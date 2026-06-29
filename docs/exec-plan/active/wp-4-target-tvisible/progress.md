@@ -21,7 +21,7 @@
 
 | ID | Status | Resolution |
 |----|--------|-----------|
-| OQ-4.1 目標幾何 / hitbox | 🟡 建議 | 膠囊/方塊 + head/body 兩 hitbox |
+| OQ-4.1 目標幾何 / hitbox | ✅ grill (H1) | 單一 hitbox（命中/未命中）；`part` 選填保留、頭/身延後 |
 | OQ-4.2 「可見」定義 | 🟡 建議 | spawn 瞬間即可見，`t_visible`=spawn tick |
 | OQ-4.3 交替序列驅動 | 🟡 建議 | 內建確定性輪替，WP-6 接管 |
 | OQ-4.4 目標消失條件 | 🟡 建議 | 被標記擊殺 → 消失 → 生成對側（WP-5 接命中） |

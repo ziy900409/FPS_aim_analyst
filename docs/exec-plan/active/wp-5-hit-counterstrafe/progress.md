@@ -21,10 +21,10 @@
 
 | ID | Status | Resolution |
 |----|--------|-----------|
-| OQ-5.1 停止 gate 精準判定 | 🟡 建議 | 布林：開火當 tick stopped→accurate=true、residualSpeed≈0；連續模型留階段 B |
-| OQ-5.2 橫移速度 / 加速 | 🟡 建議 | 瞬時 maxStrafe、反向鍵立即歸零；附錄 D 留階段 B |
-| OQ-5.3 peek 邊界 | 🟡 建議 | t_visible 為 peek 起點；新目標可見時 reset 首發旗標 |
-| OQ-5.4 命中即擊殺 | 🟡 建議 | 命中即 markKilled → 生成對側 |
+| OQ-5.1 停止 gate 精準判定 | ✅ grill | 布林：stopped→accurate；residualSpeed 二元 {0,±v}→結果頁分類；連續模型留階段 B |
+| OQ-5.2 橫移速度 / 加速 | ✅ grill | 瞬間 snap 到 `v_strafe`(~250 u/s)、反向鍵穿越 tick 歸零（M1）；附錄 D 留階段 B |
+| OQ-5.3 peek 邊界 | ✅ grill (P2) | t_visible 起點、**第一次命中=kill** 終點（未命中可補槍）；`peekTimeoutMs` 防卡；新目標可見 reset 首發 |
+| OQ-5.4 命中即擊殺 | ✅ grill (P2) | **第一次命中**即 markKilled → 生成對側（spawnDelay 0）|
 
 ---
 

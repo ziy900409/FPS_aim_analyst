@@ -13,7 +13,7 @@
 `MovementController.step` 依 A/D held 狀態在 sim 固定步長推進 velocity 與位移（FR-5.3）。公開介面須讓階段 B 替換為 friction integrator 時不變（附錄 D）。
 
 ## In scope
-- `MovementController.step(state, dt)`：held A → vx=-maxStrafe、held D → vx=+maxStrafe、皆無 → vx=0（本 task 尚無急停 flag，T4 補）；`x += vx*dt`。
+- `MovementController.step(state, dt)`：held A → vx=-`v_strafe`、held D → vx=+`v_strafe`、皆無 → vx=0（瞬間 snap、無 accel；本 task 尚無急停 flag，T4 補）；`x += vx*dt`。
 - `SharedState.player` 補 `vx`/`x`（若 WP-2 佔位已有則沿用）。
 
 ## Out of scope
@@ -21,7 +21,7 @@
 
 ## Design notes
 - **固定 dt**（sim tick），不用 frame delta（決定性）。
-- 瞬時 maxStrafe（OQ-5.2），無加速曲線（階段 A）。
+- 瞬間 snap 到 `v_strafe`（OQ-5.2，預設 ~250 u/s），無加速曲線（階段 A）。
 - `step` 為唯一公開點；內部數值階段 B 可換（附錄 D），介面不動。
 
 ## Steps

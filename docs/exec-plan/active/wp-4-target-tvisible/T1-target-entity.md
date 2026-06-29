@@ -10,10 +10,10 @@
 | **Status** | ⬜ TODO |
 
 ## Objective
-定義 `TargetState`（含 head/body hitbox）並建 `TargetView` 依狀態顯示/隱藏 mesh（FR-4.1）。
+定義 `TargetState`（**單一 hitbox，H1**；`part` 選填保留）並建 `TargetView` 依狀態顯示/隱藏 mesh（FR-4.1）。
 
 ## In scope
-- `SharedState.TargetState`：id/side/pos/visible/alive/hitboxes。
+- `SharedState.TargetState`：id/side/pos/visible/alive/**hitbox（單一，`part` 選填）/motion?+age（F5 接縫）**。
 - `TargetView`：為每個 target 建/回收 mesh（膠囊或方塊），依 `visible` 顯示/隱藏（唯讀 state）。
 - hitbox 幾何參數隨 TargetState 暴露（WP-5 Raycaster 用同來源）。
 
@@ -34,4 +34,4 @@
 - [ ] 可由 state 驅動目標 mesh 顯示/隱藏；hitbox 參數與 mesh 一致。
 
 ## Commit
-`feat(wp-4): 目標 entity（mesh + head/body hitbox）+ TargetView（FR-4.1）`
+`feat(wp-4): 目標 entity（mesh + 單一 hitbox，H1）+ TargetView（FR-4.1）`

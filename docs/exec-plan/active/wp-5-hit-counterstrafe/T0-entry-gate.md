@@ -15,10 +15,10 @@
 
 ## Steps
 - [ ] 確認 WP-3 exit ✅（fire/key 事件入緩衝、sim 消費）+ WP-4 exit ✅（hitbox + t_visible + markKilled）。
-- [ ] 鎖 OQ-5.1：布林精準 gate（stopped→accurate, residualSpeed≈0）。
-- [ ] 鎖 OQ-5.2：瞬時 maxStrafe、反向鍵立即歸零。
-- [ ] 鎖 OQ-5.3：peek 起點 = t_visible；新目標可見 reset 首發。
-- [ ] 鎖 OQ-5.4：命中即擊殺 → markKilled。
+- [ ] 鎖 OQ-5.1：布林精準 gate（stopped→accurate；residualSpeed 二元 {0,±v} → 結果頁分類）。
+- [ ] 鎖 OQ-5.2：瞬間 snap 到 `v_strafe`(~250 u/s)、反向鍵穿越 tick 歸零（M1）。
+- [ ] 鎖 OQ-5.3：peek 起點 = t_visible；**P2 命中才推進**、`peekTimeoutMs` 防卡；新目標可見 reset 首發。
+- [ ] 鎖 OQ-5.4：**第一次命中**即擊殺 → markKilled（spawnDelay 0）。
 - [ ] README §1 + progress.md 翻 ✅；加 dated log。
 
 ## Definition of Done

@@ -24,7 +24,7 @@ F3：第一人稱 + CS 風格反向急停。階段 A 用**簡化「立即停止�
 
 | ID | Requirement | Maps to task |
 |----|-------------|--------------|
-| **FR-5.1** | `HitDetector`：Raycaster 從 camera 中心開火命中判定（命中/未命中 + 部位 head/body）。 | T1 |
+| **FR-5.1** | `HitDetector`：Raycaster 從 camera 中心開火命中判定（命中/未命中；**階段 A 單一 hitbox（H1）**、`part` 選填保留）。 | T1 |
 | **FR-5.2** | 首發判定：每循環（peek）只計第一發為「首發命中率」分子來源。 | T2 |
 | **FR-5.3** | `MovementController`：A/D 橫移（速度 + 位移，固定步長 sim）。 | T3 |
 | **FR-5.4** | 簡化急停：反向鍵 = 立即「停止」flag；以停止 gate 開火精準（停止狀態下開火才算精準射擊）。 | T4 |
@@ -52,10 +52,10 @@ F3：第一人稱 + CS 風格反向急停。階段 A 用**簡化「立即停止�
 
 | ID | Question | 建議解法 | Blocks |
 |----|----------|---------|--------|
-| **OQ-5.1** | 「停止 gate 開火精準」具體判定？ | 階段 A 布林：開火當 tick 若 `stopped===true`（速度歸零 flag）→ 標記 `accurate=true` 並記 `residualSpeed≈0`；否則 `accurate=false` 記當下殘速。連續精準度模型留階段 B。 | T4 |
-| **OQ-5.2** | 橫移速度上限 / 加速？ | 階段 A 簡化：按住 A/D 即達固定 `maxStrafe`（瞬時，無加速曲線）；反向鍵立即歸零。數值佔位，pilot 校準。附錄 D 常數留階段 B。 | T3 |
-| **OQ-5.3** | peek 邊界（首發歸零點）？ | 以 WP-4 的 `t_visible`（新目標可見）為 peek 起點、擊殺/消失為終點；首發旗標在每次新目標可見時 reset。 | T2 |
-| **OQ-5.4** | 命中即擊殺？ | 階段 A：命中 body/head 即擊殺 → 觸發 WP-4 `markKilled` → 生成對側。 | T1 |
+| **OQ-5.1** | 「停止 gate 開火精準」具體判定？ | 階段 A 布林：開火事件點若 `stopped===true`→`accurate=true`、`residualSpeed=0`；否則 `accurate=false`、`residualSpeed=|v|`。**velocity 二元 {0,±v} → 結果頁分類呈現**（grill）；連續精準度模型留階段 B。 | T4 |
+| **OQ-5.2** | 橫移速度上限 / 加速？ | **已定（grill）**：瞬間 snap 到固定 `v_strafe`（無加速曲線）；反向鍵穿越 tick 歸零。`v_strafe` config 預設 **~250 u/s**（source unit）。附錄 D friction/accel 留階段 B。 | T3 |
+| **OQ-5.3** | peek 邊界（首發歸零點）？ | **P2 推進（grill）**：`t_visible` 為 peek 起點、**第一次命中=kill** 為終點（未命中不推進、可補槍）；首發旗標每次新目標可見 reset。`peekTimeoutMs` 逾時未 kill→記 timeout、推進。`t_next_acquisition`=準心射線首次命中下一目標 hitbox。 | T2 |
+| **OQ-5.4** | 命中即擊殺？ | 階段 A（P2）：**第一次命中即 kill** → 觸發 WP-4 `markKilled` → 生成對側（`spawnDelayMs` 預設 0）。 | T1 |
 
 ---
 
@@ -76,15 +76,13 @@ src/state/SharedState.ts      ← MODIFY (player velocity/stopped；peek/firstSh
 ```
 simStep(state, dt):
   consume 輸入(WP-3) → 更新 held(A/D) + 反向鍵事件 + fire 事件
-  MovementController.step(state, dt):
-      if 反向鍵觸發 → state.player.stopped=true; vx=0   (簡化急停, FR-5.4)
-      else 依 held(A/D) 設 vx=±maxStrafe; x += vx*dt    (FR-5.3)
-  若有 fire 事件：
-      HitDetector.raycast(camera 中心, targets.hitboxes) → {hit, part}     (FR-5.1)
-      accurate = state.player.stopped                                       (OQ-5.1)
-      residualSpeed = |velocity| (停止則≈0)
+  事件依 timeStamp 排序逐一處理（輸入分桶，WP-3）：
+  MovementController.step（M1）：依 held(A/D) 定目標 velocity；**穿越方向那一 tick**（反向鍵新壓、與當前移動反向）→ vx **snap 0** + stopped=true（立即停止）；續按反向鍵 → 次 tick vx=∓v_strafe（反向/過衝）。x += vx*dt（瞬間 snap、無 accel）  (FR-5.3/5.4)
+  開火事件**在串流該點 inline 評估**（準心/velocity 為 t_fire 當下值，sub-tick 忠實、零內插）：
+      HitDetector.raycast(camera 正向射線, target.hitbox) → {hit}            (FR-5.1, H1 單一 hitbox)
+      accurate = stopped；residualSpeed = |velocity|（階段 A 二元 {0,±v}）    (OQ-5.1)
       firstShot = firstShotGate(state, currentPeekId)                       (FR-5.2)
-      若 hit → TargetManager.markKilled (WP-4) → 生成對側 + 新 peek/firstShot reset
+      若 hit → **第一次命中=kill** → TargetManager.markKilled (WP-4) → 生成對側（spawnDelay 預設 0）+ 新 peek/firstShot reset  (P2)
       產出 fire 結果事件（供 WP-7 記錄 / WP-8 統計）
 ```
 
@@ -95,7 +93,7 @@ simStep(state, dt):
 export interface MovementController {
   step(state: SharedState, dtSec: number): void;   // 階段A: 立即停止; 階段B: friction integrator（同介面）
 }
-export function createMovementController(opts?: { maxStrafe?: number }): MovementController;
+export function createMovementController(opts?: { vStrafe?: number }): MovementController;  // 預設 ~250 u/s
 
 // src/sim/HitDetector.ts (FR-5.1)
 export interface FireResult { hit: boolean; part?: 'head' | 'body'; targetId?: string;
@@ -131,7 +129,7 @@ export function firstShotGate(state: SharedState, peekId: string): boolean;  // 
 | 命中判定誤差 | Med | Med | camera 中心射線 + 同來源 hitbox；正對/偏移案例測試 |
 
 ### Technical debt（自覺取捨）
-- **立即停止**取代真摩擦（FR-5.4）；**瞬時 maxStrafe**無加速（OQ-5.2）；**布林精準 gate**（OQ-5.1）。*Trigger*：階段 B 換 friction + acceleration integrator + 連續速度 gate（附錄 D），介面不變。
+- **立即停止**取代真摩擦（FR-5.4）；**瞬時 `v_strafe`**無加速（OQ-5.2）；**布林精準 gate** → 殘速二元、結果頁分類（OQ-5.1）。*Trigger*：階段 B 換 friction + acceleration integrator + 連續速度 gate（附錄 D），介面不變。
 
 ---
 

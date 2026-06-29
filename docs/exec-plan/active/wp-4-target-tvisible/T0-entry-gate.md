@@ -16,7 +16,7 @@
 ## Steps
 - [ ] 確認 WP-1 exit ✅（場景）+ WP-2 exit ✅（M1，sim tick + clock）。
 - [ ] 確認 `SimLoop` 有 simStep 掛點可呼叫 `TargetManager.tick`，且 sim clock 可取 `nowMs`。
-- [ ] 鎖 OQ-4.1：膠囊/方塊 + head/body hitbox。
+- [ ] 鎖 OQ-4.1：膠囊/方塊 + **單一 hitbox（H1）**，`part` 選填保留。
 - [ ] 鎖 OQ-4.2：spawn 即可見、`t_visible`=spawn tick 時間。
 - [ ] 鎖 OQ-4.3：內建確定性輪替序列。
 - [ ] 鎖 OQ-4.4：擊殺標記 → 消失 → 生成對側。

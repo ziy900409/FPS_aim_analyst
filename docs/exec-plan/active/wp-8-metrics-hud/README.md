@@ -25,7 +25,7 @@
 | ID | Requirement | Maps to task |
 |----|-------------|--------------|
 | **FR-8.1** | `MetricsDashboard` 計算 §5 全部 8 項指標（急停反應時間、速度歸零誤差、停火時序對齊、首發命中率、準心對齊偏移、切換時間、節奏穩定度、左右對稱性）。 | T1 |
-| **FR-8.2** | 結果畫面（DOM）：反應時間、命中率、停止時間、過衝、左右對稱。 | T2 |
+| **FR-8.2** | 結果畫面（DOM）：反應時間、命中率、停止狀態、過衝（**階段 A 分類：已停止/移動中、有無反向，非 u/s**）、左右對稱。 | T2 |
 | **FR-8.3** | 即時 HUD（DOM）：分數、計時、命中率、velocity 指示。 | T3 |
 | **FR-8.4** | 重新開始 / 換 drill 控制。 | T4 |
 
@@ -34,6 +34,7 @@
 - **純機械計算**：每指標可由時間戳/座標確定性算出，無主觀評分（§5）。
 - **UI = DOM overlay（D1）**：HUD/結果頁/控制皆純 TS + DOM，不引框架。
 - **HUD 不污染量測**：HUD 只在 rAF 讀 `SharedState`/記錄更新文字，不進 sim、不每幀配置。
+- **階段 A 指標分層（grill / 規格 §5 註）**：時序維度完整可量；精度維度（速度歸零誤差、過衝）二元 → **分類呈現、非 u/s**；停火時序對齊的 `t_velocity_zero` 塌縮成 `t_counter`；追蹤指標（F5）不在階段 A。
 
 ### Constraints
 
@@ -51,7 +52,7 @@
 | ID | Question | 建議解法 | Blocks |
 |----|----------|---------|--------|
 | **OQ-8.1** | 指標計算用記錄即時算 vs 匯出後算？ | 用 WP-7 in-memory `snapshot()`（與匯出同來源）在 drill ended 後計算，確保統計=匯出。 | T1 |
-| **OQ-8.2** | 「過衝」定義？ | 急停後殘餘反向位移 / 速度過零後反向量（從 velocity 軌跡偵測）；階段 A 以 residualSpeed + 速度符號變化近似。 | T1, T2 |
+| **OQ-8.2** | 「過衝」定義？ | **階段 A 立即停止（M1）下退化成二元（grill）**：僅「有無反向」（velocity 符號是否翻轉），非連續幅度；結果頁以**分類**呈現。連續過衝幅度待階段 B physics。 | T1, T2 |
 | **OQ-8.3** | HUD 呈現哪些即時值？ | 分數（擊殺數）、計時（drill 時間）、命中率（累積）、velocity 指示（停止/移動狀態條）。 | T3 |
 | **OQ-8.4** | 結果頁要不要圖表？ | 階段 A：數值卡為主 + 反應時間分布小圖（為 WP-9 對照 150–250 ms 鋪路）；其餘延後。 | T2 |
 
@@ -83,8 +84,8 @@ Controls：restart → DrillRunner.restart（WP-6）；換 drill → DrillLoader
 // src/metrics/compute.ts (FR-8.1)
 export interface Metrics {
   counterReactionMs: Stat;       // 急停反應時間 t_counter - t_visible
-  residualSpeed: Stat;           // 速度歸零誤差（開火殘速）
-  fireTimingAlignmentMs: Stat;   // 停火時序 t_fire - t_velocity_zero（負=未停先開）
+  residualSpeed: Stat;           // 速度歸零誤差；階段 A 二元 {0,±v} → 分類呈現（grill）
+  fireTimingAlignmentMs: Stat;   // 停火時序；階段 A t_velocity_zero 塌縮成 t_counter（grill）
   firstShotHitRate: number;      // 首發命中率 %
   crosshairOffset: Stat;         // 準心對齊偏移
   switchTimeMs: Stat;            // 切換時間 t_next_acq - t_prev_kill

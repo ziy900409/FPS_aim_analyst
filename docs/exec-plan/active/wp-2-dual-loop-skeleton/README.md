@@ -34,12 +34,13 @@
 - **計時源**：所有時間取自 `performance.now()`（ADR-4），禁用 `Date.now()`、禁用 render frame 推時間。
 - **無 GC 卡頓**：sim step 不每 tick 配置物件（為 WP-7 ring buffer 鋪路；本 WP 至少避免在熱路徑 new 物件）。
 - **tick rate 為常數**：`SIM_HZ = 128` 設定常數，不寫死在邏輯（ADR-3，可提升 256/384）。
+- **兩個時鐘（ADR-7）**：量測延遲指標用 `performance.now()`（與 `event.timeStamp` 同源）；**決定性用邏輯 tick index**（`tick0+n·TICK`），決定性測試斷言「同一 tick index 的**狀態**」相等、**不**斷言 wall-clock 時間戳。
 
 ### Constraints
 
 - **三迴圈不互相直接呼叫**：input/sim/render 只經 `SharedState`（ADR-2）。
 - **sim 與 render 各自維護 accumulator**；render 只讀 sim 最新狀態 + alpha 內插，不改 sim 狀態。
-- 決定性的定義：**給定相同輸入事件序列（含時間戳），sim 的逐 tick 輸出與 render FPS 無關**。
+- 決定性的定義：**給定相同輸入事件序列（含時間戳），sim 的逐 tick 輸出與 render FPS 無關**——斷言**狀態**（位置/velocity/命中/事件落點 tick），**不**斷言 wall-clock `t_visible`（本質非決定性，ADR-7）。事件以 `timeStamp` 落入 tick 邏輯窗 `[tickStart,tickEnd)` 消費，是決定性前提（輸入分桶，WP-3）。
 - 階段 A sim 跑主執行緒；Web Worker + `SharedArrayBuffer` 是階段 B（架構需預留 seam，不實作）。
 
 ### Out of scope
@@ -91,7 +92,7 @@ export const realClock: Clock = { now: () => performance.now() };
 
 // src/state/SharedState.ts (FR-2.1) — 單例，三迴圈唯一溝通管道
 export interface SharedState {
-  input: InputEvent[];            // 緩衝（WP-3 填，sim 消費清空）
+  input: InputEvent[];            // 固定欄位 ring buffer（WP-3；真環狀、消費後槽位重用、不 push 物件）
   player: { vx: number; vz: number; x: number; z: number };
   prev: PlayerSnapshot; curr: PlayerSnapshot;  // 內插用雙快照
   crosshair: { cx: number; cy: number };
@@ -130,7 +131,7 @@ alpha = acc / TICK;               // [0,1) 內插係數
 
 ### Concurrency model
 
-階段 A：單執行緒，三迴圈在主執行緒協作（input 事件、sim 在 rAF 內 pump、render 在 rAF）。`simStep` 為純函式以預留階段 B 搬入 Web Worker + `SharedArrayBuffer`（OQ-2.4），本 WP 不實作 worker。
+階段 A：單執行緒，三迴圈在主執行緒協作（input 事件、sim 在 rAF 內 pump、render 在 rAF）。**「雙迴圈」實為單一 rAF 超級迴圈**（sim 子步進 + render 同 callback）＋事件驅動採樣；sim **未**與 render jank 隔離（停頓 >250ms 掉 tick），真隔離待階段 B worker——見 [`DESIGN.md`](../../../DESIGN.md) §1。render 只透過窄的 **`RenderSnapshot`**（velocity/crosshair/active targets；本 WP 的 `prev/curr` 即雛形）讀 sim、不伸手進 sim 物件圖；階段 B 換 SAB+seqlock 而 consumer 不改。`simStep` 為純函式以預留階段 B 搬入 Web Worker + `SharedArrayBuffer`（OQ-2.4），本 WP 不實作 worker。
 
 ---
 

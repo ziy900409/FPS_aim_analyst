@@ -22,8 +22,8 @@
 | ID | Status | Resolution |
 |----|--------|-----------|
 | OQ-3.1 反向鍵定義 | 🟡 建議 | 採集層只記原始鍵碼；反向語意在 WP-5 處理 |
-| OQ-3.2 緩衝結構 | 🟡 建議 | 普通陣列 + 消費清空；ring buffer 留 WP-7 |
-| OQ-3.3 時間戳對齊 | 🟡 建議 | `event.timeStamp` 與 sim clock 同 `performance.now()` 基準 |
+| OQ-3.2 緩衝結構 | ✅ grill | 固定欄位 **ring buffer**（真環狀、靜態容量、不動態 resize）；溢位 `bufferOverflow` |
+| OQ-3.3 時間戳對齊 | ✅ grill | 同 `performance.now()` time origin（僅 Chromium，須重驗）|
 
 ---
 

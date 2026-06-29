@@ -50,7 +50,7 @@ F4：drill 以 **config（資料）定義**——目標數、位置、時序、�
 
 | ID | Question | 建議解法 | Blocks |
 |----|----------|---------|--------|
-| **OQ-6.1** | config schema 欄位範圍？ | 至少：`drillId`、`targets`（數/位置/距離）、`sequence`（交替規則/種子）、`timing`（倒數/間隔/時限）、`endCondition`。以 TS 型別 + JSON Schema 雙重約束。 | T1 |
+| **OQ-6.1** | config schema 欄位範圍？ | 至少：`drillId`、`targets`（數/位置/距離、**`motion?` F5 接縫**）、`sequence`（交替規則/種子）、`timing`（倒數/**`spawnDelayMs` 預設 0**/**`peekTimeoutMs`**/時限）、`endCondition`（雙閘）。以 TS 型別 + JSON Schema 雙重約束。 | T1 |
 | **OQ-6.2** | 位置定義（絕對座標 vs 左右槽位）？ | 階段 A 用「左/右 peek 槽位 + 距離」抽象，貼合 counter-strafe；絕對座標延後。 | T1, T2 |
 | **OQ-6.3** | 結束條件預設？ | 預設「目標數達標」（如 20 個 peek）；可選時限。 | T1, T4 |
 | **OQ-6.4** | 載入失敗 / schema 不合處理？ | 載入時驗證（型別 + 必填）；不合 → 明確錯誤 + 不啟動，避免污染資料。 | T2 |
@@ -87,10 +87,18 @@ DrillRunner.restart() → reset state（WP-2 resetState + TargetManager.reset）
 // src/drill/DrillConfig.ts (FR-6.1)
 export interface DrillConfig {
   drillId: string;                       // 對齊匯出 metadata（附錄 C）
-  targets: { count: number; distance: number; /* 槽位幾何 */ };
+  targets: {
+    count: number; distance: number;     // u（source unit）
+    motion?: TargetMotion;               // F5 接縫：省略 = static（向後相容，附錄 G）
+  };
   sequence: { alternation: 'LR' | 'RL'; seed?: number };
-  timing: { countdownMs: number; interTargetMs?: number; timeLimitMs?: number };
-  endCondition: { type: 'targetCount' | 'timeLimit'; value: number };
+  timing: {
+    countdownMs: number;
+    spawnDelayMs?: number;               // kill→下一目標延遲；counter-strafe 預設 0（grill）
+    peekTimeoutMs?: number;              // 逾時未 kill → 記 timeout、推進（防卡）
+    timeLimitMs?: number;
+  };
+  endCondition: { type: 'targetCount' | 'timeLimit'; value: number };   // 雙閘
 }
 
 // src/drill/DrillLoader.ts (FR-6.2/OQ-6.4)

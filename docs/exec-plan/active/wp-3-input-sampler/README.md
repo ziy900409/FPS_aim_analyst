@@ -33,7 +33,7 @@ F1：採集每個 A/D／反向鍵的 keydown/keyup、滑鼠位移、開火事件
 
 - **時間戳同源**：一律用 `event.timeStamp`（與 `performance.now()` 同基準，ADR-4），禁 `Date.now()`。
 - **無遺漏**：coalesced events 全數入緩衝；高頻滑鼠不丟樣本。
-- **無 GC 卡頓**：緩衝避免每事件大量配置（沿用 WP-2 紀律；ring buffer 屬 WP-7）。
+- **無 GC 卡頓**：輸入緩衝即**固定欄位 ring buffer**（本 WP 實作、不 `push` 物件）；`DataRecorder` 的 arena 屬 WP-7，兩者不同（前者真環狀、後者非環狀不繞圈）。
 
 ### Constraints
 
@@ -51,8 +51,8 @@ F1：採集每個 A/D／反向鍵的 keydown/keyup、滑鼠位移、開火事件
 | ID | Question | 建議解法 | Blocks |
 |----|----------|---------|--------|
 | **OQ-3.1** | 反向鍵如何定義？ | 「反向鍵」= 與當前移動方向相反者（D 中按 A、A 中按 D）；採集層只記原始鍵碼，反向語意在 WP-5 急停判定處理。 | T1 |
-| **OQ-3.2** | 緩衝資料結構？ | 階段 A 用普通陣列 + sim 消費後清空；WP-7 再評估 ring buffer。先預留無遺漏與排序契約。 | T4 |
-| **OQ-3.3** | `event.timeStamp` 與 sim clock 對齊？ | 兩者皆 `performance.now()` 同基準（ADR-4）；sim 比較事件 t 與 tick 時間用同尺度。 | T4 |
+| **OQ-3.2** | 緩衝資料結構？ | **已定（grill）**：固定欄位 **ring buffer**（真環狀；每事件壓成 `type,t,a,b` 數值欄、不 `push` 物件）——當下擋 GC、未來 SAB-portable。容量 = `nextPow2(MAX_EVENT_RATE_HZ×MAX_STALL_S×SAFETY)` 靜態常數、**執行期不動態 resize**；溢位升 `bufferOverflow`。 | T4 |
+| **OQ-3.3** | `event.timeStamp` 與 sim clock 對齊？ | 兩者皆 `performance.now()` 同 time origin（ADR-4/7），可直接相減。⚠️ **僅 Chromium 成立**；支援非 Chromium 須重驗。 | T4 |
 
 ---
 
@@ -73,7 +73,7 @@ src/loop/SimLoop.ts         ← MODIFY (simStep 開頭呼叫 consume，處理 �
 keydown/keyup(A/D/...)     ─┐
 pointermove→coalesced[]    ─┼─ event.timeStamp ─→ SharedState.input.push(evt)      [採集 ~1000 Hz]
 mousedown(fire)            ─┘
-SimLoop tick (128 Hz)：consume(state, tickEndTime) → 取出所有 t ≤ tickEndTime 的事件，按 t 升冪交給 simStep 處理 → 從緩衝移除
+SimLoop tick (128 Hz)：consume(state, [tickStart,tickEnd)) → 取該邏輯窗事件、**桶內按 t 升冪**交 simStep（決定性前提）→ 移除。遲到落在已關閉 tick 的事件夾進當前最舊 tick、計 `lateEventCount`；溢位升 `bufferOverflow`。
 ```
 
 ### Interface contracts
@@ -98,7 +98,7 @@ export function consume(state: SharedState, untilT: number,
 |------|---------|----------|
 | coalesced 不支援 | 舊瀏覽器 | `getCoalescedEvents?.() ?? [e]`（附錄 B） |
 | 時間戳亂序入緩衝 | 多來源事件交錯 | consume 端排序（不假設 push 即有序） |
-| 緩衝無限增長 | sim 落後/未消費 | consume 每 tick 排空 t≤tickEnd；積壓告警（dev log） |
+| 緩衝溢位 | 長停頓 burst | 靜態容量 ring；溢位升 `bufferOverflow` 標 suspect（**不靜默丟最舊**） |
 | 視角與量測雙重消費衝突 | 同 pointermove | WP-1 即時用 movementX/Y 驅動 camera；WP-3 另把 coalesced 樣本入緩衝；互不干擾 |
 
 ### Concurrency model
@@ -116,7 +116,7 @@ export function consume(state: SharedState, untilT: number,
 | 緩衝 GC 卡頓 | Low | Med | 陣列重用 / 移除而非重建；ring buffer 留 WP-7 |
 
 ### Technical debt
-- 普通陣列緩衝（OQ-3.2）。*Trigger*：WP-7 ring buffer 若需更低 GC。
+- （原列「普通陣列緩衝」為債）已改**固定欄位 ring buffer**（OQ-3.2，grill）：當下擋 GC、未來 SAB-portable，此債項取消。
 
 ---
 

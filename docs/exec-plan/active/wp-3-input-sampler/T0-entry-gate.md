@@ -17,8 +17,8 @@
 - [ ] 確認 [WP-2 exit-gate](../wp-2-dual-loop-skeleton/T5-exit-gate.md) ✅ 且頂層索引標記 **M1 達成**。
 - [ ] 確認 `SharedState.input` 欄位 + `SimLoop` 有 consume 掛點（WP-2 T1/T2）。
 - [ ] 鎖 OQ-3.1：採集層只記原始鍵碼，反向語意延 WP-5。
-- [ ] 鎖 OQ-3.2：普通陣列緩衝 + 消費清空。
-- [ ] 鎖 OQ-3.3：`event.timeStamp` 與 sim clock 同基準。
+- [ ] 鎖 OQ-3.2：**固定欄位 ring buffer**（真環狀、靜態容量、不動態 resize）。
+- [ ] 鎖 OQ-3.3：`event.timeStamp` 與 sim clock 同 time origin（僅 Chromium，須重驗）。
 - [ ] README §1 + progress.md ledger 翻 ✅；加 dated log。
 
 ## Definition of Done
