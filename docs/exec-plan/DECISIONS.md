@@ -1,0 +1,56 @@
+# DECISIONS — 全域決策與跨文件矛盾帳本
+
+> 專案的**全域 episodic memory**:記跨 WP / 跨文件的決策、未解問題、文件間的不一致。
+> per-WP 的決策與意外寫在各 WP 的 `progress.md`;**跨界的**(影響規格 / PLAN / 多個 WP)才寫這裡。
+> 索引:[exec-plan/README.md](README.md) · 術語:[CONTEXT.md](../../CONTEXT.md) · 導航:[docs/MAP.md](../MAP.md)
+> 語言:繁體中文,術語保留英文(D4)。最新在上。
+
+---
+
+## 1. 既有決策的權威來源(本檔不複製,只指路)
+
+| 類別 | 出處 | 內容 |
+|---|---|---|
+| 架構決策 **ADR-1~9** | [規格書](../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 1 WebGPU+fallback、2 雙迴圈、3 固定步長 128Hz、4 計時/cross-origin、5 Pointer Lock 原始輸入、6 目標 motion registry、7 兩個時鐘、8 peek 推進 P2、9 source unit |
+| 規劃補充決策 **D1~D5** | [PLAN.md §1](../PLAN.md) | 2D UI 技術、測試框架、COOP/COEP 部署、文件語言、PLAN 顆粒度 |
+
+> 上述為已定案的權威決策,改動須回原文件並在此記一筆變更。
+
+---
+
+## 2. 未解 / 待對帳項(OPEN)
+
+> 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
+
+> 目前無未解項。GD-1(F5 範圍)已於 2026-06-29 解決,見 §3。
+
+---
+
+## 3. 已解決(CLOSED)
+
+### GD-1 ✅ F5(移動目標)範圍 — 已統一 seam-in / drills-out(2026-06-29)
+
+| | |
+|---|---|
+| **決議** | 階段 A **只建 F5 架構接縫**(`SimLoop` target-motion slot、`TargetManager` motion registry、`DrillConfig.targets.motion?` 選填、預設 `static` 恆等),**不交付移動目標 drill / 追蹤指標 / slide-in `t_visible`**。 |
+| **對帳結果** | 已回寫:規格 §1.2(範圍修正註)+ 附錄 E(移動 drill 標延後、新增接縫驗收)、[PLAN.md](../PLAN.md) §1/§9、[README.md](README.md)、WP-4/WP-6 README。 |
+| **權威來源** | [CONTEXT.md §D](../../CONTEXT.md)「F5 接縫」、規格 §1.2。 |
+| **狀態** | ✅ 已解(2026-06-29;commit 待補) |
+
+### GD-2 ✅ 規劃 grill — 一批執行期契約決策(2026-06-29)
+
+| | |
+|---|---|
+| **決議** | 經 grill-with-docs 釘死一批跨 WP 執行期契約,已回寫權威文件並反映進 WP-2/3/4/5/6/7/8 README:**ADR-7** 兩個時鐘(量測 `performance.now()` / 決定性邏輯 tick index;Chromium 同源假設須重驗)、**ADR-8** peek 推進 P2(命中才推進)、**ADR-9** 正規單位 source unit;**輸入分桶**(timeStamp 落 tick 邏輯窗消費)、**輸入緩衝 = 真 ring** vs **`DataRecorder` = preallocated arena**(非環狀,`maxDrillSeconds` 300s)、**`SharedState` 兩道階段 B 跨界縫**(輸入佇列 + `RenderSnapshot`)、**移動模型 M1**(瞬間 snap、反向鍵穿越 tick 歸零)+ **指標分層**(時序可量 / 精度二元待階段 B)、**H1 單一 hitbox**、**開火 inline 評估**(sub-tick 忠實)。 |
+| **權威來源** | [CONTEXT.md](../../CONTEXT.md)、[DESIGN.md](../DESIGN.md) §1、規格 ADR-7/8/9。 |
+| **新增 metadata** | `unit`、`vStrafe`、`maxDrillSeconds`、`lateEventCount`、`bufferOverflow`、`recorderOverflow`、`suspect`(規格附錄 C / WP-7 `Meta`);`schema.md`(WP-7.5)產出時一併納入。 |
+| **狀態** | ✅ 已解(2026-06-29;commit 待補) |
+
+---
+
+## 寫入慣例
+
+- 新增條目編號 `GD-n`(global decision),最新放 §2 最上方。
+- 一條目至少含:**發現處**、**問題/決策**、**理由**、**影響面**、**待辦/結論**、**狀態**。
+- 解決時:更新狀態為 ✅、補日期與 commit、整條移到 §3。
+- 影響到 ADR/D 決策時,回改原權威文件,並在 §1 留變更註記。
