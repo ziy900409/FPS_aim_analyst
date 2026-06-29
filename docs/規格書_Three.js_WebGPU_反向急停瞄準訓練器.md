@@ -32,6 +32,8 @@
 | F4 | 多 drill 支援 | drill 以 config（資料）定義，新增 drill 不需改動引擎程式碼 |
 | F5 | 移動目標支援 | 目標位置由 sim loop 每 tick 依 `DrillConfig.targets.motion` 策略更新（**不在 render loop**）；新增移動 drill 只改 config、不改引擎；命中與量測對齊當前 tick 的目標位置（見 ADR-6、附錄 G） |
 
+> **F5 階段 A 範圍修正（grill 對帳，2026-06）**：階段 A **只建 F5 的架構接縫**（`SimLoop` 的 target-motion slot、`TargetManager` 的 motion registry、`DrillConfig.targets.motion?` 選填欄、預設 `static` 恆等策略），**不交付移動目標 drill**。移動 drill、追蹤誤差／追蹤穩定度指標、slide-in 的 `t_visible` 判準延後至階段 A+／B——理由：「移動＋急停的能力混淆」是未解的研究設計問題（附錄 F），slide-in 判準也尚未定義。詳見 [`CONTEXT.md`](../CONTEXT.md) D 節「F5 接縫（seam-in, drills-out）」。
+
 ### 1.3 階段 B（未來，預留但不在本次交付）
 - 以 Source friction + acceleration integrator 取代「立即停止」，復刻 CS2 counter-strafe 物理
 - 速度 gate 的精準度模型（v≈0 才精準）
@@ -73,6 +75,21 @@
 - **決策**：目標位置成為隨時間演化的狀態，由 `TargetManager` 在固定步長 sim loop 內每 tick 更新（**絕不在 render loop**）。移動類型（static / linear / pingpong / sine / waypoints）以註冊表集中、寫一次共用，由 `DrillConfig.targets.motion` 啟用（見附錄 G）。
 - **理由**：與玩家 movement 同理——render 被 vsync 綁定、幀率因人而異，若把目標移動寫在 render loop，目標速度會隨螢幕更新率變動，量測不可重現。把位置更新放進 sim tick 才能 deterministic。位置更新須排在**命中判定之前**（consume input → player movement → 急停判定 → **target motion** → 命中判定），命中才打在當前 tick 的目標位置。
 - **注意**：開火事件帶 sub-tick 時間戳、目標位置在 tick 上更新，兩者存在時間錯位。階段 A 採「最近 tick 位置」並記為已知偏差（附錄 F）；階段 B 對目標位置做時間戳內插以對齊 CS2 sub-tick 精神。`MovementController`／`HitDetector` 介面不變，只在 `TargetManager` 內新增 motion 更新。
+
+### ADR-7：量測時間戳採「兩個時鐘」——量測時鐘（`performance.now()`）與決定性時鐘（邏輯 tick index）
+- **決策**：所有跨角色延遲指標（反應時間、停火時序對齊、切換時間）一律在 `performance.now()` wall-clock 域計算。`t_visible` 等 sim 內事件，以「狀態翻轉那個 tick 執行當下的 `performance.now()`」蓋戳，與輸入事件的 `event.timeStamp` 同 time origin、可**直接相減**。另設一條**決定性時鐘** = 邏輯 tick index（`tick0 + n·TICK`），`DataRecorder` 每-tick row 以 tick index 為鍵；決定性測試（WP-2.4 / WP-9.3）只斷言「同一 tick index 的狀態（位置／velocity／命中與否／事件落在第幾 tick）」相等，**不**斷言 wall-clock 時間戳。
+- **理由**：反應時間是招牌指標，其兩端（`t_visible` 與 `t_counter`）必須同源可減才無系統性偏差；在 Chromium，`Event.timeStamp` 與 `performance.now()` 同 time origin，故統一用後者。但 wall-clock 時間戳本質非決定性（tick 在 rAF frame 開頭爆發執行），拿它當決定性斷言基準會誤判，故把「可重現」交給邏輯 tick index、把「可量測」交給 wall-clock，各司其職。
+- **注意**：(1) `t_visible` 帶 ≤1 render-frame／1 tick 的量化（240Hz≈4ms、tick≈7.8ms），須記為已知誤差界線，與 §15 顯示延遲誤差同數量級。(2) `event.timeStamp` 與 `performance.now()` 同源可減**僅在 Chromium（鎖定的 Chrome/Edge）成立**；若日後支援非 Chromium，此假設須重新驗證。
+
+### ADR-8：peek 推進政策採 P2（命中才推進），而非 P1（首發即推進）
+- **決策**：目標可見後**持續存在、未命中不撤**；**第一次命中＝kill → 撤掉並生成下一個**（左右交替「擊殺右→生成左」原樣成立）。每 peek 開槍數可變（0+ 次 miss 後 1 次命中）。`peekTimeoutMs`（config）逾時未 kill → 記 `timeout`、推進，避免卡死；drill 結束＝目標數達標 **或** 總時長到（雙閘）。`spawnDelay`（config）預設 0（即時交替）；`t_next_acquisition` = 準心射線首次命中下一目標 hitbox（parameter-free time-to-target）。
+- **理由**：本工具量「完整清目標（含補槍）」的行為。P2 讓 `t_prev_kill` 真的是 kill、左右交替原樣、`切換時間` 前錨乾淨。對照 P1（首發即推進）雖讓 `peek⇄首發` 1:1 更乾淨，但不像遊戲、且把補槍剔除在量測外；本專案選 P2。代價：**每 peek 耗時含 cleanup**，故節奏穩定度須同時可由 `t_visible→t_kill` 與首發間隔兩個錨計算。
+- **注意**：首發命中率**靠 `firstShot` 旗標**保證不被掃射稀釋（非靠推進政策）；counter-strafe 的時序/精度指標一律錨在首發。
+
+### ADR-9：內部正規單位採 CS Source unit（u, u/s），非公尺
+- **決策**：sim 與**所有記錄／匯出資料**一律用 Source unit。最大跑速 ~250 u/s、`sv_stopspeed` 75、精準度門檻 ~88 u/s、`v_strafe` 預設 ~250 u/s 原樣落地。`DrillConfig` 座標/range/速度、`velocity`、`residualSpeed` 全部 u/s。render 端可另套 **display scale** 做直覺場景尺度，但 sim/資料不得用公尺。附錄 G 的 `motion.speed/range` 單位為 u/s、u（修正先前誤標的 m/s）。
+- **理由**：階段 B 對照 CS2 `cl_showpos` 軌跡校準時**零換算**；若用公尺，「1 unit = ? m」的換算因子本身有多種慣例，會在量測鏈埋入人為誤差。
+- **注意**：`sv_friction`/`sv_accelerate` 為無單位係數、不受影響；`sv_stopspeed`/速度上限/門檻為 source unit/s，採本決策後直接套用。
 
 ---
 
@@ -137,10 +154,10 @@ requestAnimationFrame(frame);
 | 指標 | 定義 | 量測方式 |
 |---|---|---|
 | 急停反應時間 | 敵人可見 → 按下反向鍵 | `t_counter − t_visible` |
-| 速度歸零誤差 | 開火瞬間殘餘速度 | 開火 tick 讀 `velocity` 絕對值 |
+| 速度歸零誤差 | 開火瞬間殘餘速度 | 開火事件點（排序串流）讀 `velocity` 絕對值 |
 | 停火時序對齊 | 速度歸零 → 開火 | `t_fire − t_velocity_zero`（負值=人未停先開槍） |
 | 首發命中率 | 每循環第一發是否命中 | (首發命中 / 總 peek) × 100% |
-| 準心對齊偏移 | 開火時準心與 hitbox 偏移 | 開火 tick 算準心座標與目標中心的距離／角度 |
+| 準心對齊偏移 | 開火時準心與 hitbox 偏移 | 開火事件點（排序串流）算準心射線與目標中心的距離／角度（sub-tick 忠實、零內插） |
 | 切換時間 | 擊殺 → 對下一目標有效對齊 | `t_next_acquisition − t_prev_kill` |
 | 節奏穩定度 | 各循環耗時的變異 | 循環時長的標準差 / 變異係數 |
 | 左右對稱性 | 左右 peek 的反應與命中差異 | 分別統計左/右，計算差值 |
@@ -149,6 +166,7 @@ requestAnimationFrame(frame);
 
 > **移動目標的 `t_visible` 語意**：靜止目標的「可見」是乾淨的瞬間；移動目標須區分兩種 spawn——**pop-in（原地顯現）**：`t_visible` 仍為乾淨的 spawn tick；**slide-in（滑入視野）**：須定義「進入可命中區」的判準作為 `t_visible`。由 `DrillConfig.targets.motion.spawnKind` 指定；兩者混用會污染反應時間量測效度。
 > **追蹤指標只在移動 drill 計算**；靜止 drill 不產生追蹤誤差／追蹤穩定度（欄位留空）。
+> **階段 A 可量測性分層（grill 對帳）**：採「立即停止」簡化（M1），§5 指標分三層——**完整可量（時序維度）**：急停反應時間、首發命中率、準心對齊偏移、切換時間、節奏穩定度、左右對稱性；**語意改變但可用**：停火時序對齊（`t_velocity_zero` 塌縮成 `t_counter`，量的是「開火相對**急停輸入**」的時序）；**階段 A 退化成二元（精度維度，待階段 B physics）**：速度歸零誤差（velocity ∈ {0,±v}）、過衝（僅「有無反向」）——結果頁以**分類**呈現、不顯示誤導性 u/s。追蹤誤差／追蹤穩定度因 F5 drills 延後而**不在階段 A**。詳見 CONTEXT「速度歸零誤差」「首發」「節奏穩定度」「準心對齊偏移」。
 
 ---
 
@@ -332,7 +350,14 @@ canvas.addEventListener('pointermove', (e) => {
     "browser": "Chrome/...",
     "sensitivity": 1.8,
     "crossOriginIsolated": true,
-    "startedAt": "ISO-8601"
+    "startedAt": "ISO-8601",
+    "unit": "source",             // 正規單位 = CS source unit（u, u/s），非公尺（grill）
+    "vStrafe": 250,               // u/s；階段 A 瞬間 snap 橫移速度
+    "maxDrillSeconds": 300,       // DataRecorder arena 容量上限 = 此 × simHz
+    "lateEventCount": 0,          // 落在已關閉 tick 的遲到事件數（輸入分桶）
+    "bufferOverflow": false,      // 輸入 ring buffer 溢位
+    "recorderOverflow": false,    // DataRecorder arena 溢位
+    "suspect": false              // 任一 overflow → true；分析端可據此剔除該 drill
   },
   "ticks": [                       // 每 sim tick 一筆（ring buffer 匯出）
     { "t": 12345.6, "vx": 0, "vz": 210.4, "crosshair": [cx, cy], "keys": ["D"],
@@ -366,8 +391,9 @@ canvas.addEventListener('pointermove', (e) => {
 - [ ] 目標左右交替生成，`t_visible` 時間戳正確
 - [ ] 首發命中判定正確（不被後續掃射稀釋）
 - [ ] 1 個完整 counter-strafe drill 可端到端遊玩
-- [ ] 至少 1 個移動目標 drill 可端到端遊玩；目標位置由 sim tick 更新且與 render FPS 無關（決定性驗證涵蓋移動 drill）
-- [ ] 移動 drill 匯出含每 tick 目標位置，追蹤誤差指標有數值
+- [ ] F5 **接縫**就位：`DrillConfig.targets.motion?` 選填欄存在、`SimLoop` 保留 target-motion slot（預設 `static` 恆等、排在命中判定之前）、無 motion 欄即靜止目標（向後相容）
+- [ ] （**階段 A+／延後**）至少 1 個移動目標 drill 可端到端遊玩；目標位置由 sim tick 更新且與 render FPS 無關（決定性驗證涵蓋移動 drill）
+- [ ] （**階段 A+／延後**）移動 drill 匯出含每 tick 目標位置，追蹤誤差指標有數值
 - [ ] 資料可匯出 JSON/CSV，schema 與文件一致
 - [ ] drill 後統計顯示第 5 節全部指標
 - [ ] 反應時間分布落在合理範圍（對照 150–250 ms 文獻）
@@ -394,9 +420,9 @@ canvas.addEventListener('pointermove', (e) => {
 ```ts
 interface TargetMotion {
   type: 'static' | 'linear' | 'pingpong' | 'sine' | 'waypoints';
-  speed?: number;        // m/s
+  speed?: number;        // u/s（source unit；見 CONTEXT「正規單位」，非 m/s）
   axis?: 'horizontal' | 'vertical';
-  range?: number;        // 擺盪範圍（pingpong / sine 用）
+  range?: number;        // 擺盪範圍（u，source unit；pingpong / sine 用）
   waypoints?: Vec3[];    // waypoints 用
   spawnKind?: 'pop-in' | 'slide-in';   // 影響 t_visible 語意（見 §5 註）；預設 pop-in
 }
@@ -405,7 +431,7 @@ interface TargetMotion {
 targets: {
   count: 30,
   sequence: 'alternate_lr',
-  motion: { type: 'pingpong', axis: 'horizontal', speed: 1.5, range: 2.0, spawnKind: 'pop-in' }
+  motion: { type: 'pingpong', axis: 'horizontal', speed: 150, range: 120, spawnKind: 'pop-in' }  // u/s, u（示意值）
 }
 
 // 移動策略註冊表（寫一次、所有 drill 共用）：
