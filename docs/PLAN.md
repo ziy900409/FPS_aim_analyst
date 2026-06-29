@@ -1,7 +1,7 @@
 # 執行計畫 — FPS 反向急停瞄準訓練器（階段 A）
 
 > 對應規格書：[`規格書_Three.js_WebGPU_反向急停瞄準訓練器.md`](./規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) v1.0
-> 本文件為「大框架執行計畫」。技術骨幹與架構決策以規格書的 ADR-1~5 為準；本文件補充規格未釘死、但執行必須先定的決策，並把 WBS 轉成 **agent 可執行的階段步驟**（保留原 dev-days 估時供人工參考）。
+> 本文件為「大框架執行計畫」。技術骨幹與架構決策以規格書的 ADR-1~9 為準；本文件補充規格未釘死、但執行必須先定的決策，並把 WBS 轉成 **agent 可執行的階段步驟**（保留原 dev-days 估時供人工參考）。
 > 專有名詞定義見 [`../CONTEXT.md`](../CONTEXT.md)。
 
 ---
@@ -23,6 +23,17 @@
 | D3 | **COOP/COEP 部署** | **本機 Vite plugin（dev）+ 靜態主機（後定）** | 現階段只需本機開發：`vite.config` 設 dev server 回傳 `COOP: same-origin` / `COEP: require-corp`。上線主機（Netlify / Cloudflare Pages / nginx）以 `_headers` 或 server config 設同樣標頭，列為可插拔選項，不鎖死廠商。 |
 | D4 | **文件語言** | **繁體中文（術語保留英文）** | 與規格書一致；元件名與技術術語（`SimLoop`、`counter-strafe`、`t_visible` 等）保留英文原文，開發者讀規格與 PLAN 無需切換語言。 |
 | D5 | **PLAN 顆粒度** | **Agent 可執行的階段步驟（保留人工估時）** | 以規格 WBS 為骨架，每個 WP 拆成 agent/人都能獨立拿走的垂直切片，附驗收條件與相依；同時保留原 dev-days 供人類參考。 |
+
+> **規劃討論補充決策（grill 對帳，2026-06；權威定義見 [`../CONTEXT.md`](../CONTEXT.md)、[`DESIGN.md`](./DESIGN.md)、規格 ADR-7）**
+> - **F5 接縫 in、drills out**：階段 A 建 motion 接縫但不交付移動 drill（規格 §1.2 修正）。
+> - **兩個時鐘（ADR-7）**：量測用 `performance.now()`（與 `event.timeStamp` 同源、僅 Chromium）、決定性用邏輯 tick index。
+> - **輸入分桶**：事件依 `timeStamp` 落入 tick 邏輯窗消費；輸入緩衝 = 真 ring（固定數值欄、靜態容量、不動態 resize）。
+> - **`DataRecorder` = preallocated arena**（非環狀；容量 = `maxDrillSeconds`(300s)×`simHz`；超出升 `recorderOverflow`）。
+> - **`SharedState` 兩道階段 B 跨界縫**：輸入佇列 + `RenderSnapshot`；其餘隨 sim 進 worker。
+> - **移動模型 M1**：鍵恆移動鍵、反向鍵穿越 tick snap 0；橫移瞬間 snap、`v_strafe`≈250 u/s。**指標分層**：時序維度可量、精度維度（殘速/過衝）二元待階段 B。
+> - **peek 推進 = P2（命中才推進）**；`t_next_acquisition` = 準心射線首次命中 hitbox；`spawnDelay` 預設 0；`peekTimeoutMs` 防卡。
+> - **目標 = H1 單一 hitbox**（`part` 保留選填）。**正規單位 = source unit（u, u/s）**；render 可另套 display scale。
+> - **開火 inline 評估**：開火事件在排序串流中那一點 raycast，玩家側 sub-tick 忠實、零內插。
 
 ---
 
@@ -232,7 +243,7 @@ WP-0 → WP-1 → WP-2 →┬→ WP-3 →┐
 
 ## 9. 明確不在範圍（階段 A）
 
-美術資產、音效、帳號系統、排行榜、多人連線、anti-cheat、行動裝置最佳化、跨瀏覽器全面 QA（鎖定 Chrome/Edge 桌面版）、真 CS2 physics（階段 B）。
+美術資產、音效、帳號系統、排行榜、多人連線、anti-cheat、行動裝置最佳化、跨瀏覽器全面 QA（鎖定 Chrome/Edge 桌面版）、真 CS2 physics（階段 B）、**移動目標 drill 與追蹤指標**（F5 接縫已建、drills 延後階段 A+／B）、**頭/身部位 hitbox 與爆頭率**（H1 單一 hitbox、`part` 欄保留選填）。
 
 ---
 
