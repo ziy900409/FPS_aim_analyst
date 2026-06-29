@@ -1,0 +1,410 @@
+{
+  "D:\\git\\FPS_aim_analyst\\CLAUDE.md": {
+    "mtime": 1782765557.9009738,
+    "hash": "3343430e1eeb058e26bed11d41d00d39"
+  },
+  "D:\\git\\FPS_aim_analyst\\CONTEXT.md": {
+    "mtime": 1782767169.6831396,
+    "hash": "88d8d4084743ade5cf2ba76e5dbbc221"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\DESIGN.md": {
+    "mtime": 1782764499.4945598,
+    "hash": "ee6ac6801d72e372bf8c99c6c5470f6d"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\FRONTEND.md": {
+    "mtime": 1782763099.7869923,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\MAP.md": {
+    "mtime": 1782765608.37081,
+    "hash": "3f746ecee90ed9904d604ce7f6764012"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\PLAN.md": {
+    "mtime": 1782767332.9653208,
+    "hash": "a61c257bd8689bbc37f84e77a080b1c8"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\\u898f\u683c\u66f8_Three.js_WebGPU_\u53cd\u5411\u6025\u505c\u7784\u6e96\u8a13\u7df4\u5668.md": {
+    "mtime": 1782767832.642074,
+    "hash": "ea2c652df71c61767357bdd35d65b800"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\DECISIONS.md": {
+    "mtime": 1782765587.165404,
+    "hash": "fcaaf7eef64d58d987ba9f07172d5c47"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\README.md": {
+    "mtime": 1782767423.7494736,
+    "hash": "3352c718c792cf1b66f018af4a13aaec"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\progress.md": {
+    "mtime": 1782763099.7899933,
+    "hash": "25bc33e0890467b226a37b988ec4aa5c"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\README.md": {
+    "mtime": 1782763099.787992,
+    "hash": "cacc929f0eaf145b4a58fa7f778ef0d3"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\T0-entry-gate.md": {
+    "mtime": 1782763099.7889934,
+    "hash": "18ca1f7c7d86e1da823d1542838b3ac3"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\T1-scaffold.md": {
+    "mtime": 1782763099.7889934,
+    "hash": "7c039ed70f0499c69549f3f7578fbe86"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\T2-coop-coep-isolation.md": {
+    "mtime": 1782763099.7889934,
+    "hash": "ac6a5348a5dfce10f9c7a7e0c336a4f3"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\T3-webgpu-backend-detection.md": {
+    "mtime": 1782763099.7889934,
+    "hash": "e8785810a44450c5bc2cc8ac16a08602"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\T4-deploy-headers.md": {
+    "mtime": 1782763099.7889934,
+    "hash": "f314c41776b2cf6742381babe481ab16"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\T5-reference-notes.md": {
+    "mtime": 1782763099.7899933,
+    "hash": "c5bf731bba433b9a8e1033dd054f377b"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\T6-exit-gate.md": {
+    "mtime": 1782763099.7899933,
+    "hash": "a3ac290ab1a17d3e3e6bdf701166b652"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-0-environment-setup\\task-checklist.md": {
+    "mtime": 1782763099.7899933,
+    "hash": "db406f409587d0ec05b0f8bf01d5a414"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\progress.md": {
+    "mtime": 1782763099.791993,
+    "hash": "01b8b534bdf5e4378e2731a0ad4f22d2"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\README.md": {
+    "mtime": 1782763099.7899933,
+    "hash": "2d9f331729b8c33e784b2934c63477d4"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\T0-entry-gate.md": {
+    "mtime": 1782763099.7909932,
+    "hash": "c1779370e77a49706101e226538d8c3d"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\T1-scene.md": {
+    "mtime": 1782763099.7909932,
+    "hash": "94b3acec85361772fb7fc338c8c4cadb"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\T2-pointerlock.md": {
+    "mtime": 1782763099.7909932,
+    "hash": "4c0e10c4fa1439813872d0f8a16fc8e7"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\T3-raw-input-fallback.md": {
+    "mtime": 1782763099.7909932,
+    "hash": "e067f5a8eb37d882d147ad811080fa5e"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\T4-yaw-pitch.md": {
+    "mtime": 1782763099.791993,
+    "hash": "d1f4708fc767319802bb9db11f93ce84"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\T5-settings-panel.md": {
+    "mtime": 1782763099.791993,
+    "hash": "895f94c0a47ef77f92101bb2322bad4c"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\T6-exit-gate.md": {
+    "mtime": 1782763099.791993,
+    "hash": "4b4b80e8ef007b8fb266582ed1c53b24"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-1-fps-pointerlock\\task-checklist.md": {
+    "mtime": 1782763099.791993,
+    "hash": "7f64f51ba14123e20b1666a78ae10b94"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\progress.md": {
+    "mtime": 1782763099.7934976,
+    "hash": "75b331ab2932310267954a76dd4aaa89"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\README.md": {
+    "mtime": 1782767762.225407,
+    "hash": "8495fdf10311319eee1ab9fee6d929fc"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\T0-entry-gate.md": {
+    "mtime": 1782763099.7929928,
+    "hash": "8c9577aeeffc47f5ae4985117bc94fb7"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\T1-shared-state.md": {
+    "mtime": 1782763099.7929928,
+    "hash": "f1fdc0ec540cc3ef4819d2101dd58a6a"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\T2-sim-loop.md": {
+    "mtime": 1782763099.7929928,
+    "hash": "62e779f15af2a5aeddee9023b31fb0db"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\T3-render-interpolation.md": {
+    "mtime": 1782763099.7929928,
+    "hash": "04c3f074d3a7c2121c8a1d7937b65d1f"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\T4-determinism.md": {
+    "mtime": 1782763099.7934976,
+    "hash": "5ef62b6e4a0843480f1bd2e7e6299c65"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\T5-exit-gate.md": {
+    "mtime": 1782763099.7934976,
+    "hash": "c75567626607ad4de86b1c3c718dc4e6"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-2-dual-loop-skeleton\\task-checklist.md": {
+    "mtime": 1782763099.7934976,
+    "hash": "a2adb956b254d61e920246bdde10ed9a"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\progress.md": {
+    "mtime": 1782763099.7955024,
+    "hash": "2c809ced4d7de48da94b710921c2f5e0"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\README.md": {
+    "mtime": 1782767775.455558,
+    "hash": "af1b8deb5d67f4db64c7f0474711a34c"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\T0-entry-gate.md": {
+    "mtime": 1782763099.7945027,
+    "hash": "2c56fb0765d86a7d9d2b437567d6a91b"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\T1-keyboard.md": {
+    "mtime": 1782763099.7945027,
+    "hash": "1dbd2d6d1a5ad561aa4b6c43bc6adf99"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\T2-mouse-coalesced.md": {
+    "mtime": 1782763099.7945027,
+    "hash": "f6a9eb590099f10050b96e3adb4da02a"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\T3-fire.md": {
+    "mtime": 1782763099.7945027,
+    "hash": "b1effca6d03fa98099cb7eb63b54b5b4"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\T4-sim-consume.md": {
+    "mtime": 1782763099.7945027,
+    "hash": "9afe2f01d4db6959a1700f3905652263"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\T5-exit-gate.md": {
+    "mtime": 1782763099.7955024,
+    "hash": "0a303893063c0a54e0fe9f4de8f1bb52"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-3-input-sampler\\task-checklist.md": {
+    "mtime": 1782763099.7955024,
+    "hash": "f17d7079b99fd3780599fb2bf182ffbe"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\progress.md": {
+    "mtime": 1782763099.7975056,
+    "hash": "efa5b466f727380af0db7912d11de0e9"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\README.md": {
+    "mtime": 1782767435.8232386,
+    "hash": "b2665d22713f7d9213a3be561d18dc94"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\T0-entry-gate.md": {
+    "mtime": 1782763099.7955024,
+    "hash": "994feb684a978a00f72fb577cc808b71"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\T1-target-entity.md": {
+    "mtime": 1782763099.796502,
+    "hash": "36b507078ecb2b719ff3a4ec13b79e7d"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\T2-visibility-tvisible.md": {
+    "mtime": 1782763099.796502,
+    "hash": "c357b81e7c4d5b671b0c3f0aff12a2af"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\T3-alternation.md": {
+    "mtime": 1782763099.796502,
+    "hash": "7da13f63882dd65e028c2d6e978612e6"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\T4-crosshair.md": {
+    "mtime": 1782763099.796502,
+    "hash": "965e9f0d4c700158f61a5f380c08c6fe"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\T5-exit-gate.md": {
+    "mtime": 1782763099.7975056,
+    "hash": "c1057c506f77fd043113eff8493d40a5"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-4-target-tvisible\\task-checklist.md": {
+    "mtime": 1782763099.7975056,
+    "hash": "f214f404e372fc6b2d8607e3b5025761"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\progress.md": {
+    "mtime": 1782763099.799506,
+    "hash": "d69f39f0f3a7768ccc00051eb415c10e"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\README.md": {
+    "mtime": 1782767809.4589236,
+    "hash": "2dbb90149c27a3122f58f14a264adade"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\T0-entry-gate.md": {
+    "mtime": 1782763099.7985058,
+    "hash": "448828d37b72805021e4dd0d6c5a5952"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\T1-hit-detector.md": {
+    "mtime": 1782763099.7985058,
+    "hash": "5787e043f1fac328b1e8f56376583fba"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\T2-first-shot.md": {
+    "mtime": 1782763099.7985058,
+    "hash": "e3c3bfcc25c1320967a63af5827bc425"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\T3-strafe-movement.md": {
+    "mtime": 1782763099.7985058,
+    "hash": "da64b1544eee11baddae2a03a68051e2"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\T4-simplified-counterstrafe.md": {
+    "mtime": 1782763099.7985058,
+    "hash": "0d90bea7225393db7f9ec61b74ac6e34"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\T5-exit-gate.md": {
+    "mtime": 1782763099.799506,
+    "hash": "c90af81c99263efc83a9b9f9b6e7223a"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-5-hit-counterstrafe\\task-checklist.md": {
+    "mtime": 1782763099.799506,
+    "hash": "b05bc729d4bc94e320e7aa8efff85f78"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\progress.md": {
+    "mtime": 1782763099.8015058,
+    "hash": "b3b530f30e469cef1b476f898c5367c8"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\README.md": {
+    "mtime": 1782767450.5176115,
+    "hash": "912624f4b5ee5ad0f9541653ca73f6f4"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\T0-entry-gate.md": {
+    "mtime": 1782763099.8005054,
+    "hash": "11103fe91190bb3aa4af47509a6e1b32"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\T1-drill-config.md": {
+    "mtime": 1782763099.8005054,
+    "hash": "2f185a7a9b6eedd88531d48418544b59"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\T2-drill-loader.md": {
+    "mtime": 1782763099.8005054,
+    "hash": "fffdf261e3fe1d8054d596fb7fbc9719"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\T3-counterstrafe-drill.md": {
+    "mtime": 1782763099.8005054,
+    "hash": "e0c0c7447ec23cc08114d8a0fe82f7c7"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\T4-lifecycle.md": {
+    "mtime": 1782763099.8015058,
+    "hash": "bf40b3238e936276e676668691f44580"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\T5-exit-gate.md": {
+    "mtime": 1782763099.8015058,
+    "hash": "d67185b77fd25d60eb6ad591ac2b9808"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-6-drill-system\\task-checklist.md": {
+    "mtime": 1782763099.8015058,
+    "hash": "e9ef772776f5c6d34dc61aeb64228702"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\progress.md": {
+    "mtime": 1782763099.8035061,
+    "hash": "0a94903bb6cb715bd6d56ba0cdd05878"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\README.md": {
+    "mtime": 1782767471.49448,
+    "hash": "1206ee7dc11e31e5b9d8813b8cc13d83"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\T0-entry-gate.md": {
+    "mtime": 1782763099.8025062,
+    "hash": "fc90e470525bfb08a803435fe5772953"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\T1-ring-buffer.md": {
+    "mtime": 1782763099.8025062,
+    "hash": "13aa03aea0c4ae0a731506c400076ebf"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\T2-event-recording.md": {
+    "mtime": 1782763099.8025062,
+    "hash": "93c680c65a2b73afcaf0f84661988613"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\T3-metadata.md": {
+    "mtime": 1782763099.8025062,
+    "hash": "6684417798cef02aa5fd3ddeab24c58f"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\T4-export.md": {
+    "mtime": 1782763099.8035061,
+    "hash": "bb2f8109791c19f84cc60060f1f604dd"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\T5-schema-doc.md": {
+    "mtime": 1782763099.8035061,
+    "hash": "fc42e480adfbfca4f7ff0836e276983c"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\T6-exit-gate.md": {
+    "mtime": 1782763099.8035061,
+    "hash": "109a18843889671e1630178d3568f934"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-7-data-recorder\\task-checklist.md": {
+    "mtime": 1782763099.8035061,
+    "hash": "d034be537de4dadd8cc3ee04fe6e42f6"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\progress.md": {
+    "mtime": 1782763099.805506,
+    "hash": "c7f9f69cc8406e9bf8e10d34c93ed25e"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\README.md": {
+    "mtime": 1782767490.4042196,
+    "hash": "238643c812383702b1ce153a21829661"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\T0-entry-gate.md": {
+    "mtime": 1782763099.8045058,
+    "hash": "2101db48d742b5179113049a6e22fbb1"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\T1-compute-metrics.md": {
+    "mtime": 1782763099.8045058,
+    "hash": "20095dfce52afdc47246d1b8f374d109"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\T2-result-screen.md": {
+    "mtime": 1782763099.8045058,
+    "hash": "ac35622805aa934ffbdc9b6af34c5e38"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\T3-hud.md": {
+    "mtime": 1782763099.8045058,
+    "hash": "877278298b4f5a0fec7afd02c1485479"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\T4-controls.md": {
+    "mtime": 1782763099.805506,
+    "hash": "7dc9f643c055902c68b71555c7be4e51"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\T5-exit-gate.md": {
+    "mtime": 1782763099.805506,
+    "hash": "7692c57ea5192297e907314d79e0b651"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\task-checklist.md": {
+    "mtime": 1782763099.805506,
+    "hash": "51f8a4127f98d1cec8f6d6b533d2e244"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\progress.md": {
+    "mtime": 1782763099.807506,
+    "hash": "d850a20b834ad1ecb43491ffda6babd8"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\README.md": {
+    "mtime": 1782763099.805506,
+    "hash": "77dd1efc7a62a9821925e8c9011480be"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\T0-entry-gate.md": {
+    "mtime": 1782763099.8065057,
+    "hash": "6ea10d0c73358209f99ad5ef7cbaa2fc"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\T1-e2e-integration.md": {
+    "mtime": 1782763099.8065057,
+    "hash": "f029e979d0c1bef833760af9cc37fc19"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\T2-timing-validity.md": {
+    "mtime": 1782763099.8065057,
+    "hash": "59d7e9ddd693d340d4655ebf36064197"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\T3-determinism-regression.md": {
+    "mtime": 1782763099.8065057,
+    "hash": "8ac97d98acddbb5dfbaad0423e2ee11b"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\T4-buffer-acceptance.md": {
+    "mtime": 1782763099.8065057,
+    "hash": "a6a721c83d03b31f2520ebd199525d14"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\T5-exit-gate.md": {
+    "mtime": 1782763099.807506,
+    "hash": "3efb1412916f23368955d0a36d45a623"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\task-checklist.md": {
+    "mtime": 1782763099.807506,
+    "hash": "86c72d189287fb65d7080020b12ebe83"
+  }
+}
