@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T4 通過（2026-06-30）— yaw/pitch 視角 + pitch 夾角就緒，待執行 T5
+## Status: 🟢 T5 通過（2026-06-30）— 設定面板就緒，FR-1.1~1.5 全綠，待執行 T6 exit gate
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T2 Pointer Lock | ✅ 通過（2026-06-30）|
 | T3 原始輸入 + fallback | ✅ 通過（2026-06-30）|
 | T4 yaw/pitch | ✅ 通過（2026-06-30）|
-| T5 設定面板 | ⬜ 待執行 |
+| T5 設定面板 | ✅ 通過（2026-06-30）|
 | T6 Exit gate | ⬜ 待執行 |
 
 ---
@@ -29,6 +29,41 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T5 sensitivity/FOV 設定面板（DOM overlay, FR-1.5）✅ PASS
+
+**交付檔案：**
+- `src/ui/SettingsPanel.ts`（NEW）：`createSettingsPanel({ onSensitivityChange, onFovChange }) → { sensitivity, fov, setVisible }`。純 TS + DOM overlay（D1，不引框架）：兩個 `<input type=range>`（sensitivity 0.1–5.0、FOV 60–120°）+ 即時數值標籤；`input` 事件直呼 callback（無「套用」鈕）。`pointer-events:auto` 僅面板區、`z-index:11` 蓋在 lockHint 上。**為這兩個設定的單一真實來源**：建構時即把預設（sensitivity 1.0 / FOV 75）經 callback 推給 controller。`sensitivity`/`fov` getter 供 WP-7 metadata。
+- `src/main.ts`（MODIFY）：`createSettingsPanel` 接 `cameraController.setSensitivity/setFov`；`pointerLock.onChange(l => panel.setVisible(!l))`（鎖定中隱藏，OQ-1.3）。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 / 方法 | 結果 |
+|------|------|------|
+| 型別檢查 | `npx tsc --noEmit` | **TSC_OK**（exit 0）✅ |
+| 產線建置 | `npx vite build` | **✓ built**（12 modules）✅ |
+| 單元回歸 | `npx vitest run src` | **4 passed**（未受影響）✅ |
+| 全鏈即時生效（真實 Edge，合成 slider 事件） | 一次性 Playwright spec：import 真模組組 panel→CameraController→camera（**未提交**） | **1 passed** ✅：①2 sliders、建構推預設（sensCalls=[1]/fovCalls=[75]）、getter 與 `camera.fov` 皆 =預設、標籤 `['1.00','75°']`；②FOV slider→100 → `camera.fov===100`、`panel.fov===100`；③sensitivity slider→2 後 `applyDelta(50,0)` → yaw≈−0.22（2× 係數確實到 controller）；④`setVisible(false/true)` → `display` `none`/`flex` |
+| 視覺 spot-check | 一次性截圖（scratchpad，**未提交**） | 面板置左上、可讀、slider 拖曳值更新（Sensitivity 2.00 / FOV 100°），版面正常 ✅ |
+
+> **驗證取向（誠實記錄）**：沿用 T2–T4——以合成 slider `input` 事件驅動真模組，確定性地驗**「設定 UI → controller → camera」整條鏈即時生效**與顯示/隱藏；截圖確認面板實際渲染。**剩餘 spot-check**：真人在非 headless Edge 拖動 slider 時「手感」即時對應（與 OQ-T4.a 視角手感一併）；數值範圍（0.1–5 / 60–120）為佔位，pilot 校準（OQ-1.1）。
+
+**Decision Log：**
+- **D-T5.1：SettingsPanel 透過 callback 通知變更，不直接相依 CameraController / PointerLock；由 main 組裝。** UI 層保持可重用、可測；可見性由外部 `setVisible` 控制（main 接 `onChange`）。
+  - *Alternatives considered*：(a) 面板直接持有 CameraController 並呼其方法——較少接線但 UI↔view 耦合、且面板需知道 PointerLock；(b) callback 注入（選用）——層次乾淨，main 為唯一組裝點。
+- **D-T5.2：面板為 sensitivity/FOV 的單一真實來源，建構時把預設經 callback 推給 controller。** 避免「滑桿位置」與 CameraController(`DEFAULT_SENSITIVITY`)/SceneManager(`fovDeg`) 各自預設漂移；預設值刻意對齊（1.0 / 75）故推送為冪等。代價：`75`/`1.0` 在三處各有預設常數，但語意各自獨立（面板預設、controller fallback、scene 初值），可接受。
+- **D-T5.3：用 `createElement` 程式化建 DOM（非 innerHTML）。** 無使用者輸入故無注入風險，但 createElement 較易維護且型別安全；CSS 走 inline `cssText`（WP-1 最小樣式，無外部 stylesheet）。
+
+**Surprises & Discoveries：**
+- 一次性 spec 初版用 `#settings-panel span span` 取數值標籤，誤抓到 name span（每列 head 內含 name+value 兩個 span）→ 斷言失敗。**程式正確、測試選擇器太寬**；改 `> label > span > span:last-child` 後通過。屬測試端問題，非交付碼。
+- `graphify-out/*` 仍有非本 task 變更（工具自動再生），依切片紀律不納入 commit。
+
+**Open Questions：**
+- **OQ-T5.d（spot-check，→ T6）**：非 headless 拖動 slider 的即時手感；數值範圍/校準屬 pilot（OQ-1.1）。
+- 沿用 OQ-T3.a（rawInputEnabled 真值）、OQ-T4.a（視角手感）；OQ-T5.c（unlock 後鍵盤 latch，本 WP 無鍵盤，→ WP-3/5）。
+- localStorage 持久化（T5 Out of scope 的 nice-to-have）未做——可留待後續。
+
+**Next**：執行 **T6 / T-exit**（[T6-exit-gate.md](T6-exit-gate.md)）— 驗收 PLAN WP-1 四條（點擊鎖定/Esc 解除、無 OS 加速或記錄、可環顧四周夾角、sensitivity/FOV 即時生效）全綠，彙整真人 spot-check（OQ-T3.a/T4.a/T5.d），交棒 WP-2/4。
 
 ### 2026-06-30 — T4 yaw/pitch 視角 + pitch 夾角（FR-1.4）✅ PASS
 

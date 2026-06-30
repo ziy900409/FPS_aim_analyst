@@ -3,6 +3,7 @@ import { createRenderer } from './render/createRenderer.ts';
 import { SceneManager } from './render/SceneManager.ts';
 import { createPointerLock } from './input/PointerLock.ts';
 import { CameraController } from './view/CameraController.ts';
+import { createSettingsPanel } from './ui/SettingsPanel.ts';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
 
@@ -75,6 +76,15 @@ canvas.addEventListener('click', () => {
 // 走輸入/render 路徑，不入 sim（雙迴圈邊界，WP-2）；onMove 僅 locked 時轉發（T2）。
 const cameraController = new CameraController(sceneManager.camera);
 pointerLock.onMove((dx, dy) => cameraController.applyDelta(dx, dy));
+
+// WP-1 / T5（FR-1.5）— sensitivity/FOV 設定面板（DOM overlay, D1）：拖動即時生效。
+// 面板為這兩個設定的單一真實來源（建構時推預設給 controller），值供 WP-7 metadata。
+// 鎖定中隱藏、解除時顯示（OQ-1.3）。
+const settingsPanel = createSettingsPanel({
+  onSensitivityChange: (s) => cameraController.setSensitivity(s),
+  onFovChange: (deg) => cameraController.setFov(deg),
+});
+pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 
 // 暫用 rAF render 靜態場景；WP-2 才換 sim/render 雙迴圈，此處不引入 sim accumulator。
 function frame(): void {

@@ -7,7 +7,7 @@
 | **Depends on** | T4 |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | NEW `src/ui/SettingsPanel.ts`；MODIFY `src/main.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30）|
 
 ## Objective
 純 TS + DOM overlay（D1）的設定面板：sensitivity / FOV 滑桿，調整即時生效到 `CameraController`（FR-1.5）。面板鎖定中隱藏、解除時顯示（OQ-1.3）。
@@ -27,15 +27,15 @@
 - 即時生效：不需「套用」按鈕，`input` 事件直接呼叫 controller。
 
 ## Steps
-- [ ] 建 `src/ui/SettingsPanel.ts`：DOM 結構 + CSS（最小樣式）。
-- [ ] 綁 slider → `setSensitivity`/`setFov`，即時更新數值標籤。
-- [ ] 綁 `onChange`：locked → 隱藏、unlocked → 顯示。
-- [ ] 驗：拖動 sensitivity 後視角速度即時改變；FOV 即時改變。
-- [ ] `tsc` 乾淨。
+- [x] 建 `src/ui/SettingsPanel.ts`：DOM 結構 + CSS（最小樣式）。
+- [x] 綁 slider → `setSensitivity`/`setFov`，即時更新數值標籤。
+- [x] 綁 `onChange`：locked → 隱藏、unlocked → 顯示。→ 由 main `pointerLock.onChange(l=>panel.setVisible(!l))`（面板不依賴 PointerLock）。
+- [x] 驗：拖動 sensitivity 後視角速度即時改變；FOV 即時改變。→ 合成驗證：FOV slider→`camera.fov===100`；sens slider→2 後 `applyDelta(50,0)` yaw≈−0.22（2× 係數確實到 controller）。
+- [x] `tsc` 乾淨。
 
 ## Definition of Done
-- [ ] sensitivity/FOV 可調且即時生效（無需重載）。
-- [ ] 面板隨鎖定狀態顯示/隱藏；值可被外部讀取（WP-7 預備）。
+- [x] sensitivity/FOV 可調且即時生效（無需重載）。→ slider `input` 直呼 callback→controller，截圖確認面板渲染。
+- [x] 面板隨鎖定狀態顯示/隱藏；值可被外部讀取（WP-7 預備）。→ `setVisible` 切 display；`sensitivity`/`fov` getter 暴露值。
 
 ## Commit
 `feat(wp-1): sensitivity/FOV DOM overlay 設定面板（FR-1.5）`
