@@ -51,12 +51,14 @@
 
 ### Open Questions
 
-| ID | Question | 建議解法 | Blocks |
+> 全部於 **T0 鎖定（2026-06-30）**；ledger 見 [progress.md](progress.md)。決定性測試設計（OQ-2.1/2.2）詳見 progress.md T0 log。
+
+| ID | Question | 鎖定解法（T0 ✅） | Blocks |
 |----|----------|---------|--------|
-| **OQ-2.1** | 決定性驗證的「sim step」用什麼佔位邏輯？ | 等速位移 + 一個由合成輸入切換的 velocity（如按鍵 toggle vx），足以暴露 frame-dependent bug。 | T4 |
-| **OQ-2.2** | render FPS 如何在測試中變化？ | 餵不同 frame delta 序列（如 60/144/240 Hz + 抖動 + 一次大 spike）給同一 accumulator 驅動函式，比對 sim tick 輸出。 | T4 |
-| **OQ-2.3** | sim 時間以 `performance.now()` 還是注入式 clock？ | 抽 `clock.ts`（`now(): number`）介面，正式用 `performance.now()`，測試注入合成時間 → 可測 + 不違 ADR-4。 | T2, T4 |
-| **OQ-2.4** | 階段 B worker seam 要不要現在留？ | 留**邏輯純函式邊界**（`simStep(state, dt)` 為純函式），不引入 worker；足以日後搬遷。 | T2 |
+| **OQ-2.1** | 決定性驗證的「sim step」用什麼佔位邏輯？ | ✅ 等速位移（`x += vx·dt; z += vz·dt`）+ 由合成輸入（帶 `timeStamp`）落入 tick 邏輯窗時 toggle `vx`；足以暴露 frame-dependent bug（誤用 frame delta 當 dt 會在不同 FPS 下發散）。熱路徑不 new 物件。 | T4 |
+| **OQ-2.2** | render FPS 如何在測試中變化？ | ✅ 同一組合成輸入事件 + 同一 `pump(now)`，餵多組 frame delta 序列（穩定 60/144/240 Hz + 抖動 + 一次大 spike ~300ms 驗夾住）；斷言**逐 tick index 的狀態**全等、**不**斷言 wall-clock。 | T4 |
+| **OQ-2.3** | sim 時間以 `performance.now()` 還是注入式 clock？ | ✅ 抽 `src/loop/clock.ts`（`interface Clock { now(): number }`），正式 `realClock = performance.now()`、測試注入合成時間；正式/測試共用同一 `pump(now)` 函式（避免雙路徑分歧）→ 可測 + 不違 ADR-4。 | T2, T4 |
+| **OQ-2.4** | 階段 B worker seam 要不要現在留？ | ✅ 留**邏輯純函式邊界**（`simStep(state, dtSec)` 只讀寫傳入 state、不觸 DOM/global），預留階段 B 搬入 Worker + `SharedArrayBuffer`；本 WP 不引入 worker。 | T2 |
 
 ---
 

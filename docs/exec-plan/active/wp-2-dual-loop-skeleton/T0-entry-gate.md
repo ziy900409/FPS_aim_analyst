@@ -8,18 +8,18 @@
 | **Depends on** | WP-0 exit ✅、WP-1 exit ✅ |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | docs only |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30）— 上游綠燈確認 + 決定性測試設計鎖定 + OQ-2.1~2.4 ✅ |
 
 ## Objective
 確認 scaffold（WP-0）+ camera（WP-1）就緒，並**敲定決定性驗證的設計**——這是 M1 成敗的關鍵，必須在寫迴圈前定清楚。鎖 OQ-2.1~2.4。
 
 ## Steps
-- [ ] 確認 WP-0/WP-1 exit ✅；`createRenderer` + `CameraController` 可用。
-- [ ] 鎖 OQ-2.1：佔位 sim 邏輯 = 等速位移 + 合成輸入切換 velocity。
-- [ ] 鎖 OQ-2.2：決定性測試以多組 frame delta 序列（含抖動 + 一次 spike）餵同一 `pump`。
-- [ ] 鎖 OQ-2.3：抽 `clock.ts`（注入式 now）。
-- [ ] 鎖 OQ-2.4：`simStep` 設為純函式邊界（不引 worker）。
-- [ ] README §1 + progress.md ledger 翻 ✅；加 dated log。
+- [x] 確認 WP-0/WP-1 exit ✅；`createRenderer` + `CameraController` 可用。（兩 T6 皆 `✅ DONE 2026-06-30`；seam 證據見 progress.md T0 log A 段）
+- [x] 鎖 OQ-2.1：佔位 sim 邏輯 = 等速位移 + 合成輸入切換 velocity。
+- [x] 鎖 OQ-2.2：決定性測試以多組 frame delta 序列（含抖動 + 一次 spike）餵同一 `pump`。
+- [x] 鎖 OQ-2.3：抽 `clock.ts`（注入式 now）。
+- [x] 鎖 OQ-2.4：`simStep` 設為純函式邊界（不引 worker）。
+- [x] README §1 + progress.md ledger 翻 ✅；加 dated log。
 
 ## Definition of Done
 - WP-0/WP-1 綠燈確認 + 決定性測試設計（OQ-2.1/2.2）寫入 progress.md。
