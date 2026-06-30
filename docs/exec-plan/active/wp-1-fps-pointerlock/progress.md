@@ -30,6 +30,30 @@
 
 ## Log
 
+### 2026-06-30 — Code review of T6 exit gate（pre-execution）— 發現與 gate 強化
+
+> 觸發：`/code-review-and-quality` 對 [README.md](README.md) + [T6-exit-gate.md](T6-exit-gate.md) 的五軸審查（T6 尚未執行）。實作（T1–T5）審查結論：**Approve**（介面契約對齊 README §2、五軸通過）；發現集中在 **exit gate 文件本身比它把關的切片弱**。已據此強化 T6（A 自動三檢 / B 硬約束複驗 / C 真人 spot-check / D 收尾）。
+
+**Findings（severity 標註）：**
+- **R1（Required）— gate 驗證弱於上游切片。** T6 原僅 `tsc --noEmit`；T1–T5 每切片都跑 `tsc` + `vite build` + `vitest run src` 三檢。只跑 tsc 會讓「型別過、但 build/回歸紅」溜過最後一道門。**修正**：T6 Steps A 段補 `vite build` + `vitest run src`。**本 session 已實跑驗證三檢皆綠**：`tsc` exit 0、`vitest run src` 4 passed、`vite build ✓ built`（12 modules；three chunk warning 資訊性）。
+- **R2（Required）— 延到 T6 的真人 spot-check 未被 gate 綁定。** T2/T3/T4/T5 各自把「非 headless 真人驗」明確延到 T6（OQ-T3.a `rawInputEnabled` 真值、OQ-T4.a 視角手感、OQ-T5.d slider 手感），但原 T6 只有一行「手動驗收」+ 4 條 PLAN 驗收 box，未逐項列出這三個 OQ。風險：執行者可只勾 4 條（多數已被既有確定性 spec 滿足）就放行，**靜默漏掉 OQ-T3.a**——而該值是研究效度根（fallback 須由 WP-7 metadata 反映降級）。**修正**：T6 新增 C 段「真人 spot-check（必填）」+ 紀錄表，逐項關閉並留環境/實測；OQ-T3.a 列為硬性記錄、不可省（詳見下方「spot-check 綁定」說明）。
+- **C1（Consider）— pin 測試指令。** 裸 `vitest run` 會收 e2e Playwright 規格而 collection 失敗（T4 已記）；T6 明寫 `npx vitest run src`。
+- **C2（Consider）— Touches 漏列寫入檔。** 原只寫頂層 README；實際還動 progress.md（Outcomes）與 task-checklist.md（翻 T6 Done box，CLAUDE.md §3.4）。已補。
+- **C3（Consider）— 硬約束姿態明寫於交棒。** CLAUDE.md §4 的 isolation 仍綠（main.ts `assertIsolation`）；determinism 因 WP-1 無 sim loop 而 **N/A**，須明寫「繼承給 WP-2」避免 WP-2 誤以為 WP-1 已過此門。T6 新增 B 段。
+
+**spot-check 綁定政策（回應 R2「OQ 延到 T6 但 T6 未綁定」）：**
+- 問題本質：匯流到 T6 的驗證有兩類——(1) **確定性/自動**（合成事件 spec，T1–T5 已綠）；(2) **真人 / 非 headless**（真 OS pointer lock、`rawInputEnabled` 真值、「手感」），無法自動化，故被逐 task 延到 T6。原 T6 沒把 (2) 列成 gating item，4 條 PLAN 驗收又多由 (1) 滿足 → (2) 會被靜默丟掉。
+- 解法：把三個 OQ 升為 T6 一級 gating item + 紀錄表（已實作），並依「閘門種類」分級：
+  - **OQ-T3.a = record-to-pass（研究效度根）**：gate **不要求** `true`（fallback 可接受），但**要求觀測到實測值 + 環境並記錄**；若 `false` 須標 WP-7 可重現性 debt。此項不可省——無法當下跑時只能記 `pending` 並指定 owner+trigger、列入 WP-2 entry 複驗。
+  - **OQ-T4.a / T5.d = defect-gate（非校準）**：只驗「無重大缺陷」（不翻轉/跟手/slider 即時/可重取）；數值手感校準本就屬 pilot（OQ-1.1），不在 WP-1 把關。可隨後補但須在交棒 note 標 `spot-check pending`。
+
+**實作審查 FYI（非 WP-1 blocker，登記免遺忘）：**
+- PointerLock/SceneManager 無 `dispose()`、`onChange`·`onMove` 的 Set 無退訂——page-lifetime 正確，但未來 drill mount/unmount（後續 WP）會洩漏監聽/資源。→ 後續 WP 處理。
+- `75`/`1.0` 預設常數散在 SettingsPanel/CameraController/SceneManager 三處——D-T5.2 已論證（面板 construct-time push 使其冪等、面板為真實來源），可接受。
+- `blur → setLocked(false)` 在「瀏覽器跨 blur 仍保留鎖」時會 UI/瀏覽器狀態不同步——已記為防禦性 tradeoff（失敗模式表涵蓋），低衝擊。
+
+**Next**：執行強化後的 **T6**（[T6-exit-gate.md](T6-exit-gate.md)）— A 自動三檢 / B 硬約束 / C 真人 spot-check（關閉 OQ-T3.a/T4.a/T5.d）/ D 收尾與交棒。
+
 ### 2026-06-30 — T5 sensitivity/FOV 設定面板（DOM overlay, FR-1.5）✅ PASS
 
 **交付檔案：**
