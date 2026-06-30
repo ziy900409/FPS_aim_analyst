@@ -103,7 +103,8 @@ export interface SharedState {
 }
 
 // src/loop/SimLoop.ts (FR-2.2) — simStep 為純函式邊界（OQ-2.4）
-export function simStep(state: SharedState, dtSec: number): void;   // 推進一個固定 tick
+// T2 實作：加 tickEndMs（本 tick 邏輯窗結束，量測時鐘域 ms）供輸入分桶；仍純函式（輸入全顯式）。
+export function simStep(state: SharedState, dtSec: number, tickEndMs: number): void; // 推進一個固定 tick
 export function createSimLoop(state: SharedState, clock: Clock, simHz: number): {
   pump(nowMs: number): { ticks: number; alpha: number };           // accumulator；回傳本幀 tick 數與 alpha
 };

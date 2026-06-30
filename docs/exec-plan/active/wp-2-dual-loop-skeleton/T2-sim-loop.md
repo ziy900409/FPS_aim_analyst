@@ -6,8 +6,8 @@
 |---|---|
 | **Depends on** | T1 |
 | **Risk / Complexity** | Med / High |
-| **Touches** | NEW `src/loop/clock.ts`、`src/loop/SimLoop.ts`、`src/loop/constants.ts` |
-| **Status** | ⬜ TODO |
+| **Touches** | NEW `src/loop/clock.ts`、`src/loop/SimLoop.ts`、`src/loop/constants.ts`、`src/loop/SimLoop.test.ts` |
+| **Status** | ✅ DONE（2026-06-30）— tsc 0 + vitest 14 passed（6 新）|
 
 ## Objective
 實作 accumulator 模式的固定步長 sim loop（`SIM_HZ=128`，`TICK=1/128`，夾住 0.25s 避免 spiral of death），`simStep(state, dt)` 為純函式邊界；與 render 解耦（FR-2.2，§4.3）。
@@ -39,14 +39,14 @@ export function createSimLoop(state, clock, simHz) {
 - 每 tick 前 `state.prev = snapshot(state.curr)`，供 T3 內插。
 
 ## Steps
-- [ ] 建 `constants.ts`、`clock.ts`。
-- [ ] 建 `SimLoop.ts`：accumulator + `simStep` 佔位邏輯 + prev/curr 維護。
-- [ ] Vitest：餵固定步進 → tick 數正確（如 1s @128Hz ≈ 128 ticks）；一次 0.5s spike 被夾成 ≤ 0.25s 對應 tick 數（不爆）。
-- [ ] `npx vitest run` + `npx tsc --noEmit` 綠燈。
+- [x] 建 `constants.ts`、`clock.ts`。
+- [x] 建 `SimLoop.ts`：accumulator + `simStep` 佔位邏輯 + prev/curr 維護（+ `tickEndMs` 供輸入分桶，見 progress Decision Log）。
+- [x] Vitest：餵固定步進 → tick 數正確（64 幀×2 = 128 ticks/s）；一次 500ms spike 被夾成 0.25s → 32 ticks（不爆）。
+- [x] `npx vitest run` + `npx tsc --noEmit` 綠燈。
 
 ## Definition of Done
-- [ ] `pump` 在固定步進下產生正確 tick 數；spike 被夾住不 spiral。
-- [ ] `simStep` 為純函式（不讀 `performance.now()`、不碰 DOM）。
+- [x] `pump` 在固定步進下產生正確 tick 數；spike 被夾住不 spiral（測試證：500ms → 32 ticks）。
+- [x] `simStep` 為純函式（不讀 `performance.now()`、不碰 DOM；輸入全顯式含 `tickEndMs`）。
 
 ## Commit
 `feat(wp-2): SimLoop accumulator 128 Hz + clock 注入 + simStep 純函式（FR-2.2）`
