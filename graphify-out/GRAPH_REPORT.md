@@ -1,36 +1,42 @@
-# Graph Report - .  (2026-06-29)
+# Graph Report - FPS_aim_analyst  (2026-06-30)
 
 ## Corpus Check
-- Corpus is ~31,655 words - fits in a single context window. You may not need a graph.
+- 6 files · ~34,366 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 341 nodes · 549 edges · 22 communities (10 shown, 12 thin omitted)
+- 350 nodes · 557 edges · 25 communities (12 shown, 13 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 18 edges (avg confidence: 0.81)
-- Token cost: 406,729 input · 71,775 output
+- Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `18bb14ae`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Hit Detection & Counter-strafe|Hit Detection & Counter-strafe]]
-- [[_COMMUNITY_FPS Control & Dual-Loop|FPS Control & Dual-Loop]]
-- [[_COMMUNITY_Data Recording & Metrics|Data Recording & Metrics]]
-- [[_COMMUNITY_Input Sampling & Targets|Input Sampling & Targets]]
-- [[_COMMUNITY_Project Docs & Hard Constraints|Project Docs & Hard Constraints]]
-- [[_COMMUNITY_Integration & Acceptance (WP-9)|Integration & Acceptance (WP-9)]]
-- [[_COMMUNITY_Component Architecture Map|Component Architecture Map]]
-- [[_COMMUNITY_Environment & WebGPU Setup|Environment & WebGPU Setup]]
-- [[_COMMUNITY_Stage B Physics (deferred)|Stage B Physics (deferred)]]
-- [[_COMMUNITY_Fixed-Timestep Determinism|Fixed-Timestep Determinism]]
-- [[_COMMUNITY_Counter-strafe Mechanic|Counter-strafe Mechanic]]
-- [[_COMMUNITY_Drill Unit|Drill Unit]]
-- [[_COMMUNITY_Stop-fire Timing Metric|Stop-fire Timing Metric]]
-- [[_COMMUNITY_Target-switch Time Metric|Target-switch Time Metric]]
-- [[_COMMUNITY_Rhythm Stability Metric|Rhythm Stability Metric]]
-- [[_COMMUNITY_Left-Right Symmetry Metric|Left-Right Symmetry Metric]]
-- [[_COMMUNITY_PrePost Study Method|Pre/Post Study Method]]
-- [[_COMMUNITY_SceneManager Component|SceneManager Component]]
-- [[_COMMUNITY_Render Interpolation|Render Interpolation]]
-- [[_COMMUNITY_Stage A Scope|Stage A Scope]]
-- [[_COMMUNITY_WP-2 Progress Log|WP-2 Progress Log]]
-- [[_COMMUNITY_Open Question OQ-6.3|Open Question OQ-6.3]]
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 14|Community 14]]
+- [[_COMMUNITY_Community 15|Community 15]]
+- [[_COMMUNITY_Community 16|Community 16]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `規格書 v1.1 + WBS` - 21 edges
@@ -49,12 +55,12 @@
   docs/PLAN.md → CONTEXT.md
 - `量測時鐘 vs 決定性時鐘 (two-clock model)` --semantically_similar_to--> `主執行緒卡頓污染 sim 計時 (階段 A 隔離不成立)`  [INFERRED] [semantically similar]
   CONTEXT.md → docs/DESIGN.md
+- `不可違反的硬約束 (技術)` --references--> `決定性 (determinism)`  [EXTRACTED]
+  CLAUDE.md → CONTEXT.md
 - `WP-8 MetricsDashboard + HUD` --implements--> `MetricsDashboard 元件`  [EXTRACTED]
   docs/exec-plan/README.md → CONTEXT.md
 - `CLAUDE.md 專案執行協議與導航` --references--> `exec-plan/README.md 執行計畫索引`  [EXTRACTED]
   CLAUDE.md → docs/exec-plan/README.md
-- `不可違反的硬約束 (技術)` --references--> `DataRecorder 元件 (preallocated arena)`  [EXTRACTED]
-  CLAUDE.md → CONTEXT.md
 
 ## Hyperedges (group relationships)
 - **三迴圈透過 SharedState 溝通 (雙迴圈架構, ADR-2)** — context_input_sampler, context_sim_loop, context_render_loop, context_shared_state, spec_adr2 [EXTRACTED 1.00]
@@ -75,67 +81,63 @@
 - **E2E 全鏈路 (drill→匯出→統計，統計=匯出)** — counterstrafe_ad_v1_drill, wp7_export, wp8_statistics, wp9_stats_equals_export [EXTRACTED 1.00]
 - **M4 階段 A 交付閘 (附錄 E 10 項全綠 → 各上游 WP 證據)** — wp9_milestone_m4, wp9_appendix_e_acceptance, wp9_t5_exit_gate [EXTRACTED 1.00]
 
-## Communities (22 total, 12 thin omitted)
+## Communities (25 total, 13 thin omitted)
 
-### Community 0 - "Hit Detection & Counter-strafe"
+### Community 0 - "Community 0"
 Cohesion: 0.05
 Nodes (51): ADR-2 (three loops communicate via SharedState), ADR-3 (sub-tick), ADR-4 (timing: timeStamp / sim tick time source), Appendix D (stage B physics constants: friction/accelerate/stopspeed), Boolean Accuracy Gate (stopped -> accurate), firstShot / firstShotGate (per-peek first shot flag), Fixed-step Movement (determinism, FPS-independent), HitDetector (Raycaster camera-center hit detection) (+43 more)
 
-### Community 1 - "FPS Control & Dual-Loop"
+### Community 1 - "Community 1"
 Cohesion: 0.08
 Nodes (48): ADR-2 雙迴圈解耦, ADR-3 128 Hz tick, ADR-4 performance.now() 計時源, ADR-5 Pointer Lock + 原始輸入 + coalesced, D1 UI = 純 TS + DOM overlay, WP-0 — 環境設置 (scaffold/createRenderer seam), WP-3 — 高頻輸入採集 (getCoalescedEvents 入緩衝), WP-4 — 目標 / 準心 (+40 more)
 
-### Community 2 - "Data Recording & Metrics"
+### Community 2 - "Community 2"
 Cohesion: 0.07
 Nodes (46): ADR-1 backend metadata, ADR-4 時間源 (performance.now()), counterstrafe_ad_v1 drill config, SharedState, SimLoop (src/loop/SimLoop.ts), WP-0 createRenderer backend seam, WP-1 sensitivity, WP-2 sim tick (+38 more)
 
-### Community 3 - "Input Sampling & Targets"
-Cohesion: 0.08
-Nodes (44): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), sub-tick 輸入時間戳 (精準度真正來源) (+36 more)
+### Community 3 - "Community 3"
+Cohesion: 0.07
+Nodes (45): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), sub-tick 輸入時間戳 (精準度真正來源) (+37 more)
 
-### Community 4 - "Project Docs & Hard Constraints"
+### Community 4 - "Community 4"
+Cohesion: 0.08
+Nodes (40): 不可違反的硬約束 (技術), 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, accumulator 模式, cross-origin isolation (COOP/COEP), 準心對齊偏移 (+32 more)
+
+### Community 5 - "Community 5"
 Cohesion: 0.09
-Nodes (40): 不可違反的硬約束 (技術), 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, cross-origin isolation (COOP/COEP), 決定性 (determinism), DrillConfig 元件 (+32 more)
+Nodes (38): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間), crossOriginIsolated === true (COOP/COEP) (+30 more)
 
-### Community 5 - "Integration & Acceptance (WP-9)"
-Cohesion: 0.08
-Nodes (39): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 里程碑 M1 (WP-2 脊椎 / 決定性驗證), 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間) (+31 more)
+### Community 6 - "Community 6"
+Cohesion: 0.11
+Nodes (33): 急停反應時間 (t_counter − t_visible), DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1) (+25 more)
 
-### Community 6 - "Component Architecture Map"
-Cohesion: 0.1
-Nodes (34): 急停反應時間 (t_counter − t_visible), DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1) (+26 more)
-
-### Community 7 - "Environment & WebGPU Setup"
+### Community 7 - "Community 7"
 Cohesion: 0.18
 Nodes (16): coalesced events (getCoalescedEvents), backend (render backend webgpu/webgl2), 原始輸入 (unadjustedMovement), 技術棧 (Three.js WebGPU + TS + Vite), 附錄 E 驗收清單 (階段 A), ADR-1 WebGPURenderer + WebGL2 fallback, ADR-5 Pointer Lock + 原始輸入 + coalesced events, 附錄 C 匯出資料 schema (+8 more)
 
-### Community 8 - "Stage B Physics (deferred)"
-Cohesion: 0.33
-Nodes (6): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 速度歸零誤差 (residual speed), 階段 B (Stage B), 速度 gate (velocity gate), Web Worker + SharedArrayBuffer 真正隔離 (階段 B)
-
-### Community 9 - "Fixed-Timestep Determinism"
-Cohesion: 0.5
-Nodes (4): accumulator 模式, 準心對齊偏移, fixed-timestep (128 Hz), simStep 順序 (tick 內)
+### Community 8 - "Community 8"
+Cohesion: 0.2
+Nodes (11): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 決定性 (determinism), RenderSnapshot 窄介面, 速度歸零誤差 (residual speed), 階段 B (Stage B), 量測時鐘 vs 決定性時鐘 (two-clock model), 速度 gate (velocity gate) (+3 more)
 
 ## Knowledge Gaps
 - **89 isolated node(s):** `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)`, `counter-strafe (反向急停)`, `反向鍵 (counter key)` (+84 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `規格書 v1.1 + WBS` connect `Project Docs & Hard Constraints` to `Component Architecture Map`, `Environment & WebGPU Setup`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
-- **Why does `D1 UI = 純 TS + DOM overlay` connect `FPS Control & Dual-Loop` to `Data Recording & Metrics`?**
-  _High betweenness centrality (0.039) - this node is a cross-community bridge._
-- **Why does `里程碑 M1 (WP-2 脊椎 / 決定性驗證)` connect `Integration & Acceptance (WP-9)` to `Input Sampling & Targets`?**
-  _High betweenness centrality (0.029) - this node is a cross-community bridge._
+- **Why does `規格書 v1.1 + WBS` connect `Community 4` to `Community 8`, `Community 6`, `Community 7`?**
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
+- **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 1` to `Community 2`?**
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
+- **Why does `里程碑 M1 (WP-2 脊椎 / 決定性驗證)` connect `Community 3` to `Community 5`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **What connects `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)` to the rest of the system?**
   _89 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Hit Detection & Counter-strafe` be split into smaller, more focused modules?**
+- **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
-- **Should `FPS Control & Dual-Loop` be split into smaller, more focused modules?**
+- **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.08 - nodes in this community are weakly interconnected._
-- **Should `Data Recording & Metrics` be split into smaller, more focused modules?**
+- **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.07 - nodes in this community are weakly interconnected._

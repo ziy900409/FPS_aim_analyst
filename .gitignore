@@ -15,3 +15,7 @@ npm-debug.log*
 
 # os / editor
 .DS_Store
+
+# graphify — local-only artifacts (圖輸出本身追蹤；快取與機器路徑標記不追蹤)
+graphify-out/cache/
+graphify-out/.graphify_root
