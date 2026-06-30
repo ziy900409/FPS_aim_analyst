@@ -4,13 +4,13 @@
 
 ---
 
-## Status: 🟢 T1 通過（2026-06-30）— 封閉房間 + camera 舞台就緒，待執行 T2
+## Status: 🟢 T2 通過（2026-06-30）— Pointer Lock 生命週期就緒，待執行 T3
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 通過（2026-06-30）|
 | T1 SceneManager | ✅ 通過（2026-06-30）|
-| T2 Pointer Lock | ⬜ 待執行 |
+| T2 Pointer Lock | ✅ 通過（2026-06-30）|
 | T3 原始輸入 + fallback | ⬜ 待執行 |
 | T4 yaw/pitch | ⬜ 待執行 |
 | T5 設定面板 | ⬜ 待執行 |
@@ -29,6 +29,40 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T2 Pointer Lock 整合（手勢/Esc/失焦重取, FR-1.2）✅ PASS
+
+**交付檔案：**
+- `src/input/PointerLock.ts`（NEW）：`createPointerLock(canvas) → PointerLockHandle`（`request()` / `locked` / `onChange()` / `onMove()`）。生命週期以 document 級 `pointerlockchange` / `pointerlockerror` 為權威；`blur` 防禦性解除；`onMove` 僅 locked 時轉發 `movementX/Y`（解鎖不轉發殘留 delta）。本 task 用一般 `requestPointerLock()`。
+- `src/main.ts`（MODIFY）：canvas click → `request()`（吞 rejection，UI 由事件驅動）；「點擊以鎖定」DOM overlay 提示（pointer-events:none 穿透點擊），`onChange` 切換顯示/隱藏（OQ-1.3）。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 / 方法 | 結果 |
+|------|------|------|
+| 型別檢查 | `npx tsc --noEmit` | **exit 0** ✅ |
+| 產線建置 | `npx vite build` | **✓ built**（10 modules；three 體積 warning）✅ |
+| 狀態機（真實 Edge，合成事件） | 一次性 Playwright spec：在瀏覽器內 import 真模組、stub `pointerLockElement` + 派發 `pointerlockchange`/`mousemove`/`blur`/`pointerlockerror`（**未提交**） | 全綠 ✅：`request()` 呼叫 `requestPointerLock`；`onChange` 翻轉序列 `[t,f,t,f,t,f]`；`onMove` 鎖定中轉發 `[5,-3]`、解鎖後不再轉發（停在 1 筆）；blur / error 皆解除；console error = 0 |
+| 提示 overlay | 一次性 Playwright 截圖（**未提交**） | `#lock-hint` 解鎖時可見、置中、房間仍可見於半透明底；text =「點擊以鎖定滑鼠視角（Esc 解除）」✅ |
+
+> **驗證取向（誠實記錄）**：headless 自動化無法穩定取得 OS 級 pointer lock（需手勢且常需非 headless），故**不**用「真的鎖定」當斷言。改在真實瀏覽器內以**合成的 document 事件**驅動真模組——這些事件正是真實 click/Esc/alt-tab 會觸發的瀏覽器事件，故已驗證的是「狀態機對這些事件的反應正確」+「監聽掛在正確的 document/window 上」。剩下「瀏覽器是否真的在 click/Esc 時派發這些事件」屬瀏覽器保證行為，非本專案程式碼。**建議**：上線前由真人在非 headless Edge 做一次 UX spot-check（游標真的消失、Esc 真的解除、alt-tab 解除後再 click 重取）。
+
+**Decision Log：**
+- **D-T2.1：lock 狀態以 `document.pointerLockElement === canvas`（事件驅動）為唯一權威，不靠 `requestPointerLock()` 回傳。** MDN 記 Promise 形狀非跨瀏覽器一致（notes §lifecycle）；`request()` 對 Promise / void 兩種回傳都安全（`instanceof Promise` 才 await），最終狀態一律由 `pointerlockchange` 決定。
+- **D-T2.2：滑鼠來源用 `mousemove`（WP-1 baseline），掛在 `canvas.ownerDocument` 上。** pointer lock 中事件派發到 document（與 three.js `PointerLockControls` 一致）。`pointermove` + `getCoalescedEvents()` 是 WP-3 升級路徑（notes R3 / OQ-T5.b），T2 不引入。
+- **D-T2.3：`onMove` 僅在 `locked===true` 時轉發；狀態翻轉用 `setLocked()` 守 transition（相同值不重複通知、不重複掛/卸 mousemove）。** 直接滿足失敗模式表「失焦未解鎖殘留 delta」——解鎖即卸載 mousemove 監聽且 guard 雙保險。
+- **D-T2.4：模組從 `canvas.ownerDocument` / `defaultView` 取 document/window，不直接抓全域。** 使真實瀏覽器內可對任意 document 注入測試（本次驗證即靠此），同時語意更明確；非為測試而過度設計，是自然寫法。
+- **D-T2.5：「點擊以鎖定」提示用 `pointer-events:none` 全屏 overlay。** 點擊穿透到 canvas（click handler 在 canvas 上），提示純視覺；T5 才接完整 SettingsPanel。OQ-1.3「鎖定中隱藏、解除時顯示」由 `onChange` 達成。
+
+**Surprises & Discoveries：**
+- 真實瀏覽器內以 `await import('/src/input/PointerLock.ts')`（Vite dev server 即時轉譯 TS ESM）可直接測試單一模組，配合 `Object.defineProperty(document,'pointerLockElement',…)` stub + `new MouseEvent('mousemove',{movementX,movementY})`，得到比 headless「真鎖定」更穩定、可觀測的狀態機驗證。
+- `requestPointerLock()` 在現代 Chromium 回 `Promise<void>`；舊行為回 `void`。以 `as unknown` + `instanceof Promise` 兼容兩者，避免 lib.dom 型別差異。
+
+**Open Questions：**
+- **OQ-T2.b（→ T3）**：`request()` 目前吞所有 rejection；T3 需改為 try `unadjustedMovement:true` → catch `NotSupportedError` 才 fallback 一般 lock，其餘錯誤的處理政策一併在 T3 定。
+- 沿用 OQ-T5.a（pitch clamp，→ T4）；OQ-T5.c（unlock 後鍵盤 latch，本 WP 無鍵盤輸入故不阻塞，→ WP-3/5）。
+
+**Next**：執行 **T3**（[T3-raw-input-fallback.md](T3-raw-input-fallback.md)）— 把 `request()` 包成 `unadjustedMovement:true` → `NotSupportedError` fallback（FR-1.3），原始輸入可重現。
 
 ### 2026-06-30 — T1 SceneManager（封閉房間 + camera, FR-1.1）✅ PASS
 

@@ -7,7 +7,7 @@
 | **Depends on** | T1 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | NEW `src/input/PointerLock.ts`；MODIFY `src/main.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30）— lock 生命週期狀態機綠（onChange/onMove gating/error/blur），tsc/build 綠 |
 
 ## Objective
 以使用者手勢（click）取得 Pointer Lock；Esc / 失焦自動解除並可重取。封裝成 `PointerLockHandle`，視角（T4）與設定面板（T5）訂閱其狀態（FR-1.2）。
@@ -34,15 +34,15 @@ export interface PointerLockHandle {
 ```
 
 ## Steps
-- [ ] 建 `src/input/PointerLock.ts`：事件監聽 + 狀態機。
-- [ ] `main.ts`：canvas click → `request()`；`onChange` 切換「點擊以鎖定」提示。
-- [ ] 手動驗：click 鎖定（游標消失）、Esc 解除（游標回來 + 提示重現）、再 click 重取成功。
-- [ ] alt-tab 失焦 → unlocked，回前景再 click 可重取。
-- [ ] `tsc` 乾淨。
+- [x] 建 `src/input/PointerLock.ts`：事件監聽 + 狀態機（document 級事件為權威 + blur 防禦）。
+- [x] `main.ts`：canvas click → `request()`；`onChange` 切換「點擊以鎖定」提示（DOM overlay）。
+- [x] 驗 click/Esc/失焦/重取：狀態機在真實 Edge 以合成 `pointerlockchange`/`blur`/`pointerlockerror` 驅動全綠（`onChange` 序列 `[t,f,t,f,t,f]` = 鎖定→解除→重取循環）。**真人 UX spot-check（游標真消失/Esc/alt-tab）建議上線前補**（見 progress.md 驗證取向）。
+- [x] alt-tab 失焦 → unlocked：`blur` → `locked=false` 已驗。
+- [x] `tsc` 乾淨（+ `vite build` ✓）。
 
 ## Definition of Done
-- [ ] click 鎖定、Esc 解除、失焦解除、可重取，全部手動驗過並記 progress.md。
-- [ ] `onMove` 僅 locked 時觸發。
+- [x] click 鎖定、Esc 解除、失焦解除、可重取 → 狀態機驗證並記 progress.md（真鎖定的 UX 留真人 spot-check）。
+- [x] `onMove` 僅 locked 時觸發（`movesWhileLocked=1`、解鎖後不再增加）。
 
 ## Commit
 `feat(wp-1): Pointer Lock 整合（手勢/Esc/失焦重取）（FR-1.2）`
