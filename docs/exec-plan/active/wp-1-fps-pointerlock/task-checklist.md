@@ -8,7 +8,7 @@
 | ✅ | **T1** SceneManager（room/camera） | [T1-scene.md](T1-scene.md) | T0 | Low |
 | ✅ | **T2** Pointer Lock 整合 | [T2-pointerlock.md](T2-pointerlock.md) | T1 | Med |
 | ✅ | **T3** 原始輸入 + NotSupportedError fallback | [T3-raw-input-fallback.md](T3-raw-input-fallback.md) | T2 | Med |
-| ⬜ | **T4** yaw/pitch 視角 + 夾角 | [T4-yaw-pitch.md](T4-yaw-pitch.md) | T3 | Low |
+| ✅ | **T4** yaw/pitch 視角 + 夾角 | [T4-yaw-pitch.md](T4-yaw-pitch.md) | T3 | Low |
 | ⬜ | **T5** sensitivity/FOV 設定面板 | [T5-settings-panel.md](T5-settings-panel.md) | T4 | Low |
 | ⬜ | **T6 / T-exit** Exit gate | [T6-exit-gate.md](T6-exit-gate.md) | T1–T5 | Low |
 

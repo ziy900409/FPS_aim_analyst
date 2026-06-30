@@ -7,7 +7,7 @@
 | **Depends on** | T3 |
 | **Risk / Complexity** | Low / Med |
 | **Touches** | NEW `src/view/CameraController.ts`；MODIFY `src/main.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30）|
 
 ## Objective
 把 Pointer Lock 的 `movementX/Y` 累積成 yaw/pitch 旋轉並套到 camera；pitch 夾角避免翻轉（FR-1.4）。視角更新走輸入路徑，不入 sim（雙迴圈邊界）。
@@ -34,15 +34,15 @@ export class CameraController {
 ```
 
 ## Steps
-- [ ] 建 `CameraController`：yaw/pitch 累積 + clamp + quaternion 套用。
-- [ ] 串 `onMove` → `applyDelta`。
-- [ ] 驗：鎖定後可平順環顧四周；往上/下看不會翻轉（夾在 ±89°）。
-- [ ] 驗：視角更新在事件路徑，未進任何 accumulator/sim（程式審查）。
-- [ ] `tsc` 乾淨。
+- [x] 建 `CameraController`：yaw/pitch 累積 + clamp + quaternion 套用。
+- [x] 串 `onMove` → `applyDelta`。
+- [x] 驗：鎖定後可平順環顧四周；往上/下看不會翻轉（夾在 ±89°）。→ 一次性合成驗證：極端 dy 下 forward.y 夾在 ±sin(MAX_PITCH)、|y|<1、無 roll（right.y≈0）。
+- [x] 驗：視角更新在事件路徑，未進任何 accumulator/sim（程式審查）。→ CameraController 只 import `three/webgpu`，無 sim 依賴；main 由 `onMove` 事件直接 `applyDelta`。
+- [x] `tsc` 乾淨。
 
 ## Definition of Done
-- [ ] 可環顧四周；pitch 夾角生效不翻轉。
-- [ ] 視角與 sim 解耦（無 sim 依賴）。
+- [x] 可環顧四周；pitch 夾角生效不翻轉。→ yaw 方向正確、pitch 夾 ±89° 不翻轉（合成驗證全綠）。
+- [x] 視角與 sim 解耦（無 sim 依賴）。→ 程式審查 + import 檢查確認。
 
 ## Commit
 `feat(wp-1): yaw/pitch 視角 + pitch 夾角（FR-1.4）`

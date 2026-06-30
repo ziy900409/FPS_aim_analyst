@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T3 通過（2026-06-30）— 原始輸入 unadjustedMovement + fallback 就緒，待執行 T4
+## Status: 🟢 T4 通過（2026-06-30）— yaw/pitch 視角 + pitch 夾角就緒，待執行 T5
 
 | Phase | State |
 |-------|-------|
@@ -12,7 +12,7 @@
 | T1 SceneManager | ✅ 通過（2026-06-30）|
 | T2 Pointer Lock | ✅ 通過（2026-06-30）|
 | T3 原始輸入 + fallback | ✅ 通過（2026-06-30）|
-| T4 yaw/pitch | ⬜ 待執行 |
+| T4 yaw/pitch | ✅ 通過（2026-06-30）|
 | T5 設定面板 | ⬜ 待執行 |
 | T6 Exit gate | ⬜ 待執行 |
 
@@ -29,6 +29,41 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T4 yaw/pitch 視角 + pitch 夾角（FR-1.4）✅ PASS
+
+**交付檔案：**
+- `src/view/CameraController.ts`（NEW）：`CameraController(camera)`，`applyDelta(dx,dy)` 累積 `yaw -= dx·sens·k`、`pitch = clamp(pitch - dy·sens·k, ±MAX_PITCH)`，組 `quaternion = qYaw(world Y) · qPitch(local X)` 套到 camera（無 roll）。`setSensitivity()` / `setFov()` 為 T5 預留並已可用。常數：`RAD_PER_COUNT=0.0022`（counts→radians 佔位，OQ-1.1）、`DEFAULT_SENSITIVITY=1.0`、`MAX_PITCH=π/2−0.01`（±89°，明確專案級夾角，R2）。
+- `src/main.ts`（MODIFY）：建 `CameraController(sceneManager.camera)`，`pointerLock.onMove((dx,dy)=>applyDelta(dx,dy))`。視角走輸入/render 事件路徑，不入 sim。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 / 方法 | 結果 |
+|------|------|------|
+| 型別檢查 | `npx tsc --noEmit` | **TSC_OK**（exit 0）✅ |
+| 產線建置 | `npx vite build` | **✓ built**（11 modules）✅ |
+| 單元回歸 | `npx vitest run src` | **4 passed**（createRenderer，未受影響）✅ |
+| yaw/pitch 數學（真實 Edge，合成 delta） | 一次性 Playwright spec：import 真模組、讀回 `camera.quaternion`、Node 端以四元數旋轉 forward/right 斷言（**未提交**） | **1 passed** ✅：①base→forward≈(0,0,−1)；②dx>0→forward.x>0（向右看）、forward.y≈0、單位向量；③極端下看 forward.y≈−sin(89°)、\|y\|<1（未翻轉）、right.y≈0（無 roll）；④極端上看對稱夾角 + 無 roll；⑤sens=2 的 yaw 角=sens=1 的 2 倍；⑥`setFov(90)`→`camera.fov===90` |
+
+> **驗證取向（誠實記錄）**：沿用 T2/T3——以合成 delta 驅動真模組，確定性地驗**旋轉數學與夾角不變式**（方向 / clamp / 無 roll / sensitivity 線性 / FOV）。**剩餘 spot-check**：真人在非 headless Edge 鎖定後「手感」是否平順、實際游標移動對應視角方向符合直覺（數值校準另待 pilot，OQ-1.1）。
+
+**Decision Log：**
+- **D-T4.1：pitch 用明確 `MAX_PITCH=π/2−0.01`（±89°）對稱夾角，不沿用 three.js `PointerLockControls` 的 minPolarAngle/maxPolarAngle 預設。** 回應 notes R2：訓練工具的視角行為不應隨上游預設變動而漂移。
+  - *Alternatives considered*：(a) 直接用 `PointerLockControls`——但其 `moveForward/moveRight` 直接改 camera position，違反 SharedState 唯一通訊路徑（notes §SharedState boundary），且夾角為極座標語意較隱晦；(b) 不夾角——會翻轉。選自管 yaw/pitch + 明確夾角。
+- **D-T4.2：旋轉組合 `qYaw · qPitch`（yaw 繞 world Y、pitch 繞 local X），camera 朝向由本類別獨佔。** 先 pitch 後 yaw 的組合天然無 roll；建構子即套基準（yaw=pitch=0 → 朝 −Z，與 SceneManager `lookAt` 一致），避免「render 視角」與未來 sim aim 兩套發散狀態的入口（notes R5；WP-1 視角僅走 render 路徑，sim aim 屬 WP-2+）。
+- **D-T4.3：`applyDelta` 重用實例 scratch quaternion（`#qYaw`/`#qPitch`），不每次 `new`。** mousemove 為高頻路徑；對齊 CLAUDE.md §4「物件重用、避免 GC 卡頓」精神（雖該條原指 buffer/arena，視角熱路徑同理）。
+- **D-T4.4：`sensitivity × RAD_PER_COUNT` 為 counts→radians 線性換算（OQ-1.1）。** `RAD_PER_COUNT=0.0022` 佔位、sensitivity 預設 1.0 可調（T5）；數值校準延到 pilot。
+
+**Surprises & Discoveries：**
+- `npx vitest run`（無 scope）會把 `tests/e2e/*.spec.ts`（Playwright 規格）一併收集而報 3 個檔案 collection 失敗（它們 import `@playwright/test`，非 vitest runner）——**既有設定問題**（backend/isolation spec 同樣會被收），非 T4 引入。`npx vitest run src` 乾淨 4 passed。屬 scope 外，未動其 config。
+- `git status` 另含 `graphify-out/*` 變更（GRAPH_REPORT/graph.html/json/manifest），**非本 task 產出**（疑似工具自動再生）；依切片紀律**不納入** T4 commit，保留未暫存。
+
+**Open Questions：**
+- **OQ-T4.a（spot-check，→ T6 / 上線前）**：非 headless Edge 真鎖定下視角「手感」與方向直覺；數值（sensitivity/k）校準屬 pilot（OQ-1.1）。
+- 沿用 OQ-T3.a（rawInputEnabled 真值 spot-check）；OQ-T5.c（unlock 後鍵盤 latch，本 WP 無鍵盤，→ WP-3/5）。
+- OQ-T5.a（pitch clamp 明確界）已於 D-T4.1 結案（±89°）。
+
+**Next**：執行 **T5**（[T5-settings-panel.md](T5-settings-panel.md)）— sensitivity/FOV DOM overlay（D1），slider 即時 `setSensitivity()`/`setFov()`；面板鎖定中隱藏、解除時顯示（OQ-1.3）。
 
 ### 2026-06-30 — T3 原始輸入（unadjustedMovement）+ NotSupportedError fallback（FR-1.3）✅ PASS
 

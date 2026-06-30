@@ -2,6 +2,7 @@ import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
 import { SceneManager } from './render/SceneManager.ts';
 import { createPointerLock } from './input/PointerLock.ts';
+import { CameraController } from './view/CameraController.ts';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
 
@@ -69,6 +70,11 @@ canvas.addEventListener('click', () => {
   // 失敗時由 pointerlockerror 事件驅動 UI 復原，故吞掉 request 的 rejection。
   void pointerLock.request().catch(() => {});
 });
+
+// WP-1 / T4（FR-1.4）— yaw/pitch 視角：鎖定中的滑鼠 delta 累積到 camera 朝向。
+// 走輸入/render 路徑，不入 sim（雙迴圈邊界，WP-2）；onMove 僅 locked 時轉發（T2）。
+const cameraController = new CameraController(sceneManager.camera);
+pointerLock.onMove((dx, dy) => cameraController.applyDelta(dx, dy));
 
 // 暫用 rAF render 靜態場景；WP-2 才換 sim/render 雙迴圈，此處不引入 sim accumulator。
 function frame(): void {
