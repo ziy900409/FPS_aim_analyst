@@ -1,0 +1,7 @@
+interface:
+  display_name: "Engineering Planning"
+  short_description: "Turn requirements into a tech spec, task breakdown, and risk analysis for this repo."
+  default_prompt: "Use $engineering-planning to turn this request into a technical specification and implementation plan."
+
+policy:
+  allow_implicit_invocation: true
