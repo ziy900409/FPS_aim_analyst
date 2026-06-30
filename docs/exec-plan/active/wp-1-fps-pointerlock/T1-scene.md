@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | NEW `src/render/SceneManager.ts`；MODIFY `src/main.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30）— 封閉房間 + 四牆 + 光 + camera，tsc/build 綠、console 無 error |
 
 ## Objective
 建出可見的封閉房間（地板、牆、光源）與 `PerspectiveCamera`，作為 WP-1 視角與 WP-4 目標的舞台（FR-1.1）。
@@ -33,14 +33,14 @@ export class SceneManager {
 ```
 
 ## Steps
-- [ ] 建 `src/render/SceneManager.ts`：地板/牆/光/camera。
-- [ ] `main.ts` 串 `createRenderer` + `SceneManager`，rAF render；`resize` 處理視窗縮放。
-- [ ] `npm run dev` → 可見封閉房間、可分辨地板與牆、console 無 error。
-- [ ] `npx tsc --noEmit` 乾淨。
+- [x] 建 `src/render/SceneManager.ts`：地板/牆/光/camera。
+- [x] `main.ts` 串 `createRenderer` + `SceneManager`，rAF render；`resize` 處理視窗縮放。
+- [x] dev server → 可見封閉房間、可分辨地板與牆、console 無 error（一次性 Playwright spec：`T1_CONSOLE_ERRORS=[]` + 截圖）。
+- [x] `npx tsc --noEmit` 乾淨。
 
 ## Definition of Done
-- [ ] 封閉房間可見（地板 + 牆 + 光照）。
-- [ ] resize 正常；`tsc` 乾淨。
+- [x] 封閉房間可見（地板 + 牆 + 光照）。
+- [x] resize 正常（window resize → `renderer.setSize` + `sceneManager.resize` 更新 aspect）；`tsc` 乾淨；`vite build` ✓。
 
 ## Commit
 `feat(wp-1): SceneManager 封閉房間 + camera（FR-1.1）`
