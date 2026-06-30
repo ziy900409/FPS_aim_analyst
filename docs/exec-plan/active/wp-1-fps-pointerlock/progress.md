@@ -4,14 +4,14 @@
 
 ---
 
-## Status: 🟢 T2 通過（2026-06-30）— Pointer Lock 生命週期就緒，待執行 T3
+## Status: 🟢 T3 通過（2026-06-30）— 原始輸入 unadjustedMovement + fallback 就緒，待執行 T4
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 通過（2026-06-30）|
 | T1 SceneManager | ✅ 通過（2026-06-30）|
 | T2 Pointer Lock | ✅ 通過（2026-06-30）|
-| T3 原始輸入 + fallback | ⬜ 待執行 |
+| T3 原始輸入 + fallback | ✅ 通過（2026-06-30）|
 | T4 yaw/pitch | ⬜ 待執行 |
 | T5 設定面板 | ⬜ 待執行 |
 | T6 Exit gate | ⬜ 待執行 |
@@ -29,6 +29,40 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T3 原始輸入（unadjustedMovement）+ NotSupportedError fallback（FR-1.3）✅ PASS
+
+**交付檔案：**
+- `src/input/PointerLock.ts`（MODIFY）：`request()` 改為先試 `requestPointerLock({ unadjustedMovement: true })`（關 OS 加速 → 原始輸入），catch `NotSupportedError` 才 fallback 一般 `requestPointerLock()`；其餘錯誤（缺手勢 `SecurityError` 等）不吞、rethrow 給 caller。新增 `rawInputEnabled: boolean`（介面 + getter）：成功啟用 unadjusted 為 `true`、走 fallback 為 `false`，供 WP-7 metadata 記錄可重現性。
+- `src/main.ts`（MODIFY）：`onChange` 鎖定時 `console.info('[pointerlock] rawInputEnabled =', …)`，供真人 spot-check 觀測實際是否啟用原始輸入。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 / 方法 | 結果 |
+|------|------|------|
+| 型別檢查 | `npx tsc --noEmit` | **TSC_OK**（exit 0）✅ |
+| 產線建置 | `npx vite build` | **✓ built**（10 modules；three 體積 warning，資訊性）✅ |
+| 分支邏輯（真實 Edge，合成回傳） | 一次性 Playwright spec：瀏覽器內 import 真模組、`Object.defineProperty(canvas,'requestPointerLock',…)` stub 控制三分支（**未提交**） | **1 passed** ✅：①unadjusted resolve → `rawInputEnabled===true`、以 `{unadjustedMovement:true}` 呼叫、無 throw；②options 呼叫 reject `NotSupportedError` → 第二次無參數 fallback 呼叫、`rawInputEnabled===false`、無 throw；③`SecurityError` → rethrow（name=SecurityError）、不做 fallback、`rawInputEnabled===false` |
+
+> **驗證取向（誠實記錄）**：沿用 T2——headless 無法穩定取得真 OS pointer lock，且 `unadjustedMovement` 是否生效取決於真實瀏覽器/OS，故**不**用「真的鎖定」當斷言。改以 stub 控制 `requestPointerLock` 回傳，確定性地驗 `request()` 的**三分支控制流**（成功旗標 / NotSupportedError fallback / 其餘 rethrow）。**剩餘未驗（spot-check 項）**：受測 Edge 真實取鎖時 `rawInputEnabled` 的**實際值**（預期 `true`，但需非 headless + 真人手勢確認）；上線前一併在非 headless Edge 觀測 console `[pointerlock] rawInputEnabled =` 並回填本檔。
+
+**Decision Log：**
+- **D-T3.1：偵測「是否支援原始輸入」唯一可靠途徑 = `requestPointerLock(options)` 回傳的 Promise 是否 reject `NotSupportedError`。** 無 feature-detect API 可預先查；故必須實際呼叫並 catch。對齊附錄 B 骨架。
+- **D-T3.2：只對 `NotSupportedError` 降級；其餘錯誤 rethrow（不再像 T2 一律吞）。** 回應 OQ-T2.b：`SecurityError`（缺手勢）等屬呼叫端問題，吞掉會掩蓋 bug；UI 復原仍由 `pointerlockerror` 事件驅動（與吞 rejection 不衝突，main.ts 的 click handler 仍 `.catch(()=>{})` 防 unhandled rejection）。
+  - *Alternatives considered*：(a) 沿用 T2「吞所有 rejection」——簡單但掩蓋非預期錯誤、違反 fail-loud；(b) 連 `NotSupportedError` 都 rethrow——則 fallback 失去意義。選「只降級 NotSupportedError」。
+- **D-T3.3：保留 T2 的 `as unknown` + `instanceof Promise` 守則（D-T2.1），不假設一定回 Promise。** unadjusted 偵測本就需要 Promise；但舊版 Chromium 可能回 void，此時無從判定支援與否 → 保守 `rawInputEnabled=false`（非 false positive）。與既有模組寫法一致，非為非目標瀏覽器過度設計。
+- **D-T3.4：`rawInputEnabled` 取「最近一次取鎖結果」語意，取鎖前初始 `false`。** 旗標本質是「此環境是否支援原始輸入」，跨重取穩定；保留最後值即可，不隨解鎖清零。
+
+**Surprises & Discoveries：**
+- 本 session 起始 `node_modules` 不存在（`git status` 乾淨但無安裝）；T1/T2 驗證所需的 `tsc`/`vite`/`playwright` 需先 `npm ci`（exit 0，從 `package-lock.json`）。屬環境重建，非程式問題。
+- TS 5.7 lib.dom 已是現代簽章 `requestPointerLock(options?: PointerLockOptions): Promise<void>` + `interface PointerLockOptions { unadjustedMovement?: boolean }`，故帶 options 的呼叫型別乾淨、無需額外 cast 也能編譯（仍保留 `as unknown` 走 runtime Promise 守則，見 D-T3.3）。
+
+**Open Questions：**
+- **OQ-T3.a（spot-check，→ 上線前 / T6 exit gate）**：受測 Edge 真實取鎖時 `rawInputEnabled` 實際值（預期 `true`）。需非 headless + 真人手勢；若為 `false` 須記錄環境並由 WP-7 metadata 反映降級。
+- OQ-T2.b 已於 D-T3.2 結案（非 NotSupportedError 一律 rethrow）。
+- 沿用 OQ-T5.a（pitch clamp，→ T4）；OQ-T5.c（unlock 後鍵盤 latch，本 WP 無鍵盤輸入，→ WP-3/5）。
+
+**Next**：執行 **T4**（[T4-yaw-pitch.md](T4-yaw-pitch.md)）— yaw/pitch 視角累積 + pitch 夾角（FR-1.4）；訂閱 `pointerLock.onMove(dx,dy)` 套到 camera，pitch clamp ±~89°。
 
 ### 2026-06-30 — T2 Pointer Lock 整合（手勢/Esc/失焦重取, FR-1.2）✅ PASS
 

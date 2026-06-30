@@ -58,6 +58,12 @@ function updateLockHint(locked: boolean): void {
 updateLockHint(pointerLock.locked);
 pointerLock.onChange(updateLockHint);
 
+// T3（FR-1.3）— 鎖定後回報是否啟用原始輸入（unadjustedMovement）。false = 走 fallback，
+// 影響可重現性，WP-7 需寫入匯出 metadata。
+pointerLock.onChange((locked) => {
+  if (locked) console.info('[pointerlock] rawInputEnabled =', pointerLock.rawInputEnabled);
+});
+
 canvas.addEventListener('click', () => {
   if (pointerLock.locked) return;
   // 失敗時由 pointerlockerror 事件驅動 UI 復原，故吞掉 request 的 rejection。
