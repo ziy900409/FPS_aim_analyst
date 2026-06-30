@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟢 T4 Deploy headers 通過，deploy 待 D3
+## Status: 🟢 T5 Reference notes 通過，T6 待執行
 
 | Phase | State |
 |-------|-------|
@@ -14,7 +14,7 @@
 | T2 Cross-origin isolation | ✅ 通過（2026-06-30）|
 | T3 WebGPU backend 偵測 | ✅ 通過（2026-06-30）|
 | T4 Deploy headers | ✅ 通過（2026-06-30；實際 deploy 待 D3）|
-| T5 Reference notes | ⬜ 待執行 |
+| T5 Reference notes | ✅ 通過（2026-06-30）|
 | T6 Exit gate | ⬜ 待執行 |
 
 ---
@@ -31,6 +31,39 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T5 Reference notes（WP-1 預備學習, FR-0.5）✅ PASS
+
+**前置確認：** T0-T4 已綠燈；T5 為非阻塞 docs-only task，不觸碰 WP-1 程式、不新增相依、不執行 build/test。
+
+**交付檔案：**
+- `docs/architecture/notes-fps-controls.md`（NEW）：整理 Pointer Lock lifecycle、`unadjustedMovement` fallback、yaw/pitch 夾角、`movementX/Y` 與 `getCoalescedEvents()`、`InputSampler` 真 `ring buffer` 消費模式、`SharedState` 邊界、`PointerLockControls.moveForward()/moveRight()` 在本專案的取捨、Stage A Chrome/Edge 桌面限制，以及 WP-1 待決問題 / 風險清單。
+
+**驗證（文件型 DoD 自檢）：**
+
+| 檢查 | 方法 | 結果 |
+|------|------|------|
+| 筆記存在 | `docs/architecture/notes-fps-controls.md` | 存在 ✅ |
+| 涵蓋 T5 問題清單 | 對照 T5 Design notes | click 取得 lock、Esc/失焦解除、`unadjustedMovement` fallback、yaw/pitch clamp、`movementX/Y` vs `getCoalescedEvents()`、ADR-2 邊界皆已覆蓋 ✅ |
+| 出處可信 | 筆記 Sources checked | three.js r185 官方 source/example、MDN Pointer Lock / coalesced events、web.dev raw input、one FPS-style open-source repo ✅ |
+| WP-1 風險前置 | 筆記 `WP-1 pending questions / risks` | raw input metadata、pitch clamp、event source、unlock recovery、render camera ownership、fire ordering、permissions/user gesture 皆列出 ✅ |
+
+**Decision Log：**
+- **D-T5.1：WP-1 不直接採用 `PointerLockControls.moveForward()` / `moveRight()` 作為 movement。** 這兩個 helper 會直接改 camera position，會繞過 `SharedState`、`SimLoop`、`MovementController` 與 `DataRecorder`；本專案只可借用 Pointer Lock lifecycle 與 yaw/pitch invariant，movement 必須走 `InputSampler` → `ring buffer` → `SimLoop` → `SharedState`。
+- **D-T5.2：`unadjustedMovement` 採 best-effort fallback。** Stage A 鎖 Chrome/Edge 桌面版，足以把 raw input 納入 WP-1；若 `NotSupportedError` 或非 Promise 形狀，應退回一般 pointer lock 並在後續 metadata 標記 raw input 狀態。
+- **D-T5.3：三方 FPS demo 僅作慣例參考，不作架構依據。** 參考 repo 與 three.js FPS example 多以 rAF 迴圈、key boolean、`deltaTime` 直接改 movement，這符合 demo 慣例，但不符合本專案 counter-strafe 量測與 ADR-2/ADR-4 約束。
+
+**Surprises & Discoveries：**
+- three.js r185 `PointerLockControls` 已提供 `lock(unadjustedMovement = false)` 並轉呼叫 `requestPointerLock({ unadjustedMovement })`，但 request success/error 仍應以 document-level `pointerlockchange` / `pointerlockerror` 為權威。
+- MDN 記錄 `requestPointerLock()` 的 Promise 形狀尚非所有瀏覽器一致；WP-1 不能只靠 `await` 判斷 lock 成功。
+- Browser permission / user-activation policy 仍可能讓 lock 失敗；Stage A 雖鎖 Chrome/Edge，也仍需把 `pointerlockerror` 視為正常 recoverable state。
+
+**Open Questions：**
+- **OQ-T5.a：WP-1 pitch clamp 值待定。** 不應默默沿用 three.js 預設 `minPolarAngle=0` / `maxPolarAngle=Math.PI`；需選一組符合訓練需求的明確上下界。
+- **OQ-T5.b：WP-1 mouse event source 待定。** `mousemove` 與 `PointerLockControls` 一致；`pointermove` 可接 `getCoalescedEvents()`。建議 WP-1 以 app-owned adapter 隔離事件來源，避免未來 WP-3 重寫輸入管線。
+- **OQ-T5.c：unlock 後鍵盤 latch 清除政策待定。** 為避免 pointer lock 中斷造成 stuck-key 污染 peek，建議 unlock 時清除 pressed-key latch 並記錄 recoverable interruption。
+
+**Next**：T5 完成。停在此處，不自動續 T6。
 
 ### 2026-06-30 — T4 Deploy headers（host-agnostic, FR-0.4）✅ PASS
 

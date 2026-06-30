@@ -8,7 +8,7 @@
 | **Depends on** | 無（可平行） |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | NEW `docs/architecture/notes-fps-controls.md`（docs only） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30） |
 
 ## Objective
 
@@ -31,14 +31,14 @@
 
 ## Steps
 
-- [ ] 讀 `PointerLockControls` 範例與一個 three-fps repo；記來源連結。
-- [ ] 寫 `docs/architecture/notes-fps-controls.md`：依上方問題清單逐點整理，附程式片段引用（附錄 B 對照）。
-- [ ] 在 progress.md 記一筆完成 + 連結。
+- [x] 讀 `PointerLockControls` 範例與一個 three-fps repo；記來源連結。
+- [x] 寫 `docs/architecture/notes-fps-controls.md`：依上方問題清單逐點整理，附程式片段引用（附錄 B 對照）。
+- [x] 在 progress.md 記一筆完成 + 連結。
 
 ## Definition of Done
 
-- [ ] `docs/architecture/notes-fps-controls.md` 存在且涵蓋問題清單全部要點。
-- [ ] 至少標注 `unadjustedMovement` fallback 與 yaw/pitch 夾角兩個 WP-1 高風險點。
+- [x] `docs/architecture/notes-fps-controls.md` 存在且涵蓋問題清單全部要點。
+- [x] 至少標注 `unadjustedMovement` fallback 與 yaw/pitch 夾角兩個 WP-1 高風險點。
 
 ## Commit
 
