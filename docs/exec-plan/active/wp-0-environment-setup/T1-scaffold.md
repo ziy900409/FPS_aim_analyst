@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | NEW `package.json`、`package-lock.json`、`tsconfig.json`、`index.html`、`src/main.ts`；最小 ESLint 設定 |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30）|
 
 ## Objective
 
@@ -55,9 +55,9 @@ renderer.render(scene, camera);
 
 ## Definition of Done
 
-- [ ] `npm run dev` 跑起來，空場景可見，console 無 error / 無 warning（WebGPU 相關）。
-- [ ] `npx tsc --noEmit` exit 0。
-- [ ] `package-lock.json` committed，`three` ≥ r171。
+- [x] `npm run dev` 跑起來，空場景可見，console 無 error / 無 warning（Playwright/Edge 驗：CONSOLE_ISSUES=0，hasGpu=true）。
+- [x] `npx tsc --noEmit` exit 0。
+- [x] `package-lock.json` committed，`three` 0.185.0（≥ r171）。
 
 ## Commit
 

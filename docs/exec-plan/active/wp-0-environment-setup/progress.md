@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟢 T0 entry gate 通過，待開 T1
+## Status: 🟢 T1 scaffold 通過，待開 T2 / T3
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 通過（2026-06-30）|
-| T1 Scaffold | ⬜ 待執行 |
+| T1 Scaffold | ✅ 通過（2026-06-30）|
 | T2 Cross-origin isolation | ⬜ 待執行 |
 | T3 WebGPU backend 偵測 | ⬜ 待執行 |
 | T4 Deploy headers | ⬜ 待執行 |
@@ -31,6 +31,35 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T1 Scaffold ✅ PASS
+
+**交付檔案（NEW）：** `package.json`、`package-lock.json`（84.8 KB，鎖 `three@0.185.0`）、`tsconfig.json`（`strict: true` + `moduleResolution: bundler`）、`index.html`（full-viewport `<canvas id="app">`）、`src/main.ts`（async bootstrap：`WebGPURenderer` → `await init()` → 空 Scene + PerspectiveCamera → render 一幀）、`vite.config.ts`、`.gitignore`。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 | 結果 |
+|------|------|------|
+| 鎖定版本 | `npm ls three` | `three@0.185.0`（≥ r171 ✅）|
+| 型別檢查 | `npx tsc --noEmit` | exit 0 ✅ |
+| 產線建置 | `npx vite build` | ✓ built（6 modules；warning：chunk > 500 KB＝three 體積，資訊性非錯誤）|
+| Dev 渲染 + console | Playwright（channel `msedge`, `--enable-unsafe-webgpu`）載入 dev server | CANVAS `{w:1280,h:720,hasGpu:true}`；**CONSOLE_ISSUES = 0** ✅ |
+
+**Decision Log：**
+- **D-T1.1：提前引入 `vite.config.ts`（build/esbuild target = `esnext`）。** `src/main.ts` 依 ADR-1/附錄 A 使用 top-level `await renderer.init()`,而 Vite 預設 build target（es2020）不支援 TLA,`vite build` 失敗。
+  - *Alternatives considered*：(a) 只驗 `npm run dev`（dev 用 ESM 原生支援 TLA,可繞過）——但會留下壞掉的 `vite build`,違反「keep it compilable」;(b) 把 `init()` 包進 async IIFE 避免 TLA——增加無謂巢狀,且仍與規格骨架不符。
+  - *選擇*：建最小 `vite.config.ts` 僅設 `target: 'esnext'`（階段 A 鎖 Chrome/Edge 桌面版,esnext 合理）。**COOP/COEP plugin 不在此 task 加入,留給 T2**（FR-0.2/0.4）。
+- **D-T1.2：以手寫骨架取代 `npm create vite` 互動式 scaffold。** repo 根已有 `docs/`、`CLAUDE.md` 等檔,非空目錄會觸發 Vite 互動提示;手寫等價最小檔案更可控且非互動。產出版本與 vanilla-ts 範本一致。
+- **D-T1.3：`index.html` 加 `<link rel="icon" href="data:,">`** 抑制預設 `/favicon.ico` 404（原為唯一 console error),達成 DoD「console 無 error」。
+
+**Surprises & Discoveries：**
+- Vite 預設 build target 不支援 top-level await（見 D-T1.1）——TLA 在 dev（ESM）可跑但 build 會炸,易誤判。已以 esnext target 解決,證據：上表 build ✓。
+- `npm install` 報 5 項 audit 漏洞（3 moderate / 1 high / 1 critical），來源為 dev 工具鏈（vite/esbuild 等）傳遞相依,非 runtime。階段 A 不阻塞;待 WP-9 / CI 階段以 `npm audit` 處理。
+
+**Open Questions（待使用者確認）：**
+- **OQ-T1.a：ESLint。** T1「Touches」列出「最小 ESLint 設定」,但 T1 DoD 未含 lint 檢查,OQ-0.4 亦註明「完整 lint 規則隨程式成長補」。為守住切片範圍,**本 task 未引入 ESLint**（避免額外相依與設定膨脹）。建議於程式量成長或 WP-2 引入決定性測試時補上。如需現在就加最小 flat config,請示知。
+
+**Next**：T1 不阻塞 T2/T3（兩者並行）。建議續 **T2**（[T2-coop-coep-isolation.md](T2-coop-coep-isolation.md)）— 於既有 `vite.config.ts` 加 COOP/COEP plugin + `assertIsolation()` + Playwright 斷言 `crossOriginIsolated===true`。
 
 ### 2026-06-30 — T0 Entry gate ✅ PASS
 

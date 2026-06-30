@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# vite / playwright caches
+.vite/
+test-results/
+playwright-report/
+
+# logs
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
