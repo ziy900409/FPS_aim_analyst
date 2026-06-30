@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MetricsDashboard 雛形 — counter-strafe 量測報告</title>
+    <!--
+      aim-analyst-ui skill 的 MetricsDashboard 報告頁雛形（self-contained，雙擊即可在 Chrome 開）。
+      - 視覺方向：暗色科學儀器（dark sports-science lab）。
+      - 資料為 mock，但欄位與分類忠於 CONTEXT.md §A（counter-strafe 領域詞）。
+      - 無框架、無 charting lib（D1）：trace 與 bar 純 SVG / DOM 手繪。
+      - 正式版會搬成 src/ui/MetricsDashboard.ts factory（同 SettingsPanel 形狀），token 抽到 :root。
+    -->
+    <style>
+      /* ===== design token（取自 .claude/skills/aim-analyst-ui/assets/tokens.css）===== */
+      :root {
+        --bg-0: #0f1113;
+        --bg-1: #16191d;
+        --bg-2: #1e2227;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.14);
+        --text-hi: #edeff2;
+        --text-mid: #aeb4bc;
+        --text-lo: #6e757e;
+        --accent: #e8285a;
+        --accent-hi: #ff3d6e;
+        --accent-dim: rgba(232, 40, 90, 0.14);
+        --ok: #2ecc71;
+        --warn: #f5a623;
+        --bad: #ff5470;
+        --cat-pre: #3fa9f5; /* 前測 = azure */
+        --cat-post: #e83a6a; /* 後測 = magenta（= 主強調家族） */
+        --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+        --fs-display: 1.75rem;
+        --fs-h1: 1.25rem;
+        --fs-h2: 1rem;
+        --fs-body: 0.875rem;
+        --fs-data: 0.9375rem;
+        --fs-label: 0.6875rem;
+        --sp-1: 4px;
+        --sp-2: 8px;
+        --sp-3: 12px;
+        --sp-4: 16px;
+        --sp-6: 24px;
+        --sp-8: 32px;
+        --r-card: 12px;
+        --r-control: 8px;
+        --r-pill: 999px;
+        --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg-0);
+        color: var(--text-hi);
+        font: 400 var(--fs-body) / 1.5 var(--font-ui);
+        -webkit-font-smoothing: antialiased;
+      }
+      .label {
+        font-size: var(--fs-label);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-lo);
+        font-weight: 600;
+      }
+      .mono {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+      }
+      a {
+        color: inherit;
+      }
+
+      /* ===== top nav ===== */
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-4);
+        height: 56px;
+        padding: 0 var(--sp-6);
+        border-bottom: 1px solid var(--line);
+        background: #0c0d0f;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .brand .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        background: var(--accent);
+        box-shadow: 0 0 12px var(--accent);
+      }
+      .crumb {
+        color: var(--text-lo);
+        font-size: var(--fs-body);
+      }
+      .crumb b {
+        color: var(--text-mid);
+        font-weight: 500;
+      }
+      .topbar .spacer {
+        flex: 1;
+      }
+      .clock {
+        color: var(--text-lo);
+      }
+
+      /* ===== layout ===== */
+      .shell {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: var(--sp-6);
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: var(--sp-6);
+        align-items: start;
+      }
+      @media (max-width: 880px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ===== sidebar ===== */
+      .sidebar {
+        position: sticky;
+        top: 80px;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-4);
+      }
+      .card {
+        background: var(--bg-1);
+        border: 1px solid var(--line);
+        border-radius: var(--r-card);
+        padding: var(--sp-6);
+      }
+      .subject-name {
+        font-size: var(--fs-display);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0;
+        line-height: 1.1;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--fs-label);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: var(--r-pill);
+      }
+      .pill.ok {
+        color: var(--ok);
+        background: rgba(46, 204, 113, 0.12);
+      }
+      .pill.warn {
+        color: var(--warn);
+        background: rgba(245, 166, 35, 0.14);
+      }
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--sp-3);
+        padding: 7px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: var(--fs-body);
+      }
+      .meta-row:last-child {
+        border-bottom: 0;
+      }
+      .meta-row .k {
+        color: var(--text-lo);
+      }
+      .meta-row .v {
+        color: var(--text-hi);
+      }
+      .section-head {
+        color: var(--accent);
+        font-size: var(--fs-label);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin: var(--sp-4) 0 var(--sp-2);
+      }
+      .btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        border: 0;
+        border-radius: var(--r-control);
+        padding: 11px;
+        font: 600 var(--fs-body) / 1 var(--font-ui);
+        cursor: pointer;
+        transition: background var(--dur-fast, 120ms) var(--ease);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn.primary:hover {
+        background: var(--accent-hi);
+      }
+      .btn:focus-visible {
+        outline: 2px solid var(--accent-hi);
+        outline-offset: 2px;
+      }
+
+      /* ===== main ===== */
+      .main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-6);
+        min-width: 0;
+      }
+      .condition-strip {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--sp-4);
+      }
+      .cond {
+        background: var(--bg-1);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--c);
+        border-radius: var(--r-card);
+        padding: var(--sp-4) var(--sp-4) var(--sp-3);
+      }
+      .cond .label {
+        color: var(--c);
+      }
+      .cond .big {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 2px;
+      }
+      .cond .sub {
+        color: var(--text-lo);
+        font-size: var(--fs-label);
+      }
+
+      .card h2 {
+        font-size: var(--fs-h2);
+        font-weight: 600;
+        margin: 0;
+      }
+      .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: var(--sp-4);
+      }
+      .card-head .hint {
+        color: var(--text-lo);
+        font-size: var(--fs-label);
+      }
+
+      /* ===== signature: counter-strafe trace ===== */
+      .trace-wrap {
+        display: grid;
+        grid-template-columns: 1fr 220px;
+        gap: var(--sp-6);
+        align-items: center;
+      }
+      @media (max-width: 640px) {
+        .trace-wrap {
+          grid-template-columns: 1fr;
+        }
+      }
+      .readout {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-4);
+      }
+      .readout .item .v {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--text-hi);
+      }
+      .readout .item .v small {
+        font-size: var(--fs-body);
+        color: var(--text-lo);
+        font-weight: 400;
+      }
+      .tag {
+        display: inline-block;
+        font-size: var(--fs-label);
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: var(--r-control);
+        border: 1px solid var(--line-strong);
+        color: var(--text-mid);
+      }
+      .tag.good {
+        color: var(--ok);
+        border-color: rgba(46, 204, 113, 0.4);
+      }
+      .legend {
+        display: flex;
+        gap: var(--sp-4);
+        margin-top: var(--sp-3);
+        font-size: var(--fs-label);
+        color: var(--text-mid);
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .swatch {
+        width: 14px;
+        height: 3px;
+        border-radius: 2px;
+      }
+
+      /* ===== bars ===== */
+      .bars {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--sp-6);
+      }
+      .bar-group {
+        text-align: center;
+      }
+      .bar-track {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 10px;
+        height: 150px;
+        padding-bottom: var(--sp-2);
+        border-bottom: 1px solid var(--line);
+      }
+      .bar {
+        width: 30px;
+        border-radius: 4px 4px 0 0;
+        position: relative;
+      }
+      .bar .cap {
+        position: absolute;
+        top: -18px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: var(--font-mono);
+        font-size: var(--fs-label);
+        color: var(--text-mid);
+      }
+      .bar.pre {
+        background: var(--cat-pre);
+      }
+      /* post = 斜線 hatch（冗餘編碼，色盲也能分 pre/post） */
+      .bar.post {
+        background: repeating-linear-gradient(
+          45deg,
+          var(--cat-post) 0 3px,
+          rgba(232, 58, 106, 0.35) 3px 6px
+        );
+      }
+      .bar-group .title {
+        margin-top: var(--sp-2);
+        font-size: var(--fs-body);
+        color: var(--text-mid);
+      }
+      .bar-group .dir {
+        font-size: var(--fs-label);
+        color: var(--text-lo);
+      }
+
+      /* ===== summary table ===== */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--fs-body);
+      }
+      thead th {
+        text-align: right;
+        font-size: var(--fs-label);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-lo);
+        font-weight: 600;
+        padding: 0 var(--sp-3) var(--sp-2);
+        border-bottom: 1px solid var(--line-strong);
+      }
+      thead th:first-child,
+      thead th:nth-child(2) {
+        text-align: left;
+      }
+      tbody td {
+        padding: 10px var(--sp-3);
+        border-bottom: 1px solid var(--line);
+        text-align: right;
+      }
+      tbody tr:hover {
+        background: var(--bg-2);
+      }
+      td.metric {
+        text-align: left;
+        color: var(--text-hi);
+      }
+      td.dir {
+        text-align: left;
+        color: var(--text-lo);
+        font-size: var(--fs-label);
+      }
+      td .num {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+      }
+      td.pre .num {
+        color: var(--cat-pre);
+      }
+      td.post .num {
+        color: var(--cat-post);
+      }
+      td.delta .num {
+        font-weight: 600;
+      }
+      .delta.up {
+        color: var(--ok);
+      }
+      .delta.down {
+        color: var(--bad);
+      }
+      .delta.flat {
+        color: var(--text-mid);
+      }
+
+      .note {
+        font-size: var(--fs-label);
+        color: var(--text-lo);
+        line-height: 1.6;
+        border-left: 2px solid var(--line-strong);
+        padding-left: var(--sp-3);
+      }
+
+      /* reveal（克制、一次性、尊重 reduced-motion） */
+      .card,
+      .cond {
+        animation: rise var(--dur-reveal, 200ms) var(--ease) both;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.001ms !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===== top nav ===== -->
+    <nav class="topbar">
+      <span class="brand"><span class="dot"></span>Aim&nbsp;Analyst</span>
+      <span class="crumb">Sessions / <b>Counter-strafe report</b></span>
+      <span class="spacer"></span>
+      <span class="clock mono label">PERF CLOCK · CHROMIUM</span>
+    </nav>
+
+    <div class="shell">
+      <!-- ===== sidebar：受試者 / session ===== -->
+      <aside class="sidebar">
+        <div class="card">
+          <h1 class="subject-name">Subject&nbsp;07</h1>
+          <div style="display: flex; gap: 8px; margin: 10px 0 4px">
+            <span class="pill ok">● Completed</span>
+            <span class="pill warn">⚠ 1 suspect</span>
+          </div>
+          <div class="label" style="margin-bottom: var(--sp-4)">
+            2026-06-30 · measured by Hsin
+          </div>
+
+          <div class="section-head">Session</div>
+          <div class="meta-row"><span class="k">Drill</span><span class="v">counter-strafe-static</span></div>
+          <div class="meta-row"><span class="k">Peeks</span><span class="v mono">48</span></div>
+          <div class="meta-row"><span class="k">Sim tick</span><span class="v mono">128 Hz</span></div>
+          <div class="meta-row"><span class="k">Backend</span><span class="v mono">webgpu</span></div>
+
+          <div class="section-head">Input</div>
+          <div class="meta-row"><span class="k">Sensitivity</span><span class="v mono">1.00</span></div>
+          <div class="meta-row"><span class="k">FOV</span><span class="v mono">75°</span></div>
+          <div class="meta-row"><span class="k">Raw input</span><span class="v">unadjusted ✓</span></div>
+
+          <div class="section-head">Data quality</div>
+          <div class="meta-row"><span class="k">lateEventCount</span><span class="v mono">3</span></div>
+          <div class="meta-row"><span class="k">bufferOverflow</span><span class="v" style="color: var(--ok)">none</span></div>
+          <div class="meta-row"><span class="k">recorderOverflow</span><span class="v" style="color: var(--warn)">1 drill</span></div>
+
+          <button class="btn primary" style="margin-top: var(--sp-6)">Download JSON / CSV</button>
+        </div>
+      </aside>
+
+      <!-- ===== main ===== -->
+      <main class="main">
+        <!-- 比較條件 strip：pre / post（前後測） -->
+        <div class="condition-strip">
+          <div class="cond" style="--c: var(--cat-pre)">
+            <div class="label">Pre-test</div>
+            <div class="big mono">61.2<small style="font-size: 1rem; color: var(--text-lo)">%</small></div>
+            <div class="sub">首發命中率 · 24 peeks</div>
+          </div>
+          <div class="cond" style="--c: var(--cat-post)">
+            <div class="label">Post-test</div>
+            <div class="big mono">73.4<small style="font-size: 1rem; color: var(--text-lo)">%</small></div>
+            <div class="sub">首發命中率 · 24 peeks · 適應後</div>
+          </div>
+        </div>
+
+        <!-- ===== SIGNATURE：counter-strafe trace（hero）===== -->
+        <section class="card">
+          <div class="card-head">
+            <h2>Counter-strafe trace</h2>
+            <span class="hint">representative peek · velocity → 0 → first shot</span>
+          </div>
+          <div class="trace-wrap">
+            <div>
+              <svg viewBox="0 0 720 280" width="100%" role="img"
+                   aria-label="速度-時間軌跡：移動中按下反向鍵後速度瞬間歸零，首發於 v=0 開火">
+                <!-- grid baseline -->
+                <line x1="60" y1="40" x2="60" y2="230" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+                <line x1="60" y1="230" x2="700" y2="230" stroke="rgba(255,255,255,0.18)" stroke-width="1" />
+                <!-- v=0 baseline label -->
+                <text x="52" y="234" text-anchor="end" fill="#6e757e" font-size="11" font-family="monospace">0</text>
+                <text x="52" y="44" text-anchor="end" fill="#6e757e" font-size="11" font-family="monospace">250</text>
+                <text x="40" y="140" text-anchor="middle" fill="#6e757e" font-size="10" font-family="monospace"
+                      transform="rotate(-90 40 140)">u/s</text>
+
+                <!-- t_visible marker -->
+                <line x1="60" y1="40" x2="60" y2="245" stroke="#3fa9f5" stroke-width="1" stroke-dasharray="3 3" opacity="0.6" />
+                <text x="64" y="258" fill="#3fa9f5" font-size="10" font-family="monospace">t_visible</text>
+
+                <!-- PRE trace（前測：反應較慢，muted dashed） -->
+                <polyline points="60,40 470,40 470,230 700,230" fill="none"
+                          stroke="#6e757e" stroke-width="2" stroke-dasharray="5 4" opacity="0.7" />
+
+                <!-- POST trace（後測：反應較快，accent solid）— Stage A 階梯（snap-to-zero） -->
+                <polyline points="60,40 360,40 360,230 700,230" fill="none"
+                          stroke="#e8285a" stroke-width="2.5" stroke-linejoin="round" />
+
+                <!-- t_counter marker（post） -->
+                <line x1="360" y1="40" x2="360" y2="245" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="3 3" />
+                <text x="364" y="258" fill="#aeb4bc" font-size="10" font-family="monospace">t_counter</text>
+
+                <!-- reaction span -->
+                <line x1="60" y1="28" x2="360" y2="28" stroke="#aeb4bc" stroke-width="1" />
+                <text x="210" y="22" text-anchor="middle" fill="#aeb4bc" font-size="10" font-family="monospace">急停反應 198 ms</text>
+
+                <!-- first shot dot（on v=0 baseline） -->
+                <circle cx="408" cy="230" r="6" fill="#e8285a" stroke="#16191d" stroke-width="2" />
+                <circle cx="408" cy="230" r="11" fill="none" stroke="#e8285a" stroke-width="1" opacity="0.5" />
+                <text x="416" y="218" fill="#edeff2" font-size="11" font-family="monospace">first shot · HIT</text>
+              </svg>
+              <div class="legend">
+                <span><span class="swatch" style="background: #e8285a"></span>Post-test</span>
+                <span><span class="swatch" style="background: #6e757e"></span>Pre-test</span>
+                <span style="color: var(--text-lo)">階段 A：立即停止 → velocity 為階梯函數</span>
+              </div>
+            </div>
+
+            <div class="readout">
+              <div class="item">
+                <div class="label">急停反應時間</div>
+                <div class="v">198<small> ms</small></div>
+              </div>
+              <div class="item">
+                <div class="label">開火瞬間速度</div>
+                <div style="margin-top: 4px"><span class="tag good">已停止 · 有反向</span></div>
+                <div class="note" style="margin-top: 6px; border: 0; padding: 0">
+                  階段 A 為二元分類，不顯示連續 u/s
+                </div>
+              </div>
+              <div class="item">
+                <div class="label">停火時序對齊</div>
+                <div class="v">+12<small> ms</small></div>
+                <div class="label" style="text-transform: none; letter-spacing: 0">先停後開（正值佳）</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== first-shot performance（bars, pre vs post）===== -->
+        <section class="card">
+          <div class="card-head">
+            <h2>First-shot performance</h2>
+            <span class="hint">pre 實心 · post 斜線</span>
+          </div>
+          <div class="bars">
+            <div class="bar-group">
+              <div class="bar-track">
+                <div class="bar pre" style="height: 49%"><span class="cap">61.2</span></div>
+                <div class="bar post" style="height: 59%"><span class="cap">73.4</span></div>
+              </div>
+              <div class="title">首發命中率 (%)</div>
+              <div class="dir">▲ higher → good</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-track">
+                <div class="bar pre" style="height: 70%"><span class="cap">88.1</span></div>
+                <div class="bar post" style="height: 79%"><span class="cap">91.6</span></div>
+              </div>
+              <div class="title">Accuracy (%)</div>
+              <div class="dir">▲ higher → good</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-track">
+                <div class="bar pre" style="height: 86%"><span class="cap">271</span></div>
+                <div class="bar post" style="height: 63%"><span class="cap">198</span></div>
+              </div>
+              <div class="title">急停反應 (ms)</div>
+              <div class="dir">▼ lower → good</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== summary table ===== -->
+        <section class="card">
+          <div class="card-head">
+            <h2>Summary</h2>
+            <span class="hint">受試者內 pre / post 相對值</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Direction</th>
+                <th>Pre</th>
+                <th>Post</th>
+                <th>Δ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="metric">首發命中率</td>
+                <td class="dir">higher → good</td>
+                <td class="pre"><span class="num">61.2%</span></td>
+                <td class="post"><span class="num">73.4%</span></td>
+                <td class="delta up"><span class="num">+12.2</span></td>
+              </tr>
+              <tr>
+                <td class="metric">Accuracy</td>
+                <td class="dir">higher → good</td>
+                <td class="pre"><span class="num">88.1%</span></td>
+                <td class="post"><span class="num">91.6%</span></td>
+                <td class="delta up"><span class="num">+3.5</span></td>
+              </tr>
+              <tr>
+                <td class="metric">急停反應時間</td>
+                <td class="dir">lower → good</td>
+                <td class="pre"><span class="num">271 ms</span></td>
+                <td class="post"><span class="num">198 ms</span></td>
+                <td class="delta up"><span class="num">−73</span></td>
+              </tr>
+              <tr>
+                <td class="metric">停火時序對齊</td>
+                <td class="dir">≈0 → good</td>
+                <td class="pre"><span class="num">−34 ms</span></td>
+                <td class="post"><span class="num">+12 ms</span></td>
+                <td class="delta up"><span class="num">先停</span></td>
+              </tr>
+              <tr>
+                <td class="metric">切換時間</td>
+                <td class="dir">lower → good</td>
+                <td class="pre"><span class="num">612 ms</span></td>
+                <td class="post"><span class="num">534 ms</span></td>
+                <td class="delta up"><span class="num">−78</span></td>
+              </tr>
+              <tr>
+                <td class="metric">節奏穩定度 (CV)</td>
+                <td class="dir">lower → good</td>
+                <td class="pre"><span class="num">0.21</span></td>
+                <td class="post"><span class="num">0.16</span></td>
+                <td class="delta up"><span class="num">−0.05</span></td>
+              </tr>
+              <tr>
+                <td class="metric">左右對稱性 (Δ命中)</td>
+                <td class="dir">consistent → good</td>
+                <td class="pre"><span class="num">9.4%</span></td>
+                <td class="post"><span class="num">3.1%</span></td>
+                <td class="delta up"><span class="num">−6.3</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="note" style="margin-top: var(--sp-4)">
+            殘餘速度（residual speed）階段 A 退化為二元（velocity ∈ {0, ±v}），故以分類呈現、未列連續 u/s 欄；
+            欄位已記錄，階段 B physics 上線後自動升級為連續精度。pre/post 僅為受試者內相對比較，不對母體作因果推論。
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
