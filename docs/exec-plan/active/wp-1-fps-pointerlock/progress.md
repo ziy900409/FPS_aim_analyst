@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T5 通過（2026-06-30）— 設定面板就緒，FR-1.1~1.5 全綠，待執行 T6 exit gate
+## Status: ✅ WP-1 完成（2026-06-30）— T6 exit gate 全綠，FR-1.1~1.5 交付，交棒 WP-2/4
 
 | Phase | State |
 |-------|-------|
@@ -14,7 +14,7 @@
 | T3 原始輸入 + fallback | ✅ 通過（2026-06-30）|
 | T4 yaw/pitch | ✅ 通過（2026-06-30）|
 | T5 設定面板 | ✅ 通過（2026-06-30）|
-| T6 Exit gate | ⬜ 待執行 |
+| T6 Exit gate | ✅ 通過（2026-06-30）|
 
 ---
 
@@ -29,6 +29,48 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T6 / T-exit Exit gate ✅ PASS — WP-1 全綠，交棒 WP-2/4
+
+**Outcomes & Retrospective（WP-1 收束）：** FR-1.1~1.5 全部交付，exit gate 四段全過。
+
+**A. 自動化三檢（exit 當下重跑）：**
+
+| 檢查 | 指令 | 結果 |
+|------|------|------|
+| 型別 + 產線建置 | `npm run build`（= `tsc --noEmit && vite build`） | **✓ built**（exit 0；three chunk warning 資訊性）✅ |
+| 單元回歸 | `npx vitest run src` | **4 passed**（exit 0）✅ |
+
+**B. 硬約束複驗（CLAUDE.md §4）：**
+- cross-origin isolation：非 headless Edge console `[isolation] crossOriginIsolated: true`、`timerResolutionUs ≈ 5µs`（未被夾到 100µs，證明高解析計時器生效，ADR-4）。✅
+- determinism：WP-1 無 sim loop（視角走 render/輸入路徑），gate **N/A**，繼承給 WP-2。
+
+**C. 真人 spot-check（非 headless Edge 桌面版 Chromium/WebGPU / Windows 11 10.0.26200）：**
+
+| OQ | 項目 | 實測 | 判定 |
+|----|------|------|------|
+| OQ-T3.a | `rawInputEnabled` 真值（console main.ts:66） | **`true`** | ✅ 原始輸入生效（OS 加速已關）；無 fallback、無 WP-7 可重現性 debt |
+| OQ-T4.a | 視角環顧 / 不翻轉 / 無 roll | 跟手、±89° clamp、地平線水平 | ✅ |
+| OQ-T5.d | 解除→面板顯示→slider 即時→重取 | 面板現身、sensitivity→0.90 即時、重鎖 ×4 | ✅ |
+
+> **console 雜訊定性（誠實記錄）**：一般視窗曾見一條紅 `Uncaught SyntaxError: Invalid or unexpected token @ VM69:1`。經**無痕視窗（擴充功能關閉）複測 → 紅字消失、「沒有問題」**，確認為 Edge 擴充/Copilot 注入的 eval 腳本，**非 WP-1 程式**（我方模組皆具名 source，且 app 完整渲染/運作）。WP-1 app console = 0 error。
+
+**4 項 PLAN WP-1 驗收 → 全部有證據：**
+- 點擊鎖定、Esc 解除（T2 狀態機 spec + 真人）✅
+- 無 OS 加速的視角（T3 三分支 spec + OQ-T3.a `rawInputEnabled=true`）✅
+- 可環顧四周夾角（T4 旋轉/clamp spec + OQ-T4.a）✅
+- sensitivity/FOV 即時生效（T5 全鏈 spec + OQ-T5.d）✅
+
+**未決 / 延後（非 WP-1 blocker）：**
+- sensitivity/FOV 數值校準 → pilot（OQ-1.1）；數值範圍 0.1–5 / 60–120 為佔位。
+- 房間/距離佔位常數 → WP-6 drill config（OQ-1.2，technical debt）。
+- dispose/退訂、localStorage 持久化 → 後續 WP（見下一則 review FYI）。
+
+**交棒：**
+- **WP-2（M1 脊椎）**：用 1.4 視角（CameraController）做 render 內插驗證；**繼承 determinism gate**（sim 脊椎首次需斷言 tick→state 一致，WP-1 未測此門）。
+- **WP-4（場景/目標）**：沿用 SceneManager 房間 + 具名四牆佈目標。
+
+**Next**：WP-1 完成。依相依圖執行 **WP-2**（雙迴圈骨架，M1 門控；未過不展開 WP-3 之後）。
 
 ### 2026-06-30 — Code review of T6 exit gate（pre-execution）— 發現與 gate 強化
 

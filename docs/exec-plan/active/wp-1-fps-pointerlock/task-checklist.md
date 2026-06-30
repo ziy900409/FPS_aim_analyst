@@ -10,7 +10,7 @@
 | ✅ | **T3** 原始輸入 + NotSupportedError fallback | [T3-raw-input-fallback.md](T3-raw-input-fallback.md) | T2 | Med |
 | ✅ | **T4** yaw/pitch 視角 + 夾角 | [T4-yaw-pitch.md](T4-yaw-pitch.md) | T3 | Low |
 | ✅ | **T5** sensitivity/FOV 設定面板 | [T5-settings-panel.md](T5-settings-panel.md) | T4 | Low |
-| ⬜ | **T6 / T-exit** Exit gate | [T6-exit-gate.md](T6-exit-gate.md) | T1–T5 | Low |
+| ✅ | **T6 / T-exit** Exit gate | [T6-exit-gate.md](T6-exit-gate.md) | T1–T5 | Low |
 
 ## Execution rules
 - 一個 task = 一個切片 = 一個原子 commit；先驗證再 commit。
