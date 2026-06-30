@@ -7,7 +7,7 @@
 | **Depends on** | T1 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | NEW `src/render/createRenderer.ts`；MODIFY `src/main.ts`（改用 `createRenderer`） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE |
 
 ## Objective
 
@@ -45,17 +45,17 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
 
 ## Steps
 
-- [ ] 建 `src/render/createRenderer.ts`（上方骨架 + `pickBackend` 純函式）。
-- [ ] `main.ts` 改 `const { renderer, backend } = await createRenderer(canvas);`，render 一幀。
-- [ ] 寫 `src/render/createRenderer.test.ts`（Vitest）：`pickBackend(undefined)==='webgl2'`、`pickBackend({})==='webgpu'`。
-- [ ] `npm run dev` console 確認印出 `[render backend] webgpu`（或 webgl2，依機器）。
-- [ ] `npx vitest run` 綠燈；`npx tsc --noEmit` 乾淨。
+- [x] 建 `src/render/createRenderer.ts`（上方骨架 + `pickBackend` 純函式）。
+- [x] `main.ts` 改 `const { renderer, backend } = await createRenderer(canvas);`，render 一幀。
+- [x] 寫 `src/render/createRenderer.test.ts`（Vitest）：`pickBackend(undefined)==='webgl2'`、`pickBackend({})==='webgpu'`。
+- [x] `npm run dev` console 確認印出 `[render backend] webgpu`（或 webgl2，依機器）。
+- [x] `npx vitest run` 綠燈；`npx tsc --noEmit` 乾淨。
 
 ## Definition of Done
 
-- [ ] console 印出實際 backend；`createRenderer` 回傳的 `backend` 可被外部讀取（seam 就緒）。
-- [ ] `pickBackend` Vitest 兩案通過（webgpu / webgl2 fallback）。
-- [ ] 受測機器的實際 backend 記入 progress.md。
+- [x] console 印出實際 backend；`createRenderer` 回傳的 `backend` 可被外部讀取（seam 就緒）。
+- [x] `pickBackend` Vitest 兩案通過（webgpu / webgl2 fallback）。
+- [x] 受測機器的實際 backend 記入 progress.md。
 
 ## Commit
 

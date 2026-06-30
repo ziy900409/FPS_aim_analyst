@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟢 T2 cross-origin isolation 通過，待開 T3
+## Status: 🟢 T3 WebGPU backend seam 通過，待開 T4
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 通過（2026-06-30）|
 | T1 Scaffold | ✅ 通過（2026-06-30）|
 | T2 Cross-origin isolation | ✅ 通過（2026-06-30）|
-| T3 WebGPU backend 偵測 | ⬜ 待執行 |
+| T3 WebGPU backend 偵測 | ✅ 通過（2026-06-30）|
 | T4 Deploy headers | ⬜ 待執行 |
 | T5 Reference notes | ⬜ 待執行 |
 | T6 Exit gate | ⬜ 待執行 |
@@ -31,6 +31,36 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T3 WebGPU backend 偵測 + WebGL2 fallback seam ✅ PASS
+
+**交付檔案：** `src/render/createRenderer.ts`（NEW：`createRenderer(canvas)` async init、`RenderBackend` / `RendererBootstrap` seam、`pickBackend(gpu)`）、`src/render/createRenderer.test.ts`（NEW：`pickBackend` webgpu/webgl2 兩案）、`src/main.ts`（MODIFY：改由 `createRenderer(canvas)` 建 renderer，保留一幀空場景 render）。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 / 方法 | 結果 |
+|------|------|------|
+| 影響分析 | GitNexus `impact main` / `impact src/main.ts` | target not found；`impactedCount: 0`、processes: 0、risk `UNKNOWN`（無 HIGH/CRITICAL）|
+| 型別檢查 | `npx.cmd tsc --noEmit`（PowerShell `npx.ps1` 被 execution policy 擋下，等價於 `npx tsc --noEmit`） | exit 0 ✅ |
+| 產線建置 | `npx.cmd vite build` | ✓ built in 1.69s（chunk>500KB warning＝three 體積，資訊性）✅ |
+| fallback 純函式 | `npx.cmd vitest run src/render/createRenderer.test.ts` | 1 file / 2 tests passed：`undefined → webgl2`、`{} → webgpu` ✅ |
+| Edge 真實 backend | Playwright `chromium.launch({ channel: 'msedge', args: ['--enable-unsafe-webgpu'] })` 載入 Vite dev server | `ACTUAL_BACKEND=webgpu; HAS_GPU=true; CONSOLE=[render backend] webgpu` ✅ |
+| Edge fallback 路徑 | Playwright init script 覆寫 `Navigator.prototype.gpu` 為 `undefined` 後載入同頁 | `FALLBACK_BACKEND=webgl2; HAS_GPU=false; CONSOLE=[render backend] webgl2` ✅ |
+
+**Decision Log：**
+- **D-T3.1：`createRenderer` 回傳 `{ renderer, backend }` 作為唯一 metadata seam。** WP-7 後續從 bootstrap 結果取 backend，不重新偵測，避免雙來源漂移。
+- **D-T3.2：backend 判定維持附錄 A 的 `navigator.gpu` 存在性。** Three.js 0.185.0 本次未採用額外公開 backend 旗標；實測以 Edge console 與 `pickBackend` seam 交叉驗證。
+- **D-T3.3：不在本切片調整 Vitest/Vite 測試設定。** `npx vitest run` 預設會誤收既有 Playwright e2e spec；T3 只以目標檔驗證新增 Vitest 兩案，設定收斂留待後續測試基礎建設切片。
+
+**Surprises & Discoveries：**
+- PowerShell 直接執行 `npx` 會命中 `npx.ps1` execution policy；本機驗證改用 `npx.cmd`，語意等價且已通過。
+- `npx.cmd vitest run` 會收進 `tests/e2e/isolation.spec.ts`，Playwright 的 `test()` 在 Vitest runner 下報錯；這是 runner 邊界問題，不是 `pickBackend` 測試失敗。T3 目標檔 `src/render/createRenderer.test.ts` 已 2/2 passed。
+- Headless Edge + `--enable-unsafe-webgpu` 實測實際 backend 為 **webgpu**；在同一瀏覽器用 init script 讓 `navigator.gpu` 不存在時，程式可讀 seam 轉為 **webgl2**。
+
+**Open Questions（待使用者確認）：**
+- **OQ-T3.a：是否要在後續測試基礎建設切片加 Vitest include/exclude。** 現況 `npx vitest run` 會收 Playwright e2e spec；可在後續新增 Vitest config，只收 `src/**/*.test.ts`，避免兩種 runner 互踩。T3 為守切片範圍暫不改設定。
+
+**Next**：T3 完成。停在此處，不自動續 T4；下一個可執行切片為 **T4**（[T4-deploy-headers.md](T4-deploy-headers.md)）。
 
 ### 2026-06-30 — T2 Cross-origin isolation ✅ PASS
 
