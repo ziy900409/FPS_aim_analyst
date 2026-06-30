@@ -32,6 +32,34 @@
 
 ## Log
 
+### 2026-06-30 — T3 修正：backend 雙重判定（FR-0.3 缺口補正）✅ PASS
+
+**背景：** 驗收 T3（commit `338fd37`）時發現 backend 偵測只用 `navigator.gpu` 存在性（`pickBackend(navigator.gpu)`），**未讀 renderer 實際 backend**，違反 FR-0.3「偵測**實際** backend」與風險表「`navigator.gpu` 存在性 + renderer 實際 backend **雙重判定**」。`WebGPURenderer` 在 gpu 可用但 adapter/device 取得失敗時會內部 fallback 成 WebGL2 → 原實作會誤報 `'webgpu'`，污染 WP-7 metadata（風險表評 High impact）。使用者裁示：先補雙重判定再進 T4。
+
+**交付檔案：**
+- `src/render/createRenderer.ts`（MODIFY）：`pickBackend()` → `resolveBackend(gpuAvailable, rendererBackend)`。權威來源 = `renderer.backend.isWebGPUBackend === true`（three 自身即用此判定，見 `three.webgpu.js:9030`）；`navigator.gpu` 僅交叉檢查，可用卻 fallback → `console.warn`。`createRenderer` init 後讀 `renderer.backend`（typed cast，因 `backend` 不在公開 .d.ts）。
+- `src/render/createRenderer.test.ts`（MODIFY）：改測 `resolveBackend`，新增**風險情境**「gpu 存在但 renderer fallback → webgl2 並 warn」（原測試達不到的分歧）+ 防禦性 backend 缺失。
+- `tests/e2e/backend.spec.ts`（NEW）：真實瀏覽器攔截 `[render backend]` console，斷言實際 backend 讀取路徑端到端通且值合法（受測機 = `webgpu`）。對齊 T2 把驗證固化成可回歸 spec 的做法（原 T3 僅 ad-hoc 檢查）。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 | 結果 |
+|------|------|------|
+| 型別檢查 | `npx tsc --noEmit` | exit 0 ✅ |
+| 單元（含分歧情境） | `npx vitest run src/render/createRenderer.test.ts` | **4 passed**（webgpu / 正常 fallback 無 warn / gpu 存在但 fallback→warn / backend 缺失）✅ |
+| 產線建置 | `npx vite build` | ✓ built ✅ |
+| E2E（真實瀏覽器，無回歸） | `npx playwright test`（Edge/msedge） | **3 passed**：isolation dev+preview + backend（實際 = `webgpu`）✅ |
+
+**Decision Log：**
+- **D-T3.2：renderer 實際 backend 為權威來源，`navigator.gpu` 降為交叉檢查。** 「雙重判定」語意上以「真的在跑什麼」為準；`navigator.gpu` 可用性只用來偵測「可用卻 fallback」的 init 失敗並 warn，不參與最終值。
+  - *Alternatives considered*：(a) 兩者 AND（都為真才 webgpu）——等價但語意較弱，且 backend 缺失時行為不直觀；(b) 以實際 backend 為準 + 分歧 warn。選 (b)。
+- **D-T3.3：分歧情境靠單元測試涵蓋，e2e 只證讀取路徑。** 「gpu 存在但 renderer fallback」無法在真實瀏覽器穩定重現，故由 `resolveBackend` 單元測試（mock backend）涵蓋；e2e 負責證明 `renderer.backend.isWebGPUBackend` 是正確 API 路徑、端到端不丟例外。
+
+**Surprises & Discoveries：**
+- three 公開 .d.ts 未型別化 `Renderer.backend`，但執行期確實存在（`Renderer` 建構式 `this.backend = backend`）。以 `as unknown as { backend?: ... }` cast 取用，與既有 `navigator.gpu` cast 同模式。
+
+**Next**：T3 缺口補正完成，FR-0.3 雙重判定到位。續 **T4**（[T4-deploy-headers.md](T4-deploy-headers.md)）— `public/_headers` + nginx 文件 + preview 帶標頭；依賴的 preview isolation 已於 T2 綠燈。
+
 ### 2026-06-30 — T3 WebGPU backend 偵測 + WebGL2 fallback seam ✅ PASS
 
 **交付檔案：** `src/render/createRenderer.ts`（NEW：`createRenderer(canvas)` async init、`RenderBackend` / `RendererBootstrap` seam、`pickBackend(gpu)`）、`src/render/createRenderer.test.ts`（NEW：`pickBackend` webgpu/webgl2 兩案）、`src/main.ts`（MODIFY：改由 `createRenderer(canvas)` 建 renderer，保留一幀空場景 render）。
