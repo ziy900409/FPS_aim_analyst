@@ -6,8 +6,8 @@
 |---|---|
 | **Depends on** | T0 |
 | **Risk / Complexity** | Low / Med |
-| **Touches** | NEW `src/state/SharedState.ts`、`src/state/types.ts` |
-| **Status** | ⬜ TODO |
+| **Touches** | NEW `src/state/SharedState.ts`、`src/state/types.ts`、`src/state/SharedState.test.ts` |
+| **Status** | ✅ DONE（2026-06-30）— tsc 0 + vitest 8 passed |
 
 ## Objective
 定義 `SharedState`——三迴圈（input / sim / render）唯一溝通管道——的型別與單例：輸入緩衝、player velocity/位置、prev-curr 內插快照、準心、目標狀態、`t_visible`（FR-2.1）。
@@ -27,14 +27,14 @@
 - prev/curr 兩份快照供 T3 內插。
 
 ## Steps
-- [ ] 建 `src/state/types.ts`：`InputEvent` union（`{type:'key',code,down,t}` / `{type:'mouse',dx,dy,t}` / `{type:'fire',t}`）、`PlayerSnapshot`、`TargetState`。
-- [ ] 建 `src/state/SharedState.ts`：介面 + 單例 + `resetState()`。
-- [ ] `npx tsc --noEmit` 乾淨；寫一個最小 Vitest 確認單例 + reset。
-- [ ] `npx vitest run` 綠燈。
+- [x] 建 `src/state/types.ts`：`InputEvent` union（`{type:'key',code,down,t}` / `{type:'mouse',dx,dy,t}` / `{type:'fire',t}`）、`PlayerSnapshot`、`TargetState`。
+- [x] 建 `src/state/SharedState.ts`：介面 + 單例（+ `createSharedState()` 工廠供 T4）+ `resetState()`。
+- [x] `npx tsc --noEmit` 乾淨；寫一個最小 Vitest 確認單例 + reset。
+- [x] `npx vitest run` 綠燈。
 
 ## Definition of Done
-- [ ] `SharedState` 型別完整、單例可取、`resetState()` 清空緩衝與快照。
-- [ ] `tsc` + vitest 綠燈。
+- [x] `SharedState` 型別完整、單例可取、`resetState()` 清空緩衝與快照（原地重用、守 GC 紀律）。
+- [x] `tsc` + vitest 綠燈（tsc exit 0；`vitest run src` 8 passed）。
 
 ## Commit
 `feat(wp-2): SharedState 型別 + 單例（三迴圈溝通管道）（FR-2.1）`

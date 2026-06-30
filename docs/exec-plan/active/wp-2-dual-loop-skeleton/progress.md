@@ -4,12 +4,12 @@
 
 ---
 
-## Status: 🟡 執行中 — T0 entry gate ✅（2026-06-30），決定性測試設計已鎖定；下一步 T1 — **M1 門控**
+## Status: 🟡 執行中 — T1 SharedState ✅（2026-06-30），三迴圈溝通管道結構就位；下一步 T2 — **M1 門控**
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 通過（2026-06-30）|
-| T1 SharedState | ⬜ 待執行 |
+| T1 SharedState | ✅ 通過（2026-06-30）|
 | T2 SimLoop accumulator | ⬜ 待執行 |
 | T3 Render 內插 | ⬜ 待執行 |
 | T4 決定性驗證（M1 gate） | ⬜ 待執行 |
@@ -29,6 +29,26 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T1 / SharedState ✅ PASS — 三迴圈溝通管道型別 + 單例（FR-2.1）
+
+**交付：** `NEW src/state/types.ts`、`src/state/SharedState.ts`、`src/state/SharedState.test.ts`。
+
+| 項目 | 內容 |
+|------|------|
+| `types.ts` | `InputEvent` discriminated union（`key{code,down,t}` / `mouse{dx,dy,t}` / `fire{t}`）、`PlayerSnapshot{x,z}`、`TargetState{id,x,y,z,active}`。 |
+| `SharedState.ts` | `interface SharedState`（input / player{vx,vz,x,z} / prev,curr / crosshair{cx,cy} / targets / tVisible）+ `createSharedState()` 工廠 + `sharedState` 單例 + `resetState(state=單例)` 原地重置。 |
+| 驗證 | `npx tsc --noEmit` → **exit 0**；`npx vitest run src` → **8 passed**（4 新 + 4 既有 createRenderer，無回歸）。 |
+
+**Decision Log（本切片非平凡選擇）：**
+- **工廠 + 單例並存**：app 用 `sharedState` 單例；另出 `createSharedState()` 取獨立實例。*理由*：T0 鎖定的決定性測試（T4）需在不同 FPS 下跑**獨立** state 比對，README 的 `createSimLoop(state, …)` 也是 DI 風格——非過度抽象，而是 T4 已明確需要的第二 use case。
+- **`resetState` 原地清空、重用既有物件/陣列**（`input.length=0`、`tVisible.clear()`、欄位逐一歸零，不 reassign 新物件）。*理由*：守 CLAUDE.md §4 GC 紀律（避免 realloc 抖動）；測試斷言 `prev/player/input/targets/tVisible` 參考不變以鎖住此性質。*Alternatives*：每次 `resetState` 回傳新物件 → 會在重開 drill 時配置垃圾，與「無 GC 卡頓」NFR 相悖，否決。
+- **`resetState` 預設參數 = 單例**：滿足 spec 的 `resetState()` 寫法，同時允許測試傳入自有實例。
+- **單位/時鐘對齊 CONTEXT**：position/velocity 註記為 **u / u·s⁻¹**（canonical unit，非公尺）；`InputEvent.t` 註記為 `event.timeStamp`（量測時鐘域，ADR-7 two-clock）。
+
+**Scope 邊界（未碰，留後續 WP）：** `input` 仍為 plain array 佔位（WP-3 換真 ring buffer）；`targets`/`tVisible` 先空（WP-4 寫入）；`crosshair{cx,cy}` 語意待 WP-3/WP-5 定。
+
+**Next**：T2 — `clock.ts` + 128 Hz accumulator + `simStep` 純函式邊界（FR-2.2，[T2-sim-loop.md](T2-sim-loop.md)）。
 
 ### 2026-06-30 — T0 / Entry gate ✅ PASS — 上游綠燈確認 + 決定性測試設計鎖定
 

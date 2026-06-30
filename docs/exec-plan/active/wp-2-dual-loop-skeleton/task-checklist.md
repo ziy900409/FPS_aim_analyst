@@ -6,7 +6,7 @@
 | Done | Task | File | Depends on | Risk |
 |------|------|------|------------|------|
 | ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-0, WP-1 | Low |
-| ⬜ | **T1** SharedState（型別 + 單例） | [T1-shared-state.md](T1-shared-state.md) | T0 | Low |
+| ✅ | **T1** SharedState（型別 + 單例） | [T1-shared-state.md](T1-shared-state.md) | T0 | Low |
 | ⬜ | **T2** SimLoop accumulator 128 Hz | [T2-sim-loop.md](T2-sim-loop.md) | T1 | Med |
 | ⬜ | **T3** Render alpha 內插 | [T3-render-interpolation.md](T3-render-interpolation.md) | T2 | Med |
 | ⬜ | **T4** 決定性驗證 ★M1 gate | [T4-determinism.md](T4-determinism.md) | T2 | High |
