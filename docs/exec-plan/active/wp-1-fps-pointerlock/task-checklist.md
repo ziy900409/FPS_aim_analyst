@@ -4,7 +4,7 @@
 
 | Done | Task | File | Depends on | Risk |
 |------|------|------|------------|------|
-| ⬜ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-0 | Low |
+| ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-0 | Low |
 | ⬜ | **T1** SceneManager（room/camera） | [T1-scene.md](T1-scene.md) | T0 | Low |
 | ⬜ | **T2** Pointer Lock 整合 | [T2-pointerlock.md](T2-pointerlock.md) | T1 | Med |
 | ⬜ | **T3** 原始輸入 + NotSupportedError fallback | [T3-raw-input-fallback.md](T3-raw-input-fallback.md) | T2 | Med |

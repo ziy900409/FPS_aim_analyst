@@ -50,11 +50,13 @@
 
 ### Open Questions
 
-| ID | Question | 建議解法 | Blocks |
+> 全部於 **T0 鎖定（2026-06-30）**；ledger 見 [progress.md](progress.md)。
+
+| ID | Question | 鎖定解法（T0 ✅） | Blocks |
 |----|----------|---------|--------|
-| **OQ-1.1** | sensitivity 單位／換算？ | 採 counts→radians 線性係數（`yaw += dx × sensitivity × k`），`k` 固定常數，sensitivity 使用者可調；數值校準延到 pilot。 | T4, T5 |
-| **OQ-1.2** | 房間尺寸 / peek 距離？ | 暫用佔位常數（如 10×10×3 m，目標距離 ~8 m）；正式值由 WP-6 drill config 決定。 | T1 |
-| **OQ-1.3** | 設定面板何時可見？ | 鎖定中隱藏、解除（Esc）時顯示；避免遊玩中誤觸。 | T5 |
+| **OQ-1.1** | sensitivity 單位／換算？ | ✅ 採 counts→radians 線性係數（`yaw += dx × sensitivity × k`），`k` 固定常數，sensitivity 使用者可調；數值校準延到 pilot。 | T4, T5 |
+| **OQ-1.2** | 房間尺寸 / peek 距離？ | ✅ 佔位常數 10×10×3 m、目標距離 ~8 m；正式值由 WP-6 drill config 取代（technical debt）。 | T1 |
+| **OQ-1.3** | 設定面板何時可見？ | ✅ 鎖定中隱藏、解除（Esc/失焦）時顯示；避免遊玩中誤觸。 | T5 |
 
 ---
 
