@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟢 T3 WebGPU backend seam 通過，待開 T4
+## Status: 🟢 T4 Deploy headers 通過，deploy 待 D3
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T1 Scaffold | ✅ 通過（2026-06-30）|
 | T2 Cross-origin isolation | ✅ 通過（2026-06-30）|
 | T3 WebGPU backend 偵測 | ✅ 通過（2026-06-30）|
-| T4 Deploy headers | ⬜ 待執行 |
+| T4 Deploy headers | ✅ 通過（2026-06-30；實際 deploy 待 D3）|
 | T5 Reference notes | ⬜ 待執行 |
 | T6 Exit gate | ⬜ 待執行 |
 
@@ -31,6 +31,38 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T4 Deploy headers（host-agnostic, FR-0.4）✅ PASS
+
+**前置確認：** T4 depends on T2；T2 已於 2026-06-30 綠燈，證據含 `npx playwright test isolation` 的 dev + preview 斷言，且 preview server 已由 `vite.config.ts` 的 `coopCoep()` plugin 帶 `COOP: same-origin` / `COEP: require-corp`，`crossOriginIsolated === true`。
+
+**交付檔案：**
+- `public/_headers`（NEW）：Netlify / Cloudflare Pages 相容語法，對 `/*` 設 `Cross-Origin-Opener-Policy: same-origin` 與 `Cross-Origin-Embedder-Policy: require-corp`。
+- `docs/operational/deploy-headers.md`（NEW）：Netlify、Cloudflare Pages、nginx、Express 設標頭方式；COEP `require-corp` 跨源資源限制；D3 選定 host 後的線上驗證步驟。
+- `vite.config.ts`（READ-ONLY 參照）：確認 preview COOP/COEP 已由 T2 完成，T4 未重複實作。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 | 結果 |
+|------|------|------|
+| 產線建置 + public 複製 | `npm.cmd run build`（sandbox 內因 Vite config 載入被 Access denied 擋下，改以同指令 escalated 重跑） | exit 0；`vite v6.4.3` built；僅既有 chunk > 500 kB warning（three 體積）✅ |
+| `dist/_headers` 存在且內容正確 | `Get-Content -LiteralPath 'dist/_headers'` | 內容為 `/*` + `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp` ✅ |
+| build 複製內容相符 | `Compare-Object -ReferenceObject (Get-Content public/_headers) -DifferenceObject (Get-Content dist/_headers)` | 無輸出，表示完全相符 ✅ |
+| preview/dev isolation 無回歸 | `npx.cmd playwright test isolation`（sandbox 內 Vite config 載入被 Access denied 擋下，改以同指令 escalated 重跑） | **2 passed**：preview server emits COOP/COEP and is cross-origin isolated；dev server emits COOP/COEP and is cross-origin isolated ✅ |
+
+**Decision Log：**
+- **D-T4.1：`public/_headers` 作為 host-agnostic 預設交付。** Netlify 與 Cloudflare Pages 均從 build output 讀 `_headers`；Vite 已證明會把 `public/_headers` 原樣複製到 `dist/_headers`。
+- **D-T4.2：preview 標頭只驗證不重作。** T2 已在 `vite.config.ts` 的 `coopCoep()` 同時覆蓋 dev / preview，T4 僅用既有 `tests/e2e/isolation.spec.ts` 證無回歸。
+- **D-T4.3：實際 deploy 維持條件性。** OQ-0.3 / D3 尚未選主機，因此不部署、不填 URL；文件先提供 host 套用方式與上線後驗證步驟。
+
+**Surprises & Discoveries：**
+- PowerShell `npm` shim 仍受 execution policy 阻擋；驗證使用 `npm.cmd` / `npx.cmd`。
+- sandbox 內 Vite 讀取 `vite.config.ts` 時碰到上層目錄 `Access is denied`；同指令 escalated 後通過。這是執行環境限制，不是 T4 變更造成。
+
+**Open Questions：**
+- **OQ-0.3 靜態主機仍後定（D3）。** T4 已交付 `_headers` 與 host 操作文件；線上 URL 驗證待 D3 選定 host 後補。
+
+**Next**：T4 完成。停在此處，不自動續 T5/T6。
 
 ### 2026-06-30 — T3 修正：backend 雙重判定（FR-0.3 缺口補正）✅ PASS
 

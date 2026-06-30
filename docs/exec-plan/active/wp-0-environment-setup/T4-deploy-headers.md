@@ -7,7 +7,7 @@
 | **Depends on** | T2 |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | NEW `public/_headers`；NEW `docs/operational/deploy-headers.md`；MODIFY `package.json`（build/preview script 確認） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ PASS（deploy 待 D3） |
 
 ## Objective
 
@@ -39,15 +39,15 @@
 
 ## Steps
 
-- [ ] 建 `public/_headers`（上方語法）。
-- [ ] `npm run build`，確認 `dist/_headers` 存在且內容正確。
-- [ ] 寫 `docs/operational/deploy-headers.md`：四種 host 設標頭方式 + COEP 跨源限制註記 + 上線後驗證步驟（開 console 跑 `crossOriginIsolated`）。
+- [x] 建 `public/_headers`（上方語法）。
+- [x] `npm run build`，確認 `dist/_headers` 存在且內容正確。
+- [x] 寫 `docs/operational/deploy-headers.md`：四種 host 設標頭方式 + COEP 跨源限制註記 + 上線後驗證步驟（開 console 跑 `crossOriginIsolated`）。
 - [ ] （條件性，D3 拍板後）deploy 到選定 host，線上頁面 console 驗證 `crossOriginIsolated === true`，URL 記入 progress.md。
 
 ## Definition of Done
 
-- [ ] `public/_headers` committed 且 `vite build` 複製到 `dist/`。
-- [ ] `docs/operational/deploy-headers.md` 涵蓋 ≥ 3 種 host + COEP 限制說明。
+- [x] `public/_headers` committed 且 `vite build` 複製到 `dist/`。
+- [x] `docs/operational/deploy-headers.md` 涵蓋 ≥ 3 種 host + COEP 限制說明。
 - [ ] （若已 deploy）線上 URL `crossOriginIsolated === true`；否則 progress.md 標記「deploy 待 D3」。
 
 ## Commit
