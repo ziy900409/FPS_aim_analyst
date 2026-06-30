@@ -5,7 +5,7 @@
 
 | Done | Task | File | Depends on | Risk |
 |------|------|------|------------|------|
-| ⬜ | **T0** Entry gate（驗證 only，no code） | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
+| ✅ | **T0** Entry gate（驗證 only，no code） | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ⬜ | **T1** Scaffold（Vite+TS+three/webgpu 空場景） | [T1-scaffold.md](T1-scaffold.md) | T0 | Low |
 | ⬜ | **T2** Cross-origin isolation（COOP/COEP + 斷言） | [T2-coop-coep-isolation.md](T2-coop-coep-isolation.md) | T1 | Med |
 | ⬜ | **T3** WebGPU backend 偵測 + fallback + seam | [T3-webgpu-backend-detection.md](T3-webgpu-backend-detection.md) | T1 | Med |

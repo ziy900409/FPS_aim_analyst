@@ -8,7 +8,7 @@
 | **Depends on** | 無（專案起點） |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | 只有 docs：`progress.md`、`README.md`（OQ 狀態） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30）|
 
 ## Objective
 
@@ -24,14 +24,14 @@
 
 ## Steps
 
-- [ ] 確認 Node ≥ 20 LTS：`node -v`、`npm -v` 記進 progress.md。
-- [ ] 確認 repo 乾淨且無既有前端骨架：`git status` 乾淨、根目錄無 `package.json` / `src/`。
-- [ ] 確認 `three` ≥ r171 可取得：`npm view three version`（記下將鎖定的版本）。
-- [ ] **瀏覽器 WebGPU 探測**（手動，記錄結果）：Chrome/Edge devtools console 跑 `!!navigator.gpu` → 記 `true`/`false`（false 則 WP 走 WebGL2 fallback，需在 progress.md 註記受測後端）。
-- [ ] **OQ-0.1** 鎖定：npm + Node 版本 → progress.md。
-- [ ] **OQ-0.2** 鎖定：`three` 目標版本（≥ r171）→ progress.md。
-- [ ] **OQ-0.4** 鎖定：`tsconfig` `strict: true` + 最小 ESLint → progress.md。
-- [ ] 把 OQ-0.1/0.2/0.4 在 [README.md](README.md) §1 Open Questions 與 progress.md ledger 翻為 ✅；加一筆 dated log。
+- [x] 確認 Node ≥ 20 LTS：`node -v` = v25.6.1、`npm -v` = 11.9.0 → progress.md。
+- [x] 確認 repo 乾淨且無既有前端骨架：根目錄無 `package.json` / `src/`；`git status` 僅 `M CLAUDE.md` + `?? AGENTS.md`（與本 WP 無關）。
+- [x] 確認 `three` ≥ r171 可取得：`npm view three version` = 0.185.0（≥ 0.171 = r171）。
+- [x] **瀏覽器 WebGPU 探測**：Edge（headless=new）探測 `!!navigator.gpu` → `true` → 受測後端 = **webgpu**。
+- [x] **OQ-0.1** 鎖定：npm + Node ≥ 20 LTS → progress.md。
+- [x] **OQ-0.2** 鎖定：`three` 0.185.0（≥ r171）→ progress.md。
+- [x] **OQ-0.4** 鎖定：`tsconfig` `strict: true` + 最小 ESLint → progress.md。
+- [x] 把 OQ-0.1/0.2/0.4 在 [README.md](README.md) §1 Open Questions 與 progress.md ledger 翻為 ✅；加一筆 dated log。
 
 ## Definition of Done
 

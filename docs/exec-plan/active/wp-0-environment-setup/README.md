@@ -53,12 +53,12 @@
 
 ### Open Questions
 
-| ID | Question | 建議解法 | Blocks |
-|----|----------|---------|--------|
-| **OQ-0.1** | 套件管理器與 Node 版本？ | **npm + Node ≥ 20 LTS**（PLAN 寫 `npm create vite`；lockfile = `package-lock.json`）。entry-gate 驗證在場。 | T1 |
-| **OQ-0.2** | `three` 版本？ | **最新 stable（≥ r171）**——r171 起內建 WebGPU + 自動 WebGL2 fallback（ADR-1）。鎖進 lockfile。 | T1, T3 |
-| **OQ-0.3** | 靜態主機選哪家？（D3 後定） | **暫不選**；T4 產出通用 `_headers`（Netlify/CF Pages 語法相容）+ nginx 片段；實際 deploy 待 D3 拍板。 | T4 |
-| **OQ-0.4** | TS 嚴格度 / lint？ | **`strict: true` + 最小 ESLint**；本 WP 只立骨架，完整 lint 規則隨程式成長補。 | T1 |
+| ID | Question | 建議解法 | Blocks | Status (T0) |
+|----|----------|---------|--------|-------------|
+| **OQ-0.1** | 套件管理器與 Node 版本？ | **npm + Node ≥ 20 LTS**（PLAN 寫 `npm create vite`；lockfile = `package-lock.json`）。entry-gate 驗證在場。 | T1 | ✅ Node v25.6.1 / npm 11.9.0 |
+| **OQ-0.2** | `three` 版本？ | **最新 stable（≥ r171）**——r171 起內建 WebGPU + 自動 WebGL2 fallback（ADR-1）。鎖進 lockfile。 | T1, T3 | ✅ three 0.185.0（≥ 0.171 = r171） |
+| **OQ-0.3** | 靜態主機選哪家？（D3 後定） | **暫不選**；T4 產出通用 `_headers`（Netlify/CF Pages 語法相容）+ nginx 片段；實際 deploy 待 D3 拍板。 | T4 | ⬜ 後定（D3） |
+| **OQ-0.4** | TS 嚴格度 / lint？ | **`strict: true` + 最小 ESLint**；本 WP 只立骨架，完整 lint 規則隨程式成長補。 | T1 | ✅ `strict: true` + 最小 ESLint |
 
 ---
 
