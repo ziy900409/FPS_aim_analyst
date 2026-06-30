@@ -189,10 +189,11 @@ master checklist：[task-checklist.md](task-checklist.md)。
 
 ### Acceptance criteria（規格附錄 E 相關項）→ task map
 
-- [ ] `crossOriginIsolated === true`，`performance.now()` 達 5 µs 解析度 → **T2**
-- [ ] 渲染後端（WebGPU/WebGL2）正確偵測（為 WP-7 寫入 metadata 預備 seam）→ **T3**
-- [ ] 空場景可跑、dev server 無 error、版本鎖定 → **T1**
-- [ ] 線上主機標頭設定就緒（host-agnostic）→ **T4**
+> 全項於 T6 exit gate 最終綠燈（證據見 [progress.md](progress.md) 2026-06-30 T6 entry）。
+- [x] `crossOriginIsolated === true`，`performance.now()` 達 5 µs 解析度 → **T2**（Playwright dev+preview 3 passed + 實測 `timerResolutionUs ≈ 5.0 µs`）
+- [x] 渲染後端（WebGPU/WebGL2）正確偵測（為 WP-7 寫入 metadata 預備 seam）→ **T3**（`backend.spec.ts` e2e=webgpu + `resolveBackend` 4 tests + `{renderer,backend}` seam）
+- [x] 空場景可跑、dev server 無 error、版本鎖定 → **T1**（`tsc` exit 0 + `vite build` ✓ + lockfile 鎖 `three@0.185.0`）
+- [x] 線上主機標頭設定就緒（host-agnostic）→ **T4**（`public/_headers` == `dist/_headers` + `deploy-headers.md`；實際 deploy 視 D3）
 
 ---
 

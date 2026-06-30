@@ -5,17 +5,17 @@
 
 ---
 
-## Status: 🟢 T5 Reference notes 通過，T6 待執行
+## Status: ✅ WP-0 完成（2026-06-30）— 地基三件全綠，交棒 WP-1
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 通過（2026-06-30）|
 | T1 Scaffold | ✅ 通過（2026-06-30）|
 | T2 Cross-origin isolation | ✅ 通過（2026-06-30）|
-| T3 WebGPU backend 偵測 | ✅ 通過（2026-06-30）|
+| T3 WebGPU backend 偵測 | ✅ 通過（2026-06-30；雙重判定補正）|
 | T4 Deploy headers | ✅ 通過（2026-06-30；實際 deploy 待 D3）|
 | T5 Reference notes | ✅ 通過（2026-06-30）|
-| T6 Exit gate | ⬜ 待執行 |
+| T6 Exit gate | ✅ 通過（2026-06-30）— 最終驗收全綠 + 收口 + 交棒 |
 
 ---
 
@@ -31,6 +31,81 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T6 Exit gate（最終驗收 + 收口 + 交棒 WP-1）✅ PASS
+
+**職責：** exit gate 以唯讀方式重驗 T1–T5 產出、map 規格附錄 E 相關項、翻索引狀態、交棒 WP-1。不改 src/ 程式邏輯、不碰 ESLint（OQ-T1.a 延後）。
+
+**最終綠燈（本 session 重跑，逐項證據）：**
+
+| 檢查 | 指令 | 結果 |
+|------|------|------|
+| 型別檢查 | `npx tsc --noEmit` | **exit 0** ✅ |
+| 單元測試 | `npx vitest run src/render/createRenderer.test.ts` | **1 file / 4 tests passed**（webgpu / 正常 fallback 無 warn / gpu 存在但 fallback→warn / backend 缺失）✅ |
+| 產線建置 | `npx vite build` | **✓ built in 1.29s**（`vite v6.4.3`；8 modules；唯一 warning = `index-*.js` 761 kB＝three 體積，資訊性非錯誤）✅ |
+| `_headers` 複製相符 | `diff dist/_headers public/_headers` | **無差異（HEADERS_IDENTICAL）**；內容 = `/*` + `COOP: same-origin` + `COEP: require-corp` ✅ |
+| E2E（真實 Edge） | `npx playwright test` | **3 passed (11.5s)**：dev isolation `crossOriginIsolated===true`、preview isolation `crossOriginIsolated===true`、backend 實際讀取 = **webgpu** ✅ |
+| 清理 | `rm -rf dist test-results` | 已清；`dist/` 在 `.gitignore`（line 5），git tree 無 build 殘留 ✅ |
+
+> 補充：計時解析度實測值沿用 T2 證據——main.ts `console.info('[isolation]', …)` 於 Edge 量得 `timerResolutionUs ≈ 4.999998956918716`（≈ 5.0 µs），符合 ADR-4 isolated 預期；此為 sanity log，硬斷言固定在布林 `crossOriginIsolated`（見 `isolation.spec.ts`）。
+
+**五軸 code review（唯讀，T1–T5 產出）：APPROVE**
+- *Correctness*：`resolveBackend()` 以 `renderer.backend.isWebGPUBackend` 為權威、`navigator.gpu` 為交叉檢查，符合 FR-0.3 雙重判定；divergence 由單元測試涵蓋。`assertIsolation()` 讀 `crossOriginIsolated` 並於 false 時 warn。async bootstrap 正確（top-level await + esnext target）。
+- *Readability*：命名清楚、註解錨定 ADR、無 dead code。
+- *Architecture*：`{ renderer, backend }` seam 乾淨供 WP-7；isolation / render 分離；COOP/COEP plugin 同時覆蓋 dev + preview。
+- *Security*：無使用者輸入 / 無 secrets；COEP `require-corp` 為正確 hardening。
+- *Performance（FYI 非阻塞）*：`measureTimerResolutionUs()` 在每次頁面載入（含 prod）同步跑 50,000 取樣，僅為 `console.info` sanity 值；一次性 ~ms 成本。若日後在意啟動成本可改為 dev-only 或降採樣。記為觀察，不阻 WP-0 收口。
+
+**附錄 E（階段 A 驗收清單）→ WP-0 相關項對照：**
+
+| 附錄 E 項目 | 涵蓋 task | 證據出處 | 狀態 |
+|------|------|------|------|
+| `crossOriginIsolated === true`，`performance.now()` 達 5 µs 解析度 | T2 | 本 entry E2E 3 passed（dev+preview）+ T2 entry 實測 `timerResolutionUs ≈ 5.0 µs` | ✅ |
+| 渲染後端（WebGPU/WebGL2）正確偵測（**寫入 metadata 的 seam 就緒**；實際 write 屬 WP-7） | T3 | 本 entry backend e2e=webgpu + `resolveBackend` 4 tests + `createRenderer` 回 `{renderer,backend}` seam | ✅ |
+| 空場景可跑、dev/preview 無 error、版本鎖定 | T1 | `tsc` exit 0 + `vite build` ✓ + `package-lock.json` 鎖 `three@0.185.0` | ✅ |
+| 線上主機標頭設定就緒（host-agnostic；實際 deploy 視 D3） | T4 | `public/_headers`（=`dist/_headers`）+ `docs/operational/deploy-headers.md` | ✅ |
+
+**FR-0.1~0.5 / OQ 收束：**
+- FR-0.1 ✅（T1 空場景）、FR-0.2 ✅（T2 isolation）、FR-0.3 ✅（T3 雙重判定 seam）、FR-0.4 ✅（T4 host-agnostic headers）、FR-0.5 ✅（T5 學習筆記）。
+- OQ-0.1 ✅（npm + Node v25.6.1）、OQ-0.2 ✅（three 0.185.0）、OQ-0.4 ✅（strict TS + 最小 ESLint）；**OQ-0.3 正確標示「後定（D3）」**——非未完成，是依 D3 設計刻意延後，T4 已交付 host-agnostic 可交付部分。
+
+---
+
+## Outcomes & Retrospective（WP-0 收尾）
+
+**交付了什麼（地基三件 + 學習爬升）：**
+1. **可跑的 `three/webgpu` 空場景**：Vite + TS scaffold，`import * as THREE from 'three/webgpu'`、async `await renderer.init()`、render 一幀無 console error；`package-lock.json` 鎖 `three@0.185.0`（≥ r171）。
+2. **cross-origin isolation 真生效**：`vite.config.ts` 的 `coopCoep()` plugin 同時覆蓋 dev + preview，Playwright 在真實 Edge 斷言 `crossOriginIsolated===true`；`performance.now()` 實測 ≈ 5 µs。
+3. **render backend 雙重判定 + seam**：`createRenderer()` 回 `{ renderer, backend }`，`resolveBackend()` 以 renderer 實際 backend 為權威、`navigator.gpu` 交叉檢查並對「可用卻 fallback」warn；供 WP-7 metadata 消費。
+4. **host-agnostic 部署設定**：`public/_headers`（Netlify/CF Pages）+ `docs/operational/deploy-headers.md`（nginx/Express/線上驗證步驟）。
+5. **WP-1 預備學習筆記**：`docs/architecture/notes-fps-controls.md`（Pointer Lock lifecycle、raw input、yaw/pitch、事件來源、`SharedState` 邊界）。
+
+**與計畫的偏差（誠實記錄）：**
+- **D-T1.1：`vite.config.ts` 提前引入。** 規格把 COOP/COEP plugin 歸在 T2，但 T1 的 top-level await 需 `build.target: 'esnext'`，否則 `vite build` 失敗。故 T1 即建最小 `vite.config.ts`（僅 esnext target），plugin 留 T2。決策正確：保持「隨時可編譯」。
+- **T3 雙重判定缺口補正。** 初版 T3（commit `338fd37`）只用 `navigator.gpu` 存在性判 backend，違反風險表「雙重判定」；`ca102ea` 補正為 `resolveBackend(gpuAvailable, rendererBackend)`，以 renderer 實際 backend 為權威，並新增 divergence 單元測試 + `backend.spec.ts` e2e。**教訓：驗收要回扣風險表逐條，不只看「跑得起來」。**
+- **測試 runner 邊界（OQ-T3.a，延後）。** `npx vitest run`（無目標檔）會誤收 Playwright e2e spec；目前以指定 `src/**/*.test.ts` 規避，Vitest include/exclude config 留待後續測試基礎建設切片。
+- **ESLint 延後（OQ-T1.a / OQ-0.4）。** WP-0 只立骨架，未引入 ESLint；待程式量成長或 WP-2 決定性測試時補。
+
+**學到什麼：**
+- top-level await 在 dev（ESM 原生）可跑但 `vite build` 預設 target 會炸——「dev 綠 ≠ build 綠」，scaffold 階段就要驗 build。
+- isolated 後 `performance.now()` 恰好夾到 5 µs 量化網格，為 ADR-4 計時效度提供直接、可量的證據。
+- preview isolation 是 T4 的真實前置風險，T2 即把 dev + preview 雙 webServer 固化成可回歸 spec，避免「只驗 dev」的盲區。
+- PowerShell `npx`/`npm` 受 execution policy 阻擋，本機驗證用 `npx.cmd`/`npm.cmd` 或 Git Bash `npx`（語意等價）。
+
+**未決 / 帶到後續：**
+- **OQ-0.3 靜態主機（D3 後定）**：T4 已交付設定 + 文件；線上 URL 驗證待 D3 拍板 host 後補（附錄 E 階段 A 仍有「線上可開的 URL」一項，屬條件性步驟）。
+- **OQ-T5.a/b/c（WP-1）**：pitch clamp 值、mouse event source、unlock 後鍵盤 latch 清除政策——皆於 WP-1 拍板。
+
+## 交棒 WP-1（`active/wp-1-fps-pointerlock/`）— 既成事實
+
+WP-1（FPS 控制 + Pointer Lock + 原始輸入）啟動所需的上游事實，WP-0 已全部就緒：
+
+1. **可跑的 `three/webgpu` 管線**：`createRenderer(canvas)` async init 通、空 Scene/Camera render 一幀無 error；WP-1 可直接在此 bootstrap 上接 camera 控制。
+2. **`crossOriginIsolated === true` 已綠**：dev/preview 皆帶 COOP/COEP，`performance.now()` ≈ 5 µs；WP-1/WP-3 的高解析度輸入時間戳前置已滿足（ADR-4），WP-1 不需重設標頭。
+3. **backend seam 可供 WP-7**：`{ renderer, backend }` 已暴露；WP-1 沿用同一 bootstrap，不重新偵測。
+4. **FPS 控制學習筆記（R1~R7 / WP-1 pending）就緒**：`docs/architecture/notes-fps-controls.md` 已整理 Pointer Lock lifecycle、`unadjustedMovement` fallback、yaw/pitch clamp、`movementX/Y` vs `getCoalescedEvents()`、不採用 `PointerLockControls.moveForward/Right()`（D-T5.1）、`SharedState` 邊界（ADR-2）；WP-1 帶 OQ-T5.a/b/c 進入即可。
+
+**M1 門控提醒**：WP-1 可啟動（在關鍵路徑 `WP-0 → WP-1 → WP-2`），但 **M1（WP-2 脊椎 + 決定性驗證）未過前不展開 WP-3 之後**。
 
 ### 2026-06-30 — T5 Reference notes（WP-1 預備學習, FR-0.5）✅ PASS
 

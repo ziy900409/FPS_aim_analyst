@@ -11,7 +11,7 @@
 | ✅ | **T3** WebGPU backend 偵測 + fallback + seam | [T3-webgpu-backend-detection.md](T3-webgpu-backend-detection.md) | T1 | Med |
 | ✅ | **T4** Deploy headers（host-agnostic） | [T4-deploy-headers.md](T4-deploy-headers.md) | T2 | Low |
 | ✅ | **T5** Reference notes（WP-1 預備） | [T5-reference-notes.md](T5-reference-notes.md) | — | Low |
-| ⬜ | **T6 / T-exit** Exit gate | [T6-exit-gate.md](T6-exit-gate.md) | T1–T5 | Low |
+| ✅ | **T6 / T-exit** Exit gate | [T6-exit-gate.md](T6-exit-gate.md) | T1–T5 | Low |
 
 ## Execution rules
 
