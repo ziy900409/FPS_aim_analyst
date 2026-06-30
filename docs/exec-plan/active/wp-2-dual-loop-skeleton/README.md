@@ -110,7 +110,9 @@ export function createSimLoop(state: SharedState, clock: Clock, simHz: number): 
 };
 
 // src/loop/RenderLoop.ts (FR-2.3)
-export function createRenderLoop(state: SharedState, onFrame: (alpha: number) => void): { start(): void; stop(): void };
+// T3 實作：RenderLoop 為純 rAF 排程器（單一職責），pump/內插/繪製編排在 main.ts；onFrame 收 nowMs。
+export function createRenderLoop(onFrame: (nowMs: number) => void): { start(): void; stop(): void };
+export function lerp(a: number, b: number, alpha: number): number; // 內插：render 在 prev→curr 間取中間值
 ```
 
 ### accumulator（§4.3 對齊）

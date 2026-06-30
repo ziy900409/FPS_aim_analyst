@@ -4,14 +4,14 @@
 
 ---
 
-## Status: 🟡 執行中 — T2 SimLoop accumulator ✅（2026-06-30），固定 128 Hz + simStep 純函式就位；下一步 T3 — **M1 門控**
+## Status: 🟡 執行中 — T3 Render 內插 ✅（2026-06-30），雙迴圈於 main.ts 接通可空跑；下一步 T4 ★M1 gate
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 通過（2026-06-30）|
 | T1 SharedState | ✅ 通過（2026-06-30）|
 | T2 SimLoop accumulator | ✅ 通過（2026-06-30）|
-| T3 Render 內插 | ⬜ 待執行 |
+| T3 Render 內插 | ✅ 通過（2026-06-30）|
 | T4 決定性驗證（M1 gate） | ⬜ 待執行 |
 | T5 Exit gate（宣告 M1） | ⬜ 待執行 |
 
@@ -29,6 +29,30 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T3 / Render alpha 內插 ✅ PASS — 雙迴圈於 main.ts 接通（FR-2.3）
+
+**交付：** `NEW src/loop/RenderLoop.ts`、`src/loop/RenderLoop.test.ts`；`MODIFY src/main.ts`（換掉暫用 rAF）。
+
+| 項目 | 內容 |
+|------|------|
+| `RenderLoop.ts` | `createRenderLoop(onFrame: (nowMs)=>void) → { start, stop }` 純 rAF 排程器（重複 start 不疊、stop 後 guard 擋殘留 callback）；`lerp(a,b,alpha)`。 |
+| `main.ts` | 接通雙迴圈：`simLoop = createSimLoop(sharedState, realClock, SIM_HZ)`；每幀 `pump(now)` → 唯讀內插 `prev→curr` player 位置 → 套 camera 位置（朝向仍由 `CameraController`）→ render。換掉 T0 記錄的暫用 rAF（原 main.ts L89–94）。 |
+| 驗證 | `npx tsc --noEmit` → **exit 0**；`npx vitest run src` → **18 passed**（4 新 RenderLoop + 14 既有，無回歸）；`npx vite build` → **✓ built**（three chunk-size warning 為資訊性）。 |
+
+**測試覆蓋（4）：** lerp 端點/中點 · start 後每幀帶 rAF 時間戳呼叫 onFrame · stop 後殘留 callback 不再呼叫 · 重複 start 不疊迴圈。
+
+**Decision Log（本切片非平凡選擇）：**
+- **`createRenderLoop(onFrame: (nowMs)=>void)` 純 rAF 排程器**（偏離 README §2 原 sketch `createRenderLoop(state, onFrame:(alpha)=>void)`）。*理由*：render loop 單一職責 = 排程幀；pump/內插/繪製編排放 main.ts（T3 in-scope 明文「main.ts：每幀 `simLoop.pump(now)`」），使 RenderLoop **完全不知 sim**（雙迴圈解耦最徹底）。*Alternatives*：讓 RenderLoop 吃 `pump` 並回傳 alpha → 多一層 sim 耦合，無實益，否決。**已同步更新 README §2 該行 + 註記。**
+- **render 唯讀 sim 狀態**：onFrame 只**讀** `sharedState.prev/curr`，**寫** `camera.position` + render，**不寫回** `sharedState`。`pump()` 是唯一推進 sim 之處（即 sim 自身的職責，非 render 越界）。對齊 README 風險表「frame-dependent 偷渡」防線。
+- **視角不內插、只內插 player 位置**：yaw/pitch 由 `CameraController` 走輸入路徑即時套用（人眼對視角延遲敏感、且視角非 sim 狀態）；只有 player 位移用 alpha 內插（FR-2.3 / T3 design note）。
+- **camera 位置 = base + player 位移（佔位 1:1，sim u → world unit）**：base 取 `SceneManager` 起始 camera 位置；真 display scale 由 WP-6 drill config 定（CONTEXT 正規單位）。閒置時 player 在原點 ⇒ camera = base、僅朝向動 ⇒ **雙迴圈可空跑**成立。
+
+**Surprises：** 首次 `Edit` main.ts 失敗——old_string 用半形逗號但原檔為全形 `，`；改抄原檔全形標點後成功。無功能影響。
+
+**Spot-check（誠實記錄，承 WP-1 模式延到 exit）：** 「高 render FPS 下移動佔位 player 物件畫面平滑不抖」需**真鍵盤輸入驅動 player 位移**，而真鍵盤採集是 WP-3（本 WP out-of-scope）。故閒置雙迴圈（boot 無 error、render 唯讀內插路徑、camera 朝向跟手）為本 task 可驗範圍；**移動平滑度的非 headless 真人 spot-check 列入 T5 exit-gate / 待 WP-3 鍵盤接上後補驗**（不靜默放行）。內插**數學**已由 lerp 單元測試把關，**機制**正確性由 T4 決定性驗證間接覆蓋。
+
+**Next**：T4 — 決定性驗證 ★M1 gate（同輸入序列、不同 FPS → 逐 tick 一致，FR-2.4，[T4-determinism.md](T4-determinism.md)）。**未過 STOP，不展開 WP-3+。**
 
 ### 2026-06-30 — T2 / SimLoop accumulator ✅ PASS — 固定 128 Hz + simStep 純函式（FR-2.2）
 
