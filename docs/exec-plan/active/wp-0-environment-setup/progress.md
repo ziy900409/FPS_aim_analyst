@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟢 T1 scaffold 通過，待開 T2 / T3
+## Status: 🟢 T2 cross-origin isolation 通過，待開 T3
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 通過（2026-06-30）|
 | T1 Scaffold | ✅ 通過（2026-06-30）|
-| T2 Cross-origin isolation | ⬜ 待執行 |
+| T2 Cross-origin isolation | ✅ 通過（2026-06-30）|
 | T3 WebGPU backend 偵測 | ⬜ 待執行 |
 | T4 Deploy headers | ⬜ 待執行 |
 | T5 Reference notes | ⬜ 待執行 |
@@ -31,6 +31,39 @@
 ---
 
 ## Log
+
+### 2026-06-30 — T2 Cross-origin isolation ✅ PASS
+
+**交付檔案：** `vite.config.ts`（MODIFY：加 `coopCoep()` plugin — `configureServer` + `configurePreviewServer` 各注入 `COOP: same-origin` / `COEP: require-corp`；並加 `server.port/strictPort` + `preview.port/strictPort` 固定埠號）、`src/env/isolation.ts`（NEW：`assertIsolation()` → `{ crossOriginIsolated, timerResolutionUs }`，false → `console.warn`）、`src/main.ts`（MODIFY：bootstrap 最前呼叫 `assertIsolation()` + `console.info('[isolation]', …)`）、`playwright.config.ts`（NEW：dev+preview 雙 webServer，channel `msedge`）、`tests/e2e/isolation.spec.ts`（NEW：斷言標頭 + `crossOriginIsolated===true`）。
+
+**驗證（證據）：**
+
+| 檢查 | 指令 / 方法 | 結果 |
+|------|------|------|
+| dev 標頭生效 | `curl -D - http://localhost:5173/` | `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp` ✅ |
+| 型別檢查 | `npx tsc --noEmit` | exit 0 ✅ |
+| 產線建置 | `npx vite build` | ✓ built（chunk>500KB warning＝three 體積，資訊性）✅ |
+| E2E 斷言（真實瀏覽器） | `npx playwright test isolation`（Edge/msedge） | **2 passed**：dev + preview 皆 `crossOriginIsolated===true` ✅ |
+| 計時解析度（DoD） | main.ts `console.info('[isolation]', …)`（Edge 實測） | `{crossOriginIsolated: true, timerResolutionUs: 4.999998956918716}` → **≈ 5.0 µs**，符合 ADR-4 isolated 預期 ✅ |
+
+**Decision Log：**
+- **D-T2.1：E2E 同時覆蓋 dev 與 preview（兩個 webServer），而非只驗 dev + 手動驗 preview。** T2 設計註記明言「只設 dev 會讓 `vite preview`（T4 部署前驗證）失去 isolation」——preview isolation 是 T4 的真實前置風險。
+  - *Alternatives considered*：(a) 只在 spec 驗 dev、preview 手動 curl 記錄（task 允許「手動或 spec 覆蓋」）——但手動驗證無法防回歸，且 T4 直接依賴 preview isolation；(b) 兩 webServer。
+  - *選擇*：(b)。`preview` webServer 命令用 `npm run build && npm run preview`，使測試自足且可重複；代價是每次 `playwright test` 會跑一次 prod build（~數秒，可接受）。
+- **D-T2.2：Playwright 用 `channel: 'msedge'`（系統 Edge）而非內建 chromium。** 內建 chromium 首跑要求 `chromium_headless_shell-1228`（環境只快取 1161/1208），會觸發 `npx playwright install` 下載。
+  - *Alternatives considered*：(a) `npx playwright install chromium` 下載 ~150 MB 二進位；(b) 用系統 Edge channel。
+  - *選擇*：(b)。與 T1 一致（T1 亦用 msedge channel），且契合「階段 A 鎖 Chrome/Edge 桌面版」約束，免下載。
+- **D-T2.3：`strictPort: true` 固定 dev 5173 / preview 4173。** Playwright `webServer.url` 與 spec 內 baseURL 寫死埠號；埠被占用時 vite 預設會漂移到 5174…，導致 Playwright 等不到 url。strictPort 改為 fail-fast，使測試假設可靠。
+
+**Surprises & Discoveries：**
+- 實測 `timerResolutionUs ≈ 4.9999990 µs`——isolated 後 `performance.now()` 恰好夾到 5 µs 量化網格，與 ADR-4「isolated ~5 µs / 非 isolated ~100 µs」吻合，為計時效度提供直接證據。
+- Playwright 1.61.1 預期的內建瀏覽器版本（headless_shell 1228）與環境快取（1161/1208）不一致，首跑報「Executable doesn't exist」。已改用 msedge channel 規避（見 D-T2.2）。
+- `tsconfig` `include: ["src"]` 不涵蓋 `vite.config.ts` / `tests/`：前者由 Vite 載入時經 esbuild 型別檢查、後者由 Playwright 自帶 ts runtime 編譯，故 `tsc --noEmit` 綠燈不代表已型別檢查這兩處（皆已在實跑中驗證通過）。
+
+**Open Questions（待使用者確認）：**
+- **OQ-T2.a：preview webServer 每次 `playwright test` 觸發 prod build。** 換得自足、可回歸的 preview isolation 驗證，但 E2E 變慢（~數秒 build）。若日後 E2E 數量成長想加速，可改為「先 build 一次→preview 直接服務既有 `dist/`」並依賴 reuseExistingServer。現階段（WP-0，單一 spec）不優化。
+
+**Next**：T2 完成。建議續 **T3**（[T3-webgpu-backend-detection.md](T3-webgpu-backend-detection.md)）— `createRenderer` async init + backend 偵測（`webgpu`/`webgl2`）+ WebGL2 fallback + WP-7 metadata seam。T2 不阻塞 T3；T4（deploy headers）依賴 T2 已綠燈的 preview isolation。
 
 ### 2026-06-30 — T1 Scaffold ✅ PASS
 

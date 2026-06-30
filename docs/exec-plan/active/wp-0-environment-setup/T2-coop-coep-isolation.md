@@ -7,7 +7,7 @@
 | **Depends on** | T1 |
 | **Risk / Complexity** | Med / Low |
 | **Touches** | MODIFY `vite.config.ts`（headers plugin）；NEW `src/env/isolation.ts`；NEW E2E `tests/e2e/isolation.spec.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-06-30）|
 
 ## Objective
 
@@ -46,20 +46,20 @@ function coopCoep(): Plugin {
 
 ## Steps
 
-- [ ] `vite.config.ts` 加 `coopCoep()` plugin（dev + preview）。
-- [ ] 寫 `src/env/isolation.ts`：`assertIsolation()`（讀 `crossOriginIsolated`、量解析度、false → warn）。
-- [ ] `main.ts` 啟動呼叫 `assertIsolation()`，`console.info('[isolation]', status)`。
-- [ ] 設定 `playwright.config.ts`（webServer = `npm run dev`，baseURL）。
-- [ ] 寫 `tests/e2e/isolation.spec.ts`：`page.evaluate(() => crossOriginIsolated)` 斷言 `true`。
-- [ ] `npm run dev` 手動開 console 確認 `[isolation] { crossOriginIsolated: true, ... }`。
-- [ ] `npx playwright test isolation` 綠燈。
-- [ ] `npm run build && npm run preview` 後，preview 同樣 `crossOriginIsolated === true`（手動或 spec 覆蓋）。
+- [x] `vite.config.ts` 加 `coopCoep()` plugin（dev + preview）。
+- [x] 寫 `src/env/isolation.ts`：`assertIsolation()`（讀 `crossOriginIsolated`、量解析度、false → warn）。
+- [x] `main.ts` 啟動呼叫 `assertIsolation()`，`console.info('[isolation]', status)`。
+- [x] 設定 `playwright.config.ts`（webServer = dev + preview，baseURL；channel `msedge`）。
+- [x] 寫 `tests/e2e/isolation.spec.ts`：斷言 COOP/COEP 標頭 + `crossOriginIsolated === true`。
+- [x] `npm run dev` console 確認 `[isolation] {crossOriginIsolated: true, timerResolutionUs: ~5}`。
+- [x] `npx playwright test isolation` 綠燈（2 passed：dev + preview）。
+- [x] `npm run build && npm run preview` 後，preview 同樣 `crossOriginIsolated === true`（spec 覆蓋）。
 
 ## Definition of Done
 
-- [ ] dev + preview 皆 `crossOriginIsolated === true`。
-- [ ] Playwright `isolation.spec.ts` 通過。
-- [ ] `assertIsolation()` 量到的解析度記入 progress.md（預期 ~5 µs）。
+- [x] dev + preview 皆 `crossOriginIsolated === true`。
+- [x] Playwright `isolation.spec.ts` 通過。
+- [x] `assertIsolation()` 量到的解析度記入 progress.md（實測 ≈ 5.0 µs）。
 
 ## Commit
 
