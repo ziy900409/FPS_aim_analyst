@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import type { ServerResponse } from 'node:http';
 
@@ -44,5 +45,11 @@ export default defineConfig({
     esbuildOptions: {
       target: 'esnext',
     },
+  },
+  // Vitest 只收 src 下的單元/整合測試（`*.test.ts`）；e2e（`tests/e2e/*.spec.ts`）交給
+  // Playwright（見 playwright.config.ts 的 testDir）。無此設定時 Vitest 預設 glob 會誤收
+  // Playwright specs → `test()` 不相容而紅燈（OQ-T5.1）。副檔名分工：單元 .test.ts / e2e .spec.ts。
+  test: {
+    include: ['src/**/*.test.ts'],
   },
 });

@@ -59,7 +59,7 @@
   - **高 FPS 內插平滑的真人肉眼 spot-check 延至 WP-3**（需真鍵盤驅動 player 位移；本 WP e2e 僅能驗閒置空跑 + 無 fatal error）。
 
 **Open Questions（交棒前請確認）：**
-- **OQ-T5.1（測試 infra，非本 WP scope）**：無 `vitest.config.ts` → 裸 `npx vitest run` 會誤收 Playwright 的 `tests/e2e/*.spec.ts`（Playwright `test()` 不相容 Vitest → 2 suites fail）。現行分工＝單元用 `vitest run src`、e2e 用 `playwright test`（WP-0/1/2 一貫）。**建議**（獨立小切片）：於 vite/vitest config 加 `test.include=['src/**/*.test.ts']`（或 `test.exclude` 掉 `tests/e2e`），使裸 `vitest run` 乾淨、免後續 agent 誤判紅燈。**未在 T5 動手**（docs-only 切片，守 Rule 1 一次一件）。
+- **OQ-T5.1（測試 infra，非本 WP scope）✅ 已解決（2026-07-01，獨立 chore 切片）**：無 `vitest.config.ts` → 裸 `npx vitest run` 會誤收 Playwright 的 `tests/e2e/*.spec.ts`（Playwright `test()` 不相容 Vitest → 2 suites fail）。**解法**：於 [vite.config.ts](../../../../vite.config.ts) 加 `test.include=['src/**/*.test.ts']`（+ `/// <reference types="vitest/config" />`），並於 [package.json](../../../../package.json) 補 `test`=`vitest run`、`test:e2e`=`playwright test`。驗證：裸 `npm test` → 27 passed（只掃 5 個 src 單元 suite）、`npm run test:e2e` → 3 passed。副檔名分工固化：單元 `.test.ts`（Vitest）／e2e `.spec.ts`（Playwright）。**裸 `vitest run` 綠燈自此為 WP-3 之後穩定基準。**
 
 **交棒 note → WP-3 / WP-4（M1 後可並行）：**
 - **WP-3** `InputSampler`（F1）：接真鍵鼠高解析度時間戳採集，寫入 `SharedState.input`（換掉佔位 plain-array 為 ring buffer）；順帶補做本 WP 延後的「高 FPS 內插平滑」真人 spot-check。
