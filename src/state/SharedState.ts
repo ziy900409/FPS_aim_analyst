@@ -89,6 +89,7 @@ export function createInputRing(): InputRing {
     pushMouse: (dx, dy, t) => enqueue(EV_MOUSE, t, dx, dy),
     pushFire: (t) => enqueue(EV_FIRE, t, 0, 0),
     dequeueInto(view: InputEventView): void {
+      if (count === 0) return; // 空防呆：勿讀殘值/推進 head/使 count 變負（呼叫端仍應先 isEmpty()）
       const i = head;
       const ty = typeArr[i];
       view.t = tArr[i];

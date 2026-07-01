@@ -99,6 +99,20 @@ describe('InputRing — 固定欄位真 ring（繞圈 / 保序 / 溢位 / 重用
     expect(view.t).toBe(2); // 同一物件被就地覆寫
   });
 
+  it('dequeueInto 空 ring 為 no-op（防呆：不推進 head / count 不變負）', () => {
+    const ring = createInputRing();
+    const view: InputEventView = { type: 'key', code: '', down: false, dx: 0, dy: 0, t: 0 };
+
+    ring.dequeueInto(view); // 空 → no-op
+    expect(ring.size()).toBe(0); // count 未變負
+    expect(ring.isEmpty()).toBe(true);
+
+    ring.pushFire(5); // 續用正常（head 未被空呼叫錯推）
+    ring.dequeueInto(view);
+    expect(view.t).toBe(5);
+    expect(ring.size()).toBe(0);
+  });
+
   it('clear 原地歸零游標、可續用（typed-array 重用、不 realloc）', () => {
     const ring = createInputRing();
     ring.pushKey(KEY_CODE.KeyD, true, 1);

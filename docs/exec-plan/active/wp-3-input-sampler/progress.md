@@ -30,6 +30,19 @@
 
 ## Log
 
+### 2026-07-01 — T4b 審查補強：兌現 simStep 熱路徑零配置 + ring dequeue 空防呆 ✅ PASS
+
+對 T4b 做 `/code-review-and-quality` 五軸審查(整體 **Approve**),補強兩處審查發現。純品質補強、無行為變更、無決定性回歸。
+
+| Finding | 修正 |
+|---|---|
+| **F1｜simStep 每-tick arrow 配置與註解矛盾** | T4 遺留註解宣稱「零配置版併入 T4b」但 T4b 未動 `SimLoop.ts`,實際仍每 tick 配置 `(ev)=>applyInput(state,ev)` closure。*修*：`createSimLoop` 綁定一次 `handleInput` 傳入 `simStep`(新增**選用**第 4 參數 `handle`,預設閉包供測試直呼);熱路徑零配置,簽章向後相容。移除過時註解。真正兌現 T4b DoD「熱路徑不配置物件」。 |
+| **F2｜`dequeueInto` 無空防呆** | 空 ring 誤呼會讀殘值 / 推進 head / 使 `count` 變負(靜默腐化)。*修*：加 `if (count === 0) return;`(呼叫端仍應先 `isEmpty()`);interface doc 標注「空時 no-op」。 |
+
+**驗證**：`npx tsc --noEmit` → **exit 0**;`npx vitest run src` → **54 passed**(原 53 + 新增 dequeueInto 空防呆回歸 1;決定性 9 / consume 5 / SimLoop 6 全數無回歸 → 證 handler hoist 行為等價);`npx vite build` → **✓ built**。觸及 4 檔 +30/−6(`SimLoop.ts` / `SharedState.ts` / `types.ts` / `InputRing.test.ts`)。
+
+**Next**：T5 Exit gate。
+
 ### 2026-07-01 — T4b 輸入緩衝換固定欄位 ring buffer + 溢位 `bufferOverflow` ✅ PASS（OQ-3.2 / GD-2）
 
 **交付：** MODIFY [`src/state/types.ts`](../../../../src/state/types.ts)（`InputRing`/`InputEventView` 介面、`RING_CAPACITY`/`EV_*`/`KEY_CODE`/`CODE_KEY` 編碼常數、`InputMeta.bufferOverflow`）、[`src/state/SharedState.ts`](../../../../src/state/SharedState.ts)（`createInputRing` 工廠、`input: InputRing`、`resetState` 原地 `clear()`）、[`src/input/consume.ts`](../../../../src/input/consume.ts)（ring 游標排空 + 重用 view，移除 `due`/`sort`）、[`src/input/InputSampler.ts`](../../../../src/input/InputSampler.ts)（4 寫入點 → typed push + 溢位政策）。NEW [`src/state/inputRingTestUtil.ts`](../../../../src/state/inputRingTestUtil.ts)（`pushEvent`/`drainToArray`/`snapshot` 測試設施）、[`src/state/InputRing.test.ts`](../../../../src/state/InputRing.test.ts)（7 ring 契約 tests）。遷移 writer：`consume.test.ts` / `InputSampler.test.ts` / `SimLoop.test.ts` / `determinism.test.ts` / `SharedState.test.ts`。

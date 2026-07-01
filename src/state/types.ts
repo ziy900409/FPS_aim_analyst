@@ -68,8 +68,9 @@ export interface InputRing {
   /** 寫入 fire 事件（bounded insertion 保序）；滿則回 `false`。 */
   pushFire(t: number): boolean;
   /**
-   * 把 head 槽位就地解碼進**呼叫端提供的重用 view**、推進 head（`count--`）。
-   * view 為單一重用物件（避免每事件配置）；handle 須同步讀取、**不得保留參考**（下一次覆寫）。
+   * 把 head 槽位就地解碼進**呼叫端提供的重用 view**、推進 head（`count--`）。空時為 no-op（防呆；
+   * 呼叫端仍應先 `isEmpty()` 判定）。view 為單一重用物件（避免每事件配置）；handle 須同步讀取、
+   * **不得保留參考**（下一次覆寫）。
    */
   dequeueInto(view: InputEventView): void;
   /** 原地清空（`head=0`/`count=0`）：重用既有 typed-array、**不 realloc**（GC 紀律；重開 drill / reset）。 */

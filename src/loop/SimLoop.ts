@@ -41,13 +41,18 @@ function applyInput(state: SharedState, ev: InputEvent): void {
  * 順序（對齊 CONTEXT「simStep 順序」雛形）：① prev←curr（內插基準，T3）；② 依時序消費本 tick 輸入
  * （`consume` 排序 + 排空，T4）；③ 等速推進位置（**只用 dtSec**）；④ curr←新位置。
  */
-export function simStep(state: SharedState, dtSec: number, tickEndMs: number): void {
+export function simStep(
+  state: SharedState,
+  dtSec: number,
+  tickEndMs: number,
+  handle: (ev: InputEvent) => void = (ev) => applyInput(state, ev),
+): void {
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
 
   // 半開窗 [tickStart, tickEndMs)、嚴格 `<`（GD-3）；handle 每個到期事件套用佔位狀態變更。
-  // 每 tick 的 arrow 為極小配置；GC-strict 零配置版（handle 提升為穩定參考）併入 ring buffer 切片（T4b）。
-  consume(state, tickEndMs, (ev) => applyInput(state, ev));
+  // handle 由 createSimLoop **綁定一次**傳入(熱路徑零配置,GC 紀律 §4);直接呼叫(測試)走預設閉包。
+  consume(state, tickEndMs, handle);
 
   state.player.x += state.player.vx * dtSec;
   state.player.z += state.player.vz * dtSec;
@@ -72,6 +77,9 @@ export function createSimLoop(state: SharedState, clock: Clock, simHz: number): 
   let lastMs = clock.now();
   let simTimeMs = lastMs; // 邏輯 sim 時鐘（量測時鐘域 ms），每 tick 推進 tickMs；決定 tick 窗
 
+  // 綁定一次的輸入 handle：閉包 over state，避免每 tick 配置新 arrow（熱路徑零配置，GC 紀律 §4）。
+  const handleInput = (ev: InputEvent): void => applyInput(state, ev);
+
   return {
     pump(nowMs: number): { ticks: number; alpha: number } {
       accSec += Math.min((nowMs - lastMs) / 1000, 0.25); // 夾住避免 spiral of death
@@ -80,7 +88,7 @@ export function createSimLoop(state: SharedState, clock: Clock, simHz: number): 
       let ticks = 0;
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
-        simStep(state, tickSec, simTimeMs);
+        simStep(state, tickSec, simTimeMs, handleInput);
         accSec -= tickSec;
         ticks++;
       }
