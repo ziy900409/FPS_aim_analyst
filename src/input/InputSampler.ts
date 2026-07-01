@@ -8,7 +8,8 @@ import type { SharedState } from '../state/SharedState.ts';
  * 寫入 `SharedState.input`——精準度的真正來源是這層的 sub-tick 時間戳，不是 sim tick 頻率
  * （規格 ADR-3）。sim 端（T4）再依 timeStamp 排序消費。
  *
- * T1（鍵盤）已就緒；本切片 T3 補上「開火」（mousedown）。滑鼠 coalesced（T2）之後補進同一 sampler。
+ * T1（鍵盤）+ T3（開火 mousedown）已就緒；本切片 T2 補上滑鼠 `pointermove` 的 coalesced
+ * 次幀採樣（FR-3.2）。三類事件（key/fire/mouse）append 進同一 sampler。
  * `state.input` 目前仍是 WP-2 佔位 plain array（`push` 依到達順序 append，`event.timeStamp`
  * 近單調 ⇒ 近有序，滿足 T4 consume 的保序前提，GD-3/D-3b）；換固定欄位 ring buffer 屬後續切片。
  */
@@ -63,6 +64,21 @@ export function createInputSampler(
     state.input.push({ type: 'fire', t: e.timeStamp });
   }
 
+  /**
+   * 滑鼠移動（FR-3.2）：以 `getCoalescedEvents()` 取回瀏覽器在單一 rAF 幀內合併的**次幀**樣本，
+   * 逐一各記一筆 `{type:'mouse', dx, dy, t}`——1000 Hz 滑鼠下不遺失中間軌跡（ADR-5 / 附錄 B）。
+   * 舊瀏覽器無 `getCoalescedEvents` 時 fallback 到 `[e]` 單筆（附錄 B）。
+   * 每筆帶各自的 `event.timeStamp`（保留次幀時間解析度）；`movementX/Y` 在 Pointer Lock +
+   * `unadjustedMovement` 下為原始位移（WP-1 T3）。與 WP-1 視角互不干擾：WP-1 走 `pointerLock.onMove`
+   * 即時驅動 camera；本 task 只把樣本入緩衝供量測（兩者獨立、不在此套用視角）。
+   */
+  function onPointerMove(e: PointerEvent): void {
+    const samples = e.getCoalescedEvents?.() ?? [e];
+    for (const ev of samples) {
+      state.input.push({ type: 'mouse', dx: ev.movementX, dy: ev.movementY, t: ev.timeStamp });
+    }
+  }
+
   return {
     attach(target: EventTarget): void {
       if (attached) return; // 已掛載則不重複（避免同一事件觸發多次 push）
@@ -70,12 +86,14 @@ export function createInputSampler(
       target.addEventListener('keydown', onKeyDown as EventListener);
       target.addEventListener('keyup', onKeyUp as EventListener);
       target.addEventListener('mousedown', onMouseDown as EventListener);
+      target.addEventListener('pointermove', onPointerMove as EventListener);
     },
     detach(): void {
       if (!attached) return;
       attached.removeEventListener('keydown', onKeyDown as EventListener);
       attached.removeEventListener('keyup', onKeyUp as EventListener);
       attached.removeEventListener('mousedown', onMouseDown as EventListener);
+      attached.removeEventListener('pointermove', onPointerMove as EventListener);
       attached = null;
     },
   };

@@ -17,8 +17,8 @@ function makeFakeTarget() {
     removeEventListener(type: string, cb: EventListener): void {
       listeners.get(type)?.delete(cb);
     },
-    /** 派發一個合成事件到已註冊的 handler（鍵盤或滑鼠欄位皆可）。 */
-    dispatch(type: string, ev: Partial<KeyboardEvent & MouseEvent>): void {
+    /** 派發一個合成事件到已註冊的 handler（鍵盤 / 滑鼠 / 指標欄位皆可）。 */
+    dispatch(type: string, ev: Partial<KeyboardEvent & MouseEvent & PointerEvent>): void {
       for (const cb of listeners.get(type) ?? []) cb(ev as unknown as Event);
     },
     count(type: string): number {
@@ -33,6 +33,30 @@ function keyEvent(code: string, timeStamp: number, repeat = false): Partial<Keyb
 
 function mouseEvent(button: number, timeStamp: number): Partial<MouseEvent> {
   return { button, timeStamp };
+}
+
+/** 單一 coalesced 子樣本（movementX/Y + timeStamp），作為 pointermove 的子事件。 */
+function coalescedSample(dx: number, dy: number, timeStamp: number): Partial<PointerEvent> {
+  return { movementX: dx, movementY: dy, timeStamp };
+}
+
+/**
+ * 合成 pointermove：`getCoalescedEvents()` 回傳指定子樣本（多筆 → 次幀軌跡）。
+ * 頂層 event 的 movement/timeStamp 取最後一筆（瀏覽器行為：外層為該幀最終值）。
+ */
+function pointerMoveEvent(samples: Partial<PointerEvent>[]): Partial<PointerEvent> {
+  const last = samples[samples.length - 1];
+  return {
+    movementX: last.movementX,
+    movementY: last.movementY,
+    timeStamp: last.timeStamp,
+    getCoalescedEvents: () => samples as PointerEvent[],
+  };
+}
+
+/** 舊瀏覽器：無 `getCoalescedEvents`，pointermove 僅頂層 movement/timeStamp。 */
+function legacyPointerMoveEvent(dx: number, dy: number, timeStamp: number): Partial<PointerEvent> {
+  return { movementX: dx, movementY: dy, timeStamp };
 }
 
 describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', () => {
@@ -138,6 +162,52 @@ describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，�
     expect(target.count('mousedown')).toBe(0);
 
     target.dispatch('mousedown', mouseEvent(0, 10));
+    expect(state.input).toHaveLength(0);
+  });
+});
+
+describe('InputSampler — 滑鼠 coalesced 採集（pointermove + getCoalescedEvents 次幀採樣）', () => {
+  let state: ReturnType<typeof createSharedState>;
+  let target: ReturnType<typeof makeFakeTarget>;
+  let sampler: ReturnType<typeof createInputSampler>;
+
+  beforeEach(() => {
+    state = createSharedState();
+    target = makeFakeTarget();
+    sampler = createInputSampler(state);
+    sampler.attach(target as unknown as EventTarget);
+  });
+
+  it('單一 pointermove 的多個 coalesced 子事件各記一筆（次幀樣本無遺漏）', () => {
+    target.dispatch(
+      'pointermove',
+      pointerMoveEvent([
+        coalescedSample(3, -1, 100),
+        coalescedSample(5, 0, 100.5),
+        coalescedSample(2, 2, 101),
+      ]),
+    );
+
+    // 樣本數 = 子事件數（> 1 筆，證明次幀採樣），dx/dy 對應、timeStamp 遞增
+    expect(state.input).toEqual([
+      { type: 'mouse', dx: 3, dy: -1, t: 100 },
+      { type: 'mouse', dx: 5, dy: 0, t: 100.5 },
+      { type: 'mouse', dx: 2, dy: 2, t: 101 },
+    ]);
+    const times = state.input.map((e) => e.t);
+    expect(times).toEqual([...times].sort((a, b) => a - b)); // 遞增
+  });
+
+  it('getCoalescedEvents 不存在（舊瀏覽器）時 fallback 到單筆頂層事件', () => {
+    target.dispatch('pointermove', legacyPointerMoveEvent(7, -4, 250));
+    expect(state.input).toEqual([{ type: 'mouse', dx: 7, dy: -4, t: 250 }]);
+  });
+
+  it('detach 後移除 pointermove 監聽、後續移動不再入緩衝', () => {
+    sampler.detach();
+    expect(target.count('pointermove')).toBe(0);
+
+    target.dispatch('pointermove', pointerMoveEvent([coalescedSample(1, 1, 10)]));
     expect(state.input).toHaveLength(0);
   });
 });

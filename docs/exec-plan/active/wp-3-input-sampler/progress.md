@@ -4,15 +4,15 @@
 
 ---
 
-## Status: 🟢 T1+T3 完成（鍵盤 + 開火）；T2 待執行、T4 待 T1–T3
+## Status: 🟢 T1+T2+T3 完成（鍵盤 + 滑鼠 coalesced + 開火）；T4 前置齊備、待執行
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ DONE (2026-07-01) |
 | T1 鍵盤採集 | ✅ DONE (2026-07-01) |
-| T2 滑鼠 coalesced | ⬜ 待執行 |
+| T2 滑鼠 coalesced | ✅ DONE (2026-07-01) |
 | T3 開火事件 | ✅ DONE (2026-07-01) |
-| T4 sim 消費 | ⬜ 待執行（待 T2） |
+| T4 sim 消費 | ⬜ 待執行（T1–T3 齊備，前置解除） |
 | T5 Exit gate | ⬜ 待執行 |
 
 ---
@@ -28,6 +28,27 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T2 滑鼠 coalesced 採集 ✅ PASS（pointermove + getCoalescedEvents 次幀採樣，FR-3.2）
+
+**交付：** MODIFY [`src/input/InputSampler.ts`](../../../../src/input/InputSampler.ts)（`onPointerMove` + attach/detach 掛載）、[`InputSampler.test.ts`](../../../../src/input/InputSampler.test.ts)（+3 coalesced tests + pointermove 合成 helper）。
+
+| 項目 | 內容 |
+|------|------|
+| API | `pointermove` → `(e.getCoalescedEvents?.() ?? [e])` 逐一 `state.input.push({type:'mouse', dx:ev.movementX, dy:ev.movementY, t:ev.timeStamp})`；每個 coalesced 子事件各一筆（保留次幀解析度）。attach/detach 掛/移 `pointermove`。 |
+| 驗證 | `npx tsc --noEmit` → **exit 0**；`npx vitest run src` → **40 passed**（13 InputSampler[6 鍵盤 + 4 開火 + 3 滑鼠] + 27 既有，無回歸）；`npx vite build` → **✓ built**。 |
+| 測試覆蓋（+3） | 多子事件 pointermove → 全部樣本入緩衝、dx/dy 對應、timeStamp 遞增、無遺漏（樣本數 = 子事件數 > 1）· `getCoalescedEvents` 缺席 fallback 到 `[e]` 單筆 · detach 移除 pointermove 監聽。 |
+
+**Decision Log（本切片非平凡選擇）：**
+- **D-T2.1｜合成 pointermove 的頂層 `movementX/Y/timeStamp` 取「最後一筆 coalesced 子樣本」的值。** *理由*：貼近瀏覽器行為（外層 pointermove 為該幀最終彙總值，coalesced 為其次幀展開）；本 task 僅消費 `getCoalescedEvents()`，故頂層值只在 fallback 路徑（舊瀏覽器單筆）被讀，取最後一筆語意一致。*Alternatives*：頂層留空 → fallback 測試會拿到 undefined，語意模糊，否決。
+- **D-T2.2｜`state.input` 仍用 WP-2 佔位 array `push`（不引入 ring buffer / 排序）。** *理由*：延續 D-T1.3 / D-3b——`push` 依到達順序 append，coalesced 子事件本就按 `timeStamp` 升冪回傳，保序前提成立（GD-3/D-3b）。ring buffer（OQ-3.2）屬後續切片，Rule 0 簡單優先。
+- **D-T2.3｜與 WP-1 視角互不干擾：本 task 只入緩衝、不套用視角。** WP-1 走 `pointerLock.onMove` 即時驅動 camera；量測用的 coalesced 樣本獨立入 `state.input`，兩條路徑不共用、不互相呼叫（ADR-2 三迴圈只透過 SharedState 溝通）。滑鼠不受 T3 的 `isLocked` 閘門（該閘門僅套用於 fire）。
+
+**Surprises & Discoveries：**
+- 無意外。唯一測試設施擴充：`makeFakeTarget.dispatch` 參數型別由 `Partial<KeyboardEvent & MouseEvent>` 拓為含 `PointerEvent`（納入 `getCoalescedEvents`/`movementX/Y`），非破壞性、既有 13 測試無回歸。
+- **Scope note**：coalesced 樣本無條件入緩衝（未依 drill 生命週期閘門）——量測期 gating 屬 WP-6，同 T1/T3。
+
+**Next**：T4（sim 依 `event.timeStamp` 時序消費 + ring buffer 排空，GD-3/D-3b）——T1–T3 齊備，前置解除。
 
 ### 2026-07-01 — T3 開火事件 ✅ PASS（mousedown 左鍵 + event.timeStamp，僅鎖定中，FR-3.3）
 
