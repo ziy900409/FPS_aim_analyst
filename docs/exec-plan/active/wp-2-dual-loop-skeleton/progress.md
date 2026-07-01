@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 執行中 — T3 Render 內插 ✅（2026-06-30），雙迴圈於 main.ts 接通可空跑；下一步 T4 ★M1 gate
+## Status: 🟢 T4 決定性驗證 ✅ PASS（2026-07-01）— ★M1 gate 綠燈（同輸入不同 FPS 逐 tick 一致）；下一步 T5 正式宣告 M1
 
 | Phase | State |
 |-------|-------|
@@ -12,7 +12,7 @@
 | T1 SharedState | ✅ 通過（2026-06-30）|
 | T2 SimLoop accumulator | ✅ 通過（2026-06-30）|
 | T3 Render 內插 | ✅ 通過（2026-06-30）|
-| T4 決定性驗證（M1 gate） | ⬜ 待執行 |
+| T4 決定性驗證（M1 gate） | ✅ 通過（2026-07-01）★ |
 | T5 Exit gate（宣告 M1） | ⬜ 待執行 |
 
 ---
@@ -29,6 +29,34 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T4 / 決定性驗證 ✅ PASS — ★M1 gate 綠燈（同輸入不同 FPS 逐 tick 一致，FR-2.4）
+
+**交付：** `NEW src/loop/__tests__/determinism.test.ts`（9 tests）。無生產碼改動（純測試切片；T2 已備妥可被注入 clock 驅動的 `pump` + timeStamp 分桶）。
+
+| 項目 | 內容 |
+|------|------|
+| 決定性方法 | **per-tick ground truth**：每幀恰一 tick（`pump(k·tickMs)`）建立 canonical 軌跡；再以多組 frame delta 序列驅動同一 `pump`，每幀以「累積 tick 數」為索引對齊 canonical → 達成真正**逐 tick index** 比較。 |
+| 合成輸入（OQ-2.1）| `KeyD↓@10 / KeyD↑@100 / KeyA↓@150 / KeyA↑@300`（ms，量測時鐘域），toggle vx ±250 u/s；同一份餵所有序列。 |
+| FPS 序列（OQ-2.2）| 穩定 60/144/240 Hz + 抖動 144 Hz ±50%（決定性 LCG，不用 `Math.random`）；全部收尾對齊 `END_MS = 64.5·tickMs`（tick 窗中段，避尾端浮點 off-by-one）。 |
+| 斷言（ADR-7）| 逐 tick index 的 `{x,z,vx,vz}` **exact 相等**（本佔位數值 float 精確）；四序列最終狀態彼此 bit-exact = ground truth 第 64 tick。**不**斷言 wall-clock。 |
+| 邊界 | ① 大 unclamped gap（200ms 單幀 vs 40×5ms）→ bit-exact 相同（大 gap 不夾、不發散）；② 單一 300ms spike 夾成 **32 ticks**（`Math.min(δ,0.25)·128`，不 spiral）；③ 含多次 spike 序列重播 bit-exact（夾除為決定性、無 `Date.now()`/`Math.random()` 洩漏）。 |
+| 驗證 | `npx tsc --noEmit` → **exit 0**；`npx vitest run src` → **27 passed**（9 新 determinism + 18 既有，無回歸）；`npx vite build` → **✓ built**（three chunk-size warning 資訊性）。 |
+
+**為何 exact 而非 epsilon（決定性根源）：** `simStep` 對第 k 個 global tick 恆以 `tickEnd = base + k·tickMs` 呼叫（`simTimeMs` 每 tick +tickMs；`tickMs=7.8125=125/16` float 精確、重複加總不失精度），與「分幾次餵」無關 ⇒ 事件消費點、推進步數完全一致 ⇒ 各 FPS 序列跑相同的 simStep 呼叫序列，狀態 **bit-identical**。frame delta 的浮點抖動只可能影響**尾端 tick 數**，已由「END_MS 落窗中段」化解（穩定 64 ticks）。
+
+**Decision Log（本切片非平凡選擇）：**
+- **per-tick ground truth 取代 sketch 的逐幀 `traj.push`。** *理由*：sketch 每幀 push 一筆 → 不同 FPS 幀數不同、軌跡長度不一，無法「逐 tick index」比對（與 T4 objective 明文衝突）。改以「每幀恰一 tick」建立 canonical per-tick 軌跡，其他序列每幀以累積 tick 數索引回對 → 每個 FPS 序列的**每個幀邊界**都被拿去對照 ground-truth 對應 tick，覆蓋更嚴。*Alternatives*：(a) 改 SimLoop 加 per-tick hook 錄軌跡 → 動生產碼、out-of-scope，否決；(b) 只比最終狀態 → 漏掉中途 tick 分歧，較弱，否決（本測試同時保留最終狀態 bit-exact 斷言作雙保險）。
+- **不需 `applyInputsUpTo`（偏離 sketch）。** `consumeInput` 已依 `timeStamp < tickEndMs` 分桶，預載**全部**合成事件即決定性（事件落哪個 tick 由 timeStamp 決定，與餵入時機無關）。sketch 的漸進 push 是多餘的。
+- **spike 夾除路徑「明確定義」而非「等價於連續」。** clamp 依設計**丟棄** >0.25s 的時間（§4.3 spiral 防護），故**不**宣稱夾除序列 = 未夾序列；改為斷言「夾成固定 32 ticks」+「重播 bit-exact」，即 T4 DoD 的「行為被明確定義並測試」。真隔離（sim 不掉 tick）待階段 B worker（DESIGN §1）。
+
+**Surprises：** 無。數值如預期 float 精確（`250/128 = 1.953125`），exact 相等一次通過、無需退回 epsilon。
+
+**Scope 邊界（未碰）：** 真 movement/急停 → WP-5；真鍵鼠採集 → WP-3（本測試用合成事件）。移動平滑度的非 headless 真人 spot-check 仍列 T5 / 待 WP-3（承 T3 記錄）。
+
+**M1 狀態：** 門控閘綠燈 → **M1 可達已成立**；**正式宣告待 T5 exit-gate**（雙迴圈空跑 + 決定性綠燈 + 交棒 WP-3/WP-4）。T4 通過前的 STOP 約束（不展開 WP-3+）**於 T5 宣告後解除**。
+
+**Next**：T5 — Exit gate，正式宣告 M1（[T5-exit-gate.md](T5-exit-gate.md)）。
 
 ### 2026-06-30 — T3 / Render alpha 內插 ✅ PASS — 雙迴圈於 main.ts 接通（FR-2.3）
 
