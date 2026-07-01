@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T1+T2+T3 完成（鍵盤 + 滑鼠 coalesced + 開火）；T4 前置齊備、待執行
+## Status: 🟢 T1–T4 完成（採集三類 + sim 依時序消費 + 排空，plain array 佔位）；ring buffer + 溢位拆為 T4b、待執行
 
 | Phase | State |
 |-------|-------|
@@ -12,7 +12,8 @@
 | T1 鍵盤採集 | ✅ DONE (2026-07-01) |
 | T2 滑鼠 coalesced | ✅ DONE (2026-07-01) |
 | T3 開火事件 | ✅ DONE (2026-07-01) |
-| T4 sim 消費 | ⬜ 待執行（T1–T3 齊備，前置解除） |
+| T4 sim 消費 + 排空 | ✅ DONE (2026-07-01)（plain array 佔位；ring/溢位 → T4b） |
+| T4b ring buffer + 溢位 | ⬜ 待執行（Depends on T4） |
 | T5 Exit gate | ⬜ 待執行 |
 
 ---
@@ -28,6 +29,30 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T4 sim 依時序消費輸入緩衝 + 排空 ✅ PASS（FR-3.4）
+
+**交付：** NEW [`src/input/consume.ts`](../../../../src/input/consume.ts)、[`consume.test.ts`](../../../../src/input/consume.test.ts)（5 tests）；MODIFY [`src/loop/SimLoop.ts`](../../../../src/loop/SimLoop.ts)（`consumeInput` → `consume(state, tickEndMs, handle)` + `applyInput` handle）、[`src/state/SharedState.ts`](../../../../src/state/SharedState.ts) + [`src/state/types.ts`](../../../../src/state/types.ts)（最小 `inputMeta`）。
+
+| 項目 | 內容 |
+|------|------|
+| API | `consume(state, untilT, handle)`：一趟掃描收集 `t < untilT`（半開窗、**嚴格 `<`**，GD-3）到期子集、局部窗排序（升冪）、逐一 `handle`、殘留就地壓實排空（同一陣列參考、不 realloc）。遲到（`t < inputMeta.lastConsumedT`）夾進當前 tick 消費並計 `lateEventCount`（不丟棄）。 |
+| SimLoop | `simStep` 開頭改呼叫 `consume(state, tickEndMs, (ev) => applyInput(state, ev))`；`applyInput` 暫只 A/D 切 vx（沿用佔位），mouse/fire 忽略（→ WP-5）。accumulator / `simTimeMs` 邏輯時鐘不改。 |
+| metadata | `SharedState.inputMeta = { lateEventCount, lastConsumedT }`（`types.ts` 加 `InputMeta`）；`resetState` 原地歸零（重用物件，GC 紀律）。`lastConsumedT` 初始 `-Infinity`（首 tick 不誤判遲到）。 |
+| 驗證 | `npx tsc --noEmit` → **exit 0**；`npx vitest run src` → **45 passed**（+5 consume；含 WP-2 決定性 9 tests 無回歸）；`npx vite build` → **✓ built**。 |
+| 測試覆蓋（+5） | 亂序 push → 升冪交付 · 跨 tick 分批 + 邊界 `t == untilT` 落下一 tick（嚴格 `<`）· 緩衝排空（殘留皆 `t >= untilT`）· 遲到夾進 + `lateEventCount` 遞增 · `resetState` 歸零 inputMeta（重用物件）。 |
+
+**Decision Log（本切片非平凡選擇）：**
+- **D-T4.1｜範圍拆分：T4 只在 WP-2 佔位 plain array 上做排序消費 + 排空 + `lateEventCount` + 決定性回歸；固定欄位 ring buffer（OQ-3.2）+ `bufferOverflow`（GD-2）拆為 [T4b](T4b-ring-buffer-overflow.md)。** *理由*：符合 T4 Touches（`consume.ts` + `SimLoop.ts`，本切片僅多動最小 `inputMeta`）、Med/Med 風險、Rule 0 簡單優先，且**不回頭改動剛提交的 T1/T2/T3 採集端**（ring 化需改三個 handler 的 `push` → 槽位寫入 + 寫入端 bounded insertion，屬正交、獨立成本切片降回歸面）。*Alternatives*：(a) 一次做完 ring + overflow + 保序寫入 → 觸及 T1/T2/T3，超出 T4 Touches、回歸面大，否決；(b) 完全不加 metadata → `lateEventCount` 無處存放、GD-2 行為缺失，否決（故加**最小** `inputMeta`，不含 ring/overflow 欄位）。
+- **D-T4.2｜局部窗排序 vs D-3b。** D-3b 定「排序責任在採集端（保序寫入），consume 只游標排空」。*現況*：T1–T3 仍為到達順序 plain `push`（未實作寫入端 bounded insertion，見 D-T1.3/D-T2.2）。*決議*：本切片於 consume **僅對本 tick 到期子集**做局部排序（`due.sort`，小範圍、非整 buffer）補齊「亂序 → 升冪」，滿足 T4 DoD；**不**違背 D-3b 的最終形態——寫入端保序 + 消除 consume 排序 scratch 是 [T4b](T4b-ring-buffer-overflow.md) 的職責（ring packed 槽就地排序困難 + 每 tick sort scratch 違反 CLAUDE.md §4，故留到 ring 化一併處理）。
+- **D-T4.3｜`lateEventCount` 存放於 `SharedState.inputMeta`（+ 內部游標 `lastConsumedT`）。** *理由*：consume 為 `consume(state, untilT, handle)` 純函式，偵測遲到需跨 tick 持久化「上次已關閉窗邊界」，SharedState 是其唯一持久面。`lateEventCount` 為 GD-2 研究 metadata（WP-7 匯出）；`lastConsumedT` 標記為 consume 內部游標、非匯出語意。初始 `-Infinity` 使首 tick 不誤判。**未加** ring/overflow 欄位（→ T4b）。*Alternatives*：把游標放 SimLoop closure → consume 需多一參數、破壞既定簽章，否決。
+- **D-T4.4｜邊界維持嚴格 `<`（GD-3）。** consume 用 `ev.t < untilT`，與 WP-2 佔位 `consumeInput`（`buf[consumed].t < tickEndMs`）一致；決定性回歸 9 tests 全綠，確認未漂移成 `<=`。
+
+**Surprises & Discoveries：**
+- 無意外。`simStep` 每 tick 傳入 `(ev) => applyInput(state, ev)` arrow 為極小配置；GC-strict 零配置版（handle 提升為穩定參考、消除 `due` scratch）與 ring buffer 一併移交 T4b。已於 SimLoop 就地註記。
+- **決定性邊界重申**：逐 tick exact 全等只涵蓋預排序合成事件路徑；遲到（`lateEventCount`）路徑本質 wall-clock 相依、非決定性，故 `consume.test.ts` 以獨立單元測試驗遲到，不納入決定性 exact 斷言。
+
+**Next**：T4b（固定欄位 ring buffer + `bufferOverflow` + T1/T2/T3 push → 槽位重用 / 寫入端保序）→ 之後 T5 Exit gate。
 
 ### 2026-07-01 — T2 滑鼠 coalesced 採集 ✅ PASS（pointermove + getCoalescedEvents 次幀採樣，FR-3.2）
 

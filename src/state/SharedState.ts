@@ -1,4 +1,4 @@
-import type { InputEvent, PlayerSnapshot, TargetState } from './types.ts';
+import type { InputEvent, InputMeta, PlayerSnapshot, TargetState } from './types.ts';
 
 /**
  * SharedState — WP-2 / T1（FR-2.1）
@@ -13,6 +13,8 @@ import type { InputEvent, PlayerSnapshot, TargetState } from './types.ts';
 export interface SharedState {
   /** 輸入緩衝。本 task 為 plain array 佔位；WP-3 換成固定欄位 ring buffer（真環狀、消費後槽位重用）。 */
   input: InputEvent[];
+  /** 輸入消費 metadata（T4）：遲到事件計數 + consume 低水位游標。溢位欄位待 ring buffer 就緒（T4b）。 */
+  inputMeta: InputMeta;
   /** 玩家即時狀態，由 simStep 推進（u / u·s⁻¹，canonical unit）。 */
   player: { vx: number; vz: number; x: number; z: number };
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
@@ -30,6 +32,7 @@ export interface SharedState {
 export function createSharedState(): SharedState {
   return {
     input: [],
+    inputMeta: { lateEventCount: 0, lastConsumedT: -Infinity },
     player: { vx: 0, vz: 0, x: 0, z: 0 },
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
@@ -48,6 +51,8 @@ export const sharedState: SharedState = createSharedState();
  */
 export function resetState(state: SharedState = sharedState): void {
   state.input.length = 0;
+  state.inputMeta.lateEventCount = 0; // 原地歸零、重用既有 inputMeta 物件（GC 紀律）
+  state.inputMeta.lastConsumedT = -Infinity;
   state.player.vx = 0;
   state.player.vz = 0;
   state.player.x = 0;

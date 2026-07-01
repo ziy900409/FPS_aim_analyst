@@ -21,6 +21,26 @@ export type InputEvent =
   | { type: 'fire'; t: number }; //                            開火事件（simStep 內就地 raycast，WP-5）
 
 /**
+ * 輸入消費 metadata（WP-3 / T4，FR-3.4）。sim 端 `consume`（[consume.ts](../input/consume.ts)）維護。
+ *
+ * 目前只承載遲到事件計數（GD-2 研究 metadata）與 consume 的內部低水位游標。溢位計數
+ * `bufferOverflow`（GD-2）待固定欄位 ring buffer 就緒後於後續切片（T4b）加入——本階段仍為
+ * plain array 佔位、無靜態容量，故無溢位語意。
+ */
+export interface InputMeta {
+  /**
+   * 遲到事件累計（GD-2 metadata，WP-7 匯出）：`t` 早於已關閉 tick 窗起點、被夾進當前最舊 tick
+   * 一併消費者（非丟棄）。逐 tick 決定性只涵蓋預排序路徑；遲到本質 wall-clock 相依、非決定性。
+   */
+  lateEventCount: number;
+  /**
+   * consume 內部游標：上次 `consume` 的 `untilT`（低水位邊界 = 當前最舊未消費 tick 窗起點），
+   * 用於偵測遲到事件。初始 `-Infinity`（首 tick 不誤判）。非匯出語意、不入研究資料。
+   */
+  lastConsumedT: number;
+}
+
+/**
  * 玩家位置快照，供 RenderLoop 在兩個 sim tick 間做 alpha 內插（T3）。
  * 只含可內插的位置；朝向由 CameraController 走 render/輸入路徑、不入 sim（雙迴圈邊界）。
  */

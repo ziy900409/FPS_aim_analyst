@@ -1,4 +1,6 @@
+import { consume } from '../input/consume.ts';
 import type { SharedState } from '../state/SharedState.ts';
+import type { InputEvent } from '../state/types.ts';
 import type { Clock } from './clock.ts';
 
 /**
@@ -19,41 +21,33 @@ import type { Clock } from './clock.ts';
 const PLACEHOLDER_STRAFE_SPEED = 250;
 
 /**
- * 消費落在本 tick 邏輯窗的輸入事件（`timeStamp < tickEndMs`），依序套用（佔位：A/D 切換 vx）。
- * 這是「輸入分桶」的最小機制（CONTEXT），也是決定性前提：事件落在哪個 tick 由 timeStamp 決定、
- * 與 render frame 邊界無關。
+ * 佔位輸入套用（handle）：暫只更新按鍵 held（A/D 橫移瞬間 snap velocity，CONTEXT MovementController
+ * 狀態機雛形；WP-5 換真 physics）。mouse / fire 事件在佔位階段忽略（→ WP-3 準心 / WP-5 raycast）。
  *
- * 假設 `state.input` 已依 timeStamp 排序（T4 合成事件保證；WP-3 真 `InputSampler` 負責排序、
- * ring buffer 與遲到/溢位處理）。佔位用陣列前端 `splice`；WP-3 換 ring buffer 槽位重用。
+ * 依時序、無遺漏的排序消費與排空責任已抽到 [`consume`](../input/consume.ts)（T4）；本函式只負責
+ * 「每個到期事件如何改狀態」，不管排序/分桶/排空。
  */
-function consumeInput(state: SharedState, tickEndMs: number): void {
-  const buf = state.input;
-  let consumed = 0;
-  while (consumed < buf.length && buf[consumed].t < tickEndMs) {
-    const ev = buf[consumed];
-    if (ev.type === 'key') {
-      // 佔位 movement：A/D 橫移瞬間 snap velocity（CONTEXT MovementController 狀態機雛形；WP-5 換真 physics）。
-      if (ev.code === 'KeyD') state.player.vx = ev.down ? PLACEHOLDER_STRAFE_SPEED : 0;
-      else if (ev.code === 'KeyA') state.player.vx = ev.down ? -PLACEHOLDER_STRAFE_SPEED : 0;
-    }
-    // mouse / fire 事件在佔位階段忽略（→ WP-3 準心 / WP-5 raycast）。
-    consumed++;
+function applyInput(state: SharedState, ev: InputEvent): void {
+  if (ev.type === 'key') {
+    if (ev.code === 'KeyD') state.player.vx = ev.down ? PLACEHOLDER_STRAFE_SPEED : 0;
+    else if (ev.code === 'KeyA') state.player.vx = ev.down ? -PLACEHOLDER_STRAFE_SPEED : 0;
   }
-  if (consumed > 0) buf.splice(0, consumed);
 }
 
 /**
  * 推進一個固定 tick（純函式邊界，OQ-2.4：只讀寫傳入 state、不讀 `performance.now()`、不碰 DOM；
  * 預留階段 B Worker 搬遷）。`tickEndMs` = 本 tick 邏輯窗結束時間（量測時鐘域 ms），供輸入分桶。
  *
- * 順序（對齊 CONTEXT「simStep 順序」雛形）：① prev←curr（內插基準，T3）；② 消費本 tick 輸入；
- * ③ 等速推進位置（**只用 dtSec**）；④ curr←新位置。
+ * 順序（對齊 CONTEXT「simStep 順序」雛形）：① prev←curr（內插基準，T3）；② 依時序消費本 tick 輸入
+ * （`consume` 排序 + 排空，T4）；③ 等速推進位置（**只用 dtSec**）；④ curr←新位置。
  */
 export function simStep(state: SharedState, dtSec: number, tickEndMs: number): void {
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
 
-  consumeInput(state, tickEndMs);
+  // 半開窗 [tickStart, tickEndMs)、嚴格 `<`（GD-3）；handle 每個到期事件套用佔位狀態變更。
+  // 每 tick 的 arrow 為極小配置；GC-strict 零配置版（handle 提升為穩定參考）併入 ring buffer 切片（T4b）。
+  consume(state, tickEndMs, (ev) => applyInput(state, ev));
 
   state.player.x += state.player.vx * dtSec;
   state.player.z += state.player.vz * dtSec;
