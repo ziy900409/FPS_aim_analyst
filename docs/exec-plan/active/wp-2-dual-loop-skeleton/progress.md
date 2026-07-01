@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T4 決定性驗證 ✅ PASS（2026-07-01）— ★M1 gate 綠燈（同輸入不同 FPS 逐 tick 一致）；下一步 T5 正式宣告 M1
+## Status: ✅ WP-2 完成 — **M1（專案脊椎）正式達成（2026-07-01）**；解除 STOP，WP-3 / WP-4 可並行展開
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T2 SimLoop accumulator | ✅ 通過（2026-06-30）|
 | T3 Render 內插 | ✅ 通過（2026-06-30）|
 | T4 決定性驗證（M1 gate） | ✅ 通過（2026-07-01）★ |
-| T5 Exit gate（宣告 M1） | ⬜ 待執行 |
+| T5 Exit gate（宣告 M1） | ✅ 通過（2026-07-01）— **M1 達成** |
 
 ---
 
@@ -29,6 +29,44 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T5 / Exit gate ✅ PASS — **M1（專案脊椎）正式達成**
+
+**交付：** docs only — 翻 [頂層索引](../../README.md) §2 WP-2 → ✅、§3 里程碑 M1 → ✅ 達成；本 WP task-checklist + progress 收尾。無程式碼改動。
+
+**整體綠燈證據（本 session 本機）：**
+
+| 閘 | 指令 | 結果 |
+|----|------|------|
+| 型別 | `npx tsc --noEmit` | **exit 0** |
+| 單元/整合 | `npx vitest run src` | **27 passed**（SharedState 4 · SimLoop 6 · RenderLoop 4 · determinism 9 · createRenderer 4）|
+| e2e（real Edge） | `npx playwright test` | **3 passed**（dev+preview `crossOriginIsolated===true`；`renderer.backend` 端到端解析）|
+| 產物 | `npx vite build` | **✓ built**（three chunk-size warning 資訊性；T4 已驗）|
+
+**四項 WP-2/M1 驗收 → 證據：**
+1. `SharedState` 三迴圈唯一溝通管道 → **T1**（型別 + 單例 + 4 tests）。
+2. 雙迴圈空跑、sim 固定 128 Hz、render 解耦 → **T2+T3**（SimLoop 固定步進/spike 夾除 6 tests、RenderLoop 4 tests；e2e 真 Edge 空跑無 fatal error）。
+3. render 內插高 FPS 不抖 → **T3**（lerp 內插數學單元測試；機制由 T4 間接覆蓋）。
+4. **決定性驗證通過（M1 gate）** → **T4**（9 tests，逐 tick exact 一致）。
+
+**Outcomes & Retrospective：**
+- **達成什麼**：專案脊椎（ADR-2 雙迴圈 + fixed-timestep 128 Hz + `SharedState` 單一溝通管道 + 注入式 clock）就緒且**決定性可證**。後續所有量測（急停時機、首發命中）站在「與幀率無關、可重現」的地基上。
+- **決定性測試涵蓋**：同一合成輸入序列（`KeyD↓@10/↑@100 · KeyA↓@150/↑@300` ms）餵穩定 **60 / 144 / 240 Hz + 抖動 144 Hz ±50%**（決定性 LCG，非 `Math.random`）；每幀以累積 tick 數對齊 per-tick ground truth，逐 tick `{x,z,vx,vz}` **bit-exact 相等**。根因：`simStep` 對第 k 個 global tick 恆以 `tickEnd=base+k·tickMs` 呼叫，與分幀方式無關。
+- **spike 行為定義**（非「等價於連續」）：`Math.min(δ,0.25)` 依設計**丟棄** >0.25s 的時間 → 單一 300ms 幀夾成 **32 ticks**（不 spiral）；含多次 spike 序列**重播 bit-exact**（證明夾除為決定性、無 `Date.now()`/`Math.random()` 洩漏）。真 sim/jank 隔離（不掉 tick）待階段 B Worker（DESIGN §1）。
+- **技術債（明確標記，非本 WP 修）**：
+  - sim step 為佔位等速邏輯 → WP-5 換真 `MovementController`（friction/accel + 急停），介面 `simStep` 不變。
+  - `SharedState.input` 仍為 plain-array 佔位 → WP-3 換真 ring buffer（槽位重用）。
+  - **高 FPS 內插平滑的真人肉眼 spot-check 延至 WP-3**（需真鍵盤驅動 player 位移；本 WP e2e 僅能驗閒置空跑 + 無 fatal error）。
+
+**Open Questions（交棒前請確認）：**
+- **OQ-T5.1（測試 infra，非本 WP scope）**：無 `vitest.config.ts` → 裸 `npx vitest run` 會誤收 Playwright 的 `tests/e2e/*.spec.ts`（Playwright `test()` 不相容 Vitest → 2 suites fail）。現行分工＝單元用 `vitest run src`、e2e 用 `playwright test`（WP-0/1/2 一貫）。**建議**（獨立小切片）：於 vite/vitest config 加 `test.include=['src/**/*.test.ts']`（或 `test.exclude` 掉 `tests/e2e`），使裸 `vitest run` 乾淨、免後續 agent 誤判紅燈。**未在 T5 動手**（docs-only 切片，守 Rule 1 一次一件）。
+
+**交棒 note → WP-3 / WP-4（M1 後可並行）：**
+- **WP-3** `InputSampler`（F1）：接真鍵鼠高解析度時間戳採集，寫入 `SharedState.input`（換掉佔位 plain-array 為 ring buffer）；順帶補做本 WP 延後的「高 FPS 內插平滑」真人 spot-check。
+- **WP-4** `TargetManager` + `t_visible`（F2）：寫入 `SharedState.targets` / `tVisible`（本 WP 已留空欄位）。
+- 兩者皆以 `SharedState` 為唯一溝通管道（ADR-2）、時間戳走量測時鐘域（ADR-7 / `performance.now()`）。
+
+**Next**：WP-2 收官。開 **WP-3** entry-gate（先驗 WP-2 exit 綠燈——本檔即證據）。
 
 ### 2026-07-01 — T4 / 決定性驗證 ✅ PASS — ★M1 gate 綠燈（同輸入不同 FPS 逐 tick 一致，FR-2.4）
 

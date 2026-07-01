@@ -10,7 +10,7 @@
 | ✅ | **T2** SimLoop accumulator 128 Hz | [T2-sim-loop.md](T2-sim-loop.md) | T1 | Med |
 | ✅ | **T3** Render alpha 內插 | [T3-render-interpolation.md](T3-render-interpolation.md) | T2 | Med |
 | ✅ | **T4** 決定性驗證 ★M1 gate | [T4-determinism.md](T4-determinism.md) | T2 | High |
-| ⬜ | **T5 / T-exit** Exit gate（宣告 M1） | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Med |
+| ✅ | **T5 / T-exit** Exit gate（宣告 M1） | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Med |
 
 ## Execution rules
 - 一個 task = 一個切片 = 一個原子 commit；先驗證再 commit。
