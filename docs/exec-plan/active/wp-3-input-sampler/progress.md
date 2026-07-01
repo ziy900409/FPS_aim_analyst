@@ -14,7 +14,7 @@
 | T3 開火事件 | ✅ DONE (2026-07-01) |
 | T4 sim 消費 + 排空 | ✅ DONE (2026-07-01)（plain array 佔位；ring/溢位 → T4b） |
 | T4b ring buffer + 溢位 | ✅ DONE (2026-07-01)（固定欄位真 ring、槽位繞圈重用、寫入端保序、`bufferOverflow` 拒新不丟舊） |
-| T5 Exit gate | ✅ DONE (2026-07-01)（F1 驗收 map + 頂層索引 ✅ + 交棒 WP-5；互動式手動驗延 WP-9） |
+| T5 Exit gate | ✅ DONE (2026-07-01)（F1 驗收 map + 頂層索引 ✅ + 交棒 WP-5；真實 Edge e2e 3 passed；鎖定中 fire 手動驗） |
 
 ---
 
@@ -29,6 +29,28 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T5 補強：WP-3 真實瀏覽器 e2e（Playwright + Edge）+ 手動驗手冊 ✅ PASS
+
+補上 T5 原缺的「瀏覽器端到端」驗證（原僅單元 + 延後手動）。新增 dev-only 觀測縫 + Playwright spec + 手動手冊，把 F1 採集→ring→sim 消費整條路徑在**真實 Edge** 端到端釘住。
+
+**交付：**
+- MODIFY [`src/main.ts`](../../../../src/main.ts)：dev-only 觀測縫 `if (import.meta.env.DEV) window.__aimDebug = { state, pointerLock }`（唯讀暴露量測單例；production build 由 `import.meta.env.DEV` 剝除，e2e build 已驗不入 bundle）。NEW [`src/vite-env.d.ts`](../../../../src/vite-env.d.ts)（`vite/client` 型別，使 `import.meta.env` 通過 tsc）。
+- NEW [`tests/e2e/input-sampler.spec.ts`](../../../../tests/e2e/input-sampler.spec.ts)（3 tests，Edge）：① 鍵盤 trusted A/D → 入緩衝 → sim 消費 → `vx` ±250 + `x` 推進（FR-3.1/3.4）；② 同步探針（單一 evaluate 內 dispatch+讀，避 rAF 排空競態）驗帶同源 `timeStamp` 入 ring + 非採集鍵 KeyQ 忽略 + 未鎖定 fire 被閘門擋（FR-3.1/3.3/OQ-3.3）；③ pointermove `getCoalescedEvents` 3 子樣本各入 ring（FR-3.2）。
+- NEW [manual-verification.md](manual-verification.md)：§A e2e 操作（`npx playwright test input-sampler`）+ §B **鎖定中 fire** 手動步驟（DevTools `__aimDebug` 觀測；Pointer Lock 需真實手勢、e2e 無法穩定自動化，故正向路徑手動）。
+
+**驗證：** `npx tsc --noEmit` → **exit 0**（含新 vite-env 型別）；`npx vitest run src` → **54 passed**（無回歸）；`npx playwright test input-sampler` → **3 passed**（真實 Edge，9.2s）；`npm run build`（preview webServer）→ **✓ built**（觀測縫已剝除）。
+
+**Decision Log：**
+- **D-T5.1｜觀測用 dev-only `window.__aimDebug` 縫，非在 e2e 直接 new InputSampler。** *理由*：要驗的是**生產** main.ts 的 wiring（真 sampler + 真 SimLoop rAF pump），須觀測生產單例 `sharedState`；以 `import.meta.env.DEV` 守門唯讀暴露，production 剝除、零 runtime 成本、不違 ADR-2（只讀不寫、不新增迴圈間呼叫）。*Alternatives*：(a) 生產無條件暴露 → prod 洩內部狀態，否決；(b) 純行為觀測（camera 位移）→ camera 位置未暴露且 mouse/fire 無佔位行為，覆蓋不足，否決。
+- **D-T5.2｜同步 `page.evaluate` 內 dispatch+讀，繞過 sim 每幀排空競態。** *理由*：sim 在 rAF 每幀 `consume` 排空 ring；跨 `await` 讀 `size()` 會競態。單一同步 evaluate 內 JS 不被 rAF 搶佔 → dispatch 後 ring 尚未排空，可原地斷言入緩衝。鍵盤**行為**測試則反之用 trusted 事件 + `expect.poll` 等 sim 消費後的持久 `vx`（無競態）。
+- **D-T5.3｜fire 正向（鎖定中）留手動。** Pointer Lock 需真實使用者手勢，自動化無法穩定取得；e2e 驗負向（未鎖定→擋），正向入緩衝由 manual-verification.md §B 手動。誠實揭露於 T5 DoD 例外。
+
+**Surprises：**
+- 合成 `PointerEvent.getCoalescedEvents()` 對 untrusted 事件多回 `[]`（sampler `?? [e]` 不觸發、將 push 0）；故 e2e 以 `Object.defineProperty` 注入子樣本回傳，忠實驗 sampler 的 coalesced 迴圈 wiring（與單元測試同構）。
+- `tests/` 不在 `tsconfig` `include`（僅 `src`）→ e2e spec 不受 `tsc --noEmit` 檢查（Playwright 自行轉譯），與既有 `backend/isolation.spec.ts` 一致；但 `main.ts` 的 `import.meta.env` 在 `src` 內，故需 `vite-env.d.ts` 補型別。
+
+**Next**：WP-3 全綠（含真實瀏覽器 e2e）→ 開 WP-5。
 
 ### 2026-07-01 — T5 Exit gate ✅ PASS（F1 採集層驗收 map + 交棒 WP-5；docs only）
 
@@ -50,7 +72,7 @@ WP-3（F1 InputSampler）整體綠燈驗收。四項 PLAN 驗收皆有單元證�
 - **coalesced 樣本率**：`getCoalescedEvents()` 逐子樣本各記一筆、無合併遺失（T2 以合成多樣本驗；真實 1000Hz 滑鼠取樣率待 WP-9 瀏覽器實測）。
 - **GC 紀律最終達標**：輸入緩衝為固定欄位真 ring（槽位繞圈重用）、寫入 primitive、消費解碼進單一重用 view、寫入端 bounded insertion 消除每-tick sort scratch；審查補強後 sim 熱路徑亦零 arrow 配置。
 - **決定性守恆**：換 ring + 保序寫入 + handler hoist 後，WP-2 決定性 9 tests 逐 tick bit-exact 全綠，M1 性質未漂移。
-- **限制/待辦**：互動式瀏覽器手動驗（真實鎖定操作→緩衝→消費）本 session 非互動未執行,延 **WP-9 整合**或使用者確認;drill 生命週期 gating（量測期才採集）屬 WP-6,採集端目前無條件 `attach(window)`。
+- **限制/待辦**：初版本 session 非互動、無瀏覽器 e2e，後補真實 Edge e2e（見下方 e2e 補強 Log）；剩「鎖定中 fire 正向路徑」因 Pointer Lock 需真實手勢仍手動驗。drill 生命週期 gating（量測期才採集）屬 WP-6，採集端目前無條件 `attach(window)`。
 
 **交棒 WP-5**：`applyInput`（佔位只 A/D 切 vx）→ 真 `MovementController`（friction/accel + 簡化急停，OQ-3.1）；fire 於 simStep 內就地 raycast（`HitDetector`，H1）；mouse 樣本驅動準心供 raycast。`lateEventCount`/`bufferOverflow` metadata 待 WP-7 匯出。詳見 [T5-exit-gate.md](T5-exit-gate.md) Handoff。
 

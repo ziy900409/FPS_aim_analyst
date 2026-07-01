@@ -105,6 +105,13 @@ inputSampler.attach(window);
 // 「單一 rAF 超級迴圈」，DESIGN §1）；階段 B 才把 sim 搬入 worker。
 const simLoop = createSimLoop(sharedState, realClock, SIM_HZ);
 
+// WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
+// 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈
+// （ADR-2;只讀不寫）;e2e 用法見 tests/e2e/input-sampler.spec.ts + WP-3 manual-verification.md。
+if (import.meta.env.DEV) {
+  (window as unknown as { __aimDebug?: unknown }).__aimDebug = { state: sharedState, pointerLock };
+}
+
 // player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。佔位 1:1（sim u → world unit），
 // 真 display scale 由 WP-6 drill config 定（CONTEXT 正規單位：render 可另套，sim/資料不得用公尺）。
 // 閒置時 player 恆在原點（真鍵盤輸入是 WP-3），故 camera = base，僅朝向由 mouse 變動。
