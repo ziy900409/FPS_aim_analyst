@@ -11,7 +11,7 @@
 | ✅ | **T3** 開火事件採集 | [T3-fire.md](T3-fire.md) | T0 | Low |
 | ✅ | **T4** sim 依時序消費 + 排空 | [T4-sim-consume.md](T4-sim-consume.md) | T1, T2, T3 | Med |
 | ✅ | **T4b** 固定欄位 ring buffer + 溢位 | [T4b-ring-buffer-overflow.md](T4b-ring-buffer-overflow.md) | T4 | Med |
-| ⬜ | **T5 / T-exit** Exit gate | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4（含 T4b） | Low |
+| ✅ | **T5 / T-exit** Exit gate | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4（含 T4b） | Low |
 
 ## Execution rules
 - 一個 task = 一個切片 = 一個原子 commit；先驗證再 commit。

@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T1–T4b 完成（採集三類 + sim 依時序消費 + 排空 + **固定欄位 ring buffer 就緒** + 溢位 `bufferOverflow`）；剩 T5 Exit gate
+## Status: ✅ WP-3 完成（2026-07-01）— F1 採集層全綠：採集三類 + sim 依時序消費 + 排空 + 固定欄位 ring buffer + 溢位 `bufferOverflow`；交棒 WP-5
 
 | Phase | State |
 |-------|-------|
@@ -14,7 +14,7 @@
 | T3 開火事件 | ✅ DONE (2026-07-01) |
 | T4 sim 消費 + 排空 | ✅ DONE (2026-07-01)（plain array 佔位；ring/溢位 → T4b） |
 | T4b ring buffer + 溢位 | ✅ DONE (2026-07-01)（固定欄位真 ring、槽位繞圈重用、寫入端保序、`bufferOverflow` 拒新不丟舊） |
-| T5 Exit gate | ⬜ 待執行（前置 T1–T4b 齊備） |
+| T5 Exit gate | ✅ DONE (2026-07-01)（F1 驗收 map + 頂層索引 ✅ + 交棒 WP-5；互動式手動驗延 WP-9） |
 
 ---
 
@@ -29,6 +29,32 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T5 Exit gate ✅ PASS（F1 採集層驗收 map + 交棒 WP-5；docs only）
+
+WP-3（F1 InputSampler）整體綠燈驗收。四項 PLAN 驗收皆有單元證據、頂層索引 §2 翻 ✅、交棒 note 指向 WP-5。
+
+**驗收證據（AC → test）：**
+
+| AC（PLAN WP-3 / F1） | Task | 證據 |
+|---|---|---|
+| 鍵盤事件帶時間戳入緩衝 | T1 | `InputSampler.test.ts`：keydown/keyup 蓋 `event.timeStamp`、A/D/W/S 過濾、`repeat` 不重入、時間戳原樣保留 |
+| 滑鼠 coalesced 次幀樣本無遺漏 | T2 | `InputSampler.test.ts`：多子事件 pointermove 全數入緩衝（樣本數=子事件數>1）、`getCoalescedEvents` 缺席 fallback 單筆 |
+| 開火事件帶時間戳 | T3 | `InputSampler.test.ts`：鎖定中左鍵入緩衝+時間戳、未鎖定不採、非左鍵不採 |
+| sim 依時序、無遺漏消費並排空 | T4+T4b | `consume.test.ts`（亂序→升冪、跨 tick 分批、邊界嚴格 `<`、排空、遲到）+ `InputRing.test.ts`（真 ring 繞圈/滿拒收不丟舊/保序）+ `determinism.test.ts` 9 無回歸 |
+
+**紅綠燈（本機）：** `npx tsc --noEmit` → **exit 0**;`npx vitest run` → **8 files / 54 passed**;`npx vite build` → **✓ built**。（`tests/e2e/` 現僅 WP-0 isolation/backend。）
+
+**Outcomes & Retrospective：**
+- **時間戳基準確認（OQ-3.3）**：三類事件一律用 `event.timeStamp`（與 `performance.now()` 同 time origin，ADR-4/7），全程無 `Date.now()`。⚠️ 同源可減**僅 Chromium 成立**（階段 A 鎖 Chrome/Edge）；支援非 Chromium 須重驗。
+- **coalesced 樣本率**：`getCoalescedEvents()` 逐子樣本各記一筆、無合併遺失（T2 以合成多樣本驗；真實 1000Hz 滑鼠取樣率待 WP-9 瀏覽器實測）。
+- **GC 紀律最終達標**：輸入緩衝為固定欄位真 ring（槽位繞圈重用）、寫入 primitive、消費解碼進單一重用 view、寫入端 bounded insertion 消除每-tick sort scratch；審查補強後 sim 熱路徑亦零 arrow 配置。
+- **決定性守恆**：換 ring + 保序寫入 + handler hoist 後，WP-2 決定性 9 tests 逐 tick bit-exact 全綠，M1 性質未漂移。
+- **限制/待辦**：互動式瀏覽器手動驗（真實鎖定操作→緩衝→消費）本 session 非互動未執行,延 **WP-9 整合**或使用者確認;drill 生命週期 gating（量測期才採集）屬 WP-6,採集端目前無條件 `attach(window)`。
+
+**交棒 WP-5**：`applyInput`（佔位只 A/D 切 vx）→ 真 `MovementController`（friction/accel + 簡化急停，OQ-3.1）；fire 於 simStep 內就地 raycast（`HitDetector`，H1）；mouse 樣本驅動準心供 raycast。`lateEventCount`/`bufferOverflow` metadata 待 WP-7 匯出。詳見 [T5-exit-gate.md](T5-exit-gate.md) Handoff。
+
+**Next**：WP-3 完成 → 開 WP-5（`HitDetector` + 橫移 + 簡化急停，M2；相依 WP-3 ✅ + WP-4）。
 
 ### 2026-07-01 — T4b 審查補強：兌現 simStep 熱路徑零配置 + ring dequeue 空防呆 ✅ PASS
 
