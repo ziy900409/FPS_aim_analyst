@@ -80,7 +80,7 @@ SimLoop tick (128 Hz)：consume(state, [tickStart,tickEnd)) → 取該邏輯窗�
 
 ```ts
 // src/input/InputSampler.ts
-export interface InputSampler { attach(target: HTMLElement): void; detach(): void; }
+export interface InputSampler { attach(target: EventTarget): void; detach(): void; }  // target=EventTarget（鍵盤落 window，D-T1.1）
 export function createInputSampler(state: SharedState): InputSampler;
 // 寫入 state.input：
 //   { type:'key', code:'KeyA'|'KeyD'|..., down:boolean, t:number }

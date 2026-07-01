@@ -6,7 +6,7 @@
 | Done | Task | File | Depends on | Risk |
 |------|------|------|------------|------|
 | ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-2（M1） | Low |
-| ⬜ | **T1** 鍵盤採集 + timeStamp | [T1-keyboard.md](T1-keyboard.md) | T0 | Low |
+| ✅ | **T1** 鍵盤採集 + timeStamp | [T1-keyboard.md](T1-keyboard.md) | T0 | Low |
 | ⬜ | **T2** 滑鼠 coalesced 採集 | [T2-mouse-coalesced.md](T2-mouse-coalesced.md) | T0 | Med |
 | ⬜ | **T3** 開火事件採集 | [T3-fire.md](T3-fire.md) | T0 | Low |
 | ⬜ | **T4** sim 依時序消費 + 排空 | [T4-sim-consume.md](T4-sim-consume.md) | T1, T2, T3 | Med |

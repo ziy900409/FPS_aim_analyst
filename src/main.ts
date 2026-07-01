@@ -2,6 +2,7 @@ import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
 import { SceneManager } from './render/SceneManager.ts';
 import { createPointerLock } from './input/PointerLock.ts';
+import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
 import { sharedState } from './state/SharedState.ts';
@@ -90,6 +91,12 @@ const settingsPanel = createSettingsPanel({
   onFovChange: (deg) => cameraController.setFov(deg),
 });
 pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
+
+// WP-3 / T1（FR-3.1）— 鍵盤採集：keydown/keyup（A/D/W/S）蓋 event.timeStamp 寫入 sharedState.input，
+// 供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；掛在 window（鍵盤事件不落在 canvas）。
+// 與 CameraController（視角走 pointerLock.onMove）互不干擾——此處只入緩衝供量測（WP-3 目的）。
+const inputSampler = createInputSampler(sharedState);
+inputSampler.attach(window);
 
 // WP-2 / T2+T3（FR-2.2/2.3）— 雙迴圈：sim（128 Hz 固定步長 accumulator）與 render（rAF）解耦，
 // 全透過 sharedState 溝通（ADR-2）。階段 A 單執行緒下，sim 在 render 的 rAF callback 內 pump（§4.3

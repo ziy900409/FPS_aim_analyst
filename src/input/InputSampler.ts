@@ -1,0 +1,61 @@
+import type { SharedState } from '../state/SharedState.ts';
+
+/**
+ * InputSampler — WP-3 / T1（FR-3.1，鍵盤部分）
+ *
+ * 事件驅動採集（~1000 Hz，ADR-2 三速率之最快者）：把 keydown/keyup 蓋上高解析度
+ * `event.timeStamp`（與 `performance.now()` 同 time origin，ADR-4/7；禁 `Date.now()`）
+ * 寫入 `SharedState.input`——精準度的真正來源是這層的 sub-tick 時間戳，不是 sim tick 頻率
+ * （規格 ADR-3）。sim 端（T4）再依 timeStamp 排序消費。
+ *
+ * 本 task 只做鍵盤；滑鼠 coalesced（T2）、開火（T3）之後補進同一 sampler。
+ * `state.input` 目前仍是 WP-2 佔位 plain array（`push` 依到達順序 append，`event.timeStamp`
+ * 近單調 ⇒ 近有序，滿足 T4 consume 的保序前提，GD-3/D-3b）；換固定欄位 ring buffer 屬後續切片。
+ */
+
+/**
+ * 採集的按鍵集合（`KeyboardEvent.code`，非 `key`：避開鍵盤 layout 差異，設計註記）。
+ * A/D = 橫移（反向語意在 WP-5 急停判定，OQ-3.1）；W/S 預留（前後移動，階段 A 未用）。
+ * 只收這些鍵 → 打字/快捷鍵不污染量測緩衝、守 GC 紀律（不 push 無關事件）。
+ */
+const SAMPLED_KEYS: ReadonlySet<string> = new Set(['KeyA', 'KeyD', 'KeyW', 'KeyS']);
+
+export interface InputSampler {
+  /**
+   * 掛上事件監聽。鍵盤事件實務上落在 `window`/`document`（非某個 HTMLElement），故 target 型別
+   * 放寬為 `EventTarget`（`Window`/`Document`/`HTMLElement` 皆滿足；偏離 README 原 `HTMLElement`，
+   * 見 progress D-T1.1）。冪等：重複 `attach` 不疊聽。
+   */
+  attach(target: EventTarget): void;
+  detach(): void;
+}
+
+export function createInputSampler(state: SharedState): InputSampler {
+  let attached: EventTarget | null = null;
+
+  function onKeyDown(e: KeyboardEvent): void {
+    if (e.repeat) return; // 自動重複的 keydown 不入緩衝：只記真實狀態轉換（設計註記）
+    if (!SAMPLED_KEYS.has(e.code)) return;
+    state.input.push({ type: 'key', code: e.code, down: true, t: e.timeStamp });
+  }
+
+  function onKeyUp(e: KeyboardEvent): void {
+    if (!SAMPLED_KEYS.has(e.code)) return;
+    state.input.push({ type: 'key', code: e.code, down: false, t: e.timeStamp });
+  }
+
+  return {
+    attach(target: EventTarget): void {
+      if (attached) return; // 已掛載則不重複（避免同一事件觸發多次 push）
+      attached = target;
+      target.addEventListener('keydown', onKeyDown as EventListener);
+      target.addEventListener('keyup', onKeyUp as EventListener);
+    },
+    detach(): void {
+      if (!attached) return;
+      attached.removeEventListener('keydown', onKeyDown as EventListener);
+      attached.removeEventListener('keyup', onKeyUp as EventListener);
+      attached = null;
+    },
+  };
+}

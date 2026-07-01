@@ -4,12 +4,12 @@
 
 ---
 
-## Status: 🟢 T0 過閘（M1 已達成）；T1/T2/T3 可並行展開
+## Status: 🟢 T1 完成（鍵盤採集）；T2/T3 可並行、T4 待 T1–T3
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ DONE (2026-07-01) |
-| T1 鍵盤採集 | ⬜ 待執行 |
+| T1 鍵盤採集 | ✅ DONE (2026-07-01) |
 | T2 滑鼠 coalesced | ⬜ 待執行 |
 | T3 開火事件 | ⬜ 待執行 |
 | T4 sim 消費 | ⬜ 待執行 |
@@ -28,6 +28,27 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T1 鍵盤採集 ✅ PASS（keydown/keyup + event.timeStamp，FR-3.1）
+
+**交付：** NEW [`src/input/InputSampler.ts`](../../../../src/input/InputSampler.ts)（鍵盤部分）+ [`InputSampler.test.ts`](../../../../src/input/InputSampler.test.ts)（6 tests）；MODIFY [`src/main.ts`](../../../../src/main.ts)（建 sampler + `attach(window)`）。
+
+| 項目 | 內容 |
+|------|------|
+| API | `createInputSampler(state) → { attach(target), detach() }`；keydown（非 repeat）/keyup 過濾 A/D/W/S → `state.input.push({type:'key',code,down,t:event.timeStamp})`。 |
+| 驗證 | `npx tsc --noEmit` → **exit 0**；`npx vitest run src` → **33 passed**（6 新 InputSampler + 27 既有，無回歸）；`npx vite build` → **✓ built**。 |
+| 測試覆蓋（6） | 時間戳寫入 · A/D/W/S 過濾（無關鍵不入緩衝）· `event.repeat` 不重複 · 時間戳原樣保留 · detach 移除監聽 · attach 冪等。 |
+
+**Decision Log（本切片非平凡選擇）：**
+- **D-T1.1｜`attach` 參數型別 `HTMLElement` → `EventTarget`（偏離 README 原契約）。** *理由*：鍵盤事件實務落在 `window`/`document`，非某 HTMLElement；`EventTarget` 為 `Window`/`Document`/`HTMLElement` 共同上界，且 node 測試可注入假 target（守本專案「注入假物件」測試慣例，如 `clock.ts`）。*Alternatives*：(a) 維持 `HTMLElement` + main.ts 傳 canvas → canvas 需 focus 才收鍵盤，脆弱，否決；(b) 硬編 `window` 不收 target → 失去 DI 可測性，否決。**已同步回寫 README §2 interface contract。**
+- **D-T1.2｜採集端過濾 A/D/W/S（`KeyboardEvent.code`）。** *理由*：只有移動鍵是量測所需；過濾避免打字/快捷鍵污染緩衝、守 GC 紀律（不 push 無關事件）。用 `code` 非 `key`（避 layout 差異，設計註記）。反向語意不在此處（OQ-3.1 → WP-5）。
+- **D-T1.3｜`state.input` 維持 WP-2 佔位 plain array 的 `push`（本切片不換 ring buffer）。** *理由*：T1 touches 不含 `SharedState.ts`；`push` 依到達順序 append，`event.timeStamp` 近單調 ⇒ 近有序，滿足 D-3b 保序前提。ring buffer（OQ-3.2）與 D-3b 的 bounded-insertion 屬後續切片，不在 T1 過度實作（Rule 0 簡單優先）。
+
+**Surprises & Discoveries：**
+- **⚠️ 分支事故（已復原）**：實作 T1 期間工作區被切到 `wp-4-target-tvisible` 分支（疑似並行 WP-4 session 的 `git checkout`）。未提交的 T1 變更一度落在 wp-4 上。**復原**：restore 兩個 doc 檔（改動小、可重做）→ `git checkout wp-3-input-sampler`（main.ts 兩分支相同、untracked 檔隨遷移，皆乾淨）→ 於 wp-3 重驗 tsc/vitest（33 綠）+ 重貼 doc 編輯。wp-3 兩個 docs commit（T0 `ef52e66`、review `2e6df3f`）確認完好。**教訓**：並行 WP session 共用同一 worktree 會互相切換分支；跨 session 應各自 worktree（`git worktree`）隔離。
+- **Scope note**：sampler 目前 `attach(window)` 無條件採集（未依 drill/pointerLock 閘門）；量測期間才採集的 gating 屬 WP-6 drill 生命週期，本切片不做（記此以免誤判為遺漏）。
+
+**Next**：T2（滑鼠 `pointermove` + `getCoalescedEvents()`）∥ T3（開火 mousedown）——皆 append 進同一 sampler。
 
 ### 2026-07-01 — 審查驅動的文件補強（T0 後、T1 前；docs only）
 
