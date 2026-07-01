@@ -51,10 +51,10 @@ F2：記錄每個敵人 spawn／可見時間戳 `t_visible`——**每個目標�
 
 | ID | Question | 建議解法 | Blocks |
 |----|----------|---------|--------|
-| **OQ-4.1** | 目標幾何 / hitbox 部位？ | **已定 H1（grill）**：階段 A **單一 hitbox**（命中/未命中）；`part` 欄保留選填、向後相容；頭/身分解與爆頭率延後。正式形狀延後。 | T1 |
-| **OQ-4.2** | 「可見」的定義（spawn 即可見 vs 進視野才算）？ | 階段 A：**spawn 瞬間即視為可見**（固定左右位置在視野內），`t_visible` = spawn tick 時間；遮擋/進視野模型延後。 | T2 |
-| **OQ-4.3** | 交替序列由誰驅動？ | 本 WP 用內建確定性序列（左/右輪替）；WP-6 drill loader 之後接管。介面預留。 | T3 |
-| **OQ-4.4** | 目標消失條件（本 WP）？ | 本 WP 先支援「被標記擊殺 → 消失 → 生成對側」；擊殺訊號暫由測試/佔位觸發，WP-5 命中接上。 | T3 |
+| **OQ-4.1** | 目標幾何 / hitbox 部位？ | **已定 H1（grill）**：階段 A **單一 hitbox**（命中/未命中）；`part` 欄保留選填、向後相容；頭/身分解與爆頭率延後。正式形狀延後。**T0 鎖定 ✅（2026-07-01）**——對齊 CONTEXT.md `HitDetector`。 | T1 |
+| **OQ-4.2** | 「可見」的定義（spawn 即可見 vs 進視野才算）？ | 階段 A：**spawn 瞬間即視為可見**（固定左右位置在視野內），`t_visible` = spawn tick 時間；遮擋/進視野模型延後。**T0 鎖定 ✅（2026-07-01）**——對齊 CONTEXT.md `t_visible` 條目。 | T2 |
+| **OQ-4.3** | 交替序列由誰驅動？ | 本 WP 用內建確定性序列（左/右輪替）；WP-6 drill loader 之後接管。介面預留。**T0 鎖定 ✅（2026-07-01）**——確定性函式、與 WP-2 決定性契約相容。 | T3 |
+| **OQ-4.4** | 目標消失條件（本 WP）？ | 本 WP 先支援「被標記擊殺 → 消失 → 生成對側」；擊殺訊號暫由測試/佔位觸發，WP-5 命中接上。**T0 鎖定 ✅（2026-07-01）**。 | T3 |
 
 ---
 
@@ -132,7 +132,7 @@ TargetManager 在 sim tick 內同步執行；render 唯讀 `SharedState.targets`
 
 | Task | File | Objective | Deps | Risk | Cplx |
 |------|------|-----------|------|------|------|
-| **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | 確認 M1 + WP-1 場景；鎖 OQ-4.1~4.4。 | WP-1, WP-2 | Low | Low |
+| **T0** Entry gate ✅ | [T0-entry-gate.md](T0-entry-gate.md) | 確認 M1 + WP-1 場景；鎖 OQ-4.1~4.4。 | WP-1, WP-2 | Low | Low |
 | **T1** 目標 entity | [T1-target-entity.md](T1-target-entity.md) | mesh + 單一 hitbox（H1；`part` 選填）顯示/隱藏（FR-4.1）。 | T0 | Low | Med |
 | **T2** 可見性 + t_visible | [T2-visibility-tvisible.md](T2-visibility-tvisible.md) | spawn/可見瞬間在 **sim tick 內**蓋 `t_visible`（FR-4.2）。 | T1 | Med | Med |
 | **T3** 左右交替序列 | [T3-alternation.md](T3-alternation.md) | 擊殺一側 → 生成對側，確定性輪替（FR-4.3）。 | T2 | Med | Med |
