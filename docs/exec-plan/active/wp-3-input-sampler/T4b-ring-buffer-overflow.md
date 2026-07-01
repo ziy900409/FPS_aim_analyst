@@ -8,7 +8,7 @@
 | **Depends on** | T4 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | MODIFY `src/state/SharedState.ts`（真環狀 ring + 靜態容量 + `bufferOverflow` metadata）；`src/input/InputSampler.ts`（T1/T2/T3 的 `push` → ring 槽位寫入 + 寫入端 bounded insertion 保序）；`src/input/consume.ts`（游標排空、槽位重用，取代 plain array 掃描/壓實 + scratch sort） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE (2026-07-01) |
 
 ## 背景（為何從 T4 拆出）
 T4 依「拆分」決策（見 [progress.md](progress.md) Decision Log）只在 WP-2 佔位 plain array 上做「依 `timeStamp` 升冪消費 + 半開窗嚴格 `<` 排空 + `lateEventCount` + WP-2 決定性回歸」，**刻意不**引入固定欄位 ring buffer 與 `bufferOverflow`，也不回頭改動剛提交的 T1/T2/T3 採集端。理由：符合 T4 Touches（僅 `consume.ts` + `SimLoop.ts`）、Med/Med 風險、Rule 0 簡單優先。ring/overflow 屬正交關切，獨立成本切片降低回歸面。
@@ -31,17 +31,17 @@ T4 依「拆分」決策（見 [progress.md](progress.md) Decision Log）只在 
 - 遲到事件語意（`lateEventCount`）沿用 T4（`inputMeta.lastConsumedT` 低水位）；ring 下低水位判定不變。
 
 ## Steps
-- [ ] `SharedState` 立固定欄位 ring（靜態容量常數、頭/尾游標、數值槽位陣列）；`inputMeta` 加 `bufferOverflow` + `resetState` 歸零。
-- [ ] T1/T2/T3 採集端 `push` → ring 寫入（+ bounded insertion 保序）；容量滿升 `bufferOverflow`、不丟最舊。
-- [ ] `consume` 改游標排空、移除 `due` scratch 與局部排序。
-- [ ] Vitest：ring 繞圈重用槽位、容量滿升 `bufferOverflow`（不丟最舊）、寫入端亂序 → 保序;回歸 T4 `consume.test.ts` + WP-2 決定性測試仍綠。
-- [ ] `tsc` / `vitest run` / `vite build` 全綠。
+- [x] `SharedState` 立固定欄位 ring（`createInputRing`：靜態 `RING_CAPACITY=512` 常數、`head`/`count` 游標、`Uint8Array type` + 三 `Float64Array t/a/b` 槽位）；`inputMeta` 加 `bufferOverflow` + `resetState` 原地歸零（`ring.clear()`）。
+- [x] T1/T2/T3 採集端 `push` → ring `pushKey/pushMouse/pushFire`（+ 寫入端 bounded insertion 保序）；容量滿 `push*` 回 `false` → 升 `bufferOverflow`、拒收、不丟最舊。
+- [x] `consume` 改 ring 游標排空（`peekT()<untilT` 沿 head 排空 + 重用 view 解碼）、移除 `due` scratch 與 `due.sort`。
+- [x] Vitest：新增 `InputRing.test.ts`（繞圈重用槽位、容量滿拒收不丟最舊、寫入端亂序 → 升冪、packed 解碼保真、clear 續用）+ `InputSampler` 溢位 wiring；回歸 `consume.test.ts` + WP-2 決定性測試遷移後仍綠。
+- [x] `tsc` / `vitest run` / `vite build` 全綠（tsc exit 0、**53 passed**、✓ built）。
 
 ## Definition of Done
-- [ ] 輸入緩衝為固定欄位真 ring（靜態容量、槽位重用、熱路徑不配置物件）。
-- [ ] 容量滿升 `bufferOverflow`、不靜默丟最舊。
-- [ ] 寫入端保序 → `consume` 無需每 tick 排序 scratch（GC 紀律達標）。
-- [ ] T4 `consume.test.ts` 與 WP-2 決定性測試仍通過；邊界維持嚴格 `<`。
+- [x] 輸入緩衝為固定欄位真 ring（靜態容量、槽位繞圈重用、熱路徑不配置物件——寫入 primitive、消費解碼進單一重用 view）。
+- [x] 容量滿升 `bufferOverflow`、不靜默丟最舊（`push*` 回 `false` = 拒收新事件）。
+- [x] 寫入端 bounded insertion 保序 → `consume` 無需每 tick 排序 scratch（GC 紀律達標）。
+- [x] `consume.test.ts` 與 WP-2 決定性測試仍通過；邊界維持嚴格 `<`（GD-3 未漂移）。
 
 ## Commit
 `feat(wp-3): 輸入緩衝換固定欄位 ring buffer + 溢位 bufferOverflow（OQ-3.2/GD-2）`

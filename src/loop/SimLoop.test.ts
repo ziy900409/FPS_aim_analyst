@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSharedState } from '../state/SharedState.ts';
+import { pushEvent } from '../state/inputRingTestUtil.ts';
 import type { Clock } from './clock.ts';
 import { SIM_HZ } from './constants.ts';
 import { createSimLoop, simStep } from './SimLoop.ts';
@@ -51,20 +52,20 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
   it('輸入依 timeStamp 落入對應 tick 窗 toggle vx（決定性前提的最小機制）', () => {
     const state = createSharedState();
     // baseline=0；KeyD down @ t=2ms 應落在 tick1 窗 [0, 7.8125)
-    state.input.push({ type: 'key', code: 'KeyD', down: true, t: 2 });
+    pushEvent(state, { type: 'key', code: 'KeyD', down: true, t: 2 });
     const loop = createSimLoop(state, fixedClock(0), SIM_HZ);
     loop.pump(TICK_MS); // 跑 1 個 tick
     expect(state.player.vx).toBe(250); // KeyD 已消費 → snap 到 +STRAFE
-    expect(state.input).toHaveLength(0); // 事件已消費出緩衝
+    expect(state.input.size()).toBe(0); // 事件已消費出緩衝
   });
 
   it('未到期的事件不被提前消費（晚於本 tick 窗）', () => {
     const state = createSharedState();
     // KeyD @ t=20ms 落在 tick3（[15.625, 23.4375)），跑單一 tick 不應消費
-    state.input.push({ type: 'key', code: 'KeyD', down: true, t: 20 });
+    pushEvent(state, { type: 'key', code: 'KeyD', down: true, t: 20 });
     const loop = createSimLoop(state, fixedClock(0), SIM_HZ);
     loop.pump(TICK_MS); // 只跑 tick1，窗 [0,7.8125)
     expect(state.player.vx).toBe(0); // 尚未到期
-    expect(state.input).toHaveLength(1); // 仍在緩衝
+    expect(state.input.size()).toBe(1); // 仍在緩衝
   });
 });

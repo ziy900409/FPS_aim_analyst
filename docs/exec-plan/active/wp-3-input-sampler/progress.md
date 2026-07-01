@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T1–T4 完成（採集三類 + sim 依時序消費 + 排空，plain array 佔位）；ring buffer + 溢位拆為 T4b、待執行
+## Status: 🟢 T1–T4b 完成（採集三類 + sim 依時序消費 + 排空 + **固定欄位 ring buffer 就緒** + 溢位 `bufferOverflow`）；剩 T5 Exit gate
 
 | Phase | State |
 |-------|-------|
@@ -13,8 +13,8 @@
 | T2 滑鼠 coalesced | ✅ DONE (2026-07-01) |
 | T3 開火事件 | ✅ DONE (2026-07-01) |
 | T4 sim 消費 + 排空 | ✅ DONE (2026-07-01)（plain array 佔位；ring/溢位 → T4b） |
-| T4b ring buffer + 溢位 | ⬜ 待執行（Depends on T4） |
-| T5 Exit gate | ⬜ 待執行 |
+| T4b ring buffer + 溢位 | ✅ DONE (2026-07-01)（固定欄位真 ring、槽位繞圈重用、寫入端保序、`bufferOverflow` 拒新不丟舊） |
+| T5 Exit gate | ⬜ 待執行（前置 T1–T4b 齊備） |
 
 ---
 
@@ -29,6 +29,33 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T4b 輸入緩衝換固定欄位 ring buffer + 溢位 `bufferOverflow` ✅ PASS（OQ-3.2 / GD-2）
+
+**交付：** MODIFY [`src/state/types.ts`](../../../../src/state/types.ts)（`InputRing`/`InputEventView` 介面、`RING_CAPACITY`/`EV_*`/`KEY_CODE`/`CODE_KEY` 編碼常數、`InputMeta.bufferOverflow`）、[`src/state/SharedState.ts`](../../../../src/state/SharedState.ts)（`createInputRing` 工廠、`input: InputRing`、`resetState` 原地 `clear()`）、[`src/input/consume.ts`](../../../../src/input/consume.ts)（ring 游標排空 + 重用 view，移除 `due`/`sort`）、[`src/input/InputSampler.ts`](../../../../src/input/InputSampler.ts)（4 寫入點 → typed push + 溢位政策）。NEW [`src/state/inputRingTestUtil.ts`](../../../../src/state/inputRingTestUtil.ts)（`pushEvent`/`drainToArray`/`snapshot` 測試設施）、[`src/state/InputRing.test.ts`](../../../../src/state/InputRing.test.ts)（7 ring 契約 tests）。遷移 writer：`consume.test.ts` / `InputSampler.test.ts` / `SimLoop.test.ts` / `determinism.test.ts` / `SharedState.test.ts`。
+
+| 項目 | 內容 |
+|------|------|
+| 表示法 | packed 並行 typed-array 槽位 `type,t,a,b`（`Uint8Array type` + `Float64Array t/a/b`）；key→a=code enum、b=down(0/1)；mouse→a=dx、b=dy；fire 無 payload。`head`/`count` 游標、`RING_CAPACITY=512`（2 的冪，`& MASK` 繞圈）。`InputEvent` union 維持為**邏輯視圖**。 |
+| code 編碼 | `KEY_CODE = {KeyA:0,KeyD:1,KeyW:2,KeyS:3}` + 反向 `CODE_KEY`；SAMPLED_KEYS 封閉集併入 `KEY_CODE` 鍵（`KEY_CODE[code]===undefined` 即非採集鍵，取代舊 `Set`）。 |
+| 溢位政策 | 容量滿 → `push*` 回 `false`、`InputSampler` 升 `inputMeta.bufferOverflow`、**拒收新事件、不覆寫尚未消費的最舊槽**（GD-2「不靜默丟最舊」）。研究 metadata、WP-7 匯出。 |
+| 保序 / 消費 | 寫入端 **bounded insertion**（append 後若 `t` < 前槽就地往 head 前移，直到升冪或抵 head；`timeStamp` 近單調 → 近 O(1)）→ `consume` 從 head `peekT()<untilT` 沿序排空，**移除 T4 的 `due` 收集 + `due.sort` scratch**（GC 紀律達標）。半開窗嚴格 `<`（GD-3）、`lateEventCount` 低水位語意不變。 |
+| view 契約 | `consume` 用**單一模組層級重用 view** 解碼 packed 槽（`dequeueInto`），cast 成 `InputEvent` 交付；handle 須同步讀取、**不得保留參考**。測試收集端就地 `snapshot` 複製欄位。 |
+| 驗證 | `npx tsc --noEmit` → **exit 0**；`npx vitest run src` → **53 passed**（+7 InputRing +1 溢位 wiring；含 WP-2 決定性 9 tests、T4 consume 5 tests 遷移後無回歸）；`npx vite build` → **✓ built**。`graphify update .` 已刷新圖。 |
+
+**Decision Log（本切片非平凡選擇）：**
+- **D-T4b.1｜ring 表示法 = 並行 typed-array packed 槽位 `type,t,a,b` + `head`/`count` 游標。** *理由*：對齊 CONTEXT「ring buffer」（packed 數值欄位、不 push 物件、當下擋 GC、未來 SAB-portable）；`Float64Array` 對 `t`（量測時鐘域，float 精確）與 dx/dy/code 皆足。用 `count`（非獨立 tail）省一游標、tail = `(head+count)&MASK` 導出。*Alternatives*：(a) 單一 struct-of-arrays 之外的 array-of-packed-objects → 仍配置物件，否決；(b) `head`+`tail`+滿旗標 → 多一狀態、易錯，否決。
+- **D-T4b.2｜`code` 編碼小整數 enum（`KEY_CODE`/`CODE_KEY`），SAMPLED_KEYS 併入。** *理由*：packed 槽存整數不存字串（GC/SAB 友善）；`SAMPLED_KEYS` 本就是封閉集，`KEY_CODE` 的鍵即該集合，`KEY_CODE[code]===undefined` 一次達成「編碼 + 成員判定」，消一份重複真相源。反向 `CODE_KEY` 供 `dequeueInto` 解碼回 `InputEvent.code`。回填 CONTEXT「ring buffer」對照表。
+- **D-T4b.3｜溢位政策「滿則拒新、不丟最舊」（GD-2）。** *理由*：覆寫最舊未消費槽 = 靜默丟資料，破壞研究效度；改為 `push*` 回 `false` + `bufferOverflow++`（該 drill 標 suspect）。`bufferOverflow` 落 `inputMeta`（與 `lateEventCount` 同為 GD-2 匯出 metadata），寫入端（InputSampler）維護、`resetState` 歸零。*Alternatives*：drop-oldest（環狀常見）→ 違 GD-2，否決。
+- **D-T4b.4｜寫入端 bounded insertion 取代 consume 排序 scratch（落實 D-3b 最終形態）。** *理由*：T4 的 `due.sort` 每 tick 配置 scratch，違 CLAUDE.md §4；`event.timeStamp` 近單調故 append 後就地小範圍前移（近 O(1)）即保序，consume 遂只需沿 head 排空、零每-tick 配置。相等 `t` 用嚴格 `<` 不換 → stable、保到達順序（延續 T4 語意）。bounded 的上界為 head（遲到事件前移至 head 端恰使其夾進當前最舊 tick，與 `lateEventCount` 語意自洽）。
+- **D-T4b.5｜消費交付用單一重用 view 物件（`InputEventView`）。** *理由*：packed 槽解碼若每事件配置 InputEvent 物件則違 GC 紀律；改為模組層級單一 view 就地覆寫、cast 交付。契約：handle 同步讀取、不保留參考（於型別/consume 註解言明；WP-5 `applyInput` 同步讀取相容）。
+
+**Surprises & Discoveries：**
+- **測試設施遷移面最廣**：換型別牽動 5 個直接 `state.input.push({...})` 的測試檔（consume/InputSampler/SimLoop/determinism/SharedState）。以共用 `inputRingTestUtil`（`pushEvent` 編碼 + `drainToArray`/`snapshot` 快照）統一遷移，避免各檔重造 helper。**收集端不得保留重用 view 參考** → collector 改就地快照（否則 `delivered` 全指向同一被覆寫物件）；此即 view 契約在測試面的體現。
+- 殘留內容斷言（consume.test「邊界事件留待下一 tick」）由「讀殘留陣列」改為**行為式鏈式 consume**（續 consume 更大 `untilT` 驗遞延），因 ring 不提供非破壞性殘留讀取（且不宜為測試加生產 API）。
+- 決定性無回歸：合成輸入已升冪 → 寫入端零 bubble、consume 沿 head 排空，逐 tick 狀態與 T4 一致（9 tests bit-exact 全綠）。
+
+**Next**：T5 Exit gate（F1 採集整體驗收 map + 翻頂層索引 §2 WP-3 ✅ + 交棒 WP-5）。
 
 ### 2026-07-01 — T4 sim 依時序消費輸入緩衝 + 排空 ✅ PASS（FR-3.4）
 

@@ -1,8 +1,9 @@
 /**
  * 三迴圈共享狀態的資料型別 — WP-2 / T1（FR-2.1）
  *
- * 純型別宣告、無執行邏輯（單例與 reset 見 SharedState.ts）。本 task 只立結構，
- * 多數欄位由後續 WP 寫入（input → WP-3、targets/tVisible → WP-4）。
+ * 型別宣告 + 輸入緩衝的 **packed 編碼常數**（`RING_CAPACITY` / 事件 type 碼 / key code enum）；
+ * ring 的執行實作（typed-array 槽位、游標、bounded insertion）見 [SharedState.ts](./SharedState.ts)
+ * 的 `createInputRing`。多數欄位由後續 WP 寫入（targets/tVisible → WP-4）。
  *
  * 單位：位置/velocity 一律 **CS Source unit（u、u/s）**（CONTEXT「正規單位」）；
  * sim 與匯出資料不得用公尺。
@@ -12,8 +13,9 @@
  * 輸入事件（discriminated union）。`t` = 事件時間戳，取自 `event.timeStamp`，與
  * `performance.now()` 同 time origin（量測時鐘域，ADR-7 two-clock）。
  *
- * 本 task 為佔位型別：WP-2 用合成事件、WP-3 用真實 `InputSampler` 寫入。WP-3 的
- * ring buffer 會把每個事件壓成固定數值欄位（CONTEXT「ring buffer」），此 union 為其邏輯視圖。
+ * 這是 ring buffer 的**邏輯視圖**：固定欄位 ring 把每個事件壓成 packed 數值槽位
+ * `type,t,a,b`（CONTEXT「ring buffer」），`consume` 交付時就地解碼進**單一重用的**
+ * `InputEventView`（見下）再 cast 成本 union——handle 須**同步讀取、不得保留參考**。
  */
 export type InputEvent =
   | { type: 'key'; code: string; down: boolean; t: number } // 鍵盤：code=KeyboardEvent.code、down=true 為 keydown
@@ -21,11 +23,76 @@ export type InputEvent =
   | { type: 'fire'; t: number }; //                            開火事件（simStep 內就地 raycast，WP-5）
 
 /**
- * 輸入消費 metadata（WP-3 / T4，FR-3.4）。sim 端 `consume`（[consume.ts](../input/consume.ts)）維護。
+ * 輸入緩衝靜態容量（OQ-3.2 / CONTEXT「輸入分桶」容量政策）：
+ * `RING_CAPACITY = nextPow2(MAX_EVENT_RATE_HZ × MAX_STALL_S × SAFETY)`。
+ * 階段 A：~1000Hz（滑鼠 coalesced）× 0.25s（accumulator spiral 夾除上限）× 2 safety = 500 →
+ * next-pow2 **512**。2 的冪 → 游標繞圈用 `& (CAP-1)` 位遮罩；**執行期不動態 resize**（resize 會在
+ * burst 當下 realloc+copy，正是 ring 要消除的 GC 抖動；溢位由 `bufferOverflow` 兜底，見 CONTEXT）。
+ */
+export const RING_CAPACITY = 512;
+
+/** packed 槽位 `type` 欄位編碼（小整數，不存字串）。 */
+export const EV_KEY = 0;
+export const EV_MOUSE = 1;
+export const EV_FIRE = 2;
+
+/**
+ * key 事件 `code` 編碼（`KeyboardEvent.code` 封閉集 → 小整數 enum；packed 槽位存整數不存字串）。
+ * A/D = 橫移；W/S 預留（階段 A 未用移動）。`CODE_KEY` 為反向表（解碼進 view 用）；兩者須同序。
+ */
+export const KEY_CODE: Readonly<Record<string, number>> = { KeyA: 0, KeyD: 1, KeyW: 2, KeyS: 3 };
+export const CODE_KEY: readonly string[] = ['KeyA', 'KeyD', 'KeyW', 'KeyS'];
+
+/**
+ * 固定欄位輸入 ring buffer（真環狀、靜態容量、槽位重用、熱路徑不配置物件；CLAUDE.md §4 / OQ-3.2）。
  *
- * 目前只承載遲到事件計數（GD-2 研究 metadata）與 consume 的內部低水位游標。溢位計數
- * `bufferOverflow`（GD-2）待固定欄位 ring buffer 就緒後於後續切片（T4b）加入——本階段仍為
- * plain array 佔位、無靜態容量，故無溢位語意。
+ * 表示法：並行 typed-array 槽位 `type,t,a,b`——key: a=code enum、b=down(0/1)；mouse: a=dx、b=dy；
+ * fire 無 payload。`head`/`count` 游標繞圈（`& (CAP-1)`），寫入端 **bounded insertion 保序**
+ * （`event.timeStamp` 近單調 → append 近有序，罕見亂序就地小範圍前移修正），故 `consume` 只需
+ * 從 head 依序排空、**無需每 tick 排序 scratch**（守 GC 紀律，D-3b）。
+ *
+ * 溢位（GD-2「不靜默丟最舊」）：容量滿時 `push*` 回 `false`（**拒收新事件**，不覆寫尚未消費的最舊
+ * 槽），由呼叫端升 `inputMeta.bufferOverflow`（研究 metadata，WP-7 匯出）。
+ */
+export interface InputRing {
+  /** 目前緩衝內未消費事件數。 */
+  size(): number;
+  /** 是否空（`size() === 0` 的便捷判定）。 */
+  isEmpty(): boolean;
+  /** head（最舊未消費）事件的時間戳；**僅在非空時有意義**（呼叫端須先 `isEmpty()` 判定）。 */
+  peekT(): number;
+  /** 寫入 key 事件（bounded insertion 保序）；滿則回 `false`（拒收、不丟最舊）。 */
+  pushKey(codeInt: number, down: boolean, t: number): boolean;
+  /** 寫入 mouse delta 事件（bounded insertion 保序）；滿則回 `false`。 */
+  pushMouse(dx: number, dy: number, t: number): boolean;
+  /** 寫入 fire 事件（bounded insertion 保序）；滿則回 `false`。 */
+  pushFire(t: number): boolean;
+  /**
+   * 把 head 槽位就地解碼進**呼叫端提供的重用 view**、推進 head（`count--`）。
+   * view 為單一重用物件（避免每事件配置）；handle 須同步讀取、**不得保留參考**（下一次覆寫）。
+   */
+  dequeueInto(view: InputEventView): void;
+  /** 原地清空（`head=0`/`count=0`）：重用既有 typed-array、**不 realloc**（GC 紀律；重開 drill / reset）。 */
+  clear(): void;
+}
+
+/**
+ * `consume` 交付用的**單一重用** view（packed 槽位就地解碼目標）。含 union 所有可能欄位，交付前
+ * cast 成 [`InputEvent`](#InputEvent)。⚠️ handle 須同步讀取、**不得保留參考**——下一事件會覆寫同一物件。
+ */
+export interface InputEventView {
+  type: 'key' | 'mouse' | 'fire';
+  code: string; // key: 解碼自 code enum；mouse/fire 未定義語意（handle 依 type 分辨）
+  down: boolean; // key: keydown=true；其餘忽略
+  dx: number; // mouse: movementX；其餘忽略
+  dy: number; // mouse: movementY；其餘忽略
+  t: number; // 事件時間戳（量測時鐘域）
+}
+
+/**
+ * 輸入消費 metadata（WP-3 / T4+T4b，FR-3.4）。sim 端 `consume`（[consume.ts](../input/consume.ts)）
+ * 維護 `lateEventCount`/`lastConsumedT`；`InputSampler` 寫入端維護 `bufferOverflow`。三者皆 GD-2 研究
+ * metadata（`lastConsumedT` 除外，為 consume 內部游標，不匯出）。
  */
 export interface InputMeta {
   /**
@@ -38,6 +105,11 @@ export interface InputMeta {
    * 用於偵測遲到事件。初始 `-Infinity`（首 tick 不誤判）。非匯出語意、不入研究資料。
    */
   lastConsumedT: number;
+  /**
+   * ring buffer 溢位累計（GD-2 metadata，WP-7 匯出）：容量滿時拒收的新事件數（**不靜默丟最舊**）。
+   * 由 `InputSampler` 寫入端在 `push*` 回 `false` 時遞增；`> 0` 標示該 drill suspect。
+   */
+  bufferOverflow: number;
 }
 
 /**

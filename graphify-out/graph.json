@@ -248,7 +248,7 @@
       "source_file": "playwright.config.ts",
       "source_location": "L1",
       "id": "playwright_config_ts",
-      "community": 12,
+      "community": 14,
       "norm_label": "playwright.config.ts"
     },
     {
@@ -257,16 +257,16 @@
       "source_file": "vite.config.ts",
       "source_location": "L1",
       "id": "vite_config_ts",
-      "community": 10,
+      "community": 12,
       "norm_label": "vite.config.ts"
     },
     {
       "label": "coopCoep()",
       "file_type": "code",
       "source_file": "vite.config.ts",
-      "source_location": "L10",
+      "source_location": "L11",
       "id": "fps_aim_analyst_vite_config_coopcoep",
-      "community": 10,
+      "community": 12,
       "norm_label": "coopcoep()"
     },
     {
@@ -275,35 +275,152 @@
       "source_file": "src/main.ts",
       "source_location": "L1",
       "id": "src_main_ts",
-      "community": 7,
+      "community": 1,
       "norm_label": "main.ts"
     },
     {
       "label": "resize()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L25",
+      "source_location": "L31",
       "id": "src_main_resize",
-      "community": 7,
+      "community": 1,
       "norm_label": "resize()"
     },
     {
       "label": "updateLockHint()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L57",
+      "source_location": "L63",
       "id": "src_main_updatelockhint",
-      "community": 7,
+      "community": 1,
       "norm_label": "updatelockhint()"
     },
     {
-      "label": "frame()",
+      "label": "consume.test.ts",
       "file_type": "code",
-      "source_file": "src/main.ts",
-      "source_location": "L90",
-      "id": "src_main_frame",
-      "community": 7,
-      "norm_label": "frame()"
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L1",
+      "id": "src_input_consume_test_ts",
+      "community": 1,
+      "norm_label": "consume.test.ts"
+    },
+    {
+      "label": "key()",
+      "file_type": "code",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L17",
+      "id": "input_consume_test_key",
+      "community": 1,
+      "norm_label": "key()"
+    },
+    {
+      "label": "collector()",
+      "file_type": "code",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L25",
+      "id": "input_consume_test_collector",
+      "community": 1,
+      "norm_label": "collector()"
+    },
+    {
+      "label": "consume.ts",
+      "file_type": "code",
+      "source_file": "src/input/consume.ts",
+      "source_location": "L1",
+      "id": "src_input_consume_ts",
+      "community": 1,
+      "norm_label": "consume.ts"
+    },
+    {
+      "label": "consume()",
+      "file_type": "code",
+      "source_file": "src/input/consume.ts",
+      "source_location": "L33",
+      "id": "input_consume_consume",
+      "community": 1,
+      "norm_label": "consume()"
+    },
+    {
+      "label": "InputSampler.test.ts",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L1",
+      "id": "src_input_inputsampler_test_ts",
+      "community": 1,
+      "norm_label": "inputsampler.test.ts"
+    },
+    {
+      "label": "makeFakeTarget()",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L14",
+      "id": "input_inputsampler_test_makefaketarget",
+      "community": 1,
+      "norm_label": "makefaketarget()"
+    },
+    {
+      "label": "keyEvent()",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L35",
+      "id": "input_inputsampler_test_keyevent",
+      "community": 1,
+      "norm_label": "keyevent()"
+    },
+    {
+      "label": "mouseEvent()",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L39",
+      "id": "input_inputsampler_test_mouseevent",
+      "community": 1,
+      "norm_label": "mouseevent()"
+    },
+    {
+      "label": "coalescedSample()",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L44",
+      "id": "input_inputsampler_test_coalescedsample",
+      "community": 1,
+      "norm_label": "coalescedsample()"
+    },
+    {
+      "label": "pointerMoveEvent()",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L52",
+      "id": "input_inputsampler_test_pointermoveevent",
+      "community": 1,
+      "norm_label": "pointermoveevent()"
+    },
+    {
+      "label": "legacyPointerMoveEvent()",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L63",
+      "id": "input_inputsampler_test_legacypointermoveevent",
+      "community": 1,
+      "norm_label": "legacypointermoveevent()"
+    },
+    {
+      "label": "InputSampler.ts",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.ts",
+      "source_location": "L1",
+      "id": "src_input_inputsampler_ts",
+      "community": 1,
+      "norm_label": "inputsampler.ts"
+    },
+    {
+      "label": "createInputSampler()",
+      "file_type": "code",
+      "source_file": "src/input/InputSampler.ts",
+      "source_location": "L40",
+      "id": "input_inputsampler_createinputsampler",
+      "community": 1,
+      "norm_label": "createinputsampler()"
     },
     {
       "label": "PointerLock.ts",
@@ -311,7 +428,7 @@
       "source_file": "src/input/PointerLock.ts",
       "source_location": "L1",
       "id": "src_input_pointerlock_ts",
-      "community": 7,
+      "community": 1,
       "norm_label": "pointerlock.ts"
     },
     {
@@ -320,8 +437,188 @@
       "source_file": "src/input/PointerLock.ts",
       "source_location": "L33",
       "id": "input_pointerlock_createpointerlock",
-      "community": 7,
+      "community": 1,
       "norm_label": "createpointerlock()"
+    },
+    {
+      "label": "clock.ts",
+      "file_type": "code",
+      "source_file": "src/loop/clock.ts",
+      "source_location": "L1",
+      "id": "src_loop_clock_ts",
+      "community": 1,
+      "norm_label": "clock.ts"
+    },
+    {
+      "label": "constants.ts",
+      "file_type": "code",
+      "source_file": "src/loop/constants.ts",
+      "source_location": "L1",
+      "id": "src_loop_constants_ts",
+      "community": 1,
+      "norm_label": "constants.ts"
+    },
+    {
+      "label": "RenderLoop.test.ts",
+      "file_type": "code",
+      "source_file": "src/loop/RenderLoop.test.ts",
+      "source_location": "L1",
+      "id": "src_loop_renderloop_test_ts",
+      "community": 1,
+      "norm_label": "renderloop.test.ts"
+    },
+    {
+      "label": "RenderLoop.ts",
+      "file_type": "code",
+      "source_file": "src/loop/RenderLoop.ts",
+      "source_location": "L1",
+      "id": "src_loop_renderloop_ts",
+      "community": 1,
+      "norm_label": "renderloop.ts"
+    },
+    {
+      "label": "lerp()",
+      "file_type": "code",
+      "source_file": "src/loop/RenderLoop.ts",
+      "source_location": "L16",
+      "id": "loop_renderloop_lerp",
+      "community": 1,
+      "norm_label": "lerp()"
+    },
+    {
+      "label": "createRenderLoop()",
+      "file_type": "code",
+      "source_file": "src/loop/RenderLoop.ts",
+      "source_location": "L20",
+      "id": "loop_renderloop_createrenderloop",
+      "community": 1,
+      "norm_label": "createrenderloop()"
+    },
+    {
+      "label": "SimLoop.test.ts",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L1",
+      "id": "src_loop_simloop_test_ts",
+      "community": 1,
+      "norm_label": "simloop.test.ts"
+    },
+    {
+      "label": "fixedClock()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L9",
+      "id": "loop_simloop_test_fixedclock",
+      "community": 1,
+      "norm_label": "fixedclock()"
+    },
+    {
+      "label": "SimLoop.ts",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L1",
+      "id": "src_loop_simloop_ts",
+      "community": 1,
+      "norm_label": "simloop.ts"
+    },
+    {
+      "label": "applyInput()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L30",
+      "id": "loop_simloop_applyinput",
+      "community": 1,
+      "norm_label": "applyinput()"
+    },
+    {
+      "label": "simStep()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L44",
+      "id": "loop_simloop_simstep",
+      "community": 1,
+      "norm_label": "simstep()"
+    },
+    {
+      "label": "createSimLoop()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L68",
+      "id": "loop_simloop_createsimloop",
+      "community": 1,
+      "norm_label": "createsimloop()"
+    },
+    {
+      "label": "determinism.test.ts",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L1",
+      "id": "src_loop_tests_determinism_test_ts",
+      "community": 1,
+      "norm_label": "determinism.test.ts"
+    },
+    {
+      "label": "syntheticInputs()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L44",
+      "id": "tests_determinism_test_syntheticinputs",
+      "community": 1,
+      "norm_label": "syntheticinputs()"
+    },
+    {
+      "label": "freshState()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L54",
+      "id": "tests_determinism_test_freshstate",
+      "community": 1,
+      "norm_label": "freshstate()"
+    },
+    {
+      "label": "snap()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L60",
+      "id": "tests_determinism_test_snap",
+      "community": 1,
+      "norm_label": "snap()"
+    },
+    {
+      "label": "runFrames()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L68",
+      "id": "tests_determinism_test_runframes",
+      "community": 1,
+      "norm_label": "runframes()"
+    },
+    {
+      "label": "canonicalTrajectory()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L85",
+      "id": "tests_determinism_test_canonicaltrajectory",
+      "community": 1,
+      "norm_label": "canonicaltrajectory()"
+    },
+    {
+      "label": "framesAt()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L95",
+      "id": "tests_determinism_test_framesat",
+      "community": 1,
+      "norm_label": "framesat()"
+    },
+    {
+      "label": "jitterFrames()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L103",
+      "id": "tests_determinism_test_jitterframes",
+      "community": 1,
+      "norm_label": "jitterframes()"
     },
     {
       "label": "createRenderer.test.ts",
@@ -329,7 +626,7 @@
       "source_file": "src/render/createRenderer.test.ts",
       "source_location": "L1",
       "id": "src_render_createrenderer_test_ts",
-      "community": 7,
+      "community": 10,
       "norm_label": "createrenderer.test.ts"
     },
     {
@@ -338,7 +635,7 @@
       "source_file": "src/render/createRenderer.ts",
       "source_location": "L1",
       "id": "src_render_createrenderer_ts",
-      "community": 7,
+      "community": 10,
       "norm_label": "createrenderer.ts"
     },
     {
@@ -347,7 +644,7 @@
       "source_file": "src/render/createRenderer.ts",
       "source_location": "L23",
       "id": "render_createrenderer_resolvebackend",
-      "community": 7,
+      "community": 10,
       "norm_label": "resolvebackend()"
     },
     {
@@ -356,7 +653,7 @@
       "source_file": "src/render/createRenderer.ts",
       "source_location": "L39",
       "id": "render_createrenderer_createrenderer",
-      "community": 7,
+      "community": 10,
       "norm_label": "createrenderer()"
     },
     {
@@ -365,7 +662,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L1",
       "id": "src_render_scenemanager_ts",
-      "community": 7,
+      "community": 9,
       "norm_label": "scenemanager.ts"
     },
     {
@@ -374,7 +671,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L29",
       "id": "render_scenemanager_scenemanager",
-      "community": 7,
+      "community": 9,
       "norm_label": "scenemanager"
     },
     {
@@ -383,7 +680,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L33",
       "id": "render_scenemanager_scenemanager_constructor",
-      "community": 7,
+      "community": 9,
       "norm_label": ".constructor()"
     },
     {
@@ -392,7 +689,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L54",
       "id": "render_scenemanager_scenemanager_resize",
-      "community": 7,
+      "community": 9,
       "norm_label": ".resize()"
     },
     {
@@ -401,7 +698,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L59",
       "id": "render_scenemanager_scenemanager_buildroom",
-      "community": 7,
+      "community": 9,
       "norm_label": ".#buildroom()"
     },
     {
@@ -410,8 +707,116 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L95",
       "id": "render_scenemanager_scenemanager_buildlights",
-      "community": 7,
+      "community": 9,
       "norm_label": ".#buildlights()"
+    },
+    {
+      "label": "InputRing.test.ts",
+      "file_type": "code",
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L1",
+      "id": "src_state_inputring_test_ts",
+      "community": 1,
+      "norm_label": "inputring.test.ts"
+    },
+    {
+      "label": "drainAll()",
+      "file_type": "code",
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L16",
+      "id": "state_inputring_test_drainall",
+      "community": 1,
+      "norm_label": "drainall()"
+    },
+    {
+      "label": "inputRingTestUtil.ts",
+      "file_type": "code",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L1",
+      "id": "src_state_inputringtestutil_ts",
+      "community": 1,
+      "norm_label": "inputringtestutil.ts"
+    },
+    {
+      "label": "pushEvent()",
+      "file_type": "code",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L15",
+      "id": "state_inputringtestutil_pushevent",
+      "community": 1,
+      "norm_label": "pushevent()"
+    },
+    {
+      "label": "drainToArray()",
+      "file_type": "code",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L25",
+      "id": "state_inputringtestutil_draintoarray",
+      "community": 1,
+      "norm_label": "draintoarray()"
+    },
+    {
+      "label": "snapshot()",
+      "file_type": "code",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L32",
+      "id": "state_inputringtestutil_snapshot",
+      "community": 1,
+      "norm_label": "snapshot()"
+    },
+    {
+      "label": "SharedState.test.ts",
+      "file_type": "code",
+      "source_file": "src/state/SharedState.test.ts",
+      "source_location": "L1",
+      "id": "src_state_sharedstate_test_ts",
+      "community": 1,
+      "norm_label": "sharedstate.test.ts"
+    },
+    {
+      "label": "SharedState.ts",
+      "file_type": "code",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L1",
+      "id": "src_state_sharedstate_ts",
+      "community": 1,
+      "norm_label": "sharedstate.ts"
+    },
+    {
+      "label": "createInputRing()",
+      "file_type": "code",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L45",
+      "id": "state_sharedstate_createinputring",
+      "community": 1,
+      "norm_label": "createinputring()"
+    },
+    {
+      "label": "createSharedState()",
+      "file_type": "code",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L117",
+      "id": "state_sharedstate_createsharedstate",
+      "community": 1,
+      "norm_label": "createsharedstate()"
+    },
+    {
+      "label": "resetState()",
+      "file_type": "code",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L137",
+      "id": "state_sharedstate_resetstate",
+      "community": 1,
+      "norm_label": "resetstate()"
+    },
+    {
+      "label": "types.ts",
+      "file_type": "code",
+      "source_file": "src/state/types.ts",
+      "source_location": "L1",
+      "id": "src_state_types_ts",
+      "community": 1,
+      "norm_label": "types.ts"
     },
     {
       "label": "SettingsPanel.ts",
@@ -419,7 +824,7 @@
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L1",
       "id": "src_ui_settingspanel_ts",
-      "community": 7,
+      "community": 1,
       "norm_label": "settingspanel.ts"
     },
     {
@@ -428,7 +833,7 @@
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L41",
       "id": "ui_settingspanel_createsettingspanel",
-      "community": 7,
+      "community": 1,
       "norm_label": "createsettingspanel()"
     },
     {
@@ -437,7 +842,7 @@
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L103",
       "id": "ui_settingspanel_makerow",
-      "community": 7,
+      "community": 1,
       "norm_label": "makerow()"
     },
     {
@@ -446,7 +851,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L1",
       "id": "src_view_cameracontroller_ts",
-      "community": 7,
+      "community": 8,
       "norm_label": "cameracontroller.ts"
     },
     {
@@ -455,7 +860,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L29",
       "id": "view_cameracontroller_cameracontroller",
-      "community": 7,
+      "community": 8,
       "norm_label": "cameracontroller"
     },
     {
@@ -464,7 +869,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L39",
       "id": "view_cameracontroller_cameracontroller_constructor",
-      "community": 7,
+      "community": 8,
       "norm_label": ".constructor()"
     },
     {
@@ -473,7 +878,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L47",
       "id": "view_cameracontroller_cameracontroller_applydelta",
-      "community": 7,
+      "community": 8,
       "norm_label": ".applydelta()"
     },
     {
@@ -482,7 +887,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L55",
       "id": "view_cameracontroller_cameracontroller_setsensitivity",
-      "community": 7,
+      "community": 8,
       "norm_label": ".setsensitivity()"
     },
     {
@@ -491,7 +896,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L60",
       "id": "view_cameracontroller_cameracontroller_setfov",
-      "community": 7,
+      "community": 8,
       "norm_label": ".setfov()"
     },
     {
@@ -500,7 +905,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L65",
       "id": "view_cameracontroller_cameracontroller_applytocamera",
-      "community": 7,
+      "community": 8,
       "norm_label": ".#applytocamera()"
     },
     {
@@ -509,7 +914,7 @@
       "source_file": "tests/e2e/backend.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_backend_spec_ts",
-      "community": 13,
+      "community": 15,
       "norm_label": "backend.spec.ts"
     },
     {
@@ -518,15 +923,24 @@
       "source_file": "tests/e2e/isolation.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_isolation_spec_ts",
-      "community": 14,
+      "community": 16,
       "norm_label": "isolation.spec.ts"
+    },
+    {
+      "label": "frame()",
+      "file_type": "code",
+      "source_file": "src/main.ts",
+      "source_location": "L90",
+      "community": 1,
+      "norm_label": "frame()",
+      "id": "src_main_frame"
     },
     {
       "label": "pickBackend()",
       "file_type": "code",
       "source_file": "src/render/createRenderer.ts",
       "source_location": "L10",
-      "community": 7,
+      "community": 10,
       "norm_label": "pickbackend()",
       "id": "render_createrenderer_pickbackend"
     },
@@ -617,7 +1031,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "counter-strafe (\u53cd\u5411\u6025\u505c)",
       "id": "context_counter_strafe"
     },
@@ -630,7 +1044,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "\u53cd\u5411\u9375 (counter key)",
       "id": "context_counter_key"
     },
@@ -643,7 +1057,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 17,
       "norm_label": "drill (\u8a13\u7df4\u55ae\u5143)",
       "id": "context_drill"
     },
@@ -695,7 +1109,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 6,
       "norm_label": "\u901f\u5ea6\u6b78\u96f6\u8aa4\u5dee (residual speed)",
       "id": "context_residual_speed"
     },
@@ -708,7 +1122,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 18,
       "norm_label": "\u505c\u706b\u6642\u5e8f\u5c0d\u9f4a (t_fire \u2212 t_velocity_zero)",
       "id": "context_fire_timing_alignment"
     },
@@ -734,7 +1148,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 11,
       "norm_label": "\u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "context_crosshair_alignment_offset"
     },
@@ -747,7 +1161,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 19,
       "norm_label": "\u5207\u63db\u6642\u9593 (t_next_acquisition \u2212 t_prev_kill)",
       "id": "context_switch_time"
     },
@@ -760,7 +1174,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 18,
+      "community": 20,
       "norm_label": "\u7bc0\u594f\u7a69\u5b9a\u5ea6",
       "id": "context_rhythm_stability"
     },
@@ -773,7 +1187,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 21,
       "norm_label": "\u5de6\u53f3\u5c0d\u7a31\u6027",
       "id": "context_lr_symmetry"
     },
@@ -786,7 +1200,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 6,
       "norm_label": "\u901f\u5ea6 gate (velocity gate)",
       "id": "context_velocity_gate"
     },
@@ -799,7 +1213,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 20,
+      "community": 22,
       "norm_label": "pre/post (\u524d\u5f8c\u6e2c) \u7814\u7a76\u65b9\u6cd5\u5b78",
       "id": "context_pre_post_test"
     },
@@ -903,7 +1317,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 21,
+      "community": 23,
       "norm_label": "scenemanager \u5143\u4ef6",
       "id": "context_scene_manager"
     },
@@ -968,7 +1382,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 11,
       "norm_label": "fixed-timestep (128 hz)",
       "id": "context_fixed_timestep"
     },
@@ -981,7 +1395,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 11,
       "norm_label": "accumulator \u6a21\u5f0f",
       "id": "context_accumulator"
     },
@@ -994,7 +1408,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 11,
       "norm_label": "simstep \u9806\u5e8f (tick \u5167)",
       "id": "context_simstep_order"
     },
@@ -1007,7 +1421,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 24,
       "norm_label": "alpha \u5167\u63d2 (interpolation)",
       "id": "context_alpha_interpolation"
     },
@@ -1020,7 +1434,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 0,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism)",
       "id": "context_determinism"
     },
@@ -1033,7 +1447,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 0,
       "norm_label": "\u91cf\u6e2c\u6642\u9418 vs \u6c7a\u5b9a\u6027\u6642\u9418 (two-clock model)",
       "id": "context_two_clock_model"
     },
@@ -1163,7 +1577,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 6,
       "norm_label": "\u6b63\u898f\u55ae\u4f4d (canonical unit, source unit u/s)",
       "id": "context_canonical_unit"
     },
@@ -1176,7 +1590,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 25,
       "norm_label": "\u968e\u6bb5 a (stage a)",
       "id": "context_stage_a"
     },
@@ -1202,7 +1616,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 6,
       "norm_label": "\u968e\u6bb5 b (stage b)",
       "id": "context_stage_b"
     },
@@ -1215,7 +1629,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 6,
       "norm_label": "cs2 physics \u5e38\u6578 (\u968e\u6bb5 b \u6821\u6e96\u8d77\u9ede)",
       "id": "context_cs2_physics_constants"
     },
@@ -1254,7 +1668,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 0,
       "norm_label": "\u4e3b\u57f7\u884c\u7dd2\u5361\u9813\u6c61\u67d3 sim \u8a08\u6642 (\u968e\u6bb5 a \u9694\u96e2\u4e0d\u6210\u7acb)",
       "id": "design_main_thread_jank"
     },
@@ -1267,7 +1681,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 6,
       "norm_label": "web worker + sharedarraybuffer \u771f\u6b63\u9694\u96e2 (\u968e\u6bb5 b)",
       "id": "design_worker_isolation"
     },
@@ -1553,7 +1967,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 0,
       "norm_label": "adr-7 \u5169\u500b\u6642\u9418 (\u91cf\u6e2c\u6642\u9418 / \u6c7a\u5b9a\u6027\u6642\u9418)",
       "id": "spec_adr7"
     },
@@ -1982,7 +2396,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 \u2014 fps \u63a7\u5236 + pointer lock (exec-plan)",
       "id": "wp1_readme"
     },
@@ -1995,7 +2409,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 progress log",
       "id": "wp1_progress"
     },
@@ -2008,7 +2422,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 master task checklist",
       "id": "wp1_task_checklist"
     },
@@ -2021,7 +2435,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 t0 \u2014 entry gate",
       "id": "wp1_t0_entry_gate"
     },
@@ -2034,7 +2448,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 t1 \u2014 scenemanager (room/camera)",
       "id": "wp1_t1_scene"
     },
@@ -2047,7 +2461,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 t2 \u2014 pointer lock \u6574\u5408",
       "id": "wp1_t2_pointerlock"
     },
@@ -2060,7 +2474,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 t3 \u2014 \u539f\u59cb\u8f38\u5165 unadjustedmovement + fallback",
       "id": "wp1_t3_raw_input_fallback"
     },
@@ -2073,7 +2487,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 t4 \u2014 yaw/pitch \u8996\u89d2 + pitch \u593e\u89d2",
       "id": "wp1_t4_yaw_pitch"
     },
@@ -2086,7 +2500,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 t5 \u2014 sensitivity/fov \u8a2d\u5b9a\u9762\u677f",
       "id": "wp1_t5_settings_panel"
     },
@@ -2099,7 +2513,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-1 t6 \u2014 exit gate",
       "id": "wp1_t6_exit_gate"
     },
@@ -2112,7 +2526,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 \u2014 sharedstate + \u96d9\u8ff4\u5708\u9aa8\u67b6 \u2605\u810a\u690e (m1)",
       "id": "wp2_readme"
     },
@@ -2125,7 +2539,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 24,
+      "community": 26,
       "norm_label": "wp-2 progress log",
       "id": "wp2_progress"
     },
@@ -2138,7 +2552,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 master task checklist",
       "id": "wp2_task_checklist"
     },
@@ -2151,7 +2565,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 t0 \u2014 entry gate",
       "id": "wp2_t0_entry_gate"
     },
@@ -2164,7 +2578,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 t1 \u2014 sharedstate (\u578b\u5225 + \u55ae\u4f8b)",
       "id": "wp2_t1_shared_state"
     },
@@ -2177,7 +2591,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 t2 \u2014 simloop accumulator (128 hz)",
       "id": "wp2_t2_sim_loop"
     },
@@ -2190,7 +2604,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 t3 \u2014 render alpha \u5167\u63d2",
       "id": "wp2_t3_render_interpolation"
     },
@@ -2203,7 +2617,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 t4 \u2014 \u6c7a\u5b9a\u6027\u9a57\u8b49 \u2605m1 gate",
       "id": "wp2_t4_determinism"
     },
@@ -2216,7 +2630,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 t5 \u2014 exit gate (\u5ba3\u544a m1)",
       "id": "wp2_t5_exit_gate"
     },
@@ -2229,7 +2643,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "scenemanager (room/floor/walls/light/perspectivecamera)",
       "id": "wp1_scenemanager"
     },
@@ -2242,7 +2656,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "pointerlockhandle (request/locked/onchange/onmove)",
       "id": "wp1_pointerlock_handle"
     },
@@ -2255,7 +2669,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "unadjustedmovement (\u539f\u59cb\u6ed1\u9f20\u8f38\u5165, \u95dc os \u52a0\u901f)",
       "id": "wp1_unadjusted_movement"
     },
@@ -2268,7 +2682,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "notsupportederror fallback (\u50c5 chromium \u964d\u7d1a\u8def\u5f91)",
       "id": "wp1_notsupportederror_fallback"
     },
@@ -2281,7 +2695,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "cameracontroller (yaw/pitch + pitch clamp + sensitivity/fov)",
       "id": "wp1_camera_controller"
     },
@@ -2294,7 +2708,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "pitch \u593e\u89d2 (clamp \u00b1~89\u00b0 \u907f\u514d\u7ffb\u8f49)",
       "id": "wp1_pitch_clamp"
     },
@@ -2307,7 +2721,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "settingspanel (dom overlay sensitivity/fov)",
       "id": "wp1_settings_panel"
     },
@@ -2320,7 +2734,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "sensitivity counts\u2192radians \u7dda\u6027\u4fc2\u6578 (oq-1.1)",
       "id": "wp1_sensitivity_linear"
     },
@@ -2333,7 +2747,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "\u8996\u89d2\u8d70\u8f38\u5165/render \u8def\u5f91\u4e0d\u5165 sim (\u96d9\u8ff4\u5708\u908a\u754c)",
       "id": "wp1_view_input_path_boundary"
     },
@@ -2346,7 +2760,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "sharedstate (\u4e09\u8ff4\u5708\u552f\u4e00\u6e9d\u901a\u7ba1\u9053, \u55ae\u4f8b)",
       "id": "wp2_shared_state"
     },
@@ -2359,7 +2773,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "simloop accumulator (\u56fa\u5b9a 128 hz, fixed-timestep)",
       "id": "wp2_sim_loop_accumulator"
     },
@@ -2372,7 +2786,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "simstep \u7d14\u51fd\u5f0f\u908a\u754c (\u9810\u7559\u968e\u6bb5 b worker seam, oq-2.4)",
       "id": "wp2_sim_step_pure_fn"
     },
@@ -2385,7 +2799,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "clock.ts \u6ce8\u5165\u5f0f\u6642\u9593 (now(): performance.now(), oq-2.3)",
       "id": "wp2_clock_injectable"
     },
@@ -2398,7 +2812,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "renderloop alpha \u5167\u63d2 (lerp prev/curr, \u552f\u8b80)",
       "id": "wp2_render_loop_interpolation"
     },
@@ -2411,7 +2825,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "prev/curr \u96d9\u5feb\u7167 (\u5167\u63d2\u7528)",
       "id": "wp2_prev_curr_snapshot"
     },
@@ -2424,7 +2838,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "spiral of death \u593e\u4f4f (math.min(delta,0.25))",
       "id": "wp2_spiral_of_death_clamp"
     },
@@ -2437,7 +2851,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "\u6c7a\u5b9a\u6027 (\u540c\u8f38\u5165\u5e8f\u5217\u4e0d\u540c render fps \u2192 \u9010 tick \u4e00\u81f4)",
       "id": "wp2_determinism"
     },
@@ -2450,7 +2864,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "m1 \u2014 \u5c08\u6848\u810a\u690e\u91cc\u7a0b\u7891 (\u9580\u63a7\u9598)",
       "id": "wp2_m1_milestone"
     },
@@ -2463,7 +2877,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "\u4e09\u8ff4\u5708\u53ea\u7d93 sharedstate \u6e9d\u901a (\u4e92\u4e0d\u76f4\u63a5\u547c\u53eb)",
       "id": "wp2_three_loop_boundary"
     },
@@ -2476,7 +2890,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "adr-2 \u96d9\u8ff4\u5708\u89e3\u8026",
       "id": "ext_adr2_dual_loop"
     },
@@ -2489,7 +2903,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "adr-3 128 hz tick",
       "id": "ext_adr3_tick128"
     },
@@ -2502,7 +2916,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "adr-4 performance.now() \u8a08\u6642\u6e90",
       "id": "ext_adr4_performance_now"
     },
@@ -2515,7 +2929,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "adr-5 pointer lock + \u539f\u59cb\u8f38\u5165 + coalesced",
       "id": "ext_adr5_pointerlock_raw"
     },
@@ -2541,7 +2955,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-0 \u2014 \u74b0\u5883\u8a2d\u7f6e (scaffold/createrenderer seam)",
       "id": "ext_wp0"
     },
@@ -2554,7 +2968,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-3 \u2014 \u9ad8\u983b\u8f38\u5165\u63a1\u96c6 (getcoalescedevents \u5165\u7de9\u885d)",
       "id": "ext_wp3"
     },
@@ -2567,7 +2981,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-4 \u2014 \u76ee\u6a19 / \u6e96\u5fc3",
       "id": "ext_wp4"
     },
@@ -2580,7 +2994,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-5 \u2014 movement / \u6025\u505c\u7269\u7406",
       "id": "ext_wp5"
     },
@@ -2593,7 +3007,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-6 \u2014 drill config (\u623f\u9593/\u8ddd\u96e2\u6b63\u5f0f\u503c)",
       "id": "ext_wp6"
     },
@@ -2606,7 +3020,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-7 \u2014 datarecorder ring buffer / metadata",
       "id": "ext_wp7"
     },
@@ -2619,7 +3033,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 \u8f38\u5165\u63a1\u96c6\u5c64 inputsampler (f1)",
       "id": "wp3_input_sampler"
     },
@@ -2632,7 +3046,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 progress log",
       "id": "wp3_progress"
     },
@@ -2645,7 +3059,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 master task checklist",
       "id": "wp3_task_checklist"
     },
@@ -2658,7 +3072,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 t0 entry gate",
       "id": "wp3_t0_entry_gate"
     },
@@ -2671,7 +3085,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 t1 \u9375\u76e4\u63a1\u96c6 (keydown/keyup + timestamp)",
       "id": "wp3_t1_keyboard"
     },
@@ -2684,7 +3098,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 t2 \u6ed1\u9f20 coalesced \u63a1\u96c6 (\u6b21\u5e40\u8ecc\u8de1)",
       "id": "wp3_t2_mouse_coalesced"
     },
@@ -2697,7 +3111,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 t3 \u958b\u706b\u4e8b\u4ef6\u63a1\u96c6 (mousedown + timestamp)",
       "id": "wp3_t3_fire"
     },
@@ -2710,7 +3124,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 t4 sim \u4f9d\u6642\u5e8f\u6d88\u8cbb\u7de9\u885d + \u6392\u7a7a",
       "id": "wp3_t4_sim_consume"
     },
@@ -2723,7 +3137,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-3 t5 exit gate",
       "id": "wp3_t5_exit_gate"
     },
@@ -2736,7 +3150,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 \u76ee\u6a19\u7cfb\u7d71 + t_visible (f2)",
       "id": "wp4_target_tvisible"
     },
@@ -2749,7 +3163,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 progress log",
       "id": "wp4_progress"
     },
@@ -2762,7 +3176,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 master task checklist",
       "id": "wp4_task_checklist"
     },
@@ -2775,7 +3189,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 t0 entry gate",
       "id": "wp4_t0_entry_gate"
     },
@@ -2788,7 +3202,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 t1 \u76ee\u6a19 entity (mesh + hitbox)",
       "id": "wp4_t1_target_entity"
     },
@@ -2801,7 +3215,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 t2 \u53ef\u898b\u6027 + t_visible (sim tick \u5167\u84cb\u6233)",
       "id": "wp4_t2_visibility_tvisible"
     },
@@ -2814,7 +3228,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 t3 \u5de6\u53f3\u4ea4\u66ff\u5e8f\u5217",
       "id": "wp4_t3_alternation"
     },
@@ -2827,7 +3241,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 t4 crosshair (\u87a2\u5e55\u4e2d\u5fc3\u6e96\u5fc3)",
       "id": "wp4_t4_crosshair"
     },
@@ -2840,7 +3254,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 t5 exit gate",
       "id": "wp4_t5_exit_gate"
     },
@@ -2853,7 +3267,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "inputsampler (src/input/inputsampler.ts)",
       "id": "wp3_input_sampler_class"
     },
@@ -2866,7 +3280,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "consume (src/input/consume.ts)",
       "id": "wp3_consume_fn"
     },
@@ -2879,7 +3293,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "sharedstate (src/state/sharedstate.ts)",
       "id": "shared_state"
     },
@@ -2892,7 +3306,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "simloop (src/loop/simloop.ts, 128 hz)",
       "id": "sim_loop"
     },
@@ -2905,7 +3319,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "targetmanager (src/sim/targetmanager.ts)",
       "id": "target_manager"
     },
@@ -2918,7 +3332,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "targetview (src/render/targetview.ts)",
       "id": "target_view"
     },
@@ -2931,7 +3345,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "crosshair (src/ui/crosshair.ts)",
       "id": "crosshair"
     },
@@ -2944,7 +3358,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "targetstate (id/side/pos/visible/alive/hitboxes)",
       "id": "target_state"
     },
@@ -2957,7 +3371,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "t_visible (\u53ef\u898b\u6642\u9593\u6233 / \u53cd\u61c9\u6642\u9593\u8d77\u9ede)",
       "id": "concept_t_visible"
     },
@@ -2970,7 +3384,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "sub-tick \u8f38\u5165\u6642\u9593\u6233 (\u7cbe\u6e96\u5ea6\u771f\u6b63\u4f86\u6e90)",
       "id": "concept_sub_tick_timestamp"
     },
@@ -2983,7 +3397,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "getcoalescedevents \u6b21\u5e40\u63a1\u6a23 (\u9ad8\u983b\u6ed1\u9f20\u4e0d\u4e1f\u6a23\u672c)",
       "id": "concept_coalesced_events"
     },
@@ -2996,7 +3410,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "\u6642\u9593\u6233\u540c\u6e90 (event.timestamp = performance.now() \u57fa\u6e96)",
       "id": "concept_timestamp_same_origin"
     },
@@ -3009,7 +3423,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "\u4f9d\u6642\u5e8f\u6392\u5e8f\u6d88\u8cbb + \u6392\u7a7a (\u6c7a\u5b9a\u6027\u5951\u7d04)",
       "id": "concept_sorted_consume_determinism"
     },
@@ -3022,7 +3436,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "t_visible \u5728 sim tick \u5167\u84cb\u4e00\u6b21 (\u975e render frame)",
       "id": "concept_tvisible_in_sim_tick"
     },
@@ -3035,7 +3449,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "\u78ba\u5b9a\u6027\u5de6\u53f3\u4ea4\u66ff\u8f2a\u66ff (counter-strafe peek \u7bc0\u594f)",
       "id": "concept_deterministic_alternation"
     },
@@ -3048,7 +3462,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "adr-2 \u4e09\u8ff4\u5708\u7d93 sharedstate \u6e9d\u901a",
       "id": "adr2_three_loops"
     },
@@ -3061,7 +3475,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "adr-3 \u7cbe\u6e96\u5ea6\u4f86\u6e90 = sub-tick \u8f38\u5165\u6642\u9593\u6233",
       "id": "adr3_subtick"
     },
@@ -3074,7 +3488,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "adr-4 performance.now() / event.timestamp \u540c\u6e90",
       "id": "adr4_performance_now"
     },
@@ -3087,7 +3501,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "adr-5 coalesced events",
       "id": "adr5_coalesced"
     },
@@ -3100,7 +3514,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "d1 ui = \u7d14 ts + dom overlay",
       "id": "d1_dom_overlay"
     },
@@ -3126,7 +3540,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-1 \u5834\u666f (\u76f8\u6a5f / pointer lock)",
       "id": "wp1_scene"
     },
@@ -3139,7 +3553,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-2 \u96d9\u8ff4\u5708\u9aa8\u67b6 (sim tick + clock + \u6c7a\u5b9a\u6027)",
       "id": "wp2_dual_loop"
     },
@@ -3152,7 +3566,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-5 \u547d\u4e2d / \u6025\u505c\u5224\u5b9a (raycaster)",
       "id": "wp5_hit_counter"
     },
@@ -3165,7 +3579,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-6 drill loader (\u63a5\u7ba1\u76ee\u6a19\u751f\u6210)",
       "id": "wp6_drill_loader"
     },
@@ -3178,7 +3592,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 ring buffer \u8a18\u9304 / \u532f\u51fa",
       "id": "wp7_ring_buffer"
     },
@@ -3191,7 +3605,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-8 \u53cd\u61c9\u6642\u9593\u8a08\u7b97 / \u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "wp8_reaction_time"
     },
@@ -3204,7 +3618,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-5 \u2014 hit detection + simplified counter-strafe (f3)",
       "id": "wp5_readme_wp5"
     },
@@ -3217,7 +3631,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "m2 \u2014 core gameplay established",
       "id": "wp5_readme_m2"
     },
@@ -3230,7 +3644,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "hitdetector (raycaster camera-center hit detection)",
       "id": "wp5_readme_hitdetector"
     },
@@ -3243,7 +3657,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "movementcontroller (a/d strafe + stop flag)",
       "id": "wp5_readme_movementcontroller"
     },
@@ -3256,7 +3670,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "firstshot / firstshotgate (per-peek first shot flag)",
       "id": "wp5_readme_firstshot"
     },
@@ -3269,7 +3683,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "simplified counter-strafe (immediate stop, stage a)",
       "id": "wp5_readme_simplified_counterstrafe"
     },
@@ -3282,7 +3696,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "boolean accuracy gate (stopped -> accurate)",
       "id": "wp5_readme_boolean_accuracy_gate"
     },
@@ -3295,7 +3709,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "fixed-step movement (determinism, fps-independent)",
       "id": "wp5_readme_fixed_step_movement"
     },
@@ -3308,7 +3722,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "stage-b-stable movementcontroller interface (appendix d)",
       "id": "wp5_readme_interface_stable_stageb"
     },
@@ -3321,7 +3735,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "peek (target visible lifecycle, t_visible to kill)",
       "id": "wp5_readme_peek"
     },
@@ -3334,7 +3748,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "oq-5.1 stop gate accuracy decision",
       "id": "wp5_readme_oq51"
     },
@@ -3347,7 +3761,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "oq-5.2 strafe speed / acceleration decision",
       "id": "wp5_readme_oq52"
     },
@@ -3360,7 +3774,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "oq-5.3 peek boundary decision",
       "id": "wp5_readme_oq53"
     },
@@ -3373,7 +3787,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "oq-5.4 hit equals kill decision",
       "id": "wp5_readme_oq54"
     },
@@ -3386,7 +3800,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-5 t0 entry gate",
       "id": "wp5_t0_entry_gate"
     },
@@ -3399,7 +3813,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-5 t1 hitdetector",
       "id": "wp5_t1_hitdetector"
     },
@@ -3412,7 +3826,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-5 t2 first-shot detection",
       "id": "wp5_t2_first_shot"
     },
@@ -3425,7 +3839,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-5 t3 a/d strafe movement",
       "id": "wp5_t3_strafe_movement"
     },
@@ -3438,7 +3852,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-5 t4 simplified counter-strafe + accuracy gate",
       "id": "wp5_t4_simplified_counterstrafe"
     },
@@ -3451,7 +3865,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-5 t5 exit gate (declare m2)",
       "id": "wp5_t5_exit_gate"
     },
@@ -3464,7 +3878,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "appendix d (stage b physics constants: friction/accelerate/stopspeed)",
       "id": "wp5_readme_appendix_d"
     },
@@ -3477,7 +3891,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "adr-4 (timing: timestamp / sim tick time source)",
       "id": "wp5_readme_adr4"
     },
@@ -3490,7 +3904,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "adr-3 (sub-tick)",
       "id": "wp5_readme_adr3"
     },
@@ -3503,7 +3917,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "adr-2 (three loops communicate via sharedstate)",
       "id": "wp5_readme_adr2"
     },
@@ -3516,7 +3930,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-6 \u2014 drill system (f4)",
       "id": "wp6_readme_wp6"
     },
@@ -3529,7 +3943,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "drillconfig (data-driven drill schema)",
       "id": "wp6_readme_drillconfig"
     },
@@ -3542,7 +3956,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "drillloader (load + validate json -> drillconfig)",
       "id": "wp6_readme_drillloader"
     },
@@ -3555,7 +3969,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "drillrunner (lifecycle idle->countdown->running->ended)",
       "id": "wp6_readme_drillrunner"
     },
@@ -3568,7 +3982,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "counterstrafe_ad_v1.json (example drill config)",
       "id": "wp6_readme_counterstrafe_drill_json"
     },
@@ -3581,7 +3995,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "targetmanager (config-driven spawn/position/alternation)",
       "id": "wp6_readme_targetmanager"
     },
@@ -3594,7 +4008,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "data/engine decoupling (new drill = new json, zero engine change)",
       "id": "wp6_readme_data_engine_decoupling"
     },
@@ -3607,7 +4021,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "l/r peek slot + distance abstraction",
       "id": "wp6_readme_lr_slot_abstraction"
     },
@@ -3620,7 +4034,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "seeded alternation (deterministic target sequence)",
       "id": "wp6_readme_seeded_alternation"
     },
@@ -3633,7 +4047,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "load validation throw (no start on invalid config, avoid polluting data)",
       "id": "wp6_readme_load_validation_throw"
     },
@@ -3646,7 +4060,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "restart full reset (no residual state to pollute next run)",
       "id": "wp6_readme_restart_full_reset"
     },
@@ -3659,7 +4073,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "drillid (aligned with export metadata, appendix c)",
       "id": "wp6_readme_drillid"
     },
@@ -3672,7 +4086,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "appendix c (drillid examples / export metadata)",
       "id": "wp6_readme_appendix_c"
     },
@@ -3685,7 +4099,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "oq-6.1 schema field scope decision",
       "id": "wp6_readme_oq61"
     },
@@ -3698,7 +4112,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "oq-6.2 position definition decision",
       "id": "wp6_readme_oq62"
     },
@@ -3711,7 +4125,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 25,
+      "community": 27,
       "norm_label": "oq-6.3 end condition default decision",
       "id": "wp6_readme_oq63"
     },
@@ -3724,7 +4138,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "oq-6.4 load failure handling decision",
       "id": "wp6_readme_oq64"
     },
@@ -3737,7 +4151,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-6 t0 entry gate",
       "id": "wp6_t0_entry_gate"
     },
@@ -3750,7 +4164,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-6 t1 drillconfig schema",
       "id": "wp6_t1_drill_config"
     },
@@ -3763,7 +4177,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-6 t2 drill loader",
       "id": "wp6_t2_drill_loader"
     },
@@ -3776,7 +4190,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-6 t3 counter-strafe drill config file",
       "id": "wp6_t3_counterstrafe_drill"
     },
@@ -3789,7 +4203,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-6 t4 drill lifecycle",
       "id": "wp6_t4_lifecycle"
     },
@@ -3802,7 +4216,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-6 t5 exit gate",
       "id": "wp6_t5_exit_gate"
     },
@@ -3815,7 +4229,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-2 (sim spine / determinism / resetstate)",
       "id": "wp5_readme_wp2"
     },
@@ -3828,7 +4242,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-3 (input events)",
       "id": "wp5_readme_wp3"
     },
@@ -3841,7 +4255,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-4 (targetmanager + hitbox + t_visible)",
       "id": "wp5_readme_wp4"
     },
@@ -3854,7 +4268,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-7 (data recording)",
       "id": "wp6_readme_wp7"
     },
@@ -3867,7 +4281,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 1,
+      "community": 2,
       "norm_label": "wp-8 (metrics / result page / drill switching)",
       "id": "wp6_readme_wp8"
     },
@@ -3880,7 +4294,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-7 \u8cc7\u6599\u8a18\u9304\u8207\u532f\u51fa (f1/f2) \u2605m3",
       "id": "wp7_data_recorder"
     },
@@ -3893,7 +4307,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "m3 \u2014 \u5b8c\u6574 drill \u80fd\u7aef\u5230\u7aef\u532f\u51fa\u8cc7\u6599 (\u53ef\u958b\u59cb pilot)",
       "id": "wp7_milestone_m3"
     },
@@ -3906,7 +4320,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-7 t0 \u2014 entry gate",
       "id": "wp7_t0_entry_gate"
     },
@@ -3919,7 +4333,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-7 t1 \u2014 ring buffer \u6bcf tick \u8a18\u9304",
       "id": "wp7_t1_ring_buffer"
     },
@@ -3932,7 +4346,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-7 t2 \u2014 \u4e8b\u4ef6\u8a18\u9304 (t_visible/\u547d\u4e2d/\u9996\u767c/\u6025\u505c)",
       "id": "wp7_t2_event_recording"
     },
@@ -3945,7 +4359,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-7 t3 \u2014 \u74b0\u5883 metadata",
       "id": "wp7_t3_metadata"
     },
@@ -3958,7 +4372,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-7 t4 \u2014 json/csv \u532f\u51fa",
       "id": "wp7_t4_export"
     },
@@ -3971,7 +4385,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-7 t5 \u2014 \u532f\u51fa\u8cc7\u6599 schema \u6587\u4ef6",
       "id": "wp7_t5_schema_doc"
     },
@@ -3984,7 +4398,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-7 t6 \u2014 exit gate (\u5ba3\u544a m3)",
       "id": "wp7_t6_exit_gate"
     },
@@ -3997,7 +4411,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "ring buffer + \u7269\u4ef6\u91cd\u7528 (\u7121 gc \u5361\u9813)",
       "id": "wp7_ring_buffer_discipline"
     },
@@ -4010,7 +4424,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "datarecorder (src/data/datarecorder.ts)",
       "id": "wp7_datarecorder"
     },
@@ -4023,7 +4437,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "ringbuffer (src/data/ringbuffer.ts)",
       "id": "wp7_ringbuffer_module"
     },
@@ -4036,7 +4450,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "metadata.ts (collectmeta)",
       "id": "wp7_metadata_module"
     },
@@ -4049,7 +4463,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "export.ts (downloadjson/downloadcsv)",
       "id": "wp7_export_module"
     },
@@ -4062,7 +4476,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "\u9644\u9304 c \u532f\u51fa schema (meta/ticks[]/events[])",
       "id": "wp7_appendix_c_schema"
     },
@@ -4075,7 +4489,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "\u74b0\u5883 metadata \u5b8c\u6574\u6027 (\u7814\u7a76\u6548\u5ea6\u524d\u63d0)",
       "id": "wp7_metadata_validity"
     },
@@ -4088,7 +4502,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "\u6642\u9593\u6e90\u540c\u6e90 (performance.now() \u57fa\u6e96)",
       "id": "wp7_time_source_same"
     },
@@ -4101,7 +4515,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-8 \u6307\u6a19\u5100\u8868\u677f\u8207 hud",
       "id": "wp8_metrics_hud"
     },
@@ -4114,7 +4528,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-8 t0 \u2014 entry gate",
       "id": "wp8_t0_entry_gate"
     },
@@ -4127,7 +4541,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-8 t1 \u2014 \u6307\u6a19\u8a08\u7b97 (\u00a75 \u516b\u6307\u6a19\u7d14\u51fd\u5f0f)",
       "id": "wp8_t1_compute_metrics"
     },
@@ -4140,7 +4554,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-8 t2 \u2014 \u7d50\u679c\u9801 (dom)",
       "id": "wp8_t2_result_screen"
     },
@@ -4153,7 +4567,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-8 t3 \u2014 \u5373\u6642 hud (dom)",
       "id": "wp8_t3_hud"
     },
@@ -4166,7 +4580,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-8 t4 \u2014 \u63a7\u5236 (\u91cd\u65b0\u958b\u59cb/\u63db drill)",
       "id": "wp8_t4_controls"
     },
@@ -4179,7 +4593,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-8 t5 \u2014 exit gate",
       "id": "wp8_t5_exit_gate"
     },
@@ -4192,7 +4606,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "\u898f\u683c \u00a75 \u516b\u9805\u6307\u6a19",
       "id": "wp8_eight_metrics"
     },
@@ -4205,7 +4619,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "compute.ts (computemetrics \u7d14\u51fd\u5f0f)",
       "id": "wp8_compute_module"
     },
@@ -4218,7 +4632,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "metricsdashboard",
       "id": "wp8_metrics_dashboard"
     },
@@ -4231,7 +4645,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "resultscreen (src/ui/resultscreen.ts)",
       "id": "wp8_result_screen_module"
     },
@@ -4244,7 +4658,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "hud (src/ui/hud.ts)",
       "id": "wp8_hud_module"
     },
@@ -4257,7 +4671,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "controls (src/ui/controls.ts)",
       "id": "wp8_controls_module"
     },
@@ -4270,7 +4684,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "\u7d14\u6a5f\u68b0\u8a08\u7b97 (\u7121\u4e3b\u89c0\u8a55\u5206)",
       "id": "wp8_pure_mechanical"
     },
@@ -4283,7 +4697,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "\u7d71\u8a08=\u532f\u51fa\u540c\u4e00 snapshot \u4f86\u6e90",
       "id": "wp8_same_snapshot_source"
     },
@@ -4296,7 +4710,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "hud \u4e0d\u6c61\u67d3\u91cf\u6e2c (raf \u8b80\u503c, \u4e0d\u6bcf\u5e40\u914d\u7f6e)",
       "id": "wp8_hud_no_pollution"
     },
@@ -4309,7 +4723,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "\u00a714 \u53d7\u8a66\u8005\u5167\u76f8\u5c0d\u503c\u65b9\u6cd5\u8ad6",
       "id": "wp8_within_subject"
     },
@@ -4322,7 +4736,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-0 createrenderer backend seam",
       "id": "ext_wp0_renderer_seam"
     },
@@ -4335,7 +4749,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-1 sensitivity",
       "id": "ext_wp1_sensitivity"
     },
@@ -4348,7 +4762,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-2 sim tick",
       "id": "ext_wp2_sim_tick"
     },
@@ -4361,7 +4775,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-4 t_visible/\u547d\u4e2d\u4e8b\u4ef6",
       "id": "ext_wp4_visible_hit"
     },
@@ -4374,7 +4788,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-5 fire/\u6025\u505c/\u9996\u767c (\u5373\u6642\u72c0\u614b)",
       "id": "ext_wp5_fire_counter"
     },
@@ -4387,7 +4801,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-6 drill \u63a7\u5236 (drillrunner/drillloader)",
       "id": "ext_wp6_drill_control"
     },
@@ -4400,7 +4814,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "wp-9 \u6574\u5408 + \u8a08\u6642\u6548\u5ea6\u9a57\u8b49",
       "id": "ext_wp9_integration"
     },
@@ -4413,7 +4827,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "adr-1 backend metadata",
       "id": "ext_adr1_backend_metadata"
     },
@@ -4426,7 +4840,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "adr-4 \u6642\u9593\u6e90 (performance.now())",
       "id": "ext_adr4_time_source"
     },
@@ -4439,7 +4853,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "simloop (src/loop/simloop.ts)",
       "id": "ext_simloop"
     },
@@ -4452,7 +4866,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "sharedstate",
       "id": "ext_sharedstate"
     },
@@ -4465,7 +4879,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "counterstrafe_ad_v1 drill config",
       "id": "ext_counterstrafe_drill"
     },
@@ -4478,7 +4892,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-9 \u6574\u5408\u3001\u6e2c\u8a66\u8207\u7de9\u885d (m4 \u968e\u6bb5 a \u4ea4\u4ed8)",
       "id": "wp9_integration"
     },
@@ -4491,7 +4905,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "m4 \u2014 \u968e\u6bb5 a \u4ea4\u4ed8 (\u9644\u9304 e \u9a57\u6536\u6e05\u55ae\u5168\u6578\u901a\u904e)",
       "id": "wp9_milestone_m4"
     },
@@ -4504,7 +4918,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "t0 \u2014 entry gate (\u78ba\u8a8d wp-0~8 \u4ea4\u4ed8)",
       "id": "wp9_t0_entry_gate"
     },
@@ -4517,7 +4931,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "t1 \u2014 e2e \u6574\u5408\u6e2c\u8a66 (drill\u2192\u532f\u51fa\u2192\u7d71\u8a08)",
       "id": "wp9_t1_e2e_integration"
     },
@@ -4530,7 +4944,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "t2 \u2014 \u8a08\u6642\u6548\u5ea6\u9a57\u8b49 (\u53cd\u61c9\u6642\u9593 150\u2013250 ms)",
       "id": "wp9_t2_timing_validity"
     },
@@ -4543,7 +4957,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "t3 \u2014 \u6c7a\u5b9a\u6027\u56de\u6b78\u6e2c\u8a66 (\u81ea\u52d5\u5316)",
       "id": "wp9_t3_determinism_regression"
     },
@@ -4556,7 +4970,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "t4 \u2014 \u7de9\u885d + \u9644\u9304 e \u9a57\u6536",
       "id": "wp9_t4_buffer_acceptance"
     },
@@ -4569,7 +4983,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "t5 / t-exit \u2014 exit gate (\u5ba3\u544a m4)",
       "id": "wp9_t5_exit_gate"
     },
@@ -4582,7 +4996,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "fr-9.1 \u7aef\u5230\u7aef\u6574\u5408\u6e2c\u8a66 (playwright)",
       "id": "wp9_fr_9_1_e2e"
     },
@@ -4595,7 +5009,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "fr-9.2 \u8a08\u6642\u6548\u5ea6\u9a57\u8b49",
       "id": "wp9_fr_9_2_timing_validity"
     },
@@ -4608,7 +5022,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "fr-9.3 \u6c7a\u5b9a\u6027\u56de\u6b78\u6e2c\u8a66 (\u81ea\u52d5\u5316)",
       "id": "wp9_fr_9_3_determinism"
     },
@@ -4621,7 +5035,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "fr-9.4 \u7de9\u885d + \u9644\u9304 e \u5168\u6e05\u55ae",
       "id": "wp9_fr_9_4_buffer"
     },
@@ -4634,7 +5048,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u898f\u683c\u9644\u9304 e \u2014 \u968e\u6bb5 a \u9a57\u6536\u6e05\u55ae (10 \u9805)",
       "id": "wp9_appendix_e_acceptance"
     },
@@ -4647,7 +5061,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u898f\u683c\u9644\u9304 f \u2014 \u98a8\u96aa",
       "id": "wp9_appendix_f_risk"
     },
@@ -4660,7 +5074,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u4e09\u9053\u8a08\u6642\u6548\u5ea6\u9632\u7dda (coi e2e + \u53cd\u61c9\u5206\u5e03 sanity + \u6c7a\u5b9a\u6027\u56de\u6b78)",
       "id": "wp9_three_timing_defenses"
     },
@@ -4673,7 +5087,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "window.__fpstest \u6e2c\u8a66 harness (dev/test build only)",
       "id": "wp9_fpstest_harness"
     },
@@ -4686,7 +5100,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u53cd\u61c9\u6642\u9593 150\u2013250 ms \u6587\u737b\u5408\u7406\u91cf\u7d1a (\u5206\u5e03 sanity \u975e\u786c\u95be)",
       "id": "wp9_reaction_time_band"
     },
@@ -4699,7 +5113,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "test:ci \u8173\u672c (tsc --noemit && vitest run && playwright test)",
       "id": "wp9_test_ci_script"
     },
@@ -4712,7 +5126,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u7d71\u8a08 = \u532f\u51fa \u540c\u6e90\u4ea4\u53c9\u9a57\u8b49",
       "id": "wp9_stats_equals_export"
     },
@@ -4725,7 +5139,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "counterstrafe_ad_v1 counter-strafe drill",
       "id": "counterstrafe_ad_v1_drill"
     },
@@ -4738,7 +5152,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "crossoriginisolated === true (coop/coep)",
       "id": "term_cross_origin_isolated"
     },
@@ -4751,7 +5165,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism, sim \u591a fps \u9010 tick \u4e00\u81f4)",
       "id": "term_determinism"
     },
@@ -4764,7 +5178,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "counterreactionms (\u6025\u505c\u53cd\u61c9\u6642\u9593)",
       "id": "term_counter_reaction_ms"
     },
@@ -4777,7 +5191,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "performance.now() (\u7981\u7528 date.now)",
       "id": "term_performance_now"
     },
@@ -4790,7 +5204,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u898f\u683c \u00a714 \u65b9\u6cd5\u8ad6 (\u53d7\u8a66\u8005\u5167\u76f8\u5c0d\u503c + \u986f\u793a\u5ef6\u9072\u8aa4\u5dee\u754c\u7dda)",
       "id": "spec_section_14_methodology"
     },
@@ -4803,7 +5217,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u898f\u683c \u00a79.2 \u8a08\u6642\u6548\u5ea6 150\u2013250 ms",
       "id": "spec_section_9_2"
     },
@@ -4816,7 +5230,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "\u898f\u683c \u00a75 \u516b\u6307\u6a19",
       "id": "spec_section_5_metrics"
     },
@@ -4829,7 +5243,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "docs/operational/acceptance-stage-a.md",
       "id": "doc_acceptance_stage_a"
     },
@@ -4842,7 +5256,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "docs/operational/timing-validity.md",
       "id": "doc_timing_validity"
     },
@@ -4855,7 +5269,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-0 (bootstrap / coi / \u6e32\u67d3\u5f8c\u7aef\u5075\u6e2c)",
       "id": "wp0_bootstrap"
     },
@@ -4868,7 +5282,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-2 (sim \u810a\u690e / \u6c7a\u5b9a\u6027 t4)",
       "id": "wp2_sim_spine"
     },
@@ -4881,7 +5295,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-3 (movement \u908f\u8f2f)",
       "id": "wp3_movement"
     },
@@ -4894,7 +5308,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-4 (\u76ee\u6a19\u5de6\u53f3\u4ea4\u66ff / t_visible)",
       "id": "wp4_target"
     },
@@ -4907,7 +5321,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-5 (\u6025\u505c / \u505c\u6b62 gate \u958b\u706b / \u9996\u767c\u547d\u4e2d)",
       "id": "wp5_counterstrafe_fire"
     },
@@ -4920,7 +5334,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-6 (\u5b8c\u6574 counter-strafe drill)",
       "id": "wp6_drill"
     },
@@ -4933,7 +5347,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-7 (\u532f\u51fa json/csv / schema)",
       "id": "wp7_export"
     },
@@ -4946,7 +5360,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-8 (drill \u5f8c\u7d71\u8a08 \u00a75 \u6307\u6a19)",
       "id": "wp8_statistics"
     },
@@ -4959,7 +5373,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 7,
       "norm_label": "wp-7 schema.md (\u532f\u51fa json schema)",
       "id": "wp7_schema_md"
     }
@@ -5049,7 +5463,7 @@
       "source_location": "L5",
       "weight": 1.0,
       "source": "src_main_ts",
-      "target": "src_view_cameracontroller_ts",
+      "target": "src_input_inputsampler_ts",
       "confidence_score": 1.0
     },
     {
@@ -5060,8 +5474,30 @@
       "source_location": "L5",
       "weight": 1.0,
       "source": "src_main_ts",
-      "target": "view_cameracontroller_cameracontroller",
+      "target": "input_inputsampler_createinputsampler",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "src_view_cameracontroller_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "view_cameracontroller_cameracontroller"
     },
     {
       "relation": "imports_from",
@@ -5070,9 +5506,9 @@
       "source_file": "src/main.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_ui_settingspanel_ts",
-      "confidence_score": 1.0
+      "target": "src_ui_settingspanel_ts"
     },
     {
       "relation": "imports",
@@ -5081,8 +5517,96 @@
       "source_file": "src/main.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "ui_settingspanel_createsettingspanel",
+      "target": "ui_settingspanel_createsettingspanel"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_main_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_main_ts",
+      "target": "src_loop_simloop_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_main_ts",
+      "target": "loop_simloop_createsimloop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_main_ts",
+      "target": "src_loop_renderloop_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_main_ts",
+      "target": "loop_renderloop_createrenderloop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_main_ts",
+      "target": "loop_renderloop_lerp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "src_main_ts",
+      "target": "src_loop_clock_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_main_ts",
+      "target": "src_loop_constants_ts",
       "confidence_score": 1.0
     },
     {
@@ -5116,6 +5640,392 @@
       "target": "src_main_frame"
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "state_sharedstate_createsharedstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "state_sharedstate_resetstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "src_state_inputringtestutil_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "state_inputringtestutil_pushevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "state_inputringtestutil_snapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "src_input_consume_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "input_consume_consume",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "input_consume_test_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.test.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "src_input_consume_test_ts",
+      "target": "input_consume_test_collector",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_input_consume_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_input_consume_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/consume.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "src_input_consume_ts",
+      "target": "input_consume_consume",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_input_consume_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_state_inputringtestutil_ts",
+      "target": "src_input_consume_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "input_consume_consume",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_state_inputringtestutil_ts",
+      "target": "input_consume_consume",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "loop_simloop_simstep",
+      "target": "input_consume_consume"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "state_inputringtestutil_draintoarray",
+      "target": "input_consume_consume"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "src_input_inputsampler_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "input_inputsampler_createinputsampler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "state_sharedstate_createsharedstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "src_state_inputringtestutil_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "state_inputringtestutil_draintoarray",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "input_inputsampler_test_makefaketarget",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "input_inputsampler_test_keyevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "input_inputsampler_test_mouseevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "input_inputsampler_test_coalescedsample",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "input_inputsampler_test_pointermoveevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.test.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_test_ts",
+      "target": "input_inputsampler_test_legacypointermoveevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/input/InputSampler.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "src_input_inputsampler_ts",
+      "target": "input_inputsampler_createinputsampler",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/input/PointerLock.ts",
@@ -5124,6 +6034,477 @@
       "confidence_score": 1.0,
       "source": "src_input_pointerlock_ts",
       "target": "input_pointerlock_createpointerlock"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_loop_clock_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_loop_clock_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "src_loop_clock_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_loop_constants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "src_loop_constants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/RenderLoop.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_renderloop_test_ts",
+      "target": "src_loop_renderloop_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/RenderLoop.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_renderloop_test_ts",
+      "target": "loop_renderloop_createrenderloop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/RenderLoop.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_renderloop_test_ts",
+      "target": "loop_renderloop_lerp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/RenderLoop.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "src_loop_renderloop_ts",
+      "target": "loop_renderloop_lerp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/RenderLoop.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "src_loop_renderloop_ts",
+      "target": "loop_renderloop_createrenderloop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "state_sharedstate_createsharedstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_state_inputringtestutil_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "state_inputringtestutil_pushevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_loop_simloop_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "loop_simloop_createsimloop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "loop_simloop_simstep",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "loop_simloop_test_fixedclock",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "loop_simloop_applyinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "loop_simloop_simstep",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "loop_simloop_createsimloop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "src_loop_simloop_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "loop_simloop_createsimloop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "tests_determinism_test_runframes",
+      "target": "loop_simloop_createsimloop"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "state_sharedstate_createsharedstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "src_state_inputringtestutil_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "state_inputringtestutil_pushevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "tests_determinism_test_syntheticinputs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "tests_determinism_test_freshstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "tests_determinism_test_snap",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "tests_determinism_test_runframes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "tests_determinism_test_canonicaltrajectory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "tests_determinism_test_framesat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "src_loop_tests_determinism_test_ts",
+      "target": "tests_determinism_test_jitterframes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "tests_determinism_test_freshstate",
+      "target": "tests_determinism_test_syntheticinputs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "tests_determinism_test_runframes",
+      "target": "tests_determinism_test_freshstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "tests_determinism_test_freshstate",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "tests_determinism_test_freshstate",
+      "target": "state_inputringtestutil_pushevent"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "tests_determinism_test_runframes",
+      "target": "tests_determinism_test_snap",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/determinism.test.ts",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "tests_determinism_test_canonicaltrajectory",
+      "target": "tests_determinism_test_runframes",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -5283,14 +6664,249 @@
       "target": "render_scenemanager_scenemanager_buildlights"
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_state_inputring_test_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_state_inputring_test_ts",
+      "target": "state_sharedstate_createinputring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_state_inputring_test_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_state_inputring_test_ts",
+      "target": "src_state_inputringtestutil_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_state_inputring_test_ts",
+      "target": "state_inputringtestutil_snapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "src_state_inputring_test_ts",
+      "target": "state_inputring_test_drainall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/state/InputRing.test.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "state_inputring_test_drainall",
+      "target": "state_inputringtestutil_snapshot"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_state_inputringtestutil_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_state_inputringtestutil_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "src_state_inputringtestutil_ts",
+      "target": "state_inputringtestutil_pushevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "src_state_inputringtestutil_ts",
+      "target": "state_inputringtestutil_draintoarray",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/inputRingTestUtil.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "src_state_inputringtestutil_ts",
+      "target": "state_inputringtestutil_snapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_test_ts",
+      "target": "src_state_inputringtestutil_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_test_ts",
+      "target": "state_inputringtestutil_pushevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_test_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_test_ts",
+      "target": "state_sharedstate_createsharedstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_test_ts",
+      "target": "state_sharedstate_resetstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_ts",
+      "target": "src_state_types_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_ts",
+      "target": "state_sharedstate_createinputring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L117",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_ts",
+      "target": "state_sharedstate_createsharedstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L137",
+      "weight": 1.0,
+      "source": "src_state_sharedstate_ts",
+      "target": "state_sharedstate_resetstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L119",
+      "weight": 1.0,
+      "source": "state_sharedstate_createsharedstate",
+      "target": "state_sharedstate_createinputring",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L41",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_ui_settingspanel_ts",
-      "target": "ui_settingspanel_createsettingspanel",
-      "confidence_score": 1.0
+      "target": "ui_settingspanel_createsettingspanel"
     },
     {
       "relation": "contains",
@@ -5298,9 +6914,9 @@
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L103",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_ui_settingspanel_ts",
-      "target": "ui_settingspanel_makerow",
-      "confidence_score": 1.0
+      "target": "ui_settingspanel_makerow"
     },
     {
       "relation": "calls",
@@ -5309,9 +6925,9 @@
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L69",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ui_settingspanel_createsettingspanel",
-      "target": "ui_settingspanel_makerow",
-      "confidence_score": 1.0
+      "target": "ui_settingspanel_makerow"
     },
     {
       "relation": "contains",
@@ -5319,9 +6935,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_view_cameracontroller_ts",
-      "target": "view_cameracontroller_cameracontroller",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller"
     },
     {
       "relation": "method",
@@ -5329,9 +6945,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L39",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller",
-      "target": "view_cameracontroller_cameracontroller_constructor",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_constructor"
     },
     {
       "relation": "method",
@@ -5339,9 +6955,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L47",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller",
-      "target": "view_cameracontroller_cameracontroller_applydelta",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_applydelta"
     },
     {
       "relation": "method",
@@ -5349,9 +6965,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L55",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller",
-      "target": "view_cameracontroller_cameracontroller_setsensitivity",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_setsensitivity"
     },
     {
       "relation": "method",
@@ -5359,9 +6975,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L60",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller",
-      "target": "view_cameracontroller_cameracontroller_setfov",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_setfov"
     },
     {
       "relation": "method",
@@ -5369,9 +6985,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L65",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller",
-      "target": "view_cameracontroller_cameracontroller_applytocamera",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_applytocamera"
     },
     {
       "relation": "calls",
@@ -5380,9 +6996,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L43",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller_constructor",
-      "target": "view_cameracontroller_cameracontroller_applytocamera",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_applytocamera"
     },
     {
       "relation": "calls",
@@ -5391,9 +7007,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller_applydelta",
-      "target": "view_cameracontroller_cameracontroller_applytocamera",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_applytocamera"
     },
     {
       "relation": "references",
@@ -11124,5 +12740,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "f6e5d6feec8aceffa9edc70101d6fb8b3202cde5"
+  "built_at_commit": "908a0c95953864f498f2295976d0dfef3a19ff35"
 }

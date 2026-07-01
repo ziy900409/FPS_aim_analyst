@@ -10,7 +10,7 @@
 | ✅ | **T2** 滑鼠 coalesced 採集 | [T2-mouse-coalesced.md](T2-mouse-coalesced.md) | T0 | Med |
 | ✅ | **T3** 開火事件採集 | [T3-fire.md](T3-fire.md) | T0 | Low |
 | ✅ | **T4** sim 依時序消費 + 排空 | [T4-sim-consume.md](T4-sim-consume.md) | T1, T2, T3 | Med |
-| ⬜ | **T4b** 固定欄位 ring buffer + 溢位 | [T4b-ring-buffer-overflow.md](T4b-ring-buffer-overflow.md) | T4 | Med |
+| ✅ | **T4b** 固定欄位 ring buffer + 溢位 | [T4b-ring-buffer-overflow.md](T4b-ring-buffer-overflow.md) | T4 | Med |
 | ⬜ | **T5 / T-exit** Exit gate | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4（含 T4b） | Low |
 
 ## Execution rules

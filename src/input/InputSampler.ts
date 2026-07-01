@@ -1,4 +1,5 @@
 import type { SharedState } from '../state/SharedState.ts';
+import { KEY_CODE } from '../state/types.ts';
 
 /**
  * InputSampler — WP-3 / T1（FR-3.1，鍵盤部分）
@@ -8,18 +9,18 @@ import type { SharedState } from '../state/SharedState.ts';
  * 寫入 `SharedState.input`——精準度的真正來源是這層的 sub-tick 時間戳，不是 sim tick 頻率
  * （規格 ADR-3）。sim 端（T4）再依 timeStamp 排序消費。
  *
- * T1（鍵盤）+ T3（開火 mousedown）已就緒；本切片 T2 補上滑鼠 `pointermove` 的 coalesced
- * 次幀採樣（FR-3.2）。三類事件（key/fire/mouse）append 進同一 sampler。
- * `state.input` 目前仍是 WP-2 佔位 plain array（`push` 依到達順序 append，`event.timeStamp`
- * 近單調 ⇒ 近有序，滿足 T4 consume 的保序前提，GD-3/D-3b）；換固定欄位 ring buffer 屬後續切片。
+ * T1（鍵盤）+ T2（滑鼠 coalesced）+ T3（開火 mousedown）就緒。三類事件（key/fire/mouse）寫進同一
+ * 固定欄位 ring buffer（T4b）：`push*` 依到達順序 append，`event.timeStamp` 近單調 ⇒ ring 寫入端
+ * bounded insertion 保序（罕見亂序就地前移），滿足 T4 consume 的升冪前提（GD-3/D-3b）。
+ * 容量滿走**溢位政策**（GD-2）：`push*` 回 `false` → 升 `inputMeta.bufferOverflow`、**拒收新事件、
+ * 不覆寫尚未消費的最舊槽**（覆寫 = 靜默丟最舊資料）。
  */
 
 /**
- * 採集的按鍵集合（`KeyboardEvent.code`，非 `key`：避開鍵盤 layout 差異，設計註記）。
+ * 採集的按鍵集合 = `KEY_CODE` 的鍵（`KeyboardEvent.code`，非 `key`：避開鍵盤 layout 差異，設計註記）。
  * A/D = 橫移（反向語意在 WP-5 急停判定，OQ-3.1）；W/S 預留（前後移動，階段 A 未用）。
- * 只收這些鍵 → 打字/快捷鍵不污染量測緩衝、守 GC 紀律（不 push 無關事件）。
+ * 只收這些鍵（`KEY_CODE[code]` 有定義）→ 打字/快捷鍵不污染量測緩衝、守 GC 紀律（不寫無關事件）。
  */
-const SAMPLED_KEYS: ReadonlySet<string> = new Set(['KeyA', 'KeyD', 'KeyW', 'KeyS']);
 
 export interface InputSampler {
   /**
@@ -42,15 +43,21 @@ export function createInputSampler(
 ): InputSampler {
   let attached: EventTarget | null = null;
 
+  // ring 溢位政策（GD-2）：push* 回 false（容量滿）→ 升 bufferOverflow、拒收、不丟最舊。
+  const ring = state.input;
+  const meta = state.inputMeta;
+
   function onKeyDown(e: KeyboardEvent): void {
     if (e.repeat) return; // 自動重複的 keydown 不入緩衝：只記真實狀態轉換（設計註記）
-    if (!SAMPLED_KEYS.has(e.code)) return;
-    state.input.push({ type: 'key', code: e.code, down: true, t: e.timeStamp });
+    const codeInt = KEY_CODE[e.code];
+    if (codeInt === undefined) return; // 非採集鍵（KEY_CODE 封閉集）→ 不污染緩衝
+    if (!ring.pushKey(codeInt, true, e.timeStamp)) meta.bufferOverflow++;
   }
 
   function onKeyUp(e: KeyboardEvent): void {
-    if (!SAMPLED_KEYS.has(e.code)) return;
-    state.input.push({ type: 'key', code: e.code, down: false, t: e.timeStamp });
+    const codeInt = KEY_CODE[e.code];
+    if (codeInt === undefined) return;
+    if (!ring.pushKey(codeInt, false, e.timeStamp)) meta.bufferOverflow++;
   }
 
   /**
@@ -61,7 +68,7 @@ export function createInputSampler(
   function onMouseDown(e: MouseEvent): void {
     if (e.button !== 0) return; // 只記主鍵（左鍵）開火；其餘鍵不入緩衝
     if (!isLocked()) return; // 未鎖定不採計（避免取鎖點擊 / UI 點擊污染量測）
-    state.input.push({ type: 'fire', t: e.timeStamp });
+    if (!ring.pushFire(e.timeStamp)) meta.bufferOverflow++;
   }
 
   /**
@@ -75,7 +82,7 @@ export function createInputSampler(
   function onPointerMove(e: PointerEvent): void {
     const samples = e.getCoalescedEvents?.() ?? [e];
     for (const ev of samples) {
-      state.input.push({ type: 'mouse', dx: ev.movementX, dy: ev.movementY, t: ev.timeStamp });
+      if (!ring.pushMouse(ev.movementX, ev.movementY, ev.timeStamp)) meta.bufferOverflow++;
     }
   }
 

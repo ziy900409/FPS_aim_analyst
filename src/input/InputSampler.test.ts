@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createInputSampler } from './InputSampler.ts';
 import { createSharedState } from '../state/SharedState.ts';
+import { KEY_CODE, RING_CAPACITY } from '../state/types.ts';
+import { drainToArray } from '../state/inputRingTestUtil.ts';
 
 /**
  * 無 DOM 的假 target：捕捉 addEventListener 註冊的 handler，供測試直接派發合成事件
  * （node 環境無 KeyboardEvent/HTMLElement，且本專案慣以注入假物件測試——見 clock.ts）。
+ *
+ * T4b：`state.input` 為固定欄位 ring，內容斷言以 `drainToArray`（消費為 plain 快照陣列、升冪）表述，
+ * 長度斷言以 `state.input.size()`（取代舊 plain-array 的 `toEqual([...])` / `toHaveLength`）。
  */
 function makeFakeTarget() {
   const listeners = new Map<string, Set<EventListener>>();
@@ -75,7 +80,7 @@ describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', (
     target.dispatch('keydown', keyEvent('KeyD', 10));
     target.dispatch('keyup', keyEvent('KeyD', 100));
 
-    expect(state.input).toEqual([
+    expect(drainToArray(state)).toEqual([
       { type: 'key', code: 'KeyD', down: true, t: 10 },
       { type: 'key', code: 'KeyD', down: false, t: 100 },
     ]);
@@ -88,7 +93,8 @@ describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', (
     target.dispatch('keydown', keyEvent('Space', 4)); // 無關
     target.dispatch('keydown', keyEvent('KeyQ', 5)); // 無關
 
-    expect(state.input.map((e) => e.type === 'key' && e.code)).toEqual(['KeyA', 'KeyW', 'KeyS']);
+    const drained = drainToArray(state);
+    expect(drained.map((e) => e.type === 'key' && e.code)).toEqual(['KeyA', 'KeyW', 'KeyS']);
   });
 
   it('event.repeat 的 keydown 不重複入緩衝（只記真實狀態轉換）', () => {
@@ -97,7 +103,7 @@ describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', (
     target.dispatch('keydown', keyEvent('KeyD', 26, true));
     target.dispatch('keyup', keyEvent('KeyD', 40));
 
-    expect(state.input).toEqual([
+    expect(drainToArray(state)).toEqual([
       { type: 'key', code: 'KeyD', down: true, t: 10 },
       { type: 'key', code: 'KeyD', down: false, t: 40 },
     ]);
@@ -105,7 +111,7 @@ describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', (
 
   it('時間戳原樣保留（不改寫、不用 Date.now）', () => {
     target.dispatch('keydown', keyEvent('KeyA', 1234.5678));
-    expect(state.input[0].t).toBe(1234.5678);
+    expect(drainToArray(state)[0].t).toBe(1234.5678);
   });
 
   it('detach 後移除監聽、後續事件不再入緩衝', () => {
@@ -114,15 +120,33 @@ describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', (
     expect(target.count('keyup')).toBe(0);
 
     target.dispatch('keydown', keyEvent('KeyD', 10));
-    expect(state.input).toHaveLength(0);
+    expect(state.input.size()).toBe(0);
   });
 
-  it('重複 attach 冪等（不疊聽 → 單一事件只 push 一次）', () => {
+  it('重複 attach 冪等（不疊聽 → 單一事件只寫一次）', () => {
     sampler.attach(target as unknown as EventTarget); // 第二次 attach
     expect(target.count('keydown')).toBe(1);
 
     target.dispatch('keydown', keyEvent('KeyD', 10));
-    expect(state.input).toHaveLength(1);
+    expect(state.input.size()).toBe(1);
+  });
+
+  it('容量滿 → 溢位升 bufferOverflow、拒收新事件、不丟最舊（GD-2）', () => {
+    // 直接填滿 ring 到靜態容量（每槽遞增時間戳，保序 append）
+    for (let i = 0; i < RING_CAPACITY; i++) state.input.pushKey(KEY_CODE.KeyD, true, i + 1);
+    expect(state.input.size()).toBe(RING_CAPACITY);
+
+    // 經 sampler 再派發一個 keydown → 滿 → 拒收、升溢位、size 不增
+    target.dispatch('keydown', keyEvent('KeyD', 99999));
+    expect(state.inputMeta.bufferOverflow).toBe(1);
+    expect(state.input.size()).toBe(RING_CAPACITY);
+
+    // 最舊（t=1）仍在、未被覆寫（不靜默丟最舊）；全數升冪完整消費
+    const drained = drainToArray(state);
+    expect(drained).toHaveLength(RING_CAPACITY);
+    expect(drained[0].t).toBe(1);
+    expect(drained[drained.length - 1].t).toBe(RING_CAPACITY); // 99999 未入（拒收）
+    expect(drained.every((e, i) => i === 0 || e.t >= drained[i - 1].t)).toBe(true);
   });
 });
 
@@ -142,19 +166,19 @@ describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，�
 
   it('鎖定中左鍵 mousedown 蓋 event.timeStamp 入緩衝', () => {
     target.dispatch('mousedown', mouseEvent(0, 512.25));
-    expect(state.input).toEqual([{ type: 'fire', t: 512.25 }]);
+    expect(drainToArray(state)).toEqual([{ type: 'fire', t: 512.25 }]);
   });
 
   it('未鎖定時不採計（避免取鎖點擊 / UI 點擊誤判為開火）', () => {
     locked = false;
     target.dispatch('mousedown', mouseEvent(0, 512.25));
-    expect(state.input).toHaveLength(0);
+    expect(state.input.size()).toBe(0);
   });
 
   it('非左鍵（右鍵/中鍵）不入緩衝', () => {
     target.dispatch('mousedown', mouseEvent(2, 10)); // 右鍵
     target.dispatch('mousedown', mouseEvent(1, 20)); // 中鍵
-    expect(state.input).toHaveLength(0);
+    expect(state.input.size()).toBe(0);
   });
 
   it('detach 後移除 mousedown 監聽、後續開火不再入緩衝', () => {
@@ -162,7 +186,7 @@ describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，�
     expect(target.count('mousedown')).toBe(0);
 
     target.dispatch('mousedown', mouseEvent(0, 10));
-    expect(state.input).toHaveLength(0);
+    expect(state.input.size()).toBe(0);
   });
 });
 
@@ -189,18 +213,19 @@ describe('InputSampler — 滑鼠 coalesced 採集（pointermove + getCoalescedE
     );
 
     // 樣本數 = 子事件數（> 1 筆，證明次幀採樣），dx/dy 對應、timeStamp 遞增
-    expect(state.input).toEqual([
+    const drained = drainToArray(state);
+    expect(drained).toEqual([
       { type: 'mouse', dx: 3, dy: -1, t: 100 },
       { type: 'mouse', dx: 5, dy: 0, t: 100.5 },
       { type: 'mouse', dx: 2, dy: 2, t: 101 },
     ]);
-    const times = state.input.map((e) => e.t);
+    const times = drained.map((e) => e.t);
     expect(times).toEqual([...times].sort((a, b) => a - b)); // 遞增
   });
 
   it('getCoalescedEvents 不存在（舊瀏覽器）時 fallback 到單筆頂層事件', () => {
     target.dispatch('pointermove', legacyPointerMoveEvent(7, -4, 250));
-    expect(state.input).toEqual([{ type: 'mouse', dx: 7, dy: -4, t: 250 }]);
+    expect(drainToArray(state)).toEqual([{ type: 'mouse', dx: 7, dy: -4, t: 250 }]);
   });
 
   it('detach 後移除 pointermove 監聽、後續移動不再入緩衝', () => {
@@ -208,6 +233,6 @@ describe('InputSampler — 滑鼠 coalesced 採集（pointermove + getCoalescedE
     expect(target.count('pointermove')).toBe(0);
 
     target.dispatch('pointermove', pointerMoveEvent([coalescedSample(1, 1, 10)]));
-    expect(state.input).toHaveLength(0);
+    expect(state.input.size()).toBe(0);
   });
 });
