@@ -48,11 +48,11 @@ F1：採集每個 A/D／反向鍵的 keydown/keyup、滑鼠位移、開火事件
 
 ### Open Questions
 
-| ID | Question | 建議解法 | Blocks |
-|----|----------|---------|--------|
-| **OQ-3.1** | 反向鍵如何定義？ | 「反向鍵」= 與當前移動方向相反者（D 中按 A、A 中按 D）；採集層只記原始鍵碼，反向語意在 WP-5 急停判定處理。 | T1 |
-| **OQ-3.2** | 緩衝資料結構？ | **已定（grill）**：固定欄位 **ring buffer**（真環狀；每事件壓成 `type,t,a,b` 數值欄、不 `push` 物件）——當下擋 GC、未來 SAB-portable。容量 = `nextPow2(MAX_EVENT_RATE_HZ×MAX_STALL_S×SAFETY)` 靜態常數、**執行期不動態 resize**；溢位升 `bufferOverflow`。 | T4 |
-| **OQ-3.3** | `event.timeStamp` 與 sim clock 對齊？ | 兩者皆 `performance.now()` 同 time origin（ADR-4/7），可直接相減。⚠️ **僅 Chromium 成立**；支援非 Chromium 須重驗。 | T4 |
+| ID | Question | 解法 | Status | Blocks |
+|----|----------|---------|--------|--------|
+| **OQ-3.1** | 反向鍵如何定義？ | 「反向鍵」= 與當前移動方向相反者（D 中按 A、A 中按 D）；採集層只記原始鍵碼，反向語意在 WP-5 急停判定處理。 | ✅ locked T0 (2026-07-01) | T1 |
+| **OQ-3.2** | 緩衝資料結構？ | **已定（grill）**：固定欄位 **ring buffer**（真環狀；每事件壓成 `type,t,a,b` 數值欄、不 `push` 物件）——當下擋 GC、未來 SAB-portable。容量 = `nextPow2(MAX_EVENT_RATE_HZ×MAX_STALL_S×SAFETY)` 靜態常數、**執行期不動態 resize**；溢位升 `bufferOverflow`。 | ✅ grill / locked T0 | T4 |
+| **OQ-3.3** | `event.timeStamp` 與 sim clock 對齊？ | 兩者皆 `performance.now()` 同 time origin（ADR-4/7），可直接相減。⚠️ **僅 Chromium 成立**；支援非 Chromium 須重驗。 | ✅ grill / locked T0 | T4 |
 
 ---
 
