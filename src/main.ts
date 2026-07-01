@@ -92,10 +92,12 @@ const settingsPanel = createSettingsPanel({
 });
 pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 
-// WP-3 / T1（FR-3.1）— 鍵盤採集：keydown/keyup（A/D/W/S）蓋 event.timeStamp 寫入 sharedState.input，
-// 供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；掛在 window（鍵盤事件不落在 canvas）。
-// 與 CameraController（視角走 pointerLock.onMove）互不干擾——此處只入緩衝供量測（WP-3 目的）。
-const inputSampler = createInputSampler(sharedState);
+// WP-3 / T1+T3（FR-3.1/3.3）— 輸入採集：keydown/keyup（A/D/W/S）與開火 mousedown（左鍵）蓋
+// event.timeStamp 寫入 sharedState.input，供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；
+// 掛在 window（鍵盤事件不落在 canvas；lock 中滑鼠事件亦冒泡至 window）。開火以 pointerLock.locked
+// 為採計閘門——否則「點擊 canvas 取鎖」與 UI 點擊會被誤判為開火（T3）。與 CameraController（視角走
+// pointerLock.onMove）互不干擾——此處只入緩衝供量測（WP-3 目的）。
+const inputSampler = createInputSampler(sharedState, () => pointerLock.locked);
 inputSampler.attach(window);
 
 // WP-2 / T2+T3（FR-2.2/2.3）— 雙迴圈：sim（128 Hz 固定步長 accumulator）與 render（rAF）解耦，

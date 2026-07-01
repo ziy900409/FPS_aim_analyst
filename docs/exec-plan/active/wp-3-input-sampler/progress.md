@@ -4,15 +4,15 @@
 
 ---
 
-## Status: 🟢 T1 完成（鍵盤採集）；T2/T3 可並行、T4 待 T1–T3
+## Status: 🟢 T1+T3 完成（鍵盤 + 開火）；T2 待執行、T4 待 T1–T3
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ DONE (2026-07-01) |
 | T1 鍵盤採集 | ✅ DONE (2026-07-01) |
 | T2 滑鼠 coalesced | ⬜ 待執行 |
-| T3 開火事件 | ⬜ 待執行 |
-| T4 sim 消費 | ⬜ 待執行 |
+| T3 開火事件 | ✅ DONE (2026-07-01) |
+| T4 sim 消費 | ⬜ 待執行（待 T2） |
 | T5 Exit gate | ⬜ 待執行 |
 
 ---
@@ -28,6 +28,26 @@
 ---
 
 ## Log
+
+### 2026-07-01 — T3 開火事件 ✅ PASS（mousedown 左鍵 + event.timeStamp，僅鎖定中，FR-3.3）
+
+**交付：** MODIFY [`src/input/InputSampler.ts`](../../../../src/input/InputSampler.ts)（`onMouseDown` + lock 閘門）、[`InputSampler.test.ts`](../../../../src/input/InputSampler.test.ts)（+4 fire tests）、[`src/main.ts`](../../../../src/main.ts)（注入 `() => pointerLock.locked`）。
+
+| 項目 | 內容 |
+|------|------|
+| API | `createInputSampler(state, isLocked = () => true)`；`mousedown`（button 0 且 `isLocked()`）→ `state.input.push({type:'fire', t:event.timeStamp})`。 |
+| 驗證 | `npx tsc --noEmit` → **exit 0**；`npx vitest run src` → **37 passed**（10 InputSampler[6 鍵盤 + 4 開火] + 27 既有，無回歸）；`npx vite build` → **✓ built**。 |
+| 測試覆蓋（+4） | 鎖定中左鍵入緩衝 + 時間戳 · 未鎖定不入 · 非左鍵（右/中鍵）不入 · detach 移除 mousedown 監聽。 |
+
+**Decision Log（本切片非平凡選擇）：**
+- **D-T3.1｜lock 閘門用注入的 `isLocked: () => boolean`（第二參數，預設 `() => true`），非在 sampler 內直讀 `document.pointerLockElement`。** *理由*：(1) 守本專案 DI 可測慣例（D-T1.1；node 測試無 `document`，注入假旗標即可驗鎖定/未鎖定兩路徑）；(2) lock 權威狀態已由 [`PointerLock.ts`](../../../../src/input/PointerLock.ts) 以 `document.pointerLockElement === canvas` 事件驅動維護（D-T2.1），sampler 直讀 global 會複製該權威、且無法引用 canvas。main 傳 `() => pointerLock.locked`。*Alternatives*：(a) sampler 直讀 `document.pointerLockElement` → 破 DI、與 PointerLock 權威重複，否決；(b) 必填參數 → 破壞既有 `createInputSampler(state)`（鍵盤測試 + 語意上鍵盤不受閘門），否決。*預設 `() => true`*：sampler 單獨/鍵盤路徑不閘門（與 T1 鍵盤無條件採集一致）；閘門僅套用於 fire。
+- **D-T3.2｜開火 mousedown 掛在 `window`（沿用 T1 `attach(window)`），非 canvas。** *理由*：Pointer Lock 鎖定中滑鼠事件冒泡至 window；且與鍵盤同 target 便於單一 attach/detach 生命週期。「點擊 canvas 取鎖」的 mousedown 在鎖定完成前 `pointerLock.locked` 仍為 false（lock 為 async、由 `pointerlockchange` 確立），故取鎖點擊自然被閘門濾除，不誤判為開火。
+
+**Surprises & Discoveries：**
+- 無意外。fire 為最小切片（Low/Low）；lock 閘門的 async 時序（取鎖 mousedown 早於 locked=true）恰好使「未鎖定不採計」同時擋掉取鎖點擊，與 T3 design note 目的一致。
+- **Scope note**：與 T1 同——sampler 仍無條件 `attach(window)`，drill 生命週期 gating 屬 WP-6；fire 的 lock 閘門只擋 UI/取鎖點擊，非量測期閘門。
+
+**Next**：T2（滑鼠 `pointermove` + `getCoalescedEvents()` 次幀採樣，FR-3.2）——本 WP 唯一 Med/Med 風險項；完成後 T1–T3 齊備即可進 T4（sim 消費）。
 
 ### 2026-07-01 — T1 鍵盤採集 ✅ PASS（keydown/keyup + event.timeStamp，FR-3.1）
 

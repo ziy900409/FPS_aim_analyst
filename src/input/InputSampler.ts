@@ -8,7 +8,7 @@ import type { SharedState } from '../state/SharedState.ts';
  * 寫入 `SharedState.input`——精準度的真正來源是這層的 sub-tick 時間戳，不是 sim tick 頻率
  * （規格 ADR-3）。sim 端（T4）再依 timeStamp 排序消費。
  *
- * 本 task 只做鍵盤；滑鼠 coalesced（T2）、開火（T3）之後補進同一 sampler。
+ * T1（鍵盤）已就緒；本切片 T3 補上「開火」（mousedown）。滑鼠 coalesced（T2）之後補進同一 sampler。
  * `state.input` 目前仍是 WP-2 佔位 plain array（`push` 依到達順序 append，`event.timeStamp`
  * 近單調 ⇒ 近有序，滿足 T4 consume 的保序前提，GD-3/D-3b）；換固定欄位 ring buffer 屬後續切片。
  */
@@ -30,7 +30,15 @@ export interface InputSampler {
   detach(): void;
 }
 
-export function createInputSampler(state: SharedState): InputSampler {
+/**
+ * @param isLocked 開火採計閘門：僅 Pointer Lock 鎖定中才記 fire（見 onMouseDown）。注入以維持
+ *   可測性（本專案慣例，D-T1.1）；main 傳 `() => pointerLock.locked`（[PointerLock.ts] 為權威狀態）。
+ *   預設 `() => true`：sampler 單獨使用時不閘門（與鍵盤一致，鍵盤/滑鼠不受此閘門影響）。
+ */
+export function createInputSampler(
+  state: SharedState,
+  isLocked: () => boolean = () => true,
+): InputSampler {
   let attached: EventTarget | null = null;
 
   function onKeyDown(e: KeyboardEvent): void {
@@ -44,17 +52,30 @@ export function createInputSampler(state: SharedState): InputSampler {
     state.input.push({ type: 'key', code: e.code, down: false, t: e.timeStamp });
   }
 
+  /**
+   * 開火事件（FR-3.3）：左鍵 mousedown 蓋 `event.timeStamp` 入緩衝。命中/首發判定不在此（→ WP-5，
+   * sim 消費 fire 時就地 raycast）。僅 Pointer Lock 鎖定中採計——否則「點擊 canvas 取鎖」與 UI 點擊
+   * 會被誤判為開火（設計註記 / T3 DoD）。
+   */
+  function onMouseDown(e: MouseEvent): void {
+    if (e.button !== 0) return; // 只記主鍵（左鍵）開火；其餘鍵不入緩衝
+    if (!isLocked()) return; // 未鎖定不採計（避免取鎖點擊 / UI 點擊污染量測）
+    state.input.push({ type: 'fire', t: e.timeStamp });
+  }
+
   return {
     attach(target: EventTarget): void {
       if (attached) return; // 已掛載則不重複（避免同一事件觸發多次 push）
       attached = target;
       target.addEventListener('keydown', onKeyDown as EventListener);
       target.addEventListener('keyup', onKeyUp as EventListener);
+      target.addEventListener('mousedown', onMouseDown as EventListener);
     },
     detach(): void {
       if (!attached) return;
       attached.removeEventListener('keydown', onKeyDown as EventListener);
       attached.removeEventListener('keyup', onKeyUp as EventListener);
+      attached.removeEventListener('mousedown', onMouseDown as EventListener);
       attached = null;
     },
   };

@@ -17,8 +17,8 @@ function makeFakeTarget() {
     removeEventListener(type: string, cb: EventListener): void {
       listeners.get(type)?.delete(cb);
     },
-    /** 派發一個合成事件到已註冊的 handler。 */
-    dispatch(type: string, ev: Partial<KeyboardEvent>): void {
+    /** 派發一個合成事件到已註冊的 handler（鍵盤或滑鼠欄位皆可）。 */
+    dispatch(type: string, ev: Partial<KeyboardEvent & MouseEvent>): void {
       for (const cb of listeners.get(type) ?? []) cb(ev as unknown as Event);
     },
     count(type: string): number {
@@ -29,6 +29,10 @@ function makeFakeTarget() {
 
 function keyEvent(code: string, timeStamp: number, repeat = false): Partial<KeyboardEvent> {
   return { code, timeStamp, repeat };
+}
+
+function mouseEvent(button: number, timeStamp: number): Partial<MouseEvent> {
+  return { button, timeStamp };
 }
 
 describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', () => {
@@ -95,5 +99,45 @@ describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', (
 
     target.dispatch('keydown', keyEvent('KeyD', 10));
     expect(state.input).toHaveLength(1);
+  });
+});
+
+describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，僅鎖定中）', () => {
+  let state: ReturnType<typeof createSharedState>;
+  let target: ReturnType<typeof makeFakeTarget>;
+  let sampler: ReturnType<typeof createInputSampler>;
+  let locked: boolean; // 可變 Pointer Lock 狀態，注入為 isLocked 閘門
+
+  beforeEach(() => {
+    state = createSharedState();
+    target = makeFakeTarget();
+    locked = true;
+    sampler = createInputSampler(state, () => locked);
+    sampler.attach(target as unknown as EventTarget);
+  });
+
+  it('鎖定中左鍵 mousedown 蓋 event.timeStamp 入緩衝', () => {
+    target.dispatch('mousedown', mouseEvent(0, 512.25));
+    expect(state.input).toEqual([{ type: 'fire', t: 512.25 }]);
+  });
+
+  it('未鎖定時不採計（避免取鎖點擊 / UI 點擊誤判為開火）', () => {
+    locked = false;
+    target.dispatch('mousedown', mouseEvent(0, 512.25));
+    expect(state.input).toHaveLength(0);
+  });
+
+  it('非左鍵（右鍵/中鍵）不入緩衝', () => {
+    target.dispatch('mousedown', mouseEvent(2, 10)); // 右鍵
+    target.dispatch('mousedown', mouseEvent(1, 20)); // 中鍵
+    expect(state.input).toHaveLength(0);
+  });
+
+  it('detach 後移除 mousedown 監聽、後續開火不再入緩衝', () => {
+    sampler.detach();
+    expect(target.count('mousedown')).toBe(0);
+
+    target.dispatch('mousedown', mouseEvent(0, 10));
+    expect(state.input).toHaveLength(0);
   });
 });
