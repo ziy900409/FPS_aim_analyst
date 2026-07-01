@@ -4,12 +4,12 @@
 
 ---
 
-## Status: 🟡 T0 完成，準備 T1
+## Status: 🟡 T1 進行中（型別重塑前置切片完成）
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-01）|
-| T1 目標 entity | ⬜ 待執行 |
+| T1 目標 entity | 🟡 進行中 — T1a 型別重塑 ✅；T1b mesh/TargetView 待執行 |
 | T2 可見性 + t_visible | ⬜ 待執行 |
 | T3 左右交替 | ⬜ 待執行 |
 | T4 Crosshair | ⬜ 待執行 |
@@ -42,3 +42,18 @@
 - **鎖定 OQ-4.1~4.4**：逐項對照 [CONTEXT.md](../../../../CONTEXT.md) 的 `HitDetector`／`t_visible` 正規定義，與 README 既有建議解法一致，無矛盾，全數翻 ✅（見上表）。
 - **Surprise**：`src/state/types.ts` 現有 `TargetState`（WP-2 佔位：`{ id, x, y, z, active }`）與本 WP README §2 的新 interface contract（`{ id, side, pos, visible, alive, hitbox, motion?, age? }`）欄位形狀不同。這是**預期落差**（README 已列 `SharedState.ts` 為 T1 的 MODIFY 路徑），但實際上 `TargetState` 定義位在 `types.ts` 而非 `SharedState.ts`——**T1 需同步修改 `src/state/types.ts`**，記入 T1 執行時的 scope 提醒，避免漏改型別檔。
 - **PASS**：M1 達成 + WP-1 場景 + sim tick 可蓋戳條件成立，无 STOP 條件觸發。Next：**T1 目標 entity**（[T1-target-entity.md](T1-target-entity.md)）。
+
+### 2026-07-01 — T1a `TargetState` 型別重塑（前置切片）✅
+> T1 拆兩切片：**T1a**（本切片）先把型別重塑到最終契約、再 **T1b** 建 mesh/`TargetView`。動機見下 Decision Log。
+
+- **改動**：MODIFY [src/state/types.ts](../../../../src/state/types.ts)——把 WP-2 佔位 `TargetState`（扁平 `{ id, x, y, z, active }`）重塑為 WP-4 README §2 契約 `{ id, side, pos, visible, alive, hitbox, motion?, age? }`；新增 `Vec3`（3D 座標，目標有高度 y，與 2D `PlayerSnapshot` 不共用）與 `TargetMotion`（F5 接縫，對齊規格附錄 G）。
+- **同步修測試**：[src/state/SharedState.test.ts:44](../../../../src/state/SharedState.test.ts) 的建構字面量改用新欄位（斷言本身不變——仍是「弄髒 targets → reset 清空」）。這是 T0 Surprise 追蹤到的唯一 runtime 消費點。
+- **驗證（三檢全綠）**：`npx tsc --noEmit` exit 0；`npx vitest run src` **27/27 passed**（WP-2 決定性 9 tests 無回歸）；`npx vite build` ✓ built in 1.46s。
+- **blast radius 複核**：改 symbol 前以 Grep 追 `TargetState` 全域引用（GitNexus MCP 未載入，Grep 等價 upstream 追蹤）→ 僅 `SharedState.ts`（型別匯入＋陣列宣告，欄位無關）與 `SharedState.test.ts`（唯一字面量）；零 runtime 消費者，風險低，實測與預期一致。
+
+#### Decision Log — T1 拆成 T1a（型別）+ T1b（mesh）兩切片
+- **決策**：在寫 mesh/`TargetView` 之前，先獨立完成 `TargetState` 型別重塑並 commit。
+- **理由**：型別若不先到位，`hitbox`（WP-5 `raycastFromCenter(camera, targets: TargetState[])` 直接依賴，見 [wp-5 README:101](../wp-5-hit-counterstrafe/README.md)）與 `motion?`/`age?`（WP-6 `DrillConfig.targets.motion` F5 接縫，[wp-6 README:92](../wp-6-drill-system/README.md)）會在下游各觸發一次破壞性型別變更；且屆時消費者已增（`TargetManager`/`TargetView`/WP-5 raycast 測試），blast radius 遠大於現在（僅 1 個測試字面量）。**現在改成本最低**。
+- **Alternatives considered**：(a) 在 T1 mesh 切片裡一併改型別——否決：把型別重塑與 mesh 邏輯混在同一 commit，違反「一 task=一垂直切片」，且型別錯誤會與 mesh bug 糾纏難分。(b) 維持扁平佔位型別、到 WP-5 再改——否決：等於把破壞性變更推給下游、消費者更多時才付更高成本（見理由）。
+- **具體形狀決策**：`hitbox` 採 **box**（`width/height/depth` + `part?`），非膠囊——box 對 T1 mesh（`BoxGeometry`）與 WP-5 raycast（`Box3`）都是最單純的同來源原語，且 `part?` 保留使頭/身分解向後相容。膠囊如日後需要可再加變體，不破壞現有欄位。
+- **Scope 紀律**：`resetState`（[SharedState.ts:61](../../../../src/state/SharedState.ts)）用 `targets.length = 0`，欄位無關、不需改；未觸碰 T1b 的 mesh/`TargetView`（本切片 out of scope）。
