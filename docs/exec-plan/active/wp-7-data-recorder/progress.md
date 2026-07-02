@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 T3 metadata 完成，T4/T5 待執行（M3 持續推進）
+## Status: 🟡 T4 匯出完成，T5 schema 文件待執行（M3 持續推進）
 
 | Phase | State |
 |-------|-------|
@@ -12,7 +12,7 @@
 | T1 Ring buffer | ✅ 完成（2026-07-02） |
 | T2 事件記錄 | ✅ 完成（2026-07-02） |
 | T3 Metadata | ✅ 完成（2026-07-02） |
-| T4 JSON/CSV 匯出 | ⬜ 待執行 |
+| T4 JSON/CSV 匯出 | ✅ 完成（2026-07-02） |
 | T5 Schema 文件 | ⬜ 待執行 |
 | T6 Exit gate（M3） | ⬜ 待執行 |
 
@@ -30,6 +30,14 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T4 JSON/CSV 匯出 ✅ PASS
+- **實作**：新增 `src/data/export.ts`，提供 `buildExportPayload(meta,snapshot)`、`serializeJSON()`、`serializeCSV()`、`downloadJSON()`、`downloadCSV()`；payload 結構為 `{meta,ticks,events}`，CSV 分成 `ticks.csv` / `events.csv` 兩個扁平表。
+- **資料防線**：匯出時若 tick/event 數值含 `NaN` / `Infinity` 會丟錯，避免 JSON 靜默轉成 `null` 污染研究資料；snapshot overflow 會回寫 `meta.recorderOverflow` 並標 `suspect`。
+- **UI 串接**：新增 `src/ui/ExportPanel.ts`，`src/main.ts` 建立 `DataRecorder` 並傳入 `createSimLoop(..., recorder)`；右上角 JSON / CSV 按鈕會讀當下 snapshot、量測 `displayHz`、收集 `backend` / `SIM_HZ` / sensitivity / COI / input overflow metadata 後下載檔案。
+- **Verification**：`npm test -- --run src/data/export.test.ts` PASS（5 passed）；`npm run typecheck` PASS；`npm test` PASS（20 files / 153 tests passed）；`npm run build` PASS（僅 Vite chunk size warning）。
+- **Tooling note**：已於 code edit 後執行 `graphify update .`，更新 `graphify-out/`。
+- **Next**：T5 `docs/operational/schema.md`，把 JSON / CSV schema 文件化並與 `export.ts` 欄位對齊。
 
 ### 2026-07-02 — T3 環境 metadata ✅ PASS
 - **實作**：新增 `src/data/metadata.ts`，提供 `collectMeta(args)` 組裝 `{drillId,backend,displayHz,simHz,browser,sensitivity,crossOriginIsolated,startedAt}`，並納入附錄 C / grill 欄位 `unit:'source'`、`vStrafe`、`maxDrillSeconds`、`lateEventCount`、`bufferOverflow`、`recorderOverflow`、`suspect`。

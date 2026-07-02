@@ -7,12 +7,16 @@ import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
 import { createCrosshair } from './ui/Crosshair.ts';
+import { createExportPanel } from './ui/ExportPanel.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager } from './sim/TargetManager.ts';
 import { createSimLoop } from './loop/SimLoop.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import { SIM_HZ } from './loop/constants.ts';
+import { createDataRecorder } from './data/DataRecorder.ts';
+import { collectMeta, measureDisplayHz } from './data/metadata.ts';
+import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
 
@@ -24,7 +28,9 @@ const canvas = document.querySelector<HTMLCanvasElement>('#app')!;
 
 // WP-0 seam：async bootstrap，取得 renderer + backend（backend 供 WP-7 metadata）。
 const { renderer, backend } = await createRenderer(canvas);
-void backend;
+
+const DRILL_ID = 'counterstrafe_ad_v1';
+const recorderStartedAt = new Date().toISOString();
 
 // WP-1 / T1（FR-1.1）— 封閉房間 + camera 舞台。
 const sceneManager = new SceneManager();
@@ -102,6 +108,42 @@ pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 // 恆顯示（不隨鎖定切換）：第一人稱射線走 camera 中心，準心即射線方向指示。
 createCrosshair();
 
+// WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
+// 讀取與序列化只在 click handler 內發生，不進 sim tick 熱路徑。
+const recorder = createDataRecorder({ simHz: SIM_HZ });
+async function buildCurrentExportPayload(): Promise<ExportPayload> {
+  const snapshot = recorder.snapshot();
+  const displayHz = await measureDisplayHz();
+  const meta = collectMeta({
+    drillId: DRILL_ID,
+    backend,
+    displayHz,
+    simHz: SIM_HZ,
+    sensitivity: settingsPanel.sensitivity,
+    crossOriginIsolated: isolation.crossOriginIsolated,
+    startedAt: recorderStartedAt,
+    lateEventCount: sharedState.inputMeta.lateEventCount,
+    bufferOverflow: sharedState.inputMeta.bufferOverflow,
+    recorderOverflow: snapshot.recorderOverflow,
+  });
+  return buildExportPayload(meta, snapshot);
+}
+
+function exportBasename(payload: ExportPayload): string {
+  return `${payload.meta.drillId}-${payload.meta.startedAt}`;
+}
+
+createExportPanel({
+  async onExportJSON(): Promise<void> {
+    const payload = await buildCurrentExportPayload();
+    downloadJSON(payload, { basename: exportBasename(payload) });
+  },
+  async onExportCSV(): Promise<void> {
+    const payload = await buildCurrentExportPayload();
+    downloadCSV(payload, { basename: exportBasename(payload) });
+  },
+});
+
 // WP-3 / T1+T3（FR-3.1/3.3）— 輸入採集：keydown/keyup（A/D/W/S）與開火 mousedown（左鍵）蓋
 // event.timeStamp 寫入 sharedState.input，供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；
 // 掛在 window（鍵盤事件不落在 canvas；lock 中滑鼠事件亦冒泡至 window）。開火以 pointerLock.locked
@@ -118,7 +160,7 @@ inputSampler.attach(window);
 // WP-5 / T1（FR-5.1）— fire 事件在 sim tick 內就地 raycast（camera 中心射線 → 命中即擊殺）。
 // 傳入 sceneManager.camera：sim 唯讀其朝向（由 CameraController 走輸入路徑寫入，非 sim；雙迴圈邊界）。
 const targetManager = createTargetManager();
-const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager, sceneManager.camera);
+const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager, sceneManager.camera, undefined, recorder);
 
 // WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
 // 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈
