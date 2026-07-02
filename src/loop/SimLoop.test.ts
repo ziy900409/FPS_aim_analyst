@@ -40,11 +40,12 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(alpha).toBeLessThan(1);
   });
 
-  it('simStep 等速推進 x（純函式，只用 dtSec）+ 維護 prev/curr', () => {
+  it('simStep 由 held 定 vx（M1 snap）並等速推進 x（只用 dtSec）+ 維護 prev/curr', () => {
     const state = createSharedState();
-    state.player.vx = 128; // u/s
-    simStep(state, 1 / SIM_HZ, 0); // 無輸入；tickEndMs 任意
-    expect(state.player.x).toBeCloseTo(1, 12); // 128 × (1/128) = 1 u
+    state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick snap +v_strafe
+    simStep(state, 1 / SIM_HZ, 0); // 無新輸入事件；tickEndMs 任意
+    expect(state.player.vx).toBe(250); //           held D → snap +v_strafe
+    expect(state.player.x).toBeCloseTo(250 / SIM_HZ, 12); // 250 × (1/128) = 1.953125 u
     expect(state.prev.x).toBe(0); //                prev = 推進前位置（內插基準）
     expect(state.curr.x).toBe(state.player.x); //   curr = 推進後位置
   });

@@ -11,7 +11,7 @@
 | T0 Entry gate | ✅ 完成（2026-07-02）— WP-3/4 exit 綠燈確認、OQ-5.1~5.4 鎖定 |
 | T1 HitDetector | ✅ 完成（2026-07-02）— camera 中心射線命中 + 第一次命中即擊殺（FR-5.1，OQ-5.4）|
 | T2 首發判定 | ✅ 完成（2026-07-02）— 每 peek 首發旗標，掃射不稀釋（FR-5.2，OQ-5.3）|
-| T3 橫移 movement | ⬜ 待執行 |
+| T3 橫移 movement | ✅ 完成（2026-07-02）— MovementController A/D 橫移，held-based per-tick snap（FR-5.3，OQ-5.2）|
 | T4 簡化急停 | ⬜ 待執行 |
 | T5 Exit gate（M2） | ⬜ 待執行 |
 
@@ -29,6 +29,16 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T3 橫移 movement ✅
+- **新增** `src/sim/MovementController.ts`：`createMovementController({vStrafe?})` → `step(state, dtSec)`。M1 snap：依 `state.held` 定 vx（僅 D→+v、僅 A→−v、皆按/皆放→0 互斥抵消），`x += vx*dtSec`。公開介面僅 `step`（階段 B friction integrator 同介面替換，附錄 D）。預設 `vStrafe=250`（OQ-5.2）。
+- **狀態** `SharedState.held: {left, right}`（`left`=KeyA、`right`=KeyD）；`createSharedState` 初始 false、`resetState` 原地清零（GC 紀律）。
+- **接線** `SimLoop`：`applyInput` 鍵分支改寫 `state.held`（不再直接寫 vx）；`simStep` 移除 inline `x += vx*dt`，改在 consume 後呼叫 `movement.step`；新增選填 `movement` 參數（預設模組 `defaultMovement`；`createSimLoop` 綁定自己的實例，WP-6 vStrafe seam）。移除 `PLACEHOLDER_STRAFE_SPEED`。`main.ts` 不變（controller 由 `createSimLoop` 內建）。
+- **測試**：`MovementController.test.ts` 6 例（snap ±v/0、同按抵消、線性位移、**位移與 tick 切分無關**同總時間不同步數 bit-exact、放開歸零不前進、vStrafe 注入）。更新 `SimLoop.test.ts` 手動-vx 測試 → 改由 `held` 驅動（velocity 所有權移入 controller）。`vitest run src` **92/92**、`tsc --noEmit` exit 0。
+- **Decision — velocity 改 held-based per-tick 推導（非 event-driven 直寫 vx）**：`applyInput` 鍵事件只更新 `state.held` 布林，velocity 由 `MovementController.step` 每 tick 從 held 推導。*理由*：①T4 counter-strafe「續按反向鍵 → 下一 tick −v」需 per-tick 讀 held（held 鍵不重發事件）；②階段 B friction integrator 亦每 tick 讀 held 算 velocity——同介面。*決定性保證不變*：同一事件序列下每 tick 的 held→vx 推導與舊 event-driven 直寫**逐 tick 等值**（keydown/keyup 落同一 tick 窗、step 在 consume 後跑），故 determinism 9/9 全綠、GROUND bit-exact 不動。*Alternatives*：①保留 event-driven 直寫 vx、`step` 只做位移積分——T4 須回頭重構、且與階段 B integrator 介面不一致；②held 存 controller 私有閉包——則 controller 需額外「收鍵事件」方法，破壞「公開點只有 step」契約，且 `resetState` 無法清。選 held 入 SharedState（可 reset、T4 直接讀、controller 保持無狀態）。
+- **Decision — 同按 A+D → vx=0（互斥抵消）**：`left === right ? 0`。階段 A 簡化取捨（無 last-key-wins 佇列）；與 T4 急停「停止」語意天然一致。若日後需 last-key-wins 為階段 B 課題。
+- **Surprise**：WP-2 「simStep 等速推進 x」單元測試直接設 `state.player.vx=128` 後斷言積分——velocity 所有權移入 controller 後 `step` 會以 held（全 false）覆寫 vx→0，測試失效。改為設 `state.held.right=true`、斷言 snap +250 後積分。此為 velocity 所有權遷移的必然後果、非行為回歸（determinism/整合路徑全綠佐證）。
+- **Next**：T4 簡化急停（依 T3）——反向鍵穿越 tick snap 0 + `stopped` flag + gate 開火精準（accurate/residualSpeed），與 firstShot 組成 fire 結果事件。
 
 ### 2026-07-02 — T2 首發判定 ✅
 - **新增** `src/sim/firstShot.ts`：`firstShotGate(state, peekId)`（每 peek 首次 true、其後 false）+ `currentPeekId(state)`（第一個 `visible && alive` 目標 id = peek 錨）。

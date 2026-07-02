@@ -23,6 +23,12 @@ export interface SharedState {
   inputMeta: InputMeta;
   /** 玩家即時狀態，由 simStep 推進（u / u·s⁻¹，canonical unit）。 */
   player: { vx: number; vz: number; x: number; z: number };
+  /**
+   * A/D 橫移按住狀態（WP-5 / T3，FR-5.3）：`consume` 依 keydown/keyup 事件更新，
+   * `MovementController.step` 每 tick 讀取以定 velocity（`left`=KeyA、`right`=KeyD）。
+   * 為 held 而非 velocity——階段 B friction integrator 與 T4 急停判定皆需 per-tick held 狀態。
+   */
+  held: { left: boolean; right: boolean };
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
   prev: PlayerSnapshot;
   curr: PlayerSnapshot;
@@ -125,6 +131,7 @@ export function createSharedState(): SharedState {
     input: createInputRing(),
     inputMeta: { lateEventCount: 0, lastConsumedT: -Infinity, bufferOverflow: 0 },
     player: { vx: 0, vz: 0, x: 0, z: 0 },
+    held: { left: false, right: false },
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
     crosshair: { cx: 0, cy: 0 },
@@ -150,6 +157,8 @@ export function resetState(state: SharedState = sharedState): void {
   state.player.vz = 0;
   state.player.x = 0;
   state.player.z = 0;
+  state.held.left = false; // 原地清 held（重用既有物件，GC 紀律）；重開 drill → 橫移歸靜止
+  state.held.right = false;
   state.prev.x = 0;
   state.prev.z = 0;
   state.curr.x = 0;
