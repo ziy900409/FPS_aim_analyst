@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSharedState, resetState, sharedState } from './SharedState.ts';
+import { pushEvent } from './inputRingTestUtil.ts';
 
 describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
   it('createSharedState 回傳全零的獨立實例', () => {
@@ -8,7 +9,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(a.prev).toEqual({ x: 0, z: 0 });
     expect(a.curr).toEqual({ x: 0, z: 0 });
     expect(a.crosshair).toEqual({ cx: 0, cy: 0 });
-    expect(a.input).toHaveLength(0);
+    expect(a.input.size()).toBe(0);
     expect(a.targets).toHaveLength(0);
     expect(a.tVisible.size).toBe(0);
 
@@ -33,7 +34,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const tVisibleRef = s.tVisible;
 
     // 弄髒所有欄位
-    s.input.push({ type: 'fire', t: 1 });
+    pushEvent(s, { type: 'fire', t: 1 });
     s.player.vx = 250;
     s.player.x = 12;
     s.player.z = -3;
@@ -53,7 +54,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
 
     resetState(s);
 
-    expect(s.input).toHaveLength(0);
+    expect(s.input.size()).toBe(0);
     expect(s.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0 });
     expect(s.prev).toEqual({ x: 0, z: 0 });
     expect(s.curr).toEqual({ x: 0, z: 0 });
@@ -71,9 +72,9 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
 
   it('resetState() 預設作用於單例', () => {
     sharedState.player.x = 99;
-    sharedState.input.push({ type: 'key', code: 'KeyD', down: true, t: 0 });
+    pushEvent(sharedState, { type: 'key', code: 'KeyD', down: true, t: 0 });
     resetState();
     expect(sharedState.player.x).toBe(0);
-    expect(sharedState.input).toHaveLength(0);
+    expect(sharedState.input.size()).toBe(0);
   });
 });

@@ -38,7 +38,7 @@
 | **WP-0** | [`active/wp-0-environment-setup/`](active/wp-0-environment-setup/README.md) | 空場景 + cross-origin isolation + backend 偵測 | → M1 | — | 3–5 | ✅ 完成（2026-06-30） |
 | **WP-1** | [`active/wp-1-fps-pointerlock/`](active/wp-1-fps-pointerlock/README.md) | FPS 控制 + Pointer Lock + 原始輸入 | → M1 | WP-0 | 2–3 | ✅ 完成（2026-06-30） |
 | **WP-2** | [`active/wp-2-dual-loop-skeleton/`](active/wp-2-dual-loop-skeleton/README.md) | `SharedState` + 雙迴圈骨架 + 決定性驗證 ★脊椎 | **M1 ✅** | WP-0, WP-1 | 3–4 | ✅ 完成（2026-07-01）|
-| **WP-3** | [`active/wp-3-input-sampler/`](active/wp-3-input-sampler/README.md) | `InputSampler`（F1）高解析度時間戳採集 | — | WP-2 | 2–3 | 🟡 規劃完成 |
+| **WP-3** | [`active/wp-3-input-sampler/`](active/wp-3-input-sampler/README.md) | `InputSampler`（F1）高解析度時間戳採集 | — | WP-2 | 2–3 | ✅ 完成（2026-07-01） |
 | **WP-4** | [`active/wp-4-target-tvisible/`](active/wp-4-target-tvisible/README.md) | `TargetManager` + `t_visible`（F2）左右交替 | — | WP-1, WP-2 | 2–3 | ✅ 完成（2026-07-02） |
 | **WP-5** | [`active/wp-5-hit-counterstrafe/`](active/wp-5-hit-counterstrafe/README.md) | `HitDetector` + 橫移 + 簡化急停（F3） | **M2** | WP-3, WP-4 | 2–3 | 🟡 規劃完成 |
 | **WP-6** | [`active/wp-6-drill-system/`](active/wp-6-drill-system/README.md) | `DrillConfig` 資料驅動 drill（F4） | — | WP-4, WP-5 | 2–4 | 🟡 規劃完成 |

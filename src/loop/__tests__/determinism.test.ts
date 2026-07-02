@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createSharedState } from '../../state/SharedState.ts';
 import type { SharedState } from '../../state/SharedState.ts';
 import type { InputEvent } from '../../state/types.ts';
+import { pushEvent } from '../../state/inputRingTestUtil.ts';
 import type { Clock } from '../clock.ts';
 import { SIM_HZ } from '../constants.ts';
 import { createSimLoop } from '../SimLoop.ts';
@@ -52,7 +53,7 @@ function syntheticInputs(): InputEvent[] {
 /** 全新獨立 state，預載合成輸入的**副本**（避免跨序列共享/汙染）。 */
 function freshState(): SharedState {
   const s = createSharedState();
-  for (const ev of syntheticInputs()) s.input.push({ ...ev });
+  for (const ev of syntheticInputs()) pushEvent(s, ev); // 編碼寫入 ring（取代 plain-array push）
   return s;
 }
 

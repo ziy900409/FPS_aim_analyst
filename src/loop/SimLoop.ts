@@ -1,5 +1,7 @@
+import { consume } from '../input/consume.ts';
 import type { SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
+import type { InputEvent } from '../state/types.ts';
 import type { Clock } from './clock.ts';
 
 /**
@@ -20,27 +22,17 @@ import type { Clock } from './clock.ts';
 const PLACEHOLDER_STRAFE_SPEED = 250;
 
 /**
- * 消費落在本 tick 邏輯窗的輸入事件（`timeStamp < tickEndMs`），依序套用（佔位：A/D 切換 vx）。
- * 這是「輸入分桶」的最小機制（CONTEXT），也是決定性前提：事件落在哪個 tick 由 timeStamp 決定、
- * 與 render frame 邊界無關。
+ * 佔位輸入套用（handle）：暫只更新按鍵 held（A/D 橫移瞬間 snap velocity，CONTEXT MovementController
+ * 狀態機雛形；WP-5 換真 physics）。mouse / fire 事件在佔位階段忽略（→ WP-3 準心 / WP-5 raycast）。
  *
- * 假設 `state.input` 已依 timeStamp 排序（T4 合成事件保證；WP-3 真 `InputSampler` 負責排序、
- * ring buffer 與遲到/溢位處理）。佔位用陣列前端 `splice`；WP-3 換 ring buffer 槽位重用。
+ * 依時序、無遺漏的排序消費與排空責任已抽到 [`consume`](../input/consume.ts)（T4）；本函式只負責
+ * 「每個到期事件如何改狀態」，不管排序/分桶/排空。
  */
-function consumeInput(state: SharedState, tickEndMs: number): void {
-  const buf = state.input;
-  let consumed = 0;
-  while (consumed < buf.length && buf[consumed].t < tickEndMs) {
-    const ev = buf[consumed];
-    if (ev.type === 'key') {
-      // 佔位 movement：A/D 橫移瞬間 snap velocity（CONTEXT MovementController 狀態機雛形；WP-5 換真 physics）。
-      if (ev.code === 'KeyD') state.player.vx = ev.down ? PLACEHOLDER_STRAFE_SPEED : 0;
-      else if (ev.code === 'KeyA') state.player.vx = ev.down ? -PLACEHOLDER_STRAFE_SPEED : 0;
-    }
-    // mouse / fire 事件在佔位階段忽略（→ WP-3 準心 / WP-5 raycast）。
-    consumed++;
+function applyInput(state: SharedState, ev: InputEvent): void {
+  if (ev.type === 'key') {
+    if (ev.code === 'KeyD') state.player.vx = ev.down ? PLACEHOLDER_STRAFE_SPEED : 0;
+    else if (ev.code === 'KeyA') state.player.vx = ev.down ? -PLACEHOLDER_STRAFE_SPEED : 0;
   }
-  if (consumed > 0) buf.splice(0, consumed);
 }
 
 /**
@@ -48,8 +40,8 @@ function consumeInput(state: SharedState, tickEndMs: number): void {
  * 預留階段 B Worker 搬遷）。`tickEndMs` = 本 tick 邏輯窗結束時間（量測時鐘域 ms），供輸入分桶。
  *
  * 順序（對齊 CONTEXT「simStep 順序」雛形）：① prev←curr（內插基準，T3）；② 目標系統
- * （spawn/可見性/蓋 t_visible，**命中判定之前**，F5 seam / WP-5）；③ 消費本 tick 輸入；
- * ④ 等速推進位置（**只用 dtSec**）；⑤ curr←新位置。
+ * （spawn/可見性/蓋 t_visible，**命中判定之前**，F5 seam / WP-5，WP-4）；③ 依時序消費本 tick
+ * 輸入（`consume` 排序 + 排空，T4）；④ 等速推進位置（**只用 dtSec**）；⑤ curr←新位置。
  *
  * `targetManager` 選填：注入即在 tick 內推進目標（WP-4）；省略則維持純位移（WP-2 決定性測試路徑）。
  */
@@ -58,6 +50,7 @@ export function simStep(
   dtSec: number,
   tickEndMs: number,
   targetManager?: TargetManager,
+  handle: (ev: InputEvent) => void = (ev) => applyInput(state, ev),
 ): void {
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
@@ -66,7 +59,9 @@ export function simStep(
   // 的 `tickEndMs`（量測時鐘域，非 rAF/Date.now）——反應時間效度關鍵（README failure-mode）。
   targetManager?.tick(state, tickEndMs);
 
-  consumeInput(state, tickEndMs);
+  // 半開窗 [tickStart, tickEndMs)、嚴格 `<`（GD-3）；handle 每個到期事件套用佔位狀態變更。
+  // handle 由 createSimLoop **綁定一次**傳入(熱路徑零配置,GC 紀律 §4);直接呼叫(測試)走預設閉包。
+  consume(state, tickEndMs, handle);
 
   state.player.x += state.player.vx * dtSec;
   state.player.z += state.player.vz * dtSec;
@@ -96,6 +91,9 @@ export function createSimLoop(
   let lastMs = clock.now();
   let simTimeMs = lastMs; // 邏輯 sim 時鐘（量測時鐘域 ms），每 tick 推進 tickMs；決定 tick 窗
 
+  // 綁定一次的輸入 handle：閉包 over state，避免每 tick 配置新 arrow（熱路徑零配置，GC 紀律 §4）。
+  const handleInput = (ev: InputEvent): void => applyInput(state, ev);
+
   return {
     pump(nowMs: number): { ticks: number; alpha: number } {
       accSec += Math.min((nowMs - lastMs) / 1000, 0.25); // 夾住避免 spiral of death
@@ -104,7 +102,7 @@ export function createSimLoop(
       let ticks = 0;
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
-        simStep(state, tickSec, simTimeMs, targetManager);
+        simStep(state, tickSec, simTimeMs, targetManager, handleInput);
         accSec -= tickSec;
         ticks++;
       }

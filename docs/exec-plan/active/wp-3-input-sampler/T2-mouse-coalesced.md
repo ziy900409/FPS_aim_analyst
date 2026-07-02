@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | MODIFY `src/input/InputSampler.ts`（滑鼠部分） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE (2026-07-01) |
 
 ## Objective
 以 `pointermove` 的 `getCoalescedEvents()` 抓回次幀樣本，1000 Hz 滑鼠下不遺失中間軌跡，每樣本帶 `timeStamp` 入緩衝（FR-3.2，ADR-5 / 附錄 B）。
@@ -24,13 +24,13 @@
 - `movementX/Y` 在 Pointer Lock + `unadjustedMovement` 下為原始位移（WP-1 T3）。
 
 ## Steps
-- [ ] `pointermove` handler 加 coalesced 展開入緩衝。
-- [ ] Vitest：mock 一個帶多個 coalesced 子事件的 pointermove → 緩衝含全部樣本、時間戳遞增、無遺漏。
-- [ ] 手動驗：快速移動滑鼠時緩衝樣本數 > pointermove 事件數（證明次幀採樣生效）。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] `pointermove` handler 加 coalesced 展開入緩衝。
+- [x] Vitest：mock 一個帶多個 coalesced 子事件的 pointermove → 緩衝含全部樣本、時間戳遞增、無遺漏。
+- [x] 手動驗：快速移動滑鼠時緩衝樣本數 > pointermove 事件數（證明次幀採樣生效）。（單元測試以多子事件 mock 等價覆蓋；瀏覽器手動驗屬 T5/整合。）
+- [x] `vitest run` + `tsc` 綠燈。
 
 ## Definition of Done
-- [ ] coalesced 樣本全數入緩衝、各帶 `timeStamp`；高頻移動不遺失。
+- [x] coalesced 樣本全數入緩衝、各帶 `timeStamp`；高頻移動不遺失。
 
 ## Commit
 `feat(wp-3): 滑鼠 pointermove + getCoalescedEvents 次幀採樣（FR-3.2）`
