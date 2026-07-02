@@ -4,14 +4,14 @@
 
 ---
 
-## Status: 🟢 T2 完成（t_visible 在 sim tick 內蓋戳）→ 下一個 T3
+## Status: 🟢 T3 完成（左右交替確定性輪替）→ 下一個 T4
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-01）|
 | T1 目標 entity | ✅ 完成（2026-07-02）— T1a 型別重塑 + T1b mesh/TargetView |
 | T2 可見性 + t_visible | ✅ 完成（2026-07-02）— TargetManager.tick 在 sim tick 內蓋 t_visible |
-| T3 左右交替 | ⬜ 待執行 |
+| T3 左右交替 | ✅ 完成（2026-07-02）— markKilled 撤除後翻面 nextSide，確定性 L↔R |
 | T4 Crosshair | ⬜ 待執行 |
 | T5 Exit gate | ⬜ 待執行 |
 
@@ -30,7 +30,20 @@
 
 ## Log
 
-### 2026-07-02 — T2 `TargetManager` + `t_visible`（sim tick 內蓋戳）✅
+### 2026-07-02 — T3 左右交替序列（確定性輪替）✅
+- **改動** [src/sim/TargetManager.ts](../../../../src/sim/TargetManager.ts)：`markKilled` 在**確認撤除某目標後**翻面內部 `nextSide`（`'R'↔'L'`），下一個可見 tick 於對側 spawn 並蓋新 `t_visible`。`tick`/spawn/`reset` 邏輯不變（首側仍由 `reset(seq)` 定，預設 `'R'`）。
+  - **確定性**：輪替純由內部布林翻面驅動、**無隨機源**（不用 `Math.random`）——給定首側，side 序列可完全重現，與 WP-2 決定性契約相容。
+  - **守衛**：只在真的 `splice` 掉目標時才翻面 + 清 `t_visible`；擊殺不存在的 id 不推進序列（避免 WP-5 誤觸/重放時序列漂移）。
+  - **單 active 目標**：`tick` 僅在無存活目標時 spawn，故「擊殺 → 下一 tick 生對側」維持 counter-strafe peek 節奏（一次一個）。
+- **驗證（三檢全綠）**：`tsc --noEmit` exit 0；`vitest run src` **43/43**（新增 TargetManager T3 5 tests：嚴格交替 R→L / L→R、每次生成新 `t_visible`、決定性重跑一致、無效 id 不翻面；**WP-2 決定性 9 tests + T1/T2 既有全數無回歸**）；`vite build` ✓ 1.41s。
+- **手動驗（延後 T5）**：擊殺鍵綁定屬 WP-5（命中訊號），本 WP 無佔位擊殺鍵，端到端「左右輪替出現」併入 T5 exit gate 瀏覽器驗證。
+
+#### Decision Log — 翻面時機採「`markKilled` 確認撤除後」而非「spawn 後」
+- **決策**：在 `markKilled` 成功 `splice` 後翻 `nextSide`，而非每次 `spawn` 後翻。
+- **理由**：(1) 直接對應規格語意「擊殺一側 → 生成對側」，讀 code 即見因果；(2) 兩者對嚴格交替序列**等價**（R,L,R,L…），但綁在 kill 上可加「僅真撤除才翻」守衛——擊殺不存在 id（WP-5 未來可能重放/誤觸）不會偷偷推進序列，spawn-翻面無此保護點；(3) 保持 `spawn` 純為「用當前 `nextSide` 建目標」的單一職責。
+- **Alternatives considered**：(a) spawn 後翻面——否決：無法區分「有效擊殺」與「無效擊殺」，且序列推進與 spawn 耦合、守衛困難。(b) 帶種子 PRNG 產生 side——否決：交替本質是確定週期序列，PRNG 是過度設計（Rule 0 簡單優先），且徒增決定性驗證負擔。
+
+
 - **新增** [src/sim/TargetManager.ts](../../../../src/sim/TargetManager.ts)（NEW `src/sim/` 目錄）：`createTargetManager()` 工廠回 `tick`/`markKilled`/`reset`。
   - `tick(state, nowMs)`：① 無存活目標 → spawn 一個（T2 單目標，side 固定 'R'；spawn 即可見 OQ-4.2）；② 掃描目標，`visible && !tVisible.has(id)` → `tVisible.set(id, nowMs)`（**只蓋一次**，防重複的 design note）。
   - **時間源硬約束達成**：`nowMs` 由 `simStep` 傳入的 sim 邏輯時鐘 `simTimeMs`（累加 tickMs，量測時鐘域）——非 rAF / `Date.now()`。TargetManager 自身不讀時鐘、純函式（與 simStep Worker 搬遷紀律 OQ-2.4 相容）。

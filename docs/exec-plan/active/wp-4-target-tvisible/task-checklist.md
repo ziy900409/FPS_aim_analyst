@@ -7,7 +7,7 @@
 | ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-1, WP-2 | Low |
 | ✅ | **T1** 目標 entity（mesh + hitbox） | [T1-target-entity.md](T1-target-entity.md) | T0 | Low |
 | ✅ | **T2** 可見性 + t_visible（sim tick 內） | [T2-visibility-tvisible.md](T2-visibility-tvisible.md) | T1 | Med |
-| ⬜ | **T3** 左右交替序列 | [T3-alternation.md](T3-alternation.md) | T2 | Med |
+| ✅ | **T3** 左右交替序列 | [T3-alternation.md](T3-alternation.md) | T2 | Med |
 | ⬜ | **T4** Crosshair | [T4-crosshair.md](T4-crosshair.md) | T0 | Low |
 | ⬜ | **T5 / T-exit** Exit gate | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Low |
 

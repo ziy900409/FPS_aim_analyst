@@ -14,9 +14,11 @@ import type { SharedState } from '../state/SharedState.ts';
  *
  * **只蓋一次**:以 `state.tVisible.has(id)` 防重複——可見目標只在第一個可見 tick 蓋戳。
  *
- * 本 task(T2)為**單目標** spawn:無存活目標時生成一個(side 固定,見 `nextSide`)。左右交替
- * 序列(擊殺 → 生成對側的 side 選擇)屬 T3;命中訊號屬 WP-5。`markKilled`/`reset` 先立最小
- * 可用版本供下游與測試呼叫。
+ * **左右交替序列(T3,FR-4.3)**:一次只一個 active 目標(counter-strafe peek 節奏)。
+ * `markKilled` 撤除目標後翻面 `nextSide`(L↔R),下一個可見 tick 於對側 spawn 並蓋新
+ * `t_visible`。輪替純由內部 `nextSide` 布林驅動、無隨機源——確定性(給定首側,序列可重現),
+ * 與 WP-2 決定性契約相容(不可用無種子 `Math.random`)。首側由 `reset(seq)` 決定(預設 'R')。
+ * 命中訊號(何時呼叫 `markKilled`)屬 WP-5;本 task 用測試/佔位觸發。
  */
 
 /** 目標距玩家的前方(-Z)距離(u,source unit;佔位,WP-6 drill config 接管)。 */
@@ -35,7 +37,7 @@ function sideX(side: 'L' | 'R'): number {
 export interface TargetManager {
   /** sim tick 內呼叫:spawn/可見性 → 可見轉換即蓋 `t_visible`(nowMs = sim clock)。 */
   tick(state: SharedState, nowMs: number): void;
-  /** 標記某目標被擊殺 → 撤除(WP-5 命中後呼叫;T3 接「生成對側」的 side 翻面)。 */
+  /** 標記某目標被擊殺 → 撤除並翻面 `nextSide`,下一 tick 於對側 spawn(WP-5 命中後呼叫)。 */
   markKilled(state: SharedState, id: string): void;
   /** 重置目標與 tVisible;`seq` 首字決定首個 spawn 側(預設 'RL' → 'R')。 */
   reset(state: SharedState, seq?: 'LR' | 'RL'): void;
@@ -44,7 +46,7 @@ export interface TargetManager {
 export function createTargetManager(opts: { distance?: number } = {}): TargetManager {
   const distance = opts.distance ?? DEFAULT_DISTANCE;
   let nextId = 0;
-  // 首個 spawn 側;T3 將於擊殺後翻面以實現左右交替(本 task 固定不翻)。
+  // 下一個 spawn 側;`markKilled` 每次擊殺翻面以實現左右交替(FR-4.3)。首側由 reset 設。
   let nextSide: 'L' | 'R' = 'R';
 
   /** 生成一個目標(OQ-4.2:spawn 瞬間即可見)。spawn 屬低頻事件(peek 節奏),非每 tick 熱路徑。 */
@@ -81,14 +83,21 @@ export function createTargetManager(opts: { distance?: number } = {}): TargetMan
     },
 
     markKilled(state: SharedState, id: string): void {
+      let removed = false;
       for (let i = 0; i < state.targets.length; i++) {
         if (state.targets[i].id === id) {
           state.targets.splice(i, 1);
+          removed = true;
           break;
         }
       }
-      // t_visible 隨目標撤除清掉;下次 spawn 為新 id、重新蓋戳(可見→不可見→再可見視為新目標)。
-      state.tVisible.delete(id);
+      // 只有真的撤除了目標才翻面(擊殺不存在 id 不推進序列)——確定性輪替 L↔R(FR-4.3),
+      // 下一個可見 tick 於對側 spawn 並蓋新 t_visible。
+      if (removed) {
+        nextSide = nextSide === 'R' ? 'L' : 'R';
+        // t_visible 隨目標撤除清掉;下次 spawn 為新 id、重新蓋戳(可見→不可見→再可見視為新目標)。
+        state.tVisible.delete(id);
+      }
     },
 
     reset(state: SharedState, seq: 'LR' | 'RL' = 'RL'): void {

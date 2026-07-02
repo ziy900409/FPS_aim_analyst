@@ -97,3 +97,67 @@ describe('TargetManager — 可見性 + t_visible 在 sim tick 內蓋戳（FR-4.
     expect(state.targets[0].side).toBe('L'); // seq 'LR' → 首側 'L'
   });
 });
+
+describe('TargetManager — 左右交替序列（FR-4.3）', () => {
+  /** 驅動一輪「擊殺 → 下一 tick 生成對側」;回傳每次 spawn 的 side（依序）。 */
+  function killSequence(seq: 'LR' | 'RL', rounds: number): Array<'L' | 'R'> {
+    const state = createSharedState();
+    const tm = createTargetManager();
+    tm.reset(state, seq);
+    const sides: Array<'L' | 'R'> = [];
+    let now = 100;
+    for (let i = 0; i < rounds; i++) {
+      tm.tick(state, now); // 無存活目標 → spawn
+      sides.push(state.targets[0].side);
+      tm.markKilled(state, state.targets[0].id); // 擊殺 → 翻面
+      now += 100;
+    }
+    return sides;
+  }
+
+  it('連續 markKilled → side 嚴格交替（R→L→R→L…）', () => {
+    expect(killSequence('RL', 5)).toEqual(['R', 'L', 'R', 'L', 'R']);
+  });
+
+  it('首側由 reset(seq) 決定，之後嚴格交替（L→R→L…）', () => {
+    expect(killSequence('LR', 4)).toEqual(['L', 'R', 'L', 'R']);
+  });
+
+  it('每次生成對側目標蓋一枚新 t_visible（不同 id、新戳值）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager();
+
+    tm.tick(state, 100);
+    const first = state.targets[0];
+    expect(state.tVisible.get(first.id)).toBe(100);
+
+    tm.markKilled(state, first.id);
+    expect(state.tVisible.has(first.id)).toBe(false); // 舊戳清掉
+
+    tm.tick(state, 250); // 生成對側
+    const second = state.targets[0];
+    expect(second.id).not.toBe(first.id); // 新 id
+    expect(second.side).not.toBe(first.side); // 對側
+    expect(state.tVisible.get(second.id)).toBe(250); // 新 t_visible
+    expect(state.tVisible.size).toBe(1); // 一次只一枚（單 active 目標）
+  });
+
+  it('決定性：相同 seq 重跑產生完全相同的 side 序列', () => {
+    expect(killSequence('RL', 6)).toEqual(killSequence('RL', 6));
+    expect(killSequence('LR', 6)).toEqual(killSequence('LR', 6));
+  });
+
+  it('擊殺不存在的 id 不推進序列（不翻面）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager();
+
+    tm.tick(state, 100); // spawn 'R'
+    expect(state.targets[0].side).toBe('R');
+
+    tm.markKilled(state, 'nonexistent'); // 無效擊殺
+    tm.markKilled(state, state.targets[0].id); // 真擊殺 → 翻面
+
+    tm.tick(state, 200);
+    expect(state.targets[0].side).toBe('L'); // 只翻一次 → 對側
+  });
+});
