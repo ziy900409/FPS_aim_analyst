@@ -311,7 +311,7 @@
       "source_file": "src/data/DataRecorder.test.ts",
       "source_location": "L1",
       "id": "src_data_datarecorder_test_ts",
-      "community": 8,
+      "community": 7,
       "norm_label": "datarecorder.test.ts"
     },
     {
@@ -320,7 +320,7 @@
       "source_file": "src/data/DataRecorder.ts",
       "source_location": "L1",
       "id": "src_data_datarecorder_ts",
-      "community": 8,
+      "community": 7,
       "norm_label": "datarecorder.ts"
     },
     {
@@ -329,8 +329,161 @@
       "source_file": "src/data/DataRecorder.ts",
       "source_location": "L38",
       "id": "data_datarecorder_createdatarecorder",
-      "community": 8,
+      "community": 7,
       "norm_label": "createdatarecorder()"
+    },
+    {
+      "label": "export.test.ts",
+      "file_type": "code",
+      "source_file": "src/data/export.test.ts",
+      "source_location": "L1",
+      "id": "src_data_export_test_ts",
+      "community": 7,
+      "norm_label": "export.test.ts"
+    },
+    {
+      "label": "export.ts",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L1",
+      "id": "src_data_export_ts",
+      "community": 7,
+      "norm_label": "export.ts"
+    },
+    {
+      "label": "buildExportPayload()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L20",
+      "id": "data_export_buildexportpayload",
+      "community": 7,
+      "norm_label": "buildexportpayload()"
+    },
+    {
+      "label": "serializeJSON()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L33",
+      "id": "data_export_serializejson",
+      "community": 7,
+      "norm_label": "serializejson()"
+    },
+    {
+      "label": "serializeCSV()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L38",
+      "id": "data_export_serializecsv",
+      "community": 7,
+      "norm_label": "serializecsv()"
+    },
+    {
+      "label": "downloadJSON()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L46",
+      "id": "data_export_downloadjson",
+      "community": 7,
+      "norm_label": "downloadjson()"
+    },
+    {
+      "label": "downloadCSV()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L51",
+      "id": "data_export_downloadcsv",
+      "community": 7,
+      "norm_label": "downloadcsv()"
+    },
+    {
+      "label": "serializeTicksCSV()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L57",
+      "id": "data_export_serializetickscsv",
+      "community": 7,
+      "norm_label": "serializetickscsv()"
+    },
+    {
+      "label": "serializeEventsCSV()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L72",
+      "id": "data_export_serializeeventscsv",
+      "community": 7,
+      "norm_label": "serializeeventscsv()"
+    },
+    {
+      "label": "rowsToCSV()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L95",
+      "id": "data_export_rowstocsv",
+      "community": 7,
+      "norm_label": "rowstocsv()"
+    },
+    {
+      "label": "escapeCSVCell()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L99",
+      "id": "data_export_escapecsvcell",
+      "community": 7,
+      "norm_label": "escapecsvcell()"
+    },
+    {
+      "label": "formatNumber()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L104",
+      "id": "data_export_formatnumber",
+      "community": 7,
+      "norm_label": "formatnumber()"
+    },
+    {
+      "label": "assertFinitePayload()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L109",
+      "id": "data_export_assertfinitepayload",
+      "community": 7,
+      "norm_label": "assertfinitepayload()"
+    },
+    {
+      "label": "formatBoolean()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L123",
+      "id": "data_export_formatboolean",
+      "community": 7,
+      "norm_label": "formatboolean()"
+    },
+    {
+      "label": "exportBasename()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L127",
+      "id": "data_export_exportbasename",
+      "community": 7,
+      "norm_label": "exportbasename()"
+    },
+    {
+      "label": "sanitizeFilename()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L131",
+      "id": "data_export_sanitizefilename",
+      "community": 7,
+      "norm_label": "sanitizefilename()"
+    },
+    {
+      "label": "downloadTextFile()",
+      "file_type": "code",
+      "source_file": "src/data/export.ts",
+      "source_location": "L136",
+      "id": "data_export_downloadtextfile",
+      "community": 7,
+      "norm_label": "downloadtextfile()"
     },
     {
       "label": "metadata.test.ts",
@@ -446,7 +599,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L1",
       "id": "src_data_ringbuffer_ts",
-      "community": 8,
+      "community": 7,
       "norm_label": "ringbuffer.ts"
     },
     {
@@ -455,7 +608,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L38",
       "id": "data_ringbuffer_capacityfordrill",
-      "community": 8,
+      "community": 7,
       "norm_label": "capacityfordrill()"
     },
     {
@@ -464,7 +617,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L51",
       "id": "data_ringbuffer_keymaskfromkeys",
-      "community": 8,
+      "community": 7,
       "norm_label": "keymaskfromkeys()"
     },
     {
@@ -473,7 +626,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L62",
       "id": "data_ringbuffer_keymaskfromstate",
-      "community": 8,
+      "community": 7,
       "norm_label": "keymaskfromstate()"
     },
     {
@@ -482,7 +635,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L69",
       "id": "data_ringbuffer_keysfrommask",
-      "community": 8,
+      "community": 7,
       "norm_label": "keysfrommask()"
     },
     {
@@ -491,7 +644,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L82",
       "id": "data_ringbuffer_tickarena",
-      "community": 8,
+      "community": 7,
       "norm_label": "tickarena"
     },
     {
@@ -500,7 +653,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L92",
       "id": "data_ringbuffer_tickarena_constructor",
-      "community": 8,
+      "community": 7,
       "norm_label": ".constructor()"
     },
     {
@@ -509,7 +662,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L102",
       "id": "data_ringbuffer_tickarena_count",
-      "community": 8,
+      "community": 7,
       "norm_label": ".count()"
     },
     {
@@ -518,7 +671,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L106",
       "id": "data_ringbuffer_tickarena_recorderoverflow",
-      "community": 8,
+      "community": 7,
       "norm_label": ".recorderoverflow()"
     },
     {
@@ -527,7 +680,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L110",
       "id": "data_ringbuffer_tickarena_recordtick",
-      "community": 8,
+      "community": 7,
       "norm_label": ".recordtick()"
     },
     {
@@ -536,7 +689,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L121",
       "id": "data_ringbuffer_tickarena_recordstate",
-      "community": 8,
+      "community": 7,
       "norm_label": ".recordstate()"
     },
     {
@@ -545,7 +698,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L125",
       "id": "data_ringbuffer_tickarena_recordfields",
-      "community": 8,
+      "community": 7,
       "norm_label": ".recordfields()"
     },
     {
@@ -554,7 +707,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L142",
       "id": "data_ringbuffer_tickarena_snapshot",
-      "community": 8,
+      "community": 7,
       "norm_label": ".snapshot()"
     },
     {
@@ -563,7 +716,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L156",
       "id": "data_ringbuffer_tickarena_reset",
-      "community": 8,
+      "community": 7,
       "norm_label": ".reset()"
     },
     {
@@ -1760,7 +1913,7 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_input_sampler_spec_ts",
-      "community": 18,
+      "community": 17,
       "norm_label": "input-sampler.spec.ts"
     },
     {
@@ -1769,7 +1922,7 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L30",
       "id": "e2e_input_sampler_spec_gotoappready",
-      "community": 18,
+      "community": 17,
       "norm_label": "gotoappready()"
     },
     {
@@ -1778,7 +1931,7 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L42",
       "id": "e2e_input_sampler_spec_vx",
-      "community": 18,
+      "community": 17,
       "norm_label": "vx()"
     },
     {
@@ -1787,7 +1940,7 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L43",
       "id": "e2e_input_sampler_spec_x",
-      "community": 18,
+      "community": 17,
       "norm_label": "x()"
     },
     {
@@ -1826,7 +1979,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "claude.md \u5c08\u6848\u57f7\u884c\u5354\u8b70\u8207\u5c0e\u822a",
       "id": "claude_project_protocol"
     },
@@ -1839,7 +1992,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u7a0b\u5e8f\u8a18\u61b6 (procedural memory)",
       "id": "claude_procedural_memory"
     },
@@ -1852,7 +2005,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u5782\u76f4\u5207\u7247 = \u539f\u5b50 commit \u5354\u8b70",
       "id": "claude_vertical_slice_commit"
     },
@@ -1865,7 +2018,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u8a18\u61b6\u5206\u5c64 (working/semantic/episodic/\u5168\u57df/\u7a0b\u5e8f)",
       "id": "claude_memory_layers"
     },
@@ -1878,7 +2031,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 12,
       "norm_label": "\u4e0d\u53ef\u9055\u53cd\u7684\u786c\u7d04\u675f (\u6280\u8853)",
       "id": "claude_hard_constraints"
     },
@@ -1891,7 +2044,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "context.md \u5c08\u6709\u540d\u8a5e\u8a5e\u5f59\u8868",
       "id": "context_glossary"
     },
@@ -1969,7 +2122,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "\u6025\u505c\u53cd\u61c9\u6642\u9593 (t_counter \u2212 t_visible)",
       "id": "context_counter_reaction_time"
     },
@@ -1982,7 +2135,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "\u901f\u5ea6\u6b78\u96f6\u8aa4\u5dee (residual speed)",
       "id": "context_residual_speed"
     },
@@ -2021,7 +2174,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 19,
       "norm_label": "\u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "context_crosshair_alignment_offset"
     },
@@ -2073,7 +2226,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "\u901f\u5ea6 gate (velocity gate)",
       "id": "context_velocity_gate"
     },
@@ -2151,7 +2304,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "targetmanager \u5143\u4ef6",
       "id": "context_target_manager"
     },
@@ -2177,7 +2330,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 13,
       "norm_label": "renderloop \u5143\u4ef6",
       "id": "context_render_loop"
     },
@@ -2216,7 +2369,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "drillconfig \u5143\u4ef6",
       "id": "context_drill_config"
     },
@@ -2229,7 +2382,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 12,
       "norm_label": "metricsdashboard \u5143\u4ef6",
       "id": "context_metrics_dashboard"
     },
@@ -2242,7 +2395,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 12,
       "norm_label": "\u96d9\u8ff4\u5708 (dual-loop)",
       "id": "context_dual_loop"
     },
@@ -2255,7 +2408,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 19,
       "norm_label": "fixed-timestep (128 hz)",
       "id": "context_fixed_timestep"
     },
@@ -2268,7 +2421,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 19,
       "norm_label": "accumulator \u6a21\u5f0f",
       "id": "context_accumulator"
     },
@@ -2281,7 +2434,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 19,
       "norm_label": "simstep \u9806\u5e8f (tick \u5167)",
       "id": "context_simstep_order"
     },
@@ -2307,7 +2460,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 12,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism)",
       "id": "context_determinism"
     },
@@ -2320,7 +2473,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 12,
       "norm_label": "\u91cf\u6e2c\u6642\u9418 vs \u6c7a\u5b9a\u6027\u6642\u9418 (two-clock model)",
       "id": "context_two_clock_model"
     },
@@ -2333,7 +2486,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "t_visible",
       "id": "context_t_visible"
     },
@@ -2346,7 +2499,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "sim tick rate (128 hz)",
       "id": "context_sim_tick_rate"
     },
@@ -2385,7 +2538,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 12,
       "norm_label": "cross-origin isolation (coop/coep)",
       "id": "context_cross_origin_isolation"
     },
@@ -2450,7 +2603,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "\u6b63\u898f\u55ae\u4f4d (canonical unit, source unit u/s)",
       "id": "context_canonical_unit"
     },
@@ -2476,7 +2629,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "f5 \u63a5\u7e2b (seam-in, drills-out)",
       "id": "context_f5_seam_in"
     },
@@ -2489,7 +2642,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "\u968e\u6bb5 b (stage b)",
       "id": "context_stage_b"
     },
@@ -2502,7 +2655,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "cs2 physics \u5e38\u6578 (\u968e\u6bb5 b \u6821\u6e96\u8d77\u9ede)",
       "id": "context_cs2_physics_constants"
     },
@@ -2515,7 +2668,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "design.md \u57f7\u884c\u671f\u8207\u67b6\u69cb\u8a2d\u8a08\u7b46\u8a18",
       "id": "design_notes"
     },
@@ -2528,7 +2681,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 12,
       "norm_label": "\u968e\u6bb5 a \u96d9\u8ff4\u5708\u5be6\u70ba\u55ae\u57f7\u884c\u7dd2 raf \u8d85\u7d1a\u8ff4\u5708",
       "id": "design_single_thread_stage_a"
     },
@@ -2541,7 +2694,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 12,
       "norm_label": "\u4e3b\u57f7\u884c\u7dd2\u5361\u9813\u6c61\u67d3 sim \u8a08\u6642 (\u968e\u6bb5 a \u9694\u96e2\u4e0d\u6210\u7acb)",
       "id": "design_main_thread_jank"
     },
@@ -2567,7 +2720,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "frontend.md (\u524d\u7aef/ui \u8a2d\u8a08,\u9810\u7559\u7a7a\u6a94)",
       "id": "frontend_doc"
     },
@@ -2580,7 +2733,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "map.md \u6587\u4ef6\u5730\u5716",
       "id": "map_doc"
     },
@@ -2593,7 +2746,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "plan.md \u57f7\u884c\u8a08\u756b (\u968e\u6bb5 a)",
       "id": "plan_doc"
     },
@@ -2606,7 +2759,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 12,
       "norm_label": "d1 \u2014 2d ui = \u7d14 ts + dom overlay",
       "id": "plan_d1_dom_overlay"
     },
@@ -2619,7 +2772,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "d2 \u2014 \u6e2c\u8a66\u6846\u67b6 vitest + playwright",
       "id": "plan_d2_test_framework"
     },
@@ -2632,7 +2785,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 12,
       "norm_label": "d3 \u2014 coop/coep \u90e8\u7f72 (vite plugin + \u975c\u614b\u4e3b\u6a5f\u5f8c\u5b9a)",
       "id": "plan_d3_coop_coep_deploy"
     },
@@ -2645,7 +2798,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "d4 \u2014 \u6587\u4ef6\u8a9e\u8a00 (\u7e41\u4e2d\u4fdd\u7559\u82f1\u6587\u8853\u8a9e)",
       "id": "plan_d4_doc_language"
     },
@@ -2658,7 +2811,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "d5 \u2014 plan \u9846\u7c92\u5ea6 (agent \u53ef\u57f7\u884c\u6b65\u9a5f)",
       "id": "plan_d5_granularity"
     },
@@ -2684,7 +2837,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u898f\u683c\u66f8 v1.1 + wbs",
       "id": "spec_doc"
     },
@@ -2710,7 +2863,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "f2 \u2014 \u8a18\u9304 t_visible spawn/\u53ef\u898b\u6642\u9593\u6233",
       "id": "spec_f2"
     },
@@ -2736,7 +2889,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "f4 \u2014 \u591a drill \u652f\u63f4 (config \u9a45\u52d5)",
       "id": "spec_f4"
     },
@@ -2749,7 +2902,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "f5 \u2014 \u79fb\u52d5\u76ee\u6a19\u652f\u63f4",
       "id": "spec_f5"
     },
@@ -2775,7 +2928,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 12,
       "norm_label": "adr-2 \u908f\u8f2f\u8207\u6e32\u67d3\u89e3\u8026 (\u96d9\u8ff4\u5708 + fixed-timestep)",
       "id": "spec_adr2"
     },
@@ -2788,7 +2941,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "adr-3 sim tick rate = 128 hz",
       "id": "spec_adr3"
     },
@@ -2801,7 +2954,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 12,
       "norm_label": "adr-4 performance.now() + cross-origin isolation",
       "id": "spec_adr4"
     },
@@ -2827,7 +2980,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "adr-6 \u76ee\u6a19\u79fb\u52d5\u7b56\u7565 (sim loop \u6bcf tick \u66f4\u65b0, motion registry)",
       "id": "spec_adr6"
     },
@@ -2840,7 +2993,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 12,
       "norm_label": "adr-7 \u5169\u500b\u6642\u9418 (\u91cf\u6e2c\u6642\u9418 / \u6c7a\u5b9a\u6027\u6642\u9418)",
       "id": "spec_adr7"
     },
@@ -2866,7 +3019,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "\u9644\u9304 g \u79fb\u52d5\u76ee\u6a19 schema (targetmotion / motionstrategies)",
       "id": "spec_target_motion_schema"
     },
@@ -2892,7 +3045,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "\u9644\u9304 f \u98a8\u96aa\u767b\u8a18",
       "id": "spec_risk_register"
     },
@@ -2905,7 +3058,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "\u79fb\u52d5 + counter-strafe \u80fd\u529b\u6df7\u6dc6 (\u7814\u7a76\u8a2d\u8a08\u554f\u984c)",
       "id": "spec_ability_confusion"
     },
@@ -2918,7 +3071,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "decisions.md \u5168\u57df\u6c7a\u7b56\u8207\u77db\u76fe\u5e33\u672c",
       "id": "decisions_ledger"
     },
@@ -2931,7 +3084,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 15,
       "norm_label": "gd-1 f5 \u662f\u5426\u5c6c\u968e\u6bb5 a (\u898f\u683c v1.1 \u8207 seam-in \u4e0d\u4e00\u81f4)",
       "id": "decisions_gd1_f5_conflict"
     },
@@ -3204,7 +3357,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 12,
       "norm_label": "wp-0 t2 cross-origin isolation",
       "id": "wp0_t2_coop_coep"
     },
@@ -3230,7 +3383,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 12,
       "norm_label": "wp-0 t4 deploy headers",
       "id": "wp0_t4_deploy_headers"
     },
@@ -6691,6 +6844,28 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/data/export.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_data_export_test_ts",
+      "target": "src_data_datarecorder_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "src_data_datarecorder_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L7",
       "weight": 1.0,
@@ -6730,6 +6905,409 @@
       "weight": 1.0,
       "source": "data_datarecorder_createdatarecorder",
       "target": "data_ringbuffer_capacityfordrill"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_data_export_test_ts",
+      "target": "src_data_export_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_data_export_test_ts",
+      "target": "data_export_buildexportpayload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_data_export_test_ts",
+      "target": "data_export_serializecsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_data_export_test_ts",
+      "target": "data_export_serializejson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_data_export_test_ts",
+      "target": "src_data_metadata_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "src_data_metadata_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "src_data_ringbuffer_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_buildexportpayload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_serializejson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_serializecsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_downloadjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_downloadcsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_serializetickscsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L72",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_serializeeventscsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_rowstocsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_escapecsvcell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L104",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_formatnumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L109",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_assertfinitepayload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L123",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_formatboolean",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L127",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_exportbasename",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L131",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_sanitizefilename",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L136",
+      "weight": 1.0,
+      "source": "src_data_export_ts",
+      "target": "data_export_downloadtextfile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "data_export_serializejson",
+      "target": "data_export_assertfinitepayload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "data_export_downloadjson",
+      "target": "data_export_serializejson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "data_export_serializecsv",
+      "target": "data_export_exportbasename",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "data_export_serializecsv",
+      "target": "data_export_serializetickscsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "data_export_serializecsv",
+      "target": "data_export_serializeeventscsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "data_export_downloadcsv",
+      "target": "data_export_serializecsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "data_export_downloadjson",
+      "target": "data_export_exportbasename",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "data_export_downloadjson",
+      "target": "data_export_downloadtextfile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "data_export_downloadcsv",
+      "target": "data_export_downloadtextfile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "data_export_serializetickscsv",
+      "target": "data_export_formatnumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "data_export_serializetickscsv",
+      "target": "data_export_rowstocsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "data_export_serializeeventscsv",
+      "target": "data_export_formatnumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "data_export_serializeeventscsv",
+      "target": "data_export_formatboolean",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L92",
+      "weight": 1.0,
+      "source": "data_export_serializeeventscsv",
+      "target": "data_export_rowstocsv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "source": "data_export_assertfinitepayload",
+      "target": "data_export_formatnumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/export.ts",
+      "source_location": "L128",
+      "weight": 1.0,
+      "source": "data_export_exportbasename",
+      "target": "data_export_sanitizefilename",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -16039,5 +16617,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "dd81825931e4b3d89abf5e6677d9ff1f46193a27"
+  "built_at_commit": "882179ddae5a8ea3fe9754b64da8a1ce3d38eaa3"
 }

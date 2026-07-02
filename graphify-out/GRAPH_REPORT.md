@@ -1,16 +1,16 @@
 # Graph Report - FPS_aim_analyst  (2026-07-02)
 
 ## Corpus Check
-- 53 files · ~74,140 words
+- 55 files · ~74,942 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 516 nodes · 929 edges · 37 communities (25 shown, 12 thin omitted)
+- 533 nodes · 969 edges · 37 communities (25 shown, 12 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 39 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `dd818259`
+- Built from commit: `882179dd`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -32,7 +32,7 @@
 - [[_COMMUNITY_Community 14|Community 14]]
 - [[_COMMUNITY_Community 15|Community 15]]
 - [[_COMMUNITY_Community 16|Community 16]]
-- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
 - [[_COMMUNITY_Community 19|Community 19]]
 - [[_COMMUNITY_Community 21|Community 21]]
 - [[_COMMUNITY_Community 26|Community 26]]
@@ -64,12 +64,12 @@
   docs/PLAN.md → CONTEXT.md
 - `量測時鐘 vs 決定性時鐘 (two-clock model)` --semantically_similar_to--> `主執行緒卡頓污染 sim 計時 (階段 A 隔離不成立)`  [INFERRED] [semantically similar]
   CONTEXT.md → docs/DESIGN.md
-- `不可違反的硬約束 (技術)` --references--> `決定性 (determinism)`  [EXTRACTED]
-  CLAUDE.md → CONTEXT.md
 - `WP-8 MetricsDashboard + HUD` --implements--> `MetricsDashboard 元件`  [EXTRACTED]
   docs/exec-plan/README.md → CONTEXT.md
 - `CLAUDE.md 專案執行協議與導航` --references--> `exec-plan/README.md 執行計畫索引`  [EXTRACTED]
   CLAUDE.md → docs/exec-plan/README.md
+- `不可違反的硬約束 (技術)` --references--> `DataRecorder 元件 (preallocated arena)`  [EXTRACTED]
+  CLAUDE.md → CONTEXT.md
 
 ## Hyperedges (group relationships)
 - **三迴圈透過 SharedState 溝通 (雙迴圈架構, ADR-2)** — context_input_sampler, context_sim_loop, context_render_loop, context_shared_state, spec_adr2 [EXTRACTED 1.00]
@@ -121,12 +121,12 @@ Cohesion: 0.08
 Nodes (39): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 里程碑 M1 (WP-2 脊椎 / 決定性驗證), 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間) (+31 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.18
-Nodes (19): 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, 雙迴圈 (dual-loop), CONTEXT.md 專有名詞詞彙表, sim tick rate (128 Hz), DECISIONS.md 全域決策與矛盾帳本 (+11 more)
+Cohesion: 0.12
+Nodes (20): createDataRecorder(), assertFinitePayload(), buildExportPayload(), downloadCSV(), downloadJSON(), downloadTextFile(), exportBasename(), formatBoolean() (+12 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.2
-Nodes (6): createDataRecorder(), capacityForDrill(), keyMaskFromKeys(), keyMaskFromState(), keysFromMask(), TickArena
+Cohesion: 0.22
+Nodes (16): 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, CONTEXT.md 專有名詞詞彙表, sim tick rate (128 Hz), DECISIONS.md 全域決策與矛盾帳本, DESIGN.md 執行期與架構設計筆記 (+8 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.18
@@ -141,32 +141,32 @@ Cohesion: 0.3
 Nodes (15): 里程碑 M1 (WP-2 脊椎門控), 里程碑 M2 (WP-5 核心玩法), 里程碑 M3 (WP-7 可匯出資料), 里程碑 M4 (WP-9 階段 A 交付), exec-plan/README.md 執行計畫索引, WP-0 環境建置與學習爬升, WP-1 FPS 控制 + Pointer Lock, WP-2 SharedState + 雙迴圈骨架 (脊椎) (+7 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.19
-Nodes (13): accumulator 模式, 準心對齊偏移, DrillConfig 元件, F5 接縫 (seam-in, drills-out), fixed-timestep (128 Hz), simStep 順序 (tick 內), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), 移動 + counter-strafe 能力混淆 (研究設計問題) (+5 more)
+Cohesion: 0.18
+Nodes (15): 不可違反的硬約束 (技術), cross-origin isolation (COOP/COEP), 決定性 (determinism), 雙迴圈 (dual-loop), MetricsDashboard 元件, 量測時鐘 vs 決定性時鐘 (two-clock model), 主執行緒卡頓污染 sim 計時 (階段 A 隔離不成立), 階段 A 雙迴圈實為單執行緒 rAF 超級迴圈 (+7 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.19
-Nodes (13): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+5 more)
+Cohesion: 0.18
+Nodes (14): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+6 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.35
 Nodes (10): collectMeta(), measureDisplayHz(), nextAnimationFrame(), normalizeOverflow(), normalizeStartedAt(), requireBackend(), requireBoolean(), requireNonEmptyString() (+2 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.36
-Nodes (8): 不可違反的硬約束 (技術), cross-origin isolation (COOP/COEP), MetricsDashboard 元件, D1 — 2D UI = 純 TS + DOM overlay, D3 — COOP/COEP 部署 (Vite plugin + 靜態主機後定), ADR-4 performance.now() + cross-origin isolation, WP-0 T2 Cross-origin isolation, WP-0 T4 Deploy headers
+Cohesion: 0.31
+Nodes (9): DrillConfig 元件, F5 接縫 (seam-in, drills-out), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), 移動 + counter-strafe 能力混淆 (研究設計問題), ADR-6 目標移動策略 (sim loop 每 tick 更新, motion registry), F4 — 多 drill 支援 (config 驅動), F5 — 移動目標支援, 附錄 F 風險登記 (+1 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.33
-Nodes (7): 決定性 (determinism), RenderLoop 元件, RenderSnapshot 窄介面, 量測時鐘 vs 決定性時鐘 (two-clock model), 主執行緒卡頓污染 sim 計時 (階段 A 隔離不成立), Web Worker + SharedArrayBuffer 真正隔離 (階段 B), ADR-7 兩個時鐘 (量測時鐘 / 決定性時鐘)
+Cohesion: 0.29
+Nodes (7): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), RenderSnapshot 窄介面, 速度歸零誤差 (residual speed), 階段 B (Stage B), 速度 gate (velocity gate), Web Worker + SharedArrayBuffer 真正隔離 (階段 B)
 
-### Community 17 - "Community 17"
-Cohesion: 0.4
-Nodes (5): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 速度歸零誤差 (residual speed), 階段 B (Stage B), 速度 gate (velocity gate)
+### Community 18 - "Community 18"
+Cohesion: 0.5
+Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManager 元件, F2 — 記錄 t_visible spawn/可見時間戳
 
 ### Community 19 - "Community 19"
 Cohesion: 0.5
-Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManager 元件, F2 — 記錄 t_visible spawn/可見時間戳
+Nodes (4): accumulator 模式, 準心對齊偏移, fixed-timestep (128 Hz), simStep 順序 (tick 內)
 
 ## Knowledge Gaps
 - **89 isolated node(s):** `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)`, `counter-strafe (反向急停)`, `反向鍵 (counter key)` (+84 more)
@@ -176,12 +176,12 @@ Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManage
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `規格書 v1.1 + WBS` connect `Community 7` to `Community 9`, `Community 11`, `Community 12`, `Community 13`, `Community 15`, `Community 16`, `Community 19`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 2` to `Community 3`?**
+- **Why does `規格書 v1.1 + WBS` connect `Community 8` to `Community 9`, `Community 11`, `Community 12`, `Community 13`, `Community 15`, `Community 18`?**
   _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 2` to `Community 3`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **Why does `里程碑 M1 (WP-2 脊椎 / 決定性驗證)` connect `Community 6` to `Community 5`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `createSharedState()` (e.g. with `setup()` and `freshState()`) actually correct?**
   _`createSharedState()` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)` to the rest of the system?**
