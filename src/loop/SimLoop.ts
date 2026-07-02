@@ -7,6 +7,7 @@ import { currentPeekId, firstShotGate } from '../sim/firstShot.ts';
 import { createMovementController, type MovementController } from '../sim/MovementController.ts';
 import type { DrillRunner } from '../drill/DrillRunner.ts';
 import type { InputEvent } from '../state/types.ts';
+import type { DataRecorder } from '../data/DataRecorder.ts';
 import type { Clock } from './clock.ts';
 
 /**
@@ -91,6 +92,7 @@ export function simStep(
   movement: MovementController = defaultMovement,
   handle: (ev: InputEvent) => void = (ev) => applyInput(state, ev, camera, targetManager),
   drillRunner?: DrillRunner,
+  recorder?: DataRecorder,
 ): void {
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
@@ -111,6 +113,8 @@ export function simStep(
 
   state.curr.x = state.player.x;
   state.curr.z = state.player.z;
+
+  recorder?.recordTickFromState(tickEndMs, state);
 }
 
 export interface SimLoop {
@@ -129,6 +133,7 @@ export function createSimLoop(
   targetManager?: TargetManager,
   camera?: THREE.Camera,
   drillRunner?: DrillRunner,
+  recorder?: DataRecorder,
 ): SimLoop {
   const tickSec = 1 / simHz;
   const tickMs = 1000 / simHz;
@@ -151,7 +156,7 @@ export function createSimLoop(
       let ticks = 0;
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
-        simStep(state, tickSec, simTimeMs, targetManager, camera, movement, handleInput, drillRunner);
+        simStep(state, tickSec, simTimeMs, targetManager, camera, movement, handleInput, drillRunner, recorder);
         accSec -= tickSec;
         ticks++;
       }

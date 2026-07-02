@@ -4,12 +4,12 @@
 
 ---
 
-## Status: 🟡 T0 entry gate 完成，T1 待執行（達成即 M3）
+## Status: 🟡 T1 ring buffer 完成，T2/T3 待執行（M3 持續推進）
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-02） |
-| T1 Ring buffer | ⬜ 待執行 |
+| T1 Ring buffer | ✅ 完成（2026-07-02） |
 | T2 事件記錄 | ⬜ 待執行 |
 | T3 Metadata | ⬜ 待執行 |
 | T4 JSON/CSV 匯出 | ⬜ 待執行 |
@@ -30,6 +30,15 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T1 Ring buffer tick 記錄 ✅ PASS
+- **實作**：新增 `src/data/RingBuffer.ts` 的 `TickArena`（typed arrays：`t/vx/vz/cx/cy/keyMask`）與 `src/data/DataRecorder.ts`。arena 為 preallocated、非環狀；容量預設 `ceil(maxDrillSeconds * simHz) + extraTicks`（300s × 128Hz + 128 = 38,528）。
+- **SimLoop 串接**：`simStep` 末端於 movement / `curr` 更新後呼叫可選 `recorder.recordTickFromState(tickEndMs, state)`；既有呼叫者不傳 recorder 時行為不變。選擇不改 `SharedState`，降低 blast radius。
+- **溢位策略**：寫滿後 `recorderOverflow=true`，後續 tick 拒寫且不覆寫最舊資料；snapshot 仍保留已記錄順序。
+- **無 GC 佐證**：熱路徑由 `recordTickFromState` 直接讀 `SharedState` primitive 欄位並寫 typed arrays，不建立 tick object / crosshair array / keys array；Vitest 壓測 100,000 ticks 覆蓋此路徑，snapshot 配置只發生在匯出時。
+- **Verification**：`npm test -- --run src/data/DataRecorder.test.ts src/loop/SimLoop.test.ts` PASS；`npm run typecheck` PASS；`npm test` PASS（141 passed）；`npm run build` PASS。
+- **Tooling note**：GitNexus MCP 仍回報 0 indexed repos，無法執行 AGENTS 指定的 `impact` / `detect_changes`；改用 CodeGraph impact（`simStep` 5 symbols、`createSimLoop` 4 symbols、`SharedState` 45 symbols，故未改 `SharedState`）與 `graphify update .`。
+- **Next**：T2 事件記錄（visible/counter/fire）與 T3 metadata 可並行。
 
 ### 2026-07-02 — T0 Entry gate ✅ PASS
 - **上游狀態確認**：WP-4 progress 宣告完成（F2 `t_visible` 全綠），WP-5 progress 宣告完成並達成 **M2 核心玩法成立**（`vitest run` 99/99、`tsc --noEmit` exit 0、手動驗 PASS）。T0 依賴 WP-2/WP-4/WP-5 成立。

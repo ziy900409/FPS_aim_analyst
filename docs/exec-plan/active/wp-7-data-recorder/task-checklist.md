@@ -5,7 +5,7 @@
 | Done | Task | File | Depends on | Risk |
 |------|------|------|------------|------|
 | ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-2, WP-4, WP-5 | Low |
-| ⬜ | **T1** Ring buffer tick 記錄 | [T1-ring-buffer.md](T1-ring-buffer.md) | T0 | Med |
+| ✅ | **T1** Ring buffer tick 記錄 | [T1-ring-buffer.md](T1-ring-buffer.md) | T0 | Med |
 | ⬜ | **T2** 事件記錄（t_visible/命中/首發/急停） | [T2-event-recording.md](T2-event-recording.md) | T1 | Med |
 | ⬜ | **T3** 環境 metadata | [T3-metadata.md](T3-metadata.md) | T0 | Low |
 | ⬜ | **T4** JSON/CSV 匯出 | [T4-export.md](T4-export.md) | T1, T2, T3 | Med |

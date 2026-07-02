@@ -4,6 +4,7 @@ import { pushEvent } from '../state/inputRingTestUtil.ts';
 import type { Clock } from './clock.ts';
 import { SIM_HZ } from './constants.ts';
 import { createSimLoop, simStep } from './SimLoop.ts';
+import { createDataRecorder } from '../data/DataRecorder.ts';
 
 /** 固定基準的注入式 clock（OQ-2.3）。 */
 function fixedClock(t: number): Clock {
@@ -83,5 +84,19 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     simStep(state, 1 / SIM_HZ, TICK_MS);
     expect(state.player.vx).toBe(0);
     expect(state.player.stopped).toBe(true); // 停止態開火 → accurate=true、residualSpeed=0
+  });
+
+  it('simStep 末端把 movement 後的 tick row 寫入 DataRecorder', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 2 });
+    state.held.right = true;
+    state.crosshair.cx = 3;
+    state.crosshair.cy = -2;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+
+    expect(recorder.snapshot().ticks).toEqual([
+      { t: TICK_MS, vx: 250, vz: 0, crosshair: [3, -2], keys: ['D'] },
+    ]);
   });
 });
