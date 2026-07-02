@@ -6,6 +6,7 @@ import { createPointerLock } from './input/PointerLock.ts';
 import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
 import { sharedState } from './state/SharedState.ts';
+import { createTargetManager } from './sim/TargetManager.ts';
 import { createSimLoop } from './loop/SimLoop.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
@@ -98,7 +99,10 @@ pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 // WP-2 / T2+T3（FR-2.2/2.3）— 雙迴圈：sim（128 Hz 固定步長 accumulator）與 render（rAF）解耦，
 // 全透過 sharedState 溝通（ADR-2）。階段 A 單執行緒下，sim 在 render 的 rAF callback 內 pump（§4.3
 // 「單一 rAF 超級迴圈」，DESIGN §1）；階段 B 才把 sim 搬入 worker。
-const simLoop = createSimLoop(sharedState, realClock, SIM_HZ);
+// WP-4 / T2（FR-4.2）— 目標系統在 sim tick 內 spawn/可見性/蓋 t_visible（傳入 simLoop，
+// tick 由 simStep 呼叫；時間源為 sim clock，非 rAF）。
+const targetManager = createTargetManager();
+const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager);
 
 // player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。佔位 1:1（sim u → world unit），
 // 真 display scale 由 WP-6 drill config 定（CONTEXT 正規單位：render 可另套，sim/資料不得用公尺）。

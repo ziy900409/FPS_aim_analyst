@@ -4,13 +4,13 @@
 
 ---
 
-## Status: 🟢 T1 完成（T1a 型別 + T1b mesh/TargetView）→ 下一個 T2
+## Status: 🟢 T2 完成（t_visible 在 sim tick 內蓋戳）→ 下一個 T3
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-01）|
 | T1 目標 entity | ✅ 完成（2026-07-02）— T1a 型別重塑 + T1b mesh/TargetView |
-| T2 可見性 + t_visible | ⬜ 待執行 |
+| T2 可見性 + t_visible | ✅ 完成（2026-07-02）— TargetManager.tick 在 sim tick 內蓋 t_visible |
 | T3 左右交替 | ⬜ 待執行 |
 | T4 Crosshair | ⬜ 待執行 |
 | T5 Exit gate | ⬜ 待執行 |
@@ -29,6 +29,21 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T2 `TargetManager` + `t_visible`（sim tick 內蓋戳）✅
+- **新增** [src/sim/TargetManager.ts](../../../../src/sim/TargetManager.ts)（NEW `src/sim/` 目錄）：`createTargetManager()` 工廠回 `tick`/`markKilled`/`reset`。
+  - `tick(state, nowMs)`：① 無存活目標 → spawn 一個（T2 單目標，side 固定 'R'；spawn 即可見 OQ-4.2）；② 掃描目標，`visible && !tVisible.has(id)` → `tVisible.set(id, nowMs)`（**只蓋一次**，防重複的 design note）。
+  - **時間源硬約束達成**：`nowMs` 由 `simStep` 傳入的 sim 邏輯時鐘 `simTimeMs`（累加 tickMs，量測時鐘域）——非 rAF / `Date.now()`。TargetManager 自身不讀時鐘、純函式（與 simStep Worker 搬遷紀律 OQ-2.4 相容）。
+  - `markKilled`/`reset`：T2 最小可用版（撤除目標 + 清 tVisible / 清空 + seq 定首側），供 WP-5 與 T3 呼叫；side **交替**政策留 T3。
+- **整合** [src/loop/SimLoop.ts](../../../../src/loop/SimLoop.ts)：`simStep` 與 `createSimLoop` 各加**選填** `targetManager?` 參數；`simStep` 在 `prev←curr` 後、`consumeInput`（WP-5 fire raycast 未來所在）**之前**呼叫 `targetManager?.tick(state, tickEndMs)`（對齊 README「命中判定之前」F5 seam）。[src/main.ts](../../../../src/main.ts) 注入 `createTargetManager()`。
+- **驗證（三檢全綠）**：`tsc --noEmit` exit 0；`vitest run src` **38/38**（新增 TargetManager.test 6；**WP-2 決定性 9 tests 無回歸**——關鍵，因本切片改了 SimLoop 簽章）；`vite build` ✓ 1.74s。
+- **手動驗（暫緩至 T3/T5）**：畫面現會出現單一右側目標；左右交替與擊殺循環需 T3，端到端瀏覽器驗證併入 T5 exit gate。
+
+#### Decision Log — `targetManager` 以「選填參數」注入 `simStep`/`createSimLoop`
+- **決策**：`simStep(state, dtSec, tickEndMs, targetManager?)` 與 `createSimLoop(..., targetManager?)` 皆將 target 系統設為**選填**依賴，而非改寫 `simStep` 為必帶。
+- **理由**：(1) 向後相容——WP-2 既有 `simStep`/`createSimLoop` 測試（含 9 個決定性測試）呼叫時不帶 targetManager，簽章擴充後零改動即續綠（實測 38/38）。(2) 保留 `simStep` 的純函式邊界（OQ-2.4）：target tick 亦為 `(state, nowMs)→void` 純推進，不引入時鐘/DOM 讀取。(3) 決定性測試路徑可刻意**不注入** target，隔離 player 位移的決定性斷言、不被 target spawn 干擾。
+- **Alternatives considered**：(a) 把 `TargetManager` 設為 `createSimLoop` 必帶依賴——否決：強迫所有 WP-2 決定性測試改建 targetManager，且無法單獨驗證位移決定性。(b) 於 `createRenderLoop` 的 rAF callback 內呼叫 `tick`——**嚴重否決**：直接違反 FR-4.2 與 README failure-mode「t_visible 蓋在 render frame」，時間源變幀率相依、反應時間失真。
+- **時間源決策**：`t_visible` 取 `simTimeMs`（sim 邏輯時鐘）而非 `pump(nowMs)` 的 rAF 原始戳——確保「同輸入序列、不同 render FPS」下 t_visible 對應的 tick 一致（決定性契約）。測試以注入 `fixedClock(1000)` 斷言戳值 ~1007.8 且 `< 1e6`，明確排除 `Date.now()` 域。
 
 ### 2026-07-02 — T1b `TargetView`（mesh 池 + 依 state 顯示/隱藏）✅ → T1 完成
 - **新增** [src/render/TargetView.ts](../../../../src/render/TargetView.ts)：渲染層唯讀元件，`sync(targets)` 依 `visible` 把顯示中目標映射到 mesh 重用池、其餘隱藏。

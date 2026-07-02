@@ -1,4 +1,5 @@
 import type { SharedState } from '../state/SharedState.ts';
+import type { TargetManager } from '../sim/TargetManager.ts';
 import type { Clock } from './clock.ts';
 
 /**
@@ -46,12 +47,24 @@ function consumeInput(state: SharedState, tickEndMs: number): void {
  * 推進一個固定 tick（純函式邊界，OQ-2.4：只讀寫傳入 state、不讀 `performance.now()`、不碰 DOM；
  * 預留階段 B Worker 搬遷）。`tickEndMs` = 本 tick 邏輯窗結束時間（量測時鐘域 ms），供輸入分桶。
  *
- * 順序（對齊 CONTEXT「simStep 順序」雛形）：① prev←curr（內插基準，T3）；② 消費本 tick 輸入；
- * ③ 等速推進位置（**只用 dtSec**）；④ curr←新位置。
+ * 順序（對齊 CONTEXT「simStep 順序」雛形）：① prev←curr（內插基準，T3）；② 目標系統
+ * （spawn/可見性/蓋 t_visible，**命中判定之前**，F5 seam / WP-5）；③ 消費本 tick 輸入；
+ * ④ 等速推進位置（**只用 dtSec**）；⑤ curr←新位置。
+ *
+ * `targetManager` 選填：注入即在 tick 內推進目標（WP-4）；省略則維持純位移（WP-2 決定性測試路徑）。
  */
-export function simStep(state: SharedState, dtSec: number, tickEndMs: number): void {
+export function simStep(
+  state: SharedState,
+  dtSec: number,
+  tickEndMs: number,
+  targetManager?: TargetManager,
+): void {
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
+
+  // 目標 spawn/可見性/蓋 t_visible：在命中判定（WP-5 fire raycast）之前，且時間源為 sim tick
+  // 的 `tickEndMs`（量測時鐘域，非 rAF/Date.now）——反應時間效度關鍵（README failure-mode）。
+  targetManager?.tick(state, tickEndMs);
 
   consumeInput(state, tickEndMs);
 
@@ -71,7 +84,12 @@ export interface SimLoop {
  * 建 accumulator sim loop。`clock` 僅用於取時間基準（`pump` 的 nowMs 才是每幀驅動源），
  * `simHz` 注入使 tick rate 可調（ADR-3）。
  */
-export function createSimLoop(state: SharedState, clock: Clock, simHz: number): SimLoop {
+export function createSimLoop(
+  state: SharedState,
+  clock: Clock,
+  simHz: number,
+  targetManager?: TargetManager,
+): SimLoop {
   const tickSec = 1 / simHz;
   const tickMs = 1000 / simHz;
   let accSec = 0;
@@ -86,7 +104,7 @@ export function createSimLoop(state: SharedState, clock: Clock, simHz: number): 
       let ticks = 0;
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
-        simStep(state, tickSec, simTimeMs);
+        simStep(state, tickSec, simTimeMs, targetManager);
         accSec -= tickSec;
         ticks++;
       }
