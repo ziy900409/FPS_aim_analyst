@@ -143,7 +143,7 @@ TargetManager 在 sim tick 內同步執行；render 唯讀 `SharedState.targets`
 - [ ] 可生成目標（mesh + hitbox）→ **T1**
 - [ ] `t_visible` 在 sim tick 內正確蓋戳 → **T2**
 - [ ] 目標左右交替生成 → **T3**
-- [ ] 螢幕中心準心 → **T4**
+- [x] 螢幕中心準心 → **T4**
 
 ## Assumptions
 - **A1**：M1 達成、WP-1 場景可用。

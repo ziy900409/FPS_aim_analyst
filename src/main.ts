@@ -5,6 +5,7 @@ import { TargetView } from './render/TargetView.ts';
 import { createPointerLock } from './input/PointerLock.ts';
 import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
+import { createCrosshair } from './ui/Crosshair.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager } from './sim/TargetManager.ts';
 import { createSimLoop } from './loop/SimLoop.ts';
@@ -95,6 +96,10 @@ const settingsPanel = createSettingsPanel({
   onFovChange: (deg) => cameraController.setFov(deg),
 });
 pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
+
+// WP-4 / T4（FR-4.4）— 螢幕中心準心（DOM overlay, D1）：瞄準參考 + §5 準心對齊偏移的視覺基準。
+// 恆顯示（不隨鎖定切換）：第一人稱射線走 camera 中心，準心即射線方向指示。
+createCrosshair();
 
 // WP-2 / T2+T3（FR-2.2/2.3）— 雙迴圈：sim（128 Hz 固定步長 accumulator）與 render（rAF）解耦，
 // 全透過 sharedState 溝通（ADR-2）。階段 A 單執行緒下，sim 在 render 的 rAF callback 內 pump（§4.3

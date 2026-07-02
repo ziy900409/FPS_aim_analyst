@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T3 完成（左右交替確定性輪替）→ 下一個 T4
+## Status: 🟢 T4 完成（螢幕中心準心 overlay）→ 下一個 T5 exit gate
 
 | Phase | State |
 |-------|-------|
@@ -12,7 +12,7 @@
 | T1 目標 entity | ✅ 完成（2026-07-02）— T1a 型別重塑 + T1b mesh/TargetView |
 | T2 可見性 + t_visible | ✅ 完成（2026-07-02）— TargetManager.tick 在 sim tick 內蓋 t_visible |
 | T3 左右交替 | ✅ 完成（2026-07-02）— markKilled 撤除後翻面 nextSide，確定性 L↔R |
-| T4 Crosshair | ⬜ 待執行 |
+| T4 Crosshair | ✅ 完成（2026-07-02）— DOM overlay 十字準心、恆顯示、pointer-events:none |
 | T5 Exit gate | ⬜ 待執行 |
 
 ---
@@ -30,7 +30,21 @@
 
 ## Log
 
-### 2026-07-02 — T3 左右交替序列（確定性輪替）✅
+### 2026-07-02 — T4 Crosshair（螢幕中心準心 overlay）✅
+- **新增** [src/ui/Crosshair.ts](../../../../src/ui/Crosshair.ts)：`createCrosshair()` 工廠回 `setVisible`/`dispose`。純 TS + DOM overlay（D1），四臂十字（中心 GAP 留空露出目標中心）。
+  - **置中不偏移**：root 以 `position:fixed; left/top:50%; transform:translate(-50%,-50%)` 取視窗中心——與 `innerWidth/Height` 無關，視窗縮放/resize 不需重算即恆置中（對應 T4 DoD「縮放不偏移」）。四臂再以絕對定位 + `translate` 從中心平移 GAP+ARM，共用同一色/線寬常數。
+  - **不擋輸入**：`pointer-events:none` 使點擊穿透到 canvas，不影響 Pointer Lock 取得（與 lockHint 同紀律；z-index:12 疊在 settings-panel 11 之上，恆在最上層）。
+  - **唯讀視覺層**：不相依 sim/state、不接輸入——與 SettingsPanel 同為 main 組裝的 UI overlay。
+- **整合** [src/main.ts](../../../../src/main.ts)：`createCrosshair()` 於 settings-panel wire-up 後呼叫；**恆顯示**（不綁 `pointerLock.onChange`）——第一人稱射線走 camera 中心（WP-5），準心即射線方向指示，鎖定與否都應在場。
+- **驗證（三檢全綠）**：`tsc --noEmit` exit 0；`vitest run src` **43/43**（無新增測試——見下 Decision Log；WP-2 決定性 9 + T1/T2/T3 既有全數無回歸）；`vite build` ✓ 1.74s。
+- **手動驗（延後 T5）**：準心置中 / 縮放不偏移 / 不擋滑鼠的端到端 spot-check 併入 T5 exit-gate 瀏覽器驗證（與 SettingsPanel、lockHint 同樣採手動驗，本 repo DOM overlay 慣例）。
+
+#### Decision Log — T4 不加單元測試（沿用 DOM overlay 手動驗慣例）
+- **決策**：Crosshair 不寫 `*.test.ts`，改以三檢 + T5 瀏覽器手動驗覆蓋。
+- **理由**：(1) Vitest 預設 `node` 環境無 `document`，且 repo **未安裝** jsdom/happy-dom；為單一 Low/Low overlay 引入 DOM 測試環境屬 config scope creep（Rule 0.5）。(2) 既有兩個 DOM overlay（`SettingsPanel`、`main.ts` 的 `lockHint`）皆無單元測試、靠手動/T5 驗——T4 對齊此慣例，不破壞一致性。(3) 準心正確性（置中、不偏移、不擋輸入）本質是視覺/事件穿透，jsdom 無 layout/命中測試能力，斷言 `cssText` 字串價值低。對比 TargetView 之所以能測，是因 THREE 為純 JS 物件（無 DOM/GPU 依賴）——DOM overlay 無此性質。
+- **Alternatives considered**：(a) 安裝 jsdom + `@vitest-environment jsdom` docblock 測 DOM 節點存在/樣式——否決：為此微元件裝環境、且只能斷言字串樣式（測不到「置中/不偏移」的真實 layout），投報比低。(b) 改用 canvas 2D 畫準心——否決：CSS overlay 更簡（Rule 0），且無需接 render loop。
+
+
 - **改動** [src/sim/TargetManager.ts](../../../../src/sim/TargetManager.ts)：`markKilled` 在**確認撤除某目標後**翻面內部 `nextSide`（`'R'↔'L'`），下一個可見 tick 於對側 spawn 並蓋新 `t_visible`。`tick`/spawn/`reset` 邏輯不變（首側仍由 `reset(seq)` 定，預設 `'R'`）。
   - **確定性**：輪替純由內部布林翻面驅動、**無隨機源**（不用 `Math.random`）——給定首側，side 序列可完全重現，與 WP-2 決定性契約相容。
   - **守衛**：只在真的 `splice` 掉目標時才翻面 + 清 `t_visible`；擊殺不存在的 id 不推進序列（避免 WP-5 誤觸/重放時序列漂移）。
