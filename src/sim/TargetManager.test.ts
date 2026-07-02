@@ -3,6 +3,7 @@ import type { Clock } from '../loop/clock.ts';
 import { SIM_HZ } from '../loop/constants.ts';
 import { createSimLoop } from '../loop/SimLoop.ts';
 import { createSharedState } from '../state/SharedState.ts';
+import type { DrillConfig } from '../drill/DrillConfig.ts';
 import { createTargetManager } from './TargetManager.ts';
 
 const TICK_MS = 1000 / SIM_HZ; // 7.8125
@@ -159,5 +160,115 @@ describe('TargetManager — 左右交替序列（FR-4.3）', () => {
 
     tm.tick(state, 200);
     expect(state.targets[0].side).toBe('L'); // 只翻一次 → 對側
+  });
+});
+
+describe('TargetManager — config 驅動（WP-6 / T2，FR-6.2；換 config 即換 drill）', () => {
+  /** 構造合法 DrillConfig（欄位形狀對齊 DrillConfig）。 */
+  function config(over: {
+    count: number;
+    alternation: 'LR' | 'RL';
+    distance?: number;
+  }): DrillConfig {
+    return {
+      drillId: 'test',
+      targets: { count: over.count, distance: over.distance ?? 4 },
+      sequence: { alternation: over.alternation },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: over.count },
+    };
+  }
+
+  /** 跑完整 drill（kill→補生），回傳每次 spawn 的 side 依序;達 spawn 上限即停。 */
+  function runDrill(cfg: DrillConfig): Array<'L' | 'R'> {
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+    const sides: Array<'L' | 'R'> = [];
+    let now = 100;
+    for (let guard = 0; guard < 1000; guard++) {
+      tm.tick(state, now);
+      if (state.targets.length === 0) break; // spawn 上限達標、序列耗盡
+      sides.push(state.targets[0].side);
+      tm.markKilled(state, state.targets[0].id);
+      now += 100;
+    }
+    return sides;
+  }
+
+  it('distance 來自 config：目標 z = -config.targets.distance（非引擎預設）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(config({ count: 5, alternation: 'RL', distance: 7 }));
+    tm.tick(state, 100);
+    expect(state.targets[0].pos.z).toBe(-7);
+  });
+
+  it('首側來自 sequence.alternation 首字（LR→L、RL→R）', () => {
+    const stateL = createSharedState();
+    createTargetManager(config({ count: 5, alternation: 'LR' })).tick(stateL, 100);
+    expect(stateL.targets[0].side).toBe('L');
+
+    const stateR = createSharedState();
+    createTargetManager(config({ count: 5, alternation: 'RL' })).tick(stateR, 100);
+    expect(stateR.targets[0].side).toBe('R');
+  });
+
+  it('spawn 上限 = targets.count：達標後 tick 不再補生', () => {
+    const cfg = config({ count: 3, alternation: 'RL' });
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+
+    // 擊殺 3 個。
+    for (let i = 0; i < 3; i++) {
+      tm.tick(state, 100 + i * 100);
+      tm.markKilled(state, state.targets[0].id);
+    }
+    // 第 4 次 tick：已達上限 → 不補生。
+    tm.tick(state, 500);
+    expect(state.targets).toHaveLength(0);
+  });
+
+  it('換 config 即換 drill（零引擎改動）：不同 count/alternation → 不同序列，同一 createTargetManager', () => {
+    const a = runDrill(config({ count: 2, alternation: 'LR' }));
+    const b = runDrill(config({ count: 4, alternation: 'RL' }));
+
+    expect(a).toEqual(['L', 'R']); //           count=2、首側 L
+    expect(b).toEqual(['R', 'L', 'R', 'L']); // count=4、首側 R
+    expect(a).not.toEqual(b); //                純由 config 差異驅動,無 .ts 改動
+  });
+
+  it('決定性：相同 config 重跑產生完全相同的序列', () => {
+    const cfg = config({ count: 6, alternation: 'RL' });
+    expect(runDrill(cfg)).toEqual(runDrill(cfg));
+  });
+
+  it('reset 省略 seq 時退回 config 首側，並歸零 spawn 計數（可重跑滿額）', () => {
+    const cfg = config({ count: 2, alternation: 'LR' });
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+
+    // 第一輪跑滿 2 個。
+    tm.tick(state, 100);
+    tm.markKilled(state, state.targets[0].id);
+    tm.tick(state, 200);
+    tm.markKilled(state, state.targets[0].id);
+    tm.tick(state, 300);
+    expect(state.targets).toHaveLength(0); // 已達上限
+
+    // reset（省略 seq）→ 計數歸零、首側回 config 'L'。
+    tm.reset(state);
+    tm.tick(state, 400);
+    expect(state.targets[0].side).toBe('L'); // config 首側
+    expect(state.targets).toHaveLength(1); // 可再補生（計數已歸零）
+  });
+
+  it('config.targets.motion 提供時寫入目標（F5 接縫，複製非共用參考）', () => {
+    const cfg: DrillConfig = {
+      ...config({ count: 1, alternation: 'RL' }),
+      targets: { count: 1, distance: 4, motion: { type: 'linear', speed: 2 } },
+    };
+    const state = createSharedState();
+    createTargetManager(cfg).tick(state, 100);
+    expect(state.targets[0].motion).toEqual({ type: 'linear', speed: 2 });
+    expect(state.targets[0].motion).not.toBe(cfg.targets.motion); // 複製,不共用參考
   });
 });

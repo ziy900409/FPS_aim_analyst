@@ -7,7 +7,7 @@
 | **Depends on** | T1 |
 | **Risk / Complexity** | Med / High |
 | **Touches** | NEW `src/drill/DrillLoader.ts`；MODIFY `src/sim/TargetManager.ts`（參數化） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02） |
 
 ## Objective
 讓 `TargetManager` 由 `DrillConfig` 驅動 spawn/位置/交替/結束——**換 config 即換 drill，零引擎程式碼改動**（FR-6.2，F4 核心）。

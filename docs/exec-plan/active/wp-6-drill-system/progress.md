@@ -4,13 +4,13 @@
 
 ---
 
-## Status: 🟡 執行中（T1 ✅）
+## Status: 🟡 執行中（T2 ✅）
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-02） |
 | T1 DrillConfig schema | ✅ 完成（2026-07-02） |
-| T2 Drill 載入器 | ⬜ 待執行 |
+| T2 Drill 載入器 | ✅ 完成（2026-07-02） |
 | T3 Counter-strafe drill 檔 | ⬜ 待執行 |
 | T4 Drill 生命週期 | ⬜ 待執行 |
 | T5 Exit gate | ⬜ 待執行 |
@@ -29,6 +29,16 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T2 Drill 載入器（config 驅動 TargetManager）✅
+- **產出**：`src/drill/DrillLoader.ts`（`loadDrill` 包 `validateDrill`）、`src/drill/DrillLoader.test.ts`（5 tests）；MODIFY `src/sim/TargetManager.ts`（`createTargetManager(config?)` 由 config 驅動）、`TargetManager.test.ts`（+7 config 驅動 tests，含兩 config 解耦驗收）。
+- **驗證**：`vitest run` 123 passed（+12 新）；`tsc --noEmit` 綠燈。**F4 解耦驗收綠**：`runDrill(count=2,LR)` → `['L','R']`、`runDrill(count=4,RL)` → `['R','L','R','L']`,純由 config 差異驅動、同一 `createTargetManager`、零 `.ts` 改動。WP-4 t_visible/交替/決定性回歸全綠（TargetManager 18 tests 含原 11）。
+- **Decision — `createTargetManager(config?)` config 為選填,退回 WP-4 佔位行為**：既有 WP-4 測試與 `main.ts` `createTargetManager()` 呼叫零改動即續綠(向後相容)。有 config → `targets.distance`(位置)、`sequence.alternation[0]`(首側)、`targets.count`(spawn 上限)驅動;無 config → 預設距離 4、首側 'R'、無限補生。*Alternatives*：強制必填 config(須改 WP-4 測試 + main,破壞回歸);獨立 config-driven 子類(過度抽象,違 Rule 0)。
+- **Decision — spawn 上限用 `targets.count`;`endCondition` phase 語意留給 T4**：TargetManager 職責保持純粹「生成至多 count 個、首側交替、固定距離」;drill running→ended 判定屬 DrillRunner(T4)。README T2「結束（endCondition）取代 WP-4 內建佔位」解讀為「由無限補生改為有限 count 上限」,已滿足。*Alternatives*：TargetManager 內判 endCondition 雙閘(耦合 phase 邏輯,侵入 T4 範圍)。
+- **Decision — `loadDrill` 接受 JSON 字串或已解析物件**：`import x.json`(Vite 給物件)與 `fetch().text()`(給字串)兩路走同一驗證;字串解析失敗 throw `載入失敗: JSON 解析錯誤`(OQ-6.4 不啟動 drill)。
+- **Surprise — `reset` 預設參數語意調整**：原 `reset(state, seq='RL')` 硬編預設;改為 `reset(state, seq?)`,省略時退回 config 首側(無 config 則 'R')。既有顯式 `reset(state,'LR')` 呼叫不受影響('LR'[0]='L');`reset` 亦歸零 `spawnedCount`,使 restart 後可重跑滿額(T4 restart 相容)。
+- **F5 接縫**：config.targets.motion 提供時 spawn 複製寫入目標(非共用參考),階段 A 不驅動移動(WP-6.5 接管)。
+- **Next**：**T3** Counter-strafe drill 檔（[T3-counterstrafe-drill.md](T3-counterstrafe-drill.md)）— 產出 `drills/counterstrafe_ad_v1.json`,經 `loadDrill` + `createTargetManager` 驗證可玩;**T4** 生命週期(可並行)。
 
 ### 2026-07-02 — T1 DrillConfig schema ✅
 - **產出**：`src/drill/DrillConfig.ts`（型別）、`src/drill/schema.ts`（`validateDrill` 手寫 guard）、`src/drill/schema.test.ts`（12 tests）。
