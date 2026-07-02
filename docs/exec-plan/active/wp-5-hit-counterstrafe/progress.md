@@ -12,7 +12,7 @@
 | T1 HitDetector | ✅ 完成（2026-07-02）— camera 中心射線命中 + 第一次命中即擊殺（FR-5.1，OQ-5.4）|
 | T2 首發判定 | ✅ 完成（2026-07-02）— 每 peek 首發旗標，掃射不稀釋（FR-5.2，OQ-5.3）|
 | T3 橫移 movement | ✅ 完成（2026-07-02）— MovementController A/D 橫移，held-based per-tick snap（FR-5.3，OQ-5.2）|
-| T4 簡化急停 | ⬜ 待執行 |
+| T4 簡化急停 | ✅ 完成（2026-07-02）— 反向鍵穿越 tick 立即停止（stopped flag + vx=0）+ 開火精準 gate（accurate/residualSpeed）（FR-5.4，OQ-5.1）|
 | T5 Exit gate（M2） | ⬜ 待執行 |
 
 ---
@@ -29,6 +29,16 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T4 簡化急停 + gate 開火精準 ✅
+- **狀態** `SharedState.player` 加 `stopped: boolean`（急停 flag，抽象欄位）；`createSharedState` 初始 false、`resetState` 原地清（GC 紀律）。同步更新 `SharedState.test.ts` 兩處 `toEqual` player 形狀斷言。
+- **MovementController.step** 加反向鍵急停：以 `prevVx = state.player.vx`（上一 tick velocity）為「當前移動方向」判定源；`counterStrafe = (prevVx>0 && held.left) || (prevVx<0 && held.right)`——移動中且反向鍵按住 → 該 tick `vx=0` + `stopped=true`（急停窗，一 tick）；否則走原 M1 snap + `stopped=false`。續按反向鍵次 tick 因 prevVx 已 0 → 反向/過衝、stopped 復 false。
+- **接線** `SimLoop.applyInput` fire 分支：**在 raycast/markKilled 之前**算 `accurate = state.player.stopped`、`residualSpeed = |state.player.vx|`（反映 fire 當下＝上一 tick movement 所定 velocity；本 tick movement.step 尚未跑）。emit fire 結果事件留 WP-7，本 WP `void` 標記接縫（沿用 T2 firstShot 模式）。
+- **測試**：`MovementController.test.ts` +6 例急停組（釋放同向反向鍵急停、續按過衝、A+D 同按仍急停、對稱 A→D、純放開非急停、靜止起步非急停）；`SimLoop.test.ts` +1 整合（simStep 內反向鍵 → stopped/vx，gate 來源）。`vitest run src` **99/99**、`tsc --noEmit` exit 0、determinism **9/9** 綠。
+- **Decision — 用 held（非 target velocity）判反向鍵**：`counterStrafe` 條件讀 `held.left/right` 而非 net target。*理由*：A+D 同按（net target=0，互斥抵消）在「移動中」情境下反向鍵**已壓下**，語意上即 counter-strafe 應急停；若以 target 判定則 A+D 會落入 else 分支（vx=0 但 stopped=false），漏標精準窗。以 held 判定使「按下反向鍵那刻」= 急停，與 CS 手感一致。*Alternatives*：①以 prevVx 與 target 反號判定——漏 A+D 同按案例；②維持 controller 無狀態、prevVx 讀 `state.player.vx`——已採用（不需 controller 私有 state，`resetState` 天然清）。
+- **Decision — accurate/residualSpeed 於 fire 處**在 movement.step 之前**讀 player 狀態**（consume→movement 順序）**：fire 事件在 consume 階段 inline 評估，此時本 tick 的 movement.step 尚未跑，故讀到的是上一 tick 末的 velocity/stopped。*理由*：velocity snap 無 accel、tick 間為階梯常數，fire 當下的有效速度＝上一 tick movement 所定值，語意正確。同 tick 內「反向鍵 keydown + fire」則 fire 見上一 tick（尚未急停）狀態——急停於 tick 邊界生效，128Hz 下 sub-tick 誤差 ~7.8ms，階段 A 可接受。連續精準度模型留階段 B。
+- **Surprise**：T3 既有單元測試「held D→+v、held A→−v」原以「移動右 → 直接按 A」測 −v snap——T4 急停邏輯正確地把此情境判為 counter-strafe（vx=0 而非 −250），測試失效。修正：中間插一步「放開回靜止」再從靜止按 A 測純 −v snap（保留原「純方向 snap」意圖，反向穿越另由急停測試組覆蓋）。非行為回歸，而是 T4 語意上線的必然。
+- **Next**：T5 Exit gate（M2）——橫移/急停/開火/命中/首發全綠盤點 + 端到端手動驗（含急停瞬間開火標精準），宣告 **M2 核心玩法成立**，交棒 WP-6/WP-7。
 
 ### 2026-07-02 — T3 橫移 movement ✅
 - **新增** `src/sim/MovementController.ts`：`createMovementController({vStrafe?})` → `step(state, dtSec)`。M1 snap：依 `state.held` 定 vx（僅 D→+v、僅 A→−v、皆按/皆放→0 互斥抵消），`x += vx*dtSec`。公開介面僅 `step`（階段 B friction integrator 同介面替換，附錄 D）。預設 `vStrafe=250`（OQ-5.2）。

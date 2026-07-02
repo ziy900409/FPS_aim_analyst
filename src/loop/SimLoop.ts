@@ -24,7 +24,7 @@ const defaultMovement = createMovementController();
 
 /**
  * 輸入套用（handle）：鍵事件更新 A/D **held 狀態**（`MovementController.step` 每 tick 讀 held 定
- * velocity，T3；急停 flag 屬 T4）。**fire 事件在串流該點 inline raycast**（sub-tick 忠實、零內插）：
+ * velocity + 急停 flag，T3/T4）。**fire 事件在串流該點 inline raycast**（sub-tick 忠實、零內插）：
  * 有注入 `camera` + `targetManager` 時，從 camera 中心射線判命中，**第一次命中即擊殺**（OQ-5.4）→
  * `markKilled` → WP-4 生成對側。mouse 事件（準心）仍在佔位階段忽略。
  *
@@ -47,13 +47,21 @@ function applyInput(
     const peekId = currentPeekId(state);
     const firstShot = peekId !== undefined ? firstShotGate(state, peekId) : false;
 
-    // camera 中心射線 → 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。精準 gate（stopped）屬 T4。
+    // 精準 gate（FR-5.4，OQ-5.1）：**在命中判定與 markKilled 之前**讀 velocity——反映 fire 當下
+    // （＝上一 tick movement.step 所定，本 tick movement.step 尚未跑）的移動狀態。停止態（急停穿越
+    // tick）開火 → accurate；殘速二元 {0,±v}（階段 A），結果頁分類呈現。
+    const accurate = state.player.stopped;
+    const residualSpeed = Math.abs(state.player.vx);
+
+    // camera 中心射線 → 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。
     const { hit, targetId } = raycastFromCenter(camera, state.targets);
     if (hit && targetId !== undefined) targetManager.markKilled(state, targetId);
 
     // fire 結果事件（含 firstShot / accurate / residualSpeed）產出 → WP-7 記錄 / WP-8 統計；
     // 本 WP 只判定旗標（旗標記憶已寫入 state.firstShotPeekId，供整合測試觀察）。
     void firstShot;
+    void accurate;
+    void residualSpeed;
   }
 }
 

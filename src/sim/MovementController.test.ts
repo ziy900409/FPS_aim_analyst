@@ -17,7 +17,12 @@ describe('MovementController — A/D 橫移（M1 snap，固定步長）', () => 
     mc.step(s, 1 / 128);
     expect(s.player.vx).toBe(250); // 首個 tick 即滿速（純階梯函數，無 ramp）
 
+    // 先放開回靜止（避免觸發 T4 急停：移動中直接按反向鍵會判急停 → 見急停測試組），
+    // 再從靜止按 A 測純 −v snap。
     s.held.right = false;
+    mc.step(s, 1 / 128);
+    expect(s.player.vx).toBe(0);
+
     s.held.left = true;
     mc.step(s, 1 / 128);
     expect(s.player.vx).toBe(-250);
@@ -84,5 +89,98 @@ describe('MovementController — A/D 橫移（M1 snap，固定步長）', () => 
     s.held.right = true;
     mc.step(s, 1 / 128);
     expect(s.player.vx).toBe(400);
+  });
+});
+
+/**
+ * 簡化 counter-strafe 急停 — WP-5 / T4（FR-5.4，OQ-5.1）單元測試
+ *
+ * 驗「反向鍵穿越 tick」立即歸零 + `stopped` flag：移動中按與移動方向相反的鍵 → 該 tick vx=0、
+ * stopped=true（急停窗）；續按 → 次 tick 反向/過衝、stopped=false。純放開（非反向）不算急停。
+ * `stopped` 為開火精準 gate 的來源（`accurate = stopped`）。
+ */
+describe('MovementController — 簡化急停（反向鍵立即停止 + stopped gate，T4）', () => {
+  const dt = 1 / 128;
+
+  it('移動中按反向鍵（釋放同向）→ 穿越 tick vx=0、stopped=true', () => {
+    const mc = createMovementController();
+    const s = createSharedState();
+
+    s.held.right = true; // 向右移動
+    mc.step(s, dt);
+    expect(s.player.vx).toBe(250);
+    expect(s.player.stopped).toBe(false);
+
+    // 反向鍵：放開 D、按 A（與 +x 移動相反）→ 急停穿越 tick
+    s.held.right = false;
+    s.held.left = true;
+    mc.step(s, dt);
+    expect(s.player.vx).toBe(0);
+    expect(s.player.stopped).toBe(true);
+  });
+
+  it('急停後續按反向鍵 → 次 tick 反向 −v、stopped=false（過衝）', () => {
+    const mc = createMovementController();
+    const s = createSharedState();
+
+    s.held.right = true;
+    mc.step(s, dt); // vx=+250
+    s.held.right = false;
+    s.held.left = true;
+    mc.step(s, dt); // 急停：vx=0、stopped=true
+    expect(s.player.stopped).toBe(true);
+
+    mc.step(s, dt); // 仍按 A、prevVx=0 → 非急停 → 反向
+    expect(s.player.vx).toBe(-250);
+    expect(s.player.stopped).toBe(false);
+  });
+
+  it('A+D 同按（反向鍵壓下但同向仍持）→ 仍判急停 vx=0、stopped=true', () => {
+    const mc = createMovementController();
+    const s = createSharedState();
+
+    s.held.right = true;
+    mc.step(s, dt); // vx=+250
+    s.held.left = true; // A+D 同按（net target=0，但反向鍵已壓 → 急停）
+    mc.step(s, dt);
+    expect(s.player.vx).toBe(0);
+    expect(s.player.stopped).toBe(true);
+  });
+
+  it('向左移動時按 D（反向）→ 對稱急停 vx=0、stopped=true', () => {
+    const mc = createMovementController();
+    const s = createSharedState();
+
+    s.held.left = true;
+    mc.step(s, dt);
+    expect(s.player.vx).toBe(-250);
+
+    s.held.left = false;
+    s.held.right = true;
+    mc.step(s, dt);
+    expect(s.player.vx).toBe(0);
+    expect(s.player.stopped).toBe(true);
+  });
+
+  it('純放開（非反向）→ vx=0 但 stopped=false（放手不算急停）', () => {
+    const mc = createMovementController();
+    const s = createSharedState();
+
+    s.held.right = true;
+    mc.step(s, dt); // vx=+250
+    s.held.right = false; // 只放開、未按反向鍵
+    mc.step(s, dt);
+    expect(s.player.vx).toBe(0);
+    expect(s.player.stopped).toBe(false); // 非急停 → 開火 gate 不計精準
+  });
+
+  it('靜止起步（prevVx=0）按 A → 移動、非急停', () => {
+    const mc = createMovementController();
+    const s = createSharedState();
+
+    s.held.left = true; // 靜止直接按 A（無反向可穿越）
+    mc.step(s, dt);
+    expect(s.player.vx).toBe(-250);
+    expect(s.player.stopped).toBe(false);
   });
 });

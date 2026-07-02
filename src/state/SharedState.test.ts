@@ -5,7 +5,7 @@ import { pushEvent } from './inputRingTestUtil.ts';
 describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
   it('createSharedState 回傳全零的獨立實例', () => {
     const a = createSharedState();
-    expect(a.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0 });
+    expect(a.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0, stopped: false });
     expect(a.prev).toEqual({ x: 0, z: 0 });
     expect(a.curr).toEqual({ x: 0, z: 0 });
     expect(a.crosshair).toEqual({ cx: 0, cy: 0 });
@@ -55,7 +55,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     resetState(s);
 
     expect(s.input.size()).toBe(0);
-    expect(s.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0 });
+    expect(s.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0, stopped: false });
     expect(s.prev).toEqual({ x: 0, z: 0 });
     expect(s.curr).toEqual({ x: 0, z: 0 });
     expect(s.crosshair).toEqual({ cx: 0, cy: 0 });

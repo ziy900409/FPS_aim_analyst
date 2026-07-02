@@ -69,4 +69,19 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.player.vx).toBe(0); // 尚未到期
     expect(state.input.size()).toBe(1); // 仍在緩衝
   });
+
+  it('簡化急停（T4）：反向鍵於 simStep 內立即 stopped=true、vx=0（開火精準 gate 來源）', () => {
+    const state = createSharedState();
+    state.held.right = true; // 向右移動
+    simStep(state, 1 / SIM_HZ, 0);
+    expect(state.player.vx).toBe(250);
+    expect(state.player.stopped).toBe(false); // 移動中開火 → accurate=false、residualSpeed=|vx|
+
+    // 反向鍵（放 D、按 A）→ 下一 tick 急停：consume 更新 held、movement.step 判急停
+    state.held.right = false;
+    state.held.left = true;
+    simStep(state, 1 / SIM_HZ, TICK_MS);
+    expect(state.player.vx).toBe(0);
+    expect(state.player.stopped).toBe(true); // 停止態開火 → accurate=true、residualSpeed=0
+  });
 });

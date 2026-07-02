@@ -21,8 +21,13 @@ export interface SharedState {
   input: InputRing;
   /** 輸入消費 metadata（T4/T4b）：遲到事件計數 + consume 低水位游標 + ring 溢位計數。 */
   inputMeta: InputMeta;
-  /** 玩家即時狀態，由 simStep 推進（u / u·s⁻¹，canonical unit）。 */
-  player: { vx: number; vz: number; x: number; z: number };
+  /**
+   * 玩家即時狀態，由 simStep 推進（u / u·s⁻¹，canonical unit）。
+   * `stopped`（WP-5 / T4，FR-5.4）= 簡化 counter-strafe「急停」flag：`MovementController.step`
+   * 在反向鍵穿越 tick 置 true（vx→0），再次移動置 false。開火精準 gate 讀此欄位（OQ-5.1：
+   * `accurate = stopped`）。抽象欄位——階段 B friction integrator 改以 v<門檻 寫入（附錄 D）。
+   */
+  player: { vx: number; vz: number; x: number; z: number; stopped: boolean };
   /**
    * A/D 橫移按住狀態（WP-5 / T3，FR-5.3）：`consume` 依 keydown/keyup 事件更新，
    * `MovementController.step` 每 tick 讀取以定 velocity（`left`=KeyA、`right`=KeyD）。
@@ -130,7 +135,7 @@ export function createSharedState(): SharedState {
   return {
     input: createInputRing(),
     inputMeta: { lateEventCount: 0, lastConsumedT: -Infinity, bufferOverflow: 0 },
-    player: { vx: 0, vz: 0, x: 0, z: 0 },
+    player: { vx: 0, vz: 0, x: 0, z: 0, stopped: false },
     held: { left: false, right: false },
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
@@ -157,6 +162,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.player.vz = 0;
   state.player.x = 0;
   state.player.z = 0;
+  state.player.stopped = false; // 急停 flag 歸零（重開 drill → 非停止態；GC 紀律原地清）
   state.held.left = false; // 原地清 held（重用既有物件，GC 紀律）；重開 drill → 橫移歸靜止
   state.held.right = false;
   state.prev.x = 0;
