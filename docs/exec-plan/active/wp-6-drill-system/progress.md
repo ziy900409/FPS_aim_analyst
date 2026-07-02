@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 執行中（T3 ✅）
+## Status: 🟡 執行中（T4 ✅）
 
 | Phase | State |
 |-------|-------|
@@ -12,7 +12,7 @@
 | T1 DrillConfig schema | ✅ 完成（2026-07-02） |
 | T2 Drill 載入器 | ✅ 完成（2026-07-02） |
 | T3 Counter-strafe drill 檔 | ✅ 完成（2026-07-02） |
-| T4 Drill 生命週期 | ⬜ 待執行 |
+| T4 Drill 生命週期 | ✅ 完成（2026-07-02） |
 | T5 Exit gate | ⬜ 待執行 |
 
 ---
@@ -29,6 +29,18 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T4 Drill 生命週期（開始/倒數/結束/重來）（FR-6.4）✅
+- **產出**：`src/drill/DrillRunner.ts`（`createDrillRunner` 相位機 `idle→countdown→running→ended` + `restart` 全 reset）；`src/drill/DrillRunner.test.ts`（9 tests）；MODIFY `src/loop/SimLoop.ts`（`simStep`/`createSimLoop` 新增選填 `drillRunner`，running 相位才驅動目標）。
+- **驗證**：`vitest run` 135 passed（+9 新）；`tsc --noEmit` 綠燈。斷言涵蓋：初始 idle；start→countdown 且倒數期間零 spawn；倒數自「第一個 sim tick」起算（非 start() 時刻）達 countdownMs 轉 running 並在同 tick spawn 首側（=alternation[0]）；擊殺達 endCondition.targetCount → ended 且無超額 spawn；endCondition.timeLimit 達時限 → ended；timing.timeLimitMs 後援閘（targetCount 永不達仍結束，防卡 phase）；restart 後 targets/tVisible/firstShotPeekId/player 全空且可重玩再達 ended；SimLoop 整合（未 start 時 pump 不 spawn、start 後 pump 一 tick 即驅動 runner spawn）。
+- **Decision — DrillRunner 驅動 TargetManager，`simStep` 二選一 tick 目標**：有 `drillRunner` 則由其在 running 相位呼叫 `targetManager.tick`（countdown/idle/ended 不 spawn），**取代** `simStep` 原本的直呼；避免雙重 tick。`targetManager` 與 `drillRunner` **併傳**——fire→markKilled 仍走 `targetManager`（同一實例）。*Alternatives*：SimLoop 依 `runner.phase` 自行 gate targetManager.tick（相位邏輯外溢至 SimLoop，違單一職責）；DrillRunner 內建獨立 target 生成（與 TargetManager 重複，違 Rule 0）。
+- **Decision — `createDrillRunner(state, targetManager)` 建構期注入依賴**：README §2 interface 的 `restart(): void` 不帶參數,但 restart 必須 reset state + targetManager,故於 factory 注入二者;`tick(state,…)` 仍依 interface 收 state（＝同一實例）。*Alternatives*：`restart(state)` 帶參（背離 README 契約）。
+- **Decision — `drillRunner` 為 `simStep`/`createSimLoop` 的**末位選填參數****：既有 WP-2/4/5 positional 呼叫（至 `handle`）零改動即續綠；WP-4 無 runner 路徑走原 `targetManager?.tick`（向後相容）。
+- **Decision — endCondition.targetCount 由「擊殺數 = seen id − 目前存活」推導**：不侵入 TargetManager（T4 Touches 僅 NEW DrillRunner + MODIFY SimLoop，未列 TargetManager）；spawn 上限 `targets.count` 仍由 TargetManager 自身 config 執行（tm 與 runner 共用 config），runner 只判 endCondition。命中一 tick 後才反映（markKilled 在 tick 之後的 fire 路徑），最多晚一 tick 偵測 ended（可接受）。
+- **Decision — 倒數自「第一個 sim tick」起算**：`start()` 不帶時間源（README 契約），倒數 `countdownStartMs` 於第一個 countdown tick 以 sim clock 起算，不依賴 wall-clock；達門檻同 tick 落入 running 區塊即 spawn 首目標（不浪費一 tick）。
+- **Surprise — TargetManager spawn 上限來自「自身」config,非 runner**：測試初版誤用 `createTargetManager()`（無 config → spawnLimit=Infinity）,結束 tick 仍補生 stray 目標。修正：tm 與 runner **共用同一 config**（app / T2 真實用法）。
+- **Scope — main.ts 未接線（維持現況佔位 targetManager）**：T4 Touches 僅列 SimLoop.ts;完整 drill 載入 + 開始/重來 UI 屬 WP-8。整合已由 `createSimLoop(…, drillRunner)` 單元測試驗證（sim tick 有呼叫 runner.tick）。手動驗（開始倒數→遊玩→達標→重來）待 WP-8 UI 接線。
+- **Next**：**T5 / T-exit** Exit gate（[T5-exit-gate.md](T5-exit-gate.md)）— 換 config 即換 drill、1 drill 可玩、生命週期完整驗收；交棒 WP-7/WP-8。
 
 ### 2026-07-02 — T3 Counter-strafe drill 設定檔（FR-6.3）✅
 - **產出**：`drills/counterstrafe_ad_v1.json`（範例 drill）；`src/drill/counterstrafe_ad_v1.test.ts`（3 tests，端到端可玩性驗證）；MODIFY `tsconfig.json`（`resolveJsonModule: true`）。
