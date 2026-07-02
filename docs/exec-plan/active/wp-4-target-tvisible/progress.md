@@ -4,12 +4,12 @@
 
 ---
 
-## Status: 🟡 T1 進行中（型別重塑前置切片完成）
+## Status: 🟢 T1 完成（T1a 型別 + T1b mesh/TargetView）→ 下一個 T2
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-01）|
-| T1 目標 entity | 🟡 進行中 — T1a 型別重塑 ✅；T1b mesh/TargetView 待執行 |
+| T1 目標 entity | ✅ 完成（2026-07-02）— T1a 型別重塑 + T1b mesh/TargetView |
 | T2 可見性 + t_visible | ⬜ 待執行 |
 | T3 左右交替 | ⬜ 待執行 |
 | T4 Crosshair | ⬜ 待執行 |
@@ -29,6 +29,17 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T1b `TargetView`（mesh 池 + 依 state 顯示/隱藏）✅ → T1 完成
+- **新增** [src/render/TargetView.ts](../../../../src/render/TargetView.ts)：渲染層唯讀元件，`sync(targets)` 依 `visible` 把顯示中目標映射到 mesh 重用池、其餘隱藏。
+  - **GC 紀律**：共用一份單位 `BoxGeometry(1,1,1)` + 一份 material，以 `mesh.scale` 套各目標 `hitbox`（width/height/depth）尺寸——不每目標配置新 geometry；多出的池內 mesh `visible=false` 留用而非銷毀。
+  - **hitbox=mesh 同來源**：mesh 尺寸直接由 `TargetState.hitbox` 衍生，與 WP-5 raycast（`Box3`）同來源，杜絕視覺/判定漂移（README failure-mode）。
+  - **唯讀**：只讀 `SharedState.targets`、絕不寫 state（雙迴圈邊界 / README failure-mode「render 改目標狀態」）。
+- **整合** [src/main.ts](../../../../src/main.ts)：render frame callback 內 `targetView.sync(sharedState.targets)`（繪製前、唯讀）。本 WP 目標序列由 T2/T3 的 `TargetManager` 寫入，故現在畫面尚無目標（sharedState.targets 為空）——這是預期。
+- **驗證（自動化取代手動鉤子）**：[src/render/TargetView.test.ts](../../../../src/render/TargetView.test.ts) 5 tests——以真 `THREE.Scene`（node 下可建，無需 renderer）斷言：visible→出現且位置/尺寸取自 state、visible=false→隱藏、目標數變動時池不新建（重用）、隱藏目標不佔 slot、dispose 清場。三檢全綠：`tsc --noEmit` exit 0；`vitest run src` **32/32**（新增 5，WP-2 決定性無回歸）；`vite build` ✓ 1.28s。
+- **Surprise（正向）**：`import * as THREE from 'three/webgpu'` 在 vitest 預設 node 環境可乾淨載入並建構 `Scene/Mesh/BoxGeometry`（皆純 JS 物件，GPU 資源惰性）——故 render 元件的 state→mesh 映射邏輯可**單元測試**，不必只靠瀏覽器手動驗（優於 SceneManager 當初的純手動驗）。
+- **Scope 紀律**：`sync` 只 gate 於 `visible`（T1 DoD）；`alive` 撤除語意留 T3/WP-5。未碰 `TargetManager`（T2/T3）。
+- **Next**：**T2 可見性 + t_visible**（[T2-visibility-tvisible.md](T2-visibility-tvisible.md)）——在 sim tick 內蓋 `t_visible`。
 
 ### （規劃）— WP-4 計畫產出
 - 依 PLAN WP-4（4.1–4.4）+ 規格 §5（`t_visible` 為反應時間起點）展開為 T0–T5。

@@ -1,6 +1,7 @@
 import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
 import { SceneManager } from './render/SceneManager.ts';
+import { TargetView } from './render/TargetView.ts';
 import { createPointerLock } from './input/PointerLock.ts';
 import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
@@ -24,6 +25,9 @@ void backend;
 
 // WP-1 / T1（FR-1.1）— 封閉房間 + camera 舞台。
 const sceneManager = new SceneManager();
+
+// WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
+const targetView = new TargetView(sceneManager.scene);
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -112,7 +116,9 @@ const renderLoop = createRenderLoop((now) => {
   // 3) player 位移驅動 camera 位置；視角朝向（yaw/pitch）由 CameraController 走輸入路徑、**不內插**
   //    （人眼對視角延遲敏感，且視角非 sim 狀態）。
   sceneManager.camera.position.set(baseX + px, baseY, baseZ + pz);
-  // 4) 繪製。
+  // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
+  targetView.sync(sharedState.targets);
+  // 5) 繪製。
   renderer.render(sceneManager.scene, sceneManager.camera);
 });
 renderLoop.start();
