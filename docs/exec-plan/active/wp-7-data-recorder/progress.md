@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 T4 匯出完成，T5 schema 文件待執行（M3 持續推進）
+## Status: 🟡 T5 schema 文件完成，T6 exit gate 待執行（M3 持續推進）
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T2 事件記錄 | ✅ 完成（2026-07-02） |
 | T3 Metadata | ✅ 完成（2026-07-02） |
 | T4 JSON/CSV 匯出 | ✅ 完成（2026-07-02） |
-| T5 Schema 文件 | ⬜ 待執行 |
+| T5 Schema 文件 | ✅ 完成（2026-07-02） |
 | T6 Exit gate（M3） | ⬜ 待執行 |
 
 ---
@@ -30,6 +30,13 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T5 Schema 文件 ✅ PASS
+- **實作**：新增 `docs/operational/schema.md`，文件化 JSON root `{meta,ticks,events}`、`Meta`、`TickRecord`、`DrillEvent` 三種事件 variant，以及 `ticks.csv` / `events.csv` 欄位。
+- **對齊內容**：逐欄對照 `src/data/metadata.ts`、`src/data/DataRecorder.ts`、`src/data/export.ts`；補上時間基準（`performance.now()` ms）、source velocity 單位、backend enum、finite number 防線、CSV sparse event table 與 quote 規則。
+- **索引**：WP-7 README 與頂層 exec-plan WP-7 row 連到 `docs/operational/schema.md`。
+- **Verification**：docs-only 變更；以 `npm.cmd run typecheck` 驗證既有 TypeScript 仍通過。
+- **Next**：T6 Exit gate（M3）：確認完整 drill 可匯出、schema 一致、無卡頓證據，宣告 M3 並交棒 WP-8。
 
 ### 2026-07-02 — T4 JSON/CSV 匯出 ✅ PASS
 - **實作**：新增 `src/data/export.ts`，提供 `buildExportPayload(meta,snapshot)`、`serializeJSON()`、`serializeCSV()`、`downloadJSON()`、`downloadCSV()`；payload 結構為 `{meta,ticks,events}`，CSV 分成 `ticks.csv` / `events.csv` 兩個扁平表。

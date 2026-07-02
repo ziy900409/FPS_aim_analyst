@@ -8,7 +8,7 @@
 | **里程碑** | **M3 — 完整 drill 能端到端匯出資料**（可開始 pilot） |
 | **相依** | WP-2（sim tick）、WP-4（t_visible/命中事件）、WP-5（fire/急停/首發） |
 | **Type** | 資料層（F1/F2）：preallocated arena 記錄 + 事件流 + metadata + JSON/CSV 匯出 |
-| **Module / 觸及路徑** | NEW `src/data/DataRecorder.ts`、`src/data/RingBuffer.ts`、`src/data/metadata.ts`、`src/data/export.ts`、`docs/operational/schema.md`；MODIFY `src/loop/SimLoop.ts` |
+| **Module / 觸及路徑** | NEW `src/data/DataRecorder.ts`、`src/data/RingBuffer.ts`、`src/data/metadata.ts`、`src/data/export.ts`、[`docs/operational/schema.md`](../../../operational/schema.md)；MODIFY `src/loop/SimLoop.ts` |
 | **必讀** | 規格 §5（指標來源）· §6（無 GC 卡頓 / 資料完整性）· 附錄 C（匯出 schema）· ADR-1（backend metadata）· ADR-4（時間源）· [CONTEXT.md](../../../../CONTEXT.md) |
 | **估時** | 3–5 dev-days |
 
@@ -148,7 +148,7 @@ export function downloadCSV(payload: ...): void;   // ticks.csv + events.csv（O
 | **T2** 事件記錄 | [T2-event-recording.md](T2-event-recording.md) | t_visible/命中/首發/急停事件流（FR-7.2）。 | T1 | Med | Med |
 | **T3** 環境 metadata | [T3-metadata.md](T3-metadata.md) | backend/displayHz/simHz/browser/sensitivity/COI（FR-7.3）。 | T0 | Low | Low |
 | **T4** JSON/CSV 匯出 | [T4-export.md](T4-export.md) | 組 payload → 下載 JSON + CSV（FR-7.4）。 | T1, T2, T3 | Med | Med |
-| **T5** Schema 文件 | [T5-schema-doc.md](T5-schema-doc.md) | `schema.md` 對齊匯出格式（FR-7.5）。 | T4 | Low | Low |
+| **T5** Schema 文件 | [T5-schema-doc.md](T5-schema-doc.md) | [`schema.md`](../../../operational/schema.md) 對齊匯出格式（FR-7.5）。 | T4 | Low | Low |
 | **T6 / T-exit** Exit gate（M3） | [T6-exit-gate.md](T6-exit-gate.md) | 完整 drill 可匯出、schema 一致、無卡頓；宣告 **M3**；交棒 WP-8。 | T1–T5 | Med | Low |
 
 ### Acceptance criteria（PLAN WP-7 / F1/F2 / M3）→ task map
