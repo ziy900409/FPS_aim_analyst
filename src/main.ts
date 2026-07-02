@@ -2,6 +2,7 @@ import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
 import { SceneManager } from './render/SceneManager.ts';
 import { createPointerLock } from './input/PointerLock.ts';
+import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
 import { sharedState } from './state/SharedState.ts';
@@ -91,10 +92,25 @@ const settingsPanel = createSettingsPanel({
 });
 pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 
+// WP-3 / T1+T3（FR-3.1/3.3）— 輸入採集：keydown/keyup（A/D/W/S）與開火 mousedown（左鍵）蓋
+// event.timeStamp 寫入 sharedState.input，供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；
+// 掛在 window（鍵盤事件不落在 canvas；lock 中滑鼠事件亦冒泡至 window）。開火以 pointerLock.locked
+// 為採計閘門——否則「點擊 canvas 取鎖」與 UI 點擊會被誤判為開火（T3）。與 CameraController（視角走
+// pointerLock.onMove）互不干擾——此處只入緩衝供量測（WP-3 目的）。
+const inputSampler = createInputSampler(sharedState, () => pointerLock.locked);
+inputSampler.attach(window);
+
 // WP-2 / T2+T3（FR-2.2/2.3）— 雙迴圈：sim（128 Hz 固定步長 accumulator）與 render（rAF）解耦，
 // 全透過 sharedState 溝通（ADR-2）。階段 A 單執行緒下，sim 在 render 的 rAF callback 內 pump（§4.3
 // 「單一 rAF 超級迴圈」，DESIGN §1）；階段 B 才把 sim 搬入 worker。
 const simLoop = createSimLoop(sharedState, realClock, SIM_HZ);
+
+// WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
+// 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈
+// （ADR-2;只讀不寫）;e2e 用法見 tests/e2e/input-sampler.spec.ts + WP-3 manual-verification.md。
+if (import.meta.env.DEV) {
+  (window as unknown as { __aimDebug?: unknown }).__aimDebug = { state: sharedState, pointerLock };
+}
 
 // player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。佔位 1:1（sim u → world unit），
 // 真 display scale 由 WP-6 drill config 定（CONTEXT 正規單位：render 可另套，sim/資料不得用公尺）。

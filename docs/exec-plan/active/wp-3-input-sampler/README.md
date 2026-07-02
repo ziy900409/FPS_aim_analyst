@@ -48,11 +48,11 @@ F1：採集每個 A/D／反向鍵的 keydown/keyup、滑鼠位移、開火事件
 
 ### Open Questions
 
-| ID | Question | 建議解法 | Blocks |
-|----|----------|---------|--------|
-| **OQ-3.1** | 反向鍵如何定義？ | 「反向鍵」= 與當前移動方向相反者（D 中按 A、A 中按 D）；採集層只記原始鍵碼，反向語意在 WP-5 急停判定處理。 | T1 |
-| **OQ-3.2** | 緩衝資料結構？ | **已定（grill）**：固定欄位 **ring buffer**（真環狀；每事件壓成 `type,t,a,b` 數值欄、不 `push` 物件）——當下擋 GC、未來 SAB-portable。容量 = `nextPow2(MAX_EVENT_RATE_HZ×MAX_STALL_S×SAFETY)` 靜態常數、**執行期不動態 resize**；溢位升 `bufferOverflow`。 | T4 |
-| **OQ-3.3** | `event.timeStamp` 與 sim clock 對齊？ | 兩者皆 `performance.now()` 同 time origin（ADR-4/7），可直接相減。⚠️ **僅 Chromium 成立**；支援非 Chromium 須重驗。 | T4 |
+| ID | Question | 解法 | Status | Blocks |
+|----|----------|---------|--------|--------|
+| **OQ-3.1** | 反向鍵如何定義？ | 「反向鍵」= 與當前移動方向相反者（D 中按 A、A 中按 D）；採集層只記原始鍵碼，反向語意在 WP-5 急停判定處理。 | ✅ locked T0 (2026-07-01) | T1 |
+| **OQ-3.2** | 緩衝資料結構？ | **已定（grill）**：固定欄位 **ring buffer**（真環狀；每事件壓成 `type,t,a,b` 數值欄、不 `push` 物件）——當下擋 GC、未來 SAB-portable。容量 = `nextPow2(MAX_EVENT_RATE_HZ×MAX_STALL_S×SAFETY)` 靜態常數、**執行期不動態 resize**；溢位升 `bufferOverflow`。 | ✅ grill / locked T0 | T4 |
+| **OQ-3.3** | `event.timeStamp` 與 sim clock 對齊？ | 兩者皆 `performance.now()` 同 time origin（ADR-4/7），可直接相減。⚠️ **僅 Chromium 成立**；支援非 Chromium 須重驗。 | ✅ grill / locked T0 | T4 |
 
 ---
 
@@ -80,7 +80,7 @@ SimLoop tick (128 Hz)：consume(state, [tickStart,tickEnd)) → 取該邏輯窗�
 
 ```ts
 // src/input/InputSampler.ts
-export interface InputSampler { attach(target: HTMLElement): void; detach(): void; }
+export interface InputSampler { attach(target: EventTarget): void; detach(): void; }  // target=EventTarget（鍵盤落 window，D-T1.1）
 export function createInputSampler(state: SharedState): InputSampler;
 // 寫入 state.input：
 //   { type:'key', code:'KeyA'|'KeyD'|..., down:boolean, t:number }
@@ -89,7 +89,11 @@ export function createInputSampler(state: SharedState): InputSampler;
 
 // src/input/consume.ts (FR-3.4)
 export function consume(state: SharedState, untilT: number,
-  handle: (e: InputEvent) => void): void;   // 取 t<=untilT、按 t 升冪、處理後移除
+  handle: (e: InputEvent) => void): void;
+  // 取 t < untilT、按 t 升冪、處理後移除。
+  // ⚠️ 邊界為**半開窗** [tickStart, untilT)：caller 傳 tickEndMs，嚴格 `<`（GD-3）。
+  //    與 WP-2 佔位 consumeInput（SimLoop.ts `t < tickEndMs`）一致，否則邊界事件
+  //    落錯 tick → 破壞 M1 已鎖的決定性回歸。**不可**用 `<=`。
 ```
 
 ### Failure modes
@@ -97,8 +101,9 @@ export function consume(state: SharedState, untilT: number,
 | Mode | Trigger | Handling |
 |------|---------|----------|
 | coalesced 不支援 | 舊瀏覽器 | `getCoalescedEvents?.() ?? [e]`（附錄 B） |
-| 時間戳亂序入緩衝 | 多來源事件交錯 | consume 端排序（不假設 push 即有序） |
-| 緩衝溢位 | 長停頓 burst | 靜態容量 ring；溢位升 `bufferOverflow` 標 suspect（**不靜默丟最舊**） |
+| 時間戳亂序入緩衝 | 多來源事件交錯 | **採集端保序寫入**：`event.timeStamp` 近單調 → append 即近有序；罕見亂序時寫入端做 bounded insertion 修正。consume 端只游標排空、**不每 tick 全排序**（避免 per-tick scratch 配置，守 CLAUDE.md §4 GC 紀律）。⚠️ ring buffer 為 packed 數值槽，就地全排序困難 → 保序寫入是較深的解。 |
+| 遲到事件（落已關閉 tick） | 事件 `t` 早於當前最舊未消費 tick 窗 | 夾進當前最舊 tick 消費、計 `lateEventCount`（GD-2 metadata）。⚠️ 此路徑**本質 wall-clock 相依、非決定性**（真實輸入抖動）；決定性回歸只涵蓋預排序合成事件路徑。 |
+| 緩衝溢位 | 長停頓 burst | 靜態容量 ring；溢位升 `bufferOverflow` 標 suspect（**不靜默丟最舊**，GD-2 metadata） |
 | 視角與量測雙重消費衝突 | 同 pointermove | WP-1 即時用 movementX/Y 驅動 camera；WP-3 另把 coalesced 樣本入緩衝；互不干擾 |
 
 ### Concurrency model
