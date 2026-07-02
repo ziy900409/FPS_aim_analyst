@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟢 T4 完成（螢幕中心準心 overlay）→ 下一個 T5 exit gate
+## Status: ✅ WP-4 完成（2026-07-02）— F2 全綠、頂層索引翻 ✅、交棒 WP-5/6
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T2 可見性 + t_visible | ✅ 完成（2026-07-02）— TargetManager.tick 在 sim tick 內蓋 t_visible |
 | T3 左右交替 | ✅ 完成（2026-07-02）— markKilled 撤除後翻面 nextSide，確定性 L↔R |
 | T4 Crosshair | ✅ 完成（2026-07-02）— DOM overlay 十字準心、恆顯示、pointer-events:none |
-| T5 Exit gate | ⬜ 待執行 |
+| T5 Exit gate | ✅ 完成（2026-07-02）— 五軸 review Approve、程式面三檢全綠、頂層索引 ✅ |
 
 ---
 
@@ -29,6 +29,23 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T5 Exit gate（F2 驗收 + 五軸 code review）✅ → WP-4 完成
+- **程式面三檢全綠**：`npx tsc --noEmit` exit 0；`npx vitest run src` **43/43**（TargetManager 11 + TargetView 5 + WP-2 決定性 9 無回歸）；`npx vite build` ✓ 1.60s（chunk-size 警告為既有 three bundle，非本 WP 引入）。
+- **五軸 code review → Approve**（correctness / readability / architecture / security / performance），無 Critical/Required：
+  - **Correctness**：`t_visible` 在 sim tick 內、由注入 `nowMs`（sim clock）蓋、只蓋一次；交替純布林翻面無 RNG；「無效 id 不推進序列」守衛防 WP-5 重放/誤觸序列漂移。
+  - **Architecture**：sim 單一寫入者、render 唯讀、`targetManager` 選填注入使 WP-2 決定性測試零改動；`tick` 為純 `(state,nowMs)→void`（Worker 搬遷就緒，OQ-2.4）。
+  - **Performance**：`TargetView` mesh 重用池（共用 geometry/material、無每幀 `new Mesh`）；`spawn` 的 `push` 為低頻 peek 事件、非 per-tick 熱路徑（CLAUDE.md no-`push` 硬約束針對 input ring / DataRecorder arena，目標集不適用，且 code 已註明）。
+  - **Security**：本地瀏覽器訓練器，無外部輸入解析/網路/密鑰，N/A。
+- **驗收 map**（PLAN WP-4 / F2）四項全數勾選有證據（見 [T5-exit-gate.md](T5-exit-gate.md)）。
+- **索引更新**：翻 [頂層索引 §2](../../README.md) WP-4 ✅（2026-07-02）；[task-checklist.md](task-checklist.md) T5 Done ✅。
+
+#### Outcomes & Retrospective
+- **t_visible 時間源確認（F2 效度關鍵）**：戳源為 `SimLoop` 累加的 `simTimeMs`（量測時鐘域、與 `performance.now()` 同 origin），**非** rAF frame 時間或 `Date.now()`。單元測試以注入 `fixedClock(1000)` 斷言戳 ≈1007.8 且 `< 1e6`，明確排除 `Date.now` 域——「同輸入序列、不同 render FPS 下 t_visible 對應 tick 一致」的決定性契約成立。
+- **交替決定性確認**：side 序列純由內部 `nextSide` 布林於 `markKilled` 確認撤除後翻面驅動，無隨機源；給定首側（`reset(seq)`）序列完全可重現，`killSequence` 重跑一致性測試通過。與 WP-2 決定性契約相容。
+- **殘留 / 交棒 note**：
+  - **WP-5（命中 + 急停）**：消費 `TargetState.hitbox`（box，與 mesh 同來源）做 `raycastFromCenter`；命中後呼叫 `TargetManager.markKilled(state, id)` 即接上「擊殺→生成對側」循環。屆時可綁擊殺鍵，補做端到端「左右輪替出現」瀏覽器 spot-check（本 WP 因無 kill trigger 而延後的唯一手驗項）。`visible`/`alive` 兩軸中的 `alive` 撤除語意（P2 推進）於此收斂。
+  - **WP-6（drill）**：接管目標生成——`DrillConfig` 驅動目標數/位置/時序，取代本 WP 內建佔位序列（`DEFAULT_DISTANCE`/`SIDE_OFFSET`/固定單目標）；`motion?`/`age?` F5 接縫已於型別預留。
 
 ### 2026-07-02 — T4 Crosshair（螢幕中心準心 overlay）✅
 - **新增** [src/ui/Crosshair.ts](../../../../src/ui/Crosshair.ts)：`createCrosshair()` 工廠回 `setVisible`/`dispose`。純 TS + DOM overlay（D1），四臂十字（中心 GAP 留空露出目標中心）。
