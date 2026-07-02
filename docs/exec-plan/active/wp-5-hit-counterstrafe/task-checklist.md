@@ -9,7 +9,7 @@
 | ✅ | **T2** 首發判定 | [T2-first-shot.md](T2-first-shot.md) | T1 | Med |
 | ✅ | **T3** A/D 橫移 movement | [T3-strafe-movement.md](T3-strafe-movement.md) | T0 | Med |
 | ✅ | **T4** 簡化急停 + gate 開火 | [T4-simplified-counterstrafe.md](T4-simplified-counterstrafe.md) | T3 | Med |
-| ⬜ | **T5 / T-exit** Exit gate（宣告 M2） | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Med |
+| ✅ | **T5 / T-exit** Exit gate（宣告 M2） | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Med |
 
 ## Execution rules
 - 一個 task = 一個切片 = 一個原子 commit；先驗證再 commit。

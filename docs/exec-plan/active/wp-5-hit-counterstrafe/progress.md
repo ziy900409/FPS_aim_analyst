@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 執行中（T0 ✅；達成即 M2）
+## Status: ✅ 完成（2026-07-02）— **M2 核心玩法成立達成**
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T2 首發判定 | ✅ 完成（2026-07-02）— 每 peek 首發旗標，掃射不稀釋（FR-5.2，OQ-5.3）|
 | T3 橫移 movement | ✅ 完成（2026-07-02）— MovementController A/D 橫移，held-based per-tick snap（FR-5.3，OQ-5.2）|
 | T4 簡化急停 | ✅ 完成（2026-07-02）— 反向鍵穿越 tick 立即停止（stopped flag + vx=0）+ 開火精準 gate（accurate/residualSpeed）（FR-5.4，OQ-5.1）|
-| T5 Exit gate（M2） | ⬜ 待執行 |
+| T5 Exit gate（M2） | ✅ 完成（2026-07-02）— 99/99 綠、tsc 0、手動驗 PASS；宣告 **M2**、交棒 WP-6/7 |
 
 ---
 
@@ -29,6 +29,19 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T5 Exit gate ✅ **★ M2 核心玩法成立達成**
+- **自動化門控全綠**：`npx vitest run` **99/99**（13 檔）——命中 8 / 首發 8 / 橫移 12 / 急停含整合 / **determinism 9/9** 回歸；`npx tsc --noEmit` **exit 0**。
+- **五軸 code review（T1–T4）→ Approve**：Correctness（NDC(0,0) 最近命中 + peekId 隱式 reset + prevVx/held 急停判定 + consume→movement 順序）、Readability（zh-TW 密註、決策皆溯 OQ/ADR）、Architecture（雙迴圈邊界：sim 唯讀 camera；`MovementController.step` 唯一公開點，階段 B friction 同介面）、Security（本機瀏覽器，無外部不可信輸入面）、Performance（GC 紀律：Raycaster/Box3/Vector 模組層重用、handle/movement 綁定一次、熱路徑零配置）。**FYI**：`void firstShot/accurate/residualSpeed` 為 WP-7 emit 接縫標記，現行丟棄、有意且一致註明。
+- **4 項驗收 → 證據**：命中/部位（T1 8 例 + 端到端手動）· 首發不稀釋（T2 8 例）· A/D 橫移固定步長（T3 bit-exact）· 急停 gate 開火（T4 急停組 + SimLoop 整合）。全數勾選於 [T5-exit-gate.md](T5-exit-gate.md)。
+- **手動驗 PASS（使用者確認 2026-07-02，Edge/WebGPU）**：橫移 → 反向鍵急停 → 停止開火命中 → 對側生成 → 重複，端到端可跑。
+- **Surprise（手動驗證發現 1）— 橫移速度佔位 1:1 過快**：sim `vStrafe=250 u/s`（canonical CS 值，**不得改**，研究效度硬約束）以 main.ts 佔位 **1:1** 疊到 world，但佔位房間僅 ~10 world unit → 250 world-u/s 每 tick 移 ~1.95u、~40ms 撞牆＝無法目視橫移/急停（讀成「加速度過快」）。*修正*：main.ts 加 **render-only `SIM_TO_WORLD=0.01`** display scale（1 world unit = 100 u），250 u/s 呈現 ~2.5 world-u/s。**只影響 render、不流入 sim/匯出資料**（雙迴圈 + 單位硬約束）；真 display scale 由 WP-6 drill config 接管（同 T1 距離 8→4 佔位修正之性質）。
+- **Surprise（手動驗證發現 2）— 1-tick 急停肉眼不可視 + 過衝疑似「無急停」**：`stopped=true` 只存活 1 tick（128Hz=7.8ms），render frame ~16ms 幾乎必錯過；且**續按反向鍵次 tick 過衝 ∓v**（[README §2 data-flow line 80](README.md) 明定的階段 A 行為）使使用者見「短暫反方向位移」誤判無急停。*澄清*：急停 gate 實際有觸發（單元測試 + trace 佐證），過衝為 spec 設計；sustained 摩擦減速是階段 B（README §3 technical debt「立即停止取代真摩擦」）。*處置（使用者選「接受規格 + 加 dev debug」）*：main.ts 加 **dev-only HUD**（`import.meta.env.DEV`，production 剝除）顯示 `vx`/`急停 STOP` 閂鎖（偵測 stopped 或 vx 反向 → 綠燈保持 600ms，閂鎖時鐘用 rAF `now` 非 Date.now），使 1-tick 急停可靠可視、佐證 gate 有作用（不改 physics）。
+- **Decision — display-scale / debug HUD 屬 render 佔位，不破 WP-5 sim 交付**：兩處修正皆在 main.ts render 層、`import.meta.env.DEV` 或純視覺常數，**零觸及 sim 單位/決定性/匯出資料**。故 WP-5 sim 交付（HitDetector/firstShot/MovementController/SimLoop）維持 review 綠、determinism 9/9 不動。正式 display scale → WP-6；精準度數值呈現 → WP-8。
+- **交棒**：
+  - **WP-6（drill 編排）**：接管 `SIM_TO_WORLD` 正式 display scale + `vStrafe`/`distance`/`peekTimeoutMs`/`spawnDelayMs` 由 `DrillConfig` 注入（`createMovementController({vStrafe})` / `createTargetManager({distance})` seam 已備）。
+  - **WP-7（記錄）**：消費 fire 結果事件（`hit`/`part`/`targetId`/`accurate`/`residualSpeed`/`firstShot`/`t`）——SimLoop fire 分支已算出、現 `void` 標記接縫，WP-7 接 `DataRecorder` arena emit。
+  - **WP-8（指標/HUD）**：以 `accurate`/`residualSpeed` 二元 {0,±v} 做結果頁分類呈現（取代 dev HUD 佔位）；首發命中率分子＝`firstShot && hit`。
 
 ### 2026-07-02 — T4 簡化急停 + gate 開火精準 ✅
 - **狀態** `SharedState.player` 加 `stopped: boolean`（急停 flag，抽象欄位）；`createSharedState` 初始 false、`resetState` 原地清（GC 紀律）。同步更新 `SharedState.test.ts` 兩處 `toEqual` player 形狀斷言。
