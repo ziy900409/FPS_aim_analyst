@@ -127,12 +127,42 @@ if (import.meta.env.DEV) {
   (window as unknown as { __aimDebug?: unknown }).__aimDebug = { state: sharedState, pointerLock };
 }
 
-// player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。佔位 1:1（sim u → world unit），
-// 真 display scale 由 WP-6 drill config 定（CONTEXT 正規單位：render 可另套，sim/資料不得用公尺）。
-// 閒置時 player 恆在原點（真鍵盤輸入是 WP-3），故 camera = base，僅朝向由 mouse 變動。
+// dev-only 急停可視化 HUD（`import.meta.env.DEV`，production 剝除）：橫移/急停在階段 A 為 1-tick
+// 立即停止（vx→0 + stopped=true），7.8ms 肉眼不可視——此 readout 讓手動驗證能目視「反向鍵那刻
+// stopped 翻 true、vx 歸零」，佐證 gate 有作用（不改 physics）。正式數值呈現屬 WP-8 metrics HUD。
+const stopDebug = import.meta.env.DEV ? document.createElement('div') : null;
+if (stopDebug) {
+  stopDebug.style.cssText = [
+    'position:fixed',
+    'left:8px',
+    'bottom:8px',
+    'font:600 13px/1.5 ui-monospace,monospace',
+    'color:#e6e9ec',
+    'background:rgba(16,18,20,0.7)',
+    'padding:6px 10px',
+    'border-radius:4px',
+    'pointer-events:none',
+    'user-select:none',
+    'white-space:pre',
+    'z-index:20',
+  ].join(';');
+  document.body.appendChild(stopDebug);
+}
+
+// player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。
+// **display scale 佔位**（SIM_TO_WORLD，render-only）：sim/資料一律 source unit（u，CONTEXT 正規單位、
+// CLAUDE.md §4；vStrafe=250 u/s 為 canonical CS 值，不得改），但佔位房間僅 ~10 world unit，若 1:1 疊加
+// 則 250 u/s 每 tick 移 ~1.95 world unit、~40ms 撞牆＝無法目視橫移/急停。故 render 端把 sim position 乘
+// 一個佔位 display scale（1 world unit = 100 u），使 250 u/s 呈現為 ~2.5 world-u/s（可控、急停可目視）。
+// **只影響 render，不流入 sim/匯出資料**（雙迴圈邊界 + 單位硬約束）；真 display scale 由 WP-6 drill config 定。
+const SIM_TO_WORLD = 0.01; // world unit per source unit（佔位；WP-6 drill config 接管）
 const baseX = sceneManager.camera.position.x;
 const baseY = sceneManager.camera.position.y;
 const baseZ = sceneManager.camera.position.z;
+
+// dev-only 急停 readout 閂鎖狀態（見 render loop 內說明）。
+let stopFlashUntil = 0;
+let prevVx = 0;
 
 const renderLoop = createRenderLoop((now) => {
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
@@ -140,12 +170,25 @@ const renderLoop = createRenderLoop((now) => {
   // 2) render 唯讀內插 player 位置（prev→curr）——**不寫回 sharedState**（雙迴圈邊界，render 唯讀）。
   const px = lerp(sharedState.prev.x, sharedState.curr.x, alpha);
   const pz = lerp(sharedState.prev.z, sharedState.curr.z, alpha);
-  // 3) player 位移驅動 camera 位置；視角朝向（yaw/pitch）由 CameraController 走輸入路徑、**不內插**
-  //    （人眼對視角延遲敏感，且視角非 sim 狀態）。
-  sceneManager.camera.position.set(baseX + px, baseY, baseZ + pz);
+  // 3) player 位移驅動 camera 位置；sim source unit → world 乘 SIM_TO_WORLD 佔位 display scale（見上）。
+  //    視角朝向（yaw/pitch）由 CameraController 走輸入路徑、**不內插**（人眼對視角延遲敏感，且視角非 sim 狀態）。
+  sceneManager.camera.position.set(baseX + px * SIM_TO_WORLD, baseY, baseZ + pz * SIM_TO_WORLD);
   // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
   targetView.sync(sharedState.targets);
   // 5) 繪製。
   renderer.render(sceneManager.scene, sceneManager.camera);
+  // dev-only：更新急停 readout（vx / stopped）——手動驗證用，production 剝除。
+  // 急停 stopped=true 只存活 1 tick（7.8ms），render frame（~16ms）幾乎必錯過瞬時值；故除了讀
+  // 當下 stopped，另**閂鎖**：偵測到 stopped 或 vx 反向（+→−/−→+，過衝 = 急停已發生）就把綠燈
+  // 保持 600ms，使 1-tick 急停可靠可視。閂鎖時鐘用 rAF `now`（量測時鐘域，非 Date.now）。
+  if (stopDebug) {
+    const p = sharedState.player;
+    const reversed = (prevVx > 0 && p.vx < 0) || (prevVx < 0 && p.vx > 0);
+    if (p.stopped || reversed) stopFlashUntil = now + 600;
+    prevVx = p.vx;
+    const flashing = now < stopFlashUntil;
+    stopDebug.textContent = `vx ${p.vx.toFixed(0).padStart(5)} u/s\n急停 ${flashing ? '● STOP ✓' : '○ —'}`;
+    stopDebug.style.color = flashing ? '#7ee787' : '#e6e9ec';
+  }
 });
 renderLoop.start();
