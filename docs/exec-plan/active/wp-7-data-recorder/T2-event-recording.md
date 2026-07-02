@@ -7,7 +7,7 @@
 | **Depends on** | T1 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | MODIFY `src/data/DataRecorder.ts`、`src/loop/SimLoop.ts`（事件掛點） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02） |
 
 ## Objective
 記錄關鍵事件流：`visible`（t_visible，WP-4）、`counter`（急停，WP-5）、`fire`（含 hit/firstShot/residualSpeed/part，WP-5），對齊附錄 C events 結構（FR-7.2）。
@@ -25,13 +25,13 @@
 - 對齊附錄 C：`{"type":"fire","t":...,"hit":true,"firstShot":true,"residualSpeed":3.1,"part":"head"}`。
 
 ## Steps
-- [ ] `recordEvent` + events[]（reset 隨 drill）。
-- [ ] WP-4/5 掛點呼叫 recordEvent。
-- [ ] Vitest：一段合成 drill → events 含 visible/counter/fire，欄位齊全且時間遞增。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] `recordEvent` + events[]（reset 隨 drill）。
+- [x] WP-4/5 掛點呼叫 recordEvent。
+- [x] Vitest：一段合成 drill → events 含 visible/counter/fire，欄位齊全且時間遞增。
+- [x] `vitest run` + `tsc` 綠燈。
 
 ## Definition of Done
-- [ ] 事件流完整（visible/counter/fire + 子欄位），對齊附錄 C；時間源正確。
+- [x] 事件流完整（visible/counter/fire + 子欄位），對齊附錄 C；時間源正確。
 
 ## Commit
 `feat(wp-7): 事件記錄 t_visible/命中/首發/急停（FR-7.2）`

@@ -1,16 +1,16 @@
 # Graph Report - FPS_aim_analyst  (2026-07-02)
 
 ## Corpus Check
-- 51 files · ~72,821 words
+- 51 files · ~73,185 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 501 nodes · 898 edges · 35 communities (18 shown, 17 thin omitted)
+- 504 nodes · 904 edges · 30 communities (18 shown, 12 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 39 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `788a4f23`
+- Built from commit: `1c430d5f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -27,23 +27,18 @@
 - [[_COMMUNITY_Community 9|Community 9]]
 - [[_COMMUNITY_Community 10|Community 10]]
 - [[_COMMUNITY_Community 11|Community 11]]
-- [[_COMMUNITY_Community 12|Community 12]]
-- [[_COMMUNITY_Community 13|Community 13]]
 - [[_COMMUNITY_Community 14|Community 14]]
-- [[_COMMUNITY_Community 15|Community 15]]
-- [[_COMMUNITY_Community 17|Community 17]]
 - [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
 - [[_COMMUNITY_Community 24|Community 24]]
 - [[_COMMUNITY_Community 25|Community 25]]
 - [[_COMMUNITY_Community 26|Community 26]]
 - [[_COMMUNITY_Community 27|Community 27]]
 - [[_COMMUNITY_Community 28|Community 28]]
 - [[_COMMUNITY_Community 29|Community 29]]
-- [[_COMMUNITY_Community 30|Community 30]]
-- [[_COMMUNITY_Community 31|Community 31]]
-- [[_COMMUNITY_Community 32|Community 32]]
-- [[_COMMUNITY_Community 33|Community 33]]
-- [[_COMMUNITY_Community 34|Community 34]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `規格書 v1.1 + WBS` - 21 edges
@@ -64,8 +59,8 @@
   CONTEXT.md → docs/DESIGN.md
 - `不可違反的硬約束 (技術)` --references--> `決定性 (determinism)`  [EXTRACTED]
   CLAUDE.md → CONTEXT.md
-- `WP-6 DrillConfig 資料驅動 drill (F4)` --implements--> `DrillConfig 元件`  [EXTRACTED]
-  docs/exec-plan/README.md → CONTEXT.md
+- `附錄 G 移動目標 schema (TargetMotion / motionStrategies)` --conceptually_related_to--> `DrillConfig 元件`  [EXTRACTED]
+  docs/規格書_Three.js_WebGPU_反向急停瞄準訓練器.md → CONTEXT.md
 - `WP-8 MetricsDashboard + HUD` --implements--> `MetricsDashboard 元件`  [EXTRACTED]
   docs/exec-plan/README.md → CONTEXT.md
 
@@ -88,15 +83,15 @@
 - **E2E 全鏈路 (drill→匯出→統計，統計=匯出)** — counterstrafe_ad_v1_drill, wp7_export, wp8_statistics, wp9_stats_equals_export [EXTRACTED 1.00]
 - **M4 階段 A 交付閘 (附錄 E 10 項全綠 → 各上游 WP 證據)** — wp9_milestone_m4, wp9_appendix_e_acceptance, wp9_t5_exit_gate [EXTRACTED 1.00]
 
-## Communities (35 total, 17 thin omitted)
+## Communities (30 total, 12 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.06
-Nodes (30): createDrillRunner(), setup(), consume(), createInputSampler(), createPointerLock(), applyInput(), createSimLoop(), simStep() (+22 more)
+Cohesion: 0.05
+Nodes (83): 不可違反的硬約束 (技術), 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, coalesced events (getCoalescedEvents), 急停反應時間 (t_counter − t_visible), cross-origin isolation (COOP/COEP) (+75 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.05
-Nodes (82): 不可違反的硬約束 (技術), 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, coalesced events (getCoalescedEvents), 急停反應時間 (t_counter − t_visible), cross-origin isolation (COOP/COEP) (+74 more)
+Cohesion: 0.07
+Nodes (28): createDrillRunner(), setup(), consume(), createInputSampler(), applyInput(), createSimLoop(), recordVisibleEvents(), simStep() (+20 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.05
@@ -111,52 +106,52 @@ Cohesion: 0.07
 Nodes (46): ADR-1 backend metadata, ADR-4 時間源 (performance.now()), counterstrafe_ad_v1 drill config, SharedState, SimLoop (src/loop/SimLoop.ts), WP-0 createRenderer backend seam, WP-1 sensitivity, WP-2 sim tick (+38 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.08
-Nodes (44): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), sub-tick 輸入時間戳 (精準度真正來源) (+36 more)
+Cohesion: 0.07
+Nodes (13): createPointerLock(), createRenderLoop(), lerp(), createRenderer(), pickBackend(), resolveBackend(), SceneManager, TargetView (+5 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.08
-Nodes (39): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 里程碑 M1 (WP-2 脊椎 / 決定性驗證), 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間) (+31 more)
+Nodes (44): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), sub-tick 輸入時間戳 (精準度真正來源) (+36 more)
 
 ### Community 7 - "Community 7"
+Cohesion: 0.08
+Nodes (39): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 里程碑 M1 (WP-2 脊椎 / 決定性驗證), 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間) (+31 more)
+
+### Community 8 - "Community 8"
 Cohesion: 0.2
 Nodes (6): createDataRecorder(), capacityForDrill(), keyMaskFromKeys(), keyMaskFromState(), keysFromMask(), TickArena
 
-### Community 8 - "Community 8"
-Cohesion: 0.38
+### Community 9 - "Community 9"
+Cohesion: 0.35
 Nodes (9): loadDrill(), err(), requireFiniteNumber(), requireNonNegativeNumber(), requireObject(), requirePositiveInt(), requirePositiveNumber(), validateDrill() (+1 more)
 
-### Community 9 - "Community 9"
-Cohesion: 0.19
-Nodes (13): accumulator 模式, 準心對齊偏移, DrillConfig 元件, F5 接縫 (seam-in, drills-out), fixed-timestep (128 Hz), simStep 順序 (tick 內), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), 移動 + counter-strafe 能力混淆 (研究設計問題) (+5 more)
+### Community 10 - "Community 10"
+Cohesion: 0.24
+Nodes (11): accumulator 模式, 準心對齊偏移, F5 接縫 (seam-in, drills-out), fixed-timestep (128 Hz), simStep 順序 (tick 內), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), 移動 + counter-strafe 能力混淆 (研究設計問題), ADR-6 目標移動策略 (sim loop 每 tick 更新, motion registry) (+3 more)
 
-### Community 13 - "Community 13"
-Cohesion: 0.8
-Nodes (3): createRenderer(), pickBackend(), resolveBackend()
-
-### Community 14 - "Community 14"
-Cohesion: 0.4
-Nodes (5): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 速度歸零誤差 (residual speed), 階段 B (Stage B), 速度 gate (velocity gate)
+### Community 11 - "Community 11"
+Cohesion: 0.33
+Nodes (6): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 速度歸零誤差 (residual speed), 階段 B (Stage B), 速度 gate (velocity gate), Web Worker + SharedArrayBuffer 真正隔離 (階段 B)
 
 ## Knowledge Gaps
 - **89 isolated node(s):** `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)`, `counter-strafe (反向急停)`, `反向鍵 (counter key)` (+84 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **17 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `規格書 v1.1 + WBS` connect `Community 1` to `Community 9`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+- **Why does `規格書 v1.1 + WBS` connect `Community 0` to `Community 10`?**
+  _High betweenness centrality (0.018) - this node is a cross-community bridge._
 - **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 3` to `Community 4`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `里程碑 M1 (WP-2 脊椎 / 決定性驗證)` connect `Community 6` to `Community 5`?**
+- **Why does `里程碑 M1 (WP-2 脊椎 / 決定性驗證)` connect `Community 7` to `Community 6`?**
   _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `createSharedState()` (e.g. with `setup()` and `freshState()`) actually correct?**
   _`createSharedState()` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)` to the rest of the system?**
   _89 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
-- **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
+- **Should `Community 1` be split into smaller, more focused modules?**
+  _Cohesion score 0.07 - nodes in this community are weakly interconnected._

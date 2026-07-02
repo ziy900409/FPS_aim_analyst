@@ -4,13 +4,13 @@
 
 ---
 
-## Status: 🟡 T1 ring buffer 完成，T2/T3 待執行（M3 持續推進）
+## Status: 🟡 T2 事件記錄完成，T3/T4/T5 待執行（M3 持續推進）
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-02） |
 | T1 Ring buffer | ✅ 完成（2026-07-02） |
-| T2 事件記錄 | ⬜ 待執行 |
+| T2 事件記錄 | ✅ 完成（2026-07-02） |
 | T3 Metadata | ⬜ 待執行 |
 | T4 JSON/CSV 匯出 | ⬜ 待執行 |
 | T5 Schema 文件 | ⬜ 待執行 |
@@ -30,6 +30,14 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T2 事件記錄 ✅ PASS
+- **實作**：`DataRecorder` 補上 `recordEvent(event)`，snapshot 既有 `events[]` 現在由實際事件掛點填入；`reset()` 清空 events，維持 drill 邊界。
+- **SimLoop 串接**：target tick / drill runner tick 後掃描本 tick 新寫入 `tVisible` 的 visible target，記錄 `{type:'visible',targetId,t}`；input consume handle 於反向鍵 keydown 轉換時記錄 `{type:'counter',key,t}`；fire event 以 input `t` 記錄 `{type:'fire',hit,firstShot,residualSpeed,part?}`，並沿用既有 raycast / firstShot / markKilled 順序。
+- **時間源**：visible 用 sim tick `tickEndMs`；counter/fire 用 input ring 交付的 `event.t`（來源為 `event.timeStamp`），對齊 ADR-4 / 附錄 C。
+- **Verification**：`npm test -- --run src/data/DataRecorder.test.ts src/loop/SimLoop.test.ts` PASS（15 passed，需 sandbox 外執行，因 esbuild 載入 Vite config 時父層目錄被拒）；`npm run typecheck` PASS；`npm test` PASS（143 passed）；`npm run build` PASS（僅 Vite chunk size warning）。
+- **Tooling note**：已於 code edit 後執行 `graphify update .`，更新 `graphify-out/`。
+- **Next**：T3 Metadata 可接續執行，T4 需等待 T3 後組合 `{meta,ticks,events}` 匯出。
 
 ### 2026-07-02 — T1 Ring buffer tick 記錄 ✅ PASS
 - **實作**：新增 `src/data/RingBuffer.ts` 的 `TickArena`（typed arrays：`t/vx/vz/cx/cy/keyMask`）與 `src/data/DataRecorder.ts`。arena 為 preallocated、非環狀；容量預設 `ceil(maxDrillSeconds * simHz) + extraTicks`（300s × 128Hz + 128 = 38,528）。

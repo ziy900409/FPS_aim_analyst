@@ -38,16 +38,23 @@ function applyInput(
   ev: InputEvent,
   camera?: THREE.Camera,
   targetManager?: TargetManager,
+  recorder?: DataRecorder,
 ): void {
   if (ev.type === 'key') {
-    if (ev.code === 'KeyD') state.held.right = ev.down;
-    else if (ev.code === 'KeyA') state.held.left = ev.down;
-  } else if (ev.type === 'fire' && camera !== undefined && targetManager !== undefined) {
+    if (ev.code === 'KeyD') {
+      if (ev.down && !state.held.right && state.player.vx < 0) recorder?.recordEvent({ type: 'counter', key: 'D', t: ev.t });
+      state.held.right = ev.down;
+    } else if (ev.code === 'KeyA') {
+      if (ev.down && !state.held.left && state.player.vx > 0) recorder?.recordEvent({ type: 'counter', key: 'A', t: ev.t });
+      state.held.left = ev.down;
+    }
+  } else if (ev.type === 'fire') {
     // 開火：首發旗標**先於命中判定**——peek 錨為 fire 當下的 active 目標；命中即擊殺會撤除該目標、
     // 換 peek，故 firstShot 須在 markKilled 之前對「當前 peek」判定（FR-5.2，OQ-5.3）。未命中亦計首發
     // （P2：未命中可補槍，首發＝peek 內第一個 fire，無論中否）。
-    const peekId = currentPeekId(state);
-    const firstShot = peekId !== undefined ? firstShotGate(state, peekId) : false;
+    let firstShot = false;
+    let hit = false;
+    let part: 'head' | 'body' | undefined;
 
     // 精準 gate（FR-5.4，OQ-5.1）：**在命中判定與 markKilled 之前**讀 velocity——反映 fire 當下
     // （＝上一 tick movement.step 所定，本 tick movement.step 尚未跑）的移動狀態。停止態（急停穿越
@@ -56,14 +63,30 @@ function applyInput(
     const residualSpeed = Math.abs(state.player.vx);
 
     // camera 中心射線 → 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。
-    const { hit, targetId } = raycastFromCenter(camera, state.targets);
-    if (hit && targetId !== undefined) targetManager.markKilled(state, targetId);
+    if (camera !== undefined && targetManager !== undefined) {
+      const peekId = currentPeekId(state);
+      firstShot = peekId !== undefined ? firstShotGate(state, peekId) : false;
+      const result = raycastFromCenter(camera, state.targets);
+      hit = result.hit;
+      part = result.part;
+      if (hit && result.targetId !== undefined) targetManager.markKilled(state, result.targetId);
+    }
 
     // fire 結果事件（含 firstShot / accurate / residualSpeed）產出 → WP-7 記錄 / WP-8 統計；
     // 本 WP 只判定旗標（旗標記憶已寫入 state.firstShotPeekId，供整合測試觀察）。
-    void firstShot;
     void accurate;
-    void residualSpeed;
+    if (part !== undefined) recorder?.recordEvent({ type: 'fire', t: ev.t, hit, firstShot, residualSpeed, part });
+    else recorder?.recordEvent({ type: 'fire', t: ev.t, hit, firstShot, residualSpeed });
+  }
+}
+
+function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecorder): void {
+  if (recorder === undefined) return;
+  for (let i = 0; i < state.targets.length; i++) {
+    const target = state.targets[i];
+    if (target.visible && state.tVisible.get(target.id) === t) {
+      recorder.recordEvent({ type: 'visible', targetId: target.id, t });
+    }
   }
 }
 
@@ -90,7 +113,7 @@ export function simStep(
   targetManager?: TargetManager,
   camera?: THREE.Camera,
   movement: MovementController = defaultMovement,
-  handle: (ev: InputEvent) => void = (ev) => applyInput(state, ev, camera, targetManager),
+  handle?: (ev: InputEvent) => void,
   drillRunner?: DrillRunner,
   recorder?: DataRecorder,
 ): void {
@@ -102,10 +125,11 @@ export function simStep(
   // WP-6 / T4：有 drillRunner 則由其相位機驅動目標（running 才 spawn）；否則 WP-4 直驅（向後相容）。
   if (drillRunner !== undefined) drillRunner.tick(state, tickEndMs);
   else targetManager?.tick(state, tickEndMs);
+  recordVisibleEvents(state, tickEndMs, recorder);
 
   // 半開窗 [tickStart, tickEndMs)、嚴格 `<`（GD-3）；handle 每個到期事件套用佔位狀態變更。
   // handle 由 createSimLoop **綁定一次**傳入(熱路徑零配置,GC 紀律 §4);直接呼叫(測試)走預設閉包。
-  consume(state, tickEndMs, handle);
+  consume(state, tickEndMs, handle ?? ((ev) => applyInput(state, ev, camera, targetManager, recorder)));
 
   // MovementController：依 held 定 vx（M1 snap）並以固定 dtSec 推進 x（WP-5 T3，FR-5.3）。
   movement.step(state, dtSec);
@@ -142,8 +166,8 @@ export function createSimLoop(
   let simTimeMs = lastMs; // 邏輯 sim 時鐘（量測時鐘域 ms），每 tick 推進 tickMs；決定 tick 窗
 
   // 綁定一次的輸入 handle：閉包 over state/camera/targetManager，避免每 tick 配置新 arrow
-  // （熱路徑零配置，GC 紀律 §4）。camera/targetManager 省略時 fire 事件 no-op。
-  const handleInput = (ev: InputEvent): void => applyInput(state, ev, camera, targetManager);
+  // （熱路徑零配置，GC 紀律 §4）。camera/targetManager 省略時 fire 不做 hit/firstShot gameplay 判定。
+  const handleInput = (ev: InputEvent): void => applyInput(state, ev, camera, targetManager, recorder);
 
   // 綁定一次的 MovementController（WP-5 T3）：預設 vStrafe，WP-6 drill config 之後由此注入。
   const movement = createMovementController();

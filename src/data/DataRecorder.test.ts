@@ -52,6 +52,24 @@ describe('DataRecorder tick arena', () => {
     expect(snapshot.ticks[99_999].vx).toBe(99_999);
   });
 
+  it('records drill events and clears them on reset', () => {
+    const recorder = createDataRecorder({ capacity: 1 });
+
+    recorder.recordEvent({ type: 'visible', targetId: 't0', t: 10 });
+    recorder.recordEvent({ type: 'counter', key: 'A', t: 20 });
+    recorder.recordEvent({ type: 'fire', t: 30, hit: true, firstShot: true, residualSpeed: 0, part: 'head' });
+
+    expect(recorder.snapshot().events).toEqual([
+      { type: 'visible', targetId: 't0', t: 10 },
+      { type: 'counter', key: 'A', t: 20 },
+      { type: 'fire', t: 30, hit: true, firstShot: true, residualSpeed: 0, part: 'head' },
+    ]);
+
+    recorder.reset();
+
+    expect(recorder.snapshot().events).toEqual([]);
+  });
+
   it('reset reuses the arena and clears overflow state', () => {
     const recorder = createDataRecorder({ capacity: 1 });
     recorder.recordTick({ t: 1, vx: 1, vz: 0, crosshair: [0, 0], keys: [] });

@@ -23,6 +23,7 @@ export interface DataRecorder {
   readonly recorderOverflow: boolean;
   recordTick(record: TickRecordInput): void;
   recordTickFromState(t: number, state: TickSourceState): void;
+  recordEvent(event: DrillEvent): void;
   snapshot(): DataRecorderSnapshot;
   reset(): void;
 }
@@ -52,6 +53,9 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
     },
     recordTickFromState(t: number, state: TickSourceState): void {
       ticks.recordState(t, state);
+    },
+    recordEvent(event: DrillEvent): void {
+      events.push(event);
     },
     snapshot(): DataRecorderSnapshot {
       const tickSnapshot = ticks.snapshot();

@@ -1,6 +1,9 @@
+import * as THREE from 'three/webgpu';
 import { describe, expect, it } from 'vitest';
 import { createSharedState } from '../state/SharedState.ts';
 import { pushEvent } from '../state/inputRingTestUtil.ts';
+import type { TargetManager } from '../sim/TargetManager.ts';
+import type { TargetState } from '../state/types.ts';
 import type { Clock } from './clock.ts';
 import { SIM_HZ } from './constants.ts';
 import { createSimLoop, simStep } from './SimLoop.ts';
@@ -12,6 +15,26 @@ function fixedClock(t: number): Clock {
 }
 
 const TICK_MS = 1000 / SIM_HZ; // 7.8125（2 的冪，float 精確）
+
+function cameraLookingDownZ(): THREE.PerspectiveCamera {
+  const cam = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+  cam.position.set(0, 1.5, 5);
+  cam.lookAt(0, 1.5, -1);
+  cam.updateMatrixWorld(true);
+  return cam;
+}
+
+function makeTarget(id: string, x: number, z: number, over: Partial<TargetState> = {}): TargetState {
+  return {
+    id,
+    side: 'R',
+    pos: { x, y: 1.5, z },
+    visible: true,
+    alive: true,
+    hitbox: { width: 1, height: 2, depth: 1 },
+    ...over,
+  };
+}
 
 describe('SimLoop accumulator（固定 128 Hz）', () => {
   it('固定步進累積出正確 tick 數（64 幀 × 2 tick = 128 ticks/s）', () => {
@@ -97,6 +120,40 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
 
     expect(recorder.snapshot().ticks).toEqual([
       { t: TICK_MS, vx: 250, vz: 0, crosshair: [3, -2], keys: ['D'] },
+    ]);
+  });
+
+  it('records visible, counter, and fire events from a synthetic drill', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ();
+    let spawned = false;
+    const tm: TargetManager = {
+      tick(s, nowMs) {
+        if (spawned) return;
+        s.targets.push(makeTarget('t0', 0, -8, { hitbox: { width: 1, height: 2, depth: 1, part: 'head' } }));
+        s.tVisible.set('t0', nowMs);
+        spawned = true;
+      },
+      markKilled(s, id) {
+        const i = s.targets.findIndex((target) => target.id === id);
+        if (i >= 0) s.targets.splice(i, 1);
+      },
+      reset() {},
+    };
+
+    simStep(state, 1 / SIM_HZ, 100, tm, cam, undefined, undefined, undefined, recorder);
+    state.player.vx = 250;
+    state.held.right = true;
+    pushEvent(state, { type: 'key', code: 'KeyA', down: true, t: 101 });
+    simStep(state, 1 / SIM_HZ, 200, tm, cam, undefined, undefined, undefined, recorder);
+    pushEvent(state, { type: 'fire', t: 201 });
+    simStep(state, 1 / SIM_HZ, 300, tm, cam, undefined, undefined, undefined, recorder);
+
+    expect(recorder.snapshot().events).toEqual([
+      { type: 'visible', targetId: 't0', t: 100 },
+      { type: 'counter', key: 'A', t: 101 },
+      { type: 'fire', t: 201, hit: true, firstShot: true, residualSpeed: 0, part: 'head' },
     ]);
   });
 });
