@@ -1,7 +1,7 @@
 # Graph Report - FPS_aim_analyst  (2026-07-02)
 
 ## Corpus Check
-- 48 files · ~71,257 words
+- 48 files · ~71,093 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9cc571c9`
+- Built from commit: `16837d12`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

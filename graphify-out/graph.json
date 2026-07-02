@@ -6025,9 +6025,9 @@
       "source_file": "src/main.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_render_targetview_ts",
-      "confidence_score": 1.0
+      "target": "src_render_targetview_ts"
     },
     {
       "relation": "imports",
@@ -6036,9 +6036,9 @@
       "source_file": "src/main.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "render_targetview_targetview",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview"
     },
     {
       "relation": "imports_from",
@@ -6135,9 +6135,9 @@
       "source_file": "src/main.ts",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_ui_crosshair_ts",
-      "confidence_score": 1.0
+      "target": "src_ui_crosshair_ts"
     },
     {
       "relation": "imports",
@@ -6146,9 +6146,9 @@
       "source_file": "src/main.ts",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "ui_crosshair_createcrosshair",
-      "confidence_score": 1.0
+      "target": "ui_crosshair_createcrosshair"
     },
     {
       "relation": "imports_from",
@@ -6168,9 +6168,9 @@
       "source_file": "src/main.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_sim_targetmanager_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_targetmanager_ts"
     },
     {
       "relation": "imports",
@@ -6179,9 +6179,9 @@
       "source_file": "src/main.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "sim_targetmanager_createtargetmanager",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_createtargetmanager"
     },
     {
       "relation": "imports_from",
@@ -6297,9 +6297,9 @@
       "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_counterstrafe_ad_v1_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -6308,9 +6308,9 @@
       "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_counterstrafe_ad_v1_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -6319,9 +6319,9 @@
       "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_counterstrafe_ad_v1_test_ts",
-      "target": "src_sim_targetmanager_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_targetmanager_ts"
     },
     {
       "relation": "imports",
@@ -6330,9 +6330,9 @@
       "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_counterstrafe_ad_v1_test_ts",
-      "target": "sim_targetmanager_createtargetmanager",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_createtargetmanager"
     },
     {
       "relation": "imports_from",
@@ -6341,9 +6341,9 @@
       "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_counterstrafe_ad_v1_test_ts",
-      "target": "src_drill_drillloader_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillloader_ts"
     },
     {
       "relation": "imports",
@@ -6352,9 +6352,9 @@
       "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_counterstrafe_ad_v1_test_ts",
-      "target": "drill_drillloader_loaddrill",
-      "confidence_score": 1.0
+      "target": "drill_drillloader_loaddrill"
     },
     {
       "relation": "imports_from",
@@ -6363,9 +6363,9 @@
       "source_file": "src/drill/DrillConfig.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillconfig_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "imports_from",
@@ -6374,9 +6374,9 @@
       "source_file": "src/drill/DrillLoader.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillloader_ts",
-      "target": "src_drill_drillconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillconfig_ts"
     },
     {
       "relation": "imports_from",
@@ -6385,9 +6385,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "src_drill_drillconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillconfig_ts"
     },
     {
       "relation": "imports_from",
@@ -6396,9 +6396,9 @@
       "source_file": "src/drill/DrillRunner.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_ts",
-      "target": "src_drill_drillconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillconfig_ts"
     },
     {
       "relation": "imports_from",
@@ -6407,9 +6407,9 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_test_ts",
-      "target": "src_drill_drillconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillconfig_ts"
     },
     {
       "relation": "imports_from",
@@ -6418,9 +6418,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "src_drill_drillconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillconfig_ts"
     },
     {
       "relation": "imports_from",
@@ -6429,9 +6429,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "src_drill_drillconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillconfig_ts"
     },
     {
       "relation": "imports_from",
@@ -6440,9 +6440,9 @@
       "source_file": "src/sim/TargetManager.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_ts",
-      "target": "src_drill_drillconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillconfig_ts"
     },
     {
       "relation": "imports_from",
@@ -6451,9 +6451,9 @@
       "source_file": "src/drill/DrillLoader.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillloader_test_ts",
-      "target": "src_drill_drillloader_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillloader_ts"
     },
     {
       "relation": "imports",
@@ -6462,9 +6462,9 @@
       "source_file": "src/drill/DrillLoader.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillloader_test_ts",
-      "target": "drill_drillloader_loaddrill",
-      "confidence_score": 1.0
+      "target": "drill_drillloader_loaddrill"
     },
     {
       "relation": "imports_from",
@@ -6473,9 +6473,9 @@
       "source_file": "src/drill/DrillLoader.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillloader_ts",
-      "target": "src_drill_schema_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_schema_ts"
     },
     {
       "relation": "imports",
@@ -6484,9 +6484,9 @@
       "source_file": "src/drill/DrillLoader.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillloader_ts",
-      "target": "drill_schema_validatedrill",
-      "confidence_score": 1.0
+      "target": "drill_schema_validatedrill"
     },
     {
       "relation": "contains",
@@ -6494,9 +6494,9 @@
       "source_file": "src/drill/DrillLoader.ts",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillloader_ts",
-      "target": "drill_drillloader_loaddrill",
-      "confidence_score": 1.0
+      "target": "drill_drillloader_loaddrill"
     },
     {
       "relation": "calls",
@@ -6516,9 +6516,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "src_loop_clock_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_clock_ts"
     },
     {
       "relation": "imports_from",
@@ -6527,9 +6527,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "src_loop_constants_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_constants_ts"
     },
     {
       "relation": "imports_from",
@@ -6538,9 +6538,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "src_loop_simloop_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_simloop_ts"
     },
     {
       "relation": "imports",
@@ -6549,9 +6549,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "loop_simloop_createsimloop",
-      "confidence_score": 1.0
+      "target": "loop_simloop_createsimloop"
     },
     {
       "relation": "imports_from",
@@ -6560,9 +6560,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -6571,9 +6571,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -6582,9 +6582,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "src_sim_targetmanager_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_targetmanager_ts"
     },
     {
       "relation": "imports",
@@ -6593,9 +6593,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "sim_targetmanager_createtargetmanager",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_createtargetmanager"
     },
     {
       "relation": "imports_from",
@@ -6604,9 +6604,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "src_drill_drillrunner_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillrunner_ts"
     },
     {
       "relation": "imports",
@@ -6615,9 +6615,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "drill_drillrunner_createdrillrunner",
-      "confidence_score": 1.0
+      "target": "drill_drillrunner_createdrillrunner"
     },
     {
       "relation": "contains",
@@ -6625,9 +6625,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "drill_drillrunner_test_makeconfig",
-      "confidence_score": 1.0
+      "target": "drill_drillrunner_test_makeconfig"
     },
     {
       "relation": "contains",
@@ -6635,9 +6635,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L26",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "drill_drillrunner_test_setup",
-      "confidence_score": 1.0
+      "target": "drill_drillrunner_test_setup"
     },
     {
       "relation": "contains",
@@ -6645,9 +6645,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "drill_drillrunner_test_fixedclock",
-      "confidence_score": 1.0
+      "target": "drill_drillrunner_test_fixedclock"
     },
     {
       "relation": "contains",
@@ -6655,9 +6655,9 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L39",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_test_ts",
-      "target": "drill_drillrunner_test_killcurrenttarget",
-      "confidence_score": 1.0
+      "target": "drill_drillrunner_test_killcurrenttarget"
     },
     {
       "relation": "calls",
@@ -6699,9 +6699,9 @@
       "source_file": "src/drill/DrillRunner.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -6710,9 +6710,9 @@
       "source_file": "src/drill/DrillRunner.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_ts",
-      "target": "state_sharedstate_resetstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_resetstate"
     },
     {
       "relation": "imports_from",
@@ -6721,9 +6721,9 @@
       "source_file": "src/drill/DrillRunner.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_ts",
-      "target": "src_sim_targetmanager_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_targetmanager_ts"
     },
     {
       "relation": "contains",
@@ -6731,9 +6731,9 @@
       "source_file": "src/drill/DrillRunner.ts",
       "source_location": "L40",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_drillrunner_ts",
-      "target": "drill_drillrunner_createdrillrunner",
-      "confidence_score": 1.0
+      "target": "drill_drillrunner_createdrillrunner"
     },
     {
       "relation": "imports_from",
@@ -6742,9 +6742,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_drill_drillrunner_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillrunner_ts"
     },
     {
       "relation": "imports_from",
@@ -6753,9 +6753,9 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_test_ts",
-      "target": "src_drill_schema_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_schema_ts"
     },
     {
       "relation": "imports",
@@ -6764,9 +6764,9 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_test_ts",
-      "target": "drill_schema_validatedrill",
-      "confidence_score": 1.0
+      "target": "drill_schema_validatedrill"
     },
     {
       "relation": "contains",
@@ -6774,9 +6774,9 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_test_ts",
-      "target": "drill_schema_test_minimalvalid",
-      "confidence_score": 1.0
+      "target": "drill_schema_test_minimalvalid"
     },
     {
       "relation": "imports_from",
@@ -6785,9 +6785,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "contains",
@@ -6795,9 +6795,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "drill_schema_validatedrill",
-      "confidence_score": 1.0
+      "target": "drill_schema_validatedrill"
     },
     {
       "relation": "contains",
@@ -6805,9 +6805,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L70",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "drill_schema_validatemotion",
-      "confidence_score": 1.0
+      "target": "drill_schema_validatemotion"
     },
     {
       "relation": "contains",
@@ -6815,9 +6815,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L101",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "drill_schema_err",
-      "confidence_score": 1.0
+      "target": "drill_schema_err"
     },
     {
       "relation": "contains",
@@ -6825,9 +6825,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L105",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "drill_schema_requireobject",
-      "confidence_score": 1.0
+      "target": "drill_schema_requireobject"
     },
     {
       "relation": "contains",
@@ -6835,9 +6835,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L112",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "drill_schema_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirefinitenumber"
     },
     {
       "relation": "contains",
@@ -6845,9 +6845,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L117",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "drill_schema_requirenonnegativenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirenonnegativenumber"
     },
     {
       "relation": "contains",
@@ -6855,9 +6855,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L123",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "drill_schema_requirepositivenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirepositivenumber"
     },
     {
       "relation": "contains",
@@ -6865,9 +6865,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L129",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_drill_schema_ts",
-      "target": "drill_schema_requirepositiveint",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirepositiveint"
     },
     {
       "relation": "calls",
@@ -6876,9 +6876,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatedrill",
-      "target": "drill_schema_requireobject",
-      "confidence_score": 1.0
+      "target": "drill_schema_requireobject"
     },
     {
       "relation": "calls",
@@ -6887,9 +6887,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatedrill",
-      "target": "drill_schema_err",
-      "confidence_score": 1.0
+      "target": "drill_schema_err"
     },
     {
       "relation": "calls",
@@ -6898,9 +6898,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatedrill",
-      "target": "drill_schema_requirepositiveint",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirepositiveint"
     },
     {
       "relation": "calls",
@@ -6909,9 +6909,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L26",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatedrill",
-      "target": "drill_schema_requirepositivenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirepositivenumber"
     },
     {
       "relation": "calls",
@@ -6920,9 +6920,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatedrill",
-      "target": "drill_schema_validatemotion",
-      "confidence_score": 1.0
+      "target": "drill_schema_validatemotion"
     },
     {
       "relation": "calls",
@@ -6931,9 +6931,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatedrill",
-      "target": "drill_schema_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirefinitenumber"
     },
     {
       "relation": "calls",
@@ -6942,9 +6942,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L39",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatedrill",
-      "target": "drill_schema_requirenonnegativenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirenonnegativenumber"
     },
     {
       "relation": "calls",
@@ -6953,9 +6953,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L71",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatemotion",
-      "target": "drill_schema_requireobject",
-      "confidence_score": 1.0
+      "target": "drill_schema_requireobject"
     },
     {
       "relation": "calls",
@@ -6964,9 +6964,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L74",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatemotion",
-      "target": "drill_schema_err",
-      "confidence_score": 1.0
+      "target": "drill_schema_err"
     },
     {
       "relation": "calls",
@@ -6975,9 +6975,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L77",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_validatemotion",
-      "target": "drill_schema_requirepositivenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirepositivenumber"
     },
     {
       "relation": "calls",
@@ -6986,9 +6986,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L107",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_requireobject",
-      "target": "drill_schema_err",
-      "confidence_score": 1.0
+      "target": "drill_schema_err"
     },
     {
       "relation": "calls",
@@ -6997,9 +6997,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L113",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_requirefinitenumber",
-      "target": "drill_schema_err",
-      "confidence_score": 1.0
+      "target": "drill_schema_err"
     },
     {
       "relation": "calls",
@@ -7008,9 +7008,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L119",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_requirenonnegativenumber",
-      "target": "drill_schema_err",
-      "confidence_score": 1.0
+      "target": "drill_schema_err"
     },
     {
       "relation": "calls",
@@ -7019,9 +7019,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L125",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_requirepositivenumber",
-      "target": "drill_schema_err",
-      "confidence_score": 1.0
+      "target": "drill_schema_err"
     },
     {
       "relation": "calls",
@@ -7030,9 +7030,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L131",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_requirepositiveint",
-      "target": "drill_schema_err",
-      "confidence_score": 1.0
+      "target": "drill_schema_err"
     },
     {
       "relation": "calls",
@@ -7041,9 +7041,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L118",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_requirenonnegativenumber",
-      "target": "drill_schema_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirefinitenumber"
     },
     {
       "relation": "calls",
@@ -7052,9 +7052,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L124",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_requirepositivenumber",
-      "target": "drill_schema_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirefinitenumber"
     },
     {
       "relation": "calls",
@@ -7063,9 +7063,9 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L130",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "drill_schema_requirepositiveint",
-      "target": "drill_schema_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "drill_schema_requirefinitenumber"
     },
     {
       "relation": "imports_from",
@@ -7503,9 +7503,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "src_loop_clock_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_clock_ts"
     },
     {
       "relation": "imports_from",
@@ -7536,9 +7536,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "src_loop_constants_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_constants_ts"
     },
     {
       "relation": "imports_from",
@@ -7547,9 +7547,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "src_loop_constants_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_constants_ts"
     },
     {
       "relation": "imports_from",
@@ -7558,9 +7558,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "src_loop_constants_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_constants_ts"
     },
     {
       "relation": "imports_from",
@@ -7720,9 +7720,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_sim_targetmanager_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_targetmanager_ts"
     },
     {
       "relation": "imports_from",
@@ -7731,9 +7731,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_sim_hitdetector_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_hitdetector_ts"
     },
     {
       "relation": "imports",
@@ -7742,9 +7742,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "sim_hitdetector_raycastfromcenter",
-      "confidence_score": 1.0
+      "target": "sim_hitdetector_raycastfromcenter"
     },
     {
       "relation": "imports_from",
@@ -7753,9 +7753,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_sim_firstshot_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_firstshot_ts"
     },
     {
       "relation": "imports",
@@ -7764,9 +7764,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "sim_firstshot_currentpeekid",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_currentpeekid"
     },
     {
       "relation": "imports",
@@ -7775,9 +7775,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "sim_firstshot_firstshotgate",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_firstshotgate"
     },
     {
       "relation": "imports_from",
@@ -7786,9 +7786,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_sim_movementcontroller_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_movementcontroller_ts"
     },
     {
       "relation": "imports",
@@ -7797,9 +7797,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "sim_movementcontroller_createmovementcontroller",
-      "confidence_score": 1.0
+      "target": "sim_movementcontroller_createmovementcontroller"
     },
     {
       "relation": "imports_from",
@@ -7860,9 +7860,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "src_loop_simloop_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_simloop_ts"
     },
     {
       "relation": "imports_from",
@@ -7871,9 +7871,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "src_loop_simloop_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_simloop_ts"
     },
     {
       "relation": "imports_from",
@@ -7882,9 +7882,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "src_loop_simloop_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_simloop_ts"
     },
     {
       "relation": "calls",
@@ -7926,9 +7926,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "loop_simloop_simstep",
-      "confidence_score": 1.0
+      "target": "loop_simloop_simstep"
     },
     {
       "relation": "imports",
@@ -7937,9 +7937,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "loop_simloop_simstep",
-      "confidence_score": 1.0
+      "target": "loop_simloop_simstep"
     },
     {
       "relation": "imports",
@@ -7959,9 +7959,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "loop_simloop_createsimloop",
-      "confidence_score": 1.0
+      "target": "loop_simloop_createsimloop"
     },
     {
       "relation": "calls",
@@ -8340,9 +8340,9 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_targetview_test_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "imports_from",
@@ -8351,9 +8351,9 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_targetview_test_ts",
-      "target": "src_render_targetview_ts",
-      "confidence_score": 1.0
+      "target": "src_render_targetview_ts"
     },
     {
       "relation": "imports",
@@ -8362,9 +8362,9 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_targetview_test_ts",
-      "target": "render_targetview_targetview",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview"
     },
     {
       "relation": "contains",
@@ -8372,9 +8372,9 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_targetview_test_ts",
-      "target": "render_targetview_test_target",
-      "confidence_score": 1.0
+      "target": "render_targetview_test_target"
     },
     {
       "relation": "contains",
@@ -8382,9 +8382,9 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_targetview_test_ts",
-      "target": "render_targetview_test_meshes",
-      "confidence_score": 1.0
+      "target": "render_targetview_test_meshes"
     },
     {
       "relation": "imports_from",
@@ -8393,9 +8393,9 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_targetview_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "contains",
@@ -8403,9 +8403,9 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_targetview_ts",
-      "target": "render_targetview_targetview",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview"
     },
     {
       "relation": "method",
@@ -8413,9 +8413,9 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_targetview_targetview",
-      "target": "render_targetview_targetview_constructor",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview_constructor"
     },
     {
       "relation": "method",
@@ -8423,9 +8423,9 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_targetview_targetview",
-      "target": "render_targetview_targetview_sync",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview_sync"
     },
     {
       "relation": "method",
@@ -8433,9 +8433,9 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L60",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_targetview_targetview",
-      "target": "render_targetview_targetview_poolsize",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview_poolsize"
     },
     {
       "relation": "method",
@@ -8443,9 +8443,9 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L65",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_targetview_targetview",
-      "target": "render_targetview_targetview_acquire",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview_acquire"
     },
     {
       "relation": "method",
@@ -8453,9 +8453,9 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L76",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_targetview_targetview",
-      "target": "render_targetview_targetview_dispose",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview_dispose"
     },
     {
       "relation": "calls",
@@ -8464,9 +8464,9 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L48",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_targetview_targetview_sync",
-      "target": "render_targetview_targetview_acquire",
-      "confidence_score": 1.0
+      "target": "render_targetview_targetview_acquire"
     },
     {
       "relation": "imports_from",
@@ -8475,9 +8475,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -8486,9 +8486,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -8497,9 +8497,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "imports_from",
@@ -8508,9 +8508,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "src_sim_firstshot_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_firstshot_ts"
     },
     {
       "relation": "imports",
@@ -8519,9 +8519,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "sim_firstshot_currentpeekid",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_currentpeekid"
     },
     {
       "relation": "imports",
@@ -8530,9 +8530,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "sim_firstshot_firstshotgate",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_firstshotgate"
     },
     {
       "relation": "contains",
@@ -8540,9 +8540,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "sim_firstshot_test_maketarget",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_test_maketarget"
     },
     {
       "relation": "contains",
@@ -8550,9 +8550,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "sim_firstshot_test_cameralookingdownz",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_test_cameralookingdownz"
     },
     {
       "relation": "contains",
@@ -8560,9 +8560,9 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L83",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_test_ts",
-      "target": "sim_firstshot_test_maketargetmanager",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_test_maketargetmanager"
     },
     {
       "relation": "imports_from",
@@ -8571,9 +8571,9 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "contains",
@@ -8581,9 +8581,9 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_ts",
-      "target": "sim_firstshot_currentpeekid",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_currentpeekid"
     },
     {
       "relation": "contains",
@@ -8591,9 +8591,9 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_firstshot_ts",
-      "target": "sim_firstshot_firstshotgate",
-      "confidence_score": 1.0
+      "target": "sim_firstshot_firstshotgate"
     },
     {
       "relation": "imports_from",
@@ -8602,9 +8602,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -8613,9 +8613,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -8624,9 +8624,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "imports_from",
@@ -8635,9 +8635,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "src_sim_hitdetector_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_hitdetector_ts"
     },
     {
       "relation": "imports",
@@ -8646,9 +8646,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "sim_hitdetector_raycastfromcenter",
-      "confidence_score": 1.0
+      "target": "sim_hitdetector_raycastfromcenter"
     },
     {
       "relation": "contains",
@@ -8656,9 +8656,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "sim_hitdetector_test_cameralookingdownz",
-      "confidence_score": 1.0
+      "target": "sim_hitdetector_test_cameralookingdownz"
     },
     {
       "relation": "contains",
@@ -8666,9 +8666,9 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_test_ts",
-      "target": "sim_hitdetector_test_maketarget",
-      "confidence_score": 1.0
+      "target": "sim_hitdetector_test_maketarget"
     },
     {
       "relation": "imports_from",
@@ -8677,9 +8677,9 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "contains",
@@ -8687,9 +8687,9 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L41",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_hitdetector_ts",
-      "target": "sim_hitdetector_raycastfromcenter",
-      "confidence_score": 1.0
+      "target": "sim_hitdetector_raycastfromcenter"
     },
     {
       "relation": "imports_from",
@@ -8698,9 +8698,9 @@
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_movementcontroller_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -8709,9 +8709,9 @@
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_movementcontroller_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -8720,9 +8720,9 @@
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_movementcontroller_test_ts",
-      "target": "src_sim_movementcontroller_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_movementcontroller_ts"
     },
     {
       "relation": "imports",
@@ -8731,9 +8731,9 @@
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_movementcontroller_test_ts",
-      "target": "sim_movementcontroller_createmovementcontroller",
-      "confidence_score": 1.0
+      "target": "sim_movementcontroller_createmovementcontroller"
     },
     {
       "relation": "contains",
@@ -8741,9 +8741,9 @@
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L56",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_movementcontroller_test_ts",
-      "target": "sim_movementcontroller_test_run",
-      "confidence_score": 1.0
+      "target": "sim_movementcontroller_test_run"
     },
     {
       "relation": "calls",
@@ -8774,9 +8774,9 @@
       "source_file": "src/sim/MovementController.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_movementcontroller_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "contains",
@@ -8784,9 +8784,9 @@
       "source_file": "src/sim/MovementController.ts",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_movementcontroller_ts",
-      "target": "sim_movementcontroller_createmovementcontroller",
-      "confidence_score": 1.0
+      "target": "sim_movementcontroller_createmovementcontroller"
     },
     {
       "relation": "imports_from",
@@ -8795,9 +8795,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -8806,9 +8806,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -8817,9 +8817,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "src_sim_targetmanager_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_targetmanager_ts"
     },
     {
       "relation": "imports",
@@ -8828,9 +8828,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "sim_targetmanager_createtargetmanager",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_createtargetmanager"
     },
     {
       "relation": "contains",
@@ -8838,9 +8838,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "sim_targetmanager_test_fixedclock",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_test_fixedclock"
     },
     {
       "relation": "contains",
@@ -8848,9 +8848,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L104",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "sim_targetmanager_test_killsequence",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_test_killsequence"
     },
     {
       "relation": "contains",
@@ -8858,9 +8858,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L168",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "sim_targetmanager_test_config",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_test_config"
     },
     {
       "relation": "contains",
@@ -8868,9 +8868,9 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L183",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_test_ts",
-      "target": "sim_targetmanager_test_rundrill",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_test_rundrill"
     },
     {
       "relation": "calls",
@@ -8923,9 +8923,9 @@
       "source_file": "src/sim/TargetManager.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "contains",
@@ -8933,9 +8933,9 @@
       "source_file": "src/sim/TargetManager.ts",
       "source_location": "L47",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_ts",
-      "target": "sim_targetmanager_sidex",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_sidex"
     },
     {
       "relation": "contains",
@@ -8943,9 +8943,9 @@
       "source_file": "src/sim/TargetManager.ts",
       "source_location": "L60",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_targetmanager_ts",
-      "target": "sim_targetmanager_createtargetmanager",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_createtargetmanager"
     },
     {
       "relation": "imports_from",
@@ -9188,9 +9188,9 @@
       "source_file": "src/ui/Crosshair.ts",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_ui_crosshair_ts",
-      "target": "ui_crosshair_createcrosshair",
-      "confidence_score": 1.0
+      "target": "ui_crosshair_createcrosshair"
     },
     {
       "relation": "contains",
@@ -9198,9 +9198,9 @@
       "source_file": "src/ui/Crosshair.ts",
       "source_location": "L62",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_ui_crosshair_ts",
-      "target": "ui_crosshair_makearm",
-      "confidence_score": 1.0
+      "target": "ui_crosshair_makearm"
     },
     {
       "relation": "calls",
@@ -9209,9 +9209,9 @@
       "source_file": "src/ui/Crosshair.ts",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ui_crosshair_createcrosshair",
-      "target": "ui_crosshair_makearm",
-      "confidence_score": 1.0
+      "target": "ui_crosshair_makearm"
     },
     {
       "relation": "contains",
@@ -9332,9 +9332,9 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_e2e_input_sampler_spec_ts",
-      "target": "e2e_input_sampler_spec_gotoappready",
-      "confidence_score": 1.0
+      "target": "e2e_input_sampler_spec_gotoappready"
     },
     {
       "relation": "contains",
@@ -9342,9 +9342,9 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L42",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_e2e_input_sampler_spec_ts",
-      "target": "e2e_input_sampler_spec_vx",
-      "confidence_score": 1.0
+      "target": "e2e_input_sampler_spec_vx"
     },
     {
       "relation": "contains",
@@ -9352,9 +9352,9 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L43",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_e2e_input_sampler_spec_ts",
-      "target": "e2e_input_sampler_spec_x",
-      "confidence_score": 1.0
+      "target": "e2e_input_sampler_spec_x"
     },
     {
       "relation": "references",
@@ -15085,5 +15085,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "9cc571c98d2c2445201d770757a568bb77735512"
+  "built_at_commit": "16837d12096bb65f142770cd12381ef4c0f38265"
 }
