@@ -4,7 +4,7 @@
 
 | Done | Task | File | Depends on | Risk |
 |------|------|------|------------|------|
-| ⬜ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-4, WP-5 | Low |
+| ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-4, WP-5 | Low |
 | ⬜ | **T1** DrillConfig schema | [T1-drill-config.md](T1-drill-config.md) | T0 | Low |
 | ⬜ | **T2** Drill 載入器（驅動 TargetManager） | [T2-drill-loader.md](T2-drill-loader.md) | T1 | Med |
 | ⬜ | **T3** Counter-strafe drill 檔 | [T3-counterstrafe-drill.md](T3-counterstrafe-drill.md) | T2 | Low |
