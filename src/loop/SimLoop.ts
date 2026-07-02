@@ -3,6 +3,7 @@ import { consume } from '../input/consume.ts';
 import type { SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
 import { raycastFromCenter } from '../sim/HitDetector.ts';
+import { currentPeekId, firstShotGate } from '../sim/firstShot.ts';
 import type { InputEvent } from '../state/types.ts';
 import type { Clock } from './clock.ts';
 
@@ -42,9 +43,19 @@ function applyInput(
     if (ev.code === 'KeyD') state.player.vx = ev.down ? PLACEHOLDER_STRAFE_SPEED : 0;
     else if (ev.code === 'KeyA') state.player.vx = ev.down ? -PLACEHOLDER_STRAFE_SPEED : 0;
   } else if (ev.type === 'fire' && camera !== undefined && targetManager !== undefined) {
-    // 開火：camera 中心射線 → 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。首發/精準 gate 屬 T2/T4。
+    // 開火：首發旗標**先於命中判定**——peek 錨為 fire 當下的 active 目標；命中即擊殺會撤除該目標、
+    // 換 peek，故 firstShot 須在 markKilled 之前對「當前 peek」判定（FR-5.2，OQ-5.3）。未命中亦計首發
+    // （P2：未命中可補槍，首發＝peek 內第一個 fire，無論中否）。
+    const peekId = currentPeekId(state);
+    const firstShot = peekId !== undefined ? firstShotGate(state, peekId) : false;
+
+    // camera 中心射線 → 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。精準 gate（stopped）屬 T4。
     const { hit, targetId } = raycastFromCenter(camera, state.targets);
     if (hit && targetId !== undefined) targetManager.markKilled(state, targetId);
+
+    // fire 結果事件（含 firstShot / accurate / residualSpeed）產出 → WP-7 記錄 / WP-8 統計；
+    // 本 WP 只判定旗標（旗標記憶已寫入 state.firstShotPeekId，供整合測試觀察）。
+    void firstShot;
   }
 }
 

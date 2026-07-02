@@ -10,7 +10,7 @@
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-02）— WP-3/4 exit 綠燈確認、OQ-5.1~5.4 鎖定 |
 | T1 HitDetector | ✅ 完成（2026-07-02）— camera 中心射線命中 + 第一次命中即擊殺（FR-5.1，OQ-5.4）|
-| T2 首發判定 | ⬜ 待執行 |
+| T2 首發判定 | ✅ 完成（2026-07-02）— 每 peek 首發旗標，掃射不稀釋（FR-5.2，OQ-5.3）|
 | T3 橫移 movement | ⬜ 待執行 |
 | T4 簡化急停 | ⬜ 待執行 |
 | T5 Exit gate（M2） | ⬜ 待執行 |
@@ -29,6 +29,15 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T2 首發判定 ✅
+- **新增** `src/sim/firstShot.ts`：`firstShotGate(state, peekId)`（每 peek 首次 true、其後 false）+ `currentPeekId(state)`（第一個 `visible && alive` 目標 id = peek 錨）。
+- **狀態** `SharedState.firstShotPeekId: string | null`（已計首發的 peekId；`createSharedState` 初始 `null`、`resetState` 歸零）。
+- **接線** `SimLoop.applyInput` fire 分支：**先於命中判定**算 `firstShot = firstShotGate(state, currentPeekId(state))`，再 raycast/`markKilled`——命中即擊殺會撤除目標換 peek，故首發須對「fire 當下 peek」判定。未命中亦計首發（P2 可補槍）。fire 結果事件（含 firstShot）產出留 WP-7（`void firstShot` 標記接縫）。
+- **測試**：`firstShot.test.ts` 8 例（gate 同 peek 三槍只首發 true、換 id 隱式 reset、旗標記憶欄位；`currentPeekId` 略過 dead/hidden、無 active→undefined；simStep 整合：連開未命中不換 peek、命中擊殺換 peek 後新 peek 又計首發）。`vitest run src` **86/86**、`tsc --noEmit` exit 0。
+- **Decision — 隱式 reset（peekId 唯一）而非顯式清旗標事件**：`TargetManager.markKilled` 撤除後對側 spawn **新 id**（`nextId++`），新 peek 必帶唯一 peekId，故 `firstShotGate` 只需比對「已計 peekId ≠ 新 peekId」即自動放行首發——無需在 `t_visible` 轉換點掛顯式 reset。*Alternatives*：①TargetManager 可見轉換時清 `firstShotPeekId`——多一處耦合、且需 firstShot 反向依賴 target 生命週期事件；②每 peek 存布林 + 綁 id——等價但多欄位。選單一 peekId 記憶最小狀態、天然決定性。
+- **Decision — peekId = active 目標 id 由 firstShot 模組推導**：`currentPeekId` 放 `firstShot.ts`（peek 為首發概念），caller（SimLoop）傳入 gate；README 契約 `firstShotGate(state, peekId)` 維持 peekId 顯式參數（可測、不與 target 內部耦合）。
+- **Next**：T3 橫移 movement（依 T0，可與本線並行）；T4 簡化急停（依 T3）將補 accurate/residualSpeed，與 firstShot 一同組成 fire 結果。
 
 ### 2026-07-02 — T1 HitDetector ✅
 - **新增** `src/sim/HitDetector.ts`：`raycastFromCenter(camera, targets)` — `Raycaster.setFromCamera(NDC(0,0), camera)` → 對 active（`visible && alive`）目標由 `TargetState.hitbox` 衍生 `Box3`、`ray.intersectBox` 求交、取**最近**命中 → `{hit, targetId?, part?}`。
