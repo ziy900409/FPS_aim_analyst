@@ -4,11 +4,11 @@
 
 ---
 
-## Status: 🟡 規劃完成，待執行（達成即 M2）
+## Status: 🟡 執行中（T0 ✅；達成即 M2）
 
 | Phase | State |
 |-------|-------|
-| T0 Entry gate | ⬜ 待執行 |
+| T0 Entry gate | ✅ 完成（2026-07-02）— WP-3/4 exit 綠燈確認、OQ-5.1~5.4 鎖定 |
 | T1 HitDetector | ⬜ 待執行 |
 | T2 首發判定 | ⬜ 待執行 |
 | T3 橫移 movement | ⬜ 待執行 |
@@ -29,6 +29,14 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T0 Entry gate ✅
+- **上游 exit 綠燈確認**：WP-3（PR #1）、WP-4（PR #2）皆已合併入 `origin/main`（f530210）。WP-4 progress 記 F2 全綠（五軸 review Approve、`tsc` exit 0、`vitest run src` 43/43）。
+- **base 銜接**：WP-5 branch rebase 到 `origin/main`，取得 `TargetManager`（`markKilled`/`t_visible`/H1 hitbox）、`TargetState`、`TargetView`、`Crosshair`、`SimLoop`（target-motion slot + 佔位 strafe velocity）。
+- **就緒契約**：`SharedState.player{vx,vz,x,z}`、`tVisible: Map<id,ms>`、`targets: TargetState[]`；fire 事件型別 `{type:'fire',t}` 已在 ring（`EV_FIRE`），WP-5 在 `consume` 串流該點 inline raycast。
+- **OQ-5.1~5.4 鎖定**（見上 ledger），與 CONTEXT.md `HitDetector`(H1) / `MovementController`(M1 snap) / 首發(peek 錨) / residualSpeed(階段 A 二元) 一致。
+- **Surprise**：main 上 WP-4 其實已由 PR #2 合併（本機 main 曾落後）；rebase 到 `origin/main` 後 base 完整，entry gate PASS。
+- **Next**：T1 HitDetector 與 T3 MovementController 可並行（皆僅依 T0）。
 
 ### （規劃）— WP-5 計畫產出
 - 依 PLAN WP-5（5.1–5.4）+ 規格 §5 + F3 展開為 T0–T5。

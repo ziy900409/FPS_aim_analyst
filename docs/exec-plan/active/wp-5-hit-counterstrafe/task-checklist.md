@@ -4,7 +4,7 @@
 
 | Done | Task | File | Depends on | Risk |
 |------|------|------|------------|------|
-| ⬜ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-3, WP-4 | Low |
+| ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-3, WP-4 | Low |
 | ⬜ | **T1** HitDetector（Raycaster + 部位） | [T1-hit-detector.md](T1-hit-detector.md) | T0 | Med |
 | ⬜ | **T2** 首發判定 | [T2-first-shot.md](T2-first-shot.md) | T1 | Med |
 | ⬜ | **T3** A/D 橫移 movement | [T3-strafe-movement.md](T3-strafe-movement.md) | T0 | Med |
