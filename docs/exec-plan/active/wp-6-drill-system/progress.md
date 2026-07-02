@@ -4,14 +4,14 @@
 
 ---
 
-## Status: 🟡 執行中（T2 ✅）
+## Status: 🟡 執行中（T3 ✅）
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-02） |
 | T1 DrillConfig schema | ✅ 完成（2026-07-02） |
 | T2 Drill 載入器 | ✅ 完成（2026-07-02） |
-| T3 Counter-strafe drill 檔 | ⬜ 待執行 |
+| T3 Counter-strafe drill 檔 | ✅ 完成（2026-07-02） |
 | T4 Drill 生命週期 | ⬜ 待執行 |
 | T5 Exit gate | ⬜ 待執行 |
 
@@ -29,6 +29,15 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T3 Counter-strafe drill 設定檔（FR-6.3）✅
+- **產出**：`drills/counterstrafe_ad_v1.json`（範例 drill）；`src/drill/counterstrafe_ad_v1.test.ts`（3 tests，端到端可玩性驗證）；MODIFY `tsconfig.json`（`resolveJsonModule: true`）。
+- **驗證**：`vitest run` 126 passed（+3 新）；`tsc --noEmit` 綠燈。端到端斷言:import JSON → `loadDrill` 驗證通過（`drillId='counterstrafe_ad_v1'` 對齊附錄 C）→ 驅動 `createTargetManager` 跑滿一輪 = 恰 20 個目標、首側 L、嚴格 L↔R 交替。
+- **Decision — `distance: 4` 而非 T3 範本的 `8`**：T3 範本 JSON 寫 `distance: 8`,但 `TargetManager.ts:35-39` 註明 WP-5 T1 手動驗證發現 **distance 8 → z=-8 落在佔位房間北牆（z=-5）後方被遮擋**,故預設改為 4（z=-4,房間內、camera 前方）。DoD 要求「可端到端遊玩」,遮擋的目標不可玩,故採實測可玩的 4。範本數值本即標註「佔位,pilot 校準」。*Alternatives*：忠於範本 8（目標被牆遮,不可玩,違 DoD）；擴大 `roomSize` 房間深度（越界改 render 佔位,違 T3 範圍「NEW 僅 drills JSON」）。
+- **Decision — 用 schema 欄位 `spawnDelayMs` 取代 T3 範本的 `interTargetMs`**：T3 範本 JSON 寫 `interTargetMs: 0`,但該欄位不存在於 `DrillConfig`/`validateDrill`——正規欄位為 `spawnDelayMs`（README §2 interface + schema 一致）。counter-strafe 即時補生 → `spawnDelayMs: 0`。若沿用 `interTargetMs` 會被驗證器忽略（未知欄位）、語意落空。
+- **Decision — `resolveJsonModule: true` + Vite JSON import 驗證**：本專案無 `@types/node`（DOM-only lib）,故測試不能 `node:fs` 讀檔。改用 Vite 原生 JSON import（即 `main.ts` 未來載 drill 的路徑）,需 tsconfig `resolveJsonModule`。*Alternatives*：加 `@types/node` + `node:fs`（引入 devDep,scope creep）；把 JSON 內容 inline 進測試（不驗證磁碟上的交付檔,違 DoD）。
+- **Surprise — T3 範本 JSON 與現行 schema/實測有兩處不一致**（`distance:8`、`interTargetMs`）：範本寫於 T1 前的 README 規劃期,T1/T2 定案後欄位名與 WP-5 房間佔位已演進。已於本 task 對齊實況,不回改範本（範本本標註佔位）。
+- **Next**：**T4** Drill 生命週期（[T4-lifecycle.md](T4-lifecycle.md)）— idle→countdown→running→ended + restart 全 reset。
 
 ### 2026-07-02 — T2 Drill 載入器（config 驅動 TargetManager）✅
 - **產出**：`src/drill/DrillLoader.ts`（`loadDrill` 包 `validateDrill`）、`src/drill/DrillLoader.test.ts`（5 tests）；MODIFY `src/sim/TargetManager.ts`（`createTargetManager(config?)` 由 config 驅動）、`TargetManager.test.ts`（+7 config 驅動 tests，含兩 config 解耦驗收）。

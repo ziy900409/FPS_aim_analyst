@@ -1,0 +1,7 @@
+{
+  "drillId": "counterstrafe_ad_v1",
+  "targets": { "count": 20, "distance": 4 },
+  "sequence": { "alternation": "LR", "seed": 1 },
+  "timing": { "countdownMs": 3000, "spawnDelayMs": 0 },
+  "endCondition": { "type": "targetCount", "value": 20 }
+}
