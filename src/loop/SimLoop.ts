@@ -5,6 +5,7 @@ import type { TargetManager } from '../sim/TargetManager.ts';
 import { raycastFromCenter } from '../sim/HitDetector.ts';
 import { currentPeekId, firstShotGate } from '../sim/firstShot.ts';
 import { createMovementController, type MovementController } from '../sim/MovementController.ts';
+import type { DrillRunner } from '../drill/DrillRunner.ts';
 import type { InputEvent } from '../state/types.ts';
 import type { Clock } from './clock.ts';
 
@@ -77,6 +78,9 @@ function applyInput(
  * `targetManager` 選填：注入即在 tick 內推進目標（WP-4）；省略則維持純位移（WP-2 決定性測試路徑）。
  * `camera` 選填：注入即在 fire 事件處理命中判定（WP-5 T1）；省略則 fire 為 no-op（決定性測試路徑）。
  * `movement` 預設共用 `defaultMovement`；`createSimLoop` 綁定自己的實例（WP-6 vStrafe config seam）。
+ * `drillRunner` 選填（WP-6 / T4）：注入即由 runner 在 running 相位驅動目標（countdown/idle/ended
+ * 不 spawn）——**取代**本函式直呼 `targetManager.tick`（避免雙重 tick）；省略則沿用 WP-4 直驅路徑。
+ * 注意：fire→markKilled 仍走 `targetManager`（同一實例），故 `targetManager` 與 `drillRunner` 併傳。
  */
 export function simStep(
   state: SharedState,
@@ -86,13 +90,16 @@ export function simStep(
   camera?: THREE.Camera,
   movement: MovementController = defaultMovement,
   handle: (ev: InputEvent) => void = (ev) => applyInput(state, ev, camera, targetManager),
+  drillRunner?: DrillRunner,
 ): void {
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
 
   // 目標 spawn/可見性/蓋 t_visible：在命中判定（WP-5 fire raycast）之前，且時間源為 sim tick
   // 的 `tickEndMs`（量測時鐘域，非 rAF/Date.now）——反應時間效度關鍵（README failure-mode）。
-  targetManager?.tick(state, tickEndMs);
+  // WP-6 / T4：有 drillRunner 則由其相位機驅動目標（running 才 spawn）；否則 WP-4 直驅（向後相容）。
+  if (drillRunner !== undefined) drillRunner.tick(state, tickEndMs);
+  else targetManager?.tick(state, tickEndMs);
 
   // 半開窗 [tickStart, tickEndMs)、嚴格 `<`（GD-3）；handle 每個到期事件套用佔位狀態變更。
   // handle 由 createSimLoop **綁定一次**傳入(熱路徑零配置,GC 紀律 §4);直接呼叫(測試)走預設閉包。
@@ -121,6 +128,7 @@ export function createSimLoop(
   simHz: number,
   targetManager?: TargetManager,
   camera?: THREE.Camera,
+  drillRunner?: DrillRunner,
 ): SimLoop {
   const tickSec = 1 / simHz;
   const tickMs = 1000 / simHz;
@@ -143,7 +151,7 @@ export function createSimLoop(
       let ticks = 0;
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
-        simStep(state, tickSec, simTimeMs, targetManager, camera, movement, handleInput);
+        simStep(state, tickSec, simTimeMs, targetManager, camera, movement, handleInput, drillRunner);
         accSec -= tickSec;
         ticks++;
       }

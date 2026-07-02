@@ -248,7 +248,7 @@
       "source_file": "playwright.config.ts",
       "source_location": "L1",
       "id": "playwright_config_ts",
-      "community": 14,
+      "community": 13,
       "norm_label": "playwright.config.ts"
     },
     {
@@ -257,7 +257,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L1",
       "id": "vite_config_ts",
-      "community": 12,
+      "community": 11,
       "norm_label": "vite.config.ts"
     },
     {
@@ -266,7 +266,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L11",
       "id": "fps_aim_analyst_vite_config_coopcoep",
-      "community": 12,
+      "community": 11,
       "norm_label": "coopcoep()"
     },
     {
@@ -275,26 +275,242 @@
       "source_file": "src/main.ts",
       "source_location": "L1",
       "id": "src_main_ts",
-      "community": 1,
+      "community": 5,
       "norm_label": "main.ts"
     },
     {
       "label": "resize()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L31",
+      "source_location": "L37",
       "id": "src_main_resize",
-      "community": 1,
+      "community": 5,
       "norm_label": "resize()"
     },
     {
       "label": "updateLockHint()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L63",
+      "source_location": "L69",
       "id": "src_main_updatelockhint",
-      "community": 1,
+      "community": 5,
       "norm_label": "updatelockhint()"
+    },
+    {
+      "label": "vite-env.d.ts",
+      "file_type": "code",
+      "source_file": "src/vite-env.d.ts",
+      "source_location": "L1",
+      "id": "src_vite_env_d_ts",
+      "community": 14,
+      "norm_label": "vite-env.d.ts"
+    },
+    {
+      "label": "counterstrafe_ad_v1.test.ts",
+      "file_type": "code",
+      "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
+      "source_location": "L1",
+      "id": "src_drill_counterstrafe_ad_v1_test_ts",
+      "community": 9,
+      "norm_label": "counterstrafe_ad_v1.test.ts"
+    },
+    {
+      "label": "DrillConfig.ts",
+      "file_type": "code",
+      "source_file": "src/drill/DrillConfig.ts",
+      "source_location": "L1",
+      "id": "src_drill_drillconfig_ts",
+      "community": 0,
+      "norm_label": "drillconfig.ts"
+    },
+    {
+      "label": "DrillLoader.test.ts",
+      "file_type": "code",
+      "source_file": "src/drill/DrillLoader.test.ts",
+      "source_location": "L1",
+      "id": "src_drill_drillloader_test_ts",
+      "community": 9,
+      "norm_label": "drillloader.test.ts"
+    },
+    {
+      "label": "DrillLoader.ts",
+      "file_type": "code",
+      "source_file": "src/drill/DrillLoader.ts",
+      "source_location": "L1",
+      "id": "src_drill_drillloader_ts",
+      "community": 9,
+      "norm_label": "drillloader.ts"
+    },
+    {
+      "label": "loadDrill()",
+      "file_type": "code",
+      "source_file": "src/drill/DrillLoader.ts",
+      "source_location": "L19",
+      "id": "drill_drillloader_loaddrill",
+      "community": 9,
+      "norm_label": "loaddrill()"
+    },
+    {
+      "label": "DrillRunner.test.ts",
+      "file_type": "code",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L1",
+      "id": "src_drill_drillrunner_test_ts",
+      "community": 0,
+      "norm_label": "drillrunner.test.ts"
+    },
+    {
+      "label": "makeConfig()",
+      "file_type": "code",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L11",
+      "id": "drill_drillrunner_test_makeconfig",
+      "community": 0,
+      "norm_label": "makeconfig()"
+    },
+    {
+      "label": "setup()",
+      "file_type": "code",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L26",
+      "id": "drill_drillrunner_test_setup",
+      "community": 0,
+      "norm_label": "setup()"
+    },
+    {
+      "label": "fixedClock()",
+      "file_type": "code",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L34",
+      "id": "drill_drillrunner_test_fixedclock",
+      "community": 0,
+      "norm_label": "fixedclock()"
+    },
+    {
+      "label": "killCurrentTarget()",
+      "file_type": "code",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L39",
+      "id": "drill_drillrunner_test_killcurrenttarget",
+      "community": 0,
+      "norm_label": "killcurrenttarget()"
+    },
+    {
+      "label": "DrillRunner.ts",
+      "file_type": "code",
+      "source_file": "src/drill/DrillRunner.ts",
+      "source_location": "L1",
+      "id": "src_drill_drillrunner_ts",
+      "community": 0,
+      "norm_label": "drillrunner.ts"
+    },
+    {
+      "label": "createDrillRunner()",
+      "file_type": "code",
+      "source_file": "src/drill/DrillRunner.ts",
+      "source_location": "L40",
+      "id": "drill_drillrunner_createdrillrunner",
+      "community": 0,
+      "norm_label": "createdrillrunner()"
+    },
+    {
+      "label": "schema.test.ts",
+      "file_type": "code",
+      "source_file": "src/drill/schema.test.ts",
+      "source_location": "L1",
+      "id": "src_drill_schema_test_ts",
+      "community": 9,
+      "norm_label": "schema.test.ts"
+    },
+    {
+      "label": "minimalValid()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.test.ts",
+      "source_location": "L6",
+      "id": "drill_schema_test_minimalvalid",
+      "community": 9,
+      "norm_label": "minimalvalid()"
+    },
+    {
+      "label": "schema.ts",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L1",
+      "id": "src_drill_schema_ts",
+      "community": 9,
+      "norm_label": "schema.ts"
+    },
+    {
+      "label": "validateDrill()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L14",
+      "id": "drill_schema_validatedrill",
+      "community": 9,
+      "norm_label": "validatedrill()"
+    },
+    {
+      "label": "validateMotion()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L70",
+      "id": "drill_schema_validatemotion",
+      "community": 9,
+      "norm_label": "validatemotion()"
+    },
+    {
+      "label": "err()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L101",
+      "id": "drill_schema_err",
+      "community": 9,
+      "norm_label": "err()"
+    },
+    {
+      "label": "requireObject()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L105",
+      "id": "drill_schema_requireobject",
+      "community": 9,
+      "norm_label": "requireobject()"
+    },
+    {
+      "label": "requireFiniteNumber()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L112",
+      "id": "drill_schema_requirefinitenumber",
+      "community": 9,
+      "norm_label": "requirefinitenumber()"
+    },
+    {
+      "label": "requireNonNegativeNumber()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L117",
+      "id": "drill_schema_requirenonnegativenumber",
+      "community": 9,
+      "norm_label": "requirenonnegativenumber()"
+    },
+    {
+      "label": "requirePositiveNumber()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L123",
+      "id": "drill_schema_requirepositivenumber",
+      "community": 9,
+      "norm_label": "requirepositivenumber()"
+    },
+    {
+      "label": "requirePositiveInt()",
+      "file_type": "code",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L129",
+      "id": "drill_schema_requirepositiveint",
+      "community": 9,
+      "norm_label": "requirepositiveint()"
     },
     {
       "label": "consume.test.ts",
@@ -302,7 +518,7 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L1",
       "id": "src_input_consume_test_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "consume.test.ts"
     },
     {
@@ -311,7 +527,7 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L17",
       "id": "input_consume_test_key",
-      "community": 1,
+      "community": 0,
       "norm_label": "key()"
     },
     {
@@ -320,7 +536,7 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L25",
       "id": "input_consume_test_collector",
-      "community": 1,
+      "community": 0,
       "norm_label": "collector()"
     },
     {
@@ -329,7 +545,7 @@
       "source_file": "src/input/consume.ts",
       "source_location": "L1",
       "id": "src_input_consume_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "consume.ts"
     },
     {
@@ -338,7 +554,7 @@
       "source_file": "src/input/consume.ts",
       "source_location": "L33",
       "id": "input_consume_consume",
-      "community": 1,
+      "community": 0,
       "norm_label": "consume()"
     },
     {
@@ -347,7 +563,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L1",
       "id": "src_input_inputsampler_test_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "inputsampler.test.ts"
     },
     {
@@ -356,7 +572,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L14",
       "id": "input_inputsampler_test_makefaketarget",
-      "community": 1,
+      "community": 0,
       "norm_label": "makefaketarget()"
     },
     {
@@ -365,7 +581,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L35",
       "id": "input_inputsampler_test_keyevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "keyevent()"
     },
     {
@@ -374,7 +590,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L39",
       "id": "input_inputsampler_test_mouseevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "mouseevent()"
     },
     {
@@ -383,7 +599,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L44",
       "id": "input_inputsampler_test_coalescedsample",
-      "community": 1,
+      "community": 0,
       "norm_label": "coalescedsample()"
     },
     {
@@ -392,7 +608,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L52",
       "id": "input_inputsampler_test_pointermoveevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "pointermoveevent()"
     },
     {
@@ -401,7 +617,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L63",
       "id": "input_inputsampler_test_legacypointermoveevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "legacypointermoveevent()"
     },
     {
@@ -410,7 +626,7 @@
       "source_file": "src/input/InputSampler.ts",
       "source_location": "L1",
       "id": "src_input_inputsampler_ts",
-      "community": 1,
+      "community": 5,
       "norm_label": "inputsampler.ts"
     },
     {
@@ -419,7 +635,7 @@
       "source_file": "src/input/InputSampler.ts",
       "source_location": "L40",
       "id": "input_inputsampler_createinputsampler",
-      "community": 1,
+      "community": 5,
       "norm_label": "createinputsampler()"
     },
     {
@@ -428,7 +644,7 @@
       "source_file": "src/input/PointerLock.ts",
       "source_location": "L1",
       "id": "src_input_pointerlock_ts",
-      "community": 1,
+      "community": 5,
       "norm_label": "pointerlock.ts"
     },
     {
@@ -437,7 +653,7 @@
       "source_file": "src/input/PointerLock.ts",
       "source_location": "L33",
       "id": "input_pointerlock_createpointerlock",
-      "community": 1,
+      "community": 5,
       "norm_label": "createpointerlock()"
     },
     {
@@ -446,7 +662,7 @@
       "source_file": "src/loop/clock.ts",
       "source_location": "L1",
       "id": "src_loop_clock_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "clock.ts"
     },
     {
@@ -455,7 +671,7 @@
       "source_file": "src/loop/constants.ts",
       "source_location": "L1",
       "id": "src_loop_constants_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "constants.ts"
     },
     {
@@ -464,7 +680,7 @@
       "source_file": "src/loop/RenderLoop.test.ts",
       "source_location": "L1",
       "id": "src_loop_renderloop_test_ts",
-      "community": 1,
+      "community": 5,
       "norm_label": "renderloop.test.ts"
     },
     {
@@ -473,7 +689,7 @@
       "source_file": "src/loop/RenderLoop.ts",
       "source_location": "L1",
       "id": "src_loop_renderloop_ts",
-      "community": 1,
+      "community": 5,
       "norm_label": "renderloop.ts"
     },
     {
@@ -482,7 +698,7 @@
       "source_file": "src/loop/RenderLoop.ts",
       "source_location": "L16",
       "id": "loop_renderloop_lerp",
-      "community": 1,
+      "community": 5,
       "norm_label": "lerp()"
     },
     {
@@ -491,7 +707,7 @@
       "source_file": "src/loop/RenderLoop.ts",
       "source_location": "L20",
       "id": "loop_renderloop_createrenderloop",
-      "community": 1,
+      "community": 5,
       "norm_label": "createrenderloop()"
     },
     {
@@ -500,7 +716,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L1",
       "id": "src_loop_simloop_test_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "simloop.test.ts"
     },
     {
@@ -509,7 +725,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L9",
       "id": "loop_simloop_test_fixedclock",
-      "community": 1,
+      "community": 0,
       "norm_label": "fixedclock()"
     },
     {
@@ -518,34 +734,34 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L1",
       "id": "src_loop_simloop_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "simloop.ts"
     },
     {
       "label": "applyInput()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L30",
+      "source_location": "L35",
       "id": "loop_simloop_applyinput",
-      "community": 1,
+      "community": 0,
       "norm_label": "applyinput()"
     },
     {
       "label": "simStep()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L44",
+      "source_location": "L85",
       "id": "loop_simloop_simstep",
-      "community": 1,
+      "community": 0,
       "norm_label": "simstep()"
     },
     {
       "label": "createSimLoop()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L68",
+      "source_location": "L125",
       "id": "loop_simloop_createsimloop",
-      "community": 1,
+      "community": 0,
       "norm_label": "createsimloop()"
     },
     {
@@ -554,7 +770,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L1",
       "id": "src_loop_tests_determinism_test_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "determinism.test.ts"
     },
     {
@@ -563,7 +779,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L44",
       "id": "tests_determinism_test_syntheticinputs",
-      "community": 1,
+      "community": 0,
       "norm_label": "syntheticinputs()"
     },
     {
@@ -572,7 +788,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L54",
       "id": "tests_determinism_test_freshstate",
-      "community": 1,
+      "community": 0,
       "norm_label": "freshstate()"
     },
     {
@@ -581,7 +797,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L60",
       "id": "tests_determinism_test_snap",
-      "community": 1,
+      "community": 0,
       "norm_label": "snap()"
     },
     {
@@ -590,7 +806,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L68",
       "id": "tests_determinism_test_runframes",
-      "community": 1,
+      "community": 0,
       "norm_label": "runframes()"
     },
     {
@@ -599,7 +815,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L85",
       "id": "tests_determinism_test_canonicaltrajectory",
-      "community": 1,
+      "community": 0,
       "norm_label": "canonicaltrajectory()"
     },
     {
@@ -608,7 +824,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L95",
       "id": "tests_determinism_test_framesat",
-      "community": 1,
+      "community": 0,
       "norm_label": "framesat()"
     },
     {
@@ -617,7 +833,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L103",
       "id": "tests_determinism_test_jitterframes",
-      "community": 1,
+      "community": 0,
       "norm_label": "jitterframes()"
     },
     {
@@ -626,7 +842,7 @@
       "source_file": "src/render/createRenderer.test.ts",
       "source_location": "L1",
       "id": "src_render_createrenderer_test_ts",
-      "community": 10,
+      "community": 5,
       "norm_label": "createrenderer.test.ts"
     },
     {
@@ -635,7 +851,7 @@
       "source_file": "src/render/createRenderer.ts",
       "source_location": "L1",
       "id": "src_render_createrenderer_ts",
-      "community": 10,
+      "community": 5,
       "norm_label": "createrenderer.ts"
     },
     {
@@ -644,7 +860,7 @@
       "source_file": "src/render/createRenderer.ts",
       "source_location": "L23",
       "id": "render_createrenderer_resolvebackend",
-      "community": 10,
+      "community": 5,
       "norm_label": "resolvebackend()"
     },
     {
@@ -653,7 +869,7 @@
       "source_file": "src/render/createRenderer.ts",
       "source_location": "L39",
       "id": "render_createrenderer_createrenderer",
-      "community": 10,
+      "community": 5,
       "norm_label": "createrenderer()"
     },
     {
@@ -662,7 +878,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L1",
       "id": "src_render_scenemanager_ts",
-      "community": 9,
+      "community": 5,
       "norm_label": "scenemanager.ts"
     },
     {
@@ -671,7 +887,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L29",
       "id": "render_scenemanager_scenemanager",
-      "community": 9,
+      "community": 5,
       "norm_label": "scenemanager"
     },
     {
@@ -680,7 +896,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L33",
       "id": "render_scenemanager_scenemanager_constructor",
-      "community": 9,
+      "community": 5,
       "norm_label": ".constructor()"
     },
     {
@@ -689,7 +905,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L54",
       "id": "render_scenemanager_scenemanager_resize",
-      "community": 9,
+      "community": 5,
       "norm_label": ".resize()"
     },
     {
@@ -698,7 +914,7 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L59",
       "id": "render_scenemanager_scenemanager_buildroom",
-      "community": 9,
+      "community": 5,
       "norm_label": ".#buildroom()"
     },
     {
@@ -707,8 +923,314 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L95",
       "id": "render_scenemanager_scenemanager_buildlights",
-      "community": 9,
+      "community": 5,
       "norm_label": ".#buildlights()"
+    },
+    {
+      "label": "TargetView.test.ts",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.test.ts",
+      "source_location": "L1",
+      "id": "src_render_targetview_test_ts",
+      "community": 5,
+      "norm_label": "targetview.test.ts"
+    },
+    {
+      "label": "target()",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.test.ts",
+      "source_location": "L7",
+      "id": "render_targetview_test_target",
+      "community": 5,
+      "norm_label": "target()"
+    },
+    {
+      "label": "meshes()",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.test.ts",
+      "source_location": "L21",
+      "id": "render_targetview_test_meshes",
+      "community": 5,
+      "norm_label": "meshes()"
+    },
+    {
+      "label": "TargetView.ts",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L1",
+      "id": "src_render_targetview_ts",
+      "community": 5,
+      "norm_label": "targetview.ts"
+    },
+    {
+      "label": "TargetView",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L21",
+      "id": "render_targetview_targetview",
+      "community": 5,
+      "norm_label": "targetview"
+    },
+    {
+      "label": ".constructor()",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L29",
+      "id": "render_targetview_targetview_constructor",
+      "community": 5,
+      "norm_label": ".constructor()"
+    },
+    {
+      "label": ".sync()",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L44",
+      "id": "render_targetview_targetview_sync",
+      "community": 5,
+      "norm_label": ".sync()"
+    },
+    {
+      "label": ".poolSize()",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L60",
+      "id": "render_targetview_targetview_poolsize",
+      "community": 5,
+      "norm_label": ".poolsize()"
+    },
+    {
+      "label": ".#acquire()",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L65",
+      "id": "render_targetview_targetview_acquire",
+      "community": 5,
+      "norm_label": ".#acquire()"
+    },
+    {
+      "label": ".dispose()",
+      "file_type": "code",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L76",
+      "id": "render_targetview_targetview_dispose",
+      "community": 5,
+      "norm_label": ".dispose()"
+    },
+    {
+      "label": "firstShot.test.ts",
+      "file_type": "code",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L1",
+      "id": "src_sim_firstshot_test_ts",
+      "community": 0,
+      "norm_label": "firstshot.test.ts"
+    },
+    {
+      "label": "makeTarget()",
+      "file_type": "code",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L10",
+      "id": "sim_firstshot_test_maketarget",
+      "community": 0,
+      "norm_label": "maketarget()"
+    },
+    {
+      "label": "cameraLookingDownZ()",
+      "file_type": "code",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L23",
+      "id": "sim_firstshot_test_cameralookingdownz",
+      "community": 0,
+      "norm_label": "cameralookingdownz()"
+    },
+    {
+      "label": "makeTargetManager()",
+      "file_type": "code",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L83",
+      "id": "sim_firstshot_test_maketargetmanager",
+      "community": 0,
+      "norm_label": "maketargetmanager()"
+    },
+    {
+      "label": "firstShot.ts",
+      "file_type": "code",
+      "source_file": "src/sim/firstShot.ts",
+      "source_location": "L1",
+      "id": "src_sim_firstshot_ts",
+      "community": 0,
+      "norm_label": "firstshot.ts"
+    },
+    {
+      "label": "currentPeekId()",
+      "file_type": "code",
+      "source_file": "src/sim/firstShot.ts",
+      "source_location": "L22",
+      "id": "sim_firstshot_currentpeekid",
+      "community": 0,
+      "norm_label": "currentpeekid()"
+    },
+    {
+      "label": "firstShotGate()",
+      "file_type": "code",
+      "source_file": "src/sim/firstShot.ts",
+      "source_location": "L34",
+      "id": "sim_firstshot_firstshotgate",
+      "community": 0,
+      "norm_label": "firstshotgate()"
+    },
+    {
+      "label": "HitDetector.test.ts",
+      "file_type": "code",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L1",
+      "id": "src_sim_hitdetector_test_ts",
+      "community": 0,
+      "norm_label": "hitdetector.test.ts"
+    },
+    {
+      "label": "cameraLookingDownZ()",
+      "file_type": "code",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L10",
+      "id": "sim_hitdetector_test_cameralookingdownz",
+      "community": 0,
+      "norm_label": "cameralookingdownz()"
+    },
+    {
+      "label": "makeTarget()",
+      "file_type": "code",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L19",
+      "id": "sim_hitdetector_test_maketarget",
+      "community": 0,
+      "norm_label": "maketarget()"
+    },
+    {
+      "label": "HitDetector.ts",
+      "file_type": "code",
+      "source_file": "src/sim/HitDetector.ts",
+      "source_location": "L1",
+      "id": "src_sim_hitdetector_ts",
+      "community": 0,
+      "norm_label": "hitdetector.ts"
+    },
+    {
+      "label": "raycastFromCenter()",
+      "file_type": "code",
+      "source_file": "src/sim/HitDetector.ts",
+      "source_location": "L41",
+      "id": "sim_hitdetector_raycastfromcenter",
+      "community": 0,
+      "norm_label": "raycastfromcenter()"
+    },
+    {
+      "label": "MovementController.test.ts",
+      "file_type": "code",
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L1",
+      "id": "src_sim_movementcontroller_test_ts",
+      "community": 0,
+      "norm_label": "movementcontroller.test.ts"
+    },
+    {
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L56",
+      "id": "sim_movementcontroller_test_run",
+      "community": 0,
+      "norm_label": "run()"
+    },
+    {
+      "label": "MovementController.ts",
+      "file_type": "code",
+      "source_file": "src/sim/MovementController.ts",
+      "source_location": "L1",
+      "id": "src_sim_movementcontroller_ts",
+      "community": 0,
+      "norm_label": "movementcontroller.ts"
+    },
+    {
+      "label": "createMovementController()",
+      "file_type": "code",
+      "source_file": "src/sim/MovementController.ts",
+      "source_location": "L34",
+      "id": "sim_movementcontroller_createmovementcontroller",
+      "community": 0,
+      "norm_label": "createmovementcontroller()"
+    },
+    {
+      "label": "TargetManager.test.ts",
+      "file_type": "code",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L1",
+      "id": "src_sim_targetmanager_test_ts",
+      "community": 0,
+      "norm_label": "targetmanager.test.ts"
+    },
+    {
+      "label": "fixedClock()",
+      "file_type": "code",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L12",
+      "id": "sim_targetmanager_test_fixedclock",
+      "community": 0,
+      "norm_label": "fixedclock()"
+    },
+    {
+      "label": "killSequence()",
+      "file_type": "code",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L104",
+      "id": "sim_targetmanager_test_killsequence",
+      "community": 0,
+      "norm_label": "killsequence()"
+    },
+    {
+      "label": "config()",
+      "file_type": "code",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L168",
+      "id": "sim_targetmanager_test_config",
+      "community": 0,
+      "norm_label": "config()"
+    },
+    {
+      "label": "runDrill()",
+      "file_type": "code",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L183",
+      "id": "sim_targetmanager_test_rundrill",
+      "community": 0,
+      "norm_label": "rundrill()"
+    },
+    {
+      "label": "TargetManager.ts",
+      "file_type": "code",
+      "source_file": "src/sim/TargetManager.ts",
+      "source_location": "L1",
+      "id": "src_sim_targetmanager_ts",
+      "community": 0,
+      "norm_label": "targetmanager.ts"
+    },
+    {
+      "label": "sideX()",
+      "file_type": "code",
+      "source_file": "src/sim/TargetManager.ts",
+      "source_location": "L47",
+      "id": "sim_targetmanager_sidex",
+      "community": 0,
+      "norm_label": "sidex()"
+    },
+    {
+      "label": "createTargetManager()",
+      "file_type": "code",
+      "source_file": "src/sim/TargetManager.ts",
+      "source_location": "L60",
+      "id": "sim_targetmanager_createtargetmanager",
+      "community": 0,
+      "norm_label": "createtargetmanager()"
     },
     {
       "label": "InputRing.test.ts",
@@ -716,7 +1238,7 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L1",
       "id": "src_state_inputring_test_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "inputring.test.ts"
     },
     {
@@ -725,7 +1247,7 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L16",
       "id": "state_inputring_test_drainall",
-      "community": 1,
+      "community": 0,
       "norm_label": "drainall()"
     },
     {
@@ -734,7 +1256,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L1",
       "id": "src_state_inputringtestutil_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "inputringtestutil.ts"
     },
     {
@@ -743,7 +1265,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L15",
       "id": "state_inputringtestutil_pushevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "pushevent()"
     },
     {
@@ -752,7 +1274,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L25",
       "id": "state_inputringtestutil_draintoarray",
-      "community": 1,
+      "community": 0,
       "norm_label": "draintoarray()"
     },
     {
@@ -761,7 +1283,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L32",
       "id": "state_inputringtestutil_snapshot",
-      "community": 1,
+      "community": 0,
       "norm_label": "snapshot()"
     },
     {
@@ -770,7 +1292,7 @@
       "source_file": "src/state/SharedState.test.ts",
       "source_location": "L1",
       "id": "src_state_sharedstate_test_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "sharedstate.test.ts"
     },
     {
@@ -779,34 +1301,34 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L1",
       "id": "src_state_sharedstate_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "sharedstate.ts"
     },
     {
       "label": "createInputRing()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L45",
+      "source_location": "L61",
       "id": "state_sharedstate_createinputring",
-      "community": 1,
+      "community": 0,
       "norm_label": "createinputring()"
     },
     {
       "label": "createSharedState()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L117",
+      "source_location": "L134",
       "id": "state_sharedstate_createsharedstate",
-      "community": 1,
+      "community": 0,
       "norm_label": "createsharedstate()"
     },
     {
       "label": "resetState()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L137",
+      "source_location": "L156",
       "id": "state_sharedstate_resetstate",
-      "community": 1,
+      "community": 0,
       "norm_label": "resetstate()"
     },
     {
@@ -815,8 +1337,35 @@
       "source_file": "src/state/types.ts",
       "source_location": "L1",
       "id": "src_state_types_ts",
-      "community": 1,
+      "community": 0,
       "norm_label": "types.ts"
+    },
+    {
+      "label": "Crosshair.ts",
+      "file_type": "code",
+      "source_file": "src/ui/Crosshair.ts",
+      "source_location": "L1",
+      "id": "src_ui_crosshair_ts",
+      "community": 5,
+      "norm_label": "crosshair.ts"
+    },
+    {
+      "label": "createCrosshair()",
+      "file_type": "code",
+      "source_file": "src/ui/Crosshair.ts",
+      "source_location": "L29",
+      "id": "ui_crosshair_createcrosshair",
+      "community": 5,
+      "norm_label": "createcrosshair()"
+    },
+    {
+      "label": "makeArm()",
+      "file_type": "code",
+      "source_file": "src/ui/Crosshair.ts",
+      "source_location": "L62",
+      "id": "ui_crosshair_makearm",
+      "community": 5,
+      "norm_label": "makearm()"
     },
     {
       "label": "SettingsPanel.ts",
@@ -824,7 +1373,7 @@
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L1",
       "id": "src_ui_settingspanel_ts",
-      "community": 1,
+      "community": 5,
       "norm_label": "settingspanel.ts"
     },
     {
@@ -833,7 +1382,7 @@
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L41",
       "id": "ui_settingspanel_createsettingspanel",
-      "community": 1,
+      "community": 5,
       "norm_label": "createsettingspanel()"
     },
     {
@@ -842,7 +1391,7 @@
       "source_file": "src/ui/SettingsPanel.ts",
       "source_location": "L103",
       "id": "ui_settingspanel_makerow",
-      "community": 1,
+      "community": 5,
       "norm_label": "makerow()"
     },
     {
@@ -851,7 +1400,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L1",
       "id": "src_view_cameracontroller_ts",
-      "community": 8,
+      "community": 5,
       "norm_label": "cameracontroller.ts"
     },
     {
@@ -860,7 +1409,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L29",
       "id": "view_cameracontroller_cameracontroller",
-      "community": 8,
+      "community": 5,
       "norm_label": "cameracontroller"
     },
     {
@@ -869,7 +1418,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L39",
       "id": "view_cameracontroller_cameracontroller_constructor",
-      "community": 8,
+      "community": 5,
       "norm_label": ".constructor()"
     },
     {
@@ -878,7 +1427,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L47",
       "id": "view_cameracontroller_cameracontroller_applydelta",
-      "community": 8,
+      "community": 5,
       "norm_label": ".applydelta()"
     },
     {
@@ -887,7 +1436,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L55",
       "id": "view_cameracontroller_cameracontroller_setsensitivity",
-      "community": 8,
+      "community": 5,
       "norm_label": ".setsensitivity()"
     },
     {
@@ -896,7 +1445,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L60",
       "id": "view_cameracontroller_cameracontroller_setfov",
-      "community": 8,
+      "community": 5,
       "norm_label": ".setfov()"
     },
     {
@@ -905,7 +1454,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L65",
       "id": "view_cameracontroller_cameracontroller_applytocamera",
-      "community": 8,
+      "community": 5,
       "norm_label": ".#applytocamera()"
     },
     {
@@ -916,6 +1465,42 @@
       "id": "tests_e2e_backend_spec_ts",
       "community": 15,
       "norm_label": "backend.spec.ts"
+    },
+    {
+      "label": "input-sampler.spec.ts",
+      "file_type": "code",
+      "source_file": "tests/e2e/input-sampler.spec.ts",
+      "source_location": "L1",
+      "id": "tests_e2e_input_sampler_spec_ts",
+      "community": 10,
+      "norm_label": "input-sampler.spec.ts"
+    },
+    {
+      "label": "gotoAppReady()",
+      "file_type": "code",
+      "source_file": "tests/e2e/input-sampler.spec.ts",
+      "source_location": "L30",
+      "id": "e2e_input_sampler_spec_gotoappready",
+      "community": 10,
+      "norm_label": "gotoappready()"
+    },
+    {
+      "label": "vx()",
+      "file_type": "code",
+      "source_file": "tests/e2e/input-sampler.spec.ts",
+      "source_location": "L42",
+      "id": "e2e_input_sampler_spec_vx",
+      "community": 10,
+      "norm_label": "vx()"
+    },
+    {
+      "label": "x()",
+      "file_type": "code",
+      "source_file": "tests/e2e/input-sampler.spec.ts",
+      "source_location": "L43",
+      "id": "e2e_input_sampler_spec_x",
+      "community": 10,
+      "norm_label": "x()"
     },
     {
       "label": "isolation.spec.ts",
@@ -931,7 +1516,7 @@
       "file_type": "code",
       "source_file": "src/main.ts",
       "source_location": "L90",
-      "community": 1,
+      "community": 5,
       "norm_label": "frame()",
       "id": "src_main_frame"
     },
@@ -940,7 +1525,7 @@
       "file_type": "code",
       "source_file": "src/render/createRenderer.ts",
       "source_location": "L10",
-      "community": 10,
+      "community": 5,
       "norm_label": "pickbackend()",
       "id": "render_createrenderer_pickbackend"
     },
@@ -953,7 +1538,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "claude.md \u5c08\u6848\u57f7\u884c\u5354\u8b70\u8207\u5c0e\u822a",
       "id": "claude_project_protocol"
     },
@@ -966,7 +1551,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u7a0b\u5e8f\u8a18\u61b6 (procedural memory)",
       "id": "claude_procedural_memory"
     },
@@ -979,7 +1564,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u5782\u76f4\u5207\u7247 = \u539f\u5b50 commit \u5354\u8b70",
       "id": "claude_vertical_slice_commit"
     },
@@ -992,7 +1577,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u8a18\u61b6\u5206\u5c64 (working/semantic/episodic/\u5168\u57df/\u7a0b\u5e8f)",
       "id": "claude_memory_layers"
     },
@@ -1005,7 +1590,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u4e0d\u53ef\u9055\u53cd\u7684\u786c\u7d04\u675f (\u6280\u8853)",
       "id": "claude_hard_constraints"
     },
@@ -1018,7 +1603,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "context.md \u5c08\u6709\u540d\u8a5e\u8a5e\u5f59\u8868",
       "id": "context_glossary"
     },
@@ -1031,7 +1616,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 12,
       "norm_label": "counter-strafe (\u53cd\u5411\u6025\u505c)",
       "id": "context_counter_strafe"
     },
@@ -1044,7 +1629,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 12,
       "norm_label": "\u53cd\u5411\u9375 (counter key)",
       "id": "context_counter_key"
     },
@@ -1070,7 +1655,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "peek \u8207 p2 \u63a8\u9032\u653f\u7b56 (\u547d\u4e2d\u624d\u63a8\u9032)",
       "id": "context_peek"
     },
@@ -1083,7 +1668,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u9996\u767c (first shot / firstshot)",
       "id": "context_first_shot"
     },
@@ -1096,7 +1681,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u6025\u505c\u53cd\u61c9\u6642\u9593 (t_counter \u2212 t_visible)",
       "id": "context_counter_reaction_time"
     },
@@ -1109,7 +1694,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u901f\u5ea6\u6b78\u96f6\u8aa4\u5dee (residual speed)",
       "id": "context_residual_speed"
     },
@@ -1135,7 +1720,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u9996\u767c\u547d\u4e2d\u7387",
       "id": "context_first_shot_hit_rate"
     },
@@ -1148,7 +1733,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 1,
       "norm_label": "\u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "context_crosshair_alignment_offset"
     },
@@ -1200,7 +1785,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u901f\u5ea6 gate (velocity gate)",
       "id": "context_velocity_gate"
     },
@@ -1226,7 +1811,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "inputsampler \u5143\u4ef6",
       "id": "context_input_sampler"
     },
@@ -1239,7 +1824,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "sharedstate \u5143\u4ef6",
       "id": "context_shared_state"
     },
@@ -1252,7 +1837,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "simloop \u5143\u4ef6",
       "id": "context_sim_loop"
     },
@@ -1265,7 +1850,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "movementcontroller \u5143\u4ef6 (\u72c0\u614b\u6a5f m1)",
       "id": "context_movement_controller"
     },
@@ -1278,7 +1863,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "targetmanager \u5143\u4ef6",
       "id": "context_target_manager"
     },
@@ -1291,7 +1876,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "hitdetector \u5143\u4ef6",
       "id": "context_hit_detector"
     },
@@ -1304,7 +1889,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "renderloop \u5143\u4ef6",
       "id": "context_render_loop"
     },
@@ -1330,7 +1915,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "datarecorder \u5143\u4ef6 (preallocated arena)",
       "id": "context_data_recorder"
     },
@@ -1343,7 +1928,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "drillconfig \u5143\u4ef6",
       "id": "context_drill_config"
     },
@@ -1356,7 +1941,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "metricsdashboard \u5143\u4ef6",
       "id": "context_metrics_dashboard"
     },
@@ -1369,7 +1954,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u96d9\u8ff4\u5708 (dual-loop)",
       "id": "context_dual_loop"
     },
@@ -1382,7 +1967,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 1,
       "norm_label": "fixed-timestep (128 hz)",
       "id": "context_fixed_timestep"
     },
@@ -1395,7 +1980,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 1,
       "norm_label": "accumulator \u6a21\u5f0f",
       "id": "context_accumulator"
     },
@@ -1408,7 +1993,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 1,
       "norm_label": "simstep \u9806\u5e8f (tick \u5167)",
       "id": "context_simstep_order"
     },
@@ -1434,7 +2019,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism)",
       "id": "context_determinism"
     },
@@ -1447,7 +2032,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u91cf\u6e2c\u6642\u9418 vs \u6c7a\u5b9a\u6027\u6642\u9418 (two-clock model)",
       "id": "context_two_clock_model"
     },
@@ -1460,7 +2045,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "t_visible",
       "id": "context_t_visible"
     },
@@ -1473,7 +2058,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "sim tick rate (128 hz)",
       "id": "context_sim_tick_rate"
     },
@@ -1486,7 +2071,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "ring buffer (\u8f38\u5165\u7de9\u885d)",
       "id": "context_ring_buffer"
     },
@@ -1499,7 +2084,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "rendersnapshot \u7a84\u4ecb\u9762",
       "id": "context_render_snapshot"
     },
@@ -1512,7 +2097,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "cross-origin isolation (coop/coep)",
       "id": "context_cross_origin_isolation"
     },
@@ -1525,7 +2110,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u539f\u59cb\u8f38\u5165 (unadjustedmovement)",
       "id": "context_unadjusted_movement"
     },
@@ -1538,7 +2123,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "coalesced events (getcoalescedevents)",
       "id": "context_coalesced_events"
     },
@@ -1551,7 +2136,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u8f38\u5165\u5206\u6876 (input bucketing)",
       "id": "context_input_bucketing"
     },
@@ -1564,7 +2149,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "backend (render backend webgpu/webgl2)",
       "id": "context_render_backend"
     },
@@ -1577,7 +2162,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u6b63\u898f\u55ae\u4f4d (canonical unit, source unit u/s)",
       "id": "context_canonical_unit"
     },
@@ -1603,7 +2188,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "f5 \u63a5\u7e2b (seam-in, drills-out)",
       "id": "context_f5_seam_in"
     },
@@ -1616,7 +2201,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u968e\u6bb5 b (stage b)",
       "id": "context_stage_b"
     },
@@ -1629,7 +2214,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "cs2 physics \u5e38\u6578 (\u968e\u6bb5 b \u6821\u6e96\u8d77\u9ede)",
       "id": "context_cs2_physics_constants"
     },
@@ -1642,7 +2227,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "design.md \u57f7\u884c\u671f\u8207\u67b6\u69cb\u8a2d\u8a08\u7b46\u8a18",
       "id": "design_notes"
     },
@@ -1655,7 +2240,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u968e\u6bb5 a \u96d9\u8ff4\u5708\u5be6\u70ba\u55ae\u57f7\u884c\u7dd2 raf \u8d85\u7d1a\u8ff4\u5708",
       "id": "design_single_thread_stage_a"
     },
@@ -1668,7 +2253,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u4e3b\u57f7\u884c\u7dd2\u5361\u9813\u6c61\u67d3 sim \u8a08\u6642 (\u968e\u6bb5 a \u9694\u96e2\u4e0d\u6210\u7acb)",
       "id": "design_main_thread_jank"
     },
@@ -1681,7 +2266,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "web worker + sharedarraybuffer \u771f\u6b63\u9694\u96e2 (\u968e\u6bb5 b)",
       "id": "design_worker_isolation"
     },
@@ -1694,7 +2279,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "frontend.md (\u524d\u7aef/ui \u8a2d\u8a08,\u9810\u7559\u7a7a\u6a94)",
       "id": "frontend_doc"
     },
@@ -1707,7 +2292,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "map.md \u6587\u4ef6\u5730\u5716",
       "id": "map_doc"
     },
@@ -1720,7 +2305,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "plan.md \u57f7\u884c\u8a08\u756b (\u968e\u6bb5 a)",
       "id": "plan_doc"
     },
@@ -1733,7 +2318,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "d1 \u2014 2d ui = \u7d14 ts + dom overlay",
       "id": "plan_d1_dom_overlay"
     },
@@ -1746,7 +2331,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "d2 \u2014 \u6e2c\u8a66\u6846\u67b6 vitest + playwright",
       "id": "plan_d2_test_framework"
     },
@@ -1759,7 +2344,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "d3 \u2014 coop/coep \u90e8\u7f72 (vite plugin + \u975c\u614b\u4e3b\u6a5f\u5f8c\u5b9a)",
       "id": "plan_d3_coop_coep_deploy"
     },
@@ -1772,7 +2357,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "d4 \u2014 \u6587\u4ef6\u8a9e\u8a00 (\u7e41\u4e2d\u4fdd\u7559\u82f1\u6587\u8853\u8a9e)",
       "id": "plan_d4_doc_language"
     },
@@ -1785,7 +2370,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "d5 \u2014 plan \u9846\u7c92\u5ea6 (agent \u53ef\u57f7\u884c\u6b65\u9a5f)",
       "id": "plan_d5_granularity"
     },
@@ -1798,7 +2383,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u6280\u8853\u68e7 (three.js webgpu + ts + vite)",
       "id": "plan_tech_stack"
     },
@@ -1811,7 +2396,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u898f\u683c\u66f8 v1.1 + wbs",
       "id": "spec_doc"
     },
@@ -1824,7 +2409,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "f1 \u2014 \u63a1\u96c6\u9375\u76e4\u8207\u6ed1\u9f20\u64cd\u4f5c\u8cc7\u6599",
       "id": "spec_f1"
     },
@@ -1837,7 +2422,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "f2 \u2014 \u8a18\u9304 t_visible spawn/\u53ef\u898b\u6642\u9593\u6233",
       "id": "spec_f2"
     },
@@ -1850,7 +2435,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "f3 \u2014 \u7b2c\u4e00\u4eba\u7a31\u8996\u89d2 + cs \u98a8\u683c\u53cd\u5411\u6025\u505c",
       "id": "spec_f3"
     },
@@ -1863,7 +2448,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "f4 \u2014 \u591a drill \u652f\u63f4 (config \u9a45\u52d5)",
       "id": "spec_f4"
     },
@@ -1876,7 +2461,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "f5 \u2014 \u79fb\u52d5\u76ee\u6a19\u652f\u63f4",
       "id": "spec_f5"
     },
@@ -1889,7 +2474,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "adr-1 webgpurenderer + webgl2 fallback",
       "id": "spec_adr1"
     },
@@ -1902,7 +2487,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "adr-2 \u908f\u8f2f\u8207\u6e32\u67d3\u89e3\u8026 (\u96d9\u8ff4\u5708 + fixed-timestep)",
       "id": "spec_adr2"
     },
@@ -1915,7 +2500,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "adr-3 sim tick rate = 128 hz",
       "id": "spec_adr3"
     },
@@ -1928,7 +2513,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "adr-4 performance.now() + cross-origin isolation",
       "id": "spec_adr4"
     },
@@ -1941,7 +2526,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "adr-5 pointer lock + \u539f\u59cb\u8f38\u5165 + coalesced events",
       "id": "spec_adr5"
     },
@@ -1954,7 +2539,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "adr-6 \u76ee\u6a19\u79fb\u52d5\u7b56\u7565 (sim loop \u6bcf tick \u66f4\u65b0, motion registry)",
       "id": "spec_adr6"
     },
@@ -1967,7 +2552,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "adr-7 \u5169\u500b\u6642\u9418 (\u91cf\u6e2c\u6642\u9418 / \u6c7a\u5b9a\u6027\u6642\u9418)",
       "id": "spec_adr7"
     },
@@ -1980,7 +2565,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u9644\u9304 c \u532f\u51fa\u8cc7\u6599 schema",
       "id": "spec_export_schema"
     },
@@ -1993,7 +2578,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u9644\u9304 g \u79fb\u52d5\u76ee\u6a19 schema (targetmotion / motionstrategies)",
       "id": "spec_target_motion_schema"
     },
@@ -2006,7 +2591,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u9644\u9304 e \u9a57\u6536\u6e05\u55ae (\u968e\u6bb5 a)",
       "id": "spec_acceptance_checklist"
     },
@@ -2019,7 +2604,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u9644\u9304 f \u98a8\u96aa\u767b\u8a18",
       "id": "spec_risk_register"
     },
@@ -2032,7 +2617,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "\u79fb\u52d5 + counter-strafe \u80fd\u529b\u6df7\u6dc6 (\u7814\u7a76\u8a2d\u8a08\u554f\u984c)",
       "id": "spec_ability_confusion"
     },
@@ -2045,7 +2630,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "decisions.md \u5168\u57df\u6c7a\u7b56\u8207\u77db\u76fe\u5e33\u672c",
       "id": "decisions_ledger"
     },
@@ -2058,7 +2643,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "gd-1 f5 \u662f\u5426\u5c6c\u968e\u6bb5 a (\u898f\u683c v1.1 \u8207 seam-in \u4e0d\u4e00\u81f4)",
       "id": "decisions_gd1_f5_conflict"
     },
@@ -2071,7 +2656,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "exec-plan/readme.md \u57f7\u884c\u8a08\u756b\u7d22\u5f15",
       "id": "execplan_readme"
     },
@@ -2084,7 +2669,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u91cc\u7a0b\u7891 m1 (wp-2 \u810a\u690e\u9580\u63a7)",
       "id": "execplan_milestone_m1"
     },
@@ -2097,7 +2682,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u91cc\u7a0b\u7891 m2 (wp-5 \u6838\u5fc3\u73a9\u6cd5)",
       "id": "execplan_milestone_m2"
     },
@@ -2110,7 +2695,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u91cc\u7a0b\u7891 m3 (wp-7 \u53ef\u532f\u51fa\u8cc7\u6599)",
       "id": "execplan_milestone_m3"
     },
@@ -2123,7 +2708,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u91cc\u7a0b\u7891 m4 (wp-9 \u968e\u6bb5 a \u4ea4\u4ed8)",
       "id": "execplan_milestone_m4"
     },
@@ -2136,7 +2721,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-0 \u74b0\u5883\u5efa\u7f6e\u8207\u5b78\u7fd2\u722c\u5347",
       "id": "execplan_wp0"
     },
@@ -2149,7 +2734,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-1 fps \u63a7\u5236 + pointer lock",
       "id": "execplan_wp1"
     },
@@ -2162,7 +2747,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-2 sharedstate + \u96d9\u8ff4\u5708\u9aa8\u67b6 (\u810a\u690e)",
       "id": "execplan_wp2"
     },
@@ -2175,7 +2760,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 inputsampler (f1)",
       "id": "execplan_wp3"
     },
@@ -2188,7 +2773,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 targetmanager + t_visible (f2)",
       "id": "execplan_wp4"
     },
@@ -2201,7 +2786,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-5 hitdetector + \u6a6b\u79fb + \u7c21\u5316\u6025\u505c (f3)",
       "id": "execplan_wp5"
     },
@@ -2214,7 +2799,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-6 drillconfig \u8cc7\u6599\u9a45\u52d5 drill (f4)",
       "id": "execplan_wp6"
     },
@@ -2227,7 +2812,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-7 datarecorder ring buffer + \u532f\u51fa",
       "id": "execplan_wp7"
     },
@@ -2240,7 +2825,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-8 metricsdashboard + hud",
       "id": "execplan_wp8"
     },
@@ -2253,7 +2838,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-9 \u7aef\u5230\u7aef\u6574\u5408 + \u8a08\u6642\u6548\u5ea6 + \u6c7a\u5b9a\u6027\u56de\u6b78",
       "id": "execplan_wp9"
     },
@@ -2266,7 +2851,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 readme (tech spec)",
       "id": "wp0_readme"
     },
@@ -2279,7 +2864,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 progress.md",
       "id": "wp0_progress"
     },
@@ -2292,7 +2877,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 task-checklist.md",
       "id": "wp0_checklist"
     },
@@ -2305,7 +2890,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 t0 entry gate",
       "id": "wp0_t0_entry_gate"
     },
@@ -2318,7 +2903,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 t1 scaffold",
       "id": "wp0_t1_scaffold"
     },
@@ -2331,7 +2916,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 t2 cross-origin isolation",
       "id": "wp0_t2_coop_coep"
     },
@@ -2344,7 +2929,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 t3 webgpu backend \u5075\u6e2c",
       "id": "wp0_t3_backend_detection"
     },
@@ -2357,7 +2942,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 t4 deploy headers",
       "id": "wp0_t4_deploy_headers"
     },
@@ -2370,7 +2955,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 t5 reference notes",
       "id": "wp0_t5_reference_notes"
     },
@@ -2383,7 +2968,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 0,
+      "community": 1,
       "norm_label": "wp-0 t6 exit gate",
       "id": "wp0_t6_exit_gate"
     },
@@ -2942,7 +3527,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 4,
       "norm_label": "d1 ui = \u7d14 ts + dom overlay",
       "id": "ext_d1_dom_overlay"
     },
@@ -3033,7 +3618,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 \u8f38\u5165\u63a1\u96c6\u5c64 inputsampler (f1)",
       "id": "wp3_input_sampler"
     },
@@ -3046,7 +3631,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 progress log",
       "id": "wp3_progress"
     },
@@ -3059,7 +3644,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 master task checklist",
       "id": "wp3_task_checklist"
     },
@@ -3072,7 +3657,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 t0 entry gate",
       "id": "wp3_t0_entry_gate"
     },
@@ -3085,7 +3670,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 t1 \u9375\u76e4\u63a1\u96c6 (keydown/keyup + timestamp)",
       "id": "wp3_t1_keyboard"
     },
@@ -3098,7 +3683,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 t2 \u6ed1\u9f20 coalesced \u63a1\u96c6 (\u6b21\u5e40\u8ecc\u8de1)",
       "id": "wp3_t2_mouse_coalesced"
     },
@@ -3111,7 +3696,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 t3 \u958b\u706b\u4e8b\u4ef6\u63a1\u96c6 (mousedown + timestamp)",
       "id": "wp3_t3_fire"
     },
@@ -3124,7 +3709,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 t4 sim \u4f9d\u6642\u5e8f\u6d88\u8cbb\u7de9\u885d + \u6392\u7a7a",
       "id": "wp3_t4_sim_consume"
     },
@@ -3137,7 +3722,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-3 t5 exit gate",
       "id": "wp3_t5_exit_gate"
     },
@@ -3150,7 +3735,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 \u76ee\u6a19\u7cfb\u7d71 + t_visible (f2)",
       "id": "wp4_target_tvisible"
     },
@@ -3163,7 +3748,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 progress log",
       "id": "wp4_progress"
     },
@@ -3176,7 +3761,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 master task checklist",
       "id": "wp4_task_checklist"
     },
@@ -3189,7 +3774,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 t0 entry gate",
       "id": "wp4_t0_entry_gate"
     },
@@ -3202,7 +3787,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 t1 \u76ee\u6a19 entity (mesh + hitbox)",
       "id": "wp4_t1_target_entity"
     },
@@ -3215,7 +3800,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 t2 \u53ef\u898b\u6027 + t_visible (sim tick \u5167\u84cb\u6233)",
       "id": "wp4_t2_visibility_tvisible"
     },
@@ -3228,7 +3813,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 t3 \u5de6\u53f3\u4ea4\u66ff\u5e8f\u5217",
       "id": "wp4_t3_alternation"
     },
@@ -3241,7 +3826,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 t4 crosshair (\u87a2\u5e55\u4e2d\u5fc3\u6e96\u5fc3)",
       "id": "wp4_t4_crosshair"
     },
@@ -3254,7 +3839,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-4 t5 exit gate",
       "id": "wp4_t5_exit_gate"
     },
@@ -3267,7 +3852,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "inputsampler (src/input/inputsampler.ts)",
       "id": "wp3_input_sampler_class"
     },
@@ -3280,7 +3865,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "consume (src/input/consume.ts)",
       "id": "wp3_consume_fn"
     },
@@ -3293,7 +3878,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "sharedstate (src/state/sharedstate.ts)",
       "id": "shared_state"
     },
@@ -3306,7 +3891,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "simloop (src/loop/simloop.ts, 128 hz)",
       "id": "sim_loop"
     },
@@ -3319,7 +3904,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "targetmanager (src/sim/targetmanager.ts)",
       "id": "target_manager"
     },
@@ -3332,7 +3917,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "targetview (src/render/targetview.ts)",
       "id": "target_view"
     },
@@ -3345,7 +3930,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "crosshair (src/ui/crosshair.ts)",
       "id": "crosshair"
     },
@@ -3358,7 +3943,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "targetstate (id/side/pos/visible/alive/hitboxes)",
       "id": "target_state"
     },
@@ -3371,7 +3956,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "t_visible (\u53ef\u898b\u6642\u9593\u6233 / \u53cd\u61c9\u6642\u9593\u8d77\u9ede)",
       "id": "concept_t_visible"
     },
@@ -3384,7 +3969,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "sub-tick \u8f38\u5165\u6642\u9593\u6233 (\u7cbe\u6e96\u5ea6\u771f\u6b63\u4f86\u6e90)",
       "id": "concept_sub_tick_timestamp"
     },
@@ -3397,7 +3982,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "getcoalescedevents \u6b21\u5e40\u63a1\u6a23 (\u9ad8\u983b\u6ed1\u9f20\u4e0d\u4e1f\u6a23\u672c)",
       "id": "concept_coalesced_events"
     },
@@ -3410,7 +3995,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "\u6642\u9593\u6233\u540c\u6e90 (event.timestamp = performance.now() \u57fa\u6e96)",
       "id": "concept_timestamp_same_origin"
     },
@@ -3423,7 +4008,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "\u4f9d\u6642\u5e8f\u6392\u5e8f\u6d88\u8cbb + \u6392\u7a7a (\u6c7a\u5b9a\u6027\u5951\u7d04)",
       "id": "concept_sorted_consume_determinism"
     },
@@ -3436,7 +4021,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "t_visible \u5728 sim tick \u5167\u84cb\u4e00\u6b21 (\u975e render frame)",
       "id": "concept_tvisible_in_sim_tick"
     },
@@ -3449,7 +4034,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "\u78ba\u5b9a\u6027\u5de6\u53f3\u4ea4\u66ff\u8f2a\u66ff (counter-strafe peek \u7bc0\u594f)",
       "id": "concept_deterministic_alternation"
     },
@@ -3462,7 +4047,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "adr-2 \u4e09\u8ff4\u5708\u7d93 sharedstate \u6e9d\u901a",
       "id": "adr2_three_loops"
     },
@@ -3475,7 +4060,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "adr-3 \u7cbe\u6e96\u5ea6\u4f86\u6e90 = sub-tick \u8f38\u5165\u6642\u9593\u6233",
       "id": "adr3_subtick"
     },
@@ -3488,7 +4073,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "adr-4 performance.now() / event.timestamp \u540c\u6e90",
       "id": "adr4_performance_now"
     },
@@ -3501,7 +4086,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "adr-5 coalesced events",
       "id": "adr5_coalesced"
     },
@@ -3514,7 +4099,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "d1 ui = \u7d14 ts + dom overlay",
       "id": "d1_dom_overlay"
     },
@@ -3527,7 +4112,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 8,
       "norm_label": "\u91cc\u7a0b\u7891 m1 (wp-2 \u810a\u690e / \u6c7a\u5b9a\u6027\u9a57\u8b49)",
       "id": "milestone_m1"
     },
@@ -3540,7 +4125,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-1 \u5834\u666f (\u76f8\u6a5f / pointer lock)",
       "id": "wp1_scene"
     },
@@ -3553,7 +4138,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-2 \u96d9\u8ff4\u5708\u9aa8\u67b6 (sim tick + clock + \u6c7a\u5b9a\u6027)",
       "id": "wp2_dual_loop"
     },
@@ -3566,7 +4151,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-5 \u547d\u4e2d / \u6025\u505c\u5224\u5b9a (raycaster)",
       "id": "wp5_hit_counter"
     },
@@ -3579,7 +4164,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-6 drill loader (\u63a5\u7ba1\u76ee\u6a19\u751f\u6210)",
       "id": "wp6_drill_loader"
     },
@@ -3592,7 +4177,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-7 ring buffer \u8a18\u9304 / \u532f\u51fa",
       "id": "wp7_ring_buffer"
     },
@@ -3605,7 +4190,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 6,
       "norm_label": "wp-8 \u53cd\u61c9\u6642\u9593\u8a08\u7b97 / \u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "wp8_reaction_time"
     },
@@ -4892,7 +5477,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-9 \u6574\u5408\u3001\u6e2c\u8a66\u8207\u7de9\u885d (m4 \u968e\u6bb5 a \u4ea4\u4ed8)",
       "id": "wp9_integration"
     },
@@ -4905,7 +5490,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "m4 \u2014 \u968e\u6bb5 a \u4ea4\u4ed8 (\u9644\u9304 e \u9a57\u6536\u6e05\u55ae\u5168\u6578\u901a\u904e)",
       "id": "wp9_milestone_m4"
     },
@@ -4918,7 +5503,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "t0 \u2014 entry gate (\u78ba\u8a8d wp-0~8 \u4ea4\u4ed8)",
       "id": "wp9_t0_entry_gate"
     },
@@ -4931,7 +5516,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "t1 \u2014 e2e \u6574\u5408\u6e2c\u8a66 (drill\u2192\u532f\u51fa\u2192\u7d71\u8a08)",
       "id": "wp9_t1_e2e_integration"
     },
@@ -4944,7 +5529,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "t2 \u2014 \u8a08\u6642\u6548\u5ea6\u9a57\u8b49 (\u53cd\u61c9\u6642\u9593 150\u2013250 ms)",
       "id": "wp9_t2_timing_validity"
     },
@@ -4957,7 +5542,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "t3 \u2014 \u6c7a\u5b9a\u6027\u56de\u6b78\u6e2c\u8a66 (\u81ea\u52d5\u5316)",
       "id": "wp9_t3_determinism_regression"
     },
@@ -4970,7 +5555,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "t4 \u2014 \u7de9\u885d + \u9644\u9304 e \u9a57\u6536",
       "id": "wp9_t4_buffer_acceptance"
     },
@@ -4983,7 +5568,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "t5 / t-exit \u2014 exit gate (\u5ba3\u544a m4)",
       "id": "wp9_t5_exit_gate"
     },
@@ -4996,7 +5581,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "fr-9.1 \u7aef\u5230\u7aef\u6574\u5408\u6e2c\u8a66 (playwright)",
       "id": "wp9_fr_9_1_e2e"
     },
@@ -5009,7 +5594,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "fr-9.2 \u8a08\u6642\u6548\u5ea6\u9a57\u8b49",
       "id": "wp9_fr_9_2_timing_validity"
     },
@@ -5022,7 +5607,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "fr-9.3 \u6c7a\u5b9a\u6027\u56de\u6b78\u6e2c\u8a66 (\u81ea\u52d5\u5316)",
       "id": "wp9_fr_9_3_determinism"
     },
@@ -5035,7 +5620,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "fr-9.4 \u7de9\u885d + \u9644\u9304 e \u5168\u6e05\u55ae",
       "id": "wp9_fr_9_4_buffer"
     },
@@ -5048,7 +5633,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u898f\u683c\u9644\u9304 e \u2014 \u968e\u6bb5 a \u9a57\u6536\u6e05\u55ae (10 \u9805)",
       "id": "wp9_appendix_e_acceptance"
     },
@@ -5061,7 +5646,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u898f\u683c\u9644\u9304 f \u2014 \u98a8\u96aa",
       "id": "wp9_appendix_f_risk"
     },
@@ -5074,7 +5659,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u4e09\u9053\u8a08\u6642\u6548\u5ea6\u9632\u7dda (coi e2e + \u53cd\u61c9\u5206\u5e03 sanity + \u6c7a\u5b9a\u6027\u56de\u6b78)",
       "id": "wp9_three_timing_defenses"
     },
@@ -5087,7 +5672,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "window.__fpstest \u6e2c\u8a66 harness (dev/test build only)",
       "id": "wp9_fpstest_harness"
     },
@@ -5100,7 +5685,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u53cd\u61c9\u6642\u9593 150\u2013250 ms \u6587\u737b\u5408\u7406\u91cf\u7d1a (\u5206\u5e03 sanity \u975e\u786c\u95be)",
       "id": "wp9_reaction_time_band"
     },
@@ -5113,7 +5698,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "test:ci \u8173\u672c (tsc --noemit && vitest run && playwright test)",
       "id": "wp9_test_ci_script"
     },
@@ -5126,7 +5711,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u7d71\u8a08 = \u532f\u51fa \u540c\u6e90\u4ea4\u53c9\u9a57\u8b49",
       "id": "wp9_stats_equals_export"
     },
@@ -5139,7 +5724,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "counterstrafe_ad_v1 counter-strafe drill",
       "id": "counterstrafe_ad_v1_drill"
     },
@@ -5152,7 +5737,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "crossoriginisolated === true (coop/coep)",
       "id": "term_cross_origin_isolated"
     },
@@ -5165,7 +5750,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism, sim \u591a fps \u9010 tick \u4e00\u81f4)",
       "id": "term_determinism"
     },
@@ -5178,7 +5763,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "counterreactionms (\u6025\u505c\u53cd\u61c9\u6642\u9593)",
       "id": "term_counter_reaction_ms"
     },
@@ -5191,7 +5776,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "performance.now() (\u7981\u7528 date.now)",
       "id": "term_performance_now"
     },
@@ -5204,7 +5789,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u898f\u683c \u00a714 \u65b9\u6cd5\u8ad6 (\u53d7\u8a66\u8005\u5167\u76f8\u5c0d\u503c + \u986f\u793a\u5ef6\u9072\u8aa4\u5dee\u754c\u7dda)",
       "id": "spec_section_14_methodology"
     },
@@ -5217,7 +5802,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u898f\u683c \u00a79.2 \u8a08\u6642\u6548\u5ea6 150\u2013250 ms",
       "id": "spec_section_9_2"
     },
@@ -5230,7 +5815,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "\u898f\u683c \u00a75 \u516b\u6307\u6a19",
       "id": "spec_section_5_metrics"
     },
@@ -5243,7 +5828,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "docs/operational/acceptance-stage-a.md",
       "id": "doc_acceptance_stage_a"
     },
@@ -5256,7 +5841,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "docs/operational/timing-validity.md",
       "id": "doc_timing_validity"
     },
@@ -5269,7 +5854,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-0 (bootstrap / coi / \u6e32\u67d3\u5f8c\u7aef\u5075\u6e2c)",
       "id": "wp0_bootstrap"
     },
@@ -5282,7 +5867,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-2 (sim \u810a\u690e / \u6c7a\u5b9a\u6027 t4)",
       "id": "wp2_sim_spine"
     },
@@ -5295,7 +5880,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-3 (movement \u908f\u8f2f)",
       "id": "wp3_movement"
     },
@@ -5308,7 +5893,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-4 (\u76ee\u6a19\u5de6\u53f3\u4ea4\u66ff / t_visible)",
       "id": "wp4_target"
     },
@@ -5321,7 +5906,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-5 (\u6025\u505c / \u505c\u6b62 gate \u958b\u706b / \u9996\u767c\u547d\u4e2d)",
       "id": "wp5_counterstrafe_fire"
     },
@@ -5334,7 +5919,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-6 (\u5b8c\u6574 counter-strafe drill)",
       "id": "wp6_drill"
     },
@@ -5347,7 +5932,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-7 (\u532f\u51fa json/csv / schema)",
       "id": "wp7_export"
     },
@@ -5360,7 +5945,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-8 (drill \u5f8c\u7d71\u8a08 \u00a75 \u6307\u6a19)",
       "id": "wp8_statistics"
     },
@@ -5373,7 +5958,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "wp-7 schema.md (\u532f\u51fa json schema)",
       "id": "wp7_schema_md"
     }
@@ -5442,6 +6027,28 @@
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "src_main_ts",
+      "target": "src_render_targetview_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "render_targetview_targetview"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
       "target": "src_input_pointerlock_ts"
     },
     {
@@ -5462,9 +6069,9 @@
       "source_file": "src/main.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_input_inputsampler_ts",
-      "confidence_score": 1.0
+      "target": "src_input_inputsampler_ts"
     },
     {
       "relation": "imports",
@@ -5473,9 +6080,9 @@
       "source_file": "src/main.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "input_inputsampler_createinputsampler",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_createinputsampler"
     },
     {
       "relation": "imports_from",
@@ -5526,66 +6133,33 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "src_ui_crosshair_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "ui_crosshair_createcrosshair"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/main.ts",
-      "source_location": "L9",
-      "weight": 1.0,
-      "source": "src_main_ts",
-      "target": "src_loop_simloop_ts",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/main.ts",
-      "source_location": "L9",
-      "weight": 1.0,
-      "source": "src_main_ts",
-      "target": "loop_simloop_createsimloop",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/main.ts",
-      "source_location": "L10",
-      "weight": 1.0,
-      "source": "src_main_ts",
-      "target": "src_loop_renderloop_ts",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/main.ts",
-      "source_location": "L10",
-      "weight": 1.0,
-      "source": "src_main_ts",
-      "target": "loop_renderloop_createrenderloop",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/main.ts",
-      "source_location": "L10",
-      "weight": 1.0,
-      "source": "src_main_ts",
-      "target": "loop_renderloop_lerp",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports_from",
@@ -5594,9 +6168,86 @@
       "source_file": "src/main.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_loop_clock_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_targetmanager_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "sim_targetmanager_createtargetmanager"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "src_loop_simloop_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "loop_simloop_createsimloop"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "src_loop_renderloop_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "loop_renderloop_createrenderloop"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "loop_renderloop_lerp"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "src_loop_clock_ts"
     },
     {
       "relation": "imports_from",
@@ -5605,9 +6256,9 @@
       "source_file": "src/main.ts",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_loop_constants_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_constants_ts"
     },
     {
       "relation": "contains",
@@ -5643,12 +6294,789 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_counterstrafe_ad_v1_test_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_counterstrafe_ad_v1_test_ts",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_counterstrafe_ad_v1_test_ts",
+      "target": "src_sim_targetmanager_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_counterstrafe_ad_v1_test_ts",
+      "target": "sim_targetmanager_createtargetmanager"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_counterstrafe_ad_v1_test_ts",
+      "target": "src_drill_drillloader_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_counterstrafe_ad_v1_test_ts",
+      "target": "drill_drillloader_loaddrill"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillConfig.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillconfig_ts",
+      "target": "src_state_types_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillLoader.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillloader_ts",
+      "target": "src_drill_drillconfig_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "src_drill_drillconfig_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_ts",
+      "target": "src_drill_drillconfig_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_test_ts",
+      "target": "src_drill_drillconfig_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "src_drill_drillconfig_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "src_drill_drillconfig_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_ts",
+      "target": "src_drill_drillconfig_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillLoader.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillloader_test_ts",
+      "target": "src_drill_drillloader_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillLoader.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillloader_test_ts",
+      "target": "drill_drillloader_loaddrill"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillLoader.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillloader_ts",
+      "target": "src_drill_schema_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillLoader.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillloader_ts",
+      "target": "drill_schema_validatedrill"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillLoader.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillloader_ts",
+      "target": "drill_drillloader_loaddrill"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/drill/DrillLoader.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "drill_drillloader_loaddrill",
+      "target": "drill_schema_validatedrill"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "src_loop_clock_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "src_loop_constants_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "src_loop_simloop_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "loop_simloop_createsimloop"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "src_sim_targetmanager_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "sim_targetmanager_createtargetmanager"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "src_drill_drillrunner_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "drill_drillrunner_createdrillrunner"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "drill_drillrunner_test_makeconfig"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "drill_drillrunner_test_setup"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "drill_drillrunner_test_fixedclock"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_test_ts",
+      "target": "drill_drillrunner_test_killcurrenttarget"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "drill_drillrunner_test_setup",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "drill_drillrunner_test_setup",
+      "target": "sim_targetmanager_createtargetmanager"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/drill/DrillRunner.test.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "drill_drillrunner_test_setup",
+      "target": "drill_drillrunner_createdrillrunner"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_ts",
+      "target": "state_sharedstate_resetstate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_ts",
+      "target": "src_sim_targetmanager_ts"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/DrillRunner.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_drillrunner_ts",
+      "target": "drill_drillrunner_createdrillrunner"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_drill_drillrunner_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_test_ts",
+      "target": "src_drill_schema_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_test_ts",
+      "target": "drill_schema_validatedrill"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_test_ts",
+      "target": "drill_schema_test_minimalvalid"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "src_state_types_ts"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "drill_schema_validatedrill"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L70",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "drill_schema_validatemotion"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L101",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "drill_schema_err"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L105",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "drill_schema_requireobject"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L112",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "drill_schema_requirefinitenumber"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L117",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "drill_schema_requirenonnegativenumber"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L123",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "drill_schema_requirepositivenumber"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L129",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_drill_schema_ts",
+      "target": "drill_schema_requirepositiveint"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatedrill",
+      "target": "drill_schema_requireobject"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatedrill",
+      "target": "drill_schema_err"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatedrill",
+      "target": "drill_schema_requirepositiveint"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatedrill",
+      "target": "drill_schema_requirepositivenumber"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatedrill",
+      "target": "drill_schema_validatemotion"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatedrill",
+      "target": "drill_schema_requirefinitenumber"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatedrill",
+      "target": "drill_schema_requirenonnegativenumber"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatemotion",
+      "target": "drill_schema_requireobject"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatemotion",
+      "target": "drill_schema_err"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_validatemotion",
+      "target": "drill_schema_requirepositivenumber"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L107",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_requireobject",
+      "target": "drill_schema_err"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L113",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_requirefinitenumber",
+      "target": "drill_schema_err"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L119",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_requirenonnegativenumber",
+      "target": "drill_schema_err"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L125",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_requirepositivenumber",
+      "target": "drill_schema_err"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L131",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_requirepositiveint",
+      "target": "drill_schema_err"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L118",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_requirenonnegativenumber",
+      "target": "drill_schema_requirefinitenumber"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L124",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_requirepositivenumber",
+      "target": "drill_schema_requirefinitenumber"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/drill/schema.ts",
+      "source_location": "L130",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "drill_schema_requirepositiveint",
+      "target": "drill_schema_requirefinitenumber"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/input/consume.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -5657,9 +7085,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports",
@@ -5668,9 +7096,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "state_sharedstate_resetstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_resetstate"
     },
     {
       "relation": "imports_from",
@@ -5679,9 +7107,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "imports_from",
@@ -5690,9 +7118,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "src_state_inputringtestutil_ts",
-      "confidence_score": 1.0
+      "target": "src_state_inputringtestutil_ts"
     },
     {
       "relation": "imports",
@@ -5701,9 +7129,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "state_inputringtestutil_pushevent",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_pushevent"
     },
     {
       "relation": "imports",
@@ -5712,9 +7140,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "state_inputringtestutil_snapshot",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_snapshot"
     },
     {
       "relation": "imports_from",
@@ -5723,9 +7151,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "src_input_consume_ts",
-      "confidence_score": 1.0
+      "target": "src_input_consume_ts"
     },
     {
       "relation": "imports",
@@ -5734,9 +7162,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "input_consume_consume",
-      "confidence_score": 1.0
+      "target": "input_consume_consume"
     },
     {
       "relation": "contains",
@@ -5744,9 +7172,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "input_consume_test_key",
-      "confidence_score": 1.0
+      "target": "input_consume_test_key"
     },
     {
       "relation": "contains",
@@ -5754,9 +7182,9 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_test_ts",
-      "target": "input_consume_test_collector",
-      "confidence_score": 1.0
+      "target": "input_consume_test_collector"
     },
     {
       "relation": "imports_from",
@@ -5765,9 +7193,9 @@
       "source_file": "src/input/consume.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports_from",
@@ -5776,9 +7204,9 @@
       "source_file": "src/input/consume.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "contains",
@@ -5786,9 +7214,9 @@
       "source_file": "src/input/consume.ts",
       "source_location": "L33",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_consume_ts",
-      "target": "input_consume_consume",
-      "confidence_score": 1.0
+      "target": "input_consume_consume"
     },
     {
       "relation": "imports_from",
@@ -5797,9 +7225,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_input_consume_ts",
-      "confidence_score": 1.0
+      "target": "src_input_consume_ts"
     },
     {
       "relation": "imports_from",
@@ -5808,9 +7236,9 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputringtestutil_ts",
-      "target": "src_input_consume_ts",
-      "confidence_score": 1.0
+      "target": "src_input_consume_ts"
     },
     {
       "relation": "imports",
@@ -5819,9 +7247,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "input_consume_consume",
-      "confidence_score": 1.0
+      "target": "input_consume_consume"
     },
     {
       "relation": "imports",
@@ -5830,9 +7258,9 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputringtestutil_ts",
-      "target": "input_consume_consume",
-      "confidence_score": 1.0
+      "target": "input_consume_consume"
     },
     {
       "relation": "calls",
@@ -5863,9 +7291,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "src_input_inputsampler_ts",
-      "confidence_score": 1.0
+      "target": "src_input_inputsampler_ts"
     },
     {
       "relation": "imports",
@@ -5874,9 +7302,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "input_inputsampler_createinputsampler",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_createinputsampler"
     },
     {
       "relation": "imports_from",
@@ -5885,9 +7313,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -5896,9 +7324,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -5907,9 +7335,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "imports_from",
@@ -5918,9 +7346,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "src_state_inputringtestutil_ts",
-      "confidence_score": 1.0
+      "target": "src_state_inputringtestutil_ts"
     },
     {
       "relation": "imports",
@@ -5929,9 +7357,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "state_inputringtestutil_draintoarray",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_draintoarray"
     },
     {
       "relation": "contains",
@@ -5939,9 +7367,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "input_inputsampler_test_makefaketarget",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_test_makefaketarget"
     },
     {
       "relation": "contains",
@@ -5949,9 +7377,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "input_inputsampler_test_keyevent",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_test_keyevent"
     },
     {
       "relation": "contains",
@@ -5959,9 +7387,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L39",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "input_inputsampler_test_mouseevent",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_test_mouseevent"
     },
     {
       "relation": "contains",
@@ -5969,9 +7397,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "input_inputsampler_test_coalescedsample",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_test_coalescedsample"
     },
     {
       "relation": "contains",
@@ -5979,9 +7407,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L52",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "input_inputsampler_test_pointermoveevent",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_test_pointermoveevent"
     },
     {
       "relation": "contains",
@@ -5989,9 +7417,9 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L63",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_test_ts",
-      "target": "input_inputsampler_test_legacypointermoveevent",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_test_legacypointermoveevent"
     },
     {
       "relation": "imports_from",
@@ -6000,9 +7428,9 @@
       "source_file": "src/input/InputSampler.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports_from",
@@ -6011,9 +7439,9 @@
       "source_file": "src/input/InputSampler.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "contains",
@@ -6021,9 +7449,9 @@
       "source_file": "src/input/InputSampler.ts",
       "source_location": "L40",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_input_inputsampler_ts",
-      "target": "input_inputsampler_createinputsampler",
-      "confidence_score": 1.0
+      "target": "input_inputsampler_createinputsampler"
     },
     {
       "relation": "contains",
@@ -6042,9 +7470,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "src_loop_clock_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_clock_ts"
     },
     {
       "relation": "imports_from",
@@ -6053,9 +7481,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_loop_clock_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_clock_ts"
     },
     {
       "relation": "imports_from",
@@ -6064,9 +7492,20 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "src_loop_clock_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_clock_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "src_loop_clock_ts"
     },
     {
       "relation": "imports_from",
@@ -6075,9 +7514,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "src_loop_constants_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_constants_ts"
     },
     {
       "relation": "imports_from",
@@ -6086,9 +7525,42 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "src_loop_constants_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_constants_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "src_loop_constants_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "src_loop_constants_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "src_loop_constants_ts"
     },
     {
       "relation": "imports_from",
@@ -6097,9 +7569,9 @@
       "source_file": "src/loop/RenderLoop.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_renderloop_test_ts",
-      "target": "src_loop_renderloop_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_renderloop_ts"
     },
     {
       "relation": "imports",
@@ -6108,9 +7580,9 @@
       "source_file": "src/loop/RenderLoop.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_renderloop_test_ts",
-      "target": "loop_renderloop_createrenderloop",
-      "confidence_score": 1.0
+      "target": "loop_renderloop_createrenderloop"
     },
     {
       "relation": "imports",
@@ -6119,9 +7591,9 @@
       "source_file": "src/loop/RenderLoop.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_renderloop_test_ts",
-      "target": "loop_renderloop_lerp",
-      "confidence_score": 1.0
+      "target": "loop_renderloop_lerp"
     },
     {
       "relation": "contains",
@@ -6129,9 +7601,9 @@
       "source_file": "src/loop/RenderLoop.ts",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_renderloop_ts",
-      "target": "loop_renderloop_lerp",
-      "confidence_score": 1.0
+      "target": "loop_renderloop_lerp"
     },
     {
       "relation": "contains",
@@ -6139,9 +7611,9 @@
       "source_file": "src/loop/RenderLoop.ts",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_renderloop_ts",
-      "target": "loop_renderloop_createrenderloop",
-      "confidence_score": 1.0
+      "target": "loop_renderloop_createrenderloop"
     },
     {
       "relation": "imports_from",
@@ -6150,9 +7622,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -6161,9 +7633,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -6172,9 +7644,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "src_state_inputringtestutil_ts",
-      "confidence_score": 1.0
+      "target": "src_state_inputringtestutil_ts"
     },
     {
       "relation": "imports",
@@ -6183,9 +7655,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "state_inputringtestutil_pushevent",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_pushevent"
     },
     {
       "relation": "imports_from",
@@ -6194,9 +7666,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "src_loop_simloop_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_simloop_ts"
     },
     {
       "relation": "imports",
@@ -6205,9 +7677,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "loop_simloop_createsimloop",
-      "confidence_score": 1.0
+      "target": "loop_simloop_createsimloop"
     },
     {
       "relation": "imports",
@@ -6216,9 +7688,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "loop_simloop_simstep",
-      "confidence_score": 1.0
+      "target": "loop_simloop_simstep"
     },
     {
       "relation": "contains",
@@ -6226,9 +7698,9 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
-      "target": "loop_simloop_test_fixedclock",
-      "confidence_score": 1.0
+      "target": "loop_simloop_test_fixedclock"
     },
     {
       "relation": "imports_from",
@@ -6237,9 +7709,97 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_sim_targetmanager_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_sim_hitdetector_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "sim_hitdetector_raycastfromcenter"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_sim_firstshot_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "sim_firstshot_currentpeekid"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "sim_firstshot_firstshotgate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_sim_movementcontroller_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "sim_movementcontroller_createmovementcontroller"
     },
     {
       "relation": "imports_from",
@@ -6248,9 +7808,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "contains",
@@ -6258,9 +7818,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "loop_simloop_applyinput",
-      "confidence_score": 1.0
+      "target": "loop_simloop_applyinput"
     },
     {
       "relation": "contains",
@@ -6268,9 +7828,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "loop_simloop_simstep",
-      "confidence_score": 1.0
+      "target": "loop_simloop_simstep"
     },
     {
       "relation": "contains",
@@ -6278,9 +7838,9 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L68",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
-      "target": "loop_simloop_createsimloop",
-      "confidence_score": 1.0
+      "target": "loop_simloop_createsimloop"
     },
     {
       "relation": "imports_from",
@@ -6289,9 +7849,97 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "src_loop_simloop_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_simloop_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "src_loop_simloop_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "src_loop_simloop_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "src_loop_simloop_ts"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "loop_simloop_applyinput",
+      "target": "sim_firstshot_currentpeekid"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "loop_simloop_applyinput",
+      "target": "sim_firstshot_firstshotgate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "loop_simloop_applyinput",
+      "target": "sim_hitdetector_raycastfromcenter"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "loop_simloop_simstep"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "loop_simloop_simstep"
     },
     {
       "relation": "imports",
@@ -6300,9 +7948,31 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "loop_simloop_createsimloop",
-      "confidence_score": 1.0
+      "target": "loop_simloop_createsimloop"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "loop_simloop_createsimloop"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L144",
+      "weight": 1.0,
+      "source": "loop_simloop_createsimloop",
+      "target": "sim_movementcontroller_createmovementcontroller"
     },
     {
       "relation": "calls",
@@ -6322,9 +7992,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -6333,9 +8003,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports_from",
@@ -6344,9 +8014,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "imports_from",
@@ -6355,9 +8025,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "src_state_inputringtestutil_ts",
-      "confidence_score": 1.0
+      "target": "src_state_inputringtestutil_ts"
     },
     {
       "relation": "imports",
@@ -6366,9 +8036,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "state_inputringtestutil_pushevent",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_pushevent"
     },
     {
       "relation": "contains",
@@ -6376,9 +8046,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L44",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "tests_determinism_test_syntheticinputs",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_syntheticinputs"
     },
     {
       "relation": "contains",
@@ -6386,9 +8056,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L54",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "tests_determinism_test_freshstate",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_freshstate"
     },
     {
       "relation": "contains",
@@ -6396,9 +8066,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L60",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "tests_determinism_test_snap",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_snap"
     },
     {
       "relation": "contains",
@@ -6406,9 +8076,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L68",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "tests_determinism_test_runframes",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_runframes"
     },
     {
       "relation": "contains",
@@ -6416,9 +8086,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L85",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "tests_determinism_test_canonicaltrajectory",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_canonicaltrajectory"
     },
     {
       "relation": "contains",
@@ -6426,9 +8096,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L95",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "tests_determinism_test_framesat",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_framesat"
     },
     {
       "relation": "contains",
@@ -6436,9 +8106,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L103",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
-      "target": "tests_determinism_test_jitterframes",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_jitterframes"
     },
     {
       "relation": "calls",
@@ -6447,9 +8117,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L56",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_determinism_test_freshstate",
-      "target": "tests_determinism_test_syntheticinputs",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_syntheticinputs"
     },
     {
       "relation": "calls",
@@ -6458,9 +8128,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L69",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_determinism_test_runframes",
-      "target": "tests_determinism_test_freshstate",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_freshstate"
     },
     {
       "relation": "calls",
@@ -6491,9 +8161,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L76",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_determinism_test_runframes",
-      "target": "tests_determinism_test_snap",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_snap"
     },
     {
       "relation": "calls",
@@ -6502,9 +8172,9 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L88",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_determinism_test_canonicaltrajectory",
-      "target": "tests_determinism_test_runframes",
-      "confidence_score": 1.0
+      "target": "tests_determinism_test_runframes"
     },
     {
       "relation": "imports_from",
@@ -6667,12 +8337,626 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_render_targetview_test_ts",
+      "target": "src_state_types_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_render_targetview_test_ts",
+      "target": "src_render_targetview_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_render_targetview_test_ts",
+      "target": "render_targetview_targetview"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_render_targetview_test_ts",
+      "target": "render_targetview_test_target"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.test.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_render_targetview_test_ts",
+      "target": "render_targetview_test_meshes"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_render_targetview_ts",
+      "target": "src_state_types_ts"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_render_targetview_ts",
+      "target": "render_targetview_targetview"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "render_targetview_targetview",
+      "target": "render_targetview_targetview_constructor"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "render_targetview_targetview",
+      "target": "render_targetview_targetview_sync"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "render_targetview_targetview",
+      "target": "render_targetview_targetview_poolsize"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L65",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "render_targetview_targetview",
+      "target": "render_targetview_targetview_acquire"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L76",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "render_targetview_targetview",
+      "target": "render_targetview_targetview_dispose"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/render/TargetView.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "render_targetview_targetview_sync",
+      "target": "render_targetview_targetview_acquire"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "src_state_types_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "src_sim_firstshot_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "sim_firstshot_currentpeekid"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "sim_firstshot_firstshotgate"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "sim_firstshot_test_maketarget"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "sim_firstshot_test_cameralookingdownz"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.test.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_test_ts",
+      "target": "sim_firstshot_test_maketargetmanager"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_ts",
+      "target": "sim_firstshot_currentpeekid"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/firstShot.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_firstshot_ts",
+      "target": "sim_firstshot_firstshotgate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "src_state_types_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "src_sim_hitdetector_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "sim_hitdetector_raycastfromcenter"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "sim_hitdetector_test_cameralookingdownz"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.test.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_test_ts",
+      "target": "sim_hitdetector_test_maketarget"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_ts",
+      "target": "src_state_types_ts"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/HitDetector.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_hitdetector_ts",
+      "target": "sim_hitdetector_raycastfromcenter"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_movementcontroller_test_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_movementcontroller_test_ts",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_movementcontroller_test_ts",
+      "target": "src_sim_movementcontroller_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_movementcontroller_test_ts",
+      "target": "sim_movementcontroller_createmovementcontroller"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_movementcontroller_test_ts",
+      "target": "sim_movementcontroller_test_run"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "sim_movementcontroller_test_run",
+      "target": "sim_movementcontroller_createmovementcontroller"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/sim/MovementController.test.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "sim_movementcontroller_test_run",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/MovementController.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_movementcontroller_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/MovementController.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_movementcontroller_ts",
+      "target": "sim_movementcontroller_createmovementcontroller"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "src_sim_targetmanager_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "sim_targetmanager_createtargetmanager"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "sim_targetmanager_test_fixedclock"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L104",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "sim_targetmanager_test_killsequence"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L168",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "sim_targetmanager_test_config"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L183",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_test_ts",
+      "target": "sim_targetmanager_test_rundrill"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "sim_targetmanager_test_killsequence",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "sim_targetmanager_test_killsequence",
+      "target": "sim_targetmanager_createtargetmanager"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L184",
+      "weight": 1.0,
+      "source": "sim_targetmanager_test_rundrill",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/sim/TargetManager.test.ts",
+      "source_location": "L185",
+      "weight": 1.0,
+      "source": "sim_targetmanager_test_rundrill",
+      "target": "sim_targetmanager_createtargetmanager"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_ts",
+      "target": "src_state_sharedstate_ts"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_ts",
+      "target": "sim_targetmanager_sidex"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/sim/TargetManager.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_sim_targetmanager_ts",
+      "target": "sim_targetmanager_createtargetmanager"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputring_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -6681,9 +8965,9 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputring_test_ts",
-      "target": "state_sharedstate_createinputring",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createinputring"
     },
     {
       "relation": "imports_from",
@@ -6692,9 +8976,9 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputring_test_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "imports_from",
@@ -6703,9 +8987,9 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputring_test_ts",
-      "target": "src_state_inputringtestutil_ts",
-      "confidence_score": 1.0
+      "target": "src_state_inputringtestutil_ts"
     },
     {
       "relation": "imports",
@@ -6714,9 +8998,9 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputring_test_ts",
-      "target": "state_inputringtestutil_snapshot",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_snapshot"
     },
     {
       "relation": "contains",
@@ -6724,9 +9008,9 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputring_test_ts",
-      "target": "state_inputring_test_drainall",
-      "confidence_score": 1.0
+      "target": "state_inputring_test_drainall"
     },
     {
       "relation": "calls",
@@ -6746,9 +9030,9 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputringtestutil_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports_from",
@@ -6757,9 +9041,9 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputringtestutil_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "contains",
@@ -6767,9 +9051,9 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputringtestutil_ts",
-      "target": "state_inputringtestutil_pushevent",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_pushevent"
     },
     {
       "relation": "contains",
@@ -6777,9 +9061,9 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L25",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputringtestutil_ts",
-      "target": "state_inputringtestutil_draintoarray",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_draintoarray"
     },
     {
       "relation": "contains",
@@ -6787,9 +9071,9 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_inputringtestutil_ts",
-      "target": "state_inputringtestutil_snapshot",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_snapshot"
     },
     {
       "relation": "imports_from",
@@ -6798,9 +9082,9 @@
       "source_file": "src/state/SharedState.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_test_ts",
-      "target": "src_state_inputringtestutil_ts",
-      "confidence_score": 1.0
+      "target": "src_state_inputringtestutil_ts"
     },
     {
       "relation": "imports",
@@ -6809,9 +9093,9 @@
       "source_file": "src/state/SharedState.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_test_ts",
-      "target": "state_inputringtestutil_pushevent",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_pushevent"
     },
     {
       "relation": "imports_from",
@@ -6820,9 +9104,9 @@
       "source_file": "src/state/SharedState.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_test_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "imports",
@@ -6831,9 +9115,9 @@
       "source_file": "src/state/SharedState.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_test_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "imports",
@@ -6842,9 +9126,9 @@
       "source_file": "src/state/SharedState.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_test_ts",
-      "target": "state_sharedstate_resetstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_resetstate"
     },
     {
       "relation": "imports_from",
@@ -6853,9 +9137,9 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_ts",
-      "target": "src_state_types_ts",
-      "confidence_score": 1.0
+      "target": "src_state_types_ts"
     },
     {
       "relation": "contains",
@@ -6863,9 +9147,9 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L45",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_ts",
-      "target": "state_sharedstate_createinputring",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createinputring"
     },
     {
       "relation": "contains",
@@ -6873,9 +9157,9 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L117",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "contains",
@@ -6883,9 +9167,9 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L137",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_state_sharedstate_ts",
-      "target": "state_sharedstate_resetstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_resetstate"
     },
     {
       "relation": "calls",
@@ -6894,9 +9178,40 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L119",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "state_sharedstate_createsharedstate",
-      "target": "state_sharedstate_createinputring",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createinputring"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/ui/Crosshair.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_ui_crosshair_ts",
+      "target": "ui_crosshair_createcrosshair"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/ui/Crosshair.ts",
+      "source_location": "L62",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_ui_crosshair_ts",
+      "target": "ui_crosshair_makearm"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/ui/Crosshair.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "ui_crosshair_createcrosshair",
+      "target": "ui_crosshair_makearm"
     },
     {
       "relation": "contains",
@@ -7010,6 +9325,36 @@
       "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller_applydelta",
       "target": "view_cameracontroller_cameracontroller_applytocamera"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/e2e/input-sampler.spec.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "tests_e2e_input_sampler_spec_ts",
+      "target": "e2e_input_sampler_spec_gotoappready"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/e2e/input-sampler.spec.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "tests_e2e_input_sampler_spec_ts",
+      "target": "e2e_input_sampler_spec_vx"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/e2e/input-sampler.spec.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "tests_e2e_input_sampler_spec_ts",
+      "target": "e2e_input_sampler_spec_x"
     },
     {
       "relation": "references",
@@ -12740,5 +15085,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "908a0c95953864f498f2295976d0dfef3a19ff35"
+  "built_at_commit": "16837d12096bb65f142770cd12381ef4c0f38265"
 }

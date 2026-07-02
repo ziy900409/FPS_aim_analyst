@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Low / Med |
 | **Touches** | NEW `src/drill/DrillConfig.ts`、`src/drill/schema.ts`（驗證） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02） |
 
 ## Objective
 定義 `DrillConfig` TS 型別與執行期驗證（JSON Schema 或手寫 guard），涵蓋目標數/位置/時序/交替/結束條件（FR-6.1，OQ-6.1）。
@@ -25,13 +25,13 @@
 - 驗證失敗 throw 帶欄位訊息（OQ-6.4）。
 
 ## Steps
-- [ ] 建 `DrillConfig.ts` 型別。
-- [ ] 建 `schema.ts`：`validateDrill`（缺欄/型別/範圍）。
-- [ ] Vitest：合法 config 通過；缺 drillId/負目標數/未知 alternation → 明確 throw。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] 建 `DrillConfig.ts` 型別（reuse `state/types.ts` 的 `TargetMotion`/`Vec3`,不重複定義）。
+- [x] 建 `schema.ts`：`validateDrill`（缺欄/型別/範圍;手寫 guard,零依賴)。
+- [x] Vitest：合法 config 通過；缺 drillId/負目標數/未知 alternation → 明確 throw（12 tests）。
+- [x] `vitest run`（111 passed）+ `tsc --noEmit` 綠燈。
 
 ## Definition of Done
-- [ ] 型別完整、驗證涵蓋必填/型別/範圍；失敗訊息可定位欄位。
+- [x] 型別完整、驗證涵蓋必填/型別/範圍；失敗訊息可定位欄位（`DrillConfig 驗證失敗: <path> ...`）。
 
 ## Commit
 `feat(wp-6): DrillConfig 型別 + 驗證 schema（FR-6.1）`
