@@ -7,7 +7,7 @@
 | **Depends on** | T1 |
 | **Risk / Complexity** | Med / Low |
 | **Touches** | NEW `src/sim/firstShot.ts`；MODIFY `src/loop/SimLoop.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02）|
 
 ## Objective
 每個 peek（一個目標可見週期）只把**第一發** fire 標為 `firstShot`，作為「首發命中率」的分子來源，不被後續掃射稀釋（FR-5.2，OQ-5.3）。
@@ -24,13 +24,13 @@
 - 首發旗標存 `SharedState`（per-peek），新 peek reset。
 
 ## Steps
-- [ ] 建 `firstShot.ts`：以 peekId 判第一發。
-- [ ] sim fire 處理：附 `firstShot = firstShotGate(state, currentPeekId)`。
-- [ ] Vitest：同 peek 連開三槍 → 只有第一槍 firstShot=true；換 peek 後第一槍又 true。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] 建 `firstShot.ts`：以 peekId 判第一發（+ `currentPeekId` 取 active 目標 id）。
+- [x] sim fire 處理：附 `firstShot = firstShotGate(state, currentPeekId)`（命中判定前）。
+- [x] Vitest：同 peek 連開三槍 → 只有第一槍 firstShot=true；換 peek 後第一槍又 true。
+- [x] `vitest run` + `tsc` 綠燈（86/86、tsc exit 0）。
 
 ## Definition of Done
-- [ ] 每 peek 僅第一發 firstShot=true；換 peek 正確 reset；掃射不稀釋。
+- [x] 每 peek 僅第一發 firstShot=true；換 peek 正確 reset（peekId 唯一隱式 reset）；掃射不稀釋。
 
 ## Commit
 `feat(wp-5): 首發判定（每 peek 第一發）（FR-5.2）`

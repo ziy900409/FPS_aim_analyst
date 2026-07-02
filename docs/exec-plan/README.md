@@ -40,7 +40,7 @@
 | **WP-2** | [`active/wp-2-dual-loop-skeleton/`](active/wp-2-dual-loop-skeleton/README.md) | `SharedState` + 雙迴圈骨架 + 決定性驗證 ★脊椎 | **M1 ✅** | WP-0, WP-1 | 3–4 | ✅ 完成（2026-07-01）|
 | **WP-3** | [`active/wp-3-input-sampler/`](active/wp-3-input-sampler/README.md) | `InputSampler`（F1）高解析度時間戳採集 | — | WP-2 | 2–3 | ✅ 完成（2026-07-01） |
 | **WP-4** | [`active/wp-4-target-tvisible/`](active/wp-4-target-tvisible/README.md) | `TargetManager` + `t_visible`（F2）左右交替 | — | WP-1, WP-2 | 2–3 | ✅ 完成（2026-07-02） |
-| **WP-5** | [`active/wp-5-hit-counterstrafe/`](active/wp-5-hit-counterstrafe/README.md) | `HitDetector` + 橫移 + 簡化急停（F3） | **M2** | WP-3, WP-4 | 2–3 | 🟡 規劃完成 |
+| **WP-5** | [`active/wp-5-hit-counterstrafe/`](active/wp-5-hit-counterstrafe/README.md) | `HitDetector` + 橫移 + 簡化急停（F3） | **M2 ✅** | WP-3, WP-4 | 2–3 | ✅ 完成（2026-07-02） |
 | **WP-6** | [`active/wp-6-drill-system/`](active/wp-6-drill-system/README.md) | `DrillConfig` 資料驅動 drill（F4） | — | WP-4, WP-5 | 2–4 | 🟡 規劃完成 |
 | **WP-7** | [`active/wp-7-data-recorder/`](active/wp-7-data-recorder/README.md) | `DataRecorder` ring buffer + JSON/CSV 匯出 | **M3** | WP-2, WP-4, WP-5 | 3–5 | 🟡 規劃完成 |
 | **WP-8** | [`active/wp-8-metrics-hud/`](active/wp-8-metrics-hud/README.md) | `MetricsDashboard` + 即時 HUD | — | WP-5, WP-6, WP-7 | 3–4 | 🟡 規劃完成 |
@@ -53,7 +53,7 @@
 | 里程碑 | 完成條件 | 對應 WP | 意義 |
 |---|---|---|---|
 | **M1 ✅（2026-07-01）** | 雙迴圈骨架可空跑 + 決定性驗證通過 | WP-2 | 脊椎，量測效度基礎，**已達成 → WP-3 / WP-4 可並行展開** |
-| **M2** | 場景中可橫移、急停、開火、命中 | WP-5 | 核心玩法成立 |
+| **M2 ✅（2026-07-02）** | 場景中可橫移、急停、開火、命中 | WP-5 | 核心玩法成立，**已達成 → WP-6（drill 編排）/ WP-7（記錄）可展開** |
 | **M3** | 完整 drill 能端到端匯出資料 | WP-7 | 可開始 pilot |
 | **M4** | 階段 A 全部驗收清單通過 | WP-9 | 階段 A 交付 |
 

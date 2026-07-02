@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | NEW `src/sim/MovementController.ts`；MODIFY `src/loop/SimLoop.ts`、`src/state/SharedState.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02）|
 
 ## Objective
 `MovementController.step` 依 A/D held 狀態在 sim 固定步長推進 velocity 與位移（FR-5.3）。公開介面須讓階段 B 替換為 friction integrator 時不變（附錄 D）。
@@ -25,15 +25,15 @@
 - `step` 為唯一公開點；內部數值階段 B 可換（附錄 D），介面不動。
 
 ## Steps
-- [ ] 建 `MovementController.ts`（`step` + `createMovementController`）。
-- [ ] sim：consume 後呼叫 `movement.step(state, dt)`。
-- [ ] Vitest：held D 一段時間 → x 線性增加且與 FPS 無關（同總時間不同分幀 → 同位移）；放開 → vx=0。
-- [ ] 手動驗：A/D 可左右移動。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] 建 `MovementController.ts`（`step` + `createMovementController`）。
+- [x] sim：consume 後呼叫 `movement.step(state, dt)`（applyInput 鍵事件改寫 `state.held`）。
+- [x] Vitest：held D 一段時間 → x 線性增加且與 FPS 無關（同總時間不同分幀 → 同位移）；放開 → vx=0。
+- [x] 手動驗：A/D 可左右移動（瀏覽器，2026-07-02 使用者確認 PASS）。
+- [x] `vitest run` + `tsc` 綠燈（92/92、tsc exit 0）。
 
 ## Definition of Done
-- [ ] A/D 橫移正確、固定步長、與 FPS 無關（決定性回歸綠）。
-- [ ] `MovementController` 公開介面僅 `step`（階段 B 友善）。
+- [x] A/D 橫移正確、固定步長、與 FPS 無關（決定性回歸 9/9 綠）。
+- [x] `MovementController` 公開介面僅 `step`（階段 B 友善；velocity 讀 `state.held`、寫 `state.player.vx/x` 抽象欄位）。
 
 ## Commit
 `feat(wp-5): MovementController A/D 橫移（固定步長）（FR-5.3）`

@@ -40,11 +40,12 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(alpha).toBeLessThan(1);
   });
 
-  it('simStep 等速推進 x（純函式，只用 dtSec）+ 維護 prev/curr', () => {
+  it('simStep 由 held 定 vx（M1 snap）並等速推進 x（只用 dtSec）+ 維護 prev/curr', () => {
     const state = createSharedState();
-    state.player.vx = 128; // u/s
-    simStep(state, 1 / SIM_HZ, 0); // 無輸入；tickEndMs 任意
-    expect(state.player.x).toBeCloseTo(1, 12); // 128 × (1/128) = 1 u
+    state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick snap +v_strafe
+    simStep(state, 1 / SIM_HZ, 0); // 無新輸入事件；tickEndMs 任意
+    expect(state.player.vx).toBe(250); //           held D → snap +v_strafe
+    expect(state.player.x).toBeCloseTo(250 / SIM_HZ, 12); // 250 × (1/128) = 1.953125 u
     expect(state.prev.x).toBe(0); //                prev = 推進前位置（內插基準）
     expect(state.curr.x).toBe(state.player.x); //   curr = 推進後位置
   });
@@ -67,5 +68,20 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     loop.pump(TICK_MS); // 只跑 tick1，窗 [0,7.8125)
     expect(state.player.vx).toBe(0); // 尚未到期
     expect(state.input.size()).toBe(1); // 仍在緩衝
+  });
+
+  it('簡化急停（T4）：反向鍵於 simStep 內立即 stopped=true、vx=0（開火精準 gate 來源）', () => {
+    const state = createSharedState();
+    state.held.right = true; // 向右移動
+    simStep(state, 1 / SIM_HZ, 0);
+    expect(state.player.vx).toBe(250);
+    expect(state.player.stopped).toBe(false); // 移動中開火 → accurate=false、residualSpeed=|vx|
+
+    // 反向鍵（放 D、按 A）→ 下一 tick 急停：consume 更新 held、movement.step 判急停
+    state.held.right = false;
+    state.held.left = true;
+    simStep(state, 1 / SIM_HZ, TICK_MS);
+    expect(state.player.vx).toBe(0);
+    expect(state.player.stopped).toBe(true); // 停止態開火 → accurate=true、residualSpeed=0
   });
 });
