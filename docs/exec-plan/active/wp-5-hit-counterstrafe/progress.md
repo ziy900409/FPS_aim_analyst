@@ -46,6 +46,8 @@
 - **Decision — camera 為 sim 選填注入（非新迴圈耦合）**：命中判定需 camera 朝向，但 camera 由 render/`CameraController` 走輸入路徑持有。選擇把 camera 以**選填參數**注入 `createSimLoop`/`simStep`，sim **唯讀** camera（不寫 render 物件），維持雙迴圈邊界（ADR-2）。*Alternatives*：①把 raycast 搬到 render 層——破壞「命中判定屬 sim」（CONTEXT）；②sim 持有 camera 副本——狀態雙源、易漂移。選注入最小耦合。
 - **Decision — 手動 raycast（ray∩Box3）而非 `Raycaster.intersectObject(mesh)`**：sim 不得觸及 render mesh（TargetView 私有池，雙迴圈邊界）。改由 `TargetState.hitbox` 直接建 `Box3`，與 TargetView 的 `BoxGeometry`+scale **同來源**，判定/視覺不漂移（README failure-mode）。
 - **Surprise**：`Raycaster.setFromCamera` 讀 `camera.matrixWorld`，**不**自動更新——測試須顯式 `camera.updateMatrixWorld(true)`；app 路徑由 render loop 每幀維護。已於 HitDetector doc 註明呼叫端責任。
+- **Surprise（手動驗證發現）**：目標佔位距離 `DEFAULT_DISTANCE=8`（z=−8）落在佔位房間北牆（z=−5）**後方**，目標被牆遮擋、瀏覽器看不到方塊。命中邏輯正確（自動測試綠）但視覺不可驗。修正：距離 8→4（z=−4，房間內）——獨立 `fix` commit（`23b443c`），純佔位常數對齊，WP-6 drill config 之後接管。
+- **手動驗證 PASS（2026-07-02 Edge/WebGPU）**：臨時 `[fire]` log 佐證端到端——對空牆 `hit:false` 不殺、對準 `hit:true` → t0→t1→…→t8 依序擊殺並生成對側、side 交替、未命中可補槍（P2）。驗畢移除 log（未 commit）。
 - **Next**：T2 首發判定（依 T1）與 T3 橫移（依 T0）可並行。
 
 ### 2026-07-02 — T0 Entry gate ✅
