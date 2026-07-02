@@ -52,10 +52,10 @@
 
 | ID | Question | 建議解法 | Blocks |
 |----|----------|---------|--------|
-| **OQ-7.1** | recorder 容量與超量策略？ | **已定（grill）**：`DataRecorder` = **preallocated arena（非環狀、drill 內不 wrap）**，容量 = `maxDrillSeconds`(300s)×simHz ≈ 38400 + 餘裕；超量**升 `recorderOverflow`、不覆寫**（容量＝drill 雙閘總時長，正常碰不到）。**輸入緩衝**才是真 ring（WP-3，溢位 `bufferOverflow`）。 | T1 |
-| **OQ-7.2** | 每 tick 記錄哪些欄位（對齊附錄 C）？ | `{ t, vx, vz, crosshair:[cx,cy], keys:[...] }`（附錄 C ticks 範例）。 | T1 |
-| **OQ-7.3** | CSV 結構（ticks 與 events 異質）？ | 匯出兩個 CSV（ticks.csv / events.csv）或一個 JSON + 扁平化 CSV；建議 JSON 為主、CSV 為 ticks 扁平表 + events 扁平表。 | T4 |
-| **OQ-7.4** | 物件重用如何兼顧匯出快照？ | 記錄階段重用；匯出時一次性序列化（讀取，不在熱路徑配置）。 | T1, T4 |
+| **OQ-7.1** | recorder 容量與超量策略？ | ✅ **已定（T0 / grill）**：`DataRecorder` = **preallocated arena（非環狀、drill 內不 wrap）**，容量 = `maxDrillSeconds`(300s)×simHz ≈ 38400 + 餘裕；超量**升 `recorderOverflow`、不覆寫**（容量＝drill 雙閘總時長，正常碰不到）。**輸入緩衝**才是真 ring（WP-3，溢位 `bufferOverflow`）。 | T1 |
+| **OQ-7.2** | 每 tick 記錄哪些欄位（對齊附錄 C）？ | ✅ **已定（T0）**：`{ t, vx, vz, crosshair:[cx,cy], keys:[...] }`（附錄 C ticks 範例）。 | T1 |
+| **OQ-7.3** | CSV 結構（ticks 與 events 異質）？ | ✅ **已定（T0）**：JSON 為主；CSV 匯出兩個扁平表 `ticks.csv` / `events.csv`。 | T4 |
+| **OQ-7.4** | 物件重用如何兼顧匯出快照？ | ✅ **已定（T0）**：記錄階段重用；匯出時一次性序列化（讀取，不在熱路徑配置）。 | T1, T4 |
 
 ---
 
