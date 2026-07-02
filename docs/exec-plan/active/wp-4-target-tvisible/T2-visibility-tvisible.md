@@ -7,7 +7,7 @@
 | **Depends on** | T1 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | NEW `src/sim/TargetManager.ts`；MODIFY `src/loop/SimLoop.ts`（simStep 呼叫 tick） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02）|
 
 ## Objective
 `TargetManager.tick` 在 **sim tick 內**處理 spawn/可見性，並在目標 `visible` 由 false→true 的轉換 tick 蓋 `t_visible = nowMs`（sim clock）（FR-4.2）。這是反應時間量測的起點，效度關鍵。
@@ -24,15 +24,15 @@
 - `nowMs` 必須來自 sim clock（不可用 rAF 時間 / `Date.now()`）。
 
 ## Steps
-- [ ] 建 `TargetManager`：spawn 一目標 → 可見瞬間蓋 `t_visible`。
-- [ ] `SimLoop.simStep` 呼叫 `tick(state, nowMs)`。
-- [ ] Vitest：模擬 tick 推進，斷言 `t_visible` 在「可見轉換」那 tick 被設、值=該 tick 的 sim 時間、且不重複設。
-- [ ] 斷言 `t_visible` 來源為注入 sim clock（非 `Date.now`/rAF）。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] 建 `TargetManager`：spawn 一目標 → 可見瞬間蓋 `t_visible`（[src/sim/TargetManager.ts](../../../../src/sim/TargetManager.ts)）。
+- [x] `SimLoop.simStep` 呼叫 `tick(state, nowMs)`（選填 `targetManager` 參數，命中判定之前）。
+- [x] Vitest：斷言 `t_visible` 在可見轉換 tick 被設、值=該 tick sim 時間、且不重複設。
+- [x] 斷言 `t_visible` 來源為注入 sim clock（值 ~1007，排除 `Date.now` 域）。
+- [x] `vitest run`（38/38）+ `tsc` 綠燈；`vite build` ✓。
 
 ## Definition of Done
-- [ ] `t_visible` 在 sim tick 內、可見轉換時蓋一次，時間源為 sim clock。
-- [ ] 單元測試覆蓋「只蓋一次」與「時間源正確」。
+- [x] `t_visible` 在 sim tick 內、可見轉換時蓋一次，時間源為 sim clock。
+- [x] 單元測試覆蓋「只蓋一次」與「時間源正確」（6 tests）。
 
 ## Commit
 `feat(wp-4): 目標可見性 + t_visible 在 sim tick 內蓋戳（FR-4.2）`

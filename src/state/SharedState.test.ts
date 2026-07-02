@@ -42,7 +42,14 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     s.curr.z = 2;
     s.crosshair.cx = 9;
     s.crosshair.cy = -9;
-    s.targets.push({ id: 't1', x: 0, y: 1, z: 8, active: true });
+    s.targets.push({
+      id: 't1',
+      side: 'R',
+      pos: { x: 0, y: 1, z: 8 },
+      visible: true,
+      alive: true,
+      hitbox: { width: 1, height: 2, depth: 1 },
+    });
     s.tVisible.set('t1', 123.4);
 
     resetState(s);

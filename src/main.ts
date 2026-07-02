@@ -1,11 +1,14 @@
 import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
 import { SceneManager } from './render/SceneManager.ts';
+import { TargetView } from './render/TargetView.ts';
 import { createPointerLock } from './input/PointerLock.ts';
 import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
+import { createCrosshair } from './ui/Crosshair.ts';
 import { sharedState } from './state/SharedState.ts';
+import { createTargetManager } from './sim/TargetManager.ts';
 import { createSimLoop } from './loop/SimLoop.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
@@ -25,6 +28,9 @@ void backend;
 
 // WP-1 / T1（FR-1.1）— 封閉房間 + camera 舞台。
 const sceneManager = new SceneManager();
+
+// WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
+const targetView = new TargetView(sceneManager.scene);
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -92,6 +98,10 @@ const settingsPanel = createSettingsPanel({
 });
 pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 
+// WP-4 / T4（FR-4.4）— 螢幕中心準心（DOM overlay, D1）：瞄準參考 + §5 準心對齊偏移的視覺基準。
+// 恆顯示（不隨鎖定切換）：第一人稱射線走 camera 中心，準心即射線方向指示。
+createCrosshair();
+
 // WP-3 / T1+T3（FR-3.1/3.3）— 輸入採集：keydown/keyup（A/D/W/S）與開火 mousedown（左鍵）蓋
 // event.timeStamp 寫入 sharedState.input，供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；
 // 掛在 window（鍵盤事件不落在 canvas；lock 中滑鼠事件亦冒泡至 window）。開火以 pointerLock.locked
@@ -103,7 +113,10 @@ inputSampler.attach(window);
 // WP-2 / T2+T3（FR-2.2/2.3）— 雙迴圈：sim（128 Hz 固定步長 accumulator）與 render（rAF）解耦，
 // 全透過 sharedState 溝通（ADR-2）。階段 A 單執行緒下，sim 在 render 的 rAF callback 內 pump（§4.3
 // 「單一 rAF 超級迴圈」，DESIGN §1）；階段 B 才把 sim 搬入 worker。
-const simLoop = createSimLoop(sharedState, realClock, SIM_HZ);
+// WP-4 / T2（FR-4.2）— 目標系統在 sim tick 內 spawn/可見性/蓋 t_visible（傳入 simLoop，
+// tick 由 simStep 呼叫；時間源為 sim clock，非 rAF）。
+const targetManager = createTargetManager();
+const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager);
 
 // WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
 // 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈
@@ -128,7 +141,9 @@ const renderLoop = createRenderLoop((now) => {
   // 3) player 位移驅動 camera 位置；視角朝向（yaw/pitch）由 CameraController 走輸入路徑、**不內插**
   //    （人眼對視角延遲敏感，且視角非 sim 狀態）。
   sceneManager.camera.position.set(baseX + px, baseY, baseZ + pz);
-  // 4) 繪製。
+  // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
+  targetView.sync(sharedState.targets);
+  // 5) 繪製。
   renderer.render(sceneManager.scene, sceneManager.camera);
 });
 renderLoop.start();

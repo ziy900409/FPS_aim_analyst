@@ -7,7 +7,7 @@
 | **Depends on** | T2 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | MODIFY `src/sim/TargetManager.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02）|
 
 ## Objective
 實作左右交替序列：擊殺/消失一側 → 生成對側（依序交替），確定性輪替，與 WP-2 決定性相容（FR-4.3）。
@@ -25,14 +25,14 @@
 - 輪替不可用無種子 `Math.random`（破壞決定性）。
 
 ## Steps
-- [ ] `markKilled` + 對側生成邏輯。
-- [ ] 確定性輪替（L→R→L…）。
-- [ ] Vitest：連續 markKilled → side 嚴格交替；每次生成蓋新 `t_visible`；重跑相同序列結果一致（決定性）。
-- [ ] 手動驗：佔位擊殺鍵 → 目標左右輪替出現。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] `markKilled` + 對側生成邏輯（撤除確認後翻面 `nextSide`；下一 tick spawn 對側）。
+- [x] 確定性輪替（L→R→L…；純內部布林翻面、無隨機源）。
+- [x] Vitest：連續 markKilled → side 嚴格交替；每次生成蓋新 `t_visible`；重跑相同序列結果一致（決定性）。
+- [ ] 手動驗：佔位擊殺鍵 → 目標左右輪替出現（**延後至 T5 exit gate 端到端瀏覽器驗**；擊殺鍵綁定屬 WP-5，本 WP 無佔位鍵）。
+- [x] `vitest run`（43/43）+ `tsc` 綠燈。
 
 ## Definition of Done
-- [ ] 擊殺一側 → 生成對側，嚴格交替、確定性；每次生成有新 `t_visible`。
+- [x] 擊殺一側 → 生成對側，嚴格交替、確定性；每次生成有新 `t_visible`。
 
 ## Commit
 `feat(wp-4): 左右交替目標序列（確定性輪替）（FR-4.3）`

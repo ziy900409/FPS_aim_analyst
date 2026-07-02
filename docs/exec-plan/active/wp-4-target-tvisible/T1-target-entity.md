@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Low / Med |
 | **Touches** | NEW `src/render/TargetView.ts`；MODIFY `src/state/SharedState.ts`（TargetState） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02；T1a 型別 + T1b mesh/TargetView）|
 
 ## Objective
 定義 `TargetState`（**單一 hitbox，H1**；`part` 選填保留）並建 `TargetView` 依狀態顯示/隱藏 mesh（FR-4.1）。
@@ -25,13 +25,13 @@
 - hitbox 與 mesh 由同 TargetState 衍生，確保視覺與判定一致。
 
 ## Steps
-- [ ] `SharedState` 加 `TargetState`（若 WP-2 已留空殼則補欄位）。
-- [ ] 建 `TargetView`：mesh 池 + 依 state 顯示/隱藏。
-- [ ] 手動驗：以測試鉤子塞一個 visible target → 場景出現；設 false → 隱藏。
-- [ ] `tsc` 乾淨。
+- [x] `SharedState` 加 `TargetState`（T1a：重塑至 README §2 契約，見 progress）。
+- [x] 建 `TargetView`：mesh 池 + 依 state 顯示/隱藏（T1b）。
+- [x] 驗：`TargetView.test.ts` 以 state 驅動 visible/隱藏/位置/尺寸 + 重用池斷言（5 tests）；tsc/vitest/build 全綠。
+- [x] `tsc` 乾淨。
 
 ## Definition of Done
-- [ ] 可由 state 驅動目標 mesh 顯示/隱藏；hitbox 參數與 mesh 一致。
+- [x] 可由 state 驅動目標 mesh 顯示/隱藏；hitbox 參數與 mesh 一致（單位 box + scale 同來源）。
 
 ## Commit
 `feat(wp-4): 目標 entity（mesh + 單一 hitbox，H1）+ TargetView（FR-4.1）`
