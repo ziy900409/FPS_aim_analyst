@@ -115,8 +115,10 @@ inputSampler.attach(window);
 // 「單一 rAF 超級迴圈」，DESIGN §1）；階段 B 才把 sim 搬入 worker。
 // WP-4 / T2（FR-4.2）— 目標系統在 sim tick 內 spawn/可見性/蓋 t_visible（傳入 simLoop，
 // tick 由 simStep 呼叫；時間源為 sim clock，非 rAF）。
+// WP-5 / T1（FR-5.1）— fire 事件在 sim tick 內就地 raycast（camera 中心射線 → 命中即擊殺）。
+// 傳入 sceneManager.camera：sim 唯讀其朝向（由 CameraController 走輸入路徑寫入，非 sim；雙迴圈邊界）。
 const targetManager = createTargetManager();
-const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager);
+const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager, sceneManager.camera);
 
 // WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
 // 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈

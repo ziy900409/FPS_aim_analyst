@@ -9,7 +9,7 @@
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-02）— WP-3/4 exit 綠燈確認、OQ-5.1~5.4 鎖定 |
-| T1 HitDetector | ⬜ 待執行 |
+| T1 HitDetector | ✅ 完成（2026-07-02）— camera 中心射線命中 + 第一次命中即擊殺（FR-5.1，OQ-5.4）|
 | T2 首發判定 | ⬜ 待執行 |
 | T3 橫移 movement | ⬜ 待執行 |
 | T4 簡化急停 | ⬜ 待執行 |
@@ -29,6 +29,15 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T1 HitDetector ✅
+- **新增** `src/sim/HitDetector.ts`：`raycastFromCenter(camera, targets)` — `Raycaster.setFromCamera(NDC(0,0), camera)` → 對 active（`visible && alive`）目標由 `TargetState.hitbox` 衍生 `Box3`、`ray.intersectBox` 求交、取**最近**命中 → `{hit, targetId?, part?}`。
+- **接線** `SimLoop`：`applyInput` 新增 fire 分支（camera/tm 注入時 raycast → 命中即 `markKilled`，OQ-5.4 第一次命中即擊殺）；`simStep`/`createSimLoop` 新增選填 `camera` 參數（省略則 fire no-op，決定性測試路徑不受影響）。`main.ts` 傳入 `sceneManager.camera`。
+- **測試**：`HitDetector.test.ts` 8 例（正對→hit、偏移/背後→miss、多目標取最近、invisible/dead 不命中、simStep fire→markKilled 正確 id / 偏移不擊殺）。`vitest run src` **78/78**、`tsc --noEmit` exit 0。
+- **Decision — camera 為 sim 選填注入（非新迴圈耦合）**：命中判定需 camera 朝向，但 camera 由 render/`CameraController` 走輸入路徑持有。選擇把 camera 以**選填參數**注入 `createSimLoop`/`simStep`，sim **唯讀** camera（不寫 render 物件），維持雙迴圈邊界（ADR-2）。*Alternatives*：①把 raycast 搬到 render 層——破壞「命中判定屬 sim」（CONTEXT）；②sim 持有 camera 副本——狀態雙源、易漂移。選注入最小耦合。
+- **Decision — 手動 raycast（ray∩Box3）而非 `Raycaster.intersectObject(mesh)`**：sim 不得觸及 render mesh（TargetView 私有池，雙迴圈邊界）。改由 `TargetState.hitbox` 直接建 `Box3`，與 TargetView 的 `BoxGeometry`+scale **同來源**，判定/視覺不漂移（README failure-mode）。
+- **Surprise**：`Raycaster.setFromCamera` 讀 `camera.matrixWorld`，**不**自動更新——測試須顯式 `camera.updateMatrixWorld(true)`；app 路徑由 render loop 每幀維護。已於 HitDetector doc 註明呼叫端責任。
+- **Next**：T2 首發判定（依 T1）與 T3 橫移（依 T0）可並行。
 
 ### 2026-07-02 — T0 Entry gate ✅
 - **上游 exit 綠燈確認**：WP-3（PR #1）、WP-4（PR #2）皆已合併入 `origin/main`（f530210）。WP-4 progress 記 F2 全綠（五軸 review Approve、`tsc` exit 0、`vitest run src` 43/43）。

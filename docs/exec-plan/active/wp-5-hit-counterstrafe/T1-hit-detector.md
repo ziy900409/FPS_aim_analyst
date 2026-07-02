@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | NEW `src/sim/HitDetector.ts`；MODIFY `src/loop/SimLoop.ts`（fire 事件 → raycast） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02）|
 
 ## Objective
 消費 fire 事件時，**在排序串流的開火事件點**用 Raycaster 從 **camera 正向（螢幕中心）**射線判命中（**階段 A 單一 hitbox，H1**；`part` 選填保留）；**第一次命中**即觸發 WP-4 `markKilled`（FR-5.1，OQ-5.4）。
@@ -25,14 +25,14 @@
 - 命中即擊殺 → markKilled → WP-4 生成對側（新 peek）。
 
 ## Steps
-- [ ] 建 `HitDetector.ts`：`raycastFromCenter`。
-- [ ] sim fire 事件處理：raycast → 命中 → markKilled。
-- [ ] Vitest：camera 正對目標 → hit；偏移未對準 → miss；**第一次命中**觸發 markKilled。
-- [ ] 手動驗：對準目標開火 → 擊殺 → 對側生成。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] 建 `HitDetector.ts`：`raycastFromCenter`（模組級重用 Raycaster/Box3/Vector，GC 紀律）。
+- [x] sim fire 事件處理：`applyInput` fire 分支 → raycast → 命中 → `markKilled`（camera/tm 經 `createSimLoop`/`simStep` 注入）。
+- [x] Vitest：camera 正對目標 → hit；偏移/背後 → miss；最近者優先；非 active（invisible/dead）不命中；simStep fire → markKilled 正確 id。
+- [ ] 手動驗：對準目標開火 → 擊殺 → 對側生成（需 `npm run dev` 手動於瀏覽器確認；自動測試已覆蓋判定邏輯）。
+- [x] `vitest run` + `tsc` 綠燈（tsc exit 0；`vitest run src` 78/78）。
 
 ## Definition of Done
-- [ ] camera 中心射線正確判命中/未命中（單一 hitbox）；**第一次命中**即擊殺並生成對側。
+- [x] camera 中心射線正確判命中/未命中（單一 hitbox）；**第一次命中**即擊殺（`markKilled`）並由 WP-4 生成對側。
 
 ## Commit
 `feat(wp-5): HitDetector Raycaster 命中 + 擊殺（FR-5.1，H1 單一 hitbox）`

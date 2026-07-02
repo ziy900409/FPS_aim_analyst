@@ -1,6 +1,8 @@
+import type * as THREE from 'three/webgpu';
 import { consume } from '../input/consume.ts';
 import type { SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
+import { raycastFromCenter } from '../sim/HitDetector.ts';
 import type { InputEvent } from '../state/types.ts';
 import type { Clock } from './clock.ts';
 
@@ -22,16 +24,27 @@ import type { Clock } from './clock.ts';
 const PLACEHOLDER_STRAFE_SPEED = 250;
 
 /**
- * 佔位輸入套用（handle）：暫只更新按鍵 held（A/D 橫移瞬間 snap velocity，CONTEXT MovementController
- * 狀態機雛形；WP-5 換真 physics）。mouse / fire 事件在佔位階段忽略（→ WP-3 準心 / WP-5 raycast）。
+ * 輸入套用（handle）：鍵事件更新 A/D 橫移瞬間 snap velocity（佔位；WP-5 T3/T4 換真
+ * `MovementController` + 急停）。**fire 事件在串流該點 inline raycast**（sub-tick 忠實、零內插）：
+ * 有注入 `camera` + `targetManager` 時，從 camera 中心射線判命中，**第一次命中即擊殺**（OQ-5.4）→
+ * `markKilled` → WP-4 生成對側。mouse 事件（準心）仍在佔位階段忽略。
  *
  * 依時序、無遺漏的排序消費與排空責任已抽到 [`consume`](../input/consume.ts)（T4）；本函式只負責
  * 「每個到期事件如何改狀態」，不管排序/分桶/排空。
  */
-function applyInput(state: SharedState, ev: InputEvent): void {
+function applyInput(
+  state: SharedState,
+  ev: InputEvent,
+  camera?: THREE.Camera,
+  targetManager?: TargetManager,
+): void {
   if (ev.type === 'key') {
     if (ev.code === 'KeyD') state.player.vx = ev.down ? PLACEHOLDER_STRAFE_SPEED : 0;
     else if (ev.code === 'KeyA') state.player.vx = ev.down ? -PLACEHOLDER_STRAFE_SPEED : 0;
+  } else if (ev.type === 'fire' && camera !== undefined && targetManager !== undefined) {
+    // 開火：camera 中心射線 → 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。首發/精準 gate 屬 T2/T4。
+    const { hit, targetId } = raycastFromCenter(camera, state.targets);
+    if (hit && targetId !== undefined) targetManager.markKilled(state, targetId);
   }
 }
 
@@ -44,13 +57,15 @@ function applyInput(state: SharedState, ev: InputEvent): void {
  * 輸入（`consume` 排序 + 排空，T4）；④ 等速推進位置（**只用 dtSec**）；⑤ curr←新位置。
  *
  * `targetManager` 選填：注入即在 tick 內推進目標（WP-4）；省略則維持純位移（WP-2 決定性測試路徑）。
+ * `camera` 選填：注入即在 fire 事件處理命中判定（WP-5 T1）；省略則 fire 為 no-op（決定性測試路徑）。
  */
 export function simStep(
   state: SharedState,
   dtSec: number,
   tickEndMs: number,
   targetManager?: TargetManager,
-  handle: (ev: InputEvent) => void = (ev) => applyInput(state, ev),
+  camera?: THREE.Camera,
+  handle: (ev: InputEvent) => void = (ev) => applyInput(state, ev, camera, targetManager),
 ): void {
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
@@ -84,6 +99,7 @@ export function createSimLoop(
   clock: Clock,
   simHz: number,
   targetManager?: TargetManager,
+  camera?: THREE.Camera,
 ): SimLoop {
   const tickSec = 1 / simHz;
   const tickMs = 1000 / simHz;
@@ -91,8 +107,9 @@ export function createSimLoop(
   let lastMs = clock.now();
   let simTimeMs = lastMs; // 邏輯 sim 時鐘（量測時鐘域 ms），每 tick 推進 tickMs；決定 tick 窗
 
-  // 綁定一次的輸入 handle：閉包 over state，避免每 tick 配置新 arrow（熱路徑零配置，GC 紀律 §4）。
-  const handleInput = (ev: InputEvent): void => applyInput(state, ev);
+  // 綁定一次的輸入 handle：閉包 over state/camera/targetManager，避免每 tick 配置新 arrow
+  // （熱路徑零配置，GC 紀律 §4）。camera/targetManager 省略時 fire 事件 no-op。
+  const handleInput = (ev: InputEvent): void => applyInput(state, ev, camera, targetManager);
 
   return {
     pump(nowMs: number): { ticks: number; alpha: number } {
@@ -102,7 +119,7 @@ export function createSimLoop(
       let ticks = 0;
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
-        simStep(state, tickSec, simTimeMs, targetManager, handleInput);
+        simStep(state, tickSec, simTimeMs, targetManager, camera, handleInput);
         accSec -= tickSec;
         ticks++;
       }
