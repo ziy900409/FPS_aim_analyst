@@ -28,7 +28,7 @@
 - [x] 建 `MovementController.ts`（`step` + `createMovementController`）。
 - [x] sim：consume 後呼叫 `movement.step(state, dt)`（applyInput 鍵事件改寫 `state.held`）。
 - [x] Vitest：held D 一段時間 → x 線性增加且與 FPS 無關（同總時間不同分幀 → 同位移）；放開 → vx=0。
-- [ ] 手動驗：A/D 可左右移動（瀏覽器，交棒使用者確認；決定性/整合已自動綠）。
+- [x] 手動驗：A/D 可左右移動（瀏覽器，2026-07-02 使用者確認 PASS）。
 - [x] `vitest run` + `tsc` 綠燈（92/92、tsc exit 0）。
 
 ## Definition of Done
