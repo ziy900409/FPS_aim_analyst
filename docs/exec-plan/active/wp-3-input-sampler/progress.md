@@ -14,7 +14,7 @@
 | T3 開火事件 | ✅ DONE (2026-07-01) |
 | T4 sim 消費 + 排空 | ✅ DONE (2026-07-01)（plain array 佔位；ring/溢位 → T4b） |
 | T4b ring buffer + 溢位 | ✅ DONE (2026-07-01)（固定欄位真 ring、槽位繞圈重用、寫入端保序、`bufferOverflow` 拒新不丟舊） |
-| T5 Exit gate | ✅ DONE (2026-07-01)（F1 驗收 map + 頂層索引 ✅ + 交棒 WP-5；真實 Edge e2e 3 passed；鎖定中 fire 手動驗） |
+| T5 Exit gate | ✅ DONE (2026-07-01)（F1 驗收 map + 頂層索引 ✅ + 交棒 WP-5；真實 Edge e2e 3 passed；鎖定中 fire 正向路徑手動驗 ✅ PASS 2026-07-02） |
 
 ---
 
@@ -29,6 +29,26 @@
 ---
 
 ## Log
+
+### 2026-07-02 — §B 鎖定中 fire 正向路徑手動驗 ✅ PASS（交棒單「唯一未做的驗證」清除）+ push/PR
+
+在真實 Edge 依 [manual-verification.md](manual-verification.md) §B 手動跑完 T5-exit-gate 唯一延後項（Pointer Lock 需真實手勢、e2e 無法穩定自動化的正向路徑）。透過 `main.ts` 的 dev-only 觀測縫 `window.__aimDebug`（`state`/`pointerLock`）在 DevTools Console 觀測。
+
+**§B 四項通過標準逐項綠燈：**
+
+| 標準 | 證據（Console 探針，取樣 0.5s／行） |
+|---|---|
+| 事件入緩衝後被 sim 排空 | 有輸入時 `peak` 短暫跳 1~15，`live` 幾乎皆於下一取樣回 0（進得去、排得空） |
+| `headT` 高解析度、與 `performance.now()` 同時鐘域 | 如 `peak=14 headT=21473.7 now=21518.6`；headT 為幾千 ms 等級、緊貼同行 `now`（非 `Date.now()` epoch）→ 同源（Chromium，OQ-3.3 復驗） |
+| 無溢位/遲到、sim 正常消費 | 全程 `overflow=0 late=0`；`crossOriginIsolated:true`、`timerResolutionUs≈5µs`、`[render backend] webgpu` |
+| 解鎖後開火不入緩衝（閘門） | Esc 後約 12 秒 `peak` 恆 0（期間按左鍵無效） |
+| 事件依時序消費並套用（consume→applyInput） | 鎖定中按 D/A 畫面左右平移、移動滑鼠視角轉動（人眼確認） |
+
+**Surprise（量測方法學，非產品缺陷）：** 首版觀測探針 `setInterval(…,8ms)` 在 `size` 恆 >0 時**每 8ms 無條件 `console.log`**，DevTools 開啟下大量 log + console DOM 重繪吃光主執行緒 → 餓死 rAF → `simLoop.pump` 停 → `consume` 不推進 `untilT` → 緩衝只進不出（`headT` 凍住、`size` 狂漲、A/D 卡）。這是**量測假象**：sim 在單一 rAF 超級迴圈內 pump（[main.ts:122-134](../../../../src/main.ts#L122-L134)），rAF 被餓死即連帶停 sim。改用「快取樣只讀 `size()`、每 0.5s 才印摘要」的非洗版探針後,size 穩定回落、A/D 恢復流暢,確認 F1 無缺陷。**教訓**：驗這種單執行緒 rAF-pump 架構時,觀測工具本身的 log 頻率會反噬被觀測系統,探針須低頻或旁路。
+
+**push / PR：** branch `wp-3-input-sampler` 已在 `origin`（remote SHA == HEAD）；開 PR #1 → `main`（https://github.com/ziy900409/FPS_aim_analyst/pull/1）。開 PR 前復驗 `tsc --noEmit` exit 0 · `vitest run` 54 passed。
+
+**Next**：WP-3 收尾完成（§B 亦綠）；可將 `active/wp-3-input-sampler/` 移入 `completed/`。開 WP-5 前先驗 WP-4 exit-gate。
 
 ### 2026-07-01 — T5 補強：WP-3 真實瀏覽器 e2e（Playwright + Edge）+ 手動驗手冊 ✅ PASS
 
