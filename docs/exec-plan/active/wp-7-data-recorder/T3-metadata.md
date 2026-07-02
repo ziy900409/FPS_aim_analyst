@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | NEW `src/data/metadata.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-02） |
 
 ## Objective
 蒐集每場 drill 的環境 metadata：backend、displayHz、simHz、browser、sensitivity、`crossOriginIsolated`、drillId、startedAt（FR-7.3，附錄 C meta）。研究效度的關鍵（不同後端延遲特性不同，ADR-1）。
@@ -24,13 +24,13 @@
 - **必填強制**：缺 backend/COI/sensitivity → throw（避免匯出無效資料）。
 
 ## Steps
-- [ ] 建 `metadata.ts`：`collectMeta` + 必填檢查。
-- [ ] displayHz 量測（rAF 取樣中位數）。
-- [ ] Vitest：合成輸入 → meta 欄位齊全；缺必填 → throw。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] 建 `metadata.ts`：`collectMeta` + 必填檢查。
+- [x] displayHz 量測（rAF 取樣中位數）。
+- [x] Vitest：合成輸入 → meta 欄位齊全；缺必填 → throw。
+- [x] `vitest run` + `tsc` 綠燈。
 
 ## Definition of Done
-- [ ] meta 欄位完整對齊附錄 C；必填缺漏即報錯；backend 取自 WP-0 seam。
+- [x] meta 欄位完整對齊附錄 C；必填缺漏即報錯；backend 取自 WP-0 seam。
 
 ## Commit
 `feat(wp-7): 環境 metadata 蒐集（backend/Hz/browser/sensitivity/COI）（FR-7.3）`

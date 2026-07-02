@@ -4,14 +4,14 @@
 
 ---
 
-## Status: 🟡 T2 事件記錄完成，T3/T4/T5 待執行（M3 持續推進）
+## Status: 🟡 T3 metadata 完成，T4/T5 待執行（M3 持續推進）
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-02） |
 | T1 Ring buffer | ✅ 完成（2026-07-02） |
 | T2 事件記錄 | ✅ 完成（2026-07-02） |
-| T3 Metadata | ⬜ 待執行 |
+| T3 Metadata | ✅ 完成（2026-07-02） |
 | T4 JSON/CSV 匯出 | ⬜ 待執行 |
 | T5 Schema 文件 | ⬜ 待執行 |
 | T6 Exit gate（M3） | ⬜ 待執行 |
@@ -30,6 +30,13 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T3 環境 metadata ✅ PASS
+- **實作**：新增 `src/data/metadata.ts`，提供 `collectMeta(args)` 組裝 `{drillId,backend,displayHz,simHz,browser,sensitivity,crossOriginIsolated,startedAt}`，並納入附錄 C / grill 欄位 `unit:'source'`、`vStrafe`、`maxDrillSeconds`、`lateEventCount`、`bufferOverflow`、`recorderOverflow`、`suspect`。
+- **必填驗證**：`backend` 僅接受 `webgpu|webgl2`；`sensitivity`、`displayHz`、`simHz` 等數值必須為正 finite；`crossOriginIsolated` 必須是 boolean（`false` 代表環境有效讀取但非 isolated，不視為缺欄）。
+- **displayHz**：新增 `measureDisplayHz()`，以連續 `requestAnimationFrame` timestamp 間隔中位數估算 refresh rate；量測邏輯獨立於 `collectMeta`，供 T4/main 在匯出前呼叫。
+- **Verification**：`npm test -- --run src/data/metadata.test.ts` PASS（5 passed；sandbox 需外部執行，因 esbuild 載入 Vite config 時父層目錄被拒）；`npm run typecheck` PASS；`npm test` PASS（148 passed）；`npm run build` PASS（僅 Vite chunk size warning）。
+- **Next**：T4 JSON/CSV 匯出可消費 `Meta` + `DataRecorder.snapshot()` 組 `{meta,ticks,events}`。
 
 ### 2026-07-02 — T2 事件記錄 ✅ PASS
 - **實作**：`DataRecorder` 補上 `recordEvent(event)`，snapshot 既有 `events[]` 現在由實際事件掛點填入；`reset()` 清空 events，維持 drill 邊界。
