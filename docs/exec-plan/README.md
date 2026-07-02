@@ -10,7 +10,7 @@
 | **交付範圍** | 階段 A：F1–F4 + 1 個完整 counter-strafe drill（簡化「立即停止」急停） |
 | **技術棧** | Three.js `WebGPURenderer`（`three/webgpu`）+ TypeScript + Vite；UI = 純 TS + DOM overlay；測試 = Vitest + Playwright |
 | **估時** | 25–39 dev-days（≈5–8 週，含 WebGPU 設定與學習爬升） |
-| **狀態** | 🟡 規劃完成（WP-0 ~ WP-9 全部 exec-plan 已展開，待執行） |
+| **狀態** | 🟡 執行中（WP-0 ~ WP-6 完成，WP-7 待展開） |
 
 ---
 
@@ -41,7 +41,7 @@
 | **WP-3** | [`active/wp-3-input-sampler/`](active/wp-3-input-sampler/README.md) | `InputSampler`（F1）高解析度時間戳採集 | — | WP-2 | 2–3 | ✅ 完成（2026-07-01） |
 | **WP-4** | [`active/wp-4-target-tvisible/`](active/wp-4-target-tvisible/README.md) | `TargetManager` + `t_visible`（F2）左右交替 | — | WP-1, WP-2 | 2–3 | ✅ 完成（2026-07-02） |
 | **WP-5** | [`active/wp-5-hit-counterstrafe/`](active/wp-5-hit-counterstrafe/README.md) | `HitDetector` + 橫移 + 簡化急停（F3） | **M2 ✅** | WP-3, WP-4 | 2–3 | ✅ 完成（2026-07-02） |
-| **WP-6** | [`active/wp-6-drill-system/`](active/wp-6-drill-system/README.md) | `DrillConfig` 資料驅動 drill（F4） | — | WP-4, WP-5 | 2–4 | 🟡 規劃完成 |
+| **WP-6** | [`active/wp-6-drill-system/`](active/wp-6-drill-system/README.md) | `DrillConfig` 資料驅動 drill（F4） | — | WP-4, WP-5 | 2–4 | ✅ 完成（2026-07-02） |
 | **WP-7** | [`active/wp-7-data-recorder/`](active/wp-7-data-recorder/README.md) | `DataRecorder` ring buffer + JSON/CSV 匯出 | **M3** | WP-2, WP-4, WP-5 | 3–5 | 🟡 規劃完成 |
 | **WP-8** | [`active/wp-8-metrics-hud/`](active/wp-8-metrics-hud/README.md) | `MetricsDashboard` + 即時 HUD | — | WP-5, WP-6, WP-7 | 3–4 | 🟡 規劃完成 |
 | **WP-9** | [`active/wp-9-integration/`](active/wp-9-integration/README.md) | 端到端整合 + 計時效度 + 決定性回歸 | **M4** | 全部 | 3–5 | 🟡 規劃完成 |

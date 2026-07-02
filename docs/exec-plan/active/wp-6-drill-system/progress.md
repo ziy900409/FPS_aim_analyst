@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 執行中（T4 ✅）
+## Status: ✅ 完成（T5 ✅，2026-07-02）
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T2 Drill 載入器 | ✅ 完成（2026-07-02） |
 | T3 Counter-strafe drill 檔 | ✅ 完成（2026-07-02） |
 | T4 Drill 生命週期 | ✅ 完成（2026-07-02） |
-| T5 Exit gate | ⬜ 待執行 |
+| T5 Exit gate | ✅ 完成（2026-07-02） |
 
 ---
 
@@ -29,6 +29,14 @@
 ---
 
 ## Log
+
+### 2026-07-02 — T5 Exit gate（F4 驗收 map + 交棒 WP-7/WP-8）✅
+- **驗證**：`npx vitest run` 綠燈（17 files / 135 tests passed；因 PowerShell execution policy 擋 `npx.ps1`，實跑命令為 `npx.cmd vitest run`）；`npx tsc --noEmit` 綠燈（實跑命令為 `npx.cmd tsc --noEmit`）。
+- **Acceptance map**：`DrillConfig` 型別 + runtime schema（T1）；`loadDrill` + config-driven `TargetManager`（T2）；`drills/counterstrafe_ad_v1.json` 可跑滿 20 個 L/R 交替目標（T3）；`DrillRunner` idle/countdown/running/ended/restart 相位完整（T4）。
+- **F4 解耦證明**：T2 測試以同一個 `createTargetManager` 跑兩個 config（`count=2, LR` 與 `count=4, RL`），只換 JSON/config 即換 drill 行為，零引擎程式碼改動。
+- **Outcomes & Retrospective**：WP-6 已把 WP-4 佔位目標序列收斂到資料驅動路徑；`TargetManager` 保持目標生成職責，`DrillRunner` 負責生命週期，職責分界清楚。手動 UI 操作（開始/重來/換 drill 控制）尚未接線，已明確交棒 WP-8；資料記錄完整 drill lifecycle/event payload 交棒 WP-7。
+- **文件更新**：`T5-exit-gate.md` 驗收全勾；`task-checklist.md` T5 ✅；WP-6 README 驗收 ✅；頂層 `docs/exec-plan/README.md` WP-6 ✅。
+- **Next**：WP-7 DataRecorder（記錄完整 drill 的 ticks/events/export metadata）；WP-8 Metrics/HUD（載入 drill、開始/重來 UI、換 drill 控制、結果頁）。
 
 ### 2026-07-02 — T4 Drill 生命週期（開始/倒數/結束/重來）（FR-6.4）✅
 - **產出**：`src/drill/DrillRunner.ts`（`createDrillRunner` 相位機 `idle→countdown→running→ended` + `restart` 全 reset）；`src/drill/DrillRunner.test.ts`（9 tests）；MODIFY `src/loop/SimLoop.ts`（`simStep`/`createSimLoop` 新增選填 `drillRunner`，running 相位才驅動目標）。

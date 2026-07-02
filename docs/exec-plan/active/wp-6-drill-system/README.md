@@ -156,10 +156,10 @@ DrillRunner.tick 在 sim tick 內推進；無 worker。確定性沿用（種子�
 | **T5 / T-exit** Exit gate | [T5-exit-gate.md](T5-exit-gate.md) | 換 config 即換 drill、1 drill 可玩、生命週期完整；交棒 WP-7/WP-8。 | T1–T4 | Low | Low |
 
 ### Acceptance criteria（PLAN WP-6 / F4）→ task map
-- [ ] `DrillConfig` schema（型別 + 範例 JSON）→ **T1**
-- [ ] 換 config 即換 drill（零引擎改動）→ **T2**
-- [ ] 1 個完整 counter-strafe drill 可玩 → **T3**
-- [ ] drill 生命週期完整（開始/倒數/結束/重來）→ **T4**
+- [x] `DrillConfig` schema（型別 + 範例 JSON）→ **T1**
+- [x] 換 config 即換 drill（零引擎改動）→ **T2**
+- [x] 1 個完整 counter-strafe drill 可玩 → **T3**
+- [x] drill 生命週期完整（開始/倒數/結束/重來）→ **T4**
 
 ## Assumptions
 - **A1**：M2 達成（核心玩法可玩）。
