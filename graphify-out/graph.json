@@ -815,7 +815,7 @@
       "source_file": "src/drill/DrillLoader.test.ts",
       "source_location": "L1",
       "id": "src_drill_drillloader_test_ts",
-      "community": 13,
+      "community": 12,
       "norm_label": "drillloader.test.ts"
     },
     {
@@ -824,7 +824,7 @@
       "source_file": "src/drill/DrillLoader.ts",
       "source_location": "L1",
       "id": "src_drill_drillloader_ts",
-      "community": 13,
+      "community": 12,
       "norm_label": "drillloader.ts"
     },
     {
@@ -833,7 +833,7 @@
       "source_file": "src/drill/DrillLoader.ts",
       "source_location": "L19",
       "id": "drill_drillloader_loaddrill",
-      "community": 13,
+      "community": 12,
       "norm_label": "loaddrill()"
     },
     {
@@ -905,7 +905,7 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L1",
       "id": "src_drill_schema_test_ts",
-      "community": 13,
+      "community": 12,
       "norm_label": "schema.test.ts"
     },
     {
@@ -914,7 +914,7 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L6",
       "id": "drill_schema_test_minimalvalid",
-      "community": 13,
+      "community": 12,
       "norm_label": "minimalvalid()"
     },
     {
@@ -923,7 +923,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L1",
       "id": "src_drill_schema_ts",
-      "community": 13,
+      "community": 12,
       "norm_label": "schema.ts"
     },
     {
@@ -932,7 +932,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L14",
       "id": "drill_schema_validatedrill",
-      "community": 13,
+      "community": 12,
       "norm_label": "validatedrill()"
     },
     {
@@ -941,7 +941,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L70",
       "id": "drill_schema_validatemotion",
-      "community": 13,
+      "community": 12,
       "norm_label": "validatemotion()"
     },
     {
@@ -950,7 +950,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L101",
       "id": "drill_schema_err",
-      "community": 13,
+      "community": 12,
       "norm_label": "err()"
     },
     {
@@ -959,7 +959,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L105",
       "id": "drill_schema_requireobject",
-      "community": 13,
+      "community": 12,
       "norm_label": "requireobject()"
     },
     {
@@ -968,7 +968,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L112",
       "id": "drill_schema_requirefinitenumber",
-      "community": 13,
+      "community": 12,
       "norm_label": "requirefinitenumber()"
     },
     {
@@ -977,7 +977,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L117",
       "id": "drill_schema_requirenonnegativenumber",
-      "community": 13,
+      "community": 12,
       "norm_label": "requirenonnegativenumber()"
     },
     {
@@ -986,7 +986,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L123",
       "id": "drill_schema_requirepositivenumber",
-      "community": 13,
+      "community": 12,
       "norm_label": "requirepositivenumber()"
     },
     {
@@ -995,7 +995,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L129",
       "id": "drill_schema_requirepositiveint",
-      "community": 13,
+      "community": 12,
       "norm_label": "requirepositiveint()"
     },
     {
@@ -1398,7 +1398,7 @@
       "label": "computeSwitchTimes()",
       "file_type": "code",
       "source_file": "src/metrics/compute.ts",
-      "source_location": "L103",
+      "source_location": "L106",
       "id": "metrics_compute_computeswitchtimes",
       "community": 8,
       "norm_label": "computeswitchtimes()"
@@ -1407,7 +1407,7 @@
       "label": "computeVisibleIntervals()",
       "file_type": "code",
       "source_file": "src/metrics/compute.ts",
-      "source_location": "L113",
+      "source_location": "L119",
       "id": "metrics_compute_computevisibleintervals",
       "community": 8,
       "norm_label": "computevisibleintervals()"
@@ -1416,7 +1416,7 @@
       "label": "coefficientOfVariation()",
       "file_type": "code",
       "source_file": "src/metrics/compute.ts",
-      "source_location": "L121",
+      "source_location": "L127",
       "id": "metrics_compute_coefficientofvariation",
       "community": 8,
       "norm_label": "coefficientofvariation()"
@@ -1425,7 +1425,7 @@
       "label": "finiteValues()",
       "file_type": "code",
       "source_file": "src/metrics/compute.ts",
-      "source_location": "L126",
+      "source_location": "L132",
       "id": "metrics_compute_finitevalues",
       "community": 8,
       "norm_label": "finitevalues()"
@@ -1553,7 +1553,7 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L1",
       "id": "src_render_targetview_test_ts",
-      "community": 14,
+      "community": 15,
       "norm_label": "targetview.test.ts"
     },
     {
@@ -1562,7 +1562,7 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L7",
       "id": "render_targetview_test_target",
-      "community": 14,
+      "community": 15,
       "norm_label": "target()"
     },
     {
@@ -1571,7 +1571,7 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L21",
       "id": "render_targetview_test_meshes",
-      "community": 14,
+      "community": 15,
       "norm_label": "meshes()"
     },
     {
@@ -1580,7 +1580,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L1",
       "id": "src_render_targetview_ts",
-      "community": 14,
+      "community": 15,
       "norm_label": "targetview.ts"
     },
     {
@@ -1589,7 +1589,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L21",
       "id": "render_targetview_targetview",
-      "community": 14,
+      "community": 15,
       "norm_label": "targetview"
     },
     {
@@ -1598,7 +1598,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L29",
       "id": "render_targetview_targetview_constructor",
-      "community": 14,
+      "community": 15,
       "norm_label": ".constructor()"
     },
     {
@@ -1607,7 +1607,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L44",
       "id": "render_targetview_targetview_sync",
-      "community": 14,
+      "community": 15,
       "norm_label": ".sync()"
     },
     {
@@ -1616,7 +1616,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L60",
       "id": "render_targetview_targetview_poolsize",
-      "community": 14,
+      "community": 15,
       "norm_label": ".poolsize()"
     },
     {
@@ -1625,7 +1625,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L65",
       "id": "render_targetview_targetview_acquire",
-      "community": 14,
+      "community": 15,
       "norm_label": ".#acquire()"
     },
     {
@@ -1634,7 +1634,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L76",
       "id": "render_targetview_targetview_dispose",
-      "community": 14,
+      "community": 15,
       "norm_label": ".dispose()"
     },
     {
@@ -2100,7 +2100,7 @@
       "label": "createHUDStats()",
       "file_type": "code",
       "source_file": "src/ui/HUD.ts",
-      "source_location": "L97",
+      "source_location": "L100",
       "id": "ui_hud_createhudstats",
       "community": 16,
       "norm_label": "createhudstats()"
@@ -2109,7 +2109,7 @@
       "label": "createHUDSummary()",
       "file_type": "code",
       "source_file": "src/ui/HUD.ts",
-      "source_location": "L117",
+      "source_location": "L120",
       "id": "ui_hud_createhudsummary",
       "community": 16,
       "norm_label": "createhudsummary()"
@@ -2118,7 +2118,7 @@
       "label": "fillHUDSummary()",
       "file_type": "code",
       "source_file": "src/ui/HUD.ts",
-      "source_location": "L128",
+      "source_location": "L131",
       "id": "ui_hud_fillhudsummary",
       "community": 16,
       "norm_label": "fillhudsummary()"
@@ -2127,7 +2127,7 @@
       "label": "renderMetric()",
       "file_type": "code",
       "source_file": "src/ui/HUD.ts",
-      "source_location": "L140",
+      "source_location": "L143",
       "id": "ui_hud_rendermetric",
       "community": 16,
       "norm_label": "rendermetric()"
@@ -2136,7 +2136,7 @@
       "label": "formatElapsed()",
       "file_type": "code",
       "source_file": "src/ui/HUD.ts",
-      "source_location": "L186",
+      "source_location": "L189",
       "id": "ui_hud_formatelapsed",
       "community": 16,
       "norm_label": "formatelapsed()"
@@ -2145,7 +2145,7 @@
       "label": "formatNumber()",
       "file_type": "code",
       "source_file": "src/ui/HUD.ts",
-      "source_location": "L195",
+      "source_location": "L198",
       "id": "ui_hud_formatnumber",
       "community": 16,
       "norm_label": "formatnumber()"
@@ -2546,7 +2546,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "peek \u8207 p2 \u63a8\u9032\u653f\u7b56 (\u547d\u4e2d\u624d\u63a8\u9032)",
       "id": "context_peek"
     },
@@ -2559,7 +2559,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "\u9996\u767c (first shot / firstshot)",
       "id": "context_first_shot"
     },
@@ -2585,7 +2585,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u901f\u5ea6\u6b78\u96f6\u8aa4\u5dee (residual speed)",
       "id": "context_residual_speed"
     },
@@ -2611,7 +2611,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "\u9996\u767c\u547d\u4e2d\u7387",
       "id": "context_first_shot_hit_rate"
     },
@@ -2676,7 +2676,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u901f\u5ea6 gate (velocity gate)",
       "id": "context_velocity_gate"
     },
@@ -2702,7 +2702,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "inputsampler \u5143\u4ef6",
       "id": "context_input_sampler"
     },
@@ -2715,7 +2715,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "sharedstate \u5143\u4ef6",
       "id": "context_shared_state"
     },
@@ -2728,7 +2728,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "simloop \u5143\u4ef6",
       "id": "context_sim_loop"
     },
@@ -2741,7 +2741,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "movementcontroller \u5143\u4ef6 (\u72c0\u614b\u6a5f m1)",
       "id": "context_movement_controller"
     },
@@ -2767,7 +2767,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "hitdetector \u5143\u4ef6",
       "id": "context_hit_detector"
     },
@@ -2780,7 +2780,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "renderloop \u5143\u4ef6",
       "id": "context_render_loop"
     },
@@ -2806,7 +2806,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "datarecorder \u5143\u4ef6 (preallocated arena)",
       "id": "context_data_recorder"
     },
@@ -2910,7 +2910,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism)",
       "id": "context_determinism"
     },
@@ -2923,7 +2923,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u91cf\u6e2c\u6642\u9418 vs \u6c7a\u5b9a\u6027\u6642\u9418 (two-clock model)",
       "id": "context_two_clock_model"
     },
@@ -2962,7 +2962,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "ring buffer (\u8f38\u5165\u7de9\u885d)",
       "id": "context_ring_buffer"
     },
@@ -2975,7 +2975,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "rendersnapshot \u7a84\u4ecb\u9762",
       "id": "context_render_snapshot"
     },
@@ -3027,7 +3027,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "\u8f38\u5165\u5206\u6876 (input bucketing)",
       "id": "context_input_bucketing"
     },
@@ -3053,7 +3053,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u6b63\u898f\u55ae\u4f4d (canonical unit, source unit u/s)",
       "id": "context_canonical_unit"
     },
@@ -3092,7 +3092,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u968e\u6bb5 b (stage b)",
       "id": "context_stage_b"
     },
@@ -3105,7 +3105,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "cs2 physics \u5e38\u6578 (\u968e\u6bb5 b \u6821\u6e96\u8d77\u9ede)",
       "id": "context_cs2_physics_constants"
     },
@@ -3144,7 +3144,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u4e3b\u57f7\u884c\u7dd2\u5361\u9813\u6c61\u67d3 sim \u8a08\u6642 (\u968e\u6bb5 a \u9694\u96e2\u4e0d\u6210\u7acb)",
       "id": "design_main_thread_jank"
     },
@@ -3157,7 +3157,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "web worker + sharedarraybuffer \u771f\u6b63\u9694\u96e2 (\u968e\u6bb5 b)",
       "id": "design_worker_isolation"
     },
@@ -3300,7 +3300,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "f1 \u2014 \u63a1\u96c6\u9375\u76e4\u8207\u6ed1\u9f20\u64cd\u4f5c\u8cc7\u6599",
       "id": "spec_f1"
     },
@@ -3326,7 +3326,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 13,
       "norm_label": "f3 \u2014 \u7b2c\u4e00\u4eba\u7a31\u8996\u89d2 + cs \u98a8\u683c\u53cd\u5411\u6025\u505c",
       "id": "spec_f3"
     },
@@ -3443,7 +3443,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "adr-7 \u5169\u500b\u6642\u9418 (\u91cf\u6e2c\u6642\u9418 / \u6c7a\u5b9a\u6027\u6642\u9418)",
       "id": "spec_adr7"
     },
@@ -18501,5 +18501,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "6fd5e76f5c349435d86f2618fcc7b82ec26b003e"
+  "built_at_commit": "248d0957c462a4c652f276de6c70d9d036684e81"
 }

@@ -1,7 +1,7 @@
 # Graph Report - FPS_aim_analyst  (2026-07-03)
 
 ## Corpus Check
-- 65 files · ~82,727 words
+- 65 files · ~83,323 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6fd5e76f`
+- Built from commit: `248d0957`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -143,16 +143,16 @@ Cohesion: 0.3
 Nodes (15): 里程碑 M1 (WP-2 脊椎門控), 里程碑 M2 (WP-5 核心玩法), 里程碑 M3 (WP-7 可匯出資料), 里程碑 M4 (WP-9 階段 A 交付), exec-plan/README.md 執行計畫索引, WP-0 環境建置與學習爬升, WP-1 FPS 控制 + Pointer Lock, WP-2 SharedState + 雙迴圈骨架 (脊椎) (+7 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.16
-Nodes (15): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+7 more)
-
-### Community 13 - "Community 13"
 Cohesion: 0.38
 Nodes (9): loadDrill(), err(), requireFiniteNumber(), requireNonNegativeNumber(), requireObject(), requirePositiveInt(), requirePositiveNumber(), validateDrill() (+1 more)
 
-### Community 15 - "Community 15"
-Cohesion: 0.22
-Nodes (10): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 決定性 (determinism), 速度歸零誤差 (residual speed), 階段 B (Stage B), 量測時鐘 vs 決定性時鐘 (two-clock model), 速度 gate (velocity gate), 主執行緒卡頓污染 sim 計時 (階段 A 隔離不成立) (+2 more)
+### Community 13 - "Community 13"
+Cohesion: 0.18
+Nodes (14): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+6 more)
+
+### Community 14 - "Community 14"
+Cohesion: 0.2
+Nodes (11): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 決定性 (determinism), RenderSnapshot 窄介面, 速度歸零誤差 (residual speed), 階段 B (Stage B), 量測時鐘 vs 決定性時鐘 (two-clock model), 速度 gate (velocity gate) (+3 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.44
@@ -182,7 +182,7 @@ Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManage
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `規格書 v1.1 + WBS` connect `Community 9` to `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 17`, `Community 18`, `Community 21`?**
+- **Why does `規格書 v1.1 + WBS` connect `Community 9` to `Community 10`, `Community 11`, `Community 13`, `Community 14`, `Community 17`, `Community 18`, `Community 21`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 3` to `Community 4`?**
   _High betweenness centrality (0.013) - this node is a cross-community bridge._
