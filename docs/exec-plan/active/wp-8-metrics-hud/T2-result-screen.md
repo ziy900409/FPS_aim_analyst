@@ -7,7 +7,7 @@
 | **Depends on** | T1 |
 | **Risk / Complexity** | Low / Med |
 | **Touches** | NEW `src/ui/ResultScreen.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE (2026-07-03) |
 
 ## Objective
 drill 結束後以 DOM overlay（D1）呈現結果：反應時間、命中率、停止時間、過衝、左右對稱，及反應時間分布小圖（FR-8.2）。
@@ -25,13 +25,13 @@ drill 結束後以 DOM overlay（D1）呈現結果：反應時間、命中率、
 - drill ended 時顯示，restart/換 drill 時隱藏。
 
 ## Steps
-- [ ] 建 `ResultScreen.ts`：卡 + 分布小圖 + 左右對稱 + §14 提醒。
-- [ ] 接 `MetricsDashboard` 結果模型。
+- [x] (2026-07-03) 建 `ResultScreen.ts`：卡 + 分布小圖 + 左右對稱 + §14 提醒。
+- [x] (2026-07-03) 接 `MetricsDashboard` 結果模型；`main.ts` 於 `DrillRunner.phase === 'ended'` 後以 `recorder.snapshot()` 計算並顯示一次。
 - [ ] 手動驗：跑完 drill → 結果頁顯示 8 指標數值 + 分布圖；數值與 T1 一致。
-- [ ] `tsc` 乾淨。
+- [x] (2026-07-03) `tsc` 乾淨（`npm.cmd run build` pass；第一次 sandbox run 被 Vite config 讀取權限擋，升權重跑 pass）。
 
 ## Definition of Done
-- [ ] 結果頁呈現 §5 全部指標 + 反應時間分布 + 左右對稱 + 方法論提醒。
+- [x] (2026-07-03) 結果頁呈現 §5 全部指標 + 反應時間分布 + 左右對稱 + 方法論提醒；人工完整 drill 操作留 T5 exit gate 一併驗收。
 
 ## Commit
 `feat(wp-8): 賽後結果頁（DOM）（FR-8.2）`

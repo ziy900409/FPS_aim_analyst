@@ -4,13 +4,13 @@
 
 ---
 
-## Status: ✅ T1 指標計算完成；下一步 T2/T3/T4
+## Status: ✅ T2 結果頁完成；下一步 T3/T4
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-03）— M3 達成；8 指標對照 + OQ-8.1~8.5 全鎖定 |
 | T1 指標計算 | ✅ 完成（2026-07-03）— 8 指標純函式 + MetricsDashboard |
-| T2 結果頁 | ⬜ 待執行 |
+| T2 結果頁 | ✅ 完成（2026-07-03）— DOM overlay 結果頁 + ended 後顯示 |
 | T3 即時 HUD | ⬜ 待執行 |
 | T4 控制 | ⬜ 待執行 |
 | T5 Exit gate | ⬜ 待執行 |
@@ -30,6 +30,12 @@
 ---
 
 ## Log
+
+### 2026-07-03 — T2 ResultScreen + ended hook ✅ PASS
+- **新增 `src/ui/ResultScreen.ts`**：純 DOM overlay，呈現 §5 八項指標卡、反應時間分布 SVG、左右對稱與 §14 方法論提醒（受試者內相對值 + 顯示延遲誤差界線）。
+- **接 `MetricsDashboard` 結果模型**：`main.ts` 載入預設 `counterstrafe_ad_v1` drill config，建立 `DrillRunner`，在 `DrillRunner.phase === 'ended'` 時以 `MetricsDashboard.compute(recorder.snapshot())` 顯示結果頁一次；restart / 換 drill 的隱藏與重啟仍保留給 T4 controls。
+- **過衝 / 殘速呈現決策**：T1 model 只有 `residualSpeed`，未分離「反向」欄位；T2 以 fire-time residualSpeed 做階段 A 分類（Stopped vs Moving / reverse seen），headline 不顯示連續 u/s，避免把階段 A 二元近似誤解成物理量。
+- **Verification**：`npm.cmd test -- src/ui/ResultScreen.test.ts src/metrics/MetricsDashboard.test.ts` pass（4 tests）；`npm.cmd test` pass（23 files / 160 tests）；`npm.cmd run typecheck` pass；`npm.cmd run build` pass（升權後，sandbox 首次擋 Vite/esbuild 讀 config 上層路徑；build 僅 chunk size warning）。
 
 ### 2026-07-03 — T1 MetricsDashboard + exit verification ✅ PASS
 - **新增 `src/metrics/MetricsDashboard.ts`**：提供 `createMetricsDashboard().compute(snapshot)` facade，供 T2 結果頁在 drill ended 後取得同一個 metrics result model。

@@ -8,8 +8,11 @@ import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
 import { createCrosshair } from './ui/Crosshair.ts';
 import { createExportPanel } from './ui/ExportPanel.ts';
+import { createResultScreen } from './ui/ResultScreen.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager } from './sim/TargetManager.ts';
+import { loadDrill } from './drill/DrillLoader.ts';
+import { createDrillRunner } from './drill/DrillRunner.ts';
 import { createSimLoop } from './loop/SimLoop.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
@@ -17,6 +20,8 @@ import { SIM_HZ } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
 import { collectMeta, measureDisplayHz } from './data/metadata.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
+import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
+import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
 
@@ -29,7 +34,8 @@ const canvas = document.querySelector<HTMLCanvasElement>('#app')!;
 // WP-0 seam：async bootstrap，取得 renderer + backend（backend 供 WP-7 metadata）。
 const { renderer, backend } = await createRenderer(canvas);
 
-const DRILL_ID = 'counterstrafe_ad_v1';
+const drillConfig = loadDrill(defaultDrillSource);
+const DRILL_ID = drillConfig.drillId;
 const recorderStartedAt = new Date().toISOString();
 
 // WP-1 / T1（FR-1.1）— 封閉房間 + camera 舞台。
@@ -144,6 +150,10 @@ createExportPanel({
   },
 });
 
+// WP-8 / T2（FR-8.2）— 賽後結果頁：drill ended 後以同一 recorder snapshot 計算並呈現 §5 指標。
+const metricsDashboard = createMetricsDashboard();
+const resultScreen = createResultScreen();
+
 // WP-3 / T1+T3（FR-3.1/3.3）— 輸入採集：keydown/keyup（A/D/W/S）與開火 mousedown（左鍵）蓋
 // event.timeStamp 寫入 sharedState.input，供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；
 // 掛在 window（鍵盤事件不落在 canvas；lock 中滑鼠事件亦冒泡至 window）。開火以 pointerLock.locked
@@ -159,8 +169,10 @@ inputSampler.attach(window);
 // tick 由 simStep 呼叫；時間源為 sim clock，非 rAF）。
 // WP-5 / T1（FR-5.1）— fire 事件在 sim tick 內就地 raycast（camera 中心射線 → 命中即擊殺）。
 // 傳入 sceneManager.camera：sim 唯讀其朝向（由 CameraController 走輸入路徑寫入，非 sim；雙迴圈邊界）。
-const targetManager = createTargetManager();
-const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager, sceneManager.camera, undefined, recorder);
+const targetManager = createTargetManager(drillConfig);
+const drillRunner = createDrillRunner(sharedState, targetManager);
+drillRunner.start(drillConfig);
+const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager, sceneManager.camera, drillRunner, recorder);
 
 // WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
 // 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈
@@ -205,6 +217,7 @@ const baseZ = sceneManager.camera.position.z;
 // dev-only 急停 readout 閂鎖狀態（見 render loop 內說明）。
 let stopFlashUntil = 0;
 let prevVx = 0;
+let resultShown = false;
 
 const renderLoop = createRenderLoop((now) => {
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
@@ -219,6 +232,11 @@ const renderLoop = createRenderLoop((now) => {
   targetView.sync(sharedState.targets);
   // 5) 繪製。
   renderer.render(sceneManager.scene, sceneManager.camera);
+  // WP-8 / T2：phase 轉 ended 後只計算一次結果；T4 controls 會負責 restart / 換 drill 時隱藏與重啟。
+  if (!resultShown && drillRunner.phase === 'ended') {
+    resultScreen.show(metricsDashboard.compute(recorder.snapshot()));
+    resultShown = true;
+  }
   // dev-only：更新急停 readout（vx / stopped）——手動驗證用，production 剝除。
   // 急停 stopped=true 只存活 1 tick（7.8ms），render frame（~16ms）幾乎必錯過瞬時值；故除了讀
   // 當下 stopped，另**閂鎖**：偵測到 stopped 或 vx 反向（+→−/−→+，過衝 = 急停已發生）就把綠燈
