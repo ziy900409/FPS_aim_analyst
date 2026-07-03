@@ -1,0 +1,152 @@
+import { test, expect } from '@playwright/test';
+
+/**
+ * WP-9 / T1（FR-9.1）— E2E 端到端整合：完整 drill → 匯出 → 統計全鏈路。
+ *
+ * 在真實瀏覽器（Edge，帶 COOP/COEP）斷言 `crossOriginIsolated===true`，再經 dev-only 測試掛點
+ * `window.__fpsTest`（見 src/testharness/fpsTestHarness.ts）以合成輸入跑完整 counter-strafe 一輪
+ * （移動→急停→開火命中，左右交替），觸發匯出並斷言：
+ *   1. 匯出 JSON 符 WP-7 schema（docs/operational/schema.md）：meta 完整、ticks 皆有限、
+ *      events 含 visible/counter/fire。
+ *   2. 結果頁統計 = 匯出資料：`getMetrics()`（結果頁同源 computeMetrics）與由 JSON round-trip 後的
+ *      匯出反算指標 `metricsFromExport()` 逐欄一致（序列化不失真、統計與匯出同源）。
+ *
+ * 只跑 dev（5173）：`__fpsTest` 由 `import.meta.env.DEV` 守衛、production build 剝除（與 __aimDebug 同）。
+ * 真原生滑鼠無加速 / Pointer Lock 正向路徑 → 手動驗收（T4）；效度分布 → T2；決定性回歸 → T3。
+ */
+
+const URL = 'http://localhost:5173/';
+const DRILL_ID = 'counterstrafe_ad_v1';
+const PEEKS = 20; // = counterstrafe_ad_v1.json endCondition.targetCount
+
+/** 單一 evaluate 內跑完整鏈路並回傳可斷言摘要（重物件比對在瀏覽器內完成，減少 CDP 傳輸）。 */
+async function runFullChain(page: import('@playwright/test').Page) {
+  await page.goto(URL, { waitUntil: 'networkidle' });
+  // 等 async bootstrap + harness 安裝（install 先 measureDisplayHz 再掛 __fpsTest）。
+  await expect
+    .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+      timeout: 15_000,
+    })
+    .toBe(true);
+
+  return page.evaluate(
+    ({ drillId, peeks }) => {
+      type Harness = {
+        startDrill(id: string): void;
+        runCounterStrafeRound(maxPeeks?: number): void;
+        forceExportJSON(): unknown;
+        getMetrics(): unknown;
+        metricsFromExport(payload: unknown): unknown;
+        phase(): string;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+
+      harness.startDrill(drillId);
+      harness.runCounterStrafeRound(peeks);
+
+      const payload = harness.forceExportJSON() as {
+        meta: Record<string, unknown>;
+        ticks: Array<{ t: number; vx: number; vz: number; aim: { yaw: number; pitch: number }; keys: string[] }>;
+        events: Array<Record<string, unknown>>;
+      };
+
+      const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+      const allTicksFinite = payload.ticks.every(
+        (tk) => num(tk.t) && num(tk.vx) && num(tk.vz) && num(tk.aim.yaw) && num(tk.aim.pitch) && Array.isArray(tk.keys),
+      );
+
+      const visible = payload.events.filter((e) => e.type === 'visible');
+      const counter = payload.events.filter((e) => e.type === 'counter');
+      const fire = payload.events.filter((e) => e.type === 'fire');
+      const fireWellFormed = fire.every((e) => typeof e.hit === 'boolean' && typeof e.firstShot === 'boolean' && num(e.residualSpeed));
+      const firstShotHits = fire.filter((e) => e.firstShot === true && e.hit === true);
+
+      // 統計＝匯出：getMetrics（結果頁同源）vs. JSON round-trip 後由匯出反算——逐欄一致證序列化不失真。
+      const metrics = harness.getMetrics();
+      const roundTripped = JSON.parse(JSON.stringify(payload));
+      const metricsFromExport = harness.metricsFromExport(roundTripped);
+      const metricsMatchExport = JSON.stringify(metrics) === JSON.stringify(metricsFromExport);
+
+      return {
+        coi: window.crossOriginIsolated,
+        phase: harness.phase(),
+        meta: payload.meta,
+        ticksLen: payload.ticks.length,
+        allTicksFinite,
+        sampleTick: payload.ticks[payload.ticks.length - 1] ?? null,
+        visibleCount: visible.length,
+        counterCount: counter.length,
+        fireCount: fire.length,
+        firstShotHitCount: firstShotHits.length,
+        fireWellFormed,
+        sampleVisible: visible[0] ?? null,
+        sampleCounter: counter[0] ?? null,
+        sampleFire: fire[0] ?? null,
+        metrics: metrics as {
+          firstShotHitRate: number;
+          counterReactionMs: { n: number; mean: number };
+          residualSpeed: { n: number };
+          leftRightSymmetry: { left: { n: number }; right: { n: number } };
+        },
+        metricsMatchExport,
+      };
+    },
+    { drillId: DRILL_ID, peeks: PEEKS },
+  );
+}
+
+test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () => {
+  test('crossOriginIsolated + 全鏈路：schema / 事件 / metadata / 統計＝匯出', async ({ page }) => {
+    const r = await runFullChain(page);
+
+    // COI（計時效度前置，ADR-4）——在真實瀏覽器斷言，非肉眼。
+    expect(r.coi).toBe(true);
+
+    // 完整一輪跑到 ended（endCondition targetCount=20 達成）。
+    expect(r.phase).toBe('ended');
+
+    // ── 匯出 metadata（schema.md §meta）完整且值合法 ──
+    const m = r.meta;
+    expect(m.drillId).toBe(DRILL_ID);
+    expect(['webgpu', 'webgl2']).toContain(m.backend);
+    expect(typeof m.displayHz).toBe('number');
+    expect(m.displayHz as number).toBeGreaterThan(0);
+    expect(m.simHz).toBe(128);
+    expect(typeof m.browser).toBe('string');
+    expect((m.browser as string).length).toBeGreaterThan(0);
+    expect(m.sensitivity as number).toBeGreaterThan(0);
+    expect(m.crossOriginIsolated).toBe(true); // 匯出的 metadata 亦記錄真 COI
+    expect(Number.isNaN(Date.parse(m.startedAt as string))).toBe(false);
+    expect(m.unit).toBe('source');
+    expect(m.vStrafe).toBe(250);
+    expect(m.maxDrillSeconds).toBe(300);
+    expect(Number.isInteger(m.lateEventCount as number)).toBe(true);
+    expect(m.bufferOverflow).toBe(false);
+    expect(m.recorderOverflow).toBe(false);
+    expect(m.suspect).toBe(false);
+
+    // ── ticks（schema.md §ticks[]）：非空且所有數值有限 ──
+    expect(r.ticksLen).toBeGreaterThan(0);
+    expect(r.allTicksFinite).toBe(true);
+
+    // ── events（schema.md §events[]）：含 visible / counter / fire，且 fire 欄位齊全 ──
+    expect(r.visibleCount).toBe(PEEKS);
+    expect(r.counterCount).toBe(PEEKS);
+    expect(r.fireCount).toBe(PEEKS);
+    expect(r.fireWellFormed).toBe(true);
+    expect(r.firstShotHitCount).toBe(PEEKS); // 每 peek 首發命中（合成瞄準）
+    expect(r.sampleVisible).toMatchObject({ type: 'visible', side: expect.stringMatching(/^[LR]$/) });
+    expect(r.sampleCounter).toMatchObject({ type: 'counter' });
+    expect(r.sampleFire).toMatchObject({ type: 'fire', hit: true, firstShot: true });
+
+    // ── §5 指標 sanity（合成一輪的可預測結果）──
+    expect(r.metrics.firstShotHitRate).toBe(100); // 20/20 首發命中
+    expect(r.metrics.counterReactionMs.n).toBe(PEEKS);
+    expect(r.metrics.counterReactionMs.mean).toBeGreaterThan(0);
+    expect(r.metrics.residualSpeed.n).toBe(PEEKS);
+    expect(r.metrics.leftRightSymmetry.left.n + r.metrics.leftRightSymmetry.right.n).toBe(PEEKS);
+
+    // ── 統計＝匯出：結果頁指標與匯出資料逐欄一致（序列化不失真，FR-9.1 交叉驗證）──
+    expect(r.metricsMatchExport).toBe(true);
+  });
+});
