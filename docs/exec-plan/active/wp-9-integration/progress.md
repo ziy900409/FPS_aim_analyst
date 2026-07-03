@@ -4,7 +4,7 @@
 
 ---
 
-## Status: ✅ WP-9 完成 — **M4 階段 A 交付達成（2026-07-03）**；手動遊玩手感 / 實玩反應中位數待研究者實機回填
+## Status: ✅ WP-9 完成 — **M4 階段 A 交付達成（2026-07-03）**；實機初測回填中（手動兩項為部分驗證，待研究者補完整簽核 + 穩定中位數）
 
 | Phase | State |
 |-------|-------|
@@ -30,6 +30,14 @@
 
 ## Log
 
+### 2026-07-03 — 實機初測回填（手動驗收補項）+ 匯出疊層 bug 修正
+- **匯出疊層 bug（整合期實測發現，FR-9.4 緩衝）**：drill 結束後結果頁 `#result-screen`（全螢幕 `inset:0` / `pointer-events:auto` / z-index:30 backdrop）**吃掉** `#export-panel`（原 z-index:11 < 30）的點擊，JSON/CSV 雖可見卻不可點 → 無法匯出資料。`#drill-controls`（z-index:32）不受影響。**修正**（commit `58fb1e7`）：export panel 提到 z-index:33（與 controls 同屬結果頁上方互動 overlay 層）＋新增 [`tests/e2e/overlay-layering.spec.ts`](../../../../tests/e2e/overlay-layering.spec.ts) 真瀏覽器守疊層不變式（export/controls z-index 皆 > result-screen）。`test:ci` → tsc + vitest 185 + playwright **8**（+1）全綠、exit 0。*Note*：這是 T4 緩衝步驟預期「暴露整合 bug」的實際案例——自動閘全綠但真人操作路徑才觸發（結果頁 + 匯出的互動組合，harness E2E 走獨立管線未經此 live UI 路徑）。
+- **手動項 B 反應時間（單輪未訓練初測）**：實玩 counterstrafe_ad_v1 一輪（20 目標）→ 結果頁 Counter reaction **mean 394 ms**、SD 58、n=20、分布 271–546 ms;first-shot hit 95%;stop class = Stopped（21/21）。**判讀**：高於 150–250 ms 預期帶，但**不在** <50 ms / >1 s 計時管線示警區;對未訓練受試者 + 不熟悉任務 + 佔位 display scale 屬合理量級。**尚非結論**：(1) 結果頁顯示 **mean 非中位數**——真中位數需匯出 JSON 逐 peek 計 `counter.t − visible.t`（bug 修正後現可匯出）;(2) 單輪未訓練，需多輪熟練後取穩定中位數。
+- **手動項 A 手感（部分驗證）**：完整 drill 端到端可玩、Pointer Lock 生效、first-shot 95% → 輸入路徑功能正常;但 `rawInputEnabled` console 值與主觀無加速手感**尚未簽核**，待研究者補。
+- **回填位置**：[acceptance-stage-a.md §3](../../../operational/acceptance-stage-a.md) 兩手動項改標 `[~]` 部分驗證 + 新增「實測記錄」表。
+- **Decision（兩手動項不逕自標 ✅ 通過）**：*Why*：(A) 反應 mean 394 ms 超出 150–250 帶且僅單輪、又非中位數;(B) 手感缺 `rawInputEnabled` 明確值與主觀簽核。逕標通過等於造假（違反 T2/T5 已立的效度誠實原則）。故標**部分驗證**、明列待補項。*不影響 M4*：M4 依 T0-lock 的 10 項自動硬閘宣告，手動項本就不阻塞自動閘（acceptance §3）。
+- **Next（研究者）**：多輪熟練 → 匯出 JSON → 計 `counterReactionMs` 中位數回填;鎖定後看 console 記 `rawInputEnabled`;主觀手感簽核。
+
 ### 2026-07-03 12:59Z — T5 Exit gate ✅ → **M4 階段 A 交付**
 - **交付閘重跑（本機綠燈證據）**：`npm run test:ci` → tsc `--noEmit` 乾淨 → `vitest run` **26 files / 185 tests passed** → `playwright test` **7 passed（Edge）** → **exit 0**。附錄 E 10 項硬閘全綠（[acceptance-stage-a.md](../../../operational/acceptance-stage-a.md)），四項 WP-9 驗收（T1 E2E / T2 計時效度 / T3 決定性回歸 / T4 附錄 E）逐一 map 到證據。
 - **頂層索引翻牌**：[`docs/exec-plan/README.md`](../../README.md) §狀態 → ✅ 階段 A 交付；§2 WP-9 → ✅ 完成（2026-07-03）；§3 M4 → ✅ 達成（2026-07-03）。
@@ -50,7 +58,8 @@
 - 硬約束遵守：`performance.now()` 時鐘域、`three/webgpu`、COI、三迴圈經 `SharedState`、arena/ring 固定佈局、純 TS DOM overlay UI。
 
 ### 已知限制
-- **手動驗收補項（研究者實機）**：原生滑鼠無加速手感、A/D 急停實玩手感、實玩 `counterReactionMs` 中位數落 ~150–250 ms 量級——headless 無法合成，列於 [acceptance §3](../../../operational/acceptance-stage-a.md)，待研究者實機回填本 log。
+- **手動驗收補項（研究者實機，部分驗證）**：原生滑鼠無加速手感、A/D 急停實玩手感、實玩 `counterReactionMs` 中位數落 ~150–250 ms 量級——headless 無法合成，列於 [acceptance §3](../../../operational/acceptance-stage-a.md)。**2026-07-03 單輪初測**：反應 mean 394 ms（非中位數、高於帶但非計時示警區）、first-shot 95%、輸入路徑正常;`rawInputEnabled` 值 + 主觀手感 + 穩定中位數待研究者補（見上方實機初測 log 條目）。
+- **整合期實測發現 1 個 bug（已修）**：匯出面板疊層低於結果頁 backdrop → drill 結束後無法匯出（commit `58fb1e7` + overlay-layering e2e 回歸）。屬 T4 緩衝預期的整合 bug 類型——自動閘綠但真人「結果頁＋匯出」互動路徑才觸發。
 - **決定性回歸範圍**：守 movement/急停/輸入/目標時間源的 FPS 無關性；命中鏈路（依 camera 每幀朝向）由 T1 真瀏覽器 E2E 覆蓋，不在 node 回歸內（見 T3 log）。
 - **跨瀏覽器**：階段 A 鎖 Chrome/Edge 桌面版；全面跨瀏覽器 QA out of scope。
 - **WP 資料夾**：仍在 `active/`（見上方 Decision）。
