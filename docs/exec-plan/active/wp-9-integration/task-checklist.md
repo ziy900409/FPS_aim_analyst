@@ -6,7 +6,7 @@
 |------|------|------|------------|------|
 | ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-0~8 | Low |
 | ✅ | **T1** E2E 整合（drill→匯出→統計） | [T1-e2e-integration.md](T1-e2e-integration.md) | T0 | High |
-| ⬜ | **T2** 計時效度驗證（150–250 ms） | [T2-timing-validity.md](T2-timing-validity.md) | T0 | Med |
+| ✅ | **T2** 計時效度驗證（150–250 ms） | [T2-timing-validity.md](T2-timing-validity.md) | T0 | Med |
 | ⬜ | **T3** 決定性回歸（自動化） | [T3-determinism-regression.md](T3-determinism-regression.md) | T0 | Med |
 | ⬜ | **T4** 緩衝 + 附錄 E 驗收 | [T4-buffer-acceptance.md](T4-buffer-acceptance.md) | T1, T2, T3 | Med |
 | ⬜ | **T5 / T-exit** Exit gate（宣告 M4） | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Med |

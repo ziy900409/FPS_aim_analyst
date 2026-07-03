@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | NEW `tests/validity/reaction-time.test.ts`、`docs/operational/timing-validity.md` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ Done（2026-07-03；實玩分布中位數→T4 手動驗收） |
 
 ## Objective
 驗證量測管線產出的急停反應時間落在文獻合理量級（~150–250 ms），作為計時管線未被破壞（誤用 Date.now / frame）的 sanity（FR-9.2，§9.2/§14）。
@@ -26,13 +26,14 @@
 - 呈現附「受試者內相對值 + 顯示延遲誤差界線」（§14）。
 
 ## Steps
-- [ ] `reaction-time.test.ts`：已知間隔 → 反應時間精確（單位/基準正確）。
-- [ ] 蒐集一段實玩樣本，記錄中位數/分布於 progress.md（量級 sanity）。
-- [ ] 寫 `docs/operational/timing-validity.md`（方法論 + 誤差界線）。
-- [ ] `vitest run` + `tsc` 綠燈。
+- [x] `reaction-time.test.ts`：已知間隔 → 反應時間精確（單位/基準正確）。
+- [ ] 蒐集一段實玩樣本，記錄中位數/分布於 progress.md（量級 sanity）。→ **手動驗收補項，移至 T4 附錄 E 手動項**（OQ-9.2/9.4；headless session 無法合成真人反應）。
+- [x] 寫 `docs/operational/timing-validity.md`（方法論 + 誤差界線）。
+- [x] `vitest run` + `tsc` 綠燈（25 files / 170 tests；tsc clean）。
 
 ## Definition of Done
-- [ ] 反應時間計算確定性正確；實玩分布落合理量級；方法論文件含誤差界線提醒。
+- [x] 反應時間計算確定性正確（自動）；方法論文件含誤差界線提醒。
+- [ ] 實玩分布落合理量級 → **T4 手動驗收**（真人運動-知覺反應，無法自動合成）。
 
 ## Commit
 `test(wp-9): 計時效度驗證（反應時間 150–250 ms sanity）（FR-9.2）`

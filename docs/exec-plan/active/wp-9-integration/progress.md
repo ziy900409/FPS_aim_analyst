@@ -4,13 +4,13 @@
 
 ---
 
-## Status: 🟡 T1 complete; T2/T3 ready（達成即 M4 階段 A 交付）
+## Status: 🟡 T1/T2 complete; T3 ready（達成即 M4 階段 A 交付）
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-03） |
 | T1 E2E 整合 | ✅ 完成（2026-07-03） |
-| T2 計時效度 | ⬜ 待執行 |
+| T2 計時效度 | ✅ 完成（2026-07-03，實玩分布中位數為手動驗收補項→T4） |
 | T3 決定性回歸 | ⬜ 待執行 |
 | T4 緩衝 + 附錄 E | ⬜ 待執行 |
 | T5 Exit gate（M4） | ⬜ 待執行 |
@@ -29,6 +29,16 @@
 ---
 
 ## Log
+
+### 2026-07-03 12:23Z — T2 計時效度驗證 ✅
+- **交付**：`tests/validity/reaction-time.test.ts`（6 tests）＋ `docs/operational/timing-validity.md`（方法論 + 誤差界線）。
+- **兩層守護**：(1) **確定性驗算**——餵已知間隔 → `counterReactionMs` 精確等於該間隔（150/200/250）；斷言基準為量測時鐘域相對差（整體平移 clock origin +9,876,543 後反應值不變）；左右 peek 反應時間各自歸位（left [190,210] / right [160,170] / diff 35）。(2) **分布量級 sanity**——`withinReactionBand([150,250])` 把 OQ-9.2 判準寫成可執行邏輯：文獻量級樣本中位數落帶內 ✓；系統性偏離（<50 ms、>1 s）落帶外 → 示警查計時管線。
+- **驗證**：`vitest run tests/validity/reaction-time.test.ts` → **6 passed**；全套 `vitest run` → **25 files / 170 tests passed**（前 24/164，+1 file/+6）；`tsc --noEmit` 乾淨。
+- **Decision（新測試檔的 vitest 收錄）**：擴 `vite.config.ts` `test.include` 為 `['src/**/*.test.ts','tests/**/*.test.ts']`。*Alternatives*：(a) 把測試放 `src/` 下——但 T2 計畫明列路徑 `tests/validity/`，且此為跨模組**驗證**測試（非單一元件），語意上屬 `tests/`；(b) 維持只收 `src/`——則計畫路徑的檔不被收、靜默不跑。副檔名分工不變（單元/驗證 `.test.ts` / e2e `.spec.ts`）；Playwright `testDir=tests/e2e` 不會誤收 `tests/validity`（已驗全套仍綠且 e2e 未受影響）。
+- **Decision（實玩分布中位數歸屬）**：反應時間**計算正確性**（FR-9.2 核心）已由確定性測試自動守護；**實玩樣本中位數落 ~150–250 ms** 需真人運動-知覺反應，無法在此 headless session 合成，歸為**手動驗收補項**（OQ-9.2/9.4 一致），於 T4 附錄 E 手動項執行並回填此 log。*Alternatives*：合成一組「看起來合理」的假樣本填數字——否決（造假，無效度意義）。
+- **Surprise**：`buildPeekWindows` 對反應時間單位/基準完全由 `counter.t − visible.t` 決定，故 clock-origin 不變性可用「整體平移時間戳」單一斷言精準覆蓋，無需 mock `performance.now()`。
+- **Open Questions**：OQ-9.2 的實玩中位數（手動）待 T4；其餘無。
+- **Next**：T3（決定性回歸自動化 + `test:ci` 閘）。
 
 ### 2026-07-03 12:12Z — T1 E2E 整合 ✅
 - **交付**：`window.__fpsTest` 測試掛點（`src/testharness/fpsTestHarness.ts`，dev-only）＋ `tests/e2e/full-drill.spec.ts`。全鏈路：COI 斷言 → `startDrill` → `runCounterStrafeRound(20)` → `forceExportJSON` → schema/事件/metadata 斷言 → 統計＝匯出。
