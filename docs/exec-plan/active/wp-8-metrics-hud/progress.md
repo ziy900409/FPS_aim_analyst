@@ -43,6 +43,13 @@
 - **Open finding（→ WP-9）**：首發命中率分母 doc↔impl 偏差 — T0 對照表記「分母=首發事件數」，[compute.ts:61](../../../../src/metrics/compute.ts#L61) 實作分母=可見 peek 數（`visibleEvents.length`）。僅在「有 peek 但未開首發」時不同；皆受試者內相對值，非 blocker，交 WP-9 對齊定義。
 - **交棒 WP-9**：整合 + 計時效度驗證 + 決定性回歸；重點 (a) 統計=匯出交叉驗證、(b) 反應時間對照 150–250 ms、(c) 首發命中率分母定義最終拍板。
 
+#### 手動端到端驗證（實機 smoke，附圖）— 抓到 2 個 gate 級問題並修復
+自動化 gate 全綠後做完整互動 smoke（開始→打一輪→ended→結果頁→控制），結果頁 8 卡全渲染、HUD 即時、控制可循環、L/R diff 與 hit rate 算術正確。但實測值/版面暴露兩個測試蓋不到的問題，皆已修：
+- **[已修 `6c4cbe9`] Switch time 語意 bug**：實測 11ms（SD 2ms）= 引擎 respawn latency，非玩家切換技能。根因：舊實作 `t_next_visible − t_prev_kill`，而 `spawnDelayMs=0`（OQ-6.1）下下一目標擊殺後 ~1 tick 即 visible。改以 CONTEXT:23 定義 acquisition = 擊殺後對不同目標的首發 fire；補回歸測試。**這是研究效度問題，非延後項。**
+- **[已修 `7fd80d8`] HUD 版面碰撞**：HUD 與既有 SettingsPanel 於左上角重疊，設定滑桿被壓；HUD 改置頂置中。
+- **Retro**：T5 首輪「五軸 review 無 blocker」是**手動 E2E 前**的結論；靜態 review + 單元測試看不出 switch time 量錯物理量（測試 fixture 當時就用 `t_next_visible` 當期望值，把 bug 一起固化了）。教訓：**指標效度必須用實機值 sanity check**，固定輸入測試會鎖住錯誤定義。WP-9 計時效度驗證應對每個指標做量級合理性檢查。
+- **驗證**：修復後 `npx vitest run` → 24 files / 164 tests pass（+1 switch-time 回歸）；`npx tsc --noEmit` exit 0；`npx vite build` pass。
+
 ### 2026-07-03 — T4 Controls + drill lifecycle ✅ PASS
 - **新增 `src/ui/Controls.ts`**：純 DOM overlay，提供 Restart、drill select、Load；結果頁與解除鎖定時可操作。
 - **接入 `main.ts` lifecycle**：Restart 明確走 `DrillRunner.restart()`，清 recorder/result/HUD 計時後重新 start 當前 config；Load 以 `loadDrill()` 驗證來源、替換 active `TargetManager` / `DrillRunner` 後乾淨開始。

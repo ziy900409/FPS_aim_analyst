@@ -29,8 +29,8 @@
 ### Verification story（本 session）
 - `npx vitest run` → 24 files / 163 tests pass（1.51s）。
 - `npx tsc --noEmit` → exit 0。
-- `npx vite build` → 40 modules, built，僅既有 chunk-size warning（>500 kB，非迴歸）。
-- 互動式 pointer-lock 端到端未於本 session 重跑；沿用 T2/T3/T4 progress 內 Playwright smoke 證據（結果頁 8 卡、HUD 文字更新、Restart/Load 可循環）。WP-9 將做完整計時效度 + 端到端整合驗證。
+- `npx vite build` → 40 modules, built，僅既有 chunk-size warning（>500 kB，非迴歸）。修復後重跑 vitest → **24 files / 164 tests pass**（+1 switch-time 回歸）。
+- **實機互動 smoke 已跑**（開始→打一輪→ended→結果頁→控制，附圖）：結果頁 8 卡全渲染、HUD 即時、Restart/Load 可循環、L/R diff 與 hit rate 算術正確。**抓到並修復 2 個測試蓋不到的問題**：(1) switch time 量到 respawn latency 而非玩家切換（`6c4cbe9`，含回歸測試）；(2) HUD 與 SettingsPanel 左上角重疊（`7fd80d8`）。詳見 progress.md「手動端到端驗證」。WP-9 將做完整計時效度 + 端到端整合驗證。
 
 ### Review finding（FYI，交 WP-9 reconcile）
 - **首發命中率分母**：T0 對照表記「分母用首發事件數（`firstShot` fire 數）」，但 [compute.ts:61](../../../../src/metrics/compute.ts#L61) 實作分母為 `visibleEvents.length`（可見 peek 數）。兩者僅在「有 peek 但玩家未開首發」時不同（visible 分母會把未開火 peek 計為 miss）。皆為受試者內相對值、可辯護；非 gate blocker，但屬 doc↔impl 語意偏差 → 記入 WP-9 交叉驗證時對齊統計=匯出定義。
