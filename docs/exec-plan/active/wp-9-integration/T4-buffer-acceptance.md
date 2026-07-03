@@ -7,7 +7,7 @@
 | **Depends on** | T1, T2, T3 |
 | **Risk / Complexity** | Med / Med |
 | **Touches** | NEW `docs/operational/acceptance-stage-a.md`；MODIFY 整合期發現的任何缺陷 |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ 完成（2026-07-03） |
 
 ## Objective
 處理整合期未預期問題（緩衝），並逐項 map 規格**附錄 E 驗收清單**到證據，確保階段 A 可交付（FR-9.4）。
@@ -32,12 +32,12 @@
 - 新功能；階段 B。
 
 ## Steps
-- [ ] 跑全套測試 + 手動遊玩，列出整合期缺陷並小修。
-- [ ] 寫 `acceptance-stage-a.md`：附錄 E 逐項證據連結（自動/手動標註）。
-- [ ] 確認 10 項皆有證據（綠燈或手動通過）。
+- [x] 跑全套測試 + 手動遊玩，列出整合期缺陷並小修。（tsc + vitest 185 + playwright 7 全綠；整合期無新缺陷）
+- [x] 寫 `acceptance-stage-a.md`：附錄 E 逐項證據連結（自動/手動標註）。
+- [x] 確認 10 項皆有證據（綠燈或手動通過）。
 
 ## Definition of Done
-- [ ] 整合期缺陷已修；附錄 E 10 項全部對照證據（無漏項）。
+- [x] 整合期缺陷已修；附錄 E 10 項全部對照證據（無漏項）。
 
 ## Commit
 `docs(wp-9): 緩衝修正 + 附錄 E 階段 A 驗收對照（FR-9.4）`

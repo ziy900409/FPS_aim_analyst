@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 T1/T2/T3 complete; T4/T5 待執行（達成即 M4 階段 A 交付）
+## Status: 🟡 T1/T2/T3/T4 complete; T5 exit gate 待執行（達成即 M4 階段 A 交付）
 
 | Phase | State |
 |-------|-------|
@@ -12,7 +12,7 @@
 | T1 E2E 整合 | ✅ 完成（2026-07-03） |
 | T2 計時效度 | ✅ 完成（2026-07-03，實玩分布中位數為手動驗收補項→T4） |
 | T3 決定性回歸 | ✅ 完成（2026-07-03，`test:ci` exit-code 閘生效） |
-| T4 緩衝 + 附錄 E | ⬜ 待執行 |
+| T4 緩衝 + 附錄 E | ✅ 完成（2026-07-03，附錄 E 10 項對照證據；整合期無新缺陷） |
 | T5 Exit gate（M4） | ⬜ 待執行 |
 
 ---
@@ -29,6 +29,16 @@
 ---
 
 ## Log
+
+### 2026-07-03 12:52Z — T4 緩衝 + 附錄 E 驗收 ✅
+- **交付**：[`docs/operational/acceptance-stage-a.md`](../../../operational/acceptance-stage-a.md)——規格附錄 E 階段 A **10 項硬閘**逐項對照證據（自動 A / 手動 M 標註，OQ-9.4）＋非阻塞項（F5 接縫 + 2 個階段 A+ 移動目標項）＋手動驗收補項清單。
+- **緩衝（FR-9.4）**：於乾淨工作樹全套重跑作驗收基線——`tsc --noEmit` 乾淨；`vitest run` → **26 files / 185 tests passed**；`playwright test` → **7 passed（Edge）**；`test:ci` → **exit 0**。整合期**未暴露新缺陷**，無需小修（歷史整合修正 `6c4cbe9` switch-time / `7fd80d8` HUD 版位已於 WP-8 落地）。
+- **附錄 E 10 項對照**：COI(1)→isolation/full-drill e2e；後端 metadata(2)→backend e2e + metadata.test；128Hz 決定性(3)→regression/determinism(15) + loop determinism(9)；A/D 急停 gate(4)→MovementController/firstShot；目標交替 t_visible(5)→TargetManager(18)；首發不稀釋(6)→firstShot(8)/HitDetector；完整 drill(7)→full-drill e2e + 實機 `4eb1926`；JSON/CSV schema(8)→export.test(serializeCSV ticks+events) + schema.md；§5 統計(9)→metrics/compute + 統計＝匯出斷言；反應分布(10)→reaction-time.test(計算) + 實玩中位數(手動)。**10 項全有證據、無漏項**。
+- **Decision（涵蓋範圍：10 硬閘 vs 全附錄 E 13 項）**：doc 主表列 T0-lock 定的階段 A **10 項硬閘**；F5 接縫與 2 個「階段 A+／延後」移動目標項另立**非阻塞**節，僅記狀態不阻 M4。*Why*：T0 lock 已定移動目標項非階段 A 交付閘。*Alternatives*：把 13 項全列為硬閘——否決（與 T0 lock 及規格「階段 A+／延後」標註矛盾，會誤將延後項當交付阻塞）。
+- **F5 接縫查核**：`targets.motion?` 選填欄 + `TargetMotion` 型別已就位（`schema.ts` `validateMotion`、`state/types.ts`、`schema.test.ts` 覆蓋「無 motion 向後相容」）；階段 A 目標恆靜止，SimLoop per-tick 位置更新為階段 A+ 消費點——與規格附錄 G「先立型別、階段 A 不實作移動」一致。
+- **Surprise**：無。緩衝步驟預期可能暴露整合 bug，實測全綠——三道計時防線（COI e2e / 反應 sanity / 決定性回歸）＋各 WP exit-gate 已把關，T4 緩衝落為純驗收對照。
+- **Open Questions**：實玩反應中位數 + 原生輸入手感仍為手動補項（OQ-9.2/9.4），列於 acceptance doc §3，於 T5 exit gate 由研究者確認回填。
+- **Next**：T5 Exit gate——宣告 **M4 階段 A 交付**，翻頂層索引 WP-9 ✅ + M4 達成。
 
 ### 2026-07-03 12:36Z — T3 決定性回歸（自動化）✅
 - **交付**：`tests/regression/determinism.test.ts`（15 tests）＋ `package.json` `test:ci`（`tsc --noEmit && vitest run && playwright test`，exit code 為閘）。
