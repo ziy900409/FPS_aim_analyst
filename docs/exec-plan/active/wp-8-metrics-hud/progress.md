@@ -4,7 +4,7 @@
 
 ---
 
-## Status: ✅ T4 控制完成；下一步 T5 exit gate
+## Status: ✅ WP-8 完成（T5 exit gate PASS，2026-07-03）；交棒 WP-9
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T2 結果頁 | ✅ 完成（2026-07-03）— DOM overlay 結果頁 + ended 後顯示 |
 | T3 即時 HUD | ✅ 完成（2026-07-03）— DOM HUD + rAF 讀值更新 |
 | T4 控制 | ✅ 完成（2026-07-03）— restart / load drill controls |
-| T5 Exit gate | ⬜ 待執行 |
+| T5 Exit gate | ✅ PASS（2026-07-03）— 全綠燈 + 索引翻 ✅ + 交棒 WP-9 |
 
 ---
 
@@ -30,6 +30,18 @@
 ---
 
 ## Log
+
+### 2026-07-03 — T5 Exit gate ✅ PASS（WP-8 交付）
+- **Gate 綠燈**：`npx vitest run` → 24 files / 163 tests pass；`npx tsc --noEmit` → exit 0；`npx vite build` → 40 modules built，僅既有 chunk-size warning（非迴歸）。
+- **驗收 map（PLAN WP-8）**：(1) 賽後 §5 全 8 指標 → T1 `computeMetrics` 8 欄位 + T2 `ResultScreen` 8 卡；(2) HUD 即時更新 → T3 rAF 讀 `SharedState`+recorder counters；(3) 可循環 → T4 `Controls` → `DrillRunner.restart()`/`loadDrill()`。皆有測試 + 前置 Playwright smoke 證據。
+- **索引更新**：[頂層索引](../../README.md) §2 WP-8 → ✅（2026-07-03）；狀態行改為「WP-0~WP-8 完成」；[task-checklist](task-checklist.md) T5 Done ✅。
+
+#### Outcomes & Retrospective
+- **指標=匯出一致性**：8 指標統一消費 `DataRecorder.snapshot()`（OQ-8.1），與 JSON/CSV 匯出同源；`fire.offsetDeg` / `ticks.aim`（OQ-8.5 / GD-4）落地後準心對齊偏移有 canonical 來源。**WP-9 待辦**：交叉驗證統計數值與匯出 JSON 對得上。
+- **過衝近似定義**：階段 A 立即停止模型下「速度歸零誤差 / 過衝」退化為二元，結果頁以分類（Stopped / Moving·reverse seen）呈現，headline 不顯示連續 u/s（OQ-8.2）；連續幅度待階段 B physics。
+- **Code review（本 session 五軸掃描）**：compute 純函式 + 空樣本安全（`Stat n=0` 不外漏 NaN）；HUD 重用 summary 物件、讀 recorder getter 而非每幀 `snapshot()`（不污染量測）；UI 三檔一致 inline-style DOM overlay（D1）、以 `textContent` 寫值（無注入面）。整體綠燈、無 blocker。
+- **Open finding（→ WP-9）**：首發命中率分母 doc↔impl 偏差 — T0 對照表記「分母=首發事件數」，[compute.ts:61](../../../../src/metrics/compute.ts#L61) 實作分母=可見 peek 數（`visibleEvents.length`）。僅在「有 peek 但未開首發」時不同；皆受試者內相對值，非 blocker，交 WP-9 對齊定義。
+- **交棒 WP-9**：整合 + 計時效度驗證 + 決定性回歸；重點 (a) 統計=匯出交叉驗證、(b) 反應時間對照 150–250 ms、(c) 首發命中率分母定義最終拍板。
 
 ### 2026-07-03 — T4 Controls + drill lifecycle ✅ PASS
 - **新增 `src/ui/Controls.ts`**：純 DOM overlay，提供 Restart、drill select、Load；結果頁與解除鎖定時可操作。

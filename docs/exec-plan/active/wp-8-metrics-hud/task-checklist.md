@@ -9,7 +9,7 @@
 | ✅ | **T2** 結果頁（DOM） | [T2-result-screen.md](T2-result-screen.md) | T1 | Low |
 | ✅ | **T3** 即時 HUD（DOM） | [T3-hud.md](T3-hud.md) | T0 | Low |
 | ✅ | **T4** 控制（重來/換 drill） | [T4-controls.md](T4-controls.md) | T0 | Low |
-| ⬜ | **T5 / T-exit** Exit gate | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Low |
+| ✅ | **T5 / T-exit** Exit gate | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Low |
 
 ## Execution rules
 - 一個 task = 一個切片 = 一個原子 commit；先驗證再 commit。
