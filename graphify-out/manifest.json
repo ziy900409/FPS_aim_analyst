@@ -131,6 +131,14 @@
     "mtime": 1783067453.8508067,
     "hash": "4112936550b654bb4827939ccef87e78"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\MetricsDashboard.test.ts": {
+    "mtime": 1783067718.7702515,
+    "hash": "440eb6c7cb60f7931566db553ac0c8e7"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\MetricsDashboard.ts": {
+    "mtime": 1783067717.6201687,
+    "hash": "fe83d5bc4d53af63d213ce53cf36e534"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\render\\createRenderer.test.ts": {
     "mtime": 1782826023.9851992,
     "hash": "f192258ae80be5f3f61e687e5bd61aec"
@@ -592,8 +600,8 @@
     "hash": "e7fdb0a2f44d28d55a3c5c35b2aa525e"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\progress.md": {
-    "mtime": 1783067662.5682662,
-    "hash": "f281be412e07d2774a9a9e0f009eb4f8"
+    "mtime": 1783067813.2648919,
+    "hash": "46fb46a75dec73477b0407f3ae86f79d"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\README.md": {
     "mtime": 1783064763.9675908,
@@ -604,8 +612,8 @@
     "hash": "318707b943e8de05599795fbfd569445"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\T1-compute-metrics.md": {
-    "mtime": 1783067598.5150545,
-    "hash": "310aa341240f1a7533b93ec1bcaf2684"
+    "mtime": 1783067810.7954116,
+    "hash": "fec4ae86e077e100cde1c35def70318a"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\T2-result-screen.md": {
     "mtime": 1782738949.7767107,
@@ -624,8 +632,8 @@
     "hash": "1c6c0d024b2da83e5d91c65564b4d65f"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-8-metrics-hud\\task-checklist.md": {
-    "mtime": 1783064750.1556306,
-    "hash": "c333148b174e5f32e0d990daf4e07289"
+    "mtime": 1783067811.994413,
+    "hash": "a92bc49db3a1a02f6a373c61ed1e9973"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\wp-9-integration\\progress.md": {
     "mtime": 1782739057.439113,

@@ -1,16 +1,16 @@
 # Graph Report - FPS_aim_analyst  (2026-07-03)
 
 ## Corpus Check
-- 58 files · ~79,583 words
+- 60 files · ~79,752 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 551 nodes · 1020 edges · 38 communities (24 shown, 14 thin omitted)
+- 554 nodes · 1027 edges · 38 communities (24 shown, 14 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 45 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bc9b113b`
+- Built from commit: `d884a055`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -33,7 +33,7 @@
 - [[_COMMUNITY_Community 15|Community 15]]
 - [[_COMMUNITY_Community 16|Community 16]]
 - [[_COMMUNITY_Community 17|Community 17]]
-- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
 - [[_COMMUNITY_Community 20|Community 20]]
 - [[_COMMUNITY_Community 22|Community 22]]
 - [[_COMMUNITY_Community 27|Community 27]]
@@ -122,8 +122,8 @@ Cohesion: 0.08
 Nodes (39): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 里程碑 M1 (WP-2 脊椎 / 決定性驗證), 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間) (+31 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.14
-Nodes (13): createDataRecorder(), capacityForDrill(), keyMaskFromKeys(), keyMaskFromState(), keysFromMask(), TickArena, buildPeekWindows(), coefficientOfVariation() (+5 more)
+Cohesion: 0.13
+Nodes (14): createDataRecorder(), capacityForDrill(), keyMaskFromKeys(), keyMaskFromState(), keysFromMask(), TickArena, buildPeekWindows(), coefficientOfVariation() (+6 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.18
@@ -142,24 +142,24 @@ Cohesion: 0.3
 Nodes (15): 里程碑 M1 (WP-2 脊椎門控), 里程碑 M2 (WP-5 核心玩法), 里程碑 M3 (WP-7 可匯出資料), 里程碑 M4 (WP-9 階段 A 交付), exec-plan/README.md 執行計畫索引, WP-0 環境建置與學習爬升, WP-1 FPS 控制 + Pointer Lock, WP-2 SharedState + 雙迴圈骨架 (脊椎) (+7 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.19
-Nodes (13): accumulator 模式, 準心對齊偏移, DrillConfig 元件, F5 接縫 (seam-in, drills-out), fixed-timestep (128 Hz), simStep 順序 (tick 內), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), 移動 + counter-strafe 能力混淆 (研究設計問題) (+5 more)
+Cohesion: 0.18
+Nodes (14): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+6 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.19
-Nodes (13): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+5 more)
+Cohesion: 0.2
+Nodes (11): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 決定性 (determinism), RenderSnapshot 窄介面, 速度歸零誤差 (residual speed), 階段 B (Stage B), 量測時鐘 vs 決定性時鐘 (two-clock model), 速度 gate (velocity gate) (+3 more)
 
 ### Community 15 - "Community 15"
+Cohesion: 0.31
+Nodes (9): DrillConfig 元件, F5 接縫 (seam-in, drills-out), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), 移動 + counter-strafe 能力混淆 (研究設計問題), ADR-6 目標移動策略 (sim loop 每 tick 更新, motion registry), F4 — 多 drill 支援 (config 驅動), F5 — 移動目標支援, 附錄 F 風險登記 (+1 more)
+
+### Community 16 - "Community 16"
 Cohesion: 0.36
 Nodes (8): 不可違反的硬約束 (技術), cross-origin isolation (COOP/COEP), MetricsDashboard 元件, D1 — 2D UI = 純 TS + DOM overlay, D3 — COOP/COEP 部署 (Vite plugin + 靜態主機後定), ADR-4 performance.now() + cross-origin isolation, WP-0 T2 Cross-origin isolation, WP-0 T4 Deploy headers
 
-### Community 17 - "Community 17"
-Cohesion: 0.33
-Nodes (7): 決定性 (determinism), RenderLoop 元件, RenderSnapshot 窄介面, 量測時鐘 vs 決定性時鐘 (two-clock model), 主執行緒卡頓污染 sim 計時 (階段 A 隔離不成立), Web Worker + SharedArrayBuffer 真正隔離 (階段 B), ADR-7 兩個時鐘 (量測時鐘 / 決定性時鐘)
-
-### Community 18 - "Community 18"
-Cohesion: 0.4
-Nodes (5): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 速度歸零誤差 (residual speed), 階段 B (Stage B), 速度 gate (velocity gate)
+### Community 19 - "Community 19"
+Cohesion: 0.5
+Nodes (4): accumulator 模式, 準心對齊偏移, fixed-timestep (128 Hz), simStep 順序 (tick 內)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.5
@@ -173,7 +173,7 @@ Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManage
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `規格書 v1.1 + WBS` connect `Community 8` to `Community 9`, `Community 11`, `Community 12`, `Community 13`, `Community 15`, `Community 17`, `Community 20`?**
+- **Why does `規格書 v1.1 + WBS` connect `Community 8` to `Community 9`, `Community 11`, `Community 12`, `Community 13`, `Community 15`, `Community 16`, `Community 20`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 3` to `Community 4`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._

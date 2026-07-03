@@ -4,12 +4,12 @@
 
 ---
 
-## Status: 🔄 T1 指標計算進行中；契約切片完成
+## Status: ✅ T1 指標計算完成；下一步 T2/T3/T4
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-03）— M3 達成；8 指標對照 + OQ-8.1~8.5 全鎖定 |
-| T1 指標計算 | 🔄 進行中（2026-07-03）— OQ-8.5 / GD-4 記錄契約已落地 |
+| T1 指標計算 | ✅ 完成（2026-07-03）— 8 指標純函式 + MetricsDashboard |
 | T2 結果頁 | ⬜ 待執行 |
 | T3 即時 HUD | ⬜ 待執行 |
 | T4 控制 | ⬜ 待執行 |
@@ -30,6 +30,11 @@
 ---
 
 ## Log
+
+### 2026-07-03 — T1 MetricsDashboard + exit verification ✅ PASS
+- **新增 `src/metrics/MetricsDashboard.ts`**：提供 `createMetricsDashboard().compute(snapshot)` facade，供 T2 結果頁在 drill ended 後取得同一個 metrics result model。
+- **T1 DoD**：OQ-8.5 記錄契約、schema、8 指標純函式、固定輸入測試、空樣本安全皆完成。
+- **Verification**：`npm.cmd test` pass（22 files / 157 tests）；`npm.cmd run typecheck` pass。
 
 ### 2026-07-03 — T1 computeMetrics 純函式切片 ✅ PASS
 - **新增 `src/metrics/compute.ts`**：回傳 FR-8.1 八項指標：counter reaction、residual speed、fire timing alignment、first-shot hit rate、crosshair/aim offset、switch time、rhythm stability、left/right symmetry。
