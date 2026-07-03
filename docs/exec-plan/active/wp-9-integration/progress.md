@@ -4,14 +4,14 @@
 
 ---
 
-## Status: 🟡 T1/T2 complete; T3 ready（達成即 M4 階段 A 交付）
+## Status: 🟡 T1/T2/T3 complete; T4/T5 待執行（達成即 M4 階段 A 交付）
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-03） |
 | T1 E2E 整合 | ✅ 完成（2026-07-03） |
 | T2 計時效度 | ✅ 完成（2026-07-03，實玩分布中位數為手動驗收補項→T4） |
-| T3 決定性回歸 | ⬜ 待執行 |
+| T3 決定性回歸 | ✅ 完成（2026-07-03，`test:ci` exit-code 閘生效） |
 | T4 緩衝 + 附錄 E | ⬜ 待執行 |
 | T5 Exit gate（M4） | ⬜ 待執行 |
 
@@ -29,6 +29,17 @@
 ---
 
 ## Log
+
+### 2026-07-03 12:36Z — T3 決定性回歸（自動化）✅
+- **交付**：`tests/regression/determinism.test.ts`（15 tests）＋ `package.json` `test:ci`（`tsc --noEmit && vitest run && playwright test`，exit code 為閘）。
+- **升級（vs WP-2 T4 純 movement）**：驅動與生產同源的**完整管線**——`createSimLoop + MovementController + consume + TargetManager + DrillRunner + DataRecorder`（不注入 camera）——在 60/144/240Hz + 抖動 ±50% 幀序列下斷言四層：(1) 逐 tick 狀態 `{x,z,vx,vz,stopped}` exact 對齊 canonical per-tick 軌跡；(2) **整份記錄資料集**（`DataRecorder` snapshot：ticks + events〔visible/counter/fire〕+ overflow）跨 FPS **bit-exact**（＝匯出資料 render-FPS 無關，強於 WP-2 只比 `{x,z,vx,vz}`）；(3) countdown→running 以 sim clock 判定故轉換 tick 與 FPS 無關；(4) 反向鍵急停兩方向（counter 'A'/'D'）於固定 t、急停 tick vx=0/stopped=true；(5) 重播 + 大 gap/多小幀切分 bit-exact（守無 `Date.now`/`Math.random` 洩漏）。
+- **驗證**：`vitest run tests/regression/determinism.test.ts` → **15 passed**；全套 `vitest run` → **26 files / 185 tests passed**（前 25/170，+1 file/+15）；`tsc --noEmit` 乾淨；`npm run test:ci` → tsc + vitest(185) + playwright(7 e2e) 全綠、**exit 0**（閘生效）。
+- **Decision（檔名 `.spec.ts`→`.test.ts`）**：計畫（README §2 / T3 Touches）寫 `tests/regression/determinism.spec.ts`，實作改 `tests/regression/determinism.test.ts`。*Why*：Vitest `include=['src/**/*.test.ts','tests/**/*.test.ts']`、Playwright `testDir=tests/e2e`——`.spec.ts` 放 `tests/regression/` 會被**兩個 runner 都不收**（靜默不跑，正是 T2 決策 log 警告的反模式）。FR-9.3 明指 Vitest，故沿 T2 已定的副檔名分工（單元/驗證 `.test.ts` / e2e `.spec.ts`）改 `.test.ts`。*Alternatives*：(a) 照字面用 `.spec.ts` 並擴 Vitest include 收 `tests/regression/*.spec.ts`——否決：與既有分工衝突、且 Playwright glob 未來若擴 testDir 易誤收；(b) 放 `tests/e2e/`——否決：這是 node 決定性單元測試、非瀏覽器 e2e。
+- **Decision（不注入 camera / 範圍）**：完整 sim 決定性斷言逐 tick **sim 狀態** + 記錄資料集，**不**含 hit-detection。*Why*：命中依 camera 朝向，是每-幀外部耦合（生產由 render loop 每幀更新、非 per-tick sim 狀態），本質不屬「同輸入序列跨 FPS 一致」的 sim 決定性範疇；真瀏覽器 per-tick 瞄準的命中鏈路已由 T1 E2E 覆蓋。故此處 fire 事件記錄但 `hit=false`。與 CLAUDE.md §4「sim 狀態(position/velocity/命中)一致」不衝突：該處「命中」指 sim 內 markKilled 後的狀態流轉（需 camera，屬 T1），此回歸守的是其上游 movement/急停/輸入/目標時間源的 FPS 無關性。
+- **Surprise**：`drillRunner.start(config)` 內部 `resetState` 會 **clear 輸入 ring**——首版把合成輸入在 `start()` **之前** push（沿 WP-2 T4 習慣），被 reset 清光 → 3 個涵蓋斷言紅燈（無 counter/fire、vx 恆 0），但 12 個決定性斷言反而「全綠」（各 FPS 一致同意「什麼都沒發生」）。修正：改在 `start()` **之後**才 up-front push 全部合成輸入。教訓：determinism 斷言「跨 FPS 一致」與「有沒有真的跑到邏輯」是兩件事，需獨立的涵蓋斷言把關（本檔第三個 describe）。
+- **CI**：repo 仍無 `.github/`（OQ-9.3），故只落 `test:ci` 本機 exit-code 閘、不加 workflow。
+- **Open Questions**：無新增。
+- **Next**：T4（緩衝 + 附錄 E 驗收：階段 A 10 項自動/手動證據對照；回填 T2 實玩分布中位數手動項）。
 
 ### 2026-07-03 12:23Z — T2 計時效度驗證 ✅
 - **交付**：`tests/validity/reaction-time.test.ts`（6 tests）＋ `docs/operational/timing-validity.md`（方法論 + 誤差界線）。
