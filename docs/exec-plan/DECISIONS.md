@@ -22,7 +22,18 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
-> 目前無未解項。GD-1(F5 範圍)已於 2026-06-29 解決,見 §3。
+### GD-4 🟡 `crosshair` 未由 production 路徑寫入 — 匯出恆 `[0,0]`(2026-07-03)
+
+| | |
+|---|---|
+| **發現處** | WP-7 T6 exit-gate 審查:`TickArena.recordState` 讀 `state.crosshair.cx/cy`([RingBuffer.ts](../../src/data/RingBuffer.ts):122),但 grep 全 `src/` 僅 [SharedState.ts](../../src/state/SharedState.ts) `resetState` 歸零與測試手動設值寫入 `crosshair`——**無 production writer**。 |
+| **問題** | `SharedState.crosshair` 於 WP-2 建為佔位(SharedState.ts:40「本 task 佔位、語意待該二 WP 定」,原計畫 WP-3 滑鼠樣本寫入 / WP-5 raycast 消費),但 WP-3/WP-5 交付時**未落地寫入**。故 recorder 每 tick 忠實記錄的 `crosshair` 恆為 `[0,0]`,匯出 JSON/CSV 的 `crosshair`/`cx`/`cy` 為常數 0。`schema.md` 將 crosshair 描述為「normalized overlay/camera-center offset」,與實際常數 0 不符——WP-8 消費會誤以為有瞄準偏移資料。 |
+| **影響面** | 跨 WP:WP-3/WP-5(應寫入 crosshair)、WP-7(忠實記錄,非缺陷)、WP-8(消費 crosshair 得常數 0)、pilot 研究效度(準心軌跡不可用)。**不 blocking M3 機制門**:5 項 M3 驗收皆機制層(ring/事件/metadata/匯出/schema)均綠,recorder plumbing 正確。 |
+| **待辦/結論** | 交棒 WP-8 前釐清:(a) crosshair 語意是否為階段 A 範圍(camera yaw/pitch 已走 `CameraController`,準心恆在螢幕中心 → 或許 crosshair 本應為 camera 朝向投影,而非常數);(b) 若階段 A 不需 → schema.md 標註 crosshair 為 reserved/placeholder,避免 WP-8 誤用;(c) 若需 → 補 WP-3/WP-5 writer。 |
+| **權威來源** | [SharedState.ts](../../src/state/SharedState.ts):40 佔位註記、[RingBuffer.ts](../../src/data/RingBuffer.ts):122 讀取點。 |
+| **狀態** | 🟡 待決策(2026-07-03;WP-8 entry-gate 需處理) |
+
+> GD-1(F5 範圍)已於 2026-06-29 解決,見 §3。
 
 ---
 

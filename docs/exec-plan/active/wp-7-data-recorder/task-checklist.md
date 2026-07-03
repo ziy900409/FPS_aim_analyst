@@ -10,7 +10,7 @@
 | ✅ | **T3** 環境 metadata | [T3-metadata.md](T3-metadata.md) | T0 | Low |
 | ✅ | **T4** JSON/CSV 匯出 | [T4-export.md](T4-export.md) | T1, T2, T3 | Med |
 | ✅ | **T5** Schema 文件 | [T5-schema-doc.md](T5-schema-doc.md) | T4 | Low |
-| ⬜ | **T6 / T-exit** Exit gate（宣告 M3） | [T6-exit-gate.md](T6-exit-gate.md) | T1–T5 | Med |
+| ✅ | **T6 / T-exit** Exit gate（宣告 M3） | [T6-exit-gate.md](T6-exit-gate.md) | T1–T5 | Med |
 
 ## Execution rules
 - 一個 task = 一個切片 = 一個原子 commit；先驗證再 commit。

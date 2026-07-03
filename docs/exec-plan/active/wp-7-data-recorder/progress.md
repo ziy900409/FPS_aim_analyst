@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 T5 schema 文件完成，T6 exit gate 待執行（M3 持續推進）
+## Status: 🟢 M3 達成 — 完整 drill 資料層端到端匯出（WP-7 完成，交棒 WP-8）
 
 | Phase | State |
 |-------|-------|
@@ -14,7 +14,7 @@
 | T3 Metadata | ✅ 完成（2026-07-02） |
 | T4 JSON/CSV 匯出 | ✅ 完成（2026-07-02） |
 | T5 Schema 文件 | ✅ 完成（2026-07-02） |
-| T6 Exit gate（M3） | ⬜ 待執行 |
+| T6 Exit gate（M3） | ✅ 完成（2026-07-03）— **M3 達成** |
 
 ---
 
@@ -30,6 +30,33 @@
 ---
 
 ## Log
+
+### 2026-07-03 — T6 Exit gate ✅ PASS — **M3 達成**
+
+**驗收 map（PLAN WP-7 / F1/F2 / M3）→ 證據**
+
+| 驗收 | Task | 證據 |
+|---|---|---|
+| ring buffer 每 tick 記錄、無 GC 卡頓 | T1 | `TickArena` typed arrays（`t/vx/vz/cx/cy/keyMask`），`recordTickFromState` 熱路徑零配置；`DataRecorder.test.ts` 100,000-tick 壓測無 per-tick 物件、無溢位；overflow 不繞圈、保留最舊列。 |
+| 事件流完整（visible/counter/fire） | T2 | `SimLoop.ts` 於 target tick 後掃 `tVisible` emit `visible`、反向鍵轉換 emit `counter`、fire 分支 emit `fire`（hit/firstShot/residualSpeed/part）；`DataRecorder.test.ts` 三 variant 斷言。 |
+| 環境 metadata 完整 | T3 | `collectMeta` 強制必填 + finite 驗證（backend/displayHz/simHz/sensitivity/COI/…）；`metadata.test.ts` 5 tests。 |
+| JSON/CSV 可下載 | T4 | `export.ts` `serializeJSON`/`serializeCSV`（ticks.csv + events.csv）+ `downloadJSON`/`downloadCSV`；non-finite 丟錯、CSV escape、suspect 傳播；`export.test.ts` 對附錄 C 範例 byte-exact 斷言 + `main.ts`/`ExportPanel.ts` UI 串接。 |
+| schema 與文件一致 | T5 | `docs/operational/schema.md` 逐欄對照 `Meta`/`TickRecord`/`DrillEvent`/CSV 欄位。 |
+
+**全域紅綠燈證據**
+- `tsc --noEmit` exit 0。
+- `vitest run` — **20 files / 153 tests passed**，含 `determinism.test.ts`（9 tests）決定性回歸未漂移。
+- 匯出鏈端到端序列化證據：`export.test.ts` 對附錄 C 範例產生 byte-exact JSON + `ticks.csv`/`events.csv`，並驗 `NaN`/`Infinity` 丟錯、CSV quote/escape、`recorderOverflow`→`suspect` 傳播。
+- 無 GC 佐證：`recordTickFromState` 直讀 `SharedState` primitive 寫 typed arrays；100k-tick 壓測快照配置只發生在匯出時（非熱路徑）。
+
+**Outcomes & Retrospective**
+- **無 GC 壓測**：arena = preallocated 非環狀 typed arrays + slot 重用，熱路徑無 `new`；overflow 升 `recorderOverflow` 標 suspect、拒寫不覆寫（研究需整場資料）。100k-tick 通過。
+- **schema 一致性**：型別 = 單一真相，`schema.md` 對照無漂移；WP-9 整合測試將再驗匯出符合 schema。
+- **metadata 完整性**：`collectMeta` 缺欄／非 finite 即丟錯，杜絕靜默缺值污染研究效度。
+- **Surprise / 已知限制（不 blocking M3 機制門）**：production 路徑目前**不寫入** `SharedState.crosshair`（僅 `resetState` 歸零、測試手動設值），故每筆 tick 匯出 `crosshair: [0,0]`。recorder 忠實記錄 state；缺口在上游（WP-3/WP-5 明示佔位「語意待該二 WP 定」，SharedState.ts:40）。5 項 M3 驗收皆為機制層、均綠；此為跨 WP 資料完整性缺口，已記 [DECISIONS.md](../../DECISIONS.md) GD-4，交棒 WP-8 前需釐清（WP-8 消費 crosshair 會得到常數 0）。
+- **本 session 未能執行**：① 瀏覽器實機下載點擊；② 實跑 `counterstrafe_ad_v1` drill 由玩法填 crosshair。二者需 live browser + pointer lock（非互動 session 無法驅動）。序列化/資料鏈已由 vitest 全覆蓋；建議使用者做一次實機 click-test 收尾。
+
+**交棒 WP-8**：資料層（F1/F2）機制端到端綠燈，`{meta,ticks,events}` 可供 `MetricsDashboard` 消費。WP-8 進場前先讀 GD-4（crosshair 常數 0）與 schema.md。
 
 ### 2026-07-02 — T5 Schema 文件 ✅ PASS
 - **實作**：新增 `docs/operational/schema.md`，文件化 JSON root `{meta,ticks,events}`、`Meta`、`TickRecord`、`DrillEvent` 三種事件 variant，以及 `ticks.csv` / `events.csv` 欄位。
