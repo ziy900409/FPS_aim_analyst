@@ -8,20 +8,20 @@
 | **Depends on** | WP-5 ✅、WP-6 ✅、WP-7 ✅（M3） |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | docs only |
-| **Status** | 🟡 M3 已宣告（2026-07-03）；T0 待翻 ✅（需先鎖 OQ-8.5 記錄契約） |
+| **Status** | ✅ DONE（2026-07-03）— 可開始 WP-8 T1 |
 
 ## Objective
 確認 M3 達成（記錄 + 匯出）、WP-5 即時狀態 + WP-6 drill 控制可用，並**逐指標對照規格 §5** 確定每個指標的輸入欄位與公式（避免誤解）。鎖 OQ-8.1~8.5。
 
 ## Steps
-- [ ] 確認 WP-7 snapshot/匯出可用、WP-5 velocity/stopped + WP-6 DrillRunner.restart/load 可用。**STOP：WP-7 T6 / M3 尚未完成；不得宣告 T0 PASS。**
+- [x] 確認 WP-7 snapshot/匯出可用、WP-5 velocity/stopped + WP-6 DrillRunner.restart/load 可用。
 - [x] 逐項對照 §5 8 指標 → 輸入欄位（ticks/events）與公式，記 progress.md。
 - [x] 鎖 OQ-8.1：用 WP-7 snapshot（與匯出同源）。
 - [x] 鎖 OQ-8.2：過衝 = velocity 過零後反向量近似。
 - [x] 鎖 OQ-8.3：HUD 即時值集合。
 - [x] 鎖 OQ-8.4：結果頁 = 數值卡 + 反應時間分布小圖。
-- [ ] 鎖 **OQ-8.5**（準心資料契約，見下）：採 **B + C2**，補 fire 偏移 + 逐 tick 瞄準朝向。
-- [ ] README §1 + progress.md 翻 ✅；加 dated log。
+- [x] 鎖 **OQ-8.5**（準心資料契約，見下）：採 **B + C2**，補 fire 偏移 + 逐 tick 瞄準朝向。
+- [x] README §1 + progress.md 翻 ✅；加 dated log。
 
 ## Definition of Done
 - **PASS 條件**：M3 達成 ✅（2026-07-03）+ 8 指標輸入/公式對照 §5 完成 + OQ-8.5 契約鎖定；否則 STOP。
@@ -52,7 +52,8 @@
 - WP-5 ✅：`SharedState.player.stopped` / `vx` 可供 velocity HUD 與分類；fire event 已記 `residualSpeed` / `firstShot` / `hit`。
 - WP-6 ✅：`DrillRunner.restart()` 與 `loadDrill()` 可用；開始/換 drill UI 仍屬 WP-8 T4。
 - WP-7 ✅（**M3 達成 2026-07-03**）：`DataRecorder.snapshot()` + JSON/CSV export 已實作、文件化並經實機端到端驗證（22,219 ticks / 37 visible·21 counter·39 fire）。
-- **先前阻塞已解除**：WP-7 T6 已宣告 M3、頂層索引 WP-7 ✅。**新增前置**：翻 T0 PASS 前先鎖 OQ-8.5（B+C2 記錄契約），使 T1 指標計算有正確輸入欄位。
+- **先前阻塞已解除**：WP-7 T6 已宣告 M3、頂層索引 WP-7 ✅。
+- **T0 PASS**：OQ-8.5 已鎖 B+C2 記錄契約，使 T1 指標計算有正確輸入欄位；WP-8 可開始 T1。
 
 ## Commit
 `docs(wp-8): T0 entry gate — 對照 §5 八指標 + 鎖 OQ-8.1~8.5（含 GD-4 準心契約 B+C2）`

@@ -55,6 +55,7 @@
 | **OQ-8.2** | 「過衝」定義？ | **階段 A 立即停止（M1）下退化成二元（grill）**：僅「有無反向」（velocity 符號是否翻轉），非連續幅度；結果頁以**分類**呈現。連續過衝幅度待階段 B physics。 | T1, T2 |
 | **OQ-8.3** | HUD 呈現哪些即時值？ | 分數（擊殺數）、計時（drill 時間）、命中率（累積）、velocity 指示（停止/移動狀態條）。 | T3 |
 | **OQ-8.4** | 結果頁要不要圖表？ | 階段 A：數值卡為主 + 反應時間分布小圖（為 WP-9 對照 150–250 ms 鋪路）；其餘延後。 | T2 |
+| **OQ-8.5** | `crosshair` 匯出恆 `[0,0]`，準心對齊偏移資料契約？ | 採 DECISIONS GD-4 的 **B + C2**：`fire` 事件補 `targetId` + `offsetDeg` 作為準心對齊偏移 canonical 來源；per-tick `crosshair` 改為 camera 朝向 `aim:{yaw,pitch}` / `ticks.aim`。 | T1 |
 
 ---
 
@@ -128,7 +129,7 @@ HUD 在 rAF 讀；指標在 drill ended 後一次性計算。無 worker。
 
 | Task | File | Objective | Deps | Risk | Cplx |
 |------|------|-----------|------|------|------|
-| **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | 確認 M3（WP-7）+ WP-5/6；鎖 OQ-8.1~8.4；逐指標對照 §5。 | WP-5, WP-6, WP-7 | Low | Low |
+| **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | 確認 M3（WP-7）+ WP-5/6；鎖 OQ-8.1~8.5；逐指標對照 §5。 | WP-5, WP-6, WP-7 | Low | Low |
 | **T1** 指標計算 | [T1-compute-metrics.md](T1-compute-metrics.md) | §5 全部 8 指標純函式（FR-8.1）。 | T0 | Med | High |
 | **T2** 結果頁 | [T2-result-screen.md](T2-result-screen.md) | DOM 結果頁：卡 + 反應時間分布 + 左右對稱（FR-8.2）。 | T1 | Low | Med |
 | **T3** 即時 HUD | [T3-hud.md](T3-hud.md) | DOM HUD：分數/計時/命中率/velocity（FR-8.3）。 | T0 | Low | Med |
