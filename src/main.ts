@@ -10,10 +10,12 @@ import { createCrosshair } from './ui/Crosshair.ts';
 import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
+import { createControls } from './ui/Controls.ts';
 import { sharedState } from './state/SharedState.ts';
-import { createTargetManager } from './sim/TargetManager.ts';
+import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill } from './drill/DrillLoader.ts';
-import { createDrillRunner } from './drill/DrillRunner.ts';
+import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
+import type { DrillConfig } from './drill/DrillConfig.ts';
 import { createSimLoop } from './loop/SimLoop.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
@@ -35,9 +37,18 @@ const canvas = document.querySelector<HTMLCanvasElement>('#app')!;
 // WP-0 seam：async bootstrap，取得 renderer + backend（backend 供 WP-7 metadata）。
 const { renderer, backend } = await createRenderer(canvas);
 
-const drillConfig = loadDrill(defaultDrillSource);
-const DRILL_ID = drillConfig.drillId;
-const recorderStartedAt = new Date().toISOString();
+interface AvailableDrill {
+  id: string;
+  label: string;
+  source: unknown;
+}
+
+const initialDrillConfig = loadDrill(defaultDrillSource);
+const availableDrills: AvailableDrill[] = [
+  { id: initialDrillConfig.drillId, label: initialDrillConfig.drillId, source: defaultDrillSource },
+];
+let activeDrillConfig: DrillConfig = initialDrillConfig;
+let recorderStartedAt = new Date().toISOString();
 
 // WP-1 / T1（FR-1.1）— 封閉房間 + camera 舞台。
 const sceneManager = new SceneManager();
@@ -122,7 +133,7 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
   const displayHz = await measureDisplayHz();
   const meta = collectMeta({
-    drillId: DRILL_ID,
+    drillId: activeDrillConfig.drillId,
     backend,
     displayHz,
     simHz: SIM_HZ,
@@ -172,9 +183,34 @@ inputSampler.attach(window);
 // tick 由 simStep 呼叫；時間源為 sim clock，非 rAF）。
 // WP-5 / T1（FR-5.1）— fire 事件在 sim tick 內就地 raycast（camera 中心射線 → 命中即擊殺）。
 // 傳入 sceneManager.camera：sim 唯讀其朝向（由 CameraController 走輸入路徑寫入，非 sim；雙迴圈邊界）。
-const targetManager = createTargetManager(drillConfig);
-const drillRunner = createDrillRunner(sharedState, targetManager);
-drillRunner.start(drillConfig);
+let activeTargetManager = createTargetManager(activeDrillConfig);
+let activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
+const targetManager: TargetManager = {
+  tick(state, nowMs): void {
+    activeTargetManager.tick(state, nowMs);
+  },
+  markKilled(state, id): void {
+    activeTargetManager.markKilled(state, id);
+  },
+  reset(state, seq): void {
+    activeTargetManager.reset(state, seq);
+  },
+};
+const drillRunner: DrillRunner = {
+  start(config): void {
+    activeDrillRunner.start(config);
+  },
+  tick(state, nowMs): void {
+    activeDrillRunner.tick(state, nowMs);
+  },
+  restart(): void {
+    activeDrillRunner.restart();
+  },
+  get phase() {
+    return activeDrillRunner.phase;
+  },
+};
+drillRunner.start(activeDrillConfig);
 const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager, sceneManager.camera, drillRunner, recorder);
 
 // WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
@@ -234,6 +270,54 @@ const hudStats: HUDStats = {
   stopped: false,
 };
 
+function resetRunPresentation(): void {
+  recorder.reset();
+  resultScreen.hide();
+  resultShown = false;
+  hudRunStartMs = null;
+  hudElapsedMs = 0;
+  stopFlashUntil = 0;
+  prevVx = 0;
+  recorderStartedAt = new Date().toISOString();
+}
+
+function restartActiveDrill(): void {
+  drillRunner.restart(); // WP-6 restart path: full state + TargetManager + runner reset.
+  resetRunPresentation();
+  drillRunner.start(activeDrillConfig);
+  syncControlsVisibility();
+}
+
+function loadDrillById(drillId: string): void {
+  const option = availableDrills.find((candidate) => candidate.id === drillId);
+  if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
+
+  const nextConfig = loadDrill(option.source);
+  drillRunner.restart();
+  activeDrillConfig = nextConfig;
+  activeTargetManager = createTargetManager(nextConfig);
+  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
+  resetRunPresentation();
+  drillRunner.start(activeDrillConfig);
+  controls.setSelectedDrill(activeDrillConfig.drillId);
+  syncControlsVisibility();
+}
+
+// WP-8 / T4（FR-8.4）— 重來 / 換 drill 控制。解鎖時可操作；結果頁顯示時也保持可操作。
+const controls = createControls({
+  drills: availableDrills.map(({ id, label }) => ({ id, label })),
+  selectedDrillId: activeDrillConfig.drillId,
+  onRestart: restartActiveDrill,
+  onLoadDrill: loadDrillById,
+});
+
+function syncControlsVisibility(): void {
+  controls.setVisible(!pointerLock.locked || drillRunner.phase === 'ended');
+}
+
+pointerLock.onChange(syncControlsVisibility);
+syncControlsVisibility();
+
 const renderLoop = createRenderLoop((now) => {
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
   const { alpha } = simLoop.pump(now);
@@ -257,8 +341,10 @@ const renderLoop = createRenderLoop((now) => {
   renderer.render(sceneManager.scene, sceneManager.camera);
   // WP-8 / T2：phase 轉 ended 後只計算一次結果；T4 controls 會負責 restart / 換 drill 時隱藏與重啟。
   if (!resultShown && phase === 'ended') {
+    if (document.pointerLockElement !== null) document.exitPointerLock();
     resultScreen.show(metricsDashboard.compute(recorder.snapshot()));
     resultShown = true;
+    syncControlsVisibility();
   }
   hud.update(createHUDStats(sharedState, phase, hudElapsedMs, recorder.hitCount, recorder.fireCount, recorder.hitCount, hudStats));
   // dev-only：更新急停 readout（vx / stopped）——手動驗證用，production 剝除。

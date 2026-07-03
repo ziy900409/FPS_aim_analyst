@@ -4,7 +4,7 @@
 
 ---
 
-## Status: ✅ T3 即時 HUD 完成；下一步 T4 controls
+## Status: ✅ T4 控制完成；下一步 T5 exit gate
 
 | Phase | State |
 |-------|-------|
@@ -12,7 +12,7 @@
 | T1 指標計算 | ✅ 完成（2026-07-03）— 8 指標純函式 + MetricsDashboard |
 | T2 結果頁 | ✅ 完成（2026-07-03）— DOM overlay 結果頁 + ended 後顯示 |
 | T3 即時 HUD | ✅ 完成（2026-07-03）— DOM HUD + rAF 讀值更新 |
-| T4 控制 | ⬜ 待執行 |
+| T4 控制 | ✅ 完成（2026-07-03）— restart / load drill controls |
 | T5 Exit gate | ⬜ 待執行 |
 
 ---
@@ -30,6 +30,13 @@
 ---
 
 ## Log
+
+### 2026-07-03 — T4 Controls + drill lifecycle ✅ PASS
+- **新增 `src/ui/Controls.ts`**：純 DOM overlay，提供 Restart、drill select、Load；結果頁與解除鎖定時可操作。
+- **接入 `main.ts` lifecycle**：Restart 明確走 `DrillRunner.restart()`，清 recorder/result/HUD 計時後重新 start 當前 config；Load 以 `loadDrill()` 驗證來源、替換 active `TargetManager` / `DrillRunner` 後乾淨開始。
+- **支援未來多 drill**：SimLoop 保持單例，透過 proxy 委派到 active runner/target manager；目前 `drills/` 僅列 `counterstrafe_ad_v1`。
+- **結果頁操作性**：drill ended 後解除 pointer lock，controls 保持在 result overlay 上方可點。
+- **Verification**：`npm.cmd run typecheck` pass；`npm.cmd test` pass（24 files / 163 tests）；`npm.cmd run build` pass（僅 chunk size warning）；Playwright smoke pass（controls visible，Restart/Load 可點，selected drill = `counterstrafe_ad_v1`）。
 
 ### 2026-07-03 — T3 HUD + rAF hook ✅ PASS
 - **新增 `src/ui/HUD.ts`**：純 DOM overlay，呈現 score、drill timer、hit rate、velocity stopped/moving indicator；`update()` 只改既有節點文字/樣式。

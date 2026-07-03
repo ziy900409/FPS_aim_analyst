@@ -8,7 +8,7 @@
 | ✅ | **T1** 指標計算（§5 八指標） | [T1-compute-metrics.md](T1-compute-metrics.md) | T0 | Med |
 | ✅ | **T2** 結果頁（DOM） | [T2-result-screen.md](T2-result-screen.md) | T1 | Low |
 | ✅ | **T3** 即時 HUD（DOM） | [T3-hud.md](T3-hud.md) | T0 | Low |
-| ⬜ | **T4** 控制（重來/換 drill） | [T4-controls.md](T4-controls.md) | T0 | Low |
+| ✅ | **T4** 控制（重來/換 drill） | [T4-controls.md](T4-controls.md) | T0 | Low |
 | ⬜ | **T5 / T-exit** Exit gate | [T5-exit-gate.md](T5-exit-gate.md) | T1–T4 | Low |
 
 ## Execution rules

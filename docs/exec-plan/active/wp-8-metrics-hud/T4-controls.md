@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Low / Low |
 | **Touches** | NEW `src/ui/Controls.ts`；MODIFY `src/main.ts` |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-03） |
 
 ## Objective
 提供重新開始與換 drill 控制，讓工具可循環使用（FR-8.4）。
@@ -24,13 +24,13 @@
 - 控制在結果頁 / 解除鎖定時可見。
 
 ## Steps
-- [ ] 建 `Controls.ts`：重來 + 換 drill。
-- [ ] 串 DrillRunner/DrillLoader。
-- [ ] 手動驗：結束後重來乾淨開始；換 drill 載入新 config 並開始。
-- [ ] `tsc` 乾淨。
+- [x] 建 `Controls.ts`：重來 + 換 drill。
+- [x] 串 DrillRunner/DrillLoader。
+- [x] 手動驗：結束後重來乾淨開始；換 drill 載入新 config 並開始。
+- [x] `tsc` 乾淨。
 
 ## Definition of Done
-- [ ] 可重新開始（乾淨）+ 換 drill；循環使用無殘留狀態。
+- [x] 可重新開始（乾淨）+ 換 drill；循環使用無殘留狀態。
 
 ## Commit
 `feat(wp-8): 重新開始 / 換 drill 控制（FR-8.4）`
