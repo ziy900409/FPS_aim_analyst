@@ -4,7 +4,7 @@
 
 ---
 
-## Status: 🟡 T1/T2/T3/T4 complete; T5 exit gate 待執行（達成即 M4 階段 A 交付）
+## Status: ✅ WP-9 完成 — **M4 階段 A 交付達成（2026-07-03）**；手動遊玩手感 / 實玩反應中位數待研究者實機回填
 
 | Phase | State |
 |-------|-------|
@@ -13,7 +13,7 @@
 | T2 計時效度 | ✅ 完成（2026-07-03，實玩分布中位數為手動驗收補項→T4） |
 | T3 決定性回歸 | ✅ 完成（2026-07-03，`test:ci` exit-code 閘生效） |
 | T4 緩衝 + 附錄 E | ✅ 完成（2026-07-03，附錄 E 10 項對照證據；整合期無新缺陷） |
-| T5 Exit gate（M4） | ⬜ 待執行 |
+| T5 Exit gate（M4） | ✅ 完成（2026-07-03，宣告 **M4 階段 A 交付**） |
 
 ---
 
@@ -30,7 +30,35 @@
 
 ## Log
 
-### 2026-07-03 12:52Z — T4 緩衝 + 附錄 E 驗收 ✅
+### 2026-07-03 12:59Z — T5 Exit gate ✅ → **M4 階段 A 交付**
+- **交付閘重跑（本機綠燈證據）**：`npm run test:ci` → tsc `--noEmit` 乾淨 → `vitest run` **26 files / 185 tests passed** → `playwright test` **7 passed（Edge）** → **exit 0**。附錄 E 10 項硬閘全綠（[acceptance-stage-a.md](../../../operational/acceptance-stage-a.md)），四項 WP-9 驗收（T1 E2E / T2 計時效度 / T3 決定性回歸 / T4 附錄 E）逐一 map 到證據。
+- **頂層索引翻牌**：[`docs/exec-plan/README.md`](../../README.md) §狀態 → ✅ 階段 A 交付；§2 WP-9 → ✅ 完成（2026-07-03）；§3 M4 → ✅ 達成（2026-07-03）。
+- **Decision（M4 宣告依據：10 硬閘自動綠燈 vs 手動項）**：M4 以 T0-lock 定的階段 A **10 項硬閘**自動閘全綠為據宣告；「原生輸入無加速 / 實玩手感 / 實玩反應中位數」屬研究者實機回填步驟，依 [acceptance §3](../../../operational/acceptance-stage-a.md) 明列**不阻塞自動閘綠燈判定**。*Why*：headless session 無法合成真實運動-知覺反應與滑鼠手感，強行宣稱「已通過」等於造假（違反效度前提）；誠實作法是宣告自動閘達成、手動項明列為待回填。*Alternatives*：(a) 阻塞 M4 直到手動項完成——否決（與 T0-lock 及 acceptance §3 矛盾，且工程交付物已完備）；(b) 造假填手動數字——否決（無效度意義，見 T2 log 同款拒絕）。
+- **Decision（WP 資料夾暫不移入 `completed/`）**：T5 步驟「`active/wp-*` 依需要移入 `completed/`」暫不執行。*Why*：跨資料夾移動會把各 WP README/progress 內大量相對連結（如 `../../README.md`、`../../../operational/*`）整批打斷，需連帶修正才不破壞導航；M4 宣告不依賴實體搬移。*How to apply*：後續若整理，應一次性帶連結修正（或改用 repo 內絕對路徑）再搬。
+- **Surprise**：無。T4 已在乾淨工作樹全套重跑為基線，T5 重跑結果一致（185 + 7 全綠），交付閘穩定。
+- **PR**：本 session 記本機綠燈證據；`gh pr create`（base `main`）由使用者視需要建立。
+
+---
+
+## Outcomes & Retrospective — 階段 A 交付（M4，2026-07-03）
+
+### 交付總結
+瀏覽器內第一人稱 counter-strafe 瞄準訓練器**階段 A** 完成並通過附錄 E 全數驗收：
+- **F1–F4 + 1 個 counter-strafe drill** 端到端可跑：drill → 匯出（JSON/CSV）→ §5 八指標統計，且 **統計＝匯出** 同源交叉驗證（T1 E2E）。
+- **三道計時效度防線**：`crossOriginIsolated` E2E 斷言（COI/5 µs 解析度）+ 反應時間分布 sanity（150–250 ms 判準可執行化）+ 完整管線決定性回歸（60/144/240 Hz + 抖動 bit-exact）。
+- **回歸自動化閘**：`npm run test:ci`（tsc + vitest 185 + playwright 7，exit-code 為閘），守 M1 決定性不退化。
+- 硬約束遵守：`performance.now()` 時鐘域、`three/webgpu`、COI、三迴圈經 `SharedState`、arena/ring 固定佈局、純 TS DOM overlay UI。
+
+### 已知限制
+- **手動驗收補項（研究者實機）**：原生滑鼠無加速手感、A/D 急停實玩手感、實玩 `counterReactionMs` 中位數落 ~150–250 ms 量級——headless 無法合成，列於 [acceptance §3](../../../operational/acceptance-stage-a.md)，待研究者實機回填本 log。
+- **決定性回歸範圍**：守 movement/急停/輸入/目標時間源的 FPS 無關性；命中鏈路（依 camera 每幀朝向）由 T1 真瀏覽器 E2E 覆蓋，不在 node 回歸內（見 T3 log）。
+- **跨瀏覽器**：階段 A 鎖 Chrome/Edge 桌面版；全面跨瀏覽器 QA out of scope。
+- **WP 資料夾**：仍在 `active/`（見上方 Decision）。
+
+### 階段 B 銜接
+- **F5 接縫已就位**：`DrillConfig.targets.motion?` 選填欄 + `TargetMotion` 型別（附錄 G）已立、向後相容（省略即靜止）；`SimLoop` per-tick 目標位置更新為階段 A+ 消費點。移動目標 drill、移動決定性、每 tick 目標位置匯出 + 追蹤誤差指標（schema 已預留 `targetPosAtFire`）為階段 A+ 首批工作。
+- **pilot 實驗**：工具 + 方法論（timing-validity.md）已交付；pilot 設計屬研究者（§14），非工程。
+- **階段 B physics / 真 CS2 校準**：out of scope of 階段 A，為後續里程碑。
 - **交付**：[`docs/operational/acceptance-stage-a.md`](../../../operational/acceptance-stage-a.md)——規格附錄 E 階段 A **10 項硬閘**逐項對照證據（自動 A / 手動 M 標註，OQ-9.4）＋非阻塞項（F5 接縫 + 2 個階段 A+ 移動目標項）＋手動驗收補項清單。
 - **緩衝（FR-9.4）**：於乾淨工作樹全套重跑作驗收基線——`tsc --noEmit` 乾淨；`vitest run` → **26 files / 185 tests passed**；`playwright test` → **7 passed（Edge）**；`test:ci` → **exit 0**。整合期**未暴露新缺陷**，無需小修（歷史整合修正 `6c4cbe9` switch-time / `7fd80d8` HUD 版位已於 WP-8 落地）。
 - **附錄 E 10 項對照**：COI(1)→isolation/full-drill e2e；後端 metadata(2)→backend e2e + metadata.test；128Hz 決定性(3)→regression/determinism(15) + loop determinism(9)；A/D 急停 gate(4)→MovementController/firstShot；目標交替 t_visible(5)→TargetManager(18)；首發不稀釋(6)→firstShot(8)/HitDetector；完整 drill(7)→full-drill e2e + 實機 `4eb1926`；JSON/CSV schema(8)→export.test(serializeCSV ticks+events) + schema.md；§5 統計(9)→metrics/compute + 統計＝匯出斷言；反應分布(10)→reaction-time.test(計算) + 實玩中位數(手動)。**10 項全有證據、無漏項**。
