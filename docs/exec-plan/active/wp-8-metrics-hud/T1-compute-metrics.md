@@ -33,7 +33,7 @@
 
 ## Steps
 - [x] (2026-07-03) 契約切片：落地 OQ-8.5 / GD-4（`fire.targetId`、`fire.offsetDeg`、`ticks.aim`）並更新 schema 文件。
-- [ ] 建 `compute.ts`：逐指標純函式。
+- [x] (2026-07-03) 建 `compute.ts`：逐指標純函式。
 - [ ] `MetricsDashboard`：drill ended → `computeMetrics(snapshot)`。
 - [ ] Vitest：對每指標餵**已知**合成 snapshot → 斷言精確數值（含左右對稱、空樣本 N/A）。
 - [ ] `vitest run` + `tsc` 綠燈。

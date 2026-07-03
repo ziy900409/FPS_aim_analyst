@@ -31,6 +31,12 @@
 
 ## Log
 
+### 2026-07-03 — T1 computeMetrics 純函式切片 ✅ PASS
+- **新增 `src/metrics/compute.ts`**：回傳 FR-8.1 八項指標：counter reaction、residual speed、fire timing alignment、first-shot hit rate、crosshair/aim offset、switch time、rhythm stability、left/right symmetry。
+- **配對規則**：visible window 內配第一個 counter 與 first-shot fire；switch time 以 hit fire 到下一個 visible；左右對稱用 `visible.side` 分組。
+- **空樣本策略**：`Stat` 空樣本固定 `{mean:0, sd:0, n:0, values:[]}`，避免 NaN 外漏到 UI。
+- **Verification**：`npm.cmd test -- src/metrics/compute.test.ts` pass（3 tests；需 elevated）；`npm.cmd run typecheck` pass。
+
 ### 2026-07-03 — T1 契約切片 ✅ PASS（OQ-8.5 / GD-4）
 - **落地 `ticks.aim`**：`SharedState.aim` 由 `CameraController` 寫入 yaw/pitch；`DataRecorder` tick arena 改記 `aim:{yaw,pitch}`，取代舊 `ticks[].crosshair` 匯出欄位。
 - **落地 fire 對齊來源**：`fire` event 現可攜帶 `targetId` + `offsetDeg`；`offsetDeg` 由 camera forward ray 與 active target center 的角距離計算，作為 WP-8 準心/瞄準對齊偏移 canonical 來源。
