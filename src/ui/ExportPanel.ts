@@ -6,13 +6,17 @@ export interface ExportPanelOptions {
 export function createExportPanel(opts: ExportPanelOptions): void {
   const root = document.createElement('div');
   root.id = 'export-panel';
+  // z-index 必須高於 ResultScreen 的全螢幕 backdrop（`#result-screen` inset:0 /
+  // pointer-events:auto / z-index:30）：drill 結束顯示結果頁時仍要能匯出資料，否則
+  // backdrop 會吃掉點擊、JSON/CSV 按鈕雖可見卻不可點。與 `#drill-controls`（z-index:32）
+  // 同屬「結果頁顯示時保持可操作」的 overlay 層。
   root.style.cssText = [
     'position:fixed',
     'top:16px',
     'right:16px',
     'display:flex',
     'gap:8px',
-    'z-index:11',
+    'z-index:33',
   ].join(';');
 
   const jsonButton = makeButton('JSON', 'Download JSON export');
