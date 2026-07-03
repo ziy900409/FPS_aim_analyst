@@ -8,24 +8,24 @@ describe('DataRecorder tick arena', () => {
     expect(capacityForDrill(128, 300, 128)).toBe(38_528);
   });
 
-  it('records tick rows in order and snapshots keys/crosshair at export time', () => {
+  it('records tick rows in order and snapshots keys/aim at export time', () => {
     const recorder = createDataRecorder({ capacity: 4 });
 
-    recorder.recordTick({ t: 1, vx: 10, vz: 0, crosshair: [2, 3], keys: ['D'] });
-    recorder.recordTick({ t: 2, vx: -10, vz: 5, crosshair: [4, 5], keys: ['KeyA'] });
+    recorder.recordTick({ t: 1, vx: 10, vz: 0, aim: { yaw: 2, pitch: 3 }, keys: ['D'] });
+    recorder.recordTick({ t: 2, vx: -10, vz: 5, aim: { yaw: 4, pitch: 5 }, keys: ['KeyA'] });
 
     expect(recorder.snapshot().ticks).toEqual([
-      { t: 1, vx: 10, vz: 0, crosshair: [2, 3], keys: ['D'] },
-      { t: 2, vx: -10, vz: 5, crosshair: [4, 5], keys: ['A'] },
+      { t: 1, vx: 10, vz: 0, aim: { yaw: 2, pitch: 3 }, keys: ['D'] },
+      { t: 2, vx: -10, vz: 5, aim: { yaw: 4, pitch: 5 }, keys: ['A'] },
     ]);
   });
 
   it('does not wrap on overflow and preserves the oldest rows', () => {
     const recorder = createDataRecorder({ capacity: 2 });
 
-    recorder.recordTick({ t: 1, vx: 1, vz: 0, crosshair: [0, 0], keys: [] });
-    recorder.recordTick({ t: 2, vx: 2, vz: 0, crosshair: [0, 0], keys: [] });
-    recorder.recordTick({ t: 3, vx: 3, vz: 0, crosshair: [0, 0], keys: ['D'] });
+    recorder.recordTick({ t: 1, vx: 1, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+    recorder.recordTick({ t: 2, vx: 2, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+    recorder.recordTick({ t: 3, vx: 3, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: ['D'] });
 
     const snapshot = recorder.snapshot();
     expect(snapshot.recorderOverflow).toBe(true);
@@ -37,8 +37,8 @@ describe('DataRecorder tick arena', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 100_000 });
     state.held.right = true;
-    state.crosshair.cx = 7;
-    state.crosshair.cy = -4;
+    state.aim.yaw = 7;
+    state.aim.pitch = -4;
 
     for (let i = 0; i < 100_000; i++) {
       state.player.vx = i;
@@ -48,21 +48,39 @@ describe('DataRecorder tick arena', () => {
     const snapshot = recorder.snapshot();
     expect(snapshot.recorderOverflow).toBe(false);
     expect(snapshot.ticks).toHaveLength(100_000);
-    expect(snapshot.ticks[0]).toEqual({ t: 0, vx: 0, vz: 0, crosshair: [7, -4], keys: ['D'] });
+    expect(snapshot.ticks[0]).toEqual({ t: 0, vx: 0, vz: 0, aim: { yaw: 7, pitch: -4 }, keys: ['D'] });
     expect(snapshot.ticks[99_999].vx).toBe(99_999);
   });
 
   it('records drill events and clears them on reset', () => {
     const recorder = createDataRecorder({ capacity: 1 });
 
-    recorder.recordEvent({ type: 'visible', targetId: 't0', t: 10 });
+    recorder.recordEvent({ type: 'visible', targetId: 't0', side: 'R', t: 10 });
     recorder.recordEvent({ type: 'counter', key: 'A', t: 20 });
-    recorder.recordEvent({ type: 'fire', t: 30, hit: true, firstShot: true, residualSpeed: 0, part: 'head' });
+    recorder.recordEvent({
+      type: 'fire',
+      t: 30,
+      hit: true,
+      firstShot: true,
+      residualSpeed: 0,
+      targetId: 't0',
+      offsetDeg: 1.5,
+      part: 'head',
+    });
 
     expect(recorder.snapshot().events).toEqual([
-      { type: 'visible', targetId: 't0', t: 10 },
+      { type: 'visible', targetId: 't0', side: 'R', t: 10 },
       { type: 'counter', key: 'A', t: 20 },
-      { type: 'fire', t: 30, hit: true, firstShot: true, residualSpeed: 0, part: 'head' },
+      {
+        type: 'fire',
+        t: 30,
+        hit: true,
+        firstShot: true,
+        residualSpeed: 0,
+        targetId: 't0',
+        offsetDeg: 1.5,
+        part: 'head',
+      },
     ]);
 
     recorder.reset();
@@ -72,14 +90,14 @@ describe('DataRecorder tick arena', () => {
 
   it('reset reuses the arena and clears overflow state', () => {
     const recorder = createDataRecorder({ capacity: 1 });
-    recorder.recordTick({ t: 1, vx: 1, vz: 0, crosshair: [0, 0], keys: [] });
-    recorder.recordTick({ t: 2, vx: 2, vz: 0, crosshair: [0, 0], keys: [] });
+    recorder.recordTick({ t: 1, vx: 1, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+    recorder.recordTick({ t: 2, vx: 2, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
 
     recorder.reset();
-    recorder.recordTick({ t: 3, vx: 3, vz: 0, crosshair: [1, 1], keys: ['A'] });
+    recorder.recordTick({ t: 3, vx: 3, vz: 0, aim: { yaw: 1, pitch: 1 }, keys: ['A'] });
 
     expect(recorder.snapshot()).toEqual({
-      ticks: [{ t: 3, vx: 3, vz: 0, crosshair: [1, 1], keys: ['A'] }],
+      ticks: [{ t: 3, vx: 3, vz: 0, aim: { yaw: 1, pitch: 1 }, keys: ['A'] }],
       events: [],
       recorderOverflow: false,
     });

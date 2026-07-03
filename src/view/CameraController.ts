@@ -26,8 +26,14 @@ const MAX_PITCH = Math.PI / 2 - 0.01;
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 const LOCAL_RIGHT = new THREE.Vector3(1, 0, 0);
 
+export interface AimState {
+  yaw: number;
+  pitch: number;
+}
+
 export class CameraController {
   readonly #camera: THREE.PerspectiveCamera;
+  readonly #aimSink?: AimState;
   #yaw = 0;
   #pitch = 0;
   #sensitivity = DEFAULT_SENSITIVITY;
@@ -36,8 +42,9 @@ export class CameraController {
   readonly #qYaw = new THREE.Quaternion();
   readonly #qPitch = new THREE.Quaternion();
 
-  constructor(camera: THREE.PerspectiveCamera) {
+  constructor(camera: THREE.PerspectiveCamera, aimSink?: AimState) {
     this.#camera = camera;
+    this.#aimSink = aimSink;
     // 從基準 yaw=pitch=0 起（朝 -Z，與 SceneManager lookAt 一致）；此後 camera 朝向
     // 由本類別獨佔，避免兩套發散的視角狀態（R5）。
     this.#applyToCamera();
@@ -67,5 +74,9 @@ export class CameraController {
     this.#qPitch.setFromAxisAngle(LOCAL_RIGHT, this.#pitch);
     // qYaw · qPitch：先繞 local X（pitch）再繞 world Y（yaw），組合後無 roll。
     this.#camera.quaternion.copy(this.#qYaw).multiply(this.#qPitch);
+    if (this.#aimSink !== undefined) {
+      this.#aimSink.yaw = this.#yaw;
+      this.#aimSink.pitch = this.#pitch;
+    }
   }
 }

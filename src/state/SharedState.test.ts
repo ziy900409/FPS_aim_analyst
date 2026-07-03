@@ -9,6 +9,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(a.prev).toEqual({ x: 0, z: 0 });
     expect(a.curr).toEqual({ x: 0, z: 0 });
     expect(a.crosshair).toEqual({ cx: 0, cy: 0 });
+    expect(a.aim).toEqual({ yaw: 0, pitch: 0 });
     expect(a.input.size()).toBe(0);
     expect(a.targets).toHaveLength(0);
     expect(a.tVisible.size).toBe(0);
@@ -42,6 +43,8 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     s.curr.z = 2;
     s.crosshair.cx = 9;
     s.crosshair.cy = -9;
+    s.aim.yaw = 0.3;
+    s.aim.pitch = -0.2;
     s.targets.push({
       id: 't1',
       side: 'R',
@@ -59,6 +62,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.prev).toEqual({ x: 0, z: 0 });
     expect(s.curr).toEqual({ x: 0, z: 0 });
     expect(s.crosshair).toEqual({ cx: 0, cy: 0 });
+    expect(s.aim).toEqual({ yaw: 0, pitch: 0 });
     expect(s.targets).toHaveLength(0);
     expect(s.tVisible.size).toBe(0);
 

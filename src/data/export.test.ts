@@ -23,13 +23,13 @@ const meta: Meta = {
 
 const snapshot: DataRecorderSnapshot = {
   ticks: [
-    { t: 10, vx: 250, vz: 0, crosshair: [0.5, -0.25], keys: ['D'] },
-    { t: 17.8125, vx: 0, vz: 0, crosshair: [0.25, 0], keys: ['A', 'D'] },
+    { t: 10, vx: 250, vz: 0, aim: { yaw: 0.5, pitch: -0.25 }, keys: ['D'] },
+    { t: 17.8125, vx: 0, vz: 0, aim: { yaw: 0.25, pitch: 0 }, keys: ['A', 'D'] },
   ],
   events: [
-    { type: 'visible', targetId: 'target-1', t: 10 },
+    { type: 'visible', targetId: 'target-1', side: 'R', t: 10 },
     { type: 'counter', key: 'A', t: 14 },
-    { type: 'fire', t: 18, hit: true, firstShot: true, residualSpeed: 0, part: 'head' },
+    { type: 'fire', t: 18, hit: true, firstShot: true, residualSpeed: 0, targetId: 'target-1', offsetDeg: 0.5, part: 'head' },
   ],
   recorderOverflow: false,
 };
@@ -68,7 +68,7 @@ describe('data export', () => {
       {
         filename: 'pilot_run_01-ticks.csv',
         content: [
-          't,vx,vz,cx,cy,keys',
+          't,vx,vz,yaw,pitch,keys',
           '10,250,0,0.5,-0.25,D',
           '17.8125,0,0,0.25,0,A|D',
           '',
@@ -77,10 +77,10 @@ describe('data export', () => {
       {
         filename: 'pilot_run_01-events.csv',
         content: [
-          'type,t,targetId,key,hit,firstShot,residualSpeed,part',
-          'visible,10,target-1,,,,,',
-          'counter,14,,A,,,,',
-          'fire,18,,,true,true,0,head',
+          'type,t,targetId,side,key,hit,firstShot,residualSpeed,offsetDeg,part',
+          'visible,10,target-1,R,,,,,,',
+          'counter,14,,,A,,,,,',
+          'fire,18,target-1,,,true,true,0,0.5,head',
           '',
         ].join('\n'),
       },
@@ -89,8 +89,8 @@ describe('data export', () => {
 
   it('escapes CSV cells and rejects non-finite numbers', () => {
     const payload = buildExportPayload(meta, {
-      ticks: [{ t: 1, vx: 2, vz: 3, crosshair: [4, 5], keys: ['A'] }],
-      events: [{ type: 'visible', targetId: 'target, "quoted"', t: 6 }],
+      ticks: [{ t: 1, vx: 2, vz: 3, aim: { yaw: 4, pitch: 5 }, keys: ['A'] }],
+      events: [{ type: 'visible', targetId: 'target, "quoted"', side: 'L', t: 6 }],
       recorderOverflow: false,
     });
 
@@ -101,13 +101,13 @@ describe('data export', () => {
     expect(() =>
       serializeJSON({
         ...payload,
-        ticks: [{ t: Number.NaN, vx: 0, vz: 0, crosshair: [0, 0], keys: [] }],
+        ticks: [{ t: Number.NaN, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] }],
       }),
     ).toThrow('export payload contains a non-finite number');
     expect(() =>
       serializeCSV({
         ...payload,
-        ticks: [{ t: Number.NaN, vx: 0, vz: 0, crosshair: [0, 0], keys: [] }],
+        ticks: [{ t: Number.NaN, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] }],
       }),
     ).toThrow('export payload contains a non-finite number');
   });

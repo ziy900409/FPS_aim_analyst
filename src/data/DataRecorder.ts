@@ -7,9 +7,18 @@ import {
 } from './RingBuffer.ts';
 
 export type DrillEvent =
-  | { type: 'visible'; targetId: string; t: number }
+  | { type: 'visible'; targetId: string; side: 'L' | 'R'; t: number }
   | { type: 'counter'; key: string; t: number }
-  | { type: 'fire'; t: number; hit: boolean; firstShot: boolean; residualSpeed: number; part?: 'head' | 'body' };
+  | {
+      type: 'fire';
+      t: number;
+      hit: boolean;
+      firstShot: boolean;
+      residualSpeed: number;
+      targetId?: string;
+      offsetDeg?: number;
+      part?: 'head' | 'body';
+    };
 
 export interface DataRecorderSnapshot {
   ticks: TickRecord[];

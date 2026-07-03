@@ -2,7 +2,7 @@ import type * as THREE from 'three/webgpu';
 import { consume } from '../input/consume.ts';
 import type { SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
-import { raycastFromCenter } from '../sim/HitDetector.ts';
+import { raycastFromCenter, targetCenterOffsetDeg } from '../sim/HitDetector.ts';
 import { currentPeekId, firstShotGate } from '../sim/firstShot.ts';
 import { createMovementController, type MovementController } from '../sim/MovementController.ts';
 import type { DrillRunner } from '../drill/DrillRunner.ts';
@@ -55,6 +55,8 @@ function applyInput(
     let firstShot = false;
     let hit = false;
     let part: 'head' | 'body' | undefined;
+    let targetId: string | undefined;
+    let offsetDeg: number | undefined;
 
     // 精準 gate（FR-5.4，OQ-5.1）：**在命中判定與 markKilled 之前**讀 velocity——反映 fire 當下
     // （＝上一 tick movement.step 所定，本 tick movement.step 尚未跑）的移動狀態。停止態（急停穿越
@@ -65,18 +67,32 @@ function applyInput(
     // camera 中心射線 → 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。
     if (camera !== undefined && targetManager !== undefined) {
       const peekId = currentPeekId(state);
+      targetId = peekId;
       firstShot = peekId !== undefined ? firstShotGate(state, peekId) : false;
+      if (peekId !== undefined) {
+        const target = state.targets.find((candidate) => candidate.id === peekId);
+        if (target !== undefined) offsetDeg = targetCenterOffsetDeg(camera, target);
+      }
       const result = raycastFromCenter(camera, state.targets);
       hit = result.hit;
       part = result.part;
+      if (result.targetId !== undefined) targetId = result.targetId;
       if (hit && result.targetId !== undefined) targetManager.markKilled(state, result.targetId);
     }
 
     // fire 結果事件（含 firstShot / accurate / residualSpeed）產出 → WP-7 記錄 / WP-8 統計；
     // 本 WP 只判定旗標（旗標記憶已寫入 state.firstShotPeekId，供整合測試觀察）。
     void accurate;
-    if (part !== undefined) recorder?.recordEvent({ type: 'fire', t: ev.t, hit, firstShot, residualSpeed, part });
-    else recorder?.recordEvent({ type: 'fire', t: ev.t, hit, firstShot, residualSpeed });
+    recorder?.recordEvent({
+      type: 'fire',
+      t: ev.t,
+      hit,
+      firstShot,
+      residualSpeed,
+      ...(targetId !== undefined ? { targetId } : {}),
+      ...(offsetDeg !== undefined ? { offsetDeg } : {}),
+      ...(part !== undefined ? { part } : {}),
+    });
   }
 }
 
@@ -85,7 +101,7 @@ function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecor
   for (let i = 0; i < state.targets.length; i++) {
     const target = state.targets[i];
     if (target.visible && state.tVisible.get(target.id) === t) {
-      recorder.recordEvent({ type: 'visible', targetId: target.id, t });
+      recorder.recordEvent({ type: 'visible', targetId: target.id, side: target.side, t });
     }
   }
 }

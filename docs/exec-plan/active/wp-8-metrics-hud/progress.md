@@ -4,12 +4,12 @@
 
 ---
 
-## Status: ✅ T0 Entry gate 完成；可開始 T1
+## Status: 🔄 T1 指標計算進行中；契約切片完成
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-03）— M3 達成；8 指標對照 + OQ-8.1~8.5 全鎖定 |
-| T1 指標計算 | ⬜ 待執行 |
+| T1 指標計算 | 🔄 進行中（2026-07-03）— OQ-8.5 / GD-4 記錄契約已落地 |
 | T2 結果頁 | ⬜ 待執行 |
 | T3 即時 HUD | ⬜ 待執行 |
 | T4 控制 | ⬜ 待執行 |
@@ -30,6 +30,13 @@
 ---
 
 ## Log
+
+### 2026-07-03 — T1 契約切片 ✅ PASS（OQ-8.5 / GD-4）
+- **落地 `ticks.aim`**：`SharedState.aim` 由 `CameraController` 寫入 yaw/pitch；`DataRecorder` tick arena 改記 `aim:{yaw,pitch}`，取代舊 `ticks[].crosshair` 匯出欄位。
+- **落地 fire 對齊來源**：`fire` event 現可攜帶 `targetId` + `offsetDeg`；`offsetDeg` 由 camera forward ray 與 active target center 的角距離計算，作為 WP-8 準心/瞄準對齊偏移 canonical 來源。
+- **補 left/right 契約**：`visible` event 補 `side:'L'|'R'`，供 T1 左右對稱性分組，不再從 target id 序列猜測。
+- **Schema 對齊**：`docs/operational/schema.md` 已更新 JSON/CSV 欄位；CSV tick header 改為 `t,vx,vz,yaw,pitch,keys`，event header 改為 `type,t,targetId,side,key,hit,firstShot,residualSpeed,offsetDeg,part`。
+- **Verification**：`npm.cmd run typecheck` pass；`npm.cmd test -- src/data/DataRecorder.test.ts src/data/export.test.ts src/loop/SimLoop.test.ts src/state/SharedState.test.ts src/sim/HitDetector.test.ts` pass（32 tests；需 elevated，因 sandbox 擋 Vitest 讀 Vite config 上層目錄）。
 
 ### 2026-07-03 — T0 Entry gate ✅ PASS（可開始 T1）
 - **STOP 解除**：WP-7 T6 已宣告 **M3**（頂層索引 WP-7 ✅），並經實機端到端驗證（22,219 ticks / 37 visible·21 counter·39 fire，`meta` 齊全、`suspect: false`）。先前阻塞（M3 未宣告）消除。

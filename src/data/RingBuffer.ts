@@ -12,7 +12,7 @@ export interface TickRecord {
   t: number;
   vx: number;
   vz: number;
-  crosshair: [number, number];
+  aim: { yaw: number; pitch: number };
   keys: KeyName[];
 }
 
@@ -20,13 +20,13 @@ export interface TickRecordInput {
   t: number;
   vx: number;
   vz: number;
-  crosshair: readonly [number, number];
+  aim: { readonly yaw: number; readonly pitch: number };
   keys: readonly string[];
 }
 
 export interface TickSourceState {
   player: { vx: number; vz: number };
-  crosshair: { cx: number; cy: number };
+  aim: { yaw: number; pitch: number };
   held: { left: boolean; right: boolean };
 }
 
@@ -83,8 +83,8 @@ export class TickArena {
   private readonly t: Float64Array;
   private readonly vx: Float64Array;
   private readonly vz: Float64Array;
-  private readonly cx: Float64Array;
-  private readonly cy: Float64Array;
+  private readonly yaw: Float64Array;
+  private readonly pitch: Float64Array;
   private readonly keyMask: Uint8Array;
   private countValue = 0;
   private overflowValue = false;
@@ -94,8 +94,8 @@ export class TickArena {
     this.t = new Float64Array(capacity);
     this.vx = new Float64Array(capacity);
     this.vz = new Float64Array(capacity);
-    this.cx = new Float64Array(capacity);
-    this.cy = new Float64Array(capacity);
+    this.yaw = new Float64Array(capacity);
+    this.pitch = new Float64Array(capacity);
     this.keyMask = new Uint8Array(capacity);
   }
 
@@ -112,17 +112,17 @@ export class TickArena {
       record.t,
       record.vx,
       record.vz,
-      record.crosshair[0],
-      record.crosshair[1],
+      record.aim.yaw,
+      record.aim.pitch,
       keyMaskFromKeys(record.keys),
     );
   }
 
   recordState(t: number, state: TickSourceState): boolean {
-    return this.recordFields(t, state.player.vx, state.player.vz, state.crosshair.cx, state.crosshair.cy, keyMaskFromState(state));
+    return this.recordFields(t, state.player.vx, state.player.vz, state.aim.yaw, state.aim.pitch, keyMaskFromState(state));
   }
 
-  recordFields(t: number, vx: number, vz: number, cx: number, cy: number, keyMask: number): boolean {
+  recordFields(t: number, vx: number, vz: number, yaw: number, pitch: number, keyMask: number): boolean {
     if (this.countValue >= this.capacity) {
       this.overflowValue = true;
       return false;
@@ -132,8 +132,8 @@ export class TickArena {
     this.t[i] = t;
     this.vx[i] = vx;
     this.vz[i] = vz;
-    this.cx[i] = cx;
-    this.cy[i] = cy;
+    this.yaw[i] = yaw;
+    this.pitch[i] = pitch;
     this.keyMask[i] = keyMask;
     this.countValue++;
     return true;
@@ -146,7 +146,7 @@ export class TickArena {
         t: this.t[i],
         vx: this.vx[i],
         vz: this.vz[i],
-        crosshair: [this.cx[i], this.cy[i]],
+        aim: { yaw: this.yaw[i], pitch: this.pitch[i] },
         keys: keysFromMask(this.keyMask[i]),
       };
     }

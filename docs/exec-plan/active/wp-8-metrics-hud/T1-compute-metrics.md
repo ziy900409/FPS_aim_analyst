@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Med / High |
 | **Touches** | NEW `src/metrics/compute.ts`、`src/metrics/MetricsDashboard.ts`; MODIFY `src/data/DataRecorder.ts`、`src/data/RingBuffer.ts`、`src/loop/SimLoop.ts`、`src/state/SharedState.ts`、`src/view/CameraController.ts`、`docs/operational/schema.md` |
-| **Status** | ⬜ TODO |
+| **Status** | 🔄 IN PROGRESS — contract slice complete (2026-07-03) |
 
 ## Objective
 先落地 T0 / OQ-8.5 的記錄契約（`fire.targetId` + `fire.offsetDeg`、`ticks.aim`），再以 `computeMetrics(snapshot)` 純函式計算規格 §5 全部 8 指標，無主觀評分（FR-8.1）。
@@ -32,7 +32,7 @@
 - 過衝（結果頁用）以 velocity 過零後反向量近似（OQ-8.2）。
 
 ## Steps
-- [ ] 契約切片：落地 OQ-8.5 / GD-4（`fire.targetId`、`fire.offsetDeg`、`ticks.aim`）並更新 schema 文件。
+- [x] (2026-07-03) 契約切片：落地 OQ-8.5 / GD-4（`fire.targetId`、`fire.offsetDeg`、`ticks.aim`）並更新 schema 文件。
 - [ ] 建 `compute.ts`：逐指標純函式。
 - [ ] `MetricsDashboard`：drill ended → `computeMetrics(snapshot)`。
 - [ ] Vitest：對每指標餵**已知**合成 snapshot → 斷言精確數值（含左右對稱、空樣本 N/A）。

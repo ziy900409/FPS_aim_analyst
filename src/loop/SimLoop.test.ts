@@ -113,13 +113,13 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 2 });
     state.held.right = true;
-    state.crosshair.cx = 3;
-    state.crosshair.cy = -2;
+    state.aim.yaw = 3;
+    state.aim.pitch = -2;
 
     simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
 
     expect(recorder.snapshot().ticks).toEqual([
-      { t: TICK_MS, vx: 250, vz: 0, crosshair: [3, -2], keys: ['D'] },
+      { t: TICK_MS, vx: 250, vz: 0, aim: { yaw: 3, pitch: -2 }, keys: ['D'] },
     ]);
   });
 
@@ -151,9 +151,9 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     simStep(state, 1 / SIM_HZ, 300, tm, cam, undefined, undefined, undefined, recorder);
 
     expect(recorder.snapshot().events).toEqual([
-      { type: 'visible', targetId: 't0', t: 100 },
+      { type: 'visible', targetId: 't0', side: 'R', t: 100 },
       { type: 'counter', key: 'A', t: 101 },
-      { type: 'fire', t: 201, hit: true, firstShot: true, residualSpeed: 0, part: 'head' },
+      { type: 'fire', t: 201, hit: true, firstShot: true, residualSpeed: 0, targetId: 't0', offsetDeg: 0, part: 'head' },
     ]);
   });
 });

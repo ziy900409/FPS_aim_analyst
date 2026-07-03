@@ -55,14 +55,14 @@ export function downloadCSV(payload: ExportPayload, options: DownloadOptions = {
 }
 
 function serializeTicksCSV(ticks: TickRecord[]): string {
-  const rows = [['t', 'vx', 'vz', 'cx', 'cy', 'keys']];
+  const rows = [['t', 'vx', 'vz', 'yaw', 'pitch', 'keys']];
   for (const tick of ticks) {
     rows.push([
       formatNumber(tick.t),
       formatNumber(tick.vx),
       formatNumber(tick.vz),
-      formatNumber(tick.crosshair[0]),
-      formatNumber(tick.crosshair[1]),
+      formatNumber(tick.aim.yaw),
+      formatNumber(tick.aim.pitch),
       tick.keys.join('|'),
     ]);
   }
@@ -70,21 +70,23 @@ function serializeTicksCSV(ticks: TickRecord[]): string {
 }
 
 function serializeEventsCSV(events: DrillEvent[]): string {
-  const rows = [['type', 't', 'targetId', 'key', 'hit', 'firstShot', 'residualSpeed', 'part']];
+  const rows = [['type', 't', 'targetId', 'side', 'key', 'hit', 'firstShot', 'residualSpeed', 'offsetDeg', 'part']];
   for (const event of events) {
     if (event.type === 'visible') {
-      rows.push([event.type, formatNumber(event.t), event.targetId, '', '', '', '', '']);
+      rows.push([event.type, formatNumber(event.t), event.targetId, event.side, '', '', '', '', '', '']);
     } else if (event.type === 'counter') {
-      rows.push([event.type, formatNumber(event.t), '', event.key, '', '', '', '']);
+      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '']);
     } else {
       rows.push([
         event.type,
         formatNumber(event.t),
+        event.targetId ?? '',
         '',
         '',
         formatBoolean(event.hit),
         formatBoolean(event.firstShot),
         formatNumber(event.residualSpeed),
+        event.offsetDeg !== undefined ? formatNumber(event.offsetDeg) : '',
         event.part ?? '',
       ]);
     }
@@ -111,12 +113,15 @@ function assertFinitePayload(payload: ExportPayload): void {
     formatNumber(tick.t);
     formatNumber(tick.vx);
     formatNumber(tick.vz);
-    formatNumber(tick.crosshair[0]);
-    formatNumber(tick.crosshair[1]);
+    formatNumber(tick.aim.yaw);
+    formatNumber(tick.aim.pitch);
   }
   for (const event of payload.events) {
     formatNumber(event.t);
-    if (event.type === 'fire') formatNumber(event.residualSpeed);
+    if (event.type === 'fire') {
+      formatNumber(event.residualSpeed);
+      if (event.offsetDeg !== undefined) formatNumber(event.offsetDeg);
+    }
   }
 }
 

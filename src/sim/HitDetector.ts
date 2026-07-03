@@ -27,6 +27,10 @@ const box = new THREE.Box3();
 const boxMin = new THREE.Vector3();
 const boxMax = new THREE.Vector3();
 const hitPoint = new THREE.Vector3();
+const cameraWorld = new THREE.Vector3();
+const cameraForward = new THREE.Vector3();
+const targetCenter = new THREE.Vector3();
+const cameraToTarget = new THREE.Vector3();
 
 export interface RaycastResult {
   hit: boolean;
@@ -72,4 +76,15 @@ export function raycastFromCenter(
 
   if (nearestId === undefined) return { hit: false };
   return { hit: true, targetId: nearestId, part: nearestPart };
+}
+
+/** Camera forward ray vs target center angular offset in degrees; canonical source for WP-8 aim offset. */
+export function targetCenterOffsetDeg(camera: THREE.Camera, target: TargetState): number {
+  camera.getWorldPosition(cameraWorld);
+  camera.getWorldDirection(cameraForward);
+  targetCenter.set(target.pos.x, target.pos.y, target.pos.z);
+  cameraToTarget.subVectors(targetCenter, cameraWorld);
+  if (cameraToTarget.lengthSq() === 0) return 0;
+  cameraToTarget.normalize();
+  return THREE.MathUtils.radToDeg(cameraForward.angleTo(cameraToTarget));
 }

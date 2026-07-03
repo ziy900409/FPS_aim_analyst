@@ -92,7 +92,7 @@ canvas.addEventListener('click', () => {
 
 // WP-1 / T4（FR-1.4）— yaw/pitch 視角：鎖定中的滑鼠 delta 累積到 camera 朝向。
 // 走輸入/render 路徑，不入 sim（雙迴圈邊界，WP-2）；onMove 僅 locked 時轉發（T2）。
-const cameraController = new CameraController(sceneManager.camera);
+const cameraController = new CameraController(sceneManager.camera, sharedState.aim);
 pointerLock.onMove((dx, dy) => cameraController.applyDelta(dx, dy));
 
 // WP-1 / T5（FR-1.5）— sensitivity/FOV 設定面板（DOM overlay, D1）：拖動即時生效。

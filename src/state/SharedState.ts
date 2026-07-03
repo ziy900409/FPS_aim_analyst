@@ -37,8 +37,10 @@ export interface SharedState {
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
   prev: PlayerSnapshot;
   curr: PlayerSnapshot;
-  /** 準心瞄準狀態（WP-3 由滑鼠樣本寫入、WP-5 raycast 消費；本 task 佔位、語意待該二 WP 定）。 */
+  /** 準心 overlay 偏移；階段 A 固定中心，保留給 UI，不作為 WP-8 對齊偏移資料來源。 */
   crosshair: { cx: number; cy: number };
+  /** CameraController 寫入的 camera 朝向（radians）；WP-8 tick-level aim 軌跡來源。 */
+  aim: { yaw: number; pitch: number };
   /** 目標清單（WP-4 寫入；先空）。 */
   targets: TargetState[];
   /** 各目標可見瞬間的 `performance.now()` 時間戳（量測時鐘域，WP-4 寫入；先空）。 */
@@ -140,6 +142,7 @@ export function createSharedState(): SharedState {
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
     crosshair: { cx: 0, cy: 0 },
+    aim: { yaw: 0, pitch: 0 },
     targets: [],
     tVisible: new Map(),
     firstShotPeekId: null,
@@ -171,6 +174,8 @@ export function resetState(state: SharedState = sharedState): void {
   state.curr.z = 0;
   state.crosshair.cx = 0;
   state.crosshair.cy = 0;
+  state.aim.yaw = 0;
+  state.aim.pitch = 0;
   state.targets.length = 0;
   state.tVisible.clear();
   state.firstShotPeekId = null; // 首發旗標記憶歸零（重開 drill → 首發重新從第一 peek 計）
