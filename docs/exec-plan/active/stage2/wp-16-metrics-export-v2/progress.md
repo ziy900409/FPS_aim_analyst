@@ -1,0 +1,36 @@
+# WP-16 — Progress Log
+
+> Running log,最新在上。每勾一個 checklist box 記錄指令輸出/檔案路徑作為證據。
+> Companion:[README.md](README.md) · [task-checklist.md](task-checklist.md)
+
+---
+
+## Status: ⬜ 未開始
+
+| Task | 狀態 |
+|---|---|
+| T0 entry gate | ⬜ |
+| T1 schema v2 | ⬜ |
+| T2 理想路徑指標 | ⬜ |
+| T3 結果頁對照 | ⬜ |
+| T-exit | ⬜ |
+
+---
+
+## Open Questions ledger(T0 解決)
+
+| ID | 狀態 | 決議 |
+|----|------|------|
+| OQ-S2-3 感度語意/schema 斷代(`sensitivityModel` 已由 WP-12 落地;`schemaVersion` bump 政策本 WP 收尾) | ⬜ open | — |
+| 稽核不確定清單 #4:`targetCenterOffsetDeg` 語意(相對誰的中心/正負號)定稿 | ⬜ open | — |
+
+---
+
+## Log
+
+### 2026-07-03 — Plan authored
+- 由 stage2 計畫([../README.md](../README.md) §6 WP-16 表 + session 補充決定)展開為自足 task 檔(T0–T3 + T-exit)。
+- 補充決定:`schemaVersion` bump 落 T1(WP-12 只加 `sensitivityModel`);`DrillConfig.weaponId?`
+  選填欄與 meta `rngSeed`(WP-13 OQ-13.1 的 seed 記錄)一併落 T1;arena 容量以 fire 事件率上限
+  (= magSize/cycletime)重估。
+- **Next**:T0([T0-entry-gate.md](T0-entry-gate.md))— WP-13 exit 驗證 + 兩條語意決議,docs-only。
