@@ -15,7 +15,7 @@
 ## Steps
 - [x] `npx vitest run` 綠燈（ring buffer/事件/metadata/匯出 + 決定性回歸）— **20 files / 153 tests passed**（含 determinism 9 tests）。
 - [x] `npx tsc --noEmit` exit 0。
-- [~] 手動驗（端到端）：序列化/資料鏈由 `export.test.ts` 對附錄 C 範例 byte-exact 覆蓋（meta+ticks+events、schema 一致）；UI 串接於 `main.ts`/`ExportPanel.ts` 已審。**瀏覽器實機下載點擊 + 實跑 drill 需 live browser，非互動 session 無法驅動 → 交使用者收尾**（見 progress.md）。
+- [x] 手動驗（端到端）：使用者於 Edge/Chromium 146 實跑 `counterstrafe_ad_v1` 並下載 JSON + `ticks.csv`（2026-07-03）。**22,219 ticks / 37 visible·21 counter·39 fire**；`meta` 齊全有效（`backend: webgpu`、`crossOriginIsolated: true`、`simHz: 128`、`suspect: false`）；`vx` 達 ±250（vStrafe source unit）；schema 與 `schema.md` 一致；無可感 GC 卡頓。（序列化鏈另由 `export.test.ts` byte-exact 覆蓋。）
 - [x] map 下方 5 項驗收 → 證據；勾選（見 progress.md 2026-07-03 表）。
 - [x] 翻 [頂層索引](../../README.md) §2 WP-7 ✅ + §3 標記 **M3 達成**。
 - [x] progress.md 寫 `Outcomes & Retrospective`（無 GC 壓測結果、schema 一致性、metadata 完整性）。

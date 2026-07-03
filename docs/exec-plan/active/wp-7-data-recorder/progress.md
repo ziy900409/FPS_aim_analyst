@@ -54,7 +54,8 @@
 - **schema 一致性**：型別 = 單一真相，`schema.md` 對照無漂移；WP-9 整合測試將再驗匯出符合 schema。
 - **metadata 完整性**：`collectMeta` 缺欄／非 finite 即丟錯，杜絕靜默缺值污染研究效度。
 - **Surprise / 已知限制（不 blocking M3 機制門）**：production 路徑目前**不寫入** `SharedState.crosshair`（僅 `resetState` 歸零、測試手動設值），故每筆 tick 匯出 `crosshair: [0,0]`。recorder 忠實記錄 state；缺口在上游（WP-3/WP-5 明示佔位「語意待該二 WP 定」，SharedState.ts:40）。5 項 M3 驗收皆為機制層、均綠；此為跨 WP 資料完整性缺口，已記 [DECISIONS.md](../../DECISIONS.md) GD-4，交棒 WP-8 前需釐清（WP-8 消費 crosshair 會得到常數 0）。
-- **本 session 未能執行**：① 瀏覽器實機下載點擊；② 實跑 `counterstrafe_ad_v1` drill 由玩法填 crosshair。二者需 live browser + pointer lock（非互動 session 無法驅動）。序列化/資料鏈已由 vitest 全覆蓋；建議使用者做一次實機 click-test 收尾。
+- **實機端到端驗證 ✅（2026-07-03，使用者執行）**：Edge/Chromium 146 實跑 `counterstrafe_ad_v1` → 下載 JSON + `ticks.csv`。**22,219 ticks / events 37 visible·21 counter·39 fire**；`meta` 齊全（`backend: webgpu`、`crossOriginIsolated: true`、`simHz: 128`、`sensitivity: 0.6`、`recorderOverflow`/`bufferOverflow`/`suspect` 皆 false）；`vx` 達 ±250（vStrafe source unit）；schema 與 `schema.md` 逐欄一致。**同時實測證實 GD-4**：`ticks[].crosshair` 全為 `[0,0]`（CSV `cx`/`cy` 無任一非零）。
+- **GD-4 已定解法（B + C2）**：fire 事件補 `targetId`+`offsetDeg`（準心對齊偏移 canonical 來源）；per-tick `crosshair` 改記 camera 朝向 `aim:{yaw,pitch}`（逐 tick 瞄準軌跡，plumbing 守 ADR-2）。落地在 [wp-8 T0-entry-gate.md](../../active/wp-8-metrics-hud/T0-entry-gate.md) OQ-8.5 → T1。
 
 **交棒 WP-8**：資料層（F1/F2）機制端到端綠燈，`{meta,ticks,events}` 可供 `MetricsDashboard` 消費。WP-8 進場前先讀 GD-4（crosshair 常數 0）與 schema.md。
 

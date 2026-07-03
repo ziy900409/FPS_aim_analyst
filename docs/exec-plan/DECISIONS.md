@@ -31,7 +31,9 @@
 | **影響面** | 跨 WP:WP-3/WP-5(應寫入 crosshair)、WP-7(忠實記錄,非缺陷)、WP-8(消費 crosshair 得常數 0)、pilot 研究效度(準心軌跡不可用)。**不 blocking M3 機制門**:5 項 M3 驗收皆機制層(ring/事件/metadata/匯出/schema)均綠,recorder plumbing 正確。 |
 | **待辦/結論** | 交棒 WP-8 前釐清:(a) crosshair 語意是否為階段 A 範圍(camera yaw/pitch 已走 `CameraController`,準心恆在螢幕中心 → 或許 crosshair 本應為 camera 朝向投影,而非常數);(b) 若階段 A 不需 → schema.md 標註 crosshair 為 reserved/placeholder,避免 WP-8 誤用;(c) 若需 → 補 WP-3/WP-5 writer。 |
 | **權威來源** | [SharedState.ts](../../src/state/SharedState.ts):40 佔位註記、[RingBuffer.ts](../../src/data/RingBuffer.ts):122 讀取點。 |
-| **狀態** | 🟡 待決策(2026-07-03;WP-8 entry-gate 需處理) |
+| **實機佐證** | WP-7 T6 手動驗證(2026-07-03,22,219 ticks 實跑 drill):`ticks[].crosshair` 全為 `[0,0]`(CSV `cx`/`cy` 欄無任一非零),證實常數 0。 |
+| **決議(2026-07-03,使用者拍板 B + C2)** | **B**：把「準心對齊偏移」記在 canonical 位置——`fire` 事件。擴充 `DrillEvent.fire` 加 `targetId` + `offsetDeg`(fire 當下 camera 正向射線 vs hitbox 中心夾角,CONTEXT:22),於 [SimLoop.ts](../../src/loop/SimLoop.ts) fire 分支既有 `raycastFromCenter` 處一併算出。**C2**：per-tick `TickRecord.crosshair:[cx,cy]`(語意已空、恆置中)改記 **camera 朝向 `aim:{yaw,pitch}`**(逐 tick 瞄準軌跡)。plumbing 守 ADR-2 雙迴圈邊界：[CameraController](../../src/view/CameraController.ts) 經 input/render 路徑把 yaw/pitch 寫進 `SharedState`(如同 `held`),`recordTickFromState` 只讀 `SharedState`——sim 不伸手進 render 物件圖。aim 為 input 衍生、不影響 sim 狀態演進,決定性不變(僅觀測)。**落地在 WP-8 entry-gate**：動 `DrillEvent`/`SimLoop` fire 分支/`SharedState`/`CameraController`/`RingBuffer`/`schema.md`,並註記與規格附錄 C(`crosshair`)分歧、回改附錄 C。 |
+| **狀態** | 🟡 已定解法(2026-07-03,B+C2);落地待 WP-8 T0 → T1。詳見 [wp-8 T0-entry-gate.md](active/wp-8-metrics-hud/T0-entry-gate.md) OQ-8.5。 |
 
 > GD-1(F5 範圍)已於 2026-06-29 解決,見 §3。
 
