@@ -46,10 +46,12 @@ export default defineConfig({
       target: 'esnext',
     },
   },
-  // Vitest 只收 src 下的單元/整合測試（`*.test.ts`）；e2e（`tests/e2e/*.spec.ts`）交給
-  // Playwright（見 playwright.config.ts 的 testDir）。無此設定時 Vitest 預設 glob 會誤收
-  // Playwright specs → `test()` 不相容而紅燈（OQ-T5.1）。副檔名分工：單元 .test.ts / e2e .spec.ts。
+  // Vitest 收單元/整合測試（`*.test.ts`）：src 下的元件測試 + tests 下的跨模組驗證測試
+  // （如 WP-9 T2 `tests/validity/*.test.ts` 計時效度）；e2e（`tests/e2e/*.spec.ts`）交給
+  // Playwright（見 playwright.config.ts 的 testDir=tests/e2e，不收 validity）。無此設定時
+  // Vitest 預設 glob 會誤收 Playwright specs → `test()` 不相容而紅燈（OQ-T5.1）。
+  // 副檔名分工：單元/驗證 .test.ts / e2e .spec.ts。
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
   },
 });

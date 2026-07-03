@@ -41,7 +41,10 @@ export function createHUD(options: HUDOptions = {}): HUDHandle {
   root.style.cssText = [
     'position:fixed',
     'top:12px',
-    'left:12px',
+    // top-left is占用 by SettingsPanel（sensitivity/FOV）、top-right by ExportPanel（JSON/CSV）；
+    // HUD 置頂置中避開兩者，不與既有 overlay 重疊。
+    'left:50%',
+    'transform:translateX(-50%)',
     'display:grid',
     'grid-template-columns:repeat(4,minmax(92px,auto))',
     'gap:8px',

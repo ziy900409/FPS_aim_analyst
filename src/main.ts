@@ -220,6 +220,23 @@ if (import.meta.env.DEV) {
   (window as unknown as { __aimDebug?: unknown }).__aimDebug = { state: sharedState, pointerLock };
 }
 
+// WP-9 / T1（FR-9.1）— E2E 端到端測試掛點：**僅 dev**（`import.meta.env.DEV`，production 剝除；
+// 動態 import 使 harness 模組不進 prod bundle）。以合成 clock 自建與生產同源的獨立 sim 管線跑
+// 「完整 drill → 匯出 → 統計」全鏈路，供 Playwright 在真瀏覽器（COOP/COEP、crossOriginIsolated）
+// 斷言 schema/事件/metadata + 統計＝匯出。與 live 三迴圈隔離（不驅動 rAF pump 的單例，避免競態）。
+// 用法見 tests/e2e/full-drill.spec.ts。
+if (import.meta.env.DEV) {
+  const { createFpsTestHarness } = await import('./testharness/fpsTestHarness.ts');
+  const displayHz = await measureDisplayHz({ samples: 10 });
+  (window as unknown as { __fpsTest?: unknown }).__fpsTest = createFpsTestHarness({
+    availableDrills: availableDrills.map(({ id, source }) => ({ id, source })),
+    backend,
+    crossOriginIsolated: isolation.crossOriginIsolated,
+    displayHz,
+    sensitivity: settingsPanel.sensitivity,
+  });
+}
+
 // dev-only 急停可視化 HUD（`import.meta.env.DEV`，production 剝除）：橫移/急停在階段 A 為 1-tick
 // 立即停止（vx→0 + stopped=true），7.8ms 肉眼不可視——此 readout 讓手動驗證能目視「反向鍵那刻
 // stopped 翻 true、vx 歸零」，佐證 gate 有作用（不改 physics）。正式數值呈現屬 WP-8 metrics HUD。

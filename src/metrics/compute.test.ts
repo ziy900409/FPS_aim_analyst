@@ -38,14 +38,36 @@ describe('computeMetrics', () => {
     expect(metrics.crosshairOffset.values).toEqual([0, 2, 1.5, 1]);
     expect(metrics.crosshairOffset.mean).toBe(1.125);
 
-    expect(metrics.switchTimeMs.values).toEqual([130, 90]);
-    expect(metrics.switchTimeMs.mean).toBe(110);
+    // 切換時間 = 擊殺 → 對下一目標的首發 fire（有效對齊錨）：
+    // kill t0@170 → t1 首發@390 = 220；kill t1@410(hit) → t2 首發@570 = 160。
+    expect(metrics.switchTimeMs.values).toEqual([220, 160]);
+    expect(metrics.switchTimeMs.mean).toBe(190);
 
     expect(metrics.rhythmStability).toBe(0);
 
     expect(metrics.leftRightSymmetry.left.values).toEqual([80]);
     expect(metrics.leftRightSymmetry.right.values).toEqual([50, 60]);
     expect(metrics.leftRightSymmetry.diff).toBe(25);
+  });
+
+  it('switch time anchors on next-target acquisition, not on target respawn', () => {
+    // 立即補生（spawnDelayMs=0）：下一目標在擊殺後 ~1 tick 就 visible。
+    // 若錨在 t_next_visible，switch time 會塌縮成引擎 respawn latency（此處 5ms）；
+    // 正確錨是玩家對下一目標的首發 fire（此處 kill@200 → 首發@350 = 150）。
+    const respawnSnapshot: DataRecorderSnapshot = {
+      ticks: [],
+      events: [
+        { type: 'visible', targetId: 'a', side: 'L', t: 100 },
+        { type: 'fire', targetId: 'a', t: 200, hit: true, firstShot: true, residualSpeed: 0, offsetDeg: 0 },
+        { type: 'visible', targetId: 'b', side: 'R', t: 205 }, // 補生僅晚 5ms
+        { type: 'fire', targetId: 'b', t: 350, hit: true, firstShot: true, residualSpeed: 0, offsetDeg: 0 },
+      ],
+      recorderOverflow: false,
+    };
+
+    const metrics = computeMetrics(respawnSnapshot);
+    expect(metrics.switchTimeMs.values).toEqual([150]);
+    expect(metrics.switchTimeMs.values).not.toContain(5);
   });
 
   it('returns n=0 stats and zero rates for empty samples', () => {

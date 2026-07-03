@@ -47,7 +47,7 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
     ),
   );
   const offsets = finiteValues(fireEvents.map((event) => event.offsetDeg));
-  const switchTimes = computeSwitchTimes(visibleEvents, fireEvents);
+  const switchTimes = computeSwitchTimes(fireEvents);
   const rhythmIntervals = computeVisibleIntervals(visibleEvents);
   const leftReactions = finiteValues(peeks.filter((peek) => peek.visible.side === 'L').map((peek) => peek.reactionMs));
   const rightReactions = finiteValues(peeks.filter((peek) => peek.visible.side === 'R').map((peek) => peek.reactionMs));
@@ -100,12 +100,18 @@ function buildPeekWindows(
   });
 }
 
-function computeSwitchTimes(visibleEvents: readonly VisibleEvent[], fireEvents: readonly FireEvent[]): number[] {
+// 切換時間 = t_next_acquisition − t_prev_kill（CONTEXT:23）：擊殺一目標，到「對下一目標有效對齊」
+// 的時間。有效對齊以玩家實際動作為錨——擊殺後對「不同目標」的第一個首發 fire——而非目標補生
+// 瞬間（spawnDelayMs=0 下，用 t_next_visible 會塌縮成 1~2 tick 的引擎 respawn latency，非玩家技能）。
+function computeSwitchTimes(fireEvents: readonly FireEvent[]): number[] {
   const values: number[] = [];
-  for (const fire of fireEvents) {
-    if (!fire.hit) continue;
-    const nextVisible = visibleEvents.find((visible) => visible.t > fire.t && visible.targetId !== fire.targetId);
-    if (nextVisible !== undefined) values.push(nextVisible.t - fire.t);
+  for (let i = 0; i < fireEvents.length; i++) {
+    const kill = fireEvents[i];
+    if (!kill.hit) continue;
+    const acquisition = fireEvents.find(
+      (fire, j) => j > i && fire.firstShot && fire.targetId !== undefined && fire.targetId !== kill.targetId,
+    );
+    if (acquisition !== undefined) values.push(acquisition.t - kill.t);
   }
   return values;
 }
