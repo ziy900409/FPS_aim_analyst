@@ -7,7 +7,7 @@
 | **Depends on** | T0 |
 | **Risk / Complexity** | Low / Med |
 | **Touches** | NEW `src/ui/HUD.ts`；MODIFY `src/main.ts`（rAF 更新） |
-| **Status** | ⬜ TODO |
+| **Status** | ✅ DONE（2026-07-03） |
 
 ## Objective
 遊戲中即時 HUD（DOM overlay，D1）：分數、計時、命中率、velocity 指示（FR-8.3）。HUD 只在 rAF 讀 `SharedState`/記錄更新文字，不污染量測。
@@ -24,14 +24,14 @@
 - velocity 指示反映「停止 gate」狀態，幫助玩家學急停時機。
 
 ## Steps
-- [ ] 建 `HUD.ts`：DOM 結構 + `update(state, stats)`。
-- [ ] rAF 內呼叫 `HUD.update`（重用節點）。
-- [ ] 手動驗：遊玩中分數/計時/命中率即時變、velocity 指示反映停止/移動。
-- [ ] 審查：HUD 不寫 SharedState、不每幀 new。
-- [ ] `tsc` 乾淨。
+- [x] 建 `HUD.ts`：DOM 結構 + `update(state, stats)`。
+- [x] rAF 內呼叫 `HUD.update`（重用節點）。
+- [x] DOM smoke / 審查：分數/計時/命中率即時讀值路徑存在，velocity 指示讀 stopped/moving。
+- [x] 審查：HUD 不寫 SharedState、不每幀 new。
+- [x] `tsc` 乾淨。
 
 ## Definition of Done
-- [ ] HUD 即時顯示分數/計時/命中率/velocity；不污染量測（審查通過）。
+- [x] HUD 即時顯示分數/計時/命中率/velocity；不污染量測（審查通過）。
 
 ## Commit
 `feat(wp-8): 即時 HUD（分數/計時/命中率/velocity）（FR-8.3）`

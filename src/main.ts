@@ -8,6 +8,7 @@ import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
 import { createCrosshair } from './ui/Crosshair.ts';
 import { createExportPanel } from './ui/ExportPanel.ts';
+import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager } from './sim/TargetManager.ts';
@@ -153,6 +154,8 @@ createExportPanel({
 // WP-8 / T2（FR-8.2）— 賽後結果頁：drill ended 後以同一 recorder snapshot 計算並呈現 §5 指標。
 const metricsDashboard = createMetricsDashboard();
 const resultScreen = createResultScreen();
+// WP-8 / T3（FR-8.3）— 即時 HUD：rAF 只讀 SharedState + recorder counters，不進 sim、不 snapshot。
+const hud = createHUD();
 
 // WP-3 / T1+T3（FR-3.1/3.3）— 輸入採集：keydown/keyup（A/D/W/S）與開火 mousedown（左鍵）蓋
 // event.timeStamp 寫入 sharedState.input，供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；
@@ -218,10 +221,30 @@ const baseZ = sceneManager.camera.position.z;
 let stopFlashUntil = 0;
 let prevVx = 0;
 let resultShown = false;
+let hudRunStartMs: number | null = null;
+let hudElapsedMs = 0;
+const hudStats: HUDStats = {
+  phase: 'idle',
+  elapsedMs: 0,
+  score: 0,
+  fireCount: 0,
+  hitCount: 0,
+  vx: 0,
+  vz: 0,
+  stopped: false,
+};
 
 const renderLoop = createRenderLoop((now) => {
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
   const { alpha } = simLoop.pump(now);
+  const phase = drillRunner.phase;
+  if (phase === 'running') {
+    if (hudRunStartMs === null) hudRunStartMs = now;
+    hudElapsedMs = now - hudRunStartMs;
+  } else if (phase === 'countdown' || phase === 'idle') {
+    hudRunStartMs = null;
+    hudElapsedMs = 0;
+  }
   // 2) render 唯讀內插 player 位置（prev→curr）——**不寫回 sharedState**（雙迴圈邊界，render 唯讀）。
   const px = lerp(sharedState.prev.x, sharedState.curr.x, alpha);
   const pz = lerp(sharedState.prev.z, sharedState.curr.z, alpha);
@@ -233,10 +256,11 @@ const renderLoop = createRenderLoop((now) => {
   // 5) 繪製。
   renderer.render(sceneManager.scene, sceneManager.camera);
   // WP-8 / T2：phase 轉 ended 後只計算一次結果；T4 controls 會負責 restart / 換 drill 時隱藏與重啟。
-  if (!resultShown && drillRunner.phase === 'ended') {
+  if (!resultShown && phase === 'ended') {
     resultScreen.show(metricsDashboard.compute(recorder.snapshot()));
     resultShown = true;
   }
+  hud.update(createHUDStats(sharedState, phase, hudElapsedMs, recorder.hitCount, recorder.fireCount, recorder.hitCount, hudStats));
   // dev-only：更新急停 readout（vx / stopped）——手動驗證用，production 剝除。
   // 急停 stopped=true 只存活 1 tick（7.8ms），render frame（~16ms）幾乎必錯過瞬時值；故除了讀
   // 當下 stopped，另**閂鎖**：偵測到 stopped 或 vx 反向（+→−/−→+，過衝 = 急停已發生）就把綠燈

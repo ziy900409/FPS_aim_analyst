@@ -4,14 +4,14 @@
 
 ---
 
-## Status: ✅ T2 結果頁完成；下一步 T3/T4
+## Status: ✅ T3 即時 HUD 完成；下一步 T4 controls
 
 | Phase | State |
 |-------|-------|
 | T0 Entry gate | ✅ 完成（2026-07-03）— M3 達成；8 指標對照 + OQ-8.1~8.5 全鎖定 |
 | T1 指標計算 | ✅ 完成（2026-07-03）— 8 指標純函式 + MetricsDashboard |
 | T2 結果頁 | ✅ 完成（2026-07-03）— DOM overlay 結果頁 + ended 後顯示 |
-| T3 即時 HUD | ⬜ 待執行 |
+| T3 即時 HUD | ✅ 完成（2026-07-03）— DOM HUD + rAF 讀值更新 |
 | T4 控制 | ⬜ 待執行 |
 | T5 Exit gate | ⬜ 待執行 |
 
@@ -30,6 +30,12 @@
 ---
 
 ## Log
+
+### 2026-07-03 — T3 HUD + rAF hook ✅ PASS
+- **新增 `src/ui/HUD.ts`**：純 DOM overlay，呈現 score、drill timer、hit rate、velocity stopped/moving indicator；`update()` 只改既有節點文字/樣式。
+- **避免每幀 snapshot 配置**：`DataRecorder` 新增只讀 `fireCount` / `hitCount` getter，record fire event 時累計；HUD rAF 讀 getter，不呼叫 `recorder.snapshot()`。
+- **接入 `main.ts` rAF**：以可重用 `hudStats` 物件從 `SharedState.player` + `DrillRunner.phase` + recorder counters 填值；running phase 累積 HUD 計時，ended 後保留最後時間。
+- **Verification**：`npm.cmd test -- src/ui/HUD.test.ts src/data/DataRecorder.test.ts` pass（9 tests）；`npm.cmd run typecheck` pass；`npm.cmd test` pass（24 files / 163 tests）；`npm.cmd run build` pass（升權後，sandbox 擋 Vite/esbuild 讀 config 上層路徑；build 僅 chunk size warning）。
 
 ### 2026-07-03 — T2 ResultScreen + ended hook ✅ PASS
 - **新增 `src/ui/ResultScreen.ts`**：純 DOM overlay，呈現 §5 八項指標卡、反應時間分布 SVG、左右對稱與 §14 方法論提醒（受試者內相對值 + 顯示延遲誤差界線）。
