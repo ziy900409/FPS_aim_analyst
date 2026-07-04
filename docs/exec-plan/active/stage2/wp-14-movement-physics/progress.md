@@ -27,6 +27,12 @@
 
 ## Log
 
+### 2026-07-03 — Valorant 接口決策(使用者拍板)
+- **Valorant 移動不入本階段,只留接口**:T1 常數收斂為 `MovementProfile` 注入(`CS2_PROFILE` 預設)、
+  T2 連續 velocity gate 為未來 Valorant 模式的直接繼承點;匯出斷代標記 `movementModel` 落 WP-16 T1。
+- 依據分析:`MovementController` 已是注入式接縫(架構免改);真實成本在資料抽象 / 1D→2D / 單位校準——
+  全數延後,WP-14 之後視研究立案另立 WP。
+
 ### 2026-07-03 — Plan authored
 - 由 stage2 計畫([../README.md](../README.md) §6 WP-14 表 + session 補充設計)展開為自足 task 檔(T0–T3 + T-exit)。
 - 物理公式權威來源 = 規格附錄 D(Source ground-move:`SV_FRICTION 5.2` / `SV_ACCELERATE 5.6` / `SV_STOPSPEED 75` / vStrafe ≈ 250)。

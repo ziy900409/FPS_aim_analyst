@@ -17,7 +17,7 @@
 
 ## In scope
 - 向使用者確認 OQ-S2-1(tick 節奏)與 OQ-S2-6(彈匣行為),記入 [progress.md](progress.md) ledger 與 [../README.md §8](../README.md)。
-- [DECISIONS.md](../../../DECISIONS.md) 新增 **GD-5**:stage2 範圍採納、tick 64Hz 子節奏、感度語意變更(WP-12)、WP-14 決定性 baseline 預期重錄、sim/recoil 禁 `Math.random()`。
+- [DECISIONS.md](../../../DECISIONS.md) 新增 **GD-5**:stage2 範圍採納、tick 64Hz 子節奏、感度語意變更(WP-12)、WP-14 決定性 baseline 預期重錄、sim/recoil 禁 `Math.random()`、移動模型抽象留接口(`MovementProfile`;Valorant 不入 stage2,WP-14/16)。
 - [CLAUDE.md §4](../../../../../CLAUDE.md) 追加兩條硬約束:禁 `Math.random()`(seeded RNG 注入)、recoil 衰減以 1/64s 步長定義。
 - [exec-plan/README.md §2](../../../README.md) 加 stage2 索引列(連 [../README.md](../README.md))。
 
@@ -37,7 +37,7 @@
 ## Definition of Done
 
 - OQ-S2-1 / OQ-S2-6 於 progress ledger 皆 ✅ 且有明確決議文字(非「傾向」)。
-- GD-5 條目存在且含五個決策點;CLAUDE.md 兩條硬約束可 grep 到;exec-plan 索引列存在。
+- GD-5 條目存在且含六個決策點;CLAUDE.md 兩條硬約束可 grep 到;exec-plan 索引列存在。
 - 全部為 docs 變更:`git diff --stat` 不含 `src/`。
 
 ## Commit

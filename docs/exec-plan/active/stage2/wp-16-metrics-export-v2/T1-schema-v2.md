@@ -17,8 +17,10 @@ arena 容量以 fire 事件率上限重估——壓槍狀態在資料面完整�
 ## In scope
 - fire 事件擴欄:`viewYaw/viewPitch/aimPunchPitch/aimPunchYaw/spreadX/spreadY/recoilIndex/ammo`
   (preallocated arena 加欄 = 加平行欄位,維持固定欄位 / 物件重用 / 不 push 物件紀律)。
-- meta:`weaponId/weaponSeed/rngSeed/sensitivityModel/schemaVersion`
-  (`sensitivityModel` 已存在,收斂進 v2 區塊;`rngSeed` = OQ-13.1 spread seed)。
+- meta:`weaponId/weaponSeed/rngSeed/sensitivityModel/movementModel/schemaVersion`
+  (`sensitivityModel` 已存在,收斂進 v2 區塊;`rngSeed` = OQ-13.1 spread seed;
+  `movementModel` = 移動模型語意斷代,值對齊 WP-14 `MovementProfile` id——
+  Valorant 接口的資料面,該模式本階段不實作)。
 - `DrillConfig.weaponId?` 選填欄(`validateDrill` 更新;未給 = 預設武器)。
 - `capacityForDrill` 重估:fire 率上限 = `magSize / cycletime`;公式記 schema.md。
 - `docs/operational/schema.md` v2 全欄對帳(單位/符號慣例 + `targetCenterOffsetDeg` 語意補寫,T0 決議)。

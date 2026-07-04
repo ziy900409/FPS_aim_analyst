@@ -28,6 +28,10 @@
 
 ## Log
 
+### 2026-07-03 — Valorant 接口決策(使用者拍板)
+- meta 擴欄追加 **`movementModel`**(移動模型語意斷代,比照 `sensitivityModel`):Valorant 移動
+  本階段不實作,資料面先留可比性接口;值對齊 WP-14 `MovementProfile` id。
+
 ### 2026-07-03 — Plan authored
 - 由 stage2 計畫([../README.md](../README.md) §6 WP-16 表 + session 補充決定)展開為自足 task 檔(T0–T3 + T-exit)。
 - 補充決定:`schemaVersion` bump 落 T1(WP-12 只加 `sensitivityModel`);`DrillConfig.weaponId?`

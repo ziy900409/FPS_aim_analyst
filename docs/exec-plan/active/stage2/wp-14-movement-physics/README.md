@@ -27,13 +27,16 @@ src/metrics/compute.ts、src/ui/ResultScreen.ts ← MODIFY 殘速/過衝連續 u
 ```
 
 **Out of scope**:校準對照(WP-15)、schema v2 全量擴欄(WP-16;T3 只動計算與呈現,
-對帳點在檔內註記)、移動參數 UI(常數走規格附錄 D,不做面板)。
+對帳點在檔內註記)、移動參數 UI(常數走規格附錄 D,不做面板)、
+**Valorant 移動模式**(settle-timer 急停、2D WASD、Unreal 單位/校準——僅以 `MovementProfile`
+注入點留接口,實作排 WP-14 之後另立 WP;meta 斷代標記 `movementModel` 由 WP-16 T1 承接)。
 
 ## 2. 關鍵契約
 
 - 公開介面**不變**:`step(state, dtSec)`(規格附錄 D 承諾;呼叫端零 diff)。
-- 每 tick 順序 = **先 friction 後 accelerate**(Source 慣例);常數(附錄 D):
-  `SV_FRICTION = 5.2`、`SV_ACCELERATE = 5.6`、`SV_STOPSPEED = 75`、`vStrafe ≈ 250`。
+- 每 tick 順序 = **先 friction 後 accelerate**(Source 慣例);常數(附錄 D)以 **`MovementProfile`** 資料物件注入
+  (`CS2_PROFILE = { friction: 5.2, accelerate: 5.6, stopSpeed: 75, maxSpeed: 250, accuracyThreshold: 88 }`),
+  比照 WeaponConfig 精神:新移動模型 = 新 profile,不改引擎與呼叫端——**Valorant 接口即此,本階段僅留不實作**。
 - `stopped` 語意改寫:`|vx| < ACCURACY_THRESHOLD(88)` 時 true(SharedState 註解既定接縫);
   counter-strafe 不再瞬停,由物理自然減速穿越門檻。
 - 決定性 baseline **預期重錄**(GD-5 已記):先重驗 M1 契約(異 FPS 同軌跡)再重錄。
@@ -50,7 +53,7 @@ src/metrics/compute.ts、src/ui/ResultScreen.ts ← MODIFY 殘速/過衝連續 u
 | Task | 檔案 | Objective | 相依 | Risk |
 |---|---|---|---|---|
 | **T0** | [T0-entry-gate.md](T0-entry-gate.md) | GD-5 重錄授權確認 + 決定性測試盤點 + 介面承諾確認 | — | Low |
-| **T1** | [T1-friction-integrator.md](T1-friction-integrator.md) | Source friction/accelerate integrator 替換 + baseline 重錄 | T0 | **High** |
+| **T1** | [T1-friction-integrator.md](T1-friction-integrator.md) | Source integrator 替換(`MovementProfile` 注入)+ baseline 重錄 | T0 | **High** |
 | **T2** | [T2-velocity-gate.md](T2-velocity-gate.md) | velocity gate 連續模型(88 u/s)+ spread 接真速度 | T1、**WP-11 T3** | Med |
 | **T3** | [T3-metrics-continuous.md](T3-metrics-continuous.md) | 殘速/過衝指標連續 u/s 呈現 | T2 | Low |
 | **T-exit** | [T-exit-gate.md](T-exit-gate.md) | baseline 重錄完成 + 急停手感手動驗證 | T1–T3 | — |

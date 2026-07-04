@@ -18,9 +18,10 @@
 ## In scope
 - `fireOneShot` 內:`accurate = |vx| < ACCURACY_THRESHOLD(88)`;
   `residualSpeed = |vx|`(連續 u/s,取代分類值)。
-- spread 移動項:`speedRatio = |vx| / vMax(250)` 接真速度——介面 WP-13 T1 已留
+- spread 移動項:`speedRatio = |vx| / profile.maxSpeed(250)` 接真速度——介面 WP-13 T1 已留
   (`sampleSpread(…, speedRatio, rng)`,integrator 上線後 ratio 自然成為連續值),本 task 驗證其效果。
-- 88 門檻常數單一所有權:與 T1 的 `stopped` 門檻同源 import,不得兩處各寫一次。
+- 88 門檻取自 `MovementProfile.accuracyThreshold`(T1 定義;與 `stopped` 門檻同源,不得兩處各寫一次)。
+  連續 gate 本身**模型無關**——即未來 Valorant 模式的直接繼承點(該模式本階段僅留接口)。
 
 ## Out of scope
 - 呈現層(T3);匯出擴欄(WP-16 T1;residualSpeed 落匯出欄位的 schema 對帳在彼處)。
@@ -36,7 +37,7 @@
 
 ## Definition of Done
 
-- 88 邊界成對測試綠;移動 vs 急停 spread 統計斷言綠;門檻常數 grep 僅一處定義;
+- 88 邊界成對測試綠;移動 vs 急停 spread 統計斷言綠;門檻常數僅 `CS2_PROFILE` 一處定義;
   既有回歸綠。
 
 ## Commit

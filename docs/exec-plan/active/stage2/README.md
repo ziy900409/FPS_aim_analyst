@@ -58,10 +58,10 @@
 | FR-B8 | 命中射線方向由呼叫端注入(origin + direction);既有 camera-center 路徑保留為薄包裝、既有測試不破 | WP-12 T2 |
 | FR-B9 | 相機合成:**渲染角度 = viewAngles + aimPunch**(視覺;每幀重組,punch 於 render 端內插)、**彈道方向 = viewAngles + rawPunch×2 + 擴散偏移**(實際);兩者分離 | WP-13 T1–T2 |
 | FR-B10 | 彈孔以 `InstancedMesh` 渲染(單一 draw call,環狀覆寫上限 N;render-only,不入 sim/匯出) | WP-13 T3 |
-| FR-B11 | `MovementController` 內部換為 Source friction/accelerate integrator(`sv_friction` 5.2、`sv_accelerate` 5.6、`sv_stopspeed` 75、上限 ~250 u/s,附錄 D);公開介面 `step(state, dtSec)` 不變;velocity 為連續值 | WP-14 T1 |
+| FR-B11 | `MovementController` 內部換為 Source friction/accelerate integrator(`sv_friction` 5.2、`sv_accelerate` 5.6、`sv_stopspeed` 75、上限 ~250 u/s,附錄 D);公開介面 `step(state, dtSec)` 不變;velocity 為連續值;常數以 `MovementProfile` 資料注入(多移動模型接口——Valorant 等後續模式 = 新 profile 不改引擎,本階段僅留接口) | WP-14 T1 |
 | FR-B12 | 開火精準 gate 從二元 `stopped` 升級為連續模型(門檻 ~88 u/s = max 34%;`stopped` 改以 `v < 門檻` 寫入,SharedState 註解既定接縫);殘速/過衝指標輸出連續 u/s | WP-14 T2 |
 | FR-B13 | 急停/起步速度曲線與 CS2 `cl_showpos` 參考軌跡逐 tick 對照通過(容差見 OQ-S2-2);AK 彈道 pattern 與社群 pattern 圖逐彈比對通過 | WP-15 T1–T2 |
-| FR-B14 | 匯出 schema v2:`fire` 事件增 `viewYaw/viewPitch/aimPunchPitch/aimPunchYaw/spreadX/spreadY/recoilIndex/ammo`;meta 增 `weaponId/weaponSeed/rngSeed/sensitivityModel/schemaVersion`;統計=匯出不變式維持 | WP-16 T1 |
+| FR-B14 | 匯出 schema v2:`fire` 事件增 `viewYaw/viewPitch/aimPunchPitch/aimPunchYaw/spreadX/spreadY/recoilIndex/ammo`;meta 增 `weaponId/weaponSeed/rngSeed/sensitivityModel/movementModel/schemaVersion`;統計=匯出不變式維持 | WP-16 T1 |
 | FR-B15 | 壓槍指標:補償路徑 vs 理想路徑(= `−aimPunch×2` 時間鏡像)的平均/RMS 角度誤差;結果頁呈現軌跡對照 | WP-16 T2–T3 |
 | FR-B16 | 決定性回歸擴充:同 `rngSeed` + 同合成輸入序列(含 fire down/up 與合成 aim)→ 逐 tick punch 序列與彈著序列(tick index 鍵)一致,與 render FPS 無關 | WP-17 T1 |
 | FR-B17 | (門控)移動目標命中位置 sub-tick 內插對齊 fire 時間戳(取代「最近 tick 位置」已知偏差) | WP-18 |
@@ -95,6 +95,7 @@
 **Out of scope**(防蔓延,各附觸發條件):
 - sim → Web Worker + SharedArrayBuffer(§4.2):僅當 pilot 實測出主執行緒卡頓污染計時(DESIGN.md 既有議題)才立案。
 - 蹲姿(crouch):訓練器無蹲輸入;inaccuracy 用 stand 值,`WeaponConfig` 保留 crouch 欄。
+- Valorant 移動模式(settle-timer 急停、2D WASD、Unreal 單位/校準):**僅留接口**——`MovementProfile` 注入(WP-14)+ meta `movementModel` 斷代(WP-16);觸發條件:Valorant 訓練模式研究立案 → WP-14 之後另立 WP(屆時補 2D `held` 擴欄與 Valorant 校準參考)。
 - reload 流程:彈匣盡 = 停火(30 發 spray 恰一匣);見 OQ-S2-6。
 - 視角 tick-bucketed 重建:採「記錄而非重建」(§2.5);觸發重構條件:研究需要逐 tick 視角**重播**(非重建彈道)。
 - F5 移動 drill 與追蹤指標:隨 WP-18 門控。
@@ -154,6 +155,11 @@ export interface WeaponConfig {
   recoveryTransition?: { startBullet: number; endBullet: number };
 }
 // 執行期驗證比照 drill/schema.ts validateDrill 模式(err/require* helpers)
+
+// src/sim/MovementController.ts(WP-14;移動模型資料抽象——Valorant 僅留此接口,不實作)
+export interface MovementProfile { friction: number; accelerate: number; stopSpeed: number;
+  maxSpeed: number; accuracyThreshold: number }           // CS2_PROFILE(附錄 D 值)為 stage2 唯一實作
+export function createMovementController(profile?: MovementProfile): MovementController; // step(state, dtSec) 不變
 
 // src/sim/HitDetector.ts(WP-12)
 export function raycastWithRay(origin: THREE.Vector3, dirNormalized: THREE.Vector3,
@@ -271,7 +277,7 @@ WP-14(movement 物理)───────────────────�
 | 引擎行為假設(CS:GO 洩漏碼 + CS2 vdata 組合) | Med | 研究計畫既列 caveat;WP-15 差異分層歸因;subtick 內插差異留意 |
 | InputRing 契約變更(EV_FIRE payload) | Med | b 欄既有閒置、容量不變;既有測試全綠為閘;`codegraph_impact` 先行 |
 | 匯出量膨脹 / arena 溢位 | Med | 容量公式重估 + 溢位測試(WP-16 T1) |
-| **Technical debt(有意識妥協)** | — | ① 視角「記錄而非重建」(§2.5;觸發重構:需逐 tick 視角重播時)② crouch 欄保留不實作 ③ `view_recoil_tracking` 值未確認(僅視覺,OQ-S2-4)④ fire 排程 1 sim tick 量化誤差(7.8ms,記入已知誤差界線) |
+| **Technical debt(有意識妥協)** | — | ① 視角「記錄而非重建」(§2.5;觸發重構:需逐 tick 視角重播時)② crouch 欄保留不實作 ③ `view_recoil_tracking` 值未確認(僅視覺,OQ-S2-4)④ fire 排程 1 sim tick 量化誤差(7.8ms,記入已知誤差界線)⑤ Valorant 移動僅留接口(`MovementProfile` + `movementModel` 斷代;1D→2D、settle timer、Valorant 校準隨後續 WP) |
 
 效能瓶頸評估:recoil tick 為 O(1) 純算術、spread O(1)、彈道表預生成 — 熱路徑無新配置;彈孔 InstancedMesh 單 draw call。無新 I/O。
 
@@ -292,10 +298,10 @@ WP-14(movement 物理)───────────────────�
 
 ## 9. 文件對帳清單(採納本計畫時執行;跨文件決策入 DECISIONS.md)
 
-- [ ] [DECISIONS.md](../../DECISIONS.md) 新增 **GD-5**:stage2 範圍採納(規格 §1.3 階段 B + 後座力系統新增)、tick 64Hz 子節奏、感度語意變更、WP-14 決定性 baseline 預期重錄、sim 禁 `Math.random()`。
+- [ ] [DECISIONS.md](../../DECISIONS.md) 新增 **GD-5**:stage2 範圍採納(規格 §1.3 階段 B + 後座力系統新增)、tick 64Hz 子節奏、感度語意變更、WP-14 決定性 baseline 預期重錄、sim 禁 `Math.random()`、移動模型抽象留接口(`MovementProfile`;Valorant 不入 stage2)。
 - [ ] 規格書升 **v1.2**:§1.3 補「CS2 後座力系統」條目;附錄 C 標 schema v2 欄位;附錄 E 增「驗收清單(階段 B)」節。
 - [ ] [exec-plan/README.md](../../README.md) §2 加 stage2 索引列(連到本檔);§3 加 M5–M8。
-- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語:aimPunch / rawPunch(×2)/ recoil index / HybridDecay / cycletime / inaccuracy(三成分)/ WeaponConfig / 理想壓槍路徑(−aimPunch×2 鏡像)/ 壓槍補償誤差。
+- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語:aimPunch / rawPunch(×2)/ recoil index / HybridDecay / cycletime / inaccuracy(三成分)/ WeaponConfig / 理想壓槍路徑(−aimPunch×2 鏡像)/ 壓槍補償誤差 / MovementProfile(meta `movementModel` 斷代)。
 - [ ] [CLAUDE.md](../../../../CLAUDE.md) §4 硬約束追加:sim/recoil 禁 `Math.random()`(seeded RNG 注入);recoil 衰減以 1/64s 步長定義。
 - [ ] 稽核報告全文若需留檔,另存 `docs/operational/`(本檔 §0.1 為摘要 + 行級連結)。
 

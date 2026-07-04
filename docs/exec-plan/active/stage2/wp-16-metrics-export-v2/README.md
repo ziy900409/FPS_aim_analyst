@@ -34,8 +34,9 @@ src/ui/ResultScreen.ts      ← MODIFY 軌跡對照呈現(DOM overlay,D1)       
 ## 2. 關鍵契約
 
 - fire 事件擴欄(FR-B14):`viewYaw/viewPitch/aimPunchPitch/aimPunchYaw/spreadX/spreadY/recoilIndex/ammo`。
-- meta 擴欄:`weaponId/weaponSeed/rngSeed/sensitivityModel/schemaVersion`;
-  **`schemaVersion` bump 落本 WP**(WP-12 只加 `sensitivityModel` 欄);`rngSeed` = WP-13 OQ-13.1 的 spread seed。
+- meta 擴欄:`weaponId/weaponSeed/rngSeed/sensitivityModel/movementModel/schemaVersion`;
+  **`schemaVersion` bump 落本 WP**(WP-12 只加 `sensitivityModel` 欄);`rngSeed` = WP-13 OQ-13.1 的 spread seed;
+  `movementModel` = 移動模型語意斷代(stage2 = CS2 Source profile;為 Valorant 等後續模式留資料可比性,比照 `sensitivityModel`)。
 - 理想路徑 = `−aimPunch×2` 的時間鏡像;補償誤差 = 實際 aim 路徑 vs 理想路徑的 mean/RMS 角度差。
 - arena 容量重估:fire 事件率上限 = `magSize / cycletime`(AK = 10 發/s);per-fire 欄位
   增加後 `capacityForDrill` 重推;溢位測試為 T1 DoD。
