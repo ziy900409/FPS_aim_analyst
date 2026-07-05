@@ -22,6 +22,17 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-5 ✅ stage2 範圍採納與 recoil/movement 跨 WP 契約(2026-07-05)
+
+| | |
+|---|---|
+| **發現處** | [stage2 README](active/stage2/README.md) 已整合規格 §1.3 階段 B、CS2 壓槍軌跡復刻研究計畫、2026-07-03 後座力整合稽核報告,但採納決策尚未進全域帳本;[WP-10 T0](active/stage2/wp-10-recoil-core/T0-entry-gate.md) 要求在寫 recoil code 前完成拍板。 |
+| **決議** | 採納 stage2 範圍:CS2 後座力系統(固定彈道表 / punch 動力學 / inaccuracy)、武器層、sim/camera 接線、movement physics、schema v2、壓槍指標與整合驗收。 |
+| **六個決策點** | 1. recoil 衰減公式以 **1/64s** 步長定義,在 128Hz sim 內以偶數 tick 的 64Hz 子節奏執行(OQ-S2-1)。2. 彈匣盡即停火,本階段不做 reload;drill 一 peek ≤ 一匣(OQ-S2-6)。3. 感度語意改為 CS2 `0.022°/count`,舊匯出資料以 `sensitivityModel` / `schemaVersion` 斷代。4. WP-14 movement integrator 會改變決定性 baseline,屬預期 breaking change;先重驗 M1 決定性契約再重錄 baseline。5. `src/sim` / `src/recoil` 禁 `Math.random()`,所有隨機性以 seeded RNG 注入並記錄 seed。6. movement model 以 `MovementProfile` 留資料接口;Valorant 不進 stage2,僅在 WP-14/WP-16 保留 profile/meta 斷代能力。 |
+| **權威來源** | [stage2 README §1.3](active/stage2/README.md#13-constraint%E7%A1%AC%E7%B4%84%E6%9D%9F%E6%96%B0%E5%A2%9E%E9%A0%85%E5%B0%87%E5%9B%9E%E5%AF%AB-claudemd-4)、[§2.4](active/stage2/README.md#24-tick-%E7%AF%80%E5%A5%8F%E8%A8%AD%E8%A8%88%E9%97%9C%E9%8D%B5%E6%B1%BA%E7%AD%96%E8%A6%8B-oq-s2-1)、[§8](active/stage2/README.md#8-open-questions)、[WP-10 T0](active/stage2/wp-10-recoil-core/T0-entry-gate.md)。 |
+| **影響面** | 跨 WP-10~WP-17:golden test 定義、sim/recoil 接線、感度轉換、movement calibration、export metadata、determinism baseline 與 lint/grep 閘。 |
+| **狀態** | ✅ 已採納(2026-07-05;WP-10 T0 docs-only slice)。 |
+
 ### GD-4 🟡 `crosshair` 未由 production 路徑寫入 — 匯出恆 `[0,0]`(2026-07-03)
 
 | | |
@@ -33,7 +44,7 @@
 | **權威來源** | [SharedState.ts](../../src/state/SharedState.ts):40 佔位註記、[RingBuffer.ts](../../src/data/RingBuffer.ts):122 讀取點。 |
 | **實機佐證** | WP-7 T6 手動驗證(2026-07-03,22,219 ticks 實跑 drill):`ticks[].crosshair` 全為 `[0,0]`(CSV `cx`/`cy` 欄無任一非零),證實常數 0。 |
 | **決議(2026-07-03,使用者拍板 B + C2)** | **B**：把「準心對齊偏移」記在 canonical 位置——`fire` 事件。擴充 `DrillEvent.fire` 加 `targetId` + `offsetDeg`(fire 當下 camera 正向射線 vs hitbox 中心夾角,CONTEXT:22),於 [SimLoop.ts](../../src/loop/SimLoop.ts) fire 分支既有 `raycastFromCenter` 處一併算出。**C2**：per-tick `TickRecord.crosshair:[cx,cy]`(語意已空、恆置中)改記 **camera 朝向 `aim:{yaw,pitch}`**(逐 tick 瞄準軌跡)。plumbing 守 ADR-2 雙迴圈邊界：[CameraController](../../src/view/CameraController.ts) 經 input/render 路徑把 yaw/pitch 寫進 `SharedState`(如同 `held`),`recordTickFromState` 只讀 `SharedState`——sim 不伸手進 render 物件圖。aim 為 input 衍生、不影響 sim 狀態演進,決定性不變(僅觀測)。**落地在 WP-8 entry-gate**：動 `DrillEvent`/`SimLoop` fire 分支/`SharedState`/`CameraController`/`RingBuffer`/`schema.md`,並註記與規格附錄 C(`crosshair`)分歧、回改附錄 C。 |
-| **狀態** | 🟡 已定解法(2026-07-03,B+C2);落地待 WP-8 T0 → T1。詳見 [wp-8 T0-entry-gate.md](active/wp-8-metrics-hud/T0-entry-gate.md) OQ-8.5。 |
+| **狀態** | 🟡 已定解法(2026-07-03,B+C2);落地待 WP-8 T0 → T1。詳見 [wp-8 T0-entry-gate.md](completed/stage1/wp-8-metrics-hud/T0-entry-gate.md) OQ-8.5。 |
 
 > GD-1(F5 範圍)已於 2026-06-29 解決,見 §3。
 
@@ -45,10 +56,10 @@
 
 | | |
 |---|---|
-| **發現處** | WP-3 T0 審查:WP-2 佔位 [`SimLoop.consumeInput`](../../src/loop/SimLoop.ts)(`buf[consumed].t < tickEndMs`,嚴格 `<`、半開窗 `[tickStart,tickEnd)`)與 WP-3 契約([wp-3 README §2](active/wp-3-input-sampler/README.md) `consume` + [T4-sim-consume.md](active/wp-3-input-sampler/T4-sim-consume.md))原寫「取 `t <= untilT`」不一致。 |
+| **發現處** | WP-3 T0 審查:WP-2 佔位 [`SimLoop.consumeInput`](../../src/loop/SimLoop.ts)(`buf[consumed].t < tickEndMs`,嚴格 `<`、半開窗 `[tickStart,tickEnd)`)與 WP-3 契約([wp-3 README §2](completed/stage1/wp-3-input-sampler/README.md) `consume` + [T4-sim-consume.md](completed/stage1/wp-3-input-sampler/T4-sim-consume.md))原寫「取 `t <= untilT`」不一致。 |
 | **問題** | 若 WP-3 照 `<=` 實作且以 `untilT = tickEndMs` 呼叫,`t == tickEndMs` 的事件會比 WP-2 佔位早一個 tick 被消費 → 事件落入的 tick index 位移 → **破壞 M1 已鎖的決定性回歸**(T4 「重跑 WP-2 決定性測試仍綠」在邊界事件上會紅)。 |
 | **決議** | 統一為**嚴格 `<`**、半開窗 `[tickStart, untilT)`,caller 傳 `tickEndMs`。**理由**:WP-2 決定性已鎖定且 M1 綠燈(2026-07-01),改 WP-2 會破壞已證性質;故 WP-3 向 WP-2 對齊,而非反向。 |
-| **對帳結果** | 已回寫 [wp-3 README §2](active/wp-3-input-sampler/README.md) interface contract + Failure modes、[T4-sim-consume.md](active/wp-3-input-sampler/T4-sim-consume.md)(Objective/In scope/Design notes/Steps/DoD 全改 `<`,並加「回歸須驗邊界未漂移成 `<=`」)。WP-2 `SimLoop.ts` 無需改(已是 `<`)。 |
+| **對帳結果** | 已回寫 [wp-3 README §2](completed/stage1/wp-3-input-sampler/README.md) interface contract + Failure modes、[T4-sim-consume.md](completed/stage1/wp-3-input-sampler/T4-sim-consume.md)(Objective/In scope/Design notes/Steps/DoD 全改 `<`,並加「回歸須驗邊界未漂移成 `<=`」)。WP-2 `SimLoop.ts` 無需改(已是 `<`)。 |
 | **權威來源** | [SimLoop.ts](../../src/loop/SimLoop.ts) `consumeInput`(既有 `<` 為準)、CONTEXT「輸入分桶」半開窗。 |
 | **狀態** | ✅ 已解(2026-07-01;commit 待補) |
 
@@ -70,7 +81,7 @@
 | **新增 metadata** | `unit`、`vStrafe`、`maxDrillSeconds`、`lateEventCount`、`bufferOverflow`、`recorderOverflow`、`suspect`(規格附錄 C / WP-7 `Meta`);`schema.md`(WP-7.5)產出時一併納入。 |
 | **狀態** | ✅ 已解(2026-06-29;commit 待補) |
 
-> **實作進度交叉註記(2026-07-01,WP-3 T4)**:GD-2 的兩個輸入端 metadata 於 WP-3 分兩切片落地——**`lateEventCount` 已於 T4 實作**(`SharedState.inputMeta`,[consume.ts](../../src/input/consume.ts) 依 `lastConsumedT` 低水位偵測遲到、夾進當前 tick 消費不丟棄)。**`bufferOverflow` 延後至 T4b**([wp-3 T4b](active/wp-3-input-sampler/T4b-ring-buffer-overflow.md)):T4 仍在 WP-2 佔位 **plain array** 上消費,無靜態容量故無溢位語意;溢位須待 **OQ-3.2 固定欄位 ring buffer**(靜態容量、滿升 `bufferOverflow`、不靜默丟最舊)就緒才成立。拆分理由見 [wp-3 progress D-T4.1](active/wp-3-input-sampler/progress.md)。GD-3(嚴格 `<` 邊界)已於 T4 落實並經決定性回歸(9 tests)確認未漂移成 `<=`。
+> **實作進度交叉註記(2026-07-01,WP-3 T4)**:GD-2 的兩個輸入端 metadata 於 WP-3 分兩切片落地——**`lateEventCount` 已於 T4 實作**(`SharedState.inputMeta`,[consume.ts](../../src/input/consume.ts) 依 `lastConsumedT` 低水位偵測遲到、夾進當前 tick 消費不丟棄)。**`bufferOverflow` 延後至 T4b**([wp-3 T4b](completed/stage1/wp-3-input-sampler/T4b-ring-buffer-overflow.md)):T4 仍在 WP-2 佔位 **plain array** 上消費,無靜態容量故無溢位語意;溢位須待 **OQ-3.2 固定欄位 ring buffer**(靜態容量、滿升 `bufferOverflow`、不靜默丟最舊)就緒才成立。拆分理由見 [wp-3 progress D-T4.1](completed/stage1/wp-3-input-sampler/progress.md)。GD-3(嚴格 `<` 邊界)已於 T4 落實並經決定性回歸(9 tests)確認未漂移成 `<=`。
 
 > **實作進度交叉註記(2026-07-01,WP-3 T4b — GD-2 / OQ-3.2 完成)**:輸入緩衝已換成 **固定欄位真 ring**([SharedState.ts](../../src/state/SharedState.ts) `createInputRing`:packed 並行 typed-array 槽位 `type,t,a,b`、`head`/`count` 游標、靜態 `RING_CAPACITY=512`(2 的冪、`& MASK` 繞圈,**執行期不動態 resize**))。**`bufferOverflow` 落地**:容量滿時 `push*` 回 `false`、[InputSampler.ts](../../src/input/InputSampler.ts) 升 `inputMeta.bufferOverflow`、**拒收新事件、不覆寫尚未消費的最舊槽**(GD-2「不靜默丟最舊」)。code(`KeyA/KeyD/KeyW/KeyS`)編碼為小整數 enum(`KEY_CODE`/`CODE_KEY`,見 [types.ts](../../src/state/types.ts));`consume` 用寫入端 bounded insertion 保序取代 T4 的 `due.sort` scratch(GC 紀律),交付用單一重用 `InputEventView` 解碼。GD-3 嚴格 `<` + `lateEventCount` 低水位語意不變,決定性回歸(9 tests)+ T4 consume(5 tests)遷移後全綠。至此 GD-2 兩個輸入端 metadata(`lateEventCount` / `bufferOverflow`)皆就緒。
 

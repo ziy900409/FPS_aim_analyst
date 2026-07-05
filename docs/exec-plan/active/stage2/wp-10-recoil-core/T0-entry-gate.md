@@ -5,10 +5,10 @@
 
 | | |
 |---|---|
-| **相依** | 階段 A M4 ✅(2026-07-03,[exec-plan/README.md §3](../../../README.md)) |
+| **相依** | 階段 A M4 ✅(2026-07-03,[exec-plan/README.md §3](../../../../README.md)) |
 | **Risk / Cplx** | Low / Low |
-| **Touches** | `../../../DECISIONS.md`、`../../../README.md`、`../../../../../CLAUDE.md`、本資料夾 docs |
-| **狀態** | ⬜ |
+| **Touches** | `../../../../DECISIONS.md`、`../../../../README.md`、`../../../../../CLAUDE.md`、本資料夾 docs |
+| **狀態** | ✅ 完成(2026-07-05) |
 
 ## Objective
 
@@ -26,13 +26,13 @@
 
 ## Steps
 
-- [ ] 驗證上游:`git log --oneline` 可見 M4 exit-gate commit(`ddbb599` 附近);[exec-plan/README.md §3](../../../README.md) M4 ✅。
-- [ ] **OQ-S2-1 拍板**:recoil tick = 64Hz 子節奏(偶數 sim tick)/ dt=1/128 代入 / SIM_HZ 降 64,三擇一(計畫建議第一案,理由見 [../README.md §2.4](../README.md))。
-- [ ] **OQ-S2-6 拍板**:彈匣盡即停火(無 reload),drill 一 peek ≤ 一匣(計畫建議)。
-- [ ] 兩決議寫入 [progress.md](progress.md) ledger(含日期與拍板人)+ 回填 [../README.md §8](../README.md) 狀態。
-- [ ] [DECISIONS.md](../../../DECISIONS.md) 新增 GD-5(格式循 GD-2:決議/權威來源/影響面)。
-- [ ] [CLAUDE.md §4](../../../../../CLAUDE.md) 追加兩條硬約束(一行一條,附出處 GD-5)。
-- [ ] [exec-plan/README.md §2](../../../README.md) 加 stage2 列;§3 加 M5–M8 佔位列。
+- [x] 驗證上游:`git log --oneline` 可見 M4 exit-gate commit(`ddbb599` 附近);[exec-plan/README.md §3](../../../../README.md) M4 ✅。
+- [x] **OQ-S2-1 拍板**:recoil tick = 64Hz 子節奏(偶數 sim tick)/ dt=1/128 代入 / SIM_HZ 降 64,三擇一(計畫建議第一案,理由見 [../README.md §2.4](../README.md))。
+- [x] **OQ-S2-6 拍板**:彈匣盡即停火(無 reload),drill 一 peek ≤ 一匣(計畫建議)。
+- [x] 兩決議寫入 [progress.md](progress.md) ledger(含日期與拍板人)+ 回填 [../README.md §8](../README.md) 狀態。
+- [x] [DECISIONS.md](../../../../DECISIONS.md) 新增 GD-5(格式循 GD-2:決議/權威來源/影響面)。
+- [x] [CLAUDE.md §4](../../../../../CLAUDE.md) 追加兩條硬約束(一行一條,附出處 GD-5)。
+- [x] [exec-plan/README.md §2](../../../../README.md) 加 stage2 列;§3 加 M5–M8 佔位列。
 
 ## Definition of Done
 

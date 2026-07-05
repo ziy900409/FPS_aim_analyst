@@ -9,7 +9,7 @@
 | **相依** | T2(punch)、T3(spread) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | NEW `src/recoil/patternViewer.ts`;MODIFY `src/main.ts`(dev-only 掛載,+3 行) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-07-05) |
 
 ## Objective
 
@@ -33,11 +33,11 @@
 
 ## Steps
 
-- [ ] `patternViewer.ts`:模擬 30 發(0.1s 間隔、tick 1/64)→ 繪點/圈/連線 + 發數標記。
-- [ ] 參數面板(seed 等 5 欄)+ 重畫;預設 AK(seed 223)。
-- [ ] `main.ts` dev-only 掛載(hash `#pattern`)。
-- [ ] 人工驗證並截圖存 `progress.md` 證據:AK 形狀 = 直升 ~9 發後左右之字;M4 參數(38965)形狀不同。
-- [ ] `npm run build` 後 `dist/` grep `patternViewer` = 0(剝除證明);`vitest run` 不受影響。
+- [x] `patternViewer.ts`:模擬 30 發(0.1s 間隔、tick 1/64)→ 繪點/圈/連線 + 發數標記。
+- [x] 參數面板(seed 等 5 欄)+ 重畫;預設 AK(seed 223)。
+- [x] `main.ts` dev-only 掛載(hash `#pattern`)。
+- [x] 人工驗證並截圖存 `progress.md` 證據:AK 形狀 = 直升 ~9 發後左右之字;M4 參數(38965)形狀不同。
+- [x] `npm run build` 後 `dist/` grep `patternViewer` = 0(剝除證明);`vitest run` 不受影響。
 
 ## Definition of Done
 

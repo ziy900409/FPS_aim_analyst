@@ -8,7 +8,7 @@
 | **相依** | T1(彈道表) |
 | **Risk / Cplx** | **High** / High |
 | **Touches** | NEW `src/recoil/punch.ts`、`src/recoil/punch.test.ts`、`tests/golden/recoil/ak47-10shot-punch.json` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-05 |
 
 ## Objective
 
@@ -35,12 +35,12 @@
 
 ## Steps
 
-- [ ] `RecoilState` + `createRecoilState()`(zeroed)+ `resetRecoilState()`(原地清空)。
-- [ ] `recoilTick` 四步驟照序實作;`recoilOnFire` KickBack + index。
-- [ ] 抑制/index 交互測試:index 0..3 開火使用表 entry 對應抑制值(接 T1)。
-- [ ] **Golden**:合成序列「每 0.1s 一發 × 10 發,間隔跑 recoilTick(1/64)」→ `aimPunch×2` = pitch **−10.18°**、yaw **−1.56°**(±0.01°);全序列逐 tick punch 快照存 golden fixture。
-- [ ] 停火衰減測試:最後一發後 0.11s 起 index 以 `exp(−dt·ln10·2)` 歸零(半衰期解析值對照)。
-- [ ] `npx vitest run src/recoil` 全綠。
+- [x] `RecoilState` + `createRecoilState()`(zeroed)+ `resetRecoilState()`(原地清空)。
+- [x] `recoilTick` 四步驟照序實作;`recoilOnFire` KickBack + index。
+- [x] 抑制/index 交互測試:index 0..3 開火使用表 entry 對應抑制值(接 T1)。
+- [x] **Golden**:合成序列「每 0.1s 一發 × 10 發,間隔跑 recoilTick(1/64)」→ `aimPunch×2` = pitch **−10.18°**、yaw **−1.56°**(±0.01°);全序列逐 tick punch 快照存 golden fixture。
+- [x] 停火衰減測試:最後一發後 0.11s 起 index 以 `exp(−dt·ln10·2)` 歸零(半衰期解析值對照)。
+- [x] `npx vitest run src/recoil` 全綠。
 
 ## Definition of Done
 

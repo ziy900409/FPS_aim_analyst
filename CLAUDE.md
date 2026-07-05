@@ -55,6 +55,8 @@
 - **固定佈局紀律**:**輸入緩衝 = 真 ring**(消費後繞圈)、**`DataRecorder` = preallocated arena**(非環狀、drill 內不繞圈);兩者皆固定欄位、物件重用、不 `push` 物件(避免 GC 卡頓)。
 - **UI = 純 TS + DOM overlay**(D1),階段 A 不引入 React/Vue/Lit。
 - **階段 A 鎖 Chrome/Edge 桌面版**;`event.timeStamp` 與 `performance.now()` 同源可減僅 Chromium 成立。
+- **sim/recoil 禁 `Math.random()`**:所有隨機性一律注入 seeded RNG,seed 寫入資料/metadata(GD-5)。
+- **recoil 衰減以 1/64s 步長定義**:128Hz sim 內以 64Hz 子節奏呼叫,不得用變動 dt 代入(GD-5)。
 
 ---
 

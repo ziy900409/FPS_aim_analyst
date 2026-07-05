@@ -220,6 +220,12 @@ if (import.meta.env.DEV) {
   (window as unknown as { __aimDebug?: unknown }).__aimDebug = { state: sharedState, pointerLock };
 }
 
+// WP-10 / T4 — dev-only recoil pattern viewer. Dynamic import keeps the canvas tool out of production.
+if (import.meta.env.DEV && window.location.hash === '#pattern') {
+  const { mountPatternViewer } = await import('./recoil/patternViewer.ts');
+  mountPatternViewer();
+}
+
 // WP-9 / T1（FR-9.1）— E2E 端到端測試掛點：**僅 dev**（`import.meta.env.DEV`，production 剝除；
 // 動態 import 使 harness 模組不進 prod bundle）。以合成 clock 自建與生產同源的獨立 sim 管線跑
 // 「完整 drill → 匯出 → 統計」全鏈路，供 Playwright 在真瀏覽器（COOP/COEP、crossOriginIsolated）

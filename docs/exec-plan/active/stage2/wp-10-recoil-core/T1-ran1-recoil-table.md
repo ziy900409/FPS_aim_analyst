@@ -8,7 +8,7 @@
 | **相依** | T0(OQ-S2-1 已拍板) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | NEW `src/recoil/rng.ts`、`src/recoil/recoilTable.ts`、`src/recoil/recoilTable.test.ts`、`tests/golden/recoil/ak47-table.json` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-05 |
 
 ## Objective
 
@@ -31,12 +31,12 @@
 
 ## Steps
 
-- [ ] `rng.ts`:ran1 移植 + 單元測試(同 seed 兩 stream 前 100 值位元級一致;不同 seed 不同)。
-- [ ] `recoilTable.ts`:`generateRecoilTable` + 前 4 發抑制、Lerp 平滑。
-- [ ] 抑制係數測試:magnitude 30 → 前 4 發 22.5 / 24.375 / 26.25 / 28.125(**精確相等**,非近似)。
-- [ ] 產 seed 223 表 → 人工核 T4 前置 sanity(先用測試印出 pitch 累積形狀)→ 存 `tests/golden/recoil/ak47-table.json`。
-- [ ] Golden 測試:前 8 筆 `(angleDeg, magnitude)` 逐位 === fixture;表長恆 64;同 seed 重呼叫位元級一致。
-- [ ] `npx vitest run src/recoil` 全綠。
+- [x] `rng.ts`:ran1 移植 + 單元測試(同 seed 兩 stream 前 100 值位元級一致;不同 seed 不同)。
+- [x] `recoilTable.ts`:`generateRecoilTable` + 前 4 發抑制、Lerp 平滑。
+- [x] 抑制係數測試:magnitude 30 → 前 4 發 22.5 / 24.375 / 26.25 / 28.125(**精確相等**,非近似)。
+- [x] 產 seed 223 表 → 人工核 T4 前置 sanity(先用測試印出 pitch 累積形狀)→ 存 `tests/golden/recoil/ak47-table.json`。
+- [x] Golden 測試:前 8 筆 `(angleDeg, magnitude)` 逐位 === fixture;表長恆 64;同 seed 重呼叫位元級一致。
+- [x] `npx vitest run src/recoil` 全綠。
 
 ## Definition of Done
 

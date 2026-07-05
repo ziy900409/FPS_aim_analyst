@@ -7,7 +7,7 @@
 | **相依** | T1–T4 |
 | **Risk / Cplx** | — / Low |
 | **Touches** | docs(progress/checklist/上層索引)+ `../../../../規格書_…md`、`../../../../../CONTEXT.md`(對帳) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ M5 達成 2026-07-05 |
 
 ## Objective
 
@@ -16,15 +16,14 @@
 
 ## Steps
 
-- [ ] `npx vitest run` 全綠(exit 0);`src/recoil/` 新增測試數 ≥ 12,記入 progress。
-- [ ] Golden fixtures 齊備:`ak47-table.json`(64 筆)+ `ak47-10shot-punch.json`(逐 tick 快照)。
-- [ ] 硬約束抽查:`Math.random` 於 `src/recoil/` grep = 0;`recoilTick` 呼叫點 dtSec 恆 1/64。
-- [ ] T4 形狀 sanity 截圖已在 progress(AK 直升→之字)。
-- [ ] 文件對帳(T0 遺留的大件):規格書升 **v1.2** §1.3 補「CS2 後座力系統」條目;
-      [CONTEXT.md](../../../../../CONTEXT.md) 新術語(aimPunch / rawPunch×2 / recoil index /
-      HybridDecay / cycletime / inaccuracy 三成分 / 理想壓槍路徑)。
-- [ ] [../README.md §3](../README.md) WP-10 翻 ✅、M5 標日期;[exec-plan/README.md](../../../README.md) 同步。
-- [ ] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
+- [x] `vitest run` 全綠(exit 0):全套 30 files / 208 tests passed;`src/recoil/` 4 files / **23 tests**(≥ 12)。
+- [x] Golden fixtures 齊備:`ak47-table.json`(**64 筆**)+ `ak47-10shot-punch.json`(58 tick + 10 shotsLog 快照,final `rawPunch×2` = −10.18°/−1.56°)。
+- [x] 硬約束抽查:`Math.random` 於 `src/recoil/` grep = **0**;所有 `recoilTick` 呼叫點 dtSec 恆 `RECOIL_DT_SEC`(1/64),`punch.ts` 對非 1/64 dt 拋錯。
+- [x] T4 形狀 sanity 截圖已在 [progress.md](progress.md)(AK 直升→之字;`artifacts/t4-pattern-ak.png`)。
+- [x] 文件對帳(T0 遺留的大件):規格書升 **v1.2** §1.3 補「CS2 後座力系統」條目;
+      [CONTEXT.md](../../../../../CONTEXT.md) §F 新增術語(ran1 / 彈道表 / aimPunch / rawPunch×2 / punch 動力學 / HybridDecay / recoil index / cycletime / inaccuracy 三成分 / 理想壓槍路徑)。
+- [x] [../README.md §3](../README.md) WP-10 翻 ✅、M5 標日期;[exec-plan/README.md](../../../README.md) 同步。
+- [x] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
 
 ## Definition of Done
 
