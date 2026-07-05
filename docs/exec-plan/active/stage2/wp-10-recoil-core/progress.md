@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,T1 ✅,下一步 T2)
+## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,下一步 T3)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 ran1 + 彈道表 | ✅ |
-| T2 punch 動力學 | ⬜ |
+| T2 punch 動力學 | ✅ |
 | T3 spread/inaccuracy | ⬜ |
 | T4 2D 檢查頁 | ⬜ |
 | T-exit(M5) | ⬜ |
@@ -29,6 +29,12 @@
 
 ## Decision Log
 
+### 2026-07-05 — T2 punch dynamics decisions
+- **Decision**:新增 `src/recoil/punch.ts`,以固定 64Hz `recoilTick` 執行 HybridDecay(8/18)、leapfrog 角速度積分與 `exp(-4.5*dt)` 速度衰減;`recoilOnFire` 依 `recoilIndex` 查 64 筆表、把 polar kick 注入角速度、更新 `viewPunch*` / `inaccuracyFire` / `lastFireT` / index decay delay。
+- **Decision**:AK 10 發 golden 序列以 0.1s fire cadence、64Hz tick crossing 模擬;本地權威文件只提供最終向量,因此 pitch/yaw kick scale 集中在 `punch.ts` 兩個常數並由 `tests/golden/recoil/ak47-10shot-punch.json` 鎖住,最終 `aimPunch×2 = -10.18° / -1.56°`。
+- **Alternatives Considered**:未把 `cycletime` 寫死在 `recoilTick`;改由 `recoilOnFire` 從 weapon-like 參數設定 `recoilResetDelaySec`,保留 WP-11 `WeaponConfig` 接線空間。未在本模組做 deg→rad 或 pitch 符號翻轉,維持 WP-13 單點 adapter 契約。
+- **Evidence**:`.\node_modules\.bin\vitest.cmd run src/recoil` → 3 files / 17 tests passed;`npm.cmd run typecheck` → pass。
+
 ### 2026-07-05 — T1 ran1 + recoil table decisions
 - **Decision**:新增 `src/recoil/` 純 TS 模組,以 Numerical Recipes ran1 常數組(IA/IM/IQ/IR/NTAB/NDIV/EPS/RNMX)實作 `createRan1`,並在 `generateRecoilTable` 內以 seed 223 生成 AK-47 64 筆表;full-auto 相鄰彈使用 0.55 Lerp 平滑,前 4 發套用 0.75→1.0 抑制係數。
 - **Alternatives Considered**:未引入外部 RNG 套件,避免增加 runtime dependency;未把 golden 放進 `src/`,維持 `tests/golden/recoil/` 作為跨 T1/T2/T4 的測試資料位置。
@@ -41,6 +47,10 @@
 
 ## Surprises & Discoveries
 
+### 2026-07-05 — T2 source has final punch vector but no intermediate constants
+- **Evidence**:[研究計畫](../CS2%20壓槍軌跡復刻研究計畫.md) Phase 4 只列 AK 10 發 punch `-10.18° / -1.56°`;未列每 tick punch/velocity 或 axis scale。
+- **Action**:將校準集中為 `punch.ts` 常數,並新增完整逐 tick fixture;若 WP-15 校準或外部資料提供更細向量,只需替換集中常數並更新 golden。
+
 ### 2026-07-05 — T1 PowerShell npx shim blocked by execution policy
 - **Evidence**:`npx vitest run src/recoil` failed with `npx.ps1 cannot be loaded because running scripts is disabled on this system`。
 - **Action**:改用 `.\node_modules\.bin\vitest.cmd run src/recoil`;首次 sandbox 內載入 Vite config 遇到 `Cannot read directory "../../../..": Access is denied`,改以核准後的 escalated test command 執行。
@@ -51,11 +61,17 @@
 
 ## Open Questions
 
-- 無 T0 阻塞項。T1 可開始 `createRan1` + `generateRecoilTable` + golden(seed 223)。
+- 無 T2 阻塞項。T3 可開始 `sampleSpread` 三成分 + `inaccuracyFire` recovery。
 
 ---
 
 ## Log
+
+### 2026-07-05 — T2 punch dynamics completed
+- 新增 [punch.ts](../../../../../src/recoil/punch.ts):`RecoilState` / `createRecoilState` / `resetRecoilState` / `recoilTick` / `recoilOnFire`,維持 degree domain、64Hz 固定步長、禁用 hidden RNG。
+- 新增 [punch.test.ts](../../../../../src/recoil/punch.test.ts):覆蓋 state reuse、非 1/64 dt 拋錯、依 index 查表、停火超過 `cycletime*1.1` 後 index 解析衰減、AK 10 發 golden、同輸入決定性。
+- 新增 [ak47-10shot-punch.json](../../../../../tests/golden/recoil/ak47-10shot-punch.json):10 發 fire snapshot + 58 個 recoil tick snapshot;最終 raw punch = `-10.18° / -1.56°`。
+- 驗證:`.\node_modules\.bin\vitest.cmd run src/recoil` → 3 files / 17 tests passed;`npm.cmd run typecheck` → pass。
 
 ### 2026-07-05 — T1 ran1 + recoil table completed
 - 新增 [rng.ts](../../../../../src/recoil/rng.ts):`createRan1(seed)` 與 `randomFloat`,禁用 `Math.random()`。

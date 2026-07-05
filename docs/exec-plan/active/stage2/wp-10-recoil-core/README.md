@@ -10,7 +10,7 @@
 | **相依** | 無(階段 A M4 ✅ 已達成;可立即開跑) |
 | **對應 FR** | FR-B1(彈道表)、FR-B2(punch 動力學)、FR-B3(inaccuracy)、FR-B4(recoil index 衰減) |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 進行中(T0 ✅, T1 ✅ 2026-07-05) |
+| **狀態** | 🟡 進行中(T0 ✅, T1 ✅, T2 ✅ 2026-07-05) |
 
 ---
 
@@ -58,7 +58,7 @@ export function sampleSpread(s: RecoilState, w: WeaponInaccuracyLike, speedRatio
 |---|---|---|---|---|
 | **T0** | [T0-entry-gate.md](T0-entry-gate.md) | M4 確認 + OQ-S2-1/S2-6 拍板 + GD-5/文件對帳落地 | — | Low |
 | **T1** | [T1-ran1-recoil-table.md](T1-ran1-recoil-table.md) | `createRan1` + `generateRecoilTable` + golden(seed 223) | T0 | ✅ |
-| **T2** | [T2-punch-dynamics.md](T2-punch-dynamics.md) | `RecoilState`/`recoilTick`/`recoilOnFire` + 10 發 golden 向量 | T1 | High |
+| **T2** | [T2-punch-dynamics.md](T2-punch-dynamics.md) | `RecoilState`/`recoilTick`/`recoilOnFire` + 10 發 golden 向量 | T1 | ✅ |
 | **T3** | [T3-spread-inaccuracy.md](T3-spread-inaccuracy.md) | `sampleSpread` 三成分 + seeded RNG | T1 | Low |
 | **T4** | [T4-pattern-viewer.md](T4-pattern-viewer.md) | 2D 彈道檢查頁(dev-only) | T2, T3 | Low |
 | **T-exit** | [T-exit-gate.md](T-exit-gate.md) | **M5 門**:golden 全綠 + 文件回填 | T1–T4 | — |
