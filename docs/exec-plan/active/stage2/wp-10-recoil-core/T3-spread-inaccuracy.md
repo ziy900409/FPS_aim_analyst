@@ -8,7 +8,7 @@
 | **相依** | T1(`Rng` 型別 + ran1) |
 | **Risk / Cplx** | Low / Med |
 | **Touches** | NEW `src/recoil/spread.ts`、`src/recoil/spread.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -32,11 +32,11 @@
 
 ## Steps
 
-- [ ] `spread.ts`:inaccuracy 合成 + `sampleSpread`;`recoilTick` 補 `inaccuracyFire` 回復步進(修改 `punch.ts`,同 commit)。
-- [ ] 決定性測試:同 seed 同序列 → 逐發 `(x,y)` 位元級一致;每發恰 2 次 rng 呼叫(spy 計數)。
-- [ ] 分布測試:10k 樣本 θ 直方圖均勻(χ² 粗檢)、半徑 ≤ inaccuracyTotal 且中心偏置(均值 < 上限/2)。
-- [ ] 成分測試:`speedRatio=0` 時移動項為 0;`speedRatio=1` 時 = InaccuracyMove;連發 5 發 inaccuracy 單調升、停火後依 recovery 曲線回落(解析值對照)。
-- [ ] `npx vitest run src/recoil` 全綠;`Math.random` grep(`src/recoil/`)= 0。
+- [x] `spread.ts`:inaccuracy 合成 + `sampleSpread`;`recoilTick` 補 `inaccuracyFire` 回復步進(修改 `punch.ts`,同 commit)。
+- [x] 決定性測試:同 seed 同序列 → 逐發 `(x,y)` 位元級一致;每發恰 2 次 rng 呼叫(spy 計數)。
+- [x] 分布測試:10k 樣本 θ 直方圖均勻(χ² 粗檢)、半徑 ≤ inaccuracyTotal 且中心偏置(均值 < 上限/2)。
+- [x] 成分測試:`speedRatio=0` 時移動項為 0;`speedRatio=1` 時 = InaccuracyMove;連發 5 發 inaccuracy 單調升、停火後依 recovery 曲線回落(解析值對照)。
+- [x] `npx vitest run src/recoil` 全綠;`Math.random` grep(`src/recoil/`)= 0。
 
 ## Definition of Done
 

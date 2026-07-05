@@ -20,6 +20,7 @@ export interface RecoilState {
   viewPunchYawDeg: number;
   recoilIndex: number;
   inaccuracyFire: number;
+  inaccuracyRecoveryTimeSec: number;
   lastFireT: number;
   recoilResetDelaySec: number;
 }
@@ -28,6 +29,7 @@ export interface WeaponRecoilLike {
   cycletimeSec: number;
   inaccuracy: {
     fire: number;
+    recoveryTimeStand: number;
   };
 }
 
@@ -41,6 +43,7 @@ export function createRecoilState(): RecoilState {
     viewPunchYawDeg: 0,
     recoilIndex: 0,
     inaccuracyFire: 0,
+    inaccuracyRecoveryTimeSec: Number.POSITIVE_INFINITY,
     lastFireT: Number.POSITIVE_INFINITY,
     recoilResetDelaySec: Number.POSITIVE_INFINITY,
   });
@@ -55,6 +58,7 @@ export function resetRecoilState(s: RecoilState): RecoilState {
   s.viewPunchYawDeg = 0;
   s.recoilIndex = 0;
   s.inaccuracyFire = 0;
+  s.inaccuracyRecoveryTimeSec = Number.POSITIVE_INFINITY;
   s.lastFireT = Number.POSITIVE_INFINITY;
   s.recoilResetDelaySec = Number.POSITIVE_INFINITY;
   return s;
@@ -79,6 +83,9 @@ export function recoilTick(s: RecoilState, dtSec: number): void {
 
   s.aimPunchPitchDeg += s.punchVelPitch * dtSec * 0.5;
   s.aimPunchYawDeg += s.punchVelYaw * dtSec * 0.5;
+
+  s.inaccuracyFire *= Math.exp((-dtSec * Math.LN10) / s.inaccuracyRecoveryTimeSec);
+  if (s.inaccuracyFire < 1e-12) s.inaccuracyFire = 0;
 
   s.lastFireT += dtSec;
   if (s.lastFireT > s.recoilResetDelaySec) {
@@ -111,6 +118,7 @@ export function recoilOnFire(
   s.viewPunchYawDeg += yawKick * VIEW_PUNCH_SCALE;
   s.recoilIndex += 1;
   s.inaccuracyFire += w.inaccuracy.fire;
+  s.inaccuracyRecoveryTimeSec = w.inaccuracy.recoveryTimeStand;
   s.lastFireT = 0;
   s.recoilResetDelaySec = w.cycletimeSec * 1.1;
 }
@@ -129,5 +137,8 @@ function validateWeapon(w: WeaponRecoilLike): void {
   }
   if (!Number.isFinite(w.inaccuracy.fire) || w.inaccuracy.fire < 0) {
     throw new Error('weapon inaccuracy.fire must be >= 0');
+  }
+  if (!Number.isFinite(w.inaccuracy.recoveryTimeStand) || w.inaccuracy.recoveryTimeStand <= 0) {
+    throw new Error('weapon inaccuracy.recoveryTimeStand must be > 0');
   }
 }

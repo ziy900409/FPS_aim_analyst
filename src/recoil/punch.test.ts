@@ -23,6 +23,7 @@ const ak47Weapon: WeaponRecoilLike = {
   cycletimeSec: 0.1,
   inaccuracy: {
     fire: 0.0078,
+    recoveryTimeStand: 0.4,
   },
 };
 
@@ -44,6 +45,7 @@ describe('recoil punch dynamics', () => {
       viewPunchYawDeg: 0,
       recoilIndex: 0,
       inaccuracyFire: 0,
+      inaccuracyRecoveryTimeSec: Number.POSITIVE_INFINITY,
     });
   });
 

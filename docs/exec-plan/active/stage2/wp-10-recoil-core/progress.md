@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,下一步 T3)
+## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 ✅,下一步 T4)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 ran1 + 彈道表 | ✅ |
 | T2 punch 動力學 | ✅ |
-| T3 spread/inaccuracy | ⬜ |
+| T3 spread/inaccuracy | ✅ |
 | T4 2D 檢查頁 | ⬜ |
 | T-exit(M5) | ⬜ |
 
@@ -28,6 +28,12 @@
 ---
 
 ## Decision Log
+
+### 2026-07-05 — T3 spread/inaccuracy decisions
+- **Decision**:新增 `src/recoil/spread.ts`,以 injected `Rng` 實作每發固定 2 次取樣(theta 先、radius 後),輸出 degree-domain 的 `{x,y}` spread offset;三成分為 stand base + `state.inaccuracyFire` + `(speedRatio)^0.25 * move`。
+- **Decision**:`recoilTick(state, 1/64)` 內加入 `inaccuracyFire *= exp(-dt*ln10/recoveryTimeStand)` recovery;因 tick signature 不帶 weapon,`recoilOnFire` 驗證並把 `recoveryTimeStand` 存入 `RecoilState.inaccuracyRecoveryTimeSec`。更新 AK 10-shot golden 的 final `inaccuracyFire` 為 `0.017886498677`;punch angle golden 未變。
+- **Alternatives Considered**:未讓 `sampleSpread` 持有全域 RNG 或使用 `Math.random()`,避免破壞 GD-5 決定性契約。未在 T3 啟用 crouch,僅保留 `crouch` 欄位驗證空間,符合 stage2 訓練器無蹲輸入假設。
+- **Evidence**:`.\node_modules\.bin\vitest.cmd run src/recoil` → 4 files / 23 tests passed;`npm.cmd run typecheck` → pass;`npm.cmd test` → 30 files / 208 tests passed;`rg "Math\.random" src/recoil` → no matches(exit 1);`graphify update .` → rebuilt 635 nodes / 1253 edges / 44 communities。
 
 ### 2026-07-05 — T2 punch dynamics decisions
 - **Decision**:新增 `src/recoil/punch.ts`,以固定 64Hz `recoilTick` 執行 HybridDecay(8/18)、leapfrog 角速度積分與 `exp(-4.5*dt)` 速度衰減;`recoilOnFire` 依 `recoilIndex` 查 64 筆表、把 polar kick 注入角速度、更新 `viewPunch*` / `inaccuracyFire` / `lastFireT` / index decay delay。
@@ -61,11 +67,18 @@
 
 ## Open Questions
 
-- 無 T2 阻塞項。T3 可開始 `sampleSpread` 三成分 + `inaccuracyFire` recovery。
+- 無 T3 阻塞項。T4 可開始 2D 彈道檢查頁(dev-only)。
 
 ---
 
 ## Log
+
+### 2026-07-05 — T3 spread/inaccuracy completed
+- 新增 [spread.ts](../../../../../src/recoil/spread.ts):`WeaponInaccuracyLike` / `SpreadSample` / `sampleSpread`,以 stand + fire + move 三成分合成 inaccuracy,使用 injected seeded RNG 且每發固定 theta/radius 兩次取樣。
+- 更新 [punch.ts](../../../../../src/recoil/punch.ts):`RecoilState` 增 `inaccuracyRecoveryTimeSec`;`recoilOnFire` 設定 recovery time;`recoilTick` 以 `exp(-dt*ln10/recoveryTimeStand)` 回復 `inaccuracyFire`。
+- 新增 [spread.test.ts](../../../../../src/recoil/spread.test.ts):覆蓋同 seed 決定性、每發 2 次 RNG、10k theta 粗略均勻性、radius 上界與中心偏置、三成分合成、5 發 burst 後 recovery 解析值。
+- 更新 [ak47-10shot-punch.json](../../../../../tests/golden/recoil/ak47-10shot-punch.json):T3 recovery 生效後 final `inaccuracyFire = 0.017886498677`;raw punch final 仍為 `-10.18° / -1.56°`。
+- 驗證:`.\node_modules\.bin\vitest.cmd run src/recoil` → 4 files / 23 tests passed;`npm.cmd run typecheck` → pass;`npm.cmd test` → 30 files / 208 tests passed;`rg "Math\.random" src/recoil` → no matches(exit 1);`graphify update .` → pass。
 
 ### 2026-07-05 — T2 punch dynamics completed
 - 新增 [punch.ts](../../../../../src/recoil/punch.ts):`RecoilState` / `createRecoilState` / `resetRecoilState` / `recoilTick` / `recoilOnFire`,維持 degree domain、64Hz 固定步長、禁用 hidden RNG。

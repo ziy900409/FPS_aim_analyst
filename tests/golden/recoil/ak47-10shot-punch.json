@@ -9,7 +9,7 @@
     "rawPunchPitchDeg": -10.18,
     "rawPunchYawDeg": -1.56,
     "recoilIndex": 10,
-    "inaccuracyFire": 0.078
+    "inaccuracyFire": 0.017886498677
   },
   "shotsLog": [
     { "shot": 1, "timeSec": 0, "aimPunchPitchDeg": 0, "aimPunchYawDeg": 0, "recoilIndex": 1 },
