@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,下一步 T1)
+## Status: 🟡 進行中(T0 ✅,T1 ✅,下一步 T2)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 ran1 + 彈道表 | ⬜ |
+| T1 ran1 + 彈道表 | ✅ |
 | T2 punch 動力學 | ⬜ |
 | T3 spread/inaccuracy | ⬜ |
 | T4 2D 檢查頁 | ⬜ |
@@ -29,12 +29,21 @@
 
 ## Decision Log
 
+### 2026-07-05 — T1 ran1 + recoil table decisions
+- **Decision**:新增 `src/recoil/` 純 TS 模組,以 Numerical Recipes ran1 常數組(IA/IM/IQ/IR/NTAB/NDIV/EPS/RNMX)實作 `createRan1`,並在 `generateRecoilTable` 內以 seed 223 生成 AK-47 64 筆表;full-auto 相鄰彈使用 0.55 Lerp 平滑,前 4 發套用 0.75→1.0 抑制係數。
+- **Alternatives Considered**:未引入外部 RNG 套件,避免增加 runtime dependency;未把 golden 放進 `src/`,維持 `tests/golden/recoil/` 作為跨 T1/T2/T4 的測試資料位置。
+- **Evidence**:`.\node_modules\.bin\vitest.cmd run src/recoil` → 2 files / 11 tests passed;`npm.cmd run typecheck` → pass;`rg "Math\.random" src/recoil` → no matches(exit 1)。
+
 ### 2026-07-05 — T0 entry gate decisions
 - **Decision**:採納 stage2 範圍與 GD-5 六項跨 WP 契約:64Hz recoil 子節奏、彈匣盡停火、CS2 0.022°/count 感度語意、WP-14 baseline 預期重錄、sim/recoil 禁 `Math.random()`、`MovementProfile` 留接口但 Valorant 不進 stage2。
 - **Alternatives Considered**:OQ-S2-1 的 `dt=1/128` 代入與 `SIM_HZ` 降 64 皆未採用;前者缺 golden 對照基準,後者會破壞 ADR-3 既有 128Hz sim。OQ-S2-6 的 reload 流程未採用,避免 WP-11 範圍蔓延。
 - **Evidence**:`git log --oneline -n 20` 可見 `ddbb599 docs(wp-9): exit gate — 宣告 M4 階段 A交付 + 附錄 E 全綠`;[stage2 README](../README.md) §8 已回填 OQ 狀態;[DECISIONS.md](../../../../DECISIONS.md) 已新增 GD-5。
 
 ## Surprises & Discoveries
+
+### 2026-07-05 — T1 PowerShell npx shim blocked by execution policy
+- **Evidence**:`npx vitest run src/recoil` failed with `npx.ps1 cannot be loaded because running scripts is disabled on this system`。
+- **Action**:改用 `.\node_modules\.bin\vitest.cmd run src/recoil`;首次 sandbox 內載入 Vite config 遇到 `Cannot read directory "../../../..": Access is denied`,改以核准後的 escalated test command 執行。
 
 ### 2026-07-05 — T0 relative paths pointed at non-existent files
 - **Evidence**:`Get-Content docs/exec-plan/active/DECISIONS.md` failed with "Cannot find path";專案導航與 stage2 README 指向的權威帳本是 [docs/exec-plan/DECISIONS.md](../../../../DECISIONS.md)。
@@ -47,6 +56,13 @@
 ---
 
 ## Log
+
+### 2026-07-05 — T1 ran1 + recoil table completed
+- 新增 [rng.ts](../../../../../src/recoil/rng.ts):`createRan1(seed)` 與 `randomFloat`,禁用 `Math.random()`。
+- 新增 [recoilTable.ts](../../../../../src/recoil/recoilTable.ts):`generateRecoilTable(p)` 恆 64 筆,含相鄰彈 0.55 Lerp 平滑與前 4 發抑制。
+- 新增 [ak47-table.json](../../../../../tests/golden/recoil/ak47-table.json):seed 223 / magnitude 30 / variance 0 / angleVariance 70 的 64 筆 fixture;測試逐位鎖前 8 筆。
+- T4 前置數值 sanity:以前 9 筆累積 `x += sin(angle)*mag`, `y += cos(angle)*mag`,y 單調上升到 235.33,符合「前段直升」的前置檢查。
+- 驗證:`.\node_modules\.bin\vitest.cmd run src/recoil` → 2 files / 11 tests passed;`npm.cmd run typecheck` → pass;`rg "Math\.random" src/recoil` → no matches(exit 1)。
 
 ### 2026-07-05 — T0 entry gate completed
 - 上游 M4 已驗證:`git log --oneline -n 20` 包含 `ddbb599` exit-gate commit;[exec-plan README](../../../../README.md) §3 M4 仍為 ✅。
