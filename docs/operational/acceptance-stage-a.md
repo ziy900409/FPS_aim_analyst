@@ -1,8 +1,8 @@
 # 階段 A 驗收對照（規格附錄 E）— WP-9 T4 / FR-9.4
 
 > **交付閘**：規格 [附錄 E](../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md#12-附錄-e驗收清單階段-a) 逐項對照證據。達成即 **M4 — 階段 A 交付**。
-> 同伴：[WP-9 README](../exec-plan/active/wp-9-integration/README.md) · [progress.md](../exec-plan/active/wp-9-integration/progress.md) · [timing-validity.md](timing-validity.md) · [schema.md](schema.md)。
-> OQ-9.4（自動 vs 手動）依 [T0 lock](../exec-plan/active/wp-9-integration/progress.md) 執行：COI / metadata / 決定性 / schema / 首發 / 反應分布計算為**自動**；原生輸入手感、實玩反應中位數為**手動**。
+> 同伴：[WP-9 README](../exec-plan/completed/stage1/wp-9-integration/README.md) · [progress.md](../exec-plan/completed/stage1/wp-9-integration/progress.md) · [timing-validity.md](timing-validity.md) · [schema.md](schema.md)。
+> OQ-9.4（自動 vs 手動）依 [T0 lock](../exec-plan/completed/stage1/wp-9-integration/progress.md) 執行：COI / metadata / 決定性 / schema / 首發 / 反應分布計算為**自動**；原生輸入手感、實玩反應中位數為**手動**。
 
 ---
 
@@ -42,7 +42,7 @@
 
 ## 2. 非阻塞項（F5 接縫 + 階段 A+／延後）
 
-依 [T0 lock](../exec-plan/active/wp-9-integration/progress.md)：附錄 E 的移動目標項不阻塞 M4，僅記錄狀態。
+依 [T0 lock](../exec-plan/completed/stage1/wp-9-integration/progress.md)：附錄 E 的移動目標項不阻塞 M4，僅記錄狀態。
 
 | 附錄 E 項 | 狀態 | 證據 / 說明 |
 |---|---|---|
@@ -57,7 +57,7 @@
 自動化難以合成真實運動-知覺反應，下列由研究者實機執行並回填：
 
 - [~] **原生輸入無加速 / 實際遊玩手感**：Chrome/Edge 桌面版鎖 Pointer Lock，確認原生滑鼠無鼠標加速、A/D 急停手感與資料一致。**部分驗證**（見下方實測記錄）：完整 drill 端到端可玩、Pointer Lock 生效、首發命中 95%——輸入路徑功能正常;`rawInputEnabled` console 值 + 主觀無加速手感簽核仍待研究者明確確認。
-- [~] **實玩反應時間中位數**：實玩一段 counter-strafe drill → 匯出 → 取 `counterReactionMs` 中位數，確認落 ~150–250 ms 量級（[timing-validity.md §3](timing-validity.md)）。偏離（<50 ms / >1 s）即查計時管線。回填至 [WP-9 progress.md](../exec-plan/active/wp-9-integration/progress.md)。**單輪初測（見下方）：mean 394 ms、非中位數且高於帶**——非計時管線示警區（不在 <50 ms / >1 s），但超出 150–250 ms 預期帶;需多輪熟練後取穩定中位數再定論。
+- [~] **實玩反應時間中位數**：實玩一段 counter-strafe drill → 匯出 → 取 `counterReactionMs` 中位數，確認落 ~150–250 ms 量級（[timing-validity.md §3](timing-validity.md)）。偏離（<50 ms / >1 s）即查計時管線。回填至 [WP-9 progress.md](../exec-plan/completed/stage1/wp-9-integration/progress.md)。**單輪初測（見下方）：mean 394 ms、非中位數且高於帶**——非計時管線示警區（不在 <50 ms / >1 s），但超出 150–250 ms 預期帶;需多輪熟練後取穩定中位數再定論。
 
 ### 實測記錄（2026-07-03 · 未訓練單輪初測）
 
@@ -69,7 +69,7 @@
 | `rawInputEnabled`（console） | **未記錄** | 待研究者鎖定後看 console `[pointerlock] rawInputEnabled` 回填(true=原生無加速)。 |
 | 主觀手感（甩動線性、急停跟手） | **未簽核** | 待研究者主觀評估。 |
 
-> **後續**：現匯出按鈕已修復（見 [WP-9 progress.md](../exec-plan/active/wp-9-integration/progress.md) 疊層 bug 修正），可多跑幾輪 → 匯出 JSON → 計中位數回填此表，並補 `rawInputEnabled` 與手感簽核。
+> **後續**：現匯出按鈕已修復（見 [WP-9 progress.md](../exec-plan/completed/stage1/wp-9-integration/progress.md) 疊層 bug 修正），可多跑幾輪 → 匯出 JSON → 計中位數回填此表，並補 `rawInputEnabled` 與手感簽核。
 
 > 手動項不阻塞自動閘的綠燈判定;屬階段 A 交付前研究者驗收步驟，於 T5 exit gate 確認。**現況：兩項均為部分驗證，待研究者補完整簽核。**
 

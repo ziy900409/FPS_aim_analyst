@@ -1,6 +1,6 @@
-# 執行計畫索引 — FPS 反向急停瞄準訓練器（階段 A）
+# 執行計畫索引 — FPS 反向急停瞄準訓練器（階段 A + B）
 
-> 頂層索引。把 [`../PLAN.md`](../PLAN.md) 的 10 個工作包（WP-0 ~ WP-9）展開成**每 WP 一個自足子資料夾**的可執行實作計畫。
+> 頂層索引。把 [`../PLAN.md`](../PLAN.md) 的工作包（階段 A：WP-0 ~ WP-9；階段 B：WP-10 ~ WP-18）展開成**每 WP 一個自足子資料夾**的可執行實作計畫。
 > 規格書：[`../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md`](../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) v1.0 · 專有名詞：[`../../CONTEXT.md`](../../CONTEXT.md)
 > 格式參照 `performance_analysis` repo 的 `issue-26` exec-plan（每 task 一個自足檔案，單 task 執行時 context 用量 < 40%）。
 
@@ -10,7 +10,7 @@
 | **交付範圍** | 階段 A：F1–F4 + 1 個完整 counter-strafe drill（簡化「立即停止」急停） |
 | **技術棧** | Three.js `WebGPURenderer`（`three/webgpu`）+ TypeScript + Vite；UI = 純 TS + DOM overlay；測試 = Vitest + Playwright |
 | **估時** | 25–39 dev-days（≈5–8 週，含 WebGPU 設定與學習爬升） |
-| **狀態** | ✅ **階段 A 交付**（WP-0 ~ WP-9 全部完成，**M4 達成 2026-07-03**；自動閘全綠，手動遊玩手感項待研究者回填） |
+| **狀態** | ✅ **階段 A 交付**（WP-0 ~ WP-9 全部完成，**M4 達成 2026-07-03**；已移入 `completed/stage1/`）· 🟡 **階段 B 進行中**（WP-10~18 於 `active/stage2/`，WP-10 T0 ✅ 2026-07-05） |
 
 ---
 
@@ -33,19 +33,34 @@
 > 每個 WP = 一個自足子資料夾，內含 `README.md`（tech spec）、`task-checklist.md`、`progress.md`、`T0-entry-gate` → `Tn` → `T-exit-gate`。
 > ⬜ 待建立 · 🟡 進行中 · ✅ 完成
 
+**階段 A（`completed/stage1/`，✅ 已交付 M4 2026-07-03）**
+
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
-| **WP-0** | [`active/wp-0-environment-setup/`](active/wp-0-environment-setup/README.md) | 空場景 + cross-origin isolation + backend 偵測 | → M1 | — | 3–5 | ✅ 完成（2026-06-30） |
-| **WP-1** | [`active/wp-1-fps-pointerlock/`](active/wp-1-fps-pointerlock/README.md) | FPS 控制 + Pointer Lock + 原始輸入 | → M1 | WP-0 | 2–3 | ✅ 完成（2026-06-30） |
-| **WP-2** | [`active/wp-2-dual-loop-skeleton/`](active/wp-2-dual-loop-skeleton/README.md) | `SharedState` + 雙迴圈骨架 + 決定性驗證 ★脊椎 | **M1 ✅** | WP-0, WP-1 | 3–4 | ✅ 完成（2026-07-01）|
-| **WP-3** | [`active/wp-3-input-sampler/`](active/wp-3-input-sampler/README.md) | `InputSampler`（F1）高解析度時間戳採集 | — | WP-2 | 2–3 | ✅ 完成（2026-07-01） |
-| **WP-4** | [`active/wp-4-target-tvisible/`](active/wp-4-target-tvisible/README.md) | `TargetManager` + `t_visible`（F2）左右交替 | — | WP-1, WP-2 | 2–3 | ✅ 完成（2026-07-02） |
-| **WP-5** | [`active/wp-5-hit-counterstrafe/`](active/wp-5-hit-counterstrafe/README.md) | `HitDetector` + 橫移 + 簡化急停（F3） | **M2 ✅** | WP-3, WP-4 | 2–3 | ✅ 完成（2026-07-02） |
-| **WP-6** | [`active/wp-6-drill-system/`](active/wp-6-drill-system/README.md) | `DrillConfig` 資料驅動 drill（F4） | — | WP-4, WP-5 | 2–4 | ✅ 完成（2026-07-02） |
-| **WP-7** | [`active/wp-7-data-recorder/`](active/wp-7-data-recorder/README.md) | `DataRecorder` ring buffer + JSON/CSV 匯出（[`schema`](../operational/schema.md)） | **M3 ✅** | WP-2, WP-4, WP-5 | 3–5 | ✅ 完成（2026-07-03） |
-| **WP-8** | [`active/wp-8-metrics-hud/`](active/wp-8-metrics-hud/README.md) | `MetricsDashboard` + 即時 HUD | — | WP-5, WP-6, WP-7 | 3–4 | ✅ 完成（2026-07-03） |
-| **WP-9** | [`active/wp-9-integration/`](active/wp-9-integration/README.md) | 端到端整合 + 計時效度 + 決定性回歸 | **M4 ✅** | 全部 | 3–5 | ✅ 完成（2026-07-03） |
-| **Stage 2 / WP-10~18** | [`active/stage2/`](active/stage2/README.md) | CS2 後座力系統 + 真急停物理 + schema v2 + 壓槍指標 | **M5–M8** | M4 ✅ | 14.5–21 | 🟡 採納 / WP-10 T0 ✅（2026-07-05） |
+| **WP-0** | [`completed/stage1/wp-0-environment-setup/`](completed/stage1/wp-0-environment-setup/README.md) | 空場景 + cross-origin isolation + backend 偵測 | → M1 | — | 3–5 | ✅ 完成（2026-06-30） |
+| **WP-1** | [`completed/stage1/wp-1-fps-pointerlock/`](completed/stage1/wp-1-fps-pointerlock/README.md) | FPS 控制 + Pointer Lock + 原始輸入 | → M1 | WP-0 | 2–3 | ✅ 完成（2026-06-30） |
+| **WP-2** | [`completed/stage1/wp-2-dual-loop-skeleton/`](completed/stage1/wp-2-dual-loop-skeleton/README.md) | `SharedState` + 雙迴圈骨架 + 決定性驗證 ★脊椎 | **M1 ✅** | WP-0, WP-1 | 3–4 | ✅ 完成（2026-07-01）|
+| **WP-3** | [`completed/stage1/wp-3-input-sampler/`](completed/stage1/wp-3-input-sampler/README.md) | `InputSampler`（F1）高解析度時間戳採集 | — | WP-2 | 2–3 | ✅ 完成（2026-07-01） |
+| **WP-4** | [`completed/stage1/wp-4-target-tvisible/`](completed/stage1/wp-4-target-tvisible/README.md) | `TargetManager` + `t_visible`（F2）左右交替 | — | WP-1, WP-2 | 2–3 | ✅ 完成（2026-07-02） |
+| **WP-5** | [`completed/stage1/wp-5-hit-counterstrafe/`](completed/stage1/wp-5-hit-counterstrafe/README.md) | `HitDetector` + 橫移 + 簡化急停（F3） | **M2 ✅** | WP-3, WP-4 | 2–3 | ✅ 完成（2026-07-02） |
+| **WP-6** | [`completed/stage1/wp-6-drill-system/`](completed/stage1/wp-6-drill-system/README.md) | `DrillConfig` 資料驅動 drill（F4） | — | WP-4, WP-5 | 2–4 | ✅ 完成（2026-07-02） |
+| **WP-7** | [`completed/stage1/wp-7-data-recorder/`](completed/stage1/wp-7-data-recorder/README.md) | `DataRecorder` ring buffer + JSON/CSV 匯出（[`schema`](../operational/schema.md)） | **M3 ✅** | WP-2, WP-4, WP-5 | 3–5 | ✅ 完成（2026-07-03） |
+| **WP-8** | [`completed/stage1/wp-8-metrics-hud/`](completed/stage1/wp-8-metrics-hud/README.md) | `MetricsDashboard` + 即時 HUD | — | WP-5, WP-6, WP-7 | 3–4 | ✅ 完成（2026-07-03） |
+| **WP-9** | [`completed/stage1/wp-9-integration/`](completed/stage1/wp-9-integration/README.md) | 端到端整合 + 計時效度 + 決定性回歸 | **M4 ✅** | 全部 | 3–5 | ✅ 完成（2026-07-03） |
+
+**階段 B（`active/stage2/`，🟡 進行中；tech spec：[`active/stage2/README.md`](active/stage2/README.md)）**
+
+| WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
+|---|---|---|---|---|---|---|
+| **WP-10** | [`active/stage2/wp-10-recoil-core/`](active/stage2/wp-10-recoil-core/README.md) | 後座力數學核心（彈道表 + punch 動力學 + inaccuracy）+ golden tests | **M5** | —（可立即開跑） | 2–3 | 🟡 T0 ✅（2026-07-05） |
+| **WP-11** | [`active/stage2/wp-11-weapon-fire/`](active/stage2/wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up + cycletime 產彈 + 彈匣 | — | WP-10 | 2–3 | ⬜ |
+| **WP-12** | [`active/stage2/wp-12-input-seams/`](active/stage2/wp-12-input-seams/README.md) | CS2 感度換算（A4）+ 射線方向注入（A3） | — | — | 1–1.5 | ⬜ |
+| **WP-13** | [`active/stage2/wp-13-sim-camera-integration/`](active/stage2/wp-13-sim-camera-integration/README.md) | recoil 進 simStep（64Hz 子節奏）+ 相機/彈道合成 + 彈孔 | **M6** | WP-10, 11, 12 | 2–3 | ⬜ |
+| **WP-14** | [`active/stage2/wp-14-movement-physics/`](active/stage2/wp-14-movement-physics/README.md) | friction/accelerate integrator + velocity gate（~88 u/s）+ 殘速指標連續化 | — | —（介面不變，可並行） | 2–3 | ⬜ |
+| **WP-15** | [`active/stage2/wp-15-calibration/`](active/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 | **M7** | WP-13, 14 | 1.5–2 | ⬜ |
+| **WP-16** | [`active/stage2/wp-16-metrics-export-v2/`](active/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標（補償 vs 理想路徑）+ 結果頁對照 | — | WP-13 | 2–3 | ⬜ |
+| **WP-17** | [`active/stage2/wp-17-integration/`](active/stage2/wp-17-integration/README.md) | E2E 全鏈路 + 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ⬜ |
+| **WP-18** | [`active/stage2/wp-18-f5-subtick/`](active/stage2/wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | 門控：OQ-S2-5 + WP-17 | +2–3.5 | ⏸ 門控 |
 
 ---
 
@@ -67,13 +82,22 @@
 ## 4. 跨階段相依圖（關鍵路徑，來自 PLAN §6）
 
 ```
+階段 A（completed/stage1/）
 WP-0 → WP-1 → WP-2 →┬→ WP-3 →┐
-                     ├→ WP-4 →┼→ WP-5 → WP-6 → WP-7 → WP-8 → WP-9
+                     ├→ WP-4 →┼→ WP-5 → WP-6 → WP-7 → WP-8 → WP-9 ─── M4 ✅
                      └────────┘
+
+階段 B（active/stage2/；上游門檻 = M4 ✅）
+WP-10 ──┬→ WP-11 ──┐
+        │          ├→ WP-13(M6) ──┬→ WP-16 ──┐
+WP-12 ──┴──────────┘               │          ├→ WP-17(M8)
+WP-14 ─────────────────────────────┴→ WP-15(M7)┘
+                                          WP-18(F5，⏸ 門控)
 ```
 
-- WP-2（脊椎，M1）是門控閘：完成且決定性驗證通過前，不展開 WP-3 之後。
+- WP-2（脊椎，M1）是階段 A 的門控閘：完成且決定性驗證通過前，不展開 WP-3 之後。
 - WP-3 / WP-4 在 WP-2 之後可並行。
+- 階段 B 可並行三線開跑：WP-10、WP-12、WP-14 互不相依；**M5 未過不進 WP-13**（先鎖數學再接線）。詳見 [`active/stage2/README.md §5`](active/stage2/README.md)。
 
 ---
 
@@ -92,15 +116,20 @@ WP-0 → WP-1 → WP-2 →┬→ WP-3 →┐
 
 ```
 docs/exec-plan/
-├── README.md                       ← 本檔（頂層索引）
-├── active/                         ← 進行中的 WP
-│   └── wp-0-environment-setup/     ← 本批產出（格式模板）
-│       ├── README.md               ← WP tech spec
-│       ├── task-checklist.md       ← master task index
-│       ├── progress.md             ← running log
-│       ├── T0-entry-gate.md
-│       ├── T1..Tn.md
-│       └── T-exit-gate.md
-├── completed/                      ← WP 交付後移入
-└── superseded/                     ← 被取代的計畫
+├── README.md                          ← 本檔（頂層索引）
+├── DECISIONS.md                       ← 全域決策 / 跨文件矛盾帳本
+├── active/                            ← 進行中的 WP
+│   └── stage2/                        ← 階段 B（WP-10~18）
+│       ├── README.md                  ← stage2 頂層索引 + tech spec
+│       └── wp-N-*/                    ← 每 WP 一自足子資料夾
+│           ├── README.md              ← WP tech spec
+│           ├── task-checklist.md      ← master task index
+│           ├── progress.md            ← running log
+│           ├── T0-entry-gate.md
+│           ├── T1..Tn.md
+│           └── T-exit-gate.md
+├── completed/                         ← WP 交付後移入
+│   └── stage1/                        ← 階段 A（WP-0~9，✅ 交付；格式模板）
+│       └── wp-N-*/
+└── superseded/                        ← 被取代的計畫
 ```

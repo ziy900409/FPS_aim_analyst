@@ -48,7 +48,7 @@ COOP/COEP 生效使 `crossOriginIsolated === true`，把 `performance.now()` 解
 
 分布 sanity 是**量級檢查、非單值硬閾**（§14，受試者內相對值）。系統性偏離（如整體 <50 ms 或 >1 s）即示警去查計時管線——`reaction-time.test.ts` 以 `withinReactionBand` 把此判準寫成可執行邏輯。
 
-> **手動步驟**：實玩一段 counter-strafe drill → 匯出 → 取 `counterReactionMs` 中位數，記錄於 [WP-9 progress.md](../exec-plan/active/wp-9-integration/progress.md)。此屬 OQ-9.2/9.4 的手動驗收補項（自動化難以合成真實運動-知覺反應）。
+> **手動步驟**：實玩一段 counter-strafe drill → 匯出 → 取 `counterReactionMs` 中位數，記錄於 [WP-9 progress.md](../exec-plan/completed/stage1/wp-9-integration/progress.md)。此屬 OQ-9.2/9.4 的手動驗收補項（自動化難以合成真實運動-知覺反應）。
 
 ---
 

@@ -211,5 +211,5 @@ fire,18,target-1,,,true,true,0,0.5,head
 
 ## Related Execution Plan
 
-- WP-7 spec: [`docs/exec-plan/active/wp-7-data-recorder/README.md`](../exec-plan/active/wp-7-data-recorder/README.md)
-- T5 task: [`docs/exec-plan/active/wp-7-data-recorder/T5-schema-doc.md`](../exec-plan/active/wp-7-data-recorder/T5-schema-doc.md)
+- WP-7 spec: [`docs/exec-plan/completed/stage1/wp-7-data-recorder/README.md`](../exec-plan/completed/stage1/wp-7-data-recorder/README.md)
+- T5 task: [`docs/exec-plan/completed/stage1/wp-7-data-recorder/T5-schema-doc.md`](../exec-plan/completed/stage1/wp-7-data-recorder/T5-schema-doc.md)
