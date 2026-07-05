@@ -9,7 +9,7 @@
 | **上游門檻** | 階段 A **M4 ✅(2026-07-03)**;稽核結論**無 BLOCKER**(A1 固定 tick PASS) |
 | **技術棧** | 沿用階段 A(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright) |
 | **估時** | 14.5–21 dev-days(≈3–4 週);WP-18(F5 移動目標)門控中、另計 +2–3.5 |
-| **狀態** | ⬜ 規劃完成,待採納(採納時執行 §9 文件對帳) |
+| **狀態** | 🟡 已採納,執行中(WP-10 T0 ✅ 2026-07-05) |
 
 ---
 
@@ -287,22 +287,22 @@ WP-14(movement 物理)───────────────────�
 
 | # | 問題 | 建議(計畫預設) | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| OQ-S2-1 | recoil tick 節奏:64Hz 子節奏 vs dt=1/128 代入 vs SIM_HZ 降 64 | **64Hz 子節奏**(§2.4,ADR-3 意圖) | 使用者 | WP-10 T0 | WP-10 golden 定義、WP-13 T1 佈線 |
+| OQ-S2-1 ✅ | recoil tick 節奏:64Hz 子節奏 vs dt=1/128 代入 vs SIM_HZ 降 64 | **決議:64Hz 子節奏**(§2.4,ADR-3 意圖;2026-07-05 WP-10 T0) | 使用者 | 已拍板 | WP-10 golden 定義、WP-13 T1 佈線已鎖定 |
 | OQ-S2-2 | 校準容差:`cl_showpos` 逐 tick ±? u/s;pattern 逐彈 ±?° | 起點:速度 ±1 u/s、彈著 ±0.05°,首輪跑完再校 | 研究者 | WP-15 T0 | WP-15 DoD 無法客觀判定 |
 | OQ-S2-3 | 感度語意變更後,階段 A 已匯出資料的可比性標注 | meta 加 `sensitivityModel` + `schemaVersion`(FR-B14),舊資料視為不同 model | 研究者 | WP-12 T1 前 | WP-16 schema、跨階段分析 |
 | OQ-S2-4 | `view_recoil_tracking`(視覺跟隨比例)CS2 對應值 | 先做開關 + 可調常數(僅視覺,不影響彈著/資料) | 研究計畫(社群求證) | 不阻塞 | WP-13 T2 視覺預設 |
 | OQ-S2-5 | F5「移動 + counter-strafe 能力混淆」研究設計(附錄 F/GD-1 遺留) | 未決前 WP-18 不展開 | 研究者 | WP-18 entry | WP-18 全部 |
-| OQ-S2-6 | 彈匣盡行為:停火(無 reload)是否可接受 | 停火,drill 一 peek ≤ 一匣 | 使用者 | WP-11 T0 | WP-11 T3 DoD |
+| OQ-S2-6 ✅ | 彈匣盡行為:停火(無 reload)是否可接受 | **決議:停火,drill 一 peek ≤ 一匣**(2026-07-05 WP-10 T0) | 使用者 | 已拍板 | WP-11 T3 DoD 已鎖定 |
 
 ---
 
 ## 9. 文件對帳清單(採納本計畫時執行;跨文件決策入 DECISIONS.md)
 
-- [ ] [DECISIONS.md](../../DECISIONS.md) 新增 **GD-5**:stage2 範圍採納(規格 §1.3 階段 B + 後座力系統新增)、tick 64Hz 子節奏、感度語意變更、WP-14 決定性 baseline 預期重錄、sim 禁 `Math.random()`、移動模型抽象留接口(`MovementProfile`;Valorant 不入 stage2)。
+- [x] [DECISIONS.md](../../DECISIONS.md) 新增 **GD-5**:stage2 範圍採納(規格 §1.3 階段 B + 後座力系統新增)、tick 64Hz 子節奏、感度語意變更、WP-14 決定性 baseline 預期重錄、sim 禁 `Math.random()`、移動模型抽象留接口(`MovementProfile`;Valorant 不入 stage2)。(2026-07-05 WP-10 T0)
 - [ ] 規格書升 **v1.2**:§1.3 補「CS2 後座力系統」條目;附錄 C 標 schema v2 欄位;附錄 E 增「驗收清單(階段 B)」節。
-- [ ] [exec-plan/README.md](../../README.md) §2 加 stage2 索引列(連到本檔);§3 加 M5–M8。
+- [x] [exec-plan/README.md](../../README.md) §2 加 stage2 索引列(連到本檔);§3 加 M5–M8。(2026-07-05 WP-10 T0)
 - [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語:aimPunch / rawPunch(×2)/ recoil index / HybridDecay / cycletime / inaccuracy(三成分)/ WeaponConfig / 理想壓槍路徑(−aimPunch×2 鏡像)/ 壓槍補償誤差 / MovementProfile(meta `movementModel` 斷代)。
-- [ ] [CLAUDE.md](../../../../CLAUDE.md) §4 硬約束追加:sim/recoil 禁 `Math.random()`(seeded RNG 注入);recoil 衰減以 1/64s 步長定義。
+- [x] [CLAUDE.md](../../../../CLAUDE.md) §4 硬約束追加:sim/recoil 禁 `Math.random()`(seeded RNG 注入);recoil 衰減以 1/64s 步長定義。(2026-07-05 WP-10 T0)
 - [ ] 稽核報告全文若需留檔,另存 `docs/operational/`(本檔 §0.1 為摘要 + 行級連結)。
 
 ---

@@ -28,7 +28,7 @@
 
 ---
 
-## 2. 階段資料夾索引（WP-0 ~ WP-9）
+## 2. 階段資料夾索引（WP-0 ~ WP-18）
 
 > 每個 WP = 一個自足子資料夾，內含 `README.md`（tech spec）、`task-checklist.md`、`progress.md`、`T0-entry-gate` → `Tn` → `T-exit-gate`。
 > ⬜ 待建立 · 🟡 進行中 · ✅ 完成
@@ -45,6 +45,7 @@
 | **WP-7** | [`active/wp-7-data-recorder/`](active/wp-7-data-recorder/README.md) | `DataRecorder` ring buffer + JSON/CSV 匯出（[`schema`](../operational/schema.md)） | **M3 ✅** | WP-2, WP-4, WP-5 | 3–5 | ✅ 完成（2026-07-03） |
 | **WP-8** | [`active/wp-8-metrics-hud/`](active/wp-8-metrics-hud/README.md) | `MetricsDashboard` + 即時 HUD | — | WP-5, WP-6, WP-7 | 3–4 | ✅ 完成（2026-07-03） |
 | **WP-9** | [`active/wp-9-integration/`](active/wp-9-integration/README.md) | 端到端整合 + 計時效度 + 決定性回歸 | **M4 ✅** | 全部 | 3–5 | ✅ 完成（2026-07-03） |
+| **Stage 2 / WP-10~18** | [`active/stage2/`](active/stage2/README.md) | CS2 後座力系統 + 真急停物理 + schema v2 + 壓槍指標 | **M5–M8** | M4 ✅ | 14.5–21 | 🟡 採納 / WP-10 T0 ✅（2026-07-05） |
 
 ---
 
@@ -56,6 +57,10 @@
 | **M2 ✅（2026-07-02）** | 場景中可橫移、急停、開火、命中 | WP-5 | 核心玩法成立，**已達成 → WP-6（drill 編排）/ WP-7（記錄）可展開** |
 | **M3 ✅（2026-07-03）** | 完整 drill 能端到端匯出資料 | WP-7 | 資料層（F1/F2）端到端綠燈，**已達成 → 可開始 pilot / WP-8 metrics 可展開**（先讀 GD-4 crosshair 缺口） |
 | **M4 ✅（2026-07-03）** | 階段 A 全部驗收清單通過（附錄 E 10 項硬閘全綠；自動閘 `test:ci` exit 0） | WP-9 | **階段 A 交付達成**（手動遊玩手感項為研究者實機回填步驟，不阻塞自動閘） |
+| **M5 ⬜** | recoil-core golden tests 全綠:seed 223 前 8 筆彈道表、10 發 punch 向量、前 4 發抑制係數、同 seed 決定性 | WP-10 | 數學核心正確性釘死;之後整合問題可歸因到接線而非公式 |
+| **M6 ⬜** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效 | WP-13 | 壓槍玩法成立,核心手感可實測 |
+| **M7 ⬜** | `cl_showpos` 曲線 + pattern 圖比對通過;velocity gate 連續模型上線 | WP-14+15 | counter-strafe × 壓槍研究效度成立 |
+| **M8 ⬜** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B 全項通過 | WP-17 | stage2 交付 |
 
 ---
 

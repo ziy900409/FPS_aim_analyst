@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(決策拍板 + 對帳,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
+| ✅ | **T0** entry gate(決策拍板 + 對帳,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ⬜ | **T1** ran1 RNG + 彈道表 + golden | [T1-ran1-recoil-table.md](T1-ran1-recoil-table.md) | T0 | Med |
 | ⬜ | **T2** punch 動力學 + 10 發 golden 向量 | [T2-punch-dynamics.md](T2-punch-dynamics.md) | T1 | High |
 | ⬜ | **T3** spread / inaccuracy 三成分 | [T3-spread-inaccuracy.md](T3-spread-inaccuracy.md) | T1 | Low |
