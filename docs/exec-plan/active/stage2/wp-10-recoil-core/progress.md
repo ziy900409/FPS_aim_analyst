@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 ✅,T4 ✅,下一步 T-exit)
+## Status: ✅ 完成(T0–T4 ✅,T-exit ✅ **M5 golden 全綠 2026-07-05**)
 
 | Task | 狀態 |
 |---|---|
@@ -14,7 +14,7 @@
 | T2 punch 動力學 | ✅ |
 | T3 spread/inaccuracy | ✅ |
 | T4 2D 檢查頁 | ✅ |
-| T-exit(M5) | ⬜ |
+| T-exit(M5) | ✅ |
 
 ---
 
@@ -27,7 +27,29 @@
 
 ---
 
+## Outcomes(M5 交付總結)
+
+**交付了什麼**:`src/recoil/` 純數學 TS 模組(零 three/DOM 相依)——`rng.ts`(ran1)、`recoilTable.ts`(64 筆彈道表)、`punch.ts`(RecoilState + recoilTick + recoilOnFire)、`spread.ts`(sampleSpread 三成分)、`patternViewer.ts`(dev-only #pattern);golden fixtures `tests/golden/recoil/ak47-table.json`(64 筆)+ `ak47-10shot-punch.json`(58 tick + 10 shotsLog,final rawPunch×2 = −10.18°/−1.56°)。
+
+**M5 門控證據(2026-07-05)**:全套 `vitest run` → 30 files / 208 tests passed(exit 0);`src/recoil` → 4 files / 23 tests(≥ 12 門檻);`typecheck` pass;`Math.random` 於 `src/recoil` grep = 0;所有 `recoilTick` 呼叫點 dtSec 恆 1/64(非 1/64 拋錯);兩份 golden fixture 在 repo;T4 形狀 sanity 截圖(AK 直升→之字)已在下方 Log。
+
+**帶著走的決定(給 WP-11/12/13)**:
+- 校準集中在 `punch.ts` 兩個常數 `GOLDEN_PITCH_KICK_SCALE` / `GOLDEN_YAW_KICK_SCALE`(源只給最終向量);WP-15 若拿到更細逐 tick 資料只需替換這兩常數 + 更新 golden。
+- 模組輸出一律 degree(pitch 正值朝下);`degToRad` 與符號翻轉留給 WP-13 單點 adapter,本 WP 不做。
+- `recoilTick` signature 不帶 weapon → recovery time 由 `recoilOnFire` 存入 `RecoilState.inaccuracyRecoveryTimeSec`;WP-13 佈線需先 `recoilOnFire` 再靠 tick recovery。
+- `recoilResetDelaySec = cycletime × 1.1` 由 `recoilOnFire` 從 weapon-like 設定,保留 WP-11 `WeaponConfig` 接線空間。
+
+**Surprises**:見下方兩則(T2 源只有最終向量、T1 PowerShell npx 政策擋);校準常數為已知取捨,非 BLOCKER。
+
+**下一步**:M5 已過 → **WP-13 可開**;WP-11/12/14 不受此門限制,可並行開跑。
+
 ## Decision Log
+
+### 2026-07-05 — T-exit(M5)gate decisions
+- **Decision**:以既有 T1–T4 交付直接封 M5,不新增 `src/` 程式碼;T-exit 為驗證 + 文件對帳切片。golden 全綠即宣告數學核心鎖定,此後 WP-13 偏差歸因於接線。
+- **Decision**:文件對帳落地——規格書升 v1.2(§1.3 補「CS2 後座力系統」條目)、[CONTEXT.md](../../../../../CONTEXT.md) 新增 §F CS2 後座力術語表(ran1 / 彈道表 / aimPunch / rawPunch×2 / punch 動力學 / HybridDecay / recoil index / cycletime / inaccuracy 三成分 / 理想壓槍路徑)、stage2 README 與 exec-plan README 的 WP-10/M5 翻 ✅ 標日期。
+- **Code review(五軸)**:correctness——validate 齊全、無 NaN 路徑(Infinity init 在 exp 下退化為 1/0 安全)、決定性測試 bit-for-bit;readability——命名對齊 CONTEXT、單位/符號註記清楚;architecture——零 three/DOM 相依守住 WP 邊界、校準常數單點化;security——純數學無外部輸入;performance——無熱路徑配置。唯一取捨 = `punch.ts` 校準 magic constants(已文件化為 Surprise,可追、可替換),非 blocker。
+- **Evidence**:`.\node_modules\.bin\vitest.cmd run`(全套)→ 30 files / 208 tests passed;`run src/recoil` → 4 files / 23 tests;`npm.cmd run typecheck` → pass;`rg "Math\.random" src/recoil` → no matches;`recoilTick(` 呼叫點抽查全為 `RECOIL_DT_SEC`(除 punch.test.ts 的 1/128 反例斷言)。
 
 ### 2026-07-05 — T4 dev-only pattern viewer decisions
 - **Decision**:新增 `src/recoil/patternViewer.ts`,只透過 `generateRecoilTable` / `createRecoilState` / `recoilTick` / `recoilOnFire` / `sampleSpread` 模擬 30 發,並在 2D canvas 繪 `-aimPunch×2` 逐發點、連線、spread radius 圈與 seeded spread cloud。
@@ -73,11 +95,16 @@
 
 ## Open Questions
 
-- 無 T4 阻塞項。T-exit 可開始 M5 門控。
+- 無。M5 已過(2026-07-05),WP-10 封板。校準常數精度若有更權威來源,於 WP-15 校準時回頭替換 `punch.ts` 兩常數 + 更新 golden。
 
 ---
 
 ## Log
+
+### 2026-07-05 — T-exit(M5)completed:數學核心鎖定
+- 驗證:`.\node_modules\.bin\vitest.cmd run` → 30 files / 208 tests passed(exit 0);`run src/recoil` → 4 files / 23 tests;`npm.cmd run typecheck` → pass;`rg "Math\.random" src/recoil` → no matches;golden fixtures `ak47-table.json`(64 筆)/ `ak47-10shot-punch.json`(58 tick + 10 shots,final rawPunch×2 = −10.18°/−1.56°)在 repo。
+- 文件對帳:規格書 → v1.2(§1.3「CS2 後座力系統」條目);[CONTEXT.md](../../../../../CONTEXT.md) → 新增 §F 後座力術語表;[stage2 README](../README.md) §3 WP-10 + M5 翻 ✅ 標 2026-07-05;[exec-plan README](../../../README.md) §2/§3 同步;WP-10 [README](README.md) / [task-checklist](task-checklist.md) / [T-exit-gate](T-exit-gate.md) 狀態全翻 ✅。
+- 里程碑:**M5 達成** → WP-13 解鎖(比照 M1 脊椎:先鎖數學再接線);WP-11/12/14 不受此門限制。
 
 ### 2026-07-05 — T4 dev-only pattern viewer completed
 - 新增 [patternViewer.ts](../../../../../src/recoil/patternViewer.ts):`#pattern` 2D canvas 檢查頁,含 AK/M4A4/M4A1-S preset、seed/magnitude/variance/angleVariance/cycletime 欄位、30 發 recoil 模擬、逐發點/連線/發數標記、spread radius 圈與 seeded spread cloud。

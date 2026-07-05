@@ -89,3 +89,22 @@
 | `sv_accelerate` | 5.6 | 加速度 |
 | `sv_stopspeed` | 75 | 摩擦下限速度 |
 | 精準度門檻 | ~max 的 34%（步槍 ~88 u/s） | 速度 gate |
+
+---
+
+## F. CS2 後座力系統術語（階段 B / WP-10；數學核心 `src/recoil/`）
+
+> 後座力數學核心於 WP-10 移植為純數學 TS 模組（零 three/DOM 相依），M5 golden 全綠 2026-07-05。模組輸出一律 **degree**（Source 慣例：pitch 正值朝下）；`degToRad` 與符號翻轉由 WP-13 接線處一次完成。
+
+| 術語 | 定義 |
+|---|---|
+| **彈道表（recoil table）** | 以武器 `seed` 決定性生成的 64 筆 `(angleDeg, magnitude)` 序列（[recoilTable.ts](src/recoil/recoilTable.ts) `generateRecoilTable`）。ran1 RNG（IA=16807/IM=2147483647）+ full-auto 相鄰彈 Lerp 平滑（0.55）+ 前 4 發抑制係數（0.75→1.0）。AK-47（seed 223）前 8 筆逐位鎖定於 golden。 |
+| **ran1** | Numerical Recipes 可攜式 seeded PRNG（[rng.ts](src/recoil/rng.ts) `createRan1`），Valve `CUniformRandomStream` 慣用序列的移植。輸出 `Rng = () => number` ∈ [0,1)；**sim/recoil 禁 `Math.random()`**（GD-5），所有隨機性注入此 stream 且 seed 寫入 metadata。 |
+| **aimPunch** | 命中/開火造成的準心角度偏移狀態（pitch/yaw，degree）。每 recoil tick 以 HybridDecay 衰減，開火時由角速度 leapfrog 積分累積。 |
+| **rawPunch×2（`aimPunch × 2`）** | 實際**彈道方向**採用的 punch 量 = `aimPunch` 的兩倍（Source 慣例：視覺 punch 與彈道 punch 分離）。AK 10 發後 `rawPunch×2` = pitch −10.18° / yaw −1.56°（golden，±0.01°）。視覺渲染角度用 `viewPunch`（另存、render 端內插）。 |
+| **punch 動力學** | [punch.ts](src/recoil/punch.ts) 的 `RecoilState` + `recoilTick`（固定 1/64s）+ `recoilOnFire`。積分順序：先 HybridDecay → leapfrog 半步 → 角速度 `exp(−4.5·dt)` 衰減 → leapfrog 半步；對齊 CS2「先 decay 再 kick」。`recoilTick` 對非 1/64 dt 拋錯（硬約束）。 |
+| **HybridDecay** | punch 每 tick 的混合衰減：指數項 `exp(−8·dt)` × 線性項（每 tick 減 `18·dt`，過零即歸零）。以 1/64s 步長定義，禁用變動 dt 代入。 |
+| **recoil index** | 已連續開火發數計數，決定查彈道表第幾筆。停火超過 `cycletime × 1.1` 後以 `exp(−dt·ln10·2)` 衰減歸零；開槍時遞增。 |
+| **cycletime** | 武器連射週期（秒）。AK-47 = 0.1s。決定產彈節奏（WP-11）與 recoil index 衰減延遲門檻（`× 1.1`）。 |
+| **inaccuracy 三成分** | 擴散總量 = 站立基礎值（stand）+ 每發累積 `inaccuracyFire`（以 `exp(−dt·ln10/recoveryTime)` 回復）+ 移動附加 `(v/vmax)^0.25 × move`（[spread.ts](src/recoil/spread.ts) `sampleSpread`）。取樣 θ 均勻、半徑 = U(0,1)×inaccuracy（中心偏置），每發固定 2 次注入式 RNG 取樣（θ 先、radius 後）。 |
+| **理想壓槍路徑（ideal recoil-compensation path）** | 完美抵銷 `rawPunch×2` 累積偏移所需的反向滑鼠軌跡；結果頁以玩家實際補償 vs 此理想路徑對照量測壓槍表現（WP-16）。彈道檢查頁（[patternViewer.ts](src/recoil/patternViewer.ts)，dev-only `#pattern`）以 `-aimPunch×2` 逐發點與連線人工核對 pattern 形狀。 |
