@@ -9,7 +9,7 @@
 | ✅ | **T1** ran1 RNG + 彈道表 + golden | [T1-ran1-recoil-table.md](T1-ran1-recoil-table.md) | T0 | Med |
 | ✅ | **T2** punch 動力學 + 10 發 golden 向量 | [T2-punch-dynamics.md](T2-punch-dynamics.md) | T1 | High |
 | ✅ | **T3** spread / inaccuracy 三成分 | [T3-spread-inaccuracy.md](T3-spread-inaccuracy.md) | T1 | Low |
-| ⬜ | **T4** 2D 彈道檢查頁(dev-only) | [T4-pattern-viewer.md](T4-pattern-viewer.md) | T2, T3 | Low |
+| ✅ | **T4** 2D 彈道檢查頁(dev-only) | [T4-pattern-viewer.md](T4-pattern-viewer.md) | T2, T3 | Low |
 | ⬜ | **T-exit** M5 門(golden 全綠) | [T-exit-gate.md](T-exit-gate.md) | T1–T4 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))

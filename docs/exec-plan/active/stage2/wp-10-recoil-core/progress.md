@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 ✅,下一步 T4)
+## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 ✅,T4 ✅,下一步 T-exit)
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 ran1 + 彈道表 | ✅ |
 | T2 punch 動力學 | ✅ |
 | T3 spread/inaccuracy | ✅ |
-| T4 2D 檢查頁 | ⬜ |
+| T4 2D 檢查頁 | ✅ |
 | T-exit(M5) | ⬜ |
 
 ---
@@ -28,6 +28,12 @@
 ---
 
 ## Decision Log
+
+### 2026-07-05 — T4 dev-only pattern viewer decisions
+- **Decision**:新增 `src/recoil/patternViewer.ts`,只透過 `generateRecoilTable` / `createRecoilState` / `recoilTick` / `recoilOnFire` / `sampleSpread` 模擬 30 發,並在 2D canvas 繪 `-aimPunch×2` 逐發點、連線、spread radius 圈與 seeded spread cloud。
+- **Decision**:`src/main.ts` 以 `import.meta.env.DEV && window.location.hash === '#pattern'` 動態 import viewer;production build 經 `rg "patternViewer|Recoil Pattern|mountPatternViewer" dist` 確認無命中。
+- **Alternatives Considered**:未把 viewer 接進 sim/render loop 或新增 production route,避免把 dev 檢查工具變成 runtime 功能;未複寫 spread 總量公式,改用 `sampleSpread(..., sequenceRng([0,1]))` 取最大半徑,保持只消費公開 API。
+- **Evidence**:`.\node_modules\.bin\vitest.cmd run src\recoil` → 4 files / 23 tests passed;`npm.cmd run typecheck` → pass;`npm.cmd run build` → pass;`npm.cmd test` → 30 files / 208 tests passed;Edge Playwright `/#pattern` → mounted true,canvas 1280x727,nonWhiteSamples 11667,status `AK climb PASS`;AK 截圖 [artifacts/t4-pattern-ak.png](artifacts/t4-pattern-ak.png);M4A4 preset canvas hash 2196497058 vs AK 1892642943,形狀不同,截圖 [artifacts/t4-pattern-m4a4.png](artifacts/t4-pattern-m4a4.png);`graphify update .` → rebuilt 651 nodes / 1292 edges / 46 communities。
 
 ### 2026-07-05 — T3 spread/inaccuracy decisions
 - **Decision**:新增 `src/recoil/spread.ts`,以 injected `Rng` 實作每發固定 2 次取樣(theta 先、radius 後),輸出 degree-domain 的 `{x,y}` spread offset;三成分為 stand base + `state.inaccuracyFire` + `(speedRatio)^0.25 * move`。
@@ -67,11 +73,17 @@
 
 ## Open Questions
 
-- 無 T3 阻塞項。T4 可開始 2D 彈道檢查頁(dev-only)。
+- 無 T4 阻塞項。T-exit 可開始 M5 門控。
 
 ---
 
 ## Log
+
+### 2026-07-05 — T4 dev-only pattern viewer completed
+- 新增 [patternViewer.ts](../../../../../src/recoil/patternViewer.ts):`#pattern` 2D canvas 檢查頁,含 AK/M4A4/M4A1-S preset、seed/magnitude/variance/angleVariance/cycletime 欄位、30 發 recoil 模擬、逐發點/連線/發數標記、spread radius 圈與 seeded spread cloud。
+- 更新 [main.ts](../../../../../src/main.ts):dev-only + hash gate 動態載入 `mountPatternViewer`,production build 剝除。
+- 驗證:`.\node_modules\.bin\vitest.cmd run src\recoil` → 4 files / 23 tests passed;`npm.cmd run typecheck` → pass;`npm.cmd run build` → pass;`rg "patternViewer|Recoil Pattern|mountPatternViewer" dist` → no matches(exit 1);`npm.cmd test` → 30 files / 208 tests passed;`graphify update .` → rebuilt 651 nodes / 1292 edges / 46 communities。
+- 瀏覽器 sanity:Edge Playwright 開 `http://127.0.0.1:5173/#pattern`,canvas mounted true / 1280x727 / nonWhiteSamples 11667 / status `AK climb PASS`;截圖 [artifacts/t4-pattern-ak.png](artifacts/t4-pattern-ak.png)。切 M4A4 preset 後 canvas hash 與 AK 不同(`2196497058` vs `1892642943`),截圖 [artifacts/t4-pattern-m4a4.png](artifacts/t4-pattern-m4a4.png)。
 
 ### 2026-07-05 — T3 spread/inaccuracy completed
 - 新增 [spread.ts](../../../../../src/recoil/spread.ts):`WeaponInaccuracyLike` / `SpreadSample` / `sampleSpread`,以 stand + fire + move 三成分合成 inaccuracy,使用 injected seeded RNG 且每發固定 theta/radius 兩次取樣。
