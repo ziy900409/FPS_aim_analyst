@@ -36,6 +36,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const weaponRef = s.weapon;
     const targetsRef = s.targets;
     const tVisibleRef = s.tVisible;
+    const recoilStateRef = s.recoilState;
 
     // 弄髒所有欄位
     pushEvent(s, { type: 'fire', down: true, t: 1 });
@@ -52,6 +53,12 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     s.crosshair.cy = -9;
     s.aim.yaw = 0.3;
     s.aim.pitch = -0.2;
+    s.recoilState.aimPunchPitchDeg = -5;
+    s.recoilState.punchVelYaw = 2;
+    s.recoilState.recoilIndex = 7;
+    s.recoil.prev.pitchDeg = -1;
+    s.recoil.curr.yawDeg = 0.4;
+    s.recoil.lastSpread.x = 0.01;
     s.targets.push({
       id: 't1',
       side: 'R',
@@ -75,6 +82,14 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.targets).toHaveLength(0);
     expect(s.tVisible.size).toBe(0);
 
+    // recoil 狀態機 + 視覺快照 + spread 暫存原地歸零（WP-13 / T1）
+    expect(s.recoilState.aimPunchPitchDeg).toBe(0);
+    expect(s.recoilState.punchVelYaw).toBe(0);
+    expect(s.recoilState.recoilIndex).toBe(0);
+    expect(s.recoil.prev).toEqual({ pitchDeg: 0, yawDeg: 0 });
+    expect(s.recoil.curr).toEqual({ pitchDeg: 0, yawDeg: 0 });
+    expect(s.recoil.lastSpread).toEqual({ x: 0, y: 0 });
+
     // 重用同一參考（不 realloc）— GC 紀律
     expect(s.input).toBe(inputRef);
     expect(s.player).toBe(playerRef);
@@ -82,6 +97,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.weapon).toBe(weaponRef);
     expect(s.targets).toBe(targetsRef);
     expect(s.tVisible).toBe(tVisibleRef);
+    expect(s.recoilState).toBe(recoilStateRef); // recoil 狀態機重用同一物件（GC 紀律）
   });
 
   it('resetState() 預設作用於單例', () => {

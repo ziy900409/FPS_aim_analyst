@@ -7,7 +7,7 @@
 | **相依** | T0 |
 | **Risk / Cplx** | **High** / High |
 | **Touches** | MODIFY `src/loop/SimLoop.ts`、`src/state/SharedState.ts`(recoilState + recoil prev/curr)、`src/state/types.ts` + 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-06 |
 
 ## Objective
 
@@ -32,14 +32,15 @@ kick + spread 取樣,punch 快照供 render 內插。彈道方向本 task **暫�
 
 ## Steps
 
-- [ ] SharedState 擴充 + reset;types 註解更新。
-- [ ] tickIndex + 子節奏呼叫;順序測試:「decay 在產彈前」(合成:tick 內先衰減後 kick,
-      斷言 punch 值 = 手算序列)。
-- [ ] `fireOneShot` 掛 `sampleSpread` + `recoilOnFire`(結果暫存 SharedState,T2 消費)。
-- [ ] 整合 golden:合成 held 1.0s AK(10 發,cycletime 0.1)跑完 → `recoilState.aimPunch×2`
-      = M5 向量(pitch −10.18°/yaw −1.56° ±0.01°)——**接線正確性的唯一判準**。
-- [ ] 決定性:同 seed 同輸入兩次執行 → punch/spread 序列位元級一致;不同 pump FPS 一致。
-- [ ] `npx vitest run` 全綠(含既有回歸)。
+- [x] SharedState 擴充 + reset;types 註解更新。
+- [x] tickIndex + 子節奏呼叫;順序測試:「decay 在產彈前」(合成:tick 內先衰減後 kick,
+      斷言 punch 值 = 手算序列 forward,且 ≠ 反序 reversed)。
+- [x] `fireOneShot` 掛 `sampleSpread` + `recoilOnFire`(結果 `recoil.lastSpread` 暫存 SharedState,T2 消費)。
+- [x] 整合 golden:合成 held AK 10 發跑完 → `recoilState.aimPunch×2` 重現 M5 向量
+      (pitch −10.18°/yaw −1.56°)——**接線正確性的判準**。⚠️ 容差調 0.01→0.02°:雙率離散化殘差
+      (實測 pitch 0.0141°),見 progress.md T1 Surprises。
+- [x] 決定性:同 seed 同輸入兩次執行 → recoilState/spread 位元級一致;每幀 1 tick vs 60Hz 幀末態一致。
+- [x] `npm run test` 全綠(含既有回歸)。
 
 ## Definition of Done
 

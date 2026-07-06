@@ -7,6 +7,7 @@ import type {
 } from './types.ts';
 import { CODE_KEY, EV_FIRE, EV_KEY, EV_MOUSE, RING_CAPACITY } from './types.ts';
 import { ak47 } from '../weapon/weapons.ts';
+import { createRecoilState, resetRecoilState, type RecoilState } from '../recoil/punch.ts';
 
 /**
  * SharedState — WP-2 / T1（FR-2.1）
@@ -39,6 +40,23 @@ export interface SharedState {
   heldFire: boolean;
   /** 當前武器開火排程狀態（WP-11 / T3）：下一發排程時間 + 當前/最大彈匣。 */
   weapon: { nextFireT: number; ammo: number; magSize: number };
+  /**
+   * recoil 狀態機（WP-13 / T1）：sim 專屬（punch/velocity/inaccuracy/recoilIndex，`src/recoil`
+   * 數學核心）。偶數 tick 以 64Hz 子節奏衰減、產彈點 `recoilOnFire` 施加 kick；`resetState` 呼叫
+   * `resetRecoilState` 原地歸零（GC 紀律）。
+   */
+  recoilState: RecoilState;
+  /**
+   * recoil 視覺內插快照（WP-13 / T1，比照 position `prev`/`curr`）：sim 每 tick 寫 `prev←curr`
+   * 於步①、`curr←aimPunch(deg)` 於步⑥，render 以 alpha lerp → `setViewPunch`（T2）。punch 為
+   * **視覺** aimPunch（1×，deg）；彈道用 rawPunch=aimPunch×2（T2）。`lastSpread` = 最近一發於產彈
+   * 點取樣的圓盤偏移（source rng 序列位置決定性），T2 消費為彈道射線偏移，T1 只暫存不用於命中。
+   */
+  recoil: {
+    prev: { pitchDeg: number; yawDeg: number };
+    curr: { pitchDeg: number; yawDeg: number };
+    lastSpread: { x: number; y: number };
+  };
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
   prev: PlayerSnapshot;
   curr: PlayerSnapshot;
@@ -147,6 +165,12 @@ export function createSharedState(): SharedState {
     held: { left: false, right: false },
     heldFire: false,
     weapon: { nextFireT: Infinity, ammo: ak47.magSize, magSize: ak47.magSize },
+    recoilState: createRecoilState(),
+    recoil: {
+      prev: { pitchDeg: 0, yawDeg: 0 },
+      curr: { pitchDeg: 0, yawDeg: 0 },
+      lastSpread: { x: 0, y: 0 },
+    },
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
     crosshair: { cx: 0, cy: 0 },
@@ -179,6 +203,13 @@ export function resetState(state: SharedState = sharedState): void {
   state.heldFire = false;
   state.weapon.nextFireT = Infinity;
   state.weapon.ammo = state.weapon.magSize;
+  resetRecoilState(state.recoilState); // 原地歸零 recoil 狀態機（重用既有物件，GC 紀律；重開 drill → punch 清）
+  state.recoil.prev.pitchDeg = 0; // 原地清 recoil 視覺快照 + spread 暫存（重用既有物件，GC 紀律）
+  state.recoil.prev.yawDeg = 0;
+  state.recoil.curr.pitchDeg = 0;
+  state.recoil.curr.yawDeg = 0;
+  state.recoil.lastSpread.x = 0;
+  state.recoil.lastSpread.y = 0;
   state.prev.x = 0;
   state.prev.z = 0;
   state.curr.x = 0;

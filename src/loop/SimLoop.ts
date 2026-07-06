@@ -10,7 +10,31 @@ import type { InputEvent } from '../state/types.ts';
 import type { DataRecorder } from '../data/DataRecorder.ts';
 import type { WeaponConfig } from '../weapon/WeaponConfig.ts';
 import { ak47 } from '../weapon/weapons.ts';
+import { recoilOnFire, recoilTick } from '../recoil/punch.ts';
+import { sampleSpread } from '../recoil/spread.ts';
+import { generateRecoilTable, type RecoilTableEntry } from '../recoil/recoilTable.ts';
+import { createRan1, type Rng } from '../recoil/rng.ts';
 import type { Clock } from './clock.ts';
+
+/**
+ * spread RNG 預設種子（WP-13 / T1，OQ-13.1）：drill 未帶 `sequence.seed` 時的後援值。單一 seed
+ * 同管 spawn 序列與 spread 圓盤取樣（決定性）；drill restart 重建 stream。具體值 + 每 run 記錄交
+ * WP-16 寫入匯出 meta（研究可重現）。
+ */
+export const DEFAULT_RNG_SEED = 1;
+
+/** 橫移速度（u/s，source unit；對齊 MovementController `DEFAULT_V_STRAFE`）→ spread `speedRatio` 正規化基準。 */
+const V_STRAFE = 250;
+
+/**
+ * recoil 執行期依賴（WP-13 / T1）：由 `createSimLoop` 建一次並注入 `simStep`——`table` 為武器 recoil
+ * 樣式表（`generateRecoilTable`，決定性），`rng` 為 spread 圓盤取樣的 seeded stream（閉包持有，
+ * drill restart 由重建 loop 重置）。省略即不接 recoil（WP-2 決定性/單元測試向後相容路徑）。
+ */
+export interface RecoilRuntime {
+  table: readonly RecoilTableEntry[];
+  rng: Rng;
+}
 
 /**
  * SimLoop — WP-2 / T2（FR-2.2，§4.3 accumulator）
@@ -61,6 +85,8 @@ function fireOneShot(
   camera?: THREE.Camera,
   targetManager?: TargetManager,
   recorder?: DataRecorder,
+  weapon?: WeaponConfig,
+  recoilRuntime?: RecoilRuntime,
 ): void {
   // 開火：首發旗標**先於命中判定**——peek 錨為 fire 當下的 active 目標；命中即擊殺會撤除該目標、
   // 換 peek，故 firstShot 須在 markKilled 之前對「當前 peek」判定（FR-5.2，OQ-5.3）。未命中亦計首發
@@ -106,6 +132,17 @@ function fireOneShot(
     ...(offsetDeg !== undefined ? { offsetDeg } : {}),
     ...(part !== undefined ? { part } : {}),
   });
+
+  // WP-13 / T1：產彈點注入 recoil kick + spread 取樣。次序 = **先 `sampleSpread`（用本發 kick 之前的
+  // inaccuracy，對齊 CS2）再 `recoilOnFire`（施加本發 kick）**。spread 圓盤偏移暫存 SharedState 供 T2
+  // 彈道方向消費；本 task 命中仍走上方 `raycastFromCenter`，punch/spread 只更新狀態、不改本發判定。
+  if (recoilRuntime !== undefined && weapon !== undefined) {
+    const speedRatio = Math.min(1, Math.abs(state.player.vx) / V_STRAFE);
+    const spread = sampleSpread(state.recoilState, weapon, speedRatio, recoilRuntime.rng);
+    state.recoil.lastSpread.x = spread.x;
+    state.recoil.lastSpread.y = spread.y;
+    recoilOnFire(state.recoilState, weapon, recoilRuntime.table);
+  }
 }
 
 function scheduleFire(
@@ -115,10 +152,11 @@ function scheduleFire(
   camera?: THREE.Camera,
   targetManager?: TargetManager,
   recorder?: DataRecorder,
+  recoilRuntime?: RecoilRuntime,
 ): void {
   const cycleMs = weapon.cycletimeSec * 1000;
   while (state.heldFire && state.weapon.ammo > 0 && state.weapon.nextFireT <= untilMs) {
-    fireOneShot(state, state.weapon.nextFireT, camera, targetManager, recorder);
+    fireOneShot(state, state.weapon.nextFireT, camera, targetManager, recorder, weapon, recoilRuntime);
     state.weapon.ammo--;
     state.weapon.nextFireT += cycleMs;
   }
@@ -142,11 +180,16 @@ function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecor
  * 推進一個固定 tick（純函式邊界，OQ-2.4：只讀寫傳入 state、不讀 `performance.now()`、不碰 DOM；
  * 預留階段 B Worker 搬遷）。`tickEndMs` = 本 tick 邏輯窗結束時間（量測時鐘域 ms），供輸入分桶。
  *
- * 順序（對齊 CONTEXT「simStep 順序」雛形）：① prev←curr（內插基準，T3）；② 目標系統
- * （spawn/可見性/蓋 t_visible，**命中判定之前**，F5 seam / WP-5，WP-4）；③ 依時序消費本 tick
- * 輸入（`consume` 排序 + 排空，T4；鍵事件更新 held、fire 更新 scheduler state）；④ weapon cycletime
- * scheduler 產彈；⑤ `MovementController.step`
- * 依 held 定 velocity（snap）並推進位置（**只用 dtSec**，WP-5 T3）；⑥ curr←新位置。
+ * 順序（對齊 CONTEXT「simStep 順序」雛形 + WP-13 recoil）：① prev←curr（含 recoil 視覺快照，內插
+ * 基準，T3/T2）；② 目標系統（spawn/可見性/蓋 t_visible，**命中判定之前**，F5 seam / WP-5，WP-4）；
+ * ③ recoil 衰減（偶數 tick 64Hz 子節奏，dtSec 恆 1/64；**decay 先於本 tick 產彈 kick**，WP-13 T1）；
+ * ④ 依時序消費本 tick 輸入（`consume` 排序 + 排空，T4；鍵事件更新 held、fire 更新 scheduler state）；
+ * ⑤ weapon cycletime scheduler 產彈（產彈點注入 spread 取樣 + recoil kick，WP-13 T1）；
+ * ⑥ `MovementController.step` 依 held 定 velocity（snap）並推進位置（**只用 dtSec**，WP-5 T3）；
+ * ⑦ curr←新位置（含 recoil.curr←aimPunch 視覺快照）。
+ *
+ * `tickIndex`（`createSimLoop` 維護）決定 recoil 64Hz 子節奏（偶數跑 decay）；`recoilRuntime` 省略
+ * 即不接 recoil（WP-2 決定性/單元測試向後相容，punch 恆零）。
  *
  * `targetManager` 選填：注入即在 tick 內推進目標（WP-4）；省略則維持純位移（WP-2 決定性測試路徑）。
  * `camera` 選填：注入即在產彈點處理命中判定（WP-5 T1）；省略則 fire 只記錄 miss（決定性測試路徑）。
@@ -166,9 +209,14 @@ export function simStep(
   drillRunner?: DrillRunner,
   recorder?: DataRecorder,
   weapon: WeaponConfig = ak47,
+  tickIndex = 0,
+  recoilRuntime?: RecoilRuntime,
 ): void {
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
+  // recoil 視覺快照 prev←curr（比照 position；render 以 alpha 在 prev→curr 間 lerp aimPunch，T2）。
+  state.recoil.prev.pitchDeg = state.recoil.curr.pitchDeg;
+  state.recoil.prev.yawDeg = state.recoil.curr.yawDeg;
 
   // 目標 spawn/可見性/蓋 t_visible：在命中判定（WP-5 fire raycast）之前，且時間源為 sim tick
   // 的 `tickEndMs`（量測時鐘域，非 rAF/Date.now）——反應時間效度關鍵（README failure-mode）。
@@ -177,15 +225,20 @@ export function simStep(
   else targetManager?.tick(state, tickEndMs);
   recordVisibleEvents(state, tickEndMs, recorder);
 
+  // recoil 衰減（WP-13 / T1）：64Hz 子節奏 = 偶數 tick（128Hz sim）；dtSec **恆常數 1/64**（GD-5，
+  // 不代入 sim dtSec）。位置在目標系統與 consume 之間 → 本 tick decay 先於本 tick 產彈 kick（README
+  // §2.4 契約：decay 先於 kick）。`recoilRuntime` 省略即不接（WP-2 決定性測試向後相容）。
+  if (recoilRuntime !== undefined && (tickIndex & 1) === 0) recoilTick(state.recoilState, 1 / 64);
+
   // 半開窗 [tickStart, tickEndMs)、嚴格 `<`（GD-3）。每個事件前先補發上一段已到期子彈；
   // fire-down 套用後立即跑到該事件時間，鎖定 down→up 同 tick 仍至少產 1 發（OQ-11.1）。
   const apply = handle ?? ((ev: InputEvent) => applyInput(state, ev, recorder));
   consume(state, tickEndMs, (ev) => {
-    scheduleFire(state, ev.t, weapon, camera, targetManager, recorder);
+    scheduleFire(state, ev.t, weapon, camera, targetManager, recorder, recoilRuntime);
     apply(ev);
-    scheduleFire(state, ev.t, weapon, camera, targetManager, recorder);
+    scheduleFire(state, ev.t, weapon, camera, targetManager, recorder, recoilRuntime);
   });
-  scheduleFire(state, tickEndMs, weapon, camera, targetManager, recorder);
+  scheduleFire(state, tickEndMs, weapon, camera, targetManager, recorder, recoilRuntime);
 
   // MovementController：依 held 定 vx（M1 snap）並以固定 dtSec 推進 x（WP-5 T3，FR-5.3）。
   movement.step(state, dtSec);
@@ -193,6 +246,9 @@ export function simStep(
 
   state.curr.x = state.player.x;
   state.curr.z = state.player.z;
+  // recoil 視覺快照 curr←本 tick 末 aimPunch（deg，1× 視覺；彈道用 rawPunch=aimPunch×2，T2）。
+  state.recoil.curr.pitchDeg = state.recoilState.aimPunchPitchDeg;
+  state.recoil.curr.yawDeg = state.recoilState.aimPunchYawDeg;
 
   recorder?.recordTickFromState(tickEndMs, state);
 }
@@ -215,6 +271,7 @@ export function createSimLoop(
   drillRunner?: DrillRunner,
   recorder?: DataRecorder,
   weapon: WeaponConfig = ak47,
+  seed: number = DEFAULT_RNG_SEED,
 ): SimLoop {
   state.weapon.nextFireT = Infinity;
   state.weapon.magSize = weapon.magSize;
@@ -231,6 +288,12 @@ export function createSimLoop(
   // 綁定一次的 MovementController（WP-5 T3）：預設 vStrafe，WP-6 drill config 之後由此注入。
   const movement = createMovementController();
 
+  // recoil 執行期依賴（WP-13 / T1）：樣式表由武器 recoil 參數一次生成（決定性）；spread rng 由 seed
+  // 建 seeded stream（`drill.sequence.seed ?? DEFAULT_RNG_SEED`，OQ-13.1）。restart 走重建 loop 重置
+  // stream；seed 值交 WP-16 記入 meta。`tickIndex` 驅動 64Hz 子節奏（偶數 tick 跑 recoil decay）。
+  const recoilRuntime: RecoilRuntime = { table: generateRecoilTable(weapon.recoil), rng: createRan1(seed) };
+  let tickIndex = 0;
+
   return {
     pump(nowMs: number): { ticks: number; alpha: number } {
       accSec += Math.min((nowMs - lastMs) / 1000, 0.25); // 夾住避免 spiral of death
@@ -239,9 +302,10 @@ export function createSimLoop(
       let ticks = 0;
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
-        simStep(state, tickSec, simTimeMs, targetManager, camera, movement, handleInput, drillRunner, recorder, weapon);
+        simStep(state, tickSec, simTimeMs, targetManager, camera, movement, handleInput, drillRunner, recorder, weapon, tickIndex, recoilRuntime);
         accSec -= tickSec;
         ticks++;
+        tickIndex++;
       }
 
       return { ticks, alpha: accSec / tickSec };
