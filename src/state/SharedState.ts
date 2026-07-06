@@ -81,15 +81,15 @@ export interface SharedState {
   inputMeta: InputMeta;
   /**
    * 玩家即時狀態，由 simStep 推進（u / u·s⁻¹，canonical unit）。
-   * `stopped`（WP-5 / T4，FR-5.4）= 簡化 counter-strafe「急停」flag：`MovementController.step`
-   * 在反向鍵穿越 tick 置 true（vx→0），再次移動置 false。開火精準 gate 讀此欄位（OQ-5.1：
-   * `accurate = stopped`）。抽象欄位——階段 B friction integrator 改以 v<門檻 寫入（附錄 D）。
+   * `stopped`（WP-14 / T1，FR-B12 接縫）= 速度 gate 相容欄位：`MovementController.step`
+   * 在 `|vx| < MovementProfile.accuracyThreshold` 時置 true。開火精準 gate 目前仍讀此欄位（T2 會把
+   * fire 側 accurate/residualSpeed 正式改成同源連續速度模型）。
    */
   player: { vx: number; vz: number; x: number; z: number; stopped: boolean };
   /**
    * A/D 橫移按住狀態（WP-5 / T3，FR-5.3）：`consume` 依 keydown/keyup 事件更新，
-   * `MovementController.step` 每 tick 讀取以定 velocity（`left`=KeyA、`right`=KeyD）。
-   * 為 held 而非 velocity——階段 B friction integrator 與 T4 急停判定皆需 per-tick held 狀態。
+   * `MovementController.step` 每 tick 讀取以積分 velocity（`left`=KeyA、`right`=KeyD）。
+   * 為 held 而非 velocity，friction/accelerate integrator 需 per-tick held 狀態。
    */
   held: { left: boolean; right: boolean };
   /** 左鍵開火按住狀態（WP-11 / T2）：由 fire down/up 輸入事件依時序更新，T3 scheduler 讀取。 */
@@ -259,7 +259,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.player.vz = 0;
   state.player.x = 0;
   state.player.z = 0;
-  state.player.stopped = false; // 急停 flag 歸零（重開 drill → 非停止態；GC 紀律原地清）
+  state.player.stopped = false; // 速度 gate 歸零（重開 drill → 尚未經 movement step；GC 紀律原地清）
   state.held.left = false; // 原地清 held（重用既有物件，GC 紀律）；重開 drill → 橫移歸靜止
   state.held.right = false;
   state.heldFire = false;

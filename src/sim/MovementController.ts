@@ -1,54 +1,73 @@
 import type { SharedState } from '../state/SharedState.ts';
 
 /**
- * MovementController — WP-5 / T3（FR-5.3）
+ * MovementController — WP-14 / T1（FR-B11）
  *
- * A/D 橫移的**唯一**推進點：每 sim tick 依 `state.held`（A/D 按住狀態）定 velocity 並以固定
- * `dtSec` 推進位置。決定性根源（CLAUDE.md §4 / WP-2）：**只**用傳入的固定 `dtSec`（sim tick），
+ * A/D 橫移的**唯一**推進點：每 sim tick 依 `state.held`（A/D 按住狀態）用 Source-like
+ * friction → accelerate 積分 velocity，再以固定 `dtSec` 推進位置。決定性根源（CLAUDE.md §4 / WP-2）：
+ * **只**用傳入的固定 `dtSec`（sim tick），
  * 絕不碰 frame delta；同一輸入序列在不同 render FPS 下逐 tick 位移一致。
  *
- * 階段 A = M1 狀態機（CONTEXT `MovementController`）：橫移為**瞬間 snap**（按 A/D → velocity 瞬間
- * ±`vStrafe`、放開 → 0；無 accel ramp，velocity 為純階梯函數）。
- *
- * 簡化 counter-strafe 急停（WP-5 / T4，FR-5.4，OQ-5.1/5.2）：**反向鍵**（與當前移動方向相反者）
- * 於**穿越那一 tick** 觸發立即歸零——`vx→0` 且 `player.stopped=true`。續按反向鍵 → 次 tick 因 `prevVx`
- * 已為 0（非移動中）不再判急停 → `vx=∓vStrafe`（反向/過衝）、`stopped=false`。**單純放開**（target=0
- * 但非反向）不算急停（`stopped=false`）——急停是「按反向鍵」的技巧，非「放手」。開火精準 gate 讀
- * `stopped`（OQ-5.1）。此為抽象欄位，階段 B friction integrator 改以 v<門檻 寫入（附錄 D，介面不變）。
- *
- * 介面跨階段不變（README §2 / 附錄 D）：公開點只有 `step`；階段 B 把內部換成 friction + acceleration
- * integrator（讀同樣的 `state.held`、寫同樣的 `state.player.vx/x`），此介面與呼叫端不動。
+ * `stopped` 是連續速度 gate 的相容欄位：每 tick 末 `|vx| < profile.accuracyThreshold` 時為 true。
+ * 反向鍵不再瞬停，而是由 friction/accelerate 自然減速並穿越門檻。
  */
 export interface MovementController {
-  /** 推進一個固定 tick：依 `state.held` 定 `player.vx`（snap），再 `player.x += vx*dtSec`。 */
+  /** 推進一個固定 tick：先 friction 後 accelerate，再 `player.x += vx*dtSec`。 */
   step(state: SharedState, dtSec: number): void;
 }
 
-/** 預設橫移速度（u/s，source unit；OQ-5.2 grill 定 ~250）。 */
-const DEFAULT_V_STRAFE = 250;
+export interface MovementProfile {
+  /** Ground friction coefficient. */
+  friction: number;
+  /** Ground accelerate coefficient. */
+  accelerate: number;
+  /** Minimum control speed used by friction while grounded. */
+  stopSpeed: number;
+  /** 1D strafe wishspeed cap, in Source units per second. */
+  maxSpeed: number;
+  /** `stopped` compatibility threshold, in Source units per second. */
+  accuracyThreshold: number;
+}
+
+export const CS2_PROFILE: MovementProfile = {
+  friction: 5.2,
+  accelerate: 5.6,
+  stopSpeed: 75,
+  maxSpeed: 250,
+  accuracyThreshold: 88,
+};
 
 /**
- * 建 M1 橫移 controller。`vStrafe` 可注入（WP-6 drill config 之後接管），預設 ~250 u/s。
- * 階段 A 無內部狀態（velocity 純由 `state.held` 決定），故實例可安全共用。
+ * 建 Source-like 1D ground movement controller。新 movement model 透過 profile 注入；公開 step 介面不變。
+ * 實例無內部狀態，可安全共用。
  */
-export function createMovementController(opts?: { vStrafe?: number }): MovementController {
-  const vStrafe = opts?.vStrafe ?? DEFAULT_V_STRAFE;
+export function createMovementController(profile: MovementProfile = CS2_PROFILE): MovementController {
   return {
     step(state: SharedState, dtSec: number): void {
       const { left, right } = state.held;
-      const prevVx = state.player.vx; // 上一 tick 末的 velocity = 「當前移動方向」判定源
+      let vx = state.player.vx;
+      const speed = Math.abs(vx);
 
-      // 反向鍵急停：移動中（prevVx≠0）且**與移動方向相反**的鍵此刻按住 → 穿越 tick 立即歸零。
-      // 用 held（非 target）判定，故「A+D 同按」（net target=0）仍算急停（反向鍵已壓）。
-      const counterStrafe = (prevVx > 0 && left) || (prevVx < 0 && right);
-      if (counterStrafe) {
-        state.player.vx = 0;
-        state.player.stopped = true; // 急停窗（一 tick）：開火精準 gate 讀此（OQ-5.1）
+      if (speed < 0.1) {
+        vx = 0;
       } else {
-        // 瞬間 snap（無 accel）：僅 D → +v、僅 A → −v；皆按或皆放 → 0（互斥抵消）。
-        state.player.vx = left === right ? 0 : right ? vStrafe : -vStrafe;
-        state.player.stopped = false; // 移動 / 純放開皆非急停
+        const control = Math.max(speed, profile.stopSpeed);
+        const drop = control * profile.friction * dtSec;
+        vx *= Math.max(speed - drop, 0) / speed;
       }
+
+      const wishdir = left === right ? 0 : right ? 1 : -1;
+      if (wishdir !== 0) {
+        const currentspeed = vx * wishdir;
+        const addspeed = profile.maxSpeed - currentspeed;
+        if (addspeed > 0) {
+          const accelspeed = Math.min(profile.accelerate * profile.maxSpeed * dtSec, addspeed);
+          vx += wishdir * accelspeed;
+        }
+      }
+
+      state.player.vx = vx;
+      state.player.stopped = Math.abs(vx) < profile.accuracyThreshold;
       state.player.x += state.player.vx * dtSec;
     },
   };

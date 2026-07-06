@@ -7,6 +7,7 @@ import type { Clock } from '../../src/loop/clock.ts';
 import { SIM_HZ } from '../../src/loop/constants.ts';
 import { createSimLoop } from '../../src/loop/SimLoop.ts';
 import { createTargetManager } from '../../src/sim/TargetManager.ts';
+import { CS2_PROFILE } from '../../src/sim/MovementController.ts';
 import { createDrillRunner } from '../../src/drill/DrillRunner.ts';
 import { createDataRecorder, type DataRecorderSnapshot } from '../../src/data/DataRecorder.ts';
 import { loadDrill } from '../../src/drill/DrillLoader.ts';
@@ -15,7 +16,7 @@ import { loadDrill } from '../../src/drill/DrillLoader.ts';
  * 決定性回歸（自動化）★M1 守護 — WP-9 / T3（FR-9.3）
  *
  * WP-2 T4 的決定性驗證只涵蓋**純 movement**（`SimLoop` + 位移）。本回歸把它**升級為完整 sim**：
- * 同一條與生產同源的管線——`createSimLoop` + `MovementController`（movement / 反向鍵急停）+
+ * 同一條與生產同源的管線——`createSimLoop` + `MovementController`（movement / 反向鍵連續減速）+
  * `consume`（依 timeStamp 消費輸入 ring）+ `TargetManager`/`DrillRunner`（countdown→running→spawn/
  * 可見性、以 sim clock 蓋 `t_visible`）+ `DataRecorder`（逐 tick + 事件記錄）——在**多種 render FPS
  * 幀序列**下驅動，斷言**逐 tick sim 狀態**與**整份記錄資料集**（ticks + events）皆 render-FPS 無關。
@@ -33,7 +34,7 @@ import { loadDrill } from '../../src/drill/DrillLoader.ts';
 const TICK_MS = 1000 / SIM_HZ; // 7.8125（=125/16，float 精確）
 const CLOCK_BASE = 0; //          注入 clock 基準；simTimeMs 從此起、每 tick +tickMs
 
-/** 完整 sim 逐 tick 狀態快照（含急停 flag，較 WP-2 T4 多 `stopped`，涵蓋 WP-5 T4 反向鍵急停）。 */
+/** 完整 sim 逐 tick 狀態快照（含速度 gate flag，較 WP-2 T4 多 `stopped`）。 */
 interface FullSnap {
   x: number;
   z: number;
@@ -55,20 +56,20 @@ interface RunResult {
 
 /**
  * 合成輸入序列（量測時鐘域絕對 ms，同一份餵所有 FPS 序列）。時間戳皆落在 drill running 相位
- * （countdown 3000ms 之後），交替驅動：右移 → 反向鍵急停（記 counter 'A'）→ 停止態開火 → 放開 →
- * 左移 → 反向鍵急停（記 counter 'D'）→ 開火 → 放開。fire 單發以 down→up 表示；橫跨數個 tick 窗，
+ * （countdown 3000ms 之後），交替驅動：右移 → 反向鍵減速（記 counter 'A'）→ 開火 → 放開 →
+ * 左移 → 反向鍵減速（記 counter 'D'）→ 開火 → 放開。fire 單發以 down→up 表示；橫跨數個 tick 窗，
  * 足以暴露 frame-dependent bug。
  */
 function syntheticInputs(): InputEvent[] {
   return [
-    { type: 'key', code: 'KeyD', down: true, t: 3100 }, //  右移 +vStrafe
-    { type: 'key', code: 'KeyA', down: true, t: 3250 }, //  移動中按反向鍵 A → 急停（counter 'A'）
-    { type: 'fire', down: true, t: 3300 }, //                 停止態開火（residualSpeed=0）
+    { type: 'key', code: 'KeyD', down: true, t: 3100 }, //  右移加速
+    { type: 'key', code: 'KeyA', down: true, t: 3250 }, //  移動中按反向鍵 A → 連續減速（counter 'A'）
+    { type: 'fire', down: true, t: 3300 }, //                 記錄當下連續 residualSpeed
     { type: 'fire', down: false, t: 3301 },
     { type: 'key', code: 'KeyD', down: false, t: 3350 }, //  放開兩鍵（held 皆 false → vx=0）
     { type: 'key', code: 'KeyA', down: false, t: 3350 },
-    { type: 'key', code: 'KeyA', down: true, t: 3450 }, //  左移 −vStrafe（vx 曾為 0 → 非 counter）
-    { type: 'key', code: 'KeyD', down: true, t: 3600 }, //  移動中按反向鍵 D → 急停（counter 'D'）
+    { type: 'key', code: 'KeyA', down: true, t: 3450 }, //  殘速仍為正時再次按 A → counter 'A'
+    { type: 'key', code: 'KeyD', down: true, t: 3600 }, //  移動中按反向鍵 D → 連續減速（counter 'D'）
     { type: 'fire', down: true, t: 3650 },
     { type: 'fire', down: false, t: 3651 },
     { type: 'key', code: 'KeyA', down: false, t: 3700 }, //  放開兩鍵
@@ -203,29 +204,30 @@ describe('決定性回歸（完整 sim）— 完整 sim 邏輯確實被涵蓋（
     expect((visible[0] as { t: number }).t % TICK_MS).toBeCloseTo(0, 9);
   });
 
-  it('反向鍵急停（WP-5 T4）：兩次 counter 事件於固定 t，且急停 tick 的 vx=0 / stopped=true', () => {
+  it('反向鍵減速（WP-14 T1）：兩次 counter 事件於固定 t，且 stopped 代表 |vx| < gate', () => {
     const counters = CANON.snapshot.events.filter((e) => e.type === 'counter');
-    // 右移按 A → counter 'A'；左移按 D → counter 'D'（順序即發生序）。
-    expect(counters.map((e) => (e as { key: string }).key)).toEqual(['A', 'D']);
-    // 急停穿越 tick：該 tick 末 vx 歸零且 stopped=true（GROUND 中至少存在此狀態）。
+    // 右移按 A → counter 'A'；殘速仍為正時再次按 A → counter 'A'；左移按 D → counter 'D'。
+    expect(counters.map((e) => (e as { key: string }).key)).toEqual(['A', 'A', 'D']);
+    // 速度 gate：stopped tick 的殘速皆低於 WP-14 T1 threshold。
     const stoppedTicks = GROUND.filter((g) => g.stopped);
     expect(stoppedTicks.length).toBeGreaterThan(0);
-    for (const g of stoppedTicks) expect(g.vx).toBe(0);
+    for (const g of stoppedTicks) expect(Math.abs(g.vx)).toBeLessThan(CS2_PROFILE.accuracyThreshold);
   });
 
-  it('movement / 輸入消費：曾達左右兩方向的 ±vStrafe（250），位移由固定 tick dt 累積（非 frame dt）', () => {
+  it('movement / 輸入消費：曾出現左右兩方向速度，位移由固定 tick dt 累積（非 frame dt）', () => {
     const vxs = GROUND.map((g) => g.vx);
-    expect(Math.max(...vxs)).toBe(250); // 右移曾達 +vStrafe
-    expect(Math.min(...vxs)).toBe(-250); // 左移曾達 −vStrafe
+    expect(Math.max(...vxs)).toBeGreaterThan(0);
+    expect(Math.min(...vxs)).toBeLessThan(0);
     // z 軸階段 A 無前後移動（vz 恆 0）。
     expect(GROUND.every((g) => g.vz === 0 && g.z === 0)).toBe(true);
   });
 
-  it('開火事件：兩次 fire 皆記錄（無 camera → hit=false、residualSpeed=0，命中判定由 T1 E2E 覆蓋）', () => {
+  it('開火事件：兩次 fire 皆記錄（無 camera → hit=false、residualSpeed 為連續 u/s）', () => {
     const fires = CANON.snapshot.events.filter((e) => e.type === 'fire');
     expect(fires.length).toBe(2);
     for (const f of fires) {
-      expect(f).toMatchObject({ type: 'fire', hit: false, residualSpeed: 0 });
+      expect(f).toMatchObject({ type: 'fire', hit: false });
+      expect((f as { residualSpeed: number }).residualSpeed).toBeGreaterThan(0);
     }
   });
 });

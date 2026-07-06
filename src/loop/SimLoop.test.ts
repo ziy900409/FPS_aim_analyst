@@ -75,12 +75,12 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(alpha).toBeLessThan(1);
   });
 
-  it('simStep 由 held 定 vx（M1 snap）並等速推進 x（只用 dtSec）+ 維護 prev/curr', () => {
+  it('simStep 由 held 經 friction/accelerate 推進 vx/x（只用 dtSec）+ 維護 prev/curr', () => {
     const state = createSharedState();
-    state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick snap +v_strafe
+    state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick 加速
     simStep(state, 1 / SIM_HZ, 0); // 無新輸入事件；tickEndMs 任意
-    expect(state.player.vx).toBe(250); //           held D → snap +v_strafe
-    expect(state.player.x).toBeCloseTo(250 / SIM_HZ, 12); // 250 × (1/128) = 1.953125 u
+    expect(state.player.vx).toBeCloseTo(10.9375, 12);
+    expect(state.player.x).toBeCloseTo(10.9375 / SIM_HZ, 12);
     expect(state.prev.x).toBe(0); //                prev = 推進前位置（內插基準）
     expect(state.curr.x).toBe(state.player.x); //   curr = 推進後位置
   });
@@ -91,7 +91,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     pushEvent(state, { type: 'key', code: 'KeyD', down: true, t: 2 });
     const loop = createSimLoop(state, fixedClock(0), SIM_HZ);
     loop.pump(TICK_MS); // 跑 1 個 tick
-    expect(state.player.vx).toBe(250); // KeyD 已消費 → snap 到 +STRAFE
+    expect(state.player.vx).toBeCloseTo(10.9375, 12); // KeyD 已消費 → 起步加速
     expect(state.input.size()).toBe(0); // 事件已消費出緩衝
   });
 
@@ -105,19 +105,19 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.input.size()).toBe(1); // 仍在緩衝
   });
 
-  it('簡化急停（T4）：反向鍵於 simStep 內立即 stopped=true、vx=0（開火精準 gate 來源）', () => {
+  it('反向鍵於 simStep 內不瞬停，改由速度自然穿越 stopped 門檻', () => {
     const state = createSharedState();
     state.held.right = true; // 向右移動
-    simStep(state, 1 / SIM_HZ, 0);
-    expect(state.player.vx).toBe(250);
-    expect(state.player.stopped).toBe(false); // 移動中開火 → accurate=false、residualSpeed=|vx|
+    for (let i = 0; i < 64; i++) simStep(state, 1 / SIM_HZ, i * TICK_MS);
+    expect(state.player.vx).toBeCloseTo(249.28460529178633, 12);
+    expect(state.player.stopped).toBe(false);
 
-    // 反向鍵（放 D、按 A）→ 下一 tick 急停：consume 更新 held、movement.step 判急停
+    // 反向鍵（放 D、按 A）→ 由 friction/accelerate 連續減速，不再同 tick 歸零。
     state.held.right = false;
     state.held.left = true;
-    simStep(state, 1 / SIM_HZ, TICK_MS);
-    expect(state.player.vx).toBe(0);
-    expect(state.player.stopped).toBe(true); // 停止態開火 → accurate=true、residualSpeed=0
+    simStep(state, 1 / SIM_HZ, 65 * TICK_MS);
+    expect(state.player.vx).toBeCloseTo(228.2199182018075, 12);
+    expect(state.player.stopped).toBe(false);
   });
 
   it('simStep 末端把 movement 後的 tick row 寫入 DataRecorder', () => {
@@ -130,7 +130,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
 
     expect(recorder.snapshot().ticks).toEqual([
-      { t: TICK_MS, vx: 250, vz: 0, aim: { yaw: 3, pitch: -2 }, keys: ['D'] },
+      { t: TICK_MS, vx: 10.9375, vz: 0, aim: { yaw: 3, pitch: -2 }, keys: ['D'] },
     ]);
   });
 
@@ -259,7 +259,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(recorder.snapshot().events).toEqual([
       { type: 'visible', targetId: 't0', side: 'R', t: 100 },
       { type: 'counter', key: 'A', t: 101 },
-      { type: 'fire', t: 201, hit: true, firstShot: true, residualSpeed: 0, targetId: 't0', offsetDeg: 0, part: 'head' },
+      { type: 'fire', t: 201, hit: true, firstShot: true, residualSpeed: 239.84375, targetId: 't0', offsetDeg: 0, part: 'head' },
     ]);
   });
 });

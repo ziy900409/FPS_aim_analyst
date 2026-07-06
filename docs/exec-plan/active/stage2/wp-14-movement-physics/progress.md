@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 complete
+## Status: 🟡 T1 complete
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 friction integrator | ⬜ |
+| T1 friction integrator | ✅ |
 | T2 velocity gate | ⬜ |
 | T3 指標連續化 | ⬜ |
 | T-exit | ⬜ |
@@ -26,6 +26,28 @@
 ---
 
 ## Log
+
+### 2026-07-06 — T1 friction/accelerate integrator PASS(baseline 重錄)
+- **實作**:
+  - [../../../../../src/sim/MovementController.ts](../../../../../src/sim/MovementController.ts):新增 `MovementProfile` / `CS2_PROFILE`，`createMovementController(profile = CS2_PROFILE)`，`step(state, dtSec)` 公開介面不變；每 tick 固定順序為 friction → accelerate → position。
+  - `CS2_PROFILE = { friction: 5.2, accelerate: 5.6, stopSpeed: 75, maxSpeed: 250, accuracyThreshold: 88 }` 為 movement 物理常數單一來源；[../../../../../src/loop/SimLoop.ts](../../../../../src/loop/SimLoop.ts) 的 spread speed normalization 改讀 `CS2_PROFILE.maxSpeed`。
+  - `player.stopped` 已改為 `|vx| < profile.accuracyThreshold`；反向鍵不再瞬停，改由物理自然減速穿越門檻。
+- **解析對照單測**:
+  - [../../../../../src/sim/MovementController.test.ts](../../../../../src/sim/MovementController.test.ts) 重寫為 T1 契約:起步第 1 tick `10.9375 u/s`、第 2 tick `18.828125 u/s`、128 tick 後 `vx=250` / `x≈211.33841717272932`、250 u/s 反向第 10 tick `vx≈73.72995854812224` 且 `stopped=true`。
+- **baseline 重錄**:
+  - [../../../../../src/loop/SimLoop.test.ts](../../../../../src/loop/SimLoop.test.ts):`simStep` 首 tick、輸入落 tick、recorder tick row 從 snap `250` 改為 ramp `10.9375`;合成 drill fire residualSpeed 重錄為 `239.84375`。
+  - [../../../../../src/loop/__tests__/determinism.test.ts](../../../../../src/loop/__tests__/determinism.test.ts):仍以 canonical per-tick 軌跡守 render-FPS 無關;顯式落點從 tick2 `vx=250/x=1.953125` 改為 `vx=10.9375/x=10.9375/128`。
+  - [../../../../../tests/regression/determinism.test.ts](../../../../../tests/regression/determinism.test.ts):完整 sim baseline 改為連續速度;`stopped` 驗證改為 `|vx| < CS2_PROFILE.accuracyThreshold`;fire residualSpeed 改驗連續正值。
+- **GD-5 對帳**:本次重錄依 [../../../DECISIONS.md](../../../DECISIONS.md) GD-5 第 4 點「WP-14 movement integrator 會改變決定性 baseline,屬預期 breaking change;先重驗 M1 決定性契約再重錄 baseline」執行。重驗結果:determinism targeted 測試通過。
+- **驗證**:
+  - 指令:`npm.cmd test -- src/sim/MovementController.test.ts src/loop/SimLoop.test.ts src/loop/__tests__/determinism.test.ts tests/regression/determinism.test.ts` → Vitest `4 passed` test files / `45 passed` tests。
+  - 指令:`npm.cmd test` → Vitest `38 passed` test files / `284 passed` tests。
+- **Decision Log**:
+  - 保留 `step(state, dtSec)` 呼叫端零 diff；factory 改成 profile 注入是 T1 明定接口,呼叫端仍用預設 `CS2_PROFILE`。
+  - `fireOneShot` 的 `accurate = state.player.stopped` 暫不改為直接讀 threshold，因 T2 明確負責 fire 側 accurate/residualSpeed 連續模型；T1 僅改 `stopped` 的寫入語意並讓 residualSpeed 自然反映真速度。
+- **Surprises & Discoveries**:
+  - 完整 sim regression 中，連續物理造成 `counter` 事件序列由 `A,D` 變成 `A,A,D`:第一次反向後殘速尚未過零，之後再次按 A 仍是合法 counter。已重錄 baseline 並在測試註解明確化。
+- **Open Questions**:無新增。
 
 ### 2026-07-06 — T0 entry gate PASS(baseline 重錄授權 + 測試盤點)
 - **GD-5 證據**:[../../../DECISIONS.md](../../../DECISIONS.md) GD-5「六個決策點」第 4 點明確記錄:
