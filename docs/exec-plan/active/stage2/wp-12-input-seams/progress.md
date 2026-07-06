@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 進行中(T2 ✅ 2026-07-06;T-exit 待辦)
+## Status: ✅ 完成(2026-07-06;T0/T1/T2/T-exit 全綠)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ 2026-07-06 |
 | T1 感度 CS2 化 | ✅ 2026-07-06 |
 | T2 射線注入 | ✅ 2026-07-06 |
-| T-exit | ⬜ |
+| T-exit | ✅ 2026-07-06 |
 
 ---
 
@@ -25,6 +25,27 @@
 ---
 
 ## Log
+
+### 2026-07-06 — T-exit gate PASS(WP-12 收斂)
+
+**回歸全綠(直接證據):**
+- `npm run typecheck`(`tsc --noEmit`)= exit 0。
+- `npx vitest run` = **33 files / 250 tests passed**(含 `CameraController.test.ts` 2、`HitDetector.test.ts` 13、`metadata.test.ts` 5、`export.test.ts` 5)。
+
+**手感抽查(建構 + 測試等價證據;非互動 session 無法實跑 dev server):**
+- `RAD_PER_COUNT = THREE.MathUtils.degToRad(0.022)` = CS2 m_yaw 原值。360° 所需滑鼠位移:
+  @sens 1.0 = 360/0.022 = **16363.6 counts**;@sens 2.0 = **8181.8 counts**——與 CS2 同 sensitivity 完全一致(同一 0.022°/count 模型)。
+- `CameraController.test.ts` 鎖換算:1000 counts × sens1 → `-degToRad(22)`、× sens2 → `-degToRad(44)`(線性 2×)。
+- 設定面板([SettingsPanel.ts:15-18](../../../../../src/ui/SettingsPanel.ts))sensitivity 值域 **0.1–5.0(step 0.1)**,涵蓋 CS2 慣用 **1.5–2.5**,值域充足 → **無 OQ**。
+- 主觀「手感像 CS2」實機確認屬 **pilot scope**(量化校準,T-exit 已註明),不阻擋本 gate。
+
+**匯出抽查(真實路徑追蹤 + round-trip 測試;非互動無法實跑 drill 下載):**
+- 真實匯出路徑:[main.ts:133-148](../../../../../src/main.ts) `buildCurrentExportPayload → collectMeta`(固定寫 `sensitivityModel:'cs2-0.022deg'`,[metadata.ts:72](../../../../../src/data/metadata.ts))`→ buildExportPayload`(spread `...meta` 保留欄位,[export.ts:20-31](../../../../../src/data/export.ts))`→ serializeJSON`(`JSON.stringify`)。故實機匯出 JSON 必含該欄,by construction。
+- `export.test.ts:61` round-trip(`JSON.stringify`→`parse`)斷言 `parsed.meta.sensitivityModel === 'cs2-0.022deg'`。
+
+**Code review(五軸,T1/T2 差異):** 無 BLOCKER。correctness——換算/射線注入皆有精度斷言與等價測試;readability——常數具名、GD-5 註解到位;architecture——`raycastFromCenter` 收斂為薄包裝、呼叫端零改動,雙迴圈邊界不變;security——n/a(無外部輸入面新增);performance——熱路徑物件重用維持(`#qYaw/#qPitch`、模組層級 Raycaster/Box3/Vector)。
+
+**Outcomes:** 兩接縫就緒——感度為 CS2 語意且匯出有標記、射線可注入且 camera-center 舊路徑等價。WP-13 可在不再動這兩處的前提下接彈道(punch/spread 改呼叫 `raycastWithRay`)。
 
 ### 2026-07-06 10:36+02:00 — T2 ray injection PASS
 - `HitDetector` 新增公開 `raycastWithRay(origin, dirNormalized, targets)`,沿用模組層級 `Raycaster` / `Box3` / `Vector3` 重用物件;既有 `visible && alive` 過濾、最近命中、`part` 回傳語意不變。
