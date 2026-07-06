@@ -63,4 +63,22 @@ describe('loadDrill — 載入邊界（FR-6.2，OQ-6.4）', () => {
   it('scene clearance 違規時拒載，錯誤訊息指名 prop id', () => {
     expect(() => loadDrill(VALID, sceneWithBlockingProp())).toThrow(/clearance 驗證失敗.*blocking-crate/);
   });
+
+  // PR #10 review（Codex P2）:非 Vec3 waypoint 過去可通過 validateDrill,使 clearance envelope
+  // 變 NaN 而「未檢查即放行」。現在必須在 schema 層拒載,不得回傳看似通過淨空驗證的 DrillConfig。
+  it('waypoints 元素非 Vec3 → 帶 scene 載入時於 schema 層拒載，不得靜默通過 clearance', () => {
+    const bad = {
+      ...VALID,
+      targets: { count: 10, distance: 4, motion: { type: 'waypoints', waypoints: [{ x: 1 }] } },
+    };
+    const cleanScene: SceneConfig = {
+      sceneId: 'clean',
+      assetPackVersion: 'test',
+      clutterTier: 'low',
+      asset: null,
+      propBounds: [],
+      playerCorridor: { halfWidthU: 0.5 },
+    };
+    expect(() => loadDrill(bad, cleanScene)).toThrow(/targets\.motion\.waypoints\[0\]\.y/);
+  });
 });

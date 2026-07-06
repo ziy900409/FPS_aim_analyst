@@ -88,10 +88,19 @@ function validateMotion(json: unknown): TargetMotion {
     }
     motion.spawnKind = m.spawnKind;
   }
-  // waypoints 深驗延後至 WP-6.5（實作 waypoints 移動時);此處僅接受陣列。
+  // waypoints 形狀驗證:逐元素有限數 Vec3——clearance 淨空展開讀 x/y/z（WP-19 T3),非 Vec3 元素會讓
+  // envelope 變 NaN 而靜默跳過檢查（PR #10 review）。偏移相對 target center,可負可零,故只驗有限。
+  // 語意深驗（點數下限/speed 配套）仍延後至 WP-6.5（實作 waypoints 移動時）。
   if (m.waypoints !== undefined) {
     if (!Array.isArray(m.waypoints)) throw err('targets.motion.waypoints', '必須為陣列');
-    motion.waypoints = m.waypoints as TargetMotion['waypoints'];
+    motion.waypoints = m.waypoints.map((point, i) => {
+      const p = requireObject(point, `targets.motion.waypoints[${i}]`);
+      return {
+        x: requireFiniteNumber(p.x, `targets.motion.waypoints[${i}].x`),
+        y: requireFiniteNumber(p.y, `targets.motion.waypoints[${i}].y`),
+        z: requireFiniteNumber(p.z, `targets.motion.waypoints[${i}].z`),
+      };
+    });
   }
   return motion;
 }
