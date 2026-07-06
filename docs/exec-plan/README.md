@@ -82,7 +82,7 @@
 | **M3 ✅（2026-07-03）** | 完整 drill 能端到端匯出資料 | WP-7 | 資料層（F1/F2）端到端綠燈，**已達成 → 可開始 pilot / WP-8 metrics 可展開**（先讀 GD-4 crosshair 缺口） |
 | **M4 ✅（2026-07-03）** | 階段 A 全部驗收清單通過（附錄 E 10 項硬閘全綠；自動閘 `test:ci` exit 0） | WP-9 | **階段 A 交付達成**（手動遊玩手感項為研究者實機回填步驟，不阻塞自動閘） |
 | **M5 ✅（2026-07-05）** | recoil-core golden tests 全綠:seed 223 前 8 筆彈道表、10 發 punch 向量、前 4 發抑制係數、同 seed 決定性 | WP-10 | 數學核心正確性釘死;之後整合問題可歸因到接線而非公式 |
-| **M6 ✅（2026-07-06）** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效(automated `test:ci` 全綠;手動視覺 4 項 pending) | WP-13 | 壓槍玩法成立,核心手感可實測 |
+| **M6 ✅（2026-07-06）** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效(automated `test:ci` 全綠 + 手動視覺 4 項使用者確認通過) | WP-13 | 壓槍玩法成立,核心手感可實測 |
 | **M7 ⬜** | `cl_showpos` 曲線 + pattern 圖比對通過;velocity gate 連續模型上線 | WP-14+15 | counter-strafe × 壓槍研究效度成立 |
 | **M8 ⬜** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B 全項通過 | WP-17 | stage2 交付 |
 | **M9 ⬜** | 場景可置換(≥2 雜亂度階層)+ 淨空驗證拒載違規 drill + 跨場景 sim 決定性逐位一致 + 資產 attribution 可稽核 | WP-19 | 場景脊椎:「換場景零引擎碼」與「場景不碰決定性」被測試釘死 |

@@ -5,7 +5,7 @@
 
 ---
 
-## Status: ✅ WP-13 完成(M6 automated-green 2026-07-06;4 項手動視覺/手感驗證待使用者於瀏覽器確認)
+## Status: ✅ WP-13 完成(M6 達成 2026-07-06;automated `test:ci` 全綠 + 手動視覺/手感 4 項使用者確認通過)
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 simStep 佈線 | ✅ 2026-07-06 |
 | T2 相機/彈道合成 | ✅ 2026-07-06 |
 | T3 彈孔 + overlay | ✅ 2026-07-06 |
-| T-exit(M6) | ✅ 2026-07-06(automated;手動視覺 4 項 pending) |
+| T-exit(M6) | ✅ 2026-07-06(automated + 手動 4 項使用者確認通過) |
 
 ---
 
@@ -108,17 +108,17 @@ DoD 的手動壓槍驗證 4 項屬瀏覽器內視覺/手感確認,非自動化�
   countdown(~384 tick)保證重置後首個 render frame 先以 `total=0` sync 歸零 `#syncedSeq`,故實務不可達;
   robustness 建議加 `ImpactView.reset()` 於 restart 呼叫。
 
-**5. 手動壓槍驗證 4 項(T-exit Step 3)—— ⬜ PENDING(需使用者於 dev server 瀏覽器內確認):**
-   非自動化可自證(視覺/手感);使用者選「Flip M6 ✅, manual pending」。待確認清單(`npm run dev`,鎖定後 AK 按住 30 發):
-   - ⬜ ① 鏡頭上跳可見、放開後回落;
-   - ⬜ ② 彈孔分布 = 直升→之字 pattern 形狀;
-   - ⬜ ③ 壓槍下拉可將彈著拉回目標(視覺≠彈道分離手感);
-   - ⬜ ④ 右下 overlay `punch p/y`、`inacc`、`ammo` 數值與畫面一致;
-   - ⬜(佐證)`renderer.info.render.drawcalls` 彈孔部分 = 1(結構上單一 InstancedMesh 已保證)。
-   證據(截圖/錄影路徑)由使用者補記於此。
+**5. 手動壓槍驗證 4 項(T-exit Step 3)—— ✅ PASS(使用者於 dev server 瀏覽器內確認 2026-07-06「請標註通過」):**
+   `npm run dev`,鎖定後 AK 按住連發實測:
+   - ✅ ① 鏡頭上跳可見、放開後回落;
+   - ✅ ② 彈孔分布 = 直升→之字 pattern 形狀(**T4 脫靶投影交戰平面後始可觀測**,見上方 T4 條目;
+     原設計「僅目標命中 + 一發即死」下彈孔恆 1、pattern 不可見);
+   - ✅ ③ 壓槍下拉可將彈著拉回目標(視覺≠彈道分離手感);
+   - ✅ ④ 右下 overlay `punch p/y`、`inacc`、`ammo` 數值與畫面一致;
+   - ✅(佐證)彈孔單一 `InstancedMesh` → 1 draw call(結構保證;`renderer.info.render.drawcalls` 未暴露,採結構判定)。
 
 **M6 標記:** [../README.md](../README.md)(stage2 §WP 表 + M6 里程碑)、[exec-plan/README.md](../../../README.md)
-WP-13 + M6 皆翻 ✅ 2026-07-06(automated)。
+WP-13 + M6 皆翻 ✅ 2026-07-06(automated `test:ci` + 手動 4 項使用者確認通過)。
 
 **Next:** M6 過 → WP-15(校準)/WP-16(指標匯出 schema v2)可展開;WP-14(movement 物理)未完不阻塞此門
 (velocity gate 耦合屬 WP-14 T2)。使用者完成手動 4 項後可把上方 ⬜ 翻 ✅ 收尾。

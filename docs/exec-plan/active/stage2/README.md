@@ -214,7 +214,7 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 | **WP-10** | [wp-10-recoil-core/](wp-10-recoil-core/README.md) | 後座力數學核心(彈道表 + punch 動力學 + inaccuracy)+ golden tests + 2D 檢查頁(dev-only) | **M5** | —(可立即開跑) | 2–3 | ✅ **M5 2026-07-05** |
 | **WP-11** | [wp-11-weapon-fire/](wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up 事件 + cycletime 產彈 + 彈匣 + recoil index 掛點 | — | WP-10(型別) | 2–3 | ✅ **2026-07-06** |
 | **WP-12** | [wp-12-input-seams/](wp-12-input-seams/README.md) | 感度換算 CS2 0.022°/count(A4)+ 射線方向注入(A3) | — | — | 1–1.5 | ✅ **2026-07-06** |
-| **WP-13** | [wp-13-sim-camera-integration/](wp-13-sim-camera-integration/README.md) | recoil 進 simStep(64Hz 子節奏)+ 相機視覺/彈道合成 + 彈孔 InstancedMesh + debug overlay | **M6** | WP-10, 11, 12 | 2–3 | ✅ **M6 2026-07-06**(automated;手動視覺 4 項 pending) |
+| **WP-13** | [wp-13-sim-camera-integration/](wp-13-sim-camera-integration/README.md) | recoil 進 simStep(64Hz 子節奏)+ 相機視覺/彈道合成 + 彈孔 InstancedMesh + debug overlay | **M6** | WP-10, 11, 12 | 2–3 | ✅ **M6 2026-07-06**(automated + 手動視覺 4 項使用者確認通過) |
 | **WP-14** | [wp-14-movement-physics/](wp-14-movement-physics/README.md) | friction/accelerate integrator 取代 M1 snap + velocity gate(~88 u/s)+ 殘速指標連續化 | — | —(介面不變,可與 10–13 並行) | 2–3 | ⬜ |
 | **WP-15** | [wp-15-calibration/](wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | ⬜ |
 | **WP-16** | [wp-16-metrics-export-v2/](wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁軌跡對照 | — | WP-13 | 2–3 | ⬜ |
@@ -228,7 +228,7 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 | 里程碑 | 完成條件 | 對應 WP | 意義 |
 |---|---|---|---|
 | **M5 ✅ (2026-07-05)** | golden tests 全綠:seed 223 前 8 筆彈道表、10 發 punch 向量、前 4 發抑制係數、同 seed 決定性 | WP-10 | 數學核心正確性釘死;之後所有整合問題都可歸因到接線,不歸因到公式 |
-| **M6 ✅ (2026-07-06)** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效;10 發 E2E punch 值與 M5 向量一致(automated `test:ci` 全綠;手動視覺/手感 4 項 pending,見 WP-13 progress T-exit) | WP-13 | 壓槍玩法成立(核心手感可實測) |
+| **M6 ✅ (2026-07-06)** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效;10 發 E2E punch 值與 M5 向量一致(automated `test:ci` 全綠 + 手動視覺/手感 4 項使用者確認通過 2026-07-06) | WP-13 | 壓槍玩法成立(核心手感可實測) |
 | **M7** | `cl_showpos` 曲線 + pattern 圖比對通過;velocity gate 連續模型上線 | WP-14+15 | 「counter-strafe × 壓槍」研究效度成立(移動 inaccuracy 有真實速度可掛) |
 | **M8** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B 全項通過 | WP-17 | stage2 交付 |
 

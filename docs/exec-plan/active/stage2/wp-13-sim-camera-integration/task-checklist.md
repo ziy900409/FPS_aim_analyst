@@ -9,7 +9,7 @@
 | ✅ | **T1** simStep recoil 佈線(64Hz 子節奏 + onFire/spread) | [T1-simstep-recoil-wiring.md](T1-simstep-recoil-wiring.md) | T0 | High |
 | ✅ | **T2** adapter 轉換 + 彈道合成 + 視覺 punch compose | [T2-camera-ballistic-compose.md](T2-camera-ballistic-compose.md) | T1 | High |
 | ✅ | **T3** 彈孔 InstancedMesh + debug overlay | [T3-bullet-holes-debug.md](T3-bullet-holes-debug.md) | T2 | Low |
-| ✅ | **T-exit** M6 門(E2E golden 綠 + 手動視覺 4 項 pending) | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
+| ✅ | **T-exit** M6 門(E2E golden 綠 + 手動視覺 4 項使用者確認通過) | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 
