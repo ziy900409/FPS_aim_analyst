@@ -42,6 +42,18 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
     const cfg = validateDrill(minimalValid());
     expect(cfg.targets.motion).toBeUndefined();
   });
+
+  it('waypoints 合法 Vec3 元素（含負/零偏移）通過並收斂為純 {x,y,z}', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: {
+        count: 20,
+        distance: 4,
+        motion: { type: 'waypoints', waypoints: [{ x: -1.5, y: 0, z: 2, extra: 'dropped' }] },
+      },
+    });
+    expect(cfg.targets.motion?.waypoints).toEqual([{ x: -1.5, y: 0, z: 2 }]);
+  });
 });
 
 describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () => {
@@ -90,5 +102,35 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
   it('未知 motion.type → throw 指名 targets.motion.type', () => {
     const bad = { ...(minimalValid() as object), targets: { count: 20, distance: 4, motion: { type: 'orbit' } } };
     expect(() => validateDrill(bad)).toThrow(/targets\.motion\.type/);
+  });
+
+  // 非 Vec3 waypoint 元素若放行,clearance envelope 會變 NaN 而靜默跳過淨空檢查（PR #10 review）。
+  it('waypoint 元素非物件 → throw 帶索引路徑', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, motion: { type: 'waypoints', waypoints: [{ x: 0, y: 0, z: 0 }, 'north'] } },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.motion\.waypoints\[1\]/);
+  });
+
+  it('waypoint 元素缺座標欄位 → throw 指名 waypoints[i].y', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, motion: { type: 'waypoints', waypoints: [{ x: 1, z: 2 }] } },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.motion\.waypoints\[0\]\.y/);
+  });
+
+  it('waypoint 座標非有限（NaN / Infinity）→ throw', () => {
+    const nan = {
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, motion: { type: 'waypoints', waypoints: [{ x: NaN, y: 0, z: 0 }] } },
+    };
+    expect(() => validateDrill(nan)).toThrow(/targets\.motion\.waypoints\[0\]\.x/);
+    const inf = {
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, motion: { type: 'waypoints', waypoints: [{ x: 0, y: Infinity, z: 0 }] } },
+    };
+    expect(() => validateDrill(inf)).toThrow(/targets\.motion\.waypoints\[0\]\.y/);
   });
 });

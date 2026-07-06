@@ -66,7 +66,23 @@ export function formatClearanceViolations(violations: readonly ClearanceViolatio
 }
 
 export function deriveTargetEnvelopes(drill: DrillConfig): TargetEnvelope[] {
-  return activeSides(drill).map((side) => envelopeForSide(side, drill.targets.distance, drill.targets.motion));
+  return activeSides(drill).map((side) => {
+    const envelope = envelopeForSide(side, drill.targets.distance, drill.targets.motion);
+    assertFiniteEnvelope(envelope);
+    return envelope;
+  });
+}
+
+/**
+ * 保證門縱深（PR #10 review）:envelope 任一邊界非有限（NaN/±Infinity）時,`clipAxis` 的 NaN 比較
+ * 會讓 `segmentIntersectsAabb` 對所有線段靜默回 false——「未檢查」被當成「淨空」放行,與驗證器的
+ * 保證語意相反。schema 已擋非 Vec3 waypoint;此處對繞過 schema 的呼叫端（或未來回歸）loud fail。
+ */
+function assertFiniteEnvelope(envelope: TargetEnvelope): void {
+  const bounds = [envelope.min.x, envelope.min.y, envelope.min.z, envelope.max.x, envelope.max.y, envelope.max.z];
+  if (bounds.some((value) => !Number.isFinite(value))) {
+    throw new Error(`淨空驗證失敗: target:${envelope.side} envelope 含非有限邊界（motion range/waypoints 數值不合法）`);
+  }
 }
 
 function activeSides(drill: DrillConfig): Array<'L' | 'R'> {
