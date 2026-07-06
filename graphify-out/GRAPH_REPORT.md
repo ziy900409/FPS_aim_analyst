@@ -1,16 +1,16 @@
 # Graph Report - FPS_aim_analyst  (2026-07-06)
 
 ## Corpus Check
-- 83 files · ~119,400 words
+- 84 files · ~119,784 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 673 nodes · 1363 edges · 42 communities (28 shown, 14 thin omitted)
+- 674 nodes · 1365 edges · 42 communities (28 shown, 14 thin omitted)
 - Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 82 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `fae70724`
+- Built from commit: `f1bd0de8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -36,7 +36,7 @@
 - [[_COMMUNITY_Community 18|Community 18]]
 - [[_COMMUNITY_Community 19|Community 19]]
 - [[_COMMUNITY_Community 20|Community 20]]
-- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 21|Community 21]]
 - [[_COMMUNITY_Community 26|Community 26]]
 - [[_COMMUNITY_Community 31|Community 31]]
 - [[_COMMUNITY_Community 32|Community 32]]
@@ -104,28 +104,28 @@ Cohesion: 0.06
 Nodes (47): assertFinitePayload(), buildExportPayload(), downloadCSV(), downloadJSON(), downloadTextFile(), exportBasename(), formatBoolean(), formatNumber() (+39 more)
 
 ### Community 2 - "Community 2"
+Cohesion: 0.07
+Nodes (52): ADR-2 雙迴圈解耦, ADR-3 128 Hz tick, ADR-4 performance.now() 計時源, ADR-5 Pointer Lock + 原始輸入 + coalesced, D1 UI = 純 TS + DOM overlay, WP-0 — 環境設置 (scaffold/createRenderer seam), WP-3 — 高頻輸入採集 (getCoalescedEvents 入緩衝), WP-4 — 目標 / 準心 (+44 more)
+
+### Community 3 - "Community 3"
 Cohesion: 0.09
 Nodes (38): buttonCss(), createNumberInput(), drawGrid(), drawPattern(), maxSpreadRadiusDeg(), mountPatternViewer(), niceStep(), patternBounds() (+30 more)
 
-### Community 3 - "Community 3"
+### Community 4 - "Community 4"
 Cohesion: 0.05
 Nodes (51): ADR-2 (three loops communicate via SharedState), ADR-3 (sub-tick), ADR-4 (timing: timeStamp / sim tick time source), Appendix D (stage B physics constants: friction/accelerate/stopspeed), Boolean Accuracy Gate (stopped -> accurate), firstShot / firstShotGate (per-peek first shot flag), Fixed-step Movement (determinism, FPS-independent), HitDetector (Raycaster camera-center hit detection) (+43 more)
 
-### Community 4 - "Community 4"
-Cohesion: 0.08
-Nodes (48): ADR-2 雙迴圈解耦, ADR-3 128 Hz tick, ADR-4 performance.now() 計時源, ADR-5 Pointer Lock + 原始輸入 + coalesced, D1 UI = 純 TS + DOM overlay, WP-0 — 環境設置 (scaffold/createRenderer seam), WP-3 — 高頻輸入採集 (getCoalescedEvents 入緩衝), WP-4 — 目標 / 準心 (+40 more)
-
 ### Community 5 - "Community 5"
-Cohesion: 0.07
-Nodes (46): ADR-1 backend metadata, ADR-4 時間源 (performance.now()), counterstrafe_ad_v1 drill config, SharedState, SimLoop (src/loop/SimLoop.ts), WP-0 createRenderer backend seam, WP-1 sensitivity, WP-2 sim tick (+38 more)
-
-### Community 6 - "Community 6"
 Cohesion: 0.09
 Nodes (22): capacityForDrill(), keyMaskFromKeys(), keyMaskFromState(), keysFromMask(), TickArena, buildPeekWindows(), coefficientOfVariation(), computeMetrics() (+14 more)
 
-### Community 7 - "Community 7"
+### Community 6 - "Community 6"
 Cohesion: 0.08
 Nodes (44): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), sub-tick 輸入時間戳 (精準度真正來源) (+36 more)
+
+### Community 7 - "Community 7"
+Cohesion: 0.08
+Nodes (42): ADR-1 backend metadata, ADR-4 時間源 (performance.now()), counterstrafe_ad_v1 drill config, SharedState, SimLoop (src/loop/SimLoop.ts), WP-0 createRenderer backend seam, WP-1 sensitivity, WP-2 sim tick (+34 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.08
@@ -136,20 +136,20 @@ Cohesion: 0.18
 Nodes (19): 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, 雙迴圈 (dual-loop), CONTEXT.md 專有名詞詞彙表, sim tick rate (128 Hz), DECISIONS.md 全域決策與矛盾帳本 (+11 more)
 
 ### Community 10 - "Community 10"
+Cohesion: 0.14
+Nodes (17): 急停反應時間 (t_counter − t_visible), DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1) (+9 more)
+
+### Community 11 - "Community 11"
 Cohesion: 0.18
 Nodes (16): coalesced events (getCoalescedEvents), backend (render backend webgpu/webgl2), 原始輸入 (unadjustedMovement), 技術棧 (Three.js WebGPU + TS + Vite), 附錄 E 驗收清單 (階段 A), ADR-1 WebGPURenderer + WebGL2 fallback, ADR-5 Pointer Lock + 原始輸入 + coalesced events, 附錄 C 匯出資料 schema (+8 more)
 
-### Community 11 - "Community 11"
+### Community 12 - "Community 12"
 Cohesion: 0.3
 Nodes (15): 里程碑 M1 (WP-2 脊椎門控), 里程碑 M2 (WP-5 核心玩法), 里程碑 M3 (WP-7 可匯出資料), 里程碑 M4 (WP-9 階段 A 交付), exec-plan/README.md 執行計畫索引, WP-0 環境建置與學習爬升, WP-1 FPS 控制 + Pointer Lock, WP-2 SharedState + 雙迴圈骨架 (脊椎) (+7 more)
 
-### Community 12 - "Community 12"
+### Community 13 - "Community 13"
 Cohesion: 0.38
 Nodes (10): err(), requireFiniteNumber(), requireNonNegativeNumber(), requireObject(), requirePositiveInt(), requirePositiveNumber(), validateRecoveryTransition(), validateWeapon() (+2 more)
-
-### Community 13 - "Community 13"
-Cohesion: 0.18
-Nodes (14): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+6 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.19
@@ -159,11 +159,7 @@ Nodes (13): accumulator 模式, 準心對齊偏移, DrillConfig 元件, F5 接�
 Cohesion: 0.53
 Nodes (8): err(), requireFiniteNumber(), requireNonNegativeNumber(), requireObject(), requirePositiveInt(), requirePositiveNumber(), validateDrill(), validateMotion()
 
-### Community 16 - "Community 16"
-Cohesion: 0.2
-Nodes (11): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 決定性 (determinism), RenderSnapshot 窄介面, 速度歸零誤差 (residual speed), 階段 B (Stage B), 量測時鐘 vs 決定性時鐘 (two-clock model), 速度 gate (velocity gate) (+3 more)
-
-### Community 18 - "Community 18"
+### Community 17 - "Community 17"
 Cohesion: 0.44
 Nodes (7): createHUD(), createHUDStats(), createHUDSummary(), fillHUDSummary(), formatElapsed(), formatNumber(), renderMetric()
 
@@ -171,9 +167,13 @@ Nodes (7): createHUD(), createHUDStats(), createHUDSummary(), fillHUDSummary(), 
 Cohesion: 0.36
 Nodes (8): 不可違反的硬約束 (技術), cross-origin isolation (COOP/COEP), MetricsDashboard 元件, D1 — 2D UI = 純 TS + DOM overlay, D3 — COOP/COEP 部署 (Vite plugin + 靜態主機後定), ADR-4 performance.now() + cross-origin isolation, WP-0 T2 Cross-origin isolation, WP-0 T4 Deploy headers
 
-### Community 22 - "Community 22"
-Cohesion: 0.5
-Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManager 元件, F2 — 記錄 t_visible spawn/可見時間戳
+### Community 20 - "Community 20"
+Cohesion: 0.33
+Nodes (7): 決定性 (determinism), RenderLoop 元件, RenderSnapshot 窄介面, 量測時鐘 vs 決定性時鐘 (two-clock model), 主執行緒卡頓污染 sim 計時 (階段 A 隔離不成立), Web Worker + SharedArrayBuffer 真正隔離 (階段 B), ADR-7 兩個時鐘 (量測時鐘 / 決定性時鐘)
+
+### Community 21 - "Community 21"
+Cohesion: 0.4
+Nodes (5): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 速度歸零誤差 (residual speed), 階段 B (Stage B), 速度 gate (velocity gate)
 
 ## Knowledge Gaps
 - **89 isolated node(s):** `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)`, `counter-strafe (反向急停)`, `反向鍵 (counter key)` (+84 more)
@@ -183,9 +183,9 @@ Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManage
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `規格書 v1.1 + WBS` connect `Community 9` to `Community 10`, `Community 11`, `Community 13`, `Community 14`, `Community 16`, `Community 19`, `Community 22`?**
+- **Why does `規格書 v1.1 + WBS` connect `Community 9` to `Community 10`, `Community 11`, `Community 12`, `Community 14`, `Community 19`, `Community 20`?**
   _High betweenness centrality (0.010) - this node is a cross-community bridge._
-- **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 4` to `Community 5`?**
+- **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 2` to `Community 7`?**
   _High betweenness centrality (0.010) - this node is a cross-community bridge._
 - **Are the 8 inferred relationships involving `createSharedState()` (e.g. with `setup()` and `freshState()`) actually correct?**
   _`createSharedState()` has 8 INFERRED edges - model-reasoned connections that need verification._

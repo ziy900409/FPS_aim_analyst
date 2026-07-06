@@ -10,6 +10,7 @@ const meta: Meta = {
   simHz: 128,
   browser: 'test-browser',
   sensitivity: 1,
+  sensitivityModel: 'cs2-0.022deg',
   crossOriginIsolated: true,
   startedAt: '2026-07-02T00:00:00.000Z',
   unit: 'source',
@@ -57,6 +58,7 @@ describe('data export', () => {
     const parsed = JSON.parse(json) as ExportPayload;
 
     expect(parsed.meta.drillId).toBe('counterstrafe_ad_v1');
+    expect(parsed.meta.sensitivityModel).toBe('cs2-0.022deg');
     expect(parsed.ticks).toHaveLength(2);
     expect(parsed.events).toHaveLength(3);
   });

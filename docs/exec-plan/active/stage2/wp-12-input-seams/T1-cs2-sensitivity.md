@@ -7,7 +7,7 @@
 | **相依** | T0(標注方式已拍板) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | MODIFY `src/view/CameraController.ts`、`src/data/metadata.ts`、`src/main.ts`(collectMeta 呼叫)、`docs/operational/schema.md` + 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-06 |
 
 ## Objective
 
@@ -28,13 +28,13 @@
 
 ## Steps
 
-- [ ] 常數替換 + 註解;`CameraController` 既有測試更新期望值(若有寫死角度)。
-- [ ] 新測試:`sensitivity=1.0` 下 1000 counts → yaw 變化 = `degToRad(22)`(±1e-12);
+- [x] 常數替換 + 註解;`CameraController` 既有測試更新期望值(若有寫死角度)。
+- [x] 新測試:`sensitivity=1.0` 下 1000 counts → yaw 變化 = `degToRad(22)`(±1e-12);
       `sensitivity=2.0` → 線性 2 倍。
-- [ ] `collectMeta` 增欄 + 測試(payload 含 `sensitivityModel`);`assertFinitePayload` 等
+- [x] `collectMeta` 增欄 + 測試(payload 含 `sensitivityModel`);`assertFinitePayload` 等
       既有匯出測試不破。
-- [ ] `schema.md` 對帳(meta 節 + 變更註記)。
-- [ ] `npx vitest run` 全綠;`npm run typecheck` exit 0。
+- [x] `schema.md` 對帳(meta 節 + 變更註記)。
+- [x] `npx vitest run` 全綠;`npm run typecheck` exit 0。
 
 ## Definition of Done
 

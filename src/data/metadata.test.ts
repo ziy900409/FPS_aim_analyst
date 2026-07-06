@@ -26,6 +26,7 @@ describe('collectMeta', () => {
       simHz: 128,
       browser: 'TestBrowser/1.0',
       sensitivity: 1.2,
+      sensitivityModel: 'cs2-0.022deg',
       crossOriginIsolated: true,
       startedAt: '2026-07-02T10:00:00.000Z',
       unit: 'source',
@@ -52,6 +53,7 @@ describe('collectMeta', () => {
     expect(meta).toMatchObject({
       simHz: 128,
       unit: 'source',
+      sensitivityModel: 'cs2-0.022deg',
       vStrafe: 250,
       maxDrillSeconds: 300,
       lateEventCount: 0,

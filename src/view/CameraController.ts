@@ -11,12 +11,12 @@ import * as THREE from 'three/webgpu';
  * 故無 roll（notes-fps-controls §yaw/pitch）。pitch 以**明確**的專案級夾角 ±MAX_PITCH
  * 限制（R2：不沿用 three.js minPolarAngle/maxPolarAngle 預設），避免看正上/正下時翻轉。
  *
- * 單位：`sensitivity × RAD_PER_COUNT` 為 counts→radians 線性換算（OQ-1.1）；RAD_PER_COUNT
- * 為固定佔位常數、sensitivity 使用者可調（T5），數值校準延到 pilot。
+ * 單位：`sensitivity × RAD_PER_COUNT` 為 CS2 counts→radians 線性換算（GD-5）；
+ * RAD_PER_COUNT 固定為 0.022°/count，sensitivity 使用者可調（T5）。
  */
 
-/** counts→radians 固定線性係數（OQ-1.1，佔位；pilot 校準）。 */
-const RAD_PER_COUNT = 0.0022;
+/** CS2 counts→radians 固定線性係數（GD-5：0.022°/count）。 */
+const RAD_PER_COUNT = THREE.MathUtils.degToRad(0.022);
 /** sensitivity 預設值（T5 設定面板可即時改）。 */
 const DEFAULT_SENSITIVITY = 1.0;
 /** pitch 夾角 ±89°（Math.PI/2 - ε），避免翻轉（R2 明確專案級限制）。 */

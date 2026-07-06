@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅ 2026-07-06)
+## Status: 🟡 進行中(T1 ✅ 2026-07-06)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ 2026-07-06 |
-| T1 感度 CS2 化 | ⬜ |
+| T1 感度 CS2 化 | ✅ 2026-07-06 |
 | T2 射線注入 | ⬜ |
 | T-exit | ⬜ |
 
@@ -25,6 +25,17 @@
 ---
 
 ## Log
+
+### 2026-07-06 — T1 cs2 sensitivity PASS
+- `CameraController` counts→radians 係數改為 `THREE.MathUtils.degToRad(0.022)`;註解改為 GD-5 / CS2 語意。
+- 新增 `src/view/CameraController.test.ts`: `sensitivity=1.0` 時 1000 counts → yaw `-degToRad(22)`, `sensitivity=2.0` → `-degToRad(44)`,驗證線性 2 倍。
+- `collectMeta` 固定輸出 `sensitivityModel: 'cs2-0.022deg'`;`Meta` 型別、metadata/export 測試與 `docs/operational/schema.md` 已對齊。舊 export 無此欄 = 階段 A 佔位 `0.0022 rad/count` 語意。
+- Verification:
+  - `npx.cmd vitest run src/view/CameraController.test.ts src/data/metadata.test.ts src/data/export.test.ts` = 3 files / 12 tests passed
+  - `npx.cmd vitest run` = 33 files / 245 tests passed
+  - `npm.cmd run typecheck`
+  - `git grep 0.0022 src/` = no matches
+  - `graphify update .` = 674 nodes / 1365 edges
 
 ### 2026-07-06 10:09+02:00 — T0 entry gate PASS
 - OQ-S2-3 拍板:`sensitivityModel` 欄名固定,值域先固定為 `'cs2-0.022deg'`;無此欄 = 階段 A 佔位感度模型(`0.0022 rad/count`)。`schemaVersion` bump 延到 WP-16 schema v2 一次處理。
