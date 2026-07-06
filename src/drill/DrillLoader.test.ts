@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadDrill } from './DrillLoader.ts';
+import type { SceneConfig } from '../scene/SceneConfig.ts';
+import { CLEARANCE_MARGIN_U, TARGET_HITBOX_RADIUS_U } from '../scene/clearance.ts';
 
 /** 最小合法 config（欄位形狀對齊 DrillConfig / validateDrill）。 */
 const VALID = {
@@ -9,6 +11,25 @@ const VALID = {
   timing: { countdownMs: 3000 },
   endCondition: { type: 'targetCount', value: 10 },
 } as const;
+
+const INFLATION = TARGET_HITBOX_RADIUS_U + CLEARANCE_MARGIN_U;
+
+function sceneWithBlockingProp(): SceneConfig {
+  return {
+    sceneId: 'blocked',
+    assetPackVersion: 'test',
+    clutterTier: 'low',
+    asset: null,
+    propBounds: [
+      {
+        id: 'blocking-crate',
+        min: { x: -INFLATION - 0.2, y: 1.6 - INFLATION - 0.1, z: -INFLATION - 0.1 },
+        max: { x: -INFLATION, y: 1.6 - INFLATION + 0.1, z: -INFLATION + 0.1 },
+      },
+    ],
+    playerCorridor: { halfWidthU: 0.000001 },
+  };
+}
 
 describe('loadDrill — 載入邊界（FR-6.2，OQ-6.4）', () => {
   it('接受已解析物件 → 回傳收斂 DrillConfig', () => {
@@ -37,5 +58,9 @@ describe('loadDrill — 載入邊界（FR-6.2，OQ-6.4）', () => {
   it('schema 不合（型別錯）→ throw（不啟動 drill，OQ-6.4）', () => {
     const bad = { ...VALID, sequence: { alternation: 'XY' } };
     expect(() => loadDrill(bad)).toThrow(/驗證失敗: sequence\.alternation/);
+  });
+
+  it('scene clearance 違規時拒載，錯誤訊息指名 prop id', () => {
+    expect(() => loadDrill(VALID, sceneWithBlockingProp())).toThrow(/clearance 驗證失敗.*blocking-crate/);
   });
 });

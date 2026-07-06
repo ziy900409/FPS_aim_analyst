@@ -8,7 +8,7 @@
 | **相依** | T1、**WP-11 T3**(fireOneShot 產彈點) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | MODIFY `src/loop/SimLoop.ts`(fireOneShot 內 accurate/residualSpeed)、`src/state/SharedState.ts`(欄位/註解)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -28,12 +28,12 @@
 
 ## Steps
 
-- [ ] accurate/residualSpeed 判定落 `fireOneShot`;門檻常數與 T1 同源。
-- [ ] 88 邊界測試:構造 |vx| 略低/略高於 88 的開火時點 → accurate 翻轉正確(成對案例)。
-- [ ] 統計斷言:固定 seed 下「移動中(~250 u/s)spread ≫ 急停後(<88)spread」
+- [x] accurate/residualSpeed 判定落 `fireOneShot`;門檻常數與 T1 同源。
+- [x] 88 邊界測試:構造 |vx| 略低/略高於 88 的開火時點 → accurate 翻轉正確(成對案例)。
+- [x] 統計斷言:固定 seed 下「移動中(~250 u/s)spread ≫ 急停後(<88)spread」
       (兩組取樣半徑分布,均值比大於既定倍數;倍數由 weapon inaccuracy 參數解析推出)。
-- [ ] 決定性:同 seed 同輸入 → accurate/residualSpeed 序列兩次執行一致。
-- [ ] `npx vitest run` 全綠(含既有回歸)。
+- [x] 決定性:同 seed 同輸入 → accurate/residualSpeed 序列兩次執行一致。
+- [x] `npx vitest run` 全綠(含既有回歸)。
 
 ## Definition of Done
 

@@ -8,7 +8,7 @@
 | **相依** | —(GD-5 已於 WP-10 T0 落地;本 task 驗證其涵蓋面) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs(+ 必要時 `../../../DECISIONS.md` 補記) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ complete(2026-07-06) |
 
 ## Objective
 

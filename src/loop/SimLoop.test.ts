@@ -6,9 +6,12 @@ import type { TargetManager } from '../sim/TargetManager.ts';
 import type { TargetState } from '../state/types.ts';
 import type { Clock } from './clock.ts';
 import { SIM_HZ } from './constants.ts';
-import { createSimLoop, simStep } from './SimLoop.ts';
+import { createSimLoop, simStep, type RecoilRuntime } from './SimLoop.ts';
 import { createDataRecorder } from '../data/DataRecorder.ts';
-import { m4a1s } from '../weapon/weapons.ts';
+import { ak47, m4a1s } from '../weapon/weapons.ts';
+import { CS2_PROFILE } from '../sim/MovementController.ts';
+import { generateRecoilTable } from '../recoil/recoilTable.ts';
+import { createRan1 } from '../recoil/rng.ts';
 
 /** 固定基準的注入式 clock（OQ-2.3）。 */
 function fixedClock(t: number): Clock {
@@ -47,6 +50,10 @@ function tickAdvancer(loop: ReturnType<typeof createSimLoop>): (endMs: number) =
   };
 }
 
+function runtime(seed: number): RecoilRuntime {
+  return { table: generateRecoilTable(ak47.recoil), rng: createRan1(seed) };
+}
+
 describe('SimLoop accumulator（固定 128 Hz）', () => {
   it('固定步進累積出正確 tick 數（64 幀 × 2 tick = 128 ticks/s）', () => {
     const state = createSharedState();
@@ -75,12 +82,12 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(alpha).toBeLessThan(1);
   });
 
-  it('simStep 由 held 定 vx（M1 snap）並等速推進 x（只用 dtSec）+ 維護 prev/curr', () => {
+  it('simStep 由 held 經 friction/accelerate 推進 vx/x（只用 dtSec）+ 維護 prev/curr', () => {
     const state = createSharedState();
-    state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick snap +v_strafe
+    state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick 加速
     simStep(state, 1 / SIM_HZ, 0); // 無新輸入事件；tickEndMs 任意
-    expect(state.player.vx).toBe(250); //           held D → snap +v_strafe
-    expect(state.player.x).toBeCloseTo(250 / SIM_HZ, 12); // 250 × (1/128) = 1.953125 u
+    expect(state.player.vx).toBeCloseTo(10.9375, 12);
+    expect(state.player.x).toBeCloseTo(10.9375 / SIM_HZ, 12);
     expect(state.prev.x).toBe(0); //                prev = 推進前位置（內插基準）
     expect(state.curr.x).toBe(state.player.x); //   curr = 推進後位置
   });
@@ -91,7 +98,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     pushEvent(state, { type: 'key', code: 'KeyD', down: true, t: 2 });
     const loop = createSimLoop(state, fixedClock(0), SIM_HZ);
     loop.pump(TICK_MS); // 跑 1 個 tick
-    expect(state.player.vx).toBe(250); // KeyD 已消費 → snap 到 +STRAFE
+    expect(state.player.vx).toBeCloseTo(10.9375, 12); // KeyD 已消費 → 起步加速
     expect(state.input.size()).toBe(0); // 事件已消費出緩衝
   });
 
@@ -105,19 +112,19 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.input.size()).toBe(1); // 仍在緩衝
   });
 
-  it('簡化急停（T4）：反向鍵於 simStep 內立即 stopped=true、vx=0（開火精準 gate 來源）', () => {
+  it('反向鍵於 simStep 內不瞬停，改由速度自然穿越 stopped 門檻', () => {
     const state = createSharedState();
     state.held.right = true; // 向右移動
-    simStep(state, 1 / SIM_HZ, 0);
-    expect(state.player.vx).toBe(250);
-    expect(state.player.stopped).toBe(false); // 移動中開火 → accurate=false、residualSpeed=|vx|
+    for (let i = 0; i < 64; i++) simStep(state, 1 / SIM_HZ, i * TICK_MS);
+    expect(state.player.vx).toBeCloseTo(249.28460529178633, 12);
+    expect(state.player.stopped).toBe(false);
 
-    // 反向鍵（放 D、按 A）→ 下一 tick 急停：consume 更新 held、movement.step 判急停
+    // 反向鍵（放 D、按 A）→ 由 friction/accelerate 連續減速，不再同 tick 歸零。
     state.held.right = false;
     state.held.left = true;
-    simStep(state, 1 / SIM_HZ, TICK_MS);
-    expect(state.player.vx).toBe(0);
-    expect(state.player.stopped).toBe(true); // 停止態開火 → accurate=true、residualSpeed=0
+    simStep(state, 1 / SIM_HZ, 65 * TICK_MS);
+    expect(state.player.vx).toBeCloseTo(228.2199182018075, 12);
+    expect(state.player.stopped).toBe(false);
   });
 
   it('simStep 末端把 movement 後的 tick row 寫入 DataRecorder', () => {
@@ -130,7 +137,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
 
     expect(recorder.snapshot().ticks).toEqual([
-      { t: TICK_MS, vx: 250, vz: 0, aim: { yaw: 3, pitch: -2 }, keys: ['D'] },
+      { t: TICK_MS, vx: 10.9375, vz: 0, aim: { yaw: 3, pitch: -2 }, keys: ['D'] },
     ]);
   });
 
@@ -229,6 +236,94 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.heldFire).toBe(false);
   });
 
+  it('velocity gate 直接以 |vx| < CS2_PROFILE.accuracyThreshold 判定命中精準度', () => {
+    function fireAt(vx: number, staleStopped: boolean) {
+      const state = createSharedState();
+      const recorder = createDataRecorder({ capacity: 8 });
+      const cam = cameraLookingDownZ();
+      const killed: string[] = [];
+      const tm: TargetManager = {
+        tick() {},
+        markKilled(_s, id) {
+          killed.push(id);
+        },
+        reset() {},
+      };
+      state.player.vx = vx;
+      state.player.stopped = staleStopped;
+      state.targets.push(makeTarget('t0', 0, -8));
+      state.heldFire = true;
+      state.weapon.nextFireT = 0;
+
+      simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
+
+      return { killed, fire: recorder.snapshot().events.find((e) => e.type === 'fire') };
+    }
+
+    const below = fireAt(CS2_PROFILE.accuracyThreshold - 0.001, false);
+    expect(below.killed).toEqual(['t0']);
+    expect(below.fire).toMatchObject({ type: 'fire', hit: true, residualSpeed: CS2_PROFILE.accuracyThreshold - 0.001 });
+
+    const above = fireAt(CS2_PROFILE.accuracyThreshold + 0.001, true);
+    expect(above.killed).toEqual([]);
+    expect(above.fire).toMatchObject({ type: 'fire', hit: false, residualSpeed: CS2_PROFILE.accuracyThreshold + 0.001 });
+  });
+
+  it('spread movement term uses true speed ratio: max-speed spread mean is much larger than stopped spread', () => {
+    function meanSpreadRadius(vx: number, seed: number): number {
+      const rt = runtime(seed);
+      let sum = 0;
+      const samples = 256;
+      for (let i = 0; i < samples; i++) {
+        const state = createSharedState();
+        state.player.vx = vx;
+        state.heldFire = true;
+        state.weapon.nextFireT = 0;
+        simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, undefined, ak47, 0, rt);
+        sum += Math.hypot(state.recoil.lastSpread.x, state.recoil.lastSpread.y);
+      }
+      return sum / samples;
+    }
+
+    const stopped = meanSpreadRadius(0, 2026);
+    const moving = meanSpreadRadius(CS2_PROFILE.maxSpeed, 2026);
+
+    expect(moving / stopped).toBeGreaterThan(3.5);
+  });
+
+  it('velocity-gated fire events and spread samples replay deterministically for the same seed and speeds', () => {
+    function run(seed: number) {
+      const out: unknown[] = [];
+      const rt = runtime(seed);
+      for (const vx of [CS2_PROFILE.accuracyThreshold - 0.5, CS2_PROFILE.accuracyThreshold + 0.5]) {
+        const state = createSharedState();
+        const recorder = createDataRecorder({ capacity: 4 });
+        const cam = cameraLookingDownZ();
+        const tm: TargetManager = {
+          tick() {},
+          markKilled(s, id) {
+            const i = s.targets.findIndex((target) => target.id === id);
+            if (i >= 0) s.targets.splice(i, 1);
+          },
+          reset() {},
+        };
+        state.player.vx = vx;
+        state.targets.push(makeTarget('t0', 0, -8));
+        state.heldFire = true;
+        state.weapon.nextFireT = 0;
+
+        simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder, ak47, 0, rt);
+        out.push({
+          fire: recorder.snapshot().events.find((e) => e.type === 'fire'),
+          spread: { ...state.recoil.lastSpread },
+        });
+      }
+      return out;
+    }
+
+    expect(run(4242)).toEqual(run(4242));
+  });
+
   it('records visible, counter, and fire events from a synthetic drill', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 8 });
@@ -259,7 +354,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(recorder.snapshot().events).toEqual([
       { type: 'visible', targetId: 't0', side: 'R', t: 100 },
       { type: 'counter', key: 'A', t: 101 },
-      { type: 'fire', t: 201, hit: true, firstShot: true, residualSpeed: 0, targetId: 't0', offsetDeg: 0, part: 'head' },
+      { type: 'fire', t: 201, hit: false, firstShot: true, residualSpeed: 239.84375, targetId: 't0', offsetDeg: 0 },
     ]);
   });
 });

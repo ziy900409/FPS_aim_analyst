@@ -5,7 +5,7 @@ import type { TargetManager } from '../sim/TargetManager.ts';
 import { raycastWithRay, targetCenterOffsetDeg, type HitPointOut, type RaycastResult } from '../sim/HitDetector.ts';
 import { punchToThreeRad } from '../recoil/adapter.ts';
 import { currentPeekId, firstShotGate } from '../sim/firstShot.ts';
-import { createMovementController, type MovementController } from '../sim/MovementController.ts';
+import { CS2_PROFILE, createMovementController, type MovementController } from '../sim/MovementController.ts';
 import type { DrillRunner } from '../drill/DrillRunner.ts';
 import type { InputEvent } from '../state/types.ts';
 import type { DataRecorder } from '../data/DataRecorder.ts';
@@ -24,8 +24,8 @@ import type { Clock } from './clock.ts';
  */
 export const DEFAULT_RNG_SEED = 1;
 
-/** 橫移速度（u/s，source unit；對齊 MovementController `DEFAULT_V_STRAFE`）→ spread `speedRatio` 正規化基準。 */
-const V_STRAFE = 250;
+/** 速度 gate / spread normalization 的 movement profile 單一來源。 */
+const MOVEMENT_PROFILE = CS2_PROFILE;
 
 /**
  * recoil 執行期依賴（WP-13 / T1）：由 `createSimLoop` 建一次並注入 `simStep`——`table` 為武器 recoil
@@ -48,12 +48,12 @@ export interface RecoilRuntime {
  * 邏輯時間內的 tick 數只由累積時間決定，與 render FPS 無關（T4 驗證）。
  */
 
-/** app / 測試直呼 `simStep` 的預設 movement controller（階段 A 無內部狀態，可安全共用）。 */
+/** app / 測試直呼 `simStep` 的預設 movement controller（無內部狀態，可安全共用）。 */
 const defaultMovement = createMovementController();
 
 /**
- * 輸入套用（handle）：鍵事件更新 A/D **held 狀態**（`MovementController.step` 每 tick 讀 held 定
- * velocity + 急停 flag，T3/T4）。fire down/up 只維護 `heldFire` 與首發排程時間；實際產彈由
+ * 輸入套用（handle）：鍵事件更新 A/D **held 狀態**（`MovementController.step` 每 tick 讀 held 積分
+ * velocity + stopped gate）。fire down/up 只維護 `heldFire` 與首發排程時間；實際產彈由
  * `scheduleFire` 依 weapon cycletime 在 tick 內累加產生。mouse 事件仍忽略。
  *
  * 依時序、無遺漏的排序消費與排空責任已抽到 [`consume`](../input/consume.ts)（T4）；本函式只負責
@@ -185,17 +185,17 @@ function fireOneShot(
   let targetId: string | undefined;
   let offsetDeg: number | undefined;
 
-  // 精準 gate（FR-5.4，OQ-5.1）：**在命中判定與 markKilled 之前**讀 velocity——反映 fire 當下
-  // （＝上一 tick movement.step 所定，本 tick movement.step 尚未跑）的移動狀態。停止態（急停穿越
-  // tick）開火 → accurate；殘速二元 {0,±v}（階段 A），結果頁分類呈現。
-  const accurate = state.player.stopped;
   const residualSpeed = Math.abs(state.player.vx);
+  // Velocity gate（WP-14 / T2，FR-B12）：**在命中判定與 markKilled 之前**讀 fire 當下速度
+  // （＝上一 tick movement.step 所定，本 tick movement.step 尚未跑）。`stopped` 只是 HUD/相容欄位；
+  // 產彈點直接以同一 profile threshold 判定，避免 stale stopped flag 污染開火精準度。
+  const accurate = residualSpeed < MOVEMENT_PROFILE.accuracyThreshold;
 
   // WP-13 / T2：**先** sampleSpread（用本發 kick 之前的 inaccuracy，對齊 CS2；序列位置決定性），把圓盤
   // 偏移暫存供本發彈道射線消費——次序 = sampleSpread → 彈道 raycast → recoilOnFire（本發沿 kick 前
   // 朝向出膛，kick 影響後續發與視覺 punch）。無 recoilRuntime 時 lastSpread 維持 0（向後相容）。
   if (recoilRuntime !== undefined && weapon !== undefined) {
-    const speedRatio = Math.min(1, Math.abs(state.player.vx) / V_STRAFE);
+    const speedRatio = Math.min(1, residualSpeed / MOVEMENT_PROFILE.maxSpeed);
     const spread = sampleSpread(state.recoilState, weapon, speedRatio, recoilRuntime.rng);
     state.recoil.lastSpread.x = spread.x;
     state.recoil.lastSpread.y = spread.y;
@@ -211,8 +211,8 @@ function fireOneShot(
       if (target !== undefined) offsetDeg = targetCenterOffsetDeg(camera, target);
     }
     const result = ballisticRaycast(camera, state);
-    hit = result.hit;
-    part = result.part;
+    hit = accurate && result.hit;
+    part = hit ? result.part : undefined;
     if (result.targetId !== undefined) targetId = result.targetId;
     if (hit && result.targetId !== undefined) targetManager.markKilled(state, result.targetId);
     // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
@@ -225,7 +225,6 @@ function fireOneShot(
 
   // fire 結果事件（含 firstShot / accurate / residualSpeed）產出 → WP-7 記錄 / WP-8 統計；
   // t 使用排程時刻而非 input event 時刻，WP-16 schema v2 需對帳此欄位語意。
-  void accurate;
   recorder?.recordEvent({
     type: 'fire',
     t,
@@ -284,7 +283,7 @@ function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecor
  * ③ recoil 衰減（偶數 tick 64Hz 子節奏，dtSec 恆 1/64；**decay 先於本 tick 產彈 kick**，WP-13 T1）；
  * ④ 依時序消費本 tick 輸入（`consume` 排序 + 排空，T4；鍵事件更新 held、fire 更新 scheduler state）；
  * ⑤ weapon cycletime scheduler 產彈（產彈點注入 spread 取樣 + recoil kick，WP-13 T1）；
- * ⑥ `MovementController.step` 依 held 定 velocity（snap）並推進位置（**只用 dtSec**，WP-5 T3）；
+ * ⑥ `MovementController.step` 依 held 積分 velocity 並推進位置（**只用 dtSec**，WP-14 T1）；
  * ⑦ curr←新位置（含 recoil.curr←aimPunch 視覺快照）。
  *
  * `tickIndex`（`createSimLoop` 維護）決定 recoil 64Hz 子節奏（偶數跑 decay）；`recoilRuntime` 省略
@@ -339,7 +338,7 @@ export function simStep(
   });
   scheduleFire(state, tickEndMs, weapon, camera, targetManager, recorder, recoilRuntime);
 
-  // MovementController：依 held 定 vx（M1 snap）並以固定 dtSec 推進 x（WP-5 T3，FR-5.3）。
+  // MovementController：依 held 以 friction/accelerate 積分 vx，並以固定 dtSec 推進 x（WP-14 T1）。
   movement.step(state, dtSec);
   state.player.z += state.player.vz * dtSec; // z 軸階段 A 無前後移動（vz 恆 0）；沿用 WP-2 位移
 
@@ -384,7 +383,7 @@ export function createSimLoop(
   // 綁定一次的輸入 handle：閉包 over state，避免每 tick 配置 applyInput arrow（GC 紀律 §4）。
   const handleInput = (ev: InputEvent): void => applyInput(state, ev, recorder);
 
-  // 綁定一次的 MovementController（WP-5 T3）：預設 vStrafe，WP-6 drill config 之後由此注入。
+  // 綁定一次的 MovementController（WP-14 T1）：profile 預設 CS2_PROFILE。
   const movement = createMovementController();
 
   // recoil 執行期依賴（WP-13 / T1）：樣式表由武器 recoil 參數一次生成（決定性）；spread rng 由 seed

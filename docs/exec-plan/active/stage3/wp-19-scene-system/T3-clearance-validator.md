@@ -7,7 +7,7 @@
 | **相依** | T1(SceneConfig/propBounds 型別);與 T2 無相依(可並行) |
 | **Risk / Cplx** | **High** / High(幾何正確性 = GD-6 效度保證的全部) |
 | **Touches** | ADD `src/scene/clearance.ts` + 測試;MODIFY `src/drill/DrillLoader.ts`(載入時驗證、違規拒載) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 

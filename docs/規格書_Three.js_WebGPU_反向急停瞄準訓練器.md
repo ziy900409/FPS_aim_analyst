@@ -168,6 +168,7 @@ requestAnimationFrame(frame);
 > **移動目標的 `t_visible` 語意**：靜止目標的「可見」是乾淨的瞬間；移動目標須區分兩種 spawn——**pop-in（原地顯現）**：`t_visible` 仍為乾淨的 spawn tick；**slide-in（滑入視野）**：須定義「進入可命中區」的判準作為 `t_visible`。由 `DrillConfig.targets.motion.spawnKind` 指定；兩者混用會污染反應時間量測效度。
 > **追蹤指標只在移動 drill 計算**；靜止 drill 不產生追蹤誤差／追蹤穩定度（欄位留空）。
 > **階段 A 可量測性分層（grill 對帳）**：採「立即停止」簡化（M1），§5 指標分三層——**完整可量（時序維度）**：急停反應時間、首發命中率、準心對齊偏移、切換時間、節奏穩定度、左右對稱性；**語意改變但可用**：停火時序對齊（`t_velocity_zero` 塌縮成 `t_counter`，量的是「開火相對**急停輸入**」的時序）；**階段 A 退化成二元（精度維度，待階段 B physics）**：速度歸零誤差（velocity ∈ {0,±v}）、過衝（僅「有無反向」）——結果頁以**分類**呈現、不顯示誤導性 u/s。追蹤誤差／追蹤穩定度因 F5 drills 延後而**不在階段 A**。詳見 CONTEXT「速度歸零誤差」「首發」「節奏穩定度」「準心對齊偏移」。
+> **階段 B(1)(2) 部分解除（WP-14，2026-07-06）**：Source friction/accelerate integrator + velocity gate（88 u/s）上線後，上述「二元退化」層解除——**速度歸零誤差**回歸連續 u/s（fire 事件 `residualSpeed`；結果頁 mean/p50/SD + 88 u/s gate 對照）、**過衝**由連續殘速／反向速度呈現，不再只有「有無反向」。**停火時序對齊**維持以 `t_counter` 為 `t_velocity_zero` 代理（連續模型下真 velocity-zero 事件的記錄與回寫，隨 WP-16 schema v2 對帳）。完整可量層與追蹤指標（F5 延後）不變。
 
 ---
 

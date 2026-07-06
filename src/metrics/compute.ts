@@ -2,6 +2,7 @@ import type { DataRecorderSnapshot, DrillEvent } from '../data/DataRecorder.ts';
 
 export interface Stat {
   mean: number;
+  p50: number;
   sd: number;
   n: number;
   values?: number[];
@@ -72,11 +73,11 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
 
 export function stat(values: readonly number[]): Stat {
   const finite = finiteValues(values);
-  if (finite.length === 0) return { mean: 0, sd: 0, n: 0, values: [] };
+  if (finite.length === 0) return { mean: 0, p50: 0, sd: 0, n: 0, values: [] };
 
   const mean = finite.reduce((sum, value) => sum + value, 0) / finite.length;
   const variance = finite.reduce((sum, value) => sum + (value - mean) ** 2, 0) / finite.length;
-  return { mean, sd: Math.sqrt(variance), n: finite.length, values: finite };
+  return { mean, p50: percentile(finite, 0.5), sd: Math.sqrt(variance), n: finite.length, values: finite };
 }
 
 function buildPeekWindows(
@@ -131,4 +132,17 @@ function coefficientOfVariation(values: readonly number[]): number {
 
 function finiteValues(values: readonly (number | undefined)[]): number[] {
   return values.filter((value): value is number => value !== undefined && Number.isFinite(value));
+}
+
+function percentile(values: readonly number[], ratio: number): number {
+  if (values.length === 0) return 0;
+
+  const sorted = values.slice().sort((a, b) => a - b);
+  const index = (sorted.length - 1) * ratio;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sorted[lower];
+
+  const weight = index - lower;
+  return sorted[lower] * (1 - weight) + sorted[upper] * weight;
 }

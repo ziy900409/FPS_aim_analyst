@@ -8,7 +8,7 @@
 | **相依** | T0(盤點與授權確認完成) |
 | **Risk / Cplx** | **High** / High |
 | **Touches** | MODIFY `src/sim/MovementController.ts`、`src/sim/MovementController.test.ts`、`src/loop/__tests__/determinism.test.ts`、`tests/regression/determinism.test.ts`(baseline 重錄) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ complete |
 
 ## Objective
 
@@ -36,14 +36,14 @@
 
 ## Steps
 
-- [ ] `MovementProfile` 型別 + `CS2_PROFILE` 預設 + `createMovementController(profile)` 簽名(預設參數,呼叫端零改)。
-- [ ] integrator 實作:單一 `step` 內兩個私有步驟(讀 profile 欄位),順序 friction → accelerate 固定。
-- [ ] 解析對照單測:起步 0 → ~250 的時間常數、急停 250 → <88 的 tick 數,
+- [x] `MovementProfile` 型別 + `CS2_PROFILE` 預設 + `createMovementController(profile)` 簽名(預設參數,呼叫端零改)。
+- [x] integrator 實作:單一 `step` 內兩個私有步驟(讀 profile 欄位),順序 friction → accelerate 固定。
+- [x] 解析對照單測:起步 0 → ~250 的時間常數、急停 250 → <88 的 tick 數,
       對照逐步手算序列(±1 tick)。
-- [ ] `stopped` 改寫 + 既有消費點(HUD 燈 / 記錄欄)行為驗證。
-- [ ] M1 契約重驗:pump 60/144/240 → 同 tick index 同 position/velocity(**先於**重錄)。
-- [ ] Baseline 重錄:T0 清單逐檔更新期望值;重錄理由記 progress + GD-5 補記連結。
-- [ ] `npx vitest run` 全綠。
+- [x] `stopped` 改寫 + 既有消費點(HUD 燈 / 記錄欄)行為驗證。
+- [x] M1 契約重驗:pump 60/144/240 → 同 tick index 同 position/velocity(**先於**重錄)。
+- [x] Baseline 重錄:T0 清單逐檔更新期望值;重錄理由記 progress + GD-5 補記連結。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

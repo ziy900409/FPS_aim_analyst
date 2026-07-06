@@ -5,11 +5,11 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(重錄授權 + 測試盤點,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
-| ⬜ | **T1** friction/accelerate integrator + baseline 重錄 | [T1-friction-integrator.md](T1-friction-integrator.md) | T0 | High |
-| ⬜ | **T2** velocity gate 連續模型(88 u/s) | [T2-velocity-gate.md](T2-velocity-gate.md) | T1、WP-11 T3 | Med |
-| ⬜ | **T3** 殘速/過衝指標連續化 | [T3-metrics-continuous.md](T3-metrics-continuous.md) | T2 | Low |
-| ⬜ | **T-exit** baseline 重錄 + 手感驗證 | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
+| ✅ | **T0** entry gate(重錄授權 + 測試盤點,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
+| ✅ | **T1** friction/accelerate integrator + baseline 重錄 | [T1-friction-integrator.md](T1-friction-integrator.md) | T0 | High |
+| ✅ | **T2** velocity gate 連續模型(88 u/s) | [T2-velocity-gate.md](T2-velocity-gate.md) | T1、WP-11 T3 | Med |
+| ✅ | **T3** 殘速/過衝指標連續化 | [T3-metrics-continuous.md](T3-metrics-continuous.md) | T2 | Low |
+| ✅ | **T-exit** baseline 重錄 + 手感驗證 | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 
