@@ -15,7 +15,7 @@ import { consume } from '../input/consume.ts';
 export function pushEvent(state: SharedState, ev: InputEvent): boolean {
   if (ev.type === 'key') return state.input.pushKey(KEY_CODE[ev.code], ev.down, ev.t);
   if (ev.type === 'mouse') return state.input.pushMouse(ev.dx, ev.dy, ev.t);
-  return state.input.pushFire(ev.t);
+  return state.input.pushFire(ev.down, ev.t);
 }
 
 /**
@@ -32,5 +32,5 @@ export function drainToArray(state: SharedState, untilT = Infinity): InputEvent[
 export function snapshot(ev: InputEvent): InputEvent {
   if (ev.type === 'key') return { type: 'key', code: ev.code, down: ev.down, t: ev.t };
   if (ev.type === 'mouse') return { type: 'mouse', dx: ev.dx, dy: ev.dy, t: ev.t };
-  return { type: 'fire', t: ev.t };
+  return { type: 'fire', down: ev.down, t: ev.t };
 }

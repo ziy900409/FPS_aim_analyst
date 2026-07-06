@@ -123,6 +123,41 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     ]);
   });
 
+  it('fire down/up 依時序消費並翻轉 heldFire', () => {
+    const state = createSharedState();
+
+    pushEvent(state, { type: 'fire', down: true, t: 10 });
+    simStep(state, 1 / SIM_HZ, 100);
+    expect(state.heldFire).toBe(true);
+
+    pushEvent(state, { type: 'fire', down: false, t: 110 });
+    simStep(state, 1 / SIM_HZ, 200);
+    expect(state.heldFire).toBe(false);
+  });
+
+  it('fire up 只清 heldFire，不觸發 raycast 或 fire 記錄', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 4 });
+    const cam = cameraLookingDownZ();
+    state.heldFire = true;
+    state.targets.push(makeTarget('t0', 0, -8));
+    const killed: string[] = [];
+    const tm: TargetManager = {
+      tick() {},
+      markKilled(_s, id) {
+        killed.push(id);
+      },
+      reset() {},
+    };
+
+    pushEvent(state, { type: 'fire', down: false, t: 10 });
+    simStep(state, 1 / SIM_HZ, 100, tm, cam, undefined, undefined, undefined, recorder);
+
+    expect(state.heldFire).toBe(false);
+    expect(killed).toEqual([]);
+    expect(recorder.snapshot().events.filter((e) => e.type === 'fire')).toEqual([]);
+  });
+
   it('records visible, counter, and fire events from a synthetic drill', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 8 });
@@ -147,7 +182,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     state.held.right = true;
     pushEvent(state, { type: 'key', code: 'KeyA', down: true, t: 101 });
     simStep(state, 1 / SIM_HZ, 200, tm, cam, undefined, undefined, undefined, recorder);
-    pushEvent(state, { type: 'fire', t: 201 });
+    pushEvent(state, { type: 'fire', down: true, t: 201 });
     simStep(state, 1 / SIM_HZ, 300, tm, cam, undefined, undefined, undefined, recorder);
 
     expect(recorder.snapshot().events).toEqual([

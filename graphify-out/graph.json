@@ -248,7 +248,7 @@
       "source_file": "playwright.config.ts",
       "source_location": "L1",
       "id": "playwright_config_ts",
-      "community": 26,
+      "community": 27,
       "norm_label": "playwright.config.ts"
     },
     {
@@ -257,7 +257,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L1",
       "id": "vite_config_ts",
-      "community": 22,
+      "community": 23,
       "norm_label": "vite.config.ts"
     },
     {
@@ -266,7 +266,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L11",
       "id": "fps_aim_analyst_vite_config_coopcoep",
-      "community": 22,
+      "community": 23,
       "norm_label": "coopcoep()"
     },
     {
@@ -336,7 +336,7 @@
       "label": "resetRunPresentation()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L296",
+      "source_location": "L299",
       "id": "src_main_resetrunpresentation",
       "community": 1,
       "norm_label": "resetrunpresentation()"
@@ -345,7 +345,7 @@
       "label": "restartActiveDrill()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L307",
+      "source_location": "L310",
       "id": "src_main_restartactivedrill",
       "community": 1,
       "norm_label": "restartactivedrill()"
@@ -354,7 +354,7 @@
       "label": "loadDrillById()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L314",
+      "source_location": "L317",
       "id": "src_main_loaddrillbyid",
       "community": 1,
       "norm_label": "loaddrillbyid()"
@@ -363,7 +363,7 @@
       "label": "syncControlsVisibility()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L337",
+      "source_location": "L340",
       "id": "src_main_synccontrolsvisibility",
       "community": 1,
       "norm_label": "synccontrolsvisibility()"
@@ -374,7 +374,7 @@
       "source_file": "src/vite-env.d.ts",
       "source_location": "L1",
       "id": "src_vite_env_d_ts",
-      "community": 27,
+      "community": 28,
       "norm_label": "vite-env.d.ts"
     },
     {
@@ -905,7 +905,7 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L1",
       "id": "src_drill_schema_test_ts",
-      "community": 16,
+      "community": 15,
       "norm_label": "schema.test.ts"
     },
     {
@@ -914,7 +914,7 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L6",
       "id": "drill_schema_test_minimalvalid",
-      "community": 16,
+      "community": 15,
       "norm_label": "minimalvalid()"
     },
     {
@@ -923,7 +923,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L1",
       "id": "src_drill_schema_ts",
-      "community": 16,
+      "community": 15,
       "norm_label": "schema.ts"
     },
     {
@@ -932,7 +932,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L14",
       "id": "drill_schema_validatedrill",
-      "community": 16,
+      "community": 15,
       "norm_label": "validatedrill()"
     },
     {
@@ -941,7 +941,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L70",
       "id": "drill_schema_validatemotion",
-      "community": 16,
+      "community": 15,
       "norm_label": "validatemotion()"
     },
     {
@@ -950,7 +950,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L101",
       "id": "drill_schema_err",
-      "community": 16,
+      "community": 15,
       "norm_label": "err()"
     },
     {
@@ -959,7 +959,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L105",
       "id": "drill_schema_requireobject",
-      "community": 16,
+      "community": 15,
       "norm_label": "requireobject()"
     },
     {
@@ -968,7 +968,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L112",
       "id": "drill_schema_requirefinitenumber",
-      "community": 16,
+      "community": 15,
       "norm_label": "requirefinitenumber()"
     },
     {
@@ -977,7 +977,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L117",
       "id": "drill_schema_requirenonnegativenumber",
-      "community": 16,
+      "community": 15,
       "norm_label": "requirenonnegativenumber()"
     },
     {
@@ -986,7 +986,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L123",
       "id": "drill_schema_requirepositivenumber",
-      "community": 16,
+      "community": 15,
       "norm_label": "requirepositivenumber()"
     },
     {
@@ -995,7 +995,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L129",
       "id": "drill_schema_requirepositiveint",
-      "community": 16,
+      "community": 15,
       "norm_label": "requirepositiveint()"
     },
     {
@@ -1254,7 +1254,7 @@
       "label": "recordVisibleEvents()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L99",
+      "source_location": "L102",
       "id": "loop_simloop_recordvisibleevents",
       "community": 0,
       "norm_label": "recordvisibleevents()"
@@ -1263,7 +1263,7 @@
       "label": "simStep()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L125",
+      "source_location": "L128",
       "id": "loop_simloop_simstep",
       "community": 0,
       "norm_label": "simstep()"
@@ -1272,7 +1272,7 @@
       "label": "createSimLoop()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L169",
+      "source_location": "L172",
       "id": "loop_simloop_createsimloop",
       "community": 0,
       "norm_label": "createsimloop()"
@@ -2397,7 +2397,7 @@
       "label": "createInputRing()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L63",
+      "source_location": "L65",
       "id": "state_sharedstate_createinputring",
       "community": 0,
       "norm_label": "createinputring()"
@@ -2406,7 +2406,7 @@
       "label": "createSharedState()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L136",
+      "source_location": "L139",
       "id": "state_sharedstate_createsharedstate",
       "community": 0,
       "norm_label": "createsharedstate()"
@@ -2415,7 +2415,7 @@
       "label": "resetState()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L159",
+      "source_location": "L163",
       "id": "state_sharedstate_resetstate",
       "community": 0,
       "norm_label": "resetstate()"
@@ -2831,7 +2831,7 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L1",
       "id": "src_weapon_weaponconfig_test_ts",
-      "community": 14,
+      "community": 12,
       "norm_label": "weaponconfig.test.ts"
     },
     {
@@ -2840,7 +2840,7 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L5",
       "id": "weapon_weaponconfig_test_validweapon",
-      "community": 14,
+      "community": 12,
       "norm_label": "validweapon()"
     },
     {
@@ -2849,7 +2849,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L1",
       "id": "src_weapon_weaponconfig_ts",
-      "community": 14,
+      "community": 12,
       "norm_label": "weaponconfig.ts"
     },
     {
@@ -2858,7 +2858,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L29",
       "id": "weapon_weaponconfig_validateweapon",
-      "community": 14,
+      "community": 12,
       "norm_label": "validateweapon()"
     },
     {
@@ -2867,7 +2867,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L72",
       "id": "weapon_weaponconfig_validaterecoverytransition",
-      "community": 14,
+      "community": 12,
       "norm_label": "validaterecoverytransition()"
     },
     {
@@ -2876,7 +2876,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L82",
       "id": "weapon_weaponconfig_err",
-      "community": 14,
+      "community": 12,
       "norm_label": "err()"
     },
     {
@@ -2885,7 +2885,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L86",
       "id": "weapon_weaponconfig_requireobject",
-      "community": 14,
+      "community": 12,
       "norm_label": "requireobject()"
     },
     {
@@ -2894,7 +2894,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L93",
       "id": "weapon_weaponconfig_requirefinitenumber",
-      "community": 14,
+      "community": 12,
       "norm_label": "requirefinitenumber()"
     },
     {
@@ -2903,7 +2903,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L100",
       "id": "weapon_weaponconfig_requirenonnegativenumber",
-      "community": 14,
+      "community": 12,
       "norm_label": "requirenonnegativenumber()"
     },
     {
@@ -2912,7 +2912,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L106",
       "id": "weapon_weaponconfig_requirepositivenumber",
-      "community": 14,
+      "community": 12,
       "norm_label": "requirepositivenumber()"
     },
     {
@@ -2921,7 +2921,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L112",
       "id": "weapon_weaponconfig_requirepositiveint",
-      "community": 14,
+      "community": 12,
       "norm_label": "requirepositiveint()"
     },
     {
@@ -2930,7 +2930,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L1",
       "id": "src_weapon_weapons_ts",
-      "community": 14,
+      "community": 12,
       "norm_label": "weapons.ts"
     },
     {
@@ -2939,7 +2939,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L75",
       "id": "weapon_weapons_getweapon",
-      "community": 14,
+      "community": 12,
       "norm_label": "getweapon()"
     },
     {
@@ -2948,7 +2948,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L80",
       "id": "weapon_weapons_isweaponid",
-      "community": 14,
+      "community": 12,
       "norm_label": "isweaponid()"
     },
     {
@@ -2957,7 +2957,7 @@
       "source_file": "tests/e2e/backend.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_backend_spec_ts",
-      "community": 28,
+      "community": 29,
       "norm_label": "backend.spec.ts"
     },
     {
@@ -2966,7 +2966,7 @@
       "source_file": "tests/e2e/full-drill.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_full_drill_spec_ts",
-      "community": 23,
+      "community": 24,
       "norm_label": "full-drill.spec.ts"
     },
     {
@@ -2975,7 +2975,7 @@
       "source_file": "tests/e2e/full-drill.spec.ts",
       "source_location": "L23",
       "id": "e2e_full_drill_spec_runfullchain",
-      "community": 23,
+      "community": 24,
       "norm_label": "runfullchain()"
     },
     {
@@ -3020,7 +3020,7 @@
       "source_file": "tests/e2e/isolation.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_isolation_spec_ts",
-      "community": 29,
+      "community": 30,
       "norm_label": "isolation.spec.ts"
     },
     {
@@ -3029,7 +3029,7 @@
       "source_file": "tests/e2e/overlay-layering.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_overlay_layering_spec_ts",
-      "community": 24,
+      "community": 25,
       "norm_label": "overlay-layering.spec.ts"
     },
     {
@@ -3038,7 +3038,7 @@
       "source_file": "tests/e2e/overlay-layering.spec.ts",
       "source_location": "L17",
       "id": "e2e_overlay_layering_spec_zindexof",
-      "community": 24,
+      "community": 25,
       "norm_label": "zindexof()"
     },
     {
@@ -3167,7 +3167,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "claude.md \u5c08\u6848\u57f7\u884c\u5354\u8b70\u8207\u5c0e\u822a",
       "id": "claude_project_protocol"
     },
@@ -3180,7 +3180,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "\u7a0b\u5e8f\u8a18\u61b6 (procedural memory)",
       "id": "claude_procedural_memory"
     },
@@ -3193,7 +3193,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "\u5782\u76f4\u5207\u7247 = \u539f\u5b50 commit \u5354\u8b70",
       "id": "claude_vertical_slice_commit"
     },
@@ -3206,7 +3206,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "\u8a18\u61b6\u5206\u5c64 (working/semantic/episodic/\u5168\u57df/\u7a0b\u5e8f)",
       "id": "claude_memory_layers"
     },
@@ -3232,7 +3232,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "context.md \u5c08\u6709\u540d\u8a5e\u8a5e\u5f59\u8868",
       "id": "context_glossary"
     },
@@ -3245,7 +3245,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 25,
+      "community": 26,
       "norm_label": "counter-strafe (\u53cd\u5411\u6025\u505c)",
       "id": "context_counter_strafe"
     },
@@ -3258,7 +3258,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 25,
+      "community": 26,
       "norm_label": "\u53cd\u5411\u9375 (counter key)",
       "id": "context_counter_key"
     },
@@ -3271,7 +3271,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 30,
+      "community": 31,
       "norm_label": "drill (\u8a13\u7df4\u55ae\u5143)",
       "id": "context_drill"
     },
@@ -3284,7 +3284,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "peek \u8207 p2 \u63a8\u9032\u653f\u7b56 (\u547d\u4e2d\u624d\u63a8\u9032)",
       "id": "context_peek"
     },
@@ -3297,7 +3297,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "\u9996\u767c (first shot / firstshot)",
       "id": "context_first_shot"
     },
@@ -3310,7 +3310,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 22,
       "norm_label": "\u6025\u505c\u53cd\u61c9\u6642\u9593 (t_counter \u2212 t_visible)",
       "id": "context_counter_reaction_time"
     },
@@ -3323,7 +3323,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "\u901f\u5ea6\u6b78\u96f6\u8aa4\u5dee (residual speed)",
       "id": "context_residual_speed"
     },
@@ -3336,7 +3336,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 31,
+      "community": 32,
       "norm_label": "\u505c\u706b\u6642\u5e8f\u5c0d\u9f4a (t_fire \u2212 t_velocity_zero)",
       "id": "context_fire_timing_alignment"
     },
@@ -3349,7 +3349,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "\u9996\u767c\u547d\u4e2d\u7387",
       "id": "context_first_shot_hit_rate"
     },
@@ -3362,7 +3362,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "context_crosshair_alignment_offset"
     },
@@ -3375,7 +3375,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 32,
+      "community": 33,
       "norm_label": "\u5207\u63db\u6642\u9593 (t_next_acquisition \u2212 t_prev_kill)",
       "id": "context_switch_time"
     },
@@ -3388,7 +3388,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 33,
+      "community": 34,
       "norm_label": "\u7bc0\u594f\u7a69\u5b9a\u5ea6",
       "id": "context_rhythm_stability"
     },
@@ -3401,7 +3401,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 34,
+      "community": 35,
       "norm_label": "\u5de6\u53f3\u5c0d\u7a31\u6027",
       "id": "context_lr_symmetry"
     },
@@ -3414,7 +3414,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "\u901f\u5ea6 gate (velocity gate)",
       "id": "context_velocity_gate"
     },
@@ -3427,7 +3427,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 35,
+      "community": 36,
       "norm_label": "pre/post (\u524d\u5f8c\u6e2c) \u7814\u7a76\u65b9\u6cd5\u5b78",
       "id": "context_pre_post_test"
     },
@@ -3440,7 +3440,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "inputsampler \u5143\u4ef6",
       "id": "context_input_sampler"
     },
@@ -3453,7 +3453,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 13,
       "norm_label": "sharedstate \u5143\u4ef6",
       "id": "context_shared_state"
     },
@@ -3466,7 +3466,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "simloop \u5143\u4ef6",
       "id": "context_sim_loop"
     },
@@ -3479,7 +3479,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "movementcontroller \u5143\u4ef6 (\u72c0\u614b\u6a5f m1)",
       "id": "context_movement_controller"
     },
@@ -3492,7 +3492,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 22,
       "norm_label": "targetmanager \u5143\u4ef6",
       "id": "context_target_manager"
     },
@@ -3505,7 +3505,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "hitdetector \u5143\u4ef6",
       "id": "context_hit_detector"
     },
@@ -3518,7 +3518,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 13,
       "norm_label": "renderloop \u5143\u4ef6",
       "id": "context_render_loop"
     },
@@ -3531,7 +3531,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "scenemanager \u5143\u4ef6",
       "id": "context_scene_manager"
     },
@@ -3544,7 +3544,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "datarecorder \u5143\u4ef6 (preallocated arena)",
       "id": "context_data_recorder"
     },
@@ -3557,7 +3557,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "drillconfig \u5143\u4ef6",
       "id": "context_drill_config"
     },
@@ -3583,7 +3583,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "\u96d9\u8ff4\u5708 (dual-loop)",
       "id": "context_dual_loop"
     },
@@ -3596,7 +3596,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "fixed-timestep (128 hz)",
       "id": "context_fixed_timestep"
     },
@@ -3609,7 +3609,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "accumulator \u6a21\u5f0f",
       "id": "context_accumulator"
     },
@@ -3622,7 +3622,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "simstep \u9806\u5e8f (tick \u5167)",
       "id": "context_simstep_order"
     },
@@ -3635,7 +3635,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 37,
+      "community": 38,
       "norm_label": "alpha \u5167\u63d2 (interpolation)",
       "id": "context_alpha_interpolation"
     },
@@ -3648,7 +3648,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism)",
       "id": "context_determinism"
     },
@@ -3661,7 +3661,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "\u91cf\u6e2c\u6642\u9418 vs \u6c7a\u5b9a\u6027\u6642\u9418 (two-clock model)",
       "id": "context_two_clock_model"
     },
@@ -3674,7 +3674,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 22,
       "norm_label": "t_visible",
       "id": "context_t_visible"
     },
@@ -3687,7 +3687,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "sim tick rate (128 hz)",
       "id": "context_sim_tick_rate"
     },
@@ -3700,7 +3700,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "ring buffer (\u8f38\u5165\u7de9\u885d)",
       "id": "context_ring_buffer"
     },
@@ -3713,7 +3713,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "rendersnapshot \u7a84\u4ecb\u9762",
       "id": "context_render_snapshot"
     },
@@ -3739,7 +3739,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "\u539f\u59cb\u8f38\u5165 (unadjustedmovement)",
       "id": "context_unadjusted_movement"
     },
@@ -3752,7 +3752,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "coalesced events (getcoalescedevents)",
       "id": "context_coalesced_events"
     },
@@ -3765,7 +3765,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "\u8f38\u5165\u5206\u6876 (input bucketing)",
       "id": "context_input_bucketing"
     },
@@ -3778,7 +3778,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "backend (render backend webgpu/webgl2)",
       "id": "context_render_backend"
     },
@@ -3791,7 +3791,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "\u6b63\u898f\u55ae\u4f4d (canonical unit, source unit u/s)",
       "id": "context_canonical_unit"
     },
@@ -3804,7 +3804,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "\u968e\u6bb5 a (stage a)",
       "id": "context_stage_a"
     },
@@ -3817,7 +3817,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "f5 \u63a5\u7e2b (seam-in, drills-out)",
       "id": "context_f5_seam_in"
     },
@@ -3830,7 +3830,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "\u968e\u6bb5 b (stage b)",
       "id": "context_stage_b"
     },
@@ -3843,7 +3843,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "cs2 physics \u5e38\u6578 (\u968e\u6bb5 b \u6821\u6e96\u8d77\u9ede)",
       "id": "context_cs2_physics_constants"
     },
@@ -3856,7 +3856,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "design.md \u57f7\u884c\u671f\u8207\u67b6\u69cb\u8a2d\u8a08\u7b46\u8a18",
       "id": "design_notes"
     },
@@ -3869,7 +3869,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "\u968e\u6bb5 a \u96d9\u8ff4\u5708\u5be6\u70ba\u55ae\u57f7\u884c\u7dd2 raf \u8d85\u7d1a\u8ff4\u5708",
       "id": "design_single_thread_stage_a"
     },
@@ -3882,7 +3882,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "\u4e3b\u57f7\u884c\u7dd2\u5361\u9813\u6c61\u67d3 sim \u8a08\u6642 (\u968e\u6bb5 a \u9694\u96e2\u4e0d\u6210\u7acb)",
       "id": "design_main_thread_jank"
     },
@@ -3895,7 +3895,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "web worker + sharedarraybuffer \u771f\u6b63\u9694\u96e2 (\u968e\u6bb5 b)",
       "id": "design_worker_isolation"
     },
@@ -3908,7 +3908,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "frontend.md (\u524d\u7aef/ui \u8a2d\u8a08,\u9810\u7559\u7a7a\u6a94)",
       "id": "frontend_doc"
     },
@@ -3921,7 +3921,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "map.md \u6587\u4ef6\u5730\u5716",
       "id": "map_doc"
     },
@@ -3934,7 +3934,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "plan.md \u57f7\u884c\u8a08\u756b (\u968e\u6bb5 a)",
       "id": "plan_doc"
     },
@@ -3960,7 +3960,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "d2 \u2014 \u6e2c\u8a66\u6846\u67b6 vitest + playwright",
       "id": "plan_d2_test_framework"
     },
@@ -3986,7 +3986,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "d4 \u2014 \u6587\u4ef6\u8a9e\u8a00 (\u7e41\u4e2d\u4fdd\u7559\u82f1\u6587\u8853\u8a9e)",
       "id": "plan_d4_doc_language"
     },
@@ -3999,7 +3999,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "d5 \u2014 plan \u9846\u7c92\u5ea6 (agent \u53ef\u57f7\u884c\u6b65\u9a5f)",
       "id": "plan_d5_granularity"
     },
@@ -4012,7 +4012,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "\u6280\u8853\u68e7 (three.js webgpu + ts + vite)",
       "id": "plan_tech_stack"
     },
@@ -4025,7 +4025,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "\u898f\u683c\u66f8 v1.1 + wbs",
       "id": "spec_doc"
     },
@@ -4038,7 +4038,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "f1 \u2014 \u63a1\u96c6\u9375\u76e4\u8207\u6ed1\u9f20\u64cd\u4f5c\u8cc7\u6599",
       "id": "spec_f1"
     },
@@ -4051,7 +4051,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 22,
       "norm_label": "f2 \u2014 \u8a18\u9304 t_visible spawn/\u53ef\u898b\u6642\u9593\u6233",
       "id": "spec_f2"
     },
@@ -4064,7 +4064,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 13,
       "norm_label": "f3 \u2014 \u7b2c\u4e00\u4eba\u7a31\u8996\u89d2 + cs \u98a8\u683c\u53cd\u5411\u6025\u505c",
       "id": "spec_f3"
     },
@@ -4077,7 +4077,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "f4 \u2014 \u591a drill \u652f\u63f4 (config \u9a45\u52d5)",
       "id": "spec_f4"
     },
@@ -4090,7 +4090,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "f5 \u2014 \u79fb\u52d5\u76ee\u6a19\u652f\u63f4",
       "id": "spec_f5"
     },
@@ -4103,7 +4103,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "adr-1 webgpurenderer + webgl2 fallback",
       "id": "spec_adr1"
     },
@@ -4116,7 +4116,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 9,
       "norm_label": "adr-2 \u908f\u8f2f\u8207\u6e32\u67d3\u89e3\u8026 (\u96d9\u8ff4\u5708 + fixed-timestep)",
       "id": "spec_adr2"
     },
@@ -4129,7 +4129,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "adr-3 sim tick rate = 128 hz",
       "id": "spec_adr3"
     },
@@ -4155,7 +4155,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "adr-5 pointer lock + \u539f\u59cb\u8f38\u5165 + coalesced events",
       "id": "spec_adr5"
     },
@@ -4168,7 +4168,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "adr-6 \u76ee\u6a19\u79fb\u52d5\u7b56\u7565 (sim loop \u6bcf tick \u66f4\u65b0, motion registry)",
       "id": "spec_adr6"
     },
@@ -4181,7 +4181,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 16,
       "norm_label": "adr-7 \u5169\u500b\u6642\u9418 (\u91cf\u6e2c\u6642\u9418 / \u6c7a\u5b9a\u6027\u6642\u9418)",
       "id": "spec_adr7"
     },
@@ -4194,7 +4194,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "\u9644\u9304 c \u532f\u51fa\u8cc7\u6599 schema",
       "id": "spec_export_schema"
     },
@@ -4207,7 +4207,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u9644\u9304 g \u79fb\u52d5\u76ee\u6a19 schema (targetmotion / motionstrategies)",
       "id": "spec_target_motion_schema"
     },
@@ -4220,7 +4220,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "\u9644\u9304 e \u9a57\u6536\u6e05\u55ae (\u968e\u6bb5 a)",
       "id": "spec_acceptance_checklist"
     },
@@ -4233,7 +4233,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u9644\u9304 f \u98a8\u96aa\u767b\u8a18",
       "id": "spec_risk_register"
     },
@@ -4246,7 +4246,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u79fb\u52d5 + counter-strafe \u80fd\u529b\u6df7\u6dc6 (\u7814\u7a76\u8a2d\u8a08\u554f\u984c)",
       "id": "spec_ability_confusion"
     },
@@ -4259,7 +4259,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 9,
       "norm_label": "decisions.md \u5168\u57df\u6c7a\u7b56\u8207\u77db\u76fe\u5e33\u672c",
       "id": "decisions_ledger"
     },
@@ -4272,7 +4272,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "gd-1 f5 \u662f\u5426\u5c6c\u968e\u6bb5 a (\u898f\u683c v1.1 \u8207 seam-in \u4e0d\u4e00\u81f4)",
       "id": "decisions_gd1_f5_conflict"
     },
@@ -4285,7 +4285,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "exec-plan/readme.md \u57f7\u884c\u8a08\u756b\u7d22\u5f15",
       "id": "execplan_readme"
     },
@@ -4298,7 +4298,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "\u91cc\u7a0b\u7891 m1 (wp-2 \u810a\u690e\u9580\u63a7)",
       "id": "execplan_milestone_m1"
     },
@@ -4311,7 +4311,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "\u91cc\u7a0b\u7891 m2 (wp-5 \u6838\u5fc3\u73a9\u6cd5)",
       "id": "execplan_milestone_m2"
     },
@@ -4324,7 +4324,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "\u91cc\u7a0b\u7891 m3 (wp-7 \u53ef\u532f\u51fa\u8cc7\u6599)",
       "id": "execplan_milestone_m3"
     },
@@ -4337,7 +4337,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "\u91cc\u7a0b\u7891 m4 (wp-9 \u968e\u6bb5 a \u4ea4\u4ed8)",
       "id": "execplan_milestone_m4"
     },
@@ -4350,7 +4350,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-0 \u74b0\u5883\u5efa\u7f6e\u8207\u5b78\u7fd2\u722c\u5347",
       "id": "execplan_wp0"
     },
@@ -4363,7 +4363,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-1 fps \u63a7\u5236 + pointer lock",
       "id": "execplan_wp1"
     },
@@ -4376,7 +4376,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-2 sharedstate + \u96d9\u8ff4\u5708\u9aa8\u67b6 (\u810a\u690e)",
       "id": "execplan_wp2"
     },
@@ -4389,7 +4389,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-3 inputsampler (f1)",
       "id": "execplan_wp3"
     },
@@ -4402,7 +4402,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-4 targetmanager + t_visible (f2)",
       "id": "execplan_wp4"
     },
@@ -4415,7 +4415,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-5 hitdetector + \u6a6b\u79fb + \u7c21\u5316\u6025\u505c (f3)",
       "id": "execplan_wp5"
     },
@@ -4428,7 +4428,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-6 drillconfig \u8cc7\u6599\u9a45\u52d5 drill (f4)",
       "id": "execplan_wp6"
     },
@@ -4441,7 +4441,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-7 datarecorder ring buffer + \u532f\u51fa",
       "id": "execplan_wp7"
     },
@@ -4454,7 +4454,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-8 metricsdashboard + hud",
       "id": "execplan_wp8"
     },
@@ -4467,7 +4467,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "wp-9 \u7aef\u5230\u7aef\u6574\u5408 + \u8a08\u6642\u6548\u5ea6 + \u6c7a\u5b9a\u6027\u56de\u6b78",
       "id": "execplan_wp9"
     },
@@ -4480,7 +4480,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "wp-0 readme (tech spec)",
       "id": "wp0_readme"
     },
@@ -4493,7 +4493,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "wp-0 progress.md",
       "id": "wp0_progress"
     },
@@ -4506,7 +4506,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "wp-0 task-checklist.md",
       "id": "wp0_checklist"
     },
@@ -4519,7 +4519,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "wp-0 t0 entry gate",
       "id": "wp0_t0_entry_gate"
     },
@@ -4532,7 +4532,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "wp-0 t1 scaffold",
       "id": "wp0_t1_scaffold"
     },
@@ -4558,7 +4558,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "wp-0 t3 webgpu backend \u5075\u6e2c",
       "id": "wp0_t3_backend_detection"
     },
@@ -4584,7 +4584,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "wp-0 t5 reference notes",
       "id": "wp0_t5_reference_notes"
     },
@@ -4597,7 +4597,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 10,
       "norm_label": "wp-0 t6 exit gate",
       "id": "wp0_t6_exit_gate"
     },
@@ -4753,7 +4753,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 39,
+      "community": 40,
       "norm_label": "wp-2 progress log",
       "id": "wp2_progress"
     },
@@ -6339,7 +6339,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 41,
       "norm_label": "oq-6.3 end condition default decision",
       "id": "wp6_readme_oq63"
     },
@@ -15369,9 +15369,9 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_test_ts",
-      "target": "src_weapon_weaponconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_weapon_weaponconfig_ts"
     },
     {
       "relation": "imports",
@@ -15380,9 +15380,9 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_test_ts",
-      "target": "weapon_weaponconfig_validateweapon",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_validateweapon"
     },
     {
       "relation": "imports_from",
@@ -15391,9 +15391,9 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_test_ts",
-      "target": "src_weapon_weapons_ts",
-      "confidence_score": 1.0
+      "target": "src_weapon_weapons_ts"
     },
     {
       "relation": "imports",
@@ -15402,9 +15402,9 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_test_ts",
-      "target": "weapon_weapons_getweapon",
-      "confidence_score": 1.0
+      "target": "weapon_weapons_getweapon"
     },
     {
       "relation": "contains",
@@ -15412,9 +15412,9 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_test_ts",
-      "target": "weapon_weaponconfig_test_validweapon",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_test_validweapon"
     },
     {
       "relation": "contains",
@@ -15422,9 +15422,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_ts",
-      "target": "weapon_weaponconfig_validateweapon",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_validateweapon"
     },
     {
       "relation": "contains",
@@ -15432,9 +15432,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L72",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_ts",
-      "target": "weapon_weaponconfig_validaterecoverytransition",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_validaterecoverytransition"
     },
     {
       "relation": "contains",
@@ -15442,9 +15442,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L82",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_ts",
-      "target": "weapon_weaponconfig_err",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_err"
     },
     {
       "relation": "contains",
@@ -15452,9 +15452,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L86",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_ts",
-      "target": "weapon_weaponconfig_requireobject",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requireobject"
     },
     {
       "relation": "contains",
@@ -15462,9 +15462,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L93",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_ts",
-      "target": "weapon_weaponconfig_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirefinitenumber"
     },
     {
       "relation": "contains",
@@ -15472,9 +15472,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L100",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_ts",
-      "target": "weapon_weaponconfig_requirenonnegativenumber",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirenonnegativenumber"
     },
     {
       "relation": "contains",
@@ -15482,9 +15482,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L106",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_ts",
-      "target": "weapon_weaponconfig_requirepositivenumber",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirepositivenumber"
     },
     {
       "relation": "contains",
@@ -15492,9 +15492,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L112",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weaponconfig_ts",
-      "target": "weapon_weaponconfig_requirepositiveint",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirepositiveint"
     },
     {
       "relation": "imports_from",
@@ -15503,9 +15503,9 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weapons_ts",
-      "target": "src_weapon_weaponconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_weapon_weaponconfig_ts"
     },
     {
       "relation": "calls",
@@ -15514,9 +15514,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validateweapon",
-      "target": "weapon_weaponconfig_requireobject",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requireobject"
     },
     {
       "relation": "calls",
@@ -15525,9 +15525,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validateweapon",
-      "target": "weapon_weaponconfig_err",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_err"
     },
     {
       "relation": "calls",
@@ -15536,9 +15536,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L37",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validateweapon",
-      "target": "weapon_weaponconfig_requirepositivenumber",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirepositivenumber"
     },
     {
       "relation": "calls",
@@ -15547,9 +15547,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validateweapon",
-      "target": "weapon_weaponconfig_requirepositiveint",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirepositiveint"
     },
     {
       "relation": "calls",
@@ -15558,9 +15558,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L42",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validateweapon",
-      "target": "weapon_weaponconfig_requirenonnegativenumber",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirenonnegativenumber"
     },
     {
       "relation": "calls",
@@ -15569,9 +15569,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L60",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validateweapon",
-      "target": "weapon_weaponconfig_validaterecoverytransition",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_validaterecoverytransition"
     },
     {
       "relation": "imports",
@@ -15580,9 +15580,9 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weapons_ts",
-      "target": "weapon_weaponconfig_validateweapon",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_validateweapon"
     },
     {
       "relation": "calls",
@@ -15591,9 +15591,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L73",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validaterecoverytransition",
-      "target": "weapon_weaponconfig_requireobject",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requireobject"
     },
     {
       "relation": "calls",
@@ -15602,9 +15602,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L74",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validaterecoverytransition",
-      "target": "weapon_weaponconfig_requirepositiveint",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirepositiveint"
     },
     {
       "relation": "calls",
@@ -15613,9 +15613,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L77",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_validaterecoverytransition",
-      "target": "weapon_weaponconfig_err",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_err"
     },
     {
       "relation": "calls",
@@ -15624,9 +15624,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L88",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_requireobject",
-      "target": "weapon_weaponconfig_err",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_err"
     },
     {
       "relation": "calls",
@@ -15635,9 +15635,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L95",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_requirefinitenumber",
-      "target": "weapon_weaponconfig_err",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_err"
     },
     {
       "relation": "calls",
@@ -15646,9 +15646,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L102",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_requirenonnegativenumber",
-      "target": "weapon_weaponconfig_err",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_err"
     },
     {
       "relation": "calls",
@@ -15657,9 +15657,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L108",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_requirepositivenumber",
-      "target": "weapon_weaponconfig_err",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_err"
     },
     {
       "relation": "calls",
@@ -15668,9 +15668,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L114",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_requirepositiveint",
-      "target": "weapon_weaponconfig_err",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_err"
     },
     {
       "relation": "calls",
@@ -15679,9 +15679,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L101",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_requirenonnegativenumber",
-      "target": "weapon_weaponconfig_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirefinitenumber"
     },
     {
       "relation": "calls",
@@ -15690,9 +15690,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L107",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_requirepositivenumber",
-      "target": "weapon_weaponconfig_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirefinitenumber"
     },
     {
       "relation": "calls",
@@ -15701,9 +15701,9 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L113",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weaponconfig_requirepositiveint",
-      "target": "weapon_weaponconfig_requirefinitenumber",
-      "confidence_score": 1.0
+      "target": "weapon_weaponconfig_requirefinitenumber"
     },
     {
       "relation": "contains",
@@ -15711,9 +15711,9 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L75",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weapons_ts",
-      "target": "weapon_weapons_getweapon",
-      "confidence_score": 1.0
+      "target": "weapon_weapons_getweapon"
     },
     {
       "relation": "contains",
@@ -15721,9 +15721,9 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L80",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_weapon_weapons_ts",
-      "target": "weapon_weapons_isweaponid",
-      "confidence_score": 1.0
+      "target": "weapon_weapons_isweaponid"
     },
     {
       "relation": "calls",
@@ -15732,9 +15732,9 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L76",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "weapon_weapons_getweapon",
-      "target": "weapon_weapons_isweaponid",
-      "confidence_score": 1.0
+      "target": "weapon_weapons_isweaponid"
     },
     {
       "relation": "contains",
@@ -21638,5 +21638,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "f3c6c3c91dccc41b93f37c7661c78cecdc704869"
+  "built_at_commit": "8b848ae4bb860f0cb0ab49bd1587bb2e93968582"
 }

@@ -175,6 +175,9 @@ const hud = createHUD();
 // pointerLock.onMove）互不干擾——此處只入緩衝供量測（WP-3 目的）。
 const inputSampler = createInputSampler(sharedState, () => pointerLock.locked);
 inputSampler.attach(window);
+pointerLock.onChange((locked) => {
+  if (!locked) sharedState.heldFire = false;
+});
 
 // WP-2 / T2+T3（FR-2.2/2.3）— 雙迴圈：sim（128 Hz 固定步長 accumulator）與 render（rAF）解耦，
 // 全透過 sharedState 溝通（ADR-2）。階段 A 單執行緒下，sim 在 render 的 rAF callback 內 pump（§4.3

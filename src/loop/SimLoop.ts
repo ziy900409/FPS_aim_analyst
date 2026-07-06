@@ -26,9 +26,9 @@ const defaultMovement = createMovementController();
 
 /**
  * 輸入套用（handle）：鍵事件更新 A/D **held 狀態**（`MovementController.step` 每 tick 讀 held 定
- * velocity + 急停 flag，T3/T4）。**fire 事件在串流該點 inline raycast**（sub-tick 忠實、零內插）：
- * 有注入 `camera` + `targetManager` 時，從 camera 中心射線判命中，**第一次命中即擊殺**（OQ-5.4）→
- * `markKilled` → WP-4 生成對側。mouse 事件（準心）仍在佔位階段忽略。
+ * velocity + 急停 flag，T3/T4）。**fire down 事件在串流該點 inline raycast**（sub-tick 忠實、
+ * 零內插）：有注入 `camera` + `targetManager` 時，從 camera 中心射線判命中，**第一次命中即擊殺**
+ * （OQ-5.4）→ `markKilled` → WP-4 生成對側。fire up 只更新 `heldFire`；mouse 事件仍忽略。
  *
  * 依時序、無遺漏的排序消費與排空責任已抽到 [`consume`](../input/consume.ts)（T4）；本函式只負責
  * 「每個到期事件如何改狀態」，不管排序/分桶/排空。
@@ -49,6 +49,9 @@ function applyInput(
       state.held.left = ev.down;
     }
   } else if (ev.type === 'fire') {
+    state.heldFire = ev.down;
+    if (!ev.down) return;
+
     // 開火：首發旗標**先於命中判定**——peek 錨為 fire 當下的 active 目標；命中即擊殺會撤除該目標、
     // 換 peek，故 firstShot 須在 markKilled 之前對「當前 peek」判定（FR-5.2，OQ-5.3）。未命中亦計首發
     // （P2：未命中可補槍，首發＝peek 內第一個 fire，無論中否）。

@@ -49,7 +49,7 @@ describe('InputRing — 固定欄位真 ring（繞圈 / 保序 / 溢位 / 重用
     expect(ring.size()).toBe(RING_CAPACITY);
 
     expect(ring.pushKey(KEY_CODE.KeyD, true, 99999)).toBe(false); // 滿 → 拒收
-    expect(ring.pushFire(99999)).toBe(false);
+    expect(ring.pushFire(true, 99999)).toBe(false);
     expect(ring.size()).toBe(RING_CAPACITY); // 未增
 
     const drained = drainAll(ring);
@@ -78,25 +78,27 @@ describe('InputRing — 固定欄位真 ring（繞圈 / 保序 / 溢位 / 重用
     const ring = createInputRing();
     ring.pushKey(KEY_CODE.KeyA, false, 1);
     ring.pushMouse(3, -4, 2);
-    ring.pushFire(3);
+    ring.pushFire(true, 3);
 
     expect(drainAll(ring)).toEqual([
       { type: 'key', code: 'KeyA', down: false, t: 1 },
       { type: 'mouse', dx: 3, dy: -4, t: 2 },
-      { type: 'fire', t: 3 },
+      { type: 'fire', down: true, t: 3 },
     ]);
   });
 
   it('dequeueInto 覆寫同一重用 view（不配置新物件 — delivery 契約）', () => {
     const ring = createInputRing();
-    ring.pushFire(1);
-    ring.pushFire(2);
+    ring.pushFire(true, 1);
+    ring.pushFire(false, 2);
     const view: InputEventView = { type: 'key', code: '', down: false, dx: 0, dy: 0, t: 0 };
 
     ring.dequeueInto(view);
     expect(view.t).toBe(1);
+    expect(view.down).toBe(true);
     ring.dequeueInto(view);
     expect(view.t).toBe(2); // 同一物件被就地覆寫
+    expect(view.down).toBe(false);
   });
 
   it('dequeueInto 空 ring 為 no-op（防呆：不推進 head / count 不變負）', () => {
@@ -107,7 +109,7 @@ describe('InputRing — 固定欄位真 ring（繞圈 / 保序 / 溢位 / 重用
     expect(ring.size()).toBe(0); // count 未變負
     expect(ring.isEmpty()).toBe(true);
 
-    ring.pushFire(5); // 續用正常（head 未被空呼叫錯推）
+    ring.pushFire(true, 5); // 續用正常（head 未被空呼叫錯推）
     ring.dequeueInto(view);
     expect(view.t).toBe(5);
     expect(ring.size()).toBe(0);
@@ -120,7 +122,7 @@ describe('InputRing — 固定欄位真 ring（繞圈 / 保序 / 溢位 / 重用
     expect(ring.size()).toBe(0);
     expect(ring.isEmpty()).toBe(true);
 
-    ring.pushFire(2); // clear 後續用正常
-    expect(drainAll(ring)).toEqual([{ type: 'fire', t: 2 }]);
+    ring.pushFire(false, 2); // clear 後續用正常
+    expect(drainAll(ring)).toEqual([{ type: 'fire', down: false, t: 2 }]);
   });
 });

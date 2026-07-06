@@ -6,6 +6,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
   it('createSharedState 回傳全零的獨立實例', () => {
     const a = createSharedState();
     expect(a.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0, stopped: false });
+    expect(a.heldFire).toBe(false);
     expect(a.prev).toEqual({ x: 0, z: 0 });
     expect(a.curr).toEqual({ x: 0, z: 0 });
     expect(a.crosshair).toEqual({ cx: 0, cy: 0 });
@@ -35,7 +36,8 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const tVisibleRef = s.tVisible;
 
     // 弄髒所有欄位
-    pushEvent(s, { type: 'fire', t: 1 });
+    pushEvent(s, { type: 'fire', down: true, t: 1 });
+    s.heldFire = true;
     s.player.vx = 250;
     s.player.x = 12;
     s.player.z = -3;
@@ -59,6 +61,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
 
     expect(s.input.size()).toBe(0);
     expect(s.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0, stopped: false });
+    expect(s.heldFire).toBe(false);
     expect(s.prev).toEqual({ x: 0, z: 0 });
     expect(s.curr).toEqual({ x: 0, z: 0 });
     expect(s.crosshair).toEqual({ cx: 0, cy: 0 });

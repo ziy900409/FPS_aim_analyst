@@ -20,7 +20,7 @@
 export type InputEvent =
   | { type: 'key'; code: string; down: boolean; t: number } // 鍵盤：code=KeyboardEvent.code、down=true 為 keydown
   | { type: 'mouse'; dx: number; dy: number; t: number } //     滑鼠 delta（movementX/Y）→ 準心
-  | { type: 'fire'; t: number }; //                            開火事件（simStep 內就地 raycast，WP-5）
+  | { type: 'fire'; down: boolean; t: number }; //             開火鍵狀態：down=true 按下、false 放開
 
 /**
  * 輸入緩衝靜態容量（OQ-3.2 / CONTEXT「輸入分桶」容量政策）：
@@ -47,7 +47,7 @@ export const CODE_KEY: readonly string[] = ['KeyA', 'KeyD', 'KeyW', 'KeyS'];
  * 固定欄位輸入 ring buffer（真環狀、靜態容量、槽位重用、熱路徑不配置物件；CLAUDE.md §4 / OQ-3.2）。
  *
  * 表示法：並行 typed-array 槽位 `type,t,a,b`——key: a=code enum、b=down(0/1)；mouse: a=dx、b=dy；
- * fire 無 payload。`head`/`count` 游標繞圈（`& (CAP-1)`），寫入端 **bounded insertion 保序**
+ * fire: b=down(0/1)。`head`/`count` 游標繞圈（`& (CAP-1)`），寫入端 **bounded insertion 保序**
  * （`event.timeStamp` 近單調 → append 近有序，罕見亂序就地小範圍前移修正），故 `consume` 只需
  * 從 head 依序排空、**無需每 tick 排序 scratch**（守 GC 紀律，D-3b）。
  *
@@ -65,8 +65,8 @@ export interface InputRing {
   pushKey(codeInt: number, down: boolean, t: number): boolean;
   /** 寫入 mouse delta 事件（bounded insertion 保序）；滿則回 `false`。 */
   pushMouse(dx: number, dy: number, t: number): boolean;
-  /** 寫入 fire 事件（bounded insertion 保序）；滿則回 `false`。 */
-  pushFire(t: number): boolean;
+  /** 寫入 fire 事件（bounded insertion 保序）；`down=true` 為按下、false 為放開；滿則回 `false`。 */
+  pushFire(down: boolean, t: number): boolean;
   /**
    * 把 head 槽位就地解碼進**呼叫端提供的重用 view**、推進 head（`count--`）。空時為 no-op（防呆；
    * 呼叫端仍應先 `isEmpty()` 判定）。view 為單一重用物件（避免每事件配置）；handle 須同步讀取、
@@ -84,7 +84,7 @@ export interface InputRing {
 export interface InputEventView {
   type: 'key' | 'mouse' | 'fire';
   code: string; // key: 解碼自 code enum；mouse/fire 未定義語意（handle 依 type 分辨）
-  down: boolean; // key: keydown=true；其餘忽略
+  down: boolean; // key/fire: down=true；mouse 忽略
   dx: number; // mouse: movementX；其餘忽略
   dy: number; // mouse: movementY；其餘忽略
   t: number; // 事件時間戳（量測時鐘域）

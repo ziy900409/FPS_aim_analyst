@@ -62,12 +62,12 @@ function syntheticInputs(): InputEvent[] {
   return [
     { type: 'key', code: 'KeyD', down: true, t: 3100 }, //  右移 +vStrafe
     { type: 'key', code: 'KeyA', down: true, t: 3250 }, //  移動中按反向鍵 A → 急停（counter 'A'）
-    { type: 'fire', t: 3300 }, //                            停止態開火（residualSpeed=0）
+    { type: 'fire', down: true, t: 3300 }, //                 停止態開火（residualSpeed=0）
     { type: 'key', code: 'KeyD', down: false, t: 3350 }, //  放開兩鍵（held 皆 false → vx=0）
     { type: 'key', code: 'KeyA', down: false, t: 3350 },
     { type: 'key', code: 'KeyA', down: true, t: 3450 }, //  左移 −vStrafe（vx 曾為 0 → 非 counter）
     { type: 'key', code: 'KeyD', down: true, t: 3600 }, //  移動中按反向鍵 D → 急停（counter 'D'）
-    { type: 'fire', t: 3650 },
+    { type: 'fire', down: true, t: 3650 },
     { type: 'key', code: 'KeyA', down: false, t: 3700 }, //  放開兩鍵
     { type: 'key', code: 'KeyD', down: false, t: 3700 },
   ];

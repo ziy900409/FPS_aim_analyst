@@ -42,6 +42,7 @@ export function createInputSampler(
   isLocked: () => boolean = () => true,
 ): InputSampler {
   let attached: EventTarget | null = null;
+  let fireButtonHeld = false;
 
   // ring 溢位政策（GD-2）：push* 回 false（容量滿）→ 升 bufferOverflow、拒收、不丟最舊。
   const ring = state.input;
@@ -61,14 +62,28 @@ export function createInputSampler(
   }
 
   /**
-   * 開火事件（FR-3.3）：左鍵 mousedown 蓋 `event.timeStamp` 入緩衝。命中/首發判定不在此（→ WP-5，
-   * sim 消費 fire 時就地 raycast）。僅 Pointer Lock 鎖定中採計——否則「點擊 canvas 取鎖」與 UI 點擊
-   * 會被誤判為開火（設計註記 / T3 DoD）。
+   * 開火按下事件（FR-3.3 / WP-11 T2）：左鍵 mousedown 蓋 `event.timeStamp` 入緩衝。僅 Pointer Lock
+   * 鎖定中採計——否則「點擊 canvas 取鎖」與 UI 點擊會被誤判為開火（設計註記 / T3 DoD）。
    */
   function onMouseDown(e: MouseEvent): void {
     if (e.button !== 0) return; // 只記主鍵（左鍵）開火；其餘鍵不入緩衝
     if (!isLocked()) return; // 未鎖定不採計（避免取鎖點擊 / UI 點擊污染量測）
-    if (!ring.pushFire(e.timeStamp)) meta.bufferOverflow++;
+    if (!ring.pushFire(true, e.timeStamp)) {
+      meta.bufferOverflow++;
+      return;
+    }
+    fireButtonHeld = true;
+  }
+
+  /**
+   * 開火放開事件：不受 `isLocked` 閘門限制；若按住期間 Esc/失焦導致解鎖，mouseup 仍須送達，
+   * 否則 sim 端 `heldFire` 會卡住。未採計過 fire-down 時不送 fire-up，避免 UI 點擊放開污染資料。
+   */
+  function onMouseUp(e: MouseEvent): void {
+    if (e.button !== 0) return;
+    if (!fireButtonHeld) return;
+    fireButtonHeld = false;
+    if (!ring.pushFire(false, e.timeStamp)) meta.bufferOverflow++;
   }
 
   /**
@@ -93,6 +108,7 @@ export function createInputSampler(
       target.addEventListener('keydown', onKeyDown as EventListener);
       target.addEventListener('keyup', onKeyUp as EventListener);
       target.addEventListener('mousedown', onMouseDown as EventListener);
+      target.addEventListener('mouseup', onMouseUp as EventListener);
       target.addEventListener('pointermove', onPointerMove as EventListener);
     },
     detach(): void {
@@ -100,8 +116,10 @@ export function createInputSampler(
       attached.removeEventListener('keydown', onKeyDown as EventListener);
       attached.removeEventListener('keyup', onKeyUp as EventListener);
       attached.removeEventListener('mousedown', onMouseDown as EventListener);
+      attached.removeEventListener('mouseup', onMouseUp as EventListener);
       attached.removeEventListener('pointermove', onPointerMove as EventListener);
       attached = null;
+      fireButtonHeld = false;
     },
   };
 }

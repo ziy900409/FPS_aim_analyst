@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T1 WeaponConfig 完成;T2 可開
+## Status: 🟡 T2 fire down/up 完成;T3 可開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 WeaponConfig | ✅ |
-| T2 fire down/up | ⬜ |
+| T2 fire down/up | ✅ |
 | T3 cycletime 產彈 | ⬜ |
 | T-exit | ⬜ |
 
@@ -27,6 +27,13 @@
 ---
 
 ## Log
+
+### 2026-07-06 07:32Z — T2 fire down/up PASS
+- **修改檔案**:[types.ts](../../../../../src/state/types.ts) 將 input fire event 改為 `{type:'fire',down:boolean,t:number}`;[SharedState.ts](../../../../../src/state/SharedState.ts) 以 `EV_FIRE` 既有 `b` 欄 encode/decode `down` 並新增 `heldFire`;[InputSampler.ts](../../../../../src/input/InputSampler.ts) 新增 mouseup fire-up 與未鎖定 down gate;[SimLoop.ts](../../../../../src/loop/SimLoop.ts) fire-down 沿用既有單發 raycast/record,fire-up 只清 `heldFire`;[main.ts](../../../../../src/main.ts) 在 pointer-lock unlock 直接清 `sharedState.heldFire`。
+- **測試補強**:[InputSampler.test.ts](../../../../../src/input/InputSampler.test.ts) 覆蓋 down/up、未鎖定 down 不採計、解鎖後 mouseup 仍送 fire-up;[consume.test.ts](../../../../../src/input/consume.test.ts) 覆蓋 fire down/up 與 key 交錯保序;[SimLoop.test.ts](../../../../../src/loop/SimLoop.test.ts) 覆蓋 `heldFire` 翻轉與 fire-up 不 raycast/不記 fire;既有 firstShot/HitDetector/determinism/harness fire fixture 改成 fire-down。
+- **行為決策**:Sampler 只在已採計 fire-down 後送 fire-up;fire-up 不受 `isLocked()` gate,避免 Esc/失焦後 mouseup 被擋導致 stuck-fire,同時避免未鎖定 UI 點擊的 mouseup 污染 input ring。main 的 pointer-lock unlock guard 直接清 `heldFire`,不經 ring,符合 T2 task 的 UI 事件防護邊界。
+- **Blast radius**:CodeGraph `InputEvent` impact=31 symbols,input/state/loop/sim/render/drill/testharness/tests;`InputRing` impact=22 symbols;`createInputRing` impact=3 symbols(`SharedState.ts` local);`createInputSampler` impact=4 symbols(`InputSampler.ts`/test/`main.ts`);`applyInput` impact=4 symbols(`SimLoop.ts` local through `simStep`/`createSimLoop`)。本切片是跨 input contract 的中等範圍變更,但 shooting behavior 仍維持 T3 前的 fire-down 單發。
+- **Verification**:`npm.cmd test -- src/state src/input src/loop src/sim tests/regression/determinism.test.ts` → 12 files / 118 tests passed;`npm.cmd run typecheck` → pass;`npm.cmd test` → 31 files / 222 tests passed;`npm.cmd run build` → pass(第一次 sandbox 內 Vite config resolution 因 access denied 失敗,提權重跑成功;仍有既有 bundle size warning);`graphify update .` → rebuilt 665 nodes / 1327 edges / 42 communities。
 
 ### 2026-07-06 07:19Z — T1 WeaponConfig PASS
 - **新增檔案**:[WeaponConfig.ts](../../../../../src/weapon/WeaponConfig.ts) 定義 `WeaponConfig` 與 `validateWeapon`;[weapons.ts](../../../../../src/weapon/weapons.ts) 內建 `ak47` / `m4a4` / `m4a1s` 與 `getWeapon(id)`;[WeaponConfig.test.ts](../../../../../src/weapon/WeaponConfig.test.ts) 覆蓋合法 config、選填 `recoveryTransition`、缺欄/零 cycletime/非法 magSize/recoil range/getWeapon 未知 id。

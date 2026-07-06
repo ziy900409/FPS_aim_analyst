@@ -103,7 +103,7 @@ describe('firstShot — simStep 整合（fire 串流內判首發，換 peek rese
     state.targets.push(makeTarget('t0', 5, -8));
 
     for (let k = 0; k < 3; k++) {
-      state.input.pushFire(1 + k);
+      state.input.pushFire(true, 1 + k);
       simStep(state, 1 / SIM_HZ, 100, tm, cam);
     }
 
@@ -118,13 +118,13 @@ describe('firstShot — simStep 整合（fire 串流內判首發，換 peek rese
     state.targets.push(makeTarget('t0', 0, -8)); // 正對準心
 
     // tick 1：fire 命中 t0 → markKilled；首發已在命中前對 t0 判定。
-    state.input.pushFire(1);
+    state.input.pushFire(true, 1);
     simStep(state, 1 / SIM_HZ, 100, tm, cam);
     expect(state.firstShotPeekId).toBe('t0');
     expect(state.targets).toHaveLength(0);
 
     // tick 2：tm.tick spawn 新 peek t1（唯一新 id）；fire 命中 → 首發對 t1 重新放行。
-    state.input.pushFire(101);
+    state.input.pushFire(true, 101);
     simStep(state, 1 / SIM_HZ, 200, tm, cam);
     expect(state.firstShotPeekId).toBe('t1'); // 換 peek → 首發旗標隨新 id 推進
   });
