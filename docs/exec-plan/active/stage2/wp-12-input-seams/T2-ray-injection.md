@@ -7,7 +7,7 @@
 | **相依** | 無(可與 T0/T1 並行) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | MODIFY `src/sim/HitDetector.ts` + `src/sim/HitDetector.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-06 |
 
 ## Objective
 
@@ -36,12 +36,12 @@ export function raycastWithRay(
 
 ## Steps
 
-- [ ] 抽出 `raycastWithRay`;`raycastFromCenter` 轉包裝。
-- [ ] 等價測試:同 camera 場景下,`raycastFromCenter(camera, targets)` ===
+- [x] 抽出 `raycastWithRay`;`raycastFromCenter` 轉包裝。
+- [x] 等價測試:同 camera 場景下,`raycastFromCenter(camera, targets)` ===
       `raycastWithRay(camOrigin, camDir, targets)`(命中/targetId/part 逐欄)。
-- [ ] 注入測試:偏移方向命中側目標、反向不命中、多目標取最近(移植既有 cases 到注入介面)。
-- [ ] 既有 `HitDetector.test.ts` / `firstShot.test.ts` / `SimLoop.test.ts` 全綠不改斷言。
-- [ ] `npx vitest run` 全綠。
+- [x] 注入測試:偏移方向命中側目標、反向不命中、多目標取最近(移植既有 cases 到注入介面)。
+- [x] 既有 `HitDetector.test.ts` / `firstShot.test.ts` / `SimLoop.test.ts` 全綠不改斷言。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 進行中(T1 ✅ 2026-07-06)
+## Status: 🟡 進行中(T2 ✅ 2026-07-06;T-exit 待辦)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ 2026-07-06 |
 | T1 感度 CS2 化 | ✅ 2026-07-06 |
-| T2 射線注入 | ⬜ |
+| T2 射線注入 | ✅ 2026-07-06 |
 | T-exit | ⬜ |
 
 ---
@@ -25,6 +25,16 @@
 ---
 
 ## Log
+
+### 2026-07-06 10:36+02:00 — T2 ray injection PASS
+- `HitDetector` 新增公開 `raycastWithRay(origin, dirNormalized, targets)`,沿用模組層級 `Raycaster` / `Box3` / `Vector3` 重用物件;既有 `visible && alive` 過濾、最近命中、`part` 回傳語意不變。
+- `raycastFromCenter(camera, targets)` 改為薄包裝:先 `setFromCamera(NDC_CENTER, camera)` 取得 camera-center origin/direction,再委派 `raycastWithRay`;`SimLoop` 呼叫端零改動。
+- `HitDetector.test.ts` 新增 camera-center 等價測試與注入式 cases:偏移方向命中側目標、反向 miss、多目標取最近、略過 invisible/dead。
+- Verification:
+  - `npx.cmd vitest run src/sim/HitDetector.test.ts src/sim/firstShot.test.ts src/loop/SimLoop.test.ts` = 3 files / 35 tests passed
+  - `npm.cmd run typecheck`
+  - `npx.cmd vitest run` = 33 files / 250 tests passed
+  - `npm.cmd run build` = built successfully; Vite reported existing chunk-size warning for the main bundle
 
 ### 2026-07-06 — T1 cs2 sensitivity PASS
 - `CameraController` counts→radians 係數改為 `THREE.MathUtils.degToRad(0.022)`;註解改為 GD-5 / CS2 語意。

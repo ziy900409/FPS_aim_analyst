@@ -5,7 +5,7 @@ import type { TargetState } from '../state/types.ts';
  * HitDetector — WP-5 / T1（FR-5.1）
  *
  * sim 職責（CONTEXT.md「HitDetector」）：開火事件在**排序串流的該點** inline 評估，用 Raycaster
- * 從 **camera 正向（螢幕中心 NDC (0,0)）** 射線對 active 目標 hitbox 求交（**階段 A 單一 hitbox，H1**：
+ * 從注入射線對 active 目標 hitbox 求交（**階段 A 單一 hitbox，H1**：
  * 命中/未命中；`part` 選填保留、頭/身分解延後）。命中即由呼叫端（SimLoop）觸發 `markKilled`（OQ-5.4）。
  *
  * **判定與 mesh 同來源**：hitbox 由 `TargetState.hitbox`(box:width/height/depth)衍生 `Box3`，與
@@ -39,14 +39,15 @@ export interface RaycastResult {
 }
 
 /**
- * 從 camera 中心射線對 active（`visible && alive`）目標 hitbox 求交。多目標時取**最近**命中
+ * 從注入射線對 active（`visible && alive`）目標 hitbox 求交。多目標時取**最近**命中
  * （階段 A 通常單一 active 目標，但仍以最近者為準）。回傳 `{hit, targetId?, part?}`。
  */
-export function raycastFromCenter(
-  camera: THREE.Camera,
+export function raycastWithRay(
+  origin: THREE.Vector3,
+  dirNormalized: THREE.Vector3,
   targets: readonly TargetState[],
 ): RaycastResult {
-  raycaster.setFromCamera(NDC_CENTER, camera);
+  raycaster.set(origin, dirNormalized);
 
   let nearestId: string | undefined;
   let nearestPart: 'head' | 'body' | undefined;
@@ -76,6 +77,17 @@ export function raycastFromCenter(
 
   if (nearestId === undefined) return { hit: false };
   return { hit: true, targetId: nearestId, part: nearestPart };
+}
+
+/**
+ * 從 camera 中心射線對 active 目標 hitbox 求交；WP-13 recoil/spread 可改呼叫注入式 raycastWithRay。
+ */
+export function raycastFromCenter(
+  camera: THREE.Camera,
+  targets: readonly TargetState[],
+): RaycastResult {
+  raycaster.setFromCamera(NDC_CENTER, camera);
+  return raycastWithRay(raycaster.ray.origin, raycaster.ray.direction, targets);
 }
 
 /** Camera forward ray vs target center angular offset in degrees; canonical source for WP-8 aim offset. */
