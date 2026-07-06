@@ -24,8 +24,8 @@ import type { Clock } from './clock.ts';
  */
 export const DEFAULT_RNG_SEED = 1;
 
-/** 橫移速度（u/s，source unit；對齊 MovementController profile）→ spread `speedRatio` 正規化基準。 */
-const V_STRAFE = CS2_PROFILE.maxSpeed;
+/** 速度 gate / spread normalization 的 movement profile 單一來源。 */
+const MOVEMENT_PROFILE = CS2_PROFILE;
 
 /**
  * recoil 執行期依賴（WP-13 / T1）：由 `createSimLoop` 建一次並注入 `simStep`——`table` 為武器 recoil
@@ -185,17 +185,17 @@ function fireOneShot(
   let targetId: string | undefined;
   let offsetDeg: number | undefined;
 
-  // 精準 gate（FR-5.4，OQ-5.1）：**在命中判定與 markKilled 之前**讀 velocity——反映 fire 當下
-  // （＝上一 tick movement.step 所定，本 tick movement.step 尚未跑）的移動狀態。T1 先由 MovementController
-  // 將 stopped 改成速度門檻相容欄位；fire 側 accurate/residualSpeed 的完整連續模型由 T2 接手。
-  const accurate = state.player.stopped;
   const residualSpeed = Math.abs(state.player.vx);
+  // Velocity gate（WP-14 / T2，FR-B12）：**在命中判定與 markKilled 之前**讀 fire 當下速度
+  // （＝上一 tick movement.step 所定，本 tick movement.step 尚未跑）。`stopped` 只是 HUD/相容欄位；
+  // 產彈點直接以同一 profile threshold 判定，避免 stale stopped flag 污染開火精準度。
+  const accurate = residualSpeed < MOVEMENT_PROFILE.accuracyThreshold;
 
   // WP-13 / T2：**先** sampleSpread（用本發 kick 之前的 inaccuracy，對齊 CS2；序列位置決定性），把圓盤
   // 偏移暫存供本發彈道射線消費——次序 = sampleSpread → 彈道 raycast → recoilOnFire（本發沿 kick 前
   // 朝向出膛，kick 影響後續發與視覺 punch）。無 recoilRuntime 時 lastSpread 維持 0（向後相容）。
   if (recoilRuntime !== undefined && weapon !== undefined) {
-    const speedRatio = Math.min(1, Math.abs(state.player.vx) / V_STRAFE);
+    const speedRatio = Math.min(1, residualSpeed / MOVEMENT_PROFILE.maxSpeed);
     const spread = sampleSpread(state.recoilState, weapon, speedRatio, recoilRuntime.rng);
     state.recoil.lastSpread.x = spread.x;
     state.recoil.lastSpread.y = spread.y;
@@ -211,8 +211,8 @@ function fireOneShot(
       if (target !== undefined) offsetDeg = targetCenterOffsetDeg(camera, target);
     }
     const result = ballisticRaycast(camera, state);
-    hit = result.hit;
-    part = result.part;
+    hit = accurate && result.hit;
+    part = hit ? result.part : undefined;
     if (result.targetId !== undefined) targetId = result.targetId;
     if (hit && result.targetId !== undefined) targetManager.markKilled(state, result.targetId);
     // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
@@ -225,7 +225,6 @@ function fireOneShot(
 
   // fire 結果事件（含 firstShot / accurate / residualSpeed）產出 → WP-7 記錄 / WP-8 統計；
   // t 使用排程時刻而非 input event 時刻，WP-16 schema v2 需對帳此欄位語意。
-  void accurate;
   recorder?.recordEvent({
     type: 'fire',
     t,

@@ -248,7 +248,7 @@
       "source_file": "playwright.config.ts",
       "source_location": "L1",
       "id": "playwright_config_ts",
-      "community": 28,
+      "community": 26,
       "norm_label": "playwright.config.ts"
     },
     {
@@ -257,7 +257,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L1",
       "id": "vite_config_ts",
-      "community": 24,
+      "community": 22,
       "norm_label": "vite.config.ts"
     },
     {
@@ -266,7 +266,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L11",
       "id": "fps_aim_analyst_vite_config_coopcoep",
-      "community": 24,
+      "community": 22,
       "norm_label": "coopcoep()"
     },
     {
@@ -383,7 +383,7 @@
       "source_file": "src/vite-env.d.ts",
       "source_location": "L1",
       "id": "src_vite_env_d_ts",
-      "community": 29,
+      "community": 27,
       "norm_label": "vite-env.d.ts"
     },
     {
@@ -1218,7 +1218,7 @@
       "label": "fixedClock()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.test.ts",
-      "source_location": "L14",
+      "source_location": "L17",
       "id": "loop_simloop_test_fixedclock",
       "community": 0,
       "norm_label": "fixedclock()"
@@ -1227,7 +1227,7 @@
       "label": "cameraLookingDownZ()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.test.ts",
-      "source_location": "L20",
+      "source_location": "L23",
       "id": "loop_simloop_test_cameralookingdownz",
       "community": 0,
       "norm_label": "cameralookingdownz()"
@@ -1236,7 +1236,7 @@
       "label": "makeTarget()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.test.ts",
-      "source_location": "L28",
+      "source_location": "L31",
       "id": "loop_simloop_test_maketarget",
       "community": 0,
       "norm_label": "maketarget()"
@@ -1245,10 +1245,46 @@
       "label": "tickAdvancer()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.test.ts",
-      "source_location": "L40",
+      "source_location": "L43",
       "id": "loop_simloop_test_tickadvancer",
       "community": 0,
       "norm_label": "tickadvancer()"
+    },
+    {
+      "label": "runtime()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L53",
+      "id": "loop_simloop_test_runtime",
+      "community": 0,
+      "norm_label": "runtime()"
+    },
+    {
+      "label": "fireAt()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L240",
+      "id": "loop_simloop_test_fireat",
+      "community": 0,
+      "norm_label": "fireat()"
+    },
+    {
+      "label": "meanSpreadRadius()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L273",
+      "id": "loop_simloop_test_meanspreadradius",
+      "community": 0,
+      "norm_label": "meanspreadradius()"
+    },
+    {
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L295",
+      "id": "loop_simloop_test_run",
+      "community": 0,
+      "norm_label": "run()"
     },
     {
       "label": "SimLoop.ts",
@@ -1299,7 +1335,7 @@
       "label": "scheduleFire()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L247",
+      "source_location": "L246",
       "id": "loop_simloop_schedulefire",
       "community": 0,
       "norm_label": "schedulefire()"
@@ -1308,7 +1344,7 @@
       "label": "recordVisibleEvents()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L268",
+      "source_location": "L267",
       "id": "loop_simloop_recordvisibleevents",
       "community": 0,
       "norm_label": "recordvisibleevents()"
@@ -1317,7 +1353,7 @@
       "label": "simStep()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L300",
+      "source_location": "L299",
       "id": "loop_simloop_simstep",
       "community": 0,
       "norm_label": "simstep()"
@@ -1326,7 +1362,7 @@
       "label": "createSimLoop()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L364",
+      "source_location": "L363",
       "id": "loop_simloop_createsimloop",
       "community": 2,
       "norm_label": "createsimloop()"
@@ -2309,7 +2345,7 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L1",
       "id": "src_render_targetview_test_ts",
-      "community": 16,
+      "community": 17,
       "norm_label": "targetview.test.ts"
     },
     {
@@ -2318,7 +2354,7 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L7",
       "id": "render_targetview_test_target",
-      "community": 16,
+      "community": 17,
       "norm_label": "target()"
     },
     {
@@ -2327,7 +2363,7 @@
       "source_file": "src/render/TargetView.test.ts",
       "source_location": "L21",
       "id": "render_targetview_test_meshes",
-      "community": 16,
+      "community": 17,
       "norm_label": "meshes()"
     },
     {
@@ -2336,7 +2372,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L1",
       "id": "src_render_targetview_ts",
-      "community": 16,
+      "community": 17,
       "norm_label": "targetview.ts"
     },
     {
@@ -2345,7 +2381,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L21",
       "id": "render_targetview_targetview",
-      "community": 16,
+      "community": 17,
       "norm_label": "targetview"
     },
     {
@@ -2354,7 +2390,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L29",
       "id": "render_targetview_targetview_constructor",
-      "community": 16,
+      "community": 17,
       "norm_label": ".constructor()"
     },
     {
@@ -2363,7 +2399,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L44",
       "id": "render_targetview_targetview_sync",
-      "community": 16,
+      "community": 17,
       "norm_label": ".sync()"
     },
     {
@@ -2372,7 +2408,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L60",
       "id": "render_targetview_targetview_poolsize",
-      "community": 16,
+      "community": 17,
       "norm_label": ".poolsize()"
     },
     {
@@ -2381,7 +2417,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L65",
       "id": "render_targetview_targetview_acquire",
-      "community": 16,
+      "community": 17,
       "norm_label": ".#acquire()"
     },
     {
@@ -2390,7 +2426,7 @@
       "source_file": "src/render/TargetView.ts",
       "source_location": "L76",
       "id": "render_targetview_targetview_dispose",
-      "community": 16,
+      "community": 17,
       "norm_label": ".dispose()"
     },
     {
@@ -3227,7 +3263,7 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L1",
       "id": "src_weapon_weaponconfig_test_ts",
-      "community": 14,
+      "community": 15,
       "norm_label": "weaponconfig.test.ts"
     },
     {
@@ -3236,7 +3272,7 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L5",
       "id": "weapon_weaponconfig_test_validweapon",
-      "community": 14,
+      "community": 15,
       "norm_label": "validweapon()"
     },
     {
@@ -3245,7 +3281,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L1",
       "id": "src_weapon_weaponconfig_ts",
-      "community": 14,
+      "community": 15,
       "norm_label": "weaponconfig.ts"
     },
     {
@@ -3254,7 +3290,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L29",
       "id": "weapon_weaponconfig_validateweapon",
-      "community": 14,
+      "community": 15,
       "norm_label": "validateweapon()"
     },
     {
@@ -3263,7 +3299,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L72",
       "id": "weapon_weaponconfig_validaterecoverytransition",
-      "community": 14,
+      "community": 15,
       "norm_label": "validaterecoverytransition()"
     },
     {
@@ -3272,7 +3308,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L82",
       "id": "weapon_weaponconfig_err",
-      "community": 14,
+      "community": 15,
       "norm_label": "err()"
     },
     {
@@ -3281,7 +3317,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L86",
       "id": "weapon_weaponconfig_requireobject",
-      "community": 14,
+      "community": 15,
       "norm_label": "requireobject()"
     },
     {
@@ -3290,7 +3326,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L93",
       "id": "weapon_weaponconfig_requirefinitenumber",
-      "community": 14,
+      "community": 15,
       "norm_label": "requirefinitenumber()"
     },
     {
@@ -3299,7 +3335,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L100",
       "id": "weapon_weaponconfig_requirenonnegativenumber",
-      "community": 14,
+      "community": 15,
       "norm_label": "requirenonnegativenumber()"
     },
     {
@@ -3308,7 +3344,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L106",
       "id": "weapon_weaponconfig_requirepositivenumber",
-      "community": 14,
+      "community": 15,
       "norm_label": "requirepositivenumber()"
     },
     {
@@ -3317,7 +3353,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L112",
       "id": "weapon_weaponconfig_requirepositiveint",
-      "community": 14,
+      "community": 15,
       "norm_label": "requirepositiveint()"
     },
     {
@@ -3326,7 +3362,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L1",
       "id": "src_weapon_weapons_ts",
-      "community": 14,
+      "community": 15,
       "norm_label": "weapons.ts"
     },
     {
@@ -3335,7 +3371,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L75",
       "id": "weapon_weapons_getweapon",
-      "community": 14,
+      "community": 15,
       "norm_label": "getweapon()"
     },
     {
@@ -3344,7 +3380,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L80",
       "id": "weapon_weapons_isweaponid",
-      "community": 14,
+      "community": 15,
       "norm_label": "isweaponid()"
     },
     {
@@ -3353,7 +3389,7 @@
       "source_file": "tests/e2e/backend.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_backend_spec_ts",
-      "community": 30,
+      "community": 28,
       "norm_label": "backend.spec.ts"
     },
     {
@@ -3362,7 +3398,7 @@
       "source_file": "tests/e2e/full-drill.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_full_drill_spec_ts",
-      "community": 25,
+      "community": 23,
       "norm_label": "full-drill.spec.ts"
     },
     {
@@ -3371,7 +3407,7 @@
       "source_file": "tests/e2e/full-drill.spec.ts",
       "source_location": "L23",
       "id": "e2e_full_drill_spec_runfullchain",
-      "community": 25,
+      "community": 23,
       "norm_label": "runfullchain()"
     },
     {
@@ -3416,7 +3452,7 @@
       "source_file": "tests/e2e/isolation.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_isolation_spec_ts",
-      "community": 31,
+      "community": 29,
       "norm_label": "isolation.spec.ts"
     },
     {
@@ -3425,7 +3461,7 @@
       "source_file": "tests/e2e/overlay-layering.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_overlay_layering_spec_ts",
-      "community": 26,
+      "community": 24,
       "norm_label": "overlay-layering.spec.ts"
     },
     {
@@ -3434,7 +3470,7 @@
       "source_file": "tests/e2e/overlay-layering.spec.ts",
       "source_location": "L17",
       "id": "e2e_overlay_layering_spec_zindexof",
-      "community": 26,
+      "community": 24,
       "norm_label": "zindexof()"
     },
     {
@@ -3572,7 +3608,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "claude.md \u5c08\u6848\u57f7\u884c\u5354\u8b70\u8207\u5c0e\u822a",
       "id": "claude_project_protocol"
     },
@@ -3585,7 +3621,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "\u7a0b\u5e8f\u8a18\u61b6 (procedural memory)",
       "id": "claude_procedural_memory"
     },
@@ -3598,7 +3634,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "\u5782\u76f4\u5207\u7247 = \u539f\u5b50 commit \u5354\u8b70",
       "id": "claude_vertical_slice_commit"
     },
@@ -3611,7 +3647,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "\u8a18\u61b6\u5206\u5c64 (working/semantic/episodic/\u5168\u57df/\u7a0b\u5e8f)",
       "id": "claude_memory_layers"
     },
@@ -3637,7 +3673,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "context.md \u5c08\u6709\u540d\u8a5e\u8a5e\u5f59\u8868",
       "id": "context_glossary"
     },
@@ -3650,7 +3686,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 27,
+      "community": 25,
       "norm_label": "counter-strafe (\u53cd\u5411\u6025\u505c)",
       "id": "context_counter_strafe"
     },
@@ -3663,7 +3699,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 27,
+      "community": 25,
       "norm_label": "\u53cd\u5411\u9375 (counter key)",
       "id": "context_counter_key"
     },
@@ -3676,7 +3712,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 32,
+      "community": 30,
       "norm_label": "drill (\u8a13\u7df4\u55ae\u5143)",
       "id": "context_drill"
     },
@@ -3689,7 +3725,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "peek \u8207 p2 \u63a8\u9032\u653f\u7b56 (\u547d\u4e2d\u624d\u63a8\u9032)",
       "id": "context_peek"
     },
@@ -3702,7 +3738,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "\u9996\u767c (first shot / firstshot)",
       "id": "context_first_shot"
     },
@@ -3715,7 +3751,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 13,
       "norm_label": "\u6025\u505c\u53cd\u61c9\u6642\u9593 (t_counter \u2212 t_visible)",
       "id": "context_counter_reaction_time"
     },
@@ -3728,7 +3764,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "\u901f\u5ea6\u6b78\u96f6\u8aa4\u5dee (residual speed)",
       "id": "context_residual_speed"
     },
@@ -3741,7 +3777,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 33,
+      "community": 31,
       "norm_label": "\u505c\u706b\u6642\u5e8f\u5c0d\u9f4a (t_fire \u2212 t_velocity_zero)",
       "id": "context_fire_timing_alignment"
     },
@@ -3754,7 +3790,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "\u9996\u767c\u547d\u4e2d\u7387",
       "id": "context_first_shot_hit_rate"
     },
@@ -3767,7 +3803,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 16,
       "norm_label": "\u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "context_crosshair_alignment_offset"
     },
@@ -3780,7 +3816,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 34,
+      "community": 32,
       "norm_label": "\u5207\u63db\u6642\u9593 (t_next_acquisition \u2212 t_prev_kill)",
       "id": "context_switch_time"
     },
@@ -3793,7 +3829,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 35,
+      "community": 33,
       "norm_label": "\u7bc0\u594f\u7a69\u5b9a\u5ea6",
       "id": "context_rhythm_stability"
     },
@@ -3806,7 +3842,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 34,
       "norm_label": "\u5de6\u53f3\u5c0d\u7a31\u6027",
       "id": "context_lr_symmetry"
     },
@@ -3819,7 +3855,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "\u901f\u5ea6 gate (velocity gate)",
       "id": "context_velocity_gate"
     },
@@ -3832,7 +3868,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 37,
+      "community": 35,
       "norm_label": "pre/post (\u524d\u5f8c\u6e2c) \u7814\u7a76\u65b9\u6cd5\u5b78",
       "id": "context_pre_post_test"
     },
@@ -3845,7 +3881,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "inputsampler \u5143\u4ef6",
       "id": "context_input_sampler"
     },
@@ -3858,7 +3894,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "sharedstate \u5143\u4ef6",
       "id": "context_shared_state"
     },
@@ -3871,7 +3907,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "simloop \u5143\u4ef6",
       "id": "context_sim_loop"
     },
@@ -3884,7 +3920,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "movementcontroller \u5143\u4ef6 (\u72c0\u614b\u6a5f m1)",
       "id": "context_movement_controller"
     },
@@ -3897,7 +3933,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 13,
       "norm_label": "targetmanager \u5143\u4ef6",
       "id": "context_target_manager"
     },
@@ -3910,7 +3946,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "hitdetector \u5143\u4ef6",
       "id": "context_hit_detector"
     },
@@ -3923,7 +3959,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "renderloop \u5143\u4ef6",
       "id": "context_render_loop"
     },
@@ -3936,7 +3972,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 38,
+      "community": 36,
       "norm_label": "scenemanager \u5143\u4ef6",
       "id": "context_scene_manager"
     },
@@ -3949,7 +3985,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "datarecorder \u5143\u4ef6 (preallocated arena)",
       "id": "context_data_recorder"
     },
@@ -3962,7 +3998,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "drillconfig \u5143\u4ef6",
       "id": "context_drill_config"
     },
@@ -3988,7 +4024,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 12,
       "norm_label": "\u96d9\u8ff4\u5708 (dual-loop)",
       "id": "context_dual_loop"
     },
@@ -4001,7 +4037,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 16,
       "norm_label": "fixed-timestep (128 hz)",
       "id": "context_fixed_timestep"
     },
@@ -4014,7 +4050,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 16,
       "norm_label": "accumulator \u6a21\u5f0f",
       "id": "context_accumulator"
     },
@@ -4027,7 +4063,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 16,
       "norm_label": "simstep \u9806\u5e8f (tick \u5167)",
       "id": "context_simstep_order"
     },
@@ -4040,7 +4076,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 39,
+      "community": 37,
       "norm_label": "alpha \u5167\u63d2 (interpolation)",
       "id": "context_alpha_interpolation"
     },
@@ -4053,7 +4089,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism)",
       "id": "context_determinism"
     },
@@ -4066,7 +4102,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "\u91cf\u6e2c\u6642\u9418 vs \u6c7a\u5b9a\u6027\u6642\u9418 (two-clock model)",
       "id": "context_two_clock_model"
     },
@@ -4079,7 +4115,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 13,
       "norm_label": "t_visible",
       "id": "context_t_visible"
     },
@@ -4092,7 +4128,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 11,
       "norm_label": "sim tick rate (128 hz)",
       "id": "context_sim_tick_rate"
     },
@@ -4105,7 +4141,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "ring buffer (\u8f38\u5165\u7de9\u885d)",
       "id": "context_ring_buffer"
     },
@@ -4118,7 +4154,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "rendersnapshot \u7a84\u4ecb\u9762",
       "id": "context_render_snapshot"
     },
@@ -4170,7 +4206,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "\u8f38\u5165\u5206\u6876 (input bucketing)",
       "id": "context_input_bucketing"
     },
@@ -4196,7 +4232,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "\u6b63\u898f\u55ae\u4f4d (canonical unit, source unit u/s)",
       "id": "context_canonical_unit"
     },
@@ -4209,7 +4245,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 38,
       "norm_label": "\u968e\u6bb5 a (stage a)",
       "id": "context_stage_a"
     },
@@ -4222,7 +4258,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "f5 \u63a5\u7e2b (seam-in, drills-out)",
       "id": "context_f5_seam_in"
     },
@@ -4235,7 +4271,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "\u968e\u6bb5 b (stage b)",
       "id": "context_stage_b"
     },
@@ -4248,7 +4284,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "cs2 physics \u5e38\u6578 (\u968e\u6bb5 b \u6821\u6e96\u8d77\u9ede)",
       "id": "context_cs2_physics_constants"
     },
@@ -4261,7 +4297,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "design.md \u57f7\u884c\u671f\u8207\u67b6\u69cb\u8a2d\u8a08\u7b46\u8a18",
       "id": "design_notes"
     },
@@ -4274,7 +4310,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 12,
       "norm_label": "\u968e\u6bb5 a \u96d9\u8ff4\u5708\u5be6\u70ba\u55ae\u57f7\u884c\u7dd2 raf \u8d85\u7d1a\u8ff4\u5708",
       "id": "design_single_thread_stage_a"
     },
@@ -4287,7 +4323,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "\u4e3b\u57f7\u884c\u7dd2\u5361\u9813\u6c61\u67d3 sim \u8a08\u6642 (\u968e\u6bb5 a \u9694\u96e2\u4e0d\u6210\u7acb)",
       "id": "design_main_thread_jank"
     },
@@ -4300,7 +4336,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "web worker + sharedarraybuffer \u771f\u6b63\u9694\u96e2 (\u968e\u6bb5 b)",
       "id": "design_worker_isolation"
     },
@@ -4313,7 +4349,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "frontend.md (\u524d\u7aef/ui \u8a2d\u8a08,\u9810\u7559\u7a7a\u6a94)",
       "id": "frontend_doc"
     },
@@ -4326,7 +4362,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "map.md \u6587\u4ef6\u5730\u5716",
       "id": "map_doc"
     },
@@ -4339,7 +4375,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "plan.md \u57f7\u884c\u8a08\u756b (\u968e\u6bb5 a)",
       "id": "plan_doc"
     },
@@ -4365,7 +4401,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "d2 \u2014 \u6e2c\u8a66\u6846\u67b6 vitest + playwright",
       "id": "plan_d2_test_framework"
     },
@@ -4391,7 +4427,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "d4 \u2014 \u6587\u4ef6\u8a9e\u8a00 (\u7e41\u4e2d\u4fdd\u7559\u82f1\u6587\u8853\u8a9e)",
       "id": "plan_d4_doc_language"
     },
@@ -4404,7 +4440,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 11,
       "norm_label": "d5 \u2014 plan \u9846\u7c92\u5ea6 (agent \u53ef\u57f7\u884c\u6b65\u9a5f)",
       "id": "plan_d5_granularity"
     },
@@ -4430,7 +4466,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 11,
       "norm_label": "\u898f\u683c\u66f8 v1.1 + wbs",
       "id": "spec_doc"
     },
@@ -4443,7 +4479,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "f1 \u2014 \u63a1\u96c6\u9375\u76e4\u8207\u6ed1\u9f20\u64cd\u4f5c\u8cc7\u6599",
       "id": "spec_f1"
     },
@@ -4456,7 +4492,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 13,
       "norm_label": "f2 \u2014 \u8a18\u9304 t_visible spawn/\u53ef\u898b\u6642\u9593\u6233",
       "id": "spec_f2"
     },
@@ -4469,7 +4505,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 13,
       "norm_label": "f3 \u2014 \u7b2c\u4e00\u4eba\u7a31\u8996\u89d2 + cs \u98a8\u683c\u53cd\u5411\u6025\u505c",
       "id": "spec_f3"
     },
@@ -4482,7 +4518,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "f4 \u2014 \u591a drill \u652f\u63f4 (config \u9a45\u52d5)",
       "id": "spec_f4"
     },
@@ -4495,7 +4531,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "f5 \u2014 \u79fb\u52d5\u76ee\u6a19\u652f\u63f4",
       "id": "spec_f5"
     },
@@ -4521,7 +4557,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 12,
       "norm_label": "adr-2 \u908f\u8f2f\u8207\u6e32\u67d3\u89e3\u8026 (\u96d9\u8ff4\u5708 + fixed-timestep)",
       "id": "spec_adr2"
     },
@@ -4534,7 +4570,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 11,
       "norm_label": "adr-3 sim tick rate = 128 hz",
       "id": "spec_adr3"
     },
@@ -4573,7 +4609,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "adr-6 \u76ee\u6a19\u79fb\u52d5\u7b56\u7565 (sim loop \u6bcf tick \u66f4\u65b0, motion registry)",
       "id": "spec_adr6"
     },
@@ -4586,7 +4622,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 12,
       "norm_label": "adr-7 \u5169\u500b\u6642\u9418 (\u91cf\u6e2c\u6642\u9418 / \u6c7a\u5b9a\u6027\u6642\u9418)",
       "id": "spec_adr7"
     },
@@ -4612,7 +4648,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "\u9644\u9304 g \u79fb\u52d5\u76ee\u6a19 schema (targetmotion / motionstrategies)",
       "id": "spec_target_motion_schema"
     },
@@ -4638,7 +4674,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "\u9644\u9304 f \u98a8\u96aa\u767b\u8a18",
       "id": "spec_risk_register"
     },
@@ -4651,7 +4687,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "\u79fb\u52d5 + counter-strafe \u80fd\u529b\u6df7\u6dc6 (\u7814\u7a76\u8a2d\u8a08\u554f\u984c)",
       "id": "spec_ability_confusion"
     },
@@ -4664,7 +4700,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 11,
       "norm_label": "decisions.md \u5168\u57df\u6c7a\u7b56\u8207\u77db\u76fe\u5e33\u672c",
       "id": "decisions_ledger"
     },
@@ -4677,7 +4713,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "gd-1 f5 \u662f\u5426\u5c6c\u968e\u6bb5 a (\u898f\u683c v1.1 \u8207 seam-in \u4e0d\u4e00\u81f4)",
       "id": "decisions_gd1_f5_conflict"
     },
@@ -4690,7 +4726,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "exec-plan/readme.md \u57f7\u884c\u8a08\u756b\u7d22\u5f15",
       "id": "execplan_readme"
     },
@@ -4703,7 +4739,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "\u91cc\u7a0b\u7891 m1 (wp-2 \u810a\u690e\u9580\u63a7)",
       "id": "execplan_milestone_m1"
     },
@@ -4716,7 +4752,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "\u91cc\u7a0b\u7891 m2 (wp-5 \u6838\u5fc3\u73a9\u6cd5)",
       "id": "execplan_milestone_m2"
     },
@@ -4729,7 +4765,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "\u91cc\u7a0b\u7891 m3 (wp-7 \u53ef\u532f\u51fa\u8cc7\u6599)",
       "id": "execplan_milestone_m3"
     },
@@ -4742,7 +4778,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "\u91cc\u7a0b\u7891 m4 (wp-9 \u968e\u6bb5 a \u4ea4\u4ed8)",
       "id": "execplan_milestone_m4"
     },
@@ -4755,7 +4791,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-0 \u74b0\u5883\u5efa\u7f6e\u8207\u5b78\u7fd2\u722c\u5347",
       "id": "execplan_wp0"
     },
@@ -4768,7 +4804,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-1 fps \u63a7\u5236 + pointer lock",
       "id": "execplan_wp1"
     },
@@ -4781,7 +4817,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-2 sharedstate + \u96d9\u8ff4\u5708\u9aa8\u67b6 (\u810a\u690e)",
       "id": "execplan_wp2"
     },
@@ -4794,7 +4830,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-3 inputsampler (f1)",
       "id": "execplan_wp3"
     },
@@ -4807,7 +4843,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-4 targetmanager + t_visible (f2)",
       "id": "execplan_wp4"
     },
@@ -4820,7 +4856,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-5 hitdetector + \u6a6b\u79fb + \u7c21\u5316\u6025\u505c (f3)",
       "id": "execplan_wp5"
     },
@@ -4833,7 +4869,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-6 drillconfig \u8cc7\u6599\u9a45\u52d5 drill (f4)",
       "id": "execplan_wp6"
     },
@@ -4846,7 +4882,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-7 datarecorder ring buffer + \u532f\u51fa",
       "id": "execplan_wp7"
     },
@@ -4859,7 +4895,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-8 metricsdashboard + hud",
       "id": "execplan_wp8"
     },
@@ -4872,7 +4908,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 12,
+      "community": 14,
       "norm_label": "wp-9 \u7aef\u5230\u7aef\u6574\u5408 + \u8a08\u6642\u6548\u5ea6 + \u6c7a\u5b9a\u6027\u56de\u6b78",
       "id": "execplan_wp9"
     },
@@ -5158,7 +5194,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 39,
       "norm_label": "wp-2 progress log",
       "id": "wp2_progress"
     },
@@ -5561,7 +5597,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 5,
+      "community": 4,
       "norm_label": "d1 ui = \u7d14 ts + dom overlay",
       "id": "ext_d1_dom_overlay"
     },
@@ -6146,7 +6182,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 9,
+      "community": 7,
       "norm_label": "\u91cc\u7a0b\u7891 m1 (wp-2 \u810a\u690e / \u6c7a\u5b9a\u6027\u9a57\u8b49)",
       "id": "milestone_m1"
     },
@@ -6744,7 +6780,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 42,
+      "community": 40,
       "norm_label": "oq-6.3 end condition default decision",
       "id": "wp6_readme_oq63"
     },
@@ -9270,6 +9306,28 @@
       "weight": 1.0,
       "source": "data_datarecorder_createdatarecorder",
       "target": "data_ringbuffer_capacityfordrill"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L242",
+      "weight": 1.0,
+      "source": "loop_simloop_test_fireat",
+      "target": "data_datarecorder_createdatarecorder"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L300",
+      "weight": 1.0,
+      "source": "loop_simloop_test_run",
+      "target": "data_datarecorder_createdatarecorder"
     },
     {
       "relation": "calls",
@@ -11868,6 +11926,61 @@
       "target": "src_weapon_weapons_ts"
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_sim_movementcontroller_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_recoil_recoiltable_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "recoil_recoiltable_generaterecoiltable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_recoil_rng_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "recoil_rng_createran1",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/loop/SimLoop.test.ts",
@@ -11906,6 +12019,200 @@
       "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
       "target": "loop_simloop_test_tickadvancer"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "loop_simloop_test_runtime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L240",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "loop_simloop_test_fireat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L273",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "loop_simloop_test_meanspreadradius",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L295",
+      "weight": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "loop_simloop_test_run",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L243",
+      "weight": 1.0,
+      "source": "loop_simloop_test_fireat",
+      "target": "loop_simloop_test_cameralookingdownz",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L301",
+      "weight": 1.0,
+      "source": "loop_simloop_test_run",
+      "target": "loop_simloop_test_cameralookingdownz",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L254",
+      "weight": 1.0,
+      "source": "loop_simloop_test_fireat",
+      "target": "loop_simloop_test_maketarget",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L311",
+      "weight": 1.0,
+      "source": "loop_simloop_test_run",
+      "target": "loop_simloop_test_maketarget",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L274",
+      "weight": 1.0,
+      "source": "loop_simloop_test_meanspreadradius",
+      "target": "loop_simloop_test_runtime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L297",
+      "weight": 1.0,
+      "source": "loop_simloop_test_run",
+      "target": "loop_simloop_test_runtime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "loop_simloop_test_runtime",
+      "target": "recoil_recoiltable_generaterecoiltable"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "loop_simloop_test_runtime",
+      "target": "recoil_rng_createran1"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L241",
+      "weight": 1.0,
+      "source": "loop_simloop_test_fireat",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L258",
+      "weight": 1.0,
+      "source": "loop_simloop_test_fireat",
+      "target": "loop_simloop_simstep"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L278",
+      "weight": 1.0,
+      "source": "loop_simloop_test_meanspreadradius",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L282",
+      "weight": 1.0,
+      "source": "loop_simloop_test_meanspreadradius",
+      "target": "loop_simloop_simstep"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L299",
+      "weight": 1.0,
+      "source": "loop_simloop_test_run",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L315",
+      "weight": 1.0,
+      "source": "loop_simloop_test_run",
+      "target": "loop_simloop_simstep"
     },
     {
       "relation": "imports_from",
@@ -15946,9 +16253,9 @@
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L98",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_sim_movementcontroller_test_ts",
-      "target": "sim_movementcontroller_test_runbatches",
-      "confidence_score": 1.0
+      "target": "sim_movementcontroller_test_runbatches"
     },
     {
       "relation": "contains",
@@ -23767,5 +24074,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "48a7b955847ebdea5a3788429b876c469746c1f7"
+  "built_at_commit": "112d6a69a55fa0f27dac374da1cf69b223f8a523"
 }

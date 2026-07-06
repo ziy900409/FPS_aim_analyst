@@ -10,7 +10,7 @@
 | **相依** | 無(公開介面不變,可與 WP-10–13 並行;**T2 例外**:需 WP-11 T3 `fireOneShot`) |
 | **對應 FR** | FR-B11(integrator)、FR-B12(velocity gate + 連續指標) |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 T1 complete |
+| **狀態** | 🟡 T2 complete |
 
 ---
 

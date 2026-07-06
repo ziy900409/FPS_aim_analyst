@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T1 complete
+## Status: 🟡 T2 complete
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 friction integrator | ✅ |
-| T2 velocity gate | ⬜ |
+| T2 velocity gate | ✅ |
 | T3 指標連續化 | ⬜ |
 | T-exit | ⬜ |
 
@@ -26,6 +26,28 @@
 ---
 
 ## Log
+
+### 2026-07-06 — T2 velocity gate 連續模型 PASS
+- **相依確認**:[../wp-11-weapon-fire/T3-cycletime-scheduler.md](../wp-11-weapon-fire/T3-cycletime-scheduler.md) 狀態為 ✅；`fireOneShot` 已是唯一產彈點。
+- **實作**:
+  - [../../../../../src/loop/SimLoop.ts](../../../../../src/loop/SimLoop.ts):`fireOneShot` 改為以 `residualSpeed = |vx|` 與 `accurate = residualSpeed < CS2_PROFILE.accuracyThreshold` 判定 velocity gate；`state.player.stopped` 不再是產彈點權威來源。
+  - `hit = accurate && result.hit`;移動超過 88 u/s 時，即使彈道中心射線幾何相交也不 `markKilled`，fire event 記 `hit=false` 且保留連續 `residualSpeed`。
+  - spread movement term 改用同一 profile 來源:`speedRatio = residualSpeed / CS2_PROFILE.maxSpeed`。
+  - [../../../../../src/state/SharedState.ts](../../../../../src/state/SharedState.ts):更新 `player.stopped` 註解，明確其為 HUD/相容觀察欄位，fire gate 直接讀同源 threshold + 即時速度。
+- **測試**:
+  - [../../../../../src/loop/SimLoop.test.ts](../../../../../src/loop/SimLoop.test.ts):新增 88 u/s 成對邊界測試，刻意讓 `stopped` 為 stale 反值，確認 fire gate 仍由即時 `|vx|` 決定。
+  - 新增 spread 統計斷言:固定 seed 下 max-speed spread 半徑均值 / stopped spread 半徑均值 `> 3.5`。
+  - 新增同 seed / 同速度序列重播測試，fire event(`hit` + `residualSpeed`)與 spread sample 完全一致。
+  - 合成 drill 測試重錄:速度 `239.84375 u/s` 的中心射線開火改為 `hit=false`、不再擊殺目標，符合 gate。
+- **驗證**:
+  - 指令:`npm.cmd test -- src/loop/SimLoop.test.ts src/loop/__tests__/recoil-wiring.test.ts src/loop/__tests__/ballistic-compose.test.ts tests/regression/determinism.test.ts` → Vitest `4 passed` test files / `42 passed` tests。
+  - 指令:`npm.cmd test` → Vitest `38 passed` test files / `287 passed` tests。
+- **Decision Log**:
+  - 產彈點直接讀 `CS2_PROFILE.accuracyThreshold`，而非 `state.player.stopped`。Alternatives Considered:`stopped` 已由 MovementController 同源寫入，但 fire 在 movement.step 之前讀上一 tick 末狀態，且 reset/test 可形成 stale flag；直接讀 `|vx|` 讓 gate 權威來源與 T2 定義一致。
+  - T2 不新增 `accurate` 匯出欄位；現階段以 velocity gate 影響 `hit`，`residualSpeed` 仍是連續 u/s 欄位。Alternatives Considered:擴 `DrillEvent`/CSV 加 `accurate`，但 T2 明確把匯出擴欄留給 WP-16，避免本切片擴大 schema blast radius。
+- **Surprises & Discoveries**:
+  - T1 之後 `residualSpeed` 已是連續值，但 `accurate` 仍只計算後丟棄；T2 將其接入 `hit` gate 才讓 velocity gate 成為可觀察行為。
+- **Open Questions**:無新增。
 
 ### 2026-07-06 — T1 friction/accelerate integrator PASS(baseline 重錄)
 - **實作**:

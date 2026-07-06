@@ -6,9 +6,12 @@ import type { TargetManager } from '../sim/TargetManager.ts';
 import type { TargetState } from '../state/types.ts';
 import type { Clock } from './clock.ts';
 import { SIM_HZ } from './constants.ts';
-import { createSimLoop, simStep } from './SimLoop.ts';
+import { createSimLoop, simStep, type RecoilRuntime } from './SimLoop.ts';
 import { createDataRecorder } from '../data/DataRecorder.ts';
-import { m4a1s } from '../weapon/weapons.ts';
+import { ak47, m4a1s } from '../weapon/weapons.ts';
+import { CS2_PROFILE } from '../sim/MovementController.ts';
+import { generateRecoilTable } from '../recoil/recoilTable.ts';
+import { createRan1 } from '../recoil/rng.ts';
 
 /** 固定基準的注入式 clock（OQ-2.3）。 */
 function fixedClock(t: number): Clock {
@@ -45,6 +48,10 @@ function tickAdvancer(loop: ReturnType<typeof createSimLoop>): (endMs: number) =
       loop.pump(now);
     }
   };
+}
+
+function runtime(seed: number): RecoilRuntime {
+  return { table: generateRecoilTable(ak47.recoil), rng: createRan1(seed) };
 }
 
 describe('SimLoop accumulator（固定 128 Hz）', () => {
@@ -229,6 +236,94 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.heldFire).toBe(false);
   });
 
+  it('velocity gate 直接以 |vx| < CS2_PROFILE.accuracyThreshold 判定命中精準度', () => {
+    function fireAt(vx: number, staleStopped: boolean) {
+      const state = createSharedState();
+      const recorder = createDataRecorder({ capacity: 8 });
+      const cam = cameraLookingDownZ();
+      const killed: string[] = [];
+      const tm: TargetManager = {
+        tick() {},
+        markKilled(_s, id) {
+          killed.push(id);
+        },
+        reset() {},
+      };
+      state.player.vx = vx;
+      state.player.stopped = staleStopped;
+      state.targets.push(makeTarget('t0', 0, -8));
+      state.heldFire = true;
+      state.weapon.nextFireT = 0;
+
+      simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
+
+      return { killed, fire: recorder.snapshot().events.find((e) => e.type === 'fire') };
+    }
+
+    const below = fireAt(CS2_PROFILE.accuracyThreshold - 0.001, false);
+    expect(below.killed).toEqual(['t0']);
+    expect(below.fire).toMatchObject({ type: 'fire', hit: true, residualSpeed: CS2_PROFILE.accuracyThreshold - 0.001 });
+
+    const above = fireAt(CS2_PROFILE.accuracyThreshold + 0.001, true);
+    expect(above.killed).toEqual([]);
+    expect(above.fire).toMatchObject({ type: 'fire', hit: false, residualSpeed: CS2_PROFILE.accuracyThreshold + 0.001 });
+  });
+
+  it('spread movement term uses true speed ratio: max-speed spread mean is much larger than stopped spread', () => {
+    function meanSpreadRadius(vx: number, seed: number): number {
+      const rt = runtime(seed);
+      let sum = 0;
+      const samples = 256;
+      for (let i = 0; i < samples; i++) {
+        const state = createSharedState();
+        state.player.vx = vx;
+        state.heldFire = true;
+        state.weapon.nextFireT = 0;
+        simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, undefined, ak47, 0, rt);
+        sum += Math.hypot(state.recoil.lastSpread.x, state.recoil.lastSpread.y);
+      }
+      return sum / samples;
+    }
+
+    const stopped = meanSpreadRadius(0, 2026);
+    const moving = meanSpreadRadius(CS2_PROFILE.maxSpeed, 2026);
+
+    expect(moving / stopped).toBeGreaterThan(3.5);
+  });
+
+  it('velocity-gated fire events and spread samples replay deterministically for the same seed and speeds', () => {
+    function run(seed: number) {
+      const out: unknown[] = [];
+      const rt = runtime(seed);
+      for (const vx of [CS2_PROFILE.accuracyThreshold - 0.5, CS2_PROFILE.accuracyThreshold + 0.5]) {
+        const state = createSharedState();
+        const recorder = createDataRecorder({ capacity: 4 });
+        const cam = cameraLookingDownZ();
+        const tm: TargetManager = {
+          tick() {},
+          markKilled(s, id) {
+            const i = s.targets.findIndex((target) => target.id === id);
+            if (i >= 0) s.targets.splice(i, 1);
+          },
+          reset() {},
+        };
+        state.player.vx = vx;
+        state.targets.push(makeTarget('t0', 0, -8));
+        state.heldFire = true;
+        state.weapon.nextFireT = 0;
+
+        simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder, ak47, 0, rt);
+        out.push({
+          fire: recorder.snapshot().events.find((e) => e.type === 'fire'),
+          spread: { ...state.recoil.lastSpread },
+        });
+      }
+      return out;
+    }
+
+    expect(run(4242)).toEqual(run(4242));
+  });
+
   it('records visible, counter, and fire events from a synthetic drill', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 8 });
@@ -259,7 +354,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(recorder.snapshot().events).toEqual([
       { type: 'visible', targetId: 't0', side: 'R', t: 100 },
       { type: 'counter', key: 'A', t: 101 },
-      { type: 'fire', t: 201, hit: true, firstShot: true, residualSpeed: 239.84375, targetId: 't0', offsetDeg: 0, part: 'head' },
+      { type: 'fire', t: 201, hit: false, firstShot: true, residualSpeed: 239.84375, targetId: 't0', offsetDeg: 0 },
     ]);
   });
 });

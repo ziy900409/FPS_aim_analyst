@@ -82,8 +82,8 @@ export interface SharedState {
   /**
    * 玩家即時狀態，由 simStep 推進（u / u·s⁻¹，canonical unit）。
    * `stopped`（WP-14 / T1，FR-B12 接縫）= 速度 gate 相容欄位：`MovementController.step`
-   * 在 `|vx| < MovementProfile.accuracyThreshold` 時置 true。開火精準 gate 目前仍讀此欄位（T2 會把
-   * fire 側 accurate/residualSpeed 正式改成同源連續速度模型）。
+   * 在 `|vx| < MovementProfile.accuracyThreshold` 時置 true。開火精準 gate（WP-14 / T2）直接讀同源
+   * threshold 與即時 `|vx|`，此欄保留給 HUD / 相容觀察，不作為產彈點的權威來源。
    */
   player: { vx: number; vz: number; x: number; z: number; stopped: boolean };
   /**
