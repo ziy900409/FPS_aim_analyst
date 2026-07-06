@@ -8,7 +8,7 @@
 | ✅ | **T0** entry gate(M5/WP-11/WP-12 全綠,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-10/11/12 | Low |
 | ✅ | **T1** simStep recoil 佈線(64Hz 子節奏 + onFire/spread) | [T1-simstep-recoil-wiring.md](T1-simstep-recoil-wiring.md) | T0 | High |
 | ✅ | **T2** adapter 轉換 + 彈道合成 + 視覺 punch compose | [T2-camera-ballistic-compose.md](T2-camera-ballistic-compose.md) | T1 | High |
-| ⬜ | **T3** 彈孔 InstancedMesh + debug overlay | [T3-bullet-holes-debug.md](T3-bullet-holes-debug.md) | T2 | Low |
+| ✅ | **T3** 彈孔 InstancedMesh + debug overlay | [T3-bullet-holes-debug.md](T3-bullet-holes-debug.md) | T2 | Low |
 | ⬜ | **T-exit** M6 門(E2E golden + 手動驗證) | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))

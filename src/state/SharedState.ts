@@ -10,6 +10,62 @@ import { ak47 } from '../weapon/weapons.ts';
 import { createRecoilState, resetRecoilState, type RecoilState } from '../recoil/punch.ts';
 
 /**
+ * 彈孔環形格容量（WP-13 / T3）：preallocated 固定格，滿即環狀覆寫最舊。階段 A 場景彈孔為即時
+ * 視覺回饋（非研究資料），64 足供連發 pattern 目視；超出以最舊覆寫（不成長、不 realloc）。
+ */
+export const IMPACT_CAP = 64;
+
+/**
+ * 彈著點環形格（WP-13 / T3）：sim 命中時 `pushImpact` 寫入 world 座標、render（`ImpactView`）唯讀
+ * ——雙迴圈邊界（ADR-2）。並行 `Float64Array`（x/y/z/seq）+ 寫入游標 `cursor`，**熱路徑零配置**
+ * （CLAUDE.md §4）。`seq[i]` = 該槽的單調寫入序號（1 起；0 = 空槽），供 render 端偵測新彈著做增量同步；
+ * `total` = 累計寫入數（render 端比對是否有新彈著）。
+ */
+export interface ImpactRing {
+  readonly x: Float64Array;
+  readonly y: Float64Array;
+  readonly z: Float64Array;
+  readonly seq: Float64Array;
+  /** 累計寫入彈著總數（單調遞增；render 端據此偵測新彈著）。 */
+  total: number;
+  /** 下一寫入槽位 [0, IMPACT_CAP)。 */
+  cursor: number;
+}
+
+/** 建一份全空的彈著環形格（預配置 typed-array，不再 realloc）。 */
+export function createImpactRing(): ImpactRing {
+  return {
+    x: new Float64Array(IMPACT_CAP),
+    y: new Float64Array(IMPACT_CAP),
+    z: new Float64Array(IMPACT_CAP),
+    seq: new Float64Array(IMPACT_CAP),
+    total: 0,
+    cursor: 0,
+  };
+}
+
+/**
+ * 環狀寫入一個彈著點（覆寫最舊）：就地寫 x/y/z、蓋單調序號、推進游標——熱路徑零配置（GC 紀律）。
+ * seq 從 1 起（0 保留為「空槽」哨兵），覆寫最舊時舊槽獲得更大 seq，render 端據此判定為新彈著。
+ */
+export function pushImpact(ring: ImpactRing, x: number, y: number, z: number): void {
+  const i = ring.cursor;
+  ring.x[i] = x;
+  ring.y[i] = y;
+  ring.z[i] = z;
+  ring.total += 1;
+  ring.seq[i] = ring.total; // 單調序號（1 起）；render 端偵測 seq 變化做增量同步
+  ring.cursor = (i + 1) % IMPACT_CAP;
+}
+
+/** 原地清空彈著格（重開 drill / reset）：seq 歸零使所有槽視為空、游標歸零；typed-array 不 realloc（GC 紀律）。 */
+export function resetImpactRing(ring: ImpactRing): void {
+  ring.seq.fill(0); // seq=0 → 空槽哨兵（render 端不繪；x/y/z 殘值待覆寫，免額外清）
+  ring.total = 0;
+  ring.cursor = 0;
+}
+
+/**
  * SharedState — WP-2 / T1（FR-2.1）
  *
  * 三迴圈（input / sim / render）的**唯一**溝通管道（ADR-2）：input 寫入緩衝、sim 消費並
@@ -57,6 +113,11 @@ export interface SharedState {
     curr: { pitchDeg: number; yawDeg: number };
     lastSpread: { x: number; y: number };
   };
+  /**
+   * 彈著點環形格（WP-13 / T3）：sim 命中時寫入 world 座標、render（`ImpactView`）唯讀繪彈孔
+   * （雙迴圈邊界）。固定容量 `IMPACT_CAP`，滿即環狀覆寫最舊；熱路徑零配置（見 `ImpactRing`）。
+   */
+  impacts: ImpactRing;
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
   prev: PlayerSnapshot;
   curr: PlayerSnapshot;
@@ -171,6 +232,7 @@ export function createSharedState(): SharedState {
       curr: { pitchDeg: 0, yawDeg: 0 },
       lastSpread: { x: 0, y: 0 },
     },
+    impacts: createImpactRing(),
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
     crosshair: { cx: 0, cy: 0 },
@@ -210,6 +272,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.recoil.curr.yawDeg = 0;
   state.recoil.lastSpread.x = 0;
   state.recoil.lastSpread.y = 0;
+  resetImpactRing(state.impacts); // 原地清空彈著格（重開 drill → 彈孔清；typed-array 不 realloc，GC 紀律）
   state.prev.x = 0;
   state.prev.z = 0;
   state.curr.x = 0;

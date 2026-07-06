@@ -1,8 +1,8 @@
 import * as THREE from 'three/webgpu';
 import { consume } from '../input/consume.ts';
-import type { SharedState } from '../state/SharedState.ts';
+import { pushImpact, type SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
-import { raycastWithRay, targetCenterOffsetDeg, type RaycastResult } from '../sim/HitDetector.ts';
+import { raycastWithRay, targetCenterOffsetDeg, type HitPointOut, type RaycastResult } from '../sim/HitDetector.ts';
 import { punchToThreeRad } from '../recoil/adapter.ts';
 import { currentPeekId, firstShotGate } from '../sim/firstShot.ts';
 import { createMovementController, type MovementController } from '../sim/MovementController.ts';
@@ -93,6 +93,9 @@ const ballisticRight = new THREE.Vector3();
 const ballisticUp = new THREE.Vector3();
 const ballisticOrigin = new THREE.Vector3();
 const ballisticDir = new THREE.Vector3();
+// 彈道命中點回填的重用欄位（WP-13 / T3）：命中時 raycastWithRay 就地寫入 world 座標，fireOneShot
+// 據此寫入 `state.impacts`（彈孔）——開火熱路徑零配置（GC 紀律 §4）。
+const ballisticHitPoint: HitPointOut = { valid: false, x: 0, y: 0, z: 0 };
 
 /**
  * 彈道射線（WP-13 / T2，研究計畫 Phase 2「視覺 ≠ 實際」）：方向 = 使用者視角 `state.aim`
@@ -127,7 +130,8 @@ function ballisticRaycast(camera: THREE.Camera, state: SharedState): RaycastResu
     .normalize();
 
   camera.getWorldPosition(ballisticOrigin);
-  return raycastWithRay(ballisticOrigin, ballisticDir, state.targets);
+  // 命中點回填 `ballisticHitPoint`（重用；T3 彈孔來源），不改 RaycastResult 形狀。
+  return raycastWithRay(ballisticOrigin, ballisticDir, state.targets, ballisticHitPoint);
 }
 
 function fireOneShot(
@@ -178,6 +182,10 @@ function fireOneShot(
     part = result.part;
     if (result.targetId !== undefined) targetId = result.targetId;
     if (hit && result.targetId !== undefined) targetManager.markKilled(state, result.targetId);
+    // WP-13 / T3：命中即在彈著點寫彈孔（world 座標，render `ImpactView` 唯讀繪製）；環狀覆寫最舊。
+    if (hit && ballisticHitPoint.valid) {
+      pushImpact(state.impacts, ballisticHitPoint.x, ballisticHitPoint.y, ballisticHitPoint.z);
+    }
   }
 
   // fire 結果事件（含 firstShot / accurate / residualSpeed）產出 → WP-7 記錄 / WP-8 統計；

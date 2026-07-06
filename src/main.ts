@@ -2,6 +2,7 @@ import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
 import { SceneManager } from './render/SceneManager.ts';
 import { TargetView } from './render/TargetView.ts';
+import { ImpactView } from './render/ImpactView.ts';
 import { createPointerLock } from './input/PointerLock.ts';
 import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
@@ -57,6 +58,10 @@ const sceneManager = new SceneManager();
 
 // WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
 const targetView = new TargetView(sceneManager.scene);
+
+// WP-13 / T3（FR-B10）— 彈孔渲染:唯讀 sharedState.impacts（sim 命中時寫入）以單一 InstancedMesh
+// 繪彈孔（1 draw call）。狀態由 sim 寫、本層唯讀（雙迴圈邊界）。
+const impactView = new ImpactView(sceneManager.scene);
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -290,6 +295,29 @@ if (stopDebug) {
   document.body.appendChild(stopDebug);
 }
 
+// dev-only recoil readout（`import.meta.env.DEV`，production 剝除）：顯示 punch pitch/yaw（視覺 aimPunch,
+// deg）、inaccuracy 半徑、彈匣餘量。用途:消解「視覺 ≠ 彈道」的 QA 誤判——準心對準卻打不中時,此
+// readout 讓手動驗證能目視「彈道其實被 rawPunch(=aimPunch×2)+ inaccuracy 拉偏」。不改 sim（唯讀）。
+const recoilDebug = import.meta.env.DEV ? document.createElement('div') : null;
+if (recoilDebug) {
+  recoilDebug.style.cssText = [
+    'position:fixed',
+    'right:8px',
+    'bottom:8px',
+    'font:600 13px/1.5 ui-monospace,monospace',
+    'color:#e6e9ec',
+    'background:rgba(16,18,20,0.7)',
+    'padding:6px 10px',
+    'border-radius:4px',
+    'pointer-events:none',
+    'user-select:none',
+    'white-space:pre',
+    'text-align:right',
+    'z-index:20',
+  ].join(';');
+  document.body.appendChild(recoilDebug);
+}
+
 // player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。
 // **display scale 佔位**（SIM_TO_WORLD，render-only）：sim/資料一律 source unit（u，CONTEXT 正規單位、
 // CLAUDE.md §4；vStrafe=250 u/s 為 canonical CS 值，不得改），但佔位房間僅 ~10 world unit，若 1:1 疊加
@@ -399,6 +427,8 @@ const renderLoop = createRenderLoop((now) => {
   cameraController.setViewPunch(punchRad.yawRad, punchRad.pitchRad);
   // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
   targetView.sync(sharedState.targets);
+  // 4b) 彈孔 InstancedMesh 依 impacts 環形格增量同步（WP-13 / T3；唯讀，sim 命中時寫入）。
+  impactView.sync(sharedState.impacts);
   // 5) 繪製。
   renderer.render(sceneManager.scene, sceneManager.camera);
   // WP-8 / T2：phase 轉 ended 後只計算一次結果；T4 controls 會負責 restart / 換 drill 時隱藏與重啟。
@@ -421,6 +451,15 @@ const renderLoop = createRenderLoop((now) => {
     const flashing = now < stopFlashUntil;
     stopDebug.textContent = `vx ${p.vx.toFixed(0).padStart(5)} u/s\n急停 ${flashing ? '● STOP ✓' : '○ —'}`;
     stopDebug.style.color = flashing ? '#7ee787' : '#e6e9ec';
+  }
+  // dev-only：更新 recoil readout（punch p/y 視覺 deg、inaccuracy 半徑、ammo）——手動驗證「視覺≠彈道」。
+  if (recoilDebug) {
+    const rs = sharedState.recoilState;
+    recoilDebug.textContent =
+      `punch p ${rs.aimPunchPitchDeg.toFixed(2).padStart(7)}°\n` +
+      `punch y ${rs.aimPunchYawDeg.toFixed(2).padStart(7)}°\n` +
+      `inacc  ${rs.inaccuracyFire.toFixed(4).padStart(8)}\n` +
+      `ammo   ${String(sharedState.weapon.ammo).padStart(3)}/${sharedState.weapon.magSize}`;
   }
 });
 renderLoop.start();

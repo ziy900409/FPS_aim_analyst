@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 進行中(T2 ✅ 2026-07-06 視覺/彈道分離;可開 T3 彈孔 + overlay)
+## Status: 🟡 進行中(T3 ✅ 2026-07-06 彈孔 InstancedMesh + overlay;剩 T-exit M6 門)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ 2026-07-06 |
 | T1 simStep 佈線 | ✅ 2026-07-06 |
 | T2 相機/彈道合成 | ✅ 2026-07-06 |
-| T3 彈孔 + overlay | ⬜ |
+| T3 彈孔 + overlay | ✅ 2026-07-06 |
 | T-exit(M6) | ⬜ |
 
 ---
@@ -28,6 +28,58 @@
 ---
 
 ## Log
+
+### 2026-07-06 — T3 PASS(彈孔 InstancedMesh 環狀覆寫 + dev-only punch/inaccuracy/ammo overlay)
+
+**DoD 達成:彈孔單 InstancedMesh(1 draw call 前提)、impacts 熱路徑零配置(並行陣列)、overlay 僅 dev、全 suite 綠。**
+
+**Progress(切片,增量驗證後單一原子 commit):**
+- **Slice 1** [HitDetector.ts](../../../../../src/sim/HitDetector.ts):`raycastWithRay` 加**選填** `hitPointOut?: HitPointOut`
+  ——命中時就地寫最近命中 world 座標(`valid=true`)、未命中 `valid=false`。**刻意不改 `RaycastResult` 形狀**
+  (既有 `toEqual({hit,targetId,part})` 等值測試零回歸);呼叫端持一份重用實例(GC 紀律)。命中點以 local scalar
+  暫存最近者,不每目標配置 Vector。HitDetector.test +4(近面座標、miss valid=false、多目標取最近、無 out 行為不變)。
+- **Slice 2** [SharedState.ts](../../../../../src/state/SharedState.ts):`IMPACT_CAP=64` + `ImpactRing`(x/y/z/seq
+  並行 `Float64Array` + `total`/`cursor`)、`createImpactRing`/`resetImpactRing`/`pushImpact`(比照 recoil 模組
+  create/reset/mutator 風格)。`pushImpact` 環狀覆寫最舊、seq 單調(1 起,0=空槽哨兵);`resetState` 原地清
+  (`seq.fill(0)`,typed-array 不 realloc)。SharedState.test:reset 擴充涵蓋 impacts 重用參考 + ImpactRing describe 4 tests。
+- **Slice 3** [ImpactView.ts](../../../../../src/render/ImpactView.ts)(NEW):單一 `InstancedMesh(IMPACT_CAP)`
+  → **一個 draw call**;`PlaneGeometry(0.06)` + `MeshBasicMaterial`;`frustumCulled=false`。**seq 增量同步**——
+  只重寫 `seq > #syncedSeq` 的槽(環狀覆寫最舊亦被涵蓋,舊槽獲更大 seq);`total` 未變即早退;`Object3D`
+  scratch 重用(GC 紀律)。比照 [TargetView](../../../../../src/render/TargetView.ts) 唯讀紀律。ImpactView.test 6 tests
+  (單 mesh、位置取自座標、無新彈著早退、增量累進、cap 溢位封頂+覆寫最舊、dispose)。
+- **Slice 4** [SimLoop.ts](../../../../../src/loop/SimLoop.ts) + [main.ts](../../../../../src/main.ts):
+  SimLoop 模組層級重用 `ballisticHitPoint`,`ballisticRaycast` 透傳給 `raycastWithRay`;`fireOneShot` 命中且
+  `valid` 時 `pushImpact(state.impacts, ...)`(彈著點 = 彈道實際命中,故彈孔落在「視覺≠彈道」的**實際**著點)。
+  main.ts 掛 `ImpactView`(render loop `impactView.sync` 於 targetView.sync 後)、加 dev-only recoil overlay
+  (右下,`punch p/y`(視覺 aimPunch deg)、`inacc`(inaccuracyFire)、`ammo`);皆 `import.meta.env.DEV` 剝除。
+  HitDetector.test simStep 整合 +2(命中→impacts 寫近面座標;miss→impacts 空)。
+
+**驗證證據:** `npm run typecheck` exit 0;`npm run build`(tsc + vite)綠——48 modules,overlay 由 `import.meta.env.DEV`
+剝除(production 無 overlay);`npm run test` → **38 files / 288 tests passed**(前 272 + T3 16:HitDetector +6、
+SharedState ImpactRing +4、ImpactView +6)。零回歸。
+
+**Decision Log:**
+- **命中點走 `HitPointOut` 呼叫端重用欄位、不加進 `RaycastResult`**:既有 HitDetector.test 多處 `toEqual({hit,
+  targetId,part})` 精確等值;若把 hitX/Y/Z 塞進 result 物件會全面破測。out-param 同時滿足「呼叫端重用欄位」
+  (T3 spec 原文)+ 零配置 + 零回歸。Alternatives:擴 RaycastResult 並改所有等值測試(否決:破壞面大、
+  且每 fire 多配置三數);回傳 Vector3(否決:配置 + 違 GC 紀律)。
+- **彈孔落在彈道實際命中點(非準心/視覺點)**:`pushImpact` 用 `ballisticRaycast` 的命中座標——即 viewAngles
+  + rawPunch×2 + spread 的實際著點。故彈孔正是「視覺≠彈道」的**實際**證據(overlay + 彈孔雙證消解 QA 誤判)。
+- **ImpactView 用 total 早退 + seq 判新槽**:`total` 為單調寫入數,render 端比對即知有無新彈著(O(1) 早退);
+  有新彈著才掃 CAP 槽、只更新 seq 大於高水位者。full-rebuild 亦可(CAP≤64),但 seq 增量更貼 T3 spec「依 seq
+  增量同步」且天然處理環狀覆寫(舊槽新 seq → 被更新)。
+- **PlaneGeometry 面朝 +Z(預設)不旋轉**:玩家於 +Z 朝 −Z、目標前面法向 +Z,故彈孔面片預設朝向即面向玩家;
+  階段 A 僅目標命中(牆面求交列 stretch,未實作),故不需依命中面法向定向(記 Open Question 交後續)。
+
+**Surprises & Discoveries:**
+- **既有 HitDetector 等值測試是 out-param 設計的硬約束**:`raycastWithRay` 回傳物件被 6 處 `toEqual` 精確斷言,
+  這直接否決了「把命中點加進 RaycastResult」的直覺作法,反而印證 T3 spec「寫入呼叫端重用欄位」的措辭正確。
+
+**Open Questions:** OQ-S2-4(view_recoil_tracking,不阻塞);(新,不阻塞)牆面/地板彈孔 + 依命中面法向定向彈片
+——階段 A 僅目標命中、彈片恆朝 +Z 足用,牆面求交與定向為 stretch,交 T-exit 後視需要開。
+
+**Next:** T-exit([T-exit-gate.md](T-exit-gate.md),M6 門)——真瀏覽器 E2E golden + 手動壓槍驗證
+(壓 30 發彈孔沿 pattern 分布、`renderer.info.render.drawcalls` 佐證彈孔 1 draw call、視覺/彈道分離手感)。
 
 ### 2026-07-06 — T2 PASS(視覺/彈道分離:adapter 單點轉換 + rawPunch×2+spread 彈道 + setViewPunch 每幀 compose)
 

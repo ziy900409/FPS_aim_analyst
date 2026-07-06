@@ -39,19 +39,40 @@ export interface RaycastResult {
 }
 
 /**
+ * 命中點回填的**呼叫端重用**欄位（WP-13 / T3）：plain number x/y/z（world coord，非 Vector）+ `valid`
+ * 旗標。呼叫端（SimLoop）持一份重用實例傳入，`raycastWithRay` 命中時就地寫入、未命中置 `valid=false`
+ * ——熱路徑零配置（CLAUDE.md §4）、且不改 `RaycastResult` 形狀（既有等值測試不受影響）。
+ * 命中點供 T3 彈孔（`ImpactView`）在牆/目標面繪製；階段 A 僅目標命中回填。
+ */
+export interface HitPointOut {
+  valid: boolean;
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
  * 從注入射線對 active（`visible && alive`）目標 hitbox 求交。多目標時取**最近**命中
  * （階段 A 通常單一 active 目標，但仍以最近者為準）。回傳 `{hit, targetId?, part?}`。
+ *
+ * `hitPointOut` 選填（WP-13 / T3）：提供時把**最近命中**的 world 座標就地寫入該重用物件
+ * （`valid=true`），未命中則置 `valid=false`——呼叫端零配置取彈著點（見 `HitPointOut`）。
  */
 export function raycastWithRay(
   origin: THREE.Vector3,
   dirNormalized: THREE.Vector3,
   targets: readonly TargetState[],
+  hitPointOut?: HitPointOut,
 ): RaycastResult {
   raycaster.set(origin, dirNormalized);
 
   let nearestId: string | undefined;
   let nearestPart: 'head' | 'body' | undefined;
   let nearestDistSq = Infinity;
+  // 最近命中 world 座標（純 scalar 暫存，避免每目標配置 Vector；GC 紀律 §4）。
+  let nearestX = 0;
+  let nearestY = 0;
+  let nearestZ = 0;
 
   for (let i = 0; i < targets.length; i++) {
     const t = targets[i];
@@ -72,10 +93,22 @@ export function raycastWithRay(
       nearestDistSq = distSq;
       nearestId = t.id;
       nearestPart = t.hitbox.part;
+      nearestX = point.x;
+      nearestY = point.y;
+      nearestZ = point.z;
     }
   }
 
-  if (nearestId === undefined) return { hit: false };
+  if (nearestId === undefined) {
+    if (hitPointOut !== undefined) hitPointOut.valid = false;
+    return { hit: false };
+  }
+  if (hitPointOut !== undefined) {
+    hitPointOut.valid = true;
+    hitPointOut.x = nearestX;
+    hitPointOut.y = nearestY;
+    hitPointOut.z = nearestZ;
+  }
   return { hit: true, targetId: nearestId, part: nearestPart };
 }
 
