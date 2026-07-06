@@ -158,7 +158,17 @@ docs/exec-plan/
 
 ---
 
-## 4. 維護約定
+## 4. 研究筆記（`docs/research/`）
+
+> 外部工具 / 文獻的評估與比較，供架構決策與效度論證引用；非 source of truth。
+
+| 文件 | 內容 |
+|---|---|
+| [research/FPSci_評估與建議.md](research/FPSci_評估與建議.md) | NVlabs FPSci（SIGGRAPH 2022）與本專案逐軸比較；建議 R1–R7（schema 對映 → WP-16、click-to-photon 校準 → WP-20、CC BY-NC-SA 授權紅線） |
+
+---
+
+## 5. 維護約定
 
 - 新增 / 移除 `docs/` 下的資料夾或頂層文件時，**同步更新本檔**。
 - WP 交付移入 `completed/` 時，更新 §3.2 路徑與 [exec-plan/README.md](exec-plan/README.md) 狀態。
