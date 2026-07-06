@@ -30,6 +30,48 @@
 
 ## Log
 
+### 2026-07-06 — T4(follow-up,手動驗證觸發)PASS(脫靶彈孔投影至交戰平面 → 壓槍 pattern 可視化)
+
+**觸發:M6 手動驗證發現「只有第一發子彈有彈孔」——非 bug,而是設計必然:①彈孔只標目標命中
+([HitDetector.ts](../../../../../src/sim/HitDetector.ts) 只對 `state.targets` 求交,牆/地板無 hitbox);
+②目標一發即死([SimLoop.ts](../../../../../src/loop/SimLoop.ts) `markKilled`)。故連發時 shot1 命中→擊殺→
+後續脫靶入牆(無痕)→ 恆 1 彈孔。手動驗證項②「彈孔沿 pattern 分布」在原設計下不可觀測。使用者選
+「Add wall/floor bullet holes」。**
+
+**Progress(單一原子切片,增量驗證):**
+- [SimLoop.ts](../../../../../src/loop/SimLoop.ts):`ballisticRaycast` 脫靶時呼叫新 helper
+  `projectMissOntoEngagementPlane`——把彈道射線投影到**交戰平面**(第一個存活目標的 z 深度平面,
+  world 座標),寫入重用 `ballisticHitPoint`(valid=true)。`fireOneShot` 產彈孔條件由 `hit && valid`
+  放寬為 `valid`(命中目標近面 **或** 脫靶交戰平面投影皆產孔);命中判定/擊殺仍只看 `result.hit`,
+  脫靶不計 hit、不擊殺。複用模組層級 `ballisticOrigin`/`ballisticDir`(零配置,GC 紀律)。
+- [HitDetector.test.ts](../../../../../src/sim/HitDetector.test.ts):原「miss→impacts 空」改為
+  「miss→交戰平面投影 (0,1.5,−8) + 目標留存」;新增「脫靶且無存活目標→不產彈孔」(平面未定義早退)。
+
+**GD-6 合規(關鍵設計約束):** 交戰平面深度取自**目標**(sim 實體),**不讀** SceneManager 牆面幾何
+——故換裝飾場景時彈孔位置與**決定性 baseline 皆不變**(場景幾何不入 sim;「換場景零引擎碼」)。
+決定性回歸(`tests/regression/determinism` 15 + `determinism` 9 + `fire-determinism` 17)零回歸佐證。
+彈孔本即 render-only、不匯出(FR-B10),此變更不觸及匯出/量測資料。
+
+**行為效果:** 連發脫靶彈孔落在目標深度平面 → 壓槍漂移的 climb→之字 pattern 沿目標周圍浮現可視化,
+手動驗證項②現可觀測(彈孔恆在交戰深度而非「命中準心」處,亦是「視覺≠彈道」分離的實證)。
+
+**驗證證據:** `npm run typecheck` exit 0;`npm run test` → **38 files / 289 tests passed**(前 288 + T4:
+HitDetector miss 改測 + 無目標脫靶 +1);`npx playwright test` → **9 passed**(held-10 burst 現產交戰平面
+彈孔,recoil readout 斷言不受影響);vite build 綠(preview-server E2E 佐證)。零回歸。
+
+**Decision Log:**
+- **脫靶彈孔投影到「交戰平面(目標 z)」而非裝飾牆面**:GD-6 禁場景幾何入 sim(換場景零引擎碼 +
+  決定性 baseline 不分裂)。交戰平面 = 目標所在深度(sim 實體),決定性且場景無關;彈孔浮於目標
+  深度(現行佔位房北牆 z=−5 前方 ~1u),讀作「壓槍 pattern 環繞目標」。Alternatives:①raycast
+  SceneManager 牆 mesh(否決:場景幾何入 sim,破 GD-6);②drill config 加 backdrop 距離 + render
+  backboard(否決:本切片過重,交戰平面已足);③render 層另建 shot-ray channel + 牆求交(否決:
+  重複 raycast + 雙彈孔來源複雜,交後續若需「彈孔貼實體牆面」再議)。
+- **命中判定/擊殺不變,只放寬產孔條件**:脫靶交戰平面孔不計 hit、不擊殺、不改 fire 事件語意
+  (WP-7/8 統計不受影響);僅 `state.impacts`(render-only)多收脫靶點。
+
+**Open Questions:**(新,不阻塞)彈孔貼「實體牆/地板表面」(非交戰平面)需 render 層對場景幾何
+求交(GD-6:render 可讀場景,sim 不可)+ 依命中面法向定向彈片——交後續 scene WP(WP-19)視需要開。
+
 ### 2026-07-06 — T-exit PASS(M6 宣告:automated-green;手動視覺/手感 4 項待使用者確認)
 
 **閘門結論:`test:ci` 全綠(含首次於本機跑通的 Playwright E2E golden)→ M6 於兩層索引標記 ✅。

@@ -131,7 +131,40 @@ function ballisticRaycast(camera: THREE.Camera, state: SharedState): RaycastResu
 
   camera.getWorldPosition(ballisticOrigin);
   // 命中點回填 `ballisticHitPoint`（重用；T3 彈孔來源），不改 RaycastResult 形狀。
-  return raycastWithRay(ballisticOrigin, ballisticDir, state.targets, ballisticHitPoint);
+  const result = raycastWithRay(ballisticOrigin, ballisticDir, state.targets, ballisticHitPoint);
+  // WP-13 / T4：脫靶時把彈著投影到「交戰平面」（= active 目標所在 z 深度）。彈道漂移的壓槍 pattern
+  // 因此以彈孔可視化（彈孔沿目標周圍 climb→之字 浮現）——解 T-exit 手動驗證②「見不到 pattern」:
+  // 目標一發即死、牆面無 hitbox,原本脫靶不留痕。命中判定/擊殺仍只看 `result.hit`,脫靶不計 hit。
+  if (!result.hit) projectMissOntoEngagementPlane(state);
+  return result;
+}
+
+/**
+ * 脫靶彈著投影（WP-13 / T4）：把彈道射線投影到「交戰平面」——第一個存活目標所在的 z 深度平面
+ * （world 座標）。命中即寫 `ballisticHitPoint`（valid=true）供 `fireOneShot` 產彈孔;無存活目標
+ * 或射線非朝該平面（`dir.z ≥ 0`）/ 平面在起點後方則維持 `valid=false`（`raycastWithRay` 已置）。
+ * 複用 `ballisticRaycast` 已填的模組層級 `ballisticOrigin`/`ballisticDir`（零配置,GC 紀律 §4）。
+ *
+ * **GD-6（純裝飾場景）**:平面深度取自**目標**（sim 實體),**不讀** SceneManager 牆面幾何——故
+ * 換裝飾場景時彈孔位置與決定性 baseline 皆不變（場景幾何不入 sim）。彈孔本即 render-only、不匯出。
+ */
+function projectMissOntoEngagementPlane(state: SharedState): void {
+  let planeZ: number | undefined;
+  for (let i = 0; i < state.targets.length; i++) {
+    if (state.targets[i].alive) {
+      planeZ = state.targets[i].pos.z;
+      break;
+    }
+  }
+  if (planeZ === undefined) return; // 無存活目標（drill 收尾）→ 不產彈孔
+  const dz = ballisticDir.z;
+  if (dz >= -1e-6) return; // 射線幾乎平行/背向交戰平面 → 不投影
+  const t = (planeZ - ballisticOrigin.z) / dz;
+  if (t <= 0) return; // 平面在射線起點後方 → 不投影
+  ballisticHitPoint.valid = true;
+  ballisticHitPoint.x = ballisticOrigin.x + ballisticDir.x * t;
+  ballisticHitPoint.y = ballisticOrigin.y + ballisticDir.y * t;
+  ballisticHitPoint.z = planeZ;
 }
 
 function fireOneShot(
@@ -182,8 +215,10 @@ function fireOneShot(
     part = result.part;
     if (result.targetId !== undefined) targetId = result.targetId;
     if (hit && result.targetId !== undefined) targetManager.markKilled(state, result.targetId);
-    // WP-13 / T3：命中即在彈著點寫彈孔（world 座標，render `ImpactView` 唯讀繪製）；環狀覆寫最舊。
-    if (hit && ballisticHitPoint.valid) {
+    // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
+    // `ImpactView` 唯讀繪製）；環狀覆寫最舊。脫靶彈孔使壓槍漂移 pattern 可視化;`ballisticHitPoint`
+    // 由 `ballisticRaycast` 統一回填（命中→目標近面;脫靶→交戰平面;無存活目標→valid=false 不產）。
+    if (ballisticHitPoint.valid) {
       pushImpact(state.impacts, ballisticHitPoint.x, ballisticHitPoint.y, ballisticHitPoint.z);
     }
   }

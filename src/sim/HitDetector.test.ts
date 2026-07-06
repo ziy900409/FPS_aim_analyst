@@ -268,10 +268,27 @@ describe('HitDetector — simStep fire 事件 → 第一次命中即擊殺（OQ-
     expect(state.impacts.z[0]).toBeCloseTo(-7.5, 5);
   });
 
-  it('fire 未命中 → 不寫彈著（impacts 空）', () => {
+  it('fire 未命中目標 → 彈著投影至交戰平面（active 目標 z 深度;WP-13 T4 壓槍 pattern 可視化）', () => {
     const state = createSharedState();
     const cam = cameraLookingDownZ();
-    state.targets.push(makeTarget('t0', 5, -8)); // 偏離
+    state.targets.push(makeTarget('t0', 5, -8)); // 偏離中心射線 → 脫靶(不擊殺、不計命中)
+    const tm = { tick() {}, markKilled() {}, reset() {} };
+
+    state.input.pushFire(true, 1);
+    simStep(state, 1 / SIM_HZ, 100, tm, cam);
+
+    // 脫靶仍投影彈孔到交戰平面 z=-8:camera(0,1.5,5) 中心射線 → (0,1.5,-8)。目標未被擊殺(留存)。
+    expect(state.impacts.total).toBe(1);
+    expect(state.impacts.x[0]).toBeCloseTo(0, 5);
+    expect(state.impacts.y[0]).toBeCloseTo(1.5, 5);
+    expect(state.impacts.z[0]).toBeCloseTo(-8, 5);
+    expect(state.targets).toHaveLength(1);
+  });
+
+  it('fire 脫靶且無存活目標 → 不產彈孔（交戰平面未定義,impacts 空）', () => {
+    const state = createSharedState();
+    const cam = cameraLookingDownZ();
+    // 無目標 → 無交戰平面可投影(drill 收尾邊界);彈道脫靶不留痕。
     const tm = { tick() {}, markKilled() {}, reset() {} };
 
     state.input.pushFire(true, 1);
