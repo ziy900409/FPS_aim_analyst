@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 T2 complete
+## Status: 🟡 T3 complete
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 friction integrator | ✅ |
 | T2 velocity gate | ✅ |
-| T3 指標連續化 | ⬜ |
+| T3 指標連續化 | ✅ |
 | T-exit | ⬜ |
 
 ---
@@ -26,6 +26,24 @@
 ---
 
 ## Log
+
+### 2026-07-06 — T3 殘速/過衝指標連續化 PASS
+- **實作**:
+  - [../../../../../src/metrics/compute.ts](../../../../../src/metrics/compute.ts):`Stat` 新增 `p50`;`stat()` 仍保留原始 `values` 作為分布輸入,並以連續 fire `residualSpeed` 計算 mean / p50 / SD / n。
+  - [../../../../../src/ui/ResultScreen.ts](../../../../../src/ui/ResultScreen.ts):殘速卡由 Phase-A 分類 headline 改為連續 `u/s` 數值;detail 顯示 `p50`、`SD`、`n` 與由 `CS2_PROFILE.accuracyThreshold=88` 衍生的 gate 對照。
+  - 本 task 未修改 [../../../../../src/data/DataRecorder.ts](../../../../../src/data/DataRecorder.ts) 或匯出 schema;現有 fire event `residualSpeed` 已足夠支援 T3。WP-16 T1 仍負責 schema v2 對帳與欄位擴充。
+- **測試**:
+  - [../../../../../src/metrics/compute.test.ts](../../../../../src/metrics/compute.test.ts):新增 residualSpeed p50 / SD 解析對照與通用 `stat()` p50 測試。
+  - [../../../../../src/ui/ResultScreen.test.ts](../../../../../src/ui/ResultScreen.test.ts):更新結果卡斷言,確認畫面摘要含 `62.5 u/s` 與 `p50 0.0 u/s · SD 108.3 u/s · n=4 · 3/4 under 88 u/s gate`。
+- **驗證**:
+  - 指令:`npm.cmd test -- src/metrics/compute.test.ts src/ui/ResultScreen.test.ts src/metrics/MetricsDashboard.test.ts` → Vitest `3 passed` test files / `9 passed` tests。
+  - 指令:`npm.cmd test` → Vitest `40 passed` test files / `298 passed` tests。
+- **Decision Log**:
+  - 將 `p50` 放進通用 `Stat` 而非只為 `residualSpeed` 增加專用欄位。Alternatives Considered:只在 ResultScreen 內從 `values` 即時計算 p50,但 metrics 層才是 §5 指標統計的單一計算點,讓 p50 進 `Stat` 可避免 UI 重複計算。
+  - ResultScreen 仍顯示 gate 對照,但只作為連續數值的 detail。Alternatives Considered:完全移除分類資訊;保留 gate count 有助於 T2 velocity gate 與 T3 連續 u/s 呈現對帳,且不回退成分類 headline。
+- **Surprises & Discoveries**:
+  - T2 後 DataRecorder 的 fire event `residualSpeed` 已足夠支援 T3;不需提前做 WP-16 schema v2 擴欄。
+- **Open Questions**:規格 §5「指標分層解除」文字回寫仍依 task 註記排 T-exit,本 task 已在 progress 對帳。
 
 ### 2026-07-06 — T2 velocity gate 連續模型 PASS
 - **相依確認**:[../wp-11-weapon-fire/T3-cycletime-scheduler.md](../wp-11-weapon-fire/T3-cycletime-scheduler.md) 狀態為 ✅；`fireOneShot` 已是唯一產彈點。

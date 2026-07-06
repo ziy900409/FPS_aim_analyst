@@ -8,7 +8,7 @@
 | **相依** | T2(residualSpeed 連續值已產出) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | MODIFY `src/metrics/compute.ts`、`src/ui/ResultScreen.ts` + 對應測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -32,10 +32,10 @@ counter-strafe 品質自此可讀出程度而非只有級別。
 
 ## Steps
 
-- [ ] compute 改連續輸入 + 單測更新(合成 fire 序列 → mean/p50 殘速解析對照)。
-- [ ] ResultScreen 呈現改 u/s;DOM/快照測試更新。
-- [ ] 規格 §5「指標分層解除」的對帳需求記 progress(規格書回寫排 T-exit)。
-- [ ] `npx vitest run` 全綠。
+- [x] compute 改連續輸入 + 單測更新(合成 fire 序列 → mean/p50 殘速解析對照)。
+- [x] ResultScreen 呈現改 u/s;DOM/快照測試更新。
+- [x] 規格 §5「指標分層解除」的對帳需求記 progress(規格書回寫排 T-exit)。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

@@ -29,6 +29,8 @@ describe('computeMetrics', () => {
 
     expect(metrics.residualSpeed.values).toEqual([0, 250, 0, 0]);
     expect(metrics.residualSpeed.mean).toBe(62.5);
+    expect(metrics.residualSpeed.p50).toBe(0);
+    expect(metrics.residualSpeed.sd).toBeCloseTo(108.253175, 6);
 
     expect(metrics.fireTimingAlignmentMs.values).toEqual([20, 10, 10]);
     expect(metrics.fireTimingAlignmentMs.mean).toBeCloseTo(13.333333, 6);
@@ -73,16 +75,16 @@ describe('computeMetrics', () => {
   it('returns n=0 stats and zero rates for empty samples', () => {
     const metrics = computeMetrics({ ticks: [], events: [], recorderOverflow: false });
 
-    expect(metrics.counterReactionMs).toEqual({ mean: 0, sd: 0, n: 0, values: [] });
-    expect(metrics.residualSpeed).toEqual({ mean: 0, sd: 0, n: 0, values: [] });
-    expect(metrics.fireTimingAlignmentMs).toEqual({ mean: 0, sd: 0, n: 0, values: [] });
+    expect(metrics.counterReactionMs).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
+    expect(metrics.residualSpeed).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
+    expect(metrics.fireTimingAlignmentMs).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
     expect(metrics.firstShotHitRate).toBe(0);
-    expect(metrics.crosshairOffset).toEqual({ mean: 0, sd: 0, n: 0, values: [] });
-    expect(metrics.switchTimeMs).toEqual({ mean: 0, sd: 0, n: 0, values: [] });
+    expect(metrics.crosshairOffset).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
+    expect(metrics.switchTimeMs).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
     expect(metrics.rhythmStability).toBe(0);
     expect(metrics.leftRightSymmetry).toEqual({
-      left: { mean: 0, sd: 0, n: 0, values: [] },
-      right: { mean: 0, sd: 0, n: 0, values: [] },
+      left: { mean: 0, p50: 0, sd: 0, n: 0, values: [] },
+      right: { mean: 0, p50: 0, sd: 0, n: 0, values: [] },
       diff: 0,
     });
   });
@@ -92,9 +94,15 @@ describe('stat', () => {
   it('filters non-finite values and uses population sd', () => {
     expect(stat([1, 2, Number.NaN, Infinity, 3])).toEqual({
       mean: 2,
+      p50: 2,
       sd: Math.sqrt(2 / 3),
       n: 3,
       values: [1, 2, 3],
     });
+  });
+
+  it('computes p50 from continuous distributions', () => {
+    expect(stat([12, 4, 30, 20]).p50).toBe(16);
+    expect(stat([12, 4, 30]).p50).toBe(12);
   });
 });

@@ -1,6 +1,5 @@
+import { CS2_PROFILE } from '../sim/MovementController.ts';
 import type { Metrics, Stat } from '../metrics/compute.ts';
-
-const STOP_EPSILON = 0.001;
 
 export interface ResultCard {
   id: string;
@@ -120,7 +119,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
 }
 
 export function createResultSummary(metrics: Metrics): ResultSummary {
-  const residual = classifyResidualSpeed(metrics.residualSpeed);
+  const residual = summarizeResidualSpeed(metrics.residualSpeed);
   return {
     methodNote: 'Subject-relative values only. Interpret changes within the same participant; display-latency error bounds still apply.',
     reactionValues: metrics.counterReactionMs.values ?? [],
@@ -128,8 +127,8 @@ export function createResultSummary(metrics: Metrics): ResultSummary {
       statCard('counterReactionMs', 'Counter reaction', metrics.counterReactionMs, 'ms', 0),
       {
         id: 'residualSpeed',
-        title: 'Stop / overshoot class',
-        value: residual.label,
+        title: 'Residual speed / overshoot',
+        value: formatStatMean(metrics.residualSpeed, 'u/s', 1),
         detail: residual.detail,
       },
       statCard('fireTimingAlignmentMs', 'Fire timing alignment', metrics.fireTimingAlignmentMs, 'ms', 0),
@@ -159,20 +158,19 @@ export function createResultSummary(metrics: Metrics): ResultSummary {
   };
 }
 
-export function classifyResidualSpeed(stat: Stat): { label: string; detail: string; stopped: number; moving: number } {
+export function summarizeResidualSpeed(stat: Stat): { detail: string; withinGate: number; overGate: number } {
   const values = stat.values ?? [];
-  if (values.length === 0) return { label: 'N/A', detail: 'No fire samples', stopped: 0, moving: 0 };
+  if (values.length === 0) return { detail: 'No fire samples', withinGate: 0, overGate: 0 };
 
-  let stopped = 0;
-  let moving = 0;
+  let withinGate = 0;
+  let overGate = 0;
   for (const value of values) {
-    if (Math.abs(value) <= STOP_EPSILON) stopped++;
-    else moving++;
+    if (Math.abs(value) < CS2_PROFILE.accuracyThreshold) withinGate++;
+    else overGate++;
   }
 
-  const label = moving === 0 ? 'Stopped' : 'Moving / reverse seen';
-  const detail = `${stopped}/${values.length} stopped at fire; ${moving} moving samples. Phase A shows class, not continuous u/s.`;
-  return { label, detail, stopped, moving };
+  const detail = `p50 ${formatNumber(stat.p50, 1)} u/s · SD ${formatNumber(stat.sd, 1)} u/s · n=${stat.n} · ${withinGate}/${values.length} under ${formatNumber(CS2_PROFILE.accuracyThreshold, 0)} u/s gate`;
+  return { detail, withinGate, overGate };
 }
 
 function statCard(id: string, title: string, stat: Stat, unit: string, decimals: number): ResultCard {
