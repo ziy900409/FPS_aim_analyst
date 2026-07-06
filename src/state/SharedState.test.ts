@@ -7,6 +7,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const a = createSharedState();
     expect(a.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0, stopped: false });
     expect(a.heldFire).toBe(false);
+    expect(a.weapon).toEqual({ nextFireT: Infinity, ammo: 30, magSize: 30 });
     expect(a.prev).toEqual({ x: 0, z: 0 });
     expect(a.curr).toEqual({ x: 0, z: 0 });
     expect(a.crosshair).toEqual({ cx: 0, cy: 0 });
@@ -32,12 +33,16 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const inputRef = s.input;
     const playerRef = s.player;
     const prevRef = s.prev;
+    const weaponRef = s.weapon;
     const targetsRef = s.targets;
     const tVisibleRef = s.tVisible;
 
     // 弄髒所有欄位
     pushEvent(s, { type: 'fire', down: true, t: 1 });
     s.heldFire = true;
+    s.weapon.nextFireT = 123;
+    s.weapon.magSize = 20;
+    s.weapon.ammo = 4;
     s.player.vx = 250;
     s.player.x = 12;
     s.player.z = -3;
@@ -62,6 +67,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.input.size()).toBe(0);
     expect(s.player).toEqual({ vx: 0, vz: 0, x: 0, z: 0, stopped: false });
     expect(s.heldFire).toBe(false);
+    expect(s.weapon).toEqual({ nextFireT: Infinity, ammo: 20, magSize: 20 });
     expect(s.prev).toEqual({ x: 0, z: 0 });
     expect(s.curr).toEqual({ x: 0, z: 0 });
     expect(s.crosshair).toEqual({ cx: 0, cy: 0 });
@@ -73,6 +79,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.input).toBe(inputRef);
     expect(s.player).toBe(playerRef);
     expect(s.prev).toBe(prevRef);
+    expect(s.weapon).toBe(weaponRef);
     expect(s.targets).toBe(targetsRef);
     expect(s.tVisible).toBe(tVisibleRef);
   });

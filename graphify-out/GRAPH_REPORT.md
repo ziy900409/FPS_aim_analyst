@@ -1,16 +1,16 @@
 # Graph Report - FPS_aim_analyst  (2026-07-06)
 
 ## Corpus Check
-- 82 files · ~117,381 words
+- 82 files · ~118,436 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 665 nodes · 1327 edges · 42 communities (28 shown, 14 thin omitted)
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 74 edges (avg confidence: 0.8)
+- 668 nodes · 1342 edges · 42 communities (28 shown, 14 thin omitted)
+- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 78 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8b848ae4`
+- Built from commit: `03c04e5f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -97,7 +97,7 @@
 
 ### Community 0 - "Community 0"
 Cohesion: 0.06
-Nodes (36): createDataRecorder(), loadDrill(), createDrillRunner(), setup(), consume(), createInputSampler(), applyInput(), createSimLoop() (+28 more)
+Nodes (38): createDataRecorder(), loadDrill(), createDrillRunner(), setup(), consume(), createInputSampler(), applyInput(), createSimLoop() (+30 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.06
@@ -120,16 +120,16 @@ Cohesion: 0.07
 Nodes (46): ADR-1 backend metadata, ADR-4 時間源 (performance.now()), counterstrafe_ad_v1 drill config, SharedState, SimLoop (src/loop/SimLoop.ts), WP-0 createRenderer backend seam, WP-1 sensitivity, WP-2 sim tick (+38 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.07
-Nodes (45): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), sub-tick 輸入時間戳 (精準度真正來源) (+37 more)
-
-### Community 7 - "Community 7"
 Cohesion: 0.09
 Nodes (22): capacityForDrill(), keyMaskFromKeys(), keyMaskFromState(), keysFromMask(), TickArena, buildPeekWindows(), coefficientOfVariation(), computeMetrics() (+14 more)
 
+### Community 7 - "Community 7"
+Cohesion: 0.08
+Nodes (44): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), sub-tick 輸入時間戳 (精準度真正來源) (+36 more)
+
 ### Community 8 - "Community 8"
-Cohesion: 0.09
-Nodes (38): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間), crossOriginIsolated === true (COOP/COEP) (+30 more)
+Cohesion: 0.08
+Nodes (39): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 里程碑 M1 (WP-2 脊椎 / 決定性驗證), 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間) (+31 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.18

@@ -282,7 +282,7 @@
       "label": "resize()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L61",
+      "source_location": "L62",
       "id": "src_main_resize",
       "community": 1,
       "norm_label": "resize()"
@@ -291,7 +291,7 @@
       "label": "updateLockHint()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L93",
+      "source_location": "L94",
       "id": "src_main_updatelockhint",
       "community": 1,
       "norm_label": "updatelockhint()"
@@ -300,7 +300,7 @@
       "label": "buildCurrentExportPayload()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L132",
+      "source_location": "L133",
       "id": "src_main_buildcurrentexportpayload",
       "community": 1,
       "norm_label": "buildcurrentexportpayload()"
@@ -309,7 +309,7 @@
       "label": "exportBasename()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L150",
+      "source_location": "L151",
       "id": "src_main_exportbasename",
       "community": 1,
       "norm_label": "exportbasename()"
@@ -318,7 +318,7 @@
       "label": "onExportJSON()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L155",
+      "source_location": "L156",
       "id": "src_main_onexportjson",
       "community": 1,
       "norm_label": "onexportjson()"
@@ -327,7 +327,7 @@
       "label": "onExportCSV()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L159",
+      "source_location": "L160",
       "id": "src_main_onexportcsv",
       "community": 1,
       "norm_label": "onexportcsv()"
@@ -336,7 +336,7 @@
       "label": "resetRunPresentation()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L299",
+      "source_location": "L312",
       "id": "src_main_resetrunpresentation",
       "community": 1,
       "norm_label": "resetrunpresentation()"
@@ -345,7 +345,7 @@
       "label": "restartActiveDrill()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L310",
+      "source_location": "L323",
       "id": "src_main_restartactivedrill",
       "community": 1,
       "norm_label": "restartactivedrill()"
@@ -354,7 +354,7 @@
       "label": "loadDrillById()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L317",
+      "source_location": "L330",
       "id": "src_main_loaddrillbyid",
       "community": 1,
       "norm_label": "loaddrillbyid()"
@@ -363,7 +363,7 @@
       "label": "syncControlsVisibility()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L340",
+      "source_location": "L353",
       "id": "src_main_synccontrolsvisibility",
       "community": 1,
       "norm_label": "synccontrolsvisibility()"
@@ -383,7 +383,7 @@
       "source_file": "src/data/DataRecorder.test.ts",
       "source_location": "L1",
       "id": "src_data_datarecorder_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "datarecorder.test.ts"
     },
     {
@@ -392,7 +392,7 @@
       "source_file": "src/data/DataRecorder.ts",
       "source_location": "L1",
       "id": "src_data_datarecorder_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "datarecorder.ts"
     },
     {
@@ -671,7 +671,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L1",
       "id": "src_data_ringbuffer_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "ringbuffer.ts"
     },
     {
@@ -680,7 +680,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L38",
       "id": "data_ringbuffer_capacityfordrill",
-      "community": 7,
+      "community": 6,
       "norm_label": "capacityfordrill()"
     },
     {
@@ -689,7 +689,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L51",
       "id": "data_ringbuffer_keymaskfromkeys",
-      "community": 7,
+      "community": 6,
       "norm_label": "keymaskfromkeys()"
     },
     {
@@ -698,7 +698,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L62",
       "id": "data_ringbuffer_keymaskfromstate",
-      "community": 7,
+      "community": 6,
       "norm_label": "keymaskfromstate()"
     },
     {
@@ -707,7 +707,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L69",
       "id": "data_ringbuffer_keysfrommask",
-      "community": 7,
+      "community": 6,
       "norm_label": "keysfrommask()"
     },
     {
@@ -716,7 +716,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L82",
       "id": "data_ringbuffer_tickarena",
-      "community": 7,
+      "community": 6,
       "norm_label": "tickarena"
     },
     {
@@ -725,7 +725,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L92",
       "id": "data_ringbuffer_tickarena_constructor",
-      "community": 7,
+      "community": 6,
       "norm_label": ".constructor()"
     },
     {
@@ -734,7 +734,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L102",
       "id": "data_ringbuffer_tickarena_count",
-      "community": 7,
+      "community": 6,
       "norm_label": ".count()"
     },
     {
@@ -743,7 +743,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L106",
       "id": "data_ringbuffer_tickarena_recorderoverflow",
-      "community": 7,
+      "community": 6,
       "norm_label": ".recorderoverflow()"
     },
     {
@@ -752,7 +752,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L110",
       "id": "data_ringbuffer_tickarena_recordtick",
-      "community": 7,
+      "community": 6,
       "norm_label": ".recordtick()"
     },
     {
@@ -761,7 +761,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L121",
       "id": "data_ringbuffer_tickarena_recordstate",
-      "community": 7,
+      "community": 6,
       "norm_label": ".recordstate()"
     },
     {
@@ -770,7 +770,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L125",
       "id": "data_ringbuffer_tickarena_recordfields",
-      "community": 7,
+      "community": 6,
       "norm_label": ".recordfields()"
     },
     {
@@ -779,7 +779,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L142",
       "id": "data_ringbuffer_tickarena_snapshot",
-      "community": 7,
+      "community": 6,
       "norm_label": ".snapshot()"
     },
     {
@@ -788,7 +788,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L156",
       "id": "data_ringbuffer_tickarena_reset",
-      "community": 7,
+      "community": 6,
       "norm_label": ".reset()"
     },
     {
@@ -1209,7 +1209,7 @@
       "label": "fixedClock()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.test.ts",
-      "source_location": "L13",
+      "source_location": "L14",
       "id": "loop_simloop_test_fixedclock",
       "community": 0,
       "norm_label": "fixedclock()"
@@ -1218,7 +1218,7 @@
       "label": "cameraLookingDownZ()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.test.ts",
-      "source_location": "L19",
+      "source_location": "L20",
       "id": "loop_simloop_test_cameralookingdownz",
       "community": 0,
       "norm_label": "cameralookingdownz()"
@@ -1227,10 +1227,19 @@
       "label": "makeTarget()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.test.ts",
-      "source_location": "L27",
+      "source_location": "L28",
       "id": "loop_simloop_test_maketarget",
       "community": 0,
       "norm_label": "maketarget()"
+    },
+    {
+      "label": "tickAdvancer()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L40",
+      "id": "loop_simloop_test_tickadvancer",
+      "community": 0,
+      "norm_label": "tickadvancer()"
     },
     {
       "label": "SimLoop.ts",
@@ -1245,16 +1254,34 @@
       "label": "applyInput()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L36",
+      "source_location": "L37",
       "id": "loop_simloop_applyinput",
       "community": 0,
       "norm_label": "applyinput()"
     },
     {
+      "label": "fireOneShot()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L58",
+      "id": "loop_simloop_fireoneshot",
+      "community": 0,
+      "norm_label": "fireoneshot()"
+    },
+    {
+      "label": "scheduleFire()",
+      "file_type": "code",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L111",
+      "id": "loop_simloop_schedulefire",
+      "community": 0,
+      "norm_label": "schedulefire()"
+    },
+    {
       "label": "recordVisibleEvents()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L102",
+      "source_location": "L131",
       "id": "loop_simloop_recordvisibleevents",
       "community": 0,
       "norm_label": "recordvisibleevents()"
@@ -1263,7 +1290,7 @@
       "label": "simStep()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L128",
+      "source_location": "L158",
       "id": "loop_simloop_simstep",
       "community": 0,
       "norm_label": "simstep()"
@@ -1272,7 +1299,7 @@
       "label": "createSimLoop()",
       "file_type": "code",
       "source_file": "src/loop/SimLoop.ts",
-      "source_location": "L172",
+      "source_location": "L209",
       "id": "loop_simloop_createsimloop",
       "community": 0,
       "norm_label": "createsimloop()"
@@ -1355,7 +1382,7 @@
       "source_file": "src/metrics/compute.test.ts",
       "source_location": "L1",
       "id": "src_metrics_compute_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "compute.test.ts"
     },
     {
@@ -1364,7 +1391,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L1",
       "id": "src_metrics_compute_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "compute.ts"
     },
     {
@@ -1373,7 +1400,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L33",
       "id": "metrics_compute_computemetrics",
-      "community": 7,
+      "community": 6,
       "norm_label": "computemetrics()"
     },
     {
@@ -1382,7 +1409,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L73",
       "id": "metrics_compute_stat",
-      "community": 7,
+      "community": 6,
       "norm_label": "stat()"
     },
     {
@@ -1391,7 +1418,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L82",
       "id": "metrics_compute_buildpeekwindows",
-      "community": 7,
+      "community": 6,
       "norm_label": "buildpeekwindows()"
     },
     {
@@ -1400,7 +1427,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L106",
       "id": "metrics_compute_computeswitchtimes",
-      "community": 7,
+      "community": 6,
       "norm_label": "computeswitchtimes()"
     },
     {
@@ -1409,7 +1436,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L119",
       "id": "metrics_compute_computevisibleintervals",
-      "community": 7,
+      "community": 6,
       "norm_label": "computevisibleintervals()"
     },
     {
@@ -1418,7 +1445,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L127",
       "id": "metrics_compute_coefficientofvariation",
-      "community": 7,
+      "community": 6,
       "norm_label": "coefficientofvariation()"
     },
     {
@@ -1427,7 +1454,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L132",
       "id": "metrics_compute_finitevalues",
-      "community": 7,
+      "community": 6,
       "norm_label": "finitevalues()"
     },
     {
@@ -1436,7 +1463,7 @@
       "source_file": "src/metrics/MetricsDashboard.test.ts",
       "source_location": "L1",
       "id": "src_metrics_metricsdashboard_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "metricsdashboard.test.ts"
     },
     {
@@ -1445,7 +1472,7 @@
       "source_file": "src/metrics/MetricsDashboard.ts",
       "source_location": "L1",
       "id": "src_metrics_metricsdashboard_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "metricsdashboard.ts"
     },
     {
@@ -1454,7 +1481,7 @@
       "source_file": "src/metrics/MetricsDashboard.ts",
       "source_location": "L8",
       "id": "metrics_metricsdashboard_createmetricsdashboard",
-      "community": 7,
+      "community": 6,
       "norm_label": "createmetricsdashboard()"
     },
     {
@@ -2271,7 +2298,7 @@
       "label": "killSequence()",
       "file_type": "code",
       "source_file": "src/sim/TargetManager.test.ts",
-      "source_location": "L104",
+      "source_location": "L119",
       "id": "sim_targetmanager_test_killsequence",
       "community": 0,
       "norm_label": "killsequence()"
@@ -2280,7 +2307,7 @@
       "label": "config()",
       "file_type": "code",
       "source_file": "src/sim/TargetManager.test.ts",
-      "source_location": "L168",
+      "source_location": "L183",
       "id": "sim_targetmanager_test_config",
       "community": 0,
       "norm_label": "config()"
@@ -2289,7 +2316,7 @@
       "label": "runDrill()",
       "file_type": "code",
       "source_file": "src/sim/TargetManager.test.ts",
-      "source_location": "L183",
+      "source_location": "L198",
       "id": "sim_targetmanager_test_rundrill",
       "community": 0,
       "norm_label": "rundrill()"
@@ -2397,7 +2424,7 @@
       "label": "createInputRing()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L65",
+      "source_location": "L68",
       "id": "state_sharedstate_createinputring",
       "community": 0,
       "norm_label": "createinputring()"
@@ -2406,7 +2433,7 @@
       "label": "createSharedState()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L139",
+      "source_location": "L142",
       "id": "state_sharedstate_createsharedstate",
       "community": 0,
       "norm_label": "createsharedstate()"
@@ -2415,7 +2442,7 @@
       "label": "resetState()",
       "file_type": "code",
       "source_file": "src/state/SharedState.ts",
-      "source_location": "L163",
+      "source_location": "L167",
       "id": "state_sharedstate_resetstate",
       "community": 0,
       "norm_label": "resetstate()"
@@ -2633,7 +2660,7 @@
       "source_file": "src/ui/ResultScreen.test.ts",
       "source_location": "L1",
       "id": "src_ui_resultscreen_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "resultscreen.test.ts"
     },
     {
@@ -2642,7 +2669,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L1",
       "id": "src_ui_resultscreen_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "resultscreen.ts"
     },
     {
@@ -2651,7 +2678,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L29",
       "id": "ui_resultscreen_createresultscreen",
-      "community": 7,
+      "community": 6,
       "norm_label": "createresultscreen()"
     },
     {
@@ -2660,7 +2687,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L122",
       "id": "ui_resultscreen_createresultsummary",
-      "community": 7,
+      "community": 6,
       "norm_label": "createresultsummary()"
     },
     {
@@ -2669,7 +2696,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L162",
       "id": "ui_resultscreen_classifyresidualspeed",
-      "community": 7,
+      "community": 6,
       "norm_label": "classifyresidualspeed()"
     },
     {
@@ -2678,7 +2705,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L178",
       "id": "ui_resultscreen_statcard",
-      "community": 7,
+      "community": 6,
       "norm_label": "statcard()"
     },
     {
@@ -2687,7 +2714,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L187",
       "id": "ui_resultscreen_rendercard",
-      "community": 7,
+      "community": 6,
       "norm_label": "rendercard()"
     },
     {
@@ -2696,7 +2723,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L215",
       "id": "ui_resultscreen_renderreactiondistribution",
-      "community": 7,
+      "community": 6,
       "norm_label": "renderreactiondistribution()"
     },
     {
@@ -2705,7 +2732,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L266",
       "id": "ui_resultscreen_histogram",
-      "community": 7,
+      "community": 6,
       "norm_label": "histogram()"
     },
     {
@@ -2714,7 +2741,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L278",
       "id": "ui_resultscreen_formatstatmean",
-      "community": 7,
+      "community": 6,
       "norm_label": "formatstatmean()"
     },
     {
@@ -2723,7 +2750,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L282",
       "id": "ui_resultscreen_formatpercent",
-      "community": 7,
+      "community": 6,
       "norm_label": "formatpercent()"
     },
     {
@@ -2732,7 +2759,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L286",
       "id": "ui_resultscreen_formatnumber",
-      "community": 7,
+      "community": 6,
       "norm_label": "formatnumber()"
     },
     {
@@ -3054,7 +3081,7 @@
       "label": "syntheticInputs()",
       "file_type": "code",
       "source_file": "tests/regression/determinism.test.ts",
-      "source_location": "L61",
+      "source_location": "L62",
       "id": "regression_determinism_test_syntheticinputs",
       "community": 0,
       "norm_label": "syntheticinputs()"
@@ -3063,7 +3090,7 @@
       "label": "snap()",
       "file_type": "code",
       "source_file": "tests/regression/determinism.test.ts",
-      "source_location": "L78",
+      "source_location": "L81",
       "id": "regression_determinism_test_snap",
       "community": 0,
       "norm_label": "snap()"
@@ -3072,7 +3099,7 @@
       "label": "runFrames()",
       "file_type": "code",
       "source_file": "tests/regression/determinism.test.ts",
-      "source_location": "L87",
+      "source_location": "L90",
       "id": "regression_determinism_test_runframes",
       "community": 0,
       "norm_label": "runframes()"
@@ -3081,7 +3108,7 @@
       "label": "canonicalRun()",
       "file_type": "code",
       "source_file": "tests/regression/determinism.test.ts",
-      "source_location": "L110",
+      "source_location": "L113",
       "id": "regression_determinism_test_canonicalrun",
       "community": 0,
       "norm_label": "canonicalrun()"
@@ -3090,7 +3117,7 @@
       "label": "framesAt()",
       "file_type": "code",
       "source_file": "tests/regression/determinism.test.ts",
-      "source_location": "L117",
+      "source_location": "L120",
       "id": "regression_determinism_test_framesat",
       "community": 0,
       "norm_label": "framesat()"
@@ -3099,7 +3126,7 @@
       "label": "jitterFrames()",
       "file_type": "code",
       "source_file": "tests/regression/determinism.test.ts",
-      "source_location": "L125",
+      "source_location": "L128",
       "id": "regression_determinism_test_jitterframes",
       "community": 0,
       "norm_label": "jitterframes()"
@@ -3110,7 +3137,7 @@
       "source_file": "tests/validity/reaction-time.test.ts",
       "source_location": "L1",
       "id": "tests_validity_reaction_time_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "reaction-time.test.ts"
     },
     {
@@ -3119,7 +3146,7 @@
       "source_file": "tests/validity/reaction-time.test.ts",
       "source_location": "L23",
       "id": "validity_reaction_time_test_snapshotfrompeeks",
-      "community": 7,
+      "community": 6,
       "norm_label": "snapshotfrompeeks()"
     },
     {
@@ -3128,7 +3155,7 @@
       "source_file": "tests/validity/reaction-time.test.ts",
       "source_location": "L44",
       "id": "validity_reaction_time_test_median",
-      "community": 7,
+      "community": 6,
       "norm_label": "median()"
     },
     {
@@ -3137,7 +3164,7 @@
       "source_file": "tests/validity/reaction-time.test.ts",
       "source_location": "L53",
       "id": "validity_reaction_time_test_withinreactionband",
-      "community": 7,
+      "community": 6,
       "norm_label": "withinreactionband()"
     },
     {
@@ -5247,7 +5274,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 \u8f38\u5165\u63a1\u96c6\u5c64 inputsampler (f1)",
       "id": "wp3_input_sampler"
     },
@@ -5260,7 +5287,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 progress log",
       "id": "wp3_progress"
     },
@@ -5273,7 +5300,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 master task checklist",
       "id": "wp3_task_checklist"
     },
@@ -5286,7 +5313,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 t0 entry gate",
       "id": "wp3_t0_entry_gate"
     },
@@ -5299,7 +5326,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 t1 \u9375\u76e4\u63a1\u96c6 (keydown/keyup + timestamp)",
       "id": "wp3_t1_keyboard"
     },
@@ -5312,7 +5339,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 t2 \u6ed1\u9f20 coalesced \u63a1\u96c6 (\u6b21\u5e40\u8ecc\u8de1)",
       "id": "wp3_t2_mouse_coalesced"
     },
@@ -5325,7 +5352,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 t3 \u958b\u706b\u4e8b\u4ef6\u63a1\u96c6 (mousedown + timestamp)",
       "id": "wp3_t3_fire"
     },
@@ -5338,7 +5365,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 t4 sim \u4f9d\u6642\u5e8f\u6d88\u8cbb\u7de9\u885d + \u6392\u7a7a",
       "id": "wp3_t4_sim_consume"
     },
@@ -5351,7 +5378,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-3 t5 exit gate",
       "id": "wp3_t5_exit_gate"
     },
@@ -5364,7 +5391,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 \u76ee\u6a19\u7cfb\u7d71 + t_visible (f2)",
       "id": "wp4_target_tvisible"
     },
@@ -5377,7 +5404,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 progress log",
       "id": "wp4_progress"
     },
@@ -5390,7 +5417,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 master task checklist",
       "id": "wp4_task_checklist"
     },
@@ -5403,7 +5430,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 t0 entry gate",
       "id": "wp4_t0_entry_gate"
     },
@@ -5416,7 +5443,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 t1 \u76ee\u6a19 entity (mesh + hitbox)",
       "id": "wp4_t1_target_entity"
     },
@@ -5429,7 +5456,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 t2 \u53ef\u898b\u6027 + t_visible (sim tick \u5167\u84cb\u6233)",
       "id": "wp4_t2_visibility_tvisible"
     },
@@ -5442,7 +5469,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 t3 \u5de6\u53f3\u4ea4\u66ff\u5e8f\u5217",
       "id": "wp4_t3_alternation"
     },
@@ -5455,7 +5482,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 t4 crosshair (\u87a2\u5e55\u4e2d\u5fc3\u6e96\u5fc3)",
       "id": "wp4_t4_crosshair"
     },
@@ -5468,7 +5495,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-4 t5 exit gate",
       "id": "wp4_t5_exit_gate"
     },
@@ -5481,7 +5508,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "inputsampler (src/input/inputsampler.ts)",
       "id": "wp3_input_sampler_class"
     },
@@ -5494,7 +5521,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "consume (src/input/consume.ts)",
       "id": "wp3_consume_fn"
     },
@@ -5507,7 +5534,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "sharedstate (src/state/sharedstate.ts)",
       "id": "shared_state"
     },
@@ -5520,7 +5547,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "simloop (src/loop/simloop.ts, 128 hz)",
       "id": "sim_loop"
     },
@@ -5533,7 +5560,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "targetmanager (src/sim/targetmanager.ts)",
       "id": "target_manager"
     },
@@ -5546,7 +5573,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "targetview (src/render/targetview.ts)",
       "id": "target_view"
     },
@@ -5559,7 +5586,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "crosshair (src/ui/crosshair.ts)",
       "id": "crosshair"
     },
@@ -5572,7 +5599,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "targetstate (id/side/pos/visible/alive/hitboxes)",
       "id": "target_state"
     },
@@ -5585,7 +5612,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "t_visible (\u53ef\u898b\u6642\u9593\u6233 / \u53cd\u61c9\u6642\u9593\u8d77\u9ede)",
       "id": "concept_t_visible"
     },
@@ -5598,7 +5625,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "sub-tick \u8f38\u5165\u6642\u9593\u6233 (\u7cbe\u6e96\u5ea6\u771f\u6b63\u4f86\u6e90)",
       "id": "concept_sub_tick_timestamp"
     },
@@ -5611,7 +5638,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "getcoalescedevents \u6b21\u5e40\u63a1\u6a23 (\u9ad8\u983b\u6ed1\u9f20\u4e0d\u4e1f\u6a23\u672c)",
       "id": "concept_coalesced_events"
     },
@@ -5624,7 +5651,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u6642\u9593\u6233\u540c\u6e90 (event.timestamp = performance.now() \u57fa\u6e96)",
       "id": "concept_timestamp_same_origin"
     },
@@ -5637,7 +5664,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u4f9d\u6642\u5e8f\u6392\u5e8f\u6d88\u8cbb + \u6392\u7a7a (\u6c7a\u5b9a\u6027\u5951\u7d04)",
       "id": "concept_sorted_consume_determinism"
     },
@@ -5650,7 +5677,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "t_visible \u5728 sim tick \u5167\u84cb\u4e00\u6b21 (\u975e render frame)",
       "id": "concept_tvisible_in_sim_tick"
     },
@@ -5663,7 +5690,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "\u78ba\u5b9a\u6027\u5de6\u53f3\u4ea4\u66ff\u8f2a\u66ff (counter-strafe peek \u7bc0\u594f)",
       "id": "concept_deterministic_alternation"
     },
@@ -5676,7 +5703,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "adr-2 \u4e09\u8ff4\u5708\u7d93 sharedstate \u6e9d\u901a",
       "id": "adr2_three_loops"
     },
@@ -5689,7 +5716,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "adr-3 \u7cbe\u6e96\u5ea6\u4f86\u6e90 = sub-tick \u8f38\u5165\u6642\u9593\u6233",
       "id": "adr3_subtick"
     },
@@ -5702,7 +5729,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "adr-4 performance.now() / event.timestamp \u540c\u6e90",
       "id": "adr4_performance_now"
     },
@@ -5715,7 +5742,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "adr-5 coalesced events",
       "id": "adr5_coalesced"
     },
@@ -5728,7 +5755,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "d1 ui = \u7d14 ts + dom overlay",
       "id": "d1_dom_overlay"
     },
@@ -5741,7 +5768,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 8,
       "norm_label": "\u91cc\u7a0b\u7891 m1 (wp-2 \u810a\u690e / \u6c7a\u5b9a\u6027\u9a57\u8b49)",
       "id": "milestone_m1"
     },
@@ -5754,7 +5781,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-1 \u5834\u666f (\u76f8\u6a5f / pointer lock)",
       "id": "wp1_scene"
     },
@@ -5767,7 +5794,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-2 \u96d9\u8ff4\u5708\u9aa8\u67b6 (sim tick + clock + \u6c7a\u5b9a\u6027)",
       "id": "wp2_dual_loop"
     },
@@ -5780,7 +5807,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-5 \u547d\u4e2d / \u6025\u505c\u5224\u5b9a (raycaster)",
       "id": "wp5_hit_counter"
     },
@@ -5793,7 +5820,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-6 drill loader (\u63a5\u7ba1\u76ee\u6a19\u751f\u6210)",
       "id": "wp6_drill_loader"
     },
@@ -5806,7 +5833,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-7 ring buffer \u8a18\u9304 / \u532f\u51fa",
       "id": "wp7_ring_buffer"
     },
@@ -5819,7 +5846,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 7,
       "norm_label": "wp-8 \u53cd\u61c9\u6642\u9593\u8a08\u7b97 / \u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "wp8_reaction_time"
     },
@@ -8163,6 +8190,28 @@
       "confidence_score": 1.0,
       "source": "src_main_ts",
       "target": "metrics_metricsdashboard_createmetricsdashboard"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "src_weapon_weapons_ts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "weapon_weapons_getweapon"
     },
     {
       "relation": "contains",
@@ -11244,6 +11293,17 @@
       "target": "loop_simloop_simstep"
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "src_weapon_weapons_ts"
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/loop/SimLoop.test.ts",
@@ -11272,6 +11332,16 @@
       "confidence_score": 1.0,
       "source": "src_loop_simloop_test_ts",
       "target": "loop_simloop_test_maketarget"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.test.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_test_ts",
+      "target": "loop_simloop_test_tickadvancer"
     },
     {
       "relation": "imports_from",
@@ -11395,6 +11465,28 @@
       "target": "src_state_types_ts"
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_weapon_weaponconfig_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "src_weapon_weapons_ts"
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/loop/SimLoop.ts",
@@ -11403,6 +11495,26 @@
       "confidence_score": 1.0,
       "source": "src_loop_simloop_ts",
       "target": "loop_simloop_applyinput"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "loop_simloop_fireoneshot"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_loop_simloop_ts",
+      "target": "loop_simloop_schedulefire"
     },
     {
       "relation": "contains",
@@ -11543,6 +11655,72 @@
       "weight": 1.0,
       "source": "loop_simloop_applyinput",
       "target": "sim_hitdetector_raycastfromcenter"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L121",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "loop_simloop_schedulefire",
+      "target": "loop_simloop_fireoneshot"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "loop_simloop_fireoneshot",
+      "target": "sim_firstshot_currentpeekid"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "loop_simloop_fireoneshot",
+      "target": "sim_firstshot_firstshotgate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "loop_simloop_fireoneshot",
+      "target": "sim_hitdetector_targetcenteroffsetdeg"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L89",
+      "weight": 1.0,
+      "source": "loop_simloop_fireoneshot",
+      "target": "sim_hitdetector_raycastfromcenter"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/SimLoop.ts",
+      "source_location": "L188",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "loop_simloop_simstep",
+      "target": "loop_simloop_schedulefire"
     },
     {
       "relation": "calls",
@@ -14540,6 +14718,17 @@
       "confidence_score": 1.0,
       "source": "src_state_sharedstate_ts",
       "target": "src_state_types_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/state/SharedState.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_state_sharedstate_ts",
+      "target": "src_weapon_weapons_ts"
     },
     {
       "relation": "contains",
@@ -21638,5 +21827,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "8b848ae4bb860f0cb0ab49bd1587bb2e93968582"
+  "built_at_commit": "03c04e5fb7f72a94673f3b924d9f00864363c261"
 }

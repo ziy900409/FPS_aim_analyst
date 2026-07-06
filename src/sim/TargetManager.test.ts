@@ -27,6 +27,21 @@ describe('TargetManager — 可見性 + t_visible 在 sim tick 內蓋戳（FR-4.
     expect(state.targets[0].hitbox).toEqual({ width: 1, height: 2, depth: 1 });
   });
 
+  it('tick：每次 spawn 以當前 weapon.magSize 回滿 ammo（OQ-11.2）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager();
+    state.weapon.magSize = 20;
+    state.weapon.ammo = 0;
+
+    tm.tick(state, 100);
+    expect(state.weapon.ammo).toBe(20);
+
+    tm.markKilled(state, state.targets[0].id);
+    state.weapon.ammo = 3;
+    tm.tick(state, 200);
+    expect(state.weapon.ammo).toBe(20);
+  });
+
   it('可見轉換 tick 蓋 t_visible = nowMs', () => {
     const state = createSharedState();
     const tm = createTargetManager();

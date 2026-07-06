@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 T2 fire down/up 完成;T3 可開
+## Status: 🟡 T3 cycletime 產彈完成;T-exit 可開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 WeaponConfig | ✅ |
 | T2 fire down/up | ✅ |
-| T3 cycletime 產彈 | ⬜ |
+| T3 cycletime 產彈 | ✅ |
 | T-exit | ⬜ |
 
 ---
@@ -22,11 +22,19 @@
 | ID | 狀態 | 決議 |
 |----|------|------|
 | OQ-S2-6 彈匣盡行為(於 wp-10 T0 拍板,此處消費) | ✅ resolved | 轉錄自 [wp-10 progress](../wp-10-recoil-core/progress.md#open-questions-ledgert0-解決):2026-07-05 拍板「彈匣盡即停火,stage2 不做 reload;drill 一 peek ≤ 一匣」。WP-11 T3 scheduler 以 `ammo > 0` 為產彈條件,耗盡後停止產彈且不進 reload。 |
-| OQ-11.1 單擊(down→up 極短)最少產 1 發的邊界(down 當 tick nextFireT 檢查) | ⬜ open | T3 設計時定案並測試 |
+| OQ-11.1 單擊(down→up 極短)最少產 1 發的邊界(down 當 tick nextFireT 檢查) | ✅ resolved | T3 定案:consume 每個 input event 前先排程到 event.t,fire-down 套用後立即排程到同一 event.t,再繼續處理後續事件;因此 down→up 落同 tick 時,down 先產 1 發,up 再清 heldFire。測試:`down→up 落同 tick 仍以 fire-down 時刻產 1 發（OQ-11.1）`。 |
+| OQ-11.2 `ammo` 重置邊界(每 peek/spawn vs 整 drill 共用一匣) | ✅ resolved | 2026-07-06 CONTEXT.md grill 拍板:**`ammo` 於每個 peek / 每次目標 spawn 重置回 `magSize`**(每 peek 一整匣、噴射獨立、左右 peek 可對照,不被殘彈污染);「drill 一 peek ≤ 一匣」(OQ-S2-6)由此成立。T3 scheduler 應於 spawn 時 `ammo = weapon.magSize`。理由:整 drill 共用一匣會讓後段 peek 缺彈,污染首發/節奏/左右對稱等量測指標。同步記於 [CONTEXT.md](../../../../../CONTEXT.md) §G 彈匣政策。 |
 
 ---
 
 ## Log
+
+### 2026-07-06 07:42Z — T3 cycletime 產彈 PASS
+- **修改檔案**:[SharedState.ts](../../../../../src/state/SharedState.ts) 新增 `weapon:{nextFireT,ammo,magSize}`,create 預設 AK,reset 原地保留目前 `magSize` 並回滿 ammo;[SimLoop.ts](../../../../../src/loop/SimLoop.ts) 抽出 `fireOneShot` 作為唯一產彈點,`applyInput` 僅維護 `heldFire`/首發排程,`scheduleFire` 以 `cycletimeSec*1000` 累加制產彈並在 ammo=0 時停火,`createSimLoop` 依注入武器同步 `magSize`;[TargetManager.ts](../../../../../src/sim/TargetManager.ts) 依 OQ-11.2 在每次 spawn 回滿 `ammo = weapon.magSize`;[main.ts](../../../../../src/main.ts) 注入 `getWeapon('ak47')`,pointer unlock 同步清 `nextFireT`。
+- **測試補強**:[SimLoop.test.ts](../../../../../src/loop/SimLoop.test.ts) 覆蓋 OQ-11.1 down→up 同 tick 單擊、AK held 3.0s 恰 30 發且 span 2900ms、空彈匣放開再按不補彈、M4A1-S 注入 20 發彈匣;[TargetManager.test.ts](../../../../../src/sim/TargetManager.test.ts) 覆蓋每次 spawn 依當前 `weapon.magSize` 回滿 ammo;[SharedState.test.ts](../../../../../src/state/SharedState.test.ts) 覆蓋 weapon reset 原地重用;[determinism.test.ts](../../../../../tests/regression/determinism.test.ts) 將舊單發 fixture 改成 down→up,避免 full-auto scheduler 把 fire-down 解讀成持續按住。
+- **行為決策**:T3 scheduler 不是單純 consume 後一次跑到 tickEnd,而是依 input event 序列切段:事件前補發至 `ev.t`,fire-down 武裝後立刻排程至 `ev.t`,最後再排程到 `tickEndMs`。此設計保留 tick 內 full-auto,同時鎖定 down→up 同 tick 至少 1 發。fire record 的 `t` 改為排程時刻,不是 input event 時刻;已在 `fireOneShot` 註記 WP-16 schema v2 對帳點。
+- **Blast radius**:CodeGraph `createSimLoop` impact=2 symbols(`SimLoop.ts` local);`applyInput` impact=4 symbols(`SimLoop.ts` local through `simStep`/`createSimLoop`);`createSharedState` impact=18 symbols(state/tests/main/harness/regression);`createTargetManager` impact=16 symbols(TargetManager/drill runner/main/harness/regression/tests)。本切片跨 state/loop/sim/main/test,但輸入 ring contract 不變;`raycastFromCenter` 在 `SimLoop.ts` 僅剩 `fireOneShot` 內一個呼叫點。
+- **Verification**:`npm.cmd test -- src/state src/loop src/sim tests/regression/determinism.test.ts` → 10 files / 101 tests passed;`npm.cmd run typecheck` → pass;`npm.cmd test` → 31 files / 226 tests passed;`npm.cmd run build` → pass(sandbox 內 Vite config resolution 因 access denied 失敗過,提權重跑成功;仍有既有 bundle size warning);`graphify update .` → rebuilt 668 nodes / 1342 edges / 42 communities。
 
 ### 2026-07-06 07:32Z — T2 fire down/up PASS
 - **修改檔案**:[types.ts](../../../../../src/state/types.ts) 將 input fire event 改為 `{type:'fire',down:boolean,t:number}`;[SharedState.ts](../../../../../src/state/SharedState.ts) 以 `EV_FIRE` 既有 `b` 欄 encode/decode `down` 並新增 `heldFire`;[InputSampler.ts](../../../../../src/input/InputSampler.ts) 新增 mouseup fire-up 與未鎖定 down gate;[SimLoop.ts](../../../../../src/loop/SimLoop.ts) fire-down 沿用既有單發 raycast/record,fire-up 只清 `heldFire`;[main.ts](../../../../../src/main.ts) 在 pointer-lock unlock 直接清 `sharedState.heldFire`。

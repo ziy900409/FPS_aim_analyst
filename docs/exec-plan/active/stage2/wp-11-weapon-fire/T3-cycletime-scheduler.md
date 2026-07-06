@@ -7,7 +7,7 @@
 | **相依** | T1(WeaponConfig)、T2(heldFire) |
 | **Risk / Cplx** | Med / High |
 | **Touches** | MODIFY `src/loop/SimLoop.ts`、`src/state/SharedState.ts`(weapon 欄)、`src/main.ts`(注入 ak47)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -15,7 +15,7 @@
 (full-auto)。彈匣盡即停火(OQ-S2-6)。此產彈點即 WP-13 的 recoil `onFire` 唯一掛點。
 
 ## In scope
-- `SharedState.weapon = { nextFireT: number; ammo: number }`(reset 原地;ammo 初值 = magSize)。
+- `SharedState.weapon = { nextFireT: number; ammo: number; magSize: number }`(reset 原地;ammo 初值 = magSize)。
 - `createSimLoop(..., weapon?: WeaponConfig)` 注入;`main.ts` 綁 `getWeapon('ak47')`。
 - `simStep` 內(consume 之後、movement 之前)排程:
 
@@ -38,12 +38,12 @@ while (s.heldFire && s.weapon.ammo > 0 && s.weapon.nextFireT <= tickEndMs) {
 
 ## Steps
 
-- [ ] SharedState.weapon 欄 + reset;createSimLoop 簽名 + main 注入。
-- [ ] `fireOneShot` 抽出(含 fire 事件 recordEvent,t = 排程時刻非事件時刻——記 Design note 與 schema 對帳點 WP-16)。
-- [ ] 排程迴圈 + 首發武裝;OQ-11.1 單擊測試。
-- [ ] 測試:合成 held 3.0s(AK)→ 恰 30 發後停(ammo 0);30 發 span = 2900ms ± 7.8125ms;
+- [x] SharedState.weapon 欄 + reset;createSimLoop 簽名 + main 注入。
+- [x] `fireOneShot` 抽出(含 fire 事件 recordEvent,t = 排程時刻非事件時刻——記 Design note 與 schema 對帳點 WP-16)。
+- [x] 排程迴圈 + 首發武裝;OQ-11.1 單擊測試。
+- [x] 測試:合成 held 3.0s(AK)→ 恰 30 發後停(ammo 0);30 發 span = 2900ms ± 7.8125ms;
       放開再按 → 不重填彈匣(restart 才回滿);M4A1-S(mag 20)→ 20 發。
-- [ ] `npx vitest run` 全綠(含決定性回歸)。
+- [x] `npx vitest run` 全綠(含決定性回歸)。
 
 ## Definition of Done
 

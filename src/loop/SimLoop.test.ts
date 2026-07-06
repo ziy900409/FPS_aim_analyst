@@ -8,6 +8,7 @@ import type { Clock } from './clock.ts';
 import { SIM_HZ } from './constants.ts';
 import { createSimLoop, simStep } from './SimLoop.ts';
 import { createDataRecorder } from '../data/DataRecorder.ts';
+import { m4a1s } from '../weapon/weapons.ts';
 
 /** 固定基準的注入式 clock（OQ-2.3）。 */
 function fixedClock(t: number): Clock {
@@ -33,6 +34,16 @@ function makeTarget(id: string, x: number, z: number, over: Partial<TargetState>
     alive: true,
     hitbox: { width: 1, height: 2, depth: 1 },
     ...over,
+  };
+}
+
+function tickAdvancer(loop: ReturnType<typeof createSimLoop>): (endMs: number) => void {
+  let now = 0;
+  return (endMs: number): void => {
+    while (now + TICK_MS <= endMs + 1e-9) {
+      now += TICK_MS;
+      loop.pump(now);
+    }
   };
 }
 
@@ -156,6 +167,66 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.heldFire).toBe(false);
     expect(killed).toEqual([]);
     expect(recorder.snapshot().events.filter((e) => e.type === 'fire')).toEqual([]);
+  });
+
+  it('down→up 落同 tick 仍以 fire-down 時刻產 1 發（OQ-11.1）', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const loop = createSimLoop(state, fixedClock(0), SIM_HZ, undefined, undefined, undefined, recorder);
+    const advanceTo = tickAdvancer(loop);
+
+    state.input.pushFire(true, 10);
+    state.input.pushFire(false, 11);
+    advanceTo(2 * TICK_MS);
+
+    const fires = recorder.snapshot().events.filter((e) => e.type === 'fire');
+    expect(fires).toHaveLength(1);
+    expect(fires[0]).toMatchObject({ type: 'fire', t: 10, hit: false });
+    expect(state.heldFire).toBe(false);
+    expect(state.weapon.ammo).toBe(29);
+  });
+
+  it('AK full-auto 以 0.10s cycletime 累加排程，30 發後彈匣盡即停火', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 512 });
+    const loop = createSimLoop(state, fixedClock(0), SIM_HZ, undefined, undefined, undefined, recorder);
+    const advanceTo = tickAdvancer(loop);
+
+    state.input.pushFire(true, 0);
+    advanceTo(3000);
+
+    const fires = recorder.snapshot().events.filter((e) => e.type === 'fire');
+    expect(fires).toHaveLength(30);
+    expect(fires[0].t).toBe(0);
+    expect(fires.at(-1)?.t).toBeCloseTo(2900, 10);
+    expect((fires.at(-1)?.t ?? 0) - fires[0].t).toBeLessThanOrEqual(2900 + TICK_MS);
+    expect(state.weapon.ammo).toBe(0);
+    expect(state.heldFire).toBe(false);
+
+    state.input.pushFire(false, 3010);
+    advanceTo(3050);
+    state.input.pushFire(true, 3060);
+    advanceTo(3300);
+
+    expect(recorder.snapshot().events.filter((e) => e.type === 'fire')).toHaveLength(30);
+    expect(state.weapon.ammo).toBe(0);
+  });
+
+  it('M4A1-S 注入後使用 20 發彈匣', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 512 });
+    const loop = createSimLoop(state, fixedClock(0), SIM_HZ, undefined, undefined, undefined, recorder, m4a1s);
+    const advanceTo = tickAdvancer(loop);
+
+    expect(state.weapon.ammo).toBe(20);
+    state.input.pushFire(true, 0);
+    advanceTo(3000);
+
+    const fires = recorder.snapshot().events.filter((e) => e.type === 'fire');
+    expect(fires).toHaveLength(20);
+    expect(fires.at(-1)?.t).toBeCloseTo(1900, 10);
+    expect(state.weapon.ammo).toBe(0);
+    expect(state.heldFire).toBe(false);
   });
 
   it('records visible, counter, and fire events from a synthetic drill', () => {

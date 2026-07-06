@@ -6,6 +6,7 @@ import type {
   TargetState,
 } from './types.ts';
 import { CODE_KEY, EV_FIRE, EV_KEY, EV_MOUSE, RING_CAPACITY } from './types.ts';
+import { ak47 } from '../weapon/weapons.ts';
 
 /**
  * SharedState — WP-2 / T1（FR-2.1）
@@ -36,6 +37,8 @@ export interface SharedState {
   held: { left: boolean; right: boolean };
   /** 左鍵開火按住狀態（WP-11 / T2）：由 fire down/up 輸入事件依時序更新，T3 scheduler 讀取。 */
   heldFire: boolean;
+  /** 當前武器開火排程狀態（WP-11 / T3）：下一發排程時間 + 當前/最大彈匣。 */
+  weapon: { nextFireT: number; ammo: number; magSize: number };
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
   prev: PlayerSnapshot;
   curr: PlayerSnapshot;
@@ -143,6 +146,7 @@ export function createSharedState(): SharedState {
     player: { vx: 0, vz: 0, x: 0, z: 0, stopped: false },
     held: { left: false, right: false },
     heldFire: false,
+    weapon: { nextFireT: Infinity, ammo: ak47.magSize, magSize: ak47.magSize },
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
     crosshair: { cx: 0, cy: 0 },
@@ -173,6 +177,8 @@ export function resetState(state: SharedState = sharedState): void {
   state.held.left = false; // 原地清 held（重用既有物件，GC 紀律）；重開 drill → 橫移歸靜止
   state.held.right = false;
   state.heldFire = false;
+  state.weapon.nextFireT = Infinity;
+  state.weapon.ammo = state.weapon.magSize;
   state.prev.x = 0;
   state.prev.z = 0;
   state.curr.x = 0;
