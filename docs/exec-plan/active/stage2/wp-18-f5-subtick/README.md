@@ -7,7 +7,7 @@
 |---|---|
 | **目標** | F5 移動目標 drill + 目標 sub-tick 命中內插(FR-B17:命中位置對齊 fire 時間戳,取代「最近 tick 位置」的已知偏差)+ 追蹤指標 |
 | **里程碑** | — |
-| **相依** | **門控:OQ-S2-5** + WP-17(M8)✅ |
+| **相依** | ~~門控:OQ-S2-5~~ **✅ 已解(GD-7,2026-07-06 grill)**+ WP-17(M8) |
 | **對應 FR** | FR-B17 |
 | **估時** | +2–3.5 dev-days(門控解除後另計,不在 stage2 主估時內) |
 | **狀態** | ⏸ 門控中(不展開、不排程) |
@@ -23,10 +23,11 @@
 
 ## Entry 條件(全部達成後才展開 task 檔)
 
-1. **OQ-S2-5 決議**落 [DECISIONS.md](../../../DECISIONS.md):drill 隔離方式
-   (移動目標與 counter-strafe 是否分 drill / 混合設計)+ 追蹤指標定義。
-2. **WP-17(M8)✅**:stage2 主鏈已交付,決定性防線在位(移動目標動 sim 每 tick
-   狀態,必須在回歸防線上改)。
+1. ~~OQ-S2-5 決議~~ **✅ 已解(2026-07-06 grill)**:落 [DECISIONS.md **GD-7**](../../../DECISIONS.md)
+   ——drill 隔離(純追蹤與急停分離)+ 指標層獲取/追隨分離(`t_acquire` vs 追蹤窗口內
+   TOT%/RMS ε)+ 資料策略(記錄全套:逐 tick 目標/玩家位置,欄位落 WP-16 schema v2)。
+2. **WP-17(M8)⬜**:stage2 主鏈已交付,決定性防線在位(移動目標動 sim 每 tick
+   狀態,必須在回歸防線上改)。**唯一剩餘 entry 條件。**
 
 ## 展開時的內容來源(屆時比照其他 WP 建全套檔)
 
@@ -36,5 +37,12 @@
 - 技術要點(FR-B17):fire 時間戳 t 落於 tick n / n+1 之間 → 目標命中位置取兩 tick
   位置的內插(sub-tick 對齊),取代「最近 tick 位置」;移動目標的 per-tick 更新
   屬 sim loop 既定擴充點(規格移動目標條目,2026-07-03 已納入)。
+- **指標與資料定義(2026-07-06 已拍板,展開時直接引用)**:[DECISIONS.md GD-7](../../../DECISIONS.md)
+  (on-target/ε(t)/t_acquire/TOT%/RMS ε 正規定義同 [CONTEXT.md §A](../../../../CONTEXT.md));
+  原始欄位(逐 tick `tx/ty/tz/px/pz`)由 WP-16 schema v2 供給。
+- **展開時納入範圍**:timed presentation 政策(追蹤 drill 依時長呈現)+ render 端
+  目標 alpha 內插(移動目標視覺平滑;player 已有,目標比照 `RenderSnapshot` prev/curr)。
+- **下游消費者**:stage3 [WP-22 T1](../../stage3/wp-22-perception-integration/README.md)
+  (追蹤 drill × BR 場景);交付形狀對帳點 = stage3 OQ-S3-5(本 WP T0 展開時互驗)。
 - 檔案結構:README(full)+ task-checklist + progress + T0-entry-gate → Tn → T-exit-gate,
   格式照本資料夾同層其他 WP。

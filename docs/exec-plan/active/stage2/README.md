@@ -291,7 +291,7 @@ WP-14(movement 物理)───────────────────�
 | OQ-S2-2 | 校準容差:`cl_showpos` 逐 tick ±? u/s;pattern 逐彈 ±?° | 起點:速度 ±1 u/s、彈著 ±0.05°,首輪跑完再校 | 研究者 | WP-15 T0 | WP-15 DoD 無法客觀判定 |
 | OQ-S2-3 ✅ | 感度語意變更後,階段 A 已匯出資料的可比性標注 | **決議:T1 先加 `sensitivityModel: 'cs2-0.022deg'`;無此欄 = 階段 A 佔位語意 `0.0022 rad/count`;`schemaVersion` bump 留 WP-16 schema v2 一次做;舊資料不回溯轉換** | 研究者 | 已拍板(2026-07-06 WP-12 T0) | T1 metadata/schema 註記已鎖定 |
 | OQ-S2-4 | `view_recoil_tracking`(視覺跟隨比例)CS2 對應值 | 先做開關 + 可調常數(僅視覺,不影響彈著/資料) | 研究計畫(社群求證) | 不阻塞 | WP-13 T2 視覺預設 |
-| OQ-S2-5 | F5「移動 + counter-strafe 能力混淆」研究設計(附錄 F/GD-1 遺留) | 未決前 WP-18 不展開 | 研究者 | WP-18 entry | WP-18 全部 |
+| OQ-S2-5 ✅ | F5「移動 + counter-strafe 能力混淆」研究設計(附錄 F/GD-1 遺留) | **決議:採附錄 F 預設緩解——純追蹤 drill 與急停 drill 分離;指標層再切獲取/追隨(`t_acquire` vs 追蹤窗口內 TOT%/RMS ε),完整定義見 [DECISIONS.md GD-7](../../DECISIONS.md);複合 drill 維持進階標註、不入 WP-18** | 研究者 | 已拍板(2026-07-06 grill) | WP-18 研究側門控解除(entry 僅餘 M8) |
 | OQ-S2-6 ✅ | 彈匣盡行為:停火(無 reload)是否可接受 | **決議:停火,drill 一 peek ≤ 一匣**(2026-07-05 WP-10 T0) | 使用者 | 已拍板 | WP-11 T3 DoD 已鎖定 |
 
 ---

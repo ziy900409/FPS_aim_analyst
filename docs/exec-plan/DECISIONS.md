@@ -22,6 +22,64 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-10 ✅ 顯示硬體策略 — 全遠端 + 三道防線(2026-07-06)
+
+| | |
+|---|---|
+| **發現處** | 解析度感知實驗 grill(2026-07-06)。瀏覽器無法切換 OS 顯示模式:「解析度條件」= render buffer 解析度 + upscale;面板原生解析度/PPI/觀看距離皆瀏覽器不可控。 |
+| **決議** | **全遠端 + metadata + 統計控制**,但以下**三道防線為 blocking requirements**(缺一即實驗無效):① **軟體資格閘(eligibility gate)**——session 開始自動檢查:原生解析度 ≥ 實驗最高條件(`screen.width × devicePixelRatio`)、fullscreen 強制、效能地板(per-frame time log 超標 → session 標 `suspect`/剔除);**不合格拒入,非僅記錄**。② **受試者內對比**——每人同面板同 session 跑全部解析度條件、順序對抗平衡;面板 PPI/尺寸/觀看距離/scaler 特性在受試者內對比中一階抵銷。③ **metadata 地板**——自動:render buffer/CSS 尺寸、`devicePixelRatio`、fullscreen、upscale 模式、backend(既有)、更新率估計(rAF deltas)、per-frame render-time log(GD-8);手動(session setup 表單):螢幕型號/原生解析度/面板尺寸/觀看距離自陳——降級為 moderator,不承擔混淆控制。 |
+| **實驗語意精確化** | 量測構念 = 「**同一面板上的 render 解析度效應**」(QHD 面板玩家降 render 解析度的感知代價),**非**「不同螢幕的比較」。FHD 條件在 QHD 面板上 = compositor upscale,屬操弄本身(真實世界語意)。 |
+| **失效防範** | 無資格閘時,FHD 原生面板受試者的「QHD 條件」= 降階超取樣 → **方向性錯誤資料**(非雜訊)且無聲混入——資格閘防的是統計必然,不是罕見邊角。 |
+| **影響面** | display-settings WP(解析度切換 + fullscreen + 資格閘 + session setup 表單 + metadata 欄位)、WP-16 schema v2(display metadata + frame-time log)、偵測實驗 protocol、追蹤實驗共用同一 metadata 地板(遠端天然可行)。 |
+| **狀態** | ✅ 已拍板(2026-07-06 grill)。 |
+
+### GD-9 ✅ BR 場景資產 — 寫實原創 + CC0/CC-BY 授權紀律(2026-07-06)
+
+| | |
+|---|---|
+| **發現處** | BR 場景 grill(2026-07-06)。repo 為 **public**(`ziy900409/FPS_aim_analyst`),commit 資產即公開發布。 |
+| **決議(場景原則)** | **寫實原創 BR 場景**:攝影級寫實品質的軍事島嶼/城鎮戰場,**不複製任何特定遊戲地圖的配置**——地圖 layout 是受保護的創作表達,資產來源乾淨不能洗白配置抄襲。場景依**雜亂度階層(clutter tier)**定義並中性命名(`field-low`/`urban-high`/`mixed-mid`),發表報告雜亂度操弄、不掛遊戲名。特定地圖可辨識復刻**排除**;熟悉度若成為未來研究變因 → 授權取得或受試者玩原版遊戲的獨立實驗臂,不自建復刻。 |
+| **決議(授權)** | **CC0 優先、CC-BY 補充**(附 `ATTRIBUTIONS.md`),直接 commit。**CC-BY-NC 整類排除**(BenQ 商業脈絡地雷)。付費包僅在美術方向強烈需要時再議(`.gitignore` + 私有儲存 + fetch script)。**遊戲抽取資產/遊戲截圖背景永久排除**(EULA + 著作權;截圖背板另有無視差的深度線索問題)。 |
+| **決議(版本紀律)** | 場景 = **有版本的 config 資料**:`sceneId` + `assetPackVersion` + prop-bounds(GD-6)進匯出 metadata;資產改版即斷代——與 drill config / schema 同一套紀律。 |
+| **影響面** | 場景 WP(資產管線 + SceneConfig registry)、匯出 metadata、發表措辭(中性命名)、GD-6 prop-bounds 版本化。 |
+| **狀態** | ✅ 已拍板(2026-07-06 grill)。 |
+
+### GD-8 ✅ 偵測實驗操作化 — pop-in 刺激 + t_detect 瞄準 onset + 偏心度共變數(2026-07-06)
+
+| | |
+|---|---|
+| **發現處** | 解析度感知實驗 grill(2026-07-06)。偵測依變因(`t_detect`)與 slide-in `t_visible` 判準是 CONTEXT §D 明文「尚未定義」的空缺。 |
+| **決議(刺激)** | 偵測刺激 = **pop-in**:`t_visible` = spawn tick,沿用現行正規語意、零新判準;位置/時序由 `sequence.seed`(既有保留欄啟用)隨機化。**slide-in 判準預先釘死**:目標中心穿越 DrillConfig 宣告可見性邊界面的那一 tick 蓋 `t_visible`(camera 無關、決定性、sim 可算)——落地待 GD-6 升級路徑 C 觸發(需生態效度時),本階段不實作。 |
+| **決議(t_detect)** | **t_detect = 瞄準移動 onset(離線)**:`t_visible` 後第一個「ε(t) 以超過雜訊底的角速度下降、持續 k tick」的 tick;雜訊底以 **per-trial 前刺激窗口**(spawn 前 aim 抖動)校準,θ_v/k 為 pre-registered 分析參數。**偵測反應時間 = t_detect − t_visible**(量測時鐘域)。副指標:**engagement time = t_first_fire − t_visible**(不同構念,免費)。專用反應鍵不做(破壞任務自然性、需擴 KEY_CODE/ring/schema);首發 fire 不當主指標(混入獲取+決策)。 |
+| **決議(偏心度)** | spawn 瞬間偏心度(aim 與目標的角距)= **記錄共變數**,由 aim@spawn + 目標位置離線推導(零引擎工作、不動 GD-4「aim 僅觀測」契約)。**fixation gate**(注視閘控 spawn)列為升級選項——代價 = aim 成為 sim 演進輸入(GD-4 契約變更)+ simStep②/GD-4 aim 寫入路徑的描述張力須先對齊;pilot 顯示偏心度變異吞掉解析度效應時再議。 |
+| **工程含意** | 偵測指標鏈**零 sim 改動**(pop-in 沿用 spawn 語意;t_detect/偏心度離線推導,原始資料 = 既有 aim + GD-7 schema v2 欄位)。偵測 drill 的引擎面 = spawn 佈局隨機化(seeded)+ **per-frame render time log**(跨解析度顯示鏈延遲差的效度防線,見顯示硬體決策)。 |
+| **影響面** | 偵測 drill WP(新)、解析度實驗設計、CONTEXT §D F5 接縫列(已回改)、GD-4(fixation gate 若啟用需重開)。 |
+| **狀態** | ✅ 已拍板(2026-07-06 grill)。 |
+
+### GD-7 ✅ OQ-S2-5 解決 — 追蹤指標定義與獲取/追隨分離(2026-07-06)
+
+| | |
+|---|---|
+| **發現處** | BR 場景/移動目標 grill(2026-07-06)。OQ-S2-5(移動 + counter-strafe 能力混淆,附錄 F/GD-1 遺留)是 WP-18 唯一研究側門控。 |
+| **決議(能力混淆)** | 採規格附錄 F 預設緩解:**純追蹤 drill 與急停 drill 分離**;複合 drill 維持「進階複合技能」標註、不入 WP-18。追蹤 drill 內部再做**指標層**第二道分離:獲取(acquisition,flick 構念)vs 追隨(pursuit,連續控制構念)以窗口定義切開,不靠 drill 設計硬切。 |
+| **指標定義** | ① **on-target(逐 tick 二元)**= 準心射線(camera 正向)∩ H1 hitbox(Box3)——與命中判定同一套幾何、零新門檻參數。② **追蹤誤差 ε(t)** = 準心射線與目標 hitbox 中心夾角(deg)——「準心對齊偏移」由 fire 瞬間推廣到逐 tick。③ **t_acquire** = `t_first_on_target − t_visible`(獲取時間);整段未 on-target → 記**獲取失敗**(計入獲取失敗率、不進 TOT 聚合;失敗是資料不是缺失值)。④ **追蹤窗口** = [t_first_on_target, presentation 結束)。⑤ **TOT%** = 窗內 on-target tick 比例;**pre-registered 主統計量 = RMS(ε)**(窗內);median/P95/streak 為離線副指標。⑥ 128Hz 取樣對連續控制足夠,sub-tick 僅留 WP-18 命中內插,不參與追蹤指標。 |
+| **資料策略** | **記錄全套(raw-over-derived)**:WP-16 schema v2 逐 tick 加目標中心 `(tx,ty,tz)` + 玩家位置 `(px,pz)`(~1.5MB/drill,preallocated arena 紀律不變);`sequence.seed` + motion config 進 metadata(供 drill 重現與交叉驗證,非 ε 的資料來源)。**拒絕離線重建路線**——motion 函數兩份實作 = 兩份真相源漂移風險;velocity 積分重建玩家位置會被未來 clamp/teleport 無聲破功。 |
+| **工程含意** | 指標全部離線推導,**零 sim 改動、零熱路徑成本**;引擎交付面 = schema v2 欄位(WP-16)+ WP-18 既有範圍。GD-6(淨空驗證)保證 presentation 期間目標恆可見 → TOT 時間軸連續、無遮擋窗特例。 |
+| **影響面** | WP-18(研究側門控解除,entry 僅餘 M8)、WP-16 schema v2 欄位、stage2 README §8(OQ-S2-5 已回改)、規格附錄 F(緩解方式具體化)、結果頁顯示(TOT% / RMS ε / t_acquire)。 |
+| **狀態** | ✅ 已拍板(2026-07-06 grill)。 |
+
+### GD-6 ✅ 場景遮擋路線 — 純裝飾場景 + 淨空驗證,排除 mesh 衍生 collision(2026-07-06)
+
+| | |
+|---|---|
+| **發現處** | BR 場景背景 + 移動目標/解析度感知實驗的可行性 grill(2026-07-06)。場景遮擋語意是 OQ-S2-5(追蹤指標)與偵測實驗(slide-in `t_visible` / `t_detect`)的上游前提。 |
+| **事實基礎** | sim 對場景零知識,且 `src/sim` 全目錄無任何位置 clamp——玩家位置無界、佔位房間四牆只存在 render 層([SceneManager.ts](../../src/render/SceneManager.ts) 註記「數字不得流入 sim」)。**純裝飾是本系統既有本體論**,非新選擇;「視覺≠物理」今日已存在,僅因 drill 設計未被觀測。 |
+| **決議** | **場景 = 純裝飾(render-only)+ 淨空驗證(clearance validation)**:(a) 場景資產附 **prop-bounds 清單**(僅驗證器可讀,**永不進 sim runtime**);(b) drill 載入時驗證**視線走廊**(玩家 strafe 走廊 ∪ 目標運動包絡之凸包,保守過近似)與 prop bounds 不相交,**相交即拒載**(自動化大聲失敗,不靠人工紀律);(c) 玩家活動範圍以 config 宣告假設,runtime 逸出走廊 → 標 `suspect`(純觀測,不動 sim 演進);(d) 走廊淨空 ⇒ 對場景 raycast 與無場景逐位元等價 ⇒ 決定性 baseline 不分裂、F4「換場景零引擎碼」成立。 |
+| **排除與升級路徑** | **B-full(render mesh 自動衍生 collision)永久排除**——proxy 生成變異會無聲流入量測資料。B-lite(授權 collision 進 runtime)/ C(DrillConfig 宣告式 occluder)保留為升級路徑,prop-bounds 即其前身資料;觸發條件 = 研究需要「目標躲藏(reacquisition)/ 擋彈(blocked shot)/ LOS 自動 t_visible」任一。 |
+| **理由** | 需求訊問收斂到唯一訴求「視覺=物理一致性,且不靠人工紀律」:一致性是**保證**非能力——建構期幾何證明(載入 gate,~1 dev-day)取得與 runtime 機械(1+ WP + per-scene determinism baseline 維護)等價的保證;且一致性原則若當本體論貫徹會層層擴張(玩家-場景 collision → movement physics),無自然停點。 |
+| **影響面** | 未來場景 WP(SceneConfig + prop-bounds + 驗證器)、WP-18(追蹤指標**無需**處理遮擋窗)、偵測 drill(slide-in 需宣告式 occluder 時走 C)、規格附錄 F(遮擋風險緩解方式)。 |
+| **狀態** | ✅ 已拍板(2026-07-06 grill;落地待場景 WP)。 |
+
 ### GD-5 ✅ stage2 範圍採納與 recoil/movement 跨 WP 契約(2026-07-05)
 
 | | |
