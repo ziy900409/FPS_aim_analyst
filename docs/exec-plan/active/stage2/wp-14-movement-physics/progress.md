@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T3 complete
+## Status: ✅ WP complete(2026-07-06,T-exit 過門)
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 friction integrator | ✅ |
 | T2 velocity gate | ✅ |
 | T3 指標連續化 | ✅ |
-| T-exit | ⬜ |
+| T-exit | ✅ |
 
 ---
 
@@ -26,6 +26,31 @@
 ---
 
 ## Log
+
+### 2026-07-06 — T-exit gate PASS(真急停物理上線)
+- **`npm run test:ci` exit 0**:`tsc --noEmit` 通過;Vitest `40 passed` test files / `298 passed` tests;Playwright `9 passed`(Edge,dev+preview isolation / backend / input-sampler / full-drill / overlay 全綠)。
+- **baseline 重錄對帳**:T0 盤點清單 4 檔已於 T1 全數改寫(commit `112d6a6`)——
+  [determinism.test.ts](../../../../../src/loop/__tests__/determinism.test.ts)、[regression determinism](../../../../../tests/regression/determinism.test.ts)(baseline 重錄),
+  [MovementController.test.ts](../../../../../src/sim/MovementController.test.ts)、[SimLoop.test.ts](../../../../../src/loop/SimLoop.test.ts)(相鄰解析契約改寫);
+  T2(`6be8d59`)/T3(`417fb5e`)未再動 baseline。重錄理由已補記 [DECISIONS.md GD-5](../../../DECISIONS.md)「WP-14 T-exit 補記」列。
+- **手感驗證(真 Edge,dev 5173)**:以 Playwright(`channel: msedge`)驅動 trusted 鍵盤事件,經 `__aimDebug` dev 縫逐 rAF 取樣 vx/stopped/HUD(probe 腳本臨時,未入 repo)。三觀察點:
+  - ① **A/D 起步平滑升至 250**:111 筆中間態樣本(5<vx<245)單調不減,序列 `10.94 → 18.83 → 26.72 → 34.61 → …`(首 tick 與解析契約 10.9375 一致);t+505ms 首達 vx=250(accelerate 對 maxSpeed 截頂,~64 tick 收斂,與解析一致)。**非瞬跳**。
+  - ② **反向鍵急停自然衰減穿越 88**:放 D 按 A 後 `228.91 → 208.67 → 189.25 → 170.63 → 152.76 → …`,17 筆 88–245 中間態;穿越點 `88.25(t+1377ms)→ 73.73(t+1381ms)`,距反向鍵 ~75ms ≈ 10 tick(73.73 與 T1 解析值 73.7299… 一致)。**非瞬停**。
+  - ③ **HUD stopped 燈**:|vx|<88 樣本 142 筆全為 `STOP`/`stopped=true`、燈色 `rgb(126,231,135)`(#7ee787 綠);|vx|≥88 樣本 311 筆全為 `MOVING`/`stopped=false`。
+- **規格 §5 回寫**:規格已為 v1.2 → 走「補節」:§5 分層註記後新增「階段 B(1)(2) 部分解除(WP-14)」——速度歸零誤差/過衝連續化解除、停火時序對齊仍以 `t_counter` 為代理(真 `t_velocity_zero` 隨 WP-16 schema v2 對帳)。
+- **索引翻綠**:[../README.md §3](../README.md) WP-14 ✅;[task-checklist.md](task-checklist.md) 全 ✅(含 T0/T-exit 檔內狀態欄補翻)。
+- **T-exit 附帶 code review(五軸,T1–T3 全 diff)**:Approve。發現(皆不擋線):
+  - *Nit*:[main.ts](../../../../../src/main.ts) dev-only 急停 readout 的閂鎖註解仍描述 M1「stopped 只存活 1 tick」語意;連續模型下 `stopped` 為持續態(靜止恆 true),閂鎖已退化為恆亮。dev-only、production 剝除,建議後續順手改。
+  - *Consider*:[ResultScreen.ts](../../../../../src/ui/ResultScreen.ts)(UI 層)直接 import `CS2_PROFILE`(sim 層)取 gate 門檻——單一來源正確;若未來 profile 可切換(Valorant),門檻應改經 metrics 層傳遞,避免 UI 綁死單一 profile。
+  - *FYI*:velocity gate 擋下的 fire(幾何相交但 `accurate=false`)仍於目標近面寫彈孔——T2 Decision Log 已載明之設計(彈著回饋與擊殺判定分離),與 `hit=false` 並存為預期行為。
+- **Outcomes(WP-14 交付了什麼)**:
+  - Source friction/accelerate integrator(`MovementProfile` 注入、`CS2_PROFILE` 單一常數來源)取代 M1 snap,`step(state, dtSec)` 介面零 diff;
+  - 開火精準 gate 升級連續速度模型(`accurate = |vx| < 88`,產彈點直讀 threshold 不依賴 stale `stopped`);spread movement term 接真速度;
+  - 殘速/過衝指標連續 u/s(`Stat.p50` 進 metrics 層,結果頁連續數值 + gate 對照);
+  - determinism baseline 重錄完成且證據可追(GD-5 補記 + T0 盤點對帳);
+  - **M7 前置就緒**:WP-15 T1 可直接以本 WP 速度曲線對 `cl_showpos`。
+- **Surprises**:Edge 實測觀測值與解析單測 bit-level 一致(10.94/73.73),probe 未發現 sim–render–HUD 鏈上任何偏差;達 250 實際 ~64 tick(截頂收斂)而非直覺的 128 tick,兩者與 T1 契約(128 tick 斷言 vx=250)相容。
+- **帶著走的決定**:真 `t_velocity_zero` 事件(連續模型下有意義)的記錄與停火時序對齊語意升級,統一排 WP-16 schema v2 對帳,不在本 WP 提前擴欄。
 
 ### 2026-07-06 — T3 殘速/過衝指標連續化 PASS
 - **實作**:

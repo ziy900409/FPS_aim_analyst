@@ -7,7 +7,7 @@
 | **相依** | T1–T3 |
 | **Risk / Cplx** | — / Low |
 | **Touches** | docs(progress/checklist/上層索引)+ `../../../DECISIONS.md`(GD 補記)+ 規格 §5 註記回寫 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ complete(2026-07-06) |
 
 ## Objective
 
