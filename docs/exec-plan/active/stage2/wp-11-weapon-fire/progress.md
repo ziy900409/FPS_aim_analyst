@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 entry gate 完成;T1 可開
+## Status: 🟡 T1 WeaponConfig 完成;T2 可開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 WeaponConfig | ⬜ |
+| T1 WeaponConfig | ✅ |
 | T2 fire down/up | ⬜ |
 | T3 cycletime 產彈 | ⬜ |
 | T-exit | ⬜ |
@@ -27,6 +27,12 @@
 ---
 
 ## Log
+
+### 2026-07-06 07:19Z — T1 WeaponConfig PASS
+- **新增檔案**:[WeaponConfig.ts](../../../../../src/weapon/WeaponConfig.ts) 定義 `WeaponConfig` 與 `validateWeapon`;[weapons.ts](../../../../../src/weapon/weapons.ts) 內建 `ak47` / `m4a4` / `m4a1s` 與 `getWeapon(id)`;[WeaponConfig.test.ts](../../../../../src/weapon/WeaponConfig.test.ts) 覆蓋合法 config、選填 `recoveryTransition`、缺欄/零 cycletime/非法 magSize/recoil range/getWeapon 未知 id。
+- **資料決策**:三把的 recoil seed/magnitude/variance、angleVariance、cycletime、magSize、InaccuracyFire 使用 [README §2](README.md) 與 stage2 研究計畫表格。AK 的 stand/crouch/move/recovery 沿用研究計畫與 `patternViewer.ts` 既有 baseline。M4A4/M4A1-S 的 stand/crouch/move/recovery 目前 repo 內沒有獨立 vdata 表,先繼承同一 stage2 baseline 並在 `weapons.ts` 註解;WP-15 calibration 應補齊 per-weapon vdata 對照後再調整。
+- **Blast radius**:T1 為新增 `src/weapon/` 模組 + WP-11 文件狀態更新;未修改既有 exported symbol,無既有呼叫端行為變更。
+- **Verification**:`.\node_modules\.bin\vitest.cmd run src\weapon src\drill` → 5 files / 39 tests passed;`npm.cmd run typecheck` → pass;`npm.cmd test` → 31 files / 218 tests passed;`npm.cmd run build` → pass(既有 bundle size warning);`graphify update .` → rebuilt 665 nodes / 1327 edges / 41 communities。
 
 ### 2026-07-06 07:11Z — T0 entry gate PASS
 - **上游證據**:[wp-10 task-checklist](../wp-10-recoil-core/task-checklist.md) T1/T2/T3 皆為 ✅;[wp-10 progress](../wp-10-recoil-core/progress.md) 狀態為 M5 golden 全綠。

@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(影響面盤點,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-10 T1–T3 | Low |
-| ⬜ | **T1** WeaponConfig + validateWeapon + 三把內建 | [T1-weapon-config.md](T1-weapon-config.md) | T0 | Low |
+| ✅ | **T1** WeaponConfig + validateWeapon + 三把內建 | [T1-weapon-config.md](T1-weapon-config.md) | T0 | Low |
 | ⬜ | **T2** fire down/up 事件鏈 + heldFire | [T2-fire-down-up.md](T2-fire-down-up.md) | T0 | Med |
 | ⬜ | **T3** cycletime 產彈排程 + 彈匣 | [T3-cycletime-scheduler.md](T3-cycletime-scheduler.md) | T1, T2 | Med |
 | ⬜ | **T-exit** 連發決定性 + 回歸全綠 | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
