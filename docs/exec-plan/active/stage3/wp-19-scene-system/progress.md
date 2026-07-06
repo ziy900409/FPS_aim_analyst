@@ -31,6 +31,21 @@
 
 ## Log
 
+### 2026-07-07 — T3 追記:PR #10 review 修復(waypoints NaN 靜默穿越淨空門)
+- **來源**:[PR #10](https://github.com/ziy900409/FPS_aim_analyst/pull/10) Codex inline comment(P2,`clearance.ts:111`),人工逐步驗證**成立**:
+  非 Vec3 waypoint 元素(如 `{x:1}`、字串)可通過 `validateDrill`(當時僅驗 `Array.isArray`)→
+  `expandForMotion` 的 `center.x + undefined = NaN` 污染 envelope → `clipAxis` 的 NaN 比較使
+  `segmentIntersectsAabb` 對所有線段回 false → **零 violations,`loadDrill(source, scene)` 把「未檢查」當「淨空」放行**——與驗證器保證語意相反(GD-6/OQ-6.4)。
+- **修復(雙層)**:
+  - [../../../../../src/drill/schema.ts](../../../../../src/drill/schema.ts) 主修:`validateMotion` 逐元素驗 waypoint 為有限數 Vec3(`requireFiniteNumber`,錯誤帶索引路徑 `targets.motion.waypoints[i].x`),並收斂為純 `{x,y,z}`;偏移相對 center 可負可零,故只驗有限、不驗正。
+  - [../../../../../src/scene/clearance.ts](../../../../../src/scene/clearance.ts) 縱深:`deriveTargetEnvelopes` 內 `assertFiniteEnvelope`——envelope 任一邊界非有限即 throw,繞過 schema 的呼叫端或未來回歸也無法靜默穿門。
+- **測試**(+6,全綠):schema 合法負偏移/收斂 ×1、非物件元素/缺欄位/NaN/Infinity ×3;clearance NaN envelope loud-fail ×1;DrillLoader 端到端重現 Codex 情境(malformed waypoint + scene → schema 層拒載)×1。
+- **驗證**:`tsc --noEmit` pass;`npm.cmd test` → Vitest `40 passed` files / `304 passed` tests。
+- **Decision Log**:
+  - waypoints **形狀驗證**提前收緊,**語意深驗**(點數下限、speed 配套)仍留 WP-6.5。Alternatives Considered:(a) 全面禁載 waypoints 直到 WP-6.5——會破壞附錄 G 的 F5 接縫契約;(b) 只修 schema 不加 clearance 防線——淨空門是「保證」(GD-6),對「未檢查=放行」這類反向失效值得縱深,6 行成本。
+  - 防線放 `deriveTargetEnvelopes`(而非 `validateClearance` 入口),讓 dev overlay 等直接呼叫端同樣受保護。
+- **Surprises**:`clipAxis` 的 NaN 失效方向是「全綠」而非「全紅」——slab test 的 `tMin <= tMax` 對 NaN 恆 false,凡含 NaN 的軸一律判「不相交」。安全關卡若含浮點比較,NaN 路徑必須顯式測。
+
 ### 2026-07-06 — T3 clearance validator PASS
 - **相依狀態**:目前工作樹尚未有完整 T1/T2 scene pipeline；本切片補上 T3 必要的 `SceneConfig` runtime contract 與純函式 validator，不改 `SceneManager`/GLTF/UI。
 - **實作**:

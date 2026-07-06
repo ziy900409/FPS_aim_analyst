@@ -53,6 +53,16 @@ describe('deriveTargetEnvelopes', () => {
     expect(envelopes[0].min.x).toBe(-1.5);
     expect(envelopes[0].max.x).toBe(5.5);
   });
+
+  // 保證門縱深（PR #10 review）:NaN envelope 會讓 segmentIntersectsAabb 全部靜默回 false,
+  // 「未檢查」被當成「淨空」——即使呼叫端繞過 schema,此處也必須 loud fail 而非放行。
+  it('waypoint 座標非有限 → throw、不得靜默視為淨空', () => {
+    const bad = drill({
+      targets: { count: 1, distance: 4, motion: { type: 'waypoints', waypoints: [{ x: NaN, y: 0, z: 0 }] } },
+    });
+    expect(() => deriveTargetEnvelopes(bad)).toThrow(/非有限邊界/);
+    expect(() => validateClearance(scene([]), bad)).toThrow(/非有限邊界/);
+  });
 });
 
 describe('validateClearance', () => {
