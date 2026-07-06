@@ -16,7 +16,8 @@ import { createTargetManager, type TargetManager } from './sim/TargetManager.ts'
 import { loadDrill } from './drill/DrillLoader.ts';
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
 import type { DrillConfig } from './drill/DrillConfig.ts';
-import { createSimLoop } from './loop/SimLoop.ts';
+import { createSimLoop, type SimLoop } from './loop/SimLoop.ts';
+import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import { SIM_HZ } from './loop/constants.ts';
@@ -218,16 +219,24 @@ const drillRunner: DrillRunner = {
   },
 };
 drillRunner.start(activeDrillConfig);
-const simLoop = createSimLoop(
-  sharedState,
-  realClock,
-  SIM_HZ,
-  targetManager,
-  sceneManager.camera,
-  drillRunner,
-  recorder,
-  getWeapon('ak47'),
-);
+
+// WP-13 / T2 — spread/recoil RNG seed 佈線（OQ-13.1）：seed 取自 `drill.sequence.seed`（省略即
+// createSimLoop 內後援 DEFAULT_RNG_SEED）。restart / 換 drill 走**重建 loop** 重置 rng stream 與
+// tickIndex（決定性:同 seed 同輸入序列位元一致）。seed 值交 WP-16 記入匯出 meta（研究可重現）。
+function buildSimLoop(): SimLoop {
+  return createSimLoop(
+    sharedState,
+    realClock,
+    SIM_HZ,
+    targetManager,
+    sceneManager.camera,
+    drillRunner,
+    recorder,
+    getWeapon('ak47'),
+    activeDrillConfig.sequence.seed,
+  );
+}
+let simLoop = buildSimLoop();
 
 // WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
 // 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈
@@ -288,6 +297,11 @@ if (stopDebug) {
 // 一個佔位 display scale（1 world unit = 100 u），使 250 u/s 呈現為 ~2.5 world-u/s（可控、急停可目視）。
 // **只影響 render，不流入 sim/匯出資料**（雙迴圈邊界 + 單位硬約束）；真 display scale 由 WP-6 drill config 定。
 const SIM_TO_WORLD = 0.01; // world unit per source unit（佔位；WP-6 drill config 接管）
+
+// WP-13 / T2 — 視覺 recoil 跟隨比例（OQ-S2-4）：aimPunch(視覺)乘此常數後才組進 camera 朝向。
+// 1.0 = 全量視覺後座（渲染 = viewAngles + aimPunch×1）;調小可弱化鏡頭上跳、0 = 關閉視覺跟隨。
+// `view_recoil_tracking` 精確 CS2 值待 WP-15 校準（OQ-S2-4 open,不阻塞);此處為可調開關 + 註記。
+const VIEW_RECOIL_TRACKING = 1.0;
 const baseX = sceneManager.camera.position.x;
 const baseY = sceneManager.camera.position.y;
 const baseZ = sceneManager.camera.position.z;
@@ -323,6 +337,7 @@ function resetRunPresentation(): void {
 function restartActiveDrill(): void {
   drillRunner.restart(); // WP-6 restart path: full state + TargetManager + runner reset.
   resetRunPresentation();
+  simLoop = buildSimLoop(); // WP-13 / T2：重建 loop 重置 recoil rng stream + tickIndex（決定性）。
   drillRunner.start(activeDrillConfig);
   syncControlsVisibility();
 }
@@ -337,6 +352,7 @@ function loadDrillById(drillId: string): void {
   activeTargetManager = createTargetManager(nextConfig);
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
+  simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
   drillRunner.start(activeDrillConfig);
   controls.setSelectedDrill(activeDrillConfig.drillId);
   syncControlsVisibility();
@@ -374,6 +390,13 @@ const renderLoop = createRenderLoop((now) => {
   // 3) player 位移驅動 camera 位置；sim source unit → world 乘 SIM_TO_WORLD 佔位 display scale（見上）。
   //    視角朝向（yaw/pitch）由 CameraController 走輸入路徑、**不內插**（人眼對視角延遲敏感，且視角非 sim 狀態）。
   sceneManager.camera.position.set(baseX + px * SIM_TO_WORLD, baseY, baseZ + pz * SIM_TO_WORLD);
+  // 3b) recoil 視覺 punch（WP-13 / T2）：sim 每 tick 寫 recoil.prev/curr(aimPunch deg,視覺 ×1),
+  //     render 以 alpha lerp(比照 position)→ 乘 VIEW_RECOIL_TRACKING → adapter 轉 three rad →
+  //     setViewPunch 每幀重組 camera 朝向(滑鼠靜止時 punch 衰減仍逐幀可見,稽核 A2)。
+  const punchPitchDeg = lerp(sharedState.recoil.prev.pitchDeg, sharedState.recoil.curr.pitchDeg, alpha) * VIEW_RECOIL_TRACKING;
+  const punchYawDeg = lerp(sharedState.recoil.prev.yawDeg, sharedState.recoil.curr.yawDeg, alpha) * VIEW_RECOIL_TRACKING;
+  const punchRad = punchToThreeRad(punchPitchDeg, punchYawDeg);
+  cameraController.setViewPunch(punchRad.yawRad, punchRad.pitchRad);
   // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
   targetView.sync(sharedState.targets);
   // 5) 繪製。

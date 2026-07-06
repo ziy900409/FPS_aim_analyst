@@ -149,4 +149,46 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
     // ── 統計＝匯出：結果頁指標與匯出資料逐欄一致（序列化不失真，FR-9.1 交叉驗證）──
     expect(r.metricsMatchExport).toBe(true);
   });
+
+  // WP-13 / T2 — 視覺/彈道分離：按住連發 10 發後,rawPunch(彈道)= M5 向量,方向 = 上 + 右。
+  test('recoil 分離：held 10 發 → rawPunch 漂移方向(上+右)+ M5 向量', async ({ page }) => {
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+
+    const r = await page.evaluate((drillId) => {
+      type Readout = {
+        aimPunchPitchDeg: number;
+        aimPunchYawDeg: number;
+        rawPunchPitchDeg: number;
+        rawPunchYawDeg: number;
+        recoilIndex: number;
+        shotsFired: number;
+      };
+      type Harness = {
+        startDrill(id: string): void;
+        fireRecoilBurst(shots: number): Readout;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+      harness.startDrill(drillId);
+      return harness.fireRecoilBurst(10);
+    }, DRILL_ID);
+
+    expect(r.shotsFired).toBe(10);
+    expect(r.recoilIndex).toBe(10);
+
+    // 方向：Source deg — pitch<0（下正 → 鏡頭/彈道上跳）、yaw<0（左正 → 向右漂）。
+    expect(r.aimPunchPitchDeg).toBeLessThan(0);
+    expect(r.aimPunchYawDeg).toBeLessThan(0);
+
+    // 彈道 rawPunch = 視覺 aimPunch × 2（研究計畫 Phase 2「視覺 ≠ 實際」的量化分離）。
+    expect(r.rawPunchPitchDeg).toBeCloseTo(r.aimPunchPitchDeg * 2, 9);
+
+    // 向量 ≈ M5 golden（容差 0.1°：雙率離散化相位殘差,見 progress OQ-13.2）。
+    expect(Math.abs(r.rawPunchPitchDeg - -10.18)).toBeLessThanOrEqual(0.1);
+    expect(Math.abs(r.rawPunchYawDeg - -1.56)).toBeLessThanOrEqual(0.1);
+  });
 });

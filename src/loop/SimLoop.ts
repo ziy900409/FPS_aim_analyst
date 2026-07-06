@@ -1,8 +1,9 @@
-import type * as THREE from 'three/webgpu';
+import * as THREE from 'three/webgpu';
 import { consume } from '../input/consume.ts';
 import type { SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
-import { raycastFromCenter, targetCenterOffsetDeg } from '../sim/HitDetector.ts';
+import { raycastWithRay, targetCenterOffsetDeg, type RaycastResult } from '../sim/HitDetector.ts';
+import { punchToThreeRad } from '../recoil/adapter.ts';
 import { currentPeekId, firstShotGate } from '../sim/firstShot.ts';
 import { createMovementController, type MovementController } from '../sim/MovementController.ts';
 import type { DrillRunner } from '../drill/DrillRunner.ts';
@@ -79,6 +80,56 @@ function applyInput(
   }
 }
 
+// 彈道方向合成（WP-13 / T2）用的模組層級重用向量/quaternion（開火熱路徑零配置，GC 紀律 §4）。
+// 旋轉軸與 CameraController 同慣例：yaw 繞 world +Y、pitch 繞 local +X、forward 為 −Z。
+const BALLISTIC_WORLD_UP = new THREE.Vector3(0, 1, 0);
+const BALLISTIC_LOCAL_RIGHT = new THREE.Vector3(1, 0, 0);
+const BALLISTIC_FORWARD = new THREE.Vector3(0, 0, -1);
+const ballisticYawQ = new THREE.Quaternion();
+const ballisticPitchQ = new THREE.Quaternion();
+const ballisticQ = new THREE.Quaternion();
+const ballisticForward = new THREE.Vector3();
+const ballisticRight = new THREE.Vector3();
+const ballisticUp = new THREE.Vector3();
+const ballisticOrigin = new THREE.Vector3();
+const ballisticDir = new THREE.Vector3();
+
+/**
+ * 彈道射線（WP-13 / T2，研究計畫 Phase 2「視覺 ≠ 實際」）：方向 = 使用者視角 `state.aim`
+ * + **rawPunch = aimPunch×2**（實際彈道偏移為視覺 punch 兩倍，經 `adapter` 轉 three rad）
+ * + spread 圓盤偏移（`recoil.lastSpread`，於本函式產彈點先取樣）。起點取 camera world 位置。
+ *
+ * 與視覺分離：camera 朝向（render 端）用 aimPunch×1，彈道用 rawPunch×2 + spread——故準心對準
+ * 目標時實際彈著仍會上跳 + 右漂（QA「打不準」的設計來源，debug overlay 於 T3 可視化）。
+ * 無 recoil（punch/spread 皆 0）時退化為 `state.aim` 中心射線（WP-2/WP-5 向後相容路徑）。
+ */
+function ballisticRaycast(camera: THREE.Camera, state: SharedState): RaycastResult {
+  const punch = punchToThreeRad(
+    state.recoilState.aimPunchPitchDeg * 2,
+    state.recoilState.aimPunchYawDeg * 2,
+  );
+  const yaw = state.aim.yaw + punch.yawRad;
+  const pitch = state.aim.pitch + punch.pitchRad;
+
+  ballisticYawQ.setFromAxisAngle(BALLISTIC_WORLD_UP, yaw);
+  ballisticPitchQ.setFromAxisAngle(BALLISTIC_LOCAL_RIGHT, pitch);
+  ballisticQ.copy(ballisticYawQ).multiply(ballisticPitchQ);
+
+  ballisticForward.copy(BALLISTIC_FORWARD).applyQuaternion(ballisticQ);
+  ballisticRight.copy(BALLISTIC_LOCAL_RIGHT).applyQuaternion(ballisticQ);
+  ballisticUp.copy(BALLISTIC_WORLD_UP).applyQuaternion(ballisticQ);
+
+  // spread (x,y) 以 forward + x·right + y·up 疊加後正規化（契約 README §2；小角度近似切平面偏移）。
+  ballisticDir
+    .copy(ballisticForward)
+    .addScaledVector(ballisticRight, state.recoil.lastSpread.x)
+    .addScaledVector(ballisticUp, state.recoil.lastSpread.y)
+    .normalize();
+
+  camera.getWorldPosition(ballisticOrigin);
+  return raycastWithRay(ballisticOrigin, ballisticDir, state.targets);
+}
+
 function fireOneShot(
   state: SharedState,
   t: number,
@@ -103,7 +154,17 @@ function fireOneShot(
   const accurate = state.player.stopped;
   const residualSpeed = Math.abs(state.player.vx);
 
-  // camera 中心射線 → 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。WP-13 recoil/spread 掛點在此集中。
+  // WP-13 / T2：**先** sampleSpread（用本發 kick 之前的 inaccuracy，對齊 CS2；序列位置決定性），把圓盤
+  // 偏移暫存供本發彈道射線消費——次序 = sampleSpread → 彈道 raycast → recoilOnFire（本發沿 kick 前
+  // 朝向出膛，kick 影響後續發與視覺 punch）。無 recoilRuntime 時 lastSpread 維持 0（向後相容）。
+  if (recoilRuntime !== undefined && weapon !== undefined) {
+    const speedRatio = Math.min(1, Math.abs(state.player.vx) / V_STRAFE);
+    const spread = sampleSpread(state.recoilState, weapon, speedRatio, recoilRuntime.rng);
+    state.recoil.lastSpread.x = spread.x;
+    state.recoil.lastSpread.y = spread.y;
+  }
+
+  // 彈道射線（viewAngles + rawPunch×2 + spread）→ 命中 → 第一次命中即擊殺（FR-5.1，OQ-5.4）。
   if (camera !== undefined && targetManager !== undefined) {
     const peekId = currentPeekId(state);
     targetId = peekId;
@@ -112,7 +173,7 @@ function fireOneShot(
       const target = state.targets.find((candidate) => candidate.id === peekId);
       if (target !== undefined) offsetDeg = targetCenterOffsetDeg(camera, target);
     }
-    const result = raycastFromCenter(camera, state.targets);
+    const result = ballisticRaycast(camera, state);
     hit = result.hit;
     part = result.part;
     if (result.targetId !== undefined) targetId = result.targetId;
@@ -133,14 +194,9 @@ function fireOneShot(
     ...(part !== undefined ? { part } : {}),
   });
 
-  // WP-13 / T1：產彈點注入 recoil kick + spread 取樣。次序 = **先 `sampleSpread`（用本發 kick 之前的
-  // inaccuracy，對齊 CS2）再 `recoilOnFire`（施加本發 kick）**。spread 圓盤偏移暫存 SharedState 供 T2
-  // 彈道方向消費；本 task 命中仍走上方 `raycastFromCenter`，punch/spread 只更新狀態、不改本發判定。
+  // WP-13 / T2：施加本發 recoil kick（於彈道判定之後）——影響後續發的 rawPunch 與視覺 punch，
+  // 本發已沿 kick 前朝向出膛。無 recoilRuntime 時不接（WP-2 決定性/單元測試向後相容，punch 恆零）。
   if (recoilRuntime !== undefined && weapon !== undefined) {
-    const speedRatio = Math.min(1, Math.abs(state.player.vx) / V_STRAFE);
-    const spread = sampleSpread(state.recoilState, weapon, speedRatio, recoilRuntime.rng);
-    state.recoil.lastSpread.x = spread.x;
-    state.recoil.lastSpread.y = spread.y;
     recoilOnFire(state.recoilState, weapon, recoilRuntime.table);
   }
 }
