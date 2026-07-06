@@ -8,7 +8,7 @@
 | **相依** | WP-10 T1–T3(recoil/inaccuracy 型別已存在) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -27,12 +27,12 @@
 
 ## Steps
 
-- [ ] `wp-10/task-checklist.md` T1–T3 = ✅;`src/recoil/` 模組可 import(tsc 快查)。
-- [ ] `codegraph_impact` 三個符號;整理受影響檔案清單 + 每檔一句「怎麼改」進 progress。
-- [ ] 確認 `EV_FIRE` 的 `b` 欄目前恆 0(`pushFire: (t) => enqueue(EV_FIRE, t, 0, 0)`,
+- [x] `wp-10/task-checklist.md` T1–T3 = ✅;`src/recoil/` 模組可 import(tsc 快查)。
+- [x] `codegraph_impact` 三個符號;整理受影響檔案清單 + 每檔一句「怎麼改」進 progress。
+- [x] 確認 `EV_FIRE` 的 `b` 欄目前恆 0(`pushFire: (t) => enqueue(EV_FIRE, t, 0, 0)`,
       [SharedState.ts:108](../../../../../src/state/SharedState.ts))——變更為 down 不影響既有解碼。
-- [ ] OQ-S2-6 決議轉錄至本 WP ledger(含 wp-10 progress 連結)。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] OQ-S2-6 決議轉錄至本 WP ledger(含 wp-10 progress 連結)。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 
