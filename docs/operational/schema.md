@@ -57,6 +57,7 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `simHz` | number | Hz | Yes | sim loop config | Defaults to `128`. |
 | `browser` | string | user agent | Yes | `navigator.userAgent` or caller | `unknown` only when unavailable. |
 | `sensitivity` | number | app setting | Yes | settings panel | Positive finite number. |
+| `sensitivityModel` | string | `cs2-0.022deg` | Yes | `collectMeta()` fixed value | Current count conversion model: `degrees = movementX * sensitivity * 0.022`. Missing in older exports means phase-A placeholder semantics (`0.0022 rad/count`). |
 | `crossOriginIsolated` | boolean | `true` / `false` | Yes | runtime global | `false` is valid metadata, not a missing value. |
 | `startedAt` | string | ISO-8601 | Yes | export/session start | Normalized by `collectMeta()`. |
 | `unit` | string | `source` | Yes | fixed phase-A value | Velocity unit namespace. |
@@ -168,6 +169,7 @@ CSV cells are comma-separated, include a trailing newline, and quote cells conta
     "simHz": 128,
     "browser": "Mozilla/5.0",
     "sensitivity": 1,
+    "sensitivityModel": "cs2-0.022deg",
     "crossOriginIsolated": true,
     "startedAt": "2026-07-02T00:00:00.000Z",
     "unit": "source",

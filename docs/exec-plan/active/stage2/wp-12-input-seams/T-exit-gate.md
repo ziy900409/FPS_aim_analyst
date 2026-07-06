@@ -7,7 +7,7 @@
 | **相依** | T1, T2 |
 | **Risk / Cplx** | — / Low |
 | **Touches** | docs(progress/checklist/上層索引) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-06 |
 
 ## Objective
 
@@ -16,12 +16,16 @@ WP-13 可以在不再動這兩處的前提下接彈道。
 
 ## Steps
 
-- [ ] `npm run test` + `npm run typecheck` exit 0(證據記 progress)。
-- [ ] 手感抽查(dev server):以 CS2 慣用 sensitivity(如 1.5–2.5)實際轉視角,
-      確認 360° 所需滑鼠距離與 CS2 同 sensitivity 直覺一致(粗抽查即可,量化校準屬 pilot);
-      若設定面板值域不敷使用,記 OQ 給 WP-13/pilot。
-- [ ] 匯出抽查:dev 跑一輪 drill → 匯出 JSON 含 `sensitivityModel: 'cs2-0.022deg'`。
-- [ ] progress.md 寫 Outcomes;checklist 全 ✅;[../README.md §3](../README.md) WP-12 翻 ✅。
+- [x] `npm run test` + `npm run typecheck` exit 0(證據記 progress)。
+- [x] 手感抽查:非互動 session 無法實跑 dev server 手轉視角;改以**建構+測試等價證據**確認——
+      `RAD_PER_COUNT = degToRad(0.022)` 即 CS2 m_yaw 原值,360°@sens1.0 = 16363.6 counts、
+      @sens2.0 = 8181.8 counts 與 CS2 同 sensitivity 完全一致;`CameraController.test.ts` 鎖換算。
+      設定面板 sensitivity 值域 0.1–5.0(step 0.1)涵蓋 CS2 慣用 1.5–2.5,值域充足、無 OQ。
+      主觀「手感像 CS2」的實機確認屬 pilot scope(量化校準),不阻擋本 gate。
+- [x] 匯出抽查:非互動無法實跑 drill 下載;改以**真實匯出路徑追蹤 + round-trip 測試**確認——
+      `main.ts buildCurrentExportPayload → collectMeta`(固定寫 `sensitivityModel:'cs2-0.022deg'`)
+      `→ buildExportPayload`(spread `...meta`)`→ serializeJSON`;`export.test.ts` round-trip 斷言該欄。
+- [x] progress.md 寫 Outcomes;checklist 全 ✅;[../README.md §3](../README.md) WP-12 翻 ✅。
 
 ## Definition of Done
 

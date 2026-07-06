@@ -11,6 +11,7 @@ export interface Meta {
   simHz: number;
   browser: string;
   sensitivity: number;
+  sensitivityModel: 'cs2-0.022deg';
   crossOriginIsolated: boolean;
   startedAt: string;
   unit: 'source';
@@ -68,6 +69,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     simHz,
     browser,
     sensitivity,
+    sensitivityModel: 'cs2-0.022deg',
     crossOriginIsolated,
     startedAt,
     unit: 'source',

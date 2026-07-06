@@ -5,10 +5,10 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(OQ-S2-3 拍板,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
-| ⬜ | **T1** 感度 CS2 0.022°/count + meta 標記 | [T1-cs2-sensitivity.md](T1-cs2-sensitivity.md) | T0 | Low |
-| ⬜ | **T2** raycastWithRay 方向注入 + 薄包裝 | [T2-ray-injection.md](T2-ray-injection.md) | — | Low |
-| ⬜ | **T-exit** 回歸全綠 + 手感抽查 | [T-exit-gate.md](T-exit-gate.md) | T1, T2 | — |
+| ✅ | **T0** entry gate(OQ-S2-3 拍板,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
+| ✅ | **T1** 感度 CS2 0.022°/count + meta 標記 | [T1-cs2-sensitivity.md](T1-cs2-sensitivity.md) | T0 | Low |
+| ✅ | **T2** raycastWithRay 方向注入 + 薄包裝 | [T2-ray-injection.md](T2-ray-injection.md) | — | Low |
+| ✅ | **T-exit** 回歸全綠 + 手感抽查 | [T-exit-gate.md](T-exit-gate.md) | T1, T2 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 

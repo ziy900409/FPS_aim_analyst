@@ -8,7 +8,7 @@
 | **相依** | 無(GD-5 若尚未落地——wp-10 T0 負責——本 task 可先行,僅需此一問拍板) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs、`../../../DECISIONS.md`(GD-5 補充一行) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-06 |
 
 ## Objective
 
@@ -27,11 +27,11 @@
 
 ## Steps
 
-- [ ] OQ-S2-3 拍板,決議記 [progress.md](progress.md) ledger + 回填 [../README.md §8](../README.md)。
-- [ ] 若 GD-5 已存在([DECISIONS.md](../../../DECISIONS.md)):補「標注方式」一行;
+- [x] OQ-S2-3 拍板,決議記 [progress.md](progress.md) ledger + 回填 [../README.md §8](../README.md)。
+- [x] 若 GD-5 已存在([DECISIONS.md](../../../DECISIONS.md)):補「標注方式」一行;
       若尚未(wp-10 T0 未跑):在本 WP ledger 記決議 + 標注「待 GD-5 落地時併入」。
-- [ ] 插入點盤點三處(檔案:行號)記 progress。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] 插入點盤點三處(檔案:行號)記 progress。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 

@@ -4,7 +4,7 @@ import { SIM_HZ } from '../loop/constants.ts';
 import { simStep } from '../loop/SimLoop.ts';
 import { createSharedState } from '../state/SharedState.ts';
 import type { TargetState } from '../state/types.ts';
-import { raycastFromCenter } from './HitDetector.ts';
+import { raycastFromCenter, raycastWithRay } from './HitDetector.ts';
 
 /** 建一台朝 -Z 看的 camera（等同 SceneManager 基準朝向），並更新 matrixWorld 供 raycast。 */
 function cameraLookingDownZ(): THREE.PerspectiveCamera {
@@ -26,6 +26,18 @@ function makeTarget(id: string, x: number, z: number, over: Partial<TargetState>
     hitbox: { width: 1, height: 2, depth: 1 },
     ...over,
   };
+}
+
+function cameraCenterRay(cam: THREE.Camera): { origin: THREE.Vector3; direction: THREE.Vector3 } {
+  const origin = new THREE.Vector3();
+  const direction = new THREE.Vector3();
+  cam.getWorldPosition(origin);
+  cam.getWorldDirection(direction);
+  return { origin, direction };
+}
+
+function rayTowardTarget(origin: THREE.Vector3, target: TargetState): THREE.Vector3 {
+  return new THREE.Vector3(target.pos.x, target.pos.y, target.pos.z).sub(origin).normalize();
 }
 
 describe('HitDetector — raycastFromCenter（camera 中心射線判命中，FR-5.1）', () => {
@@ -76,6 +88,63 @@ describe('HitDetector — raycastFromCenter（camera 中心射線判命中，FR-
   it('無目標 → miss', () => {
     const cam = cameraLookingDownZ();
     expect(raycastFromCenter(cam, []).hit).toBe(false);
+  });
+});
+
+describe('HitDetector — raycastWithRay（注入式射線方向，FR-B8）', () => {
+  it('與 raycastFromCenter 在同 camera 中心射線下等價', () => {
+    const cam = cameraLookingDownZ();
+    const targets = [
+      makeTarget('far', 0, -8),
+      makeTarget('near', 0, -4, { hitbox: { width: 1, height: 2, depth: 1, part: 'head' } }),
+    ];
+    const { origin, direction } = cameraCenterRay(cam);
+
+    expect(raycastWithRay(origin, direction, targets)).toEqual(raycastFromCenter(cam, targets));
+  });
+
+  it('注入偏移方向可命中側向目標', () => {
+    const origin = new THREE.Vector3(0, 1.5, 5);
+    const sideTarget = makeTarget('side', 3, -8, {
+      hitbox: { width: 1, height: 2, depth: 1, part: 'body' },
+    });
+    const direction = rayTowardTarget(origin, sideTarget);
+
+    expect(raycastWithRay(origin, direction, [sideTarget])).toEqual({
+      hit: true,
+      targetId: 'side',
+      part: 'body',
+    });
+  });
+
+  it('反向注入方向不命中前方目標', () => {
+    const origin = new THREE.Vector3(0, 1.5, 5);
+    const target = makeTarget('front', 0, -8);
+    const backward = rayTowardTarget(origin, target).negate();
+
+    expect(raycastWithRay(origin, backward, [target])).toEqual({ hit: false });
+  });
+
+  it('多目標同在注入射線上 → 取最近者', () => {
+    const origin = new THREE.Vector3(0, 1.5, 5);
+    const near = makeTarget('near', 3, -4);
+    const far = makeTarget('far', 6, -13);
+    const direction = rayTowardTarget(origin, near);
+
+    expect(raycastWithRay(origin, direction, [far, near])).toEqual({
+      hit: true,
+      targetId: 'near',
+      part: undefined,
+    });
+  });
+
+  it('注入射線略過 invisible / dead 目標', () => {
+    const origin = new THREE.Vector3(0, 1.5, 5);
+    const dead = makeTarget('dead', 0, -8, { alive: false });
+    const hidden = makeTarget('hidden', 0, -8, { visible: false });
+    const { direction } = cameraCenterRay(cameraLookingDownZ());
+
+    expect(raycastWithRay(origin, direction, [dead, hidden])).toEqual({ hit: false });
   });
 });
 
