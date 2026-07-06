@@ -55,7 +55,7 @@
 | **WP-10** | [`active/stage2/wp-10-recoil-core/`](active/stage2/wp-10-recoil-core/README.md) | 後座力數學核心（彈道表 + punch 動力學 + inaccuracy）+ golden tests | **M5** | —（可立即開跑） | 2–3 | ✅ **M5（2026-07-05）** |
 | **WP-11** | [`active/stage2/wp-11-weapon-fire/`](active/stage2/wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up + cycletime 產彈 + 彈匣 | — | WP-10 | 2–3 | ⬜ |
 | **WP-12** | [`active/stage2/wp-12-input-seams/`](active/stage2/wp-12-input-seams/README.md) | CS2 感度換算（A4）+ 射線方向注入（A3） | — | — | 1–1.5 | ⬜ |
-| **WP-13** | [`active/stage2/wp-13-sim-camera-integration/`](active/stage2/wp-13-sim-camera-integration/README.md) | recoil 進 simStep（64Hz 子節奏）+ 相機/彈道合成 + 彈孔 | **M6** | WP-10, 11, 12 | 2–3 | ⬜ |
+| **WP-13** | [`active/stage2/wp-13-sim-camera-integration/`](active/stage2/wp-13-sim-camera-integration/README.md) | recoil 進 simStep（64Hz 子節奏）+ 相機/彈道合成 + 彈孔 | **M6** | WP-10, 11, 12 | 2–3 | ✅ **M6（2026-07-06）** |
 | **WP-14** | [`active/stage2/wp-14-movement-physics/`](active/stage2/wp-14-movement-physics/README.md) | friction/accelerate integrator + velocity gate（~88 u/s）+ 殘速指標連續化 | — | —（介面不變，可並行） | 2–3 | ⬜ |
 | **WP-15** | [`active/stage2/wp-15-calibration/`](active/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 | **M7** | WP-13, 14 | 1.5–2 | ⬜ |
 | **WP-16** | [`active/stage2/wp-16-metrics-export-v2/`](active/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標（補償 vs 理想路徑）+ 結果頁對照 | — | WP-13 | 2–3 | ⬜ |
@@ -73,7 +73,7 @@
 | **M3 ✅（2026-07-03）** | 完整 drill 能端到端匯出資料 | WP-7 | 資料層（F1/F2）端到端綠燈，**已達成 → 可開始 pilot / WP-8 metrics 可展開**（先讀 GD-4 crosshair 缺口） |
 | **M4 ✅（2026-07-03）** | 階段 A 全部驗收清單通過（附錄 E 10 項硬閘全綠；自動閘 `test:ci` exit 0） | WP-9 | **階段 A 交付達成**（手動遊玩手感項為研究者實機回填步驟，不阻塞自動閘） |
 | **M5 ✅（2026-07-05）** | recoil-core golden tests 全綠:seed 223 前 8 筆彈道表、10 發 punch 向量、前 4 發抑制係數、同 seed 決定性 | WP-10 | 數學核心正確性釘死;之後整合問題可歸因到接線而非公式 |
-| **M6 ⬜** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效 | WP-13 | 壓槍玩法成立,核心手感可實測 |
+| **M6 ✅（2026-07-06）** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效(automated `test:ci` 全綠;手動視覺 4 項 pending) | WP-13 | 壓槍玩法成立,核心手感可實測 |
 | **M7 ⬜** | `cl_showpos` 曲線 + pattern 圖比對通過;velocity gate 連續模型上線 | WP-14+15 | counter-strafe × 壓槍研究效度成立 |
 | **M8 ⬜** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B 全項通過 | WP-17 | stage2 交付 |
 

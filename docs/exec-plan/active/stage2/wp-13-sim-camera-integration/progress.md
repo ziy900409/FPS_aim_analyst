@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 進行中(T3 ✅ 2026-07-06 彈孔 InstancedMesh + overlay;剩 T-exit M6 門)
+## Status: ✅ WP-13 完成(M6 automated-green 2026-07-06;4 項手動視覺/手感驗證待使用者於瀏覽器確認)
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 simStep 佈線 | ✅ 2026-07-06 |
 | T2 相機/彈道合成 | ✅ 2026-07-06 |
 | T3 彈孔 + overlay | ✅ 2026-07-06 |
-| T-exit(M6) | ⬜ |
+| T-exit(M6) | ✅ 2026-07-06(automated;手動視覺 4 項 pending) |
 
 ---
 
@@ -24,10 +24,62 @@
 | OQ-S2-4 `view_recoil_tracking` CS2 值(僅視覺;先做開關 + 可調常數,預設關) | ⬜ open(不阻塞) | — |
 | OQ-13.1 spread RNG 的 `DEFAULT_RNG_SEED` 值與 drill seed 分流(drill.sequence.seed 兼用 or 獨立欄) | ✅ 定案(T1) | **drill.sequence.seed 兼用**:`createSimLoop` 新增 `seed = DEFAULT_RNG_SEED` 參數,rng = `createRan1(seed)` 於閉包持有;drill restart 走**重建 loop** 重置 stream。`DEFAULT_RNG_SEED = 1`(定於 [SimLoop.ts](../../../../../src/loop/SimLoop.ts))。**T1 未改 main.ts**(不在 Touches):seed 由 `drill.sequence.seed` 注入的佈線 + 每 run 記錄入 meta 交 T2/WP-16。無需新增 DrillConfig 欄。 |
 | OQ-13.2 (新) 整合 golden 容差:雙率離散化使 sim 無法位元重現 WP-10 golden(單一 64Hz 時鐘) | 🟡 已緩解(T1/T2) | 容差 0.01→**0.02°**(recoil-wiring 相位)→ harness burst 相位殘差 **0.063°**(即「奇數 tick 衰減」量級,T1 Surprises 已載),故 harness/E2E 級容差 **0.1°**。殘差為設計固有;fidelity 交 WP-15 校準評估。 |
+| OQ-13.3 (新,T-exit code review) `ImpactView.#syncedSeq` 於 drill restart 不重置 | 🟢 Optional(不阻塞) | countdown(~384 tick)保證重置後首個 render frame 以 `total=0` sync 先歸零 `#syncedSeq`,實務不可達;robustness 建議加 `ImpactView.reset()` 於 `restartActiveDrill`/`loadDrillById` 呼叫(交後續)。 |
 
 ---
 
 ## Log
+
+### 2026-07-06 — T-exit PASS(M6 宣告:automated-green;手動視覺/手感 4 項待使用者確認)
+
+**閘門結論:`test:ci` 全綠(含首次於本機跑通的 Playwright E2E golden)→ M6 於兩層索引標記 ✅。
+DoD 的手動壓槍驗證 4 項屬瀏覽器內視覺/手感確認,非自動化可自證,記為 pending(使用者選項「Flip M6 ✅, manual pending」)。**
+
+**1. `test:ci` 三段全綠(證據):**
+
+| 段 | 指令 | 結果 |
+|---|---|---|
+| typecheck | `npm run typecheck`(`tsc --noEmit`) | ✅ exit 0 |
+| unit/整合 | `npm run test`(`vitest run`) | ✅ **38 files / 288 tests passed**,3.13s |
+| E2E | `npx playwright test`(Edge, COOP/COEP) | ✅ **9 passed**,22.0s |
+
+- **E2E 首次於本機跑通**(T2/T3 progress 記為未跑):`full-drill.spec.ts` 兩測皆綠——
+  ① WP-9 全鏈路(COI + schema/事件/metadata + 統計=匯出);② **WP-13 recoil 分離 held-10**。
+- `isolation.spec.ts` dev + preview 兩 server `crossOriginIsolated===true`(WP-9 三計時效度防線不退化)。
+
+**2. E2E 斷言清單確認(T-exit Step 2)——`full-drill.spec.ts` recoil-separation 測實際斷言:**
+- `shotsFired=10`、`recoilIndex=10`;
+- `aimPunchPitchDeg < 0` 且 `aimPunchYawDeg < 0`(Source deg:pitch 下正→上跳、yaw 左正→右漂,**上+右**);
+- `rawPunchPitchDeg = aimPunchPitchDeg × 2`(`toBeCloseTo(...,9)`,**×2 視覺/彈道分離量化**);
+- `|rawPunchPitchDeg − (−10.18)| ≤ 0.1` 且 `|rawPunchYawDeg − (−1.56)| ≤ 0.1`(**M5 golden 容差 0.1°**,OQ-13.2 雙率離散化殘差)。
+- COI 斷言於 full-drill(`m.crossOriginIsolated===true` + `window.crossOriginIsolated`)與 isolation 兩處維持。
+
+**3. 決定性回歸(T-exit Step 4)全綠:** `determinism.test.ts`(9)+ `tests/regression/determinism.test.ts`(15)
++ `fire-determinism.test.ts`(17)——WP-2 位置維度 + WP-11 fire 維度逐發 bit-exact,零回歸。
+
+**4. Code review(五軸,`/code-review-and-quality`):** T1–T3 通過。
+- **Correctness/Architecture**:recoil 佈線序 decay→kick 契約正確;視覺(aimPunch×1)/彈道(state.aim + rawPunch×2 + spread)
+  真分離、`aimSink` 不含 punch 避免雙重計入;`adapter.punchToThreeRad` 為唯一 deg→rad + pitch 翻號點(A6);
+  impact ring `seq`/`total` 同一單調計數器,`ImpactView.sync` 增量偵測自洽;彈孔單一 `InstancedMesh`(結構上 1 draw call)。
+- **GC 紀律**:模組層級 scratch、`HitPointOut` out-param、typed-array ring,開火熱路徑零配置。
+- **Optional 一項(非阻塞,已記 Open Questions)**:`ImpactView.#syncedSeq` 於 drill restart 不重置——
+  countdown(~384 tick)保證重置後首個 render frame 先以 `total=0` sync 歸零 `#syncedSeq`,故實務不可達;
+  robustness 建議加 `ImpactView.reset()` 於 restart 呼叫。
+
+**5. 手動壓槍驗證 4 項(T-exit Step 3)—— ⬜ PENDING(需使用者於 dev server 瀏覽器內確認):**
+   非自動化可自證(視覺/手感);使用者選「Flip M6 ✅, manual pending」。待確認清單(`npm run dev`,鎖定後 AK 按住 30 發):
+   - ⬜ ① 鏡頭上跳可見、放開後回落;
+   - ⬜ ② 彈孔分布 = 直升→之字 pattern 形狀;
+   - ⬜ ③ 壓槍下拉可將彈著拉回目標(視覺≠彈道分離手感);
+   - ⬜ ④ 右下 overlay `punch p/y`、`inacc`、`ammo` 數值與畫面一致;
+   - ⬜(佐證)`renderer.info.render.drawcalls` 彈孔部分 = 1(結構上單一 InstancedMesh 已保證)。
+   證據(截圖/錄影路徑)由使用者補記於此。
+
+**M6 標記:** [../README.md](../README.md)(stage2 §WP 表 + M6 里程碑)、[exec-plan/README.md](../../../README.md)
+WP-13 + M6 皆翻 ✅ 2026-07-06(automated)。
+
+**Next:** M6 過 → WP-15(校準)/WP-16(指標匯出 schema v2)可展開;WP-14(movement 物理)未完不阻塞此門
+(velocity gate 耦合屬 WP-14 T2)。使用者完成手動 4 項後可把上方 ⬜ 翻 ✅ 收尾。
 
 ### 2026-07-06 — T3 PASS(彈孔 InstancedMesh 環狀覆寫 + dev-only punch/inaccuracy/ammo overlay)
 

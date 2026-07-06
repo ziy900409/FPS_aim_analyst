@@ -10,7 +10,7 @@
 | **相依** | WP-10(**M5 必須先過**)、WP-11(fireOneShot 產彈點)、WP-12(raycastWithRay) |
 | **對應 FR** | FR-B9(相機合成)、FR-B10(彈孔)、FR-B2/B3 的 sim 佈線 |
 | **估時** | 2–3 dev-days |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | ✅ 完成(M6 2026-07-06,automated-green;手動視覺 4 項 pending) |
 
 ---
 
