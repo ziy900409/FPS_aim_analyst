@@ -1,16 +1,16 @@
 # Graph Report - FPS_aim_analyst  (2026-07-06)
 
 ## Corpus Check
-- 82 files · ~118,436 words
+- 83 files · ~119,400 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 668 nodes · 1342 edges · 42 communities (28 shown, 14 thin omitted)
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 78 edges (avg confidence: 0.8)
+- 673 nodes · 1363 edges · 42 communities (28 shown, 14 thin omitted)
+- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 82 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `03c04e5f`
+- Built from commit: `fae70724`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -51,16 +51,16 @@
 - [[_COMMUNITY_Community 41|Community 41]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `createSharedState()` - 24 edges
+1. `createSharedState()` - 26 edges
 2. `規格書 v1.1 + WBS` - 21 edges
 3. `WP-3 輸入採集層 InputSampler (F1)` - 17 edges
 4. `exec-plan/README.md 執行計畫索引` - 16 edges
-5. `PLAN.md 執行計畫 (階段 A)` - 14 edges
-6. `createTargetManager()` - 13 edges
-7. `WP-4 目標系統 + t_visible (F2)` - 13 edges
-8. `collectMeta()` - 12 edges
-9. `createSimLoop()` - 12 edges
-10. `validateDrill()` - 11 edges
+5. `createSimLoop()` - 14 edges
+6. `PLAN.md 執行計畫 (階段 A)` - 14 edges
+7. `createTargetManager()` - 13 edges
+8. `WP-4 目標系統 + t_visible (F2)` - 13 edges
+9. `collectMeta()` - 12 edges
+10. `createDataRecorder()` - 11 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `D1 — 2D UI = 純 TS + DOM overlay` --semantically_similar_to--> `MetricsDashboard 元件`  [INFERRED] [semantically similar]
@@ -97,7 +97,7 @@
 
 ### Community 0 - "Community 0"
 Cohesion: 0.06
-Nodes (38): createDataRecorder(), loadDrill(), createDrillRunner(), setup(), consume(), createInputSampler(), applyInput(), createSimLoop() (+30 more)
+Nodes (40): createDataRecorder(), loadDrill(), createDrillRunner(), setup(), consume(), createInputSampler(), applyInput(), createSimLoop() (+32 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.06
@@ -184,16 +184,16 @@ Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManage
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `規格書 v1.1 + WBS` connect `Community 9` to `Community 10`, `Community 11`, `Community 13`, `Community 14`, `Community 16`, `Community 19`, `Community 22`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+  _High betweenness centrality (0.010) - this node is a cross-community bridge._
 - **Why does `D1 UI = 純 TS + DOM overlay` connect `Community 4` to `Community 5`?**
   _High betweenness centrality (0.010) - this node is a cross-community bridge._
-- **Are the 7 inferred relationships involving `createSharedState()` (e.g. with `setup()` and `freshState()`) actually correct?**
-  _`createSharedState()` has 7 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 8 inferred relationships involving `createSharedState()` (e.g. with `setup()` and `freshState()`) actually correct?**
+  _`createSharedState()` has 8 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 5 inferred relationships involving `createSimLoop()` (e.g. with `createMovementController()` and `runFrames()`) actually correct?**
+  _`createSimLoop()` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)` to the rest of the system?**
   _89 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.06 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.06 - nodes in this community are weakly interconnected._
-- **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.09 - nodes in this community are weakly interconnected._

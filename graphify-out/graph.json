@@ -1377,6 +1377,51 @@
       "norm_label": "jitterframes()"
     },
     {
+      "label": "fire-determinism.test.ts",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L1",
+      "id": "src_loop_tests_fire_determinism_test_ts",
+      "community": 0,
+      "norm_label": "fire-determinism.test.ts"
+    },
+    {
+      "label": "runFire()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L47",
+      "id": "tests_fire_determinism_test_runfire",
+      "community": 0,
+      "norm_label": "runfire()"
+    },
+    {
+      "label": "canonicalFire()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L68",
+      "id": "tests_fire_determinism_test_canonicalfire",
+      "community": 0,
+      "norm_label": "canonicalfire()"
+    },
+    {
+      "label": "framesAt()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L75",
+      "id": "tests_fire_determinism_test_framesat",
+      "community": 0,
+      "norm_label": "framesat()"
+    },
+    {
+      "label": "jitterFrames()",
+      "file_type": "code",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L83",
+      "id": "tests_fire_determinism_test_jitterframes",
+      "community": 0,
+      "norm_label": "jitterframes()"
+    },
+    {
       "label": "compute.test.ts",
       "file_type": "code",
       "source_file": "src/metrics/compute.test.ts",
@@ -8656,6 +8701,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "src_data_datarecorder_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/metrics/compute.test.ts",
       "source_location": "L2",
       "weight": 1.0,
@@ -8744,6 +8800,17 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "data_datarecorder_createdatarecorder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/testharness/fpsTestHarness.ts",
       "source_location": "L11",
       "weight": 1.0,
@@ -8772,6 +8839,17 @@
       "weight": 1.0,
       "source": "data_datarecorder_createdatarecorder",
       "target": "data_ringbuffer_capacityfordrill"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "tests_fire_determinism_test_runfire",
+      "target": "data_datarecorder_createdatarecorder"
     },
     {
       "relation": "calls",
@@ -11034,6 +11112,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "src_loop_clock_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L2",
       "weight": 1.0,
@@ -11084,6 +11173,17 @@
       "confidence_score": 1.0,
       "source": "src_loop_tests_determinism_test_ts",
       "target": "src_loop_constants_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "src_loop_constants_ts",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -11561,6 +11661,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "src_loop_simloop_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L4",
       "weight": 1.0,
@@ -11770,6 +11881,17 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "loop_simloop_createsimloop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L4",
       "weight": 1.0,
@@ -11819,6 +11941,17 @@
       "source_location": "L71",
       "weight": 1.0,
       "source": "tests_determinism_test_runframes",
+      "target": "loop_simloop_createsimloop"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "tests_fire_determinism_test_runfire",
       "target": "loop_simloop_createsimloop"
     },
     {
@@ -12033,6 +12166,145 @@
       "confidence_score": 1.0,
       "source": "tests_determinism_test_canonicaltrajectory",
       "target": "tests_determinism_test_runframes"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "src_state_sharedstate_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "state_sharedstate_createsharedstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "src_state_inputringtestutil_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "state_inputringtestutil_pushevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "src_weapon_weapons_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "src_weapon_weaponconfig_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "tests_fire_determinism_test_runfire",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "tests_fire_determinism_test_canonicalfire",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "tests_fire_determinism_test_framesat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "src_loop_tests_fire_determinism_test_ts",
+      "target": "tests_fire_determinism_test_jitterframes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "tests_fire_determinism_test_canonicalfire",
+      "target": "tests_fire_determinism_test_runfire",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "tests_fire_determinism_test_runfire",
+      "target": "state_sharedstate_createsharedstate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/loop/__tests__/fire-determinism.test.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "tests_fire_determinism_test_runfire",
+      "target": "state_inputringtestutil_pushevent"
     },
     {
       "relation": "imports_from",
@@ -21827,5 +22099,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "03c04e5fb7f72a94673f3b924d9f00864363c261"
+  "built_at_commit": "fae707246913136e3a31a8e02e3bbc32db587440"
 }

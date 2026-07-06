@@ -123,6 +123,10 @@
     "mtime": 1782985917.624562,
     "hash": "6f28ad65880cfc27317b15ab5bbda5fb"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\loop\\__tests__\\fire-determinism.test.ts": {
+    "mtime": 1783324705.409734,
+    "hash": "0f378cb006c4d6f070212b5ad8d75a69"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\compute.test.ts": {
     "mtime": 1783071415.9926796,
     "hash": "25c1e9f04052632c0c293de6c3f1d71d"
@@ -380,8 +384,8 @@
     "hash": "a743c09df154643dcd7ff2f71e75ca4a"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\README.md": {
-    "mtime": 1783244120.3043194,
-    "hash": "17cfca83a57721fefe43a7de9d6a0ff9"
+    "mtime": 1783324820.5731885,
+    "hash": "3964926356e675d2b2acbc716185ac21"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-10-recoil-core\\progress.md": {
     "mtime": 1783244273.0517523,
@@ -420,12 +424,12 @@
     "hash": "381e425a8df8ee76b9413574e56ef955"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-11-weapon-fire\\progress.md": {
-    "mtime": 1783324081.7719574,
-    "hash": "2e087ec5d0b69f34c48da1a92784d524"
+    "mtime": 1783324859.746057,
+    "hash": "0e8675026a3566dcc1a2e332892a3e8e"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-11-weapon-fire\\README.md": {
-    "mtime": 1783323946.9583251,
-    "hash": "8cecabd225a68e01c3e773511a2d6f5f"
+    "mtime": 1783324810.5941093,
+    "hash": "6cd424c0267571911052548833097143"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-11-weapon-fire\\T-exit-gate.md": {
     "mtime": 1783082641.4128165,
@@ -448,8 +452,8 @@
     "hash": "42dcd075450485da74597ac6e5c4630a"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-11-weapon-fire\\task-checklist.md": {
-    "mtime": 1783323795.5012412,
-    "hash": "17fe1a2b57a8484b81117c124a55ed8d"
+    "mtime": 1783324817.2041237,
+    "hash": "ea1530133476babda39279bbe0c0a164"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-12-input-seams\\progress.md": {
     "mtime": 1783082705.2160966,
