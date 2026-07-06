@@ -8,7 +8,7 @@
 | **相依** | WP-10 **M5** ✅、WP-11 exit ✅、WP-12 exit ✅ |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-06) |
 
 ## Objective
 
@@ -28,11 +28,11 @@
 
 ## Steps
 
-- [ ] 三份上游 checklist 全 ✅;各 exit-gate 的 progress 證據連結記入本 WP progress。
-- [ ] `npm run test` 當前全綠(exit 0)——接線前的乾淨基準。
-- [ ] 符號抽查(`codegraph_search` 或 tsc import 快查)三組,結果記 progress。
-- [ ] OQ-13.1 傾向記 ledger。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] 三份上游 checklist 全 ✅;各 exit-gate 的 progress 證據連結記入本 WP progress。
+- [x] `npm run test` 當前全綠(exit 0)——接線前的乾淨基準(33 files / 250 tests)。
+- [x] 符號抽查(`codegraph_search` 或 tsc import 快查)三組,結果記 progress(7 符號全存在)。
+- [x] OQ-13.1 傾向記 ledger(drill.sequence.seed 兼用)。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 
