@@ -39,6 +39,22 @@ describe('consume — 依時序消費 + 排空（FR-3.4）', () => {
     expect(s.input.size()).toBe(0); // 全數 < 10 → 排空
   });
 
+  it('fire down/up 與 key 事件交錯時仍依 t 升冪交付，並保留 down payload', () => {
+    const s = createSharedState();
+    pushEvent(s, { type: 'fire', down: false, t: 30 });
+    pushEvent(s, { type: 'key', code: 'KeyD', down: true, t: 10 });
+    pushEvent(s, { type: 'fire', down: true, t: 20 });
+    const { handle, delivered } = collector();
+
+    consume(s, 40, handle);
+
+    expect(delivered).toEqual([
+      { type: 'key', code: 'KeyD', down: true, t: 10 },
+      { type: 'fire', down: true, t: 20 },
+      { type: 'fire', down: false, t: 30 },
+    ]);
+  });
+
   it('跨 tick 邊界正確分批；邊界事件 t == untilT 落下一 tick（嚴格 `<`，非 `<=`）', () => {
     const s = createSharedState();
     // 5 落本窗；7.8125 恰在邊界（嚴格 < → 不落本窗）；10、20 之後

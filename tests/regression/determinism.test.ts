@@ -56,18 +56,21 @@ interface RunResult {
 /**
  * 合成輸入序列（量測時鐘域絕對 ms，同一份餵所有 FPS 序列）。時間戳皆落在 drill running 相位
  * （countdown 3000ms 之後），交替驅動：右移 → 反向鍵急停（記 counter 'A'）→ 停止態開火 → 放開 →
- * 左移 → 反向鍵急停（記 counter 'D'）→ 開火 → 放開。橫跨數個 tick 窗，足以暴露 frame-dependent bug。
+ * 左移 → 反向鍵急停（記 counter 'D'）→ 開火 → 放開。fire 單發以 down→up 表示；橫跨數個 tick 窗，
+ * 足以暴露 frame-dependent bug。
  */
 function syntheticInputs(): InputEvent[] {
   return [
     { type: 'key', code: 'KeyD', down: true, t: 3100 }, //  右移 +vStrafe
     { type: 'key', code: 'KeyA', down: true, t: 3250 }, //  移動中按反向鍵 A → 急停（counter 'A'）
-    { type: 'fire', t: 3300 }, //                            停止態開火（residualSpeed=0）
+    { type: 'fire', down: true, t: 3300 }, //                 停止態開火（residualSpeed=0）
+    { type: 'fire', down: false, t: 3301 },
     { type: 'key', code: 'KeyD', down: false, t: 3350 }, //  放開兩鍵（held 皆 false → vx=0）
     { type: 'key', code: 'KeyA', down: false, t: 3350 },
     { type: 'key', code: 'KeyA', down: true, t: 3450 }, //  左移 −vStrafe（vx 曾為 0 → 非 counter）
     { type: 'key', code: 'KeyD', down: true, t: 3600 }, //  移動中按反向鍵 D → 急停（counter 'D'）
-    { type: 'fire', t: 3650 },
+    { type: 'fire', down: true, t: 3650 },
+    { type: 'fire', down: false, t: 3651 },
     { type: 'key', code: 'KeyA', down: false, t: 3700 }, //  放開兩鍵
     { type: 'key', code: 'KeyD', down: false, t: 3700 },
   ];

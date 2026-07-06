@@ -166,12 +166,24 @@ describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，�
 
   it('鎖定中左鍵 mousedown 蓋 event.timeStamp 入緩衝', () => {
     target.dispatch('mousedown', mouseEvent(0, 512.25));
-    expect(drainToArray(state)).toEqual([{ type: 'fire', t: 512.25 }]);
+    expect(drainToArray(state)).toEqual([{ type: 'fire', down: true, t: 512.25 }]);
+  });
+
+  it('已採計 fire-down 後即使解鎖，mouseup 仍送 fire-up（stuck-fire 防護）', () => {
+    target.dispatch('mousedown', mouseEvent(0, 512.25));
+    locked = false;
+    target.dispatch('mouseup', mouseEvent(0, 620.5));
+
+    expect(drainToArray(state)).toEqual([
+      { type: 'fire', down: true, t: 512.25 },
+      { type: 'fire', down: false, t: 620.5 },
+    ]);
   });
 
   it('未鎖定時不採計（避免取鎖點擊 / UI 點擊誤判為開火）', () => {
     locked = false;
     target.dispatch('mousedown', mouseEvent(0, 512.25));
+    target.dispatch('mouseup', mouseEvent(0, 620.5));
     expect(state.input.size()).toBe(0);
   });
 
@@ -184,8 +196,10 @@ describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，�
   it('detach 後移除 mousedown 監聽、後續開火不再入緩衝', () => {
     sampler.detach();
     expect(target.count('mousedown')).toBe(0);
+    expect(target.count('mouseup')).toBe(0);
 
     target.dispatch('mousedown', mouseEvent(0, 10));
+    target.dispatch('mouseup', mouseEvent(0, 20));
     expect(state.input.size()).toBe(0);
   });
 });

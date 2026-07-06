@@ -7,7 +7,7 @@
 | **相依** | T0(影響面清單在 progress) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | MODIFY `src/state/types.ts`、`src/state/SharedState.ts`、`src/input/InputSampler.ts`、`src/loop/SimLoop.ts`(applyInput fire 分支)、`src/main.ts`(stuck-fire 防護)+ 既有測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -30,11 +30,11 @@
 
 ## Steps
 
-- [ ] 依 T0 影響面清單逐檔修改;既有測試斷言同刀更新(`{type:'fire'}` → 加 `down:true`)。
-- [ ] 新測試:down/up 序列 → `heldFire` 翻轉正確;up 不觸發 raycast;鎖定外 down 不採計、
+- [x] 依 T0 影響面清單逐檔修改;既有測試斷言同刀更新(`{type:'fire'}` → 加 `down:true`)。
+- [x] 新測試:down/up 序列 → `heldFire` 翻轉正確;up 不觸發 raycast;鎖定外 down 不採計、
       已 held 時解鎖 → `heldFire=false`(stuck-fire)。
-- [ ] ring 保序測試:fire down/up 與 key 事件交錯,依 t 升冪消費(沿用既有 consume 測試模式)。
-- [ ] `npx vitest run` 全綠(含 WP-2/3/5 既有回歸)。
+- [x] ring 保序測試:fire down/up 與 key 事件交錯,依 t 升冪消費(沿用既有 consume 測試模式)。
+- [x] `npx vitest run` 全綠(含 WP-2/3/5 既有回歸)。
 
 ## Definition of Done
 

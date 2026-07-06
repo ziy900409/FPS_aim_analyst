@@ -10,7 +10,7 @@
 | **相依** | WP-10(`WeaponConfig` 的 recoil/inaccuracy 欄位形狀由 T1–T3 型別定義) |
 | **對應 FR** | FR-B5(WeaponConfig)、FR-B6(cycletime 連發 + 彈匣)、FR-B4 部分(index 遞增掛點) |
 | **估時** | 2–3 dev-days |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | ✅ 完成(T-exit:連發決定性 + 回歸全綠,2026-07-06) |
 
 ---
 
@@ -23,7 +23,7 @@ src/weapon/WeaponConfig.ts     ← NEW 型別 + validateWeapon(比照 drill/sche
 src/weapon/weapons.ts          ← NEW 內建三把(ak47/m4a4/m4a1s,CS2 vdata 值)           [T1]
 src/input/InputSampler.ts      ← MODIFY mouseup 監聽 + pushFire(down)                     [T2]
 src/state/types.ts             ← MODIFY InputEvent fire variant 加 down;EV_FIRE b 欄啟用 [T2]
-src/state/SharedState.ts       ← MODIFY heldFire + weapon:{nextFireT, ammo}(原地 reset) [T2/T3]
+src/state/SharedState.ts       ← MODIFY heldFire + weapon:{nextFireT, ammo, magSize}(原地 reset) [T2/T3]
 src/loop/SimLoop.ts            ← MODIFY fire down/up 消費 + tick 內 cycletime 產彈排程    [T3]
 src/main.ts                    ← MODIFY createSimLoop 注入預設武器(ak47)                [T3]
 (+ 對應 *.test.ts)

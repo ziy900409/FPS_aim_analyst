@@ -74,6 +74,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
 
   /** 生成一個目標(OQ-4.2:spawn 瞬間即可見)。spawn 屬低頻事件(peek 節奏),非每 tick 熱路徑。 */
   function spawn(state: SharedState): void {
+    state.weapon.ammo = state.weapon.magSize;
     state.targets.push({
       id: `t${nextId++}`,
       side: nextSide,

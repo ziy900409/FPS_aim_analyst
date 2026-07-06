@@ -126,7 +126,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
   function pushInputEvent(ev: InputEvent, t: number): void {
     if (ev.type === 'key') state.input.pushKey(KEY_CODE[ev.code] ?? 0, ev.down, t);
     else if (ev.type === 'mouse') state.input.pushMouse(ev.dx, ev.dy, t);
-    else state.input.pushFire(t);
+    else state.input.pushFire(ev.down, t);
   }
 
   return {
@@ -181,7 +181,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         pushInputEvent({ type: 'key', code: 'KeyD', down: true, t: clockMs }, clockMs);
         advanceTicks(2); // counter 記錄（vx<0 + 按 D）；下一 tick 急停 vx→0
         aimAtActiveTarget();
-        pushInputEvent({ type: 'fire', t: clockMs }, clockMs);
+        pushInputEvent({ type: 'fire', down: true, t: clockMs }, clockMs);
         advanceTicks(3); // 開火命中 → markKilled → 對側補生 + 蓋新 t_visible
         pushInputEvent({ type: 'key', code: 'KeyA', down: false, t: clockMs }, clockMs);
         pushInputEvent({ type: 'key', code: 'KeyD', down: false, t: clockMs }, clockMs);

@@ -6,6 +6,7 @@ import type {
   TargetState,
 } from './types.ts';
 import { CODE_KEY, EV_FIRE, EV_KEY, EV_MOUSE, RING_CAPACITY } from './types.ts';
+import { ak47 } from '../weapon/weapons.ts';
 
 /**
  * SharedState — WP-2 / T1（FR-2.1）
@@ -34,6 +35,10 @@ export interface SharedState {
    * 為 held 而非 velocity——階段 B friction integrator 與 T4 急停判定皆需 per-tick held 狀態。
    */
   held: { left: boolean; right: boolean };
+  /** 左鍵開火按住狀態（WP-11 / T2）：由 fire down/up 輸入事件依時序更新，T3 scheduler 讀取。 */
+  heldFire: boolean;
+  /** 當前武器開火排程狀態（WP-11 / T3）：下一發排程時間 + 當前/最大彈匣。 */
+  weapon: { nextFireT: number; ammo: number; magSize: number };
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
   prev: PlayerSnapshot;
   curr: PlayerSnapshot;
@@ -105,7 +110,7 @@ export function createInputRing(): InputRing {
     peekT: () => tArr[head], // 呼叫端須先 isEmpty() 判定；空時值無意義
     pushKey: (codeInt, down, t) => enqueue(EV_KEY, t, codeInt, down ? 1 : 0),
     pushMouse: (dx, dy, t) => enqueue(EV_MOUSE, t, dx, dy),
-    pushFire: (t) => enqueue(EV_FIRE, t, 0, 0),
+    pushFire: (down, t) => enqueue(EV_FIRE, t, 0, down ? 1 : 0),
     dequeueInto(view: InputEventView): void {
       if (count === 0) return; // 空防呆：勿讀殘值/推進 head/使 count 變負（呼叫端仍應先 isEmpty()）
       const i = head;
@@ -121,6 +126,7 @@ export function createInputRing(): InputRing {
         view.dy = bArr[i];
       } else {
         view.type = 'fire';
+        view.down = bArr[i] === 1;
       }
       head = (head + 1) & MASK; // 推進 head、槽位留待繞圈重用（不清值）
       count--;
@@ -139,6 +145,8 @@ export function createSharedState(): SharedState {
     inputMeta: { lateEventCount: 0, lastConsumedT: -Infinity, bufferOverflow: 0 },
     player: { vx: 0, vz: 0, x: 0, z: 0, stopped: false },
     held: { left: false, right: false },
+    heldFire: false,
+    weapon: { nextFireT: Infinity, ammo: ak47.magSize, magSize: ak47.magSize },
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
     crosshair: { cx: 0, cy: 0 },
@@ -168,6 +176,9 @@ export function resetState(state: SharedState = sharedState): void {
   state.player.stopped = false; // 急停 flag 歸零（重開 drill → 非停止態；GC 紀律原地清）
   state.held.left = false; // 原地清 held（重用既有物件，GC 紀律）；重開 drill → 橫移歸靜止
   state.held.right = false;
+  state.heldFire = false;
+  state.weapon.nextFireT = Infinity;
+  state.weapon.ammo = state.weapon.magSize;
   state.prev.x = 0;
   state.prev.z = 0;
   state.curr.x = 0;

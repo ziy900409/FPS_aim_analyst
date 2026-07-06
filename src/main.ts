@@ -24,6 +24,7 @@ import { createDataRecorder } from './data/DataRecorder.ts';
 import { collectMeta, measureDisplayHz } from './data/metadata.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
+import { getWeapon } from './weapon/weapons.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -175,6 +176,12 @@ const hud = createHUD();
 // pointerLock.onMove）互不干擾——此處只入緩衝供量測（WP-3 目的）。
 const inputSampler = createInputSampler(sharedState, () => pointerLock.locked);
 inputSampler.attach(window);
+pointerLock.onChange((locked) => {
+  if (!locked) {
+    sharedState.heldFire = false;
+    sharedState.weapon.nextFireT = Infinity;
+  }
+});
 
 // WP-2 / T2+T3（FR-2.2/2.3）— 雙迴圈：sim（128 Hz 固定步長 accumulator）與 render（rAF）解耦，
 // 全透過 sharedState 溝通（ADR-2）。階段 A 單執行緒下，sim 在 render 的 rAF callback 內 pump（§4.3
@@ -211,7 +218,16 @@ const drillRunner: DrillRunner = {
   },
 };
 drillRunner.start(activeDrillConfig);
-const simLoop = createSimLoop(sharedState, realClock, SIM_HZ, targetManager, sceneManager.camera, drillRunner, recorder);
+const simLoop = createSimLoop(
+  sharedState,
+  realClock,
+  SIM_HZ,
+  targetManager,
+  sceneManager.camera,
+  drillRunner,
+  recorder,
+  getWeapon('ak47'),
+);
 
 // WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
 // 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈

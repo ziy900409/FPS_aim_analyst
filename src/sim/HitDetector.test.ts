@@ -98,7 +98,7 @@ describe('HitDetector — simStep fire 事件 → 第一次命中即擊殺（OQ-
       reset() {},
     };
 
-    state.input.pushFire(1); // t=1，落在本 tick 窗 [_, 100)
+    state.input.pushFire(true, 1); // t=1，落在本 tick 窗 [_, 100)
     simStep(state, 1 / SIM_HZ, 100, tm, cam);
 
     expect(killed).toEqual(['t0']);
@@ -119,7 +119,7 @@ describe('HitDetector — simStep fire 事件 → 第一次命中即擊殺（OQ-
       reset() {},
     };
 
-    state.input.pushFire(1);
+    state.input.pushFire(true, 1);
     simStep(state, 1 / SIM_HZ, 100, tm, cam);
 
     expect(killed).toEqual([]);

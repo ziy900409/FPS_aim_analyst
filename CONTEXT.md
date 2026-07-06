@@ -14,7 +14,7 @@
 | **反向鍵（counter key）** | 與當前移動方向相反的按鍵（向右 D 移動時的 A，反之亦然）。按下即觸發急停判定。 |
 | **drill** | 由**資料（config）**定義的一次訓練單元，規定目標數、位置、時序、左右交替方向與結束條件。新增 drill 不需改引擎程式碼（F4）。 |
 | **peek** | 一次「探頭—對齊—開火」的循環，**1 個目標 presentation ⇄ 1 個 peek**。**推進政策 = P2（命中才推進）**：目標可見後持續存在，未命中不撤；**第一次命中 = kill → 撤掉、生成下一個**（左右交替「擊殺右→生成左」因此原樣成立）。每 peek 開槍數可變（0+ 次 miss 後 1 次命中）。設 `peekTimeoutMs`（config）：逾時未 kill → 記為 `timeout`、推進，避免卡死。drill 結束 = 目標數達標 **或** 總時長到（雙閘）。左右 peek 對稱性是量測指標之一。 |
-| **首發（first shot / firstShot）** | 每個 peek 的**第一發**，帶 `firstShot=true` 旗標。首發命中率 = 首發命中 peek 數 / peek 數；不被後續掃射稀釋（P2 下靠**旗標**保證，非靠推進政策）。**counter-strafe 的時序/精度指標（急停反應、停火對齊、殘餘速度、準心偏移）一律錨在首發**；後續補槍只為 kill、不計入 counter-strafe 量測。`DataRecorder` 須能還原兩個錨點 `t_firstShot` 與 `t_kill`（首發即命中時兩者相同），故每 peek 記 `shotCount` 與逐發事件。 |
+| **首發（first shot / firstShot）** | 每個 peek 的**第一發**，帶 `firstShot=true` 旗標。首發命中率 = 首發命中 peek 數 / peek 數；不被後續掃射稀釋（P2 下靠**旗標**保證，非靠推進政策）。**counter-strafe 的時序/精度指標（急停反應、停火對齊、殘餘速度、準心偏移）一律錨在首發**；後續補槍只為 kill、不計入 counter-strafe 量測。`DataRecorder` 須能還原兩個錨點 `t_firstShot` 與 `t_kill`（首發即命中時兩者相同），故每 peek 記 `shotCount` 與逐發事件。**full-auto(WP-11)下 `firstShot` 仍錨定 peek**(每 peek 的第一發 shot),不隨扳機開合移動;與 `recoil index=0`(每段連續射擊,§F)為**可分岔**的兩件事——同一 peek 內 double-tap 的第二次 fire-down,其 shot `firstShot=false` 但 recoil index 重新從 0。 |
 | **急停反應時間** | `t_counter − t_visible`：敵人可見 → 按下反向鍵的時間差。 |
 | **速度歸零誤差（residual speed）** | 開火瞬間殘餘速度的絕對值，越接近 0 越精準。⚠️ **階段 A 立即停止（M1）下退化成二元**（velocity ∈ {0, ±v}），量不出連續精度；屬 counter-strafe 的「停得多準」維度，要等階段 B physics。`DataRecorder` 仍每 tick 記 velocity、開火 tick 記此欄（欄位先存、階段 B 自動升級成連續值）；結果頁以**分類**（開火時「已停止/移動中」、「有無反向」）呈現，不顯示誤導性 u/s。 |
 | **停火時序對齊** | `t_fire − t_velocity_zero`：速度歸零到開火的時間差；負值代表「人未停先開槍」。階段 A 立即停止下 `t_velocity_zero` 塌縮成 `t_counter`，故量的是「開火相對**急停輸入**」的時序（語意改變但仍可用）。 |
@@ -108,3 +108,22 @@
 | **cycletime** | 武器連射週期（秒）。AK-47 = 0.1s。決定產彈節奏（WP-11）與 recoil index 衰減延遲門檻（`× 1.1`）。 |
 | **inaccuracy 三成分** | 擴散總量 = 站立基礎值（stand）+ 每發累積 `inaccuracyFire`（以 `exp(−dt·ln10/recoveryTime)` 回復）+ 移動附加 `(v/vmax)^0.25 × move`（[spread.ts](src/recoil/spread.ts) `sampleSpread`）。取樣 θ 均勻、半徑 = U(0,1)×inaccuracy（中心偏置），每發固定 2 次注入式 RNG 取樣（θ 先、radius 後）。 |
 | **理想壓槍路徑（ideal recoil-compensation path）** | 完美抵銷 `rawPunch×2` 累積偏移所需的反向滑鼠軌跡；結果頁以玩家實際補償 vs 此理想路徑對照量測壓槍表現（WP-16）。彈道檢查頁（[patternViewer.ts](src/recoil/patternViewer.ts)，dev-only `#pattern`）以 `-aimPunch×2` 逐發點與連線人工核對 pattern 形狀。 |
+
+---
+
+## G. CS2 開火管線術語（WP-11；武器抽象 `src/weapon/` + fire 事件鏈）
+
+> full-auto 開火管線於 WP-11 建立：武器抽象 → fire down/up 事件 → `heldFire` → tick 內 cycletime 產彈 + 彈匣；產彈點保留為 WP-13 recoil `onFire` 的唯一掛點。
+> **「fire」正名（消歧）**：input 端 = **fire down/up**（扣／放扳機的*意圖*）；產出的一次擊發 = **shot（發）**（≡「產彈」），與既有 `首發`／`shotCount` 一致。`DataRecorder`／metrics 內既有的 `type:'fire'` row 語意是「一發 shot」（legacy 欄名，**不改**）。
+
+| 術語 | 定義 |
+|---|---|
+| **`WeaponConfig`** | 武器抽象 schema（[WeaponConfig.ts](src/weapon/WeaponConfig.ts)）：`cycletimeSec`、`magSize`、`recoil{seed, magnitude, magnitudeVariance, angleVariance}`、`inaccuracy{stand, crouch, fire, move, recoveryTimeStand, recoveryTimeCrouch}`、選填 `recoveryTransition{startBullet, endBullet}`。`validateWeapon` 為零相依 runtime guard（比照 [drill/schema.ts](src/drill/schema.ts)），field-path 錯誤訊息、成功回窄化 config。⚠️ 階段 A（靜止站立 + strafe）僅用到 `inaccuracy.stand/move` 與 recoil 欄；`crouch`／`recoveryTimeCrouch` 為未來預留。 |
+| **內建三把（`WEAPONS`）** | [weapons.ts](src/weapon/weapons.ts)：`ak47`（seed 223）、`m4a4`（seed 38965）、`m4a1s`（seed 38965）。`getWeapon(id)` 取用，未知 id 拋錯。M4 系列的 stand/crouch/move/recovery 暫繼承 AK 同一 stage2 baseline（`BASE_INACCURACY`），待 **WP-15 calibration** 補齊 per-weapon CS2 vdata 後再調。 |
+| **fire down/up 事件** | input 端的擊發**意圖**：`{ type:'fire'; down: boolean; t: number }`。ring packed 以既有閒置 `b` 欄存 `down`（0/1），容量／佈局不變。fire-up（`down=false`）與 PointerLock 解鎖時補送的 **stuck-fire 防護** fire-up，共同維護 `heldFire`。⚠️ 與 §A 的「shot（發）」是不同層次的事件，勿混。 |
+| **`heldFire`** | `SharedState` 旗標：扳機是否按住。fire-down 置真、fire-up／解鎖置假；為 full-auto 產彈排程的閘之一。 |
+| **產彈排程（shot scheduler）** | `SimLoop` tick 內的**累加制**產彈（防漂移）：`while (heldFire && ammo > 0 && nextFireT <= tickEndMs) { 產一發 shot; nextFireT += cycletimeSec*1000 }`。首發（從閒置／停火後）`nextFireT = fire-down 事件的 t`。**禁**用 `nextFireT = now + cycletime` 重設制（會累積漂移；T3 DoD：30 發 span = 2900ms ± 1 tick）。 |
+| **`nextFireT`** | 下一發 shot 預定產出的量測時鐘時間（ms）。以 `+= cycletimeSec*1000` 累加推進，非「當下 + cycletime」重設。 |
+| **彈匣政策（ammo / magSize）** | `ammo` 每發遞減，`ammo === 0` 即停火；**stage2 不做 reload**（OQ-S2-6）。**`ammo` 於每個 peek／每次目標 spawn 重置回 `magSize`**——每 peek 一整匣，噴射獨立、左右 peek 可對照（不被殘彈污染），「drill 一 peek ≤ 一匣」由此成立。 |
+| **產彈點 = recoil 掛點 seam** | WP-11 的產彈仍走既有 camera-center raycast（WP-5 路徑）；WP-13 在**同一點**呼叫 `recoilOnFire` + `sampleSpread` 並替換方向來源。此點是 recoil `onFire` 的**唯一**掛點。 |
+| **`recoveryTransition`（選填）** | 每武器覆寫前段彈抑制斜坡的彈序窗 `{startBullet, endBullet}`，對應 §F 彈道表「前 4 發抑制係數 0.75→1.0」；未給則用預設。 |
