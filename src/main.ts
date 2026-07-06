@@ -2,6 +2,7 @@ import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
 import { SceneManager } from './render/SceneManager.ts';
 import { TargetView } from './render/TargetView.ts';
+import { ImpactView } from './render/ImpactView.ts';
 import { createPointerLock } from './input/PointerLock.ts';
 import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
@@ -16,7 +17,8 @@ import { createTargetManager, type TargetManager } from './sim/TargetManager.ts'
 import { loadDrill } from './drill/DrillLoader.ts';
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
 import type { DrillConfig } from './drill/DrillConfig.ts';
-import { createSimLoop } from './loop/SimLoop.ts';
+import { createSimLoop, type SimLoop } from './loop/SimLoop.ts';
+import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import { SIM_HZ } from './loop/constants.ts';
@@ -56,6 +58,10 @@ const sceneManager = new SceneManager();
 
 // WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
 const targetView = new TargetView(sceneManager.scene);
+
+// WP-13 / T3（FR-B10）— 彈孔渲染:唯讀 sharedState.impacts（sim 命中時寫入）以單一 InstancedMesh
+// 繪彈孔（1 draw call）。狀態由 sim 寫、本層唯讀（雙迴圈邊界）。
+const impactView = new ImpactView(sceneManager.scene);
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -218,16 +224,24 @@ const drillRunner: DrillRunner = {
   },
 };
 drillRunner.start(activeDrillConfig);
-const simLoop = createSimLoop(
-  sharedState,
-  realClock,
-  SIM_HZ,
-  targetManager,
-  sceneManager.camera,
-  drillRunner,
-  recorder,
-  getWeapon('ak47'),
-);
+
+// WP-13 / T2 — spread/recoil RNG seed 佈線（OQ-13.1）：seed 取自 `drill.sequence.seed`（省略即
+// createSimLoop 內後援 DEFAULT_RNG_SEED）。restart / 換 drill 走**重建 loop** 重置 rng stream 與
+// tickIndex（決定性:同 seed 同輸入序列位元一致）。seed 值交 WP-16 記入匯出 meta（研究可重現）。
+function buildSimLoop(): SimLoop {
+  return createSimLoop(
+    sharedState,
+    realClock,
+    SIM_HZ,
+    targetManager,
+    sceneManager.camera,
+    drillRunner,
+    recorder,
+    getWeapon('ak47'),
+    activeDrillConfig.sequence.seed,
+  );
+}
+let simLoop = buildSimLoop();
 
 // WP-3 / T5 — dev/e2e 觀測縫：**僅 dev**（`import.meta.env.DEV`，production build 剝除）唯讀暴露量測
 // 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈
@@ -281,6 +295,29 @@ if (stopDebug) {
   document.body.appendChild(stopDebug);
 }
 
+// dev-only recoil readout（`import.meta.env.DEV`，production 剝除）：顯示 punch pitch/yaw（視覺 aimPunch,
+// deg）、inaccuracy 半徑、彈匣餘量。用途:消解「視覺 ≠ 彈道」的 QA 誤判——準心對準卻打不中時,此
+// readout 讓手動驗證能目視「彈道其實被 rawPunch(=aimPunch×2)+ inaccuracy 拉偏」。不改 sim（唯讀）。
+const recoilDebug = import.meta.env.DEV ? document.createElement('div') : null;
+if (recoilDebug) {
+  recoilDebug.style.cssText = [
+    'position:fixed',
+    'right:8px',
+    'bottom:8px',
+    'font:600 13px/1.5 ui-monospace,monospace',
+    'color:#e6e9ec',
+    'background:rgba(16,18,20,0.7)',
+    'padding:6px 10px',
+    'border-radius:4px',
+    'pointer-events:none',
+    'user-select:none',
+    'white-space:pre',
+    'text-align:right',
+    'z-index:20',
+  ].join(';');
+  document.body.appendChild(recoilDebug);
+}
+
 // player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。
 // **display scale 佔位**（SIM_TO_WORLD，render-only）：sim/資料一律 source unit（u，CONTEXT 正規單位、
 // CLAUDE.md §4；vStrafe=250 u/s 為 canonical CS 值，不得改），但佔位房間僅 ~10 world unit，若 1:1 疊加
@@ -288,6 +325,11 @@ if (stopDebug) {
 // 一個佔位 display scale（1 world unit = 100 u），使 250 u/s 呈現為 ~2.5 world-u/s（可控、急停可目視）。
 // **只影響 render，不流入 sim/匯出資料**（雙迴圈邊界 + 單位硬約束）；真 display scale 由 WP-6 drill config 定。
 const SIM_TO_WORLD = 0.01; // world unit per source unit（佔位；WP-6 drill config 接管）
+
+// WP-13 / T2 — 視覺 recoil 跟隨比例（OQ-S2-4）：aimPunch(視覺)乘此常數後才組進 camera 朝向。
+// 1.0 = 全量視覺後座（渲染 = viewAngles + aimPunch×1）;調小可弱化鏡頭上跳、0 = 關閉視覺跟隨。
+// `view_recoil_tracking` 精確 CS2 值待 WP-15 校準（OQ-S2-4 open,不阻塞);此處為可調開關 + 註記。
+const VIEW_RECOIL_TRACKING = 1.0;
 const baseX = sceneManager.camera.position.x;
 const baseY = sceneManager.camera.position.y;
 const baseZ = sceneManager.camera.position.z;
@@ -323,6 +365,7 @@ function resetRunPresentation(): void {
 function restartActiveDrill(): void {
   drillRunner.restart(); // WP-6 restart path: full state + TargetManager + runner reset.
   resetRunPresentation();
+  simLoop = buildSimLoop(); // WP-13 / T2：重建 loop 重置 recoil rng stream + tickIndex（決定性）。
   drillRunner.start(activeDrillConfig);
   syncControlsVisibility();
 }
@@ -337,6 +380,7 @@ function loadDrillById(drillId: string): void {
   activeTargetManager = createTargetManager(nextConfig);
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
+  simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
   drillRunner.start(activeDrillConfig);
   controls.setSelectedDrill(activeDrillConfig.drillId);
   syncControlsVisibility();
@@ -374,8 +418,17 @@ const renderLoop = createRenderLoop((now) => {
   // 3) player 位移驅動 camera 位置；sim source unit → world 乘 SIM_TO_WORLD 佔位 display scale（見上）。
   //    視角朝向（yaw/pitch）由 CameraController 走輸入路徑、**不內插**（人眼對視角延遲敏感，且視角非 sim 狀態）。
   sceneManager.camera.position.set(baseX + px * SIM_TO_WORLD, baseY, baseZ + pz * SIM_TO_WORLD);
+  // 3b) recoil 視覺 punch（WP-13 / T2）：sim 每 tick 寫 recoil.prev/curr(aimPunch deg,視覺 ×1),
+  //     render 以 alpha lerp(比照 position)→ 乘 VIEW_RECOIL_TRACKING → adapter 轉 three rad →
+  //     setViewPunch 每幀重組 camera 朝向(滑鼠靜止時 punch 衰減仍逐幀可見,稽核 A2)。
+  const punchPitchDeg = lerp(sharedState.recoil.prev.pitchDeg, sharedState.recoil.curr.pitchDeg, alpha) * VIEW_RECOIL_TRACKING;
+  const punchYawDeg = lerp(sharedState.recoil.prev.yawDeg, sharedState.recoil.curr.yawDeg, alpha) * VIEW_RECOIL_TRACKING;
+  const punchRad = punchToThreeRad(punchPitchDeg, punchYawDeg);
+  cameraController.setViewPunch(punchRad.yawRad, punchRad.pitchRad);
   // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
   targetView.sync(sharedState.targets);
+  // 4b) 彈孔 InstancedMesh 依 impacts 環形格增量同步（WP-13 / T3；唯讀，sim 命中時寫入）。
+  impactView.sync(sharedState.impacts);
   // 5) 繪製。
   renderer.render(sceneManager.scene, sceneManager.camera);
   // WP-8 / T2：phase 轉 ended 後只計算一次結果；T4 controls 會負責 restart / 換 drill 時隱藏與重啟。
@@ -398,6 +451,15 @@ const renderLoop = createRenderLoop((now) => {
     const flashing = now < stopFlashUntil;
     stopDebug.textContent = `vx ${p.vx.toFixed(0).padStart(5)} u/s\n急停 ${flashing ? '● STOP ✓' : '○ —'}`;
     stopDebug.style.color = flashing ? '#7ee787' : '#e6e9ec';
+  }
+  // dev-only：更新 recoil readout（punch p/y 視覺 deg、inaccuracy 半徑、ammo）——手動驗證「視覺≠彈道」。
+  if (recoilDebug) {
+    const rs = sharedState.recoilState;
+    recoilDebug.textContent =
+      `punch p ${rs.aimPunchPitchDeg.toFixed(2).padStart(7)}°\n` +
+      `punch y ${rs.aimPunchYawDeg.toFixed(2).padStart(7)}°\n` +
+      `inacc  ${rs.inaccuracyFire.toFixed(4).padStart(8)}\n` +
+      `ammo   ${String(sharedState.weapon.ammo).padStart(3)}/${sharedState.weapon.magSize}`;
   }
 });
 renderLoop.start();

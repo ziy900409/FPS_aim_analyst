@@ -7,7 +7,7 @@
 | **相依** | T2 |
 | **Risk / Cplx** | Low / Med |
 | **Touches** | NEW `src/render/ImpactView.ts`(+test);MODIFY `src/state/SharedState.ts`(impacts 固定格)、`src/sim/HitDetector.ts`(命中點回填)、`src/main.ts`(掛載 + overlay) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-06 |
 
 ## Objective
 
@@ -30,13 +30,13 @@ dev-only overlay 顯示 punch/spread 數值,消解「視覺≠彈道」的 QA �
 
 ## Steps
 
-- [ ] `raycastWithRay` 命中點回填 + 測試(命中點在 hitbox 面上)。
-- [ ] `SharedState.impacts` 固定格 + reset 原地清空 + 溢位環狀覆寫測試。
-- [ ] `ImpactView` + 測試(合成 impacts → instanceMatrix 數量/位置;cap 溢位覆寫最舊)。
-- [ ] main.ts 掛載;dev overlay 三值 readout。
+- [x] `raycastWithRay` 命中點回填 + 測試(命中點在 hitbox 面上)。→ `HitPointOut` 呼叫端重用欄位(不改 `RaycastResult` 形狀,既有等值測試零回歸);HitDetector.test 4 tests。
+- [x] `SharedState.impacts` 固定格 + reset 原地清空 + 溢位環狀覆寫測試。→ `IMPACT_CAP=64`、`ImpactRing`(x/y/z/seq 並行陣列 + cursor)、`pushImpact`/`resetImpactRing`;SharedState.test ImpactRing 4 tests + reset 擴充。
+- [x] `ImpactView` + 測試(合成 impacts → instanceMatrix 數量/位置;cap 溢位覆寫最舊)。→ 單 `InstancedMesh(64)`、seq 增量同步、`frustumCulled=false`;ImpactView.test 6 tests。
+- [x] main.ts 掛載;dev overlay 三值 readout(punch p/y、inaccuracy、ammo)。
 - [ ] 手動:壓 30 發 → 彈孔沿 pattern 分布可見;`renderer.info` 顯示彈孔為 1 draw call
-      (dev console 證據記 progress);production build 無 overlay。
-- [ ] `npx vitest run` 全綠。
+      (dev console 證據記 progress);production build 無 overlay。→ **交 T-exit(M6)真瀏覽器驗**;`npm run build` 已綠(overlay 由 `import.meta.env.DEV` 剝除)。
+- [x] `npx vitest run` 全綠。→ 38 files / 288 tests。
 
 ## Definition of Done
 

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { createSharedState, resetState, sharedState } from './SharedState.ts';
+import {
+  createImpactRing,
+  createSharedState,
+  IMPACT_CAP,
+  pushImpact,
+  resetImpactRing,
+  resetState,
+  sharedState,
+} from './SharedState.ts';
 import { pushEvent } from './inputRingTestUtil.ts';
 
 describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
@@ -36,6 +44,8 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const weaponRef = s.weapon;
     const targetsRef = s.targets;
     const tVisibleRef = s.tVisible;
+    const recoilStateRef = s.recoilState;
+    const impactsRef = s.impacts;
 
     // 弄髒所有欄位
     pushEvent(s, { type: 'fire', down: true, t: 1 });
@@ -52,6 +62,14 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     s.crosshair.cy = -9;
     s.aim.yaw = 0.3;
     s.aim.pitch = -0.2;
+    s.recoilState.aimPunchPitchDeg = -5;
+    s.recoilState.punchVelYaw = 2;
+    s.recoilState.recoilIndex = 7;
+    s.recoil.prev.pitchDeg = -1;
+    s.recoil.curr.yawDeg = 0.4;
+    s.recoil.lastSpread.x = 0.01;
+    pushImpact(s.impacts, 1, 2, 3);
+    pushImpact(s.impacts, 4, 5, 6);
     s.targets.push({
       id: 't1',
       side: 'R',
@@ -75,6 +93,19 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.targets).toHaveLength(0);
     expect(s.tVisible.size).toBe(0);
 
+    // recoil 狀態機 + 視覺快照 + spread 暫存原地歸零（WP-13 / T1）
+    expect(s.recoilState.aimPunchPitchDeg).toBe(0);
+    expect(s.recoilState.punchVelYaw).toBe(0);
+    expect(s.recoilState.recoilIndex).toBe(0);
+    expect(s.recoil.prev).toEqual({ pitchDeg: 0, yawDeg: 0 });
+    expect(s.recoil.curr).toEqual({ pitchDeg: 0, yawDeg: 0 });
+    expect(s.recoil.lastSpread).toEqual({ x: 0, y: 0 });
+
+    // 彈著格原地清空（WP-13 / T3）：total/cursor 歸零、seq 全清為空槽
+    expect(s.impacts.total).toBe(0);
+    expect(s.impacts.cursor).toBe(0);
+    expect(Array.from(s.impacts.seq)).toEqual(new Array(IMPACT_CAP).fill(0));
+
     // 重用同一參考（不 realloc）— GC 紀律
     expect(s.input).toBe(inputRef);
     expect(s.player).toBe(playerRef);
@@ -82,6 +113,8 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.weapon).toBe(weaponRef);
     expect(s.targets).toBe(targetsRef);
     expect(s.tVisible).toBe(tVisibleRef);
+    expect(s.recoilState).toBe(recoilStateRef); // recoil 狀態機重用同一物件（GC 紀律）
+    expect(s.impacts).toBe(impactsRef); // 彈著格重用同一物件 + typed-array（GC 紀律）
   });
 
   it('resetState() 預設作用於單例', () => {
@@ -90,5 +123,60 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     resetState();
     expect(sharedState.player.x).toBe(0);
     expect(sharedState.input.size()).toBe(0);
+  });
+});
+
+describe('ImpactRing — 彈著環形格（WP-13 / T3）', () => {
+  it('createImpactRing 全空：total/cursor 0、seq 全 0、typed-array 容量 = IMPACT_CAP', () => {
+    const r = createImpactRing();
+    expect(r.total).toBe(0);
+    expect(r.cursor).toBe(0);
+    expect(r.x).toHaveLength(IMPACT_CAP);
+    expect(r.seq).toHaveLength(IMPACT_CAP);
+    expect(Array.from(r.seq)).toEqual(new Array(IMPACT_CAP).fill(0));
+  });
+
+  it('pushImpact 就地寫 x/y/z、蓋單調 seq（1 起）、推進游標', () => {
+    const r = createImpactRing();
+    pushImpact(r, 1, 2, 3);
+    pushImpact(r, 4, 5, 6);
+
+    expect(r.total).toBe(2);
+    expect(r.cursor).toBe(2);
+    expect([r.x[0], r.y[0], r.z[0]]).toEqual([1, 2, 3]);
+    expect([r.x[1], r.y[1], r.z[1]]).toEqual([4, 5, 6]);
+    expect(r.seq[0]).toBe(1);
+    expect(r.seq[1]).toBe(2);
+  });
+
+  it('溢位 → 環狀覆寫最舊槽（游標繞回、seq 遞增使舊槽被判為新彈著）', () => {
+    const r = createImpactRing();
+    // 寫滿 CAP 發：slot i 的 seq = i+1。
+    for (let i = 0; i < IMPACT_CAP; i++) pushImpact(r, i, 0, 0);
+    expect(r.total).toBe(IMPACT_CAP);
+    expect(r.cursor).toBe(0); // 繞回
+    expect(r.seq[0]).toBe(1);
+
+    // 第 CAP+1 發覆寫 slot 0（最舊），seq 變 CAP+1。
+    pushImpact(r, 999, 0, 0);
+    expect(r.total).toBe(IMPACT_CAP + 1);
+    expect(r.cursor).toBe(1);
+    expect(r.x[0]).toBe(999);
+    expect(r.seq[0]).toBe(IMPACT_CAP + 1); // 舊槽獲更大 seq → render 端判為新彈著
+  });
+
+  it('resetImpactRing 原地清空：total/cursor 0、seq 全清、重用同一 typed-array', () => {
+    const r = createImpactRing();
+    const xRef = r.x;
+    const seqRef = r.seq;
+    pushImpact(r, 1, 2, 3);
+
+    resetImpactRing(r);
+
+    expect(r.total).toBe(0);
+    expect(r.cursor).toBe(0);
+    expect(Array.from(r.seq)).toEqual(new Array(IMPACT_CAP).fill(0));
+    expect(r.x).toBe(xRef); // 不 realloc（GC 紀律）
+    expect(r.seq).toBe(seqRef);
   });
 });

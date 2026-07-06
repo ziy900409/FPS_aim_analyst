@@ -32,14 +32,15 @@
 
 ## Steps
 
-- [ ] `adapter.ts` + 純函式測試(±向量對照表:pitch −10° Source → +0.1745 rad three)。
-- [ ] `setViewPunch` + compose;單元測試:punch 疊加後 quaternion = 手組期望;clamp 不夾 punch。
-- [ ] render loop 內插佈線(main.ts;比照 position lerp 三行)。
-- [ ] `fireOneShot` 方向替換;命中測試:punch 已知時,原準心對準目標 → miss、
-      補償 `−rawPunch` 對準 → hit(合成場景,決定性)。
-- [ ] E2E(`__fpsTest` 擴充):fire(10) → 彈著點序列漂移方向 = 上(pitch)+ 右偏(yaw 負)
-      鏡頭上跳方向斷言;10 發後 punch readout = M5 向量。
-- [ ] `npx vitest run` + `npm run test:e2e` 全綠。
+- [x] `adapter.ts` + 純函式測試(±向量對照表:pitch −10° Source → +0.1745 rad three)。
+- [x] `setViewPunch` + compose;單元測試:punch 疊加後 quaternion = 手組期望;clamp 不夾 punch。
+- [x] render loop 內插佈線(main.ts;比照 position lerp 三行)+ seed 佈線 + restart 重建 loop。
+- [x] `fireOneShot` 方向替換;命中測試:punch 已知時,原準心對準目標 → miss、
+      補償 `−rawPunch` 對準 → hit(合成場景,決定性);另證彈道用 ×2(只補償 ×1 仍 miss)。
+- [x] E2E(`__fpsTest` 擴充):`fireRecoilBurst(10)` → punch 方向 = 上(pitch<0)+ 右(yaw<0)、
+      rawPunch = M5 向量;等價 node 整合測 [fpsTestHarness.test.ts] 已綠(20/20 命中 + 漂移向量)。
+- [x] `npx vitest run` 全綠(37 files / 272 tests)。⚠️ `npm run test:e2e`(Playwright)**未於本機跑**
+      (需真瀏覽器 + dev server):等價邏輯已由 node harness 整合測涵蓋,真 COI/metadata 待 T-exit M6 門在瀏覽器綠燈。
 
 ## Definition of Done
 

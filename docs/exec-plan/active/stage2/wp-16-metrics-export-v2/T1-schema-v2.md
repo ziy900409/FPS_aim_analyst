@@ -23,6 +23,9 @@ arena 容量以 fire 事件率上限重估——壓槍狀態在資料面完整�
   Valorant 接口的資料面,該模式本階段不實作)。
 - `DrillConfig.weaponId?` 選填欄(`validateDrill` 更新;未給 = 預設武器)。
 - `capacityForDrill` 重估:fire 率上限 = `magSize / cycletime`;公式記 schema.md。
+- **stage3 前置(GD-7/8/10,2026-07-06)**:逐 tick `tx/ty/tz/px/pz` 平行欄位(容量重估一併含此 5 欄)
+  + meta `spawn` 區塊縫 + `scene`/`display`/`frames` reserved optional 區塊記 schema.md
+  (填值歸 WP-19/20/21;詳 [stage3 README §2.5](../../stage3/README.md))。
 - `docs/operational/schema.md` v2 全欄對帳(單位/符號慣例 + `targetCenterOffsetDeg` 語意補寫,T0 決議)。
 
 ## Out of scope

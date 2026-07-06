@@ -20,11 +20,19 @@
 | **停火時序對齊** | `t_fire − t_velocity_zero`：速度歸零到開火的時間差；負值代表「人未停先開槍」。階段 A 立即停止下 `t_velocity_zero` 塌縮成 `t_counter`，故量的是「開火相對**急停輸入**」的時序（語意改變但仍可用）。 |
 | **首發命中率** | （首發命中 / 總 peek）× 100%。 |
 | **準心對齊偏移** | 開火事件在排序串流中那一點，準心射線與目標 hitbox 中心的距離／角度（**sub-tick 忠實、零內插**，見 simStep 順序）。「準心射線」≡ **camera 正向（螢幕中心）射線**，HitDetector raycast 同此；畫面十字（階段 A = DOM overlay）純裝飾、**必須精確置中**（注意 `devicePixelRatio`），指標**不讀**該元素座標。 |
+| **追蹤誤差 ε(t)（tracking error）／on-target** | ε(t) = 逐 tick 的「準心射線 vs 目標 hitbox 中心」夾角（deg）——**準心對齊偏移由 fire 瞬間推廣到逐 tick**，同一數學、同一單位。**on-target（逐 tick 二元）**= 準心射線 ∩ H1 hitbox（與命中判定同幾何，**零新門檻參數**）。全部由 schema v2 原始欄位（aim + 玩家/目標位置）**離線推導**，不進 sim 熱路徑（GD-7）。 |
+| **獲取時間（t_acquire）** | `t_first_on_target − t_visible`：目標可見到首次 on-target 的時間——flick／獲取構念，與追隨（pursuit）分離。整段 presentation 未 on-target → 記**獲取失敗**（計入獲取失敗率、該 presentation 不進 TOT 聚合；失敗是資料不是缺失值）（GD-7）。 |
+| **time-on-target（TOT%）／追蹤窗口** | **追蹤窗口 = [t_first_on_target, presentation 結束)**——TOT% 與 ε 統計只在窗內算，獲取能力不污染追隨量測（能力混淆的**指標層**緩解）。TOT% = 窗內 on-target tick 比例；**pre-registered 主統計量 = RMS(ε)**（對跟丟瞬間平方級敏感）；median／P95／streak 為離線副指標（GD-7）。 |
+| **偵測反應時間（detection RT）／t_detect** | `t_detect − t_visible`（量測時鐘域）。**t_detect = 瞄準移動 onset**：`t_visible` 後第一個「ε(t) 以超過雜訊底的角速度下降、持續 k tick」的 tick——**離線**從 128Hz aim 流推導，雜訊底以 **per-trial 前刺激窗口**（spawn 前 aim 抖動）校準，θ_v／k 為 pre-registered 分析參數。無眼動儀下的標準 proxy（含動作啟動成分）。副構念 **engagement time** = `t_first_fire − t_visible`（GD-8）。 |
+| **偏心度（eccentricity）** | spawn 瞬間「玩家瞄準方向 vs 目標」的角距離——偵測 RT 的最強預測子之一。**記錄為共變數**（aim@spawn + 目標位置離線推導）；不做 fixation gate（那會讓 aim 成為 sim 演進輸入，動 GD-4「aim 僅觀測」契約）（GD-8）。 |
+| **pop-in／slide-in（偵測刺激）** | **pop-in**：目標瞬現，`t_visible` = spawn tick（現行語意，OQ-4.2）；偵測 drill 起手式。**slide-in**：目標自宣告式 occluder 後滑出；判準已預先釘死＝**目標中心穿越 DrillConfig 宣告可見性邊界的那一 tick** 蓋 `t_visible`（camera 無關、決定性）——落地待 GD-6 升級路徑 C 觸發（GD-8）。 |
 | **切換時間** | `t_next_acquisition − t_prev_kill`：擊殺一目標到對下一目標有效對齊的時間。 |
 | **節奏穩定度** | 各循環耗時的標準差／變異係數。⚠️ P2 下「循環耗時」有兩種錨可選：`t_visible→t_kill`（含補槍 cleanup）或首發間隔（`t_firstShot`）；兩者量的是不同技能（清目標節奏 vs 首發節奏），分析端擇一——**兩個錨都要記**。 |
 | **左右對稱性** | 左 peek 與右 peek 在反應時間與命中率上的差異。 |
 | **速度 gate（velocity gate）** | 以速度是否夠低（階段 A 為「已停止」flag；階段 B 為精準度門檻 ~88 u/s）決定開火是否精準的判定機制。 |
 | **pre/post（前後測）** | 研究方法學：證明訓練成效需前後測對照與適應週期。**單純本地觀察只能得到受試者內相對值。** |
+| **雜亂度階層（clutter tier）** | 場景的實驗定義軸：以可量測的視覺統計（雜亂度／對比分佈／深度線索密度）分階（`field-low`／`urban-high`／`mixed-mid`），取代品牌擬真作為場景需求規格。偵測 RT 受背景雜亂度調變——雜亂度是要控制／操弄的自變因，「像哪款遊戲」不是。場景為**寫實原創**：不複製特定遊戲地圖配置（GD-9）。 |
+| **資格閘（eligibility gate）** | 遠端施測 session 開始的**軟體自動檢查**：原生解析度 ≥ 實驗最高條件（`screen.width × devicePixelRatio`）、fullscreen 強制、效能地板（frame-time 超標 → `suspect`／剔除）；**不合格拒入實驗，非僅記錄**。搭配**受試者內解析度對比**（同面板跑全部條件、順序對抗平衡，面板特性一階抵銷）；解析度實驗構念＝「同一面板上的 render 解析度效應」。螢幕型號／觀看距離等自陳欄位僅作 moderator（GD-10）。 |
 
 ---
 
@@ -67,6 +75,9 @@
 | **輸入分桶（input bucketing）** | `InputSampler`↔`SimLoop` 的消費契約：事件以 `event.timeStamp` 落在哪個 tick 的**邏輯時間窗 `[tickStart, tickEnd)`** 決定它在哪個 tick 被消費（**非** rAF 爆發時把緩衝清空）——這是決定性的前提。桶內先依 `timeStamp` 排序再處理（解 coalesced 樣本與鍵盤事件的 append 亂序）。遲到落在已關閉 tick 的事件，夾進當前最舊未關閉 tick 並計入 `lateEventCount`；ring buffer 溢位升 `bufferOverflow` flag、該 drill 標 suspect（**不靜默丟最舊**）。`lateEventCount` / `bufferOverflow` 須寫進匯出 metadata。**容量政策**：`RING_CAPACITY = nextPow2(MAX_EVENT_RATE_HZ × MAX_STALL_S × SAFETY)` 為**靜態常數**，彈性放在設定/建置期、**執行期不動態 resize**（resize 會在 burst 當下 realloc+copy、正是 ring buffer 要消除的 GC 抖動，且 SAB 不可調整大小；溢位已由 `bufferOverflow` flag 兜底）。要支援 8000Hz 只改 `MAX_EVENT_RATE_HZ` 重建（最壞 ≈ 8000×0.25 ≈ 2K → next-pow2 4096），記憶體成本可忽略。 |
 | **backend（render backend）** | 實際使用的渲染後端：`webgpu` 或 `webgl2`（fallback）。延遲特性不同，必須寫入匯出資料 metadata（ADR-1）。 |
 | **正規單位（canonical unit）** | sim 與**所有記錄/匯出資料**一律用 **CS Source unit（u、u/s）**：最大跑速 ~250 u/s、`sv_stopspeed` 75、精準度門檻 ~88 u/s 原樣落地，階段 B 對照 CS2 `cl_showpos` 校準時零換算。`DrillConfig` 座標/range/速度、`velocity`、`residualSpeed` 全部 u/s。render 端可另套 **display scale** 做直覺場景尺度，但 **sim/資料不得用公尺**——避免換算因子在量測鏈埋人為誤差。 |
+| **純裝飾場景（decorative scene）** | 場景（佔位房間、未來 BR 背景）只存在 render 層，sim 對其**零知識**；玩家位置在 sim 無界、牆不擋人——本系統既有本體論。場景幾何**不得**成為 sim 輸入（決定性 baseline 不分裂、F4 換場景零引擎碼）。視覺=物理一致性由**淨空驗證**在載入期保證，非 runtime 計算（GD-6）。 |
+| **淨空驗證（clearance validation）** | drill 載入時的自動幾何 gate：**視線走廊（sightline corridor）**＝「玩家 strafe 走廊 ∪ 目標運動包絡」之凸包（保守過近似），與場景資產附帶的 **prop-bounds** 清單（僅驗證器可讀、**永不進 sim**）相交即**拒載 drill**（大聲失敗，不靠人工紀律）。玩家活動範圍為 config 宣告假設，runtime 逸出 → 標 `suspect`（純觀測）。走廊淨空 ⇒ 對場景 raycast 與無場景逐位元等價。prop-bounds 為未來宣告式 occluder / 授權 collision 的前身資料（GD-6）。 |
+| **SceneConfig／sceneId（場景為資料）** | 場景比照 drill 為**資料驅動**：`sceneId`（中性命名，不掛遊戲名）＋ `assetPackVersion` ＋ prop-bounds 清單，全部進匯出 metadata；資產改版即斷代。授權紀律：CC0 優先、CC-BY 附 `ATTRIBUTIONS.md` 可 commit；NC／遊戲抽取資產／付費包原始檔**不得**入 public repo（GD-9）。 |
 
 ---
 
@@ -75,7 +86,7 @@
 | 術語 | 定義 |
 |---|---|
 | **階段 A（Stage A）** | 本次交付：F1–F4 + 1 個靜止 counter-strafe drill，急停為簡化「立即停止」判定。鎖定 Chrome/Edge 桌面版。 |
-| **F5 接縫（seam-in, drills-out）** | 階段 A **建好 F5 的架構接縫**（`SimLoop` step 順序保留 target-motion slot、`TargetManager` 帶 motion registry、`DrillConfig.targets.motion?` 選填欄位、預設 `static` 為恆等策略），但**不交付移動目標 drill**。移動 drill、追蹤誤差／追蹤穩定度指標、slide-in 的 `t_visible` 判準延後至階段 A+／B——因為「移動＋急停的能力混淆」是未解的研究設計問題（附錄 F），slide-in 判準也尚未定義。規格 v1.1 把 F5 列為階段 A 必要功能，與此決議不一致，**規格／PLAN／exec-plan 待做一次版本對帳**。 |
+| **F5 接縫（seam-in, drills-out）** | 階段 A **建好 F5 的架構接縫**（`SimLoop` step 順序保留 target-motion slot、`TargetManager` 帶 motion registry、`DrillConfig.targets.motion?` 選填欄位、預設 `static` 為恆等策略），但**不交付移動目標 drill**。～2026-07-06 更新：當年延後的三個未決已全數拍板——能力混淆已解（GD-7：drill 分離＋指標層獲取／追隨分離）、追蹤指標已定義（GD-7：TOT%／RMS ε／t_acquire）、slide-in `t_visible` 判準已定義（GD-8：中心穿越宣告邊界；落地待 GD-6 路徑 C 觸發）。移動 drill 交付時程隨 WP-18（entry 僅餘 M8）。規格 v1.1 把 F5 列為階段 A 必要功能，與 seam-in/drills-out 決議不一致，**規格／PLAN／exec-plan 待做一次版本對帳**。 |
 | **階段 B（Stage B）** | 未來：以 Source friction + acceleration integrator 復刻 CS2 真實 physics、速度 gate 精準度模型、sim loop 移入 Web Worker、移動目標 sub-tick 命中位置內插。架構已預留。 |
 
 ---

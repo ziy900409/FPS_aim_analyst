@@ -5,6 +5,7 @@ import type { InputEvent, TargetState } from '../state/types.ts';
 import { createTargetManager, type TargetManager } from '../sim/TargetManager.ts';
 import { createDrillRunner, type DrillRunner } from '../drill/DrillRunner.ts';
 import { createSimLoop, type SimLoop } from '../loop/SimLoop.ts';
+import { punchToThreeRad } from '../recoil/adapter.ts';
 import { loadDrill } from '../drill/DrillLoader.ts';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
 import { SIM_HZ } from '../loop/constants.ts';
@@ -46,6 +47,16 @@ const CAMERA_Z = 4; // depth(10)/2 - standoff(1)，與 SceneManager 一致
 /** 合成輸入序列（`feedInput`）的來源型別：即生產 InputEvent，`t` 為相對本次餵入起點的毫秒偏移。 */
 export type HarnessInputEvent = InputEvent;
 
+/** recoil punch 讀數（Source deg）：視覺 aimPunch（渲染用 ×1）與彈道 rawPunch（判定用 ×2）。 */
+export interface RecoilReadout {
+  aimPunchPitchDeg: number;
+  aimPunchYawDeg: number;
+  rawPunchPitchDeg: number;
+  rawPunchYawDeg: number;
+  recoilIndex: number;
+  shotsFired: number;
+}
+
 export interface FpsTestHarness {
   /** 載入指定 drill → 建全新管線 → start → 推進過 countdown 至 running 且首目標可見。 */
   startDrill(id: string): void;
@@ -53,6 +64,13 @@ export interface FpsTestHarness {
   feedInput(seq: HarnessInputEvent[]): void;
   /** 便捷驅動：合成完整 counter-strafe 一輪（移動→急停→開火命中，左右交替），跑到 ended 或 peek 上限。 */
   runCounterStrafeRound(maxPeeks?: number): void;
+  /**
+   * WP-13 / T2：按住連發 `shots` 發（不自動瞄準,凍結 state.aim）→ 讓 recoil 純由連發累積,供
+   * 「視覺/彈道分離」E2E 讀 punch 漂移方向 + 向量（10 發 = M5 向量）。回傳 kick 後讀數。
+   */
+  fireRecoilBurst(shots: number): RecoilReadout;
+  /** 當前 recoil punch 讀數（視覺 aimPunch 與彈道 rawPunch=×2,Source deg）。 */
+  getRecoilReadout(): RecoilReadout;
   /** 建匯出 payload（不觸發下載）；供 E2E 斷言 schema/事件/metadata。 */
   forceExportJSON(): ExportPayload;
   /** 由當前 recorder snapshot 計算 §5 指標（與結果頁同源 `computeMetrics`）。 */
@@ -109,7 +127,21 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     const target = activeTarget();
     if (target === undefined) return;
     camera.lookAt(target.pos.x, target.pos.y, target.pos.z);
-    camera.updateMatrixWorld(true); // HitDetector：raycast 前 caller 須更新 matrixWorld
+    camera.updateMatrixWorld(true); // HitDetector：raycast 前 caller 須更新 matrixWorld（offsetDeg 仍讀 camera）
+
+    // WP-13 / T2：彈道走 `state.aim` + rawPunch(=aimPunch×2)——非 camera 中心。合成瞄準須把
+    // state.aim 設為「指向目標並補償 −rawPunch」（模擬玩家壓槍），使 recoil 下彈道回正命中
+    // （E2E firstShotHitRate=100 前提）。角度慣例與 SimLoop.ballisticRaycast / anglesToDir 一致。
+    const dx = target.pos.x - camera.position.x;
+    const dy = target.pos.y - camera.position.y;
+    const dz = target.pos.z - camera.position.z;
+    const len = Math.hypot(dx, dy, dz);
+    if (len === 0) return;
+    const targetPitch = Math.asin(dy / len);
+    const targetYaw = Math.atan2(-dx / len, -dz / len);
+    const raw = punchToThreeRad(state.recoilState.aimPunchPitchDeg * 2, state.recoilState.aimPunchYawDeg * 2);
+    state.aim.yaw = targetYaw - raw.yawRad;
+    state.aim.pitch = targetPitch - raw.pitchRad;
   }
 
   /** 推進恰好一個固定 tick（clockMs += tickMs → pump 跑 1 tick；clockMs 與內部 simTimeMs 同步）。 */
@@ -119,8 +151,27 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     simLoop.pump(clockMs);
   }
 
+  /** 推進一 tick 但**不**自動瞄準（供 recoil burst：凍結 state.aim,讓 recoil 純由連發累積）。 */
+  function advanceOneTickNoAim(): void {
+    clockMs += tickMs;
+    simLoop.pump(clockMs);
+  }
+
   function advanceTicks(n: number): void {
     for (let i = 0; i < n; i++) advanceOneTick();
+  }
+
+  /** recoil punch 讀數（rawPunch = aimPunch×2；shotsFired 相對 baseAmmo）。 */
+  function readRecoil(baseAmmo: number): RecoilReadout {
+    const r = state.recoilState;
+    return {
+      aimPunchPitchDeg: r.aimPunchPitchDeg,
+      aimPunchYawDeg: r.aimPunchYawDeg,
+      rawPunchPitchDeg: r.aimPunchPitchDeg * 2,
+      rawPunchYawDeg: r.aimPunchYawDeg * 2,
+      recoilIndex: r.recoilIndex,
+      shotsFired: baseAmmo - state.weapon.ammo,
+    };
   }
 
   function pushInputEvent(ev: InputEvent, t: number): void {
@@ -183,12 +234,34 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         aimAtActiveTarget();
         pushInputEvent({ type: 'fire', down: true, t: clockMs }, clockMs);
         advanceTicks(3); // 開火命中 → markKilled → 對側補生 + 蓋新 t_visible
+        // WP-13 / T2：**tap fire**（每 peek 放開扳機）——counter-strafe 為單點射擊,亦使 recoil 不跨
+        // peek 累積（否則 held 連發 recoilIndex climbs、彈道大幅上跳右漂 → 首發脫靶）。
+        pushInputEvent({ type: 'fire', down: false, t: clockMs }, clockMs);
         pushInputEvent({ type: 'key', code: 'KeyA', down: false, t: clockMs }, clockMs);
         pushInputEvent({ type: 'key', code: 'KeyD', down: false, t: clockMs }, clockMs);
         advanceTicks(2); // 清 held，下一 peek 乾淨起步
         done++;
       }
       advanceTicks(4); // 讓相位機偵測 endCondition（達標晚一 tick）
+    },
+
+    fireRecoilBurst(shots: number): RecoilReadout {
+      if (config === null) throw new Error('fireRecoilBurst requires startDrill first');
+      const startAmmo = state.weapon.ammo;
+      pushInputEvent({ type: 'fire', down: true, t: clockMs }, clockMs);
+      let guard = 0;
+      // 不自動瞄準（凍結 state.aim）→ 命中/脫靶不影響 recoil 累積;連發至已產 shots 發。
+      while (startAmmo - state.weapon.ammo < shots && guard < 100000) {
+        advanceOneTickNoAim();
+        guard++;
+      }
+      pushInputEvent({ type: 'fire', down: false, t: clockMs }, clockMs);
+      advanceOneTickNoAim(); // 消費 fire-up、停止產彈（末發即取樣,不含其後尾端衰減）
+      return readRecoil(startAmmo);
+    },
+
+    getRecoilReadout(): RecoilReadout {
+      return readRecoil(state.weapon.magSize);
     },
 
     forceExportJSON(): ExportPayload {

@@ -4,7 +4,7 @@ import { SIM_HZ } from '../loop/constants.ts';
 import { simStep } from '../loop/SimLoop.ts';
 import { createSharedState } from '../state/SharedState.ts';
 import type { TargetState } from '../state/types.ts';
-import { raycastFromCenter, raycastWithRay } from './HitDetector.ts';
+import { raycastFromCenter, raycastWithRay, type HitPointOut } from './HitDetector.ts';
 
 /** 建一台朝 -Z 看的 camera（等同 SceneManager 基準朝向），並更新 matrixWorld 供 raycast。 */
 function cameraLookingDownZ(): THREE.PerspectiveCamera {
@@ -148,6 +148,63 @@ describe('HitDetector — raycastWithRay（注入式射線方向，FR-B8）', ()
   });
 });
 
+describe('HitDetector — hitPointOut 命中點回填（WP-13 / T3）', () => {
+  function out(): HitPointOut {
+    return { valid: false, x: 0, y: 0, z: 0 };
+  }
+
+  it('命中 → valid=true，座標落在 hitbox 近面上', () => {
+    // origin z=5 沿 -Z；target z=-8、depth=1 → hitbox z∈[-8.5,-7.5]，近面 z=-7.5。
+    const origin = new THREE.Vector3(0, 1.5, 5);
+    const dir = new THREE.Vector3(0, 0, -1);
+    const target = makeTarget('t0', 0, -8);
+    const hp = out();
+
+    const result = raycastWithRay(origin, dir, [target], hp);
+
+    expect(result.hit).toBe(true);
+    expect(hp.valid).toBe(true);
+    expect(hp.z).toBeCloseTo(-7.5, 5); // 近面（entry point）
+    expect(hp.x).toBeCloseTo(0, 5);
+    expect(hp.y).toBeCloseTo(1.5, 5);
+  });
+
+  it('未命中 → valid=false（座標不作數）', () => {
+    const origin = new THREE.Vector3(0, 1.5, 5);
+    const dir = new THREE.Vector3(0, 0, -1);
+    const target = makeTarget('t0', 5, -8); // 偏離射線
+    const hp = out();
+
+    const result = raycastWithRay(origin, dir, [target], hp);
+
+    expect(result.hit).toBe(false);
+    expect(hp.valid).toBe(false);
+  });
+
+  it('多目標 → 回填最近命中點', () => {
+    const origin = new THREE.Vector3(0, 1.5, 5);
+    const dir = new THREE.Vector3(0, 0, -1);
+    const far = makeTarget('far', 0, -8); // 近面 z=-7.5
+    const near = makeTarget('near', 0, -4); // 近面 z=-3.5（較近 camera）
+    const hp = out();
+
+    const result = raycastWithRay(origin, dir, [far, near], hp);
+
+    expect(result.targetId).toBe('near');
+    expect(hp.z).toBeCloseTo(-3.5, 5);
+  });
+
+  it('未提供 hitPointOut → 行為不變（回傳形狀不含命中點）', () => {
+    const origin = new THREE.Vector3(0, 1.5, 5);
+    const dir = new THREE.Vector3(0, 0, -1);
+    expect(raycastWithRay(origin, dir, [makeTarget('t0', 0, -8)])).toEqual({
+      hit: true,
+      targetId: 't0',
+      part: undefined,
+    });
+  });
+});
+
 describe('HitDetector — simStep fire 事件 → 第一次命中即擊殺（OQ-5.4）', () => {
   it('fire 命中 → markKilled 撤除目標', () => {
     const state = createSharedState();
@@ -193,5 +250,50 @@ describe('HitDetector — simStep fire 事件 → 第一次命中即擊殺（OQ-
 
     expect(killed).toEqual([]);
     expect(state.targets).toHaveLength(1);
+  });
+
+  it('fire 命中 → 彈著點寫入 state.impacts（world 座標,近面上）', () => {
+    // camera(0,1.5,5) 朝 -Z；target z=-8 depth1 → 近面 z=-7.5。punch=0 → 彈道退化中心射線 → 命中。
+    const state = createSharedState();
+    const cam = cameraLookingDownZ();
+    state.targets.push(makeTarget('t0', 0, -8));
+    const tm = { tick() {}, markKilled() {}, reset() {} };
+
+    state.input.pushFire(true, 1);
+    simStep(state, 1 / SIM_HZ, 100, tm, cam);
+
+    expect(state.impacts.total).toBe(1);
+    expect(state.impacts.x[0]).toBeCloseTo(0, 5);
+    expect(state.impacts.y[0]).toBeCloseTo(1.5, 5);
+    expect(state.impacts.z[0]).toBeCloseTo(-7.5, 5);
+  });
+
+  it('fire 未命中目標 → 彈著投影至交戰平面（active 目標 z 深度;WP-13 T4 壓槍 pattern 可視化）', () => {
+    const state = createSharedState();
+    const cam = cameraLookingDownZ();
+    state.targets.push(makeTarget('t0', 5, -8)); // 偏離中心射線 → 脫靶(不擊殺、不計命中)
+    const tm = { tick() {}, markKilled() {}, reset() {} };
+
+    state.input.pushFire(true, 1);
+    simStep(state, 1 / SIM_HZ, 100, tm, cam);
+
+    // 脫靶仍投影彈孔到交戰平面 z=-8:camera(0,1.5,5) 中心射線 → (0,1.5,-8)。目標未被擊殺(留存)。
+    expect(state.impacts.total).toBe(1);
+    expect(state.impacts.x[0]).toBeCloseTo(0, 5);
+    expect(state.impacts.y[0]).toBeCloseTo(1.5, 5);
+    expect(state.impacts.z[0]).toBeCloseTo(-8, 5);
+    expect(state.targets).toHaveLength(1);
+  });
+
+  it('fire 脫靶且無存活目標 → 不產彈孔（交戰平面未定義,impacts 空）', () => {
+    const state = createSharedState();
+    const cam = cameraLookingDownZ();
+    // 無目標 → 無交戰平面可投影(drill 收尾邊界);彈道脫靶不留痕。
+    const tm = { tick() {}, markKilled() {}, reset() {} };
+
+    state.input.pushFire(true, 1);
+    simStep(state, 1 / SIM_HZ, 100, tm, cam);
+
+    expect(state.impacts.total).toBe(0);
   });
 });

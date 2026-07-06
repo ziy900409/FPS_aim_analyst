@@ -37,6 +37,11 @@ export class CameraController {
   #yaw = 0;
   #pitch = 0;
   #sensitivity = DEFAULT_SENSITIVITY;
+  // recoil 視覺 punch（rad，WP-13 / T2）：每幀由 render loop 以 setViewPunch 餵入（aimPunch 內插後
+  // 經 adapter 轉 three rad）。與使用者 yaw/pitch 分離：punch 只組進 camera 朝向、**不**寫回 aimSink
+  // （state.aim = 使用者視角；彈道另加 rawPunch，避免雙重計入）。
+  #punchYaw = 0;
+  #punchPitch = 0;
 
   // 每次 applyDelta 重用，避免 mousemove 高頻路徑上的 GC 卡頓（CLAUDE.md §4 物件重用）。
   readonly #qYaw = new THREE.Quaternion();
@@ -63,6 +68,17 @@ export class CameraController {
     this.#sensitivity = s;
   }
 
+  /**
+   * 設定 recoil 視覺 punch（rad，WP-13 / T2）：render loop 每幀呼叫 → 立即重組 camera 朝向，
+   * 故滑鼠靜止時 punch 衰減仍逐幀可見（稽核 A2）。punch 疊加於使用者 yaw/pitch **之外**、
+   * 不受 pitch 夾角限制（夾角只約束使用者視角，見 `#applyToCamera`）。
+   */
+  setViewPunch(yawRad: number, pitchRad: number): void {
+    this.#punchYaw = yawRad;
+    this.#punchPitch = pitchRad;
+    this.#applyToCamera();
+  }
+
   /** 設定垂直 FOV（度）（T5 設定面板；即時生效）。 */
   setFov(deg: number): void {
     this.#camera.fov = deg;
@@ -70,11 +86,15 @@ export class CameraController {
   }
 
   #applyToCamera(): void {
-    this.#qYaw.setFromAxisAngle(WORLD_UP, this.#yaw);
-    this.#qPitch.setFromAxisAngle(LOCAL_RIGHT, this.#pitch);
+    // recoil 視覺 punch 疊加於使用者 yaw/pitch 之上組進 camera；使用者 pitch 已於 applyDelta 夾角，
+    // punch 加在夾角之外（夾角只約束使用者視角，不夾 punch，避免高後座時卡在 ±89°）。
+    this.#qYaw.setFromAxisAngle(WORLD_UP, this.#yaw + this.#punchYaw);
+    this.#qPitch.setFromAxisAngle(LOCAL_RIGHT, this.#pitch + this.#punchPitch);
     // qYaw · qPitch：先繞 local X（pitch）再繞 world Y（yaw），組合後無 roll。
     this.#camera.quaternion.copy(this.#qYaw).multiply(this.#qPitch);
     if (this.#aimSink !== undefined) {
+      // aimSink = 使用者視角（**不含** punch）：彈道另加 rawPunch=aimPunch×2（SimLoop），
+      // 若此處寫入含 punch 的角度會使彈道雙重計入 punch。
       this.#aimSink.yaw = this.#yaw;
       this.#aimSink.pitch = this.#pitch;
     }
