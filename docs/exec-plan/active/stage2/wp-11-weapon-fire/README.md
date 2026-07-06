@@ -10,7 +10,7 @@
 | **相依** | WP-10(`WeaponConfig` 的 recoil/inaccuracy 欄位形狀由 T1–T3 型別定義) |
 | **對應 FR** | FR-B5(WeaponConfig)、FR-B6(cycletime 連發 + 彈匣)、FR-B4 部分(index 遞增掛點) |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 T3 cycletime 產彈完成;T-exit 可開 |
+| **狀態** | ✅ 完成(T-exit:連發決定性 + 回歸全綠,2026-07-06) |
 
 ---
 

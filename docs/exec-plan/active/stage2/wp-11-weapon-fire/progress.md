@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T3 cycletime 產彈完成;T-exit 可開
+## Status: ✅ 完成 — full-auto 管線決定性驗證 + WP 收斂(2026-07-06)
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 WeaponConfig | ✅ |
 | T2 fire down/up | ✅ |
 | T3 cycletime 產彈 | ✅ |
-| T-exit | ⬜ |
+| T-exit | ✅ |
 
 ---
 
@@ -28,6 +28,16 @@
 ---
 
 ## Log
+
+### 2026-07-06 — T-exit 連發決定性 + 回歸全綠 PASS(WP-11 收斂）
+
+**Outcomes**
+
+- **新增檔案**:[fire-determinism.test.ts](../../../../../src/loop/__tests__/fire-determinism.test.ts) — full-auto 產彈決定性回歸(比照 [loop determinism.test.ts](../../../../../src/loop/__tests__/determinism.test.ts) 模式,補上 fire 維度)。按住左鍵不放(`FIRE_DOWN_MS=50`,不推 fire-up),由 `scheduleFire` 依 cycletime 累加連發至彈匣盡;不注入 camera/target/drillRunner(彈匣不被 spawn 重置),以 `DataRecorder` 記錄逐發事件。逐發**出彈 tick index**由記錄的 tick 邊界回推(**非計算**,故為實跑結果)。斷言:60/144/240 FPS + 抖動 144 FPS ±50% 序列下,逐發 `{tick index, 排程時刻}` 序列與 canonical(每幀一 tick)**逐位 bit-exact 一致**;三把武器(AK-47 100ms/30、M4A4 90ms/30、M4A1-S 100ms/20)各驗;canonical 斷言彈匣盡即停(shots=magSize、ammo=0、heldFire=false)、首發於按下時刻、累加制 span=(mag−1)·cycletime;重播 bit-exact(無 `Date.now`/`Math.random` 洩漏)。共 17 tests。
+- **決定性根源守護**:此測試釘死 README §3 / stage2 §2.6 failure-mode「`nextFireT = now + cycletime` 重設制 → 排程漂移,pattern 全歪」——任何把 frame delta / rAF 幀邊界偷渡進產彈排程的改動會使不同 FPS 的出彈 tick index 序列分歧 → 紅燈擋下。span 斷言為**精確** `(mag−1)·cycletime`(累加制無漂移),較 T3 DoD 的「2900ms ± 1 tick」更緊。
+- **Verification**:`npm.cmd test -- src/loop/__tests__/fire-determinism.test.ts` → 17 tests passed;`npm.cmd run typecheck` → exit 0;`npm.cmd test`(全套)→ **32 files / 243 tests passed**(較 T3 的 31/226 +1 file/+17 tests,無回歸紅燈)。
+- **手動驗證(dev server)**:本 session 為非互動環境,無法實際驅動瀏覽器 pointer-lock/滑鼠。DoD 的兩項手動目標行為改以**程式碼 + 自動化測試**佐證:①「鎖定後按住左鍵 → 連發至 30 發停」= [fire-determinism.test.ts](../../../../../src/loop/__tests__/fire-determinism.test.ts) canonical(AK 恰 30 發、ammo=0、heldFire 自動解除)+ [SimLoop.test.ts](../../../../../src/loop/SimLoop.test.ts)「AK held 3.0s 恰 30 發且 span 2900ms」;②「Esc 解鎖不卡連發」= [main.ts:179-183](../../../../../src/main.ts) pointer-lock unlock 直接清 `heldFire`+`nextFireT=Infinity` + [InputSampler.test.ts:172](../../../../../src/input/InputSampler.test.ts)「已採計 fire-down 後即使解鎖,mouseup 仍送 fire-up(stuck-fire 防護)」。**互動式瀏覽器實跑留待有 GUI 的 session 補做**,不在此宣稱已人工實測。
+- **WP 收斂**:[README.md](README.md) 狀態、[task-checklist.md](task-checklist.md) T-exit、[../README.md §3](../README.md) WP-11 皆翻 ✅。
 
 ### 2026-07-06 07:42Z — T3 cycletime 產彈 PASS
 - **修改檔案**:[SharedState.ts](../../../../../src/state/SharedState.ts) 新增 `weapon:{nextFireT,ammo,magSize}`,create 預設 AK,reset 原地保留目前 `magSize` 並回滿 ammo;[SimLoop.ts](../../../../../src/loop/SimLoop.ts) 抽出 `fireOneShot` 作為唯一產彈點,`applyInput` 僅維護 `heldFire`/首發排程,`scheduleFire` 以 `cycletimeSec*1000` 累加制產彈並在 ammo=0 時停火,`createSimLoop` 依注入武器同步 `magSize`;[TargetManager.ts](../../../../../src/sim/TargetManager.ts) 依 OQ-11.2 在每次 spawn 回滿 `ammo = weapon.magSize`;[main.ts](../../../../../src/main.ts) 注入 `getWeapon('ak47')`,pointer unlock 同步清 `nextFireT`。

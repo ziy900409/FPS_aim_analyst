@@ -9,7 +9,7 @@
 | ✅ | **T1** WeaponConfig + validateWeapon + 三把內建 | [T1-weapon-config.md](T1-weapon-config.md) | T0 | Low |
 | ✅ | **T2** fire down/up 事件鏈 + heldFire | [T2-fire-down-up.md](T2-fire-down-up.md) | T0 | Med |
 | ✅ | **T3** cycletime 產彈排程 + 彈匣 | [T3-cycletime-scheduler.md](T3-cycletime-scheduler.md) | T1, T2 | Med |
-| ⬜ | **T-exit** 連發決定性 + 回歸全綠 | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
+| ✅ | **T-exit** 連發決定性 + 回歸全綠 | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 
