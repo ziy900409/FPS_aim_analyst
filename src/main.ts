@@ -275,13 +275,19 @@ if (import.meta.env.DEV && window.location.hash === '#pattern') {
 if (import.meta.env.DEV) {
   const { createFpsTestHarness } = await import('./testharness/fpsTestHarness.ts');
   const displayHz = await measureDisplayHz({ samples: 10 });
-  (window as unknown as { __fpsTest?: unknown }).__fpsTest = createFpsTestHarness({
+  const fpsTestHarness = createFpsTestHarness({
     availableDrills: availableDrills.map(({ id, source }) => ({ id, source })),
     backend,
     crossOriginIsolated: isolation.crossOriginIsolated,
     displayHz,
     sensitivity: settingsPanel.sensitivity,
   });
+  (window as unknown as { __fpsTest?: unknown }).__fpsTest = {
+    ...fpsTestHarness,
+    showResult(): void {
+      resultScreen.show(fpsTestHarness.getMetrics());
+    },
+  };
 }
 
 // dev-only 急停可視化 HUD（`import.meta.env.DEV`，production 剝除）：橫移/急停在階段 A 為 1-tick

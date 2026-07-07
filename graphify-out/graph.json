@@ -248,7 +248,7 @@
       "source_file": "playwright.config.ts",
       "source_location": "L1",
       "id": "playwright_config_ts",
-      "community": 35,
+      "community": 37,
       "norm_label": "playwright.config.ts"
     },
     {
@@ -257,7 +257,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L1",
       "id": "vite_config_ts",
-      "community": 31,
+      "community": 32,
       "norm_label": "vite.config.ts"
     },
     {
@@ -266,7 +266,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L11",
       "id": "fps_aim_analyst_vite_config_coopcoep",
-      "community": 31,
+      "community": 32,
       "norm_label": "coopcoep()"
     },
     {
@@ -293,7 +293,7 @@
       "source_file": "src/main.ts",
       "source_location": "L77",
       "id": "src_main_activeweaponconfig",
-      "community": 0,
+      "community": 16,
       "norm_label": "activeweaponconfig()"
     },
     {
@@ -347,14 +347,23 @@
       "source_file": "src/main.ts",
       "source_location": "L242",
       "id": "src_main_buildsimloop",
-      "community": 0,
+      "community": 16,
       "norm_label": "buildsimloop()"
+    },
+    {
+      "label": "showResult()",
+      "file_type": "code",
+      "source_file": "src/main.ts",
+      "source_location": "L287",
+      "id": "src_main_showresult",
+      "community": 0,
+      "norm_label": "showresult()"
     },
     {
       "label": "resetRunPresentation()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L365",
+      "source_location": "L371",
       "id": "src_main_resetrunpresentation",
       "community": 0,
       "norm_label": "resetrunpresentation()"
@@ -363,7 +372,7 @@
       "label": "restartActiveDrill()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L376",
+      "source_location": "L382",
       "id": "src_main_restartactivedrill",
       "community": 0,
       "norm_label": "restartactivedrill()"
@@ -372,7 +381,7 @@
       "label": "loadDrillById()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L384",
+      "source_location": "L390",
       "id": "src_main_loaddrillbyid",
       "community": 0,
       "norm_label": "loaddrillbyid()"
@@ -381,7 +390,7 @@
       "label": "syncControlsVisibility()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L408",
+      "source_location": "L414",
       "id": "src_main_synccontrolsvisibility",
       "community": 0,
       "norm_label": "synccontrolsvisibility()"
@@ -392,7 +401,7 @@
       "source_file": "src/vite-env.d.ts",
       "source_location": "L1",
       "id": "src_vite_env_d_ts",
-      "community": 36,
+      "community": 38,
       "norm_label": "vite-env.d.ts"
     },
     {
@@ -401,7 +410,7 @@
       "source_file": "src/data/DataRecorder.test.ts",
       "source_location": "L1",
       "id": "src_data_datarecorder_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "datarecorder.test.ts"
     },
     {
@@ -410,7 +419,7 @@
       "source_file": "src/data/DataRecorder.ts",
       "source_location": "L1",
       "id": "src_data_datarecorder_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "datarecorder.ts"
     },
     {
@@ -419,7 +428,7 @@
       "source_file": "src/data/DataRecorder.ts",
       "source_location": "L57",
       "id": "data_datarecorder_createdatarecorder",
-      "community": 7,
+      "community": 15,
       "norm_label": "createdatarecorder()"
     },
     {
@@ -707,7 +716,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L1",
       "id": "src_data_ringbuffer_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "ringbuffer.ts"
     },
     {
@@ -716,7 +725,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L50",
       "id": "data_ringbuffer_capacityfordrill",
-      "community": 7,
+      "community": 6,
       "norm_label": "capacityfordrill()"
     },
     {
@@ -725,7 +734,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L65",
       "id": "data_ringbuffer_keymaskfromkeys",
-      "community": 7,
+      "community": 6,
       "norm_label": "keymaskfromkeys()"
     },
     {
@@ -734,7 +743,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L76",
       "id": "data_ringbuffer_keymaskfromstate",
-      "community": 7,
+      "community": 6,
       "norm_label": "keymaskfromstate()"
     },
     {
@@ -743,7 +752,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L83",
       "id": "data_ringbuffer_keysfrommask",
-      "community": 7,
+      "community": 6,
       "norm_label": "keysfrommask()"
     },
     {
@@ -752,7 +761,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L96",
       "id": "data_ringbuffer_tickarena",
-      "community": 7,
+      "community": 6,
       "norm_label": "tickarena"
     },
     {
@@ -761,7 +770,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L112",
       "id": "data_ringbuffer_tickarena_constructor",
-      "community": 7,
+      "community": 6,
       "norm_label": ".constructor()"
     },
     {
@@ -770,7 +779,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L128",
       "id": "data_ringbuffer_tickarena_count",
-      "community": 7,
+      "community": 6,
       "norm_label": ".count()"
     },
     {
@@ -779,7 +788,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L132",
       "id": "data_ringbuffer_tickarena_recorderoverflow",
-      "community": 7,
+      "community": 6,
       "norm_label": ".recorderoverflow()"
     },
     {
@@ -788,7 +797,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L136",
       "id": "data_ringbuffer_tickarena_recordtick",
-      "community": 7,
+      "community": 6,
       "norm_label": ".recordtick()"
     },
     {
@@ -797,7 +806,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L152",
       "id": "data_ringbuffer_tickarena_recordstate",
-      "community": 7,
+      "community": 6,
       "norm_label": ".recordstate()"
     },
     {
@@ -806,7 +815,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L180",
       "id": "data_ringbuffer_tickarena_recordfields",
-      "community": 7,
+      "community": 6,
       "norm_label": ".recordfields()"
     },
     {
@@ -815,7 +824,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L219",
       "id": "data_ringbuffer_tickarena_snapshot",
-      "community": 7,
+      "community": 6,
       "norm_label": ".snapshot()"
     },
     {
@@ -824,7 +833,7 @@
       "source_file": "src/data/RingBuffer.ts",
       "source_location": "L238",
       "id": "data_ringbuffer_tickarena_reset",
-      "community": 7,
+      "community": 6,
       "norm_label": ".reset()"
     },
     {
@@ -851,7 +860,7 @@
       "source_file": "src/drill/DrillLoader.test.ts",
       "source_location": "L1",
       "id": "src_drill_drillloader_test_ts",
-      "community": 5,
+      "community": 8,
       "norm_label": "drillloader.test.ts"
     },
     {
@@ -860,7 +869,7 @@
       "source_file": "src/drill/DrillLoader.test.ts",
       "source_location": "L17",
       "id": "drill_drillloader_test_scenewithblockingprop",
-      "community": 5,
+      "community": 8,
       "norm_label": "scenewithblockingprop()"
     },
     {
@@ -869,7 +878,7 @@
       "source_file": "src/drill/DrillLoader.ts",
       "source_location": "L1",
       "id": "src_drill_drillloader_ts",
-      "community": 5,
+      "community": 8,
       "norm_label": "drillloader.ts"
     },
     {
@@ -878,7 +887,7 @@
       "source_file": "src/drill/DrillLoader.ts",
       "source_location": "L21",
       "id": "drill_drillloader_loaddrill",
-      "community": 5,
+      "community": 8,
       "norm_label": "loaddrill()"
     },
     {
@@ -950,7 +959,7 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L1",
       "id": "src_drill_schema_test_ts",
-      "community": 5,
+      "community": 21,
       "norm_label": "schema.test.ts"
     },
     {
@@ -959,7 +968,7 @@
       "source_file": "src/drill/schema.test.ts",
       "source_location": "L6",
       "id": "drill_schema_test_minimalvalid",
-      "community": 5,
+      "community": 21,
       "norm_label": "minimalvalid()"
     },
     {
@@ -968,7 +977,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L1",
       "id": "src_drill_schema_ts",
-      "community": 5,
+      "community": 21,
       "norm_label": "schema.ts"
     },
     {
@@ -977,7 +986,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L14",
       "id": "drill_schema_validatedrill",
-      "community": 5,
+      "community": 21,
       "norm_label": "validatedrill()"
     },
     {
@@ -986,7 +995,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L73",
       "id": "drill_schema_validatemotion",
-      "community": 5,
+      "community": 21,
       "norm_label": "validatemotion()"
     },
     {
@@ -995,7 +1004,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L113",
       "id": "drill_schema_err",
-      "community": 5,
+      "community": 21,
       "norm_label": "err()"
     },
     {
@@ -1004,7 +1013,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L117",
       "id": "drill_schema_requireobject",
-      "community": 5,
+      "community": 21,
       "norm_label": "requireobject()"
     },
     {
@@ -1013,7 +1022,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L124",
       "id": "drill_schema_requirefinitenumber",
-      "community": 5,
+      "community": 21,
       "norm_label": "requirefinitenumber()"
     },
     {
@@ -1022,7 +1031,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L129",
       "id": "drill_schema_requirenonemptystring",
-      "community": 5,
+      "community": 21,
       "norm_label": "requirenonemptystring()"
     },
     {
@@ -1031,7 +1040,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L134",
       "id": "drill_schema_requirenonnegativenumber",
-      "community": 5,
+      "community": 21,
       "norm_label": "requirenonnegativenumber()"
     },
     {
@@ -1040,7 +1049,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L140",
       "id": "drill_schema_requirepositivenumber",
-      "community": 5,
+      "community": 21,
       "norm_label": "requirepositivenumber()"
     },
     {
@@ -1049,7 +1058,7 @@
       "source_file": "src/drill/schema.ts",
       "source_location": "L146",
       "id": "drill_schema_requirepositiveint",
-      "community": 5,
+      "community": 21,
       "norm_label": "requirepositiveint()"
     },
     {
@@ -1058,7 +1067,7 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L1",
       "id": "src_input_consume_test_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "consume.test.ts"
     },
     {
@@ -1067,7 +1076,7 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L17",
       "id": "input_consume_test_key",
-      "community": 12,
+      "community": 10,
       "norm_label": "key()"
     },
     {
@@ -1076,7 +1085,7 @@
       "source_file": "src/input/consume.test.ts",
       "source_location": "L25",
       "id": "input_consume_test_collector",
-      "community": 12,
+      "community": 10,
       "norm_label": "collector()"
     },
     {
@@ -1085,7 +1094,7 @@
       "source_file": "src/input/consume.ts",
       "source_location": "L1",
       "id": "src_input_consume_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "consume.ts"
     },
     {
@@ -1094,7 +1103,7 @@
       "source_file": "src/input/consume.ts",
       "source_location": "L33",
       "id": "input_consume_consume",
-      "community": 12,
+      "community": 10,
       "norm_label": "consume()"
     },
     {
@@ -1103,7 +1112,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L1",
       "id": "src_input_inputsampler_test_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "inputsampler.test.ts"
     },
     {
@@ -1112,7 +1121,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L14",
       "id": "input_inputsampler_test_makefaketarget",
-      "community": 12,
+      "community": 10,
       "norm_label": "makefaketarget()"
     },
     {
@@ -1121,7 +1130,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L35",
       "id": "input_inputsampler_test_keyevent",
-      "community": 12,
+      "community": 10,
       "norm_label": "keyevent()"
     },
     {
@@ -1130,7 +1139,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L39",
       "id": "input_inputsampler_test_mouseevent",
-      "community": 12,
+      "community": 10,
       "norm_label": "mouseevent()"
     },
     {
@@ -1139,7 +1148,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L44",
       "id": "input_inputsampler_test_coalescedsample",
-      "community": 12,
+      "community": 10,
       "norm_label": "coalescedsample()"
     },
     {
@@ -1148,7 +1157,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L52",
       "id": "input_inputsampler_test_pointermoveevent",
-      "community": 12,
+      "community": 10,
       "norm_label": "pointermoveevent()"
     },
     {
@@ -1157,7 +1166,7 @@
       "source_file": "src/input/InputSampler.test.ts",
       "source_location": "L63",
       "id": "input_inputsampler_test_legacypointermoveevent",
-      "community": 12,
+      "community": 10,
       "norm_label": "legacypointermoveevent()"
     },
     {
@@ -1166,7 +1175,7 @@
       "source_file": "src/input/InputSampler.ts",
       "source_location": "L1",
       "id": "src_input_inputsampler_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "inputsampler.ts"
     },
     {
@@ -1175,7 +1184,7 @@
       "source_file": "src/input/InputSampler.ts",
       "source_location": "L40",
       "id": "input_inputsampler_createinputsampler",
-      "community": 12,
+      "community": 10,
       "norm_label": "createinputsampler()"
     },
     {
@@ -1202,7 +1211,7 @@
       "source_file": "src/loop/clock.ts",
       "source_location": "L1",
       "id": "src_loop_clock_ts",
-      "community": 14,
+      "community": 9,
       "norm_label": "clock.ts"
     },
     {
@@ -1211,7 +1220,7 @@
       "source_file": "src/loop/constants.ts",
       "source_location": "L1",
       "id": "src_loop_constants_ts",
-      "community": 14,
+      "community": 12,
       "norm_label": "constants.ts"
     },
     {
@@ -1256,7 +1265,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L1",
       "id": "src_loop_simloop_test_ts",
-      "community": 14,
+      "community": 15,
       "norm_label": "simloop.test.ts"
     },
     {
@@ -1265,7 +1274,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L17",
       "id": "loop_simloop_test_fixedclock",
-      "community": 14,
+      "community": 15,
       "norm_label": "fixedclock()"
     },
     {
@@ -1274,7 +1283,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L23",
       "id": "loop_simloop_test_cameralookingdownz",
-      "community": 14,
+      "community": 15,
       "norm_label": "cameralookingdownz()"
     },
     {
@@ -1283,7 +1292,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L31",
       "id": "loop_simloop_test_maketarget",
-      "community": 14,
+      "community": 15,
       "norm_label": "maketarget()"
     },
     {
@@ -1292,7 +1301,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L43",
       "id": "loop_simloop_test_tickadvancer",
-      "community": 14,
+      "community": 15,
       "norm_label": "tickadvancer()"
     },
     {
@@ -1301,7 +1310,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L53",
       "id": "loop_simloop_test_runtime",
-      "community": 14,
+      "community": 15,
       "norm_label": "runtime()"
     },
     {
@@ -1310,7 +1319,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L251",
       "id": "loop_simloop_test_fireat",
-      "community": 14,
+      "community": 15,
       "norm_label": "fireat()"
     },
     {
@@ -1319,7 +1328,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L284",
       "id": "loop_simloop_test_meanspreadradius",
-      "community": 14,
+      "community": 15,
       "norm_label": "meanspreadradius()"
     },
     {
@@ -1328,7 +1337,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L306",
       "id": "loop_simloop_test_run",
-      "community": 14,
+      "community": 15,
       "norm_label": "run()"
     },
     {
@@ -1337,7 +1346,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L1",
       "id": "src_loop_simloop_ts",
-      "community": 11,
+      "community": 12,
       "norm_label": "simloop.ts"
     },
     {
@@ -1346,7 +1355,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L62",
       "id": "loop_simloop_applyinput",
-      "community": 11,
+      "community": 12,
       "norm_label": "applyinput()"
     },
     {
@@ -1355,7 +1364,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L109",
       "id": "loop_simloop_ballisticraycast",
-      "community": 11,
+      "community": 12,
       "norm_label": "ballisticraycast()"
     },
     {
@@ -1364,7 +1373,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L151",
       "id": "loop_simloop_projectmissontoengagementplane",
-      "community": 11,
+      "community": 12,
       "norm_label": "projectmissontoengagementplane()"
     },
     {
@@ -1373,7 +1382,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L170",
       "id": "loop_simloop_fireoneshot",
-      "community": 11,
+      "community": 12,
       "norm_label": "fireoneshot()"
     },
     {
@@ -1382,7 +1391,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L254",
       "id": "loop_simloop_schedulefire",
-      "community": 11,
+      "community": 12,
       "norm_label": "schedulefire()"
     },
     {
@@ -1391,7 +1400,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L275",
       "id": "loop_simloop_recordvisibleevents",
-      "community": 14,
+      "community": 15,
       "norm_label": "recordvisibleevents()"
     },
     {
@@ -1400,7 +1409,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L307",
       "id": "loop_simloop_simstep",
-      "community": 14,
+      "community": 15,
       "norm_label": "simstep()"
     },
     {
@@ -1409,7 +1418,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L371",
       "id": "loop_simloop_createsimloop",
-      "community": 18,
+      "community": 13,
       "norm_label": "createsimloop()"
     },
     {
@@ -1463,7 +1472,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L1",
       "id": "src_loop_tests_determinism_test_ts",
-      "community": 18,
+      "community": 26,
       "norm_label": "determinism.test.ts"
     },
     {
@@ -1472,7 +1481,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L44",
       "id": "tests_determinism_test_syntheticinputs",
-      "community": 18,
+      "community": 26,
       "norm_label": "syntheticinputs()"
     },
     {
@@ -1481,7 +1490,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L54",
       "id": "tests_determinism_test_freshstate",
-      "community": 18,
+      "community": 26,
       "norm_label": "freshstate()"
     },
     {
@@ -1490,7 +1499,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L60",
       "id": "tests_determinism_test_snap",
-      "community": 18,
+      "community": 26,
       "norm_label": "snap()"
     },
     {
@@ -1499,7 +1508,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L68",
       "id": "tests_determinism_test_runframes",
-      "community": 18,
+      "community": 26,
       "norm_label": "runframes()"
     },
     {
@@ -1508,7 +1517,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L85",
       "id": "tests_determinism_test_canonicaltrajectory",
-      "community": 18,
+      "community": 26,
       "norm_label": "canonicaltrajectory()"
     },
     {
@@ -1517,7 +1526,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L95",
       "id": "tests_determinism_test_framesat",
-      "community": 18,
+      "community": 26,
       "norm_label": "framesat()"
     },
     {
@@ -1526,7 +1535,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L103",
       "id": "tests_determinism_test_jitterframes",
-      "community": 18,
+      "community": 26,
       "norm_label": "jitterframes()"
     },
     {
@@ -1535,7 +1544,7 @@
       "source_file": "src/loop/__tests__/fire-determinism.test.ts",
       "source_location": "L1",
       "id": "src_loop_tests_fire_determinism_test_ts",
-      "community": 18,
+      "community": 13,
       "norm_label": "fire-determinism.test.ts"
     },
     {
@@ -1544,7 +1553,7 @@
       "source_file": "src/loop/__tests__/fire-determinism.test.ts",
       "source_location": "L47",
       "id": "tests_fire_determinism_test_runfire",
-      "community": 18,
+      "community": 13,
       "norm_label": "runfire()"
     },
     {
@@ -1553,7 +1562,7 @@
       "source_file": "src/loop/__tests__/fire-determinism.test.ts",
       "source_location": "L68",
       "id": "tests_fire_determinism_test_canonicalfire",
-      "community": 18,
+      "community": 13,
       "norm_label": "canonicalfire()"
     },
     {
@@ -1562,7 +1571,7 @@
       "source_file": "src/loop/__tests__/fire-determinism.test.ts",
       "source_location": "L75",
       "id": "tests_fire_determinism_test_framesat",
-      "community": 18,
+      "community": 13,
       "norm_label": "framesat()"
     },
     {
@@ -1571,7 +1580,7 @@
       "source_file": "src/loop/__tests__/fire-determinism.test.ts",
       "source_location": "L83",
       "id": "tests_fire_determinism_test_jitterframes",
-      "community": 18,
+      "community": 13,
       "norm_label": "jitterframes()"
     },
     {
@@ -1598,7 +1607,7 @@
       "source_file": "src/loop/__tests__/recoil-wiring.test.ts",
       "source_location": "L33",
       "id": "tests_recoil_wiring_test_baseclock",
-      "community": 1,
+      "community": 13,
       "norm_label": "baseclock()"
     },
     {
@@ -1607,7 +1616,7 @@
       "source_file": "src/loop/__tests__/recoil-wiring.test.ts",
       "source_location": "L42",
       "id": "tests_recoil_wiring_test_holdfire",
-      "community": 1,
+      "community": 13,
       "norm_label": "holdfire()"
     },
     {
@@ -1616,7 +1625,7 @@
       "source_file": "src/loop/__tests__/recoil-wiring.test.ts",
       "source_location": "L151",
       "id": "tests_recoil_wiring_test_run",
-      "community": 1,
+      "community": 13,
       "norm_label": "run()"
     },
     {
@@ -1625,7 +1634,7 @@
       "source_file": "src/metrics/compute.test.ts",
       "source_location": "L1",
       "id": "src_metrics_compute_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "compute.test.ts"
     },
     {
@@ -1634,7 +1643,7 @@
       "source_file": "src/metrics/compute.test.ts",
       "source_location": "L208",
       "id": "metrics_compute_test_degtorad",
-      "community": 7,
+      "community": 6,
       "norm_label": "degtorad()"
     },
     {
@@ -1643,7 +1652,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L1",
       "id": "src_metrics_compute_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "compute.ts"
     },
     {
@@ -1652,7 +1661,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L56",
       "id": "metrics_compute_computemetrics",
-      "community": 7,
+      "community": 6,
       "norm_label": "computemetrics()"
     },
     {
@@ -1661,7 +1670,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L100",
       "id": "metrics_compute_buildidealpath",
-      "community": 7,
+      "community": 6,
       "norm_label": "buildidealpath()"
     },
     {
@@ -1670,7 +1679,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L112",
       "id": "metrics_compute_compensationerror",
-      "community": 7,
+      "community": 6,
       "norm_label": "compensationerror()"
     },
     {
@@ -1679,7 +1688,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L133",
       "id": "metrics_compute_stat",
-      "community": 7,
+      "community": 6,
       "norm_label": "stat()"
     },
     {
@@ -1688,7 +1697,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L142",
       "id": "metrics_compute_buildpeekwindows",
-      "community": 7,
+      "community": 6,
       "norm_label": "buildpeekwindows()"
     },
     {
@@ -1697,7 +1706,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L166",
       "id": "metrics_compute_computeswitchtimes",
-      "community": 7,
+      "community": 6,
       "norm_label": "computeswitchtimes()"
     },
     {
@@ -1706,7 +1715,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L179",
       "id": "metrics_compute_computerecoilcompensationpath",
-      "community": 7,
+      "community": 6,
       "norm_label": "computerecoilcompensationpath()"
     },
     {
@@ -1715,7 +1724,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L213",
       "id": "metrics_compute_computevisibleintervals",
-      "community": 7,
+      "community": 6,
       "norm_label": "computevisibleintervals()"
     },
     {
@@ -1724,7 +1733,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L221",
       "id": "metrics_compute_coefficientofvariation",
-      "community": 7,
+      "community": 6,
       "norm_label": "coefficientofvariation()"
     },
     {
@@ -1733,7 +1742,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L226",
       "id": "metrics_compute_finitevalues",
-      "community": 7,
+      "community": 6,
       "norm_label": "finitevalues()"
     },
     {
@@ -1742,7 +1751,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L230",
       "id": "metrics_compute_radtodeg",
-      "community": 7,
+      "community": 6,
       "norm_label": "radtodeg()"
     },
     {
@@ -1751,7 +1760,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L234",
       "id": "metrics_compute_mirrorpunch",
-      "community": 7,
+      "community": 6,
       "norm_label": "mirrorpunch()"
     },
     {
@@ -1760,7 +1769,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L239",
       "id": "metrics_compute_shortestangledeltarad",
-      "community": 7,
+      "community": 6,
       "norm_label": "shortestangledeltarad()"
     },
     {
@@ -1769,7 +1778,7 @@
       "source_file": "src/metrics/compute.ts",
       "source_location": "L243",
       "id": "metrics_compute_percentile",
-      "community": 7,
+      "community": 6,
       "norm_label": "percentile()"
     },
     {
@@ -1778,7 +1787,7 @@
       "source_file": "src/metrics/MetricsDashboard.test.ts",
       "source_location": "L1",
       "id": "src_metrics_metricsdashboard_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "metricsdashboard.test.ts"
     },
     {
@@ -1787,7 +1796,7 @@
       "source_file": "src/metrics/MetricsDashboard.ts",
       "source_location": "L1",
       "id": "src_metrics_metricsdashboard_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "metricsdashboard.ts"
     },
     {
@@ -1796,7 +1805,7 @@
       "source_file": "src/metrics/MetricsDashboard.ts",
       "source_location": "L8",
       "id": "metrics_metricsdashboard_createmetricsdashboard",
-      "community": 7,
+      "community": 6,
       "norm_label": "createmetricsdashboard()"
     },
     {
@@ -2039,7 +2048,7 @@
       "source_file": "src/recoil/punch.ts",
       "source_location": "L52",
       "id": "recoil_punch_resetrecoilstate",
-      "community": 16,
+      "community": 1,
       "norm_label": "resetrecoilstate()"
     },
     {
@@ -2327,7 +2336,7 @@
       "source_file": "src/render/ImpactView.test.ts",
       "source_location": "L1",
       "id": "src_render_impactview_test_ts",
-      "community": 16,
+      "community": 10,
       "norm_label": "impactview.test.ts"
     },
     {
@@ -2336,7 +2345,7 @@
       "source_file": "src/render/ImpactView.test.ts",
       "source_location": "L7",
       "id": "render_impactview_test_instanced",
-      "community": 16,
+      "community": 10,
       "norm_label": "instanced()"
     },
     {
@@ -2345,7 +2354,7 @@
       "source_file": "src/render/ImpactView.test.ts",
       "source_location": "L14",
       "id": "render_impactview_test_instancepos",
-      "community": 16,
+      "community": 10,
       "norm_label": "instancepos()"
     },
     {
@@ -2354,7 +2363,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L1",
       "id": "src_render_impactview_ts",
-      "community": 16,
+      "community": 0,
       "norm_label": "impactview.ts"
     },
     {
@@ -2363,7 +2372,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L23",
       "id": "render_impactview_impactview",
-      "community": 16,
+      "community": 0,
       "norm_label": "impactview"
     },
     {
@@ -2372,7 +2381,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L33",
       "id": "render_impactview_impactview_constructor",
-      "community": 16,
+      "community": 0,
       "norm_label": ".constructor()"
     },
     {
@@ -2381,7 +2390,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L47",
       "id": "render_impactview_impactview_sync",
-      "community": 16,
+      "community": 0,
       "norm_label": ".sync()"
     },
     {
@@ -2390,7 +2399,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L63",
       "id": "render_impactview_impactview_count",
-      "community": 16,
+      "community": 0,
       "norm_label": ".count()"
     },
     {
@@ -2399,7 +2408,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L68",
       "id": "render_impactview_impactview_dispose",
-      "community": 16,
+      "community": 0,
       "norm_label": ".dispose()"
     },
     {
@@ -2552,7 +2561,7 @@
       "source_file": "src/scene/clearance.test.ts",
       "source_location": "L1",
       "id": "src_scene_clearance_test_ts",
-      "community": 5,
+      "community": 8,
       "norm_label": "clearance.test.ts"
     },
     {
@@ -2561,7 +2570,7 @@
       "source_file": "src/scene/clearance.test.ts",
       "source_location": "L16",
       "id": "scene_clearance_test_drill",
-      "community": 5,
+      "community": 8,
       "norm_label": "drill()"
     },
     {
@@ -2570,7 +2579,7 @@
       "source_file": "src/scene/clearance.test.ts",
       "source_location": "L27",
       "id": "scene_clearance_test_scene",
-      "community": 5,
+      "community": 8,
       "norm_label": "scene()"
     },
     {
@@ -2579,7 +2588,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L1",
       "id": "src_scene_clearance_ts",
-      "community": 5,
+      "community": 8,
       "norm_label": "clearance.ts"
     },
     {
@@ -2588,7 +2597,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L36",
       "id": "scene_clearance_validateclearance",
-      "community": 5,
+      "community": 8,
       "norm_label": "validateclearance()"
     },
     {
@@ -2597,7 +2606,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L64",
       "id": "scene_clearance_formatclearanceviolations",
-      "community": 5,
+      "community": 8,
       "norm_label": "formatclearanceviolations()"
     },
     {
@@ -2606,7 +2615,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L68",
       "id": "scene_clearance_derivetargetenvelopes",
-      "community": 5,
+      "community": 8,
       "norm_label": "derivetargetenvelopes()"
     },
     {
@@ -2615,7 +2624,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L81",
       "id": "scene_clearance_assertfiniteenvelope",
-      "community": 5,
+      "community": 8,
       "norm_label": "assertfiniteenvelope()"
     },
     {
@@ -2624,7 +2633,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L88",
       "id": "scene_clearance_activesides",
-      "community": 5,
+      "community": 8,
       "norm_label": "activesides()"
     },
     {
@@ -2633,7 +2642,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L94",
       "id": "scene_clearance_envelopeforside",
-      "community": 5,
+      "community": 8,
       "norm_label": "envelopeforside()"
     },
     {
@@ -2642,7 +2651,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L115",
       "id": "scene_clearance_expandformotion",
-      "community": 5,
+      "community": 8,
       "norm_label": "expandformotion()"
     },
     {
@@ -2651,7 +2660,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L132",
       "id": "scene_clearance_expandbypoint",
-      "community": 5,
+      "community": 8,
       "norm_label": "expandbypoint()"
     },
     {
@@ -2660,7 +2669,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L141",
       "id": "scene_clearance_sampleplayercorridor",
-      "community": 5,
+      "community": 8,
       "norm_label": "sampleplayercorridor()"
     },
     {
@@ -2669,7 +2678,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L149",
       "id": "scene_clearance_sampleaabb",
-      "community": 5,
+      "community": 8,
       "norm_label": "sampleaabb()"
     },
     {
@@ -2678,7 +2687,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L173",
       "id": "scene_clearance_inflateaabb",
-      "community": 5,
+      "community": 8,
       "norm_label": "inflateaabb()"
     },
     {
@@ -2687,7 +2696,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L180",
       "id": "scene_clearance_segmentintersectsaabb",
-      "community": 5,
+      "community": 8,
       "norm_label": "segmentintersectsaabb()"
     },
     {
@@ -2696,7 +2705,7 @@
       "source_file": "src/scene/clearance.ts",
       "source_location": "L202",
       "id": "scene_clearance_clipaxis",
-      "community": 5,
+      "community": 8,
       "norm_label": "clipaxis()"
     },
     {
@@ -2705,7 +2714,7 @@
       "source_file": "src/scene/SceneConfig.test.ts",
       "source_location": "L1",
       "id": "src_scene_sceneconfig_test_ts",
-      "community": 5,
+      "community": 8,
       "norm_label": "sceneconfig.test.ts"
     },
     {
@@ -2714,7 +2723,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L1",
       "id": "src_scene_sceneconfig_ts",
-      "community": 5,
+      "community": 8,
       "norm_label": "sceneconfig.ts"
     },
     {
@@ -2723,7 +2732,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L20",
       "id": "scene_sceneconfig_validatescene",
-      "community": 5,
+      "community": 8,
       "norm_label": "validatescene()"
     },
     {
@@ -2732,7 +2741,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L41",
       "id": "scene_sceneconfig_validatecluttertier",
-      "community": 5,
+      "community": 8,
       "norm_label": "validatecluttertier()"
     },
     {
@@ -2741,7 +2750,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L48",
       "id": "scene_sceneconfig_validateasset",
-      "community": 5,
+      "community": 8,
       "norm_label": "validateasset()"
     },
     {
@@ -2750,7 +2759,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L54",
       "id": "scene_sceneconfig_validatepropbounds",
-      "community": 5,
+      "community": 8,
       "norm_label": "validatepropbounds()"
     },
     {
@@ -2759,7 +2768,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L69",
       "id": "scene_sceneconfig_validatevec3",
-      "community": 5,
+      "community": 8,
       "norm_label": "validatevec3()"
     },
     {
@@ -2768,7 +2777,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L78",
       "id": "scene_sceneconfig_err",
-      "community": 5,
+      "community": 8,
       "norm_label": "err()"
     },
     {
@@ -2777,7 +2786,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L82",
       "id": "scene_sceneconfig_requireobject",
-      "community": 5,
+      "community": 8,
       "norm_label": "requireobject()"
     },
     {
@@ -2786,7 +2795,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L89",
       "id": "scene_sceneconfig_requirenonemptystring",
-      "community": 5,
+      "community": 8,
       "norm_label": "requirenonemptystring()"
     },
     {
@@ -2795,7 +2804,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L94",
       "id": "scene_sceneconfig_requirefinitenumber",
-      "community": 5,
+      "community": 8,
       "norm_label": "requirefinitenumber()"
     },
     {
@@ -2804,7 +2813,7 @@
       "source_file": "src/scene/SceneConfig.ts",
       "source_location": "L99",
       "id": "scene_sceneconfig_requirepositivenumber",
-      "community": 5,
+      "community": 8,
       "norm_label": "requirepositivenumber()"
     },
     {
@@ -2813,7 +2822,7 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L1",
       "id": "src_sim_firstshot_test_ts",
-      "community": 11,
+      "community": 12,
       "norm_label": "firstshot.test.ts"
     },
     {
@@ -2822,7 +2831,7 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L10",
       "id": "sim_firstshot_test_maketarget",
-      "community": 11,
+      "community": 12,
       "norm_label": "maketarget()"
     },
     {
@@ -2831,7 +2840,7 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L23",
       "id": "sim_firstshot_test_cameralookingdownz",
-      "community": 11,
+      "community": 12,
       "norm_label": "cameralookingdownz()"
     },
     {
@@ -2840,7 +2849,7 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L83",
       "id": "sim_firstshot_test_maketargetmanager",
-      "community": 11,
+      "community": 12,
       "norm_label": "maketargetmanager()"
     },
     {
@@ -2849,7 +2858,7 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L1",
       "id": "src_sim_firstshot_ts",
-      "community": 11,
+      "community": 12,
       "norm_label": "firstshot.ts"
     },
     {
@@ -2858,7 +2867,7 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L22",
       "id": "sim_firstshot_currentpeekid",
-      "community": 11,
+      "community": 12,
       "norm_label": "currentpeekid()"
     },
     {
@@ -2867,7 +2876,7 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L34",
       "id": "sim_firstshot_firstshotgate",
-      "community": 11,
+      "community": 12,
       "norm_label": "firstshotgate()"
     },
     {
@@ -2876,7 +2885,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L1",
       "id": "src_sim_hitdetector_test_ts",
-      "community": 11,
+      "community": 12,
       "norm_label": "hitdetector.test.ts"
     },
     {
@@ -2885,7 +2894,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L10",
       "id": "sim_hitdetector_test_cameralookingdownz",
-      "community": 11,
+      "community": 12,
       "norm_label": "cameralookingdownz()"
     },
     {
@@ -2894,7 +2903,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L19",
       "id": "sim_hitdetector_test_maketarget",
-      "community": 11,
+      "community": 12,
       "norm_label": "maketarget()"
     },
     {
@@ -2903,7 +2912,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L31",
       "id": "sim_hitdetector_test_cameracenterray",
-      "community": 11,
+      "community": 12,
       "norm_label": "cameracenterray()"
     },
     {
@@ -2912,7 +2921,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L39",
       "id": "sim_hitdetector_test_raytowardtarget",
-      "community": 11,
+      "community": 12,
       "norm_label": "raytowardtarget()"
     },
     {
@@ -2921,7 +2930,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L152",
       "id": "sim_hitdetector_test_out",
-      "community": 11,
+      "community": 12,
       "norm_label": "out()"
     },
     {
@@ -2930,7 +2939,7 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L1",
       "id": "src_sim_hitdetector_ts",
-      "community": 11,
+      "community": 12,
       "norm_label": "hitdetector.ts"
     },
     {
@@ -2939,7 +2948,7 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L61",
       "id": "sim_hitdetector_raycastwithray",
-      "community": 11,
+      "community": 12,
       "norm_label": "raycastwithray()"
     },
     {
@@ -2948,7 +2957,7 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L118",
       "id": "sim_hitdetector_raycastfromcenter",
-      "community": 11,
+      "community": 12,
       "norm_label": "raycastfromcenter()"
     },
     {
@@ -2957,7 +2966,7 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L127",
       "id": "sim_hitdetector_targetcenteroffsetdeg",
-      "community": 11,
+      "community": 12,
       "norm_label": "targetcenteroffsetdeg()"
     },
     {
@@ -3074,7 +3083,7 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L1",
       "id": "src_state_inputring_test_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "inputring.test.ts"
     },
     {
@@ -3083,7 +3092,7 @@
       "source_file": "src/state/InputRing.test.ts",
       "source_location": "L16",
       "id": "state_inputring_test_drainall",
-      "community": 12,
+      "community": 10,
       "norm_label": "drainall()"
     },
     {
@@ -3092,7 +3101,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L1",
       "id": "src_state_inputringtestutil_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "inputringtestutil.ts"
     },
     {
@@ -3101,7 +3110,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L15",
       "id": "state_inputringtestutil_pushevent",
-      "community": 18,
+      "community": 13,
       "norm_label": "pushevent()"
     },
     {
@@ -3110,7 +3119,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L25",
       "id": "state_inputringtestutil_draintoarray",
-      "community": 12,
+      "community": 10,
       "norm_label": "draintoarray()"
     },
     {
@@ -3119,7 +3128,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L32",
       "id": "state_inputringtestutil_snapshot",
-      "community": 12,
+      "community": 10,
       "norm_label": "snapshot()"
     },
     {
@@ -3128,7 +3137,7 @@
       "source_file": "src/state/SharedState.test.ts",
       "source_location": "L1",
       "id": "src_state_sharedstate_test_ts",
-      "community": 16,
+      "community": 10,
       "norm_label": "sharedstate.test.ts"
     },
     {
@@ -3137,7 +3146,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L1",
       "id": "src_state_sharedstate_ts",
-      "community": 16,
+      "community": 10,
       "norm_label": "sharedstate.ts"
     },
     {
@@ -3146,7 +3155,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L36",
       "id": "state_sharedstate_createimpactring",
-      "community": 16,
+      "community": 10,
       "norm_label": "createimpactring()"
     },
     {
@@ -3155,7 +3164,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L51",
       "id": "state_sharedstate_pushimpact",
-      "community": 16,
+      "community": 10,
       "norm_label": "pushimpact()"
     },
     {
@@ -3164,7 +3173,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L62",
       "id": "state_sharedstate_resetimpactring",
-      "community": 16,
+      "community": 10,
       "norm_label": "resetimpactring()"
     },
     {
@@ -3173,7 +3182,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L147",
       "id": "state_sharedstate_createinputring",
-      "community": 12,
+      "community": 10,
       "norm_label": "createinputring()"
     },
     {
@@ -3191,7 +3200,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L253",
       "id": "state_sharedstate_resetstate",
-      "community": 16,
+      "community": 10,
       "norm_label": "resetstate()"
     },
     {
@@ -3200,7 +3209,7 @@
       "source_file": "src/state/types.ts",
       "source_location": "L1",
       "id": "src_state_types_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "types.ts"
     },
     {
@@ -3344,7 +3353,7 @@
       "source_file": "src/ui/HUD.test.ts",
       "source_location": "L1",
       "id": "src_ui_hud_test_ts",
-      "community": 25,
+      "community": 24,
       "norm_label": "hud.test.ts"
     },
     {
@@ -3353,7 +3362,7 @@
       "source_file": "src/ui/HUD.ts",
       "source_location": "L1",
       "id": "src_ui_hud_ts",
-      "community": 25,
+      "community": 24,
       "norm_label": "hud.ts"
     },
     {
@@ -3362,7 +3371,7 @@
       "source_file": "src/ui/HUD.ts",
       "source_location": "L35",
       "id": "ui_hud_createhud",
-      "community": 25,
+      "community": 24,
       "norm_label": "createhud()"
     },
     {
@@ -3371,7 +3380,7 @@
       "source_file": "src/ui/HUD.ts",
       "source_location": "L100",
       "id": "ui_hud_createhudstats",
-      "community": 25,
+      "community": 24,
       "norm_label": "createhudstats()"
     },
     {
@@ -3380,7 +3389,7 @@
       "source_file": "src/ui/HUD.ts",
       "source_location": "L120",
       "id": "ui_hud_createhudsummary",
-      "community": 25,
+      "community": 24,
       "norm_label": "createhudsummary()"
     },
     {
@@ -3389,7 +3398,7 @@
       "source_file": "src/ui/HUD.ts",
       "source_location": "L131",
       "id": "ui_hud_fillhudsummary",
-      "community": 25,
+      "community": 24,
       "norm_label": "fillhudsummary()"
     },
     {
@@ -3398,7 +3407,7 @@
       "source_file": "src/ui/HUD.ts",
       "source_location": "L143",
       "id": "ui_hud_rendermetric",
-      "community": 25,
+      "community": 24,
       "norm_label": "rendermetric()"
     },
     {
@@ -3407,7 +3416,7 @@
       "source_file": "src/ui/HUD.ts",
       "source_location": "L189",
       "id": "ui_hud_formatelapsed",
-      "community": 25,
+      "community": 24,
       "norm_label": "formatelapsed()"
     },
     {
@@ -3416,7 +3425,7 @@
       "source_file": "src/ui/HUD.ts",
       "source_location": "L198",
       "id": "ui_hud_formatnumber",
-      "community": 25,
+      "community": 24,
       "norm_label": "formatnumber()"
     },
     {
@@ -3425,7 +3434,7 @@
       "source_file": "src/ui/ResultScreen.test.ts",
       "source_location": "L1",
       "id": "src_ui_resultscreen_test_ts",
-      "community": 10,
+      "community": 11,
       "norm_label": "resultscreen.test.ts"
     },
     {
@@ -3434,7 +3443,7 @@
       "source_file": "src/ui/ResultScreen.test.ts",
       "source_location": "L134",
       "id": "ui_resultscreen_test_buildsyntheticpath",
-      "community": 10,
+      "community": 11,
       "norm_label": "buildsyntheticpath()"
     },
     {
@@ -3443,7 +3452,7 @@
       "source_file": "src/ui/ResultScreen.test.ts",
       "source_location": "L144",
       "id": "ui_resultscreen_test_formatpointlist",
-      "community": 10,
+      "community": 11,
       "norm_label": "formatpointlist()"
     },
     {
@@ -3452,7 +3461,7 @@
       "source_file": "src/ui/ResultScreen.test.ts",
       "source_location": "L148",
       "id": "ui_resultscreen_test_formatnumber",
-      "community": 10,
+      "community": 11,
       "norm_label": "formatnumber()"
     },
     {
@@ -3461,7 +3470,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L1",
       "id": "src_ui_resultscreen_ts",
-      "community": 10,
+      "community": 11,
       "norm_label": "resultscreen.ts"
     },
     {
@@ -3470,7 +3479,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L47",
       "id": "ui_resultscreen_createresultscreen",
-      "community": 10,
+      "community": 11,
       "norm_label": "createresultscreen()"
     },
     {
@@ -3479,7 +3488,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L158",
       "id": "ui_resultscreen_createresultsummary",
-      "community": 10,
+      "community": 11,
       "norm_label": "createresultsummary()"
     },
     {
@@ -3488,7 +3497,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L202",
       "id": "ui_resultscreen_createrecoiloverlaymodel",
-      "community": 10,
+      "community": 11,
       "norm_label": "createrecoiloverlaymodel()"
     },
     {
@@ -3497,7 +3506,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L234",
       "id": "ui_resultscreen_summarizeresidualspeed",
-      "community": 10,
+      "community": 11,
       "norm_label": "summarizeresidualspeed()"
     },
     {
@@ -3506,7 +3515,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L249",
       "id": "ui_resultscreen_statcard",
-      "community": 10,
+      "community": 11,
       "norm_label": "statcard()"
     },
     {
@@ -3515,7 +3524,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L258",
       "id": "ui_resultscreen_rendercard",
-      "community": 10,
+      "community": 11,
       "norm_label": "rendercard()"
     },
     {
@@ -3524,7 +3533,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L286",
       "id": "ui_resultscreen_renderrecoilcompensation",
-      "community": 10,
+      "community": 11,
       "norm_label": "renderrecoilcompensation()"
     },
     {
@@ -3533,7 +3542,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L312",
       "id": "ui_resultscreen_renderlegenditem",
-      "community": 10,
+      "community": 11,
       "norm_label": "renderlegenditem()"
     },
     {
@@ -3542,7 +3551,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L326",
       "id": "ui_resultscreen_rendermetricpill",
-      "community": 10,
+      "community": 11,
       "norm_label": "rendermetricpill()"
     },
     {
@@ -3551,7 +3560,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L350",
       "id": "ui_resultscreen_renderrecoilsvg",
-      "community": 10,
+      "community": 11,
       "norm_label": "renderrecoilsvg()"
     },
     {
@@ -3560,7 +3569,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L382",
       "id": "ui_resultscreen_appendguideline",
-      "community": 10,
+      "community": 11,
       "norm_label": "appendguideline()"
     },
     {
@@ -3569,7 +3578,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L393",
       "id": "ui_resultscreen_appendpath",
-      "community": 10,
+      "community": 11,
       "norm_label": "appendpath()"
     },
     {
@@ -3578,7 +3587,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L421",
       "id": "ui_resultscreen_finiteoffsets",
-      "community": 10,
+      "community": 11,
       "norm_label": "finiteoffsets()"
     },
     {
@@ -3587,7 +3596,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L425",
       "id": "ui_resultscreen_formatsvgnumber",
-      "community": 10,
+      "community": 11,
       "norm_label": "formatsvgnumber()"
     },
     {
@@ -3596,7 +3605,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L429",
       "id": "ui_resultscreen_renderreactiondistribution",
-      "community": 10,
+      "community": 11,
       "norm_label": "renderreactiondistribution()"
     },
     {
@@ -3605,7 +3614,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L480",
       "id": "ui_resultscreen_histogram",
-      "community": 10,
+      "community": 11,
       "norm_label": "histogram()"
     },
     {
@@ -3614,7 +3623,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L492",
       "id": "ui_resultscreen_formatstatmean",
-      "community": 10,
+      "community": 11,
       "norm_label": "formatstatmean()"
     },
     {
@@ -3623,7 +3632,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L496",
       "id": "ui_resultscreen_formatpercent",
-      "community": 10,
+      "community": 11,
       "norm_label": "formatpercent()"
     },
     {
@@ -3632,7 +3641,7 @@
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L500",
       "id": "ui_resultscreen_formatnumber",
-      "community": 10,
+      "community": 11,
       "norm_label": "formatnumber()"
     },
     {
@@ -3668,7 +3677,7 @@
       "source_file": "src/view/CameraController.test.ts",
       "source_location": "L1",
       "id": "src_view_cameracontroller_test_ts",
-      "community": 26,
+      "community": 25,
       "norm_label": "cameracontroller.test.ts"
     },
     {
@@ -3677,7 +3686,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L1",
       "id": "src_view_cameracontroller_ts",
-      "community": 26,
+      "community": 25,
       "norm_label": "cameracontroller.ts"
     },
     {
@@ -3686,7 +3695,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L34",
       "id": "view_cameracontroller_cameracontroller",
-      "community": 26,
+      "community": 25,
       "norm_label": "cameracontroller"
     },
     {
@@ -3695,7 +3704,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L50",
       "id": "view_cameracontroller_cameracontroller_constructor",
-      "community": 26,
+      "community": 25,
       "norm_label": ".constructor()"
     },
     {
@@ -3704,7 +3713,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L59",
       "id": "view_cameracontroller_cameracontroller_applydelta",
-      "community": 26,
+      "community": 25,
       "norm_label": ".applydelta()"
     },
     {
@@ -3713,7 +3722,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L67",
       "id": "view_cameracontroller_cameracontroller_setsensitivity",
-      "community": 26,
+      "community": 25,
       "norm_label": ".setsensitivity()"
     },
     {
@@ -3722,7 +3731,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L76",
       "id": "view_cameracontroller_cameracontroller_setviewpunch",
-      "community": 26,
+      "community": 25,
       "norm_label": ".setviewpunch()"
     },
     {
@@ -3731,7 +3740,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L83",
       "id": "view_cameracontroller_cameracontroller_setfov",
-      "community": 26,
+      "community": 25,
       "norm_label": ".setfov()"
     },
     {
@@ -3740,7 +3749,7 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L88",
       "id": "view_cameracontroller_cameracontroller_applytocamera",
-      "community": 26,
+      "community": 25,
       "norm_label": ".#applytocamera()"
     },
     {
@@ -3749,7 +3758,7 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L1",
       "id": "src_weapon_weaponconfig_test_ts",
-      "community": 21,
+      "community": 16,
       "norm_label": "weaponconfig.test.ts"
     },
     {
@@ -3758,7 +3767,7 @@
       "source_file": "src/weapon/WeaponConfig.test.ts",
       "source_location": "L5",
       "id": "weapon_weaponconfig_test_validweapon",
-      "community": 21,
+      "community": 16,
       "norm_label": "validweapon()"
     },
     {
@@ -3767,7 +3776,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L1",
       "id": "src_weapon_weaponconfig_ts",
-      "community": 21,
+      "community": 16,
       "norm_label": "weaponconfig.ts"
     },
     {
@@ -3776,7 +3785,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L29",
       "id": "weapon_weaponconfig_validateweapon",
-      "community": 21,
+      "community": 16,
       "norm_label": "validateweapon()"
     },
     {
@@ -3785,7 +3794,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L72",
       "id": "weapon_weaponconfig_validaterecoverytransition",
-      "community": 21,
+      "community": 16,
       "norm_label": "validaterecoverytransition()"
     },
     {
@@ -3794,7 +3803,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L82",
       "id": "weapon_weaponconfig_err",
-      "community": 21,
+      "community": 16,
       "norm_label": "err()"
     },
     {
@@ -3803,7 +3812,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L86",
       "id": "weapon_weaponconfig_requireobject",
-      "community": 21,
+      "community": 16,
       "norm_label": "requireobject()"
     },
     {
@@ -3812,7 +3821,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L93",
       "id": "weapon_weaponconfig_requirefinitenumber",
-      "community": 21,
+      "community": 16,
       "norm_label": "requirefinitenumber()"
     },
     {
@@ -3821,7 +3830,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L100",
       "id": "weapon_weaponconfig_requirenonnegativenumber",
-      "community": 21,
+      "community": 16,
       "norm_label": "requirenonnegativenumber()"
     },
     {
@@ -3830,7 +3839,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L106",
       "id": "weapon_weaponconfig_requirepositivenumber",
-      "community": 21,
+      "community": 16,
       "norm_label": "requirepositivenumber()"
     },
     {
@@ -3839,7 +3848,7 @@
       "source_file": "src/weapon/WeaponConfig.ts",
       "source_location": "L112",
       "id": "weapon_weaponconfig_requirepositiveint",
-      "community": 21,
+      "community": 16,
       "norm_label": "requirepositiveint()"
     },
     {
@@ -3848,7 +3857,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L1",
       "id": "src_weapon_weapons_ts",
-      "community": 21,
+      "community": 16,
       "norm_label": "weapons.ts"
     },
     {
@@ -3857,7 +3866,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L75",
       "id": "weapon_weapons_getweapon",
-      "community": 0,
+      "community": 16,
       "norm_label": "getweapon()"
     },
     {
@@ -3866,7 +3875,7 @@
       "source_file": "src/weapon/weapons.ts",
       "source_location": "L80",
       "id": "weapon_weapons_isweaponid",
-      "community": 0,
+      "community": 16,
       "norm_label": "isweaponid()"
     },
     {
@@ -3929,7 +3938,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L1",
       "id": "tests_calibration_showpos_test_ts",
-      "community": 14,
+      "community": 15,
       "norm_label": "showpos.test.ts"
     },
     {
@@ -3938,7 +3947,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L47",
       "id": "calibration_showpos_test_assertfixturemeta",
-      "community": 14,
+      "community": 15,
       "norm_label": "assertfixturemeta()"
     },
     {
@@ -3947,7 +3956,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L56",
       "id": "calibration_showpos_test_assertproductionprofilematchesfixture",
-      "community": 14,
+      "community": 15,
       "norm_label": "assertproductionprofilematchesfixture()"
     },
     {
@@ -3956,7 +3965,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L62",
       "id": "calibration_showpos_test_collect64hzsamples",
-      "community": 14,
+      "community": 15,
       "norm_label": "collect64hzsamples()"
     },
     {
@@ -3965,7 +3974,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L86",
       "id": "calibration_showpos_test_expectserieswithintolerance",
-      "community": 14,
+      "community": 15,
       "norm_label": "expectserieswithintolerance()"
     },
     {
@@ -3974,7 +3983,7 @@
       "source_file": "tests/e2e/backend.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_backend_spec_ts",
-      "community": 37,
+      "community": 39,
       "norm_label": "backend.spec.ts"
     },
     {
@@ -3983,7 +3992,7 @@
       "source_file": "tests/e2e/full-drill.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_full_drill_spec_ts",
-      "community": 32,
+      "community": 33,
       "norm_label": "full-drill.spec.ts"
     },
     {
@@ -3992,7 +4001,7 @@
       "source_file": "tests/e2e/full-drill.spec.ts",
       "source_location": "L23",
       "id": "e2e_full_drill_spec_runfullchain",
-      "community": 32,
+      "community": 33,
       "norm_label": "runfullchain()"
     },
     {
@@ -4037,7 +4046,7 @@
       "source_file": "tests/e2e/isolation.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_isolation_spec_ts",
-      "community": 38,
+      "community": 40,
       "norm_label": "isolation.spec.ts"
     },
     {
@@ -4046,7 +4055,7 @@
       "source_file": "tests/e2e/overlay-layering.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_overlay_layering_spec_ts",
-      "community": 33,
+      "community": 34,
       "norm_label": "overlay-layering.spec.ts"
     },
     {
@@ -4055,8 +4064,26 @@
       "source_file": "tests/e2e/overlay-layering.spec.ts",
       "source_location": "L17",
       "id": "e2e_overlay_layering_spec_zindexof",
-      "community": 33,
+      "community": 34,
       "norm_label": "zindexof()"
+    },
+    {
+      "label": "spray-drill.spec.ts",
+      "file_type": "code",
+      "source_file": "tests/e2e/spray-drill.spec.ts",
+      "source_location": "L1",
+      "id": "tests_e2e_spray_drill_spec_ts",
+      "community": 35,
+      "norm_label": "spray-drill.spec.ts"
+    },
+    {
+      "label": "waitForHarness()",
+      "file_type": "code",
+      "source_file": "tests/e2e/spray-drill.spec.ts",
+      "source_location": "L7",
+      "id": "e2e_spray_drill_spec_waitforharness",
+      "community": 35,
+      "norm_label": "waitforharness()"
     },
     {
       "label": "determinism.test.ts",
@@ -4127,7 +4154,7 @@
       "source_file": "tests/regression/spray-determinism.test.ts",
       "source_location": "L1",
       "id": "tests_regression_spray_determinism_test_ts",
-      "community": 24,
+      "community": 13,
       "norm_label": "spray-determinism.test.ts"
     },
     {
@@ -4136,7 +4163,7 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L1",
       "id": "tests_regression_spraydeterminismfixture_ts",
-      "community": 24,
+      "community": 13,
       "norm_label": "spraydeterminismfixture.ts"
     },
     {
@@ -4145,7 +4172,7 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L78",
       "id": "regression_spraydeterminismfixture_canonicalsprayframes",
-      "community": 24,
+      "community": 13,
       "norm_label": "canonicalsprayframes()"
     },
     {
@@ -4154,7 +4181,7 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L84",
       "id": "regression_spraydeterminismfixture_runspray",
-      "community": 24,
+      "community": 13,
       "norm_label": "runspray()"
     },
     {
@@ -4163,7 +4190,7 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L156",
       "id": "regression_spraydeterminismfixture_framesat",
-      "community": 24,
+      "community": 13,
       "norm_label": "framesat()"
     },
     {
@@ -4172,7 +4199,7 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L163",
       "id": "regression_spraydeterminismfixture_createcamera",
-      "community": 24,
+      "community": 13,
       "norm_label": "createcamera()"
     },
     {
@@ -4181,7 +4208,7 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L171",
       "id": "regression_spraydeterminismfixture_applyaimfixture",
-      "community": 24,
+      "community": 13,
       "norm_label": "applyaimfixture()"
     },
     {
@@ -4190,7 +4217,7 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L176",
       "id": "regression_spraydeterminismfixture_collectimpacts",
-      "community": 24,
+      "community": 13,
       "norm_label": "collectimpacts()"
     },
     {
@@ -4199,7 +4226,7 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L187",
       "id": "regression_spraydeterminismfixture_round",
-      "community": 24,
+      "community": 13,
       "norm_label": "round()"
     },
     {
@@ -4208,7 +4235,7 @@
       "source_file": "tests/validity/reaction-time.test.ts",
       "source_location": "L1",
       "id": "tests_validity_reaction_time_test_ts",
-      "community": 7,
+      "community": 6,
       "norm_label": "reaction-time.test.ts"
     },
     {
@@ -4217,7 +4244,7 @@
       "source_file": "tests/validity/reaction-time.test.ts",
       "source_location": "L23",
       "id": "validity_reaction_time_test_snapshotfrompeeks",
-      "community": 7,
+      "community": 6,
       "norm_label": "snapshotfrompeeks()"
     },
     {
@@ -4226,7 +4253,7 @@
       "source_file": "tests/validity/reaction-time.test.ts",
       "source_location": "L44",
       "id": "validity_reaction_time_test_median",
-      "community": 7,
+      "community": 6,
       "norm_label": "median()"
     },
     {
@@ -4235,7 +4262,7 @@
       "source_file": "tests/validity/reaction-time.test.ts",
       "source_location": "L53",
       "id": "validity_reaction_time_test_withinreactionband",
-      "community": 7,
+      "community": 6,
       "norm_label": "withinreactionband()"
     },
     {
@@ -4243,7 +4270,7 @@
       "file_type": "code",
       "source_file": "src/metrics/compute.ts",
       "source_location": "L171",
-      "community": 7,
+      "community": 6,
       "norm_label": "computerecoilcompensationerror()",
       "id": "metrics_compute_computerecoilcompensationerror"
     },
@@ -4252,7 +4279,7 @@
       "file_type": "code",
       "source_file": "src/ui/ResultScreen.ts",
       "source_location": "L162",
-      "community": 10,
+      "community": 11,
       "norm_label": "classifyresidualspeed()",
       "id": "ui_resultscreen_classifyresidualspeed"
     },
@@ -4292,7 +4319,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "claude.md \u5c08\u6848\u57f7\u884c\u5354\u8b70\u8207\u5c0e\u822a",
       "id": "claude_project_protocol"
     },
@@ -4305,7 +4332,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "\u7a0b\u5e8f\u8a18\u61b6 (procedural memory)",
       "id": "claude_procedural_memory"
     },
@@ -4318,7 +4345,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "\u5782\u76f4\u5207\u7247 = \u539f\u5b50 commit \u5354\u8b70",
       "id": "claude_vertical_slice_commit"
     },
@@ -4331,7 +4358,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "\u8a18\u61b6\u5206\u5c64 (working/semantic/episodic/\u5168\u57df/\u7a0b\u5e8f)",
       "id": "claude_memory_layers"
     },
@@ -4357,7 +4384,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "context.md \u5c08\u6709\u540d\u8a5e\u8a5e\u5f59\u8868",
       "id": "context_glossary"
     },
@@ -4370,7 +4397,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 34,
+      "community": 36,
       "norm_label": "counter-strafe (\u53cd\u5411\u6025\u505c)",
       "id": "context_counter_strafe"
     },
@@ -4383,7 +4410,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 34,
+      "community": 36,
       "norm_label": "\u53cd\u5411\u9375 (counter key)",
       "id": "context_counter_key"
     },
@@ -4396,7 +4423,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 39,
+      "community": 41,
       "norm_label": "drill (\u8a13\u7df4\u55ae\u5143)",
       "id": "context_drill"
     },
@@ -4409,7 +4436,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "peek \u8207 p2 \u63a8\u9032\u653f\u7b56 (\u547d\u4e2d\u624d\u63a8\u9032)",
       "id": "context_peek"
     },
@@ -4422,7 +4449,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "\u9996\u767c (first shot / firstshot)",
       "id": "context_first_shot"
     },
@@ -4435,7 +4462,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 31,
       "norm_label": "\u6025\u505c\u53cd\u61c9\u6642\u9593 (t_counter \u2212 t_visible)",
       "id": "context_counter_reaction_time"
     },
@@ -4461,7 +4488,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 42,
       "norm_label": "\u505c\u706b\u6642\u5e8f\u5c0d\u9f4a (t_fire \u2212 t_velocity_zero)",
       "id": "context_fire_timing_alignment"
     },
@@ -4474,7 +4501,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "\u9996\u767c\u547d\u4e2d\u7387",
       "id": "context_first_shot_hit_rate"
     },
@@ -4500,7 +4527,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 43,
       "norm_label": "\u5207\u63db\u6642\u9593 (t_next_acquisition \u2212 t_prev_kill)",
       "id": "context_switch_time"
     },
@@ -4513,7 +4540,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 42,
+      "community": 44,
       "norm_label": "\u7bc0\u594f\u7a69\u5b9a\u5ea6",
       "id": "context_rhythm_stability"
     },
@@ -4526,7 +4553,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 43,
+      "community": 45,
       "norm_label": "\u5de6\u53f3\u5c0d\u7a31\u6027",
       "id": "context_lr_symmetry"
     },
@@ -4552,7 +4579,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 44,
+      "community": 46,
       "norm_label": "pre/post (\u524d\u5f8c\u6e2c) \u7814\u7a76\u65b9\u6cd5\u5b78",
       "id": "context_pre_post_test"
     },
@@ -4565,7 +4592,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "inputsampler \u5143\u4ef6",
       "id": "context_input_sampler"
     },
@@ -4578,7 +4605,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "sharedstate \u5143\u4ef6",
       "id": "context_shared_state"
     },
@@ -4591,7 +4618,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "simloop \u5143\u4ef6",
       "id": "context_sim_loop"
     },
@@ -4604,7 +4631,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "movementcontroller \u5143\u4ef6 (\u72c0\u614b\u6a5f m1)",
       "id": "context_movement_controller"
     },
@@ -4617,7 +4644,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 31,
       "norm_label": "targetmanager \u5143\u4ef6",
       "id": "context_target_manager"
     },
@@ -4630,7 +4657,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "hitdetector \u5143\u4ef6",
       "id": "context_hit_detector"
     },
@@ -4643,7 +4670,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 19,
       "norm_label": "renderloop \u5143\u4ef6",
       "id": "context_render_loop"
     },
@@ -4656,7 +4683,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 45,
+      "community": 47,
       "norm_label": "scenemanager \u5143\u4ef6",
       "id": "context_scene_manager"
     },
@@ -4669,7 +4696,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "datarecorder \u5143\u4ef6 (preallocated arena)",
       "id": "context_data_recorder"
     },
@@ -4708,7 +4735,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "\u96d9\u8ff4\u5708 (dual-loop)",
       "id": "context_dual_loop"
     },
@@ -4760,7 +4787,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 46,
+      "community": 48,
       "norm_label": "alpha \u5167\u63d2 (interpolation)",
       "id": "context_alpha_interpolation"
     },
@@ -4799,7 +4826,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 31,
       "norm_label": "t_visible",
       "id": "context_t_visible"
     },
@@ -4812,7 +4839,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "sim tick rate (128 hz)",
       "id": "context_sim_tick_rate"
     },
@@ -4825,7 +4852,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "ring buffer (\u8f38\u5165\u7de9\u885d)",
       "id": "context_ring_buffer"
     },
@@ -4890,7 +4917,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "\u8f38\u5165\u5206\u6876 (input bucketing)",
       "id": "context_input_bucketing"
     },
@@ -4929,7 +4956,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 47,
+      "community": 49,
       "norm_label": "\u968e\u6bb5 a (stage a)",
       "id": "context_stage_a"
     },
@@ -4981,7 +5008,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "design.md \u57f7\u884c\u671f\u8207\u67b6\u69cb\u8a2d\u8a08\u7b46\u8a18",
       "id": "design_notes"
     },
@@ -4994,7 +5021,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "\u968e\u6bb5 a \u96d9\u8ff4\u5708\u5be6\u70ba\u55ae\u57f7\u884c\u7dd2 raf \u8d85\u7d1a\u8ff4\u5708",
       "id": "design_single_thread_stage_a"
     },
@@ -5033,7 +5060,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "frontend.md (\u524d\u7aef/ui \u8a2d\u8a08,\u9810\u7559\u7a7a\u6a94)",
       "id": "frontend_doc"
     },
@@ -5046,7 +5073,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "map.md \u6587\u4ef6\u5730\u5716",
       "id": "map_doc"
     },
@@ -5059,7 +5086,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "plan.md \u57f7\u884c\u8a08\u756b (\u968e\u6bb5 a)",
       "id": "plan_doc"
     },
@@ -5085,7 +5112,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "d2 \u2014 \u6e2c\u8a66\u6846\u67b6 vitest + playwright",
       "id": "plan_d2_test_framework"
     },
@@ -5111,7 +5138,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "d4 \u2014 \u6587\u4ef6\u8a9e\u8a00 (\u7e41\u4e2d\u4fdd\u7559\u82f1\u6587\u8853\u8a9e)",
       "id": "plan_d4_doc_language"
     },
@@ -5124,7 +5151,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "d5 \u2014 plan \u9846\u7c92\u5ea6 (agent \u53ef\u57f7\u884c\u6b65\u9a5f)",
       "id": "plan_d5_granularity"
     },
@@ -5150,7 +5177,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "\u898f\u683c\u66f8 v1.1 + wbs",
       "id": "spec_doc"
     },
@@ -5163,7 +5190,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "f1 \u2014 \u63a1\u96c6\u9375\u76e4\u8207\u6ed1\u9f20\u64cd\u4f5c\u8cc7\u6599",
       "id": "spec_f1"
     },
@@ -5176,7 +5203,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 31,
       "norm_label": "f2 \u2014 \u8a18\u9304 t_visible spawn/\u53ef\u898b\u6642\u9593\u6233",
       "id": "spec_f2"
     },
@@ -5189,7 +5216,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 19,
       "norm_label": "f3 \u2014 \u7b2c\u4e00\u4eba\u7a31\u8996\u89d2 + cs \u98a8\u683c\u53cd\u5411\u6025\u505c",
       "id": "spec_f3"
     },
@@ -5241,7 +5268,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "adr-2 \u908f\u8f2f\u8207\u6e32\u67d3\u89e3\u8026 (\u96d9\u8ff4\u5708 + fixed-timestep)",
       "id": "spec_adr2"
     },
@@ -5254,7 +5281,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "adr-3 sim tick rate = 128 hz",
       "id": "spec_adr3"
     },
@@ -5384,7 +5411,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 13,
+      "community": 14,
       "norm_label": "decisions.md \u5168\u57df\u6c7a\u7b56\u8207\u77db\u76fe\u5e33\u672c",
       "id": "decisions_ledger"
     },
@@ -5410,7 +5437,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "exec-plan/readme.md \u57f7\u884c\u8a08\u756b\u7d22\u5f15",
       "id": "execplan_readme"
     },
@@ -5423,7 +5450,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "\u91cc\u7a0b\u7891 m1 (wp-2 \u810a\u690e\u9580\u63a7)",
       "id": "execplan_milestone_m1"
     },
@@ -5436,7 +5463,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "\u91cc\u7a0b\u7891 m2 (wp-5 \u6838\u5fc3\u73a9\u6cd5)",
       "id": "execplan_milestone_m2"
     },
@@ -5449,7 +5476,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "\u91cc\u7a0b\u7891 m3 (wp-7 \u53ef\u532f\u51fa\u8cc7\u6599)",
       "id": "execplan_milestone_m3"
     },
@@ -5462,7 +5489,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "\u91cc\u7a0b\u7891 m4 (wp-9 \u968e\u6bb5 a \u4ea4\u4ed8)",
       "id": "execplan_milestone_m4"
     },
@@ -5475,7 +5502,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-0 \u74b0\u5883\u5efa\u7f6e\u8207\u5b78\u7fd2\u722c\u5347",
       "id": "execplan_wp0"
     },
@@ -5488,7 +5515,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-1 fps \u63a7\u5236 + pointer lock",
       "id": "execplan_wp1"
     },
@@ -5501,7 +5528,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-2 sharedstate + \u96d9\u8ff4\u5708\u9aa8\u67b6 (\u810a\u690e)",
       "id": "execplan_wp2"
     },
@@ -5514,7 +5541,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-3 inputsampler (f1)",
       "id": "execplan_wp3"
     },
@@ -5527,7 +5554,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-4 targetmanager + t_visible (f2)",
       "id": "execplan_wp4"
     },
@@ -5540,7 +5567,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-5 hitdetector + \u6a6b\u79fb + \u7c21\u5316\u6025\u505c (f3)",
       "id": "execplan_wp5"
     },
@@ -5553,7 +5580,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-6 drillconfig \u8cc7\u6599\u9a45\u52d5 drill (f4)",
       "id": "execplan_wp6"
     },
@@ -5566,7 +5593,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-7 datarecorder ring buffer + \u532f\u51fa",
       "id": "execplan_wp7"
     },
@@ -5579,7 +5606,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-8 metricsdashboard + hud",
       "id": "execplan_wp8"
     },
@@ -5592,7 +5619,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 19,
+      "community": 18,
       "norm_label": "wp-9 \u7aef\u5230\u7aef\u6574\u5408 + \u8a08\u6642\u6548\u5ea6 + \u6c7a\u5b9a\u6027\u56de\u6b78",
       "id": "execplan_wp9"
     },
@@ -5735,7 +5762,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 \u2014 fps \u63a7\u5236 + pointer lock (exec-plan)",
       "id": "wp1_readme"
     },
@@ -5748,7 +5775,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 progress log",
       "id": "wp1_progress"
     },
@@ -5761,7 +5788,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 master task checklist",
       "id": "wp1_task_checklist"
     },
@@ -5774,7 +5801,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 t0 \u2014 entry gate",
       "id": "wp1_t0_entry_gate"
     },
@@ -5787,7 +5814,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 t1 \u2014 scenemanager (room/camera)",
       "id": "wp1_t1_scene"
     },
@@ -5800,7 +5827,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 t2 \u2014 pointer lock \u6574\u5408",
       "id": "wp1_t2_pointerlock"
     },
@@ -5813,7 +5840,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 t3 \u2014 \u539f\u59cb\u8f38\u5165 unadjustedmovement + fallback",
       "id": "wp1_t3_raw_input_fallback"
     },
@@ -5826,7 +5853,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 t4 \u2014 yaw/pitch \u8996\u89d2 + pitch \u593e\u89d2",
       "id": "wp1_t4_yaw_pitch"
     },
@@ -5839,7 +5866,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 t5 \u2014 sensitivity/fov \u8a2d\u5b9a\u9762\u677f",
       "id": "wp1_t5_settings_panel"
     },
@@ -5852,7 +5879,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-1 t6 \u2014 exit gate",
       "id": "wp1_t6_exit_gate"
     },
@@ -5865,7 +5892,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-2 \u2014 sharedstate + \u96d9\u8ff4\u5708\u9aa8\u67b6 \u2605\u810a\u690e (m1)",
       "id": "wp2_readme"
     },
@@ -5878,7 +5905,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 48,
+      "community": 50,
       "norm_label": "wp-2 progress log",
       "id": "wp2_progress"
     },
@@ -5891,7 +5918,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-2 master task checklist",
       "id": "wp2_task_checklist"
     },
@@ -5904,7 +5931,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-2 t0 \u2014 entry gate",
       "id": "wp2_t0_entry_gate"
     },
@@ -5917,7 +5944,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-2 t1 \u2014 sharedstate (\u578b\u5225 + \u55ae\u4f8b)",
       "id": "wp2_t1_shared_state"
     },
@@ -5930,7 +5957,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-2 t2 \u2014 simloop accumulator (128 hz)",
       "id": "wp2_t2_sim_loop"
     },
@@ -5943,7 +5970,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-2 t3 \u2014 render alpha \u5167\u63d2",
       "id": "wp2_t3_render_interpolation"
     },
@@ -5956,7 +5983,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-2 t4 \u2014 \u6c7a\u5b9a\u6027\u9a57\u8b49 \u2605m1 gate",
       "id": "wp2_t4_determinism"
     },
@@ -5969,7 +5996,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-2 t5 \u2014 exit gate (\u5ba3\u544a m1)",
       "id": "wp2_t5_exit_gate"
     },
@@ -5982,7 +6009,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "scenemanager (room/floor/walls/light/perspectivecamera)",
       "id": "wp1_scenemanager"
     },
@@ -5995,7 +6022,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "pointerlockhandle (request/locked/onchange/onmove)",
       "id": "wp1_pointerlock_handle"
     },
@@ -6008,7 +6035,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "unadjustedmovement (\u539f\u59cb\u6ed1\u9f20\u8f38\u5165, \u95dc os \u52a0\u901f)",
       "id": "wp1_unadjusted_movement"
     },
@@ -6021,7 +6048,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "notsupportederror fallback (\u50c5 chromium \u964d\u7d1a\u8def\u5f91)",
       "id": "wp1_notsupportederror_fallback"
     },
@@ -6034,7 +6061,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "cameracontroller (yaw/pitch + pitch clamp + sensitivity/fov)",
       "id": "wp1_camera_controller"
     },
@@ -6047,7 +6074,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "pitch \u593e\u89d2 (clamp \u00b1~89\u00b0 \u907f\u514d\u7ffb\u8f49)",
       "id": "wp1_pitch_clamp"
     },
@@ -6060,7 +6087,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "settingspanel (dom overlay sensitivity/fov)",
       "id": "wp1_settings_panel"
     },
@@ -6073,7 +6100,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "sensitivity counts\u2192radians \u7dda\u6027\u4fc2\u6578 (oq-1.1)",
       "id": "wp1_sensitivity_linear"
     },
@@ -6086,7 +6113,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "\u8996\u89d2\u8d70\u8f38\u5165/render \u8def\u5f91\u4e0d\u5165 sim (\u96d9\u8ff4\u5708\u908a\u754c)",
       "id": "wp1_view_input_path_boundary"
     },
@@ -6099,7 +6126,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "sharedstate (\u4e09\u8ff4\u5708\u552f\u4e00\u6e9d\u901a\u7ba1\u9053, \u55ae\u4f8b)",
       "id": "wp2_shared_state"
     },
@@ -6112,7 +6139,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "simloop accumulator (\u56fa\u5b9a 128 hz, fixed-timestep)",
       "id": "wp2_sim_loop_accumulator"
     },
@@ -6125,7 +6152,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "simstep \u7d14\u51fd\u5f0f\u908a\u754c (\u9810\u7559\u968e\u6bb5 b worker seam, oq-2.4)",
       "id": "wp2_sim_step_pure_fn"
     },
@@ -6138,7 +6165,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "clock.ts \u6ce8\u5165\u5f0f\u6642\u9593 (now(): performance.now(), oq-2.3)",
       "id": "wp2_clock_injectable"
     },
@@ -6151,7 +6178,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "renderloop alpha \u5167\u63d2 (lerp prev/curr, \u552f\u8b80)",
       "id": "wp2_render_loop_interpolation"
     },
@@ -6164,7 +6191,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "prev/curr \u96d9\u5feb\u7167 (\u5167\u63d2\u7528)",
       "id": "wp2_prev_curr_snapshot"
     },
@@ -6177,7 +6204,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "spiral of death \u593e\u4f4f (math.min(delta,0.25))",
       "id": "wp2_spiral_of_death_clamp"
     },
@@ -6190,7 +6217,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "\u6c7a\u5b9a\u6027 (\u540c\u8f38\u5165\u5e8f\u5217\u4e0d\u540c render fps \u2192 \u9010 tick \u4e00\u81f4)",
       "id": "wp2_determinism"
     },
@@ -6203,7 +6230,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "m1 \u2014 \u5c08\u6848\u810a\u690e\u91cc\u7a0b\u7891 (\u9580\u63a7\u9598)",
       "id": "wp2_m1_milestone"
     },
@@ -6216,7 +6243,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "\u4e09\u8ff4\u5708\u53ea\u7d93 sharedstate \u6e9d\u901a (\u4e92\u4e0d\u76f4\u63a5\u547c\u53eb)",
       "id": "wp2_three_loop_boundary"
     },
@@ -6229,7 +6256,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "adr-2 \u96d9\u8ff4\u5708\u89e3\u8026",
       "id": "ext_adr2_dual_loop"
     },
@@ -6242,7 +6269,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "adr-3 128 hz tick",
       "id": "ext_adr3_tick128"
     },
@@ -6255,7 +6282,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "adr-4 performance.now() \u8a08\u6642\u6e90",
       "id": "ext_adr4_performance_now"
     },
@@ -6268,7 +6295,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "adr-5 pointer lock + \u539f\u59cb\u8f38\u5165 + coalesced",
       "id": "ext_adr5_pointerlock_raw"
     },
@@ -6281,7 +6308,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "d1 ui = \u7d14 ts + dom overlay",
       "id": "ext_d1_dom_overlay"
     },
@@ -6294,7 +6321,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-0 \u2014 \u74b0\u5883\u8a2d\u7f6e (scaffold/createrenderer seam)",
       "id": "ext_wp0"
     },
@@ -6307,7 +6334,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-3 \u2014 \u9ad8\u983b\u8f38\u5165\u63a1\u96c6 (getcoalescedevents \u5165\u7de9\u885d)",
       "id": "ext_wp3"
     },
@@ -6320,7 +6347,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-4 \u2014 \u76ee\u6a19 / \u6e96\u5fc3",
       "id": "ext_wp4"
     },
@@ -6333,7 +6360,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-5 \u2014 movement / \u6025\u505c\u7269\u7406",
       "id": "ext_wp5"
     },
@@ -6346,7 +6373,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-6 \u2014 drill config (\u623f\u9593/\u8ddd\u96e2\u6b63\u5f0f\u503c)",
       "id": "ext_wp6"
     },
@@ -6359,7 +6386,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 2,
       "norm_label": "wp-7 \u2014 datarecorder ring buffer / metadata",
       "id": "ext_wp7"
     },
@@ -6372,7 +6399,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 \u8f38\u5165\u63a1\u96c6\u5c64 inputsampler (f1)",
       "id": "wp3_input_sampler"
     },
@@ -6385,7 +6412,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 progress log",
       "id": "wp3_progress"
     },
@@ -6398,7 +6425,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 master task checklist",
       "id": "wp3_task_checklist"
     },
@@ -6411,7 +6438,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 t0 entry gate",
       "id": "wp3_t0_entry_gate"
     },
@@ -6424,7 +6451,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 t1 \u9375\u76e4\u63a1\u96c6 (keydown/keyup + timestamp)",
       "id": "wp3_t1_keyboard"
     },
@@ -6437,7 +6464,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 t2 \u6ed1\u9f20 coalesced \u63a1\u96c6 (\u6b21\u5e40\u8ecc\u8de1)",
       "id": "wp3_t2_mouse_coalesced"
     },
@@ -6450,7 +6477,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 t3 \u958b\u706b\u4e8b\u4ef6\u63a1\u96c6 (mousedown + timestamp)",
       "id": "wp3_t3_fire"
     },
@@ -6463,7 +6490,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 t4 sim \u4f9d\u6642\u5e8f\u6d88\u8cbb\u7de9\u885d + \u6392\u7a7a",
       "id": "wp3_t4_sim_consume"
     },
@@ -6476,7 +6503,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-3 t5 exit gate",
       "id": "wp3_t5_exit_gate"
     },
@@ -6489,7 +6516,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 \u76ee\u6a19\u7cfb\u7d71 + t_visible (f2)",
       "id": "wp4_target_tvisible"
     },
@@ -6502,7 +6529,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 progress log",
       "id": "wp4_progress"
     },
@@ -6515,7 +6542,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 master task checklist",
       "id": "wp4_task_checklist"
     },
@@ -6528,7 +6555,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 t0 entry gate",
       "id": "wp4_t0_entry_gate"
     },
@@ -6541,7 +6568,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 t1 \u76ee\u6a19 entity (mesh + hitbox)",
       "id": "wp4_t1_target_entity"
     },
@@ -6554,7 +6581,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 t2 \u53ef\u898b\u6027 + t_visible (sim tick \u5167\u84cb\u6233)",
       "id": "wp4_t2_visibility_tvisible"
     },
@@ -6567,7 +6594,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 t3 \u5de6\u53f3\u4ea4\u66ff\u5e8f\u5217",
       "id": "wp4_t3_alternation"
     },
@@ -6580,7 +6607,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 t4 crosshair (\u87a2\u5e55\u4e2d\u5fc3\u6e96\u5fc3)",
       "id": "wp4_t4_crosshair"
     },
@@ -6593,7 +6620,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-4 t5 exit gate",
       "id": "wp4_t5_exit_gate"
     },
@@ -6606,7 +6633,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "inputsampler (src/input/inputsampler.ts)",
       "id": "wp3_input_sampler_class"
     },
@@ -6619,7 +6646,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "consume (src/input/consume.ts)",
       "id": "wp3_consume_fn"
     },
@@ -6632,7 +6659,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "sharedstate (src/state/sharedstate.ts)",
       "id": "shared_state"
     },
@@ -6645,7 +6672,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "simloop (src/loop/simloop.ts, 128 hz)",
       "id": "sim_loop"
     },
@@ -6658,7 +6685,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "targetmanager (src/sim/targetmanager.ts)",
       "id": "target_manager"
     },
@@ -6671,7 +6698,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "targetview (src/render/targetview.ts)",
       "id": "target_view"
     },
@@ -6684,7 +6711,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "crosshair (src/ui/crosshair.ts)",
       "id": "crosshair"
     },
@@ -6697,7 +6724,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "targetstate (id/side/pos/visible/alive/hitboxes)",
       "id": "target_state"
     },
@@ -6710,7 +6737,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "t_visible (\u53ef\u898b\u6642\u9593\u6233 / \u53cd\u61c9\u6642\u9593\u8d77\u9ede)",
       "id": "concept_t_visible"
     },
@@ -6723,7 +6750,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "sub-tick \u8f38\u5165\u6642\u9593\u6233 (\u7cbe\u6e96\u5ea6\u771f\u6b63\u4f86\u6e90)",
       "id": "concept_sub_tick_timestamp"
     },
@@ -6736,7 +6763,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "getcoalescedevents \u6b21\u5e40\u63a1\u6a23 (\u9ad8\u983b\u6ed1\u9f20\u4e0d\u4e1f\u6a23\u672c)",
       "id": "concept_coalesced_events"
     },
@@ -6749,7 +6776,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "\u6642\u9593\u6233\u540c\u6e90 (event.timestamp = performance.now() \u57fa\u6e96)",
       "id": "concept_timestamp_same_origin"
     },
@@ -6762,7 +6789,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "\u4f9d\u6642\u5e8f\u6392\u5e8f\u6d88\u8cbb + \u6392\u7a7a (\u6c7a\u5b9a\u6027\u5951\u7d04)",
       "id": "concept_sorted_consume_determinism"
     },
@@ -6775,7 +6802,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "t_visible \u5728 sim tick \u5167\u84cb\u4e00\u6b21 (\u975e render frame)",
       "id": "concept_tvisible_in_sim_tick"
     },
@@ -6788,7 +6815,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "\u78ba\u5b9a\u6027\u5de6\u53f3\u4ea4\u66ff\u8f2a\u66ff (counter-strafe peek \u7bc0\u594f)",
       "id": "concept_deterministic_alternation"
     },
@@ -6801,7 +6828,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "adr-2 \u4e09\u8ff4\u5708\u7d93 sharedstate \u6e9d\u901a",
       "id": "adr2_three_loops"
     },
@@ -6814,7 +6841,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "adr-3 \u7cbe\u6e96\u5ea6\u4f86\u6e90 = sub-tick \u8f38\u5165\u6642\u9593\u6233",
       "id": "adr3_subtick"
     },
@@ -6827,7 +6854,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "adr-4 performance.now() / event.timestamp \u540c\u6e90",
       "id": "adr4_performance_now"
     },
@@ -6840,7 +6867,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "adr-5 coalesced events",
       "id": "adr5_coalesced"
     },
@@ -6853,7 +6880,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "d1 ui = \u7d14 ts + dom overlay",
       "id": "d1_dom_overlay"
     },
@@ -6866,7 +6893,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u91cc\u7a0b\u7891 m1 (wp-2 \u810a\u690e / \u6c7a\u5b9a\u6027\u9a57\u8b49)",
       "id": "milestone_m1"
     },
@@ -6879,7 +6906,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-1 \u5834\u666f (\u76f8\u6a5f / pointer lock)",
       "id": "wp1_scene"
     },
@@ -6892,7 +6919,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-2 \u96d9\u8ff4\u5708\u9aa8\u67b6 (sim tick + clock + \u6c7a\u5b9a\u6027)",
       "id": "wp2_dual_loop"
     },
@@ -6905,7 +6932,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-5 \u547d\u4e2d / \u6025\u505c\u5224\u5b9a (raycaster)",
       "id": "wp5_hit_counter"
     },
@@ -6918,7 +6945,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-6 drill loader (\u63a5\u7ba1\u76ee\u6a19\u751f\u6210)",
       "id": "wp6_drill_loader"
     },
@@ -6931,7 +6958,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-7 ring buffer \u8a18\u9304 / \u532f\u51fa",
       "id": "wp7_ring_buffer"
     },
@@ -6944,7 +6971,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 6,
+      "community": 4,
       "norm_label": "wp-8 \u53cd\u61c9\u6642\u9593\u8a08\u7b97 / \u6e96\u5fc3\u5c0d\u9f4a\u504f\u79fb",
       "id": "wp8_reaction_time"
     },
@@ -6957,7 +6984,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-5 \u2014 hit detection + simplified counter-strafe (f3)",
       "id": "wp5_readme_wp5"
     },
@@ -6970,7 +6997,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "m2 \u2014 core gameplay established",
       "id": "wp5_readme_m2"
     },
@@ -6983,7 +7010,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "hitdetector (raycaster camera-center hit detection)",
       "id": "wp5_readme_hitdetector"
     },
@@ -6996,7 +7023,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "movementcontroller (a/d strafe + stop flag)",
       "id": "wp5_readme_movementcontroller"
     },
@@ -7009,7 +7036,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "firstshot / firstshotgate (per-peek first shot flag)",
       "id": "wp5_readme_firstshot"
     },
@@ -7022,7 +7049,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "simplified counter-strafe (immediate stop, stage a)",
       "id": "wp5_readme_simplified_counterstrafe"
     },
@@ -7035,7 +7062,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "boolean accuracy gate (stopped -> accurate)",
       "id": "wp5_readme_boolean_accuracy_gate"
     },
@@ -7048,7 +7075,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "fixed-step movement (determinism, fps-independent)",
       "id": "wp5_readme_fixed_step_movement"
     },
@@ -7061,7 +7088,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "stage-b-stable movementcontroller interface (appendix d)",
       "id": "wp5_readme_interface_stable_stageb"
     },
@@ -7074,7 +7101,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "peek (target visible lifecycle, t_visible to kill)",
       "id": "wp5_readme_peek"
     },
@@ -7087,7 +7114,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "oq-5.1 stop gate accuracy decision",
       "id": "wp5_readme_oq51"
     },
@@ -7100,7 +7127,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "oq-5.2 strafe speed / acceleration decision",
       "id": "wp5_readme_oq52"
     },
@@ -7113,7 +7140,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "oq-5.3 peek boundary decision",
       "id": "wp5_readme_oq53"
     },
@@ -7126,7 +7153,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "oq-5.4 hit equals kill decision",
       "id": "wp5_readme_oq54"
     },
@@ -7139,7 +7166,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-5 t0 entry gate",
       "id": "wp5_t0_entry_gate"
     },
@@ -7152,7 +7179,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-5 t1 hitdetector",
       "id": "wp5_t1_hitdetector"
     },
@@ -7165,7 +7192,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-5 t2 first-shot detection",
       "id": "wp5_t2_first_shot"
     },
@@ -7178,7 +7205,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-5 t3 a/d strafe movement",
       "id": "wp5_t3_strafe_movement"
     },
@@ -7191,7 +7218,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-5 t4 simplified counter-strafe + accuracy gate",
       "id": "wp5_t4_simplified_counterstrafe"
     },
@@ -7204,7 +7231,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-5 t5 exit gate (declare m2)",
       "id": "wp5_t5_exit_gate"
     },
@@ -7217,7 +7244,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "appendix d (stage b physics constants: friction/accelerate/stopspeed)",
       "id": "wp5_readme_appendix_d"
     },
@@ -7230,7 +7257,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "adr-4 (timing: timestamp / sim tick time source)",
       "id": "wp5_readme_adr4"
     },
@@ -7243,7 +7270,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "adr-3 (sub-tick)",
       "id": "wp5_readme_adr3"
     },
@@ -7256,7 +7283,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "adr-2 (three loops communicate via sharedstate)",
       "id": "wp5_readme_adr2"
     },
@@ -7269,7 +7296,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-6 \u2014 drill system (f4)",
       "id": "wp6_readme_wp6"
     },
@@ -7282,7 +7309,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "drillconfig (data-driven drill schema)",
       "id": "wp6_readme_drillconfig"
     },
@@ -7295,7 +7322,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "drillloader (load + validate json -> drillconfig)",
       "id": "wp6_readme_drillloader"
     },
@@ -7308,7 +7335,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "drillrunner (lifecycle idle->countdown->running->ended)",
       "id": "wp6_readme_drillrunner"
     },
@@ -7321,7 +7348,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "counterstrafe_ad_v1.json (example drill config)",
       "id": "wp6_readme_counterstrafe_drill_json"
     },
@@ -7334,7 +7361,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "targetmanager (config-driven spawn/position/alternation)",
       "id": "wp6_readme_targetmanager"
     },
@@ -7347,7 +7374,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "data/engine decoupling (new drill = new json, zero engine change)",
       "id": "wp6_readme_data_engine_decoupling"
     },
@@ -7360,7 +7387,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "l/r peek slot + distance abstraction",
       "id": "wp6_readme_lr_slot_abstraction"
     },
@@ -7373,7 +7400,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "seeded alternation (deterministic target sequence)",
       "id": "wp6_readme_seeded_alternation"
     },
@@ -7386,7 +7413,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "load validation throw (no start on invalid config, avoid polluting data)",
       "id": "wp6_readme_load_validation_throw"
     },
@@ -7399,7 +7426,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "restart full reset (no residual state to pollute next run)",
       "id": "wp6_readme_restart_full_reset"
     },
@@ -7412,7 +7439,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "drillid (aligned with export metadata, appendix c)",
       "id": "wp6_readme_drillid"
     },
@@ -7425,7 +7452,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "appendix c (drillid examples / export metadata)",
       "id": "wp6_readme_appendix_c"
     },
@@ -7438,7 +7465,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "oq-6.1 schema field scope decision",
       "id": "wp6_readme_oq61"
     },
@@ -7451,7 +7478,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "oq-6.2 position definition decision",
       "id": "wp6_readme_oq62"
     },
@@ -7464,7 +7491,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 49,
+      "community": 51,
       "norm_label": "oq-6.3 end condition default decision",
       "id": "wp6_readme_oq63"
     },
@@ -7477,7 +7504,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "oq-6.4 load failure handling decision",
       "id": "wp6_readme_oq64"
     },
@@ -7490,7 +7517,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-6 t0 entry gate",
       "id": "wp6_t0_entry_gate"
     },
@@ -7503,7 +7530,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-6 t1 drillconfig schema",
       "id": "wp6_t1_drill_config"
     },
@@ -7516,7 +7543,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-6 t2 drill loader",
       "id": "wp6_t2_drill_loader"
     },
@@ -7529,7 +7556,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-6 t3 counter-strafe drill config file",
       "id": "wp6_t3_counterstrafe_drill"
     },
@@ -7542,7 +7569,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-6 t4 drill lifecycle",
       "id": "wp6_t4_lifecycle"
     },
@@ -7555,7 +7582,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-6 t5 exit gate",
       "id": "wp6_t5_exit_gate"
     },
@@ -7568,7 +7595,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-2 (sim spine / determinism / resetstate)",
       "id": "wp5_readme_wp2"
     },
@@ -7581,7 +7608,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-3 (input events)",
       "id": "wp5_readme_wp3"
     },
@@ -7594,7 +7621,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-4 (targetmanager + hitbox + t_visible)",
       "id": "wp5_readme_wp4"
     },
@@ -7607,7 +7634,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-7 (data recording)",
       "id": "wp6_readme_wp7"
     },
@@ -7620,7 +7647,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 3,
       "norm_label": "wp-8 (metrics / result page / drill switching)",
       "id": "wp6_readme_wp8"
     },
@@ -7633,7 +7660,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 \u8cc7\u6599\u8a18\u9304\u8207\u532f\u51fa (f1/f2) \u2605m3",
       "id": "wp7_data_recorder"
     },
@@ -7646,7 +7673,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "m3 \u2014 \u5b8c\u6574 drill \u80fd\u7aef\u5230\u7aef\u532f\u51fa\u8cc7\u6599 (\u53ef\u958b\u59cb pilot)",
       "id": "wp7_milestone_m3"
     },
@@ -7659,7 +7686,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 t0 \u2014 entry gate",
       "id": "wp7_t0_entry_gate"
     },
@@ -7672,7 +7699,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 t1 \u2014 ring buffer \u6bcf tick \u8a18\u9304",
       "id": "wp7_t1_ring_buffer"
     },
@@ -7685,7 +7712,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 t2 \u2014 \u4e8b\u4ef6\u8a18\u9304 (t_visible/\u547d\u4e2d/\u9996\u767c/\u6025\u505c)",
       "id": "wp7_t2_event_recording"
     },
@@ -7698,7 +7725,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 t3 \u2014 \u74b0\u5883 metadata",
       "id": "wp7_t3_metadata"
     },
@@ -7711,7 +7738,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 t4 \u2014 json/csv \u532f\u51fa",
       "id": "wp7_t4_export"
     },
@@ -7724,7 +7751,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 t5 \u2014 \u532f\u51fa\u8cc7\u6599 schema \u6587\u4ef6",
       "id": "wp7_t5_schema_doc"
     },
@@ -7737,7 +7764,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-7 t6 \u2014 exit gate (\u5ba3\u544a m3)",
       "id": "wp7_t6_exit_gate"
     },
@@ -7750,7 +7777,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "ring buffer + \u7269\u4ef6\u91cd\u7528 (\u7121 gc \u5361\u9813)",
       "id": "wp7_ring_buffer_discipline"
     },
@@ -7763,7 +7790,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "datarecorder (src/data/datarecorder.ts)",
       "id": "wp7_datarecorder"
     },
@@ -7776,7 +7803,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "ringbuffer (src/data/ringbuffer.ts)",
       "id": "wp7_ringbuffer_module"
     },
@@ -7789,7 +7816,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "metadata.ts (collectmeta)",
       "id": "wp7_metadata_module"
     },
@@ -7802,7 +7829,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "export.ts (downloadjson/downloadcsv)",
       "id": "wp7_export_module"
     },
@@ -7815,7 +7842,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "\u9644\u9304 c \u532f\u51fa schema (meta/ticks[]/events[])",
       "id": "wp7_appendix_c_schema"
     },
@@ -7828,7 +7855,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "\u74b0\u5883 metadata \u5b8c\u6574\u6027 (\u7814\u7a76\u6548\u5ea6\u524d\u63d0)",
       "id": "wp7_metadata_validity"
     },
@@ -7841,7 +7868,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "\u6642\u9593\u6e90\u540c\u6e90 (performance.now() \u57fa\u6e96)",
       "id": "wp7_time_source_same"
     },
@@ -7854,7 +7881,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-8 \u6307\u6a19\u5100\u8868\u677f\u8207 hud",
       "id": "wp8_metrics_hud"
     },
@@ -7867,7 +7894,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-8 t0 \u2014 entry gate",
       "id": "wp8_t0_entry_gate"
     },
@@ -7880,7 +7907,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-8 t1 \u2014 \u6307\u6a19\u8a08\u7b97 (\u00a75 \u516b\u6307\u6a19\u7d14\u51fd\u5f0f)",
       "id": "wp8_t1_compute_metrics"
     },
@@ -7893,7 +7920,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 2,
       "norm_label": "wp-8 t2 \u2014 \u7d50\u679c\u9801 (dom)",
       "id": "wp8_t2_result_screen"
     },
@@ -7906,7 +7933,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-8 t3 \u2014 \u5373\u6642 hud (dom)",
       "id": "wp8_t3_hud"
     },
@@ -7919,7 +7946,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-8 t4 \u2014 \u63a7\u5236 (\u91cd\u65b0\u958b\u59cb/\u63db drill)",
       "id": "wp8_t4_controls"
     },
@@ -7932,7 +7959,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-8 t5 \u2014 exit gate",
       "id": "wp8_t5_exit_gate"
     },
@@ -7945,7 +7972,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "\u898f\u683c \u00a75 \u516b\u9805\u6307\u6a19",
       "id": "wp8_eight_metrics"
     },
@@ -7958,7 +7985,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "compute.ts (computemetrics \u7d14\u51fd\u5f0f)",
       "id": "wp8_compute_module"
     },
@@ -7971,7 +7998,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "metricsdashboard",
       "id": "wp8_metrics_dashboard"
     },
@@ -7984,7 +8011,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 2,
       "norm_label": "resultscreen (src/ui/resultscreen.ts)",
       "id": "wp8_result_screen_module"
     },
@@ -7997,7 +8024,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "hud (src/ui/hud.ts)",
       "id": "wp8_hud_module"
     },
@@ -8010,7 +8037,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "controls (src/ui/controls.ts)",
       "id": "wp8_controls_module"
     },
@@ -8023,7 +8050,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 2,
       "norm_label": "\u7d14\u6a5f\u68b0\u8a08\u7b97 (\u7121\u4e3b\u89c0\u8a55\u5206)",
       "id": "wp8_pure_mechanical"
     },
@@ -8036,7 +8063,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "\u7d71\u8a08=\u532f\u51fa\u540c\u4e00 snapshot \u4f86\u6e90",
       "id": "wp8_same_snapshot_source"
     },
@@ -8049,7 +8076,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "hud \u4e0d\u6c61\u67d3\u91cf\u6e2c (raf \u8b80\u503c, \u4e0d\u6bcf\u5e40\u914d\u7f6e)",
       "id": "wp8_hud_no_pollution"
     },
@@ -8062,7 +8089,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 2,
       "norm_label": "\u00a714 \u53d7\u8a66\u8005\u5167\u76f8\u5c0d\u503c\u65b9\u6cd5\u8ad6",
       "id": "wp8_within_subject"
     },
@@ -8075,7 +8102,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-0 createrenderer backend seam",
       "id": "ext_wp0_renderer_seam"
     },
@@ -8088,7 +8115,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-1 sensitivity",
       "id": "ext_wp1_sensitivity"
     },
@@ -8101,7 +8128,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-2 sim tick",
       "id": "ext_wp2_sim_tick"
     },
@@ -8114,7 +8141,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-4 t_visible/\u547d\u4e2d\u4e8b\u4ef6",
       "id": "ext_wp4_visible_hit"
     },
@@ -8127,7 +8154,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-5 fire/\u6025\u505c/\u9996\u767c (\u5373\u6642\u72c0\u614b)",
       "id": "ext_wp5_fire_counter"
     },
@@ -8140,7 +8167,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-6 drill \u63a7\u5236 (drillrunner/drillloader)",
       "id": "ext_wp6_drill_control"
     },
@@ -8153,7 +8180,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "wp-9 \u6574\u5408 + \u8a08\u6642\u6548\u5ea6\u9a57\u8b49",
       "id": "ext_wp9_integration"
     },
@@ -8166,7 +8193,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "adr-1 backend metadata",
       "id": "ext_adr1_backend_metadata"
     },
@@ -8179,7 +8206,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "adr-4 \u6642\u9593\u6e90 (performance.now())",
       "id": "ext_adr4_time_source"
     },
@@ -8192,7 +8219,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "simloop (src/loop/simloop.ts)",
       "id": "ext_simloop"
     },
@@ -8205,7 +8232,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "sharedstate",
       "id": "ext_sharedstate"
     },
@@ -8218,7 +8245,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 4,
+      "community": 5,
       "norm_label": "counterstrafe_ad_v1 drill config",
       "id": "ext_counterstrafe_drill"
     },
@@ -8231,7 +8258,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-9 \u6574\u5408\u3001\u6e2c\u8a66\u8207\u7de9\u885d (m4 \u968e\u6bb5 a \u4ea4\u4ed8)",
       "id": "wp9_integration"
     },
@@ -8244,7 +8271,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "m4 \u2014 \u968e\u6bb5 a \u4ea4\u4ed8 (\u9644\u9304 e \u9a57\u6536\u6e05\u55ae\u5168\u6578\u901a\u904e)",
       "id": "wp9_milestone_m4"
     },
@@ -8257,7 +8284,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "t0 \u2014 entry gate (\u78ba\u8a8d wp-0~8 \u4ea4\u4ed8)",
       "id": "wp9_t0_entry_gate"
     },
@@ -8270,7 +8297,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "t1 \u2014 e2e \u6574\u5408\u6e2c\u8a66 (drill\u2192\u532f\u51fa\u2192\u7d71\u8a08)",
       "id": "wp9_t1_e2e_integration"
     },
@@ -8283,7 +8310,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "t2 \u2014 \u8a08\u6642\u6548\u5ea6\u9a57\u8b49 (\u53cd\u61c9\u6642\u9593 150\u2013250 ms)",
       "id": "wp9_t2_timing_validity"
     },
@@ -8296,7 +8323,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "t3 \u2014 \u6c7a\u5b9a\u6027\u56de\u6b78\u6e2c\u8a66 (\u81ea\u52d5\u5316)",
       "id": "wp9_t3_determinism_regression"
     },
@@ -8309,7 +8336,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "t4 \u2014 \u7de9\u885d + \u9644\u9304 e \u9a57\u6536",
       "id": "wp9_t4_buffer_acceptance"
     },
@@ -8322,7 +8349,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "t5 / t-exit \u2014 exit gate (\u5ba3\u544a m4)",
       "id": "wp9_t5_exit_gate"
     },
@@ -8335,7 +8362,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "fr-9.1 \u7aef\u5230\u7aef\u6574\u5408\u6e2c\u8a66 (playwright)",
       "id": "wp9_fr_9_1_e2e"
     },
@@ -8348,7 +8375,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "fr-9.2 \u8a08\u6642\u6548\u5ea6\u9a57\u8b49",
       "id": "wp9_fr_9_2_timing_validity"
     },
@@ -8361,7 +8388,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "fr-9.3 \u6c7a\u5b9a\u6027\u56de\u6b78\u6e2c\u8a66 (\u81ea\u52d5\u5316)",
       "id": "wp9_fr_9_3_determinism"
     },
@@ -8374,7 +8401,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "fr-9.4 \u7de9\u885d + \u9644\u9304 e \u5168\u6e05\u55ae",
       "id": "wp9_fr_9_4_buffer"
     },
@@ -8387,7 +8414,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u898f\u683c\u9644\u9304 e \u2014 \u968e\u6bb5 a \u9a57\u6536\u6e05\u55ae (10 \u9805)",
       "id": "wp9_appendix_e_acceptance"
     },
@@ -8400,7 +8427,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u898f\u683c\u9644\u9304 f \u2014 \u98a8\u96aa",
       "id": "wp9_appendix_f_risk"
     },
@@ -8413,7 +8440,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u4e09\u9053\u8a08\u6642\u6548\u5ea6\u9632\u7dda (coi e2e + \u53cd\u61c9\u5206\u5e03 sanity + \u6c7a\u5b9a\u6027\u56de\u6b78)",
       "id": "wp9_three_timing_defenses"
     },
@@ -8426,7 +8453,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "window.__fpstest \u6e2c\u8a66 harness (dev/test build only)",
       "id": "wp9_fpstest_harness"
     },
@@ -8439,7 +8466,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u53cd\u61c9\u6642\u9593 150\u2013250 ms \u6587\u737b\u5408\u7406\u91cf\u7d1a (\u5206\u5e03 sanity \u975e\u786c\u95be)",
       "id": "wp9_reaction_time_band"
     },
@@ -8452,7 +8479,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "test:ci \u8173\u672c (tsc --noemit && vitest run && playwright test)",
       "id": "wp9_test_ci_script"
     },
@@ -8465,7 +8492,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u7d71\u8a08 = \u532f\u51fa \u540c\u6e90\u4ea4\u53c9\u9a57\u8b49",
       "id": "wp9_stats_equals_export"
     },
@@ -8478,7 +8505,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "counterstrafe_ad_v1 counter-strafe drill",
       "id": "counterstrafe_ad_v1_drill"
     },
@@ -8491,7 +8518,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "crossoriginisolated === true (coop/coep)",
       "id": "term_cross_origin_isolated"
     },
@@ -8504,7 +8531,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u6c7a\u5b9a\u6027 (determinism, sim \u591a fps \u9010 tick \u4e00\u81f4)",
       "id": "term_determinism"
     },
@@ -8517,7 +8544,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "counterreactionms (\u6025\u505c\u53cd\u61c9\u6642\u9593)",
       "id": "term_counter_reaction_ms"
     },
@@ -8530,7 +8557,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "performance.now() (\u7981\u7528 date.now)",
       "id": "term_performance_now"
     },
@@ -8543,7 +8570,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u898f\u683c \u00a714 \u65b9\u6cd5\u8ad6 (\u53d7\u8a66\u8005\u5167\u76f8\u5c0d\u503c + \u986f\u793a\u5ef6\u9072\u8aa4\u5dee\u754c\u7dda)",
       "id": "spec_section_14_methodology"
     },
@@ -8556,7 +8583,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u898f\u683c \u00a79.2 \u8a08\u6642\u6548\u5ea6 150\u2013250 ms",
       "id": "spec_section_9_2"
     },
@@ -8569,7 +8596,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "\u898f\u683c \u00a75 \u516b\u6307\u6a19",
       "id": "spec_section_5_metrics"
     },
@@ -8582,7 +8609,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "docs/operational/acceptance-stage-a.md",
       "id": "doc_acceptance_stage_a"
     },
@@ -8595,7 +8622,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "docs/operational/timing-validity.md",
       "id": "doc_timing_validity"
     },
@@ -8608,7 +8635,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-0 (bootstrap / coi / \u6e32\u67d3\u5f8c\u7aef\u5075\u6e2c)",
       "id": "wp0_bootstrap"
     },
@@ -8621,7 +8648,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-2 (sim \u810a\u690e / \u6c7a\u5b9a\u6027 t4)",
       "id": "wp2_sim_spine"
     },
@@ -8634,7 +8661,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-3 (movement \u908f\u8f2f)",
       "id": "wp3_movement"
     },
@@ -8647,7 +8674,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-4 (\u76ee\u6a19\u5de6\u53f3\u4ea4\u66ff / t_visible)",
       "id": "wp4_target"
     },
@@ -8660,7 +8687,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-5 (\u6025\u505c / \u505c\u6b62 gate \u958b\u706b / \u9996\u767c\u547d\u4e2d)",
       "id": "wp5_counterstrafe_fire"
     },
@@ -8673,7 +8700,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-6 (\u5b8c\u6574 counter-strafe drill)",
       "id": "wp6_drill"
     },
@@ -8686,7 +8713,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-7 (\u532f\u51fa json/csv / schema)",
       "id": "wp7_export"
     },
@@ -8699,7 +8726,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-8 (drill \u5f8c\u7d71\u8a08 \u00a75 \u6307\u6a19)",
       "id": "wp8_statistics"
     },
@@ -8712,7 +8739,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 8,
+      "community": 7,
       "norm_label": "wp-7 schema.md (\u532f\u51fa json schema)",
       "id": "wp7_schema_md"
     }
@@ -9439,6 +9466,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/main.ts",
+      "source_location": "L287",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_main_ts",
+      "target": "src_main_showresult"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.ts",
       "source_location": "L273",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -9975,9 +10012,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_data_datarecorder_ts",
-      "confidence_score": 1.0
+      "target": "src_data_datarecorder_ts"
     },
     {
       "relation": "imports_from",
@@ -10041,9 +10078,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "data_datarecorder_createdatarecorder",
-      "confidence_score": 1.0
+      "target": "data_datarecorder_createdatarecorder"
     },
     {
       "relation": "calls",
@@ -11451,9 +11488,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_drill_drillloader_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillloader_ts"
     },
     {
       "relation": "imports",
@@ -11495,9 +11532,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "drill_drillloader_loaddrill",
-      "confidence_score": 1.0
+      "target": "drill_drillloader_loaddrill"
     },
     {
       "relation": "calls",
@@ -11820,9 +11857,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_drill_drillrunner_ts",
-      "confidence_score": 1.0
+      "target": "src_drill_drillrunner_ts"
     },
     {
       "relation": "imports",
@@ -11853,9 +11890,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "drill_drillrunner_createdrillrunner",
-      "confidence_score": 1.0
+      "target": "drill_drillrunner_createdrillrunner"
     },
     {
       "relation": "calls",
@@ -12734,9 +12771,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_loop_clock_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_clock_ts"
     },
     {
       "relation": "imports_from",
@@ -12866,9 +12903,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_loop_constants_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_constants_ts"
     },
     {
       "relation": "imports_from",
@@ -13794,9 +13831,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_loop_simloop_ts",
-      "confidence_score": 1.0
+      "target": "src_loop_simloop_ts"
     },
     {
       "relation": "imports",
@@ -14168,9 +14205,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "loop_simloop_createsimloop",
-      "confidence_score": 1.0
+      "target": "loop_simloop_createsimloop"
     },
     {
       "relation": "calls",
@@ -18705,9 +18742,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_sim_targetmanager_ts",
-      "confidence_score": 1.0
+      "target": "src_sim_targetmanager_ts"
     },
     {
       "relation": "imports",
@@ -18738,9 +18775,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "sim_targetmanager_createtargetmanager",
-      "confidence_score": 1.0
+      "target": "sim_targetmanager_createtargetmanager"
     },
     {
       "relation": "calls",
@@ -18932,9 +18969,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_state_inputringtestutil_ts",
-      "confidence_score": 1.0
+      "target": "src_state_inputringtestutil_ts"
     },
     {
       "relation": "imports",
@@ -18965,9 +19002,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "state_inputringtestutil_pushevent",
-      "confidence_score": 1.0
+      "target": "state_inputringtestutil_pushevent"
     },
     {
       "relation": "calls",
@@ -19201,9 +19238,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_state_sharedstate_ts",
-      "confidence_score": 1.0
+      "target": "src_state_sharedstate_ts"
     },
     {
       "relation": "calls",
@@ -19289,9 +19326,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "state_sharedstate_createsharedstate",
-      "confidence_score": 1.0
+      "target": "state_sharedstate_createsharedstate"
     },
     {
       "relation": "calls",
@@ -20780,9 +20817,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "src_weapon_weapons_ts",
-      "confidence_score": 1.0
+      "target": "src_weapon_weapons_ts"
     },
     {
       "relation": "calls",
@@ -20960,6 +20997,16 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "tests/e2e/spray-drill.spec.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "tests_e2e_spray_drill_spec_ts",
+      "target": "e2e_spray_drill_spec_waitforharness"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "tests/regression/determinism.test.ts",
       "source_location": "L61",
       "weight": 1.0,
@@ -21057,9 +21104,9 @@
       "source_file": "tests/regression/spray-determinism.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spray_determinism_test_ts",
-      "target": "tests_regression_spraydeterminismfixture_ts",
-      "confidence_score": 1.0
+      "target": "tests_regression_spraydeterminismfixture_ts"
     },
     {
       "relation": "imports",
@@ -21068,9 +21115,9 @@
       "source_file": "tests/regression/spray-determinism.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spray_determinism_test_ts",
-      "target": "regression_spraydeterminismfixture_canonicalsprayframes",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_canonicalsprayframes"
     },
     {
       "relation": "imports",
@@ -21079,9 +21126,9 @@
       "source_file": "tests/regression/spray-determinism.test.ts",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spray_determinism_test_ts",
-      "target": "regression_spraydeterminismfixture_runspray",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_runspray"
     },
     {
       "relation": "contains",
@@ -21089,9 +21136,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L78",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "regression_spraydeterminismfixture_canonicalsprayframes",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_canonicalsprayframes"
     },
     {
       "relation": "contains",
@@ -21099,9 +21146,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L84",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "regression_spraydeterminismfixture_runspray",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_runspray"
     },
     {
       "relation": "contains",
@@ -21109,9 +21156,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L156",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "regression_spraydeterminismfixture_framesat",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_framesat"
     },
     {
       "relation": "contains",
@@ -21119,9 +21166,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L163",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "regression_spraydeterminismfixture_createcamera",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_createcamera"
     },
     {
       "relation": "contains",
@@ -21129,9 +21176,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L171",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "regression_spraydeterminismfixture_applyaimfixture",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_applyaimfixture"
     },
     {
       "relation": "contains",
@@ -21139,9 +21186,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L176",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "regression_spraydeterminismfixture_collectimpacts",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_collectimpacts"
     },
     {
       "relation": "contains",
@@ -21149,9 +21196,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L187",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tests_regression_spraydeterminismfixture_ts",
-      "target": "regression_spraydeterminismfixture_round",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_round"
     },
     {
       "relation": "calls",
@@ -21160,9 +21207,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L91",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "regression_spraydeterminismfixture_runspray",
-      "target": "regression_spraydeterminismfixture_createcamera",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_createcamera"
     },
     {
       "relation": "calls",
@@ -21171,9 +21218,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L95",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "regression_spraydeterminismfixture_runspray",
-      "target": "regression_spraydeterminismfixture_applyaimfixture",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_applyaimfixture"
     },
     {
       "relation": "calls",
@@ -21182,9 +21229,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L103",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "regression_spraydeterminismfixture_runspray",
-      "target": "regression_spraydeterminismfixture_collectimpacts",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_collectimpacts"
     },
     {
       "relation": "calls",
@@ -21193,9 +21240,9 @@
       "source_file": "tests/regression/sprayDeterminismFixture.ts",
       "source_location": "L144",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "regression_spraydeterminismfixture_runspray",
-      "target": "regression_spraydeterminismfixture_round",
-      "confidence_score": 1.0
+      "target": "regression_spraydeterminismfixture_round"
     },
     {
       "relation": "contains",
@@ -26956,5 +27003,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "6191dc30a9e73b16e3de567b6fd9fbefae300515"
+  "built_at_commit": "351e7364c0d5b9e36f8193ec81d9655e518bc321"
 }

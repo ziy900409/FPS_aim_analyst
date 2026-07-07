@@ -7,7 +7,7 @@
 | **相依** | T1 |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | NEW `tests/e2e/spray-drill.spec.ts`(必要時 MODIFY `__fpsTest` debug API 最小擴充 fire(n)) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS 2026-07-07 |
 
 ## Objective
 
@@ -29,10 +29,10 @@ COI 斷言維持——stage2「能玩且資料可信」在 CI 常駐。
 
 ## Steps
 
-- [ ] spec 撰寫(drill 驅動 + fire(30) 合成)。
-- [ ] 四組斷言:匯出 v2 / 統計不變式 / 結果頁 DOM / COI。
-- [ ] `npx playwright test spray-drill` 綠。
-- [ ] `npm run test:ci` 全綠。
+- [x] spec 撰寫(drill 驅動 + fire(30) 合成)。
+- [x] 四組斷言:匯出 v2 / 統計不變式 / 結果頁 DOM / COI。
+- [x] `npx playwright test spray-drill` 綠。
+- [x] `npm run test:ci` 全綠。
 
 ## Definition of Done
 

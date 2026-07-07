@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T1 PASS(2026-07-07):punch/spread/impact 決定性 baseline 已入 repo;T2 全鏈路 E2E 可開
+## Status: 🟡 T2 PASS(2026-07-07):spray drill 全鏈路 E2E 已常駐;T-exit(M8) 可開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS 2026-07-07 |
 | T1 決定性回歸擴充 | ✅ PASS 2026-07-07 |
-| T2 全鏈路 E2E | ⬜ |
+| T2 全鏈路 E2E | ✅ PASS 2026-07-07 |
 | T-exit(M8) | ⬜ |
 
 ---
@@ -25,6 +25,38 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T2 PASS(spray drill full chain E2E:fire(30) → export v2 → metrics → result DOM + COI)
+
+**閘門結論:** PASS。新增 `tests/e2e/spray-drill.spec.ts`,以真瀏覽器經 `window.__fpsTest` 啟動 `counterstrafe_ad_v1`,合成 held-fire 30 發,再對匯出 v2 / 統計=匯出 / 結果頁 recoil path DOM / COI 做同一 spec 斷言。
+
+**覆蓋內容:**
+
+| 項目 | 證據 |
+|---|---|
+| 合成 fire(30) | `fireRecoilBurst(30)` 產生 30 筆 fire event;`shotsFired=30`,`recoilIndex=30`;事件序列 `recoilIndex=0..29`,`ammo=30..1`。 |
+| 匯出 v2 欄位 | `meta.schemaVersion=2`,含 `weaponId/weaponSeed/rngSeed/sensitivityModel/movementModel`;每筆 fire 皆有 `viewYaw/viewPitch/aimPunchPitch/aimPunchYaw/spreadX/spreadY/recoilIndex/ammo` 且有限。 |
+| 統計=匯出 | `getMetrics()` 與 JSON round-trip 後 `metricsFromExport(payload)` 逐欄一致;`recoilCompensationPath.actual/ideal` 長度皆為 30。 |
+| 結果頁 DOM | dev-only `__fpsTest.showResult()` 以 harness metrics 呼叫 production `ResultScreen.show()`;斷言 `#result-screen` 顯示且 `data-metric-id="recoilCompensationPath"` / recoil path SVG 存在。 |
+| COI | spec 內重申 `window.crossOriginIsolated === true`;匯出 meta 亦為 true。 |
+
+**Verification:**
+
+- `npm.cmd run typecheck` → exit 0,`tsc --noEmit` clean。
+- 沙盒內 `npx.cmd playwright test tests/e2e/spray-drill.spec.ts` 仍受既知 Vite config access denied 限制;提升權限重跑 → exit 0,**1 passed**。
+- 沙盒內 `npm.cmd run test:ci` 同樣受既知 Vite config access denied 限制;提升權限重跑 → exit 0:
+  - Vitest:**43 files / 326 tests passed**。
+  - Playwright:**10 passed**(新增 `spray-drill.spec.ts` 已納入)。
+
+**Decision Log:**
+- **T2 不新增獨立 `fire(n)` API;沿用 `fireRecoilBurst(shots)`。** Alternatives Considered:新增 `fire(30)` wrapper。否決,既有 dev/test-only API 已精確表達 held-fire burst 並回傳 recoil readout;新增別名只增加 surface。
+- **以 dev-only `showResult()` 橋接 harness metrics 到既有 ResultScreen。** Alternatives Considered:只斷言初始 `#result-screen` 容器或在測試中偽造 recoil path DOM。否決,初始容器不能證明 WP-16 T3 recoil path 真的 render;測試偽造 DOM 不能驗 production UI。採 `main.ts` DEV guard 下的小包裝,production build 仍剝除。
+
+**Surprises & Discoveries:**
+- `__fpsTest` 自建 deterministic sim 管線,不驅動 `main.ts` live `DrillRunner`,因此原本不會自動顯示結果頁。Evidence:`src/testharness/fpsTestHarness.ts` 註解與實作皆明示自建管線以避開 rAF 競態。
+- T2 在沙盒內仍重現 T0 記錄的 Vite config access denied;提升權限後目標 spec 與完整 CI 全綠。
+
+**Next:** T-exit([T-exit-gate.md](T-exit-gate.md))— M8 門:驗收清單 B + 宣告。
 
 ### 2026-07-07 — T1 PASS(punch / spread / impact 決定性回歸 × 60/144/240 FPS)
 
