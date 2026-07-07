@@ -7,7 +7,7 @@
 | **相依** | T2(指標與序列就緒) |
 | **Risk / Cplx** | Low / Med |
 | **Touches** | MODIFY `src/ui/ResultScreen.ts` + `src/ui/ResultScreen.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-07 |
 
 ## Objective
 
@@ -27,11 +27,11 @@
 
 ## Steps
 
-- [ ] 疊圖繪製(座標歸一 + 兩序列 + 圖例 + 數值列)。
-- [ ] 空資料 / 單發邊界處理。
-- [ ] 快照測試(合成 10 發)+ 既有 ResultScreen 測試綠(疊層 z-index 迴歸留意:
+- [x] 疊圖繪製(座標歸一 + 兩序列 + 圖例 + 數值列)。
+- [x] 空資料 / 單發邊界處理。
+- [x] 快照測試(合成 10 發)+ 既有 ResultScreen 測試綠(疊層 z-index 迴歸留意:
       參照 2026-07-03 匯出面板疊層 bug 的教訓,新區塊不得蓋住既有互動)。
-- [ ] `npx vitest run` 全綠;dev server 手動目視一次記 progress。
+- [x] `npx vitest run` 全綠;dev server 手動目視一次記 progress。
 
 ## Definition of Done
 

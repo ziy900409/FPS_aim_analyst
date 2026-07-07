@@ -40,6 +40,7 @@ describe('computeMetrics', () => {
     expect(metrics.crosshairOffset.values).toEqual([0, 2, 1.5, 1]);
     expect(metrics.crosshairOffset.mean).toBe(1.125);
     expect(metrics.recoilCompensationError).toEqual({ meanDeg: 0, rmsDeg: 0 });
+    expect(metrics.recoilCompensationPath).toEqual({ actual: [], ideal: [] });
 
     // 切換時間 = 擊殺 → 對下一目標的首發 fire（有效對齊錨）：
     // kill t0@170 → t1 首發@390 = 220；kill t1@410(hit) → t2 首發@570 = 160。
@@ -82,6 +83,7 @@ describe('computeMetrics', () => {
     expect(metrics.firstShotHitRate).toBe(0);
     expect(metrics.crosshairOffset).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
     expect(metrics.recoilCompensationError).toEqual({ meanDeg: 0, rmsDeg: 0 });
+    expect(metrics.recoilCompensationPath).toEqual({ actual: [], ideal: [] });
     expect(metrics.switchTimeMs).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
     expect(metrics.rhythmStability).toBe(0);
     expect(metrics.leftRightSymmetry).toEqual({
@@ -172,6 +174,17 @@ describe('recoil compensation path metrics', () => {
     const metrics = computeMetrics(perfectSnapshot);
     expect(metrics.recoilCompensationError.meanDeg).toBeLessThan(1e-9);
     expect(metrics.recoilCompensationError.rmsDeg).toBeLessThan(1e-9);
+    expect(metrics.recoilCompensationPath.ideal).toEqual([
+      { pitchDeg: 0, yawDeg: 0 },
+      { pitchDeg: -1, yawDeg: 0.5 },
+      { pitchDeg: -2, yawDeg: -1 },
+    ]);
+    expect(metrics.recoilCompensationPath.actual).toHaveLength(3);
+    expect(metrics.recoilCompensationPath.actual[0]).toEqual({ pitchDeg: 0, yawDeg: 0 });
+    expect(metrics.recoilCompensationPath.actual[1].pitchDeg).toBeCloseTo(-1, 12);
+    expect(metrics.recoilCompensationPath.actual[1].yawDeg).toBeCloseTo(0.5, 12);
+    expect(metrics.recoilCompensationPath.actual[2].pitchDeg).toBeCloseTo(-2, 12);
+    expect(metrics.recoilCompensationPath.actual[2].yawDeg).toBeCloseTo(-1, 12);
   });
 });
 

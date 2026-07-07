@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 T2 ideal path metric PASS; T3 result overlay next
+## Status: 🟡 T3 result overlay PASS; T-exit next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ 2026-07-07 |
 | T1 schema v2 | ✅ 2026-07-07 |
 | T2 理想路徑指標 | ✅ 2026-07-07 |
-| T3 結果頁對照 | ⬜ |
+| T3 結果頁對照 | ✅ 2026-07-07 |
 | T-exit | ⬜ |
 
 ---
@@ -27,6 +27,46 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T3 result overlay PASS(實際 vs 理想壓槍軌跡對照)
+
+**結論:** 結果頁已呈現 FR-B15 的軌跡對照。`Metrics` 現在帶同源
+`recoilCompensationPath.actual/ideal`;ResultScreen 直接讀結算物件,畫出 actual aim 與 ideal `-aimPunch x2`
+兩條線、圖例與 mean/RMS 數值列。零 fire path 隱藏區塊;單發 path 以點 marker 呈現,不畫 polyline。
+
+**實作摘要:**
+- [compute.ts](../../../../../src/metrics/compute.ts):新增 `RecoilCompensationPath`,由 fire-time
+  `viewYaw/viewPitch/aimPunchPitch/aimPunchYaw` 同時計算 actual/ideal path;mean/RMS 與 UI path 共用同一序列。
+- [ResultScreen.ts](../../../../../src/ui/ResultScreen.ts):新增 `createRecoilOverlayModel(...)` 純 view model 與
+  DOM/SVG overlay 渲染;結果頁新增 `Recoil Compensation Path` 區塊,保留既有 cards 與 reaction histogram。
+- [compute.test.ts](../../../../../src/metrics/compute.test.ts)+[ResultScreen.test.ts](../../../../../src/ui/ResultScreen.test.ts):
+  鎖住 path 契約、合成 10 發座標 snapshot、空資料與單發邊界。
+
+**Decision Log:**
+- **Metrics 擴出 `recoilCompensationPath`,UI 不重算:**T3 需要畫兩條序列;若 ResultScreen 從 raw event 重建會違反
+  「數值列與 T2 統計物件同源」要求。*Alternatives considered:*把 raw fire events 傳進 `show(...)` 或在 UI 重新跑
+  T2 計算;否決,會擴大 UI 職責並製造統計/呈現漂移風險。
+- **ResultScreen 測試走純 overlay model snapshot:**現有 Vitest 沒 DOM shim;新增 jsdom/happy-dom 只是為一個 SVG 測試引入依賴。
+  *Alternatives considered:*新增 DOM test environment;否決,改以 `createRecoilOverlayModel` 鎖座標歸一與邊界,再用
+  Playwright 目視補足 DOM 呈現。
+
+**驗證證據:**
+- `npm.cmd run typecheck` → exit 0。
+- `npx.cmd vitest run src\metrics\compute.test.ts src\ui\ResultScreen.test.ts`
+  → **2 files / 14 tests passed**。
+- `npm.cmd test` → **42 files / 320 tests passed**。
+- `npm.cmd run dev -- --host 127.0.0.1`(提升權限;沙盒內 Vite/esbuild 讀 config 會 access denied) →
+  `http://127.0.0.1:5173/` 回 `status=200`。
+- Playwright 注入合成 10 發 metrics 目視:結果頁 cards、reaction histogram、`Recoil Compensation Path`
+  legend/mean/RMS 與兩條軌跡同時可見;overlay 未遮住既有互動控制。
+
+**Surprises & Discoveries:**
+- 本機原先缺 Playwright browser,已用 `npx.cmd playwright install chromium` 安裝 Chromium 後完成目視截圖檢查。
+- Vitest 專案未配置 DOM shim;T3 測試採純 view model snapshot,避免為單一 UI 測試新增 runtime 依賴。
+
+**Open Questions:** none。
+
+**Next:** T-exit([T-exit-gate.md](T-exit-gate.md))—不變式全綠 + schema 對帳宣告。
 
 ### 2026-07-07 — T2 ideal path metric PASS(理想壓槍路徑 + 補償誤差)
 

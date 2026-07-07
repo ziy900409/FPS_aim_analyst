@@ -15,6 +15,7 @@ export interface Metrics {
   firstShotHitRate: number;
   crosshairOffset: Stat;
   recoilCompensationError: CompensationError;
+  recoilCompensationPath: RecoilCompensationPath;
   switchTimeMs: Stat;
   rhythmStability: number;
   leftRightSymmetry: { left: Stat; right: Stat; diff: number };
@@ -33,6 +34,11 @@ export interface PunchSample {
 export interface CompensationError {
   meanDeg: number;
   rmsDeg: number;
+}
+
+export interface RecoilCompensationPath {
+  actual: AimOffset[];
+  ideal: AimOffset[];
 }
 
 type VisibleEvent = Extract<DrillEvent, { type: 'visible' }>;
@@ -64,7 +70,8 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
     ),
   );
   const offsets = finiteValues(fireEvents.map((event) => event.offsetDeg));
-  const recoilCompensationError = computeRecoilCompensationError(fireEvents);
+  const recoilCompensationPath = computeRecoilCompensationPath(fireEvents);
+  const recoilCompensationError = compensationError(recoilCompensationPath.actual, recoilCompensationPath.ideal);
   const switchTimes = computeSwitchTimes(fireEvents);
   const rhythmIntervals = computeVisibleIntervals(visibleEvents);
   const leftReactions = finiteValues(peeks.filter((peek) => peek.visible.side === 'L').map((peek) => peek.reactionMs));
@@ -79,6 +86,7 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
     firstShotHitRate: visibleEvents.length > 0 ? (firstShotFires.filter((fire) => fire.hit).length / visibleEvents.length) * 100 : 0,
     crosshairOffset: stat(offsets),
     recoilCompensationError,
+    recoilCompensationPath,
     switchTimeMs: stat(switchTimes),
     rhythmStability: coefficientOfVariation(rhythmIntervals),
     leftRightSymmetry: {
@@ -168,7 +176,7 @@ function computeSwitchTimes(fireEvents: readonly FireEvent[]): number[] {
   return values;
 }
 
-function computeRecoilCompensationError(fireEvents: readonly FireEvent[]): CompensationError {
+function computeRecoilCompensationPath(fireEvents: readonly FireEvent[]): RecoilCompensationPath {
   const aimSeq: AimOffset[] = [];
   const punchSeq: PunchSample[] = [];
   let baseViewPitch = 0;
@@ -199,7 +207,7 @@ function computeRecoilCompensationError(fireEvents: readonly FireEvent[]): Compe
     });
   }
 
-  return compensationError(aimSeq, buildIdealPath(punchSeq));
+  return { actual: aimSeq, ideal: buildIdealPath(punchSeq) };
 }
 
 function computeVisibleIntervals(visibleEvents: readonly VisibleEvent[]): number[] {
