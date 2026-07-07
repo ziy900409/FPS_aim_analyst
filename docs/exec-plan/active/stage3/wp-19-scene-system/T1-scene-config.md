@@ -7,7 +7,7 @@
 | **相依** | T0(資產選型 + margin 常數決議) |
 | **Risk / Cplx** | Low / Med |
 | **Touches** | ADD `src/scene/SceneConfig.ts`、`src/scene/scenes/placeholder-room.ts`;MODIFY `src/render/SceneManager.ts`(建構子收 SceneConfig,程序化房間改由 config 驅動)+ 對應測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-07 14:22Z |
 
 ## Objective
 
@@ -33,10 +33,18 @@ fallback 都走同一條。
 
 ## Steps
 
-- [ ] `SceneConfig.ts` schema + `validateScene` + 單元測試(合法/非法各欄、field-path 訊息)。
-- [ ] `placeholder-room.ts` config + `SceneManager` 改建構子;既有渲染測試全綠(行為不變)。
-- [ ] 架構閘測試(sim 不 import scene)綠。
-- [ ] `npx vitest run` 全綠。
+- [x] `SceneConfig.ts` schema + `validateScene` + 單元測試(合法/非法各欄、field-path 訊息)。
+- [x] `placeholder-room.ts` config + `SceneManager` 改建構子;既有渲染測試全綠(行為不變)。
+- [x] 架構閘測試(sim 不 import scene)綠。
+- [x] `npx vitest run` 全綠。
+
+## Completion Evidence
+
+- `npm.cmd test -- src/scene/SceneConfig.test.ts src/scene/architecture.test.ts src/render/SceneManager.test.ts src/scene/clearance.test.ts src/drill/DrillLoader.test.ts` → Vitest `5 passed` files / `24 passed` tests。
+- `npm.cmd run typecheck` → `tsc --noEmit` pass。
+- `npm.cmd test` → Vitest `45 passed` files / `333 passed` tests。
+- `npm.cmd run build` → `tsc --noEmit && vite build` pass。
+- `graphify update .` → AST extraction `103/103 files`, graph rebuilt。
 
 ## Definition of Done
 

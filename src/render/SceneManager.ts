@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu';
+import type { ProceduralRoomConfig, SceneConfig } from '../scene/SceneConfig.ts';
 
 /**
  * SceneManager — WP-1 / T1（FR-1.1）
@@ -13,41 +14,46 @@ import * as THREE from 'three/webgpu';
  * 此處的數字不得流入 sim 或匯出資料。
  */
 
-export interface SceneManagerOptions {
-  /** [width(X), depth(Z), height(Y)]，預設 [10, 10, 3]（佔位，OQ-1.2）。 */
-  roomSize?: [number, number, number];
-  /** 玩家眼高（camera Y），預設 1.6（佔位）。 */
-  eyeHeight?: number;
-  /** 垂直 FOV（度），預設 75；T5 設定面板可即時改。 */
-  fovDeg?: number;
-}
-
-const FLOOR_COLOR = 0x33373c;
-const WALL_COLOR = 0x4d545c;
-const BACKGROUND_COLOR = 0x202428;
+const DEFAULT_PROCEDURAL_ROOM: ProceduralRoomConfig = {
+  roomSize: [10, 10, 3],
+  eyeHeight: 1.6,
+  fovDeg: 75,
+  colors: {
+    floor: 0x33373c,
+    wall: 0x4d545c,
+    background: 0x202428,
+  },
+  lights: {
+    ambientIntensity: 0.6,
+    directionalIntensity: 1.2,
+    directionalPosition: { x: 3, y: 4.5, z: 2.5 },
+  },
+};
 
 export class SceneManager {
   readonly scene: THREE.Scene;
   readonly camera: THREE.PerspectiveCamera;
 
-  constructor(opts: SceneManagerOptions = {}) {
-    const [width, depth, height] = opts.roomSize ?? [10, 10, 3];
-    const eyeHeight = opts.eyeHeight ?? 1.6;
-    const fovDeg = opts.fovDeg ?? 75;
+  constructor(config: SceneConfig) {
+    if (config.asset !== null) {
+      throw new Error('SceneManager GLTF asset loading belongs to WP-19 T2');
+    }
+    const room = config.proceduralRoom ?? DEFAULT_PROCEDURAL_ROOM;
+    const [width, depth, height] = room.roomSize;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(BACKGROUND_COLOR);
+    this.scene.background = new THREE.Color(room.colors.background);
 
-    this.#buildRoom(width, depth, height);
-    this.#buildLights(width, depth, height);
+    this.#buildRoom(width, depth, height, room.colors);
+    this.#buildLights(room.lights);
 
     // camera 立於房間一端、踩中軸，朝 -Z 望向對牆與中軸（FR-1.1）。
     // T4 的 CameraController 之後接管 yaw/pitch；此 lookAt 為 yaw=pitch=0 的基準朝向。
     // aspect 先給 1，由 main 在 resize() 帶入真實視窗比例。
-    this.camera = new THREE.PerspectiveCamera(fovDeg, 1, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(room.fovDeg, 1, 0.1, 1000);
     const standoff = 1; // 與背牆保持距離，避免 camera 卡進牆面
-    this.camera.position.set(0, eyeHeight, depth / 2 - standoff);
-    this.camera.lookAt(0, eyeHeight, -depth / 2);
+    this.camera.position.set(0, room.eyeHeight, depth / 2 - standoff);
+    this.camera.lookAt(0, room.eyeHeight, -depth / 2);
   }
 
   /** 視窗縮放時更新 camera aspect（renderer.setSize 由 main 持有）。 */
@@ -56,14 +62,14 @@ export class SceneManager {
     this.camera.updateProjectionMatrix();
   }
 
-  #buildRoom(width: number, depth: number, height: number): void {
+  #buildRoom(width: number, depth: number, height: number, colors: ProceduralRoomConfig['colors']): void {
     const hw = width / 2;
     const hd = depth / 2;
 
     // 地板：平面鋪在 XZ（y=0），法線朝 +Y。
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(width, depth),
-      new THREE.MeshStandardMaterial({ color: FLOOR_COLOR, roughness: 0.95 }),
+      new THREE.MeshStandardMaterial({ color: colors.floor, roughness: 0.95 }),
     );
     floor.rotation.x = -Math.PI / 2;
     this.scene.add(floor);
@@ -71,7 +77,7 @@ export class SceneManager {
     // 四牆：PlaneGeometry 預設法線 +Z，以 rotation.y 轉到「朝房間內側」(FrontSide
     // 即可從室內看見且被正確打光)。牆高 = height。
     const wallMat = new THREE.MeshStandardMaterial({
-      color: WALL_COLOR,
+      color: colors.wall,
       roughness: 0.9,
     });
     // [planeWidth, x, z, rotY]
@@ -92,11 +98,11 @@ export class SceneManager {
     }
   }
 
-  #buildLights(width: number, depth: number, height: number): void {
+  #buildLights(lights: ProceduralRoomConfig['lights']): void {
     // 環境光保證無面全黑；方向光給地板與各牆不同明暗，肉眼可分辨表面（DoD）。
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
-    dir.position.set(width * 0.3, height * 1.5, depth * 0.25);
+    this.scene.add(new THREE.AmbientLight(0xffffff, lights.ambientIntensity));
+    const dir = new THREE.DirectionalLight(0xffffff, lights.directionalIntensity);
+    dir.position.set(lights.directionalPosition.x, lights.directionalPosition.y, lights.directionalPosition.z);
     this.scene.add(dir);
   }
 }

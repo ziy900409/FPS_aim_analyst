@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 entry gate + T3 clearance validator complete; T1/T2 full scene pipeline still pending
+## Status: 🟡 T0/T1/T3 complete; T2 full GLTF scene pipeline still pending
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 SceneConfig schema | ⬜ |
+| T1 SceneConfig schema | ✅ |
 | T2 GLTF 管線 + field-low | ⬜ |
 | T3 淨空驗證器 | ✅ |
 | T4 場景切換 + meta | ⬜ |
@@ -30,6 +30,28 @@
 ---
 
 ## Log
+
+### 2026-07-07 14:22Z — T1 SceneConfig schema + placeholder-room config PASS
+- **Blast radius(CodeGraph)**:`SceneManager` 影響範圍為 `src/render/SceneManager.ts` + `src/main.ts` 呼叫點,local-to-render;`SceneConfig`/`validateScene` 影響 `DrillLoader`、clearance tests、harness/determinism 型別引用,屬跨模組 config contract,但不改 `src/sim` runtime。
+- **實作**:
+  - [../../../../../src/scene/SceneConfig.ts](../../../../../src/scene/SceneConfig.ts):保留 T3 已用的 `Vec3` AABB 形狀,補 `SceneAsset.displayScale?` 驗證與 render-only `proceduralRoom` 區塊(房間尺寸、eye height、FOV、顏色、光照),錯誤訊息維持 field-path。
+  - [../../../../../src/scene/scenes/placeholder-room.ts](../../../../../src/scene/scenes/placeholder-room.ts):新增 `placeholder-room` config,`asset:null`、`propBounds:[]`、`playerCorridor.halfWidthU=1`,並用 `validateScene` 自驗。
+  - [../../../../../src/render/SceneManager.ts](../../../../../src/render/SceneManager.ts):建構子改收 `SceneConfig`;`asset:null` 走 `proceduralRoom` 建出既有房間/光照/camera,GLTF asset 明確保留給 T2。
+  - [../../../../../src/main.ts](../../../../../src/main.ts):啟動路徑改傳 `placeholderRoom`,佔位房間也走同一個 config 入口。
+  - [../../../../../src/scene/architecture.test.ts](../../../../../src/scene/architecture.test.ts):新增架構閘,斷言 `src/sim`/`src/state` 不得 import `src/scene`。
+- **測試**:
+  - `npm.cmd test -- src/scene/SceneConfig.test.ts src/scene/architecture.test.ts src/render/SceneManager.test.ts src/scene/clearance.test.ts src/drill/DrillLoader.test.ts` → Vitest `5 passed` files / `24 passed` tests。
+  - `npm.cmd run typecheck` → `tsc --noEmit` pass。
+  - `npm.cmd test` → Vitest `45 passed` files / `333 passed` tests。
+  - `npm.cmd run build` → `tsc --noEmit && vite build` pass(初次 sandbox 內 Vite config 存取被拒;提升權限重跑成功,僅既有 chunk-size warning)。
+  - `graphify update .` → AST extraction `103/103 files`, graph rebuilt(`800 nodes`, `1746 edges`)。
+- **Decision Log**:
+  - `proceduralRoom` 採 optional render-only 區塊,而非把 placeholder 房間欄位塞進必填核心 contract。Alternatives Considered:強制所有 `asset:null` config 都帶 `proceduralRoom` 可更嚴格,但 T3/clearance 測試中的最小 SceneConfig 只需要 validator contract;本切片讓正式 placeholder 經 config 驗證,同時不擴大淨空測試 fixture 成本。
+  - 保留現行 `Vec3` propBounds 形狀,不改成 stage3 README 範例 tuple。Alternatives Considered:同步切 tuple 可貼近文件範例,但已完成的 T3 clearance/DrillLoader contract 都以 `Vec3` 運作;T1 目標是 schema + placeholder 收編,不混入淨空幾何資料形狀遷移。
+  - `SceneManager` 對 `asset !== null` 先 loud fail 並指向 T2。Alternatives Considered:靜默 fallback 到 placeholder 可讓任意 config 可建構,但會掩蓋 GLTF 管線尚未完成;T2 會把這條分支替換為 async loader + fallback。
+- **Surprises & Discoveries**:
+  - T3 已先落地 `SceneConfig` 最小 contract,因此 T1 不是從零新增 schema,而是把 contract 補完整並把 render 入口改成資料驅動。
+- **Open Questions**:無新增。T2 需接手 `asset !== null` 分支與 fallback 同路徑。
 
 ### 2026-07-07 14:13Z — T0 entry gate PASS(GD-6/9 收斂 + 資產選型 + 硬約束回寫)
 - **上游/M4 證據**:[../../../README.md](../../../README.md) 記錄 M4 ✅(2026-07-03),WP-19/20 上游門檻成立;[../../../completed/stage1/wp-9-integration/T5-exit-gate.md](../../../completed/stage1/wp-9-integration/T5-exit-gate.md) 宣告 M4 階段 A 交付。

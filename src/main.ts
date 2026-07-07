@@ -27,6 +27,7 @@ import { collectMeta, measureDisplayHz } from './data/metadata.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
+import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -54,7 +55,7 @@ let activeDrillConfig: DrillConfig = initialDrillConfig;
 let recorderStartedAt = new Date().toISOString();
 
 // WP-1 / T1（FR-1.1）— 封閉房間 + camera 舞台。
-const sceneManager = new SceneManager();
+const sceneManager = new SceneManager(placeholderRoom);
 
 // WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
 const targetView = new TargetView(sceneManager.scene);
