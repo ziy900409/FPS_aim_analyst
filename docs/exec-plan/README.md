@@ -60,7 +60,7 @@
 | **WP-15** | [`active/stage2/wp-15-calibration/`](active/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 | **M7** | WP-13, 14 | 1.5–2 | ✅ **M7 caveated（2026-07-07）** |
 | **WP-16** | [`active/stage2/wp-16-metrics-export-v2/`](active/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標（補償 vs 理想路徑）+ 結果頁對照 | — | WP-13 | 2–3 | ✅ **2026-07-07** |
 | **WP-17** | [`active/stage2/wp-17-integration/`](active/stage2/wp-17-integration/README.md) | E2E 全鏈路 + 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ✅ **M8（2026-07-07）** |
-| **WP-18** | [`active/stage2/wp-18-f5-subtick/`](active/stage2/wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅（GD-7）+ WP-17（M8） | +2–3.5 | ⏸ 待 M8 |
+| **WP-18** | [`active/stage2/wp-18-f5-subtick/`](active/stage2/wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅（GD-7）+ ~~WP-17（M8）~~ ✅ | +2–3.5 | 🟢 ready（entry 全達成 2026-07-07）· 未展開，待排程 |
 
 **階段 C（`active/stage3/`，⬜ 已規劃 2026-07-06；tech spec：[`active/stage3/README.md`](active/stage3/README.md)；研究決議 [DECISIONS.md](DECISIONS.md) GD-6~10）**
 
@@ -103,7 +103,7 @@ WP-10 ──┬→ WP-11 ──┐
         │          ├→ WP-13(M6) ──┬→ WP-16 ──┐
 WP-12 ──┴──────────┘               │          ├→ WP-17(M8)
 WP-14 ─────────────────────────────┴→ WP-15(M7)┘
-                                          WP-18(F5，⏸ 門控)
+                                          WP-18（F5，🟢 ready 未展開）
 ```
 
 - WP-2（脊椎，M1）是階段 A 的門控閘：完成且決定性驗證通過前，不展開 WP-3 之後。

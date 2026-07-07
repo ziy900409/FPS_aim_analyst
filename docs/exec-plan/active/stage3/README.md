@@ -28,7 +28,7 @@
 **與 stage2 的介面**(不重疊、不搶跑):
 
 - **WP-16(schema v2)** 是 stage3 的資料面上游:GD-7/8/10 指定的欄位(逐 tick 目標/玩家位置、`sequence.seed`/motion meta、`scene`/`display`/`frames` optional 區塊)**一次進 v2**——本計畫已回饋 WP-16 T1 scope(見 §9 對帳)。
-- **WP-18(F5 移動 drill)** 維持在 stage2(門控已解除一半:OQ-S2-5 ✅,entry 僅餘 M8):移動目標 sim 驅動、sub-tick 命中內插、render 端目標 alpha 內插、追蹤 drill(timed presentation)。stage3 的 WP-22 T1 **消費** WP-18,把追蹤 drill 放進 BR 場景。
+- **WP-18(F5 移動 drill)** 維持在 stage2(門控**全解**:OQ-S2-5 ✅ + M8 ✅ 2026-07-07;🟢 ready、未展開、待排程):移動目標 sim 驅動、sub-tick 命中內插、render 端目標 alpha 內插、追蹤 drill(timed presentation)。stage3 的 WP-22 T1 **消費** WP-18,把追蹤 drill 放進 BR 場景——建議 WP-18 隨 stage3 一起排。
 - **sim 熱路徑零侵入**:stage3 全部工作落在 render/UI/data/驗證層 + `TargetManager` 的 seeded spawn(注入式 RNG,GD-5 紀律)。recoil 鏈(WP-10~13)完全不碰。
 
 ---
