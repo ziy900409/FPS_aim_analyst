@@ -1,5 +1,5 @@
 import { CS2_PROFILE } from '../sim/MovementController.ts';
-import type { Metrics, Stat } from '../metrics/compute.ts';
+import type { AimOffset, CompensationError, Metrics, RecoilCompensationPath, Stat } from '../metrics/compute.ts';
 
 export interface ResultCard {
   id: string;
@@ -11,7 +11,26 @@ export interface ResultCard {
 export interface ResultSummary {
   cards: ResultCard[];
   reactionValues: number[];
+  recoilCompensation: RecoilCompensationSummary;
   methodNote: string;
+}
+
+export interface RecoilCompensationSummary {
+  error: CompensationError;
+  path: RecoilCompensationPath;
+}
+
+export interface RecoilOverlayPoint {
+  x: number;
+  y: number;
+}
+
+export interface RecoilOverlayModel {
+  actual: RecoilOverlayPoint[];
+  ideal: RecoilOverlayPoint[];
+  origin: RecoilOverlayPoint;
+  meanText: string;
+  rmsText: string;
 }
 
 export interface ResultScreenHandle {
@@ -89,7 +108,21 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     'border-radius:6px',
   ].join(';');
 
-  panel.append(title, method, grid, chartTitle, chart);
+  const recoilTitle = document.createElement('h3');
+  recoilTitle.textContent = 'Recoil Compensation Path';
+  recoilTitle.style.cssText = 'margin:18px 0 8px;font:700 14px/1.25 system-ui,sans-serif;letter-spacing:0';
+
+  const recoilChart = document.createElement('div');
+  recoilChart.style.cssText = [
+    'min-height:236px',
+    'box-sizing:border-box',
+    'padding:12px',
+    'background:rgba(255,255,255,0.045)',
+    'border:1px solid rgba(255,255,255,0.10)',
+    'border-radius:6px',
+  ].join(';');
+
+  panel.append(title, method, grid, chartTitle, chart, recoilTitle, recoilChart);
   root.appendChild(panel);
   parent.appendChild(root);
 
@@ -97,6 +130,10 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     method.textContent = summary.methodNote;
     grid.replaceChildren(...summary.cards.map(renderCard));
     chart.replaceChildren(renderReactionDistribution(summary.reactionValues));
+    const recoilModel = createRecoilOverlayModel(summary.recoilCompensation);
+    recoilTitle.style.display = recoilModel !== undefined ? '' : 'none';
+    recoilChart.style.display = recoilModel !== undefined ? '' : 'none';
+    recoilChart.replaceChildren(...(recoilModel !== undefined ? [renderRecoilCompensation(recoilModel)] : []));
   }
 
   return {
@@ -123,6 +160,10 @@ export function createResultSummary(metrics: Metrics): ResultSummary {
   return {
     methodNote: 'Subject-relative values only. Interpret changes within the same participant; display-latency error bounds still apply.',
     reactionValues: metrics.counterReactionMs.values ?? [],
+    recoilCompensation: {
+      error: metrics.recoilCompensationError,
+      path: metrics.recoilCompensationPath,
+    },
     cards: [
       statCard('counterReactionMs', 'Counter reaction', metrics.counterReactionMs, 'ms', 0),
       {
@@ -155,6 +196,38 @@ export function createResultSummary(metrics: Metrics): ResultSummary {
         detail: `L ${formatStatMean(metrics.leftRightSymmetry.left, 'ms', 0)} · R ${formatStatMean(metrics.leftRightSymmetry.right, 'ms', 0)}`,
       },
     ],
+  };
+}
+
+export function createRecoilOverlayModel(summary: RecoilCompensationSummary): RecoilOverlayModel | undefined {
+  const width = 720;
+  const height = 176;
+  const margin = 18;
+  const actual = finiteOffsets(summary.path.actual);
+  const ideal = finiteOffsets(summary.path.ideal);
+  if (actual.length === 0 && ideal.length === 0) return undefined;
+
+  const points = [...actual, ...ideal, { pitchDeg: 0, yawDeg: 0 }];
+  const minPitch = Math.min(...points.map((point) => point.pitchDeg));
+  const maxPitch = Math.max(...points.map((point) => point.pitchDeg));
+  const minYaw = Math.min(...points.map((point) => point.yawDeg));
+  const maxYaw = Math.max(...points.map((point) => point.yawDeg));
+  const pitchSpan = Math.max(maxPitch - minPitch, 1);
+  const yawSpan = Math.max(maxYaw - minYaw, 1);
+  const plotWidth = width - margin * 2;
+  const plotHeight = height - margin * 2;
+
+  const mapPoint = (point: AimOffset): RecoilOverlayPoint => ({
+    x: margin + ((point.yawDeg - minYaw) / yawSpan) * plotWidth,
+    y: margin + ((point.pitchDeg - minPitch) / pitchSpan) * plotHeight,
+  });
+
+  return {
+    actual: actual.map(mapPoint),
+    ideal: ideal.map(mapPoint),
+    origin: mapPoint({ pitchDeg: 0, yawDeg: 0 }),
+    meanText: `${formatNumber(summary.error.meanDeg, 2)} deg`,
+    rmsText: `${formatNumber(summary.error.rmsDeg, 2)} deg`,
   };
 }
 
@@ -208,6 +281,149 @@ function renderCard(card: ResultCard): HTMLElement {
 
   node.append(title, value, detail);
   return node;
+}
+
+function renderRecoilCompensation(model: RecoilOverlayModel): HTMLElement {
+  const wrapper = document.createElement('div');
+  wrapper.dataset.metricId = 'recoilCompensationPath';
+  wrapper.style.cssText = 'display:grid;grid-template-rows:auto auto;gap:10px';
+
+  const stats = document.createElement('div');
+  stats.style.cssText = [
+    'display:flex',
+    'flex-wrap:wrap',
+    'gap:12px',
+    'align-items:center',
+    'color:#d9e2ec',
+    'font:650 12px/1.35 system-ui,sans-serif',
+  ].join(';');
+
+  stats.append(
+    renderLegendItem('Actual aim', '#7cc7ff'),
+    renderLegendItem('Ideal -aimPunch x2', '#ffcf6e'),
+    renderMetricPill('Mean', model.meanText),
+    renderMetricPill('RMS', model.rmsText),
+  );
+
+  wrapper.append(stats, renderRecoilSvg(model));
+  return wrapper;
+}
+
+function renderLegendItem(label: string, color: string): HTMLElement {
+  const item = document.createElement('span');
+  item.style.cssText = 'display:inline-flex;align-items:center;gap:6px;white-space:nowrap';
+
+  const swatch = document.createElement('span');
+  swatch.style.cssText = `width:18px;height:3px;border-radius:2px;background:${color}`;
+
+  const text = document.createElement('span');
+  text.textContent = label;
+
+  item.append(swatch, text);
+  return item;
+}
+
+function renderMetricPill(label: string, value: string): HTMLElement {
+  const item = document.createElement('span');
+  item.style.cssText = [
+    'display:inline-flex',
+    'gap:6px',
+    'align-items:baseline',
+    'padding:4px 8px',
+    'border:1px solid rgba(255,255,255,0.12)',
+    'border-radius:6px',
+    'background:rgba(0,0,0,0.16)',
+    'font-variant-numeric:tabular-nums',
+  ].join(';');
+
+  const name = document.createElement('span');
+  name.textContent = label;
+  name.style.cssText = 'color:#aeb9c4';
+
+  const number = document.createElement('span');
+  number.textContent = value;
+
+  item.append(name, number);
+  return item;
+}
+
+function renderRecoilSvg(model: RecoilOverlayModel): SVGSVGElement {
+  const width = 720;
+  const height = 176;
+  const margin = 18;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '176');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Actual recoil compensation path compared with ideal path');
+
+  const plotWidth = width - margin * 2;
+  const plotHeight = height - margin * 2;
+
+  const grid = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  grid.setAttribute('x', String(margin));
+  grid.setAttribute('y', String(margin));
+  grid.setAttribute('width', String(plotWidth));
+  grid.setAttribute('height', String(plotHeight));
+  grid.setAttribute('rx', '4');
+  grid.setAttribute('fill', 'rgba(0,0,0,0.12)');
+  grid.setAttribute('stroke', 'rgba(255,255,255,0.10)');
+  svg.appendChild(grid);
+
+  appendGuideLine(svg, margin, model.origin.y, width - margin, model.origin.y);
+  appendGuideLine(svg, model.origin.x, margin, model.origin.x, height - margin);
+  appendPath(svg, model.ideal, '#ffcf6e');
+  appendPath(svg, model.actual, '#7cc7ff');
+
+  return svg;
+}
+
+function appendGuideLine(svg: SVGSVGElement, x1: number, y1: number, x2: number, y2: number): void {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', formatSvgNumber(x1));
+  line.setAttribute('y1', formatSvgNumber(y1));
+  line.setAttribute('x2', formatSvgNumber(x2));
+  line.setAttribute('y2', formatSvgNumber(y2));
+  line.setAttribute('stroke', 'rgba(255,255,255,0.14)');
+  line.setAttribute('stroke-width', '1');
+  svg.appendChild(line);
+}
+
+function appendPath(
+  svg: SVGSVGElement,
+  points: readonly RecoilOverlayPoint[],
+  color: string,
+): void {
+  if (points.length === 0) return;
+
+  if (points.length > 1) {
+    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    polyline.setAttribute('points', points.map((point) => `${formatSvgNumber(point.x)},${formatSvgNumber(point.y)}`).join(' '));
+    polyline.setAttribute('fill', 'none');
+    polyline.setAttribute('stroke', color);
+    polyline.setAttribute('stroke-width', '3');
+    polyline.setAttribute('stroke-linecap', 'round');
+    polyline.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(polyline);
+  }
+
+  for (const point of points) {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', formatSvgNumber(point.x));
+    circle.setAttribute('cy', formatSvgNumber(point.y));
+    circle.setAttribute('r', '3');
+    circle.setAttribute('fill', color);
+    svg.appendChild(circle);
+  }
+}
+
+function finiteOffsets(path: readonly AimOffset[]): AimOffset[] {
+  return path.filter((point) => Number.isFinite(point.pitchDeg) && Number.isFinite(point.yawDeg));
+}
+
+function formatSvgNumber(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(3).replace(/\.?0+$/, '') : '0';
 }
 
 function renderReactionDistribution(values: readonly number[]): SVGSVGElement {

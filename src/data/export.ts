@@ -55,12 +55,17 @@ export function downloadCSV(payload: ExportPayload, options: DownloadOptions = {
 }
 
 function serializeTicksCSV(ticks: TickRecord[]): string {
-  const rows = [['t', 'vx', 'vz', 'yaw', 'pitch', 'keys']];
+  const rows = [['t', 'vx', 'vz', 'px', 'pz', 'tx', 'ty', 'tz', 'yaw', 'pitch', 'keys']];
   for (const tick of ticks) {
     rows.push([
       formatNumber(tick.t),
       formatNumber(tick.vx),
       formatNumber(tick.vz),
+      formatNumber(tick.px),
+      formatNumber(tick.pz),
+      formatOptionalNumber(tick.tx),
+      formatOptionalNumber(tick.ty),
+      formatOptionalNumber(tick.tz),
       formatNumber(tick.aim.yaw),
       formatNumber(tick.aim.pitch),
       tick.keys.join('|'),
@@ -70,12 +75,33 @@ function serializeTicksCSV(ticks: TickRecord[]): string {
 }
 
 function serializeEventsCSV(events: DrillEvent[]): string {
-  const rows = [['type', 't', 'targetId', 'side', 'key', 'hit', 'firstShot', 'residualSpeed', 'offsetDeg', 'part']];
+  const rows = [
+    [
+      'type',
+      't',
+      'targetId',
+      'side',
+      'key',
+      'hit',
+      'firstShot',
+      'residualSpeed',
+      'viewYaw',
+      'viewPitch',
+      'aimPunchPitch',
+      'aimPunchYaw',
+      'spreadX',
+      'spreadY',
+      'recoilIndex',
+      'ammo',
+      'offsetDeg',
+      'part',
+    ],
+  ];
   for (const event of events) {
     if (event.type === 'visible') {
-      rows.push([event.type, formatNumber(event.t), event.targetId, event.side, '', '', '', '', '', '']);
+      rows.push([event.type, formatNumber(event.t), event.targetId, event.side, '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else if (event.type === 'counter') {
-      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '']);
+      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
       rows.push([
         event.type,
@@ -86,6 +112,14 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         formatBoolean(event.hit),
         formatBoolean(event.firstShot),
         formatNumber(event.residualSpeed),
+        formatOptionalNumber(event.viewYaw),
+        formatOptionalNumber(event.viewPitch),
+        formatOptionalNumber(event.aimPunchPitch),
+        formatOptionalNumber(event.aimPunchYaw),
+        formatOptionalNumber(event.spreadX),
+        formatOptionalNumber(event.spreadY),
+        formatOptionalNumber(event.recoilIndex),
+        formatOptionalNumber(event.ammo),
         event.offsetDeg !== undefined ? formatNumber(event.offsetDeg) : '',
         event.part ?? '',
       ]);
@@ -108,11 +142,20 @@ function formatNumber(value: number): string {
   return String(value);
 }
 
+function formatOptionalNumber(value: number | null | undefined): string {
+  return value === null || value === undefined ? '' : formatNumber(value);
+}
+
 function assertFinitePayload(payload: ExportPayload): void {
   for (const tick of payload.ticks) {
     formatNumber(tick.t);
     formatNumber(tick.vx);
     formatNumber(tick.vz);
+    formatNumber(tick.px);
+    formatNumber(tick.pz);
+    formatOptionalNumber(tick.tx);
+    formatOptionalNumber(tick.ty);
+    formatOptionalNumber(tick.tz);
     formatNumber(tick.aim.yaw);
     formatNumber(tick.aim.pitch);
   }
@@ -120,6 +163,14 @@ function assertFinitePayload(payload: ExportPayload): void {
     formatNumber(event.t);
     if (event.type === 'fire') {
       formatNumber(event.residualSpeed);
+      formatOptionalNumber(event.viewYaw);
+      formatOptionalNumber(event.viewPitch);
+      formatOptionalNumber(event.aimPunchPitch);
+      formatOptionalNumber(event.aimPunchYaw);
+      formatOptionalNumber(event.spreadX);
+      formatOptionalNumber(event.spreadY);
+      formatOptionalNumber(event.recoilIndex);
+      formatOptionalNumber(event.ammo);
       if (event.offsetDeg !== undefined) formatNumber(event.offsetDeg);
     }
   }

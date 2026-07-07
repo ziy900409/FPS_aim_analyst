@@ -400,6 +400,22 @@ canvas.addEventListener('pointermove', (e) => {
 - [ ] drill 後統計顯示第 5 節全部指標
 - [ ] 反應時間分布落在合理範圍（對照 150–250 ms 文獻）
 
+## 附錄 E-B：驗收清單（階段 B，M8 交付門）
+
+> stage2（CS2 後座力系統 + 真急停物理）交付門。~10 項客觀可勾，涵蓋 M5–M7 證據 + schema v2 + 決定性 + NFR 抽查。
+> 執行記錄與逐項證據連結見 [`exec-plan/completed/stage2/wp-17-integration/progress.md`](exec-plan/completed/stage2/wp-17-integration/progress.md)（T-exit 2026-07-07）。
+
+- [x] **[M5] recoil 數學核心 golden 全綠**：AK-47（seed 223）前 8 筆彈道表逐位一致、10 發 punch 向量（pitch −10.18°／yaw −1.56°，±0.01°）、前 4 發抑制係數 = 30×Lerp(j/4, 0.75, 1) 精確 — `src/recoil/recoilTable.test.ts` + `spread.test.ts` 綠
+- [x] **[M6] 壓槍手感全鏈路分離**：按住連發時視覺 = viewAngles + aimPunch、彈道 = viewAngles + rawPunch×2 + spread 分離生效；held 10 發 rawPunch 漂移方向（上+右）且逼近 M5 向量 — `tests/e2e/full-drill.spec.ts`「recoil 分離」綠 + M6 手動視覺 4 項使用者確認（2026-07-06）
+- [x] **[M7 caveated] 校準**：速度曲線於 sim cadence surrogate 對表 ±1 u/s 內；AK pattern 對 CS2 vdata M5 golden 逐位釘死；第三方 Aiming.Pro pattern 逐彈差異（yaw maxAbs 3.941°）分層歸因為來源模型不匹配並經研究者接受（GD-14，外部實錄真值仍列 caveat） — `tests/calibration/showpos.test.ts` 綠 + WP-15 progress
+- [x] **schema v2 對帳 + 溢位保護**：匯出 `meta.schemaVersion === 2` 且 fire 事件含 `viewYaw/viewPitch/aimPunchPitch/aimPunchYaw/spreadX/spreadY/recoilIndex/ammo`；統計 = 匯出（`metricsFromExport(payload)` round-trip 逐欄一致）；30 發滿匣 spray `recorderOverflow === false` — `src/data/export.test.ts`/`metadata.test.ts`/`DataRecorder.test.ts` 綠 + spray baseline `recorderOverflow:false`
+- [x] **決定性 punch/彈著 × 3 FPS（FR-B16）**：同 `rngSeed` + 同合成輸入序列 → 30 發出彈 punch/spread/彈著（tick-index 鍵）序列 bit-exact，60/144/240 FPS pump 下 `final.ticks === expectedTicks` — `tests/regression/spray-determinism.test.ts` + `determinism.test.ts` 綠
+- [x] **COI 三計時防線不退化**：dev server 與 preview server 皆 `crossOriginIsolated === true`（COOP/COEP）；全鏈路與 spray drill E2E 內重申 COI — `tests/e2e/isolation.spec.ts` + `full-drill.spec.ts` + `spray-drill.spec.ts` 綠
+- [x] **sim/recoil 無 `Math.random()`**：`src/sim`／`src/recoil` grep `Math.random(` 呼叫數 = 0（僅 `TargetManager.ts` 註解提及禁用，非呼叫） — grep 抽查（2026-07-07）
+- [x] **彈孔單一 draw call**：`ImpactView` 以單一 `InstancedMesh(IMPACT_CAP)` render-only 繪彈孔，不入 sim/匯出 — `src/render/ImpactView.ts` + `ImpactView.test.ts` 綠
+- [x] **壓 30 發不掉 tick（NFR 抽查）**：30 發 spray 於 60/144/240 FPS pump 下 `final.ticks` 等於 canonical `expectedTicks`（accumulator 全數處理、無 tick 缺口），`impactTotal === 30` — `tests/regression/spray-determinism.test.ts` 綠
+- [x] **`npm run test:ci` exit 0**：`tsc --noEmit` + Vitest 43 files／326 tests + Playwright 10 passed，退出碼 0 — 本機 run（2026-07-07）
+
 ## 13. 附錄 F：風險登記（重點）
 | 風險 | 影響 | 緩解 |
 |---|---|---|

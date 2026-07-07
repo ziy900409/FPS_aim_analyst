@@ -8,8 +8,8 @@
 | **交付範圍** | CS2 後座力系統(彈道表 + punch 動力學 + inaccuracy)+ 武器層(cycletime/彈匣/full-auto)+ 階段 B 真急停物理(friction/accelerate integrator + velocity gate)+ 校準驗證 + 匯出 schema v2 與壓槍指標 |
 | **上游門檻** | 階段 A **M4 ✅(2026-07-03)**;稽核結論**無 BLOCKER**(A1 固定 tick PASS) |
 | **技術棧** | 沿用階段 A(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright) |
-| **估時** | 14.5–21 dev-days(≈3–4 週);WP-18(F5 移動目標)門控中、另計 +2–3.5 |
-| **狀態** | 🟡 已採納,執行中(**WP-10 ✅ M5 golden 全綠 2026-07-05**;下一步 WP-11/12/14 可並行開跑) |
+| **估時** | 14.5–21 dev-days(≈3–4 週);WP-18(F5 移動目標)門控已解、未展開、另計 +2–3.5 |
+| **狀態** | ✅ **M8 交付(2026-07-07)**:WP-10~17 全綠、驗收清單 B(附錄 E-B)全項通過、`test:ci` exit 0;WP-18(F5)為門控後續,不阻塞 M8 |
 
 ---
 
@@ -211,15 +211,15 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
-| **WP-10** | [wp-10-recoil-core/](wp-10-recoil-core/README.md) | 後座力數學核心(彈道表 + punch 動力學 + inaccuracy)+ golden tests + 2D 檢查頁(dev-only) | **M5** | —(可立即開跑) | 2–3 | ✅ **M5 2026-07-05** |
-| **WP-11** | [wp-11-weapon-fire/](wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up 事件 + cycletime 產彈 + 彈匣 + recoil index 掛點 | — | WP-10(型別) | 2–3 | ✅ **2026-07-06** |
-| **WP-12** | [wp-12-input-seams/](wp-12-input-seams/README.md) | 感度換算 CS2 0.022°/count(A4)+ 射線方向注入(A3) | — | — | 1–1.5 | ✅ **2026-07-06** |
-| **WP-13** | [wp-13-sim-camera-integration/](wp-13-sim-camera-integration/README.md) | recoil 進 simStep(64Hz 子節奏)+ 相機視覺/彈道合成 + 彈孔 InstancedMesh + debug overlay | **M6** | WP-10, 11, 12 | 2–3 | ✅ **M6 2026-07-06**(automated + 手動視覺 4 項使用者確認通過) |
-| **WP-14** | [wp-14-movement-physics/](wp-14-movement-physics/README.md) | friction/accelerate integrator 取代 M1 snap + velocity gate(~88 u/s)+ 殘速指標連續化 | — | —(介面不變,可與 10–13 並行) | 2–3 | ✅ **2026-07-06**(baseline 重錄 + Edge 實測手感驗證) |
-| **WP-15** | [wp-15-calibration/](wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | 🟡 T0 surrogate PASS |
-| **WP-16** | [wp-16-metrics-export-v2/](wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁軌跡對照 | — | WP-13 | 2–3 | ⬜ |
-| **WP-17** | [wp-17-integration/](wp-17-integration/README.md) | E2E 全鏈路(壓槍 drill → 匯出 → 統計)+ 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ⬜ |
-| **WP-18** | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md)(門控) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | **門控:OQ-S2-5** + WP-17 | +2–3.5 | ⏸ 門控 |
+| **WP-10** | [wp-10-recoil-core/](../../completed/stage2/wp-10-recoil-core/README.md) | 後座力數學核心(彈道表 + punch 動力學 + inaccuracy)+ golden tests + 2D 檢查頁(dev-only) | **M5** | —(可立即開跑) | 2–3 | ✅ **M5 2026-07-05** |
+| **WP-11** | [wp-11-weapon-fire/](../../completed/stage2/wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up 事件 + cycletime 產彈 + 彈匣 + recoil index 掛點 | — | WP-10(型別) | 2–3 | ✅ **2026-07-06** |
+| **WP-12** | [wp-12-input-seams/](../../completed/stage2/wp-12-input-seams/README.md) | 感度換算 CS2 0.022°/count(A4)+ 射線方向注入(A3) | — | — | 1–1.5 | ✅ **2026-07-06** |
+| **WP-13** | [wp-13-sim-camera-integration/](../../completed/stage2/wp-13-sim-camera-integration/README.md) | recoil 進 simStep(64Hz 子節奏)+ 相機視覺/彈道合成 + 彈孔 InstancedMesh + debug overlay | **M6** | WP-10, 11, 12 | 2–3 | ✅ **M6 2026-07-06**(automated + 手動視覺 4 項使用者確認通過) |
+| **WP-14** | [wp-14-movement-physics/](../../completed/stage2/wp-14-movement-physics/README.md) | friction/accelerate integrator 取代 M1 snap + velocity gate(~88 u/s)+ 殘速指標連續化 | — | —(介面不變,可與 10–13 並行) | 2–3 | ✅ **2026-07-06**(baseline 重錄 + Edge 實測手感驗證) |
+| **WP-15** | [wp-15-calibration/](../../completed/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | ✅ **M7 caveated(2026-07-07)** — 速度曲線 surrogate 對表通過 + recoil 對 CS2 golden 釘死;第三方 pattern 差異已歸因接受(GD-14) |
+| **WP-16** | [wp-16-metrics-export-v2/](../../completed/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁軌跡對照 | — | WP-13 | 2–3 | ✅ **2026-07-07**(schema v2 + 壓槍指標;不變式/溢位/對帳全綠) |
+| **WP-17** | [wp-17-integration/](../../completed/stage2/wp-17-integration/README.md) | E2E 全鏈路(壓槍 drill → 匯出 → 統計)+ 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ✅ **M8(2026-07-07)** |
+| **WP-18** | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅(GD-7)+ ~~WP-17(M8)~~ ✅ | +2–3.5 | 🟢 ready(entry 全達成 2026-07-07)· 未展開,待排程(建議隨 stage3) |
 
 ---
 
@@ -229,8 +229,8 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 |---|---|---|---|
 | **M5 ✅ (2026-07-05)** | golden tests 全綠:seed 223 前 8 筆彈道表、10 發 punch 向量、前 4 發抑制係數、同 seed 決定性 | WP-10 | 數學核心正確性釘死;之後所有整合問題都可歸因到接線,不歸因到公式 |
 | **M6 ✅ (2026-07-06)** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效;10 發 E2E punch 值與 M5 向量一致(automated `test:ci` 全綠 + 手動視覺/手感 4 項使用者確認通過 2026-07-06) | WP-13 | 壓槍玩法成立(核心手感可實測) |
-| **M7** | `cl_showpos` 曲線 + pattern 圖比對通過;velocity gate 連續模型上線 | WP-14+15 | 「counter-strafe × 壓槍」研究效度成立(移動 inaccuracy 有真實速度可掛) |
-| **M8** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B 全項通過 | WP-17 | stage2 交付 |
+| **M7 ✅ caveated (2026-07-07)** | 速度曲線於 sim cadence 公式/常數對表通過(theory surrogate,非 `cl_showpos` 實錄——承 OQ-15.1/GD-13);recoil pattern 對 CS2 vdata M5 golden 逐位釘死;第三方 Aiming.Pro pattern 逐彈差異(yaw maxAbs 3.941°)分層歸因為來源模型不匹配並被研究者接受(GD-14);velocity gate 連續模型上線(WP-14) | WP-14+15 | 「counter-strafe × 壓槍」研究效度成立(移動 inaccuracy 掛在可信速度上);**外部實錄行為級真值仍為 caveat**(待高幀率 `cl_showpos`/demo 實錄) |
+| **M8 ✅ (2026-07-07)** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B(附錄 E-B)全 10 項通過;`test:ci` exit 0 | WP-17 | **stage2 交付達成**(WP-10~17 全綠;WP-18 F5 為門控後續、不阻塞 M8) |
 
 ---
 
@@ -241,7 +241,7 @@ WP-10(recoil 核心)──┬→ WP-11(武器/fire)──┐
                      │                     ├→ WP-13(整合,M6)──┬→ WP-16(指標/匯出)──┐
 WP-12(輸入接縫)─────┴─────────────────────┘                  │                    ├→ WP-17(M8)
 WP-14(movement 物理)──────────────────────────────────────────┴→ WP-15(校準,M7)───┘
-                                                                        WP-18(F5,門控)⏸
+                                                                        WP-18(F5,🟢 ready 未展開)
 ```
 
 - **可並行三線開跑**:WP-10、WP-12、WP-14 互不相依。
@@ -256,15 +256,15 @@ WP-14(movement 物理)───────────────────�
 
 | WP | Task 檔 |
 |---|---|
-| **WP-10** recoil-core(M5) | [wp-10-recoil-core/](wp-10-recoil-core/README.md):T0 → T1 ran1/彈道表 → T2 punch → T3 spread → T4 檢查頁 → T-exit |
-| **WP-11** weapon-fire | [wp-11-weapon-fire/](wp-11-weapon-fire/README.md):T0 → T1 WeaponConfig → T2 fire down/up → T3 cycletime 排程 → T-exit |
-| **WP-12** input-seams | [wp-12-input-seams/](wp-12-input-seams/README.md):T0 → T1 CS2 感度 → T2 射線注入 → T-exit |
-| **WP-13** sim-camera-integration(M6) | [wp-13-sim-camera-integration/](wp-13-sim-camera-integration/README.md):T0 → T1 simStep 佈線 → T2 相機/彈道合成 → T3 彈孔 + debug overlay → T-exit |
-| **WP-14** movement-physics | [wp-14-movement-physics/](wp-14-movement-physics/README.md):T0 → T1 integrator → T2 velocity gate → T3 指標連續化 → T-exit |
-| **WP-15** calibration(M7) | [wp-15-calibration/](wp-15-calibration/README.md):T0 → T1 cl_showpos 對表 → T2 pattern 比對 → T-exit |
-| **WP-16** metrics-export-v2 | [wp-16-metrics-export-v2/](wp-16-metrics-export-v2/README.md):T0 → T1 schema v2 → T2 理想路徑指標 → T3 結果頁對照 → T-exit |
-| **WP-17** integration(M8) | [wp-17-integration/](wp-17-integration/README.md):T0 → T1 決定性回歸 → T2 全鏈路 E2E → T-exit(原 T3 驗收清單 B 併入) |
-| **WP-18** f5-subtick(⏸ 門控) | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md):README stub;entry 條件 = OQ-S2-5 決議 + M8 ✅ |
+| **WP-10** recoil-core(M5) | [wp-10-recoil-core/](../../completed/stage2/wp-10-recoil-core/README.md):T0 → T1 ran1/彈道表 → T2 punch → T3 spread → T4 檢查頁 → T-exit |
+| **WP-11** weapon-fire | [wp-11-weapon-fire/](../../completed/stage2/wp-11-weapon-fire/README.md):T0 → T1 WeaponConfig → T2 fire down/up → T3 cycletime 排程 → T-exit |
+| **WP-12** input-seams | [wp-12-input-seams/](../../completed/stage2/wp-12-input-seams/README.md):T0 → T1 CS2 感度 → T2 射線注入 → T-exit |
+| **WP-13** sim-camera-integration(M6) | [wp-13-sim-camera-integration/](../../completed/stage2/wp-13-sim-camera-integration/README.md):T0 → T1 simStep 佈線 → T2 相機/彈道合成 → T3 彈孔 + debug overlay → T-exit |
+| **WP-14** movement-physics | [wp-14-movement-physics/](../../completed/stage2/wp-14-movement-physics/README.md):T0 → T1 integrator → T2 velocity gate → T3 指標連續化 → T-exit |
+| **WP-15** calibration(M7) | [wp-15-calibration/](../../completed/stage2/wp-15-calibration/README.md):T0 → T1 cl_showpos 對表 → T2 pattern 比對 → T-exit |
+| **WP-16** metrics-export-v2 | [wp-16-metrics-export-v2/](../../completed/stage2/wp-16-metrics-export-v2/README.md):T0 → T1 schema v2 → T2 理想路徑指標 → T3 結果頁對照 → T-exit |
+| **WP-17** integration(M8) | [wp-17-integration/](../../completed/stage2/wp-17-integration/README.md):T0 → T1 決定性回歸 → T2 全鏈路 E2E → T-exit(原 T3 驗收清單 B 併入) |
+| **WP-18** f5-subtick(🟢 ready,未展開) | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md):README stub;entry 條件 = OQ-S2-5 ✅ + M8 ✅ 皆達成(2026-07-07),待排程展開 |
 
 ---
 
@@ -288,10 +288,10 @@ WP-14(movement 物理)───────────────────�
 | # | 問題 | 建議(計畫預設) | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
 | OQ-S2-1 ✅ | recoil tick 節奏:64Hz 子節奏 vs dt=1/128 代入 vs SIM_HZ 降 64 | **決議:64Hz 子節奏**(§2.4,ADR-3 意圖;2026-07-05 WP-10 T0) | 使用者 | 已拍板 | WP-10 golden 定義、WP-13 T1 佈線已鎖定 |
-| OQ-S2-2 ✅ | 校準容差:`cl_showpos` 逐 tick ±? u/s;pattern 逐彈 ±?° | **決議:速度逐 tick ±1 u/s、AK pattern 逐彈 ±0.05°**;首輪跑完若需校正,須記最大偏差與差異分層理由 | 研究者 | 已拍板(2026-07-07 WP-15 T0) | T0 已改為 surrogate PASS:速度曲線採 Source formula + CS2 cvars theory-derived fixture,AK pattern 採 Aiming.Pro 候選 fixture;M7 若無實錄補強須保留 caveat |
-| OQ-S2-3 ✅ | 感度語意變更後,階段 A 已匯出資料的可比性標注 | **決議:T1 先加 `sensitivityModel: 'cs2-0.022deg'`;無此欄 = 階段 A 佔位語意 `0.0022 rad/count`;`schemaVersion` bump 留 WP-16 schema v2 一次做;舊資料不回溯轉換** | 研究者 | 已拍板(2026-07-06 WP-12 T0) | T1 metadata/schema 註記已鎖定 |
+| OQ-S2-2 ✅ | 校準容差:`cl_showpos` 逐 tick ±? u/s;pattern 逐彈 ±?° | **決議:速度逐 tick ±1 u/s、AK pattern 逐彈 ±0.05°**;首輪跑完若需校正,須記最大偏差與差異分層理由。**T-exit 收斂(2026-07-07):容差維持 ±1 u/s / ±0.05°,未放寬。** 速度:surrogate 於 sim cadence 對表通過(±1 u/s 內)。pattern:第三方 Aiming.Pro 逐彈 yaw maxAbs **3.941°** **未通過** ±0.05° → 依規則記最大偏差(shot 15 yaw)+ 分層歸因(來源模型不匹配,非公式/換算),研究者接受為 caveat(GD-14)。 | 研究者 | 已拍板(2026-07-07 WP-15 T0);ledger 收斂 T-exit(2026-07-07) | M7 caveated PASS:速度曲線 surrogate 對表 + recoil 對 CS2 golden 釘死;第三方 pattern 差異歸因接受;實錄行為級真值仍為 caveat |
+| OQ-S2-3 ✅ | 感度語意變更後,階段 A 已匯出資料的可比性標注 | **決議:T1 先加 `sensitivityModel: 'cs2-0.022deg'`;無此欄 = 階段 A 佔位語意 `0.0022 rad/count`;`schemaVersion` bump 留 WP-16 schema v2 一次做;舊資料不回溯轉換。WP-16 T0 收尾確認:v2 以 `schemaVersion` + model 欄共同斷代,研究端分流,不做舊資料轉換。** | 研究者 | 已拍板(2026-07-06 WP-12 T0);T0 收尾(2026-07-07 WP-16) | T1 metadata/schema 註記已鎖定 |
 | OQ-S2-4 | `view_recoil_tracking`(視覺跟隨比例)CS2 對應值 | 先做開關 + 可調常數(僅視覺,不影響彈著/資料) | 研究計畫(社群求證) | 不阻塞 | WP-13 T2 視覺預設 |
-| OQ-S2-5 ✅ | F5「移動 + counter-strafe 能力混淆」研究設計(附錄 F/GD-1 遺留) | **決議:採附錄 F 預設緩解——純追蹤 drill 與急停 drill 分離;指標層再切獲取/追隨(`t_acquire` vs 追蹤窗口內 TOT%/RMS ε),完整定義見 [DECISIONS.md GD-7](../../DECISIONS.md);複合 drill 維持進階標註、不入 WP-18** | 研究者 | 已拍板(2026-07-06 grill) | WP-18 研究側門控解除(entry 僅餘 M8) |
+| OQ-S2-5 ✅ | F5「移動 + counter-strafe 能力混淆」研究設計(附錄 F/GD-1 遺留) | **決議:採附錄 F 預設緩解——純追蹤 drill 與急停 drill 分離;指標層再切獲取/追隨(`t_acquire` vs 追蹤窗口內 TOT%/RMS ε),完整定義見 [DECISIONS.md GD-7](../../DECISIONS.md);複合 drill 維持進階標註、不入 WP-18** | 研究者 | 已拍板(2026-07-06 grill) | WP-18 門控**全解**(M8 ✅ 2026-07-07);ready 未展開,待排程 |
 | OQ-S2-6 ✅ | 彈匣盡行為:停火(無 reload)是否可接受 | **決議:停火,drill 一 peek ≤ 一匣**(2026-07-05 WP-10 T0) | 使用者 | 已拍板 | WP-11 T3 DoD 已鎖定 |
 
 ---

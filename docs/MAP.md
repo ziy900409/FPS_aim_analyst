@@ -93,14 +93,14 @@ docs/exec-plan/
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 |
 |---|---|---|---|---|
-| **WP-10** | [wp-10-recoil-core/](exec-plan/active/stage2/wp-10-recoil-core/README.md) | 後座力數學核心（彈道表 + punch 動力學 + inaccuracy）+ golden tests | **M5** | — |
-| **WP-11** | [wp-11-weapon-fire/](exec-plan/active/stage2/wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up + cycletime 產彈 + 彈匣 | — | WP-10 |
-| **WP-12** | [wp-12-input-seams/](exec-plan/active/stage2/wp-12-input-seams/README.md) | CS2 感度換算（A4）+ 射線方向注入（A3） | — | — |
-| **WP-13** | [wp-13-sim-camera-integration/](exec-plan/active/stage2/wp-13-sim-camera-integration/README.md) | recoil 進 simStep（64Hz 子節奏）+ 相機/彈道合成 + 彈孔 | **M6** | WP-10,11,12 |
-| **WP-14** | [wp-14-movement-physics/](exec-plan/active/stage2/wp-14-movement-physics/README.md) | friction/accelerate integrator + velocity gate（~88 u/s） | — | —（介面不變，可並行） |
-| **WP-15** | [wp-15-calibration/](exec-plan/active/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 | **M7** | WP-13,14 |
-| **WP-16** | [wp-16-metrics-export-v2/](exec-plan/active/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標（補償 vs 理想路徑） | — | WP-13 |
-| **WP-17** | [wp-17-integration/](exec-plan/active/stage2/wp-17-integration/README.md) | E2E 全鏈路 + 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15,16 |
+| **WP-10** | [wp-10-recoil-core/](exec-plan/completed/stage2/wp-10-recoil-core/README.md) | 後座力數學核心（彈道表 + punch 動力學 + inaccuracy）+ golden tests | **M5** | — |
+| **WP-11** | [wp-11-weapon-fire/](exec-plan/completed/stage2/wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up + cycletime 產彈 + 彈匣 | — | WP-10 |
+| **WP-12** | [wp-12-input-seams/](exec-plan/completed/stage2/wp-12-input-seams/README.md) | CS2 感度換算（A4）+ 射線方向注入（A3） | — | — |
+| **WP-13** | [wp-13-sim-camera-integration/](exec-plan/completed/stage2/wp-13-sim-camera-integration/README.md) | recoil 進 simStep（64Hz 子節奏）+ 相機/彈道合成 + 彈孔 | **M6** | WP-10,11,12 |
+| **WP-14** | [wp-14-movement-physics/](exec-plan/completed/stage2/wp-14-movement-physics/README.md) | friction/accelerate integrator + velocity gate（~88 u/s） | — | —（介面不變，可並行） |
+| **WP-15** | [wp-15-calibration/](exec-plan/completed/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 | **M7** | WP-13,14 |
+| **WP-16** | [wp-16-metrics-export-v2/](exec-plan/completed/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標（補償 vs 理想路徑） | — | WP-13 |
+| **WP-17** | [wp-17-integration/](exec-plan/completed/stage2/wp-17-integration/README.md) | E2E 全鏈路 + 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15,16 |
 | **WP-18** ⏸待 M8 | [wp-18-f5-subtick/](exec-plan/active/stage2/wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅（GD-7）+ WP-17 |
 
 #### 階段 C（`active/stage3/`，WP-19~22 ⬜ 已規劃 2026-07-06）
@@ -135,14 +135,14 @@ docs/exec-plan/
 
 | WP | Tasks（`T0` entry-gate → `Tn` → exit-gate） |
 |---|---|
-| WP-10 | [T1 ran1/彈道表](exec-plan/active/stage2/wp-10-recoil-core/T1-ran1-recoil-table.md) · [T2 punch 動力學](exec-plan/active/stage2/wp-10-recoil-core/T2-punch-dynamics.md) · [T3 spread/inaccuracy](exec-plan/active/stage2/wp-10-recoil-core/T3-spread-inaccuracy.md) · [T4 pattern viewer](exec-plan/active/stage2/wp-10-recoil-core/T4-pattern-viewer.md) · [T-exit](exec-plan/active/stage2/wp-10-recoil-core/T-exit-gate.md) |
-| WP-11 | [T1 WeaponConfig](exec-plan/active/stage2/wp-11-weapon-fire/T1-weapon-config.md) · [T2 fire down/up](exec-plan/active/stage2/wp-11-weapon-fire/T2-fire-down-up.md) · [T3 cycletime 排程](exec-plan/active/stage2/wp-11-weapon-fire/T3-cycletime-scheduler.md) · [T-exit](exec-plan/active/stage2/wp-11-weapon-fire/T-exit-gate.md) |
-| WP-12 | [T1 CS2 感度](exec-plan/active/stage2/wp-12-input-seams/T1-cs2-sensitivity.md) · [T2 射線注入](exec-plan/active/stage2/wp-12-input-seams/T2-ray-injection.md) · [T-exit](exec-plan/active/stage2/wp-12-input-seams/T-exit-gate.md) |
-| WP-13 | [T1 simStep 佈線](exec-plan/active/stage2/wp-13-sim-camera-integration/T1-simstep-recoil-wiring.md) · [T2 相機/彈道合成](exec-plan/active/stage2/wp-13-sim-camera-integration/T2-camera-ballistic-compose.md) · [T3 彈孔 + debug](exec-plan/active/stage2/wp-13-sim-camera-integration/T3-bullet-holes-debug.md) · [T-exit](exec-plan/active/stage2/wp-13-sim-camera-integration/T-exit-gate.md) |
-| WP-14 | [T1 friction integrator](exec-plan/active/stage2/wp-14-movement-physics/T1-friction-integrator.md) · [T2 velocity gate](exec-plan/active/stage2/wp-14-movement-physics/T2-velocity-gate.md) · [T3 指標連續化](exec-plan/active/stage2/wp-14-movement-physics/T3-metrics-continuous.md) · [T-exit](exec-plan/active/stage2/wp-14-movement-physics/T-exit-gate.md) |
-| WP-15 | [T1 cl_showpos 校準](exec-plan/active/stage2/wp-15-calibration/T1-clshowpos-calibration.md) · [T2 pattern 比對](exec-plan/active/stage2/wp-15-calibration/T2-pattern-comparison.md) · [T-exit](exec-plan/active/stage2/wp-15-calibration/T-exit-gate.md) |
-| WP-16 | [T1 schema v2](exec-plan/active/stage2/wp-16-metrics-export-v2/T1-schema-v2.md) · [T2 理想路徑指標](exec-plan/active/stage2/wp-16-metrics-export-v2/T2-ideal-path-metric.md) · [T3 結果頁對照](exec-plan/active/stage2/wp-16-metrics-export-v2/T3-result-overlay.md) · [T-exit](exec-plan/active/stage2/wp-16-metrics-export-v2/T-exit-gate.md) |
-| WP-17 | [T1 決定性回歸](exec-plan/active/stage2/wp-17-integration/T1-determinism-regression.md) · [T2 全鏈路 E2E](exec-plan/active/stage2/wp-17-integration/T2-e2e-full-chain.md) · [T-exit](exec-plan/active/stage2/wp-17-integration/T-exit-gate.md) |
+| WP-10 | [T1 ran1/彈道表](exec-plan/completed/stage2/wp-10-recoil-core/T1-ran1-recoil-table.md) · [T2 punch 動力學](exec-plan/completed/stage2/wp-10-recoil-core/T2-punch-dynamics.md) · [T3 spread/inaccuracy](exec-plan/completed/stage2/wp-10-recoil-core/T3-spread-inaccuracy.md) · [T4 pattern viewer](exec-plan/completed/stage2/wp-10-recoil-core/T4-pattern-viewer.md) · [T-exit](exec-plan/completed/stage2/wp-10-recoil-core/T-exit-gate.md) |
+| WP-11 | [T1 WeaponConfig](exec-plan/completed/stage2/wp-11-weapon-fire/T1-weapon-config.md) · [T2 fire down/up](exec-plan/completed/stage2/wp-11-weapon-fire/T2-fire-down-up.md) · [T3 cycletime 排程](exec-plan/completed/stage2/wp-11-weapon-fire/T3-cycletime-scheduler.md) · [T-exit](exec-plan/completed/stage2/wp-11-weapon-fire/T-exit-gate.md) |
+| WP-12 | [T1 CS2 感度](exec-plan/completed/stage2/wp-12-input-seams/T1-cs2-sensitivity.md) · [T2 射線注入](exec-plan/completed/stage2/wp-12-input-seams/T2-ray-injection.md) · [T-exit](exec-plan/completed/stage2/wp-12-input-seams/T-exit-gate.md) |
+| WP-13 | [T1 simStep 佈線](exec-plan/completed/stage2/wp-13-sim-camera-integration/T1-simstep-recoil-wiring.md) · [T2 相機/彈道合成](exec-plan/completed/stage2/wp-13-sim-camera-integration/T2-camera-ballistic-compose.md) · [T3 彈孔 + debug](exec-plan/completed/stage2/wp-13-sim-camera-integration/T3-bullet-holes-debug.md) · [T-exit](exec-plan/completed/stage2/wp-13-sim-camera-integration/T-exit-gate.md) |
+| WP-14 | [T1 friction integrator](exec-plan/completed/stage2/wp-14-movement-physics/T1-friction-integrator.md) · [T2 velocity gate](exec-plan/completed/stage2/wp-14-movement-physics/T2-velocity-gate.md) · [T3 指標連續化](exec-plan/completed/stage2/wp-14-movement-physics/T3-metrics-continuous.md) · [T-exit](exec-plan/completed/stage2/wp-14-movement-physics/T-exit-gate.md) |
+| WP-15 | [T1 cl_showpos 校準](exec-plan/completed/stage2/wp-15-calibration/T1-clshowpos-calibration.md) · [T2 pattern 比對](exec-plan/completed/stage2/wp-15-calibration/T2-pattern-comparison.md) · [T-exit](exec-plan/completed/stage2/wp-15-calibration/T-exit-gate.md) |
+| WP-16 | [T1 schema v2](exec-plan/completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md) · [T2 理想路徑指標](exec-plan/completed/stage2/wp-16-metrics-export-v2/T2-ideal-path-metric.md) · [T3 結果頁對照](exec-plan/completed/stage2/wp-16-metrics-export-v2/T3-result-overlay.md) · [T-exit](exec-plan/completed/stage2/wp-16-metrics-export-v2/T-exit-gate.md) |
+| WP-17 | [T1 決定性回歸](exec-plan/completed/stage2/wp-17-integration/T1-determinism-regression.md) · [T2 全鏈路 E2E](exec-plan/completed/stage2/wp-17-integration/T2-e2e-full-chain.md) · [T-exit](exec-plan/completed/stage2/wp-17-integration/T-exit-gate.md) |
 | WP-18 ⏸ | [README stub](exec-plan/active/stage2/wp-18-f5-subtick/README.md)（~~OQ-S2-5~~ ✅ 已解 GD-7；M8 ✅ 後展開） |
 
 **階段 C（`active/stage3/`）**

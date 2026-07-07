@@ -27,10 +27,12 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
   it('保留所有選填欄位（seed / spawnDelayMs / peekTimeoutMs / timeLimitMs / motion）', () => {
     const cfg = validateDrill({
       ...(minimalValid() as object),
+      weaponId: 'm4a4',
       targets: { count: 30, distance: 4, motion: { type: 'pingpong', axis: 'horizontal', speed: 150, range: 120 } },
       sequence: { alternation: 'LR', seed: 42 },
       timing: { countdownMs: 3000, spawnDelayMs: 0, peekTimeoutMs: 1500, timeLimitMs: 60000 },
     });
+    expect(cfg.weaponId).toBe('m4a4');
     expect(cfg.sequence.seed).toBe(42);
     expect(cfg.timing.spawnDelayMs).toBe(0);
     expect(cfg.timing.peekTimeoutMs).toBe(1500);
@@ -41,6 +43,11 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
   it('省略 motion → static（向後相容,F5 接縫）', () => {
     const cfg = validateDrill(minimalValid());
     expect(cfg.targets.motion).toBeUndefined();
+  });
+
+  it('省略 weaponId → 保持 undefined（呼叫端使用預設武器）', () => {
+    const cfg = validateDrill(minimalValid());
+    expect(cfg.weaponId).toBeUndefined();
   });
 
   it('waypoints 合法 Vec3 元素（含負/零偏移）通過並收斂為純 {x,y,z}', () => {
@@ -102,6 +109,11 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
   it('未知 motion.type → throw 指名 targets.motion.type', () => {
     const bad = { ...(minimalValid() as object), targets: { count: 20, distance: 4, motion: { type: 'orbit' } } };
     expect(() => validateDrill(bad)).toThrow(/targets\.motion\.type/);
+  });
+
+  it('weaponId 非字串或空字串 → throw 指名 weaponId', () => {
+    expect(() => validateDrill({ ...(minimalValid() as object), weaponId: '' })).toThrow(/weaponId/);
+    expect(() => validateDrill({ ...(minimalValid() as object), weaponId: 47 })).toThrow(/weaponId/);
   });
 
   // 非 Vec3 waypoint 元素若放行,clearance envelope 會變 NaN 而靜默跳過淨空檢查（PR #10 review）。

@@ -137,7 +137,18 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
 
     expect(recorder.snapshot().ticks).toEqual([
-      { t: TICK_MS, vx: 10.7421875, vz: 0, aim: { yaw: 3, pitch: -2 }, keys: ['D'] },
+      {
+        t: TICK_MS,
+        vx: 10.7421875,
+        vz: 0,
+        px: 0.08392333984375,
+        pz: 0,
+        tx: null,
+        ty: null,
+        tz: null,
+        aim: { yaw: 3, pitch: -2 },
+        keys: ['D'],
+      },
     ]);
   });
 
@@ -354,7 +365,23 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(recorder.snapshot().events).toEqual([
       { type: 'visible', targetId: 't0', side: 'R', t: 100 },
       { type: 'counter', key: 'A', t: 101 },
-      { type: 'fire', t: 201, hit: false, firstShot: true, residualSpeed: 239.84375, targetId: 't0', offsetDeg: 0 },
+      {
+        type: 'fire',
+        t: 201,
+        hit: false,
+        firstShot: true,
+        residualSpeed: 239.84375,
+        viewYaw: 0,
+        viewPitch: 0,
+        aimPunchPitch: 0,
+        aimPunchYaw: 0,
+        spreadX: 0,
+        spreadY: 0,
+        recoilIndex: 0,
+        ammo: 30,
+        targetId: 't0',
+        offsetDeg: 0,
+      },
     ]);
   });
 });

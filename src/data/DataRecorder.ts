@@ -15,6 +15,14 @@ export type DrillEvent =
       hit: boolean;
       firstShot: boolean;
       residualSpeed: number;
+      viewYaw?: number;
+      viewPitch?: number;
+      aimPunchPitch?: number;
+      aimPunchYaw?: number;
+      spreadX?: number;
+      spreadY?: number;
+      recoilIndex?: number;
+      ammo?: number;
       targetId?: string;
       offsetDeg?: number;
       part?: 'head' | 'body';

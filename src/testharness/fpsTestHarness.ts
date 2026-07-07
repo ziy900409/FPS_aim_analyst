@@ -4,7 +4,7 @@ import { KEY_CODE } from '../state/types.ts';
 import type { InputEvent, TargetState } from '../state/types.ts';
 import { createTargetManager, type TargetManager } from '../sim/TargetManager.ts';
 import { createDrillRunner, type DrillRunner } from '../drill/DrillRunner.ts';
-import { createSimLoop, type SimLoop } from '../loop/SimLoop.ts';
+import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from '../loop/SimLoop.ts';
 import { punchToThreeRad } from '../recoil/adapter.ts';
 import { loadDrill } from '../drill/DrillLoader.ts';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
@@ -15,6 +15,7 @@ import { buildExportPayload, type ExportPayload } from '../data/export.ts';
 import { computeMetrics, type Metrics } from '../metrics/compute.ts';
 import type { Clock } from '../loop/clock.ts';
 import type { RenderBackend } from '../render/createRenderer.ts';
+import { getWeapon } from '../weapon/weapons.ts';
 
 /**
  * fpsTestHarness — WP-9 / T1（FR-9.1）
@@ -123,6 +124,10 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     return undefined;
   }
 
+  function activeWeaponConfig(): ReturnType<typeof getWeapon> {
+    return getWeapon(config?.weaponId ?? 'ak47');
+  }
+
   function aimAtActiveTarget(): void {
     const target = activeTarget();
     if (target === undefined) return;
@@ -192,7 +197,17 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       recorder = createDataRecorder({ simHz: SIM_HZ });
       targetManager = createTargetManager(config);
       drillRunner = createDrillRunner(state, targetManager);
-      simLoop = createSimLoop(state, makeClock(), SIM_HZ, targetManager, camera, drillRunner, recorder);
+      simLoop = createSimLoop(
+        state,
+        makeClock(),
+        SIM_HZ,
+        targetManager,
+        camera,
+        drillRunner,
+        recorder,
+        activeWeaponConfig(),
+        config.sequence.seed,
+      );
       startedAt = new Date().toISOString(); // wall-clock session metadata（非量測時鐘；main.ts 亦如此）
 
       drillRunner.start(config);
@@ -269,6 +284,9 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       const snapshot = recorder.snapshot();
       const meta = collectMeta({
         drillId: config.drillId,
+        weaponId: activeWeaponConfig().id,
+        weaponSeed: activeWeaponConfig().recoil.seed,
+        rngSeed: config.sequence.seed ?? DEFAULT_RNG_SEED,
         backend: deps.backend,
         displayHz: deps.displayHz,
         simHz: SIM_HZ,
@@ -278,6 +296,10 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         lateEventCount: state.inputMeta.lateEventCount,
         bufferOverflow: state.inputMeta.bufferOverflow,
         recorderOverflow: snapshot.recorderOverflow,
+        spawn: {
+          seed: config.sequence.seed ?? DEFAULT_RNG_SEED,
+          ...(config.targets.motion !== undefined ? { motion: config.targets.motion } : {}),
+        },
       });
       return buildExportPayload(meta, snapshot);
     },

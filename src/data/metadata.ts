@@ -3,15 +3,31 @@ import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
+export const SCHEMA_VERSION = 2;
+export const DEFAULT_WEAPON_ID = 'ak47';
+export const DEFAULT_WEAPON_SEED = 223;
+export const DEFAULT_RNG_SEED = 1;
+export const DEFAULT_MOVEMENT_MODEL = 'cs2-source';
+
+export interface SpawnMeta {
+  seed: number;
+  motion?: unknown;
+  spawnArea?: unknown;
+}
 
 export interface Meta {
+  schemaVersion: 2;
   drillId: string;
+  weaponId: string;
+  weaponSeed: number;
+  rngSeed: number;
   backend: RenderBackend;
   displayHz: number;
   simHz: number;
   browser: string;
   sensitivity: number;
   sensitivityModel: 'cs2-0.022deg';
+  movementModel: 'cs2-source';
   crossOriginIsolated: boolean;
   startedAt: string;
   unit: 'source';
@@ -21,10 +37,18 @@ export interface Meta {
   bufferOverflow: boolean;
   recorderOverflow: boolean;
   suspect: boolean;
+  spawn?: SpawnMeta;
+  scene?: unknown;
+  display?: unknown;
+  frames?: unknown;
+  session?: { participantId?: string; sessionLabel?: string };
 }
 
 export interface CollectMetaArgs {
   drillId: string;
+  weaponId?: string;
+  weaponSeed?: number;
+  rngSeed?: number;
   backend: RenderBackend;
   displayHz: number;
   simHz?: number;
@@ -37,6 +61,11 @@ export interface CollectMetaArgs {
   lateEventCount?: number;
   bufferOverflow?: boolean | number;
   recorderOverflow?: boolean;
+  spawn?: SpawnMeta;
+  scene?: unknown;
+  display?: unknown;
+  frames?: unknown;
+  session?: { participantId?: string; sessionLabel?: string };
 }
 
 export interface MeasureDisplayHzOptions {
@@ -46,6 +75,9 @@ export interface MeasureDisplayHzOptions {
 
 export function collectMeta(args: CollectMetaArgs): Meta {
   const drillId = requireNonEmptyString(args.drillId, 'drillId');
+  const weaponId = requireNonEmptyString(args.weaponId ?? DEFAULT_WEAPON_ID, 'weaponId');
+  const weaponSeed = requireNonNegativeInteger(args.weaponSeed ?? DEFAULT_WEAPON_SEED, 'weaponSeed');
+  const rngSeed = requireFiniteNumber(args.rngSeed ?? DEFAULT_RNG_SEED, 'rngSeed');
   const backend = requireBackend(args.backend);
   const displayHz = requirePositiveFiniteNumber(args.displayHz, 'displayHz');
   const simHz = requirePositiveFiniteNumber(args.simHz ?? DEFAULT_SIM_HZ, 'simHz');
@@ -63,13 +95,18 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const recorderOverflow = requireBoolean(args.recorderOverflow ?? false, 'recorderOverflow');
 
   return {
+    schemaVersion: SCHEMA_VERSION,
     drillId,
+    weaponId,
+    weaponSeed,
+    rngSeed,
     backend,
     displayHz,
     simHz,
     browser,
     sensitivity,
     sensitivityModel: 'cs2-0.022deg',
+    movementModel: DEFAULT_MOVEMENT_MODEL,
     crossOriginIsolated,
     startedAt,
     unit: 'source',
@@ -79,6 +116,11 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     bufferOverflow,
     recorderOverflow,
     suspect: bufferOverflow || recorderOverflow,
+    ...(args.spawn !== undefined ? { spawn: args.spawn } : {}),
+    ...(args.scene !== undefined ? { scene: args.scene } : {}),
+    ...(args.display !== undefined ? { display: args.display } : {}),
+    ...(args.frames !== undefined ? { frames: args.frames } : {}),
+    ...(args.session !== undefined ? { session: args.session } : {}),
   };
 }
 
@@ -137,6 +179,13 @@ function requireNonEmptyString(value: unknown, name: string): string {
 function requirePositiveFiniteNumber(value: unknown, name: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new Error(`${name} must be a positive finite number`);
+  }
+  return value;
+}
+
+function requireFiniteNumber(value: unknown, name: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`${name} must be a finite number`);
   }
   return value;
 }

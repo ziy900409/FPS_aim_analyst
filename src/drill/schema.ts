@@ -19,6 +19,8 @@ export function validateDrill(json: unknown): DrillConfig {
   if (typeof drillId !== 'string' || drillId.length === 0) {
     throw err('drillId', '必須為非空字串');
   }
+  const weaponId =
+    root.weaponId === undefined ? undefined : requireNonEmptyString(root.weaponId, 'weaponId');
 
   // targets — count 正整數、distance 正有限數、motion 選填。
   const targets = requireObject(root.targets, 'targets');
@@ -54,6 +56,7 @@ export function validateDrill(json: unknown): DrillConfig {
 
   return {
     drillId,
+    ...(weaponId !== undefined ? { weaponId } : {}),
     targets: { count, distance, ...(motion ? { motion } : {}) },
     sequence: { alternation, ...(seed !== undefined ? { seed } : {}) },
     timing: {
@@ -120,6 +123,11 @@ function requireObject(v: unknown, path: string): Record<string, unknown> {
 
 function requireFiniteNumber(v: unknown, path: string): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) throw err(path, '必須為有限數字');
+  return v;
+}
+
+function requireNonEmptyString(v: unknown, path: string): string {
+  if (typeof v !== 'string' || v.length === 0) throw err(path, '必須為非空字串');
   return v;
 }
 

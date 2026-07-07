@@ -22,14 +22,26 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-14 ✅ WP-15 T-exit — M7 caveated 通過(T2 pattern 差異分層歸因 + 研究者接受)(2026-07-07)
+
+| | |
+|---|---|
+| **發現處** | WP-15 T-exit 閘門([wp-15 progress](completed/stage2/wp-15-calibration/progress.md))。T2 AK pattern 對 Aiming.Pro fixture 逐彈對表 yaw maxAbs **3.941°**(shot 15),遠超 OQ-S2-2 ±0.05°;T1 為 theory surrogate(承 OQ-15.1 / [[GD-13]])。M7 的「pattern 對上外部真值」直路不成立,走「差異已分層歸因並被研究者接受」路徑。 |
+| **差異分層歸因** | **(公式)** recoil 數學已由 M5 golden 對 CS2 vdata 逐位釘死(10 發 punch −10.18°/−1.56° ±0.01°)——非公式錯。**(常數/scale)** 水平 yaw scale 與 recoil table seed 與 WP-10 10-shot golden 相依,盲調追齊會破壞既有校準基準。**(資料品質/來源模型)** Aiming.Pro 為第三方訓練器模型、**非 CS2 權威真值**;其 shot 1 已有非零 offset,與本專案 post-fire/pre-tick 純 punch 首發為 0 的語意不符,暗示其含 bullet-impact/compensation 或自有訓練模型。→ 差異主因判為**來源模型不匹配**,非引擎 error(pitch 軌跡同量級、yaw 在 shot 15/19/24/28/30 有 2°–4° 級偏差,非角度→公分換算問題)。 |
+| **決議** | 研究者**接受**分層歸因,M7 以 **caveated pass** 宣告。權威 recoil 校準以 M5 golden(CS2 vdata)為終審;Aiming.Pro 差異記為已知 caveat,**不盲調 recoil 追齊**(協議 [README §2](completed/stage2/wp-15-calibration/README.md):比對不過是歸因不是調參)。velocity gate 連續模型已上線(WP-14)。 |
+| **caveat(M7 措辭降級)** | 「速度曲線於 sim cadence 公式/常數對表通過(theory surrogate,**非** `cl_showpos` 實錄行為級)+ recoil pattern 已對 CS2 vdata golden 逐位釘死;對第三方 Aiming.Pro pattern 的逐彈對表**未通過** ±0.05°,歸因為來源模型差異並被研究者接受」。 |
+| **遺留 OQ** | OQ-15.4(Aiming.Pro 30 點語意:CS2 bullet-impact / compensation path / 自有模型?)、OQ-15.5(是否以外部 pattern 為權威改動 recoil model)。**若立案改動 → 另開校準切片**評估對 WP-10 10-shot golden、pattern viewer、ballistic compose 的整體影響。 |
+| **影響面** | WP-15 exit(M7 ✅ caveated;兩層索引標日期)、解鎖 WP-17/M8 的校準側前置(WP-15 相依滿足)。 |
+| **狀態** | ✅ 已拍板(2026-07-07 T-exit;研究者接受歸因)。 |
+
 ### GD-13 ✅ WP-15 calibration 抓到 WP-14 CS2_PROFILE 常數 bug + T1 cadence 定案(2026-07-07)
 
 | | |
 |---|---|
-| **發現處** | WP-15 T1 首輪對表 RED([wp-15 progress](active/stage2/wp-15-calibration/progress.md))。歸因兩層:(1) production `CS2_PROFILE` 常數與 surrogate fixture meta 不一致;(2) fixture 為單一 64Hz step 曲線、sim 為 128Hz 每 2 tick 取樣,cadence 不對齊——即使常數對齊仍紅(起步 tick0:單步 21.484 vs 2×128Hz 積分 18.234,差 3.25 u/s > ±1)。 |
+| **發現處** | WP-15 T1 首輪對表 RED([wp-15 progress](completed/stage2/wp-15-calibration/progress.md))。歸因兩層:(1) production `CS2_PROFILE` 常數與 surrogate fixture meta 不一致;(2) fixture 為單一 64Hz step 曲線、sim 為 128Hz 每 2 tick 取樣,cadence 不對齊——即使常數對齊仍紅(起步 tick0:單步 21.484 vs 2×128Hz 積分 18.234,差 3.25 u/s > ±1)。 |
 | **查證** | 2026-07-07 遊戲內 console 查 CS2 default:`sv_accelerate=5.5`、`sv_friction=5.2`、`sv_stopspeed=80`(二手 totalcsgo 頁自相矛盾 5.5/5.6,以遊戲 binary default 為終審)。production `CS2_PROFILE` 原為 accelerate=**5.6**、stopSpeed=**75** → **兩常數偏離權威 default**,為真實 bug(calibration 的目的即抓此)。 |
 | **決議** | **(OQ-15.3)** `CS2_PROFILE` 修正為 5.5/5.2/80(commit `347ce78`,WP-14 correctness fix);受影響的 WP-14/WP-2 逐 tick 回歸斷言以**獨立參考實作**(hand-rolled Source friction→accelerate,不 import controller)重算,非以讓測試變綠推導。**(OQ-15.2)** T1 reference cadence 採「128Hz 積分、每 2 sim tick 取樣(64Hz)」重產 surrogate fixture,對表 sim 實際積分路徑,而非單一 64Hz step 公式。 |
-| **理由** | 常數偏差是事實問題,以遊戲內權威 default 解、非以讓測試變綠解(協議 [README §1](active/stage2/wp-15-calibration/README.md) 禁盲調參)。fixture 既為 theory-derived surrogate(OQ-15.1),可提供的最高效度即「Source 公式於 sim cadence 下的 regression/公式對表」,故 cadence 對齊 sim。 |
+| **理由** | 常數偏差是事實問題,以遊戲內權威 default 解、非以讓測試變綠解(協議 [README §1](completed/stage2/wp-15-calibration/README.md) 禁盲調參)。fixture 既為 theory-derived surrogate(OQ-15.1),可提供的最高效度即「Source 公式於 sim cadence 下的 regression/公式對表」,故 cadence 對齊 sim。 |
 | **影響面** | WP-14(`CS2_PROFILE` + MovementController/SimLoop/determinism 回歸 baseline;**gameplay 移動手感隨之改變**,待瀏覽器實測手感驗收)、WP-15 T1(fixture 重產 + 對表綠)、WP-2 determinism gate(baseline 重錄)。 |
 | **caveat** | T-exit/M7 仍**不得**宣稱 `cl_showpos` 實錄行為級通過(仍為 theory surrogate);結論措辭降級為「公式/常數曲線於 sim cadence 對表通過」(承 OQ-15.1)。 |
 | **狀態** | ✅ 已拍板 + 落地(2026-07-07;commit `347ce78` WP-14 fix + 本次 T1 calibration 切片)。 |
@@ -117,12 +129,12 @@
 
 | | |
 |---|---|
-| **發現處** | [stage2 README](active/stage2/README.md) 已整合規格 §1.3 階段 B、CS2 壓槍軌跡復刻研究計畫、2026-07-03 後座力整合稽核報告,但採納決策尚未進全域帳本;[WP-10 T0](active/stage2/wp-10-recoil-core/T0-entry-gate.md) 要求在寫 recoil code 前完成拍板。 |
+| **發現處** | [stage2 README](active/stage2/README.md) 已整合規格 §1.3 階段 B、CS2 壓槍軌跡復刻研究計畫、2026-07-03 後座力整合稽核報告,但採納決策尚未進全域帳本;[WP-10 T0](completed/stage2/wp-10-recoil-core/T0-entry-gate.md) 要求在寫 recoil code 前完成拍板。 |
 | **決議** | 採納 stage2 範圍:CS2 後座力系統(固定彈道表 / punch 動力學 / inaccuracy)、武器層、sim/camera 接線、movement physics、schema v2、壓槍指標與整合驗收。 |
 | **六個決策點** | 1. recoil 衰減公式以 **1/64s** 步長定義,在 128Hz sim 內以偶數 tick 的 64Hz 子節奏執行(OQ-S2-1)。2. 彈匣盡即停火,本階段不做 reload;drill 一 peek ≤ 一匣(OQ-S2-6)。3. 感度語意改為 CS2 `0.022°/count`,舊匯出資料以 `sensitivityModel` / `schemaVersion` 斷代。4. WP-14 movement integrator 會改變決定性 baseline,屬預期 breaking change;先重驗 M1 決定性契約再重錄 baseline。5. `src/sim` / `src/recoil` 禁 `Math.random()`,所有隨機性以 seeded RNG 注入並記錄 seed。6. movement model 以 `MovementProfile` 留資料接口;Valorant 不進 stage2,僅在 WP-14/WP-16 保留 profile/meta 斷代能力。 |
 | **WP-12 T0 補充** | OQ-S2-3 標注方式拍板:T1 先加 `sensitivityModel: 'cs2-0.022deg'` 字串欄;舊匯出無此欄即代表階段 A 佔位感度模型 `0.0022 rad/count`;`schemaVersion` bump 留給 WP-16 schema v2 一次處理,避免兩次 schema 斷代;舊資料不回溯轉換。(2026-07-06) |
-| **WP-14 T-exit 補記** | 決策點 4 已執行完畢:M1 決定性契約(異 render FPS 同 per-tick 狀態)先重驗通過,determinism baseline 於 T1 重錄(commit `112d6a6`;[determinism.test.ts](../../src/loop/__tests__/determinism.test.ts)、[regression determinism](../../tests/regression/determinism.test.ts),連同相鄰解析契約 `MovementController.test.ts` / `SimLoop.test.ts` 一併改寫);T2(`6be8d59`)/T3(`417fb5e`)未再動 baseline。`test:ci` 全綠 + Edge 實測手感驗證(觀察值)見 [wp-14 progress](active/stage2/wp-14-movement-physics/progress.md)。規格 §5 指標分層註記已補節解除。(2026-07-06) |
-| **權威來源** | [stage2 README §1.3](active/stage2/README.md#13-constraint%E7%A1%AC%E7%B4%84%E6%9D%9F%E6%96%B0%E5%A2%9E%E9%A0%85%E5%B0%87%E5%9B%9E%E5%AF%AB-claudemd-4)、[§2.4](active/stage2/README.md#24-tick-%E7%AF%80%E5%A5%8F%E8%A8%AD%E8%A8%88%E9%97%9C%E9%8D%B5%E6%B1%BA%E7%AD%96%E8%A6%8B-oq-s2-1)、[§8](active/stage2/README.md#8-open-questions)、[WP-10 T0](active/stage2/wp-10-recoil-core/T0-entry-gate.md)。 |
+| **WP-14 T-exit 補記** | 決策點 4 已執行完畢:M1 決定性契約(異 render FPS 同 per-tick 狀態)先重驗通過,determinism baseline 於 T1 重錄(commit `112d6a6`;[determinism.test.ts](../../src/loop/__tests__/determinism.test.ts)、[regression determinism](../../tests/regression/determinism.test.ts),連同相鄰解析契約 `MovementController.test.ts` / `SimLoop.test.ts` 一併改寫);T2(`6be8d59`)/T3(`417fb5e`)未再動 baseline。`test:ci` 全綠 + Edge 實測手感驗證(觀察值)見 [wp-14 progress](completed/stage2/wp-14-movement-physics/progress.md)。規格 §5 指標分層註記已補節解除。(2026-07-06) |
+| **權威來源** | [stage2 README §1.3](active/stage2/README.md#13-constraint%E7%A1%AC%E7%B4%84%E6%9D%9F%E6%96%B0%E5%A2%9E%E9%A0%85%E5%B0%87%E5%9B%9E%E5%AF%AB-claudemd-4)、[§2.4](active/stage2/README.md#24-tick-%E7%AF%80%E5%A5%8F%E8%A8%AD%E8%A8%88%E9%97%9C%E9%8D%B5%E6%B1%BA%E7%AD%96%E8%A6%8B-oq-s2-1)、[§8](active/stage2/README.md#8-open-questions)、[WP-10 T0](completed/stage2/wp-10-recoil-core/T0-entry-gate.md)。 |
 | **影響面** | 跨 WP-10~WP-17:golden test 定義、sim/recoil 接線、感度轉換、movement calibration、export metadata、determinism baseline 與 lint/grep 閘。 |
 | **狀態** | ✅ 已採納(2026-07-05;WP-10 T0 docs-only slice)。 |
 
