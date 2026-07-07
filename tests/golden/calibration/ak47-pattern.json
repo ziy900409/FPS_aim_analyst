@@ -17,6 +17,12 @@
       "pixelToAngleScale": null,
       "requiresPixelDigitization": false
     },
+    "comparisonMapping": {
+      "sourceXDeg": "maps to project pattern xDeg = -rawPunchYawDeg",
+      "sourceYDeg": "maps to project pattern yDeg = -rawPunchPitchDeg",
+      "sampleTiming": "post recoilOnFire, before the next 64Hz recoilTick; this matches patternViewer.simulatePattern",
+      "spreadIsolation": "pure punch trajectory only; spread samples are not added"
+    },
     "notes": [
       "Decimal commas from the source UI were normalized to decimal points.",
       "Sign convention is preserved as source-entered; T2 comparison must explicitly map this to project yaw/pitch signs.",

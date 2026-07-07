@@ -7,7 +7,7 @@
 | **相依** | T0(資料就緒)、WP-13 exit(M6 整合鏈) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | NEW `tests/golden/calibration/ak47-pattern.json`、`tests/calibration/pattern.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | 🟡 RED/STOP(2026-07-07):可重跑比對與 10m 換算單測已落地;AK pattern yaw 偏差超 OQ-S2-2 |
 
 ## Objective
 
@@ -28,11 +28,11 @@ AK 30 發理論彈道(rawPunch×2 累積)與社群 pattern 圖逐彈比對(FR-B1
 
 ## Steps
 
-- [ ] pattern 圖標定 + 數位化 → fixture(meta 記來源 URL 與標定係數)。
-- [ ] 純 punch 軌跡萃取(合成 30 發 held,spread 隔離手法記測試註解)。
-- [ ] 逐彈誤差表測試 + 容差斷言;誤差全表輸出記 progress。
-- [ ] 換算單測(≥ 3 樣本解析對照)。
-- [ ] `npx vitest run tests/calibration` 全綠(或 STOP + 歸因報告,分層同 T1)。
+- [x] pattern 圖標定 + 數位化 → fixture(meta 記來源 URL 與標定係數)。
+- [x] 純 punch 軌跡萃取(合成 30 發 held,spread 隔離手法記測試註解)。
+- [x] 逐彈誤差表測試 + 容差斷言;誤差全表輸出記 progress。
+- [x] 換算單測(≥ 3 樣本解析對照)。
+- [x] `npx vitest run tests/calibration` 全綠(或 STOP + 歸因報告,分層同 T1)。
 
 ## Definition of Done
 

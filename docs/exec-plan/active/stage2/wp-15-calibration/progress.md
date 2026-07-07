@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T1 GREEN(2026-07-07):128Hz surrogate 對表通過 + 抓到並修正 WP-14 CS2_PROFILE 常數 bug;T2/T-exit 待開
+## Status: 🟡 T2 RED/STOP(2026-07-07):AK pattern fixture 可重跑比對已落地,但 yaw 最大偏差 3.941° 超 OQ-S2-2;T-exit 阻塞
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ surrogate PASS 2026-07-07(可開 T1/T2;實錄 caveat) |
 | T1 cl_showpos 對表 | ✅ GREEN 2026-07-07(128Hz fixture;calibration 抓到 CS2_PROFILE 兩常數 bug,已修) |
-| T2 pattern 比對 | ⬜ |
+| T2 pattern 比對 | ✅ RED/STOP 2026-07-07(測試與歸因已落地;pattern 未通過容差) |
 | T-exit(M7) | ⬜ |
 
 ---
@@ -28,6 +28,72 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T2 RED/STOP(Aiming.Pro AK pattern 可重跑比對 + 10m 換算單測)
+
+已新增 [tests/calibration/pattern.test.ts](../../../../../tests/calibration/pattern.test.ts),以 production `ak47` recoil config 合成 30 發 held-fire 純 punch pattern:
+- table:`generateRecoilTable(ak47.recoil)`;
+- shot cadence:`cycletimeSec=0.1`;
+- sample timing:每發 `recoilOnFire` 後、下一個 64Hz `recoilTick` 前,對齊 `patternViewer.simulatePattern`;
+- spread isolation:不呼叫 `sampleSpread`,只取 `-rawPunchYawDeg`/`-rawPunchPitchDeg` 對 fixture `xDeg`/`yDeg`。
+
+**Fixture meta 更新:**[ak47-pattern.json](../../../../../tests/golden/calibration/ak47-pattern.json) 增加 `comparisonMapping`,明確記錄 `sourceXDeg -> -rawPunchYawDeg`、`sourceYDeg -> -rawPunchPitchDeg`、sample timing 與 spread isolation。Aiming.Pro 來源是 UI 直接角度值,所以仍不需要像素→角度標定。
+
+**逐彈誤差表(角度 deg;OQ-S2-2 容差 ±0.05°):**
+
+| shot | pitch actual | pitch ref | Δpitch | yaw actual | yaw ref | Δyaw |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 0.000 | 0.380 | -0.380 | 0.000 | 0.190 | -0.190 |
+| 2 | 0.396 | 1.440 | -1.044 | 0.368 | 0.000 | 0.368 |
+| 3 | 1.737 | 3.060 | -1.323 | -0.044 | 0.130 | -0.174 |
+| 4 | 3.781 | 4.880 | -1.099 | 0.068 | 0.190 | -0.122 |
+| 5 | 5.777 | 6.440 | -0.663 | 0.075 | -0.500 | 0.575 |
+| 6 | 7.710 | 7.945 | -0.235 | -0.258 | -0.938 | 0.680 |
+| 7 | 9.149 | 9.000 | 0.149 | -0.330 | -1.630 | 1.300 |
+| 8 | 10.019 | 10.063 | -0.044 | -0.783 | -0.805 | 0.022 |
+| 9 | 10.572 | 9.750 | 0.822 | -0.118 | 1.630 | -1.748 |
+| 10 | 10.180 | 10.123 | 0.057 | 1.560 | 2.735 | -1.175 |
+| 11 | 10.442 | 10.655 | -0.213 | 2.996 | 2.065 | 0.931 |
+| 12 | 10.774 | 10.568 | 0.206 | 1.228 | 2.880 | -1.652 |
+| 13 | 10.761 | 10.520 | 0.241 | 2.737 | 4.382 | -1.645 |
+| 14 | 10.070 | 10.637 | -0.567 | 5.811 | 4.592 | 1.219 |
+| 15 | 10.231 | 10.873 | -0.642 | 6.504 | 2.563 | 3.941 |
+| 16 | 10.713 | 11.078 | -0.365 | 2.642 | 1.220 | 1.422 |
+| 17 | 11.070 | 11.310 | -0.240 | 0.200 | 0.440 | -0.240 |
+| 18 | 11.463 | 11.575 | -0.112 | 0.027 | -0.930 | 0.957 |
+| 19 | 11.352 | 11.060 | 0.292 | -0.399 | -2.920 | 2.521 |
+| 20 | 10.864 | 11.185 | -0.321 | -2.907 | -1.845 | -1.062 |
+| 21 | 11.108 | 11.190 | -0.082 | -0.634 | -2.030 | 1.396 |
+| 22 | 11.117 | 11.455 | -0.338 | -0.765 | -1.558 | 0.793 |
+| 23 | 11.432 | 11.830 | -0.398 | -0.370 | -1.185 | 0.815 |
+| 24 | 11.580 | 11.668 | -0.088 | -0.240 | -2.292 | 2.052 |
+| 25 | 11.427 | 11.755 | -0.328 | -1.502 | -2.453 | 0.951 |
+| 26 | 11.711 | 11.720 | -0.009 | -1.931 | -1.410 | -0.521 |
+| 27 | 11.730 | 11.508 | 0.222 | -0.240 | 0.578 | -0.818 |
+| 28 | 11.608 | 10.820 | 0.788 | 0.333 | 2.820 | -2.487 |
+| 29 | 10.466 | 10.825 | -0.359 | 3.331 | 3.785 | -0.454 |
+| 30 | 10.394 | 10.525 | -0.131 | 4.644 | 2.400 | 2.244 |
+
+**結果:**maxAbs = **3.941°**(shot 15 yaw),meanAbsPitch = **0.392°**,meanAbsYaw = **1.150°** → T2 pattern 對表 **未通過** ±0.05°。10m 牆面換算單測通過:`tan(angleDeg) * 1000 cm`,樣本包含 0.38°→6.632cm、10.123°→178.541cm、11.83°→209.457cm、2.735°→47.771cm。
+
+**驗證指令:**
+- `node_modules/.bin/vitest run tests/calibration`:6 tests passed(含 T1 showpos 3 + T2 pattern 3;T2 pattern 比對以 RED report 形式斷言目前偏差超容差)。
+- `node_modules/.bin/vitest run`:42 files / **310 tests passed**。
+- `node_modules/.bin/tsc --noEmit`:exit 0。
+- `graphify update .`:rebuild ok,757 nodes / 1620 edges / 47 communities。
+
+**Decision Log:**
+- **不調整 recoil seed/magnitude/scale 來追 Aiming.Pro yaw。** Alternatives Considered:直接改 `GOLDEN_YAW_KICK_SCALE` 或 recoil table seed 讓 shot 15 對齊。否決,WP-15 規則明確要求比對不過先歸因;現有 recoil 參數與 10-shot golden/WP-10 相依,盲調會破壞既有校準基準。
+- **T2 測試採 RED report,不是讓 CI 紅燈。** Alternatives Considered:新增一個必紅的 ±0.05° assertion。否決,會讓 repo 長期不可驗證;改以可重跑 report pin 住最大偏差與均值,並把 T-exit 阻塞寫在 progress。
+- **sample timing 對齊現有 `patternViewer.simulatePattern`:post-fire/pre-next-tick。** Alternatives Considered:每發後額外取 1–7 個 64Hz tick 嘗試對齊 Aiming.Pro 首發非零點。否決,這會讓測試與 UI/既有 pattern semantics 分叉,且最佳取樣仍遠超 ±0.05°。
+
+**Surprises & Discoveries:**
+- pitch 軌跡中後段大致同量級,但 yaw 在 shot 15、19、24、28、30 有 2°–4° 級偏差,暗示差異較可能來自 recoil table/水平 scale/來源資料 sign 或 Aiming.Pro 模型差異,不是角度→公分換算問題。
+- Aiming.Pro fixture shot 1 已有非零 offset,但專案 post-fire/pre-tick pure punch 首發為 0;若未來改用外部 bullet impact timing,需先定義 sample semantics,不能只改容差。
+
+**Open Questions / Blocker:**
+- OQ-15.4:Aiming.Pro 的 30 點是否代表 CS2 bullet impact pattern、recoil compensation path,或其自有訓練模型? 需確認 sample timing/首發語意。
+- OQ-15.5:是否要以 Aiming.Pro 作為權威外部真值改動 recoil model? 若是,應另開 WP-16/校準切片評估 WP-10 10-shot golden、pattern viewer、ballistic compose 的整體影響。
 
 ### 2026-07-07 — T1 GREEN(cadence 定案 + WP-14 常數 bug 修正 + 128Hz fixture 重產)
 
