@@ -8,7 +8,7 @@
 | ✅ | **T0** entry gate(M7 + WP-16 上游驗證,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ✅ | **T1** 決定性回歸擴充(punch/彈著 × 3 FPS) | [T1-determinism-regression.md](T1-determinism-regression.md) | T0 | Med |
 | ✅ | **T2** 壓槍 drill 全鏈路 E2E | [T2-e2e-full-chain.md](T2-e2e-full-chain.md) | T1 | Med |
-| ⬜ | **T-exit** M8 門(驗收清單 B,原 T3 併入) | [T-exit-gate.md](T-exit-gate.md) | T1, T2 | — |
+| ✅ | **T-exit** M8 門(驗收清單 B,原 T3 併入) | [T-exit-gate.md](T-exit-gate.md) | T1, T2 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 

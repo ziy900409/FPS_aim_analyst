@@ -9,7 +9,7 @@
 | **上游門檻** | 階段 A **M4 ✅(2026-07-03)**;稽核結論**無 BLOCKER**(A1 固定 tick PASS) |
 | **技術棧** | 沿用階段 A(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright) |
 | **估時** | 14.5–21 dev-days(≈3–4 週);WP-18(F5 移動目標)門控中、另計 +2–3.5 |
-| **狀態** | 🟡 已採納,執行中(**WP-10 ✅ M5 golden 全綠 2026-07-05**;下一步 WP-11/12/14 可並行開跑) |
+| **狀態** | ✅ **M8 交付(2026-07-07)**:WP-10~17 全綠、驗收清單 B(附錄 E-B)全項通過、`test:ci` exit 0;WP-18(F5)為門控後續,不阻塞 M8 |
 
 ---
 
@@ -218,7 +218,7 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 | **WP-14** | [wp-14-movement-physics/](wp-14-movement-physics/README.md) | friction/accelerate integrator 取代 M1 snap + velocity gate(~88 u/s)+ 殘速指標連續化 | — | —(介面不變,可與 10–13 並行) | 2–3 | ✅ **2026-07-06**(baseline 重錄 + Edge 實測手感驗證) |
 | **WP-15** | [wp-15-calibration/](wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | ✅ **M7 caveated(2026-07-07)** — 速度曲線 surrogate 對表通過 + recoil 對 CS2 golden 釘死;第三方 pattern 差異已歸因接受(GD-14) |
 | **WP-16** | [wp-16-metrics-export-v2/](wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁軌跡對照 | — | WP-13 | 2–3 | ✅ **2026-07-07**(schema v2 + 壓槍指標;不變式/溢位/對帳全綠) |
-| **WP-17** | [wp-17-integration/](wp-17-integration/README.md) | E2E 全鏈路(壓槍 drill → 匯出 → 統計)+ 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ⬜ |
+| **WP-17** | [wp-17-integration/](wp-17-integration/README.md) | E2E 全鏈路(壓槍 drill → 匯出 → 統計)+ 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ✅ **M8(2026-07-07)** |
 | **WP-18** | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md)(門控) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | **門控:OQ-S2-5** + WP-17 | +2–3.5 | ⏸ 門控 |
 
 ---
@@ -230,7 +230,7 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 | **M5 ✅ (2026-07-05)** | golden tests 全綠:seed 223 前 8 筆彈道表、10 發 punch 向量、前 4 發抑制係數、同 seed 決定性 | WP-10 | 數學核心正確性釘死;之後所有整合問題都可歸因到接線,不歸因到公式 |
 | **M6 ✅ (2026-07-06)** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效;10 發 E2E punch 值與 M5 向量一致(automated `test:ci` 全綠 + 手動視覺/手感 4 項使用者確認通過 2026-07-06) | WP-13 | 壓槍玩法成立(核心手感可實測) |
 | **M7 ✅ caveated (2026-07-07)** | 速度曲線於 sim cadence 公式/常數對表通過(theory surrogate,非 `cl_showpos` 實錄——承 OQ-15.1/GD-13);recoil pattern 對 CS2 vdata M5 golden 逐位釘死;第三方 Aiming.Pro pattern 逐彈差異(yaw maxAbs 3.941°)分層歸因為來源模型不匹配並被研究者接受(GD-14);velocity gate 連續模型上線(WP-14) | WP-14+15 | 「counter-strafe × 壓槍」研究效度成立(移動 inaccuracy 掛在可信速度上);**外部實錄行為級真值仍為 caveat**(待高幀率 `cl_showpos`/demo 實錄) |
-| **M8** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B 全項通過 | WP-17 | stage2 交付 |
+| **M8 ✅ (2026-07-07)** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B(附錄 E-B)全 10 項通過;`test:ci` exit 0 | WP-17 | **stage2 交付達成**(WP-10~17 全綠;WP-18 F5 為門控後續、不阻塞 M8) |
 
 ---
 

@@ -5,14 +5,36 @@
 
 ---
 
-## Status: 🟡 T2 PASS(2026-07-07):spray drill 全鏈路 E2E 已常駐;T-exit(M8) 可開
+## Status: ✅ M8 交付(2026-07-07):驗收清單 B 全 10 項通過、`test:ci` exit 0、兩層索引收斂 → **stage2 交付達成**
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS 2026-07-07 |
 | T1 決定性回歸擴充 | ✅ PASS 2026-07-07 |
 | T2 全鏈路 E2E | ✅ PASS 2026-07-07 |
-| T-exit(M8) | ⬜ |
+| T-exit(M8) | ✅ PASS 2026-07-07 |
+
+---
+
+## stage2 Outcomes 總結(M8 交付,2026-07-07)
+
+**交付內容(WP-10~17):** CS2 後座力系統(seeded 彈道表 + HybridDecay punch 動力學 + 三成分 inaccuracy)、武器層(`WeaponConfig` + cycletime/彈匣/full-auto)、階段 B 真急停物理(friction/accelerate integrator + 連續 velocity gate ~88 u/s)、輸入接縫(CS2 0.022°/count 感度 + 射線方向注入)、相機視覺/彈道 punch 分離 + 彈孔 InstancedMesh、校準(M7 caveated)、匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁對照、全鏈路 E2E + punch/彈著 × 3 FPS 決定性回歸 + 驗收清單 B(附錄 E-B)。
+
+**里程碑:** M5(2026-07-05)· M6(2026-07-06)· M7 caveated(2026-07-07)· **M8(2026-07-07)= stage2 交付**。
+
+**Surprises(跨 WP):**
+- M7 為 **caveated PASS**:速度用 sim cadence surrogate(非 `cl_showpos` 實錄),第三方 Aiming.Pro pattern 逐彈差異(yaw maxAbs 3.941°)歸因為來源模型不匹配、研究者接受(GD-14);外部實錄行為級真值仍列 caveat。
+- `DataRecorder.ticks` 不含 recoil 逐 tick 欄位 → 決定性回歸鎖 fire 產彈點 punch/spread + `ImpactRing` 彈著序列(以 tick index 對齊),而非擴充 schema。
+- `__fpsTest` 自建決定性管線(不驅動 live `DrillRunner`)→ T2 以 dev-only `showResult()` 橋接 harness metrics 到 production `ResultScreen`。
+
+**Technical debt(有意識妥協,stage3 既知起點;照抄 [../README.md §7](../README.md)):**
+1. **視角「記錄而非重建」**(§2.5):每發 fire 完整記錄 `viewYaw/viewPitch + aimPunch + spread + recoilIndex`,彈道可離線精確重建;觸發重構條件 = 研究需逐 tick 視角**重播**。
+2. **crouch 欄保留不實作**:訓練器無蹲輸入,inaccuracy 用 stand 值,`WeaponConfig` 保留 crouch 欄。
+3. **`view_recoil_tracking` 值未確認**(OQ-S2-4):僅視覺、不影響彈著/資料;先做開關 + 可調常數。
+4. **fire 排程 1 sim tick 量化誤差**(7.8ms):`nextFireT += cycletime` 累加制,cycletime 0.1s = 12.8 sim tick 非整數,誤差 ≤ 1 tick,記為已知誤差界線。
+5. **Valorant 移動僅留接口**:`MovementProfile` 注入 + meta `movementModel` 斷代;1D→2D、settle timer、Valorant 校準隨後續 WP(研究立案觸發)。
+
+**stage2 資料夾移 `completed/`:** 暫緩(WP-18 F5 仍在 `active/stage2/`,entry 僅餘 M8 現已達成;整包 stage2 尚未全數交付)。待 WP-18 收斂或使用者指示再整體移入(協議 §5,待使用者確認)。
 
 ---
 
@@ -25,6 +47,43 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T-exit PASS(M8 stage2 交付:驗收清單 B 全 10 項通過)
+
+**閘門結論:** PASS。驗收清單 B(規格書**附錄 E-B**,10 項客觀可勾)逐項執行 + 勾選;`npm run test:ci` **exit 0**;兩層索引 M8 標 ✅ + 日期;technical debt 落帳為 stage3 入口。本切片 docs-only + 驗證,不改 `src/` / `tests/`。
+
+**1. 驗收清單 B 逐項證據:**
+
+| # | 項目 | 證據 |
+|---|---|---|
+| ① | [M5] recoil 數學 golden | `src/recoil/recoilTable.test.ts`(6)+ `spread.test.ts`(6)綠;seed 223 前 8 筆彈道表 + 10 發 punch(−10.18°/−1.56° ±0.01°)+ 前 4 發抑制係數。 |
+| ② | [M6] 壓槍手感全鏈路分離 | `tests/e2e/full-drill.spec.ts`「recoil 分離:held 10 發 → rawPunch 漂移(上+右)+ M5 向量」綠;M6 手動視覺 4 項使用者確認(2026-07-06)。 |
+| ③ | [M7 caveated] 校準 | `tests/calibration/showpos.test.ts`(3)綠;速度 surrogate ±1 u/s、AK pattern 對 CS2 golden 釘死;第三方 Aiming.Pro 差異(yaw maxAbs 3.941°)分層歸因接受(GD-14),外部實錄真值列 caveat。 |
+| ④ | schema v2 對帳 + 溢位保護 | `src/data/export.test.ts`/`metadata.test.ts`/`DataRecorder.test.ts` 綠;`meta.schemaVersion===2` + fire 8 欄;`metricsFromExport` round-trip 逐欄一致;30 發 spray baseline `recorderOverflow:false`。 |
+| ⑤ | 決定性 punch/彈著 × 3 FPS | `tests/regression/spray-determinism.test.ts`(6)+ `determinism.test.ts`(15)綠;60/144/240 FPS pump `final.ticks===expectedTicks`,30 發序列 bit-exact。 |
+| ⑥ | COI 三計時防線 | `tests/e2e/isolation.spec.ts`(dev+preview COOP/COEP)+ `full-drill.spec.ts` + `spray-drill.spec.ts` 內 `crossOriginIsolated===true` 綠。 |
+| ⑦ | sim/recoil 無 `Math.random()` | `grep Math.random src/sim src/recoil` → 呼叫數 0(僅 `TargetManager.ts:21` 註解提及禁用,非呼叫)。2026-07-07 抽查。 |
+| ⑧ | 彈孔單一 draw call | `src/render/ImpactView.ts` 單一 `InstancedMesh(IMPACT_CAP)` render-only + `ImpactView.test.ts`(6)綠。 |
+| ⑨ | 壓 30 發不掉 tick(NFR) | `spray-determinism.test.ts`:60/144/240 FPS pump `final.ticks===expectedTicks`(accumulator 全處理、無缺口)、`impactTotal===30`。 |
+| ⑩ | `test:ci` exit 0 | 本機 run 2026-07-07:`tsc --noEmit` + Vitest **43 files/326 tests** + Playwright **10 passed**;`$LASTEXITCODE=0`。 |
+
+**Verification:**
+
+- `npm run test:ci` → **exit 0**:Vitest **43 files / 326 tests passed**;Playwright **10 passed**(含 `spray-drill.spec.ts`)。
+- `grep Math.random src/sim src/recoil` → 僅 `src/sim/TargetManager.ts:21` 註解命中,零實際呼叫。
+- 兩層索引已同步:[../README.md](../README.md)(WP-17 ✅ / M8)、[../../../README.md](../../../README.md) §2/§3(WP-17 ✅ / M8 ✅ + 日期 / 頂層狀態)、規格書附錄 E-B 落地。
+
+**Decision Log:**
+- **stage2 資料夾暫不移 `completed/`。** Alternatives Considered:M8 達成即整包移入 `completed/stage2/`。否決,WP-18(F5)仍在 `active/stage2/` 且其 entry 僅餘 M8(現已達成);整個 stage2 尚未全數交付,提前移動會割裂 WP-18。待 WP-18 收斂或使用者指示再整體移入(協議 §5,待使用者確認)。
+- **驗收清單 B 落規格書附錄 E-B(非改寫附錄 E)。** Alternatives Considered:併入既有附錄 E(階段 A)。否決,兩階段驗收語意獨立、階段 A 清單須保留為 M4 交付憑證;新增 E-B 節不動 E,對帳更清楚。
+
+**Surprises & Discoveries:**
+- 無新 blocker,無全鏈路暴露的上游缺口(範圍紀律未觸發)。
+- test:ci 於沙盒仍受既知 Vite config access denied 限制;提升權限後 exit 0(與 T0/T1/T2 一致)。
+
+**Next:** stage2 交付完成。後續:WP-18(F5,門控解除,entry 僅餘 M8 ✅)或 stage3(WP-19~22)。
+
+---
 
 ### 2026-07-07 — T2 PASS(spray drill full chain E2E:fire(30) → export v2 → metrics → result DOM + COI)
 
