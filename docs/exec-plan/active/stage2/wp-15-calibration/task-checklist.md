@@ -8,7 +8,7 @@
 | ✅ | **T0** entry gate(容差拍板 + 資料備妥檢查,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low(surrogate PASS;實錄 caveat) |
 | ✅ | **T1** cl_showpos 起步/急停逐 tick 對表(128Hz surrogate;抓到+修正 CS2_PROFILE 常數 bug) | [T1-clshowpos-calibration.md](T1-clshowpos-calibration.md) | T0、WP-14 exit | Med |
 | ✅ | **T2** pattern 逐彈比對 + 換算檢查(RED/STOP:外部 AK pattern yaw 偏差超容差,已記歸因) | [T2-pattern-comparison.md](T2-pattern-comparison.md) | T0、WP-13 exit | Med |
-| ⬜ | **T-exit** M7 門(比對通過 + 歸因定稿) | [T-exit-gate.md](T-exit-gate.md) | T1, T2 | — |
+| ✅ | **T-exit** M7 門(caveated PASS:速度 surrogate 對表 + recoil golden 釘死;第三方 pattern 差異歸因接受,GD-14) | [T-exit-gate.md](T-exit-gate.md) | T1, T2 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 

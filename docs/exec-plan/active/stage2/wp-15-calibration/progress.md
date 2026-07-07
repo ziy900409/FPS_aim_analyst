@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 T2 RED/STOP(2026-07-07):AK pattern fixture 可重跑比對已落地,但 yaw 最大偏差 3.941° 超 OQ-S2-2;T-exit 阻塞
+## Status: ✅ M7 caveated PASS(2026-07-07):速度曲線 surrogate 對表通過 + recoil 對 CS2 golden 釘死;第三方 pattern 差異(yaw maxAbs 3.941°)分層歸因、經研究者接受(GD-14);`cl_showpos` 實錄行為級真值仍為 caveat
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ surrogate PASS 2026-07-07(可開 T1/T2;實錄 caveat) |
 | T1 cl_showpos 對表 | ✅ GREEN 2026-07-07(128Hz fixture;calibration 抓到 CS2_PROFILE 兩常數 bug,已修) |
 | T2 pattern 比對 | ✅ RED/STOP 2026-07-07(測試與歸因已落地;pattern 未通過容差) |
-| T-exit(M7) | ⬜ |
+| T-exit(M7) | ✅ caveated PASS 2026-07-07(歸因接受;GD-14) |
 
 ---
 
@@ -28,6 +28,29 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T-exit:M7 caveated PASS(歸因接受 + 兩層索引同步)
+
+研究者於 T-exit 閘門裁決:**接受 T2 分層歸因,M7 以 caveated pass 宣告**(走 T-exit DoD「差異已分層歸因並被研究者接受」路徑,非「pattern 對上外部真值」直路)。跨界決策記 [DECISIONS GD-14](../../../DECISIONS.md)。
+
+**Outcomes:**
+
+| 類別 | 內容 |
+|---|---|
+| **通過項** | (1) T1 速度曲線:surrogate(128Hz 積分 / 64Hz 取樣)於 sim cadence 逐 tick 對表 **±1 u/s 內通過**(integrator/公式 regression pin)。(2) recoil pattern **數學層**已由 WP-10 M5 golden 對 CS2 vdata 逐位釘死(10 發 punch −10.18°/−1.56° ±0.01°)。(3) 10m 牆面角度→公分換算單測通過(`tan(角度)×1000 cm`)。(4) velocity gate 連續模型(WP-14)已上線。 |
+| **校正項** | 容差**未放寬**,維持 OQ-S2-2 的 ±1 u/s / ±0.05°。T1 途中觸發的兩項 **WP-14 常數 bug 修正**(accelerate 5.6→5.5、stopSpeed 75→80,commit `347ce78`)已於前述 log 記錄(GD-13)。 |
+| **caveat 清單** | (a) **速度曲線為 theory-derived surrogate,非 `cl_showpos` 實錄**——M7 措辭已降級,不宣稱實錄行為級通過(OQ-15.1)。(b) **T2 第三方 Aiming.Pro pattern 逐彈對表未通過 ±0.05°**(yaw maxAbs 3.941° @ shot 15);歸因為**來源模型不匹配**(Aiming.Pro 為第三方訓練器、shot 1 非零 offset 與純 punch 語意不符),非引擎 error,經研究者接受。(c) **OQ-15.4 / OQ-15.5 未解**:Aiming.Pro 30 點語意、是否以外部 pattern 為權威改 recoil model——若立案改動另開校準切片評估 WP-10 golden/pattern viewer/ballistic compose 整體影響。(d) fixture 與 sim 同源 → T1 本質為 regression/公式 pin;真正外部行為真值待高幀率 `cl_showpos`/demo 實錄(屆時新增 `sourceType=clshowpos-capture` fixture)。 |
+
+**驗證指令(T-exit 重跑):**
+- `node_modules/.bin/vitest run`(全套):42 files / **310 tests passed**。
+- `node_modules/.bin/vitest run tests/calibration`:6/6 passed(T1 showpos 3 + T2 pattern 3;T2 以可重跑 RED report 形式 pin 住偏差,CI 綠)。
+- `node_modules/.bin/tsc --noEmit`:exit 0。
+
+**兩層索引同步:** [../README.md §3](../README.md) WP-15 → ✅ M7 caveated + §4 M7 標日期 + §8 OQ-S2-2 ledger 收斂;[exec-plan/README.md §3](../../../README.md) WP-15 + §4 M7 同步;[task-checklist.md](task-checklist.md) T-exit → ✅;[T-exit-gate.md](T-exit-gate.md) Steps 全勾。
+
+**Decision Log:**
+- **走「歸因接受」而非「調參追齊」或「必紅 CI」。** Alternatives Considered:(1) 盲調 `GOLDEN_YAW_KICK_SCALE`/recoil seed 讓 shot 15 對齊 Aiming.Pro——否決,破壞 WP-10 M5 golden 與既有校準基準,違反 WP-15 README §2「比對不過是歸因不是調參」;(2) 無限期阻塞 M7 直到取得高幀率 `cl_showpos` 實錄——否決,權威 recoil 已由 M5 對 CS2 vdata 校準,對第三方弱參考無限期門控 WP-17/M8 不成比例;T-exit DoD 本就提供「分層歸因 + 研究者接受」逃生路徑。
+- **M7 措辭雙重降級並存。** 速度側 caveat(theory surrogate)與 pattern 側 caveat(第三方來源差異)語意不同,兩者皆明列於 M7 里程碑與 GD-14,避免日後誤讀為「已對 CS2 實錄全面校準」。
 
 ### 2026-07-07 — T2 RED/STOP(Aiming.Pro AK pattern 可重跑比對 + 10m 換算單測)
 

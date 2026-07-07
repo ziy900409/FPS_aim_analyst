@@ -10,7 +10,7 @@
 | **相依** | WP-13(M6,pattern 需整合鏈)、WP-14(速度曲線) |
 | **對應 FR** | FR-B13 |
 | **估時** | 1.5–2 dev-days |
-| **狀態** | 🟡 T0 surrogate PASS(2026-07-07):速度曲線採 theory-derived fixture;實錄 caveat 留 T-exit |
+| **狀態** | ✅ **M7 caveated PASS(2026-07-07)**:速度曲線 surrogate 於 sim cadence 對表通過 + recoil 對 CS2 vdata golden 釘死;第三方 Aiming.Pro pattern 逐彈差異(yaw maxAbs 3.941°)分層歸因為來源模型不匹配、經研究者接受(GD-14);`cl_showpos` 實錄行為級真值仍為 caveat |
 
 ---
 

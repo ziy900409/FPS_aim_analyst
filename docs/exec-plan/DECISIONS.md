@@ -22,6 +22,18 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-14 ✅ WP-15 T-exit — M7 caveated 通過(T2 pattern 差異分層歸因 + 研究者接受)(2026-07-07)
+
+| | |
+|---|---|
+| **發現處** | WP-15 T-exit 閘門([wp-15 progress](active/stage2/wp-15-calibration/progress.md))。T2 AK pattern 對 Aiming.Pro fixture 逐彈對表 yaw maxAbs **3.941°**(shot 15),遠超 OQ-S2-2 ±0.05°;T1 為 theory surrogate(承 OQ-15.1 / [[GD-13]])。M7 的「pattern 對上外部真值」直路不成立,走「差異已分層歸因並被研究者接受」路徑。 |
+| **差異分層歸因** | **(公式)** recoil 數學已由 M5 golden 對 CS2 vdata 逐位釘死(10 發 punch −10.18°/−1.56° ±0.01°)——非公式錯。**(常數/scale)** 水平 yaw scale 與 recoil table seed 與 WP-10 10-shot golden 相依,盲調追齊會破壞既有校準基準。**(資料品質/來源模型)** Aiming.Pro 為第三方訓練器模型、**非 CS2 權威真值**;其 shot 1 已有非零 offset,與本專案 post-fire/pre-tick 純 punch 首發為 0 的語意不符,暗示其含 bullet-impact/compensation 或自有訓練模型。→ 差異主因判為**來源模型不匹配**,非引擎 error(pitch 軌跡同量級、yaw 在 shot 15/19/24/28/30 有 2°–4° 級偏差,非角度→公分換算問題)。 |
+| **決議** | 研究者**接受**分層歸因,M7 以 **caveated pass** 宣告。權威 recoil 校準以 M5 golden(CS2 vdata)為終審;Aiming.Pro 差異記為已知 caveat,**不盲調 recoil 追齊**(協議 [README §2](active/stage2/wp-15-calibration/README.md):比對不過是歸因不是調參)。velocity gate 連續模型已上線(WP-14)。 |
+| **caveat(M7 措辭降級)** | 「速度曲線於 sim cadence 公式/常數對表通過(theory surrogate,**非** `cl_showpos` 實錄行為級)+ recoil pattern 已對 CS2 vdata golden 逐位釘死;對第三方 Aiming.Pro pattern 的逐彈對表**未通過** ±0.05°,歸因為來源模型差異並被研究者接受」。 |
+| **遺留 OQ** | OQ-15.4(Aiming.Pro 30 點語意:CS2 bullet-impact / compensation path / 自有模型?)、OQ-15.5(是否以外部 pattern 為權威改動 recoil model)。**若立案改動 → 另開校準切片**評估對 WP-10 10-shot golden、pattern viewer、ballistic compose 的整體影響。 |
+| **影響面** | WP-15 exit(M7 ✅ caveated;兩層索引標日期)、解鎖 WP-17/M8 的校準側前置(WP-15 相依滿足)。 |
+| **狀態** | ✅ 已拍板(2026-07-07 T-exit;研究者接受歸因)。 |
+
 ### GD-13 ✅ WP-15 calibration 抓到 WP-14 CS2_PROFILE 常數 bug + T1 cadence 定案(2026-07-07)
 
 | | |

@@ -216,7 +216,7 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 | **WP-12** | [wp-12-input-seams/](wp-12-input-seams/README.md) | 感度換算 CS2 0.022°/count(A4)+ 射線方向注入(A3) | — | — | 1–1.5 | ✅ **2026-07-06** |
 | **WP-13** | [wp-13-sim-camera-integration/](wp-13-sim-camera-integration/README.md) | recoil 進 simStep(64Hz 子節奏)+ 相機視覺/彈道合成 + 彈孔 InstancedMesh + debug overlay | **M6** | WP-10, 11, 12 | 2–3 | ✅ **M6 2026-07-06**(automated + 手動視覺 4 項使用者確認通過) |
 | **WP-14** | [wp-14-movement-physics/](wp-14-movement-physics/README.md) | friction/accelerate integrator 取代 M1 snap + velocity gate(~88 u/s)+ 殘速指標連續化 | — | —(介面不變,可與 10–13 並行) | 2–3 | ✅ **2026-07-06**(baseline 重錄 + Edge 實測手感驗證) |
-| **WP-15** | [wp-15-calibration/](wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | 🟡 T0 surrogate PASS |
+| **WP-15** | [wp-15-calibration/](wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | ✅ **M7 caveated(2026-07-07)** — 速度曲線 surrogate 對表通過 + recoil 對 CS2 golden 釘死;第三方 pattern 差異已歸因接受(GD-14) |
 | **WP-16** | [wp-16-metrics-export-v2/](wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁軌跡對照 | — | WP-13 | 2–3 | ⬜ |
 | **WP-17** | [wp-17-integration/](wp-17-integration/README.md) | E2E 全鏈路(壓槍 drill → 匯出 → 統計)+ 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ⬜ |
 | **WP-18** | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md)(門控) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | **門控:OQ-S2-5** + WP-17 | +2–3.5 | ⏸ 門控 |
@@ -229,7 +229,7 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 |---|---|---|---|
 | **M5 ✅ (2026-07-05)** | golden tests 全綠:seed 223 前 8 筆彈道表、10 發 punch 向量、前 4 發抑制係數、同 seed 決定性 | WP-10 | 數學核心正確性釘死;之後所有整合問題都可歸因到接線,不歸因到公式 |
 | **M6 ✅ (2026-07-06)** | 瀏覽器內可按住連發壓槍:視覺上跳 + 彈道 = viewAngles + rawPunch×2 + spread 分離生效;10 發 E2E punch 值與 M5 向量一致(automated `test:ci` 全綠 + 手動視覺/手感 4 項使用者確認通過 2026-07-06) | WP-13 | 壓槍玩法成立(核心手感可實測) |
-| **M7** | `cl_showpos` 曲線 + pattern 圖比對通過;velocity gate 連續模型上線 | WP-14+15 | 「counter-strafe × 壓槍」研究效度成立(移動 inaccuracy 有真實速度可掛) |
+| **M7 ✅ caveated (2026-07-07)** | 速度曲線於 sim cadence 公式/常數對表通過(theory surrogate,非 `cl_showpos` 實錄——承 OQ-15.1/GD-13);recoil pattern 對 CS2 vdata M5 golden 逐位釘死;第三方 Aiming.Pro pattern 逐彈差異(yaw maxAbs 3.941°)分層歸因為來源模型不匹配並被研究者接受(GD-14);velocity gate 連續模型上線(WP-14) | WP-14+15 | 「counter-strafe × 壓槍」研究效度成立(移動 inaccuracy 掛在可信速度上);**外部實錄行為級真值仍為 caveat**(待高幀率 `cl_showpos`/demo 實錄) |
 | **M8** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B 全項通過 | WP-17 | stage2 交付 |
 
 ---
@@ -288,7 +288,7 @@ WP-14(movement 物理)───────────────────�
 | # | 問題 | 建議(計畫預設) | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
 | OQ-S2-1 ✅ | recoil tick 節奏:64Hz 子節奏 vs dt=1/128 代入 vs SIM_HZ 降 64 | **決議:64Hz 子節奏**(§2.4,ADR-3 意圖;2026-07-05 WP-10 T0) | 使用者 | 已拍板 | WP-10 golden 定義、WP-13 T1 佈線已鎖定 |
-| OQ-S2-2 ✅ | 校準容差:`cl_showpos` 逐 tick ±? u/s;pattern 逐彈 ±?° | **決議:速度逐 tick ±1 u/s、AK pattern 逐彈 ±0.05°**;首輪跑完若需校正,須記最大偏差與差異分層理由 | 研究者 | 已拍板(2026-07-07 WP-15 T0) | T0 已改為 surrogate PASS:速度曲線採 Source formula + CS2 cvars theory-derived fixture,AK pattern 採 Aiming.Pro 候選 fixture;M7 若無實錄補強須保留 caveat |
+| OQ-S2-2 ✅ | 校準容差:`cl_showpos` 逐 tick ±? u/s;pattern 逐彈 ±?° | **決議:速度逐 tick ±1 u/s、AK pattern 逐彈 ±0.05°**;首輪跑完若需校正,須記最大偏差與差異分層理由。**T-exit 收斂(2026-07-07):容差維持 ±1 u/s / ±0.05°,未放寬。** 速度:surrogate 於 sim cadence 對表通過(±1 u/s 內)。pattern:第三方 Aiming.Pro 逐彈 yaw maxAbs **3.941°** **未通過** ±0.05° → 依規則記最大偏差(shot 15 yaw)+ 分層歸因(來源模型不匹配,非公式/換算),研究者接受為 caveat(GD-14)。 | 研究者 | 已拍板(2026-07-07 WP-15 T0);ledger 收斂 T-exit(2026-07-07) | M7 caveated PASS:速度曲線 surrogate 對表 + recoil 對 CS2 golden 釘死;第三方 pattern 差異歸因接受;實錄行為級真值仍為 caveat |
 | OQ-S2-3 ✅ | 感度語意變更後,階段 A 已匯出資料的可比性標注 | **決議:T1 先加 `sensitivityModel: 'cs2-0.022deg'`;無此欄 = 階段 A 佔位語意 `0.0022 rad/count`;`schemaVersion` bump 留 WP-16 schema v2 一次做;舊資料不回溯轉換** | 研究者 | 已拍板(2026-07-06 WP-12 T0) | T1 metadata/schema 註記已鎖定 |
 | OQ-S2-4 | `view_recoil_tracking`(視覺跟隨比例)CS2 對應值 | 先做開關 + 可調常數(僅視覺,不影響彈著/資料) | 研究計畫(社群求證) | 不阻塞 | WP-13 T2 視覺預設 |
 | OQ-S2-5 ✅ | F5「移動 + counter-strafe 能力混淆」研究設計(附錄 F/GD-1 遺留) | **決議:採附錄 F 預設緩解——純追蹤 drill 與急停 drill 分離;指標層再切獲取/追隨(`t_acquire` vs 追蹤窗口內 TOT%/RMS ε),完整定義見 [DECISIONS.md GD-7](../../DECISIONS.md);複合 drill 維持進階標註、不入 WP-18** | 研究者 | 已拍板(2026-07-06 grill) | WP-18 研究側門控解除(entry 僅餘 M8) |
