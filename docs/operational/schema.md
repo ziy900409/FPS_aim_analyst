@@ -278,8 +278,8 @@ This appendix is a semantic mapping only. Per GD-11, FPSci source code is not co
 
 ## Related Execution Plan
 
-- WP-16 spec: [`docs/exec-plan/active/stage2/wp-16-metrics-export-v2/README.md`](../exec-plan/active/stage2/wp-16-metrics-export-v2/README.md)
-- T1 task: [`docs/exec-plan/active/stage2/wp-16-metrics-export-v2/T1-schema-v2.md`](../exec-plan/active/stage2/wp-16-metrics-export-v2/T1-schema-v2.md)
+- WP-16 spec: [`docs/exec-plan/completed/stage2/wp-16-metrics-export-v2/README.md`](../exec-plan/completed/stage2/wp-16-metrics-export-v2/README.md)
+- T1 task: [`docs/exec-plan/completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md`](../exec-plan/completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md)
 ## Recorder Capacity
 
 `capacityForDrill(simHz, maxDrillSeconds, extraTicks, maxFireHz)` reserves:

@@ -282,7 +282,7 @@ WP-21(偵測 drill;T3 需 WP-16)─┤
 - [x] [CONTEXT.md](../../../../CONTEXT.md) 新術語:追蹤誤差 ε(t)/on-target、t_acquire、TOT%/追蹤窗口、偵測反應時間/t_detect、偏心度、pop-in/slide-in、雜亂度階層、資格閘、純裝飾場景、淨空驗證、SceneConfig/sceneId;§D F5 接縫列更新。(2026-07-06 grill)
 - [x] [stage2 README §8](../stage2/README.md) OQ-S2-5 翻 ✅ 指向 GD-7。(2026-07-06 grill)
 - [x] [exec-plan/README.md](../../README.md) §2 加 stage3 索引表;§3 加 M9–M10;§4 相依圖擴充。(2026-07-06 本計畫)
-- [x] [WP-16 README/T1](../stage2/wp-16-metrics-export-v2/README.md) scope 回饋:GD-7 逐 tick 欄(`tx,ty,tz,px,pz`)+ meta `spawn`(seed/motion)+ `scene`/`display`/`frames` reserved optional 區塊。(2026-07-06 本計畫)
+- [x] [WP-16 README/T1](../../completed/stage2/wp-16-metrics-export-v2/README.md) scope 回饋:GD-7 逐 tick 欄(`tx,ty,tz,px,pz`)+ meta `spawn`(seed/motion)+ `scene`/`display`/`frames` reserved optional 區塊。(2026-07-06 本計畫)
 - [x] [WP-18 README stub](../stage2/wp-18-f5-subtick/README.md) 更新:OQ-S2-5 ✅ → entry 僅餘 M8;指標定義指向 GD-7;stage3 WP-22 消費對帳。(2026-07-06 本計畫)
 - [ ] [CLAUDE.md](../../../../CLAUDE.md) §4 硬約束追加(§1.3 三條新增項)——落 WP-19/20/21 各自 T0(採納即回寫)。
 - [ ] 規格書升 **v1.3**:新增「階段 C:研究場景與感知實驗」節 + 附錄 E 增「驗收清單 C」+ F5/附錄 F 對帳(既有懸案一併收);GD-6~10 為權威來源。

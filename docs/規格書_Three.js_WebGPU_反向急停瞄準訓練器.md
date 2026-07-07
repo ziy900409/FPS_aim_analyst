@@ -403,7 +403,7 @@ canvas.addEventListener('pointermove', (e) => {
 ## 附錄 E-B：驗收清單（階段 B，M8 交付門）
 
 > stage2（CS2 後座力系統 + 真急停物理）交付門。~10 項客觀可勾，涵蓋 M5–M7 證據 + schema v2 + 決定性 + NFR 抽查。
-> 執行記錄與逐項證據連結見 [`exec-plan/active/stage2/wp-17-integration/progress.md`](exec-plan/active/stage2/wp-17-integration/progress.md)（T-exit 2026-07-07）。
+> 執行記錄與逐項證據連結見 [`exec-plan/completed/stage2/wp-17-integration/progress.md`](exec-plan/completed/stage2/wp-17-integration/progress.md)（T-exit 2026-07-07）。
 
 - [x] **[M5] recoil 數學核心 golden 全綠**：AK-47（seed 223）前 8 筆彈道表逐位一致、10 發 punch 向量（pitch −10.18°／yaw −1.56°，±0.01°）、前 4 發抑制係數 = 30×Lerp(j/4, 0.75, 1) 精確 — `src/recoil/recoilTable.test.ts` + `spread.test.ts` 綠
 - [x] **[M6] 壓槍手感全鏈路分離**：按住連發時視覺 = viewAngles + aimPunch、彈道 = viewAngles + rawPunch×2 + spread 分離生效；held 10 發 rawPunch 漂移方向（上+右）且逼近 M5 向量 — `tests/e2e/full-drill.spec.ts`「recoil 分離」綠 + M6 手動視覺 4 項使用者確認（2026-07-06）

@@ -211,14 +211,14 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
-| **WP-10** | [wp-10-recoil-core/](wp-10-recoil-core/README.md) | 後座力數學核心(彈道表 + punch 動力學 + inaccuracy)+ golden tests + 2D 檢查頁(dev-only) | **M5** | —(可立即開跑) | 2–3 | ✅ **M5 2026-07-05** |
-| **WP-11** | [wp-11-weapon-fire/](wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up 事件 + cycletime 產彈 + 彈匣 + recoil index 掛點 | — | WP-10(型別) | 2–3 | ✅ **2026-07-06** |
-| **WP-12** | [wp-12-input-seams/](wp-12-input-seams/README.md) | 感度換算 CS2 0.022°/count(A4)+ 射線方向注入(A3) | — | — | 1–1.5 | ✅ **2026-07-06** |
-| **WP-13** | [wp-13-sim-camera-integration/](wp-13-sim-camera-integration/README.md) | recoil 進 simStep(64Hz 子節奏)+ 相機視覺/彈道合成 + 彈孔 InstancedMesh + debug overlay | **M6** | WP-10, 11, 12 | 2–3 | ✅ **M6 2026-07-06**(automated + 手動視覺 4 項使用者確認通過) |
-| **WP-14** | [wp-14-movement-physics/](wp-14-movement-physics/README.md) | friction/accelerate integrator 取代 M1 snap + velocity gate(~88 u/s)+ 殘速指標連續化 | — | —(介面不變,可與 10–13 並行) | 2–3 | ✅ **2026-07-06**(baseline 重錄 + Edge 實測手感驗證) |
-| **WP-15** | [wp-15-calibration/](wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | ✅ **M7 caveated(2026-07-07)** — 速度曲線 surrogate 對表通過 + recoil 對 CS2 golden 釘死;第三方 pattern 差異已歸因接受(GD-14) |
-| **WP-16** | [wp-16-metrics-export-v2/](wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁軌跡對照 | — | WP-13 | 2–3 | ✅ **2026-07-07**(schema v2 + 壓槍指標;不變式/溢位/對帳全綠) |
-| **WP-17** | [wp-17-integration/](wp-17-integration/README.md) | E2E 全鏈路(壓槍 drill → 匯出 → 統計)+ 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ✅ **M8(2026-07-07)** |
+| **WP-10** | [wp-10-recoil-core/](../../completed/stage2/wp-10-recoil-core/README.md) | 後座力數學核心(彈道表 + punch 動力學 + inaccuracy)+ golden tests + 2D 檢查頁(dev-only) | **M5** | —(可立即開跑) | 2–3 | ✅ **M5 2026-07-05** |
+| **WP-11** | [wp-11-weapon-fire/](../../completed/stage2/wp-11-weapon-fire/README.md) | `WeaponConfig` + fire down/up 事件 + cycletime 產彈 + 彈匣 + recoil index 掛點 | — | WP-10(型別) | 2–3 | ✅ **2026-07-06** |
+| **WP-12** | [wp-12-input-seams/](../../completed/stage2/wp-12-input-seams/README.md) | 感度換算 CS2 0.022°/count(A4)+ 射線方向注入(A3) | — | — | 1–1.5 | ✅ **2026-07-06** |
+| **WP-13** | [wp-13-sim-camera-integration/](../../completed/stage2/wp-13-sim-camera-integration/README.md) | recoil 進 simStep(64Hz 子節奏)+ 相機視覺/彈道合成 + 彈孔 InstancedMesh + debug overlay | **M6** | WP-10, 11, 12 | 2–3 | ✅ **M6 2026-07-06**(automated + 手動視覺 4 項使用者確認通過) |
+| **WP-14** | [wp-14-movement-physics/](../../completed/stage2/wp-14-movement-physics/README.md) | friction/accelerate integrator 取代 M1 snap + velocity gate(~88 u/s)+ 殘速指標連續化 | — | —(介面不變,可與 10–13 並行) | 2–3 | ✅ **2026-07-06**(baseline 重錄 + Edge 實測手感驗證) |
+| **WP-15** | [wp-15-calibration/](../../completed/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | ✅ **M7 caveated(2026-07-07)** — 速度曲線 surrogate 對表通過 + recoil 對 CS2 golden 釘死;第三方 pattern 差異已歸因接受(GD-14) |
+| **WP-16** | [wp-16-metrics-export-v2/](../../completed/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁軌跡對照 | — | WP-13 | 2–3 | ✅ **2026-07-07**(schema v2 + 壓槍指標;不變式/溢位/對帳全綠) |
+| **WP-17** | [wp-17-integration/](../../completed/stage2/wp-17-integration/README.md) | E2E 全鏈路(壓槍 drill → 匯出 → 統計)+ 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ✅ **M8(2026-07-07)** |
 | **WP-18** | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅(GD-7)+ ~~WP-17(M8)~~ ✅ | +2–3.5 | 🟢 ready(entry 全達成 2026-07-07)· 未展開,待排程(建議隨 stage3) |
 
 ---
@@ -256,14 +256,14 @@ WP-14(movement 物理)───────────────────�
 
 | WP | Task 檔 |
 |---|---|
-| **WP-10** recoil-core(M5) | [wp-10-recoil-core/](wp-10-recoil-core/README.md):T0 → T1 ran1/彈道表 → T2 punch → T3 spread → T4 檢查頁 → T-exit |
-| **WP-11** weapon-fire | [wp-11-weapon-fire/](wp-11-weapon-fire/README.md):T0 → T1 WeaponConfig → T2 fire down/up → T3 cycletime 排程 → T-exit |
-| **WP-12** input-seams | [wp-12-input-seams/](wp-12-input-seams/README.md):T0 → T1 CS2 感度 → T2 射線注入 → T-exit |
-| **WP-13** sim-camera-integration(M6) | [wp-13-sim-camera-integration/](wp-13-sim-camera-integration/README.md):T0 → T1 simStep 佈線 → T2 相機/彈道合成 → T3 彈孔 + debug overlay → T-exit |
-| **WP-14** movement-physics | [wp-14-movement-physics/](wp-14-movement-physics/README.md):T0 → T1 integrator → T2 velocity gate → T3 指標連續化 → T-exit |
-| **WP-15** calibration(M7) | [wp-15-calibration/](wp-15-calibration/README.md):T0 → T1 cl_showpos 對表 → T2 pattern 比對 → T-exit |
-| **WP-16** metrics-export-v2 | [wp-16-metrics-export-v2/](wp-16-metrics-export-v2/README.md):T0 → T1 schema v2 → T2 理想路徑指標 → T3 結果頁對照 → T-exit |
-| **WP-17** integration(M8) | [wp-17-integration/](wp-17-integration/README.md):T0 → T1 決定性回歸 → T2 全鏈路 E2E → T-exit(原 T3 驗收清單 B 併入) |
+| **WP-10** recoil-core(M5) | [wp-10-recoil-core/](../../completed/stage2/wp-10-recoil-core/README.md):T0 → T1 ran1/彈道表 → T2 punch → T3 spread → T4 檢查頁 → T-exit |
+| **WP-11** weapon-fire | [wp-11-weapon-fire/](../../completed/stage2/wp-11-weapon-fire/README.md):T0 → T1 WeaponConfig → T2 fire down/up → T3 cycletime 排程 → T-exit |
+| **WP-12** input-seams | [wp-12-input-seams/](../../completed/stage2/wp-12-input-seams/README.md):T0 → T1 CS2 感度 → T2 射線注入 → T-exit |
+| **WP-13** sim-camera-integration(M6) | [wp-13-sim-camera-integration/](../../completed/stage2/wp-13-sim-camera-integration/README.md):T0 → T1 simStep 佈線 → T2 相機/彈道合成 → T3 彈孔 + debug overlay → T-exit |
+| **WP-14** movement-physics | [wp-14-movement-physics/](../../completed/stage2/wp-14-movement-physics/README.md):T0 → T1 integrator → T2 velocity gate → T3 指標連續化 → T-exit |
+| **WP-15** calibration(M7) | [wp-15-calibration/](../../completed/stage2/wp-15-calibration/README.md):T0 → T1 cl_showpos 對表 → T2 pattern 比對 → T-exit |
+| **WP-16** metrics-export-v2 | [wp-16-metrics-export-v2/](../../completed/stage2/wp-16-metrics-export-v2/README.md):T0 → T1 schema v2 → T2 理想路徑指標 → T3 結果頁對照 → T-exit |
+| **WP-17** integration(M8) | [wp-17-integration/](../../completed/stage2/wp-17-integration/README.md):T0 → T1 決定性回歸 → T2 全鏈路 E2E → T-exit(原 T3 驗收清單 B 併入) |
 | **WP-18** f5-subtick(🟢 ready,未展開) | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md):README stub;entry 條件 = OQ-S2-5 ✅ + M8 ✅ 皆達成(2026-07-07),待排程展開 |
 
 ---

@@ -67,7 +67,7 @@ WP-18(F5;stage2,M8 後)────────┘
 
 | 接點 | 文件 | 關係 |
 |---|---|---|
-| **WP-16 schema v2**(stage2) | [wp-16 README](../stage2/wp-16-metrics-export-v2/README.md) · [T1](../stage2/wp-16-metrics-export-v2/T1-schema-v2.md) | stage3 資料面上游:逐 tick `tx/ty/tz/px/pz` + meta `spawn` + `scene`/`display`/`frames` reserved 區塊(GD-7/8/10 回饋已入其 scope,2026-07-06);WP-21 T3 的 task 級相依 |
+| **WP-16 schema v2**(stage2) | [wp-16 README](../../completed/stage2/wp-16-metrics-export-v2/README.md) · [T1](../../completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md) | stage3 資料面上游:逐 tick `tx/ty/tz/px/pz` + meta `spawn` + `scene`/`display`/`frames` reserved 區塊(GD-7/8/10 回饋已入其 scope,2026-07-06);WP-21 T3 的 task 級相依 |
 | **WP-18 F5**(stage2) | [wp-18 README](../stage2/wp-18-f5-subtick/README.md) | 追蹤 drill 供應者(移動目標 + sub-tick 內插 + timed presentation + 目標內插);WP-22 T1 消費;交付形狀對帳點 = OQ-S3-5 |
 | 全域決策帳本 | [DECISIONS.md](../../DECISIONS.md) | GD-6~10 = 本階段研究決議權威;新的跨 WP 決策照慣例寫回該帳本 |
 | 專有名詞 | [CONTEXT.md](../../../../CONTEXT.md) | 本階段新術語已收錄(見 §1 ①);命名任何東西前先對齊 |
