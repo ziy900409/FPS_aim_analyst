@@ -1,12 +1,20 @@
 import * as THREE from 'three/webgpu';
 import type { ProceduralRoomConfig, SceneConfig } from '../scene/SceneConfig.ts';
+import { disposeScene, loadScene, type SceneAssetLoader } from './sceneLoader.ts';
+import { placeholderRoom } from '../scene/scenes/placeholder-room.ts';
 
 /**
- * SceneManager — WP-1 / T1（FR-1.1）
+ * SceneManager — WP-1 / T1（FR-1.1）+ WP-19 / T2（FR-C2）
  *
- * 建出可見的封閉房間（地板 + 四牆 + 光）與 PerspectiveCamera，作為 WP-1 視角
- * 與 WP-4 目標的舞台。本檔屬「渲染」層（CONTEXT.md §B）：只擺場景與 camera，
- * 不碰 sim、不引入 accumulator（雙迴圈邊界，WP-2）。
+ * 建出可見的舞台(camera + 光 + 背景)與可見幾何,作為 WP-1 視角與 WP-4 目標的舞台。
+ * 本檔屬「渲染」層（CONTEXT.md §B）：只擺場景與 camera，不碰 sim、不引入 accumulator
+ * （雙迴圈邊界，WP-2）;**不讀 propBounds**(GD-6:場景幾何永不進 sim runtime)。
+ *
+ * 兩種場景走**同一個 SceneConfig 入口**(README §2 佔位房間收編):
+ * - `asset === null`:程序化房間(地板 + 四牆 + 光),`proceduralRoom` 描述尺寸/顏色/光照。
+ * - `asset !== null`:GLTF 場景。`proceduralRoom` 仍描述 camera(眼高/FOV/standoff)+ 光 +
+ *   背景色的「舞台」,但**不建牆/地板**(GLTF 自帶地形/props);GLTF group 由 `createSceneManager`
+ *   async 載入後 `mountAsset()` 掛入。載入失敗 fallback 佔位房間(同一路徑,無特例分支)。
  *
  * ⚠️ 單位：房間尺寸 / 眼高為 **render 端佔位常數**（THREE world unit；OQ-1.2，
  * 10×10×3、眼高 ~1.6）。正式幾何由 WP-6 drill config 以 **canonical CS unit (u)**
@@ -33,18 +41,19 @@ const DEFAULT_PROCEDURAL_ROOM: ProceduralRoomConfig = {
 export class SceneManager {
   readonly scene: THREE.Scene;
   readonly camera: THREE.PerspectiveCamera;
+  #assetGroup: THREE.Group | null = null;
 
   constructor(config: SceneConfig) {
-    if (config.asset !== null) {
-      throw new Error('SceneManager GLTF asset loading belongs to WP-19 T2');
-    }
     const room = config.proceduralRoom ?? DEFAULT_PROCEDURAL_ROOM;
     const [width, depth, height] = room.roomSize;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(room.colors.background);
 
-    this.#buildRoom(width, depth, height, room.colors);
+    // 程序化房間幾何只在無 GLTF 資產時建;GLTF 場景自帶地形/props(見類別註解)。
+    if (config.asset === null) {
+      this.#buildRoom(width, depth, height, room.colors);
+    }
     this.#buildLights(room.lights);
 
     // camera 立於房間一端、踩中軸，朝 -Z 望向對牆與中軸（FR-1.1）。
@@ -60,6 +69,22 @@ export class SceneManager {
   resize(w: number, h: number): void {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+  }
+
+  /** 掛載已套 displayScale 的 GLTF group;重覆呼叫前先釋放前一個(防洩漏)。 */
+  mountAsset(group: THREE.Group): void {
+    if (this.#assetGroup !== null) disposeScene(this.#assetGroup);
+    this.#assetGroup = group;
+    this.scene.add(group);
+  }
+
+  /**
+   * 釋放整個場景(房間 mesh + GLTF group)的 GPU 資源;場景切換前呼叫(T4),防洩漏。
+   * (即 T2 In scope 所述 `disposeScene()` 職責,以 SceneManager 方法形式提供。)
+   */
+  dispose(): void {
+    for (const child of [...this.scene.children]) disposeScene(child);
+    this.#assetGroup = null;
   }
 
   #buildRoom(width: number, depth: number, height: number, colors: ProceduralRoomConfig['colors']): void {
@@ -105,4 +130,29 @@ export class SceneManager {
     dir.position.set(lights.directionalPosition.x, lights.directionalPosition.y, lights.directionalPosition.z);
     this.scene.add(dir);
   }
+}
+
+/**
+ * 依 SceneConfig 建 SceneManager,GLTF 資產 async 載入後掛入(FR-C2)。
+ * - `asset === null`:同步程序化房間。
+ * - `asset !== null`:先建舞台(camera + 光),再 `await loadScene` 掛 GLTF group。
+ *   載入失敗 → **fallback 佔位房間**(遞迴走 placeholderRoom config,單一路徑,無特例分支)。
+ *
+ * `loaderOverride` 供測試注入 mock loader(不必真跑 WebGPU/GLTF 解析)。
+ */
+export async function createSceneManager(
+  config: SceneConfig,
+  loaderOverride?: SceneAssetLoader,
+): Promise<SceneManager> {
+  const manager = new SceneManager(config);
+  if (config.asset === null) return manager;
+
+  const group = await loadScene(config, loaderOverride);
+  if (group !== null) {
+    manager.mountAsset(group);
+    return manager;
+  }
+  // 載入失敗:丟棄剛建的舞台,fallback 佔位房間(與正常路徑同一 config 入口)。
+  manager.dispose();
+  return new SceneManager(placeholderRoom);
 }

@@ -1,6 +1,6 @@
 import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
-import { SceneManager } from './render/SceneManager.ts';
+import { createSceneManager } from './render/SceneManager.ts';
 import { TargetView } from './render/TargetView.ts';
 import { ImpactView } from './render/ImpactView.ts';
 import { createPointerLock } from './input/PointerLock.ts';
@@ -54,8 +54,9 @@ const availableDrills: AvailableDrill[] = [
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let recorderStartedAt = new Date().toISOString();
 
-// WP-1 / T1（FR-1.1）— 封閉房間 + camera 舞台。
-const sceneManager = new SceneManager(placeholderRoom);
+// WP-1 / T1（FR-1.1）+ WP-19 / T2（FR-C2）— 舞台 + camera:async 場景載入管線。
+// 佔位房間走同一入口(asset:null → 同步程序化房間);GLTF 場景載入失敗自動 fallback 佔位房間。
+const sceneManager = await createSceneManager(placeholderRoom);
 
 // WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
 const targetView = new TargetView(sceneManager.scene);
