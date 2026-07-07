@@ -8,7 +8,7 @@
 | **相依** | WP-13 exit ✅(M6) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-07 |
 
 ## Objective
 
@@ -29,11 +29,11 @@
 
 ## Steps
 
-- [ ] WP-13 exit 證據記 progress;`npm run test` 乾淨基準 exit 0。
-- [ ] 資料形狀抽查(codegraph 或讀碼)四欄逐項記 progress。
-- [ ] OQ-S2-3 斷代政策文字定稿記 ledger + §8 回填。
-- [ ] `targetCenterOffsetDeg` 語意定稿記 ledger。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] WP-13 exit 證據記 progress;`npm run test` 乾淨基準 exit 0。
+- [x] 資料形狀抽查(codegraph 或讀碼)四欄逐項記 progress。
+- [x] OQ-S2-3 斷代政策文字定稿記 ledger + §8 回填。
+- [x] `targetCenterOffsetDeg` 語意定稿記 ledger。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 
