@@ -8,7 +8,7 @@
 | **相依** | WP-13 exit ✅(M6)、WP-14 exit ✅(逐項驗證) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | 🛑 STOP(2026-07-07):OQ-S2-2 已拍板;參考資料未備 |
 
 ## Objective
 
@@ -28,11 +28,21 @@
 
 ## Steps
 
-- [ ] 上游兩 WP exit 證據記 progress。
-- [ ] OQ-S2-2 拍板(明確數字,非「傾向」);ledger + §8 回填。
-- [ ] 資料清點:兩類參考資料逐項核對合格條件;檔案路徑 / 來源 URL 記 progress。
-- [ ] 任一不備 → **STOP**:記 blocker + 通知研究者,不開 T1/T2。
+- [x] 上游兩 WP exit 證據記 progress。
+- [x] OQ-S2-2 拍板(明確數字,非「傾向」);ledger + §8 回填。
+- [x] 資料清點:兩類參考資料逐項核對合格條件;檔案路徑 / 來源 URL 記 progress。
+- [x] 任一不備 → **STOP**:記 blocker + 通知研究者,不開 T1/T2。
 - [ ] progress.md 記 entry-gate PASS 宣告。
+
+## T0 Result(2026-07-07)
+
+**STOP, not PASS.** 容差已拍板為 `cl_showpos` 速度逐 tick **±1 u/s**、AK pattern 逐彈角度 **±0.05°**。但校準參考資料未備妥:
+
+- `tests/golden/calibration/clshowpos-accel.json`:缺。
+- `tests/golden/calibration/clshowpos-stop.json`:缺。
+- `tests/golden/calibration/ak47-pattern.json`:缺。
+
+因此 T1/T2 不得開工;待研究者提供 CS2 `cl_showpos` 起步/急停錄製資料與可標定 AK pattern 圖來源後,重跑 T0 資料清點並改為 PASS。
 
 ## Definition of Done
 

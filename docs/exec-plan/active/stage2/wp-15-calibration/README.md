@@ -10,7 +10,7 @@
 | **相依** | WP-13(M6,pattern 需整合鏈)、WP-14(速度曲線) |
 | **對應 FR** | FR-B13 |
 | **估時** | 1.5–2 dev-days |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | 🛑 T0 STOP(2026-07-07):校準參考資料尚未入 repo |
 
 ---
 
@@ -47,7 +47,7 @@ M4A4/M4A1-S pattern(AK 先行,方法可複製);subtick 精度追齊(記 caveat)�
 
 | Task | 檔案 | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| **T0** | [T0-entry-gate.md](T0-entry-gate.md) | OQ-S2-2 容差拍板 + **參考資料備妥檢查(STOP 條件)** | — | Low |
+| **T0** | [T0-entry-gate.md](T0-entry-gate.md) | OQ-S2-2 容差拍板 + **參考資料備妥檢查(STOP 條件)** | — | Low(STOP:資料未備) |
 | **T1** | [T1-clshowpos-calibration.md](T1-clshowpos-calibration.md) | `cl_showpos` 起步/急停逐 tick 對表 | T0、WP-14 exit | Med |
 | **T2** | [T2-pattern-comparison.md](T2-pattern-comparison.md) | pattern 逐彈比對 + 擴散雲換算檢查 | T0、WP-13 exit | Med |
 | **T-exit** | [T-exit-gate.md](T-exit-gate.md) | **M7 門**:比對通過宣告 + 歸因報告定稿 | T1, T2 | — |
