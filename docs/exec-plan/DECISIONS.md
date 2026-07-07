@@ -22,6 +22,27 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-12 ✅ FPSci 建議採納對帳 — R1~R7 處置(2026-07-07)
+
+| | |
+|---|---|
+| **發現處** | FPSci 比較評估 grill(2026-07-07;[docs/research/FPSci_評估與建議.md](../research/FPSci_評估與建議.md) §5 R1~R7)。 |
+| **採納** | **R1(縮限)**:FPSci 欄位對映表入 WP-16 T1(schema.md 附錄,相同/近似/無對應三類);**命名 CONTEXT.md 優先、既有欄位不改名**——R1 原文「沿用其命名慣例」與 CLAUDE.md §2 命名協議衝突,以後者為準,可比性由對映表承擔。**R3(縮限)**:三層實驗結構正名入 CONTEXT §A(experiment = 分析端概念、引擎不實作;session = `ProtocolConfig`;drill 既有);WP-20 T4 加 `participantId`/`sessionLabel` 進 meta `session` 區塊(v2 reserved,形狀歸 WP-16 T1)——前後測離線串接不靠檔名紀律;FPSci 的 userstatus/config `#include`/受試者管理後端不採納。**R4**:pilot 分析文件(WP-22 T3 pilot-protocol 起)納 FPSci 論文反應時間分布(150–250ms)作效度 baseline。**R7**:→ GD-11(授權紅線)。 |
+| **不採納** | **R2(click-to-photon 硬體校準)**:不做——與研究筆記「高優先」評級相悖,使用者拍板。接受瀏覽器 compositor 盲區為先天限制;審稿回應 = 誤差界線陳述(規格 §15)+ 受試者內對比設計(GD-10 防線②)+ frame-time log(WP-20 T3)。 |
+| **停車(backlog + 觸發條件)** | **R5(注入式延遲)**:觸發 = 「延遲 × counter-strafe 時序」成為研究問題;架構縫已存在(render 讀落後 N tick 的 `RenderSnapshot`,render-only、不動決定性),晚做不變貴。**R6(問卷模組)**:觸發 = WP-22 T2 pilot protocol 題組定案;屆時複用 WP-20 T4 DOM 表單模式(D1 相容);過渡期可用外部問卷 + `participantId` 離線串接。 |
+| **影響面** | WP-16 T1(對映表 + `session` reserved)、WP-20 T4(session 識別欄)、WP-22 T2/T3(R6 觸發、R4 引用)、CONTEXT §A(三層實驗結構)、CLAUDE.md §4(GD-11)。各落點已於 2026-07-07 回寫(見各 WP progress.md)。 |
+| **狀態** | ✅ 已拍板(2026-07-07 grill;使用者逐項確認)。 |
+
+### GD-11 ✅ FPSci 授權紅線 — 禁複製程式碼,僅參考方法學與 schema 語意(2026-07-07)
+
+| | |
+|---|---|
+| **發現處** | FPSci 比較評估 grill(2026-07-07;[docs/research/FPSci_評估與建議.md](../research/FPSci_評估與建議.md) R7)。NVlabs/FPSci 為 **CC BY-NC-SA 4.0**:禁商用、share-alike 具傳染性、非 OSI 認可的軟體授權。 |
+| **決議** | **禁止**:複製/改寫/翻譯 FPSci 任何程式碼進本 repo(C++ → TS 翻譯亦屬衍生著作),包含其 `.Any` config 檔內容。**允許**:閱讀其文件與論文、參考 SQLite schema 的欄位語意與命名慣例、複刻公開發表的方法學(click-to-photon 校準、experiment/session/trial 三層結構)。 |
+| **理由** | share-alike 會把整個專案傳染進 NC-SA;BenQ 商業脈絡下 NC 是地雷(先例:GD-9 已整類排除 CC-BY-NC 資產)。方法學與欄位語意非著作權保護的表達,參考安全。 |
+| **影響面** | 全域協議(CLAUDE.md §4 硬約束加一行)、WP-16 schema v2(R1 欄位對映)、WP-20(R2 校準 / R3 session 結構)——皆為「參考語意/方法」,不移植程式碼。 |
+| **狀態** | ✅ 已拍板(2026-07-07 grill;使用者確認)。 |
+
 ### GD-10 ✅ 顯示硬體策略 — 全遠端 + 三道防線(2026-07-06)
 
 | | |

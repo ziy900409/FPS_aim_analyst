@@ -78,6 +78,15 @@
 
 **不建議採納**：G3D/原生移植（放棄瀏覽器佈署優勢）、SQLite 進瀏覽器（JSON/CSV + 分析端入庫已足夠,sql.js 反而引入 WASM 複雜度）、frame-coupled 迴圈（違反本專案決定性硬約束）。
 
+> **採納對帳（2026-07-07 grill,權威：[DECISIONS.md](../exec-plan/DECISIONS.md) GD-11/GD-12）**：
+> R1 ✅ 縮限採納（對映表入 WP-16 T1;**命名 CONTEXT.md 優先、既有欄位不改名**,可比性由對映表承擔）·
+> R2 ❌ **不採納**（使用者拍板,與本文「高」評級相悖：接受 compositor 盲區為先天限制,審稿以誤差界線 + 受試者內對比 + frame-time log 回應）·
+> R3 ✅ 縮限採納（三層術語正名入 CONTEXT §A + `participantId`/`sessionLabel` 入 WP-20 T4;不建流水線/userstatus）·
+> R4 ✅ 採納（pilot 分析文件引 baseline,WP-22 T3 起）·
+> R5 ⏸ backlog（觸發：延遲 × counter-strafe 成為研究問題;RenderSnapshot 縫已在,晚做不變貴）·
+> R6 ⏸ backlog（觸發：WP-22 T2 pilot protocol 題組定案;複用 T4 表單模式）·
+> R7 ✅ → GD-11 + CLAUDE.md §4 硬約束。
+
 ---
 
 ## 6. 定位總結

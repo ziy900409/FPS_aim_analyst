@@ -24,22 +24,29 @@ GD-10 防線③的手動半邊(FR-C9):瀏覽器讀不到的顯示硬體事實(�
 - `meta.display` 手動欄填值;schema.md 註記「self-reported, moderator-only」語意。
 - 自陳 nativeW/H 與自動 `screen × dpr` 不一致 → 不擋(自動值才是 gate 依據),
   但記 `nativeMismatch: true`(分析端審查旗標)。
+- **session 識別欄(FPSci R3,2026-07-07 grill 拍板——原 out-of-scope 懸案在此解決)**:
+  `participantId`(必填,研究者發放代號)+ `sessionLabel`(選填,pre/post/day-N),
+  進 meta `session` 區塊(v2 reserved,形狀歸 WP-16 T1)——跨場次離線串接鍵。
 
 ## Out of scope
-- 受試者 ID/知情同意等 pilot 行政欄(protocol 文件層,WP-22 T2 對帳是否需要)、
+- 知情同意等 pilot 行政欄(protocol 文件層,WP-22 T2 對帳是否需要)、
   表單資料的本地持久化(localStorage 便利性——觸發:pilot 多 session 重填煩)。
+- 受試者管理/上傳後端(本地匯出為交付邊界,規格 §14;`participantId` 只是 metadata 鍵,
+  非帳號系統)。
 
 ## Steps
 
 - [ ] 表單元件 + 驗證(數字欄範圍 sanity)+ 單元測試。
 - [ ] meta 手動欄 + `nativeMismatch` 邏輯 + 匯出測試。
+- [ ] session 識別欄(`participantId`/`sessionLabel`)+ meta `session` 區塊 + 匯出測試。
 - [ ] 流程掛線(實驗 session 才出現)實機驗證記 progress。
 - [ ] schema.md 手動欄語意對帳。
 - [ ] `npx vitest run` 全綠。
 
 ## Definition of Done
 
-- 表單四欄 + 不確定選項可用;匯出含手動欄與 `nativeMismatch`;一般練習不受干擾;
+- 表單六欄(顯示四欄 + session 識別二欄)+ 不確定選項可用;匯出含手動欄、
+  `nativeMismatch` 與 meta `session` 區塊;一般練習不受干擾;
   schema.md 語意明確(self-reported)。
 
 ## Commit

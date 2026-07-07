@@ -33,6 +33,7 @@
 | **pre/post（前後測）** | 研究方法學：證明訓練成效需前後測對照與適應週期。**單純本地觀察只能得到受試者內相對值。** |
 | **雜亂度階層（clutter tier）** | 場景的實驗定義軸：以可量測的視覺統計（雜亂度／對比分佈／深度線索密度）分階（`field-low`／`urban-high`／`mixed-mid`），取代品牌擬真作為場景需求規格。偵測 RT 受背景雜亂度調變——雜亂度是要控制／操弄的自變因，「像哪款遊戲」不是。場景為**寫實原創**：不複製特定遊戲地圖配置（GD-9）。 |
 | **資格閘（eligibility gate）** | 遠端施測 session 開始的**軟體自動檢查**：原生解析度 ≥ 實驗最高條件（`screen.width × devicePixelRatio`）、fullscreen 強制、效能地板（frame-time 超標 → `suspect`／剔除）；**不合格拒入實驗，非僅記錄**。搭配**受試者內解析度對比**（同面板跑全部條件、順序對抗平衡，面板特性一階抵銷）；解析度實驗構念＝「同一面板上的 render 解析度效應」。螢幕型號／觀看距離等自陳欄位僅作 moderator（GD-10）。 |
+| **三層實驗結構（experiment→session→drill）** | 對映 FPSci 的 experiment→session→trial。**drill** = 本表既有定義；**session** = 一次施測（資格閘 → setup 表單 → 條件序列 → 匯出），引擎面宣告 = `ProtocolConfig`（WP-22 T2）；**experiment** = 多 session 的組合與統計設計，屬**分析端概念、引擎不實作**。跨場次串接鍵 = **`participantId`**（研究者發放代號）+ **`sessionLabel`**（pre/post/day-N），setup 表單自陳、進 meta `session` 區塊——前後測資料離線串接不靠檔名人工紀律（2026-07-07 grill，FPSci R3 對齊；授權紅線 GD-11）。 |
 
 ---
 

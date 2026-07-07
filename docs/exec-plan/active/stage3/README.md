@@ -49,7 +49,7 @@
 | FR-C6 | 解析度模式 `native`/`fhd-1080`/`qhd-1440`:顯式 render buffer 尺寸 + `setPixelRatio(1)` + CSS 全螢幕 upscale;DOM 準心置中不受內部 buffer 影響(既有 §A 約束);感度為角度制、跨解析度不變(斷言) | WP-20 T1 |
 | FR-C7 | **資格閘(GD-10)**:session 開始自動檢查——原生解析度 ≥ 實驗最高條件(`screen.width/height × devicePixelRatio`)、fullscreen 已進入、效能地板(warmup 探測 p95 frame time ≤ 門檻);**不合格 = 拒入實驗 session(明確畫面),非僅記錄** | WP-20 T2 |
 | FR-C8 | per-frame render-time log:preallocated 固定容量,逐幀記 rAF timestamp;隨匯出輸出 `frames` 區塊(JSON 完整序列 + 摘要 p50/p95/p99/超標窗數);drill 中 p95 超效能地板 → `suspect` | WP-20 T3 |
-| FR-C9 | session setup 表單(純 TS DOM):自陳欄(螢幕型號/原生解析度/面板尺寸/觀看距離);meta 增 `display` 區塊(自動:mode/buffer/CSS 尺寸/dpr/fullscreen/更新率估計/screen 尺寸;手動:自陳欄) | WP-20 T4 |
+| FR-C9 | session setup 表單(純 TS DOM):自陳欄(螢幕型號/原生解析度/面板尺寸/觀看距離)+ **session 識別欄(`participantId`/`sessionLabel`)**;meta 增 `display` 區塊(自動:mode/buffer/CSS 尺寸/dpr/fullscreen/更新率估計/screen 尺寸;手動:自陳欄)與 `session` 區塊(跨場次離線串接鍵;FPSci R3 對齊,2026-07-07 grill) | WP-20 T4 |
 | FR-C10 | **seeded spawn 隨機化**:`sequence.seed` 啟用,`createRan1`(重用 [src/recoil/rng.ts](../../../../src/recoil/rng.ts),零相依)注入 `TargetManager`;spawn 位置(yaw 角/距離範圍)與時序(延遲分佈)由 config `spawnArea`/`spawnDelay` 定義;**同 seed 同序列**(決定性測試);**無 seed 的既有 drill 行為逐位不變**(回歸) | WP-21 T1 |
 | FR-C11 | 偵測 drill(pop-in,GD-8):目標於 seeded 隨機位置/延遲瞬現,`t_visible` = spawn tick(現行語意,零新判準);推進沿用 P2 + `peekTimeoutMs`;spawn 事件記錄含目標位置 | WP-21 T2 |
 | FR-C12 | 偵測離線推導鏈完整:由匯出(aim 逐 tick + 目標位置 + `t_visible`)可推導 `t_detect`(瞄準移動 onset)與偏心度;推導 spec 落 `docs/operational/`,合成 fixture 驗證(已知 onset 的合成 aim 流 → 推導誤差 ≤ 1 tick) | WP-21 T3 |
@@ -181,7 +181,7 @@ export function createFrameLog(capacity: number): FrameLog;  // 容量 = maxDril
 
 ### 2.5 schema 政策(v2 additive,不二次斷代)
 
-GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵守:**GD-7 指定的逐 tick 欄(`tx,ty,tz,px,pz`)與 meta `spawn` seed/motion 隨 WP-16 T1 一次進 v2**(已回饋 WP-16 scope,見 §9);`scene`/`display`/`frames` 為 **v2 的 optional 區塊**(schema.md 定義為 reserved,WP-19/20 填值)——additive、無語意重解釋,**不再 bump**。舊 v2 資料無這些區塊 = 該功能未啟用,語意自明。
+GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵守:**GD-7 指定的逐 tick 欄(`tx,ty,tz,px,pz`)與 meta `spawn` seed/motion 隨 WP-16 T1 一次進 v2**(已回饋 WP-16 scope,見 §9);`scene`/`display`/`frames`/`session` 為 **v2 的 optional 區塊**(schema.md 定義為 reserved,WP-19/20 填值;`session` = `participantId`/`sessionLabel` 跨場次串接鍵,WP-20 T4 填值,FPSci R3 對齊 2026-07-07)——additive、無語意重解釋,**不再 bump**。舊 v2 資料無這些區塊 = 該功能未啟用,語意自明。
 
 ### 2.6 Failure modes(對應 High/Med risk task)
 

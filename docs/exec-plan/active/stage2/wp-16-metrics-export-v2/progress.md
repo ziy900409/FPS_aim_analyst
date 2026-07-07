@@ -28,6 +28,13 @@
 
 ## Log
 
+### 2026-07-07 — FPSci R1 對齊決策(使用者拍板,grill)
+- **對映表入 T1**:schema v2 設計時同步產出 FPSci 欄位對映表(schema.md 附錄);
+  **命名 CONTEXT.md 正規術語優先、既有欄位不改名**,僅 v2 全新欄位且語意完全相同時採 FPSci 命名——
+  可比性由對映表承擔,不由改名承擔(R1 原文「沿用其命名慣例」與 CLAUDE.md §2 命名協議衝突,以後者為準)。
+- 授權邊界:GD-11(禁碰 FPSci 程式碼;欄位語意/文件/論文可參考)。
+- 出處:[FPSci 評估 R1](../../../../research/FPSci_評估與建議.md)。
+
 ### 2026-07-03 — Valorant 接口決策(使用者拍板)
 - meta 擴欄追加 **`movementModel`**(移動模型語意斷代,比照 `sensitivityModel`):Valorant 移動
   本階段不實作,資料面先留可比性接口;值對齊 WP-14 `MovementProfile` id。

@@ -51,6 +51,10 @@ src/data/metadata.ts            ← MODIFY meta.display 填值(自動 + 自陳) 
 - `meta.display` 自動欄 = `DisplayState` + `screenW/screenH`;自陳欄 = setup 表單
   (`monitorModel?/panelInches?/nativeW?/nativeH?/viewingDistanceCm?`)——moderator 用,
   不承擔混淆控制(GD-10)。
+- **session 識別欄(FPSci R3 對齊,2026-07-07 grill)**:setup 表單另收 `participantId`
+  (研究者發放代號)+ `sessionLabel`(pre/post/day-N),進 meta `session` 區塊(v2 reserved,
+  形狀歸 WP-16 T1)——前後測/多場次資料的離線串接鍵,不靠檔名人工紀律;
+  experiment 層 = 分析端概念、引擎不實作(CONTEXT §A「三層實驗結構」)。
 
 ## 3. Failure modes
 

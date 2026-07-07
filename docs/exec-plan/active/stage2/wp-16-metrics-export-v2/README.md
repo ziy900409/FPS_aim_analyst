@@ -39,8 +39,10 @@ src/ui/ResultScreen.ts      ← MODIFY 軌跡對照呈現(DOM overlay,D1)       
   `movementModel` = 移動模型語意斷代(stage2 = CS2 Source profile;為 Valorant 等後續模式留資料可比性,比照 `sensitivityModel`)。
 - **stage3 前置欄位(GD-7/8/10 回饋,2026-07-06)**:逐 tick 加目標中心 `tx/ty/tz` + 玩家位置 `px/pz`
   (arena 平行欄位;追蹤/偵測指標離線推導的輸入,GD-7「記錄全套」決議);meta 增 `spawn` 區塊縫
-  (`sequence.seed` + motion/spawnArea 快照);`scene`/`display`/`frames` 定義為 **v2 reserved optional
-  區塊**(schema.md 記形狀、WP-19/20 填值,additive 不再 bump)。詳 [stage3 README §2.5](../../stage3/README.md)。
+  (`sequence.seed` + motion/spawnArea 快照);`scene`/`display`/`frames`/`session` 定義為 **v2 reserved optional
+  區塊**(schema.md 記形狀、WP-19/20 填值,additive 不再 bump;`session` =
+  `participantId`/`sessionLabel` 串接鍵,FPSci R3,2026-07-07)。詳 [stage3 README §2.5](../../stage3/README.md)。
+- **FPSci 欄位對映(R1,2026-07-07 grill 拍板)**:T1 產出 schema v2 ↔ FPSci SQLite 表(frame-wise 玩家狀態/目標軌跡/click 事件)的欄位對映表,收 `docs/operational/schema.md` 附錄。**命名以 CONTEXT.md 正規術語優先、既有欄位不改名**;僅 v2 全新欄位且語意完全相同時考慮沿用 FPSci 命名——可比性由對映表承擔,不由改名承擔。授權邊界守 GD-11(只讀其文件/論文,不碰程式碼)。出處:[FPSci 評估 R1](../../../../research/FPSci_評估與建議.md)。
 - 理想路徑 = `−aimPunch×2` 的時間鏡像;補償誤差 = 實際 aim 路徑 vs 理想路徑的 mean/RMS 角度差。
 - arena 容量重估:fire 事件率上限 = `magSize / cycletime`(AK = 10 發/s);per-fire 欄位
   增加後 `capacityForDrill` 重推;溢位測試為 T1 DoD。

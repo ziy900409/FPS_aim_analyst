@@ -24,9 +24,12 @@ arena 容量以 fire 事件率上限重估——壓槍狀態在資料面完整�
 - `DrillConfig.weaponId?` 選填欄(`validateDrill` 更新;未給 = 預設武器)。
 - `capacityForDrill` 重估:fire 率上限 = `magSize / cycletime`;公式記 schema.md。
 - **stage3 前置(GD-7/8/10,2026-07-06)**:逐 tick `tx/ty/tz/px/pz` 平行欄位(容量重估一併含此 5 欄)
-  + meta `spawn` 區塊縫 + `scene`/`display`/`frames` reserved optional 區塊記 schema.md
+  + meta `spawn` 區塊縫 + `scene`/`display`/`frames`/`session` reserved optional 區塊記 schema.md
   (填值歸 WP-19/20/21;詳 [stage3 README §2.5](../../stage3/README.md))。
 - `docs/operational/schema.md` v2 全欄對帳(單位/符號慣例 + `targetCenterOffsetDeg` 語意補寫,T0 決議)。
+- **FPSci 欄位對映表(R1,2026-07-07)**:schema.md 附錄——v2 欄位 ↔ FPSci SQLite 表
+  (frame-wise 玩家狀態/目標軌跡/click 事件)語意對照,標注「相同/近似/無對應」三類;
+  命名 CONTEXT.md 優先、既有欄位不改名;GD-11 紅線(僅讀 FPSci 文件/論文,不碰程式碼)。
 
 ## Out of scope
 - 指標計算(T2)、呈現(T3);殘速連續欄與 WP-14 T3 的對帳(欄位歸本 task 一次加齊,
@@ -39,6 +42,7 @@ arena 容量以 fire 事件率上限重估——壓槍狀態在資料面完整�
 - [ ] `capacityForDrill` 重估 + **滿載溢位測試**(構造 fire 率上限 drill → 無 `recorderOverflow`)。
 - [ ] 統計=匯出不變式測試擴 v2 欄後維持綠(既有 assert 機制)。
 - [ ] schema.md 對帳(欄位表 + 單位/符號 + 容量公式)。
+- [ ] schema.md 附錄:FPSci 欄位對映表(相同/近似/無對應三類標注)。
 - [ ] `npx vitest run` 全綠。
 
 ## Definition of Done
