@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T1 schema v2 PASS; T2 ideal path metric next
+## Status: 🟡 T2 ideal path metric PASS; T3 result overlay next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ 2026-07-07 |
 | T1 schema v2 | ✅ 2026-07-07 |
-| T2 理想路徑指標 | ⬜ |
+| T2 理想路徑指標 | ✅ 2026-07-07 |
 | T3 結果頁對照 | ⬜ |
 | T-exit | ⬜ |
 
@@ -27,6 +27,43 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T2 ideal path metric PASS(理想壓槍路徑 + 補償誤差)
+
+**結論:** FR-B15 的純計算路徑已落地。`buildIdealPath(punchSeq)` 產生 `-aimPunch*2` 的 pitch/yaw 理想補償序列;
+`compensationError(aimSeq, idealSeq)` 回傳 `{ meanDeg, rmsDeg }`;`computeMetrics(...)` 現在輸出
+`recoilCompensationError` 供 T3 結果頁直接消費。
+
+**實作摘要:**
+- [compute.ts](../../../../../src/metrics/compute.ts):新增 `AimOffset` / `PunchSample` / `CompensationError` 型別與
+  `buildIdealPath`、`compensationError` 純函式。
+- [compute.ts](../../../../../src/metrics/compute.ts):fire event 同時具備
+  `viewYaw/viewPitch/aimPunchPitch/aimPunchYaw` 時,以第一筆有效 fire view 作 baseline,將實際 view 序列轉成度數偏移,
+  再與理想路徑比較;缺 v2 欄位的舊資料安全回傳 `{ meanDeg:0, rmsDeg:0 }`。
+- [compute.test.ts](../../../../../src/metrics/compute.test.ts):新增完美補償、零補償解析對照與
+  `computeMetrics` 整合測試。
+
+**Decision Log:**
+- **實際 aim path 使用第一筆有效 fire view 作 baseline:**理想路徑是 offset 序列而非世界絕對角度,所以實際
+  `viewYaw/viewPitch` 先轉成相對第一發的角度偏移。`yaw` 使用 shortest-angle delta 避免跨 `±pi` wrap。
+  *Alternatives considered:*直接比較絕對 view rad 與 ideal deg 會混用單位且受初始朝向污染;改讀逐 tick aim 會違反
+  T2 out-of-scope 的「記錄而非重建」邊界。
+- **T2 指標只掛統計物件、不擴匯出 schema:**目前匯出仍是原始 ticks/events;補償指標可由 v2 fire 欄位離線重算。
+  *Alternatives considered:*把 mean/RMS 另寫入 export payload;否決,避免在 T2 擴張 schema 契約,T3 可直接讀結算物件。
+
+**驗證證據:**
+- `npm.cmd run typecheck` → exit 0。
+- `npx.cmd vitest run src/metrics/compute.test.ts src/ui/ResultScreen.test.ts`
+  → **2 files / 11 tests passed**。
+- `npx.cmd vitest run` → **42 files / 317 tests passed**。
+- `graphify update .` → rebuilt **768 nodes / 1651 edges / 50 communities**。
+
+**Surprises & Discoveries:**
+- 沙盒內直接跑 targeted Vitest 仍在載入 Vite config 時遇到父層 access denied;提升後同一指令通過。
+
+**Open Questions:** none。
+
+**Next:** T3([T3-result-overlay.md](T3-result-overlay.md))—結果頁軌跡對照(實際 vs 理想)。
 
 ### 2026-07-07 — T1 schema v2 PASS(fire/meta 擴欄 + arena 容量重估)
 

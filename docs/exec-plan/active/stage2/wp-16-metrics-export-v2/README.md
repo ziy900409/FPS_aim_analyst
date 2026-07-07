@@ -10,7 +10,7 @@
 | **相依** | WP-13(M6;punch/spread 資料源) |
 | **對應 FR** | FR-B14(schema v2)、FR-B15(壓槍指標) |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 T1 schema v2 PASS(2026-07-07);T2 ideal path metric next |
+| **狀態** | 🟡 T2 ideal path metric PASS(2026-07-07);T3 result overlay next |
 
 ---
 

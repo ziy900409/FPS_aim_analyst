@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DataRecorderSnapshot } from '../data/DataRecorder.ts';
-import { computeMetrics, stat } from './compute.ts';
+import { buildIdealPath, compensationError, computeMetrics, stat } from './compute.ts';
 
 const snapshot: DataRecorderSnapshot = {
   ticks: [],
@@ -39,6 +39,7 @@ describe('computeMetrics', () => {
 
     expect(metrics.crosshairOffset.values).toEqual([0, 2, 1.5, 1]);
     expect(metrics.crosshairOffset.mean).toBe(1.125);
+    expect(metrics.recoilCompensationError).toEqual({ meanDeg: 0, rmsDeg: 0 });
 
     // 切換時間 = 擊殺 → 對下一目標的首發 fire（有效對齊錨）：
     // kill t0@170 → t1 首發@390 = 220；kill t1@410(hit) → t2 首發@570 = 160。
@@ -80,6 +81,7 @@ describe('computeMetrics', () => {
     expect(metrics.fireTimingAlignmentMs).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
     expect(metrics.firstShotHitRate).toBe(0);
     expect(metrics.crosshairOffset).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
+    expect(metrics.recoilCompensationError).toEqual({ meanDeg: 0, rmsDeg: 0 });
     expect(metrics.switchTimeMs).toEqual({ mean: 0, p50: 0, sd: 0, n: 0, values: [] });
     expect(metrics.rhythmStability).toBe(0);
     expect(metrics.leftRightSymmetry).toEqual({
@@ -87,6 +89,89 @@ describe('computeMetrics', () => {
       right: { mean: 0, p50: 0, sd: 0, n: 0, values: [] },
       diff: 0,
     });
+  });
+});
+
+describe('recoil compensation path metrics', () => {
+  it('builds the ideal path as the -aimPunch x2 mirror and scores perfect compensation as zero', () => {
+    const ideal = buildIdealPath([
+      { aimPunchPitch: 0, aimPunchYaw: 0 },
+      { aimPunchPitch: 0.5, aimPunchYaw: -0.25 },
+      { aimPunchPitch: 1, aimPunchYaw: 0.5 },
+    ]);
+
+    expect(ideal).toEqual([
+      { pitchDeg: 0, yawDeg: 0 },
+      { pitchDeg: -1, yawDeg: 0.5 },
+      { pitchDeg: -2, yawDeg: -1 },
+    ]);
+    expect(compensationError(ideal, ideal).meanDeg).toBeLessThan(1e-9);
+    expect(compensationError(ideal, ideal).rmsDeg).toBeLessThan(1e-9);
+  });
+
+  it('scores zero compensation against the analytic ideal path magnitude', () => {
+    const ideal = buildIdealPath([
+      { aimPunchPitch: 0, aimPunchYaw: 0 },
+      { aimPunchPitch: 0.5, aimPunchYaw: -0.25 },
+      { aimPunchPitch: 1, aimPunchYaw: 0.5 },
+    ]);
+    const zeroAim = ideal.map(() => ({ pitchDeg: 0, yawDeg: 0 }));
+    const expectedErrors = [0, Math.hypot(1, 0.5), Math.hypot(2, 1)];
+    const error = compensationError(zeroAim, ideal);
+
+    expect(error.meanDeg).toBeCloseTo(expectedErrors.reduce((sum, value) => sum + value, 0) / expectedErrors.length, 12);
+    expect(error.rmsDeg).toBeCloseTo(
+      Math.sqrt(expectedErrors.reduce((sum, value) => sum + value * value, 0) / expectedErrors.length),
+      12,
+    );
+  });
+
+  it('computes recoil compensation error from fire-time view and punch fields', () => {
+    const basePitch = 0.12;
+    const baseYaw = -2.9;
+    const perfectSnapshot: DataRecorderSnapshot = {
+      ticks: [],
+      events: [
+        {
+          type: 'fire',
+          t: 100,
+          hit: false,
+          firstShot: true,
+          residualSpeed: 0,
+          viewPitch: basePitch,
+          viewYaw: baseYaw,
+          aimPunchPitch: 0,
+          aimPunchYaw: 0,
+        },
+        {
+          type: 'fire',
+          t: 200,
+          hit: false,
+          firstShot: false,
+          residualSpeed: 0,
+          viewPitch: basePitch + degToRad(-1),
+          viewYaw: baseYaw + degToRad(0.5),
+          aimPunchPitch: 0.5,
+          aimPunchYaw: -0.25,
+        },
+        {
+          type: 'fire',
+          t: 300,
+          hit: false,
+          firstShot: false,
+          residualSpeed: 0,
+          viewPitch: basePitch + degToRad(-2),
+          viewYaw: baseYaw + degToRad(-1),
+          aimPunchPitch: 1,
+          aimPunchYaw: 0.5,
+        },
+      ],
+      recorderOverflow: false,
+    };
+
+    const metrics = computeMetrics(perfectSnapshot);
+    expect(metrics.recoilCompensationError.meanDeg).toBeLessThan(1e-9);
+    expect(metrics.recoilCompensationError.rmsDeg).toBeLessThan(1e-9);
   });
 });
 
@@ -106,3 +191,7 @@ describe('stat', () => {
     expect(stat([12, 4, 30]).p50).toBe(12);
   });
 });
+
+function degToRad(value: number): number {
+  return (value * Math.PI) / 180;
+}

@@ -8,6 +8,7 @@ const metrics: Metrics = {
   fireTimingAlignmentMs: { mean: 13.33, p50: 10, sd: 4.71, n: 3, values: [20, 10, 10] },
   firstShotHitRate: 66.666,
   crosshairOffset: { mean: 1.125, p50: 1.25, sd: 0.74, n: 4, values: [0, 2, 1.5, 1] },
+  recoilCompensationError: { meanDeg: 0.42, rmsDeg: 0.55 },
   switchTimeMs: { mean: 110, p50: 110, sd: 20, n: 2, values: [130, 90] },
   rhythmStability: 0.0834,
   leftRightSymmetry: {

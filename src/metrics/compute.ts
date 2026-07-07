@@ -14,9 +14,25 @@ export interface Metrics {
   fireTimingAlignmentMs: Stat;
   firstShotHitRate: number;
   crosshairOffset: Stat;
+  recoilCompensationError: CompensationError;
   switchTimeMs: Stat;
   rhythmStability: number;
   leftRightSymmetry: { left: Stat; right: Stat; diff: number };
+}
+
+export interface AimOffset {
+  pitchDeg: number;
+  yawDeg: number;
+}
+
+export interface PunchSample {
+  aimPunchPitch: number;
+  aimPunchYaw: number;
+}
+
+export interface CompensationError {
+  meanDeg: number;
+  rmsDeg: number;
 }
 
 type VisibleEvent = Extract<DrillEvent, { type: 'visible' }>;
@@ -48,6 +64,7 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
     ),
   );
   const offsets = finiteValues(fireEvents.map((event) => event.offsetDeg));
+  const recoilCompensationError = computeRecoilCompensationError(fireEvents);
   const switchTimes = computeSwitchTimes(fireEvents);
   const rhythmIntervals = computeVisibleIntervals(visibleEvents);
   const leftReactions = finiteValues(peeks.filter((peek) => peek.visible.side === 'L').map((peek) => peek.reactionMs));
@@ -61,6 +78,7 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
     fireTimingAlignmentMs: stat(fireAlignments),
     firstShotHitRate: visibleEvents.length > 0 ? (firstShotFires.filter((fire) => fire.hit).length / visibleEvents.length) * 100 : 0,
     crosshairOffset: stat(offsets),
+    recoilCompensationError,
     switchTimeMs: stat(switchTimes),
     rhythmStability: coefficientOfVariation(rhythmIntervals),
     leftRightSymmetry: {
@@ -69,6 +87,39 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
       diff: left.n > 0 && right.n > 0 ? Math.abs(left.mean - right.mean) : 0,
     },
   };
+}
+
+export function buildIdealPath(punchSeq: readonly PunchSample[]): AimOffset[] {
+  const path = new Array<AimOffset>(punchSeq.length);
+  for (let i = 0; i < punchSeq.length; i++) {
+    const punch = punchSeq[i];
+    path[i] = {
+      pitchDeg: mirrorPunch(punch.aimPunchPitch),
+      yawDeg: mirrorPunch(punch.aimPunchYaw),
+    };
+  }
+  return path;
+}
+
+export function compensationError(aimSeq: readonly AimOffset[], idealSeq: readonly AimOffset[]): CompensationError {
+  const count = Math.min(aimSeq.length, idealSeq.length);
+  if (count === 0) return { meanDeg: 0, rmsDeg: 0 };
+
+  let sum = 0;
+  let sumSquares = 0;
+  let valid = 0;
+  for (let i = 0; i < count; i++) {
+    const pitchDelta = aimSeq[i].pitchDeg - idealSeq[i].pitchDeg;
+    const yawDelta = aimSeq[i].yawDeg - idealSeq[i].yawDeg;
+    if (!Number.isFinite(pitchDelta) || !Number.isFinite(yawDelta)) continue;
+
+    const error = Math.hypot(pitchDelta, yawDelta);
+    sum += error;
+    sumSquares += error * error;
+    valid++;
+  }
+
+  return valid > 0 ? { meanDeg: sum / valid, rmsDeg: Math.sqrt(sumSquares / valid) } : { meanDeg: 0, rmsDeg: 0 };
 }
 
 export function stat(values: readonly number[]): Stat {
@@ -117,6 +168,40 @@ function computeSwitchTimes(fireEvents: readonly FireEvent[]): number[] {
   return values;
 }
 
+function computeRecoilCompensationError(fireEvents: readonly FireEvent[]): CompensationError {
+  const aimSeq: AimOffset[] = [];
+  const punchSeq: PunchSample[] = [];
+  let baseViewPitch = 0;
+  let baseViewYaw = 0;
+
+  for (const event of fireEvents) {
+    if (
+      event.viewPitch === undefined ||
+      event.viewYaw === undefined ||
+      event.aimPunchPitch === undefined ||
+      event.aimPunchYaw === undefined
+    ) {
+      continue;
+    }
+
+    if (aimSeq.length === 0) {
+      baseViewPitch = event.viewPitch;
+      baseViewYaw = event.viewYaw;
+    }
+
+    aimSeq.push({
+      pitchDeg: radToDeg(event.viewPitch - baseViewPitch),
+      yawDeg: radToDeg(shortestAngleDeltaRad(event.viewYaw, baseViewYaw)),
+    });
+    punchSeq.push({
+      aimPunchPitch: event.aimPunchPitch,
+      aimPunchYaw: event.aimPunchYaw,
+    });
+  }
+
+  return compensationError(aimSeq, buildIdealPath(punchSeq));
+}
+
 function computeVisibleIntervals(visibleEvents: readonly VisibleEvent[]): number[] {
   const values: number[] = [];
   for (let i = 1; i < visibleEvents.length; i++) {
@@ -132,6 +217,19 @@ function coefficientOfVariation(values: readonly number[]): number {
 
 function finiteValues(values: readonly (number | undefined)[]): number[] {
   return values.filter((value): value is number => value !== undefined && Number.isFinite(value));
+}
+
+function radToDeg(value: number): number {
+  return (value * 180) / Math.PI;
+}
+
+function mirrorPunch(value: number): number {
+  const mirrored = -value * 2;
+  return Object.is(mirrored, -0) ? 0 : mirrored;
+}
+
+function shortestAngleDeltaRad(value: number, origin: number): number {
+  return Math.atan2(Math.sin(value - origin), Math.cos(value - origin));
 }
 
 function percentile(values: readonly number[], ratio: number): number {

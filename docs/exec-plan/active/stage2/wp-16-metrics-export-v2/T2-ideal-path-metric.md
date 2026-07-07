@@ -7,7 +7,7 @@
 | **相依** | T1(v2 欄位就緒:aimPunch / view 序列可讀) |
 | **Risk / Cplx** | Low / Med |
 | **Touches** | MODIFY `src/metrics/compute.ts`(新增純函式)+ `src/metrics/compute.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-07) |
 
 ## Objective
 
@@ -27,11 +27,11 @@ FR-B15 的數學落地:理想壓槍路徑 = `−aimPunch×2` 的時間鏡像;補
 
 ## Steps
 
-- [ ] `buildIdealPath` + `compensationError` 實作(純函式 + 型別)。
-- [ ] 解析對照測試 ①:**完美補償**合成輸入(aim ≡ −rawPunch×2)→ mean/RMS ≈ 0(< 1e-9)。
-- [ ] 解析對照測試 ②:**零補償**(aim 恆定)→ 誤差 = punch 累積解析值(逐點對照)。
-- [ ] 掛進結算統計物件 + 既有統計測試不退化。
-- [ ] `npx vitest run` 全綠。
+- [x] `buildIdealPath` + `compensationError` 實作(純函式 + 型別)。
+- [x] 解析對照測試 ①:**完美補償**合成輸入(aim ≡ −rawPunch×2)→ mean/RMS ≈ 0(< 1e-9)。
+- [x] 解析對照測試 ②:**零補償**(aim 恆定)→ 誤差 = punch 累積解析值(逐點對照)。
+- [x] 掛進結算統計物件 + 既有統計測試不退化。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 
