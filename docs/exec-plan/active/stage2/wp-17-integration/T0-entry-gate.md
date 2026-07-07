@@ -8,7 +8,7 @@
 | **相依** | WP-15 exit ✅(**M7**)、WP-16 exit ✅ |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-07 |
 
 ## Objective
 
@@ -28,11 +28,11 @@ M8 是 stage2 的交付宣告,不能建立在未收斂的上游上:驗證 M7(校
 
 ## Steps
 
-- [ ] 兩份上游 checklist 全 ✅;exit 證據連結記 progress。
-- [ ] `npm run test:ci` 當前全綠(exit 0)——整合前的乾淨基準。
-- [ ] `__fpsTest` 入口抽查 + v2 欄位可讀性抽查,結果記 progress。
-- [ ] 上游 OQ 收斂抽查(四項),記 progress。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] 兩份上游 checklist 全 ✅;exit 證據連結記 progress。
+- [x] `npm run test:ci` 當前全綠(exit 0)——整合前的乾淨基準。
+- [x] `__fpsTest` 入口抽查 + v2 欄位可讀性抽查,結果記 progress。
+- [x] 上游 OQ 收斂抽查(四項),記 progress。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 
