@@ -5,11 +5,11 @@
 
 ---
 
-## Status: 🟡 T3 clearance validator complete; T1/T2 full scene pipeline still pending
+## Status: 🟡 T0 entry gate + T3 clearance validator complete; T1/T2 full scene pipeline still pending
 
 | Task | 狀態 |
 |---|---|
-| T0 entry gate | ⬜ |
+| T0 entry gate | ✅ |
 | T1 SceneConfig schema | ⬜ |
 | T2 GLTF 管線 + field-low | ⬜ |
 | T3 淨空驗證器 | ✅ |
@@ -23,13 +23,36 @@
 
 | ID | 狀態 | 決議 |
 |----|------|------|
-| OQ-S3-3 場景資產選型(3 候選比 draw calls/授權/雜亂度對應) | ⬜ open | — |
-| OQ-19.1 `CLEARANCE_MARGIN_U` 起點值(計畫預設 0.5u)與玩家走廊 `halfWidthU` 預設 | ⬜ open | — |
-| OQ-19.2 meta.scene 落點確認:WP-16 已留 optional 區塊縫?(未留 → T4 與 WP-16 對帳) | ⬜ open | — |
+| OQ-S3-3 場景資產選型(3 候選比 draw calls/授權/雜亂度對應) | ✅ resolved | `field-low` 採 Kenney Nature Kit v1.0(CC0)作為模組化來源;T2 以低雜亂度原創 layout 放置 <=25 個 prop,下載後實測 triangles/materials 並寫 `ATTRIBUTIONS.md`。備選:Quaternius Ultimate Nature Pack(CC0)、Poly Pizza Walk in the Woods(CC-BY)。 |
+| OQ-19.1 `CLEARANCE_MARGIN_U` 起點值(計畫預設 0.5u)與玩家走廊 `halfWidthU` 預設 | ✅ resolved | `CLEARANCE_MARGIN_U = 0.5u`;`playerCorridor.halfWidthU = 1.0u`。理由:沿用 T3 常數與 `field-low` fixture,保守包住現行 counter-strafe 橫移走廊;若 T2 實測 layout 誤擋,只調 SceneConfig corridor/propBounds,不把場景知識推進 sim。 |
+| OQ-19.2 meta.scene 落點確認:WP-16 已留 optional 區塊縫?(未留 → T4 與 WP-16 對帳) | ✅ resolved | WP-16 已留縫:`src/data/metadata.ts` 的 `Meta.scene?: unknown` / `CollectMetaArgs.scene?` / `collectMeta(...scene)`、`docs/operational/schema.md` `meta.scene` reserved optional、WP-16 README/T1 stage3 前置欄位。T4 只負責填值與測試。 |
 
 ---
 
 ## Log
+
+### 2026-07-07 14:13Z — T0 entry gate PASS(GD-6/9 收斂 + 資產選型 + 硬約束回寫)
+- **上游/M4 證據**:[../../../README.md](../../../README.md) 記錄 M4 ✅(2026-07-03),WP-19/20 上游門檻成立;[../../../completed/stage1/wp-9-integration/T5-exit-gate.md](../../../completed/stage1/wp-9-integration/T5-exit-gate.md) 宣告 M4 階段 A 交付。
+- **基準驗證**:`npm.cmd test` → Vitest `43 passed` files / `326 passed` tests,exit 0。
+- **GD-6 收斂證據**:
+  - CodeGraph status:103 files / 1212 nodes / 2265 edges,index healthy;task context 只找到 render `SceneManager` 作為 scene 入口,未找到 sim scene 入口。
+  - `rg -n "scene|SceneConfig|propBounds|clearance" src/sim src/state` → 無命中(exit 1 = no matches)。
+  - `rg -n "clamp|clip|Math\.min|Math\.max" src/sim src/state` → 僅 `src/sim/MovementController.ts` 物理積分用 `Math.max/Math.min`;無場景位置 clamp/邊界 clamp。
+  - 現行 `SceneManager` 註解明確宣告房間尺寸/眼高為 render 端佔位常數,不得流入 sim 或匯出資料;`src/main.ts` 的 `SIM_TO_WORLD = 0.01` 亦為 render-only display scale。
+- **資產候選(OQ-S3-3;2026-07-07 查核)**:
+
+| 候選 | 授權 | 來源 | source metadata / 量級 | 雜亂度對應 | 判定 |
+|---|---|---|---|---|---|
+| Kenney Nature Kit v1.0 | CC0 | https://kenney.nl/assets/nature-kit | Kenney 頁面列 `Category 3D`, `Files 330x`,tags nature/tree/rock/foliage。三角形/材質精確值待 T2 下載 GLTF 後量測;T2 budget:low-poly <=25 props、目標 <20k triangles、<=8 materials。 | `field-low` | **選定**。CC0、模組化、可做原創低雜亂 layout;授權與 repo commit 風險最低。 |
+| Quaternius Ultimate Nature Pack | CC0 | https://quaternius.com/packs/ultimatenature.html | 頁面列 `Models 150`,格式 FBX/OBJ/Blend,Textured,CC0。需轉 GLTF;材質/triangles T2 量測。 | `field-low` fallback / nature prop pool | 備選。內容足,但格式轉換增加 T2 風險。 |
+| Poly Pizza Walk in the Woods by Don Carson | CC-BY | https://poly.pizza/m/38m6Q1H12DU | 頁面列 small forest scene,OBJ/GLTF format,Creative Commons Attribution,顯示 38k 等 source metric。T2 仍需實測 triangles/materials 與 attribution。 | low-to-mid forest clutter | 備選/對照。GLTF 可用且補足 CC-BY 候選,但固定場景較容易碰視線走廊,且 attribution 必填。 |
+
+- **OQ-19.1 決議**:`CLEARANCE_MARGIN_U = 0.5u`;`playerCorridor.halfWidthU = 1.0u`。Alternatives Considered:(a) halfWidth 0.5u,較不易誤擋但不能包住 T3 `field-low` fixture 與預期橫移走廊;(b) margin >0.5u,更保守但會放大誤擋與資產配置成本。採 0.5/1.0,若後續場景配置太窄,修 `propBounds`/layout 或 per-scene corridor,不改 sim。
+- **OQ-19.2 決議**:WP-16 已留 `meta.scene` optional 區塊縫。Evidence:`src/data/metadata.ts` (`scene?: unknown`,collect args + spread),[../../../../operational/schema.md](../../../../operational/schema.md) `meta.scene` reserved optional,[../../../completed/stage2/wp-16-metrics-export-v2/README.md](../../../completed/stage2/wp-16-metrics-export-v2/README.md) stage3 前置欄位。
+- **CLAUDE.md §4 回寫**:追加 GD-6「場景幾何永不進 sim runtime」與 GD-9「場景資產授權白名單 CC0/CC-BY;NC/遊戲抽取/付費包原始檔禁入 repo」兩條硬約束。
+- **文件更新**:[task-checklist.md](task-checklist.md) T0 翻 ✅;[T0-entry-gate.md](T0-entry-gate.md) status 翻 ✅;[../README.md](../README.md) OQ-S3-3 指向本 ledger。
+- **Surprises & Discoveries**:WP-19 實際歷史已有 T3 先於 T0/T1/T2 完成,且 repo 已存在 `src/scene`/`DrillLoader(scene?)`。T0 仍採 docs-only gate 補齊決策與授權紀律,不改任何 `src/`。
+- **Entry-gate conclusion**:**PASS**。`git diff --stat` 不含 `src/`;T1/T2 可依本 ledger 繼續,但 T2 下載資產後必須重新量測 triangles/materials 並補 `ATTRIBUTIONS.md`。
 
 ### 2026-07-07 — T3 追記:PR #10 review 修復(waypoints NaN 靜默穿越淨空門)
 - **來源**:[PR #10](https://github.com/ziy900409/FPS_aim_analyst/pull/10) Codex inline comment(P2,`clearance.ts:111`),人工逐步驗證**成立**:

@@ -270,7 +270,7 @@ WP-21(偵測 drill;T3 需 WP-16)─┤
 |---|---|---|---|---|---|
 | OQ-S3-1 | 效能地板門檻(資格閘 warmup p95 ≤ ?ms;drill 中 suspect 門檻) | 起點:p95 ≤ 8.33ms(120Hz 等效),pilot 後校 | 研究者 | WP-20 T2 | 資格閘 DoD 無法客觀判定 |
 | OQ-S3-2 | `t_detect` 參數 pre-registered 起點(θ_v 相對雜訊底倍率、持續 k tick) | 起點:θ_v = 3× 前刺激窗 SD、k = 4 tick(≈31ms);敏感度分析離線做 | 研究者 | WP-21 T3(spec 內給預設) | 不阻塞引擎;分析 spec 需標「暫定」 |
-| OQ-S3-3 | 場景資產具體選型(CC0/CC-BY pack 清單與雜亂度對應) | T2 前列 3 候選(PolyHaven/Kenney/Sketchfab CC-BY 各一)比 draw calls/授權 | 使用者 | WP-19 T2 | T2 無法開工 |
+| OQ-S3-3 | 場景資產具體選型(CC0/CC-BY pack 清單與雜亂度對應) | ✅ WP-19 T0 決議:field-low 採 Kenney Nature Kit(CC0)為模組化來源;備選 Quaternius Ultimate Nature Pack(CC0)與 Poly Pizza Walk in the Woods(CC-BY)。詳 [wp-19 progress](wp-19-scene-system/progress.md)。 | 使用者 | WP-19 T0 | 已決;T2 需下載後量測實際 triangles/materials 並寫 `ATTRIBUTIONS.md` |
 | OQ-S3-4 | frames 匯出形式(完整序列 vs 摘要) | JSON 完整序列 + 摘要;CSV 只摘要 | 研究者 | WP-20 T3 | 匯出大小與分析端便利性 |
 | OQ-S3-5 | 追蹤 drill 的 presentation 時長/速度階層設計(WP-18 展開時定) | 對帳點:WP-18 T0 與本計畫 WP-22 T1 互記 | 研究者 | WP-18 entry | WP-22 T1 消費面 |
 

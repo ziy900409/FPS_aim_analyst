@@ -58,6 +58,8 @@
 - **sim/recoil 禁 `Math.random()`**:所有隨機性一律注入 seeded RNG,seed 寫入資料/metadata(GD-5)。
 - **recoil 衰減以 1/64s 步長定義**:128Hz sim 內以 64Hz 子節奏呼叫,不得用變動 dt 代入(GD-5)。
 - **FPSci 授權紅線**:NVlabs/FPSci 為 CC BY-NC-SA 4.0——**禁止複製/改寫其任何程式碼或 config 進本 repo**(share-alike 傳染 + 禁商用);允許參考方法學與 schema 欄位語意(GD-11)。
+- **場景幾何永不進 sim runtime**:`propBounds`/GLTF mesh/場景 collision 只可被 render/scene validation 層讀取;`src/sim`、`SharedState`、`HitDetector`、`TargetManager` 不得引用任何場景資料(GD-6)。
+- **場景資產授權白名單**:可 commit 的場景資產僅限 CC0 或 CC-BY 且需在 `ATTRIBUTIONS.md` 可稽核;CC-BY-NC、遊戲抽取資產、付費包原始檔禁止進 repo(GD-9)。
 
 ---
 
