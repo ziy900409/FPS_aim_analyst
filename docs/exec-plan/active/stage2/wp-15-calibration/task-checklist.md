@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| 🛑 | **T0** entry gate(容差拍板 + 資料備妥檢查,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low(STOP:`cl_showpos` 未備) |
+| ✅ | **T0** entry gate(容差拍板 + 資料備妥檢查,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low(surrogate PASS;實錄 caveat) |
 | ⬜ | **T1** cl_showpos 起步/急停逐 tick 對表 | [T1-clshowpos-calibration.md](T1-clshowpos-calibration.md) | T0、WP-14 exit | Med |
 | ⬜ | **T2** pattern 逐彈比對 + 換算檢查 | [T2-pattern-comparison.md](T2-pattern-comparison.md) | T0、WP-13 exit | Med |
 | ⬜ | **T-exit** M7 門(比對通過 + 歸因定稿) | [T-exit-gate.md](T-exit-gate.md) | T1, T2 | — |

@@ -5,11 +5,11 @@
 
 ---
 
-## Status: 🛑 T0 STOP(2026-07-07):容差已拍板,AK pattern 候選資料已入 repo,`cl_showpos` 仍缺
+## Status: 🟡 T0 surrogate PASS(2026-07-07):速度曲線採 theory-derived fixture;實錄 caveat 留 T-exit
 
 | Task | 狀態 |
 |---|---|
-| T0 entry gate | 🛑 STOP 2026-07-07(資料未備;不開 T1/T2) |
+| T0 entry gate | ✅ surrogate PASS 2026-07-07(可開 T1/T2;實錄 caveat) |
 | T1 cl_showpos 對表 | ⬜ |
 | T2 pattern 比對 | ⬜ |
 | T-exit(M7) | ⬜ |
@@ -21,10 +21,33 @@
 | ID | 狀態 | 決議 |
 |----|------|------|
 | OQ-S2-2 校準容差 | ✅ decided 2026-07-07 | `cl_showpos` 速度逐 tick **±1 u/s**;AK pattern 逐彈角度 **±0.05°**。首輪跑完若需校正,須記錄最大偏差、原因分層與新容差理由。 |
+| OQ-15.1 速度曲線資料來源 | 🟡 caveat accepted 2026-07-07 | 因目前沒有高幀率錄影設備,研究者批准以 Source movement 公式 + CS2 cvars 產生 theory-derived surrogate fixture。T1 可開工;M7/T-exit 不得宣稱已通過 `cl_showpos` 實錄行為級校準。 |
 
 ---
 
 ## Log
+
+### 2026-07-07 — T0 amended to surrogate PASS(theory-derived velocity fixtures)
+
+研究者指示:目前沒有設備錄高幀率影片,改用本輪調查得到的速度曲線資料。T0 因此由 STOP 改為 **surrogate PASS**。
+
+**新增 fixtures:**
+- [tests/golden/calibration/clshowpos-accel.json](../../../../../tests/golden/calibration/clshowpos-accel.json):Source movement 公式 + CS2 cvars 產生的起步曲線;primary `knife_250`,alternate `ak47_215`。
+- [tests/golden/calibration/clshowpos-stop.json](../../../../../tests/golden/calibration/clshowpos-stop.json):同來源的 counter-strafe 急停 signed velocity 曲線;含 zero-crossing bracket。
+
+**採用依據:**
+- Source movement 順序採 friction → accelerate;fixture meta 記公式與來源。
+- CS2 cvars 採 `sv_accelerate=5.5`、`sv_friction=5.2`、`sv_stopspeed=80`。
+- `cl_showpos` 有 frame interpolation 與 subtick partial-step 地雷;T1 對齊規則改為 fixture tick 0 = input 生效後第一個完整 64Hz movement step,未來真實錄資料的 partial sample 不納入 ±1 u/s 斷言。
+
+**Decision Log:**
+- **接受 theory-derived surrogate 解除工程 blocker,但不等同外部行為真值。** Alternatives Considered:維持 STOP 直到高幀率 `cl_showpos` 錄影可得;使用者明確表示目前無設備並要求使用本資料,故改採 surrogate 以推進 T1/T2。限制寫入 OQ-15.1 與 T1/T-exit caveat。
+- **保留 primary `knife_250` + alternate `ak47_215`。** 現行 WP-14 movement baseline 是 250 u/s,但 recoil/AK 情境的手持速度為 215 u/s;兩條曲線同檔保留,避免日後 weapon-specific movement 對帳重做 fixture。
+- **stop fixture 保存 signed velocity。** Alternatives Considered:只存 `abs(speed)`;否決,因 counter-strafe 持續按反向鍵會 overshoot,保存 signed velocity 才能明確斷言 zero-crossing bracket。
+
+**Open Questions / Caveat:**
+- 若日後可取得 demo parser 或高品質實錄,應新增 `sourceType=demo-derived` 或 `sourceType=clshowpos-capture` fixture,再決定是否替換 theory surrogate。
+- T-exit/M7 若仍只使用 theory surrogate,結論文字必須降級為「公式/常數曲線對表通過」,不能宣告 `cl_showpos` 實錄行為級通過。
 
 ### 2026-07-07 — AK pattern candidate fixture added(Aiming.Pro)
 

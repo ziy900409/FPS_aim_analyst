@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "sourceType": "theory-derived-surrogate",
+    "status": "researcher-approved fallback because high-FPS capture equipment is unavailable",
+    "capturedAt": null,
+    "generatedAt": "2026-07-07",
+    "tickrate": 64,
+    "dtSec": 0.015625,
+    "formula": "Source ground move order: friction, then accelerate. Stop scenario starts at +maxSpeed and holds the opposite strafe key continuously until the velocity crosses zero.",
+    "constants": {
+      "svAccelerate": 5.5,
+      "svFriction": 5.2,
+      "svStopSpeed": 80
+    },
+    "primaryProfile": "knife_250",
+    "alternateProfiles": ["ak47_215"],
+    "sourceUrls": [
+      "https://raw.githubusercontent.com/nillerusr/source-engine/master/game/shared/gamemovement.cpp",
+      "https://totalcsgo.com/commands/svaccelerate",
+      "https://totalcsgo.com/commands/svfriction",
+      "https://totalcsgo.com/commands/svstopspeed",
+      "https://community.skin.club/en/news/cs2-subtick-vs-csgo-movement-analysis",
+      "https://cs.money/blog/esports/based-movement-in-csgo/"
+    ],
+    "methodologyNotes": [
+      "This is not a cl_showpos recording. It is a deterministic theory curve derived from Source movement formulas and CS2 default cvars.",
+      "velocity is signed along the original strafe axis; speed is abs(velocity).",
+      "The continuous opposite-key sequence intentionally overshoots zero. T1 should treat the zero-crossing bracket as the counter-strafe stop event, not assert post-crossing speed as residual motion.",
+      "For future real cl_showpos or demo-derived data, exclude the first partial subtick sample from +/-1 u/s assertions or infer the subtick fraction explicitly."
+    ]
+  },
+  "primary": {
+    "profileId": "knife_250",
+    "maxSpeed": 250,
+    "wishspeed": 250,
+    "scenario": "counter_strafe_from_full_speed_hold_opposite",
+    "startsAtVelocity": 250,
+    "zeroCrossing": {
+      "betweenTicks": [6, 7],
+      "estimatedTick": 6.584536
+    },
+    "samples": [
+      { "tick": 0, "velocity": 208.203125, "speed": 208.203125 },
+      { "tick": 1, "velocity": 169.80224609375, "speed": 169.80224609375 },
+      { "tick": 2, "velocity": 134.5214385986328, "speed": 134.5214385986328 },
+      { "tick": 3, "velocity": 102.1071968372345, "speed": 102.1071968372345 },
+      { "tick": 4, "velocity": 72.32661209481764, "speed": 72.32661209481764 },
+      { "tick": 5, "velocity": 44.34223709481764, "speed": 44.34223709481764 },
+      { "tick": 6, "velocity": 16.35786209481764, "speed": 16.35786209481764 },
+      { "tick": 7, "velocity": -11.62651290518236, "speed": 11.62651290518236 }
+    ]
+  },
+  "alternates": {
+    "ak47_215": {
+      "profileId": "ak47_215",
+      "maxSpeed": 215,
+      "wishspeed": 215,
+      "scenario": "counter_strafe_from_full_speed_hold_opposite",
+      "startsAtVelocity": 215,
+      "zeroCrossing": {
+        "betweenTicks": [6, 7],
+        "estimatedTick": 6.49037
+      },
+      "samples": [
+        { "tick": 0, "velocity": 179.0546875, "speed": 179.0546875 },
+        { "tick": 1, "velocity": 146.029931640625, "speed": 146.029931640625 },
+        { "tick": 2, "velocity": 115.68843719189453, "speed": 115.68843719189453 },
+        { "tick": 3, "velocity": 87.8121904200531, "speed": 87.8121904200531 },
+        { "tick": 4, "velocity": 62.2008779200531, "speed": 62.2008779200531 },
+        { "tick": 5, "velocity": 37.2243154200531, "speed": 37.2243154200531 },
+        { "tick": 6, "velocity": 12.2477529200531, "speed": 12.2477529200531 },
+        { "tick": 7, "velocity": -12.7288095799469, "speed": 12.7288095799469 }
+      ]
+    }
+  }
+}

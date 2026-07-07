@@ -8,7 +8,7 @@
 | **相依** | WP-13 exit ✅(M6)、WP-14 exit ✅(逐項驗證) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | 🛑 STOP(2026-07-07):OQ-S2-2 已拍板;AK pattern 候選資料已入 repo;`cl_showpos` 仍缺 |
+| **狀態** | ✅ surrogate PASS(2026-07-07):OQ-S2-2 已拍板;速度曲線採 theory-derived fixture;AK pattern 候選資料已入 repo |
 
 ## Objective
 
@@ -32,17 +32,27 @@
 - [x] OQ-S2-2 拍板(明確數字,非「傾向」);ledger + §8 回填。
 - [x] 資料清點:兩類參考資料逐項核對合格條件;檔案路徑 / 來源 URL 記 progress。
 - [x] 任一不備 → **STOP**:記 blocker + 通知研究者,不開 T1/T2。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] progress.md 記 entry-gate PASS 宣告。
+
+## T0 Amendment(2026-07-07)
+
+研究者確認目前沒有設備錄製高幀率 `cl_showpos` 影片,並指示以本輪調查得到的 Source movement 公式 + CS2 預設常數產生速度曲線資料。T0 因此由 STOP 改為 **surrogate PASS**:
+
+- [tests/golden/calibration/clshowpos-accel.json](../../../../../tests/golden/calibration/clshowpos-accel.json):已補 theory-derived 起步曲線(primary `knife_250`,alternate `ak47_215`)。
+- [tests/golden/calibration/clshowpos-stop.json](../../../../../tests/golden/calibration/clshowpos-stop.json):已補 theory-derived counter-strafe 急停曲線(primary `knife_250`,alternate `ak47_215`)。
+- [tests/golden/calibration/ak47-pattern.json](../../../../../tests/golden/calibration/ak47-pattern.json):已補 Aiming.Pro AK pattern 候選 fixture。
+
+此 PASS 只解除 T1/T2 工程 blocker;它不是 `cl_showpos` 行為級外部真值。M7/T-exit 必須保留 caveat:速度曲線目前驗證的是公式/常數對表,不是實錄逐 tick 對表。
 
 ## T0 Result(2026-07-07)
 
-**STOP, not PASS.** 容差已拍板為 `cl_showpos` 速度逐 tick **±1 u/s**、AK pattern 逐彈角度 **±0.05°**。AK pattern 候選資料已於 2026-07-07 補入,但 `cl_showpos` 校準參考資料仍未備妥:
+**Historical STOP superseded by T0 Amendment above.** 容差已拍板為 `cl_showpos` 速度逐 tick **±1 u/s**、AK pattern 逐彈角度 **±0.05°**。AK pattern 候選資料已於 2026-07-07 補入,但當時 `cl_showpos` 校準參考資料仍未備妥:
 
 - `tests/golden/calibration/clshowpos-accel.json`:缺。
 - `tests/golden/calibration/clshowpos-stop.json`:缺。
 - `tests/golden/calibration/ak47-pattern.json`:已補候選 fixture(Aiming.Pro drill creator;直接角度值,非像素數位化)。
 
-因此 T1/T2 不得開工;待研究者提供 CS2 `cl_showpos` 起步/急停錄製資料後,重跑 T0 資料清點並改為 PASS。
+此 STOP 已由研究者批准的 theory-derived 速度 fixture 取代;T1/T2 可開工,但須標示實錄 caveat。
 
 ## Definition of Done
 
