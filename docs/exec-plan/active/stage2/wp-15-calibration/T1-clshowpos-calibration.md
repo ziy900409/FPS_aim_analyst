@@ -6,8 +6,8 @@
 |---|---|
 | **相依** | T0(surrogate PASS:容差 + theory-derived 速度曲線 fixture + AK pattern 候選資料)、WP-14 exit(integrator 上線) |
 | **Risk / Cplx** | Med / Med |
-| **Touches** | NEW `tests/golden/calibration/clshowpos-accel.json`、`clshowpos-stop.json`、`tests/calibration/showpos.test.ts` |
-| **狀態** | ⬜ |
+| **Touches** | NEW `tests/golden/calibration/clshowpos-accel.json`、`clshowpos-stop.json`、`tests/calibration/showpos.test.ts`;附帶觸發 WP-14 `CS2_PROFILE` correctness fix(見 [DECISIONS GD-13](../../../DECISIONS.md)) |
+| **狀態** | ✅ GREEN 2026-07-07(128Hz surrogate 對表通過;calibration 抓到並修正 WP-14 CS2_PROFILE 常數 bug。手感回歸與 `cl_showpos` 實錄 caveat 留 T-exit) |
 
 ## Objective
 
@@ -29,11 +29,11 @@
 
 ## Steps
 
-- [ ] fixture 載入 + meta 註記檢查(來源、tickrate、常數、surrogate caveat)。
-- [ ] 對表測試:起步段 + 急停段逐 tick 斷言(容差常數 = OQ-S2-2)。
-- [ ] 首輪執行:全過 → 記 progress;有紅 → 歸因報告(公式/常數/subtick 分層)記 progress,
-      與研究者確認是否動用 OQ-S2-2 預留的首輪容差校正(校正值與理由記 ledger)。
-- [ ] `npx vitest run tests/calibration` 全綠(或 STOP + 歸因報告)。
+- [x] fixture 載入 + meta 註記檢查(來源、tickrate、常數、surrogate caveat)。
+- [x] 對表測試:起步段 + 急停段逐 tick 斷言(容差常數 = OQ-S2-2)。
+- [x] 首輪執行:RED → 歸因報告(常數 + cadence 分層)記 progress;與研究者確認後解兩個 blocker
+      (OQ-15.2 cadence 選項1、OQ-15.3 遊戲內查證常數)——非動用容差校正,而是修正 production 常數 bug + 重產 128Hz fixture。
+- [x] `vitest run tests/calibration` 全綠(3/3;全套 307 tests / tsc exit 0)。
 
 ## Definition of Done
 

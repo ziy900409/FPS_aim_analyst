@@ -6,14 +6,20 @@
     "generatedAt": "2026-07-07",
     "tickrate": 64,
     "dtSec": 0.015625,
-    "formula": "Source ground move order: friction, then accelerate. Stop scenario starts at +maxSpeed and holds the opposite strafe key continuously until the velocity crosses zero.",
+    "integrationHz": 128,
+    "sampleHz": 64,
+    "simTicksPerSample": 2,
+    "formula": "Source ground move order per 128Hz sim tick: friction then accelerate. Stop scenario starts at +maxSpeed and holds the opposite strafe key continuously; each fixture sample = velocity after two 128Hz sim ticks (64Hz sample cadence).",
+    "cvarSource": "CS2 in-game defaults confirmed 2026-07-07 via console: sv_accelerate=5.5, sv_friction=5.2, sv_stopspeed=80.",
     "constants": {
       "svAccelerate": 5.5,
       "svFriction": 5.2,
       "svStopSpeed": 80
     },
     "primaryProfile": "knife_250",
-    "alternateProfiles": ["ak47_215"],
+    "alternateProfiles": [
+      "ak47_215"
+    ],
     "sourceUrls": [
       "https://raw.githubusercontent.com/nillerusr/source-engine/master/game/shared/gamemovement.cpp",
       "https://totalcsgo.com/commands/svaccelerate",
@@ -23,7 +29,7 @@
       "https://cs.money/blog/esports/based-movement-in-csgo/"
     ],
     "methodologyNotes": [
-      "This is not a cl_showpos recording. It is a deterministic theory curve derived from Source movement formulas and CS2 default cvars.",
+      "This is not a cl_showpos recording. It is a deterministic theory curve derived from Source movement formulas and CS2 default cvars, integrated at the 128Hz sim cadence and sampled every two sim ticks (64Hz).",
       "velocity is signed along the original strafe axis; speed is abs(velocity).",
       "The continuous opposite-key sequence intentionally overshoots zero. T1 should treat the zero-crossing bracket as the counter-strafe stop event, not assert post-crossing speed as residual motion.",
       "For future real cl_showpos or demo-derived data, exclude the first partial subtick sample from +/-1 u/s assertions or infer the subtick fraction explicitly."
@@ -36,18 +42,53 @@
     "scenario": "counter_strafe_from_full_speed_hold_opposite",
     "startsAtVelocity": 250,
     "zeroCrossing": {
-      "betweenTicks": [6, 7],
-      "estimatedTick": 6.584536
+      "betweenTicks": [
+        6,
+        7
+      ],
+      "estimatedTick": 6.6930059564155195
     },
     "samples": [
-      { "tick": 0, "velocity": 208.203125, "speed": 208.203125 },
-      { "tick": 1, "velocity": 169.80224609375, "speed": 169.80224609375 },
-      { "tick": 2, "velocity": 134.5214385986328, "speed": 134.5214385986328 },
-      { "tick": 3, "velocity": 102.1071968372345, "speed": 102.1071968372345 },
-      { "tick": 4, "velocity": 72.32661209481764, "speed": 72.32661209481764 },
-      { "tick": 5, "velocity": 44.34223709481764, "speed": 44.34223709481764 },
-      { "tick": 6, "velocity": 16.35786209481764, "speed": 16.35786209481764 },
-      { "tick": 7, "velocity": -11.62651290518236, "speed": 11.62651290518236 }
+      {
+        "tick": 0,
+        "velocity": 209.0521240234375,
+        "speed": 209.0521240234375
+      },
+      {
+        "tick": 1,
+        "velocity": 171.36368297934533,
+        "speed": 171.36368297934533
+      },
+      {
+        "tick": 2,
+        "velocity": 136.67522712031558,
+        "speed": 136.67522712031558
+      },
+      {
+        "tick": 3,
+        "velocity": 104.74795879748658,
+        "speed": 104.74795879748658
+      },
+      {
+        "tick": 4,
+        "velocity": 75.36208856156556,
+        "speed": 75.36208856156556
+      },
+      {
+        "tick": 5,
+        "velocity": 47.37771356156556,
+        "speed": 47.37771356156556
+      },
+      {
+        "tick": 6,
+        "velocity": 19.393338561565557,
+        "speed": 19.393338561565557
+      },
+      {
+        "tick": 7,
+        "velocity": -8.591036438434443,
+        "speed": 8.591036438434443
+      }
     ]
   },
   "alternates": {
@@ -58,18 +99,53 @@
       "scenario": "counter_strafe_from_full_speed_hold_opposite",
       "startsAtVelocity": 215,
       "zeroCrossing": {
-        "betweenTicks": [6, 7],
-        "estimatedTick": 6.49037
+        "betweenTicks": [
+          6,
+          7
+        ],
+        "estimatedTick": 6.614786018628494
       },
       "samples": [
-        { "tick": 0, "velocity": 179.0546875, "speed": 179.0546875 },
-        { "tick": 1, "velocity": 146.029931640625, "speed": 146.029931640625 },
-        { "tick": 2, "velocity": 115.68843719189453, "speed": 115.68843719189453 },
-        { "tick": 3, "velocity": 87.8121904200531, "speed": 87.8121904200531 },
-        { "tick": 4, "velocity": 62.2008779200531, "speed": 62.2008779200531 },
-        { "tick": 5, "velocity": 37.2243154200531, "speed": 37.2243154200531 },
-        { "tick": 6, "velocity": 12.2477529200531, "speed": 12.2477529200531 },
-        { "tick": 7, "velocity": -12.7288095799469, "speed": 12.7288095799469 }
+        {
+          "tick": 0,
+          "velocity": 179.78482666015626,
+          "speed": 179.78482666015626
+        },
+        {
+          "tick": 1,
+          "velocity": 147.37276736223697,
+          "speed": 147.37276736223697
+        },
+        {
+          "tick": 2,
+          "velocity": 117.54069532347141,
+          "speed": 117.54069532347141
+        },
+        {
+          "tick": 3,
+          "velocity": 90.08324456583844,
+          "speed": 90.08324456583844
+        },
+        {
+          "tick": 4,
+          "velocity": 64.69705025535126,
+          "speed": 64.69705025535126
+        },
+        {
+          "tick": 5,
+          "velocity": 39.72048775535126,
+          "speed": 39.72048775535126
+        },
+        {
+          "tick": 6,
+          "velocity": 14.743925255351257,
+          "speed": 14.743925255351257
+        },
+        {
+          "tick": 7,
+          "velocity": -9.23828125,
+          "speed": 9.23828125
+        }
       ]
     }
   }

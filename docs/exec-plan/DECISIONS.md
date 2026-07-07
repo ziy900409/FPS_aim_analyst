@@ -22,6 +22,18 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-13 ✅ WP-15 calibration 抓到 WP-14 CS2_PROFILE 常數 bug + T1 cadence 定案(2026-07-07)
+
+| | |
+|---|---|
+| **發現處** | WP-15 T1 首輪對表 RED([wp-15 progress](active/stage2/wp-15-calibration/progress.md))。歸因兩層:(1) production `CS2_PROFILE` 常數與 surrogate fixture meta 不一致;(2) fixture 為單一 64Hz step 曲線、sim 為 128Hz 每 2 tick 取樣,cadence 不對齊——即使常數對齊仍紅(起步 tick0:單步 21.484 vs 2×128Hz 積分 18.234,差 3.25 u/s > ±1)。 |
+| **查證** | 2026-07-07 遊戲內 console 查 CS2 default:`sv_accelerate=5.5`、`sv_friction=5.2`、`sv_stopspeed=80`(二手 totalcsgo 頁自相矛盾 5.5/5.6,以遊戲 binary default 為終審)。production `CS2_PROFILE` 原為 accelerate=**5.6**、stopSpeed=**75** → **兩常數偏離權威 default**,為真實 bug(calibration 的目的即抓此)。 |
+| **決議** | **(OQ-15.3)** `CS2_PROFILE` 修正為 5.5/5.2/80(commit `347ce78`,WP-14 correctness fix);受影響的 WP-14/WP-2 逐 tick 回歸斷言以**獨立參考實作**(hand-rolled Source friction→accelerate,不 import controller)重算,非以讓測試變綠推導。**(OQ-15.2)** T1 reference cadence 採「128Hz 積分、每 2 sim tick 取樣(64Hz)」重產 surrogate fixture,對表 sim 實際積分路徑,而非單一 64Hz step 公式。 |
+| **理由** | 常數偏差是事實問題,以遊戲內權威 default 解、非以讓測試變綠解(協議 [README §1](active/stage2/wp-15-calibration/README.md) 禁盲調參)。fixture 既為 theory-derived surrogate(OQ-15.1),可提供的最高效度即「Source 公式於 sim cadence 下的 regression/公式對表」,故 cadence 對齊 sim。 |
+| **影響面** | WP-14(`CS2_PROFILE` + MovementController/SimLoop/determinism 回歸 baseline;**gameplay 移動手感隨之改變**,待瀏覽器實測手感驗收)、WP-15 T1(fixture 重產 + 對表綠)、WP-2 determinism gate(baseline 重錄)。 |
+| **caveat** | T-exit/M7 仍**不得**宣稱 `cl_showpos` 實錄行為級通過(仍為 theory surrogate);結論措辭降級為「公式/常數曲線於 sim cadence 對表通過」(承 OQ-15.1)。 |
+| **狀態** | ✅ 已拍板 + 落地(2026-07-07;commit `347ce78` WP-14 fix + 本次 T1 calibration 切片)。 |
+
 ### GD-12 ✅ FPSci 建議採納對帳 — R1~R7 處置(2026-07-07)
 
 | | |

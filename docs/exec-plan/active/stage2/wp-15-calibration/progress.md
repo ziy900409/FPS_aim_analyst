@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 surrogate PASS(2026-07-07):速度曲線採 theory-derived fixture;實錄 caveat 留 T-exit
+## Status: 🟡 T1 GREEN(2026-07-07):128Hz surrogate 對表通過 + 抓到並修正 WP-14 CS2_PROFILE 常數 bug;T2/T-exit 待開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ surrogate PASS 2026-07-07(可開 T1/T2;實錄 caveat) |
-| T1 cl_showpos 對表 | ⬜ |
+| T1 cl_showpos 對表 | ✅ GREEN 2026-07-07(128Hz fixture;calibration 抓到 CS2_PROFILE 兩常數 bug,已修) |
 | T2 pattern 比對 | ⬜ |
 | T-exit(M7) | ⬜ |
 
@@ -22,10 +22,88 @@
 |----|------|------|
 | OQ-S2-2 校準容差 | ✅ decided 2026-07-07 | `cl_showpos` 速度逐 tick **±1 u/s**;AK pattern 逐彈角度 **±0.05°**。首輪跑完若需校正,須記錄最大偏差、原因分層與新容差理由。 |
 | OQ-15.1 速度曲線資料來源 | 🟡 caveat accepted 2026-07-07 | 因目前沒有高幀率錄影設備,研究者批准以 Source movement 公式 + CS2 cvars 產生 theory-derived surrogate fixture。T1 可開工;M7/T-exit 不得宣稱已通過 `cl_showpos` 實錄行為級校準。 |
+| OQ-15.2 T1 reference cadence | ✅ decided 2026-07-07 | 採「128Hz 積分、每 2 sim tick 取樣(64Hz)」重產 surrogate fixture,對表 sim 實際積分路徑(選項1)。否決「單一 64Hz step 公式」(不驗真 integrator)與「改 movement 為 64Hz 子步」(屬 WP-14 架構變更、動手感)。詳 [DECISIONS GD-13](../../../DECISIONS.md)。 |
+| OQ-15.3 CS2_PROFILE 常數 | ✅ decided 2026-07-07 | 遊戲內 console 查證權威 default = `accelerate 5.5 / friction 5.2 / stopSpeed 80`;production 原 5.6/75 為 bug,修正至 5.5/5.2/80(commit `347ce78`)。二手 totalcsgo 頁自相矛盾(5.5/5.6),以遊戲 binary 為終審。詳 [DECISIONS GD-13](../../../DECISIONS.md)。 |
 
 ---
 
 ## Log
+
+### 2026-07-07 — T1 GREEN(cadence 定案 + WP-14 常數 bug 修正 + 128Hz fixture 重產)
+
+承上 RED 的兩個 blocker(OQ-15.2 cadence、OQ-15.3 常數),經研究者拍板 + 遊戲內查證後解除,T1 對表通過。
+
+**OQ-15.3 常數查證(遊戲內權威 default,終審):**
+
+| cvar | 遊戲內 default | production 原值 | 結果 |
+|---|---:|---:|---|
+| `sv_accelerate` | 5.5 | 5.6 | ❌→修 |
+| `sv_friction` | 5.2 | 5.2 | ✅ |
+| `sv_stopspeed` | 80 | 75 | ❌→修 |
+
+二手來源(totalcsgo `svaccelerate` 頁)描述寫 5.6、表格寫 5.5 自相矛盾;gist cvar dump 過大被截斷讀不到 `sv_` 段。故以**遊戲內 `sv_accelerate` / `sv_friction` / `sv_stopspeed`(不帶值)印出的 default** 為終審 → 5.5 / 5.2 / 80。
+
+**Slice A — WP-14 correctness fix(commit `347ce78`):** `CS2_PROFILE` accelerate 5.6→5.5、stopSpeed 75→80。以**獨立參考實作**(hand-rolled Source friction→accelerate,不 import controller)重算受影響斷言:
+- held-D 首 tick `10.9375→10.7421875`、次 tick `18.828125→18.234375`;1s 位移 `211.338→209.177`;64-tick vx `249.285→244.578`;反向鍵/低速衰減穿越門檻值同步重算。
+- friction-only-from-250 值(A+D、剛放開)`239.84375` **不變**(`max(250,80)=max(250,75)=250`)。
+- 受影響檔:[MovementController.ts](../../../../../src/sim/MovementController.ts)、[MovementController.test.ts](../../../../../src/sim/MovementController.test.ts)、[SimLoop.test.ts](../../../../../src/loop/SimLoop.test.ts)、[__tests__/determinism.test.ts](../../../../../src/loop/__tests__/determinism.test.ts)。
+
+**Slice B — fixture 重產(128Hz 積分 / 64Hz 取樣):** 以同一參考實作重產 [clshowpos-accel.json](../../../../../tests/golden/calibration/clshowpos-accel.json)、[clshowpos-stop.json](../../../../../tests/golden/calibration/clshowpos-stop.json)。meta 加 `integrationHz=128`/`sampleHz=64`/`simTicksPerSample=2`/`cvarSource`。起步 tick0 `21.484→18.234`;急停 zero-crossing bracket 仍 [6,7],estimatedTick `6.584536→6.6930059564155195`。fixture 與 sim 同公式同 cadence → 對表為 integrator 決定性/公式 regression pin(非實錄真值)。
+
+**Slice C — T1 對表綠:** [tests/calibration/showpos.test.ts](../../../../../tests/calibration/showpos.test.ts) 更新 zeroCrossing 期望值。
+
+**驗證指令:**
+- `node_modules/.bin/vitest run`(全套):41 files / **307 tests passed**。
+- `node_modules/.bin/vitest run tests/calibration`:3/3 passed(起步、急停+zero-crossing、fixture meta 契約)。
+- `node_modules/.bin/tsc --noEmit`:exit 0。
+
+**Decision Log:**
+- **OQ-15.3 以事實(遊戲內 default)解,非以讓測試變綠解。** Alternatives Considered:改 fixture 對齊 production 5.6/75。否決,遊戲內權威值為 5.5/80,production 才是 bug——calibration 的職責即抓此,遷就 bug 會讓校準失去意義。
+- **OQ-15.2 採選項1(128Hz fixture)。** Alternatives Considered:選項3(只驗 formula,不驗真 sim)校準價值最弱;選項2(改 movement 為 64Hz 子步)屬 WP-14 架構變更、動手感、out-of-scope。
+- **用獨立 hand-rolled 參考實作算期望值,不直接呼叫 controller。** Alternatives Considered:直接把 controller 輸出寫回測試。否決,那是純套套邏輯;獨立重導 Source 公式並與 sim 相符,才同時驗證「controller 正確實作公式」。
+- **WP-14 fix 與 T1 calibration 分兩個 commit。** Alternatives Considered:一個大 commit。否決,引擎 correctness fix 與校準測試是兩個 logical change(協議禁引擎修正混進校準 WP)。
+
+**Open Questions / Caveat:**
+- **gameplay 手感回歸未驗**:accelerate/stopSpeed 改變會改 counter-strafe drill 實際手感,需瀏覽器實機驗收(承 GD-13 影響面)。
+- **surrogate caveat 仍在**(OQ-15.1):T-exit/M7 結論措辭須為「公式/常數曲線於 sim cadence 對表通過」,不得宣稱 `cl_showpos` 實錄行為級通過。
+- fixture 與 sim 同源 → 本對表主要是 integrator regression/公式 pin;真正外部行為真值仍待高幀率 `cl_showpos`/demo 實錄(屆時新增 `sourceType=clshowpos-capture` fixture)。
+
+### 2026-07-07 — T1 first run RED(constants mismatch + fixture cadence mismatch)
+
+已新增 T1 對表測試草稿:[tests/calibration/showpos.test.ts](../../../../../tests/calibration/showpos.test.ts),但 targeted suite 尚未通過,因此 T1 **未完成、不 commit**。
+
+**驗證指令:**
+- `npx vitest run tests/calibration`:PowerShell `npx.ps1` 被 execution policy 擋住,未跑到測試。
+- `.\node_modules\.bin\vitest.cmd run tests/calibration`:sandbox 啟動 Vite config 時讀取權限不足,未跑到測試。
+- 升權後 `.\node_modules\.bin\vitest.cmd run tests/calibration`:Vitest 啟動成功,`tests/calibration/showpos.test.ts` 3 tests / 3 failed。
+
+**第一層歸因:constants 假設不一致。**
+
+| 欄位 | fixture meta | production `CS2_PROFILE` | 結果 |
+|---|---:|---:|---|
+| accelerate | 5.5 | 5.6 | ❌ |
+| friction | 5.2 | 5.2 | ✅ |
+| stopSpeed | 80 | 75 | ❌ |
+| maxSpeed | 250 | 250 | ✅ |
+
+失敗訊息首要點:`expected 5.6 to be 5.5`,位置 `tests/calibration/showpos.test.ts:57`。
+
+**第二層歸因:fixture cadence 與 sim cadence 不同。** 用 fixture 常數手算拆分:
+- 起步 tick0:`2 x 128Hz sim step = 18.234375 u/s`,`1 x 64Hz fixture step = 21.484375 u/s`。
+- 急停 tick0:`2 x 128Hz sim step = 209.0521240234375 u/s`,`1 x 64Hz fixture step = 208.203125 u/s`。
+
+所以即使 production 常數改成 fixture 常數,目前 `clshowpos-accel.json`/`clshowpos-stop.json` 仍是「64Hz 單步公式」fixture,不是「128Hz sim 每 2 tick 取樣」fixture。這會讓 T1 的 2:1 子節奏對表在起步段紅燈。
+
+**Decision Log:**
+- **不在 T1 內直接改 `src/sim/MovementController.ts` 常數。** Alternatives Considered:把 `CS2_PROFILE` 改成 fixture cvars 後繼續;否決,因 WP-15 README/T1 out-of-scope 明確要求比對不過時先歸因,引擎行為修正需另行決策。
+- **保留紅燈測試草稿作為可重跑證據,但不 commit。** Alternatives Considered:改成用 fixture 常數注入 controller 讓測試綠;否決,因這會避開 production `CS2_PROFILE` 與 fixture meta 的實際差異,降低校準測試價值。
+
+**Open Questions / Blocker:**
+- OQ-15.2: T1 reference cadence 要採哪一個?
+  1. 重產 fixture 為「128Hz integrator 每 2 tick 取樣」,保留現行 sim 架構;
+  2. 將 movement calibration path 改為 64Hz movement 子步,再由 128Hz sim 對齊;
+  3. 保留 64Hz 單步 fixture,但 T1 改成只驗 formula/cvars,不宣稱驗 128Hz sim 2:1 對表。
+- OQ-15.3: `CS2_PROFILE` 是否要對齊 T0 surrogate cvars(`accelerate=5.5`,`stopSpeed=80`)? 若要改 production 常數,應先評估 WP-14 既有測試與 gameplay 手感影響。
 
 ### 2026-07-07 — T0 amended to surrogate PASS(theory-derived velocity fixtures)
 

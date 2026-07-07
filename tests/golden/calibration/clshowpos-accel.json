@@ -6,14 +6,20 @@
     "generatedAt": "2026-07-07",
     "tickrate": 64,
     "dtSec": 0.015625,
-    "formula": "Source ground move order: friction, then accelerate. friction: control=max(|v|, sv_stopspeed); v -= control * sv_friction * dt. accelerate: accelspeed=min(sv_accelerate * dt * wishspeed, wishspeed - v dot wishdir).",
+    "integrationHz": 128,
+    "sampleHz": 64,
+    "simTicksPerSample": 2,
+    "formula": "Source ground move order per 128Hz sim tick: friction then accelerate. friction: control=max(|v|, sv_stopspeed); v*=max(|v|-control*sv_friction*dt,0)/|v|. accelerate: accelspeed=min(sv_accelerate*maxSpeed*dt, maxSpeed - v dot wishdir); v+=wishdir*accelspeed. Each fixture sample = velocity after two 128Hz sim ticks (64Hz sample cadence).",
+    "cvarSource": "CS2 in-game defaults confirmed 2026-07-07 via console: sv_accelerate=5.5, sv_friction=5.2, sv_stopspeed=80.",
     "constants": {
       "svAccelerate": 5.5,
       "svFriction": 5.2,
       "svStopSpeed": 80
     },
     "primaryProfile": "knife_250",
-    "alternateProfiles": ["ak47_215"],
+    "alternateProfiles": [
+      "ak47_215"
+    ],
     "sourceUrls": [
       "https://raw.githubusercontent.com/nillerusr/source-engine/master/game/shared/gamemovement.cpp",
       "https://totalcsgo.com/commands/svaccelerate",
@@ -23,8 +29,8 @@
       "https://cs.money/blog/esports/based-movement-in-csgo/"
     ],
     "methodologyNotes": [
-      "This is not a cl_showpos recording. It is a deterministic theory curve derived from Source movement formulas and CS2 default cvars.",
-      "tick 0 is the first complete 64Hz movement step after the input is active; no subtick partial-step sample is included.",
+      "This is not a cl_showpos recording. It is a deterministic theory curve derived from Source movement formulas and CS2 default cvars, integrated at the 128Hz sim cadence and sampled every two sim ticks (64Hz).",
+      "tick 0 is the velocity after the first two complete 128Hz movement steps following input activation; no subtick partial-step sample is included.",
       "For future real cl_showpos or demo-derived data, exclude the first partial subtick sample from +/-1 u/s assertions or infer the subtick fraction explicitly."
     ]
   },
@@ -33,43 +39,188 @@
     "maxSpeed": 250,
     "wishspeed": 250,
     "scenario": "standstill_hold_strafe",
-    "reachesMaxAtTick": 34,
+    "reachesMaxAtTick": 35,
     "samples": [
-      { "tick": 0, "velocity": 21.484375, "speed": 21.484375 },
-      { "tick": 1, "velocity": 36.46875, "speed": 36.46875 },
-      { "tick": 2, "velocity": 51.453125, "speed": 51.453125 },
-      { "tick": 3, "velocity": 66.4375, "speed": 66.4375 },
-      { "tick": 4, "velocity": 81.421875, "speed": 81.421875 },
-      { "tick": 5, "velocity": 96.29072265625, "speed": 96.29072265625 },
-      { "tick": 6, "velocity": 109.95147583007812, "speed": 109.95147583007812 },
-      { "tick": 7, "velocity": 122.50229358398437, "speed": 122.50229358398437 },
-      { "tick": 8, "velocity": 134.0333575439453, "speed": 134.0333575439453 },
-      { "tick": 9, "velocity": 144.6275222415924, "speed": 144.6275222415924 },
-      { "tick": 10, "velocity": 154.3609110588378, "speed": 154.3609110588378 },
-      { "tick": 11, "velocity": 163.3034620353072, "speed": 163.3034620353072 },
-      { "tick": 12, "velocity": 171.51943115019098, "speed": 171.51943115019098 },
-      { "tick": 13, "velocity": 179.06785236923797, "speed": 179.06785236923797 },
-      { "tick": 14, "velocity": 186.00296398923737, "speed": 186.00296398923737 },
-      { "tick": 15, "velocity": 192.37459816448745, "speed": 192.37459816448745 },
-      { "tick": 16, "velocity": 198.22853706362284, "speed": 198.22853706362284 },
-      { "tick": 17, "velocity": 203.6068421765797, "speed": 203.6068421765797 },
-      { "tick": 18, "velocity": 208.54816249978384, "speed": 208.54816249978384 },
-      { "tick": 19, "velocity": 213.0879992966764, "speed": 213.0879992966764 },
-      { "tick": 20, "velocity": 217.25897435382143, "speed": 217.25897435382143 },
-      { "tick": 21, "velocity": 221.0910576875647, "speed": 221.0910576875647 },
-      { "tick": 22, "velocity": 224.61178425045003, "speed": 224.61178425045003 },
-      { "tick": 23, "velocity": 227.84645240510097, "speed": 227.84645240510097 },
-      { "tick": 24, "velocity": 230.81830314681152, "speed": 230.81830314681152 },
-      { "tick": 25, "velocity": 233.54868945363247, "speed": 233.54868945363247 },
-      { "tick": 26, "velocity": 236.05723468552478, "speed": 236.05723468552478 },
-      { "tick": 27, "velocity": 238.36198311639, "speed": 238.36198311639 },
-      { "tick": 28, "velocity": 240.4794332381833, "speed": 240.4794332381833 },
-      { "tick": 29, "velocity": 242.42476303883092, "speed": 242.42476303883092 },
-      { "tick": 30, "velocity": 244.21283729130093, "speed": 244.21283729130093 },
-      { "tick": 31, "velocity": 245.854336352485, "speed": 245.854336352485 },
-      { "tick": 32, "velocity": 247.363046523845, "speed": 247.363046523845 },
-      { "tick": 33, "velocity": 248.749173993783, "speed": 248.749173993783 },
-      { "tick": 34, "velocity": 250, "speed": 250 }
+      {
+        "tick": 0,
+        "velocity": 18.234375,
+        "speed": 18.234375
+      },
+      {
+        "tick": 1,
+        "velocity": 33.21875,
+        "speed": 33.21875
+      },
+      {
+        "tick": 2,
+        "velocity": 48.203125,
+        "speed": 48.203125
+      },
+      {
+        "tick": 3,
+        "velocity": 63.1875,
+        "speed": 63.1875
+      },
+      {
+        "tick": 4,
+        "velocity": 78.171875,
+        "speed": 78.171875
+      },
+      {
+        "tick": 5,
+        "velocity": 92.9261474609375,
+        "speed": 92.9261474609375
+      },
+      {
+        "tick": 6,
+        "velocity": 106.57723605513573,
+        "speed": 106.57723605513573
+      },
+      {
+        "tick": 7,
+        "velocity": 119.14170332969226,
+        "speed": 119.14170332969226
+      },
+      {
+        "tick": 8,
+        "velocity": 130.7060439171891,
+        "speed": 130.7060439171891
+      },
+      {
+        "tick": 9,
+        "velocity": 141.34986751124177,
+        "speed": 141.34986751124177
+      },
+      {
+        "tick": 10,
+        "velocity": 151.1464469049514,
+        "speed": 151.1464469049514
+      },
+      {
+        "tick": 11,
+        "velocity": 160.1632224057106,
+        "speed": 160.1632224057106
+      },
+      {
+        "tick": 12,
+        "velocity": 168.4622660987873,
+        "speed": 168.4622660987873
+      },
+      {
+        "tick": 13,
+        "velocity": 176.100709155709,
+        "speed": 176.100709155709
+      },
+      {
+        "tick": 14,
+        "velocity": 183.1311351290666,
+        "speed": 183.1311351290666
+      },
+      {
+        "tick": 15,
+        "velocity": 189.60194194120504,
+        "speed": 189.60194194120504
+      },
+      {
+        "tick": 16,
+        "velocity": 195.55767505875622,
+        "speed": 195.55767505875622
+      },
+      {
+        "tick": 17,
+        "velocity": 201.03933414660855,
+        "speed": 201.03933414660855
+      },
+      {
+        "tick": 18,
+        "velocity": 206.0846553123409,
+        "speed": 206.0846553123409
+      },
+      {
+        "tick": 19,
+        "velocity": 210.72837088410955,
+        "speed": 210.72837088410955
+      },
+      {
+        "tick": 20,
+        "velocity": 215.00244851031678,
+        "speed": 215.00244851031678
+      },
+      {
+        "tick": 21,
+        "velocity": 218.9363112270395,
+        "speed": 218.9363112270395
+      },
+      {
+        "tick": 22,
+        "velocity": 222.55704000817622,
+        "speed": 222.55704000817622
+      },
+      {
+        "tick": 23,
+        "velocity": 225.88956019268164,
+        "speed": 225.88956019268164
+      },
+      {
+        "tick": 24,
+        "velocity": 228.95681307226613,
+        "speed": 228.95681307226613
+      },
+      {
+        "tick": 25,
+        "velocity": 231.77991382078136,
+        "speed": 231.77991382078136
+      },
+      {
+        "tick": 26,
+        "velocity": 234.3782968524885,
+        "speed": 234.3782968524885
+      },
+      {
+        "tick": 27,
+        "velocity": 236.7698496098651,
+        "speed": 236.7698496098651
+      },
+      {
+        "tick": 28,
+        "velocity": 238.97103570195483,
+        "speed": 238.97103570195483
+      },
+      {
+        "tick": 29,
+        "velocity": 240.99700824095254,
+        "speed": 240.99700824095254
+      },
+      {
+        "tick": 30,
+        "velocity": 242.86171415724155,
+        "speed": 242.86171415724155
+      },
+      {
+        "tick": 31,
+        "velocity": 244.5779902109947,
+        "speed": 244.5779902109947
+      },
+      {
+        "tick": 32,
+        "velocity": 246.15765136128945,
+        "speed": 246.15765136128945
+      },
+      {
+        "tick": 33,
+        "velocity": 247.61157210107586,
+        "speed": 247.61157210107586
+      },
+      {
+        "tick": 34,
+        "velocity": 248.94976131791307,
+        "speed": 248.94976131791307
+      },
+      {
+        "tick": 35,
+        "velocity": 250,
+        "speed": 250
+      }
     ]
   },
   "alternates": {
@@ -78,44 +229,193 @@
       "maxSpeed": 215,
       "wishspeed": 215,
       "scenario": "standstill_hold_strafe",
-      "reachesMaxAtTick": 35,
+      "reachesMaxAtTick": 36,
       "samples": [
-        { "tick": 0, "velocity": 18.4765625, "speed": 18.4765625 },
-        { "tick": 1, "velocity": 30.453125, "speed": 30.453125 },
-        { "tick": 2, "velocity": 42.4296875, "speed": 42.4296875 },
-        { "tick": 3, "velocity": 54.40625, "speed": 54.40625 },
-        { "tick": 4, "velocity": 66.3828125, "speed": 66.3828125 },
-        { "tick": 5, "velocity": 78.359375, "speed": 78.359375 },
-        { "tick": 6, "velocity": 90.3359375, "speed": 90.3359375 },
-        { "tick": 7, "velocity": 101.472705078125, "speed": 101.472705078125 },
-        { "tick": 8, "velocity": 111.70461029052734, "speed": 111.70461029052734 },
-        { "tick": 9, "velocity": 121.10517319957734, "speed": 121.10517319957734 },
-        { "tick": 10, "velocity": 129.74194037711108, "speed": 129.74194037711108 },
-        { "tick": 11, "velocity": 137.67697021972144, "speed": 137.67697021972144 },
-        { "tick": 12, "velocity": 144.96727901624408, "speed": 144.96727901624408 },
-        { "tick": 13, "velocity": 151.66524959742423, "speed": 151.66524959742423 },
-        { "tick": 14, "velocity": 157.8190068172429, "speed": 157.8190068172429 },
-        { "tick": 15, "velocity": 163.47277970146692, "speed": 163.47277970146692 },
-        { "tick": 16, "velocity": 168.6671783504096, "speed": 168.6671783504096 },
-        { "tick": 17, "velocity": 173.43953260943758, "speed": 173.43953260943758 },
-        { "tick": 18, "velocity": 177.82413221929578, "speed": 177.82413221929578 },
-        { "tick": 19, "velocity": 181.85248197647798, "speed": 181.85248197647798 },
-        { "tick": 20, "velocity": 185.55353281588916, "speed": 185.55353281588916 },
-        { "tick": 21, "velocity": 188.95388077334817, "speed": 188.95388077334817 },
-        { "tick": 22, "velocity": 192.07796071570113, "speed": 192.07796071570113 },
-        { "tick": 23, "velocity": 194.94825265873668, "speed": 194.94825265873668 },
-        { "tick": 24, "velocity": 197.5854683795898, "speed": 197.5854683795898 },
-        { "tick": 25, "velocity": 200.00870793955817, "speed": 200.00870793955817 },
-        { "tick": 26, "velocity": 202.233868596081, "speed": 202.233868596081 },
-        { "tick": 27, "velocity": 204.278929272649, "speed": 204.278929272649 },
-        { "tick": 28, "velocity": 206.157828769247, "speed": 206.157828769247 },
-        { "tick": 29, "velocity": 207.884067681745, "speed": 207.884067681745 },
-        { "tick": 30, "velocity": 209.470049682604, "speed": 209.470049682604 },
-        { "tick": 31, "velocity": 210.927170645892, "speed": 210.927170645892 },
-        { "tick": 32, "velocity": 212.265900530913, "speed": 212.265900530913 },
-        { "tick": 33, "velocity": 213.495858612777, "speed": 213.495858612777 },
-        { "tick": 34, "velocity": 214.625882600488, "speed": 214.625882600488 },
-        { "tick": 35, "velocity": 215, "speed": 215 }
+        {
+          "tick": 0,
+          "velocity": 15.2265625,
+          "speed": 15.2265625
+        },
+        {
+          "tick": 1,
+          "velocity": 27.203125,
+          "speed": 27.203125
+        },
+        {
+          "tick": 2,
+          "velocity": 39.1796875,
+          "speed": 39.1796875
+        },
+        {
+          "tick": 3,
+          "velocity": 51.15625,
+          "speed": 51.15625
+        },
+        {
+          "tick": 4,
+          "velocity": 63.1328125,
+          "speed": 63.1328125
+        },
+        {
+          "tick": 5,
+          "velocity": 75.109375,
+          "speed": 75.109375
+        },
+        {
+          "tick": 6,
+          "velocity": 87.04134521484374,
+          "speed": 87.04134521484374
+        },
+        {
+          "tick": 7,
+          "velocity": 98.2141454604864,
+          "speed": 98.2141454604864
+        },
+        {
+          "tick": 8,
+          "velocity": 108.49759517095102,
+          "speed": 108.49759517095102
+        },
+        {
+          "tick": 9,
+          "velocity": 117.96248630143518,
+          "speed": 117.96248630143518
+        },
+        {
+          "tick": 10,
+          "velocity": 126.6739757951559,
+          "speed": 126.6739757951559
+        },
+        {
+          "tick": 11,
+          "velocity": 134.69203412810202,
+          "speed": 134.69203412810202
+        },
+        {
+          "tick": 12,
+          "velocity": 142.07185814979968,
+          "speed": 142.07185814979968
+        },
+        {
+          "tick": 13,
+          "velocity": 148.86425106211396,
+          "speed": 148.86425106211396
+        },
+        {
+          "tick": 14,
+          "velocity": 155.11597215188652,
+          "speed": 155.11597215188652
+        },
+        {
+          "tick": 15,
+          "velocity": 160.87005868499173,
+          "speed": 160.87005868499173
+        },
+        {
+          "tick": 16,
+          "velocity": 166.16612217775182,
+          "speed": 166.16612217775182
+        },
+        {
+          "tick": 17,
+          "velocity": 171.040621085263,
+          "speed": 171.040621085263
+        },
+        {
+          "tick": 18,
+          "velocity": 175.52711178383746,
+          "speed": 175.52711178383746
+        },
+        {
+          "tick": 19,
+          "velocity": 179.6564795753408,
+          "speed": 179.6564795753408
+        },
+        {
+          "tick": 20,
+          "velocity": 183.45715130367475,
+          "speed": 183.45715130367475
+        },
+        {
+          "tick": 21,
+          "velocity": 186.95529104707072,
+          "speed": 186.95529104707072
+        },
+        {
+          "tick": 22,
+          "velocity": 190.17498023335318,
+          "speed": 190.17498023335318
+        },
+        {
+          "tick": 23,
+          "velocity": 193.13838341809867,
+          "speed": 193.13838341809867
+        },
+        {
+          "tick": 24,
+          "velocity": 195.86590086691777,
+          "speed": 195.86590086691777
+        },
+        {
+          "tick": 25,
+          "velocity": 198.37630899224737,
+          "speed": 198.37630899224737
+        },
+        {
+          "tick": 26,
+          "velocity": 200.68688961142894,
+          "speed": 200.68688961142894
+        },
+        {
+          "tick": 27,
+          "velocity": 202.8135489158942,
+          "speed": 202.8135489158942
+        },
+        {
+          "tick": 28,
+          "velocity": 204.7709269704503,
+          "speed": 204.7709269704503
+        },
+        {
+          "tick": 29,
+          "velocity": 206.57249849646456,
+          "speed": 206.57249849646456
+        },
+        {
+          "tick": 30,
+          "velocity": 208.23066563274696,
+          "speed": 208.23066563274696
+        },
+        {
+          "tick": 31,
+          "velocity": 209.7568433127028,
+          "speed": 209.7568433127028
+        },
+        {
+          "tick": 32,
+          "velocity": 211.16153784549732,
+          "speed": 211.16153784549732
+        },
+        {
+          "tick": 33,
+          "velocity": 212.4544192421902,
+          "speed": 212.4544192421902
+        },
+        {
+          "tick": 34,
+          "velocity": 213.64438778473811,
+          "speed": 213.64438778473811
+        },
+        {
+          "tick": 35,
+          "velocity": 214.73963529613067,
+          "speed": 214.73963529613067
+        },
+        {
+          "tick": 36,
+          "velocity": 215,
+          "speed": 215
+        }
       ]
     }
   }
