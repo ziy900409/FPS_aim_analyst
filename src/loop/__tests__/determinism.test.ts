@@ -154,9 +154,9 @@ describe('決定性驗證 ★M1 gate — 同輸入序列、不同 render FPS →
   it('事件確於同一 tick index 落點（vx 於固定 tick 切換，與 FPS 無關）', () => {
     // KeyD@10 → tick2 消費（窗 [7.8125,15.625) 含 10）：ground[0]（tick1）vx=0、ground[1]（tick2）起步加速。
     expect(GROUND[0].vx).toBe(0);
-    expect(GROUND[1].vx).toBeCloseTo(10.9375, 12);
-    // x 只在 vx≠0 的 tick 推進；tick2 後 x = 10.9375·(1/128)。
-    expect(GROUND[1].x).toBeCloseTo(10.9375 / SIM_HZ, 12);
+    expect(GROUND[1].vx).toBeCloseTo(10.7421875, 12);
+    // x 只在 vx≠0 的 tick 推進；tick2 後 x = 10.7421875·(1/128)。
+    expect(GROUND[1].x).toBeCloseTo(10.7421875 / SIM_HZ, 12);
   });
 });
 

@@ -31,8 +31,8 @@ export interface MovementProfile {
 
 export const CS2_PROFILE: MovementProfile = {
   friction: 5.2,
-  accelerate: 5.6,
-  stopSpeed: 75,
+  accelerate: 5.5,
+  stopSpeed: 80,
   maxSpeed: 250,
   accuracyThreshold: 88,
 };

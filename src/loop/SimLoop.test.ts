@@ -86,8 +86,8 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     const state = createSharedState();
     state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick 加速
     simStep(state, 1 / SIM_HZ, 0); // 無新輸入事件；tickEndMs 任意
-    expect(state.player.vx).toBeCloseTo(10.9375, 12);
-    expect(state.player.x).toBeCloseTo(10.9375 / SIM_HZ, 12);
+    expect(state.player.vx).toBeCloseTo(10.7421875, 12);
+    expect(state.player.x).toBeCloseTo(10.7421875 / SIM_HZ, 12);
     expect(state.prev.x).toBe(0); //                prev = 推進前位置（內插基準）
     expect(state.curr.x).toBe(state.player.x); //   curr = 推進後位置
   });
@@ -98,7 +98,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     pushEvent(state, { type: 'key', code: 'KeyD', down: true, t: 2 });
     const loop = createSimLoop(state, fixedClock(0), SIM_HZ);
     loop.pump(TICK_MS); // 跑 1 個 tick
-    expect(state.player.vx).toBeCloseTo(10.9375, 12); // KeyD 已消費 → 起步加速
+    expect(state.player.vx).toBeCloseTo(10.7421875, 12); // KeyD 已消費 → 起步加速
     expect(state.input.size()).toBe(0); // 事件已消費出緩衝
   });
 
@@ -116,14 +116,14 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     const state = createSharedState();
     state.held.right = true; // 向右移動
     for (let i = 0; i < 64; i++) simStep(state, 1 / SIM_HZ, i * TICK_MS);
-    expect(state.player.vx).toBeCloseTo(249.28460529178633, 12);
+    expect(state.player.vx).toBeCloseTo(244.5779902109947, 12);
     expect(state.player.stopped).toBe(false);
 
     // 反向鍵（放 D、按 A）→ 由 friction/accelerate 連續減速，不再同 tick 歸零。
     state.held.right = false;
     state.held.left = true;
     simStep(state, 1 / SIM_HZ, 65 * TICK_MS);
-    expect(state.player.vx).toBeCloseTo(228.2199182018075, 12);
+    expect(state.player.vx).toBeCloseTo(223.89982185867305, 12);
     expect(state.player.stopped).toBe(false);
   });
 
@@ -137,7 +137,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
 
     expect(recorder.snapshot().ticks).toEqual([
-      { t: TICK_MS, vx: 10.9375, vz: 0, aim: { yaw: 3, pitch: -2 }, keys: ['D'] },
+      { t: TICK_MS, vx: 10.7421875, vz: 0, aim: { yaw: 3, pitch: -2 }, keys: ['D'] },
     ]);
   });
 

@@ -17,12 +17,12 @@ describe('MovementController — Source friction/accelerate integrator', () => {
 
     s.held.right = true;
     mc.step(s, dt);
-    expect(s.player.vx).toBeCloseTo(10.9375, 12);
+    expect(s.player.vx).toBeCloseTo(10.7421875, 12);
     expect(s.player.vx).toBeLessThan(CS2_PROFILE.maxSpeed);
     expect(s.player.stopped).toBe(true);
 
     mc.step(s, dt);
-    expect(s.player.vx).toBeCloseTo(18.828125, 12);
+    expect(s.player.vx).toBeCloseTo(18.234375, 12);
     expect(s.player.stopped).toBe(true);
   });
 
@@ -34,7 +34,7 @@ describe('MovementController — Source friction/accelerate integrator', () => {
     for (let i = 0; i < 128; i++) mc.step(s, dt);
 
     expect(s.player.vx).toBe(CS2_PROFILE.maxSpeed);
-    expect(s.player.x).toBeCloseTo(211.33841717272932, 12);
+    expect(s.player.x).toBeCloseTo(209.1774976441331, 12);
   });
 
   it('A/D 方向對稱，A+D 同按只套 friction 不套 accelerate', () => {
@@ -43,7 +43,7 @@ describe('MovementController — Source friction/accelerate integrator', () => {
 
     s.held.left = true;
     mc.step(s, dt);
-    expect(s.player.vx).toBeCloseTo(-10.9375, 12);
+    expect(s.player.vx).toBeCloseTo(-10.7421875, 12);
 
     s.player.vx = CS2_PROFILE.maxSpeed;
     s.held.left = true;
@@ -62,7 +62,7 @@ describe('MovementController — Source friction/accelerate integrator', () => {
     expect(s.player.stopped).toBe(false);
 
     for (let i = 1; i < 30; i++) mc.step(s, dt);
-    expect(s.player.vx).toBeCloseTo(72.04302223916855, 12);
+    expect(s.player.vx).toBeCloseTo(71.77356764836614, 12);
     expect(s.player.stopped).toBe(true);
   });
 
@@ -78,7 +78,7 @@ describe('MovementController — Source friction/accelerate integrator', () => {
     expect(s.player.stopped).toBe(false);
 
     mc.step(s, dt);
-    expect(s.player.vx).toBeCloseTo(73.72995854812224, 12);
+    expect(s.player.vx).toBeCloseTo(75.36208856156556, 12);
     expect(s.player.stopped).toBe(true);
   });
 
