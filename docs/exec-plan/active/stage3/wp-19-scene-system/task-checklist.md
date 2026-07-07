@@ -7,7 +7,7 @@
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(GD-6/9 收斂 + 資產選型 + 硬約束回寫,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ✅ | **T1** SceneConfig schema + validateScene + 佔位房間收編 | [T1-scene-config.md](T1-scene-config.md) | T0 | Low |
-| ⬜ | **T2** GLTF 管線 + field-low 場景 + ATTRIBUTIONS | [T2-gltf-pipeline.md](T2-gltf-pipeline.md) | T1 | High |
+| 🟡 | **T2** GLTF 管線 + field-low 場景 + ATTRIBUTIONS(程式碼/資產/測試綠;實機 render + 無掉 tick + 壞 URL fallback 待人工瀏覽器驗證) | [T2-gltf-pipeline.md](T2-gltf-pipeline.md) | T1 | High |
 | ✅ | **T3** 淨空驗證器 + DrillLoader 拒載 | [T3-clearance-validator.md](T3-clearance-validator.md) | T1 | High |
 | ⬜ | **T4** 場景切換 + meta.scene + 跨場景決定性斷言 | [T4-scene-switch-metadata.md](T4-scene-switch-metadata.md) | T2, T3 | Med |
 | ⬜ | **T5** urban-high 第二場景 + 負載驗證 | [T5-second-scene-perf.md](T5-second-scene-perf.md) | T4 | Med |

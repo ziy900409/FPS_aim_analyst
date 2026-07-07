@@ -27,7 +27,7 @@ import { collectMeta, measureDisplayHz } from './data/metadata.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
-import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
+import { fieldLow } from './scene/scenes/field-low.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -55,8 +55,9 @@ let activeDrillConfig: DrillConfig = initialDrillConfig;
 let recorderStartedAt = new Date().toISOString();
 
 // WP-1 / T1（FR-1.1）+ WP-19 / T2（FR-C2）— 舞台 + camera:async 場景載入管線。
-// 佔位房間走同一入口(asset:null → 同步程序化房間);GLTF 場景載入失敗自動 fallback 佔位房間。
-const sceneManager = await createSceneManager(placeholderRoom);
+// 預設載入 field-low GLTF 場景;載入失敗(斷網/壞 URL)自動 fallback 佔位房間(同一 config 路徑)。
+// T4 接手場景切換 UI;此處先讓 field-low 實機可見(T2 DoD)。
+const sceneManager = await createSceneManager(fieldLow);
 
 // WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
 const targetView = new TargetView(sceneManager.scene);

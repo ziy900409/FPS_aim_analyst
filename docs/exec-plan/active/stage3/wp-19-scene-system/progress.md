@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T0/T1/T3 complete; T2 full GLTF scene pipeline still pending
+## Status: 🟡 T0/T1/T3 complete; T2 程式碼/資產/測試綠(實機瀏覽器驗證待人工)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 SceneConfig schema | ✅ |
-| T2 GLTF 管線 + field-low | ⬜ |
+| T2 GLTF 管線 + field-low | 🟡 code/asset/test 綠;實機 render + 無掉 tick + 壞 URL fallback 待人工瀏覽器驗證 |
 | T3 淨空驗證器 | ✅ |
 | T4 場景切換 + meta | ⬜ |
 | T5 urban-high + perf | ⬜ |
@@ -31,7 +31,61 @@
 
 ## Log
 
-### 2026-07-07 14:22Z — T1 SceneConfig schema + placeholder-room config PASS
+### 2026-07-07 16:48Z — T2 GLTF 管線 + field-low 場景 + ATTRIBUTIONS(code/asset/test 綠;實機待人工)
+- **切片(3 個原子 commit)**:
+  1. `sceneLoader.ts` + 單元測試(mock loader):`loadScene(config, loaderOverride?)` async GLTF 載入,
+     成功回套 `displayScale` 的 group;`asset:null` 或任何載入/解析失敗回 `null`(fallback 契約)。
+     `disposeScene(root)` traverse 釋放 geometry/material/texture 並自 parent 移除(防洩漏)。
+     依賴注入 loader 使測試不必真跑 WebGPU/GLTF 解析。
+  2. `SceneManager` GLTF 分支 + `createSceneManager` async 工廠 + fallback:建構子改資料驅動——
+     `asset:null` 建程序化房間;`asset!==null` 只建**舞台**(camera + 光 + 背景,`proceduralRoom` 描述),
+     牆/地板留給 GLTF。新增 `mountAsset()`(重覆 mount 先釋放)/`dispose()`(全場景 GPU 釋放)。
+     `createSceneManager` 載入失敗遞迴 fallback 佔位房間(單一 config 路徑)。`main.ts` 改 async 工廠。
+  3. field-low 資產落地:原創 CC0 GLTF(使用者選項)+ SceneConfig + ATTRIBUTIONS + 測試 + `main.ts` 預設載入。
+- **field-low 資產(原創 CC0)**:
+  - 權威 prop 清單 [../../../../../src/scene/scenes/field-low.props.json](../../../../../src/scene/scenes/field-low.props.json)(15 props,canonical u 座標)。
+  - 生成器 [../../../../../scripts/gen-field-low-gltf.mjs](../../../../../scripts/gen-field-low-gltf.mjs) → `public/assets/scenes/field-low/field-low.gltf`
+    (原創立方體幾何,3 材質色 foliage/rock/crate,node translation+scale = prop AABB)。
+  - [../../../../../src/scene/scenes/field-low.ts](../../../../../src/scene/scenes/field-low.ts):讀同一 props.json 生 `propBounds`(視覺與淨空資料不漂移),
+    `displayScale:1`(與 target 渲染同 1:1 世界座標),`proceduralRoom` 僅描述舞台(camera+光+天空色)。
+  - [../../../../../ATTRIBUTIONS.md](../../../../../ATTRIBUTIONS.md):field-low 逐項 = 原創 / CC0 / 2026-07-07;含重生指令。
+- **負載量測(headless GLTFLoader.parse)**:15 mesh nodes / 360 verts / **180 triangles** / 3 materials;
+  bbox min[-8,0,-9] max[8,3.5,1.5](= props.json,零漂移)。三角形數遠低於 T0 budget(<20k)。
+  draw calls ~15(每 prop 一 node;低雜亂度可接受,若 T5 需可 instancing)。
+- **測試/驗證**:
+  - `npm.cmd test -- src/render/sceneLoader.test.ts src/render/SceneManager.test.ts src/scene/scenes/field-low.test.ts` → 綠。
+  - `npm.cmd test`(全）→ Vitest **47 passed files / 346 passed tests**(T1 時 45/333;+sceneLoader 6、+field-low 3、SceneManager 重寫）。
+  - `npm.cmd run typecheck` → `tsc --noEmit` pass。
+  - `npm.cmd run build` → `tsc --noEmit && vite build` pass(僅既有 chunk-size warning);`dist/assets/scenes/field-low/field-low.gltf` 隨 build 靜態複製。
+  - headless GLTF 解析驗證:real `GLTFLoader.parse`(polyfill `ProgressEvent`)成功解出 15 mesh。
+  - `field-low × counterstrafe_ad_v1` `validateClearance` → **零違規**;`loadDrill(json, fieldLow)` 不 throw(淨空門放行)。
+  - `public/assets/scenes/` 僅 `field-low.gltf`(原創 CC0)——repo 內**無非 CC0/CC-BY 檔案**(DoD)。
+- **Decision Log**:
+  - **field-low 採原創 CC0 生成 GLTF**(使用者於本 session 明確選定),而非 T0/OQ-S3-3 選定的 Kenney Nature Kit。
+    Alternatives Considered:(a) 下載 Kenney kit 並組裝 ≤25 props——最貼近 T0,但需二進位資產下載 + 3D 場景組裝,
+    本環境無法可靠執行且 T2 實機 DoD 本就須人工瀏覽器驗證;(b) 只落 config+ATTRIBUTIONS scaffold 不落二進位——
+    pipeline 空轉、實機 render DoD 完全未達。採原創 CC0:GD-9 完全合規(原創=CC0、零 attribution 義務/share-alike)、
+    真 GLTFLoader 端到端可跑、propBounds 與視覺同源。**寫實資產置換保留給後續**(ATTRIBUTIONS 已註記接續紀律)。
+  - **GLTF 場景重用 `proceduralRoom` block 描述舞台(camera+光+背景),但不建牆/地板**。
+    Alternatives Considered:新增獨立 `stage`/`camera`/`lighting` schema block 更語意清晰,但屬 T1 schema territory 且擴大切片;
+    重用既有 block + `asset!==null` 時跳過 `#buildRoom`,零 schema 變更、camera 放置與 placeholder 同構(單一路徑)。
+  - **field-low props 全置於淨空安全區(flank |x|>=4.5、backdrop z<=-7)**,`displayScale:1`(canonical u = world 1:1)。
+    Alternatives Considered:貼近走廊擺放更「有臨場感」,但 T2 propBounds 只是資料(T3 消費)、T2 不驗淨空邏輯本體;
+    保守置於安全區使 `field-low × 現行 drill` 淨空零違規、DrillLoader 不拒載,符合 T2「本 task propBounds 只是資料」範圍。
+- **Surprises & Discoveries**:
+  - `TargetView` 直接以 `t.pos` 世界座標放 mesh(target distance 4 → z=-4 world,**1:1 canonical u**),而 player camera 位移
+    另乘 `SIM_TO_WORLD=0.01`(佔位 display scale)。故 GLTF props 須以 `displayScale:1` 授 1:1 才與 target 對齊;
+    player「走廊」在淨空驗證中是 z=0 原點抽象,render camera 另有 standoff——此空間不一致為既知佔位妥協(main.ts 註),
+    正式 display scale 待 WP-6 drill config。實機 camera/props 對位屬 T2 DoD 的人工瀏覽器驗證項。
+  - Node headless 跑 `GLTFLoader.parse` 需 polyfill `ProgressEvent`(three.core 於解析完成派發),與 GLTF 本身合法性無關。
+- **Open Questions / 待人工**:
+  - T2 DoD 實機項(**須使用者在 Chrome/Edge 桌面版驗證**):(1) `npm run dev` → field-low 可見、既有 counter-strafe drill 全程無掉 tick
+    (`sharedState.ticks` 監控);(2) 壞 URL / 斷網 → 自動 fallback 佔位房間成功(可暫改 `field-low.ts` asset.url 為壞路徑驗證);
+    (3) `dispose()` 無殘留(場景切換於 T4 才有 UI,可先手動觀測)。驗證後把 task-checklist T2 由 🟡 翻 ✅。
+  - field-low 視覺對位(props 與玩家/target 相對位置、camera standoff)如需微調:只改 `field-low.props.json` +
+    `field-low.ts` `displayScale`/`proceduralRoom`,**不把場景知識推進 sim**(GD-6)。
+
+
 - **Blast radius(CodeGraph)**:`SceneManager` 影響範圍為 `src/render/SceneManager.ts` + `src/main.ts` 呼叫點,local-to-render;`SceneConfig`/`validateScene` 影響 `DrillLoader`、clearance tests、harness/determinism 型別引用,屬跨模組 config contract,但不改 `src/sim` runtime。
 - **實作**:
   - [../../../../../src/scene/SceneConfig.ts](../../../../../src/scene/SceneConfig.ts):保留 T3 已用的 `Vec3` AABB 形狀,補 `SceneAsset.displayScale?` 驗證與 render-only `proceduralRoom` 區塊(房間尺寸、eye height、FOV、顏色、光照),錯誤訊息維持 field-path。
