@@ -383,6 +383,14 @@
     "mtime": 1783406922.5696416,
     "hash": "1f0ad04a56b42d1944a67a81294cc394"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\regression\\spray-determinism.test.ts": {
+    "mtime": 1783429533.583959,
+    "hash": "b4d36ef9792576ca6228e1f13c20533d"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\regression\\sprayDeterminismFixture.ts": {
+    "mtime": 1783429532.175871,
+    "hash": "f2f72c0efa41c706e6a644bbfddf5619"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\validity\\reaction-time.test.ts": {
     "mtime": 1783080356.7806294,
     "hash": "a492ee6ca5b2e7e14133f04fd78382dc"
@@ -432,16 +440,16 @@
     "hash": "5e6f5030447832c91106f868e100dbcf"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\README.md": {
-    "mtime": 1783419260.2499542,
-    "hash": "aa53dc7cf41e5950a93f4fbbf3b98ae0"
+    "mtime": 1783427450.7851849,
+    "hash": "02e50e70ed424bd0736ac8f2fa0d5c17"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\CS2 \u58d3\u69cd\u8ecc\u8de1\u5fa9\u523b\u7814\u7a76\u8a08\u756b.md": {
     "mtime": 1783081091.946416,
     "hash": "a743c09df154643dcd7ff2f71e75ca4a"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\README.md": {
-    "mtime": 1783419368.746634,
-    "hash": "2e0c2b5ea09647a43d4919fb4f0c7f1e"
+    "mtime": 1783427393.9503427,
+    "hash": "9a2a3f3eb736fa747ab54ba5739ad571"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-10-recoil-core\\progress.md": {
     "mtime": 1783325183.4663665,
@@ -572,8 +580,8 @@
     "hash": "ce72fee0d36979802ba48a6e4b307c96"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-14-movement-physics\\progress.md": {
-    "mtime": 1783406922.5015342,
-    "hash": "e365d50452f801a68c0140321d642cc7"
+    "mtime": 1783427418.9839685,
+    "hash": "3b0a3df1f9243e40441d22bcd19c3d68"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-14-movement-physics\\README.md": {
     "mtime": 1783406922.496303,
@@ -632,16 +640,16 @@
     "hash": "e14d8a5e6c933318eb98bcb68c0efd30"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-16-metrics-export-v2\\progress.md": {
-    "mtime": 1783426763.643782,
-    "hash": "0f7f889530e38f4078cd76b8b1c758e6"
+    "mtime": 1783427347.356754,
+    "hash": "be46d73c80a98279e8c66f777e45a604"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-16-metrics-export-v2\\README.md": {
-    "mtime": 1783426707.851496,
-    "hash": "06b0aeba61bf4425abba241741dc276c"
+    "mtime": 1783427360.2751932,
+    "hash": "e261fbda6ddef389db1d05d64d886861"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-16-metrics-export-v2\\T-exit-gate.md": {
-    "mtime": 1783085186.7496881,
-    "hash": "88078a437e0f4e9f16cbdf2444e0b3ee"
+    "mtime": 1783427386.3077893,
+    "hash": "fcd98ca77054db95e150bd558ff89960"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-16-metrics-export-v2\\T0-entry-gate.md": {
     "mtime": 1783419366.1116831,
@@ -660,36 +668,36 @@
     "hash": "59fcf1e33bfdce1762f310f9ffa3c91c"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-16-metrics-export-v2\\task-checklist.md": {
-    "mtime": 1783426715.844252,
-    "hash": "41b261a0078e6a0dec304a47cd215464"
+    "mtime": 1783427355.6273217,
+    "hash": "2d2c84c861766dfd40c7e583b51a6caa"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-17-integration\\progress.md": {
-    "mtime": 1783085244.4144466,
-    "hash": "dc53ce732fd918b002ffe66de02f5830"
+    "mtime": 1783429594.2566593,
+    "hash": "771e62d44b49ceab9a3aad41cb5f41c2"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-17-integration\\README.md": {
-    "mtime": 1783085229.9726706,
-    "hash": "51297e703f543c91b1cb35ba098444e5"
+    "mtime": 1783428665.7196918,
+    "hash": "43aeece2e362ce4099844ae66cdd3bb2"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-17-integration\\T-exit-gate.md": {
     "mtime": 1783085304.9505737,
     "hash": "b4ca9b937940b364e700c2cd44df1809"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-17-integration\\T0-entry-gate.md": {
-    "mtime": 1783085267.0104587,
-    "hash": "b6b8e760a12ad40c84c6abeb8a14e531"
+    "mtime": 1783428596.9688878,
+    "hash": "cb68335953caa94b21d985fd342acafb"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-17-integration\\T1-determinism-regression.md": {
-    "mtime": 1783085279.165087,
-    "hash": "aa60fcf3aaf16001c276aa2da8a68897"
+    "mtime": 1783429591.1261315,
+    "hash": "f83885e0e86432e489234e2dd5d8c63e"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-17-integration\\T2-e2e-full-chain.md": {
     "mtime": 1783085290.8766377,
     "hash": "fdd98af49ac6f659124d97acbd9db015"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-17-integration\\task-checklist.md": {
-    "mtime": 1783085237.5499885,
-    "hash": "3973e2b91b075a233bce7bfa5a53f314"
+    "mtime": 1783429592.7146022,
+    "hash": "52c3b23765c30dac070240e8e9663ee8"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage2\\wp-18-f5-subtick\\README.md": {
     "mtime": 1783346199.1246798,

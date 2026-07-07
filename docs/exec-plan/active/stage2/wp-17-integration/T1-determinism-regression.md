@@ -7,7 +7,7 @@
 | **相依** | T0 |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | MODIFY `tests/regression/determinism.test.ts`(或並列 NEW `tests/regression/spray-determinism.test.ts`)、NEW `tests/golden/recoil/spray-baseline.json` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS 2026-07-07 |
 
 ## Objective
 
@@ -28,10 +28,10 @@ FR-B16 落地:壓槍全狀態(punch、彈著)納入決定性回歸——同 seed
 
 ## Steps
 
-- [ ] 合成輸入 fixture 定義(aim + fire 時刻表,註解記語意)。
-- [ ] 兩次執行一致測試 + 三 FPS pump 一致測試。
-- [ ] 基準檔鎖定 + M5 golden 交叉 sanity 記 progress。
-- [ ] `npx vitest run tests/regression` 全綠(含既有 M1 案例不退化)。
+- [x] (2026-07-07 15:05Z) 合成輸入 fixture 定義(aim + fire 時刻表,註解記語意)。
+- [x] (2026-07-07 15:05Z) 兩次執行一致測試 + 三 FPS pump 一致測試。
+- [x] (2026-07-07 15:05Z) 基準檔鎖定 + M5 golden 交叉 sanity 記 progress。
+- [x] (2026-07-07 15:05Z) `npx vitest run tests/regression` 全綠(含既有 M1 案例不退化)。
 
 ## Definition of Done
 

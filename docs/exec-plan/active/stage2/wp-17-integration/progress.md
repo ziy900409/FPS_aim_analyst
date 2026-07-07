@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 entry gate PASS(2026-07-07):M7/WP-16 雙上游已收斂;整合前 `test:ci` 乾淨;WP-17 T1 可開
+## Status: 🟡 T1 PASS(2026-07-07):punch/spread/impact 決定性 baseline 已入 repo;T2 全鏈路 E2E 可開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS 2026-07-07 |
-| T1 決定性回歸擴充 | ⬜ |
+| T1 決定性回歸擴充 | ✅ PASS 2026-07-07 |
 | T2 全鏈路 E2E | ⬜ |
 | T-exit(M8) | ⬜ |
 
@@ -25,6 +25,33 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T1 PASS(punch / spread / impact 決定性回歸 × 60/144/240 FPS)
+
+**閘門結論:** PASS。新增 `tests/regression/spray-determinism.test.ts` 與 fixture,鎖定 `tests/golden/recoil/spray-baseline.json`。同 seed / 同 fire 時刻表下,canonical per-tick、重播兩次、60/144/240 FPS pump 的 30 發序列皆 bit-exact 一致。
+
+**覆蓋內容:**
+
+| 項目 | 證據 |
+|---|---|
+| 合成輸入 fixture | `SPRAY_FIRE_DOWN_MS=3100`, `SPRAY_FIRE_UP_MS=6100`, neutral fixed aim;fire window 覆蓋 AK 30 發滿匣。 |
+| tick-index keyed baseline | `spray-baseline.json` 逐發記錄 `tick`, `aimPunch*`, `rawPunch*`, `spreadX/Y`, `impactX/Y/Z`, `recoilIndex`, `ammoBefore`。 |
+| 多 FPS 決定性 | `sprayFrameSequences` 覆蓋 60/144/240 FPS;測試斷言 shots/final 完全等於 canonical baseline。 |
+| M5 sanity | baseline 第 10 發 rawPunch 與 `ak47-10shot-punch.json` 方向一致且向量近似(pitch 容差 0.25°,yaw 容差 0.1°),確認 M5 recoil 接線仍可辨識。 |
+
+**Verification:**
+
+- `npx.cmd vitest run tests/regression` → exit 0,**2 files / 21 tests passed**。
+- `npm.cmd run typecheck` → exit 0,`tsc --noEmit` clean。
+
+**Decision Log:**
+- **T1 不擴充 `DataRecorder` tick schema。** Alternatives Considered:為逐 recoil tick punch 新增 tick 欄位或 debug-only recorder hook。否決,WP-17 T1 是回歸防線而非 schema 新功能;WP-16 已定 v2 export 欄位。採測試 fixture 直接鎖定 fire event 產彈點的 punch/spread + `ImpactRing` 彈著序列,以 tick index 對齊 FPS 決定性。
+
+**Surprises & Discoveries:**
+- `DataRecorder.ticks` 目前不含 recoil 欄位,逐 tick punch 無法不改 schema 直接從 export snapshot 取出。Evidence:`src/data/RingBuffer.ts` 的 `TickRecord` 僅含 t/vx/vz/position/target/aim/keys。
+- M5 pure recoil golden 與 SimLoop 產彈點存在 64Hz recoil tick 相位差;第 10 發 rawPunch 可辨識但不應用 0.01° 純公式等值容差。Evidence:T1 baseline 第 10 發 rawPunch 約 `(-10.4069,-1.6072)`,M5 golden final `(-10.18,-1.56)`。
+
+**Next:** T2([T2-e2e-full-chain.md](T2-e2e-full-chain.md))— 壓槍 drill 全鏈路 E2E(含 COI)。
 
 ### 2026-07-07 — T0 entry gate PASS(M7 / WP-16 雙上游收斂驗證)
 
