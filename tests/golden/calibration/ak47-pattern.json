@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "weapon": "ak47",
+    "sourceName": "Aiming.Pro drill creator",
+    "sourceUrl": "https://aiming.pro/app#/training/drills/create",
+    "capturedAt": "2026-07-07",
+    "providedBy": "researcher",
+    "unit": "deg",
+    "status": "candidate-reference",
+    "sourceAccessNote": "The public URL resolves to the Aiming.Pro app shell; the drill creator values were supplied by the researcher from screenshots.",
+    "columns": {
+      "xDeg": "yaw / horizontal angle, source-entered",
+      "yDeg": "pitch / vertical angle, source-entered"
+    },
+    "calibration": {
+      "method": "direct angular values from source UI",
+      "pixelToAngleScale": null,
+      "requiresPixelDigitization": false
+    },
+    "notes": [
+      "Decimal commas from the source UI were normalized to decimal points.",
+      "Sign convention is preserved as source-entered; T2 comparison must explicitly map this to project yaw/pitch signs.",
+      "Custom damage falloff and spread settings were provided with the source screenshots but are outside the WP-15 pattern fixture contract."
+    ]
+  },
+  "shots": [
+    { "i": 1, "xDeg": 0.19, "yDeg": 0.38 },
+    { "i": 2, "xDeg": 0.0, "yDeg": 1.44 },
+    { "i": 3, "xDeg": 0.13, "yDeg": 3.06 },
+    { "i": 4, "xDeg": 0.19, "yDeg": 4.88 },
+    { "i": 5, "xDeg": -0.5, "yDeg": 6.44 },
+    { "i": 6, "xDeg": -0.938, "yDeg": 7.945 },
+    { "i": 7, "xDeg": -1.63, "yDeg": 9.0 },
+    { "i": 8, "xDeg": -0.805, "yDeg": 10.063 },
+    { "i": 9, "xDeg": 1.63, "yDeg": 9.75 },
+    { "i": 10, "xDeg": 2.735, "yDeg": 10.123 },
+    { "i": 11, "xDeg": 2.065, "yDeg": 10.655 },
+    { "i": 12, "xDeg": 2.88, "yDeg": 10.568 },
+    { "i": 13, "xDeg": 4.382, "yDeg": 10.52 },
+    { "i": 14, "xDeg": 4.592, "yDeg": 10.637 },
+    { "i": 15, "xDeg": 2.563, "yDeg": 10.873 },
+    { "i": 16, "xDeg": 1.22, "yDeg": 11.078 },
+    { "i": 17, "xDeg": 0.44, "yDeg": 11.31 },
+    { "i": 18, "xDeg": -0.93, "yDeg": 11.575 },
+    { "i": 19, "xDeg": -2.92, "yDeg": 11.06 },
+    { "i": 20, "xDeg": -1.845, "yDeg": 11.185 },
+    { "i": 21, "xDeg": -2.03, "yDeg": 11.19 },
+    { "i": 22, "xDeg": -1.558, "yDeg": 11.455 },
+    { "i": 23, "xDeg": -1.185, "yDeg": 11.83 },
+    { "i": 24, "xDeg": -2.292, "yDeg": 11.668 },
+    { "i": 25, "xDeg": -2.453, "yDeg": 11.755 },
+    { "i": 26, "xDeg": -1.41, "yDeg": 11.72 },
+    { "i": 27, "xDeg": 0.578, "yDeg": 11.508 },
+    { "i": 28, "xDeg": 2.82, "yDeg": 10.82 },
+    { "i": 29, "xDeg": 3.785, "yDeg": 10.825 },
+    { "i": 30, "xDeg": 2.4, "yDeg": 10.525 }
+  ]
+}

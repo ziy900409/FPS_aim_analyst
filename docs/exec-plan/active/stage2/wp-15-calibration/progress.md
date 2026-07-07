@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🛑 T0 STOP(2026-07-07):容差已拍板,校準參考資料未備
+## Status: 🛑 T0 STOP(2026-07-07):容差已拍板,AK pattern 候選資料已入 repo,`cl_showpos` 仍缺
 
 | Task | 狀態 |
 |---|---|
@@ -25,6 +25,18 @@
 ---
 
 ## Log
+
+### 2026-07-07 — AK pattern candidate fixture added(Aiming.Pro)
+
+研究者提供 Aiming.Pro drill creator 內 AK47 spray pattern 數值與來源:
+- 來源 URL:`https://aiming.pro/app#/training/drills/create`。
+- 第 1 欄 = yaw / horizontal = `xDeg`。
+- 第 2 欄 = pitch / vertical = `yDeg`。
+- 30 發角度值已整理為 [tests/golden/calibration/ak47-pattern.json](../../../../../tests/golden/calibration/ak47-pattern.json)。
+
+**清點狀態更新:**AK pattern 由「缺」改為「候選 fixture 已入 repo」。此資料是來源 UI 直接給出的角度值,因此不需要像素→角度標定;但 T2 實作時仍必須明確把來源 sign convention 映射到本專案 yaw/pitch sign。`cl_showpos` 起步與急停兩段仍缺,所以 WP-15 T0 整體維持 STOP,T1/T2 不開工。
+
+**Out of scope note:**研究者同時提供 Custom Damage Fall Off、clip、spread 等武器設定截圖;這些不屬於 WP-15 T2 pattern fixture 的必要欄位,暫不入本 fixture。若後續要校準 weapon config,應另開對應資料/測試切片。
 
 ### 2026-07-07 — T0 entry gate STOP(OQ-S2-2 已拍板;參考資料未備)
 
@@ -48,7 +60,7 @@
 |---|---|---|
 | CS2 `cl_showpos` 起步段 | `tests/golden/calibration/clshowpos-accel.json`,tick 連續無缺漏,含 tickrate/來源/錄製條件 | ❌ 缺。`tests/golden/calibration` 目錄不存在。 |
 | CS2 `cl_showpos` 急停段 | `tests/golden/calibration/clshowpos-stop.json`,tick 連續無缺漏,含 tickrate/來源/錄製條件 | ❌ 缺。`tests/golden/calibration` 目錄不存在。 |
-| 社群 AK pattern 圖 | `tests/golden/calibration/ak47-pattern.json`,含來源 URL 與可複核的像素→角度標定方法 | ❌ 缺。repo 內僅有 WP-10 recoil golden 與 pattern viewer PNG,沒有可標定外部 pattern fixture。 |
+| 社群 AK pattern 圖 | `tests/golden/calibration/ak47-pattern.json`,含來源 URL 與可複核的像素→角度標定方法 | 🟡 2026-07-07 已補候選 fixture:Aiming.Pro drill creator 直接角度值;不需像素標定,sign 映射待 T2 明確化。 |
 
 **資料清點證據:** `rg --files tests docs | rg "(calibration|clshowpos|showpos|pattern|ak47)"` 只找到 WP-15 task 文件、WP-10 recoil golden(`tests/golden/recoil/*`)與 pattern viewer 圖;未找到 `tests/golden/calibration/*`。`Test-Path tests\golden\calibration` 回報 missing。
 
@@ -58,7 +70,7 @@
 
 **Open Questions / Blocker:**
 - 研究者需提供 CS2 `cl_showpos` 起步 + 急停錄製資料(各至少一段,64 tick 連續、含 tickrate/來源/錄製條件)。
-- 研究者需提供 AK pattern 圖來源 URL 與可標定尺度,或直接提供可複核的 30 點數位化草稿與標定方法。
+- AK pattern 候選 fixture 已補;T2 仍需在測試中明確來源 sign convention 到 project yaw/pitch 的映射。
 
 ### 2026-07-03 — Plan authored
 - 由 stage2 計畫([../README.md](../README.md) §6 WP-15 表 + session 補充決定)展開為自足 task 檔(T0–T2 + T-exit)。
