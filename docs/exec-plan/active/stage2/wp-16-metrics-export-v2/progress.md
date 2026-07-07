@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T3 result overlay PASS; T-exit next
+## Status: ✅ WP-16 收斂(schema v2 + 壓槍指標交付)— T-exit PASS 2026-07-07
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 schema v2 | ✅ 2026-07-07 |
 | T2 理想路徑指標 | ✅ 2026-07-07 |
 | T3 結果頁對照 | ✅ 2026-07-07 |
-| T-exit | ⬜ |
+| T-exit | ✅ 2026-07-07 |
 
 ---
 
@@ -27,6 +27,70 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T-exit PASS(schema v2 + 壓槍指標交付;不變式/溢位/對帳全綠)
+
+**閘門結論:** WP-16 收斂。v2 匯出對帳一致、統計=匯出與 schema.md=payload 兩不變式綠、arena 溢位保護測試綠、
+與 WP-14 T3 殘速連續欄對帳收斂。**WP-17 全鏈路 E2E 自此有穩定資料面可消費**(fire 欄位齊、meta v2 斷代齊、不變式綠)。
+本切片為 docs-only(status/checklist/OQ ledger/上層索引 + 五軸 code review 附註),`git diff --stat` 不含 `src/`。
+
+**1. `test:ci` 三段全綠(提升權限;沙盒讀 Vite config access denied):**
+- `npm.cmd run typecheck` → exit 0。
+- `npm.cmd test`(vitest) → **42 files / 320 tests passed**,2.37s。
+- `npm.cmd run test:e2e`(playwright) → **9 passed**,18.3s(含 `full-drill` 全鏈路 schema / 事件 / metadata / 統計＝匯出)。
+
+**2. 不變式抽查(assert 測試名 + 結果):**
+- **統計=匯出**:
+  - unit [export.test.ts](../../../../../src/data/export.test.ts) › *builds the appendix C payload from metadata and recorder snapshot*
+    → `buildExportPayload(meta, snapshot)` `toEqual({ meta, ticks, events })`;ticks/events 為 snapshot 直通,無轉換漂移(見 [export.ts:20-31](../../../../../src/data/export.ts))。
+  - E2E [full-drill.spec.ts](../../../../../tests/e2e/full-drill.spec.ts) › *crossOriginIsolated + 全鏈路:schema / 事件 / metadata / 統計＝匯出*
+    → `metricsMatchExport === true`(結果頁 `getMetrics()` vs JSON round-trip 反算逐欄一致)。
+- **schema.md=payload**:
+  - unit [export.test.ts](../../../../../src/data/export.test.ts) › *serializes ticks and sparse event tables as CSV files*
+    → 逐 byte 釘住 CSV 表頭 `t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys` 與 fire 全欄
+    `type,t,targetId,side,key,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part`,
+    與 [schema.md](../../../../operational/schema.md) §CSV(line 172/252)完全一致;JSON 範例(schema.md:234)與測試 payload 同形。
+
+**3. 溢位保護確認(容量公式 + 測得餘裕):**
+- 容量公式 [RingBuffer.capacityForDrill](../../../../../src/data/RingBuffer.ts):`ceil(maxDrillSeconds × (simHz + maxFireHz)) + ceil(extraTicks)`,`maxFireHz=10`(AK 1/cycletime)。
+- [DataRecorder.test.ts](../../../../../src/data/DataRecorder.test.ts):
+  - *estimates capacity from drill duration and sim rate with spare ticks* → `capacityForDrill(128, 300, 128) === 41_528`。
+  - *does not wrap on overflow and preserves the oldest rows* → 非環狀 arena,滿載置 `recorderOverflow=true` 並保留最舊列。
+  - *records directly from shared state without per-tick record objects* → 100_000 列寫入不溢位(物件重用,零 per-tick 配置)。
+- **測得餘裕**:300s / 128Hz drill 實需 38 400 tick 列,容量 41 528 → 餘裕 **3 128 列(≈8.1%)**,另公式已內含 `+10Hz` fire-rate 保守預留。
+
+**4. WP-14 T3 對帳點收斂(殘速連續欄落位):**
+- [WP-14 T3](../wp-14-movement-physics/T3-metrics-continuous.md) 帶著走的決定為「真殘速連續欄/停火時序對齊統一排 WP-16 schema v2 對帳,不在 WP-14 提前擴欄」。
+- **收斂確認**:fire 事件 `residualSpeed: number`(連續 u/s)為 v2 必填欄([DataRecorder.ts:17](../../../../../src/data/DataRecorder.ts)、[schema.md:130](../../../../operational/schema.md)),
+  匯出/CSV/JSON 全鏈路齊;WP-14 T3 的連續殘速統計(mean/p50/SD)即讀此欄。**殘速連續欄落位確認。**
+- **仍延後(非 WP-16 交付)**:獨立 `t_velocity_zero` 事件欄未於 v2 加入——v2 fire 欄鎖定 8 個具名欄(§2 契約),`residualSpeed` 已足以承載 counter-strafe 品質的逐發連續量;
+  `t_velocity_zero` 若研究需要,屬 additive 擴欄(v2 reserved optional,不再 bump)。互記:見 WP-14 progress 對帳附註。
+
+**5. OQ ledger 收斂:**
+- **OQ-S2-3**(感度語意/schema 斷代)已於 [../README.md §8](../README.md) ✅ closed 並註「T0 收尾(2026-07-07 WP-16)」;T1 已 bump `schemaVersion:2` + `sensitivityModel` 納 v2 對帳,無重開項。
+- **`targetCenterOffsetDeg`**(稽核不確定 #4)已於本檔 T0 OQ ledger ✅ closed(無號非負角距離,不重解釋 `offsetDeg`);T-exit 確認無回歸。
+- 本 WP 無新增未決 OQ。
+
+**五軸 code review(T1–T3 全 diff):Approve。** 發現皆不擋線:
+- **Correctness**:T2 補償路徑為累積偏移對累積偏移比較(`aimPunch` 本身為 burst 內累積狀態),單位/baseline/shortest-angle 處理正確;
+  `mirrorPunch` 正規化 `-0`→`0`;空/短序列安全回 `{0,0}`。fire 欄位語意(pre-kick punch / 本發 shot index / 開火前剩彈)承 T0 決議。
+- **Architecture**:統計單一計算點在 metrics 層,UI 讀結算物件不重算(避免統計/呈現漂移);匯出為 snapshot 直通,meta 僅 OR 合併 `suspect/recorderOverflow`。
+- **Security**:無外部輸入面;CSV cell 逸出引號/逗號/換行;`assertFinitePayload` 擋非有限數。
+- **Performance**:metrics 為離線 O(n) 統計(`computeSwitchTimes` 對 fire 事件 O(n²) 但集合極小,非熱路徑);匯出零 sim 熱路徑影響。
+- **Readability**:命名對齊 CONTEXT.md 正規術語;無 dead code。
+
+**Outcomes(交付了什麼):**
+- 匯出 **schema v2**:fire 事件 8 擴欄(view/punch/spread/recoilIndex/ammo)+ meta 6 欄(weaponId/weaponSeed/rngSeed/sensitivityModel/movementModel/`schemaVersion:2`)+ tick arena `px/pz/tx/ty/tz`;`schema.md` v2 欄位/容量公式/FPSci 對映附錄齊。
+- **壓槍指標**:`buildIdealPath`(−aimPunch×2 鏡像)+ `compensationError`(mean/RMS 角度)+ 結果頁實際 vs 理想軌跡 overlay(legend + mean/RMS 數值列)。
+- 不變式:統計=匯出、schema.md=payload、arena 非環狀溢位保護——全綠。
+
+**Surprises:** 無新增(沙盒 Vite config access denied 為既知,提升後全綠)。
+
+**帶著走的決定:**
+- v2 fire 欄鎖 8 具名欄;`t_velocity_zero` 與 `scene/display/frames/session` 同列 v2 reserved optional,後續 additive 不 bump。
+- WP-17 T2 可直接消費 v2 匯出(欄位齊、不變式綠、決定性回歸由 WP-17 T1 擴充)。
+
+**Next:** WP-16 完成;WP-17([../wp-17-integration/README.md](../wp-17-integration/README.md))全鏈路 E2E(M8)可開跑(上游 WP-15 M7 caveated + WP-16 均 ✅)。
 
 ### 2026-07-07 — T3 result overlay PASS(實際 vs 理想壓槍軌跡對照)
 

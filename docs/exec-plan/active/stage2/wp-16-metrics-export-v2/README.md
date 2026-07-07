@@ -10,7 +10,7 @@
 | **相依** | WP-13(M6;punch/spread 資料源) |
 | **對應 FR** | FR-B14(schema v2)、FR-B15(壓槍指標) |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 T3 result overlay PASS(2026-07-07);T-exit next |
+| **狀態** | ✅ 完成(2026-07-07)— schema v2 + 壓槍指標交付;不變式/溢位/對帳全綠 |
 
 ---
 
@@ -62,4 +62,4 @@ src/ui/ResultScreen.ts      ← MODIFY 軌跡對照呈現(DOM overlay,D1)       
 | **T1** | [T1-schema-v2.md](T1-schema-v2.md) | schema v2 擴欄 + `schemaVersion` + arena 容量重估 | T0 | Med |
 | **T2** | [T2-ideal-path-metric.md](T2-ideal-path-metric.md) | 理想路徑產生器 + 補償誤差 mean/RMS | T1 | Low |
 | **T3** | [T3-result-overlay.md](T3-result-overlay.md) | 結果頁軌跡對照(實際 vs 理想) | T2 | Low |
-| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 不變式全綠 + schema 對帳宣告 | T1–T3 | — |
+| **T-exit** ✅ | [T-exit-gate.md](T-exit-gate.md) | 不變式全綠 + schema 對帳宣告 | T1–T3 | — |

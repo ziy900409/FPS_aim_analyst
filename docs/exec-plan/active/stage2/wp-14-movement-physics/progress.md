@@ -27,6 +27,13 @@
 
 ## Log
 
+### 2026-07-07 — 下游對帳回填(WP-16 T-exit 收斂殘速連續欄)
+
+- T3「帶著走的決定」(真殘速連續欄/停火時序對齊排 WP-16 schema v2 對帳)已於下游收斂:
+  [WP-16 T-exit](../wp-16-metrics-export-v2/progress.md)(§4)確認 fire 事件 `residualSpeed: number`(連續 u/s)為 schema v2 必填欄,
+  匯出/CSV/JSON 全鏈路齊,本 WP T3 的連續殘速統計(mean/p50/SD)即讀此欄。**殘速連續欄落位確認,對帳點收斂。**
+- 仍延後(非 WP-16 交付):獨立 `t_velocity_zero` 事件欄未入 v2(v2 fire 鎖 8 具名欄);若研究需要屬 additive 擴欄,不再 bump。
+
 ### 2026-07-06 — T-exit gate PASS(真急停物理上線)
 - **`npm run test:ci` exit 0**:`tsc --noEmit` 通過;Vitest `40 passed` test files / `298 passed` tests;Playwright `9 passed`(Edge,dev+preview isolation / backend / input-sampler / full-drill / overlay 全綠)。
 - **baseline 重錄對帳**:T0 盤點清單 4 檔已於 T1 全數改寫(commit `112d6a6`)——
