@@ -7,7 +7,7 @@
 | **相依** | T0(語意決議完成) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | MODIFY `src/data/DataRecorder.ts`、`src/data/metadata.ts`、`src/data/export.ts`、`src/drill/schema.ts`、`docs/operational/schema.md` + 對應測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-07 |
 
 ## Objective
 
@@ -37,13 +37,13 @@ arena 容量以 fire 事件率上限重估——壓槍狀態在資料面完整�
 
 ## Steps
 
-- [ ] arena 平行欄位擴欄 + fire 記錄簽名更新(呼叫端 = fireOneShot 單點)。
-- [ ] meta 五欄 + `schemaVersion` bump;drill schema `weaponId?` + validate 測試。
-- [ ] `capacityForDrill` 重估 + **滿載溢位測試**(構造 fire 率上限 drill → 無 `recorderOverflow`)。
-- [ ] 統計=匯出不變式測試擴 v2 欄後維持綠(既有 assert 機制)。
-- [ ] schema.md 對帳(欄位表 + 單位/符號 + 容量公式)。
-- [ ] schema.md 附錄:FPSci 欄位對映表(相同/近似/無對應三類標注)。
-- [ ] `npx vitest run` 全綠。
+- [x] arena 平行欄位擴欄 + fire 記錄簽名更新(呼叫端 = fireOneShot 單點)。
+- [x] meta 五欄 + `schemaVersion` bump;drill schema `weaponId?` + validate 測試。
+- [x] `capacityForDrill` 重估 + **滿載溢位測試**(構造 fire 率上限 drill → 無 `recorderOverflow`)。
+- [x] 統計=匯出不變式測試擴 v2 欄後維持綠(既有 assert 機制)。
+- [x] schema.md 對帳(欄位表 + 單位/符號 + 容量公式)。
+- [x] schema.md 附錄:FPSci 欄位對映表(相同/近似/無對應三類標注)。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 entry gate PASS; T1 schema v2 next
+## Status: 🟡 T1 schema v2 PASS; T2 ideal path metric next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ 2026-07-07 |
-| T1 schema v2 | ⬜ |
+| T1 schema v2 | ✅ 2026-07-07 |
 | T2 理想路徑指標 | ⬜ |
 | T3 結果頁對照 | ⬜ |
 | T-exit | ⬜ |
@@ -27,6 +27,45 @@
 ---
 
 ## Log
+
+### 2026-07-07 — T1 schema v2 PASS(fire/meta 擴欄 + arena 容量重估)
+
+**結論:** schema v2 已落地。匯出 meta 固定 `schemaVersion:2`，新增 `weaponId/weaponSeed/rngSeed/movementModel`；
+fire 事件由唯一產彈點 `fireOneShot` 寫入 view/punch/spread/recoilIndex/ammo；tick arena 新增
+`px/pz/tx/ty/tz`；`docs/operational/schema.md` 已更新 v2 欄位、容量公式與 FPSci 對映附錄。
+
+**實作摘要:**
+- [RingBuffer.ts](../../../../../src/data/RingBuffer.ts):`TickRecord` 新增玩家位置與 active target center；無 active target 時
+  `tx/ty/tz = null`。`capacityForDrill` 改為
+  `ceil(maxDrillSeconds * (simHz + maxFireHz)) + ceil(extraTicks)`，預設 `maxFireHz=10`(AK 1/cycletime)。
+- [SimLoop.ts](../../../../../src/loop/SimLoop.ts):`fireOneShot` 在 `recoilOnFire` 前記錄本發 pre-kick
+  `viewYaw/viewPitch/aimPunchPitch/aimPunchYaw/spreadX/spreadY/recoilIndex/ammo`，沿用 T0 語意決議。
+- [metadata.ts](../../../../../src/data/metadata.ts):`collectMeta` 固定輸出 v2 meta，並保留
+  `spawn/scene/display/frames/session` optional block 縫。
+- [DrillConfig.ts](../../../../../src/drill/DrillConfig.ts)+[schema.ts](../../../../../src/drill/schema.ts):新增 additive
+  `weaponId?`；省略時由呼叫端使用預設 AK-47。
+- [main.ts](../../../../../src/main.ts)+[fpsTestHarness.ts](../../../../../src/testharness/fpsTestHarness.ts):
+  export meta 寫入 active weapon 與 `sequence.seed ?? DEFAULT_RNG_SEED`，sim loop 也依 `weaponId?` 取 weapon。
+
+**Decision Log:**
+- **active target 欄位 nullable:** `tx/ty/tz` 在無 active visible/alive target 時輸出 `null`(CSV 空欄)，而非填 0。
+  *Alternatives considered:*填 0 會與世界原點混淆；省略欄位會使逐 tick schema 不固定。
+- **容量公式納入 fire 率上限:** 以 `simHz + maxFireHz` 估算預留空間，預設 `maxFireHz=10` 對齊 AK-47
+  `1/cycletimeSec`。*Alternatives considered:*只維持 tick-only 容量會無法反映 T1 per-fire 欄位增加後的保守容量政策。
+- **`DrillConfig.weaponId?` 僅驗非空字串:** 實際 weapon 解析仍由 `getWeapon` 負責。*Alternatives considered:*在
+  drill schema 重複 weapon enum；否決，避免 weapon registry 雙寫漂移。
+
+**驗證證據:**
+- `npm.cmd run typecheck` → exit 0。
+- `npx.cmd vitest run src/data/DataRecorder.test.ts src/data/export.test.ts src/data/metadata.test.ts src/drill/schema.test.ts src/loop/SimLoop.test.ts`
+  → **5 files / 53 tests passed**。
+- `npm.cmd test` → **42 files / 314 tests passed**。
+- `graphify update .` → rebuilt **761 nodes / 1636 edges / 49 communities**。
+
+**Surprises & Discoveries:**
+- 沙盒內直接跑 Vitest 仍會在載入 Vite config 時遇到父層 access denied；依權限規則提升後測試乾淨通過。
+
+**Next:** T2([T2-ideal-path-metric.md](T2-ideal-path-metric.md))—理想壓槍路徑 + 補償誤差 mean/RMS。
 
 ### 2026-07-07 — T0 entry gate PASS(WP-13 exit 驗證 + schema v2 斷代/欄位語意決議)
 

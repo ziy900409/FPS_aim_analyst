@@ -17,6 +17,8 @@ import type { TargetMotion } from '../state/types.ts';
 export interface DrillConfig {
   /** 對齊匯出 metadata（規格附錄 C `"drillId": "counterstrafe_ad_v1"`）——drill 的穩定識別。 */
   drillId: string;
+  /** 選填武器 id；省略時使用預設 AK-47（`ak47`）。 */
+  weaponId?: string;
   targets: {
     /** 目標總數（正整數;與 endCondition.targetCount 搭配,見 §endCondition）。 */
     count: number;

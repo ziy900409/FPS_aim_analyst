@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(上游驗證 + 語意決議,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
-| ⬜ | **T1** schema v2 擴欄 + schemaVersion + 容量重估 | [T1-schema-v2.md](T1-schema-v2.md) | T0 | Med |
+| ✅ | **T1** schema v2 擴欄 + schemaVersion + 容量重估 | [T1-schema-v2.md](T1-schema-v2.md) | T0 | Med |
 | ⬜ | **T2** 理想路徑 + 補償誤差 mean/RMS | [T2-ideal-path-metric.md](T2-ideal-path-metric.md) | T1 | Low |
 | ⬜ | **T3** 結果頁軌跡對照 | [T3-result-overlay.md](T3-result-overlay.md) | T2 | Low |
 | ⬜ | **T-exit** 不變式全綠 + 對帳宣告 | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |

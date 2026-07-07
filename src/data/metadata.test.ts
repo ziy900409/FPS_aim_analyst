@@ -20,13 +20,18 @@ describe('collectMeta', () => {
         recorderOverflow: false,
       }),
     ).toEqual({
+      schemaVersion: 2,
       drillId: 'counterstrafe_ad_v1',
+      weaponId: 'ak47',
+      weaponSeed: 223,
+      rngSeed: 1,
       backend: 'webgpu',
       displayHz: 144,
       simHz: 128,
       browser: 'TestBrowser/1.0',
       sensitivity: 1.2,
       sensitivityModel: 'cs2-0.022deg',
+      movementModel: 'cs2-source',
       crossOriginIsolated: true,
       startedAt: '2026-07-02T10:00:00.000Z',
       unit: 'source',
@@ -52,8 +57,13 @@ describe('collectMeta', () => {
 
     expect(meta).toMatchObject({
       simHz: 128,
+      schemaVersion: 2,
       unit: 'source',
+      weaponId: 'ak47',
+      weaponSeed: 223,
+      rngSeed: 1,
       sensitivityModel: 'cs2-0.022deg',
+      movementModel: 'cs2-source',
       vStrafe: 250,
       maxDrillSeconds: 300,
       lateEventCount: 0,
@@ -83,6 +93,31 @@ describe('collectMeta', () => {
     expect(() =>
       collectMeta({ ...valid, crossOriginIsolated: undefined } as unknown as CollectMetaArgs),
     ).toThrow('crossOriginIsolated must be a boolean');
+  });
+
+  it('accepts explicit v2 weapon and spawn metadata', () => {
+    expect(
+      collectMeta({
+        drillId: 'spray_v1',
+        weaponId: 'm4a4',
+        weaponSeed: 38965,
+        rngSeed: 2026,
+        backend: 'webgl2',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        spawn: { seed: 2026, motion: { type: 'static' } },
+      }),
+    ).toMatchObject({
+      schemaVersion: 2,
+      drillId: 'spray_v1',
+      weaponId: 'm4a4',
+      weaponSeed: 38965,
+      rngSeed: 2026,
+      movementModel: 'cs2-source',
+      spawn: { seed: 2026, motion: { type: 'static' } },
+    });
   });
 });
 

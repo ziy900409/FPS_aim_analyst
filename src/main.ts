@@ -17,7 +17,7 @@ import { createTargetManager, type TargetManager } from './sim/TargetManager.ts'
 import { loadDrill } from './drill/DrillLoader.ts';
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
 import type { DrillConfig } from './drill/DrillConfig.ts';
-import { createSimLoop, type SimLoop } from './loop/SimLoop.ts';
+import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts';
 import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
@@ -73,6 +73,10 @@ function resize(): void {
 }
 resize();
 window.addEventListener('resize', resize);
+
+function activeWeaponConfig() {
+  return getWeapon(activeDrillConfig.weaponId ?? 'ak47');
+}
 
 // WP-1 / T2（FR-1.2）— Pointer Lock：click 取得、Esc/失焦解除、可重取。
 const pointerLock = createPointerLock(canvas);
@@ -141,6 +145,9 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
   const displayHz = await measureDisplayHz();
   const meta = collectMeta({
     drillId: activeDrillConfig.drillId,
+    weaponId: activeWeaponConfig().id,
+    weaponSeed: activeWeaponConfig().recoil.seed,
+    rngSeed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
     backend,
     displayHz,
     simHz: SIM_HZ,
@@ -150,6 +157,10 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
+    spawn: {
+      seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
+      ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
+    },
   });
   return buildExportPayload(meta, snapshot);
 }
@@ -237,7 +248,7 @@ function buildSimLoop(): SimLoop {
     sceneManager.camera,
     drillRunner,
     recorder,
-    getWeapon('ak47'),
+    activeWeaponConfig(),
     activeDrillConfig.sequence.seed,
   );
 }

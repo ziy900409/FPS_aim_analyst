@@ -1,5 +1,6 @@
 export const DEFAULT_MAX_DRILL_SECONDS = 300;
 export const DEFAULT_RECORDER_EXTRA_TICKS = 128;
+export const DEFAULT_MAX_FIRE_HZ = 10;
 
 const KEY_A = 1 << 0;
 const KEY_D = 1 << 1;
@@ -12,6 +13,11 @@ export interface TickRecord {
   t: number;
   vx: number;
   vz: number;
+  px: number;
+  pz: number;
+  tx: number | null;
+  ty: number | null;
+  tz: number | null;
   aim: { yaw: number; pitch: number };
   keys: KeyName[];
 }
@@ -20,14 +26,20 @@ export interface TickRecordInput {
   t: number;
   vx: number;
   vz: number;
+  px?: number;
+  pz?: number;
+  tx?: number | null;
+  ty?: number | null;
+  tz?: number | null;
   aim: { readonly yaw: number; readonly pitch: number };
   keys: readonly string[];
 }
 
 export interface TickSourceState {
-  player: { vx: number; vz: number };
+  player: { vx: number; vz: number; x: number; z: number };
   aim: { yaw: number; pitch: number };
   held: { left: boolean; right: boolean };
+  targets: Array<{ pos: { x: number; y: number; z: number }; visible: boolean; alive: boolean }>;
 }
 
 export interface TickArenaSnapshot {
@@ -39,13 +51,15 @@ export function capacityForDrill(
   simHz: number,
   maxDrillSeconds = DEFAULT_MAX_DRILL_SECONDS,
   extraTicks = DEFAULT_RECORDER_EXTRA_TICKS,
+  maxFireHz = DEFAULT_MAX_FIRE_HZ,
 ): number {
   if (!Number.isFinite(simHz) || simHz <= 0) throw new Error('simHz must be a positive finite number');
   if (!Number.isFinite(maxDrillSeconds) || maxDrillSeconds <= 0) {
     throw new Error('maxDrillSeconds must be a positive finite number');
   }
   if (!Number.isFinite(extraTicks) || extraTicks < 0) throw new Error('extraTicks must be a non-negative finite number');
-  return Math.ceil(maxDrillSeconds * simHz) + Math.ceil(extraTicks);
+  if (!Number.isFinite(maxFireHz) || maxFireHz < 0) throw new Error('maxFireHz must be a non-negative finite number');
+  return Math.ceil(maxDrillSeconds * (simHz + maxFireHz)) + Math.ceil(extraTicks);
 }
 
 export function keyMaskFromKeys(keys: readonly string[]): number {
@@ -83,6 +97,12 @@ export class TickArena {
   private readonly t: Float64Array;
   private readonly vx: Float64Array;
   private readonly vz: Float64Array;
+  private readonly px: Float64Array;
+  private readonly pz: Float64Array;
+  private readonly tx: Float64Array;
+  private readonly ty: Float64Array;
+  private readonly tz: Float64Array;
+  private readonly hasTarget: Uint8Array;
   private readonly yaw: Float64Array;
   private readonly pitch: Float64Array;
   private readonly keyMask: Uint8Array;
@@ -94,6 +114,12 @@ export class TickArena {
     this.t = new Float64Array(capacity);
     this.vx = new Float64Array(capacity);
     this.vz = new Float64Array(capacity);
+    this.px = new Float64Array(capacity);
+    this.pz = new Float64Array(capacity);
+    this.tx = new Float64Array(capacity);
+    this.ty = new Float64Array(capacity);
+    this.tz = new Float64Array(capacity);
+    this.hasTarget = new Uint8Array(capacity);
     this.yaw = new Float64Array(capacity);
     this.pitch = new Float64Array(capacity);
     this.keyMask = new Uint8Array(capacity);
@@ -112,6 +138,11 @@ export class TickArena {
       record.t,
       record.vx,
       record.vz,
+      record.px ?? 0,
+      record.pz ?? 0,
+      record.tx ?? null,
+      record.ty ?? null,
+      record.tz ?? null,
       record.aim.yaw,
       record.aim.pitch,
       keyMaskFromKeys(record.keys),
@@ -119,10 +150,46 @@ export class TickArena {
   }
 
   recordState(t: number, state: TickSourceState): boolean {
-    return this.recordFields(t, state.player.vx, state.player.vz, state.aim.yaw, state.aim.pitch, keyMaskFromState(state));
+    let tx: number | null = null;
+    let ty: number | null = null;
+    let tz: number | null = null;
+    for (let i = 0; i < state.targets.length; i++) {
+      const target = state.targets[i];
+      if (target.visible && target.alive) {
+        tx = target.pos.x;
+        ty = target.pos.y;
+        tz = target.pos.z;
+        break;
+      }
+    }
+    return this.recordFields(
+      t,
+      state.player.vx,
+      state.player.vz,
+      state.player.x,
+      state.player.z,
+      tx,
+      ty,
+      tz,
+      state.aim.yaw,
+      state.aim.pitch,
+      keyMaskFromState(state),
+    );
   }
 
-  recordFields(t: number, vx: number, vz: number, yaw: number, pitch: number, keyMask: number): boolean {
+  recordFields(
+    t: number,
+    vx: number,
+    vz: number,
+    px: number,
+    pz: number,
+    tx: number | null,
+    ty: number | null,
+    tz: number | null,
+    yaw: number,
+    pitch: number,
+    keyMask: number,
+  ): boolean {
     if (this.countValue >= this.capacity) {
       this.overflowValue = true;
       return false;
@@ -132,6 +199,16 @@ export class TickArena {
     this.t[i] = t;
     this.vx[i] = vx;
     this.vz[i] = vz;
+    this.px[i] = px;
+    this.pz[i] = pz;
+    if (tx !== null && ty !== null && tz !== null) {
+      this.tx[i] = tx;
+      this.ty[i] = ty;
+      this.tz[i] = tz;
+      this.hasTarget[i] = 1;
+    } else {
+      this.hasTarget[i] = 0;
+    }
     this.yaw[i] = yaw;
     this.pitch[i] = pitch;
     this.keyMask[i] = keyMask;
@@ -146,6 +223,11 @@ export class TickArena {
         t: this.t[i],
         vx: this.vx[i],
         vz: this.vz[i],
+        px: this.px[i],
+        pz: this.pz[i],
+        tx: this.hasTarget[i] ? this.tx[i] : null,
+        ty: this.hasTarget[i] ? this.ty[i] : null,
+        tz: this.hasTarget[i] ? this.tz[i] : null,
         aim: { yaw: this.yaw[i], pitch: this.pitch[i] },
         keys: keysFromMask(this.keyMask[i]),
       };

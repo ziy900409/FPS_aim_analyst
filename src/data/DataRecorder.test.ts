@@ -5,7 +5,7 @@ import { capacityForDrill } from './RingBuffer.ts';
 
 describe('DataRecorder tick arena', () => {
   it('estimates capacity from drill duration and sim rate with spare ticks', () => {
-    expect(capacityForDrill(128, 300, 128)).toBe(38_528);
+    expect(capacityForDrill(128, 300, 128)).toBe(41_528);
   });
 
   it('records tick rows in order and snapshots keys/aim at export time', () => {
@@ -15,8 +15,8 @@ describe('DataRecorder tick arena', () => {
     recorder.recordTick({ t: 2, vx: -10, vz: 5, aim: { yaw: 4, pitch: 5 }, keys: ['KeyA'] });
 
     expect(recorder.snapshot().ticks).toEqual([
-      { t: 1, vx: 10, vz: 0, aim: { yaw: 2, pitch: 3 }, keys: ['D'] },
-      { t: 2, vx: -10, vz: 5, aim: { yaw: 4, pitch: 5 }, keys: ['A'] },
+      { t: 1, vx: 10, vz: 0, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 2, pitch: 3 }, keys: ['D'] },
+      { t: 2, vx: -10, vz: 5, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 4, pitch: 5 }, keys: ['A'] },
     ]);
   });
 
@@ -48,8 +48,38 @@ describe('DataRecorder tick arena', () => {
     const snapshot = recorder.snapshot();
     expect(snapshot.recorderOverflow).toBe(false);
     expect(snapshot.ticks).toHaveLength(100_000);
-    expect(snapshot.ticks[0]).toEqual({ t: 0, vx: 0, vz: 0, aim: { yaw: 7, pitch: -4 }, keys: ['D'] });
+    expect(snapshot.ticks[0]).toEqual({
+      t: 0,
+      vx: 0,
+      vz: 0,
+      px: 0,
+      pz: 0,
+      tx: null,
+      ty: null,
+      tz: null,
+      aim: { yaw: 7, pitch: -4 },
+      keys: ['D'],
+    });
     expect(snapshot.ticks[99_999].vx).toBe(99_999);
+  });
+
+  it('records player and active target position fields from shared state', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 1 });
+    state.player.x = 12;
+    state.player.z = -3;
+    state.targets.push({
+      id: 't0',
+      side: 'R',
+      pos: { x: 4, y: 1.6, z: -8 },
+      visible: true,
+      alive: true,
+      hitbox: { width: 1, height: 2, depth: 1 },
+    });
+
+    recorder.recordTickFromState(10, state);
+
+    expect(recorder.snapshot().ticks[0]).toMatchObject({ px: 12, pz: -3, tx: 4, ty: 1.6, tz: -8 });
   });
 
   it('records drill events and clears them on reset', () => {
@@ -107,7 +137,7 @@ describe('DataRecorder tick arena', () => {
     recorder.recordTick({ t: 3, vx: 3, vz: 0, aim: { yaw: 1, pitch: 1 }, keys: ['A'] });
 
     expect(recorder.snapshot()).toEqual({
-      ticks: [{ t: 3, vx: 3, vz: 0, aim: { yaw: 1, pitch: 1 }, keys: ['A'] }],
+      ticks: [{ t: 3, vx: 3, vz: 0, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 1, pitch: 1 }, keys: ['A'] }],
       events: [],
       recorderOverflow: false,
     });
