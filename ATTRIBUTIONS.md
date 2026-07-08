@@ -31,3 +31,29 @@ node scripts/gen-field-low-gltf.mjs
 
 讀 `src/scene/scenes/field-low.props.json`(權威 prop 清單,同時供 SceneConfig `propBounds`),
 輸出 `public/assets/scenes/field-low/field-low.gltf`。座標為 canonical CS unit(u),`displayScale: 1`。
+
+---
+
+## urban-high(WP-19 / T5)
+
+| 欄位 | 值 |
+|---|---|
+| 資產名 | `urban-high.gltf`(高雜亂度城市街廓,63 個 box props + 4 個視覺-only 地面/道路節點) |
+| 作者 | FPS_aim_analyst 專案(**原創**) |
+| 來源 | 本 repo `scripts/gen-urban-high-gltf.mjs` 程序化生成;prop 佈局同步輸出 `src/scene/scenes/urban-high.props.json` |
+| 授權 | **CC0 1.0**(公眾領域捐獻;原創幾何 + 原創程式碼,無第三方素材) |
+| 取得日 | 2026-07-08 |
+| 檔案路徑 | `public/assets/scenes/urban-high/urban-high.gltf` |
+
+**說明**:urban-high 幾何為原創低多邊形 box props(建物、箱體、桶、路燈、路障、招牌)
+加扁平視覺道路/人行道/地面(render-only、不入淨空 `propBounds`),非取自任何第三方資產包。
+場景 layout 為中性城市街廓,不復刻任何特定遊戲地圖。
+
+### 重生方式
+
+```
+node scripts/gen-urban-high-gltf.mjs
+```
+
+同步輸出 `src/scene/scenes/urban-high.props.json` 與
+`public/assets/scenes/urban-high/urban-high.gltf`。座標為 canonical CS unit(u),`displayScale: 1`。

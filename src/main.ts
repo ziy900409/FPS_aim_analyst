@@ -30,6 +30,7 @@ import { getWeapon } from './weapon/weapons.ts';
 import type { SceneConfig } from './scene/SceneConfig.ts';
 import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import { fieldLow } from './scene/scenes/field-low.ts';
+import { urbanHigh } from './scene/scenes/urban-high.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -58,6 +59,7 @@ interface AvailableScene {
 const availableScenes: AvailableScene[] = [
   { id: placeholderRoom.sceneId, label: 'placeholder-room', config: placeholderRoom },
   { id: fieldLow.sceneId, label: 'field-low', config: fieldLow },
+  { id: urbanHigh.sceneId, label: 'urban-high', config: urbanHigh },
 ];
 let activeSceneConfig: SceneConfig = fieldLow;
 let activeSceneFallback = false;

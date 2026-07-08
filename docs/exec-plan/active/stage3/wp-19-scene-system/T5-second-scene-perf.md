@@ -7,7 +7,7 @@
 | **相依** | T4(切換/meta 就緒) |
 | **Risk / Cplx** | Med / Low(機制全就緒,本 task 是內容 + 驗證) |
 | **Touches** | ADD `public/assets/scenes/urban-high/`、`src/scene/scenes/urban-high.ts`;MODIFY `ATTRIBUTIONS.md`;負載驗證證據 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -36,10 +36,10 @@ GD-9 的實驗對照軸;兩場景負載驗證證明感知實驗的顯示鏈在�
 
 ## Steps
 
-- [ ] 資產落地 + SceneConfig + ATTRIBUTIONS 增補。
-- [ ] 淨空驗證首跑 → 修 config → 通過;過程記 progress。
-- [ ] 兩場景負載實測記 progress。
-- [ ] `npx vitest run` 全綠。
+- [x] 資產落地 + SceneConfig + ATTRIBUTIONS 增補。
+- [x] 淨空驗證首跑 → 修 config → 通過;過程記 progress。
+- [x] 兩場景負載實測記 progress。
+- [x] `npx vitest run` 全綠。
 
 ## Commit
 

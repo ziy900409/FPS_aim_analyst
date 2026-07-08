@@ -5,7 +5,7 @@
 
 ---
 
-## Status: ✅ T0/T1/T2/T3/T4 complete(T2 實機三檢皆綠);T5/T-exit 待開
+## Status: ✅ T0/T1/T2/T3/T4/T5 complete(T2 實機三檢皆綠);T-exit 待開
 
 | Task | 狀態 |
 |---|---|
@@ -14,7 +14,7 @@
 | T2 GLTF 管線 + field-low | ✅ code/asset/test + 實機三檢綠 |
 | T3 淨空驗證器 | ✅ |
 | T4 場景切換 + meta | ✅ |
-| T5 urban-high + perf | ⬜ |
+| T5 urban-high + perf | ✅ |
 | T-exit(M9) | ⬜ |
 
 ---
@@ -30,6 +30,46 @@
 ---
 
 ## Log
+
+### 2026-07-08 08:48Z — T5 `urban-high` 第二場景 + 兩場景負載驗證 ✅
+- **實作**:
+  - 新增 [../../../../../scripts/gen-urban-high-gltf.mjs](../../../../../scripts/gen-urban-high-gltf.mjs):原創 CC0 box-geometry 生成器,同步輸出
+    [../../../../../src/scene/scenes/urban-high.props.json](../../../../../src/scene/scenes/urban-high.props.json) 與
+    `public/assets/scenes/urban-high/urban-high.gltf`。
+  - 新增 [../../../../../src/scene/scenes/urban-high.ts](../../../../../src/scene/scenes/urban-high.ts):`sceneId: urban-high`,
+    `assetPackVersion: urban-high-v1`,`clutterTier: high`,`displayScale: 1`,63 個 `propBounds`,走既有 `validateScene`。
+  - [../../../../../src/main.ts](../../../../../src/main.ts) 場景清單加入 `urban-high`;`loadSceneById`/fallback/meta 路徑不改。
+  - [../../../../../ATTRIBUTIONS.md](../../../../../ATTRIBUTIONS.md) 增 `urban-high` 逐項授權稽核:原創 / CC0 / 2026-07-08 / 可重生指令。
+- **資產負載**:
+  - `field-low`:17 mesh nodes / 204 triangles / 4 materials / 0 textures。
+  - `urban-high`:67 mesh nodes(63 props + 4 visual-only ground/road/sidewalk) / 804 triangles / 9 materials / 0 textures。
+  - 兩者均遠低於 T5 budget `<20k triangles`;`urban-high` draw-call proxy 67 < 80。
+- **淨空驗證實戰**:
+  - 首次 focused test 抓到生成器左側 props `min.x > max.x`(`SceneConfig 驗證失敗: propBounds[14].min.x 必須 ≤ max.x`);修正 generator `box()` 正規化 min/max 後重生。
+  - `urban-high.test.ts` 加 intentional blocker fixture(`intentional-blocker`)確認高雜亂配置誤入視線走廊時 validator 會報 prop id。
+  - 正式 `urban-high × counterstrafe_ad_v1` `validateClearance` 零違規;`loadDrill(drillJson, urbanHigh)` 不 throw。
+- **Runtime smoke / frame distribution(Edge headless,dev server `127.0.0.1:5173`,1280×720,180 rAF frames)**:
+  - Network:`field-low.gltf` 200、`urban-high.gltf` 200;scene select 最終值 `urban-high`。
+  - `field-low`:mean 16.67ms / p95 16.82ms / max 17.00ms。
+  - `urban-high`:mean 16.67ms / p95 16.85ms / max 17.01ms。
+  - 結論:兩場景在本機 headless smoke 下 frame distribution 等價,未見高雜亂度場景壓垮 render loop。
+- **自動化驗證**:
+  - `npm.cmd test -- src/scene/scenes/urban-high.test.ts src/scene/scenes/field-low.test.ts` → 2 files / 8 tests pass。
+  - `npm.cmd test -- src/scene/SceneConfig.test.ts src/scene/architecture.test.ts src/scene/clearance.test.ts src/scene/scenes/field-low.test.ts src/scene/scenes/urban-high.test.ts src/render/sceneLoader.test.ts src/render/SceneManager.test.ts` → 7 files / 36 tests pass。
+  - `npm.cmd test -- tests/regression/determinism.test.ts` → 16 tests pass;跨場景 bit-exact 擴充為 placeholder-room / field-low / urban-high。
+  - `npm.cmd run typecheck` → pass。
+  - `npm.cmd test` → Vitest **48 files / 356 tests pass**。
+  - `npm.cmd run build` → pass(需提升權限避開既有 Vite/esbuild sandbox config 讀取限制;僅既有 chunk-size warning)。
+  - `graphify update .` → AST extraction 111/111,graph rebuilt。
+- **Decision Log**:
+  - **T5 繼續採原創 CC0 生成 GLTF,不下載第三方城市資產**。Alternatives Considered:下載 CC0/CC-BY 城市包可更美術化,但需網路/授權/二進位篩選且會擴大 T5;原創生成保證 GD-9 合規、可重生、propBounds 與視覺同源。
+  - **高雜亂度用「雙側街廓 + 遠端 backdrop + 近側街道雜物」,中心道路/地面作 visual-only**。Alternatives Considered:把道路/地面納入 `propBounds` 可更完整描述幾何,但扁平地面被 AABB inflation 後會誤擋所有視線;保持 render-only 符合 GD-6,遮擋相關 props 才入 validator。
+  - **不改 `SceneConfig`/loader/main 切換 contract,只新增 scene data 並掛清單**。Alternatives Considered:新增 scene registry 模組可清理 `main.ts`,但目前只有三個場景且 T5 目標是內容+驗證;抽象留到更多場景或 WP-22 需要時再做。
+- **Surprises & Discoveries**:
+  - 生成器對左右鏡像物件若直接用 `sign * x` 容易產生 `min.x > max.x`;在 `box()` 層正規化比逐筆修資料穩。
+  - TypeScript 專案未引入 Node type declarations;測試讀 GLTF 改用既有 Vite `import.meta.glob(...?raw)` 而非 `node:fs`。
+- **Open Questions / 待人工**:
+  - 建議使用者在桌面 Edge/Chrome 肉眼確認 `field-low ↔ urban-high` 視覺切換與高雜亂城市街廓辨識度;headless smoke 已覆蓋真 GLTF 載入、UI gating 與 frame timing,但不替代主觀視覺 QA。
 
 ### 2026-07-08 07:31Z — T4 場景切換 + `meta.scene` + 決定性/suspect 防線 ✅
 - **切片(3 個原子 commit)**:

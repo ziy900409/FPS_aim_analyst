@@ -14,6 +14,7 @@ import { loadDrill } from '../../src/drill/DrillLoader.ts';
 import type { SceneConfig } from '../../src/scene/SceneConfig.ts';
 import { fieldLow } from '../../src/scene/scenes/field-low.ts';
 import { placeholderRoom } from '../../src/scene/scenes/placeholder-room.ts';
+import { urbanHigh } from '../../src/scene/scenes/urban-high.ts';
 
 /**
  * 決定性回歸（自動化）★M1 守護 — WP-9 / T3（FR-9.3）
@@ -198,14 +199,18 @@ describe('決定性回歸（完整 sim）— 記錄資料集（ticks + events）
 });
 
 describe('WP-19 T4 — 場景純裝飾：跨場景 sim 狀態與記錄資料 bit-exact 相同', () => {
-  it('placeholder-room 與 field-low 使用同輸入序列時完整 sim 輸出一致', () => {
+  it('placeholder-room / field-low / urban-high 使用同輸入序列時完整 sim 輸出一致', () => {
     const abs = sequences['穩定 144 Hz'];
     const placeholder = runFrames(abs, placeholderRoom);
     const field = runFrames(abs, fieldLow);
+    const urban = runFrames(abs, urbanHigh);
 
     expect(field.samples).toEqual(placeholder.samples);
     expect(field.snapshot).toEqual(placeholder.snapshot);
     expect(field.phase).toBe(placeholder.phase);
+    expect(urban.samples).toEqual(placeholder.samples);
+    expect(urban.snapshot).toEqual(placeholder.snapshot);
+    expect(urban.phase).toBe(placeholder.phase);
   });
 });
 
