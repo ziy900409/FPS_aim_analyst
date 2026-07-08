@@ -7,7 +7,7 @@
 | **相依** | T0(效能地板/落點決議) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | ADD `src/display/resolutionMode.ts`;MODIFY `src/main.ts`(resize 改走模式)、`src/ui/SettingsPanel.ts`(模式選擇)、`src/data/metadata.ts`(display 自動欄填值)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-08 |
 
 ## Objective
 
@@ -34,12 +34,12 @@ render buffer 尺寸**顯式指定** + `setPixelRatio(1)` + CSS 全螢幕 upscal
 
 ## Steps
 
-- [ ] `resolutionMode.ts` + 單元測試(模式 → buffer/CSS/DisplayState 各欄)。
-- [ ] `main.ts` resize 重構 + SettingsPanel 掛線;三模式實機驗證(buffer 尺寸以
+- [x] `resolutionMode.ts` + 單元測試(模式 → buffer/CSS/DisplayState 各欄)。
+- [x] `main.ts` resize 重構 + SettingsPanel 掛線;三模式實機驗證(buffer 尺寸以
   `renderer.domElement.width/height` 斷言)記 progress。
-- [ ] meta.display 填值 + 匯出測試。
-- [ ] 三條斷言(準心/感度/sim 不變性)綠。
-- [ ] `npx vitest run` 全綠。
+- [x] meta.display 填值 + 匯出測試。
+- [x] 三條斷言(準心/感度/sim 不變性)綠。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

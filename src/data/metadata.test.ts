@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectMeta, measureDisplayHz, type CollectMetaArgs } from './metadata.ts';
+import { collectMeta, measureDisplayHz, measureDisplayRefresh, type CollectMetaArgs } from './metadata.ts';
 
 describe('collectMeta', () => {
   it('collects complete drill metadata and computes suspect from overflow flags', () => {
@@ -146,6 +146,62 @@ describe('collectMeta', () => {
     });
   });
 
+  it('accepts WP-20 display metadata with explicit buffer and refresh estimate', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      display: {
+        mode: 'fhd-1080',
+        bufferW: 1920,
+        bufferH: 1080,
+        cssW: 2560,
+        cssH: 1440,
+        dpr: 1.25,
+        screenW: 3200,
+        screenH: 1800,
+        fullscreen: true,
+        refreshEstimateHz: 120,
+        refreshMedianDeltaMs: 8.333,
+      },
+    });
+
+    expect(meta.display).toEqual({
+      mode: 'fhd-1080',
+      bufferW: 1920,
+      bufferH: 1080,
+      cssW: 2560,
+      cssH: 1440,
+      dpr: 1.25,
+      screenW: 3200,
+      screenH: 1800,
+      fullscreen: true,
+      refreshEstimateHz: 120,
+      refreshMedianDeltaMs: 8.333,
+    });
+  });
+
+  it('rejects malformed display metadata', () => {
+    const valid: CollectMetaArgs = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() =>
+      collectMeta({
+        ...valid,
+        display: { mode: 'bogus' },
+      } as unknown as CollectMetaArgs),
+    ).toThrow('display.mode must be native, fhd-1080, or qhd-1440');
+  });
+
   it('allows runtime validity observers to mark metadata suspect', () => {
     expect(
       collectMeta({
@@ -168,6 +224,7 @@ describe('measureDisplayHz', () => {
 
     const hz = await measureDisplayHz({
       samples: 5,
+      warmupSamples: 0,
       requestAnimationFrame: (callback) => {
         callback(timestamps[i++]);
         return i;
@@ -175,6 +232,23 @@ describe('measureDisplayHz', () => {
     });
 
     expect(hz).toBeCloseTo(60, 1);
+  });
+
+  it('drops warmup deltas and reports rounded Hz plus median delta', async () => {
+    const timestamps = [0, 100, 200, 208.34, 216.67, 225, 233.33, 241.66];
+    let i = 0;
+
+    const estimate = await measureDisplayRefresh({
+      samples: 5,
+      warmupSamples: 2,
+      requestAnimationFrame: (callback) => {
+        callback(timestamps[i++]);
+        return i;
+      },
+    });
+
+    expect(estimate.refreshEstimateHz).toBe(120);
+    expect(estimate.medianDeltaMs).toBeCloseTo(8.33, 2);
   });
 
   it('requires requestAnimationFrame to measure displayHz', async () => {

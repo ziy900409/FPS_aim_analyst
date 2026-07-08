@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 entry gate complete;T1 next
+## Status: 🟡 T1 complete;T2 next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 解析度模式 | ⬜ |
+| T1 解析度模式 | ✅ |
 | T2 fullscreen + 資格閘 | ⬜ |
 | T3 frame-time log | ⬜ |
 | T4 session setup 表單 | ⬜ |
@@ -30,6 +30,24 @@
 ---
 
 ## Log
+
+### 2026-07-08 — T1 解析度模式 PASS(顯式 buffer + CSS upscale + display meta)
+- **實作檔案**:
+  - 新增 `src/display/resolutionMode.ts`: `ResolutionMode`/`DisplayState`/`applyResolutionMode()`;固定模式走 `setPixelRatio(1)` + `setSize(1920×1080|2560×1440,false)` + canvas CSS `100%`;`native` 保留 `Math.min(dpr,2)` 路徑。
+  - 修改 `src/main.ts`:所有 window resize 與 scene reload 走同一個 active resolution mode path;SettingsPanel 切換即重套 buffer 並更新 camera aspect;匯出 `meta.display` 由目前 `DisplayState` + rAF refresh estimate 填值。
+  - 修改 `src/ui/SettingsPanel.ts`:新增 Resolution select 與 `lockMode(locked)` 介面,供 WP-22 protocol 鎖定解析度條件。
+  - 修改 `src/data/metadata.ts`: `display?: DisplayState` 驗證;新增 `measureDisplayRefresh()`(丟前 30 deltas,取後 120 median,`round(1000/median)`),`measureDisplayHz()` 保留相容 wrapper。
+- **Playwright/Edge 實機量測(1280×720 viewport,dpr=1,headless Edge,dev server 5173)**:
+  - `native`:canvas buffer `1280×720`,CSS box `1280×720`,style `1280px×720px`,crosshair center `640,360` = viewport center。
+  - `fhd-1080`:canvas buffer `1920×1080`,CSS box `1280×720`,style `100%×100%`,crosshair center `640,360` = viewport center。
+  - `qhd-1440`:canvas buffer `2560×1440`,CSS box `1280×720`,style `100%×100%`,crosshair center `640,360` = viewport center。
+- **斷言證據**:
+  - `npx.cmd vitest run src/display/resolutionMode.test.ts src/ui/SettingsPanel.test.ts src/data/metadata.test.ts src/view/CameraController.test.ts tests/regression/determinism.test.ts` exit 0 — 5 files / 36 tests passed(buffer/CSS/DisplayState、mode lock、meta.display、0.022°/count sensitivity、完整 sim determinism)。
+  - `npm.cmd run typecheck` exit 0。
+  - `npm.cmd test` exit 0 — 50 test files / 363 tests passed。
+  - `npm.cmd run build` sandbox 首跑被 Vite config 上層讀取權限擋下;經使用者核准非 sandbox 重跑 exit 0 — 61 modules transformed,production build succeeded(僅既有 chunk size warning)。
+- **範圍檢查**:未修改 `SIM_HZ`、sim/input 鏈、movement/recoil constants;resolution mode 僅 render/UI/data 層。
+- **清理**:T1 browser 驗證用 dev server PID 57716 已停止;`Get-NetTCPConnection -LocalPort 5173` 無 listener。
 
 ### 2026-07-08 — T0 entry gate PASS(GD-10 收斂 + 顯示基線)
 - **測試基準**:`npm.cmd test` exit 0 — 48 test files / 356 tests passed(Vitest v2.1.9, duration 2.54s)。

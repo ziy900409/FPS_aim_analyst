@@ -12,6 +12,7 @@ import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
 import { createControls } from './ui/Controls.ts';
+import { applyResolutionMode, type DisplayState, type ResolutionMode } from './display/resolutionMode.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill } from './drill/DrillLoader.ts';
@@ -23,7 +24,7 @@ import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import { SIM_HZ } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
-import { collectMeta, measureDisplayHz } from './data/metadata.ts';
+import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
@@ -86,13 +87,12 @@ let targetView = new TargetView(sceneManager.scene);
 // 繪彈孔（1 draw call）。狀態由 sim 寫、本層唯讀（雙迴圈邊界）。
 let impactView = new ImpactView(sceneManager.scene);
 
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+let activeResolutionMode: ResolutionMode = 'native';
+let displayState: DisplayState = applyResolutionMode(renderer, activeResolutionMode);
 
 function resize(): void {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  renderer.setSize(w, h);
-  sceneManager.resize(w, h);
+  displayState = applyResolutionMode(renderer, activeResolutionMode);
+  sceneManager.resize(displayState.cssW, displayState.cssH);
 }
 resize();
 window.addEventListener('resize', resize);
@@ -153,6 +153,11 @@ pointerLock.onMove((dx, dy) => cameraController.applyDelta(dx, dy));
 const settingsPanel = createSettingsPanel({
   onSensitivityChange: (s) => cameraController.setSensitivity(s),
   onFovChange: (deg) => cameraController.setFov(deg),
+  initialResolutionMode: activeResolutionMode,
+  onResolutionModeChange: (mode) => {
+    activeResolutionMode = mode;
+    resize();
+  },
 });
 pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 
@@ -165,7 +170,13 @@ createCrosshair();
 const recorder = createDataRecorder({ simHz: SIM_HZ });
 async function buildCurrentExportPayload(): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
-  const displayHz = await measureDisplayHz();
+  const displayRefresh = await measureDisplayRefresh();
+  const displayHz = displayRefresh.refreshEstimateHz;
+  const currentDisplay: DisplayState = {
+    ...displayState,
+    refreshEstimateHz: displayRefresh.refreshEstimateHz,
+    refreshMedianDeltaMs: displayRefresh.medianDeltaMs,
+  };
   const meta = collectMeta({
     drillId: activeDrillConfig.drillId,
     weaponId: activeWeaponConfig().id,
@@ -191,6 +202,7 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
       clutterTier: activeSceneConfig.clutterTier,
       fallback: activeSceneFallback,
     },
+    display: currentDisplay,
   });
   return buildExportPayload(meta, snapshot);
 }
@@ -459,7 +471,7 @@ async function loadSceneById(sceneId: string): Promise<void> {
   impactView.dispose();
   sceneManager.dispose();
   sceneManager = nextScene.manager;
-  sceneManager.resize(window.innerWidth, window.innerHeight);
+  resize();
   targetView = new TargetView(sceneManager.scene);
   impactView = new ImpactView(sceneManager.scene);
   cameraController.setCamera(sceneManager.camera);
