@@ -31,6 +31,22 @@
 
 ## Log
 
+### 2026-07-08 — T2 追記:實機截圖回饋 → field-low 視覺調整(地面 + prop 重排)
+- **來源**:使用者實機截圖(Chrome,`Time 01:07` 順跑、target 紅盒 spawn、天空藍 + props 可見)——
+  **Check 1 過**(GLTF 載入非 fallback)。回報兩視覺問題:(1) props 浮在藍色虛空無地面;(2) 近 camera 的
+  flank props(z∈[0,1.5],camera z~4)看起來過大 looming。二者皆呈現層,不影響 sim/淨空效度。
+- **調整(只動 field-low 資產/config,不碰 sim,GD-6)**:
+  - **地面平板**:生成器新增 `ground` 材質 + 一塊扁平 box(`GROUND` x[-14,14] y[-0.3,0] z[-16,8]),props 底面
+    y=0 恰坐其上,給地平線、消虛空。**視覺-only、不入 `propBounds`**(水平視線 y~1.5,地面 y<=0 永不遮擋)——
+    故 `field-low.props.json` 不列;淨空契約與資料源不變。
+  - **prop 重排**:flank props 全推到 z<=-1(最近 z=-0.5→改為 flank 皆 z<=-0.5、多數 z<=-1.5),移除近端 crates,
+    改以 flank rock/tree 沿 z 由近到遠遞退框景;維持 flank |x|>=4.5、backdrop z<=-7 淨空安全區。16 props(原 15)。
+- **驗證**:GLTF 重生 headless parse OK(**17 mesh nodes = 16 props + ground / 408 verts / 204 triangles**;
+  bbox min[-14,-0.3,-16] max[14,3.5,8]);`field-low × counterstrafe drill` validateClearance **仍零違規**;
+  `npm.cmd test` 47 files / 346 tests 綠;`typecheck` + `build` pass。
+- **仍待人工**:Check 2(export JSON 看 ticks≈128/s)、Check 3(斷 URL fallback)。視覺若仍需微調同樣只改
+  `field-low.props.json` / `field-low.ts` / 生成器。
+
 ### 2026-07-07 16:48Z — T2 GLTF 管線 + field-low 場景 + ATTRIBUTIONS(code/asset/test 綠;實機待人工)
 - **切片(3 個原子 commit)**:
   1. `sceneLoader.ts` + 單元測試(mock loader):`loadScene(config, loaderOverride?)` async GLTF 載入,

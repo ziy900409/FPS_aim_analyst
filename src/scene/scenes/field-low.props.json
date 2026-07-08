@@ -1,20 +1,21 @@
 {
-  "_comment": "field-low 權威 prop 清單(WP-19 T2)。單一來源:scripts/gen-field-low-gltf.mjs 讀此檔生 public/assets/scenes/field-low/field-low.gltf(視覺 box),src/scene/scenes/field-low.ts 讀此檔生 propBounds(淨空驗證權威資料)。座標為 canonical CS unit(u),與 target 渲染同 1:1 世界座標(displayScale=1)。所有 prop 置於淨空安全區:flank |x|>=4.5、backdrop z<=-7,遠離玩家走廊(z=0,|x|<=1)與到 target(±2,z=-4)的視線;由 field-low.test.ts 的 validateClearance 斷言零違規。kind 僅決定視覺材質色。",
+  "_comment": "field-low 權威 prop 清單(WP-19 T2)。單一來源:scripts/gen-field-low-gltf.mjs 讀此檔生 public/assets/scenes/field-low/field-low.gltf(視覺 box),src/scene/scenes/field-low.ts 讀此檔生 propBounds(淨空驗證權威資料)。座標為 canonical CS unit(u),與 target 渲染同 1:1 世界座標(displayScale=1)。所有 prop 置於淨空安全區:flank |x|>=4.5、backdrop z<=-7,遠離玩家走廊(z=0,|x|<=1)與到 target(±2,z=-4)的視線;由 field-low.test.ts 的 validateClearance 斷言零違規。flank props 皆置於 z<=-1(camera 在 z~4)避免前景 looming。kind 僅決定視覺材質色。ground plane 由生成器另加(視覺-only、扁平 y<=0,不入 propBounds、不影響淨空)。",
   "props": [
-    { "id": "rock-r1", "kind": "rock", "min": { "x": 4.5, "y": 0, "z": -2 }, "max": { "x": 5.5, "y": 1.2, "z": -1 } },
-    { "id": "rock-r2", "kind": "rock", "min": { "x": 6, "y": 0, "z": -4 }, "max": { "x": 7.2, "y": 1, "z": -3 } },
-    { "id": "tree-r1", "kind": "tree", "min": { "x": 5, "y": 0, "z": -6 }, "max": { "x": 6, "y": 3, "z": -5 } },
-    { "id": "crate-r1", "kind": "crate", "min": { "x": 4.5, "y": 0, "z": 0.5 }, "max": { "x": 5.5, "y": 1, "z": 1.5 } },
-    { "id": "rock-r3", "kind": "rock", "min": { "x": 7, "y": 0, "z": 0 }, "max": { "x": 8, "y": 0.8, "z": 1 } },
-    { "id": "rock-l1", "kind": "rock", "min": { "x": -5.5, "y": 0, "z": -2 }, "max": { "x": -4.5, "y": 1.2, "z": -1 } },
-    { "id": "rock-l2", "kind": "rock", "min": { "x": -7.2, "y": 0, "z": -4 }, "max": { "x": -6, "y": 1, "z": -3 } },
-    { "id": "tree-l1", "kind": "tree", "min": { "x": -6, "y": 0, "z": -6 }, "max": { "x": -5, "y": 3, "z": -5 } },
-    { "id": "crate-l1", "kind": "crate", "min": { "x": -5.5, "y": 0, "z": 0.5 }, "max": { "x": -4.5, "y": 1, "z": 1.5 } },
-    { "id": "rock-l3", "kind": "rock", "min": { "x": -8, "y": 0, "z": 0 }, "max": { "x": -7, "y": 0.8, "z": 1 } },
-    { "id": "tree-b1", "kind": "tree", "min": { "x": -1.5, "y": 0, "z": -8 }, "max": { "x": -0.5, "y": 3.5, "z": -7 } },
-    { "id": "tree-b2", "kind": "tree", "min": { "x": 0.5, "y": 0, "z": -8.5 }, "max": { "x": 1.5, "y": 3.5, "z": -7.5 } },
-    { "id": "rock-b1", "kind": "rock", "min": { "x": -3, "y": 0, "z": -8 }, "max": { "x": -2, "y": 1, "z": -7 } },
-    { "id": "rock-b2", "kind": "rock", "min": { "x": 2, "y": 0, "z": -8 }, "max": { "x": 3, "y": 1, "z": -7 } },
-    { "id": "tree-b3", "kind": "tree", "min": { "x": -5, "y": 0, "z": -9 }, "max": { "x": -4, "y": 3, "z": -8 } }
+    { "id": "rock-r1", "kind": "rock", "min": { "x": 4.5, "y": 0, "z": -1.5 }, "max": { "x": 5.6, "y": 1, "z": -0.5 } },
+    { "id": "tree-r1", "kind": "tree", "min": { "x": 5, "y": 0, "z": -3.5 }, "max": { "x": 6, "y": 3.2, "z": -2.5 } },
+    { "id": "rock-r2", "kind": "rock", "min": { "x": 6.5, "y": 0, "z": -5 }, "max": { "x": 7.6, "y": 1.3, "z": -4 } },
+    { "id": "tree-r2", "kind": "tree", "min": { "x": 5.5, "y": 0, "z": -6.5 }, "max": { "x": 6.5, "y": 2.6, "z": -5.5 } },
+    { "id": "rock-r3", "kind": "rock", "min": { "x": 8, "y": 0, "z": -2 }, "max": { "x": 9, "y": 0.9, "z": -1 } },
+    { "id": "rock-l1", "kind": "rock", "min": { "x": -5.6, "y": 0, "z": -1.5 }, "max": { "x": -4.5, "y": 1, "z": -0.5 } },
+    { "id": "tree-l1", "kind": "tree", "min": { "x": -6, "y": 0, "z": -3.5 }, "max": { "x": -5, "y": 3.2, "z": -2.5 } },
+    { "id": "rock-l2", "kind": "rock", "min": { "x": -7.6, "y": 0, "z": -5 }, "max": { "x": -6.5, "y": 1.3, "z": -4 } },
+    { "id": "tree-l2", "kind": "tree", "min": { "x": -6.5, "y": 0, "z": -6.5 }, "max": { "x": -5.5, "y": 2.6, "z": -5.5 } },
+    { "id": "rock-l3", "kind": "rock", "min": { "x": -9, "y": 0, "z": -2 }, "max": { "x": -8, "y": 0.9, "z": -1 } },
+    { "id": "tree-b1", "kind": "tree", "min": { "x": -2, "y": 0, "z": -8.5 }, "max": { "x": -1, "y": 3.5, "z": -7.5 } },
+    { "id": "tree-b2", "kind": "tree", "min": { "x": 1, "y": 0, "z": -9 }, "max": { "x": 2, "y": 3.5, "z": -8 } },
+    { "id": "rock-b1", "kind": "rock", "min": { "x": -4, "y": 0, "z": -8 }, "max": { "x": -3, "y": 1.2, "z": -7 } },
+    { "id": "rock-b2", "kind": "rock", "min": { "x": 3, "y": 0, "z": -8 }, "max": { "x": 4, "y": 1.2, "z": -7 } },
+    { "id": "tree-b3", "kind": "tree", "min": { "x": -6, "y": 0, "z": -9 }, "max": { "x": -5, "y": 3, "z": -8 } },
+    { "id": "tree-b4", "kind": "tree", "min": { "x": 5, "y": 0, "z": -9 }, "max": { "x": 6, "y": 3, "z": -8 } }
   ]
 }

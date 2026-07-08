@@ -22,12 +22,19 @@ mkdirSync(outDir, { recursive: true });
 const { props } = JSON.parse(readFileSync(propsPath, 'utf8'));
 
 // kind → 材質基礎色(linear-ish sRGB factor)。低多邊形戶外配色:foliage 綠 / rock 灰 / crate 棕。
-const KINDS = ['tree', 'rock', 'crate'];
+// ground 為視覺-only 地面(見下),扁平大 box,不入 propBounds。
+const KINDS = ['tree', 'rock', 'crate', 'ground'];
 const BASE_COLOR = {
   tree: [0.24, 0.42, 0.19, 1],
   rock: [0.45, 0.46, 0.48, 1],
   crate: [0.5, 0.36, 0.22, 1],
+  ground: [0.3, 0.36, 0.22, 1],
 };
+
+// 地面平板(視覺-only,GD-6:render-only、不入 sim/淨空)。扁平 box y∈[-0.3,0],props 底面 y=0
+// 恰坐落其上;涵蓋所有 prop 的 x/z 範圍 + 遠景,給地平線、消除「藍色虛空」。**非 propBound**
+// (水平視線在 y~1.5,地面 y<=0 永不遮擋;故不列入 field-low.props.json)。
+const GROUND = { min: { x: -14, y: -0.3, z: -16 }, max: { x: 14, y: 0, z: 8 } };
 
 // ---- 單位立方體(中心原點,邊長 1):24 頂點(每面 4)+ 每面法線 + 36 index。----
 // 6 面:+X -X +Y -Y +Z -Z。每面 4 角(CCW,面向外),正常朝外。
@@ -82,12 +89,17 @@ const materials = KINDS.map((kind) => ({
   pbrMetallicRoughness: { baseColorFactor: BASE_COLOR[kind], metallicFactor: 0, roughnessFactor: 0.9 },
 }));
 
-const nodes = props.map((p) => {
-  const center = [(p.min.x + p.max.x) / 2, (p.min.y + p.max.y) / 2, (p.min.z + p.max.z) / 2];
-  const scale = [p.max.x - p.min.x, p.max.y - p.min.y, p.max.z - p.min.z];
-  const meshIndex = Math.max(0, KINDS.indexOf(p.kind));
-  return { name: p.id, mesh: meshIndex, translation: center, scale };
-});
+const boxNode = (name, kind, min, max) => {
+  const center = [(min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2];
+  const scale = [max.x - min.x, max.y - min.y, max.z - min.z];
+  return { name, mesh: Math.max(0, KINDS.indexOf(kind)), translation: center, scale };
+};
+
+// props(propBounds 同源)+ 一塊視覺-only ground plane(不入 propBounds)。
+const nodes = [
+  ...props.map((p) => boxNode(p.id, p.kind, p.min, p.max)),
+  boxNode('ground', 'ground', GROUND.min, GROUND.max),
+];
 
 const gltf = {
   asset: {
