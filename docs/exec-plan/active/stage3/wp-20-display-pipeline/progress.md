@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T3 complete;T4 next
+## Status: 🟡 T4 complete;T-exit next
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 解析度模式 | ✅ |
 | T2 fullscreen + 資格閘 | ✅ |
 | T3 frame-time log | ✅ |
-| T4 session setup 表單 | ⬜ |
+| T4 session setup 表單 | ✅ |
 | T-exit | ⬜ |
 
 ---
@@ -31,6 +31,24 @@
 ---
 
 ## Log
+
+### 2026-07-08 — T4 session setup 表單 + self-report/session meta PASS(GD-10 防線③ 手動半邊)
+- **實作檔案**:
+  - 新增 `src/ui/SessionSetup.ts`:`createSessionSetupForm()` 純 TS DOM overlay;`participantId` 必填,`sessionLabel` 選填;顯示硬體自陳欄(`monitorModel/nativeW/nativeH/panelInches/viewingDistanceCm`)全選填;`selfReportUncertain` 勾選可只記「不確定」。數字欄做最小 sanity range;表單顯示自動 `screen × dpr` 原生解析度供核對。
+  - 修改 `src/display/resolutionMode.ts`:新增 `DisplaySelfReport` optional 欄位,併入 `DisplayState`。
+  - 修改 `src/main.ts`:實驗 session 入口改為 setup → eligibility gate;setup submit 後才開 T2 gate,gate 通過後才讓 setup 值正式進 export metadata。匯出時把 self-report 欄位寫入 `meta.display`,自陳 nativeW/H 與自動 screenW/H 不一致時寫 `nativeMismatch`;`participantId/sessionLabel` 寫 `meta.session`。
+  - 修改 `src/data/metadata.ts`:驗證/trim `meta.display` 手動欄;`meta.session.participantId` 必填且 trim,`sessionLabel` 選填。
+  - 修改 `docs/operational/schema.md`:補 `meta.display` self-reported moderator-only 語意與 `meta.session` join key schema。
+- **斷言證據**:
+  - `npx.cmd vitest run src/ui/SessionSetup.test.ts src/data/metadata.test.ts src/data/export.test.ts` exit 0 — 3 files / 31 tests passed(form submit/必填/範圍/uncertain、nativeMismatch、metadata/session/export JSON)。
+  - `npm.cmd run typecheck` exit 0。
+  - `npm.cmd test` exit 0 — **55 test files / 412 tests passed**(T3 為 54/403;+1 檔 +9 tests)。
+  - `npm.cmd run build` sandbox 首跑被 Vite config 上層讀取權限擋下;經使用者核准非 sandbox 重跑 exit 0 — 67 modules transformed,production build succeeded(僅既有 chunk size warning)。
+  - **Live flow smoke(Edge/Chromium headless,1280×720 viewport,dev server 5175)**:點 `實驗 session` button(index 4)→ `#session-setup` visible → 填 `participantId=P001/sessionLabel=pre/monitorModel/nativeW/nativeH/panelInches/viewingDistanceCm` → submit → `#session-setup` display `none`, `#eligibility-gate` display `flex`。5175 dev server PID 56960 已停止;`netstat` 僅餘 TIME_WAIT,無 LISTENING。
+  - `graphify update .` exit 0 — AST extraction 125/125 files;graph rebuilt to 924 nodes / 2026 edges / 60 communities。
+- **範圍檢查**:未修改 `SIM_HZ`、sim/input/HitDetector/physics constants;T4 只碰 UI/data/main/display metadata 與 docs。一般練習/export 不強制 session setup;只有點「實驗 session」才出現 setup→gate 流程。
+- **決策**:setup 放在 gate 前,因 fullscreen 仍需 T2 gate 按鈕保留 user gesture;表單 submit 只收 pending metadata、不請求 fullscreen,gate pass 後才正式進匯出。`nativeMismatch` 只在 nativeW/H 兩者皆填時寫 boolean,不作阻擋;自動 `screen × dpr` 仍是資格閘唯一依據。文字欄 trim 後進 meta,空字串不落欄。
+- **Surprises / 有意識妥協**:Headless smoke 的中文 role selector 在 PowerShell→Node stdin 內被轉碼成 `??`,因此改以 button index + DOM id 驗證流程;這只影響測試 selector,不影響 app 文案。T4 未做 localStorage 記憶,符合 task out-of-scope;若 pilot 多 session 重填成本高,另開便利性 task。
 
 ### 2026-07-08 — T3 frame-time log + frames 匯出 PASS(GD-10 防線③)
 - **實作檔案**:

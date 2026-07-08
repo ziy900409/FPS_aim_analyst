@@ -110,6 +110,44 @@ describe('data export', () => {
     });
   });
 
+  it('serializes session setup metadata in JSON', () => {
+    const setupMeta: Meta = {
+      ...meta,
+      display: {
+        mode: 'qhd-1440',
+        bufferW: 2560,
+        bufferH: 1440,
+        cssW: 2560,
+        cssH: 1440,
+        dpr: 1,
+        screenW: 2560,
+        screenH: 1440,
+        fullscreen: true,
+        refreshEstimateHz: 120,
+        monitorModel: 'BenQ XL2546K',
+        nativeW: 1920,
+        nativeH: 1080,
+        panelInches: 24.5,
+        viewingDistanceCm: 60,
+        selfReportUncertain: true,
+        nativeMismatch: true,
+      },
+      session: { participantId: 'P001', sessionLabel: 'pre' },
+    };
+    const parsed = JSON.parse(serializeJSON(buildExportPayload(setupMeta, snapshot))) as ExportPayload;
+
+    expect(parsed.meta.display).toMatchObject({
+      monitorModel: 'BenQ XL2546K',
+      nativeW: 1920,
+      nativeH: 1080,
+      panelInches: 24.5,
+      viewingDistanceCm: 60,
+      selfReportUncertain: true,
+      nativeMismatch: true,
+    });
+    expect(parsed.meta.session).toEqual({ participantId: 'P001', sessionLabel: 'pre' });
+  });
+
   it('serializes ticks and sparse event tables as CSV files', () => {
     const files = serializeCSV(buildExportPayload(meta, snapshot), { basename: 'pilot run/01' });
 

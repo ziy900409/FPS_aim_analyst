@@ -18,6 +18,11 @@ import { createExperimentSession } from './display/experimentSession.ts';
 import { EXPERIMENT_MAX_CONDITION, PERF_FLOOR_MS } from './display/constants.ts';
 import { createFrameLog, frameLogCapacity } from './display/frameLog.ts';
 import { createEligibilityGateScreen } from './ui/EligibilityGate.ts';
+import {
+  createSessionSetupForm,
+  displaySelfReportFromSessionSetup,
+  type SessionSetupValues,
+} from './ui/SessionSetup.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill } from './drill/DrillLoader.ts';
@@ -178,11 +183,27 @@ createCrosshair();
 const experimentSession = createExperimentSession({
   onSuspect: () => eligibilityGateScreen.showSuspectWarning(),
 });
+let pendingSessionSetupValues: SessionSetupValues | undefined;
+let sessionSetupValues: SessionSetupValues | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
   required: EXPERIMENT_MAX_CONDITION,
   requestFullscreen: () => document.documentElement.requestFullscreen(),
   probeWarmupP95Ms: () => probeWarmupP95Ms(),
-  onEnter: (report) => experimentSession.enter(report),
+  onEnter: (report) => {
+    if (pendingSessionSetupValues !== undefined) {
+      sessionSetupValues = pendingSessionSetupValues;
+      pendingSessionSetupValues = undefined;
+    }
+    eligibilityGateScreen.hideSuspectWarning();
+    experimentSession.enter(report);
+  },
+});
+const sessionSetupForm = createSessionSetupForm({
+  getDetectedDisplay: () => ({ screenW: displayState.screenW, screenH: displayState.screenH }),
+  onSubmit: (values) => {
+    pendingSessionSetupValues = values;
+    eligibilityGateScreen.open();
+  },
 });
 document.addEventListener('fullscreenchange', () => {
   experimentSession.handleFullscreenChange(document.fullscreenElement != null);
@@ -207,7 +228,7 @@ experimentButton.style.cssText = [
   'cursor:pointer',
   'z-index:40',
 ].join(';');
-experimentButton.addEventListener('click', () => eligibilityGateScreen.open());
+experimentButton.addEventListener('click', () => sessionSetupForm.open());
 document.body.appendChild(experimentButton);
 pointerLock.onChange((locked) => {
   experimentButton.style.display = locked ? 'none' : 'block';
@@ -222,8 +243,16 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
   const frames = frameLog.export(PERF_FLOOR_MS);
   const displayRefresh = frameLog.refreshEstimate() ?? (await measureDisplayRefresh());
   const displayHz = displayRefresh.refreshEstimateHz;
+  const displaySelfReport =
+    sessionSetupValues === undefined
+      ? {}
+      : displaySelfReportFromSessionSetup(sessionSetupValues, {
+          screenW: displayState.screenW,
+          screenH: displayState.screenH,
+        });
   const currentDisplay: DisplayState = {
     ...displayState,
+    ...displaySelfReport,
     refreshEstimateHz: displayRefresh.refreshEstimateHz,
     refreshMedianDeltaMs: displayRefresh.medianDeltaMs,
     // GD-10 防線①:資格閘全量明細,僅實驗 session 進入時填入（事後審查依據）。
@@ -261,6 +290,16 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     },
     display: currentDisplay,
     frames,
+    ...(sessionSetupValues !== undefined
+      ? {
+          session: {
+            participantId: sessionSetupValues.participantId,
+            ...(sessionSetupValues.sessionLabel !== undefined
+              ? { sessionLabel: sessionSetupValues.sessionLabel }
+              : {}),
+          },
+        }
+      : {}),
   });
   return buildExportPayload(meta, snapshot);
 }

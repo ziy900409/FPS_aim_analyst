@@ -94,6 +94,37 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `clutterTier` | string | `low`, `mid`, `high` | Yes | active `SceneConfig` | Scene clutter condition. |
 | `fallback` | boolean | `true` / `false` | Yes | scene loader | `true` when the requested scene asset failed and render fell back to placeholder-room. |
 
+#### `meta.display`
+
+`meta.display` combines automatic display/runtime facts with WP-20 session setup self-report fields.
+Self-reported fields are moderator-only audit metadata; they do not control eligibility. The eligibility
+gate continues to use automatic `screenW/screenH = screen × devicePixelRatio`.
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `mode` | string | `native`, `fhd-1080`, `qhd-1440` | Yes when `display` exists | active resolution mode | Fixed modes are render-buffer sizes with CSS fullscreen upscale. |
+| `bufferW`, `bufferH` | number | pixels | Yes | renderer canvas | Actual render buffer dimensions. |
+| `cssW`, `cssH` | number | CSS pixels | Yes | viewport | CSS presentation size. |
+| `dpr` | number | device pixel ratio | Yes | `window.devicePixelRatio` | Used to recover physical screen pixels. |
+| `screenW`, `screenH` | number | physical pixels | Yes | `screen × dpr` | Automatic native resolution estimate; gate input. |
+| `fullscreen` | boolean | `true` / `false` | Yes | `document.fullscreenElement` | Snapshot at export time. |
+| `refreshEstimateHz` | number | Hz | Yes | frame log / rAF probe | Rounded refresh estimate. |
+| `refreshMedianDeltaMs` | number | ms | No | frame log / rAF probe | Median rAF delta used for the estimate. |
+| `gate` | object | eligibility report | No | WP-20 gate | Full pass/fail details for post-hoc audit. |
+| `monitorModel` | string | self-reported text | No | session setup | Optional, trimmed, moderator-only. |
+| `nativeW`, `nativeH` | number | self-reported pixels | No | session setup | Optional; shown next to automatic `screenW/screenH` for participant verification. |
+| `panelInches` | number | inches | No | session setup | Optional self-report. |
+| `viewingDistanceCm` | number | cm | No | session setup | Optional self-report. |
+| `selfReportUncertain` | boolean | `true` | No | session setup | Present when participant checked "not sure". |
+| `nativeMismatch` | boolean | `true` / `false` | No | derived from setup | Present when both `nativeW/nativeH` are provided; true if they differ from automatic `screenW/screenH`. |
+
+#### `meta.session`
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `participantId` | string | researcher-issued id | Yes when `session` exists | session setup | Required for experiment session exports; trimmed. |
+| `sessionLabel` | string | e.g. `pre`, `post`, `day-1` | No | session setup | Optional cross-session label for offline joins. |
+
 #### `meta.frames`
 
 Frame timing is recorded from `requestAnimationFrame` timestamps into a preallocated arena.

@@ -2,7 +2,22 @@ import type { GateReport } from './eligibilityGate.ts';
 
 export type ResolutionMode = 'native' | 'fhd-1080' | 'qhd-1440';
 
-export interface DisplayState {
+export interface DisplaySelfReport {
+  /** 自陳螢幕型號;瀏覽器無法可靠讀取,僅供 moderator 事後審查。 */
+  monitorModel?: string;
+  /** 自陳原生解析度;自動 `screenW/screenH` 仍是資格閘依據。 */
+  nativeW?: number;
+  nativeH?: number;
+  /** 自陳面板尺寸與觀看距離;moderator-only,不作 gate。 */
+  panelInches?: number;
+  viewingDistanceCm?: number;
+  /** 受試者明確勾選「不確定」。 */
+  selfReportUncertain?: boolean;
+  /** 自陳 nativeW/H 與自動 `screen × dpr` 不一致時標記。 */
+  nativeMismatch?: boolean;
+}
+
+export interface DisplayState extends DisplaySelfReport {
   mode: ResolutionMode;
   bufferW: number;
   bufferH: number;

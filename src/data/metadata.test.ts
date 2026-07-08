@@ -216,6 +216,60 @@ describe('collectMeta', () => {
     });
   });
 
+  it('accepts WP-20 display self-report fields and native mismatch flags', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      display: {
+        mode: 'qhd-1440',
+        bufferW: 2560,
+        bufferH: 1440,
+        cssW: 2560,
+        cssH: 1440,
+        dpr: 1,
+        screenW: 2560,
+        screenH: 1440,
+        fullscreen: true,
+        refreshEstimateHz: 120,
+        monitorModel: ' BenQ XL2546K ',
+        nativeW: 1920,
+        nativeH: 1080,
+        panelInches: 24.5,
+        viewingDistanceCm: 60,
+        selfReportUncertain: true,
+        nativeMismatch: true,
+      },
+    });
+
+    expect(meta.display).toMatchObject({
+      monitorModel: 'BenQ XL2546K',
+      nativeW: 1920,
+      nativeH: 1080,
+      panelInches: 24.5,
+      viewingDistanceCm: 60,
+      selfReportUncertain: true,
+      nativeMismatch: true,
+    });
+  });
+
+  it('accepts required participantId and optional sessionLabel metadata', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      session: { participantId: ' P001 ', sessionLabel: ' pre ' },
+    });
+
+    expect(meta.session).toEqual({ participantId: 'P001', sessionLabel: 'pre' });
+  });
+
   it('rejects a malformed gate report on display metadata', () => {
     expect(() =>
       collectMeta({
@@ -240,6 +294,37 @@ describe('collectMeta', () => {
         },
       } as unknown as CollectMetaArgs),
     ).toThrow('display.gate.pass');
+  });
+
+  it('rejects malformed display self-report fields and missing participant IDs', () => {
+    const valid: CollectMetaArgs = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() =>
+      collectMeta({
+        ...valid,
+        display: {
+          mode: 'qhd-1440',
+          bufferW: 2560,
+          bufferH: 1440,
+          cssW: 2560,
+          cssH: 1440,
+          dpr: 1,
+          screenW: 2560,
+          screenH: 1440,
+          fullscreen: true,
+          refreshEstimateHz: 120,
+          panelInches: -1,
+        },
+      } as unknown as CollectMetaArgs),
+    ).toThrow('display.panelInches');
+    expect(() => collectMeta({ ...valid, session: { participantId: ' ' } })).toThrow('session.participantId');
   });
 
   it('rejects malformed display metadata', () => {

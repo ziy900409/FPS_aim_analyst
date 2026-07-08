@@ -1,5 +1,5 @@
 import type { RenderBackend } from '../render/createRenderer.ts';
-import { isResolutionMode, type DisplayState } from '../display/resolutionMode.ts';
+import { isResolutionMode, type DisplaySelfReport, type DisplayState } from '../display/resolutionMode.ts';
 import type { GateReport } from '../display/eligibilityGate.ts';
 import { PERF_FLOOR_MS } from '../display/constants.ts';
 import type { FrameLogExport } from '../display/frameLog.ts';
@@ -24,6 +24,11 @@ export interface SceneMeta {
   assetPackVersion: string;
   clutterTier: 'low' | 'mid' | 'high';
   fallback: boolean;
+}
+
+export interface SessionMeta {
+  participantId: string;
+  sessionLabel?: string;
 }
 
 export interface Meta {
@@ -52,7 +57,7 @@ export interface Meta {
   scene?: SceneMeta;
   display?: DisplayState;
   frames?: FrameLogExport;
-  session?: { participantId?: string; sessionLabel?: string };
+  session?: SessionMeta;
 }
 
 export interface CollectMetaArgs {
@@ -77,7 +82,7 @@ export interface CollectMetaArgs {
   scene?: SceneMeta;
   display?: DisplayState;
   frames?: FrameLogExport;
-  session?: { participantId?: string; sessionLabel?: string };
+  session?: SessionMeta;
 }
 
 export interface MeasureDisplayHzOptions {
@@ -115,6 +120,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const scene = args.scene === undefined ? undefined : requireSceneMeta(args.scene);
   const display = args.display === undefined ? undefined : requireDisplayState(args.display);
   const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
+  const session = args.session === undefined ? undefined : requireSessionMeta(args.session);
   const frameFloorSuspect = frames !== undefined && frames.summary.p95 > PERF_FLOOR_MS;
 
   return {
@@ -143,7 +149,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(scene !== undefined ? { scene } : {}),
     ...(display !== undefined ? { display } : {}),
     ...(frames !== undefined ? { frames } : {}),
-    ...(args.session !== undefined ? { session: args.session } : {}),
+    ...(session !== undefined ? { session } : {}),
   };
 }
 
@@ -166,6 +172,29 @@ function requireDisplayState(value: DisplayState): DisplayState {
       ? { refreshMedianDeltaMs: requirePositiveFiniteNumber(display.refreshMedianDeltaMs, 'display.refreshMedianDeltaMs') }
       : {}),
     ...(display.gate !== undefined ? { gate: requireGateReport(display.gate) } : {}),
+    ...requireDisplaySelfReport(display),
+  };
+}
+
+function requireDisplaySelfReport(display: Record<string, unknown>): DisplaySelfReport {
+  return {
+    ...(display.monitorModel !== undefined
+      ? { monitorModel: requireTrimmedNonEmptyString(display.monitorModel, 'display.monitorModel') }
+      : {}),
+    ...(display.nativeW !== undefined ? { nativeW: requirePositiveInteger(display.nativeW, 'display.nativeW') } : {}),
+    ...(display.nativeH !== undefined ? { nativeH: requirePositiveInteger(display.nativeH, 'display.nativeH') } : {}),
+    ...(display.panelInches !== undefined
+      ? { panelInches: requirePositiveFiniteNumber(display.panelInches, 'display.panelInches') }
+      : {}),
+    ...(display.viewingDistanceCm !== undefined
+      ? { viewingDistanceCm: requirePositiveFiniteNumber(display.viewingDistanceCm, 'display.viewingDistanceCm') }
+      : {}),
+    ...(display.selfReportUncertain !== undefined
+      ? { selfReportUncertain: requireBoolean(display.selfReportUncertain, 'display.selfReportUncertain') }
+      : {}),
+    ...(display.nativeMismatch !== undefined
+      ? { nativeMismatch: requireBoolean(display.nativeMismatch, 'display.nativeMismatch') }
+      : {}),
   };
 }
 
@@ -208,6 +237,16 @@ function requireSceneMeta(value: SceneMeta): SceneMeta {
     assetPackVersion: requireNonEmptyString(scene.assetPackVersion, 'scene.assetPackVersion'),
     clutterTier: requireClutterTier(scene.clutterTier, 'scene.clutterTier'),
     fallback: requireBoolean(scene.fallback, 'scene.fallback'),
+  };
+}
+
+function requireSessionMeta(value: unknown): SessionMeta {
+  const session = requireRecord(value, 'session');
+  return {
+    participantId: requireTrimmedNonEmptyString(session.participantId, 'session.participantId'),
+    ...(session.sessionLabel !== undefined
+      ? { sessionLabel: requireTrimmedNonEmptyString(session.sessionLabel, 'session.sessionLabel') }
+      : {}),
   };
 }
 
@@ -270,6 +309,10 @@ function requireBoolean(value: unknown, name: string): boolean {
 function requireNonEmptyString(value: unknown, name: string): string {
   if (typeof value !== 'string' || value.trim() === '') throw new Error(`${name} must be a non-empty string`);
   return value;
+}
+
+function requireTrimmedNonEmptyString(value: unknown, name: string): string {
+  return requireNonEmptyString(value, name).trim();
 }
 
 function requireRecord(value: unknown, name: string): Record<string, unknown> {
