@@ -1,4 +1,5 @@
 import { PERF_FLOOR_MS } from './constants.ts';
+import { createFrameLog } from './frameLog.ts';
 
 /**
  * 資格閘 — GD-10 防線①（FR-C7）。WP-20 T2。
@@ -7,7 +8,7 @@ import { PERF_FLOOR_MS } from './constants.ts';
  * 效能地板通過**。任一不合格 = 拒入實驗 session（UI 明示原因）。一般練習不受限。
  *
  * 純函式:讀 `screen`/`devicePixelRatio`/`document.fullscreenElement` 三個環境訊號 +
- * caller 傳入的 warmup p95（局部量測,見 `probeWarmupP95Ms`;T3 frameLog 落地後改 consolidated 來源）。
+ * caller 傳入的 warmup p95（見 `probeWarmupP95Ms`;百分位由 T3 frameLog consolidated 來源計算）。
  * `details` 為全量人類可讀字串,進 `meta.display.gate` 供事後審查（跨硬體誤判的稽核依據）。
  */
 
@@ -82,9 +83,9 @@ export interface ProbeWarmupOptions {
 }
 
 /**
- * warmup 探測:量測既有場景 idle render 的 frame-time p95（局部量測）。
- * T3 frameLog 落地後改由 consolidated 來源取代（OQ-S3-1）。丟前 `warmupSamples` 個 rAF delta
- * （冷啟動抖動）,取接續 `samples` 個 delta 的 p95（nearest-rank）。
+ * warmup 探測:量測既有場景 idle render 的 frame-time p95（局部量測）。丟前 `warmupSamples` 個 rAF
+ * 冷啟動幀,其餘 `samples` 幀餵入一個 throwaway `frameLog`——frame-time 百分位一律由 frameLog
+ * （T3 consolidated 來源,OQ-S3-1）計算,資格閘不再自帶百分位實作（T2↔T3 對帳收斂）。
  */
 export async function probeWarmupP95Ms(options: ProbeWarmupOptions = {}): Promise<number> {
   const samples = requireNonNegativeInteger(options.samples ?? 120, 'samples');
@@ -102,23 +103,13 @@ export async function probeWarmupP95Ms(options: ProbeWarmupOptions = {}): Promis
     timestamps.push(await nextAnimationFrame(requestAnimationFrame));
   }
 
-  const intervals: number[] = [];
-  for (let i = 1; i < timestamps.length; i++) {
-    const delta = timestamps[i] - timestamps[i - 1];
-    if (Number.isFinite(delta) && delta > 0) intervals.push(delta);
-  }
-  const measured = intervals.slice(warmupSamples, warmupSamples + samples);
-  if (measured.length === 0) throw new Error('warmup frame time could not be measured');
+  // 丟前 warmupSamples 個冷啟動幀,其餘餵入 frameLog(delta 過濾 + nearest-rank p95 皆走 T3 來源)。
+  const log = createFrameLog(samples);
+  for (const t of timestamps.slice(warmupSamples)) log.push(t);
+  const summary = log.summary();
+  if (summary.count === 0) throw new Error('warmup frame time could not be measured');
 
-  return percentile(measured, 0.95);
-}
-
-/** nearest-rank percentile（0<q≤1）。T3 frameLog summary 落地後統一至該來源。 */
-function percentile(values: readonly number[], q: number): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const rank = Math.ceil(q * sorted.length);
-  const index = Math.min(sorted.length - 1, Math.max(0, rank - 1));
-  return sorted[index];
+  return summary.p95;
 }
 
 function nextAnimationFrame(

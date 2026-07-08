@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T4 complete;T-exit next
+## Status: ✅ WP-20 交付(四件套齊備;T-exit 收斂 2026-07-08)
 
 | Task | 狀態 |
 |---|---|
@@ -14,7 +14,7 @@
 | T2 fullscreen + 資格閘 | ✅ |
 | T3 frame-time log | ✅ |
 | T4 session setup 表單 | ✅ |
-| T-exit | ⬜ |
+| T-exit | ✅ |
 
 ---
 
@@ -31,6 +31,26 @@
 ---
 
 ## Log
+
+### 2026-07-08 — T-exit 顯示管線四件套交付 PASS(WP-22 T2 可消費)
+
+- **驗證**:`npm run test:ci` exit 0 —— `tsc --noEmit` 綠;vitest **55 test files / 412 tests passed**;playwright **10/10 passed**(Edge,含 COOP/COEP isolation、input-sampler、full-drill、spray-drill 全鏈)。build 僅既有 chunk-size warning。
+- **四件套交付證據(可追)**:
+  - **① 解析度模式**:`src/display/resolutionMode.test.ts` 3 tests(native `Math.min(dpr,2)` 保留、`fhd-1080` 顯式 1920×1080 buffer + CSS upscale、`qhd-1440` 2560×1440 buffer 與 viewport 無關);T1 Playwright(1280×720 viewport)三模式 buffer/CSS/準心量測記 [T1 log](#2026-07-08--t1-解析度模式-pass顯式-buffer--css-upscale--display-meta)。
+  - **② 資格閘**:`src/display/eligibilityGate.test.ts` 14 tests(三檢查各自可獨立紅/綠、`<=` 地板邊界、DPI 矩陣 100%/125%/150% → native 還原 2560×1440 PASS、真 FHD FAIL);`src/ui/EligibilityGate.test.ts` 4 + `src/display/experimentSession.test.ts` 7(拒入/放行/suspect)。
+  - **③ frames 匯出**:`src/display/frameLog.test.ts`(容量/溢位/凍結/摘要/refresh estimate)+ `export.test.ts`(JSON series + CSV summary-only);T3 Edge live export 三模式 `frames.summary` 分佈記 [T3 log](#2026-07-08--t3-frame-time-log--frames-匯出-passgd-10-防線)。
+  - **④ session setup**:`src/ui/SessionSetup.test.ts` + `metadata.test.ts`(self-report trim/range/uncertain、`nativeMismatch`、`participantId` 必填、`meta.session`)。
+- **斷言複查(GD-10/CONTEXT §A 不變式)**:
+  - **準心置中**:準心為 DOM overlay(`src/ui/Crosshair.ts`,CSS `left/top:50%`),不受 render buffer 影響 → 無單元測試;T1 Playwright 三模式(native/fhd-1080/qhd-1440)實測 crosshair center = viewport center `640,360`(見 T1 log)。
+  - **感度無像素項**:`src/view/CameraController.test.ts` → 「uses the CS2 0.022 degrees/count sensitivity model for yaw」+「scales the CS2 sensitivity model linearly」;感度 = 角度制 `0.022°/count`(`meta.sensitivityModel = 'cs2-0.022deg'`),無解析度/像素項 → 跨模式不變。
+  - **sim 跨模式不變性**:`applyResolutionMode` 只回 `DisplayState`(buffer/CSS),不碰 sim(resolutionMode.test.ts 佐證);sim 狀態序列不變性由 `tests/regression/determinism.test.ts` 16 tests(render-FPS 無關,逐 tick bit-exact)+ WP-19 T4 跨場景 bit-exact 守護。**完整跨解析度逐位 determinism = WP-22 T3 收斂**(README §2.3),本 WP 交付單元級斷言(解析度為 render-only)。
+- **T2↔T3 對帳收斂(本 task 唯一程式碼異動)**:`src/display/eligibilityGate.ts` 的 `probeWarmupP95Ms` 原自帶 nearest-rank `percentile()`(與 `frameLog.ts` 的 `nearestRank()` 重複);T-exit 改為把丟棄冷啟動幀後的 timestamps 餵入一個 throwaway `frameLog`,p95 由 `frameLog.summary()` 計算並刪除重複 percentile —— **frame-time 百分位自此單一來源(frameLog,T3 consolidated)**。行為保持不變:`eligibilityGate.test.ts` 兩個 probe 測試(p95=8 / p95=30)續綠。**T3 側對帳**:frameLog 現同時是 drill-time 記錄(RenderLoop sink)與 gate-time warmup 百分位的權威來源;兩者共用 `PERF_FLOOR_MS` 與 nearest-rank 語意。
+- **範圍檢查**:未修改 `SIM_HZ`、sim/input/HitDetector/physics;唯一 src 異動 `eligibilityGate.ts` 屬 display 層,只換百分位來源、不改三檢查邏輯與門檻。architecture guard 綠。
+- **OQ ledger**:OQ-S3-1 / OQ-S3-4 / OQ-20.1 / OQ-20.2 於 T0 已 resolved 並回填 stage3 README §8;**OQ-20.3**(物理硬體 DPI 端到端 + 真 fullscreen gesture)維持 open,owner = moderator 實驗機(headless 無法忠實重現),非阻塞 WP-22。
+- **Outcomes / 帶著走的決定**:
+  - **交付了什麼**:WP-22 T2 受試者內解析度 protocol 的完整顯示面 —— gate(拒入)→ 三解析度條件切換 → 匯出含 `meta.display`(自動 buffer/CSS/dpr/fullscreen/refresh + gate 全量明細 + 自陳欄)/`meta.frames`(series+summary)/`meta.session`(join key)全鏈就緒。
+  - **Surprises**:T-exit 原規劃 docs-only,但 step 4「warmup 改用 frameLog 來源」實為一筆小程式碼收斂(消重複 percentile);判斷屬 T2↔T3 收斂本體(非另立 feature),故隨 exit-gate 一併落地並在此明記。
+  - **帶著走**:效能地板真實硬體 PASS/FAIL(120/240Hz 面板 + 真 fullscreen)仍待 moderator 實機(OQ-20.3);headless 為 60Hz cadence,三模式必標 suspect,只證匯出鏈路與 buffer/frames 形狀,不作效能證據。
 
 ### 2026-07-08 — T4 session setup 表單 + self-report/session meta PASS(GD-10 防線③ 手動半邊)
 - **實作檔案**:

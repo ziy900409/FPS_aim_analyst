@@ -9,7 +9,7 @@
 | **上游門檻** | 研究側:**GD-6~10 已全數拍板(2026-07-06 grill)**,無未決研究設計。工程側:WP-19/20 僅需 M4 ✅;WP-21 資料面需 WP-16(schema v2);WP-22 需 **M8 + WP-18** |
 | **技術棧** | 沿用(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright)+ GLTF 資產管線(`GLTFLoader`,render-only) |
 | **估時** | 11.5–16.5 dev-days(WP-19~22;不含 stage2 的 WP-18 +2–3.5) |
-| **狀態** | 🟡 進行中;**WP-19 ✅ M9 達成(2026-07-08)** — 場景脊椎成立;WP-20/21 三線可續;WP-22 待 M9 ✅(已達)+ M8 ✅ + WP-18 |
+| **狀態** | 🟡 進行中;**WP-19 ✅ M9 達成 + WP-20 ✅ 交付(2026-07-08)** — 場景脊椎成立、顯示管線四件套齊備;WP-21 可續;WP-22 待 M9 ✅(已達)+ M8 ✅ + WP-18 |
 
 ---
 
@@ -208,7 +208,7 @@ GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵�
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
 | **WP-19** | [wp-19-scene-system/](wp-19-scene-system/README.md) | 場景系統:SceneConfig + GLTF 管線 + 淨空驗證 + 場景切換/meta + 兩個雜亂度階層場景 | **M9 ✅** | M4 ✅(可與 stage2 尾段並行) | 4–6 | ✅ **M9(2026-07-08)** |
-| **WP-20** | [wp-20-display-pipeline/](wp-20-display-pipeline/README.md) | 顯示管線:解析度模式 + fullscreen/資格閘 + frame-time log + session setup 表單/display meta | — | M4 ✅(可並行) | 3–4 | 🟡 T0 ✅ |
+| **WP-20** | [wp-20-display-pipeline/](wp-20-display-pipeline/README.md) | 顯示管線:解析度模式 + fullscreen/資格閘 + frame-time log + session setup 表單/display meta | — | M4 ✅(可並行) | 3–4 | ✅ **交付(2026-07-08)** — 四件套齊備,WP-22 T2 可消費 |
 | **WP-21** | [wp-21-detection-drill/](wp-21-detection-drill/README.md) | 偵測 drill:seeded spawn 隨機化 + pop-in drill + t_detect/偏心度離線推導 spec | — | T1/T2 獨立;T3 需 WP-16(v2 欄) | 2.5–3.5 | ⬜ |
 | **WP-22** | [wp-22-perception-integration/](wp-22-perception-integration/README.md) | 感知實驗整合:追蹤 × 場景 + 解析度受試者內 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + **WP-18(M8 後)** | 2–3 | ⬜ |
 

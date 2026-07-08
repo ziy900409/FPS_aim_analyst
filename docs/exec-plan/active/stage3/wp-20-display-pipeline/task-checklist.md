@@ -10,7 +10,7 @@
 | ✅ | **T2** fullscreen + 資格閘(拒入) | [T2-fullscreen-eligibility-gate.md](T2-fullscreen-eligibility-gate.md) | T1 | High |
 | ✅ | **T3** frame-time log + frames 匯出 + suspect | [T3-frame-time-log.md](T3-frame-time-log.md) | T1 | Med |
 | ✅ | **T4** session setup 表單 + 自陳 meta | [T4-session-setup-form.md](T4-session-setup-form.md) | T1 | Low |
-| ⬜ | **T-exit** 四件套交付宣告 | [T-exit-gate.md](T-exit-gate.md) | T1–T4 | — |
+| ✅ | **T-exit** 四件套交付宣告 | [T-exit-gate.md](T-exit-gate.md) | T1–T4 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 
