@@ -5,7 +5,7 @@
 
 ---
 
-## Status: ✅ T0/T1/T2/T3/T4/T5 complete(T2 實機三檢皆綠);T-exit 待開
+## Status: ✅ **M9 達成 2026-07-08** — WP-19 場景脊椎交付(T0–T-exit 全綠)
 
 | Task | 狀態 |
 |---|---|
@@ -15,7 +15,7 @@
 | T3 淨空驗證器 | ✅ |
 | T4 場景切換 + meta | ✅ |
 | T5 urban-high + perf | ✅ |
-| T-exit(M9) | ⬜ |
+| T-exit(M9) | ✅ M9 宣告 2026-07-08 |
 
 ---
 
@@ -30,6 +30,32 @@
 ---
 
 ## Log
+
+### 2026-07-08 — T-exit gate:M9 場景脊椎宣告 ✅
+
+**交付了什麼(M9 承諾被測試釘死)**:場景系統作為可消費的穩定面——「換場景零引擎碼」與「場景不碰決定性」兩承諾各有測試級證據。WP-22 T1 起可直接消費 `SceneConfig` / 切換 / 淨空驗證 / `meta.scene`。
+
+**閘門驗證(`npm run test:ci` exit 0,2026-07-08)**:
+- `tsc --noEmit` → pass。
+- Vitest → **48 files / 356 tests pass**。
+- Playwright(Edge,dev + preview server)→ **10 tests pass**(COOP/COEP isolation、backend、InputSampler、full-drill、spray-drill、overlay)。
+
+**M9 四項證據(測試名 + 結果)**:
+1. **置換**:`src/scene/scenes/field-low.test.ts`(3)+ `src/scene/scenes/urban-high.test.ts`(5)綠;T4/T5 headless smoke 兩場景真 GLTF(`field-low.gltf` / `urban-high.gltf` 皆 200)+ UI gating + drill 可跑;`loadDrill(drill, scene)` 對兩場景不 throw。
+2. **拒載**:`src/drill/DrillLoader.test.ts` › `scene clearance 違規時拒載,錯誤訊息指名 prop id` 綠(對抗性 fixture `blocking-crate`);縱深 `waypoints 元素非 Vec3 → 帶 scene 載入時於 schema 層拒載,不得靜默通過 clearance` 綠(PR #10 NaN 穿門修復回歸)。
+3. **決定性**:`tests/regression/determinism.test.ts` › `WP-19 T4 — 場景純裝飾:跨場景 sim 狀態與記錄資料 bit-exact 相同` › `placeholder-room / field-low / urban-high 使用同輸入序列時完整 sim 輸出一致` 綠(逐位,涵蓋三場景)。
+4. **稽核**:`ATTRIBUTIONS.md` 逐項 ↔ `public/assets/scenes/` 一一對應——僅 `field-low/field-low.gltf` 與 `urban-high/urban-high.gltf` 兩資產,皆**原創程序化生成 CC0**(無第三方素材、無 share-alike);repo 內無非白名單(NC/遊戲抽取/付費)授權檔。
+
+**架構閘複查**:`src/scene/architecture.test.ts` › `scene architecture boundary` › `src/sim 與 src/state 不得 import src/scene` 綠(1 test)——`propBounds` 資料流終點守在 validator,GD-6 硬約束成立。
+
+**OQ ledger 收斂**:OQ-S3-3 於 [../README.md §8](../README.md) 翻收斂註記(T2/T5 最終採原創 CC0 而非 T0 候選 Kenney,triangles 已實測);OQ-19.1 / OQ-19.2 於本 ledger 已 ✅,§8 補 WP-19-local footnote。
+
+**文件同步**:[task-checklist.md](task-checklist.md) T-exit ✅;[README.md](README.md) 狀態 ✅;[../README.md](../README.md) §3 WP-19 ✅ + §4 M9 ✅ + 狀態列;[exec-plan/README.md](../../../README.md) §2 stage3 表 + §3 M9 + 階段 C 狀態列。
+
+**帶著走的決定 / Surprises**:
+- **exit gate 為 docs-only 切片**,零 `src/` 改動——四項證據皆為既有 T1–T5 測試,T-exit 只驗證彙整與宣告,不新增測試碼(符合 exit gate 職責:宣告而非開發)。
+- **實機視覺 QA 仍為建議人工項**(桌面 Edge/Chrome 肉眼切 field-low ↔ urban-high):headless smoke 已覆蓋真 GLTF 載入 / UI gating / frame timing,但不替代主觀視覺辨識度確認;不阻塞 M9 自動閘(比照 M4/M6 手感項紀律)。
+- **資產最終形態與 T0 選型分歧但更嚴合規**:原創 CC0 保證 GD-9 零 attribution 義務 + propBounds 與視覺同源;寫實第三方置換保留為未來升級路徑(ATTRIBUTIONS 已註記接續紀律)。
 
 ### 2026-07-08 08:48Z — T5 `urban-high` 第二場景 + 兩場景負載驗證 ✅
 - **實作**:

@@ -9,7 +9,7 @@
 | **上游門檻** | 研究側:**GD-6~10 已全數拍板(2026-07-06 grill)**,無未決研究設計。工程側:WP-19/20 僅需 M4 ✅;WP-21 資料面需 WP-16(schema v2);WP-22 需 **M8 + WP-18** |
 | **技術棧** | 沿用(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright)+ GLTF 資產管線(`GLTFLoader`,render-only) |
 | **估時** | 11.5–16.5 dev-days(WP-19~22;不含 stage2 的 WP-18 +2–3.5) |
-| **狀態** | ⬜ 已規劃(2026-07-06);**排程建議**:WP-19/20/21 於 stage2 M6 後三線並行——**M6 ✅ 已達成(2026-07-06),條件成立**;WP-22 待 M8 + WP-18 |
+| **狀態** | 🟡 進行中;**WP-19 ✅ M9 達成(2026-07-08)** — 場景脊椎成立;WP-20/21 三線可續;WP-22 待 M9 ✅(已達)+ M8 ✅ + WP-18 |
 
 ---
 
@@ -207,7 +207,7 @@ GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵�
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
-| **WP-19** | [wp-19-scene-system/](wp-19-scene-system/README.md) | 場景系統:SceneConfig + GLTF 管線 + 淨空驗證 + 場景切換/meta + 兩個雜亂度階層場景 | **M9** | M4 ✅(可與 stage2 尾段並行) | 4–6 | ⬜ |
+| **WP-19** | [wp-19-scene-system/](wp-19-scene-system/README.md) | 場景系統:SceneConfig + GLTF 管線 + 淨空驗證 + 場景切換/meta + 兩個雜亂度階層場景 | **M9 ✅** | M4 ✅(可與 stage2 尾段並行) | 4–6 | ✅ **M9(2026-07-08)** |
 | **WP-20** | [wp-20-display-pipeline/](wp-20-display-pipeline/README.md) | 顯示管線:解析度模式 + fullscreen/資格閘 + frame-time log + session setup 表單/display meta | — | M4 ✅(可並行) | 3–4 | ⬜ |
 | **WP-21** | [wp-21-detection-drill/](wp-21-detection-drill/README.md) | 偵測 drill:seeded spawn 隨機化 + pop-in drill + t_detect/偏心度離線推導 spec | — | T1/T2 獨立;T3 需 WP-16(v2 欄) | 2.5–3.5 | ⬜ |
 | **WP-22** | [wp-22-perception-integration/](wp-22-perception-integration/README.md) | 感知實驗整合:追蹤 × 場景 + 解析度受試者內 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + **WP-18(M8 後)** | 2–3 | ⬜ |
@@ -218,7 +218,7 @@ GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵�
 
 | 里程碑 | 完成條件 | 對應 WP | 意義 |
 |---|---|---|---|
-| **M9** | 場景可置換(≥2 個雜亂度階層)+ 淨空驗證會拒載違規 drill + 同輸入序列跨場景 sim 狀態逐位一致 + 資產 attribution 可稽核 | WP-19 | 場景脊椎成立:「換場景零引擎碼」與「場景不碰決定性」兩個承諾被測試釘死 |
+| **M9 ✅(2026-07-08)** | 場景可置換(≥2 個雜亂度階層)+ 淨空驗證會拒載違規 drill + 同輸入序列跨場景 sim 狀態逐位一致 + 資產 attribution 可稽核 | WP-19 | 場景脊椎成立:「換場景零引擎碼」與「場景不碰決定性」兩個承諾被測試釘死(`test:ci` exit 0;四項證據 + 架構閘測試名見 [wp-19 T-exit](wp-19-scene-system/T-exit-gate.md)) |
 | **M10** | 驗收清單 C 全項通過:資格閘拒入/放行正確、受試者內解析度 protocol E2E 綠、追蹤 × 場景 E2E 綠、偵測推導 fixture 綠、決定性回歸(場景/解析度不變性 + seeded spawn 重現)全綠 | WP-22 | **stage3 交付**:兩個感知實驗(追蹤能力、解析度 × 偵測)可開 pilot |
 
 > WP-20/21 無獨立里程碑:其交付由 M10 驗收清單 C 一次收斂(比照 stage2 WP-11/12 → M6 的模式)。
@@ -270,9 +270,11 @@ WP-21(偵測 drill;T3 需 WP-16)─┤
 |---|---|---|---|---|---|
 | OQ-S3-1 | 效能地板門檻(資格閘 warmup p95 ≤ ?ms;drill 中 suspect 門檻) | 起點:p95 ≤ 8.33ms(120Hz 等效),pilot 後校 | 研究者 | WP-20 T2 | 資格閘 DoD 無法客觀判定 |
 | OQ-S3-2 | `t_detect` 參數 pre-registered 起點(θ_v 相對雜訊底倍率、持續 k tick) | 起點:θ_v = 3× 前刺激窗 SD、k = 4 tick(≈31ms);敏感度分析離線做 | 研究者 | WP-21 T3(spec 內給預設) | 不阻塞引擎;分析 spec 需標「暫定」 |
-| OQ-S3-3 | 場景資產具體選型(CC0/CC-BY pack 清單與雜亂度對應) | ✅ WP-19 T0 決議:field-low 採 Kenney Nature Kit(CC0)為模組化來源;備選 Quaternius Ultimate Nature Pack(CC0)與 Poly Pizza Walk in the Woods(CC-BY)。詳 [wp-19 progress](wp-19-scene-system/progress.md)。 | 使用者 | WP-19 T0 | 已決;T2 需下載後量測實際 triangles/materials 並寫 `ATTRIBUTIONS.md` |
+| OQ-S3-3 | 場景資產具體選型(CC0/CC-BY pack 清單與雜亂度對應) | ✅ **收斂(M9 2026-07-08)**:T0 選定 Kenney Nature Kit(CC0)為候選,惟 T2/T5 最終改採**原創程序化生成 CC0** 資產(GD-9 完全合規、propBounds 與視覺同源)——`field-low`(204 triangles)+ `urban-high`(804 triangles),皆遠低於 <20k budget,`ATTRIBUTIONS.md` 逐項可稽核。備選 Kenney/Quaternius/Poly Pizza 保留供未來寫實置換。詳 [wp-19 progress](wp-19-scene-system/progress.md)。 | 使用者 | WP-19 T0 | ✅ 已收斂;triangles/materials 已實測、`ATTRIBUTIONS.md` 已寫 |
 | OQ-S3-4 | frames 匯出形式(完整序列 vs 摘要) | JSON 完整序列 + 摘要;CSV 只摘要 | 研究者 | WP-20 T3 | 匯出大小與分析端便利性 |
 | OQ-S3-5 | 追蹤 drill 的 presentation 時長/速度階層設計(WP-18 展開時定) | 對帳點:WP-18 T0 與本計畫 WP-22 T1 互記 | 研究者 | WP-18 entry | WP-22 T1 消費面 |
+
+> **WP-19-local OQ 收斂(M9 2026-07-08)**:OQ-19.1(`CLEARANCE_MARGIN_U = 0.5u` / `playerCorridor.halfWidthU = 1.0u`)與 OQ-19.2(`meta.scene` optional 區塊縫 WP-16 已留,T4 填值)均 ✅ resolved,決議與證據見 [wp-19 progress](wp-19-scene-system/progress.md) OQ ledger。
 
 ---
 
