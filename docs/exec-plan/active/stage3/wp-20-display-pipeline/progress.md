@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 T2 complete;T3 next
+## Status: 🟡 T3 complete;T4 next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 解析度模式 | ✅ |
 | T2 fullscreen + 資格閘 | ✅ |
-| T3 frame-time log | ⬜ |
+| T3 frame-time log | ✅ |
 | T4 session setup 表單 | ⬜ |
 | T-exit | ⬜ |
 
@@ -31,6 +31,31 @@
 ---
 
 ## Log
+
+### 2026-07-08 — T3 frame-time log + frames 匯出 PASS(GD-10 防線③)
+- **實作檔案**:
+  - 新增 `src/display/frameLog.ts`:`createFrameLog(capacity)` 使用 `Float64Array` 記 rAF delta 序列;容量 `maxDrillSeconds × MAX_DISPLAY_HZ(240)`(現行 72,000 samples);滿即停記 + `overflow`,不繞圈。`summary()` 輸出 `count/p50/p95/p99/overBudgetWindows/overflow`;`refreshEstimate()` 由 median delta 算 `round(1000 / median)`。
+  - 修改 `src/display/constants.ts`:新增 `MAX_DISPLAY_HZ = 240`。
+  - 修改 `src/loop/RenderLoop.ts`:新增 optional `frameLog` sink,每幀以 primitive rAF timestamp 呼叫 `push(nowMs)`;排程職責仍不知 sim。
+  - 修改 `src/main.ts`:建立 `frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS)`;drill start/restart/reset 時重置,phase 首次 `ended` 時 freeze;匯出時寫 `meta.frames`;`meta.display.refreshEstimateHz/refreshMedianDeltaMs` 優先取 frameLog median(無 samples 的 pre-run export 才 fallback rAF probe);`suspect` OR `frames.summary.p95 > PERF_FLOOR_MS`。
+  - 修改 `src/data/metadata.ts`: `frames?: FrameLogExport` validator;`summary.count` 必須等於 `series.length`;`p95 > PERF_FLOOR_MS` 自動標 `suspect`。
+  - 修改 `src/data/export.ts`:JSON 保留 `meta.frames.series + summary`;CSV 只新增 `<basename>-frames.csv` summary 欄位,不展開逐幀序列。
+  - 修改 `docs/operational/schema.md`:補 `meta.frames` 與 optional frames CSV schema。
+- **斷言證據**:
+  - `npx.cmd vitest run src/display/frameLog.test.ts src/loop/RenderLoop.test.ts src/data/metadata.test.ts src/data/export.test.ts` exit 0 — 4 files / 35 tests passed(容量/溢位/凍結/摘要/refresh estimate、RenderLoop sink、metadata suspect 邊界、JSON series + CSV summary)。
+  - `npm.cmd run typecheck` exit 0。
+  - `npm.cmd test` exit 0 — **54 test files / 403 tests passed**(T2 為 53/390;+1 檔 +13 tests)。
+  - `npm.cmd run build` sandbox 首跑被 Vite config 上層讀取權限擋下;經使用者核准非 sandbox 重跑 exit 0 — 66 modules transformed,production build succeeded(僅既有 chunk size warning)。
+- **Edge headless live export smoke(1280×720 viewport,dpr=1,dev server 5174)**:
+  - 流程:每模式切換 resolution select → `Restart` → 等 4.3s(跨 countdown 進 running sample)→ 點 `JSON` 下載 → 讀 `meta.frames.summary`。此為 live app 匯出鏈路樣本,非完整人工 20-target completion run。
+  - `native`:buffer `1280×720`,CSS `1280×720`,refresh `60Hz`,median `16.67ms`,frames `count=260,p50=16.67,p95=16.80,p99=16.90,overBudgetWindows=260,overflow=false`,suspect `true`。
+  - `fhd-1080`:buffer `1920×1080`,CSS `1280×720`,refresh `60Hz`,median `16.67ms`,frames `count=260,p50=16.67,p95=16.81,p99=16.93,overBudgetWindows=260,overflow=false`,suspect `true`。
+  - `qhd-1440`:buffer `2560×1440`,CSS `1280×720`,refresh `60Hz`,median `16.67ms`,frames `count=260,p50=16.67,p95=16.81,p99=16.88,overBudgetWindows=260,overflow=false`,suspect `true`。
+  - 解讀:本機/headless Edge 為 60Hz cadence,故 p95 必然超過 8.33ms 120Hz 效能地板並標 suspect;三模式 buffer/display meta 與 `frames` JSON 匯出均可讀。Bundled Chromium headless 曾被節流到 3–10Hz,不採作效能證據。
+  - 清理:dev server PIDs 22664/14664 已停止;`netstat` 僅餘 TIME_WAIT,無 5173/5174 LISTENING。
+- **範圍檢查**:未修改 `SIM_HZ`、sim/input/HitDetector/physics constants;frame log 只掛 render/data/main 層。`RenderLoop` 新增 optional sink 不改既有 onFrame 呼叫契約;`meta.frames` 為 v2 optional reserved 區塊,不 bump schema。
+- **決策**:`meta.frames` 沿用 WP-16 v2 reserved 區塊;CSV 以第三個 summary-only 檔輸出,避免 per-frame series 膨脹 CSV。Frame log 記 delta 而非 raw timestamp,符合 OQ-S3-4「JSON 完整 delta 序列」。
+- **Surprises / 有意識妥協**:真實 120Hz/240Hz 面板與完整人工 20-target run 未於本 headless 環境執行;T3 用 Edge headless 驗證 live export 鏈路與三解析度 buffer/frames 形狀,效能地板的真實硬體 PASS/FAIL 留 moderator 實驗機延續 T2 OQ-20.3 實機矩陣。
 
 ### 2026-07-08 — T2 fullscreen 流程 + 資格閘 PASS(GD-10 防線①,不合格拒入)
 - **實作檔案**:

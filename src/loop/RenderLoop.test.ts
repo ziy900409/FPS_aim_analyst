@@ -49,4 +49,22 @@ describe('createRenderLoop（rAF 驅動，單一職責 = 排程幀）', () => {
     loop.start();
     expect(rafCbs).toHaveLength(1);
   });
+
+  it('可在每幀以 primitive rAF timestamp 掛入 frame log sink', () => {
+    const seen: number[] = [];
+    const loop = createRenderLoop(() => {}, {
+      frameLog: {
+        push(tMs) {
+          expect(typeof tMs).toBe('number');
+          seen.push(tMs);
+        },
+      },
+    });
+
+    loop.start();
+    rafCbs.shift()!(16);
+    rafCbs.shift()!(32);
+
+    expect(seen).toEqual([16, 32]);
+  });
 });

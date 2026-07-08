@@ -1,6 +1,8 @@
 import type { RenderBackend } from '../render/createRenderer.ts';
 import { isResolutionMode, type DisplayState } from '../display/resolutionMode.ts';
 import type { GateReport } from '../display/eligibilityGate.ts';
+import { PERF_FLOOR_MS } from '../display/constants.ts';
+import type { FrameLogExport } from '../display/frameLog.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
 
 export const DEFAULT_SIM_HZ = 128;
@@ -49,7 +51,7 @@ export interface Meta {
   spawn?: SpawnMeta;
   scene?: SceneMeta;
   display?: DisplayState;
-  frames?: unknown;
+  frames?: FrameLogExport;
   session?: { participantId?: string; sessionLabel?: string };
 }
 
@@ -74,7 +76,7 @@ export interface CollectMetaArgs {
   spawn?: SpawnMeta;
   scene?: SceneMeta;
   display?: DisplayState;
-  frames?: unknown;
+  frames?: FrameLogExport;
   session?: { participantId?: string; sessionLabel?: string };
 }
 
@@ -112,6 +114,8 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const explicitSuspect = requireBoolean(args.suspect ?? false, 'suspect');
   const scene = args.scene === undefined ? undefined : requireSceneMeta(args.scene);
   const display = args.display === undefined ? undefined : requireDisplayState(args.display);
+  const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
+  const frameFloorSuspect = frames !== undefined && frames.summary.p95 > PERF_FLOOR_MS;
 
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -134,11 +138,11 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     lateEventCount,
     bufferOverflow,
     recorderOverflow,
-    suspect: explicitSuspect || bufferOverflow || recorderOverflow,
+    suspect: explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect,
     ...(args.spawn !== undefined ? { spawn: args.spawn } : {}),
     ...(scene !== undefined ? { scene } : {}),
     ...(display !== undefined ? { display } : {}),
-    ...(args.frames !== undefined ? { frames: args.frames } : {}),
+    ...(frames !== undefined ? { frames } : {}),
     ...(args.session !== undefined ? { session: args.session } : {}),
   };
 }
@@ -174,6 +178,27 @@ function requireGateReport(value: unknown): GateReport {
     perf: requireBoolean(gate.perf, 'display.gate.perf'),
     details: requireNonEmptyString(gate.details, 'display.gate.details'),
   };
+}
+
+function requireFrameLogExport(value: unknown): FrameLogExport {
+  const frames = requireRecord(value, 'frames');
+  const rawSeries = frames.series;
+  if (!Array.isArray(rawSeries)) throw new Error('frames.series must be an array');
+  const series = rawSeries.map((delta, index) => requireNonNegativeFiniteNumber(delta, `frames.series[${index}]`));
+  const summaryRecord = requireRecord(frames.summary, 'frames.summary');
+  const summary = {
+    count: requireNonNegativeInteger(summaryRecord.count, 'frames.summary.count'),
+    p50: requireNonNegativeFiniteNumber(summaryRecord.p50, 'frames.summary.p50'),
+    p95: requireNonNegativeFiniteNumber(summaryRecord.p95, 'frames.summary.p95'),
+    p99: requireNonNegativeFiniteNumber(summaryRecord.p99, 'frames.summary.p99'),
+    overBudgetWindows: requireNonNegativeInteger(
+      summaryRecord.overBudgetWindows,
+      'frames.summary.overBudgetWindows',
+    ),
+    overflow: requireBoolean(summaryRecord.overflow, 'frames.summary.overflow'),
+  };
+  if (summary.count !== series.length) throw new Error('frames.summary.count must match frames.series length');
+  return { series, summary };
 }
 
 function requireSceneMeta(value: SceneMeta): SceneMeta {
@@ -278,6 +303,13 @@ function requirePositiveInteger(value: unknown, name: string): number {
 function requireFiniteNumber(value: unknown, name: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`${name} must be a finite number`);
+  }
+  return value;
+}
+
+function requireNonNegativeFiniteNumber(value: unknown, name: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`${name} must be a non-negative finite number`);
   }
   return value;
 }

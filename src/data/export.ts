@@ -37,10 +37,14 @@ export function serializeJSON(payload: ExportPayload): string {
 
 export function serializeCSV(payload: ExportPayload, options: DownloadOptions = {}): CsvFile[] {
   const basename = exportBasename(payload, options);
-  return [
+  const files = [
     { filename: `${basename}-ticks.csv`, content: serializeTicksCSV(payload.ticks) },
     { filename: `${basename}-events.csv`, content: serializeEventsCSV(payload.events) },
   ];
+  if (payload.meta.frames !== undefined) {
+    files.push({ filename: `${basename}-frames.csv`, content: serializeFramesCSV(payload.meta.frames.summary) });
+  }
+  return files;
 }
 
 export function downloadJSON(payload: ExportPayload, options: DownloadOptions = {}): void {
@@ -128,6 +132,20 @@ function serializeEventsCSV(events: DrillEvent[]): string {
   return rowsToCSV(rows);
 }
 
+function serializeFramesCSV(summary: NonNullable<Meta['frames']>['summary']): string {
+  return rowsToCSV([
+    ['count', 'p50', 'p95', 'p99', 'overBudgetWindows', 'overflow'],
+    [
+      formatNumber(summary.count),
+      formatNumber(summary.p50),
+      formatNumber(summary.p95),
+      formatNumber(summary.p99),
+      formatNumber(summary.overBudgetWindows),
+      formatBoolean(summary.overflow),
+    ],
+  ]);
+}
+
 function rowsToCSV(rows: string[][]): string {
   return `${rows.map((row) => row.map(escapeCSVCell).join(',')).join('\n')}\n`;
 }
@@ -173,6 +191,15 @@ function assertFinitePayload(payload: ExportPayload): void {
       formatOptionalNumber(event.ammo);
       if (event.offsetDeg !== undefined) formatNumber(event.offsetDeg);
     }
+  }
+  if (payload.meta.frames !== undefined) {
+    for (const delta of payload.meta.frames.series) formatNumber(delta);
+    const summary = payload.meta.frames.summary;
+    formatNumber(summary.count);
+    formatNumber(summary.p50);
+    formatNumber(summary.p95);
+    formatNumber(summary.p99);
+    formatNumber(summary.overBudgetWindows);
   }
 }
 

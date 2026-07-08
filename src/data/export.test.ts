@@ -86,6 +86,30 @@ describe('data export', () => {
     expect(parsed.events).toHaveLength(3);
   });
 
+  it('serializes frame deltas in JSON and only the frame summary in CSV', () => {
+    const frameMeta: Meta = {
+      ...meta,
+      frames: {
+        series: [8, 9, 10],
+        summary: { count: 3, p50: 9, p95: 10, p99: 10, overBudgetWindows: 2, overflow: false },
+      },
+      suspect: true,
+    };
+    const payload = buildExportPayload(frameMeta, snapshot);
+    const parsed = JSON.parse(serializeJSON(payload)) as ExportPayload;
+    const files = serializeCSV(payload, { basename: 'pilot run/01' });
+
+    expect(parsed.meta.frames?.series).toEqual([8, 9, 10]);
+    expect(files[2]).toEqual({
+      filename: 'pilot_run_01-frames.csv',
+      content: [
+        'count,p50,p95,p99,overBudgetWindows,overflow',
+        '3,9,10,10,2,false',
+        '',
+      ].join('\n'),
+    });
+  });
+
   it('serializes ticks and sparse event tables as CSV files', () => {
     const files = serializeCSV(buildExportPayload(meta, snapshot), { basename: 'pilot run/01' });
 

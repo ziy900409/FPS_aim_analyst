@@ -7,7 +7,7 @@
 | **相依** | T1(display 語意就緒);與 T2 可並行 |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | ADD `src/display/frameLog.ts`;MODIFY `src/loop/RenderLoop.ts`(每幀 push 一行)、`src/data/export.ts`(frames 區塊)、`src/data/metadata.ts`(摘要 + suspect)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-08 |
 
 ## Objective
 
@@ -31,13 +31,13 @@ preallocated log,隨匯出輸出完整序列 + 摘要;drill 中 p95 超效能地
 
 ## Steps
 
-- [ ] `frameLog` 單元測試(容量/溢位/摘要正確性;合成 timestamps)。
-- [ ] `RenderLoop` 掛線 + 零配置斷言;drill 邊界重置/凍結測試。
-- [ ] `suspect` 門檻測試(合成超標序列)。
-- [ ] `export` frames 區塊 + schema 對帳(`docs/operational/schema.md` frames 節)。
-- [ ] 實機:一場 drill 的 frames 分佈(三解析度模式各一)記 progress——跨模式
+- [x] `frameLog` 單元測試(容量/溢位/摘要正確性;合成 timestamps)。
+- [x] `RenderLoop` 掛線 + 零配置斷言;drill 邊界重置/凍結測試。
+- [x] `suspect` 門檻測試(合成超標序列)。
+- [x] `export` frames 區塊 + schema 對帳(`docs/operational/schema.md` frames 節)。
+- [x] 實機:一場 drill 的 frames 分佈(三解析度模式各一)記 progress——跨模式
   frame time 差異的首份實測。
-- [ ] `npx vitest run` 全綠。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

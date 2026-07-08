@@ -13,6 +13,12 @@
 export const PERF_FLOOR_MS = 8.33;
 
 /**
+ * Highest display refresh rate the frame log reserves for.
+ * OQ-20.1 (WP-20 T0 2026-07-08): capacity = maxDrillSeconds * MAX_DISPLAY_HZ.
+ */
+export const MAX_DISPLAY_HZ = 240;
+
+/**
  * 實驗最高條件（原生解析度需 ≥ 此值,單位 = 實體像素 = CSS 尺寸 × devicePixelRatio）。
  * = qhd-1440 buffer（2560×1440）。資格閘「原生解析度」檢查以此為門檻:
  * FHD 面板（1920×1080）跑 QHD 條件 = 方向性錯誤資料的統計必然,故拒入（GD-10 防線①）。

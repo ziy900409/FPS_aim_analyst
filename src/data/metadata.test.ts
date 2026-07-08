@@ -273,6 +273,61 @@ describe('collectMeta', () => {
       }).suspect,
     ).toBe(true);
   });
+
+  it('accepts frame log metadata and marks p95 over the performance floor suspect', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      frames: {
+        series: [8, 9, 10],
+        summary: { count: 3, p50: 9, p95: 10, p99: 10, overBudgetWindows: 2, overflow: false },
+      },
+    });
+
+    expect(meta.frames).toEqual({
+      series: [8, 9, 10],
+      summary: { count: 3, p50: 9, p95: 10, p99: 10, overBudgetWindows: 2, overflow: false },
+    });
+    expect(meta.suspect).toBe(true);
+  });
+
+  it('does not mark frame logs suspect at the performance floor boundary', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      frames: {
+        series: [8.33],
+        summary: { count: 1, p50: 8.33, p95: 8.33, p99: 8.33, overBudgetWindows: 0, overflow: false },
+      },
+    });
+
+    expect(meta.suspect).toBe(false);
+  });
+
+  it('rejects malformed frame log metadata', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 120,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        frames: {
+          series: [8],
+          summary: { count: 2, p50: 8, p95: 8, p99: 8, overBudgetWindows: 0, overflow: false },
+        },
+      } as unknown as CollectMetaArgs),
+    ).toThrow('frames.summary.count must match frames.series length');
+  });
 });
 
 describe('measureDisplayHz', () => {

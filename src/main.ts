@@ -15,7 +15,8 @@ import { createControls } from './ui/Controls.ts';
 import { applyResolutionMode, type DisplayState, type ResolutionMode } from './display/resolutionMode.ts';
 import { probeWarmupP95Ms } from './display/eligibilityGate.ts';
 import { createExperimentSession } from './display/experimentSession.ts';
-import { EXPERIMENT_MAX_CONDITION } from './display/constants.ts';
+import { EXPERIMENT_MAX_CONDITION, PERF_FLOOR_MS } from './display/constants.ts';
+import { createFrameLog, frameLogCapacity } from './display/frameLog.ts';
 import { createEligibilityGateScreen } from './ui/EligibilityGate.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
@@ -28,6 +29,7 @@ import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import { SIM_HZ } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
+import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
@@ -214,9 +216,11 @@ pointerLock.onChange((locked) => {
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
 // 讀取與序列化只在 click handler 內發生，不進 sim tick 熱路徑。
 const recorder = createDataRecorder({ simHz: SIM_HZ });
+const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
-  const displayRefresh = await measureDisplayRefresh();
+  const frames = frameLog.export(PERF_FLOOR_MS);
+  const displayRefresh = frameLog.refreshEstimate() ?? (await measureDisplayRefresh());
   const displayHz = displayRefresh.refreshEstimateHz;
   const currentDisplay: DisplayState = {
     ...displayState,
@@ -239,8 +243,12 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
-    // 純觀測 suspect:玩家逸出走廊(GD-6)或實驗 session 中途退出 fullscreen(GD-10 failure mode)。
-    suspect: sharedState.validity.playerCorridorExceeded || experimentSession.suspect,
+    // 純觀測 suspect:玩家逸出走廊(GD-6)、實驗 session 中途退出 fullscreen(GD-10 failure mode)、
+    // 或 drill frame p95 超過效能地板(GD-10 防線③)。
+    suspect:
+      sharedState.validity.playerCorridorExceeded ||
+      experimentSession.suspect ||
+      frames.summary.p95 > PERF_FLOOR_MS,
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
@@ -252,6 +260,7 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
       fallback: activeSceneFallback,
     },
     display: currentDisplay,
+    frames,
   });
   return buildExportPayload(meta, snapshot);
 }
@@ -313,6 +322,7 @@ const targetManager: TargetManager = {
 };
 const drillRunner: DrillRunner = {
   start(config): void {
+    frameLog.reset();
     activeDrillRunner.start(config);
   },
   tick(state, nowMs): void {
@@ -474,6 +484,7 @@ const hudStats: HUDStats = {
 
 function resetRunPresentation(): void {
   recorder.reset();
+  frameLog.reset();
   resultScreen.hide();
   resultShown = false;
   hudRunStartMs = null;
@@ -590,6 +601,7 @@ const renderLoop = createRenderLoop((now) => {
   renderer.render(sceneManager.scene, sceneManager.camera);
   // WP-8 / T2：phase 轉 ended 後只計算一次結果；T4 controls 會負責 restart / 換 drill 時隱藏與重啟。
   if (!resultShown && phase === 'ended') {
+    frameLog.freeze();
     if (document.pointerLockElement !== null) document.exitPointerLock();
     resultScreen.show(metricsDashboard.compute(recorder.snapshot()));
     resultShown = true;
@@ -618,5 +630,5 @@ const renderLoop = createRenderLoop((now) => {
       `inacc  ${rs.inaccuracyFire.toFixed(4).padStart(8)}\n` +
       `ammo   ${String(sharedState.weapon.ammo).padStart(3)}/${sharedState.weapon.magSize}`;
   }
-});
+}, { frameLog });
 renderLoop.start();

@@ -15,12 +15,14 @@ The JSON export is one object:
 }
 ```
 
-CSV export writes two files with the same basename:
+CSV export writes two required files with the same basename. When `meta.frames` is present,
+it also writes one summary-only frames file; per-frame deltas are JSON-only.
 
 | File | Rows | Source |
 |---|---:|---|
 | `<basename>-ticks.csv` | one row per sim tick | `ticks[]` |
 | `<basename>-events.csv` | one sparse row per drill event | `events[]` |
+| `<basename>-frames.csv` | one summary row | `meta.frames.summary` (optional) |
 
 All numeric data fields must be finite. `collectMeta()` validates metadata numeric fields; JSON/CSV serialization rejects non-finite tick/event values such as `NaN`, `Infinity`, and `-Infinity`.
 
@@ -78,7 +80,7 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `spawn` | object | reserved optional | No | stage3/WP-21 | v2 reserved block for `seed`, motion, and spawn-area snapshots. WP-16 writes seed/motion when available. |
 | `scene` | object | scene condition | No | stage3/WP-19 | `{ sceneId, assetPackVersion, clutterTier, fallback }`. Additive; absence means scene system not active. |
 | `display` | object | reserved optional | No | stage3/WP-20 | v2 reserved display/session setup metadata block. |
-| `frames` | object/array | reserved optional | No | stage3/WP-20 | v2 reserved frame-time log block. |
+| `frames` | object | frame deltas and summary | No | stage3/WP-20 | `{ series, summary }`; complete delta series is JSON-only. |
 | `session` | object | reserved optional | No | stage3/WP-20 | `participantId` / `sessionLabel` cross-session join keys. |
 
 `buildExportPayload()` also ORs `meta.recorderOverflow` with `snapshot.recorderOverflow`, then preserves any existing `meta.suspect` flag.
@@ -91,6 +93,29 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `assetPackVersion` | string | asset/config version | Yes | active `SceneConfig` | Lets analyses group exports by scene asset revision. |
 | `clutterTier` | string | `low`, `mid`, `high` | Yes | active `SceneConfig` | Scene clutter condition. |
 | `fallback` | boolean | `true` / `false` | Yes | scene loader | `true` when the requested scene asset failed and render fell back to placeholder-room. |
+
+#### `meta.frames`
+
+Frame timing is recorded from `requestAnimationFrame` timestamps into a preallocated arena.
+The exported series stores frame-to-frame deltas in milliseconds, not raw timestamps.
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `series` | number[] | ms | Yes | `FrameLog.series()` | Complete ordered delta series for JSON analysis. Values are finite and non-negative. |
+| `summary` | object | frame stats | Yes | `FrameLog.summary()` | Summary used by CSV and validity metadata. |
+
+`summary` fields:
+
+| Field | Type | Unit / Values | Required | Notes |
+|---|---|---|---:|---|
+| `count` | number | samples | Yes | Must equal `series.length`. |
+| `p50` | number | ms | Yes | Median frame delta. |
+| `p95` | number | ms | Yes | Nearest-rank p95 frame delta. |
+| `p99` | number | ms | Yes | Nearest-rank p99 frame delta. |
+| `overBudgetWindows` | number | count | Yes | Number of deltas above `PERF_FLOOR_MS`. |
+| `overflow` | boolean | `true` / `false` | Yes | True when the fixed-capacity arena stopped accepting later deltas. |
+
+If `summary.p95 > PERF_FLOOR_MS`, `collectMeta()` marks `meta.suspect = true`.
 
 ### `ticks[]`
 
@@ -203,6 +228,26 @@ Rows are sparse because event variants have different fields.
 | `ammo` | empty | empty | pre-shot ammo |
 | `offsetDeg` | empty | empty | camera-forward to target-center angle in degrees, or empty |
 | `part` | empty | empty | `head`, `body`, or empty |
+
+### `<basename>-frames.csv`
+
+This file exists only when `meta.frames` exists. It intentionally exports the summary only;
+the complete per-frame delta series stays in JSON.
+
+Header:
+
+```csv
+count,p50,p95,p99,overBudgetWindows,overflow
+```
+
+| Column | JSON source | Notes |
+|---|---|---|
+| `count` | `meta.frames.summary.count` | Number of frame deltas in JSON `series`. |
+| `p50` | `meta.frames.summary.p50` | Median frame delta, ms. |
+| `p95` | `meta.frames.summary.p95` | Nearest-rank p95, ms. |
+| `p99` | `meta.frames.summary.p99` | Nearest-rank p99, ms. |
+| `overBudgetWindows` | `meta.frames.summary.overBudgetWindows` | Count above `PERF_FLOOR_MS`. |
+| `overflow` | `meta.frames.summary.overflow` | Whether the frame arena overflowed. |
 
 CSV cells are comma-separated, include a trailing newline, and quote cells containing commas, quotes, or line breaks. Quotes inside cells are doubled.
 
