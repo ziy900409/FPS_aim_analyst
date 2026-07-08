@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectMeta, measureDisplayHz, type CollectMetaArgs } from './metadata.ts';
+import { collectMeta, measureDisplayHz, measureDisplayRefresh, type CollectMetaArgs } from './metadata.ts';
 
 describe('collectMeta', () => {
   it('collects complete drill metadata and computes suspect from overflow flags', () => {
@@ -146,6 +146,205 @@ describe('collectMeta', () => {
     });
   });
 
+  it('accepts WP-20 display metadata with explicit buffer and refresh estimate', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      display: {
+        mode: 'fhd-1080',
+        bufferW: 1920,
+        bufferH: 1080,
+        cssW: 2560,
+        cssH: 1440,
+        dpr: 1.25,
+        screenW: 3200,
+        screenH: 1800,
+        fullscreen: true,
+        refreshEstimateHz: 120,
+        refreshMedianDeltaMs: 8.333,
+      },
+    });
+
+    expect(meta.display).toEqual({
+      mode: 'fhd-1080',
+      bufferW: 1920,
+      bufferH: 1080,
+      cssW: 2560,
+      cssH: 1440,
+      dpr: 1.25,
+      screenW: 3200,
+      screenH: 1800,
+      fullscreen: true,
+      refreshEstimateHz: 120,
+      refreshMedianDeltaMs: 8.333,
+    });
+  });
+
+  it('carries the eligibility gate report through meta.display.gate (GD-10 audit)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      display: {
+        mode: 'qhd-1440',
+        bufferW: 2560,
+        bufferH: 1440,
+        cssW: 2560,
+        cssH: 1440,
+        dpr: 1,
+        screenW: 2560,
+        screenH: 1440,
+        fullscreen: true,
+        refreshEstimateHz: 120,
+        gate: { pass: true, native: true, fullscreen: true, perf: true, details: 'all pass' },
+      },
+    });
+
+    expect(meta.display?.gate).toEqual({
+      pass: true,
+      native: true,
+      fullscreen: true,
+      perf: true,
+      details: 'all pass',
+    });
+  });
+
+  it('accepts WP-20 display self-report fields and native mismatch flags', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      display: {
+        mode: 'qhd-1440',
+        bufferW: 2560,
+        bufferH: 1440,
+        cssW: 2560,
+        cssH: 1440,
+        dpr: 1,
+        screenW: 2560,
+        screenH: 1440,
+        fullscreen: true,
+        refreshEstimateHz: 120,
+        monitorModel: ' BenQ XL2546K ',
+        nativeW: 1920,
+        nativeH: 1080,
+        panelInches: 24.5,
+        viewingDistanceCm: 60,
+        selfReportUncertain: true,
+        nativeMismatch: true,
+      },
+    });
+
+    expect(meta.display).toMatchObject({
+      monitorModel: 'BenQ XL2546K',
+      nativeW: 1920,
+      nativeH: 1080,
+      panelInches: 24.5,
+      viewingDistanceCm: 60,
+      selfReportUncertain: true,
+      nativeMismatch: true,
+    });
+  });
+
+  it('accepts required participantId and optional sessionLabel metadata', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      session: { participantId: ' P001 ', sessionLabel: ' pre ' },
+    });
+
+    expect(meta.session).toEqual({ participantId: 'P001', sessionLabel: 'pre' });
+  });
+
+  it('rejects a malformed gate report on display metadata', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 120,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        display: {
+          mode: 'qhd-1440',
+          bufferW: 2560,
+          bufferH: 1440,
+          cssW: 2560,
+          cssH: 1440,
+          dpr: 1,
+          screenW: 2560,
+          screenH: 1440,
+          fullscreen: true,
+          refreshEstimateHz: 120,
+          gate: { pass: 'yes' },
+        },
+      } as unknown as CollectMetaArgs),
+    ).toThrow('display.gate.pass');
+  });
+
+  it('rejects malformed display self-report fields and missing participant IDs', () => {
+    const valid: CollectMetaArgs = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() =>
+      collectMeta({
+        ...valid,
+        display: {
+          mode: 'qhd-1440',
+          bufferW: 2560,
+          bufferH: 1440,
+          cssW: 2560,
+          cssH: 1440,
+          dpr: 1,
+          screenW: 2560,
+          screenH: 1440,
+          fullscreen: true,
+          refreshEstimateHz: 120,
+          panelInches: -1,
+        },
+      } as unknown as CollectMetaArgs),
+    ).toThrow('display.panelInches');
+    expect(() => collectMeta({ ...valid, session: { participantId: ' ' } })).toThrow('session.participantId');
+  });
+
+  it('rejects malformed display metadata', () => {
+    const valid: CollectMetaArgs = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() =>
+      collectMeta({
+        ...valid,
+        display: { mode: 'bogus' },
+      } as unknown as CollectMetaArgs),
+    ).toThrow('display.mode must be native, fhd-1080, or qhd-1440');
+  });
+
   it('allows runtime validity observers to mark metadata suspect', () => {
     expect(
       collectMeta({
@@ -159,6 +358,61 @@ describe('collectMeta', () => {
       }).suspect,
     ).toBe(true);
   });
+
+  it('accepts frame log metadata and marks p95 over the performance floor suspect', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      frames: {
+        series: [8, 9, 10],
+        summary: { count: 3, p50: 9, p95: 10, p99: 10, overBudgetWindows: 2, overflow: false },
+      },
+    });
+
+    expect(meta.frames).toEqual({
+      series: [8, 9, 10],
+      summary: { count: 3, p50: 9, p95: 10, p99: 10, overBudgetWindows: 2, overflow: false },
+    });
+    expect(meta.suspect).toBe(true);
+  });
+
+  it('does not mark frame logs suspect at the performance floor boundary', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      frames: {
+        series: [8.33],
+        summary: { count: 1, p50: 8.33, p95: 8.33, p99: 8.33, overBudgetWindows: 0, overflow: false },
+      },
+    });
+
+    expect(meta.suspect).toBe(false);
+  });
+
+  it('rejects malformed frame log metadata', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 120,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        frames: {
+          series: [8],
+          summary: { count: 2, p50: 8, p95: 8, p99: 8, overBudgetWindows: 0, overflow: false },
+        },
+      } as unknown as CollectMetaArgs),
+    ).toThrow('frames.summary.count must match frames.series length');
+  });
 });
 
 describe('measureDisplayHz', () => {
@@ -168,6 +422,7 @@ describe('measureDisplayHz', () => {
 
     const hz = await measureDisplayHz({
       samples: 5,
+      warmupSamples: 0,
       requestAnimationFrame: (callback) => {
         callback(timestamps[i++]);
         return i;
@@ -175,6 +430,23 @@ describe('measureDisplayHz', () => {
     });
 
     expect(hz).toBeCloseTo(60, 1);
+  });
+
+  it('drops warmup deltas and reports rounded Hz plus median delta', async () => {
+    const timestamps = [0, 100, 200, 208.34, 216.67, 225, 233.33, 241.66];
+    let i = 0;
+
+    const estimate = await measureDisplayRefresh({
+      samples: 5,
+      warmupSamples: 2,
+      requestAnimationFrame: (callback) => {
+        callback(timestamps[i++]);
+        return i;
+      },
+    });
+
+    expect(estimate.refreshEstimateHz).toBe(120);
+    expect(estimate.medianDeltaMs).toBeCloseTo(8.33, 2);
   });
 
   it('requires requestAnimationFrame to measure displayHz', async () => {

@@ -10,7 +10,7 @@
 | **相依** | M4 ✅(可並行;只碰 render/UI/data 層) |
 | **對應 FR** | FR-C6 ~ FR-C9 |
 | **估時** | 3–4 dev-days |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | ✅ 交付(T0–T4 + T-exit ✅ 2026-07-08;四件套齊備,WP-22 T2 可消費) |
 
 ---
 
@@ -69,9 +69,9 @@ src/data/metadata.ts            ← MODIFY meta.display 填值(自動 + 自陳) 
 
 | Task | 檔案 | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| **T0** | [T0-entry-gate.md](T0-entry-gate.md) | GD-10 收斂 + 效能地板起點(OQ-S3-1)+ WP-16 display 縫對帳 | — | Low |
-| **T1** | [T1-resolution-modes.md](T1-resolution-modes.md) | 解析度模式 + 顯式 buffer 控制 + display 自動 meta | T0 | Med |
-| **T2** | [T2-fullscreen-eligibility-gate.md](T2-fullscreen-eligibility-gate.md) | fullscreen 流程 + 資格閘(拒入) | T1 | **High** |
-| **T3** | [T3-frame-time-log.md](T3-frame-time-log.md) | frame log + frames 匯出 + 效能地板 suspect | T1 | Med |
-| **T4** | [T4-session-setup-form.md](T4-session-setup-form.md) | session setup 表單 + 自陳欄進 meta | T1 | Low |
-| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 四件套交付宣告(WP-22 T2 可消費) | T1–T4 | — |
+| **T0 ✅** | [T0-entry-gate.md](T0-entry-gate.md) | GD-10 收斂 + 效能地板起點(OQ-S3-1)+ WP-16 display 縫對帳 | — | Low |
+| **T1 ✅** | [T1-resolution-modes.md](T1-resolution-modes.md) | 解析度模式 + 顯式 buffer 控制 + display 自動 meta | T0 | Med |
+| **T2 ✅** | [T2-fullscreen-eligibility-gate.md](T2-fullscreen-eligibility-gate.md) | fullscreen 流程 + 資格閘(拒入) | T1 | **High** |
+| **T3 ✅** | [T3-frame-time-log.md](T3-frame-time-log.md) | frame log + frames 匯出 + 效能地板 suspect | T1 | Med |
+| **T4 ✅** | [T4-session-setup-form.md](T4-session-setup-form.md) | session setup 表單 + 自陳欄進 meta | T1 | Low |
+| **T-exit ✅** | [T-exit-gate.md](T-exit-gate.md) | 四件套交付宣告(WP-22 T2 可消費) | T1–T4 | — |

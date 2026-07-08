@@ -1,4 +1,8 @@
 import type { RenderBackend } from '../render/createRenderer.ts';
+import { isResolutionMode, type DisplaySelfReport, type DisplayState } from '../display/resolutionMode.ts';
+import type { GateReport } from '../display/eligibilityGate.ts';
+import { PERF_FLOOR_MS } from '../display/constants.ts';
+import type { FrameLogExport } from '../display/frameLog.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
 
 export const DEFAULT_SIM_HZ = 128;
@@ -20,6 +24,11 @@ export interface SceneMeta {
   assetPackVersion: string;
   clutterTier: 'low' | 'mid' | 'high';
   fallback: boolean;
+}
+
+export interface SessionMeta {
+  participantId: string;
+  sessionLabel?: string;
 }
 
 export interface Meta {
@@ -46,9 +55,9 @@ export interface Meta {
   suspect: boolean;
   spawn?: SpawnMeta;
   scene?: SceneMeta;
-  display?: unknown;
-  frames?: unknown;
-  session?: { participantId?: string; sessionLabel?: string };
+  display?: DisplayState;
+  frames?: FrameLogExport;
+  session?: SessionMeta;
 }
 
 export interface CollectMetaArgs {
@@ -71,14 +80,20 @@ export interface CollectMetaArgs {
   suspect?: boolean;
   spawn?: SpawnMeta;
   scene?: SceneMeta;
-  display?: unknown;
-  frames?: unknown;
-  session?: { participantId?: string; sessionLabel?: string };
+  display?: DisplayState;
+  frames?: FrameLogExport;
+  session?: SessionMeta;
 }
 
 export interface MeasureDisplayHzOptions {
   samples?: number;
+  warmupSamples?: number;
   requestAnimationFrame?: ((callback: FrameRequestCallback) => number) | null;
+}
+
+export interface DisplayRefreshEstimate {
+  refreshEstimateHz: number;
+  medianDeltaMs: number;
 }
 
 export function collectMeta(args: CollectMetaArgs): Meta {
@@ -103,6 +118,10 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const recorderOverflow = requireBoolean(args.recorderOverflow ?? false, 'recorderOverflow');
   const explicitSuspect = requireBoolean(args.suspect ?? false, 'suspect');
   const scene = args.scene === undefined ? undefined : requireSceneMeta(args.scene);
+  const display = args.display === undefined ? undefined : requireDisplayState(args.display);
+  const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
+  const session = args.session === undefined ? undefined : requireSessionMeta(args.session);
+  const frameFloorSuspect = frames !== undefined && frames.summary.p95 > PERF_FLOOR_MS;
 
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -125,13 +144,90 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     lateEventCount,
     bufferOverflow,
     recorderOverflow,
-    suspect: explicitSuspect || bufferOverflow || recorderOverflow,
+    suspect: explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect,
     ...(args.spawn !== undefined ? { spawn: args.spawn } : {}),
     ...(scene !== undefined ? { scene } : {}),
-    ...(args.display !== undefined ? { display: args.display } : {}),
-    ...(args.frames !== undefined ? { frames: args.frames } : {}),
-    ...(args.session !== undefined ? { session: args.session } : {}),
+    ...(display !== undefined ? { display } : {}),
+    ...(frames !== undefined ? { frames } : {}),
+    ...(session !== undefined ? { session } : {}),
   };
+}
+
+function requireDisplayState(value: DisplayState): DisplayState {
+  const display = requireRecord(value, 'display');
+  const mode = display.mode;
+  if (!isResolutionMode(mode)) throw new Error('display.mode must be native, fhd-1080, or qhd-1440');
+  return {
+    mode,
+    bufferW: requirePositiveInteger(display.bufferW, 'display.bufferW'),
+    bufferH: requirePositiveInteger(display.bufferH, 'display.bufferH'),
+    cssW: requirePositiveInteger(display.cssW, 'display.cssW'),
+    cssH: requirePositiveInteger(display.cssH, 'display.cssH'),
+    dpr: requirePositiveFiniteNumber(display.dpr, 'display.dpr'),
+    screenW: requirePositiveInteger(display.screenW, 'display.screenW'),
+    screenH: requirePositiveInteger(display.screenH, 'display.screenH'),
+    fullscreen: requireBoolean(display.fullscreen, 'display.fullscreen'),
+    refreshEstimateHz: requireNonNegativeInteger(display.refreshEstimateHz, 'display.refreshEstimateHz'),
+    ...(display.refreshMedianDeltaMs !== undefined
+      ? { refreshMedianDeltaMs: requirePositiveFiniteNumber(display.refreshMedianDeltaMs, 'display.refreshMedianDeltaMs') }
+      : {}),
+    ...(display.gate !== undefined ? { gate: requireGateReport(display.gate) } : {}),
+    ...requireDisplaySelfReport(display),
+  };
+}
+
+function requireDisplaySelfReport(display: Record<string, unknown>): DisplaySelfReport {
+  return {
+    ...(display.monitorModel !== undefined
+      ? { monitorModel: requireTrimmedNonEmptyString(display.monitorModel, 'display.monitorModel') }
+      : {}),
+    ...(display.nativeW !== undefined ? { nativeW: requirePositiveInteger(display.nativeW, 'display.nativeW') } : {}),
+    ...(display.nativeH !== undefined ? { nativeH: requirePositiveInteger(display.nativeH, 'display.nativeH') } : {}),
+    ...(display.panelInches !== undefined
+      ? { panelInches: requirePositiveFiniteNumber(display.panelInches, 'display.panelInches') }
+      : {}),
+    ...(display.viewingDistanceCm !== undefined
+      ? { viewingDistanceCm: requirePositiveFiniteNumber(display.viewingDistanceCm, 'display.viewingDistanceCm') }
+      : {}),
+    ...(display.selfReportUncertain !== undefined
+      ? { selfReportUncertain: requireBoolean(display.selfReportUncertain, 'display.selfReportUncertain') }
+      : {}),
+    ...(display.nativeMismatch !== undefined
+      ? { nativeMismatch: requireBoolean(display.nativeMismatch, 'display.nativeMismatch') }
+      : {}),
+  };
+}
+
+function requireGateReport(value: unknown): GateReport {
+  const gate = requireRecord(value, 'display.gate');
+  return {
+    pass: requireBoolean(gate.pass, 'display.gate.pass'),
+    native: requireBoolean(gate.native, 'display.gate.native'),
+    fullscreen: requireBoolean(gate.fullscreen, 'display.gate.fullscreen'),
+    perf: requireBoolean(gate.perf, 'display.gate.perf'),
+    details: requireNonEmptyString(gate.details, 'display.gate.details'),
+  };
+}
+
+function requireFrameLogExport(value: unknown): FrameLogExport {
+  const frames = requireRecord(value, 'frames');
+  const rawSeries = frames.series;
+  if (!Array.isArray(rawSeries)) throw new Error('frames.series must be an array');
+  const series = rawSeries.map((delta, index) => requireNonNegativeFiniteNumber(delta, `frames.series[${index}]`));
+  const summaryRecord = requireRecord(frames.summary, 'frames.summary');
+  const summary = {
+    count: requireNonNegativeInteger(summaryRecord.count, 'frames.summary.count'),
+    p50: requireNonNegativeFiniteNumber(summaryRecord.p50, 'frames.summary.p50'),
+    p95: requireNonNegativeFiniteNumber(summaryRecord.p95, 'frames.summary.p95'),
+    p99: requireNonNegativeFiniteNumber(summaryRecord.p99, 'frames.summary.p99'),
+    overBudgetWindows: requireNonNegativeInteger(
+      summaryRecord.overBudgetWindows,
+      'frames.summary.overBudgetWindows',
+    ),
+    overflow: requireBoolean(summaryRecord.overflow, 'frames.summary.overflow'),
+  };
+  if (summary.count !== series.length) throw new Error('frames.summary.count must match frames.series length');
+  return { series, summary };
 }
 
 function requireSceneMeta(value: SceneMeta): SceneMeta {
@@ -144,8 +240,23 @@ function requireSceneMeta(value: SceneMeta): SceneMeta {
   };
 }
 
+function requireSessionMeta(value: unknown): SessionMeta {
+  const session = requireRecord(value, 'session');
+  return {
+    participantId: requireTrimmedNonEmptyString(session.participantId, 'session.participantId'),
+    ...(session.sessionLabel !== undefined
+      ? { sessionLabel: requireTrimmedNonEmptyString(session.sessionLabel, 'session.sessionLabel') }
+      : {}),
+  };
+}
+
 export async function measureDisplayHz(options: MeasureDisplayHzOptions = {}): Promise<number> {
-  const samples = requireNonNegativeInteger(options.samples ?? 60, 'samples');
+  return (await measureDisplayRefresh(options)).refreshEstimateHz;
+}
+
+export async function measureDisplayRefresh(options: MeasureDisplayHzOptions = {}): Promise<DisplayRefreshEstimate> {
+  const samples = requireNonNegativeInteger(options.samples ?? 120, 'samples');
+  const warmupSamples = requireNonNegativeInteger(options.warmupSamples ?? 30, 'warmupSamples');
   if (samples < 2) throw new Error('samples must be at least 2');
 
   const requestAnimationFrame =
@@ -155,7 +266,7 @@ export async function measureDisplayHz(options: MeasureDisplayHzOptions = {}): P
   if (!requestAnimationFrame) throw new Error('requestAnimationFrame is not available');
 
   const timestamps: number[] = [];
-  while (timestamps.length < samples + 1) {
+  while (timestamps.length < warmupSamples + samples + 1) {
     timestamps.push(await nextAnimationFrame(requestAnimationFrame));
   }
 
@@ -164,13 +275,17 @@ export async function measureDisplayHz(options: MeasureDisplayHzOptions = {}): P
     const delta = timestamps[i] - timestamps[i - 1];
     if (Number.isFinite(delta) && delta > 0) intervals.push(delta);
   }
-  if (intervals.length === 0) throw new Error('displayHz could not be measured');
+  const measured = intervals.slice(warmupSamples, warmupSamples + samples);
+  if (measured.length === 0) throw new Error('displayHz could not be measured');
 
-  intervals.sort((a, b) => a - b);
-  const mid = Math.floor(intervals.length / 2);
+  measured.sort((a, b) => a - b);
+  const mid = Math.floor(measured.length / 2);
   const medianMs =
-    intervals.length % 2 === 0 ? (intervals[mid - 1] + intervals[mid]) / 2 : intervals[mid];
-  return 1000 / medianMs;
+    measured.length % 2 === 0 ? (measured[mid - 1] + measured[mid]) / 2 : measured[mid];
+  return {
+    refreshEstimateHz: Math.round(1000 / medianMs),
+    medianDeltaMs: medianMs,
+  };
 }
 
 function nextAnimationFrame(
@@ -196,6 +311,10 @@ function requireNonEmptyString(value: unknown, name: string): string {
   return value;
 }
 
+function requireTrimmedNonEmptyString(value: unknown, name: string): string {
+  return requireNonEmptyString(value, name).trim();
+}
+
 function requireRecord(value: unknown, name: string): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new Error(`${name} must be an object`);
@@ -217,9 +336,23 @@ function requirePositiveFiniteNumber(value: unknown, name: string): number {
   return value;
 }
 
+function requirePositiveInteger(value: unknown, name: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  return value;
+}
+
 function requireFiniteNumber(value: unknown, name: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`${name} must be a finite number`);
+  }
+  return value;
+}
+
+function requireNonNegativeFiniteNumber(value: unknown, name: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`${name} must be a non-negative finite number`);
   }
   return value;
 }

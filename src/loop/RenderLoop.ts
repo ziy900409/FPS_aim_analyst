@@ -12,17 +12,26 @@ export interface RenderLoop {
   stop(): void;
 }
 
+export interface RenderFrameSink {
+  push(tMs: number): void;
+}
+
+export interface RenderLoopOptions {
+  frameLog?: RenderFrameSink;
+}
+
 /** 線性內插：render 在兩個 sim tick 快照間以 `alpha ∈ [0,1)` 取中間值，高 FPS 下畫面不抖（FR-2.3）。 */
 export function lerp(a: number, b: number, alpha: number): number {
   return a + (b - a) * alpha;
 }
 
-export function createRenderLoop(onFrame: (nowMs: number) => void): RenderLoop {
+export function createRenderLoop(onFrame: (nowMs: number) => void, options: RenderLoopOptions = {}): RenderLoop {
   let rafId = 0;
   let running = false;
 
   function frame(nowMs: number): void {
     if (!running) return; // stop() 後殘留的已排程 callback 在此被擋下
+    options.frameLog?.push(nowMs);
     onFrame(nowMs);
     rafId = requestAnimationFrame(frame);
   }

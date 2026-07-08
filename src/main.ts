@@ -12,6 +12,17 @@ import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
 import { createControls } from './ui/Controls.ts';
+import { applyResolutionMode, type DisplayState, type ResolutionMode } from './display/resolutionMode.ts';
+import { probeWarmupP95Ms } from './display/eligibilityGate.ts';
+import { createExperimentSession } from './display/experimentSession.ts';
+import { EXPERIMENT_MAX_CONDITION, PERF_FLOOR_MS } from './display/constants.ts';
+import { createFrameLog, frameLogCapacity } from './display/frameLog.ts';
+import { createEligibilityGateScreen } from './ui/EligibilityGate.ts';
+import {
+  createSessionSetupForm,
+  displaySelfReportFromSessionSetup,
+  type SessionSetupValues,
+} from './ui/SessionSetup.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill } from './drill/DrillLoader.ts';
@@ -23,7 +34,8 @@ import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import { SIM_HZ } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
-import { collectMeta, measureDisplayHz } from './data/metadata.ts';
+import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
+import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
@@ -86,13 +98,12 @@ let targetView = new TargetView(sceneManager.scene);
 // 繪彈孔（1 draw call）。狀態由 sim 寫、本層唯讀（雙迴圈邊界）。
 let impactView = new ImpactView(sceneManager.scene);
 
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+let activeResolutionMode: ResolutionMode = 'native';
+let displayState: DisplayState = applyResolutionMode(renderer, activeResolutionMode);
 
 function resize(): void {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  renderer.setSize(w, h);
-  sceneManager.resize(w, h);
+  displayState = applyResolutionMode(renderer, activeResolutionMode);
+  sceneManager.resize(displayState.cssW, displayState.cssH);
 }
 resize();
 window.addEventListener('resize', resize);
@@ -153,6 +164,11 @@ pointerLock.onMove((dx, dy) => cameraController.applyDelta(dx, dy));
 const settingsPanel = createSettingsPanel({
   onSensitivityChange: (s) => cameraController.setSensitivity(s),
   onFovChange: (deg) => cameraController.setFov(deg),
+  initialResolutionMode: activeResolutionMode,
+  onResolutionModeChange: (mode) => {
+    activeResolutionMode = mode;
+    resize();
+  },
 });
 pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 
@@ -160,12 +176,88 @@ pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 // 恆顯示（不隨鎖定切換）：第一人稱射線走 camera 中心，準心即射線方向指示。
 createCrosshair();
 
+// WP-20 / T2（FR-C7）— 資格閘 + 實驗 session 進入流程（GD-10 防線①）。通過三檢查（原生解析度 ≥
+// 實驗最高條件、fullscreen 已進入、warmup 效能地板）才進入實驗 session;不合格 = **拒入並明示原因**
+// （防 FHD 面板混入 QHD 條件）。session 進行中退出 fullscreen → 標 suspect（純觀測,OR 進匯出 meta,
+// 不中斷 drill）;gate 全量進 meta.display.gate 供事後審查。protocol 排程本體歸 WP-22 T2（此為最小落地）。
+const experimentSession = createExperimentSession({
+  onSuspect: () => eligibilityGateScreen.showSuspectWarning(),
+});
+let pendingSessionSetupValues: SessionSetupValues | undefined;
+let sessionSetupValues: SessionSetupValues | undefined;
+const eligibilityGateScreen = createEligibilityGateScreen({
+  required: EXPERIMENT_MAX_CONDITION,
+  requestFullscreen: () => document.documentElement.requestFullscreen(),
+  probeWarmupP95Ms: () => probeWarmupP95Ms(),
+  onEnter: (report) => {
+    if (pendingSessionSetupValues !== undefined) {
+      sessionSetupValues = pendingSessionSetupValues;
+      pendingSessionSetupValues = undefined;
+    }
+    eligibilityGateScreen.hideSuspectWarning();
+    experimentSession.enter(report);
+  },
+});
+const sessionSetupForm = createSessionSetupForm({
+  getDetectedDisplay: () => ({ screenW: displayState.screenW, screenH: displayState.screenH }),
+  onSubmit: (values) => {
+    pendingSessionSetupValues = values;
+    eligibilityGateScreen.open();
+  },
+});
+document.addEventListener('fullscreenchange', () => {
+  experimentSession.handleFullscreenChange(document.fullscreenElement != null);
+});
+
+// 最小啟動器：解鎖時可開資格閘（fullscreen 請求須在 user gesture 內,故走按鈕點擊）。
+const experimentButton = document.createElement('button');
+experimentButton.type = 'button';
+experimentButton.textContent = '實驗 session';
+experimentButton.title = '進入資格閘（GD-10 防線①）';
+experimentButton.style.cssText = [
+  'position:fixed',
+  'top:12px',
+  'left:12px',
+  'height:34px',
+  'padding:0 14px',
+  'border:1px solid rgba(255,255,255,0.18)',
+  'border-radius:6px',
+  'font:750 12px/1 system-ui,sans-serif',
+  'color:#e6e9ec',
+  'background:rgba(15,18,21,0.96)',
+  'cursor:pointer',
+  'z-index:40',
+].join(';');
+experimentButton.addEventListener('click', () => sessionSetupForm.open());
+document.body.appendChild(experimentButton);
+pointerLock.onChange((locked) => {
+  experimentButton.style.display = locked ? 'none' : 'block';
+});
+
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
 // 讀取與序列化只在 click handler 內發生，不進 sim tick 熱路徑。
 const recorder = createDataRecorder({ simHz: SIM_HZ });
+const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
-  const displayHz = await measureDisplayHz();
+  const frames = frameLog.export(PERF_FLOOR_MS);
+  const displayRefresh = frameLog.refreshEstimate() ?? (await measureDisplayRefresh());
+  const displayHz = displayRefresh.refreshEstimateHz;
+  const displaySelfReport =
+    sessionSetupValues === undefined
+      ? {}
+      : displaySelfReportFromSessionSetup(sessionSetupValues, {
+          screenW: displayState.screenW,
+          screenH: displayState.screenH,
+        });
+  const currentDisplay: DisplayState = {
+    ...displayState,
+    ...displaySelfReport,
+    refreshEstimateHz: displayRefresh.refreshEstimateHz,
+    refreshMedianDeltaMs: displayRefresh.medianDeltaMs,
+    // GD-10 防線①:資格閘全量明細,僅實驗 session 進入時填入（事後審查依據）。
+    ...(experimentSession.gate !== undefined ? { gate: experimentSession.gate } : {}),
+  };
   const meta = collectMeta({
     drillId: activeDrillConfig.drillId,
     weaponId: activeWeaponConfig().id,
@@ -180,7 +272,12 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
-    suspect: sharedState.validity.playerCorridorExceeded,
+    // 純觀測 suspect:玩家逸出走廊(GD-6)、實驗 session 中途退出 fullscreen(GD-10 failure mode)、
+    // 或 drill frame p95 超過效能地板(GD-10 防線③)。
+    suspect:
+      sharedState.validity.playerCorridorExceeded ||
+      experimentSession.suspect ||
+      frames.summary.p95 > PERF_FLOOR_MS,
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
@@ -191,6 +288,18 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
       clutterTier: activeSceneConfig.clutterTier,
       fallback: activeSceneFallback,
     },
+    display: currentDisplay,
+    frames,
+    ...(sessionSetupValues !== undefined
+      ? {
+          session: {
+            participantId: sessionSetupValues.participantId,
+            ...(sessionSetupValues.sessionLabel !== undefined
+              ? { sessionLabel: sessionSetupValues.sessionLabel }
+              : {}),
+          },
+        }
+      : {}),
   });
   return buildExportPayload(meta, snapshot);
 }
@@ -252,6 +361,7 @@ const targetManager: TargetManager = {
 };
 const drillRunner: DrillRunner = {
   start(config): void {
+    frameLog.reset();
     activeDrillRunner.start(config);
   },
   tick(state, nowMs): void {
@@ -413,6 +523,7 @@ const hudStats: HUDStats = {
 
 function resetRunPresentation(): void {
   recorder.reset();
+  frameLog.reset();
   resultScreen.hide();
   resultShown = false;
   hudRunStartMs = null;
@@ -459,7 +570,7 @@ async function loadSceneById(sceneId: string): Promise<void> {
   impactView.dispose();
   sceneManager.dispose();
   sceneManager = nextScene.manager;
-  sceneManager.resize(window.innerWidth, window.innerHeight);
+  resize();
   targetView = new TargetView(sceneManager.scene);
   impactView = new ImpactView(sceneManager.scene);
   cameraController.setCamera(sceneManager.camera);
@@ -529,6 +640,7 @@ const renderLoop = createRenderLoop((now) => {
   renderer.render(sceneManager.scene, sceneManager.camera);
   // WP-8 / T2：phase 轉 ended 後只計算一次結果；T4 controls 會負責 restart / 換 drill 時隱藏與重啟。
   if (!resultShown && phase === 'ended') {
+    frameLog.freeze();
     if (document.pointerLockElement !== null) document.exitPointerLock();
     resultScreen.show(metricsDashboard.compute(recorder.snapshot()));
     resultShown = true;
@@ -557,5 +669,5 @@ const renderLoop = createRenderLoop((now) => {
       `inacc  ${rs.inaccuracyFire.toFixed(4).padStart(8)}\n` +
       `ammo   ${String(sharedState.weapon.ammo).padStart(3)}/${sharedState.weapon.magSize}`;
   }
-});
+}, { frameLog });
 renderLoop.start();

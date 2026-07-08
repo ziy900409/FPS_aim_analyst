@@ -7,7 +7,7 @@
 | **相依** | T1(模式/DisplayState 就緒) |
 | **Risk / Cplx** | **High** / Med(跨硬體判斷正確性 = GD-10 防線①的全部) |
 | **Touches** | ADD `src/display/eligibilityGate.ts`、`src/ui/`(gate 畫面);MODIFY `src/main.ts`(實驗 session 進入流程)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-08 |
 
 ## Objective
 
@@ -35,12 +35,11 @@ fullscreen 已進入、效能地板通過**;不合格 = **拒入並明示原因*
 
 ## Steps
 
-- [ ] `eligibilityGate` 三檢查 + 單元測試(screen/dpr/fullscreen mock 矩陣)。
-- [ ] gate 畫面 + fullscreen 請求流程;拒入路徑實機驗證(縮小視窗/假 required)記 progress。
-- [ ] **DPI 矩陣手動驗證**:Windows 縮放 100%/125%/150% 下原生解析度判斷正確,
-  結果矩陣記 progress(failure mode 表)。
-- [ ] fullscreenchange → suspect 測試。
-- [ ] `npx vitest run` 全綠。
+- [x] `eligibilityGate` 三檢查 + 單元測試(screen/dpr/fullscreen mock 矩陣)。
+- [x] gate 畫面 + fullscreen 請求流程;拒入路徑以 UI 單元測試驗證(逐項原因 + 重試)。實機縮小視窗/假 required 端到端確認留 moderator(OQ-20.3)。
+- [~] **DPI 矩陣手動驗證**:Windows 縮放 100%/125%/150% 的 `screen × dpr` 還原機制已以單元矩陣釘死(+ FHD 反例);真實面板端到端確認留 moderator 實機(OQ-20.3,progress ledger)。
+- [x] fullscreenchange → suspect 測試(`experimentSession.test.ts`)。
+- [x] `npx vitest run` 全綠(53 檔 / 390 test)。
 
 ## Definition of Done
 

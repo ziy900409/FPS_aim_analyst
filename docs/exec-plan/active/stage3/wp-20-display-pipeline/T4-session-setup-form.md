@@ -7,7 +7,7 @@
 | **相依** | T1(meta.display 區塊就緒);與 T2/T3 可並行 |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | ADD `src/ui/SessionSetup.ts`;MODIFY `src/data/metadata.ts`(手動欄)、`src/main.ts`(掛線)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -36,12 +36,12 @@ GD-10 防線③的手動半邊(FR-C9):瀏覽器讀不到的顯示硬體事實(�
 
 ## Steps
 
-- [ ] 表單元件 + 驗證(數字欄範圍 sanity)+ 單元測試。
-- [ ] meta 手動欄 + `nativeMismatch` 邏輯 + 匯出測試。
-- [ ] session 識別欄(`participantId`/`sessionLabel`)+ meta `session` 區塊 + 匯出測試。
-- [ ] 流程掛線(實驗 session 才出現)實機驗證記 progress。
-- [ ] schema.md 手動欄語意對帳。
-- [ ] `npx vitest run` 全綠。
+- [x] 表單元件 + 驗證(數字欄範圍 sanity)+ 單元測試。
+- [x] meta 手動欄 + `nativeMismatch` 邏輯 + 匯出測試。
+- [x] session 識別欄(`participantId`/`sessionLabel`)+ meta `session` 區塊 + 匯出測試。
+- [x] 流程掛線(實驗 session 才出現)實機驗證記 progress。
+- [x] schema.md 手動欄語意對帳。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 
