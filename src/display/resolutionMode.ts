@@ -1,3 +1,5 @@
+import type { GateReport } from './eligibilityGate.ts';
+
 export type ResolutionMode = 'native' | 'fhd-1080' | 'qhd-1440';
 
 export interface DisplayState {
@@ -12,6 +14,8 @@ export interface DisplayState {
   fullscreen: boolean;
   refreshEstimateHz: number;
   refreshMedianDeltaMs?: number;
+  /** 資格閘全量明細（GD-10 防線①,T2）——僅實驗 session 進入時填入,供事後審查。 */
+  gate?: GateReport;
 }
 
 export interface ResolutionModeOption {

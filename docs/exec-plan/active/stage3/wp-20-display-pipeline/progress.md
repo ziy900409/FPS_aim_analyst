@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T1 complete;T2 next
+## Status: 🟡 T2 complete;T3 next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 解析度模式 | ✅ |
-| T2 fullscreen + 資格閘 | ⬜ |
+| T2 fullscreen + 資格閘 | ✅ |
 | T3 frame-time log | ⬜ |
 | T4 session setup 表單 | ⬜ |
 | T-exit | ⬜ |
@@ -26,10 +26,33 @@
 | OQ-S3-4 frames 匯出形式(JSON 完整序列 + 摘要;CSV 只摘要)確認 | ✅ resolved | JSON 匯出 `frames.series` 完整 delta 序列 + `summary`(`p50/p95/p99/overBudgetWindows/overflow`);CSV 只輸出 summary 欄位,不展開逐幀序列。 |
 | OQ-20.1 `MAX_DISPLAY_HZ` 容量常數(計畫預設 240)與更新率估計演算法(rAF deltas 中位數) | ✅ resolved | `MAX_DISPLAY_HZ = 240`;frame log 容量 = `maxDrillSeconds * MAX_DISPLAY_HZ`(現行 300s → 72,000 samples)。更新率估計:丟棄前 30 個 rAF deltas,採接續 120 個 deltas 的 median,`refreshEstimateHz = round(1000 / medianDeltaMs)`,同時保留 median delta 供 meta/debug。 |
 | OQ-20.2 meta.display 落點:WP-16 已留 optional 區塊縫?(未留 → 與 WP-16 對帳,比照 OQ-19.2) | ✅ resolved | WP-16 已留 v2 optional reserved 縫: `meta.display`, `meta.frames`, `meta.session` 見 `src/data/metadata.ts` 與 `docs/operational/schema.md`。形狀歸 WP-16/schema,填值歸 WP-20;本 WP 不 bump schema。 |
+| OQ-20.3 物理硬體 DPI 端到端驗證(Windows 100%/125%/150% 真實面板 + 真 fullscreen gesture) | ⬜ open(moderator 實機) | T2 已以單元矩陣釘死 `screen × dpr` 還原機制(三檔 + FHD 反例);headless 環境無法忠實重現多 DPI 實機 + fullscreen user gesture。最終端到端確認留 moderator 於實驗機執行,結果矩陣回填本 ledger(比照 T1 real-browser 分工)。不阻塞 T3(資格閘邏輯已可機械判定)。 |
 
 ---
 
 ## Log
+
+### 2026-07-08 — T2 fullscreen 流程 + 資格閘 PASS(GD-10 防線①,不合格拒入)
+- **實作檔案**:
+  - 新增 `src/display/constants.ts`:`PERF_FLOOR_MS = 8.33`(OQ-S3-1 收斂值)+ `EXPERIMENT_MAX_CONDITION = {minW:2560, minH:1440}`(= qhd-1440,實驗最高條件)。設定常數、不寫死。
+  - 新增 `src/display/eligibilityGate.ts`:`runEligibilityGate(required, warmupP95Ms, perfFloorMs?)` 純三檢查(原生解析度 `screen×dpr ≥ 需求`、`document.fullscreenElement != null`、`p95 ≤ 地板`);`details` 為全量人類可讀明細(逐項 pass/fail + 實測值 vs 門檻),進 `meta.display.gate`。另 `probeWarmupP95Ms()` = warmup 局部量測(丟前 30 rAF delta,取後 120 nearest-rank p95;T3 frameLog 落地後改 consolidated 來源)。
+  - 新增 `src/display/experimentSession.ts`:`createExperimentSession()` 最小狀態機;`enter(report)` 保存 gate、`handleFullscreenChange(present)` session 進行中退出 fullscreen → 標 `suspect` + 觸發 `onSuspect`(一次)。protocol 排程本體歸 WP-22 T2。
+  - 新增 `src/ui/EligibilityGate.ts`:`createEligibilityGateScreen()` 純 TS DOM overlay;啟動按鈕(user gesture)→ 請求 fullscreen → warmup 探測 → 資格閘;通過 `onEnter(report)` 並關閉,不合格逐項 ✓✗ + 全量 details + 「重試」;另 `showSuspectWarning()` 中途退出 fullscreen 警示條。
+  - 修改 `src/display/resolutionMode.ts`:`DisplayState` 加 optional `gate?: GateReport`。
+  - 修改 `src/data/metadata.ts`:`requireDisplayState` 驗證 optional `display.gate`(`requireGateReport`:pass/native/fullscreen/perf 布林 + details 非空)。
+  - 修改 `src/main.ts`:`enterExperimentSession` 最小落地——實驗 session 按鈕(解鎖顯示)開資格閘;`fullscreenchange` 掛 `experimentSession.handleFullscreenChange`;匯出 `suspect = playerCorridorExceeded || experimentSession.suspect`、`meta.display.gate = experimentSession.gate`。
+- **斷言證據**:
+  - `npx.cmd vitest run src/display/eligibilityGate.test.ts` — 14 tests:三檢查各自可獨立紅/綠(native/fullscreen/perf 單項失敗)、`<=` 邊界(p95 = 地板 → PASS)、自訂地板 override、參數驗證、warmup p95 nearest-rank(spike 位於/低於 top 5%)。
+  - **DPI 矩陣(單元級,失效防範機制驗證)**:Windows 縮放 100%(screen 2560×1440 × dpr 1)/125%(2048×1152 × 1.25)/150%(1706.67×960 × 1.5)三檔 → 還原原生 2560×1440 皆 PASS;真 FHD 面板 100%(1920×1080 × 1)→ FAIL。機制 = `screen × devicePixelRatio` 還原實體像素。
+  - `src/display/experimentSession.test.ts` — 7 tests:enter 保存 gate、fullscreen 退出 → suspect + onSuspect 一次(重複退出不重觸)、進入前忽略、entering(present=true)不升 suspect、exit 後保留供最後匯出。
+  - `src/ui/EligibilityGate.test.ts` — 4 tests:通過 → onEnter + 關閉;不合格 → 逐項原因 + details + 「重試」;警示條 show/hide;取消關閉不進 session。
+  - `src/data/metadata.test.ts` — +2 tests:`meta.display.gate` 全量帶過;malformed gate 拒絕。
+  - `npm.cmd run typecheck` exit 0。
+  - `npm.cmd test` exit 0 — **53 test files / 390 tests passed**(T1 為 50/363;+3 檔 +27 test)。
+  - `npm.cmd run build` exit 0 — 65 modules transformed(T1 為 61;+4 新模組),production build succeeded(僅既有 chunk size warning)。
+- **範圍檢查**:未修改 `SIM_HZ`、sim/input 鏈、命中判定;資格閘/fullscreen/session 僅落 display/ui/data/main(render/UI/data 層,GD-10/GD-6c)。`sharedState.validity` 未被本 task 寫入(只讀 `playerCorridorExceeded`);suspect 為 data 層 OR,不改 sim 演進。architecture guard(sim/state 不 import scene)仍綠。
+- **決策**:資格閘為純函式讀環境訊號 + caller 傳入 warmup p95(比照 resolutionMode 讀 global 慣例;p95 量測抽離為 `probeWarmupP95Ms` 便於測試與 T3 consolidate)。`gate` 掛在 `DisplayState` optional 欄而非另開 meta 頂層區塊——維持 `meta.display = DisplayState` 契約、additive 不 bump schema(§2.5)。
+- **Surprises / 有意識妥協**:**物理硬體 DPI 驗證未於本環境執行**——headless/無多 DPI 實機 + fullscreen 需 user gesture,無法忠實重現。DPI 判斷「機制」(`screen × dpr` 換算)已以單元矩陣釘死(上);真實面板 100%/125%/150% 的最終端到端確認留 moderator 實機(比照 T1 的 real-browser 量測分工),見 Open Questions。
 
 ### 2026-07-08 — T1 解析度模式 PASS(顯式 buffer + CSS upscale + display meta)
 - **實作檔案**:

@@ -184,6 +184,64 @@ describe('collectMeta', () => {
     });
   });
 
+  it('carries the eligibility gate report through meta.display.gate (GD-10 audit)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      display: {
+        mode: 'qhd-1440',
+        bufferW: 2560,
+        bufferH: 1440,
+        cssW: 2560,
+        cssH: 1440,
+        dpr: 1,
+        screenW: 2560,
+        screenH: 1440,
+        fullscreen: true,
+        refreshEstimateHz: 120,
+        gate: { pass: true, native: true, fullscreen: true, perf: true, details: 'all pass' },
+      },
+    });
+
+    expect(meta.display?.gate).toEqual({
+      pass: true,
+      native: true,
+      fullscreen: true,
+      perf: true,
+      details: 'all pass',
+    });
+  });
+
+  it('rejects a malformed gate report on display metadata', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 120,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        display: {
+          mode: 'qhd-1440',
+          bufferW: 2560,
+          bufferH: 1440,
+          cssW: 2560,
+          cssH: 1440,
+          dpr: 1,
+          screenW: 2560,
+          screenH: 1440,
+          fullscreen: true,
+          refreshEstimateHz: 120,
+          gate: { pass: 'yes' },
+        },
+      } as unknown as CollectMetaArgs),
+    ).toThrow('display.gate.pass');
+  });
+
   it('rejects malformed display metadata', () => {
     const valid: CollectMetaArgs = {
       drillId: 'counterstrafe_ad_v1',

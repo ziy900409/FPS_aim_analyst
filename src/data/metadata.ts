@@ -1,5 +1,6 @@
 import type { RenderBackend } from '../render/createRenderer.ts';
 import { isResolutionMode, type DisplayState } from '../display/resolutionMode.ts';
+import type { GateReport } from '../display/eligibilityGate.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
 
 export const DEFAULT_SIM_HZ = 128;
@@ -160,6 +161,18 @@ function requireDisplayState(value: DisplayState): DisplayState {
     ...(display.refreshMedianDeltaMs !== undefined
       ? { refreshMedianDeltaMs: requirePositiveFiniteNumber(display.refreshMedianDeltaMs, 'display.refreshMedianDeltaMs') }
       : {}),
+    ...(display.gate !== undefined ? { gate: requireGateReport(display.gate) } : {}),
+  };
+}
+
+function requireGateReport(value: unknown): GateReport {
+  const gate = requireRecord(value, 'display.gate');
+  return {
+    pass: requireBoolean(gate.pass, 'display.gate.pass'),
+    native: requireBoolean(gate.native, 'display.gate.native'),
+    fullscreen: requireBoolean(gate.fullscreen, 'display.gate.fullscreen'),
+    perf: requireBoolean(gate.perf, 'display.gate.perf'),
+    details: requireNonEmptyString(gate.details, 'display.gate.details'),
   };
 }
 

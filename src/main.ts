@@ -13,6 +13,10 @@ import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
 import { createControls } from './ui/Controls.ts';
 import { applyResolutionMode, type DisplayState, type ResolutionMode } from './display/resolutionMode.ts';
+import { probeWarmupP95Ms } from './display/eligibilityGate.ts';
+import { createExperimentSession } from './display/experimentSession.ts';
+import { EXPERIMENT_MAX_CONDITION } from './display/constants.ts';
+import { createEligibilityGateScreen } from './ui/EligibilityGate.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill } from './drill/DrillLoader.ts';
@@ -165,6 +169,48 @@ pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 // 恆顯示（不隨鎖定切換）：第一人稱射線走 camera 中心，準心即射線方向指示。
 createCrosshair();
 
+// WP-20 / T2（FR-C7）— 資格閘 + 實驗 session 進入流程（GD-10 防線①）。通過三檢查（原生解析度 ≥
+// 實驗最高條件、fullscreen 已進入、warmup 效能地板）才進入實驗 session;不合格 = **拒入並明示原因**
+// （防 FHD 面板混入 QHD 條件）。session 進行中退出 fullscreen → 標 suspect（純觀測,OR 進匯出 meta,
+// 不中斷 drill）;gate 全量進 meta.display.gate 供事後審查。protocol 排程本體歸 WP-22 T2（此為最小落地）。
+const experimentSession = createExperimentSession({
+  onSuspect: () => eligibilityGateScreen.showSuspectWarning(),
+});
+const eligibilityGateScreen = createEligibilityGateScreen({
+  required: EXPERIMENT_MAX_CONDITION,
+  requestFullscreen: () => document.documentElement.requestFullscreen(),
+  probeWarmupP95Ms: () => probeWarmupP95Ms(),
+  onEnter: (report) => experimentSession.enter(report),
+});
+document.addEventListener('fullscreenchange', () => {
+  experimentSession.handleFullscreenChange(document.fullscreenElement != null);
+});
+
+// 最小啟動器：解鎖時可開資格閘（fullscreen 請求須在 user gesture 內,故走按鈕點擊）。
+const experimentButton = document.createElement('button');
+experimentButton.type = 'button';
+experimentButton.textContent = '實驗 session';
+experimentButton.title = '進入資格閘（GD-10 防線①）';
+experimentButton.style.cssText = [
+  'position:fixed',
+  'top:12px',
+  'left:12px',
+  'height:34px',
+  'padding:0 14px',
+  'border:1px solid rgba(255,255,255,0.18)',
+  'border-radius:6px',
+  'font:750 12px/1 system-ui,sans-serif',
+  'color:#e6e9ec',
+  'background:rgba(15,18,21,0.96)',
+  'cursor:pointer',
+  'z-index:40',
+].join(';');
+experimentButton.addEventListener('click', () => eligibilityGateScreen.open());
+document.body.appendChild(experimentButton);
+pointerLock.onChange((locked) => {
+  experimentButton.style.display = locked ? 'none' : 'block';
+});
+
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
 // 讀取與序列化只在 click handler 內發生，不進 sim tick 熱路徑。
 const recorder = createDataRecorder({ simHz: SIM_HZ });
@@ -176,6 +222,8 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     ...displayState,
     refreshEstimateHz: displayRefresh.refreshEstimateHz,
     refreshMedianDeltaMs: displayRefresh.medianDeltaMs,
+    // GD-10 防線①:資格閘全量明細,僅實驗 session 進入時填入（事後審查依據）。
+    ...(experimentSession.gate !== undefined ? { gate: experimentSession.gate } : {}),
   };
   const meta = collectMeta({
     drillId: activeDrillConfig.drillId,
@@ -191,7 +239,8 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
-    suspect: sharedState.validity.playerCorridorExceeded,
+    // 純觀測 suspect:玩家逸出走廊(GD-6)或實驗 session 中途退出 fullscreen(GD-10 failure mode)。
+    suspect: sharedState.validity.playerCorridorExceeded || experimentSession.suspect,
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
