@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T0/T1/T3 complete; T2 程式碼/資產/測試綠(實機瀏覽器驗證待人工)
+## Status: ✅ T0/T1/T2/T3 complete(T2 實機三檢皆綠);T4/T5/T-exit 待開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 SceneConfig schema | ✅ |
-| T2 GLTF 管線 + field-low | 🟡 code/asset/test 綠;實機 render + 無掉 tick + 壞 URL fallback 待人工瀏覽器驗證 |
+| T2 GLTF 管線 + field-low | ✅ code/asset/test + 實機三檢綠 |
 | T3 淨空驗證器 | ✅ |
 | T4 場景切換 + meta | ⬜ |
 | T5 urban-high + perf | ⬜ |
@@ -30,6 +30,23 @@
 ---
 
 ## Log
+
+### 2026-07-08 — T2 DoD 實機三檢**全綠** → T2 ✅(使用者於 Edge 146 桌面版驗證)
+- **Check 1 — field-low 實機 render(真管線,非 fallback)**:Network `GET /assets/scenes/field-low/field-low.gltf`
+  → **200 OK**、`Content-Type: model/gltf+json`、`Content-Length 7408`、COOP/COEP header 齊(require-corp / same-origin),
+  initiator `sceneLoader.ts:27`;內嵌 buffer `data:application/octet-stream`(648 B)一併載入。畫面天空藍 + props + 地面。
+- **Check 2 — 完整 drill 無掉 tick**:匯出 JSON(`counterstrafe_ad_v1-2026-07-08T06_53_47Z.json`)tick 流分析——
+  **2536 ticks / span 19.80s = 100.0% of expected**;delta histogram `{1: 2535}`(**每一步恰 1 tick**,無 2+);
+  max gap 7.81ms(=1.00 tick);gaps>1.5tick = **0**;non-monotonic = 0;`recorderOverflow: false`。
+  關鍵:`displayHz ~60` 而 sim 恰 128Hz 零掉 tick——固定步長 accumulator 在 GLTF 場景載入下仍完美 decouple(ADR-3)。
+- **Check 3 — 壞 URL → fallback 佔位房間**:DevTools Network request blocking 規則
+  `*://localhost:5173/assets/scenes/field-low/field-low.gltf` = Block(1 affected)→ reload。
+  `field-low.gltf` 列紅 `(blocked)` 0B;畫面 fallback 為**灰色四面牆佔位房間**(bg `0x202428`,無天空/props),
+  `placeholder-room.ts` 經 `SceneManager.ts:3` 載入;Console 印 `[sceneLoader] 場景資產載入失敗,fallback 佔位房間`。
+  → 單一路徑 fallback(`loadScene` null → `createSceneManager` 重建 placeholderRoom)實測成立。
+- **DoD 對照**:field-low 實機渲染 ✅ / 既有 drill 全程無掉 tick ✅(證據上述)/ 載入失敗 fallback 實測 ✅ /
+  `ATTRIBUTIONS.md` 與資產一一對應 ✅ / repo 內無非 CC0/CC-BY 檔 ✅。**T2 = ✅**;task-checklist 翻 ✅。
+- **Next**:T4(場景切換 UI + `meta.scene` 填值 + 跨場景決定性斷言;相依 T2 ✅ + T3 ✅ 已滿足)。
 
 ### 2026-07-08 — T2 追記:實機截圖回饋 → field-low 視覺調整(地面 + prop 重排)
 - **來源**:使用者實機截圖(Chrome,`Time 01:07` 順跑、target 紅盒 spawn、天空藍 + props 可見)——
