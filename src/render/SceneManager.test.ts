@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu';
 import { describe, expect, it, vi } from 'vitest';
 import { placeholderRoom } from '../scene/scenes/placeholder-room.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
-import { createSceneManager, SceneManager } from './SceneManager.ts';
+import { createSceneManager, createSceneManagerWithStatus, SceneManager } from './SceneManager.ts';
 import type { SceneAssetLoader } from './sceneLoader.ts';
 
 const gltfConfig: SceneConfig = {
@@ -80,6 +80,22 @@ describe('createSceneManager', () => {
     // fallback 佔位房間:5 mesh + 2 光,與正常 placeholder 路徑同構。
     expect(meshesOf(manager)).toHaveLength(5);
     expect(lightsOf(manager)).toHaveLength(2);
+    errorSpy.mockRestore();
+  });
+
+  it('createSceneManagerWithStatus 回報 fallback 狀態與有效 config', async () => {
+    const loader: SceneAssetLoader = {
+      loadAsync: vi.fn(async () => {
+        throw new Error('壞 URL / 斷網');
+      }),
+    };
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await createSceneManagerWithStatus(gltfConfig, loader);
+
+    expect(result.fallback).toBe(true);
+    expect(result.effectiveConfig.sceneId).toBe('placeholder-room');
+    expect(meshesOf(result.manager)).toHaveLength(5);
     errorSpy.mockRestore();
   });
 });

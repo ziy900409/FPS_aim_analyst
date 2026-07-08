@@ -132,6 +132,12 @@ export class SceneManager {
   }
 }
 
+export interface SceneManagerLoadResult {
+  manager: SceneManager;
+  effectiveConfig: SceneConfig;
+  fallback: boolean;
+}
+
 /**
  * 依 SceneConfig 建 SceneManager,GLTF 資產 async 載入後掛入(FR-C2)。
  * - `asset === null`:同步程序化房間。
@@ -140,19 +146,26 @@ export class SceneManager {
  *
  * `loaderOverride` 供測試注入 mock loader(不必真跑 WebGPU/GLTF 解析)。
  */
-export async function createSceneManager(
+export async function createSceneManagerWithStatus(
   config: SceneConfig,
   loaderOverride?: SceneAssetLoader,
-): Promise<SceneManager> {
+): Promise<SceneManagerLoadResult> {
   const manager = new SceneManager(config);
-  if (config.asset === null) return manager;
+  if (config.asset === null) return { manager, effectiveConfig: config, fallback: false };
 
   const group = await loadScene(config, loaderOverride);
   if (group !== null) {
     manager.mountAsset(group);
-    return manager;
+    return { manager, effectiveConfig: config, fallback: false };
   }
   // 載入失敗:丟棄剛建的舞台,fallback 佔位房間(與正常路徑同一 config 入口)。
   manager.dispose();
-  return new SceneManager(placeholderRoom);
+  return { manager: new SceneManager(placeholderRoom), effectiveConfig: placeholderRoom, fallback: true };
+}
+
+export async function createSceneManager(
+  config: SceneConfig,
+  loaderOverride?: SceneAssetLoader,
+): Promise<SceneManager> {
+  return (await createSceneManagerWithStatus(config, loaderOverride)).manager;
 }
