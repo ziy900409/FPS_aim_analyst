@@ -5,7 +5,7 @@
 
 ---
 
-## Status: ✅ T0/T1/T2/T3 complete(T2 實機三檢皆綠);T4/T5/T-exit 待開
+## Status: ✅ T0/T1/T2/T3/T4 complete(T2 實機三檢皆綠);T5/T-exit 待開
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 SceneConfig schema | ✅ |
 | T2 GLTF 管線 + field-low | ✅ code/asset/test + 實機三檢綠 |
 | T3 淨空驗證器 | ✅ |
-| T4 場景切換 + meta | ⬜ |
+| T4 場景切換 + meta | ✅ |
 | T5 urban-high + perf | ⬜ |
 | T-exit(M9) | ⬜ |
 
@@ -30,6 +30,34 @@
 ---
 
 ## Log
+
+### 2026-07-08 07:31Z — T4 場景切換 + `meta.scene` + 決定性/suspect 防線 ✅
+- **切片(3 個原子 commit)**:
+  1. `f47f689` `feat(wp-19): add scene switching pipeline` — `Controls` 增 scene selector(placeholder-room / field-low),scene load button 與 all-controls async disable gating;`main.ts` 改 active scene manager 可替換,切換前用 `loadDrill(activeDrillSource, nextScene)` 重跑淨空驗證,切換後 dispose 舊 scene/TargetView/ImpactView、重綁 camera、重建 SimLoop;`SceneManager` 新增 fallback-aware `createSceneManagerWithStatus`。
+  2. `1d0fe1f` `feat(wp-19): export scene metadata` — `Meta.scene` 型別化為 `{sceneId, assetPackVersion, clutterTier, fallback}`;export path 從 active SceneConfig 與 loader fallback state 填值;`docs/operational/schema.md` 補 `meta.scene` 欄位。
+  3. `0589135` `feat(wp-19): assert scene determinism and corridor suspect` — `SharedState.validity.playerCorridorExceeded` + `createSimLoop(..., { afterTick })` 純觀測 hook;`main.ts` 每 tick 比對 active `playerCorridor.halfWidthU` 升 `suspect`,不 clamp、不改 sim;regression 加 placeholder-room vs field-low 完整 sim bit-exact 斷言。
+- **自動化驗證**:
+  - `npm.cmd test -- src/render/SceneManager.test.ts src/render/sceneLoader.test.ts` → 2 files / 13 tests pass。
+  - `npm.cmd test -- src/data/metadata.test.ts src/data/export.test.ts` → 2 files / 12 tests pass。
+  - `npm.cmd test -- src/state/SharedState.test.ts src/loop/SimLoop.test.ts src/data/metadata.test.ts tests/regression/determinism.test.ts` → 4 files / 50 tests pass。
+  - `npm.cmd test -- src/scene/architecture.test.ts` → scene boundary pass(`src/sim`/`src/state` 未 import `src/scene`)。
+  - `npm.cmd test` → Vitest **47 files / 351 tests pass**。
+  - `npm.cmd run build` → pass(需提升權限避開 sandbox 對 Vite/esbuild 讀 `vite.config.ts` 的上層目錄限制;僅既有 chunk-size warning)。
+  - `graphify update .` → AST extraction 108/108, graph rebuilt(`825 nodes`, `1821 edges`)。
+- **Headless browser smoke(Chromium,dev server `127.0.0.1:5173`)**:
+  - Playwright 載入 app → `#scene-select` 存在。
+  - 選 `placeholder-room` + click `Load selected scene` → controls 等待後全部 enabled。
+  - 選 `field-low` + click `Load selected scene` → controls 等待後全部 enabled。
+  - 回傳:`{"first":"placeholder-room","second":"field-low","controls":[... disabled:false]}`。
+- **Decision Log**:
+  - **fallback 狀態由 `createSceneManagerWithStatus` 回報,保留既有 `createSceneManager(config): Promise<SceneManager>` API**。Alternatives Considered:直接改 `createSceneManager` 回傳 `{manager,fallback}` 會破壞現有呼叫端/測試;新增 wrapper 讓 `main.ts` 可填 `meta.scene.fallback`,舊 API 仍可用。
+  - **scene 切換採「先淨空驗證、再 async 載入、最後替換 render scene」**。Alternatives Considered:先載入再驗證可讓 UI 更早顯示載入狀態,但若驗證失敗會出現畫面已換、drill 被拒的半狀態;先驗證保持 active scene/drill 原子切換。
+  - **走廊逸出用 SimLoop optional `afterTick` observer,scene config 只留在 `main.ts` 組裝層**。Alternatives Considered:把 `SceneConfig` 傳入 SimLoop 或 SharedState 更直接,但會違反 GD-6 邊界;observer 只看 state 數值並設 validity flag,不讓 scene module 進 sim/state。
+- **Surprises & Discoveries**:
+  - `CameraController` 原本固定綁建構時 camera;scene 切換需新增 `setCamera()` 才能保留 yaw/pitch/sensitivity/punch 並套到新 camera。
+  - Vite/esbuild 在 sandbox 內讀取 `vite.config.ts` 仍會觸發上層目錄 access denied;同 T2 build 經驗,提升權限重跑可通過。
+- **Open Questions / 待人工**:
+  - 實機可視切換(肉眼確認 placeholder 灰房間 ↔ field-low 戶外 GLTF)仍建議使用者在 Edge/Chrome 桌面版快速切 3–5 次確認;headless smoke 已覆蓋 DOM gating 與載入流程,但不替代肉眼視覺確認。
 
 ### 2026-07-08 — T2 DoD 實機三檢**全綠** → T2 ✅(使用者於 Edge 146 桌面版驗證)
 - **Check 1 — field-low 實機 render(真管線,非 fallback)**:Network `GET /assets/scenes/field-low/field-low.gltf`

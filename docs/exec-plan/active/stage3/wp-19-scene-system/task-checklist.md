@@ -9,7 +9,7 @@
 | ✅ | **T1** SceneConfig schema + validateScene + 佔位房間收編 | [T1-scene-config.md](T1-scene-config.md) | T0 | Low |
 | ✅ | **T2** GLTF 管線 + field-low 場景 + ATTRIBUTIONS(實機三檢皆綠:load / 零掉 tick / 壞 URL fallback) | [T2-gltf-pipeline.md](T2-gltf-pipeline.md) | T1 | High |
 | ✅ | **T3** 淨空驗證器 + DrillLoader 拒載 | [T3-clearance-validator.md](T3-clearance-validator.md) | T1 | High |
-| ⬜ | **T4** 場景切換 + meta.scene + 跨場景決定性斷言 | [T4-scene-switch-metadata.md](T4-scene-switch-metadata.md) | T2, T3 | Med |
+| ✅ | **T4** 場景切換 + meta.scene + 跨場景決定性斷言 | [T4-scene-switch-metadata.md](T4-scene-switch-metadata.md) | T2, T3 | Med |
 | ⬜ | **T5** urban-high 第二場景 + 負載驗證 | [T5-second-scene-perf.md](T5-second-scene-perf.md) | T4 | Med |
 | ⬜ | **T-exit** M9 宣告(四項證據) | [T-exit-gate.md](T-exit-gate.md) | T1–T5 | — |
 
