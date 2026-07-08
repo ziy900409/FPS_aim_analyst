@@ -68,6 +68,7 @@ export interface CollectMetaArgs {
   lateEventCount?: number;
   bufferOverflow?: boolean | number;
   recorderOverflow?: boolean;
+  suspect?: boolean;
   spawn?: SpawnMeta;
   scene?: SceneMeta;
   display?: unknown;
@@ -100,6 +101,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const lateEventCount = requireNonNegativeInteger(args.lateEventCount ?? 0, 'lateEventCount');
   const bufferOverflow = normalizeOverflow(args.bufferOverflow ?? false, 'bufferOverflow');
   const recorderOverflow = requireBoolean(args.recorderOverflow ?? false, 'recorderOverflow');
+  const explicitSuspect = requireBoolean(args.suspect ?? false, 'suspect');
   const scene = args.scene === undefined ? undefined : requireSceneMeta(args.scene);
 
   return {
@@ -123,7 +125,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     lateEventCount,
     bufferOverflow,
     recorderOverflow,
-    suspect: bufferOverflow || recorderOverflow,
+    suspect: explicitSuspect || bufferOverflow || recorderOverflow,
     ...(args.spawn !== undefined ? { spawn: args.spawn } : {}),
     ...(scene !== undefined ? { scene } : {}),
     ...(args.display !== undefined ? { display: args.display } : {}),

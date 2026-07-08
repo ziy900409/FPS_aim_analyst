@@ -364,6 +364,11 @@ export interface SimLoop {
   pump(nowMs: number): { ticks: number; alpha: number };
 }
 
+export interface SimLoopOptions {
+  /** 每個 sim tick 完成後的純觀測 hook；不得 clamp 或改寫演進來源。 */
+  afterTick?: (state: SharedState, tickEndMs: number, tickIndex: number) => void;
+}
+
 /**
  * 建 accumulator sim loop。`clock` 僅用於取時間基準（`pump` 的 nowMs 才是每幀驅動源），
  * `simHz` 注入使 tick rate 可調（ADR-3）。
@@ -377,8 +382,11 @@ export function createSimLoop(
   drillRunner?: DrillRunner,
   recorder?: DataRecorder,
   weapon: WeaponConfig = ak47,
-  seed: number = DEFAULT_RNG_SEED,
+  seedOrOptions: number | SimLoopOptions = DEFAULT_RNG_SEED,
+  options?: SimLoopOptions,
 ): SimLoop {
+  const seed = typeof seedOrOptions === 'number' ? seedOrOptions : DEFAULT_RNG_SEED;
+  const loopOptions = typeof seedOrOptions === 'number' ? options : seedOrOptions;
   state.weapon.nextFireT = Infinity;
   state.weapon.magSize = weapon.magSize;
   state.weapon.ammo = weapon.magSize;
@@ -409,6 +417,7 @@ export function createSimLoop(
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
         simStep(state, tickSec, simTimeMs, targetManager, camera, movement, handleInput, drillRunner, recorder, weapon, tickIndex, recoilRuntime);
+        loopOptions?.afterTick?.(state, simTimeMs, tickIndex);
         accSec -= tickSec;
         ticks++;
         tickIndex++;

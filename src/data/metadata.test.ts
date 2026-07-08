@@ -145,6 +145,20 @@ describe('collectMeta', () => {
       },
     });
   });
+
+  it('allows runtime validity observers to mark metadata suspect', () => {
+    expect(
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        suspect: true,
+      }).suspect,
+    ).toBe(true);
+  });
 });
 
 describe('measureDisplayHz', () => {

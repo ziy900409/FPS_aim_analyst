@@ -23,6 +23,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(a.input.size()).toBe(0);
     expect(a.targets).toHaveLength(0);
     expect(a.tVisible.size).toBe(0);
+    expect(a.validity).toEqual({ playerCorridorExceeded: false });
 
     // 實例彼此獨立、且不污染單例
     const b = createSharedState();
@@ -46,6 +47,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const tVisibleRef = s.tVisible;
     const recoilStateRef = s.recoilState;
     const impactsRef = s.impacts;
+    const validityRef = s.validity;
 
     // 弄髒所有欄位
     pushEvent(s, { type: 'fire', down: true, t: 1 });
@@ -79,6 +81,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
       hitbox: { width: 1, height: 2, depth: 1 },
     });
     s.tVisible.set('t1', 123.4);
+    s.validity.playerCorridorExceeded = true;
 
     resetState(s);
 
@@ -92,6 +95,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.aim).toEqual({ yaw: 0, pitch: 0 });
     expect(s.targets).toHaveLength(0);
     expect(s.tVisible.size).toBe(0);
+    expect(s.validity).toEqual({ playerCorridorExceeded: false });
 
     // recoil 狀態機 + 視覺快照 + spread 暫存原地歸零（WP-13 / T1）
     expect(s.recoilState.aimPunchPitchDeg).toBe(0);
@@ -115,6 +119,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.tVisible).toBe(tVisibleRef);
     expect(s.recoilState).toBe(recoilStateRef); // recoil 狀態機重用同一物件（GC 紀律）
     expect(s.impacts).toBe(impactsRef); // 彈著格重用同一物件 + typed-array（GC 紀律）
+    expect(s.validity).toBe(validityRef);
   });
 
   it('resetState() 預設作用於單例', () => {

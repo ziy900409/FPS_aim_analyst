@@ -178,6 +178,7 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
+    suspect: sharedState.validity.playerCorridorExceeded,
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
@@ -277,6 +278,13 @@ function buildSimLoop(): SimLoop {
     recorder,
     activeWeaponConfig(),
     activeDrillConfig.sequence.seed,
+    {
+      afterTick(state): void {
+        if (Math.abs(state.player.x) > activeSceneConfig.playerCorridor.halfWidthU) {
+          state.validity.playerCorridorExceeded = true;
+        }
+      },
+    },
   );
 }
 let simLoop = buildSimLoop();
