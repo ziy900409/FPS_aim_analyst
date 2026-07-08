@@ -32,7 +32,7 @@ export interface AimState {
 }
 
 export class CameraController {
-  readonly #camera: THREE.PerspectiveCamera;
+  #camera: THREE.PerspectiveCamera;
   readonly #aimSink?: AimState;
   #yaw = 0;
   #pitch = 0;
@@ -83,6 +83,12 @@ export class CameraController {
   setFov(deg: number): void {
     this.#camera.fov = deg;
     this.#camera.updateProjectionMatrix();
+  }
+
+  /** 場景切換時把既有 yaw/pitch/sensitivity/punch 套到新 camera。 */
+  setCamera(camera: THREE.PerspectiveCamera): void {
+    this.#camera = camera;
+    this.#applyToCamera();
   }
 
   #applyToCamera(): void {

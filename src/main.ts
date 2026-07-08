@@ -1,6 +1,6 @@
 import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
-import { SceneManager } from './render/SceneManager.ts';
+import { createSceneManagerWithStatus } from './render/SceneManager.ts';
 import { TargetView } from './render/TargetView.ts';
 import { ImpactView } from './render/ImpactView.ts';
 import { createPointerLock } from './input/PointerLock.ts';
@@ -27,6 +27,10 @@ import { collectMeta, measureDisplayHz } from './data/metadata.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
+import type { SceneConfig } from './scene/SceneConfig.ts';
+import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
+import { fieldLow } from './scene/scenes/field-low.ts';
+import { urbanHigh } from './scene/scenes/urban-high.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -46,22 +50,41 @@ interface AvailableDrill {
   source: unknown;
 }
 
-const initialDrillConfig = loadDrill(defaultDrillSource);
+interface AvailableScene {
+  id: string;
+  label: string;
+  config: SceneConfig;
+}
+
+const availableScenes: AvailableScene[] = [
+  { id: placeholderRoom.sceneId, label: 'placeholder-room', config: placeholderRoom },
+  { id: fieldLow.sceneId, label: 'field-low', config: fieldLow },
+  { id: urbanHigh.sceneId, label: 'urban-high', config: urbanHigh },
+];
+let activeSceneConfig: SceneConfig = fieldLow;
+let activeSceneFallback = false;
+
+const initialDrillConfig = loadDrill(defaultDrillSource, activeSceneConfig);
 const availableDrills: AvailableDrill[] = [
   { id: initialDrillConfig.drillId, label: initialDrillConfig.drillId, source: defaultDrillSource },
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;
+let activeDrillSource: unknown = defaultDrillSource;
 let recorderStartedAt = new Date().toISOString();
 
-// WP-1 / T1（FR-1.1）— 封閉房間 + camera 舞台。
-const sceneManager = new SceneManager();
+// WP-1 / T1（FR-1.1）+ WP-19 / T2（FR-C2）— 舞台 + camera:async 場景載入管線。
+// 預設載入 field-low GLTF 場景;載入失敗(斷網/壞 URL)自動 fallback 佔位房間(同一 config 路徑)。
+// T4 接手場景切換 UI;此處先讓 field-low 實機可見(T2 DoD)。
+const initialSceneLoad = await createSceneManagerWithStatus(activeSceneConfig);
+let sceneManager = initialSceneLoad.manager;
+activeSceneFallback = initialSceneLoad.fallback;
 
 // WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
-const targetView = new TargetView(sceneManager.scene);
+let targetView = new TargetView(sceneManager.scene);
 
 // WP-13 / T3（FR-B10）— 彈孔渲染:唯讀 sharedState.impacts（sim 命中時寫入）以單一 InstancedMesh
 // 繪彈孔（1 draw call）。狀態由 sim 寫、本層唯讀（雙迴圈邊界）。
-const impactView = new ImpactView(sceneManager.scene);
+let impactView = new ImpactView(sceneManager.scene);
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -157,9 +180,16 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
+    suspect: sharedState.validity.playerCorridorExceeded,
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
+    },
+    scene: {
+      sceneId: activeSceneConfig.sceneId,
+      assetPackVersion: activeSceneConfig.assetPackVersion,
+      clutterTier: activeSceneConfig.clutterTier,
+      fallback: activeSceneFallback,
     },
   });
   return buildExportPayload(meta, snapshot);
@@ -250,6 +280,13 @@ function buildSimLoop(): SimLoop {
     recorder,
     activeWeaponConfig(),
     activeDrillConfig.sequence.seed,
+    {
+      afterTick(state): void {
+        if (Math.abs(state.player.x) > activeSceneConfig.playerCorridor.halfWidthU) {
+          state.validity.playerCorridorExceeded = true;
+        }
+      },
+    },
   );
 }
 let simLoop = buildSimLoop();
@@ -347,9 +384,15 @@ const SIM_TO_WORLD = 0.01; // world unit per source unit（佔位；WP-6 drill c
 // 1.0 = 全量視覺後座（渲染 = viewAngles + aimPunch×1）;調小可弱化鏡頭上跳、0 = 關閉視覺跟隨。
 // `view_recoil_tracking` 精確 CS2 值待 WP-15 校準（OQ-S2-4 open,不阻塞);此處為可調開關 + 註記。
 const VIEW_RECOIL_TRACKING = 1.0;
-const baseX = sceneManager.camera.position.x;
-const baseY = sceneManager.camera.position.y;
-const baseZ = sceneManager.camera.position.z;
+let baseX = sceneManager.camera.position.x;
+let baseY = sceneManager.camera.position.y;
+let baseZ = sceneManager.camera.position.z;
+
+function syncCameraBase(): void {
+  baseX = sceneManager.camera.position.x;
+  baseY = sceneManager.camera.position.y;
+  baseZ = sceneManager.camera.position.z;
+}
 
 // dev-only 急停 readout 閂鎖狀態（見 render loop 內說明）。
 let stopFlashUntil = 0;
@@ -391,9 +434,10 @@ function loadDrillById(drillId: string): void {
   const option = availableDrills.find((candidate) => candidate.id === drillId);
   if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
 
-  const nextConfig = loadDrill(option.source);
+  const nextConfig = loadDrill(option.source, activeSceneConfig);
   drillRunner.restart();
   activeDrillConfig = nextConfig;
+  activeDrillSource = option.source;
   activeTargetManager = createTargetManager(nextConfig);
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
@@ -403,12 +447,47 @@ function loadDrillById(drillId: string): void {
   syncControlsVisibility();
 }
 
+async function loadSceneById(sceneId: string): Promise<void> {
+  const option = availableScenes.find((candidate) => candidate.id === sceneId);
+  if (option === undefined) throw new Error(`Unknown scene: ${sceneId}`);
+  if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
+
+  const nextDrillConfig = loadDrill(activeDrillSource, option.config);
+  const nextScene = await createSceneManagerWithStatus(option.config);
+
+  targetView.dispose();
+  impactView.dispose();
+  sceneManager.dispose();
+  sceneManager = nextScene.manager;
+  sceneManager.resize(window.innerWidth, window.innerHeight);
+  targetView = new TargetView(sceneManager.scene);
+  impactView = new ImpactView(sceneManager.scene);
+  cameraController.setCamera(sceneManager.camera);
+  cameraController.setFov(settingsPanel.fov);
+  syncCameraBase();
+
+  drillRunner.restart();
+  activeSceneConfig = option.config;
+  activeSceneFallback = nextScene.fallback;
+  activeDrillConfig = nextDrillConfig;
+  activeTargetManager = createTargetManager(activeDrillConfig);
+  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
+  resetRunPresentation();
+  simLoop = buildSimLoop();
+  drillRunner.start(activeDrillConfig);
+  controls.setSelectedScene(activeSceneConfig.sceneId);
+  syncControlsVisibility();
+}
+
 // WP-8 / T4（FR-8.4）— 重來 / 換 drill 控制。解鎖時可操作；結果頁顯示時也保持可操作。
 const controls = createControls({
   drills: availableDrills.map(({ id, label }) => ({ id, label })),
+  scenes: availableScenes.map(({ id, label }) => ({ id, label })),
   selectedDrillId: activeDrillConfig.drillId,
+  selectedSceneId: activeSceneConfig.sceneId,
   onRestart: restartActiveDrill,
   onLoadDrill: loadDrillById,
+  onLoadScene: loadSceneById,
 });
 
 function syncControlsVisibility(): void {

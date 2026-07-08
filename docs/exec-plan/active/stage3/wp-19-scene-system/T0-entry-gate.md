@@ -8,7 +8,7 @@
 | **相依** | —(stage3 首個可開跑 task) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [CLAUDE.md](../../../../../CLAUDE.md) §4 + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-07 |
 
 ## Objective
 

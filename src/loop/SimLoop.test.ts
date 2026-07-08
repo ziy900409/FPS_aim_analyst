@@ -82,6 +82,31 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(alpha).toBeLessThan(1);
   });
 
+  it('afterTick observer can flag player corridor escape without clamping movement', () => {
+    const state = createSharedState();
+    state.held.right = true;
+    const loop = createSimLoop(
+      state,
+      fixedClock(0),
+      SIM_HZ,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ak47,
+      {
+        afterTick(s) {
+          if (Math.abs(s.player.x) > 0.05) s.validity.playerCorridorExceeded = true;
+        },
+      },
+    );
+
+    loop.pump(TICK_MS);
+
+    expect(state.player.x).toBeCloseTo(10.7421875 / SIM_HZ, 12);
+    expect(state.validity.playerCorridorExceeded).toBe(true);
+  });
+
   it('simStep 由 held 經 friction/accelerate 推進 vx/x（只用 dtSec）+ 維護 prev/curr', () => {
     const state = createSharedState();
     state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick 加速

@@ -1,0 +1,1316 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "FPS_aim_analyst WP-19 T5 urban-high generator (original geometry, CC0)",
+    "copyright": "CC0 1.0 — original work, FPS_aim_analyst"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "urban-high",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "backdrop-building-1",
+      "mesh": 0,
+      "translation": [
+        -6.775,
+        1.9,
+        -12.45
+      ],
+      "scale": [
+        1.4500000000000002,
+        3.8,
+        2.700000000000001
+      ]
+    },
+    {
+      "name": "backdrop-building-2",
+      "mesh": 0,
+      "translation": [
+        -4.75,
+        2.25,
+        -11.875
+      ],
+      "scale": [
+        1.1000000000000005,
+        4.5,
+        2.25
+      ]
+    },
+    {
+      "name": "backdrop-building-3",
+      "mesh": 0,
+      "translation": [
+        -2.3749999999999996,
+        2.5999999999999996,
+        -12.100000000000001
+      ],
+      "scale": [
+        1.45,
+        5.199999999999999,
+        3.4000000000000004
+      ]
+    },
+    {
+      "name": "backdrop-building-4",
+      "mesh": 0,
+      "translation": [
+        -0.3499999999999994,
+        2.9499999999999997,
+        -12.05
+      ],
+      "scale": [
+        1.1,
+        5.8999999999999995,
+        1.9000000000000004
+      ]
+    },
+    {
+      "name": "backdrop-building-5",
+      "mesh": 0,
+      "translation": [
+        2.025000000000001,
+        1.9,
+        -12.275
+      ],
+      "scale": [
+        1.4500000000000002,
+        3.8,
+        3.0500000000000007
+      ]
+    },
+    {
+      "name": "backdrop-building-6",
+      "mesh": 0,
+      "translation": [
+        4.05,
+        2.25,
+        -11.7
+      ],
+      "scale": [
+        1.0999999999999996,
+        4.5,
+        2.5999999999999996
+      ]
+    },
+    {
+      "name": "backdrop-building-7",
+      "mesh": 0,
+      "translation": [
+        6.425000000000001,
+        2.5999999999999996,
+        -12.45
+      ],
+      "scale": [
+        1.4500000000000002,
+        5.199999999999999,
+        2.700000000000001
+      ]
+    },
+    {
+      "name": "backdrop-building-8",
+      "mesh": 0,
+      "translation": [
+        8.450000000000003,
+        2.9499999999999997,
+        -11.875
+      ],
+      "scale": [
+        1.0999999999999996,
+        5.8999999999999995,
+        2.25
+      ]
+    },
+    {
+      "name": "backdrop-sign-1",
+      "mesh": 3,
+      "translation": [
+        -5.199999999999999,
+        1.05,
+        -9.9
+      ],
+      "scale": [
+        0.7999999999999998,
+        1.5,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "backdrop-sign-2",
+      "mesh": 3,
+      "translation": [
+        -2.9499999999999997,
+        1.05,
+        -9.9
+      ],
+      "scale": [
+        0.7999999999999998,
+        1.5,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "backdrop-sign-3",
+      "mesh": 3,
+      "translation": [
+        -0.6999999999999996,
+        1.05,
+        -9.9
+      ],
+      "scale": [
+        0.8,
+        1.5,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "backdrop-sign-4",
+      "mesh": 3,
+      "translation": [
+        1.5500000000000003,
+        1.05,
+        -9.9
+      ],
+      "scale": [
+        0.8,
+        1.5,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "backdrop-sign-5",
+      "mesh": 3,
+      "translation": [
+        3.8000000000000003,
+        1.05,
+        -9.9
+      ],
+      "scale": [
+        0.7999999999999998,
+        1.5,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "backdrop-sign-6",
+      "mesh": 3,
+      "translation": [
+        6.050000000000001,
+        1.05,
+        -9.9
+      ],
+      "scale": [
+        0.7999999999999998,
+        1.5,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "barrel-l1",
+      "mesh": 2,
+      "translation": [
+        -6.55,
+        0.45,
+        -1.6
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.40000000000000013
+      ]
+    },
+    {
+      "name": "barrel-l3",
+      "mesh": 2,
+      "translation": [
+        -6.55,
+        0.45,
+        -3.7
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.3999999999999999
+      ]
+    },
+    {
+      "name": "barrel-l5",
+      "mesh": 2,
+      "translation": [
+        -6.55,
+        0.45,
+        -5.8
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.40000000000000036
+      ]
+    },
+    {
+      "name": "barrel-l7",
+      "mesh": 2,
+      "translation": [
+        -6.55,
+        0.45,
+        -7.900000000000001
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.40000000000000036
+      ]
+    },
+    {
+      "name": "barrel-l9",
+      "mesh": 2,
+      "translation": [
+        -6.55,
+        0.45,
+        -10
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.40000000000000036
+      ]
+    },
+    {
+      "name": "barrel-r10",
+      "mesh": 2,
+      "translation": [
+        6.55,
+        0.45,
+        -11.05
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.40000000000000036
+      ]
+    },
+    {
+      "name": "barrel-r2",
+      "mesh": 2,
+      "translation": [
+        6.55,
+        0.45,
+        -2.6500000000000004
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.3999999999999999
+      ]
+    },
+    {
+      "name": "barrel-r4",
+      "mesh": 2,
+      "translation": [
+        6.55,
+        0.45,
+        -4.75
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.40000000000000036
+      ]
+    },
+    {
+      "name": "barrel-r6",
+      "mesh": 2,
+      "translation": [
+        6.55,
+        0.45,
+        -6.85
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.40000000000000036
+      ]
+    },
+    {
+      "name": "barrel-r8",
+      "mesh": 2,
+      "translation": [
+        6.55,
+        0.45,
+        -8.95
+      ],
+      "scale": [
+        0.40000000000000036,
+        0.9,
+        0.40000000000000036
+      ]
+    },
+    {
+      "name": "barrier-l1",
+      "mesh": 5,
+      "translation": [
+        -5.5,
+        0.35,
+        -1.8599999999999999
+      ],
+      "scale": [
+        0.6999999999999993,
+        0.7,
+        0.28
+      ]
+    },
+    {
+      "name": "barrier-l3",
+      "mesh": 5,
+      "translation": [
+        -5.5,
+        0.35,
+        -4.459999999999999
+      ],
+      "scale": [
+        0.6999999999999993,
+        0.7,
+        0.28000000000000025
+      ]
+    },
+    {
+      "name": "barrier-l5",
+      "mesh": 5,
+      "translation": [
+        -5.5,
+        0.35,
+        -7.0600000000000005
+      ],
+      "scale": [
+        0.6999999999999993,
+        0.7,
+        0.28000000000000025
+      ]
+    },
+    {
+      "name": "barrier-l7",
+      "mesh": 5,
+      "translation": [
+        -5.5,
+        0.35,
+        -9.66
+      ],
+      "scale": [
+        0.6999999999999993,
+        0.7,
+        0.27999999999999936
+      ]
+    },
+    {
+      "name": "barrier-r2",
+      "mesh": 5,
+      "translation": [
+        5.5,
+        0.35,
+        -3.1599999999999997
+      ],
+      "scale": [
+        0.6999999999999993,
+        0.7,
+        0.28000000000000025
+      ]
+    },
+    {
+      "name": "barrier-r4",
+      "mesh": 5,
+      "translation": [
+        5.5,
+        0.35,
+        -5.76
+      ],
+      "scale": [
+        0.6999999999999993,
+        0.7,
+        0.28000000000000025
+      ]
+    },
+    {
+      "name": "barrier-r6",
+      "mesh": 5,
+      "translation": [
+        5.5,
+        0.35,
+        -8.36
+      ],
+      "scale": [
+        0.6999999999999993,
+        0.7,
+        0.27999999999999936
+      ]
+    },
+    {
+      "name": "barrier-r8",
+      "mesh": 5,
+      "translation": [
+        5.5,
+        0.35,
+        -10.96
+      ],
+      "scale": [
+        0.6999999999999993,
+        0.7,
+        0.27999999999999936
+      ]
+    },
+    {
+      "name": "building-l1",
+      "mesh": 0,
+      "translation": [
+        -7.699999999999999,
+        1.6,
+        -0.30000000000000004
+      ],
+      "scale": [
+        2.999999999999999,
+        3.2,
+        1.2
+      ]
+    },
+    {
+      "name": "building-l2",
+      "mesh": 0,
+      "translation": [
+        -7.9,
+        2.0500000000000003,
+        -2.1999999999999997
+      ],
+      "scale": [
+        2.5999999999999988,
+        4.1000000000000005,
+        1.2
+      ]
+    },
+    {
+      "name": "building-l3",
+      "mesh": 0,
+      "translation": [
+        -7.699999999999999,
+        2.5,
+        -4.1
+      ],
+      "scale": [
+        2.999999999999999,
+        5,
+        1.2000000000000002
+      ]
+    },
+    {
+      "name": "building-l4",
+      "mesh": 0,
+      "translation": [
+        -7.9,
+        1.6,
+        -6
+      ],
+      "scale": [
+        2.5999999999999988,
+        3.2,
+        1.2000000000000002
+      ]
+    },
+    {
+      "name": "building-l5",
+      "mesh": 0,
+      "translation": [
+        -7.699999999999999,
+        2.0500000000000003,
+        -7.9
+      ],
+      "scale": [
+        2.999999999999999,
+        4.1000000000000005,
+        1.2000000000000002
+      ]
+    },
+    {
+      "name": "building-l6",
+      "mesh": 0,
+      "translation": [
+        -7.9,
+        2.5,
+        -9.8
+      ],
+      "scale": [
+        2.5999999999999988,
+        5,
+        1.1999999999999993
+      ]
+    },
+    {
+      "name": "building-l7",
+      "mesh": 0,
+      "translation": [
+        -7.699999999999999,
+        1.6,
+        -11.7
+      ],
+      "scale": [
+        2.999999999999999,
+        3.2,
+        1.1999999999999993
+      ]
+    },
+    {
+      "name": "building-r1",
+      "mesh": 0,
+      "translation": [
+        7.699999999999999,
+        1.6,
+        -0.30000000000000004
+      ],
+      "scale": [
+        2.999999999999999,
+        3.2,
+        1.2
+      ]
+    },
+    {
+      "name": "building-r2",
+      "mesh": 0,
+      "translation": [
+        7.9,
+        2.0500000000000003,
+        -2.1999999999999997
+      ],
+      "scale": [
+        2.5999999999999988,
+        4.1000000000000005,
+        1.2
+      ]
+    },
+    {
+      "name": "building-r3",
+      "mesh": 0,
+      "translation": [
+        7.699999999999999,
+        2.5,
+        -4.1
+      ],
+      "scale": [
+        2.999999999999999,
+        5,
+        1.2000000000000002
+      ]
+    },
+    {
+      "name": "building-r4",
+      "mesh": 0,
+      "translation": [
+        7.9,
+        1.6,
+        -6
+      ],
+      "scale": [
+        2.5999999999999988,
+        3.2,
+        1.2000000000000002
+      ]
+    },
+    {
+      "name": "building-r5",
+      "mesh": 0,
+      "translation": [
+        7.699999999999999,
+        2.0500000000000003,
+        -7.9
+      ],
+      "scale": [
+        2.999999999999999,
+        4.1000000000000005,
+        1.2000000000000002
+      ]
+    },
+    {
+      "name": "building-r6",
+      "mesh": 0,
+      "translation": [
+        7.9,
+        2.5,
+        -9.8
+      ],
+      "scale": [
+        2.5999999999999988,
+        5,
+        1.1999999999999993
+      ]
+    },
+    {
+      "name": "building-r7",
+      "mesh": 0,
+      "translation": [
+        7.699999999999999,
+        1.6,
+        -11.7
+      ],
+      "scale": [
+        2.999999999999999,
+        3.2,
+        1.1999999999999993
+      ]
+    },
+    {
+      "name": "crate-l2",
+      "mesh": 1,
+      "translation": [
+        -5.7,
+        0.325,
+        -2.1750000000000003
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.55
+      ]
+    },
+    {
+      "name": "crate-l4",
+      "mesh": 1,
+      "translation": [
+        -5.7,
+        0.325,
+        -4.675000000000001
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.5499999999999998
+      ]
+    },
+    {
+      "name": "crate-l6",
+      "mesh": 1,
+      "translation": [
+        -5.7,
+        0.325,
+        -7.175000000000001
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.5499999999999998
+      ]
+    },
+    {
+      "name": "crate-l8",
+      "mesh": 1,
+      "translation": [
+        -5.7,
+        0.325,
+        -9.674999999999999
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.5500000000000007
+      ]
+    },
+    {
+      "name": "crate-r1",
+      "mesh": 1,
+      "translation": [
+        5.7,
+        0.325,
+        -0.9249999999999999
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.55
+      ]
+    },
+    {
+      "name": "crate-r3",
+      "mesh": 1,
+      "translation": [
+        5.7,
+        0.325,
+        -3.4250000000000003
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.5499999999999998
+      ]
+    },
+    {
+      "name": "crate-r5",
+      "mesh": 1,
+      "translation": [
+        5.7,
+        0.325,
+        -5.925000000000001
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.5499999999999998
+      ]
+    },
+    {
+      "name": "crate-r7",
+      "mesh": 1,
+      "translation": [
+        5.7,
+        0.325,
+        -8.424999999999999
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.5500000000000007
+      ]
+    },
+    {
+      "name": "crate-r9",
+      "mesh": 1,
+      "translation": [
+        5.7,
+        0.325,
+        -10.924999999999999
+      ],
+      "scale": [
+        0.5999999999999996,
+        0.65,
+        0.5500000000000007
+      ]
+    },
+    {
+      "name": "lamp-l2",
+      "mesh": 4,
+      "translation": [
+        -6,
+        1.8,
+        -2.05
+      ],
+      "scale": [
+        0.1999999999999993,
+        3.6,
+        0.19999999999999996
+      ]
+    },
+    {
+      "name": "lamp-l4",
+      "mesh": 4,
+      "translation": [
+        -6,
+        1.8,
+        -5.15
+      ],
+      "scale": [
+        0.1999999999999993,
+        3.6,
+        0.20000000000000018
+      ]
+    },
+    {
+      "name": "lamp-l6",
+      "mesh": 4,
+      "translation": [
+        -6,
+        1.8,
+        -8.25
+      ],
+      "scale": [
+        0.1999999999999993,
+        3.6,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "lamp-l8",
+      "mesh": 4,
+      "translation": [
+        -6,
+        1.8,
+        -11.35
+      ],
+      "scale": [
+        0.1999999999999993,
+        3.6,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "lamp-r1",
+      "mesh": 4,
+      "translation": [
+        6,
+        1.8,
+        -0.5
+      ],
+      "scale": [
+        0.1999999999999993,
+        3.6,
+        0.2
+      ]
+    },
+    {
+      "name": "lamp-r3",
+      "mesh": 4,
+      "translation": [
+        6,
+        1.8,
+        -3.6
+      ],
+      "scale": [
+        0.1999999999999993,
+        3.6,
+        0.20000000000000018
+      ]
+    },
+    {
+      "name": "lamp-r5",
+      "mesh": 4,
+      "translation": [
+        6,
+        1.8,
+        -6.699999999999999
+      ],
+      "scale": [
+        0.1999999999999993,
+        3.6,
+        0.20000000000000018
+      ]
+    },
+    {
+      "name": "lamp-r7",
+      "mesh": 4,
+      "translation": [
+        6,
+        1.8,
+        -9.8
+      ],
+      "scale": [
+        0.1999999999999993,
+        3.6,
+        0.1999999999999993
+      ]
+    },
+    {
+      "name": "ground",
+      "mesh": 6,
+      "translation": [
+        0,
+        -0.125,
+        -5
+      ],
+      "scale": [
+        28,
+        0.25,
+        22
+      ]
+    },
+    {
+      "name": "road-center",
+      "mesh": 7,
+      "translation": [
+        0,
+        0.015,
+        -5
+      ],
+      "scale": [
+        6.4,
+        0.03,
+        21
+      ]
+    },
+    {
+      "name": "sidewalk-left",
+      "mesh": 8,
+      "translation": [
+        -4.675,
+        0.060000000000000005,
+        -5
+      ],
+      "scale": [
+        2.65,
+        0.08,
+        21
+      ]
+    },
+    {
+      "name": "sidewalk-right",
+      "mesh": 8,
+      "translation": [
+        4.675,
+        0.060000000000000005,
+        -5
+      ],
+      "scale": [
+        2.65,
+        0.08,
+        21
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "unit-cube-building",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-crate",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 1
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-barrel",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 2
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-sign",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 3
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-lamp",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 4
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-barrier",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 5
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-ground",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 6
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-road",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 7
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-sidewalk",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 8
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "mat-building",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.42,
+          0.44,
+          0.46,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "name": "mat-crate",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.52,
+          0.36,
+          0.22,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "name": "mat-barrel",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.22,
+          0.34,
+          0.55,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "name": "mat-sign",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.75,
+          0.62,
+          0.28,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "name": "mat-lamp",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.1,
+          0.1,
+          0.12,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "name": "mat-barrier",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.72,
+          0.18,
+          0.14,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "name": "mat-ground",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.25,
+          0.27,
+          0.28,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "name": "mat-road",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.12,
+          0.13,
+          0.14,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "name": "mat-sidewalk",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.48,
+          0.49,
+          0.47,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 648,
+      "uri": "data:application/octet-stream;base64,AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcA"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 288,
+      "byteLength": 288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 576,
+      "byteLength": 72,
+      "target": 34963
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3",
+      "min": [
+        -0.5,
+        -0.5,
+        -0.5
+      ],
+      "max": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    }
+  ]
+}

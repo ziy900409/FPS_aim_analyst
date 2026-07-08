@@ -1,0 +1,436 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "FPS_aim_analyst WP-19 T2 field-low generator (original geometry, CC0)",
+    "copyright": "CC0 1.0 — original work, FPS_aim_analyst"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "field-low",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "rock-r1",
+      "mesh": 1,
+      "translation": [
+        5.05,
+        0.5,
+        -1
+      ],
+      "scale": [
+        1.0999999999999996,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "tree-r1",
+      "mesh": 0,
+      "translation": [
+        5.5,
+        1.6,
+        -3
+      ],
+      "scale": [
+        1,
+        3.2,
+        1
+      ]
+    },
+    {
+      "name": "rock-r2",
+      "mesh": 1,
+      "translation": [
+        7.05,
+        0.65,
+        -4.5
+      ],
+      "scale": [
+        1.0999999999999996,
+        1.3,
+        1
+      ]
+    },
+    {
+      "name": "tree-r2",
+      "mesh": 0,
+      "translation": [
+        6,
+        1.3,
+        -6
+      ],
+      "scale": [
+        1,
+        2.6,
+        1
+      ]
+    },
+    {
+      "name": "rock-r3",
+      "mesh": 1,
+      "translation": [
+        8.5,
+        0.45,
+        -1.5
+      ],
+      "scale": [
+        1,
+        0.9,
+        1
+      ]
+    },
+    {
+      "name": "rock-l1",
+      "mesh": 1,
+      "translation": [
+        -5.05,
+        0.5,
+        -1
+      ],
+      "scale": [
+        1.0999999999999996,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "tree-l1",
+      "mesh": 0,
+      "translation": [
+        -5.5,
+        1.6,
+        -3
+      ],
+      "scale": [
+        1,
+        3.2,
+        1
+      ]
+    },
+    {
+      "name": "rock-l2",
+      "mesh": 1,
+      "translation": [
+        -7.05,
+        0.65,
+        -4.5
+      ],
+      "scale": [
+        1.0999999999999996,
+        1.3,
+        1
+      ]
+    },
+    {
+      "name": "tree-l2",
+      "mesh": 0,
+      "translation": [
+        -6,
+        1.3,
+        -6
+      ],
+      "scale": [
+        1,
+        2.6,
+        1
+      ]
+    },
+    {
+      "name": "rock-l3",
+      "mesh": 1,
+      "translation": [
+        -8.5,
+        0.45,
+        -1.5
+      ],
+      "scale": [
+        1,
+        0.9,
+        1
+      ]
+    },
+    {
+      "name": "tree-b1",
+      "mesh": 0,
+      "translation": [
+        -1.5,
+        1.75,
+        -8
+      ],
+      "scale": [
+        1,
+        3.5,
+        1
+      ]
+    },
+    {
+      "name": "tree-b2",
+      "mesh": 0,
+      "translation": [
+        1.5,
+        1.75,
+        -8.5
+      ],
+      "scale": [
+        1,
+        3.5,
+        1
+      ]
+    },
+    {
+      "name": "rock-b1",
+      "mesh": 1,
+      "translation": [
+        -3.5,
+        0.6,
+        -7.5
+      ],
+      "scale": [
+        1,
+        1.2,
+        1
+      ]
+    },
+    {
+      "name": "rock-b2",
+      "mesh": 1,
+      "translation": [
+        3.5,
+        0.6,
+        -7.5
+      ],
+      "scale": [
+        1,
+        1.2,
+        1
+      ]
+    },
+    {
+      "name": "tree-b3",
+      "mesh": 0,
+      "translation": [
+        -5.5,
+        1.5,
+        -8.5
+      ],
+      "scale": [
+        1,
+        3,
+        1
+      ]
+    },
+    {
+      "name": "tree-b4",
+      "mesh": 0,
+      "translation": [
+        5.5,
+        1.5,
+        -8.5
+      ],
+      "scale": [
+        1,
+        3,
+        1
+      ]
+    },
+    {
+      "name": "ground",
+      "mesh": 3,
+      "translation": [
+        0,
+        -0.15,
+        -4
+      ],
+      "scale": [
+        28,
+        0.3,
+        24
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "unit-cube-tree",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-rock",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 1
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-crate",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 2
+        }
+      ]
+    },
+    {
+      "name": "unit-cube-ground",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 3
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "mat-tree",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.24,
+          0.42,
+          0.19,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.9
+      }
+    },
+    {
+      "name": "mat-rock",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.45,
+          0.46,
+          0.48,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.9
+      }
+    },
+    {
+      "name": "mat-crate",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.5,
+          0.36,
+          0.22,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.9
+      }
+    },
+    {
+      "name": "mat-ground",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.3,
+          0.36,
+          0.22,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.9
+      }
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 648,
+      "uri": "data:application/octet-stream;base64,AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcA"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 288,
+      "byteLength": 288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 576,
+      "byteLength": 72,
+      "target": 34963
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3",
+      "min": [
+        -0.5,
+        -0.5,
+        -0.5
+      ],
+      "max": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    }
+  ]
+}

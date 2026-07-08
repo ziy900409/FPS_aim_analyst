@@ -11,6 +11,10 @@ import { CS2_PROFILE } from '../../src/sim/MovementController.ts';
 import { createDrillRunner } from '../../src/drill/DrillRunner.ts';
 import { createDataRecorder, type DataRecorderSnapshot } from '../../src/data/DataRecorder.ts';
 import { loadDrill } from '../../src/drill/DrillLoader.ts';
+import type { SceneConfig } from '../../src/scene/SceneConfig.ts';
+import { fieldLow } from '../../src/scene/scenes/field-low.ts';
+import { placeholderRoom } from '../../src/scene/scenes/placeholder-room.ts';
+import { urbanHigh } from '../../src/scene/scenes/urban-high.ts';
 
 /**
  * 決定性回歸（自動化）★M1 守護 — WP-9 / T3（FR-9.3）
@@ -88,14 +92,15 @@ function snap(s: SharedState): FullSnap {
  * 收尾回傳 DataRecorder 快照（逐 tick + 事件）與相位。clock 只提供 base（=0）；真正每幀驅動源是
  * `pump(now)`（正式/測試共用同一函式）。**不注入 camera**（命中屬外部每-幀耦合，見檔頭範圍說明）。
  */
-function runFrames(absTimes: number[]): RunResult {
+function runFrames(absTimes: number[], scene?: SceneConfig): RunResult {
+  const config = scene === undefined ? CONFIG : loadDrill(drillJson, scene);
   const state = createSharedState();
   const clock: Clock = { now: () => CLOCK_BASE };
   const recorder = createDataRecorder({ simHz: SIM_HZ });
-  const targetManager = createTargetManager(CONFIG);
+  const targetManager = createTargetManager(config);
   const drillRunner = createDrillRunner(state, targetManager);
   const sim = createSimLoop(state, clock, SIM_HZ, targetManager, undefined, drillRunner, recorder);
-  drillRunner.start(CONFIG); // 先 start（其 resetState 會 clear 輸入 ring）……
+  drillRunner.start(config); // 先 start（其 resetState 會 clear 輸入 ring）……
   for (const ev of syntheticInputs()) pushEvent(state, ev); // ……再 up-front 全推合成輸入（避免被 reset 清掉）
 
   const samples: Sample[] = [];
@@ -191,6 +196,22 @@ describe('決定性回歸（完整 sim）— 記錄資料集（ticks + events）
       expect(phase).toBe(CANON.phase);
     });
   }
+});
+
+describe('WP-19 T4 — 場景純裝飾：跨場景 sim 狀態與記錄資料 bit-exact 相同', () => {
+  it('placeholder-room / field-low / urban-high 使用同輸入序列時完整 sim 輸出一致', () => {
+    const abs = sequences['穩定 144 Hz'];
+    const placeholder = runFrames(abs, placeholderRoom);
+    const field = runFrames(abs, fieldLow);
+    const urban = runFrames(abs, urbanHigh);
+
+    expect(field.samples).toEqual(placeholder.samples);
+    expect(field.snapshot).toEqual(placeholder.snapshot);
+    expect(field.phase).toBe(placeholder.phase);
+    expect(urban.samples).toEqual(placeholder.samples);
+    expect(urban.snapshot).toEqual(placeholder.snapshot);
+    expect(urban.phase).toBe(placeholder.phase);
+  });
 });
 
 describe('決定性回歸（完整 sim）— 完整 sim 邏輯確實被涵蓋（movement / 急停 / 輸入消費 / 目標）', () => {

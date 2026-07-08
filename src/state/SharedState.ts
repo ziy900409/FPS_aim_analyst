@@ -129,6 +129,8 @@ export interface SharedState {
   targets: TargetState[];
   /** 各目標可見瞬間的 `performance.now()` 時間戳（量測時鐘域，WP-4 寫入；先空）。 */
   tVisible: Map<string, number>;
+  /** runtime validity observations;純觀測旗標，不 clamp、不改 sim 演進。 */
+  validity: { playerCorridorExceeded: boolean };
   /**
    * 首發旗標記憶（WP-5 / T2，FR-5.2）：已計首發的 peekId（= active 目標 id）。`firstShotGate`
    * 每 peek 只放行第一發；新 peek（唯一新 id）隱式 reset。初始 `null`（首發尚未計）。
@@ -239,6 +241,7 @@ export function createSharedState(): SharedState {
     aim: { yaw: 0, pitch: 0 },
     targets: [],
     tVisible: new Map(),
+    validity: { playerCorridorExceeded: false },
     firstShotPeekId: null,
   };
 }
@@ -283,5 +286,6 @@ export function resetState(state: SharedState = sharedState): void {
   state.aim.pitch = 0;
   state.targets.length = 0;
   state.tVisible.clear();
+  state.validity.playerCorridorExceeded = false;
   state.firstShotPeekId = null; // 首發旗標記憶歸零（重開 drill → 首發重新從第一 peek 計）
 }

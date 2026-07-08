@@ -74,14 +74,23 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `lateEventCount` | number | count | Yes | input buffer telemetry | Non-negative integer. |
 | `bufferOverflow` | boolean | `true` / `false` | Yes | input buffer telemetry | Marks dropped/late input-buffer data. |
 | `recorderOverflow` | boolean | `true` / `false` | Yes | recorder snapshot | If true, arena refused later tick writes and preserved oldest rows. |
-| `suspect` | boolean | `true` / `false` | Yes | derived validity flag | `true` if `bufferOverflow` or `recorderOverflow` is true. |
+| `suspect` | boolean | `true` / `false` | Yes | derived validity flag | `true` if overflow or a runtime validity observer marks the run suspect. |
 | `spawn` | object | reserved optional | No | stage3/WP-21 | v2 reserved block for `seed`, motion, and spawn-area snapshots. WP-16 writes seed/motion when available. |
-| `scene` | object | reserved optional | No | stage3/WP-19 | v2 reserved scene metadata block. Additive; absence means scene system not active. |
+| `scene` | object | scene condition | No | stage3/WP-19 | `{ sceneId, assetPackVersion, clutterTier, fallback }`. Additive; absence means scene system not active. |
 | `display` | object | reserved optional | No | stage3/WP-20 | v2 reserved display/session setup metadata block. |
 | `frames` | object/array | reserved optional | No | stage3/WP-20 | v2 reserved frame-time log block. |
 | `session` | object | reserved optional | No | stage3/WP-20 | `participantId` / `sessionLabel` cross-session join keys. |
 
-`buildExportPayload()` also ORs `meta.recorderOverflow` with `snapshot.recorderOverflow`, then recomputes `suspect` from the resulting recorder flag.
+`buildExportPayload()` also ORs `meta.recorderOverflow` with `snapshot.recorderOverflow`, then preserves any existing `meta.suspect` flag.
+
+#### `meta.scene`
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `sceneId` | string | scene config id | Yes | active `SceneConfig` | Example: `placeholder-room`, `field-low`. |
+| `assetPackVersion` | string | asset/config version | Yes | active `SceneConfig` | Lets analyses group exports by scene asset revision. |
+| `clutterTier` | string | `low`, `mid`, `high` | Yes | active `SceneConfig` | Scene clutter condition. |
+| `fallback` | boolean | `true` / `false` | Yes | scene loader | `true` when the requested scene asset failed and render fell back to placeholder-room. |
 
 ### `ticks[]`
 

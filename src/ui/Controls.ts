@@ -3,17 +3,26 @@ export interface DrillControlOption {
   label: string;
 }
 
+export interface SceneControlOption {
+  id: string;
+  label: string;
+}
+
 export interface ControlsOptions {
   drills: DrillControlOption[];
+  scenes: SceneControlOption[];
   selectedDrillId: string;
+  selectedSceneId: string;
   onRestart: () => void | Promise<void>;
   onLoadDrill: (drillId: string) => void | Promise<void>;
+  onLoadScene: (sceneId: string) => void | Promise<void>;
   parent?: HTMLElement;
 }
 
 export interface ControlsHandle {
   setVisible(visible: boolean): void;
   setSelectedDrill(drillId: string): void;
+  setSelectedScene(sceneId: string): void;
   dispose(): void;
 }
 
@@ -45,20 +54,7 @@ export function createControls(options: ControlsOptions): ControlsHandle {
   ].join(';');
 
   const restartButton = makeButton('Restart', 'Restart current drill');
-  const select = document.createElement('select');
-  select.id = 'drill-select';
-  select.title = 'Select drill';
-  select.style.cssText = [
-    'height:34px',
-    'max-width:min(52vw,260px)',
-    'padding:0 10px',
-    'border:1px solid rgba(255,255,255,0.18)',
-    'border-radius:6px',
-    'font:650 12px/1 system-ui,sans-serif',
-    'color:#e6e9ec',
-    'background:rgba(15,18,21,0.96)',
-    'cursor:pointer',
-  ].join(';');
+  const select = makeSelect('drill-select', 'Select drill');
 
   for (const drill of options.drills) {
     const option = document.createElement('option');
@@ -69,12 +65,26 @@ export function createControls(options: ControlsOptions): ControlsHandle {
   select.value = options.selectedDrillId;
 
   const loadButton = makeButton('Load', 'Load selected drill');
-  root.append(restartButton, select, loadButton);
+  const sceneSelect = makeSelect('scene-select', 'Select scene');
+  for (const scene of options.scenes) {
+    const option = document.createElement('option');
+    option.value = scene.id;
+    option.textContent = scene.label;
+    sceneSelect.appendChild(option);
+  }
+  sceneSelect.value = options.selectedSceneId;
+  const loadSceneButton = makeButton('Scene', 'Load selected scene');
+  const allControls = [restartButton, select, loadButton, sceneSelect, loadSceneButton];
+
+  root.append(restartButton, select, loadButton, sceneSelect, loadSceneButton);
   parent.appendChild(root);
 
-  restartButton.addEventListener('click', () => void runControl([restartButton, loadButton, select], options.onRestart));
+  restartButton.addEventListener('click', () => void runControl(allControls, options.onRestart));
   loadButton.addEventListener('click', () =>
-    void runControl([restartButton, loadButton, select], () => options.onLoadDrill(select.value)),
+    void runControl(allControls, () => options.onLoadDrill(select.value)),
+  );
+  loadSceneButton.addEventListener('click', () =>
+    void runControl(allControls, () => options.onLoadScene(sceneSelect.value)),
   );
 
   return {
@@ -86,10 +96,31 @@ export function createControls(options: ControlsOptions): ControlsHandle {
     setSelectedDrill(drillId: string): void {
       select.value = drillId;
     },
+    setSelectedScene(sceneId: string): void {
+      sceneSelect.value = sceneId;
+    },
     dispose(): void {
       root.remove();
     },
   };
+}
+
+function makeSelect(id: string, title: string): HTMLSelectElement {
+  const select = document.createElement('select');
+  select.id = id;
+  select.title = title;
+  select.style.cssText = [
+    'height:34px',
+    'max-width:min(52vw,260px)',
+    'padding:0 10px',
+    'border:1px solid rgba(255,255,255,0.18)',
+    'border-radius:6px',
+    'font:650 12px/1 system-ui,sans-serif',
+    'color:#e6e9ec',
+    'background:rgba(15,18,21,0.96)',
+    'cursor:pointer',
+  ].join(';');
+  return select;
 }
 
 function makeButton(label: string, title: string): HTMLButtonElement {

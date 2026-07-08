@@ -7,7 +7,7 @@
 | **相依** | T2(GLTF 場景)+ T3(切換即重跑淨空驗證) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | MODIFY `src/main.ts`(切換掛線 + 載入時序 gating)、`src/ui/Controls.ts`(場景選擇)、`src/data/metadata.ts`(meta.scene 填值)、`src/loop/__tests__/determinism.test.ts`(跨場景不變性)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -31,11 +31,11 @@
 
 ## Steps
 
-- [ ] 切換 UI + 載入時序 gating;競態手動驗證(快速連續切換)記 progress。
-- [ ] meta.scene 填值 + 匯出測試(含 fallback 情境)。
-- [ ] 跨場景決定性斷言測試綠(兩場景同輸入 → 狀態逐位一致)。
-- [ ] 走廊逸出 → suspect 測試(合成輸入把玩家推出走廊)。
-- [ ] `npx vitest run` 全綠。
+- [x] 切換 UI + 載入時序 gating;競態手動驗證(快速連續切換)記 progress。
+- [x] meta.scene 填值 + 匯出測試(含 fallback 情境)。
+- [x] 跨場景決定性斷言測試綠(兩場景同輸入 → 狀態逐位一致)。
+- [x] 走廊逸出 → suspect 測試(合成輸入把玩家推出走廊)。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 
