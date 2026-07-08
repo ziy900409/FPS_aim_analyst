@@ -182,6 +182,12 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
     },
+    scene: {
+      sceneId: activeSceneConfig.sceneId,
+      assetPackVersion: activeSceneConfig.assetPackVersion,
+      clutterTier: activeSceneConfig.clutterTier,
+      fallback: activeSceneFallback,
+    },
   });
   return buildExportPayload(meta, snapshot);
 }

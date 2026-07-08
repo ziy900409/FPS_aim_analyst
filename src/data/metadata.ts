@@ -15,6 +15,13 @@ export interface SpawnMeta {
   spawnArea?: unknown;
 }
 
+export interface SceneMeta {
+  sceneId: string;
+  assetPackVersion: string;
+  clutterTier: 'low' | 'mid' | 'high';
+  fallback: boolean;
+}
+
 export interface Meta {
   schemaVersion: 2;
   drillId: string;
@@ -38,7 +45,7 @@ export interface Meta {
   recorderOverflow: boolean;
   suspect: boolean;
   spawn?: SpawnMeta;
-  scene?: unknown;
+  scene?: SceneMeta;
   display?: unknown;
   frames?: unknown;
   session?: { participantId?: string; sessionLabel?: string };
@@ -62,7 +69,7 @@ export interface CollectMetaArgs {
   bufferOverflow?: boolean | number;
   recorderOverflow?: boolean;
   spawn?: SpawnMeta;
-  scene?: unknown;
+  scene?: SceneMeta;
   display?: unknown;
   frames?: unknown;
   session?: { participantId?: string; sessionLabel?: string };
@@ -93,6 +100,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const lateEventCount = requireNonNegativeInteger(args.lateEventCount ?? 0, 'lateEventCount');
   const bufferOverflow = normalizeOverflow(args.bufferOverflow ?? false, 'bufferOverflow');
   const recorderOverflow = requireBoolean(args.recorderOverflow ?? false, 'recorderOverflow');
+  const scene = args.scene === undefined ? undefined : requireSceneMeta(args.scene);
 
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -117,10 +125,20 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     recorderOverflow,
     suspect: bufferOverflow || recorderOverflow,
     ...(args.spawn !== undefined ? { spawn: args.spawn } : {}),
-    ...(args.scene !== undefined ? { scene: args.scene } : {}),
+    ...(scene !== undefined ? { scene } : {}),
     ...(args.display !== undefined ? { display: args.display } : {}),
     ...(args.frames !== undefined ? { frames: args.frames } : {}),
     ...(args.session !== undefined ? { session: args.session } : {}),
+  };
+}
+
+function requireSceneMeta(value: SceneMeta): SceneMeta {
+  const scene = requireRecord(value, 'scene');
+  return {
+    sceneId: requireNonEmptyString(scene.sceneId, 'scene.sceneId'),
+    assetPackVersion: requireNonEmptyString(scene.assetPackVersion, 'scene.assetPackVersion'),
+    clutterTier: requireClutterTier(scene.clutterTier, 'scene.clutterTier'),
+    fallback: requireBoolean(scene.fallback, 'scene.fallback'),
   };
 }
 
@@ -173,6 +191,20 @@ function requireBoolean(value: unknown, name: string): boolean {
 
 function requireNonEmptyString(value: unknown, name: string): string {
   if (typeof value !== 'string' || value.trim() === '') throw new Error(`${name} must be a non-empty string`);
+  return value;
+}
+
+function requireRecord(value: unknown, name: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`${name} must be an object`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function requireClutterTier(value: unknown, name: string): SceneMeta['clutterTier'] {
+  if (value !== 'low' && value !== 'mid' && value !== 'high') {
+    throw new Error(`${name} must be low, mid, or high`);
+  }
   return value;
 }
 

@@ -248,7 +248,7 @@
       "source_file": "playwright.config.ts",
       "source_location": "L1",
       "id": "playwright_config_ts",
-      "community": 37,
+      "community": 38,
       "norm_label": "playwright.config.ts"
     },
     {
@@ -257,7 +257,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L1",
       "id": "vite_config_ts",
-      "community": 31,
+      "community": 32,
       "norm_label": "vite.config.ts"
     },
     {
@@ -266,7 +266,7 @@
       "source_file": "vite.config.ts",
       "source_location": "L11",
       "id": "fps_aim_analyst_vite_config_coopcoep",
-      "community": 31,
+      "community": 32,
       "norm_label": "coopcoep()"
     },
     {
@@ -275,7 +275,7 @@
       "source_file": "scripts/gen-field-low-gltf.mjs",
       "source_location": "L1",
       "id": "scripts_gen_field_low_gltf_mjs",
-      "community": 32,
+      "community": 33,
       "norm_label": "gen-field-low-gltf.mjs"
     },
     {
@@ -284,7 +284,7 @@
       "source_file": "scripts/gen-field-low-gltf.mjs",
       "source_location": "L92",
       "id": "scripts_gen_field_low_gltf_boxnode",
-      "community": 32,
+      "community": 33,
       "norm_label": "boxnode()"
     },
     {
@@ -336,7 +336,7 @@
       "label": "exportBasename()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L189",
+      "source_location": "L195",
       "id": "src_main_exportbasename",
       "community": 0,
       "norm_label": "exportbasename()"
@@ -345,7 +345,7 @@
       "label": "onExportJSON()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L194",
+      "source_location": "L200",
       "id": "src_main_onexportjson",
       "community": 0,
       "norm_label": "onexportjson()"
@@ -354,7 +354,7 @@
       "label": "onExportCSV()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L198",
+      "source_location": "L204",
       "id": "src_main_onexportcsv",
       "community": 0,
       "norm_label": "onexportcsv()"
@@ -363,7 +363,7 @@
       "label": "buildSimLoop()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L263",
+      "source_location": "L269",
       "id": "src_main_buildsimloop",
       "community": 0,
       "norm_label": "buildsimloop()"
@@ -372,7 +372,7 @@
       "label": "showResult()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L308",
+      "source_location": "L314",
       "id": "src_main_showresult",
       "community": 0,
       "norm_label": "showresult()"
@@ -381,7 +381,7 @@
       "label": "syncCameraBase()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L375",
+      "source_location": "L381",
       "id": "src_main_synccamerabase",
       "community": 0,
       "norm_label": "synccamerabase()"
@@ -390,7 +390,7 @@
       "label": "resetRunPresentation()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L398",
+      "source_location": "L404",
       "id": "src_main_resetrunpresentation",
       "community": 0,
       "norm_label": "resetrunpresentation()"
@@ -399,7 +399,7 @@
       "label": "restartActiveDrill()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L409",
+      "source_location": "L415",
       "id": "src_main_restartactivedrill",
       "community": 0,
       "norm_label": "restartactivedrill()"
@@ -408,7 +408,7 @@
       "label": "loadDrillById()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L417",
+      "source_location": "L423",
       "id": "src_main_loaddrillbyid",
       "community": 0,
       "norm_label": "loaddrillbyid()"
@@ -417,7 +417,7 @@
       "label": "loadSceneById()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L434",
+      "source_location": "L440",
       "id": "src_main_loadscenebyid",
       "community": 0,
       "norm_label": "loadscenebyid()"
@@ -426,7 +426,7 @@
       "label": "syncControlsVisibility()",
       "file_type": "code",
       "source_file": "src/main.ts",
-      "source_location": "L477",
+      "source_location": "L483",
       "id": "src_main_synccontrolsvisibility",
       "community": 0,
       "norm_label": "synccontrolsvisibility()"
@@ -437,7 +437,7 @@
       "source_file": "src/vite-env.d.ts",
       "source_location": "L1",
       "id": "src_vite_env_d_ts",
-      "community": 38,
+      "community": 39,
       "norm_label": "vite-env.d.ts"
     },
     {
@@ -651,16 +651,25 @@
       "label": "collectMeta()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L76",
+      "source_location": "L83",
       "id": "data_metadata_collectmeta",
       "community": 0,
       "norm_label": "collectmeta()"
     },
     {
+      "label": "requireSceneMeta()",
+      "file_type": "code",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L135",
+      "id": "data_metadata_requirescenemeta",
+      "community": 0,
+      "norm_label": "requirescenemeta()"
+    },
+    {
       "label": "measureDisplayHz()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L127",
+      "source_location": "L145",
       "id": "data_metadata_measuredisplayhz",
       "community": 0,
       "norm_label": "measuredisplayhz()"
@@ -669,7 +678,7 @@
       "label": "nextAnimationFrame()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L156",
+      "source_location": "L174",
       "id": "data_metadata_nextanimationframe",
       "community": 0,
       "norm_label": "nextanimationframe()"
@@ -678,7 +687,7 @@
       "label": "requireBackend()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L164",
+      "source_location": "L182",
       "id": "data_metadata_requirebackend",
       "community": 0,
       "norm_label": "requirebackend()"
@@ -687,7 +696,7 @@
       "label": "requireBoolean()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L169",
+      "source_location": "L187",
       "id": "data_metadata_requireboolean",
       "community": 0,
       "norm_label": "requireboolean()"
@@ -696,16 +705,34 @@
       "label": "requireNonEmptyString()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L174",
+      "source_location": "L192",
       "id": "data_metadata_requirenonemptystring",
       "community": 0,
       "norm_label": "requirenonemptystring()"
     },
     {
+      "label": "requireRecord()",
+      "file_type": "code",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L197",
+      "id": "data_metadata_requirerecord",
+      "community": 0,
+      "norm_label": "requirerecord()"
+    },
+    {
+      "label": "requireClutterTier()",
+      "file_type": "code",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L204",
+      "id": "data_metadata_requirecluttertier",
+      "community": 0,
+      "norm_label": "requirecluttertier()"
+    },
+    {
       "label": "requirePositiveFiniteNumber()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L179",
+      "source_location": "L211",
       "id": "data_metadata_requirepositivefinitenumber",
       "community": 0,
       "norm_label": "requirepositivefinitenumber()"
@@ -714,7 +741,7 @@
       "label": "requireFiniteNumber()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L186",
+      "source_location": "L218",
       "id": "data_metadata_requirefinitenumber",
       "community": 0,
       "norm_label": "requirefinitenumber()"
@@ -723,7 +750,7 @@
       "label": "requireNonNegativeInteger()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L193",
+      "source_location": "L225",
       "id": "data_metadata_requirenonnegativeinteger",
       "community": 0,
       "norm_label": "requirenonnegativeinteger()"
@@ -732,7 +759,7 @@
       "label": "normalizeOverflow()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L200",
+      "source_location": "L232",
       "id": "data_metadata_normalizeoverflow",
       "community": 0,
       "norm_label": "normalizeoverflow()"
@@ -741,7 +768,7 @@
       "label": "normalizeStartedAt()",
       "file_type": "code",
       "source_file": "src/data/metadata.ts",
-      "source_location": "L205",
+      "source_location": "L237",
       "id": "data_metadata_normalizestartedat",
       "community": 0,
       "norm_label": "normalizestartedat()"
@@ -878,7 +905,7 @@
       "source_file": "src/drill/counterstrafe_ad_v1.test.ts",
       "source_location": "L1",
       "id": "src_drill_counterstrafe_ad_v1_test_ts",
-      "community": 9,
+      "community": 10,
       "norm_label": "counterstrafe_ad_v1.test.ts"
     },
     {
@@ -887,7 +914,7 @@
       "source_file": "src/drill/DrillConfig.ts",
       "source_location": "L1",
       "id": "src_drill_drillconfig_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "drillconfig.ts"
     },
     {
@@ -932,7 +959,7 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L1",
       "id": "src_drill_drillrunner_test_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "drillrunner.test.ts"
     },
     {
@@ -941,7 +968,7 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L11",
       "id": "drill_drillrunner_test_makeconfig",
-      "community": 12,
+      "community": 10,
       "norm_label": "makeconfig()"
     },
     {
@@ -950,7 +977,7 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L26",
       "id": "drill_drillrunner_test_setup",
-      "community": 12,
+      "community": 10,
       "norm_label": "setup()"
     },
     {
@@ -959,7 +986,7 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L34",
       "id": "drill_drillrunner_test_fixedclock",
-      "community": 12,
+      "community": 10,
       "norm_label": "fixedclock()"
     },
     {
@@ -968,7 +995,7 @@
       "source_file": "src/drill/DrillRunner.test.ts",
       "source_location": "L39",
       "id": "drill_drillrunner_test_killcurrenttarget",
-      "community": 12,
+      "community": 10,
       "norm_label": "killcurrenttarget()"
     },
     {
@@ -977,7 +1004,7 @@
       "source_file": "src/drill/DrillRunner.ts",
       "source_location": "L1",
       "id": "src_drill_drillrunner_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "drillrunner.ts"
     },
     {
@@ -986,7 +1013,7 @@
       "source_file": "src/drill/DrillRunner.ts",
       "source_location": "L40",
       "id": "drill_drillrunner_createdrillrunner",
-      "community": 0,
+      "community": 10,
       "norm_label": "createdrillrunner()"
     },
     {
@@ -1247,7 +1274,7 @@
       "source_file": "src/loop/clock.ts",
       "source_location": "L1",
       "id": "src_loop_clock_ts",
-      "community": 12,
+      "community": 13,
       "norm_label": "clock.ts"
     },
     {
@@ -1256,7 +1283,7 @@
       "source_file": "src/loop/constants.ts",
       "source_location": "L1",
       "id": "src_loop_constants_ts",
-      "community": 10,
+      "community": 12,
       "norm_label": "constants.ts"
     },
     {
@@ -1301,7 +1328,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L1",
       "id": "src_loop_simloop_test_ts",
-      "community": 16,
+      "community": 15,
       "norm_label": "simloop.test.ts"
     },
     {
@@ -1310,7 +1337,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L17",
       "id": "loop_simloop_test_fixedclock",
-      "community": 16,
+      "community": 15,
       "norm_label": "fixedclock()"
     },
     {
@@ -1319,7 +1346,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L23",
       "id": "loop_simloop_test_cameralookingdownz",
-      "community": 16,
+      "community": 15,
       "norm_label": "cameralookingdownz()"
     },
     {
@@ -1328,7 +1355,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L31",
       "id": "loop_simloop_test_maketarget",
-      "community": 16,
+      "community": 15,
       "norm_label": "maketarget()"
     },
     {
@@ -1337,7 +1364,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L43",
       "id": "loop_simloop_test_tickadvancer",
-      "community": 16,
+      "community": 15,
       "norm_label": "tickadvancer()"
     },
     {
@@ -1346,7 +1373,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L53",
       "id": "loop_simloop_test_runtime",
-      "community": 16,
+      "community": 15,
       "norm_label": "runtime()"
     },
     {
@@ -1355,7 +1382,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L251",
       "id": "loop_simloop_test_fireat",
-      "community": 16,
+      "community": 15,
       "norm_label": "fireat()"
     },
     {
@@ -1364,7 +1391,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L284",
       "id": "loop_simloop_test_meanspreadradius",
-      "community": 16,
+      "community": 15,
       "norm_label": "meanspreadradius()"
     },
     {
@@ -1373,7 +1400,7 @@
       "source_file": "src/loop/SimLoop.test.ts",
       "source_location": "L306",
       "id": "loop_simloop_test_run",
-      "community": 16,
+      "community": 15,
       "norm_label": "run()"
     },
     {
@@ -1382,7 +1409,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L1",
       "id": "src_loop_simloop_ts",
-      "community": 10,
+      "community": 12,
       "norm_label": "simloop.ts"
     },
     {
@@ -1391,7 +1418,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L62",
       "id": "loop_simloop_applyinput",
-      "community": 10,
+      "community": 12,
       "norm_label": "applyinput()"
     },
     {
@@ -1400,7 +1427,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L109",
       "id": "loop_simloop_ballisticraycast",
-      "community": 10,
+      "community": 12,
       "norm_label": "ballisticraycast()"
     },
     {
@@ -1409,7 +1436,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L151",
       "id": "loop_simloop_projectmissontoengagementplane",
-      "community": 10,
+      "community": 12,
       "norm_label": "projectmissontoengagementplane()"
     },
     {
@@ -1418,7 +1445,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L170",
       "id": "loop_simloop_fireoneshot",
-      "community": 10,
+      "community": 12,
       "norm_label": "fireoneshot()"
     },
     {
@@ -1427,7 +1454,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L254",
       "id": "loop_simloop_schedulefire",
-      "community": 10,
+      "community": 12,
       "norm_label": "schedulefire()"
     },
     {
@@ -1436,7 +1463,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L275",
       "id": "loop_simloop_recordvisibleevents",
-      "community": 16,
+      "community": 15,
       "norm_label": "recordvisibleevents()"
     },
     {
@@ -1445,7 +1472,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L307",
       "id": "loop_simloop_simstep",
-      "community": 16,
+      "community": 15,
       "norm_label": "simstep()"
     },
     {
@@ -1454,7 +1481,7 @@
       "source_file": "src/loop/SimLoop.ts",
       "source_location": "L371",
       "id": "loop_simloop_createsimloop",
-      "community": 14,
+      "community": 10,
       "norm_label": "createsimloop()"
     },
     {
@@ -1463,7 +1490,7 @@
       "source_file": "src/loop/__tests__/ballistic-compose.test.ts",
       "source_location": "L1",
       "id": "src_loop_tests_ballistic_compose_test_ts",
-      "community": 10,
+      "community": 27,
       "norm_label": "ballistic-compose.test.ts"
     },
     {
@@ -1472,7 +1499,7 @@
       "source_file": "src/loop/__tests__/ballistic-compose.test.ts",
       "source_location": "L23",
       "id": "tests_ballistic_compose_test_fartarget",
-      "community": 10,
+      "community": 27,
       "norm_label": "fartarget()"
     },
     {
@@ -1481,7 +1508,7 @@
       "source_file": "src/loop/__tests__/ballistic-compose.test.ts",
       "source_location": "L35",
       "id": "tests_ballistic_compose_test_cameraatorigin",
-      "community": 10,
+      "community": 27,
       "norm_label": "cameraatorigin()"
     },
     {
@@ -1490,7 +1517,7 @@
       "source_file": "src/loop/__tests__/ballistic-compose.test.ts",
       "source_location": "L44",
       "id": "tests_ballistic_compose_test_killtracker",
-      "community": 10,
+      "community": 27,
       "norm_label": "killtracker()"
     },
     {
@@ -1499,7 +1526,7 @@
       "source_file": "src/loop/__tests__/ballistic-compose.test.ts",
       "source_location": "L57",
       "id": "tests_ballistic_compose_test_fireonce",
-      "community": 16,
+      "community": 27,
       "norm_label": "fireonce()"
     },
     {
@@ -1508,7 +1535,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L1",
       "id": "src_loop_tests_determinism_test_ts",
-      "community": 27,
+      "community": 11,
       "norm_label": "determinism.test.ts"
     },
     {
@@ -1517,7 +1544,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L44",
       "id": "tests_determinism_test_syntheticinputs",
-      "community": 27,
+      "community": 11,
       "norm_label": "syntheticinputs()"
     },
     {
@@ -1526,7 +1553,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L54",
       "id": "tests_determinism_test_freshstate",
-      "community": 27,
+      "community": 11,
       "norm_label": "freshstate()"
     },
     {
@@ -1535,7 +1562,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L60",
       "id": "tests_determinism_test_snap",
-      "community": 27,
+      "community": 11,
       "norm_label": "snap()"
     },
     {
@@ -1544,7 +1571,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L68",
       "id": "tests_determinism_test_runframes",
-      "community": 27,
+      "community": 11,
       "norm_label": "runframes()"
     },
     {
@@ -1553,7 +1580,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L85",
       "id": "tests_determinism_test_canonicaltrajectory",
-      "community": 27,
+      "community": 11,
       "norm_label": "canonicaltrajectory()"
     },
     {
@@ -1562,7 +1589,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L95",
       "id": "tests_determinism_test_framesat",
-      "community": 27,
+      "community": 11,
       "norm_label": "framesat()"
     },
     {
@@ -1571,7 +1598,7 @@
       "source_file": "src/loop/__tests__/determinism.test.ts",
       "source_location": "L103",
       "id": "tests_determinism_test_jitterframes",
-      "community": 27,
+      "community": 11,
       "norm_label": "jitterframes()"
     },
     {
@@ -1625,7 +1652,7 @@
       "source_file": "src/loop/__tests__/recoil-wiring.test.ts",
       "source_location": "L1",
       "id": "src_loop_tests_recoil_wiring_test_ts",
-      "community": 14,
+      "community": 1,
       "norm_label": "recoil-wiring.test.ts"
     },
     {
@@ -1634,7 +1661,7 @@
       "source_file": "src/loop/__tests__/recoil-wiring.test.ts",
       "source_location": "L28",
       "id": "tests_recoil_wiring_test_clonerecoil",
-      "community": 14,
+      "community": 1,
       "norm_label": "clonerecoil()"
     },
     {
@@ -1643,7 +1670,7 @@
       "source_file": "src/loop/__tests__/recoil-wiring.test.ts",
       "source_location": "L33",
       "id": "tests_recoil_wiring_test_baseclock",
-      "community": 14,
+      "community": 10,
       "norm_label": "baseclock()"
     },
     {
@@ -1652,7 +1679,7 @@
       "source_file": "src/loop/__tests__/recoil-wiring.test.ts",
       "source_location": "L42",
       "id": "tests_recoil_wiring_test_holdfire",
-      "community": 14,
+      "community": 10,
       "norm_label": "holdfire()"
     },
     {
@@ -1661,7 +1688,7 @@
       "source_file": "src/loop/__tests__/recoil-wiring.test.ts",
       "source_location": "L151",
       "id": "tests_recoil_wiring_test_run",
-      "community": 14,
+      "community": 10,
       "norm_label": "run()"
     },
     {
@@ -1850,7 +1877,7 @@
       "source_file": "src/recoil/adapter.test.ts",
       "source_location": "L1",
       "id": "src_recoil_adapter_test_ts",
-      "community": 10,
+      "community": 27,
       "norm_label": "adapter.test.ts"
     },
     {
@@ -1859,7 +1886,7 @@
       "source_file": "src/recoil/adapter.ts",
       "source_location": "L1",
       "id": "src_recoil_adapter_ts",
-      "community": 10,
+      "community": 27,
       "norm_label": "adapter.ts"
     },
     {
@@ -1868,7 +1895,7 @@
       "source_file": "src/recoil/adapter.ts",
       "source_location": "L33",
       "id": "recoil_adapter_punchtothreerad",
-      "community": 10,
+      "community": 27,
       "norm_label": "punchtothreerad()"
     },
     {
@@ -2372,7 +2399,7 @@
       "source_file": "src/render/ImpactView.test.ts",
       "source_location": "L1",
       "id": "src_render_impactview_test_ts",
-      "community": 11,
+      "community": 17,
       "norm_label": "impactview.test.ts"
     },
     {
@@ -2381,7 +2408,7 @@
       "source_file": "src/render/ImpactView.test.ts",
       "source_location": "L7",
       "id": "render_impactview_test_instanced",
-      "community": 11,
+      "community": 17,
       "norm_label": "instanced()"
     },
     {
@@ -2390,7 +2417,7 @@
       "source_file": "src/render/ImpactView.test.ts",
       "source_location": "L14",
       "id": "render_impactview_test_instancepos",
-      "community": 11,
+      "community": 17,
       "norm_label": "instancepos()"
     },
     {
@@ -2399,7 +2426,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L1",
       "id": "src_render_impactview_ts",
-      "community": 11,
+      "community": 17,
       "norm_label": "impactview.ts"
     },
     {
@@ -2408,7 +2435,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L23",
       "id": "render_impactview_impactview",
-      "community": 0,
+      "community": 17,
       "norm_label": "impactview"
     },
     {
@@ -2417,7 +2444,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L33",
       "id": "render_impactview_impactview_constructor",
-      "community": 0,
+      "community": 17,
       "norm_label": ".constructor()"
     },
     {
@@ -2426,7 +2453,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L47",
       "id": "render_impactview_impactview_sync",
-      "community": 0,
+      "community": 17,
       "norm_label": ".sync()"
     },
     {
@@ -2435,7 +2462,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L63",
       "id": "render_impactview_impactview_count",
-      "community": 0,
+      "community": 17,
       "norm_label": ".count()"
     },
     {
@@ -2444,7 +2471,7 @@
       "source_file": "src/render/ImpactView.ts",
       "source_location": "L68",
       "id": "render_impactview_impactview_dispose",
-      "community": 0,
+      "community": 17,
       "norm_label": ".dispose()"
     },
     {
@@ -2732,7 +2759,7 @@
       "source_file": "src/scene/architecture.test.ts",
       "source_location": "L1",
       "id": "src_scene_architecture_test_ts",
-      "community": 39,
+      "community": 40,
       "norm_label": "architecture.test.ts"
     },
     {
@@ -3065,7 +3092,7 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L1",
       "id": "src_sim_firstshot_test_ts",
-      "community": 10,
+      "community": 12,
       "norm_label": "firstshot.test.ts"
     },
     {
@@ -3074,7 +3101,7 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L10",
       "id": "sim_firstshot_test_maketarget",
-      "community": 10,
+      "community": 12,
       "norm_label": "maketarget()"
     },
     {
@@ -3083,7 +3110,7 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L23",
       "id": "sim_firstshot_test_cameralookingdownz",
-      "community": 10,
+      "community": 12,
       "norm_label": "cameralookingdownz()"
     },
     {
@@ -3092,7 +3119,7 @@
       "source_file": "src/sim/firstShot.test.ts",
       "source_location": "L83",
       "id": "sim_firstshot_test_maketargetmanager",
-      "community": 10,
+      "community": 12,
       "norm_label": "maketargetmanager()"
     },
     {
@@ -3101,7 +3128,7 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L1",
       "id": "src_sim_firstshot_ts",
-      "community": 10,
+      "community": 12,
       "norm_label": "firstshot.ts"
     },
     {
@@ -3110,7 +3137,7 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L22",
       "id": "sim_firstshot_currentpeekid",
-      "community": 10,
+      "community": 12,
       "norm_label": "currentpeekid()"
     },
     {
@@ -3119,7 +3146,7 @@
       "source_file": "src/sim/firstShot.ts",
       "source_location": "L34",
       "id": "sim_firstshot_firstshotgate",
-      "community": 10,
+      "community": 12,
       "norm_label": "firstshotgate()"
     },
     {
@@ -3128,7 +3155,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L1",
       "id": "src_sim_hitdetector_test_ts",
-      "community": 10,
+      "community": 12,
       "norm_label": "hitdetector.test.ts"
     },
     {
@@ -3137,7 +3164,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L10",
       "id": "sim_hitdetector_test_cameralookingdownz",
-      "community": 10,
+      "community": 12,
       "norm_label": "cameralookingdownz()"
     },
     {
@@ -3146,7 +3173,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L19",
       "id": "sim_hitdetector_test_maketarget",
-      "community": 10,
+      "community": 12,
       "norm_label": "maketarget()"
     },
     {
@@ -3155,7 +3182,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L31",
       "id": "sim_hitdetector_test_cameracenterray",
-      "community": 10,
+      "community": 12,
       "norm_label": "cameracenterray()"
     },
     {
@@ -3164,7 +3191,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L39",
       "id": "sim_hitdetector_test_raytowardtarget",
-      "community": 10,
+      "community": 12,
       "norm_label": "raytowardtarget()"
     },
     {
@@ -3173,7 +3200,7 @@
       "source_file": "src/sim/HitDetector.test.ts",
       "source_location": "L152",
       "id": "sim_hitdetector_test_out",
-      "community": 10,
+      "community": 12,
       "norm_label": "out()"
     },
     {
@@ -3182,7 +3209,7 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L1",
       "id": "src_sim_hitdetector_ts",
-      "community": 10,
+      "community": 12,
       "norm_label": "hitdetector.ts"
     },
     {
@@ -3191,7 +3218,7 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L61",
       "id": "sim_hitdetector_raycastwithray",
-      "community": 10,
+      "community": 12,
       "norm_label": "raycastwithray()"
     },
     {
@@ -3200,7 +3227,7 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L118",
       "id": "sim_hitdetector_raycastfromcenter",
-      "community": 10,
+      "community": 12,
       "norm_label": "raycastfromcenter()"
     },
     {
@@ -3209,7 +3236,7 @@
       "source_file": "src/sim/HitDetector.ts",
       "source_location": "L127",
       "id": "sim_hitdetector_targetcenteroffsetdeg",
-      "community": 10,
+      "community": 12,
       "norm_label": "targetcenteroffsetdeg()"
     },
     {
@@ -3218,7 +3245,7 @@
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L1",
       "id": "src_sim_movementcontroller_test_ts",
-      "community": 14,
+      "community": 29,
       "norm_label": "movementcontroller.test.ts"
     },
     {
@@ -3227,7 +3254,7 @@
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L98",
       "id": "sim_movementcontroller_test_runbatches",
-      "community": 14,
+      "community": 29,
       "norm_label": "runbatches()"
     },
     {
@@ -3236,7 +3263,7 @@
       "source_file": "src/sim/MovementController.ts",
       "source_location": "L1",
       "id": "src_sim_movementcontroller_ts",
-      "community": 14,
+      "community": 29,
       "norm_label": "movementcontroller.ts"
     },
     {
@@ -3245,7 +3272,7 @@
       "source_file": "src/sim/MovementController.ts",
       "source_location": "L44",
       "id": "sim_movementcontroller_createmovementcontroller",
-      "community": 14,
+      "community": 29,
       "norm_label": "createmovementcontroller()"
     },
     {
@@ -3254,7 +3281,7 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L1",
       "id": "src_sim_targetmanager_test_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "targetmanager.test.ts"
     },
     {
@@ -3263,7 +3290,7 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L12",
       "id": "sim_targetmanager_test_fixedclock",
-      "community": 12,
+      "community": 10,
       "norm_label": "fixedclock()"
     },
     {
@@ -3272,7 +3299,7 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L119",
       "id": "sim_targetmanager_test_killsequence",
-      "community": 12,
+      "community": 10,
       "norm_label": "killsequence()"
     },
     {
@@ -3281,7 +3308,7 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L183",
       "id": "sim_targetmanager_test_config",
-      "community": 12,
+      "community": 10,
       "norm_label": "config()"
     },
     {
@@ -3290,7 +3317,7 @@
       "source_file": "src/sim/TargetManager.test.ts",
       "source_location": "L198",
       "id": "sim_targetmanager_test_rundrill",
-      "community": 12,
+      "community": 10,
       "norm_label": "rundrill()"
     },
     {
@@ -3299,7 +3326,7 @@
       "source_file": "src/sim/TargetManager.ts",
       "source_location": "L1",
       "id": "src_sim_targetmanager_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "targetmanager.ts"
     },
     {
@@ -3308,7 +3335,7 @@
       "source_file": "src/sim/TargetManager.ts",
       "source_location": "L47",
       "id": "sim_targetmanager_sidex",
-      "community": 12,
+      "community": 10,
       "norm_label": "sidex()"
     },
     {
@@ -3317,7 +3344,7 @@
       "source_file": "src/sim/TargetManager.ts",
       "source_location": "L60",
       "id": "sim_targetmanager_createtargetmanager",
-      "community": 12,
+      "community": 10,
       "norm_label": "createtargetmanager()"
     },
     {
@@ -3353,7 +3380,7 @@
       "source_file": "src/state/inputRingTestUtil.ts",
       "source_location": "L15",
       "id": "state_inputringtestutil_pushevent",
-      "community": 13,
+      "community": 11,
       "norm_label": "pushevent()"
     },
     {
@@ -3380,7 +3407,7 @@
       "source_file": "src/state/SharedState.test.ts",
       "source_location": "L1",
       "id": "src_state_sharedstate_test_ts",
-      "community": 11,
+      "community": 17,
       "norm_label": "sharedstate.test.ts"
     },
     {
@@ -3389,7 +3416,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L1",
       "id": "src_state_sharedstate_ts",
-      "community": 11,
+      "community": 17,
       "norm_label": "sharedstate.ts"
     },
     {
@@ -3398,7 +3425,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L36",
       "id": "state_sharedstate_createimpactring",
-      "community": 11,
+      "community": 17,
       "norm_label": "createimpactring()"
     },
     {
@@ -3407,7 +3434,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L51",
       "id": "state_sharedstate_pushimpact",
-      "community": 11,
+      "community": 17,
       "norm_label": "pushimpact()"
     },
     {
@@ -3416,7 +3443,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L62",
       "id": "state_sharedstate_resetimpactring",
-      "community": 11,
+      "community": 17,
       "norm_label": "resetimpactring()"
     },
     {
@@ -3434,7 +3461,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L221",
       "id": "state_sharedstate_createsharedstate",
-      "community": 14,
+      "community": 10,
       "norm_label": "createsharedstate()"
     },
     {
@@ -3443,7 +3470,7 @@
       "source_file": "src/state/SharedState.ts",
       "source_location": "L253",
       "id": "state_sharedstate_resetstate",
-      "community": 11,
+      "community": 17,
       "norm_label": "resetstate()"
     },
     {
@@ -3461,7 +3488,7 @@
       "source_file": "src/testharness/fpsTestHarness.test.ts",
       "source_location": "L1",
       "id": "src_testharness_fpstestharness_test_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "fpstestharness.test.ts"
     },
     {
@@ -3470,7 +3497,7 @@
       "source_file": "src/testharness/fpsTestHarness.test.ts",
       "source_location": "L15",
       "id": "testharness_fpstestharness_test_makeharness",
-      "community": 12,
+      "community": 10,
       "norm_label": "makeharness()"
     },
     {
@@ -3479,7 +3506,7 @@
       "source_file": "src/testharness/fpsTestHarness.ts",
       "source_location": "L1",
       "id": "src_testharness_fpstestharness_ts",
-      "community": 12,
+      "community": 10,
       "norm_label": "fpstestharness.ts"
     },
     {
@@ -3488,7 +3515,7 @@
       "source_file": "src/testharness/fpsTestHarness.ts",
       "source_location": "L98",
       "id": "testharness_fpstestharness_createfpstestharness",
-      "community": 12,
+      "community": 10,
       "norm_label": "createfpstestharness()"
     },
     {
@@ -4199,7 +4226,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L1",
       "id": "tests_calibration_showpos_test_ts",
-      "community": 16,
+      "community": 15,
       "norm_label": "showpos.test.ts"
     },
     {
@@ -4208,7 +4235,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L47",
       "id": "calibration_showpos_test_assertfixturemeta",
-      "community": 16,
+      "community": 15,
       "norm_label": "assertfixturemeta()"
     },
     {
@@ -4217,7 +4244,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L56",
       "id": "calibration_showpos_test_assertproductionprofilematchesfixture",
-      "community": 16,
+      "community": 15,
       "norm_label": "assertproductionprofilematchesfixture()"
     },
     {
@@ -4226,7 +4253,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L62",
       "id": "calibration_showpos_test_collect64hzsamples",
-      "community": 16,
+      "community": 15,
       "norm_label": "collect64hzsamples()"
     },
     {
@@ -4235,7 +4262,7 @@
       "source_file": "tests/calibration/showpos.test.ts",
       "source_location": "L86",
       "id": "calibration_showpos_test_expectserieswithintolerance",
-      "community": 16,
+      "community": 15,
       "norm_label": "expectserieswithintolerance()"
     },
     {
@@ -4244,7 +4271,7 @@
       "source_file": "tests/e2e/backend.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_backend_spec_ts",
-      "community": 40,
+      "community": 41,
       "norm_label": "backend.spec.ts"
     },
     {
@@ -4253,7 +4280,7 @@
       "source_file": "tests/e2e/full-drill.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_full_drill_spec_ts",
-      "community": 33,
+      "community": 34,
       "norm_label": "full-drill.spec.ts"
     },
     {
@@ -4262,7 +4289,7 @@
       "source_file": "tests/e2e/full-drill.spec.ts",
       "source_location": "L23",
       "id": "e2e_full_drill_spec_runfullchain",
-      "community": 33,
+      "community": 34,
       "norm_label": "runfullchain()"
     },
     {
@@ -4271,7 +4298,7 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_input_sampler_spec_ts",
-      "community": 29,
+      "community": 30,
       "norm_label": "input-sampler.spec.ts"
     },
     {
@@ -4280,7 +4307,7 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L30",
       "id": "e2e_input_sampler_spec_gotoappready",
-      "community": 29,
+      "community": 30,
       "norm_label": "gotoappready()"
     },
     {
@@ -4289,7 +4316,7 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L42",
       "id": "e2e_input_sampler_spec_vx",
-      "community": 29,
+      "community": 30,
       "norm_label": "vx()"
     },
     {
@@ -4298,7 +4325,7 @@
       "source_file": "tests/e2e/input-sampler.spec.ts",
       "source_location": "L43",
       "id": "e2e_input_sampler_spec_x",
-      "community": 29,
+      "community": 30,
       "norm_label": "x()"
     },
     {
@@ -4307,7 +4334,7 @@
       "source_file": "tests/e2e/isolation.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_isolation_spec_ts",
-      "community": 41,
+      "community": 42,
       "norm_label": "isolation.spec.ts"
     },
     {
@@ -4316,7 +4343,7 @@
       "source_file": "tests/e2e/overlay-layering.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_overlay_layering_spec_ts",
-      "community": 34,
+      "community": 35,
       "norm_label": "overlay-layering.spec.ts"
     },
     {
@@ -4325,7 +4352,7 @@
       "source_file": "tests/e2e/overlay-layering.spec.ts",
       "source_location": "L17",
       "id": "e2e_overlay_layering_spec_zindexof",
-      "community": 34,
+      "community": 35,
       "norm_label": "zindexof()"
     },
     {
@@ -4334,7 +4361,7 @@
       "source_file": "tests/e2e/spray-drill.spec.ts",
       "source_location": "L1",
       "id": "tests_e2e_spray_drill_spec_ts",
-      "community": 35,
+      "community": 36,
       "norm_label": "spray-drill.spec.ts"
     },
     {
@@ -4343,7 +4370,7 @@
       "source_file": "tests/e2e/spray-drill.spec.ts",
       "source_location": "L7",
       "id": "e2e_spray_drill_spec_waitforharness",
-      "community": 35,
+      "community": 36,
       "norm_label": "waitforharness()"
     },
     {
@@ -4352,7 +4379,7 @@
       "source_file": "tests/regression/determinism.test.ts",
       "source_location": "L1",
       "id": "tests_regression_determinism_test_ts",
-      "community": 14,
+      "community": 10,
       "norm_label": "determinism.test.ts"
     },
     {
@@ -4361,7 +4388,7 @@
       "source_file": "tests/regression/determinism.test.ts",
       "source_location": "L63",
       "id": "regression_determinism_test_syntheticinputs",
-      "community": 14,
+      "community": 10,
       "norm_label": "syntheticinputs()"
     },
     {
@@ -4370,7 +4397,7 @@
       "source_file": "tests/regression/determinism.test.ts",
       "source_location": "L82",
       "id": "regression_determinism_test_snap",
-      "community": 14,
+      "community": 10,
       "norm_label": "snap()"
     },
     {
@@ -4379,7 +4406,7 @@
       "source_file": "tests/regression/determinism.test.ts",
       "source_location": "L91",
       "id": "regression_determinism_test_runframes",
-      "community": 14,
+      "community": 10,
       "norm_label": "runframes()"
     },
     {
@@ -4388,7 +4415,7 @@
       "source_file": "tests/regression/determinism.test.ts",
       "source_location": "L114",
       "id": "regression_determinism_test_canonicalrun",
-      "community": 14,
+      "community": 10,
       "norm_label": "canonicalrun()"
     },
     {
@@ -4397,7 +4424,7 @@
       "source_file": "tests/regression/determinism.test.ts",
       "source_location": "L121",
       "id": "regression_determinism_test_framesat",
-      "community": 14,
+      "community": 10,
       "norm_label": "framesat()"
     },
     {
@@ -4406,7 +4433,7 @@
       "source_file": "tests/regression/determinism.test.ts",
       "source_location": "L129",
       "id": "regression_determinism_test_jitterframes",
-      "community": 14,
+      "community": 10,
       "norm_label": "jitterframes()"
     },
     {
@@ -4549,7 +4576,7 @@
       "file_type": "code",
       "source_file": "src/sim/MovementController.test.ts",
       "source_location": "L98",
-      "community": 14,
+      "community": 29,
       "norm_label": "run()",
       "id": "sim_movementcontroller_test_run"
     },
@@ -4580,7 +4607,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "claude.md \u5c08\u6848\u57f7\u884c\u5354\u8b70\u8207\u5c0e\u822a",
       "id": "claude_project_protocol"
     },
@@ -4593,7 +4620,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u7a0b\u5e8f\u8a18\u61b6 (procedural memory)",
       "id": "claude_procedural_memory"
     },
@@ -4606,7 +4633,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u5782\u76f4\u5207\u7247 = \u539f\u5b50 commit \u5354\u8b70",
       "id": "claude_vertical_slice_commit"
     },
@@ -4619,7 +4646,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u8a18\u61b6\u5206\u5c64 (working/semantic/episodic/\u5168\u57df/\u7a0b\u5e8f)",
       "id": "claude_memory_layers"
     },
@@ -4645,7 +4672,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "context.md \u5c08\u6709\u540d\u8a5e\u8a5e\u5f59\u8868",
       "id": "context_glossary"
     },
@@ -4658,7 +4685,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "counter-strafe (\u53cd\u5411\u6025\u505c)",
       "id": "context_counter_strafe"
     },
@@ -4671,7 +4698,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "\u53cd\u5411\u9375 (counter key)",
       "id": "context_counter_key"
     },
@@ -4684,7 +4711,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 42,
+      "community": 43,
       "norm_label": "drill (\u8a13\u7df4\u55ae\u5143)",
       "id": "context_drill"
     },
@@ -4723,7 +4750,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 30,
+      "community": 31,
       "norm_label": "\u6025\u505c\u53cd\u61c9\u6642\u9593 (t_counter \u2212 t_visible)",
       "id": "context_counter_reaction_time"
     },
@@ -4749,7 +4776,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 43,
+      "community": 44,
       "norm_label": "\u505c\u706b\u6642\u5e8f\u5c0d\u9f4a (t_fire \u2212 t_velocity_zero)",
       "id": "context_fire_timing_alignment"
     },
@@ -4788,7 +4815,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 44,
+      "community": 45,
       "norm_label": "\u5207\u63db\u6642\u9593 (t_next_acquisition \u2212 t_prev_kill)",
       "id": "context_switch_time"
     },
@@ -4801,7 +4828,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 45,
+      "community": 46,
       "norm_label": "\u7bc0\u594f\u7a69\u5b9a\u5ea6",
       "id": "context_rhythm_stability"
     },
@@ -4814,7 +4841,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 46,
+      "community": 47,
       "norm_label": "\u5de6\u53f3\u5c0d\u7a31\u6027",
       "id": "context_lr_symmetry"
     },
@@ -4840,7 +4867,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 47,
+      "community": 48,
       "norm_label": "pre/post (\u524d\u5f8c\u6e2c) \u7814\u7a76\u65b9\u6cd5\u5b78",
       "id": "context_pre_post_test"
     },
@@ -4905,7 +4932,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 30,
+      "community": 31,
       "norm_label": "targetmanager \u5143\u4ef6",
       "id": "context_target_manager"
     },
@@ -4944,7 +4971,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 48,
+      "community": 49,
       "norm_label": "scenemanager \u5143\u4ef6",
       "id": "context_scene_manager"
     },
@@ -4996,7 +5023,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u96d9\u8ff4\u5708 (dual-loop)",
       "id": "context_dual_loop"
     },
@@ -5048,7 +5075,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 49,
+      "community": 50,
       "norm_label": "alpha \u5167\u63d2 (interpolation)",
       "id": "context_alpha_interpolation"
     },
@@ -5087,7 +5114,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 30,
+      "community": 31,
       "norm_label": "t_visible",
       "id": "context_t_visible"
     },
@@ -5100,7 +5127,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "sim tick rate (128 hz)",
       "id": "context_sim_tick_rate"
     },
@@ -5152,7 +5179,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "\u539f\u59cb\u8f38\u5165 (unadjustedmovement)",
       "id": "context_unadjusted_movement"
     },
@@ -5165,7 +5192,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "coalesced events (getcoalescedevents)",
       "id": "context_coalesced_events"
     },
@@ -5191,7 +5218,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "backend (render backend webgpu/webgl2)",
       "id": "context_render_backend"
     },
@@ -5217,7 +5244,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 50,
+      "community": 51,
       "norm_label": "\u968e\u6bb5 a (stage a)",
       "id": "context_stage_a"
     },
@@ -5269,7 +5296,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "design.md \u57f7\u884c\u671f\u8207\u67b6\u69cb\u8a2d\u8a08\u7b46\u8a18",
       "id": "design_notes"
     },
@@ -5282,7 +5309,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u968e\u6bb5 a \u96d9\u8ff4\u5708\u5be6\u70ba\u55ae\u57f7\u884c\u7dd2 raf \u8d85\u7d1a\u8ff4\u5708",
       "id": "design_single_thread_stage_a"
     },
@@ -5321,7 +5348,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "frontend.md (\u524d\u7aef/ui \u8a2d\u8a08,\u9810\u7559\u7a7a\u6a94)",
       "id": "frontend_doc"
     },
@@ -5334,7 +5361,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "map.md \u6587\u4ef6\u5730\u5716",
       "id": "map_doc"
     },
@@ -5347,7 +5374,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "plan.md \u57f7\u884c\u8a08\u756b (\u968e\u6bb5 a)",
       "id": "plan_doc"
     },
@@ -5373,7 +5400,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "d2 \u2014 \u6e2c\u8a66\u6846\u67b6 vitest + playwright",
       "id": "plan_d2_test_framework"
     },
@@ -5399,7 +5426,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "d4 \u2014 \u6587\u4ef6\u8a9e\u8a00 (\u7e41\u4e2d\u4fdd\u7559\u82f1\u6587\u8853\u8a9e)",
       "id": "plan_d4_doc_language"
     },
@@ -5412,7 +5439,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "d5 \u2014 plan \u9846\u7c92\u5ea6 (agent \u53ef\u57f7\u884c\u6b65\u9a5f)",
       "id": "plan_d5_granularity"
     },
@@ -5425,7 +5452,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "\u6280\u8853\u68e7 (three.js webgpu + ts + vite)",
       "id": "plan_tech_stack"
     },
@@ -5438,7 +5465,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "\u898f\u683c\u66f8 v1.1 + wbs",
       "id": "spec_doc"
     },
@@ -5464,7 +5491,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 30,
+      "community": 31,
       "norm_label": "f2 \u2014 \u8a18\u9304 t_visible spawn/\u53ef\u898b\u6642\u9593\u6233",
       "id": "spec_f2"
     },
@@ -5516,7 +5543,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "adr-1 webgpurenderer + webgl2 fallback",
       "id": "spec_adr1"
     },
@@ -5529,7 +5556,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "adr-2 \u908f\u8f2f\u8207\u6e32\u67d3\u89e3\u8026 (\u96d9\u8ff4\u5708 + fixed-timestep)",
       "id": "spec_adr2"
     },
@@ -5542,7 +5569,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "adr-3 sim tick rate = 128 hz",
       "id": "spec_adr3"
     },
@@ -5568,7 +5595,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "adr-5 pointer lock + \u539f\u59cb\u8f38\u5165 + coalesced events",
       "id": "spec_adr5"
     },
@@ -5607,7 +5634,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "\u9644\u9304 c \u532f\u51fa\u8cc7\u6599 schema",
       "id": "spec_export_schema"
     },
@@ -5633,7 +5660,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "\u9644\u9304 e \u9a57\u6536\u6e05\u55ae (\u968e\u6bb5 a)",
       "id": "spec_acceptance_checklist"
     },
@@ -5672,7 +5699,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 14,
       "norm_label": "decisions.md \u5168\u57df\u6c7a\u7b56\u8207\u77db\u76fe\u5e33\u672c",
       "id": "decisions_ledger"
     },
@@ -5893,7 +5920,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "wp-0 readme (tech spec)",
       "id": "wp0_readme"
     },
@@ -5906,7 +5933,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "wp-0 progress.md",
       "id": "wp0_progress"
     },
@@ -5919,7 +5946,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "wp-0 task-checklist.md",
       "id": "wp0_checklist"
     },
@@ -5932,7 +5959,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "wp-0 t0 entry gate",
       "id": "wp0_t0_entry_gate"
     },
@@ -5945,7 +5972,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "wp-0 t1 scaffold",
       "id": "wp0_t1_scaffold"
     },
@@ -5971,7 +5998,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "wp-0 t3 webgpu backend \u5075\u6e2c",
       "id": "wp0_t3_backend_detection"
     },
@@ -5997,7 +6024,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "wp-0 t5 reference notes",
       "id": "wp0_t5_reference_notes"
     },
@@ -6010,7 +6037,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 17,
+      "community": 16,
       "norm_label": "wp-0 t6 exit gate",
       "id": "wp0_t6_exit_gate"
     },
@@ -6166,7 +6193,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 51,
+      "community": 52,
       "norm_label": "wp-2 progress log",
       "id": "wp2_progress"
     },
@@ -7752,7 +7779,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 52,
+      "community": 53,
       "norm_label": "oq-6.3 end condition default decision",
       "id": "wp6_readme_oq63"
     },
@@ -9066,9 +9093,9 @@
       "source_file": "src/main.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "render_scenemanager_createscenemanagerwithstatus",
-      "confidence_score": 1.0
+      "target": "render_scenemanager_createscenemanagerwithstatus"
     },
     {
       "relation": "imports_from",
@@ -9660,9 +9687,9 @@
       "source_file": "src/main.ts",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_scene_sceneconfig_ts",
-      "confidence_score": 1.0
+      "target": "src_scene_sceneconfig_ts"
     },
     {
       "relation": "imports_from",
@@ -9782,9 +9809,9 @@
       "source_file": "src/main.ts",
       "source_location": "L375",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_main_synccamerabase",
-      "confidence_score": 1.0
+      "target": "src_main_synccamerabase"
     },
     {
       "relation": "contains",
@@ -9822,9 +9849,9 @@
       "source_file": "src/main.ts",
       "source_location": "L434",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_ts",
-      "target": "src_main_loadscenebyid",
-      "confidence_score": 1.0
+      "target": "src_main_loadscenebyid"
     },
     {
       "relation": "contains",
@@ -9875,9 +9902,9 @@
       "source_file": "src/main.ts",
       "source_location": "L446",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_loadscenebyid",
-      "target": "src_main_resize",
-      "confidence_score": 1.0
+      "target": "src_main_resize"
     },
     {
       "relation": "calls",
@@ -10040,9 +10067,9 @@
       "source_file": "src/main.ts",
       "source_location": "L460",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_loadscenebyid",
-      "target": "src_main_buildsimloop",
-      "confidence_score": 1.0
+      "target": "src_main_buildsimloop"
     },
     {
       "relation": "calls",
@@ -10073,9 +10100,9 @@
       "source_file": "src/main.ts",
       "source_location": "L451",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_loadscenebyid",
-      "target": "src_main_synccamerabase",
-      "confidence_score": 1.0
+      "target": "src_main_synccamerabase"
     },
     {
       "relation": "calls",
@@ -10106,9 +10133,9 @@
       "source_file": "src/main.ts",
       "source_location": "L459",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_loadscenebyid",
-      "target": "src_main_resetrunpresentation",
-      "confidence_score": 1.0
+      "target": "src_main_resetrunpresentation"
     },
     {
       "relation": "calls",
@@ -10172,9 +10199,9 @@
       "source_file": "src/main.ts",
       "source_location": "L463",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_main_loadscenebyid",
-      "target": "src_main_synccontrolsvisibility",
-      "confidence_score": 1.0
+      "target": "src_main_synccontrolsvisibility"
     },
     {
       "relation": "calls",
@@ -11152,6 +11179,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/data/metadata.ts",
+      "source_location": "L135",
+      "weight": 1.0,
+      "source": "src_data_metadata_ts",
+      "target": "data_metadata_requirescenemeta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/metadata.ts",
       "source_location": "L83",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -11197,6 +11234,26 @@
       "confidence_score": 1.0,
       "source": "src_data_metadata_ts",
       "target": "data_metadata_requirenonemptystring"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L197",
+      "weight": 1.0,
+      "source": "src_data_metadata_ts",
+      "target": "data_metadata_requirerecord",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L204",
+      "weight": 1.0,
+      "source": "src_data_metadata_ts",
+      "target": "data_metadata_requirecluttertier",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -11348,6 +11405,17 @@
       "target": "data_metadata_normalizeoverflow"
     },
     {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "data_metadata_collectmeta",
+      "target": "data_metadata_requirescenemeta",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -11357,6 +11425,50 @@
       "confidence_score": 1.0,
       "source": "src_testharness_fpstestharness_ts",
       "target": "data_metadata_collectmeta"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L136",
+      "weight": 1.0,
+      "source": "data_metadata_requirescenemeta",
+      "target": "data_metadata_requirerecord",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "data_metadata_requirescenemeta",
+      "target": "data_metadata_requirenonemptystring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L140",
+      "weight": 1.0,
+      "source": "data_metadata_requirescenemeta",
+      "target": "data_metadata_requirecluttertier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/data/metadata.ts",
+      "source_location": "L141",
+      "weight": 1.0,
+      "source": "data_metadata_requirescenemeta",
+      "target": "data_metadata_requireboolean",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -18009,9 +18121,9 @@
       "source_file": "src/render/SceneManager.test.ts",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_scenemanager_test_ts",
-      "target": "render_scenemanager_createscenemanagerwithstatus",
-      "confidence_score": 1.0
+      "target": "render_scenemanager_createscenemanagerwithstatus"
     },
     {
       "relation": "imports",
@@ -18082,9 +18194,9 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L149",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_render_scenemanager_ts",
-      "target": "render_scenemanager_createscenemanagerwithstatus",
-      "confidence_score": 1.0
+      "target": "render_scenemanager_createscenemanagerwithstatus"
     },
     {
       "relation": "contains",
@@ -18185,9 +18297,9 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L158",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_scenemanager_createscenemanagerwithstatus",
-      "target": "render_scenemanager_scenemanager_mountasset",
-      "confidence_score": 1.0
+      "target": "render_scenemanager_scenemanager_mountasset"
     },
     {
       "relation": "calls",
@@ -18207,9 +18319,9 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L162",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_scenemanager_createscenemanagerwithstatus",
-      "target": "render_scenemanager_scenemanager_dispose",
-      "confidence_score": 1.0
+      "target": "render_scenemanager_scenemanager_dispose"
     },
     {
       "relation": "calls",
@@ -18229,9 +18341,9 @@
       "source_file": "src/render/SceneManager.ts",
       "source_location": "L170",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "render_scenemanager_createscenemanager",
-      "target": "render_scenemanager_createscenemanagerwithstatus",
-      "confidence_score": 1.0
+      "target": "render_scenemanager_createscenemanagerwithstatus"
     },
     {
       "relation": "imports_from",
@@ -20664,9 +20776,9 @@
       "source_file": "src/ui/Controls.ts",
       "source_location": "L108",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_ui_controls_ts",
-      "target": "ui_controls_makeselect",
-      "confidence_score": 1.0
+      "target": "ui_controls_makeselect"
     },
     {
       "relation": "contains",
@@ -20706,9 +20818,9 @@
       "source_file": "src/ui/Controls.ts",
       "source_location": "L57",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ui_controls_createcontrols",
-      "target": "ui_controls_makeselect",
-      "confidence_score": 1.0
+      "target": "ui_controls_makeselect"
     },
     {
       "relation": "contains",
@@ -21597,9 +21709,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L89",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller",
-      "target": "view_cameracontroller_cameracontroller_setcamera",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_setcamera"
     },
     {
       "relation": "method",
@@ -21651,9 +21763,9 @@
       "source_file": "src/view/CameraController.ts",
       "source_location": "L91",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "view_cameracontroller_cameracontroller_setcamera",
-      "target": "view_cameracontroller_cameracontroller_applytocamera",
-      "confidence_score": 1.0
+      "target": "view_cameracontroller_cameracontroller_applytocamera"
     },
     {
       "relation": "imports_from",
@@ -28222,5 +28334,5 @@
       "source_file": "docs/exec-plan/active/wp-9-integration/T5-exit-gate.md"
     }
   ],
-  "built_at_commit": "8d55d7ac518c7a0ecfcab3cc03bfb964d0f7b55a"
+  "built_at_commit": "f47f689d7bcd30290229e96af40a5c0b5c721734"
 }
