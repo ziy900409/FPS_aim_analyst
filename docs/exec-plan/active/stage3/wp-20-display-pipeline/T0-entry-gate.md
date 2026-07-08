@@ -8,7 +8,7 @@
 | **相依** | —(可與 WP-19 並行開跑) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [CLAUDE.md](../../../../../CLAUDE.md) §4 + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ complete(2026-07-08) |
 
 ## Objective
 
@@ -32,12 +32,12 @@
 
 ## Steps
 
-- [ ] `npm run test` 乾淨基準 exit 0 記 progress。
-- [ ] resize/pixelRatio 現況證據記 progress。
-- [ ] OQ-S3-1 / OQ-S3-4 / OQ-20.1 / OQ-20.2 決議記 ledger + §8 回填。
-- [ ] CLAUDE.md §4 追加一條硬約束(與本 task 同 commit)。
-- [ ] 本機 frame time 粗測基線記 progress。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] `npm run test` 乾淨基準 exit 0 記 progress。
+- [x] resize/pixelRatio 現況證據記 progress。
+- [x] OQ-S3-1 / OQ-S3-4 / OQ-20.1 / OQ-20.2 決議記 ledger + §8 回填。
+- [x] CLAUDE.md §4 追加一條硬約束(與本 task 同 commit)。
+- [x] 本機 frame time 粗測基線記 progress。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 
