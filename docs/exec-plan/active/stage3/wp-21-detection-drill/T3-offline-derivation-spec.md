@@ -7,7 +7,7 @@
 | **相依** | T2 + **WP-16 exit**(v2 逐 tick aim/目標位置欄就緒——本 task 的推導輸入) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | ADD `docs/operational/analysis-t-detect.md`(spec)、`src/metrics/` dev 驗證器 + fixture 測試;MODIFY `docs/operational/schema.md`(交叉引用) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-09 08:31Z PASS |
 
 ## Objective
 
@@ -37,11 +37,11 @@
 
 ## Steps
 
-- [ ] spec 初稿(演算法 + 參數 + 邊界案例 + 敏感度分析建議)。
-- [ ] dev 驗證器 + round-trip fixture 四組 + 邊界案例測試全綠。
-- [ ] 誤差斷言(合成已知 onset vs 推導值 ≤ 1 tick)證據記 progress。
-- [ ] schema.md 交叉引用;OQ-S3-2 參數落 spec(標暫定)。
-- [ ] `npx vitest run` 全綠。
+- [x] (2026-07-09 08:31Z) spec 初稿(演算法 + 參數 + 邊界案例 + 敏感度分析建議)。
+- [x] (2026-07-09 08:31Z) dev 驗證器 + round-trip fixture 四組 + 邊界案例測試全綠。
+- [x] (2026-07-09 08:31Z) 誤差斷言(合成已知 onset vs 推導值 ≤ 1 tick)證據記 progress。
+- [x] (2026-07-09 08:31Z) schema.md 交叉引用;OQ-S3-2 參數落 spec(標暫定)。
+- [x] (2026-07-09 08:31Z) `npx vitest run` 全綠。
 
 ## Definition of Done
 

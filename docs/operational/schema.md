@@ -175,6 +175,9 @@ If `summary.p95 > PERF_FLOOR_MS`, `collectMeta()` marks `meta.suspect = true`.
 | `targetId` | string | target id | Yes | target manager | Identifies the visible target. |
 | `side` | string | `L`, `R` | Yes | target state | Peek side for left/right symmetry metrics. |
 | `t` | number | ms | Yes | sim tick time | `t_visible`; reaction-time start. |
+| `targetX` | number | source u | Yes in WP-21 exports | target state | Target center x at `t_visible`; additive for offline detection derivation. |
+| `targetY` | number | source u | Yes in WP-21 exports | target state | Target center y at `t_visible`; additive for offline detection derivation. |
+| `targetZ` | number | source u | Yes in WP-21 exports | target state | Target center z at `t_visible`; additive for offline detection derivation. |
 
 #### `counter`
 
@@ -234,7 +237,7 @@ t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys
 Header:
 
 ```csv
-type,t,targetId,side,key,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part
+type,t,targetId,side,key,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ
 ```
 
 Rows are sparse because event variants have different fields.
@@ -259,6 +262,9 @@ Rows are sparse because event variants have different fields.
 | `ammo` | empty | empty | pre-shot ammo |
 | `offsetDeg` | empty | empty | camera-forward to target-center angle in degrees, or empty |
 | `part` | empty | empty | `head`, `body`, or empty |
+| `targetX` | source u target center x | empty | empty |
+| `targetY` | source u target center y | empty | empty |
+| `targetZ` | source u target center z | empty | empty |
 
 ### `<basename>-frames.csv`
 
@@ -314,7 +320,7 @@ CSV cells are comma-separated, include a trailing newline, and quote cells conta
     { "t": 17.8125, "vx": 0, "vz": 0, "px": 1.5, "pz": 2.5, "tx": null, "ty": null, "tz": null, "aim": { "yaw": 0.25, "pitch": 0 }, "keys": ["A", "D"] }
   ],
   "events": [
-    { "type": "visible", "targetId": "target-1", "side": "R", "t": 10 },
+    { "type": "visible", "targetId": "target-1", "side": "R", "t": 10, "targetX": 3, "targetY": 1.6, "targetZ": -4 },
     { "type": "counter", "key": "A", "t": 14 },
     { "type": "fire", "t": 18, "targetId": "target-1", "hit": true, "firstShot": true, "residualSpeed": 0, "viewYaw": 0.25, "viewPitch": -0.1, "aimPunchPitch": -1.2, "aimPunchYaw": 0.8, "spreadX": 0.01, "spreadY": -0.02, "recoilIndex": 2, "ammo": 28, "offsetDeg": 0.5, "part": "head" }
   ]
@@ -334,11 +340,19 @@ t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys
 `counterstrafe_ad_v1-events.csv`
 
 ```csv
-type,t,targetId,side,key,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part
-visible,10,target-1,R,,,,,,,,,,,,,,
-counter,14,,,A,,,,,,,,,,,,,
-fire,18,target-1,,,true,true,0,0.25,-0.1,-1.2,0.8,0.01,-0.02,2,28,0.5,head
+type,t,targetId,side,key,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ
+visible,10,target-1,R,,,,,,,,,,,,,,,3,1.6,-4
+counter,14,,,A,,,,,,,,,,,,,,,,
+fire,18,target-1,,,true,true,0,0.25,-0.1,-1.2,0.8,0.01,-0.02,2,28,0.5,head,,,
 ```
+
+## Offline Derived Fields
+
+Detection pop-in analyses derive `eccentricity_at_spawn`, `t_detect`, timeout, anticipation,
+and engagement time offline from the raw schema v2 rows above. The executable interface and
+default provisional parameters live in
+[`analysis-t-detect.md`](analysis-t-detect.md). These derived fields are not written by the
+engine export.
 
 ## FPSci Field Mapping Appendix
 
@@ -352,6 +366,7 @@ This appendix is a semantic mapping only. Per GD-11, FPSci source code is not co
 | `ticks.aim.yaw`, `ticks.aim.pitch` | frame-wise view/aim state | same | Camera/view direction over time. |
 | `ticks.tx`, `ticks.ty`, `ticks.tz` | target trajectory table | same | Active target center trajectory. |
 | `events.visible.t` | target spawn/visibility event | approximate | `t_visible` is spawn tick for pop-in targets. |
+| `events.visible.targetX/Y/Z` | target spawn/visibility event | approximate | Spawn-time target center for offline `t_detect` / eccentricity derivation. |
 | `events.fire.t` | click event table | same | Shot/click timestamp. |
 | `events.fire.hit` | click/hit result | same | Boolean hit outcome. |
 | `events.fire.viewYaw/viewPitch` | click-time player view | same | Fire-time view snapshot. |
@@ -365,6 +380,7 @@ This appendix is a semantic mapping only. Per GD-11, FPSci source code is not co
 
 - WP-16 spec: [`docs/exec-plan/completed/stage2/wp-16-metrics-export-v2/README.md`](../exec-plan/completed/stage2/wp-16-metrics-export-v2/README.md)
 - T1 task: [`docs/exec-plan/completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md`](../exec-plan/completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md)
+- WP-21 detection derivation spec: [`docs/operational/analysis-t-detect.md`](analysis-t-detect.md)
 ## Recorder Capacity
 
 `capacityForDrill(simHz, maxDrillSeconds, extraTicks, maxFireHz)` reserves:

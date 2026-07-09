@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 進行中 — T2 detection drill PASS 2026-07-09; T3 next
+## Status: 🟡 進行中 — T3 offline derivation PASS 2026-07-09; T-exit next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 seeded spawn | ✅ |
 | T2 偵測 drill config | ✅ |
-| T3 離線推導 spec + fixture | ⬜ |
+| T3 離線推導 spec + fixture | ✅ |
 | T-exit | ⬜ |
 
 ---
@@ -28,6 +28,27 @@
 ---
 
 ## Log
+
+### 2026-07-09 08:31Z — T3 offline derivation PASS(spec + executable verifier + round-trip fixtures)
+
+- **Spec / schema**:
+  - `docs/operational/analysis-t-detect.md`:新增 t_detect / eccentricity 離線推導 spec。定義輸入 schema v2、aim/target 角距公式、`theta_v = 3 × SD(|dε/dt|)`、`k = 4 tick`、timeout / short baseline / anticipation / engagement time。
+  - `docs/operational/schema.md`:補 `visible.targetX/targetY/targetZ` JSON/CSV 文件與範例，新增 Offline Derived Fields 交叉引用到 `analysis-t-detect.md`。
+- **Executable verifier**:
+  - `src/metrics/detectionDerivation.ts`:新增純離線 `deriveDetectionMetrics(payload)`，消費 production `ExportPayload`，輸出每個 presentation 的 `eccentricityAtSpawnDeg`、threshold、status、`tDetectMs`、baseline/anticipation flags。
+  - `src/metrics/detectionDerivation.test.ts`:合成 aim fixture 經 `DataRecorder` → `buildExportPayload()` → `serializeJSON()` round-trip 後推導。四組 known onset(快/慢 × 高/低 noise)皆斷言誤差 ≤ 1 tick，並覆蓋 timeout、anticipation、首窗不足。
+- **Verification**:
+  - `npm.cmd test -- src/metrics/detectionDerivation.test.ts` → **1 file / 8 tests pass**。
+  - `npm.cmd run typecheck` → pass。
+  - `npx.cmd vitest run` → **58 files / 438 tests pass**。
+- **Decision Log**:
+  - **`t_detect` 回傳 sustained run 的第一個 tick，而非第 k 個確認 tick**。Alternatives Considered:回傳第 k tick 可在單 pass streaming 中更直覺；但會系統性晚 `k-1` tick，不符合「onset」語意。採第一 tick，演算法仍需觀察到 k tick 後才確認。
+  - **baseline threshold 使用 `|dε/dt|` 的 SD，`dε/dt` 仍保留符號判斷下降**。Alternatives Considered:對 signed velocity 直接取 SD；但 OQ-S3-2 指向 aim angular velocity noise magnitude，使用 absolute velocity SD 更符合噪聲底估計。
+  - **缺 `visible.targetX/Y/Z` 且 spawn tick 也無 target center 時 fail-fast**。Alternatives Considered:輸出 timeout 或 NaN；但這是 schema drift / 舊匯出格式，不是受試者行為，fail-fast 更能保護分析端。
+- **Surprises & Discoveries**:
+  - `docs/operational/schema.md` 尚未記錄 T2 已實作的 `visible.targetX/Y/Z` 欄位；T3 已補齊 JSON/CSV header、範例與 FPSci mapping。
+- **Open Questions**:
+  - 無新增阻塞。`theta_v` multiplier 與 `k` 仍依 OQ-S3-2 標為 provisional，留待 pilot sweep 校準。
 
 ### 2026-07-09 08:14Z — T2 detection drill PASS(pop-in config + visible position fields + meta.spawn + E2E smoke)
 
