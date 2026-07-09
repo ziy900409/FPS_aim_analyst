@@ -44,6 +44,7 @@ import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
+import { trackingV1 } from './drill/tracking_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -81,6 +82,7 @@ const initialDrillConfig = loadDrill(defaultDrillSource, activeSceneConfig);
 const availableDrills: AvailableDrill[] = [
   { id: initialDrillConfig.drillId, label: initialDrillConfig.drillId, source: defaultDrillSource },
   { id: detectionPopinV1.drillId, label: detectionPopinV1.drillId, source: detectionPopinV1 },
+  { id: trackingV1.drillId, label: trackingV1.drillId, source: trackingV1 },
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
@@ -287,6 +289,9 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
         ? { spawnDelayMsRange: activeDrillConfig.sequence.spawnDelayMsRange }
         : {}),
       ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
+      ...(activeDrillConfig.timing.presentationMs !== undefined
+        ? { presentationMs: activeDrillConfig.timing.presentationMs }
+        : {}),
     },
     scene: {
       sceneId: activeSceneConfig.sceneId,

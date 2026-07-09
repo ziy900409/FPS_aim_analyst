@@ -7,7 +7,7 @@
 | **相依** | T1–T4(移動目標 + 內插 + presentation + drill 就緒) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | MODIFY `src/loop/__tests__/determinism.test.ts` + `tests/regression/`(移動目標跨 FPS 不變性)、`src/main.ts`(`tracking_v1` 進 drill registry);ADD 移動目標決定性 fixture |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-09;487 test 全綠 + test:ci exit 0、零破壞) |
 
 ## Objective
 
@@ -27,11 +27,11 @@
 
 ## Steps
 
-- [ ] 既有 determinism/regression 套件基準全綠(改動前)。
-- [ ] 移動目標跨 FPS 不變性 fixture(pos + 命中序列逐位)+ 收編回歸套件。
-- [ ] `tracking_v1` 進 drill registry + 匯出 meta(motion/seed/presentation)確認。
-- [ ] 手動實機抽查(平滑移動 / 無掉 tick / tx-tz 非常數)記 progress。
-- [ ] `npx vitest run` + `npm run test:ci` 全綠(exit 0)。
+- [x] 既有 determinism/regression 套件基準全綠(改動前;61 test)。
+- [x] 移動目標跨 FPS 不變性 fixture(pos + 命中序列逐位)+ 收編回歸套件([moving-target-determinism.test.ts](../../../../tests/regression/moving-target-determinism.test.ts) + [movingTargetDeterminismFixture.ts](../../../../tests/regression/movingTargetDeterminismFixture.ts))。
+- [x] `tracking_v1` 進 drill registry([main.ts](../../../../src/main.ts))+ 匯出 meta(motion/seed/presentation;`SpawnMeta.presentationMs` 新增選填欄)確認。
+- [x] `npx vitest run`(487 test)+ `npm run test:ci`(tsc + vitest + playwright 11)全綠(exit 0)。
+- [ ] 手動實機抽查(平滑移動 / 無掉 tick / tx-tz 非常數)——**headless session 未跑**;自動回歸已證 per-tick `tx/tz` 非常數(`distinctTx>1`)+ 跨 FPS 逐位一致(無掉 tick,tick 數相等),render 平滑內插由 T3 單元測試涵蓋。實機視覺抽查留待 user / WP-22 T1 消費端 E2E。
 
 ## Definition of Done
 

@@ -14,7 +14,7 @@
 | T2 sub-tick 命中內插 | ✅ PASS(2026-07-09;466 test 全綠、零破壞) |
 | T3 timed presentation + render 內插 | ✅ PASS(2026-07-09;474 test 全綠、零破壞) |
 | T4 tracking drill + 指標推導 spec | ✅ PASS(2026-07-09;480 test 全綠、零破壞) |
-| T5 決定性回歸 + 掛線 | ⬜ |
+| T5 決定性回歸 + 掛線 | ✅ PASS(2026-07-09;487 test + test:ci exit 0、零破壞) |
 | T-exit(交付) | ⬜ |
 
 ---
@@ -31,6 +31,37 @@
 ---
 
 ## Log
+
+### 2026-07-09 — T5 移動目標跨 FPS 決定性回歸 + tracking_v1 drill registry 掛線 ✅ PASS(487 test + test:ci exit 0)
+
+**切片**(走 `/incremental-implementation`,兩 slice 各自原子 commit):
+- **Slice 1/2**(`74f718d`):移動目標跨 FPS 決定性回歸 fixture + test。
+- **Slice 2/2**(本 commit):`tracking_v1` 進 drill registry + `SpawnMeta.presentationMs` 匯出欄 + meta round-trip test + ExecPlan 收尾。
+
+**① 實作**:
+- **移動目標決定性 fixture**([movingTargetDeterminismFixture.ts](../../../../tests/regression/movingTargetDeterminismFixture.ts) + [moving-target-determinism.test.ts](../../../../tests/regression/moving-target-determinism.test.ts),比照 [sprayDeterminismFixture.ts](../../../../tests/regression/sprayDeterminismFixture.ts)):同一 held-fire 合成輸入序列在 60/144/240 Hz + 抖動 ±50% 幀切法下驅動**完整生產同源 sim**(motion drive T1 + timed presentation T3 + sub-tick 命中內插 T2 + DataRecorder),斷言 `DataRecorder` 快照(逐 tick `tx/ty/tz` + fire 命中事件序列)與 canonical per-tick 跑 **bit-exact 相等**。玩家靜止(純追蹤 GD-7):camera + `state.aim` 固定對準 pingpong 中心,故命中判定只由目標 sub-tick 內插位置(+ seeded recoil)決定,移動目標得以在 headless 決定性 harness 內被 sub-tick 命中覆蓋(有別於 counter-strafe 決定性測試刻意不注入 camera)。
+- **drill registry 掛線**([main.ts](../../../../src/main.ts)):`trackingV1` 加入 `availableDrills`(可實機選取施測)。
+- **`SpawnMeta.presentationMs`**([metadata.ts](../../../../src/data/metadata.ts) 新增選填欄):main.ts spawn meta 條件式帶入 `timing.presentationMs`(比照 motion/seed);additive optional → 既有 detection/counter-strafe drill 匯出零破壞。
+
+**② 測試**(+7,480→487):
+- [moving-target-determinism.test.ts](../../../../tests/regression/moving-target-determinism.test.ts)(+6):canonical 基準(780 tick、2 presentation L→R、`distinctTx>1` 證目標移動、30 fire / 13 sub-tick 命中的命中/脫靶混合序列);四種 FPS 幀切法快照 bit-exact;抖動序列重播 bit-exact。
+- [tracking_v1.test.ts](../../../../src/drill/tracking_v1.test.ts)(+1):spawn meta(motion/seed/presentationMs)三欄皆入匯出、`collectMeta` 逐欄保留。
+
+**③ grep 閘**:新 fixture 無 `Date.now`/`performance.now`/`Math.random`(抖動用決定性 LCG;grep 唯一命中為 doc comment 散文)。
+
+**④ 收尾**:`npm run test:ci`(`tsc --noEmit` + `vitest run` 487 + `playwright` 11 edge)全綠,exit 0(baseline 480 + 7 新,零破壞)。
+
+**Decision Log**:
+- **`presentationMs` 落 `SpawnMeta`(而非新設 timing meta 區塊)**。Alternatives Considered:(a) 新增獨立 `timing` meta 物件——否決:presentationMs 是追蹤 drill 的 spawn/呈現節奏參數,與既有 `spawn.motion`/`spawn.seed` 同屬「drill 目標序列重現」語意群,獨立區塊會割裂重現資訊且擴 schema 面;(b) 不匯出(靠 `visible.t` 反推)——否決:T5 DoD 明列「presentation 入 meta」,且 `visible.t` 只給推導窗界、不等於 drill 設定的呈現時長參數(重現需原始參數)。**選定**:additive optional 欄併入 `SpawnMeta`,與 motion/seed 同置、同條件式 spread 紀律。
+- **決定性斷言用 canonical 跨 FPS deep-equal(而非 checked-in golden JSON)**。Alternatives Considered:比照 spray 落一份 golden baseline JSON——否決:移動目標決定性的守護對象是「跨 FPS 一致 + 重播一致」,canonical per-tick 跑即為 ground truth,deep-equal 已完備;額外 golden JSON 會與 recoil 調參耦合、增維護面而無額外守護力。**選定**:test 時算 canonical、各 FPS 序列對其 deep-equal(同 [determinism.test.ts](../../../../tests/regression/determinism.test.ts) 模式)。
+
+**Surprises & Discoveries**:
+- **canonical 跑天然涵蓋兩個 presentation(L→R)**:trackingV1 `presentationMs=2000` + END≈6098ms(780 tick)使 timed presentation 於 running 中途到期推進,第二目標於對側(R,x=+2 → pingpong [+1,+3])spawn——`tx` 值域橫跨 [-3,+3],回歸同時覆蓋「命中不撤除 → 到期推進」與對側 motion,非單一目標。
+- **移動目標可在 headless 被 sub-tick 命中覆蓋**:既有 [determinism.test.ts](../../../../tests/regression/determinism.test.ts) 刻意不注入 camera(counter-strafe 命中依每-幀 camera 朝向、屬外部耦合)。純追蹤玩家靜止 → camera/aim 為常數 → 命中只由目標 sub-tick 位置決定,故 T5 可注入固定 camera 直接鎖定「13 發 sub-tick 命中」的移動目標命中序列(counter-strafe 做不到、留給 T1 E2E)。
+
+**Open Questions / Next**:
+- **手動實機抽查未在 headless session 執行**:自動回歸已證 per-tick `tx/tz` 非常數 + 跨 FPS 逐位一致(無掉 tick),render 平滑內插由 T3 單元測試涵蓋;實機視覺平滑抽查留待 user 或 WP-22 T1 消費端 E2E(tracking × 場景)。
+- **Next**:T-exit [T-exit-gate.md](T-exit-gate.md)——交付宣告(WP-22 T1 可消費追蹤 drill 型 + 內插 + 指標介面)+ 回 [WP-22 T0](../../stage3/wp-22-perception-integration/T0-entry-gate.md) 重跑 OQ-S3-5 對帳(解除 WP-22 T1 blocked)。T1–T5 皆 ✅。
 
 ### 2026-07-09 — T4 tracking drill config + 追蹤指標離線推導 spec + round-trip fixture ✅ PASS(引擎零計算;GD-7)
 

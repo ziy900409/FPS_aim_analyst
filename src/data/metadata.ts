@@ -18,6 +18,8 @@ export interface SpawnMeta {
   motion?: unknown;
   spawnArea?: unknown;
   spawnDelayMsRange?: unknown;
+  /** timed presentation 呈現時長(ms,WP-18 / T3)——追蹤 drill 重現/追蹤窗口右界所需。 */
+  presentationMs?: number;
 }
 
 export interface SceneMeta {
