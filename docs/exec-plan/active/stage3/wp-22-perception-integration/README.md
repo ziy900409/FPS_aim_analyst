@@ -7,10 +7,10 @@
 |---|---|
 | **目標** | 兩個感知實驗端到端成立:**追蹤 × 場景**(WP-18 移動目標進 BR 場景)+ **解析度 × 偵測受試者內 protocol**(資格閘 → 條件序列 → 匯出);決定性回歸擴充 + **驗收清單 C** = stage3 交付 |
 | **里程碑** | **M10**(stage3 交付) |
-| **相依** | WP-19(M9)✅ + WP-20 ✅ + WP-21 ✅ + **WP-18 entry ✅ / exit ⬜**(stage2 stub;T1 blocked until delivery shape exists) |
+| **相依** | WP-19(M9)✅ + WP-20 ✅ + WP-21 ✅ + WP-18 ✅ |
 | **對應 FR** | FR-C13 ~ FR-C15 |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 T0 precheck blocked(2026-07-09):WP-19/20/21 exit verified;WP-18 尚未交付,T1 不開跑 |
+| **狀態** | 🟡 T1 PASS(2026-07-09):`tracking_scene_v1` + field-low E2E + urban-high probe 完成;T2 next |
 
 ---
 

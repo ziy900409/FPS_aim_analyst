@@ -5,12 +5,12 @@
 
 ---
 
-## Status: ✅ T0 entry gate PASS(2026-07-09):四上游 exit verified + WP-18 交付形狀對帳完成 → T1 可開跑
+## Status: 🟡 T1 PASS(2026-07-09):tracking_scene_v1 + field-low E2E + urban-high probe 完成 → T2 next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS(2026-07-09;WP-18 T-exit 交付 + OQ-S3-5 對帳解除;`test:ci` green) |
-| T1 追蹤 × 場景 | ⬜ |
+| T1 追蹤 × 場景 | ✅ PASS(2026-07-09;`tracking_scene_v1` + Playwright E2E + urban-high harness probe) |
 | T2 protocol 執行器 + E2E | ⬜ |
 | T3 決定性 + 驗收清單 C | ⬜ |
 | T-exit(M10) | ⬜ |
@@ -28,6 +28,40 @@
 ---
 
 ## Log
+
+### 2026-07-09 16:14 local — T1 PASS(tracking drill × field-low scene + E2E)
+
+**Scope delivered**:
+- Added `src/drill/tracking_scene_v1.ts` as a scene-drill composition:drill id `tracking_scene_v1`, required `sceneId: field-low`, WP-18 timed tracking drill semantics preserved(seed `18018`, `presentationMs=2000`, speed `2u/s`) with scene-safe horizontal `range=0.25u`.
+- App registry now exposes `tracking_scene_v1`; selecting it auto-loads its required `field-low` scene before `loadDrill(source, scene)` runs clearance.
+- Test harness now accepts per-drill `SceneConfig`, exports `meta.scene`, keeps `meta.spawn.presentationMs`, and exposes tracking derivation from export payload.
+- Playwright E2E covers `tracking_scene_v1`:COI, `meta.scene=field-low`, `meta.spawn.motion/presentationMs`, finite `px/pz/tx/ty/tz/aim` columns, moving `tx`, 10 visible events, `suspect=false`, presentation spacing, and tracking metrics sanity.
+
+**Verification**:
+- `npm.cmd test -- src/drill/tracking_scene_v1.test.ts src/drill/tracking_v1.test.ts src/scene/scenes/field-low.test.ts src/scene/scenes/urban-high.test.ts` → PASS(4 files / 14 tests).
+- `npm.cmd test -- src/testharness/fpsTestHarness.test.ts src/drill/tracking_scene_v1.test.ts` → PASS(2 files / 9 tests).
+- `npm.cmd run typecheck` → PASS(`tsc --noEmit`).
+- `npx.cmd playwright test tests/e2e/full-drill.spec.ts -g "WP-22"` → PASS(1 test;required elevation because sandbox blocked Vite/esbuild config read).
+- `npm.cmd test` → PASS(63 files / 492 tests).
+- `npx.cmd playwright test` → PASS(12 tests;required elevation for webServer).
+
+**Result sanity**:
+- Perfect/auto tracking fixture from exported payload:`acquisitionFailureRate=0`,all presentations `TOT% >= 99`, `tAcquireMs <= 16ms`, `RMS ε < 1deg`.
+- Stationary aim fixture from exported payload:`acquisitionFailureRate=1`,all presentations acquisition failure.
+- `urban-high` probe via harness scene config completes all 10 timed presentations with `meta.scene=urban-high`, `suspect=false`, `recorderOverflow=false`, and tracking acquisition success.
+
+**Decision Log**:
+- Decision:T1 scene-drill is a composition object `{ id, sceneId, drill }`, not a new `DrillConfig.sceneId` field.
+  Alternatives Considered:adding `sceneId` to `DrillConfig` would be silently discarded by current schema and would mix experiment composition with drill mechanics; relying on current active scene would make `tracking_scene_v1` non-reproducible after UI scene changes.
+- Decision:`tracking_scene_v1` uses motion `range=0.25u`.
+  Alternatives Considered:keeping WP-18 `tracking_v1` range `1u` failed clearance against `field-low` rock/tree and `urban-high` barriers; `range=0.5u` passed `urban-high` but still failed `field-low` rock bounds under the existing hitbox-radius + 0.5u clearance inflation. `0.25u` is the smallest scoped config change that preserves moving-target behavior and passes both scenes.
+
+**Surprises & Discoveries**:
+- T0 OQ-S3-5 assumed the WP-18 range envelope `[0.5,1.5]u` was field-low-compatible; real WP-19 clearance inflation shows `field-low` permits less than `0.5u` for this L/R slot geometry. Evidence:first test run failed on `rock-r1/tree-r1/rock-l1/tree-l1`; second run at `0.5u` still failed on `rock-r1/rock-l1`; `0.25u` passed.
+- Browser/harness auto-aim originally used camera world z=4, while `deriveTrackingMetrics` consumes exported `px/pz` origin geometry. Tracking-specific harness aim now targets from player origin only for tracking sanity; counter-strafe fire aim remains camera-based.
+
+**Open Questions**:
+- None for T1. T2 protocol can consume `tracking_scene_v1` as a stable field-low condition and can use the same `{ mode, sceneId, drillId }` composition pattern.
 
 ### 2026-07-09 — T0 entry gate PASS(WP-18 交付 → OQ-S3-5 對帳解除;由 WP-18 T-exit 互記)
 

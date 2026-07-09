@@ -18,6 +18,7 @@ import { test, expect } from '@playwright/test';
 const URL = 'http://localhost:5173/';
 const DRILL_ID = 'counterstrafe_ad_v1';
 const DETECTION_DRILL_ID = 'detection_popin_v1';
+const TRACKING_SCENE_DRILL_ID = 'tracking_scene_v1';
 const PEEKS = 20; // = counterstrafe_ad_v1.json endCondition.targetCount
 
 /** 單一 evaluate 內跑完整鏈路並回傳可斷言摘要（重物件比對在瀏覽器內完成，減少 CDP 傳輸）。 */
@@ -247,5 +248,112 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
       spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
       spawnDelayMsRange: [800, 2400],
     });
+  });
+
+  test('WP-22 tracking_scene_v1：field-low 場景匯出欄 + tracking 指標 sanity', async ({ page }) => {
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+
+    const r = await page.evaluate((drillId) => {
+      type TrackingPresentation = {
+        acquisitionFailure: boolean;
+        tAcquireMs?: number;
+        totPercent?: number;
+        rmsEpsilonDeg?: number;
+      };
+      type Harness = {
+        startDrill(id: string): void;
+        runTrackingPresentationRound(mode?: 'autoAim' | 'stationary', maxPresentations?: number): void;
+        forceExportJSON(): unknown;
+        trackingMetricsFromExport(payload: unknown): { acquisitionFailureRate: number; presentations: TrackingPresentation[] };
+        phase(): string;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+      const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+      harness.startDrill(drillId);
+      harness.runTrackingPresentationRound('autoAim');
+      const payload = harness.forceExportJSON() as {
+        meta: Record<string, unknown>;
+        ticks: Array<{ t: number; px: number; pz: number; tx: number | null; ty: number | null; tz: number | null; aim: { yaw: number; pitch: number } }>;
+        events: Array<Record<string, unknown>>;
+      };
+      const tracking = harness.trackingMetricsFromExport(payload);
+      const visible = payload.events.filter((event) => event.type === 'visible');
+      const visibleTimes = visible.map((event) => event.t).filter(finite);
+      const visibleDeltas = visibleTimes.slice(1).map((t, index) => t - visibleTimes[index]);
+      const targetTicks = payload.ticks.filter((tick) => tick.tx !== null && tick.ty !== null && tick.tz !== null);
+      const distinctTx = new Set(targetTicks.map((tick) => tick.tx)).size;
+      const allTickColumnsFinite = payload.ticks.every(
+        (tick) =>
+          finite(tick.t) &&
+          finite(tick.px) &&
+          finite(tick.pz) &&
+          finite(tick.aim.yaw) &&
+          finite(tick.aim.pitch) &&
+          (tick.tx === null || finite(tick.tx)) &&
+          (tick.ty === null || finite(tick.ty)) &&
+          (tick.tz === null || finite(tick.tz)),
+      );
+
+      harness.startDrill(drillId);
+      harness.runTrackingPresentationRound('stationary');
+      const missPayload = harness.forceExportJSON();
+      const missTracking = harness.trackingMetricsFromExport(missPayload);
+
+      return {
+        coi: window.crossOriginIsolated,
+        phase: harness.phase(),
+        meta: payload.meta,
+        ticksLen: payload.ticks.length,
+        targetTickCount: targetTicks.length,
+        allTickColumnsFinite,
+        distinctTx,
+        visibleCount: visible.length,
+        allVisibleHavePosition: visible.every(
+          (event) => finite(event.targetX) && finite(event.targetY) && finite(event.targetZ),
+        ),
+        visibleDeltas,
+        tracking,
+        missTracking,
+      };
+    }, TRACKING_SCENE_DRILL_ID);
+
+    expect(r.coi).toBe(true);
+    expect(r.phase).toBe('ended');
+    expect(r.meta.drillId).toBe(TRACKING_SCENE_DRILL_ID);
+    expect(r.meta.scene).toMatchObject({
+      sceneId: 'field-low',
+      assetPackVersion: 'field-low-v1',
+      clutterTier: 'low',
+      fallback: false,
+    });
+    expect(r.meta.spawn).toMatchObject({
+      seed: 18018,
+      motion: { type: 'pingpong', axis: 'horizontal', range: 0.25, speed: 2 },
+      presentationMs: 2000,
+    });
+    expect(r.meta.suspect).toBe(false);
+    expect(r.ticksLen).toBeGreaterThan(0);
+    expect(r.targetTickCount).toBeGreaterThan(0);
+    expect(r.allTickColumnsFinite).toBe(true);
+    expect(r.distinctTx).toBeGreaterThan(1);
+    expect(r.visibleCount).toBe(10);
+    expect(r.allVisibleHavePosition).toBe(true);
+    for (const delta of r.visibleDeltas) {
+      expect(delta).toBeGreaterThanOrEqual(1990);
+      expect(delta).toBeLessThanOrEqual(2025);
+    }
+    expect(r.tracking.acquisitionFailureRate).toBe(0);
+    expect(r.tracking.presentations).toHaveLength(10);
+    expect(r.tracking.presentations.every((p) => p.tAcquireMs !== undefined && p.tAcquireMs <= 16)).toBe(true);
+    expect(r.tracking.presentations.every((p) => p.totPercent !== undefined && p.totPercent >= 99)).toBe(true);
+    expect(r.tracking.presentations.every((p) => p.rmsEpsilonDeg !== undefined && p.rmsEpsilonDeg < 1)).toBe(true);
+    expect(r.missTracking.acquisitionFailureRate).toBe(1);
+    expect(r.missTracking.presentations.every((p) => p.acquisitionFailure)).toBe(true);
   });
 });

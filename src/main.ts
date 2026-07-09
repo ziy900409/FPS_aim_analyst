@@ -45,6 +45,7 @@ import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
+import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -62,6 +63,7 @@ interface AvailableDrill {
   id: string;
   label: string;
   source: unknown;
+  sceneId?: string;
 }
 
 interface AvailableScene {
@@ -83,6 +85,12 @@ const availableDrills: AvailableDrill[] = [
   { id: initialDrillConfig.drillId, label: initialDrillConfig.drillId, source: defaultDrillSource },
   { id: detectionPopinV1.drillId, label: detectionPopinV1.drillId, source: detectionPopinV1 },
   { id: trackingV1.drillId, label: trackingV1.drillId, source: trackingV1 },
+  {
+    id: trackingSceneV1.id,
+    label: trackingSceneV1.id,
+    source: trackingSceneV1.drill,
+    sceneId: trackingSceneV1.sceneId,
+  },
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
@@ -434,7 +442,11 @@ if (import.meta.env.DEV) {
   const { createFpsTestHarness } = await import('./testharness/fpsTestHarness.ts');
   const displayHz = await measureDisplayHz({ samples: 10 });
   const fpsTestHarness = createFpsTestHarness({
-    availableDrills: availableDrills.map(({ id, source }) => ({ id, source })),
+    availableDrills: availableDrills.map(({ id, source, sceneId }) => ({
+      id,
+      source,
+      ...(sceneId !== undefined ? { scene: findSceneOption(sceneId).config } : {}),
+    })),
     backend,
     crossOriginIsolated: isolation.crossOriginIsolated,
     displayHz,
@@ -552,31 +564,16 @@ function restartActiveDrill(): void {
   syncControlsVisibility();
 }
 
-function loadDrillById(drillId: string): void {
-  const option = availableDrills.find((candidate) => candidate.id === drillId);
-  if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
-
-  const nextConfig = loadDrill(option.source, activeSceneConfig);
-  drillRunner.restart();
-  activeDrillConfig = nextConfig;
-  activeDrillSource = option.source;
-  activeTargetManager = createTargetManager(nextConfig);
-  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
-  resetRunPresentation();
-  simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
-  drillRunner.start(activeDrillConfig);
-  controls.setSelectedDrill(activeDrillConfig.drillId);
-  syncControlsVisibility();
-}
-
-async function loadSceneById(sceneId: string): Promise<void> {
+function findSceneOption(sceneId: string): AvailableScene {
   const option = availableScenes.find((candidate) => candidate.id === sceneId);
   if (option === undefined) throw new Error(`Unknown scene: ${sceneId}`);
-  if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
+  return option;
+}
 
-  const nextDrillConfig = loadDrill(activeDrillSource, option.config);
-  const nextScene = await createSceneManagerWithStatus(option.config);
-
+function installSceneLoad(
+  option: AvailableScene,
+  nextScene: Awaited<ReturnType<typeof createSceneManagerWithStatus>>,
+): void {
   targetView.dispose();
   impactView.dispose();
   sceneManager.dispose();
@@ -587,17 +584,52 @@ async function loadSceneById(sceneId: string): Promise<void> {
   cameraController.setCamera(sceneManager.camera);
   cameraController.setFov(settingsPanel.fov);
   syncCameraBase();
-
-  drillRunner.restart();
   activeSceneConfig = option.config;
   activeSceneFallback = nextScene.fallback;
+  controls.setSelectedScene(activeSceneConfig.sceneId);
+}
+
+async function loadDrillById(drillId: string): Promise<void> {
+  const option = availableDrills.find((candidate) => candidate.id === drillId);
+  if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
+
+  const requiredScene = option.sceneId !== undefined ? findSceneOption(option.sceneId) : undefined;
+  const targetSceneConfig = requiredScene?.config ?? activeSceneConfig;
+  const nextConfig = loadDrill(option.source, targetSceneConfig);
+  const needsSceneLoad =
+    requiredScene !== undefined &&
+    (requiredScene.config.sceneId !== activeSceneConfig.sceneId || activeSceneFallback);
+  const nextScene = needsSceneLoad ? await createSceneManagerWithStatus(requiredScene.config) : undefined;
+  if (nextScene !== undefined && requiredScene !== undefined) installSceneLoad(requiredScene, nextScene);
+
+  drillRunner.restart();
+  activeDrillConfig = nextConfig;
+  activeDrillSource = option.source;
+  activeTargetManager = createTargetManager(nextConfig);
+  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
+  resetRunPresentation();
+  simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
+  drillRunner.start(activeDrillConfig);
+  controls.setSelectedDrill(option.id);
+  syncControlsVisibility();
+}
+
+async function loadSceneById(sceneId: string): Promise<void> {
+  const option = findSceneOption(sceneId);
+  if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
+
+  const nextDrillConfig = loadDrill(activeDrillSource, option.config);
+  const nextScene = await createSceneManagerWithStatus(option.config);
+
+  installSceneLoad(option, nextScene);
+
+  drillRunner.restart();
   activeDrillConfig = nextDrillConfig;
   activeTargetManager = createTargetManager(activeDrillConfig);
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
   simLoop = buildSimLoop();
   drillRunner.start(activeDrillConfig);
-  controls.setSelectedScene(activeSceneConfig.sceneId);
   syncControlsVisibility();
 }
 

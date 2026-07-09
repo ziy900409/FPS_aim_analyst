@@ -13,8 +13,10 @@ import { createDataRecorder, type DataRecorder, type DataRecorderSnapshot } from
 import { collectMeta } from '../data/metadata.ts';
 import { buildExportPayload, type ExportPayload } from '../data/export.ts';
 import { computeMetrics, type Metrics } from '../metrics/compute.ts';
+import { deriveTrackingMetrics, type TrackingDerivationResult } from '../metrics/trackingDerivation.ts';
 import type { Clock } from '../loop/clock.ts';
 import type { RenderBackend } from '../render/createRenderer.ts';
+import type { SceneConfig } from '../scene/SceneConfig.ts';
 import { getWeapon } from '../weapon/weapons.ts';
 
 /**
@@ -67,6 +69,8 @@ export interface FpsTestHarness {
   runCounterStrafeRound(maxPeeks?: number): void;
   /** 便捷驅動：不開火，讓 detection pop-in presentations 依 peekTimeoutMs 自行推進直到 ended。 */
   runDetectionTimeoutRound(maxPresentations?: number): void;
+  /** 便捷驅動：不開火，讓 tracking timed presentations 自行推進直到 ended。 */
+  runTrackingPresentationRound(mode?: 'autoAim' | 'stationary', maxPresentations?: number): void;
   /**
    * WP-13 / T2：按住連發 `shots` 發（不自動瞄準,凍結 state.aim）→ 讓 recoil 純由連發累積,供
    * 「視覺/彈道分離」E2E 讀 punch 漂移方向 + 向量（10 發 = M5 向量）。回傳 kick 後讀數。
@@ -80,13 +84,15 @@ export interface FpsTestHarness {
   getMetrics(): Metrics;
   /** 由（可能經 JSON round-trip 的）匯出 payload 反算指標；供「統計＝匯出」一致性斷言。 */
   metricsFromExport(payload: ExportPayload): Metrics;
+  /** 由匯出 payload 反算 tracking 指標；供 WP-22 T1 tracking scene E2E sanity。 */
+  trackingMetricsFromExport(payload: ExportPayload): TrackingDerivationResult;
   /** 當前 drill 相位（唯讀）。 */
   phase(): DrillRunner['phase'];
 }
 
 export interface HarnessDeps {
   /** 可載入的 drill（id → 未解析 JSON 來源，交 loadDrill 驗證）。 */
-  availableDrills: ReadonlyArray<{ id: string; source: unknown }>;
+  availableDrills: ReadonlyArray<{ id: string; source: unknown; scene?: SceneConfig }>;
   /** 真實 render backend（createRenderer seam），寫入匯出 metadata。 */
   backend: RenderBackend;
   /** 真實 crossOriginIsolated（runtime global），寫入匯出 metadata。 */
@@ -112,6 +118,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
   let drillRunner: DrillRunner = createDrillRunner(state, targetManager);
   let simLoop: SimLoop = createSimLoop(state, makeClock(), SIM_HZ, targetManager, camera, drillRunner, recorder);
   let config: DrillConfig | null = null;
+  let sceneConfig: SceneConfig | undefined;
   let startedAt = '';
 
   function makeClock(): Clock {
@@ -151,6 +158,18 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     state.aim.pitch = targetPitch - raw.pitchRad;
   }
 
+  function aimAtActiveTargetFromPlayerOrigin(): void {
+    const target = activeTarget();
+    if (target === undefined) return;
+    const dx = target.pos.x - state.player.x;
+    const dy = target.pos.y - EYE_HEIGHT;
+    const dz = target.pos.z - state.player.z;
+    const len = Math.hypot(dx, dy, dz);
+    if (len === 0) return;
+    state.aim.yaw = Math.atan2(-dx, -dz);
+    state.aim.pitch = Math.asin(dy / len);
+  }
+
   /** 推進恰好一個固定 tick（clockMs += tickMs → pump 跑 1 tick；clockMs 與內部 simTimeMs 同步）。 */
   function advanceOneTick(): void {
     aimAtActiveTarget(); // 開火於 consume（movement 之前）判定命中，故瞄準須先於本 tick pump
@@ -162,6 +181,11 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
   function advanceOneTickNoAim(): void {
     clockMs += tickMs;
     simLoop.pump(clockMs);
+  }
+
+  function advanceOneTrackingTick(mode: 'autoAim' | 'stationary'): void {
+    if (mode === 'autoAim') aimAtActiveTargetFromPlayerOrigin();
+    advanceOneTickNoAim();
   }
 
   function advanceTicks(n: number): void {
@@ -191,7 +215,8 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     startDrill(id: string): void {
       const entry = deps.availableDrills.find((candidate) => candidate.id === id);
       if (entry === undefined) throw new Error(`Unknown drill: ${id}`);
-      config = loadDrill(entry.source);
+      sceneConfig = entry.scene;
+      config = loadDrill(entry.source, sceneConfig);
 
       // 全新管線（乾淨起步、與 live 單例隔離）。
       clockMs = 0;
@@ -275,6 +300,19 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       advanceTicks(4); // 讓 timeout 後的 targetCount 判定穩定落到 ended
     },
 
+    runTrackingPresentationRound(mode = 'autoAim', maxPresentations = Infinity): void {
+      if (config === null) throw new Error('runTrackingPresentationRound requires startDrill first');
+      const seen = new Set<string>();
+      let guard = 0;
+      while (seen.size < maxPresentations && drillRunner.phase !== 'ended' && guard < 300000) {
+        const target = activeTarget();
+        if (target !== undefined) seen.add(target.id);
+        advanceOneTrackingTick(mode);
+        guard++;
+      }
+      for (let i = 0; i < 4; i++) advanceOneTrackingTick(mode);
+    },
+
     fireRecoilBurst(shots: number): RecoilReadout {
       if (config === null) throw new Error('fireRecoilBurst requires startDrill first');
       const startAmmo = state.weapon.ammo;
@@ -316,7 +354,18 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
           ...(config.targets.spawnArea !== undefined ? { spawnArea: config.targets.spawnArea } : {}),
           ...(config.sequence.spawnDelayMsRange !== undefined ? { spawnDelayMsRange: config.sequence.spawnDelayMsRange } : {}),
           ...(config.targets.motion !== undefined ? { motion: config.targets.motion } : {}),
+          ...(config.timing.presentationMs !== undefined ? { presentationMs: config.timing.presentationMs } : {}),
         },
+        ...(sceneConfig !== undefined
+          ? {
+              scene: {
+                sceneId: sceneConfig.sceneId,
+                assetPackVersion: sceneConfig.assetPackVersion,
+                clutterTier: sceneConfig.clutterTier,
+                fallback: false,
+              },
+            }
+          : {}),
       });
       return buildExportPayload(meta, snapshot);
     },
@@ -332,6 +381,10 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         recorderOverflow: payload.meta.recorderOverflow,
       };
       return computeMetrics(snapshot);
+    },
+
+    trackingMetricsFromExport(payload: ExportPayload): TrackingDerivationResult {
+      return deriveTrackingMetrics(payload);
     },
 
     phase(): DrillRunner['phase'] {
