@@ -7,7 +7,7 @@
 | **相依** | T0(motion 階層 / 決定性紀律凍結) |
 | **Risk / Cplx** | **High** / Med(動 sim 目標機制;移動目標決定性是全部風險所在) |
 | **Touches** | MODIFY `src/sim/TargetManager.ts`(每 tick 依 motion+age 更新 pos)、`src/loop/SimLoop.ts`(僅必要:`age` 累加 tickSec 的位置對齊)、REUSE `src/state/types.ts`(`TargetMotion`/`age`,不改型別);ADD 單元測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-09;459 test 全綠、零破壞) |
 
 ## Objective
 
@@ -33,12 +33,12 @@
 
 ## Steps
 
-- [ ] **既有命中/決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
-- [ ] `age` 累加(tickSec 常數)+ motion drive(linear/pingpong/sine)實作。
-- [ ] static/無 motion 逐位不變測試 + 三 motion type pos golden 測試。
-- [ ] 決定性單元測試(異 frame 切法同 per-tick pos)。
-- [ ] `Math.random`/時鐘禁令 grep 閘涵蓋 `src/sim` motion 路徑(確認既有 lint 閘已含)。
-- [ ] `npx vitest run` 全綠。
+- [x] **既有命中/決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
+- [x] `age` 累加(tickSec 常數)+ motion drive(linear/pingpong/sine)實作。
+- [x] static/無 motion 逐位不變測試 + 三 motion type pos golden 測試。
+- [x] 決定性單元測試(異 frame 切法同 per-tick pos)。
+- [x] `Math.random`/時鐘禁令 grep 閘涵蓋 `src/sim` motion 路徑(確認既有 lint 閘已含)。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

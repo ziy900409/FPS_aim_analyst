@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
 import type { TargetState } from '../state/types.ts';
+import { lerp } from '../loop/RenderLoop.ts';
 
 /**
  * TargetView — WP-4 / T1b（FR-4.1）
@@ -40,13 +41,24 @@ export class TargetView {
    *
    * 顯示條件為 `visible`(是否已 spawn／在視野內——由 sim 於 t_visible 轉換 tick 設,T2);
    * `alive` 撤除語意屬 T3/WP-5,不在 T1b 收斂。
+   *
+   * **移動目標 render 內插(WP-18 / T3,render-only)**:`alpha ∈ [0,1]` 為 render 在兩 sim tick
+   * 快照間的內插係數(比照 player 位置,RenderLoop)。mesh 位置取 `lerp(posPrev, pos, alpha)`——
+   * 高 FPS 下移動目標畫面不抖。**絕不寫 state**(唯讀;posPrev/pos 皆由 sim 寫,GD-6/GD-10)。
+   * `alpha` 省略＝1 → 讀 `pos`(既有靜止 drill 逐位不變);無 `posPrev`(直接注入目標)亦退回 `pos`。
    */
-  sync(targets: readonly TargetState[]): void {
+  sync(targets: readonly TargetState[], alpha = 1): void {
     let used = 0;
     for (const t of targets) {
       if (!t.visible) continue;
       const mesh = this.#acquire(used++);
-      mesh.position.set(t.pos.x, t.pos.y, t.pos.z);
+      // posPrev 存在 → 內插(alpha=1 → pos,零破壞);無 posPrev → 直接讀 pos(向後相容)。
+      const prev = t.posPrev;
+      if (prev !== undefined) {
+        mesh.position.set(lerp(prev.x, t.pos.x, alpha), lerp(prev.y, t.pos.y, alpha), lerp(prev.z, t.pos.z, alpha));
+      } else {
+        mesh.position.set(t.pos.x, t.pos.y, t.pos.z);
+      }
       mesh.scale.set(t.hitbox.width, t.hitbox.height, t.hitbox.depth);
       mesh.visible = true;
     }

@@ -106,7 +106,7 @@ const ballisticHitPoint: HitPointOut = { valid: false, x: 0, y: 0, z: 0 };
  * 目標時實際彈著仍會上跳 + 右漂（QA「打不準」的設計來源，debug overlay 於 T3 可視化）。
  * 無 recoil（punch/spread 皆 0）時退化為 `state.aim` 中心射線（WP-2/WP-5 向後相容路徑）。
  */
-function ballisticRaycast(camera: THREE.Camera, state: SharedState): RaycastResult {
+function ballisticRaycast(camera: THREE.Camera, state: SharedState, subAlpha?: number): RaycastResult {
   const punch = punchToThreeRad(
     state.recoilState.aimPunchPitchDeg * 2,
     state.recoilState.aimPunchYawDeg * 2,
@@ -131,7 +131,8 @@ function ballisticRaycast(camera: THREE.Camera, state: SharedState): RaycastResu
 
   camera.getWorldPosition(ballisticOrigin);
   // 命中點回填 `ballisticHitPoint`（重用；T3 彈孔來源），不改 RaycastResult 形狀。
-  const result = raycastWithRay(ballisticOrigin, ballisticDir, state.targets, ballisticHitPoint);
+  // subAlpha 傳入啟用目標 sub-tick 內插（FR-B17）;省略/靜止目標退回讀 tick 末 pos（向後相容）。
+  const result = raycastWithRay(ballisticOrigin, ballisticDir, state.targets, ballisticHitPoint, subAlpha);
   // WP-13 / T4：脫靶時把彈著投影到「交戰平面」（= active 目標所在 z 深度）。彈道漂移的壓槍 pattern
   // 因此以彈孔可視化（彈孔沿目標周圍 climb→之字 浮現）——解 T-exit 手動驗證②「見不到 pattern」:
   // 目標一發即死、牆面無 hitbox,原本脫靶不留痕。命中判定/擊殺仍只看 `result.hit`,脫靶不計 hit。
@@ -170,6 +171,8 @@ function projectMissOntoEngagementPlane(state: SharedState): void {
 function fireOneShot(
   state: SharedState,
   t: number,
+  tickStartMs: number,
+  tickMs: number,
   camera?: THREE.Camera,
   targetManager?: TargetManager,
   recorder?: DataRecorder,
@@ -210,11 +213,26 @@ function fireOneShot(
       const target = state.targets.find((candidate) => candidate.id === peekId);
       if (target !== undefined) offsetDeg = targetCenterOffsetDeg(camera, target);
     }
-    const result = ballisticRaycast(camera, state);
+    // sub-tick 命中內插（WP-18 / T2，FR-B17）:fire 時間戳 t 落於 tick 窗 [tickStartMs, tickEndMs) 內
+    // 的比例 subAlpha = (t − tickStartMs) / tickMs。目標命中位置取 lerp(posPrev, pos, subAlpha),對齊
+    // fire 時刻而非 tick 末。clamp [0,1] 防護（半開窗理論上 t ∈ [tickStart, tickEnd];boundary t=tickEnd
+    // → subAlpha=1 → posCurr,與舊「讀 pos」逐位一致）。靜止目標 posPrev==pos → 內插無效果（零破壞）。
+    let subAlpha = tickMs > 0 ? (t - tickStartMs) / tickMs : 0;
+    if (subAlpha < 0) subAlpha = 0;
+    else if (subAlpha > 1) subAlpha = 1;
+    const result = ballisticRaycast(camera, state, subAlpha);
     hit = accurate && result.hit;
     part = hit ? result.part : undefined;
     if (result.targetId !== undefined) targetId = result.targetId;
-    if (hit && result.targetId !== undefined) targetManager.markKilled(state, result.targetId);
+    // persistent 目標（timed presentation,WP-18 / T3）:命中只記 fire 事件、**不** markKilled——窗內
+    // 持續存活移動,推進由 DrillRunner 呈現時長到期驅動（守 GD-7 追蹤窗口右界）。非 persistent 目標
+    //（persistent 為 undefined,既有 peek/detection drill）維持「命中即撤」。
+    if (hit && result.targetId !== undefined) {
+      const hitTarget = state.targets.find((candidate) => candidate.id === result.targetId);
+      if (hitTarget === undefined || hitTarget.persistent !== true) {
+        targetManager.markKilled(state, result.targetId);
+      }
+    }
     // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
     // `ImpactView` 唯讀繪製）；環狀覆寫最舊。脫靶彈孔使壓槍漂移 pattern 可視化;`ballisticHitPoint`
     // 由 `ballisticRaycast` 統一回填（命中→目標近面;脫靶→交戰平面;無存活目標→valid=false 不產）。
@@ -255,6 +273,8 @@ function scheduleFire(
   state: SharedState,
   untilMs: number,
   weapon: WeaponConfig,
+  tickStartMs: number,
+  tickMs: number,
   camera?: THREE.Camera,
   targetManager?: TargetManager,
   recorder?: DataRecorder,
@@ -262,7 +282,7 @@ function scheduleFire(
 ): void {
   const cycleMs = weapon.cycletimeSec * 1000;
   while (state.heldFire && state.weapon.ammo > 0 && state.weapon.nextFireT <= untilMs) {
-    fireOneShot(state, state.weapon.nextFireT, camera, targetManager, recorder, weapon, recoilRuntime);
+    fireOneShot(state, state.weapon.nextFireT, tickStartMs, tickMs, camera, targetManager, recorder, weapon, recoilRuntime);
     state.weapon.ammo--;
     state.weapon.nextFireT += cycleMs;
   }
@@ -332,6 +352,19 @@ export function simStep(
   state.recoil.prev.pitchDeg = state.recoil.curr.pitchDeg;
   state.recoil.prev.yawDeg = state.recoil.curr.yawDeg;
 
+  // 目標 posPrev 快照 ← pos（WP-18 / T2，FR-B17）：在 motion drive（targetManager.tick，下方）**之前**
+  // 擷取 tick 起始位置,與上方 player/recoil 的 prev←curr 快照同紀律、同時點。drive 後 `pos` 即 tick 末
+  // 位置(posCurr);sub-tick 命中內插以 lerp(posPrev, pos, subAlpha) 對齊 fire 時間戳(OQ-18.3)。
+  // 就地寫重用欄位(GC 紀律 §4);本 tick 新 spawn 的目標於 spawn 時已初始化 posPrev（此迴圈前不在陣列
+  // 內,不受影響）。無 posPrev 的目標(直接注入的測試目標)略過 → 命中判定退回讀 pos(向後相容)。
+  for (let i = 0; i < state.targets.length; i++) {
+    const t = state.targets[i];
+    if (t.posPrev === undefined) continue;
+    t.posPrev.x = t.pos.x;
+    t.posPrev.y = t.pos.y;
+    t.posPrev.z = t.pos.z;
+  }
+
   // 目標 spawn/可見性/蓋 t_visible：在命中判定（WP-5 fire raycast）之前，且時間源為 sim tick
   // 的 `tickEndMs`（量測時鐘域，非 rAF/Date.now）——反應時間效度關鍵（README failure-mode）。
   // WP-6 / T4：有 drillRunner 則由其相位機驅動目標（running 才 spawn）；否則 WP-4 直驅（向後相容）。
@@ -346,13 +379,16 @@ export function simStep(
 
   // 半開窗 [tickStart, tickEndMs)、嚴格 `<`（GD-3）。每個事件前先補發上一段已到期子彈；
   // fire-down 套用後立即跑到該事件時間，鎖定 down→up 同 tick 仍至少產 1 發（OQ-11.1）。
+  // tick 窗 [tickStartMs, tickEndMs) 供 sub-tick 命中內插:fire 時間戳 t → subAlpha（WP-18/T2，FR-B17）。
+  const tickMs = dtSec * 1000;
+  const tickStartMs = tickEndMs - tickMs;
   const apply = handle ?? ((ev: InputEvent) => applyInput(state, ev, recorder));
   consume(state, tickEndMs, (ev) => {
-    scheduleFire(state, ev.t, weapon, camera, targetManager, recorder, recoilRuntime);
+    scheduleFire(state, ev.t, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime);
     apply(ev);
-    scheduleFire(state, ev.t, weapon, camera, targetManager, recorder, recoilRuntime);
+    scheduleFire(state, ev.t, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime);
   });
-  scheduleFire(state, tickEndMs, weapon, camera, targetManager, recorder, recoilRuntime);
+  scheduleFire(state, tickEndMs, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime);
 
   // MovementController：依 held 以 friction/accelerate 積分 vx，並以固定 dtSec 推進 x（WP-14 T1）。
   movement.step(state, dtSec);

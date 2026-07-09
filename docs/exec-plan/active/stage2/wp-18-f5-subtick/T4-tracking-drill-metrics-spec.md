@@ -7,7 +7,7 @@
 | **相依** | T2(sub-tick 內插——命中語意)+ T3(timed presentation——追蹤窗右界)+ schema v2 逐 tick `tx/ty/tz`+`px/pz`(WP-16 已交付) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | ADD `src/drill/tracking_v1.ts`(純追蹤 drill config)、`docs/operational/analysis-tracking.md`(推導 spec)、`src/metrics/trackingDerivation*`(dev 驗證器 + fixture);MODIFY `docs/operational/schema.md`(交叉引用) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-09;480 test 全綠) |
 
 ## Objective
 
@@ -32,12 +32,12 @@
 
 ## Steps
 
-- [ ] `tracking_v1` config + schema 驗證通過 + 單元 sanity(可載入、motion/presentation 欄齊)。
-- [ ] `analysis-tracking.md` spec(演算法 + 參數 + 邊界案例 + 敏感度建議)。
-- [ ] dev 驗證器 + round-trip fixture(完美追蹤 / 不動輸入兩極端 + 已知 onset)測試全綠。
-- [ ] 誤差斷言(合成 vs 推導 ≤ 1 tick)證據記 progress;兩極端指標數值 sanity 記 progress。
-- [ ] `schema.md` 交叉引用;結果頁欄位語意標注。
-- [ ] `npx vitest run` 全綠。
+- [x] `tracking_v1` config + schema 驗證通過 + 單元 sanity(可載入、motion/presentation 欄齊)。
+- [x] `analysis-tracking.md` spec(演算法 + 參數 + 邊界案例 + 敏感度建議)。
+- [x] dev 驗證器 + round-trip fixture(完美追蹤 / 不動輸入兩極端 + 已知 onset)測試全綠。
+- [x] 誤差斷言(合成 vs 推導 ≤ 1 tick)證據記 progress;兩極端指標數值 sanity 記 progress。
+- [x] `schema.md` 交叉引用;結果頁欄位語意標注。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

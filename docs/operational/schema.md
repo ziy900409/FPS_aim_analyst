@@ -354,6 +354,13 @@ default provisional parameters live in
 [`analysis-t-detect.md`](analysis-t-detect.md). These derived fields are not written by the
 engine export.
 
+Tracking analyses derive `t_acquire`, acquisition failure rate, TOT%, and RMS ε offline from the
+same raw rows — the moving-target center trajectory (`ticks.tx/ty/tz`), the aim ray
+(`ticks.aim.yaw/pitch` + `ticks.px/pz`), and the `visible` presentation boundaries. on-target reuses
+the H1 hit geometry with no new threshold parameter. The executable interface lives in
+[`analysis-tracking.md`](analysis-tracking.md). These derived fields are not written by the engine
+export.
+
 ## FPSci Field Mapping Appendix
 
 This appendix is a semantic mapping only. Per GD-11, FPSci source code is not copied; the mapping is based on FPSci documentation/papers and the local research note.
@@ -381,6 +388,7 @@ This appendix is a semantic mapping only. Per GD-11, FPSci source code is not co
 - WP-16 spec: [`docs/exec-plan/completed/stage2/wp-16-metrics-export-v2/README.md`](../exec-plan/completed/stage2/wp-16-metrics-export-v2/README.md)
 - T1 task: [`docs/exec-plan/completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md`](../exec-plan/completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md)
 - WP-21 detection derivation spec: [`docs/operational/analysis-t-detect.md`](analysis-t-detect.md)
+- WP-18 tracking derivation spec: [`docs/operational/analysis-tracking.md`](analysis-tracking.md)
 ## Recorder Capacity
 
 `capacityForDrill(simHz, maxDrillSeconds, extraTicks, maxFireHz)` reserves:

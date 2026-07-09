@@ -40,6 +40,11 @@ function rayTowardTarget(origin: THREE.Vector3, target: TargetState): THREE.Vect
   return new THREE.Vector3(target.pos.x, target.pos.y, target.pos.z).sub(origin).normalize();
 }
 
+/** 從 origin 指向任意 world point 的正規化方向（sub-tick 內插測試用；瞄準非目標中心的一點）。 */
+function rayToPoint(origin: THREE.Vector3, x: number, y: number, z: number): THREE.Vector3 {
+  return new THREE.Vector3(x, y, z).sub(origin).normalize();
+}
+
 describe('HitDetector — raycastFromCenter（camera 中心射線判命中，FR-5.1）', () => {
   it('camera 正對目標 → hit，回傳 targetId', () => {
     const cam = cameraLookingDownZ();
@@ -145,6 +150,59 @@ describe('HitDetector — raycastWithRay（注入式射線方向，FR-B8）', ()
     const { direction } = cameraCenterRay(cameraLookingDownZ());
 
     expect(raycastWithRay(origin, direction, [dead, hidden])).toEqual({ hit: false });
+  });
+});
+
+describe('HitDetector — 目標 sub-tick 命中內插（WP-18 / T2，FR-B17）', () => {
+  const origin = new THREE.Vector3(0, 1.5, 5);
+  const centerDir = new THREE.Vector3(0, 0, -1); // 準心中心射線（x=0）
+
+  it('靜止目標（posPrev==pos）：任意 subAlpha 逐位等價現行判定（零破壞不變式）', () => {
+    const staticT = makeTarget('t0', 0, -8, { posPrev: { x: 0, y: 1.5, z: -8 } });
+    const baseline = raycastWithRay(origin, centerDir, [makeTarget('t0', 0, -8)]);
+    for (const alpha of [0, 0.25, 0.5, 0.75, 1]) {
+      expect(raycastWithRay(origin, centerDir, [staticT], undefined, alpha)).toEqual(baseline);
+    }
+    // 命中點回填亦逐位等價（posPrev==pos → 內插中心 == pos）。
+    const hpInterp: HitPointOut = { valid: false, x: 0, y: 0, z: 0 };
+    const hpBase: HitPointOut = { valid: false, x: 0, y: 0, z: 0 };
+    raycastWithRay(origin, centerDir, [staticT], hpInterp, 0.5);
+    raycastWithRay(origin, centerDir, [makeTarget('t0', 0, -8)], hpBase);
+    expect(hpInterp).toEqual(hpBase);
+  });
+
+  it('無 posPrev + subAlpha → 退回讀 pos（向後相容;直接注入目標無快照欄）', () => {
+    const noPrev = makeTarget('t0', 0, -8); // 無 posPrev
+    expect(raycastWithRay(origin, centerDir, [noPrev], undefined, 0.3)).toEqual(
+      raycastWithRay(origin, centerDir, [noPrev]),
+    );
+  });
+
+  it('移動目標 fire 中點 → 命中中心 ≈ 兩 tick 中點（posPrev x=−1、posCurr x=+1 → 中點 0）', () => {
+    // posCurr(pos) x=+1、posPrev x=−1 → 中點 x=0。射線瞄準 x=0.4（非中心）：只有內插中心落在 ~0
+    // 時才命中（hitbox 半寬 0.5 → x∈[−0.1,0.9]）;若讀 posCurr(x=1) 或 posPrev(x=−1) 皆脫靶。
+    const moving = makeTarget('t0', 1, -8, { posPrev: { x: -1, y: 1.5, z: -8 } });
+    const dir = rayToPoint(origin, 0.4, 1.5, -8);
+    expect(raycastWithRay(origin, dir, [moving], undefined, 0.5).hit).toBe(true); // 中點 x=0 → 命中
+    expect(raycastWithRay(origin, dir, [moving], undefined, 1).hit).toBe(false); // posCurr x=1 → 脫靶
+    expect(raycastWithRay(origin, dir, [moving], undefined, 0).hit).toBe(false); // posPrev x=−1 → 脫靶
+  });
+
+  it('邊界:subAlpha=0 → posPrev 位置、subAlpha=1 → posCurr 位置', () => {
+    // posPrev x=0（中心射線命中）、posCurr(pos) x=3（脫靶）。α=0 取 posPrev → 命中;α=1 取 posCurr → 脫靶。
+    const moving = makeTarget('t0', 3, -8, { posPrev: { x: 0, y: 1.5, z: -8 } });
+    expect(raycastWithRay(origin, centerDir, [moving], undefined, 0).hit).toBe(true);
+    expect(raycastWithRay(origin, centerDir, [moving], undefined, 1).hit).toBe(false);
+  });
+
+  it('翻轉案例:高速移動目標,sub-tick 命中 vs「最近 tick 位置」脫靶（FR-B17 修正的偏差）', () => {
+    // 目標本 tick 由 x=0 移到 x=2（位移 2u,遠大於 hitbox 半寬 0.5）。fire 落在 tick 前段（α=0.1）：
+    // 內插中心 x=0.2、hitbox x∈[−0.3,0.7] → 中心射線(x=0)命中。舊行為讀 tick 末 pos(x=2、hitbox
+    // [1.5,2.5]) → 脫靶。此即 FR-B17 修正對象:命中判定對齊 fire 時刻而非 tick 末（偏差量化 = 2u 位移
+    // 造成命中↔脫靶翻轉）。
+    const fast = makeTarget('t0', 2, -8, { posPrev: { x: 0, y: 1.5, z: -8 } });
+    expect(raycastWithRay(origin, centerDir, [fast], undefined, 0.1).hit).toBe(true); // sub-tick 內插 → 命中
+    expect(raycastWithRay(origin, centerDir, [fast]).hit).toBe(false); //                「最近 tick」→ 脫靶
   });
 });
 
@@ -295,5 +353,49 @@ describe('HitDetector — simStep fire 事件 → 第一次命中即擊殺（OQ-
     simStep(state, 1 / SIM_HZ, 100, tm, cam);
 
     expect(state.impacts.total).toBe(0);
+  });
+});
+
+describe('HitDetector — simStep sub-tick 命中內插端到端（WP-18 / T2，fire 時間戳 → subAlpha 接線）', () => {
+  // tick 窗 [tickStart, 100)：tickMs = (1/SIM_HZ)·1000 = 1000/128 = 7.8125 → tickStart = 92.1875。
+  const TICK_MS = 1000 / SIM_HZ;
+  const TICK_START = 100 - TICK_MS;
+  const atSubAlpha = (a: number): number => TICK_START + a * TICK_MS;
+
+  /** tm stub：tick() 內把目標由 x=0 驅到 x=2（模擬 motion drive,發生於 simStep posPrev 快照之後）。 */
+  function movingSetup() {
+    const state = createSharedState();
+    const cam = cameraLookingDownZ();
+    // posPrev 必須存在,simStep 快照迴圈才會維護（無 posPrev 的目標退回讀 pos）；起始 pos.x=0。
+    state.targets.push(makeTarget('t0', 0, -8, { posPrev: { x: 0, y: 1.5, z: -8 } }));
+    const killed: string[] = [];
+    const tm = {
+      tick(_s: typeof state) {
+        _s.targets[0].pos.x = 2; // posCurr = 2（posPrev 已由 simStep 快照為 0）
+      },
+      markKilled(_s: typeof state, id: string) {
+        killed.push(id);
+        const i = _s.targets.findIndex((t) => t.id === id);
+        if (i >= 0) _s.targets.splice(i, 1);
+      },
+      reset() {},
+    };
+    return { state, cam, tm, killed };
+  }
+
+  it('fire 於 tick 前段（subAlpha≈0.1）→ 內插中心 x≈0.2 → 命中（對比「最近 tick」x=2 脫靶）', () => {
+    const { state, cam, tm, killed } = movingSetup();
+    state.input.pushFire(true, atSubAlpha(0.1)); // 92.96875
+    simStep(state, 1 / SIM_HZ, 100, tm, cam);
+    expect(killed).toEqual(['t0']); // sub-tick 內插命中 → markKilled；舊「讀 pos=2」則會脫靶不擊殺
+    expect(state.targets).toHaveLength(0);
+  });
+
+  it('fire 於 tick 中段（subAlpha≈0.5）→ 內插中心 x=1.0 → 脫靶（目標已離開準心）', () => {
+    const { state, cam, tm, killed } = movingSetup();
+    state.input.pushFire(true, atSubAlpha(0.5)); // 96.09375
+    simStep(state, 1 / SIM_HZ, 100, tm, cam);
+    expect(killed).toEqual([]); // 內插中心 x=1.0、hitbox [0.5,1.5] → 中心射線(x=0)脫靶
+    expect(state.targets).toHaveLength(1);
   });
 });
