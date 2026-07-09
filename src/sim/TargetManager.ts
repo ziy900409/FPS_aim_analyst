@@ -1,5 +1,6 @@
 import type { SharedState } from '../state/SharedState.ts';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
+import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
 
 /**
  * TargetManager — WP-4 / T2（FR-4.2）；WP-6 / T2（FR-6.2）config 驅動
@@ -27,8 +28,9 @@ import type { DrillConfig } from '../drill/DrillConfig.ts';
  * 省略時退回 WP-4 佔位行為(預設距離、首側 'R'、無限補生),既有 WP-4 測試不變。
  *
  * ⚠️ 範圍:`endCondition` 的 **phase 語意**(running→ended)屬 DrillRunner(T4);此處只把
- * `targets.count` 當 spawn 上限,不判定 drill 結束。`sequence.seed` 為未來隨機化保留(階段 A
- * 交替為決定性 L↔R,不讀 seed)。`targets.motion` 若提供則寫入目標(F5 接縫),階段 A 不驅動移動。
+ * `targets.count` 當 spawn 上限,不判定 drill 結束。WP-21 seeded spawn 只在 config 提供
+ * `targets.spawnArea` 或 `sequence.spawnDelayMsRange` 時啟用；seed-only 既有 drill 維持舊 L/R slot
+ * 行為。`targets.motion` 若提供則寫入目標(F5 接縫),階段 A 不驅動移動。
  */
 
 /**
@@ -43,6 +45,7 @@ const TARGET_Y = 1.5;
 const SIDE_OFFSET = 2;
 /** 單一 box hitbox(H1;width/height/depth,u)——與 mesh 同來源(TargetView 以此 scale)。 */
 const HITBOX = { width: 1, height: 2, depth: 1 } as const;
+const DEG_TO_RAD = Math.PI / 180;
 
 function sideX(side: 'L' | 'R'): number {
   return side === 'R' ? SIDE_OFFSET : -SIDE_OFFSET;
@@ -65,26 +68,63 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   const motion = config?.targets.motion;
   // 首側:config.sequence.alternation 首字(對齊 reset 語意);無 config 時預設 'R'(WP-4)。
   const defaultFirstSide: 'L' | 'R' = config ? (config.sequence.alternation[0] as 'L' | 'R') : 'R';
+  const spawnArea = config?.targets.spawnArea;
+  const spawnDelayMsRange = config?.sequence.spawnDelayMsRange;
+  const usesSeededSpawn =
+    config?.sequence.seed !== undefined && (spawnArea !== undefined || spawnDelayMsRange !== undefined);
 
   let nextId = 0;
   // 下一個 spawn 側;`markKilled` 每次擊殺翻面以實現左右交替(FR-4.3)。首側由 reset 設。
   let nextSide: 'L' | 'R' = defaultFirstSide;
   // 已 spawn 目標數(對照 spawnLimit;reset 歸零)——config 驅動的「換 config 即換數量」判準。
   let spawnedCount = 0;
+  let spawnRng: Rng | undefined = usesSeededSpawn ? createRan1(config.sequence.seed!) : undefined;
+  let pendingSpawnAtMs: number | null = null;
+
+  function sampleDelayMs(): number {
+    if (spawnRng === undefined || spawnDelayMsRange === undefined) return 0;
+    return randomFloat(spawnRng, spawnDelayMsRange[0], spawnDelayMsRange[1]);
+  }
+
+  function sampleSpawnPose(): { side: 'L' | 'R'; pos: { x: number; y: number; z: number } } {
+    if (spawnRng === undefined || spawnArea === undefined) {
+      return { side: nextSide, pos: { x: sideX(nextSide), y: TARGET_Y, z: -distance } };
+    }
+    const yawDeg = randomFloat(spawnRng, spawnArea.yawDegRange[0], spawnArea.yawDegRange[1]);
+    const distanceU = randomFloat(spawnRng, spawnArea.distanceURange[0], spawnArea.distanceURange[1]);
+    const yawRad = yawDeg * DEG_TO_RAD;
+    return {
+      side: yawDeg < 0 ? 'L' : yawDeg > 0 ? 'R' : nextSide,
+      pos: {
+        x: Math.sin(yawRad) * distanceU,
+        y: TARGET_Y,
+        z: -Math.cos(yawRad) * distanceU,
+      },
+    };
+  }
 
   /** 生成一個目標(OQ-4.2:spawn 瞬間即可見)。spawn 屬低頻事件(peek 節奏),非每 tick 熱路徑。 */
   function spawn(state: SharedState): void {
+    const pose = sampleSpawnPose();
     state.weapon.ammo = state.weapon.magSize;
     state.targets.push({
       id: `t${nextId++}`,
-      side: nextSide,
-      pos: { x: sideX(nextSide), y: TARGET_Y, z: -distance },
+      side: pose.side,
+      pos: pose.pos,
       visible: true,
       alive: true,
       hitbox: { ...HITBOX },
       ...(motion ? { motion: { ...motion } } : {}),
     });
     spawnedCount++;
+  }
+
+  function spawnWhenDue(state: SharedState, nowMs: number): void {
+    if (pendingSpawnAtMs === null) pendingSpawnAtMs = nowMs + sampleDelayMs();
+    if (nowMs >= pendingSpawnAtMs) {
+      pendingSpawnAtMs = null;
+      spawn(state);
+    }
   }
 
   function hasAliveTarget(state: SharedState): boolean {
@@ -98,7 +138,10 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     tick(state: SharedState, nowMs: number): void {
       // ① spawn:無存活目標且未達 spawn 上限時補一個(單 active 目標;side 由 nextSide 交替)。
       //    達 spawnLimit(config.targets.count)後不再補生——drill 目標序列耗盡(結束判定屬 T4)。
-      if (!hasAliveTarget(state) && spawnedCount < spawnLimit) spawn(state);
+      if (!hasAliveTarget(state) && spawnedCount < spawnLimit) {
+        if (usesSeededSpawn) spawnWhenDue(state, nowMs);
+        else spawn(state);
+      }
       // ② 蓋 t_visible:可見且尚未蓋過者蓋一次(sim clock nowMs)——只在可見轉換 tick 蓋。
       //    穩態(已蓋戳)只做 Map.has 掃描,零配置(GC 紀律)。
       for (let i = 0; i < state.targets.length; i++) {
@@ -132,6 +175,8 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       state.tVisible.clear();
       nextId = 0;
       spawnedCount = 0;
+      pendingSpawnAtMs = null;
+      spawnRng = usesSeededSpawn ? createRan1(config!.sequence.seed!) : undefined;
       // seq 顯式優先(既有 WP-4 呼叫);省略時退回 config 首側(或無 config 的預設 'R')。
       nextSide = seq ? (seq[0] as 'L' | 'R') : defaultFirstSide;
     },
