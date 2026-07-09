@@ -10,7 +10,7 @@
 | **相依** | WP-19(M9)✅ + WP-20 ✅ + WP-21 ✅ + WP-18 ✅ |
 | **對應 FR** | FR-C13 ~ FR-C15 |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 T2 AUTO PASS(2026-07-09):protocol runner + 2-condition E2E + `test:ci` green;manual true-fullscreen walkthrough pending |
+| **狀態** | 🟡 T3 AUTO PASS(2026-07-09):determinism + checklist C + pilot docs + `test:ci` green;manual true-fullscreen walkthrough pending |
 
 ---
 

@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 T2 AUTO PASS(2026-07-09):protocol runner + 2-condition E2E + `test:ci` green;manual true-fullscreen walkthrough pending
+## Status: 🟡 T3 AUTO PASS(2026-07-09):determinism + checklist C + pilot docs + `test:ci` green;manual true-fullscreen walkthrough pending
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS(2026-07-09;WP-18 T-exit 交付 + OQ-S3-5 對帳解除;`test:ci` green) |
 | T1 追蹤 × 場景 | ✅ PASS(2026-07-09;`tracking_scene_v1` + Playwright E2E + urban-high harness probe) |
 | T2 protocol 執行器 + E2E | 🟡 AUTO PASS(2026-07-09;manual true-fullscreen walkthrough pending) |
-| T3 決定性 + 驗收清單 C | ⬜ |
+| T3 決定性 + 驗收清單 C | 🟡 AUTO PASS(2026-07-09;manual true-fullscreen walkthrough pending) |
 | T-exit(M10) | ⬜ |
 
 ---
@@ -28,6 +28,33 @@
 ---
 
 ## Log
+
+### 2026-07-09 16:59 local — T3 AUTO PASS(determinism regression + checklist C + pilot protocol;manual pending)
+
+**Scope delivered**:
+- Added `src/loop/__tests__/wp22-determinism.test.ts` covering all three FR-C15 invariants:cross-scene bit-exact sim state, cross-resolution bit-exact sim state after buffer mode application, and seeded `detection_popin_v1` spawn golden replay. The legacy L/R slot path is also checked against `sequence.seed` drift.
+- Added [acceptance-checklist-c.md](../../../../operational/acceptance-checklist-c.md):10 M10 checklist rows with automatic evidence entry points and the remaining true-fullscreen manual walk-through.
+- Added [pilot-protocol-stage3.md](../../../../operational/pilot-protocol-stage3.md):tracking × scene and resolution × detection pilot procedure, export naming/collection convention, and error-boundary notes for GD-7/GD-8/GD-10.
+- Updated T3 task status to AUTO PASS. M10/T-exit remains pending until the manual true-fullscreen protocol walk-through is recorded.
+
+**Verification**:
+- `npm.cmd test -- src/loop/__tests__/wp22-determinism.test.ts` -> PASS(1 file / 4 tests).
+- `npm.cmd test -- src/loop/__tests__/wp22-determinism.test.ts src/loop/__tests__/determinism.test.ts tests/regression/determinism.test.ts src/display/resolutionMode.test.ts tests/regression/moving-target-determinism.test.ts` -> PASS(5 files / 38 tests).
+- `npm.cmd run typecheck` -> PASS(`tsc --noEmit`).
+- `npm.cmd run test:ci` sandbox run failed because Vite/esbuild could not read upper config paths; elevated rerun -> PASS(`tsc --noEmit`;Vitest 65 files / 505 tests;Playwright 14 tests).
+- `graphify update .` -> PASS(AST extraction 144/144;graph rebuilt 1052 nodes / 2435 edges / 65 communities).
+
+**Decision Log**:
+- Decision:T3 determinism tests live under `src/loop/__tests__/wp22-determinism.test.ts` as an additive WP-22 regression gate, while the existing `tests/regression/determinism.test.ts` baseline remains untouched.
+  Alternatives Considered:expanding the older regression fixture directly;rejected because T3 needs a named acceptance-facing gate and should not churn the stage1/2 baseline file.
+- Decision:清單 C treats true-fullscreen protocol operation as an explicit manual supplement while keeping the automatic protocol E2E as the CI gate.
+  Alternatives Considered:marking fullscreen as auto-covered by Playwright;rejected because headless/browser automation does not prove the local interactive fullscreen/download path.
+
+**Surprises & Discoveries**:
+- Seeded spawn golden matched the independent reconstruction except for two floating-point last-bit display values;the committed golden uses the production TS pipeline output. Evidence:first run of `wp22-determinism.test.ts` failed only on `targetX` ULP differences for targets `t1`/`t2`,then passed after aligning to actual output.
+
+**Open Questions / Manual Follow-up**:
+- Same manual item remains:run the local app in true fullscreen, execute `resolution_detection_v1` end-to-end, and record the two exported JSON checks in this progress log before T-exit/M10.
 
 ### 2026-07-09 16:43 local — T2 AUTO PASS(protocol runner + resolution x detection E2E;manual pending)
 

@@ -7,7 +7,7 @@
 | **相依** | T1, T2 |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | MODIFY `src/loop/__tests__/`(回歸收編);ADD `docs/operational/acceptance-checklist-c.md`、`docs/operational/pilot-protocol-stage3.md` |
-| **狀態** | 🟡 determinism regression PASS(2026-07-09 14:52Z);docs/checklist pending |
+| **狀態** | 🟡 AUTO PASS 2026-07-09 14:59Z;manual true-fullscreen walkthrough pending |
 
 ## Objective
 
@@ -37,10 +37,10 @@ stage3 的防線與判準定稿(FR-C15):三條新決定性不變性收編進回�
 ## Steps
 
 - [x] (2026-07-09 14:52Z) 三不變性收編回歸套件 + 既有 baseline 全綠。
-- [ ] `acceptance-checklist-c.md` 定稿(每項判定方式明確)。
-- [ ] `pilot-protocol-stage3.md` 初版(含誤差界線節)。
-- [ ] 清單 C 全項執行,結果矩陣記 progress。
-- [ ] `npm run test:ci` exit 0。
+- [x] (2026-07-09 14:57Z) `acceptance-checklist-c.md` 定稿(每項判定方式明確)。
+- [x] (2026-07-09 14:57Z) `pilot-protocol-stage3.md` 初版(含誤差界線節)。
+- [x] (2026-07-09 14:59Z) 清單 C 全項執行,結果矩陣記 progress(AUTO green;manual true-fullscreen walkthrough pending)。
+- [x] (2026-07-09 14:59Z) `npm.cmd run test:ci` exit 0。
 
 ## Definition of Done
 
