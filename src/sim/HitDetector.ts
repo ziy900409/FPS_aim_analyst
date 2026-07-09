@@ -57,12 +57,19 @@ export interface HitPointOut {
  *
  * `hitPointOut` 選填（WP-13 / T3）：提供時把**最近命中**的 world 座標就地寫入該重用物件
  * （`valid=true`），未命中則置 `valid=false`——呼叫端零配置取彈著點（見 `HitPointOut`）。
+ *
+ * `subAlpha` 選填（WP-18 / T2，FR-B17：目標 sub-tick 命中內插）：提供時，hitbox 中心取
+ * `lerp(t.posPrev, t.pos, subAlpha)`——目標在 fire 時間戳（tick 窗內比例 `subAlpha`）的內插位置,
+ * 取代「tick 末位置」偏差。**向後相容**:`subAlpha` 省略或目標無 `posPrev`（如靜止/直接注入目標）
+ * 時退回讀 `t.pos`（既有 WP-5/WP-13 路徑逐位不變）。靜止目標 `posPrev == pos` → 內插逐位等價。
+ * 內插用純 scalar 暫存（零配置,GC 紀律 §4）；`subAlpha` 為 `(t, tickStart, tickMs)` 純函式。
  */
 export function raycastWithRay(
   origin: THREE.Vector3,
   dirNormalized: THREE.Vector3,
   targets: readonly TargetState[],
   hitPointOut?: HitPointOut,
+  subAlpha?: number,
 ): RaycastResult {
   raycaster.set(origin, dirNormalized);
 
@@ -81,8 +88,18 @@ export function raycastWithRay(
     const hw = t.hitbox.width / 2;
     const hh = t.hitbox.height / 2;
     const hd = t.hitbox.depth / 2;
-    boxMin.set(t.pos.x - hw, t.pos.y - hh, t.pos.z - hd);
-    boxMax.set(t.pos.x + hw, t.pos.y + hh, t.pos.z + hd);
+    // hitbox 中心:預設讀 tick 末 `t.pos`;有 subAlpha + posPrev 時取 fire 時間戳的內插位置
+    // （sub-tick,FR-B17）。posPrev==pos（靜止）或無 subAlpha → cx/cy/cz == t.pos（逐位等價）。
+    let cx = t.pos.x;
+    let cy = t.pos.y;
+    let cz = t.pos.z;
+    if (subAlpha !== undefined && t.posPrev !== undefined) {
+      cx = t.posPrev.x + (t.pos.x - t.posPrev.x) * subAlpha;
+      cy = t.posPrev.y + (t.pos.y - t.posPrev.y) * subAlpha;
+      cz = t.posPrev.z + (t.pos.z - t.posPrev.z) * subAlpha;
+    }
+    boxMin.set(cx - hw, cy - hh, cz - hd);
+    boxMax.set(cx + hw, cy + hh, cz + hd);
     box.set(boxMin, boxMax);
 
     const point = raycaster.ray.intersectBox(box, hitPoint);

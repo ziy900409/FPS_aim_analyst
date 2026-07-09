@@ -169,4 +169,5 @@ export interface TargetState {
   hitbox: { width: number; height: number; depth: number; part?: 'head' | 'body' }; // 單一 box hitbox（H1）；part 選填保留
   motion?: TargetMotion; //               F5 接縫：省略＝static
   age?: number; //                        自 spawn 起的邏輯秒數（sim tick 累加；motion 用）
+  posPrev?: Vec3; //                       tick 起始位置快照（motion drive 之前）；sub-tick 命中內插基準（WP-18/T2，FR-B17）
 }

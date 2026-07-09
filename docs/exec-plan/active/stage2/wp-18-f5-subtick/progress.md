@@ -11,7 +11,7 @@
 |---|---|
 | T0 entry gate | ✅ PASS(2026-07-09;基線凍結 + OQ 收斂) |
 | T1 motion drive | ✅ PASS(2026-07-09;459 test 全綠、零破壞) |
-| T2 sub-tick 命中內插 | ⬜ |
+| T2 sub-tick 命中內插 | ✅ PASS(2026-07-09;466 test 全綠、零破壞) |
 | T3 timed presentation + render 內插 | ⬜ |
 | T4 tracking drill + 指標推導 spec | ⬜ |
 | T5 決定性回歸 + 掛線 | ⬜ |
@@ -31,6 +31,39 @@
 ---
 
 ## Log
+
+### 2026-07-09 — T2 sub-tick 命中內插 ✅ PASS(FR-B17;fire 時間戳對齊;靜止目標零破壞)
+
+**切片**:命中判定由「讀 tick 末 `target.pos`」改為「fire 時間戳對齊的內插位置 `lerp(posPrev, posCurr, subAlpha)`」(FR-B17)。四檔垂直切片 + 單元/整合測試。
+
+**① 改動前基準**(T2 零破壞閘):T0 凍結的 10 檔既有命中/決定性回歸 → **137 test 全綠**(改動後重跑仍 137 全綠,逐位零破壞)。
+
+**② 實作**:
+- **型別**([types.ts](../../../../src/state/types.ts)):`TargetState.posPrev?: Vec3`——tick 起始位置快照(motion drive 之前);sub-tick 內插基準。optional → 直接注入的既有測試目標無此欄,命中判定退回讀 `pos`(向後相容)。
+- **posPrev spawn init**([TargetManager.ts](../../../../src/sim/TargetManager.ts):spawn):目標各持一份重用 `posPrev` Vec3(spawn 時 = spawn 位置;GC 紀律,不 push 額外物件)。
+- **posPrev tick 快照**([SimLoop.ts](../../../../src/loop/SimLoop.ts) simStep):在 `targetManager.tick`/`drillRunner.tick`(motion drive)**之前**,就地 `posPrev ← pos`——與上方 player/recoil `prev←curr` 快照**同時點、同紀律**(tick 起始)。drive 後 `pos` 即 `posCurr`(tick 末)。無 `posPrev` 的目標略過(向後相容)。
+- **subAlpha 計算**([SimLoop.ts](../../../../src/loop/SimLoop.ts) `fireOneShot`):`subAlpha = (t − tickStartMs) / tickMs`,`tickMs = dtSec·1000`、`tickStartMs = tickEndMs − tickMs`。clamp `[0,1]`(半開窗防護;`t=tickEnd` boundary → subAlpha=1 → posCurr,逐位等價舊「讀 pos」)。純函式、無隨機/時鐘。經 `scheduleFire`→`fireOneShot`→`ballisticRaycast` 傳入(私有函式簽章擴充;`simStep` 對外簽章不變)。
+- **HitDetector 注入**([HitDetector.ts](../../../../src/sim/HitDetector.ts) `raycastWithRay`):新增選填 `subAlpha` 參數。有 `subAlpha` + `posPrev` 時 hitbox 中心取 `lerp(posPrev, pos, subAlpha)`(純 scalar 暫存,零配置);否則讀 `pos`。**簽章向後相容**(`raycastFromCenter` 等既有呼叫不變)。
+
+**③ 測試**(+7,459→466):
+- [HitDetector.test.ts](../../../../src/sim/HitDetector.test.ts) sub-tick 內插 geometry(+5):靜止(posPrev==pos)任意 subAlpha 逐位等價現行判定(含 hitPointOut)、無 posPrev 退回讀 pos、移動目標中點命中中心 ≈ 兩 tick 中點(瞄準 x=0.4 只在內插中心 ~0 時命中)、邊界(α=0→posPrev/α=1→posCurr)、**翻轉案例**(目標本 tick 移 0→2,α=0.1 內插命中 vs 讀 pos=2 脫靶)。
+- [HitDetector.test.ts](../../../../src/sim/HitDetector.test.ts) simStep 端到端(+2):fire 時間戳落 tick 前段(α≈0.1)→ markKilled 擊殺;中段(α≈0.5,內插中心 x=1.0)→ 脫靶不擊殺——證明 `fireOneShot` 由 fire 時間戳算 subAlpha 的接線正確。
+
+**④ grep 閘**:`HitDetector.ts`/`TargetManager.ts`/`types.ts` 無 `Date.now`/`performance.now`/`Math.random` 呼叫(grep 命中 4 處皆 doc comment 描述禁令的散文)。`architecture.test.ts`(GD-6)綠。
+
+**⑤ 收尾**:`tsc --noEmit` exit 0;`npx vitest run` → **59 files / 466 tests passed**,exit 0(baseline 459 + 7 新,零破壞)。
+
+**Decision Log**:
+- **posPrev 快照落點採 simStep(motion drive 之前)+ spawn init 雙寫**,對齊 T0 OQ-18.3。Alternatives Considered:(a) 快照放 `TargetManager.tick` step ③ 內對所有目標——否決:step ③ 只在有 driven motion 時跑迴圈,且會與「靜止目標也需 posPrev==pos」的零破壞不變式打架(要在 isDrivenMotion 早退之前處理),邏輯較繞;(b) SimLoop 側 id→pos 平行 map——OQ-18.3 已否決(額外配置 + 生命週期雙寫)。**選定**:simStep 在既有 player/recoil `prev←curr` 快照旁加一段 `posPrev←pos`(同時點語意最自然、天然位於 drive 之前),搭配 spawn init 涵蓋「本 tick 新 spawn 目標」(該目標此迴圈時尚不在陣列,由 spawn 補上 posPrev=spawnPos)——兩者合璧使 posPrev 恆 = 該 tick drive 之前的位置。
+- **subAlpha clamp `[0,1]` 而非嚴格 `[0,1)`**。Alternatives Considered:硬性 `< 1`(如 `Math.min(subAlpha, 1 − ε)`)——否決:boundary `t = tickEnd`(`scheduleFire` 的 `nextFireT <= untilMs` 允許 `== tickEnd`)時 subAlpha=1 → `lerp` 取 posCurr = `pos`,**恰等於舊「讀 tick 末 pos」行為**,無需特例;clamp 上界 1 語意乾淨且與零破壞相容。
+
+**Surprises & Discoveries**:
+- **零破壞不變式落在「內插中心 == pos」的代數恆等**:靜止目標 posPrev==pos → `lerp(posPrev,pos,α) = pos` 對任意 α 逐位成立(浮點無誤差,因 `a+(a−a)·α = a`);故靜止/直接注入目標的命中判定與彈著回填 byte-for-byte 不變,無需容差測試。
+- **subAlpha 接線可不動 simStep 對外簽章**:`tickMs`/`tickStartMs` 由 simStep 既有的 `dtSec`+`tickEndMs` 就地導出(`tickMs = dtSec·1000`),只擴充私有 `scheduleFire`/`fireOneShot`/`ballisticRaycast` 簽章——既有直呼 `simStep` 的測試零改動。
+
+**Open Questions / Next**:
+- **Next**:T3 [T3-timed-presentation-render-interp.md](T3-timed-presentation-render-interp.md)(Med)——timed presentation 推進政策(`timing.presentationMs`,命中不撤除)+ 目標 render alpha 內插(render-only,比照玩家/recoil prev→curr)。
+- OQ-S3-5 仍 blocked,待 T-exit 綠燈後回 WP-22 T0 重跑。
 
 ### 2026-07-09 — T1 motion drive ✅ PASS(移動目標每 tick 驅動 pos;static 零破壞)
 

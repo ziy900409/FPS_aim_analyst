@@ -135,6 +135,10 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       // motion 提供即寫入(F5 接縫);`age` 一律 spawn 起算 0——motion drive 以 age 累加驅動 pos
       // （T1)。無 motion 時 age 仍設 0(語意一致、零成本),drive 步驟會依 motion 缺省而跳過。
       age: 0,
+      // posPrev 快照欄(WP-18/T2,FR-B17):spawn 時初始化為 spawn 位置(= 本 tick drive 之前的
+      // 起始位置);後續 tick 由 simStep 在 drive 前就地更新。目標各持一份重用 Vec3(GC 紀律 §4,
+      // 不 push 額外物件)。sub-tick 命中內插以 lerp(posPrev, pos, subAlpha) 對齊 fire 時間戳。
+      posPrev: { x: pose.pos.x, y: pose.pos.y, z: pose.pos.z },
       ...(motion ? { motion: { ...motion } } : {}),
     });
     spawnedCount++;
