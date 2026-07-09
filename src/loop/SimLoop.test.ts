@@ -305,6 +305,58 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(above.fire).toMatchObject({ type: 'fire', hit: false, residualSpeed: CS2_PROFILE.accuracyThreshold + 0.001 });
   });
 
+  it('persistent 目標命中不撤除：記 hit 事件但不呼叫 markKilled（timed presentation,WP-18/T3）', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ();
+    const killed: string[] = [];
+    const tm: TargetManager = {
+      tick() {},
+      markKilled(s, id) {
+        killed.push(id);
+        const i = s.targets.findIndex((target) => target.id === id);
+        if (i >= 0) s.targets.splice(i, 1);
+      },
+      reset() {},
+    };
+    state.player.vx = 0; // 精準（靜止）→ 命中
+    state.targets.push(makeTarget('t0', 0, -8, { persistent: true }));
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
+
+    const fire = recorder.snapshot().events.find((e) => e.type === 'fire');
+    expect(fire).toMatchObject({ type: 'fire', hit: true, targetId: 't0' }); // 命中有記錄
+    expect(killed).toEqual([]); // persistent → 不撤除
+    expect(state.targets.map((target) => target.id)).toEqual(['t0']); // 目標仍存活於場上
+    expect(state.targets[0].alive).toBe(true);
+  });
+
+  it('非 persistent 目標命中即撤除（既有政策零破壞）', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ();
+    const killed: string[] = [];
+    const tm: TargetManager = {
+      tick() {},
+      markKilled(s, id) {
+        killed.push(id);
+        const i = s.targets.findIndex((target) => target.id === id);
+        if (i >= 0) s.targets.splice(i, 1);
+      },
+      reset() {},
+    };
+    state.player.vx = 0;
+    state.targets.push(makeTarget('t0', 0, -8)); // persistent 省略
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
+
+    expect(killed).toEqual(['t0']); // 命中即撤除
+  });
+
   it('spread movement term uses true speed ratio: max-speed spread mean is much larger than stopped spread', () => {
     function meanSpreadRadius(vx: number, seed: number): number {
       const rt = runtime(seed);

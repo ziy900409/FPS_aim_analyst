@@ -100,6 +100,21 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
           }
         }
 
+        // timed presentation 推進（WP-18 / T3,OQ-18.2）:純時長驅動——目標可見達 presentationMs 即
+        // markKilled 推進下一目標（撤舊 spawn 新）。與 peekTimeoutMs 並存(語意不同:presentation 是
+        // 追蹤窗右界,窗內命中不撤除,只有此到期閘撤除)。時間源 = sim clock nowMs（ADR-4）。
+        const presentationMs = config.timing.presentationMs;
+        if (presentationMs !== undefined) {
+          for (let i = 0; i < s.targets.length; i++) {
+            const target = s.targets[i];
+            const visibleAt = s.tVisible.get(target.id);
+            if (target.alive && visibleAt !== undefined && nowMs - visibleAt >= presentationMs) {
+              targetManager.markKilled(s, target.id);
+              break;
+            }
+          }
+        }
+
         const killed = seenIds.size - s.targets.length;
         const ec = config.endCondition;
         const elapsed = nowMs - runStartMs;

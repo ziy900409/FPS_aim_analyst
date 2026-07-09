@@ -155,6 +155,54 @@ describe('DrillRunner — 生命週期（FR-6.4）', () => {
     expect(state.targets).toHaveLength(0);
   });
 
+  it('timing.presentationMs：目標可見達呈現時長 → 純時長推進序列並計入 targetCount（WP-18/T3）', () => {
+    const config = makeConfig({
+      timing: { countdownMs: 0, presentationMs: 100 },
+      targets: { count: 2, distance: 4 },
+      endCondition: { type: 'targetCount', value: 2 },
+    });
+    const { state, runner } = setup(config);
+
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(runner.phase).toBe('running');
+    expect(state.targets.map((target) => target.id)).toEqual(['t0']);
+    // presentationMs 提供 → spawn 的目標標記 persistent（命中不撤除,SimLoop gate 消費）。
+    expect(state.targets[0].persistent).toBe(true);
+
+    runner.tick(state, 99); // 未達呈現時長,不推進
+    expect(state.targets.map((target) => target.id)).toEqual(['t0']);
+
+    runner.tick(state, 100); // 達呈現時長 → 撤舊目標推進
+    expect(runner.phase).toBe('running');
+    expect(state.targets).toHaveLength(0);
+
+    runner.tick(state, 101); // 補生下一目標（對側）
+    expect(state.targets.map((target) => target.id)).toEqual(['t1']);
+
+    runner.tick(state, 201); // 第二個亦到期 → 達 targetCount=2 → ended
+    expect(runner.phase).toBe('ended');
+    expect(state.targets).toHaveLength(0);
+  });
+
+  it('未設 presentationMs：目標非 persistent，不因時長自動推進（既有政策零破壞）', () => {
+    const config = makeConfig({
+      timing: { countdownMs: 0 },
+      targets: { count: 3, distance: 4 },
+      endCondition: { type: 'targetCount', value: 3 },
+    });
+    const { state, runner } = setup(config);
+
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0].persistent).toBeUndefined(); // 無 presentationMs → 不標記
+    // 時間大幅推進但未擊殺 → 目標仍在（不因時長撤除;既有政策不變）。
+    runner.tick(state, 999999);
+    expect(state.targets.map((target) => target.id)).toEqual(['t0']);
+    expect(runner.phase).toBe('running');
+  });
+
   it('restart：全 reset → idle，state/target/首發游標無殘留', () => {
     const config = makeConfig({
       timing: { countdownMs: 0 },

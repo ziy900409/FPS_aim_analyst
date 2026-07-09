@@ -224,7 +224,15 @@ function fireOneShot(
     hit = accurate && result.hit;
     part = hit ? result.part : undefined;
     if (result.targetId !== undefined) targetId = result.targetId;
-    if (hit && result.targetId !== undefined) targetManager.markKilled(state, result.targetId);
+    // persistent 目標（timed presentation,WP-18 / T3）:命中只記 fire 事件、**不** markKilled——窗內
+    // 持續存活移動,推進由 DrillRunner 呈現時長到期驅動（守 GD-7 追蹤窗口右界）。非 persistent 目標
+    //（persistent 為 undefined,既有 peek/detection drill）維持「命中即撤」。
+    if (hit && result.targetId !== undefined) {
+      const hitTarget = state.targets.find((candidate) => candidate.id === result.targetId);
+      if (hitTarget === undefined || hitTarget.persistent !== true) {
+        targetManager.markKilled(state, result.targetId);
+      }
+    }
     // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
     // `ImpactView` 唯讀繪製）；環狀覆寫最舊。脫靶彈孔使壓槍漂移 pattern 可視化;`ballisticHitPoint`
     // 由 `ballisticRaycast` 統一回填（命中→目標近面;脫靶→交戰平面;無存活目標→valid=false 不產）。

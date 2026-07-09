@@ -84,6 +84,9 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   const spawnLimit = config ? config.targets.count : Infinity;
   // F5 接縫:config 帶 motion 即寫入目標(階段 A 不驅動移動,WP-6.5 接管)。
   const motion = config?.targets.motion;
+  // timed presentation（WP-18 / T3）:config.timing.presentationMs 提供即把目標標為 persistent
+  //（命中不撤除,只由 DrillRunner 呈現時長到期推進）。省略＝命中即撤(既有政策,persistent 為 undefined)。
+  const persistent = config?.timing.presentationMs !== undefined;
   // 首側:config.sequence.alternation 首字(對齊 reset 語意);無 config 時預設 'R'(WP-4)。
   const defaultFirstSide: 'L' | 'R' = config ? (config.sequence.alternation[0] as 'L' | 'R') : 'R';
   const spawnArea = config?.targets.spawnArea;
@@ -140,6 +143,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       // 不 push 額外物件)。sub-tick 命中內插以 lerp(posPrev, pos, subAlpha) 對齊 fire 時間戳。
       posPrev: { x: pose.pos.x, y: pose.pos.y, z: pose.pos.z },
       ...(motion ? { motion: { ...motion } } : {}),
+      ...(persistent ? { persistent: true } : {}),
     });
     spawnedCount++;
   }
