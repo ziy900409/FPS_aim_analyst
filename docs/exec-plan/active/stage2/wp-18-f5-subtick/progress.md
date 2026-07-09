@@ -13,7 +13,7 @@
 | T1 motion drive | ✅ PASS(2026-07-09;459 test 全綠、零破壞) |
 | T2 sub-tick 命中內插 | ✅ PASS(2026-07-09;466 test 全綠、零破壞) |
 | T3 timed presentation + render 內插 | ✅ PASS(2026-07-09;474 test 全綠、零破壞) |
-| T4 tracking drill + 指標推導 spec | ⬜ |
+| T4 tracking drill + 指標推導 spec | ✅ PASS(2026-07-09;480 test 全綠、零破壞) |
 | T5 決定性回歸 + 掛線 | ⬜ |
 | T-exit(交付) | ⬜ |
 
@@ -32,7 +32,44 @@
 
 ## Log
 
-### 2026-07-09 — T3 timed presentation 推進 + 目標 render 內插 ✅ PASS(命中不撤除;render-only 內插;零破壞)
+### 2026-07-09 — T4 tracking drill config + 追蹤指標離線推導 spec + round-trip fixture ✅ PASS(引擎零計算;GD-7)
+
+**切片**(走 `/incremental-implementation`,三 slice 各自原子 commit):
+- **Slice 1/3**:`tracking_v1` 純追蹤 drill config + sanity test。
+- **Slice 2/3**:`trackingDerivation` 離線推導驗證器 + round-trip fixture。
+- **Slice 3/3**(本 commit):`analysis-tracking.md` spec + `schema.md` 交叉引用 + progress/checklist。
+
+**① 實作**:
+- **`tracking_v1` drill config**([tracking_v1.ts](../../../../src/drill/tracking_v1.ts),比照 [detection_popin_v1.ts](../../../../src/drill/detection_popin_v1.ts)):純追蹤——單一 `pingpong` horizontal 移動目標(range 1 / speed 2,T0 OQ-18.1 field-low 相容包絡)、`timing.presentationMs = 2000`(T3 timed presentation)、玩家靜止瞄準(不與 counter-strafe 複合,GD-7)。`sequence.seed = 18018` 記 metadata(重現);無 `spawnArea`(用 L/R peek 槽位 + distance 抽象,seed 只預留 RNG 流,不改決定性 sim 路徑)。
+- **`trackingDerivation` 離線推導**([trackingDerivation.ts](../../../../src/metrics/trackingDerivation.ts),對齊 WP-21 T3 [detectionDerivation.ts](../../../../src/metrics/detectionDerivation.ts)):消費 `ExportPayload`,每 `visible` 事件一 presentation。
+  - **on-target(逐 tick 二元)**:aim ray ∩ H1 hitbox AABB——**ray/box slab test 等價引擎 `THREE.Ray.intersectBox`**(同幾何、零新門檻參數)。hitbox 尺寸(H1 = `{1,2,1}`)為結構常數選項(非匯出欄、非調參旋鈕),預設 = 引擎 `HITBOX`。
+  - **ε(t)**:aim ray vs 目標中心無號夾角(deg,`acos(clamp(dot,-1,1))`,對齊 `targetCenterOffsetDeg`)。**移動目標用逐 tick `tx/ty/tz` 中心**(非 spawn 中心)。
+  - **t_acquire** = `t_first_on_target − t_visible`;整窗 miss → `acquisitionFailure`(計入 `acquisitionFailureRate`、排除 TOT/ε 聚合;失敗是資料不是缺失值)。
+  - **追蹤窗口** = `[t_first_on_target, presentation 結束)`;`presentation 結束` = 下一 `visible.t`(advance)或匯出結尾;窗不洩漏至下一 presentation。**TOT%** = 窗內 on-target tick 比例;**主統計量 RMS(ε)**(窗內);median/P95 為離線副指標。
+- **docs**:[analysis-tracking.md](../../../../docs/operational/analysis-tracking.md)(輸入 / 座標慣例 / on-target / ε / t_acquire / 追蹤窗口 / TOT% / RMS / 邊界案例 / 敏感度 / 結果頁欄位語意 / 參考實作);[schema.md](../../../../docs/operational/schema.md) Offline Derived Fields 段 + Related Execution Plan 加追蹤 spec 交叉引用。
+
+**② 測試**(+6,474→480):
+- [tracking_v1.test.ts](../../../../src/drill/tracking_v1.test.ts)(+2):`loadDrill` 驗證(drillId/count/motion/presentationMs/seed/endCondition);motion 包絡界定(axis horizontal、range ∈ [0.5,1.5]、speed ∈ [1,4])。
+- [trackingDerivation.test.ts](../../../../src/metrics/trackingDerivation.test.ts)(+4):round-trip(錄 → `buildExportPayload` → JSON round-trip → 推導)——**完美追蹤**(aim 逐 tick 貼中心 → TOT% = 100、RMS ε < 1e-6、t_acquire ≈ 0);**不動輸入 miss**(aim 恆離目標 → `acquisitionFailure`、`acquisitionFailureRate = 1`、TOT/RMS undefined);**已知 onset**(前 25 tick miss、之後鎖定 → t_acquire 誤差 ≤ 1 tick、窗內 TOT% = 100);**多 presentation 聚合**(perfect + miss → `acquisitionFailureRate = 0.5`、窗界 = 下一 `visible.t`,不洩漏)。
+
+**③ grep 閘**:[trackingDerivation.ts](../../../../src/metrics/trackingDerivation.ts) 無 `Date.now`/`performance.now`/`Math.random`(離線純函式推導,GD-7 引擎零計算)。
+
+**④ 收尾**:`tsc --noEmit` exit 0;`npx vitest run` → **61 files / 480 tests passed**,exit 0(baseline 474 + 6 新,零破壞)。
+
+**Decision Log**:
+- **on-target 用 ray/box slab test 而非 ε 角度門檻**。Alternatives Considered:(a) 以 ε(t) < 某角度閾值定 on-target——否決:會引入新門檻參數,違反 CONTEXT §A / GD-7「與命中判定同幾何、零新門檻」;且 ε 角度門檻與方形 hitbox 幾何不等價(角度是圓錐、hitbox 是方盒)。**選定**:複刻引擎 `THREE.Ray.intersectBox` 的 slab 判定,on-target 恰 = 「沿 aim ray 開火本 tick 是否命中」,與 `HitDetector` 同幾何。ε(t) 仍獨立算作連續追蹤誤差(RMS 主統計量)。
+- **H1 hitbox 尺寸作為推導選項(預設 `{1,2,1}`)而非匯出欄位**。Alternatives Considered:(a) 匯出逐 tick hitbox 尺寸——否決:hitbox 是目標結構常數、非逐 tick 變動狀態,匯出會膨脹 schema 且無資訊增益;(b) 硬編在推導內——否決:未來 H2 頭/身分解或不同 drill hitbox 需可覆寫。**選定**:結構常數選項,預設對齊引擎 `HITBOX`,保持 on-target 幾何與引擎一致;非調參旋鈕(spec 明列)。
+- **推導對齊 WP-21 T3 detectionDerivation 結構**(每 visible 一 presentation、window = 下一 visible.t、round-trip fixture)。理由:GD-7 raw-over-derived + WP-21 已驗證此模式;共用 `ExportPayload`/`aimForward`/`angularEccentricityDeg` 數學語意,單一真相源。
+
+**Surprises & Discoveries**:
+- **完美追蹤 fixture 可用解析式 aim 反解**:給定目標中心與眼睛位置,`yaw = atan2(-dx, -dz)`、`pitch = asin(dy/len)` 使 `f_aim` 精確指向中心 → ε ≈ 0(僅 atan2/asin/acos round-trip 的 ~1e-7 級誤差)、on-target 必真。故完美追蹤斷言用 `< 1e-6` 而非寬容差。
+- **acquisition failure 需目標「持續」離 aim**:不動輸入 fixture 早期若目標恰經過 aim 方向會假命中 → 取 aim 恆指 `x = 6`(遠離 ±1 走廊)確保整窗 miss,乾淨觸發 acquisitionFailure。
+
+**Open Questions / Next**:
+- **Next**:T5 [T5-determinism-regression-integration.md](T5-determinism-regression-integration.md)(Med)——移動目標跨 render FPS 決定性回歸(per-tick 狀態逐位一致)+ `tracking_v1` 進 [main.ts](../../../../src/main.ts) drill registry 掛線。相依 T1–T4 皆 ✅。
+- OQ-S3-5 仍 blocked,待 T-exit 綠燈後回 WP-22 T0 重跑(T4 已補齊「追蹤 drill config 型 / t_acquire·TOT%·RMS ε 欄位語意」兩交付形狀,見 T0 §⑤對應表)。
+
+
 
 **切片**(走 `/incremental-implementation`,三 slice 各自原子 commit):
 - **Slice 1/3**(`34df851`):`timing.presentationMs`(additive optional)schema + config 欄位。
