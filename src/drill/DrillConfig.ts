@@ -47,6 +47,13 @@ export interface DrillConfig {
     peekTimeoutMs?: number;
     /** 全 drill 時限（ms;endCondition.type='timeLimit' 的後援閘,OQ-6.3）。 */
     timeLimitMs?: number;
+    /**
+     * 追蹤 drill 每目標「呈現時長」（ms;WP-18 / T3,OQ-18.2）。提供即啟用 **timed presentation**
+     * 推進政策:目標可見後計時,達 `presentationMs` → 推進下一目標(撤舊 spawn 新),窗內目標**持續
+     * 存活移動、命中不撤除**（連續控制;守 GD-7 追蹤窗口右界）。與 `peekTimeoutMs` 語意不同(後者為
+     * detection 的「peek→到期撤除」),故獨立欄位;兩者不應併用同一 drill。省略＝不啟用(既有政策)。
+     */
+    presentationMs?: number;
   };
   /**
    * 結束條件（雙閘,OQ-6.3）:預設 `targetCount`（目標數達標,如 20 個 peek）;`timeLimit` 為時限後援。

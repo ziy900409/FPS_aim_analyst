@@ -35,7 +35,7 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
         motion: { type: 'pingpong', axis: 'horizontal', speed: 150, range: 120 },
       },
       sequence: { alternation: 'LR', seed: 42, spawnDelayMsRange: [100, 350] },
-      timing: { countdownMs: 3000, spawnDelayMs: 0, peekTimeoutMs: 1500, timeLimitMs: 60000 },
+      timing: { countdownMs: 3000, spawnDelayMs: 0, peekTimeoutMs: 1500, timeLimitMs: 60000, presentationMs: 2500 },
     });
     expect(cfg.weaponId).toBe('m4a4');
     expect(cfg.targets.spawnArea).toEqual({ yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] });
@@ -44,6 +44,7 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
     expect(cfg.timing.spawnDelayMs).toBe(0);
     expect(cfg.timing.peekTimeoutMs).toBe(1500);
     expect(cfg.timing.timeLimitMs).toBe(60000);
+    expect(cfg.timing.presentationMs).toBe(2500);
     expect(cfg.targets.motion).toEqual({ type: 'pingpong', axis: 'horizontal', speed: 150, range: 120 });
   });
 
@@ -115,6 +116,15 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
   it('countdownMs 非數字 → throw', () => {
     const bad = { ...(minimalValid() as object), timing: { countdownMs: 'soon' } };
     expect(() => validateDrill(bad)).toThrow(/timing\.countdownMs/);
+  });
+
+  it('presentationMs ≤ 0 / 非有限 → throw 指名 timing.presentationMs', () => {
+    const zero = { ...(minimalValid() as object), timing: { countdownMs: 3000, presentationMs: 0 } };
+    expect(() => validateDrill(zero)).toThrow(/timing\.presentationMs/);
+    const neg = { ...(minimalValid() as object), timing: { countdownMs: 3000, presentationMs: -100 } };
+    expect(() => validateDrill(neg)).toThrow(/timing\.presentationMs/);
+    const str = { ...(minimalValid() as object), timing: { countdownMs: 3000, presentationMs: 'long' } };
+    expect(() => validateDrill(str)).toThrow(/timing\.presentationMs/);
   });
 
   it('非物件輸入（null / 陣列 / 字串）→ throw root', () => {
