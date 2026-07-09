@@ -24,16 +24,23 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
     expect(cfg.endCondition).toEqual({ type: 'targetCount', value: 20 });
   });
 
-  it('保留所有選填欄位（seed / spawnDelayMs / peekTimeoutMs / timeLimitMs / motion）', () => {
+  it('保留所有選填欄位（seed / spawnArea / spawnDelayMsRange / spawnDelayMs / peekTimeoutMs / timeLimitMs / motion）', () => {
     const cfg = validateDrill({
       ...(minimalValid() as object),
       weaponId: 'm4a4',
-      targets: { count: 30, distance: 4, motion: { type: 'pingpong', axis: 'horizontal', speed: 150, range: 120 } },
-      sequence: { alternation: 'LR', seed: 42 },
+      targets: {
+        count: 30,
+        distance: 4,
+        spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
+        motion: { type: 'pingpong', axis: 'horizontal', speed: 150, range: 120 },
+      },
+      sequence: { alternation: 'LR', seed: 42, spawnDelayMsRange: [100, 350] },
       timing: { countdownMs: 3000, spawnDelayMs: 0, peekTimeoutMs: 1500, timeLimitMs: 60000 },
     });
     expect(cfg.weaponId).toBe('m4a4');
+    expect(cfg.targets.spawnArea).toEqual({ yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] });
     expect(cfg.sequence.seed).toBe(42);
+    expect(cfg.sequence.spawnDelayMsRange).toEqual([100, 350]);
     expect(cfg.timing.spawnDelayMs).toBe(0);
     expect(cfg.timing.peekTimeoutMs).toBe(1500);
     expect(cfg.timing.timeLimitMs).toBe(60000);
@@ -48,6 +55,16 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
   it('省略 weaponId → 保持 undefined（呼叫端使用預設武器）', () => {
     const cfg = validateDrill(minimalValid());
     expect(cfg.weaponId).toBeUndefined();
+  });
+
+  it('seeded spawn range 允許退化為固定值（min=max）', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, spawnArea: { yawDegRange: [0, 0], distanceURange: [4, 4] } },
+      sequence: { alternation: 'RL', seed: 7, spawnDelayMsRange: [0, 0] },
+    });
+    expect(cfg.targets.spawnArea).toEqual({ yawDegRange: [0, 0], distanceURange: [4, 4] });
+    expect(cfg.sequence.spawnDelayMsRange).toEqual([0, 0]);
   });
 
   it('waypoints 合法 Vec3 元素（含負/零偏移）通過並收斂為純 {x,y,z}', () => {
@@ -114,6 +131,56 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
   it('weaponId 非字串或空字串 → throw 指名 weaponId', () => {
     expect(() => validateDrill({ ...(minimalValid() as object), weaponId: '' })).toThrow(/weaponId/);
     expect(() => validateDrill({ ...(minimalValid() as object), weaponId: 47 })).toThrow(/weaponId/);
+  });
+
+  it('spawnArea 缺 sequence.seed → throw 指名 targets.spawnArea', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] } },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.spawnArea/);
+  });
+
+  it('spawnDelayMsRange 缺 sequence.seed → throw 指名 sequence.spawnDelayMsRange', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      sequence: { alternation: 'RL', spawnDelayMsRange: [100, 350] },
+    };
+    expect(() => validateDrill(bad)).toThrow(/sequence\.spawnDelayMsRange/);
+  });
+
+  it('spawnArea range 形狀、順序與正距離錯誤 → throw field path', () => {
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: { count: 20, distance: 4, spawnArea: { yawDegRange: [25, -25], distanceURange: [3.2, 4.4] } },
+        sequence: { alternation: 'RL', seed: 7 },
+      }),
+    ).toThrow(/targets\.spawnArea\.yawDegRange/);
+
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: { count: 20, distance: 4, spawnArea: { yawDegRange: [-25, 25], distanceURange: [0, 4.4] } },
+        sequence: { alternation: 'RL', seed: 7 },
+      }),
+    ).toThrow(/targets\.spawnArea\.distanceURange/);
+  });
+
+  it('spawnDelayMsRange 非二元非負遞增 range → throw field path', () => {
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        sequence: { alternation: 'RL', seed: 7, spawnDelayMsRange: [100] },
+      }),
+    ).toThrow(/sequence\.spawnDelayMsRange/);
+
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        sequence: { alternation: 'RL', seed: 7, spawnDelayMsRange: [-1, 100] },
+      }),
+    ).toThrow(/sequence\.spawnDelayMsRange/);
   });
 
   // 非 Vec3 waypoint 元素若放行,clearance envelope 會變 NaN 而靜默跳過淨空檢查（PR #10 review）。

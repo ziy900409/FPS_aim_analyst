@@ -1,5 +1,12 @@
 import type { TargetMotion } from '../state/types.ts';
 
+export interface SpawnAreaConfig {
+  /** 水平偏心角範圍（deg）；0 = 玩家正前方 -Z，正值往 +X（右側）。 */
+  yawDegRange: [number, number];
+  /** 與玩家原點的前方距離範圍（u, source unit）。 */
+  distanceURange: [number, number];
+}
+
 /**
  * DrillConfig — WP-6 / T1（FR-6.1，OQ-6.1~6.3）
  *
@@ -24,11 +31,13 @@ export interface DrillConfig {
     count: number;
     /** 目標距玩家前方（-Z）距離（u,source unit）。 */
     distance: number;
+    /** WP-21 seeded spawn:以 polar yaw/distance 範圍取樣 pop-in 位置；需搭配 `sequence.seed`。 */
+    spawnArea?: SpawnAreaConfig;
     /** F5 接縫（規格附錄 G）:省略＝static（向後相容）。階段 A 不實作移動,WP-6.5 接管。 */
     motion?: TargetMotion;
   };
-  /** 左右交替序列:`alternation` 首字定首側（對齊 `TargetManager.reset(seq)`）;`seed` 供未來隨機化。 */
-  sequence: { alternation: 'LR' | 'RL'; seed?: number };
+  /** 左右交替序列:`alternation` 首字定首側（對齊 `TargetManager.reset(seq)`）;`seed` 驅動 WP-21 seeded spawn。 */
+  sequence: { alternation: 'LR' | 'RL'; seed?: number; spawnDelayMsRange?: [number, number] };
   timing: {
     /** 開始前倒數（ms;DrillRunner countdown phase,T4）。 */
     countdownMs: number;

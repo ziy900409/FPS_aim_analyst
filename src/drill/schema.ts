@@ -1,4 +1,4 @@
-import type { DrillConfig } from './DrillConfig.ts';
+import type { DrillConfig, SpawnAreaConfig } from './DrillConfig.ts';
 import type { TargetMotion } from '../state/types.ts';
 
 /**
@@ -22,19 +22,30 @@ export function validateDrill(json: unknown): DrillConfig {
   const weaponId =
     root.weaponId === undefined ? undefined : requireNonEmptyString(root.weaponId, 'weaponId');
 
-  // targets — count 正整數、distance 正有限數、motion 選填。
+  // targets — count 正整數、distance 正有限數、spawnArea / motion 選填。
   const targets = requireObject(root.targets, 'targets');
   const count = requirePositiveInt(targets.count, 'targets.count');
   const distance = requirePositiveNumber(targets.distance, 'targets.distance');
+  const spawnArea = targets.spawnArea === undefined ? undefined : validateSpawnArea(targets.spawnArea);
   const motion = targets.motion === undefined ? undefined : validateMotion(targets.motion);
 
-  // sequence — alternation 列舉、seed 選填有限數。
+  // sequence — alternation 列舉、seed 與 seeded spawn delay 選填。
   const sequence = requireObject(root.sequence, 'sequence');
   const alternation = sequence.alternation;
   if (alternation !== 'LR' && alternation !== 'RL') {
     throw err('sequence.alternation', "必須為 'LR' 或 'RL'");
   }
   const seed = sequence.seed === undefined ? undefined : requireFiniteNumber(sequence.seed, 'sequence.seed');
+  const spawnDelayMsRange =
+    sequence.spawnDelayMsRange === undefined
+      ? undefined
+      : requireNonNegativeRange(sequence.spawnDelayMsRange, 'sequence.spawnDelayMsRange');
+  if (spawnArea !== undefined && seed === undefined) {
+    throw err('targets.spawnArea', '需搭配 sequence.seed');
+  }
+  if (spawnDelayMsRange !== undefined && seed === undefined) {
+    throw err('sequence.spawnDelayMsRange', '需搭配 sequence.seed');
+  }
 
   // timing — countdownMs 非負必填;其餘非負選填。
   const timing = requireObject(root.timing, 'timing');
@@ -57,8 +68,12 @@ export function validateDrill(json: unknown): DrillConfig {
   return {
     drillId,
     ...(weaponId !== undefined ? { weaponId } : {}),
-    targets: { count, distance, ...(motion ? { motion } : {}) },
-    sequence: { alternation, ...(seed !== undefined ? { seed } : {}) },
+    targets: { count, distance, ...(spawnArea ? { spawnArea } : {}), ...(motion ? { motion } : {}) },
+    sequence: {
+      alternation,
+      ...(seed !== undefined ? { seed } : {}),
+      ...(spawnDelayMsRange !== undefined ? { spawnDelayMsRange } : {}),
+    },
     timing: {
       countdownMs,
       ...(spawnDelayMs !== undefined ? { spawnDelayMs } : {}),
@@ -66,6 +81,14 @@ export function validateDrill(json: unknown): DrillConfig {
       ...(timeLimitMs !== undefined ? { timeLimitMs } : {}),
     },
     endCondition: { type, value },
+  };
+}
+
+function validateSpawnArea(json: unknown): SpawnAreaConfig {
+  const spawnArea = requireObject(json, 'targets.spawnArea');
+  return {
+    yawDegRange: requireRange(spawnArea.yawDegRange, 'targets.spawnArea.yawDegRange'),
+    distanceURange: requirePositiveRange(spawnArea.distanceURange, 'targets.spawnArea.distanceURange'),
   };
 }
 
@@ -135,6 +158,26 @@ function requireNonNegativeNumber(v: unknown, path: string): number {
   const n = requireFiniteNumber(v, path);
   if (n < 0) throw err(path, '必須 ≥ 0');
   return n;
+}
+
+function requireRange(v: unknown, path: string): [number, number] {
+  if (!Array.isArray(v) || v.length !== 2) throw err(path, '必須為 [min, max] 陣列');
+  const min = requireFiniteNumber(v[0], `${path}[0]`);
+  const max = requireFiniteNumber(v[1], `${path}[1]`);
+  if (min > max) throw err(path, '必須 min ≤ max');
+  return [min, max];
+}
+
+function requireNonNegativeRange(v: unknown, path: string): [number, number] {
+  const range = requireRange(v, path);
+  if (range[0] < 0 || range[1] < 0) throw err(path, '必須 ≥ 0');
+  return range;
+}
+
+function requirePositiveRange(v: unknown, path: string): [number, number] {
+  const range = requireRange(v, path);
+  if (range[0] <= 0 || range[1] <= 0) throw err(path, '必須 > 0');
+  return range;
 }
 
 function requirePositiveNumber(v: unknown, path: string): number {
