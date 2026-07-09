@@ -99,13 +99,38 @@ function serializeEventsCSV(events: DrillEvent[]): string {
       'ammo',
       'offsetDeg',
       'part',
+      'targetX',
+      'targetY',
+      'targetZ',
     ],
   ];
   for (const event of events) {
     if (event.type === 'visible') {
-      rows.push([event.type, formatNumber(event.t), event.targetId, event.side, '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      rows.push([
+        event.type,
+        formatNumber(event.t),
+        event.targetId,
+        event.side,
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        formatOptionalNumber(event.targetX),
+        formatOptionalNumber(event.targetY),
+        formatOptionalNumber(event.targetZ),
+      ]);
     } else if (event.type === 'counter') {
-      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else {
       rows.push([
         event.type,
@@ -126,6 +151,9 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         formatOptionalNumber(event.ammo),
         event.offsetDeg !== undefined ? formatNumber(event.offsetDeg) : '',
         event.part ?? '',
+        '',
+        '',
+        '',
       ]);
     }
   }
@@ -179,7 +207,11 @@ function assertFinitePayload(payload: ExportPayload): void {
   }
   for (const event of payload.events) {
     formatNumber(event.t);
-    if (event.type === 'fire') {
+    if (event.type === 'visible') {
+      formatOptionalNumber(event.targetX);
+      formatOptionalNumber(event.targetY);
+      formatOptionalNumber(event.targetZ);
+    } else if (event.type === 'fire') {
       formatNumber(event.residualSpeed);
       formatOptionalNumber(event.viewYaw);
       formatOptionalNumber(event.viewPitch);

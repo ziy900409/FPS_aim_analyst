@@ -68,7 +68,7 @@
 |---|---|---|---|---|---|---|
 | **WP-19** | [`active/stage3/wp-19-scene-system/`](active/stage3/wp-19-scene-system/README.md) | 場景系統：SceneConfig + GLTF 管線 + 淨空驗證 + 雜亂度階層場景 ×2 | **M9 ✅** | M4 ✅（可與 stage2 尾段並行） | 4–6 | ✅ **M9（2026-07-08）** |
 | **WP-20** | [`active/stage3/wp-20-display-pipeline/`](active/stage3/wp-20-display-pipeline/README.md) | 解析度模式 + fullscreen/資格閘 + frame-time log + session setup | — | M4 ✅（可並行） | 3–4 | ⬜ |
-| **WP-21** | [`active/stage3/wp-21-detection-drill/`](active/stage3/wp-21-detection-drill/README.md) | seeded spawn + pop-in 偵測 drill + t_detect 離線推導 spec | — | T1/T2 獨立；T3 需 WP-16 | 2.5–3.5 | ⬜ |
+| **WP-21** | [`active/stage3/wp-21-detection-drill/`](active/stage3/wp-21-detection-drill/README.md) | seeded spawn + pop-in 偵測 drill + t_detect 離線推導 spec | — | T1/T2 獨立；T3 需 WP-16 | 2.5–3.5 | 🟡 T1 ✅;T2 next |
 | **WP-22** | [`active/stage3/wp-22-perception-integration/`](active/stage3/wp-22-perception-integration/README.md) | 追蹤×場景 + 解析度 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + WP-18 | 2–3 | ⬜ |
 
 ---

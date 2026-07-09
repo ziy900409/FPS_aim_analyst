@@ -43,6 +43,7 @@ import type { SceneConfig } from './scene/SceneConfig.ts';
 import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
+import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -79,6 +80,7 @@ let activeSceneFallback = false;
 const initialDrillConfig = loadDrill(defaultDrillSource, activeSceneConfig);
 const availableDrills: AvailableDrill[] = [
   { id: initialDrillConfig.drillId, label: initialDrillConfig.drillId, source: defaultDrillSource },
+  { id: detectionPopinV1.drillId, label: detectionPopinV1.drillId, source: detectionPopinV1 },
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
@@ -280,6 +282,10 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
       frames.summary.p95 > PERF_FLOOR_MS,
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
+      ...(activeDrillConfig.targets.spawnArea !== undefined ? { spawnArea: activeDrillConfig.targets.spawnArea } : {}),
+      ...(activeDrillConfig.sequence.spawnDelayMsRange !== undefined
+        ? { spawnDelayMsRange: activeDrillConfig.sequence.spawnDelayMsRange }
+        : {}),
       ...(activeDrillConfig.targets.motion !== undefined ? { motion: activeDrillConfig.targets.motion } : {}),
     },
     scene: {

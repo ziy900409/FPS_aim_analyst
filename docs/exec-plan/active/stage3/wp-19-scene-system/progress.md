@@ -31,6 +31,20 @@
 
 ## Log
 
+### 2026-07-09 07:54Z — WP-21 T1 對帳完成:spawnArea 已納入 clearance envelope
+
+- **來源**:WP-21 T1 seeded spawn 完成([../wp-21-detection-drill/progress.md](../wp-21-detection-drill/progress.md))。
+- **實作結論**:`src/scene/clearance.ts` `deriveTargetEnvelopes(drill)` 現在遇到 `targets.spawnArea` 時,會以 yaw range 端點 + 90° 倍數臨界角、distance min/max 推得 polar sector 的保守 target envelope;既有無 spawnArea 的 L/R slot path 不變。
+- **測試證據**:`src/scene/clearance.test.ts` 新增 default spawnArea 極值 golden 與 `spawnarea-blocker` fixture;`npm.cmd run test -- src/scene/clearance.test.ts` → **1 file / 10 tests pass**;T1 完整 `npx.cmd vitest run` → **56 files / 426 tests pass**。
+- **待辦狀態**:2026-07-09 07:35Z 記錄的「spawnArea 尚未被 clearance envelope 形式涵蓋」已關閉。WP-21 T2 detection drill config 可宣告受 WP-19 clearance gate 覆蓋。
+
+### 2026-07-09 07:35Z — WP-21 T0 對帳:spawnArea 尚未被 clearance envelope 形式涵蓋
+
+- **來源**:WP-21 T0 entry gate 對帳([../wp-21-detection-drill/progress.md](../wp-21-detection-drill/progress.md))。
+- **讀碼結論**:`src/scene/clearance.ts` `deriveTargetEnvelopes(drill)` 目前只使用 `targets.distance`、active sides(±2u)與 `targets.motion`;`targets.spawnArea` 尚未存在於 schema,因此 WP-19 T3 的包絡推導**未形式涵蓋** seeded spawn 的 yaw/distance 極值。
+- **WP-21 決議值**:`targets.spawnArea` 預設 `{ yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] }`。此值保守避開 placeholder-room z=-5 北牆,但仍需進 validator 才能成為機械保證。
+- **待辦歸屬**:WP-21 T1 啟用 `targets.spawnArea` 時必須同步擴充 WP-19 clearance target envelope(或另立等效 gate)並補場景淨空回歸測試;在此之前,既有 WP-19 淨空證據只覆蓋舊左右側槽/既有 motion 包絡。
+
 ### 2026-07-08 — T-exit gate:M9 場景脊椎宣告 ✅
 
 **交付了什麼(M9 承諾被測試釘死)**:場景系統作為可消費的穩定面——「換場景零引擎碼」與「場景不碰決定性」兩承諾各有測試級證據。WP-22 T1 起可直接消費 `SceneConfig` / 切換 / 淨空驗證 / `meta.scene`。

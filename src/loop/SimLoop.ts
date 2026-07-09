@@ -277,7 +277,15 @@ function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecor
   for (let i = 0; i < state.targets.length; i++) {
     const target = state.targets[i];
     if (target.visible && state.tVisible.get(target.id) === t) {
-      recorder.recordEvent({ type: 'visible', targetId: target.id, side: target.side, t });
+      recorder.recordEvent({
+        type: 'visible',
+        targetId: target.id,
+        side: target.side,
+        t,
+        targetX: target.pos.x,
+        targetY: target.pos.y,
+        targetZ: target.pos.z,
+      });
     }
   }
 }

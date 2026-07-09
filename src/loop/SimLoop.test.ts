@@ -388,7 +388,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     simStep(state, 1 / SIM_HZ, 300, tm, cam, undefined, undefined, undefined, recorder);
 
     expect(recorder.snapshot().events).toEqual([
-      { type: 'visible', targetId: 't0', side: 'R', t: 100 },
+      { type: 'visible', targetId: 't0', side: 'R', t: 100, targetX: 0, targetY: 1.5, targetZ: -8 },
       { type: 'counter', key: 'A', t: 101 },
       {
         type: 'fire',

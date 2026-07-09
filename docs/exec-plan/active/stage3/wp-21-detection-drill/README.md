@@ -10,7 +10,7 @@
 | **相依** | T1/T2 獨立可跑;**T3 需 WP-16**(schema v2 逐 tick 目標/玩家位置欄) |
 | **對應 FR** | FR-C10 ~ FR-C12 |
 | **估時** | 2.5–3.5 dev-days |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | ✅ 完成(2026-07-09)— T1–T3 交付,T-exit gate 綠(`test:ci` exit 0);WP-22 T2 可消費偵測 drill + meta.spawn + 推導 spec |
 
 ---
 

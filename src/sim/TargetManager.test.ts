@@ -184,11 +184,22 @@ describe('TargetManager — config 驅動（WP-6 / T2，FR-6.2；換 config 即�
     count: number;
     alternation: 'LR' | 'RL';
     distance?: number;
+    seed?: number;
+    spawnArea?: DrillConfig['targets']['spawnArea'];
+    spawnDelayMsRange?: [number, number];
   }): DrillConfig {
     return {
       drillId: 'test',
-      targets: { count: over.count, distance: over.distance ?? 4 },
-      sequence: { alternation: over.alternation },
+      targets: {
+        count: over.count,
+        distance: over.distance ?? 4,
+        ...(over.spawnArea !== undefined ? { spawnArea: over.spawnArea } : {}),
+      },
+      sequence: {
+        alternation: over.alternation,
+        ...(over.seed !== undefined ? { seed: over.seed } : {}),
+        ...(over.spawnDelayMsRange !== undefined ? { spawnDelayMsRange: over.spawnDelayMsRange } : {}),
+      },
       timing: { countdownMs: 0 },
       endCondition: { type: 'targetCount', value: over.count },
     };
@@ -285,5 +296,98 @@ describe('TargetManager — config 驅動（WP-6 / T2，FR-6.2；換 config 即�
     createTargetManager(cfg).tick(state, 100);
     expect(state.targets[0].motion).toEqual({ type: 'linear', speed: 2 });
     expect(state.targets[0].motion).not.toBe(cfg.targets.motion); // 複製,不共用參考
+  });
+
+  it('seed-only config 維持既有 L/R slot 位置（counterstrafe_ad_v1 零破壞）', () => {
+    const state = createSharedState();
+    createTargetManager(config({ count: 1, alternation: 'LR', seed: 1 })).tick(state, 100);
+
+    expect(state.targets[0].side).toBe('L');
+    expect(state.targets[0].pos).toEqual({ x: -2, y: 1.5, z: -4 });
+  });
+});
+
+describe('TargetManager — WP-21 seeded spawn（FR-C10）', () => {
+  const SPAWN_AREA = { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] } satisfies NonNullable<
+    DrillConfig['targets']['spawnArea']
+  >;
+
+  function config(seed: number, count = 5, spawnDelayMsRange: [number, number] = [0, 0]): DrillConfig {
+    return {
+      drillId: 'seeded-test',
+      targets: { count, distance: 4, spawnArea: SPAWN_AREA },
+      sequence: { alternation: 'LR', seed, spawnDelayMsRange },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: count },
+    };
+  }
+
+  function collectImmediateSpawns(cfg: DrillConfig): Array<{ side: 'L' | 'R'; x: number; y: number; z: number }> {
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+    const samples: Array<{ side: 'L' | 'R'; x: number; y: number; z: number }> = [];
+    for (let i = 0; i < cfg.targets.count; i++) {
+      tm.tick(state, 100 + i * 100);
+      const target = state.targets[0];
+      samples.push({ side: target.side, x: target.pos.x, y: target.pos.y, z: target.pos.z });
+      tm.markKilled(state, target.id);
+    }
+    return samples;
+  }
+
+  it('同 seed reset 後重跑產生完全相同的 spawn 位置序列', () => {
+    const cfg = config(77, 4);
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+
+    function run(): Array<{ side: 'L' | 'R'; x: number; y: number; z: number }> {
+      const samples: Array<{ side: 'L' | 'R'; x: number; y: number; z: number }> = [];
+      for (let i = 0; i < cfg.targets.count; i++) {
+        tm.tick(state, 100 + i * 100);
+        const target = state.targets[0];
+        samples.push({ side: target.side, x: target.pos.x, y: target.pos.y, z: target.pos.z });
+        tm.markKilled(state, target.id);
+      }
+      return samples;
+    }
+
+    const first = run();
+    tm.reset(state);
+    expect(run()).toEqual(first);
+  });
+
+  it('不同 seed 產生不同 spawn 位置序列（sanity）', () => {
+    expect(collectImmediateSpawns(config(77, 4))).not.toEqual(collectImmediateSpawns(config(78, 4)));
+  });
+
+  it('取樣次序鎖定：delay → yaw → distance（seed=12345 前五個 spawn golden）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(config(12345, 5, [100, 200]));
+    const expected = [
+      { t: 1192.3120571730249, side: 'L', x: -0.4987525503090686, z: -3.401090868918761 },
+      { t: 1387.2542292751623, side: 'R', x: 1.0738688519024253, z: -4.24699909359848 },
+      { t: 1578.6672345728925, side: 'R', x: 0.25058957781529, z: -3.441850672924976 },
+      { t: 1696.4455222228753, side: 'R', x: 1.48768974307174, z: -3.7683740784973336 },
+      { t: 1799.8563998843806, side: 'L', x: -0.47634821560472135, z: -3.7846125290323904 },
+    ] as const;
+
+    let now = 1000;
+    for (const sample of expected) {
+      tm.tick(state, now); // schedules this trial's seeded delay; no target until due.
+      expect(state.targets).toHaveLength(0);
+      tm.tick(state, sample.t - 1e-6);
+      expect(state.targets).toHaveLength(0);
+
+      tm.tick(state, sample.t);
+      const target = state.targets[0];
+      expect(target.side).toBe(sample.side);
+      expect(target.pos.x).toBeCloseTo(sample.x, 12);
+      expect(target.pos.y).toBe(1.5);
+      expect(target.pos.z).toBeCloseTo(sample.z, 12);
+      expect(state.tVisible.get(target.id)).toBeCloseTo(sample.t, 10);
+
+      tm.markKilled(state, target.id);
+      now = sample.t;
+    }
   });
 });
