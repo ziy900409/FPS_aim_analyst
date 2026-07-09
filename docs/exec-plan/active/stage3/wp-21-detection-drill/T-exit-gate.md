@@ -7,7 +7,7 @@
 | **相依** | T1–T3 |
 | **Risk / Cplx** | — / Low |
 | **Touches** | docs(progress/checklist/上層索引) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-09 |
 
 ## Objective
 
@@ -16,15 +16,15 @@ WP-22 T2 的解析度 × 偵測 protocol 自此有完整的 drill 與分析介�
 
 ## Steps
 
-- [ ] `npm run test:ci` exit 0。
-- [ ] 三項證據記 progress:
-  - 零破壞:既有決定性回歸零修改全綠(測試名 + 結果)。
-  - 重現:同 seed spawn 序列 golden 鎖定(測試名)。
-  - 推導:round-trip fixture 誤差 ≤ 1 tick(四組結果)。
-- [ ] WP-19 對帳複查:淨空驗證涵蓋 spawnArea 極值(雙方 progress 互記)。
-- [ ] OQ ledger 收斂:OQ-S3-2 / OQ-21.1 / OQ-21.2 回填 [../README.md §8](../README.md)。
-- [ ] [../README.md §3](../README.md) WP-21 翻 ✅;[task-checklist.md](task-checklist.md) 全 ✅。
-- [ ] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
+- [x] `npm run test:ci` exit 0。→ `tsc --noEmit` pass;vitest **58 files / 438 tests**;playwright **11 tests**(含 WP-21 detection pop-in E2E);`EXIT=0`。
+- [x] 三項證據記 progress:
+  - 零破壞:`tests/regression/determinism.test.ts`(16)+ `src/sim/TargetManager.test.ts` 既有決定性回歸零修改全綠。
+  - 重現:`src/sim/TargetManager.test.ts` 同 seed(12345)前五 spawn golden(due time + polar position)鎖定。
+  - 推導:`src/metrics/detectionDerivation.test.ts`(8)round-trip fixture 四組 known onset(快/慢 × 高/低 noise)誤差 ≤ 1 tick。
+- [x] WP-19 對帳複查:淨空驗證涵蓋 spawnArea 極值——WP-19 progress 2026-07-09 07:54Z 已關閉待辦(`clearance.test.ts` default spawnArea 極值 golden + `spawnarea-blocker` fixture),雙方 progress 互記。
+- [x] OQ ledger 收斂:OQ-S3-2 / OQ-21.1 / OQ-21.2 已回填 [../README.md §8](../README.md)(OQ-S3-2 ✅ resolved;WP-21-local note 收 OQ-21.1/21.2)。
+- [x] [../README.md §3](../README.md) WP-21 翻 ✅;[task-checklist.md](task-checklist.md) 全 ✅。
+- [x] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
 
 ## Definition of Done
 

@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 進行中 — T3 offline derivation PASS 2026-07-09; T-exit next
+## Status: ✅ 完成 — T-exit gate PASS 2026-07-09(`test:ci` exit 0);WP-22 T2 可消費
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 seeded spawn | ✅ |
 | T2 偵測 drill config | ✅ |
 | T3 離線推導 spec + fixture | ✅ |
-| T-exit | ⬜ |
+| T-exit | ✅ |
 
 ---
 
@@ -28,6 +28,25 @@
 ---
 
 ## Log
+
+### 2026-07-09 10:36Z — T-exit gate PASS(偵測鏈交付宣告;WP-21 收斂)
+
+- **Gate:`npm.cmd run test:ci` → EXIT=0**。
+  - `tsc --noEmit` pass。
+  - `vitest run` → **58 files / 438 tests pass**。
+  - `playwright test` → **11 tests pass**(含 `tests/e2e/full-drill.spec.ts` 的 `WP-21 detection pop-in:timeout 完整一輪 → visible 位置欄 + meta.spawn`)。
+- **三項交付證據(exit-gate 要求)**:
+  - **零破壞**:`tests/regression/determinism.test.ts`(16 tests,跨 render FPS bit-exact/場景純裝飾/重播)+ `src/sim/TargetManager.test.ts`(seed-only legacy 位置逐位不變)零修改全綠。seeded 改動未波及無 seed / seed-only 舊路徑。
+  - **重現**:`src/sim/TargetManager.test.ts` 鎖 seed=12345 前五 spawn golden(delay→yaw→distance 次序下的 due time + polar position);`reset()` 同 seed 重跑同序列。
+  - **推導**:`src/metrics/detectionDerivation.test.ts`(8 tests)以 `DataRecorder → buildExportPayload → serializeJSON` round-trip 消費 production `ExportPayload`,四組 known onset(快/慢 × 高/低 noise)推導 `t_detect` 誤差 ≤ 1 tick,並覆蓋 timeout/anticipation/首窗不足。
+- **WP-19 對帳複查**:淨空驗證涵蓋 spawnArea 極值——WP-19 progress 2026-07-09 07:54Z 已將「spawnArea 尚未被 clearance envelope 形式涵蓋」待辦關閉(`src/scene/clearance.ts` polar sector 保守 envelope + `clearance.test.ts` default spawnArea 極值 golden / `spawnarea-blocker` fixture)。雙方 progress 互記完成。
+- **OQ ledger 收斂**([../README.md §8](../README.md)):OQ-S3-2(θ_v=3×SD、k=4 tick,標暫定/pilot 校準)✅ resolved;OQ-21.1(`spawnArea {yawDegRange:[-25,25], distanceURange:[3.2,4.4]}`)、OQ-21.2(取樣次序 `delay→yaw→distance`、位置落 `visible.targetX/Y/Z` additive)由 WP-21-local note 收斂,均 ✅。無帶著走的阻塞 OQ。
+
+**Outcomes**
+
+- **交付了什麼**:偵測實驗完整機械與資料鏈——(1)`sequence.seed` 啟用 seeded spawn(位置 polar 取樣 + 延遲取樣,取樣次序固定、可重現);(2)`detection_popin_v1` pop-in drill config(`t_visible`=spawn tick 語意零改動)+ `visible.targetX/Y/Z` 位置欄 + `meta.spawn` 快照 + `peekTimeoutMs` 逾時推進;(3)`docs/operational/analysis-t-detect.md` t_detect/偏心度離線推導 spec(引擎零新計算)+ `src/metrics/detectionDerivation.ts` 可執行離線推導器與 round-trip fixture。WP-22 T2 解析度 × 偵測 protocol 自此有完整 drill + 分析介面可消費。
+- **帶著走的決定**:① seeded spawn 以「有 `spawnArea`/`spawnDelayMsRange` 才啟用」opt-in,seed-only 舊 drill 逐位不變(保護零破壞);② 沿用 `visible` event 追加位置欄,不新增 `spawn` event type;③ `t_detect` 回傳 sustained run 第一 tick(onset 語意),需觀察到 k tick 才確認;④ θ_v/k 仍為 provisional,留 pilot sweep 校準(離線可調,不阻塞引擎)。
+- **Surprises**:exit-gate 無新意外;沿用 T1–T3 已記錄的 surprises(counter-strafe drill 已帶 seed 故需另測 seed-only path、`peekTimeoutMs` 原未實作 per-presentation timeout、schema.md 原缺 `visible.targetX/Y/Z` 文件——皆已於 T1/T2/T3 落地補齊)。
 
 ### 2026-07-09 08:31Z — T3 offline derivation PASS(spec + executable verifier + round-trip fixtures)
 
