@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(四上游 exit 驗證 + WP-18 形狀對帳,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
+| 🟡 | **T0** entry gate precheck(三上游 exit verified;blocked on WP-18 exit/形狀對帳,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ⬜ | **T1** 追蹤 drill × BR 場景 + E2E | [T1-tracking-in-scene.md](T1-tracking-in-scene.md) | T0 | Med |
 | ⬜ | **T2** protocol 執行器 + 解析度 × 偵測受試者內 E2E | [T2-resolution-protocol-e2e.md](T2-resolution-protocol-e2e.md) | T0 | High |
 | ⬜ | **T3** 決定性回歸擴充 + 驗收清單 C + pilot protocol | [T3-determinism-acceptance-c.md](T3-determinism-acceptance-c.md) | T1, T2 | Med |

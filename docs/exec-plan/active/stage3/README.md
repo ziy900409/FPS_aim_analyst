@@ -272,11 +272,12 @@ WP-21(偵測 drill;T3 需 WP-16)─┤
 | OQ-S3-2 | `t_detect` 參數 pre-registered 起點(θ_v 相對雜訊底倍率、持續 k tick) | ✅ **收斂(WP-21 T0 2026-07-09)**:θ_v = 3× 前刺激窗 500ms aim 角速度 SD、k = 4 tick(≈31.25ms@128Hz);敏感度分析離線做,analysis spec 內標「暫定,pilot 校準」。 | 研究者 | WP-21 T3(spec 內給預設) | ✅ 已收斂;不阻塞引擎 |
 | OQ-S3-3 | 場景資產具體選型(CC0/CC-BY pack 清單與雜亂度對應) | ✅ **收斂(M9 2026-07-08)**:T0 選定 Kenney Nature Kit(CC0)為候選,惟 T2/T5 最終改採**原創程序化生成 CC0** 資產(GD-9 完全合規、propBounds 與視覺同源)——`field-low`(204 triangles)+ `urban-high`(804 triangles),皆遠低於 <20k budget,`ATTRIBUTIONS.md` 逐項可稽核。備選 Kenney/Quaternius/Poly Pizza 保留供未來寫實置換。詳 [wp-19 progress](wp-19-scene-system/progress.md)。 | 使用者 | WP-19 T0 | ✅ 已收斂;triangles/materials 已實測、`ATTRIBUTIONS.md` 已寫 |
 | OQ-S3-4 | frames 匯出形式(完整序列 vs 摘要) | ✅ **收斂(WP-20 T0 2026-07-08)**:JSON `frames.series` 完整 delta 序列 + summary(`p50/p95/p99/overBudgetWindows/overflow`);CSV 只輸出 summary 欄位。 | 研究者 | WP-20 T0 | ✅ 已收斂;T3 匯出形式固定 |
-| OQ-S3-5 | 追蹤 drill 的 presentation 時長/速度階層設計(WP-18 展開時定) | 對帳點:WP-18 T0 與本計畫 WP-22 T1 互記 | 研究者 | WP-18 entry | WP-22 T1 消費面 |
+| OQ-S3-5 | 追蹤 drill 的 presentation 時長/速度階層設計(WP-18 展開時定) | 🟡 **WP-22 T0 precheck(2026-07-09)**:current main 只有 WP-18 ready stub(entry 全達成、未展開),無 exit/實際交付形狀可對帳。WP-18 exit 後重跑對帳:tracking drill config 型、motion 欄、presentation duration/速度階層、target render interpolation、`t_acquire`/TOT/RMS ε 欄位。 | 研究者 | WP-18 exit / WP-22 T0 rerun | WP-22 T1 blocked |
 
 > **WP-19-local OQ 收斂(M9 2026-07-08)**:OQ-19.1(`CLEARANCE_MARGIN_U = 0.5u` / `playerCorridor.halfWidthU = 1.0u`)與 OQ-19.2(`meta.scene` optional 區塊縫 WP-16 已留,T4 填值)均 ✅ resolved,決議與證據見 [wp-19 progress](wp-19-scene-system/progress.md) OQ ledger。
 > **WP-20-local OQ 收斂(T0 2026-07-08)**:OQ-20.1(`MAX_DISPLAY_HZ = 240`;rAF deltas 丟前 30、取後 120 median 估 refresh)與 OQ-20.2(`meta.display`/`frames`/`session` optional 縫 WP-16 已留,填值歸 WP-20)均 ✅ resolved,決議與證據見 [wp-20 progress](wp-20-display-pipeline/progress.md) OQ ledger。
 > **WP-21-local OQ 收斂(T0/T1 2026-07-09)**:OQ-21.1 `spawnArea` 預設 `{ yawDegRange: [-25,25], distanceURange: [3.2,4.4] }`;OQ-21.2 seeded 取樣次序固定 `delay → yaw → distance`,spawn 位置欄落在既有 `visible` event 的 `targetX`/`targetY`/`targetZ` additive 欄位。WP-19 對帳結論:T1 已把 `spawnArea` polar 極值納入 clearance envelope;證據見 [wp-21 progress](wp-21-detection-drill/progress.md)。
+> **WP-22-local OQ 收斂(T0 2026-07-09)**:OQ-22.1 `meta.protocol = { protocolId, conditionIndex, conditionLabel }`(`conditionIndex` = 0-based config index);OQ-22.2 app 只收 WP-20 T4 `participantId`/`sessionLabel` 並寫 `meta.session`,同意書/納排簽核/moderator 備註留 T3 `pilot-protocol-stage3.md` 文件層。T0 不宣告 PASS,因 OQ-S3-5 仍 blocked by WP-18 exit。
 
 ---
 
