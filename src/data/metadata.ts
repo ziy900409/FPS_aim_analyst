@@ -17,6 +17,7 @@ export interface SpawnMeta {
   seed: number;
   motion?: unknown;
   spawnArea?: unknown;
+  spawnDelayMsRange?: unknown;
 }
 
 export interface SceneMeta {

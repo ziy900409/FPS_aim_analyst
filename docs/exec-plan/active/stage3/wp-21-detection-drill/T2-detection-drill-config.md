@@ -7,7 +7,7 @@
 | **相依** | T1(seeded spawn 就緒) |
 | **Risk / Cplx** | Med / Low |
 | **Touches** | ADD `src/drill/detection_popin_v1.ts`;MODIFY spawn 事件記錄(位置欄,v2 additive)、`src/data/metadata.ts`(meta.spawn 填值)、`src/ui/Controls.ts`(drill 清單)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS 2026-07-09 08:14Z |
 
 ## Objective
 
@@ -32,11 +32,11 @@ tick(語意零改動);spawn 事件帶目標位置——偵測實驗的最小資�
 
 ## Steps
 
-- [ ] drill config + validate 綠;Controls 掛線。
-- [ ] spawn 事件位置欄 + meta.spawn + 匯出測試。
-- [ ] 實機驗證記 progress(隨機性觀感 + 匯出抽查)。
-- [ ] E2E 冒煙綠。
-- [ ] `npx vitest run` 全綠。
+- [x] (2026-07-09 08:07Z) drill config + validate 綠;Controls 掛線。
+- [x] (2026-07-09 08:10Z) spawn 事件位置欄 + meta.spawn + 匯出測試。
+- [x] (2026-07-09 08:14Z) 實機驗證記 progress(Edge E2E 以 `__fpsTest` 跑完整 detection timeout round + 匯出抽查)。
+- [x] (2026-07-09 08:14Z) E2E 冒煙綠。
+- [x] (2026-07-09 08:12Z) `npx vitest run` 全綠。
 
 ## Definition of Done
 

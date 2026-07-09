@@ -10,7 +10,7 @@
 | **相依** | T1/T2 獨立可跑;**T3 需 WP-16**(schema v2 逐 tick 目標/玩家位置欄) |
 | **對應 FR** | FR-C10 ~ FR-C12 |
 | **估時** | 2.5–3.5 dev-days |
-| **狀態** | 🟡 進行中 — T1 seeded spawn ✅;T2 next |
+| **狀態** | 🟡 進行中 — T2 detection drill ✅;T3 next |
 
 ---
 

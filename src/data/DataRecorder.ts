@@ -7,7 +7,15 @@ import {
 } from './RingBuffer.ts';
 
 export type DrillEvent =
-  | { type: 'visible'; targetId: string; side: 'L' | 'R'; t: number }
+  | {
+      type: 'visible';
+      targetId: string;
+      side: 'L' | 'R';
+      t: number;
+      targetX?: number;
+      targetY?: number;
+      targetZ?: number;
+    }
   | { type: 'counter'; key: string; t: number }
   | {
       type: 'fire';

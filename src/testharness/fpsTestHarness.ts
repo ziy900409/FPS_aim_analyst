@@ -65,6 +65,8 @@ export interface FpsTestHarness {
   feedInput(seq: HarnessInputEvent[]): void;
   /** 便捷驅動：合成完整 counter-strafe 一輪（移動→急停→開火命中，左右交替），跑到 ended 或 peek 上限。 */
   runCounterStrafeRound(maxPeeks?: number): void;
+  /** 便捷驅動：不開火，讓 detection pop-in presentations 依 peekTimeoutMs 自行推進直到 ended。 */
+  runDetectionTimeoutRound(maxPresentations?: number): void;
   /**
    * WP-13 / T2：按住連發 `shots` 發（不自動瞄準,凍結 state.aim）→ 讓 recoil 純由連發累積,供
    * 「視覺/彈道分離」E2E 讀 punch 漂移方向 + 向量（10 發 = M5 向量）。回傳 kick 後讀數。
@@ -260,6 +262,19 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       advanceTicks(4); // 讓相位機偵測 endCondition（達標晚一 tick）
     },
 
+    runDetectionTimeoutRound(maxPresentations = Infinity): void {
+      if (config === null) throw new Error('runDetectionTimeoutRound requires startDrill first');
+      const seen = new Set<string>();
+      let guard = 0;
+      while (seen.size < maxPresentations && drillRunner.phase !== 'ended' && guard < 200000) {
+        const target = activeTarget();
+        if (target !== undefined) seen.add(target.id);
+        advanceOneTick();
+        guard++;
+      }
+      advanceTicks(4); // 讓 timeout 後的 targetCount 判定穩定落到 ended
+    },
+
     fireRecoilBurst(shots: number): RecoilReadout {
       if (config === null) throw new Error('fireRecoilBurst requires startDrill first');
       const startAmmo = state.weapon.ammo;
@@ -298,6 +313,8 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         recorderOverflow: snapshot.recorderOverflow,
         spawn: {
           seed: config.sequence.seed ?? DEFAULT_RNG_SEED,
+          ...(config.targets.spawnArea !== undefined ? { spawnArea: config.targets.spawnArea } : {}),
+          ...(config.sequence.spawnDelayMsRange !== undefined ? { spawnDelayMsRange: config.sequence.spawnDelayMsRange } : {}),
           ...(config.targets.motion !== undefined ? { motion: config.targets.motion } : {}),
         },
       });

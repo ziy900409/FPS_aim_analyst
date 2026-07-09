@@ -127,6 +127,34 @@ describe('DrillRunner — 生命週期（FR-6.4）', () => {
     expect(runner.phase).toBe('ended');
   });
 
+  it('timing.peekTimeoutMs：未擊殺的 visible target 逾時後推進序列並計入 targetCount', () => {
+    const config = makeConfig({
+      timing: { countdownMs: 0, peekTimeoutMs: 100 },
+      targets: { count: 2, distance: 4 },
+      endCondition: { type: 'targetCount', value: 2 },
+    });
+    const { state, runner } = setup(config);
+
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(runner.phase).toBe('running');
+    expect(state.targets.map((target) => target.id)).toEqual(['t0']);
+
+    runner.tick(state, 99);
+    expect(state.targets.map((target) => target.id)).toEqual(['t0']);
+
+    runner.tick(state, 100);
+    expect(runner.phase).toBe('running');
+    expect(state.targets).toHaveLength(0);
+
+    runner.tick(state, 101);
+    expect(state.targets.map((target) => target.id)).toEqual(['t1']);
+
+    runner.tick(state, 201);
+    expect(runner.phase).toBe('ended');
+    expect(state.targets).toHaveLength(0);
+  });
+
   it('restart：全 reset → idle，state/target/首發游標無殘留', () => {
     const config = makeConfig({
       timing: { countdownMs: 0 },

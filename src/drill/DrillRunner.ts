@@ -88,6 +88,18 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
 
         // 擊殺數 = 見過的 id 數 − 目前存活數（單 active 目標，故 targets.length ∈ {0,1}）。
         // 命中一 tick 後才反映（markKilled 在本 tick 之後的 fire 路徑），最多晚一 tick 偵測 ended。
+        const peekTimeoutMs = config.timing.peekTimeoutMs;
+        if (peekTimeoutMs !== undefined) {
+          for (let i = 0; i < s.targets.length; i++) {
+            const target = s.targets[i];
+            const visibleAt = s.tVisible.get(target.id);
+            if (target.alive && visibleAt !== undefined && nowMs - visibleAt >= peekTimeoutMs) {
+              targetManager.markKilled(s, target.id);
+              break;
+            }
+          }
+        }
+
         const killed = seenIds.size - s.targets.length;
         const ec = config.endCondition;
         const elapsed = nowMs - runStartMs;

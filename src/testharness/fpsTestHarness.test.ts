@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createFpsTestHarness } from './fpsTestHarness.ts';
 import drillSource from '../../drills/counterstrafe_ad_v1.json';
+import { detectionPopinV1 } from '../drill/detection_popin_v1.ts';
 
 /**
  * WP-13 / T2 — fpsTestHarness 整合（node 層,對應瀏覽器 E2E full-drill.spec.ts）
@@ -15,6 +16,19 @@ import drillSource from '../../drills/counterstrafe_ad_v1.json';
 function makeHarness() {
   return createFpsTestHarness({
     availableDrills: [{ id: 'counterstrafe_ad_v1', source: drillSource }],
+    backend: 'webgl2',
+    crossOriginIsolated: true,
+    displayHz: 240,
+    sensitivity: 1,
+  });
+}
+
+function makeDetectionHarness() {
+  return createFpsTestHarness({
+    availableDrills: [
+      { id: 'counterstrafe_ad_v1', source: drillSource },
+      { id: detectionPopinV1.drillId, source: detectionPopinV1 },
+    ],
     backend: 'webgl2',
     crossOriginIsolated: true,
     displayHz: 240,
@@ -65,5 +79,29 @@ describe('WP-13 / T2 — harness 整合(分離後仍命中 + recoil 漂移讀數
 
     expect(ra.rawPunchPitchDeg).toBe(rb.rawPunchPitchDeg);
     expect(ra.rawPunchYawDeg).toBe(rb.rawPunchYawDeg);
+  });
+
+  it('WP-21 / T2 detection drill：timeout 跑完後匯出 visible 位置欄與 meta.spawn', () => {
+    const harness = makeDetectionHarness();
+    harness.startDrill('detection_popin_v1');
+    harness.runDetectionTimeoutRound();
+
+    expect(harness.phase()).toBe('ended');
+    const payload = harness.forceExportJSON();
+    const visible = payload.events.filter((event) => event.type === 'visible');
+    const targetIds = new Set(visible.map((event) => event.targetId));
+
+    expect(visible).toHaveLength(detectionPopinV1.targets.count);
+    expect(targetIds.size).toBe(detectionPopinV1.targets.count);
+    expect(visible.some((event) => Math.abs(event.targetX ?? 0) > 0)).toBe(true);
+    for (const event of visible) {
+      expect(event.targetY).toBe(1.5);
+      expect(event.targetZ).toBeLessThan(0);
+    }
+    expect(payload.meta.spawn).toMatchObject({
+      seed: detectionPopinV1.sequence.seed,
+      spawnArea: detectionPopinV1.targets.spawnArea,
+      spawnDelayMsRange: detectionPopinV1.sequence.spawnDelayMsRange,
+    });
   });
 });

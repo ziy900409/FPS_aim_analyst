@@ -33,7 +33,7 @@ const snapshot: DataRecorderSnapshot = {
     { t: 17.8125, vx: 0, vz: 0, px: 1.5, pz: 2.5, tx: null, ty: null, tz: null, aim: { yaw: 0.25, pitch: 0 }, keys: ['A', 'D'] },
   ],
   events: [
-    { type: 'visible', targetId: 'target-1', side: 'R', t: 10 },
+    { type: 'visible', targetId: 'target-1', side: 'R', t: 10, targetX: 3, targetY: 1.6, targetZ: -4 },
     { type: 'counter', key: 'A', t: 14 },
     {
       type: 'fire',
@@ -164,10 +164,10 @@ describe('data export', () => {
       {
         filename: 'pilot_run_01-events.csv',
         content: [
-          'type,t,targetId,side,key,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part',
-          'visible,10,target-1,R,,,,,,,,,,,,,,',
-          'counter,14,,,A,,,,,,,,,,,,,',
-          'fire,18,target-1,,,true,true,0,0.25,-0.1,-1.2,0.8,0.01,-0.02,2,28,0.5,head',
+          'type,t,targetId,side,key,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ',
+          'visible,10,target-1,R,,,,,,,,,,,,,,,3,1.6,-4',
+          'counter,14,,,A,,,,,,,,,,,,,,,,',
+          'fire,18,target-1,,,true,true,0,0.25,-0.1,-1.2,0.8,0.01,-0.02,2,28,0.5,head,,,',
           '',
         ].join('\n'),
       },

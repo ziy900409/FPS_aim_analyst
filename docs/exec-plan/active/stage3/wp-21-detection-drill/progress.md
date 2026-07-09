@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 進行中 — T1 seeded spawn PASS 2026-07-09; T2 next
+## Status: 🟡 進行中 — T2 detection drill PASS 2026-07-09; T3 next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 seeded spawn | ✅ |
-| T2 偵測 drill config | ⬜ |
+| T2 偵測 drill config | ✅ |
 | T3 離線推導 spec + fixture | ⬜ |
 | T-exit | ⬜ |
 
@@ -28,6 +28,42 @@
 ---
 
 ## Log
+
+### 2026-07-09 08:14Z — T2 detection drill PASS(pop-in config + visible position fields + meta.spawn + E2E smoke)
+
+- **Slice 1 — detection drill config + Controls 掛線**:
+  - `src/drill/detection_popin_v1.ts`:新增 `detection_popin_v1`，使用 T0 定稿 `spawnArea { yawDegRange:[-25,25], distanceURange:[3.2,4.4] }`、`sequence.seed:21021`、`spawnDelayMsRange:[800,2400]`、`count:20`、`peekTimeoutMs:1500`。
+  - `src/main.ts`:`availableDrills` 新增 detection drill，Controls dropdown 可載入。
+  - 驗證:`npm.cmd test -- src/drill/detection_popin_v1.test.ts src/drill/schema.test.ts` → **2 files / 25 tests pass**。
+- **Slice 2 — visible event 位置欄(v2 additive)**:
+  - `src/data/DataRecorder.ts`:visible event additive 欄位 `targetX`/`targetY`/`targetZ`。
+  - `src/loop/SimLoop.ts`:spawn tick 的 `visible` event 寫入 active target world/source 位置；`t_visible` 語意不變。
+  - `src/data/export.ts`:JSON finite check + CSV events 追加 `targetX,targetY,targetZ` 欄。
+  - 驗證:`npm.cmd test -- src/data/export.test.ts src/data/DataRecorder.test.ts src/loop/SimLoop.test.ts` → **3 files / 32 tests pass**。
+- **Slice 3 — `meta.spawn` snapshot**:
+  - `src/data/metadata.ts`:`SpawnMeta` 擴 `spawnDelayMsRange`。
+  - `src/main.ts`、`src/testharness/fpsTestHarness.ts`:匯出 `seed`、`spawnArea`、`spawnDelayMsRange`、既有 `motion`。
+  - 驗證:`npm.cmd test -- src/data/metadata.test.ts src/testharness/fpsTestHarness.test.ts` → **2 files / 22 tests pass**。
+- **Slice 4 — timeout 推進 + harness/E2E smoke**:
+  - `src/drill/DrillRunner.ts`:`timing.peekTimeoutMs` 省略時行為不變；提供時 visible target 逾時後用同一 `TargetManager.markKilled` 推進序列並計入 targetCount。
+  - `src/testharness/fpsTestHarness.ts`:新增 `runDetectionTimeoutRound()`，不開火，靠 timeout 跑完整 detection drill。
+  - `tests/e2e/full-drill.spec.ts`:新增 Edge E2E detection smoke，斷言 `visible` 位置欄、唯一 presentation 數、`meta.spawn`。
+  - 驗證:`npm.cmd test -- src/drill/DrillRunner.test.ts src/testharness/fpsTestHarness.test.ts src/drill/detection_popin_v1.test.ts` → **3 files / 16 tests pass**。
+- **T2 完整驗證**:
+  - `npm.cmd run typecheck` → pass。
+  - `npx.cmd vitest run` → **57 files / 430 tests pass**。
+  - Sandbox 內 `npx.cmd playwright test tests/e2e/full-drill.spec.ts --project=edge` 被 Vite/esbuild 讀取上層目錄權限擋住。
+  - 提升權限重跑同一條 Playwright 命令 → **3 tests pass**(含 WP-21 detection pop-in smoke)。
+- **Decision Log**:
+  - **沿用既有 `visible` event，不新增 `spawn` event type**。Alternatives Considered:新增 `spawn` event 語意較直觀；但 T0/OQ-21.2 已決議 `visible.t` 是 `t_visible` 起點，追加位置欄可避免分析端處理兩個起點事件。
+  - **`targetX/Y/Z` 在 TypeScript union 內保持 optional，但由 `SimLoop.recordVisibleEvents` 對新資料必填輸出**。Alternatives Considered:型別上強制 required；但既有測試 fixture/舊匯出 payload 可合法缺欄，optional 更符合 v2 additive 相容。
+  - **timeout 推進重用 `TargetManager.markKilled`**。Alternatives Considered:新增 `markTimedOut` 或 timeout event；目前 targetCount 只需要「presentation consumed」語意，重用既有 remove/flip/tVisible 清理路徑可保持 side/seed 序列一致，且不擴大 public interface。
+  - **detection drill 以 TS config 落在 `src/drill/detection_popin_v1.ts`**。Alternatives Considered:新增根目錄 JSON drill；但 T2 明確指定 src 檔，且 TS 常數可被 unit/harness/main 共用並受 typecheck 覆蓋。
+- **Surprises & Discoveries**:
+  - `timing.peekTimeoutMs` 原本只在 schema/config 中存在，`DrillRunner` 尚未實作 per-presentation timeout；若只加 detection config，未開火會卡在第一個目標。
+  - Playwright/Vite 在 sandbox 內仍會遇到 esbuild 讀 `vite.config.ts` 上層目錄權限問題；提升權限後同一命令通過。
+- **Open Questions**:
+  - 無新增阻塞。T3 可消費 `visible.targetX/Y/Z` 與 `meta.spawn`，再接 WP-16 的逐 tick 目標/玩家位置欄做互驗。
 
 ### 2026-07-09 07:54Z — T1 seeded spawn PASS(schema + TargetManager + WP-19 clearance 對帳)
 

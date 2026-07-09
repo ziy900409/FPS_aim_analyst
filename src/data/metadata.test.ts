@@ -107,7 +107,12 @@ describe('collectMeta', () => {
         sensitivity: 1,
         crossOriginIsolated: true,
         startedAt: '2026-07-02T10:00:00.000Z',
-        spawn: { seed: 2026, motion: { type: 'static' } },
+        spawn: {
+          seed: 2026,
+          spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
+          spawnDelayMsRange: [800, 2400],
+          motion: { type: 'static' },
+        },
       }),
     ).toMatchObject({
       schemaVersion: 2,
@@ -116,7 +121,12 @@ describe('collectMeta', () => {
       weaponSeed: 38965,
       rngSeed: 2026,
       movementModel: 'cs2-source',
-      spawn: { seed: 2026, motion: { type: 'static' } },
+      spawn: {
+        seed: 2026,
+        spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
+        spawnDelayMsRange: [800, 2400],
+        motion: { type: 'static' },
+      },
     });
   });
 

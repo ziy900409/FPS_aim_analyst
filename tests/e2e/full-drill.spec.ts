@@ -17,6 +17,7 @@ import { test, expect } from '@playwright/test';
 
 const URL = 'http://localhost:5173/';
 const DRILL_ID = 'counterstrafe_ad_v1';
+const DETECTION_DRILL_ID = 'detection_popin_v1';
 const PEEKS = 20; // = counterstrafe_ad_v1.json endCondition.targetCount
 
 /** 單一 evaluate 內跑完整鏈路並回傳可斷言摘要（重物件比對在瀏覽器內完成，減少 CDP 傳輸）。 */
@@ -190,5 +191,61 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
     // 向量 ≈ M5 golden（容差 0.1°：雙率離散化相位殘差,見 progress OQ-13.2）。
     expect(Math.abs(r.rawPunchPitchDeg - -10.18)).toBeLessThanOrEqual(0.1);
     expect(Math.abs(r.rawPunchYawDeg - -1.56)).toBeLessThanOrEqual(0.1);
+  });
+
+  test('WP-21 detection pop-in：timeout 完整一輪 → visible 位置欄 + meta.spawn', async ({ page }) => {
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+
+    const r = await page.evaluate((drillId) => {
+      type Harness = {
+        startDrill(id: string): void;
+        runDetectionTimeoutRound(maxPresentations?: number): void;
+        forceExportJSON(): unknown;
+        phase(): string;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+      harness.startDrill(drillId);
+      harness.runDetectionTimeoutRound();
+
+      const payload = harness.forceExportJSON() as {
+        meta: { drillId?: unknown; spawn?: Record<string, unknown> };
+        events: Array<Record<string, unknown>>;
+      };
+      const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+      const visible = payload.events.filter((event) => event.type === 'visible');
+      const targetIds = new Set(visible.map((event) => event.targetId));
+      return {
+        coi: window.crossOriginIsolated,
+        phase: harness.phase(),
+        drillId: payload.meta.drillId,
+        spawn: payload.meta.spawn,
+        visibleCount: visible.length,
+        uniqueTargetCount: targetIds.size,
+        allVisibleHavePosition: visible.every(
+          (event) => num(event.targetX) && num(event.targetY) && num(event.targetZ),
+        ),
+        nonZeroHorizontalOffset: visible.some((event) => num(event.targetX) && Math.abs(event.targetX) > 0.001),
+        allTargetsInFront: visible.every((event) => num(event.targetZ) && event.targetZ < 0),
+      };
+    }, DETECTION_DRILL_ID);
+
+    expect(r.coi).toBe(true);
+    expect(r.phase).toBe('ended');
+    expect(r.drillId).toBe(DETECTION_DRILL_ID);
+    expect(r.visibleCount).toBe(PEEKS);
+    expect(r.uniqueTargetCount).toBe(PEEKS);
+    expect(r.allVisibleHavePosition).toBe(true);
+    expect(r.nonZeroHorizontalOffset).toBe(true);
+    expect(r.allTargetsInFront).toBe(true);
+    expect(r.spawn).toMatchObject({
+      seed: 21021,
+      spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
+      spawnDelayMsRange: [800, 2400],
+    });
   });
 });
