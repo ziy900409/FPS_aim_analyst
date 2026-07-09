@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(上游 exit + F5 seam 基線 + OQ 收斂,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
+| ✅ | **T0** entry gate(上游 exit + F5 seam 基線 + OQ 收斂,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ⬜ | **T1** motion drive(每 tick 驅動 target.pos;static 零破壞) | [T1-motion-drive.md](T1-motion-drive.md) | T0 | High |
 | ⬜ | **T2** sub-tick 命中內插(FR-B17;靜止目標零破壞) | [T2-subtick-hit-interpolation.md](T2-subtick-hit-interpolation.md) | T1 | High |
 | ⬜ | **T3** timed presentation 推進 + 目標 render 內插 | [T3-timed-presentation-render-interp.md](T3-timed-presentation-render-interp.md) | T1 | Med |

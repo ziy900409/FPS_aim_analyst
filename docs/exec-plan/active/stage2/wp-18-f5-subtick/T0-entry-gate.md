@@ -8,7 +8,7 @@
 | **相依** | —(WP-17 M8 exit + GD-7 為 entry 前提,本 task 驗證其可追溯) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [CLAUDE.md](../../../../CLAUDE.md) §4(移動目標決定性硬約束回寫,若尚缺)|
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-09) |
 
 ## Objective
 
@@ -33,13 +33,13 @@
 
 ## Steps
 
-- [ ] `npm run test`(或 `test:ci`)乾淨基準 exit 0,記檔數/測項數 progress(T1 零破壞基線)。
-- [ ] F5 seam 現況讀碼證據 + 既有命中/決定性回歸測試清單記 progress。
-- [ ] OQ-18.1 / OQ-18.2 / OQ-18.3 決議記 ledger(明確集合/數值/落點)。
-- [ ] WP-19 淨空包絡對帳結論(互記 progress)。
-- [ ] OQ-S3-5 交付形狀清單 × task 對應表記 progress。
-- [ ] CLAUDE.md §4 移動目標決定性硬約束回寫(若尚缺;與本 task 同 commit)。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] `npm run test`(或 `test:ci`)乾淨基準 exit 0,記檔數/測項數 progress(T1 零破壞基線)。→ tsc exit 0;vitest 58 files/438 tests;playwright 11 tests(edge)。
+- [x] F5 seam 現況讀碼證據 + 既有命中/決定性回歸測試清單記 progress。→ TargetManager:33/117、HitDetector:84、SimLoop:338 核對無誤。
+- [x] OQ-18.1 / OQ-18.2 / OQ-18.3 決議記 ledger(明確集合/數值/落點)。
+- [x] WP-19 淨空包絡對帳結論(互記 progress)。→ `deriveTargetEnvelopes`/`expandForMotion` 已涵蓋,WP-18 不新增驗證碼。
+- [x] OQ-S3-5 交付形狀清單 × task 對應表記 progress。
+- [x] CLAUDE.md §4 移動目標決定性硬約束回寫(若尚缺;與本 task 同 commit)。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 

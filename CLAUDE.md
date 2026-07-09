@@ -53,6 +53,7 @@
 - **`import * as THREE from 'three/webgpu'`**(非 `'three'`),否則拿不到 `WebGPURenderer`;bootstrap 必須 async(`await renderer.init()`)。
 - **cross-origin isolation 必須生效**(`crossOriginIsolated === true`,COOP/COEP),否則計時精度不足、量測資料失效(ADR-4)。
 - **決定性 (determinism)**:同一輸入序列在不同 render FPS 下,sim **狀態**(tick index 對應的 position/velocity/命中)一致;**不**斷言 wall-clock 時間戳。
+- **移動目標位置一律以 `age`(sim tick 累加的邏輯秒數)驅動的純函式演進**,不代入變動 dt、不讀時鐘(`Date.now`/`performance.now`/rAF frame time)——與逐 tick 決定性契約相容;`static`/省略 motion 逐位不變(WP-18/GD-7,規格 FR-B17 / 附錄 G)。
 - **三迴圈只透過 `SharedState` 溝通**,互不直接呼叫(ADR-2)。
 - **固定佈局紀律**:**輸入緩衝 = 真 ring**(消費後繞圈)、**`DataRecorder` = preallocated arena**(非環狀、drill 內不繞圈);兩者皆固定欄位、物件重用、不 `push` 物件(避免 GC 卡頓)。
 - **UI = 純 TS + DOM overlay**(D1),階段 A 不引入 React/Vue/Lit。
