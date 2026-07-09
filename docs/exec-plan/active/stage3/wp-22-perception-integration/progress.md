@@ -5,11 +5,11 @@
 
 ---
 
-## Status: 🟡 T0 entry gate blocked(2026-07-09):WP-19/20/21 exit verified;WP-18 尚未交付
+## Status: ✅ T0 entry gate PASS(2026-07-09):四上游 exit verified + WP-18 交付形狀對帳完成 → T1 可開跑
 
 | Task | 狀態 |
 |---|---|
-| T0 entry gate | 🟡 blocked(WP-18 exit/交付形狀缺口;`test:ci` baseline green) |
+| T0 entry gate | ✅ PASS(2026-07-09;WP-18 T-exit 交付 + OQ-S3-5 對帳解除;`test:ci` green) |
 | T1 追蹤 × 場景 | ⬜ |
 | T2 protocol 執行器 + E2E | ⬜ |
 | T3 決定性 + 驗收清單 C | ⬜ |
@@ -21,13 +21,36 @@
 
 | ID | 狀態 | 決議 |
 |----|------|------|
-| OQ-S3-5 WP-18 交付形狀對帳(presentation policy / 追蹤 drill config 型 / 目標內插) | 🟡 blocked | Current main 只有 [WP-18 stub](../../stage2/wp-18-f5-subtick/README.md):entry 全達成但「未展開、待排程」,無 task/progress/T-exit,因此沒有實際交付形狀可對帳。T1 不得開跑;WP-18 exit 後重跑本對帳。 |
+| OQ-S3-5 WP-18 交付形狀對帳(presentation policy / 追蹤 drill config 型 / 目標內插) | ✅ resolved (2026-07-09) | [WP-18 T-exit](../../stage2/wp-18-f5-subtick/T-exit-gate.md)✅ 交付。六項交付形狀逐項對帳、與本 WP T1 假設一致無漂移(對帳表見下方 Log 2026-07-09):motion drive(T1)/ sub-tick 命中內插 FR-B17(T2)/ timed presentation 命中不撤除(T3)/ target render alpha 內插(T3)/ `tracking_v1` config(T4)/ `t_acquire`·TOT%·RMS ε 離線推導 + `SpawnMeta.presentationMs` 匯出欄(T4+T5)。**T1 blocked 解除。** |
 | OQ-22.1 protocol 條件標記落點(meta 何欄標記「本 drill 屬哪個條件/序位」) | ✅ resolved | `meta.protocol = { protocolId, conditionIndex, conditionLabel }`。`conditionIndex` 為 0-based config array index,`conditionLabel` 為檔名/人工檢查用 human label;v2 additive optional 區塊,比照 `scene`/`display`/`spawn`。 |
 | OQ-22.2 pilot protocol 文件範圍(是否含受試者 ID/同意書行政欄 → 與 WP-20 T4 表單對帳) | ✅ resolved | App 只收 WP-20 T4 已落地的 `participantId`(必填)/`sessionLabel`(選填)並寫 `meta.session`;同意書、納排條件簽核、moderator 備註等行政欄不進 app,寫入 T3 `pilot-protocol-stage3.md` 文件層。 |
 
 ---
 
 ## Log
+
+### 2026-07-09 — T0 entry gate PASS(WP-18 交付 → OQ-S3-5 對帳解除;由 WP-18 T-exit 互記)
+
+**觸發**:[WP-18 f5-subtick T-exit](../../stage2/wp-18-f5-subtick/T-exit-gate.md)✅ 交付(2026-07-09;T0–T5 全綠、`test:ci` exit 0 = 62 files / 487 vitest + 11 playwright)。原 T0 唯一 blocker(WP-18 尚為 stub、無交付形狀)已消除 → 重跑 OQ-S3-5 對帳、宣告 T0 PASS。
+
+**四上游 exit 全 verified**:WP-19/M9 ✅ + WP-20 ✅ + WP-21 ✅(見下方原 BLOCKED log 表)+ **WP-18 ✅(本次)**。
+
+**OQ-S3-5 形狀對帳表(假設 vs 實際)——六項逐項對齊、無漂移,T1 假設無需修正**:
+
+| WP-22 T1 消費假設 | WP-18 實際交付 | 對帳 |
+|---|---|---|
+| 移動 target `pos` 每 tick 驅動 | `motionOffset(motion, age)` 純函式(linear/pingpong/sine);`age` 累加 `TICK_SEC` 常數 | ✅ 一致;tick 決定性(異 FPS 逐位一致) |
+| sub-tick 命中內插(FR-B17) | `TargetState.posPrev` + fire 時間戳 `subAlpha` → `lerp(posPrev,pos,α)`;靜止零破壞 | ✅ 一致;命中位置對齊 fire 時刻 |
+| timed presentation 推進政策 | `timing.presentationMs`(additive optional);`TargetState.persistent` 命中不撤除 | ✅ 一致;追蹤窗右界 = presentation 到期/下一 visible.t |
+| target render alpha 內插 | `TargetView.sync(targets, alpha)` render-only,比照 player prev→curr | ✅ 一致;不寫 state、不進匯出 |
+| 追蹤 drill config 型 | `src/drill/tracking_v1.ts`(pingpong horizontal range1/speed2 + presentationMs 2000 + seed 18018) | ✅ 一致;純追蹤(不複合 counter-strafe,GD-7) |
+| `t_acquire`/TOT%/RMS ε 欄位語意 | `deriveTrackingMetrics` 離線推導 + `analysis-tracking.md` spec;`SpawnMeta.presentationMs` 匯出欄 | ✅ 一致;引擎零計算(GD-7 raw-over-derived);結果頁欄位語意在 spec 定 |
+
+**清單 C 影響**:「追蹤 x 場景 E2E」條目(草稿)可消費 `tracking_v1` + 逐 tick `tx/ty/tz`+`px/pz` 欄——WP-18 已交付來源,T1 實作時掛 `sceneId: 'field-low'` 即成 `tracking_scene_v1`。
+
+**互記**:WP-18 progress T-exit log 已記反向對帳(WP-18 側 OQ-S3-5 標 resolved)。
+
+**Next**:WP-22 **T1 追蹤 × 場景**(blocked 解除,可開跑)——消費 WP-18 追蹤 drill 型 + sub-tick 內插 + presentation + 指標推導 spec,掛 field-low/urban-high 場景 + 速度/雜亂度實驗矩陣。
 
 ### 2026-07-09 10:52 local — T0 entry gate BLOCKED(WP-18 未交付;三上游 exit verified)
 

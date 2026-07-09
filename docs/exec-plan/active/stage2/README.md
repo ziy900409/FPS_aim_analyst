@@ -219,7 +219,7 @@ recoil: { prev: PunchSnapshot; curr: PunchSnapshot };  // sim 每 tick 末寫,re
 | **WP-15** | [wp-15-calibration/](../../completed/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 + 擴散雲換算檢查 | **M7** | WP-13, 14 | 1.5–2 | ✅ **M7 caveated(2026-07-07)** — 速度曲線 surrogate 對表通過 + recoil 對 CS2 golden 釘死;第三方 pattern 差異已歸因接受(GD-14) |
 | **WP-16** | [wp-16-metrics-export-v2/](../../completed/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標(補償 vs 理想路徑)+ 結果頁軌跡對照 | — | WP-13 | 2–3 | ✅ **2026-07-07**(schema v2 + 壓槍指標;不變式/溢位/對帳全綠) |
 | **WP-17** | [wp-17-integration/](../../completed/stage2/wp-17-integration/README.md) | E2E 全鏈路(壓槍 drill → 匯出 → 統計)+ 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15, 16 | 1.5–2.5 | ✅ **M8(2026-07-07)** |
-| **WP-18** | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅(GD-7)+ ~~WP-17(M8)~~ ✅ | +2–3.5 | 🟡 **task 檔已展開(2026-07-09),待實作**(T0–T5 + T-exit;下游 = [WP-22 T1](../stage3/wp-22-perception-integration/README.md)) |
+| **WP-18** | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅(GD-7)+ ~~WP-17(M8)~~ ✅ | +2–3.5 | ✅ **交付(2026-07-09)**:T0–T5 + T-exit 全綠、`test:ci` exit 0;下游 = [WP-22 T1](../stage3/wp-22-perception-integration/README.md)(OQ-S3-5 對帳完成、blocked 解除) |
 
 ---
 
@@ -241,7 +241,7 @@ WP-10(recoil 核心)──┬→ WP-11(武器/fire)──┐
                      │                     ├→ WP-13(整合,M6)──┬→ WP-16(指標/匯出)──┐
 WP-12(輸入接縫)─────┴─────────────────────┘                  │                    ├→ WP-17(M8)
 WP-14(movement 物理)──────────────────────────────────────────┴→ WP-15(校準,M7)───┘
-                                                                        WP-18(F5,🟡 task 檔已展開 · 待實作)
+                                                                        WP-18(F5,✅ 交付 2026-07-09)
 ```
 
 - **可並行三線開跑**:WP-10、WP-12、WP-14 互不相依。
@@ -264,7 +264,7 @@ WP-14(movement 物理)───────────────────�
 | **WP-15** calibration(M7) | [wp-15-calibration/](../../completed/stage2/wp-15-calibration/README.md):T0 → T1 cl_showpos 對表 → T2 pattern 比對 → T-exit |
 | **WP-16** metrics-export-v2 | [wp-16-metrics-export-v2/](../../completed/stage2/wp-16-metrics-export-v2/README.md):T0 → T1 schema v2 → T2 理想路徑指標 → T3 結果頁對照 → T-exit |
 | **WP-17** integration(M8) | [wp-17-integration/](../../completed/stage2/wp-17-integration/README.md):T0 → T1 決定性回歸 → T2 全鏈路 E2E → T-exit(原 T3 驗收清單 B 併入) |
-| **WP-18** f5-subtick(🟡 task 檔已展開,待實作) | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md):2026-07-09 由 stub 展開為全套 task 檔(README/checklist/progress/T0–T5/T-exit);entry(OQ-S2-5 ✅ + M8 ✅)皆達成,尚未動 `src/`。下游消費者 = [WP-22 T1](../stage3/wp-22-perception-integration/README.md) |
+| **WP-18** f5-subtick(✅ 交付 2026-07-09) | [wp-18-f5-subtick/](wp-18-f5-subtick/README.md):T0 entry → T1 motion drive → T2 sub-tick 命中內插(FR-B17)→ T3 timed presentation + render 內插 → T4 tracking drill + 指標推導 spec → T5 決定性回歸 + 掛線 → T-exit。`test:ci` exit 0(62 files / 487 vitest + 11 playwright)。下游消費者 = [WP-22 T1](../stage3/wp-22-perception-integration/README.md)(OQ-S3-5 對帳完成、blocked 解除) |
 
 ---
 

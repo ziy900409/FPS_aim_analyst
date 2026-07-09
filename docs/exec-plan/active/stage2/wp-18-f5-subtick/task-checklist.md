@@ -11,7 +11,7 @@
 | ✅ | **T3** timed presentation 推進 + 目標 render 內插 | [T3-timed-presentation-render-interp.md](T3-timed-presentation-render-interp.md) | T1 | Med |
 | ✅ | **T4** tracking drill config + 追蹤指標離線推導 spec + fixture | [T4-tracking-drill-metrics-spec.md](T4-tracking-drill-metrics-spec.md) | T2, T3 | Med |
 | ✅ | **T5** 移動目標跨 FPS 決定性回歸 + drill 掛線整合 | [T5-determinism-regression-integration.md](T5-determinism-regression-integration.md) | T1–T4 | Med |
-| ⬜ | **T-exit** 交付宣告(WP-22 T1 可消費)+ OQ-S3-5 對帳 | [T-exit-gate.md](T-exit-gate.md) | T1–T5 | — |
+| ✅ | **T-exit** 交付宣告(WP-22 T1 可消費)+ OQ-S3-5 對帳 | [T-exit-gate.md](T-exit-gate.md) | T1–T5 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 

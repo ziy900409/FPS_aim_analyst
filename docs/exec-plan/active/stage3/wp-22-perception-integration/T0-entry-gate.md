@@ -5,10 +5,10 @@
 
 | | |
 |---|---|
-| **相依** | WP-19 exit(M9)✅ + WP-20 exit ✅ + WP-21 exit ✅ + WP-18 entry ✅ / exit ⬜(stage2 stub) |
+| **相依** | WP-19 exit(M9)✅ + WP-20 exit ✅ + WP-21 exit ✅ + WP-18 entry ✅ / **exit ✅(2026-07-09 交付)** |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | 🟡 blocked(2026-07-09):WP-19/20/21 exit verified;WP-18 尚無 exit/交付形狀 |
+| **狀態** | ✅ PASS(2026-07-09):四上游 exit 全 verified;WP-18 交付形狀 OQ-S3-5 對帳完成 → WP-22 T1 blocked 解除 |
 
 ## Objective
 
@@ -33,19 +33,21 @@ presentation policy、目標 render 內插)與本 WP 的消費假設對帳——
 ## Steps
 
 - [x] WP-19 / WP-20 / WP-21 exit 證據連結 + `test:ci` 基準記 progress。
-- [ ] WP-18 exit 證據連結。Blocked:current main 只有 [WP-18 stub](../../stage2/wp-18-f5-subtick/README.md),無 task/progress/T-exit。
-- [ ] OQ-S3-5 形狀對帳表(假設 vs 實際)記 ledger;必要時修 T1 檔。Blocked:WP-18 尚無實際交付形狀。
+- [x] WP-18 exit 證據連結:[WP-18 T-exit](../../stage2/wp-18-f5-subtick/T-exit-gate.md)✅ 2026-07-09(T0–T5 全綠、`test:ci` exit 0 = 62 files / 487 vitest + 11 playwright)。
+- [x] OQ-S3-5 形狀對帳表(假設 vs 實際)記 ledger:六項交付形狀逐項對齊、無漂移(見下方 Log 2026-07-09 對帳表);T1 假設無需修正。
 - [x] OQ-22.1 / OQ-22.2 決議記 ledger + §8 回填。
 - [x] 清單 C 條目草稿記 progress。
-- [ ] progress.md 記 entry-gate PASS 宣告。Blocked:progress 已記 T0 BLOCKED,不得宣告 PASS。
+- [x] progress.md 記 entry-gate PASS 宣告(2026-07-09;四上游 exit + WP-18 對帳)。
 
-## Current Gate Result(2026-07-09)
+## Current Gate Result(2026-07-09,updated)
 
-**BLOCKED,not PASS**。WP-19(M9)、WP-20、WP-21 三條上游 exit 證據已驗證,且本次
-`npm.cmd run test:ci` exit 0(`tsc` pass;Vitest 58 files / 438 tests;Playwright 11 tests)。
-但 WP-18 目前仍是「entry 全達成、未展開、待排程」stub,沒有可對帳的追蹤 drill config 型、
-presentation policy、target render interpolation 或 `t_acquire`/TOT/RMS ε 欄位。WP-18 exit
-前不得展開 T1;WP-18 交付後重跑本 T0 的 OQ-S3-5 對帳。
+**PASS**。四條上游 exit 證據皆已驗證(WP-19/M9、WP-20、WP-21 + **WP-18 T-exit 2026-07-09 交付**),
+且 WP-18 交付形狀 OQ-S3-5 逐項對帳完成(追蹤 drill config 型、timed presentation policy、target
+render alpha 內插、`t_acquire`/TOT%/RMS ε 離線推導 spec + `SpawnMeta.presentationMs` 匯出欄——
+與本 WP T1 消費假設一致,無漂移)。`npm run test:ci` exit 0(WP-18 交付時 62 files / 487 vitest +
+11 playwright)。**WP-22 T1 blocked 解除,可開跑。**
+
+> 原始 BLOCKED 判定(2026-07-09 上午,WP-18 尚為 stub)保留於下方 progress Log 供稽核。
 
 ## Definition of Done
 

@@ -10,7 +10,7 @@
 | **相依** | WP-17(M8)✅ + GD-7 拍板 ✅(entry 兩條件皆達成 2026-07-07,門控解除);T4 的追蹤指標推導輸入 = schema v2 逐 tick `tx/ty/tz`+`px/pz`(WP-16 已交付,`TickRecord` 既有欄) |
 | **對應 FR** | FR-B17(sub-tick 命中內插)+ 規格 §1.3 階段 B(4)(移動目標)+ GD-7(追蹤指標) |
 | **估時** | +2–3.5 dev-days(門控解除後另計,不在 stage2 主估時內) |
-| **狀態** | 🟡 **task 檔已展開,待實作**(2026-07-09):T0–T5 + T-exit 規劃就緒;尚未動 `src/`。下游 = stage3 [WP-22 T1](../../stage3/wp-22-perception-integration/README.md) |
+| **狀態** | ✅ **交付(2026-07-09)**:T0–T5 + T-exit 全綠;`test:ci` exit 0(62 files / 487 vitest + 11 playwright)。移動目標 motion drive + sub-tick 命中內插(FR-B17)+ timed presentation + 追蹤指標離線推導 spec 皆就緒。下游 = stage3 [WP-22 T1](../../stage3/wp-22-perception-integration/README.md)(OQ-S3-5 對帳完成、blocked 解除) |
 
 ---
 

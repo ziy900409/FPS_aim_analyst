@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 task 檔已展開,待實作(2026-07-09)
+## Status: ✅ 交付(2026-07-09)—— T0–T5 + T-exit 全綠,WP-22 T1 blocked 解除
 
 | Task | 狀態 |
 |---|---|
@@ -15,7 +15,7 @@
 | T3 timed presentation + render 內插 | ✅ PASS(2026-07-09;474 test 全綠、零破壞) |
 | T4 tracking drill + 指標推導 spec | ✅ PASS(2026-07-09;480 test 全綠、零破壞) |
 | T5 決定性回歸 + 掛線 | ✅ PASS(2026-07-09;487 test + test:ci exit 0、零破壞) |
-| T-exit(交付) | ⬜ |
+| T-exit(交付) | ✅ PASS(2026-07-09;test:ci exit 0 + 五軸 code review approve + OQ-S3-5 對帳解除 WP-22 T1) |
 
 ---
 
@@ -26,11 +26,58 @@
 | OQ-18.1 motion 階層 | ✅ resolved (T0, 2026-07-09) | **T1 驅動集 = `linear` / `pingpong` / `sine`**(以 `age` 純函式演進)。`waypoints` **只淺驗形狀、不驅動**(schema 既有 `validateMotion`;點數下限/速度配套隨真實需求另立)。`static`/省略 motion 逐位不變(既有 drill 零破壞)。**`field-low` 走廊相容預設包絡**(單元界定,WP-22 T1 實戰對帳):`axis: 'horizontal'`、`range ∈ [0.5, 1.5] u`(擺盪半幅;pingpong/sine)、`speed ∈ [1, 4] u/s`;linear 行程 ≤ `range`。包絡極值已由 WP-19 `deriveTargetEnvelopes`→`expandForMotion`(range/axis)涵蓋(見下 WP-19 對帳),故淨空由既有驗證器把關,本 WP 不新增驗證碼。 |
 | OQ-18.2 presentation 落點 | ✅ resolved (T0, 2026-07-09) | **新增 `timing.presentationMs`(additive optional),不複用 `peekTimeoutMs`**。理由:`peekTimeoutMs` 是 detection 的「peek→撤除」窗語意(目標到期消失);tracking 的 presentation 是「持續呈現移動、到期推進下一目標」的連續控制構念——語意不同,共用欄位會製造雙重語意。**命中不撤除機制**:追蹤 drill 於 DrillRunner **running 相位**推進純由 `presentationMs` 到期驅動;命中只記事件(不呼叫 `markKilled`、不 advance),目標在 presentation 窗內持續存活移動。落地細節在 T3。 |
 | OQ-18.3 posPrev 快照落點 | ✅ resolved (T0, 2026-07-09) | **存 `TargetState.posPrev`(每目標,GC 紀律下物件重用)**,不另立 SimLoop 側平行結構。理由:motion drive 發生在 `TargetManager.tick`(擁有 `TargetState`),posPrev 與目標同置可避免額外 id→pos map、複用既有 preallocated 目標物件(不 push)。**快照時點 = motion drive 之前**(`simStep` line 338 `drillRunner.tick`/`targetManager.tick` 呼叫前);`posCurr` = drive 後 = tick 末位置。落案細節在 T2。 |
-| OQ-S3-5 交付形狀對帳 | 🟡 blocked→本 WP 交付後解 | WP-22 T1 的對帳點:追蹤 drill config 型、motion 欄用法、presentation 時長、target render alpha 內插、`t_acquire`/TOT%/RMS ε 結果頁/匯出欄位。**T-exit 綠燈後回 [WP-22 T0](../../stage3/wp-22-perception-integration/T0-entry-gate.md) 重跑此對帳。**(形狀×task 對應表見下方 Log。) |
+| OQ-S3-5 交付形狀對帳 | ✅ resolved (T-exit, 2026-07-09) | 六項交付形狀皆與 WP-22 T1 消費假設對齊(對帳表見下方 T-exit Log):移動 target pos 每 tick 驅動(T1)、sub-tick 命中內插 FR-B17(T2)、timed presentation 命中不撤除(T3)、target render alpha 內插(T3)、`tracking_v1` drill config 型(T4)、`t_acquire`/TOT%/RMS ε 離線推導 spec + `SpawnMeta.presentationMs` 匯出欄(T4+T5)。已回 [WP-22 T0](../../stage3/wp-22-perception-integration/T0-entry-gate.md) 互記解除 blocked。 |
 
 ---
 
 ## Log
+
+### 2026-07-09 — T-exit 交付宣告 ✅ PASS(五軸 code review approve + test:ci exit 0 + OQ-S3-5 對帳解除 WP-22 T1)
+
+**Docs-only 切片**(唯一非 docs 觸點 = 無;`git diff --stat` 不含 `src/`)。收斂 WP-18:移動目標可跑、sub-tick 命中內插修正偏差、timed presentation + 追蹤指標介面就緒、移動目標決定性進回歸。
+
+**① 交付驗證(`npm run test:ci` exit 0,2026-07-09)**:`tsc --noEmit` pass;vitest **62 files / 487 tests passed**;playwright **11 edge tests passed**。baseline(M8=58 files / 438)+ WP-18 五 task 累計 +49 vitest,零破壞。
+
+**② 五軸 code review(T1–T5 交付碼)→ Approve**(定義即改善整體 code health):
+- **Correctness**:motion drive 純函式(位移差增量 = `原點+offset(age)`,`offset(_,0)=0` 電報相消)、sub-tick `lerp(posPrev,pos,subAlpha)` clamp `[0,1]`(boundary 逐位等價舊「讀 pos」)、persistent gate 落 SimLoop 命中路徑(DrillRunner presentation 路徑無條件撤)、offline 推導 ray/box slab 等價 `THREE.Ray.intersectBox`。跨 FPS 決定性回歸(60/144/240Hz + 抖動)bit-exact 守護。
+- **Readability**:命名對齊 CONTEXT.md 術語(`posPrev`/`subAlpha`/`persistent`/`t_acquire`/TOT%/RMS ε);註解密度與 repo 既有一致;無 clever trick。
+- **Architecture**:層界守住——`trackingDerivation` 純離線(metrics 層,不 import sim,GD-7 引擎零計算)、render 內插 render-only(不寫 state,GD-6/GD-10)、場景資料未入 sim。additive optional 欄(`timing.presentationMs`/`SpawnMeta.presentationMs`/`TargetState.posPrev|persistent`)零破壞既有 drill。
+- **Security**:N/A(無外部輸入/secret/注入面;drill config 走既有 `validateDrill` 邊界驗證,`presentationMs` 正有限檢查)。
+- **Performance**:GC 紀律維持(module-level 重用 `offsetPrev/offsetCurr`、就地寫 pos/posPrev、不 push);sim 熱路徑增量皆 O(targets)(count 小)。`trackingDerivation` 每 tick 建暫存物件屬離線分析層(GD-7 明列非熱路徑),可接受。
+- **Nit(不阻塞交付,FYI)**:`trackingDerivation.ts` 內 `aimForward`/`targetForTick` 每 tick 回傳新物件——離線推導可接受;若未來移入結果頁即時預覽再考慮重用暫存。
+
+**③ 五項交付證據可追**:
+- **移動目標**(T1):`linear`/`pingpong`/`sine` 每 tick 依 `age`(`TICK_SEC=1/SIM_HZ` 常數)純函式驅動 `pos`;`static`/省略逐位不變。跨 FPS 逐位一致(T5 fixture 60/144/240Hz bit-exact)。
+- **FR-B17**(T2):sub-tick 命中內插修正「最近 tick 位置」偏差——翻轉案例證據(目標本 tick 移 0→2,α=0.1 內插命中 vs 讀 pos=2 脫靶);靜止目標 `posPrev==pos` → 逐位零破壞。
+- **timed presentation + render 內插**(T3):`timing.presentationMs` 純時長推進(命中不撤除、追隨窗不截斷);目標 render alpha 內插 render-only、alpha=1 代數恆等零破壞。
+- **追蹤指標介面**(T4):`tracking_v1` + `analysis-tracking.md` spec + round-trip fixture——已知 onset t_acquire 誤差 ≤ 1 tick、完美追蹤 RMS ε < 1e-6、acquisitionFailure 兩極端 sanity。
+- **決定性回歸**(T5):移動目標跨 FPS per-tick(`tx/ty/tz` + 命中序列)bit-exact 收編;stage1/2 既有 baseline(punch/彈著/spawn 序列)零破壞。
+
+**④ OQ-S3-5 對帳(回 WP-22 T0,互記)**:六項交付形狀逐項對齊 WP-22 T1 消費假設,無漂移——
+
+| WP-22 T1 需要的交付形狀 | 交付 | 實際形狀 |
+|---|---|---|
+| 移動 target `pos` 每 tick 驅動 | T1 | `motionOffset(motion, age)` 純函式;`age` 累加 `TICK_SEC`;linear/pingpong/sine |
+| sub-tick 命中內插(FR-B17) | T2 | `TargetState.posPrev` + fire 時間戳 `subAlpha=(t−tickStart)/tickMs` → `lerp` |
+| timed presentation 推進政策 | T3 | `timing.presentationMs`(additive optional);`TargetState.persistent`;命中不撤除 |
+| target render alpha 內插 | T3 | `TargetView.sync(targets, alpha)` render-only,比照 player prev→curr |
+| 追蹤 drill config 型 | T4 | `src/drill/tracking_v1.ts`(pingpong horizontal range1/speed2 + presentationMs 2000) |
+| `t_acquire`/TOT%/RMS ε 欄位語意 | T4 | `deriveTrackingMetrics` 離線 + `analysis-tracking.md`;`SpawnMeta.presentationMs` 匯出欄(T5) |
+
+**⑤ OQ ledger 收斂**:OQ-18.1/18.2/18.3 於 T0 已 resolved(見上表);OQ-S3-5 由本 T-exit 標 ✅ resolved 並回 WP-22 T0 互記解除 blocked。
+
+**⑥ WP-19 對帳複查**:移動目標運動包絡已由 `deriveTargetEnvelopes`→`expandForMotion`(range/axis)涵蓋(T0 對帳結論複查無變);`tracking_v1` 選定包絡(pingpong horizontal range1/speed2)落 T0 OQ-18.1 field-low 相容界內,淨空由既有驗證器把關,WP-19 側無新待辦。WP-22 T1 首跑 `field-low` 實戰對帳。
+
+**Outcomes(帶著走的決定)**:
+- **資料夾留 `active/stage2/` 不搬 `completed/`**:下游 WP-22 以相對路徑 `../../stage2/wp-18-f5-subtick/` 大量引用本資料夾;搬遷會斷所有交叉引用,且 WP-22 尚在 active。搬遷待 stage3 整體收尾另計。
+- **T-exit code review 採五軸內審(非另派 sub-agent)**:交付碼已由 T1–T5 逐 slice 走 `/incremental-implementation` + grep 閘 + 零破壞回歸把關,T-exit 以五軸複核確認 code health 改善即 approve(perfect≠gate)。
+
+**Surprises & Discoveries**:
+- **WP-18 引擎交付面比字面小,已於各 task 兌現**:真正新 sim 碼集中 T1(driven motion)+ T2(內插);T4 幾乎 docs + 離線測試(對齊 WP-21 T3),schema v2 欄與 render prev/curr 機制皆 WP-16/既有已備——T-exit 無驚訝、無遺留 blocker。
+
+**Open Questions / Next**:
+- **WP-18 收斂,無遺留 OQ**。下游 **WP-22 T0** blocked 解除 → WP-22 T1(追蹤 × 場景實驗)可開跑(消費 `tracking_v1` drill 型 + sub-tick 內插 + presentation + 指標推導 spec)。
+- 手動實機視覺平滑抽查留待 user 或 WP-22 T1 消費端 E2E(見 T5 log);自動回歸已證 per-tick 決定性 + render 內插單元覆蓋。
 
 ### 2026-07-09 — T5 移動目標跨 FPS 決定性回歸 + tracking_v1 drill registry 掛線 ✅ PASS(487 test + test:ci exit 0)
 
