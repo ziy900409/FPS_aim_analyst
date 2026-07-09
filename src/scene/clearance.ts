@@ -1,4 +1,4 @@
-import type { DrillConfig } from '../drill/DrillConfig.ts';
+import type { DrillConfig, SpawnAreaConfig } from '../drill/DrillConfig.ts';
 import type { TargetMotion, Vec3 } from '../state/types.ts';
 import type { PropBound, SceneConfig } from './SceneConfig.ts';
 
@@ -66,6 +66,11 @@ export function formatClearanceViolations(violations: readonly ClearanceViolatio
 }
 
 export function deriveTargetEnvelopes(drill: DrillConfig): TargetEnvelope[] {
+  if (drill.targets.spawnArea !== undefined) {
+    const envelope = envelopeForSpawnArea(drill.targets.spawnArea, drill.targets.motion);
+    assertFiniteEnvelope(envelope);
+    return [envelope];
+  }
   return activeSides(drill).map((side) => {
     const envelope = envelopeForSide(side, drill.targets.distance, drill.targets.motion);
     assertFiniteEnvelope(envelope);
@@ -112,6 +117,48 @@ function envelopeForSide(side: 'L' | 'R', distance: number, motion: TargetMotion
   return { side, min, max };
 }
 
+function envelopeForSpawnArea(spawnArea: SpawnAreaConfig, motion: TargetMotion | undefined): TargetEnvelope {
+  const centers = spawnAreaCenters(spawnArea);
+  const min = { x: Infinity, y: Infinity, z: Infinity };
+  const max = { x: -Infinity, y: -Infinity, z: -Infinity };
+  for (const center of centers) expandByPoint(min, max, center);
+
+  if (motion !== undefined && motion.type !== 'static') {
+    expandSpawnAreaForMotion(min, max, centers, motion);
+  }
+
+  return { side: spawnArea.yawDegRange[1] <= 0 ? 'L' : 'R', min, max };
+}
+
+function spawnAreaCenters(spawnArea: SpawnAreaConfig): Vec3[] {
+  const yaws = uniqueNumbers([...spawnArea.yawDegRange, ...criticalYawDegrees(spawnArea.yawDegRange)]);
+  const distances = uniqueNumbers([...spawnArea.distanceURange]);
+  const centers: Vec3[] = [];
+  for (const yawDeg of yaws) {
+    const yawRad = yawDeg * (Math.PI / 180);
+    for (const distanceU of distances) {
+      centers.push({
+        x: Math.sin(yawRad) * distanceU,
+        y: TARGET_CENTER_Y_U,
+        z: -Math.cos(yawRad) * distanceU,
+      });
+    }
+  }
+  return centers;
+}
+
+function criticalYawDegrees(range: readonly [number, number]): number[] {
+  const yaws: number[] = [];
+  for (let yaw = Math.ceil(range[0] / 90) * 90; yaw <= range[1]; yaw += 90) {
+    yaws.push(yaw);
+  }
+  return yaws;
+}
+
+function uniqueNumbers(values: readonly number[]): number[] {
+  return Array.from(new Set(values));
+}
+
 function expandForMotion(min: Vec3, max: Vec3, center: Vec3, motion: TargetMotion): void {
   if (motion.range !== undefined && motion.axis !== undefined) {
     const axis = motion.axis === 'horizontal' ? 'x' : 'y';
@@ -125,6 +172,25 @@ function expandForMotion(min: Vec3, max: Vec3, center: Vec3, motion: TargetMotio
         y: center.y + point.y,
         z: center.z + point.z,
       });
+    }
+  }
+}
+
+function expandSpawnAreaForMotion(min: Vec3, max: Vec3, centers: readonly Vec3[], motion: TargetMotion): void {
+  if (motion.range !== undefined && motion.axis !== undefined) {
+    const axis = motion.axis === 'horizontal' ? 'x' : 'y';
+    min[axis] -= motion.range;
+    max[axis] += motion.range;
+  }
+  if (motion.type === 'waypoints' && motion.waypoints !== undefined) {
+    for (const center of centers) {
+      for (const point of motion.waypoints) {
+        expandByPoint(min, max, {
+          x: center.x + point.x,
+          y: center.y + point.y,
+          z: center.z + point.z,
+        });
+      }
     }
   }
 }

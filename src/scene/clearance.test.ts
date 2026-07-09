@@ -54,6 +54,26 @@ describe('deriveTargetEnvelopes', () => {
     expect(envelopes[0].max.x).toBe(5.5);
   });
 
+  it('spawnArea 會以 polar yaw/distance 極值推得保守 hitbox AABB（WP-21 T1）', () => {
+    const envelopes = deriveTargetEnvelopes(
+      drill({
+        targets: {
+          count: 1,
+          distance: 4,
+          spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
+        },
+        sequence: { alternation: 'LR', seed: 7 },
+      }),
+    );
+    expect(envelopes).toHaveLength(1);
+    expect(envelopes[0].min.x).toBeCloseTo(-2.3595203516590777, 12);
+    expect(envelopes[0].max.x).toBeCloseTo(2.3595203516590777, 12);
+    expect(envelopes[0].min.y).toBe(0.5);
+    expect(envelopes[0].max.y).toBe(2.5);
+    expect(envelopes[0].min.z).toBeCloseTo(-4.9, 12);
+    expect(envelopes[0].max.z).toBeCloseTo(-2.40018491851728, 12);
+  });
+
   // 保證門縱深（PR #10 review）:NaN envelope 會讓 segmentIntersectsAabb 全部靜默回 false,
   // 「未檢查」被當成「淨空」——即使呼叫端繞過 schema,此處也必須 loud fail 而非放行。
   it('waypoint 座標非有限 → throw、不得靜默視為淨空', () => {
@@ -128,6 +148,29 @@ describe('validateClearance', () => {
     expect(violations).toHaveLength(1);
     expect(violations[0].propId).toBe('motion-extreme-prop');
     expect(validateClearance(scene([]), moving)).toEqual([]);
+  });
+
+  it('spawnArea 極值納入淨空檢查：阻擋 seeded pop-in 包絡時回報違規', () => {
+    const seeded = drill({
+      targets: {
+        count: 1,
+        distance: 4,
+        spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
+      },
+      sequence: { alternation: 'LR', seed: 7 },
+    });
+    const violations = validateClearance(
+      scene([
+        {
+          id: 'spawnarea-blocker',
+          min: { x: -0.1, y: 1.4, z: -4.95 },
+          max: { x: 0.1, y: 1.8, z: -4.85 },
+        },
+      ]),
+      seeded,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].propId).toBe('spawnarea-blocker');
   });
 
   it('field-low 淨空 fixture × 現行 counter-strafe drill 通過', () => {

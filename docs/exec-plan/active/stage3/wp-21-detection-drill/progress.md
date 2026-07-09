@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 進行中 — T0 entry gate PASS 2026-07-09; T1 next
+## Status: 🟡 進行中 — T1 seeded spawn PASS 2026-07-09; T2 next
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 seeded spawn | ⬜ |
+| T1 seeded spawn | ✅ |
 | T2 偵測 drill config | ⬜ |
 | T3 離線推導 spec + fixture | ⬜ |
 | T-exit | ⬜ |
@@ -28,6 +28,43 @@
 ---
 
 ## Log
+
+### 2026-07-09 07:54Z — T1 seeded spawn PASS(schema + TargetManager + WP-19 clearance 對帳)
+
+- **基準 / 零破壞證據**:
+  - Sandbox 內 `npm.cmd run test -- src/drill/schema.test.ts src/sim/TargetManager.test.ts src/scene/clearance.test.ts tests/regression/determinism.test.ts src/loop/__tests__/fire-determinism.test.ts src/loop/__tests__/recoil-wiring.test.ts src/loop/__tests__/sim-clock-drift.test.ts` 被既有 Vite/esbuild config 讀取權限擋住。
+  - 提升權限重跑同一組基準 → **7 files / 87 tests pass**(改動前基準)。
+- **Slice 1 — schema 擴欄**:
+  - `src/drill/DrillConfig.ts`:新增 `SpawnAreaConfig`、`targets.spawnArea?`、`sequence.spawnDelayMsRange?`。
+  - `src/drill/schema.ts`:驗證 `yawDegRange` / `distanceURange` / `spawnDelayMsRange` tuple、range 順序與有限數;`spawnArea`、`spawnDelayMsRange` 皆需搭配 `sequence.seed`。
+  - `src/drill/schema.test.ts`:合法/非法/缺 seed 併用規則覆蓋。
+  - 驗證:`npm.cmd run test -- src/drill/schema.test.ts` → **1 file / 23 tests pass**。
+  - Commit:`8d6908b feat(wp-21): add seeded spawn schema fields`。
+- **Slice 2 — TargetManager seeded branch**:
+  - `src/sim/TargetManager.ts`:只有 config 提供 `targets.spawnArea` 或 `sequence.spawnDelayMsRange` 時啟用 seeded spawn;seed-only 現行 `counterstrafe_ad_v1` 仍走舊 L/R slot 位置,保護零破壞。
+  - 取樣次序鎖定為 `delay → yaw → distance`;位置為 camera-independent world polar (`x=sin(yaw)*distance`,`z=-cos(yaw)*distance`)。
+  - `reset()` 重建 ran1 stream,同 seed 可重跑同序列;`spawnDelayMsRange` 以 pending due time 延後 pop-in,`t_visible` 仍由 spawn tick 蓋戳。
+  - `src/sim/TargetManager.test.ts`:seed-only legacy 位置、同 seed reset 重現、不同 seed sanity、seed=12345 前五個 spawn golden(含 due time/position)。
+  - 驗證:`npm.cmd run test -- src/sim/TargetManager.test.ts` → **1 file / 23 tests pass**;TargetManager regression 組 → **5 files / 65 tests pass**。
+  - Commit:`a427e70 feat(wp-21): add deterministic seeded spawn`。
+- **Slice 3 — WP-19 clearance 對帳**:
+  - `src/scene/clearance.ts`:若 `targets.spawnArea` 存在,以 yaw range 端點 + 90° 倍數臨界角、distance min/max 推得 polar sector 的保守 hitbox AABB;保留既有 L/R slot path 不變。
+  - `src/scene/clearance.test.ts`:鎖 default spawnArea `{ yawDegRange:[-25,25], distanceURange:[3.2,4.4] }` 的 envelope 極值,並以 `spawnarea-blocker` fixture 驗證 seeded pop-in 包絡會被淨空 gate 擋下。
+  - 驗證:`npm.cmd run test -- src/scene/clearance.test.ts` → **1 file / 10 tests pass**。
+- **T1 完整驗證**:
+  - `npm.cmd run typecheck` → pass。
+  - T1 regression 組 → **7 files / 98 tests pass**。
+  - `rg "Math\.random\(" src\sim src\recoil` → no matches(exit 1,無呼叫)。
+  - `npx.cmd vitest run` → **56 files / 426 tests pass**。
+- **Decision Log**:
+  - **seed-only 不啟用 spawn 隨機化**。Alternatives Considered:任何 `sequence.seed` 都改成 seeded spawn,較貼近「seed 啟用」字面;但現行 `drills/counterstrafe_ad_v1.json` 已有 `seed:1`,若直接改會破壞既有 drill baseline。採「有 `spawnArea` 或 `spawnDelayMsRange` 才啟用」,讓 T2 detection config 明確 opt-in,同時保住舊 drill。
+  - **`spawnDelayMsRange` 也需 `sequence.seed`**。Alternatives Considered:只要求 `spawnArea` 有 seed,讓 delay range 可單獨存在;但 range delay 也是隨機來源,無 seed 會違反 GD-5。若需要固定延遲,沿用既有 `timing.spawnDelayMs`。
+  - **clearance 對 spawnArea 用保守 AABB,不把 scene/clearance import 進 sim**。Alternatives Considered:讓 TargetManager 匯出 spawnArea sampling helpers 給 clearance 共用;但會把驗證層與 sim runtime 綁得更緊。採兩邊同公式+測試鎖極值,維持 GD-6 邊界。
+- **Surprises & Discoveries**:
+  - 現行 counter-strafe drill 已帶 `sequence.seed`,所以「無 seed path」不足以保證零破壞;必須另外測 seed-only legacy path。
+  - `spawnDelayMsRange:[0,0]` 仍刻意消耗一個 ran1 值,用 golden 鎖住 `delay → yaw → distance` 次序;否則固定 delay 會悄悄改變位置序列。
+- **Open Questions**:
+  - 無新增阻塞。T2 可新增 detection pop-in drill config 並在 spawn/visible event payload 落 `targetX/targetY/targetZ` additive 欄。
 
 ### 2026-07-09 07:35Z — T0 entry gate PASS(GD-7/8 收斂 + spawnArea/取樣次序決議 + WP-19 對帳)
 

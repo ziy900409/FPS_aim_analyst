@@ -7,7 +7,7 @@
 | **相依** | T0(spawnArea/取樣次序決議) |
 | **Risk / Cplx** | **High** / Med(動 sim 目標機制——零破壞不變式是全部風險所在) |
 | **Touches** | MODIFY `src/drill/schema.ts`(spawnArea?/spawnDelayMsRange?/seed 語意)、`src/sim/TargetManager.ts`(seeded spawn 分支)、`src/scene/clearance.ts`(spawnArea envelope 對帳);REUSE `src/recoil/rng.ts`(不改)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -36,12 +36,12 @@ polar 取樣)與延遲——**同 seed 同序列**;無 seed 的既有 drill **�
 
 ## Steps
 
-- [ ] schema 擴欄 + 驗證測試(合法/非法/缺 seed 併用)。
-- [ ] **既有決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
-- [ ] TargetManager seeded 分支 + 同 seed 重現測試 + reset 重建 stream 測試。
-- [ ] 取樣次序鎖定測試(golden:seed X → 前 5 個 spawn 的 (delay,yaw,dist) 逐位)。
-- [ ] WP-19 clearance envelope 納入 `targets.spawnArea` 極值 + 場景淨空回歸測試。
-- [ ] `npx vitest run` 全綠。
+- [x] schema 擴欄 + 驗證測試(合法/非法/缺 seed 併用)。
+- [x] **既有決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
+- [x] TargetManager seeded 分支 + 同 seed 重現測試 + reset 重建 stream 測試。
+- [x] 取樣次序鎖定測試(golden:seed X → 前 5 個 spawn 的 (delay,yaw,dist) 逐位)。
+- [x] WP-19 clearance envelope 納入 `targets.spawnArea` 極值 + 場景淨空回歸測試。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

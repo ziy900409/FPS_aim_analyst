@@ -31,6 +31,13 @@
 
 ## Log
 
+### 2026-07-09 07:54Z — WP-21 T1 對帳完成:spawnArea 已納入 clearance envelope
+
+- **來源**:WP-21 T1 seeded spawn 完成([../wp-21-detection-drill/progress.md](../wp-21-detection-drill/progress.md))。
+- **實作結論**:`src/scene/clearance.ts` `deriveTargetEnvelopes(drill)` 現在遇到 `targets.spawnArea` 時,會以 yaw range 端點 + 90° 倍數臨界角、distance min/max 推得 polar sector 的保守 target envelope;既有無 spawnArea 的 L/R slot path 不變。
+- **測試證據**:`src/scene/clearance.test.ts` 新增 default spawnArea 極值 golden 與 `spawnarea-blocker` fixture;`npm.cmd run test -- src/scene/clearance.test.ts` → **1 file / 10 tests pass**;T1 完整 `npx.cmd vitest run` → **56 files / 426 tests pass**。
+- **待辦狀態**:2026-07-09 07:35Z 記錄的「spawnArea 尚未被 clearance envelope 形式涵蓋」已關閉。WP-21 T2 detection drill config 可宣告受 WP-19 clearance gate 覆蓋。
+
 ### 2026-07-09 07:35Z — WP-21 T0 對帳:spawnArea 尚未被 clearance envelope 形式涵蓋
 
 - **來源**:WP-21 T0 entry gate 對帳([../wp-21-detection-drill/progress.md](../wp-21-detection-drill/progress.md))。
