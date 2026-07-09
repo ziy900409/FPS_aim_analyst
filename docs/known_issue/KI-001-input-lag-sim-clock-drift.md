@@ -1,7 +1,7 @@
 # KI-001 — 開火/鍵盤嚴重輸入延遲(sim 邏輯時鐘漂移)修改計畫
 
-> 類型:tech spec(修改計畫,**尚未動 code**)。語言:繁中,術語保留英文(D4)。
-> 狀態:草案待核准 → 核准後才進實作。
+> 類型:tech spec(修改計畫)。語言:繁中,術語保留英文(D4)。
+> 狀態:**Task 1+2 已實作(2026-07-09)**——re-anchor 修法落於 [SimLoop.ts:412](../../src/loop/SimLoop.ts#L412) `pump`;回歸測試 [sim-clock-drift.test.ts](../../src/loop/__tests__/sim-clock-drift.test.ts) 綠;determinism 全數(src + tests/regression)0 迴歸。Task 3/4/5 為選配硬化,尚未執行。
 > 診斷來源:2026-07-08 /debug session(已用臨時 repro 測試證實,測試已移除)。
 
 ---

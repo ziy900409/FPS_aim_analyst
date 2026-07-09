@@ -1,7 +1,8 @@
 # DECISIONS — 全域決策與跨文件矛盾帳本
 
-> 專案的**全域 episodic memory**:記跨 WP / 跨文件的決策、未解問題、文件間的不一致。
+> 專案的**全域 episodic memory**:記跨 WP / 跨文件的 **feature/WP 決策**(`GD-n`)、未解問題、文件間的不一致。
 > per-WP 的決策與意外寫在各 WP 的 `progress.md`;**跨界的**(影響規格 / PLAN / 多個 WP)才寫這裡。
+> **修 bug 的決策(`BD-n`)另記** [known_issue/BUGFIX-DECISIONS.md](../known_issue/BUGFIX-DECISIONS.md);本檔只收 feature/WP 決策。
 > 索引:[exec-plan/README.md](README.md) · 術語:[CONTEXT.md](../../CONTEXT.md) · 導航:[docs/MAP.md](../MAP.md)
 > 語言:繁體中文,術語保留英文(D4)。最新在上。
 

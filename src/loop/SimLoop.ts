@@ -410,7 +410,8 @@ export function createSimLoop(
 
   return {
     pump(nowMs: number): { ticks: number; alpha: number } {
-      accSec += Math.min((nowMs - lastMs) / 1000, 0.25); // 夾住避免 spiral of death
+      const rawDeltaS = (nowMs - lastMs) / 1000;
+      accSec += Math.min(rawDeltaS, 0.25); // 夾住避免 spiral of death
       lastMs = nowMs;
 
       let ticks = 0;
@@ -421,6 +422,16 @@ export function createSimLoop(
         accSec -= tickSec;
         ticks++;
         tickIndex++;
+      }
+
+      // KI-001 修法（INV-ReAnchor，§2.4）:單次 >0.25s 卡頓被夾除時,被丟棄的 (rawDelta−0.25s) 若
+      // 不補回,`simTimeMs`（消費閘門 tickEndMs 的來源）會永久落後真實時鐘域（event.timeStamp）,
+      // 使其後開火/鍵盤事件延後數百 ms 消費。故夾除生效時把邏輯時鐘重新錨定至真實 `nowMs`、accSec
+      // 歸零——只在 >0.25s 分支動作,≤0.25s 路徑 byte-for-byte 不變（決定性回歸 C-2 不受影響）。
+      // 現行 clamp 本就丟棄被夾模擬時間,re-anchor 不新增丟棄量,僅該幀一次 hitch（OQ-KI1-1）。
+      if (rawDeltaS > 0.25) {
+        simTimeMs = nowMs;
+        accSec = 0;
       }
 
       return { ticks, alpha: accSec / tickSec };

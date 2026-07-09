@@ -20,7 +20,8 @@
 | 需求 / ADR-1~9 / WBS(source of truth) | [docs/規格書_Three.js_WebGPU_反向急停瞄準訓練器.md](docs/規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) |
 | 大框架計畫 / 決策 D1–D5 / 架構總覽 | [docs/PLAN.md](docs/PLAN.md) |
 | 可執行任務(要做什麼) | [docs/exec-plan/README.md](docs/exec-plan/README.md) → `active/wp-N-*/` |
-| 全域決策 / 跨文件矛盾帳本 | [docs/exec-plan/DECISIONS.md](docs/exec-plan/DECISIONS.md) |
+| 全域決策 / 跨文件矛盾帳本(feature/WP) | [docs/exec-plan/DECISIONS.md](docs/exec-plan/DECISIONS.md) |
+| 已知 bug / 修 bug 決策帳本 | [docs/known_issue/](docs/known_issue/) → 診斷計畫 `KI-NNN-*.md` · 決策 [BUGFIX-DECISIONS.md](docs/known_issue/BUGFIX-DECISIONS.md) |
 
 **命名任何東西前**(變數/函式/類別/檔案/欄位),先對齊 [CONTEXT.md](CONTEXT.md) 的正規術語。
 
@@ -40,6 +41,7 @@
 6. **跨 WP 先驗上游 exit-gate 已綠燈**(entry-gate task 的職責)。
 7. **跨 WP / 跨文件的決策或矛盾** → 寫進 [DECISIONS.md](docs/exec-plan/DECISIONS.md)(per-WP 的寫 `progress.md`,跨界的寫全域帳本)。
 8. 里程碑門控:**M1(WP-2 脊椎)未過,不展開 WP-3 之後**。
+9. **修 bug(known issue)**:診斷 + 修改計畫寫 `docs/known_issue/KI-NNN-*.md`(tech spec);修復**決策**(選了哪個修法、為何、偏離協議、遺留 OQ)寫 [known_issue/BUGFIX-DECISIONS.md](docs/known_issue/BUGFIX-DECISIONS.md)(編號 `BD-n` 對應 `KI-NNN`)。落地時同步翻 KI doc 狀態 + 帳本索引。純 feature/WP 決策仍走 §7 的 DECISIONS.md。
 
 ---
 
@@ -71,7 +73,8 @@
 | Working(短期) | 當前 `Tn-*.md` + 指名原始檔 | 執行中,不落盤 |
 | Semantic(概念) | [CONTEXT.md](CONTEXT.md) / 規格書 | 新術語或架構概念定案時 |
 | Episodic(發生過) | per-WP `progress.md` + git history | 每個 task 完成 |
-| 全域決策/矛盾 | [DECISIONS.md](docs/exec-plan/DECISIONS.md) | 跨 WP/跨文件的決策或不一致 |
+| 全域決策/矛盾(feature) | [DECISIONS.md](docs/exec-plan/DECISIONS.md) | 跨 WP/跨文件的決策或不一致 |
+| 除錯決策(bug 修復) | [known_issue/](docs/known_issue/):`KI-NNN-*.md` + [BUGFIX-DECISIONS.md](docs/known_issue/BUGFIX-DECISIONS.md) | 每個 bug 診斷/修復定案 |
 | 程序(怎麼做) | 本檔 + task 內建 DoD | 協議變更時 |
 
 ## graphify
