@@ -6,7 +6,7 @@
 |---|---|
 | **相依** | T0(spawnArea/取樣次序決議) |
 | **Risk / Cplx** | **High** / Med(動 sim 目標機制——零破壞不變式是全部風險所在) |
-| **Touches** | MODIFY `src/drill/schema.ts`(spawnArea?/spawnDelayMsRange?/seed 語意)、`src/sim/TargetManager.ts`(seeded spawn 分支);REUSE `src/recoil/rng.ts`(不改)+ 測試 |
+| **Touches** | MODIFY `src/drill/schema.ts`(spawnArea?/spawnDelayMsRange?/seed 語意)、`src/sim/TargetManager.ts`(seeded spawn 分支)、`src/scene/clearance.ts`(spawnArea envelope 對帳);REUSE `src/recoil/rng.ts`(不改)+ 測試 |
 | **狀態** | ⬜ |
 
 ## Objective
@@ -25,6 +25,9 @@ polar 取樣)與延遲——**同 seed 同序列**;無 seed 的既有 drill **�
   **先跑既有決定性回歸全綠**再進新功能測試。
 - 新決定性測試:同 seed 兩次 reset+run → spawn 序列(位置/延遲)逐位一致;
   不同 seed → 序列不同(sanity)。
+- WP-19 淨空對帳:T0 已確認現行 `deriveTargetEnvelopes` 尚未形式涵蓋
+  `targets.spawnArea`;本 task 啟用 spawnArea 時需把 yaw/distance 極值納入 target envelope
+  (並加場景淨空測試),否則 detection drill config 不得宣告已受 WP-19 gate 覆蓋。
 - `Math.random` 禁令 grep 閘擴充:涵蓋 `TargetManager` 路徑(既有 lint 閘已含 src/sim,
   確認即可)。
 
@@ -37,12 +40,13 @@ polar 取樣)與延遲——**同 seed 同序列**;無 seed 的既有 drill **�
 - [ ] **既有決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
 - [ ] TargetManager seeded 分支 + 同 seed 重現測試 + reset 重建 stream 測試。
 - [ ] 取樣次序鎖定測試(golden:seed X → 前 5 個 spawn 的 (delay,yaw,dist) 逐位)。
+- [ ] WP-19 clearance envelope 納入 `targets.spawnArea` 極值 + 場景淨空回歸測試。
 - [ ] `npx vitest run` 全綠。
 
 ## Definition of Done
 
 - 無 seed:既有測試**零修改**全綠(逐位不變證據);有 seed:同 seed 同序列 golden 鎖定;
-  schema 驗證涵蓋併用規則;`Math.random` 閘涵蓋確認。
+  schema 驗證涵蓋併用規則;`spawnArea` 已進 WP-19 clearance envelope;`Math.random` 閘涵蓋確認。
 
 ## Commit
 

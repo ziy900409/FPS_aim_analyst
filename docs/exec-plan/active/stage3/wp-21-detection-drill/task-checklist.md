@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(GD-7/8 收斂 + spawnArea 決議,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
+| ✅ | **T0** entry gate(GD-7/8 收斂 + spawnArea 決議,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ⬜ | **T1** seeded spawn(schema 擴欄 + TargetManager;零破壞) | [T1-seeded-spawn.md](T1-seeded-spawn.md) | T0 | High |
 | ⬜ | **T2** 偵測 drill config + spawn 事件位置欄 | [T2-detection-drill-config.md](T2-detection-drill-config.md) | T1 | Med |
 | ⬜ | **T3** t_detect/偏心度離線推導 spec + fixture | [T3-offline-derivation-spec.md](T3-offline-derivation-spec.md) | T2 + WP-16 | Med |

@@ -9,7 +9,7 @@
 | **上游門檻** | 研究側:**GD-6~10 已全數拍板(2026-07-06 grill)**,無未決研究設計。工程側:WP-19/20 僅需 M4 ✅;WP-21 資料面需 WP-16(schema v2);WP-22 需 **M8 + WP-18** |
 | **技術棧** | 沿用(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright)+ GLTF 資產管線(`GLTFLoader`,render-only) |
 | **估時** | 11.5–16.5 dev-days(WP-19~22;不含 stage2 的 WP-18 +2–3.5) |
-| **狀態** | 🟡 進行中;**WP-19 ✅ M9 達成 + WP-20 ✅ 交付(2026-07-08)** — 場景脊椎成立、顯示管線四件套齊備;WP-21 可續;WP-22 待 M9 ✅(已達)+ M8 ✅ + WP-18 |
+| **狀態** | 🟡 進行中;**WP-19 ✅ M9 達成 + WP-20 ✅ 交付(2026-07-08)** — 場景脊椎成立、顯示管線四件套齊備;WP-21 T0 ✅、T1 可續;WP-22 待 M9 ✅(已達)+ M8 ✅ + WP-18 |
 
 ---
 
@@ -209,7 +209,7 @@ GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵�
 |---|---|---|---|---|---|---|
 | **WP-19** | [wp-19-scene-system/](wp-19-scene-system/README.md) | 場景系統:SceneConfig + GLTF 管線 + 淨空驗證 + 場景切換/meta + 兩個雜亂度階層場景 | **M9 ✅** | M4 ✅(可與 stage2 尾段並行) | 4–6 | ✅ **M9(2026-07-08)** |
 | **WP-20** | [wp-20-display-pipeline/](wp-20-display-pipeline/README.md) | 顯示管線:解析度模式 + fullscreen/資格閘 + frame-time log + session setup 表單/display meta | — | M4 ✅(可並行) | 3–4 | ✅ **交付(2026-07-08)** — 四件套齊備,WP-22 T2 可消費 |
-| **WP-21** | [wp-21-detection-drill/](wp-21-detection-drill/README.md) | 偵測 drill:seeded spawn 隨機化 + pop-in drill + t_detect/偏心度離線推導 spec | — | T1/T2 獨立;T3 需 WP-16(v2 欄) | 2.5–3.5 | ⬜ |
+| **WP-21** | [wp-21-detection-drill/](wp-21-detection-drill/README.md) | 偵測 drill:seeded spawn 隨機化 + pop-in drill + t_detect/偏心度離線推導 spec | — | T1/T2 獨立;T3 需 WP-16(v2 欄) | 2.5–3.5 | 🟡 T0 ✅;T1 next |
 | **WP-22** | [wp-22-perception-integration/](wp-22-perception-integration/README.md) | 感知實驗整合:追蹤 × 場景 + 解析度受試者內 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + **WP-18(M8 後)** | 2–3 | ⬜ |
 
 ---
@@ -269,13 +269,14 @@ WP-21(偵測 drill;T3 需 WP-16)─┤
 | # | 問題 | 建議(計畫預設) | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
 | OQ-S3-1 | 效能地板門檻(資格閘 warmup p95 ≤ ?ms;drill 中 suspect 門檻) | ✅ **收斂(WP-20 T0 2026-07-08)**:`PERF_FLOOR_MS = 8.33ms`;資格閘 warmup p95 `<= 8.33ms` 才可進實驗 session,drill 中 p95 `> 8.33ms` 標 `suspect`;120Hz 等效起點,pilot 後另 task 校準。 | 研究者 | WP-20 T0 | ✅ 已收斂;T2 可機械判定 |
-| OQ-S3-2 | `t_detect` 參數 pre-registered 起點(θ_v 相對雜訊底倍率、持續 k tick) | 起點:θ_v = 3× 前刺激窗 SD、k = 4 tick(≈31ms);敏感度分析離線做 | 研究者 | WP-21 T3(spec 內給預設) | 不阻塞引擎;分析 spec 需標「暫定」 |
+| OQ-S3-2 | `t_detect` 參數 pre-registered 起點(θ_v 相對雜訊底倍率、持續 k tick) | ✅ **收斂(WP-21 T0 2026-07-09)**:θ_v = 3× 前刺激窗 500ms aim 角速度 SD、k = 4 tick(≈31.25ms@128Hz);敏感度分析離線做,analysis spec 內標「暫定,pilot 校準」。 | 研究者 | WP-21 T3(spec 內給預設) | ✅ 已收斂;不阻塞引擎 |
 | OQ-S3-3 | 場景資產具體選型(CC0/CC-BY pack 清單與雜亂度對應) | ✅ **收斂(M9 2026-07-08)**:T0 選定 Kenney Nature Kit(CC0)為候選,惟 T2/T5 最終改採**原創程序化生成 CC0** 資產(GD-9 完全合規、propBounds 與視覺同源)——`field-low`(204 triangles)+ `urban-high`(804 triangles),皆遠低於 <20k budget,`ATTRIBUTIONS.md` 逐項可稽核。備選 Kenney/Quaternius/Poly Pizza 保留供未來寫實置換。詳 [wp-19 progress](wp-19-scene-system/progress.md)。 | 使用者 | WP-19 T0 | ✅ 已收斂;triangles/materials 已實測、`ATTRIBUTIONS.md` 已寫 |
 | OQ-S3-4 | frames 匯出形式(完整序列 vs 摘要) | ✅ **收斂(WP-20 T0 2026-07-08)**:JSON `frames.series` 完整 delta 序列 + summary(`p50/p95/p99/overBudgetWindows/overflow`);CSV 只輸出 summary 欄位。 | 研究者 | WP-20 T0 | ✅ 已收斂;T3 匯出形式固定 |
 | OQ-S3-5 | 追蹤 drill 的 presentation 時長/速度階層設計(WP-18 展開時定) | 對帳點:WP-18 T0 與本計畫 WP-22 T1 互記 | 研究者 | WP-18 entry | WP-22 T1 消費面 |
 
 > **WP-19-local OQ 收斂(M9 2026-07-08)**:OQ-19.1(`CLEARANCE_MARGIN_U = 0.5u` / `playerCorridor.halfWidthU = 1.0u`)與 OQ-19.2(`meta.scene` optional 區塊縫 WP-16 已留,T4 填值)均 ✅ resolved,決議與證據見 [wp-19 progress](wp-19-scene-system/progress.md) OQ ledger。
 > **WP-20-local OQ 收斂(T0 2026-07-08)**:OQ-20.1(`MAX_DISPLAY_HZ = 240`;rAF deltas 丟前 30、取後 120 median 估 refresh)與 OQ-20.2(`meta.display`/`frames`/`session` optional 縫 WP-16 已留,填值歸 WP-20)均 ✅ resolved,決議與證據見 [wp-20 progress](wp-20-display-pipeline/progress.md) OQ ledger。
+> **WP-21-local OQ 收斂(T0 2026-07-09)**:OQ-21.1 `spawnArea` 預設 `{ yawDegRange: [-25,25], distanceURange: [3.2,4.4] }`;OQ-21.2 seeded 取樣次序固定 `delay → yaw → distance`,spawn 位置欄落在既有 `visible` event 的 `targetX/targetY/targetZ` additive 欄位。WP-19 對帳結論:現行 clearance envelope 尚未形式涵蓋 `spawnArea`,WP-21 T1 啟用時需同步擴充 envelope;證據見 [wp-21 progress](wp-21-detection-drill/progress.md)。
 
 ---
 

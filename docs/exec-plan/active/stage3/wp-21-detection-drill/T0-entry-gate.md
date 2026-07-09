@@ -8,7 +8,7 @@
 | **相依** | —(T1/T2 可先行;T3 的 WP-16 相依在 task 級把關) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [CLAUDE.md](../../../../../CLAUDE.md) §4 + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | ✅（2026-07-09 T0 PASS） |
 
 ## Objective
 
@@ -34,12 +34,12 @@
 
 ## Steps
 
-- [ ] `npm run test` 乾淨基準 exit 0 記 progress。
-- [ ] TargetManager/seed 現況證據 + 既有決定性測試清單記 progress。
-- [ ] OQ-21.1 / OQ-21.2 / OQ-S3-2 決議記 ledger + §8 回填。
-- [ ] WP-19 淨空包絡對帳(互記 progress)。
-- [ ] CLAUDE.md §4 追加一條硬約束(與本 task 同 commit)。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] `npm run test` 乾淨基準 exit 0 記 progress。
+- [x] TargetManager/seed 現況證據 + 既有決定性測試清單記 progress。
+- [x] OQ-21.1 / OQ-21.2 / OQ-S3-2 決議記 ledger + §8 回填。
+- [x] WP-19 淨空包絡對帳(互記 progress)。
+- [x] CLAUDE.md §4 追加一條硬約束(與本 task 同 commit)。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 
