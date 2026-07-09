@@ -639,7 +639,8 @@ const renderLoop = createRenderLoop((now) => {
   const punchRad = punchToThreeRad(punchPitchDeg, punchYawDeg);
   cameraController.setViewPunch(punchRad.yawRad, punchRad.pitchRad);
   // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
-  targetView.sync(sharedState.targets);
+  //    移動目標以 alpha 內插 posPrev→pos（WP-18 / T3，比照 player 位置；render-only，不寫 state）。
+  targetView.sync(sharedState.targets, alpha);
   // 4b) 彈孔 InstancedMesh 依 impacts 環形格增量同步（WP-13 / T3；唯讀，sim 命中時寫入）。
   impactView.sync(sharedState.impacts);
   // 5) 繪製。

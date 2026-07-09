@@ -12,7 +12,7 @@
 | T0 entry gate | ✅ PASS(2026-07-09;基線凍結 + OQ 收斂) |
 | T1 motion drive | ✅ PASS(2026-07-09;459 test 全綠、零破壞) |
 | T2 sub-tick 命中內插 | ✅ PASS(2026-07-09;466 test 全綠、零破壞) |
-| T3 timed presentation + render 內插 | ⬜ |
+| T3 timed presentation + render 內插 | ✅ PASS(2026-07-09;474 test 全綠、零破壞) |
 | T4 tracking drill + 指標推導 spec | ⬜ |
 | T5 決定性回歸 + 掛線 | ⬜ |
 | T-exit(交付) | ⬜ |
@@ -31,6 +31,44 @@
 ---
 
 ## Log
+
+### 2026-07-09 — T3 timed presentation 推進 + 目標 render 內插 ✅ PASS(命中不撤除;render-only 內插;零破壞)
+
+**切片**(走 `/incremental-implementation`,三 slice 各自原子 commit):
+- **Slice 1/3**(`34df851`):`timing.presentationMs`(additive optional)schema + config 欄位。
+- **Slice 2/3**(`b72f9d2`):DrillRunner timed presentation 推進 + persistent 命中 gate(命中不撤除)。
+- **Slice 3/3**(本 commit):目標 render alpha 內插(render-only,`posPrev`→`pos`)。
+
+**① 實作**:
+- **`timing.presentationMs?`**([DrillConfig.ts](../../../../src/drill/DrillConfig.ts) + [schema.ts](../../../../src/drill/schema.ts)):正有限驗證(比照 `peekTimeoutMs`),spread 條件式保留欄位。additive optional → 既有 detection/counter-strafe drill 零破壞。
+- **`TargetState.persistent?: boolean`**([types.ts](../../../../src/state/types.ts)):timed presentation 目標旗標——命中不撤除,只由 DrillRunner 呈現時長到期推進。省略＝命中即撤(既有政策)。
+- **spawn 設旗標**([TargetManager.ts](../../../../src/sim/TargetManager.ts)):`config.timing.presentationMs !== undefined` → spawn 目標帶 `persistent: true`(條件式 spread,不設時欄位不存在 → 逐位零破壞)。
+- **SimLoop 命中 gate**([SimLoop.ts](../../../../src/loop/SimLoop.ts) `fireOneShot`):命中路徑改為先 `state.targets.find(result.targetId)`,`persistent === true` 時**不** `markKilled`(只記 fire 事件,`hit: true`);非 persistent 維持命中即撤。
+- **DrillRunner 呈現時長推進**([DrillRunner.ts](../../../../src/drill/DrillRunner.ts) running 相位):`presentationMs` 提供時,目標可見達 `nowMs − visibleAt >= presentationMs` → `markKilled` 推進下一目標。純時長驅動、時間源 = sim clock `nowMs`(ADR-4),與 `peekTimeoutMs` 並存(語意不同:presentation 是追蹤窗右界,窗內命中不撤除)。
+- **目標 render alpha 內插**([TargetView.ts](../../../../src/render/TargetView.ts) `sync`):新增選填 `alpha = 1`;`posPrev` 存在時 mesh 位置取 `lerp(posPrev, pos, alpha)`(reuse [RenderLoop.ts](../../../../src/loop/RenderLoop.ts):24 `lerp`),無 `posPrev` 退回 `pos`。**render-only、不寫 state**(GD-6/GD-10)。[main.ts](../../../../src/main.ts) render frame 傳入 SimLoop `alpha`(比照 player 位置)。
+
+**② 測試**(+8,466→474):
+- [schema.test.ts](../../../../src/drill/schema.test.ts)(+1):`presentationMs ≤ 0 / 非有限 → throw` + 合法欄位保留斷言。
+- [DrillRunner.test.ts](../../../../src/drill/DrillRunner.test.ts)(+2):`presentationMs` 到期純時長推進並計入 targetCount(spawn 帶 `persistent: true`);未設 `presentationMs` 時目標非 persistent、時間大幅推進不自動撤除(既有政策零破壞)。
+- [SimLoop.test.ts](../../../../src/loop/SimLoop.test.ts)(+2):persistent 目標命中記 `hit: true` 事件但**不** `markKilled`、目標仍存活;非 persistent 命中即撤除(零破壞)。
+- [TargetView.test.ts](../../../../src/render/TargetView.test.ts)(+3):`alpha` 0→posPrev / 1→pos / 0.5→中點;無 posPrev 退回 pos;`sync` 不寫回 `pos`/`posPrev`(render 唯讀不變式)。
+
+**③ grep 閘**:`src/{sim,loop,drill}/*.ts` 無 `Date.now`/`Math.random` 呼叫(grep 命中皆 doc comment/測試描述禁令的散文)。persistent gate 只加布林判斷,無時鐘/隨機/演進改動。
+
+**④ 收尾**:`tsc --noEmit` exit 0;`npx vitest run` → **59 files / 474 tests passed**,exit 0(baseline 466 + 8 新,零破壞)。
+
+**Decision Log**:
+- **⚠️ 外科式 SimLoop gate(擴 scope 超出 T3 原 Touches,user 本 session 確認)**:「命中不撤除」的撤除點是 `SimLoop.fireOneShot` 的 `markKilled`(line 227),**DrillRunner 單獨擋不住**。故採 per-target persistent 布林旗標,擴 scope 到 **SimLoop + TargetManager + types**(T3 原 Touches 只列 DrillRunner/TargetView/main)。Alternatives Considered:(a) DrillRunner 攔截命中事件——否決:DrillRunner 不在命中判定路徑,無從得知本 tick 命中了誰;(b) 在 `markKilled` 內查 persistent——否決:`markKilled` 是 DrillRunner presentation 推進**也**要用的撤除原語(persistent 目標到期仍須被 presentation gate 撤除),在原語內擋會連 presentation 推進一起擋死。**選定**:gate 放呼叫端(SimLoop 命中路徑查 `persistent` 才撤;DrillRunner presentation 路徑無條件撤)——兩條撤除路徑語意分離、`markKilled` 保持單純原語。
+- **「命中不撤除」測試落 SimLoop.test.ts 而非 DrillRunner.test.ts**。Alternatives Considered:handoff 原建議用 DrillRunner `killCurrentTarget` helper——否決:該 helper 直呼 `markKilled`(繞過 SimLoop gate,必移除 persistent 目標),無法驗證 gate。**選定**:gate 行為在 SimLoop fire 路徑,故在 [SimLoop.test.ts](../../../../src/loop/SimLoop.test.ts) 以真實 `simStep` 命中 persistent 目標並斷言 `killed` 為空、目標仍存活——測在行為所在層。
+- **render lerp reuse `RenderLoop.lerp` 而非 inline / 新 helper**。Alternatives Considered:inline `a+(b-a)*α`——否決:與 player/recoil 內插同一數學,共用具名純函式語意一致、單一真相源;`RenderLoop.lerp` 為 tree-shakeable 具名 export,無循環依賴(RenderLoop 不 import TargetView)。
+
+**Surprises & Discoveries**:
+- **`alpha` 預設 1 天然涵蓋零破壞**:`lerp(posPrev, pos, 1) = pos` 代數恆等,故靜止/直接注入目標(`sync` 省略 alpha 或無 posPrev)逐位讀 `pos`,既有 5 個 TargetView 測試零改動通過。
+- **`TargetView.test.ts` 的 `target()` helper 顯式列欄、丟棄 `posPrev`**:helper 不 spread `over` 而逐欄複製,新增 `posPrev` 內插測試須先在 helper 補 `posPrev: over.posPrev`,否則旗標被靜默丟棄(內插測試會假綠退回 pos 分支)。
+
+**Open Questions / Next**:
+- **Next**:T4 [T4-tracking-drill-metrics-spec.md](T4-tracking-drill-metrics-spec.md)(Med)——`tracking_v1` drill config(移動目標 + timed presentation)+ 追蹤指標離線推導 spec(`t_acquire`/TOT%/RMS ε)+ round-trip fixture。相依 T2+T3 皆 ✅。
+- OQ-S3-5 仍 blocked,待 T-exit 綠燈後回 WP-22 T0 重跑。
 
 ### 2026-07-09 — T2 sub-tick 命中內插 ✅ PASS(FR-B17;fire 時間戳對齊;靜止目標零破壞)
 

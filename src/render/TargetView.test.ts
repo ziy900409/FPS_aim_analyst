@@ -14,6 +14,7 @@ function target(over: Partial<TargetState> = {}): TargetState {
     hitbox: over.hitbox ?? { width: 1, height: 2, depth: 1 },
     motion: over.motion,
     age: over.age,
+    posPrev: over.posPrev,
   };
 }
 
@@ -78,6 +79,40 @@ describe('TargetView — 依 state 唯讀顯示/隱藏目標 mesh(FR-4.1)', () =
     ]);
     expect(view.poolSize).toBe(1);
     expect(meshes(scene).filter((m) => m.visible)).toHaveLength(1);
+  });
+
+  it('render alpha 內插：posPrev→pos，alpha=0→posPrev、1→pos、0.5→中點（WP-18/T3，render-only）', () => {
+    const scene = new THREE.Scene();
+    const view = new TargetView(scene);
+    const moving = (): TargetState =>
+      target({ pos: { x: 4, y: 1.5, z: -8 }, posPrev: { x: 0, y: 1.5, z: -8 } });
+
+    view.sync([moving()], 0);
+    expect(meshes(scene)[0].position.toArray()).toEqual([0, 1.5, -8]); // α=0 → posPrev
+
+    view.sync([moving()], 1);
+    expect(meshes(scene)[0].position.toArray()).toEqual([4, 1.5, -8]); // α=1 → pos
+
+    view.sync([moving()], 0.5);
+    expect(meshes(scene)[0].position.toArray()).toEqual([2, 1.5, -8]); // α=0.5 → 中點
+  });
+
+  it('無 posPrev → 退回讀 pos（向後相容；alpha 省略＝1）', () => {
+    const scene = new THREE.Scene();
+    const view = new TargetView(scene);
+
+    view.sync([target({ pos: { x: -2, y: 1.5, z: 6 } })]); // 無 posPrev、alpha 預設 1
+    expect(meshes(scene)[0].position.toArray()).toEqual([-2, 1.5, 6]);
+  });
+
+  it('sync 不寫回 state（render 唯讀；posPrev/pos 不被修改）', () => {
+    const scene = new THREE.Scene();
+    const view = new TargetView(scene);
+    const t = target({ pos: { x: 4, y: 1.5, z: -8 }, posPrev: { x: 0, y: 1.5, z: -8 } });
+
+    view.sync([t], 0.5);
+    expect(t.pos).toEqual({ x: 4, y: 1.5, z: -8 });
+    expect(t.posPrev).toEqual({ x: 0, y: 1.5, z: -8 });
   });
 
   it('dispose 後場景清空且池歸零', () => {
