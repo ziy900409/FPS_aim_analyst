@@ -10,7 +10,7 @@
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS(2026-07-09;基線凍結 + OQ 收斂) |
-| T1 motion drive | ⬜ |
+| T1 motion drive | ✅ PASS(2026-07-09;459 test 全綠、零破壞) |
 | T2 sub-tick 命中內插 | ⬜ |
 | T3 timed presentation + render 內插 | ⬜ |
 | T4 tracking drill + 指標推導 spec | ⬜ |
@@ -31,6 +31,37 @@
 ---
 
 ## Log
+
+### 2026-07-09 — T1 motion drive ✅ PASS(移動目標每 tick 驅動 pos;static 零破壞)
+
+**切片**:`TargetManager.tick` 由「motion 寫入未驅動」接活為每 tick 以 `age` 純函式驅動 `pos`。抽出純函式 motion 模組。**未動 `src/loop/SimLoop.ts`**(見下 Decision)。
+
+**① 改動前基準**(T1 零破壞閘):`tsc --noEmit` exit 0;既有命中/決定性回歸清單(T0 凍結的 10 檔)→ **128 test 全綠**。
+
+**② 實作**:
+- **新增純函式模組** [targetMotion.ts](../../../../src/sim/targetMotion.ts):`motionOffset(motion, age, out)` 算相對 spawn 原點的位移——`linear`(`speed·age`)/`pingpong`(三角波,恆速率,值域 `[−range,+range]`)/`sine`(`range·sin(ω·age)`,`ω=speed/range` 使峰值速率=speed)。所有 type `offset(_,0)=0`(spawn 位置=原點)。`static`/`waypoints`/省略 → 位移 0。`isDrivenMotion` type guard 篩驅動集。
+- **TargetManager.tick 加 ③ motion drive step**([TargetManager.ts](../../../../src/sim/TargetManager.ts)):在 t_visible 蓋戳後(命中判定之前,simStep 順序)每 tick `age += TICK_SEC`(=`1/SIM_HZ` **常數**),以**位移差** `offset(age)−offset(age−TICK_SEC)` **就地**更新 `pos.x/y/z`——免存 spawn 原點、模組層級重用 `offsetPrev/offsetCurr`(GC 紀律)。spawn 設 `age: 0`。
+- **REUSE 型別**:未改 `src/state/types.ts`(`age`/`motion`/`Vec3` 既有,不改型別;posPrev 留 T2)。
+
+**③ 測試**(+21,438→459):
+- [targetMotion.test.ts](../../../../src/sim/targetMotion.test.ts)(12):原點語意(offset(_,0)=0)、linear/pingpong 逐位 golden(`toBe`,exact binary)、sine 峰值(`toBeCloseTo`)、pingpong/sine 包絡 `[−range,+range]` 觸兩端、`isDrivenMotion` 篩選。
+- [TargetManager.test.ts](../../../../src/sim/TargetManager.test.ts)(+9):spawn age=0 且累加 TICK_SEC、**static/無 motion pos 逐位不變**(零破壞)、linear horizontal/vertical 128-tick(age=1s)逐位 golden(`pos.x` exact 4)、pingpong ±range 往返 golden、sine 峰值、**決定性(異 nowMs 序列同 tick 數 → per-tick pos `toEqual`)**、config.motion 不回寫。
+
+**④ grep 閘**:`targetMotion.ts` runtime 僅用 `Math.sin`(決定性),無 `Date.now`/`performance.now`/`Math.random`(grep 命中 2 處為 doc comment 描述禁令的散文,非呼叫)。`architecture.test.ts`(GD-6)掃 `src/sim/**` 僅查 scene import,本檔只 import `state/types` → 綠。
+
+**⑤ 收尾**:`tsc --noEmit` exit 0;`npx vitest run` → **59 files / 459 tests passed**,exit 0(baseline 438 + 21 新,零破壞)。
+
+**Decision Log**:
+- **motion drive 採「位移差增量」而非「存 spawn 原點 + 絕對重算」**。Alternatives Considered:(a) 加 `TargetState.spawnPos` 存原點——否決:T1「不改型別」(型別改動屬 T2 的 posPrev);(b) TargetManager 閉包 `Map<id, origin>`——否決:額外配置 + 與目標生命週期雙寫不同步(同 OQ-18.3 對 posPrev 的否決理由)。增量式 `pos += offset(age)−offset(age−dt)` 等價 `pos=原點+offset(age)`(因 `offset(_,0)=0` 電報式相消),就地更新、零原點儲存、零型別改動、跨 FPS 逐位一致。代價:與絕對值有極小 FP 漂移(每 tick ~1e-16 級),presentation 短時長內可忽略,且**決定性不受影響**(同運算序列)。
+- **未改 `src/loop/SimLoop.ts`(T1 Touches 標「僅必要」)**。Alternatives Considered:把 `tickSec` 經 `tick(state,nowMs,tickSec)` 注入——否決:會連帶改 `DrillRunner.tick`(非 T1 touch)介面 + SimLoop 兩呼叫點,放大 blast radius。改用**模組常數 `TICK_SEC = 1/SIM_HZ`**(與既有 `recoilTick(state, 1/64)` 硬編 sim 子速率同紀律,SimLoop.ts:345);motion drive 完全落在 `TargetManager.tick`,天然位於命中判定之前(simStep:338-339 早於 consume/scheduleFire),故兩條驅動路徑(SimLoop 直驅 / DrillRunner 相位機)零改動即正確。
+
+**Surprises & Discoveries**:
+- **linear 128-tick 位移可 exact `toBe`**:`speed=2` → 每 tick 位移 `2/128 = 1/64 = 0.015625`(exact binary),128 次累加 = `2.0` 精確,故 `pos.x` golden 用 `toBe(4)` 而非容差。pingpong 上/下坡段同理(整段同號 delta),peak/原點亦 exact。sine 因 `Math.sin` 非精確,用 `toBeCloseTo`。
+- **決定性可在 TargetManager 層直證**(免 SimLoop):motion drive 以 `TICK_SEC` 常數累加 age、與 `nowMs` 完全解耦(非 seeded spawn 下 `nowMs` 只影響 `t_visible` 戳值,不影響 pos/spawn)——故「同 tick 數、亂序 nowMs → per-tick pos `toEqual`」即為異 FPS 不變性的單元版(完整 SimLoop 跨 FPS 回歸收編在 T5)。
+
+**Open Questions / Next**:
+- **Next**:T2 [T2-subtick-hit-interpolation.md](T2-subtick-hit-interpolation.md)(High risk)——`TargetState.posPrev` 快照(型別改動落此)+ fire 時間戳 `subAlpha` → `lerp(posPrev, posCurr, α)` 內插命中位置(FR-B17)。**先跑既有命中/決定性回歸全綠再改**;posPrev 快照時點 = motion drive 之前(見 OQ-18.3)。
+- OQ-S3-5 仍 blocked,待 T-exit 綠燈後回 WP-22 T0 重跑。
 
 ### 2026-07-09 — T0 entry gate ✅ PASS(上游 exit 驗證 + F5 seam 基線凍結 + OQ 收斂)
 

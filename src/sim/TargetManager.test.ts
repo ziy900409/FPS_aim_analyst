@@ -307,6 +307,128 @@ describe('TargetManager — config 驅動（WP-6 / T2，FR-6.2；換 config 即�
   });
 });
 
+describe('TargetManager — 移動目標 motion drive（WP-18 / T1，FR-B17 前置）', () => {
+  const TICK_SEC = 1 / SIM_HZ; // 每 tick age 累加步長（1/128 = 0.0078125，逐位可表示）
+
+  /** 帶 motion 的 config（count=1、首側由 alternation 定；非 seeded → 立即 spawn）。 */
+  function motionConfig(motion: DrillConfig['targets']['motion'], alternation: 'LR' | 'RL' = 'RL'): DrillConfig {
+    return {
+      drillId: 'motion-test',
+      targets: { count: 1, distance: 4, ...(motion !== undefined ? { motion } : {}) },
+      sequence: { alternation },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: 1 },
+    };
+  }
+
+  it('spawn 時 age=0，之後每 tick 累加 TICK_SEC', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(motionConfig({ type: 'linear', speed: 2 }));
+
+    tm.tick(state, 100); // spawn（age 起算 0）+ 首個 drive tick → age = 1·TICK_SEC
+    expect(state.targets[0].age).toBe(TICK_SEC);
+
+    tm.tick(state, 200);
+    tm.tick(state, 300);
+    expect(state.targets[0].age).toBe(3 * TICK_SEC);
+  });
+
+  it('static motion：pos 逐位不變（多 tick 後仍等於 spawn 位置）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(motionConfig({ type: 'static' }, 'RL'));
+
+    tm.tick(state, 100);
+    const spawnPos = { ...state.targets[0].pos }; // R 側 slot：{x:2,y:1.5,z:-4}
+    for (let i = 0; i < 50; i++) tm.tick(state, 200 + i * 100);
+
+    expect(state.targets[0].pos).toEqual(spawnPos);
+    expect(state.targets[0].pos).toEqual({ x: 2, y: 1.5, z: -4 });
+  });
+
+  it('無 motion（既有 counter-strafe drill）：pos 逐位不變', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(motionConfig(undefined, 'RL'));
+
+    tm.tick(state, 100);
+    for (let i = 0; i < 50; i++) tm.tick(state, 200 + i * 100);
+
+    expect(state.targets[0].pos).toEqual({ x: 2, y: 1.5, z: -4 });
+  });
+
+  it('linear：pos 沿 axis 等速位移（128 tick = 1s，逐位 golden）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(motionConfig({ type: 'linear', speed: 2, axis: 'horizontal' }, 'RL'));
+
+    // spawn 於首 tick；再跑到累計 128 tick（age=1s）。offset.x = speed·age = 2 → pos.x = 2(slot)+2 = 4。
+    for (let i = 0; i < 128; i++) tm.tick(state, 100 + i);
+    expect(state.targets[0].age).toBe(1);
+    expect(state.targets[0].pos.x).toBe(4); // 2/128 每 tick（exact binary）× 128 = 2.0 位移
+    expect(state.targets[0].pos.y).toBe(1.5); // horizontal → y/z 不動
+    expect(state.targets[0].pos.z).toBe(-4);
+  });
+
+  it('linear vertical：位移落在 y、x/z 不動', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(motionConfig({ type: 'linear', speed: 2, axis: 'vertical' }, 'RL'));
+
+    for (let i = 0; i < 128; i++) tm.tick(state, 100 + i);
+    expect(state.targets[0].pos.x).toBe(2); // slot x 不動
+    expect(state.targets[0].pos.y).toBe(1.5 + 2); // 1.5 + speed·age
+    expect(state.targets[0].pos.z).toBe(-4);
+  });
+
+  it('pingpong：在 spawn 原點 ±range 往返（peak 與回原點 golden）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(motionConfig({ type: 'pingpong', speed: 2, range: 1 }, 'RL'));
+
+    for (let i = 0; i < 64; i++) tm.tick(state, 100 + i); // age=0.5s → +range 峰
+    expect(state.targets[0].pos.x).toBe(3); // slot 2 + range 1
+
+    for (let i = 0; i < 64; i++) tm.tick(state, 200 + i); // age=1s → 回原點
+    expect(state.targets[0].pos.x).toBe(2);
+  });
+
+  it('sine：在 spawn 原點 ±range 擺盪（峰值 golden，浮點容差）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(motionConfig({ type: 'sine', speed: Math.PI, range: 1 }, 'RL'));
+
+    for (let i = 0; i < 64; i++) tm.tick(state, 100 + i); // age=0.5s → sin(π/2)=+range 峰
+    expect(state.targets[0].pos.x).toBeCloseTo(3, 10); // slot 2 + range 1
+  });
+
+  it('決定性：相同 tick 數、不同 nowMs 序列（frame 切法）→ per-tick pos 逐位一致', () => {
+    // motion drive 以 TICK_SEC 常數累加 age，與 nowMs（frame 時間）解耦——pos 只依 tick 數。
+    function runPositions(nowSeq: number[]): Array<{ x: number; y: number; z: number }> {
+      const state = createSharedState();
+      const tm = createTargetManager(motionConfig({ type: 'pingpong', speed: 3, range: 1.2 }, 'RL'));
+      const trail: Array<{ x: number; y: number; z: number }> = [];
+      for (const now of nowSeq) {
+        tm.tick(state, now);
+        trail.push({ ...state.targets[0].pos });
+      }
+      return trail;
+    }
+
+    const ticks = 200;
+    // A：規律 frame 間距；B：不規律（大小幀交錯）——同 tick 數,不同 nowMs。
+    const seqA = Array.from({ length: ticks }, (_, i) => 1000 + i * 8);
+    const seqB = Array.from({ length: ticks }, (_, i) => 1000 + i * i * 0.37 + (i % 3) * 5);
+
+    expect(runPositions(seqA)).toEqual(runPositions(seqB));
+  });
+
+  it('config.motion 複製非共用參考時，pos 更新不回寫 config', () => {
+    const cfg = motionConfig({ type: 'linear', speed: 2 }, 'RL');
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+    tm.tick(state, 100);
+    tm.tick(state, 200);
+    // 目標 pos 已移動,但 config 的 motion 定義（無 pos 概念）不受污染,drill 可重跑一致。
+    expect(cfg.targets.motion).toEqual({ type: 'linear', speed: 2 });
+    expect(state.targets[0].pos.x).not.toBe(2); // 已離開 slot
+  });
+});
+
 describe('TargetManager — WP-21 seeded spawn（FR-C10）', () => {
   const SPAWN_AREA = { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] } satisfies NonNullable<
     DrillConfig['targets']['spawnArea']

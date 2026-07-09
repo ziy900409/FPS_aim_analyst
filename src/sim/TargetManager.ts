@@ -1,6 +1,9 @@
 import type { SharedState } from '../state/SharedState.ts';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
+import type { Vec3 } from '../state/types.ts';
 import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
+import { SIM_HZ } from '../loop/constants.ts';
+import { isDrivenMotion, motionOffset } from './targetMotion.ts';
 
 /**
  * TargetManager — WP-4 / T2（FR-4.2）；WP-6 / T2（FR-6.2）config 驅動
@@ -30,7 +33,14 @@ import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
  * ⚠️ 範圍:`endCondition` 的 **phase 語意**(running→ended)屬 DrillRunner(T4);此處只把
  * `targets.count` 當 spawn 上限,不判定 drill 結束。WP-21 seeded spawn 只在 config 提供
  * `targets.spawnArea` 或 `sequence.spawnDelayMsRange` 時啟用；seed-only 既有 drill 維持舊 L/R slot
- * 行為。`targets.motion` 若提供則寫入目標(F5 接縫),階段 A 不驅動移動。
+ * 行為。
+ *
+ * **移動目標驅動(WP-18 / T1,FR-B17 前置)**:`targets.motion` 提供 `linear`/`pingpong`/`sine` 時,
+ * `tick` 於**命中判定之前**([SimLoop.ts](../loop/SimLoop.ts) simStep 順序)每 tick 依 `age`(累加
+ * `TICK_SEC = 1/SIM_HZ` **常數**,非變動 dt)以純函式 [`motionOffset`](./targetMotion.ts) 就地更新
+ * `target.pos`——pos 為 tick 數的純函式,異 render FPS 逐位一致(CLAUDE.md §4)。`static`/`waypoints`/
+ * 省略 motion 逐位不變(既有靜止 drill 零破壞)。以每 tick **位移差**增量更新,免存 spawn 原點、
+ * 免額外配置(GC 紀律 §4;等價 pos = 原點 + offset(age))。
  */
 
 /**
@@ -46,6 +56,14 @@ const SIDE_OFFSET = 2;
 /** 單一 box hitbox(H1;width/height/depth,u)——與 mesh 同來源(TargetView 以此 scale)。 */
 const HITBOX = { width: 1, height: 2, depth: 1 } as const;
 const DEG_TO_RAD = Math.PI / 180;
+/**
+ * 每 tick age 累加步長(邏輯秒)= sim tick 週期 `1/SIM_HZ`,**常數**(不代入變動 dt;決定性根源,
+ * WP-18 / T1,CLAUDE.md §4)。與 recoil 64Hz 子節奏用固定 `1/64` 同紀律——sim 子速率一律常數。
+ */
+const TICK_SEC = 1 / SIM_HZ;
+// 移動目標位移差計算的模組層級重用向量(每 tick 熱路徑零配置,GC 紀律 §4)。
+const offsetPrev: Vec3 = { x: 0, y: 0, z: 0 };
+const offsetCurr: Vec3 = { x: 0, y: 0, z: 0 };
 
 function sideX(side: 'L' | 'R'): number {
   return side === 'R' ? SIDE_OFFSET : -SIDE_OFFSET;
@@ -114,6 +132,9 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       visible: true,
       alive: true,
       hitbox: { ...HITBOX },
+      // motion 提供即寫入(F5 接縫);`age` 一律 spawn 起算 0——motion drive 以 age 累加驅動 pos
+      // （T1)。無 motion 時 age 仍設 0(語意一致、零成本),drive 步驟會依 motion 缺省而跳過。
+      age: 0,
       ...(motion ? { motion: { ...motion } } : {}),
     });
     spawnedCount++;
@@ -149,6 +170,23 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
         if (t.visible && !state.tVisible.has(t.id)) {
           state.tVisible.set(t.id, nowMs);
         }
+      }
+      // ③ 移動目標 motion drive(WP-18 / T1):age 累加 TICK_SEC 常數 → 以純函式位移差就地更新
+      //    pos——pos 為 tick 數的純函式(異 FPS 逐位一致),在命中判定之前(simStep 順序)。無 motion /
+      //    static / waypoints 跳過(pos 逐位不變,既有 drill 零破壞)。z 恆不動(走廊縱深,GD-6)。
+      for (let i = 0; i < state.targets.length; i++) {
+        const t = state.targets[i];
+        if (!isDrivenMotion(t.motion)) continue;
+        const prevAge = t.age ?? 0;
+        const nextAge = prevAge + TICK_SEC;
+        t.age = nextAge;
+        // 位移差 offset(age) − offset(age−TICK_SEC):等價 pos = spawn 原點 + offset(age) 的增量形式
+        //（免存原點;offset(_,0)=0 → 首個 drive tick 由 spawn 位置起步)。
+        motionOffset(t.motion, prevAge, offsetPrev);
+        motionOffset(t.motion, nextAge, offsetCurr);
+        t.pos.x += offsetCurr.x - offsetPrev.x;
+        t.pos.y += offsetCurr.y - offsetPrev.y;
+        t.pos.z += offsetCurr.z - offsetPrev.z;
       }
     },
 
