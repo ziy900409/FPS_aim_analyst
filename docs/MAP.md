@@ -168,8 +168,21 @@ docs/exec-plan/
 
 ---
 
-## 5. 維護約定
+## 5. 已知問題與修 bug 決策（`docs/known_issue/`）
+
+> 執行期發現的 bug 的診斷、修改計畫與修復決策。與 exec-plan 分工：exec-plan 記「該做什麼功能」，known_issue 記「發現了什麼 bug、怎麼修、修的決策」。
+
+| 文件 | 內容 |
+|---|---|
+| [known_issue/BUGFIX-DECISIONS.md](known_issue/BUGFIX-DECISIONS.md) | 修 bug 決策帳本（`BD-n` 對應 `KI-NNN`）+ Known Issues 索引；除錯 episodic memory 的入口 |
+| `known_issue/KI-NNN-*.md` | 每個 bug 一支 tech spec（症狀/根因/修改計畫/風險/任務拆解）；source of truth |
+| [known_issue/KI-001-input-lag-sim-clock-drift.md](known_issue/KI-001-input-lag-sim-clock-drift.md) | KI-001：開火/鍵盤嚴重輸入延遲（sim 邏輯時鐘漂移）— 已修（re-anchor，BD-001） |
+
+---
+
+## 6. 維護約定
 
 - 新增 / 移除 `docs/` 下的資料夾或頂層文件時，**同步更新本檔**。
 - WP 交付移入 `completed/` 時，更新 §3.2 路徑與 [exec-plan/README.md](exec-plan/README.md) 狀態。
+- 新增 known issue（`KI-NNN-*.md`）或其修復決策時，更新 §5 表格與 [known_issue/BUGFIX-DECISIONS.md](known_issue/BUGFIX-DECISIONS.md) §1 索引。
 - 本檔只列**結構與導航**；各文件的內容變更不需回寫本檔。
