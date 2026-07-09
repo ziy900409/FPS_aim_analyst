@@ -219,6 +219,10 @@
     "mtime": 1783586779.894988,
     "hash": "dbc6afcd73ca0808999d82bcceb7eba6"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\loop\\__tests__\\wp22-determinism.test.ts": {
+    "mtime": 1783608745.7760227,
+    "hash": "9c527827f1a8f529d37ef382a58e3779"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\compute.test.ts": {
     "mtime": 1783426358.235468,
     "hash": "240c9b684c6a5f37b381298bbef3be49"
@@ -792,12 +796,12 @@
     "hash": "c8adb0ea318862246b4dc1ef96df9008"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage3\\wp-22-perception-integration\\progress.md": {
-    "mtime": 1783606700.7219129,
-    "hash": "381b028137fdeb8291ddb60d9e51b0c8"
+    "mtime": 1783608308.0365317,
+    "hash": "14194ec68dceb9e047661f8a1e4a4ae1"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage3\\wp-22-perception-integration\\README.md": {
-    "mtime": 1783606698.7976923,
-    "hash": "bbc971df6b842d0d09e2c2bb366d34ee"
+    "mtime": 1783608280.819317,
+    "hash": "e8aad19235b440682b88ca19a3f1cf6a"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage3\\wp-22-perception-integration\\T-exit-gate.md": {
     "mtime": 1783346199.1706486,
@@ -812,16 +816,16 @@
     "hash": "f5b4d4cbfe5d2cc21936d11d312d4ddb"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage3\\wp-22-perception-integration\\T2-resolution-protocol-e2e.md": {
-    "mtime": 1783346199.1736465,
-    "hash": "c0d5867ea41ae310336b75720f74335e"
+    "mtime": 1783608262.389477,
+    "hash": "10b541d8713e675e6b0db646c3839991"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage3\\wp-22-perception-integration\\T3-determinism-acceptance-c.md": {
-    "mtime": 1783346199.1746476,
-    "hash": "565f22311abe00a1e086a1913c6e6f10"
+    "mtime": 1783608807.5965166,
+    "hash": "19af7ef1748ff403d1ae87277b22085d"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage3\\wp-22-perception-integration\\task-checklist.md": {
-    "mtime": 1783606559.3249476,
-    "hash": "65cbea774246b39fbd355ed4869d1db8"
+    "mtime": 1783608270.975173,
+    "hash": "db7fc69518b454ebcda2dcbc4764ebd9"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage4\\README.md": {
     "mtime": 1783590903.900915,
