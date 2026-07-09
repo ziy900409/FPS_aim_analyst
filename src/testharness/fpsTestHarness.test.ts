@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createFpsTestHarness } from './fpsTestHarness.ts';
 import drillSource from '../../drills/counterstrafe_ad_v1.json';
 import { detectionPopinV1 } from '../drill/detection_popin_v1.ts';
+import { resolutionDetectionProtocol } from '../display/resolutionDetectionProtocol.ts';
 import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { fieldLow } from '../scene/scenes/field-low.ts';
 import { urbanHigh } from '../scene/scenes/urban-high.ts';
@@ -33,6 +34,7 @@ function makeDetectionHarness() {
       { id: 'counterstrafe_ad_v1', source: drillSource },
       { id: detectionPopinV1.drillId, source: detectionPopinV1 },
     ],
+    availableScenes: [fieldLow],
     backend: 'webgl2',
     crossOriginIsolated: true,
     displayHz: 240,
@@ -175,5 +177,43 @@ describe('WP-13 / T2 — harness 整合(分離後仍命中 + recoil 漂移讀數
     });
     expect(payload.events.filter((event) => event.type === 'visible')).toHaveLength(trackingSceneV1.drill.targets.count);
     expect(harness.trackingMetricsFromExport(payload).acquisitionFailureRate).toBe(0);
+  });
+
+  it('WP-22 / T2 resolution protocol：two detection conditions export isolated display + protocol metadata', async () => {
+    const harness = makeDetectionHarness();
+
+    const payloads = await harness.runResolutionDetectionProtocol();
+
+    expect(payloads).toHaveLength(2);
+    expect(payloads.map((payload) => payload.meta.protocol?.conditionLabel)).toEqual(
+      resolutionDetectionProtocol.conditions.map((condition) => condition.label),
+    );
+    expect(payloads.map((payload) => payload.meta.display?.mode)).toEqual(['fhd-1080', 'qhd-1440']);
+    expect(payloads.map((payload) => payload.meta.display?.bufferW)).toEqual([1920, 2560]);
+    expect(payloads.map((payload) => payload.meta.display?.bufferH)).toEqual([1080, 1440]);
+
+    for (const [index, payload] of payloads.entries()) {
+      expect(payload.meta.drillId).toBe(detectionPopinV1.drillId);
+      expect(payload.meta.protocol).toEqual({
+        protocolId: resolutionDetectionProtocol.protocolId,
+        conditionIndex: index,
+        conditionLabel: resolutionDetectionProtocol.conditions[index].label,
+      });
+      expect(payload.meta.display?.gate).toMatchObject({ pass: true, native: true, fullscreen: true, perf: true });
+      expect(payload.meta.scene).toMatchObject({
+        sceneId: 'field-low',
+        assetPackVersion: fieldLow.assetPackVersion,
+        clutterTier: 'low',
+        fallback: false,
+      });
+      expect(payload.meta.spawn).toMatchObject({
+        seed: detectionPopinV1.sequence.seed,
+        spawnArea: detectionPopinV1.targets.spawnArea,
+        spawnDelayMsRange: detectionPopinV1.sequence.spawnDelayMsRange,
+      });
+      expect(payload.meta.frames?.summary).toMatchObject({ count: 1, overBudgetWindows: 0, overflow: false });
+      expect(payload.meta.suspect).toBe(false);
+      expect(payload.events.filter((event) => event.type === 'visible')).toHaveLength(detectionPopinV1.targets.count);
+    }
   });
 });

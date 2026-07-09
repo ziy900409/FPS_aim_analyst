@@ -16,8 +16,8 @@
     "hash": "7b5b6083cb1471193d53317aeec1ac6f"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\main.ts": {
-    "mtime": 1783606145.7310507,
-    "hash": "f141665031f584235366283c100e14f9"
+    "mtime": 1783607656.0640993,
+    "hash": "da8a9d9a6c6a4cead6b2fe7111492f41"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\vite-env.d.ts": {
     "mtime": 1782985917.6295617,
@@ -40,12 +40,12 @@
     "hash": "b686bdb4d9270ef40de1ac66f0c91347"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\data\\metadata.test.ts": {
-    "mtime": 1783586921.7831151,
-    "hash": "a19e78618046bb8fd4320cc9efdc0b12"
+    "mtime": 1783607399.2569408,
+    "hash": "c979d086c15a9d3746c9b921a37a10c5"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\data\\metadata.ts": {
-    "mtime": 1783599817.7375271,
-    "hash": "423afe1c0d60b368f493f594ed392809"
+    "mtime": 1783607382.6302886,
+    "hash": "04a84f8495c8031d1b96888547166685"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\data\\RingBuffer.ts": {
     "mtime": 1783423253.4645422,
@@ -78,6 +78,18 @@
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\display\\frameLog.ts": {
     "mtime": 1783519166.1856503,
     "hash": "92df9ba6cc0d67b5360ea70dd8da0569"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\display\\ProtocolRunner.test.ts": {
+    "mtime": 1783607367.9342158,
+    "hash": "e40c5ed8526bad4f7438c60291ed471d"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\display\\ProtocolRunner.ts": {
+    "mtime": 1783607332.622133,
+    "hash": "c1d048432b237f042e3caef84176f0b8"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\display\\resolutionDetectionProtocol.ts": {
+    "mtime": 1783607341.1178064,
+    "hash": "f126c9b7d8400284cdb7dcaeaa1d5481"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\display\\resolutionMode.test.ts": {
     "mtime": 1783519166.1866498,
@@ -424,12 +436,12 @@
     "hash": "436e24f57bcce56fa66acdb98ac3bb5d"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\testharness\\fpsTestHarness.test.ts": {
-    "mtime": 1783606522.1895754,
-    "hash": "bb5ac7157ea4c7c3e9607cef9bc61774"
+    "mtime": 1783607744.3384337,
+    "hash": "170de9f7d93efd05f81bf1842a80ea90"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\testharness\\fpsTestHarness.ts": {
-    "mtime": 1783606294.7374165,
-    "hash": "a26eb9a4cb765d3168f6f96962d7ae97"
+    "mtime": 1783607963.2619698,
+    "hash": "f0f4b0929c4c0f0753b0a909c3cee060"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\Controls.ts": {
     "mtime": 1783504508.0161202,
@@ -480,8 +492,8 @@
     "hash": "e538d9c52082911fd74fc83ab9b98d8e"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\SettingsPanel.ts": {
-    "mtime": 1783519166.200321,
-    "hash": "e44df075502af21820f41159e5b7a3c6"
+    "mtime": 1783607424.4781506,
+    "hash": "7d247b9d670f9a48a166f77c67ef4605"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\view\\CameraController.test.ts": {
     "mtime": 1783346199.2125533,
@@ -516,8 +528,8 @@
     "hash": "babf661e35a1af5475e43d00813eda88"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\e2e\\full-drill.spec.ts": {
-    "mtime": 1783606245.2322397,
-    "hash": "1a991effcbc53cd3e67a86fa87eba01b"
+    "mtime": 1783607834.0274293,
+    "hash": "b8aad4295aadef2a41733184474f803f"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\e2e\\input-sampler.spec.ts": {
     "mtime": 1782985917.6295617,

@@ -10,7 +10,7 @@
 | **相依** | WP-19(M9)✅ + WP-20 ✅ + WP-21 ✅ + WP-18 ✅ |
 | **對應 FR** | FR-C13 ~ FR-C15 |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 T1 PASS(2026-07-09):`tracking_scene_v1` + field-low E2E + urban-high probe 完成;T2 next |
+| **狀態** | 🟡 T2 AUTO PASS(2026-07-09):protocol runner + 2-condition E2E + `test:ci` green;manual true-fullscreen walkthrough pending |
 
 ---
 

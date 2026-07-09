@@ -34,6 +34,12 @@ export interface SessionMeta {
   sessionLabel?: string;
 }
 
+export interface ProtocolMeta {
+  protocolId: string;
+  conditionIndex: number;
+  conditionLabel: string;
+}
+
 export interface Meta {
   schemaVersion: 2;
   drillId: string;
@@ -61,6 +67,7 @@ export interface Meta {
   display?: DisplayState;
   frames?: FrameLogExport;
   session?: SessionMeta;
+  protocol?: ProtocolMeta;
 }
 
 export interface CollectMetaArgs {
@@ -86,6 +93,7 @@ export interface CollectMetaArgs {
   display?: DisplayState;
   frames?: FrameLogExport;
   session?: SessionMeta;
+  protocol?: ProtocolMeta;
 }
 
 export interface MeasureDisplayHzOptions {
@@ -124,6 +132,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const display = args.display === undefined ? undefined : requireDisplayState(args.display);
   const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
   const session = args.session === undefined ? undefined : requireSessionMeta(args.session);
+  const protocol = args.protocol === undefined ? undefined : requireProtocolMeta(args.protocol);
   const frameFloorSuspect = frames !== undefined && frames.summary.p95 > PERF_FLOOR_MS;
 
   return {
@@ -153,6 +162,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(display !== undefined ? { display } : {}),
     ...(frames !== undefined ? { frames } : {}),
     ...(session !== undefined ? { session } : {}),
+    ...(protocol !== undefined ? { protocol } : {}),
   };
 }
 
@@ -250,6 +260,15 @@ function requireSessionMeta(value: unknown): SessionMeta {
     ...(session.sessionLabel !== undefined
       ? { sessionLabel: requireTrimmedNonEmptyString(session.sessionLabel, 'session.sessionLabel') }
       : {}),
+  };
+}
+
+function requireProtocolMeta(value: unknown): ProtocolMeta {
+  const protocol = requireRecord(value, 'protocol');
+  return {
+    protocolId: requireTrimmedNonEmptyString(protocol.protocolId, 'protocol.protocolId'),
+    conditionIndex: requireNonNegativeInteger(protocol.conditionIndex, 'protocol.conditionIndex'),
+    conditionLabel: requireTrimmedNonEmptyString(protocol.conditionLabel, 'protocol.conditionLabel'),
   };
 }
 

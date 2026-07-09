@@ -48,6 +48,8 @@ export interface SettingsPanelHandle {
   readonly resolutionMode: ResolutionMode;
   /** 顯示/隱藏面板（locked 時隱藏，OQ-1.3）。 */
   setVisible(visible: boolean): void;
+  /** 外部流程（例如 protocol 條件）套用解析度模式後同步 UI 顯示。 */
+  setResolutionMode(mode: ResolutionMode): void;
   /** protocol 鎖定解析度條件時停用切換；WP-22 T2 消費。 */
   lockMode(locked: boolean): void;
 }
@@ -122,6 +124,11 @@ export function createSettingsPanel(opts: SettingsPanelOptions): SettingsPanelHa
     },
     setVisible(visible: boolean): void {
       root.style.display = visible ? 'flex' : 'none';
+    },
+    setResolutionMode(mode: ResolutionMode): void {
+      resolutionMode = mode;
+      resolutionRow.select.value = mode;
+      resolutionRow.value.textContent = resolutionModeLabel(mode);
     },
     lockMode(locked: boolean): void {
       resolutionModeLocked = locked;

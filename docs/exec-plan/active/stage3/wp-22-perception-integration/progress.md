@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T1 PASS(2026-07-09):tracking_scene_v1 + field-low E2E + urban-high probe 完成 → T2 next
+## Status: 🟡 T2 AUTO PASS(2026-07-09):protocol runner + 2-condition E2E + `test:ci` green;manual true-fullscreen walkthrough pending
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS(2026-07-09;WP-18 T-exit 交付 + OQ-S3-5 對帳解除;`test:ci` green) |
 | T1 追蹤 × 場景 | ✅ PASS(2026-07-09;`tracking_scene_v1` + Playwright E2E + urban-high harness probe) |
-| T2 protocol 執行器 + E2E | ⬜ |
+| T2 protocol 執行器 + E2E | 🟡 AUTO PASS(2026-07-09;manual true-fullscreen walkthrough pending) |
 | T3 決定性 + 驗收清單 C | ⬜ |
 | T-exit(M10) | ⬜ |
 
@@ -28,6 +28,41 @@
 ---
 
 ## Log
+
+### 2026-07-09 16:43 local — T2 AUTO PASS(protocol runner + resolution x detection E2E;manual pending)
+
+**Scope delivered**:
+- Added `ProtocolConfig` / `validateProtocol` / `ProtocolRunner` in `src/display/ProtocolRunner.ts`.
+- Added shared `resolution_detection_v1` config:2 conditions ordered by config data, `fhd-1080-field-low-detection` then `qhd-1440-field-low-detection`.
+- Added additive `meta.protocol = { protocolId, conditionIndex, conditionLabel }` and validation in `collectMeta`.
+- Wired main UI:「解析度 protocol」button -> setup form -> eligibility gate -> condition sequence;each condition applies + locks resolution mode, loads declared scene/drill, exports condition-tagged JSON, then shows a next-condition transition.
+- Wired dev harness + Playwright:2-condition protocol run exports two detection payloads;low-resolution gate path rejects without exports.
+
+**Verification**:
+- `npm.cmd test -- src/display/ProtocolRunner.test.ts src/data/metadata.test.ts src/testharness/fpsTestHarness.test.ts` -> PASS(3 files / 34 tests).
+- `npm.cmd run typecheck` -> PASS(`tsc --noEmit`).
+- `npx.cmd playwright test tests/e2e/full-drill.spec.ts -g "WP-22"` -> PASS(3 tests;required elevation because sandbox blocked Vite/esbuild config read).
+- `npm.cmd test` -> PASS(64 files / 501 tests).
+- `npx.cmd playwright test` -> PASS(14 tests;required elevation for webServer).
+- `npm.cmd run test:ci` -> PASS(`tsc --noEmit`;Vitest 64 files / 501 tests;Playwright 14 tests).
+- `graphify update .` -> PASS(AST extraction 143/143;graph rebuilt 1038 nodes / 2370 edges / 61 communities).
+
+**Decision Log**:
+- Decision:protocol config lives as `resolution_detection_v1` in `src/display/resolutionDetectionProtocol.ts`, separate from drill config.
+  Alternatives Considered:embedding protocol fields in `detection_popin_v1`;rejected because condition order/mode/scene are experiment orchestration, not drill mechanics.
+- Decision:main protocol progression exports automatically at drill `ended`, but requires an explicit next-condition button.
+  Alternatives Considered:auto-advancing immediately after export;rejected because it hides the condition boundary and makes operator inspection/download failures harder to notice.
+- Decision:condition-level fullscreen failure maps through `ProtocolRunner.markCurrentConditionSuspect('fullscreen-exit')`;non-protocol exports keep the existing `experimentSession.suspect` path.
+  Alternatives Considered:using session-level suspect for all protocol exports;rejected because a condition-1 fullscreen exit would incorrectly contaminate condition 2.
+- Decision:dev harness protocol uses a passed gate fixture for the mainline, and a separate `previewResolutionProtocolGate` path for low-resolution rejection.
+  Alternatives Considered:driving real fullscreen in headless E2E;not reliable across CI/headless browser modes and not equivalent to the required manual walk.
+
+**Surprises & Discoveries**:
+- Harness synthetic frames initially used actual browser `displayHz`;on 60Hz runners this exceeded the 120Hz perf floor and correctly marked protocol exports `suspect=true`. Evidence:first WP-22 protocol E2E failed at `meta.suspect`;fix clamps harness protocol frame summary to `PERF_FLOOR_MS` because the harness mainline uses a pass gate fixture.
+- `SettingsPanel.lockMode()` was already present as a WP-22 T2 seam;only `setResolutionMode()` was needed so protocol-applied modes do not visually drift from the dropdown.
+
+**Open Questions / Manual Follow-up**:
+- Manual true-fullscreen walkthrough remains pending:run local app, click「解析度 protocol」, fill setup, pass gate in real fullscreen, complete both detection conditions, and confirm two downloaded JSON files. This was not executed by the agent because it requires interactive local fullscreen/manual operation.
 
 ### 2026-07-09 16:14 local — T1 PASS(tracking drill × field-low scene + E2E)
 

@@ -12,6 +12,17 @@ import { SIM_HZ } from '../loop/constants.ts';
 import { createDataRecorder, type DataRecorder, type DataRecorderSnapshot } from '../data/DataRecorder.ts';
 import { collectMeta } from '../data/metadata.ts';
 import { buildExportPayload, type ExportPayload } from '../data/export.ts';
+import { PERF_FLOOR_MS } from '../display/constants.ts';
+import { runEligibilityGate, type GateReport } from '../display/eligibilityGate.ts';
+import type { FrameLogExport } from '../display/frameLog.ts';
+import { applyResolutionMode, type DisplayState } from '../display/resolutionMode.ts';
+import {
+  createProtocolRunner,
+  validateProtocol,
+  type ProtocolConditionContext,
+  type ProtocolConfig,
+} from '../display/ProtocolRunner.ts';
+import { resolutionDetectionProtocol } from '../display/resolutionDetectionProtocol.ts';
 import { computeMetrics, type Metrics } from '../metrics/compute.ts';
 import { deriveTrackingMetrics, type TrackingDerivationResult } from '../metrics/trackingDerivation.ts';
 import type { Clock } from '../loop/clock.ts';
@@ -86,6 +97,10 @@ export interface FpsTestHarness {
   metricsFromExport(payload: ExportPayload): Metrics;
   /** 由匯出 payload 反算 tracking 指標；供 WP-22 T1 tracking scene E2E sanity。 */
   trackingMetricsFromExport(payload: ExportPayload): TrackingDerivationResult;
+  /** 跑完 stage3 解析度 x 偵測 protocol，回傳每個條件的匯出 payload。 */
+  runResolutionDetectionProtocol(protocol?: ProtocolConfig): Promise<ExportPayload[]>;
+  /** 只跑資格閘判定；拒入 E2E 用此確認低解析度不會產生 protocol exports。 */
+  previewResolutionProtocolGate(protocol?: ProtocolConfig, warmupP95Ms?: number): GateReport;
   /** 當前 drill 相位（唯讀）。 */
   phase(): DrillRunner['phase'];
 }
@@ -93,6 +108,8 @@ export interface FpsTestHarness {
 export interface HarnessDeps {
   /** 可載入的 drill（id → 未解析 JSON 來源，交 loadDrill 驗證）。 */
   availableDrills: ReadonlyArray<{ id: string; source: unknown; scene?: SceneConfig }>;
+  /** 可載入的場景 config（protocol condition 的 sceneId 解析用）。 */
+  availableScenes?: ReadonlyArray<SceneConfig>;
   /** 真實 render backend（createRenderer seam），寫入匯出 metadata。 */
   backend: RenderBackend;
   /** 真實 crossOriginIsolated（runtime global），寫入匯出 metadata。 */
@@ -135,6 +152,61 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
 
   function activeWeaponConfig(): ReturnType<typeof getWeapon> {
     return getWeapon(config?.weaponId ?? 'ak47');
+  }
+
+  function findSceneConfig(sceneId: string): SceneConfig {
+    const scene = deps.availableScenes?.find((candidate) => candidate.sceneId === sceneId);
+    if (scene === undefined) throw new Error(`Unknown protocol scene: ${sceneId}`);
+    return scene;
+  }
+
+  function createProtocolDisplayRenderer(): {
+    renderer: {
+      domElement: HTMLCanvasElement;
+      setPixelRatio(pixelRatio: number): void;
+      setSize(width: number, height: number, updateStyle?: boolean): void;
+    };
+  } {
+    let pixelRatio = 1;
+    const canvas = {
+      width: 0,
+      height: 0,
+      style: { width: '', height: '' },
+    } as HTMLCanvasElement;
+    return {
+      renderer: {
+        domElement: canvas,
+        setPixelRatio(next: number): void {
+          pixelRatio = next;
+        },
+        setSize(width: number, height: number, updateStyle = true): void {
+          canvas.width = Math.round(width * pixelRatio);
+          canvas.height = Math.round(height * pixelRatio);
+          if (updateStyle) {
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+          }
+        },
+      },
+    };
+  }
+
+  function passedHarnessGate(required: ProtocolConfig['requiredDisplay']): GateReport {
+    return {
+      pass: true,
+      native: true,
+      fullscreen: true,
+      perf: true,
+      details: `harness pass: native/fullscreen/perf satisfy ${required.minW}x${required.minH}`,
+    };
+  }
+
+  function harnessFrameLog(): FrameLogExport {
+    const delta = Math.min(1000 / deps.displayHz, PERF_FLOOR_MS);
+    return {
+      series: [delta],
+      summary: { count: 1, p50: delta, p95: delta, p99: delta, overBudgetWindows: 0, overflow: false },
+    };
   }
 
   function aimAtActiveTarget(): void {
@@ -211,11 +283,10 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     else state.input.pushFire(ev.down, t);
   }
 
-  return {
-    startDrill(id: string): void {
+  function startDrillWithScene(id: string, sceneOverride?: SceneConfig): void {
       const entry = deps.availableDrills.find((candidate) => candidate.id === id);
       if (entry === undefined) throw new Error(`Unknown drill: ${id}`);
-      sceneConfig = entry.scene;
+      sceneConfig = sceneOverride ?? entry.scene;
       config = loadDrill(entry.source, sceneConfig);
 
       // 全新管線（乾淨起步、與 live 單例隔離）。
@@ -244,6 +315,91 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         advanceOneTick();
         guard++;
       }
+  }
+
+  function buildHarnessExport(
+    protocolContext?: ProtocolConditionContext,
+    display?: DisplayState,
+    frames?: FrameLogExport,
+  ): ExportPayload {
+    if (config === null) throw new Error('forceExportJSON requires startDrill first');
+    const snapshot = recorder.snapshot();
+    const meta = collectMeta({
+      drillId: config.drillId,
+      weaponId: activeWeaponConfig().id,
+      weaponSeed: activeWeaponConfig().recoil.seed,
+      rngSeed: config.sequence.seed ?? DEFAULT_RNG_SEED,
+      backend: deps.backend,
+      displayHz: deps.displayHz,
+      simHz: SIM_HZ,
+      sensitivity: deps.sensitivity,
+      crossOriginIsolated: deps.crossOriginIsolated,
+      startedAt,
+      lateEventCount: state.inputMeta.lateEventCount,
+      bufferOverflow: state.inputMeta.bufferOverflow,
+      recorderOverflow: snapshot.recorderOverflow,
+      suspect: protocolContext?.suspect ?? false,
+      spawn: {
+        seed: config.sequence.seed ?? DEFAULT_RNG_SEED,
+        ...(config.targets.spawnArea !== undefined ? { spawnArea: config.targets.spawnArea } : {}),
+        ...(config.sequence.spawnDelayMsRange !== undefined ? { spawnDelayMsRange: config.sequence.spawnDelayMsRange } : {}),
+        ...(config.targets.motion !== undefined ? { motion: config.targets.motion } : {}),
+        ...(config.timing.presentationMs !== undefined ? { presentationMs: config.timing.presentationMs } : {}),
+      },
+      ...(sceneConfig !== undefined
+        ? {
+            scene: {
+              sceneId: sceneConfig.sceneId,
+              assetPackVersion: sceneConfig.assetPackVersion,
+              clutterTier: sceneConfig.clutterTier,
+              fallback: false,
+            },
+          }
+        : {}),
+      ...(display !== undefined ? { display } : {}),
+      ...(frames !== undefined ? { frames } : {}),
+      ...(protocolContext !== undefined
+        ? {
+            protocol: {
+              protocolId: protocolContext.protocolId,
+              conditionIndex: protocolContext.conditionIndex,
+              conditionLabel: protocolContext.conditionLabel,
+            },
+          }
+        : {}),
+    });
+    return buildExportPayload(meta, snapshot);
+  }
+
+  function runDetectionTimeoutRoundInternal(maxPresentations = Infinity): void {
+    if (config === null) throw new Error('runDetectionTimeoutRound requires startDrill first');
+    const seen = new Set<string>();
+    let guard = 0;
+    while (seen.size < maxPresentations && drillRunner.phase !== 'ended' && guard < 200000) {
+      const target = activeTarget();
+      if (target !== undefined) seen.add(target.id);
+      advanceOneTick();
+      guard++;
+    }
+    advanceTicks(4); // 讓 timeout 後的 targetCount 判定穩定落到 ended
+  }
+
+  function runTrackingPresentationRoundInternal(mode: 'autoAim' | 'stationary' = 'autoAim', maxPresentations = Infinity): void {
+    if (config === null) throw new Error('runTrackingPresentationRound requires startDrill first');
+    const seen = new Set<string>();
+    let guard = 0;
+    while (seen.size < maxPresentations && drillRunner.phase !== 'ended' && guard < 300000) {
+      const target = activeTarget();
+      if (target !== undefined) seen.add(target.id);
+      advanceOneTrackingTick(mode);
+      guard++;
+    }
+    for (let i = 0; i < 4; i++) advanceOneTrackingTick(mode);
+  }
+
+  return {
+    startDrill(id: string): void {
+      startDrillWithScene(id);
     },
 
     feedInput(seq: HarnessInputEvent[]): void {
@@ -288,29 +444,11 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     },
 
     runDetectionTimeoutRound(maxPresentations = Infinity): void {
-      if (config === null) throw new Error('runDetectionTimeoutRound requires startDrill first');
-      const seen = new Set<string>();
-      let guard = 0;
-      while (seen.size < maxPresentations && drillRunner.phase !== 'ended' && guard < 200000) {
-        const target = activeTarget();
-        if (target !== undefined) seen.add(target.id);
-        advanceOneTick();
-        guard++;
-      }
-      advanceTicks(4); // 讓 timeout 後的 targetCount 判定穩定落到 ended
+      runDetectionTimeoutRoundInternal(maxPresentations);
     },
 
     runTrackingPresentationRound(mode = 'autoAim', maxPresentations = Infinity): void {
-      if (config === null) throw new Error('runTrackingPresentationRound requires startDrill first');
-      const seen = new Set<string>();
-      let guard = 0;
-      while (seen.size < maxPresentations && drillRunner.phase !== 'ended' && guard < 300000) {
-        const target = activeTarget();
-        if (target !== undefined) seen.add(target.id);
-        advanceOneTrackingTick(mode);
-        guard++;
-      }
-      for (let i = 0; i < 4; i++) advanceOneTrackingTick(mode);
+      runTrackingPresentationRoundInternal(mode, maxPresentations);
     },
 
     fireRecoilBurst(shots: number): RecoilReadout {
@@ -333,41 +471,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     },
 
     forceExportJSON(): ExportPayload {
-      if (config === null) throw new Error('forceExportJSON requires startDrill first');
-      const snapshot = recorder.snapshot();
-      const meta = collectMeta({
-        drillId: config.drillId,
-        weaponId: activeWeaponConfig().id,
-        weaponSeed: activeWeaponConfig().recoil.seed,
-        rngSeed: config.sequence.seed ?? DEFAULT_RNG_SEED,
-        backend: deps.backend,
-        displayHz: deps.displayHz,
-        simHz: SIM_HZ,
-        sensitivity: deps.sensitivity,
-        crossOriginIsolated: deps.crossOriginIsolated,
-        startedAt,
-        lateEventCount: state.inputMeta.lateEventCount,
-        bufferOverflow: state.inputMeta.bufferOverflow,
-        recorderOverflow: snapshot.recorderOverflow,
-        spawn: {
-          seed: config.sequence.seed ?? DEFAULT_RNG_SEED,
-          ...(config.targets.spawnArea !== undefined ? { spawnArea: config.targets.spawnArea } : {}),
-          ...(config.sequence.spawnDelayMsRange !== undefined ? { spawnDelayMsRange: config.sequence.spawnDelayMsRange } : {}),
-          ...(config.targets.motion !== undefined ? { motion: config.targets.motion } : {}),
-          ...(config.timing.presentationMs !== undefined ? { presentationMs: config.timing.presentationMs } : {}),
-        },
-        ...(sceneConfig !== undefined
-          ? {
-              scene: {
-                sceneId: sceneConfig.sceneId,
-                assetPackVersion: sceneConfig.assetPackVersion,
-                clutterTier: sceneConfig.clutterTier,
-                fallback: false,
-              },
-            }
-          : {}),
-      });
-      return buildExportPayload(meta, snapshot);
+      return buildHarnessExport();
     },
 
     getMetrics(): Metrics {
@@ -385,6 +489,48 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
 
     trackingMetricsFromExport(payload: ExportPayload): TrackingDerivationResult {
       return deriveTrackingMetrics(payload);
+    },
+
+    async runResolutionDetectionProtocol(protocol = resolutionDetectionProtocol): Promise<ExportPayload[]> {
+      const resolved = validateProtocol(protocol);
+      const gate = passedHarnessGate(resolved.requiredDisplay);
+      const { renderer } = createProtocolDisplayRenderer();
+      let display: DisplayState | undefined;
+      const payloads: ExportPayload[] = [];
+      const runner = createProtocolRunner<ExportPayload>({
+        config: resolved,
+        applyCondition: (condition) => {
+          const nextScene = findSceneConfig(condition.sceneId);
+          display = {
+            ...applyResolutionMode(renderer, condition.mode),
+            fullscreen: true,
+            refreshEstimateHz: deps.displayHz,
+            gate,
+          };
+          startDrillWithScene(condition.drillId, nextScene);
+          return {
+            mode: display.mode,
+            sceneId: nextScene.sceneId,
+            drillId: config?.drillId ?? condition.drillId,
+          };
+        },
+        exportCondition: (context) => buildHarnessExport(context, display, harnessFrameLog()),
+      });
+
+      let context: ProtocolConditionContext | undefined = await runner.start();
+      while (context !== undefined) {
+        if (context.condition.drillId === 'detection_popin_v1') runDetectionTimeoutRoundInternal();
+        const result = await runner.completeCurrentCondition();
+        payloads.push(result.payload);
+        if (result.context.conditionIndex >= resolved.conditions.length - 1) break;
+        context = await runner.beginNextCondition();
+      }
+      return payloads;
+    },
+
+    previewResolutionProtocolGate(protocol = resolutionDetectionProtocol, warmupP95Ms = 8): GateReport {
+      const resolved = validateProtocol(protocol);
+      return runEligibilityGate(resolved.requiredDisplay, warmupP95Ms);
     },
 
     phase(): DrillRunner['phase'] {

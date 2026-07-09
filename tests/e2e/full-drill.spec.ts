@@ -19,6 +19,7 @@ const URL = 'http://localhost:5173/';
 const DRILL_ID = 'counterstrafe_ad_v1';
 const DETECTION_DRILL_ID = 'detection_popin_v1';
 const TRACKING_SCENE_DRILL_ID = 'tracking_scene_v1';
+const RESOLUTION_PROTOCOL_ID = 'resolution_detection_v1';
 const PEEKS = 20; // = counterstrafe_ad_v1.json endCondition.targetCount
 
 /** 單一 evaluate 內跑完整鏈路並回傳可斷言摘要（重物件比對在瀏覽器內完成，減少 CDP 傳輸）。 */
@@ -355,5 +356,106 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
     expect(r.tracking.presentations.every((p) => p.rmsEpsilonDeg !== undefined && p.rmsEpsilonDeg < 1)).toBe(true);
     expect(r.missTracking.acquisitionFailureRate).toBe(1);
     expect(r.missTracking.presentations.every((p) => p.acquisitionFailure)).toBe(true);
+  });
+
+  test('WP-22 protocol：2 條件解析度 × 偵測匯出 + 狀態隔離', async ({ page }) => {
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+
+    const r = await page.evaluate(async () => {
+      type Payload = {
+        meta: {
+          drillId?: unknown;
+          suspect?: unknown;
+          spawn?: Record<string, unknown>;
+          scene?: Record<string, unknown>;
+          display?: Record<string, unknown>;
+          frames?: { summary?: Record<string, unknown> };
+          protocol?: Record<string, unknown>;
+        };
+        events: Array<Record<string, unknown>>;
+      };
+      type Harness = {
+        runResolutionDetectionProtocol(): Promise<Payload[]>;
+      };
+      const payloads = await (window as unknown as { __fpsTest: Harness }).__fpsTest.runResolutionDetectionProtocol();
+      return payloads.map((payload) => ({
+        drillId: payload.meta.drillId,
+        suspect: payload.meta.suspect,
+        protocol: payload.meta.protocol,
+        display: payload.meta.display,
+        scene: payload.meta.scene,
+        spawn: payload.meta.spawn,
+        frames: payload.meta.frames?.summary,
+        visibleCount: payload.events.filter((event) => event.type === 'visible').length,
+      }));
+    });
+
+    expect(r).toHaveLength(2);
+    expect(r.map((item) => item.protocol?.protocolId)).toEqual([RESOLUTION_PROTOCOL_ID, RESOLUTION_PROTOCOL_ID]);
+    expect(r.map((item) => item.protocol?.conditionIndex)).toEqual([0, 1]);
+    expect(r.map((item) => item.protocol?.conditionLabel)).toEqual([
+      'fhd-1080-field-low-detection',
+      'qhd-1440-field-low-detection',
+    ]);
+    expect(r.map((item) => item.display?.mode)).toEqual(['fhd-1080', 'qhd-1440']);
+    expect(r.map((item) => item.display?.bufferW)).toEqual([1920, 2560]);
+    expect(r.map((item) => item.display?.bufferH)).toEqual([1080, 1440]);
+
+    for (const item of r) {
+      expect(item.drillId).toBe(DETECTION_DRILL_ID);
+      expect(item.suspect).toBe(false);
+      expect(item.display?.gate).toMatchObject({ pass: true, native: true, fullscreen: true, perf: true });
+      expect(item.scene).toMatchObject({ sceneId: 'field-low', assetPackVersion: 'field-low-v1', clutterTier: 'low' });
+      expect(item.spawn).toMatchObject({
+        seed: 21021,
+        spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
+        spawnDelayMsRange: [800, 2400],
+      });
+      expect(item.frames).toMatchObject({ count: 1, overBudgetWindows: 0, overflow: false });
+      expect(item.visibleCount).toBe(PEEKS);
+    }
+  });
+
+  test('WP-22 protocol gate：低解析度 screen 拒入且不產生匯出', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'screen', {
+        value: { width: 1920, height: 1080 },
+        configurable: true,
+      });
+      Object.defineProperty(window, 'devicePixelRatio', {
+        value: 1,
+        configurable: true,
+      });
+    });
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+
+    const r = await page.evaluate(() => {
+      type Harness = {
+        previewResolutionProtocolGate(protocol?: unknown, warmupP95Ms?: number): {
+          pass: boolean;
+          native: boolean;
+          fullscreen: boolean;
+          perf: boolean;
+          details: string;
+        };
+      };
+      const gate = (window as unknown as { __fpsTest: Harness }).__fpsTest.previewResolutionProtocolGate(undefined, 8);
+      return { gate, exportCount: gate.pass ? -1 : 0 };
+    });
+
+    expect(r.gate.pass).toBe(false);
+    expect(r.gate.native).toBe(false);
+    expect(r.gate.details).toContain('需求 2560×1440');
+    expect(r.exportCount).toBe(0);
   });
 });
