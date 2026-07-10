@@ -5,15 +5,15 @@
 
 ---
 
-## Status: 🟡 T-exit AUTO-COMPLETE(2026-07-10):auto-gate 全綠(`test:ci` exit 0 + 清單 C 自動 9 項)+ 索引/OQ 同步;**M10 保留待研究者真 fullscreen walkthrough**
+## Status: ✅ M10 交付(2026-07-10):auto-gate 全綠 + 真 fullscreen 實機 walkthrough 證據回填;stage3 交付,兩感知實驗 pilot-ready
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS(2026-07-09;WP-18 T-exit 交付 + OQ-S3-5 對帳解除;`test:ci` green) |
 | T1 追蹤 × 場景 | ✅ PASS(2026-07-09;`tracking_scene_v1` + Playwright E2E + urban-high harness probe) |
-| T2 protocol 執行器 + E2E | 🟡 AUTO PASS(2026-07-09;manual true-fullscreen walkthrough pending) |
-| T3 決定性 + 驗收清單 C | 🟡 AUTO PASS(2026-07-09;manual true-fullscreen walkthrough pending) |
-| T-exit(M10) | 🟡 AUTO-COMPLETE(2026-07-10;auto-gate 全綠 + 索引/OQ 同步;M10 宣告待手動 walkthrough) |
+| T2 protocol 執行器 + E2E | ✅ PASS(2026-07-10;auto E2E + 真 fullscreen 實機 walkthrough 證據) |
+| T3 決定性 + 驗收清單 C | ✅ PASS(2026-07-10;清單 C 全 10 項 + C-5 手動補項證據) |
+| T-exit(M10) | ✅ PASS(2026-07-10;stage3 交付宣告) |
 
 ---
 
@@ -28,6 +28,40 @@
 ---
 
 ## Log
+
+### 2026-07-10 local — T-exit M10 交付宣告(真 fullscreen 實機 walkthrough 證據回填;stage3 交付)
+
+**觸發**:研究者在本機 Chrome/Edge(Edg/146,240Hz 面板)真 fullscreen 走完 `resolution_detection_v1` protocol,回填三份匯出 JSON 證據 → C-5 手動補項解除 → M10 唯一 gating open item 關閉。使用者拍板 accept now(2026-07-10)。
+
+**環境排障(前置,已解)**:首輪 warmup p95 16.75ms(≈60Hz)perf FAIL。根因 = 瀏覽器 rAF 被壓到 60Hz(多螢幕/主顯示器/VRR)而非面板實際 240Hz;非程式碼缺陷(資格閘只量 rAF cadence,`PERF_FLOOR_MS=8.33ms`=120Hz 等效門檻,OQ-S3-1)。研究者調整顯示設定後 rAF 回到 240Hz(warmup p95 4.23ms,`refreshEstimateHz=240`)→ perf PASS。
+
+**真 fullscreen walkthrough 證據(participantId `Test` / sessionLabel `pilot-verify`;純驗證,非 pilot 資料)**:
+
+| 匯出檔 | protocol | mode / buffer | gate.pass / refreshHz | frames p95 | seed | scene | suspect | 判定 |
+|---|---|---|---|---|---|---|---|---|
+| `detection_popin_v1-1-fhd-1080-field-low-detection-…07_14_57Z.json` | index 0 / `fhd-1080-field-low-detection` | fhd-1080 / 1920×1080 | true / 240 | 4.26ms | 21021 | field-low | false | ✅ 條件 0 全欄一致 |
+| `detection_popin_v1-2-qhd-1440-field-low-detection-…07_18_01Z.json` | index 1 / `qhd-1440-field-low-detection` | qhd-1440 / 2560×1440 | true / 240 | 4.26ms | 21021 | field-low | **true** | ✅ 條件 1 全欄一致;suspect=true 為操作者移動所致(見下) |
+| `detection_popin_v1-…07_23_36Z.json`(standalone 補跑) | — 無(非 protocol 流程) | qhd-1440 / 2560×1440 | true / 240 | 4.24ms | 21021 | field-low | false | ✅ 靜止時 qhd 條件 suspect=false 確證 |
+
+**QHD 條件 1 `suspect=true` 診斷(非缺陷)**:`suspect = playerCorridorExceeded || protocolContext.suspect || frames.p95>floor`([main.ts:317-320](../../../../../src/main.ts#L317-L320))。frames p95 clean、無 fullscreen-exit;根因 = 操作者在該條件中 strafe 逸出宣告 player corridor(玩家 px 到達 ±262 units vs corridor halfWidth ~1.0u;FHD 條件玩家 px 全程 0)→ `sharedState.validity.playerCorridorExceeded` = GD-6c 純觀測旗標**如設計運作**。`detection_popin_v1` 為靜止 pop-in 反應任務(GD-8),移動非任務一部分;正式 pilot 受試者靜止即 suspect=false(standalone 補跑已證)。
+
+**額外驗證收穫**:同一 protocol run 中條件 0 `suspect=false` 而條件 1 `suspect=true`,證明 README failure-mode 契約「**條件級 suspect(非 session 級)**」——條件 1 汙染未洩漏至條件 0。條件隔離成立。
+
+**清單 C 最終狀態**:C-1~C-4、C-6~C-10 自動 ✅;**C-5 = ✅ A(auto E2E)+ ✅ M(真 fullscreen 實機證據,本 log)**。全 10 項綠。
+
+**最終基準**:`npm run test:ci` exit 0(2026-07-10 本 session,`tsc` clean + Vitest 65 files/505 tests + Playwright 14;程式碼自該次未變,docs-only 編輯不影響)。
+
+**Outcomes(交付了什麼)**:
+- **stage3 交付(M10)**:兩感知實驗端到端成立且 pilot-ready——追蹤×場景(`tracking_scene_v1`)+ 解析度×偵測受試者內 protocol(`resolution_detection_v1`,真 fullscreen 實機證據)。決定性三不變性回歸、驗收清單 C 全 10 項、pilot protocol 文件齊備。
+- 索引同步:stage3 README + exec-plan README WP-22 → ✅ / M10 記日期;OQ ledger(OQ-S3-5 / OQ-22.1 / OQ-22.2)全收斂。
+- **帶著走的決定**:(1) 資格閘 perf 只量 rAF cadence → 60Hz 面板/被壓到 60Hz 的多螢幕環境永遠 FAIL,屬設計(GD-10 需 ≥120Hz);未來可在 gate `details` 顯示推估 Hz 以利實機排障(選項,未落地)。(2) QHD 首跑 suspect=true 保留於證據表作為條件隔離+corridor-escape 機制的實證,不視為缺陷。
+
+**帶著走的技術債 / 後續**:
+- stage3 資料夾(wp-19/20/21/22)仍在 `active/stage3/`;全數已交付,可另立 housekeeping slice 一次移入 `completed/stage3/`(協議 §5「視需要」)——本切片不移,避免大量相對連結變動混入 M10 宣告 commit。
+- 規格書升 v1.3(stage3 節 + 附錄 E 清單 C)仍 ⬜,owner 待指派(見 stage3 README §9)。
+- 資格閘 `details` 顯示推估 Hz 的 UX 改進為選項,未落地。
+
+**Open Questions / Manual Follow-up**:無。M10 gating open item(真 fullscreen walkthrough)已關閉。
 
 ### 2026-07-10 local — T-exit gate AUTO-COMPLETE(auto-gate 全綠 + 索引/OQ 同步;M10 保留待手動 walkthrough)
 

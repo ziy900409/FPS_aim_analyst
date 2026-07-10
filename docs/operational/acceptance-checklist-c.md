@@ -15,7 +15,7 @@
 | `npm.cmd run typecheck` | ✅ `tsc --noEmit` clean |
 | `npm.cmd run test:ci` | ✅ exit 0 (`tsc --noEmit`;Vitest 65 files / 505 tests;Playwright 14 tests) |
 
-手動補項:真 fullscreen 的 `resolution_detection_v1` walk-through 仍需研究者在本機互動執行。自動 E2E 已覆蓋 gate→setup→兩條件→兩份匯出與低解析度拒入;手動補項只驗證瀏覽器 fullscreen/下載路徑的實機操作。
+手動補項:真 fullscreen 的 `resolution_detection_v1` walk-through **已由研究者於 2026-07-10 在本機執行**(Chrome/Edge Edg/146,240Hz 面板,真 fullscreen)。自動 E2E 覆蓋 gate→setup→兩條件→兩份匯出與低解析度拒入;手動補項驗證瀏覽器 fullscreen/下載路徑的實機操作 + 條件級 suspect 隔離。證據見 §2 與 [wp-22 progress](../exec-plan/active/stage3/wp-22-perception-integration/progress.md)。
 
 ---
 
@@ -27,7 +27,7 @@
 | C-2 | 淨空拒載會指出違規 prop id | **A**:構造 blocker 進視線走廊,`validateClearance` 回報 prop id;`DrillLoader` 對淨空違規 loud fail。 | `src/scene/clearance.test.ts`;`src/scene/scenes/urban-high.test.ts` intentional blocker case | ✅ |
 | C-3 | 資格閘拒入/放行正確 | **A**:native/fullscreen/perf 三軸矩陣;低解析度 protocol gate 拒入且無匯出。 | `src/display/eligibilityGate.test.ts`;`tests/e2e/full-drill.spec.ts` `WP-22 protocol gate` | ✅ |
 | C-4 | 三解析度模式 buffer 斷言 | **A**:`native`/`fhd-1080`/`qhd-1440` buffer 尺寸固定;protocol E2E 斷 fhd/qhd 條件匯出 buffer。 | `src/display/resolutionMode.test.ts`;`src/loop/__tests__/wp22-determinism.test.ts`;`tests/e2e/full-drill.spec.ts` protocol case | ✅ |
-| C-5 | 受試者內 protocol 全流程 | **A**:`resolution_detection_v1` 兩條件同 session 匯出,各含 `meta.protocol`/`meta.display`/`meta.scene`/`meta.spawn`/`meta.frames`。**M**:真 fullscreen 手動 walk-through 見 §2。 | `src/display/ProtocolRunner.test.ts`;`tests/e2e/full-drill.spec.ts` `WP-22 protocol` | ✅ A / ⏳ M |
+| C-5 | 受試者內 protocol 全流程 | **A**:`resolution_detection_v1` 兩條件同 session 匯出,各含 `meta.protocol`/`meta.display`/`meta.scene`/`meta.spawn`/`meta.frames`。**M**:真 fullscreen 手動 walk-through 見 §2。 | `src/display/ProtocolRunner.test.ts`;`tests/e2e/full-drill.spec.ts` `WP-22 protocol`;**M 證據**:[wp-22 progress 2026-07-10](../exec-plan/active/stage3/wp-22-perception-integration/progress.md) T-exit 證據表(三份匯出) | ✅ A / ✅ M(2026-07-10) |
 | C-6 | 偵測 round-trip 推導 | **A**:已知 onset 合成匯出 round-trip 後,`t_detect` 誤差 ≤ 1 tick;timeout/anticipation/baseline insufficient 明確。 | `src/metrics/detectionDerivation.test.ts`;[analysis-t-detect.md](analysis-t-detect.md) | ✅ |
 | C-7 | 追蹤 × 場景 E2E | **A**:`tracking_scene_v1` 在 `field-low` 跑完,匯出逐 tick `tx/ty/tz` + `px/pz` + aim;`suspect=false`;tracking 指標 sanity 通過。 | `src/drill/tracking_scene_v1.test.ts`;`tests/e2e/full-drill.spec.ts` `WP-22 tracking_scene_v1` | ✅ |
 | C-8 | 決定性三不變性 | **A**:跨場景 sim 狀態逐 tick bit-exact;跨解析度模式同上;`detection_popin_v1` 同 seed spawn golden 重現,legacy slot seed path 不漂移。 | `src/loop/__tests__/wp22-determinism.test.ts` | ✅ |
@@ -53,4 +53,6 @@
 
 ## 3. M10 判定
 
-自動清單 C 已全綠。M10 宣告前仍需研究者補真 fullscreen walk-through 的手動記錄;若該手動項通過,WP-22 可進 T-exit gate 宣告 stage3 交付。
+✅ **M10 達成(2026-07-10)**:清單 C 全 10 項綠(自動 9 項 + C-5 真 fullscreen 實機補項)。真 fullscreen walk-through 三份 `resolution_detection_v1` 匯出證據回填 [wp-22 progress](../exec-plan/active/stage3/wp-22-perception-integration/progress.md);WP-22 T-exit gate 已宣告 stage3 交付。兩感知實驗(追蹤×場景、解析度×偵測)pilot-ready。
+
+> 手動 walk-through 附帶診斷(非缺陷,供施測判讀):QHD 首跑 `suspect=true` = 操作者 strafe 逸出 player corridor(GD-6c 純觀測),靜止補跑即 `suspect=false`;同 run 條件 0 clean / 條件 1 flagged 證明條件級 suspect 隔離。`detection_popin_v1` 為靜止 pop-in 任務,正式 pilot 受試者靜止。

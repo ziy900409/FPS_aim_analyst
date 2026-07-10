@@ -9,7 +9,7 @@
 | **上游門檻** | 研究側:**GD-6~10 已全數拍板(2026-07-06 grill)**,無未決研究設計。工程側:WP-19/20 僅需 M4 ✅;WP-21 資料面需 WP-16(schema v2);WP-22 需 **M8 + WP-18** |
 | **技術棧** | 沿用(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright)+ GLTF 資產管線(`GLTFLoader`,render-only) |
 | **估時** | 11.5–16.5 dev-days(WP-19~22;不含 stage2 的 WP-18 +2–3.5) |
-| **狀態** | 🟡 進行中;**WP-19 ✅ M9 + WP-20 ✅(2026-07-08)+ WP-21 ✅(2026-07-09)+ WP-22 🟡 T-exit auto-green(2026-07-10)** — 場景脊椎、顯示管線四件套、偵測鏈、兩感知實驗端到端自動成立(`test:ci` exit 0 + 清單 C 自動 9 項);**M10 正式宣告待研究者真 fullscreen walkthrough 兩份 JSON 證據(清單 C-5 手動補項)** |
+| **狀態** | ✅ **交付(M10 2026-07-10)**;**WP-19 ✅ M9 + WP-20 ✅(2026-07-08)+ WP-21 ✅(2026-07-09)+ WP-22 ✅ M10(2026-07-10)** — 場景脊椎、顯示管線四件套、偵測鏈、兩感知實驗端到端成立且 pilot-ready(`test:ci` exit 0 + 清單 C 全 10 項,含 C-5 真 fullscreen 實機證據) |
 
 ---
 
@@ -210,7 +210,7 @@ GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵�
 | **WP-19** | [wp-19-scene-system/](wp-19-scene-system/README.md) | 場景系統:SceneConfig + GLTF 管線 + 淨空驗證 + 場景切換/meta + 兩個雜亂度階層場景 | **M9 ✅** | M4 ✅(可與 stage2 尾段並行) | 4–6 | ✅ **M9(2026-07-08)** |
 | **WP-20** | [wp-20-display-pipeline/](wp-20-display-pipeline/README.md) | 顯示管線:解析度模式 + fullscreen/資格閘 + frame-time log + session setup 表單/display meta | — | M4 ✅(可並行) | 3–4 | ✅ **交付(2026-07-08)** — 四件套齊備,WP-22 T2 可消費 |
 | **WP-21** | [wp-21-detection-drill/](wp-21-detection-drill/README.md) | 偵測 drill:seeded spawn 隨機化 + pop-in drill + t_detect/偏心度離線推導 spec | — | T1/T2 獨立;T3 需 WP-16(v2 欄) | 2.5–3.5 | ✅ **交付(2026-07-09)** — T-exit gate 綠;WP-22 T2 可消費 |
-| **WP-22** | [wp-22-perception-integration/](wp-22-perception-integration/README.md) | 感知實驗整合:追蹤 × 場景 + 解析度受試者內 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + **WP-18(M8 後)** | 2–3 | 🟡 T-exit auto-green(2026-07-10;`test:ci` exit 0 + 清單 C 自動 9 項);**M10 待研究者真 fullscreen walkthrough** |
+| **WP-22** | [wp-22-perception-integration/](wp-22-perception-integration/README.md) | 感知實驗整合:追蹤 × 場景 + 解析度受試者內 protocol E2E + 決定性回歸 + 驗收清單 C | **M10 ✅** | WP-19, 20, 21 + **WP-18(M8 後)** | 2–3 | ✅ **M10(2026-07-10)** — `test:ci` exit 0 + 清單 C 全 10 項(C-5 真 fullscreen 實機證據) |
 
 ---
 
@@ -219,7 +219,7 @@ GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵�
 | 里程碑 | 完成條件 | 對應 WP | 意義 |
 |---|---|---|---|
 | **M9 ✅(2026-07-08)** | 場景可置換(≥2 個雜亂度階層)+ 淨空驗證會拒載違規 drill + 同輸入序列跨場景 sim 狀態逐位一致 + 資產 attribution 可稽核 | WP-19 | 場景脊椎成立:「換場景零引擎碼」與「場景不碰決定性」兩個承諾被測試釘死(`test:ci` exit 0;四項證據 + 架構閘測試名見 [wp-19 T-exit](wp-19-scene-system/T-exit-gate.md)) |
-| **M10 🟡 auto-green(2026-07-10)** | 驗收清單 C 全項通過:資格閘拒入/放行正確、受試者內解析度 protocol E2E 綠、追蹤 × 場景 E2E 綠、偵測推導 fixture 綠、決定性回歸(場景/解析度不變性 + seeded spawn 重現)全綠 | WP-22 | **stage3 交付**:兩個感知實驗(追蹤能力、解析度 × 偵測)可開 pilot。**auto-gate 全綠(`test:ci` exit 0 + 清單 C 自動 9 項);正式宣告 gating = 研究者真 fullscreen walkthrough 兩份 JSON 證據(清單 C-5 手動補項)** |
+| **M10 ✅(2026-07-10)** | 驗收清單 C 全項通過:資格閘拒入/放行正確、受試者內解析度 protocol E2E 綠、追蹤 × 場景 E2E 綠、偵測推導 fixture 綠、決定性回歸(場景/解析度不變性 + seeded spawn 重現)全綠 | WP-22 | **stage3 交付**:兩個感知實驗(追蹤能力、解析度 × 偵測)可開 pilot。**清單 C 全 10 項綠(`test:ci` exit 0 + 自動 9 項 + C-5 真 fullscreen 實機證據,見 [wp-22 progress](wp-22-perception-integration/progress.md) 2026-07-10)** |
 
 > WP-20/21 無獨立里程碑:其交付由 M10 驗收清單 C 一次收斂(比照 stage2 WP-11/12 → M6 的模式)。
 
