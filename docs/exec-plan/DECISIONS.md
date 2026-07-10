@@ -23,6 +23,17 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-16 ✅ ADS 感度模型 — CS2 式 FOV-ratio gain + hold 語意凍結(2026-07-10)
+
+| | |
+|---|---|
+| **發現處** | stage5 WP-24 T0 entry gate([wp-24 README](active/stage5/wp-24-ads-optics/README.md)、[T0](active/stage5/wp-24-ads-optics/T0-entry-gate.md))。ADS 會改變滑鼠 count → 視角角度的換算;若模型未先拍板,同一瞄準資料在 hip/ADS 條件間不可比較,離線分析也無法可靠還原構念。 |
+| **決議** | ADS 有效感度採 **CS2 式 FOV-ratio gain**:`effectiveSensitivity = sensitivity × sensitivityRatio × (adsFov / hipFov)`。`sensitivityRatio` 預設 `1.0`;`hipFov` 取當前未開鏡 camera FOV,`adsFov` 取 `WeaponConfig.ads.fovDeg`。此模型於 stage5 pre-registered 後凍結;後續若要研究 monitor-distance match,另開新條件/新決策,不得重解釋既有 ADS 資料。 |
+| **理由** | CS2 式與本專案既有 GD-5 感度慣例相容(count→angle 線性、`0.022°/count` 為底);FOV ratio 讓縮 FOV 後的角速度同步下降,模型可由 `sensitivity`、`sensitivityRatio`、hip/ads FOV 與 tick `ads` flag 完整重建。monitor-distance match 較偏顯示器座標/螢幕距離不變,引入 monitor coefficient 與解析度/視角假設,不符合本階段「角度制、跨解析度不變」的資料模型。 |
+| **操作語意** | OQ-S5-6 同步拍板為 **hold**:右鍵按住 = ADS down,放開 = ADS up。toggle 僅保留為未來 config 候補欄形狀,不在 stage5 預設啟用;理由是 hold 與 CS2 慣例一致,且 PointerLock 解鎖補 ads-up 的 stuck 防護可直接比照 fire down/up 鏈。 |
+| **影響面** | WP-24 T1(`EV_ADS` packed `b=down`、`heldAds`、stuck-ads 防護)、T2(`WeaponConfig.ads` + `CameraController.applyDelta` gain/FOV 內插)、T3(tick row `ads` + events `ads` 必記錄)、stage5 README §8 OQ-S5-1/S5-6、CLAUDE.md §4 ADS 硬約束。 |
+| **狀態** | ✅ 已拍板(2026-07-10 WP-24 T0);WP-24 T1/T2/T3 unblocked。 |
+
 ### GD-15 ✅ WP 編號分配 — stage5(BR 遠距跟槍測試模組)取用 WP-23~26 / M11~M13 / 清單 E;stage4 草稿採納時重編(2026-07-10)
 
 | | |
