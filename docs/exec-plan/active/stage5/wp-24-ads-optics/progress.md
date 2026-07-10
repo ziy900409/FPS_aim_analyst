@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 next)
+## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 next)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 EV_ADS 輸入鏈 | ✅ |
-| T2 WeaponConfig.ads + zoom | ⬜ |
+| T2 WeaponConfig.ads + zoom | ✅ |
 | T3 overlay + 記錄 | ⬜ |
 | T-exit | ⬜ |
 
@@ -23,11 +23,52 @@
 |----|------|------|
 | OQ-S5-1 ADS 感度換算模型(CS2 zoom_sensitivity_ratio vs monitor-distance match)→ **GD-16** | ✅ 已決 | **CS2 式 FOV-ratio gain**:`sensitivity × sensitivityRatio × (adsFov / hipFov)`;`sensitivityRatio` 預設 1.0;pre-registered 後凍結,monitor-distance match 不重解釋既有資料 |
 | OQ-S5-6 ADS 操作語意(hold vs toggle) | ✅ 已決 | **hold**:右鍵按住 = ADS down、放開 = ADS up;toggle 留未來 config 候補,stage5 預設不啟用 |
-| OQ-24.1 ads FOV 過渡時長(render 內插)與 overlay 淡入語意 | 🟡 待 T2 | 預設:120ms 線性(render-only,不進 sim/記錄;記錄的是 heldAds 事件與 flag,非視覺過渡) |
+| OQ-24.1 ads FOV 過渡時長(render 內插)與 overlay 淡入語意 | ✅ 已決(T2) | **120ms 線性**(`ADS_FOV_TRANSITION_MS`,`CameraController.setAds` render-only,不進 sim/記錄);感度 gain 為**階躍**不受此內插影響。overlay 淡入語意留 T3 |
 
 ---
 
 ## Log
+
+### 2026-07-10 13:52Z — T2 WeaponConfig.ads + CameraController zoom/gain PASS(GD-16 感度模型落地)
+
+**Progress**
+
+- `WeaponConfig.ts`:加 optional `ads?: { fovDeg; sensitivityRatio }` + `validateAds`(field-path 驗證,兩欄皆 `requirePositiveNumber`)。`hipFov` 不在武器資料內,故 `fovDeg` 只驗**正有限**(zoom-in 由 `fovDeg < hipFov` 於相機層自然成立,gain 公式產生縮放);相對上限交 CameraController 層(見下)。
+- `weapons.ts`:依 T2 spec「AK 加欄」,ak47(**預設 drill 武器**,[main.ts:137](../../../../../src/main.ts))加 `ads: { fovDeg: 40, sensitivityRatio: 1.0 }`——手動 smoke 免換武器即可驗。既有 CS2 vdata lock 測試用 `toMatchObject`/自比 `toEqual`,加欄零破壞。
+- `CameraController.ts`:
+  - `setAdsConfig(ads | undefined)`:注入當前武器 ADS 光學;`undefined` = 該武器開鏡 no-op。
+  - `setAds(active, nowMs)`(比照 `setViewPunch` 每幀模式,render-only):狀態轉換翻 FOV 目標(hip/ads)+ **gain 階躍**(GD-16 `sensitivityRatio × adsFov/hipFov`,以目標態計算非內插中值);每幀依 `nowMs` 線性內插 FOV(`ADS_FOV_TRANSITION_MS=120`,OQ-24.1)。內插起點取當前值 → 過渡中反向切換不跳變。
+  - `applyDelta` gain:`sensitivity × RAD_PER_COUNT × #adsGain`——ADS gain 只乘使用者 delta,**punch/`aimSink` 路徑零改動**(既有分離註解為準)。
+  - `setFov` 改維護 `#hipFov` 基準(非 ADS 時直接生效,語意等價既有);`setCamera` 補 `#applyFov` 讓場景切換繼承當前 FOV。
+- `main.ts` 佈線:(a) controller 建立後 `setAdsConfig(activeWeaponConfig().ads)`;(b) `loadDrillById` 換 drill 武器後重設;(c) render loop 每幀 `setAds(sharedState.heldAds, now)`(接在 `setViewPunch` 後,同 render-only 語意);(d) **stuck-ads 佈線落地**(D-T1.1 遺留):PointerLock 解鎖掛點 `inputSampler.releaseAds(performance.now())` 補送可記錄 ads-up 事件。
+
+**驗證證據**
+
+- 單元 golden:`CameraController.test.ts` +8 cases(gain=`s×ratio×adsFov/hipFov` 逐位、hip gain=1、gain 於過渡中點仍為完整階躍值、FOV 中點/完成/clamp、放開鏡反向不跳變、無 config no-op、setFov 基準)。`WeaponConfig.test.ts` +5(ads 省略/保留/兩欄非正值 field-path、ak47 demo 值鎖定)。
+- **零破壞閘**:`npx tsc --noEmit` clean;`npx vitest run` = **67 files / 553 tests** 綠(baseline 541 +12);三組 determinism regression(spray / moving-target / longrange)+ fire-determinism 全綠 → **決定性零重錄、sim 零觸動**(gain 只落 render 路徑,無 sim 測試變動)。`npx vite build` 成功(main.ts 佈線 bundles clean)。
+
+**手動 smoke**
+
+- 單元 golden 已編碼等價斷言(FOV 內插逐值、gain 階躍逐位)。live 瀏覽器 smoke 因本 session 非互動無法自動化,**已由使用者實測確認**(2026-07-10):右鍵按住開鏡時瞄準感度變慢(GD-16 gain < 1 生效)。FOV 收窄/放開回復/解鎖不卡鏡與 golden 一致。
+
+**Decision Log**
+
+| ID | Decision | Alternatives Considered | Rationale |
+|----|----------|--------------------------|-----------|
+| D-T2.1 | 示範 ADS 加在既有 ak47(加 optional `ads` 欄);**專屬 scoped 武器留後續擴充**(使用者拍板) | 本 task 即新增 scoped 武器(如 awp) | 新增 WeaponId 會改 `getWeapon` union + 既有「Available weapons: ak47, m4a4, m4a1s」錯誤訊息測試 → 破壞「既有測試零修改」DoD;加欄用 `toMatchObject`/自比零破壞。ak47 為預設 drill 武器,smoke 免換武器。使用者確認先加 ak47、之後再擴充獨立武器 |
+| D-T2.2 | `validateWeapon` 對 `ads.fovDeg` 只驗正有限(非 `≤ hipFov`) | 於 validator 驗 `fovDeg ≤ hipFov` | hipFov 是相機/使用者設定,**不在武器資料內**,validator 無從取得;zoom-in 語意由 `fovDeg < hipFov` 在相機層(gain=adsFov/hipFov)自然成立,無需硬夾 |
+| D-T2.3 | `setAds(active, nowMs)` 顯式收 `nowMs`(非內部讀時鐘) | controller 內呼 `performance.now()` | CameraController 現況即**不讀時鐘**(純函式化,可測);傳入 render `now` 使 FOV 內插決定性可測(單元以合成 nowMs 斷言),且不違反時鐘域紀律 |
+| D-T2.4 | gain 為**階躍**(切換即完整目標態),FOV 為**內插** | gain 也隨 FOV 內插 | spec 明訂「感度切換為階躍,語意可分析」——分析端 ads flag 對應的感度須是確定的兩態之一,漸變會使構念不可分 |
+
+**Deviation / 誠實記錄**
+
+- T2 spec Touches 提「或 AK 加欄,依 T0 決議」——T0 未指定武器,由 T2 拍板(D-T2.1)加在 ak47。
+- 手動 smoke 未於本 session 跑(見上「手動 smoke」段),以單元 golden 等價覆蓋 + 留使用者 live 確認。
+
+**Open Questions**
+
+- OQ-24.1 已決(120ms 線性 render-only);overlay 淡入語意仍待 T3。
+- 記錄鏈(tick `ads` flag + events `ads`)為 T3,本 task 未觸 DataRecorder/export(FR-E6 於 T3 收斂)。
 
 ### 2026-07-10 12:13Z — T1 EV_ADS 輸入事件鏈 PASS(heldAds + stuck 防護;ring 佈局零破壞)
 

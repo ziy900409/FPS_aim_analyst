@@ -69,6 +69,28 @@ describe('validateWeapon', () => {
       /recoveryTransition\.startBullet/,
     );
   });
+
+  // ── WP-24 / T2：ADS 光學欄（FR-E5） ──
+
+  it('omits ads when not present (weapon cannot ADS)', () => {
+    expect(validateWeapon(validWeapon())).not.toHaveProperty('ads');
+  });
+
+  it('preserves optional ads when present', () => {
+    const cfg = validateWeapon(validWeapon({ ads: { fovDeg: 40, sensitivityRatio: 1.0 } }));
+
+    expect(cfg.ads).toEqual({ fovDeg: 40, sensitivityRatio: 1.0 });
+  });
+
+  it('rejects non-positive ads.fovDeg with field path', () => {
+    expect(() => validateWeapon(validWeapon({ ads: { fovDeg: 0, sensitivityRatio: 1.0 } }))).toThrow(/ads\.fovDeg/);
+  });
+
+  it('rejects non-positive ads.sensitivityRatio with field path', () => {
+    expect(() => validateWeapon(validWeapon({ ads: { fovDeg: 40, sensitivityRatio: 0 } }))).toThrow(
+      /ads\.sensitivityRatio/,
+    );
+  });
 });
 
 describe('built-in weapons', () => {
@@ -98,6 +120,10 @@ describe('built-in weapons', () => {
       recoil: { seed: 38965, magnitude: 25, magnitudeVariance: 3, angleVariance: 65 },
       inaccuracy: { fire: 0.012 },
     });
+  });
+
+  it('carries the WP-24 demo ADS optics on ak47 (default drill weapon)', () => {
+    expect(WEAPONS.ak47.ads).toEqual({ fovDeg: 40, sensitivityRatio: 1.0 });
   });
 
   it('returns known weapons by id and reports available ids for unknown weapons', () => {

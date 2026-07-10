@@ -182,6 +182,9 @@ canvas.addEventListener('click', () => {
 // 走輸入/render 路徑，不入 sim（雙迴圈邊界，WP-2）；onMove 僅 locked 時轉發（T2）。
 const cameraController = new CameraController(sceneManager.camera, sharedState.aim);
 pointerLock.onMove((dx, dy) => cameraController.applyDelta(dx, dy));
+// WP-24 / T2（FR-E5）— 當前武器 ADS 光學佈線（render loop 每幀讀 heldAds → FOV/gain）；
+// undefined = 該武器不可開鏡。換 drill/武器時於 loadDrillById 重設。
+cameraController.setAdsConfig(activeWeaponConfig().ads);
 
 // WP-1 / T5（FR-1.5）— sensitivity/FOV 設定面板（DOM overlay, D1）：拖動即時生效。
 // 面板為這兩個設定的單一真實來源（建構時推預設給 controller），值供 WP-7 metadata。
@@ -404,6 +407,9 @@ pointerLock.onChange((locked) => {
   if (!locked) {
     sharedState.heldFire = false;
     sharedState.weapon.nextFireT = Infinity;
+    // WP-24 / T2 stuck-ads 防護（D-T1.1）：解鎖時仍按住右鍵 → 補送可被消費/記錄的 ads-up
+    // 事件（非直接寫 heldAds 旗標），避免 heldAds 永真污染後續 drill。
+    inputSampler.releaseAds(performance.now());
   }
 });
 
@@ -659,6 +665,7 @@ async function loadDrillById(drillId: string): Promise<void> {
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
   simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
+  cameraController.setAdsConfig(activeWeaponConfig().ads); // WP-24 / T2：新 drill 武器的 ADS 光學。
   drillRunner.start(activeDrillConfig);
   controls.setSelectedDrill(option.id);
   syncControlsVisibility();
@@ -862,6 +869,9 @@ const renderLoop = createRenderLoop((now) => {
   const punchYawDeg = lerp(sharedState.recoil.prev.yawDeg, sharedState.recoil.curr.yawDeg, alpha) * VIEW_RECOIL_TRACKING;
   const punchRad = punchToThreeRad(punchPitchDeg, punchYawDeg);
   cameraController.setViewPunch(punchRad.yawRad, punchRad.pitchRad);
+  // 3c) ADS 開鏡（WP-24 / T2，FR-E5）：每幀依 heldAds 切換 camera FOV 目標 + GD-16 感度 gain
+  //     （比照 setViewPunch，render-only；不進 sim/命中/彈道）。now 為 render 時鐘,僅驅動 FOV 視覺內插。
+  cameraController.setAds(sharedState.heldAds, now);
   // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
   //    移動目標以 alpha 內插 posPrev→pos（WP-18 / T3，比照 player 位置；render-only，不寫 state）。
   targetView.sync(sharedState.targets, alpha);

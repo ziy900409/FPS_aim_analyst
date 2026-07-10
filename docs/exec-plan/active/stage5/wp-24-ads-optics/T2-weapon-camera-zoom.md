@@ -7,7 +7,7 @@
 | **相依** | T1(heldAds 可用)+ T0(GD-16 公式) |
 | **Risk / Cplx** | Med / Med(gain 作用點錯 = 構念/決定性風險) |
 | **Touches** | MODIFY `src/weapon/WeaponConfig.ts` + `weapons.ts`(`ads?` 欄 + validateWeapon)、`src/view/CameraController.ts`(`setAds` + gain)、`src/main.ts`/render 佈線(heldAds → camera 每幀同步)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-10 T2 PASS |
 
 ## Objective
 
