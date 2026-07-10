@@ -8,7 +8,7 @@
 | **相依** | 上游:WP-18 exit ✅ + M10 ✅(驗證非執行) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [CLAUDE.md](../../../../../CLAUDE.md) §4 候選 + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-10) |
 
 ## Objective
 
@@ -35,12 +35,12 @@
 
 ## Steps
 
-- [ ] `npm run test:ci` 乾淨基準 exit 0 記 progress。
-- [ ] 上游 exit-gate 證據(WP-18/M10)引用記 progress。
-- [ ] hitbox 消費點盤點 + 既有回歸測試清單記 progress。
-- [ ] OQ-S5-4 / OQ-23.1 決議記 ledger(明確數值,非「傾向」)+ 上層 §8 回填。
-- [ ] CLAUDE.md §4 追加候選約束(與本 task 同 commit)。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] `npm run test:ci` 乾淨基準 exit 0 記 progress。
+- [x] 上游 exit-gate 證據(WP-18/M10)引用記 progress。
+- [x] hitbox 消費點盤點 + 既有回歸測試清單記 progress。
+- [x] OQ-S5-4 / OQ-23.1 決議記 ledger(明確數值,非「傾向」)+ 上層 §8 回填。
+- [x] CLAUDE.md §4 追加候選約束(與本 task 同 commit)。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 

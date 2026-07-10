@@ -5,11 +5,11 @@
 
 ---
 
-## Status: ⬜ 未開始
+## Status: 🟡 T0 PASS(2026-07-10);T1 ready
 
 | Task | 狀態 |
 |---|---|
-| T0 entry gate | ⬜ |
+| T0 entry gate | ✅ |
 | T1 hitbox config 化 | ⬜ |
 | T2 遠距 drill config | ⬜ |
 | T3 round-trip + 決定性 | ⬜ |
@@ -21,13 +21,37 @@
 
 | ID | 狀態 | 決議 |
 |----|------|------|
-| OQ-S5-4 遠距 drill 設計矩陣(角尺寸/角速度/距離/hitbox;角尺寸下限) | 🟡 待 T0 | 計畫預設:角高 0.5°–2° × 角速度 5–20°/s 各 2 階;下限 0.5°(混疊防線);T0 拍板記此處 |
-| OQ-23.1 hitbox 單一來源落點(型別/常數宣告在哪一檔) | 🟡 待 T0 | 候選:`src/state/types.ts`(Vec3 同居地)或 `src/drill/DrillConfig.ts`;T0 讀碼後定 |
+| OQ-S5-4 遠距 drill 設計矩陣(角尺寸/角速度/距離/hitbox;角尺寸下限) | ✅ T0 決議 | 小目標 H1 = `{ widthU:0.5, heightU:1, depthU:0.5 }`;角高階層 0.5° / 2.0°;角速度階層 5°/s / 20°/s;角尺寸下限 0.5°。距離 `d = h/(2*tan(theta/2))`:0.5°→114.59u,2.0°→28.65u。水平速度 `v = d * omegaRad`:0.5°×5→10.00u/s,0.5°×20→40.00u/s,2°×5→2.50u/s,2°×20→10.00u/s。T2 canonical default = 0.5° × 5°/s,hard profile = 0.5° × 20°/s,近距 sanity = 2° × 5°/s。 |
+| OQ-23.1 hitbox 單一來源落點(型別/常數宣告在哪一檔) | ✅ T0 決議 | `src/drill/DrillConfig.ts` 擴 `targets.hitbox?: { widthU;heightU;depthU }` 並宣告唯一預設常數 `{1,2,1}`;loader/schema resolve 後交給 `TargetManager` 寫入 `TargetState.hitbox`。sim/render 讀 `TargetState.hitbox`;clearance 讀 resolved `DrillConfig`;離線推導優先讀 `meta.targets.hitbox`,缺欄 fallback 預設常數。 |
 | OQ-23.2 遠距 drill 的 display scale 與場景尺度(`field-low` 是否直接可用) | 🟡 待 T2 | 預設沿用既有 display scale 機制;`field-low` 走廊長度不足時記 WP-26 br-field 需求 |
 
 ---
 
 ## Log
+
+### 2026-07-10 — T0 entry gate PASS
+
+- **Baseline verification**:`npm.cmd run test:ci` exit 0(unsandboxed rerun;PowerShell `npm.ps1` 受 execution policy 擋,沙盒 Vitest config 解析受 parent path 權限擋)。結果:`tsc --noEmit` clean;Vitest **65 files / 505 tests**;Playwright **14 tests**。
+- **Upstream gates verified**:
+  - WP-18 T-exit ✅ PASS(2026-07-09):motion 驅動、FR-B17 sub-tick hit interpolation、timed presentation、tracking metrics、moving-target determinism 已交付。
+  - WP-22 T-exit / M10 ✅ PASS(2026-07-10):stage3 perception integration 交付;`test:ci` clean;兩個感知實驗 pilot-ready。
+- **Current hitbox consumer baseline**(T1 零破壞參照):
+  - `src/sim/TargetManager.ts`:local `HITBOX = { width:1,height:2,depth:1 }` 寫入 spawned `TargetState.hitbox`。
+  - `src/sim/HitDetector.ts`:不持有常數;用 `TargetState.hitbox` 建 `Box3`,含 `subAlpha` 內插中心。
+  - `src/render/TargetView.ts`:不持有尺寸常數;單位 `BoxGeometry(1,1,1)` 以 `mesh.scale.set(t.hitbox.width,height,depth)` 呈現。
+  - `src/scene/clearance.ts`:local `TARGET_HITBOX_U = {1,2,1}`;`TARGET_HITBOX_RADIUS_U` / `PROP_INFLATION_U` / static + motion envelope 皆由此派生。
+  - `src/metrics/trackingDerivation.ts`:local `DEFAULT_OPTIONS.hitbox = {1,2,1}`;`on-target` slab intersection 使用 `options.hitbox`。
+  - `docs/operational/analysis-tracking.md`:仍描述 hitbox 常數非匯出欄;T1 需與 schema/meta 一起更新。
+- **Regression / tracking test list for T1 zero-break gate**:
+  `tests/regression/determinism.test.ts`;`tests/regression/moving-target-determinism.test.ts`;`tests/regression/spray-determinism.test.ts`;
+  `src/loop/__tests__/determinism.test.ts`;`src/loop/__tests__/fire-determinism.test.ts`;`src/loop/__tests__/wp22-determinism.test.ts`;
+  `src/sim/TargetManager.test.ts`;`src/sim/HitDetector.test.ts`;`src/render/TargetView.test.ts`;`src/scene/clearance.test.ts`;
+  `src/metrics/trackingDerivation.test.ts`;`src/drill/tracking_v1.test.ts`;`src/drill/tracking_scene_v1.test.ts`;
+  `src/testharness/fpsTestHarness.test.ts`;`tests/e2e/full-drill.spec.ts`.
+- **OQ-S5-4 decision**:遠距設計矩陣定稿為小目標 H1 `{0.5,1,0.5}` + 角高 0.5°/2.0° + 角速度 5°/s/20°/s;反推表見 ledger。T2 預設用 0.5° × 5°/s,hard profile 記 0.5° × 20°/s,近距 sanity 記 2° × 5°/s。
+- **OQ-23.1 decision**:單一來源落在 `DrillConfig` contract + resolved config;`TargetState.hitbox` 是 runtime sim/render/hit detector 傳遞值;export meta 是離線推導來源。預設常數只允許一處宣告,省略 `targets.hitbox` 必須逐位不變。
+- **CLAUDE.md §4**:追加「目標 hitbox 單一來源;命中判定與 on-target 推導必須同幾何」硬約束。
+- **Entry gate**:PASS。T1 可開;本切片無 `src/` 變更。
 
 ### 2026-07-10 — Plan authored
 
