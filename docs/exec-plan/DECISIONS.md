@@ -23,6 +23,16 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-15 ✅ WP 編號分配 — stage5(BR 遠距跟槍測試模組)取用 WP-23~26 / M11~M13 / 清單 E;stage4 草稿採納時重編(2026-07-10)
+
+| | |
+|---|---|
+| **發現處** | stage5 規劃(2026-07-10,使用者指示 WP-23~25 + WP-26 落 `active/stage5/`)與 [stage4 README 草稿](active/stage4/README.md)(2026-07-09,**未採納**,原預留 WP-23~27 / M11~M12 / 清單 D)發生 WP 編號衝突——兩份文件對同一組編號有主張,屬跨文件矛盾。 |
+| **決議** | 編號歸屬以「**採納入 [exec-plan/README.md](README.md) §2 索引**」為準。stage4 草稿明文「採納前不展開 WP 子資料夾、不動索引」,故無正式編號主張;stage5 即時採納展開,取 **WP-23~26、M11~M13、驗收清單 E**(清單字母對齊階段字母:stage5 = 階段 E)。stage4 採納時 WP 重編為 **WP-27+**、里程碑 **M14+**(清單 D 字母保留給階段 D),其 README 已標註對帳提醒。 |
+| **理由** | 使用者明示 stage5 使用 WP-23~26;草稿之「預留」不構成佔用(其自身協議即如此宣告);先採納者先得編號可避免索引出現空號或雙重主張。 |
+| **影響面** | [stage4 README](active/stage4/README.md)(重編標註)、[exec-plan/README.md](README.md)(§2 stage5 索引 + §3 M11~M13 + §4 相依圖)、[docs/MAP.md](../MAP.md)、[stage5 README](active/stage5/README.md)(引用本決議)。 |
+| **狀態** | ✅ 已拍板(2026-07-10,使用者指示 stage5 編號)。 |
+
 ### GD-14 ✅ WP-15 T-exit — M7 caveated 通過(T2 pattern 差異分層歸因 + 研究者接受)(2026-07-07)
 
 | | |

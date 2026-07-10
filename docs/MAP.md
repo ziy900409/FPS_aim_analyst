@@ -14,8 +14,8 @@
 | ① | [`../CONTEXT.md`](../CONTEXT.md) | 專有名詞 / ubiquitous language（repo 根） |
 | ② | [規格書](規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 需求、ADR-1~9、WBS、功能 F1–F5（source of truth） |
 | ③ | [PLAN.md](PLAN.md) | 大框架執行計畫：補充決策 D1–D5、技術棧、架構總覽、WP-0~9 |
-| ④ | [exec-plan/README.md](exec-plan/README.md) | 執行計畫頂層索引：把 WP-0~18（階段 A+B）展開成可執行子資料夾 |
-| ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/active/stage2/wp-N-*/`（階段 B 進行中）、`exec-plan/active/stage3/wp-N-*/`（階段 C 已規劃；導航見 [stage3 MAP](exec-plan/active/stage3/MAP.md)） | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
+| ④ | [exec-plan/README.md](exec-plan/README.md) | 執行計畫頂層索引：把 WP-0~26（階段 A+B+C+E）展開成可執行子資料夾 |
+| ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/active/stage2/wp-N-*/`（階段 B 已交付）、`exec-plan/active/stage3/wp-N-*/`（階段 C 已交付；導航見 [stage3 MAP](exec-plan/active/stage3/MAP.md)）、`exec-plan/active/stage5/wp-N-*/`（階段 E 已規劃；tech spec 見 [stage5 README](exec-plan/active/stage5/README.md)） | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
 
 ---
 
@@ -33,7 +33,7 @@
 
 ## 3. 執行計畫（`docs/exec-plan/`）
 
-頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M10）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/active/stage2/README.md](exec-plan/active/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/active/stage3/MAP.md](exec-plan/active/stage3/MAP.md) · [PLAN.md](exec-plan/active/stage3/PLAN.md) · [README.md](exec-plan/active/stage3/README.md)。
+頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M13）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/active/stage2/README.md](exec-plan/active/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/active/stage3/MAP.md](exec-plan/active/stage3/MAP.md) · [PLAN.md](exec-plan/active/stage3/PLAN.md) · [README.md](exec-plan/active/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/active/stage5/README.md](exec-plan/active/stage5/README.md)；stage4 為未採納草稿（編號分配見 [DECISIONS.md](exec-plan/DECISIONS.md) GD-15）。
 
 ### 3.1 資料夾慣例
 
@@ -45,8 +45,12 @@ docs/exec-plan/
 │   ├── stage2/            ← 階段 B（CS2 後座力系統 + 真急停）
 │   │   ├── README.md      ← stage2 頂層索引 + tech spec
 │   │   └── wp-N-*/        ← 每個 WP 一個自足子資料夾（WP-10~18）
-│   └── stage3/            ← 階段 C（研究場景與感知實驗，WP-19~22）
-│       ├── MAP.md         ← stage3 導航 · PLAN.md ← 大框架 · README.md ← tech spec
+│   ├── stage3/            ← 階段 C（研究場景與感知實驗，WP-19~22）
+│   │   ├── MAP.md         ← stage3 導航 · PLAN.md ← 大框架 · README.md ← tech spec
+│   │   └── wp-N-*/
+│   ├── stage4/            ← 階段 D 草稿（選手表現分析管線；未採納，僅 README；GD-15）
+│   └── stage5/            ← 階段 E（BR 遠距跟槍測試模組，WP-23~26）
+│       ├── README.md      ← stage5 頂層索引 + tech spec
 │       └── wp-N-*/
 ├── completed/             ← WP 交付後移入
 │   └── stage1/            ← 階段 A 已交付（WP-0~9）
@@ -69,7 +73,7 @@ docs/exec-plan/
 
 ### 3.2 WP 索引
 
-> 里程碑：M1 = 脊椎（WP-2）· M2 = 核心玩法（WP-5）· M3 = 可匯出資料（WP-7）· M4 = 階段 A 交付（WP-9）· M5 = recoil 核心（WP-10）· M6 = 壓槍玩法（WP-13）· M7 = 校準效度（WP-14+15）· M8 = 階段 B 交付（WP-17）· M9 = 場景脊椎（WP-19）· M10 = 階段 C 交付（WP-22）。
+> 里程碑：M1 = 脊椎（WP-2）· M2 = 核心玩法（WP-5）· M3 = 可匯出資料（WP-7）· M4 = 階段 A 交付（WP-9）· M5 = recoil 核心（WP-10）· M6 = 壓槍玩法（WP-13）· M7 = 校準效度（WP-14+15）· M8 = 階段 B 交付（WP-17）· M9 = 場景脊椎（WP-19）· M10 = 階段 C 交付（WP-22）· M11 = 遠距追蹤地基（WP-23）· M12 = 彈道模型門控（WP-25）· M13 = 階段 E 交付（WP-26）。
 > 詳細狀態以 [exec-plan/README.md §2](exec-plan/README.md) 為準。
 
 #### 階段 A（`completed/stage1/`，WP-0~9 ✅ 已交付 M4 2026-07-03）
@@ -87,7 +91,7 @@ docs/exec-plan/
 | **WP-8** | [wp-8-metrics-hud/](exec-plan/completed/stage1/wp-8-metrics-hud/README.md) | `MetricsDashboard` + 即時 HUD | — | WP-5,6,7 |
 | **WP-9** | [wp-9-integration/](exec-plan/completed/stage1/wp-9-integration/README.md) | 端到端整合 + 計時效度 + 決定性回歸 | **M4** | 全部 |
 
-#### 階段 B（`active/stage2/`，WP-10~18 🟡 進行中）
+#### 階段 B（`active/stage2/`，WP-10~18 ✅ 已交付 M8 2026-07-07 · WP-18 ✅ 2026-07-09）
 
 > stage2 頂層索引 + tech spec：[exec-plan/active/stage2/README.md](exec-plan/active/stage2/README.md)。
 
@@ -101,7 +105,7 @@ docs/exec-plan/
 | **WP-15** | [wp-15-calibration/](exec-plan/completed/stage2/wp-15-calibration/README.md) | `cl_showpos` 軌跡校準 + pattern 圖逐彈比對 | **M7** | WP-13,14 |
 | **WP-16** | [wp-16-metrics-export-v2/](exec-plan/completed/stage2/wp-16-metrics-export-v2/README.md) | 匯出 schema v2 + 壓槍指標（補償 vs 理想路徑） | — | WP-13 |
 | **WP-17** | [wp-17-integration/](exec-plan/completed/stage2/wp-17-integration/README.md) | E2E 全鏈路 + 決定性回歸擴充 + 驗收清單 B | **M8** | WP-15,16 |
-| **WP-18** ⏸待 M8 | [wp-18-f5-subtick/](exec-plan/active/stage2/wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅（GD-7）+ WP-17 |
+| **WP-18** ✅ | [wp-18-f5-subtick/](exec-plan/active/stage2/wp-18-f5-subtick/README.md) | F5 移動 drill + 目標 sub-tick 命中內插 + 追蹤指標 | — | ~~OQ-S2-5~~ ✅（GD-7）+ WP-17 |
 
 #### 階段 C（`active/stage3/`，WP-19~22 ⬜ 已規劃 2026-07-06）
 
@@ -113,6 +117,17 @@ docs/exec-plan/
 | **WP-20** | [wp-20-display-pipeline/](exec-plan/active/stage3/wp-20-display-pipeline/README.md) | 解析度模式 + fullscreen/資格閘 + frame-time log + session setup | — | M4（可並行） |
 | **WP-21** | [wp-21-detection-drill/](exec-plan/active/stage3/wp-21-detection-drill/README.md) | seeded spawn + pop-in 偵測 drill + t_detect 離線推導 spec | — | T1/T2 獨立；T3 需 WP-16 |
 | **WP-22** | [wp-22-perception-integration/](exec-plan/active/stage3/wp-22-perception-integration/README.md) | 追蹤×場景 + 解析度 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19,20,21 + WP-18 |
+
+#### 階段 E（`active/stage5/`，WP-23~26 ⬜ 已規劃 2026-07-10）
+
+> stage5 tech spec：[README.md](exec-plan/active/stage5/README.md) · 編號分配：[DECISIONS.md](exec-plan/DECISIONS.md) GD-15（stage4 為未採納草稿，採納時重編 WP-27+）。
+
+| WP | 子資料夾 | 目標 | 里程碑 | 相依 |
+|---|---|---|---|---|
+| **WP-23** | [wp-23-longrange-tracking/](exec-plan/active/stage5/wp-23-longrange-tracking/README.md) | 遠距小目標追蹤：hitbox config 化 + 遠距 drill + 指標 round-trip/決定性 | **M11** | WP-18 + M10 |
+| **WP-24** | [wp-24-ads-optics/](exec-plan/active/stage5/wp-24-ads-optics/README.md) | ADS 開鏡：EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8（可並行） |
+| **WP-25** | [wp-25-ballistics-tracer/](exec-plan/active/stage5/wp-25-ballistics-tracer/README.md) | 彈道：tracer 顯示（T1 獨立）+ config-gated projectile | **M12** | T1 獨立；T2+ 需 M11 |
+| **WP-26** | [wp-26-br-scene-integration/](exec-plan/active/stage5/wp-26-br-scene-integration/README.md) | BR 場景實作與整合：br-field + tracking_br_v1 + protocol + E2E + 驗收清單 E | **M13** | WP-23,24,25 |
 
 ### 3.3 各 WP task 一覽
 
@@ -143,7 +158,7 @@ docs/exec-plan/
 | WP-15 | [T1 cl_showpos 校準](exec-plan/completed/stage2/wp-15-calibration/T1-clshowpos-calibration.md) · [T2 pattern 比對](exec-plan/completed/stage2/wp-15-calibration/T2-pattern-comparison.md) · [T-exit](exec-plan/completed/stage2/wp-15-calibration/T-exit-gate.md) |
 | WP-16 | [T1 schema v2](exec-plan/completed/stage2/wp-16-metrics-export-v2/T1-schema-v2.md) · [T2 理想路徑指標](exec-plan/completed/stage2/wp-16-metrics-export-v2/T2-ideal-path-metric.md) · [T3 結果頁對照](exec-plan/completed/stage2/wp-16-metrics-export-v2/T3-result-overlay.md) · [T-exit](exec-plan/completed/stage2/wp-16-metrics-export-v2/T-exit-gate.md) |
 | WP-17 | [T1 決定性回歸](exec-plan/completed/stage2/wp-17-integration/T1-determinism-regression.md) · [T2 全鏈路 E2E](exec-plan/completed/stage2/wp-17-integration/T2-e2e-full-chain.md) · [T-exit](exec-plan/completed/stage2/wp-17-integration/T-exit-gate.md) |
-| WP-18 ⏸ | [README stub](exec-plan/active/stage2/wp-18-f5-subtick/README.md)（~~OQ-S2-5~~ ✅ 已解 GD-7；M8 ✅ 後展開） |
+| WP-18 ✅ | [T1 motion 驅動](exec-plan/active/stage2/wp-18-f5-subtick/T1-motion-drive.md) · [T2 sub-tick 命中內插](exec-plan/active/stage2/wp-18-f5-subtick/T2-subtick-hit-interpolation.md) · [T3 timed presentation](exec-plan/active/stage2/wp-18-f5-subtick/T3-timed-presentation-render-interp.md) · [T4 追蹤 drill + 指標 spec](exec-plan/active/stage2/wp-18-f5-subtick/T4-tracking-drill-metrics-spec.md) · [T5 決定性回歸](exec-plan/active/stage2/wp-18-f5-subtick/T5-determinism-regression-integration.md) · [T-exit](exec-plan/active/stage2/wp-18-f5-subtick/T-exit-gate.md) |
 
 **階段 C（`active/stage3/`）**
 
@@ -153,6 +168,15 @@ docs/exec-plan/
 | WP-20 | [T1 解析度模式](exec-plan/active/stage3/wp-20-display-pipeline/T1-resolution-modes.md) · [T2 fullscreen + 資格閘](exec-plan/active/stage3/wp-20-display-pipeline/T2-fullscreen-eligibility-gate.md) · [T3 frame-time log](exec-plan/active/stage3/wp-20-display-pipeline/T3-frame-time-log.md) · [T4 session setup](exec-plan/active/stage3/wp-20-display-pipeline/T4-session-setup-form.md) · [T-exit](exec-plan/active/stage3/wp-20-display-pipeline/T-exit-gate.md) |
 | WP-21 | [T1 seeded spawn](exec-plan/active/stage3/wp-21-detection-drill/T1-seeded-spawn.md) · [T2 偵測 drill config](exec-plan/active/stage3/wp-21-detection-drill/T2-detection-drill-config.md) · [T3 推導 spec + fixture](exec-plan/active/stage3/wp-21-detection-drill/T3-offline-derivation-spec.md) · [T-exit](exec-plan/active/stage3/wp-21-detection-drill/T-exit-gate.md) |
 | WP-22 | [T1 追蹤 × 場景](exec-plan/active/stage3/wp-22-perception-integration/T1-tracking-in-scene.md) · [T2 protocol E2E](exec-plan/active/stage3/wp-22-perception-integration/T2-resolution-protocol-e2e.md) · [T3 決定性 + 清單 C](exec-plan/active/stage3/wp-22-perception-integration/T3-determinism-acceptance-c.md) · [T-exit](exec-plan/active/stage3/wp-22-perception-integration/T-exit-gate.md) |
+
+**階段 E（`active/stage5/`）**
+
+| WP | Tasks（`T0` entry-gate → `Tn` → exit-gate） |
+|---|---|
+| WP-23 | [T1 hitbox config 化](exec-plan/active/stage5/wp-23-longrange-tracking/T1-hitbox-config.md) · [T2 遠距 drill](exec-plan/active/stage5/wp-23-longrange-tracking/T2-longrange-drill.md) · [T3 round-trip + 決定性](exec-plan/active/stage5/wp-23-longrange-tracking/T3-metrics-roundtrip.md) · [T-exit](exec-plan/active/stage5/wp-23-longrange-tracking/T-exit-gate.md) |
+| WP-24 | [T1 EV_ADS 輸入鏈](exec-plan/active/stage5/wp-24-ads-optics/T1-ads-input-event.md) · [T2 WeaponConfig.ads + zoom](exec-plan/active/stage5/wp-24-ads-optics/T2-weapon-camera-zoom.md) · [T3 overlay + 記錄](exec-plan/active/stage5/wp-24-ads-optics/T3-overlay-recording.md) · [T-exit](exec-plan/active/stage5/wp-24-ads-optics/T-exit-gate.md) |
+| WP-25 | [T1 tracer](exec-plan/active/stage5/wp-25-ballistics-tracer/T1-tracer-view.md) · [T2 projectile 數學核心](exec-plan/active/stage5/wp-25-ballistics-tracer/T2-projectile-math-core.md) · [T3 sim 整合](exec-plan/active/stage5/wp-25-ballistics-tracer/T3-sim-integration.md) · [T4 指標語意](exec-plan/active/stage5/wp-25-ballistics-tracer/T4-metrics-semantics.md) · [T-exit](exec-plan/active/stage5/wp-25-ballistics-tracer/T-exit-gate.md) |
+| WP-26 | [T1 br-field 資產](exec-plan/active/stage5/wp-26-br-scene-integration/T1-br-scene-assets.md) · [T2 場景上線](exec-plan/active/stage5/wp-26-br-scene-integration/T2-br-scene-online.md) · [T3 整合 drill + protocol](exec-plan/active/stage5/wp-26-br-scene-integration/T3-br-tracking-drill.md) · [T4 E2E + 清單 E](exec-plan/active/stage5/wp-26-br-scene-integration/T4-e2e-acceptance.md) · [T-exit](exec-plan/active/stage5/wp-26-br-scene-integration/T-exit-gate.md) |
 
 > 每個 WP 另含 `T0-entry-gate.md`、`task-checklist.md`、`progress.md`（見 §3.1 慣例），此處省略以保持精簡。
 
