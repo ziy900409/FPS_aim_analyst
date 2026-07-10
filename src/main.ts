@@ -33,7 +33,7 @@ import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill } from './drill/DrillLoader.ts';
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
-import type { DrillConfig } from './drill/DrillConfig.ts';
+import { resolveTargetHitbox, targetHitboxToConfig, type DrillConfig } from './drill/DrillConfig.ts';
 import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts';
 import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
@@ -318,6 +318,9 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       sharedState.validity.playerCorridorExceeded ||
       (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
       frames.summary.p95 > PERF_FLOOR_MS,
+    targets: {
+      hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),
+    },
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.spawnArea !== undefined ? { spawnArea: activeDrillConfig.targets.spawnArea } : {}),

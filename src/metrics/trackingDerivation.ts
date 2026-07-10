@@ -1,4 +1,5 @@
 import type { ExportPayload } from '../data/export.ts';
+import { DEFAULT_TARGET_HITBOX } from '../drill/DrillConfig.ts';
 
 /**
  * WP-18 / T4 tracking metrics offline derivation (GD-7).
@@ -93,7 +94,7 @@ interface TrackingSample {
 
 const DEFAULT_OPTIONS: ResolvedTrackingDerivationOptions = {
   eyeHeight: 1.6,
-  hitbox: { width: 1, height: 2, depth: 1 },
+  hitbox: DEFAULT_TARGET_HITBOX,
 };
 
 const EPSILON = 1e-9;
@@ -102,7 +103,7 @@ export function deriveTrackingMetrics(
   payload: ExportPayload,
   options: TrackingDerivationOptions = {},
 ): TrackingDerivationResult {
-  const resolved = resolveOptions(options);
+  const resolved = resolveOptions(payload, options);
   const ticks = payload.ticks.slice().sort((a, b) => a.t - b.t);
   const visibleEvents = payload.events
     .filter((event): event is VisibleEvent => event.type === 'visible')
@@ -253,8 +254,8 @@ function targetForTick(tick: Tick, fallback: TargetPoint): TargetPoint {
   return fallback;
 }
 
-function resolveOptions(options: TrackingDerivationOptions): ResolvedTrackingDerivationOptions {
-  const hitbox = options.hitbox ?? DEFAULT_OPTIONS.hitbox;
+function resolveOptions(payload: ExportPayload, options: TrackingDerivationOptions): ResolvedTrackingDerivationOptions {
+  const hitbox = hitboxFromMeta(payload) ?? options.hitbox ?? DEFAULT_OPTIONS.hitbox;
   return {
     eyeHeight: finite(options.eyeHeight ?? DEFAULT_OPTIONS.eyeHeight, 'eyeHeight'),
     hitbox: {
@@ -263,6 +264,12 @@ function resolveOptions(options: TrackingDerivationOptions): ResolvedTrackingDer
       depth: positiveFinite(hitbox.depth, 'hitbox.depth'),
     },
   };
+}
+
+function hitboxFromMeta(payload: ExportPayload): HitboxSize | undefined {
+  const hitbox = payload.meta.targets?.hitbox;
+  if (hitbox === undefined) return undefined;
+  return { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU };
 }
 
 function rms(values: readonly number[]): number {

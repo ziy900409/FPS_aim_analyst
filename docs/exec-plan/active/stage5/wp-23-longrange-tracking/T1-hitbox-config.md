@@ -7,7 +7,7 @@
 | **相依** | T0(OQ-S5-4/OQ-23.1 決議) |
 | **Risk / Cplx** | **High** / Med(動命中幾何——零破壞不變式與同幾何不變式是全部風險所在) |
 | **Touches** | MODIFY `src/drill/DrillConfig.ts` + `schema.ts`(`targets.hitbox?`)、`src/sim/TargetManager.ts`(HITBOX 常數 → config)、`src/sim/HitDetector.ts` / `src/render/TargetView.ts`(幾何來源)、`src/scene/clearance.ts`(`TARGET_HITBOX_U`/膨脹半徑 per-drill)、`src/metrics/trackingDerivation.ts`(options 由 meta 餵)、`src/data/metadata.ts` + `export.ts`(meta 快照)、`docs/operational/schema.md` + 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-10) |
 
 ## Objective
 

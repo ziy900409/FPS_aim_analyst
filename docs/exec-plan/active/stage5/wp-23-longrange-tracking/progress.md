@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 PASS(2026-07-10);T1 ready
+## Status: 🟡 T1 PASS(2026-07-10);T2 ready
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 hitbox config 化 | ⬜ |
+| T1 hitbox config 化 | ✅ |
 | T2 遠距 drill config | ⬜ |
 | T3 round-trip + 決定性 | ⬜ |
 | T-exit(M11) | ⬜ |
@@ -28,6 +28,22 @@
 ---
 
 ## Log
+
+### 2026-07-10 — T1 hitbox config 化 PASS
+
+- **Implementation**:`src/drill/DrillConfig.ts` 新增 `targets.hitbox?: { widthU;heightU;depthU }`、唯一預設 `DEFAULT_TARGET_HITBOX = { width:1,height:2,depth:1 }`、resolved/config 轉換 helper;`schema.ts` 驗證正有限與 sanity 上限 `MAX_TARGET_HITBOX_U = 10`。
+- **Single-source runtime path**:`TargetManager` spawn 改由 `resolveTargetHitbox(config)` 寫入 `TargetState.hitbox`;`HitDetector` / `TargetView` 維持讀 `TargetState.hitbox`;`clearance` 的 target envelope 與 prop inflation 改 per-drill hitbox 派生。
+- **Export / offline derivation**:`collectMeta` 接受 `meta.targets.hitbox`;production `main.ts` 與 `fpsTestHarness` 匯出 resolved hitbox snapshot;`trackingDerivation` 優先讀 `payload.meta.targets.hitbox`,舊匯出 fallback `DEFAULT_TARGET_HITBOX` / legacy options。
+- **同幾何 fixture**:`src/metrics/trackingDerivation.test.ts` 新增邊緣 aim fixture:小 hitbox `{0.5,1,0.5}` 下 inside/outside 斷言 `raycastWithRay` sim hit 與 offline on-target 同真同假;並驗證 meta hitbox 優先於 options。
+- **小 hitbox smoke**:`TargetManager.test.ts`、`clearance.test.ts` 覆蓋 `{0.5,1,0.5}` 的 spawn state、envelope、prop inflation;`metadata.test.ts` 覆蓋 meta snapshot 驗證。
+- **Schema/docs**:`docs/operational/schema.md` 新增 `meta.targets.hitbox`;`analysis-tracking.md` 更新為新匯出讀 meta、舊匯出 fallback 預設 H1。
+- **Verification**:
+  - `npm.cmd run typecheck` exit 0。
+  - Targeted Vitest:`npx.cmd vitest run src/drill/schema.test.ts src/sim/TargetManager.test.ts src/scene/clearance.test.ts src/data/metadata.test.ts src/metrics/trackingDerivation.test.ts src/testharness/fpsTestHarness.test.ts` exit 0 (**6 files / 107 tests**).
+  - Full Vitest:`npx.cmd vitest run` exit 0 (**65 files / 514 tests**).
+  - Full CI:`npm.cmd run test:ci` sandbox run hit Vitest config parent-path permission denial;unsandboxed rerun exit 0 (**tsc clean;65 Vitest files / 514 tests;Playwright 14 tests**).
+  - `graphify update .` exit 0;graphify rebuilt **1064 nodes / 2488 edges / 63 communities**.
+- **Decision**:保留 runtime `TargetState.hitbox` 的 `{width,height,depth}` 形狀,只在 config/meta 邊界使用 `{widthU,heightU,depthU}`。理由:sim/render/hit detector 已以 runtime shape 同源消費,此做法把 T1 風險集中在 loader/metadata/clearance/derivation 邊界,避免無必要改動熱路徑與既有測試 fixtures。
 
 ### 2026-07-10 — T0 entry gate PASS
 

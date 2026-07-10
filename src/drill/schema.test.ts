@@ -31,6 +31,7 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
       targets: {
         count: 30,
         distance: 4,
+        hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 },
         spawnArea: { yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] },
         motion: { type: 'pingpong', axis: 'horizontal', speed: 150, range: 120 },
       },
@@ -38,6 +39,7 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
       timing: { countdownMs: 3000, spawnDelayMs: 0, peekTimeoutMs: 1500, timeLimitMs: 60000, presentationMs: 2500 },
     });
     expect(cfg.weaponId).toBe('m4a4');
+    expect(cfg.targets.hitbox).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5 });
     expect(cfg.targets.spawnArea).toEqual({ yawDegRange: [-25, 25], distanceURange: [3.2, 4.4] });
     expect(cfg.sequence.seed).toBe(42);
     expect(cfg.sequence.spawnDelayMsRange).toEqual([100, 350]);
@@ -51,6 +53,11 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
   it('省略 motion → static（向後相容,F5 接縫）', () => {
     const cfg = validateDrill(minimalValid());
     expect(cfg.targets.motion).toBeUndefined();
+  });
+
+  it('省略 hitbox → 保持 undefined（呼叫端解析為預設 H1）', () => {
+    const cfg = validateDrill(minimalValid());
+    expect(cfg.targets.hitbox).toBeUndefined();
   });
 
   it('省略 weaponId → 保持 undefined（呼叫端使用預設武器）', () => {
@@ -111,6 +118,27 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
   it('負 distance → throw 指名 targets.distance', () => {
     const bad = { ...(minimalValid() as object), targets: { count: 20, distance: -1 } };
     expect(() => validateDrill(bad)).toThrow(/targets\.distance/);
+  });
+
+  it('hitbox 非正、非有限或超過 sanity 上限 → throw 指名 targets.hitbox 欄位', () => {
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: { count: 20, distance: 4, hitbox: { widthU: 0, heightU: 1, depthU: 0.5 } },
+      }),
+    ).toThrow(/targets\.hitbox\.widthU/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: { count: 20, distance: 4, hitbox: { widthU: 0.5, heightU: Infinity, depthU: 0.5 } },
+      }),
+    ).toThrow(/targets\.hitbox\.heightU/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: { count: 20, distance: 4, hitbox: { widthU: 0.5, heightU: 1, depthU: 10.1 } },
+      }),
+    ).toThrow(/targets\.hitbox\.depthU/);
   });
 
   it('countdownMs 非數字 → throw', () => {

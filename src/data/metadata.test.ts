@@ -130,6 +130,36 @@ describe('collectMeta', () => {
     });
   });
 
+  it('accepts resolved target hitbox metadata for offline geometry replay', () => {
+    expect(
+      collectMeta({
+        drillId: 'tracking_longrange_v1',
+        backend: 'webgl2',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        targets: { hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } },
+      }),
+    ).toMatchObject({
+      targets: { hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } },
+    });
+  });
+
+  it('rejects malformed target hitbox metadata', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'tracking_longrange_v1',
+        backend: 'webgl2',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        targets: { hitbox: { widthU: 0.5, heightU: -1, depthU: 0.5 } },
+      }),
+    ).toThrow('targets.hitbox.heightU');
+  });
+
   it('accepts stage3 scene metadata including fallback state', () => {
     expect(
       collectMeta({

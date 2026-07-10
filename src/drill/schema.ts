@@ -1,4 +1,4 @@
-import type { DrillConfig, SpawnAreaConfig } from './DrillConfig.ts';
+import { MAX_TARGET_HITBOX_U, type DrillConfig, type SpawnAreaConfig, type TargetHitboxConfig } from './DrillConfig.ts';
 import type { TargetMotion } from '../state/types.ts';
 
 /**
@@ -22,10 +22,11 @@ export function validateDrill(json: unknown): DrillConfig {
   const weaponId =
     root.weaponId === undefined ? undefined : requireNonEmptyString(root.weaponId, 'weaponId');
 
-  // targets — count 正整數、distance 正有限數、spawnArea / motion 選填。
+  // targets — count 正整數、distance 正有限數、hitbox / spawnArea / motion 選填。
   const targets = requireObject(root.targets, 'targets');
   const count = requirePositiveInt(targets.count, 'targets.count');
   const distance = requirePositiveNumber(targets.distance, 'targets.distance');
+  const hitbox = targets.hitbox === undefined ? undefined : validateHitbox(targets.hitbox);
   const spawnArea = targets.spawnArea === undefined ? undefined : validateSpawnArea(targets.spawnArea);
   const motion = targets.motion === undefined ? undefined : validateMotion(targets.motion);
 
@@ -71,7 +72,13 @@ export function validateDrill(json: unknown): DrillConfig {
   return {
     drillId,
     ...(weaponId !== undefined ? { weaponId } : {}),
-    targets: { count, distance, ...(spawnArea ? { spawnArea } : {}), ...(motion ? { motion } : {}) },
+    targets: {
+      count,
+      distance,
+      ...(hitbox ? { hitbox } : {}),
+      ...(spawnArea ? { spawnArea } : {}),
+      ...(motion ? { motion } : {}),
+    },
     sequence: {
       alternation,
       ...(seed !== undefined ? { seed } : {}),
@@ -85,6 +92,15 @@ export function validateDrill(json: unknown): DrillConfig {
       ...(presentationMs !== undefined ? { presentationMs } : {}),
     },
     endCondition: { type, value },
+  };
+}
+
+function validateHitbox(json: unknown): TargetHitboxConfig {
+  const hitbox = requireObject(json, 'targets.hitbox');
+  return {
+    widthU: requireHitboxDimension(hitbox.widthU, 'targets.hitbox.widthU'),
+    heightU: requireHitboxDimension(hitbox.heightU, 'targets.hitbox.heightU'),
+    depthU: requireHitboxDimension(hitbox.depthU, 'targets.hitbox.depthU'),
   };
 }
 
@@ -187,6 +203,12 @@ function requirePositiveRange(v: unknown, path: string): [number, number] {
 function requirePositiveNumber(v: unknown, path: string): number {
   const n = requireFiniteNumber(v, path);
   if (n <= 0) throw err(path, '必須 > 0');
+  return n;
+}
+
+function requireHitboxDimension(v: unknown, path: string): number {
+  const n = requirePositiveNumber(v, path);
+  if (n > MAX_TARGET_HITBOX_U) throw err(path, `必須 ≤ ${MAX_TARGET_HITBOX_U}`);
   return n;
 }
 

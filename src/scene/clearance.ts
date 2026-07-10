@@ -1,17 +1,20 @@
-import type { DrillConfig, SpawnAreaConfig } from '../drill/DrillConfig.ts';
+import {
+  DEFAULT_TARGET_HITBOX,
+  resolveTargetHitbox,
+  type DrillConfig,
+  type SpawnAreaConfig,
+  type TargetHitboxSize,
+} from '../drill/DrillConfig.ts';
 import type { TargetMotion, Vec3 } from '../state/types.ts';
 import type { PropBound, SceneConfig } from './SceneConfig.ts';
 
 export const CLEARANCE_MARGIN_U = 0.5;
 export const TARGET_SIDE_OFFSET_U = 2;
 export const TARGET_CENTER_Y_U = 1.5;
-export const TARGET_HITBOX_U = { width: 1, height: 2, depth: 1 } as const;
+export const TARGET_HITBOX_U = DEFAULT_TARGET_HITBOX;
 export const PLAYER_EYE_HEIGHT_U = 1.6;
 
-export const TARGET_HITBOX_RADIUS_U = Math.sqrt(
-  (TARGET_HITBOX_U.width / 2) ** 2 + (TARGET_HITBOX_U.height / 2) ** 2 + (TARGET_HITBOX_U.depth / 2) ** 2,
-);
-const PROP_INFLATION_U = TARGET_HITBOX_RADIUS_U + CLEARANCE_MARGIN_U;
+export const TARGET_HITBOX_RADIUS_U = targetHitboxRadius(TARGET_HITBOX_U);
 
 export interface Aabb {
   min: Vec3;
@@ -27,6 +30,10 @@ export interface ClearanceViolation {
   segment: string;
 }
 
+export function targetHitboxRadius(hitbox: TargetHitboxSize): number {
+  return Math.sqrt((hitbox.width / 2) ** 2 + (hitbox.height / 2) ** 2 + (hitbox.depth / 2) ** 2);
+}
+
 interface Segment {
   from: Vec3;
   to: Vec3;
@@ -34,12 +41,14 @@ interface Segment {
 }
 
 export function validateClearance(scene: SceneConfig, drill: DrillConfig): ClearanceViolation[] {
+  const hitbox = resolveTargetHitbox(drill);
+  const propInflationU = targetHitboxRadius(hitbox) + CLEARANCE_MARGIN_U;
   const playerSamples = samplePlayerCorridor(scene.playerCorridor.halfWidthU);
   const targetSamples = deriveTargetEnvelopes(drill).flatMap(sampleAabb);
   const violations: ClearanceViolation[] = [];
 
   for (const prop of scene.propBounds) {
-    const inflated = inflateAabb(prop, PROP_INFLATION_U);
+    const inflated = inflateAabb(prop, propInflationU);
     let propViolated = false;
     for (let i = 0; i < playerSamples.length; i++) {
       for (let j = 0; j < targetSamples.length; j++) {
@@ -66,13 +75,14 @@ export function formatClearanceViolations(violations: readonly ClearanceViolatio
 }
 
 export function deriveTargetEnvelopes(drill: DrillConfig): TargetEnvelope[] {
+  const hitbox = resolveTargetHitbox(drill);
   if (drill.targets.spawnArea !== undefined) {
-    const envelope = envelopeForSpawnArea(drill.targets.spawnArea, drill.targets.motion);
+    const envelope = envelopeForSpawnArea(drill.targets.spawnArea, drill.targets.motion, hitbox);
     assertFiniteEnvelope(envelope);
     return [envelope];
   }
   return activeSides(drill).map((side) => {
-    const envelope = envelopeForSide(side, drill.targets.distance, drill.targets.motion);
+    const envelope = envelopeForSide(side, drill.targets.distance, drill.targets.motion, hitbox);
     assertFiniteEnvelope(envelope);
     return envelope;
   });
@@ -96,35 +106,44 @@ function activeSides(drill: DrillConfig): Array<'L' | 'R'> {
   return ['L', 'R'];
 }
 
-function envelopeForSide(side: 'L' | 'R', distance: number, motion: TargetMotion | undefined): TargetEnvelope {
+function envelopeForSide(
+  side: 'L' | 'R',
+  distance: number,
+  motion: TargetMotion | undefined,
+  hitbox: TargetHitboxSize,
+): TargetEnvelope {
   const center = {
     x: side === 'R' ? TARGET_SIDE_OFFSET_U : -TARGET_SIDE_OFFSET_U,
     y: TARGET_CENTER_Y_U,
     z: -distance,
   };
   const half = {
-    x: TARGET_HITBOX_U.width / 2,
-    y: TARGET_HITBOX_U.height / 2,
-    z: TARGET_HITBOX_U.depth / 2,
+    x: hitbox.width / 2,
+    y: hitbox.height / 2,
+    z: hitbox.depth / 2,
   };
   const min = { x: center.x - half.x, y: center.y - half.y, z: center.z - half.z };
   const max = { x: center.x + half.x, y: center.y + half.y, z: center.z + half.z };
 
   if (motion !== undefined && motion.type !== 'static') {
-    expandForMotion(min, max, center, motion);
+    expandForMotion(min, max, center, motion, hitbox);
   }
 
   return { side, min, max };
 }
 
-function envelopeForSpawnArea(spawnArea: SpawnAreaConfig, motion: TargetMotion | undefined): TargetEnvelope {
+function envelopeForSpawnArea(
+  spawnArea: SpawnAreaConfig,
+  motion: TargetMotion | undefined,
+  hitbox: TargetHitboxSize,
+): TargetEnvelope {
   const centers = spawnAreaCenters(spawnArea);
   const min = { x: Infinity, y: Infinity, z: Infinity };
   const max = { x: -Infinity, y: -Infinity, z: -Infinity };
-  for (const center of centers) expandByPoint(min, max, center);
+  for (const center of centers) expandByPoint(min, max, center, hitbox);
 
   if (motion !== undefined && motion.type !== 'static') {
-    expandSpawnAreaForMotion(min, max, centers, motion);
+    expandSpawnAreaForMotion(min, max, centers, motion, hitbox);
   }
 
   return { side: spawnArea.yawDegRange[1] <= 0 ? 'L' : 'R', min, max };
@@ -159,7 +178,13 @@ function uniqueNumbers(values: readonly number[]): number[] {
   return Array.from(new Set(values));
 }
 
-function expandForMotion(min: Vec3, max: Vec3, center: Vec3, motion: TargetMotion): void {
+function expandForMotion(
+  min: Vec3,
+  max: Vec3,
+  center: Vec3,
+  motion: TargetMotion,
+  hitbox: TargetHitboxSize,
+): void {
   if (motion.range !== undefined && motion.axis !== undefined) {
     const axis = motion.axis === 'horizontal' ? 'x' : 'y';
     min[axis] -= motion.range;
@@ -167,16 +192,27 @@ function expandForMotion(min: Vec3, max: Vec3, center: Vec3, motion: TargetMotio
   }
   if (motion.type === 'waypoints' && motion.waypoints !== undefined) {
     for (const point of motion.waypoints) {
-      expandByPoint(min, max, {
-        x: center.x + point.x,
-        y: center.y + point.y,
-        z: center.z + point.z,
-      });
+      expandByPoint(
+        min,
+        max,
+        {
+          x: center.x + point.x,
+          y: center.y + point.y,
+          z: center.z + point.z,
+        },
+        hitbox,
+      );
     }
   }
 }
 
-function expandSpawnAreaForMotion(min: Vec3, max: Vec3, centers: readonly Vec3[], motion: TargetMotion): void {
+function expandSpawnAreaForMotion(
+  min: Vec3,
+  max: Vec3,
+  centers: readonly Vec3[],
+  motion: TargetMotion,
+  hitbox: TargetHitboxSize,
+): void {
   if (motion.range !== undefined && motion.axis !== undefined) {
     const axis = motion.axis === 'horizontal' ? 'x' : 'y';
     min[axis] -= motion.range;
@@ -185,23 +221,28 @@ function expandSpawnAreaForMotion(min: Vec3, max: Vec3, centers: readonly Vec3[]
   if (motion.type === 'waypoints' && motion.waypoints !== undefined) {
     for (const center of centers) {
       for (const point of motion.waypoints) {
-        expandByPoint(min, max, {
-          x: center.x + point.x,
-          y: center.y + point.y,
-          z: center.z + point.z,
-        });
+        expandByPoint(
+          min,
+          max,
+          {
+            x: center.x + point.x,
+            y: center.y + point.y,
+            z: center.z + point.z,
+          },
+          hitbox,
+        );
       }
     }
   }
 }
 
-function expandByPoint(min: Vec3, max: Vec3, point: Vec3): void {
-  min.x = Math.min(min.x, point.x - TARGET_HITBOX_U.width / 2);
-  max.x = Math.max(max.x, point.x + TARGET_HITBOX_U.width / 2);
-  min.y = Math.min(min.y, point.y - TARGET_HITBOX_U.height / 2);
-  max.y = Math.max(max.y, point.y + TARGET_HITBOX_U.height / 2);
-  min.z = Math.min(min.z, point.z - TARGET_HITBOX_U.depth / 2);
-  max.z = Math.max(max.z, point.z + TARGET_HITBOX_U.depth / 2);
+function expandByPoint(min: Vec3, max: Vec3, point: Vec3, hitbox: TargetHitboxSize): void {
+  min.x = Math.min(min.x, point.x - hitbox.width / 2);
+  max.x = Math.max(max.x, point.x + hitbox.width / 2);
+  min.y = Math.min(min.y, point.y - hitbox.height / 2);
+  max.y = Math.max(max.y, point.y + hitbox.height / 2);
+  min.z = Math.min(min.z, point.z - hitbox.depth / 2);
+  max.z = Math.max(max.z, point.z + hitbox.depth / 2);
 }
 
 function samplePlayerCorridor(halfWidthU: number): Vec3[] {

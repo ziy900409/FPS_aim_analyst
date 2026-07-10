@@ -7,6 +7,7 @@ import {
   CLEARANCE_MARGIN_U,
   TARGET_HITBOX_RADIUS_U,
   deriveTargetEnvelopes,
+  targetHitboxRadius,
   validateClearance,
 } from './clearance.ts';
 
@@ -42,6 +43,18 @@ describe('deriveTargetEnvelopes', () => {
         side: 'R',
         min: { x: 1.5, y: 0.5, z: -4.5 },
         max: { x: 2.5, y: 2.5, z: -3.5 },
+      },
+    ]);
+  });
+
+  it('config.targets.hitbox 會縮放靜態目標 envelope（小目標 smoke）', () => {
+    expect(
+      deriveTargetEnvelopes(drill({ targets: { count: 1, distance: 4, hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } } })),
+    ).toEqual([
+      {
+        side: 'R',
+        min: { x: 1.75, y: 1, z: -4.25 },
+        max: { x: 2.25, y: 2, z: -3.75 },
       },
     ]);
   });
@@ -112,6 +125,24 @@ describe('validateClearance', () => {
           },
         ]),
         drill(),
+      ),
+    ).toEqual([]);
+  });
+
+  it('config.targets.hitbox 會縮小 prop inflation 半徑（小目標 smoke）', () => {
+    const small = drill({ targets: { count: 1, distance: 4, hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } } });
+    const smallInflation = targetHitboxRadius({ width: 0.5, height: 1, depth: 0.5 }) + CLEARANCE_MARGIN_U;
+    expect(smallInflation).toBeLessThan(INFLATION);
+    expect(
+      validateClearance(
+        scene([
+          {
+            id: 'default-only-blocker',
+            min: { x: -INFLATION - 0.2, y: 1.6 - INFLATION - 0.1, z: -INFLATION - 0.1 },
+            max: { x: -INFLATION, y: 1.6 - INFLATION + 0.1, z: -INFLATION + 0.1 },
+          },
+        ]),
+        small,
       ),
     ).toEqual([]);
   });

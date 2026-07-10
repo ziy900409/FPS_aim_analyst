@@ -77,6 +77,7 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `bufferOverflow` | boolean | `true` / `false` | Yes | input buffer telemetry | Marks dropped/late input-buffer data. |
 | `recorderOverflow` | boolean | `true` / `false` | Yes | recorder snapshot | If true, arena refused later tick writes and preserved oldest rows. |
 | `suspect` | boolean | `true` / `false` | Yes | derived validity flag | `true` if overflow or a runtime validity observer marks the run suspect. |
+| `targets` | object | optional target geometry snapshot | No | active `DrillConfig` after defaults resolve | Additive v2 block. `targets.hitbox` stores the H1 hitbox used by sim/render/offline derivation. |
 | `spawn` | object | reserved optional | No | stage3/WP-21 | v2 reserved block for `seed`, motion, and spawn-area snapshots. WP-16 writes seed/motion when available. |
 | `scene` | object | scene condition | No | stage3/WP-19 | `{ sceneId, assetPackVersion, clutterTier, fallback }`. Additive; absence means scene system not active. |
 | `display` | object | reserved optional | No | stage3/WP-20 | v2 reserved display/session setup metadata block. |
@@ -84,6 +85,12 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `session` | object | reserved optional | No | stage3/WP-20 | `participantId` / `sessionLabel` cross-session join keys. |
 
 `buildExportPayload()` also ORs `meta.recorderOverflow` with `snapshot.recorderOverflow`, then preserves any existing `meta.suspect` flag.
+
+#### `meta.targets`
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `hitbox` | object | source units | No | resolved `DrillConfig.targets.hitbox` | `{ widthU, heightU, depthU }`. Omitted in older exports; analysis falls back to the default H1 `{1,2,1}`. |
 
 #### `meta.scene`
 
@@ -313,7 +320,10 @@ CSV cells are comma-separated, include a trailing newline, and quote cells conta
     "lateEventCount": 0,
     "bufferOverflow": false,
     "recorderOverflow": false,
-    "suspect": false
+    "suspect": false,
+    "targets": {
+      "hitbox": { "widthU": 1, "heightU": 2, "depthU": 1 }
+    }
   },
   "ticks": [
     { "t": 10, "vx": 250, "vz": 0, "px": 1, "pz": 2, "tx": 3, "ty": 1.6, "tz": -4, "aim": { "yaw": 0.5, "pitch": -0.25 }, "keys": ["D"] },
@@ -357,7 +367,8 @@ engine export.
 Tracking analyses derive `t_acquire`, acquisition failure rate, TOT%, and RMS ε offline from the
 same raw rows — the moving-target center trajectory (`ticks.tx/ty/tz`), the aim ray
 (`ticks.aim.yaw/pitch` + `ticks.px/pz`), and the `visible` presentation boundaries. on-target reuses
-the H1 hit geometry with no new threshold parameter. The executable interface lives in
+the H1 hit geometry from `meta.targets.hitbox` when present, with the default H1 fallback for older
+exports. The executable interface lives in
 [`analysis-tracking.md`](analysis-tracking.md). These derived fields are not written by the engine
 export.
 
@@ -381,6 +392,7 @@ This appendix is a semantic mapping only. Per GD-11, FPSci source code is not co
 | `meta.session` | experiment/session/user status | approximate | Reserved v2 join keys; WP-20 fills participant/session labels. |
 | `meta.display`, `meta.frames` | system/frame timing tables | approximate | Reserved v2 display and frame-time blocks. |
 | `meta.scene` | environment/condition config | approximate | Reserved v2 scene condition block. |
+| `meta.targets.hitbox` | target geometry/config table | approximate | Resolved H1 hitbox snapshot for offline on-target replay. |
 | `meta.weaponId`, `weaponSeed`, `rngSeed` | weapon/config seed fields | approximate | Reproducibility fields for weapon and RNG streams. |
 
 ## Related Execution Plan

@@ -1,7 +1,10 @@
+import * as THREE from 'three/webgpu';
 import { describe, expect, it } from 'vitest';
 import { createDataRecorder } from '../data/DataRecorder.ts';
 import { buildExportPayload, serializeJSON, type ExportPayload } from '../data/export.ts';
 import type { Meta } from '../data/metadata.ts';
+import type { TargetState } from '../state/types.ts';
+import { raycastWithRay } from '../sim/HitDetector.ts';
 import { deriveTrackingMetrics } from './trackingDerivation.ts';
 
 const SIM_HZ = 128;
@@ -11,6 +14,8 @@ const TARGET_Y = 1.6;
 const TARGET_Z = -4;
 const MOTION_RANGE = 1; // horizontal pingpong half-amplitude (u), matching tracking_v1
 const OFF_TARGET_X = 6; // aim held far from the corridor → never on-target
+
+type HitboxMeta = NonNullable<NonNullable<Meta['targets']>['hitbox']>;
 
 const meta: Meta = {
   schemaVersion: 2,
@@ -85,13 +90,35 @@ describe('deriveTrackingMetrics', () => {
     // A presentation window must not leak samples into the next presentation.
     expect(result.presentations[0].windowEndMs).toBeCloseTo(result.presentations[1].tVisibleMs, 9);
   });
+
+  it('reads meta.targets.hitbox before options.hitbox for on-target geometry', () => {
+    const payload = makeRoundTripPayload({
+      visibleTick: 0,
+      totalTicks: 0,
+      mode: 'edge-inside',
+      hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 },
+    });
+    const result = deriveTrackingMetrics(payload, { hitbox: { width: 0.1, height: 0.1, depth: 0.1 } });
+    const presentation = onlyPresentation(result);
+
+    expect(result.options.hitbox).toEqual({ width: 0.5, height: 1, depth: 0.5 });
+    expect(presentation.acquisitionFailure).toBe(false);
+    expect(presentation.totPercent).toBe(100);
+  });
+
+  it('edge aim fixture keeps sim hit and offline on-target geometry identical', () => {
+    const hitbox = { widthU: 0.5, heightU: 1, depthU: 0.5 };
+    expect(simAndOfflineOnTarget(0.24, hitbox)).toEqual({ simHit: true, offlineOnTarget: true });
+    expect(simAndOfflineOnTarget(0.3, hitbox)).toEqual({ simHit: false, offlineOnTarget: false });
+  });
 });
 
 interface FixtureOptions {
   visibleTick: number;
   totalTicks: number;
-  mode: 'perfect' | 'stationary-miss' | 'lock-at';
+  mode: 'perfect' | 'stationary-miss' | 'lock-at' | 'edge-inside';
   onsetTick?: number;
+  hitbox?: HitboxMeta;
 }
 
 function makeRoundTripPayload(options: FixtureOptions): ExportPayload {
@@ -129,7 +156,9 @@ function makeRoundTripPayload(options: FixtureOptions): ExportPayload {
     });
   }
 
-  return roundTrip(recorder.snapshot());
+  return options.hitbox === undefined
+    ? roundTrip(recorder.snapshot())
+    : roundTripWithMeta(recorder.snapshot(), { targets: { hitbox: options.hitbox } });
 }
 
 function makeMultiPresentationPayload(): ExportPayload {
@@ -172,6 +201,7 @@ function makeMultiPresentationPayload(): ExportPayload {
 
 function aimForTick(tick: number, options: FixtureOptions, target: { x: number; y: number; z: number } | null) {
   if (options.mode === 'stationary-miss') return aimAtOffTarget();
+  if (options.mode === 'edge-inside') return aimAtPoint({ x: 0.24, y: TARGET_Y, z: TARGET_Z });
   if (options.mode === 'lock-at' && tick < options.onsetTick!) return aimAtOffTarget();
   if (target === null) return aimAtOffTarget();
   return aimAtCenter(target);
@@ -185,6 +215,10 @@ function targetAt(tick: number): { x: number; y: number; z: number } {
 
 /** Yaw/pitch that aims exactly at a world point from eye (0, EYE_HEIGHT, 0). */
 function aimAtCenter(point: { x: number; y: number; z: number }): { yaw: number; pitch: number } {
+  return aimAtPoint(point);
+}
+
+function aimAtPoint(point: { x: number; y: number; z: number }): { yaw: number; pitch: number } {
   const dx = point.x;
   const dy = point.y - EYE_HEIGHT;
   const dz = point.z;
@@ -199,6 +233,54 @@ function aimAtOffTarget(): { yaw: number; pitch: number } {
 function roundTrip(snapshot: ReturnType<ReturnType<typeof createDataRecorder>['snapshot']>): ExportPayload {
   const payload = buildExportPayload(meta, snapshot);
   return JSON.parse(serializeJSON(payload)) as ExportPayload;
+}
+
+function roundTripWithMeta(
+  snapshot: ReturnType<ReturnType<typeof createDataRecorder>['snapshot']>,
+  metaOverride: Partial<Meta>,
+): ExportPayload {
+  const payload = buildExportPayload({ ...meta, ...metaOverride }, snapshot);
+  return JSON.parse(serializeJSON(payload)) as ExportPayload;
+}
+
+function simAndOfflineOnTarget(
+  aimXAtTargetDepth: number,
+  hitbox: HitboxMeta,
+): { simHit: boolean; offlineOnTarget: boolean } {
+  const target = makeHitboxTarget(hitbox);
+  const origin = new THREE.Vector3(0, EYE_HEIGHT, 0);
+  const point = { x: aimXAtTargetDepth, y: TARGET_Y, z: TARGET_Z };
+  const direction = new THREE.Vector3(point.x, point.y - EYE_HEIGHT, point.z).normalize();
+  const simHit = raycastWithRay(origin, direction, [target]).hit;
+
+  const recorder = createDataRecorder({ capacity: 2 });
+  recorder.recordEvent({ type: 'visible', targetId: target.id, side: target.side, t: 0, targetX: target.pos.x, targetY: target.pos.y, targetZ: target.pos.z });
+  recorder.recordTick({
+    t: 0,
+    vx: 0,
+    vz: 0,
+    px: 0,
+    pz: 0,
+    tx: target.pos.x,
+    ty: target.pos.y,
+    tz: target.pos.z,
+    aim: aimAtPoint(point),
+    keys: [],
+  });
+  const payload = roundTripWithMeta(recorder.snapshot(), { targets: { hitbox } });
+  const offlineOnTarget = !onlyPresentation(deriveTrackingMetrics(payload)).acquisitionFailure;
+  return { simHit, offlineOnTarget };
+}
+
+function makeHitboxTarget(hitbox: HitboxMeta): TargetState {
+  return {
+    id: 'edge-target',
+    side: 'R',
+    pos: { x: 0, y: TARGET_Y, z: TARGET_Z },
+    visible: true,
+    alive: true,
+    hitbox: { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU },
+  };
 }
 
 function onlyPresentation(result: ReturnType<typeof deriveTrackingMetrics>) {

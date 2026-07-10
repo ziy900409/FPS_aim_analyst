@@ -7,7 +7,7 @@ import { createDrillRunner, type DrillRunner } from '../drill/DrillRunner.ts';
 import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from '../loop/SimLoop.ts';
 import { punchToThreeRad } from '../recoil/adapter.ts';
 import { loadDrill } from '../drill/DrillLoader.ts';
-import type { DrillConfig } from '../drill/DrillConfig.ts';
+import { resolveTargetHitbox, targetHitboxToConfig, type DrillConfig } from '../drill/DrillConfig.ts';
 import { SIM_HZ } from '../loop/constants.ts';
 import { createDataRecorder, type DataRecorder, type DataRecorderSnapshot } from '../data/DataRecorder.ts';
 import { collectMeta } from '../data/metadata.ts';
@@ -339,6 +339,9 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       bufferOverflow: state.inputMeta.bufferOverflow,
       recorderOverflow: snapshot.recorderOverflow,
       suspect: protocolContext?.suspect ?? false,
+      targets: {
+        hitbox: targetHitboxToConfig(resolveTargetHitbox(config)),
+      },
       spawn: {
         seed: config.sequence.seed ?? DEFAULT_RNG_SEED,
         ...(config.targets.spawnArea !== undefined ? { spawnArea: config.targets.spawnArea } : {}),

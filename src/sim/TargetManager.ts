@@ -1,5 +1,5 @@
 import type { SharedState } from '../state/SharedState.ts';
-import type { DrillConfig } from '../drill/DrillConfig.ts';
+import { resolveTargetHitbox, type DrillConfig } from '../drill/DrillConfig.ts';
 import type { Vec3 } from '../state/types.ts';
 import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
 import { SIM_HZ } from '../loop/constants.ts';
@@ -53,8 +53,6 @@ const DEFAULT_DISTANCE = 4;
 const TARGET_Y = 1.5;
 /** 左右 peek 槽位相對中軸的水平偏移(u)。 */
 const SIDE_OFFSET = 2;
-/** 單一 box hitbox(H1;width/height/depth,u)——與 mesh 同來源(TargetView 以此 scale)。 */
-const HITBOX = { width: 1, height: 2, depth: 1 } as const;
 const DEG_TO_RAD = Math.PI / 180;
 /**
  * 每 tick age 累加步長(邏輯秒)= sim tick 週期 `1/SIM_HZ`,**常數**(不代入變動 dt;決定性根源,
@@ -80,6 +78,7 @@ export interface TargetManager {
 
 export function createTargetManager(config?: DrillConfig): TargetManager {
   const distance = config?.targets.distance ?? DEFAULT_DISTANCE;
+  const hitbox = resolveTargetHitbox(config);
   // spawn 上限:config 的目標總數;無 config 時不設限(向後相容 WP-4 佔位——無限補生)。
   const spawnLimit = config ? config.targets.count : Infinity;
   // F5 接縫:config 帶 motion 即寫入目標(階段 A 不驅動移動,WP-6.5 接管)。
@@ -134,7 +133,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       pos: pose.pos,
       visible: true,
       alive: true,
-      hitbox: { ...HITBOX },
+      hitbox: { ...hitbox },
       // motion 提供即寫入(F5 接縫);`age` 一律 spawn 起算 0——motion drive 以 age 累加驅動 pos
       // （T1)。無 motion 時 age 仍設 0(語意一致、零成本),drive 步驟會依 motion 缺省而跳過。
       age: 0,
