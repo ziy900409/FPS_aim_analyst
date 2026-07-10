@@ -10,7 +10,7 @@
 | **交付範圍** | 階段 A：F1–F4 + 1 個完整 counter-strafe drill（簡化「立即停止」急停） |
 | **技術棧** | Three.js `WebGPURenderer`（`three/webgpu`）+ TypeScript + Vite；UI = 純 TS + DOM overlay；測試 = Vitest + Playwright |
 | **估時** | 25–39 dev-days（≈5–8 週，含 WebGPU 設定與學習爬升） |
-| **狀態** | ✅ **階段 A 交付**（WP-0 ~ WP-9 全部完成，**M4 達成 2026-07-03**；已移入 `completed/stage1/`）· ✅ **階段 B 交付**（WP-10~17 於 `completed/stage2/`，**M8 達成 2026-07-07**；WP-18 F5 於 `active/stage2/`，門控後續）· 🟡 **階段 C 進行中**（WP-19~22 於 `active/stage3/`；**WP-19 ✅ M9 達成 2026-07-08**，場景脊椎成立；研究決議 GD-6~10 已全數拍板） |
+| **狀態** | ✅ **階段 A 交付**（WP-0 ~ WP-9 全部完成，**M4 達成 2026-07-03**；已移入 `completed/stage1/`）· ✅ **階段 B 交付**（WP-10~17 於 `completed/stage2/`，**M8 達成 2026-07-07**；WP-18 F5 於 `active/stage2/`，門控後續）· 🟡 **階段 C 進行中**（WP-19~22 於 `active/stage3/`；**WP-19 ✅ M9 2026-07-08 + WP-20 ✅ + WP-21 ✅ 2026-07-09 + WP-22 🟡 T-exit auto-green 2026-07-10**；兩感知實驗端到端自動成立、`test:ci` exit 0 + 清單 C 自動 9 項；**M10 正式宣告待研究者真 fullscreen walkthrough**；研究決議 GD-6~10 已全數拍板） |
 
 ---
 
@@ -67,9 +67,9 @@
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
 | **WP-19** | [`active/stage3/wp-19-scene-system/`](active/stage3/wp-19-scene-system/README.md) | 場景系統：SceneConfig + GLTF 管線 + 淨空驗證 + 雜亂度階層場景 ×2 | **M9 ✅** | M4 ✅（可與 stage2 尾段並行） | 4–6 | ✅ **M9（2026-07-08）** |
-| **WP-20** | [`active/stage3/wp-20-display-pipeline/`](active/stage3/wp-20-display-pipeline/README.md) | 解析度模式 + fullscreen/資格閘 + frame-time log + session setup | — | M4 ✅（可並行） | 3–4 | ⬜ |
-| **WP-21** | [`active/stage3/wp-21-detection-drill/`](active/stage3/wp-21-detection-drill/README.md) | seeded spawn + pop-in 偵測 drill + t_detect 離線推導 spec | — | T1/T2 獨立；T3 需 WP-16 | 2.5–3.5 | 🟡 T1 ✅;T2 next |
-| **WP-22** | [`active/stage3/wp-22-perception-integration/`](active/stage3/wp-22-perception-integration/README.md) | 追蹤×場景 + 解析度 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + WP-18 | 2–3 | ⬜ |
+| **WP-20** | [`active/stage3/wp-20-display-pipeline/`](active/stage3/wp-20-display-pipeline/README.md) | 解析度模式 + fullscreen/資格閘 + frame-time log + session setup | — | M4 ✅（可並行） | 3–4 | ✅ **交付（2026-07-08）** |
+| **WP-21** | [`active/stage3/wp-21-detection-drill/`](active/stage3/wp-21-detection-drill/README.md) | seeded spawn + pop-in 偵測 drill + t_detect 離線推導 spec | — | T1/T2 獨立；T3 需 WP-16 | 2.5–3.5 | ✅ **交付（2026-07-09）** |
+| **WP-22** | [`active/stage3/wp-22-perception-integration/`](active/stage3/wp-22-perception-integration/README.md) | 追蹤×場景 + 解析度 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + WP-18 | 2–3 | 🟡 **T-exit auto-green（2026-07-10；`test:ci` exit 0 + 清單 C 自動 9 項）;M10 待研究者真 fullscreen walkthrough** |
 
 ---
 
@@ -86,7 +86,7 @@
 | **M7 ✅ caveated（2026-07-07）** | 速度曲線於 sim cadence 公式/常數對表通過(theory surrogate,非 `cl_showpos` 實錄);recoil pattern 對 CS2 vdata M5 golden 逐位釘死;第三方 Aiming.Pro pattern 差異分層歸因為來源模型不匹配並被研究者接受(GD-14);velocity gate 連續模型上線 | WP-14+15 | counter-strafe × 壓槍研究效度成立;**外部實錄行為級真值仍為 caveat** |
 | **M8 ✅（2026-07-07）** | E2E + schema v2 + 決定性回歸(punch/彈著序列)全綠;驗收清單 B(附錄 E-B)全 10 項通過;`test:ci` exit 0 | WP-17 | **stage2 交付達成**(WP-10~17;WP-18 F5 為門控後續) |
 | **M9 ✅（2026-07-08）** | 場景可置換(≥2 雜亂度階層)+ 淨空驗證拒載違規 drill + 跨場景 sim 決定性逐位一致 + 資產 attribution 可稽核 | WP-19 | 場景脊椎:「換場景零引擎碼」與「場景不碰決定性」被測試釘死（`test:ci` exit 0：356 vitest + 10 e2e） |
-| **M10 ⬜** | 驗收清單 C 全項通過:資格閘拒入/放行、受試者內解析度 protocol E2E、追蹤×場景 E2E、偵測推導 round-trip、三條決定性不變性全綠 | WP-22 | **stage3 交付**:追蹤能力與解析度×偵測兩實驗 pilot-ready |
+| **M10 🟡 auto-green（2026-07-10）** | 驗收清單 C 全項通過:資格閘拒入/放行、受試者內解析度 protocol E2E、追蹤×場景 E2E、偵測推導 round-trip、三條決定性不變性全綠 | WP-22 | **stage3 交付**:追蹤能力與解析度×偵測兩實驗 pilot-ready。**auto-gate 全綠（`test:ci` exit 0 + 清單 C 自動 9 項）;正式宣告 gating = 研究者真 fullscreen walkthrough 兩份 JSON 證據（清單 C-5 手動補項）** |
 
 ---
 

@@ -9,7 +9,7 @@
 | ✅ | **T1** 追蹤 drill × BR 場景 + E2E | [T1-tracking-in-scene.md](T1-tracking-in-scene.md) | T0 | Med |
 | 🟡 | **T2** protocol 執行器 + 解析度 × 偵測受試者內 E2E(auto pass;manual pending) | [T2-resolution-protocol-e2e.md](T2-resolution-protocol-e2e.md) | T0 | High |
 | 🟡 | **T3** 決定性回歸擴充 + 驗收清單 C + pilot protocol(auto pass;manual pending) | [T3-determinism-acceptance-c.md](T3-determinism-acceptance-c.md) | T1, T2 | Med |
-| ⬜ | **T-exit** M10 宣告(stage3 交付) | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
+| 🟡 | **T-exit** M10 宣告(auto-gate 全綠 + 索引/OQ 同步;M10 保留待研究者真 fullscreen walkthrough) | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 

@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T3 AUTO PASS(2026-07-09):determinism + checklist C + pilot docs + `test:ci` green;manual true-fullscreen walkthrough pending
+## Status: 🟡 T-exit AUTO-COMPLETE(2026-07-10):auto-gate 全綠(`test:ci` exit 0 + 清單 C 自動 9 項)+ 索引/OQ 同步;**M10 保留待研究者真 fullscreen walkthrough**
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 追蹤 × 場景 | ✅ PASS(2026-07-09;`tracking_scene_v1` + Playwright E2E + urban-high harness probe) |
 | T2 protocol 執行器 + E2E | 🟡 AUTO PASS(2026-07-09;manual true-fullscreen walkthrough pending) |
 | T3 決定性 + 驗收清單 C | 🟡 AUTO PASS(2026-07-09;manual true-fullscreen walkthrough pending) |
-| T-exit(M10) | ⬜ |
+| T-exit(M10) | 🟡 AUTO-COMPLETE(2026-07-10;auto-gate 全綠 + 索引/OQ 同步;M10 宣告待手動 walkthrough) |
 
 ---
 
@@ -28,6 +28,38 @@
 ---
 
 ## Log
+
+### 2026-07-10 local — T-exit gate AUTO-COMPLETE(auto-gate 全綠 + 索引/OQ 同步;M10 保留待手動 walkthrough)
+
+**觸發**:`/code-review-and-quality` 執行 T-exit。決策(2026-07-10 使用者拍板):**落自動閘、M10 保留待手動**——完成所有可自動化的 exit-gate 工作,但**不宣告 M10、不翻 WP-22 ✅**,因真 fullscreen 實機 walkthrough(清單 C-5 ⏳ M / T-exit DoD「實機證據」)需研究者互動操作,非互動 session 無法產生。
+
+**最終基準驗證(本切片重跑)**:
+- `npm.cmd run test:ci`(sandbox 停用)→ **exit 0**:`tsc --noEmit` clean;Vitest **65 files / 505 tests** pass;Playwright **14 tests** pass(含 WP-22 三案:`tracking_scene_v1` field-low 匯出欄、protocol 2 條件解析度×偵測 + 狀態隔離、protocol gate 低解析度拒入無匯出)。
+
+**五軸 code review(交付物)——無 BLOCKER/無 required change**:
+- `src/display/ProtocolRunner.ts`:validateProtocol field-path 錯誤明確;`snapshotContext` 深拷貝防外洩;`markCurrentConditionSuspect` 條件級(非 session 級)隔離符合 README failure-mode 契約。
+- `src/drill/tracking_scene_v1.ts`:composition object `{ id, sceneId, drill }` 未污染 `DrillConfig`;`range=0.25u` 淨空決策有 T1 log 佐證。
+- `src/loop/__tests__/wp22-determinism.test.ts`:三不變性 bit-exact(跨場景/跨解析度 `toEqual` 全 tick snapshot + snapshot 記錄)+ seeded golden 雙跑一致 + legacy slot seed 不漂移。
+- `src/data/metadata.ts`:`meta.protocol` additive optional + `requireProtocolMeta` 驗證,`conditionIndex` 非負整數、label 非空 trim。
+- 五軸(correctness/readability/architecture/security/performance)均無 required change;change sizing 各 task 為單一垂直切片。
+
+**auto-gate 判定(清單 C)**:C-1~C-4、C-6~C-10 = ✅ A(有測試入口);C-5 = ✅ A / ⏳ M(auto E2E 綠,真 fullscreen 手動補項待研究者)。**9/10 自動項全綠;唯一手動補項 = M10 唯一 gating open item。**
+
+**索引/OQ 同步(本切片交付)**:
+- [../README.md(stage3)](../README.md) §3 WP-22 列 ⬜ → 🟡(exit-gate auto-green,M10 待手動);§4 M10 列加 auto-gate 綠/手動 pending 註記;§8 OQ-S3-5 🟡 → ✅ resolved(WP-18 T-exit 交付 + T0 對帳,見 2026-07-09 log)。
+- [exec-plan/README.md](../../../README.md) §2 stage3 表修正 staleness:WP-20 ⬜ → ✅ 交付、WP-21 🟡 → ✅ 交付、WP-22 ⬜ → 🟡(exit-gate auto-green);§3 M10 列加 auto-gate 綠 + 手動 pending 註記。
+- OQ ledger 收斂複查:OQ-22.1 / OQ-22.2 ✅(見上方 ledger);OQ-S3-5 ✅;stage3 OQ-S3-1~4 先前皆已 ✅ 收斂(見 stage3 README §8)。
+
+**Outcomes(交付了什麼)**:
+- 交付:兩感知實驗端到端**自動**成立(追蹤×場景 + 解析度×偵測 protocol)、決定性三不變性回歸、驗收清單 C 自動 9 項、pilot protocol 文件、`test:ci` exit 0。上層索引(stage3 README + exec-plan README)stage3 交付狀態同步。
+- **未交付(保留)**:M10 正式宣告 + WP-22 ✅ + stage3 資料夾移入 `completed/`——全部 gating 於研究者真 fullscreen walkthrough 的兩份 JSON 證據回填(見下方 Follow-up)。
+
+**Surprises & Discoveries**:
+- exec-plan/README.md §2 stage3 表在本切片前 stale:WP-20 仍 ⬜、WP-21 仍 🟡 T1,但兩者 T-exit 早已 ✅(WP-22 T0 已驗證上游 exit)。本切片一併校正,避免頂層索引與實際交付漂移。
+- WP-18 於 exec-plan §2 stage2 列仍標「🟢 ready 未展開」,但 progress/T0 顯示 WP-18 T-exit 已交付。此為 **stage2** 列(非本 WP T-exit step 5 的 stage3 範圍),本切片不動,記此觀察供 stage2 index owner 校正。
+
+**Open Questions / Manual Follow-up(M10 唯一 gating)**:
+- 研究者在本機真 fullscreen 執行 `resolution_detection_v1` 兩條件,回填兩份 JSON 檢查(`meta.protocol.conditionIndex` 0/1、`meta.display.mode` fhd-1080/qhd-1440、`meta.spawn.seed=21021`、`meta.display.gate.pass=true`、`meta.frames.summary`)至本 progress。回填後即可翻 WP-22 ✅ / 宣告 M10 / 視需要移 `completed/`。步驟見 [acceptance-checklist-c.md §2](../../../../operational/acceptance-checklist-c.md) 與 [pilot-protocol-stage3.md §4.2](../../../../operational/pilot-protocol-stage3.md)。
 
 ### 2026-07-09 16:59 local — T3 AUTO PASS(determinism regression + checklist C + pilot protocol;manual pending)
 

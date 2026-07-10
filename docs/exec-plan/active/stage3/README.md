@@ -9,7 +9,7 @@
 | **上游門檻** | 研究側:**GD-6~10 已全數拍板(2026-07-06 grill)**,無未決研究設計。工程側:WP-19/20 僅需 M4 ✅;WP-21 資料面需 WP-16(schema v2);WP-22 需 **M8 + WP-18** |
 | **技術棧** | 沿用(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright)+ GLTF 資產管線(`GLTFLoader`,render-only) |
 | **估時** | 11.5–16.5 dev-days(WP-19~22;不含 stage2 的 WP-18 +2–3.5) |
-| **狀態** | 🟡 進行中;**WP-19 ✅ M9 達成 + WP-20 ✅ 交付(2026-07-08)+ WP-21 ✅ 交付(2026-07-09)** — 場景脊椎成立、顯示管線四件套齊備、偵測鏈(seeded spawn/pop-in drill/離線推導 spec)交付;WP-22 待 M9 ✅(已達)+ M8 ✅ + WP-18 |
+| **狀態** | 🟡 進行中;**WP-19 ✅ M9 + WP-20 ✅(2026-07-08)+ WP-21 ✅(2026-07-09)+ WP-22 🟡 T-exit auto-green(2026-07-10)** — 場景脊椎、顯示管線四件套、偵測鏈、兩感知實驗端到端自動成立(`test:ci` exit 0 + 清單 C 自動 9 項);**M10 正式宣告待研究者真 fullscreen walkthrough 兩份 JSON 證據(清單 C-5 手動補項)** |
 
 ---
 
@@ -210,7 +210,7 @@ GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵�
 | **WP-19** | [wp-19-scene-system/](wp-19-scene-system/README.md) | 場景系統:SceneConfig + GLTF 管線 + 淨空驗證 + 場景切換/meta + 兩個雜亂度階層場景 | **M9 ✅** | M4 ✅(可與 stage2 尾段並行) | 4–6 | ✅ **M9(2026-07-08)** |
 | **WP-20** | [wp-20-display-pipeline/](wp-20-display-pipeline/README.md) | 顯示管線:解析度模式 + fullscreen/資格閘 + frame-time log + session setup 表單/display meta | — | M4 ✅(可並行) | 3–4 | ✅ **交付(2026-07-08)** — 四件套齊備,WP-22 T2 可消費 |
 | **WP-21** | [wp-21-detection-drill/](wp-21-detection-drill/README.md) | 偵測 drill:seeded spawn 隨機化 + pop-in drill + t_detect/偏心度離線推導 spec | — | T1/T2 獨立;T3 需 WP-16(v2 欄) | 2.5–3.5 | ✅ **交付(2026-07-09)** — T-exit gate 綠;WP-22 T2 可消費 |
-| **WP-22** | [wp-22-perception-integration/](wp-22-perception-integration/README.md) | 感知實驗整合:追蹤 × 場景 + 解析度受試者內 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + **WP-18(M8 後)** | 2–3 | ⬜ |
+| **WP-22** | [wp-22-perception-integration/](wp-22-perception-integration/README.md) | 感知實驗整合:追蹤 × 場景 + 解析度受試者內 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19, 20, 21 + **WP-18(M8 後)** | 2–3 | 🟡 T-exit auto-green(2026-07-10;`test:ci` exit 0 + 清單 C 自動 9 項);**M10 待研究者真 fullscreen walkthrough** |
 
 ---
 
@@ -219,7 +219,7 @@ GD-5/OQ-S2-3 既定「`schemaVersion` bump 留 WP-16 一次做」。stage3 遵�
 | 里程碑 | 完成條件 | 對應 WP | 意義 |
 |---|---|---|---|
 | **M9 ✅(2026-07-08)** | 場景可置換(≥2 個雜亂度階層)+ 淨空驗證會拒載違規 drill + 同輸入序列跨場景 sim 狀態逐位一致 + 資產 attribution 可稽核 | WP-19 | 場景脊椎成立:「換場景零引擎碼」與「場景不碰決定性」兩個承諾被測試釘死(`test:ci` exit 0;四項證據 + 架構閘測試名見 [wp-19 T-exit](wp-19-scene-system/T-exit-gate.md)) |
-| **M10** | 驗收清單 C 全項通過:資格閘拒入/放行正確、受試者內解析度 protocol E2E 綠、追蹤 × 場景 E2E 綠、偵測推導 fixture 綠、決定性回歸(場景/解析度不變性 + seeded spawn 重現)全綠 | WP-22 | **stage3 交付**:兩個感知實驗(追蹤能力、解析度 × 偵測)可開 pilot |
+| **M10 🟡 auto-green(2026-07-10)** | 驗收清單 C 全項通過:資格閘拒入/放行正確、受試者內解析度 protocol E2E 綠、追蹤 × 場景 E2E 綠、偵測推導 fixture 綠、決定性回歸(場景/解析度不變性 + seeded spawn 重現)全綠 | WP-22 | **stage3 交付**:兩個感知實驗(追蹤能力、解析度 × 偵測)可開 pilot。**auto-gate 全綠(`test:ci` exit 0 + 清單 C 自動 9 項);正式宣告 gating = 研究者真 fullscreen walkthrough 兩份 JSON 證據(清單 C-5 手動補項)** |
 
 > WP-20/21 無獨立里程碑:其交付由 M10 驗收清單 C 一次收斂(比照 stage2 WP-11/12 → M6 的模式)。
 
@@ -272,7 +272,7 @@ WP-21(偵測 drill;T3 需 WP-16)─┤
 | OQ-S3-2 | `t_detect` 參數 pre-registered 起點(θ_v 相對雜訊底倍率、持續 k tick) | ✅ **收斂(WP-21 T0 2026-07-09)**:θ_v = 3× 前刺激窗 500ms aim 角速度 SD、k = 4 tick(≈31.25ms@128Hz);敏感度分析離線做,analysis spec 內標「暫定,pilot 校準」。 | 研究者 | WP-21 T3(spec 內給預設) | ✅ 已收斂;不阻塞引擎 |
 | OQ-S3-3 | 場景資產具體選型(CC0/CC-BY pack 清單與雜亂度對應) | ✅ **收斂(M9 2026-07-08)**:T0 選定 Kenney Nature Kit(CC0)為候選,惟 T2/T5 最終改採**原創程序化生成 CC0** 資產(GD-9 完全合規、propBounds 與視覺同源)——`field-low`(204 triangles)+ `urban-high`(804 triangles),皆遠低於 <20k budget,`ATTRIBUTIONS.md` 逐項可稽核。備選 Kenney/Quaternius/Poly Pizza 保留供未來寫實置換。詳 [wp-19 progress](wp-19-scene-system/progress.md)。 | 使用者 | WP-19 T0 | ✅ 已收斂;triangles/materials 已實測、`ATTRIBUTIONS.md` 已寫 |
 | OQ-S3-4 | frames 匯出形式(完整序列 vs 摘要) | ✅ **收斂(WP-20 T0 2026-07-08)**:JSON `frames.series` 完整 delta 序列 + summary(`p50/p95/p99/overBudgetWindows/overflow`);CSV 只輸出 summary 欄位。 | 研究者 | WP-20 T0 | ✅ 已收斂;T3 匯出形式固定 |
-| OQ-S3-5 | 追蹤 drill 的 presentation 時長/速度階層設計(WP-18 展開時定) | 🟡 **WP-22 T0 precheck(2026-07-09)**:current main 只有 WP-18 ready stub(entry 全達成、未展開),無 exit/實際交付形狀可對帳。WP-18 exit 後重跑對帳:tracking drill config 型、motion 欄、presentation duration/速度階層、target render interpolation、`t_acquire`/TOT/RMS ε 欄位。 | 研究者 | WP-18 exit / WP-22 T0 rerun | WP-22 T1 blocked |
+| OQ-S3-5 | 追蹤 drill 的 presentation 時長/速度階層設計(WP-18 展開時定) | ✅ **resolved(WP-22 T0 rerun 2026-07-09)**:WP-18 T-exit 交付後六項交付形狀逐項對帳、與 WP-22 T1 假設一致無漂移(tracking drill config 型 `tracking_v1`、motion 純函式驅動、presentation `2000ms`/速度階層、target render alpha 內插、`t_acquire`/TOT%/RMS ε 離線推導)。WP-22 T1 blocked 解除、已交付 `tracking_scene_v1`。對帳表見 [wp-22 progress](wp-22-perception-integration/progress.md) 2026-07-09 T0 log。 | 研究者 | WP-18 exit / WP-22 T0 rerun | ✅ 已解除;WP-22 T1 已交付 |
 
 > **WP-19-local OQ 收斂(M9 2026-07-08)**:OQ-19.1(`CLEARANCE_MARGIN_U = 0.5u` / `playerCorridor.halfWidthU = 1.0u`)與 OQ-19.2(`meta.scene` optional 區塊縫 WP-16 已留,T4 填值)均 ✅ resolved,決議與證據見 [wp-19 progress](wp-19-scene-system/progress.md) OQ ledger。
 > **WP-20-local OQ 收斂(T0 2026-07-08)**:OQ-20.1(`MAX_DISPLAY_HZ = 240`;rAF deltas 丟前 30、取後 120 median 估 refresh)與 OQ-20.2(`meta.display`/`frames`/`session` optional 縫 WP-16 已留,填值歸 WP-20)均 ✅ resolved,決議與證據見 [wp-20 progress](wp-20-display-pipeline/progress.md) OQ ledger。
