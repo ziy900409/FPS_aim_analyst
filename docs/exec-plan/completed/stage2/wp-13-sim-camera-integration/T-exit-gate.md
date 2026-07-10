@@ -24,7 +24,7 @@
       ③ 壓槍下拉可將彈著拉回目標(視覺≠彈道分離的手感確認);
       ④ overlay punch 數值與畫面一致。證據(截圖/錄影路徑)記 progress。
 - [ ] 決定性回歸(WP-2 既有 + WP-11 fire 維度)全綠再確認。
-- [ ] progress.md 寫 Outcomes;checklist 全 ✅;[../README.md §3](../../../active/stage2/README.md) WP-13 翻 ✅、
+- [ ] progress.md 寫 Outcomes;checklist 全 ✅;[../README.md §3](../../../completed/stage2/README.md) WP-13 翻 ✅、
       **M6 標日期**;[exec-plan/README.md](../../../README.md) 同步。
 
 ## Definition of Done

@@ -1,6 +1,6 @@
 # WP-23 — longrange-tracking:hitbox config 化 + 遠距小目標追蹤 drill
 
-> stage5 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 決議依據:**GD-7**(追蹤指標/同幾何零新門檻)/ GD-15(編號分配)· 上游交付:[WP-18 T-exit](../../stage2/wp-18-f5-subtick/T-exit-gate.md) ✅(motion/sub-tick 內插/追蹤指標)。
+> stage5 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 決議依據:**GD-7**(追蹤指標/同幾何零新門檻)/ GD-15(編號分配)· 上游交付:[WP-18 T-exit](../../../completed/stage2/wp-18-f5-subtick/T-exit-gate.md) ✅(motion/sub-tick 內插/追蹤指標)。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |

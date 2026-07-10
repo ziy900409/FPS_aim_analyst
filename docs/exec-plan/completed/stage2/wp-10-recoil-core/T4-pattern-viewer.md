@@ -1,7 +1,7 @@
 # T4 — 2D 彈道檢查頁(dev-only)
 
 > Part of [WP-10 recoil-core](README.md)。Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
-> 對應[研究計畫 Phase 3](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md) 的單檔驗證工具(縮
+> 對應[研究計畫 Phase 3](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md) 的單檔驗證工具(縮
 > 減版:先驗「理論彈道圖」;Pointer Lock 練習模式與補償對照移 WP-16 結果頁)。
 
 | | |

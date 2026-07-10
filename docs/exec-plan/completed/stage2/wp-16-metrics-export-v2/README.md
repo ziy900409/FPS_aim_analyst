@@ -1,6 +1,6 @@
 # WP-16 — metrics-export-v2:schema v2 + 壓槍指標
 
-> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../active/stage2/README.md) · [研究計畫 Phase 3](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md)(對照工具)的呈現部分併入本 WP。
+> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../completed/stage2/README.md) · [研究計畫 Phase 3](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md)(對照工具)的呈現部分併入本 WP。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |
@@ -29,7 +29,7 @@ src/ui/ResultScreen.ts      ← MODIFY 軌跡對照呈現(DOM overlay,D1)       
 ```
 
 **Out of scope**:殘速/過衝連續化(WP-14 T3;對帳點互指)、視角逐 tick 重建
-([../README.md §2.5](../../../active/stage2/README.md) 政策 = 記錄而非重建)、舊資料回溯轉換(schemaVersion 斷代即可)。
+([../README.md §2.5](../../../completed/stage2/README.md) 政策 = 記錄而非重建)、舊資料回溯轉換(schemaVersion 斷代即可)。
 
 ## 2. 關鍵契約
 
@@ -41,7 +41,7 @@ src/ui/ResultScreen.ts      ← MODIFY 軌跡對照呈現(DOM overlay,D1)       
   (arena 平行欄位;追蹤/偵測指標離線推導的輸入,GD-7「記錄全套」決議);meta 增 `spawn` 區塊縫
   (`sequence.seed` + motion/spawnArea 快照);`scene`/`display`/`frames`/`session` 定義為 **v2 reserved optional
   區塊**(schema.md 記形狀、WP-19/20 填值,additive 不再 bump;`session` =
-  `participantId`/`sessionLabel` 串接鍵,FPSci R3,2026-07-07)。詳 [stage3 README §2.5](../../../active/stage3/README.md)。
+  `participantId`/`sessionLabel` 串接鍵,FPSci R3,2026-07-07)。詳 [stage3 README §2.5](../../../completed/stage3/README.md)。
 - **FPSci 欄位對映(R1,2026-07-07 grill 拍板)**:T1 產出 schema v2 ↔ FPSci SQLite 表(frame-wise 玩家狀態/目標軌跡/click 事件)的欄位對映表,收 `docs/operational/schema.md` 附錄。**命名以 CONTEXT.md 正規術語優先、既有欄位不改名**;僅 v2 全新欄位且語意完全相同時考慮沿用 FPSci 命名——可比性由對映表承擔,不由改名承擔。授權邊界守 GD-11(只讀其文件/論文,不碰程式碼)。出處:[FPSci 評估 R1](../../../../research/FPSci_評估與建議.md)。
 - 理想路徑 = `−aimPunch×2` 的時間鏡像;補償誤差 = 實際 aim 路徑 vs 理想路徑的 mean/RMS 角度差。
 - arena 容量重估:fire 事件率上限 = `magSize / cycletime`(AK = 10 發/s);per-fire 欄位
@@ -51,7 +51,7 @@ src/ui/ResultScreen.ts      ← MODIFY 軌跡對照呈現(DOM overlay,D1)       
 
 | 觸發 | 影響 | 處理 |
 |---|---|---|
-| per-fire 欄位增加使 arena 提前溢位 | `recorderOverflow` 污染 drill | 容量公式重估 + 滿載溢位測試(T1 DoD;[../README.md §2.6](../../../active/stage2/README.md)) |
+| per-fire 欄位增加使 arena 提前溢位 | `recorderOverflow` 污染 drill | 容量公式重估 + 滿載溢位測試(T1 DoD;[../README.md §2.6](../../../completed/stage2/README.md)) |
 | schema.md 與實際 payload 漂移 | 研究端解析錯欄 | 沿用既有 schema assert 機制,對帳為 T1 DoD |
 
 ## 4. Task 索引

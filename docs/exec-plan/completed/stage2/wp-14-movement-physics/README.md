@@ -1,6 +1,6 @@
 # WP-14 — movement-physics:friction/accelerate integrator + velocity gate
 
-> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../active/stage2/README.md) · 公式依據:規格 §1.3 階段 B(1)(2) + 附錄 D([../../../../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md](../../../../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md))
+> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../completed/stage2/README.md) · 公式依據:規格 §1.3 階段 B(1)(2) + 附錄 D([../../../../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md](../../../../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md))
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |
@@ -45,7 +45,7 @@ src/metrics/compute.ts、src/ui/ResultScreen.ts ← MODIFY 殘速/過衝連續 u
 
 | 觸發 | 影響 | 處理 |
 |---|---|---|
-| integrator 改變逐 tick 軌跡 → 既有決定性 baseline 全紅 | 回歸誤判為 regression | **預期 breaking**([../README.md §2.6](../../../active/stage2/README.md)):先重驗 M1 契約(異 FPS 同軌跡)再重錄 baseline + GD 記錄 |
+| integrator 改變逐 tick 軌跡 → 既有決定性 baseline 全紅 | 回歸誤判為 regression | **預期 breaking**([../README.md §2.6](../../../completed/stage2/README.md)):先重驗 M1 契約(異 FPS 同軌跡)再重錄 baseline + GD 記錄 |
 | friction/accelerate 次序寫反或 dt 代錯 | 曲線形狀錯 → WP-15 校準全歪且難歸因 | T1 解析對照單測(起步時間常數 / 急停 tick 數)把關 |
 
 ## 4. Task 索引

@@ -1,6 +1,6 @@
 # WP-15 — calibration:cl_showpos 軌跡校準 + pattern 比對(M7)
 
-> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../active/stage2/README.md) · 驗證方法來源:[研究計畫 Phase 4](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md)
+> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../completed/stage2/README.md) · 驗證方法來源:[研究計畫 Phase 4](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md)
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |
@@ -40,7 +40,7 @@ M4A4/M4A1-S pattern(AK 先行,方法可複製);subtick 精度追齊(記 caveat)�
 
 | 觸發 | 影響 | 處理 |
 |---|---|---|
-| 校準不過(引擎行為假設失效) | golden 基準可信度存疑 | 差異分層歸因(公式/常數/subtick);結果記 progress + GD([../README.md §2.6](../../../active/stage2/README.md)) |
+| 校準不過(引擎行為假設失效) | golden 基準可信度存疑 | 差異分層歸因(公式/常數/subtick);結果記 progress + GD([../README.md §2.6](../../../completed/stage2/README.md)) |
 | 參考資料品質差(錄製 tick 缺漏、pattern 圖無標定尺度) | 對表無意義 | T0 資料備妥檢查為 **STOP 條件**;fixture 附來源與標定方法註記 |
 
 ## 4. Task 索引

@@ -19,7 +19,7 @@ kick + spread 取樣,punch 快照供 render 內插。彈道方向本 task **暫�
   + `recoil: { prev: {pitchDeg,yawDeg}; curr: {...} }` 內插快照(比照 position prev/curr)。
 - `createSimLoop`:`tickIndex` 計數器;spread RNG = `createRan1(seed)`(OQ-13.1 定案:
   seed = `drill.sequence.seed ?? DEFAULT_RNG_SEED`,restart 重建 stream);weapon 已由 WP-11 注入。
-- `simStep` 順序(更新 [../README.md §2.4](../../../active/stage2/README.md) 契約):
+- `simStep` 順序(更新 [../README.md §2.4](../../../completed/stage2/README.md) 契約):
   ① prev←curr(含 `recoil.prev ← recoil.curr`);② targets;
   ③ **`tickIndex & 1 === 0` → `recoilTick(recoilState, 1/64)`**;④ consume(fire 排程產彈:
   `fireOneShot` 內先 `sampleSpread(…, rng)` 再 `recoilOnFire(…)`——spread 用 kick **前**的

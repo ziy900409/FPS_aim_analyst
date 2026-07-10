@@ -7,7 +7,7 @@
 |---|---|
 | **相依** | WP-13 exit ✅(M6) |
 | **Risk / Cplx** | Low / Low |
-| **Touches** | 本資料夾 docs + [../README.md §8](../../../active/stage2/README.md)(OQ 回填) |
+| **Touches** | 本資料夾 docs + [../README.md §8](../../../completed/stage2/README.md)(OQ 回填) |
 | **狀態** | ✅ 2026-07-07 |
 
 ## Objective
@@ -20,7 +20,7 @@
 - 資料形狀抽查:fire 時點可讀到的 `SharedState.recoil` / fireOneShot 暫存欄
   (punch、spread、recoilIndex、ammo)逐項確認,記 progress——T1 擴欄的輸入依據。
 - **OQ-S2-3 收尾**:`sensitivityModel`(WP-12 已落)+ `schemaVersion` bump(T1)合併
-  定稿為 v2 斷代政策;舊資料視為不同 model,不回溯轉換。記 ledger + 回填 [../README.md §8](../../../active/stage2/README.md)。
+  定稿為 v2 斷代政策;舊資料視為不同 model,不回溯轉換。記 ledger + 回填 [../README.md §8](../../../completed/stage2/README.md)。
 - **稽核不確定清單 #4**:`targetCenterOffsetDeg` 語意(相對誰的中心 / 正負號)查核定稿,
   記 ledger(T1 寫 schema.md 時一併寫清)。
 

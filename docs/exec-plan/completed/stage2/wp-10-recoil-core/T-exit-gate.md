@@ -22,14 +22,14 @@
 - [x] T4 形狀 sanity 截圖已在 [progress.md](progress.md)(AK 直升→之字;`artifacts/t4-pattern-ak.png`)。
 - [x] 文件對帳(T0 遺留的大件):規格書升 **v1.2** §1.3 補「CS2 後座力系統」條目;
       [CONTEXT.md](../../../../../CONTEXT.md) §F 新增術語(ran1 / 彈道表 / aimPunch / rawPunch×2 / punch 動力學 / HybridDecay / recoil index / cycletime / inaccuracy 三成分 / 理想壓槍路徑)。
-- [x] [../README.md §3](../../../active/stage2/README.md) WP-10 翻 ✅、M5 標日期;[exec-plan/README.md](../../../README.md) 同步。
+- [x] [../README.md §3](../../../completed/stage2/README.md) WP-10 翻 ✅、M5 標日期;[exec-plan/README.md](../../../README.md) 同步。
 - [x] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
 
 ## Definition of Done
 
 - `test:ci` 的 vitest 段 exit 0;兩份 golden fixture 在 repo;M5 於兩層索引標記 ✅ + 日期;
   規格書/CONTEXT 對帳 commit 可追(連結記入 progress)。
-- **M5 未過(任一 golden 紅)不得開 WP-13**;WP-11/12/14 不受此門限制(見 [../README.md §5](../../../active/stage2/README.md))。
+- **M5 未過(任一 golden 紅)不得開 WP-13**;WP-11/12/14 不受此門限制(見 [../README.md §5](../../../completed/stage2/README.md))。
 
 ## Commit
 

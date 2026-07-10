@@ -117,7 +117,7 @@ DoD 的手動壓槍驗證 4 項屬瀏覽器內視覺/手感確認,非自動化�
    - ✅ ④ 右下 overlay `punch p/y`、`inacc`、`ammo` 數值與畫面一致;
    - ✅(佐證)彈孔單一 `InstancedMesh` → 1 draw call(結構保證;`renderer.info.render.drawcalls` 未暴露,採結構判定)。
 
-**M6 標記:** [../README.md](../../../active/stage2/README.md)(stage2 §WP 表 + M6 里程碑)、[exec-plan/README.md](../../../README.md)
+**M6 標記:** [../README.md](../../../completed/stage2/README.md)(stage2 §WP 表 + M6 里程碑)、[exec-plan/README.md](../../../README.md)
 WP-13 + M6 皆翻 ✅ 2026-07-06(automated `test:ci` + 手動 4 項使用者確認通過)。
 
 **Next:** M6 過 → WP-15(校準)/WP-16(指標匯出 schema v2)可展開;WP-14(movement 物理)未完不阻塞此門
@@ -317,7 +317,7 @@ SharedState reset 測試就地擴充)。回歸零破壞(recoil 只寫新欄 + �
 **Next:** T1([T1-simstep-recoil-wiring.md](T1-simstep-recoil-wiring.md),High risk)——tickIndex + 64Hz 子節奏 + onFire/spread 掛線 + prev/curr 快照。
 
 ### 2026-07-03 — Plan authored
-- 由 stage2 計畫([../README.md](../../../active/stage2/README.md))展開;整合點承稽核 A2(punch 每幀重組)、
+- 由 stage2 計畫([../README.md](../../../completed/stage2/README.md))展開;整合點承稽核 A2(punch 每幀重組)、
   A6(deg/rad + pitch 符號單點轉換)與研究計畫 Phase 2(視覺≠實際分離)。
 - **M5 未過不得開工**(T0 把關);T1/T2 為 High risk,failure modes 見 README §3。
 - **Next**:T0([T0-entry-gate.md](T0-entry-gate.md))。

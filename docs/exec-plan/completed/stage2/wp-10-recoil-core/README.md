@@ -1,6 +1,6 @@
 # WP-10 — recoil-core:後座力數學核心 + golden tests(M5)
 
-> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../active/stage2/README.md) · 演算法來源:[研究計畫 Phase 1](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md)
+> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../completed/stage2/README.md) · 演算法來源:[研究計畫 Phase 1](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md)
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |
@@ -31,7 +31,7 @@ tests/golden/recoil/*.json     ← golden fixtures(彈道表前 8 筆、10 發 p
 **Out of scope**:`WeaponConfig` 執行期驗證與武器 JSON(WP-11)、simStep 佈線(WP-13)、
 相機/射線(WP-12/13)。本 WP 的參數以 inline 常數/測試 fixture 形式存在。
 
-## 2. 介面契約(權威版見 [../README.md §2.3](../../../active/stage2/README.md))
+## 2. 介面契約(權威版見 [../README.md §2.3](../../../completed/stage2/README.md))
 
 ```ts
 export type Rng = () => number;                                  // [0,1) seeded;禁 Math.random

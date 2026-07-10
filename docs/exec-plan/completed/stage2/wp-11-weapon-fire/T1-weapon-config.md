@@ -15,7 +15,7 @@
 CS2 vdata 預設值;新增武器 = 新 config 物件,零引擎程式碼改動。
 
 ## In scope
-- `WeaponConfig`(對齊 [../README.md §2.3](../../../active/stage2/README.md) 契約):
+- `WeaponConfig`(對齊 [../README.md §2.3](../../../completed/stage2/README.md) 契約):
 
 ```ts
 export interface WeaponConfig {
@@ -46,7 +46,7 @@ export interface WeaponConfig {
 
 ## Definition of Done
 
-- 型別與 [../README.md §2.3](../../../active/stage2/README.md) 契約一致;測試 ≥ 6 cases 全綠;drill schema 既有測試不受影響。
+- 型別與 [../README.md §2.3](../../../completed/stage2/README.md) 契約一致;測試 ≥ 6 cases 全綠;drill schema 既有測試不受影響。
 
 ## Commit
 

@@ -27,7 +27,7 @@
 
 ## Steps
 
-- [x] OQ-S2-3 拍板,決議記 [progress.md](progress.md) ledger + 回填 [../README.md §8](../../../active/stage2/README.md)。
+- [x] OQ-S2-3 拍板,決議記 [progress.md](progress.md) ledger + 回填 [../README.md §8](../../../completed/stage2/README.md)。
 - [x] 若 GD-5 已存在([DECISIONS.md](../../../DECISIONS.md)):補「標注方式」一行;
       若尚未(wp-10 T0 未跑):在本 WP ledger 記決議 + 標注「待 GD-5 落地時併入」。
 - [x] 插入點盤點三處(檔案:行號)記 progress。

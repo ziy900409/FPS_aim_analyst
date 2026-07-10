@@ -79,6 +79,6 @@
 - Verification:docs-only;`src/` 未修改。
 
 ### 2026-07-03 — Plan authored
-- 由 stage2 計畫([../README.md](../../../active/stage2/README.md))展開;修補稽核 A4(感度佔位 0.0022 rad/count ≈ 5.73× CS2)與 A3(`setFromCamera` 寫死)。
+- 由 stage2 計畫([../README.md](../../../completed/stage2/README.md))展開;修補稽核 A4(感度佔位 0.0022 rad/count ≈ 5.73× CS2)與 A3(`setFromCamera` 寫死)。
 - 兩 task 互不相依,T2 可先行;T1 需 T0 的標注方式決議。
 - **Next**:T1([T1-cs2-sensitivity.md](T1-cs2-sensitivity.md))。

@@ -21,7 +21,7 @@
 - [ ] `npm run test`(vitest)exit 0;`npm run typecheck` exit 0。
 - [ ] 手動驗證(dev server):鎖定後按住左鍵 → 連發至 30 發停;Esc 解鎖不卡連發;
       證據(操作紀錄 + console)記 progress。
-- [ ] progress.md 寫 Outcomes;checklist 全 ✅;[../README.md §3](../../../active/stage2/README.md) WP-11 翻 ✅。
+- [ ] progress.md 寫 Outcomes;checklist 全 ✅;[../README.md §3](../../../completed/stage2/README.md) WP-11 翻 ✅。
 
 ## Definition of Done
 

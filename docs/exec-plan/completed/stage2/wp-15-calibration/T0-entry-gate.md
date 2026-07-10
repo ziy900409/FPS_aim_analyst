@@ -7,7 +7,7 @@
 |---|---|
 | **相依** | WP-13 exit ✅(M6)、WP-14 exit ✅(逐項驗證) |
 | **Risk / Cplx** | Low / Low |
-| **Touches** | 本資料夾 docs + [../README.md §8](../../../active/stage2/README.md)(OQ 回填) |
+| **Touches** | 本資料夾 docs + [../README.md §8](../../../completed/stage2/README.md)(OQ 回填) |
 | **狀態** | ✅ surrogate PASS(2026-07-07):OQ-S2-2 已拍板;速度曲線採 theory-derived fixture;AK pattern 候選資料已入 repo |
 
 ## Objective
@@ -18,7 +18,7 @@
 ## In scope
 - 上游驗證:wp-13 / wp-14 的 `task-checklist.md` 全 ✅ 與 exit 證據連結記 progress。
 - **OQ-S2-2 拍板**(與研究者):`cl_showpos` 逐 tick 容差(預設 ±1 u/s)、pattern 逐彈
-  容差(預設 ±0.05°);記 ledger + 回填 [../README.md §8](../../../active/stage2/README.md)。
+  容差(預設 ±0.05°);記 ledger + 回填 [../README.md §8](../../../completed/stage2/README.md)。
 - **參考資料備妥檢查**(STOP 條件,逐項驗收入 progress):
   - CS2 `cl_showpos` 錄製檔:起步 + 急停各 ≥ 1 段,tick 連續無缺漏,附錄製條件(tickrate、來源)。
   - 社群 AK pattern 圖:附來源連結,且**可標定**(已知參考尺度可換算角度)。

@@ -25,7 +25,7 @@
 - [x] **OQ-S3-5 對帳**:回 [WP-22 T0](../../stage3/wp-22-perception-integration/T0-entry-gate.md) 逐項核對交付形狀(drill 型 / motion 欄 / presentation 時長 / target render alpha / t_acquire/TOT%/RMS ε 匯出+結果頁欄位),互記雙方 progress;解除 WP-22 T1 的 blocked。
 - [x] OQ ledger 收斂:OQ-18.1/18.2/18.3 回填 progress;OQ-S3-5 標由本 WP 交付解除。
 - [x] WP-19 對帳複查:移動目標運動包絡已納入淨空驗證(T1 對帳結論複查),雙方 progress 互記。
-- [x] 索引翻牌:本資料夾 [README.md](README.md) 狀態 → ✅;[stage2 README](../README.md) WP-18 列(line 222/267)+ 相依圖 → ✅ 交付。資料夾留 `active/stage2/`(下游 WP-22 相對路徑引用未斷,搬遷另計)。
+- [x] 索引翻牌:本資料夾 [README.md](README.md) 狀態 → ✅;[stage2 README](../README.md) WP-18 列(line 222/267)+ 相依圖 → ✅ 交付。資料夾留 `completed/stage2/`(下游 WP-22 相對路徑引用未斷,搬遷另計)。
 - [x] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
 
 ## Definition of Done

@@ -25,7 +25,7 @@ arena 容量以 fire 事件率上限重估——壓槍狀態在資料面完整�
 - `capacityForDrill` 重估:fire 率上限 = `magSize / cycletime`;公式記 schema.md。
 - **stage3 前置(GD-7/8/10,2026-07-06)**:逐 tick `tx/ty/tz/px/pz` 平行欄位(容量重估一併含此 5 欄)
   + meta `spawn` 區塊縫 + `scene`/`display`/`frames`/`session` reserved optional 區塊記 schema.md
-  (填值歸 WP-19/20/21;詳 [stage3 README §2.5](../../../active/stage3/README.md))。
+  (填值歸 WP-19/20/21;詳 [stage3 README §2.5](../../../completed/stage3/README.md))。
 - `docs/operational/schema.md` v2 全欄對帳(單位/符號慣例 + `targetCenterOffsetDeg` 語意補寫,T0 決議)。
 - **FPSci 欄位對映表(R1,2026-07-07)**:schema.md 附錄——v2 欄位 ↔ FPSci SQLite 表
   (frame-wise 玩家狀態/目標軌跡/click 事件)語意對照,標注「相同/近似/無對應」三類;

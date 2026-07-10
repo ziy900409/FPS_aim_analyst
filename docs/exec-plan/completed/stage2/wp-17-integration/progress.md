@@ -27,14 +27,14 @@
 - `DataRecorder.ticks` 不含 recoil 逐 tick 欄位 → 決定性回歸鎖 fire 產彈點 punch/spread + `ImpactRing` 彈著序列(以 tick index 對齊),而非擴充 schema。
 - `__fpsTest` 自建決定性管線(不驅動 live `DrillRunner`)→ T2 以 dev-only `showResult()` 橋接 harness metrics 到 production `ResultScreen`。
 
-**Technical debt(有意識妥協,stage3 既知起點;照抄 [../README.md §7](../../../active/stage2/README.md)):**
+**Technical debt(有意識妥協,stage3 既知起點;照抄 [../README.md §7](../../../completed/stage2/README.md)):**
 1. **視角「記錄而非重建」**(§2.5):每發 fire 完整記錄 `viewYaw/viewPitch + aimPunch + spread + recoilIndex`,彈道可離線精確重建;觸發重構條件 = 研究需逐 tick 視角**重播**。
 2. **crouch 欄保留不實作**:訓練器無蹲輸入,inaccuracy 用 stand 值,`WeaponConfig` 保留 crouch 欄。
 3. **`view_recoil_tracking` 值未確認**(OQ-S2-4):僅視覺、不影響彈著/資料;先做開關 + 可調常數。
 4. **fire 排程 1 sim tick 量化誤差**(7.8ms):`nextFireT += cycletime` 累加制,cycletime 0.1s = 12.8 sim tick 非整數,誤差 ≤ 1 tick,記為已知誤差界線。
 5. **Valorant 移動僅留接口**:`MovementProfile` 注入 + meta `movementModel` 斷代;1D→2D、settle timer、Valorant 校準隨後續 WP(研究立案觸發)。
 
-**stage2 資料夾移 `completed/`:** 暫緩(WP-18 F5 仍在 `active/stage2/`,entry 僅餘 M8 現已達成;整包 stage2 尚未全數交付)。待 WP-18 收斂或使用者指示再整體移入(協議 §5,待使用者確認)。
+**stage2 資料夾移 `completed/`:** 暫緩(WP-18 F5 仍在 `completed/stage2/`,entry 僅餘 M8 現已達成;整包 stage2 尚未全數交付)。待 WP-18 收斂或使用者指示再整體移入(協議 §5,待使用者確認)。
 
 ---
 
@@ -71,10 +71,10 @@
 
 - `npm run test:ci` → **exit 0**:Vitest **43 files / 326 tests passed**;Playwright **10 passed**(含 `spray-drill.spec.ts`)。
 - `grep Math.random src/sim src/recoil` → 僅 `src/sim/TargetManager.ts:21` 註解命中,零實際呼叫。
-- 兩層索引已同步:[../README.md](../../../active/stage2/README.md)(WP-17 ✅ / M8)、[../../../README.md](../../../README.md) §2/§3(WP-17 ✅ / M8 ✅ + 日期 / 頂層狀態)、規格書附錄 E-B 落地。
+- 兩層索引已同步:[../README.md](../../../completed/stage2/README.md)(WP-17 ✅ / M8)、[../../../README.md](../../../README.md) §2/§3(WP-17 ✅ / M8 ✅ + 日期 / 頂層狀態)、規格書附錄 E-B 落地。
 
 **Decision Log:**
-- **stage2 資料夾暫不移 `completed/`。** Alternatives Considered:M8 達成即整包移入 `completed/stage2/`。否決,WP-18(F5)仍在 `active/stage2/` 且其 entry 僅餘 M8(現已達成);整個 stage2 尚未全數交付,提前移動會割裂 WP-18。待 WP-18 收斂或使用者指示再整體移入(協議 §5,待使用者確認)。
+- **stage2 資料夾暫不移 `completed/`。** Alternatives Considered:M8 達成即整包移入 `completed/stage2/`。否決,WP-18(F5)仍在 `completed/stage2/` 且其 entry 僅餘 M8(現已達成);整個 stage2 尚未全數交付,提前移動會割裂 WP-18。待 WP-18 收斂或使用者指示再整體移入(協議 §5,待使用者確認)。
 - **驗收清單 B 落規格書附錄 E-B(非改寫附錄 E)。** Alternatives Considered:併入既有附錄 E(階段 A)。否決,兩階段驗收語意獨立、階段 A 清單須保留為 M4 交付憑證;新增 E-B 節不動 E,對帳更清楚。
 
 **Surprises & Discoveries:**
@@ -152,7 +152,7 @@
 
 | 上游 | checklist | exit 證據 |
 |---|---|---|
-| WP-15(M7) | [../wp-15-calibration/task-checklist.md](../wp-15-calibration/task-checklist.md) 全 ✅ | [../wp-15-calibration/T-exit-gate.md](../wp-15-calibration/T-exit-gate.md) 與 [progress.md](../wp-15-calibration/progress.md) 宣告 **M7 caveated PASS 2026-07-07**:速度曲線 surrogate 對表通過,recoil 對 CS2 golden 釘死,第三方 Aiming.Pro pattern 差異已分層歸因並由研究者接受(GD-14)。兩層索引 [../README.md](../../../active/stage2/README.md) 與 [../../../README.md](../../../README.md) 皆已標 M7 caveated。 |
+| WP-15(M7) | [../wp-15-calibration/task-checklist.md](../wp-15-calibration/task-checklist.md) 全 ✅ | [../wp-15-calibration/T-exit-gate.md](../wp-15-calibration/T-exit-gate.md) 與 [progress.md](../wp-15-calibration/progress.md) 宣告 **M7 caveated PASS 2026-07-07**:速度曲線 surrogate 對表通過,recoil 對 CS2 golden 釘死,第三方 Aiming.Pro pattern 差異已分層歸因並由研究者接受(GD-14)。兩層索引 [../README.md](../../../completed/stage2/README.md) 與 [../../../README.md](../../../README.md) 皆已標 M7 caveated。 |
 | WP-16 | [../wp-16-metrics-export-v2/task-checklist.md](../wp-16-metrics-export-v2/task-checklist.md) 全 ✅ | [../wp-16-metrics-export-v2/T-exit-gate.md](../wp-16-metrics-export-v2/T-exit-gate.md) 與 [progress.md](../wp-16-metrics-export-v2/progress.md) 宣告 **T-exit PASS 2026-07-07**:schema v2 + 壓槍指標交付,不變式/溢位/對帳全綠,WP-17 T2 可直接消費 v2 匯出。 |
 
 **2. T0 乾淨基準:**
@@ -182,10 +182,10 @@
 
 | OQ | 狀態 | 證據 |
 |---|---|---|
-| OQ-S2-1 recoil tick 節奏 | ✅ closed | [../README.md §8](../../../active/stage2/README.md#8-open-questions):64Hz 子節奏,偶數 sim tick,WP-10 T0 拍板。 |
-| OQ-S2-2 校準容差 | ✅ closed | [../README.md §8](../../../active/stage2/README.md#8-open-questions):速度 ±1 u/s、AK pattern ±0.05°,T-exit 維持容差;M7 caveated PASS 記明第三方 pattern 差異與 caveat。 |
-| OQ-S2-3 感度/schema 斷代 | ✅ closed | [../README.md §8](../../../active/stage2/README.md#8-open-questions):`sensitivityModel: 'cs2-0.022deg'` + `schemaVersion` v2,舊資料不回溯轉換;WP-16 T0/T-exit 收尾。 |
-| OQ-S2-6 彈匣盡行為 | ✅ closed | [../README.md §8](../../../active/stage2/README.md#8-open-questions):彈匣盡即停火,drill 一 peek ≤ 一匣;WP-10 T0 拍板,WP-11 scheduler 消費。 |
+| OQ-S2-1 recoil tick 節奏 | ✅ closed | [../README.md §8](../../../completed/stage2/README.md#8-open-questions):64Hz 子節奏,偶數 sim tick,WP-10 T0 拍板。 |
+| OQ-S2-2 校準容差 | ✅ closed | [../README.md §8](../../../completed/stage2/README.md#8-open-questions):速度 ±1 u/s、AK pattern ±0.05°,T-exit 維持容差;M7 caveated PASS 記明第三方 pattern 差異與 caveat。 |
+| OQ-S2-3 感度/schema 斷代 | ✅ closed | [../README.md §8](../../../completed/stage2/README.md#8-open-questions):`sensitivityModel: 'cs2-0.022deg'` + `schemaVersion` v2,舊資料不回溯轉換;WP-16 T0/T-exit 收尾。 |
+| OQ-S2-6 彈匣盡行為 | ✅ closed | [../README.md §8](../../../completed/stage2/README.md#8-open-questions):彈匣盡即停火,drill 一 peek ≤ 一匣;WP-10 T0 拍板,WP-11 scheduler 消費。 |
 
 **Decision Log:**
 - **T0 不擴充 `__fpsTest` API。** Alternatives Considered:在 T0 補 `fire(30)` 別名。否決,T0 明確 docs-only;現有 `fireRecoilBurst(shots)` 已證明合成 fire 能力存在。若 T2 需要 spray drill 專用 wrapper,應在 T2 以最小範圍處理。
@@ -196,7 +196,7 @@
 **Next:** T1([T1-determinism-regression.md](T1-determinism-regression.md))— punch/彈著決定性回歸 × 60/144/240 FPS。
 
 ### 2026-07-03 — Plan authored
-- 由 stage2 計畫([../README.md](../../../active/stage2/README.md) §6 WP-17 表 + session 補充決定)展開為自足 task 檔(T0–T2 + T-exit)。
+- 由 stage2 計畫([../README.md](../../../completed/stage2/README.md) §6 WP-17 表 + session 補充決定)展開為自足 task 檔(T0–T2 + T-exit)。
 - 補充決定:outline 的 **T3(驗收清單 B)併入 T-exit**(比照 issue-26「T7 / T-exit」合併寫法)——
   清單本身就是 exit gate 的內容,不拆兩個 commit。
 - 範圍紀律:全鏈路暴露的缺口一律記 blocker 回上游 WP,本 WP 不就地補功能。

@@ -1,6 +1,6 @@
 # WP-13 — sim-camera-integration:recoil 進 sim + 視覺/彈道分離(M6)
 
-> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../active/stage2/README.md) · 對應[研究計畫 Phase 2](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md)。
+> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../completed/stage2/README.md) · 對應[研究計畫 Phase 2](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md)。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |

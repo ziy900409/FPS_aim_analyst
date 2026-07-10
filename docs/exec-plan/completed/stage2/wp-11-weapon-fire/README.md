@@ -1,6 +1,6 @@
 # WP-11 — weapon-fire:WeaponConfig + full-auto 開火管線
 
-> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../active/stage2/README.md) · 稽核 A5 缺口的補齊。
+> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../completed/stage2/README.md) · 稽核 A5 缺口的補齊。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |

@@ -35,7 +35,7 @@
 > **F5 階段 A 範圍修正（grill 對帳，2026-06）**：階段 A **只建 F5 的架構接縫**（`SimLoop` 的 target-motion slot、`TargetManager` 的 motion registry、`DrillConfig.targets.motion?` 選填欄、預設 `static` 恆等策略），**不交付移動目標 drill**。移動 drill、追蹤誤差／追蹤穩定度指標、slide-in 的 `t_visible` 判準延後至階段 A+／B——理由：「移動＋急停的能力混淆」是未解的研究設計問題（附錄 F），slide-in 判準也尚未定義。詳見 [`CONTEXT.md`](../CONTEXT.md) D 節「F5 接縫（seam-in, drills-out）」。
 
 ### 1.3 階段 B（未來，預留但不在本次交付）
-- **CS2 後座力系統**（三層：固定彈道表 + punch 動力學 + inaccuracy 三成分）：以武器 `seed` 決定性生成 64 筆彈道表、每 recoil tick（1/64s）HybridDecay + leapfrog 積分、θ/半徑注入式 seeded RNG 取樣。**數學核心（`src/recoil/`，零 three/DOM 相依）於 WP-10 完成、M5 golden 全綠 2026-07-05**；相機/射線接線見 WP-13（M6）。詳見 [`docs/exec-plan/active/stage2/README.md`](exec-plan/active/stage2/README.md) 與 [`CONTEXT.md §F`](../CONTEXT.md)。
+- **CS2 後座力系統**（三層：固定彈道表 + punch 動力學 + inaccuracy 三成分）：以武器 `seed` 決定性生成 64 筆彈道表、每 recoil tick（1/64s）HybridDecay + leapfrog 積分、θ/半徑注入式 seeded RNG 取樣。**數學核心（`src/recoil/`，零 three/DOM 相依）於 WP-10 完成、M5 golden 全綠 2026-07-05**；相機/射線接線見 WP-13（M6）。詳見 [`docs/exec-plan/completed/stage2/README.md`](exec-plan/completed/stage2/README.md) 與 [`CONTEXT.md §F`](../CONTEXT.md)。
 - 以 Source friction + acceleration integrator 取代「立即停止」，復刻 CS2 counter-strafe 物理
 - 速度 gate 的精準度模型（v≈0 才精準）
 - 對照 CS2 `cl_showpos` 軌跡校準

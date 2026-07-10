@@ -45,7 +45,7 @@
   - ② **反向鍵急停自然衰減穿越 88**:放 D 按 A 後 `228.91 → 208.67 → 189.25 → 170.63 → 152.76 → …`,17 筆 88–245 中間態;穿越點 `88.25(t+1377ms)→ 73.73(t+1381ms)`,距反向鍵 ~75ms ≈ 10 tick(73.73 與 T1 解析值 73.7299… 一致)。**非瞬停**。
   - ③ **HUD stopped 燈**:|vx|<88 樣本 142 筆全為 `STOP`/`stopped=true`、燈色 `rgb(126,231,135)`(#7ee787 綠);|vx|≥88 樣本 311 筆全為 `MOVING`/`stopped=false`。
 - **規格 §5 回寫**:規格已為 v1.2 → 走「補節」:§5 分層註記後新增「階段 B(1)(2) 部分解除(WP-14)」——速度歸零誤差/過衝連續化解除、停火時序對齊仍以 `t_counter` 為代理(真 `t_velocity_zero` 隨 WP-16 schema v2 對帳)。
-- **索引翻綠**:[../README.md §3](../../../active/stage2/README.md) WP-14 ✅;[task-checklist.md](task-checklist.md) 全 ✅(含 T0/T-exit 檔內狀態欄補翻)。
+- **索引翻綠**:[../README.md §3](../../../completed/stage2/README.md) WP-14 ✅;[task-checklist.md](task-checklist.md) 全 ✅(含 T0/T-exit 檔內狀態欄補翻)。
 - **T-exit 附帶 code review(五軸,T1–T3 全 diff)**:Approve。發現(皆不擋線):
   - *Nit*:[main.ts](../../../../../src/main.ts) dev-only 急停 readout 的閂鎖註解仍描述 M1「stopped 只存活 1 tick」語意;連續模型下 `stopped` 為持續態(靜止恆 true),閂鎖已退化為恆亮。dev-only、production 剝除,建議後續順手改。
   - *Consider*:[ResultScreen.ts](../../../../../src/ui/ResultScreen.ts)(UI 層)直接 import `CS2_PROFILE`(sim 層)取 gate 門檻——單一來源正確;若未來 profile 可切換(Valorant),門檻應改經 metrics 層傳遞,避免 UI 綁死單一 profile。
@@ -160,7 +160,7 @@
   全數延後,WP-14 之後視研究立案另立 WP。
 
 ### 2026-07-03 — Plan authored
-- 由 stage2 計畫([../README.md](../../../active/stage2/README.md) §6 WP-14 表 + session 補充設計)展開為自足 task 檔(T0–T3 + T-exit)。
+- 由 stage2 計畫([../README.md](../../../completed/stage2/README.md) §6 WP-14 表 + session 補充設計)展開為自足 task 檔(T0–T3 + T-exit)。
 - 物理公式權威來源 = 規格附錄 D(Source ground-move:`SV_FRICTION 5.2` / `SV_ACCELERATE 5.6` / `SV_STOPSPEED 75` / vStrafe ≈ 250)。
 - 已知 breaking:integrator 會改變逐 tick 軌跡,既有決定性 baseline **預期重錄**(先重驗 M1 契約再重錄,見 T1)。
 - **Next**:T0([T0-entry-gate.md](T0-entry-gate.md))— GD-5 重錄授權確認 + 決定性測試盤點,docs-only。

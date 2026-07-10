@@ -77,12 +77,12 @@
 ### 2026-07-05 — T0 entry gate decisions
 - **Decision**:採納 stage2 範圍與 GD-5 六項跨 WP 契約:64Hz recoil 子節奏、彈匣盡停火、CS2 0.022°/count 感度語意、WP-14 baseline 預期重錄、sim/recoil 禁 `Math.random()`、`MovementProfile` 留接口但 Valorant 不進 stage2。
 - **Alternatives Considered**:OQ-S2-1 的 `dt=1/128` 代入與 `SIM_HZ` 降 64 皆未採用;前者缺 golden 對照基準,後者會破壞 ADR-3 既有 128Hz sim。OQ-S2-6 的 reload 流程未採用,避免 WP-11 範圍蔓延。
-- **Evidence**:`git log --oneline -n 20` 可見 `ddbb599 docs(wp-9): exit gate — 宣告 M4 階段 A交付 + 附錄 E 全綠`;[stage2 README](../../../active/stage2/README.md) §8 已回填 OQ 狀態;[DECISIONS.md](../../../../DECISIONS.md) 已新增 GD-5。
+- **Evidence**:`git log --oneline -n 20` 可見 `ddbb599 docs(wp-9): exit gate — 宣告 M4 階段 A交付 + 附錄 E 全綠`;[stage2 README](../../../completed/stage2/README.md) §8 已回填 OQ 狀態;[DECISIONS.md](../../../../DECISIONS.md) 已新增 GD-5。
 
 ## Surprises & Discoveries
 
 ### 2026-07-05 — T2 source has final punch vector but no intermediate constants
-- **Evidence**:[研究計畫](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md) Phase 4 只列 AK 10 發 punch `-10.18° / -1.56°`;未列每 tick punch/velocity 或 axis scale。
+- **Evidence**:[研究計畫](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md) Phase 4 只列 AK 10 發 punch `-10.18° / -1.56°`;未列每 tick punch/velocity 或 axis scale。
 - **Action**:將校準集中為 `punch.ts` 常數,並新增完整逐 tick fixture;若 WP-15 校準或外部資料提供更細向量,只需替換集中常數並更新 golden。
 
 ### 2026-07-05 — T1 PowerShell npx shim blocked by execution policy
@@ -103,7 +103,7 @@
 
 ### 2026-07-05 — T-exit(M5)completed:數學核心鎖定
 - 驗證:`.\node_modules\.bin\vitest.cmd run` → 30 files / 208 tests passed(exit 0);`run src/recoil` → 4 files / 23 tests;`npm.cmd run typecheck` → pass;`rg "Math\.random" src/recoil` → no matches;golden fixtures `ak47-table.json`(64 筆)/ `ak47-10shot-punch.json`(58 tick + 10 shots,final rawPunch×2 = −10.18°/−1.56°)在 repo。
-- 文件對帳:規格書 → v1.2(§1.3「CS2 後座力系統」條目);[CONTEXT.md](../../../../../CONTEXT.md) → 新增 §F 後座力術語表;[stage2 README](../../../active/stage2/README.md) §3 WP-10 + M5 翻 ✅ 標 2026-07-05;[exec-plan README](../../../README.md) §2/§3 同步;WP-10 [README](README.md) / [task-checklist](task-checklist.md) / [T-exit-gate](T-exit-gate.md) 狀態全翻 ✅。
+- 文件對帳:規格書 → v1.2(§1.3「CS2 後座力系統」條目);[CONTEXT.md](../../../../../CONTEXT.md) → 新增 §F 後座力術語表;[stage2 README](../../../completed/stage2/README.md) §3 WP-10 + M5 翻 ✅ 標 2026-07-05;[exec-plan README](../../../README.md) §2/§3 同步;WP-10 [README](README.md) / [task-checklist](task-checklist.md) / [T-exit-gate](T-exit-gate.md) 狀態全翻 ✅。
 - 里程碑:**M5 達成** → WP-13 解鎖(比照 M1 脊椎:先鎖數學再接線);WP-11/12/14 不受此門限制。
 
 ### 2026-07-05 — T4 dev-only pattern viewer completed
@@ -134,11 +134,11 @@
 
 ### 2026-07-05 — T0 entry gate completed
 - 上游 M4 已驗證:`git log --oneline -n 20` 包含 `ddbb599` exit-gate commit;[exec-plan README](../../../../README.md) §3 M4 仍為 ✅。
-- 已拍板 OQ-S2-1/OQ-S2-6,回填 [stage2 README](../../../active/stage2/README.md) §8 與本檔 ledger。
+- 已拍板 OQ-S2-1/OQ-S2-6,回填 [stage2 README](../../../completed/stage2/README.md) §8 與本檔 ledger。
 - 已新增 [GD-5](../../../../DECISIONS.md),補 [CLAUDE.md](../../../../../CLAUDE.md) §4 兩條硬約束,並在 [exec-plan README](../../../../README.md) §2/§3 補 stage2/M5–M8。
 - 已勾選 [task-checklist.md](task-checklist.md) T0;本 slice 為 docs-only,不含 `src/` 變更。
 
 ### 2026-07-03 — Plan authored
-- 由 stage2 計畫([../README.md](../../../active/stage2/README.md))展開為自足 task 檔(T0–T4 + T-exit)。
-- 演算法權威來源 = [研究計畫](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md) Phase 1;golden 測試向量 = Phase 4(seed 223、10 發 punch −10.18°/−1.56°、前 4 發抑制係數)。
+- 由 stage2 計畫([../README.md](../../../completed/stage2/README.md))展開為自足 task 檔(T0–T4 + T-exit)。
+- 演算法權威來源 = [研究計畫](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md) Phase 1;golden 測試向量 = Phase 4(seed 223、10 發 punch −10.18°/−1.56°、前 4 發抑制係數)。
 - **Next at authoring time**:T0([T0-entry-gate.md](T0-entry-gate.md))— 決策拍板 + GD-5 對帳,docs-only commit。

@@ -46,7 +46,7 @@
 - `node_modules/.bin/vitest run tests/calibration`:6/6 passed(T1 showpos 3 + T2 pattern 3;T2 以可重跑 RED report 形式 pin 住偏差,CI 綠)。
 - `node_modules/.bin/tsc --noEmit`:exit 0。
 
-**兩層索引同步:** [../README.md §3](../../../active/stage2/README.md) WP-15 → ✅ M7 caveated + §4 M7 標日期 + §8 OQ-S2-2 ledger 收斂;[exec-plan/README.md §3](../../../README.md) WP-15 + §4 M7 同步;[task-checklist.md](task-checklist.md) T-exit → ✅;[T-exit-gate.md](T-exit-gate.md) Steps 全勾。
+**兩層索引同步:** [../README.md §3](../../../completed/stage2/README.md) WP-15 → ✅ M7 caveated + §4 M7 標日期 + §8 OQ-S2-2 ledger 收斂;[exec-plan/README.md §3](../../../README.md) WP-15 + §4 M7 同步;[task-checklist.md](task-checklist.md) T-exit → ✅;[T-exit-gate.md](T-exit-gate.md) Steps 全勾。
 
 **Decision Log:**
 - **走「歸因接受」而非「調參追齊」或「必紅 CI」。** Alternatives Considered:(1) 盲調 `GOLDEN_YAW_KICK_SCALE`/recoil seed 讓 shot 15 對齊 Aiming.Pro——否決,破壞 WP-10 M5 golden 與既有校準基準,違反 WP-15 README §2「比對不過是歸因不是調參」;(2) 無限期阻塞 M7 直到取得高幀率 `cl_showpos` 實錄——否決,權威 recoil 已由 M5 對 CS2 vdata 校準,對第三方弱參考無限期門控 WP-17/M8 不成比例;T-exit DoD 本就提供「分層歸因 + 研究者接受」逃生路徑。
@@ -242,7 +242,7 @@
 **OQ-S2-2 決議:**採 stage2 計畫預設並拍板為明確數字:
 - `cl_showpos` 起步/急停速度逐 tick 容差:**±1 u/s**。
 - AK pattern 逐彈角度容差:**±0.05°**。
-- 首輪比對若需調整容差,不得靜默放寬;必須在本 progress 記最大偏差 tick/彈號、差異分層(公式/常數/subtick/資料品質)、新容差與理由,並同步回填 [../README.md §8](../../../active/stage2/README.md)。
+- 首輪比對若需調整容差,不得靜默放寬;必須在本 progress 記最大偏差 tick/彈號、差異分層(公式/常數/subtick/資料品質)、新容差與理由,並同步回填 [../README.md §8](../../../completed/stage2/README.md)。
 
 **參考資料清點(STOP 條件):**
 
@@ -263,7 +263,7 @@
 - AK pattern 候選 fixture 已補;T2 仍需在測試中明確來源 sign convention 到 project yaw/pitch 的映射。
 
 ### 2026-07-03 — Plan authored
-- 由 stage2 計畫([../README.md](../../../active/stage2/README.md) §6 WP-15 表 + session 補充決定)展開為自足 task 檔(T0–T2 + T-exit)。
+- 由 stage2 計畫([../README.md](../../../completed/stage2/README.md) §6 WP-15 表 + session 補充決定)展開為自足 task 檔(T0–T2 + T-exit)。
 - 補充決定:T0 加入**參考資料備妥檢查**(CS2 `cl_showpos` 錄製檔、社群 pattern 圖來源)——資料不在手 = blocker,列 STOP 條件。
 - 比對不過的處理原則 = 差異分層歸因(公式/常數/subtick),不盲調參([README.md §2](README.md))。
 - **Next**:T0([T0-entry-gate.md](T0-entry-gate.md))— OQ-S2-2 拍板 + 資料清點,docs-only。

@@ -1,6 +1,6 @@
 # WP-17 — integration:全鏈路 E2E + 決定性回歸 + 驗收清單 B(M8)
 
-> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../active/stage2/README.md)
+> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../completed/stage2/README.md)
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |

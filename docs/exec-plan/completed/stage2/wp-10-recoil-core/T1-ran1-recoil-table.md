@@ -1,7 +1,7 @@
 # T1 — ran1 RNG + 固定彈道表 + golden
 
 > Part of [WP-10 recoil-core](README.md)。Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
-> 演算法權威來源:[研究計畫 Phase 1-1](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md)
+> 演算法權威來源:[研究計畫 Phase 1-1](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md)
 
 | | |
 |---|---|

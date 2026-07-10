@@ -16,4 +16,4 @@
 - 一個 task = 一個垂直切片 = 一個原子 commit;先驗證再 commit,未 commit 不開下一個。
 - 每個 task 檔自帶 Steps / Definition of Done / Commit message,照著走。
 - task 完成:更新 [progress.md](progress.md) 與切片一起 stage;把上表 Done 翻 ✅。
-- WP 完成:把 [../README.md §3](../../../active/stage2/README.md) 的 WP-11 狀態翻 ✅。
+- WP 完成:把 [../README.md §3](../../../completed/stage2/README.md) 的 WP-11 狀態翻 ✅。

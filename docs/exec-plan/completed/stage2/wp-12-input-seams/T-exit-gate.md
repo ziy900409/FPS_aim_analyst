@@ -25,7 +25,7 @@ WP-13 可以在不再動這兩處的前提下接彈道。
 - [x] 匯出抽查:非互動無法實跑 drill 下載;改以**真實匯出路徑追蹤 + round-trip 測試**確認——
       `main.ts buildCurrentExportPayload → collectMeta`(固定寫 `sensitivityModel:'cs2-0.022deg'`)
       `→ buildExportPayload`(spread `...meta`)`→ serializeJSON`;`export.test.ts` round-trip 斷言該欄。
-- [x] progress.md 寫 Outcomes;checklist 全 ✅;[../README.md §3](../../../active/stage2/README.md) WP-12 翻 ✅。
+- [x] progress.md 寫 Outcomes;checklist 全 ✅;[../README.md §3](../../../completed/stage2/README.md) WP-12 翻 ✅。
 
 ## Definition of Done
 

@@ -69,7 +69,7 @@
 **⑥ WP-19 對帳複查**:移動目標運動包絡已由 `deriveTargetEnvelopes`→`expandForMotion`(range/axis)涵蓋(T0 對帳結論複查無變);`tracking_v1` 選定包絡(pingpong horizontal range1/speed2)落 T0 OQ-18.1 field-low 相容界內,淨空由既有驗證器把關,WP-19 側無新待辦。WP-22 T1 首跑 `field-low` 實戰對帳。
 
 **Outcomes(帶著走的決定)**:
-- **資料夾留 `active/stage2/` 不搬 `completed/`**:下游 WP-22 以相對路徑 `../../stage2/wp-18-f5-subtick/` 大量引用本資料夾;搬遷會斷所有交叉引用,且 WP-22 尚在 active。搬遷待 stage3 整體收尾另計。
+- **資料夾留 `completed/stage2/` 不搬 `completed/`**:下游 WP-22 以相對路徑 `../../stage2/wp-18-f5-subtick/` 大量引用本資料夾;搬遷會斷所有交叉引用,且 WP-22 尚在 active。搬遷待 stage3 整體收尾另計。
 - **T-exit code review 採五軸內審(非另派 sub-agent)**:交付碼已由 T1–T5 逐 slice 走 `/incremental-implementation` + grep 閘 + 零破壞回歸把關,T-exit 以五軸複核確認 code health 改善即 approve(perfect≠gate)。
 
 **Surprises & Discoveries**:

@@ -1,6 +1,6 @@
 # WP-12 — input-seams:CS2 感度換算 + 射線方向注入
 
-> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../active/stage2/README.md) · 稽核 A3/A4 WARN 的修補。
+> stage2 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../../../completed/stage2/README.md) · 稽核 A3/A4 WARN 的修補。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |

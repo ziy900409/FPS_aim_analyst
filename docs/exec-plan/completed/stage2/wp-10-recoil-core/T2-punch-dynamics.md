@@ -1,7 +1,7 @@
 # T2 — punch 動力學(KickBack / HybridDecay / leapfrog / index)
 
 > Part of [WP-10 recoil-core](README.md)。Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
-> 演算法權威來源:[研究計畫 Phase 1-2](../../../active/stage2/CS2%20壓槍軌跡復刻研究計畫.md)
+> 演算法權威來源:[研究計畫 Phase 1-2](../../../completed/stage2/CS2%20壓槍軌跡復刻研究計畫.md)
 
 | | |
 |---|---|
@@ -30,7 +30,7 @@
 ## Design notes
 
 - 單位 = **degree、Source 慣例(pitch 正值朝下)**;golden 向量即此域,不得在本模組先翻轉。
-- decay-先-kick 順序:tick 內先衰減、fire 事件後注入(與 WP-13 simStep 順序契約一致,[../README.md §2.4](../../../active/stage2/README.md))。
+- decay-先-kick 順序:tick 內先衰減、fire 事件後注入(與 WP-13 simStep 順序契約一致,[../README.md §2.4](../../../completed/stage2/README.md))。
 - `cycletime` 由參數傳入(本 WP 測試用 AK 0.10s inline 常數;正式 config 屬 WP-11)。
 
 ## Steps

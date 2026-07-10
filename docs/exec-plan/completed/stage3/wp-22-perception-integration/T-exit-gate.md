@@ -23,7 +23,7 @@
 - [x] [../README.md §3](../README.md) WP-22 → ✅ + §4 M10 記日期(2026-07-10);[exec-plan/README.md](../../../README.md) §2/§3 stage3 交付狀態同步(含 WP-20/21 staleness 校正)。
 - [x] 文件對帳複查([../README.md §9](../README.md)):CLAUDE.md 三條新約束已落(WP-19/20/21 T0);規格書 v1.3 項狀態確認(⬜ 保留,owner 待指派)。
 - [x] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
-- [ ] 視需要把 stage3 資料夾移入 `completed/`(協議 §5)——**保留**;wp-19/20/21/22 全數交付後另立 housekeeping slice 一次移,避免大量相對連結變動混入 M10 commit。
+- [x] 把 stage3 資料夾移入 `completed/`(協議 §5)——✅ 2026-07-10 完成(stage2 含 WP-18 + stage3 一併移入 `completed/`,連結全域改寫)。
 
 ## Definition of Done
 

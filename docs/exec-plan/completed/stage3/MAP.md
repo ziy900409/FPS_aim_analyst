@@ -1,6 +1,6 @@
 # 文件地圖 — 階段 C(stage3)研究場景與感知實驗
 
-> 本檔為 `docs/exec-plan/active/stage3/` 的**目錄總覽**,stage3 閱讀導航的單一入口。上層地圖:[docs/MAP.md](../../../MAP.md)。
+> 本檔為 `docs/exec-plan/completed/stage3/` 的**目錄總覽**,stage3 閱讀導航的單一入口。上層地圖:[docs/MAP.md](../../../MAP.md)。
 > 想找「該做什麼、怎麼做」→ [README.md](README.md)(tech spec)+ 各 WP 資料夾;想找「為什麼這樣定」→ [DECISIONS.md](../../DECISIONS.md) GD-6~10;想快速看懂全貌 → [PLAN.md](PLAN.md)。
 > 文件語言:繁體中文,術語保留英文(D4)。
 

@@ -22,7 +22,7 @@ FR-B15 的數學落地:理想壓槍路徑 = `−aimPunch×2` 的時間鏡像;補
 - 結算路徑非熱路徑,但沿用陣列重用慣例(不在迴圈內配置中間物件)。
 
 ## Out of scope
-- 呈現(T3);視角逐 tick 重建([../README.md §2.5](../../../active/stage2/README.md):記錄而非重建,
+- 呈現(T3);視角逐 tick 重建([../README.md §2.5](../../../completed/stage2/README.md):記錄而非重建,
   輸入一律取自 fire 事件記錄欄)。
 
 ## Steps

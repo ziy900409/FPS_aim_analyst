@@ -67,7 +67,7 @@
   `t_velocity_zero` 若研究需要,屬 additive 擴欄(v2 reserved optional,不再 bump)。互記:見 WP-14 progress 對帳附註。
 
 **5. OQ ledger 收斂:**
-- **OQ-S2-3**(感度語意/schema 斷代)已於 [../README.md §8](../../../active/stage2/README.md) ✅ closed 並註「T0 收尾(2026-07-07 WP-16)」;T1 已 bump `schemaVersion:2` + `sensitivityModel` 納 v2 對帳,無重開項。
+- **OQ-S2-3**(感度語意/schema 斷代)已於 [../README.md §8](../../../completed/stage2/README.md) ✅ closed 並註「T0 收尾(2026-07-07 WP-16)」;T1 已 bump `schemaVersion:2` + `sensitivityModel` 納 v2 對帳,無重開項。
 - **`targetCenterOffsetDeg`**(稽核不確定 #4)已於本檔 T0 OQ ledger ✅ closed(無號非負角距離,不重解釋 `offsetDeg`);T-exit 確認無回歸。
 - 本 WP 無新增未決 OQ。
 
@@ -259,7 +259,7 @@ fire 事件由唯一產彈點 `fireOneShot` 寫入 view/punch/spread/recoilIndex
   本階段不實作,資料面先留可比性接口;值對齊 WP-14 `MovementProfile` id。
 
 ### 2026-07-03 — Plan authored
-- 由 stage2 計畫([../README.md](../../../active/stage2/README.md) §6 WP-16 表 + session 補充決定)展開為自足 task 檔(T0–T3 + T-exit)。
+- 由 stage2 計畫([../README.md](../../../completed/stage2/README.md) §6 WP-16 表 + session 補充決定)展開為自足 task 檔(T0–T3 + T-exit)。
 - 補充決定:`schemaVersion` bump 落 T1(WP-12 只加 `sensitivityModel`);`DrillConfig.weaponId?`
   選填欄與 meta `rngSeed`(WP-13 OQ-13.1 的 seed 記錄)一併落 T1;arena 容量以 fire 事件率上限
   (= magSize/cycletime)重估。

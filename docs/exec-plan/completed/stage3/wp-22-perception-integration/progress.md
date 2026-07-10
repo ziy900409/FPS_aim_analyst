@@ -57,7 +57,7 @@
 - **帶著走的決定**:(1) 資格閘 perf 只量 rAF cadence → 60Hz 面板/被壓到 60Hz 的多螢幕環境永遠 FAIL,屬設計(GD-10 需 ≥120Hz);未來可在 gate `details` 顯示推估 Hz 以利實機排障(選項,未落地)。(2) QHD 首跑 suspect=true 保留於證據表作為條件隔離+corridor-escape 機制的實證,不視為缺陷。
 
 **帶著走的技術債 / 後續**:
-- stage3 資料夾(wp-19/20/21/22)仍在 `active/stage3/`;全數已交付,可另立 housekeeping slice 一次移入 `completed/stage3/`(協議 §5「視需要」)——本切片不移,避免大量相對連結變動混入 M10 宣告 commit。
+- ~~stage3 資料夾另立 housekeeping slice 移入 `completed/`~~ ✅ **已完成(2026-07-10)**:stage2(含 WP-18)+ stage3 全數 `active/` → `completed/`,連結全域改寫(協議 §5)。
 - 規格書升 v1.3(stage3 節 + 附錄 E 清單 C)仍 ⬜,owner 待指派(見 stage3 README §9)。
 - 資格閘 `details` 顯示推估 Hz 的 UX 改進為選項,未落地。
 

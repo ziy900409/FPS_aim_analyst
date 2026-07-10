@@ -23,7 +23,7 @@
       ② 按反向鍵急停 → vx 自然衰減穿越 88(非瞬停);
       ③ HUD stopped 燈在 |vx| < 88 時亮。
 - [ ] 規格 §5「階段 A 指標分層」註記解除回寫(若規格已升 v1.2 則補節,否則記入待對帳)。
-- [ ] [../README.md §3](../../../active/stage2/README.md) WP-14 翻 ✅;[task-checklist.md](task-checklist.md) 全 ✅。
+- [ ] [../README.md §3](../../../completed/stage2/README.md) WP-14 翻 ✅;[task-checklist.md](task-checklist.md) 全 ✅。
 - [ ] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
 
 ## Definition of Done

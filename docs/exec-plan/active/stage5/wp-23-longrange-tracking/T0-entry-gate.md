@@ -17,8 +17,8 @@
 
 ## In scope
 
-- **上游驗證**:[WP-18 T-exit](../../stage2/wp-18-f5-subtick/T-exit-gate.md) ✅(motion/sub-tick 內插/追蹤指標)
-  與 [WP-22 T-exit](../../stage3/wp-22-perception-integration/T-exit-gate.md)(M10)✅ 證據引用記 progress。
+- **上游驗證**:[WP-18 T-exit](../../../completed/stage2/wp-18-f5-subtick/T-exit-gate.md) ✅(motion/sub-tick 內插/追蹤指標)
+  與 [WP-22 T-exit](../../../completed/stage3/wp-22-perception-integration/T-exit-gate.md)(M10)✅ 證據引用記 progress。
 - **現況基線**:hitbox `{1,2,1}` 全部消費點讀碼盤點(已知三處:`src/sim/TargetManager.ts:57`、
   `src/scene/clearance.ts:8`(含 `TARGET_HITBOX_RADIUS_U`/`PROP_INFLATION_U` 派生)、
   `src/metrics/trackingDerivation.ts` `DEFAULT_OPTIONS`;另盤點 `HitDetector`/`TargetView` 的幾何來源);

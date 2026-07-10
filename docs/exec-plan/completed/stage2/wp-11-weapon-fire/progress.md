@@ -37,7 +37,7 @@
 - **決定性根源守護**:此測試釘死 README §3 / stage2 §2.6 failure-mode「`nextFireT = now + cycletime` 重設制 → 排程漂移,pattern 全歪」——任何把 frame delta / rAF 幀邊界偷渡進產彈排程的改動會使不同 FPS 的出彈 tick index 序列分歧 → 紅燈擋下。span 斷言為**精確** `(mag−1)·cycletime`(累加制無漂移),較 T3 DoD 的「2900ms ± 1 tick」更緊。
 - **Verification**:`npm.cmd test -- src/loop/__tests__/fire-determinism.test.ts` → 17 tests passed;`npm.cmd run typecheck` → exit 0;`npm.cmd test`(全套)→ **32 files / 243 tests passed**(較 T3 的 31/226 +1 file/+17 tests,無回歸紅燈)。
 - **手動驗證(dev server)**:本 session 為非互動環境,無法實際驅動瀏覽器 pointer-lock/滑鼠。DoD 的兩項手動目標行為改以**程式碼 + 自動化測試**佐證:①「鎖定後按住左鍵 → 連發至 30 發停」= [fire-determinism.test.ts](../../../../../src/loop/__tests__/fire-determinism.test.ts) canonical(AK 恰 30 發、ammo=0、heldFire 自動解除)+ [SimLoop.test.ts](../../../../../src/loop/SimLoop.test.ts)「AK held 3.0s 恰 30 發且 span 2900ms」;②「Esc 解鎖不卡連發」= [main.ts:179-183](../../../../../src/main.ts) pointer-lock unlock 直接清 `heldFire`+`nextFireT=Infinity` + [InputSampler.test.ts:172](../../../../../src/input/InputSampler.test.ts)「已採計 fire-down 後即使解鎖,mouseup 仍送 fire-up(stuck-fire 防護)」。**互動式瀏覽器實跑留待有 GUI 的 session 補做**,不在此宣稱已人工實測。
-- **WP 收斂**:[README.md](README.md) 狀態、[task-checklist.md](task-checklist.md) T-exit、[../README.md §3](../../../active/stage2/README.md) WP-11 皆翻 ✅。
+- **WP 收斂**:[README.md](README.md) 狀態、[task-checklist.md](task-checklist.md) T-exit、[../README.md §3](../../../completed/stage2/README.md) WP-11 皆翻 ✅。
 
 ### 2026-07-06 07:42Z — T3 cycletime 產彈 PASS
 - **修改檔案**:[SharedState.ts](../../../../../src/state/SharedState.ts) 新增 `weapon:{nextFireT,ammo,magSize}`,create 預設 AK,reset 原地保留目前 `magSize` 並回滿 ammo;[SimLoop.ts](../../../../../src/loop/SimLoop.ts) 抽出 `fireOneShot` 作為唯一產彈點,`applyInput` 僅維護 `heldFire`/首發排程,`scheduleFire` 以 `cycletimeSec*1000` 累加制產彈並在 ammo=0 時停火,`createSimLoop` 依注入武器同步 `magSize`;[TargetManager.ts](../../../../../src/sim/TargetManager.ts) 依 OQ-11.2 在每次 spawn 回滿 `ammo = weapon.magSize`;[main.ts](../../../../../src/main.ts) 注入 `getWeapon('ak47')`,pointer unlock 同步清 `nextFireT`。
@@ -90,9 +90,9 @@
 
 `src/data/*`, `src/metrics/*`, `tests/e2e/full-drill.spec.ts`, and `tests/validity/reaction-time.test.ts` also contain `type:'fire'`, but those are recorded/exported drill events (`hit`, `firstShot`, `residualSpeed`, target metadata), not input-ring fire events. T2 should not add `down` to those output payloads unless a later WP explicitly changes the export schema.
 
-- **Docs-only verification**:`git diff --stat` for this slice is limited to `docs/exec-plan/active/stage2/wp-11-weapon-fire/`; no `src/` changes.
+- **Docs-only verification**:`git diff --stat` for this slice is limited to `docs/exec-plan/completed/stage2/wp-11-weapon-fire/`; no `src/` changes.
 
 ### 2026-07-03 — Plan authored
-- 由 stage2 計畫([../README.md](../../../active/stage2/README.md))展開;補齊稽核 A5 缺口(無 WeaponConfig、無 cycletime、無 full-auto)。
+- 由 stage2 計畫([../README.md](../../../completed/stage2/README.md))展開;補齊稽核 A5 缺口(無 WeaponConfig、無 cycletime、無 full-auto)。
 - 關鍵契約:fire down/up 走 `EV_FIRE` 既有閒置 b 欄;產彈排程累加制;產彈點 = WP-13 recoil 掛點 seam。
 - **Next**:T0([T0-entry-gate.md](T0-entry-gate.md))。
