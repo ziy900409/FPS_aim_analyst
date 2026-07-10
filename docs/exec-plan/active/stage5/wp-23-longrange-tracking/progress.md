@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T1 PASS(2026-07-10);T2 ready
+## Status: 🟡 T2 PASS(2026-07-10);T3 ready
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 hitbox config 化 | ✅ |
-| T2 遠距 drill config | ⬜ |
+| T2 遠距 drill config | ✅ |
 | T3 round-trip + 決定性 | ⬜ |
 | T-exit(M11) | ⬜ |
 
@@ -23,11 +23,25 @@
 |----|------|------|
 | OQ-S5-4 遠距 drill 設計矩陣(角尺寸/角速度/距離/hitbox;角尺寸下限) | ✅ T0 決議 | 小目標 H1 = `{ widthU:0.5, heightU:1, depthU:0.5 }`;角高階層 0.5° / 2.0°;角速度階層 5°/s / 20°/s;角尺寸下限 0.5°。距離 `d = h/(2*tan(theta/2))`:0.5°→114.59u,2.0°→28.65u。水平速度 `v = d * omegaRad`:0.5°×5→10.00u/s,0.5°×20→40.00u/s,2°×5→2.50u/s,2°×20→10.00u/s。T2 canonical default = 0.5° × 5°/s,hard profile = 0.5° × 20°/s,近距 sanity = 2° × 5°/s。 |
 | OQ-23.1 hitbox 單一來源落點(型別/常數宣告在哪一檔) | ✅ T0 決議 | `src/drill/DrillConfig.ts` 擴 `targets.hitbox?: { widthU;heightU;depthU }` 並宣告唯一預設常數 `{1,2,1}`;loader/schema resolve 後交給 `TargetManager` 寫入 `TargetState.hitbox`。sim/render 讀 `TargetState.hitbox`;clearance 讀 resolved `DrillConfig`;離線推導優先讀 `meta.targets.hitbox`,缺欄 fallback 預設常數。 |
-| OQ-23.2 遠距 drill 的 display scale 與場景尺度(`field-low` 是否直接可用) | 🟡 待 T2 | 預設沿用既有 display scale 機制;`field-low` 走廊長度不足時記 WP-26 br-field 需求 |
+| OQ-23.2 遠距 drill 的 display scale 與場景尺度(`field-low` 是否直接可用) | ✅ T2 決議 | `field-low` 正面遠距走廊不可直接用:0.5° canonical distance 114.59u 與 2° sanity distance 28.65u 的 forward sightline 皆被 z≈-8 backdrop props 擋住。T2 先用同一 `field-low` 的右後方 clear long lane(`spawnArea.yawDegRange=[110,110]`,radial distance 114.59u)保留角尺寸/角速度契約並通過 clearance;WP-26 仍需補 front-facing BR field/long corridor。display scale 不改 sim 單位,沿用 `field-low.asset.displayScale=1`。 |
 
 ---
 
 ## Log
+
+### 2026-07-10 — T2 tracking_longrange_v1 遠距小目標 drill PASS
+
+- **Implementation**:`src/drill/tracking_longrange_v1.ts` 新增 `tracking_longrange_v1` scene-drill config,掛 `sceneId:'field-low'`。config 以小 hitbox `{widthU:0.5,heightU:1,depthU:0.5}` + canonical 角參數 0.5° × 5°/s 反推 `distance=114.59083180471995u`,`speed=9.999936537956994u/s`,`range=4.999968268978497u`(2000ms pingpong 完整週期)。
+- **Angular audit note**:config 註記完整列出 T0 OQ-S5-4 四檔矩陣:0.5°/2.0° × 5/20°/s 的 distance/speed/2s range,供研究者對帳。
+- **Clearance decision**:`field-low` forward lane 會被 backdrop props 擋住(正面 114.59u 與 28.65u 皆不通);T2 固定 `spawnArea` 到右後方 clear long lane `yaw=110°`,radial distance 保持 114.59u,不修改 sim/data 層或場景 propBounds。此為 T2 可上線折衷;WP-26 需補 front-facing BR field。
+- **UI / harness exposure**:`src/main.ts` 將 `tracking_longrange_v1` 加入 `availableDrills`,切換時會自動載入 `field-low`;dev `__fpsTest` 由同一清單暴露新 drill。
+- **Tests**:`src/drill/tracking_longrange_v1.test.ts` 覆蓋角參數反推、固定 field-low spawn lane、resolved hitbox meta shape、`validateClearance(fieldLow,cfg)` 零違規與 `loadDrill(...,fieldLow)` 不 throw。
+- **Verification**:
+  - Targeted Vitest:`npx.cmd vitest run src/drill/tracking_longrange_v1.test.ts src/drill/schema.test.ts src/scene/clearance.test.ts src/testharness/fpsTestHarness.test.ts` exit 0 (**4 files / 49 tests**).
+  - Typecheck:`npm.cmd run typecheck` exit 0。
+  - Full Vitest:`npx.cmd vitest run` exit 0 (**66 files / 518 tests**).
+  - Browser smoke:`npx.cmd playwright test tests/e2e/full-drill.spec.ts -g "tracking_longrange" --project=edge` unsandboxed exit 0 (**1 test**).Sandboxed first run failed because Vite/esbuild could not resolve `vite.config.ts` due parent-directory access denial;unsandboxed rerun passed. Smoke verifies true browser/dev harness can load `tracking_longrange_v1`, export `field-low` scene meta, small hitbox meta, fixed longrange spawn lane, and moving target samples.
+  - `graphify update .` exit 0;graphify rebuilt **1068 nodes / 2502 edges / 63 communities**.
 
 ### 2026-07-10 — T1 hitbox config 化 PASS
 

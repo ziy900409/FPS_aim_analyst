@@ -52,6 +52,7 @@ import { urbanHigh } from './scene/scenes/urban-high.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
+import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -96,6 +97,12 @@ const availableDrills: AvailableDrill[] = [
     label: trackingSceneV1.id,
     source: trackingSceneV1.drill,
     sceneId: trackingSceneV1.sceneId,
+  },
+  {
+    id: trackingLongrangeV1.id,
+    label: trackingLongrangeV1.id,
+    source: trackingLongrangeV1.drill,
+    sceneId: trackingLongrangeV1.sceneId,
   },
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;

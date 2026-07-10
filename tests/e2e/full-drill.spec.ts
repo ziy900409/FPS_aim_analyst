@@ -19,6 +19,7 @@ const URL = 'http://localhost:5173/';
 const DRILL_ID = 'counterstrafe_ad_v1';
 const DETECTION_DRILL_ID = 'detection_popin_v1';
 const TRACKING_SCENE_DRILL_ID = 'tracking_scene_v1';
+const TRACKING_LONGRANGE_DRILL_ID = 'tracking_longrange_v1';
 const RESOLUTION_PROTOCOL_ID = 'resolution_detection_v1';
 const PEEKS = 20; // = counterstrafe_ad_v1.json endCondition.targetCount
 
@@ -356,6 +357,88 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
     expect(r.tracking.presentations.every((p) => p.rmsEpsilonDeg !== undefined && p.rmsEpsilonDeg < 1)).toBe(true);
     expect(r.missTracking.acquisitionFailureRate).toBe(1);
     expect(r.missTracking.presentations.every((p) => p.acquisitionFailure)).toBe(true);
+  });
+
+  test('WP-23 T2 tracking_longrange_v1：field-low 載入 + 小 hitbox/遠距 lane smoke', async ({ page }) => {
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+
+    const r = await page.evaluate((drillId) => {
+      type Harness = {
+        startDrill(id: string): void;
+        runTrackingPresentationRound(mode?: 'autoAim' | 'stationary', maxPresentations?: number): void;
+        forceExportJSON(): unknown;
+        phase(): string;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+      const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+      harness.startDrill(drillId);
+      harness.runTrackingPresentationRound('autoAim', 2);
+      const payload = harness.forceExportJSON() as {
+        meta: Record<string, unknown> & {
+          scene?: Record<string, unknown>;
+          targets?: Record<string, unknown>;
+          spawn?: Record<string, unknown>;
+        };
+        ticks: Array<{ tx: number | null; ty: number | null; tz: number | null }>;
+        events: Array<Record<string, unknown>>;
+      };
+      const visible = payload.events.filter((event) => event.type === 'visible');
+      const firstVisible = visible[0] ?? {};
+      const targetTicks = payload.ticks.filter((tick) => tick.tx !== null && tick.ty !== null && tick.tz !== null);
+      const spawnArea = payload.meta.spawn?.spawnArea as
+        | { distanceURange?: [number, number]; yawDegRange?: [number, number] }
+        | undefined;
+      const radialDistance =
+        finite(firstVisible.targetX) && finite(firstVisible.targetZ)
+          ? Math.hypot(firstVisible.targetX, firstVisible.targetZ)
+          : null;
+
+      return {
+        coi: window.crossOriginIsolated,
+        phase: harness.phase(),
+        meta: payload.meta,
+        visibleCount: visible.length,
+        targetTickCount: targetTicks.length,
+        distinctTx: new Set(targetTicks.map((tick) => tick.tx)).size,
+        firstVisible,
+        spawnDistance: spawnArea?.distanceURange?.[0] ?? null,
+        radialDistance,
+      };
+    }, TRACKING_LONGRANGE_DRILL_ID);
+
+    expect(r.coi).toBe(true);
+    expect(['running', 'ended']).toContain(r.phase);
+    expect(r.meta.drillId).toBe(TRACKING_LONGRANGE_DRILL_ID);
+    expect(r.meta.scene).toMatchObject({
+      sceneId: 'field-low',
+      assetPackVersion: 'field-low-v1',
+      clutterTier: 'low',
+      fallback: false,
+    });
+    expect(r.meta.targets).toMatchObject({ hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } });
+    expect(r.meta.spawn).toMatchObject({
+      seed: 23002,
+      spawnArea: {
+        yawDegRange: [110, 110],
+        distanceURange: [expect.any(Number), expect.any(Number)],
+      },
+      motion: { type: 'pingpong', axis: 'horizontal', range: expect.any(Number), speed: expect.any(Number) },
+      presentationMs: 2000,
+    });
+    expect(r.visibleCount).toBeGreaterThanOrEqual(2);
+    expect(r.targetTickCount).toBeGreaterThan(0);
+    expect(r.distinctTx).toBeGreaterThan(1);
+    expect(r.firstVisible).toMatchObject({ type: 'visible', side: 'R' });
+    expect(r.firstVisible.targetX as number).toBeGreaterThan(0);
+    expect(r.firstVisible.targetZ as number).toBeGreaterThan(0);
+    expect(r.spawnDistance as number).toBeCloseTo(114.59083180471995, 6);
+    expect(r.radialDistance as number).toBeGreaterThan(110);
   });
 
   test('WP-22 protocol：2 條件解析度 × 偵測匯出 + 狀態隔離', async ({ page }) => {

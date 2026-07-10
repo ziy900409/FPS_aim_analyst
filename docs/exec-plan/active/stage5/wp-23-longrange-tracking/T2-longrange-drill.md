@@ -7,7 +7,7 @@
 | **相依** | T1(hitbox 欄可用) |
 | **Risk / Cplx** | Med / Low(純 config + 對帳;風險在幾何/尺度設計而非程式碼) |
 | **Touches** | ADD `src/drill/tracking_longrange_v1.ts`;MODIFY `src/main.ts`(availableDrills)、必要時 `src/render/`(display scale 確認,不改 sim);測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-10) |
 
 ## Objective
 
@@ -35,11 +35,11 @@ timed presentation 沿用 WP-18 交付形狀。
 
 ## Steps
 
-- [ ] 角參數 → config 數值反推表落 config 註記(與 T0 決議一致)。
-- [ ] `tracking_longrange_v1.ts` + schema 驗證測試。
-- [ ] 淨空驗證通過證據(或調整記錄)記 progress。
-- [ ] `main.ts` 掛載;手動 smoke(瀏覽器可載入、目標可見、可追蹤)記 progress。
-- [ ] `npx vitest run` 全綠。
+- [x] 角參數 → config 數值反推表落 config 註記(與 T0 決議一致)。
+- [x] `tracking_longrange_v1.ts` + schema 驗證測試。
+- [x] 淨空驗證通過證據(或調整記錄)記 progress。
+- [x] `main.ts` 掛載;手動 smoke(瀏覽器可載入、目標可見、可追蹤)記 progress。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 
