@@ -189,6 +189,52 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.heldFire).toBe(false);
   });
 
+  it('ads down/up 依時序消費並翻轉 heldAds（WP-24 / T1）', () => {
+    const state = createSharedState();
+
+    pushEvent(state, { type: 'ads', down: true, t: 10 });
+    simStep(state, 1 / SIM_HZ, 100);
+    expect(state.heldAds).toBe(true);
+
+    pushEvent(state, { type: 'ads', down: false, t: 110 });
+    simStep(state, 1 / SIM_HZ, 200);
+    expect(state.heldAds).toBe(false);
+  });
+
+  it('ads down→up 同 tick 內依事件序消費，收尾 heldAds=false', () => {
+    const state = createSharedState();
+    pushEvent(state, { type: 'ads', down: true, t: 10 });
+    pushEvent(state, { type: 'ads', down: false, t: 11 });
+    simStep(state, 1 / SIM_HZ, 100); // 兩事件皆落 [0,100) → 依序 down 再 up
+    expect(state.heldAds).toBe(false);
+    expect(state.input.size()).toBe(0);
+  });
+
+  it('ads 事件不觸發開火 / 命中 / 記錄（GD-16：ADS 不進 sim）', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 4 });
+    const cam = cameraLookingDownZ();
+    state.targets.push(makeTarget('t0', 0, -8));
+    const killed: string[] = [];
+    const tm: TargetManager = {
+      tick() {},
+      markKilled(_s, id) {
+        killed.push(id);
+      },
+      reset() {},
+    };
+
+    // 未按左鍵開火，僅右鍵 ADS 按住 → 不得產彈 / 擊殺 / 記 fire 事件
+    pushEvent(state, { type: 'ads', down: true, t: 10 });
+    simStep(state, 1 / SIM_HZ, 100, tm, cam, undefined, undefined, undefined, recorder);
+
+    expect(state.heldAds).toBe(true);
+    expect(state.heldFire).toBe(false);
+    expect(state.weapon.ammo).toBe(30); // 未消耗
+    expect(killed).toEqual([]);
+    expect(recorder.snapshot().events.filter((e) => e.type === 'fire')).toEqual([]);
+  });
+
   it('fire up 只清 heldFire，不觸發 raycast 或 fire 記錄', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 4 });

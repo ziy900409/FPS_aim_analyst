@@ -54,7 +54,8 @@ const defaultMovement = createMovementController();
 /**
  * 輸入套用（handle）：鍵事件更新 A/D **held 狀態**（`MovementController.step` 每 tick 讀 held 積分
  * velocity + stopped gate）。fire down/up 只維護 `heldFire` 與首發排程時間；實際產彈由
- * `scheduleFire` 依 weapon cycletime 在 tick 內累加產生。mouse 事件仍忽略。
+ * `scheduleFire` 依 weapon cycletime 在 tick 內累加產生。ads down/up 只翻 `heldAds`（WP-24 / T1，
+ * render/data 層消費，不進 sim）。mouse 事件仍忽略。
  *
  * 依時序、無遺漏的排序消費與排空責任已抽到 [`consume`](../input/consume.ts)（T4）；本函式只負責
  * 「每個到期事件如何改狀態」，不管排序/分桶/排空。
@@ -77,6 +78,10 @@ function applyInput(
     state.heldFire = ev.down;
     if (ev.down && !wasHeld) state.weapon.nextFireT = ev.t;
     if (!ev.down) state.weapon.nextFireT = Infinity;
+  } else if (ev.type === 'ads') {
+    // ADS 開鏡（WP-24 / T1，FR-E4）：只翻 heldAds 旗標（tick 內事件序語意比照 key/fire）。
+    // **不**觸發 raycast / weapon schedule / 目標演進（GD-16：ADS 不進 sim）；render/data 層再消費。
+    state.heldAds = ev.down;
   }
 }
 

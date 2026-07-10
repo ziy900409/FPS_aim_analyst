@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,T1 next)
+## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 next)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 EV_ADS 輸入鏈 | ⬜ |
+| T1 EV_ADS 輸入鏈 | ✅ |
 | T2 WeaponConfig.ads + zoom | ⬜ |
 | T3 overlay + 記錄 | ⬜ |
 | T-exit | ⬜ |
@@ -28,6 +28,50 @@
 ---
 
 ## Log
+
+### 2026-07-10 12:13Z — T1 EV_ADS 輸入事件鏈 PASS(heldAds + stuck 防護;ring 佈局零破壞)
+
+**Progress**
+
+- 擴碼:`src/state/types.ts` 加 `EV_ADS = 3` + `InputEvent` union `{ type:'ads'; down; t }` + `InputEventView.type` 增 `'ads'`;packed 佈局 `type,t,a,b` **未動**(ads 走 `a=0`、`b=down`,比照 fire)。grep 佐證:`enqueue(EV_ADS, t, 0, down?1:0)` 與 `pushFire` 逐位同形([SharedState.ts:200-201](../../../../../src/state/SharedState.ts))。
+- `SharedState`:加 `pushAds`(InputRing)、`heldAds` 旗標(interface + `createSharedState` false + `resetState` 歸零)、`dequeueInto` 顯式 `EV_FIRE`/`EV_ADS` 分支解碼。
+- `InputSampler`:右鍵(`button===2`)down/up → `pushAds`(down 走 pointer-lock 採計閘門、up 不受閘門但需已採計 down);`contextmenu` 鎖定中 `preventDefault`;新增 `releaseAds(t)` 接縫(解鎖掛點補送 ads-up,stuck 防護);`detach` 清 `adsButtonHeld`。
+- `SimLoop.applyInput`:新增 `ads` 分支只翻 `state.heldAds`——**不**觸發 raycast / weapon schedule / 目標演進(GD-16)。`consume.ts` **零改動**(型別無關的通用消費,ads 走同一分桶排序路徑)。
+- 測試設施 `inputRingTestUtil.ts`:`pushEvent`/`snapshot` 加 `ads` 分支(additive,既有 key/mouse/fire 路徑不變)。
+- **零破壞閘證據**:改動前基準 `npx vitest run <6 檔>` = 74 tests 綠;改動後同指令 = 88 tests 綠(+14 新,`consume`/`InputRing` bounded-insertion/`SharedState`/`SimLoop`/`fire-determinism` 全綠)。全量 `npx tsc --noEmit` clean + `npx vitest run` = **67 files / 541 tests**(baseline 527 +14)綠;三組 determinism regression(spray / moving-target / longrange)全綠 → **決定性回歸零重錄**。
+
+**手動驗證矩陣(以決定性單元測試編碼)**
+
+T1 尚未把 ADS 接進 live app(main.ts 佈線屬 T2/T3),故 README failure-mode 的手動矩陣以合成事件單元測試等價覆蓋:
+
+| 情境 | 測試 | 斷言 |
+|---|---|---|
+| 按住(hold) | InputSampler「鎖定中右鍵 down/up 入緩衝」 | ads down/up 蓋 timeStamp 升冪入 ring |
+| 快速點放 | InputSampler「快速點放同序列 down+up」/ SimLoop「同 tick down→up」 | 依到達序消費,收尾 `heldAds=false` |
+| 解鎖中放開(mouseup) | InputSampler「已採計 ads-down 後即使解鎖 mouseup 仍送 ads-up」 | up 不受 isLocked 閘門 |
+| 解鎖(pointerlockchange) | InputSampler「releaseAds:解鎖中按住補送 ads-up」+「未按住 no-op」 | stuck-ads 防護、不重複補 up |
+| 右鍵選單衝突 | InputSampler「contextmenu 鎖定中 preventDefault;未鎖定不抑制」 | 鎖定中抑制、放行一般選單 |
+
+**Decision Log**
+
+| ID | Decision | Alternatives Considered | Rationale |
+|----|----------|--------------------------|-----------|
+| D-T1.1 | stuck-ads 防護以 `InputSampler.releaseAds(t)` 接縫實作(推真正的 ads-up 事件過 ring→consume→heldAds),而非比照 fire 在 main.ts 直接寫 `sharedState.heldFire=false` | (a) 直接在解鎖掛點寫 `sharedState.heldAds=false`;(b) 注入解鎖 notifier 進 sampler | ADS 記錄為效度必要條件(FR-E6,T3):ads-up 必須成為**可被消費/記錄的事件**才能還原構念,直接寫旗標會漏記事件。`releaseAds` 保留 sampler 為 ads 事件單一產源、可測(注入式,本專案慣例);main.ts 佈線延到 T2/T3(該檔為 T2/T3 熱區) |
+| D-T1.2 | ads-down 走 pointer-lock 採計閘門、ads-up 不受閘門但需已採計 down | ads 全程不設閘門 | 完全比照 fire down/up(WP-11):避免取鎖前右鍵 / UI 右鍵污染;確保按住期間解鎖仍能補 up |
+| D-T1.3 | `consume.ts` 不改動 | 加 ads 專屬分支/註解 | consume 型別無關,ads 走既有升冪分桶排空;不動 = 最小風險、與「分桶排序語意不變」一致 |
+
+**Deviation from 「零修改」DoD(誠實記錄)**
+
+- `src/input/InputSampler.test.ts` 既有 case「非左鍵(右鍵/中鍵)不入緩衝」被**窄化**為「中鍵不入緩衝」:該 case 的前提(右鍵完全惰性)正是 T1 要改的行為(右鍵→ADS),故其斷言已被 feature 取代。ring/consume 核心佈局測試(failure-mode 指名的零修改閘)全數未動。右鍵行為改由新增的 ADS describe(9 cases)覆蓋。此為伴隨 feature 的合理、最小測試更新,非為配合實作而放寬既有斷言。
+
+**Surprises & Discoveries**
+
+- TS 無 exhaustive `never` switch 消費 `InputEvent`,故加 union 成員零編譯破壞;`fpsTestHarness.pushInputEvent` 的 `else → pushFire` 對 `{down}` 相容(ads 未經該 harness 注入,無實際影響,留 T2/T3 視需要擴充)。
+
+**Open Questions**
+
+- OQ-24.1 仍留 T2:ADS FOV 過渡時長 / overlay 淡入預設 120ms render-only。
+- main.ts 解鎖掛點呼叫 `inputSampler.releaseAds(performance.now())` 的 live 佈線待 T2/T3 落地(與 camera/overlay 同步一併接)。
 
 ### 2026-07-10 09:46Z — T0 entry gate PASS(GD-16 + fire 鏈移植基線)
 

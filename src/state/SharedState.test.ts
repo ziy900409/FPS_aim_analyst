@@ -122,6 +122,14 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.validity).toBe(validityRef);
   });
 
+  it('heldAds 初始 false，resetState 歸零（WP-24 / T1：不跨 drill 汙染）', () => {
+    const s = createSharedState();
+    expect(s.heldAds).toBe(false);
+    s.heldAds = true;
+    resetState(s);
+    expect(s.heldAds).toBe(false);
+  });
+
   it('resetState() 預設作用於單例', () => {
     sharedState.player.x = 99;
     pushEvent(sharedState, { type: 'key', code: 'KeyD', down: true, t: 0 });
