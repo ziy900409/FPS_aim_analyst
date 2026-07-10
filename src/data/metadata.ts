@@ -4,6 +4,7 @@ import type { GateReport } from '../display/eligibilityGate.ts';
 import { PERF_FLOOR_MS } from '../display/constants.ts';
 import type { FrameLogExport } from '../display/frameLog.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
+import type { TargetHitboxConfig } from '../drill/DrillConfig.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
@@ -20,6 +21,11 @@ export interface SpawnMeta {
   spawnDelayMsRange?: unknown;
   /** timed presentation 呈現時長(ms,WP-18 / T3)——追蹤 drill 重現/追蹤窗口右界所需。 */
   presentationMs?: number;
+}
+
+export interface TargetsMeta {
+  /** Resolved H1 hitbox snapshot (source units). Additive v2 metadata for offline on-target derivation. */
+  hitbox?: TargetHitboxConfig;
 }
 
 export interface SceneMeta {
@@ -62,6 +68,7 @@ export interface Meta {
   bufferOverflow: boolean;
   recorderOverflow: boolean;
   suspect: boolean;
+  targets?: TargetsMeta;
   spawn?: SpawnMeta;
   scene?: SceneMeta;
   display?: DisplayState;
@@ -88,6 +95,7 @@ export interface CollectMetaArgs {
   bufferOverflow?: boolean | number;
   recorderOverflow?: boolean;
   suspect?: boolean;
+  targets?: TargetsMeta;
   spawn?: SpawnMeta;
   scene?: SceneMeta;
   display?: DisplayState;
@@ -133,6 +141,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
   const session = args.session === undefined ? undefined : requireSessionMeta(args.session);
   const protocol = args.protocol === undefined ? undefined : requireProtocolMeta(args.protocol);
+  const targets = args.targets === undefined ? undefined : requireTargetsMeta(args.targets);
   const frameFloorSuspect = frames !== undefined && frames.summary.p95 > PERF_FLOOR_MS;
 
   return {
@@ -157,12 +166,29 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     bufferOverflow,
     recorderOverflow,
     suspect: explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect,
+    ...(targets !== undefined ? { targets } : {}),
     ...(args.spawn !== undefined ? { spawn: args.spawn } : {}),
     ...(scene !== undefined ? { scene } : {}),
     ...(display !== undefined ? { display } : {}),
     ...(frames !== undefined ? { frames } : {}),
     ...(session !== undefined ? { session } : {}),
     ...(protocol !== undefined ? { protocol } : {}),
+  };
+}
+
+function requireTargetsMeta(value: unknown): TargetsMeta {
+  const targets = requireRecord(value, 'targets');
+  return {
+    ...(targets.hitbox !== undefined ? { hitbox: requireTargetHitboxConfig(targets.hitbox, 'targets.hitbox') } : {}),
+  };
+}
+
+function requireTargetHitboxConfig(value: unknown, name: string): TargetHitboxConfig {
+  const hitbox = requireRecord(value, name);
+  return {
+    widthU: requirePositiveFiniteNumber(hitbox.widthU, `${name}.widthU`),
+    heightU: requirePositiveFiniteNumber(hitbox.heightU, `${name}.heightU`),
+    depthU: requirePositiveFiniteNumber(hitbox.depthU, `${name}.depthU`),
   };
 }
 

@@ -7,7 +7,7 @@
 | **相依** | T2(遠距 drill 存在) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | ADD `tests/regression/`(遠距決定性 fixture)、`src/metrics/` 測試(小角尺寸 round-trip);MODIFY 無 production 邏輯(僅測試/fixture);結果頁 sanity 為觀測 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-10) |
 
 ## Objective
 
@@ -36,12 +36,12 @@
 
 ## Steps
 
-- [ ] round-trip fixture(known 窗 → 誤差 ≤ 1 tick)+ meta hitbox 傳遞斷言。
-- [ ] 兩極端 sanity fixture。
-- [ ] sub-tick 內插遠距回歸 fixture。
-- [ ] 遠距決定性 fixture 收編 `tests/regression/`;既有 baseline 零重錄證據。
-- [ ] 結果頁手動 sanity 記 progress。
-- [ ] `npm run test:ci` exit 0。
+- [x] round-trip fixture(known 窗 → 誤差 ≤ 1 tick)+ meta hitbox 傳遞斷言。
+- [x] 兩極端 sanity fixture。
+- [x] sub-tick 內插遠距回歸 fixture。
+- [x] 遠距決定性 fixture 收編 `tests/regression/`;既有 baseline 零重錄證據。
+- [x] 結果頁手動 sanity 記 progress。
+- [x] `npm run test:ci` exit 0。
 
 ## Definition of Done
 

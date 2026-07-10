@@ -189,7 +189,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
-| **WP-23** | [wp-23-longrange-tracking/](wp-23-longrange-tracking/README.md) | 遠距小目標追蹤:hitbox config 化(單一來源)+ 遠距 drill + 指標 round-trip/決定性 | **M11** | WP-18 ✅ + M10 ✅ | 1.5–2.5 | ⬜ |
+| **WP-23** | [wp-23-longrange-tracking/](wp-23-longrange-tracking/README.md) | 遠距小目標追蹤:hitbox config 化(單一來源)+ 遠距 drill + 指標 round-trip/決定性 | **M11 ✅** | WP-18 ✅ + M10 ✅ | 1.5–2.5 | ✅(2026-07-10) |
 | **WP-24** | [wp-24-ads-optics/](wp-24-ads-optics/README.md) | ADS 開鏡:EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8 ✅(可與 WP-23 並行) | 2–3 | ⬜ |
 | **WP-25** | [wp-25-ballistics-tracer/](wp-25-ballistics-tracer/README.md) | 彈道:tracer 顯示(T1,獨立)+ projectile 數學核心/sim 整合/指標語意(T2–T4,gated) | **M12** | T1 獨立;T2+ 需 **M11** | 4–6.5 | ⬜ |
 | **WP-26** | [wp-26-br-scene-integration/](wp-26-br-scene-integration/README.md) | BR 場景與整合:`br-field` 資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | ⬜ |
@@ -200,7 +200,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 
 | 里程碑 | 完成條件 | 對應 WP | 意義 |
 |---|---|---|---|
-| **M11** | hitbox config 化零破壞(舊 drill 逐位不變)+ 同幾何斷言綠 + `tracking_longrange_v1` round-trip(推導誤差 ≤ 1 tick)+ 遠距 fixture 決定性綠 | WP-23 | 遠距追蹤效度地基;**M11 未過不進 WP-25 T2+**(projectile 需遠距 drill 才有構念意義) |
+| **M11 ✅**<br>(2026-07-10) | hitbox config 化零破壞(舊 drill 逐位不變)+ 同幾何斷言綠 + `tracking_longrange_v1` round-trip(推導誤差 ≤ 1 tick)+ 遠距 fixture 決定性綠 | WP-23 | 遠距追蹤效度地基;**WP-25 T2+ entry 前提自此可引用** |
 | **M12** | hitscan 逐位回歸綠(baseline 零重錄)+ projectile golden(位置序列/命中 tick)綠 + tracer 交付(單 draw call、sim 零改動證據)+ shot/hit 事件 schema 對帳 | WP-25 | 彈道模型門控:**M12 未過 `bullet` 欄不得進任何 drill config** |
 | **M13** | 驗收清單 E 全項通過:BR 整合 drill E2E 綠、三條決定性不變性(場景/ADS/彈道 gate)綠、ads/hit/追蹤欄匯出 round-trip 綠、資產 attribution 可稽核、`test:ci` exit 0 | WP-26 | **stage5 交付**:BR 遠距跟槍測試(含 ADS 與彈道條件)pilot-ready |
 
@@ -254,7 +254,7 @@ WP-25 T1(tracer)──────┴──────────────�
 | OQ-S5-1 | ADS 感度換算模型(CS2 `zoom_sensitivity_ratio` vs monitor-distance match) | **CS2 式**:ads 有效感度 = sensitivity × sensitivityRatio ×(adsFov/hipFov);`sensitivityRatio` 預設 1.0,pre-registered 後凍結 | 研究者 | WP-24 T0 | WP-24 T2 blocked;跨條件可比性 |
 | OQ-S5-2 | projectile 參數域(speedU/gravityU/maxRangeU 對照表;與 drill distance 聯動) | 以**飛行時間 tick 數**(8–32 tick)反推 speedU;gravityU 以「到靶下墜角尺寸 0.1–0.5×目標角高」反推;表列 2–3 組武器檔 | 架構+研究者 | WP-25 T0 | WP-25 T2+ blocked |
 | OQ-S5-3 | br-field 資產路線(程序化生成 vs CC0 pack) | **程序化生成 CC0**(WP-19 先例:GD-9 完全合規、propBounds 與視覺同源);Kenney/Quaternius 保留為寫實置換備選 | 使用者 | WP-26 T0 | WP-26 T1 blocked(不阻塞 T0 前其他 WP) |
-| OQ-S5-4 | 遠距 drill 設計矩陣(角尺寸/角速度/距離/hitbox 組合;角尺寸下限) | 角高 0.5°–2° × 角速度 5–20°/s 各 2 階;display scale 沿用;角尺寸下限暫定 0.5°(混疊防線) | 研究者 | WP-23 T0 | WP-23 T2 blocked |
+| OQ-S5-4 | 遠距 drill 設計矩陣(角尺寸/角速度/距離/hitbox 組合;角尺寸下限) | ✅ WP-23 T0 決議:小目標 H1 = `{widthU:0.5,heightU:1,depthU:0.5}`;角高 0.5°/2.0° × 角速度 5°/s/20°/s;角尺寸下限 0.5°。距離 `d=h/(2*tan(theta/2))`:0.5°→114.59u,2.0°→28.65u。水平速度 `v=d*omegaRad`:10.00/40.00u/s(0.5°),2.50/10.00u/s(2°)。T2 default=0.5°×5°/s;hard=0.5°×20°/s;near sanity=2°×5°/s。 | 研究者 | WP-23 T0 ✅ | WP-23 T2 unblocked |
 | OQ-S5-5 | lead 誤差是否進正式指標(或 spec-only) | **spec-only 離線**(引擎零計算);pilot 顯示構念有效再立案晉升 | 研究者 | WP-25 T4 | 不阻塞工程 |
 | OQ-S5-6 | ADS 操作語意(hold vs toggle) | **hold**(右鍵按住,與 CS2 慣例一致;stuck-ads 防護簡單);toggle 留 config 選項候補 | 研究者 | WP-24 T0 | WP-24 T1 事件語意 |
 

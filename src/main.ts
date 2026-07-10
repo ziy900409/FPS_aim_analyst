@@ -33,7 +33,7 @@ import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill } from './drill/DrillLoader.ts';
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
-import type { DrillConfig } from './drill/DrillConfig.ts';
+import { resolveTargetHitbox, targetHitboxToConfig, type DrillConfig } from './drill/DrillConfig.ts';
 import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts';
 import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
@@ -52,6 +52,7 @@ import { urbanHigh } from './scene/scenes/urban-high.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
+import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -96,6 +97,12 @@ const availableDrills: AvailableDrill[] = [
     label: trackingSceneV1.id,
     source: trackingSceneV1.drill,
     sceneId: trackingSceneV1.sceneId,
+  },
+  {
+    id: trackingLongrangeV1.id,
+    label: trackingLongrangeV1.id,
+    source: trackingLongrangeV1.drill,
+    sceneId: trackingLongrangeV1.sceneId,
   },
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;
@@ -318,6 +325,9 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       sharedState.validity.playerCorridorExceeded ||
       (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
       frames.summary.p95 > PERF_FLOOR_MS,
+    targets: {
+      hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),
+    },
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.spawnArea !== undefined ? { spawnArea: activeDrillConfig.targets.spawnArea } : {}),

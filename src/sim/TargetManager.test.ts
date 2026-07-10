@@ -185,6 +185,7 @@ describe('TargetManager — config 驅動（WP-6 / T2，FR-6.2；換 config 即�
     alternation: 'LR' | 'RL';
     distance?: number;
     seed?: number;
+    hitbox?: DrillConfig['targets']['hitbox'];
     spawnArea?: DrillConfig['targets']['spawnArea'];
     spawnDelayMsRange?: [number, number];
   }): DrillConfig {
@@ -193,6 +194,7 @@ describe('TargetManager — config 驅動（WP-6 / T2，FR-6.2；換 config 即�
       targets: {
         count: over.count,
         distance: over.distance ?? 4,
+        ...(over.hitbox !== undefined ? { hitbox: over.hitbox } : {}),
         ...(over.spawnArea !== undefined ? { spawnArea: over.spawnArea } : {}),
       },
       sequence: {
@@ -226,6 +228,18 @@ describe('TargetManager — config 驅動（WP-6 / T2，FR-6.2；換 config 即�
     const tm = createTargetManager(config({ count: 5, alternation: 'RL', distance: 7 }));
     tm.tick(state, 100);
     expect(state.targets[0].pos.z).toBe(-7);
+  });
+
+  it('hitbox 來自 config：小目標尺寸寫入 TargetState，省略時維持預設 H1', () => {
+    const small = createSharedState();
+    createTargetManager(
+      config({ count: 1, alternation: 'RL', hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } }),
+    ).tick(small, 100);
+    expect(small.targets[0].hitbox).toEqual({ width: 0.5, height: 1, depth: 0.5 });
+
+    const omitted = createSharedState();
+    createTargetManager(config({ count: 1, alternation: 'RL' })).tick(omitted, 100);
+    expect(omitted.targets[0].hitbox).toEqual({ width: 1, height: 2, depth: 1 });
   });
 
   it('首側來自 sequence.alternation 首字（LR→L、RL→R）', () => {

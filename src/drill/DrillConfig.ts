@@ -1,5 +1,21 @@
 import type { TargetMotion } from '../state/types.ts';
 
+export interface TargetHitboxConfig {
+  widthU: number;
+  heightU: number;
+  depthU: number;
+}
+
+export interface TargetHitboxSize {
+  width: number;
+  height: number;
+  depth: number;
+}
+
+/** Single-source default H1 hitbox (source units). Omitted drill config must resolve to this exactly. */
+export const DEFAULT_TARGET_HITBOX: TargetHitboxSize = { width: 1, height: 2, depth: 1 } as const;
+export const MAX_TARGET_HITBOX_U = 10;
+
 export interface SpawnAreaConfig {
   /** 水平偏心角範圍（deg）；0 = 玩家正前方 -Z，正值往 +X（右側）。 */
   yawDegRange: [number, number];
@@ -31,6 +47,8 @@ export interface DrillConfig {
     count: number;
     /** 目標距玩家前方（-Z）距離（u,source unit）。 */
     distance: number;
+    /** H1 target hitbox size (source units). Omitted = DEFAULT_TARGET_HITBOX, preserving existing drills. */
+    hitbox?: TargetHitboxConfig;
     /** WP-21 seeded spawn:以 polar yaw/distance 範圍取樣 pop-in 位置；需搭配 `sequence.seed`。 */
     spawnArea?: SpawnAreaConfig;
     /** F5 接縫（規格附錄 G）:省略＝static（向後相容）。階段 A 不實作移動,WP-6.5 接管。 */
@@ -60,4 +78,14 @@ export interface DrillConfig {
    * `value` 語意隨 `type`:targetCount=目標數、timeLimit=毫秒。
    */
   endCondition: { type: 'targetCount' | 'timeLimit'; value: number };
+}
+
+export function resolveTargetHitbox(config?: DrillConfig): TargetHitboxSize {
+  const hitbox = config?.targets.hitbox;
+  if (hitbox === undefined) return DEFAULT_TARGET_HITBOX;
+  return { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU };
+}
+
+export function targetHitboxToConfig(hitbox: TargetHitboxSize): TargetHitboxConfig {
+  return { widthU: hitbox.width, heightU: hitbox.height, depthU: hitbox.depth };
 }

@@ -15,14 +15,15 @@ Use schema v2 JSON exports:
 - `ticks[].px`, `ticks[].pz`
 - `ticks[].tx`, `ticks[].ty`, `ticks[].tz` while a target is active (the moving target center trajectory)
 - `events[]` rows with `type:"visible"`, `t`, `targetId`, and `targetX/targetY/targetZ`
+- `meta.targets.hitbox` when present: `{ widthU, heightU, depthU }`
 
 Time fields are milliseconds in the same `performance.now()` basis. Angles are radians in export
 rows unless this spec explicitly says degrees. Target/player positions are source units.
 
-The H1 hitbox dimensions are **not** exported per tick — they are a structural constant of the
-target (`width 1, height 2, depth 1` source units, matching the engine `HITBOX`). The derivation
-takes them as a fixed parameter so the on-target geometry is identical to the engine hit detector;
-this is not a tuning knob.
+The H1 hitbox dimensions are **not** exported per tick. New v2 exports snapshot the resolved target
+hitbox once in `meta.targets.hitbox`; older exports omit that block and fall back to the default H1
+(`width 1, height 2, depth 1` source units). The derivation consumes that snapshot so the on-target
+geometry is identical to the engine hit detector; this is not a tuning knob.
 
 ## Coordinate Convention
 
