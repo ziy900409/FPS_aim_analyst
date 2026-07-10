@@ -10,7 +10,7 @@
 | **相依** | WP-18 ✅(2026-07-09)+ M10 ✅(2026-07-10);T1 之後 T2→T3 串行 |
 | **對應 FR** | FR-E1 ~ FR-E3 |
 | **估時** | 1.5–2.5 dev-days |
-| **狀態** | 🟡 T3 PASS(2026-07-10);T-exit ready |
+| **狀態** | ✅ 完成(2026-07-10);M11 PASS,T-exit 綠 |
 
 ---
 
@@ -57,4 +57,4 @@ docs/operational/schema.md               ← MODIFY hitbox 欄對帳            
 | **T1** | [T1-hitbox-config.md](T1-hitbox-config.md) | hitbox config 化(單一來源;零破壞) | T0 | **High** |
 | **T2** | [T2-longrange-drill.md](T2-longrange-drill.md) | `tracking_longrange_v1` config + 淨空 + display scale | T1 | Med |
 | **T3** | [T3-metrics-roundtrip.md](T3-metrics-roundtrip.md) | 小角尺寸 round-trip + 遠距決定性 + 結果頁 sanity | T2 | Med |
-| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | M11 宣告(WP-25 T2+ 可開) | T1–T3 | — |
+| **T-exit** ✅ | [T-exit-gate.md](T-exit-gate.md) | M11 宣告(WP-25 T2+ 可開) | T1–T3 | — |

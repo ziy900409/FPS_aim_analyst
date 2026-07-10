@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T3 PASS(2026-07-10);T-exit ready
+## Status: ✅ 完成(2026-07-10);M11 PASS,T-exit 綠
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 hitbox config 化 | ✅ |
 | T2 遠距 drill config | ✅ |
 | T3 round-trip + 決定性 | ✅ |
-| T-exit(M11) | ⬜ |
+| T-exit(M11) | ✅ |
 
 ---
 
@@ -28,6 +28,20 @@
 ---
 
 ## Log
+
+### 2026-07-10 — T-exit:M11 遠距追蹤效度地基 PASS
+
+- **CI gate**:`npm.cmd run test:ci` exit 0(unsandboxed;沙盒仍受 Vite/esbuild parent-path 權限擋,沿 T0–T3 慣例)。證據:`tsc --noEmit` clean;Vitest **67 files / 527 tests** 全綠;Playwright **15 tests** 全綠(含 `full-drill.spec.ts` 的 `WP-23 T2 tracking_longrange_v1:field-low 載入 + 小 hitbox/遠距 lane smoke`)。
+- **M11 四項證據(Outcomes)**:
+  - **零破壞**:省略 `targets.hitbox` 的既有 drill(counterstrafe/tracking/detection)決定性回歸零修改全綠——`tests/regression/{determinism,moving-target-determinism,spray-determinism}.test.ts`、`src/loop/__tests__/*determinism*.test.ts` 均在 full Vitest 內綠;`resolveTargetHitbox(config)` 省略時回唯一預設 `DEFAULT_TARGET_HITBOX={1,2,1}`(T1)。
+  - **同幾何(GD-7)**:`src/metrics/trackingDerivation.test.ts` 邊緣開火 fixture——小 hitbox `{0.5,1,0.5}` 下 inside/outside `raycastWithRay` sim hit 與離線 on-target 同真同假,且 `meta.targets.hitbox` 優先於 options(T1)。
+  - **round-trip**:`tracking_longrange_v1` 經 production `DataRecorder → buildExportPayload → serializeJSON → deriveTrackingMetrics` round-trip,`tAcquireMs` 誤差 ≤ 1 tick、TOT=100、RMS ε < 1e-6(T3)。
+  - **決定性**:`tests/regression/longrange-tracking-determinism.test.ts` 收編 `tracking_longrange_v1`,60/144/240/jitter render FPS 的 `DataRecorder` snapshot 與 canonical bit-exact,既有 baseline 零重錄(T3)。
+- **OQ ledger 收斂**:OQ-S5-4(遠距設計矩陣)/ OQ-23.1(hitbox 單一來源落點)/ OQ-23.2(display scale 與 `field-low` 適用性)全 ✅ 回填(見下 ledger)。**帶著走**:OQ-23.2 的「`field-low` 正面遠距走廊被 backdrop props 擋、T2 折衷用右後方 clear lane」→ 移交 **WP-26 T0**(需補 front-facing BR field/long corridor)。
+- **CONTEXT.md 回寫**:§B `HitDetector` 列加註「hitbox 尺寸為資料(WP-23):H1 單一 hitbox 語意不變、尺寸由 `DrillConfig.targets.hitbox?` config 化、省略逐位等同 `{1,2,1}`、單一來源貫穿 sim/render/clearance/離線推導」。
+- **索引翻牌**:本資料夾 README 狀態 → ✅;[task-checklist.md](task-checklist.md) T-exit → ✅;[上層 stage5 README §3/§4](../README.md) WP-23 列 + M11 → ✅;[exec-plan/README.md §2/§3](../../../README.md) WP-23 列 + M11 → ✅。
+- **交付總結**:hitbox 由三處寫死常數收斂為 `DrillConfig` 單一來源(additive、省略逐位不變),遠距小目標追蹤 drill `tracking_longrange_v1` 以角參數(0.5°×5°/s)反推距離/速度/hitbox 並通過淨空,小角尺寸下指標鏈 round-trip 與跨 FPS 決定性成立。**WP-25 T2+(projectile)與 WP-26(BR 整合)自此有效度地基可消費。**
+- **Surprises / 帶著走的決定**:① `field-low` 無 front-facing 遠距走廊(props 擋線)——T2 以右後方 lane 保契約、真 BR 走廊移交 WP-26。② 未新增 production metrics/dashboard surface(T3 決策):結果頁 sanity 以既有 DOM 無 NaN/爆值驗證,tracking 指標仍走離線 `deriveTrackingMetrics`,符合 GD-7「沿用既有指標族、零新門檻」。
 
 ### 2026-07-10 — T3 小角尺寸 round-trip + 遠距決定性 PASS
 

@@ -46,7 +46,7 @@
 | **`SimLoop`** | 128 Hz 固定步長 accumulator 迴圈：消費輸入 → movement → 急停判定 → 命中判定 → 記錄（F2/F3） | 模擬 |
 | **`MovementController`** | A/D 橫移 + 急停（階段 A 簡化「立即停止」/ 階段 B physics）；介面跨階段不變（F3）。**狀態機 = M1**：鍵恆為移動鍵，反向鍵在穿越方向那一 tick 把 velocity **snap 到 0**（即「立即停止」）＋升 `stopped` flag，續按反向鍵 → 下一 tick `−v`（反向/過衝）。橫移亦為**瞬間 snap**（按 A/D → velocity 瞬間 ±`v_strafe`、放開 → 0；無 accel ramp，velocity 為純階梯函數），`v_strafe` config 預設 ~250 u/s。階段 B 把起步與停止都換成 friction+accel integrator，狀態機外形不變。 | 模擬 |
 | **`TargetManager`** | 目標 spawn／可見性、左右交替序列、蓋 `t_visible`（F2/F4） | 模擬 |
-| **`HitDetector`** | Raycaster 命中判定、首發判定（F3）。**階段 A 單一 hitbox**（命中/未命中；`part` 欄位保留選填、向後相容，頭/身分解延後至「精準射擊」維度）。 | 模擬 |
+| **`HitDetector`** | Raycaster 命中判定、首發判定（F3）。**階段 A 單一 hitbox**（命中/未命中；`part` 欄位保留選填、向後相容，頭/身分解延後至「精準射擊」維度）。**hitbox 尺寸為資料**（WP-23）：`DrillConfig.targets.hitbox?` 省略 = 唯一預設 H1 `{1,2,1}` 逐位不變;H1 **單一 hitbox 語意不變**,只是尺寸從寫死常數變成 config 值。**單一來源**貫穿 sim 命中(`TargetState.hitbox`)、渲染、淨空、離線 on-target 推導(讀 `meta.targets.hitbox`),同幾何零新門檻由測試釘死(GD-7)。 | 模擬 |
 | **`RenderLoop`** | rAF 迴圈，讀 sim 最新狀態做 alpha 內插後繪製 | 渲染 |
 | **`SceneManager`** | Three.js 場景、camera、room、crosshair、HUD 容器 | 渲染 |
 | **`DataRecorder`** | 每 tick 記錄、**preallocated arena**（**非環狀**；drill 內線性不 wrap，容量 `N = ceil(maxDrillSeconds × simHz)` + 裕度，`maxDrillSeconds` 預設 **300s（5 分鐘）** → ≈ 38,400 槽；跨 drill index 歸零、覆寫同一塊；超出升 `recorderOverflow` 標 suspect）、JSON/CSV 匯出（F1/F2）。容量上限與 drill 雙閘的「總時長」是**同一個數**，正常會先因總時長結束、碰不到上限。定位在 **sim 下游**，由 `simStep` 末端呼叫（非被 render／UI 直接讀）；階段 B 跟著 sim 進 worker、worker 內記錄、drill 結束才 `postMessage` 匯出，故不經 SAB。 | 資料 |
