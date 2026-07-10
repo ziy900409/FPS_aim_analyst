@@ -368,10 +368,18 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
       .toBe(true);
 
     const r = await page.evaluate((drillId) => {
+      type TrackingPresentation = {
+        acquisitionFailure: boolean;
+        tAcquireMs?: number;
+        totPercent?: number;
+        rmsEpsilonDeg?: number;
+      };
       type Harness = {
         startDrill(id: string): void;
         runTrackingPresentationRound(mode?: 'autoAim' | 'stationary', maxPresentations?: number): void;
         forceExportJSON(): unknown;
+        trackingMetricsFromExport(payload: unknown): { acquisitionFailureRate: number; presentations: TrackingPresentation[] };
+        showResult(): void;
         phase(): string;
       };
       const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
@@ -391,6 +399,7 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
       const visible = payload.events.filter((event) => event.type === 'visible');
       const firstVisible = visible[0] ?? {};
       const targetTicks = payload.ticks.filter((tick) => tick.tx !== null && tick.ty !== null && tick.tz !== null);
+      const tracking = harness.trackingMetricsFromExport(payload);
       const spawnArea = payload.meta.spawn?.spawnArea as
         | { distanceURange?: [number, number]; yawDegRange?: [number, number] }
         | undefined;
@@ -398,6 +407,9 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
         finite(firstVisible.targetX) && finite(firstVisible.targetZ)
           ? Math.hypot(firstVisible.targetX, firstVisible.targetZ)
           : null;
+      harness.showResult();
+      const resultScreen = document.querySelector<HTMLElement>('#result-screen');
+      const resultText = resultScreen?.textContent ?? '';
 
       return {
         coi: window.crossOriginIsolated,
@@ -409,6 +421,9 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
         firstVisible,
         spawnDistance: spawnArea?.distanceURange?.[0] ?? null,
         radialDistance,
+        tracking,
+        resultDisplay: resultScreen?.style.display ?? null,
+        resultHasInvalidNumber: resultText.includes('NaN') || resultText.includes('Infinity'),
       };
     }, TRACKING_LONGRANGE_DRILL_ID);
 
@@ -439,6 +454,13 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
     expect(r.firstVisible.targetZ as number).toBeGreaterThan(0);
     expect(r.spawnDistance as number).toBeCloseTo(114.59083180471995, 6);
     expect(r.radialDistance as number).toBeGreaterThan(110);
+    expect(r.tracking.acquisitionFailureRate).toBe(0);
+    expect(r.tracking.presentations.length).toBeGreaterThanOrEqual(2);
+    expect(r.tracking.presentations.every((p) => p.tAcquireMs !== undefined && p.tAcquireMs <= 16)).toBe(true);
+    expect(r.tracking.presentations.every((p) => p.totPercent !== undefined && p.totPercent >= 99)).toBe(true);
+    expect(r.tracking.presentations.every((p) => p.rmsEpsilonDeg !== undefined && p.rmsEpsilonDeg < 0.1)).toBe(true);
+    expect(r.resultDisplay).toBe('flex');
+    expect(r.resultHasInvalidNumber).toBe(false);
   });
 
   test('WP-22 protocol：2 條件解析度 × 偵測匯出 + 狀態隔離', async ({ page }) => {

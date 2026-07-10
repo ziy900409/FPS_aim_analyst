@@ -8,7 +8,7 @@
 | ✅ | **T0** entry gate(上游驗證 + OQ-S5-4 拍板,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ✅ | **T1** hitbox config 化(單一來源;零破壞) | [T1-hitbox-config.md](T1-hitbox-config.md) | T0 | High |
 | ✅ | **T2** 遠距追蹤 drill config(角參數反推) | [T2-longrange-drill.md](T2-longrange-drill.md) | T1 | Med |
-| ⬜ | **T3** round-trip + 決定性 + 結果頁 sanity | [T3-metrics-roundtrip.md](T3-metrics-roundtrip.md) | T2 | Med |
+| ✅ | **T3** round-trip + 決定性 + 結果頁 sanity | [T3-metrics-roundtrip.md](T3-metrics-roundtrip.md) | T2 | Med |
 | ⬜ | **T-exit** M11 宣告 | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))

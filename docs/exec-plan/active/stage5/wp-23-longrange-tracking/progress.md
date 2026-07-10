@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 T2 PASS(2026-07-10);T3 ready
+## Status: 🟡 T3 PASS(2026-07-10);T-exit ready
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 hitbox config 化 | ✅ |
 | T2 遠距 drill config | ✅ |
-| T3 round-trip + 決定性 | ⬜ |
+| T3 round-trip + 決定性 | ✅ |
 | T-exit(M11) | ⬜ |
 
 ---
@@ -28,6 +28,21 @@
 ---
 
 ## Log
+
+### 2026-07-10 — T3 小角尺寸 round-trip + 遠距決定性 PASS
+
+- **Metrics round-trip**:`src/metrics/trackingDerivation.test.ts` 新增 `tracking_longrange_v1` 小角尺寸 fixture,以 production `DataRecorder` → `buildExportPayload` → `serializeJSON` → `deriveTrackingMetrics` 路徑 round-trip。known acquisition window 斷言 `tAcquireMs` 誤差 ≤ 1 tick,TOT=100,RMS ε < 1e-6,且 `meta.targets.hitbox={0.5,1,0.5}` 優先進 derivation options。
+- **Endpoint sanity**:同一 longrange fixture 補完美追蹤(首 tick acquired,TOT=100,RMS≈0)與完全不追(acquisition failure rate=1,TOT/RMS undefined)兩端點。
+- **Sub-tick regression**:新增小 hitbox 遠距 raycast fixture:同一 aim ray 在 tick-end 位置 miss,帶 `subAlpha=0.25` 內插位置 hit,釘住 WP-18 FR-B17 在 0.5° 小角尺寸下的語意。
+- **Determinism regression**:`tests/regression/longrangeTrackingDeterminismFixture.ts` + `longrange-tracking-determinism.test.ts` 收編 `tracking_longrange_v1`。canonical 每 tick 幀切法覆蓋 countdown→running、≥3 次 timed presentation、遠距 radial >110u 與 moving target;60/144/240/jitter render FPS 的 `DataRecorder` snapshot 與 canonical bit-exact;同 jitter 序列重播一致。
+- **Result page sanity**:`tests/e2e/full-drill.spec.ts` 的 longrange smoke 升級為 tracking metrics sanity + `showResult()` DOM 檢查。真瀏覽器匯出反算 `acquisitionFailureRate=0`,`tAcquireMs<=16ms`,`TOT>=99`,`RMS<0.1°`;`#result-screen` display=`flex` 且不含 `NaN`/`Infinity`。
+- **Decision**:不新增 production metrics/dashboard surface。T3 只補效度證據;結果頁 sanity 以現有 `MetricsDashboard`/`ResultScreen` DOM 無 NaN/爆值驗證,tracking 指標仍走 dev/test harness 的 `deriveTrackingMetrics(payload)` 對帳。理由:task 明定 MODIFY 無 production 邏輯,且 GD-7 要求沿用既有指標族、零新門檻。
+- **Verification**:
+  - Targeted Vitest:`npx.cmd vitest run src/metrics/trackingDerivation.test.ts src/drill/tracking_longrange_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts` exit 0 (**3 files / 19 tests**).
+  - Typecheck:`npm.cmd run typecheck` exit 0。
+  - Full Vitest:`npx.cmd vitest run` exit 0 (**67 files / 527 tests**).
+  - Targeted Playwright:`npx.cmd playwright test tests/e2e/full-drill.spec.ts -g "tracking_longrange" --project=edge` sandbox run hit Vite/esbuild parent-directory permission denial;unsandboxed rerun exit 0 (**1 test**).
+  - Full CI:`npm.cmd run test:ci` sandbox run hit same Vite/esbuild permission denial;unsandboxed rerun exit 0 (**tsc clean;67 Vitest files / 527 tests;Playwright 15 tests**).
 
 ### 2026-07-10 — T2 tracking_longrange_v1 遠距小目標 drill PASS
 
