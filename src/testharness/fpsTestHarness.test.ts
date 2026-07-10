@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { createFpsTestHarness } from './fpsTestHarness.ts';
 import drillSource from '../../drills/counterstrafe_ad_v1.json';
 import { detectionPopinV1 } from '../drill/detection_popin_v1.ts';
+import { resolutionDetectionProtocol } from '../display/resolutionDetectionProtocol.ts';
+import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
+import { fieldLow } from '../scene/scenes/field-low.ts';
+import { urbanHigh } from '../scene/scenes/urban-high.ts';
+import type { SceneConfig } from '../scene/SceneConfig.ts';
 
 /**
  * WP-13 / T2 — fpsTestHarness 整合（node 層,對應瀏覽器 E2E full-drill.spec.ts）
@@ -29,6 +34,17 @@ function makeDetectionHarness() {
       { id: 'counterstrafe_ad_v1', source: drillSource },
       { id: detectionPopinV1.drillId, source: detectionPopinV1 },
     ],
+    availableScenes: [fieldLow],
+    backend: 'webgl2',
+    crossOriginIsolated: true,
+    displayHz: 240,
+    sensitivity: 1,
+  });
+}
+
+function makeTrackingHarness(scene: SceneConfig = fieldLow) {
+  return createFpsTestHarness({
+    availableDrills: [{ id: trackingSceneV1.id, source: trackingSceneV1.drill, scene }],
     backend: 'webgl2',
     crossOriginIsolated: true,
     displayHz: 240,
@@ -103,5 +119,101 @@ describe('WP-13 / T2 — harness 整合(分離後仍命中 + recoil 漂移讀數
       spawnArea: detectionPopinV1.targets.spawnArea,
       spawnDelayMsRange: detectionPopinV1.sequence.spawnDelayMsRange,
     });
+  });
+
+  it('WP-22 / T1 tracking_scene_v1：timed presentations export scene + tracking sanity', () => {
+    const harness = makeTrackingHarness();
+    harness.startDrill(trackingSceneV1.id);
+    harness.runTrackingPresentationRound('autoAim');
+
+    expect(harness.phase()).toBe('ended');
+    const payload = harness.forceExportJSON();
+    const visible = payload.events.filter((event) => event.type === 'visible');
+    const targetTx = payload.ticks
+      .map((tick) => tick.tx)
+      .filter((value): value is number => value !== null);
+    const tracking = harness.trackingMetricsFromExport(payload);
+
+    expect(payload.meta.drillId).toBe(trackingSceneV1.id);
+    expect(payload.meta.suspect).toBe(false);
+    expect(payload.meta.scene).toMatchObject({
+      sceneId: 'field-low',
+      assetPackVersion: fieldLow.assetPackVersion,
+      clutterTier: 'low',
+      fallback: false,
+    });
+    expect(payload.meta.spawn).toMatchObject({
+      seed: trackingSceneV1.drill.sequence.seed,
+      motion: trackingSceneV1.drill.targets.motion,
+      presentationMs: trackingSceneV1.drill.timing.presentationMs,
+    });
+    expect(visible).toHaveLength(trackingSceneV1.drill.targets.count);
+    expect(new Set(targetTx).size).toBeGreaterThan(1);
+    expect(tracking.acquisitionFailureRate).toBe(0);
+    expect(tracking.presentations.every((p) => p.totPercent !== undefined && p.totPercent >= 99)).toBe(true);
+
+    const miss = makeTrackingHarness();
+    miss.startDrill(trackingSceneV1.id);
+    miss.runTrackingPresentationRound('stationary');
+    const missTracking = miss.trackingMetricsFromExport(miss.forceExportJSON());
+    expect(missTracking.acquisitionFailureRate).toBe(1);
+    expect(missTracking.presentations.every((p) => p.acquisitionFailure)).toBe(true);
+  });
+
+  it('WP-22 / T1 urban-high probe：tracking presentations complete without recorder suspect', () => {
+    const harness = makeTrackingHarness(urbanHigh);
+    harness.startDrill(trackingSceneV1.id);
+    harness.runTrackingPresentationRound('autoAim');
+
+    const payload = harness.forceExportJSON();
+    expect(harness.phase()).toBe('ended');
+    expect(payload.meta.suspect).toBe(false);
+    expect(payload.meta.recorderOverflow).toBe(false);
+    expect(payload.meta.scene).toMatchObject({
+      sceneId: 'urban-high',
+      assetPackVersion: urbanHigh.assetPackVersion,
+      clutterTier: 'high',
+      fallback: false,
+    });
+    expect(payload.events.filter((event) => event.type === 'visible')).toHaveLength(trackingSceneV1.drill.targets.count);
+    expect(harness.trackingMetricsFromExport(payload).acquisitionFailureRate).toBe(0);
+  });
+
+  it('WP-22 / T2 resolution protocol：two detection conditions export isolated display + protocol metadata', async () => {
+    const harness = makeDetectionHarness();
+
+    const payloads = await harness.runResolutionDetectionProtocol();
+
+    expect(payloads).toHaveLength(2);
+    expect(payloads.map((payload) => payload.meta.protocol?.conditionLabel)).toEqual(
+      resolutionDetectionProtocol.conditions.map((condition) => condition.label),
+    );
+    expect(payloads.map((payload) => payload.meta.display?.mode)).toEqual(['fhd-1080', 'qhd-1440']);
+    expect(payloads.map((payload) => payload.meta.display?.bufferW)).toEqual([1920, 2560]);
+    expect(payloads.map((payload) => payload.meta.display?.bufferH)).toEqual([1080, 1440]);
+
+    for (const [index, payload] of payloads.entries()) {
+      expect(payload.meta.drillId).toBe(detectionPopinV1.drillId);
+      expect(payload.meta.protocol).toEqual({
+        protocolId: resolutionDetectionProtocol.protocolId,
+        conditionIndex: index,
+        conditionLabel: resolutionDetectionProtocol.conditions[index].label,
+      });
+      expect(payload.meta.display?.gate).toMatchObject({ pass: true, native: true, fullscreen: true, perf: true });
+      expect(payload.meta.scene).toMatchObject({
+        sceneId: 'field-low',
+        assetPackVersion: fieldLow.assetPackVersion,
+        clutterTier: 'low',
+        fallback: false,
+      });
+      expect(payload.meta.spawn).toMatchObject({
+        seed: detectionPopinV1.sequence.seed,
+        spawnArea: detectionPopinV1.targets.spawnArea,
+        spawnDelayMsRange: detectionPopinV1.sequence.spawnDelayMsRange,
+      });
+      expect(payload.meta.frames?.summary).toMatchObject({ count: 1, overBudgetWindows: 0, overflow: false });
+      expect(payload.meta.suspect).toBe(false);
+      expect(payload.events.filter((event) => event.type === 'visible')).toHaveLength(detectionPopinV1.targets.count);
+    }
   });
 });

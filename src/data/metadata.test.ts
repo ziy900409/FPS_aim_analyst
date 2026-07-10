@@ -280,6 +280,49 @@ describe('collectMeta', () => {
     expect(meta.session).toEqual({ participantId: 'P001', sessionLabel: 'pre' });
   });
 
+  it('accepts WP-22 protocol condition metadata', () => {
+    const meta = collectMeta({
+      drillId: 'detection_popin_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      protocol: {
+        protocolId: ' resolution_detection_v1 ',
+        conditionIndex: 0,
+        conditionLabel: ' fhd-1080-field-low-detection ',
+      },
+    });
+
+    expect(meta.protocol).toEqual({
+      protocolId: 'resolution_detection_v1',
+      conditionIndex: 0,
+      conditionLabel: 'fhd-1080-field-low-detection',
+    });
+  });
+
+  it('rejects malformed protocol metadata', () => {
+    const valid: CollectMetaArgs = {
+      drillId: 'detection_popin_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() => collectMeta({ ...valid, protocol: { protocolId: ' ', conditionIndex: 0, conditionLabel: 'fhd' } })).toThrow(
+      'protocol.protocolId',
+    );
+    expect(() =>
+      collectMeta({ ...valid, protocol: { protocolId: 'p', conditionIndex: -1, conditionLabel: 'fhd' } }),
+    ).toThrow('protocol.conditionIndex');
+    expect(() => collectMeta({ ...valid, protocol: { protocolId: 'p', conditionIndex: 0, conditionLabel: ' ' } })).toThrow(
+      'protocol.conditionLabel',
+    );
+  });
+
   it('rejects a malformed gate report on display metadata', () => {
     expect(() =>
       collectMeta({

@@ -7,7 +7,7 @@
 | **相依** | T0(WP-20/21 上游確認);與 T1 可並行 |
 | **Risk / Cplx** | **High** / High(GD-10 三道防線的整合收斂點) |
 | **Touches** | ADD `src/display/ProtocolRunner.ts`(或 `src/ui/`)+ `ProtocolConfig` + E2E 一條;MODIFY `src/data/metadata.ts`(meta.protocol 標記)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | 🟡 AUTO PASS 2026-07-09 14:43Z; manual true-fullscreen walkthrough pending |
 
 ## Objective
 
@@ -37,11 +37,11 @@ GD-10 的實驗實體成形(FR-C14):受試者內解析度 protocol——資格�
 
 ## Steps
 
-- [ ] `ProtocolConfig` + validate + 單元測試。
-- [ ] `ProtocolRunner` 流程 + 條件級 suspect + meta.protocol;單元測試(mock 各站)。
-- [ ] E2E 主線(2 條件全流程)+ 拒入路徑 + 狀態隔離斷言,全綠。
+- [x] (2026-07-09 14:30Z) `ProtocolConfig` + validate + 單元測試。
+- [x] (2026-07-09 14:36Z) `ProtocolRunner` 流程 + 條件級 suspect + meta.protocol;單元測試(mock 各站)。
+- [x] (2026-07-09 14:39Z) E2E 主線(2 條件全流程)+ 拒入路徑 + 狀態隔離斷言,全綠。
 - [ ] 實機手動走一輪完整 protocol(真 fullscreen/真切換)記 progress。
-- [ ] `npx vitest run` + E2E 全綠。
+- [x] (2026-07-09 14:43Z) `npx vitest run` + E2E 全綠;`npm.cmd run test:ci` exit 0。
 
 ## Definition of Done
 

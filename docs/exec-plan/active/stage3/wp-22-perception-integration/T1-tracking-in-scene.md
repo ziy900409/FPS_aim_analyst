@@ -7,7 +7,7 @@
 | **相依** | T0(WP-18 形狀對帳完成) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | ADD `src/drill/tracking_scene_v1.ts`(組合 config)、E2E 一條;MODIFY(僅必要時)場景/drill 掛線膠合 + 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-09) |
 
 ## Objective
 
@@ -35,11 +35,11 @@ GD-7 的實驗實體成形(FR-C13):WP-18 追蹤 drill 在 `field-low` BR 場景�
 
 ## Steps
 
-- [ ] `tracking_scene_v1` config + 淨空驗證通過(修正過程記 progress)。
-- [ ] E2E 一條全綠(匯出斷言全項)。
-- [ ] 結果頁 sanity 兩極端 case 記 progress。
-- [ ] `urban-high` 複驗記 progress。
-- [ ] `npx vitest run` + E2E 全綠。
+- [x] `tracking_scene_v1` config + 淨空驗證通過(修正過程記 progress)。
+- [x] E2E 一條全綠(匯出斷言全項)。
+- [x] 結果頁/匯出 sanity 兩極端 case 記 progress。
+- [x] `urban-high` 複驗記 progress。
+- [x] `npm.cmd test` + E2E 全綠。
 
 ## Definition of Done
 

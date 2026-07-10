@@ -5,15 +5,15 @@
 
 ---
 
-## Status: ✅ T0 entry gate PASS(2026-07-09):四上游 exit verified + WP-18 交付形狀對帳完成 → T1 可開跑
+## Status: ✅ M10 交付(2026-07-10):auto-gate 全綠 + 真 fullscreen 實機 walkthrough 證據回填;stage3 交付,兩感知實驗 pilot-ready
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ PASS(2026-07-09;WP-18 T-exit 交付 + OQ-S3-5 對帳解除;`test:ci` green) |
-| T1 追蹤 × 場景 | ⬜ |
-| T2 protocol 執行器 + E2E | ⬜ |
-| T3 決定性 + 驗收清單 C | ⬜ |
-| T-exit(M10) | ⬜ |
+| T1 追蹤 × 場景 | ✅ PASS(2026-07-09;`tracking_scene_v1` + Playwright E2E + urban-high harness probe) |
+| T2 protocol 執行器 + E2E | ✅ PASS(2026-07-10;auto E2E + 真 fullscreen 實機 walkthrough 證據) |
+| T3 決定性 + 驗收清單 C | ✅ PASS(2026-07-10;清單 C 全 10 項 + C-5 手動補項證據) |
+| T-exit(M10) | ✅ PASS(2026-07-10;stage3 交付宣告) |
 
 ---
 
@@ -28,6 +28,168 @@
 ---
 
 ## Log
+
+### 2026-07-10 local — T-exit M10 交付宣告(真 fullscreen 實機 walkthrough 證據回填;stage3 交付)
+
+**觸發**:研究者在本機 Chrome/Edge(Edg/146,240Hz 面板)真 fullscreen 走完 `resolution_detection_v1` protocol,回填三份匯出 JSON 證據 → C-5 手動補項解除 → M10 唯一 gating open item 關閉。使用者拍板 accept now(2026-07-10)。
+
+**環境排障(前置,已解)**:首輪 warmup p95 16.75ms(≈60Hz)perf FAIL。根因 = 瀏覽器 rAF 被壓到 60Hz(多螢幕/主顯示器/VRR)而非面板實際 240Hz;非程式碼缺陷(資格閘只量 rAF cadence,`PERF_FLOOR_MS=8.33ms`=120Hz 等效門檻,OQ-S3-1)。研究者調整顯示設定後 rAF 回到 240Hz(warmup p95 4.23ms,`refreshEstimateHz=240`)→ perf PASS。
+
+**真 fullscreen walkthrough 證據(participantId `Test` / sessionLabel `pilot-verify`;純驗證,非 pilot 資料)**:
+
+| 匯出檔 | protocol | mode / buffer | gate.pass / refreshHz | frames p95 | seed | scene | suspect | 判定 |
+|---|---|---|---|---|---|---|---|---|
+| `detection_popin_v1-1-fhd-1080-field-low-detection-…07_14_57Z.json` | index 0 / `fhd-1080-field-low-detection` | fhd-1080 / 1920×1080 | true / 240 | 4.26ms | 21021 | field-low | false | ✅ 條件 0 全欄一致 |
+| `detection_popin_v1-2-qhd-1440-field-low-detection-…07_18_01Z.json` | index 1 / `qhd-1440-field-low-detection` | qhd-1440 / 2560×1440 | true / 240 | 4.26ms | 21021 | field-low | **true** | ✅ 條件 1 全欄一致;suspect=true 為操作者移動所致(見下) |
+| `detection_popin_v1-…07_23_36Z.json`(standalone 補跑) | — 無(非 protocol 流程) | qhd-1440 / 2560×1440 | true / 240 | 4.24ms | 21021 | field-low | false | ✅ 靜止時 qhd 條件 suspect=false 確證 |
+
+**QHD 條件 1 `suspect=true` 診斷(非缺陷)**:`suspect = playerCorridorExceeded || protocolContext.suspect || frames.p95>floor`([main.ts:317-320](../../../../../src/main.ts#L317-L320))。frames p95 clean、無 fullscreen-exit;根因 = 操作者在該條件中 strafe 逸出宣告 player corridor(玩家 px 到達 ±262 units vs corridor halfWidth ~1.0u;FHD 條件玩家 px 全程 0)→ `sharedState.validity.playerCorridorExceeded` = GD-6c 純觀測旗標**如設計運作**。`detection_popin_v1` 為靜止 pop-in 反應任務(GD-8),移動非任務一部分;正式 pilot 受試者靜止即 suspect=false(standalone 補跑已證)。
+
+**額外驗證收穫**:同一 protocol run 中條件 0 `suspect=false` 而條件 1 `suspect=true`,證明 README failure-mode 契約「**條件級 suspect(非 session 級)**」——條件 1 汙染未洩漏至條件 0。條件隔離成立。
+
+**清單 C 最終狀態**:C-1~C-4、C-6~C-10 自動 ✅;**C-5 = ✅ A(auto E2E)+ ✅ M(真 fullscreen 實機證據,本 log)**。全 10 項綠。
+
+**最終基準**:`npm run test:ci` exit 0(2026-07-10 本 session,`tsc` clean + Vitest 65 files/505 tests + Playwright 14;程式碼自該次未變,docs-only 編輯不影響)。
+
+**Outcomes(交付了什麼)**:
+- **stage3 交付(M10)**:兩感知實驗端到端成立且 pilot-ready——追蹤×場景(`tracking_scene_v1`)+ 解析度×偵測受試者內 protocol(`resolution_detection_v1`,真 fullscreen 實機證據)。決定性三不變性回歸、驗收清單 C 全 10 項、pilot protocol 文件齊備。
+- 索引同步:stage3 README + exec-plan README WP-22 → ✅ / M10 記日期;OQ ledger(OQ-S3-5 / OQ-22.1 / OQ-22.2)全收斂。
+- **帶著走的決定**:(1) 資格閘 perf 只量 rAF cadence → 60Hz 面板/被壓到 60Hz 的多螢幕環境永遠 FAIL,屬設計(GD-10 需 ≥120Hz);未來可在 gate `details` 顯示推估 Hz 以利實機排障(選項,未落地)。(2) QHD 首跑 suspect=true 保留於證據表作為條件隔離+corridor-escape 機制的實證,不視為缺陷。
+
+**帶著走的技術債 / 後續**:
+- stage3 資料夾(wp-19/20/21/22)仍在 `active/stage3/`;全數已交付,可另立 housekeeping slice 一次移入 `completed/stage3/`(協議 §5「視需要」)——本切片不移,避免大量相對連結變動混入 M10 宣告 commit。
+- 規格書升 v1.3(stage3 節 + 附錄 E 清單 C)仍 ⬜,owner 待指派(見 stage3 README §9)。
+- 資格閘 `details` 顯示推估 Hz 的 UX 改進為選項,未落地。
+
+**Open Questions / Manual Follow-up**:無。M10 gating open item(真 fullscreen walkthrough)已關閉。
+
+### 2026-07-10 local — T-exit gate AUTO-COMPLETE(auto-gate 全綠 + 索引/OQ 同步;M10 保留待手動 walkthrough)
+
+**觸發**:`/code-review-and-quality` 執行 T-exit。決策(2026-07-10 使用者拍板):**落自動閘、M10 保留待手動**——完成所有可自動化的 exit-gate 工作,但**不宣告 M10、不翻 WP-22 ✅**,因真 fullscreen 實機 walkthrough(清單 C-5 ⏳ M / T-exit DoD「實機證據」)需研究者互動操作,非互動 session 無法產生。
+
+**最終基準驗證(本切片重跑)**:
+- `npm.cmd run test:ci`(sandbox 停用)→ **exit 0**:`tsc --noEmit` clean;Vitest **65 files / 505 tests** pass;Playwright **14 tests** pass(含 WP-22 三案:`tracking_scene_v1` field-low 匯出欄、protocol 2 條件解析度×偵測 + 狀態隔離、protocol gate 低解析度拒入無匯出)。
+
+**五軸 code review(交付物)——無 BLOCKER/無 required change**:
+- `src/display/ProtocolRunner.ts`:validateProtocol field-path 錯誤明確;`snapshotContext` 深拷貝防外洩;`markCurrentConditionSuspect` 條件級(非 session 級)隔離符合 README failure-mode 契約。
+- `src/drill/tracking_scene_v1.ts`:composition object `{ id, sceneId, drill }` 未污染 `DrillConfig`;`range=0.25u` 淨空決策有 T1 log 佐證。
+- `src/loop/__tests__/wp22-determinism.test.ts`:三不變性 bit-exact(跨場景/跨解析度 `toEqual` 全 tick snapshot + snapshot 記錄)+ seeded golden 雙跑一致 + legacy slot seed 不漂移。
+- `src/data/metadata.ts`:`meta.protocol` additive optional + `requireProtocolMeta` 驗證,`conditionIndex` 非負整數、label 非空 trim。
+- 五軸(correctness/readability/architecture/security/performance)均無 required change;change sizing 各 task 為單一垂直切片。
+
+**auto-gate 判定(清單 C)**:C-1~C-4、C-6~C-10 = ✅ A(有測試入口);C-5 = ✅ A / ⏳ M(auto E2E 綠,真 fullscreen 手動補項待研究者)。**9/10 自動項全綠;唯一手動補項 = M10 唯一 gating open item。**
+
+**索引/OQ 同步(本切片交付)**:
+- [../README.md(stage3)](../README.md) §3 WP-22 列 ⬜ → 🟡(exit-gate auto-green,M10 待手動);§4 M10 列加 auto-gate 綠/手動 pending 註記;§8 OQ-S3-5 🟡 → ✅ resolved(WP-18 T-exit 交付 + T0 對帳,見 2026-07-09 log)。
+- [exec-plan/README.md](../../../README.md) §2 stage3 表修正 staleness:WP-20 ⬜ → ✅ 交付、WP-21 🟡 → ✅ 交付、WP-22 ⬜ → 🟡(exit-gate auto-green);§3 M10 列加 auto-gate 綠 + 手動 pending 註記。
+- OQ ledger 收斂複查:OQ-22.1 / OQ-22.2 ✅(見上方 ledger);OQ-S3-5 ✅;stage3 OQ-S3-1~4 先前皆已 ✅ 收斂(見 stage3 README §8)。
+
+**Outcomes(交付了什麼)**:
+- 交付:兩感知實驗端到端**自動**成立(追蹤×場景 + 解析度×偵測 protocol)、決定性三不變性回歸、驗收清單 C 自動 9 項、pilot protocol 文件、`test:ci` exit 0。上層索引(stage3 README + exec-plan README)stage3 交付狀態同步。
+- **未交付(保留)**:M10 正式宣告 + WP-22 ✅ + stage3 資料夾移入 `completed/`——全部 gating 於研究者真 fullscreen walkthrough 的兩份 JSON 證據回填(見下方 Follow-up)。
+
+**Surprises & Discoveries**:
+- exec-plan/README.md §2 stage3 表在本切片前 stale:WP-20 仍 ⬜、WP-21 仍 🟡 T1,但兩者 T-exit 早已 ✅(WP-22 T0 已驗證上游 exit)。本切片一併校正,避免頂層索引與實際交付漂移。
+- WP-18 於 exec-plan §2 stage2 列仍標「🟢 ready 未展開」,但 progress/T0 顯示 WP-18 T-exit 已交付。此為 **stage2** 列(非本 WP T-exit step 5 的 stage3 範圍),本切片不動,記此觀察供 stage2 index owner 校正。
+
+**Open Questions / Manual Follow-up(M10 唯一 gating)**:
+- 研究者在本機真 fullscreen 執行 `resolution_detection_v1` 兩條件,回填兩份 JSON 檢查(`meta.protocol.conditionIndex` 0/1、`meta.display.mode` fhd-1080/qhd-1440、`meta.spawn.seed=21021`、`meta.display.gate.pass=true`、`meta.frames.summary`)至本 progress。回填後即可翻 WP-22 ✅ / 宣告 M10 / 視需要移 `completed/`。步驟見 [acceptance-checklist-c.md §2](../../../../operational/acceptance-checklist-c.md) 與 [pilot-protocol-stage3.md §4.2](../../../../operational/pilot-protocol-stage3.md)。
+
+### 2026-07-09 16:59 local — T3 AUTO PASS(determinism regression + checklist C + pilot protocol;manual pending)
+
+**Scope delivered**:
+- Added `src/loop/__tests__/wp22-determinism.test.ts` covering all three FR-C15 invariants:cross-scene bit-exact sim state, cross-resolution bit-exact sim state after buffer mode application, and seeded `detection_popin_v1` spawn golden replay. The legacy L/R slot path is also checked against `sequence.seed` drift.
+- Added [acceptance-checklist-c.md](../../../../operational/acceptance-checklist-c.md):10 M10 checklist rows with automatic evidence entry points and the remaining true-fullscreen manual walk-through.
+- Added [pilot-protocol-stage3.md](../../../../operational/pilot-protocol-stage3.md):tracking × scene and resolution × detection pilot procedure, export naming/collection convention, and error-boundary notes for GD-7/GD-8/GD-10.
+- Updated T3 task status to AUTO PASS. M10/T-exit remains pending until the manual true-fullscreen protocol walk-through is recorded.
+
+**Verification**:
+- `npm.cmd test -- src/loop/__tests__/wp22-determinism.test.ts` -> PASS(1 file / 4 tests).
+- `npm.cmd test -- src/loop/__tests__/wp22-determinism.test.ts src/loop/__tests__/determinism.test.ts tests/regression/determinism.test.ts src/display/resolutionMode.test.ts tests/regression/moving-target-determinism.test.ts` -> PASS(5 files / 38 tests).
+- `npm.cmd run typecheck` -> PASS(`tsc --noEmit`).
+- `npm.cmd run test:ci` sandbox run failed because Vite/esbuild could not read upper config paths; elevated rerun -> PASS(`tsc --noEmit`;Vitest 65 files / 505 tests;Playwright 14 tests).
+- `graphify update .` -> PASS(AST extraction 144/144;graph rebuilt 1052 nodes / 2435 edges / 65 communities).
+
+**Decision Log**:
+- Decision:T3 determinism tests live under `src/loop/__tests__/wp22-determinism.test.ts` as an additive WP-22 regression gate, while the existing `tests/regression/determinism.test.ts` baseline remains untouched.
+  Alternatives Considered:expanding the older regression fixture directly;rejected because T3 needs a named acceptance-facing gate and should not churn the stage1/2 baseline file.
+- Decision:清單 C treats true-fullscreen protocol operation as an explicit manual supplement while keeping the automatic protocol E2E as the CI gate.
+  Alternatives Considered:marking fullscreen as auto-covered by Playwright;rejected because headless/browser automation does not prove the local interactive fullscreen/download path.
+
+**Surprises & Discoveries**:
+- Seeded spawn golden matched the independent reconstruction except for two floating-point last-bit display values;the committed golden uses the production TS pipeline output. Evidence:first run of `wp22-determinism.test.ts` failed only on `targetX` ULP differences for targets `t1`/`t2`,then passed after aligning to actual output.
+
+**Open Questions / Manual Follow-up**:
+- Same manual item remains:run the local app in true fullscreen, execute `resolution_detection_v1` end-to-end, and record the two exported JSON checks in this progress log before T-exit/M10.
+
+### 2026-07-09 16:43 local — T2 AUTO PASS(protocol runner + resolution x detection E2E;manual pending)
+
+**Scope delivered**:
+- Added `ProtocolConfig` / `validateProtocol` / `ProtocolRunner` in `src/display/ProtocolRunner.ts`.
+- Added shared `resolution_detection_v1` config:2 conditions ordered by config data, `fhd-1080-field-low-detection` then `qhd-1440-field-low-detection`.
+- Added additive `meta.protocol = { protocolId, conditionIndex, conditionLabel }` and validation in `collectMeta`.
+- Wired main UI:「解析度 protocol」button -> setup form -> eligibility gate -> condition sequence;each condition applies + locks resolution mode, loads declared scene/drill, exports condition-tagged JSON, then shows a next-condition transition.
+- Wired dev harness + Playwright:2-condition protocol run exports two detection payloads;low-resolution gate path rejects without exports.
+
+**Verification**:
+- `npm.cmd test -- src/display/ProtocolRunner.test.ts src/data/metadata.test.ts src/testharness/fpsTestHarness.test.ts` -> PASS(3 files / 34 tests).
+- `npm.cmd run typecheck` -> PASS(`tsc --noEmit`).
+- `npx.cmd playwright test tests/e2e/full-drill.spec.ts -g "WP-22"` -> PASS(3 tests;required elevation because sandbox blocked Vite/esbuild config read).
+- `npm.cmd test` -> PASS(64 files / 501 tests).
+- `npx.cmd playwright test` -> PASS(14 tests;required elevation for webServer).
+- `npm.cmd run test:ci` -> PASS(`tsc --noEmit`;Vitest 64 files / 501 tests;Playwright 14 tests).
+- `graphify update .` -> PASS(AST extraction 143/143;graph rebuilt 1038 nodes / 2370 edges / 61 communities).
+
+**Decision Log**:
+- Decision:protocol config lives as `resolution_detection_v1` in `src/display/resolutionDetectionProtocol.ts`, separate from drill config.
+  Alternatives Considered:embedding protocol fields in `detection_popin_v1`;rejected because condition order/mode/scene are experiment orchestration, not drill mechanics.
+- Decision:main protocol progression exports automatically at drill `ended`, but requires an explicit next-condition button.
+  Alternatives Considered:auto-advancing immediately after export;rejected because it hides the condition boundary and makes operator inspection/download failures harder to notice.
+- Decision:condition-level fullscreen failure maps through `ProtocolRunner.markCurrentConditionSuspect('fullscreen-exit')`;non-protocol exports keep the existing `experimentSession.suspect` path.
+  Alternatives Considered:using session-level suspect for all protocol exports;rejected because a condition-1 fullscreen exit would incorrectly contaminate condition 2.
+- Decision:dev harness protocol uses a passed gate fixture for the mainline, and a separate `previewResolutionProtocolGate` path for low-resolution rejection.
+  Alternatives Considered:driving real fullscreen in headless E2E;not reliable across CI/headless browser modes and not equivalent to the required manual walk.
+
+**Surprises & Discoveries**:
+- Harness synthetic frames initially used actual browser `displayHz`;on 60Hz runners this exceeded the 120Hz perf floor and correctly marked protocol exports `suspect=true`. Evidence:first WP-22 protocol E2E failed at `meta.suspect`;fix clamps harness protocol frame summary to `PERF_FLOOR_MS` because the harness mainline uses a pass gate fixture.
+- `SettingsPanel.lockMode()` was already present as a WP-22 T2 seam;only `setResolutionMode()` was needed so protocol-applied modes do not visually drift from the dropdown.
+
+**Open Questions / Manual Follow-up**:
+- Manual true-fullscreen walkthrough remains pending:run local app, click「解析度 protocol」, fill setup, pass gate in real fullscreen, complete both detection conditions, and confirm two downloaded JSON files. This was not executed by the agent because it requires interactive local fullscreen/manual operation.
+
+### 2026-07-09 16:14 local — T1 PASS(tracking drill × field-low scene + E2E)
+
+**Scope delivered**:
+- Added `src/drill/tracking_scene_v1.ts` as a scene-drill composition:drill id `tracking_scene_v1`, required `sceneId: field-low`, WP-18 timed tracking drill semantics preserved(seed `18018`, `presentationMs=2000`, speed `2u/s`) with scene-safe horizontal `range=0.25u`.
+- App registry now exposes `tracking_scene_v1`; selecting it auto-loads its required `field-low` scene before `loadDrill(source, scene)` runs clearance.
+- Test harness now accepts per-drill `SceneConfig`, exports `meta.scene`, keeps `meta.spawn.presentationMs`, and exposes tracking derivation from export payload.
+- Playwright E2E covers `tracking_scene_v1`:COI, `meta.scene=field-low`, `meta.spawn.motion/presentationMs`, finite `px/pz/tx/ty/tz/aim` columns, moving `tx`, 10 visible events, `suspect=false`, presentation spacing, and tracking metrics sanity.
+
+**Verification**:
+- `npm.cmd test -- src/drill/tracking_scene_v1.test.ts src/drill/tracking_v1.test.ts src/scene/scenes/field-low.test.ts src/scene/scenes/urban-high.test.ts` → PASS(4 files / 14 tests).
+- `npm.cmd test -- src/testharness/fpsTestHarness.test.ts src/drill/tracking_scene_v1.test.ts` → PASS(2 files / 9 tests).
+- `npm.cmd run typecheck` → PASS(`tsc --noEmit`).
+- `npx.cmd playwright test tests/e2e/full-drill.spec.ts -g "WP-22"` → PASS(1 test;required elevation because sandbox blocked Vite/esbuild config read).
+- `npm.cmd test` → PASS(63 files / 492 tests).
+- `npx.cmd playwright test` → PASS(12 tests;required elevation for webServer).
+
+**Result sanity**:
+- Perfect/auto tracking fixture from exported payload:`acquisitionFailureRate=0`,all presentations `TOT% >= 99`, `tAcquireMs <= 16ms`, `RMS ε < 1deg`.
+- Stationary aim fixture from exported payload:`acquisitionFailureRate=1`,all presentations acquisition failure.
+- `urban-high` probe via harness scene config completes all 10 timed presentations with `meta.scene=urban-high`, `suspect=false`, `recorderOverflow=false`, and tracking acquisition success.
+
+**Decision Log**:
+- Decision:T1 scene-drill is a composition object `{ id, sceneId, drill }`, not a new `DrillConfig.sceneId` field.
+  Alternatives Considered:adding `sceneId` to `DrillConfig` would be silently discarded by current schema and would mix experiment composition with drill mechanics; relying on current active scene would make `tracking_scene_v1` non-reproducible after UI scene changes.
+- Decision:`tracking_scene_v1` uses motion `range=0.25u`.
+  Alternatives Considered:keeping WP-18 `tracking_v1` range `1u` failed clearance against `field-low` rock/tree and `urban-high` barriers; `range=0.5u` passed `urban-high` but still failed `field-low` rock bounds under the existing hitbox-radius + 0.5u clearance inflation. `0.25u` is the smallest scoped config change that preserves moving-target behavior and passes both scenes.
+
+**Surprises & Discoveries**:
+- T0 OQ-S3-5 assumed the WP-18 range envelope `[0.5,1.5]u` was field-low-compatible; real WP-19 clearance inflation shows `field-low` permits less than `0.5u` for this L/R slot geometry. Evidence:first test run failed on `rock-r1/tree-r1/rock-l1/tree-l1`; second run at `0.5u` still failed on `rock-r1/rock-l1`; `0.25u` passed.
+- Browser/harness auto-aim originally used camera world z=4, while `deriveTrackingMetrics` consumes exported `px/pz` origin geometry. Tracking-specific harness aim now targets from player origin only for tracking sanity; counter-strafe fire aim remains camera-based.
+
+**Open Questions**:
+- None for T1. T2 protocol can consume `tracking_scene_v1` as a stable field-low condition and can use the same `{ mode, sceneId, drillId }` composition pattern.
 
 ### 2026-07-09 — T0 entry gate PASS(WP-18 交付 → OQ-S3-5 對帳解除;由 WP-18 T-exit 互記)
 

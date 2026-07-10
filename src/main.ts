@@ -13,9 +13,15 @@ import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
 import { createControls } from './ui/Controls.ts';
 import { applyResolutionMode, type DisplayState, type ResolutionMode } from './display/resolutionMode.ts';
+import {
+  createProtocolRunner,
+  type ProtocolConditionContext,
+  type ProtocolRunner,
+} from './display/ProtocolRunner.ts';
+import { resolutionDetectionProtocol } from './display/resolutionDetectionProtocol.ts';
 import { probeWarmupP95Ms } from './display/eligibilityGate.ts';
 import { createExperimentSession } from './display/experimentSession.ts';
-import { EXPERIMENT_MAX_CONDITION, PERF_FLOOR_MS } from './display/constants.ts';
+import { PERF_FLOOR_MS } from './display/constants.ts';
 import { createFrameLog, frameLogCapacity } from './display/frameLog.ts';
 import { createEligibilityGateScreen } from './ui/EligibilityGate.ts';
 import {
@@ -45,6 +51,7 @@ import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
+import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -62,6 +69,7 @@ interface AvailableDrill {
   id: string;
   label: string;
   source: unknown;
+  sceneId?: string;
 }
 
 interface AvailableScene {
@@ -83,6 +91,12 @@ const availableDrills: AvailableDrill[] = [
   { id: initialDrillConfig.drillId, label: initialDrillConfig.drillId, source: defaultDrillSource },
   { id: detectionPopinV1.drillId, label: detectionPopinV1.drillId, source: detectionPopinV1 },
   { id: trackingV1.drillId, label: trackingV1.drillId, source: trackingV1 },
+  {
+    id: trackingSceneV1.id,
+    label: trackingSceneV1.id,
+    source: trackingSceneV1.drill,
+    sceneId: trackingSceneV1.sceneId,
+  },
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
@@ -189,17 +203,22 @@ const experimentSession = createExperimentSession({
 });
 let pendingSessionSetupValues: SessionSetupValues | undefined;
 let sessionSetupValues: SessionSetupValues | undefined;
+let pendingSessionMode: 'session' | 'protocol' = 'session';
+let markProtocolFullscreenExit: (() => void) | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
-  required: EXPERIMENT_MAX_CONDITION,
+  required: resolutionDetectionProtocol.requiredDisplay,
   requestFullscreen: () => document.documentElement.requestFullscreen(),
   probeWarmupP95Ms: () => probeWarmupP95Ms(),
   onEnter: (report) => {
+    const requestedMode = pendingSessionMode;
+    pendingSessionMode = 'session';
     if (pendingSessionSetupValues !== undefined) {
       sessionSetupValues = pendingSessionSetupValues;
       pendingSessionSetupValues = undefined;
     }
     eligibilityGateScreen.hideSuspectWarning();
     experimentSession.enter(report);
+    if (requestedMode === 'protocol') void startResolutionProtocol();
   },
 });
 const sessionSetupForm = createSessionSetupForm({
@@ -210,7 +229,9 @@ const sessionSetupForm = createSessionSetupForm({
   },
 });
 document.addEventListener('fullscreenchange', () => {
-  experimentSession.handleFullscreenChange(document.fullscreenElement != null);
+  const fullscreen = document.fullscreenElement != null;
+  experimentSession.handleFullscreenChange(fullscreen);
+  if (!fullscreen) markProtocolFullscreenExit?.();
 });
 
 // 最小啟動器：解鎖時可開資格閘（fullscreen 請求須在 user gesture 內,故走按鈕點擊）。
@@ -232,17 +253,32 @@ experimentButton.style.cssText = [
   'cursor:pointer',
   'z-index:40',
 ].join(';');
-experimentButton.addEventListener('click', () => sessionSetupForm.open());
+experimentButton.addEventListener('click', () => {
+  pendingSessionMode = 'session';
+  sessionSetupForm.open();
+});
 document.body.appendChild(experimentButton);
+
+const protocolButton = document.createElement('button');
+protocolButton.type = 'button';
+protocolButton.textContent = '解析度 protocol';
+protocolButton.title = '執行受試者內解析度 × 偵測 protocol';
+protocolButton.style.cssText = experimentButton.style.cssText.replace('top:12px', 'top:54px');
+protocolButton.addEventListener('click', () => {
+  pendingSessionMode = 'protocol';
+  sessionSetupForm.open();
+});
+document.body.appendChild(protocolButton);
 pointerLock.onChange((locked) => {
   experimentButton.style.display = locked ? 'none' : 'block';
+  protocolButton.style.display = locked ? 'none' : 'block';
 });
 
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
 // 讀取與序列化只在 click handler 內發生，不進 sim tick 熱路徑。
 const recorder = createDataRecorder({ simHz: SIM_HZ });
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
-async function buildCurrentExportPayload(): Promise<ExportPayload> {
+async function buildCurrentExportPayload(protocolContext?: ProtocolConditionContext): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
   const frames = frameLog.export(PERF_FLOOR_MS);
   const displayRefresh = frameLog.refreshEstimate() ?? (await measureDisplayRefresh());
@@ -280,7 +316,7 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
     // 或 drill frame p95 超過效能地板(GD-10 防線③)。
     suspect:
       sharedState.validity.playerCorridorExceeded ||
-      experimentSession.suspect ||
+      (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
       frames.summary.p95 > PERF_FLOOR_MS,
     spawn: {
       seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
@@ -311,12 +347,23 @@ async function buildCurrentExportPayload(): Promise<ExportPayload> {
           },
         }
       : {}),
+    ...(protocolContext !== undefined
+      ? {
+          protocol: {
+            protocolId: protocolContext.protocolId,
+            conditionIndex: protocolContext.conditionIndex,
+            conditionLabel: protocolContext.conditionLabel,
+          },
+        }
+      : {}),
   });
   return buildExportPayload(meta, snapshot);
 }
 
 function exportBasename(payload: ExportPayload): string {
-  return `${payload.meta.drillId}-${payload.meta.startedAt}`;
+  const protocol = payload.meta.protocol;
+  const condition = protocol === undefined ? '' : `-${protocol.conditionIndex + 1}-${protocol.conditionLabel}`;
+  return `${payload.meta.drillId}${condition}-${payload.meta.startedAt}`;
 }
 
 createExportPanel({
@@ -434,7 +481,12 @@ if (import.meta.env.DEV) {
   const { createFpsTestHarness } = await import('./testharness/fpsTestHarness.ts');
   const displayHz = await measureDisplayHz({ samples: 10 });
   const fpsTestHarness = createFpsTestHarness({
-    availableDrills: availableDrills.map(({ id, source }) => ({ id, source })),
+    availableDrills: availableDrills.map(({ id, source, sceneId }) => ({
+      id,
+      source,
+      ...(sceneId !== undefined ? { scene: findSceneOption(sceneId).config } : {}),
+    })),
+    availableScenes: availableScenes.map(({ config }) => config),
     backend,
     crossOriginIsolated: isolation.crossOriginIsolated,
     displayHz,
@@ -552,31 +604,16 @@ function restartActiveDrill(): void {
   syncControlsVisibility();
 }
 
-function loadDrillById(drillId: string): void {
-  const option = availableDrills.find((candidate) => candidate.id === drillId);
-  if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
-
-  const nextConfig = loadDrill(option.source, activeSceneConfig);
-  drillRunner.restart();
-  activeDrillConfig = nextConfig;
-  activeDrillSource = option.source;
-  activeTargetManager = createTargetManager(nextConfig);
-  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
-  resetRunPresentation();
-  simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
-  drillRunner.start(activeDrillConfig);
-  controls.setSelectedDrill(activeDrillConfig.drillId);
-  syncControlsVisibility();
-}
-
-async function loadSceneById(sceneId: string): Promise<void> {
+function findSceneOption(sceneId: string): AvailableScene {
   const option = availableScenes.find((candidate) => candidate.id === sceneId);
   if (option === undefined) throw new Error(`Unknown scene: ${sceneId}`);
-  if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
+  return option;
+}
 
-  const nextDrillConfig = loadDrill(activeDrillSource, option.config);
-  const nextScene = await createSceneManagerWithStatus(option.config);
-
+function installSceneLoad(
+  option: AvailableScene,
+  nextScene: Awaited<ReturnType<typeof createSceneManagerWithStatus>>,
+): void {
   targetView.dispose();
   impactView.dispose();
   sceneManager.dispose();
@@ -587,19 +624,73 @@ async function loadSceneById(sceneId: string): Promise<void> {
   cameraController.setCamera(sceneManager.camera);
   cameraController.setFov(settingsPanel.fov);
   syncCameraBase();
-
-  drillRunner.restart();
   activeSceneConfig = option.config;
   activeSceneFallback = nextScene.fallback;
+  controls.setSelectedScene(activeSceneConfig.sceneId);
+}
+
+async function loadDrillById(drillId: string): Promise<void> {
+  const option = availableDrills.find((candidate) => candidate.id === drillId);
+  if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
+
+  const requiredScene = option.sceneId !== undefined ? findSceneOption(option.sceneId) : undefined;
+  const targetSceneConfig = requiredScene?.config ?? activeSceneConfig;
+  const nextConfig = loadDrill(option.source, targetSceneConfig);
+  const needsSceneLoad =
+    requiredScene !== undefined &&
+    (requiredScene.config.sceneId !== activeSceneConfig.sceneId || activeSceneFallback);
+  const nextScene = needsSceneLoad ? await createSceneManagerWithStatus(requiredScene.config) : undefined;
+  if (nextScene !== undefined && requiredScene !== undefined) installSceneLoad(requiredScene, nextScene);
+
+  drillRunner.restart();
+  activeDrillConfig = nextConfig;
+  activeDrillSource = option.source;
+  activeTargetManager = createTargetManager(nextConfig);
+  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
+  resetRunPresentation();
+  simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
+  drillRunner.start(activeDrillConfig);
+  controls.setSelectedDrill(option.id);
+  syncControlsVisibility();
+}
+
+async function loadSceneById(sceneId: string): Promise<void> {
+  const option = findSceneOption(sceneId);
+  if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
+
+  const nextDrillConfig = loadDrill(activeDrillSource, option.config);
+  const nextScene = await createSceneManagerWithStatus(option.config);
+
+  installSceneLoad(option, nextScene);
+
+  drillRunner.restart();
   activeDrillConfig = nextDrillConfig;
   activeTargetManager = createTargetManager(activeDrillConfig);
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
   simLoop = buildSimLoop();
   drillRunner.start(activeDrillConfig);
-  controls.setSelectedScene(activeSceneConfig.sceneId);
   syncControlsVisibility();
 }
+
+const protocolRunner: ProtocolRunner<ExportPayload> = createProtocolRunner({
+  config: resolutionDetectionProtocol,
+  async applyCondition(condition) {
+    activeResolutionMode = condition.mode;
+    settingsPanel.setResolutionMode(condition.mode);
+    settingsPanel.lockMode(true);
+    resize();
+    await loadSceneById(condition.sceneId);
+    await loadDrillById(condition.drillId);
+    return {
+      mode: displayState.mode,
+      sceneId: activeSceneConfig.sceneId,
+      drillId: activeDrillConfig.drillId,
+    };
+  },
+  exportCondition: (context) => buildCurrentExportPayload(context),
+});
+markProtocolFullscreenExit = () => protocolRunner.markCurrentConditionSuspect('fullscreen-exit');
 
 // WP-8 / T4（FR-8.4）— 重來 / 換 drill 控制。解鎖時可操作；結果頁顯示時也保持可操作。
 const controls = createControls({
@@ -618,6 +709,124 @@ function syncControlsVisibility(): void {
 
 pointerLock.onChange(syncControlsVisibility);
 syncControlsVisibility();
+
+const protocolStatus = document.createElement('div');
+protocolStatus.id = 'protocol-status';
+protocolStatus.style.cssText = [
+  'position:fixed',
+  'top:12px',
+  'left:50%',
+  'transform:translateX(-50%)',
+  'display:none',
+  'align-items:center',
+  'gap:10px',
+  'max-width:min(92vw,760px)',
+  'padding:9px 12px',
+  'font:700 13px/1.35 system-ui,sans-serif',
+  'color:#e6e9ec',
+  'background:rgba(24,27,30,0.96)',
+  'border:1px solid rgba(255,255,255,0.14)',
+  'border-radius:8px',
+  'box-shadow:0 10px 32px rgba(0,0,0,0.3)',
+  'pointer-events:auto',
+  'z-index:45',
+].join(';');
+const protocolStatusText = document.createElement('span');
+const protocolNextButton = document.createElement('button');
+protocolNextButton.type = 'button';
+protocolNextButton.textContent = '下一條件';
+protocolNextButton.title = 'Start next protocol condition';
+protocolNextButton.style.cssText = [
+  'height:30px',
+  'padding:0 12px',
+  'border:1px solid rgba(255,255,255,0.18)',
+  'border-radius:6px',
+  'font:750 12px/1 system-ui,sans-serif',
+  'color:#e6e9ec',
+  'background:rgba(15,18,21,0.96)',
+  'cursor:pointer',
+].join(';');
+protocolNextButton.style.display = 'none';
+protocolStatus.append(protocolStatusText, protocolNextButton);
+document.body.appendChild(protocolStatus);
+
+let completingProtocolCondition = false;
+let completedProtocolConditionIndex: number | undefined;
+
+function setProtocolStatus(text: string, showNext: boolean): void {
+  protocolStatusText.textContent = text;
+  protocolNextButton.style.display = showNext ? 'inline-flex' : 'none';
+  protocolStatus.style.display = 'flex';
+}
+
+async function startResolutionProtocol(): Promise<void> {
+  protocolRunner.reset();
+  completingProtocolCondition = false;
+  completedProtocolConditionIndex = undefined;
+  try {
+    const context = await protocolRunner.start();
+    setProtocolStatus(protocolRunningText(context), false);
+  } catch (error) {
+    settingsPanel.lockMode(false);
+    setProtocolStatus(`Protocol 啟動失敗:${error instanceof Error ? error.message : String(error)}`, false);
+  }
+}
+
+async function beginNextProtocolCondition(): Promise<void> {
+  protocolNextButton.disabled = true;
+  try {
+    const context = await protocolRunner.beginNextCondition();
+    if (context === undefined) {
+      settingsPanel.lockMode(false);
+      experimentSession.exit();
+      setProtocolStatus('Protocol 完成：所有條件已匯出。', false);
+      return;
+    }
+    completedProtocolConditionIndex = undefined;
+    setProtocolStatus(protocolRunningText(context), false);
+  } catch (error) {
+    setProtocolStatus(`下一條件啟動失敗:${error instanceof Error ? error.message : String(error)}`, true);
+  } finally {
+    protocolNextButton.disabled = false;
+  }
+}
+
+async function completeActiveProtocolCondition(): Promise<void> {
+  const current = protocolRunner.current;
+  if (
+    current === undefined ||
+    completingProtocolCondition ||
+    completedProtocolConditionIndex === current.conditionIndex
+  ) {
+    return;
+  }
+
+  completingProtocolCondition = true;
+  try {
+    const result = await protocolRunner.completeCurrentCondition();
+    completedProtocolConditionIndex = result.context.conditionIndex;
+    downloadJSON(result.payload, { basename: exportBasename(result.payload) });
+    const hasNext = result.context.conditionIndex < protocolRunner.config.conditions.length - 1;
+    if (!hasNext) {
+      settingsPanel.lockMode(false);
+      experimentSession.exit();
+    }
+    setProtocolStatus(
+      `Protocol 條件 ${result.context.conditionIndex + 1}/${protocolRunner.config.conditions.length} 已匯出: ${result.context.conditionLabel}`,
+      hasNext,
+    );
+  } catch (error) {
+    setProtocolStatus(`Protocol 匯出失敗:${error instanceof Error ? error.message : String(error)}`, false);
+  } finally {
+    completingProtocolCondition = false;
+  }
+}
+
+function protocolRunningText(context: ProtocolConditionContext): string {
+  return `Protocol 條件 ${context.conditionIndex + 1}/${protocolRunner.config.conditions.length}: ${context.conditionLabel}`;
+}
+
+protocolNextButton.addEventListener('click', () => void beginNextProtocolCondition());
 
 const renderLoop = createRenderLoop((now) => {
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
@@ -657,6 +866,7 @@ const renderLoop = createRenderLoop((now) => {
     resultScreen.show(metricsDashboard.compute(recorder.snapshot()));
     resultShown = true;
     syncControlsVisibility();
+    void completeActiveProtocolCondition();
   }
   hud.update(createHUDStats(sharedState, phase, hudElapsedMs, recorder.hitCount, recorder.fireCount, recorder.hitCount, hudStats));
   // dev-only：更新急停 readout（vx / stopped）——手動驗證用，production 剝除。
