@@ -290,6 +290,7 @@ const recorder = createDataRecorder({ simHz: SIM_HZ });
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(protocolContext?: ProtocolConditionContext): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
+  const weaponConfig = activeWeaponConfig();
   const frames = frameLog.export(PERF_FLOOR_MS);
   const displayRefresh = frameLog.refreshEstimate() ?? (await measureDisplayRefresh());
   const displayHz = displayRefresh.refreshEstimateHz;
@@ -310,8 +311,8 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
   };
   const meta = collectMeta({
     drillId: activeDrillConfig.drillId,
-    weaponId: activeWeaponConfig().id,
-    weaponSeed: activeWeaponConfig().recoil.seed,
+    weaponId: weaponConfig.id,
+    weaponSeed: weaponConfig.recoil.seed,
     rngSeed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
     backend,
     displayHz,
@@ -328,6 +329,10 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       sharedState.validity.playerCorridorExceeded ||
       (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
       frames.summary.p95 > PERF_FLOOR_MS,
+    weapon: {
+      id: weaponConfig.id,
+      ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
+    },
     targets: {
       hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),
     },

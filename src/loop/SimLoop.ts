@@ -82,6 +82,7 @@ function applyInput(
     // ADS 開鏡（WP-24 / T1，FR-E4）：只翻 heldAds 旗標（tick 內事件序語意比照 key/fire）。
     // **不**觸發 raycast / weapon schedule / 目標演進（GD-16：ADS 不進 sim）；render/data 層再消費。
     state.heldAds = ev.down;
+    recorder?.recordEvent({ type: 'ads', down: ev.down, t: ev.t });
   }
 }
 

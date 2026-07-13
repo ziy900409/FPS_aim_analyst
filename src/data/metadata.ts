@@ -28,6 +28,14 @@ export interface TargetsMeta {
   hitbox?: TargetHitboxConfig;
 }
 
+export interface WeaponMeta {
+  id: string;
+  ads?: {
+    fovDeg: number;
+    sensitivityRatio: number;
+  };
+}
+
 export interface SceneMeta {
   sceneId: string;
   assetPackVersion: string;
@@ -68,6 +76,7 @@ export interface Meta {
   bufferOverflow: boolean;
   recorderOverflow: boolean;
   suspect: boolean;
+  weapon?: WeaponMeta;
   targets?: TargetsMeta;
   spawn?: SpawnMeta;
   scene?: SceneMeta;
@@ -95,6 +104,7 @@ export interface CollectMetaArgs {
   bufferOverflow?: boolean | number;
   recorderOverflow?: boolean;
   suspect?: boolean;
+  weapon?: WeaponMeta;
   targets?: TargetsMeta;
   spawn?: SpawnMeta;
   scene?: SceneMeta;
@@ -141,6 +151,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
   const session = args.session === undefined ? undefined : requireSessionMeta(args.session);
   const protocol = args.protocol === undefined ? undefined : requireProtocolMeta(args.protocol);
+  const weapon = args.weapon === undefined ? undefined : requireWeaponMeta(args.weapon);
   const targets = args.targets === undefined ? undefined : requireTargetsMeta(args.targets);
   const frameFloorSuspect = frames !== undefined && frames.summary.p95 > PERF_FLOOR_MS;
 
@@ -166,6 +177,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     bufferOverflow,
     recorderOverflow,
     suspect: explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect,
+    ...(weapon !== undefined ? { weapon } : {}),
     ...(targets !== undefined ? { targets } : {}),
     ...(args.spawn !== undefined ? { spawn: args.spawn } : {}),
     ...(scene !== undefined ? { scene } : {}),
@@ -173,6 +185,22 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(frames !== undefined ? { frames } : {}),
     ...(session !== undefined ? { session } : {}),
     ...(protocol !== undefined ? { protocol } : {}),
+  };
+}
+
+function requireWeaponMeta(value: unknown): WeaponMeta {
+  const weapon = requireRecord(value, 'weapon');
+  return {
+    id: requireNonEmptyString(weapon.id, 'weapon.id'),
+    ...(weapon.ads !== undefined ? { ads: requireWeaponAdsMeta(weapon.ads) } : {}),
+  };
+}
+
+function requireWeaponAdsMeta(value: unknown): NonNullable<WeaponMeta['ads']> {
+  const ads = requireRecord(value, 'weapon.ads');
+  return {
+    fovDeg: requirePositiveFiniteNumber(ads.fovDeg, 'weapon.ads.fovDeg'),
+    sensitivityRatio: requirePositiveFiniteNumber(ads.sensitivityRatio, 'weapon.ads.sensitivityRatio'),
   };
 }
 

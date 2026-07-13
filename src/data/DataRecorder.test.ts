@@ -15,8 +15,8 @@ describe('DataRecorder tick arena', () => {
     recorder.recordTick({ t: 2, vx: -10, vz: 5, aim: { yaw: 4, pitch: 5 }, keys: ['KeyA'] });
 
     expect(recorder.snapshot().ticks).toEqual([
-      { t: 1, vx: 10, vz: 0, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 2, pitch: 3 }, keys: ['D'] },
-      { t: 2, vx: -10, vz: 5, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 4, pitch: 5 }, keys: ['A'] },
+      { t: 1, vx: 10, vz: 0, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 2, pitch: 3 }, keys: ['D'], ads: false },
+      { t: 2, vx: -10, vz: 5, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 4, pitch: 5 }, keys: ['A'], ads: false },
     ]);
   });
 
@@ -37,6 +37,7 @@ describe('DataRecorder tick arena', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 100_000 });
     state.held.right = true;
+    state.heldAds = true;
     state.aim.yaw = 7;
     state.aim.pitch = -4;
 
@@ -59,6 +60,7 @@ describe('DataRecorder tick arena', () => {
       tz: null,
       aim: { yaw: 7, pitch: -4 },
       keys: ['D'],
+      ads: true,
     });
     expect(snapshot.ticks[99_999].vx).toBe(99_999);
   });
@@ -90,6 +92,7 @@ describe('DataRecorder tick arena', () => {
 
     recorder.recordEvent({ type: 'visible', targetId: 't0', side: 'R', t: 10 });
     recorder.recordEvent({ type: 'counter', key: 'A', t: 20 });
+    recorder.recordEvent({ type: 'ads', down: true, t: 25 });
     recorder.recordEvent({
       type: 'fire',
       t: 30,
@@ -108,6 +111,7 @@ describe('DataRecorder tick arena', () => {
     expect(recorder.snapshot().events).toEqual([
       { type: 'visible', targetId: 't0', side: 'R', t: 10 },
       { type: 'counter', key: 'A', t: 20 },
+      { type: 'ads', down: true, t: 25 },
       {
         type: 'fire',
         t: 30,
@@ -137,7 +141,7 @@ describe('DataRecorder tick arena', () => {
     recorder.recordTick({ t: 3, vx: 3, vz: 0, aim: { yaw: 1, pitch: 1 }, keys: ['A'] });
 
     expect(recorder.snapshot()).toEqual({
-      ticks: [{ t: 3, vx: 3, vz: 0, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 1, pitch: 1 }, keys: ['A'] }],
+      ticks: [{ t: 3, vx: 3, vz: 0, px: 0, pz: 0, tx: null, ty: null, tz: null, aim: { yaw: 1, pitch: 1 }, keys: ['A'], ads: false }],
       events: [],
       recorderOverflow: false,
     });

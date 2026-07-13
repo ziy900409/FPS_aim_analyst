@@ -173,6 +173,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
         tz: null,
         aim: { yaw: 3, pitch: -2 },
         keys: ['D'],
+        ads: false,
       },
     ]);
   });
@@ -210,7 +211,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.input.size()).toBe(0);
   });
 
-  it('ads 事件不觸發開火 / 命中 / 記錄（GD-16：ADS 不進 sim）', () => {
+  it('ads 事件只記錄 ads，不觸發開火 / 命中（GD-16：ADS 不進 sim）', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 4 });
     const cam = cameraLookingDownZ();
@@ -224,7 +225,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
       reset() {},
     };
 
-    // 未按左鍵開火，僅右鍵 ADS 按住 → 不得產彈 / 擊殺 / 記 fire 事件
+    // 未按左鍵開火，僅右鍵 ADS 按住 → 不得產彈 / 擊殺 / 記 fire 事件；ads 本身須進記錄。
     pushEvent(state, { type: 'ads', down: true, t: 10 });
     simStep(state, 1 / SIM_HZ, 100, tm, cam, undefined, undefined, undefined, recorder);
 
@@ -233,6 +234,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.weapon.ammo).toBe(30); // 未消耗
     expect(killed).toEqual([]);
     expect(recorder.snapshot().events.filter((e) => e.type === 'fire')).toEqual([]);
+    expect(recorder.snapshot().events.filter((e) => e.type === 'ads')).toEqual([{ type: 'ads', down: true, t: 10 }]);
   });
 
   it('fire up 只清 heldFire，不觸發 raycast 或 fire 記錄', () => {
@@ -481,6 +483,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     state.player.vx = 250;
     state.held.right = true;
     pushEvent(state, { type: 'key', code: 'KeyA', down: true, t: 101 });
+    pushEvent(state, { type: 'ads', down: true, t: 150 });
     simStep(state, 1 / SIM_HZ, 200, tm, cam, undefined, undefined, undefined, recorder);
     pushEvent(state, { type: 'fire', down: true, t: 201 });
     simStep(state, 1 / SIM_HZ, 300, tm, cam, undefined, undefined, undefined, recorder);
@@ -488,6 +491,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(recorder.snapshot().events).toEqual([
       { type: 'visible', targetId: 't0', side: 'R', t: 100, targetX: 0, targetY: 1.5, targetZ: -8 },
       { type: 'counter', key: 'A', t: 101 },
+      { type: 'ads', down: true, t: 150 },
       {
         type: 'fire',
         t: 201,

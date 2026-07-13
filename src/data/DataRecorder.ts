@@ -17,6 +17,7 @@ export type DrillEvent =
       targetZ?: number;
     }
   | { type: 'counter'; key: string; t: number }
+  | { type: 'ads'; down: boolean; t: number }
   | {
       type: 'fire';
       t: number;
