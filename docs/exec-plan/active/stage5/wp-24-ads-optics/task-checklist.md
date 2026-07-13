@@ -8,7 +8,7 @@
 | ✅ | **T0** entry gate(GD-16 感度模型 + hold/toggle 拍板,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ✅ | **T1** EV_ADS 輸入鏈 + heldAds(零破壞) | [T1-ads-input-event.md](T1-ads-input-event.md) | T0 | Med |
 | ✅ | **T2** WeaponConfig.ads + CameraController zoom/gain | [T2-weapon-camera-zoom.md](T2-weapon-camera-zoom.md) | T1 | Med |
-| ⬜ | **T3** scope overlay + 記錄 + schema 對帳 | [T3-overlay-recording.md](T3-overlay-recording.md) | T2 | Med |
+| ✅ | **T3** scope overlay + 記錄 + schema 對帳 | [T3-overlay-recording.md](T3-overlay-recording.md) | T2 | Med |
 | ⬜ | **T-exit** ADS 鏈交付宣告 | [T-exit-gate.md](T-exit-gate.md) | T1–T3 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))

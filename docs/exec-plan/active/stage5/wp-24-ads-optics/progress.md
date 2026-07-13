@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 next)
+## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 ✅,T-exit next)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 EV_ADS 輸入鏈 | ✅ |
 | T2 WeaponConfig.ads + zoom | ✅ |
-| T3 overlay + 記錄 | ⬜ |
+| T3 overlay + 記錄 | ✅ |
 | T-exit | ⬜ |
 
 ---
@@ -28,6 +28,37 @@
 ---
 
 ## Log
+
+### 2026-07-13 09:11Z — T3 scope overlay + ADS recording/schema PASS
+
+**Progress**
+
+- `ScopeOverlay.ts`:新增純 DOM overlay(圓形鏡框 + radial dark mask),`pointer-events:none`,120ms linear opacity transition；`main.ts` 每幀以 `heldAds && weapon.ads` 同步顯隱,準心仍由 `Crosshair` 以較高 z-index 固定中心。
+- `DataRecorder/RingBuffer/SimLoop/export`:tick row 新增 required `ads` boolean(手寫 tick default false,`recordTickFromState` 取 `state.heldAds`);ads down/up 事件進 `events[]`;CSV ticks 增 `ads`,events 增 `down` 欄。
+- `metadata/main/testharness`:新增 optional `meta.weapon` snapshot(`id`,`ads.fovDeg`,`ads.sensitivityRatio`),production export 與 dev harness 都填入；harness `feedInput` 正確 push ADS event,不再把 ads 當 fire。
+- `schema.md` 已對帳 JSON/CSV 欄位、範例、FPSci mapping；`task-checklist.md`/T3 task 檔狀態同步。
+
+**驗證證據**
+
+- Focused unit/typecheck: `npx.cmd tsc --noEmit` clean;`npx.cmd vitest run src/data/DataRecorder.test.ts src/data/export.test.ts src/data/metadata.test.ts src/loop/SimLoop.test.ts src/ui/ScopeOverlay.test.ts` = 5 files / 63 tests 綠。
+- Focused E2E: `npx.cmd playwright test tests/e2e/full-drill.spec.ts -g "WP-24 ADS smoke"` = 1 test 綠,斷言 ads event/tick flag/meta.weapon.ads。
+- Full gate: `npm.cmd run test:ci` = `tsc --noEmit` + Vitest **68 files / 556 tests** + Playwright **16 tests** 全綠。
+
+**Decision Log**
+
+| ID | Decision | Alternatives Considered | Rationale |
+|----|----------|--------------------------|-----------|
+| D-T3.1 | `meta.weapon` 採 additive optional snapshot,保留既有 top-level `weaponId`/`weaponSeed` | 直接搬移/替代 top-level weapon fields | 避免破壞既有分析與 schema v2 consumers;production 仍提供完整 ADS optics 給新分析端重建 gain |
+| D-T3.2 | overlay 顯隱以 `heldAds && weapon.ads` 為有效態 | 只看 `heldAds` | 與 `CameraController.setAds` 的 no-config no-op 對齊;不可 ADS 的武器按右鍵不顯示 scope 視覺 |
+| D-T3.3 | tick `ads` 為 required boolean,手寫 tick input default `false` | optional `ads?: boolean` | 分析端 ADS window 不應處理三態;舊測試/手寫 tick 仍可省略 input,arena snapshot 一律輸出明確 false |
+
+**Surprises & Discoveries**
+
+- sandbox 內 `npm.cmd run test:ci` 與 Playwright webServer 會因 Vite/Vitest config 讀取父層目錄被 Windows access denied 擋住;外部核准重跑同一命令通過。
+
+**Open Questions**
+
+- T3 無新增 open question。T-exit 仍需做 WP-24 ADS 鏈交付宣告。
 
 ### 2026-07-10 13:52Z — T2 WeaponConfig.ads + CameraController zoom/gain PASS(GD-16 感度模型落地)
 
