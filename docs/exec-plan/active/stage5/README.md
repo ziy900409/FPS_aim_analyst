@@ -191,7 +191,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 |---|---|---|---|---|---|---|
 | **WP-23** | [wp-23-longrange-tracking/](wp-23-longrange-tracking/README.md) | 遠距小目標追蹤:hitbox config 化(單一來源)+ 遠距 drill + 指標 round-trip/決定性 | **M11 ✅** | WP-18 ✅ + M10 ✅ | 1.5–2.5 | ✅(2026-07-10) |
 | **WP-24** | [wp-24-ads-optics/](wp-24-ads-optics/README.md) | ADS 開鏡:EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8 ✅(可與 WP-23 並行) | 2–3 | ✅(2026-07-13) |
-| **WP-25** | [wp-25-ballistics-tracer/](wp-25-ballistics-tracer/README.md) | 彈道:tracer 顯示(T1,獨立)+ projectile 數學核心/sim 整合/指標語意(T2–T4,gated) | **M12** | T1 獨立;T2+ 需 **M11** | 4–6.5 | ⬜ |
+| **WP-25** | [wp-25-ballistics-tracer/](wp-25-ballistics-tracer/README.md) | 彈道:tracer 顯示(T1,獨立)+ projectile 數學核心/sim 整合/指標語意(T2–T4,gated) | **M12** | T1 獨立;T2+ 需 **M11** | 4–6.5 | 🟡 T0 ✅(2026-07-13) |
 | **WP-26** | [wp-26-br-scene-integration/](wp-26-br-scene-integration/README.md) | BR 場景與整合:`br-field` 資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | ⬜ |
 
 ---
@@ -252,7 +252,7 @@ WP-25 T1(tracer)──────┴──────────────�
 | # | 問題 | 建議(計畫預設) | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
 | OQ-S5-1 | ADS 感度換算模型(CS2 `zoom_sensitivity_ratio` vs monitor-distance match) | ✅ **GD-16 決議:CS2 式**。ads 有效感度 = `sensitivity × sensitivityRatio × (adsFov / hipFov)`;`sensitivityRatio` 預設 1.0,pre-registered 後凍結;monitor-distance match 不重解釋既有資料 | 研究者 | WP-24 T0 ✅ | WP-24 T2 unblocked;跨條件可比性由 config + ads flag 離線重建 |
-| OQ-S5-2 | projectile 參數域(speedU/gravityU/maxRangeU 對照表;與 drill distance 聯動) | 以**飛行時間 tick 數**(8–32 tick)反推 speedU;gravityU 以「到靶下墜角尺寸 0.1–0.5×目標角高」反推;表列 2–3 組武器檔 | 架構+研究者 | WP-25 T0 | WP-25 T2+ blocked |
+| OQ-S5-2 | projectile 參數域(speedU/gravityU/maxRangeU 對照表;與 drill distance 聯動) | ✅ **GD-17 決議**:以 flight ticks × WP-23 distance tier 反推。canonical 0.5° distance=114.59u:8/16/32 ticks → `speedU=1833.45/916.73/458.36`, `maxRangeU=143.24`;2° sanity distance=28.65u:8/16/32 ticks → `speedU=458.37/229.18/114.59`, `maxRangeU=35.81`;下墜 0.10/0.25/0.50H → `gravityU=51.20/32.00/16.00`;T3 對 <2 ticks 到靶 warning,M12 前 `bullet` 欄不得進 drill config | 架構+研究者 | WP-25 T0 ✅ | WP-25 T2+ unblocked by params;仍需 M11 ✅ 複驗 |
 | OQ-S5-3 | br-field 資產路線(程序化生成 vs CC0 pack) | **程序化生成 CC0**(WP-19 先例:GD-9 完全合規、propBounds 與視覺同源);Kenney/Quaternius 保留為寫實置換備選 | 使用者 | WP-26 T0 | WP-26 T1 blocked(不阻塞 T0 前其他 WP) |
 | OQ-S5-4 | 遠距 drill 設計矩陣(角尺寸/角速度/距離/hitbox 組合;角尺寸下限) | ✅ WP-23 T0 決議:小目標 H1 = `{widthU:0.5,heightU:1,depthU:0.5}`;角高 0.5°/2.0° × 角速度 5°/s/20°/s;角尺寸下限 0.5°。距離 `d=h/(2*tan(theta/2))`:0.5°→114.59u,2.0°→28.65u。水平速度 `v=d*omegaRad`:10.00/40.00u/s(0.5°),2.50/10.00u/s(2°)。T2 default=0.5°×5°/s;hard=0.5°×20°/s;near sanity=2°×5°/s。 | 研究者 | WP-23 T0 ✅ | WP-23 T2 unblocked |
 | OQ-S5-5 | lead 誤差是否進正式指標(或 spec-only) | **spec-only 離線**(引擎零計算);pilot 顯示構念有效再立案晉升 | 研究者 | WP-25 T4 | 不阻塞工程 |
@@ -267,10 +267,10 @@ WP-25 T1(tracer)──────┴──────────────�
 - [x] [exec-plan/README.md](../../README.md):§2 加 stage5 索引表 + WP-18 狀態翻 ✅;§3 加 M11–M13;§4 相依圖擴充;§6 目錄慣例。(2026-07-10 本計畫)
 - [x] [docs/MAP.md](../../../MAP.md):§3 加 stage5(+ stage4 草稿列)導航。(2026-07-10 本計畫)
 - [x] [DECISIONS.md](../../DECISIONS.md) **GD-16**(ADS 感度模型:CS2 式 FOV-ratio gain + hold 語意)入帳。(2026-07-10 WP-24 T0)
-- [ ] GD-17(彈道參數域)——落 WP-25 T0(拍板即入帳)。
+- [x] [DECISIONS.md](../../DECISIONS.md) **GD-17**(projectile 參數域:flight ticks × distance tier 反推 speed/gravity/maxRange;未命中 tracer 端點語意)入帳。(2026-07-13 WP-25 T0)
 - [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 T0/T-exit 隨切片回寫):~~ADS/heldAds、zoom 感度換算~~(✅ WP-24 T-exit,§A/§G,2026-07-13)、tracer/shotRays、projectile/彈道模型 gate、time-of-flight、lead 誤差、hitbox config 化(H1 參數化)。
 - [x] [CLAUDE.md](../../../../../CLAUDE.md) §4 硬約束追加:ADS 只落 input/render/data + ads event/tick flag 必記錄。(2026-07-10 WP-24 T0)
-- [ ] [CLAUDE.md](../../../../../CLAUDE.md) §4 其餘 stage5 硬約束追加(彈道模型 config-gated、子彈不測場景、tracer render-only)——落 WP-25/26 各自 T0/T-exit。
+- [x] [CLAUDE.md](../../../../../CLAUDE.md) §4 彈道硬約束追加:config-gated、hitscan 預設逐位不變、projectile 固定步長純函式、子彈不測場景、tracer render-only。(2026-07-13 WP-25 T0)
 - [ ] `docs/operational/schema.md`:~~`ads` 事件、tick `ads` flag、`meta.weapon`~~(✅ WP-24 T3,2026-07-13)、`hit` 事件、`meta.targets.hitbox`/(WP-25)`meta.weapon` 對帳(隨 WP-23 T1 / WP-24 T3 / WP-25 T3 分批)。
 - [ ] 規格書版本對帳:新增「階段 E」節 + 附錄 E 增「驗收清單 E」(M13 前完成)。
 

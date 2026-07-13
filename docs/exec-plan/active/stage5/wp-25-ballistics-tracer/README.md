@@ -1,6 +1,6 @@
 # WP-25 — ballistics-tracer:子彈軌跡顯示 + config-gated projectile 彈道模型
 
-> stage5 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 決議依據:GD-6(場景零知識——子彈不測場景)/ GD-5(seeded RNG)/ 待拍板 **GD-17**(彈道參數域,T0)。
+> stage5 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 決議依據:GD-6(場景零知識——子彈不測場景)/ GD-5(seeded RNG)/ **GD-17**(彈道參數域,2026-07-13 T0)。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |
@@ -10,7 +10,7 @@
 | **相依** | **T1(tracer)獨立可先行**(M8 ✅ 即可);**T2–T4 需 M11**(遠距 drill 是 projectile 構念前提) |
 | **對應 FR** | FR-E7 ~ FR-E10 |
 | **估時** | 4–6.5 dev-days(T1 1–1.5 + T2–T4 3–5) |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | 🟡 進行中;T0 ✅(2026-07-13) |
 
 ---
 
@@ -71,7 +71,7 @@ docs/operational/schema.md          ← MODIFY 對帳                           
 
 | Task | 檔案 | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| **T0** | [T0-entry-gate.md](T0-entry-gate.md) | GD-17 參數域拍板 + 產彈點/命中鏈基線 | —(T1 可與 T0 併卷) | Low |
+| **T0** | [T0-entry-gate.md](T0-entry-gate.md) | GD-17 參數域拍板 + 產彈點/命中鏈基線 | —(T1 可與 T0 併卷) | Low ✅ |
 | **T1** | [T1-tracer-view.md](T1-tracer-view.md) | shotRays ring + TracerView + UI 開關(render-only) | T0 | Med |
 | **T2** | [T2-projectile-math-core.md](T2-projectile-math-core.md) | `src/ballistics/` 純數學核心 + golden | T0 + **M11** | Med |
 | **T3** | [T3-sim-integration.md](T3-sim-integration.md) | config gate + SimLoop 子彈 arena + 事件解耦(零破壞) | T2 | **High** |

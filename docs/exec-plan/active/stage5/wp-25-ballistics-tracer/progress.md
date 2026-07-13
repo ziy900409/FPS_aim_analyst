@@ -5,11 +5,11 @@
 
 ---
 
-## Status: ⬜ 未開始
+## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13)
 
 | Task | 狀態 |
 |---|---|
-| T0 entry gate | ⬜ |
+| T0 entry gate | ✅ |
 | T1 tracer | ⬜ |
 | T2 數學核心 | ⬜ |
 | T3 sim 整合 | ⬜ |
@@ -22,15 +22,40 @@
 
 | ID | 狀態 | 決議 |
 |----|------|------|
-| OQ-S5-2 projectile 參數域(speedU/gravityU/maxRangeU 表;與 distance 聯動)→ **GD-17** | 🟡 待 T0 | 計畫預設:飛行時間 8–32 tick 反推 speedU;下墜角尺寸 0.1–0.5× 目標角高反推 gravityU;2–3 組武器檔;拍板入 DECISIONS.md GD-17 |
+| OQ-S5-2 projectile 參數域(speedU/gravityU/maxRangeU 表;與 distance 聯動)→ **GD-17** | ✅ T0 決議 | 以 WP-23 距離檔位聯動反推。canonical 0.5° distance=114.59u:8/16/32 ticks → `speedU=1833.45/916.73/458.36`, `maxRangeU=143.24`;2° sanity distance=28.65u:8/16/32 ticks → `speedU=458.37/229.18/114.59`, `maxRangeU=35.81`。重力以 target height 1u 的 0.10/0.25/0.50H 下墜反推:`gravityU=51.20/32.00/16.00`。config 驗證對到靶 <2 ticks 發 warning;`bullet` 欄 M12 前不得進任何 drill config。 |
 | OQ-S5-5 lead 誤差是否進正式指標 | 🟡 待 T4 | 計畫預設:spec-only 離線推導(引擎零計算);pilot 顯示構念有效再立案晉升 |
-| OQ-25.1 未命中彈的 tracer 端點(engagement plane 投影 vs maxRange 點) | 🟡 待 T1 | 預設:hitscan 沿用 `projectMissOntoEngagementPlane` 既有語意;projectile 用消滅點(maxRange/落地高度) |
+| OQ-25.1 未命中彈的 tracer 端點(engagement plane 投影 vs maxRange 點) | ✅ T0 決議 | hitscan tracer 端點沿用 `projectMissOntoEngagementPlane` 既有交戰平面投影語意;projectile tracer 端點用子彈消滅點(`maxRangeU` 到達或未來 T2/T3 spec 定義的落地/失活點)。tracer 純視覺,不記錄。 |
 | OQ-25.2 `BULLET_CAP` 容量與滿載政策 | 🟡 待 T3 | 預設:`magSize × 2`(單 peek 一匣 + 飛行殘留裕度);滿載拒發 + 旗標(比照 ring 溢位語意) |
 | OQ-25.3 移動目標 × 飛行彈命中語意(swept 對本 tick 目標 AABB) | 🟡 待 T2 | 預設:swept segment vs 本 tick 目標 AABB(決定性可斷言);sub-tick 目標內插與彈道的交互留 spec 註記 |
 
 ---
 
 ## Log
+
+### 2026-07-13 — T0 entry gate PASS
+
+- **Baseline verification**:`npm.cmd run test:ci` exit 0(unsandboxed rerun;PowerShell `npm.ps1` execution policy 擋住 `npm run`,sandboxed `npm.cmd run test:ci` 又被 Vite/esbuild parent-directory access denial 擋,故同 WP-23 慣例核准後重跑)。結果:`tsc --noEmit` clean;Vitest **68 files / 556 tests** 全綠;Playwright **16 tests** 全綠。
+- **GD-17 projectile 參數域決議**(入 [DECISIONS.md](../../../DECISIONS.md)):飛行時間以 tick 數設計,距離採 WP-23 OQ-S5-4 已拍板檔位聯動。公式:`speedU = distanceU * 128 / flightTicks`;`gravityU = 2 * (dropRatio * targetHeightU) / flightSec^2`;`maxRangeU = distanceU * 1.25`。具體表:
+  - canonical 0.5° longrange(`distanceU=114.59`,target height=1u):8 ticks flat → `{ speedU:1833.45, gravityU:51.20, maxRangeU:143.24 }`;16 ticks standard → `{ speedU:916.73, gravityU:32.00, maxRangeU:143.24 }`;32 ticks heavy → `{ speedU:458.36, gravityU:16.00, maxRangeU:143.24 }`。
+  - 2° sanity(`distanceU=28.65`,target height=1u):8 ticks → `{ speedU:458.37, gravityU:51.20, maxRangeU:35.81 }`;16 ticks → `{ speedU:229.18, gravityU:32.00, maxRangeU:35.81 }`;32 ticks → `{ speedU:114.59, gravityU:16.00, maxRangeU:35.81 }`。
+  - 下墜比:8 ticks = 0.10H,16 ticks = 0.25H,32 ticks = 0.50H。config 驗證規則:T3 對到靶飛行時間 `< 2 ticks` 的組合發 warning(退化 hitscan);M12 前 `bullet` 欄不得進任何 drill config。
+- **OQ-25.1 未命中 tracer 端點**:hitscan 沿用 `projectMissOntoEngagementPlane` 既有交戰平面投影;projectile 用消滅點(`maxRangeU` 或後續 spec 定義的失活點)。tracer 不進 export/event schema。
+- **Current fire spawn seam baseline**(CodeGraph source read):
+  - `simStep` 順序:`drillRunner.tick/targetManager.tick` 更新目標與 `recordVisibleEvents` → 偶數 tick `recoilTick(1/64)` decay → `consume` 前/事件前後/tick end 呼叫 `scheduleFire` → movement → `recordTickFromState`。
+  - `scheduleFire` 只在 `heldFire && ammo > 0 && nextFireT <= untilMs` 時呼叫 `fireOneShot`,每發扣 ammo 並把 `nextFireT += weapon.cycletimeSec * 1000`;空匣會清 `heldFire`。
+  - `fireOneShot` 產彈順序固定為:**firstShotGate/currentPeekId 先取** → velocity gate 讀 fire 當下 `vx` → `sampleSpread(state.recoilState, weapon, speedRatio, seeded rng)` 寫 `state.recoil.lastSpread` → `ballisticRaycast(camera,state,subAlpha)` → `hit = accurate && result.hit` → 非 persistent target 命中才 `targetManager.markKilled` → `pushImpact(state.impacts, ballisticHitPoint)`(命中/脫靶皆可視化) → `recorder.recordEvent({ type:'fire', ... })` → `recoilOnFire`。因此本發沿 kick 前朝向出膛,kick 只影響後續發與視覺 punch。
+  - 方向合成:`ballisticRaycast` 用 `state.aim.yaw/pitch + aimPunch*2` 建 forward/right/up,再疊 `lastSpread.x/y` 正規化;hit test 走 `raycastWithRay(..., subAlpha)`。miss 時 `projectMissOntoEngagementPlane(state)` 回填 `ballisticHitPoint`。
+- **Hit handling / recording baseline**:
+  - `markKilled` 掛點只在 `hit && result.targetId` 且 target 非 `persistent:true` 時執行;tracking/timed presentation target 命中不撤除。
+  - 現行 `DataRecorder.recordEvent` 只有 `type:'fire'` 會增加 `fireCount`;`event.hit` 為 true 時同步增加 `hitCount`。T3 要新增 `type:'hit'` 時不得重解釋既有 fire row;`firstShot` 仍錨 shot/fire。
+  - `pushImpact` 寫 `ImpactRing` typed arrays `x/y/z/seq`,`total` 單調遞增,`cursor` 環狀覆寫;熱路徑零配置。
+- **ImpactRing / ImpactView pattern for T1 tracer**:
+  - `createImpactRing` 預配置 `Float64Array(IMPACT_CAP)` for `x/y/z/seq` + `total/cursor`;`seq=0` 是空槽哨兵。
+  - `ImpactView.sync(impacts)` render-only 讀 ring;以 `#syncedSeq` 高水位只同步新槽,`InstancedMesh(IMPACT_CAP)` 單 draw call,`Object3D` scratch 重用,無新彈著早退。T1 `ShotRayRing` / `TracerView` 應複製此 ring + seq 高水位 pattern,但欄位改成 origin/end。
+- **T3 hitscan zero-break test list**:
+  `src/loop/__tests__/fire-determinism.test.ts`;`src/loop/__tests__/recoil-wiring.test.ts`;`src/loop/__tests__/ballistic-compose.test.ts`;`src/loop/__tests__/determinism.test.ts`;`src/loop/SimLoop.test.ts`;`tests/regression/determinism.test.ts`;`tests/regression/spray-determinism.test.ts`;`tests/regression/moving-target-determinism.test.ts`;`tests/regression/longrange-tracking-determinism.test.ts`;`src/sim/HitDetector.test.ts`;`src/sim/firstShot.test.ts`;`src/data/DataRecorder.test.ts`;`src/data/export.test.ts`;`tests/e2e/full-drill.spec.ts`。
+- **CLAUDE.md §4**:追加彈道 config-gated / hitscan 預設逐位不變、projectile 固定步長純函式、子彈永不測場景、tracer render-only 的硬約束。
+- **Entry gate**:PASS。T1 可開;T2 開工前仍需複驗 **M11 ✅**(目前 WP-23 / M11 已 PASS)。本切片無 `src/` 變更。
 
 ### 2026-07-10 — Plan authored
 
@@ -44,5 +69,4 @@
   **hitscan 預設逐位不變**是 M12 門控核心——這就是使用者要的 Bullet Type
   Enabled/Disabled 開關,同時保護 stage1–3 全部 golden 資產。
 - **Next**:T0([T0-entry-gate.md](T0-entry-gate.md))— GD-17 拍板,docs-only;
-  T1 可與 WP-23/24 並行。
-
+  T1 可與 WP-23/24 並行。(2026-07-13:T0 已 PASS;下一步為 T1 tracer。)

@@ -79,7 +79,7 @@
 |---|---|---|---|---|---|---|
 | **WP-23** | [`active/stage5/wp-23-longrange-tracking/`](active/stage5/wp-23-longrange-tracking/README.md) | 遠距小目標追蹤：hitbox config 化（單一來源）+ 遠距 drill + 指標 round-trip/決定性 | **M11 ✅** | WP-18 ✅ + M10 ✅ | 1.5–2.5 | ✅（2026-07-10） |
 | **WP-24** | [`active/stage5/wp-24-ads-optics/`](active/stage5/wp-24-ads-optics/README.md) | ADS 開鏡：EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度（GD-16）+ scope overlay + 記錄 | — | M8 ✅（可與 WP-23 並行） | 2–3 | ⬜ |
-| **WP-25** | [`active/stage5/wp-25-ballistics-tracer/`](active/stage5/wp-25-ballistics-tracer/README.md) | 彈道：tracer 顯示（T1 獨立）+ config-gated projectile（數學核心/sim 整合/指標語意） | **M12** | T1 獨立；T2+ 需 M11 | 4–6.5 | ⬜ |
+| **WP-25** | [`active/stage5/wp-25-ballistics-tracer/`](active/stage5/wp-25-ballistics-tracer/README.md) | 彈道：tracer 顯示（T1 獨立）+ config-gated projectile（數學核心/sim 整合/指標語意） | **M12** | T1 獨立；T2+ 需 M11 | 4–6.5 | 🟡 T0 ✅(2026-07-13) |
 | **WP-26** | [`active/stage5/wp-26-br-scene-integration/`](active/stage5/wp-26-br-scene-integration/README.md) | BR 場景實作與整合：`br-field` 原創資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | ⬜ |
 
 ---
