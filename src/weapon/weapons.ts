@@ -30,6 +30,12 @@ export const ak47: WeaponConfig = validateWeapon({
     ...BASE_INACCURACY,
     fire: 0.0078,
   },
+  // WP-24 / T2（FR-E5）— ADS 示範光學：開鏡收窄 FOV（zoom-in），sensitivityRatio=1.0
+  // （GD-16 預設，pre-registered 凍結）。zoom-in 由 fovDeg < hipFov 自然成立。
+  ads: {
+    fovDeg: 40,
+    sensitivityRatio: 1.0,
+  },
 });
 
 export const m4a4: WeaponConfig = validateWeapon({

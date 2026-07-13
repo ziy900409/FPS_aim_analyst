@@ -87,6 +87,29 @@ describe('InputRing — 固定欄位真 ring（繞圈 / 保序 / 溢位 / 重用
     ]);
   });
 
+  it('packed 槽位就地解碼保真（ads 型 b=down，比照 fire；四型並存升冪解碼，WP-24 / T1）', () => {
+    const ring = createInputRing();
+    ring.pushAds(true, 1);
+    ring.pushKey(KEY_CODE.KeyA, false, 2);
+    ring.pushFire(true, 3);
+    ring.pushAds(false, 4);
+
+    expect(drainAll(ring)).toEqual([
+      { type: 'ads', down: true, t: 1 },
+      { type: 'key', code: 'KeyA', down: false, t: 2 },
+      { type: 'fire', down: true, t: 3 },
+      { type: 'ads', down: false, t: 4 },
+    ]);
+  });
+
+  it('ads 走與 fire 同一 bounded insertion 保序（亂序寫入 → 排空升冪）', () => {
+    const ring = createInputRing();
+    ring.pushAds(true, 5);
+    ring.pushAds(false, 1);
+    ring.pushAds(true, 3);
+    expect(drainAll(ring).map((e) => e.t)).toEqual([1, 3, 5]);
+  });
+
   it('dequeueInto 覆寫同一重用 view（不配置新物件 — delivery 契約）', () => {
     const ring = createInputRing();
     ring.pushFire(true, 1);

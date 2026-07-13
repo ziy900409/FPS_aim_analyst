@@ -20,6 +20,7 @@ export interface TickRecord {
   tz: number | null;
   aim: { yaw: number; pitch: number };
   keys: KeyName[];
+  ads: boolean;
 }
 
 export interface TickRecordInput {
@@ -33,11 +34,13 @@ export interface TickRecordInput {
   tz?: number | null;
   aim: { readonly yaw: number; readonly pitch: number };
   keys: readonly string[];
+  ads?: boolean;
 }
 
 export interface TickSourceState {
   player: { vx: number; vz: number; x: number; z: number };
   aim: { yaw: number; pitch: number };
+  heldAds: boolean;
   held: { left: boolean; right: boolean };
   targets: Array<{ pos: { x: number; y: number; z: number }; visible: boolean; alive: boolean }>;
 }
@@ -106,6 +109,7 @@ export class TickArena {
   private readonly yaw: Float64Array;
   private readonly pitch: Float64Array;
   private readonly keyMask: Uint8Array;
+  private readonly ads: Uint8Array;
   private countValue = 0;
   private overflowValue = false;
 
@@ -123,6 +127,7 @@ export class TickArena {
     this.yaw = new Float64Array(capacity);
     this.pitch = new Float64Array(capacity);
     this.keyMask = new Uint8Array(capacity);
+    this.ads = new Uint8Array(capacity);
   }
 
   get count(): number {
@@ -146,6 +151,7 @@ export class TickArena {
       record.aim.yaw,
       record.aim.pitch,
       keyMaskFromKeys(record.keys),
+      record.ads === true,
     );
   }
 
@@ -174,6 +180,7 @@ export class TickArena {
       state.aim.yaw,
       state.aim.pitch,
       keyMaskFromState(state),
+      state.heldAds,
     );
   }
 
@@ -189,6 +196,7 @@ export class TickArena {
     yaw: number,
     pitch: number,
     keyMask: number,
+    ads: boolean,
   ): boolean {
     if (this.countValue >= this.capacity) {
       this.overflowValue = true;
@@ -212,6 +220,7 @@ export class TickArena {
     this.yaw[i] = yaw;
     this.pitch[i] = pitch;
     this.keyMask[i] = keyMask;
+    this.ads[i] = ads ? 1 : 0;
     this.countValue++;
     return true;
   }
@@ -230,6 +239,7 @@ export class TickArena {
         tz: this.hasTarget[i] ? this.tz[i] : null,
         aim: { yaw: this.yaw[i], pitch: this.pitch[i] },
         keys: keysFromMask(this.keyMask[i]),
+        ads: this.ads[i] === 1,
       };
     }
     return { ticks, recorderOverflow: this.overflowValue };

@@ -7,7 +7,7 @@
 | **相依** | T2(zoom 鏈可用) |
 | **Risk / Cplx** | Med / Med(記錄缺失 = 分析效度破口) |
 | **Touches** | ADD `src/ui/`(scope overlay DOM);MODIFY `src/data/DataRecorder.ts`(tick `ads` flag + `ads` 事件)、`src/data/export.ts` + `metadata.ts`(`meta.weapon.ads` 快照)、`docs/operational/schema.md`(對帳)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -38,12 +38,12 @@ ADS 的視覺與資料面收斂(FR-E6):scope overlay(純 TS + DOM,D1)+
 
 ## Steps
 
-- [ ] overlay DOM + 顯隱佈線 + 準心置中回歸(手動 + 既有測試)。
-- [ ] DataRecorder tick flag + 事件 + meta 快照(additive)。
-- [ ] round-trip 一致性測試 + 決定性 ads fixture。
-- [ ] schema.md 對帳 + export 測試(JSON finite check/CSV 欄)。
-- [ ] E2E smoke(Playwright)。
-- [ ] `npm run test:ci` exit 0。
+- [x] overlay DOM + 顯隱佈線 + 準心置中回歸(手動 + 既有測試)。
+- [x] DataRecorder tick flag + 事件 + meta 快照(additive)。
+- [x] round-trip 一致性測試 + 決定性 ads fixture。
+- [x] schema.md 對帳 + export 測試(JSON finite check/CSV 欄)。
+- [x] E2E smoke(Playwright)。
+- [x] `npm run test:ci` exit 0。
 
 ## Definition of Done
 

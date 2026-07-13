@@ -75,4 +75,103 @@ describe('CameraController', () => {
     expect(aim.yaw).toBe(0); // punch 不污染 aimSink
     expect(aim.pitch).toBe(0);
   });
+
+  // ── WP-24 / T2：ADS 開鏡 zoom/gain（GD-16，FR-E5） ──
+
+  it('ADS gain = sensitivity × sensitivityRatio × (adsFov/hipFov)（GD-16 逐位）', () => {
+    const aim: AimState = { yaw: 0, pitch: 0 };
+    const camera = new THREE.PerspectiveCamera(90); // hipFov = 90
+    const controller = new CameraController(camera, aim);
+    controller.setSensitivity(1);
+    controller.setAdsConfig({ fovDeg: 45, sensitivityRatio: 0.8 });
+
+    // 開鏡：gain = 1 × 0.8 × (45/90) = 0.4。同 delta → yaw 增量 × 0.4。
+    controller.setAds(true, 1000); // t=0，gain 立即階躍
+    controller.applyDelta(1000, 0);
+
+    const step = THREE.MathUtils.degToRad(0.022);
+    expect(aim.yaw).toBeCloseTo(-1000 * step * 0.4, 12);
+  });
+
+  it('hip 態 gain = 1（開鏡前後感度可分：階躍非漸變）', () => {
+    const aim: AimState = { yaw: 0, pitch: 0 };
+    const controller = new CameraController(new THREE.PerspectiveCamera(90), aim);
+    controller.setSensitivity(1);
+    controller.setAdsConfig({ fovDeg: 45, sensitivityRatio: 0.8 });
+
+    // 尚未開鏡 → 全感度。
+    controller.applyDelta(1000, 0);
+    const step = THREE.MathUtils.degToRad(0.022);
+    expect(aim.yaw).toBeCloseTo(-1000 * step, 12);
+  });
+
+  it('gain 於開鏡瞬間即階躍，不隨 FOV 內插中值變化', () => {
+    const aim: AimState = { yaw: 0, pitch: 0 };
+    const controller = new CameraController(new THREE.PerspectiveCamera(90), aim);
+    controller.setSensitivity(1);
+    controller.setAdsConfig({ fovDeg: 45, sensitivityRatio: 1.0 });
+
+    // FOV 過渡進行到一半（t≈0.5），gain 仍為完整目標態 0.5（45/90），非按內插比例。
+    controller.setAds(true, 0);
+    controller.setAds(true, 60); // 120ms 過渡的中點
+    controller.applyDelta(1000, 0);
+
+    const step = THREE.MathUtils.degToRad(0.022);
+    expect(aim.yaw).toBeCloseTo(-1000 * step * 0.5, 12);
+  });
+
+  it('setAds 切換 FOV 目標並以 render 幀線性內插（render-only）', () => {
+    const camera = new THREE.PerspectiveCamera(90);
+    const controller = new CameraController(camera, { yaw: 0, pitch: 0 });
+    controller.setAdsConfig({ fovDeg: 30, sensitivityRatio: 1.0 });
+
+    controller.setAds(true, 0);
+    expect(camera.fov).toBeCloseTo(90, 6); // t=0 仍在起點
+
+    controller.setAds(true, 60); // 過渡中點 → lerp(90,30,0.5)=60
+    expect(camera.fov).toBeCloseTo(60, 6);
+
+    controller.setAds(true, 120); // 過渡完成 → 30
+    expect(camera.fov).toBeCloseTo(30, 6);
+
+    controller.setAds(true, 1000); // clamp：不超過目標
+    expect(camera.fov).toBeCloseTo(30, 6);
+  });
+
+  it('放開鏡 FOV 由當前值趨回 hip（起點=當前內插值，反向不跳變）', () => {
+    const camera = new THREE.PerspectiveCamera(90);
+    const controller = new CameraController(camera, { yaw: 0, pitch: 0 });
+    controller.setAdsConfig({ fovDeg: 30, sensitivityRatio: 1.0 });
+
+    controller.setAds(true, 0);
+    controller.setAds(true, 120); // 到達 ads 30
+    controller.setAds(false, 120); // 起點=30
+    controller.setAds(false, 180); // lerp(30,90,0.5)=60
+    expect(camera.fov).toBeCloseTo(60, 6);
+    controller.setAds(false, 240);
+    expect(camera.fov).toBeCloseTo(90, 6);
+  });
+
+  it('無 ads config 的武器：開鏡為 no-op（FOV 與 gain 皆不變）', () => {
+    const aim: AimState = { yaw: 0, pitch: 0 };
+    const camera = new THREE.PerspectiveCamera(90);
+    const controller = new CameraController(camera, aim);
+    controller.setSensitivity(1);
+    // 未 setAdsConfig → ads = undefined。
+
+    controller.setAds(true, 0);
+    controller.setAds(true, 120);
+    expect(camera.fov).toBeCloseTo(90, 6); // FOV 不動
+
+    controller.applyDelta(1000, 0);
+    const step = THREE.MathUtils.degToRad(0.022);
+    expect(aim.yaw).toBeCloseTo(-1000 * step, 12); // gain=1
+  });
+
+  it('setFov 更新 hip 基準；非 ADS 時直接生效', () => {
+    const camera = new THREE.PerspectiveCamera(90);
+    const controller = new CameraController(camera, { yaw: 0, pitch: 0 });
+    controller.setFov(103);
+    expect(camera.fov).toBeCloseTo(103, 6);
+  });
 });

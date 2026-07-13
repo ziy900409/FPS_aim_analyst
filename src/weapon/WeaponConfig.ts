@@ -20,6 +20,17 @@ export interface WeaponConfig {
     startBullet: number;
     endBullet: number;
   };
+  /**
+   * ADS 開鏡光學（WP-24 / T2，FR-E5）。省略 = 該武器不可開鏡（ADS 為 no-op，維持 hip 視角）。
+   * `fovDeg`：開鏡目標垂直 FOV（度）；正有限，zoom-in 語意由 `fovDeg < hipFov` 自然成立
+   * （hipFov 為使用者/相機設定，不在武器資料內，故此處只驗正有限）。
+   * `sensitivityRatio`：GD-16 感度換算係數，正有限，預設 1.0；
+   * ADS 有效感度 = `sensitivity × sensitivityRatio × (fovDeg / hipFov)`（作用點在 CameraController）。
+   */
+  ads?: {
+    fovDeg: number;
+    sensitivityRatio: number;
+  };
 }
 
 /**
@@ -59,6 +70,8 @@ export function validateWeapon(input: unknown): WeaponConfig {
       ? undefined
       : validateRecoveryTransition(root.recoveryTransition);
 
+  const ads = root.ads === undefined ? undefined : validateAds(root.ads);
+
   return {
     id,
     cycletimeSec,
@@ -66,7 +79,16 @@ export function validateWeapon(input: unknown): WeaponConfig {
     recoil: { seed, magnitude, magnitudeVariance, angleVariance },
     inaccuracy: { stand, crouch, fire, move, recoveryTimeStand, recoveryTimeCrouch },
     ...(recoveryTransition ? { recoveryTransition } : {}),
+    ...(ads ? { ads } : {}),
   };
+}
+
+function validateAds(input: unknown): WeaponConfig['ads'] {
+  const ads = requireObject(input, 'ads');
+  // hipFov 不在武器資料內，故 fovDeg 只驗正有限（zoom-in 由 fovDeg < hipFov 於相機層自然成立）。
+  const fovDeg = requirePositiveNumber(ads.fovDeg, 'ads.fovDeg');
+  const sensitivityRatio = requirePositiveNumber(ads.sensitivityRatio, 'ads.sensitivityRatio');
+  return { fovDeg, sensitivityRatio };
 }
 
 function validateRecoveryTransition(input: unknown): WeaponConfig['recoveryTransition'] {

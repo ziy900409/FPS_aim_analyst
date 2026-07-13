@@ -66,6 +66,7 @@
 - **場景資產授權白名單**:可 commit 的場景資產僅限 CC0 或 CC-BY 且需在 `ATTRIBUTIONS.md` 可稽核;CC-BY-NC、遊戲抽取資產、付費包原始檔禁止進 repo(GD-9)。
 - **解析度/場景切換不改 sim**:解析度模式、fullscreen、場景切換與 frame log 僅可落在 render/UI/data/validation 層;不得改變 `SIM_HZ`、sim 狀態演進、輸入鏈或命中判定(GD-6/GD-10)。
 - **目標 hitbox 單一來源**:`DrillConfig.targets.hitbox?` 省略時必須逐位等同現行 H1 `{1,2,1}`;命中判定(`HitDetector`)與 on-target 離線推導(`trackingDerivation`)必須使用同一 AABB 來源(`TargetState.hitbox` / export `meta.targets.hitbox`),不得新增另一套閾值或尺寸常數(WP-23/GD-7)。
+- **ADS 只落輸入/render/data 層**:`EV_ADS`/`heldAds` 可影響 `CameraController` FOV 與滑鼠 gain,但不得改 `SIM_HZ`、目標演進、命中幾何或彈道語意;ads 狀態必須同時記錄事件與逐 tick flag,否則 ADS drill 分析無效(WP-24/GD-16)。
 
 ---
 

@@ -21,6 +21,11 @@ const RAD_PER_COUNT = THREE.MathUtils.degToRad(0.022);
 const DEFAULT_SENSITIVITY = 1.0;
 /** pitch 夾角 ±89°（Math.PI/2 - ε），避免翻轉（R2 明確專案級限制）。 */
 const MAX_PITCH = Math.PI / 2 - 0.01;
+/**
+ * ADS 開鏡 FOV 過渡時長（ms，render-only，OQ-24.1）。視覺淡入專用——**不進 sim/記錄**
+ * （記錄的是 heldAds 事件與逐 tick flag，非此視覺過渡）。感度切換為階躍，不受此內插影響。
+ */
+const ADS_FOV_TRANSITION_MS = 120;
 
 // 旋轉軸常數（setFromAxisAngle 只讀不改）。
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
@@ -29,6 +34,14 @@ const LOCAL_RIGHT = new THREE.Vector3(1, 0, 0);
 export interface AimState {
   yaw: number;
   pitch: number;
+}
+
+/** ADS 光學參數（WP-24 / T2，來源 `WeaponConfig.ads`）。 */
+export interface AdsConfig {
+  /** 開鏡目標垂直 FOV（度）。 */
+  fovDeg: number;
+  /** GD-16 感度換算係數（正有限，預設 1.0）。 */
+  sensitivityRatio: number;
 }
 
 export class CameraController {
@@ -43,6 +56,18 @@ export class CameraController {
   #punchYaw = 0;
   #punchPitch = 0;
 
+  // ADS 開鏡（WP-24 / T2，FR-E5）：只落 render/input 層（GD-16），不進 sim/命中/彈道。
+  #adsConfig?: AdsConfig;
+  #adsActive = false;
+  // 感度 gain 為**階躍**（切換 ADS 立即生效，非隨 FOV 內插）：hip=1、ads=ratio×(adsFov/hipFov)。
+  #adsGain = 1;
+  // FOV 內插狀態（render-only；#hipFov 為使用者/相機基準 FOV，setFov 維護）。
+  #hipFov: number;
+  #fovFrom: number;
+  #fovTarget: number;
+  #fovCurrent: number;
+  #transitionStartMs = 0;
+
   // 每次 applyDelta 重用，避免 mousemove 高頻路徑上的 GC 卡頓（CLAUDE.md §4 物件重用）。
   readonly #qYaw = new THREE.Quaternion();
   readonly #qPitch = new THREE.Quaternion();
@@ -50,14 +75,19 @@ export class CameraController {
   constructor(camera: THREE.PerspectiveCamera, aimSink?: AimState) {
     this.#camera = camera;
     this.#aimSink = aimSink;
+    // FOV 基準取自 camera 現值（SceneManager/設定面板設定）；hip=ads=current 起始無過渡。
+    this.#hipFov = camera.fov;
+    this.#fovFrom = camera.fov;
+    this.#fovTarget = camera.fov;
+    this.#fovCurrent = camera.fov;
     // 從基準 yaw=pitch=0 起（朝 -Z，與 SceneManager lookAt 一致）；此後 camera 朝向
     // 由本類別獨佔，避免兩套發散的視角狀態（R5）。
     this.#applyToCamera();
   }
 
-  /** 鎖定中的滑鼠 delta → 累積 yaw/pitch（pitch 夾角）→ 套到 camera。 */
+  /** 鎖定中的滑鼠 delta → 累積 yaw/pitch（pitch 夾角）→ 套到 camera。ADS 態乘 GD-16 gain。 */
   applyDelta(dx: number, dy: number): void {
-    const step = this.#sensitivity * RAD_PER_COUNT;
+    const step = this.#sensitivity * RAD_PER_COUNT * this.#adsGain;
     this.#yaw -= dx * step; // dx>0（右移）→ yaw 減 → 向右看
     this.#pitch = THREE.MathUtils.clamp(this.#pitch - dy * step, -MAX_PITCH, MAX_PITCH);
     this.#applyToCamera();
@@ -79,9 +109,63 @@ export class CameraController {
     this.#applyToCamera();
   }
 
-  /** 設定垂直 FOV（度）（T5 設定面板；即時生效）。 */
+  /**
+   * 設定 hip 基準垂直 FOV（度）（T5 設定面板；即時生效）。非 ADS 時直接套到 camera；
+   * ADS 進行中僅更新基準（放開鏡後趨近新值），設定面板鎖定中隱藏故實務不並發（WP-24 / T2）。
+   */
   setFov(deg: number): void {
-    this.#camera.fov = deg;
+    this.#hipFov = deg;
+    if (!this.#adsActive) {
+      this.#fovFrom = deg;
+      this.#fovTarget = deg;
+      this.#fovCurrent = deg;
+      this.#applyFov();
+    }
+  }
+
+  /**
+   * 設定當前武器的 ADS 光學（WP-24 / T2）。`undefined` = 該武器不可開鏡（ADS 為 no-op）。
+   * 一般在武器/drill 切換時佈線一次；若正 ADS 中變更，重算 gain 與 FOV 目標（保守邊界）。
+   */
+  setAdsConfig(ads: AdsConfig | undefined): void {
+    this.#adsConfig = ads;
+    if (this.#adsActive) {
+      this.#fovTarget = ads ? ads.fovDeg : this.#hipFov;
+      this.#adsGain = ads ? ads.sensitivityRatio * (ads.fovDeg / this.#hipFov) : 1;
+    }
+  }
+
+  /**
+   * 每幀由 render loop 依 `heldAds` 呼叫（比照 `setViewPunch` 模式，render-only，不進 sim）。
+   * 狀態轉換時：FOV 目標翻為 ads/hip、gain **階躍**更新（GD-16，以目標態計算而非內插中值）；
+   * 每幀依 `nowMs` 推進 FOV 線性內插（時長 `ADS_FOV_TRANSITION_MS`）。無 ADS config 時開鏡為 no-op。
+   * `nowMs` 為 render 時鐘（rAF），只作視覺過渡進度，決定性/記錄不依賴之。
+   */
+  setAds(active: boolean, nowMs: number): void {
+    // 無 ADS config 的武器：強制維持 hip（開鏡請求無效）。
+    const effectiveActive = active && this.#adsConfig !== undefined;
+    if (effectiveActive !== this.#adsActive) {
+      this.#adsActive = effectiveActive;
+      // 內插起點 = 當前 FOV（支援過渡中反向切換不跳變）；目標 = ads/hip。
+      this.#fovFrom = this.#fovCurrent;
+      this.#fovTarget = effectiveActive && this.#adsConfig ? this.#adsConfig.fovDeg : this.#hipFov;
+      this.#transitionStartMs = nowMs;
+      // gain 階躍：立即以目標態計算（切換感度為分析可分的階躍，非隨 FOV 漸變）。
+      this.#adsGain =
+        effectiveActive && this.#adsConfig
+          ? this.#adsConfig.sensitivityRatio * (this.#adsConfig.fovDeg / this.#hipFov)
+          : 1;
+    }
+    const t =
+      ADS_FOV_TRANSITION_MS <= 0
+        ? 1
+        : THREE.MathUtils.clamp((nowMs - this.#transitionStartMs) / ADS_FOV_TRANSITION_MS, 0, 1);
+    this.#fovCurrent = THREE.MathUtils.lerp(this.#fovFrom, this.#fovTarget, t);
+    this.#applyFov();
+  }
+
+  #applyFov(): void {
+    this.#camera.fov = this.#fovCurrent;
     this.#camera.updateProjectionMatrix();
   }
 
@@ -89,6 +173,7 @@ export class CameraController {
   setCamera(camera: THREE.PerspectiveCamera): void {
     this.#camera = camera;
     this.#applyToCamera();
+    this.#applyFov(); // 新 camera 繼承當前 FOV（含 ADS 內插中值）
   }
 
   #applyToCamera(): void {

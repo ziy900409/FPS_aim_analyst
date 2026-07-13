@@ -50,13 +50,20 @@ async function runFullChain(page: import('@playwright/test').Page) {
 
       const payload = harness.forceExportJSON() as {
         meta: Record<string, unknown>;
-        ticks: Array<{ t: number; vx: number; vz: number; aim: { yaw: number; pitch: number }; keys: string[] }>;
+        ticks: Array<{ t: number; vx: number; vz: number; aim: { yaw: number; pitch: number }; keys: string[]; ads: boolean }>;
         events: Array<Record<string, unknown>>;
       };
 
       const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
       const allTicksFinite = payload.ticks.every(
-        (tk) => num(tk.t) && num(tk.vx) && num(tk.vz) && num(tk.aim.yaw) && num(tk.aim.pitch) && Array.isArray(tk.keys),
+        (tk) =>
+          num(tk.t) &&
+          num(tk.vx) &&
+          num(tk.vz) &&
+          num(tk.aim.yaw) &&
+          num(tk.aim.pitch) &&
+          Array.isArray(tk.keys) &&
+          typeof tk.ads === 'boolean',
       );
 
       const visible = payload.events.filter((e) => e.type === 'visible');
@@ -128,6 +135,7 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
     expect(m.bufferOverflow).toBe(false);
     expect(m.recorderOverflow).toBe(false);
     expect(m.suspect).toBe(false);
+    expect(m.weapon).toMatchObject({ id: 'ak47', ads: { fovDeg: 40, sensitivityRatio: 1 } });
 
     // ── ticks（schema.md §ticks[]）：非空且所有數值有限 ──
     expect(r.ticksLen).toBeGreaterThan(0);
@@ -152,6 +160,54 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
 
     // ── 統計＝匯出：結果頁指標與匯出資料逐欄一致（序列化不失真，FR-9.1 交叉驗證）──
     expect(r.metricsMatchExport).toBe(true);
+  });
+
+  test('WP-24 ADS smoke：export 含 ads event / tick flag / weapon ads snapshot', async ({ page }) => {
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+        timeout: 15_000,
+      })
+      .toBe(true);
+
+    const r = await page.evaluate((drillId) => {
+      type Harness = {
+        startDrill(id: string): void;
+        feedInput(seq: Array<{ type: 'ads'; down: boolean; t: number }>): void;
+        forceExportJSON(): unknown;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+      harness.startDrill(drillId);
+      harness.feedInput([
+        { type: 'ads', down: true, t: 0 },
+        { type: 'ads', down: false, t: 50 },
+      ]);
+
+      const payload = harness.forceExportJSON() as {
+        meta: Record<string, unknown> & { weapon?: { id?: unknown; ads?: Record<string, unknown> } };
+        ticks: Array<{ t: number; ads?: unknown }>;
+        events: Array<Record<string, unknown>>;
+      };
+      const adsEvents = payload.events.filter((event) => event.type === 'ads');
+      const upT = adsEvents.find((event) => event.down === false)?.t;
+      return {
+        weapon: payload.meta.weapon,
+        adsEvents,
+        allTicksHaveAdsBoolean: payload.ticks.every((tick) => typeof tick.ads === 'boolean'),
+        anyAdsTick: payload.ticks.some((tick) => tick.ads === true),
+        postUpFalseTick:
+          typeof upT === 'number' && payload.ticks.some((tick) => tick.t > upT && tick.ads === false),
+      };
+    }, DRILL_ID);
+
+    expect(r.weapon).toMatchObject({ id: 'ak47', ads: { fovDeg: 40, sensitivityRatio: 1 } });
+    expect(r.adsEvents).toEqual([
+      expect.objectContaining({ type: 'ads', down: true }),
+      expect.objectContaining({ type: 'ads', down: false }),
+    ]);
+    expect(r.allTicksHaveAdsBoolean).toBe(true);
+    expect(r.anyAdsTick).toBe(true);
+    expect(r.postUpFalseTick).toBe(true);
   });
 
   // WP-13 / T2 — 視覺/彈道分離：按住連發 10 發後,rawPunch(彈道)= M5 向量,方向 = 上 + 右。

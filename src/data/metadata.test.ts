@@ -102,6 +102,7 @@ describe('collectMeta', () => {
         weaponId: 'm4a4',
         weaponSeed: 38965,
         rngSeed: 2026,
+        weapon: { id: 'm4a4', ads: { fovDeg: 40, sensitivityRatio: 1 } },
         backend: 'webgl2',
         displayHz: 144,
         sensitivity: 1,
@@ -120,6 +121,7 @@ describe('collectMeta', () => {
       weaponId: 'm4a4',
       weaponSeed: 38965,
       rngSeed: 2026,
+      weapon: { id: 'm4a4', ads: { fovDeg: 40, sensitivityRatio: 1 } },
       movementModel: 'cs2-source',
       spawn: {
         seed: 2026,
@@ -128,6 +130,20 @@ describe('collectMeta', () => {
         motion: { type: 'static' },
       },
     });
+  });
+
+  it('rejects malformed weapon ads metadata', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgl2',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        weapon: { id: 'ak47', ads: { fovDeg: 0, sensitivityRatio: 1 } },
+      }),
+    ).toThrow('weapon.ads.fovDeg');
   });
 
   it('accepts resolved target hitbox metadata for offline geometry replay', () => {

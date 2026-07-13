@@ -30,6 +30,12 @@ export interface InputSampler {
    */
   attach(target: EventTarget): void;
   detach(): void;
+  /**
+   * stuck-ads 防護接縫（WP-24 / T1）：PointerLock 解鎖 / blur 時由呼叫端觸發——若右鍵仍按住（已採計
+   * ads-down），補送一筆 ads-up（`down=false`，蓋傳入 `t`）避免 `heldAds` 永真汙染後續 drill。
+   * 未採計過 ads-down 時為 no-op（比照 stuck-fire 掛點，見 [main.ts] pointerLock.onChange）。
+   */
+  releaseAds(t: number): void;
 }
 
 /**
@@ -43,6 +49,7 @@ export function createInputSampler(
 ): InputSampler {
   let attached: EventTarget | null = null;
   let fireButtonHeld = false;
+  let adsButtonHeld = false; // 右鍵 ADS 按住狀態（WP-24 / T1）：比照 fireButtonHeld，用於 up 補送與 stuck 防護
 
   // ring 溢位政策（GD-2）：push* 回 false（容量滿）→ 升 bufferOverflow、拒收、不丟最舊。
   const ring = state.input;
@@ -66,24 +73,52 @@ export function createInputSampler(
    * 鎖定中採計——否則「點擊 canvas 取鎖」與 UI 點擊會被誤判為開火（設計註記 / T3 DoD）。
    */
   function onMouseDown(e: MouseEvent): void {
-    if (e.button !== 0) return; // 只記主鍵（左鍵）開火；其餘鍵不入緩衝
-    if (!isLocked()) return; // 未鎖定不採計（避免取鎖點擊 / UI 點擊污染量測）
-    if (!ring.pushFire(true, e.timeStamp)) {
-      meta.bufferOverflow++;
+    if (e.button === 0) {
+      if (!isLocked()) return; // 未鎖定不採計（避免取鎖點擊 / UI 點擊污染量測）
+      if (!ring.pushFire(true, e.timeStamp)) {
+        meta.bufferOverflow++;
+        return;
+      }
+      fireButtonHeld = true;
       return;
     }
-    fireButtonHeld = true;
+    // 右鍵 ADS 開鏡按下（WP-24 / T1，FR-E4）：比照 fire-down 走 pointer-lock 採計閘門
+    // （否則取鎖前的右鍵 / UI 右鍵污染量測）；packed b=down，走既有 ring 分桶消費。
+    if (e.button === 2) {
+      if (!isLocked()) return;
+      if (!ring.pushAds(true, e.timeStamp)) {
+        meta.bufferOverflow++;
+        return;
+      }
+      adsButtonHeld = true;
+    }
   }
 
   /**
-   * 開火放開事件：不受 `isLocked` 閘門限制；若按住期間 Esc/失焦導致解鎖，mouseup 仍須送達，
-   * 否則 sim 端 `heldFire` 會卡住。未採計過 fire-down 時不送 fire-up，避免 UI 點擊放開污染資料。
+   * 滑鼠放開事件（左鍵 fire / 右鍵 ads）：不受 `isLocked` 閘門限制；若按住期間 Esc/失焦導致解鎖，
+   * mouseup 仍須送達，否則 sim 端 `heldFire`/`heldAds` 會卡住。未採計過對應 down 時不送 up，避免
+   * UI 點擊放開污染資料。
    */
   function onMouseUp(e: MouseEvent): void {
-    if (e.button !== 0) return;
-    if (!fireButtonHeld) return;
-    fireButtonHeld = false;
-    if (!ring.pushFire(false, e.timeStamp)) meta.bufferOverflow++;
+    if (e.button === 0) {
+      if (!fireButtonHeld) return;
+      fireButtonHeld = false;
+      if (!ring.pushFire(false, e.timeStamp)) meta.bufferOverflow++;
+      return;
+    }
+    if (e.button === 2) {
+      if (!adsButtonHeld) return;
+      adsButtonHeld = false;
+      if (!ring.pushAds(false, e.timeStamp)) meta.bufferOverflow++;
+    }
+  }
+
+  /**
+   * 右鍵情境選單抑制（WP-24 / T1）：PointerLock 鎖定中 `preventDefault` 阻止瀏覽器右鍵選單彈出
+   * （否則 ADS 按住手勢會被選單打斷）。未鎖定時放行（不劫持一般右鍵選單）。
+   */
+  function onContextMenu(e: Event): void {
+    if (isLocked()) e.preventDefault();
   }
 
   /**
@@ -109,6 +144,7 @@ export function createInputSampler(
       target.addEventListener('keyup', onKeyUp as EventListener);
       target.addEventListener('mousedown', onMouseDown as EventListener);
       target.addEventListener('mouseup', onMouseUp as EventListener);
+      target.addEventListener('contextmenu', onContextMenu as EventListener);
       target.addEventListener('pointermove', onPointerMove as EventListener);
     },
     detach(): void {
@@ -117,9 +153,16 @@ export function createInputSampler(
       attached.removeEventListener('keyup', onKeyUp as EventListener);
       attached.removeEventListener('mousedown', onMouseDown as EventListener);
       attached.removeEventListener('mouseup', onMouseUp as EventListener);
+      attached.removeEventListener('contextmenu', onContextMenu as EventListener);
       attached.removeEventListener('pointermove', onPointerMove as EventListener);
       attached = null;
       fireButtonHeld = false;
+      adsButtonHeld = false;
+    },
+    releaseAds(t: number): void {
+      if (!adsButtonHeld) return; // 未按住 → no-op（比照 stuck-fire：只在已採計 down 後補 up）
+      adsButtonHeld = false;
+      if (!ring.pushAds(false, t)) meta.bufferOverflow++;
     },
   };
 }

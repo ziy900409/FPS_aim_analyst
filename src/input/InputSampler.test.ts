@@ -187,8 +187,8 @@ describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，�
     expect(state.input.size()).toBe(0);
   });
 
-  it('非左鍵（右鍵/中鍵）不入緩衝', () => {
-    target.dispatch('mousedown', mouseEvent(2, 10)); // 右鍵
+  it('中鍵不入緩衝（右鍵 ADS 語意見 WP-24 / T1 describe）', () => {
+    // WP-24 / T1：右鍵改採計為 ADS（見下方 ADS describe）；此處僅驗中鍵仍不污染開火緩衝。
     target.dispatch('mousedown', mouseEvent(1, 20)); // 中鍵
     expect(state.input.size()).toBe(0);
   });
@@ -201,6 +201,107 @@ describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，�
     target.dispatch('mousedown', mouseEvent(0, 10));
     target.dispatch('mouseup', mouseEvent(0, 20));
     expect(state.input.size()).toBe(0);
+  });
+});
+
+describe('InputSampler — ADS 開鏡採集（右鍵 mousedown/mouseup + contextmenu 抑制 + stuck 防護，WP-24 / T1）', () => {
+  let state: ReturnType<typeof createSharedState>;
+  let target: ReturnType<typeof makeFakeTarget>;
+  let sampler: ReturnType<typeof createInputSampler>;
+  let locked: boolean;
+
+  beforeEach(() => {
+    state = createSharedState();
+    target = makeFakeTarget();
+    locked = true;
+    sampler = createInputSampler(state, () => locked);
+    sampler.attach(target as unknown as EventTarget);
+  });
+
+  it('鎖定中右鍵 mousedown/mouseup 蓋 event.timeStamp 入緩衝（ads down/up）', () => {
+    target.dispatch('mousedown', mouseEvent(2, 300.5));
+    target.dispatch('mouseup', mouseEvent(2, 480.25));
+
+    expect(drainToArray(state)).toEqual([
+      { type: 'ads', down: true, t: 300.5 },
+      { type: 'ads', down: false, t: 480.25 },
+    ]);
+  });
+
+  it('已採計 ads-down 後即使解鎖，mouseup 仍送 ads-up（stuck-ads 防護）', () => {
+    target.dispatch('mousedown', mouseEvent(2, 300.5));
+    locked = false; // 按住期間 Esc/失焦解鎖
+    target.dispatch('mouseup', mouseEvent(2, 480.25));
+
+    expect(drainToArray(state)).toEqual([
+      { type: 'ads', down: true, t: 300.5 },
+      { type: 'ads', down: false, t: 480.25 },
+    ]);
+  });
+
+  it('未鎖定時右鍵不採計（避免取鎖前右鍵 / UI 右鍵污染量測）', () => {
+    locked = false;
+    target.dispatch('mousedown', mouseEvent(2, 300.5));
+    target.dispatch('mouseup', mouseEvent(2, 480.25)); // 未採計 down → up 亦不送
+    expect(state.input.size()).toBe(0);
+  });
+
+  it('快速點放（同序列 down+up）依到達順序入緩衝', () => {
+    target.dispatch('mousedown', mouseEvent(2, 100));
+    target.dispatch('mouseup', mouseEvent(2, 108));
+    expect(drainToArray(state)).toEqual([
+      { type: 'ads', down: true, t: 100 },
+      { type: 'ads', down: false, t: 108 },
+    ]);
+  });
+
+  it('releaseAds：解鎖中仍按住右鍵時補送 ads-up（stuck 防護接縫）', () => {
+    target.dispatch('mousedown', mouseEvent(2, 300.5)); // 按住、無 mouseup
+    sampler.releaseAds(900); // PointerLock 解鎖掛點觸發
+
+    expect(drainToArray(state)).toEqual([
+      { type: 'ads', down: true, t: 300.5 },
+      { type: 'ads', down: false, t: 900 },
+    ]);
+  });
+
+  it('releaseAds 未按住時為 no-op（不送多餘 ads-up）', () => {
+    sampler.releaseAds(900);
+    expect(state.input.size()).toBe(0);
+
+    // 一次完整 down→up 後 releaseAds 亦不重複補 up（已消耗 held 狀態）
+    target.dispatch('mousedown', mouseEvent(2, 100));
+    target.dispatch('mouseup', mouseEvent(2, 108));
+    sampler.releaseAds(200);
+    expect(drainToArray(state)).toEqual([
+      { type: 'ads', down: true, t: 100 },
+      { type: 'ads', down: false, t: 108 },
+    ]);
+  });
+
+  it('contextmenu：鎖定中 preventDefault（抑制右鍵選單）；未鎖定不抑制', () => {
+    let prevented = 0;
+    const ctx = () => ({ preventDefault: () => { prevented++; } });
+
+    target.dispatch('contextmenu', ctx() as unknown as Partial<MouseEvent>);
+    expect(prevented).toBe(1); // 鎖定中抑制
+
+    locked = false;
+    target.dispatch('contextmenu', ctx() as unknown as Partial<MouseEvent>);
+    expect(prevented).toBe(1); // 未鎖定不再抑制（放行一般右鍵選單）
+  });
+
+  it('detach 後移除右鍵/contextmenu 監聽、releaseAds 不再補 up', () => {
+    target.dispatch('mousedown', mouseEvent(2, 100)); // 採計 down
+    sampler.detach();
+    expect(target.count('mousedown')).toBe(0);
+    expect(target.count('contextmenu')).toBe(0);
+
+    // detach 清空 held → releaseAds no-op；後續右鍵事件亦不入緩衝
+    const before = state.input.size();
+    sampler.releaseAds(200);
+    target.dispatch('mousedown', mouseEvent(2, 300));
+    expect(state.input.size()).toBe(before);
   });
 });
 

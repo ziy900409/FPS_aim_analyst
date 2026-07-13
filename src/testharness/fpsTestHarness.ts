@@ -280,7 +280,8 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
   function pushInputEvent(ev: InputEvent, t: number): void {
     if (ev.type === 'key') state.input.pushKey(KEY_CODE[ev.code] ?? 0, ev.down, t);
     else if (ev.type === 'mouse') state.input.pushMouse(ev.dx, ev.dy, t);
-    else state.input.pushFire(ev.down, t);
+    else if (ev.type === 'fire') state.input.pushFire(ev.down, t);
+    else state.input.pushAds(ev.down, t);
   }
 
   function startDrillWithScene(id: string, sceneOverride?: SceneConfig): void {
@@ -324,10 +325,11 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
   ): ExportPayload {
     if (config === null) throw new Error('forceExportJSON requires startDrill first');
     const snapshot = recorder.snapshot();
+    const weaponConfig = activeWeaponConfig();
     const meta = collectMeta({
       drillId: config.drillId,
-      weaponId: activeWeaponConfig().id,
-      weaponSeed: activeWeaponConfig().recoil.seed,
+      weaponId: weaponConfig.id,
+      weaponSeed: weaponConfig.recoil.seed,
       rngSeed: config.sequence.seed ?? DEFAULT_RNG_SEED,
       backend: deps.backend,
       displayHz: deps.displayHz,
@@ -339,6 +341,10 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       bufferOverflow: state.inputMeta.bufferOverflow,
       recorderOverflow: snapshot.recorderOverflow,
       suspect: protocolContext?.suspect ?? false,
+      weapon: {
+        id: weaponConfig.id,
+        ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
+      },
       targets: {
         hitbox: targetHitboxToConfig(resolveTargetHitbox(config)),
       },

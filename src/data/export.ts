@@ -59,7 +59,7 @@ export function downloadCSV(payload: ExportPayload, options: DownloadOptions = {
 }
 
 function serializeTicksCSV(ticks: TickRecord[]): string {
-  const rows = [['t', 'vx', 'vz', 'px', 'pz', 'tx', 'ty', 'tz', 'yaw', 'pitch', 'keys']];
+  const rows = [['t', 'vx', 'vz', 'px', 'pz', 'tx', 'ty', 'tz', 'yaw', 'pitch', 'keys', 'ads']];
   for (const tick of ticks) {
     rows.push([
       formatNumber(tick.t),
@@ -73,6 +73,7 @@ function serializeTicksCSV(ticks: TickRecord[]): string {
       formatNumber(tick.aim.yaw),
       formatNumber(tick.aim.pitch),
       tick.keys.join('|'),
+      formatBoolean(tick.ads),
     ]);
   }
   return rowsToCSV(rows);
@@ -86,6 +87,7 @@ function serializeEventsCSV(events: DrillEvent[]): string {
       'targetId',
       'side',
       'key',
+      'down',
       'hit',
       'firstShot',
       'residualSpeed',
@@ -125,17 +127,44 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         '',
         '',
         '',
+        '',
         formatOptionalNumber(event.targetX),
         formatOptionalNumber(event.targetY),
         formatOptionalNumber(event.targetZ),
       ]);
     } else if (event.type === 'counter') {
-      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    } else if (event.type === 'ads') {
+      rows.push([
+        event.type,
+        formatNumber(event.t),
+        '',
+        '',
+        '',
+        formatBoolean(event.down),
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+      ]);
     } else {
       rows.push([
         event.type,
         formatNumber(event.t),
         event.targetId ?? '',
+        '',
         '',
         '',
         formatBoolean(event.hit),

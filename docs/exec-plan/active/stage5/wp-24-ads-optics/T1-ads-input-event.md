@@ -7,7 +7,7 @@
 | **相依** | T0(GD-16 + hold/toggle 決議) |
 | **Risk / Cplx** | Med / Med(動輸入 ring 編碼——佈局不變是風險控制核心) |
 | **Touches** | MODIFY `src/state/types.ts`(`EV_ADS=3` + InputEvent union)、`src/state/SharedState.ts`(`pushAds` + `heldAds`)、`src/input/InputSampler.ts`(右鍵 + contextmenu 抑制 + stuck-ads 防護)、`src/input/consume.ts` + `src/loop/SimLoop.ts`(消費 → heldAds)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -36,12 +36,12 @@
 
 ## Steps
 
-- [ ] `types.ts`/`SharedState` 擴碼 + push/解碼 golden 測試。
-- [ ] **既有輸入鏈測試零修改全綠**(改動前基準 → 改動後重跑,證據記 progress)。
-- [ ] `InputSampler` 右鍵 + contextmenu 抑制 + stuck-ads 防護。
-- [ ] consume → heldAds + 分桶/同 tick 序測試 + reset 歸位。
-- [ ] 手動驗證矩陣(按住/點放/解鎖中放開)記 progress。
-- [ ] `npx vitest run` 全綠。
+- [x] `types.ts`/`SharedState` 擴碼 + push/解碼 golden 測試。
+- [x] **既有輸入鏈測試零修改全綠**(改動前基準 → 改動後重跑,證據記 progress)——ring/consume/SharedState/SimLoop/fire-determinism 五檔零修改;僅 InputSampler「非左鍵不入緩衝」一 case 因右鍵改採計 ADS 而窄化為中鍵(deviation 記 progress)。
+- [x] `InputSampler` 右鍵 + contextmenu 抑制 + stuck-ads 防護(`releaseAds` 接縫)。
+- [x] consume → heldAds + 分桶/同 tick 序測試 + reset 歸位。
+- [x] 手動驗證矩陣(按住/點放/解鎖中放開)以決定性單元測試編碼(T1 未接 live app,見 progress)。
+- [x] `npx vitest run` 全綠(67 files / 541 tests)。
 
 ## Definition of Done
 

@@ -8,7 +8,7 @@
 | **相依** | —(M8 ✅ 為既成事實,驗證非執行) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [DECISIONS.md](../../../DECISIONS.md)(GD-16)+ [CLAUDE.md](../../../../../CLAUDE.md) §4 候選 + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-10 T0 PASS |
 
 ## Objective
 
@@ -35,12 +35,12 @@ hold/toggle 操作語意、與 fire 事件鏈的現況基線(T1 比照移植的�
 
 ## Steps
 
-- [ ] `npm run test:ci` 乾淨基準 exit 0 記 progress。
-- [ ] GD-16 決議(模型 + 理由 + 凍結)入 DECISIONS.md;OQ-S5-1/S5-6 回填上層 §8。
-- [ ] fire 鏈現況對照表(EV_FIRE→EV_ADS 移植點清單)記 progress。
-- [ ] 既有輸入鏈測試清單(零破壞閘)記 progress。
-- [ ] CLAUDE.md §4 追加候選約束(與本 task 同 commit)。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] `npm run test:ci` 乾淨基準 exit 0 記 progress。
+- [x] GD-16 決議(模型 + 理由 + 凍結)入 DECISIONS.md;OQ-S5-1/S5-6 回填上層 §8。
+- [x] fire 鏈現況對照表(EV_FIRE→EV_ADS 移植點清單)記 progress。
+- [x] 既有輸入鏈測試清單(零破壞閘)記 progress。
+- [x] CLAUDE.md §4 追加候選約束(與本 task 同 commit)。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 

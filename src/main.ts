@@ -8,6 +8,7 @@ import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
 import { createSettingsPanel } from './ui/SettingsPanel.ts';
 import { createCrosshair } from './ui/Crosshair.ts';
+import { createScopeOverlay } from './ui/ScopeOverlay.ts';
 import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
@@ -182,6 +183,9 @@ canvas.addEventListener('click', () => {
 // 走輸入/render 路徑，不入 sim（雙迴圈邊界，WP-2）；onMove 僅 locked 時轉發（T2）。
 const cameraController = new CameraController(sceneManager.camera, sharedState.aim);
 pointerLock.onMove((dx, dy) => cameraController.applyDelta(dx, dy));
+// WP-24 / T2（FR-E5）— 當前武器 ADS 光學佈線（render loop 每幀讀 heldAds → FOV/gain）；
+// undefined = 該武器不可開鏡。換 drill/武器時於 loadDrillById 重設。
+cameraController.setAdsConfig(activeWeaponConfig().ads);
 
 // WP-1 / T5（FR-1.5）— sensitivity/FOV 設定面板（DOM overlay, D1）：拖動即時生效。
 // 面板為這兩個設定的單一真實來源（建構時推預設給 controller），值供 WP-7 metadata。
@@ -200,6 +204,7 @@ pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 // WP-4 / T4（FR-4.4）— 螢幕中心準心（DOM overlay, D1）：瞄準參考 + §5 準心對齊偏移的視覺基準。
 // 恆顯示（不隨鎖定切換）：第一人稱射線走 camera 中心，準心即射線方向指示。
 createCrosshair();
+const scopeOverlay = createScopeOverlay();
 
 // WP-20 / T2（FR-C7）— 資格閘 + 實驗 session 進入流程（GD-10 防線①）。通過三檢查（原生解析度 ≥
 // 實驗最高條件、fullscreen 已進入、warmup 效能地板）才進入實驗 session;不合格 = **拒入並明示原因**
@@ -287,6 +292,7 @@ const recorder = createDataRecorder({ simHz: SIM_HZ });
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(protocolContext?: ProtocolConditionContext): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
+  const weaponConfig = activeWeaponConfig();
   const frames = frameLog.export(PERF_FLOOR_MS);
   const displayRefresh = frameLog.refreshEstimate() ?? (await measureDisplayRefresh());
   const displayHz = displayRefresh.refreshEstimateHz;
@@ -307,8 +313,8 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
   };
   const meta = collectMeta({
     drillId: activeDrillConfig.drillId,
-    weaponId: activeWeaponConfig().id,
-    weaponSeed: activeWeaponConfig().recoil.seed,
+    weaponId: weaponConfig.id,
+    weaponSeed: weaponConfig.recoil.seed,
     rngSeed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
     backend,
     displayHz,
@@ -325,6 +331,10 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       sharedState.validity.playerCorridorExceeded ||
       (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
       frames.summary.p95 > PERF_FLOOR_MS,
+    weapon: {
+      id: weaponConfig.id,
+      ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
+    },
     targets: {
       hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),
     },
@@ -404,6 +414,9 @@ pointerLock.onChange((locked) => {
   if (!locked) {
     sharedState.heldFire = false;
     sharedState.weapon.nextFireT = Infinity;
+    // WP-24 / T2 stuck-ads 防護（D-T1.1）：解鎖時仍按住右鍵 → 補送可被消費/記錄的 ads-up
+    // 事件（非直接寫 heldAds 旗標），避免 heldAds 永真污染後續 drill。
+    inputSampler.releaseAds(performance.now());
   }
 });
 
@@ -659,6 +672,7 @@ async function loadDrillById(drillId: string): Promise<void> {
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
   simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
+  cameraController.setAdsConfig(activeWeaponConfig().ads); // WP-24 / T2：新 drill 武器的 ADS 光學。
   drillRunner.start(activeDrillConfig);
   controls.setSelectedDrill(option.id);
   syncControlsVisibility();
@@ -862,6 +876,10 @@ const renderLoop = createRenderLoop((now) => {
   const punchYawDeg = lerp(sharedState.recoil.prev.yawDeg, sharedState.recoil.curr.yawDeg, alpha) * VIEW_RECOIL_TRACKING;
   const punchRad = punchToThreeRad(punchPitchDeg, punchYawDeg);
   cameraController.setViewPunch(punchRad.yawRad, punchRad.pitchRad);
+  // 3c) ADS 開鏡（WP-24 / T2，FR-E5）：每幀依 heldAds 切換 camera FOV 目標 + GD-16 感度 gain
+  //     （比照 setViewPunch，render-only；不進 sim/命中/彈道）。now 為 render 時鐘,僅驅動 FOV 視覺內插。
+  cameraController.setAds(sharedState.heldAds, now);
+  scopeOverlay.setActive(sharedState.heldAds && activeWeaponConfig().ads !== undefined);
   // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
   //    移動目標以 alpha 內插 posPrev→pos（WP-18 / T3，比照 player 位置；render-only，不寫 state）。
   targetView.sync(sharedState.targets, alpha);

@@ -5,7 +5,7 @@ import type {
   PlayerSnapshot,
   TargetState,
 } from './types.ts';
-import { CODE_KEY, EV_FIRE, EV_KEY, EV_MOUSE, RING_CAPACITY } from './types.ts';
+import { CODE_KEY, EV_ADS, EV_FIRE, EV_KEY, EV_MOUSE, RING_CAPACITY } from './types.ts';
 import { ak47 } from '../weapon/weapons.ts';
 import { createRecoilState, resetRecoilState, type RecoilState } from '../recoil/punch.ts';
 
@@ -94,6 +94,12 @@ export interface SharedState {
   held: { left: boolean; right: boolean };
   /** 左鍵開火按住狀態（WP-11 / T2）：由 fire down/up 輸入事件依時序更新，T3 scheduler 讀取。 */
   heldFire: boolean;
+  /**
+   * 右鍵 ADS 開鏡按住狀態（WP-24 / T1，FR-E4）：由 ads down/up 輸入事件依時序更新（比照 heldFire）。
+   * render 端（T2）據此切換 camera FOV 目標值與滑鼠 gain；資料端（T3）逐 tick 記錄為 `ads` flag。
+   * **不進 sim 演進/命中幾何**（GD-16 硬約束）：僅 input/render/data 層可讀。
+   */
+  heldAds: boolean;
   /** 當前武器開火排程狀態（WP-11 / T3）：下一發排程時間 + 當前/最大彈匣。 */
   weapon: { nextFireT: number; ammo: number; magSize: number };
   /**
@@ -148,7 +154,7 @@ export interface SharedState {
  */
 export function createInputRing(): InputRing {
   const MASK = RING_CAPACITY - 1; // RING_CAPACITY 為 2 的冪 → 繞圈用位遮罩
-  const typeArr = new Uint8Array(RING_CAPACITY); // packed: 事件 type 碼（EV_KEY/EV_MOUSE/EV_FIRE）
+  const typeArr = new Uint8Array(RING_CAPACITY); // packed: 事件 type 碼（EV_KEY/EV_MOUSE/EV_FIRE/EV_ADS）
   const tArr = new Float64Array(RING_CAPACITY); //  packed: 時間戳（量測時鐘域，float 精確）
   const aArr = new Float64Array(RING_CAPACITY); //  packed a: key→code enum / mouse→dx
   const bArr = new Float64Array(RING_CAPACITY); //  packed b: key→down(0/1) / mouse→dy
@@ -192,6 +198,7 @@ export function createInputRing(): InputRing {
     pushKey: (codeInt, down, t) => enqueue(EV_KEY, t, codeInt, down ? 1 : 0),
     pushMouse: (dx, dy, t) => enqueue(EV_MOUSE, t, dx, dy),
     pushFire: (down, t) => enqueue(EV_FIRE, t, 0, down ? 1 : 0),
+    pushAds: (down, t) => enqueue(EV_ADS, t, 0, down ? 1 : 0), // WP-24 / T1：比照 fire（a=0、b=down）
     dequeueInto(view: InputEventView): void {
       if (count === 0) return; // 空防呆：勿讀殘值/推進 head/使 count 變負（呼叫端仍應先 isEmpty()）
       const i = head;
@@ -205,8 +212,11 @@ export function createInputRing(): InputRing {
         view.type = 'mouse';
         view.dx = aArr[i];
         view.dy = bArr[i];
-      } else {
+      } else if (ty === EV_FIRE) {
         view.type = 'fire';
+        view.down = bArr[i] === 1;
+      } else {
+        view.type = 'ads'; // EV_ADS（WP-24 / T1）：b=down，比照 fire
         view.down = bArr[i] === 1;
       }
       head = (head + 1) & MASK; // 推進 head、槽位留待繞圈重用（不清值）
@@ -227,6 +237,7 @@ export function createSharedState(): SharedState {
     player: { vx: 0, vz: 0, x: 0, z: 0, stopped: false },
     held: { left: false, right: false },
     heldFire: false,
+    heldAds: false,
     weapon: { nextFireT: Infinity, ammo: ak47.magSize, magSize: ak47.magSize },
     recoilState: createRecoilState(),
     recoil: {
@@ -266,6 +277,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.held.left = false; // 原地清 held（重用既有物件，GC 紀律）；重開 drill → 橫移歸靜止
   state.held.right = false;
   state.heldFire = false;
+  state.heldAds = false; // 重開 drill → ADS 歸位（stuck-ads 不跨 drill 汙染，WP-24 / T1）
   state.weapon.nextFireT = Infinity;
   state.weapon.ammo = state.weapon.magSize;
   resetRecoilState(state.recoilState); // 原地歸零 recoil 狀態機（重用既有物件，GC 紀律；重開 drill → punch 清）
