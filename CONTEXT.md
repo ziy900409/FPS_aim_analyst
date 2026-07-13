@@ -34,6 +34,7 @@
 | **雜亂度階層（clutter tier）** | 場景的實驗定義軸：以可量測的視覺統計（雜亂度／對比分佈／深度線索密度）分階（`field-low`／`urban-high`／`mixed-mid`），取代品牌擬真作為場景需求規格。偵測 RT 受背景雜亂度調變——雜亂度是要控制／操弄的自變因，「像哪款遊戲」不是。場景為**寫實原創**：不複製特定遊戲地圖配置（GD-9）。 |
 | **資格閘（eligibility gate）** | 遠端施測 session 開始的**軟體自動檢查**：原生解析度 ≥ 實驗最高條件（`screen.width × devicePixelRatio`）、fullscreen 強制、效能地板（frame-time 超標 → `suspect`／剔除）；**不合格拒入實驗，非僅記錄**。搭配**受試者內解析度對比**（同面板跑全部條件、順序對抗平衡，面板特性一階抵銷）；解析度實驗構念＝「同一面板上的 render 解析度效應」。螢幕型號／觀看距離等自陳欄位僅作 moderator（GD-10）。 |
 | **三層實驗結構（experiment→session→drill）** | 對映 FPSci 的 experiment→session→trial。**drill** = 本表既有定義；**session** = 一次施測（資格閘 → setup 表單 → 條件序列 → 匯出），引擎面宣告 = `ProtocolConfig`（WP-22 T2）；**experiment** = 多 session 的組合與統計設計，屬**分析端概念、引擎不實作**。跨場次串接鍵 = **`participantId`**（研究者發放代號）+ **`sessionLabel`**（pre/post/day-N），setup 表單自陳、進 meta `session` 區塊——前後測資料離線串接不靠檔名人工紀律（2026-07-07 grill，FPSci R3 對齊；授權紅線 GD-11）。 |
+| **ADS（開鏡 / aim-down-sight）** | 右鍵**按住**開瞄準鏡（hold 語意，OQ-S5-6）：視野收窄（FOV↓）放大目標、滑鼠感度依 **GD-16** 換算（通常變慢），放開回復。屬**視覺/操作**層，**不改** sim 演進、命中幾何或彈道語意（GD-16）。研究構念 = ADS 條件下的獲取／首發／追蹤表現；效度靠逐 tick `ads` flag ＋ ads 事件離線還原（FR-E6，缺記錄該 drill 分析無效）。管線術語見 §G。 |
 
 ---
 
@@ -123,9 +124,10 @@
 
 ---
 
-## G. CS2 開火管線術語（WP-11；武器抽象 `src/weapon/` + fire 事件鏈）
+## G. CS2 開火 / ADS 管線術語（WP-11 開火；WP-24 ADS 開鏡；武器抽象 `src/weapon/` + 輸入事件鏈）
 
 > full-auto 開火管線於 WP-11 建立：武器抽象 → fire down/up 事件 → `heldFire` → tick 內 cycletime 產彈 + 彈匣；產彈點保留為 WP-13 recoil `onFire` 的唯一掛點。
+> **ADS 開鏡管線**於 WP-24 建立，全面比照 fire 事件模式：`WeaponConfig.ads` → ads down/up 事件（`EV_ADS`）→ `heldAds` → render 端 FOV/感度 gain + scope overlay + 逐 tick 記錄。**只落 input/render/data 層**，不改 sim/命中/彈道（GD-16）。
 > **「fire」正名（消歧）**：input 端 = **fire down/up**（扣／放扳機的*意圖*）；產出的一次擊發 = **shot（發）**（≡「產彈」），與既有 `首發`／`shotCount` 一致。`DataRecorder`／metrics 內既有的 `type:'fire'` row 語意是「一發 shot」（legacy 欄名，**不改**）。
 
 | 術語 | 定義 |
@@ -139,3 +141,11 @@
 | **彈匣政策（ammo / magSize）** | `ammo` 每發遞減，`ammo === 0` 即停火；**stage2 不做 reload**（OQ-S2-6）。**`ammo` 於每個 peek／每次目標 spawn 重置回 `magSize`**——每 peek 一整匣，噴射獨立、左右 peek 可對照（不被殘彈污染），「drill 一 peek ≤ 一匣」由此成立。 |
 | **產彈點 = recoil 掛點 seam** | WP-11 的產彈仍走既有 camera-center raycast（WP-5 路徑）；WP-13 在**同一點**呼叫 `recoilOnFire` + `sampleSpread` 並替換方向來源。此點是 recoil `onFire` 的**唯一**掛點。 |
 | **`recoveryTransition`（選填）** | 每武器覆寫前段彈抑制斜坡的彈序窗 `{startBullet, endBullet}`，對應 §F 彈道表「前 4 發抑制係數 0.75→1.0」；未給則用預設。 |
+| **`WeaponConfig.ads`（選填）** | 武器 ADS 光學：`{ fovDeg, sensitivityRatio }`。**省略 = 該武器不可開鏡**（ADS 為 no-op，維持 hip 視角）。`fovDeg` 只驗**正有限**（zoom-in 由 `fovDeg < hipFov` 於相機層自然成立；hipFov 為使用者/相機設定，不在武器資料內，validator 無從夾）；`sensitivityRatio` 正有限、預設 `1.0`。additive optional 加欄，對既有武器資料／schema **零破壞**；示範值加在 `ak47`（預設 drill 武器）。 |
+| **ADS down/up 事件** | input 端開鏡**意圖**：`{ type:'ads'; down: boolean; t: number }`，event code `EV_ADS = 3`。ring packed 佈局**比照 fire**（`a=0`、`b=down` 0/1），容量／佈局不變、既有解碼零破壞。右鍵（`button===2`）down 走 pointer-lock 採計閘門、up 不受閘門（但需已採計 down）；鎖定中 `contextmenu` 抑制。走既有升冪分桶消費（`consume` 零改）。 |
+| **stuck-ads 防護** | PointerLock 解鎖／blur 時若右鍵仍按住，由 `InputSampler.releaseAds(t)` 補送一筆**可被消費/記錄**的 ads-up（非直接寫旗標），避免 `heldAds` 永真跨 drill 汙染。比照 stuck-fire，掛在 `main.ts` 的 PointerLock onChange。 |
+| **`heldAds`** | `SharedState` 旗標：右鍵是否按住開鏡。ads-down 置真、ads-up／解鎖置假（比照 `heldFire`）。**只 input/render/data 層可讀**：render 端切 camera FOV 目標 + 感度 gain、資料端逐 tick 記為 `ads` flag；`SimLoop.applyInput` 的 ads 分支**只翻此旗標**，不觸發 raycast／weapon schedule／目標演進（GD-16）。 |
+| **ADS 感度換算（GD-16）** | 開鏡有效感度 = `sensitivity × sensitivityRatio × (adsFov / hipFov)`（CS2 式 FOV-ratio；pre-registered 後凍結）。gain 只乘 `CameraController.applyDelta` 的**使用者 delta**，**不**套到 punch／彈道／sim（避免雙重計入）。gain 為**階躍**（切換即完整目標態，分析可分），非隨 FOV 漸變。 |
+| **ADS FOV 過渡（render-only）** | 開鏡切 camera FOV 目標值（hip↔ads），實際 FOV 以 render 幀線性內插趨近（`ADS_FOV_TRANSITION_MS = 120`，OQ-24.1）；**不進 sim／記錄**（記錄的是 `heldAds` 事件與 flag，非視覺過渡）。`CameraController.setAds(active, nowMs)` 顯式收 render `now`、不讀時鐘（可測、守時鐘域紀律）；過渡中反向切換自當前值起不跳變。 |
+| **scope overlay** | 純 TS + DOM overlay（D1，[ScopeOverlay.ts](src/ui/ScopeOverlay.ts)）：ADS 時顯示圓形鏡框 + 周邊暗化，120ms 淡入淡出。`pointer-events:none`（不影響 Pointer Lock／canvas click）；準心（`Crosshair`）以較高 z-index **維持精確置中**（§A 準心紀律不變）。顯隱有效態 = `heldAds && weapon.ads !== undefined`。 |
+| **ADS 記錄（FR-E6，效度必要條件）** | aim 資料已含 gain，離線分析**必須**靠 `ads` flag 還原構念：tick row required `ads` boolean（取 `state.heldAds`）+ ads down/up 進 `events[]`；JSON／CSV 皆含。metadata `meta.weapon`（additive optional snapshot：`id` + `ads{fovDeg,sensitivityRatio}`）供分析端重建 gain。缺記錄 = 測試紅。 |

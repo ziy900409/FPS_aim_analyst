@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 ✅,T-exit next)
+## Status: ✅ 完成(T0 ✅,T1 ✅,T2 ✅,T3 ✅,T-exit ✅ 2026-07-13)
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 EV_ADS 輸入鏈 | ✅ |
 | T2 WeaponConfig.ads + zoom | ✅ |
 | T3 overlay + 記錄 | ✅ |
-| T-exit | ⬜ |
+| T-exit | ✅ |
 
 ---
 
@@ -28,6 +28,36 @@
 ---
 
 ## Log
+
+### 2026-07-13 — T-exit gate PASS(ADS 鏈交付宣告;code review 五軸過)
+
+**交付了什麼(Outcomes)**
+
+WP-24 收斂:ADS 開鏡端到端可用且**狀態完整可記錄**,WP-26 T3 整合 drill 自此可直接以 config 宣告 ADS on/off 條件。四面交付:
+
+- **輸入鏈(T1)**:`EV_ADS = 3` packed 佈局比照 fire(`b`=down),ring/consume 零破壞;右鍵 down/up 走 pointer-lock 採計閘門 + `InputSampler.releaseAds` stuck-ads 防護;`SharedState.heldAds` 旗標經既有升冪分桶消費維護。
+- **zoom/gain(T2)**:`WeaponConfig.ads?: {fovDeg, sensitivityRatio}`(additive optional,`validateAds` field-path);`CameraController.setAds` render-only FOV 內插(120ms)+ GD-16 感度 gain **階躍**;gain 只乘 `applyDelta` 使用者 delta,punch/aimSink/sim 零改動。
+- **記錄(T3)**:tick row required `ads` boolean(取 `state.heldAds`)+ ads down/up 進 `events[]`;JSON/CSV 皆含;`meta.weapon`(additive optional snapshot)供分析端重建 gain;`schema.md` 對帳。
+- **手動實機**:開鏡體感(FOV 收窄/感度變慢/overlay/準心置中)已於 2026-07-10 由使用者確認(見 T2 log)。
+
+**驗證證據**
+
+- `npm.cmd run test:ci` exit 0:`tsc --noEmit` clean + Vitest **68 files / 556 tests** + Playwright **16 tests**(含 `full-drill.spec.ts` 的 `WP-24 ADS smoke`:export 含 ads event / tick flag / weapon ads snapshot)全綠。三組 determinism regression(spray / moving-target / longrange)綠 → **sim 決定性零重錄**(ADS 只落 render/data,GD-16 硬約束成立)。
+
+**Code review(五軸,exit gate 職責)——結論:Approve**
+
+| 軸 | 結論 |
+|---|---|
+| Correctness | EV_ADS 擴碼不動既有碼值;ads 分支只翻 heldAds、不觸 raycast/schedule/目標演進;stuck 防護補**可記錄**事件;tick flag 取 tick 末 heldAds(事件分桶後),事件↔flag 對齊由 T3 round-trip 斷言 ✓ |
+| Readability | 命名/註解與既有 fire 鏈一致(heldAds↔heldFire、pushAds↔pushFire);無 clever trick、無 dead code ✓ |
+| Architecture | ADS 嚴守 input/render/data 三層(GD-16);`consume.ts` 零改;`CameraController.setAds(active, nowMs)` 顯式收 render now、不讀時鐘(可測);`meta.weapon` additive 不破壞既有 consumer ✓ |
+| Security | 無新信任邊界;export validator 對 `weapon.ads` field-path 驗證(正有限)✓ |
+| Performance | ring/arena 熱路徑零配置;ads 走既有 enqueue 路徑。**FYI**(非 blocker):`setAds` 每幀呼叫 → `updateProjectionMatrix()` 每幀執行(即使非 ADS/過渡已完成);單相機成本可忽略,若未來多相機或側寫顯示可加「FOV 未變則跳過」短路 |
+
+**帶著走的決定 / Surprises**
+
+- code review 為 exit-gate 內生職責(本 repo 無獨立 reviewer),五軸於此 log 存證;唯一 FYI(每幀 `updateProjectionMatrix`)量級可忽略,不改本 slice、不開 issue(留待若有多相機需求再議)。
+- CONTEXT.md §G 標題由「CS2 開火管線術語」拓為「CS2 開火 / ADS 管線術語」,使 `heldAds`↔`heldFire` 並列(導航一致);ADS domain 構念入 §A。stage5 README 的 CONTEXT/schema 合併 checkbox 以刪節線標記 WP-24 部分已落地(tracer/projectile 部分仍待 WP-25)。
 
 ### 2026-07-13 09:11Z — T3 scope overlay + ADS recording/schema PASS
 

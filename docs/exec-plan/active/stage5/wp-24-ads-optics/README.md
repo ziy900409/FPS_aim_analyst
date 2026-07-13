@@ -10,7 +10,7 @@
 | **相依** | M8 ✅(WeaponConfig/fire 事件模式/感度鏈既有);**可與 WP-23 並行**(無檔案熱區重疊) |
 | **對應 FR** | FR-E4 ~ FR-E6 |
 | **估時** | 2–3 dev-days |
-| **狀態** | 🟡 進行中(T0 ✅,T1 ✅,T2 ✅,T3 ✅,T-exit next) |
+| **狀態** | ✅ 完成(T0 ✅,T1 ✅,T2 ✅,T3 ✅,T-exit ✅ 2026-07-13) |
 
 ---
 
@@ -66,4 +66,4 @@ docs/operational/schema.md            ← MODIFY 對帳                         
 | **T1** | [T1-ads-input-event.md](T1-ads-input-event.md) | EV_ADS 輸入鏈 + heldAds + stuck 防護(零破壞) | T0 | Med |
 | **T2** | [T2-weapon-camera-zoom.md](T2-weapon-camera-zoom.md) | WeaponConfig.ads + CameraController zoom/gain | T1 | Med |
 | **T3** | [T3-overlay-recording.md](T3-overlay-recording.md) | scope overlay + tick flag/事件記錄 + schema 對帳 | T2 | Med |
-| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | ADS 鏈交付宣告(WP-26 可消費) | T1–T3 | — |
+| **T-exit** ✅ | [T-exit-gate.md](T-exit-gate.md) | ADS 鏈交付宣告(WP-26 可消費) | T1–T3 | — |

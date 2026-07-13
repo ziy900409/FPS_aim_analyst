@@ -190,7 +190,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
 | **WP-23** | [wp-23-longrange-tracking/](wp-23-longrange-tracking/README.md) | 遠距小目標追蹤:hitbox config 化(單一來源)+ 遠距 drill + 指標 round-trip/決定性 | **M11 ✅** | WP-18 ✅ + M10 ✅ | 1.5–2.5 | ✅(2026-07-10) |
-| **WP-24** | [wp-24-ads-optics/](wp-24-ads-optics/README.md) | ADS 開鏡:EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8 ✅(可與 WP-23 並行) | 2–3 | 🟡 T0 ✅,T1 next |
+| **WP-24** | [wp-24-ads-optics/](wp-24-ads-optics/README.md) | ADS 開鏡:EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8 ✅(可與 WP-23 並行) | 2–3 | ✅(2026-07-13) |
 | **WP-25** | [wp-25-ballistics-tracer/](wp-25-ballistics-tracer/README.md) | 彈道:tracer 顯示(T1,獨立)+ projectile 數學核心/sim 整合/指標語意(T2–T4,gated) | **M12** | T1 獨立;T2+ 需 **M11** | 4–6.5 | ⬜ |
 | **WP-26** | [wp-26-br-scene-integration/](wp-26-br-scene-integration/README.md) | BR 場景與整合:`br-field` 資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | ⬜ |
 
@@ -268,10 +268,10 @@ WP-25 T1(tracer)──────┴──────────────�
 - [x] [docs/MAP.md](../../../MAP.md):§3 加 stage5(+ stage4 草稿列)導航。(2026-07-10 本計畫)
 - [x] [DECISIONS.md](../../DECISIONS.md) **GD-16**(ADS 感度模型:CS2 式 FOV-ratio gain + hold 語意)入帳。(2026-07-10 WP-24 T0)
 - [ ] GD-17(彈道參數域)——落 WP-25 T0(拍板即入帳)。
-- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 T0/T-exit 隨切片回寫):ADS/heldAds、zoom 感度換算、tracer/shotRays、projectile/彈道模型 gate、time-of-flight、lead 誤差、hitbox config 化(H1 參數化)。
+- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 T0/T-exit 隨切片回寫):~~ADS/heldAds、zoom 感度換算~~(✅ WP-24 T-exit,§A/§G,2026-07-13)、tracer/shotRays、projectile/彈道模型 gate、time-of-flight、lead 誤差、hitbox config 化(H1 參數化)。
 - [x] [CLAUDE.md](../../../../../CLAUDE.md) §4 硬約束追加:ADS 只落 input/render/data + ads event/tick flag 必記錄。(2026-07-10 WP-24 T0)
 - [ ] [CLAUDE.md](../../../../../CLAUDE.md) §4 其餘 stage5 硬約束追加(彈道模型 config-gated、子彈不測場景、tracer render-only)——落 WP-25/26 各自 T0/T-exit。
-- [ ] `docs/operational/schema.md`:`ads`/`hit` 事件、tick `ads` flag、`meta.targets.hitbox`/`meta.weapon` 對帳(隨 WP-23 T1 / WP-24 T3 / WP-25 T3 分批)。
+- [ ] `docs/operational/schema.md`:~~`ads` 事件、tick `ads` flag、`meta.weapon`~~(✅ WP-24 T3,2026-07-13)、`hit` 事件、`meta.targets.hitbox`/(WP-25)`meta.weapon` 對帳(隨 WP-23 T1 / WP-24 T3 / WP-25 T3 分批)。
 - [ ] 規格書版本對帳:新增「階段 E」節 + 附錄 E 增「驗收清單 E」(M13 前完成)。
 
 ---
