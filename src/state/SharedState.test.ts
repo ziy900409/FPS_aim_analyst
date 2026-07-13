@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   createImpactRing,
   createSharedState,
+  createShotRayRing,
   IMPACT_CAP,
   pushImpact,
+  pushShotRay,
   resetImpactRing,
+  resetShotRayRing,
   resetState,
   sharedState,
+  TRACER_CAP,
 } from './SharedState.ts';
 import { pushEvent } from './inputRingTestUtil.ts';
 
@@ -24,6 +28,8 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(a.targets).toHaveLength(0);
     expect(a.tVisible.size).toBe(0);
     expect(a.validity).toEqual({ playerCorridorExceeded: false });
+    expect(a.shotRays.total).toBe(0);
+    expect(a.shotRays.cursor).toBe(0);
 
     // 實例彼此獨立、且不污染單例
     const b = createSharedState();
@@ -47,6 +53,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const tVisibleRef = s.tVisible;
     const recoilStateRef = s.recoilState;
     const impactsRef = s.impacts;
+    const shotRaysRef = s.shotRays;
     const validityRef = s.validity;
 
     // 弄髒所有欄位
@@ -72,6 +79,8 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     s.recoil.lastSpread.x = 0.01;
     pushImpact(s.impacts, 1, 2, 3);
     pushImpact(s.impacts, 4, 5, 6);
+    pushShotRay(s.shotRays, 0, 1, 2, 3, 4, 5);
+    pushShotRay(s.shotRays, 1, 2, 3, 4, 5, 6);
     s.targets.push({
       id: 't1',
       side: 'R',
@@ -109,6 +118,9 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.impacts.total).toBe(0);
     expect(s.impacts.cursor).toBe(0);
     expect(Array.from(s.impacts.seq)).toEqual(new Array(IMPACT_CAP).fill(0));
+    expect(s.shotRays.total).toBe(0);
+    expect(s.shotRays.cursor).toBe(0);
+    expect(Array.from(s.shotRays.seq)).toEqual(new Array(TRACER_CAP).fill(0));
 
     // 重用同一參考（不 realloc）— GC 紀律
     expect(s.input).toBe(inputRef);
@@ -119,6 +131,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.tVisible).toBe(tVisibleRef);
     expect(s.recoilState).toBe(recoilStateRef); // recoil 狀態機重用同一物件（GC 紀律）
     expect(s.impacts).toBe(impactsRef); // 彈著格重用同一物件 + typed-array（GC 紀律）
+    expect(s.shotRays).toBe(shotRaysRef); // tracer 格重用同一物件 + typed-array（GC 紀律）
     expect(s.validity).toBe(validityRef);
   });
 
@@ -190,6 +203,60 @@ describe('ImpactRing — 彈著環形格（WP-13 / T3）', () => {
     expect(r.cursor).toBe(0);
     expect(Array.from(r.seq)).toEqual(new Array(IMPACT_CAP).fill(0));
     expect(r.x).toBe(xRef); // 不 realloc（GC 紀律）
+    expect(r.seq).toBe(seqRef);
+  });
+});
+
+describe('ShotRayRing — tracer 軌跡環形格（WP-25 / T1）', () => {
+  it('createShotRayRing 全空：total/cursor 0、seq 全 0、typed-array 容量 = TRACER_CAP', () => {
+    const r = createShotRayRing();
+    expect(r.total).toBe(0);
+    expect(r.cursor).toBe(0);
+    expect(r.ox).toHaveLength(TRACER_CAP);
+    expect(r.ex).toHaveLength(TRACER_CAP);
+    expect(r.seq).toHaveLength(TRACER_CAP);
+    expect(Array.from(r.seq)).toEqual(new Array(TRACER_CAP).fill(0));
+  });
+
+  it('pushShotRay 就地寫 origin/end、蓋單調 seq（1 起）、推進游標', () => {
+    const r = createShotRayRing();
+    pushShotRay(r, 0, 1, 2, 3, 4, 5);
+    pushShotRay(r, 6, 7, 8, 9, 10, 11);
+
+    expect(r.total).toBe(2);
+    expect(r.cursor).toBe(2);
+    expect([r.ox[0], r.oy[0], r.oz[0], r.ex[0], r.ey[0], r.ez[0]]).toEqual([0, 1, 2, 3, 4, 5]);
+    expect([r.ox[1], r.oy[1], r.oz[1], r.ex[1], r.ey[1], r.ez[1]]).toEqual([6, 7, 8, 9, 10, 11]);
+    expect(r.seq[0]).toBe(1);
+    expect(r.seq[1]).toBe(2);
+  });
+
+  it('溢位 → 環狀覆寫最舊槽（游標繞回、seq 遞增使舊槽被判為新軌跡）', () => {
+    const r = createShotRayRing();
+    for (let i = 0; i < TRACER_CAP; i++) pushShotRay(r, i, 0, 0, i + 1, 0, 0);
+    expect(r.total).toBe(TRACER_CAP);
+    expect(r.cursor).toBe(0);
+    expect(r.seq[0]).toBe(1);
+
+    pushShotRay(r, 999, 1, 2, 1000, 3, 4);
+    expect(r.total).toBe(TRACER_CAP + 1);
+    expect(r.cursor).toBe(1);
+    expect([r.ox[0], r.oy[0], r.oz[0], r.ex[0], r.ey[0], r.ez[0]]).toEqual([999, 1, 2, 1000, 3, 4]);
+    expect(r.seq[0]).toBe(TRACER_CAP + 1);
+  });
+
+  it('resetShotRayRing 原地清空：total/cursor 0、seq 全清、重用同一 typed-array', () => {
+    const r = createShotRayRing();
+    const oxRef = r.ox;
+    const seqRef = r.seq;
+    pushShotRay(r, 0, 1, 2, 3, 4, 5);
+
+    resetShotRayRing(r);
+
+    expect(r.total).toBe(0);
+    expect(r.cursor).toBe(0);
+    expect(Array.from(r.seq)).toEqual(new Array(TRACER_CAP).fill(0));
+    expect(r.ox).toBe(oxRef);
     expect(r.seq).toBe(seqRef);
   });
 });

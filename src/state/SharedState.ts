@@ -16,6 +16,12 @@ import { createRecoilState, resetRecoilState, type RecoilState } from '../recoil
 export const IMPACT_CAP = 64;
 
 /**
+ * 子彈軌跡環形格容量（WP-25 / T1）：render-only tracer 視覺資料，固定格滿即覆寫最舊。
+ * 64 對齊彈著格容量，足供連發目視且不成長、不 realloc。
+ */
+export const TRACER_CAP = 64;
+
+/**
  * 彈著點環形格（WP-13 / T3）：sim 命中時 `pushImpact` 寫入 world 座標、render（`ImpactView`）唯讀
  * ——雙迴圈邊界（ADR-2）。並行 `Float64Array`（x/y/z/seq）+ 寫入游標 `cursor`，**熱路徑零配置**
  * （CLAUDE.md §4）。`seq[i]` = 該槽的單調寫入序號（1 起；0 = 空槽），供 render 端偵測新彈著做增量同步；
@@ -32,6 +38,24 @@ export interface ImpactRing {
   cursor: number;
 }
 
+/**
+ * 子彈軌跡環形格（WP-25 / T1）：sim 產彈點寫 origin→endpoint，render（`TracerView`）唯讀。
+ * 並行 typed-array 欄位 + 單調 seq 完全比照 `ImpactRing`，確保熱路徑零配置。
+ */
+export interface ShotRayRing {
+  readonly ox: Float64Array;
+  readonly oy: Float64Array;
+  readonly oz: Float64Array;
+  readonly ex: Float64Array;
+  readonly ey: Float64Array;
+  readonly ez: Float64Array;
+  readonly seq: Float64Array;
+  /** 累計寫入軌跡總數（單調遞增；render 端據此偵測新軌跡）。 */
+  total: number;
+  /** 下一寫入槽位 [0, TRACER_CAP)。 */
+  cursor: number;
+}
+
 /** 建一份全空的彈著環形格（預配置 typed-array，不再 realloc）。 */
 export function createImpactRing(): ImpactRing {
   return {
@@ -39,6 +63,21 @@ export function createImpactRing(): ImpactRing {
     y: new Float64Array(IMPACT_CAP),
     z: new Float64Array(IMPACT_CAP),
     seq: new Float64Array(IMPACT_CAP),
+    total: 0,
+    cursor: 0,
+  };
+}
+
+/** 建一份全空的子彈軌跡環形格（預配置 typed-array，不再 realloc）。 */
+export function createShotRayRing(): ShotRayRing {
+  return {
+    ox: new Float64Array(TRACER_CAP),
+    oy: new Float64Array(TRACER_CAP),
+    oz: new Float64Array(TRACER_CAP),
+    ex: new Float64Array(TRACER_CAP),
+    ey: new Float64Array(TRACER_CAP),
+    ez: new Float64Array(TRACER_CAP),
+    seq: new Float64Array(TRACER_CAP),
     total: 0,
     cursor: 0,
   };
@@ -58,9 +97,38 @@ export function pushImpact(ring: ImpactRing, x: number, y: number, z: number): v
   ring.cursor = (i + 1) % IMPACT_CAP;
 }
 
+/** 環狀寫入一條子彈軌跡（origin→endpoint），覆寫最舊槽並蓋單調 seq。 */
+export function pushShotRay(
+  ring: ShotRayRing,
+  ox: number,
+  oy: number,
+  oz: number,
+  ex: number,
+  ey: number,
+  ez: number,
+): void {
+  const i = ring.cursor;
+  ring.ox[i] = ox;
+  ring.oy[i] = oy;
+  ring.oz[i] = oz;
+  ring.ex[i] = ex;
+  ring.ey[i] = ey;
+  ring.ez[i] = ez;
+  ring.total += 1;
+  ring.seq[i] = ring.total;
+  ring.cursor = (i + 1) % TRACER_CAP;
+}
+
 /** 原地清空彈著格（重開 drill / reset）：seq 歸零使所有槽視為空、游標歸零；typed-array 不 realloc（GC 紀律）。 */
 export function resetImpactRing(ring: ImpactRing): void {
   ring.seq.fill(0); // seq=0 → 空槽哨兵（render 端不繪；x/y/z 殘值待覆寫，免額外清）
+  ring.total = 0;
+  ring.cursor = 0;
+}
+
+/** 原地清空子彈軌跡格；typed-array 不 realloc，端點殘值待下次覆寫。 */
+export function resetShotRayRing(ring: ShotRayRing): void {
+  ring.seq.fill(0);
   ring.total = 0;
   ring.cursor = 0;
 }
@@ -124,6 +192,11 @@ export interface SharedState {
    * （雙迴圈邊界）。固定容量 `IMPACT_CAP`，滿即環狀覆寫最舊；熱路徑零配置（見 `ImpactRing`）。
    */
   impacts: ImpactRing;
+  /**
+   * 子彈軌跡環形格（WP-25 / T1）：sim 產彈點寫 origin→endpoint，render 唯讀繪 tracer。
+   * 不參與命中/資料匯出，固定容量 `TRACER_CAP`，滿即環狀覆寫最舊。
+   */
+  shotRays: ShotRayRing;
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
   prev: PlayerSnapshot;
   curr: PlayerSnapshot;
@@ -246,6 +319,7 @@ export function createSharedState(): SharedState {
       lastSpread: { x: 0, y: 0 },
     },
     impacts: createImpactRing(),
+    shotRays: createShotRayRing(),
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
     crosshair: { cx: 0, cy: 0 },
@@ -288,6 +362,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.recoil.lastSpread.x = 0;
   state.recoil.lastSpread.y = 0;
   resetImpactRing(state.impacts); // 原地清空彈著格（重開 drill → 彈孔清；typed-array 不 realloc，GC 紀律）
+  resetShotRayRing(state.shotRays); // 原地清空 tracer 格（render-only；重開 drill → 軌跡清）
   state.prev.x = 0;
   state.prev.z = 0;
   state.curr.x = 0;

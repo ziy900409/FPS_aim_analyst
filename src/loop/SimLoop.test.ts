@@ -405,6 +405,54 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(killed).toEqual(['t0']); // 命中即撤除
   });
 
+  it('fire hit writes a render-only shotRay from camera origin to the impact point', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ();
+    const tm: TargetManager = {
+      tick() {},
+      markKilled() {},
+      reset() {},
+    };
+    state.targets.push(makeTarget('t0', 0, -8));
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
+
+    expect(state.shotRays.total).toBe(1);
+    expect(state.shotRays.cursor).toBe(1);
+    expect([state.shotRays.ox[0], state.shotRays.oy[0], state.shotRays.oz[0]]).toEqual([0, 1.5, 5]);
+    expect(state.shotRays.ex[0]).toBeCloseTo(state.impacts.x[0], 12);
+    expect(state.shotRays.ey[0]).toBeCloseTo(state.impacts.y[0], 12);
+    expect(state.shotRays.ez[0]).toBeCloseTo(state.impacts.z[0], 12);
+  });
+
+  it('fire miss writes a shotRay endpoint on the existing engagement-plane projection', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ();
+    const tm: TargetManager = {
+      tick() {},
+      markKilled() {},
+      reset() {},
+    };
+    state.targets.push(makeTarget('t0', 0, -8));
+    state.aim.yaw = 0.2;
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
+
+    expect(recorder.snapshot().events.find((e) => e.type === 'fire')).toMatchObject({ hit: false });
+    expect(state.shotRays.total).toBe(1);
+    expect(state.shotRays.ex[0]).not.toBeCloseTo(0, 6);
+    expect(state.shotRays.ez[0]).toBeCloseTo(-8, 12);
+    expect(state.shotRays.ex[0]).toBeCloseTo(state.impacts.x[0], 12);
+    expect(state.shotRays.ey[0]).toBeCloseTo(state.impacts.y[0], 12);
+    expect(state.shotRays.ez[0]).toBeCloseTo(state.impacts.z[0], 12);
+  });
+
   it('spread movement term uses true speed ratio: max-speed spread mean is much larger than stopped spread', () => {
     function meanSpreadRadius(vx: number, seed: number): number {
       const rt = runtime(seed);

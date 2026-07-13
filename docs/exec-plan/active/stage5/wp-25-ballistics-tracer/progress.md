@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13)
+## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13);T1 tracer ✅ PASS(2026-07-13)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 tracer | ⬜ |
+| T1 tracer | ✅ |
 | T2 數學核心 | ⬜ |
 | T3 sim 整合 | ⬜ |
 | T4 指標語意 | ⬜ |
@@ -31,6 +31,26 @@
 ---
 
 ## Log
+
+### 2026-07-13 — T1 tracer PASS
+
+- **Implementation**:
+  - `src/state/SharedState.ts`:新增 `ShotRayRing` / `TRACER_CAP` / `createShotRayRing` / `pushShotRay` / `resetShotRayRing`;`createSharedState` 與 `resetState` 原地管理 `shotRays`。
+  - `src/loop/SimLoop.ts`:在既有 `ballisticHitPoint.valid` 分支中追加 `pushShotRay(origin→endpoint)`;endpoint 完全沿用命中點或 OQ-25.1 的 engagement-plane miss 投影,不改方向/命中/record event 語意。
+  - `src/render/TracerView.ts`:新增單一 `InstancedMesh(TRACER_CAP)` tracer render view,seq 高水位增量同步,`Object3D`/向量 scratch 重用,`clear(skipSeq)` 與 `dispose()` 完整。
+  - `src/ui/Controls.ts` + `src/main.ts`:新增 render 層 tracer checkbox;toggle 變更時立即清掉畫面並跳過既有 `shotRays.total`,重新啟用後只顯示新 shot;`tracerEnabled=false` 時 render loop 不呼叫 `TracerView.sync`(關閉=零同步工作),不進 SharedState/export。
+- **Decision**:tracer lifetime fade 採「render-time 縮尾」而非 per-instance alpha。Alternatives considered:per-instance opacity 需要 shader/custom instance alpha 或材質拆分,會提高 render 複雜度並危及單 draw call;縮尾保留 `InstancedMesh` 單 draw call 與零配置紀律,足以滿足 FR-E7 視覺衰減。
+- **Surprises & discoveries**:Three.js 對完全零縮放 instance matrix 做 `decompose` 時測試側可讀回非零 scale;expired tracer 改用 `1e-9` 極小 scale 隱藏。Evidence:`src/render/TracerView.test.ts` 的 lifetime/expired test 通過。
+- **Verification**:
+  - `npx.cmd vitest run src/state/SharedState.test.ts src/loop/SimLoop.test.ts src/render/TracerView.test.ts src/ui/Controls.test.ts` exit 0:4 files / **46 tests** 全綠。
+  - `npm.cmd run typecheck` exit 0:`tsc --noEmit` clean。
+  - 既有開火/決定性回歸:`npx.cmd vitest run src/loop/__tests__/fire-determinism.test.ts src/loop/__tests__/recoil-wiring.test.ts src/loop/__tests__/ballistic-compose.test.ts src/loop/__tests__/determinism.test.ts src/loop/SimLoop.test.ts tests/regression/determinism.test.ts tests/regression/spray-determinism.test.ts tests/regression/moving-target-determinism.test.ts tests/regression/longrange-tracking-determinism.test.ts src/sim/HitDetector.test.ts src/sim/firstShot.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts` exit 0:13 files / **144 tests** 全綠。
+  - `npm.cmd test` exit 0:Vitest **70 files / 570 tests** 全綠。
+  - `npm.cmd run build` sandboxed run blocked by Vite/esbuild parent-directory access denial;unsandboxed rerun exit 0:`tsc --noEmit && vite build` clean,only existing chunk-size warning。
+  - `npm.cmd run test:e2e` sandboxed run blocked by Vite dev server parent-directory access denial;unsandboxed rerun exit 0:Playwright **16 tests** 全綠。
+  - `graphify update .` exit 0:AST re-extract **153/153 files**,graphify-out rebuilt;`codegraph_status` after edits:156 indexed files / 2188 nodes / 3165 edges。
+- **Manual smoke note**:連發/漸隱/開關即時性以 `TracerView` render tests + Controls test + Playwright browser smoke 覆蓋;未做人工視覺檢視。
+- **Open questions**:T1 無新增 open question。OQ-25.2/OQ-25.3 仍留 T3/T2。
 
 ### 2026-07-13 — T0 entry gate PASS
 

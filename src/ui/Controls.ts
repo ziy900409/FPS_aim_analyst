@@ -16,6 +16,8 @@ export interface ControlsOptions {
   onRestart: () => void | Promise<void>;
   onLoadDrill: (drillId: string) => void | Promise<void>;
   onLoadScene: (sceneId: string) => void | Promise<void>;
+  initialTracerEnabled?: boolean;
+  onTracerEnabledChange?: (enabled: boolean) => void;
   parent?: HTMLElement;
 }
 
@@ -23,6 +25,7 @@ export interface ControlsHandle {
   setVisible(visible: boolean): void;
   setSelectedDrill(drillId: string): void;
   setSelectedScene(sceneId: string): void;
+  setTracerEnabled(enabled: boolean): void;
   dispose(): void;
 }
 
@@ -74,9 +77,26 @@ export function createControls(options: ControlsOptions): ControlsHandle {
   }
   sceneSelect.value = options.selectedSceneId;
   const loadSceneButton = makeButton('Scene', 'Load selected scene');
-  const allControls = [restartButton, select, loadButton, sceneSelect, loadSceneButton];
+  const tracerToggle = options.onTracerEnabledChange === undefined
+    ? undefined
+    : makeToggle('tracer-toggle', 'Tracer', options.initialTracerEnabled ?? true);
+  const allControls = [
+    restartButton,
+    select,
+    loadButton,
+    sceneSelect,
+    loadSceneButton,
+    ...(tracerToggle === undefined ? [] : [tracerToggle.input]),
+  ];
 
-  root.append(restartButton, select, loadButton, sceneSelect, loadSceneButton);
+  root.append(
+    restartButton,
+    select,
+    loadButton,
+    sceneSelect,
+    loadSceneButton,
+    ...(tracerToggle === undefined ? [] : [tracerToggle.label]),
+  );
   parent.appendChild(root);
 
   restartButton.addEventListener('click', () => void runControl(allControls, options.onRestart));
@@ -86,6 +106,9 @@ export function createControls(options: ControlsOptions): ControlsHandle {
   loadSceneButton.addEventListener('click', () =>
     void runControl(allControls, () => options.onLoadScene(sceneSelect.value)),
   );
+  tracerToggle?.input.addEventListener('change', () => {
+    options.onTracerEnabledChange?.(tracerToggle.input.checked);
+  });
 
   return {
     setVisible(next: boolean): void {
@@ -98,6 +121,10 @@ export function createControls(options: ControlsOptions): ControlsHandle {
     },
     setSelectedScene(sceneId: string): void {
       sceneSelect.value = sceneId;
+    },
+    setTracerEnabled(enabled: boolean): void {
+      if (tracerToggle === undefined) return;
+      tracerToggle.input.checked = enabled;
     },
     dispose(): void {
       root.remove();
@@ -142,7 +169,34 @@ function makeButton(label: string, title: string): HTMLButtonElement {
   return button;
 }
 
-async function runControl(controls: Array<HTMLButtonElement | HTMLSelectElement>, action: () => void | Promise<void>): Promise<void> {
+function makeToggle(id: string, labelText: string, checked: boolean): { label: HTMLLabelElement; input: HTMLInputElement } {
+  const label = document.createElement('label');
+  label.title = 'Show tracer lines';
+  label.style.cssText = [
+    'height:34px',
+    'display:inline-flex',
+    'align-items:center',
+    'gap:6px',
+    'padding:0 10px',
+    'border:1px solid rgba(255,255,255,0.18)',
+    'border-radius:6px',
+    'font:750 12px/1 system-ui,sans-serif',
+    'color:#e6e9ec',
+    'background:rgba(15,18,21,0.96)',
+    'cursor:pointer',
+  ].join(';');
+  const input = document.createElement('input');
+  input.id = id;
+  input.type = 'checkbox';
+  input.checked = checked;
+  input.style.cssText = 'margin:0;accent-color:#7dd3fc';
+  const text = document.createElement('span');
+  text.textContent = labelText;
+  label.append(input, text);
+  return { label, input };
+}
+
+async function runControl(controls: Array<HTMLButtonElement | HTMLSelectElement | HTMLInputElement>, action: () => void | Promise<void>): Promise<void> {
   for (const control of controls) control.disabled = true;
   try {
     await action();

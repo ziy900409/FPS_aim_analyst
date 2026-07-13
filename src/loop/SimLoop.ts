@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { consume } from '../input/consume.ts';
-import { pushImpact, type SharedState } from '../state/SharedState.ts';
+import { pushImpact, pushShotRay, type SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
 import { raycastWithRay, targetCenterOffsetDeg, type HitPointOut, type RaycastResult } from '../sim/HitDetector.ts';
 import { punchToThreeRad } from '../recoil/adapter.ts';
@@ -244,6 +244,15 @@ function fireOneShot(
     // 由 `ballisticRaycast` 統一回填（命中→目標近面;脫靶→交戰平面;無存活目標→valid=false 不產）。
     if (ballisticHitPoint.valid) {
       pushImpact(state.impacts, ballisticHitPoint.x, ballisticHitPoint.y, ballisticHitPoint.z);
+      pushShotRay(
+        state.shotRays,
+        ballisticOrigin.x,
+        ballisticOrigin.y,
+        ballisticOrigin.z,
+        ballisticHitPoint.x,
+        ballisticHitPoint.y,
+        ballisticHitPoint.z,
+      );
     }
   }
 
