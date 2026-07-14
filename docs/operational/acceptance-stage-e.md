@@ -40,9 +40,13 @@ Sandbox note:`npm.cmd run test:ci` sandboxed first run hit the known Vite/esbuil
 
 自動測試覆蓋資料鏈與決定性;下列視覺/手感仍需研究者在本機實機回填:
 
+> **操作提示(2026-07-14 實機驗證回饋後修正)**:drill 下拉選單**選了即自動載入**(不必再按 Load)。scene 仍以「Scene」按鈕載入。
+> **視覺預期**:br-field **前向走廊 x∈[-21,21] 是刻意淨空**的(遠距 tracking 視線需求),所以直視正前方時中央是空的、只在天際線看到遠山;**麥田/丘陵/樹在兩側翼**——需左右轉視角才看得到開闊田野。
+> **目標可見度**:canonical `tracking_br_v1` = 0.5°@114.59u,換算到畫面僅數 px(研究規格上的遠距小目標);**肉眼視覺/手感確認請改載入 2° 變體**(如 `tracking_br_v1__ads_on__projectile__2deg`,28.65u,清楚可見)。
+
 1. 啟動 dev server,用 Chrome/Edge 桌面版進入 app。
-2. 選 `br-field` 與 `tracking_br_v1`,確認場景視覺尺度為開闊麥田/丘陵/遠山,未呈現特定商業 BR 地圖配置。
-3. 執行 BR protocol 或單條 `tracking_br_v1`,按住 ADS 追蹤遠距小目標;確認 scope/FOV 過渡手感可接受且不遮蔽目標。
+2. 選 `br-field`(按 Scene 載入),左右轉視角確認兩側翼為開闊麥田/丘陵、天際線有遠山,未呈現特定商業 BR 地圖配置。
+3. drill 下拉選 `tracking_br_v1__ads_on__projectile__2deg`(自動載入),按住右鍵 ADS 追蹤移動小目標;確認 scope/FOV 過渡手感可接受且不遮蔽目標。(0.5° canonical 變體因目標僅數 px,不適合肉眼手感確認。)
 4. 在 projectile 條件開火,確認 tracer/impact 視覺能支援研究者觀察,且無明顯 frame hitch。
 5. 匯出 JSON,確認 `meta.protocol`、`meta.scene.sceneId='br-field'`、`meta.weapon.ads/bullet`、tick `ads`、tracking 欄位存在。
 

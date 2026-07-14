@@ -293,7 +293,8 @@ const protocolButton = document.createElement('button');
 protocolButton.type = 'button';
 protocolButton.textContent = '解析度 protocol';
 protocolButton.title = '執行受試者內解析度 × 偵測 protocol';
-protocolButton.style.cssText = experimentButton.style.cssText.replace('top:12px', 'top:54px');
+protocolButton.style.cssText = experimentButton.style.cssText;
+protocolButton.style.top = '54px'; // 顯式設值：cssText getter 會序列化為 'top: 12px'（含空格），字串 .replace 會失效 → 三顆按鈕重疊。
 protocolButton.addEventListener('click', () => {
   pendingSessionMode = 'resolution-protocol';
   sessionSetupForm.open();
@@ -303,7 +304,8 @@ const brProtocolButton = document.createElement('button');
 brProtocolButton.type = 'button';
 brProtocolButton.textContent = 'BR protocol';
 brProtocolButton.title = '執行 BR 跟槍 ADS × 彈道 × 角尺寸 protocol';
-brProtocolButton.style.cssText = experimentButton.style.cssText.replace('top:12px', 'top:96px');
+brProtocolButton.style.cssText = experimentButton.style.cssText;
+brProtocolButton.style.top = '96px'; // 同上：顯式設 top,避免與 protocol/experiment 按鈕重疊。
 brProtocolButton.addEventListener('click', () => {
   pendingSessionMode = 'br-tracking-protocol';
   sessionSetupForm.open();

@@ -121,7 +121,7 @@ const BASE_COLOR = {
   'tree-trunk': [0.32, 0.22, 0.13, 1],
   'tree-canopy': [0.18, 0.32, 0.17, 1],
   hay: [0.72, 0.55, 0.24, 1],
-  mountain: [0.38, 0.45, 0.43, 1],
+  mountain: [0.55, 0.62, 0.68, 1], // 大氣霧化的藍灰遠山色,讓天際線在前向視野中明顯讀成「遠山」(非暗色土丘)。
   dirt: [0.42, 0.34, 0.22, 1],
 };
 
@@ -133,15 +133,18 @@ addVisual('corridor-flat-earth', 'dirt', { x: -21, y: 0, z: -145 }, { x: 21, y: 
 addVisual('left-low-hill', 'ground', { x: -86, y: -0.2, z: -155 }, { x: -24, y: 0.35, z: 5 });
 addVisual('right-low-hill', 'ground', { x: 24, y: -0.2, z: -155 }, { x: 86, y: 0.35, z: 5 });
 
+// 麥田加高:0.85~1.09u 讓側翼看得出成排麥浪(仍在 x>=23 側翼,不入 x∈[-21,21] 走廊)。
 for (let i = 0; i < 18; i++) {
   const z0 = -145 + i * 8.2;
-  addVisual(`wheat-row-r${i + 1}`, 'wheat', { x: 23 + (i % 4) * 4.5, y: 0.03, z: z0 }, { x: 25.2 + (i % 4) * 4.5, y: 0.28, z: z0 + 5.8 });
-  addVisual(`wheat-row-l${i + 1}`, 'wheat', { x: -25.2 - ((i + 2) % 4) * 4.5, y: 0.03, z: z0 - 2.7 }, { x: -23 - ((i + 2) % 4) * 4.5, y: 0.28, z: z0 + 3.1 });
+  const top = 0.85 + (i % 3) * 0.12;
+  addVisual(`wheat-row-r${i + 1}`, 'wheat', { x: 23 + (i % 4) * 4.5, y: 0.03, z: z0 }, { x: 25.2 + (i % 4) * 4.5, y: top, z: z0 + 5.8 });
+  addVisual(`wheat-row-l${i + 1}`, 'wheat', { x: -25.2 - ((i + 2) % 4) * 4.5, y: 0.03, z: z0 - 2.7 }, { x: -23 - ((i + 2) % 4) * 4.5, y: top, z: z0 + 3.1 });
 }
 
-addVisual('mountain-left', 'mountain', { x: -90, y: 0, z: -171 }, { x: -28, y: 9.5, z: -168 });
-addVisual('mountain-center', 'mountain', { x: -34, y: 0, z: -172 }, { x: 32, y: 7.8, z: -169 });
-addVisual('mountain-right', 'mountain', { x: 28, y: 0, z: -171 }, { x: 90, y: 10.8, z: -168 });
+// 遠山加大:高度約 x2、略加寬加深,形成一整排可辨識的天際線(render-only,不入 propBounds/走廊)。
+addVisual('mountain-left', 'mountain', { x: -104, y: 0, z: -175 }, { x: -24, y: 19, z: -166 });
+addVisual('mountain-center', 'mountain', { x: -40, y: 0, z: -177 }, { x: 40, y: 15.5, z: -168 });
+addVisual('mountain-right', 'mountain', { x: 24, y: 0, z: -175 }, { x: 104, y: 21.5, z: -166 });
 
 function propVisuals(prop) {
   if (prop.kind === 'tree') {

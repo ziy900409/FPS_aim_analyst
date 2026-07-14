@@ -33,6 +33,18 @@
 
 ## Log
 
+### 2026-07-14 05:10Z — 手動驗證回饋修正(issue 1/2/3);仍待完整實機回填
+
+研究者實機初驗 br-field + `tracking_br_v1`,回報三問題。以 headless Edge(Playwright)驅動真 app + 讀 `__aimDebug.state` 逐一診斷,再修:
+
+- **Issue 3(BR protocol 按鈕與 protocol 按鈕重疊)= 真 bug,已修**。`experimentButton.style.cssText` getter 序列化為 `top: 12px`(冒號後空格),原碼 `.replace('top:12px', …)` 找不到子字串 → 三顆 top-left 按鈕全疊在 `top:12`。改 [src/main.ts](../../../../../src/main.ts) 顯式 `protocolButton.style.top='54px'` / `brProtocolButton.style.top='96px'`。repro 確認 `12/54/96` 不再重疊。
+- **Issue 2(選 `tracking_br_v1` 仍是 counterstrafe)= 非 drill-switch bug + UX/可見度**。repro 證實按「Load」後 `#drill-select=tracking_br_v1`、近距 counterstrafe 靶消失、新靶生於 `z=-114.59` hitbox `{0.5,1,0.5}`——切換本身正確。真因:①下拉選了不生效、要另按 Load(易漏);②0.5°@114.59u 目標畫面僅數 px、近乎隱形。**修**(使用者決定):[src/ui/Controls.ts](../../../../../src/ui/Controls.ts) drill 下拉加 `change` 自動載入(程式化 `setSelectedDrill` 不觸發 change,protocol 回寫不會二次載入);手動驗證文件改用 2° 變體(`tracking_br_v1__ads_on__projectile__2deg`,28.65u,肉眼可見)。repro 確認「選了未按 Load」即自動生靶。
+- **Issue 1(br-field 不像麥田/丘陵/遠山)= 真問題,最小改動修**(使用者決定)。[scripts/gen-br-field-gltf.mjs](../../../../../scripts/gen-br-field-gltf.mjs):麥田加高 `0.28u → 0.85~1.09u`、遠山高度 ~×2 並略加寬加深、遠山色改大氣藍灰霧化(`[0.38,0.45,0.43]→[0.55,0.62,0.68]`)。重生成 GLTF:仍 **129 nodes / 1548 tri / 8 materials / 62 propBounds**(budget/propBounds/走廊淨空 x∈[-21,21] z∈[-145,0] 全不變;麥田/山為 render-only visual node,不入 propBounds)。**限制(已與使用者對齊)**:前向走廊刻意淨空,直視正前方仍是空走廊 + 天際線遠山;麥田/丘陵/樹在**兩側翼**,需轉視角才見——要讓正前方也像田野需超出「最小改動」(加走廊視覺細節或走完整重做,後者使用者已否決)。
+
+- **五軸 review**:三修皆小、局部、無跨層污染。Controls `change` auto-load 不影響 protocol runner(獨立 runner + 程式化設值不觸發 change);generator 改動純 render-only(GD-6 場景零知識不破);button 修為 DOM-only。
+- **驗證(branch-guarded `aa`@eae7370)**:`npm run test:ci` exit 0;vitest 77 files / 622 tests、playwright 18 tests 全綠;`tsc --noEmit` clean。針對性:br-field(6)/tracking_br_v1(5)/Controls(1)綠。實機 repro:按鈕 12/54/96、drill 下拉自動載入、0.5° 靶 z=-114.59、2° 靶 z=-28.64、遠山天際線色調提升。
+- **仍待**:issue 1 前向視野的田野感受限於走廊淨空設計(側翼可見);M13 §2 完整實機回填(視覺/ADS 手感/tracer/hitch)仍待研究者親跑——本次修正只解除操作/顯示障礙,未取代手動回填。
+
 ### 2026-07-14 04:30Z — T-exit 自動閘 PASS;M13 保留待手動(使用者拍板,沿 stage-C M10 先例)
 
 - **決策(使用者拍板)**:比照 2026-07-10 stage-C M10 同一 `/code-review-and-quality` T-exit 情境——**落自動閘,里程碑保留待手動**。完成所有可自動化的 exit-gate 工作,但**不宣告 M13、不翻 WP-26/stage5「✅ 交付」**,因驗收清單 E §2 手動視覺/手感項(br-field 開闊尺度、ADS scope 手感、tracer/impact 觀感、無 frame hitch)需研究者實機互動,非互動 session 無法產生證據。
