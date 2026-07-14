@@ -44,6 +44,7 @@ export interface RecoilCompensationPath {
 type VisibleEvent = Extract<DrillEvent, { type: 'visible' }>;
 type CounterEvent = Extract<DrillEvent, { type: 'counter' }>;
 type FireEvent = Extract<DrillEvent, { type: 'fire' }>;
+type HitEvent = Extract<DrillEvent, { type: 'hit' }>;
 
 interface PeekWindow {
   visible: VisibleEvent;
@@ -58,6 +59,8 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
   const visibleEvents = events.filter((event): event is VisibleEvent => event.type === 'visible');
   const counterEvents = events.filter((event): event is CounterEvent => event.type === 'counter');
   const fireEvents = events.filter((event): event is FireEvent => event.type === 'fire');
+  const hitEvents = events.filter((event): event is HitEvent => event.type === 'hit');
+  const hitShotSeqs = buildHitShotSeqs(hitEvents);
 
   const peeks = buildPeekWindows(visibleEvents, counterEvents, fireEvents);
   const reactions = finiteValues(peeks.map((peek) => peek.reactionMs));
@@ -72,7 +75,7 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
   const offsets = finiteValues(fireEvents.map((event) => event.offsetDeg));
   const recoilCompensationPath = computeRecoilCompensationPath(fireEvents);
   const recoilCompensationError = compensationError(recoilCompensationPath.actual, recoilCompensationPath.ideal);
-  const switchTimes = computeSwitchTimes(fireEvents);
+  const switchTimes = computeSwitchTimes(fireEvents, hitShotSeqs);
   const rhythmIntervals = computeVisibleIntervals(visibleEvents);
   const leftReactions = finiteValues(peeks.filter((peek) => peek.visible.side === 'L').map((peek) => peek.reactionMs));
   const rightReactions = finiteValues(peeks.filter((peek) => peek.visible.side === 'R').map((peek) => peek.reactionMs));
@@ -83,7 +86,10 @@ export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
     counterReactionMs: stat(reactions),
     residualSpeed: stat(residualSpeeds),
     fireTimingAlignmentMs: stat(fireAlignments),
-    firstShotHitRate: visibleEvents.length > 0 ? (firstShotFires.filter((fire) => fire.hit).length / visibleEvents.length) * 100 : 0,
+    firstShotHitRate:
+      visibleEvents.length > 0
+        ? (firstShotFires.filter((fire) => fireHitOutcome(fire, hitShotSeqs)).length / visibleEvents.length) * 100
+        : 0,
     crosshairOffset: stat(offsets),
     recoilCompensationError,
     recoilCompensationPath,
@@ -163,17 +169,27 @@ function buildPeekWindows(
 // 切換時間 = t_next_acquisition − t_prev_kill（CONTEXT:23）：擊殺一目標，到「對下一目標有效對齊」
 // 的時間。有效對齊以玩家實際動作為錨——擊殺後對「不同目標」的第一個首發 fire——而非目標補生
 // 瞬間（spawnDelayMs=0 下，用 t_next_visible 會塌縮成 1~2 tick 的引擎 respawn latency，非玩家技能）。
-function computeSwitchTimes(fireEvents: readonly FireEvent[]): number[] {
+function computeSwitchTimes(fireEvents: readonly FireEvent[], hitShotSeqs: ReadonlySet<number>): number[] {
   const values: number[] = [];
   for (let i = 0; i < fireEvents.length; i++) {
     const kill = fireEvents[i];
-    if (!kill.hit) continue;
+    if (!fireHitOutcome(kill, hitShotSeqs)) continue;
     const acquisition = fireEvents.find(
       (fire, j) => j > i && fire.firstShot && fire.targetId !== undefined && fire.targetId !== kill.targetId,
     );
     if (acquisition !== undefined) values.push(acquisition.t - kill.t);
   }
   return values;
+}
+
+function buildHitShotSeqs(hitEvents: readonly HitEvent[]): ReadonlySet<number> {
+  const shotSeqs = new Set<number>();
+  for (const hit of hitEvents) shotSeqs.add(hit.shotSeq);
+  return shotSeqs;
+}
+
+function fireHitOutcome(fire: FireEvent, hitShotSeqs: ReadonlySet<number>): boolean {
+  return fire.hit || (fire.shotSeq !== undefined && hitShotSeqs.has(fire.shotSeq));
 }
 
 function computeRecoilCompensationPath(fireEvents: readonly FireEvent[]): RecoilCompensationPath {

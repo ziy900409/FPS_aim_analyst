@@ -74,6 +74,29 @@ describe('computeMetrics', () => {
     expect(metrics.switchTimeMs.values).not.toContain(5);
   });
 
+  it('backfills projectile first-shot outcomes from hit events while keeping timing anchored to fire time', () => {
+    const projectileSnapshot: DataRecorderSnapshot = {
+      ticks: [],
+      events: [
+        { type: 'visible', targetId: 'a', side: 'L', t: 100 },
+        { type: 'counter', key: 'D', t: 140 },
+        { type: 'fire', targetId: 'a', t: 170, hit: false, firstShot: true, residualSpeed: 0, shotSeq: 11 },
+        { type: 'hit', targetId: 'a', t: 195, timeOfFlightMs: 25, shotSeq: 11, part: 'body' },
+        { type: 'visible', targetId: 'b', side: 'R', t: 230 },
+        { type: 'counter', key: 'A', t: 260 },
+        { type: 'fire', targetId: 'b', t: 310, hit: false, firstShot: true, residualSpeed: 0, shotSeq: 12 },
+      ],
+      recorderOverflow: false,
+    };
+
+    const metrics = computeMetrics(projectileSnapshot);
+
+    expect(metrics.firstShotHitRate).toBe(50);
+    expect(metrics.fireTimingAlignmentMs.values).toEqual([30, 50]);
+    expect(metrics.switchTimeMs.values).toEqual([140]);
+    expect(metrics.switchTimeMs.values).not.toContain(115);
+  });
+
   it('returns n=0 stats and zero rates for empty samples', () => {
     const metrics = computeMetrics({ ticks: [], events: [], recorderOverflow: false });
 
