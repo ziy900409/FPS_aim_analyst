@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { validateWeapon, type WeaponConfig } from './WeaponConfig.ts';
-import { ak47, getWeapon, m4a1s, m4a4, WEAPONS } from './weapons.ts';
+import {
+  ak47,
+  ak47BrAdsHitscan,
+  ak47BrAdsProjectile,
+  ak47BrHipHitscan,
+  ak47BrHipProjectile,
+  BR_PROJECTILE_BULLET,
+  getWeapon,
+  m4a1s,
+  m4a4,
+  WEAPONS,
+} from './weapons.ts';
 
 function validWeapon(overrides: Partial<WeaponConfig> = {}): WeaponConfig {
   return {
@@ -155,6 +166,10 @@ describe('built-in weapons', () => {
     expect(validateWeapon(ak47)).toEqual(ak47);
     expect(validateWeapon(m4a4)).toEqual(m4a4);
     expect(validateWeapon(m4a1s)).toEqual(m4a1s);
+    expect(validateWeapon(ak47BrHipHitscan)).toEqual(ak47BrHipHitscan);
+    expect(validateWeapon(ak47BrAdsHitscan)).toEqual(ak47BrAdsHitscan);
+    expect(validateWeapon(ak47BrHipProjectile, { engagementDistanceU: 114.59 })).toEqual(ak47BrHipProjectile);
+    expect(validateWeapon(ak47BrAdsProjectile, { engagementDistanceU: 114.59 })).toEqual(ak47BrAdsProjectile);
   });
 
   it('locks CS2 vdata values used by WP-11 scheduling and recoil', () => {
@@ -183,8 +198,27 @@ describe('built-in weapons', () => {
     expect(WEAPONS.ak47.ads).toEqual({ fovDeg: 40, sensitivityRatio: 1.0 });
   });
 
+  it('declares BR tracking weapon profiles as AK clones with ADS/projectile gates only', () => {
+    expect(WEAPONS.ak47_br_hip_hitscan).toMatchObject({
+      id: 'ak47_br_hip_hitscan',
+      recoil: ak47.recoil,
+      inaccuracy: ak47.inaccuracy,
+    });
+    expect(WEAPONS.ak47_br_hip_hitscan.ads).toBeUndefined();
+    expect(WEAPONS.ak47_br_hip_hitscan.bullet).toBeUndefined();
+    expect(WEAPONS.ak47_br_ads_hitscan.ads).toEqual(ak47.ads);
+    expect(WEAPONS.ak47_br_ads_hitscan.bullet).toBeUndefined();
+    expect(WEAPONS.ak47_br_hip_projectile.ads).toBeUndefined();
+    expect(WEAPONS.ak47_br_hip_projectile.bullet).toEqual(BR_PROJECTILE_BULLET);
+    expect(WEAPONS.ak47_br_ads_projectile.ads).toEqual(ak47.ads);
+    expect(WEAPONS.ak47_br_ads_projectile.bullet).toEqual(BR_PROJECTILE_BULLET);
+  });
+
   it('returns known weapons by id and reports available ids for unknown weapons', () => {
     expect(getWeapon('ak47').recoil.seed).toBe(223);
-    expect(() => getWeapon('awp')).toThrow(/Available weapons: ak47, m4a4, m4a1s/);
+    expect(getWeapon('ak47_br_ads_projectile').bullet).toEqual(BR_PROJECTILE_BULLET);
+    expect(() => getWeapon('awp')).toThrow(
+      /Available weapons: ak47, m4a4, m4a1s, ak47_br_hip_hitscan, ak47_br_ads_hitscan, ak47_br_hip_projectile, ak47_br_ads_projectile/,
+    );
   });
 });
