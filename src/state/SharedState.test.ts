@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BULLET_CAP,
+  createBulletArena,
   createImpactRing,
   createSharedState,
   createShotRayRing,
@@ -7,6 +9,7 @@ import {
   pushImpact,
   pushShotRay,
   resetImpactRing,
+  resetBulletArena,
   resetShotRayRing,
   resetState,
   sharedState,
@@ -30,6 +33,9 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(a.validity).toEqual({ playerCorridorExceeded: false });
     expect(a.shotRays.total).toBe(0);
     expect(a.shotRays.cursor).toBe(0);
+    expect(a.bullets.activeCount).toBe(0);
+    expect(a.bullets.overflowCount).toBe(0);
+    expect(a.bullets.nextShotSeq).toBe(1);
 
     // 實例彼此獨立、且不污染單例
     const b = createSharedState();
@@ -54,6 +60,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     const recoilStateRef = s.recoilState;
     const impactsRef = s.impacts;
     const shotRaysRef = s.shotRays;
+    const bulletsRef = s.bullets;
     const validityRef = s.validity;
 
     // 弄髒所有欄位
@@ -81,6 +88,10 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     pushImpact(s.impacts, 4, 5, 6);
     pushShotRay(s.shotRays, 0, 1, 2, 3, 4, 5);
     pushShotRay(s.shotRays, 1, 2, 3, 4, 5, 6);
+    s.bullets.alive[0] = 1;
+    s.bullets.activeCount = 1;
+    s.bullets.overflowCount = 2;
+    s.bullets.nextShotSeq = 3;
     s.targets.push({
       id: 't1',
       side: 'R',
@@ -121,6 +132,10 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.shotRays.total).toBe(0);
     expect(s.shotRays.cursor).toBe(0);
     expect(Array.from(s.shotRays.seq)).toEqual(new Array(TRACER_CAP).fill(0));
+    expect(s.bullets.activeCount).toBe(0);
+    expect(s.bullets.overflowCount).toBe(0);
+    expect(s.bullets.nextShotSeq).toBe(1);
+    expect(Array.from(s.bullets.alive)).toEqual(new Array(BULLET_CAP).fill(0));
 
     // 重用同一參考（不 realloc）— GC 紀律
     expect(s.input).toBe(inputRef);
@@ -132,6 +147,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.recoilState).toBe(recoilStateRef); // recoil 狀態機重用同一物件（GC 紀律）
     expect(s.impacts).toBe(impactsRef); // 彈著格重用同一物件 + typed-array（GC 紀律）
     expect(s.shotRays).toBe(shotRaysRef); // tracer 格重用同一物件 + typed-array（GC 紀律）
+    expect(s.bullets).toBe(bulletsRef); // 飛行彈 arena 重用同一物件 + typed-array（GC 紀律）
     expect(s.validity).toBe(validityRef);
   });
 
@@ -149,6 +165,38 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     resetState();
     expect(sharedState.player.x).toBe(0);
     expect(sharedState.input.size()).toBe(0);
+  });
+});
+
+describe('BulletArena — projectile 飛行彈 arena（WP-25 / T3）', () => {
+  it('createBulletArena 全空：active/overflow 0、shotSeq 從 1 起、typed-array 容量 = BULLET_CAP', () => {
+    const arena = createBulletArena();
+    expect(arena.activeCount).toBe(0);
+    expect(arena.overflowCount).toBe(0);
+    expect(arena.nextShotSeq).toBe(1);
+    expect(arena.x).toHaveLength(BULLET_CAP);
+    expect(arena.alive).toHaveLength(BULLET_CAP);
+    expect(Array.from(arena.alive)).toEqual(new Array(BULLET_CAP).fill(0));
+  });
+
+  it('resetBulletArena 原地清空 alive/active/overflow/shotSeq 並重用 typed-array', () => {
+    const arena = createBulletArena();
+    const xRef = arena.x;
+    const aliveRef = arena.alive;
+    arena.x[0] = 10;
+    arena.alive[0] = 1;
+    arena.activeCount = 1;
+    arena.overflowCount = 2;
+    arena.nextShotSeq = 7;
+
+    resetBulletArena(arena);
+
+    expect(arena.activeCount).toBe(0);
+    expect(arena.overflowCount).toBe(0);
+    expect(arena.nextShotSeq).toBe(1);
+    expect(Array.from(arena.alive)).toEqual(new Array(BULLET_CAP).fill(0));
+    expect(arena.x).toBe(xRef);
+    expect(arena.alive).toBe(aliveRef);
   });
 });
 

@@ -77,7 +77,7 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `bufferOverflow` | boolean | `true` / `false` | Yes | input buffer telemetry | Marks dropped/late input-buffer data. |
 | `recorderOverflow` | boolean | `true` / `false` | Yes | recorder snapshot | If true, arena refused later tick writes and preserved oldest rows. |
 | `suspect` | boolean | `true` / `false` | Yes | derived validity flag | `true` if overflow or a runtime validity observer marks the run suspect. |
-| `weapon` | object | active weapon snapshot | No | active `WeaponConfig` | Additive v2 block. Production exports include `{ id, ads? }`; `ads` stores the ADS optical config used for gain reconstruction. |
+| `weapon` | object | active weapon snapshot | No | active `WeaponConfig` | Additive v2 block. Production exports include `{ id, ads?, bullet?, projectileOverflow? }`; `ads` stores ADS optics and `bullet` stores projectile ballistics when enabled. |
 | `targets` | object | optional target geometry snapshot | No | active `DrillConfig` after defaults resolve | Additive v2 block. `targets.hitbox` stores the H1 hitbox used by sim/render/offline derivation. |
 | `spawn` | object | reserved optional | No | stage3/WP-21 | v2 reserved block for `seed`, motion, and spawn-area snapshots. WP-16 writes seed/motion when available. |
 | `scene` | object | scene condition | No | stage3/WP-19 | `{ sceneId, assetPackVersion, clutterTier, fallback }`. Additive; absence means scene system not active. |
@@ -93,6 +93,8 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 |---|---|---|---:|---|---|
 | `id` | string | weapon config id | Yes when `weapon` exists | active `WeaponConfig.id` | Mirrors `meta.weaponId` for a self-contained weapon snapshot. |
 | `ads` | object | ADS optics | No | active `WeaponConfig.ads` | Omitted when the weapon has no ADS optics. |
+| `bullet` | object | projectile ballistics | No | active `WeaponConfig.bullet` | Omitted for hitscan weapons. Presence means projectile model was enabled for this export. |
+| `projectileOverflow` | boolean | `true` / `false` | No | `state.bullets.overflowCount > 0` | Present when projectile mode is enabled; true means the fixed bullet arena refused at least one shot. |
 
 `weapon.ads` fields:
 
@@ -100,6 +102,15 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 |---|---|---|---:|---|---|
 | `fovDeg` | number | degrees | Yes when `ads` exists | active `WeaponConfig.ads.fovDeg` | ADS target vertical FOV. |
 | `sensitivityRatio` | number | positive ratio | Yes when `ads` exists | active `WeaponConfig.ads.sensitivityRatio` | GD-16 ratio. Effective ADS sensitivity is `sensitivity × sensitivityRatio × (fovDeg / hipFov)`. |
+
+`weapon.bullet` fields:
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `model` | string | `projectile` | Yes when `bullet` exists | active `WeaponConfig.bullet.model` | Config gate; absent `bullet` preserves hitscan semantics. |
+| `speedU` | number | source u/s | Yes when `bullet` exists | active `WeaponConfig.bullet.speedU` | GD-17 tick-count-derived projectile speed. |
+| `gravityU` | number | source u/s^2 | Yes when `bullet` exists | active `WeaponConfig.bullet.gravityU` | Downward acceleration applied at fixed 128 Hz. |
+| `maxRangeU` | number | source u | Yes when `bullet` exists | active `WeaponConfig.bullet.maxRangeU` | Projectile expires and writes tracer endpoint when this range is reached. |
 
 #### `meta.targets`
 
@@ -227,6 +238,7 @@ If `summary.p95 > PERF_FLOOR_MS`, `collectMeta()` marks `meta.suspect = true`.
 | `hit` | boolean | `true` / `false` | Yes | hit detector | Whether the shot hit a target. |
 | `firstShot` | boolean | `true` / `false` | Yes | first-shot gate | First shot for the current peek sequence. |
 | `residualSpeed` | number | source u/s | Yes | movement state at fire | Used by WP-8 metrics. |
+| `shotSeq` | number | shot sequence | No | projectile spawn | Present for projectile fire rows; links the fire row to later `hit` events. |
 | `viewYaw` | number | radians | Yes in production v2 | `state.aim.yaw` | Camera/view yaw at fire time, pre-kick for this shot. |
 | `viewPitch` | number | radians | Yes in production v2 | `state.aim.pitch` | Camera/view pitch at fire time, pre-kick for this shot. |
 | `aimPunchPitch` | number | degrees | Yes in production v2 | `state.recoilState` | AimPunch pitch used by this shot before `recoilOnFire`. Ideal compensation uses `-aimPunch×2`. |
@@ -238,6 +250,19 @@ If `summary.p95 > PERF_FLOOR_MS`, `collectMeta()` marks `meta.suspect = true`.
 | `targetId` | string | target id | No | active target / hit detector | Active target at fire time; present when a target exists. |
 | `offsetDeg` | number | degrees | No | camera forward vs target center | Non-negative unsigned angular distance from camera forward ray to active target center; `0` means centered. |
 | `part` | string | `head`, `body` | No | hit detector | Present only when a hit part is available. |
+
+For projectile mode, `fire.hit` remains the immediate fire-row field and is `false` until a later projectile hit is recorded. Projectile outcomes are represented by additive `hit` events linked by `shotSeq`; existing hitscan `fire` row semantics are unchanged.
+
+#### `hit`
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `type` | string | `hit` | Yes | projectile swept hit | Projectile impact event. |
+| `t` | number | ms | Yes | tick-interpolated swept hit time | Hit time (`t_hit`) in the `performance.now()` basis. |
+| `timeOfFlightMs` | number | ms | Yes | `t_hit - fire.t` | Projectile time of flight for the linked shot. |
+| `shotSeq` | number | shot sequence | Yes | projectile spawn | Links to the projectile fire row. |
+| `targetId` | string | target id | No | hit target | Target hit by the projectile. |
+| `part` | string | `head`, `body` | No | target hitbox | Present when a hit part is available. |
 
 ## CSV Schema
 
@@ -269,35 +294,37 @@ t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys,ads
 Header:
 
 ```csv
-type,t,targetId,side,key,down,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ
+type,t,targetId,side,key,down,hit,firstShot,residualSpeed,shotSeq,timeOfFlightMs,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ
 ```
 
 Rows are sparse because event variants have different fields.
 
-| Column | `visible` | `counter` | `ads` | `fire` |
-|---|---|---|---|---|
-| `type` | `visible` | `counter` | `ads` | `fire` |
-| `t` | event time | event time | event time | event time |
-| `targetId` | target id | empty | empty | active/hit target id, or empty |
-| `side` | `L` / `R` | empty | empty | empty |
-| `key` | empty | counter key | empty | empty |
-| `down` | empty | empty | `true` / `false` | empty |
-| `hit` | empty | empty | empty | `true` / `false` |
-| `firstShot` | empty | empty | empty | `true` / `false` |
-| `residualSpeed` | empty | empty | empty | source u/s |
-| `viewYaw` | empty | empty | empty | radians |
-| `viewPitch` | empty | empty | empty | radians |
-| `aimPunchPitch` | empty | empty | empty | degrees |
-| `aimPunchYaw` | empty | empty | empty | degrees |
-| `spreadX` | empty | empty | empty | tangent offset |
-| `spreadY` | empty | empty | empty | tangent offset |
-| `recoilIndex` | empty | empty | empty | shot index used by this shot |
-| `ammo` | empty | empty | empty | pre-shot ammo |
-| `offsetDeg` | empty | empty | empty | camera-forward to target-center angle in degrees, or empty |
-| `part` | empty | empty | empty | `head`, `body`, or empty |
-| `targetX` | source u target center x | empty | empty | empty |
-| `targetY` | source u target center y | empty | empty | empty |
-| `targetZ` | source u target center z | empty | empty | empty |
+| Column | `visible` | `counter` | `ads` | `fire` | `hit` |
+|---|---|---|---|---|---|
+| `type` | `visible` | `counter` | `ads` | `fire` | `hit` |
+| `t` | event time | event time | event time | event time | `t_hit` |
+| `targetId` | target id | empty | empty | active/hit target id, or empty | hit target id, or empty |
+| `side` | `L` / `R` | empty | empty | empty | empty |
+| `key` | empty | counter key | empty | empty | empty |
+| `down` | empty | empty | `true` / `false` | empty | empty |
+| `hit` | empty | empty | empty | `true` / `false` | empty |
+| `firstShot` | empty | empty | empty | `true` / `false` | empty |
+| `residualSpeed` | empty | empty | empty | source u/s | empty |
+| `shotSeq` | empty | empty | empty | projectile shot seq, or empty | projectile shot seq |
+| `timeOfFlightMs` | empty | empty | empty | empty | projectile time of flight |
+| `viewYaw` | empty | empty | empty | radians | empty |
+| `viewPitch` | empty | empty | empty | radians | empty |
+| `aimPunchPitch` | empty | empty | empty | degrees | empty |
+| `aimPunchYaw` | empty | empty | empty | degrees | empty |
+| `spreadX` | empty | empty | empty | tangent offset | empty |
+| `spreadY` | empty | empty | empty | tangent offset | empty |
+| `recoilIndex` | empty | empty | empty | shot index used by this shot | empty |
+| `ammo` | empty | empty | empty | pre-shot ammo | empty |
+| `offsetDeg` | empty | empty | empty | camera-forward to target-center angle in degrees, or empty | empty |
+| `part` | empty | empty | empty | `head`, `body`, or empty | `head`, `body`, or empty |
+| `targetX` | source u target center x | empty | empty | empty | empty |
+| `targetY` | source u target center y | empty | empty | empty | empty |
+| `targetZ` | source u target center z | empty | empty | empty | empty |
 
 ### `<basename>-frames.csv`
 
@@ -349,7 +376,9 @@ CSV cells are comma-separated, include a trailing newline, and quote cells conta
     "suspect": false,
     "weapon": {
       "id": "ak47",
-      "ads": { "fovDeg": 40, "sensitivityRatio": 1 }
+      "ads": { "fovDeg": 40, "sensitivityRatio": 1 },
+      "bullet": { "model": "projectile", "speedU": 916.73, "gravityU": 32, "maxRangeU": 143.24 },
+      "projectileOverflow": false
     },
     "targets": {
       "hitbox": { "widthU": 1, "heightU": 2, "depthU": 1 }
@@ -363,7 +392,8 @@ CSV cells are comma-separated, include a trailing newline, and quote cells conta
     { "type": "visible", "targetId": "target-1", "side": "R", "t": 10, "targetX": 3, "targetY": 1.6, "targetZ": -4 },
     { "type": "counter", "key": "A", "t": 14 },
     { "type": "ads", "down": true, "t": 15 },
-    { "type": "fire", "t": 18, "targetId": "target-1", "hit": true, "firstShot": true, "residualSpeed": 0, "viewYaw": 0.25, "viewPitch": -0.1, "aimPunchPitch": -1.2, "aimPunchYaw": 0.8, "spreadX": 0.01, "spreadY": -0.02, "recoilIndex": 2, "ammo": 28, "offsetDeg": 0.5, "part": "head" }
+    { "type": "fire", "t": 18, "targetId": "target-1", "hit": false, "firstShot": true, "residualSpeed": 0, "shotSeq": 1, "viewYaw": 0.25, "viewPitch": -0.1, "aimPunchPitch": -1.2, "aimPunchYaw": 0.8, "spreadX": 0.01, "spreadY": -0.02, "recoilIndex": 2, "ammo": 28, "offsetDeg": 0.5 },
+    { "type": "hit", "t": 30, "targetId": "target-1", "shotSeq": 1, "timeOfFlightMs": 12, "part": "head" }
   ]
 }
 ```
@@ -381,11 +411,12 @@ t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys,ads
 `counterstrafe_ad_v1-events.csv`
 
 ```csv
-type,t,targetId,side,key,down,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ
-visible,10,target-1,R,,,,,,,,,,,,,,,,3,1.6,-4
-counter,14,,,A,,,,,,,,,,,,,,,,,
-ads,15,,,,true,,,,,,,,,,,,,,,,
-fire,18,target-1,,,,true,true,0,0.25,-0.1,-1.2,0.8,0.01,-0.02,2,28,0.5,head,,,
+type,t,targetId,side,key,down,hit,firstShot,residualSpeed,shotSeq,timeOfFlightMs,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ
+visible,10,target-1,R,,,,,,,,,,,,,,,,,,3,1.6,-4
+counter,14,,,A,,,,,,,,,,,,,,,,,,,
+ads,15,,,,true,,,,,,,,,,,,,,,,,,
+fire,18,target-1,,,,false,true,0,1,,0.25,-0.1,-1.2,0.8,0.01,-0.02,2,28,0.5,,,,
+hit,30,target-1,,,,,,,1,12,,,,,,,,,,head,,,
 ```
 
 ## Offline Derived Fields
@@ -420,9 +451,9 @@ This appendix is a semantic mapping only. Per GD-11, FPSci source code is not co
 | `events.visible.targetX/Y/Z` | target spawn/visibility event | approximate | Spawn-time target center for offline `t_detect` / eccentricity derivation. |
 | `events.fire.t` | click event table | same | Shot/click timestamp. |
 | `events.ads.t/down` | input/button event table | approximate | ADS right-button transition timestamp and state. |
-| `events.fire.hit` | click/hit result | same | Boolean hit outcome. |
+| `events.fire.hit` / `events.hit` | click/hit result | same | Hitscan uses `fire.hit`; projectile mode writes delayed `hit` events linked by `shotSeq`. |
 | `events.fire.viewYaw/viewPitch` | click-time player view | same | Fire-time view snapshot. |
-| `events.fire.aimPunch*`, `spread*`, `recoilIndex`, `ammo` | weapon/recoil state | no direct equivalent | CS2 recoil/spread-specific state for WP-16/WP-17 reproducibility. |
+| `events.fire.aimPunch*`, `spread*`, `recoilIndex`, `ammo`, `shotSeq`, `timeOfFlightMs` | weapon/recoil/projectile state | no direct equivalent | CS2 recoil/spread-specific state and WP-25 projectile timing for reproducibility. |
 | `meta.session` | experiment/session/user status | approximate | Reserved v2 join keys; WP-20 fills participant/session labels. |
 | `meta.display`, `meta.frames` | system/frame timing tables | approximate | Reserved v2 display and frame-time blocks. |
 | `meta.scene` | environment/condition config | approximate | Reserved v2 scene condition block. |

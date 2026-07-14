@@ -34,6 +34,13 @@ export interface WeaponMeta {
     fovDeg: number;
     sensitivityRatio: number;
   };
+  bullet?: {
+    model: 'projectile';
+    speedU: number;
+    gravityU: number;
+    maxRangeU: number;
+  };
+  projectileOverflow?: boolean;
 }
 
 export interface SceneMeta {
@@ -193,6 +200,10 @@ function requireWeaponMeta(value: unknown): WeaponMeta {
   return {
     id: requireNonEmptyString(weapon.id, 'weapon.id'),
     ...(weapon.ads !== undefined ? { ads: requireWeaponAdsMeta(weapon.ads) } : {}),
+    ...(weapon.bullet !== undefined ? { bullet: requireWeaponBulletMeta(weapon.bullet) } : {}),
+    ...(weapon.projectileOverflow !== undefined
+      ? { projectileOverflow: requireBoolean(weapon.projectileOverflow, 'weapon.projectileOverflow') }
+      : {}),
   };
 }
 
@@ -201,6 +212,17 @@ function requireWeaponAdsMeta(value: unknown): NonNullable<WeaponMeta['ads']> {
   return {
     fovDeg: requirePositiveFiniteNumber(ads.fovDeg, 'weapon.ads.fovDeg'),
     sensitivityRatio: requirePositiveFiniteNumber(ads.sensitivityRatio, 'weapon.ads.sensitivityRatio'),
+  };
+}
+
+function requireWeaponBulletMeta(value: unknown): NonNullable<WeaponMeta['bullet']> {
+  const bullet = requireRecord(value, 'weapon.bullet');
+  if (bullet.model !== 'projectile') throw new Error('weapon.bullet.model must be projectile');
+  return {
+    model: 'projectile',
+    speedU: requirePositiveFiniteNumber(bullet.speedU, 'weapon.bullet.speedU'),
+    gravityU: requirePositiveFiniteNumber(bullet.gravityU, 'weapon.bullet.gravityU'),
+    maxRangeU: requirePositiveFiniteNumber(bullet.maxRangeU, 'weapon.bullet.maxRangeU'),
   };
 }
 

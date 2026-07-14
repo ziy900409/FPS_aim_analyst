@@ -340,6 +340,8 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
     weapon: {
       id: weaponConfig.id,
       ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
+      ...(weaponConfig.bullet !== undefined ? { bullet: weaponConfig.bullet } : {}),
+      ...(weaponConfig.bullet !== undefined ? { projectileOverflow: sharedState.bullets.overflowCount > 0 } : {}),
     },
     targets: {
       hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),

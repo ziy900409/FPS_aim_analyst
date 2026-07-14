@@ -102,7 +102,12 @@ describe('collectMeta', () => {
         weaponId: 'm4a4',
         weaponSeed: 38965,
         rngSeed: 2026,
-        weapon: { id: 'm4a4', ads: { fovDeg: 40, sensitivityRatio: 1 } },
+        weapon: {
+          id: 'm4a4',
+          ads: { fovDeg: 40, sensitivityRatio: 1 },
+          bullet: { model: 'projectile', speedU: 916.73, gravityU: 32, maxRangeU: 143.24 },
+          projectileOverflow: true,
+        },
         backend: 'webgl2',
         displayHz: 144,
         sensitivity: 1,
@@ -121,7 +126,12 @@ describe('collectMeta', () => {
       weaponId: 'm4a4',
       weaponSeed: 38965,
       rngSeed: 2026,
-      weapon: { id: 'm4a4', ads: { fovDeg: 40, sensitivityRatio: 1 } },
+      weapon: {
+        id: 'm4a4',
+        ads: { fovDeg: 40, sensitivityRatio: 1 },
+        bullet: { model: 'projectile', speedU: 916.73, gravityU: 32, maxRangeU: 143.24 },
+        projectileOverflow: true,
+      },
       movementModel: 'cs2-source',
       spawn: {
         seed: 2026,

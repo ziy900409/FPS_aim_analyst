@@ -22,6 +22,12 @@ export const IMPACT_CAP = 64;
 export const TRACER_CAP = 64;
 
 /**
+ * 飛行彈 arena 容量（WP-25 / T3）：預設 AK 彈匣 30 × 2 = 60，一匣連發加飛行殘留裕度。
+ * 滿載時拒發並升 `overflowCount`，不成長、不 realloc。
+ */
+export const BULLET_CAP = ak47.magSize * 2;
+
+/**
  * 彈著點環形格（WP-13 / T3）：sim 命中時 `pushImpact` 寫入 world 座標、render（`ImpactView`）唯讀
  * ——雙迴圈邊界（ADR-2）。並行 `Float64Array`（x/y/z/seq）+ 寫入游標 `cursor`，**熱路徑零配置**
  * （CLAUDE.md §4）。`seq[i]` = 該槽的單調寫入序號（1 起；0 = 空槽），供 render 端偵測新彈著做增量同步；
@@ -56,6 +62,29 @@ export interface ShotRayRing {
   cursor: number;
 }
 
+/**
+ * 飛行彈 arena（WP-25 / T3）：欄位式 typed arrays，sim tick 熱路徑只覆寫槽位。
+ * `alive[i]` = 1 表示活彈；`accurate[i]` 保存 fire 時 velocity gate 結果，命中時才消費。
+ */
+export interface BulletArena {
+  readonly x: Float64Array;
+  readonly y: Float64Array;
+  readonly z: Float64Array;
+  readonly vx: Float64Array;
+  readonly vy: Float64Array;
+  readonly vz: Float64Array;
+  readonly ox: Float64Array;
+  readonly oy: Float64Array;
+  readonly oz: Float64Array;
+  readonly spawnT: Float64Array;
+  readonly shotSeq: Float64Array;
+  readonly accurate: Uint8Array;
+  readonly alive: Uint8Array;
+  activeCount: number;
+  overflowCount: number;
+  nextShotSeq: number;
+}
+
 /** 建一份全空的彈著環形格（預配置 typed-array，不再 realloc）。 */
 export function createImpactRing(): ImpactRing {
   return {
@@ -80,6 +109,28 @@ export function createShotRayRing(): ShotRayRing {
     seq: new Float64Array(TRACER_CAP),
     total: 0,
     cursor: 0,
+  };
+}
+
+/** 建一份全空的飛行彈 arena（預配置 typed-array，不再 realloc）。 */
+export function createBulletArena(): BulletArena {
+  return {
+    x: new Float64Array(BULLET_CAP),
+    y: new Float64Array(BULLET_CAP),
+    z: new Float64Array(BULLET_CAP),
+    vx: new Float64Array(BULLET_CAP),
+    vy: new Float64Array(BULLET_CAP),
+    vz: new Float64Array(BULLET_CAP),
+    ox: new Float64Array(BULLET_CAP),
+    oy: new Float64Array(BULLET_CAP),
+    oz: new Float64Array(BULLET_CAP),
+    spawnT: new Float64Array(BULLET_CAP),
+    shotSeq: new Float64Array(BULLET_CAP),
+    accurate: new Uint8Array(BULLET_CAP),
+    alive: new Uint8Array(BULLET_CAP),
+    activeCount: 0,
+    overflowCount: 0,
+    nextShotSeq: 1,
   };
 }
 
@@ -131,6 +182,14 @@ export function resetShotRayRing(ring: ShotRayRing): void {
   ring.seq.fill(0);
   ring.total = 0;
   ring.cursor = 0;
+}
+
+/** 原地清空飛行彈 arena；typed-array 殘值待下次覆寫。 */
+export function resetBulletArena(arena: BulletArena): void {
+  arena.alive.fill(0);
+  arena.activeCount = 0;
+  arena.overflowCount = 0;
+  arena.nextShotSeq = 1;
 }
 
 /**
@@ -197,6 +256,10 @@ export interface SharedState {
    * 不參與命中/資料匯出，固定容量 `TRACER_CAP`，滿即環狀覆寫最舊。
    */
   shotRays: ShotRayRing;
+  /**
+   * 飛行彈 arena（WP-25 / T3）：`WeaponConfig.bullet` 存在時才由 SimLoop 使用；hitscan 路徑不讀。
+   */
+  bullets: BulletArena;
   /** 內插用雙快照：sim 每 tick 末更新，render 以 alpha 在 prev→curr 間 lerp（T3）。 */
   prev: PlayerSnapshot;
   curr: PlayerSnapshot;
@@ -320,6 +383,7 @@ export function createSharedState(): SharedState {
     },
     impacts: createImpactRing(),
     shotRays: createShotRayRing(),
+    bullets: createBulletArena(),
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
     crosshair: { cx: 0, cy: 0 },
@@ -363,6 +427,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.recoil.lastSpread.y = 0;
   resetImpactRing(state.impacts); // 原地清空彈著格（重開 drill → 彈孔清；typed-array 不 realloc，GC 紀律）
   resetShotRayRing(state.shotRays); // 原地清空 tracer 格（render-only；重開 drill → 軌跡清）
+  resetBulletArena(state.bullets); // 原地清空飛行彈 arena（重開 drill → 不保留飛行中子彈）
   state.prev.x = 0;
   state.prev.z = 0;
   state.curr.x = 0;

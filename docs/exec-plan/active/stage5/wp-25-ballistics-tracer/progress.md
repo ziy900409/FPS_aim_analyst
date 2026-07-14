@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13);T1 tracer ✅ PASS(2026-07-13);T2 math core ✅ PASS(2026-07-14)
+## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13);T1 tracer ✅ PASS(2026-07-13);T2 math core ✅ PASS(2026-07-14);T3 sim integration ✅ PASS(2026-07-14)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 tracer | ✅ |
 | T2 數學核心 | ✅ |
-| T3 sim 整合 | ⬜ |
+| T3 sim 整合 | ✅ |
 | T4 指標語意 | ⬜ |
 | T-exit(M12) | ⬜ |
 
@@ -25,12 +25,32 @@
 | OQ-S5-2 projectile 參數域(speedU/gravityU/maxRangeU 表;與 distance 聯動)→ **GD-17** | ✅ T0 決議 | 以 WP-23 距離檔位聯動反推。canonical 0.5° distance=114.59u:8/16/32 ticks → `speedU=1833.45/916.73/458.36`, `maxRangeU=143.24`;2° sanity distance=28.65u:8/16/32 ticks → `speedU=458.37/229.18/114.59`, `maxRangeU=35.81`。重力以 target height 1u 的 0.10/0.25/0.50H 下墜反推:`gravityU=51.20/32.00/16.00`。config 驗證對到靶 <2 ticks 發 warning;`bullet` 欄 M12 前不得進任何 drill config。 |
 | OQ-S5-5 lead 誤差是否進正式指標 | 🟡 待 T4 | 計畫預設:spec-only 離線推導(引擎零計算);pilot 顯示構念有效再立案晉升 |
 | OQ-25.1 未命中彈的 tracer 端點(engagement plane 投影 vs maxRange 點) | ✅ T0 決議 | hitscan tracer 端點沿用 `projectMissOntoEngagementPlane` 既有交戰平面投影語意;projectile tracer 端點用子彈消滅點(`maxRangeU` 到達或未來 T2/T3 spec 定義的落地/失活點)。tracer 純視覺,不記錄。 |
-| OQ-25.2 `BULLET_CAP` 容量與滿載政策 | 🟡 待 T3 | 預設:`magSize × 2`(單 peek 一匣 + 飛行殘留裕度);滿載拒發 + 旗標(比照 ring 溢位語意) |
+| OQ-25.2 `BULLET_CAP` 容量與滿載政策 | ✅ T3 決議 | `BULLET_CAP = 60`(AK `magSize × 2`;一匣連發 + 飛行殘留裕度)。滿載時拒發、不扣 ammo、不記 fire row、推進排程避免 busy loop,並遞增 `state.bullets.overflowCount`;projectile export 於 `meta.weapon.projectileOverflow` 記旗標。 |
 | OQ-25.3 移動目標 × 飛行彈命中語意(swept 對本 tick 目標 AABB) | ✅ T2 決議 | `sweptHitTest` 只測 projectile segment(上一 tick bullet position → 本 tick bullet position)對「本 tick 目標 AABB」;不做目標 sub-tick path 內插。回傳 `s ∈ [0,1]` 作為後續 `t_hit` tick 內插輸入。 |
 
 ---
 
 ## Log
+
+### 2026-07-14 — T3 sim integration PASS
+
+- **Pre-change hitscan baseline**:`npx.cmd vitest run src/loop/__tests__/fire-determinism.test.ts src/loop/__tests__/recoil-wiring.test.ts src/loop/__tests__/ballistic-compose.test.ts src/loop/__tests__/determinism.test.ts src/loop/SimLoop.test.ts tests/regression/determinism.test.ts tests/regression/spray-determinism.test.ts tests/regression/moving-target-determinism.test.ts tests/regression/longrange-tracking-determinism.test.ts src/sim/HitDetector.test.ts src/sim/firstShot.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts` exit 0:13 files / **144 tests** 全綠。
+- **Implementation**:
+  - `src/weapon/WeaponConfig.ts`:新增 `bullet?: { model:'projectile'; speedU; gravityU; maxRangeU }` 與 validation warning hook;`bullet` 省略時 validate 回傳維持省略(hitscan default)。
+  - `src/state/SharedState.ts`:新增 `BulletArena` 欄位式 typed arrays + `BULLET_CAP=60` + `resetBulletArena`;`resetState`/`createSimLoop` 原地清 arena。
+  - `src/loop/SimLoop.ts`:`weapon.bullet === undefined` 保留 hitscan `ballisticRaycast` 分支;projectile 分支用同源 viewAngles + rawPunch×2 + spread 方向 `spawnBullet` 入 arena。每 tick 在目標 motion 更新後以 `stepBullet` + `sweptHitTest` 對本 tick AABB 判定;命中沿用 `markKilled`/`pushImpact`/tracer,並記 `type:'hit'` event;maxRange/落地只寫 tracer endpoint。
+  - `src/data/*` + `src/main.ts`:新增 additive `hit` event、projectile `shotSeq/timeOfFlightMs` CSV 欄、`meta.weapon.bullet` 與 `meta.weapon.projectileOverflow`。
+  - `tests/regression/projectile-determinism.test.ts`:新增 projectile fixture,同一 fire/hit/tracer/impact 在 60/144/240Hz 與 jitter frame 序列下對 canonical bit-exact。
+  - `docs/operational/schema.md`:對帳 projectile metadata、`hit` event、CSV 欄與範例。
+- **Decision**:OQ-25.2 定案為固定 `BULLET_CAP=60`(AK magSize×2)。Alternatives considered:依 weapon 動態配置 `magSize×2`;但 `SharedState` 是跨 loop 重用的共享 arena,動態重配會在換 weapon/restart 時破壞 GC 紀律與參考穩定性。60 覆蓋目前 AK/M4 內建武器,滿載拒發 + metadata flag 保守暴露容量不足。
+- **Surprises & discoveries**:sandboxed `npm.cmd run test:ci` 仍被 Vite/esbuild parent-directory access denial 擋在 config load 前;unsandboxed rerun通過。Evidence: sandbox error `Cannot read directory "../../../..": Access is denied`; approved rerun exit 0。
+- **Verification**:
+  - `npx.cmd vitest run src/weapon/WeaponConfig.test.ts` exit 0:1 file / **20 tests** 全綠。
+  - `npx.cmd vitest run tests/regression/projectile-determinism.test.ts src/state/SharedState.test.ts src/loop/SimLoop.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts src/data/metadata.test.ts` exit 0:6 files / **85 tests** 全綠。
+  - **Post-change hitscan zero-break**:`npx.cmd vitest run ...`(T3 list) exit 0:13 files / **146 tests** 全綠。
+  - `npx.cmd vitest run` exit 0:Vitest **73 files / 596 tests** 全綠。
+  - `npm.cmd run test:ci` sandboxed blocked as above;approved unsandboxed rerun exit 0:`tsc --noEmit` clean,Vitest **73 files / 596 tests** 全綠,Playwright **16 tests** 全綠。
+- **Open questions**:OQ-25.2 ✅;OQ-S5-5 仍留 T4。
 
 ### 2026-07-14 — T2 projectile math core PASS
 

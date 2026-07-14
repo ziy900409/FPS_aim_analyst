@@ -58,6 +58,7 @@ const snapshot: DataRecorderSnapshot = {
       offsetDeg: 0.5,
       part: 'head',
     },
+    { type: 'hit', t: 30, timeOfFlightMs: 12, shotSeq: 1, targetId: 'target-1', part: 'head' },
   ],
   recorderOverflow: false,
 };
@@ -90,8 +91,16 @@ describe('data export', () => {
     expect(parsed.ticks).toHaveLength(2);
     expect(parsed.meta.weapon?.ads).toEqual({ fovDeg: 40, sensitivityRatio: 1 });
     expect(parsed.ticks[1].ads).toBe(true);
-    expect(parsed.events).toHaveLength(4);
+    expect(parsed.events).toHaveLength(5);
     expect(parsed.events[2]).toEqual({ type: 'ads', down: true, t: 15 });
+    expect(parsed.events[4]).toEqual({
+      type: 'hit',
+      t: 30,
+      timeOfFlightMs: 12,
+      shotSeq: 1,
+      targetId: 'target-1',
+      part: 'head',
+    });
   });
 
   it('serializes frame deltas in JSON and only the frame summary in CSV', () => {
@@ -172,11 +181,12 @@ describe('data export', () => {
       {
         filename: 'pilot_run_01-events.csv',
         content: [
-          'type,t,targetId,side,key,down,hit,firstShot,residualSpeed,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ',
-          'visible,10,target-1,R,,,,,,,,,,,,,,,,3,1.6,-4',
-          'counter,14,,,A,,,,,,,,,,,,,,,,,',
-          'ads,15,,,,true,,,,,,,,,,,,,,,,',
-          'fire,18,target-1,,,,true,true,0,0.25,-0.1,-1.2,0.8,0.01,-0.02,2,28,0.5,head,,,',
+          'type,t,targetId,side,key,down,hit,firstShot,residualSpeed,shotSeq,timeOfFlightMs,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ',
+          'visible,10,target-1,R,,,,,,,,,,,,,,,,,,3,1.6,-4',
+          'counter,14,,,A,,,,,,,,,,,,,,,,,,,',
+          'ads,15,,,,true,,,,,,,,,,,,,,,,,,',
+          'fire,18,target-1,,,,true,true,0,,,0.25,-0.1,-1.2,0.8,0.01,-0.02,2,28,0.5,head,,,',
+          'hit,30,target-1,,,,,,,1,12,,,,,,,,,,head,,,',
           '',
         ].join('\n'),
       },
