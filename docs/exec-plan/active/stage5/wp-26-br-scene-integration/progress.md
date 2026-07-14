@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 scene online PASS(2026-07-14);T3 drill/protocol PASS(2026-07-14);T4 E2E/acceptance PASS(2026-07-14);T-exit 可開
+## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 scene online PASS(2026-07-14);T3 drill/protocol PASS(2026-07-14);T4 E2E/acceptance PASS(2026-07-14);**T-exit 自動閘 PASS(2026-07-14);M13 保留待研究者實機手動回填**(沿 stage-C M10 先例,使用者拍板)
 
 | Task | 狀態 |
 |---|---|
@@ -14,7 +14,7 @@
 | T2 場景上線 | ✅ |
 | T3 整合 drill + protocol | ✅ |
 | T4 E2E + 驗收清單 E | ✅ |
-| T-exit(M13) | ⬜ |
+| T-exit(M13) | 🟡 自動閘 ✅ / **M13 待手動實機回填** |
 
 ---
 
@@ -27,9 +27,47 @@
 | OQ-26.2 protocol 條件矩陣(ADS × 彈道 × 角尺寸的組合數與對抗平衡) | ✅ T3 決議 | 採完整 2(ADS off/on) × 2(hitscan/projectile) × 2(角尺寸 0.5°/2.0°)= 8 條件受試者內矩陣。工程實作以 8 個 `tracking_br_v1` 變體 drillId 承載條件,protocol `conditionLabel` 明確編碼三軸;ADS 軸採 weapon profile gate + harness protocol 中 ADS-on 條件持續送 ads down/up,正式受試者仍以 hold ADS 操作記錄還原。暫不裁剪條件;若 pilot 時長過長,裁剪屬研究設計另案。 |
 | OQ-26.3 走廊長度與 display scale(遠距檔位在 br-field 的擺法) | ✅ T0 需求拍板;T1/T2 實作驗證 | 承 WP-23 OQ-23.2:`field-low` 正面 114.59u 走廊被 backdrop props 擋,br-field 必須提供 front-facing clear corridor。display scale 預設 `1`,不改 sim 單位;T1 先保留 `145u` 前向 projectile/sight corridor,hard profile clear width `>= 42u`,T2 以 clearance/perf 證據驗收。 |
 
+**T-exit 收斂(2026-07-14)**:本 WP 全部 OQ(OQ-S5-3/OQ-26.1~26.3)於 T0~T2 已定案並落地驗證,無遺留。**帶著走(backlog,非本 WP 阻塞)**:① lead 誤差晉升正式指標(OQ-S5-5,spec-only 離線;pilot 顯示構念有效再立案)② scoped inaccuracy / ADS 移動懲罰(stage5 §2.2 out-of-scope;研究需要 ADS 精度構念時觸發)③ ADS toggle 語意(OQ-S5-6 決 hold;toggle 留 config 候補)。三項均為研究設計後續,不阻塞 M13。
+
 ---
 
 ## Log
+
+### 2026-07-14 04:30Z — T-exit 自動閘 PASS;M13 保留待手動(使用者拍板,沿 stage-C M10 先例)
+
+- **決策(使用者拍板)**:比照 2026-07-10 stage-C M10 同一 `/code-review-and-quality` T-exit 情境——**落自動閘,里程碑保留待手動**。完成所有可自動化的 exit-gate 工作,但**不宣告 M13、不翻 WP-26/stage5「✅ 交付」**,因驗收清單 E §2 手動視覺/手感項(br-field 開闊尺度、ADS scope 手感、tracer/impact 觀感、無 frame hitch)需研究者實機互動,非互動 session 無法產生證據。
+
+- **自動閘證據(`npm run test:ci` exit 0,branch-guarded)**:
+
+  ```
+  BRANCH_BEFORE=aa HEAD=6fec1e6
+  TEST_CI_EXIT=0 BRANCH_AFTER=aa HEAD=6fec1e6
+  # tsc --noEmit clean
+  # vitest run       77 files / 622 tests passed
+  #   含 WP-26:tests/regression/br-tracking-invariants.test.ts (3)、
+  #            src/scene/scenes/br-field.test.ts (6)、src/drill/tracking_br_v1.test.ts (5)
+  # playwright test  18 tests passed(含 tests/e2e/br-tracking.spec.ts 2 條)
+  ```
+
+- **四項交付證據(自動可追)**:
+  - **場景**(T1/T2):`br-field` 上線,GLTF 1548 tri / 8 materials / 0 textures(`<20k` / `<=8`),propBounds 與 GLTF 生成器同源;front-facing 145u 走廊、42u hard clear band 淨空 violations 0;跨場景(placeholder/field-low/urban-high/br-field)recorder snapshot 逐位一致;frame-log p95 8ms、overBudgetWindows 0。
+  - **整合 drill**(T3):`tracking_br_v1` 8 變體(2 ADS × 2 ballistic × 2 角尺寸)純 config 宣告,H1 hitbox `{0.5,1,0.5}`、front-facing spawn、5°/s pingpong;`br_tracking_v1` protocol 8 條件 label 編碼三軸;bullet 欄走 M12 canonical 16-tick `{916.73,32,143.24}`。
+  - **全鏈路**(T4):canonical `tracking_br_v1` E2E drill → export → `trackingMetricsFromExport()` 回算 acquisition failure 0 / TOT `>=99%` / RMS `<0.1°`,`deriveLeadError()` 產 finite lead sample;export 含 `meta.scene.br-field`、H1 hitbox、`meta.weapon.ads/bullet`、ads event+tick flag、fire row、逐 tick player/target。
+  - **三不變性**(T4):①`br-field` vs scene-free baseline recorder snapshot 逐位一致;②ADS FOV display hook 驅動 vs 不驅動 sim 逐位一致(ads events/flag 仍在);③projectile 條件 stable 60/144/240Hz + jitter 144Hz ±50% 與 canonical tick frames 逐位一致。
+
+- **驗收清單 E 狀態**:自動項 E-1~E-10 全綠(證據入口見 [docs/operational/acceptance-stage-e.md](../../../../operational/acceptance-stage-e.md) §1);§2 手動視覺/手感回填項 = **待研究者實機回填**(M13 阻塞項)。
+
+- **五軸 code review(T1–T4 已提交碼)**:通過。config-driven 零引擎碼(`br-field` SceneConfig / 8 drill 變體 / protocol 皆宣告式);seeded RNG(seed = `26000 + 角尺寸offset + 變體offset`);hitbox 單一來源(H1 貫穿命中/淨空/離線推導);`bullet` 欄 config-gated(M12 已解鎖);`main.ts` 以 `createAppProtocolRunner` factory + `activeProtocolRunner` 泛化雙 protocol,harness 抽出共用 `runProtocol` 消 DRY;無 `Date.now`/`Math.random` 於 sim/彈道。無 blocker。
+
+- **Surprises & discoveries(環境,非碼缺陷)**:
+  1. **stale dev server 汙染首跑 e2e**:`playwright.config.ts` `reuseExistingServer: !CI`;一個 T2/T4 遺留的 5173 dev server(pre-T3/T4 bundle)被 Playwright 重用,`br-tracking.spec.ts` 報 `Unknown drill: tracking_br_v1` / `runBrTrackingProtocol is not a function`。kill stale server(5173/4173)後 fresh server 兩條 e2e 通過。碼無缺陷,純環境。
+  2. **外部程序 session 中途切換 branch**:reflog 顯示 `aa → main → docs/tracer-pertick-replay-plan → wp-25-ballistics-tracer-t0 → aa`。中間一次 CI rerun 在非-`aa` branch 上執行,回報 baseline 74 files/603 tests/16 e2e(WP-26 檔缺席)——該次結果作廢。使用者要求切回後於 `aa`(HEAD 6fec1e6)重跑,branch-guard 確認 before/after 皆 `aa`,得 77/622/18。**教訓**:CI 證據必須 branch-guarded。
+
+- **帶著走的決定**:見上方 OQ ledger「T-exit 收斂」——lead 晉升 / scoped inaccuracy / ADS toggle 三項移交 backlog。
+
+- **索引處置**:本資料夾 README / stage5 README / exec-plan README §2/§3 / MAP.md 皆標「WP-26 自動閘 ✅ / M13 待手動」,**不翻「✅ 交付」**;規格書 §9 對帳項(階段 E 節 + 附錄 E-E 清單 E)沿 stage-C 先例保留 ⬜(owner 待指派,M13 正式宣告時補)。
+
+- **M13 待辦(研究者實機)**:acceptance-stage-e.md §2 五步——(2)br-field 開闊尺度確認、(3)hold ADS 追蹤遠距小目標 scope/FOV 手感、(4)projectile tracer/impact 觀感 + 無 hitch、(5)export JSON 欄位肉眼複驗(已被 e2e 覆蓋,人工再確認)。回填後翻 WP-26/stage5 ✅ 交付 + 規格書 §9。
 
 ### 2026-07-14 02:15Z — T4 BR tracking E2E + 三不變性 + 驗收清單 E PASS
 

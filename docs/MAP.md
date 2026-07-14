@@ -118,7 +118,7 @@ docs/exec-plan/
 | **WP-21** | [wp-21-detection-drill/](exec-plan/completed/stage3/wp-21-detection-drill/README.md) | seeded spawn + pop-in 偵測 drill + t_detect 離線推導 spec | — | T1/T2 獨立；T3 需 WP-16 |
 | **WP-22** | [wp-22-perception-integration/](exec-plan/completed/stage3/wp-22-perception-integration/README.md) | 追蹤×場景 + 解析度 protocol E2E + 決定性回歸 + 驗收清單 C | **M10** | WP-19,20,21 + WP-18 |
 
-#### 階段 E（`active/stage5/`，WP-23~26 ⬜ 已規劃 2026-07-10）
+#### 階段 E（`active/stage5/`，🟡 收尾中：WP-23 ✅ M11 · WP-24 ✅ · WP-25 ✅ M12 · **WP-26 T-exit 自動閘 ✅（`test:ci` exit 0）/ M13 待研究者實機手動回填**）
 
 > stage5 tech spec：[README.md](exec-plan/active/stage5/README.md) · 編號分配：[DECISIONS.md](exec-plan/DECISIONS.md) GD-15（stage4 為未採納草稿，採納時重編 WP-27+）。
 
@@ -126,7 +126,7 @@ docs/exec-plan/
 |---|---|---|---|---|
 | **WP-23** | [wp-23-longrange-tracking/](exec-plan/active/stage5/wp-23-longrange-tracking/README.md) | 遠距小目標追蹤：hitbox config 化 + 遠距 drill + 指標 round-trip/決定性 | **M11** | WP-18 + M10 |
 | **WP-24** | [wp-24-ads-optics/](exec-plan/active/stage5/wp-24-ads-optics/README.md) | ADS 開鏡：EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8（可並行） |
-| **WP-25** | [wp-25-ballistics-tracer/](exec-plan/active/stage5/wp-25-ballistics-tracer/README.md) | 彈道：tracer 顯示（T1 獨立）+ config-gated projectile | **M12** | 🟡 T0 ✅；T1 獨立；T2+ 需 M11 |
+| **WP-25** | [wp-25-ballistics-tracer/](exec-plan/active/stage5/wp-25-ballistics-tracer/README.md) | 彈道：tracer 顯示（T1 獨立）+ config-gated projectile | **M12** | T1 獨立；T2+ 需 M11 |
 | **WP-26** | [wp-26-br-scene-integration/](exec-plan/active/stage5/wp-26-br-scene-integration/README.md) | BR 場景實作與整合：br-field + tracking_br_v1 + protocol + E2E + 驗收清單 E | **M13** | WP-23,24,25 |
 
 ### 3.3 各 WP task 一覽

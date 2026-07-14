@@ -10,7 +10,7 @@
 | **上游門檻** | **WP-18 ✅(2026-07-09 T-exit)**:motion 驅動 + sub-tick 命中內插 + timed presentation + 追蹤指標推導全就緒。**M10 ✅(2026-07-10)**:場景系統/顯示管線/protocol E2E 鏈可消費。研究側:GD-7(追蹤指標)/GD-9(資產授權)既有決議直接沿用;新增構念(ADS 感度模型、彈道參數域)由各 T0 拍板 |
 | **技術棧** | 沿用(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright);新增 `src/ballistics/` 純數學模組(比照 `src/recoil/`,零 three/DOM 相依) |
 | **估時** | 10.5–17 dev-days(WP-23~26) |
-| **狀態** | ⬜ **已規劃(2026-07-10)**;WP-23 / WP-24 / WP-25 T1 可並行開跑 |
+| **狀態** | 🟡 **收尾中**;WP-23 ✅(M11 2026-07-10)· WP-24 ✅(2026-07-13)· WP-25 ✅(M12 2026-07-14)· **WP-26 T-exit 自動閘 ✅(`test:ci` exit 0)/ M13 待研究者實機手動回填**(清單 E §2)。M13/stage5 交付於手動回填後正式宣告。 |
 
 ---
 
@@ -192,7 +192,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 | **WP-23** | [wp-23-longrange-tracking/](wp-23-longrange-tracking/README.md) | 遠距小目標追蹤:hitbox config 化(單一來源)+ 遠距 drill + 指標 round-trip/決定性 | **M11 ✅** | WP-18 ✅ + M10 ✅ | 1.5–2.5 | ✅(2026-07-10) |
 | **WP-24** | [wp-24-ads-optics/](wp-24-ads-optics/README.md) | ADS 開鏡:EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8 ✅(可與 WP-23 並行) | 2–3 | ✅(2026-07-13) |
 | **WP-25** | [wp-25-ballistics-tracer/](wp-25-ballistics-tracer/README.md) | 彈道:tracer 顯示(T1,獨立)+ projectile 數學核心/sim 整合/指標語意(T2–T4,gated) | **M12 ✅** | T1 獨立;T2+ 需 **M11** | 4–6.5 | ✅(2026-07-14) |
-| **WP-26** | [wp-26-br-scene-integration/](wp-26-br-scene-integration/README.md) | BR 場景與整合:`br-field` 資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | ⬜ |
+| **WP-26** | [wp-26-br-scene-integration/](wp-26-br-scene-integration/README.md) | BR 場景與整合:`br-field` 資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | 🟡 自動閘 ✅ / M13 待手動 |
 
 ---
 
@@ -202,7 +202,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 |---|---|---|---|
 | **M11 ✅**<br>(2026-07-10) | hitbox config 化零破壞(舊 drill 逐位不變)+ 同幾何斷言綠 + `tracking_longrange_v1` round-trip(推導誤差 ≤ 1 tick)+ 遠距 fixture 決定性綠 | WP-23 | 遠距追蹤效度地基;**WP-25 T2+ entry 前提自此可引用** |
 | **M12 ✅**<br>(2026-07-14) | hitscan 逐位回歸綠(baseline 零重錄)+ projectile golden(位置序列/命中 tick)綠 + tracer 交付(單 draw call、sim 零改動證據)+ shot/hit 事件 schema 對帳 | WP-25 | 彈道模型門控:**M12 已過 → `bullet` 欄自此可進 drill config(WP-26 T3 解鎖)** |
-| **M13** | 驗收清單 E 全項通過:BR 整合 drill E2E 綠、三條決定性不變性(場景/ADS/彈道 gate)綠、ads/hit/追蹤欄匯出 round-trip 綠、資產 attribution 可稽核、`test:ci` exit 0 | WP-26 | **stage5 交付**:BR 遠距跟槍測試(含 ADS 與彈道條件)pilot-ready |
+| **M13 🟡**<br>(自動閘 2026-07-14) | 驗收清單 E 全項通過:BR 整合 drill E2E 綠、三條決定性不變性(場景/ADS/彈道 gate)綠、ads/hit/追蹤欄匯出 round-trip 綠、資產 attribution 可稽核、`test:ci` exit 0。**自動項全綠(E-1~E-10);清單 E §2 手動視覺/手感回填為 M13 阻塞項,待研究者實機**。 | WP-26 | **stage5 交付**:BR 遠距跟槍測試(含 ADS 與彈道條件)pilot-ready(手動回填後正式宣告) |
 
 > WP-24 無獨立里程碑:其交付由 M13 驗收清單 E 一次收斂(比照 stage3 WP-20/21 → M10 模式)。
 

@@ -10,7 +10,7 @@
 | ✅ | **T2** 場景上線 + 淨空 + perf + 決定性 | [T2-br-scene-online.md](T2-br-scene-online.md) | T1 + WP-23 | Med |
 | ✅ | **T3** tracking_br_v1 + protocol(純 config) | [T3-br-tracking-drill.md](T3-br-tracking-drill.md) | T2 + WP-24/25 | Med |
 | ✅ | **T4** 整合 E2E + 三不變性 + 驗收清單 E | [T4-e2e-acceptance.md](T4-e2e-acceptance.md) | T3 | Med |
-| ⬜ | **T-exit** M13 宣告(stage5 交付) | [T-exit-gate.md](T-exit-gate.md) | T1–T4 | — |
+| 🟡 | **T-exit** 自動閘 ✅(`test:ci` exit 0 branch-guarded + 清單 E 自動項 + 四交付證據 + 三不變性);**M13 宣告保留待研究者實機手動回填**(清單 E §2) | [T-exit-gate.md](T-exit-gate.md) | T1–T4 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 

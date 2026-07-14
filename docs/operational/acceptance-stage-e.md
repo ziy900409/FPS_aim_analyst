@@ -78,6 +78,10 @@ Sandbox note:`npm.cmd run test:ci` sandboxed first run hit the known Vite/esbuil
 
 ---
 
-## 4. T4 判定
+## 4. T4 判定 / T-exit 收斂
 
-✅ **T4 自動驗收項通過**:BR tracking E2E、三條決定性不變性、清單 E 自動項、完整 `test:ci` gate 與 pilot 草案已落地。手動視覺/手感項已明確列出回填流程;T-exit 可宣告 M13/stage5 交付。
+✅ **T4 自動驗收項通過**:BR tracking E2E、三條決定性不變性、清單 E 自動項、完整 `test:ci` gate 與 pilot 草案已落地。手動視覺/手感項已明確列出回填流程。
+
+**T-exit 自動閘複驗(2026-07-14,branch-guarded)**:於 `aa`(HEAD 6fec1e6)重跑 `npm run test:ci` exit 0——`BRANCH_BEFORE=aa … BRANCH_AFTER=aa`;vitest 77 files / 622 tests、playwright 18 tests(含 `br-tracking.spec.ts` 2 條)全綠。首跑 2 條 BR e2e 失敗係 stale 5173 dev server 服務 pre-T3/T4 bundle(`reuseExistingServer:!CI`),kill 後 fresh server 通過——碼無缺陷。
+
+**M13 判定**:自動項 E-1~E-10 + `test:ci` 全綠;**§2 手動視覺/手感回填(br-field 開闊尺度、ADS scope 手感、tracer/impact 觀感、無 hitch)為 M13 阻塞項,待研究者實機**。沿 stage-C M10 先例(使用者拍板 2026-07-14):**落自動閘、保留 M13 待手動**;回填完成後翻 WP-26/stage5「✅ 交付」並補規格書 §9(階段 E 節 + 附錄 E-E 清單 E)。回填位置:[WP-26 progress](../exec-plan/active/stage5/wp-26-br-scene-integration/progress.md) T-exit 段。
