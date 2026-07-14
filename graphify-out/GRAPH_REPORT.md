@@ -1,16 +1,16 @@
 # Graph Report - FPS_aim_analyst  (2026-07-14)
 
 ## Corpus Check
-- 168 files · ~257,491 words
+- 168 files · ~258,446 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1215 nodes · 2899 edges · 79 communities (62 shown, 17 thin omitted)
+- 1215 nodes · 2899 edges · 76 communities (60 shown, 16 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 238 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `631127d3`
+- Built from commit: `1dd4ae33`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -67,10 +67,10 @@
 - [[_COMMUNITY_Community 49|Community 49]]
 - [[_COMMUNITY_Community 50|Community 50]]
 - [[_COMMUNITY_Community 51|Community 51]]
-- [[_COMMUNITY_Community 52|Community 52]]
-- [[_COMMUNITY_Community 53|Community 53]]
-- [[_COMMUNITY_Community 55|Community 55]]
-- [[_COMMUNITY_Community 62|Community 62]]
+- [[_COMMUNITY_Community 59|Community 59]]
+- [[_COMMUNITY_Community 65|Community 65]]
+- [[_COMMUNITY_Community 66|Community 66]]
+- [[_COMMUNITY_Community 67|Community 67]]
 - [[_COMMUNITY_Community 68|Community 68]]
 - [[_COMMUNITY_Community 69|Community 69]]
 - [[_COMMUNITY_Community 70|Community 70]]
@@ -79,9 +79,6 @@
 - [[_COMMUNITY_Community 73|Community 73]]
 - [[_COMMUNITY_Community 74|Community 74]]
 - [[_COMMUNITY_Community 75|Community 75]]
-- [[_COMMUNITY_Community 76|Community 76]]
-- [[_COMMUNITY_Community 77|Community 77]]
-- [[_COMMUNITY_Community 78|Community 78]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `createSharedState()` - 59 edges
@@ -126,7 +123,7 @@
 - **E2E 全鏈路 (drill→匯出→統計，統計=匯出)** — counterstrafe_ad_v1_drill, wp7_export, wp8_statistics, wp9_stats_equals_export [EXTRACTED 1.00]
 - **M4 階段 A 交付閘 (附錄 E 10 項全綠 → 各上游 WP 證據)** — wp9_milestone_m4, wp9_appendix_e_acceptance, wp9_t5_exit_gate [EXTRACTED 1.00]
 
-## Communities (79 total, 17 thin omitted)
+## Communities (76 total, 16 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.05
@@ -153,52 +150,52 @@ Cohesion: 0.07
 Nodes (46): ADR-1 backend metadata, ADR-4 時間源 (performance.now()), counterstrafe_ad_v1 drill config, SharedState, SimLoop (src/loop/SimLoop.ts), WP-0 createRenderer backend seam, WP-1 sensitivity, WP-2 sim tick (+38 more)
 
 ### Community 6 - "Community 6"
+Cohesion: 0.09
+Nodes (33): round(), simulatePurePunchPattern(), toPatternShot(), buttonCss(), createNumberInput(), drawGrid(), drawPattern(), maxSpreadRadiusDeg() (+25 more)
+
+### Community 7 - "Community 7"
 Cohesion: 0.07
 Nodes (45): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), sub-tick 輸入時間戳 (精準度真正來源) (+37 more)
 
-### Community 7 - "Community 7"
+### Community 8 - "Community 8"
+Cohesion: 0.1
+Nodes (23): spawnBullet(), stepBullet(), clipAxis(), sweptHitTest(), advanceProjectiles(), applyInput(), ballisticRaycast(), composeProjectileRay() (+15 more)
+
+### Community 9 - "Community 9"
 Cohesion: 0.13
 Nodes (20): defaultLoader(), disposeScene(), loadScene(), createSceneManager(), createSceneManagerWithStatus(), SceneManager, err(), requireColorNumber() (+12 more)
 
-### Community 8 - "Community 8"
+### Community 10 - "Community 10"
 Cohesion: 0.09
 Nodes (38): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, docs/operational/timing-validity.md, 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §5 八指標, 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間), crossOriginIsolated === true (COOP/COEP) (+30 more)
 
-### Community 9 - "Community 9"
-Cohesion: 0.12
-Nodes (22): spawnBullet(), stepBullet(), clipAxis(), sweptHitTest(), advanceProjectiles(), applyInput(), ballisticRaycast(), composeProjectileRay() (+14 more)
-
-### Community 10 - "Community 10"
+### Community 11 - "Community 11"
 Cohesion: 0.12
 Nodes (20): createSimLoop(), collectImpacts(), collectTracers(), createCamera(), createTargetManagerStub(), makeTarget(), runProjectile(), runWeapon() (+12 more)
 
-### Community 11 - "Community 11"
+### Community 12 - "Community 12"
 Cohesion: 0.19
 Nodes (29): collectMeta(), measureDisplayHz(), measureDisplayRefresh(), nextAnimationFrame(), normalizeOverflow(), normalizeStartedAt(), requireBackend(), requireBoolean() (+21 more)
 
-### Community 12 - "Community 12"
+### Community 13 - "Community 13"
 Cohesion: 0.2
 Nodes (5): resolveTargetHitbox(), targetHitboxToConfig(), loadDrill(), formatClearanceViolations(), validateClearance()
 
-### Community 13 - "Community 13"
-Cohesion: 0.17
-Nodes (13): collect64HzSamples(), createMovementController(), run(), runBatches(), createBulletArena(), createImpactRing(), createInputRing(), createSharedState() (+5 more)
-
 ### Community 14 - "Community 14"
-Cohesion: 0.19
-Nodes (17): round(), simulatePurePunchPattern(), toPatternShot(), createRecoilState(), hybridDecay(), recoilOnFire(), recoilTick(), resetRecoilState() (+9 more)
+Cohesion: 0.16
+Nodes (14): collect64HzSamples(), resetRecoilState(), createMovementController(), run(), runBatches(), createBulletArena(), createImpactRing(), createInputRing() (+6 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.21
 Nodes (15): recordVisibleEvents(), simStep(), cameraLookingDownZ(), fireAt(), makeTarget(), meanSpreadRadius(), run(), runtime() (+7 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.15
-Nodes (17): buttonCss(), createNumberInput(), drawGrid(), drawPattern(), maxSpreadRadiusDeg(), mountPatternViewer(), niceStep(), patternBounds() (+9 more)
-
-### Community 17 - "Community 17"
 Cohesion: 0.13
 Nodes (12): assignOptionalNumber(), assignOptionalText(), createSessionSetupForm(), displaySelfReportFromSessionSetup(), makeButton(), makeNumberField(), makeTextField(), optionalText() (+4 more)
+
+### Community 17 - "Community 17"
+Cohesion: 0.16
+Nodes (16): activeSides(), assertFiniteEnvelope(), clipAxis(), criticalYawDegrees(), deriveTargetEnvelopes(), envelopeForSide(), envelopeForSpawnArea(), expandByPoint() (+8 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.16
@@ -206,23 +203,23 @@ Nodes (12): createDrillRunner(), setup(), applyMode(), canonicalFrames(), counte
 
 ### Community 19 - "Community 19"
 Cohesion: 0.16
-Nodes (16): activeSides(), assertFiniteEnvelope(), clipAxis(), criticalYawDegrees(), deriveTargetEnvelopes(), envelopeForSide(), envelopeForSpawnArea(), expandByPoint() (+8 more)
-
-### Community 20 - "Community 20"
-Cohesion: 0.16
 Nodes (5): consume(), createInputSampler(), drainAll(), drainToArray(), snapshot()
 
-### Community 21 - "Community 21"
+### Community 20 - "Community 20"
 Cohesion: 0.2
 Nodes (19): aimForward(), angularEccentricityDeg(), clamp(), deriveDetectionMetrics(), derivePresentation(), eccentricitySamples(), finite(), firstSustainedDecrease() (+11 more)
 
-### Community 22 - "Community 22"
-Cohesion: 0.18
-Nodes (19): 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, 雙迴圈 (dual-loop), CONTEXT.md 專有名詞詞彙表, sim tick rate (128 Hz), DECISIONS.md 全域決策與矛盾帳本 (+11 more)
-
-### Community 23 - "Community 23"
+### Community 21 - "Community 21"
 Cohesion: 0.35
 Nodes (15): err(), requireFiniteNumber(), requireHitboxDimension(), requireNonEmptyString(), requireNonNegativeNumber(), requireNonNegativeRange(), requireObject(), requirePositiveInt() (+7 more)
+
+### Community 22 - "Community 22"
+Cohesion: 0.13
+Nodes (18): 急停反應時間 (t_counter − t_visible), DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1) (+10 more)
+
+### Community 23 - "Community 23"
+Cohesion: 0.18
+Nodes (18): 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, 雙迴圈 (dual-loop), CONTEXT.md 專有名詞詞彙表, sim tick rate (128 Hz), DESIGN.md 執行期與架構設計筆記 (+10 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.21
@@ -241,16 +238,16 @@ Cohesion: 0.34
 Nodes (13): err(), pushWarning(), requireFiniteNumber(), requireNonNegativeNumber(), requireObject(), requirePositiveInt(), requirePositiveNumber(), validateAds() (+5 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.29
-Nodes (9): assertReadyState(), createProtocolRunner(), requireCondition(), requireNonEmptyString(), requirePositiveInteger(), requireRecord(), validateProtocol(), isResolutionMode() (+1 more)
-
-### Community 29 - "Community 29"
 Cohesion: 0.16
 Nodes (6): createControls(), makeButton(), makeSelect(), makeToggle(), FakeDocument, FakeElement
 
-### Community 30 - "Community 30"
+### Community 29 - "Community 29"
 Cohesion: 0.18
 Nodes (16): coalesced events (getCoalescedEvents), backend (render backend webgpu/webgl2), 原始輸入 (unadjustedMovement), 技術棧 (Three.js WebGPU + TS + Vite), 附錄 E 驗收清單 (階段 A), ADR-1 WebGPURenderer + WebGL2 fallback, ADR-5 Pointer Lock + 原始輸入 + coalesced events, 附錄 C 匯出資料 schema (+8 more)
+
+### Community 30 - "Community 30"
+Cohesion: 0.3
+Nodes (9): assertReadyState(), createProtocolRunner(), requireCondition(), requireNonEmptyString(), requirePositiveInteger(), requireRecord(), validateProtocol(), isResolutionMode() (+1 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.3
@@ -258,7 +255,7 @@ Nodes (15): 里程碑 M1 (WP-2 脊椎門控), 里程碑 M2 (WP-5 核心玩法), 
 
 ### Community 33 - "Community 33"
 Cohesion: 0.18
-Nodes (14): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+6 more)
+Nodes (14): accumulator 模式, 準心對齊偏移, DrillConfig 元件, F5 接縫 (seam-in, drills-out), fixed-timestep (128 Hz), simStep 順序 (tick 內), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), DECISIONS.md 全域決策與矛盾帳本 (+6 more)
 
 ### Community 34 - "Community 34"
 Cohesion: 0.21
@@ -269,76 +266,68 @@ Cohesion: 0.22
 Nodes (7): distanceForAngularHeight(), makeVariant(), speedForAngularRate(), variantId(), brInputs(), createCamera(), runBrVariant()
 
 ### Community 37 - "Community 37"
-Cohesion: 0.19
-Nodes (13): accumulator 模式, 準心對齊偏移, DrillConfig 元件, F5 接縫 (seam-in, drills-out), fixed-timestep (128 Hz), simStep 順序 (tick 內), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), 移動 + counter-strafe 能力混淆 (研究設計問題) (+5 more)
-
-### Community 38 - "Community 38"
 Cohesion: 0.2
 Nodes (11): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 決定性 (determinism), RenderSnapshot 窄介面, 速度歸零誤差 (residual speed), 階段 B (Stage B), 量測時鐘 vs 決定性時鐘 (two-clock model), 速度 gate (velocity gate) (+3 more)
 
-### Community 39 - "Community 39"
+### Community 38 - "Community 38"
 Cohesion: 0.31
 Nodes (5): applyResolutionMode(), readDevicePixelRatio(), readViewport(), requirePositiveInteger(), FakeRenderer
 
-### Community 40 - "Community 40"
+### Community 39 - "Community 39"
 Cohesion: 0.31
 Nodes (6): createTargetManager(), collectImmediateSpawns(), killSequence(), motionConfig(), runDrill(), runPositions()
 
-### Community 41 - "Community 41"
+### Community 40 - "Community 40"
 Cohesion: 0.39
 Nodes (7): addHay(), addShrub(), addTree(), addVisual(), box(), propVisuals(), round()
 
-### Community 42 - "Community 42"
+### Community 41 - "Community 41"
 Cohesion: 0.31
 Nodes (4): createEligibilityGateScreen(), makeButton(), FakeDocument, setup()
 
-### Community 43 - "Community 43"
+### Community 42 - "Community 42"
 Cohesion: 0.39
 Nodes (6): applyAimFixture(), canonicalSprayFrames(), collectImpacts(), createCamera(), round(), runSpray()
 
-### Community 44 - "Community 44"
+### Community 43 - "Community 43"
 Cohesion: 0.28
 Nodes (3): cameraLookingDownZ(), makeTarget(), movingSetup()
+
+### Community 45 - "Community 45"
+Cohesion: 0.46
+Nodes (4): isDrivenMotion(), motionOffset(), offsetAt(), triangleWave()
 
 ### Community 46 - "Community 46"
 Cohesion: 0.39
 Nodes (4): applyAimFixture(), canonicalMovingTargetFrames(), createCamera(), runMovingTarget()
 
 ### Community 47 - "Community 47"
-Cohesion: 0.46
-Nodes (4): isDrivenMotion(), motionOffset(), offsetAt(), triangleWave()
-
-### Community 48 - "Community 48"
 Cohesion: 0.36
 Nodes (8): 不可違反的硬約束 (技術), cross-origin isolation (COOP/COEP), MetricsDashboard 元件, D1 — 2D UI = 純 TS + DOM overlay, D3 — COOP/COEP 部署 (Vite plugin + 靜態主機後定), ADR-4 performance.now() + cross-origin isolation, WP-0 T2 Cross-origin isolation, WP-0 T4 Deploy headers
 
 ### Community 49 - "Community 49"
 Cohesion: 0.43
-Nodes (3): canonicalLongrangeFrames(), createCamera(), runLongrangeTracking()
+Nodes (4): canonicalRun(), runFrames(), snap(), syntheticInputs()
 
 ### Community 50 - "Community 50"
 Cohesion: 0.43
-Nodes (4): canonicalRun(), runFrames(), snap(), syntheticInputs()
+Nodes (3): canonicalLongrangeFrames(), createCamera(), runLongrangeTracking()
 
-### Community 52 - "Community 52"
+### Community 51 - "Community 51"
 Cohesion: 0.6
 Nodes (5): createFpsTestHarness(), makeBrTrackingProtocolHarness(), makeDetectionHarness(), makeHarness(), makeTrackingHarness()
-
-### Community 55 - "Community 55"
-Cohesion: 0.5
-Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManager 元件, F2 — 記錄 t_visible spawn/可見時間戳
 
 ## Knowledge Gaps
 - **89 isolated node(s):** `程序記憶 (procedural memory)`, `垂直切片 = 原子 commit 協議`, `記憶分層 (Working/Semantic/Episodic/全域/程序)`, `counter-strafe (反向急停)`, `反向鍵 (counter key)` (+84 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **17 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createDataRecorder()` connect `Community 1` to `Community 0`, `Community 35`, `Community 10`, `Community 43`, `Community 46`, `Community 15`, `Community 49`, `Community 18`, `Community 50`, `Community 52`, `Community 28`?**
+- **Why does `createDataRecorder()` connect `Community 1` to `Community 0`, `Community 35`, `Community 42`, `Community 11`, `Community 46`, `Community 15`, `Community 49`, `Community 18`, `Community 50`, `Community 51`, `Community 30`?**
   _High betweenness centrality (0.017) - this node is a cross-community bridge._
-- **Why does `createSimLoop()` connect `Community 10` to `Community 0`, `Community 35`, `Community 40`, `Community 9`, `Community 43`, `Community 13`, `Community 46`, `Community 15`, `Community 49`, `Community 18`, `Community 50`, `Community 52`, `Community 28`?**
+- **Why does `createSimLoop()` connect `Community 11` to `Community 0`, `Community 35`, `Community 39`, `Community 8`, `Community 42`, `Community 46`, `Community 15`, `Community 14`, `Community 49`, `Community 18`, `Community 50`, `Community 51`, `Community 30`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **Are the 28 inferred relationships involving `createSharedState()` (e.g. with `setup()` and `fireAt()`) actually correct?**
   _`createSharedState()` has 28 INFERRED edges - model-reasoned connections that need verification._
