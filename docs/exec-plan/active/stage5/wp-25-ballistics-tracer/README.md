@@ -10,7 +10,7 @@
 | **相依** | **T1(tracer)獨立可先行**(M8 ✅ 即可);**T2–T4 需 M11**(遠距 drill 是 projectile 構念前提) |
 | **對應 FR** | FR-E7 ~ FR-E10 |
 | **估時** | 4–6.5 dev-days(T1 1–1.5 + T2–T4 3–5) |
-| **狀態** | 🟡 進行中;T0 ✅(2026-07-13);T1 ✅(2026-07-13);T2 ✅(2026-07-14);T3 ✅(2026-07-14);T4 ✅(2026-07-14) |
+| **狀態** | ✅ 交付(2026-07-14);**M12 達成**;T0 ✅(2026-07-13);T1 ✅(2026-07-13);T2 ✅(2026-07-14);T3 ✅(2026-07-14);T4 ✅(2026-07-14);T-exit ✅(2026-07-14) |
 
 ---
 
@@ -76,4 +76,4 @@ docs/operational/schema.md          ← MODIFY 對帳                           
 | **T2** | [T2-projectile-math-core.md](T2-projectile-math-core.md) | `src/ballistics/` 純數學核心 + golden | T0 + **M11** | Med |
 | **T3** | [T3-sim-integration.md](T3-sim-integration.md) | config gate + SimLoop 子彈 arena + 事件解耦(零破壞) | T2 | **High** |
 | **T4 ✅** | [T4-metrics-semantics.md](T4-metrics-semantics.md) | 指標語意 + lead spec + 決定性回歸 | T3 | Med |
-| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | M12 宣告(彈道模型門控解鎖) | T1–T4 | — |
+| **T-exit ✅** | [T-exit-gate.md](T-exit-gate.md) | M12 宣告(彈道模型門控解鎖) | T1–T4 | — |

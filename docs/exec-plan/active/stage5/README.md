@@ -191,7 +191,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 |---|---|---|---|---|---|---|
 | **WP-23** | [wp-23-longrange-tracking/](wp-23-longrange-tracking/README.md) | 遠距小目標追蹤:hitbox config 化(單一來源)+ 遠距 drill + 指標 round-trip/決定性 | **M11 ✅** | WP-18 ✅ + M10 ✅ | 1.5–2.5 | ✅(2026-07-10) |
 | **WP-24** | [wp-24-ads-optics/](wp-24-ads-optics/README.md) | ADS 開鏡:EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8 ✅(可與 WP-23 並行) | 2–3 | ✅(2026-07-13) |
-| **WP-25** | [wp-25-ballistics-tracer/](wp-25-ballistics-tracer/README.md) | 彈道:tracer 顯示(T1,獨立)+ projectile 數學核心/sim 整合/指標語意(T2–T4,gated) | **M12** | T1 獨立;T2+ 需 **M11** | 4–6.5 | 🟡 T0 ✅(2026-07-13) |
+| **WP-25** | [wp-25-ballistics-tracer/](wp-25-ballistics-tracer/README.md) | 彈道:tracer 顯示(T1,獨立)+ projectile 數學核心/sim 整合/指標語意(T2–T4,gated) | **M12 ✅** | T1 獨立;T2+ 需 **M11** | 4–6.5 | ✅(2026-07-14) |
 | **WP-26** | [wp-26-br-scene-integration/](wp-26-br-scene-integration/README.md) | BR 場景與整合:`br-field` 資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | ⬜ |
 
 ---
@@ -201,7 +201,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 | 里程碑 | 完成條件 | 對應 WP | 意義 |
 |---|---|---|---|
 | **M11 ✅**<br>(2026-07-10) | hitbox config 化零破壞(舊 drill 逐位不變)+ 同幾何斷言綠 + `tracking_longrange_v1` round-trip(推導誤差 ≤ 1 tick)+ 遠距 fixture 決定性綠 | WP-23 | 遠距追蹤效度地基;**WP-25 T2+ entry 前提自此可引用** |
-| **M12** | hitscan 逐位回歸綠(baseline 零重錄)+ projectile golden(位置序列/命中 tick)綠 + tracer 交付(單 draw call、sim 零改動證據)+ shot/hit 事件 schema 對帳 | WP-25 | 彈道模型門控:**M12 未過 `bullet` 欄不得進任何 drill config** |
+| **M12 ✅**<br>(2026-07-14) | hitscan 逐位回歸綠(baseline 零重錄)+ projectile golden(位置序列/命中 tick)綠 + tracer 交付(單 draw call、sim 零改動證據)+ shot/hit 事件 schema 對帳 | WP-25 | 彈道模型門控:**M12 已過 → `bullet` 欄自此可進 drill config(WP-26 T3 解鎖)** |
 | **M13** | 驗收清單 E 全項通過:BR 整合 drill E2E 綠、三條決定性不變性(場景/ADS/彈道 gate)綠、ads/hit/追蹤欄匯出 round-trip 綠、資產 attribution 可稽核、`test:ci` exit 0 | WP-26 | **stage5 交付**:BR 遠距跟槍測試(含 ADS 與彈道條件)pilot-ready |
 
 > WP-24 無獨立里程碑:其交付由 M13 驗收清單 E 一次收斂(比照 stage3 WP-20/21 → M10 模式)。
@@ -268,10 +268,10 @@ WP-25 T1(tracer)──────┴──────────────�
 - [x] [docs/MAP.md](../../../MAP.md):§3 加 stage5(+ stage4 草稿列)導航。(2026-07-10 本計畫)
 - [x] [DECISIONS.md](../../DECISIONS.md) **GD-16**(ADS 感度模型:CS2 式 FOV-ratio gain + hold 語意)入帳。(2026-07-10 WP-24 T0)
 - [x] [DECISIONS.md](../../DECISIONS.md) **GD-17**(projectile 參數域:flight ticks × distance tier 反推 speed/gravity/maxRange;未命中 tracer 端點語意)入帳。(2026-07-13 WP-25 T0)
-- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 T0/T-exit 隨切片回寫):~~ADS/heldAds、zoom 感度換算~~(✅ WP-24 T-exit,§A/§G,2026-07-13)、tracer/shotRays、projectile/彈道模型 gate、time-of-flight、lead 誤差、hitbox config 化(H1 參數化)。
+- [x] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 T0/T-exit 隨切片回寫):~~ADS/heldAds、zoom 感度換算~~(✅ WP-24 T-exit,§A/§G,2026-07-13)、~~tracer/shotRays、projectile/彈道模型 gate、time-of-flight、lead 誤差~~(✅ WP-25 T-exit,新增 §H + §A/§G 對帳,2026-07-14);hitbox config 化(H1 參數化)由 WP-23 覆蓋。
 - [x] [CLAUDE.md](../../../../../CLAUDE.md) §4 硬約束追加:ADS 只落 input/render/data + ads event/tick flag 必記錄。(2026-07-10 WP-24 T0)
 - [x] [CLAUDE.md](../../../../../CLAUDE.md) §4 彈道硬約束追加:config-gated、hitscan 預設逐位不變、projectile 固定步長純函式、子彈不測場景、tracer render-only。(2026-07-13 WP-25 T0)
-- [ ] `docs/operational/schema.md`:~~`ads` 事件、tick `ads` flag、`meta.weapon`~~(✅ WP-24 T3,2026-07-13)、`hit` 事件、`meta.targets.hitbox`/(WP-25)`meta.weapon` 對帳(隨 WP-23 T1 / WP-24 T3 / WP-25 T3 分批)。
+- [x] `docs/operational/schema.md`:~~`ads` 事件、tick `ads` flag、`meta.weapon`~~(✅ WP-24 T3,2026-07-13)、~~`hit` 事件、`meta.weapon.bullet`~~(✅ WP-25 T3,2026-07-14)、`meta.targets.hitbox`(WP-23 T1)對帳。
 - [ ] 規格書版本對帳:新增「階段 E」節 + 附錄 E 增「驗收清單 E」(M13 前完成)。
 
 ---

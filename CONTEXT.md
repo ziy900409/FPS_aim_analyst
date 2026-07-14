@@ -149,3 +149,22 @@
 | **ADS FOV 過渡（render-only）** | 開鏡切 camera FOV 目標值（hip↔ads），實際 FOV 以 render 幀線性內插趨近（`ADS_FOV_TRANSITION_MS = 120`，OQ-24.1）；**不進 sim／記錄**（記錄的是 `heldAds` 事件與 flag，非視覺過渡）。`CameraController.setAds(active, nowMs)` 顯式收 render `now`、不讀時鐘（可測、守時鐘域紀律）；過渡中反向切換自當前值起不跳變。 |
 | **scope overlay** | 純 TS + DOM overlay（D1，[ScopeOverlay.ts](src/ui/ScopeOverlay.ts)）：ADS 時顯示圓形鏡框 + 周邊暗化，120ms 淡入淡出。`pointer-events:none`（不影響 Pointer Lock／canvas click）；準心（`Crosshair`）以較高 z-index **維持精確置中**（§A 準心紀律不變）。顯隱有效態 = `heldAds && weapon.ads !== undefined`。 |
 | **ADS 記錄（FR-E6，效度必要條件）** | aim 資料已含 gain，離線分析**必須**靠 `ads` flag 還原構念：tick row required `ads` boolean（取 `state.heldAds`）+ ads down/up 進 `events[]`；JSON／CSV 皆含。metadata `meta.weapon`（additive optional snapshot：`id` + `ads{fovDeg,sensitivityRatio}`）供分析端重建 gain。缺記錄 = 測試紅。 |
+
+---
+
+## H. 彈道 / tracer 術語（WP-25，M12；純數學核心 `src/ballistics/` + render `src/render/TracerView.ts`）
+
+> **雙軌分離**於 WP-25 建立：**(a) tracer 軌跡顯示**是 render-only 顯示層（sim 演進零改動）；**(b) projectile 彈道模型**才動命中語意，且 **config-gated——`WeaponConfig.bullet` 省略時走現行 hitscan 路徑、逐位不變**（M12 門控核心，比照 WP-21「無 seed 逐位不變」）。
+> **M12 門控**：hitscan 逐位回歸綠 + projectile golden（位置序列／命中 tick）+ tracer 單 draw call／sim 零改動 + shot/hit 事件 schema 對帳全綠後，`bullet` 欄自此可進 drill config（WP-26 T3 整合 drill 解鎖）。
+
+| 術語 | 定義 |
+|---|---|
+| **tracer（軌跡顯示）** | 子彈飛行軌跡的**純視覺**呈現。sim 在產彈點已算出射線（hitscan）或子彈路徑（projectile），只多寫一筆 `shotRays` 環形格；**render-only、UI 可開關、不進 export／不改命中或指標語意**（GD-17／WP-25 硬約束）。命中彈端點 = 命中點；未命中 hitscan 端點 = `projectMissOntoEngagementPlane` 交戰平面投影（OQ-25.1），projectile 端點 = 子彈消滅點（`maxRangeU` 到達或失活點）。 |
+| **`shotRays`（環形格）** | `SharedState` 的 tracer 專用 preallocated ring（`ShotRayRing`：`ox,oy,oz,ex,ey,ez,seq` typed arrays + `total/cursor`，容量 `TRACER_CAP`），比照 `ImpactRing`。sim 唯寫（`pushShotRay`），render 唯讀；`seq=0` 為空槽哨兵。**sim 產彈點最多寫此 ring**，`TracerView` 不得回寫 sim／不記錄 export（WP-25 硬約束）。 |
+| **`TracerView`** | render 唯讀 tracer view（[TracerView.ts](src/render/TracerView.ts)）：單一 `InstancedMesh(TRACER_CAP)` **單 draw call**、`seq` 高水位增量同步、`Object3D`/向量 scratch 重用（比照 `ImpactView`）。壽命漸隱採 **render-time 縮尾**（非 per-instance alpha，保單 draw call）；expired instance 以 `1e-9` 極小 scale 隱藏。tracer 關閉 = render loop 不呼叫 `sync`（零同步工作）。 |
+| **彈道模型 gate（`WeaponConfig.bullet`）** | 選填 `{ model:'projectile'; speedU; gravityU; maxRangeU }`。**省略 = hitscan（現行 `ballisticRaycast` 路徑，程式碼路徑零改動、逐位不變）**——這就是使用者要的 Bullet Type Enabled/Disabled 開關，同時保護 stage1–3 全部 golden/決定性 baseline。`validateWeapon` field-path 驗證；對到靶飛行時間 `< 2 ticks` 的組合發 warning（退化 hitscan）。參數域 = GD-17（見 §E 下方註／DECISIONS）。 |
+| **`stepBullet` / `BULLET_DT_SEC`** | 子彈演進純函式（[bullet.ts](src/ballistics/bullet.ts)）：**固定 1/128s 步長**（`BULLET_DT_SEC`；非 1/128 拋錯，比照 `recoilTick`）、半隱式 Euler（先 `vy -= g·dt` 再位移）、**禁時鐘、禁 `Math.random`**（方向由產彈點 seeded spread 決定，彈道本身無隨機）。零 three/DOM 相依（比照 `src/recoil/`）。 |
+| **`sweptHitTest`（掃掠命中測試）** | slab-method（[sweptHit.ts](src/ballistics/sweptHit.ts)）：子彈 segment（上一 tick position → 本 tick position）對「**本 tick 目標 AABB**」測試，回傳第一個 segment fraction `s∈[0,1]` 或 `null`（OQ-25.3；不做目標 sub-tick path 內插）。**非點採樣 → 高速彈不 tunnel 穿薄 hitbox**。**只測目標 hitbox，永不測場景幾何**（GD-6）。`s` 作為 `t_hit` tick 內插輸入。 |
+| **子彈 arena（`BulletArena` / `BULLET_CAP`）** | `SharedState` 的欄位式 typed-array arena（preallocated、物件重用、跨 loop 重用），`BULLET_CAP = 60`（AK `magSize × 2`；一匣連發 + 飛行殘留裕度，OQ-25.2）。滿載 = 拒發、不扣 ammo、不記 fire row、遞增 `state.bullets.overflowCount`；projectile export 於 `meta.weapon.projectileOverflow` 記旗標。simStep 內子彈演進排在「目標 motion 更新到本 tick」**之後**、記錄之前。 |
+| **time-of-flight（`timeOfFlightMs` / `t_hit`）** | projectile 專屬 additive `type:'hit'` 事件：`timeOfFlightMs = t_hit − t_fire`，關聯產出它的 shot 序號 `shotSeq`。既有 `type:'fire'` row 語意（= 一發 shot）**不變**；**既有八指標的時序錨不從 `fire.t` 搬到 `hit.t`**（§A 首發／切換時間、§G「fire 正名」）。首發命中率 = 首發 shot 的 outcome，由同 `shotSeq` 的 `hit` 事件回填（hitscan 仍直接讀 `fire.hit`）。 |
+| **lead 誤差（提前量，spec-only 離線）** | 移動目標 × 飛行彈下，玩家應提前瞄準的量與實際瞄準的差。**引擎零新計算**——僅 `docs/operational/analysis-lead.md` spec + [leadDerivation.ts](src/metrics/leadDerivation.ts) 離線 verifier，消費 schema v2 export + `meta.weapon.bullet` + fire-time view angles + 目標 tick 軌跡；命中彈用 linked `hit.timeOfFlightMs`，未命中 exploratory sample 標 `timeOfFlightSource:'estimated'`。**不進正式結果頁/八指標**（OQ-S5-5）；pilot 顯示構念有效再另案晉升 pre-registered metric。 |

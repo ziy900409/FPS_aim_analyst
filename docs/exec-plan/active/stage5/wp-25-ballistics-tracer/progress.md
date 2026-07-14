@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13);T1 tracer ✅ PASS(2026-07-13);T2 math core ✅ PASS(2026-07-14);T3 sim integration ✅ PASS(2026-07-14);T4 metrics semantics ✅ PASS(2026-07-14)
+## Status: ✅ 交付(2026-07-14);**M12 達成**。T0 ✅(2026-07-13);T1 tracer ✅(2026-07-13);T2 math core ✅(2026-07-14);T3 sim integration ✅(2026-07-14);T4 metrics semantics ✅(2026-07-14);T-exit(M12)✅(2026-07-14)
 
 | Task | 狀態 |
 |---|---|
@@ -14,7 +14,7 @@
 | T2 數學核心 | ✅ |
 | T3 sim 整合 | ✅ |
 | T4 指標語意 | ✅ |
-| T-exit(M12) | ⬜ |
+| T-exit(M12) | ✅ |
 
 ---
 
@@ -31,6 +31,21 @@
 ---
 
 ## Log
+
+### 2026-07-14 — T-exit gate ✅ M12 彈道模型門控達成
+
+- **Gate 判定**:PASS。docs-only 切片,無 `src/` 變更。宣告 **M12**——tracer 交付 + projectile 數學/整合/語意全綠且 hitscan 逐位不變;`bullet` 欄自此可進 drill config(**WP-26 T3 整合 drill 解鎖**)。
+- **`test:ci` exit 0**(unsandboxed rerun;sandboxed 仍被 Vite/esbuild parent-directory access denial 擋在 config load 前,同 T0–T4 慣例核准後重跑):`tsc --noEmit` clean;Vitest **74 files / 603 tests** 全綠;Playwright **16 tests** 全綠。Evidence:`npm.cmd run test:ci` 輸出 `74 passed (74)` / `603 passed (603)` / `16 passed (32.4s)`。
+- **M12 四項證據(可追)**:
+  1. **tracer render-only + 單 draw call + sim 零改動**(T1):`TracerView` = 單一 `InstancedMesh(TRACER_CAP)`(單 draw call)、`seq` 高水位增量同步、render-time 縮尾漸隱;sim 僅在既有命中分支多寫一筆 `shotRays` 環形格,`tracerEnabled=false` 時 render loop 零同步。Evidence:`src/render/TracerView.test.ts`(7 tests)+ `src/ui/Controls.test.ts` 綠;T1 既有開火/決定性回歸零破壞。
+  2. **hitscan 零破壞(逐位不變)**:`WeaponConfig.bullet` 省略 → 走現行 `ballisticRaycast` 路徑,程式碼路徑零改動。Evidence:T3 pre-change baseline **144 tests** → post-change **146 tests**(+2 為新增 projectile 斷言,既有 0 修改),stage1–3 golden/決定性 baseline 零重錄全綠(fire-determinism/determinism/spray/moving-target/longrange-tracking/HitDetector/firstShot/DataRecorder/export 13-file list)。
+  3. **projectile golden + 決定性**(T2/T3/T4):`stepBullet` 固定 1/128s 半隱式 Euler + `sweptHitTest` slab-method golden(位置序列/命中 tick 逐位);`tests/regression/projectile-determinism.test.ts` 同輸入在 60/144/240Hz + jitter frame 下 fire/hit/tracer/impact 逐位一致。Evidence:`src/ballistics/bullet.test.ts`(5)+ `src/ballistics/sweptHit.test.ts`(7)+ `projectile-determinism.test.ts`(7)綠。
+  4. **語意(FR-E10)**:`firstShot`/`t_fire` 錨定不變斷言(hitscan/projectile 同輸入序列一致)+ `hit` 事件 round-trip(首發 outcome 由 `hit.shotSeq` 回填為 100%)+ lead spec 離線(引擎零新計算)。Evidence:`src/metrics/compute.test.ts`(9)+ `src/metrics/leadDerivation.test.ts`(4)+ `src/metrics/MetricsDashboard.test.ts` + projectile-determinism 語意斷言綠。
+- **OQ ledger 收斂**:全數 ✅——OQ-S5-2(GD-17 參數域,T0)/ OQ-S5-5(lead spec-only,T4)/ OQ-25.1(未命中 tracer 端點,T0)/ OQ-25.2(`BULLET_CAP=60`,T3)/ OQ-25.3(swept 對本 tick 目標 AABB,T2)。本 gate 無新增 OQ。
+- **CONTEXT.md 回寫**:新增 **§H 彈道 / tracer 術語**(tracer/`shotRays`/`TracerView`、彈道模型 gate、`stepBullet`/`sweptHitTest`、子彈 arena/`BULLET_CAP`、time-of-flight/`t_hit`、lead 誤差 spec-only);§A/§G 既有 t_fire/t_hit/shot-vs-fire 對帳沿用(T4 已入)。
+- **索引翻牌**:本資料夾 [README.md](README.md) 狀態 → ✅ + T-exit row;[task-checklist.md](task-checklist.md) T-exit Done → ✅;[stage5 README §3](../README.md) WP-25 → ✅ / §4 **M12 ✅** / §9 CONTEXT + schema 對帳勾銷;[exec-plan/README.md §2](../../../README.md) WP-25 → ✅ / §3 **M12 ✅**。
+- **帶著走的決定**:M12 已過 → WP-26 T3 整合 drill(`tracking_br_v1` 含 projectile 條件)的 `bullet` 欄使用解鎖;唯一動 sim 核心語意的切片(projectile)已被 golden + 跨 FPS 決定性 + hitscan 零破壞三重鎖定,後續整合問題可歸因到接線而非公式。
+- **Surprises**:無。docs-only 切片按 exit-gate DoD 逐項落地;`test:ci` sandbox 阻擋為已知環境限制(非退化),unsandboxed rerun 綠。
 
 ### 2026-07-14 — T4 metrics semantics PASS
 
