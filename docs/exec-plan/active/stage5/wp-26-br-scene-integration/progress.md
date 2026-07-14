@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 scene online PASS(2026-07-14);T3 drill/protocol PASS(2026-07-14);T4 可開
+## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 scene online PASS(2026-07-14);T3 drill/protocol PASS(2026-07-14);T4 E2E/acceptance PASS(2026-07-14);T-exit 可開
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 br-field 資產 | ✅ |
 | T2 場景上線 | ✅ |
 | T3 整合 drill + protocol | ✅ |
-| T4 E2E + 驗收清單 E | ⬜ |
+| T4 E2E + 驗收清單 E | ✅ |
 | T-exit(M13) | ⬜ |
 
 ---
@@ -30,6 +30,50 @@
 ---
 
 ## Log
+
+### 2026-07-14 02:15Z — T4 BR tracking E2E + 三不變性 + 驗收清單 E PASS
+
+- **Slice / scope**:新增 `tests/e2e/br-tracking.spec.ts`、`tests/regression/br-tracking-invariants.test.ts`、`docs/operational/acceptance-stage-e.md`;更新 T4/task checklist/README/progress。未修改 production runtime、drill schema、SimLoop 或 render engine。
+- **E2E evidence**:`tests/e2e/br-tracking.spec.ts` 在真 Edge dev/preview 路徑下驗:
+  - canonical `tracking_br_v1`(ADS-on projectile 0.5deg)完整 10 presentations,export 含 `meta.scene.br-field`、H1 hitbox、`meta.weapon.ads`、`meta.weapon.bullet`、ADS event/tick flag、fire row、逐 tick player/target columns。
+  - `trackingMetricsFromExport()` 對該 payload 回算 acquisition failure rate `0`,每 presentation `tAcquireMs <= 16`,TOT `>= 99%`,RMS `< 0.1deg`。
+  - `deriveLeadError()` 對 projectile fire row 產生 finite lead sample。
+  - BR protocol 8 條件匯出 `meta.protocol` condition index/label/display/weapon gate;另用 ADS-on hitscan 2deg smoke 驗 `fire.hit=true`。
+- **Regression invariants**:`tests/regression/br-tracking-invariants.test.ts` 收編三條 T4 gate:
+  1. `br-field` scene config vs scene-free baseline 對 BR hitscan condition 的 recorder snapshot/phase/ticks 逐位一致。
+  2. 同 ADS input 下,驅動 CameraController ADS FOV display hook 與不驅動相比,sim recorder snapshot 逐位一致;ADS events/tick flag 仍存在。
+  3. canonical BR projectile condition 在 stable 60/144/240Hz 與 jitter 144Hz ±50% frame sequences 下與 canonical tick frames 逐位一致。
+- **Acceptance doc / pilot**:`docs/operational/acceptance-stage-e.md` 定稿 10 項清單 E、自動證據入口、手動 BR 視覺/ADS/tracer 回填流程,並附 `br_tracking_v1` 8 條件 pilot protocol 草案。
+- **Surprises & discoveries**:回歸夾具初版只在 display-on 路徑建立 `CameraController`;該 class 建構時會接管 camera quaternion,造成 fire `offsetDeg` 與 display-off baseline 不同。修正為兩邊都採同一 controller camera 基準,只讓 display-on 額外推 ADS FOV hook。這是測試夾具差異,未暴露 runtime 缺陷。
+- **Focused verification**:
+
+  ```
+  npx.cmd vitest run tests/regression/br-tracking-invariants.test.ts src/testharness/fpsTestHarness.test.ts
+  # 2 files / 13 tests passed
+
+  npm.cmd run typecheck
+  # tsc --noEmit clean
+
+  npx.cmd playwright test tests/e2e/br-tracking.spec.ts
+  # sandboxed first run hit known Vite/esbuild parent-directory access denial
+  # approved external rerun: 2 tests passed
+  ```
+
+- **Full CI / graph update evidence**:
+
+  ```
+  npm.cmd run test:ci
+  # sandboxed first run hit known Vite/esbuild parent-directory access denial
+  # approved external rerun exit 0:
+  # tsc --noEmit
+  # vitest run       # 77 files / 622 tests passed
+  # playwright test  # 18 tests passed
+
+  graphify update .
+  # AST extraction: 168/168 files; graph rebuilt: 1215 nodes / 2899 edges / 79 communities
+  ```
+
+- **T-exit handoff**:T4 auto gates and checklist E are in place. T-exit still owns M13/stage5 declaration and researcher manual visual/ADS/tracer回填。
 
 ### 2026-07-14 02:10Z — T3 tracking_br_v1 整合 drill + BR protocol PASS
 
