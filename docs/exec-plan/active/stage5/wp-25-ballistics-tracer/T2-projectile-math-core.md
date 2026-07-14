@@ -7,7 +7,7 @@
 | **相依** | T0(GD-17 參數表)+ **M11 ✅**(開工前複驗 WP-23 T-exit) |
 | **Risk / Cplx** | Med / Med(演算法正確性——swept 測試與固定步長語意) |
 | **Touches** | ADD `src/ballistics/`(`bullet.ts` + `sweptHit.ts` + golden 測試);**零 three/DOM/sim 相依**(比照 `src/recoil/`) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-14) |
 
 ## Objective
 

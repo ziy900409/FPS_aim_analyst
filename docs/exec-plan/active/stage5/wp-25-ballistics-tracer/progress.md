@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13);T1 tracer ✅ PASS(2026-07-13)
+## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13);T1 tracer ✅ PASS(2026-07-13);T2 math core ✅ PASS(2026-07-14)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 tracer | ✅ |
-| T2 數學核心 | ⬜ |
+| T2 數學核心 | ✅ |
 | T3 sim 整合 | ⬜ |
 | T4 指標語意 | ⬜ |
 | T-exit(M12) | ⬜ |
@@ -26,11 +26,31 @@
 | OQ-S5-5 lead 誤差是否進正式指標 | 🟡 待 T4 | 計畫預設:spec-only 離線推導(引擎零計算);pilot 顯示構念有效再立案晉升 |
 | OQ-25.1 未命中彈的 tracer 端點(engagement plane 投影 vs maxRange 點) | ✅ T0 決議 | hitscan tracer 端點沿用 `projectMissOntoEngagementPlane` 既有交戰平面投影語意;projectile tracer 端點用子彈消滅點(`maxRangeU` 到達或未來 T2/T3 spec 定義的落地/失活點)。tracer 純視覺,不記錄。 |
 | OQ-25.2 `BULLET_CAP` 容量與滿載政策 | 🟡 待 T3 | 預設:`magSize × 2`(單 peek 一匣 + 飛行殘留裕度);滿載拒發 + 旗標(比照 ring 溢位語意) |
-| OQ-25.3 移動目標 × 飛行彈命中語意(swept 對本 tick 目標 AABB) | 🟡 待 T2 | 預設:swept segment vs 本 tick 目標 AABB(決定性可斷言);sub-tick 目標內插與彈道的交互留 spec 註記 |
+| OQ-25.3 移動目標 × 飛行彈命中語意(swept 對本 tick 目標 AABB) | ✅ T2 決議 | `sweptHitTest` 只測 projectile segment(上一 tick bullet position → 本 tick bullet position)對「本 tick 目標 AABB」;不做目標 sub-tick path 內插。回傳 `s ∈ [0,1]` 作為後續 `t_hit` tick 內插輸入。 |
 
 ---
 
 ## Log
+
+### 2026-07-14 — T2 projectile math core PASS
+
+- **M11 複驗**:WP-23 T-exit 已 ✅ PASS(2026-07-10),progress 明確列出「WP-25 T2+(projectile)自此有效度地基可消費」;T2 entry 前提成立。
+- **Implementation**:
+  - `src/ballistics/bullet.ts`:新增 `BulletState` / `Vec3Like` / `BULLET_DT_SEC` / `spawnBullet(out,origin,dirUnit,speedU)` / `stepBullet(b,dtSec,gravityU)`。`spawnBullet` 原地重用 out;`stepBullet` 固定 1/128s,非 1/128 拋錯;採半隱式 Euler(先 `vy -= g*dt`,再位移),inactive slot 不前進。
+  - `src/ballistics/sweptHit.ts`:新增 slab-method `sweptHitTest(x0,y0,z0,x1,y1,z1,aabb)`;回傳第一個 segment fraction `s` 或 `null`;平行軸 outside 拒絕,inside 保留區間,邊界相切視為 hit。
+- **Decision**:OQ-25.3 定案為「飛行彈 segment vs 本 tick 目標 AABB」。Alternatives considered:對目標也做 sub-tick swept / 目標位置內插;但會把 T2 純幾何核心綁到 motion model 與 SimLoop tick sequencing,降低決定性可斷言性。T3 只需在 target motion 更新後傳入本 tick AABB。
+- **Golden tests**:
+  - `src/ballistics/bullet.test.ts`:spawn 重用、非法 dt、g=0 平飛 32 tick bit-exact、GD-17 16 tick 參數(`speedU=916.73`,`gravityU=32`)前 32 tick 位置/速度序列、inactive slot。
+  - `src/ballistics/sweptHit.test.ts`:known hit tick + `s`、高速薄 AABB tunneling、boundary tangency、平行 zero-delta inside/outside、起點在 AABB 內、ray hit outside segment interval。
+- **Zero-dependency evidence**:`Select-String -Path src/ballistics/*.ts -Pattern '^import'` 只顯示 test imports 與 `sweptHit.ts` 的 `import type { Vec3Like } from './bullet.ts'`;production ballistics 無 three/DOM/sim import。
+- **Verification**:
+  - `npx.cmd vitest run src/ballistics/bullet.test.ts` exit 0:1 file / **5 tests** 全綠(first slice)。
+  - `npx.cmd vitest run src/ballistics/bullet.test.ts src/ballistics/sweptHit.test.ts` exit 0:2 files / **12 tests** 全綠。
+  - `Select-String -Path src/ballistics/*.ts -Pattern '^import'` exit 0:production 只見 `sweptHit.ts` type-only import from `bullet.ts`;其餘為 test imports。
+  - `npm.cmd run typecheck` exit 0:`tsc --noEmit` clean。
+  - `npx.cmd vitest run` exit 0:Vitest **72 files / 582 tests** 全綠。
+  - `graphify update .` exit 0 twice:bullet slice AST **155/155 files**,swept slice AST **157/157 files**;graphify-out rebuilt。
+- **Open questions**:OQ-25.3 ✅;OQ-25.2 仍留 T3。
 
 ### 2026-07-13 — T1 tracer PASS
 
