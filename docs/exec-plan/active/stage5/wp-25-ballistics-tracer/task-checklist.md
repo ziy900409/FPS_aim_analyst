@@ -9,7 +9,7 @@
 | ✅ | **T1** tracer(shotRays + TracerView + 開關;render-only) | [T1-tracer-view.md](T1-tracer-view.md) | T0 | Med |
 | ✅ | **T2** projectile 數學核心 + golden | [T2-projectile-math-core.md](T2-projectile-math-core.md) | T0 + M11 | Med |
 | ✅ | **T3** sim 整合(config gate + arena;hitscan 零破壞) | [T3-sim-integration.md](T3-sim-integration.md) | T2 | High |
-| ⬜ | **T4** 指標語意 + lead spec + 決定性 | [T4-metrics-semantics.md](T4-metrics-semantics.md) | T3 | Med |
+| ✅ | **T4** 指標語意 + lead spec + 決定性 | [T4-metrics-semantics.md](T4-metrics-semantics.md) | T3 | Med |
 | ⬜ | **T-exit** M12 宣告 | [T-exit-gate.md](T-exit-gate.md) | T1–T4 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))

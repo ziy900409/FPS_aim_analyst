@@ -435,6 +435,12 @@ exports. The executable interface lives in
 [`analysis-tracking.md`](analysis-tracking.md). These derived fields are not written by the engine
 export.
 
+Projectile lead analyses derive `lead_error_deg` offline from the same raw rows plus
+`meta.weapon.bullet`, fire-time view angles, target tick trajectory, and linked `hit.shotSeq`
+time of flight when available. Lead error is a WP-25 pilot construct, not a result-page metric;
+the engine writes only `fire`/`hit` observations. The executable interface lives in
+[`analysis-lead.md`](analysis-lead.md).
+
 ## FPSci Field Mapping Appendix
 
 This appendix is a semantic mapping only. Per GD-11, FPSci source code is not copied; the mapping is based on FPSci documentation/papers and the local research note.
@@ -453,7 +459,7 @@ This appendix is a semantic mapping only. Per GD-11, FPSci source code is not co
 | `events.ads.t/down` | input/button event table | approximate | ADS right-button transition timestamp and state. |
 | `events.fire.hit` / `events.hit` | click/hit result | same | Hitscan uses `fire.hit`; projectile mode writes delayed `hit` events linked by `shotSeq`. |
 | `events.fire.viewYaw/viewPitch` | click-time player view | same | Fire-time view snapshot. |
-| `events.fire.aimPunch*`, `spread*`, `recoilIndex`, `ammo`, `shotSeq`, `timeOfFlightMs` | weapon/recoil/projectile state | no direct equivalent | CS2 recoil/spread-specific state and WP-25 projectile timing for reproducibility. |
+| `events.fire.aimPunch*`, `spread*`, `recoilIndex`, `ammo`, `shotSeq`, `events.hit.timeOfFlightMs` | weapon/recoil/projectile state | no direct equivalent | CS2 recoil/spread-specific state and WP-25 projectile timing for reproducibility. |
 | `meta.session` | experiment/session/user status | approximate | Reserved v2 join keys; WP-20 fills participant/session labels. |
 | `meta.display`, `meta.frames` | system/frame timing tables | approximate | Reserved v2 display and frame-time blocks. |
 | `meta.scene` | environment/condition config | approximate | Reserved v2 scene condition block. |

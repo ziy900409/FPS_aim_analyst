@@ -4,6 +4,7 @@ import { createDataRecorder, type DataRecorderSnapshot } from '../../src/data/Da
 import type { Clock } from '../../src/loop/clock.ts';
 import { SIM_HZ } from '../../src/loop/constants.ts';
 import { createSimLoop } from '../../src/loop/SimLoop.ts';
+import { createMetricsDashboard } from '../../src/metrics/MetricsDashboard.ts';
 import type { TargetManager } from '../../src/sim/TargetManager.ts';
 import { createSharedState, type SharedState } from '../../src/state/SharedState.ts';
 import { pushEvent } from '../../src/state/inputRingTestUtil.ts';
@@ -27,6 +28,12 @@ const projectileWeapon: WeaponConfig = {
     recoveryTimeCrouch: ak47.inaccuracy.recoveryTimeCrouch,
   },
   bullet: { model: 'projectile', speedU: 832, gravityU: 1, maxRangeU: 64 },
+};
+
+const hitscanWeapon: WeaponConfig = {
+  ...ak47,
+  id: 'ak47_hitscan_regression',
+  inaccuracy: projectileWeapon.inaccuracy,
 };
 
 interface ProjectileRun {
@@ -53,6 +60,10 @@ function canonicalFrames(): number[] {
 }
 
 function runProjectile(absTimes: readonly number[]): ProjectileRun {
+  return runWeapon(absTimes, projectileWeapon);
+}
+
+function runWeapon(absTimes: readonly number[], weapon: WeaponConfig): ProjectileRun {
   const state = createSharedState();
   const recorder = createDataRecorder({ simHz: SIM_HZ });
   const clock: Clock = { now: () => 0 };
@@ -66,11 +77,21 @@ function runProjectile(absTimes: readonly number[]): ProjectileRun {
     camera,
     undefined,
     recorder,
-    projectileWeapon,
+    weapon,
     2026,
   );
 
-  state.targets.push(makeTarget('t0', 0, -8));
+  const target = makeTarget('t0', 0, -8);
+  state.targets.push(target);
+  recorder.recordEvent({
+    type: 'visible',
+    targetId: target.id,
+    side: target.side,
+    t: 0,
+    targetX: target.pos.x,
+    targetY: target.pos.y,
+    targetZ: target.pos.z,
+  });
   pushEvent(state, { type: 'fire', down: true, t: 0 });
   pushEvent(state, { type: 'fire', down: false, t: 1 });
 
@@ -195,4 +216,41 @@ describe('WP-25 projectile determinism regression', () => {
     expect(canonical.activeBullets).toBe(0);
     expect(canonical.remainingTargets).toEqual([]);
   });
+
+  it('keeps shot-layer firstShot and t_fire semantics identical to hitscan for the same input', () => {
+    const hitscan = runWeapon(canonicalFrames(), hitscanWeapon);
+    const projectileFire = fireRows(canonical.snapshot).map((event) => ({
+      t: event.t,
+      firstShot: event.firstShot,
+      targetId: event.targetId,
+    }));
+    const hitscanFire = fireRows(hitscan.snapshot).map((event) => ({
+      t: event.t,
+      firstShot: event.firstShot,
+      targetId: event.targetId,
+    }));
+
+    expect(projectileFire).toEqual(hitscanFire);
+    expect(fireRows(hitscan.snapshot)[0]).toMatchObject({ hit: true, firstShot: true });
+    expect(fireRows(canonical.snapshot)[0]).toMatchObject({ hit: false, firstShot: true, shotSeq: 1 });
+  });
+
+  it('keeps MetricsDashboard finite and backfills projectile first-shot outcome from hit events', () => {
+    const metrics = createMetricsDashboard().compute(canonical.snapshot);
+
+    expect(metrics.firstShotHitRate).toBe(100);
+    expect(metrics.counterReactionMs.mean).toBe(0);
+    expect(metrics.residualSpeed.mean).toBe(0);
+    expect(metrics.fireTimingAlignmentMs.mean).toBe(0);
+    expect(metrics.crosshairOffset.mean).toBe(0);
+    expect(metrics.switchTimeMs.mean).toBe(0);
+    expect(metrics.rhythmStability).toBe(0);
+    expect(metrics.leftRightSymmetry.diff).toBe(0);
+    expect(Number.isFinite(metrics.recoilCompensationError.meanDeg)).toBe(true);
+    expect(Number.isFinite(metrics.recoilCompensationError.rmsDeg)).toBe(true);
+  });
 });
+
+function fireRows(snapshot: DataRecorderSnapshot) {
+  return snapshot.events.filter((event) => event.type === 'fire');
+}

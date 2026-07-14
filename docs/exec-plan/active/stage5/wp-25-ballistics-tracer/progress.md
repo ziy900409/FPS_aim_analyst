@@ -5,7 +5,7 @@
 
 ---
 
-## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13);T1 tracer ✅ PASS(2026-07-13);T2 math core ✅ PASS(2026-07-14);T3 sim integration ✅ PASS(2026-07-14)
+## Status: 🟡 進行中;T0 entry gate ✅ PASS(2026-07-13);T1 tracer ✅ PASS(2026-07-13);T2 math core ✅ PASS(2026-07-14);T3 sim integration ✅ PASS(2026-07-14);T4 metrics semantics ✅ PASS(2026-07-14)
 
 | Task | 狀態 |
 |---|---|
@@ -13,7 +13,7 @@
 | T1 tracer | ✅ |
 | T2 數學核心 | ✅ |
 | T3 sim 整合 | ✅ |
-| T4 指標語意 | ⬜ |
+| T4 指標語意 | ✅ |
 | T-exit(M12) | ⬜ |
 
 ---
@@ -23,7 +23,7 @@
 | ID | 狀態 | 決議 |
 |----|------|------|
 | OQ-S5-2 projectile 參數域(speedU/gravityU/maxRangeU 表;與 distance 聯動)→ **GD-17** | ✅ T0 決議 | 以 WP-23 距離檔位聯動反推。canonical 0.5° distance=114.59u:8/16/32 ticks → `speedU=1833.45/916.73/458.36`, `maxRangeU=143.24`;2° sanity distance=28.65u:8/16/32 ticks → `speedU=458.37/229.18/114.59`, `maxRangeU=35.81`。重力以 target height 1u 的 0.10/0.25/0.50H 下墜反推:`gravityU=51.20/32.00/16.00`。config 驗證對到靶 <2 ticks 發 warning;`bullet` 欄 M12 前不得進任何 drill config。 |
-| OQ-S5-5 lead 誤差是否進正式指標 | 🟡 待 T4 | 計畫預設:spec-only 離線推導(引擎零計算);pilot 顯示構念有效再立案晉升 |
+| OQ-S5-5 lead 誤差是否進正式指標 | ✅ T4 決議 | 不進正式結果頁/八指標;本階段只落 `docs/operational/analysis-lead.md` + `src/metrics/leadDerivation.ts` 離線 verifier。Pilot 若顯示構念有效,再另案晉升 pre-registered metric。 |
 | OQ-25.1 未命中彈的 tracer 端點(engagement plane 投影 vs maxRange 點) | ✅ T0 決議 | hitscan tracer 端點沿用 `projectMissOntoEngagementPlane` 既有交戰平面投影語意;projectile tracer 端點用子彈消滅點(`maxRangeU` 到達或未來 T2/T3 spec 定義的落地/失活點)。tracer 純視覺,不記錄。 |
 | OQ-25.2 `BULLET_CAP` 容量與滿載政策 | ✅ T3 決議 | `BULLET_CAP = 60`(AK `magSize × 2`;一匣連發 + 飛行殘留裕度)。滿載時拒發、不扣 ammo、不記 fire row、推進排程避免 busy loop,並遞增 `state.bullets.overflowCount`;projectile export 於 `meta.weapon.projectileOverflow` 記旗標。 |
 | OQ-25.3 移動目標 × 飛行彈命中語意(swept 對本 tick 目標 AABB) | ✅ T2 決議 | `sweptHitTest` 只測 projectile segment(上一 tick bullet position → 本 tick bullet position)對「本 tick 目標 AABB」;不做目標 sub-tick path 內插。回傳 `s ∈ [0,1]` 作為後續 `t_hit` tick 內插輸入。 |
@@ -31,6 +31,23 @@
 ---
 
 ## Log
+
+### 2026-07-14 — T4 metrics semantics PASS
+
+- **Implementation**:
+  - `src/metrics/compute.ts`:新增 `hit` event `shotSeq` lookup;`firstShotHitRate` 與 `switchTimeMs` 用 projectile `hit.shotSeq` 回填 shot outcome,但時間差仍以成功 shot 的 `fire.t` 計算。Hitscan `fire.hit` fallback 保持既有語意。
+  - `src/metrics/leadDerivation.ts`:新增 offline-only lead error verifier,消費 schema v2 export + `meta.weapon.bullet` + fire-time view angles + target tick trajectory;命中彈用 linked `hit.timeOfFlightMs`,未命中 exploratory sample 明確標 `timeOfFlightSource:'estimated'`。
+  - `tests/regression/projectile-determinism.test.ts`:收編 T3 projectile fixture 的 T4 語意斷言:同輸入 hitscan/projectile 的 `firstShot` 與 `t_fire` 序列一致;projectile result dashboard 八指標 finite 且首發 outcome 從 delayed hit 回填為 100%。
+  - `docs/operational/analysis-lead.md` + `docs/operational/schema.md` + `CONTEXT.md`:對帳 `t_fire`/`t_hit`/`timeOfFlightMs`、首發 outcome、lead spec 與「engine zero new calculation」邊界。
+- **Decision**:OQ-S5-5 定案為 spec-only offline derivation,不進正式指標。Alternatives considered:把 lead error 直接加入 `MetricsDashboard`;拒絕,因目前缺 pilot validity evidence,且正式八指標不應因 projectile pilot 構念增加而漂移。
+- **Surprises & discoveries**:projectile regression fixture 原先只手動 push target,沒有 `visible` row;`MetricsDashboard` first-shot denominator 因此為 0。Fixture 補上 target presentation event 後更接近 production export shape。Evidence:`tests/regression/projectile-determinism.test.ts` dashboard sanity test 通過。
+- **Verification**:
+  - Focused T4:`npx.cmd vitest run src/metrics/compute.test.ts src/metrics/leadDerivation.test.ts tests/regression/projectile-determinism.test.ts src/metrics/MetricsDashboard.test.ts src/ui/ResultScreen.test.ts` exit 0:5 files / **27 tests** 全綠。
+  - Hitscan zero-break:`npx.cmd vitest run src/loop/__tests__/fire-determinism.test.ts src/loop/__tests__/recoil-wiring.test.ts src/loop/__tests__/ballistic-compose.test.ts src/loop/__tests__/determinism.test.ts src/loop/SimLoop.test.ts tests/regression/determinism.test.ts tests/regression/spray-determinism.test.ts tests/regression/moving-target-determinism.test.ts tests/regression/longrange-tracking-determinism.test.ts src/sim/HitDetector.test.ts src/sim/firstShot.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts` exit 0:13 files / **146 tests** 全綠。
+  - `npm.cmd run typecheck` exit 0:`tsc --noEmit` clean。
+  - `graphify update .` exit 0:AST **160/160 files**,graphify-out rebuilt;`codegraph_status`:163 indexed files / 2312 nodes / 3316 edges。
+  - `npm.cmd run test:ci` sandboxed blocked by known Vite/esbuild parent-directory access denial (`Cannot read directory "../../../.."`);approved unsandboxed rerun exit 0:`tsc --noEmit` clean,Vitest **74 files / 603 tests** 全綠,Playwright **16 tests** 全綠。
+- **Open questions**:OQ-S5-5 ✅;T-exit(M12) remains.
 
 ### 2026-07-14 — T3 sim integration PASS
 

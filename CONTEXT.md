@@ -14,11 +14,11 @@
 | **反向鍵（counter key）** | 與當前移動方向相反的按鍵（向右 D 移動時的 A，反之亦然）。按下即觸發急停判定。 |
 | **drill** | 由**資料（config）**定義的一次訓練單元，規定目標數、位置、時序、左右交替方向與結束條件。新增 drill 不需改引擎程式碼（F4）。 |
 | **peek** | 一次「探頭—對齊—開火」的循環，**1 個目標 presentation ⇄ 1 個 peek**。**推進政策 = P2（命中才推進）**：目標可見後持續存在，未命中不撤；**第一次命中 = kill → 撤掉、生成下一個**（左右交替「擊殺右→生成左」因此原樣成立）。每 peek 開槍數可變（0+ 次 miss 後 1 次命中）。設 `peekTimeoutMs`（config）：逾時未 kill → 記為 `timeout`、推進，避免卡死。drill 結束 = 目標數達標 **或** 總時長到（雙閘）。左右 peek 對稱性是量測指標之一。 |
-| **首發（first shot / firstShot）** | 每個 peek 的**第一發**，帶 `firstShot=true` 旗標。首發命中率 = 首發命中 peek 數 / peek 數；不被後續掃射稀釋（P2 下靠**旗標**保證，非靠推進政策）。**counter-strafe 的時序/精度指標（急停反應、停火對齊、殘餘速度、準心偏移）一律錨在首發**；後續補槍只為 kill、不計入 counter-strafe 量測。`DataRecorder` 須能還原兩個錨點 `t_firstShot` 與 `t_kill`（首發即命中時兩者相同），故每 peek 記 `shotCount` 與逐發事件。**full-auto(WP-11)下 `firstShot` 仍錨定 peek**(每 peek 的第一發 shot),不隨扳機開合移動;與 `recoil index=0`(每段連續射擊,§F)為**可分岔**的兩件事——同一 peek 內 double-tap 的第二次 fire-down,其 shot `firstShot=false` 但 recoil index 重新從 0。 |
+| **首發（first shot / firstShot）** | 每個 peek 的**第一發**，帶 `firstShot=true` 旗標。首發命中率 = 首發命中 peek 數 / peek 數；不被後續掃射稀釋（P2 下靠**旗標**保證，非靠推進政策）。**counter-strafe 的時序/精度指標（急停反應、停火對齊、殘餘速度、準心偏移）一律錨在首發的 `t_fire`**；後續補槍只為 kill、不計入 counter-strafe 量測。Projectile 模式下 `fire.hit=false` 是產彈瞬間觀測；首發 outcome 由同 `shotSeq` 的 additive `hit` 事件回填，錨點仍是 `t_fire`，不移到 `t_hit`。`DataRecorder` 須能還原兩個錨點 `t_firstShot/t_fire` 與 `t_hit/t_kill`（hitscan 下可同時刻），故每 peek 記 `shotCount` 與逐發事件。**full-auto(WP-11)下 `firstShot` 仍錨定 peek**(每 peek 的第一發 shot),不隨扳機開合移動;與 `recoil index=0`(每段連續射擊,§F)為**可分岔**的兩件事——同一 peek 內 double-tap 的第二次 fire-down,其 shot `firstShot=false` 但 recoil index 重新從 0。 |
 | **急停反應時間** | `t_counter − t_visible`：敵人可見 → 按下反向鍵的時間差。 |
 | **速度歸零誤差（residual speed）** | 開火瞬間殘餘速度的絕對值，越接近 0 越精準。⚠️ **階段 A 立即停止（M1）下退化成二元**（velocity ∈ {0, ±v}），量不出連續精度；屬 counter-strafe 的「停得多準」維度，要等階段 B physics。`DataRecorder` 仍每 tick 記 velocity、開火 tick 記此欄（欄位先存、階段 B 自動升級成連續值）；結果頁以**分類**（開火時「已停止/移動中」、「有無反向」）呈現，不顯示誤導性 u/s。 |
 | **停火時序對齊** | `t_fire − t_velocity_zero`：速度歸零到開火的時間差；負值代表「人未停先開槍」。階段 A 立即停止下 `t_velocity_zero` 塌縮成 `t_counter`，故量的是「開火相對**急停輸入**」的時序（語意改變但仍可用）。 |
-| **首發命中率** | （首發命中 / 總 peek）× 100%。 |
+| **首發命中率** | （首發命中 / 總 peek）× 100%。Hitscan 直接讀首發 `fire.hit`; projectile 讀首發 `fire.shotSeq` 是否存在對應 `type:'hit'` row。 |
 | **準心對齊偏移** | 開火事件在排序串流中那一點，準心射線與目標 hitbox 中心的距離／角度（**sub-tick 忠實、零內插**，見 simStep 順序）。「準心射線」≡ **camera 正向（螢幕中心）射線**，HitDetector raycast 同此；畫面十字（階段 A = DOM overlay）純裝飾、**必須精確置中**（注意 `devicePixelRatio`），指標**不讀**該元素座標。 |
 | **追蹤誤差 ε(t)（tracking error）／on-target** | ε(t) = 逐 tick 的「準心射線 vs 目標 hitbox 中心」夾角（deg）——**準心對齊偏移由 fire 瞬間推廣到逐 tick**，同一數學、同一單位。**on-target（逐 tick 二元）**= 準心射線 ∩ H1 hitbox（與命中判定同幾何，**零新門檻參數**）。全部由 schema v2 原始欄位（aim + 玩家/目標位置）**離線推導**，不進 sim 熱路徑（GD-7）。 |
 | **獲取時間（t_acquire）** | `t_first_on_target − t_visible`：目標可見到首次 on-target 的時間——flick／獲取構念，與追隨（pursuit）分離。整段 presentation 未 on-target → 記**獲取失敗**（計入獲取失敗率、該 presentation 不進 TOT 聚合；失敗是資料不是缺失值）（GD-7）。 |
@@ -26,7 +26,7 @@
 | **偵測反應時間（detection RT）／t_detect** | `t_detect − t_visible`（量測時鐘域）。**t_detect = 瞄準移動 onset**：`t_visible` 後第一個「ε(t) 以超過雜訊底的角速度下降、持續 k tick」的 tick——**離線**從 128Hz aim 流推導，雜訊底以 **per-trial 前刺激窗口**（spawn 前 aim 抖動）校準，θ_v／k 為 pre-registered 分析參數。無眼動儀下的標準 proxy（含動作啟動成分）。副構念 **engagement time** = `t_first_fire − t_visible`（GD-8）。 |
 | **偏心度（eccentricity）** | spawn 瞬間「玩家瞄準方向 vs 目標」的角距離——偵測 RT 的最強預測子之一。**記錄為共變數**（aim@spawn + 目標位置離線推導）；不做 fixation gate（那會讓 aim 成為 sim 演進輸入，動 GD-4「aim 僅觀測」契約）（GD-8）。 |
 | **pop-in／slide-in（偵測刺激）** | **pop-in**：目標瞬現，`t_visible` = spawn tick（現行語意，OQ-4.2）；偵測 drill 起手式。**slide-in**：目標自宣告式 occluder 後滑出；判準已預先釘死＝**目標中心穿越 DrillConfig 宣告可見性邊界的那一 tick** 蓋 `t_visible`（camera 無關、決定性）——落地待 GD-6 升級路徑 C 觸發（GD-8）。 |
-| **切換時間** | `t_next_acquisition − t_prev_kill`：擊殺一目標到對下一目標有效對齊的時間。 |
+| **切換時間** | `t_next_acquisition − t_prev_kill`：擊殺一目標到對下一目標有效對齊的時間。WP-25 projectile 下「是否 kill」可由 `hit.shotSeq` 回填，但時間錨仍用成功 shot 的 `t_fire`，避免既有時序指標被飛行時間重定義。 |
 | **節奏穩定度** | 各循環耗時的標準差／變異係數。⚠️ P2 下「循環耗時」有兩種錨可選：`t_visible→t_kill`（含補槍 cleanup）或首發間隔（`t_firstShot`）；兩者量的是不同技能（清目標節奏 vs 首發節奏），分析端擇一——**兩個錨都要記**。 |
 | **左右對稱性** | 左 peek 與右 peek 在反應時間與命中率上的差異。 |
 | **速度 gate（velocity gate）** | 以速度是否夠低（階段 A 為「已停止」flag；階段 B 為精準度門檻 ~88 u/s）決定開火是否精準的判定機制。 |
@@ -128,7 +128,7 @@
 
 > full-auto 開火管線於 WP-11 建立：武器抽象 → fire down/up 事件 → `heldFire` → tick 內 cycletime 產彈 + 彈匣；產彈點保留為 WP-13 recoil `onFire` 的唯一掛點。
 > **ADS 開鏡管線**於 WP-24 建立，全面比照 fire 事件模式：`WeaponConfig.ads` → ads down/up 事件（`EV_ADS`）→ `heldAds` → render 端 FOV/感度 gain + scope overlay + 逐 tick 記錄。**只落 input/render/data 層**，不改 sim/命中/彈道（GD-16）。
-> **「fire」正名（消歧）**：input 端 = **fire down/up**（扣／放扳機的*意圖*）；產出的一次擊發 = **shot（發）**（≡「產彈」），與既有 `首發`／`shotCount` 一致。`DataRecorder`／metrics 內既有的 `type:'fire'` row 語意是「一發 shot」（legacy 欄名，**不改**）。
+> **「fire」正名（消歧）**：input 端 = **fire down/up**（扣／放扳機的*意圖*）；產出的一次擊發 = **shot（發）**（≡「產彈」），與既有 `首發`／`shotCount` 一致。`DataRecorder`／metrics 內既有的 `type:'fire'` row 語意是「一發 shot」（legacy 欄名，**不改**）。WP-25 projectile 另有 `type:'hit'` row 表示 delayed impact；`timeOfFlightMs = t_hit - t_fire`，但既有八指標的時序錨不從 `fire.t` 搬到 `hit.t`。
 
 | 術語 | 定義 |
 |---|---|
