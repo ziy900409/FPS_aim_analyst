@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { describe, expect, it } from 'vitest';
-import { createSharedState } from '../state/SharedState.ts';
+import { BULLET_CAP, createSharedState } from '../state/SharedState.ts';
 import { pushEvent } from '../state/inputRingTestUtil.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
 import type { TargetState } from '../state/types.ts';
@@ -9,6 +9,7 @@ import { SIM_HZ } from './constants.ts';
 import { createSimLoop, simStep, type RecoilRuntime } from './SimLoop.ts';
 import { createDataRecorder } from '../data/DataRecorder.ts';
 import { ak47, m4a1s } from '../weapon/weapons.ts';
+import type { WeaponConfig } from '../weapon/WeaponConfig.ts';
 import { CS2_PROFILE } from '../sim/MovementController.ts';
 import { generateRecoilTable } from '../recoil/recoilTable.ts';
 import { createRan1 } from '../recoil/rng.ts';
@@ -53,6 +54,12 @@ function tickAdvancer(loop: ReturnType<typeof createSimLoop>): (endMs: number) =
 function runtime(seed: number): RecoilRuntime {
   return { table: generateRecoilTable(ak47.recoil), rng: createRan1(seed) };
 }
+
+const projectileAk47: WeaponConfig = {
+  ...ak47,
+  id: 'ak47_projectile_test',
+  bullet: { model: 'projectile', speedU: 832, gravityU: 1, maxRangeU: 64 },
+};
 
 describe('SimLoop accumulator（固定 128 Hz）', () => {
   it('固定步進累積出正確 tick 數（64 幀 × 2 tick = 128 ticks/s）', () => {
@@ -403,6 +410,119 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
 
     expect(killed).toEqual(['t0']); // 命中即撤除
+  });
+
+  it('fire hit writes a render-only shotRay from camera origin to the impact point', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ();
+    const tm: TargetManager = {
+      tick() {},
+      markKilled() {},
+      reset() {},
+    };
+    state.targets.push(makeTarget('t0', 0, -8));
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
+
+    expect(state.shotRays.total).toBe(1);
+    expect(state.shotRays.cursor).toBe(1);
+    expect([state.shotRays.ox[0], state.shotRays.oy[0], state.shotRays.oz[0]]).toEqual([0, 1.5, 5]);
+    expect(state.shotRays.ex[0]).toBeCloseTo(state.impacts.x[0], 12);
+    expect(state.shotRays.ey[0]).toBeCloseTo(state.impacts.y[0], 12);
+    expect(state.shotRays.ez[0]).toBeCloseTo(state.impacts.z[0], 12);
+  });
+
+  it('fire miss writes a shotRay endpoint on the existing engagement-plane projection', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ();
+    const tm: TargetManager = {
+      tick() {},
+      markKilled() {},
+      reset() {},
+    };
+    state.targets.push(makeTarget('t0', 0, -8));
+    state.aim.yaw = 0.2;
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder);
+
+    expect(recorder.snapshot().events.find((e) => e.type === 'fire')).toMatchObject({ hit: false });
+    expect(state.shotRays.total).toBe(1);
+    expect(state.shotRays.ex[0]).not.toBeCloseTo(0, 6);
+    expect(state.shotRays.ez[0]).toBeCloseTo(-8, 12);
+    expect(state.shotRays.ex[0]).toBeCloseTo(state.impacts.x[0], 12);
+    expect(state.shotRays.ey[0]).toBeCloseTo(state.impacts.y[0], 12);
+    expect(state.shotRays.ez[0]).toBeCloseTo(state.impacts.z[0], 12);
+  });
+
+  it('projectile fire spawns a bullet and later records a swept hit event with time of flight', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 16 });
+    const cam = cameraLookingDownZ();
+    const killed: string[] = [];
+    const tm: TargetManager = {
+      tick() {},
+      markKilled(s, id) {
+        killed.push(id);
+        const i = s.targets.findIndex((target) => target.id === id);
+        if (i >= 0) s.targets.splice(i, 1);
+      },
+      reset() {},
+    };
+    state.targets.push(makeTarget('t0', 0, -8));
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder, projectileAk47);
+
+    expect(state.bullets.activeCount).toBe(1);
+    expect(state.impacts.total).toBe(0);
+    expect(state.shotRays.total).toBe(0);
+    expect(recorder.snapshot().events).toEqual([
+      expect.objectContaining({ type: 'fire', t: 0, hit: false, firstShot: true, shotSeq: 1, targetId: 't0' }),
+    ]);
+
+    simStep(state, 1 / SIM_HZ, 2 * TICK_MS, tm, cam, undefined, undefined, undefined, recorder, projectileAk47);
+    expect(recorder.snapshot().events.filter((event) => event.type === 'hit')).toEqual([]);
+
+    simStep(state, 1 / SIM_HZ, 3 * TICK_MS, tm, cam, undefined, undefined, undefined, recorder, projectileAk47);
+
+    const hit = recorder.snapshot().events.find((event) => event.type === 'hit');
+    expect(hit).toMatchObject({ type: 'hit', shotSeq: 1, targetId: 't0' });
+    if (hit?.type !== 'hit') throw new Error('expected projectile hit event');
+    expect(hit.t).toBeGreaterThan(2 * TICK_MS);
+    expect(hit.timeOfFlightMs).toBeGreaterThan(0);
+    expect(killed).toEqual(['t0']);
+    expect(state.bullets.activeCount).toBe(0);
+    expect(state.impacts.total).toBe(1);
+    expect(state.shotRays.total).toBe(1);
+  });
+
+  it('projectile arena full refuses fire, preserves ammo, and raises overflow metadata', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 16 });
+    const cam = cameraLookingDownZ();
+    const tm: TargetManager = { tick() {}, markKilled() {}, reset() {} };
+    for (let i = 0; i < BULLET_CAP; i++) {
+      state.bullets.y[i] = 1.5;
+      state.bullets.alive[i] = 1;
+    }
+    state.bullets.activeCount = BULLET_CAP;
+    state.targets.push(makeTarget('t0', 0, -8));
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder, projectileAk47);
+
+    expect(state.bullets.overflowCount).toBe(1);
+    expect(state.bullets.activeCount).toBe(BULLET_CAP);
+    expect(state.weapon.ammo).toBe(30);
+    expect(recorder.snapshot().events.filter((event) => event.type === 'fire')).toEqual([]);
   });
 
   it('spread movement term uses true speed ratio: max-speed spread mean is much larger than stopped spread', () => {

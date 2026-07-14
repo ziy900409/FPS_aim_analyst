@@ -3,6 +3,7 @@ import { createRenderer } from './render/createRenderer.ts';
 import { createSceneManagerWithStatus } from './render/SceneManager.ts';
 import { TargetView } from './render/TargetView.ts';
 import { ImpactView } from './render/ImpactView.ts';
+import { TracerView } from './render/TracerView.ts';
 import { createPointerLock } from './input/PointerLock.ts';
 import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
@@ -123,6 +124,11 @@ let targetView = new TargetView(sceneManager.scene);
 // WP-13 / T3（FR-B10）— 彈孔渲染:唯讀 sharedState.impacts（sim 命中時寫入）以單一 InstancedMesh
 // 繪彈孔（1 draw call）。狀態由 sim 寫、本層唯讀（雙迴圈邊界）。
 let impactView = new ImpactView(sceneManager.scene);
+
+// WP-25 / T1（FR-E7）— tracer 渲染:唯讀 sharedState.shotRays（sim 產彈點寫入 origin→endpoint）。
+// 顯示開關只存在 render 層，不進 sim / recorder / export。
+let tracerView = new TracerView(sceneManager.scene);
+let tracerEnabled = true;
 
 let activeResolutionMode: ResolutionMode = 'native';
 let displayState: DisplayState = applyResolutionMode(renderer, activeResolutionMode);
@@ -334,6 +340,8 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
     weapon: {
       id: weaponConfig.id,
       ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
+      ...(weaponConfig.bullet !== undefined ? { bullet: weaponConfig.bullet } : {}),
+      ...(weaponConfig.bullet !== undefined ? { projectileOverflow: sharedState.bullets.overflowCount > 0 } : {}),
     },
     targets: {
       hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),
@@ -639,11 +647,13 @@ function installSceneLoad(
 ): void {
   targetView.dispose();
   impactView.dispose();
+  tracerView.dispose();
   sceneManager.dispose();
   sceneManager = nextScene.manager;
   resize();
   targetView = new TargetView(sceneManager.scene);
   impactView = new ImpactView(sceneManager.scene);
+  tracerView = new TracerView(sceneManager.scene);
   cameraController.setCamera(sceneManager.camera);
   cameraController.setFov(settingsPanel.fov);
   syncCameraBase();
@@ -725,6 +735,11 @@ const controls = createControls({
   onRestart: restartActiveDrill,
   onLoadDrill: loadDrillById,
   onLoadScene: loadSceneById,
+  initialTracerEnabled: tracerEnabled,
+  onTracerEnabledChange: (enabled) => {
+    tracerEnabled = enabled;
+    tracerView.clear(sharedState.shotRays.total);
+  },
 });
 
 function syncControlsVisibility(): void {
@@ -885,6 +900,8 @@ const renderLoop = createRenderLoop((now) => {
   targetView.sync(sharedState.targets, alpha);
   // 4b) 彈孔 InstancedMesh 依 impacts 環形格增量同步（WP-13 / T3；唯讀，sim 命中時寫入）。
   impactView.sync(sharedState.impacts);
+  // 4c) tracer InstancedMesh 依 shotRays 環形格增量同步（WP-25 / T1；關閉時不呼叫 sync = 零工作）。
+  if (tracerEnabled) tracerView.sync(sharedState.shotRays, now);
   // 5) 繪製。
   renderer.render(sceneManager.scene, sceneManager.camera);
   // WP-8 / T2：phase 轉 ended 後只計算一次結果；T4 controls 會負責 restart / 換 drill 時隱藏與重啟。

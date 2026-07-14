@@ -104,9 +104,10 @@ describe('DataRecorder tick arena', () => {
       part: 'head',
     });
     recorder.recordEvent({ type: 'fire', t: 40, hit: false, firstShot: false, residualSpeed: 250 });
+    recorder.recordEvent({ type: 'hit', t: 55, timeOfFlightMs: 25, shotSeq: 2, targetId: 't0', part: 'body' });
 
     expect(recorder.fireCount).toBe(2);
-    expect(recorder.hitCount).toBe(1);
+    expect(recorder.hitCount).toBe(2);
 
     expect(recorder.snapshot().events).toEqual([
       { type: 'visible', targetId: 't0', side: 'R', t: 10 },
@@ -123,6 +124,7 @@ describe('DataRecorder tick arena', () => {
         part: 'head',
       },
       { type: 'fire', t: 40, hit: false, firstShot: false, residualSpeed: 250 },
+      { type: 'hit', t: 55, timeOfFlightMs: 25, shotSeq: 2, targetId: 't0', part: 'body' },
     ]);
 
     recorder.reset();

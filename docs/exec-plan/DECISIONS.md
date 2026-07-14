@@ -23,6 +23,19 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-17 ✅ Projectile 參數域 — flight ticks × distance tier 反推 speed/gravity/maxRange(2026-07-13)
+
+| | |
+|---|---|
+| **發現處** | stage5 WP-25 T0 entry gate([wp-25 README](active/stage5/wp-25-ballistics-tracer/README.md)、[T0](active/stage5/wp-25-ballistics-tracer/T0-entry-gate.md))。Projectile 彈道若直接以任意 `speedU/gravityU` 寫進 weapon config,會與 WP-23 遠距 drill 的距離/角尺寸設計脫鉤,使飛行時間低於 1–2 ticks 時退化 hitscan、lead 構念空轉。 |
+| **決議** | Projectile 參數以**飛行時間 tick 數**為主設計參數,與 WP-23 OQ-S5-4 的距離檔位聯動。公式:`speedU = distanceU * 128 / flightTicks`;`gravityU = 2 * (dropRatio * targetHeightU) / flightSec^2`;`maxRangeU = distanceU * 1.25`。預設 weapon profile 為 8/16/32 ticks 三檔,下墜分別為 0.10/0.25/0.50 × target height。 |
+| **參數表** | canonical 0.5° longrange(`distanceU=114.59`,target height=1u):8 ticks flat `{ speedU:1833.45, gravityU:51.20, maxRangeU:143.24 }`;16 ticks standard `{ speedU:916.73, gravityU:32.00, maxRangeU:143.24 }`;32 ticks heavy `{ speedU:458.36, gravityU:16.00, maxRangeU:143.24 }`。2° sanity(`distanceU=28.65`):8 ticks `{ speedU:458.37, gravityU:51.20, maxRangeU:35.81 }`;16 ticks `{ speedU:229.18, gravityU:32.00, maxRangeU:35.81 }`;32 ticks `{ speedU:114.59, gravityU:16.00, maxRangeU:35.81 }`。 |
+| **驗證/警告政策** | T3 config validation 對到靶飛行時間 `< 2 ticks` 的 `bullet` 組合發 warning(退化 hitscan);M12 未過前 `bullet` 欄不得進任何 drill config。hitscan 仍為 `WeaponConfig.bullet` 省略時的預設路徑,且必須逐位不變。 |
+| **未命中端點** | OQ-25.1 同步拍板:hitscan tracer 端點沿用 `projectMissOntoEngagementPlane` 既有交戰平面投影;projectile tracer 端點用子彈消滅點(`maxRangeU` 到達或後續 T2/T3 spec 定義的失活點)。tracer 純視覺,不記錄。 |
+| **理由** | tick 數直接對齊 128Hz sim 與決定性 golden,避免以真實世界槍速導致 <1 tick 到靶;距離聯動則維持 WP-23 角尺寸設計的效度。下墜以 target height fraction 表達,研究者可用相同角尺寸語言理解可見彈道差異。 |
+| **影響面** | WP-25 T2(`src/ballistics/` golden 的速度/重力表)、T3(`WeaponConfig.bullet` validation、SimLoop projectile gate)、T4(timeOfFlight/lead 語意)、stage5 README §8 OQ-S5-2、WP-25 progress ledger、CLAUDE.md §4 projectile 硬約束。 |
+| **狀態** | ✅ 已拍板(2026-07-13 WP-25 T0);WP-25 T1 unblocked,T2 開工仍需複驗 M11 ✅。 |
+
 ### GD-16 ✅ ADS 感度模型 — CS2 式 FOV-ratio gain + hold 語意凍結(2026-07-10)
 
 | | |

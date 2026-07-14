@@ -7,7 +7,7 @@
 | **相依** | T3(hit 事件存在) |
 | **Risk / Cplx** | Med / Med(語意漂移風險——文件與斷言雙防線) |
 | **Touches** | MODIFY `src/metrics/compute.ts`(首發 outcome 消費 hit 事件,語意不變斷言)、`docs/operational/`(ADD `analysis-lead.md` spec;MODIFY 既有指標文件對帳)、[CONTEXT.md](../../../../../CONTEXT.md)(術語)、`tests/regression/`(收編)+ 結果頁 sanity |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS (2026-07-14) |
 
 ## Objective
 
@@ -42,12 +42,12 @@ projectile 下既有指標語意釘死、新構念離線化(FR-E10):`t_fire`/`fi
 
 ## Steps
 
-- [ ] 語意對帳落 CONTEXT.md + 既有指標文件。
-- [ ] 語意斷言測試(shot 層逐位不變 + outcome 回填兩支)。
-- [ ] `analysis-lead.md` spec + 合成 fixture 驗證。
-- [ ] 決定性回歸收編 + baseline 零重錄確認。
-- [ ] 結果頁手動 sanity 記 progress。
-- [ ] `npm run test:ci` exit 0。
+- [x] 語意對帳落 CONTEXT.md + 既有指標文件。
+- [x] 語意斷言測試(shot 層逐位不變 + outcome 回填兩支)。
+- [x] `analysis-lead.md` spec + 合成 fixture 驗證。
+- [x] 決定性回歸收編 + baseline 零重錄確認。
+- [x] 結果頁手動 sanity 記 progress。
+- [x] `npm run test:ci` exit 0。
 
 ## Definition of Done
 

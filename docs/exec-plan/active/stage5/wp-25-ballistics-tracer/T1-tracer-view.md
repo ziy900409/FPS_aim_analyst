@@ -7,7 +7,7 @@
 | **相依** | T0(OQ-25.1 端點語意);**不依賴 T2–T4/M11**,可與 WP-23/24 並行 |
 | **Risk / Cplx** | Med / Med(風險在 GC 紀律與雙迴圈邊界,非演算法) |
 | **Touches** | MODIFY `src/state/SharedState.ts`(`ShotRayRing` + `pushShotRay` + reset)、`src/loop/SimLoop.ts`(產彈點寫入一行)、`src/main.ts`(佈線);ADD `src/render/TracerView.ts`;MODIFY `src/ui/`(Controls 開關)+ 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-13) |
 
 ## Objective
 
@@ -39,12 +39,12 @@
 
 ## Steps
 
-- [ ] `ShotRayRing` + push/reset + 單元測試。
-- [ ] 產彈點寫入(hit/miss 兩端點語意)+ SimLoop 測試。
-- [ ] **既有決定性/開火回歸零修改全綠**(證據記 progress)。
-- [ ] `TracerView` + 增量同步測試 + draw call 證據(`renderer.info`)。
-- [ ] UI 開關 + 手動 smoke(連發下軌跡可見、漸隱、開關即時)記 progress。
-- [ ] `npx vitest run` 全綠。
+- [x] (2026-07-13 12:00+02:00) `ShotRayRing` + push/reset + 單元測試。
+- [x] (2026-07-13 12:00+02:00) 產彈點寫入(hit/miss 兩端點語意)+ SimLoop 測試。
+- [x] (2026-07-13 12:00+02:00) **既有決定性/開火回歸零修改全綠**(證據記 progress)。
+- [x] (2026-07-13 12:00+02:00) `TracerView` + 增量同步測試 + draw call 證據(單一 `InstancedMesh(TRACER_CAP)`)。
+- [x] (2026-07-13 12:00+02:00) UI 開關 + browser smoke 證據記 progress(人工視覺檢視未執行)。
+- [x] (2026-07-13 12:00+02:00) `npx vitest run` 全綠。
 
 ## Definition of Done
 

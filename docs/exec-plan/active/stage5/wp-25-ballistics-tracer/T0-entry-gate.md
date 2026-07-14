@@ -8,7 +8,7 @@
 | **相依** | —(T1 前置;T2 另需 M11,於 T2 開工時複驗) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [DECISIONS.md](../../../DECISIONS.md)(GD-17)+ [CLAUDE.md](../../../../../CLAUDE.md) §4 候選 + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-13) |
 
 ## Objective
 
@@ -38,12 +38,12 @@
 
 ## Steps
 
-- [ ] `npm run test:ci` 乾淨基準 exit 0 記 progress。
-- [ ] GD-17 決議(參數表 + 反推依據)入 DECISIONS.md;OQ-S5-2/OQ-25.1 回填上層 §8/ledger。
-- [ ] 產彈點/命中鏈/ImpactView 基線讀碼證據記 progress。
-- [ ] T3 零破壞測試清單記 progress。
-- [ ] CLAUDE.md §4 追加候選約束(與本 task 同 commit)。
-- [ ] progress.md 記 entry-gate PASS 宣告(註記:T2 開工前另需 M11 ✅ 複驗)。
+- [x] `npm run test:ci` 乾淨基準 exit 0 記 progress。
+- [x] GD-17 決議(參數表 + 反推依據)入 DECISIONS.md;OQ-S5-2/OQ-25.1 回填上層 §8/ledger。
+- [x] 產彈點/命中鏈/ImpactView 基線讀碼證據記 progress。
+- [x] T3 零破壞測試清單記 progress。
+- [x] CLAUDE.md §4 追加候選約束(與本 task 同 commit)。
+- [x] progress.md 記 entry-gate PASS 宣告(註記:T2 開工前另需 M11 ✅ 複驗)。
 
 ## Definition of Done
 

@@ -91,6 +91,8 @@ function serializeEventsCSV(events: DrillEvent[]): string {
       'hit',
       'firstShot',
       'residualSpeed',
+      'shotSeq',
+      'timeOfFlightMs',
       'viewYaw',
       'viewPitch',
       'aimPunchPitch',
@@ -128,12 +130,14 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         '',
         '',
         '',
+        '',
+        '',
         formatOptionalNumber(event.targetX),
         formatOptionalNumber(event.targetY),
         formatOptionalNumber(event.targetZ),
       ]);
     } else if (event.type === 'counter') {
-      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      rows.push([event.type, formatNumber(event.t), '', '', event.key, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     } else if (event.type === 'ads') {
       rows.push([
         event.type,
@@ -158,8 +162,10 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         '',
         '',
         '',
+        '',
+        '',
       ]);
-    } else {
+    } else if (event.type === 'fire') {
       rows.push([
         event.type,
         formatNumber(event.t),
@@ -170,6 +176,8 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         formatBoolean(event.hit),
         formatBoolean(event.firstShot),
         formatNumber(event.residualSpeed),
+        formatOptionalNumber(event.shotSeq),
+        '',
         formatOptionalNumber(event.viewYaw),
         formatOptionalNumber(event.viewPitch),
         formatOptionalNumber(event.aimPunchPitch),
@@ -179,6 +187,33 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         formatOptionalNumber(event.recoilIndex),
         formatOptionalNumber(event.ammo),
         event.offsetDeg !== undefined ? formatNumber(event.offsetDeg) : '',
+        event.part ?? '',
+        '',
+        '',
+        '',
+      ]);
+    } else {
+      rows.push([
+        event.type,
+        formatNumber(event.t),
+        event.targetId ?? '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        formatNumber(event.shotSeq),
+        formatNumber(event.timeOfFlightMs),
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
         event.part ?? '',
         '',
         '',
@@ -242,6 +277,7 @@ function assertFinitePayload(payload: ExportPayload): void {
       formatOptionalNumber(event.targetZ);
     } else if (event.type === 'fire') {
       formatNumber(event.residualSpeed);
+      formatOptionalNumber(event.shotSeq);
       formatOptionalNumber(event.viewYaw);
       formatOptionalNumber(event.viewPitch);
       formatOptionalNumber(event.aimPunchPitch);
@@ -251,6 +287,9 @@ function assertFinitePayload(payload: ExportPayload): void {
       formatOptionalNumber(event.recoilIndex);
       formatOptionalNumber(event.ammo);
       if (event.offsetDeg !== undefined) formatNumber(event.offsetDeg);
+    } else if (event.type === 'hit') {
+      formatNumber(event.shotSeq);
+      formatNumber(event.timeOfFlightMs);
     }
   }
   if (payload.meta.frames !== undefined) {

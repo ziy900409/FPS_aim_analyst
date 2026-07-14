@@ -24,6 +24,7 @@ export type DrillEvent =
       hit: boolean;
       firstShot: boolean;
       residualSpeed: number;
+      shotSeq?: number;
       viewYaw?: number;
       viewPitch?: number;
       aimPunchPitch?: number;
@@ -34,6 +35,14 @@ export type DrillEvent =
       ammo?: number;
       targetId?: string;
       offsetDeg?: number;
+      part?: 'head' | 'body';
+    }
+  | {
+      type: 'hit';
+      t: number;
+      timeOfFlightMs: number;
+      shotSeq: number;
+      targetId?: string;
       part?: 'head' | 'body';
     };
 
@@ -95,6 +104,8 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
       if (event.type === 'fire') {
         fireCount++;
         if (event.hit) hitCount++;
+      } else if (event.type === 'hit') {
+        hitCount++;
       }
     },
     snapshot(): DataRecorderSnapshot {

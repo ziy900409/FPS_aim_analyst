@@ -7,7 +7,7 @@
 | **相依** | T2(數學核心 golden 綠) |
 | **Risk / Cplx** | **High** / High(唯一動 sim 核心語意的切片——零破壞閘是全部風險所在) |
 | **Touches** | MODIFY `src/weapon/WeaponConfig.ts`(`bullet?` + 驗證)、`src/loop/SimLoop.ts`(產彈點分支 + arena 逐 tick 演進)、`src/state/SharedState.ts`(bullet arena 落點)、`src/data/DataRecorder.ts` + `export.ts` + `metadata.ts`(`hit` 事件 + `meta.weapon.bullet`)、`docs/operational/schema.md` + 測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-14) |
 
 ## Objective
 
@@ -45,12 +45,12 @@ shot 與 hit 事件解耦。
 
 ## Steps
 
-- [ ] WeaponConfig 擴欄 + 驗證測試。
-- [ ] **hitscan 零破壞證據**(改動前基準 → 分支引入後 stage1–3 回歸零修改全綠)。
-- [ ] arena + 產彈點分支 + 逐 tick 演進/命中(T2 模組接線,不重寫數學)。
-- [ ] `hit` 事件 + meta + schema.md 對帳 + export 測試。
-- [ ] projectile 決定性 fixture(跨 FPS 逐位)+ 滿載/reset 測試。
-- [ ] `npm run test:ci` exit 0。
+- [x] WeaponConfig 擴欄 + 驗證測試。
+- [x] **hitscan 零破壞證據**(改動前基準 → 分支引入後 stage1–3 回歸零修改全綠)。
+- [x] arena + 產彈點分支 + 逐 tick 演進/命中(T2 模組接線,不重寫數學)。
+- [x] `hit` 事件 + meta + schema.md 對帳 + export 測試。
+- [x] projectile 決定性 fixture(跨 FPS 逐位)+ 滿載/reset 測試。
+- [x] `npm run test:ci` exit 0。
 
 ## Definition of Done
 

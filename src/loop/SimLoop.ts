@@ -1,8 +1,10 @@
 import * as THREE from 'three/webgpu';
 import { consume } from '../input/consume.ts';
-import { pushImpact, type SharedState } from '../state/SharedState.ts';
+import { pushImpact, pushShotRay, resetBulletArena, type SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
 import { raycastWithRay, targetCenterOffsetDeg, type HitPointOut, type RaycastResult } from '../sim/HitDetector.ts';
+import { spawnBullet, stepBullet, type BulletState } from '../ballistics/bullet.ts';
+import { sweptHitTest, type Aabb } from '../ballistics/sweptHit.ts';
 import { punchToThreeRad } from '../recoil/adapter.ts';
 import { currentPeekId, firstShotGate } from '../sim/firstShot.ts';
 import { CS2_PROFILE, createMovementController, type MovementController } from '../sim/MovementController.ts';
@@ -102,6 +104,8 @@ const ballisticDir = new THREE.Vector3();
 // 彈道命中點回填的重用欄位（WP-13 / T3）：命中時 raycastWithRay 就地寫入 world 座標，fireOneShot
 // 據此寫入 `state.impacts`（彈孔）——開火熱路徑零配置（GC 紀律 §4）。
 const ballisticHitPoint: HitPointOut = { valid: false, x: 0, y: 0, z: 0 };
+const projectileScratch: BulletState = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, ageTicks: 0, alive: false };
+const projectileAabb: Aabb = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } };
 
 /**
  * 彈道射線（WP-13 / T2，研究計畫 Phase 2「視覺 ≠ 實際」）：方向 = 使用者視角 `state.aim`
@@ -174,6 +178,184 @@ function projectMissOntoEngagementPlane(state: SharedState): void {
   ballisticHitPoint.z = planeZ;
 }
 
+function composeProjectileRay(camera: THREE.Camera, state: SharedState): void {
+  const punch = punchToThreeRad(
+    state.recoilState.aimPunchPitchDeg * 2,
+    state.recoilState.aimPunchYawDeg * 2,
+  );
+  const yaw = state.aim.yaw + punch.yawRad;
+  const pitch = state.aim.pitch + punch.pitchRad;
+
+  ballisticYawQ.setFromAxisAngle(BALLISTIC_WORLD_UP, yaw);
+  ballisticPitchQ.setFromAxisAngle(BALLISTIC_LOCAL_RIGHT, pitch);
+  ballisticQ.copy(ballisticYawQ).multiply(ballisticPitchQ);
+
+  ballisticForward.copy(BALLISTIC_FORWARD).applyQuaternion(ballisticQ);
+  ballisticRight.copy(BALLISTIC_LOCAL_RIGHT).applyQuaternion(ballisticQ);
+  ballisticUp.copy(BALLISTIC_WORLD_UP).applyQuaternion(ballisticQ);
+
+  ballisticDir
+    .copy(ballisticForward)
+    .addScaledVector(ballisticRight, state.recoil.lastSpread.x)
+    .addScaledVector(ballisticUp, state.recoil.lastSpread.y)
+    .normalize();
+
+  camera.getWorldPosition(ballisticOrigin);
+}
+
+function spawnProjectile(
+  state: SharedState,
+  t: number,
+  weapon: WeaponConfig,
+  accurate: boolean,
+): number | null {
+  if (weapon.bullet === undefined) return null;
+
+  const arena = state.bullets;
+  let slot = -1;
+  for (let i = 0; i < arena.alive.length; i++) {
+    if (arena.alive[i] === 0) {
+      slot = i;
+      break;
+    }
+  }
+  if (slot < 0) {
+    arena.overflowCount += 1;
+    return null;
+  }
+
+  spawnBullet(projectileScratch, ballisticOrigin, ballisticDir, weapon.bullet.speedU);
+  arena.x[slot] = projectileScratch.x;
+  arena.y[slot] = projectileScratch.y;
+  arena.z[slot] = projectileScratch.z;
+  arena.vx[slot] = projectileScratch.vx;
+  arena.vy[slot] = projectileScratch.vy;
+  arena.vz[slot] = projectileScratch.vz;
+  arena.ox[slot] = ballisticOrigin.x;
+  arena.oy[slot] = ballisticOrigin.y;
+  arena.oz[slot] = ballisticOrigin.z;
+  arena.spawnT[slot] = t;
+  const shotSeq = arena.nextShotSeq++;
+  arena.shotSeq[slot] = shotSeq;
+  arena.accurate[slot] = accurate ? 1 : 0;
+  arena.alive[slot] = 1;
+  arena.activeCount += 1;
+  return shotSeq;
+}
+
+function targetAabb(target: SharedState['targets'][number]): Aabb {
+  const halfW = target.hitbox.width / 2;
+  const halfH = target.hitbox.height / 2;
+  const halfD = target.hitbox.depth / 2;
+  projectileAabb.min.x = target.pos.x - halfW;
+  projectileAabb.min.y = target.pos.y - halfH;
+  projectileAabb.min.z = target.pos.z - halfD;
+  projectileAabb.max.x = target.pos.x + halfW;
+  projectileAabb.max.y = target.pos.y + halfH;
+  projectileAabb.max.z = target.pos.z + halfD;
+  return projectileAabb;
+}
+
+function deactivateProjectile(state: SharedState, index: number): void {
+  const arena = state.bullets;
+  arena.alive[index] = 0;
+  arena.activeCount -= 1;
+}
+
+function advanceProjectiles(
+  state: SharedState,
+  dtSec: number,
+  tickStartMs: number,
+  tickEndMs: number,
+  targetManager?: TargetManager,
+  recorder?: DataRecorder,
+  weapon: WeaponConfig = ak47,
+): void {
+  const bullet = weapon.bullet;
+  const arena = state.bullets;
+  if (bullet === undefined || arena.activeCount === 0) return;
+
+  const tickMs = tickEndMs - tickStartMs;
+  for (let i = 0; i < arena.alive.length; i++) {
+    if (arena.alive[i] === 0) continue;
+
+    const x0 = arena.x[i];
+    const y0 = arena.y[i];
+    const z0 = arena.z[i];
+    projectileScratch.x = x0;
+    projectileScratch.y = y0;
+    projectileScratch.z = z0;
+    projectileScratch.vx = arena.vx[i];
+    projectileScratch.vy = arena.vy[i];
+    projectileScratch.vz = arena.vz[i];
+    projectileScratch.alive = true;
+    projectileScratch.ageTicks = 0;
+    stepBullet(projectileScratch, dtSec, bullet.gravityU);
+
+    const x1 = projectileScratch.x;
+    const y1 = projectileScratch.y;
+    const z1 = projectileScratch.z;
+    arena.x[i] = x1;
+    arena.y[i] = y1;
+    arena.z[i] = z1;
+    arena.vx[i] = projectileScratch.vx;
+    arena.vy[i] = projectileScratch.vy;
+    arena.vz[i] = projectileScratch.vz;
+
+    let hitS = Infinity;
+    let hitIndex = -1;
+    for (let t = 0; t < state.targets.length; t++) {
+      const target = state.targets[t];
+      if (!target.visible || !target.alive) continue;
+      const s = sweptHitTest(x0, y0, z0, x1, y1, z1, targetAabb(target));
+      if (s !== null && s < hitS) {
+        hitS = s;
+        hitIndex = t;
+      }
+    }
+
+    if (hitIndex >= 0 && arena.accurate[i] === 1) {
+      const target = state.targets[hitIndex];
+      const hx = x0 + (x1 - x0) * hitS;
+      const hy = y0 + (y1 - y0) * hitS;
+      const hz = z0 + (z1 - z0) * hitS;
+      const hitT = tickStartMs + tickMs * hitS;
+      pushImpact(state.impacts, hx, hy, hz);
+      pushShotRay(state.shotRays, arena.ox[i], arena.oy[i], arena.oz[i], hx, hy, hz);
+      if (target.persistent !== true) targetManager?.markKilled(state, target.id);
+      recorder?.recordEvent({
+        type: 'hit',
+        t: hitT,
+        timeOfFlightMs: hitT - arena.spawnT[i],
+        shotSeq: arena.shotSeq[i],
+        targetId: target.id,
+        ...(target.hitbox.part !== undefined ? { part: target.hitbox.part } : {}),
+      });
+      deactivateProjectile(state, i);
+      continue;
+    }
+
+    let expireS = Infinity;
+    const d0 = Math.hypot(x0 - arena.ox[i], y0 - arena.oy[i], z0 - arena.oz[i]);
+    const d1 = Math.hypot(x1 - arena.ox[i], y1 - arena.oy[i], z1 - arena.oz[i]);
+    if (d1 >= bullet.maxRangeU) {
+      const denom = d1 - d0;
+      expireS = denom > 0 ? Math.max(0, Math.min(1, (bullet.maxRangeU - d0) / denom)) : 0;
+    }
+    if (y1 <= 0) {
+      const groundS = y0 > 0 && y1 !== y0 ? (0 - y0) / (y1 - y0) : 0;
+      if (groundS >= 0 && groundS <= 1) expireS = Math.min(expireS, groundS);
+    }
+    if (expireS !== Infinity) {
+      const ex = x0 + (x1 - x0) * expireS;
+      const ey = y0 + (y1 - y0) * expireS;
+      const ez = z0 + (z1 - z0) * expireS;
+      pushShotRay(state.shotRays, arena.ox[i], arena.oy[i], arena.oz[i], ex, ey, ez);
+      deactivateProjectile(state, i);
+    }
+  }
+}
+
 function fireOneShot(
   state: SharedState,
   t: number,
@@ -184,7 +366,7 @@ function fireOneShot(
   recorder?: DataRecorder,
   weapon?: WeaponConfig,
   recoilRuntime?: RecoilRuntime,
-): void {
+): boolean {
   // 開火：首發旗標**先於命中判定**——peek 錨為 fire 當下的 active 目標；命中即擊殺會撤除該目標、
   // 換 peek，故 firstShot 須在 markKilled 之前對「當前 peek」判定（FR-5.2，OQ-5.3）。未命中亦計首發
   // （P2：未命中可補槍，首發＝peek 內第一個 fire，無論中否）。
@@ -193,6 +375,7 @@ function fireOneShot(
   let part: 'head' | 'body' | undefined;
   let targetId: string | undefined;
   let offsetDeg: number | undefined;
+  let shotSeq: number | undefined;
 
   const residualSpeed = Math.abs(state.player.vx);
   // Velocity gate（WP-14 / T2，FR-B12）：**在命中判定與 markKilled 之前**讀 fire 當下速度
@@ -226,24 +409,40 @@ function fireOneShot(
     let subAlpha = tickMs > 0 ? (t - tickStartMs) / tickMs : 0;
     if (subAlpha < 0) subAlpha = 0;
     else if (subAlpha > 1) subAlpha = 1;
-    const result = ballisticRaycast(camera, state, subAlpha);
-    hit = accurate && result.hit;
-    part = hit ? result.part : undefined;
-    if (result.targetId !== undefined) targetId = result.targetId;
-    // persistent 目標（timed presentation,WP-18 / T3）:命中只記 fire 事件、**不** markKilled——窗內
-    // 持續存活移動,推進由 DrillRunner 呈現時長到期驅動（守 GD-7 追蹤窗口右界）。非 persistent 目標
-    //（persistent 為 undefined,既有 peek/detection drill）維持「命中即撤」。
-    if (hit && result.targetId !== undefined) {
-      const hitTarget = state.targets.find((candidate) => candidate.id === result.targetId);
-      if (hitTarget === undefined || hitTarget.persistent !== true) {
-        targetManager.markKilled(state, result.targetId);
+    if (weapon?.bullet === undefined) {
+      const result = ballisticRaycast(camera, state, subAlpha);
+      hit = accurate && result.hit;
+      part = hit ? result.part : undefined;
+      if (result.targetId !== undefined) targetId = result.targetId;
+      // persistent 目標（timed presentation,WP-18 / T3）:命中只記 fire 事件、**不** markKilled——窗內
+      // 持續存活移動,推進由 DrillRunner 呈現時長到期驅動（守 GD-7 追蹤窗口右界）。非 persistent 目標
+      //（persistent 為 undefined,既有 peek/detection drill）維持「命中即撤」。
+      if (hit && result.targetId !== undefined) {
+        const hitTarget = state.targets.find((candidate) => candidate.id === result.targetId);
+        if (hitTarget === undefined || hitTarget.persistent !== true) {
+          targetManager.markKilled(state, result.targetId);
+        }
       }
-    }
-    // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
-    // `ImpactView` 唯讀繪製）；環狀覆寫最舊。脫靶彈孔使壓槍漂移 pattern 可視化;`ballisticHitPoint`
-    // 由 `ballisticRaycast` 統一回填（命中→目標近面;脫靶→交戰平面;無存活目標→valid=false 不產）。
-    if (ballisticHitPoint.valid) {
-      pushImpact(state.impacts, ballisticHitPoint.x, ballisticHitPoint.y, ballisticHitPoint.z);
+      // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
+      // `ImpactView` 唯讀繪製）；環狀覆寫最舊。脫靶彈孔使壓槍漂移 pattern 可視化;`ballisticHitPoint`
+      // 由 `ballisticRaycast` 統一回填（命中→目標近面;脫靶→交戰平面;無存活目標→valid=false 不產）。
+      if (ballisticHitPoint.valid) {
+        pushImpact(state.impacts, ballisticHitPoint.x, ballisticHitPoint.y, ballisticHitPoint.z);
+        pushShotRay(
+          state.shotRays,
+          ballisticOrigin.x,
+          ballisticOrigin.y,
+          ballisticOrigin.z,
+          ballisticHitPoint.x,
+          ballisticHitPoint.y,
+          ballisticHitPoint.z,
+        );
+      }
+    } else {
+      composeProjectileRay(camera, state);
+      const spawnedShotSeq = spawnProjectile(state, t, weapon, accurate);
+      if (spawnedShotSeq === null) return false;
+      shotSeq = spawnedShotSeq;
     }
   }
 
@@ -263,6 +462,7 @@ function fireOneShot(
     spreadY: state.recoil.lastSpread.y,
     recoilIndex: state.recoilState.recoilIndex,
     ammo: state.weapon.ammo,
+    ...(shotSeq !== undefined ? { shotSeq } : {}),
     ...(targetId !== undefined ? { targetId } : {}),
     ...(offsetDeg !== undefined ? { offsetDeg } : {}),
     ...(part !== undefined ? { part } : {}),
@@ -273,6 +473,7 @@ function fireOneShot(
   if (recoilRuntime !== undefined && weapon !== undefined) {
     recoilOnFire(state.recoilState, weapon, recoilRuntime.table);
   }
+  return true;
 }
 
 function scheduleFire(
@@ -288,8 +489,8 @@ function scheduleFire(
 ): void {
   const cycleMs = weapon.cycletimeSec * 1000;
   while (state.heldFire && state.weapon.ammo > 0 && state.weapon.nextFireT <= untilMs) {
-    fireOneShot(state, state.weapon.nextFireT, tickStartMs, tickMs, camera, targetManager, recorder, weapon, recoilRuntime);
-    state.weapon.ammo--;
+    const fired = fireOneShot(state, state.weapon.nextFireT, tickStartMs, tickMs, camera, targetManager, recorder, weapon, recoilRuntime);
+    if (fired) state.weapon.ammo--;
     state.weapon.nextFireT += cycleMs;
   }
   if (state.heldFire && state.weapon.ammo <= 0) {
@@ -352,6 +553,9 @@ export function simStep(
   tickIndex = 0,
   recoilRuntime?: RecoilRuntime,
 ): void {
+  const tickMs = dtSec * 1000;
+  const tickStartMs = tickEndMs - tickMs;
+
   state.prev.x = state.curr.x;
   state.prev.z = state.curr.z;
   // recoil 視覺快照 prev←curr（比照 position；render 以 alpha 在 prev→curr 間 lerp aimPunch，T2）。
@@ -377,6 +581,7 @@ export function simStep(
   if (drillRunner !== undefined) drillRunner.tick(state, tickEndMs);
   else targetManager?.tick(state, tickEndMs);
   recordVisibleEvents(state, tickEndMs, recorder);
+  advanceProjectiles(state, dtSec, tickStartMs, tickEndMs, targetManager, recorder, weapon);
 
   // recoil 衰減（WP-13 / T1）：64Hz 子節奏 = 偶數 tick（128Hz sim）；dtSec **恆常數 1/64**（GD-5，
   // 不代入 sim dtSec）。位置在目標系統與 consume 之間 → 本 tick decay 先於本 tick 產彈 kick（README
@@ -386,8 +591,6 @@ export function simStep(
   // 半開窗 [tickStart, tickEndMs)、嚴格 `<`（GD-3）。每個事件前先補發上一段已到期子彈；
   // fire-down 套用後立即跑到該事件時間，鎖定 down→up 同 tick 仍至少產 1 發（OQ-11.1）。
   // tick 窗 [tickStartMs, tickEndMs) 供 sub-tick 命中內插:fire 時間戳 t → subAlpha（WP-18/T2，FR-B17）。
-  const tickMs = dtSec * 1000;
-  const tickStartMs = tickEndMs - tickMs;
   const apply = handle ?? ((ev: InputEvent) => applyInput(state, ev, recorder));
   consume(state, tickEndMs, (ev) => {
     scheduleFire(state, ev.t, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime);
@@ -440,6 +643,7 @@ export function createSimLoop(
   state.weapon.nextFireT = Infinity;
   state.weapon.magSize = weapon.magSize;
   state.weapon.ammo = weapon.magSize;
+  resetBulletArena(state.bullets);
   const tickSec = 1 / simHz;
   const tickMs = 1000 / simHz;
   let accSec = 0;
