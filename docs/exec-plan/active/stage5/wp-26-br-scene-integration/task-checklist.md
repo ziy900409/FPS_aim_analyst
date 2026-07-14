@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(上游三 WP 驗證 + 資產路線拍板,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
-| ⬜ | **T1** br-field 原創資產 + attribution | [T1-br-scene-assets.md](T1-br-scene-assets.md) | T0 | Med |
+| ✅ | **T1** br-field 原創資產 + attribution | [T1-br-scene-assets.md](T1-br-scene-assets.md) | T0 | Med |
 | ⬜ | **T2** 場景上線 + 淨空 + perf + 決定性 | [T2-br-scene-online.md](T2-br-scene-online.md) | T1 + WP-23 | Med |
 | ⬜ | **T3** tracking_br_v1 + protocol(純 config) | [T3-br-tracking-drill.md](T3-br-tracking-drill.md) | T2 + WP-24/25 | Med |
 | ⬜ | **T4** 整合 E2E + 三不變性 + 驗收清單 E | [T4-e2e-acceptance.md](T4-e2e-acceptance.md) | T3 | Med |

@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 可開
+## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 可開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 br-field 資產 | ⬜ |
+| T1 br-field 資產 | ✅ |
 | T2 場景上線 | ⬜ |
 | T3 整合 drill + protocol | ⬜ |
 | T4 E2E + 驗收清單 E | ⬜ |
@@ -30,6 +30,41 @@
 ---
 
 ## Log
+
+### 2026-07-14 01:34Z — T1 br-field 原創資產 PASS
+
+- **Slice / scope**:T1 只新增原創 procedural 資產與權威 props,不掛 SceneConfig、不修改 loader/drill/runtime。新增 `scripts/gen-br-field-gltf.mjs`,同步輸出 `src/scene/scenes/br-field.props.json` 與 `public/assets/scenes/br-field/br-field.gltf`。
+- **Asset route / license**:沿 T0 OQ-S5-3 採程序化生成 CC0。`ATTRIBUTIONS.md` 已新增 br-field 逐項記錄;紅線自檢:無遊戲抽取資產、無 PUBG/特定 BR 地圖復刻、無 NC/付費素材。
+- **Corridor self-check**:`node scripts/gen-br-field-gltf.mjs` exit 0:
+
+  ```
+  wrote ...\src\scene\scenes\br-field.props.json: 62 propBounds
+  wrote ...\public\assets\scenes\br-field\br-field.gltf: 129 mesh nodes, 1548 triangles, 8 materials, 0 textures
+  corridor clear: length 145u, width 42u
+  ```
+
+  生成器內建檢查所有 propBounds 對 `z in [-145,0]`、`x in [-21,21]` 的 hard clear band 零交集。
+- **Budget evidence**:`node -e "...budget/corridor verify..."` exit 0:
+
+  ```
+  br-field verify: 62 propBounds, 129 nodes, 1548 triangles, 8 materials, corridor violations 0
+  ```
+
+  對 T0 預算:1548 triangles `<20k`;8 materials `<=8`;0 textures。
+- **Visual smoke**:使用 Playwright 臨時 canvas viewer 讀取 GLTF nodes,輸出 top-down smoke 截圖:
+  `docs/exec-plan/active/stage5/wp-26-br-scene-integration/evidence/br-field-topdown-smoke.png`。
+  截圖顯示 42u x 145u 中央走廊淨空,麥田/props 在 flank。
+- **Targeted verification**:
+
+  ```
+  npm.cmd run typecheck
+  # exit 0
+
+  npx.cmd vitest run src/scene/SceneConfig.test.ts src/render/sceneLoader.test.ts
+  # 2 files / 12 tests passed
+  ```
+
+- **T2 handoff**:SceneConfig 可直接消費 `br-field.props.json` 的 `props` 作為 `propBounds`;建議 `sceneId:'br-field'`,`assetPackVersion:'br-field-v1'`,`clutterTier:'low'`,`asset.url:'/assets/scenes/br-field/br-field.gltf'`,`displayScale:1`。T2 仍需正式跑 clearance/perf/跨場景決定性。
 
 ### 2026-07-14 01:24Z — T0 entry gate PASS
 

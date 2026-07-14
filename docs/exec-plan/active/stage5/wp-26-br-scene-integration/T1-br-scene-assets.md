@@ -7,7 +7,7 @@
 | **相依** | T0(OQ-S5-3 路線 + 走廊需求表);**可在 WP-23/24/25 進行中提前並行** |
 | **Risk / Cplx** | Med / Med(風險在效能預算與授權紀律,非程式) |
 | **Touches** | ADD `public/assets/scenes/br-field/`(GLTF + 貼圖)或程序化生成器擴充;MODIFY `ATTRIBUTIONS.md`;propBounds 資料(隨資產同源產出) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-07-14 01:34Z |
 
 ## Objective
 
@@ -37,11 +37,11 @@ propBounds 與視覺同源、遠距視線走廊淨空。
 
 ## Steps
 
-- [ ] 資產產出(生成器或組裝)+ propBounds 同源輸出。
-- [ ] 走廊淨空自檢(T0 需求表逐項比對)記 progress。
-- [ ] 預算證據(三角形/材質/貼圖尺寸)記 progress。
-- [ ] `ATTRIBUTIONS.md` 逐項 + 紅線自檢記 progress。
-- [ ] 視覺 smoke(獨立 viewer 或暫掛 SceneManager)截圖記 progress。
+- [x] 資產產出(生成器或組裝)+ propBounds 同源輸出。
+- [x] 走廊淨空自檢(T0 需求表逐項比對)記 progress。
+- [x] 預算證據(三角形/材質/貼圖尺寸)記 progress。
+- [x] `ATTRIBUTIONS.md` 逐項 + 紅線自檢記 progress。
+- [x] 視覺 smoke(獨立 viewer 或暫掛 SceneManager)截圖記 progress。
 
 ## Definition of Done
 

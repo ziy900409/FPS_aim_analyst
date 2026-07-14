@@ -57,3 +57,30 @@ node scripts/gen-urban-high-gltf.mjs
 
 同步輸出 `src/scene/scenes/urban-high.props.json` 與
 `public/assets/scenes/urban-high/urban-high.gltf`。座標為 canonical CS unit(u),`displayScale: 1`。
+
+---
+
+## br-field(WP-26 / T1)
+
+| 欄位 | 值 |
+|---|---|
+| 資產名 | `br-field.gltf`(大逃殺跟槍測試用開闊麥田/丘陵/遠山場景,62 個 propBounds + 67 個視覺-only 地面/麥田/遠山節點) |
+| 作者 | FPS_aim_analyst 專案(**原創**) |
+| 來源 | 本 repo `scripts/gen-br-field-gltf.mjs` 程序化生成;prop 佈局同步輸出 `src/scene/scenes/br-field.props.json` |
+| 授權 | **CC0 1.0**(公眾領域捐獻;原創幾何 + 原創程式碼,無第三方素材) |
+| 取得日 | 2026-07-14 |
+| 檔案路徑 | `public/assets/scenes/br-field/br-field.gltf` |
+
+**說明**:br-field 幾何為原創低多邊形戶外場景。可進 `propBounds` 的樹木、灌木、乾草捆
+全部放置在 42u 寬、145u 長前向 tracking/projectile 走廊外側;地面、低麥田帶、flank
+丘陵與遠山為 render-only 視覺節點,不進 sim、不擋彈。場景 layout 為中性開闊地貌,
+不使用遊戲抽取資產,不復刻 PUBG 或任何特定地圖。
+
+### 重生方式
+
+```
+node scripts/gen-br-field-gltf.mjs
+```
+
+同步輸出 `src/scene/scenes/br-field.props.json` 與
+`public/assets/scenes/br-field/br-field.gltf`。座標為 canonical CS unit(u),`displayScale: 1`。
