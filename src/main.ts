@@ -18,8 +18,10 @@ import { applyResolutionMode, type DisplayState, type ResolutionMode } from './d
 import {
   createProtocolRunner,
   type ProtocolConditionContext,
+  type ProtocolConfig,
   type ProtocolRunner,
 } from './display/ProtocolRunner.ts';
+import { brTrackingProtocol } from './display/brTrackingProtocol.ts';
 import { resolutionDetectionProtocol } from './display/resolutionDetectionProtocol.ts';
 import { probeWarmupP95Ms } from './display/eligibilityGate.ts';
 import { createExperimentSession } from './display/experimentSession.ts';
@@ -56,6 +58,7 @@ import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
+import { trackingBrVariants } from './drill/tracking_br_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -108,6 +111,12 @@ const availableDrills: AvailableDrill[] = [
     source: trackingLongrangeV1.drill,
     sceneId: trackingLongrangeV1.sceneId,
   },
+  ...trackingBrVariants.map((variant) => ({
+    id: variant.id,
+    label: variant.id,
+    source: variant.drill,
+    sceneId: variant.sceneId,
+  })),
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
@@ -223,7 +232,7 @@ const experimentSession = createExperimentSession({
 });
 let pendingSessionSetupValues: SessionSetupValues | undefined;
 let sessionSetupValues: SessionSetupValues | undefined;
-let pendingSessionMode: 'session' | 'protocol' = 'session';
+let pendingSessionMode: 'session' | 'resolution-protocol' | 'br-tracking-protocol' = 'session';
 let markProtocolFullscreenExit: (() => void) | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
   required: resolutionDetectionProtocol.requiredDisplay,
@@ -238,7 +247,8 @@ const eligibilityGateScreen = createEligibilityGateScreen({
     }
     eligibilityGateScreen.hideSuspectWarning();
     experimentSession.enter(report);
-    if (requestedMode === 'protocol') void startResolutionProtocol();
+    if (requestedMode === 'resolution-protocol') void startResolutionProtocol();
+    else if (requestedMode === 'br-tracking-protocol') void startBrTrackingProtocol();
   },
 });
 const sessionSetupForm = createSessionSetupForm({
@@ -285,13 +295,24 @@ protocolButton.textContent = '解析度 protocol';
 protocolButton.title = '執行受試者內解析度 × 偵測 protocol';
 protocolButton.style.cssText = experimentButton.style.cssText.replace('top:12px', 'top:54px');
 protocolButton.addEventListener('click', () => {
-  pendingSessionMode = 'protocol';
+  pendingSessionMode = 'resolution-protocol';
   sessionSetupForm.open();
 });
 document.body.appendChild(protocolButton);
+const brProtocolButton = document.createElement('button');
+brProtocolButton.type = 'button';
+brProtocolButton.textContent = 'BR protocol';
+brProtocolButton.title = '執行 BR 跟槍 ADS × 彈道 × 角尺寸 protocol';
+brProtocolButton.style.cssText = experimentButton.style.cssText.replace('top:12px', 'top:96px');
+brProtocolButton.addEventListener('click', () => {
+  pendingSessionMode = 'br-tracking-protocol';
+  sessionSetupForm.open();
+});
+document.body.appendChild(brProtocolButton);
 pointerLock.onChange((locked) => {
   experimentButton.style.display = locked ? 'none' : 'block';
   protocolButton.style.display = locked ? 'none' : 'block';
+  brProtocolButton.style.display = locked ? 'none' : 'block';
 });
 
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
@@ -709,24 +730,30 @@ async function loadSceneById(sceneId: string): Promise<void> {
   syncControlsVisibility();
 }
 
-const protocolRunner: ProtocolRunner<ExportPayload> = createProtocolRunner({
-  config: resolutionDetectionProtocol,
-  async applyCondition(condition) {
-    activeResolutionMode = condition.mode;
-    settingsPanel.setResolutionMode(condition.mode);
-    settingsPanel.lockMode(true);
-    resize();
-    await loadSceneById(condition.sceneId);
-    await loadDrillById(condition.drillId);
-    return {
-      mode: displayState.mode,
-      sceneId: activeSceneConfig.sceneId,
-      drillId: activeDrillConfig.drillId,
-    };
-  },
-  exportCondition: (context) => buildCurrentExportPayload(context),
-});
-markProtocolFullscreenExit = () => protocolRunner.markCurrentConditionSuspect('fullscreen-exit');
+function createAppProtocolRunner(config: ProtocolConfig): ProtocolRunner<ExportPayload> {
+  return createProtocolRunner({
+    config,
+    async applyCondition(condition) {
+      activeResolutionMode = condition.mode;
+      settingsPanel.setResolutionMode(condition.mode);
+      settingsPanel.lockMode(true);
+      resize();
+      await loadSceneById(condition.sceneId);
+      await loadDrillById(condition.drillId);
+      return {
+        mode: displayState.mode,
+        sceneId: activeSceneConfig.sceneId,
+        drillId: activeDrillConfig.drillId,
+      };
+    },
+    exportCondition: (context) => buildCurrentExportPayload(context),
+  });
+}
+
+const resolutionProtocolRunner = createAppProtocolRunner(resolutionDetectionProtocol);
+const brTrackingProtocolRunner = createAppProtocolRunner(brTrackingProtocol);
+let activeProtocolRunner: ProtocolRunner<ExportPayload> = resolutionProtocolRunner;
+markProtocolFullscreenExit = () => activeProtocolRunner.markCurrentConditionSuspect('fullscreen-exit');
 
 // WP-8 / T4（FR-8.4）— 重來 / 換 drill 控制。解鎖時可操作；結果頁顯示時也保持可操作。
 const controls = createControls({
@@ -800,12 +827,13 @@ function setProtocolStatus(text: string, showNext: boolean): void {
   protocolStatus.style.display = 'flex';
 }
 
-async function startResolutionProtocol(): Promise<void> {
-  protocolRunner.reset();
+async function startProtocol(runner: ProtocolRunner<ExportPayload>): Promise<void> {
+  activeProtocolRunner = runner;
+  activeProtocolRunner.reset();
   completingProtocolCondition = false;
   completedProtocolConditionIndex = undefined;
   try {
-    const context = await protocolRunner.start();
+    const context = await activeProtocolRunner.start();
     setProtocolStatus(protocolRunningText(context), false);
   } catch (error) {
     settingsPanel.lockMode(false);
@@ -813,10 +841,18 @@ async function startResolutionProtocol(): Promise<void> {
   }
 }
 
+function startResolutionProtocol(): Promise<void> {
+  return startProtocol(resolutionProtocolRunner);
+}
+
+function startBrTrackingProtocol(): Promise<void> {
+  return startProtocol(brTrackingProtocolRunner);
+}
+
 async function beginNextProtocolCondition(): Promise<void> {
   protocolNextButton.disabled = true;
   try {
-    const context = await protocolRunner.beginNextCondition();
+    const context = await activeProtocolRunner.beginNextCondition();
     if (context === undefined) {
       settingsPanel.lockMode(false);
       experimentSession.exit();
@@ -833,7 +869,7 @@ async function beginNextProtocolCondition(): Promise<void> {
 }
 
 async function completeActiveProtocolCondition(): Promise<void> {
-  const current = protocolRunner.current;
+  const current = activeProtocolRunner.current;
   if (
     current === undefined ||
     completingProtocolCondition ||
@@ -844,16 +880,16 @@ async function completeActiveProtocolCondition(): Promise<void> {
 
   completingProtocolCondition = true;
   try {
-    const result = await protocolRunner.completeCurrentCondition();
+    const result = await activeProtocolRunner.completeCurrentCondition();
     completedProtocolConditionIndex = result.context.conditionIndex;
     downloadJSON(result.payload, { basename: exportBasename(result.payload) });
-    const hasNext = result.context.conditionIndex < protocolRunner.config.conditions.length - 1;
+    const hasNext = result.context.conditionIndex < activeProtocolRunner.config.conditions.length - 1;
     if (!hasNext) {
       settingsPanel.lockMode(false);
       experimentSession.exit();
     }
     setProtocolStatus(
-      `Protocol 條件 ${result.context.conditionIndex + 1}/${protocolRunner.config.conditions.length} 已匯出: ${result.context.conditionLabel}`,
+      `Protocol 條件 ${result.context.conditionIndex + 1}/${activeProtocolRunner.config.conditions.length} 已匯出: ${result.context.conditionLabel}`,
       hasNext,
     );
   } catch (error) {
@@ -864,7 +900,7 @@ async function completeActiveProtocolCondition(): Promise<void> {
 }
 
 function protocolRunningText(context: ProtocolConditionContext): string {
-  return `Protocol 條件 ${context.conditionIndex + 1}/${protocolRunner.config.conditions.length}: ${context.conditionLabel}`;
+  return `Protocol 條件 ${context.conditionIndex + 1}/${activeProtocolRunner.config.conditions.length}: ${context.conditionLabel}`;
 }
 
 protocolNextButton.addEventListener('click', () => void beginNextProtocolCondition());

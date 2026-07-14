@@ -5,6 +5,7 @@ import {
   type ProtocolConfig,
   type ProtocolReadyState,
 } from './ProtocolRunner.ts';
+import { brTrackingProtocol } from './brTrackingProtocol.ts';
 import { resolutionDetectionProtocol } from './resolutionDetectionProtocol.ts';
 
 const PROTOCOL: ProtocolConfig = {
@@ -23,6 +24,24 @@ describe('validateProtocol', () => {
       'fhd-1080',
       'qhd-1440',
     ]);
+  });
+
+  it('declares the BR tracking ADS x ballistic x angular-size protocol matrix', () => {
+    expect(brTrackingProtocol.protocolId).toBe('br_tracking_v1');
+    expect(brTrackingProtocol.conditions).toHaveLength(8);
+    expect(brTrackingProtocol.conditions.map((condition) => condition.label)).toEqual([
+      'br-ads_off-hitscan-0p5deg',
+      'br-ads_on-hitscan-0p5deg',
+      'br-ads_off-projectile-0p5deg',
+      'br-ads_on-projectile-0p5deg',
+      'br-ads_off-hitscan-2deg',
+      'br-ads_on-hitscan-2deg',
+      'br-ads_off-projectile-2deg',
+      'br-ads_on-projectile-2deg',
+    ]);
+    expect(new Set(brTrackingProtocol.conditions.map((condition) => condition.drillId)).size).toBe(8);
+    expect(brTrackingProtocol.conditions.every((condition) => condition.mode === 'native')).toBe(true);
+    expect(brTrackingProtocol.conditions.every((condition) => condition.sceneId === 'br-field')).toBe(true);
   });
 
   it('rejects malformed configs before a protocol session can start', () => {

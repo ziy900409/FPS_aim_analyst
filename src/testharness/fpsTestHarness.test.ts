@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createFpsTestHarness } from './fpsTestHarness.ts';
 import drillSource from '../../drills/counterstrafe_ad_v1.json';
 import { detectionPopinV1 } from '../drill/detection_popin_v1.ts';
+import { brTrackingProtocol } from '../display/brTrackingProtocol.ts';
 import { resolutionDetectionProtocol } from '../display/resolutionDetectionProtocol.ts';
+import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
 import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { fieldLow } from '../scene/scenes/field-low.ts';
 import { urbanHigh } from '../scene/scenes/urban-high.ts';
@@ -46,6 +48,17 @@ function makeDetectionHarness() {
 function makeTrackingHarness(scene: SceneConfig = fieldLow) {
   return createFpsTestHarness({
     availableDrills: [{ id: trackingSceneV1.id, source: trackingSceneV1.drill, scene }],
+    backend: 'webgl2',
+    crossOriginIsolated: true,
+    displayHz: 240,
+    sensitivity: 1,
+  });
+}
+
+function makeBrTrackingProtocolHarness() {
+  return createFpsTestHarness({
+    availableDrills: trackingBrVariants.map((variant) => ({ id: variant.id, source: variant.drill, scene: brField })),
+    availableScenes: [brField],
     backend: 'webgl2',
     crossOriginIsolated: true,
     displayHz: 240,
@@ -235,5 +248,76 @@ describe('WP-13 / T2 — harness 整合(分離後仍命中 + recoil 漂移讀數
       expect(payload.meta.suspect).toBe(false);
       expect(payload.events.filter((event) => event.type === 'visible')).toHaveLength(detectionPopinV1.targets.count);
     }
+  });
+
+  it('WP-26 / T3 BR tracking protocol：8 conditions export protocol, scene, weapon, and tracking metadata', async () => {
+    const harness = makeBrTrackingProtocolHarness();
+
+    const payloads = await harness.runBrTrackingProtocol();
+
+    expect(payloads).toHaveLength(8);
+    expect(payloads.map((payload) => payload.meta.protocol?.conditionLabel)).toEqual(
+      brTrackingProtocol.conditions.map((condition) => condition.label),
+    );
+
+    for (const [index, payload] of payloads.entries()) {
+      const variant = trackingBrVariants[index];
+      const hasAds = variant.axes.ads === 'ads_on';
+      const hasProjectile = variant.axes.ballistic === 'projectile';
+      const adsEvents = payload.events.filter((event) => event.type === 'ads');
+      const tracking = harness.trackingMetricsFromExport(payload);
+
+      expect(payload.meta.drillId).toBe(variant.id);
+      expect(payload.meta.protocol).toEqual({
+        protocolId: brTrackingProtocol.protocolId,
+        conditionIndex: index,
+        conditionLabel: brTrackingProtocol.conditions[index].label,
+      });
+      expect(payload.meta.display?.mode).toBe('native');
+      expect(payload.meta.scene).toMatchObject({
+        sceneId: 'br-field',
+        assetPackVersion: brField.assetPackVersion,
+        clutterTier: 'low',
+        fallback: false,
+      });
+      expect(payload.meta.targets).toMatchObject({ hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } });
+      expect(payload.meta.weapon?.ads !== undefined).toBe(hasAds);
+      expect(payload.meta.weapon?.bullet !== undefined).toBe(hasProjectile);
+      expect(payload.meta.weapon?.projectileOverflow).toBe(hasProjectile ? false : undefined);
+      expect(adsEvents.length).toBe(hasAds ? 2 : 0);
+      expect(payload.ticks.some((tick) => tick.ads)).toBe(hasAds);
+      expect(payload.events.filter((event) => event.type === 'visible')).toHaveLength(variant.drill.targets.count);
+      expect(tracking.acquisitionFailureRate).toBe(0);
+      expect(tracking.presentations.every((p) => p.totPercent !== undefined && p.totPercent >= 99)).toBe(true);
+      expect(payload.meta.suspect).toBe(false);
+    }
+  });
+
+  it('WP-26 / T3 BR ADS smoke：open ADS, track, fire-hit, and export on br-field', () => {
+    const variant = trackingBrVariants[5]; // ads_on / hitscan / 2deg
+    const harness = makeBrTrackingProtocolHarness();
+
+    harness.startDrill(variant.id);
+    harness.feedInput([
+      { type: 'ads', down: true, t: 0 },
+      { type: 'fire', down: true, t: 20 },
+      { type: 'fire', down: false, t: 30 },
+      { type: 'ads', down: false, t: 50 },
+    ]);
+
+    const payload = harness.forceExportJSON();
+    const adsEvents = payload.events.filter((event) => event.type === 'ads');
+    const fireEvents = payload.events.filter((event) => event.type === 'fire');
+
+    expect(payload.meta.drillId).toBe(variant.id);
+    expect(payload.meta.scene).toMatchObject({ sceneId: 'br-field', fallback: false });
+    expect(payload.meta.weapon).toMatchObject({ id: 'ak47_br_ads_hitscan', ads: { fovDeg: 40, sensitivityRatio: 1 } });
+    expect(adsEvents).toEqual([
+      expect.objectContaining({ type: 'ads', down: true }),
+      expect.objectContaining({ type: 'ads', down: false }),
+    ]);
+    expect(payload.ticks.some((tick) => tick.ads)).toBe(true);
+    expect(fireEvents.some((event) => event.type === 'fire' && event.hit === true)).toBe(true);
+    expect(payload.meta.suspect).toBe(false);
   });
 });

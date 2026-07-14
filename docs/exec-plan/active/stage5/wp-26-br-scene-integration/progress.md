@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 scene online PASS(2026-07-14);T3 可開
+## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 scene online PASS(2026-07-14);T3 drill/protocol PASS(2026-07-14);T4 可開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 br-field 資產 | ✅ |
 | T2 場景上線 | ✅ |
-| T3 整合 drill + protocol | ⬜ |
+| T3 整合 drill + protocol | ✅ |
 | T4 E2E + 驗收清單 E | ⬜ |
 | T-exit(M13) | ⬜ |
 
@@ -24,12 +24,39 @@
 |----|------|------|
 | OQ-S5-3 br-field 資產路線(程序化生成 vs CC0 pack) | ✅ T0 決議 | **程序化生成 CC0**。T1 以原創 procedural GLTF/貼圖/材質生成為主路線,不得使用遊戲抽取資產或復刻特定 BR 地圖。寫實目標 = 開闊麥田/丘陵/遠山地貌,但研究幾何優先於美術密度。預算:三角形總量 `< 20k`,材質 slots `<= 8`;Kenney/Quaternius 僅保留為未來白名單替換備選,若使用 CC-BY 必須逐項進 `ATTRIBUTIONS.md`。 |
 | OQ-26.1 br-field 雜亂度階層定位(low?mid?新階?)與 clutterTier 值 | ✅ T0 決議 | `clutterTier: 'low'`。理由:BR field 是遠距開闊走廊測試場,雜物不能成為 tracking/ADS/projectile 構念;與 `field-low` 同層但尺度更大、front-facing long corridor 更長。若未來研究需要「BR clutter」獨立對照階,另開 GD/新 SceneConfig,本 WP 不新增 tier。 |
-| OQ-26.2 protocol 條件矩陣(ADS × 彈道 × 角尺寸的組合數與對抗平衡) | 🟡 待 T3 | 預設:2(ADS on/off)× 2(hitscan/projectile)× 2(角尺寸檔)= 8 條件受試者內;實際裁剪為研究設計決策 |
+| OQ-26.2 protocol 條件矩陣(ADS × 彈道 × 角尺寸的組合數與對抗平衡) | ✅ T3 決議 | 採完整 2(ADS off/on) × 2(hitscan/projectile) × 2(角尺寸 0.5°/2.0°)= 8 條件受試者內矩陣。工程實作以 8 個 `tracking_br_v1` 變體 drillId 承載條件,protocol `conditionLabel` 明確編碼三軸;ADS 軸採 weapon profile gate + harness protocol 中 ADS-on 條件持續送 ads down/up,正式受試者仍以 hold ADS 操作記錄還原。暫不裁剪條件;若 pilot 時長過長,裁剪屬研究設計另案。 |
 | OQ-26.3 走廊長度與 display scale(遠距檔位在 br-field 的擺法) | ✅ T0 需求拍板;T1/T2 實作驗證 | 承 WP-23 OQ-23.2:`field-low` 正面 114.59u 走廊被 backdrop props 擋,br-field 必須提供 front-facing clear corridor。display scale 預設 `1`,不改 sim 單位;T1 先保留 `145u` 前向 projectile/sight corridor,hard profile clear width `>= 42u`,T2 以 clearance/perf 證據驗收。 |
 
 ---
 
 ## Log
+
+### 2026-07-14 02:10Z — T3 tracking_br_v1 整合 drill + BR protocol PASS
+
+- **Slice / scope**:新增 `src/drill/tracking_br_v1.ts` + test、BR 專用 AK weapon profiles、`src/display/brTrackingProtocol.ts`;`src/main.ts` 只掛 drill 選單與 BR protocol 入口,protocol runner 改為共用 factory;`src/testharness/fpsTestHarness.ts` 加 BR protocol harness 與 projectile weapon metadata。未修改 `DrillConfig` schema、SimLoop、TargetManager、clearance 或 render engine。
+- **Drill config**:`trackingBrV1` canonical id = `tracking_br_v1`,sceneId `br-field`,ADS-on + projectile + 0.5° longrange。`trackingBrVariants` 共 8 條件:ADS off/on × hitscan/projectile × angular height 0.5°/2.0°;全部使用 H1 hitbox `{0.5,1,0.5}`、front-facing spawnArea yaw `[0,0]`、5°/s pingpong motion、2000ms timed presentation。
+- **Weapon gate**:新增 `ak47_br_hip_hitscan`、`ak47_br_ads_hitscan`、`ak47_br_hip_projectile`、`ak47_br_ads_projectile`;projectile 使用 WP-25/GD-17 canonical 16-tick bullet `{speedU:916.73,gravityU:32,maxRangeU:143.24}`。M12 已 PASS,`bullet` 欄使用解鎖。
+- **Protocol**:`br_tracking_v1` 條件序列 8 筆,全部 `sceneId:'br-field'`,display mode `native`,condition label 形式 `br-{ads_axis}-{ballistic_axis}-{angular_axis}`。`meta.protocol` 由既有 ProtocolRunner/collectMeta 路徑生效;harness protocol 斷言 condition index/label/scene/drill 對齊。
+- **Harness smoke / export evidence**:`src/testharness/fpsTestHarness.test.ts` 跑完整 BR protocol 8 條件;每條 export 都含 `meta.protocol`、`meta.scene.br-field`、H1 hitbox、weapon ADS/bullet gate、frame summary、tracking metrics。ADS-on 條件有 ads down/up events 且 tick `ads=true`;projectile 條件 export `meta.weapon.bullet` 且 `projectileOverflow=false`;tracking acquisition failure rate `0`。另以 `tracking_br_v1__ads_on__hitscan__2deg` 跑單條 BR ADS smoke:開鏡 → fire hit row → 匯出;timed-presentation tracking target 為 persistent,命中不撤除,故證據採 `fire.hit=true` 而非 `markKilled`。0.5° 遠距小目標不作 fire-hit smoke,避免 AK inaccuracy 讓 smoke 被隨機散布支配。
+- **OQ-26.2 決議**:採完整 8 條件受試者內矩陣,不在 T3 工程層裁剪。Alternatives considered:先落 4 條件(固定 0.5°)或只落 hitscan-only;拒絕,因 M12 已解鎖 projectile,且 T3 目標是 stage5 BR tracking 整合條件矩陣。
+- **Surprises & discoveries**:既有 harness 只把 `meta.weapon.ads` 寫入 export,未帶 `bullet`;production `main.ts` 已有 bullet metadata。T3 將 harness 補齊,使 protocol smoke 能驗 projectile 條件 export,不動 production export schema。
+- **Focused verification**:
+
+  ```
+  npx.cmd vitest run src/display/ProtocolRunner.test.ts src/testharness/fpsTestHarness.test.ts src/drill/tracking_br_v1.test.ts src/weapon/WeaponConfig.test.ts
+  # 4 files / 43 tests passed
+
+  npm.cmd run typecheck
+  # exit 0
+
+  npx.cmd vitest run
+  # 76 files / 619 tests passed
+
+  graphify update .
+  # AST extraction: 166/166 files; graphify-out rebuilt
+  ```
+
+- **T4 handoff**:`tracking_br_v1` 與 `br_tracking_v1` 已可由 main/harness 載入。T4 可在此基礎上補 E2E、三條決定性不變性、驗收清單 E 與完整 `test:ci` gate。
 
 ### 2026-07-14 01:44Z — T2 br-field 場景上線 PASS
 
