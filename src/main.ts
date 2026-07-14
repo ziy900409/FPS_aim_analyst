@@ -51,6 +51,7 @@ import type { SceneConfig } from './scene/SceneConfig.ts';
 import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
+import { brField } from './scene/scenes/br-field.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
@@ -85,6 +86,7 @@ const availableScenes: AvailableScene[] = [
   { id: placeholderRoom.sceneId, label: 'placeholder-room', config: placeholderRoom },
   { id: fieldLow.sceneId, label: 'field-low', config: fieldLow },
   { id: urbanHigh.sceneId, label: 'urban-high', config: urbanHigh },
+  { id: brField.sceneId, label: 'br-field', config: brField },
 ];
 let activeSceneConfig: SceneConfig = fieldLow;
 let activeSceneFallback = false;

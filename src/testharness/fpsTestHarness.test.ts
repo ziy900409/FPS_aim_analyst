@@ -6,6 +6,7 @@ import { resolutionDetectionProtocol } from '../display/resolutionDetectionProto
 import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { fieldLow } from '../scene/scenes/field-low.ts';
 import { urbanHigh } from '../scene/scenes/urban-high.ts';
+import { brField } from '../scene/scenes/br-field.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
 
 /**
@@ -173,6 +174,25 @@ describe('WP-13 / T2 — harness 整合(分離後仍命中 + recoil 漂移讀數
       sceneId: 'urban-high',
       assetPackVersion: urbanHigh.assetPackVersion,
       clutterTier: 'high',
+      fallback: false,
+    });
+    expect(payload.events.filter((event) => event.type === 'visible')).toHaveLength(trackingSceneV1.drill.targets.count);
+    expect(harness.trackingMetricsFromExport(payload).acquisitionFailureRate).toBe(0);
+  });
+
+  it('WP-26 / T2 br-field probe：moving-target tracking export includes scene meta and remains non-suspect', () => {
+    const harness = makeTrackingHarness(brField);
+    harness.startDrill(trackingSceneV1.id);
+    harness.runTrackingPresentationRound('autoAim');
+
+    const payload = harness.forceExportJSON();
+    expect(harness.phase()).toBe('ended');
+    expect(payload.meta.suspect).toBe(false);
+    expect(payload.meta.recorderOverflow).toBe(false);
+    expect(payload.meta.scene).toMatchObject({
+      sceneId: 'br-field',
+      assetPackVersion: brField.assetPackVersion,
+      clutterTier: 'low',
       fallback: false,
     });
     expect(payload.events.filter((event) => event.type === 'visible')).toHaveLength(trackingSceneV1.drill.targets.count);

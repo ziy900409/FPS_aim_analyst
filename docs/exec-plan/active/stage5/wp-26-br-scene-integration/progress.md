@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 可開
+## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 asset PASS(2026-07-14);T2 scene online PASS(2026-07-14);T3 可開
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 br-field 資產 | ✅ |
-| T2 場景上線 | ⬜ |
+| T2 場景上線 | ✅ |
 | T3 整合 drill + protocol | ⬜ |
 | T4 E2E + 驗收清單 E | ⬜ |
 | T-exit(M13) | ⬜ |
@@ -30,6 +30,45 @@
 ---
 
 ## Log
+
+### 2026-07-14 01:44Z — T2 br-field 場景上線 PASS
+
+- **Slice / scope**:新增 `src/scene/scenes/br-field.ts` 與 `src/scene/scenes/br-field.test.ts`;`src/main.ts` 只掛 `br-field` 場景選單 entry;未修改 loader/sim/render 引擎機制。另將跨場景決定性 fixture 與 node harness probe 擴到 `br-field`。
+- **SceneConfig**:`sceneId:'br-field'`,`assetPackVersion:'br-field-v1'`,`clutterTier:'low'`,`asset.url:'/assets/scenes/br-field/br-field.gltf'`,`displayScale:1`;`propBounds` 消費 T1 generated `br-field.props.json`;`playerCorridor.halfWidthU = 21` 對齊 T1 42u hard clear band。
+- **Clearance evidence**:`src/scene/scenes/br-field.test.ts` 驗證:
+
+  ```
+  br-field propBounds: 62, unique AABB ids
+  hard clear band: x [-21,21], z [-145,0], violations 0
+  front-facing tracking_longrange_v1 canonical envelope: PASS
+  hard 20deg/s longrange envelope(range x4): PASS
+  intentional front-corridor-blocker: rejected and prop id named
+  ```
+
+- **Render/budget evidence**:`br-field.gltf` raw asset test shows `129` mesh nodes,`1548` triangles,`8` materials,`0` textures;triangles `<20k`,materials `<=8`。Frame-log comparison fixture records matching `field-low` vs `br-field` summary at 8ms frame deltas: p95 `8ms`,overBudgetWindows `0`,overflow `false`。
+- **Cross-scene determinism**:`tests/regression/determinism.test.ts` now compares `placeholder-room / field-low / urban-high / br-field` with the same input sequence;`samples`,`DataRecorder snapshot`,`phase` all bit-exact vs placeholder。
+- **Harness/export smoke**:`src/testharness/fpsTestHarness.test.ts` adds `br-field` moving-target tracking probe;export `meta.scene` contains `sceneId:'br-field'`,fallback `false`;`meta.suspect=false`;`recorderOverflow=false`;tracking acquisition failure rate `0`。
+- **Manual visual smoke**:started Vite dev server at `http://127.0.0.1:5173/`,selected `br-field` in scene control,clicked `Scene`;Playwright observed `selected:"br-field"` and canvas `1280x720`。Screenshot:
+  `docs/exec-plan/active/stage5/wp-26-br-scene-integration/evidence/br-field-online-smoke.png`。
+- **Targeted verification**:
+
+  ```
+  npx.cmd vitest run src/scene/scenes/br-field.test.ts tests/regression/determinism.test.ts src/testharness/fpsTestHarness.test.ts
+  # 3 files / 30 tests passed
+
+  npm.cmd run typecheck
+  # exit 0
+  ```
+
+- **Full CI**:`npm.cmd run test:ci` sandboxed first run hit the known Vite/esbuild parent-directory access denial (`Cannot read directory "../../../.."`);approved external rerun exit 0:
+
+  ```
+  tsc --noEmit
+  vitest run      # 75 files / 610 tests passed
+  playwright test # 16 tests passed
+  ```
+
+- **T3 handoff**:`br-field` is selectable and clearance-verified for front-facing longrange envelopes. `tracking_br_v1` can now consume `sceneId:'br-field'` without engine changes;T3 still owns drill/protocol condition matrix.
 
 ### 2026-07-14 01:34Z — T1 br-field 原創資產 PASS
 
