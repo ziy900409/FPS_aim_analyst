@@ -31,13 +31,37 @@ export interface WeaponConfig {
     fovDeg: number;
     sensitivityRatio: number;
   };
+  /**
+   * Projectile ballistics gate (WP-25 / T3). Omitted means the weapon remains
+   * hitscan and must keep the existing fire path semantics.
+   */
+  bullet?: {
+    model: 'projectile';
+    speedU: number;
+    gravityU: number;
+    maxRangeU: number;
+  };
+}
+
+export interface WeaponValidationWarning {
+  path: string;
+  message: string;
+}
+
+export interface WeaponValidationOptions {
+  /**
+   * Optional active engagement distance. When supplied, validation warns if
+   * projectile time-to-target is below the GD-17 two-tick floor.
+   */
+  engagementDistanceU?: number;
+  warnings?: WeaponValidationWarning[];
 }
 
 /**
  * Runtime guard for WeaponConfig data. Mirrors drill/schema.ts style: zero
  * dependencies, field-path errors, and a narrowed config on success.
  */
-export function validateWeapon(input: unknown): WeaponConfig {
+export function validateWeapon(input: unknown, options: WeaponValidationOptions = {}): WeaponConfig {
   const root = requireObject(input, 'root');
 
   const id = root.id;
@@ -71,6 +95,7 @@ export function validateWeapon(input: unknown): WeaponConfig {
       : validateRecoveryTransition(root.recoveryTransition);
 
   const ads = root.ads === undefined ? undefined : validateAds(root.ads);
+  const bullet = root.bullet === undefined ? undefined : validateBullet(root.bullet, options);
 
   return {
     id,
@@ -80,7 +105,37 @@ export function validateWeapon(input: unknown): WeaponConfig {
     inaccuracy: { stand, crouch, fire, move, recoveryTimeStand, recoveryTimeCrouch },
     ...(recoveryTransition ? { recoveryTransition } : {}),
     ...(ads ? { ads } : {}),
+    ...(bullet ? { bullet } : {}),
   };
+}
+
+function validateBullet(input: unknown, options: WeaponValidationOptions): WeaponConfig['bullet'] {
+  const bullet = requireObject(input, 'bullet');
+  if (bullet.model !== 'projectile') {
+    throw err('bullet.model', 'must be "projectile"');
+  }
+  const speedU = requirePositiveNumber(bullet.speedU, 'bullet.speedU');
+  const gravityU = requirePositiveNumber(bullet.gravityU, 'bullet.gravityU');
+  const maxRangeU = requirePositiveNumber(bullet.maxRangeU, 'bullet.maxRangeU');
+
+  const maxRangeTicks = (maxRangeU / speedU) * 128;
+  if (maxRangeTicks < 2) {
+    pushWarning(options, 'bullet.maxRangeU', 'projectile lifetime is below 2 ticks and degenerates toward hitscan');
+  }
+
+  if (options.engagementDistanceU !== undefined) {
+    const engagementDistanceU = requirePositiveNumber(options.engagementDistanceU, 'engagementDistanceU');
+    const timeToTargetTicks = (engagementDistanceU / speedU) * 128;
+    if (timeToTargetTicks < 2) {
+      pushWarning(options, 'bullet.speedU', 'projectile reaches engagement distance in < 2 ticks');
+    }
+  }
+
+  return { model: 'projectile', speedU, gravityU, maxRangeU };
+}
+
+function pushWarning(options: WeaponValidationOptions, path: string, message: string): void {
+  options.warnings?.push({ path, message });
 }
 
 function validateAds(input: unknown): WeaponConfig['ads'] {

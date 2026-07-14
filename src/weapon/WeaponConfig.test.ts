@@ -91,6 +91,63 @@ describe('validateWeapon', () => {
       /ads\.sensitivityRatio/,
     );
   });
+
+  // ── WP-25 / T3：projectile bullet gate（FR-E9） ──
+
+  it('omits bullet when not present (hitscan default)', () => {
+    expect(validateWeapon(validWeapon())).not.toHaveProperty('bullet');
+  });
+
+  it('preserves projectile bullet config when present', () => {
+    const bullet = { model: 'projectile' as const, speedU: 916.73, gravityU: 32, maxRangeU: 143.24 };
+    const cfg = validateWeapon(validWeapon({ bullet }));
+
+    expect(cfg.bullet).toEqual(bullet);
+  });
+
+  it('rejects invalid projectile bullet fields with field paths', () => {
+    expect(() =>
+      validateWeapon(
+        validWeapon({
+          bullet: { model: 'hitscan' as 'projectile', speedU: 916.73, gravityU: 32, maxRangeU: 143.24 },
+        }),
+      ),
+    ).toThrow(/bullet\.model/);
+    expect(() =>
+      validateWeapon(validWeapon({ bullet: { model: 'projectile', speedU: 0, gravityU: 32, maxRangeU: 143.24 } })),
+    ).toThrow(/bullet\.speedU/);
+    expect(() =>
+      validateWeapon(validWeapon({ bullet: { model: 'projectile', speedU: 916.73, gravityU: 0, maxRangeU: 143.24 } })),
+    ).toThrow(/bullet\.gravityU/);
+    expect(() =>
+      validateWeapon(validWeapon({ bullet: { model: 'projectile', speedU: 916.73, gravityU: 32, maxRangeU: 0 } })),
+    ).toThrow(/bullet\.maxRangeU/);
+  });
+
+  it('warns when projectile reaches engagement distance in less than two ticks', () => {
+    const warnings: { path: string; message: string }[] = [];
+
+    validateWeapon(
+      validWeapon({ bullet: { model: 'projectile', speedU: 1833.45, gravityU: 51.2, maxRangeU: 143.24 } }),
+      { engagementDistanceU: 20, warnings },
+    );
+
+    expect(warnings).toContainEqual({
+      path: 'bullet.speedU',
+      message: 'projectile reaches engagement distance in < 2 ticks',
+    });
+  });
+
+  it('does not warn for GD-17 canonical sixteen-tick projectile config', () => {
+    const warnings: { path: string; message: string }[] = [];
+
+    validateWeapon(
+      validWeapon({ bullet: { model: 'projectile', speedU: 916.73, gravityU: 32, maxRangeU: 143.24 } }),
+      { engagementDistanceU: 114.59, warnings },
+    );
+
+    expect(warnings).toEqual([]);
+  });
 });
 
 describe('built-in weapons', () => {
