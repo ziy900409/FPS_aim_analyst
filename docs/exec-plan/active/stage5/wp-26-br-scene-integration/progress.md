@@ -5,11 +5,11 @@
 
 ---
 
-## Status: ⬜ 未開始
+## Status: 🟡 T0 entry gate PASS(2026-07-14);T1 可開
 
 | Task | 狀態 |
 |---|---|
-| T0 entry gate | ⬜ |
+| T0 entry gate | ✅ |
 | T1 br-field 資產 | ⬜ |
 | T2 場景上線 | ⬜ |
 | T3 整合 drill + protocol | ⬜ |
@@ -22,14 +22,48 @@
 
 | ID | 狀態 | 決議 |
 |----|------|------|
-| OQ-S5-3 br-field 資產路線(程序化生成 vs CC0 pack) | 🟡 待 T0 | 計畫預設:程序化生成 CC0(WP-19 先例;GD-9 完全合規、propBounds 與視覺同源);Kenney/Quaternius 保留為寫實置換備選 |
-| OQ-26.1 br-field 雜亂度階層定位(low?mid?新階?)與 clutterTier 值 | 🟡 待 T0 | 預設:`clutterTier: 'low'`(開闊麥田情境,與 field-low 同階但地形尺度不同);若研究需要 BR 場景為獨立對照階,記 GD 議題 |
+| OQ-S5-3 br-field 資產路線(程序化生成 vs CC0 pack) | ✅ T0 決議 | **程序化生成 CC0**。T1 以原創 procedural GLTF/貼圖/材質生成為主路線,不得使用遊戲抽取資產或復刻特定 BR 地圖。寫實目標 = 開闊麥田/丘陵/遠山地貌,但研究幾何優先於美術密度。預算:三角形總量 `< 20k`,材質 slots `<= 8`;Kenney/Quaternius 僅保留為未來白名單替換備選,若使用 CC-BY 必須逐項進 `ATTRIBUTIONS.md`。 |
+| OQ-26.1 br-field 雜亂度階層定位(low?mid?新階?)與 clutterTier 值 | ✅ T0 決議 | `clutterTier: 'low'`。理由:BR field 是遠距開闊走廊測試場,雜物不能成為 tracking/ADS/projectile 構念;與 `field-low` 同層但尺度更大、front-facing long corridor 更長。若未來研究需要「BR clutter」獨立對照階,另開 GD/新 SceneConfig,本 WP 不新增 tier。 |
 | OQ-26.2 protocol 條件矩陣(ADS × 彈道 × 角尺寸的組合數與對抗平衡) | 🟡 待 T3 | 預設:2(ADS on/off)× 2(hitscan/projectile)× 2(角尺寸檔)= 8 條件受試者內;實際裁剪為研究設計決策 |
-| OQ-26.3 走廊長度與 display scale(遠距檔位在 br-field 的擺法) | 🟡 待 T1/T2 | 承 WP-23 OQ-23.2;地形設計時視線走廊先行 |
+| OQ-26.3 走廊長度與 display scale(遠距檔位在 br-field 的擺法) | ✅ T0 需求拍板;T1/T2 實作驗證 | 承 WP-23 OQ-23.2:`field-low` 正面 114.59u 走廊被 backdrop props 擋,br-field 必須提供 front-facing clear corridor。display scale 預設 `1`,不改 sim 單位;T1 先保留 `145u` 前向 projectile/sight corridor,hard profile clear width `>= 42u`,T2 以 clearance/perf 證據驗收。 |
 
 ---
 
 ## Log
+
+### 2026-07-14 01:24Z — T0 entry gate PASS
+
+- **Branch / scope**:建立 `aa` branch(base `main` commit `f0c2b9866797eb7493e9a6340e06402fcb6579f5`)。T0 是 docs-only;本切片不得碰 `src/` 或資產。
+- **Baseline verification**:`npm.cmd run test:ci` sandboxed 首跑被已知 Vite/esbuild parent-directory access denial 擋(`Cannot read directory "../../../.."`);approved unsandboxed rerun exit 0。結果:`tsc --noEmit` clean;Vitest **74 files / 603 tests** 全綠;Playwright **16 tests** 全綠。
+- **Upstream reconciliation / integration consumer list**:
+  - **WP-23 / M11 ✅**([../wp-23-longrange-tracking/progress.md](../wp-23-longrange-tracking/progress.md)):hitbox config 化、`tracking_longrange_v1`、小角尺寸 round-trip、遠距決定性全綠。WP-26 消費面:小目標 H1 `{widthU:0.5,heightU:1,depthU:0.5}`;角高 0.5°/2.0°;角速度 5°/s/20°/s;distance/speed/range 表;OQ-23.2 移交「`field-low` 無 front-facing 114.59u 走廊,br-field 需補」。
+  - **WP-24 ✅**([../wp-24-ads-optics/progress.md](../wp-24-ads-optics/progress.md)):ADS input/render/data 鏈完成,`WeaponConfig.ads`、CS2 式 FOV-ratio gain、scope overlay、tick `ads` flag、ads events、`meta.weapon.ads` 全綠。WP-26 消費面:T3 可用 config 宣告 ADS on/off 條件;T4 驗收需查 ads event/tick flag/export round-trip。
+  - **WP-25 / M12 ✅**([../wp-25-ballistics-tracer/progress.md](../wp-25-ballistics-tracer/progress.md)):tracer、projectile math/sim integration、`hit` event、time-of-flight、lead spec-only 全綠。WP-26 消費面:M12 已過,`bullet` 欄可進 `tracking_br_v1`;hitscan 預設逐位不變仍是 T4 gate。
+- **OQ-S5-3 決議**:br-field 資產路線採程序化生成 CC0。寫實目標是開闊麥田/丘陵/遠山,不是復刻 PUBG 或任何特定地圖;`ATTRIBUTIONS.md` 仍需逐項記錄自產/外部來源。預算鎖定:三角形 `< 20k`,材質 slots `<= 8`。
+- **OQ-26.1 決議**:`clutterTier: 'low'`。br-field 是大尺度開闊場景,不是新雜亂度構念;保持低雜亂以保護遠距 tracking/ADS/projectile 條件的可歸因性。
+- **Corridor geometry requirements for T1/T2**:
+
+  | Profile | Angular height / speed | distanceU | 2s pingpong rangeU | Required clear corridor |
+  |---|---:|---:|---:|---|
+  | near sanity | 2.0° / 5°/s | 28.65 | 1.25 | front-facing sightline length `>= 30u`;clear width `>= 3u` |
+  | canonical longrange | 0.5° / 5°/s | 114.59 | 5.00 | front-facing sightline length `>= 115u`;clear width `>= 12u` |
+  | hard longrange | 0.5° / 20°/s | 114.59 | 20.00 | front-facing sightline length `>= 115u`;clear width `>= 42u` |
+  | projectile envelope | canonical 0.5° distance + GD-17 maxRange | 143.24 maxRange | n/a | forward projectile/tracer corridor length `>= 145u`;scene geometry must not be modeled as bullet blockers |
+
+  Widths include lateral motion envelope plus H1 target width margin;T1 should design terrain/prop placement around the hard profile,not retrofit after clearance fails. `displayScale` remains `1` unless T2 records a contrary decision.
+- **驗收清單 E 草案(T4 定稿)**:
+  1. `br-field` 原創/白名單資產可稽核;`ATTRIBUTIONS.md` 完整,無遊戲抽取/地圖復刻。
+  2. `br-field` SceneConfig 資料化上線,`sceneId:'br-field'`,`clutterTier:'low'`,三角形 `<20k`,材質 slots `<=8`,零引擎碼。
+  3. propBounds 與視覺同源;front-facing long corridor clearance 對 114.59u sightline、42u hard width、145u projectile envelope 全綠。
+  4. `tracking_br_v1` 純 config 宣告 `br-field` × H1 小目標 × WP-23 motion/distance 檔位 × ADS weapon × projectile weapon。
+  5. protocol 條件序列宣告 ADS on/off × hitscan/projectile × 角尺寸檔;條件切換不殘留 scene/weapon/ads/bullet state。
+  6. export round-trip 含 `meta.scene`、`meta.targets.hitbox`、`meta.weapon.ads/bullet`、tick `ads`、ads/fire/hit events、tracking derivation 欄位。
+  7. E2E 一鍵跑 `tracking_br_v1` 從 drill → export → offline tracking metrics,無 `NaN`/`Infinity`,小角尺寸 round-trip 誤差 `<= 1 tick`。
+  8. 決定性不變性 ①:同輸入下 `br-field` vs baseline/placeholder scene 的 sim state/export core rows 逐位一致。
+  9. 決定性不變性 ②/③:ADS 顯示層不改 sim 序列;hitscan weapon 在 `br-field` 下與既有 hitscan baseline 逐位一致。
+  10. `npm.cmd run test:ci` exit 0,frame log/perf 證據顯示 `br-field` 負載未使 drill 進 suspect 狀態。
+- **Stage5 §8 回填**:[../README.md](../README.md) OQ-S5-3 標為 ✅,並新增 OQ-26.1 clutterTier 決議列。
+- **Entry gate**:PASS。T1 可開;T2+ 上游三 WP 已全綠,無 M12 fallback 需求。
 
 ### 2026-07-10 — Plan authored
 

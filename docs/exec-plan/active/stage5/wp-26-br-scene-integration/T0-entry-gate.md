@@ -8,7 +8,7 @@
 | **相依** | 上游:WP-23(M11)/WP-24(exit)/WP-25(M12)——T1 僅需 OQ-S5-3,可提前;T2+ 開工前上游須全綠 |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [../README.md §8](../README.md)(OQ 回填) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-14) |
 
 ## Objective
 
@@ -35,12 +35,12 @@ br-field 的雜亂度定位與走廊幾何需求。
 
 ## Steps
 
-- [ ] `npm run test:ci` 乾淨基準 exit 0 記 progress。
-- [ ] 上游三 WP exit 證據 + 消費面清單記 progress(M12 未過則記門控備案)。
-- [ ] OQ-S5-3 / OQ-26.1 決議記 ledger + 上層 §8 回填。
-- [ ] 走廊幾何需求表記 progress(供 T1)。
-- [ ] 驗收清單 E 條目草案記 progress。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] `npm run test:ci` 乾淨基準 exit 0 記 progress。
+- [x] 上游三 WP exit 證據 + 消費面清單記 progress(M12 未過則記門控備案)。
+- [x] OQ-S5-3 / OQ-26.1 決議記 ledger + 上層 §8 回填。
+- [x] 走廊幾何需求表記 progress(供 T1)。
+- [x] 驗收清單 E 條目草案記 progress。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 
