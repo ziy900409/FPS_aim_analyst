@@ -61,8 +61,12 @@ export class SceneManager {
     // aspect 先給 1，由 main 在 resize() 帶入真實視窗比例。
     this.camera = new THREE.PerspectiveCamera(room.fovDeg, 1, 0.1, 1000);
     const standoff = 1; // 與背牆保持距離，避免 camera 卡進牆面
-    this.camera.position.set(0, room.eyeHeight, depth / 2 - standoff);
-    this.camera.lookAt(0, room.eyeHeight, -depth / 2);
+    // KI-002 / D1:eyeZ 顯式錨定射線/彈道原點的 world z。省略時 = depth/2 - standoff(背牆站位,
+    // 逐位相容既有場景);radial-spawn 場景(br-field)設 eyeZ:0 使原點落在 sim origin,實際交戰距離
+    // == config distance。camera z 不進 sim(目標靠 age 純函式演進;GD-6);syncCameraBase 直接讀此 z。
+    const eyeZ = room.eyeZ ?? depth / 2 - standoff;
+    this.camera.position.set(0, room.eyeHeight, eyeZ);
+    this.camera.lookAt(0, room.eyeHeight, -depth / 2); // 維持 -Z 基準朝向
   }
 
   /** 視窗縮放時更新 camera aspect（renderer.setSize 由 main 持有）。 */

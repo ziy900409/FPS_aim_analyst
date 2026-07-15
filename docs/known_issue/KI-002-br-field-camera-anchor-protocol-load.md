@@ -1,7 +1,7 @@
 # KI-002 — br-field camera 未錨定 sim origin + protocol 場景載入驗證舊 drill(PR #34 Codex review)修改計畫
 
 > 類型:tech spec(修改計畫)。語言:繁中,術語保留英文(D4)。
-> 狀態:**🟡 已定解法待落地**(2026-07-15 診斷 + 定解;尚未實作)。
+> 狀態:**🟡 D1 已落地 / D2 待落地**(2026-07-15 診斷 + 定解;Task 1(D1)已實作驗證,Task 2(D2)進行中)。
 > 來源:[PR #34](https://github.com/ziy900409/FPS_aim_analyst/pull/34) Codex 自動 review 兩則(P1 / P2),已於本 repo 逐條追碼證實。
 > 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-002。
 
@@ -223,7 +223,7 @@ async applyCondition(condition) {
 
 | Task | Objective | Deps | Risk | Cplx | Definition of Done |
 |------|-----------|------|------|------|--------------------|
-| **1. D1 — eyeZ 錨點 + 不變性測試** | `SceneConfig` 加 `eyeZ?` + finite-number validator;`SceneManager` 用 `room.eyeZ ?? (depth/2-standoff)`;br-field 設 `eyeZ:0`;新增測試斷言 `new SceneManager(brField).camera.position.z===0` 且 placeholder/field-low/urban camera z 逐位不變 | None | Med | Low | 新不變性測試綠;`tsc --noEmit` 0;`br-tracking-invariants` 三案維持綠;數值驗證:0.5° 變體實際交戰距離 == 114.591u(誤差 < 1e-3)、projectile 實際距離 ≤ 143.24 → 可命中;`npm run test:ci` exit 0 |
+| **1. D1 — eyeZ 錨點 + 不變性測試** ✅ | `SceneConfig` 加 `eyeZ?` + finite-number validator;`SceneManager` 用 `room.eyeZ ?? (depth/2-standoff)`;br-field 設 `eyeZ:0`;新增測試斷言 `new SceneManager(brField).camera.position.z===0` 且 placeholder/field-low/urban camera z 逐位不變 | None | Med | Low | 新不變性測試綠;`tsc --noEmit` 0;`br-tracking-invariants` 三案維持綠;數值驗證:0.5° 變體實際交戰距離 == 114.591u(誤差 < 1e-3)、projectile 實際距離 ≤ 143.24 → 可命中;`npm run test:ci` exit 0 |
 | **2. D2 — protocol 原子載入(補 sceneId)** | drill 註冊表補 `detection_popin_v1.sceneId='field-low'`;`applyCondition` 移除 `loadSceneById(condition.sceneId)`,只留 `loadDrillById(condition.drillId)`;加 dev assertion 落點 == condition.sceneId | None | Med | Low | 回歸測試:BR drill 為 active 時啟動 resolution protocol,首條件成功載 field-low+detection_popin_v1、不 throw;`ProtocolRunner` 既有測試綠;`tests/e2e/br-tracking.spec.ts` + resolution protocol e2e 全綠(必要時更新 OQ-KI2-3 命中期望);`npm run test:ci` exit 0 |
 
 ### 驗證總表(對應 FR)

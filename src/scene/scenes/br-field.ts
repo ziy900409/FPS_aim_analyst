@@ -20,6 +20,10 @@ export const brField: SceneConfig = validateScene({
     roomSize: [42, 290, 8],
     eyeHeight: 1.6,
     fovDeg: 75,
+    // KI-002 / D1:前向 radial-spawn 目標以 sim origin (z=0) 為圓心、置於 z=−distance;
+    // 眼睛(射線/彈道原點)必須在 z=0,否則交戰距離被 depth/2−standoff(=144u)放大,
+    // 角尺寸/角速度失真、projectile 打不到目標。GLTF 場景不建牆,roomSize 僅驅動 camera z。
+    eyeZ: 0,
     colors: {
       floor: 0x5c6b38,
       wall: 0x7c8fa0,
