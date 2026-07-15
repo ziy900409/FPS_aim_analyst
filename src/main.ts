@@ -97,7 +97,7 @@ let activeSceneFallback = false;
 const initialDrillConfig = loadDrill(defaultDrillSource, activeSceneConfig);
 const availableDrills: AvailableDrill[] = [
   { id: initialDrillConfig.drillId, label: initialDrillConfig.drillId, source: defaultDrillSource },
-  { id: detectionPopinV1.drillId, label: detectionPopinV1.drillId, source: detectionPopinV1 },
+  { id: detectionPopinV1.drillId, label: detectionPopinV1.drillId, source: detectionPopinV1, sceneId: 'field-low' },
   { id: trackingV1.drillId, label: trackingV1.drillId, source: trackingV1 },
   {
     id: trackingSceneV1.id,
@@ -740,8 +740,18 @@ function createAppProtocolRunner(config: ProtocolConfig): ProtocolRunner<ExportP
       settingsPanel.setResolutionMode(condition.mode);
       settingsPanel.lockMode(true);
       resize();
-      await loadSceneById(condition.sceneId);
+      // KI-002 / D2:只走 loadDrillById——它原子載入該 drill 的正規場景並驗證「新」drill vs
+      // 新 scene。移除先前的 loadSceneById(condition.sceneId):它會拿**舊** activeDrillSource
+      // 重驗目標場景淨空(BR-active → 啟動 resolution protocol 時舊 BR 前向 drill 過不了 field-low
+      // → throw 中止)。每個 protocol condition 的 drill 皆已在 availableDrills 宣告自己的 sceneId。
       await loadDrillById(condition.drillId);
+      // dev 兜底:偵測 drill 落點與 condition.sceneId 靜默漂移(drill sceneId 與 protocol 不一致)。
+      if (import.meta.env.DEV && activeSceneConfig.sceneId !== condition.sceneId) {
+        throw new Error(
+          `applyCondition scene mismatch: drill '${condition.drillId}' landed on scene ` +
+            `'${activeSceneConfig.sceneId}', expected '${condition.sceneId}'`,
+        );
+      }
       return {
         mode: displayState.mode,
         sceneId: activeSceneConfig.sceneId,
