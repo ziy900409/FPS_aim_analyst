@@ -1,7 +1,7 @@
 # 階段 E 驗收清單 E — WP-26 T4 / FR-E13
 
 > M13(stage5 交付)的 BR 跟槍整合驗收對照。每項要嘛有自動測試入口,要嘛有明確手動回填步驟。
-> Companion:[analysis-tracking.md](analysis-tracking.md) · [analysis-lead.md](analysis-lead.md) · [schema.md](schema.md) · [WP-26 progress](../exec-plan/active/stage5/wp-26-br-scene-integration/progress.md)。
+> Companion:[analysis-tracking.md](analysis-tracking.md) · [analysis-lead.md](analysis-lead.md) · [schema.md](schema.md) · [WP-26 progress](../exec-plan/completed/stage5/wp-26-br-scene-integration/progress.md)。
 
 ---
 
@@ -23,16 +23,16 @@ Sandbox note:`npm.cmd run test:ci` sandboxed first run hit the known Vite/esbuil
 
 | # | 驗收項 | 判定方式 | 證據入口 | T4 狀態 |
 |---|---|---|---|---|
-| E-1 | `br-field` 原創/白名單資產可稽核,無遊戲抽取/地圖復刻 | **A/M**:`ATTRIBUTIONS.md` br-field 條目為 procedural CC0;T1 progress 記錄生成器與紅線自檢。 | [ATTRIBUTIONS.md](../../ATTRIBUTIONS.md);[WP-26 progress T1](../exec-plan/active/stage5/wp-26-br-scene-integration/progress.md) | ✅ |
+| E-1 | `br-field` 原創/白名單資產可稽核,無遊戲抽取/地圖復刻 | **A/M**:`ATTRIBUTIONS.md` br-field 條目為 procedural CC0;T1 progress 記錄生成器與紅線自檢。 | [ATTRIBUTIONS.md](../../ATTRIBUTIONS.md);[WP-26 progress T1](../exec-plan/completed/stage5/wp-26-br-scene-integration/progress.md) | ✅ |
 | E-2 | `br-field` SceneConfig 資料化上線,零引擎碼,tri/material budget 通過 | **A**:`br-field` scene test 驗 GLTF 1548 triangles、8 materials、SceneConfig metadata。 | [`src/scene/scenes/br-field.test.ts`](../../src/scene/scenes/br-field.test.ts);[`src/scene/scenes/br-field.ts`](../../src/scene/scenes/br-field.ts) | ✅ |
-| E-3 | front-facing long corridor clearance 對 114.59u sightline、42u hard width、145u projectile envelope 全綠 | **A**:`br-field.test.ts` clearance + intentional blocker;T2 progress 記錄 corridor/budget。 | [`src/scene/scenes/br-field.test.ts`](../../src/scene/scenes/br-field.test.ts);[WP-26 progress T2](../exec-plan/active/stage5/wp-26-br-scene-integration/progress.md) | ✅ |
+| E-3 | front-facing long corridor clearance 對 114.59u sightline、42u hard width、145u projectile envelope 全綠 | **A**:`br-field.test.ts` clearance + intentional blocker;T2 progress 記錄 corridor/budget。 | [`src/scene/scenes/br-field.test.ts`](../../src/scene/scenes/br-field.test.ts);[WP-26 progress T2](../exec-plan/completed/stage5/wp-26-br-scene-integration/progress.md) | ✅ |
 | E-4 | `tracking_br_v1` 純 config 宣告 BR 場景 × H1 小目標 × ADS × projectile | **A**:drill config tests + E2E canonical payload meta.scene/meta.targets/meta.weapon bullet。 | [`src/drill/tracking_br_v1.test.ts`](../../src/drill/tracking_br_v1.test.ts);[`tests/e2e/br-tracking.spec.ts`](../../tests/e2e/br-tracking.spec.ts) | ✅ |
 | E-5 | BR protocol 條件序列 = 2 ADS × 2 ballistic × 2 angular height,條件 metadata 不殘留 | **A**:ProtocolRunner tests + Playwright BR protocol export 8 條件,condition index/label/display/weapon gate 對齊。 | [`src/display/ProtocolRunner.test.ts`](../../src/display/ProtocolRunner.test.ts);[`tests/e2e/br-tracking.spec.ts`](../../tests/e2e/br-tracking.spec.ts) | ✅ |
 | E-6 | export round-trip 含 `meta.scene`、`meta.targets.hitbox`、`meta.weapon.ads/bullet`、tick `ads`、ads/fire/hit events | **A**:canonical projectile condition 驗 ADS+bullet+fire;ADS hitscan 2deg smoke 驗 `fire.hit=true`;protocol payload 驗 tick `ads`。 | [`tests/e2e/br-tracking.spec.ts`](../../tests/e2e/br-tracking.spec.ts);[`src/testharness/fpsTestHarness.test.ts`](../../src/testharness/fpsTestHarness.test.ts) | ✅ |
 | E-7 | E2E 一鍵跑 `tracking_br_v1` → export → offline tracking metrics + lead derivation,無 NaN/Infinity | **A**:Playwright canonical `tracking_br_v1` full round validates TOT%/RMS/t_acquire sanity and `deriveLeadError()` finite sample。 | [`tests/e2e/br-tracking.spec.ts`](../../tests/e2e/br-tracking.spec.ts);[`src/metrics/trackingDerivation.ts`](../../src/metrics/trackingDerivation.ts);[`src/metrics/leadDerivation.ts`](../../src/metrics/leadDerivation.ts) | ✅ |
 | E-8 | 決定性不變性 ①:同輸入下 `br-field` vs baseline/placeholder scene sim/export core rows 逐位一致 | **A**:T2 cross-scene fixture includes `br-field`;T4 BR hitscan variant compares `br-field` against scene-free baseline。 | [`tests/regression/determinism.test.ts`](../../tests/regression/determinism.test.ts);[`tests/regression/br-tracking-invariants.test.ts`](../../tests/regression/br-tracking-invariants.test.ts) | ✅ |
 | E-9 | 決定性不變性 ②/③:ADS display 不改 sim;hitscan gate baseline 逐位;projectile 跨 FPS 逐位 | **A**:T4 regression drives ADS FOV display hook with identical ADS input and compares recorder snapshot;BR projectile condition stable/jitter FPS equals canonical。 | [`tests/regression/br-tracking-invariants.test.ts`](../../tests/regression/br-tracking-invariants.test.ts);[`tests/regression/projectile-determinism.test.ts`](../../tests/regression/projectile-determinism.test.ts) | ✅ |
-| E-10 | 效能/CI gate:frame log 不使 BR condition suspect;`test:ci` exit 0 | **A**:BR protocol harness exports `frames.summary.overBudgetWindows=0`, `suspect=false`;`npm.cmd run test:ci` exit 0。 | [`src/testharness/fpsTestHarness.test.ts`](../../src/testharness/fpsTestHarness.test.ts);[WP-26 progress](../exec-plan/active/stage5/wp-26-br-scene-integration/progress.md) | ✅ |
+| E-10 | 效能/CI gate:frame log 不使 BR condition suspect;`test:ci` exit 0 | **A**:BR protocol harness exports `frames.summary.overBudgetWindows=0`, `suspect=false`;`npm.cmd run test:ci` exit 0。 | [`src/testharness/fpsTestHarness.test.ts`](../../src/testharness/fpsTestHarness.test.ts);[WP-26 progress](../exec-plan/completed/stage5/wp-26-br-scene-integration/progress.md) | ✅ |
 
 ---
 
@@ -88,4 +88,4 @@ Sandbox note:`npm.cmd run test:ci` sandboxed first run hit the known Vite/esbuil
 
 **T-exit 自動閘複驗(2026-07-14,branch-guarded)**:於 `aa`(HEAD 6fec1e6)重跑 `npm run test:ci` exit 0——`BRANCH_BEFORE=aa … BRANCH_AFTER=aa`;vitest 77 files / 622 tests、playwright 18 tests(含 `br-tracking.spec.ts` 2 條)全綠。首跑 2 條 BR e2e 失敗係 stale 5173 dev server 服務 pre-T3/T4 bundle(`reuseExistingServer:!CI`),kill 後 fresh server 通過——碼無缺陷。
 
-**M13 判定**:自動項 E-1~E-10 + `test:ci` 全綠;**§2 手動視覺/手感回填(br-field 開闊尺度、ADS scope 手感、tracer/impact 觀感、無 hitch)為 M13 阻塞項,待研究者實機**。沿 stage-C M10 先例(使用者拍板 2026-07-14):**落自動閘、保留 M13 待手動**;回填完成後翻 WP-26/stage5「✅ 交付」並補規格書 §9(階段 E 節 + 附錄 E-E 清單 E)。回填位置:[WP-26 progress](../exec-plan/active/stage5/wp-26-br-scene-integration/progress.md) T-exit 段。
+**M13 判定**:自動項 E-1~E-10 + `test:ci` 全綠;**§2 手動視覺/手感回填(br-field 開闊尺度、ADS scope 手感、tracer/impact 觀感、無 hitch)為 M13 阻塞項,待研究者實機**。沿 stage-C M10 先例(使用者拍板 2026-07-14):**落自動閘、保留 M13 待手動**;回填完成後翻 WP-26/stage5「✅ 交付」並補規格書 §9(階段 E 節 + 附錄 E-E 清單 E)。回填位置:[WP-26 progress](../exec-plan/completed/stage5/wp-26-br-scene-integration/progress.md) T-exit 段。

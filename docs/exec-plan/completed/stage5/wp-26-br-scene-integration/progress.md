@@ -170,7 +170,7 @@
 - **Cross-scene determinism**:`tests/regression/determinism.test.ts` now compares `placeholder-room / field-low / urban-high / br-field` with the same input sequence;`samples`,`DataRecorder snapshot`,`phase` all bit-exact vs placeholder。
 - **Harness/export smoke**:`src/testharness/fpsTestHarness.test.ts` adds `br-field` moving-target tracking probe;export `meta.scene` contains `sceneId:'br-field'`,fallback `false`;`meta.suspect=false`;`recorderOverflow=false`;tracking acquisition failure rate `0`。
 - **Manual visual smoke**:started Vite dev server at `http://127.0.0.1:5173/`,selected `br-field` in scene control,clicked `Scene`;Playwright observed `selected:"br-field"` and canvas `1280x720`。Screenshot:
-  `docs/exec-plan/active/stage5/wp-26-br-scene-integration/evidence/br-field-online-smoke.png`。
+  `docs/exec-plan/completed/stage5/wp-26-br-scene-integration/evidence/br-field-online-smoke.png`。
 - **Targeted verification**:
 
   ```
@@ -212,7 +212,7 @@
 
   對 T0 預算:1548 triangles `<20k`;8 materials `<=8`;0 textures。
 - **Visual smoke**:使用 Playwright 臨時 canvas viewer 讀取 GLTF nodes,輸出 top-down smoke 截圖:
-  `docs/exec-plan/active/stage5/wp-26-br-scene-integration/evidence/br-field-topdown-smoke.png`。
+  `docs/exec-plan/completed/stage5/wp-26-br-scene-integration/evidence/br-field-topdown-smoke.png`。
   截圖顯示 42u x 145u 中央走廊淨空,麥田/props 在 flank。
 - **Targeted verification**:
 

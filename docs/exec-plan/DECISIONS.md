@@ -27,7 +27,7 @@
 
 | | |
 |---|---|
-| **發現處** | stage5 WP-25 T0 entry gate([wp-25 README](active/stage5/wp-25-ballistics-tracer/README.md)、[T0](active/stage5/wp-25-ballistics-tracer/T0-entry-gate.md))。Projectile 彈道若直接以任意 `speedU/gravityU` 寫進 weapon config,會與 WP-23 遠距 drill 的距離/角尺寸設計脫鉤,使飛行時間低於 1–2 ticks 時退化 hitscan、lead 構念空轉。 |
+| **發現處** | stage5 WP-25 T0 entry gate([wp-25 README](completed/stage5/wp-25-ballistics-tracer/README.md)、[T0](completed/stage5/wp-25-ballistics-tracer/T0-entry-gate.md))。Projectile 彈道若直接以任意 `speedU/gravityU` 寫進 weapon config,會與 WP-23 遠距 drill 的距離/角尺寸設計脫鉤,使飛行時間低於 1–2 ticks 時退化 hitscan、lead 構念空轉。 |
 | **決議** | Projectile 參數以**飛行時間 tick 數**為主設計參數,與 WP-23 OQ-S5-4 的距離檔位聯動。公式:`speedU = distanceU * 128 / flightTicks`;`gravityU = 2 * (dropRatio * targetHeightU) / flightSec^2`;`maxRangeU = distanceU * 1.25`。預設 weapon profile 為 8/16/32 ticks 三檔,下墜分別為 0.10/0.25/0.50 × target height。 |
 | **參數表** | canonical 0.5° longrange(`distanceU=114.59`,target height=1u):8 ticks flat `{ speedU:1833.45, gravityU:51.20, maxRangeU:143.24 }`;16 ticks standard `{ speedU:916.73, gravityU:32.00, maxRangeU:143.24 }`;32 ticks heavy `{ speedU:458.36, gravityU:16.00, maxRangeU:143.24 }`。2° sanity(`distanceU=28.65`):8 ticks `{ speedU:458.37, gravityU:51.20, maxRangeU:35.81 }`;16 ticks `{ speedU:229.18, gravityU:32.00, maxRangeU:35.81 }`;32 ticks `{ speedU:114.59, gravityU:16.00, maxRangeU:35.81 }`。 |
 | **驗證/警告政策** | T3 config validation 對到靶飛行時間 `< 2 ticks` 的 `bullet` 組合發 warning(退化 hitscan);M12 未過前 `bullet` 欄不得進任何 drill config。hitscan 仍為 `WeaponConfig.bullet` 省略時的預設路徑,且必須逐位不變。 |
@@ -40,7 +40,7 @@
 
 | | |
 |---|---|
-| **發現處** | stage5 WP-24 T0 entry gate([wp-24 README](active/stage5/wp-24-ads-optics/README.md)、[T0](active/stage5/wp-24-ads-optics/T0-entry-gate.md))。ADS 會改變滑鼠 count → 視角角度的換算;若模型未先拍板,同一瞄準資料在 hip/ADS 條件間不可比較,離線分析也無法可靠還原構念。 |
+| **發現處** | stage5 WP-24 T0 entry gate([wp-24 README](completed/stage5/wp-24-ads-optics/README.md)、[T0](completed/stage5/wp-24-ads-optics/T0-entry-gate.md))。ADS 會改變滑鼠 count → 視角角度的換算;若模型未先拍板,同一瞄準資料在 hip/ADS 條件間不可比較,離線分析也無法可靠還原構念。 |
 | **決議** | ADS 有效感度採 **CS2 式 FOV-ratio gain**:`effectiveSensitivity = sensitivity × sensitivityRatio × (adsFov / hipFov)`。`sensitivityRatio` 預設 `1.0`;`hipFov` 取當前未開鏡 camera FOV,`adsFov` 取 `WeaponConfig.ads.fovDeg`。此模型於 stage5 pre-registered 後凍結;後續若要研究 monitor-distance match,另開新條件/新決策,不得重解釋既有 ADS 資料。 |
 | **理由** | CS2 式與本專案既有 GD-5 感度慣例相容(count→angle 線性、`0.022°/count` 為底);FOV ratio 讓縮 FOV 後的角速度同步下降,模型可由 `sensitivity`、`sensitivityRatio`、hip/ads FOV 與 tick `ads` flag 完整重建。monitor-distance match 較偏顯示器座標/螢幕距離不變,引入 monitor coefficient 與解析度/視角假設,不符合本階段「角度制、跨解析度不變」的資料模型。 |
 | **操作語意** | OQ-S5-6 同步拍板為 **hold**:右鍵按住 = ADS down,放開 = ADS up。toggle 僅保留為未來 config 候補欄形狀,不在 stage5 預設啟用;理由是 hold 與 CS2 慣例一致,且 PointerLock 解鎖補 ads-up 的 stuck 防護可直接比照 fire down/up 鏈。 |
@@ -51,10 +51,10 @@
 
 | | |
 |---|---|
-| **發現處** | stage5 規劃(2026-07-10,使用者指示 WP-23~25 + WP-26 落 `active/stage5/`)與 [stage4 README 草稿](active/stage4/README.md)(2026-07-09,**未採納**,原預留 WP-23~27 / M11~M12 / 清單 D)發生 WP 編號衝突——兩份文件對同一組編號有主張,屬跨文件矛盾。 |
+| **發現處** | stage5 規劃(2026-07-10,使用者指示 WP-23~25 + WP-26 落 `completed/stage5/`)與 [stage4 README 草稿](active/stage4/README.md)(2026-07-09,**未採納**,原預留 WP-23~27 / M11~M12 / 清單 D)發生 WP 編號衝突——兩份文件對同一組編號有主張,屬跨文件矛盾。 |
 | **決議** | 編號歸屬以「**採納入 [exec-plan/README.md](README.md) §2 索引**」為準。stage4 草稿明文「採納前不展開 WP 子資料夾、不動索引」,故無正式編號主張;stage5 即時採納展開,取 **WP-23~26、M11~M13、驗收清單 E**(清單字母對齊階段字母:stage5 = 階段 E)。stage4 採納時 WP 重編為 **WP-27+**、里程碑 **M14+**(清單 D 字母保留給階段 D),其 README 已標註對帳提醒。 |
 | **理由** | 使用者明示 stage5 使用 WP-23~26;草稿之「預留」不構成佔用(其自身協議即如此宣告);先採納者先得編號可避免索引出現空號或雙重主張。 |
-| **影響面** | [stage4 README](active/stage4/README.md)(重編標註)、[exec-plan/README.md](README.md)(§2 stage5 索引 + §3 M11~M13 + §4 相依圖)、[docs/MAP.md](../MAP.md)、[stage5 README](active/stage5/README.md)(引用本決議)。 |
+| **影響面** | [stage4 README](active/stage4/README.md)(重編標註)、[exec-plan/README.md](README.md)(§2 stage5 索引 + §3 M11~M13 + §4 相依圖)、[docs/MAP.md](../MAP.md)、[stage5 README](completed/stage5/README.md)(引用本決議)。 |
 | **狀態** | ✅ 已拍板(2026-07-10,使用者指示 stage5 編號)。 |
 
 ### GD-14 ✅ WP-15 T-exit — M7 caveated 通過(T2 pattern 差異分層歸因 + 研究者接受)(2026-07-07)
