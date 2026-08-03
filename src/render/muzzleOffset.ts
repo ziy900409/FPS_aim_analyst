@@ -5,6 +5,7 @@ import * as THREE from 'three/webgpu';
  *
  * This module owns render-only constants. SimLoop's import is an intentional one-way dependency:
  * these values may feed tracer origins only and must never enter hit detection or projectile physics.
+ * Hip/ADS selection is a step at fire time: the captured sim value must not depend on render-frame interpolation.
  */
 
 /** View-space muzzle offset. THREE camera-local: +X right, +Y up, -Z forward. */

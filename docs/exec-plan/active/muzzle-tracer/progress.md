@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🚧 T0/T1 ✅;T2 等待 OQ-MT-2 實機量測值(2026-08-03)
+## Status: 🚧 T0/T1 ✅;T2 自動化接線 ✅,等待 OQ-MT-2 實測值 + 實機截圖(2026-08-03)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 hip muzzle tracer | ✅ |
-| T2 ADS muzzle | ⬜ |
+| T2 ADS muzzle | 🚧 自動化接線/驗證 ✅;DoD ⑥⑦待補 |
 | T-exit | ⬜ |
 
 ---
@@ -31,6 +31,30 @@
 ---
 
 ## Log
+
+### 2026-08-03 — T2 ADS muzzle 自動化接線 PASS;DoD ⑥⑦待補
+
+- **交付**:`SimLoop.fireOneShot` 的 hitscan/projectile 兩處 `computeMuzzleOrigin` 改讀開火 tick
+  `state.heldAds`;`muzzleOffset.ts` 明記 hip/ADS 為 capture-at-fire 階躍,不引入 render-frame 內插狀態。
+- **Blast radius**:CodeGraph 顯示 `computeMuzzleOrigin` production callers 侷限於 `SimLoop.ts` 產彈路徑;
+  `spawnProjectile` / `fireOneShot` production caller 亦都在 `SimLoop.ts`,屬局部變更。data/metrics/TracerView 零改動。
+- **先紅後綠**:新增 T2 斷言後先得到 2 failures(ADS 仍收到 hip `[2.15,2.88,3.4]`);
+  接上 `state.heldAds` 後 `muzzle-tracer-invariants.test.ts` **8/8**、`muzzleOffset.test.ts` **4/4** 綠。
+- **ADS 四項契約**:同條件 hip/ADS 起點逐位分離;hip→ADS→hip 只有兩個離散值;raycast 原點、
+  projectile `x/y/z` + `o*`、fire/hit 事件逐位不變;ADS 跨 frame sequence tracer origin 逐位一致。
+- **零破壞 / CI**:`npm run test:ci` sandbox 外 exit 0(TypeScript 0 errors;Vitest **81 files / 640 tests**;
+  Playwright **18 passed**)。sandbox 內首次執行仍因既知 esbuild 權限限制無法讀 `vite.config.ts`,
+  與 T0 證據一致;非產品失敗。相關回歸組另跑 **12 files / 114 tests passed**。
+- **Export / data 邊界**:`projectile-determinism.test.ts` diff = **0 bytes**;`src/data` +
+  `docs/operational/schema.md` diff = **0 bytes**;data 層查詢 `shotRays` / `arena.m*` = **zero matches**。
+- **Graph freshness**:`graphify update .` 完成(AST 173/173),更新為 **1227 nodes / 2950 edges / 71 communities**。
+- **Decision Log**:保留 GD-18 佔位 ADS offset `{rightU:0,upU:-0.08,forwardU:0.60}` 以先完成行為接線;
+  未把佔位值冒充實測值,亦未提前勾 T2 完成。
+  **Alternatives Considered**:等待實測值才寫任何 code 會延後與數值解耦的低風險接線;自行猜測新 offset
+  則違反 OQ-MT-2 的量測契約,兩者皆不採。
+- **Surprises & Discoveries**:無產品層意外;既有 `applyInput` 已完整維護 `heldAds`,T2 確認不需新接線。
+- **Open Questions / blocker**:OQ-MT-2 仍未解;缺實測 offset 原始數據與 ADS 實機截圖,故 DoD ⑥⑦未滿足。
+  依使用者明確要求,將目前自動化接線成果作為 checkpoint commit;T2 仍維持 🚧,亦未把 task-checklist 翻 ✅。
 
 ### 2026-08-03 — T1 hip muzzle tracer PASS
 

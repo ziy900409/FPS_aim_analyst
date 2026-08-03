@@ -7,7 +7,7 @@
 | **相依** | **T1**(hip 路徑先綠)+ **OQ-MT-2**(ads 偏移量實機量測值;未回填可先以佔位值接線並綠,但 DoD ⑥ 需回填後才可勾) |
 | **Risk / Cplx** | Low-Med / Low |
 | **Touches** | MODIFY `src/render/muzzleOffset.ts`(ads 數值回填)、`src/loop/SimLoop.ts`(兩處產彈點的 `ads` 引數)、`tests/regression/muzzle-tracer-invariants.test.ts`(ADS 案) |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | 🚧 `heldAds` 接線與自動驗證已完成;待 OQ-MT-2 實測值 + 實機截圖 |
 
 ## Objective
 
@@ -37,11 +37,11 @@
 
 ## Steps
 
-- [ ] SimLoop 兩處 `ads` 引數接 `state.heldAds`。
-- [ ] `muzzle-tracer-invariants.test.ts` ADS 四項斷言綠(差異 / 不變性 / 無中間值 / 跨 FPS)。
-- [ ] **零破壞驗證**:`projectile-determinism.test.ts` 與命中/彈孔/事件既有測試零修改全綠。
-- [ ] export fixture diff 0 驗證。
-- [ ] `npx tsc --noEmit` 0 + `npm run test:ci` exit 0。
+- [x] SimLoop 兩處 `ads` 引數接 `state.heldAds`。(2026-08-03)
+- [x] `muzzle-tracer-invariants.test.ts` ADS 四項斷言綠(差異 / 不變性 / 無中間值 / 跨 FPS)。(2026-08-03)
+- [x] **零破壞驗證**:`projectile-determinism.test.ts` 與命中/彈孔/事件既有測試零修改全綠。(2026-08-03)
+- [x] export fixture diff 0 驗證。(2026-08-03)
+- [x] `npx tsc --noEmit` 0 + `npm run test:ci` exit 0。(2026-08-03)
 - [ ] OQ-MT-2 量測值回填 `DEFAULT_MUZZLE_OFFSETS.ads`(量測方法與數據記 progress)。
 - [ ] 實機截圖:ads 態槍口落準心下方(記 progress)。
 

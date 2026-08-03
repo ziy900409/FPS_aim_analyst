@@ -18,6 +18,7 @@ import { SIM_HZ } from '../../src/loop/constants.ts';
 import { createSimLoop, simStep } from '../../src/loop/SimLoop.ts';
 import { createSharedState, type SharedState } from '../../src/state/SharedState.ts';
 import { pushEvent } from '../../src/state/inputRingTestUtil.ts';
+import { createDataRecorder, type DataRecorder } from '../../src/data/DataRecorder.ts';
 import type { TargetManager } from '../../src/sim/TargetManager.ts';
 import type { TargetState } from '../../src/state/types.ts';
 import type { Clock } from '../../src/loop/clock.ts';
@@ -27,6 +28,7 @@ import type { WeaponConfig } from '../../src/weapon/WeaponConfig.ts';
 const TICK_MS = 1000 / SIM_HZ;
 const CAMERA_POSITION = [2, 3, 4] as const;
 const HIP_MUZZLE = [2.15, 2.88, 3.4] as const;
+const ADS_MUZZLE = [2, 2.92, 3.4] as const;
 const projectileWeapon: WeaponConfig = {
   ...ak47,
   id: 'muzzle_tracer_projectile_test',
@@ -58,11 +60,18 @@ function createTarget(): TargetState {
   };
 }
 
-function fireOne(state: SharedState, camera: THREE.Camera, weapon: WeaponConfig = ak47): void {
+function fireOne(
+  state: SharedState,
+  camera: THREE.Camera,
+  weapon: WeaponConfig = ak47,
+  ads = false,
+  recorder?: DataRecorder,
+): void {
   state.targets.push(createTarget());
+  state.heldAds = ads;
   state.heldFire = true;
   state.weapon.nextFireT = 0;
-  simStep(state, 1 / SIM_HZ, TICK_MS, targetManager, camera, undefined, undefined, undefined, undefined, weapon);
+  simStep(state, 1 / SIM_HZ, TICK_MS, targetManager, camera, undefined, undefined, undefined, recorder, weapon);
   state.heldFire = false;
   state.weapon.nextFireT = Infinity;
 }
@@ -71,6 +80,7 @@ function advanceUntilTracer(
   state: SharedState,
   camera: THREE.Camera,
   weapon: WeaponConfig,
+  recorder?: DataRecorder,
 ): void {
   for (let tick = 2; tick <= 64 && state.shotRays.total === 0; tick++) {
     simStep(
@@ -82,21 +92,22 @@ function advanceUntilTracer(
       undefined,
       undefined,
       undefined,
-      undefined,
+      recorder,
       weapon,
     );
   }
   expect(state.shotRays.total).toBe(1);
 }
 
-function runAtFrames(frames: readonly number[]): [number, number, number] {
+function runAtFrames(frames: readonly number[], ads = false): [number, number, number] {
   const state = createSharedState();
   const camera = createCamera();
   const clock: Clock = { now: () => 0 };
   const loop = createSimLoop(state, clock, SIM_HZ, targetManager, camera);
   state.targets.push(createTarget());
-  pushEvent(state, { type: 'fire', down: true, t: 0 });
-  pushEvent(state, { type: 'fire', down: false, t: 1 });
+  if (ads) pushEvent(state, { type: 'ads', down: true, t: 0 });
+  pushEvent(state, { type: 'fire', down: true, t: 1 });
+  pushEvent(state, { type: 'fire', down: false, t: 2 });
   for (const frame of frames) loop.pump(frame);
   return [state.shotRays.ox[0], state.shotRays.oy[0], state.shotRays.oz[0]];
 }
@@ -151,5 +162,76 @@ describe('WP-27 muzzle tracer invariants', () => {
     for (let tick = 1; tick <= 8; tick++) canonical.push(tick * TICK_MS);
 
     expect(runAtFrames([5, 18, 31, 47, 62.5])).toEqual(runAtFrames(canonical));
+  });
+
+  it('switches hip -> ADS -> hip as two discrete capture-at-fire muzzle origins', () => {
+    const state = createSharedState();
+    const camera = createCamera();
+
+    fireOne(state, camera, ak47, false);
+    fireOne(state, camera, ak47, true);
+    fireOne(state, camera, ak47, false);
+
+    const origins = [0, 1, 2].map((i) => [state.shotRays.ox[i], state.shotRays.oy[i], state.shotRays.oz[i]]);
+    expect(origins).toEqual([[...HIP_MUZZLE], [...ADS_MUZZLE], [...HIP_MUZZLE]]);
+    expect(new Set(origins.map((origin) => origin.join(','))).size).toBe(2);
+  });
+
+  it('keeps hit authority and fire/hit events byte-for-byte unchanged when ADS changes', () => {
+    const hipHitscan = createSharedState();
+    const hipHitscanRecorder = createDataRecorder({ capacity: 8 });
+    fireOne(hipHitscan, createCamera(), ak47, false, hipHitscanRecorder);
+
+    const adsHitscan = createSharedState();
+    const adsHitscanRecorder = createDataRecorder({ capacity: 8 });
+    fireOne(adsHitscan, createCamera(), ak47, true, adsHitscanRecorder);
+
+    expect(raycastProbe.origins).toEqual([[...CAMERA_POSITION], [...CAMERA_POSITION]]);
+    expect(adsHitscanRecorder.snapshot().events).toEqual(hipHitscanRecorder.snapshot().events);
+
+    const hipProjectile = createSharedState();
+    const hipProjectileCamera = createCamera();
+    const hipProjectileRecorder = createDataRecorder({ capacity: 64 });
+    fireOne(hipProjectile, hipProjectileCamera, projectileWeapon, false, hipProjectileRecorder);
+
+    const adsProjectile = createSharedState();
+    const adsProjectileCamera = createCamera();
+    const adsProjectileRecorder = createDataRecorder({ capacity: 64 });
+    fireOne(adsProjectile, adsProjectileCamera, projectileWeapon, true, adsProjectileRecorder);
+
+    expect([adsProjectile.bullets.x[0], adsProjectile.bullets.y[0], adsProjectile.bullets.z[0]]).toEqual([
+      hipProjectile.bullets.x[0],
+      hipProjectile.bullets.y[0],
+      hipProjectile.bullets.z[0],
+    ]);
+    expect([adsProjectile.bullets.ox[0], adsProjectile.bullets.oy[0], adsProjectile.bullets.oz[0]]).toEqual([
+      hipProjectile.bullets.ox[0],
+      hipProjectile.bullets.oy[0],
+      hipProjectile.bullets.oz[0],
+    ]);
+    expect([hipProjectile.bullets.mx[0], hipProjectile.bullets.my[0], hipProjectile.bullets.mz[0]]).toEqual([
+      ...HIP_MUZZLE,
+    ]);
+    expect([adsProjectile.bullets.mx[0], adsProjectile.bullets.my[0], adsProjectile.bullets.mz[0]]).toEqual([
+      ...ADS_MUZZLE,
+    ]);
+
+    advanceUntilTracer(hipProjectile, hipProjectileCamera, projectileWeapon, hipProjectileRecorder);
+    advanceUntilTracer(adsProjectile, adsProjectileCamera, projectileWeapon, adsProjectileRecorder);
+    expect([hipProjectile.shotRays.ox[0], hipProjectile.shotRays.oy[0], hipProjectile.shotRays.oz[0]]).toEqual([
+      ...HIP_MUZZLE,
+    ]);
+    expect([adsProjectile.shotRays.ox[0], adsProjectile.shotRays.oy[0], adsProjectile.shotRays.oz[0]]).toEqual([
+      ...ADS_MUZZLE,
+    ]);
+    expect(adsProjectileRecorder.snapshot().events).toEqual(hipProjectileRecorder.snapshot().events);
+  });
+
+  it('produces byte-for-byte identical ADS tracer origins across render frame sequences', () => {
+    const canonical: number[] = [];
+    for (let tick = 1; tick <= 8; tick++) canonical.push(tick * TICK_MS);
+
+    expect(runAtFrames([5, 18, 31, 47, 62.5], true)).toEqual(runAtFrames(canonical, true));
+    expect(runAtFrames(canonical, true)).toEqual([...ADS_MUZZLE]);
   });
 });

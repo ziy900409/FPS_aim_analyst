@@ -416,7 +416,7 @@ function fireOneShot(
     else if (subAlpha > 1) subAlpha = 1;
     if (weapon?.bullet === undefined) {
       const result = ballisticRaycast(camera, state, subAlpha);
-      computeMuzzleOrigin(ballisticOrigin, ballisticQ, false, DEFAULT_MUZZLE_OFFSETS, muzzleScratch);
+      computeMuzzleOrigin(ballisticOrigin, ballisticQ, state.heldAds, DEFAULT_MUZZLE_OFFSETS, muzzleScratch);
       hit = accurate && result.hit;
       part = hit ? result.part : undefined;
       if (result.targetId !== undefined) targetId = result.targetId;
@@ -446,7 +446,7 @@ function fireOneShot(
       }
     } else {
       composeProjectileRay(camera, state);
-      computeMuzzleOrigin(ballisticOrigin, ballisticQ, false, DEFAULT_MUZZLE_OFFSETS, muzzleScratch);
+      computeMuzzleOrigin(ballisticOrigin, ballisticQ, state.heldAds, DEFAULT_MUZZLE_OFFSETS, muzzleScratch);
       const spawnedShotSeq = spawnProjectile(state, t, weapon, accurate);
       if (spawnedShotSeq === null) return false;
       shotSeq = spawnedShotSeq;
