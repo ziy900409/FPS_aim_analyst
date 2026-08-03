@@ -5,12 +5,12 @@
 
 ---
 
-## Status: 🚧 T0 entry gate ✅;T1 ready(2026-08-03)
+## Status: 🚧 T0/T1 ✅;T2 等待 OQ-MT-2 實機量測值(2026-08-03)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
-| T1 hip muzzle tracer | ⬜ |
+| T1 hip muzzle tracer | ✅ |
 | T2 ADS muzzle | ⬜ |
 | T-exit | ⬜ |
 
@@ -31,6 +31,44 @@
 ---
 
 ## Log
+
+### 2026-08-03 — T1 hip muzzle tracer PASS
+
+- **交付**:`src/render/muzzleOffset.ts` 新增 allocation-free `computeMuzzleOrigin` 與 hip/ADS 常數;
+  `BulletArena` 以預配置 `Float64Array(BULLET_CAP)` 新增 `mx/my/mz`;`SimLoop` hitscan/projectile
+  capture-at-fire 後只把 muzzle 寫入 tracer 路徑。`arena.x/y/z`、`arena.ox/oy/oz`、raycast 與
+  `pushImpact` 保持命中/彈道權威。
+- **Blast radius / structural review**:CodeGraph 顯示 `spawnProjectile` / `advanceProjectiles` 的 production caller
+  皆侷限於 `SimLoop.ts`;`BulletArena` 為跨 `SharedState` factory + SimLoop 的 additive change。
+  Post-edit 查核確認 `computeMuzzleOrigin` 只由 SimLoop 產彈路徑與其單元測試消費。
+- **新增測試**:
+  - `src/render/muzzleOffset.test.ts` **4 passed**:THREE `−Z` forward、yaw 90°、pitch ±45°、逐位決定性 + 回傳 caller `out`;
+  - `tests/regression/muzzle-tracer-invariants.test.ts` **5 passed**:hitscan raycast origin probe、projectile
+    `x/o*` 權威、獨立 `m*`、hitscan/projectile tracer 同源、capture-at-fire、跨 frame sequence 逐位一致。
+- **F-5 唯一既有斷言變更**:[SimLoop.test.ts](../../../../src/loop/SimLoop.test.ts) 的 tracer origin
+  從 `[0,1.5,5]` 改為顯式逐位 `[0.15,1.38,4.4]`;仍使用 `toEqual`,未放寬精度。其餘既有案零修改。
+- **零破壞 / CI**:`npm run test:ci` exit 0(2026-08-03):`tsc --noEmit` 0 errors;
+  Vitest **81 files / 637 tests passed**(T0 79/628 + 新增 2 files/9 tests);Playwright **18 passed**。
+  `projectile-determinism.test.ts`、`TracerView.test.ts`、SharedState、命中/彈孔/fire/BR regression 全部零修改綠。
+- **Export / data 邊界**:`git diff -- src/data docs/operational/schema.md` = **0 changed files**;
+  `projectile-determinism.test.ts` diff = **0 bytes**;`rg -n 'shotRays|arena.(mx|my|mz)|bullets.(mx|my|mz)' src/data`
+  = **zero matches**。schema/export/metrics 不變。
+- **GC 紀律**:`muzzleScratch` 是 SimLoop 模組層單一 `Vector3`;`computeMuzzleOrigin` 只改 caller `out`;
+  `mx/my/mz` 只在 arena 建立時配置。開火函式內無 `new Vector3/Quaternion`。
+- **視覺證據**:[t1-hip-muzzle-tracer.png](t1-hip-muzzle-tracer.png) 由本機 Edge + production SimLoop
+  真實 fire 事件產生;ring origin 先逐位斷言為 `[0.15,1.48,3.4]`,畫面可見 cyan tracer 連接準心與
+  右下 hip muzzle。暫時 Playwright probe 已刪除,未進正式測試。
+- **Graph freshness**:`graphify update .` 完成(AST 173/173),更新為 **1227 nodes / 2948 edges / 72 communities**。
+- **Decision Log**:T1 對 `computeMuzzleOrigin` 的 `ads` 固定傳 `false`,不提前接 T2 分支;
+  projectile 另存 `m*` 而保留 `o*` 作物理距離基準。
+  **Alternatives Considered**:覆寫 `arena.o*` 會污染 maxRange/落地;從 camera quaternion 重算會污染跨 FPS 決定性;
+  提前讀 `heldAds` 會混合 T1/T2 切片,三者皆不採。
+- **Surprises & Discoveries**:純函式 pitch 測試的 quaternion 結果與 `Math.SQRT1_2` 相差 1 ULP,
+  改以 15 位精度驗旋轉(不影響被要求逐位的 SimLoop/invariant 斷言)。前兩次人工 ring 注入截圖錯過
+  tracer lifetime;改以真實 fire event 並先 poll ring 後成功取得證據,production 無需改動。
+- **Open Questions**:無新增。OQ-MT-2 仍為唯一待決項;T2 code 可用佔位值接線,但實機數值未回填前
+  T2 DoD ⑥ 不可完成。
+- **T1 宣告**:**PASS**。T1 已完成且可獨立回滾;依規則未取得 OQ-MT-2 實測值前不宣告 T2 完成。
 
 ### 2026-08-03 — T0 entry gate PASS
 

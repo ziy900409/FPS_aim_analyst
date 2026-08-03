@@ -76,6 +76,10 @@ export interface BulletArena {
   readonly ox: Float64Array;
   readonly oy: Float64Array;
   readonly oz: Float64Array;
+  /** Fire-time muzzle world position; render-only tracer origin, never a physics baseline. */
+  readonly mx: Float64Array;
+  readonly my: Float64Array;
+  readonly mz: Float64Array;
   readonly spawnT: Float64Array;
   readonly shotSeq: Float64Array;
   readonly accurate: Uint8Array;
@@ -124,6 +128,9 @@ export function createBulletArena(): BulletArena {
     ox: new Float64Array(BULLET_CAP),
     oy: new Float64Array(BULLET_CAP),
     oz: new Float64Array(BULLET_CAP),
+    mx: new Float64Array(BULLET_CAP),
+    my: new Float64Array(BULLET_CAP),
+    mz: new Float64Array(BULLET_CAP),
     spawnT: new Float64Array(BULLET_CAP),
     shotSeq: new Float64Array(BULLET_CAP),
     accurate: new Uint8Array(BULLET_CAP),

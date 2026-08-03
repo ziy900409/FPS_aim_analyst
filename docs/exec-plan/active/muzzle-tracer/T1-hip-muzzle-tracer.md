@@ -7,7 +7,7 @@
 | **相依** | T0 |
 | **Risk / Cplx** | **Med** / Low-Med(風險在「誤把 muzzle 套進命中權威」,非演算法) |
 | **Touches** | ADD `src/render/muzzleOffset.ts` + `src/render/muzzleOffset.test.ts` + `tests/regression/muzzle-tracer-invariants.test.ts`;MODIFY `src/state/SharedState.ts`(`BulletArena` 三欄)、`src/loop/SimLoop.ts`(四處)、`src/loop/SimLoop.test.ts`(僅 1 案) |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | ✅ PASS(2026-08-03) |
 
 ## Objective
 
@@ -51,16 +51,16 @@ tracer 視覺起點自畫面中心移到**槍口**(hip 右手位),涵蓋 hitscan
 
 ## Steps
 
-- [ ] `muzzleOffset.ts` + 單元測試(先鎖純函式,再接線——比照 WP-25 T2 → T3 模式)。
-- [ ] `BulletArena.mx/my/mz` + `createBulletArena` 預配置 + `SharedState.test.ts` 既有案全綠。
-- [ ] SimLoop 四處切口 + 模組層 `muzzleScratch`。
-- [ ] `muzzle-tracer-invariants.test.ts` 五項斷言綠。
-- [ ] **零破壞驗證**:`projectile-determinism.test.ts`、`TracerView.test.ts`、命中/彈孔/fire 事件相關既有測試
+- [x] `muzzleOffset.ts` + 單元測試(先鎖純函式,再接線——比照 WP-25 T2 → T3 模式)。
+- [x] `BulletArena.mx/my/mz` + `createBulletArena` 預配置 + `SharedState.test.ts` 既有案全綠。
+- [x] SimLoop 四處切口 + 模組層 `muzzleScratch`。
+- [x] `muzzle-tracer-invariants.test.ts` 五項斷言綠。
+- [x] **零破壞驗證**:`projectile-determinism.test.ts`、`TracerView.test.ts`、命中/彈孔/fire 事件相關既有測試
       **零修改全綠**(與 T0 基線數字對照,記 progress)。
-- [ ] `SimLoop.test.ts:432` 單案更新為顯式期望值。
-- [ ] export fixture diff 0 驗證(記 progress)。
-- [ ] `npx tsc --noEmit` 0 + `npm run test:ci` exit 0。
-- [ ] 實機截圖:tracer 自畫面右下起(記 progress)。
+- [x] `SimLoop.test.ts:432` 單案更新為顯式期望值。
+- [x] export fixture diff 0 驗證(記 progress)。
+- [x] `npx tsc --noEmit` 0 + `npm run test:ci` exit 0。
+- [x] 實機截圖:tracer 自畫面右下起(記 progress)。
 
 ## Definition of Done
 

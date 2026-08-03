@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk | 估時 |
 |------|------|------|------|------|------|
 | ✅ | **T0** entry gate(基線核對 + 讀碼證據,無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low | 0.25 |
-| ⬜ | **T1** hip muzzle tracer(muzzleOffset + `BulletArena.m*` + SimLoop 四切口) | [T1-hip-muzzle-tracer.md](T1-hip-muzzle-tracer.md) | T0 | **Med** | 0.75–1 |
+| ✅ | **T1** hip muzzle tracer(muzzleOffset + `BulletArena.m*` + SimLoop 四切口) | [T1-hip-muzzle-tracer.md](T1-hip-muzzle-tracer.md) | T0 | **Med** | 0.75–1 |
 | ⬜ | **T2** ADS muzzle(`heldAds` 階躍切換 + 量測值回填) | [T2-ads-muzzle.md](T2-ads-muzzle.md) | T1 + OQ-MT-2 | Low-Med | 0.5–1 |
 | ⬜ | **T-exit** 三不變性驗收 + 視覺驗收 + 文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1–T2 | — | 0.25–0.5 |
 
