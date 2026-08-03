@@ -132,7 +132,7 @@ export interface MuzzleOffset {
 
 export interface MuzzleOffsets {
   readonly hip: MuzzleOffset;   // GD-18 初值 { rightU: 0.15, upU: -0.12, forwardU: 0.60 }
-  readonly ads: MuzzleOffset;   // GD-18 佔位  { rightU: 0,    upU: -0.08, forwardU: 0.60 }（OQ-MT-2 量測後回填）
+  readonly ads: MuzzleOffset;   // T2 實測值 { rightU: 0,    upU: -0.065, forwardU: 0.60 }（OQ-MT-2 ✅）
 }
 
 export const DEFAULT_MUZZLE_OFFSETS: MuzzleOffsets;
@@ -187,7 +187,7 @@ export interface BulletArena {
 | 熱路徑每發 `new Vector3/Quaternion` | 高射速 GC 卡頓汙染量測 | 模組層 `muzzleScratch` 單例 + `computeMuzzleOrigin` 寫入 out;code review 檢查點 |
 | `pushImpact` 也被改成 muzzle | 彈孔位置錯亂(彈孔 = 命中點,與 tracer 無關) | 改動清單明列「`pushImpact` 不動」;既有彈孔測試零修改全綠 |
 | forward 分量過小 | muzzle 落在光軸 60°+ → 畫面外,看起來像沒生效 | GD-18 初值(前向 ≫ 側向)+ T1 手動視覺驗收截圖 |
-| ADS 偏移量未經實機驗證即定 | tracer 觀感不真實(不影響正確性) | OQ-MT-2 為量測任務;T2 code 與數值解耦,回填不改介面 |
+| ADS 偏移量未經實機驗證即定 | tracer 觀感不真實(不影響正確性) | ✅ T2 以 Edge FHD/QHD 三候選實測,選定 `upU:-0.065`;方法與證據見 progress |
 | tracer 縮尾方向觀感 | origin 從眼睛(看不見)移到槍口後,**縮尾行為第一次真正可見**,可能讀作「線往槍口縮回」而非「子彈往前飛」 | 列入 T-exit 手動視覺驗收(OQ-MT-7);不可接受則另開 task(本 WP out of scope) |
 
 ---
@@ -221,7 +221,7 @@ export interface BulletArena {
 | 命中污染(唯一嚴重風險) | **High → 測試後 Low** | F-2 使它比初版估計**更易誤觸**(`arena.o*` 看起來像純 tracer 欄位,實則是物理基準)。緩解 = C-1b 分離欄位 + 新回歸檔顯式封盲區(沿用 BD-002 已驗證手法);C-1 為 T1 DoD 首項 |
 | 決定性破壞 | Med → Low | F-3 已在設計階段消除主要陷阱;`projectile-determinism` 零修改全綠即為充分證據 |
 | 相依風險 | ~~Med~~ → **已消** | KI-002 D1 已落地(BD-002) |
-| 經驗成本(非 code) | Med | ADS 偏移量需實機量測(OQ-MT-2);介面與數值解耦,不阻塞 T1、不阻塞 T2 接線 |
+| 經驗成本(非 code) | ~~Med~~ → **已消** | OQ-MT-2 已以 Edge FHD/QHD 實測並回填;介面維持不變 |
 | **Technical debt(有意識妥協)** | — | ① projectile 物理從相機中心飛、tracer 從槍口起,兩者在 endpoint 收斂(真實遊戲同款妥協)② 不建 viewmodel,槍口是「不可見的點」③ `TracerView` 縮尾方向維持現狀(重構觸發 = T-exit 視覺驗收判定不可接受)④ 單一全域偏移,非 per-weapon(觸發 = 第二把幾何差異顯著的武器) |
 
 ---
@@ -231,7 +231,7 @@ export interface BulletArena {
 | # | 問題 | 狀態 / 決議 | Owner | Deadline | 未解影響 |
 |---|---|---|---|---|---|
 | OQ-MT-1 | offset config 放哪? | ✅ **GD-18:`src/render/muzzleOffset.ts`**,與 `WeaponConfig` 解耦(保 weapon config = 命中/彈道語意純淨)。`SimLoop` 對它的 import 是 render-only 常數的刻意單向引用,檔頭註記可稽核 | 使用者 | ✅ 2026-08-03 | — |
-| OQ-MT-2 | **ADS 時槍口相對準心的下方偏移量** | 🔴 **未解 — 唯一待決項**。需實機影格量測(像素 → 視角度 → world 偏移)。T1/T2 code 與數值解耦,先用 `upU: −0.08` 佔位 | 研究者/使用者 | **T2 前** | T2 ads 數值;code 可先接線 |
+| OQ-MT-2 | **ADS 時槍口相對準心的下方偏移量** | ✅ **`{rightU:0,upU:-0.065,forwardU:0.60}`**。Edge FHD/QHD 比較 `upU -0.055/-0.065/-0.080`;選定值在兩解析度下分別距準心 161/214 px,維持相同比例且不貼 scope 下緣。原始數據/截圖見 progress T2 final log | Codex 實測、使用者授權 | ✅ 2026-08-03 | — |
 | OQ-MT-3 | capture-at-fire vs 顯示時重算 | ✅ **GD-18:capture-at-fire**(F-3 使其零額外成本且天然決定性) | 實作者 | ✅ 2026-08-03 | — |
 | OQ-MT-4 | hip「右手位」偏移方向/量值 | ✅ **GD-18:`{rightU 0.15, upU −0.12, forwardU 0.60}`**(F-4:前向必須 ≫ 側向),實機微調 | 使用者 | ✅ 2026-08-03 | — |
 | OQ-MT-5 | WP 正式編號與採納 | ✅ **GD-18:WP-27**,單 WP 資料夾 `active/muzzle-tracer/`,無獨立里程碑;stage4 草稿順延重編 **WP-28+ / M14+** | 使用者 | ✅ 2026-08-03 | — |

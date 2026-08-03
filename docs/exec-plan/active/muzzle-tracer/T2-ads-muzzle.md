@@ -7,7 +7,7 @@
 | **相依** | **T1**(hip 路徑先綠)+ **OQ-MT-2**(ads 偏移量實機量測值;未回填可先以佔位值接線並綠,但 DoD ⑥ 需回填後才可勾) |
 | **Risk / Cplx** | Low-Med / Low |
 | **Touches** | MODIFY `src/render/muzzleOffset.ts`(ads 數值回填)、`src/loop/SimLoop.ts`(兩處產彈點的 `ads` 引數)、`tests/regression/muzzle-tracer-invariants.test.ts`(ADS 案) |
-| **狀態** | 🚧 `heldAds` 接線與自動驗證已完成;待 OQ-MT-2 實測值 + 實機截圖 |
+| **狀態** | ✅ 完成(2026-08-03):`heldAds` 階躍接線 + OQ-MT-2 實測值 + FHD/QHD 截圖 |
 
 ## Objective
 
@@ -20,7 +20,7 @@
   (hitscan 分支 + `spawnProjectile` 路徑各一)。`state.heldAds` 已由 `applyInput`
   [:83-88](../../../../src/loop/SimLoop.ts#L83-L88) 維護(WP-24 T1),**零新接線**。
 - **`muzzleOffset.ts`**:`DEFAULT_MUZZLE_OFFSETS.ads` 由佔位值 `{rightU 0, upU −0.08, forwardU 0.60}`
-  回填為 OQ-MT-2 的實機量測值;**介面不變**(數值與 code 解耦)。
+  回填為 OQ-MT-2 實測值 `{rightU 0, upU −0.065, forwardU 0.60}`;**介面不變**(數值與 code 解耦)。
 - **階躍語意(C-7)**:不引入任何 hip↔ads 內插狀態。理由於檔頭註記:tracer origin 是
   capture-at-fire 的 sim 值,平滑內插必然是 render 幀狀態,兩者互斥;且與 GD-16「ADS gain 階躍」一致。
 - **測試(`muzzle-tracer-invariants.test.ts` 增段)**:
@@ -42,8 +42,8 @@
 - [x] **零破壞驗證**:`projectile-determinism.test.ts` 與命中/彈孔/事件既有測試零修改全綠。(2026-08-03)
 - [x] export fixture diff 0 驗證。(2026-08-03)
 - [x] `npx tsc --noEmit` 0 + `npm run test:ci` exit 0。(2026-08-03)
-- [ ] OQ-MT-2 量測值回填 `DEFAULT_MUZZLE_OFFSETS.ads`(量測方法與數據記 progress)。
-- [ ] 實機截圖:ads 態槍口落準心下方(記 progress)。
+- [x] OQ-MT-2 量測值回填 `DEFAULT_MUZZLE_OFFSETS.ads`(量測方法與數據記 progress)。(2026-08-03)
+- [x] 實機截圖:ads 態槍口落準心下方(記 progress)。(2026-08-03)
 
 ## Definition of Done
 

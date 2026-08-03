@@ -5,13 +5,13 @@
 
 ---
 
-## Status: 🚧 T0/T1 ✅;T2 自動化接線 ✅,等待 OQ-MT-2 實測值 + 實機截圖(2026-08-03)
+## Status: 🚧 T0/T1/T2 ✅;T-exit 待執行(2026-08-03)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 hip muzzle tracer | ✅ |
-| T2 ADS muzzle | 🚧 自動化接線/驗證 ✅;DoD ⑥⑦待補 |
+| T2 ADS muzzle | ✅ |
 | T-exit | ⬜ |
 
 ---
@@ -21,7 +21,7 @@
 | ID | 狀態 | 決議 |
 |----|------|------|
 | OQ-MT-1 offset config 落點 | ✅ 採納時決議(GD-18) | `src/render/muzzleOffset.ts`,與 `WeaponConfig` 解耦(保 weapon config = 命中/彈道語意純淨)。`SimLoop` 的 import 為 render-only 常數的刻意單向引用,檔頭註記可稽核。per-weapon 槍口偏移待「第二把幾何差異顯著的武器」觸發再晉升 `WeaponConfig`。 |
-| OQ-MT-2 **ADS 槍口相對準心的下方偏移量** | 🔴 **未解(唯一待決)** | Owner:研究者/使用者。Deadline:**T2 前**。方法:實機影格量測槍口在畫面中的像素位置 → 依當時 FOV 與解析度換算視角度 → 反推 world 偏移。未回填前 T2 可用佔位值 `{rightU 0, upU −0.08, forwardU 0.60}` 接線並使自動測試綠,但 T2 DoD ⑥ 需回填後才可勾。 |
+| OQ-MT-2 **ADS 槍口相對準心的下方偏移量** | ✅ 2026-08-03 | `{rightU 0, upU −0.065, forwardU 0.60}`。Edge 40° ADS FOV,固定 forward 0.60;FHD/QHD 比較三候選後選定。FHD/QHD 距準心 161/214 px(畫面高 14.88%),世界 origin 分別由 camera y 寫為 `cameraY−0.065`。 |
 | OQ-MT-3 capture-at-fire vs 顯示時重算 | ✅ 採納時決議(GD-18) | **capture-at-fire**。F-3 使其零額外成本:muzzle 由既有 `ballisticQ` 於開火 tick 算出,hitscan 直寫 ring、projectile 寫 `arena.m*`,顯示端不重算 → 開火後轉視角 tracer 不游移。 |
 | OQ-MT-4 hip 偏移方向/量值 | ✅ 採納時決議(GD-18) | `{rightU 0.15, upU −0.12, forwardU 0.60}`(右 ≈14°、下 ≈11°)。**前向必須 ≫ 側向**——初版草稿的 `[0.18, −0.12, 0.10]` 會使 muzzle 落在光軸外 ≈63°(畫面外)。實機可微調,不改介面。 |
 | OQ-MT-5 WP 編號與採納 | ✅ 採納時決議(GD-18) | **WP-27**,單 WP 資料夾 `active/muzzle-tracer/`,**無獨立里程碑**(exit gate 即交付判定)。stage4 草稿順延重編 **WP-28+ / M14+**。 |
@@ -31,6 +31,38 @@
 ---
 
 ## Log
+
+### 2026-08-03 — T2 ADS muzzle final PASS(OQ-MT-2 實測 + 視覺驗收)
+
+- **量測環境**:系統 Edge(Playwright `channel:msedge`)、真 Vite dev render、ADS 垂直 FOV 40°;
+  每案按 ADS 後等待 180ms(>120ms FOV transition),再注入無移動第一發。固定 `rightU:0`、
+  `forwardU:0.60`,只比較可由 2D 影格唯一校準的 `upU`。
+- **原始候選數據**:
+
+  | `upU` | FHD 1920×1080 | QHD 2560×1440 | 畫面高比例 | 結論 |
+  |---:|---:|---:|---:|---|
+  | −0.055 | 136.00 px | 181.33 px | 12.59% | 略貼近準心 |
+  | **−0.065** | **160.73 px** | **214.30 px** | **14.88%** | **採用:清楚位於下方且保留 scope 下緣餘裕** |
+  | −0.080 | 197.82 px | 263.76 px | 18.32% | QHD 幾乎貼/越過 260px scope 下緣 |
+
+- **世界座標交叉驗證**:選定案 FHD/QHD 的 live `shotRays` 皆逐位讀得
+  `[0,1.5350000000000001,3.4]`(camera `[0,1.6,4]` + local `[0,−0.065,−0.6]`),各案 total=1;
+  兩解析度 world origin 相同,像素比例一致。
+- **視覺證據**:[FHD](t2-ads-balanced-fhd.png) / [QHD](t2-ads-balanced-qhd.png)。兩圖均由真實
+  `heldAds` + production SimLoop 第一發產生;槍口端在準心正下方且留在 scope 圈內。
+- **選定/回填**:`DEFAULT_MUZZLE_OFFSETS.ads = {rightU:0,upU:-0.065,forwardU:0.60}`;
+  `muzzle-tracer-invariants` 的逐位期望同步為 camera `[2,3,4]` → muzzle `[2,2.935,3.4]`。
+- **驗證**:量測探針 Edge **6/6** 候選案 + 最終清潔證據圖 **2/2** 通過;目標 Vitest
+  `muzzleOffset` / `muzzle-tracer-invariants` / `projectile-determinism` **3 files / 19 tests** 通過。
+  最終 `npm run test:ci` exit 0:TypeScript 0 errors、Vitest **81 files / 640 tests**、Playwright **18 passed**。
+  首次完整 Playwright 曾有既有 `input-sampler` 等待 `__aimDebug` 5s 啟動逾時(17/18);單案重跑
+  **1 passed(1.3s)**,隨後完整重跑 18/18,證實為並行啟動抖動而非產品失敗。
+- **Graph freshness**:`graphify update .` 完成(AST 173/173),更新為 **1227 nodes / 2950 edges / 72 communities**。
+- **Decision Log**:以 scope 下緣餘裕 + 跨解析度相同比例作客觀選值準則。
+  **Alternatives Considered**:`−0.055` 雖保守但槍口感偏近準心;原佔位 `−0.080` 在 QHD 過低,皆不採。
+- **Surprises & Discoveries**:Scope overlay 半徑由 CSS `min(34vmin,260px)` 封頂;因此 QHD 是辨別
+  `−0.080` 過低的關鍵條件,只看 FHD 會低估此風險。
+- **Open Questions**:OQ-MT-2 ✅ 關閉;T2 無剩餘 open question。
 
 ### 2026-08-03 — T2 ADS muzzle 自動化接線 PASS;DoD ⑥⑦待補
 

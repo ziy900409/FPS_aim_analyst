@@ -28,7 +28,7 @@ import type { WeaponConfig } from '../../src/weapon/WeaponConfig.ts';
 const TICK_MS = 1000 / SIM_HZ;
 const CAMERA_POSITION = [2, 3, 4] as const;
 const HIP_MUZZLE = [2.15, 2.88, 3.4] as const;
-const ADS_MUZZLE = [2, 2.92, 3.4] as const;
+const ADS_MUZZLE = [2, 2.935, 3.4] as const;
 const projectileWeapon: WeaponConfig = {
   ...ak47,
   id: 'muzzle_tracer_projectile_test',

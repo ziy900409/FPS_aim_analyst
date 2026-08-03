@@ -23,7 +23,7 @@ export interface MuzzleOffsets {
 
 export const DEFAULT_MUZZLE_OFFSETS = {
   hip: { rightU: 0.15, upU: -0.12, forwardU: 0.6 },
-  ads: { rightU: 0, upU: -0.08, forwardU: 0.6 },
+  ads: { rightU: 0, upU: -0.065, forwardU: 0.6 },
 } as const satisfies MuzzleOffsets;
 
 /** Deterministic, allocation-free `out = origin + quat * viewOffset`. */
