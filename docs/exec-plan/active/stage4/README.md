@@ -3,7 +3,8 @@
 > stage4 頂層索引 + tech spec **草稿(2026-07-09 提案,未採納)**。整合輸入:performance_analysis repo 架構分析與移植評估(2026-07-09)+ 教練視角優先序排序(目標:更有效追蹤選手**瞄準**與**急停**表現)+ stage1–3 既有資料面(WP-16 schema v2、WP-21 偵測 drill、WP-8 `MetricsDashboard`)。
 > 格式沿用 [exec-plan/README.md](../../README.md)(每 WP 一個自足子資料夾;task = 垂直切片 = 原子 commit)。文件語言:繁體中文,術語保留英文(D4)。
 > **採納前不展開 WP 子資料夾、不動 exec-plan/README.md §2 索引**;採納時執行 §9 文件對帳清單。
-> ⚠️ **編號對帳(GD-15,2026-07-10)**:本草稿原預留之 **WP-23~27 / M11~M12** 已由 stage5(BR 遠距跟槍測試模組,[../stage5/README.md](../stage5/README.md))取用 WP-23~26 / M11~M13;本計畫**採納時 WP 重編為 WP-27+、里程碑 M14+**(下文編號依當時序更新),見 [DECISIONS.md](../../DECISIONS.md) GD-15。
+> ⚠️ **編號對帳(GD-15,2026-07-10)**:本草稿原預留之 **WP-23~27 / M11~M12** 已由 stage5(BR 遠距跟槍測試模組,[../stage5/README.md](../stage5/README.md))取用 WP-23~26 / M11~M13;本計畫**採納時 WP 重編、里程碑 M14+**(下文編號依當時序更新),見 [DECISIONS.md](../../DECISIONS.md) GD-15。
+> ⚠️ **編號再順延(GD-18,2026-08-03)**:**WP-27 已由 [muzzle-tracer](../muzzle-tracer/README.md) 採納取用**(單 WP,tracer 槍口起點);本草稿採納時 WP 起始編號順延為 **WP-28+**,里程碑仍為 **M14+**。
 
 | | |
 |---|---|

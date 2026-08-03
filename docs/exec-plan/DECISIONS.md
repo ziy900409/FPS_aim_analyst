@@ -23,6 +23,20 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-18 ✅ muzzle-tracer 採納 — WP-27 編號 + 五項設計拍板(tracer 槍口起點)(2026-08-03)
+
+| | |
+|---|---|
+| **發現處** | [muzzle-tracer 草稿](active/muzzle-tracer/README.md)(2026-07-15 提案)之採納規劃。規劃期讀碼發現草稿的**三項技術假設與實況不符**,若照草稿施作會破壞命中物理或決定性,故採納同時一併拍板設計方向。 |
+| **決議(編號)** | 採納為 **WP-27**,單 WP 自足資料夾 `active/muzzle-tracer/`,**無獨立里程碑**(T-exit gate 即交付判定)。依 GD-15「先採納先得」,[stage4 草稿](active/stage4/README.md)原預留之 WP-27 順延重編為 **WP-28+ / M14+**。 |
+| **決議(設計五項)** | ① **OQ-MT-1 offset 落點**:`src/render/muzzleOffset.ts`,與 `WeaponConfig` 解耦(保 weapon config = 命中/彈道語意純淨);`SimLoop` 的 import 為 render-only 常數的刻意單向引用。② **OQ-MT-3 凍結語意**:**capture-at-fire**(開火 tick 算好寫入,顯示端不重算)。③ **OQ-MT-4 hip 偏移初值**:`{rightU 0.15, upU −0.12, forwardU 0.60}`(THREE camera-local,前 = −Z);**前向必須 ≫ 側向**。④ **OQ-MT-6 ADS 切換**:**階躍**,不做平滑內插。⑤ **旋轉來源**:複用既有 sim 側 `ballisticQ`(`state.aim + rawPunch×2`),**禁用** `camera.getWorldQuaternion()`。 |
+| **理由(三項讀碼發現)** | **(a) `arena.ox/oy/oz` 是雙重角色**——既是 projectile tracer origin([SimLoop.ts:324](../../src/loop/SimLoop.ts#L324)/[:353](../../src/loop/SimLoop.ts#L353)),**也是** `maxRangeU` 與落地判定的距離基準([:339-343](../../src/loop/SimLoop.ts#L339-L343));草稿「三個 `pushShotRay` 點都改用 muzzleOrigin」會改變子彈存活長度與命中數 → 故另立 `BulletArena.mx/my/mz` 三欄僅供 tracer 消費。**(b) camera quaternion 由 render loop 每幀寫入**(`CameraController` + 內插 punch);sim 讀它會使決定性依賴 render FPS。既有 `ballisticRaycast` 刻意不讀之([:127-133](../../src/loop/SimLoop.ts#L127-L133))→ muzzle 沿用同一 `ballisticQ`,零額外計算且與彈道方向同源。**(c) 平滑內插與 capture-at-fire 互斥**——tracer origin 是 sim 值,內插必然是 render 幀狀態;階躍亦與 GD-16「ADS gain 階躍」慣例一致。 |
+| **紅線(繼承 WP-25 / GD-6)** | muzzle 偏移**只可**寫入 `shotRays` 與 `BulletArena.mx/my/mz`;**不得**進入 raycast 原點、`arena.ox/oy/oz`、`arena.x/y/z` 或 `pushImpact`(彈孔 = 命中點)。tracer 維持 render-only:不進匯出、不進指標、`schemaVersion` 不動。 |
+| **前置** | **KI-002 D1 ✅ 已落地**([BD-002](../known_issue/BUGFIX-DECISIONS.md),2026-07-15):相機中心 = sim origin = 準心,偏移基準正確。草稿列為阻塞相依者已解。 |
+| **未決** | **OQ-MT-2**(ADS 槍口相對準心的下方偏移量)須實機影格量測,owner = 研究者/使用者,deadline = T2 前;code 與數值解耦,不阻塞接線。**OQ-MT-7**(tracer 縮尾方向觀感)待 T-exit 視覺驗收判定。 |
+| **影響面** | [WP-27 README](active/muzzle-tracer/README.md) 全篇契約 C-1b/C-4/C-6/C-7、T0–T-exit 四個 task 檔、[exec-plan/README.md](README.md) §2/§4/§6、[stage4 README](active/stage4/README.md) 編號重編標註、[docs/MAP.md](../MAP.md)、[CLAUDE.md](../../CLAUDE.md) §4 tracer 條目補句(T0)、[CONTEXT.md](../../CONTEXT.md) §H muzzle origin 術語(T-exit)。 |
+| **狀態** | ✅ 已拍板(2026-08-03,使用者採納並指示展開全套);T0 unblocked。 |
+
 ### GD-17 ✅ Projectile 參數域 — flight ticks × distance tier 反推 speed/gravity/maxRange(2026-07-13)
 
 | | |
