@@ -8,7 +8,7 @@
 | **相依** | —(GD-18 五項設計決策已於採納時拍板,見 [DECISIONS.md](../../DECISIONS.md)) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 本資料夾 docs + [CLAUDE.md](../../../../CLAUDE.md) §4 tracer 條目 |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | ✅ PASS(2026-08-03) |
 
 ## Objective
 
@@ -44,13 +44,13 @@
 
 ## Steps
 
-- [ ] BD-002 / KI-002 D1 核對 + `br-field.eyeZ` 佐證記 progress。
-- [ ] `npm run test:ci` 乾淨基準 exit 0,數字記 progress。
-- [ ] F-2 / F-3 / F-5 三項讀碼證據(含行號)記 progress。
-- [ ] `src/data/` 對 `shotRays` 零引用 grep 證據記 progress。
-- [ ] CLAUDE.md §4 tracer 條目補句(與本 task 同 commit)。
-- [ ] OQ-MT-2 owner / deadline / 量測方法登記 progress OQ ledger。
-- [ ] progress.md 記 entry-gate PASS 宣告。
+- [x] BD-002 / KI-002 D1 核對 + `br-field.eyeZ` 佐證記 progress。
+- [x] `npm run test:ci` 乾淨基準 exit 0,數字記 progress。
+- [x] F-2 / F-3 / F-5 三項讀碼證據(含行號)記 progress。
+- [x] `src/data/` 對 `shotRays` 零引用 grep 證據記 progress。
+- [x] CLAUDE.md §4 tracer 條目補句(與本 task 同 commit)。
+- [x] OQ-MT-2 owner / deadline / 量測方法登記 progress OQ ledger。
+- [x] progress.md 記 entry-gate PASS 宣告。
 
 ## Definition of Done
 

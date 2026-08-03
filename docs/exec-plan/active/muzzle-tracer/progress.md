@@ -5,11 +5,11 @@
 
 ---
 
-## Status: ⬜ 已採納待開工(2026-08-03 採納,GD-18)
+## Status: 🚧 T0 entry gate ✅;T1 ready(2026-08-03)
 
 | Task | 狀態 |
 |---|---|
-| T0 entry gate | ⬜ |
+| T0 entry gate | ✅ |
 | T1 hip muzzle tracer | ⬜ |
 | T2 ADS muzzle | ⬜ |
 | T-exit | ⬜ |
@@ -31,6 +31,47 @@
 ---
 
 ## Log
+
+### 2026-08-03 — T0 entry gate PASS
+
+- **前置相依(C-0)**:[BUGFIX-DECISIONS.md:21/36-46](../../../known_issue/BUGFIX-DECISIONS.md#L36)
+  明記 **BD-002 / KI-002 D1+D2 ✅(2026-07-15)**;[br-field.ts:24-26](../../../../src/scene/scenes/br-field.ts#L24)
+  以 `eyeZ:0` 把 camera(射線/彈道原點)錨在 sim origin。T1 的 muzzle 偏移基準已成立。
+- **乾淨基線**:`npm run test:ci` exit 0(2026-08-03 12:41Z):`tsc --noEmit` 0 errors;
+  Vitest **79 files / 628 tests passed**;Playwright **18 passed**。此數字作為 T1/T2 零破壞比較基準。
+- **F-2 — `arena.o*` 雙重角色**:
+  - [SimLoop.ts:234-236](../../../../src/loop/SimLoop.ts#L234) 於 spawn 時把 `ballisticOrigin` 寫入 `arena.ox/oy/oz`;
+  - [SimLoop.ts:324](../../../../src/loop/SimLoop.ts#L324) 與
+    [SimLoop.ts:353](../../../../src/loop/SimLoop.ts#L353) 又把同欄作 projectile tracer origin;
+  - [SimLoop.ts:339-343](../../../../src/loop/SimLoop.ts#L339) 同時以該欄計算 `maxRangeU`/落地前的距離進度。
+  結論:C-1b 必須另立 `mx/my/mz`;T1 不得改 `arena.o*`。
+- **F-3 — 決定性旋轉來源**:[SimLoop.ts:119-145](../../../../src/loop/SimLoop.ts#L119) 以
+  `state.aim + rawPunch×2` 合成模組層 `ballisticQ`,再由 camera 只讀 world position;
+  [CameraController.ts:102-109](../../../../src/view/CameraController.ts#L102) 及
+  [CameraController.ts:179-190](../../../../src/view/CameraController.ts#L179) 則證實 camera quaternion 由 render 幀
+  的 view-punch + aim 重組。結論:muzzle 只能複用 `ballisticQ`,不得讀 `camera.getWorldQuaternion()`。
+- **F-5 — T1 零破壞測試帳本**:
+  - 唯一允許修改的既有斷言:[SimLoop.test.ts:432](../../../../src/loop/SimLoop.test.ts#L432),目前顯式期望
+    tracer origin `=== [0, 1.5, 5]`;T1 必須改成 `camPos + R·hipOffset` 的逐位顯式期望,不得放寬精度。
+  - **零修改全綠**:`tests/regression/projectile-determinism.test.ts`、`src/loop/SimLoop.test.ts` 其餘案、
+    `src/state/SharedState.test.ts`、`src/render/TracerView.test.ts`、
+    `tests/regression/br-camera-anchor-invariants.test.ts`、`tests/regression/br-tracking-invariants.test.ts`、
+    `src/loop/__tests__/fire-determinism.test.ts`、`src/loop/__tests__/ballistic-compose.test.ts`、
+    `src/ballistics/bullet.test.ts`、`src/ballistics/sweptHit.test.ts`、`src/render/ImpactView.test.ts`、
+    `src/data/DataRecorder.test.ts`。基線全數包含於上述 628 tests 且已綠。
+- **C-2 export 邊界**:`rg -n 'shotRays' src/data` exit 1 / **zero matches**;T1 後須以相同查詢複核
+  `shotRays` 與新增 `arena.m*` 都未進 data 層。
+- **CLAUDE.md §4**:已在 WP-25 render-only tracer 約束後補上 WP-27 分離原點紅線:muzzle 只可寫
+  `shotRays` / `BulletArena.m*`,不得進 raycast、`arena.o*` 或 `pushImpact`。
+- **OQ-MT-2**:Owner 維持「研究者/使用者」,deadline **T2 前**;量測法已登記於上方 ledger:
+  實機影格像素位置 → 依 FOV/解析度換算視角度 → 反推 world offset。T1 不受阻塞。
+- **Decision Log**:工作分支先從 `main` 建立,再 fast-forward 納入 `aa` 的 WP-26/KI-002/WP-27 完整前置歷史。
+  **Alternatives Considered**:只 cherry-pick WP-27 計畫提交會遺漏 BD-002 與 `br-field` 且產生文件歸檔衝突;
+  手工拼接文件會使 T0 宣稱的上游證據不存在,故不採。
+- **Surprises & Discoveries**:sandbox 內第一次 `npm run test:ci` 於 Vitest 啟動時因 esbuild 無權讀
+  `vite.config.ts` 失敗(`Access is denied`);相同指令於核准的 sandbox 外 exit 0,證實為環境限制而非產品/測試失敗。
+- **Open Questions**:無新增。OQ-MT-2 仍為唯一待決項,不阻塞 T1。
+- **Entry-gate 宣告**:**PASS**。`src/` 零變更;T1 可開工。
 
 ### 2026-08-03 — 採納 + 計畫展開(GD-18)
 
