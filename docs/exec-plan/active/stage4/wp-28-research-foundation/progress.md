@@ -20,6 +20,10 @@
 | 2026-08-04 | T2 | ✅ ω(t)/ε(t)/on_target + Python↔TS ε presentation parity 閘完成 | `uv run pytest -q -p no:cacheprovider --basetemp .pytest_tmp_t2_final3`:**26 passed in 1.34s**;`npm run test:ci`:tsc PASS + Vitest **82 files / 641 tests passed** + Playwright **18 passed** |
 | 2026-08-04 | T2 parity | ✅ `synthetic_counterstrafe` 逐 presentation 對表 `deriveTrackingMetrics`≤1e-9 | parity 覆蓋 acquisition failure + acquired 兩路;`tAcquireMs`/TOT/RMS/median/P95/null 語意全綠;TS 生產碼零修改 |
 | 2026-08-04 | T2 units | ✅ rad→deg 邊界維持單點 | `rg -n "np\\.degrees" research/src`:命中僅 `modules/kinematics/algorithms/angular.py` 兩處 |
+| 2026-08-04 | T3 | ✅ SG/Butter 契約 + submovement 分段 + `seg-v1` 凍結;合成立即 DoD PASS | targeted T3:`27 passed in 2.82s`;final full `uv run pytest -q -p no:cacheprovider --basetemp .pytest_tmp_t3_final`:**53 passed in 4.53s** |
+| 2026-08-04 | T3 sweep | ✅ 243 組(SG window × k × floor × low/stop ratio)決定性掃參;108 組通過六情境 | selected `seg-v1`:case failures=0,max boundary error=**1 tick**;CSV 9,824 bytes;重生 SHA-256 同為 `B83C726F…77E577B` |
+| 2026-08-04 | T3 engine gate | ✅ research-only 變更未破壞引擎/parity gate | `npm run test:ci`:tsc PASS + Vitest **82 files / 641 tests passed** + Playwright **18 passed** |
+| 2026-08-04 | T3 real-data gate | 🟡 真實 drill 分段成功率與 ω(t) 疊圖未執行 | **M14 ④ blocker 維持**;runner 已備妥 `--real-export`，樣本到位後產 summary/segments/overlay SVG |
 
 ---
 
@@ -33,6 +37,9 @@
 | D-28.3 | `load_export(path)` 是 `algorithms/` 唯一受 T1 明文要求的 read-only I/O boundary;其餘 algorithms 仍維持純函式,所有寫檔只在 notebook-side generator | T1 interface contract 指定 path loader 與 `algorithms/loader.py`,但 C-D2 泛稱禁 file I/O;以更具體契約限縮例外,並用 import 純度測試鎖住零副作用。Alternatives Considered:移到 adapter 目錄(拒絕:偏離已採納 interface path)、讓 algorithms 寫 fixture(拒絕:C-D2 且混合計算/輸出) | T1 contract + purity test(2026-08-04) |
 | D-28.4 | T1 有實質 tests 後移除 T0 的 `pytest-custom-exit-code` | 已不再需要抑制 0-test exit;保持 dev dependency 最小。Alternatives Considered:永久保留 plugin(拒絕:無用途的測試依賴) | T1 pyproject/uv.lock(2026-08-04) |
 | D-28.5 | `omega_deg_s` 的 yaw `cos(pitch)` 校正採相鄰兩 tick 的 midpoint pitch | midpoint 對離散區間兩端對稱,且在 pitch 同時改變時比固定取前一 tick 少方向性偏差;高 pitch/變 pitch fixture 鎖死。Alternatives Considered:前一 tick pitch(拒絕:非對稱且規格已允許更準確的 midpoint) | T2 angular.py + geometry fixtures(2026-08-04) |
+| D-28.6 | filter 退化輸入採明確 `ValueError`;只有 `segment_submovements` 對短於 SG window 的訊號採 raw fallback 並加 `sg_fallback_short_signal` | filter 簽名沒有 flag channel，回 raw 會靜默；分段結果有可觀測 flag，可安全保留短窗分析。Alternatives Considered:兩層都拋錯(拒絕:短 peek 無法產生可聚合品質結果)、兩層都 fallback(拒絕:底層呼叫者無法辨識未濾波) | T3 filter/segment contract tests(2026-08-04) |
+| D-28.7 | pre-register `seg-v1`=`SG(7,3),k=0.5,floor=80deg/s,low=0.1,stop=0.2`;真實資料若否證只能升版重跑 | w=7≈55ms 且 k/ratio 沿移植骨架；80deg/s 取候選中點，避免 60 的噪聲敏感與 100 的低幅修正漏檢；六組合成 max error=1 tick。Alternatives Considered:等真實資料後才選(拒絕:形成看資料調參)、取所有通過組 ensemble(拒絕:無單一可追溯契約) | T3 243-grid sweep(2026-08-04) |
+| D-28.8 | 空分段回傳 list-compatible `SegmentList`，以 `result.flags` 承載 `zero_motion`/`below_floor`/`no_peak` | 契約要求回空 list 又要求正確 flag，普通空 list 無 Segment 可掛旗標；list subclass 保持既有迭代/equality 語意並補上 machine-readable outcome。Alternatives Considered:塞 sentinel Segment(拒絕:不再是空段)、只發 warning(拒絕:難以進 T4 聚合) | T3 empty-result tests(2026-08-04) |
 
 ---
 
@@ -46,6 +53,7 @@
 | S-28.3 | Windows `%TEMP%/pytest-of-*` 與 escalated pytest 產物有 ACL 限制 | 首輪 3 passed / 8 setup errors,錯誤全為 `PermissionError`,非 assertion failure | 正式閘固定 workspace `--basetemp` 並停用 cacheprovider;`.pytest_*`/cache/venv 納入 `research/.gitignore` |
 | S-28.4 | C-D2 泛稱 `algorithms/` 禁 I/O,但 T1 同時指定 `algorithms/loader.py:load_export(path)` | 若不記邊界,後續可能誤把此必要 read adapter 擴張成一般演算法 I/O | D-28.3 限縮為 loader call-time read-only 例外;import/其他 algorithms/所有 writes 仍受純度閘約束 |
 | S-28.5 | ω combined fixture 首輪把 30° yaw + 40° pitch 誤寫成未套 midpoint-pitch 校正的 50°/s | core 首輪為 10 passed / 1 failed,若照錯誤 golden 修改演算法會違反 T2 公式 | 依 `sqrt((Δyaw·cos(midpoint pitch))²+Δpitch²)/Δt` 修正 fixture 為 48.935876°/s;重跑後 11/11 core tests PASS |
+| S-28.6 | T3 的 `segment_submovements(...) -> list[Segment]` 與「零/等速回空段 + 正確 flag」同時成立時，普通 list 沒有承載 trace-level flag 的位置 | 若只回 `[]`，T4 無法區分零運動、低於 floor、連續等速無 peak | D-28.8 採 list-compatible `SegmentList.flags`;正常 Segment 仍各自保有 flags |
 
 ---
 
@@ -53,5 +61,5 @@
 
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
-| OQ-S4-8(樣本) | 真實 drill 匯出樣本(≤30s、匿名)未取得 | 🟡 使用者後補;**M14 ①④ 阻塞項**;T1 合成匯出產生器已交付但不替代真實證據 | 使用者 | T3 掃參前 |
-| OQ-S4-2 | 分段閾值 / SG window 的 128Hz 起點數值 | 🟡 T3 掃參後 pre-register 凍結 | 研究者 | WP-28 T3 |
+| OQ-S4-8(樣本) | 真實 drill 匯出樣本(≤30s、匿名)未取得 | 🟡 使用者後補;**M14 ①④ 阻塞項**;T1 合成匯出與 T3 sweep runner 已交付但不替代真實證據 | 使用者 | M14 exit 前 |
+| OQ-S4-2 | 分段閾值 / SG window 的 128Hz 起點數值 | ✅ `seg-v1` 已在看真實資料前 pre-register 凍結(D-28.7);真實效度驗證仍由 OQ-S4-8 阻塞 | 研究者 | 2026-08-04 |

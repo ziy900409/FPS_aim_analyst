@@ -8,7 +8,7 @@
 | ✅ | **T0** entry gate(決策落地 + CLAUDE.md §4 + 樣本狀態;無演算法碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ✅ | **T1** scaffold + ingest + 合成匯出產生器 | [T1-scaffold-ingest.md](T1-scaffold-ingest.md) | T0 | Low |
 | ✅ | **T2** 角運動學 ω(t)/ε(t) + **ε 雙向 parity 閘** | [T2-angular-kinematics.md](T2-angular-kinematics.md) | T1 | High |
-| ⬜ | **T3** SG + submovement 分段(參數凍結) | [T3-submovement-segments.md](T3-submovement-segments.md) | T2 | High |
+| ✅ | **T3** SG + submovement 分段(`seg-v1` 凍結;合成 DoD;真實資料證據仍阻塞 M14) | [T3-submovement-segments.md](T3-submovement-segments.md) | T2 | High |
 | ⬜ | **T4** per_segment_apply + quality flags | [T4-per-segment-flags.md](T4-per-segment-flags.md) | T3 | Low |
 | ⬜ | **T-exit** M14 宣告 | [T-exit-gate.md](T-exit-gate.md) | T1–T4 | — |
 

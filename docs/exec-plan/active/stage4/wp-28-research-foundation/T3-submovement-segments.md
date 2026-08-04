@@ -7,7 +7,7 @@
 | **相依** | T2(ω(t) 已釘死且 ε parity 綠) |
 | **Risk / Cplx** | **High** / High — 閾值在 128Hz/deg/s 域是否穩定是全 stage 的地基風險(§3 Failure modes) |
 | **Touches** | ADD `research/src/shared/filters/{sg,butter}.py`;ADD `research/src/modules/segments/algorithms/submovement.py` + tests;ADD `modules/segments/notebooks/t3-sweep/`(掃參 + 疊圖) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 合成 DoD(2026-08-04 11:55Z);🟡 真實 drill 成功率/疊圖仍為 M14 blocker |
 
 ## Objective
 
@@ -33,12 +33,13 @@ FR-D5:把 performance_analysis 的 submovement 分段骨架移到 128Hz / deg/s 
 
 ## Steps
 
-- [ ] `sg.py` / `butter.py` + 退化輸入測試。
-- [ ] `submovement.py`:`SegmentParams` + `Segment` + `segment_submovements`。
-- [ ] 六個合成 fixture + 邊界誤差測試(≤2 tick)。
-- [ ] 掃參 notebook:合成誤差表 + (樣本到位後)真實分段成功率 + 疊圖。
-- [ ] 參數定案 → 常數 + `version`;掃參證據 + 理由記 progress。
-- [ ] `uv run pytest` 全綠(輸出貼 progress)。
+- [x] `sg.py` / `butter.py` + 退化輸入測試。
+- [x] `submovement.py`:`SegmentParams` + `Segment` + `segment_submovements`。
+- [x] 六個合成 fixture + 邊界誤差測試(≤2 tick;`seg-v1` 實測 max=1 tick)。
+- [x] 掃參 notebook + 合成誤差表(243 組);[ ] 樣本到位後補真實分段成功率 + 疊圖。
+- [x] 參數定案 → `DEFAULT_SEGMENT_PARAMS` + `version="seg-v1"`;掃參證據 + 理由記 progress。
+- [x] `uv run pytest` 全綠(`53 passed in 4.53s`)。
+- [x] `npm run test:ci` 全綠(tsc + Vitest 82 files/641 tests + Playwright 18 tests)。
 
 ## Definition of Done
 
