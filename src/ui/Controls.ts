@@ -103,6 +103,11 @@ export function createControls(options: ControlsOptions): ControlsHandle {
   loadButton.addEventListener('click', () =>
     void runControl(allControls, () => options.onLoadDrill(select.value)),
   );
+  // 選了就載入：下拉 change 直接套用該 drill(不必再按 Load)。程式化設值(setSelectedDrill)
+  // 不觸發 change,故 protocol/loadDrillById 回寫選單不會二次載入。
+  select.addEventListener('change', () =>
+    void runControl(allControls, () => options.onLoadDrill(select.value)),
+  );
   loadSceneButton.addEventListener('click', () =>
     void runControl(allControls, () => options.onLoadScene(sceneSelect.value)),
   );

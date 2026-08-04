@@ -11,6 +11,13 @@ export interface ProceduralRoomConfig {
   roomSize: readonly [number, number, number];
   eyeHeight: number;
   fovDeg: number;
+  /**
+   * 眼睛(= camera / 射線與彈道原點)的 world z(KI-002 / D1)。
+   * 省略時 = `depth/2 - standoff`,逐位相容既有場景放置(FR-3)。
+   * 可為 0 或負值(finite number;不可 NaN/Infinity)——**不套** positive/tuple 驗證。
+   * radial-spawn drill(前向目標 z=−distance)需 `eyeZ:0`,使實際交戰距離 == config distance。
+   */
+  eyeZ?: number;
   colors: {
     floor: number;
     wall: number;
@@ -109,10 +116,13 @@ function validateProceduralRoom(v: unknown): ProceduralRoomConfig {
   const room = requireObject(v, 'proceduralRoom');
   const colors = requireObject(room.colors, 'proceduralRoom.colors');
   const lights = requireObject(room.lights, 'proceduralRoom.lights');
+  // eyeZ 為可省略的 world z(可為 0/負;finite);省略者維持 depth/2-standoff 逐位不變(KI-002/D1)。
+  const eyeZ = room.eyeZ === undefined ? undefined : requireFiniteNumber(room.eyeZ, 'proceduralRoom.eyeZ');
   return {
     roomSize: validatePositiveNumberTuple3(room.roomSize, 'proceduralRoom.roomSize'),
     eyeHeight: requirePositiveNumber(room.eyeHeight, 'proceduralRoom.eyeHeight'),
     fovDeg: requirePositiveNumber(room.fovDeg, 'proceduralRoom.fovDeg'),
+    ...(eyeZ !== undefined ? { eyeZ } : {}),
     colors: {
       floor: requireColorNumber(colors.floor, 'proceduralRoom.colors.floor'),
       wall: requireColorNumber(colors.wall, 'proceduralRoom.colors.wall'),

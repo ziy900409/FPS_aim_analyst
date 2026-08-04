@@ -7,7 +7,7 @@
 | **相依** | T1(資產)+ WP-23 M11(遠距檔位定案) |
 | **Risk / Cplx** | Med / Low(機制全部既有——本 task 是「換場景零引擎碼」承諾的第三次驗證) |
 | **Touches** | ADD br-field SceneConfig(資料);MODIFY `src/main.ts`(場景選單掛載,比照 field-low/urban-high);測試(淨空/決定性/perf 皆沿既有模式) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-14 01:44Z) |
 
 ## Objective
 
@@ -35,12 +35,12 @@
 
 ## Steps
 
-- [ ] SceneConfig + validateScene 測試 + 選單掛載。
-- [ ] 淨空驗證(遠距 drill 通過 + 對抗性拒載)測試。
-- [ ] perf 證據(frame log 對比表)記 progress。
-- [ ] 跨場景決定性收編 + 既有 baseline 零重錄。
-- [ ] 手動 smoke(切到 br-field、視覺/尺度/準心置中)記 progress。
-- [ ] `npm run test:ci` exit 0。
+- [x] SceneConfig + validateScene 測試 + 選單掛載。
+- [x] 淨空驗證(遠距 drill 通過 + 對抗性拒載)測試。
+- [x] perf 證據(frame log 對比表)記 progress。
+- [x] 跨場景決定性收編 + 既有 baseline 零重錄。
+- [x] 手動 smoke(切到 br-field、視覺/尺度/準心置中)記 progress。
+- [x] `npm run test:ci` exit 0。
 
 ## Definition of Done
 

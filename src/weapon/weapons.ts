@@ -1,6 +1,13 @@
 import { validateWeapon, type WeaponConfig } from './WeaponConfig.ts';
 
-export type WeaponId = 'ak47' | 'm4a4' | 'm4a1s';
+export type WeaponId =
+  | 'ak47'
+  | 'm4a4'
+  | 'm4a1s'
+  | 'ak47_br_hip_hitscan'
+  | 'ak47_br_ads_hitscan'
+  | 'ak47_br_hip_projectile'
+  | 'ak47_br_ads_projectile';
 
 // Source: the stage2 CS2 recoil research plan and WP-11 README lock recoil
 // seed/magnitude/variance, angle variance, cycletime, mag size, and
@@ -70,10 +77,59 @@ export const m4a1s: WeaponConfig = validateWeapon({
   },
 });
 
+const AK47_BR_BASE = {
+  cycletimeSec: ak47.cycletimeSec,
+  magSize: ak47.magSize,
+  recoil: { ...ak47.recoil },
+  inaccuracy: { ...ak47.inaccuracy },
+  ...(ak47.recoveryTransition !== undefined ? { recoveryTransition: { ...ak47.recoveryTransition } } : {}),
+};
+
+export const BR_PROJECTILE_BULLET = {
+  model: 'projectile',
+  speedU: 916.73,
+  gravityU: 32,
+  maxRangeU: 143.24,
+} as const;
+
+export const ak47BrHipHitscan: WeaponConfig = validateWeapon({
+  ...AK47_BR_BASE,
+  id: 'ak47_br_hip_hitscan',
+});
+
+export const ak47BrAdsHitscan: WeaponConfig = validateWeapon({
+  ...AK47_BR_BASE,
+  id: 'ak47_br_ads_hitscan',
+  ads: { ...ak47.ads! },
+});
+
+export const ak47BrHipProjectile: WeaponConfig = validateWeapon(
+  {
+    ...AK47_BR_BASE,
+    id: 'ak47_br_hip_projectile',
+    bullet: BR_PROJECTILE_BULLET,
+  },
+  { engagementDistanceU: 114.59 },
+);
+
+export const ak47BrAdsProjectile: WeaponConfig = validateWeapon(
+  {
+    ...AK47_BR_BASE,
+    id: 'ak47_br_ads_projectile',
+    ads: { ...ak47.ads! },
+    bullet: BR_PROJECTILE_BULLET,
+  },
+  { engagementDistanceU: 114.59 },
+);
+
 export const WEAPONS = {
   ak47,
   m4a4,
   m4a1s,
+  ak47_br_hip_hitscan: ak47BrHipHitscan,
+  ak47_br_ads_hitscan: ak47BrAdsHitscan,
+  ak47_br_hip_projectile: ak47BrHipProjectile,
+  ak47_br_ads_projectile: ak47BrAdsProjectile,
 } as const satisfies Record<WeaponId, WeaponConfig>;
 
 const WEAPON_IDS = Object.keys(WEAPONS) as WeaponId[];

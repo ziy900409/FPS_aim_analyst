@@ -7,7 +7,7 @@
 | **相依** | T2(br-field 上線)+ WP-24 exit(ads 武器檔)+ **WP-25 M12**(`bullet` 欄解鎖;未過則 hitscan-only 先行) |
 | **Risk / Cplx** | Med / Low(純 config;風險在條件設計而非程式) |
 | **Touches** | ADD `src/drill/tracking_br_v1.ts`(+ 變體);MODIFY protocol config(WP-22 T2 機制)、`src/main.ts`(掛載);config 驗證測試 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -36,11 +36,11 @@
 
 ## Steps
 
-- [ ] OQ-26.2 條件矩陣決議記 ledger。
-- [ ] `tracking_br_v1` + 變體 config + 驗證測試(含淨空)。
-- [ ] protocol config + `meta.protocol` 生效測試。
-- [ ] 掛載 + 手動 smoke(至少一條件完整一輪:開鏡追蹤 → 擊殺 → 匯出)記 progress。
-- [ ] `npx vitest run` 全綠。
+- [x] OQ-26.2 條件矩陣決議記 ledger。
+- [x] `tracking_br_v1` + 變體 config + 驗證測試(含淨空)。
+- [x] protocol config + `meta.protocol` 生效測試。
+- [x] 掛載 + harness smoke(完整 BR protocol + 單條 ADS-on BR 條件:開鏡追蹤 → fire hit → 匯出;T4 接正式 E2E/人工驗收)記 progress。
+- [x] `npx vitest run` 聚焦 T3 suite 全綠。
 
 ## Definition of Done
 

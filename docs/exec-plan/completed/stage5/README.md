@@ -10,7 +10,7 @@
 | **上游門檻** | **WP-18 ✅(2026-07-09 T-exit)**:motion 驅動 + sub-tick 命中內插 + timed presentation + 追蹤指標推導全就緒。**M10 ✅(2026-07-10)**:場景系統/顯示管線/protocol E2E 鏈可消費。研究側:GD-7(追蹤指標)/GD-9(資產授權)既有決議直接沿用;新增構念(ADS 感度模型、彈道參數域)由各 T0 拍板 |
 | **技術棧** | 沿用(Three.js `WebGPURenderer` + TS + Vite;UI = 純 TS + DOM overlay;Vitest + Playwright);新增 `src/ballistics/` 純數學模組(比照 `src/recoil/`,零 three/DOM 相依) |
 | **估時** | 10.5–17 dev-days(WP-23~26) |
-| **狀態** | ⬜ **已規劃(2026-07-10)**;WP-23 / WP-24 / WP-25 T1 可並行開跑 |
+| **狀態** | 🟡 **收尾中**;WP-23 ✅(M11 2026-07-10)· WP-24 ✅(2026-07-13)· WP-25 ✅(M12 2026-07-14)· **WP-26 T-exit 自動閘 ✅(`test:ci` exit 0)/ M13 待研究者實機手動回填**(清單 E §2)。M13/stage5 交付於手動回填後正式宣告。 |
 
 ---
 
@@ -192,7 +192,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 | **WP-23** | [wp-23-longrange-tracking/](wp-23-longrange-tracking/README.md) | 遠距小目標追蹤:hitbox config 化(單一來源)+ 遠距 drill + 指標 round-trip/決定性 | **M11 ✅** | WP-18 ✅ + M10 ✅ | 1.5–2.5 | ✅(2026-07-10) |
 | **WP-24** | [wp-24-ads-optics/](wp-24-ads-optics/README.md) | ADS 開鏡:EV_ADS 輸入鏈 + WeaponConfig.ads + zoom/感度 + scope overlay + 記錄 | — | M8 ✅(可與 WP-23 並行) | 2–3 | ✅(2026-07-13) |
 | **WP-25** | [wp-25-ballistics-tracer/](wp-25-ballistics-tracer/README.md) | 彈道:tracer 顯示(T1,獨立)+ projectile 數學核心/sim 整合/指標語意(T2–T4,gated) | **M12 ✅** | T1 獨立;T2+ 需 **M11** | 4–6.5 | ✅(2026-07-14) |
-| **WP-26** | [wp-26-br-scene-integration/](wp-26-br-scene-integration/README.md) | BR 場景與整合:`br-field` 資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | ⬜ |
+| **WP-26** | [wp-26-br-scene-integration/](wp-26-br-scene-integration/README.md) | BR 場景與整合:`br-field` 資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | 🟡 自動閘 ✅ / M13 待手動 |
 
 ---
 
@@ -202,7 +202,7 @@ export function sweptHitTest(x0: number, y0: number, z0: number, x1: number, y1:
 |---|---|---|---|
 | **M11 ✅**<br>(2026-07-10) | hitbox config 化零破壞(舊 drill 逐位不變)+ 同幾何斷言綠 + `tracking_longrange_v1` round-trip(推導誤差 ≤ 1 tick)+ 遠距 fixture 決定性綠 | WP-23 | 遠距追蹤效度地基;**WP-25 T2+ entry 前提自此可引用** |
 | **M12 ✅**<br>(2026-07-14) | hitscan 逐位回歸綠(baseline 零重錄)+ projectile golden(位置序列/命中 tick)綠 + tracer 交付(單 draw call、sim 零改動證據)+ shot/hit 事件 schema 對帳 | WP-25 | 彈道模型門控:**M12 已過 → `bullet` 欄自此可進 drill config(WP-26 T3 解鎖)** |
-| **M13** | 驗收清單 E 全項通過:BR 整合 drill E2E 綠、三條決定性不變性(場景/ADS/彈道 gate)綠、ads/hit/追蹤欄匯出 round-trip 綠、資產 attribution 可稽核、`test:ci` exit 0 | WP-26 | **stage5 交付**:BR 遠距跟槍測試(含 ADS 與彈道條件)pilot-ready |
+| **M13 🟡**<br>(自動閘 2026-07-14) | 驗收清單 E 全項通過:BR 整合 drill E2E 綠、三條決定性不變性(場景/ADS/彈道 gate)綠、ads/hit/追蹤欄匯出 round-trip 綠、資產 attribution 可稽核、`test:ci` exit 0。**自動項全綠(E-1~E-10);清單 E §2 手動視覺/手感回填為 M13 阻塞項,待研究者實機**。 | WP-26 | **stage5 交付**:BR 遠距跟槍測試(含 ADS 與彈道條件)pilot-ready(手動回填後正式宣告) |
 
 > WP-24 無獨立里程碑:其交付由 M13 驗收清單 E 一次收斂(比照 stage3 WP-20/21 → M10 模式)。
 
@@ -253,7 +253,8 @@ WP-25 T1(tracer)──────┴──────────────�
 |---|---|---|---|---|---|
 | OQ-S5-1 | ADS 感度換算模型(CS2 `zoom_sensitivity_ratio` vs monitor-distance match) | ✅ **GD-16 決議:CS2 式**。ads 有效感度 = `sensitivity × sensitivityRatio × (adsFov / hipFov)`;`sensitivityRatio` 預設 1.0,pre-registered 後凍結;monitor-distance match 不重解釋既有資料 | 研究者 | WP-24 T0 ✅ | WP-24 T2 unblocked;跨條件可比性由 config + ads flag 離線重建 |
 | OQ-S5-2 | projectile 參數域(speedU/gravityU/maxRangeU 對照表;與 drill distance 聯動) | ✅ **GD-17 決議**:以 flight ticks × WP-23 distance tier 反推。canonical 0.5° distance=114.59u:8/16/32 ticks → `speedU=1833.45/916.73/458.36`, `maxRangeU=143.24`;2° sanity distance=28.65u:8/16/32 ticks → `speedU=458.37/229.18/114.59`, `maxRangeU=35.81`;下墜 0.10/0.25/0.50H → `gravityU=51.20/32.00/16.00`;T3 對 <2 ticks 到靶 warning,M12 前 `bullet` 欄不得進 drill config | 架構+研究者 | WP-25 T0 ✅ | WP-25 T2+ unblocked by params;仍需 M11 ✅ 複驗 |
-| OQ-S5-3 | br-field 資產路線(程序化生成 vs CC0 pack) | **程序化生成 CC0**(WP-19 先例:GD-9 完全合規、propBounds 與視覺同源);Kenney/Quaternius 保留為寫實置換備選 | 使用者 | WP-26 T0 | WP-26 T1 blocked(不阻塞 T0 前其他 WP) |
+| OQ-S5-3 | br-field 資產路線(程序化生成 vs CC0 pack) | ✅ **WP-26 T0 決議:程序化生成 CC0**。T1 以原創 procedural GLTF/貼圖/材質生成為主路線,不得使用遊戲抽取資產或復刻特定 BR 地圖。寫實目標 = 開闊麥田/丘陵/遠山地貌,但研究幾何優先於美術密度。預算:三角形 `<20k`,材質 slots `<=8`;Kenney/Quaternius 僅保留為未來白名單替換備選,若用 CC-BY 必須逐項進 `ATTRIBUTIONS.md` | 使用者 | WP-26 T0 ✅ | WP-26 T1 unblocked |
+| OQ-26.1 | br-field 雜亂度階層定位與 `clutterTier` 值 | ✅ **WP-26 T0 決議:`clutterTier:'low'`**。BR field 是遠距開闊走廊測試場,不是新雜亂度構念;保持低雜亂以保護 tracking/ADS/projectile 條件的可歸因性。若未來需要 BR clutter 獨立對照階,另開 GD/新 SceneConfig | 架構+研究者 | WP-26 T0 ✅ | WP-26 T2 SceneConfig unblocked |
 | OQ-S5-4 | 遠距 drill 設計矩陣(角尺寸/角速度/距離/hitbox 組合;角尺寸下限) | ✅ WP-23 T0 決議:小目標 H1 = `{widthU:0.5,heightU:1,depthU:0.5}`;角高 0.5°/2.0° × 角速度 5°/s/20°/s;角尺寸下限 0.5°。距離 `d=h/(2*tan(theta/2))`:0.5°→114.59u,2.0°→28.65u。水平速度 `v=d*omegaRad`:10.00/40.00u/s(0.5°),2.50/10.00u/s(2°)。T2 default=0.5°×5°/s;hard=0.5°×20°/s;near sanity=2°×5°/s。 | 研究者 | WP-23 T0 ✅ | WP-23 T2 unblocked |
 | OQ-S5-5 | lead 誤差是否進正式指標(或 spec-only) | **spec-only 離線**(引擎零計算);pilot 顯示構念有效再立案晉升 | 研究者 | WP-25 T4 | 不阻塞工程 |
 | OQ-S5-6 | ADS 操作語意(hold vs toggle) | ✅ **hold**(右鍵按住,與 CS2 慣例一致;stuck-ads 防護比照 fire);toggle 留未來 config 候補,stage5 預設不啟用 | 研究者 | WP-24 T0 ✅ | WP-24 T1 事件語意已鎖 |

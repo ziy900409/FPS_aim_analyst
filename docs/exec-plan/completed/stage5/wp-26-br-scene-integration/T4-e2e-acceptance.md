@@ -7,7 +7,7 @@
 | **相依** | T3(整合 drill 存在) |
 | **Risk / Cplx** | Med / Med(整合紅燈的分層歸因成本) |
 | **Touches** | ADD `tests/e2e/`(BR 跟槍全鏈路)、`tests/regression/`(三不變性收編)、`docs/operational/acceptance-stage-e.md`(驗收清單 E);必要時 harness 擴充(`src/testharness/`,測試設施非引擎) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ PASS(2026-07-14) |
 
 ## Objective
 
@@ -40,11 +40,11 @@ stage5 交付的驗收面(FR-E13):BR 跟槍測試端到端成立——drill 執�
 
 ## Steps
 
-- [ ] E2E 全鏈路 + 匯出欄位斷言 + 離線推導 smoke。
-- [ ] 三不變性分項 + 收編(`tests/regression/`)。
-- [ ] `acceptance-stage-e.md` 定稿(逐項證據連結;手動項標回填)。
-- [ ] pilot protocol 草案附錄。
-- [ ] `npm run test:ci` exit 0。
+- [x] E2E 全鏈路 + 匯出欄位斷言 + 離線推導 smoke。
+- [x] 三不變性分項 + 收編(`tests/regression/`)。
+- [x] `acceptance-stage-e.md` 定稿(逐項證據連結;手動項標回填)。
+- [x] pilot protocol 草案附錄。
+- [x] `npm run test:ci` exit 0。
 
 ## Definition of Done
 

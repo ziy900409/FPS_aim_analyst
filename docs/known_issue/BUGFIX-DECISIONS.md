@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-002](KI-002-br-field-camera-anchor-protocol-load.md) | br-field camera 未錨定 sim origin(D1)+ protocol 場景載入驗證舊 drill(D2)(PR #34 review) | BD-002(§3) | ✅ D1+D2 已修(2026-07-15) |
 | [KI-001](KI-001-input-lag-sim-clock-drift.md) | 開火/鍵盤嚴重輸入延遲(sim 邏輯時鐘漂移) | BD-001(§3) | ✅ Task 1+2 已修(2026-07-09) |
 
 ---
@@ -26,11 +27,25 @@
 
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
 
-_(目前無 open 條目)_
+目前無 OPEN 項。
 
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-002 ✅ KI-002 — br-field camera 錨定 sim origin(eyeZ)+ protocol 原子載入(2026-07-15)
+
+| | |
+|---|---|
+| **發現處 / 根因** | [PR #34](https://github.com/ziy900409/FPS_aim_analyst/pull/34) Codex 自動 review 兩則(P1/P2),追碼證實 → [KI-002](KI-002-br-field-camera-anchor-protocol-load.md)。**D1(P1)**:`SceneManager` 把 camera(= 射線/彈道原點,[SimLoop.ts:142](../../src/loop/SimLoop.ts#L142))放在背牆 standoff `depth/2-1`([SceneManager.ts:64](../../src/render/SceneManager.ts#L64)),br-field depth=290 → camera z=144,前向目標 z=−distance → 實際交戰距離放大 ~2.3×(0.5°→0.22°、2°→0.33°),projectile `maxRangeU=143.24` 永不達標(4 變體 0 命中)。**D2(P2)**:`applyCondition` 先 `loadSceneById` 拿**舊** drill 驗目標場景淨空([main.ts:720/743](../../src/main.ts#L743)),BR-active → 啟動 resolution protocol 時舊 BR drill 過不了 field-low → throw 中止。 |
+| **決策(修法選項)** | **D1 → Option A(顯式 `eyeZ` 欄位)**:`ProceduralRoomConfig` 加 `eyeZ?: number`,`SceneManager` 用 `room.eyeZ ?? (depth/2 - standoff)`,br-field 設 `eyeZ:0`。**不採 B**(把 roomSize.depth 改 2:語意混亂、依賴「GLTF 跳過建房」巧合)、**不採 C**(asset≠null 無條件放 origin:行為改動面過大需回歸全場景)。**D2 → Option B(補 drill `sceneId` + 簡化 applyCondition)**:`detection_popin_v1` 補 `sceneId:'field-low'`,`applyCondition` 移除 `loadSceneById`、只留 `loadDrillById`(驗新 drill vs 新 scene)+ dev assertion 落點校驗。**不採 A**(新增合併載入器:多餘程式碼)、**不採 C**(把新 drill 傳進 loadSceneById:耦合)。 |
+| **理由** | D1-A 最誠實建模「玩家站 sim origin、場景往前延伸」,`eyeZ` optional 且預設逐位相容 → placeholder/field-low/urban camera 不動、零回歸;`maxRangeU/engagementDistanceU` 圍繞 114.59 的設計佐證原意即 origin 錨定。D2-B 改動最小且順手補齊 data-model 缺口(drill 宣告自己的 scene),`loadDrillById` 既有契約已能原子載入 + 驗證**新** drill。 |
+| **偏離計畫** | 無偏離協議;兩缺陷源自 PR #34 review 而非既定 WP task,依 §9 走 known_issue 流程(KI-002 tech spec + 本帳本)。診斷/計畫於前一 session 產出(僅落 KI 文件),實作於本 session(2026-07-15)完成,依協議拆為兩個原子 commit(D1、D2 相互獨立)。 |
+| **遺留 OQ / 未做** | **OQ-KI2-1**:`tracking_longrange_v1`(field-low camera z=4)~1% 側翼距離誤差**維持現狀**(使用者拍板),不綁 field-low eyeZ;日後若研究者判不可接受再另開 task 並重驗 WP-23 決定性。**OQ-KI2-2**:補 sceneId 使 detection_popin_v1 下拉選取強制載 field-low(行為變更,使用者已接受)。**OQ-KI2-3**:已釐清——`br-tracking.spec.ts` 兩案(autoAim tracking 指標 + hitscan 命中)不斷言 projectile 命中數,`full-drill.spec.ts` WP-22 resolution protocol 兩案亦綠 → 修法後自然綠,無需改期望。 |
+| **影響面** | **D1**(commit 1):`src/scene/SceneConfig.ts`(+`eyeZ`+finite validator)、`src/render/SceneManager.ts`(camera z 用 `room.eyeZ ??`)、`src/scene/scenes/br-field.ts`(`eyeZ:0`)、新增 [br-camera-anchor-invariants.test.ts](../../tests/regression/br-camera-anchor-invariants.test.ts)(封 D1 測試盲區——既有 [br-tracking-invariants.test.ts:84](../../tests/regression/br-tracking-invariants.test.ts#L84) 自建 z=4 camera 故看不到 bug)。**D2**(commit 2):`src/main.ts`(drill 註冊表補 `detection_popin_v1.sceneId='field-low'`、`applyCondition` 移除 `loadSceneById` + 加 dev assertion)、新增 [protocol-atomic-load.test.ts](../../tests/regression/protocol-atomic-load.test.ts)(鎖 `loadDrill(目標 drill, 目標 scene)` 契約 + 重現「舊 BR drill vs field-low throws」根因;main.ts wiring 另由 e2e protocol 全鏈路覆蓋)。不動 sim/hitbox/彈道語意(GD-6/7/16/17)、不動場景資產(GD-9)。 |
+| **狀態** | ✅ D1+D2 已修 + 落地(2026-07-15;branch `aa`)。驗證:`tsc --noEmit` 0、`vitest run` 628 綠(含新增 D1 3 案 + D2 3 案、br-tracking-invariants 三案 0 迴歸)、`playwright` 18 綠(含 WP-22 resolution×detection protocol + br-tracking)。 |
+
+---
 
 ### BD-001 ✅ KI-001 — sim 邏輯時鐘 re-anchor 修法 + 提交顆粒度偏離(2026-07-09)
 

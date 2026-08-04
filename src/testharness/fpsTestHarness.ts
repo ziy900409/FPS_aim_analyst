@@ -22,6 +22,7 @@ import {
   type ProtocolConditionContext,
   type ProtocolConfig,
 } from '../display/ProtocolRunner.ts';
+import { brTrackingProtocol } from '../display/brTrackingProtocol.ts';
 import { resolutionDetectionProtocol } from '../display/resolutionDetectionProtocol.ts';
 import { computeMetrics, type Metrics } from '../metrics/compute.ts';
 import { deriveTrackingMetrics, type TrackingDerivationResult } from '../metrics/trackingDerivation.ts';
@@ -99,6 +100,8 @@ export interface FpsTestHarness {
   trackingMetricsFromExport(payload: ExportPayload): TrackingDerivationResult;
   /** 跑完 stage3 解析度 x 偵測 protocol，回傳每個條件的匯出 payload。 */
   runResolutionDetectionProtocol(protocol?: ProtocolConfig): Promise<ExportPayload[]>;
+  /** 跑完 WP-26 BR tracking protocol，回傳每個條件的匯出 payload。 */
+  runBrTrackingProtocol(protocol?: ProtocolConfig): Promise<ExportPayload[]>;
   /** 只跑資格閘判定；拒入 E2E 用此確認低解析度不會產生 protocol exports。 */
   previewResolutionProtocolGate(protocol?: ProtocolConfig, warmupP95Ms?: number): GateReport;
   /** 當前 drill 相位（唯讀）。 */
@@ -344,6 +347,8 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       weapon: {
         id: weaponConfig.id,
         ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
+        ...(weaponConfig.bullet !== undefined ? { bullet: weaponConfig.bullet } : {}),
+        ...(weaponConfig.bullet !== undefined ? { projectileOverflow: state.bullets.overflowCount > 0 } : {}),
       },
       targets: {
         hitbox: targetHitboxToConfig(resolveTargetHitbox(config)),
@@ -404,6 +409,46 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       guard++;
     }
     for (let i = 0; i < 4; i++) advanceOneTrackingTick(mode);
+  }
+
+  async function runProtocol(
+    protocol: ProtocolConfig,
+    driveCondition: (context: ProtocolConditionContext) => void,
+  ): Promise<ExportPayload[]> {
+    const resolved = validateProtocol(protocol);
+    const gate = passedHarnessGate(resolved.requiredDisplay);
+    const { renderer } = createProtocolDisplayRenderer();
+    let display: DisplayState | undefined;
+    const payloads: ExportPayload[] = [];
+    const runner = createProtocolRunner<ExportPayload>({
+      config: resolved,
+      applyCondition: (condition) => {
+        const nextScene = findSceneConfig(condition.sceneId);
+        display = {
+          ...applyResolutionMode(renderer, condition.mode),
+          fullscreen: true,
+          refreshEstimateHz: deps.displayHz,
+          gate,
+        };
+        startDrillWithScene(condition.drillId, nextScene);
+        return {
+          mode: display.mode,
+          sceneId: nextScene.sceneId,
+          drillId: config?.drillId ?? condition.drillId,
+        };
+      },
+      exportCondition: (context) => buildHarnessExport(context, display, harnessFrameLog()),
+    });
+
+    let context: ProtocolConditionContext | undefined = await runner.start();
+    while (context !== undefined) {
+      driveCondition(context);
+      const result = await runner.completeCurrentCondition();
+      payloads.push(result.payload);
+      if (result.context.conditionIndex >= resolved.conditions.length - 1) break;
+      context = await runner.beginNextCondition();
+    }
+    return payloads;
   }
 
   return {
@@ -501,40 +546,25 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     },
 
     async runResolutionDetectionProtocol(protocol = resolutionDetectionProtocol): Promise<ExportPayload[]> {
-      const resolved = validateProtocol(protocol);
-      const gate = passedHarnessGate(resolved.requiredDisplay);
-      const { renderer } = createProtocolDisplayRenderer();
-      let display: DisplayState | undefined;
-      const payloads: ExportPayload[] = [];
-      const runner = createProtocolRunner<ExportPayload>({
-        config: resolved,
-        applyCondition: (condition) => {
-          const nextScene = findSceneConfig(condition.sceneId);
-          display = {
-            ...applyResolutionMode(renderer, condition.mode),
-            fullscreen: true,
-            refreshEstimateHz: deps.displayHz,
-            gate,
-          };
-          startDrillWithScene(condition.drillId, nextScene);
-          return {
-            mode: display.mode,
-            sceneId: nextScene.sceneId,
-            drillId: config?.drillId ?? condition.drillId,
-          };
-        },
-        exportCondition: (context) => buildHarnessExport(context, display, harnessFrameLog()),
-      });
-
-      let context: ProtocolConditionContext | undefined = await runner.start();
-      while (context !== undefined) {
+      return runProtocol(protocol, (context) => {
         if (context.condition.drillId === 'detection_popin_v1') runDetectionTimeoutRoundInternal();
-        const result = await runner.completeCurrentCondition();
-        payloads.push(result.payload);
-        if (result.context.conditionIndex >= resolved.conditions.length - 1) break;
-        context = await runner.beginNextCondition();
-      }
-      return payloads;
+      });
+    },
+
+    async runBrTrackingProtocol(protocol = brTrackingProtocol): Promise<ExportPayload[]> {
+      return runProtocol(protocol, () => {
+        const weapon = activeWeaponConfig();
+        const holdAds = weapon.ads !== undefined;
+        if (holdAds) {
+          pushInputEvent({ type: 'ads', down: true, t: clockMs }, clockMs);
+          advanceOneTrackingTick('autoAim');
+        }
+        runTrackingPresentationRoundInternal('autoAim');
+        if (holdAds) {
+          pushInputEvent({ type: 'ads', down: false, t: clockMs }, clockMs);
+          advanceOneTrackingTick('autoAim');
+        }
+      });
     },
 
     previewResolutionProtocolGate(protocol = resolutionDetectionProtocol, warmupP95Ms = 8): GateReport {
