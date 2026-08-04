@@ -71,6 +71,10 @@
 - **子彈永不與場景幾何互動**:projectile / hitscan 只可測目標 hitbox;不得讓 `propBounds`、GLTF mesh 或場景 collision 進入彈道命中語意,以維持 GD-6 純裝飾場景本體論(WP-25/GD-6)。
 - **tracer/軌跡顯示為 render-only**:sim 產彈點最多寫 `SharedState` preallocated ring;`TracerView` 只能唯讀 ring 繪製,不得回寫 sim 狀態、不得記錄 export、不得改命中/指標語意(WP-25)。
 - **tracer origin 為 muzzle 偏移,與命中/彈道原點分離**:muzzle 只寫 `shotRays` / `BulletArena.m*`,不得進入 raycast 原點、`arena.o*`(maxRange/落地基準)或 `pushImpact`(WP-27/GD-18)。
+- **C-D1 — `research/` ↔ `src/` 單向隔離**:`research/` 只讀匯出 JSON/CSV 與 golden fixture,不得 import 任何 TS 模組;`src/` 不得 import Python 產物(唯一例外 = committed golden/parity JSON fixture)。
+- **C-D2 — `algorithms/` 純函式紀律**:禁 matplotlib / print / file I/O;繪圖與 I/O 一律落在 `notebooks/`。
+- **C-D3 — 教練報告紅線**:未通過構念驗證(reliability gate)的指標不得進教練報告;寧可少一個指標,不能有一個會說錯話的指標(GD-20)。
+- **C-D4 — 既有構念不得有第二定義**:ε(t) / on-target / t_acquire / t_detect / peek 窗界以 `docs/operational/analysis-*.md` + `src/metrics/` TS 實作為權威;Python 側任何差異視為 bug,或屬須入帳的語意分歧(不得靜默各算一套)。
 
 ---
 

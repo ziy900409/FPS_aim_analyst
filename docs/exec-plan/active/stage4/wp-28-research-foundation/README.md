@@ -10,7 +10,7 @@
 | **相依** | M4 ✅ + WP-16 ✅ + **M11/M12 ✅**(`meta.targets.hitbox` / tick `ads` / `hit` 事件語意已鎖) |
 | **對應 FR** | FR-D1 ~ FR-D6 |
 | **估時** | 3.5–4.5 dev-days |
-| **狀態** | ⬜ 未開始(T0 待執行) |
+| **狀態** | 🟡 進行中(T0 ✅ 2026-08-04;T1 待執行) |
 
 ---
 
@@ -58,7 +58,7 @@ CLAUDE.md §4                                     ← MODIFY C-D1~C-D4 四條硬
 
 | Task | 檔案 | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| **T0** | [T0-entry-gate.md](T0-entry-gate.md) | 決策落地(OQ-S4-1/7/8)+ CLAUDE.md §4 C-D1~C-D4 + 樣本狀態記錄 | — | Low |
+| **T0 ✅** | [T0-entry-gate.md](T0-entry-gate.md) | 決策落地(OQ-S4-1/7/8)+ CLAUDE.md §4 C-D1~C-D4 + 樣本狀態記錄 | — | Low |
 | **T1** | [T1-scaffold-ingest.md](T1-scaffold-ingest.md) | 四目錄制 + `load_export`/`check_dt` + 合成匯出產生器 | T0 | Low |
 | **T2** | [T2-angular-kinematics.md](T2-angular-kinematics.md) | ω(t)/ε(t)/on_target + **ε 層雙向 parity 閘** | T1 | **High** |
 | **T3** | [T3-submovement-segments.md](T3-submovement-segments.md) | SG 平滑 + submovement 分段 + 參數凍結 | T2 | **High** |
