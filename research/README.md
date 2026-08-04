@@ -5,6 +5,21 @@ one-way isolated: `research/` consumes export JSON/CSV and committed golden/pari
 `src/` may only consume committed golden/parity JSON. Code under `algorithms/` must not plot,
 print, or write files; rendering and output belong under `notebooks/`.
 
+## One-command pipeline
+
+`src/report/run_pipeline.py` is the shared entry point for WP-29/30/31: one export in, ingest +
+dt report + omega/epsilon + submovement segments + quality summary out.
+
+```powershell
+uv run python src/report/run_pipeline.py                                  # committed synthetic export
+uv run python src/report/run_pipeline.py --export fixtures/exports/<real>.json --out out
+```
+
+Artifacts land in `out/` (git-ignored): `pipeline-summary.json`, `peek-quality.csv`, and
+`peek-segments.csv`. Exit code is 0 on success and 1 on a schema or filesystem failure. Contents and
+conventions are documented in
+[`docs/operational/analysis-segments.md`](../docs/operational/analysis-segments.md).
+
 ## Verification
 
 From this directory:

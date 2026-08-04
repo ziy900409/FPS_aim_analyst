@@ -16,6 +16,38 @@ Each `Segment` may carry a non-negative `peek_index`. WP-29 owns reconstruction 
 WP-28 only preserves that index through `per_segment_apply` so peek- and segment-level results can
 be joined without reconstructing windows inside metric functions.
 
+`omega_deg_s` returns `nan` at index zero because `omega[i]` describes the interval `(i-1, i]`; that
+sample is undefined, not missing. Callers segment the measured tail and shift reported indices back
+into the tick frame, so a segment never starts at tick index 0. Passing the undefined sample into
+`segment_submovements` is accepted but stamps `non_finite_interpolated` on every segment of every
+export, which makes `summarize_with_flags` exclude all rows.
+
+## One-command pipeline
+
+`research/src/report/run_pipeline.py` is the shared entry point for WP-29/30/31. It chains
+`load_export` → `check_dt` → `omega_deg_s`/`epsilon_deg` → `segment_submovements` →
+`per_segment_apply`/`summarize_with_flags` and writes three artifacts to `research/out/`
+(git-ignored, regenerate on demand):
+
+| Artifact | Contents |
+|---|---|
+| `pipeline-summary.json` | Export identity, dt report (tick count, median/expected dt, gap list), segmentation counts and success rate, per-metric quality aggregates, flag histograms. Non-finite values are serialized as `null`. |
+| `peek-quality.csv` | One row per `visible` event: tick count, segment count, `has_primary_flick`, peek-level flags. |
+| `peek-segments.csv` | One row per segment: kind, inclusive tick indices and timestamps, per-segment values, flags. |
+
+```powershell
+uv run python src/report/run_pipeline.py                                  # committed synthetic export
+uv run python src/report/run_pipeline.py --export fixtures/exports/<real>.json
+```
+
+Presentation windows are `[t_visible, next t_visible)` per
+[analysis-tracking.md](analysis-tracking.md); the pipeline slices ticks identically to the committed
+epsilon parity generator. The per-segment values it writes (`duration_ms`, `peak_omega_deg_s`,
+`mean_epsilon_deg`) are **pipeline diagnostics, not coach-report metrics**: they restate quantities
+that are already authoritative elsewhere and have not passed a construct-validity gate (GD-20 /
+C-D3). Real-export overlay SVGs and the parameter sweep come from
+`modules/segments/notebooks/t3-sweep/run_sweep.py`.
+
 ## Frozen parameter registry
 
 | Version | SG window/poly | Peak k | Floor | Low ratio | Stop ratio |
@@ -63,3 +95,13 @@ reports excluded `n_flagged` separately alongside mean, p50, and sample standard
   continuous-speed movement.
 - Per-drill and per-condition sample sizes may be small; reports must display `n` and `n_flagged`.
 - Real-data validation scope is not yet established because the anonymized sample is still missing.
+  Every claim in this document therefore rests on deterministic synthetic traces; `seg-v1` is
+  pre-registered, not validated. See M14 ①④⑤ in
+  [WP-28 T-exit](../exec-plan/active/stage4/wp-28-research-foundation/T-exit-gate.md).
+- `summarize_with_flags` excludes any flagged row, so a single quality flag removes a segment from
+  every aggregate. Aggregates must be read together with `n_flagged` and the flag histogram.
+- Segment boundaries are inclusive tick indices, not milliseconds. Converting them to durations
+  assumes uniform spacing unless timestamps are used directly; the pipeline uses timestamps.
+- A dt gap raises `non_uniform_dt` only on the presentation window that contains it, so one dropped
+  tick does not exclude the whole export from every aggregate. The export-wide gap count and gap
+  list stay in `pipeline-summary.json`; read both.

@@ -26,6 +26,12 @@
 | 2026-08-04 | T3 real-data gate | 🟡 真實 drill 分段成功率與 ω(t) 疊圖未執行 | **M14 ④ blocker 維持**;runner 已備妥 `--real-export`，樣本到位後產 summary/segments/overlay SVG |
 | 2026-08-04 | T4 | ✅ `per_segment_apply` + `summarize_with_flags` + 封閉 quality vocabulary + `peek_index` 傳遞完成 | targeted T4:**8 passed in 1.47s**;final full `uv run pytest -q -p no:cacheprovider --basetemp .pytest_tmp_t4_final`:**61 passed in 4.85s** |
 | 2026-08-04 | T4 engine gate | ✅ per-segment research 變更未破壞引擎/parity gate | `npm.cmd run test:ci`:tsc PASS + Vitest **82 files / 641 tests passed** + Playwright **18 passed** |
+| 2026-08-04 | T-exit script | ✅ 一鍵 script `src/report/run_pipeline.py` 交付並於合成匯出跑通 | `uv run python src/report/run_pipeline.py` exit 0:48 ticks / median dt 7.8125ms / gap 0 / 2 peeks / 2 segments / `seg-v1`;產 `out/pipeline-summary.json` + `peek-quality.csv` + `peek-segments.csv` |
+| 2026-08-04 | T-exit gate ⑥ | ✅ research 閘全綠 | `uv run pytest -q -p no:cacheprovider --basetemp .pytest_tmp_texit_full`:**74 passed in 5.24s**,exit 0(T4 的 61 + 一鍵 script 13) |
+| 2026-08-04 | T-exit gate ② | ✅ 引擎閘 + ε parity 全綠 | `npm.cmd run test:ci` exit 0:tsc PASS + Vitest **82 files / 641 tests passed** + Playwright **18 passed**;`epsilon-parity.test.ts` 單獨重跑 1 passed,逐 presentation 覆蓋五個量 ≤1e-9 |
+| 2026-08-04 | T-exit gate ③ | ✅ 合成 fixture 邊界 ≤2 tick 維持綠 | `test_known_submovement_boundaries_are_within_two_ticks`(T3 掃參實測 max error = 1 tick) |
+| 2026-08-04 | T-exit docs | ✅ `analysis-segments.md` 補一鍵 script 契約 + omega index 慣例 + 三條新限制;`research/README.md` 補指令 | [analysis-segments.md](../../../../operational/analysis-segments.md) §One-command pipeline / §Known limits |
+| 2026-08-04 | **T-exit M14** | 🟡 **未宣告**:②③⑥ 綠,①④⑤ 阻塞於 OQ-S4-8 | [T-exit-gate.md](T-exit-gate.md) DoD 表;**WP-30/31 不得開工**,WP-29 可依 T1 ingest + 一鍵 script 先行 |
 
 ---
 
@@ -44,6 +50,10 @@
 | D-28.8 | 空分段回傳 list-compatible `SegmentList`，以 `result.flags` 承載 `zero_motion`/`below_floor`/`no_peak` | 契約要求回空 list 又要求正確 flag，普通空 list 無 Segment 可掛旗標；list subclass 保持既有迭代/equality 語意並補上 machine-readable outcome。Alternatives Considered:塞 sentinel Segment(拒絕:不再是空段)、只發 warning(拒絕:難以進 T4 聚合) | T3 empty-result tests(2026-08-04) |
 | D-28.9 | `QUALITY_FLAG_VOCABULARY` 同時枚舉 T4 必要旗標與 T3 已存在的 trace/segment flags；動態失敗只允許 `compute_failed:<非空 reason>` 模板 | 若只照 T4 列出的六個 exact flags，T3 合法輸出會在逐段入口被判非法；模板保留實際失敗原因又可封閉驗證。Alternatives Considered:丟棄 T3 flags(拒絕:品質資料遺失)、接受任意字串(拒絕:無法枚舉)、每個 exception reason 都預列 exact flag(拒絕:不可行) | T4 vocabulary closure tests(2026-08-04) |
 | D-28.10 | `Segment.peek_index` 採 nullable non-negative integer，`per_segment_apply` 原樣傳遞並禁止 `fn` 覆寫 | WP-29 才擁有 peek 重建；nullable default 保持 T3 呼叫相容，同時先固定 join 欄位契約。Alternatives Considered:由 T4 重建 peek(拒絕:越界)、只靠列順序(拒絕:跨表 join 脆弱)、允許 fn 產生 index(拒絕:每個指標可漂移) | T4 contract tests(2026-08-04) |
+| D-28.11 | 一鍵 script 落 `research/src/report/run_pipeline.py`（report 層），不落 `algorithms/` 也不落單一模組的 `notebooks/` | C-D2 禁 `algorithms/` I/O，而此 script 是跨模組 CLI 入口；塞進任一模組的 notebooks 會把 WP-29/30/31 的共同入口埋在 segments 底下。`src/report/` 本就是 stage4 的「notebook → 輸出」層，寫檔與 print 在此合法。Alternatives Considered:`research/run_pipeline.py` 置根(拒絕:繞開四目錄制)、`segments/notebooks/t-exit/`(拒絕:跨模組入口錯置) | T-exit script(2026-08-04) |
+| D-28.12 | 一鍵 script 只把 `omega[1:]` 餵給 `segment_submovements`，回報索引以 `_OMEGA_INDEX_OFFSET` 映回 tick frame | `omega[0]` 依契約為 `nan`（描述區間 `(i-1, i]`，首筆**未定義**而非缺值）。整條餵入雖被 T3 接受，卻讓每個 export 的每一段都掛 `non_finite_interpolated`，而 `summarize_with_flags` 排除任何有旗標的列 → 品質摘要恆為 `n=0`，聚合形同廢掉。切尾不製造樣本，索引映射為精確 +1（合成 fixture 的 `start_idx=1`/`end_idx=9` 前後逐位一致）。Alternatives Considered:改 T3 的 flag 行為(拒絕:動已凍結契約，須升版)、把 `omega[0]` 補 0(拒絕:對未定義樣本造值)、只在文件註明 `n=0` 屬預期(拒絕:等於交付一份無用的品質摘要) | T-exit `test_undefined_leading_omega_sample_does_not_flag_segments`(2026-08-04) |
+| D-28.13 | 一鍵 script 的逐段值（`duration_ms`/`peak_omega_deg_s`/`mean_epsilon_deg`）明文標為 pipeline 診斷，不是教練報告指標 | 三者皆為既有權威量的直述（段界時間戳、`Segment.peak_omega`、權威 ε(t) 的段內均值），不新增構念；但未過構念驗證，依 C-D3/GD-20 不得進教練報告。Alternatives Considered:加段內 on-target%(拒絕:TOT 定義在 `t_acquire` 起的追蹤窗，段內版本 = 第二定義，違 C-D4)、完全不出逐段值(拒絕:`per_segment_apply` 與品質摘要就沒有可示範的載體) | T-exit script docstring + [analysis-segments.md](../../../../operational/analysis-segments.md)(2026-08-04) |
+| D-28.14 | `non_uniform_dt` 只掛在**含該 gap 的 presentation 窗**，不由 export 層 dt 報告一律下掛;export 層 gap 數/清單仍完整寫入 summary | 全域下掛時，30s 真實匯出只要掉一個 tick 就讓 100% 的段帶旗標 → `summarize_with_flags` 再次回 `n=0`，與 D-28.12 同一類「聚合被廢掉」缺陷。窗界切片本就按序分割 ticks，故以 gap 的全域 tick index 落在哪個窗來歸屬是精確的，不是近似。Alternatives Considered:全域下掛(拒絕:如上)、完全不下掛只留 summary(拒絕:逐段消費者看不到自己這段不可信) | T-exit `test_dt_gap_flags_only_the_peek_that_contains_it`(2026-08-04) |
 
 ---
 
@@ -59,6 +69,8 @@
 | S-28.5 | ω combined fixture 首輪把 30° yaw + 40° pitch 誤寫成未套 midpoint-pitch 校正的 50°/s | core 首輪為 10 passed / 1 failed,若照錯誤 golden 修改演算法會違反 T2 公式 | 依 `sqrt((Δyaw·cos(midpoint pitch))²+Δpitch²)/Δt` 修正 fixture 為 48.935876°/s;重跑後 11/11 core tests PASS |
 | S-28.6 | T3 的 `segment_submovements(...) -> list[Segment]` 與「零/等速回空段 + 正確 flag」同時成立時，普通 list 沒有承載 trace-level flag 的位置 | 若只回 `[]`，T4 無法區分零運動、低於 floor、連續等速無 peak | D-28.8 採 list-compatible `SegmentList.flags`;正常 Segment 仍各自保有 flags |
 | S-28.7 | T4 文案列出的 vocabulary 未包含 T3 已實際產生的 `zero_motion`/`no_peak`/SG 與 non-finite flags | 若逐字只建六個 exact flags，T3→T4 的正常資料會被改寫成 compute failure | 依「新增 flag 必須加入詞彙表」將全部既有 T3 flags 納入常數與 `analysis-segments.md`，並用 closure test 鎖定 |
+| S-28.8 | T3/T4 各自綠燈，但把兩者串成一鍵 pipeline 後才暴露:`omega[0]` 的契約 `nan` 會讓**每一段**掛 `non_finite_interpolated`，`summarize_with_flags` 因此排除 100% 的列 | 品質摘要恆為 `n=0`/`mean=null`，WP-29/30/31 拿到的聚合層形同廢掉;單元測試看不到,因為 T3 測試直餵合成 ω 陣列(無 leading nan),T4 測試直建 `Segment` | D-28.12 在 pipeline 側切尾 + 索引映回;新增 `test_undefined_leading_omega_sample_does_not_flag_segments` 鎖住「乾淨匯出不得整批掛旗標」 |
+| S-28.9 | presentation 窗界切片邏輯已在 t2 parity generator 與 t3-sweep runner 各有一份，一鍵 script 是第三份 | 三份若漂移，ε/分段/parity 會各自對到不同 tick 窗，M14 ② 綠但下游全錯 | 一鍵 script 逐字沿用 parity generator 的 tolerance 慣例並在原始碼註明;整併留給擁有 peek 窗重建的 WP-29(記為 OQ-S4-9) |
 
 ---
 
@@ -66,5 +78,6 @@
 
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
-| OQ-S4-8(樣本) | 真實 drill 匯出樣本(≤30s、匿名)未取得 | 🟡 使用者後補;**M14 ①④ 阻塞項**;T1 合成匯出與 T3 sweep runner 已交付但不替代真實證據 | 使用者 | M14 exit 前 |
+| OQ-S4-8(樣本) | 真實 drill 匯出樣本(≤30s、匿名)未取得 | 🟡 使用者後補;**M14 ①④⑤ 阻塞項,M14 未宣告**;T-exit 一鍵 script 已備妥,樣本落 `research/fixtures/exports/` 後兩道指令即可補齊證據(見 [T-exit-gate.md](T-exit-gate.md) 判定段) | 使用者 | M14 宣告前 |
+| OQ-S4-9 | presentation 窗界切片有三份實作(t2 parity generator / t3-sweep runner / T-exit 一鍵 script) | 🟡 一鍵 script 已對齊 parity generator 的 tolerance 慣例並在原始碼註明;整併由擁有 peek 窗重建的 WP-29 執行(S-28.9) | WP-29 | WP-29 T-exit 前 |
 | OQ-S4-2 | 分段閾值 / SG window 的 128Hz 起點數值 | ✅ `seg-v1` 已在看真實資料前 pre-register 凍結(D-28.7);真實效度驗證仍由 OQ-S4-8 阻塞 | 研究者 | 2026-08-04 |

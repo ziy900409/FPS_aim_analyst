@@ -22,7 +22,10 @@
 | **準心對齊偏移** | 開火事件在排序串流中那一點，準心射線與目標 hitbox 中心的距離／角度（**sub-tick 忠實、零內插**，見 simStep 順序）。「準心射線」≡ **camera 正向（螢幕中心）射線**，HitDetector raycast 同此；畫面十字（階段 A = DOM overlay）純裝飾、**必須精確置中**（注意 `devicePixelRatio`），指標**不讀**該元素座標。 |
 | **追蹤誤差 ε(t)（tracking error）／on-target** | ε(t) = 逐 tick 的「準心射線 vs 目標 hitbox 中心」夾角（deg）——**準心對齊偏移由 fire 瞬間推廣到逐 tick**，同一數學、同一單位。**on-target（逐 tick 二元）**= 準心射線 ∩ H1 hitbox（與命中判定同幾何，**零新門檻參數**）。全部由 schema v2 原始欄位（aim + 玩家/目標位置）**離線推導**，不進 sim 熱路徑（GD-7）。 |
 | **角速度 ω(t)（angular speed）** | 128Hz aim 串流相鄰 tick 的無號角速度（deg/s）；yaw 分量以兩 tick 的 midpoint pitch 做 `cos(pitch)` 校正，首筆為 `nan`。rad→deg 只在 kinematics 邊界轉換，下游 research 模組一律消費 degree。 |
-| **submovement 分段** | 將 SG 平滑後的 ω(t) 依 peak 與 low/stop crossing 切成一個 `primary_flick`（第一次主要彈道式甩動）及其後零到多個 `micro_adjustment`（較低幅度修正）。參數以版本化 `SegmentParams` pre-register；`seg-v1` 在六組合成情境的邊界誤差 ≤1 tick，真實 drill 效度仍須於 M14 驗證。 |
+| **submovement 分段** | 將 SG 平滑後的 ω(t) 依 peak 與 low/stop crossing 切成一個 `primary_flick`（第一次主要彈道式甩動）及其後零到多個 `micro_adjustment`（較低幅度修正）。參數以版本化 `SegmentParams` pre-register；`seg-v1` 在六組合成情境的邊界誤差 ≤1 tick，真實 drill 效度仍須於 M14 驗證。**分段吃 ω(t) 的已測樣本（`omega[1:]`）**：首筆 `nan` 是「未定義」不是缺值，整條餵入會讓每一段都掛 `non_finite_interpolated` 而被聚合排除。定義見 [analysis-segments.md](docs/operational/analysis-segments.md)。 |
+| **quality flags（逐段品質旗標）** | 逐 peek／逐段結果上 machine-readable 的**封閉詞彙表**（`QUALITY_FLAG_VOCABULARY`），例如 `no_segment`／`below_floor`／`non_uniform_dt`／`truncated_at_window_edge`；動態失敗只能是 `compute_failed:<reason>`。**品質失敗是資料，不吞成 NaN**：計算失敗的列仍在，只有數值變 `NaN` 並帶原因。聚合（`summarize_with_flags`）排除任何帶旗標的列，故報告必須同時顯示 `n` 與 `n_flagged`。 |
+| **parity fixture（跨語言對表夾具）** | Python 側算出、**commit 進 repo** 的 JSON（`research/fixtures/parity/`），由既有 `npm run test:ci` 內的 vitest 對表 TS 權威實作（ε 層對 `deriveTrackingMetrics` 五個量 ≤1e-9）。跨語言漂移由此在引擎閘變紅，`test:ci` 本身**不引入 Python 相依**（GD-19）。 |
+| **reliability gate（構念驗證閘，佔位）** | 指標進教練報告前必須通過的信度／效度門檻；未過的指標**寧可不出**（C-D3／GD-20）。門檻數值由 WP-31 T0 pre-register 凍結（OQ-S4-3），WP-28 只保留紅線與詞彙，不落實作。 |
 | **獲取時間（t_acquire）** | `t_first_on_target − t_visible`：目標可見到首次 on-target 的時間——flick／獲取構念，與追隨（pursuit）分離。整段 presentation 未 on-target → 記**獲取失敗**（計入獲取失敗率、該 presentation 不進 TOT 聚合；失敗是資料不是缺失值）（GD-7）。 |
 | **time-on-target（TOT%）／追蹤窗口** | **追蹤窗口 = [t_first_on_target, presentation 結束)**——TOT% 與 ε 統計只在窗內算，獲取能力不污染追隨量測（能力混淆的**指標層**緩解）。TOT% = 窗內 on-target tick 比例；**pre-registered 主統計量 = RMS(ε)**（對跟丟瞬間平方級敏感）；median／P95／streak 為離線副指標（GD-7）。 |
 | **偵測反應時間（detection RT）／t_detect** | `t_detect − t_visible`（量測時鐘域）。**t_detect = 瞄準移動 onset**：`t_visible` 後第一個「ε(t) 以超過雜訊底的角速度下降、持續 k tick」的 tick——**離線**從 128Hz aim 流推導，雜訊底以 **per-trial 前刺激窗口**（spawn 前 aim 抖動）校準，θ_v／k 為 pre-registered 分析參數。無眼動儀下的標準 proxy（含動作啟動成分）。副構念 **engagement time** = `t_first_fire − t_visible`（GD-8）。 |
@@ -46,7 +49,7 @@
 |---|---|---|
 | **`InputSampler`** | ~1000 Hz 事件驅動採樣鍵鼠、蓋高解析度時間戳、寫入輸入緩衝（F1） | 輸入 |
 | **`SharedState`** | 三迴圈唯一溝通管道：輸入緩衝（固定欄位 ring buffer）、player velocity、準心、目標狀態、`t_visible`（單例）。階段 B 的兩道跨執行緒縫＝**輸入佇列**（主→worker）與 **`RenderSnapshot`**（worker→主）；其餘狀態跟著 sim 進 worker、不跨界。 | 狀態 |
-| **`research/` 離線分析層** | 單向消費 schema v2 匯出，提供 ingest、角運動學、版本化 submovement 分段及後續逐段指標；`algorithms/` 維持純函式，掃參、疊圖與檔案輸出只在 notebooks。 | Python / 離線研究 |
+| **`research/` 離線分析層** | 單向消費 schema v2 匯出，提供 ingest、角運動學、版本化 submovement 分段及後續逐段指標；`algorithms/` 維持純函式，掃參、疊圖與檔案輸出只在 notebooks。跨模組 CLI 入口 = `src/report/run_pipeline.py`（匯出 → dt 報告 → ω/ε → 分段 → 品質摘要，一道指令），為 WP-29/30/31 的共同入口。 | Python / 離線研究 |
 | **`SimLoop`** | 128 Hz 固定步長 accumulator 迴圈：消費輸入 → movement → 急停判定 → 命中判定 → 記錄（F2/F3） | 模擬 |
 | **`MovementController`** | A/D 橫移 + 急停（階段 A 簡化「立即停止」/ 階段 B physics）；介面跨階段不變（F3）。**狀態機 = M1**：鍵恆為移動鍵，反向鍵在穿越方向那一 tick 把 velocity **snap 到 0**（即「立即停止」）＋升 `stopped` flag，續按反向鍵 → 下一 tick `−v`（反向/過衝）。橫移亦為**瞬間 snap**（按 A/D → velocity 瞬間 ±`v_strafe`、放開 → 0；無 accel ramp，velocity 為純階梯函數），`v_strafe` config 預設 ~250 u/s。階段 B 把起步與停止都換成 friction+accel integrator，狀態機外形不變。 | 模擬 |
 | **`TargetManager`** | 目標 spawn／可見性、左右交替序列、蓋 `t_visible`（F2/F4） | 模擬 |

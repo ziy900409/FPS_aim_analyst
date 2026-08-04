@@ -10,7 +10,7 @@
 | **相依** | M4 ✅ + WP-16 ✅ + **M11/M12 ✅**(`meta.targets.hitbox` / tick `ads` / `hit` 事件語意已鎖) |
 | **對應 FR** | FR-D1 ~ FR-D6 |
 | **估時** | 3.5–4.5 dev-days |
-| **狀態** | 🟡 進行中(T0–T4 ✅ 2026-08-04;真實 ingest/分段證據仍阻塞 M14 T-exit) |
+| **狀態** | 🟡 進行中(T0–T4 ✅ + T-exit 交付物 ✅ 2026-08-04;**M14 未宣告**:②③⑥ 綠,①④⑤ 阻塞於真實匯出樣本 OQ-S4-8 → **WP-30/31 不得開工**) |
 
 ---
 
@@ -27,7 +27,8 @@ research/src/modules/segments/                   ← ADD SG 平滑 / submovement
 research/src/shared/filters/                     ← ADD sg_filter / butter_filter(移植)              [T3]
 research/fixtures/{exports,parity}/              ← ADD 合成匯出 + parity JSON                         [T1/T2]
 tests/golden/research/epsilon-parity.test.ts     ← ADD vitest 對表閘(在既有 test:ci 內)             [T2]
-docs/operational/analysis-segments.md            ← ADD 分段參數 registry + 限制                       [T-exit]
+research/src/report/run_pipeline.py               ← ADD 一鍵 pipeline(WP-29/30/31 共同入口)+ tests    [T-exit]
+docs/operational/analysis-segments.md            ← ADD 分段參數 registry + 限制                       [T3/T-exit]
 CLAUDE.md §4                                     ← MODIFY C-D1~C-D4 四條硬約束                        [T0]
 ```
 
@@ -63,4 +64,4 @@ CLAUDE.md §4                                     ← MODIFY C-D1~C-D4 四條硬
 | **T2 ✅** | [T2-angular-kinematics.md](T2-angular-kinematics.md) | ω(t)/ε(t)/on_target + **ε 層雙向 parity 閘** | T1 | **High** |
 | **T3 ✅** | [T3-submovement-segments.md](T3-submovement-segments.md) | SG 平滑 + submovement 分段 + `seg-v1` 參數凍結(合成 DoD;真實資料證據留 M14 blocker) | T2 | **High** |
 | **T4 ✅** | [T4-per-segment-flags.md](T4-per-segment-flags.md) | `per_segment_apply` + quality flags | T3 | Low |
-| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | M14 宣告(六項證據;真實資料項為阻塞) | T1–T4 | — |
+| **T-exit 🟡** | [T-exit-gate.md](T-exit-gate.md) | 一鍵 script(`src/report/run_pipeline.py`)+ `analysis-segments.md` + M14 六項證據;**②③⑥ 綠、①④⑤ 阻塞 → M14 未宣告** | T1–T4 | — |
