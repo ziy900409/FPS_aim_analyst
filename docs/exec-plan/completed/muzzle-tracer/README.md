@@ -1,9 +1,9 @@
 # WP-27 — muzzle-tracer:tracer 從槍口射出 + ADS 槍口移置準心下方
 
-> **狀態:✅ 已採納(2026-08-03)**,編號 **WP-27**(GD-18);單 WP 自足資料夾,無獨立里程碑(exit gate = 三不變性驗收)。
+> **狀態:✅ 已交付(2026-08-04)**,編號 **WP-27**(GD-18);單 WP 自足資料夾,無獨立里程碑(exit gate = 三不變性驗收)。
 > 上層索引:[exec-plan/README.md](../../README.md) · 決議帳本:[DECISIONS.md](../../DECISIONS.md) **GD-18** · 術語:[CONTEXT.md](../../../../CONTEXT.md)
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
-> 家族:延伸 **WP-25 tracer**([completed/stage5/wp-25-ballistics-tracer](../../completed/stage5/wp-25-ballistics-tracer/README.md));ADS 沿 **WP-24**([wp-24-ads-optics](../../completed/stage5/wp-24-ads-optics/README.md));前置 bug 修 **BD-002 / KI-002 D1**([BUGFIX-DECISIONS.md](../../../known_issue/BUGFIX-DECISIONS.md))。
+> 家族:延伸 **WP-25 tracer**([completed/stage5/wp-25-ballistics-tracer](../stage5/wp-25-ballistics-tracer/README.md));ADS 沿 **WP-24**([wp-24-ads-optics](../stage5/wp-24-ads-optics/README.md));前置 bug 修 **BD-002 / KI-002 D1**([BUGFIX-DECISIONS.md](../../../known_issue/BUGFIX-DECISIONS.md))。
 
 | | |
 |---|---|
@@ -234,9 +234,9 @@ export interface BulletArena {
 | OQ-MT-2 | **ADS 時槍口相對準心的下方偏移量** | ✅ **`{rightU:0,upU:-0.065,forwardU:0.60}`**。Edge FHD/QHD 比較 `upU -0.055/-0.065/-0.080`;選定值在兩解析度下分別距準心 161/214 px,維持相同比例且不貼 scope 下緣。原始數據/截圖見 progress T2 final log | Codex 實測、使用者授權 | ✅ 2026-08-03 | — |
 | OQ-MT-3 | capture-at-fire vs 顯示時重算 | ✅ **GD-18:capture-at-fire**(F-3 使其零額外成本且天然決定性) | 實作者 | ✅ 2026-08-03 | — |
 | OQ-MT-4 | hip「右手位」偏移方向/量值 | ✅ **GD-18:`{rightU 0.15, upU −0.12, forwardU 0.60}`**(F-4:前向必須 ≫ 側向),實機微調 | 使用者 | ✅ 2026-08-03 | — |
-| OQ-MT-5 | WP 正式編號與採納 | ✅ **GD-18:WP-27**,單 WP 資料夾 `active/muzzle-tracer/`,無獨立里程碑;stage4 草稿順延重編 **WP-28+ / M14+** | 使用者 | ✅ 2026-08-03 | — |
+| OQ-MT-5 | WP 正式編號與採納 | ✅ **GD-18:WP-27**,單 WP 資料夾已歸檔至 `completed/muzzle-tracer/`,無獨立里程碑;stage4 草稿順延重編 **WP-28+ / M14+** | 使用者 | ✅ 2026-08-03 | — |
 | OQ-MT-6 | hip↔ads 平滑內插 vs 階躍 | ✅ **GD-18:階躍**(C-7:與 capture-at-fire 互斥,且與 GD-16 gain 階躍一致) | 使用者 | ✅ 2026-08-03 | — |
-| OQ-MT-7 | tracer 縮尾方向(origin 端固定) | 🟡 **新增**。origin 移到槍口後首次可見;先維持現狀,T-exit 視覺驗收判定 | 使用者 | T-exit | 觀感;不影響正確性 |
+| OQ-MT-7 | tracer 縮尾方向(origin 端固定) | ✅ **維持現狀**。使用者於 2026-08-04 委託 Codex 代測；`TracerView` 7/7 綠，origin 固定、260 ms 線性縮尾、無反向／越界，工程觀感判定可接受 | 使用者委託 Codex 代測 | ✅ 2026-08-04 | — |
 
 ---
 
@@ -254,11 +254,11 @@ export interface BulletArena {
 
 - [x] [DECISIONS.md](../../DECISIONS.md) **GD-18**(WP-27 編號 + 五項設計拍板 + stage4 順延 WP-28+)入帳。(2026-08-03 採納)
 - [x] [exec-plan/README.md](../../README.md):§2 加 WP-27 索引列;§4 相依圖加註;§6 目錄慣例。(2026-08-03 採納)
-- [x] [stage4 README](../stage4/README.md) 編號重編標註更新為 WP-28+ / M14+。(2026-08-03 採納)
+- [x] [stage4 README](../../active/stage4/README.md) 編號重編標註更新為 WP-28+ / M14+。(2026-08-03 採納)
 - [x] [docs/MAP.md](../../../MAP.md) 導航加 WP-27。(2026-08-03 採納)
-- [ ] [CLAUDE.md](../../../../CLAUDE.md) §4 tracer 條目補句(muzzle origin 與命中原點分離)。(T0)
-- [ ] [CONTEXT.md](../../../../CONTEXT.md) §H 新增術語「muzzle origin / 槍口偏移」。(T-exit)
-- [ ] `docs/operational/schema.md`:**無需改動**(FR-MT5 零新欄位)—— T-exit 明文確認一次。
+- [x] [CLAUDE.md](../../../../CLAUDE.md) §4 tracer 條目補句(muzzle origin 與命中原點分離)。(2026-08-03 T0)
+- [x] [CONTEXT.md](../../../../CONTEXT.md) §H 新增術語「muzzle origin / 槍口原點」。(2026-08-03 T-exit 自動對帳)
+- [x] `docs/operational/schema.md`:**無需改動**(FR-MT5 零新欄位);自 T0 base `508c3fd` 至 T2 HEAD `117c3d4` diff = 0 bytes。(2026-08-03 T-exit 自動對帳)
 
 ---
 

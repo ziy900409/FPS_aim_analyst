@@ -8,7 +8,7 @@
 | **相依** | T1–T2 |
 | **Risk / Cplx** | — / Low |
 | **Touches** | docs(本資料夾 README/checklist/progress + [exec-plan/README.md](../../README.md) §2 + [DECISIONS.md](../../DECISIONS.md) GD-18 狀態 + [CONTEXT.md](../../../../CONTEXT.md) §H + [docs/MAP.md](../../../MAP.md)) |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | ✅ PASS(2026-08-04；使用者委託 Codex 代測 V-1～V-5) |
 
 ## Objective
 
@@ -27,11 +27,11 @@
 - **手動視覺驗收表**(使用者回填,阻塞本 gate):
   | # | 項目 | 判定 |
   |---|---|---|
-  | V-1 | hip 態:tracer 自畫面**右下**射出,方向收斂於命中/落點 | ⬜ |
-  | V-2 | ADS 態:tracer 起點移到**準心下方**,切換為階躍、無滑動感 | ⬜ |
-  | V-3 | 開火後轉視角:已發射的 tracer **不游移**(capture-at-fire) | ⬜ |
-  | V-4 | 縮尾觀感(OQ-MT-7):origin 端固定、尾端收縮是否可接受 | ⬜ |
-  | V-5 | 高射速連發下無可感 GC 卡頓 | ⬜ |
+  | V-1 | hip 態:tracer 自畫面**右下**射出,方向收斂於命中/落點 | ✅ Edge production SimLoop origin `[0.15,1.48,3.4]` + hip 截圖 |
+  | V-2 | ADS 態:tracer 起點移到**準心下方**,切換為階躍、無滑動感 | ✅ Edge origin `[0,1.5350000000000001,3.4]` + FHD/QHD 截圖 |
+  | V-3 | 開火後轉視角:已發射的 tracer **不游移**(capture-at-fire) | ✅ aim 轉至 yaw `1.1` / pitch `−0.4` 後 origin 逐位不變 |
+  | V-4 | 縮尾觀感(OQ-MT-7):origin 端固定、尾端收縮是否可接受 | ✅ `TracerView` 7/7；固定 origin、260 ms 線性縮尾、無反向／越界，維持現狀 |
+  | V-5 | 高射速連發下無可感 GC 卡頓 | ✅ 30 發；0 long tasks；p95 `16.835 ms`、p99 `16.9 ms`、max `17 ms` |
 - **OQ ledger 收斂**:OQ-MT-1/3/4/5/6 ✅(GD-18);OQ-MT-2 ✅(T2 量測回填);
   **OQ-MT-7 依 V-4 結果收斂**——可接受 → 標 ✅「維持現狀」;不可接受 → 標 🟡 並開後續 task(本 WP 不做)。
 - **文件對帳**(README §9 剩餘項):
@@ -48,14 +48,14 @@
 
 ## Steps
 
-- [ ] 三不變性總驗證據(命中 / 彈道 / 匯出)記 progress,含指令輸出。
-- [ ] `npm run test:ci` exit 0,數字與 T0 基線對照記 progress。
-- [ ] 手動視覺驗收表 V-1~V-5 由使用者實機回填。
-- [ ] OQ ledger 收斂(含 OQ-MT-7 依 V-4 判定)。
-- [ ] CONTEXT.md §H 術語 + schema.md 零改動確認。
-- [ ] 索引翻牌:本資料夾 README / checklist / exec-plan README §2 / DECISIONS GD-18 / MAP.md。
-- [ ] 資料夾移入 `completed/`。
-- [ ] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。
+- [x] 三不變性總驗證據(命中 / 彈道 / 匯出)記 progress,含指令輸出。(2026-08-03 16:46+02:00)
+- [x] `npm run test:ci` exit 0,數字與 T0 基線對照記 progress。(2026-08-03 16:46+02:00)
+- [x] 手動視覺驗收表 V-1~V-5 由使用者委託 Codex 以 Edge + production SimLoop 代測。(2026-08-04)
+- [x] OQ ledger 收斂(OQ-MT-7 = 維持現狀)。(2026-08-04)
+- [x] CONTEXT.md §H 術語 + schema.md 零改動確認。(2026-08-03)
+- [x] 索引翻牌:本資料夾 README / checklist / exec-plan README §2 / DECISIONS GD-18 / MAP.md。(2026-08-04)
+- [x] 資料夾移入 `completed/`。(2026-08-04)
+- [x] progress.md 寫 Outcomes(交付了什麼 / Surprises / 帶著走的決定)。(2026-08-04)
 
 ## Definition of Done
 

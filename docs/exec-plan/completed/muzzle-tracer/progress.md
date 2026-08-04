@@ -5,14 +5,14 @@
 
 ---
 
-## Status: 🚧 T0/T1/T2 ✅;T-exit 待執行(2026-08-03)
+## Status: ✅ WP-27 交付；T0/T1/T2/T-exit 全部 PASS(2026-08-04)
 
 | Task | 狀態 |
 |---|---|
 | T0 entry gate | ✅ |
 | T1 hip muzzle tracer | ✅ |
 | T2 ADS muzzle | ✅ |
-| T-exit | ⬜ |
+| T-exit | ✅ |
 
 ---
 
@@ -24,13 +24,74 @@
 | OQ-MT-2 **ADS 槍口相對準心的下方偏移量** | ✅ 2026-08-03 | `{rightU 0, upU −0.065, forwardU 0.60}`。Edge 40° ADS FOV,固定 forward 0.60;FHD/QHD 比較三候選後選定。FHD/QHD 距準心 161/214 px(畫面高 14.88%),世界 origin 分別由 camera y 寫為 `cameraY−0.065`。 |
 | OQ-MT-3 capture-at-fire vs 顯示時重算 | ✅ 採納時決議(GD-18) | **capture-at-fire**。F-3 使其零額外成本:muzzle 由既有 `ballisticQ` 於開火 tick 算出,hitscan 直寫 ring、projectile 寫 `arena.m*`,顯示端不重算 → 開火後轉視角 tracer 不游移。 |
 | OQ-MT-4 hip 偏移方向/量值 | ✅ 採納時決議(GD-18) | `{rightU 0.15, upU −0.12, forwardU 0.60}`(右 ≈14°、下 ≈11°)。**前向必須 ≫ 側向**——初版草稿的 `[0.18, −0.12, 0.10]` 會使 muzzle 落在光軸外 ≈63°(畫面外)。實機可微調,不改介面。 |
-| OQ-MT-5 WP 編號與採納 | ✅ 採納時決議(GD-18) | **WP-27**,單 WP 資料夾 `active/muzzle-tracer/`,**無獨立里程碑**(exit gate 即交付判定)。stage4 草稿順延重編 **WP-28+ / M14+**。 |
+| OQ-MT-5 WP 編號與採納 | ✅ 採納時決議(GD-18) | **WP-27**,單 WP 資料夾已歸檔 `completed/muzzle-tracer/`,**無獨立里程碑**(exit gate 即交付判定)。stage4 草稿順延重編 **WP-28+ / M14+**。 |
 | OQ-MT-6 hip↔ads 平滑內插 vs 階躍 | ✅ 採納時決議(GD-18) | **階躍**。tracer origin 是 capture-at-fire 的 sim 值,平滑內插必然是 render 幀狀態,兩者互斥;且與 GD-16「ADS gain 階躍」慣例一致。 |
-| OQ-MT-7 tracer 縮尾方向(origin 端固定) | 🟡 新增,待 T-exit V-4 | `TracerView` 現行以 origin 為固定端縮短([TracerView.ts:148-163](../../../../src/render/TracerView.ts#L148-L163))。origin 從眼睛(看不見)移到槍口後,此行為**第一次真正可見**,可能讀作「線往槍口縮回」而非「子彈往前飛」。先維持現狀,T-exit 視覺驗收判定;不可接受則另開 task(本 WP out of scope)。 |
+| OQ-MT-7 tracer 縮尾方向(origin 端固定) | ✅ 2026-08-04 | **維持現狀**。使用者委託 Codex 代測；`TracerView` 7/7 綠，origin 固定、260 ms 線性縮尾、無反向／越界。短壽命下工程觀感可接受，不開後續 task。 |
 
 ---
 
 ## Log
+
+### 2026-08-04 — T-exit PASS；WP-27 交付
+
+- **委託**:使用者明確詢問並委託 Codex 代測 V-1～V-5；以 Edge、真 Vite dev render、production
+  SimLoop/InputRing 路徑執行臨時 Playwright probe，完成後已刪除 probe，未留下測試輔助碼。
+- **V-1 hip PASS**:production shotRay origin `[0.15,1.48,3.4]`，相對 camera 為右、下、前；
+  [hip 截圖](t1-hip-muzzle-tracer.png)顯示 tracer 自右下收斂至落點。
+- **V-2 ADS PASS**:production shotRay origin `[0,1.5350000000000001,3.4]`；FHD/QHD
+  [截圖](t2-ads-balanced-fhd.png) / [截圖](t2-ads-balanced-qhd.png)均位於準心正下方，且只取兩個離散 offset。
+- **V-3 capture-at-fire PASS**:開火後把 aim 改為 yaw `1.1` / pitch `−0.4`，等待 120 ms 後
+  shotRay origin 仍逐位 `[0,1.5350000000000001,3.4]`；既有 projectile invariant 亦鎖住後續 tick 不重算。
+- **V-4 縮尾 PASS / OQ-MT-7 收斂**:`npx vitest run src/render/TracerView.test.ts --reporter=verbose`
+  **1 file / 7 tests passed**。半壽命矩陣由 length `10` → `5`、midpoint `5` → `2.5`，因此 origin
+  恆為 `0`；260 ms 後隱藏，無反向／越界。工程觀感判定可接受，**維持現狀**。
+- **V-5 GC／frame pacing PASS**:Edge 30 發高射速連發；0 long tasks，burst p95 `16.835 ms`、
+  p99 `16.9 ms`、max `17 ms`（idle p95 `16.88 ms`），heap delta `−590,764 bytes`；未見 burst-specific
+  frame regression 或配置累積。Playwright probe **2/2 passed (20.9 s)**。
+- **三不變性**:命中／彈道／匯出自動閘維持 PASS；T2 HEAD 完整 CI 為 TypeScript 0 errors、Vitest
+  **81 files / 640 tests**、Playwright **18 passed**，且 `src/data` / schema / projectile-determinism 0-byte diff。
+- **Decision Log**:接受使用者的代測委託，以可重現數值取代純肉眼回填；V-4 採「固定 origin、無反向／越界、
+  260 ms 內消失」為工程驗收準則。
+  **Alternatives Considered**:另改 `TracerView` 為移動頭部／尾端淡出會擴張 production scope，且現況未呈現缺陷，不採。
+- **Surprises & Discoveries**:idle 探測曾含一次 `150.19 ms` 啟動抖動，但 burst p99/max 穩定在
+  `16.9/17 ms` 且 0 long tasks，證據顯示抖動不是 tracer 連發造成。
+- **Open Questions**:OQ-MT-1～MT-7 全部收斂，無後續 blocker。
+
+## Outcomes & Retrospective
+
+- **交付**:hitscan 與 projectile tracer 均從 capture-at-fire muzzle origin 射出；hip 為右手位，ADS
+  為準心正下方實測 offset；命中權威、projectile 物理與 export/schema 三者不變。
+- **驗證結果**:自動 gate、Edge FHD/QHD 視覺證據、轉視角 capture、縮尾矩陣及 30 發 frame/GC probe 全綠。
+- **帶著走的決定**:`BulletArena.o*` 永遠保留物理基準，`m*` 僅供 tracer；muzzle quaternion 只讀
+  sim-side `ballisticQ`；hip↔ADS 為開火 tick 階躍；現行 260 ms origin-fixed 縮尾維持不變。
+- **技術債觸發條件**:第二把幾何差異顯著的武器才把 offset 晉升為 per-weapon；若日後使用者回報縮尾
+  有倒吸感，再另案評估移動 tracer head／tail，不回頭污染本 WP 的 render-only 邊界。
+
+### 2026-08-03 — T-exit 自動閘 PASS；等待使用者 V-1～V-5
+
+- **命中不變**:`muzzle-tracer-invariants.test.ts` 逐位鎖住 hitscan raycast origin、projectile
+  `x/y/z` + `ox/oy/oz`、fire/hit events；完整 CI 中該檔 **8/8** 綠。muzzle 只寫
+  `shotRays` / `BulletArena.m*`，未進 `pushImpact` 或命中權威。
+- **彈道不變**:`tests/regression/projectile-determinism.test.ts` 自 T0 base `508c3fd` 至 T2 HEAD
+  `117c3d4` **0-byte diff**，完整 CI **7/7** 綠；`arena.o*` 仍作 `maxRangeU`／落地距離基準。
+- **匯出不變**:`git diff 508c3fd..117c3d4 -- src/data docs/operational/schema.md` 無輸出；
+  `schemaVersion` diff 無輸出；`rg -n 'shotRays|arena\\.(mx|my|mz)|bullets\\.(mx|my|mz)' src/data`
+  回報 `SRC_DATA_REFERENCES=0`。
+- **既有測試變更帳本**:`git diff --name-status 508c3fd..117c3d4 -- ':(glob)**/*.test.ts'`
+  僅列 `M src/loop/SimLoop.test.ts`（1 line changed）以及兩個新增測試檔；符合「修改的既有測試數 == 1」。
+- **CI**:`npm run test:ci` 於 T2 HEAD sandbox 外 exit 0：TypeScript 0 errors、Vitest
+  **81 files / 640 tests passed**、Playwright **18 passed**。sandbox 內 esbuild 無權讀 `vite.config.ts`
+  的既知環境限制仍可重現，非產品失敗。
+- **文件對帳（可先完成部分）**:[CONTEXT.md](../../../../CONTEXT.md) §H 已新增 `muzzle origin（槍口原點）`；
+  [README.md](README.md) 已明文記錄 schema 0-byte diff，並補正 T0 的 CLAUDE.md checklist 漂移。
+- **視覺證據待使用者判定**:hip [截圖](t1-hip-muzzle-tracer.png)、ADS
+  [FHD](t2-ads-balanced-fhd.png) / [QHD](t2-ads-balanced-qhd.png) 已備妥；V-1～V-5 仍須由使用者實機回填。
+  OQ-MT-7 依 V-4 決定「維持現狀」或另開後續 task。在收到判定前不翻交付狀態、不歸檔、不 commit T-exit。
+- **Decision Log**:自動證據與主觀視覺 gate 分離，先完成可重現的三不變性與文件術語對帳。
+  **Alternatives Considered**:以截圖或自動測試代替使用者 V-1～V-5 會違反 T-exit 的 owner 契約；故不採。
+- **Surprises & Discoveries**:開始 T-exit 時發現 README 的 OQ-MT-2 已收斂但舊 worktree 仍顯示佔位值；
+  隨後同分支的 `faa6e00` / `117c3d4` 已完成接線、校準與原子 commits，最終 HEAD 文件／程式／影像一致。
+- **Open Questions / blocker**:只剩 V-1～V-5，尤其 V-4（縮尾觀感）與 V-5（高射速 GC 體感）。
 
 ### 2026-08-03 — T2 ADS muzzle final PASS(OQ-MT-2 實測 + 視覺驗收)
 

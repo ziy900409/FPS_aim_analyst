@@ -160,6 +160,7 @@
 | 術語 | 定義 |
 |---|---|
 | **tracer（軌跡顯示）** | 子彈飛行軌跡的**純視覺**呈現。sim 在產彈點已算出射線（hitscan）或子彈路徑（projectile），只多寫一筆 `shotRays` 環形格；**render-only、UI 可開關、不進 export／不改命中或指標語意**（GD-17／WP-25 硬約束）。命中彈端點 = 命中點；未命中 hitscan 端點 = `projectMissOntoEngagementPlane` 交戰平面投影（OQ-25.1），projectile 端點 = 子彈消滅點（`maxRangeU` 到達或失活點）。 |
+| **muzzle origin（槍口原點）** | tracer 的**視覺起點**，於開火 tick 由命中／彈道原點加上相機本地 hip 或 ADS 偏移計算並凍結。hitscan 直接寫入 `shotRays`；projectile 先寫入 `BulletArena.mx/my/mz`，消滅時再供 tracer 使用。此座標 **render-only，不進 raycast、`arena.x/y/z`、`arena.ox/oy/oz`、命中事件、彈道存活判定或 export**（WP-27／GD-18）。 |
 | **`shotRays`（環形格）** | `SharedState` 的 tracer 專用 preallocated ring（`ShotRayRing`：`ox,oy,oz,ex,ey,ez,seq` typed arrays + `total/cursor`，容量 `TRACER_CAP`），比照 `ImpactRing`。sim 唯寫（`pushShotRay`），render 唯讀；`seq=0` 為空槽哨兵。**sim 產彈點最多寫此 ring**，`TracerView` 不得回寫 sim／不記錄 export（WP-25 硬約束）。 |
 | **`TracerView`** | render 唯讀 tracer view（[TracerView.ts](src/render/TracerView.ts)）：單一 `InstancedMesh(TRACER_CAP)` **單 draw call**、`seq` 高水位增量同步、`Object3D`/向量 scratch 重用（比照 `ImpactView`）。壽命漸隱採 **render-time 縮尾**（非 per-instance alpha，保單 draw call）；expired instance 以 `1e-9` 極小 scale 隱藏。tracer 關閉 = render loop 不呼叫 `sync`（零同步工作）。 |
 | **彈道模型 gate（`WeaponConfig.bullet`）** | 選填 `{ model:'projectile'; speedU; gravityU; maxRangeU }`。**省略 = hitscan（現行 `ballisticRaycast` 路徑，程式碼路徑零改動、逐位不變）**——這就是使用者要的 Bullet Type Enabled/Disabled 開關，同時保護 stage1–3 全部 golden/決定性 baseline。`validateWeapon` field-path 驗證；對到靶飛行時間 `< 2 ticks` 的組合發 warning（退化 hitscan）。參數域 = GD-17（見 §E 下方註／DECISIONS）。 |
