@@ -17,6 +17,9 @@
 | 2026-08-04 | T1 | ✅ scaffold + schema v2 ingest + dt report + deterministic synthetic export 完成 | `uv run pytest -q -p no:cacheprovider --basetemp .pytest_tmp_t1_final`:**12 passed in 0.92s** |
 | 2026-08-04 | T1 fixture | ✅ committed 合成 fixture 可重生且通過 round-trip | `synthetic_counterstrafe.json`:18,193 bytes / 48 ticks / 11 events;event types=`visible,counter,ads,fire,hit`;participantId=`anonymous-synthetic` |
 | 2026-08-04 | T1 real-data gate | 🟡 真實匯出 round-trip 未執行 | **M14 ① blocker 維持**;樣本到位後放 `research/fixtures/exports/` 並補跑 ingest + dt report |
+| 2026-08-04 | T2 | ✅ ω(t)/ε(t)/on_target + Python↔TS ε presentation parity 閘完成 | `uv run pytest -q -p no:cacheprovider --basetemp .pytest_tmp_t2_final3`:**26 passed in 1.34s**;`npm run test:ci`:tsc PASS + Vitest **82 files / 641 tests passed** + Playwright **18 passed** |
+| 2026-08-04 | T2 parity | ✅ `synthetic_counterstrafe` 逐 presentation 對表 `deriveTrackingMetrics`≤1e-9 | parity 覆蓋 acquisition failure + acquired 兩路;`tAcquireMs`/TOT/RMS/median/P95/null 語意全綠;TS 生產碼零修改 |
+| 2026-08-04 | T2 units | ✅ rad→deg 邊界維持單點 | `rg -n "np\\.degrees" research/src`:命中僅 `modules/kinematics/algorithms/angular.py` 兩處 |
 
 ---
 
@@ -29,6 +32,7 @@
 | D-28.2 | T0 使用 `pytest-custom-exit-code` 僅抑制 `NO_TESTS_COLLECTED`,讓指定的零測試空跑為綠 | pytest 9.1.1 原生在 0 tests 回傳非零,與 T0 DoD 衝突;plugin 不抑制 collection error 或 test failure。Alternatives Considered:提前加 smoke test(拒絕:T1 tests tree out of scope)、包 shell `||`(拒絕:不再是指定的 `uv run pytest` 閘) | T0 本機驗證(2026-08-04) |
 | D-28.3 | `load_export(path)` 是 `algorithms/` 唯一受 T1 明文要求的 read-only I/O boundary;其餘 algorithms 仍維持純函式,所有寫檔只在 notebook-side generator | T1 interface contract 指定 path loader 與 `algorithms/loader.py`,但 C-D2 泛稱禁 file I/O;以更具體契約限縮例外,並用 import 純度測試鎖住零副作用。Alternatives Considered:移到 adapter 目錄(拒絕:偏離已採納 interface path)、讓 algorithms 寫 fixture(拒絕:C-D2 且混合計算/輸出) | T1 contract + purity test(2026-08-04) |
 | D-28.4 | T1 有實質 tests 後移除 T0 的 `pytest-custom-exit-code` | 已不再需要抑制 0-test exit;保持 dev dependency 最小。Alternatives Considered:永久保留 plugin(拒絕:無用途的測試依賴) | T1 pyproject/uv.lock(2026-08-04) |
+| D-28.5 | `omega_deg_s` 的 yaw `cos(pitch)` 校正採相鄰兩 tick 的 midpoint pitch | midpoint 對離散區間兩端對稱,且在 pitch 同時改變時比固定取前一 tick 少方向性偏差;高 pitch/變 pitch fixture 鎖死。Alternatives Considered:前一 tick pitch(拒絕:非對稱且規格已允許更準確的 midpoint) | T2 angular.py + geometry fixtures(2026-08-04) |
 
 ---
 
@@ -41,6 +45,7 @@
 | S-28.2 | pytest 9.1.1 收集 0 tests 時原生退出非零,不是 T0 文案所述的綠燈 | 若不處理,T0 無法同時滿足「不提前開 T1 tests tree」與 `uv run pytest` exit 0 | dev-only `pytest-custom-exit-code` + `--suppress-no-test-exit-code`;實測 0 tests / exit 0 |
 | S-28.3 | Windows `%TEMP%/pytest-of-*` 與 escalated pytest 產物有 ACL 限制 | 首輪 3 passed / 8 setup errors,錯誤全為 `PermissionError`,非 assertion failure | 正式閘固定 workspace `--basetemp` 並停用 cacheprovider;`.pytest_*`/cache/venv 納入 `research/.gitignore` |
 | S-28.4 | C-D2 泛稱 `algorithms/` 禁 I/O,但 T1 同時指定 `algorithms/loader.py:load_export(path)` | 若不記邊界,後續可能誤把此必要 read adapter 擴張成一般演算法 I/O | D-28.3 限縮為 loader call-time read-only 例外;import/其他 algorithms/所有 writes 仍受純度閘約束 |
+| S-28.5 | ω combined fixture 首輪把 30° yaw + 40° pitch 誤寫成未套 midpoint-pitch 校正的 50°/s | core 首輪為 10 passed / 1 failed,若照錯誤 golden 修改演算法會違反 T2 公式 | 依 `sqrt((Δyaw·cos(midpoint pitch))²+Δpitch²)/Δt` 修正 fixture 為 48.935876°/s;重跑後 11/11 core tests PASS |
 
 ---
 

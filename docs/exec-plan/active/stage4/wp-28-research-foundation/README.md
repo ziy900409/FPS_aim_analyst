@@ -10,7 +10,7 @@
 | **相依** | M4 ✅ + WP-16 ✅ + **M11/M12 ✅**(`meta.targets.hitbox` / tick `ads` / `hit` 事件語意已鎖) |
 | **對應 FR** | FR-D1 ~ FR-D6 |
 | **估時** | 3.5–4.5 dev-days |
-| **狀態** | 🟡 進行中(T0/T1 ✅ 2026-08-04;T2 待執行) |
+| **狀態** | 🟡 進行中(T0/T1/T2 ✅ 2026-08-04;T3 待執行) |
 
 ---
 
@@ -60,7 +60,7 @@ CLAUDE.md §4                                     ← MODIFY C-D1~C-D4 四條硬
 |---|---|---|---|---|
 | **T0 ✅** | [T0-entry-gate.md](T0-entry-gate.md) | 決策落地(OQ-S4-1/7/8)+ CLAUDE.md §4 C-D1~C-D4 + 樣本狀態記錄 | — | Low |
 | **T1 ✅** | [T1-scaffold-ingest.md](T1-scaffold-ingest.md) | 四目錄制 + `load_export`/`check_dt` + 合成匯出產生器 | T0 | Low |
-| **T2** | [T2-angular-kinematics.md](T2-angular-kinematics.md) | ω(t)/ε(t)/on_target + **ε 層雙向 parity 閘** | T1 | **High** |
+| **T2 ✅** | [T2-angular-kinematics.md](T2-angular-kinematics.md) | ω(t)/ε(t)/on_target + **ε 層雙向 parity 閘** | T1 | **High** |
 | **T3** | [T3-submovement-segments.md](T3-submovement-segments.md) | SG 平滑 + submovement 分段 + 參數凍結 | T2 | **High** |
 | **T4** | [T4-per-segment-flags.md](T4-per-segment-flags.md) | `per_segment_apply` + quality flags | T3 | Low |
 | **T-exit** | [T-exit-gate.md](T-exit-gate.md) | M14 宣告(六項證據;真實資料項為阻塞) | T1–T4 | — |
