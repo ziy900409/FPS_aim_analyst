@@ -10,7 +10,7 @@
 | **上游門檻** | M4 ✅(schema v2 匯出鏈)+ WP-16 ✅(v2 欄位)+ **M11/M12 ✅**(`meta.targets.hitbox`/tick `ads`/`hit` 事件語意已鎖);**引擎零改動**(例外:WP-29 T3 選配 key-event 記錄、WP-32 metrics/UI 層,皆不碰 sim)。M13 手動回填(#32)**不阻塞** |
 | **技術棧** | 新增:**Python 3.12 + uv + pyproject**(numpy/pandas/scipy;pytest)於 `research/`(OQ-S4-1 ✅);既有 TS 棧觸及點 = 對表 vitest(WP-28 T2、WP-32 T1)+ `src/metrics/` 與結果頁(WP-32) |
 | **估時** | 11–16 dev-days(WP-28~32) |
-| **狀態** | 🟡 **已採納,WP-28 展開中**;WP-28 T0 ✅ / T1 待執行 · WP-29 ⬜ · WP-30 ⬜ · WP-31 ⬜ · WP-32 ⬜。**已知阻塞項**:真實 drill 匯出樣本未取得(使用者後補)→ M14 不得宣告(§4);演算法開發以合成匯出產生器解鎖(WP-28 T1) |
+| **狀態** | 🟡 **已採納,WP-28 展開中**;WP-28 T0/T1 ✅ / T2 待執行 · WP-29 ⬜ · WP-30 ⬜ · WP-31 ⬜ · WP-32 ⬜。**已知阻塞項**:真實 drill 匯出樣本未取得(使用者後補)→ M14 不得宣告(§4);演算法開發已由合成匯出產生器解鎖(WP-28 T1) |
 
 ---
 
@@ -321,7 +321,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 
 | WP | 子資料夾 | 目標 | 優先序 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|---|
-| **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags | P0-2 | **M14** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 T0 ✅ / T1 待執行 |
+| **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags | P0-2 | **M14** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 T0/T1 ✅ / T2 待執行 |
 | **WP-29** | `wp-29-coach-timeline/` | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件) | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ⬜ |
 | **WP-30** | `wp-30-trajectory-metrics/` | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14** | 2–3 | ⬜ |
 | **WP-31** | `wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14** | 2–3 | ⬜ |

@@ -1,0 +1,1 @@
+"""Submovement segmentation research module."""
