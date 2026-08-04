@@ -92,6 +92,7 @@ class Segment:
     end_idx: int
     peak_omega: float
     flags: tuple[str, ...] = ()
+    peek_index: int | None = None
 
     def __post_init__(self) -> None:
         if self.kind not in ("primary_flick", "micro_adjustment"):
@@ -102,6 +103,12 @@ class Segment:
             raise ValueError("peak_omega must be finite and non-negative")
         if not isinstance(self.flags, tuple) or not all(isinstance(flag, str) for flag in self.flags):
             raise ValueError("flags must be a tuple of strings")
+        if self.peek_index is not None and (
+            isinstance(self.peek_index, bool)
+            or not isinstance(self.peek_index, int)
+            or self.peek_index < 0
+        ):
+            raise ValueError("peek_index must be a non-negative integer or None")
 
 
 class SegmentList(list[Segment]):

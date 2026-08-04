@@ -95,13 +95,21 @@
     "mtime": 1785835260.2911694,
     "hash": "03d0e1eda6c7b84b6257257b2d53ca57"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\segments\\algorithms\\apply.py": {
+    "mtime": 1785846408.5031233,
+    "hash": "56bb2b118935bc943606bb11c5b3c0f1"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\segments\\algorithms\\submovement.py": {
-    "mtime": 1785844840.7208786,
-    "hash": "c0d70c6fc81204057152de9eaed8b43a"
+    "mtime": 1785845877.5289526,
+    "hash": "1044218a297975805faac1ecd1badcbf"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\segments\\algorithms\\__init__.py": {
-    "mtime": 1785843838.617182,
-    "hash": "71af3accd8c8d7532e437c0c0bb38967"
+    "mtime": 1785845880.6017828,
+    "hash": "c7aafa9a94f7253887987511cfd54f3a"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\segments\\algorithms\\tests\\test_apply.py": {
+    "mtime": 1785845882.091967,
+    "hash": "b60222116590f44d3f846c28d6d5feff"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\segments\\algorithms\\tests\\test_submovement.py": {
     "mtime": 1785844842.2293885,
@@ -888,12 +896,12 @@
     "hash": "a1eaa821e20da08d026538f5581d0ac8"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage4\\wp-28-research-foundation\\progress.md": {
-    "mtime": 1785845070.2404184,
-    "hash": "8dbca4423ed5d9ae4134ceac53aadfe0"
+    "mtime": 1785846518.373585,
+    "hash": "bc2d2fb880bc2f3f3560605a9c119074"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage4\\wp-28-research-foundation\\README.md": {
-    "mtime": 1785844633.3291736,
-    "hash": "4ebf3996e12eed7eb04903c650791c6b"
+    "mtime": 1785846350.4503093,
+    "hash": "c6d8a48f5f65e643c8c454d6b5c41212"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage4\\wp-28-research-foundation\\T-exit-gate.md": {
     "mtime": 1785831264.5283246,
@@ -916,12 +924,12 @@
     "hash": "735ab89409495b8ab013426d43f7dcc0"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage4\\wp-28-research-foundation\\T4-per-segment-flags.md": {
-    "mtime": 1785831264.5466166,
-    "hash": "6f9e6d32ae9b82ed3f97abf0104b0751"
+    "mtime": 1785846351.5369003,
+    "hash": "7500b985b813ba3759c381081497acaf"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage4\\wp-28-research-foundation\\task-checklist.md": {
-    "mtime": 1785844634.5962744,
-    "hash": "6fea41967b586efca558a1c6964acb9b"
+    "mtime": 1785846352.6746013,
+    "hash": "2a5b7da58ba5719352c9bec84758dae8"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage5\\wp-25-ballistics-tracer\\ENHANCEMENT-tracer-pertick-replay.md": {
     "mtime": 1785827798.6873362,
@@ -1954,6 +1962,10 @@
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\operational\\analysis-lead.md": {
     "mtime": 1783992105.6323495,
     "hash": "6e8664e7bdae89ccf3226e2805f386a1"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\operational\\analysis-segments.md": {
+    "mtime": 1785846197.4320295,
+    "hash": "5bd4fbedffe5d80723c0312c87d3d8ae"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\operational\\analysis-t-detect.md": {
     "mtime": 1783586921.754269,

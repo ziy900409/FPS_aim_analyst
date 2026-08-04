@@ -24,6 +24,8 @@
 | 2026-08-04 | T3 sweep | ✅ 243 組(SG window × k × floor × low/stop ratio)決定性掃參;108 組通過六情境 | selected `seg-v1`:case failures=0,max boundary error=**1 tick**;CSV 9,824 bytes;重生 SHA-256 同為 `B83C726F…77E577B` |
 | 2026-08-04 | T3 engine gate | ✅ research-only 變更未破壞引擎/parity gate | `npm run test:ci`:tsc PASS + Vitest **82 files / 641 tests passed** + Playwright **18 passed** |
 | 2026-08-04 | T3 real-data gate | 🟡 真實 drill 分段成功率與 ω(t) 疊圖未執行 | **M14 ④ blocker 維持**;runner 已備妥 `--real-export`，樣本到位後產 summary/segments/overlay SVG |
+| 2026-08-04 | T4 | ✅ `per_segment_apply` + `summarize_with_flags` + 封閉 quality vocabulary + `peek_index` 傳遞完成 | targeted T4:**8 passed in 1.47s**;final full `uv run pytest -q -p no:cacheprovider --basetemp .pytest_tmp_t4_final`:**61 passed in 4.85s** |
+| 2026-08-04 | T4 engine gate | ✅ per-segment research 變更未破壞引擎/parity gate | `npm.cmd run test:ci`:tsc PASS + Vitest **82 files / 641 tests passed** + Playwright **18 passed** |
 
 ---
 
@@ -40,6 +42,8 @@
 | D-28.6 | filter 退化輸入採明確 `ValueError`;只有 `segment_submovements` 對短於 SG window 的訊號採 raw fallback 並加 `sg_fallback_short_signal` | filter 簽名沒有 flag channel，回 raw 會靜默；分段結果有可觀測 flag，可安全保留短窗分析。Alternatives Considered:兩層都拋錯(拒絕:短 peek 無法產生可聚合品質結果)、兩層都 fallback(拒絕:底層呼叫者無法辨識未濾波) | T3 filter/segment contract tests(2026-08-04) |
 | D-28.7 | pre-register `seg-v1`=`SG(7,3),k=0.5,floor=80deg/s,low=0.1,stop=0.2`;真實資料若否證只能升版重跑 | w=7≈55ms 且 k/ratio 沿移植骨架；80deg/s 取候選中點，避免 60 的噪聲敏感與 100 的低幅修正漏檢；六組合成 max error=1 tick。Alternatives Considered:等真實資料後才選(拒絕:形成看資料調參)、取所有通過組 ensemble(拒絕:無單一可追溯契約) | T3 243-grid sweep(2026-08-04) |
 | D-28.8 | 空分段回傳 list-compatible `SegmentList`，以 `result.flags` 承載 `zero_motion`/`below_floor`/`no_peak` | 契約要求回空 list 又要求正確 flag，普通空 list 無 Segment 可掛旗標；list subclass 保持既有迭代/equality 語意並補上 machine-readable outcome。Alternatives Considered:塞 sentinel Segment(拒絕:不再是空段)、只發 warning(拒絕:難以進 T4 聚合) | T3 empty-result tests(2026-08-04) |
+| D-28.9 | `QUALITY_FLAG_VOCABULARY` 同時枚舉 T4 必要旗標與 T3 已存在的 trace/segment flags；動態失敗只允許 `compute_failed:<非空 reason>` 模板 | 若只照 T4 列出的六個 exact flags，T3 合法輸出會在逐段入口被判非法；模板保留實際失敗原因又可封閉驗證。Alternatives Considered:丟棄 T3 flags(拒絕:品質資料遺失)、接受任意字串(拒絕:無法枚舉)、每個 exception reason 都預列 exact flag(拒絕:不可行) | T4 vocabulary closure tests(2026-08-04) |
+| D-28.10 | `Segment.peek_index` 採 nullable non-negative integer，`per_segment_apply` 原樣傳遞並禁止 `fn` 覆寫 | WP-29 才擁有 peek 重建；nullable default 保持 T3 呼叫相容，同時先固定 join 欄位契約。Alternatives Considered:由 T4 重建 peek(拒絕:越界)、只靠列順序(拒絕:跨表 join 脆弱)、允許 fn 產生 index(拒絕:每個指標可漂移) | T4 contract tests(2026-08-04) |
 
 ---
 
@@ -54,6 +58,7 @@
 | S-28.4 | C-D2 泛稱 `algorithms/` 禁 I/O,但 T1 同時指定 `algorithms/loader.py:load_export(path)` | 若不記邊界,後續可能誤把此必要 read adapter 擴張成一般演算法 I/O | D-28.3 限縮為 loader call-time read-only 例外;import/其他 algorithms/所有 writes 仍受純度閘約束 |
 | S-28.5 | ω combined fixture 首輪把 30° yaw + 40° pitch 誤寫成未套 midpoint-pitch 校正的 50°/s | core 首輪為 10 passed / 1 failed,若照錯誤 golden 修改演算法會違反 T2 公式 | 依 `sqrt((Δyaw·cos(midpoint pitch))²+Δpitch²)/Δt` 修正 fixture 為 48.935876°/s;重跑後 11/11 core tests PASS |
 | S-28.6 | T3 的 `segment_submovements(...) -> list[Segment]` 與「零/等速回空段 + 正確 flag」同時成立時，普通 list 沒有承載 trace-level flag 的位置 | 若只回 `[]`，T4 無法區分零運動、低於 floor、連續等速無 peak | D-28.8 採 list-compatible `SegmentList.flags`;正常 Segment 仍各自保有 flags |
+| S-28.7 | T4 文案列出的 vocabulary 未包含 T3 已實際產生的 `zero_motion`/`no_peak`/SG 與 non-finite flags | 若逐字只建六個 exact flags，T3→T4 的正常資料會被改寫成 compute failure | 依「新增 flag 必須加入詞彙表」將全部既有 T3 flags 納入常數與 `analysis-segments.md`，並用 closure test 鎖定 |
 
 ---
 
