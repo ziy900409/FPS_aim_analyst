@@ -429,7 +429,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
 
     expect(state.shotRays.total).toBe(1);
     expect(state.shotRays.cursor).toBe(1);
-    expect([state.shotRays.ox[0], state.shotRays.oy[0], state.shotRays.oz[0]]).toEqual([0, 1.5, 5]);
+    expect([state.shotRays.ox[0], state.shotRays.oy[0], state.shotRays.oz[0]]).toEqual([0.15, 1.38, 4.4]);
     expect(state.shotRays.ex[0]).toBeCloseTo(state.impacts.x[0], 12);
     expect(state.shotRays.ey[0]).toBeCloseTo(state.impacts.y[0], 12);
     expect(state.shotRays.ez[0]).toBeCloseTo(state.impacts.z[0], 12);

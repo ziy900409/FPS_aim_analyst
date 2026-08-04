@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu';
+import { computeMuzzleOrigin, DEFAULT_MUZZLE_OFFSETS } from '../render/muzzleOffset.ts';
 import { consume } from '../input/consume.ts';
 import { pushImpact, pushShotRay, resetBulletArena, type SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
@@ -101,6 +102,7 @@ const ballisticRight = new THREE.Vector3();
 const ballisticUp = new THREE.Vector3();
 const ballisticOrigin = new THREE.Vector3();
 const ballisticDir = new THREE.Vector3();
+const muzzleScratch = new THREE.Vector3();
 // 彈道命中點回填的重用欄位（WP-13 / T3）：命中時 raycastWithRay 就地寫入 world 座標，fireOneShot
 // 據此寫入 `state.impacts`（彈孔）——開火熱路徑零配置（GC 紀律 §4）。
 const ballisticHitPoint: HitPointOut = { valid: false, x: 0, y: 0, z: 0 };
@@ -234,6 +236,9 @@ function spawnProjectile(
   arena.ox[slot] = ballisticOrigin.x;
   arena.oy[slot] = ballisticOrigin.y;
   arena.oz[slot] = ballisticOrigin.z;
+  arena.mx[slot] = muzzleScratch.x;
+  arena.my[slot] = muzzleScratch.y;
+  arena.mz[slot] = muzzleScratch.z;
   arena.spawnT[slot] = t;
   const shotSeq = arena.nextShotSeq++;
   arena.shotSeq[slot] = shotSeq;
@@ -321,7 +326,7 @@ function advanceProjectiles(
       const hz = z0 + (z1 - z0) * hitS;
       const hitT = tickStartMs + tickMs * hitS;
       pushImpact(state.impacts, hx, hy, hz);
-      pushShotRay(state.shotRays, arena.ox[i], arena.oy[i], arena.oz[i], hx, hy, hz);
+      pushShotRay(state.shotRays, arena.mx[i], arena.my[i], arena.mz[i], hx, hy, hz);
       if (target.persistent !== true) targetManager?.markKilled(state, target.id);
       recorder?.recordEvent({
         type: 'hit',
@@ -350,7 +355,7 @@ function advanceProjectiles(
       const ex = x0 + (x1 - x0) * expireS;
       const ey = y0 + (y1 - y0) * expireS;
       const ez = z0 + (z1 - z0) * expireS;
-      pushShotRay(state.shotRays, arena.ox[i], arena.oy[i], arena.oz[i], ex, ey, ez);
+      pushShotRay(state.shotRays, arena.mx[i], arena.my[i], arena.mz[i], ex, ey, ez);
       deactivateProjectile(state, i);
     }
   }
@@ -411,6 +416,7 @@ function fireOneShot(
     else if (subAlpha > 1) subAlpha = 1;
     if (weapon?.bullet === undefined) {
       const result = ballisticRaycast(camera, state, subAlpha);
+      computeMuzzleOrigin(ballisticOrigin, ballisticQ, state.heldAds, DEFAULT_MUZZLE_OFFSETS, muzzleScratch);
       hit = accurate && result.hit;
       part = hit ? result.part : undefined;
       if (result.targetId !== undefined) targetId = result.targetId;
@@ -430,9 +436,9 @@ function fireOneShot(
         pushImpact(state.impacts, ballisticHitPoint.x, ballisticHitPoint.y, ballisticHitPoint.z);
         pushShotRay(
           state.shotRays,
-          ballisticOrigin.x,
-          ballisticOrigin.y,
-          ballisticOrigin.z,
+          muzzleScratch.x,
+          muzzleScratch.y,
+          muzzleScratch.z,
           ballisticHitPoint.x,
           ballisticHitPoint.y,
           ballisticHitPoint.z,
@@ -440,6 +446,7 @@ function fireOneShot(
       }
     } else {
       composeProjectileRay(camera, state);
+      computeMuzzleOrigin(ballisticOrigin, ballisticQ, state.heldAds, DEFAULT_MUZZLE_OFFSETS, muzzleScratch);
       const spawnedShotSeq = spawnProjectile(state, t, weapon, accurate);
       if (spawnedShotSeq === null) return false;
       shotSeq = spawnedShotSeq;

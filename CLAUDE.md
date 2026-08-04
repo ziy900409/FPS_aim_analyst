@@ -70,6 +70,7 @@
 - **彈道模型必須 config-gated**:`WeaponConfig.bullet` 省略時必須走現行 hitscan 路徑且逐位不變;projectile 演進只能是固定 128Hz 步長純函式,禁時鐘、禁 `Math.random`,參數由 config 注入(WP-25/GD-17)。
 - **子彈永不與場景幾何互動**:projectile / hitscan 只可測目標 hitbox;不得讓 `propBounds`、GLTF mesh 或場景 collision 進入彈道命中語意,以維持 GD-6 純裝飾場景本體論(WP-25/GD-6)。
 - **tracer/軌跡顯示為 render-only**:sim 產彈點最多寫 `SharedState` preallocated ring;`TracerView` 只能唯讀 ring 繪製,不得回寫 sim 狀態、不得記錄 export、不得改命中/指標語意(WP-25)。
+- **tracer origin 為 muzzle 偏移,與命中/彈道原點分離**:muzzle 只寫 `shotRays` / `BulletArena.m*`,不得進入 raycast 原點、`arena.o*`(maxRange/落地基準)或 `pushImpact`(WP-27/GD-18)。
 
 ---
 

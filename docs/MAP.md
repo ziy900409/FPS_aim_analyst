@@ -14,8 +14,8 @@
 | ① | [`../CONTEXT.md`](../CONTEXT.md) | 專有名詞 / ubiquitous language（repo 根） |
 | ② | [規格書](規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 需求、ADR-1~9、WBS、功能 F1–F5（source of truth） |
 | ③ | [PLAN.md](PLAN.md) | 大框架執行計畫：補充決策 D1–D5、技術棧、架構總覽、WP-0~9 |
-| ④ | [exec-plan/README.md](exec-plan/README.md) | 執行計畫頂層索引：把 WP-0~26（階段 A+B+C+E）展開成可執行子資料夾 |
-| ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/completed/stage2/wp-N-*/`（階段 B 已交付）、`exec-plan/completed/stage3/wp-N-*/`（階段 C 已交付；導航見 [stage3 MAP](exec-plan/completed/stage3/MAP.md)）、`exec-plan/completed/stage5/wp-N-*/`（階段 E 已歸檔;M13 待手動回填；tech spec 見 [stage5 README](exec-plan/completed/stage5/README.md)） | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
+| ④ | [exec-plan/README.md](exec-plan/README.md) | 執行計畫頂層索引：把 WP-0~27（階段 A+B+C+E + 單 WP muzzle-tracer）展開成可執行子資料夾 |
+| ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/completed/stage2/wp-N-*/`（階段 B 已交付）、`exec-plan/completed/stage3/wp-N-*/`（階段 C 已交付；導航見 [stage3 MAP](exec-plan/completed/stage3/MAP.md)）、`exec-plan/completed/stage5/wp-N-*/`（階段 E 已歸檔;M13 待手動回填；tech spec 見 [stage5 README](exec-plan/completed/stage5/README.md)）、**[`exec-plan/completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md)（WP-27，✅ 已交付）** | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
 
 ---
 
@@ -33,7 +33,9 @@
 
 ## 3. 執行計畫（`docs/exec-plan/`）
 
-頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M13）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/completed/stage2/README.md](exec-plan/completed/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/completed/stage3/MAP.md](exec-plan/completed/stage3/MAP.md) · [PLAN.md](exec-plan/completed/stage3/PLAN.md) · [README.md](exec-plan/completed/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/completed/stage5/README.md](exec-plan/completed/stage5/README.md)；stage4 為未採納草稿（編號分配見 [DECISIONS.md](exec-plan/DECISIONS.md) GD-15）。
+頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M13）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/completed/stage2/README.md](exec-plan/completed/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/completed/stage3/MAP.md](exec-plan/completed/stage3/MAP.md) · [PLAN.md](exec-plan/completed/stage3/PLAN.md) · [README.md](exec-plan/completed/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/completed/stage5/README.md](exec-plan/completed/stage5/README.md)；stage4 為未採納草稿（編號分配見 [DECISIONS.md](exec-plan/DECISIONS.md) GD-15，採納時重編 WP-28+）。
+
+**單 WP（不屬任何 stage）**：[`completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md) = **WP-27**，tracer 視覺起點自準心移至槍口（hip）+ ADS 時移至準心下方；render-only，命中判定/彈道物理/匯出**三不變**。✅ 已交付 2026-08-04（[DECISIONS.md](exec-plan/DECISIONS.md) **GD-18**），無獨立里程碑。Task：[T0](exec-plan/completed/muzzle-tracer/T0-entry-gate.md) · [T1 hip](exec-plan/completed/muzzle-tracer/T1-hip-muzzle-tracer.md) · [T2 ADS](exec-plan/completed/muzzle-tracer/T2-ads-muzzle.md) · [T-exit](exec-plan/completed/muzzle-tracer/T-exit-gate.md)。
 
 ### 3.1 資料夾慣例
 
@@ -42,7 +44,7 @@ docs/exec-plan/
 ├── README.md              ← 頂層索引（WP 狀態表 + milestones）
 ├── DECISIONS.md           ← 全域決策 / 跨文件矛盾帳本（global episodic）
 ├── active/                ← 進行中的 WP
-│   └── stage4/            ← 階段 D 草稿（選手表現分析管線；未採納，僅 README；GD-15）
+│   └── stage4/            ← 階段 D 草稿（選手表現分析管線；未採納，僅 README；GD-15 → 重編 WP-28+）
 ├── completed/             ← WP 交付後移入
 │   ├── stage1/            ← 階段 A 已交付（WP-0~9）
 │   │   └── wp-N-*/
@@ -52,9 +54,10 @@ docs/exec-plan/
 │   ├── stage3/            ← 階段 C 已交付（WP-19~22）
 │   │   ├── MAP.md         ← stage3 導航 · PLAN.md ← 大框架 · README.md ← tech spec
 │   │   └── wp-N-*/
-│   └── stage5/            ← 階段 E 已歸檔（BR 遠距跟槍測試，WP-23~26；M13 待 #32 手動回填）
-│       ├── README.md      ← stage5 頂層索引 + tech spec
-│       └── wp-N-*/
+│   ├── stage5/            ← 階段 E 已歸檔（BR 遠距跟槍測試，WP-23~26；M13 待 #32 手動回填）
+│   │   ├── README.md      ← stage5 頂層索引 + tech spec
+│   │   └── wp-N-*/
+│   └── muzzle-tracer/     ← WP-27（✅ 已交付 2026-08-04，GD-18）
 └── superseded/            ← 被取代的計畫
 ```
 

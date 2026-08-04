@@ -82,6 +82,14 @@
 | **WP-25** | [`completed/stage5/wp-25-ballistics-tracer/`](completed/stage5/wp-25-ballistics-tracer/README.md) | 彈道：tracer 顯示（T1 獨立）+ config-gated projectile（數學核心/sim 整合/指標語意） | **M12 ✅** | T1 獨立；T2+ 需 M11 | 4–6.5 | ✅（2026-07-14） |
 | **WP-26** | [`completed/stage5/wp-26-br-scene-integration/`](completed/stage5/wp-26-br-scene-integration/README.md) | BR 場景實作與整合：`br-field` 原創資產/上線 + `tracking_br_v1` + protocol + E2E + 驗收清單 E | **M13** | WP-23, 24, 25 | 3–5 | 🟡 自動閘 ✅ / M13 待手動 |
 
+**單 WP（`completed/muzzle-tracer/`，✅ 已交付 2026-08-04；編號分配 [DECISIONS.md](DECISIONS.md) GD-18）**
+
+> WP-25 tracer 家族的 render-only 視覺延伸，不屬任何 stage、**無獨立里程碑**（T-exit gate 即交付判定）。依 GD-15「先採納先得」取用 **WP-27**，stage4 草稿順延重編為 **WP-28+ / M14+**。
+
+| WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
+|---|---|---|---|---|---|---|
+| **WP-27** | [`completed/muzzle-tracer/`](completed/muzzle-tracer/README.md) | tracer 視覺起點自準心移至**槍口**（hip 右手位）+ ADS 時移至**準心下方**；命中判定/彈道物理/匯出**三不變**（GD-18） | —（exit gate 即交付） | WP-25 ✅ + WP-24 ✅ + **KI-002 D1 ✅**（[BD-002](../known_issue/BUGFIX-DECISIONS.md)） | 1.75–2.75 | ✅（2026-08-04） |
+
 ---
 
 ## 3. 里程碑門控（gates）
@@ -143,6 +151,15 @@ WP-25 T1（tracer）──────┴─────────────
 
 - 階段 E 三線可並行開跑：WP-23、WP-24、WP-25 T1 互不相依（hitbox 鏈 / 輸入+相機鏈 / SharedState+render 鏈,無檔案熱區重疊）;WP-26 T1（資產）可提前並行。**M11 未過不進 WP-25 T2+；M12 未過不進 WP-26 T3+**。詳見 [`completed/stage5/README.md §5`](completed/stage5/README.md)。
 
+```
+單 WP（completed/muzzle-tracer/；上游門檻 = WP-25 ✅ + WP-24 ✅ + KI-002 D1 ✅）
+WP-25（tracer）─┐
+WP-24（ADS）────┼→ WP-27（muzzle tracer：T0 → T1 hip → T2 ADS → T-exit）
+KI-002 D1（BD-002，相機錨定 sim origin）─┘
+```
+
+- WP-27 不屬任何 stage、無獨立里程碑；**T1 未綠不開 T2**（ADS 是 hip 路徑的分支）。KI-002 D1 是硬前置：未修時偏移基準錯（camera z=144），數值全錯——該前置已於 2026-07-15 落地。WP-27 已於 2026-08-04 交付，詳見 [`completed/muzzle-tracer/README.md`](completed/muzzle-tracer/README.md)。
+
 ---
 
 ## 5. 執行規則（每 task 一個切片）
@@ -163,7 +180,7 @@ docs/exec-plan/
 ├── README.md                          ← 本檔（頂層索引）
 ├── DECISIONS.md                       ← 全域決策 / 跨文件矛盾帳本
 ├── active/                            ← 進行中的 WP
-│   └── stage4/                        ← 階段 D 草稿（選手表現分析管線；未採納，僅 README；GD-15）
+│   └── stage4/                        ← 階段 D 草稿（選手表現分析管線；未採納，僅 README；GD-15 → 重編 WP-28+）
 ├── completed/                         ← WP 交付後移入
 │   ├── stage1/                        ← 階段 A（WP-0~9，✅ 交付；格式模板）
 │   │   └── wp-N-*/
@@ -179,8 +196,9 @@ docs/exec-plan/
 │   ├── stage3/                        ← 階段 C（WP-19~22，✅ 交付）
 │   │   ├── README.md                  ← stage3 頂層索引 + tech spec
 │   │   └── wp-N-*/
-│   └── stage5/                        ← 階段 E（WP-23~26；歸檔 2026-07-15，M13 待 #32 手動回填）
-│       ├── README.md                  ← stage5 頂層索引 + tech spec
-│       └── wp-N-*/
+│   ├── stage5/                        ← 階段 E（WP-23~26；歸檔 2026-07-15，M13 待 #32 手動回填）
+│   │   ├── README.md                  ← stage5 頂層索引 + tech spec
+│   │   └── wp-N-*/
+│   └── muzzle-tracer/                 ← WP-27（✅ 交付 2026-08-04；GD-18）
 └── superseded/                        ← 被取代的計畫
 ```
