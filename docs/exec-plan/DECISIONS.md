@@ -23,6 +23,31 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-20 ✅ 教練報告紅線 — 構念驗證 gate 為進報告前提;P3 儀器研究延遲決策(2026-08-04)
+
+| | |
+|---|---|
+| **發現處** | [stage4 計畫](active/stage4/README.md) 採納(§1.3 C-D3、§0.0 P2/P3 分層)。stage4 的 P2 指標(Key-Velocity Coupling xcorr、SPARC、Fitts)有兩類效度風險:**構念未驗證**(xcorr 是本專案原創構念,128Hz + 階段 A 二元移動速度下是否穩定未知)與**資料不足**(Fitts 需 D 變異)。若這類指標直接進教練報告,教練會據以下訓練處方——說錯話的成本高於少一個指標。 |
+| **決議(紅線)** | **未通過構念驗證的指標不得進教練報告**。P2 指標必須內建 gate 並輸出**明確二元判定**:`coach_report`(可對選手解讀)或 `research_only`(僅研究記錄)。xcorr 的 gate = split-half reliability + shuffle baseline(門檻 OQ-S4-3,WP-31 T0 **pre-register 凍結**,事後不得調整);Fitts 的 gate = D 變異充足性,不足時輸出 `blocked-by-data` 而非硬給回歸結論。判定與證據記該 WP `progress.md`。 |
+| **決議(P3 延遲)** | 下列項目**明文不進 stage4**,各附觸發條件:① **LDJ-V**(觸發 = SPARC 上線後需第二平滑度指標交叉驗證,且先解 128Hz jerk 頻帶放大問題)② **velocity scaling 回歸**(觸發 = 每條件 n ≥ 5 primary_flick 且 D 跨 ≥ 2 倍)③ **RawInputTrace + schema v3 / 瀏覽器輸入保真度 bench / polling rate 1k–8k 實驗**(唯一需動輸入-匯出鏈者;觸發 = 明確硬體研究委託 → 另立 stage,先跑保真度 spike 並以 performance_analysis 原生採集為 ground-truth)④ **即時 drill 中指標回饋**(觸發 = 教練工作流需 drill 中介入)⑤ **跨 session/選手縱貫資料庫**(觸發 = 累積 ≥ 3 session 或 ≥ 3 選手)。 |
+| **理由** | 效度優先於指標數量:一個未驗證構念進報告,會讓教練把雜訊當訊號並改動訓練處方,傷害不可逆且事後難稽核;而少一個指標的成本只是資訊量。pre-registration(先凍門檻再看資料)是避免「調門檻直到指標好看」的唯一機制,與 GD-5/GD-8 既有 pre-registered 紀律一致。P3 全列觸發條件而非直接刪除,是為了讓後續委託有可引用的判準,避免每次重新爭論範圍。 |
+| **影響面** | [stage4 README](active/stage4/README.md) §1.3 C-D3 / §2.1 out of scope / §6 WP-31 / §7;WP-31 T0(門檻凍結)與 T2/T3(判定產出);[CLAUDE.md](../../CLAUDE.md) §4(WP-28 T0 回寫);教練報告模板(WP-29 T-exit)。 |
+| **狀態** | ✅ 採納生效(2026-08-04);各 P2 指標判定於 WP-31 各 task 產出。 |
+
+### GD-19 ✅ stage4 採納 — WP-28~32 / M14~M15 重編 + research 層邊界 + parity 雙向(2026-08-04)
+
+| | |
+|---|---|
+| **發現處** | [stage4 計畫](active/stage4/README.md)(2026-07-09 草稿;2026-08-04 採納)。採納期讀碼對帳發現草稿的**一項核心技術假設與實況不符**:草稿把 ε(t) 當作本 stage 新推導,但 ε(t) 語意、`eyeY = 1.6`、hitbox 來源與 peek 窗界 `[t_visible, nextVisible.t)` **已被 TS 實作與 operational spec 釘死**([trackingDerivation.ts](../../src/metrics/trackingDerivation.ts)、[detectionDerivation.ts](../../src/metrics/detectionDerivation.ts)、[analysis-tracking.md](../operational/analysis-tracking.md)、[analysis-t-detect.md](../operational/analysis-t-detect.md))。若照草稿只做單向 parity,stage4 全部逐段指標會建在一個未對表的 ε 上。 |
+| **決議(編號)** | 採納為 **WP-28~32 / M14~M15 / 驗收清單 D**(`docs/operational/acceptance-stage-d.md`)。依 GD-15「先採納先得」,草稿原編號重編:WP-23→**28**(research 地基,M14)、WP-24→**29**(教練時間軸)、WP-25→**30**(軌跡診斷)、WP-26→**31**(進階診斷)、WP-27→**32**(晉升整合,M15);M11/M12→**M14/M15**。**`OQ-S4-n` 編號不變**(草稿期已被引用,保留追溯性),新增者續編 OQ-S4-7/8。 |
+| **決議(research 層邊界)** | **C-D1 單向隔離**:`research/` 只讀匯出 JSON/CSV 與 committed fixture,**不得 import 任何 TS 模組**;`src/` 不得 import Python 產物(唯一例外 = committed golden/parity JSON)。**C-D2 `algorithms/` 純函式**(禁 matplotlib/print/file I/O,繪圖與 I/O 落 `notebooks/`)。**C-D4 既有構念不得有第二定義**:ε(t)/on-target/t_acquire/t_detect/peek 窗界以 `docs/operational/analysis-*.md` + `src/metrics/` 為權威,Python 側差異視為 bug 或須入帳的語意分歧,不得靜默各算一套。 |
+| **決議(parity 雙向 + CI 落點)** | parity **雙向**且共用一套機制:**TS → Python**(既有構念)Python 產 `research/fixtures/parity/*.json`(逐 presentation 的 `tAcquireMs`/`totPercent`/`rmsEpsilonDeg`/`medianEpsilonDeg`/`p95EpsilonDeg`),由 `tests/golden/research/*.test.ts` 對同一匯出跑 `deriveTrackingMetrics` 比對 ≤1e-9;**Python → TS**(新構念,WP-32)Python 產 `fixtures/golden/*.json`,`src/metrics/` 新實作 table-driven 對表。對表面**限 TS 既有公開輸出,不為對表新增任何 TS API**。**CI 落點(OQ-S4-7)**:Python 閘 **不進** `npm run test:ci`(避免引擎工作被 Python 工具鏈綁住),改為 `uv run pytest` 獨立閘 + 雙向 fixture 進 `test:ci`(跨語言漂移仍會紅)+ M15 要求雙閘證據。 |
+| **決議(工具鏈與 fixture)** | **OQ-S4-1:Python 3.12 + uv + pyproject**(環境已驗 Python 3.12.10 / uv 0.9.18);移植對象是 performance_analysis Python 實作,scipy 生態必要。**OQ-S4-8 fixture 政策**:真實匯出 fixture ≤ 30s drill(≈3840 ticks)+ `participantId` 匿名化,存 `research/fixtures/exports/`;長 drill 只在本機分析不進 repo。 |
+| **理由(三項讀碼發現)** | **(a) ε 已有權威實作** → parity 必須雙向,否則 M14 綠燈是假的(見上)。**(b) schema 沒有 `kill`/`timeout` 事件**([schema.md](../operational/schema.md) events = visible/counter/ads/fire/hit):草稿 FR-D6 的 `t_kill/timeout` 必須推導(hitscan → `fire.hit`;projectile → `shotSeq` 關聯的 `hit` 事件;timeout → 窗內無命中),窗界沿用 TS 定義不得另立。**(c) `counter` 事件是條件性的**([SimLoop.ts:73-76](../../src/loop/SimLoop.ts#L73-L76) 僅在 `ev.down && !held(反向) && vx 反號` 時記錄)→ 已停住才開槍的 peek 沒有 counter 事件,故 Sync 族缺事件是常態語意,必須是 `flag` 而非 NaN;t_release 無事件,只能自 `ticks[].keys` 取(±1 tick = 7.8125ms),升級判準見 stage4 §2.4d。 |
+| **未決** | 真實 drill 匯出樣本尚未取得(使用者後補)→ **M14 ①④(真實 ingest / 真實分段報告)為阻塞項**;WP-28 T1 交付**合成匯出產生器**解鎖演算法與 parity 開發,但合成不得替代 M14 的真實資料項。其餘見 stage4 §8(OQ-S4-2/3/4/5/6)。 |
+| **影響面** | [stage4 README](active/stage4/README.md) 全篇;[exec-plan/README.md](README.md) §2/§3/§4/§6;[docs/MAP.md](../MAP.md) §3;[CLAUDE.md](../../CLAUDE.md) §4(C-D1~C-D4,WP-28 T0);[CONTEXT.md](../../CONTEXT.md)(research 層術語,各 task 隨切片);新檔 `docs/operational/analysis-segments.md`(WP-28 T-exit)、`acceptance-stage-d.md`(WP-32 T-exit);新增 `tests/golden/research/`(對表閘)。 |
+| **狀態** | ✅ 採納生效(2026-08-04);WP-28 子資料夾已展開,T0 待執行。 |
+
 ### GD-18 ✅ muzzle-tracer 採納 — WP-27 編號 + 五項設計拍板(tracer 槍口起點)(2026-08-03)
 
 | | |
