@@ -14,23 +14,33 @@
 
 ---
 
-## 0. 進場現況(2026-08-05 讀資料,影響 scope 與 DoD)
+## 0. 進場現況(2026-08-05 讀資料 + 補錄,影響 scope 與 DoD)
 
-**唯一真實匯出 [`counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json`](../../../../../research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json) 是一份「純瞄準、零位移」的 run**:
+`research/fixtures/exports/` 現有**兩份**真實匯出,構成一組天然對照。第二份(09:39)是為排查第一份「零位移」而補錄的,詳見 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md)。
 
-| 觀察 | 值 | 對 WP-29 的意義 |
+| | [08:03](../../../../../research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json) | [**09:39**](../../../../../research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json) |
 |---|---|---|
-| `events` 型別分布 | `fire` 22 / `visible` 20;**`counter` 0、`ads` 0、`hit` 0** | `counterReactionMs`/`fireTimingAlignmentMs` 在真實樣本上 **n = 0**;t_counter 錨點無樣本 |
-| `ticks[].keys` | 3,507 tick **全為 `[]`**,鍵狀態轉換 0 次 | **t_release 在真實樣本上不可量測** → Sync 族三個指標全部無樣本 |
-| `ticks[].vx` | 恆 0(無 strafe) | 本樣本不是 counter-strafe 行為樣本,只是 drill id 叫 counterstrafe |
-| peek 面 | 20 peeks(L10/R10)、visible 間隔中位數 500 ms、首發全中(`firstShotHitRate` = 100) | 時間軸骨架、`outcome` 分類、`firstShotHitRate` 交叉驗證**可**在真實資料上做 |
-| 彈道 | `meta.weapon.bullet` 缺席(hitscan)、`fire.hit` = true × 20 | `t_hit` 走 hitscan 路徑;projectile `hit`/`shotSeq` 路徑只有合成 fixture 可驗 |
+| 時長 / ticks | 27.39s / 3,507 | 21.27s / 2,723 |
+| `ticks[].keys` | **全為 `[]`**,零鍵狀態轉換 | `A` 617 / `D` 587 / `A+D` 33 / 空 1,486 |
+| `counter` 事件 | **0** | **24**(`A` 12 / `D` 12) |
+| `vx` / `max\|px\|` | 恆 0 / 0 | ±250(612 個相異值)/ 169.25 |
+| `visible` / `fire` | 20 / 22 | 20 / 22 |
+| `counterReactionMs` | **n = 0** | **n = 20**,中位數 427.2 ms |
+| `fireTimingAlignmentMs` | **n = 0** | **n = 20**,中位數 126.5 ms |
+| `firstShotHitRate` | 100 | 90 |
+| `meta.suspect` | false | **true**(KI-004;非效能/溢位問題) |
+| 彈道 / ADS | hitscan、`ads` 事件 0 | hitscan、`ads` 事件 0 |
 
-**三個直接後果(已寫入下方契約與 DoD,不是備註)**:
+**08:03 那份的成因已結案**:不是引擎缺陷,是該次 run 確實沒有鍵盤輸入 —— 同 build、同機器、同流程重錄後鍵盤資料完整落盤(`keydown → onKeyDown → pushKey → ring → consume → applyInput → held → movement.step → ticks[].keys` 全鏈驗證通過)。
 
-1. **反 vacuous 條款**:FR-D8 的 ≤1e-9 對表若只跑真實 fixture,兩個指標會以 `n=0 vs n=0` **假綠**。故交叉驗證閘**必須同時跑合成 + 真實**,且對合成 fixture 斷言三個量各自 `n ≥ 2`、`firstShotHitRate` 同時涵蓋命中與未命中路徑(T1 DoD ②)。
-2. **T2 精度評估的第三分支**:§2.4d 的 pre-registered 判準(量化誤差 SD ≥ 樣本 SD 的 1/3 → 觸發 T3)在 n=0 時無法評估。T0 必須先凍結 `blocked-by-data` 分支與最小樣本數,**評估後才看資料**(見 [T0](T0-entry-gate.md) §決策 3)。
-3. **新資料需求入 OQ**:「帶真實 A/D strafe 的 counter-strafe 匯出」是 Sync 族效度的前提,列 **OQ-S4-9**(owner/deadline 見 §7),不阻塞 T1/T2 的演算法與合成 fixture 驗證。
+**四個直接後果(已寫入下方契約與 DoD,不是備註)**:
+
+1. **真實資料現在可承擔交叉驗證**:09:39 三個量都有 n=20,FR-D8 的 ≤1e-9 對表在真實 fixture 上是實質的。
+2. **反 vacuous 條款仍然保留**,但改變理由:不再是「真實資料沒樣本」的權宜,而是**紀律** —— 對表閘必須斷言參與比對的樣本數非零,否則未來換 fixture 時可能無聲退化成 `n=0 vs n=0` 假綠(T1 DoD ②)。
+3. **T2 精度評估不再預期落 `blocked-by-data`**:09:39 提供 20 個 `release_to_fire_ms` 樣本,`sync-v1` 判準可以真的跑出 `sufficient` / `insufficient`。三分支仍保留(未來 fixture 未必有樣本),但 T3 是否觸發從此是**有證據的決定**。
+4. **兩份 fixture 分工明確**:08:03 = 「零輸入」邊界案例(所有錨點缺席時報告不得 crash);09:39 = 主要真實效度樣本。兩者都要進 T1/T2 的測試矩陣。
+
+> ⚠️ **09:39 帶 `suspect: true`,但這不代表資料不可用。** 成因是 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) 的 corridor gate 單位域錯誤(source unit 比 world unit,門檻緊 100×),**任何**有做急停的 run 都會被標記。WP-29 的指標只吃 `events` 與 `ticks[].keys`,不碰 `px/pz`,故**不受 KI-004 影響**;使用理由與界線須記 progress(見 [T0](T0-entry-gate.md))。ε(t) 系列(WP-30/31)則受影響,須等 KI-004 拍板。
 
 ---
 
@@ -186,6 +196,7 @@ def evaluate_release_precision(sync: pd.DataFrame, params: SyncParams,
 
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| **OQ-S4-9** | 真實 counter-strafe 樣本缺席(現有匯出零位移、零 counter 事件) | 請研究者補錄 **≤30s、含真實 A/D strafe** 的 `counterstrafe_ad_v1` 匯出(匿名 ID,政策同 OQ-S4-8);未到位前 T1/T2 以合成 fixture 驗演算法,真實效度項明列阻塞 | 使用者 / 研究者 | **T2 精度評估前**(否則判定必為 `blocked-by-data`) | Sync 族與 counter 錨點無真實效度證據;T3 無法被證據觸發 |
+| ~~**OQ-S4-9**~~ | ~~真實 counter-strafe 樣本缺席~~ | ✅ **關閉(2026-08-05)**:09:39 匯出已補錄並進 `research/fixtures/exports/`(21.27s ≤30s、`participantId=P001`、PII-like 掃描無命中、counter 24、三個對表量各 n=20) | 使用者 | 2026-08-05 | unblocked |
+| **OQ-S4-11**(新) | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan | §2.4c 的條件分層(ads on/off × hitscan/projectile)在真實資料上**只有一個 cell 有樣本**。T-exit 的 `--group-by` 仍須實作並以合成 fixture 驗證,但真實報告的分層欄位會退化成單值 | 研究者 | WP-29 T-exit | 條件分層無真實對照;不阻塞實作 |
 | **OQ-S4-10** | `t_release` 在無 counter 事件時的 fallback 定義是否足以支撐跨 peek 比較 | 先落「窗內最後一次 A/D held→released」+ `release_inferred_no_counter` flag,聚合預設**排除**該 flag;OQ-S4-9 樣本到位後以真實資料複核是否改為預設納入 | 研究者 | WP-29 T-exit | Sync 族的 n 與可比性;報告 v0 的分母定義 |
 | **OQ-S4-6**(既有) | 教練報告載體 | notebook → 靜態 HTML 單檔;本 WP T-exit 落地即關閉 | 使用者 | WP-29 T-exit | 報告形式不定 |

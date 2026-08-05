@@ -36,7 +36,8 @@
     | `n ≥ min_samples` 且 `quantization_sd ≥ sample_sd × sd_ratio_threshold` | **`insufficient`** — 觸發 T3 |
     | `n ≥ min_samples` 且 `quantization_sd < sample_sd × sd_ratio_threshold` | **`sufficient`** — T3 標 skipped |
   - **凍結值提案**(T0 拍板寫入 `SyncParams`,version = `sync-v1`):`min_samples = 10`、`sd_ratio_threshold = 1/3`(即樣本 SD ≤ 6.765 ms 判 insufficient)。
-- **資料現況記錄**:把 [README §0](README.md) 的真實匯出調查(counter 0 / keys 全空 / vx 恆 0 / hit 事件 0)抄入 progress 作為 T2 判定的前置事實,並開 **OQ-S4-9 / OQ-S4-10**。
+- **資料現況記錄**:把 [README §0](README.md) 的兩份真實匯出對照表抄入 progress 作為 T1/T2 的前置事實(08:03 = 零輸入邊界案例、09:39 = 主要效度樣本)。OQ-S4-9 **已於 2026-08-05 關閉**(09:39 補錄到位),本 task 只需記錄關閉證據;新開 **OQ-S4-10 / OQ-S4-11**。
+- **KI-004 使用界線拍板(必須入 Decision Log)**:09:39 帶 `meta.suspect = true`,成因為 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) 的 corridor gate 單位域錯誤,**不是**效能/溢位/gate 失敗。須明文決議「本 WP 使用該 fixture 的理由與界線」:WP-29 全部指標只消費 `events` 與 `ticks[].keys`,**不觸及 `px/pz`**,故不受 KI-004 D2(離線 ε 原點)影響;若日後 WP-29 的任何指標開始消費 `px/pz`,此決議即失效並須重新評估。
 
 ## Out of scope
 
@@ -50,7 +51,8 @@
 - [ ] 把對表基準清單五列逐條抄入 progress(含 `firstShotHitRate` 分母與 `stat()` 定義)。
 - [ ] 記錄 `counter` 事件條件性語意 + 出處行號。
 - [ ] 拍板並凍結 `SyncParams` 提案值(`min_samples`/`sd_ratio_threshold`/`version`),寫入 progress Decision Log(`D-29.x`)。
-- [ ] 開 OQ-S4-9(真實 strafe 樣本)與 OQ-S4-10(t_release fallback),填 owner/deadline,並在 [../README.md §8](../README.md) 對帳補列。
+- [ ] 記錄 OQ-S4-9 關閉證據;開 OQ-S4-10(t_release fallback)與 OQ-S4-11(條件分層無真實對照),填 owner/deadline,並在 [../README.md §8](../README.md) 對帳補列。
+- [ ] Decision Log 記 KI-004 使用界線(為何 `suspect=true` 的 fixture 仍可用於本 WP,以及失效條件)。
 - [ ] 更新 [../README.md §3](../README.md) WP-29 狀態 ⬜ → 🟡。
 
 ## Definition of Done
@@ -58,9 +60,10 @@
 1. progress.md 含**對表基準清單五列**,每列註明 [compute.ts](../../../../../src/metrics/compute.ts) 的行號範圍。
 2. progress.md 含 `counter` 事件條件性語意段落 + [SimLoop.ts](../../../../../src/loop/SimLoop.ts) 行號引用。
 3. progress.md Decision Log 有一條凍結 `SyncParams`(三個欄位值 + version + 凍結時點),且明文寫「事後不得依真實資料調整,只能升版重跑」。
-4. OQ-S4-9 / OQ-S4-10 已建立,兩者皆有 owner 與 deadline;stage4 [../README.md §8](../README.md) 已同步。
-5. `git diff --stat` 證據:本 task 僅動 `docs/exec-plan/active/stage4/`(零 `src/`、零 `research/` 變更)。
+4. OQ-S4-9 關閉證據已記(09:39 fixture 路徑 + 政策符合性);OQ-S4-10 / OQ-S4-11 已建立且各有 owner 與 deadline;stage4 [../README.md §8](../README.md) 已同步。
+5. Decision Log 有一條 KI-004 使用界線決議,含**失效條件**(WP-29 指標若開始消費 `px/pz` 即需重評)。
+6. `git diff --stat` 證據:本 task 僅動 `docs/exec-plan/active/stage4/`(零 `src/` 變更)。
 
 ## Commit
 
-`docs(wp-29): T0 entry gate — compute.ts 對表基準凍結 + Sync 精度判準 pre-registration(sync-v1)+ OQ-S4-9/10`
+`docs(wp-29): T0 entry gate — compute.ts 對表基準凍結 + Sync 精度判準 pre-registration(sync-v1)+ KI-004 使用界線`

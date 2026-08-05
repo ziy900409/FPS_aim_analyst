@@ -19,4 +19,5 @@
 - WP 完成:把 [../README.md §3](../README.md) 的 WP-29 狀態翻 ✅。
 - **兩個閘都要貼證據**:`uv run pytest`(research)+ `npm run test:ci`(engine,含 `timeline-parity.test.ts`)。
 - **三條不可事後改的凍結**:T0 的 `compute.ts` 對表基準、T0 的 `SyncParams`(`sync-v1`)、WP-28 的 `seg-v1`。要改一律升 version + 重跑全鏈(D-28.7 先例)。
-- **T1 的反 vacuous 條款**:真實 fixture 零 strafe,counter/sync 樣本數為 0;對表閘必須同時跑合成 fixture 並斷言 `n ≥ 2`,否則 ≤1e-9 綠燈無意義。
+- **T1 的反 vacuous 條款(紀律,非權宜)**:對表閘必須斷言參與比對的樣本數非零(合成 + 09:39 各 `n ≥ 2`),否則換 fixture 時可能無聲退化成 `n=0 vs n=0` 假綠。三份 fixture 分工:合成 = 演算法邊界、08:03 = 零輸入邊界、09:39 = 主要真實效度樣本。
+- **KI-004 界線**:09:39 帶 `meta.suspect=true`(corridor gate 單位域錯誤,見 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md))。WP-29 全部指標只吃 `events` 與 `ticks[].keys`,**不得**開始消費 `px/pz` —— 一旦消費,T0 的使用界線決議即失效,須重新評估。

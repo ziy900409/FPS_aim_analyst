@@ -50,8 +50,8 @@ FR-D9:把 counter-strafe 的本質——「**鬆原方向鍵 → 按反向鍵 �
 
 1. 單元測試綠:上列七個 `sync_metrics` 情境 + 三個判定分支 + 聚合排除,全數有測試。
 2. **量化 SD 常數正確**:測試斷言 `quantization_sd_ms == (1000/128)/sqrt(12)`(相對誤差 ≤ 1e-12)。
-3. **判定明確**:`evaluate_release_precision` 對真實 fixture 與合成 fixture 各輸出 `sufficient` / `insufficient` / `blocked-by-data` 之一,**無「待定」狀態**;判定值 + `n` + `sample_sd_ms` + `reason` 寫入 progress 與 `notebooks/t2/outputs/` 報告。
-4. **T3 觸發條件二值化**:progress 明文記「T3 觸發 = 是/否」及依據;若為 `blocked-by-data` → T3 標 **deferred**(非 skipped),解除條件明確指向 OQ-S4-9。
+3. **判定明確**:`evaluate_release_precision` 對三份 fixture(合成 / 真實 08:03 / 真實 09:39)各輸出 `sufficient` / `insufficient` / `blocked-by-data` 之一,**無「待定」狀態**;判定值 + `n` + `sample_sd_ms` + `reason` 寫入 progress 與 `notebooks/t2/outputs/` 報告。**判定以 09:39 為準**(唯一有 Sync 樣本的真實資料,預期 n ≈ 20);08:03 預期 `blocked-by-data`(n=0),用來證明三分支邏輯在零樣本下不會硬給結論。
+4. **T3 觸發條件二值化**:progress 明文記「T3 觸發 = 是/否」及依據 —— 依 09:39 的判定。若 09:39 亦落 `blocked-by-data`(例如有效樣本 < `min_samples`)→ T3 標 **deferred** 並記錄還缺多少樣本;`sufficient` → skipped;`insufficient` → 展開 T3。
 5. **判準未被事後調整**:`SyncParams` 的三個值與 T0 Decision Log 逐位一致(diff 證據貼 progress);任何改動須升 `version` 並重跑全鏈。
 6. `analysis-peek-timeline.md` 含 Sync 族三指標定義、精度層級表、判定三分支表、`sync-v1` 凍結值。
 7. `uv run pytest` exit 0;**未動任何 `src/` 生產碼**;`algorithms/` 純度測試綠。

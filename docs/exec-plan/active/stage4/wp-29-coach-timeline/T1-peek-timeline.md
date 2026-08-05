@@ -48,7 +48,8 @@ FR-D7 + FR-D8:交付**教練第一線要的東西**——每個 peek 一條事�
 - [ ] 單元測試:窗界(末筆 +∞、邊界 tick 歸屬)、`firstFire` 的 targetId 過濾、缺 counter、缺 release、亂序事件、空窗、projectile 跨窗命中、`outcome` 三分類。
 - [ ] `timeline.py`:`Stat` + `timeline_metrics` + `timeline_parity_payload`;`stat()` 定義以獨立測試釘死(p50 插值 / 母體 sd / 空集合)。
 - [ ] 建反 vacuous 合成 fixture(三量 `n ≥ 2`、命中與未命中各 ≥1、含一個 projectile 跨窗命中)。
-- [ ] parity 產生腳本(notebooks)→ `fixtures/parity/timeline-*.json`(合成 + 真實各一份)。
+- [ ] parity 產生腳本(notebooks)→ `fixtures/parity/timeline-*.json`(合成 + 真實 08:03 + 真實 09:39,共三份)。
+- [ ] 檢查 09:39 的 **24 個 `counter` 事件 vs 20 個 peek**:部分窗內有多個 counter,`t_counter` 一律取窗內**第一個**(與 `compute.ts` 的 `counterEvents.find()` 同語意);多 counter 的 peek 標 flag 供 T2 判讀。
 - [ ] `tests/golden/research/timeline-parity.test.ts`;`npm run test:ci` 全綠。
 - [ ] 消重:`run_pipeline.py` + t2 parity generator 改用共享窗界;重跑兩者確認產物逐位不變。
 - [ ] `analysis-peek-timeline.md` 落地(定義 + flags 詞彙表 + version + 限制)。
@@ -57,8 +58,14 @@ FR-D7 + FR-D8:交付**教練第一線要的東西**——每個 peek 一條事�
 
 ## Definition of Done
 
-1. **對表閘綠**:`npm run test:ci` exit 0,且 `timeline-parity.test.ts` 對**合成與真實兩份 fixture**逐量(`counterReactionMs`/`fireTimingAlignmentMs` 各自 `mean/p50/sd/n` + `firstShotHitRate`)相對誤差 ≤ 1e-9。
-2. **反 vacuous 斷言綠**:測試自身斷言合成 fixture 的 `counterReactionMs.n ≥ 2`、`fireTimingAlignmentMs.n ≥ 2`,且首發集合同時含命中與未命中(否則測試失敗)。真實 fixture 允許 `n = 0`,但 `firstShotHitRate` 必須為 `100` 且 peek 數 = 20。
+1. **對表閘綠**:`npm run test:ci` exit 0,且 `timeline-parity.test.ts` 對**三份 fixture**(合成 + 真實 08:03 + 真實 09:39)逐量(`counterReactionMs`/`fireTimingAlignmentMs` 各自 `mean/p50/sd/n` + `firstShotHitRate`)相對誤差 ≤ 1e-9。
+2. **反 vacuous 斷言綠**(紀律條款,不因 09:39 到位而放寬):測試自身斷言參與比對的樣本數非零 —— 合成 fixture 與 **09:39** 的 `counterReactionMs.n ≥ 2`、`fireTimingAlignmentMs.n ≥ 2`,且首發集合同時涵蓋命中與未命中(否則測試失敗)。三份 fixture 的期望骨架:
+
+   | fixture | 角色 | 期望 |
+   |---|---|---|
+   | 合成 | 演算法邊界(缺 counter/缺 release/projectile 跨窗命中) | 三量各 `n ≥ 2`;命中/未命中皆有 |
+   | 真實 08:03 | **零輸入邊界案例** | `counterReactionMs.n = 0`、`fireTimingAlignmentMs.n = 0`、`firstShotHitRate = 100`、peek 數 20;**不得 crash、不得補 0** |
+   | 真實 09:39 | **主要真實效度樣本** | 兩量各 `n = 20`(中位數約 427.2 / 126.5 ms)、`firstShotHitRate = 90`、peek 數 20 |
 3. **窗界與 outcome 單元測試綠**:上列 Steps 第 2 點八個情境各有測試;`build_peek_windows` 回傳長度恆等於 `visible` 事件數。
 4. **不一致處置**:若對表出現差異 → 先修 Python;若判定為 TS 側 bug 或 spec 分歧,入 [DECISIONS.md](../../../DECISIONS.md) 或開 [KI](../../../../known_issue/) 並取得結論後,本 task 才可標 PASS。
 5. **消重零漂移**:重跑 parity 產生器與 `run_pipeline.py` 後,`git diff --exit-code research/fixtures/parity/epsilon-*.json` 乾淨,且 `research/out/pipeline-summary.json` 的 `segmentation`/`dtReport` 區塊與消重前逐位一致(證據貼 progress)。
