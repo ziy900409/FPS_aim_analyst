@@ -169,6 +169,8 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 
 ### 5.1 落地階段
 
+> **S1 的可執行計畫**:[KI-004-S1/](KI-004-S1/README.md)(tech spec + T0–T5 + T-exit;task 索引 [task-checklist.md](KI-004-S1/task-checklist.md))。
+
 | 階段 | 內容 | 對資料語意的影響 |
 |---|---|---|
 | **S1 修正性** | ① `SIM_TO_WORLD` 從 `main.ts` module 常數升為引擎級具名常數(置 `src/loop/constants.ts` 同級,**不掛 `SceneConfig`** —— 掛上去會讓同一 drill 在不同場景產生不同幾何,且讓 sim 行為依賴場景資料,踩 GD-6 精神)② corridor gate 改 world 域比較 + 依 K-3 脫離 `suspect` ③ `trackingDerivation`/`detectionDerivation` 改為接受 eye pose(base + scale),不再寫死 `(px, eyeY, pz)` ④ Python 側同步 ⑤ 重產 parity fixture ⑥ 加 §6 的兩道正確性閘 | 匯出**欄位與值不變**;ε/t_detect 系列的**計算結果會變**(本來就是錯的)。sim 未動 → determinism baseline 零影響 |
