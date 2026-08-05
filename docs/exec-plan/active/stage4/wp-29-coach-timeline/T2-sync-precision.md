@@ -27,7 +27,7 @@ FR-D9:把 counter-strafe 的本質——「**鬆原方向鍵 → 按反向鍵 �
   - `quantization_sd_ms = (1000 / sim_hz) / √12`(128 Hz → ≈ 2.2551 ms),來源為均勻量化誤差,寫入報告 metadata。
   - 對 `release_to_fire_ms` 與 `counter_hold_ms` **各自**依 T0 凍結的 `SyncParams`(`min_samples` / `sd_ratio_threshold` / `version = sync-v1`)輸出三分支判定之一,附 `n` / `sample_sd_ms` / `reason`。
   - `counter_to_fire_ms` **不參與**此判定(非量化來源),但報告中並列作為對照。
-- **精度評估報告**(notebooks/t2/outputs/,靜態產物):每指標的 `n`、樣本 SD、量化 SD、判定與理由;`blocked-by-data` 時明列缺樣本的成因(引用 [README §0](README.md) 的資料現況)與解除條件(OQ-S4-9)。
+- **精度評估報告**(notebooks/t2/outputs/,靜態產物):每指標的 `n`、樣本 SD、量化 SD、判定與理由;`blocked-by-data` 時明列缺樣本的成因(引用 [README §0](README.md) 的資料現況)與解除條件(OQ-S4-12)。
 - **`analysis-peek-timeline.md` 補 Sync 族段**:三個指標定義、精度層級、`SyncParams` 凍結值、判定三分支表。
 
 ## Out of scope

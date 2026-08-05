@@ -19,7 +19,9 @@
 
 ## 進場事實(2026-08-05 規劃期;非 task 產出,供 T0 引用)
 
-上游:WP-28 T1 ✅(2026-08-04,ingest/`check_dt`/合成產生器)· M14 ✅(2026-08-05,六項全綠)· 目前無其他 active WP,零檔案熱區競爭。
+上游:WP-28 T1 ✅(2026-08-04,ingest/`check_dt`/合成產生器)· **M14 🟡**(②於 2026-08-05 撤回,見 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2;①③④⑤⑥ 維持)· 目前無其他 active WP,零檔案熱區競爭。
+
+> **WP-29 的硬相依只有 WP-28 T1(ingest),不含 M14 ②** —— 本 WP 不消費 ε(t),故 M14 ② 撤回**不阻塞** WP-29。撤回阻塞的是 WP-30/31。
 
 ### 兩份真實 fixture(對照組)
 
@@ -53,7 +55,9 @@
 
 - **WP-29 不受影響**:T1/T2 的指標只吃 `events` 與 `ticks[].keys`,不碰 `px/pz`。
 - **09:39 仍可用**,但 T0 必須把「使用理由 + 失效條件」寫成 Decision Log 條目。
-- **WP-30/31 受影響**(ε(t) 系列),須等 KI-004 拍板 —— 這是本 WP 之外的相依,已記入 KI-004 §3。
+- **WP-30/31 受影響**(ε(t) 系列):修法方向已於 2026-08-05 拍板(K-1/K-2/K-3),但須待 **S1 落地並重新宣告 M14 ②** 才解除 entry blocker。
+
+**後續實測更正(2026-08-05)**:D2 實為兩個獨立缺陷 —— D2a(遺漏 camera base offset `eyeZ`,**與 `px` 無關**)+ D2b(遺漏 `SIM_TO_WORLD`)。以引擎 `fire.offsetDeg` 為 ground truth 實測偏差:08:03 = 12.52°、09:39 = 67.11°。**M14 ② 因此撤回**(K-2)。
 
 ---
 
@@ -81,8 +85,8 @@
 
 | # | 問題 | 現況 | Owner | Deadline |
 |---|---|---|---|---|
-| ~~OQ-S4-9~~ | ~~缺「含真實 A/D strafe」的 counter-strafe 匯出~~ | ✅ **關閉(2026-08-05)**:09:39 已補錄並進 `research/fixtures/exports/`(21.27s、`P001`、PII-like 掃描無命中) | 使用者 | 2026-08-05 |
+| ~~OQ-S4-12~~ | ~~缺「含真實 A/D strafe」的 counter-strafe 匯出~~ | ✅ **關閉(2026-08-05)**:09:39 已補錄並進 `research/fixtures/exports/`(21.27s、`P001`、PII-like 掃描無命中) | 使用者 | 2026-08-05 |
 | OQ-S4-10 | `t_release` 無 counter 事件時的 fallback 是否可跨 peek 比較 | 🟡 open;先落 fallback + `release_inferred_no_counter` flag,聚合預設排除 | 研究者 | WP-29 T-exit |
 | OQ-S4-11 | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan → 條件分層無真實對照 | 🟡 open;`--group-by` 仍實作,以合成 fixture 驗證 | 研究者 | WP-29 T-exit |
 | OQ-S4-6 | 教練報告載體(既有) | 🟡 open;本 WP T-exit 落靜態單檔 HTML 後關閉 | 使用者 | WP-29 T-exit |
-| (外部) | KI-004 修法拍板(先決 = OQ-KI4-1 正規單位域) | 🔴 待拍板;**不阻塞 WP-29**,阻塞 WP-30/31 | 使用者 / 研究者 | WP-30 T0 前 |
+| (外部) | KI-004 修法落地(K-1 雙域 / K-2 M14 ② 撤回 / K-3 自由位移已拍板) | 🟡 待 S1 落地;**不阻塞 WP-29**,阻塞 WP-30/31 | 使用者 / 研究者 | WP-30 T0 前 |

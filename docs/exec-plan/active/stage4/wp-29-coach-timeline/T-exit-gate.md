@@ -23,7 +23,7 @@ FR-D16 首版:把 T1 的時間軸與 T2 的 Sync 族收斂成**單一命令產�
 - **教練報告紅線落地(C-D3 / GD-20)**:報告內每個量標註來源與效度層級 —— 「與結果頁對表通過」(T1 三量)/「新構念,精度判定 = X」(Sync 族);未通過構念驗證者一律不進報告主表。
 - **`analysis-peek-timeline.md` 定稿**:T1/T2 的定義 + flags 詞彙表 + 版本字串 + **已知限制**(±1 tick 量化、單一真實樣本且零 strafe、projectile 跨窗命中處置、無 kill/timeout 事件故由 fire/hit 推導)。
 - **文件對帳**:
-  - [../README.md](../README.md) §3 WP-29 狀態翻 ✅、§8 OQ-S4-6 關閉 + OQ-S4-9/10 現況更新、§9 對帳清單補 `analysis-peek-timeline.md`;
+  - [../README.md](../README.md) §3 WP-29 狀態翻 ✅、§8 OQ-S4-6 關閉 + OQ-S4-12/10 現況更新、§9 對帳清單補 `analysis-peek-timeline.md`;
   - [exec-plan/README.md](../../../README.md) §2 階段 D 表 WP-29 狀態;
   - [CONTEXT.md](../../../../../CONTEXT.md):Release-to-Click Sync、peek 時間軸、`t_release`、outcome 詞彙、quality flags 隨本切片回寫;
   - 若 T1 期間發現與 `compute.ts` 的語意分歧 → 確認已入 [DECISIONS.md](../../../DECISIONS.md)。

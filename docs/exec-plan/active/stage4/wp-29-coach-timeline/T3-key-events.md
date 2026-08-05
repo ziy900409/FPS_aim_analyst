@@ -1,7 +1,7 @@
 # T3(選配,gated)— `DataRecorder` additive `key` 事件
 
 > Part of [WP-29 coach-timeline](README.md)。Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
-> **本 task 預設不執行。** 只有 [T2](T2-sync-precision.md) 判定為 `insufficient` 時才展開;判定為 `sufficient` → 標 **skipped**;判定為 `blocked-by-data` → 標 **deferred**(等 OQ-S4-9 樣本後重跑 T2 評估)。
+> **本 task 預設不執行。** 只有 [T2](T2-sync-precision.md) 判定為 `insufficient` 時才展開;判定為 `sufficient` → 標 **skipped**;判定為 `blocked-by-data` → 標 **deferred**(等 OQ-S4-12 樣本後重跑 T2 評估)。
 
 | | |
 |---|---|
@@ -37,7 +37,7 @@ FR-D10:當 `t_release` 的 ±1 tick 量化被證實吃掉 Sync 族的效應量�
 - [ ] vitest:新事件寫入/欄位正確 + **既有決定性測試零修改全綠**(`npm run test:ci`)。
 - [ ] `schema.md`:`events[].key` 章節 + CSV 對帳 + 「additive、不 bump schemaVersion」明文。
 - [ ] `peek.py`:雙路徑 `t_release` + flags;單元測試(有 key 事件 / 無 key 事件 / 混合)。
-- [ ] 重錄一份含 strafe 的匯出(OQ-S4-9 樣本或新錄)→ 重跑 T2 評估,判定寫 progress。
+- [ ] 重錄一份含 strafe 的匯出(OQ-S4-12 樣本或新錄)→ 重跑 T2 評估,判定寫 progress。
 - [ ] 兩閘輸出貼 progress。
 
 ## Definition of Done

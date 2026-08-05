@@ -41,6 +41,16 @@
 
 ---
 
+## 事後更正(2026-08-05)— M14 ② 撤回
+
+排查 WP-29 的匯出資料時發現 ε(t) 的**量測原點**錯誤,詳見 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / [BD-004](../../../../known_issue/BUGFIX-DECISIONS.md)。
+
+- **缺陷**:`trackingDerivation`/`detectionDerivation` 與移植過去的 `angular.py` 都把射線原點寫死為 `(px, eyeY, pz)`,遺漏 ① camera base offset(`field-low` 的 `eyeZ = depth/2 − standoff = 4`)② `SIM_TO_WORLD = 0.01`。
+- **實測**(ground truth = 引擎自身的 `fire.offsetDeg`):08:03 偏差中位數 **12.52°**、09:39 **67.11°**;正確公式為 0.21° / 0.14°。
+- **為何 T2 的 parity 閘沒抓到**:parity 是**一致性**閘,Python 忠實移植了同一個錯誤原點 → 兩側一致地錯,≤1e-9 恆綠。這是 S-28.0 當初擔心的「假綠」的另一種形態:不是 Python 與 TS 分裂,而是**兩者一起偏離構念**。
+- **處置**:M14 ② 撤回,①③④⑤⑥ 維持(分段走 ω(t),只依賴 `aim`,與原點無關)。T2/T-exit 的 task 交付物本身不需重做,但 S1 落地後須**重產 parity fixture 並重新宣告 ②**。
+- **新增閘(S1 DoD)**:`fire.offsetDeg` 與 ε(t) 互驗(同構念、不同實作路徑、不同資料來源),以及涵蓋 `eyeZ ≠ 0 且 px ≠ 0` 的合成幾何 fixture —— 現行 T2 幾何 fixture 全為原點 `(0,·,0)` 的靜態情境,結構上看不見此 bug。
+
 ## Decision Log
 
 | # | 決策 | 理由 | 出處 |

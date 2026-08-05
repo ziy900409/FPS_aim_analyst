@@ -7,7 +7,7 @@
 | **相依** | T1–T4 全綠 |
 | **Risk / Cplx** | — / Low |
 | **Touches** | ADD `docs/operational/analysis-segments.md`;ADD 一鍵 script(`research/` 內:匯出 → 分段 + 品質報告);MODIFY [../README.md](../README.md) §3 狀態、[../../../README.md](../../../README.md) §2/§3 |
-| **狀態** | ✅ **M14 已宣告(2026-08-05);六項 DoD 全綠** |
+| **狀態** | 🟡 **M14 ② 已撤回(2026-08-05,[KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md));①③④⑤⑥ 維持** |
 
 ## Objective
 
@@ -37,7 +37,7 @@
 | # | 條件 | 判定方式 | 結果(2026-08-05) |
 |---|---|---|---|
 | ① | **真實** drill 匯出 ingest 綠 + dt 報告產出 | 一鍵 script 於真實匯出 exit 0;dt 報告含 tick 數/缺口/中位間隔 | ✅ `counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json`:exit 0;3,507 ticks / median dt 7.8125ms / gap 0 / uniform;27.390625s、`participantId=P001`、PII-like literal scan 無命中、`suspect=false`、無 overflow |
-| ② | **ε 層 parity 綠** | `npm run test:ci` exit 0 且 `epsilon-parity.test.ts` 五個量 ≤1e-9 | ✅ `test:ci` exit 0(tsc + Vitest 82 files / 641 tests + Playwright 19);parity 測試逐 presentation 覆蓋 `tAcquireMs`/`totPercent`/`rmsEpsilonDeg`/`medianEpsilonDeg`/`p95EpsilonDeg` |
+| ② | **ε 層 parity 綠** | `npm run test:ci` exit 0 且 `epsilon-parity.test.ts` 五個量 ≤1e-9 | ❌ **撤回(2026-08-05,[KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)**。機制面仍綠(`test:ci` exit 0、逐 presentation ≤1e-9),但**兩側一致地錯**:ε 的量測原點寫死 `(px, eyeY, pz)`,遺漏 camera base offset(`eyeZ = depth/2 − standoff = 4`)與 `SIM_TO_WORLD`。以引擎 `fire.offsetDeg` 為 ground truth 實測偏差:08:03 = **12.52°**、09:39 = **67.11°**(正確公式 0.21°/0.14°)。待 KI-004 S1 落地 + 重產 parity fixture 後重新宣告 |
 | ③ | 合成 fixture 分段邊界誤差 ≤ 2 tick | T3 六個 fixture 測試綠 | ✅ `test_known_submovement_boundaries_are_within_two_ticks` 綠(T3 掃參實測 max error = 1 tick) |
 | ④ | **真實**資料分段成功率 + 疊圖報告 | `notebooks/t3-sweep/outputs/` 產出 + progress 記錄 | ✅ 20 peeks 中 19 個 `primary_flick`;成功率 **0.95**;20 張 `real-peek-*-overlay.svg` + summary/segments CSV 產出。人工逐張檢核:19 段皆包住主要 ω burst,未見跨兩個獨立 burst 的錯誤合併;peek 0 長靜止窗為 `below_floor|no_segment` |
 | ⑤ | 分段參數 pre-registered 凍結並記 `analysis-segments.md` | 文件含凍結值 + `version` + 掃參證據 | ✅ 保留 `seg-v1` 不調參;243 組合成掃參(max error 1 tick)+ 本次真實成功率/疊圖結論/單樣本效度限制已回寫 [analysis-segments.md](../../../../operational/analysis-segments.md)。T3 runner 的 leading-`nan` flags 污染另列已知限制,不影響 pipeline 品質摘要或疊圖幾何 |
@@ -45,9 +45,14 @@
 
 **宣告規則已滿足**:匿名真實匯出已完成 ① ingest/dt、④ 成功率/疊圖與 ⑤ 人工效度回填;②③⑥ 亦於 2026-08-05 複驗全綠。
 
-### 判定:M14 ✅ 已宣告(2026-08-05)
+### 判定:M14 🟡 —— ② 於 2026-08-05 撤回
 
-六項 DoD 全綠;OQ-S4-8 關閉。**WP-30/31 自此解除 entry blocker**;WP-29 可繼續引用 T1 ingest 與本 task 的一鍵 script。
+原判定(六項全綠、WP-30/31 解除 blocker)**已於同日撤銷**:② 的 parity 綠燈是「兩個實作一致地錯」,不構成 ε 地基成立的證據([KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md))。現況:
+
+- **①③④⑤⑥ 維持** —— 分段地基走 ω(t),只依賴 `ticks[].aim`,與量測原點無關,不受 KI-004 影響。
+- **② 待重新宣告** —— 需 KI-004 S1(修正原點 + Python 同步 + 重產 parity fixture + 新增 `fire.offsetDeg` 正確性閘)。
+- **WP-30/31 entry blocker 恢復**;**WP-29 不受影響**(只吃 `events` 與 `ticks[].keys`)。
+- OQ-S4-8 維持關閉(fixture 政策與此無關)。
 
 解除阻塞實測記錄:
 

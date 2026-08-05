@@ -32,7 +32,7 @@ FR-D7 + FR-D8:交付**教練第一線要的東西**——每個 peek 一條事�
 - **parity 產出**:`timeline_parity_payload()` → `fixtures/parity/timeline-<fixture>.json`(逐量 `mean/p50/sd/n` + `firstShotHitRate` + 逐 peek 的 `targetId`/`tVisible`/`tEnd`/`outcome` + 來源檔名 + `version`)。**寫檔只在 notebooks/**(C-D2)。
 - **對表閘(TS 側)**:`tests/golden/research/timeline-parity.test.ts` — 讀同一份匯出 JSON,就地組 `DataRecorderSnapshot({ ticks, events, recorderOverflow })` → 呼叫既有 `computeMetrics()`,逐量對表 ≤1e-9。**零新 TS API**(比照 [epsilon-parity.test.ts](../../../../../tests/golden/research/epsilon-parity.test.ts))。
 - **反 vacuous 保護**:合成 fixture 必須讓三個量都有樣本。現有 [`SyntheticSpec`](../../../../../research/src/modules/ingest/algorithms/synthetic.py) 已支援 `missing_counter_peeks` / `missing_release_peeks` / `dropped_tick_indices` 與 hitscan/projectile 交替,足以產生涵蓋「有 counter / 無 counter / 命中 / 未命中 / 跨窗 projectile 命中」的 fixture;必要時新增 fixture 檔,**不改既有 `synthetic_counterstrafe.json`**(它被 M14 ② 引用)。
-- **窗界消重**:`run_pipeline._presentation_windows`(其註解已指名本 WP)與 t2 parity generator 的切片改呼叫 `peek.build_peek_windows`(或其共享底層 slicing 函式)。
+- **窗界消重(= 結清 WP-28 的 OQ-S4-9)**:[wp-28 progress](../wp-28-research-foundation/progress.md) 的 **OQ-S4-9**(presentation 窗界切片有**三份**實作:t2 parity generator / t3-sweep runner / T-exit 一鍵 script,owner 指定為 WP-29)由本 task 結清。三份全部改呼叫 `peek.build_peek_windows`(或其共享底層 slicing 函式);另須一併處理 S-28.10 記錄的「t3-sweep runner 尚未套 D-28.12 leading-ω 切尾」。
 - **`docs/operational/analysis-peek-timeline.md`**(新):新構念 registry — `t_release` 定義與兩條路徑、`outcome` 判定表、`t_hit` 關聯規則、**flags 封閉詞彙表**、`version` 字串、已知限制(±1 tick 量化、單樣本效度、無 strafe 樣本)。
 - **時間軸圖 + drill 摘要表**(notebooks/t1/outputs/):每 peek 一條事件軸(visible/counter/release/fire×n/hit 標記)+ drill 級摘要(逐 peek 一列:side/outcome/三個錨點差/flags)。
 
@@ -68,7 +68,8 @@ FR-D7 + FR-D8:交付**教練第一線要的東西**——每個 peek 一條事�
    | 真實 09:39 | **主要真實效度樣本** | 兩量各 `n = 20`(中位數約 427.2 / 126.5 ms)、`firstShotHitRate = 90`、peek 數 20 |
 3. **窗界與 outcome 單元測試綠**:上列 Steps 第 2 點八個情境各有測試;`build_peek_windows` 回傳長度恆等於 `visible` 事件數。
 4. **不一致處置**:若對表出現差異 → 先修 Python;若判定為 TS 側 bug 或 spec 分歧,入 [DECISIONS.md](../../../DECISIONS.md) 或開 [KI](../../../../known_issue/) 並取得結論後,本 task 才可標 PASS。
-5. **消重零漂移**:重跑 parity 產生器與 `run_pipeline.py` 後,`git diff --exit-code research/fixtures/parity/epsilon-*.json` 乾淨,且 `research/out/pipeline-summary.json` 的 `segmentation`/`dtReport` 區塊與消重前逐位一致(證據貼 progress)。
+5. **消重零漂移**:三份窗界實作收斂後,`research/out/pipeline-summary.json` 的 `segmentation`/`dtReport` 區塊與消重前逐位一致(證據貼 progress);t3-sweep runner 的分段結果一併複驗。**wp-28 的 OQ-S4-9 於本 task 標記關閉**(在 wp-28 progress 補一行指向本 commit)。
+   > ⚠️ `fixtures/parity/epsilon-*.json` **不再要求逐位不變** —— M14 ② 已因 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) 撤回,該 fixture 將於 KI-004 S1 重產。本 task 只需保證**窗界切片本身**未改變(即消重前後 tick 索引集合相同),ε 值的變動由 S1 負責。
 6. **文件**:`analysis-peek-timeline.md` 含 `t_release` 兩條路徑、`outcome` 判定表、`t_hit` 關聯規則、封閉 flags 詞彙表、`version`、三項已知限制。
 7. **產物**:合成與真實各一組時間軸圖 + drill 摘要表落 `notebooks/t1/outputs/`;真實那組明文標註「零 strafe 樣本:counter/release 錨點全缺」。
 8. `uv run pytest` exit 0;`research/` 零 TS import(C-D1);`algorithms/` 純度測試綠(C-D2);**未動任何 `src/` 生產碼**。

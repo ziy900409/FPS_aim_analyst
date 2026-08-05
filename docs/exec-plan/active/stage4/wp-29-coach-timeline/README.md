@@ -7,7 +7,7 @@
 |---|---|
 | **目標** | 教練第一線可用的**個案回放層**:逐 peek 事件時間軸(`t_visible → t_counter → t_release → t_fire → t_hit/timeout`)+ **與 [compute.ts](../../../../../src/metrics/compute.ts) 逐量交叉驗證**;Release-to-Click Sync 指標族 + **量化精度 pre-registered 判定**;教練報告 v0(靜態 HTML,條件可分層) |
 | **里程碑** | 無獨立里程碑(WP-32 → M15 的必要輸入;為 [§5 最短價值路徑](../README.md) 的第二段) |
-| **相依** | **WP-28 T1 ✅**(ingest 綠即可;不需 M14)。實際 M14 已於 2026-08-05 宣告 → 分段/ω/ε 亦可直接引用 |
+| **相依** | **WP-28 T1 ✅**(ingest 綠即可;**不需 M14**)。M14 ① ③④⑤⑥ 可引用(分段 / ω(t) / 一鍵 pipeline);**② ε parity 已於 2026-08-05 撤回**([KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)→ **ε(t) 相關產物一律不得引用**,但本 WP 本就不消費 ε,故**不受阻塞** |
 | **對應 FR** | FR-D7 / FR-D8 / FR-D9 / FR-D10(gated)+ FR-D16 首版(報告 v0) |
 | **估時** | 1.5–2.5 dev-days(T3 若觸發 +0.5–1) |
 | **狀態** | ⬜ 未開始 |
@@ -40,7 +40,7 @@
 3. **T2 精度評估不再預期落 `blocked-by-data`**:09:39 提供 20 個 `release_to_fire_ms` 樣本,`sync-v1` 判準可以真的跑出 `sufficient` / `insufficient`。三分支仍保留(未來 fixture 未必有樣本),但 T3 是否觸發從此是**有證據的決定**。
 4. **兩份 fixture 分工明確**:08:03 = 「零輸入」邊界案例(所有錨點缺席時報告不得 crash);09:39 = 主要真實效度樣本。兩者都要進 T1/T2 的測試矩陣。
 
-> ⚠️ **09:39 帶 `suspect: true`,但這不代表資料不可用。** 成因是 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) 的 corridor gate 單位域錯誤(source unit 比 world unit,門檻緊 100×),**任何**有做急停的 run 都會被標記。WP-29 的指標只吃 `events` 與 `ticks[].keys`,不碰 `px/pz`,故**不受 KI-004 影響**;使用理由與界線須記 progress(見 [T0](T0-entry-gate.md))。ε(t) 系列(WP-30/31)則受影響,須等 KI-004 拍板。
+> ⚠️ **09:39 帶 `suspect: true`,但這不代表資料不可用。** 成因是 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) 的 corridor gate 單位域錯誤(source unit 比 world unit,門檻緊 100×),**任何**有做急停的 run 都會被標記。WP-29 的指標只吃 `events` 與 `ticks[].keys`,不碰 `px/pz`,故**不受 KI-004 影響**;使用理由與界線須記 progress(見 [T0](T0-entry-gate.md))。ε(t) 系列(WP-30/31)則受影響 —— 修法已於 2026-08-05 拍板(K-1/K-2/K-3),**M14 ② 撤回**,須待 KI-004 S1 落地後才解除 WP-30/31 的 entry blocker。
 
 ---
 
@@ -196,7 +196,7 @@ def evaluate_release_precision(sync: pd.DataFrame, params: SyncParams,
 
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| ~~**OQ-S4-9**~~ | ~~真實 counter-strafe 樣本缺席~~ | ✅ **關閉(2026-08-05)**:09:39 匯出已補錄並進 `research/fixtures/exports/`(21.27s ≤30s、`participantId=P001`、PII-like 掃描無命中、counter 24、三個對表量各 n=20) | 使用者 | 2026-08-05 | unblocked |
+| ~~**OQ-S4-12**~~ | ~~真實 counter-strafe 樣本缺席~~ | ✅ **關閉(2026-08-05)**:09:39 匯出已補錄並進 `research/fixtures/exports/`(21.27s ≤30s、`participantId=P001`、PII-like 掃描無命中、counter 24、三個對表量各 n=20) | 使用者 | 2026-08-05 | unblocked |
 | **OQ-S4-11**(新) | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan | §2.4c 的條件分層(ads on/off × hitscan/projectile)在真實資料上**只有一個 cell 有樣本**。T-exit 的 `--group-by` 仍須實作並以合成 fixture 驗證,但真實報告的分層欄位會退化成單值 | 研究者 | WP-29 T-exit | 條件分層無真實對照;不阻塞實作 |
-| **OQ-S4-10** | `t_release` 在無 counter 事件時的 fallback 定義是否足以支撐跨 peek 比較 | 先落「窗內最後一次 A/D held→released」+ `release_inferred_no_counter` flag,聚合預設**排除**該 flag;OQ-S4-9 樣本到位後以真實資料複核是否改為預設納入 | 研究者 | WP-29 T-exit | Sync 族的 n 與可比性;報告 v0 的分母定義 |
+| **OQ-S4-10** | `t_release` 在無 counter 事件時的 fallback 定義是否足以支撐跨 peek 比較 | 先落「窗內最後一次 A/D held→released」+ `release_inferred_no_counter` flag,聚合預設**排除**該 flag;OQ-S4-12 樣本到位後以真實資料複核是否改為預設納入 | 研究者 | WP-29 T-exit | Sync 族的 n 與可比性;報告 v0 的分母定義 |
 | **OQ-S4-6**(既有) | 教練報告載體 | notebook → 靜態 HTML 單檔;本 WP T-exit 落地即關閉 | 使用者 | WP-29 T-exit | 報告形式不定 |
