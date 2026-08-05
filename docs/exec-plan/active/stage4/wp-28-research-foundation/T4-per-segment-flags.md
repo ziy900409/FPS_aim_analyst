@@ -7,7 +7,7 @@
 | **相依** | T3(分段可用且參數已凍結) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | ADD `research/src/modules/segments/algorithms/apply.py` + tests |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-08-04 |
 
 ## Objective
 
@@ -27,9 +27,9 @@ FR-D6:交付泛用逐段計算入口與 quality flags 契約——**失敗是資
 
 ## Steps
 
-- [ ] `apply.py`:`per_segment_apply` + `summarize_with_flags` + flags 詞彙表常數。
-- [ ] tests:空段清單、單樣本段、NaN 注入、`fn` 拋錯(→ `compute_failed`)、flag 詞彙表封閉性、`summarize_with_flags` 的 n/n_flagged 正確性。
-- [ ] `uv run pytest` 全綠(輸出貼 progress)。
+- [x] `apply.py`:`per_segment_apply` + `summarize_with_flags` + flags 詞彙表常數。
+- [x] tests:空段清單、單樣本段、NaN 注入、`fn` 拋錯(→ `compute_failed`)、flag 詞彙表封閉性、`summarize_with_flags` 的 n/n_flagged 正確性。
+- [x] `uv run pytest` 全綠(輸出貼 progress)。
 
 ## Definition of Done
 

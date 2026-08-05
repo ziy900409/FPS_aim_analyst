@@ -1,0 +1,7 @@
+.venv/
+out/
+.pytest_cache/
+.pytest_tmp*/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/

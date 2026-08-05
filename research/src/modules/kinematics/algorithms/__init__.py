@@ -1,0 +1,1 @@
+"""Pure angular kinematics algorithms."""

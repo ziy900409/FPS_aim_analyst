@@ -1,0 +1,33 @@
+{
+  "source": "synthetic_counterstrafe.json",
+  "options": {
+    "eyeHeight": 1.6,
+    "hitbox": {
+      "width": 1.0,
+      "height": 2.0,
+      "depth": 1.0
+    }
+  },
+  "presentations": [
+    {
+      "targetId": "target-1",
+      "tVisibleMs": 0.0,
+      "tAcquireMs": null,
+      "totPercent": null,
+      "rmsEpsilonDeg": null,
+      "medianEpsilonDeg": null,
+      "p95EpsilonDeg": null,
+      "acquisitionFailure": true
+    },
+    {
+      "targetId": "target-2",
+      "tVisibleMs": 187.5,
+      "tAcquireMs": 54.6875,
+      "totPercent": 100.0,
+      "rmsEpsilonDeg": 1.465899435769622,
+      "medianEpsilonDeg": 1.7031249999996494,
+      "p95EpsilonDeg": 1.7031249999996494,
+      "acquisitionFailure": false
+    }
+  ]
+}

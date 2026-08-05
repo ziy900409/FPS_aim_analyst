@@ -7,7 +7,7 @@
 | **相依** | — (stage4 採納 = GD-19/GD-20 已入帳) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | MODIFY [CLAUDE.md](../../../../../CLAUDE.md) §4(C-D1~C-D4);ADD `research/pyproject.toml` 最小骨架(可 `pytest` 空跑) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-08-04 |
 
 ## Objective
 
@@ -36,11 +36,11 @@
 
 ## Steps
 
-- [ ] 複驗並記錄上游 exit-gate 引用(M4/WP-16/M11/M12)+ schema v2 欄位對表基準。
-- [ ] CLAUDE.md §4 追加 C-D1~C-D4(四條,措辭與 stage4 §1.3 一致)。
-- [ ] 建 `research/pyproject.toml` 最小骨架;`uv run pytest` 空跑。
-- [ ] progress.md 記:三項決策證據、樣本狀態 + M14 阻塞項、上游引用。
-- [ ] 對帳 [../README.md §9](../README.md) 的 CLAUDE.md 項打勾。
+- [x] 複驗並記錄上游 exit-gate 引用(M4/WP-16/M11/M12)+ schema v2 欄位對表基準。
+- [x] CLAUDE.md §4 追加 C-D1~C-D4(四條,措辭與 stage4 §1.3 一致)。
+- [x] 建 `research/pyproject.toml` 最小骨架;`uv run pytest` 空跑。
+- [x] progress.md 記:三項決策證據、樣本狀態 + M14 阻塞項、上游引用。
+- [x] 對帳 [../README.md §9](../README.md) 的 CLAUDE.md 項打勾。
 
 ## Definition of Done
 
@@ -48,6 +48,8 @@
 - `uv run pytest` 於 `research/` 退出碼 0(輸出貼 progress)。
 - progress.md 含:三項決策(OQ-S4-1/7/8)證據行、樣本狀態 🟡 + M14 ①④ 阻塞項明文、上游 exit-gate 引用。
 - **未動任何 `src/` 引擎碼**(`git diff --stat` 證據:僅 CLAUDE.md + research/pyproject.toml + 本 WP 文件)。
+
+✅ 2026-08-04:全部達成;驗證與差異證據見 [progress.md](progress.md)。
 
 ## Commit
 

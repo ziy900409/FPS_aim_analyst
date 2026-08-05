@@ -7,7 +7,7 @@
 | **相依** | T1(ingest + 合成匯出) |
 | **Risk / Cplx** | **High** / Med — 本 WP 唯一的 High risk task:ε 若與既有 TS 推導分裂,全 stage 的逐段指標都建在錯誤地基上 |
 | **Touches** | ADD `research/src/modules/kinematics/algorithms/angular.py` + tests;ADD `research/fixtures/parity/*.json`;**ADD `tests/golden/research/epsilon-parity.test.ts`**(vitest,落在既有 `test:ci`) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-08-04 |
 
 ## Objective
 
@@ -33,12 +33,12 @@ FR-D3 + FR-D4:交付 ω(t)/ε(t)/on_target 純函式,並用**雙向 parity 閘**
 
 ## Steps
 
-- [ ] `angular.py`:`omega_deg_s` + 合成 fixture(常數角速度/純 yaw/純 pitch/高 pitch)。
-- [ ] `epsilon_deg` / `on_target` + 已知幾何 fixture(ε=0、已知偏角、hitbox 缺席 fallback)。
-- [ ] presentation 窗界與 fallback 語意對照 TS 實作逐行核對,差異記 Decision Log。
-- [ ] parity 產生腳本(`notebooks/` 或 `scripts/`,**不在 `algorithms/` 內寫檔**)→ `fixtures/parity/epsilon-*.json`。
-- [ ] `tests/golden/research/epsilon-parity.test.ts`;`npm run test:ci` 全綠。
-- [ ] `uv run pytest` 全綠;兩份輸出貼 progress。
+- [x] `angular.py`:`omega_deg_s` + 合成 fixture(常數角速度/純 yaw/純 pitch/高 pitch)。
+- [x] `epsilon_deg` / `on_target` + 已知幾何 fixture(ε=0、已知偏角、hitbox 缺席 fallback)。
+- [x] presentation 窗界與 fallback 語意對照 TS 實作逐行核對,差異記 Decision Log。
+- [x] parity 產生腳本(`notebooks/` 或 `scripts/`,**不在 `algorithms/` 內寫檔**)→ `fixtures/parity/epsilon-*.json`。
+- [x] `tests/golden/research/epsilon-parity.test.ts`;`npm run test:ci` 全綠。
+- [x] `uv run pytest` 全綠;兩份輸出貼 progress。
 
 ## Definition of Done
 

@@ -7,7 +7,7 @@
 | **相依** | T0(工具鏈與硬約束落地) |
 | **Risk / Cplx** | Low / Med(欄位對表面廣:含 stage5 additive 欄) |
 | **Touches** | ADD `research/` 四目錄制 + `README.md`;ADD `modules/ingest/algorithms/{loader,dt,synthetic}.py` + tests;ADD `fixtures/exports/`(合成) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-08-04 |
 
 ## Objective
 
@@ -34,13 +34,13 @@ FR-D1 + FR-D2:立起 `research/` 四目錄制與 schema v2 loader,並交付**合
 
 ## Steps
 
-- [ ] scaffold 目錄 + `research/README.md`(含 fixture 上限與閘門指令)。
-- [ ] `loader.py`:`Export` dataclass + `load_export` + `SchemaError`;欄位對表寫成模組 doc(對照 schema.md 章節)。
-- [ ] `dt.py`:`DtReport` + `check_dt`。
-- [ ] `synthetic.py`:`SyntheticSpec` + `make_synthetic_export`(決定性;含缺事件/掉 tick 情境開關)。
-- [ ] tests:合成 round-trip、缺欄/`schemaVersion!=2`/非有限值三種 field-path 錯誤、dt 報告(均勻 + 掉 tick 各一)、純度三項。
-- [ ] 產 `fixtures/exports/synthetic_counterstrafe.json`(供 T2/T3 使用)。
-- [ ] `uv run pytest` 全綠(輸出貼 progress)。
+- [x] scaffold 目錄 + `research/README.md`(含 fixture 上限與閘門指令)。
+- [x] `loader.py`:`Export` dataclass + `load_export` + `SchemaError`;欄位對表寫成模組 doc(對照 schema.md 章節)。
+- [x] `dt.py`:`DtReport` + `check_dt`。
+- [x] `synthetic.py`:`SyntheticSpec` + `make_synthetic_export`(決定性;含缺事件/掉 tick 情境開關)。
+- [x] tests:合成 round-trip、缺欄/`schemaVersion!=2`/非有限值三種 field-path 錯誤、dt 報告(均勻 + 掉 tick 各一)、純度三項。
+- [x] 產 `fixtures/exports/synthetic_counterstrafe.json`(供 T2/T3 使用)。
+- [x] `uv run pytest` 全綠(輸出貼 progress)。
 
 ## Definition of Done
 
@@ -51,6 +51,8 @@ FR-D1 + FR-D2:立起 `research/` 四目錄制與 schema v2 loader,並交付**合
 - 純度測試綠(無寫檔、無 matplotlib、無 stdout)。
 - `uv run pytest` 退出碼 0;**未動任何 `src/` 引擎碼**。
 - progress 記:真實匯出 round-trip 為 **M14 ① 阻塞項**(樣本到位後補跑)。
+
+✅ 2026-08-04:全部達成;12 tests passed,真實資料項仍依原計畫保持阻塞。
 
 ## Commit
 
