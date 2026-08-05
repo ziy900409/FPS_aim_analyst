@@ -42,6 +42,7 @@ from modules.ingest.algorithms import (  # noqa: E402
     load_export,
 )
 from modules.kinematics.algorithms.angular import epsilon_deg, omega_deg_s  # noqa: E402
+from modules.metrics.algorithms.peek import build_peek_windows  # noqa: E402
 from modules.segments.algorithms import (  # noqa: E402
     DEFAULT_SEGMENT_PARAMS,
     Segment,
@@ -60,13 +61,6 @@ PEEK_FILENAME = "peek-quality.csv"
 SEGMENT_FILENAME = "peek-segments.csv"
 
 METRIC_COLUMNS = ("duration_ms", "peak_omega_deg_s", "mean_epsilon_deg")
-
-# The presentation window is ``[t_visible, next t_visible)`` per
-# docs/operational/analysis-tracking.md; the tolerance matches the committed
-# parity generator in modules/kinematics/notebooks/t2 so both sides slice ticks
-# identically. WP-29 owns peek-window reconstruction and will consolidate these
-# two copies into one shared derivation.
-_WINDOW_EPSILON_MS = 1e-9
 
 # omega_deg_s returns nan at index zero by contract; segmentation consumes the
 # measured tail and every reported index is shifted back by this offset.
@@ -260,7 +254,7 @@ def _segment_metrics(
 def _presentation_windows(
     export: Export,
 ) -> list[tuple[int, pd.Series, pd.DataFrame, np.ndarray]]:
-    """Slice ticks into ``[t_visible, next t_visible)`` presentation windows.
+    """Adapt the shared peek windows to the report pipeline's legacy tuple shape.
 
     Each window also carries the positions its ticks occupy in the sorted export,
     so dt gaps reported against the whole export can be attributed per window.
@@ -273,20 +267,14 @@ def _presentation_windows(
         .reset_index(drop=True)
     )
     windows = []
-    for ordinal, event in visible.iterrows():
-        start_ms = float(event["t"])
-        end_ms = (
-            float(visible.iloc[ordinal + 1]["t"]) if ordinal + 1 < len(visible) else math.inf
-        )
-        inside = (ticks["t"] + _WINDOW_EPSILON_MS >= start_ms) & (
-            ticks["t"] < end_ms - _WINDOW_EPSILON_MS
-        )
+    for window in build_peek_windows(export):
+        positions = np.arange(window.tick_slice.start, window.tick_slice.stop, dtype=int)
         windows.append(
             (
-                ordinal,
-                event,
-                ticks.loc[inside].reset_index(drop=True),
-                np.flatnonzero(inside.to_numpy()),
+                window.index,
+                visible.iloc[window.index],
+                ticks.iloc[window.tick_slice].reset_index(drop=True),
+                positions,
             )
         )
     return windows

@@ -5,9 +5,9 @@
 | | |
 |---|---|
 | **相依** | T0(基準凍結)+ WP-28 T1(ingest) |
-| **Risk / Cplx** | **Med** / Med — 風險不在演算法難度,而在**假綠**:真實 fixture 上 counter/sync 樣本數為 0,對表可能以 `n=0 vs n=0` 通過 |
-| **Touches** | ADD `research/src/modules/metrics/algorithms/{peek,timeline}.py` + tests;ADD `research/fixtures/parity/timeline-*.json`;ADD `tests/golden/research/timeline-parity.test.ts`;ADD `docs/operational/analysis-peek-timeline.md`;MODIFY `research/src/report/run_pipeline.py`、`research/src/modules/kinematics/notebooks/t2/generate_epsilon_parity.py`(消重) |
-| **狀態** | ⬜ |
+| **Risk / Cplx** | **Med** / Med — 風險不在演算法難度,而在**假綠**:零輸入 fixture 可用 `n=0 vs n=0` 通過,故合成與 09:39 都必須有反 vacuous 斷言 |
+| **Touches** | ADD `research/src/modules/metrics/algorithms/{peek,timeline}.py` + tests/fixture/notebook outputs;ADD `research/fixtures/parity/timeline-*.json`;ADD `tests/golden/research/timeline-parity.test.ts`;ADD `docs/operational/analysis-peek-timeline.md`;MODIFY `run_pipeline.py`、t2 parity generator、t3-sweep runner(消重) |
+| **狀態** | ✅ (2026-08-05) |
 
 ## Objective
 
@@ -40,21 +40,21 @@ FR-D7 + FR-D8:交付**教練第一線要的東西**——每個 peek 一條事�
 
 - Sync 族三指標與精度評估(T2)。
 - 動任何 TS 生產碼:本 task **只新增測試檔**;對表不一致一律先修 Python,判定為 TS 側 bug/spec 分歧則停手入帳(DoD ④)。
-- 改動 `synthetic_counterstrafe.json` 或 `epsilon-*.json` 的內容(消重後必須逐位不變)。
+- 改動 `synthetic_counterstrafe.json` 或把 `epsilon-*.json` / ε 數值當作有效驗收證據(M14 ② 已撤回；本 slice 亦不修改現有 epsilon fixture)。
 
 ## Steps
 
-- [ ] `peek.py`:`PeekWindow` + `build_peek_windows`(窗界/錨點/outcome/flags)。
-- [ ] 單元測試:窗界(末筆 +∞、邊界 tick 歸屬)、`firstFire` 的 targetId 過濾、缺 counter、缺 release、亂序事件、空窗、projectile 跨窗命中、`outcome` 三分類。
-- [ ] `timeline.py`:`Stat` + `timeline_metrics` + `timeline_parity_payload`;`stat()` 定義以獨立測試釘死(p50 插值 / 母體 sd / 空集合)。
-- [ ] 建反 vacuous 合成 fixture(三量 `n ≥ 2`、命中與未命中各 ≥1、含一個 projectile 跨窗命中)。
-- [ ] parity 產生腳本(notebooks)→ `fixtures/parity/timeline-*.json`(合成 + 真實 08:03 + 真實 09:39,共三份)。
-- [ ] 檢查 09:39 的 **24 個 `counter` 事件 vs 20 個 peek**:部分窗內有多個 counter,`t_counter` 一律取窗內**第一個**(與 `compute.ts` 的 `counterEvents.find()` 同語意);多 counter 的 peek 標 flag 供 T2 判讀。
-- [ ] `tests/golden/research/timeline-parity.test.ts`;`npm run test:ci` 全綠。
-- [ ] 消重:`run_pipeline.py` + t2 parity generator 改用共享窗界;重跑兩者確認產物逐位不變。
-- [ ] `analysis-peek-timeline.md` 落地(定義 + flags 詞彙表 + version + 限制)。
-- [ ] 時間軸圖 + 摘要表產出(合成 + 真實各一組)。
-- [ ] 兩閘輸出貼 progress(`uv run pytest` / `npm run test:ci`)。
+- [x] `peek.py`:`PeekWindow` + `build_peek_windows`(窗界/錨點/outcome/flags)。
+- [x] 單元測試:窗界(末筆 +∞、邊界 tick 歸屬)、`firstFire` 的 targetId 過濾、缺 counter、缺 release、亂序事件、空窗、projectile 跨窗命中、`outcome` 三分類。
+- [x] `timeline.py`:`Stat` + `timeline_metrics` + `timeline_parity_payload`;`stat()` 定義以獨立測試釘死(p50 插值 / 母體 sd / 空集合)。
+- [x] 建反 vacuous 合成 fixture(三量 `n ≥ 2`、命中與未命中各 ≥1、含一個 projectile 跨窗命中)。
+- [x] parity 產生腳本(notebooks)→ `fixtures/parity/timeline-*.json`(合成 + 真實 08:03 + 真實 09:39,共三份)。
+- [x] 檢查 09:39 的 **24 個 `counter` 事件 vs 20 個 peek**:部分窗內有多個 counter,`t_counter` 一律取窗內**第一個**(與 `compute.ts` 的 `counterEvents.find()` 同語意);多 counter 的 peek 標 flag 供 T2 判讀。
+- [x] `tests/golden/research/timeline-parity.test.ts`;`npm run test:ci` 全綠。
+- [x] 消重:`run_pipeline.py` + t2 parity generator + t3-sweep runner 改用共享窗界;重跑確認窗內 tick 索引逐位不變。
+- [x] `analysis-peek-timeline.md` 落地(定義 + flags 詞彙表 + version + 限制)。
+- [x] 時間軸圖 + 摘要表產出(合成 + 真實各一組)。
+- [x] 兩閘輸出貼 progress(`uv run pytest` / `npm run test:ci`)。
 
 ## Definition of Done
 
@@ -64,7 +64,7 @@ FR-D7 + FR-D8:交付**教練第一線要的東西**——每個 peek 一條事�
    | fixture | 角色 | 期望 |
    |---|---|---|
    | 合成 | 演算法邊界(缺 counter/缺 release/projectile 跨窗命中) | 三量各 `n ≥ 2`;命中/未命中皆有 |
-   | 真實 08:03 | **零輸入邊界案例** | `counterReactionMs.n = 0`、`fireTimingAlignmentMs.n = 0`、`firstShotHitRate = 100`、peek 數 20;**不得 crash、不得補 0** |
+   | 真實 08:03 | **零輸入邊界案例** | `counterReactionMs.n = 0`、`fireTimingAlignmentMs.n = 0`、`firstShotHitRate = 90`、peek 數 20;**不得 crash、不得補 0**(D-29.3 更正原殘留的 100) |
    | 真實 09:39 | **主要真實效度樣本** | 兩量各 `n = 20`(中位數約 427.2 / 126.5 ms)、`firstShotHitRate = 90`、peek 數 20 |
 3. **窗界與 outcome 單元測試綠**:上列 Steps 第 2 點八個情境各有測試;`build_peek_windows` 回傳長度恆等於 `visible` 事件數。
 4. **不一致處置**:若對表出現差異 → 先修 Python;若判定為 TS 側 bug 或 spec 分歧,入 [DECISIONS.md](../../../DECISIONS.md) 或開 [KI](../../../../known_issue/) 並取得結論後,本 task 才可標 PASS。

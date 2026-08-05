@@ -17,9 +17,9 @@ sys.path.insert(0, str(RESEARCH_ROOT / "src"))
 
 from modules.ingest.algorithms.loader import Export, load_export  # noqa: E402
 from modules.kinematics.algorithms.angular import epsilon_deg, on_target  # noqa: E402
+from modules.metrics.algorithms.peek import build_peek_windows  # noqa: E402
 
 
-_WINDOW_EPSILON_MS = 1e-9
 _DEFAULT_HITBOX = {"width": 1.0, "height": 2.0, "depth": 1.0}
 
 
@@ -33,13 +33,16 @@ def build_parity_payload(export: Export, eye_height: float = 1.6) -> dict[str, A
         .reset_index(drop=True)
     )
     presentations = []
-    for index, visible in visible_events.iterrows():
-        end_ms = (
-            float(visible_events.iloc[index + 1]["t"])
-            if index + 1 < len(visible_events)
-            else math.inf
+    for window in build_peek_windows(export):
+        presentation_ticks = ticks.iloc[window.tick_slice].reset_index(drop=True)
+        presentations.append(
+            _derive_presentation(
+                presentation_ticks,
+                visible_events.iloc[window.index],
+                export.meta,
+                eye_height,
+            )
         )
-        presentations.append(_derive_presentation(ticks, visible, end_ms, export.meta, eye_height))
 
     return {
         "source": export.source_path.name,
@@ -51,24 +54,19 @@ def build_parity_payload(export: Export, eye_height: float = 1.6) -> dict[str, A
 def _derive_presentation(
     ticks: pd.DataFrame,
     visible: pd.Series,
-    end_ms: float,
     meta: dict[str, Any],
     eye_height: float,
 ) -> dict[str, Any]:
     visible_ms = float(visible["t"])
     fallback = _visible_or_first_tick_target(visible, ticks)
-    inside = (ticks["t"] + _WINDOW_EPSILON_MS >= visible_ms) & (
-        ticks["t"] < end_ms - _WINDOW_EPSILON_MS
-    )
-    presentation_ticks = ticks.loc[inside].reset_index(drop=True)
     epsilon = epsilon_deg(
-        presentation_ticks,
+        ticks,
         meta,
         eye_height,
         fallback_target=fallback,
     )
     covered = on_target(
-        presentation_ticks,
+        ticks,
         meta,
         eye_height,
         fallback_target=fallback,
@@ -90,7 +88,7 @@ def _derive_presentation(
     first = int(acquired_indices[0])
     tracking_epsilon = epsilon[first:]
     tracking_covered = covered[first:]
-    first_tick_ms = float(presentation_ticks.iloc[first]["t"])
+    first_tick_ms = float(ticks.iloc[first]["t"])
     base.update(
         {
             "tAcquireMs": first_tick_ms - visible_ms,
@@ -111,9 +109,8 @@ def _visible_or_first_tick_target(
     if all(_is_finite_number(value) for value in visible_target):
         return tuple(float(value) for value in visible_target)
 
-    candidates = ticks.loc[ticks["t"] + _WINDOW_EPSILON_MS >= float(visible["t"])]
-    if not candidates.empty:
-        tick_target = tuple(candidates.iloc[0][field] for field in ("tx", "ty", "tz"))
+    if not ticks.empty:
+        tick_target = tuple(ticks.iloc[0][field] for field in ("tx", "ty", "tz"))
         if all(_is_finite_number(value) for value in tick_target):
             return tuple(float(value) for value in tick_target)
     raise ValueError(f"visible target position is missing for {visible['targetId']}")

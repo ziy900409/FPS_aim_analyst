@@ -19,6 +19,7 @@ if str(SOURCE_ROOT) not in sys.path:
 
 from modules.ingest.algorithms import load_export  # noqa: E402
 from modules.kinematics.algorithms.angular import omega_deg_s  # noqa: E402
+from modules.metrics.algorithms.peek import build_peek_windows  # noqa: E402
 from modules.segments.algorithms import (  # noqa: E402
     DEFAULT_SEGMENT_PARAMS,
     Segment,
@@ -192,29 +193,38 @@ def write_synthetic_sweep() -> Path:
 
 def write_real_evidence(path: Path) -> tuple[Path, Path]:
     export = load_export(path)
-    visible = export.events.loc[export.events["type"] == "visible"].sort_values("t")
+    ticks = export.ticks.sort_values("t", kind="stable").reset_index(drop=True)
     summary_rows: list[dict[str, Any]] = []
     segment_rows: list[dict[str, Any]] = []
 
-    for ordinal, (_, event) in enumerate(visible.iterrows()):
-        start_t = float(event["t"])
-        next_t = float(visible.iloc[ordinal + 1]["t"]) if ordinal + 1 < len(visible) else np.inf
-        ticks = export.ticks.loc[(export.ticks["t"] >= start_t) & (export.ticks["t"] < next_t)].reset_index()
-        omega = omega_deg_s(ticks)
-        segments = segment_submovements(omega)
+    for window in build_peek_windows(export):
+        window_ticks = ticks.iloc[window.tick_slice].reset_index(drop=True)
+        omega = omega_deg_s(window_ticks)
+        raw_segments = segment_submovements(omega[1:])
+        segments = [
+            Segment(
+                kind=segment.kind,
+                start_idx=segment.start_idx + 1,
+                end_idx=segment.end_idx + 1,
+                peak_omega=segment.peak_omega,
+                flags=segment.flags,
+                peek_index=window.index,
+            )
+            for segment in raw_segments
+        ]
         summary_rows.append(
             {
-                "peek_index": ordinal,
-                "tick_count": len(ticks),
+                "peek_index": window.index,
+                "tick_count": len(window_ticks),
                 "segment_count": len(segments),
                 "has_primary_flick": any(segment.kind == "primary_flick" for segment in segments),
-                "result_flags": "|".join(segments.flags),
+                "result_flags": "|".join(raw_segments.flags),
             }
         )
         for segment_index, segment in enumerate(segments):
             segment_rows.append(
                 {
-                    "peek_index": ordinal,
+                    "peek_index": window.index,
                     "segment_index": segment_index,
                     "kind": segment.kind,
                     "start_idx": segment.start_idx,
@@ -223,7 +233,7 @@ def write_real_evidence(path: Path) -> tuple[Path, Path]:
                     "flags": "|".join(segment.flags),
                 }
             )
-        _write_overlay(ordinal, omega, segments)
+        _write_overlay(window.index, omega, segments)
 
     segmented = sum(bool(row["has_primary_flick"]) for row in summary_rows)
     overview = {

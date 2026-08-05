@@ -1,0 +1,5 @@
+peek_index,target_id,side,outcome,visible_to_counter_ms,counter_to_first_shot_ms,release_to_first_shot_ms,flags
+0,target-1,L,hit,39.0625,54.6875,70.3125,
+1,target-2,R,hit,39.0625,54.6875,70.3125,hit_outside_window
+2,target-3,L,timeout,,,70.3125,no_counter|release_inferred_no_counter
+3,target-4,R,hit,39.0625,54.6875,,no_key_transition

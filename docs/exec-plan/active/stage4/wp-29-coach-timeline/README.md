@@ -27,7 +27,7 @@
 | `visible` / `fire` | 20 / 22 | 20 / 22 |
 | `counterReactionMs` | **n = 0** | **n = 20**,中位數 427.2 ms |
 | `fireTimingAlignmentMs` | **n = 0** | **n = 20**,中位數 126.5 ms |
-| `firstShotHitRate` | 100 | 90 |
+| `firstShotHitRate` | **90** | 90 |
 | `meta.suspect` | false | **true**(KI-004;非效能/溢位問題) |
 | 彈道 / ADS | hitscan、`ads` 事件 0 | hitscan、`ads` 事件 0 |
 
@@ -36,7 +36,7 @@
 **四個直接後果(已寫入下方契約與 DoD,不是備註)**:
 
 1. **真實資料現在可承擔交叉驗證**:09:39 三個量都有 n=20,FR-D8 的 ≤1e-9 對表在真實 fixture 上是實質的。
-2. **反 vacuous 條款仍然保留**,但改變理由:不再是「真實資料沒樣本」的權宜,而是**紀律** —— 對表閘必須斷言參與比對的樣本數非零,否則未來換 fixture 時可能無聲退化成 `n=0 vs n=0` 假綠(T1 DoD ②)。
+2. **反 vacuous 條款仍然保留**,但改變理由:不再是「真實資料沒樣本」的權宜,而是**紀律** —— 對表閘必須斷言參與比對的樣本數非零,否則未來換 fixture 時可能無聲退化成 `n=0 vs n=0` 假綠(T1 DoD ②)。08:03 的首發率經 `compute-v1` 稽核更正為 90(20 個相容首發中 2 miss;補槍使逐 peek outcome 仍全為 hit),見 D-29.3。
 3. **T2 精度評估不再預期落 `blocked-by-data`**:09:39 提供 20 個 `release_to_fire_ms` 樣本,`sync-v1` 判準可以真的跑出 `sufficient` / `insufficient`。三分支仍保留(未來 fixture 未必有樣本),但 T3 是否觸發從此是**有證據的決定**。
 4. **兩份 fixture 分工明確**:08:03 = 「零輸入」邊界案例(所有錨點缺席時報告不得 crash);09:39 = 主要真實效度樣本。兩者都要進 T1/T2 的測試矩陣。
 
@@ -59,7 +59,8 @@ research/fixtures/parity/timeline-*.json                 ← ADD 時間軸交叉
 tests/golden/research/timeline-parity.test.ts            ← ADD vitest 對表閘(既有 test:ci 內)      [T1]
 research/src/report/coach_report.py                      ← ADD 教練報告 v0(靜態 HTML,條件分層)     [T-exit]
 research/src/report/run_pipeline.py                      ← MODIFY 改用共享 peek 模組(消重)          [T1]
-research/src/modules/kinematics/notebooks/t2/generate_epsilon_parity.py ← MODIFY 同上(parity 逐位不變) [T1]
+research/src/modules/kinematics/notebooks/t2/generate_epsilon_parity.py ← MODIFY 同上(只驗窗界 index;ε 非證據) [T1]
+research/src/modules/segments/notebooks/t3-sweep/run_sweep.py ← MODIFY 同上 + leading-ω 切尾 [T1]
 docs/operational/analysis-peek-timeline.md               ← ADD 新構念 registry(t_release/outcome/flags) [T1/T-exit]
 src/data/DataRecorder.ts + docs/operational/schema.md    ← MODIFY **僅 T2 判定不足時**(additive `key` 事件) [T3]
 ```
@@ -91,7 +92,7 @@ graph LR
   - `stat()` 的 `p50` 為**線性插值**分位數、`sd` 為**母體**標準差(除以 n)——聚合層對表必須用同一定義。
 - **新構念 Python 為權威,但必須有文件**(C-D4 的另一半):`t_release`、`outcome`、`counter_hold_ms`、flags 詞彙表落 `docs/operational/analysis-peek-timeline.md`,帶 `version` 字串;定案後比照 `seg-v1` 只能升版重跑,不得原地改語意。
 - **缺事件是常態語意,不是缺失值**:[SimLoop.ts](../../../../../src/loop/SimLoop.ts) 只在 `ev.down && !held(反向) && vx 反號` 時寫 `counter` 事件 → **已停住才開槍的 peek 天生沒有 counter 事件**。缺錨點一律標 `flag` 並排除該指標的聚合,**不得吞成 NaN、不得補 0**(沿用 D-28.9 的 flag 詞彙表封閉紀律)。
-- **單一窗界實作**:`build_peek_windows` 是全 research 層唯一的 peek 窗來源。T1 必須把 [run_pipeline.py `_presentation_windows`](../../../../../research/src/report/run_pipeline.py)(其註解已指名「WP-29 owns peek-window reconstruction」)與 t2 parity generator 的兩份切片**收斂到此模組**,且 `fixtures/parity/epsilon-*.json` 重新產生後**逐位不變**。
+- **單一窗界實作**:`build_peek_windows` 是全 research 層唯一的 peek 窗來源。T1 必須把 [run_pipeline.py `_presentation_windows`](../../../../../research/src/report/run_pipeline.py)、t2 parity generator 與 t3-sweep runner 三份切片**收斂到此模組**,並證明消重前後窗內 tick index 集合逐位相同。M14 ② 已撤回,ε 數值與 `epsilon-*.json` 不作本 task 證據。
 - **parity 閘落點不變**(GD-19 / OQ-S4-7):Python 產 committed JSON → vitest 在**既有 `npm run test:ci`** 內對表;engine CI 不引入 Python 相依。**不得為對表新增任何 TS API**(比照 [epsilon-parity.test.ts](../../../../../tests/golden/research/epsilon-parity.test.ts):測試內就地組 `DataRecorderSnapshot` 後呼叫既有 `computeMetrics`)。
 - **教練報告紅線(C-D3 / GD-20)**:報告 v0 只放通過交叉驗證的時間軸量與明確標示精度限制的 Sync 族;任何未過構念驗證的量一律標「研究向」或不進報告。
 - **引擎零侵入**:T1/T2/T-exit 不動 `src/`;T3 若觸發僅動 data 層 additive 欄,**不 bump `schemaVersion`、不重錄任何 golden**(stage3 §2.5 additive 政策)。
@@ -100,11 +101,11 @@ graph LR
 
 | 觸發 | 影響 | 處理 |
 |---|---|---|
-| **交叉驗證假綠**(真實 fixture 上 counter/sync 樣本數為 0) | FR-D8 綠燈不代表 Python 實作正確,WP-30/32 建在未驗證的窗界上 | T1 DoD ② 的反 vacuous 斷言:合成 fixture 三量各 `n ≥ 2` 且涵蓋命中/未命中兩路徑;真實 fixture 只承擔 `firstShotHitRate` + 窗界/outcome 證據 |
+| **交叉驗證假綠**(零輸入 fixture 上 counter/alignment 樣本數為 0) | FR-D8 綠燈不代表 Python 實作正確,WP-30/32 建在未驗證的窗界上 | T1 DoD ② 的反 vacuous 斷言:合成與 09:39 兩量各 `n ≥ 2` 且首發同時涵蓋命中/未命中;08:03 專責 `n=0` 邊界不得 crash/補 0 |
 | Python 與 `compute.ts` 對不上(分母、`p50` 插值、`sd` 母體/樣本、targetId 過濾) | 教練看到的數字 ≠ 結果頁數字 | 對表容差 ≤1e-9 為 T1 DoD 首項;不一致**先修 Python**;若判定 TS 側 bug 或 spec 分歧 → 入 [DECISIONS.md](../../../DECISIONS.md) / [known_issue](../../../../known_issue/) 後才可 PASS |
 | `t_release` 定義在無 counter 事件時退化(不知道哪一鍵是「原方向」) | Sync 族語意漂移,跨 peek 不可比 | 定義寫死於 `analysis-peek-timeline.md`:原方向鍵 = counter 鍵的反向鍵;無 counter 事件時以「窗內最後一次 A/D 由 held → released 的 tick」為 fallback 並標 `release_inferred_no_counter`;兩條路徑各有單元測試 |
 | projectile `hit` 事件落在 `nextVisible` 之後 | 命中被誤判為 timeout,`outcome` 分布失真 | `hit` 以 `shotSeq` 關聯**不受窗界限制**;跨窗命中標 `hit_outside_window` 並仍計為 `hit`(與 `compute.ts` 的 `fireHitOutcome` 同語意);合成 fixture 釘死 |
-| 消重時改動了 parity 產生器 → `epsilon-*.json` 漂移 | M14 ② 的既有證據被無聲推翻 | T1 DoD ⑤:重跑 parity 產生器後 `git diff --exit-code research/fixtures/parity/` 必須乾淨 |
+| 消重時改動了 parity 產生器的窗界 | tracking presentation 可能對到不同 tick 集合,讓後續 KI-004 S1 重產失去可比基線 | T1 DoD ⑤:逐窗比較消重前後 tick index 集合；不得引用或要求 ε 數值不變(M14 ② 已撤回) |
 | 精度判準在 n 過小時被硬套 | 以噪音決定是否動引擎(T3) | T0 凍結最小樣本數與 `blocked-by-data` 分支;n 不足一律輸出 `blocked-by-data`,**不得**因此觸發 T3 |
 | 報告把 flag 過的 peek 併入聚合 | 教練用被污染的統計下處方 | 每個聚合欄位輸出 `n` + `flags` 計數;單元測試斷言帶 flag 的 peek 不進聚合分母 |
 | 時間軸圖依賴 matplotlib 進 `algorithms/` | C-D2 純度紀律腐化 | 繪圖只在 `notebooks/` 與 `src/report/`;`algorithms/` 純度測試沿用 WP-28 T1 模式 |
@@ -114,7 +115,7 @@ graph LR
 | Task | 檔案 | Objective | 相依 | Risk | 估時 |
 |---|---|---|---|---|---|
 | **T0** | [T0-entry-gate.md](T0-entry-gate.md) | 驗 WP-28 T1 exit;凍結 `compute.ts` 對表基準清單 + 缺事件語意 + **精度判準三分支與最小 n** | — | Low | 0.25d |
-| **T1** | [T1-peek-timeline.md](T1-peek-timeline.md) | `build_peek_windows` + `timeline_metrics` + **交叉驗證閘**(含反 vacuous)+ 兩份窗界實作消重 | T0 | **Med** | 0.75–1d |
+| **T1** | [T1-peek-timeline.md](T1-peek-timeline.md) | `build_peek_windows` + `timeline_metrics` + **交叉驗證閘**(含反 vacuous)+ 三份窗界實作消重 | T0 | **Med** | 0.75–1d |
 | **T2** | [T2-sync-precision.md](T2-sync-precision.md) | Sync 族三指標 + flags + **量化精度評估與明確判定** | T1 | Med | 0.5–0.75d |
 | **T3(選配,gated)** | [T3-key-events.md](T3-key-events.md) | **僅當 T2 判定 `insufficient`**:`DataRecorder` additive `key` 事件 | T2 判定 | Med | 0.5–1d |
 | **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 教練報告 v0(一鍵、條件分層)+ `analysis-peek-timeline.md` 定稿 + OQ-S4-6 關閉 | T1–T2(T3 依判定) | — | 0.25–0.5d |

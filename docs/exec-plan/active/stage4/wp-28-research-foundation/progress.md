@@ -97,5 +97,5 @@
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
 | OQ-S4-8(樣本) | 真實 drill 匯出樣本(≤30s、匿名)未取得 | ✅ **關閉(2026-08-05)**:`counterstrafe_ad_v1` 27.390625s / `P001`;① ingest/dt、④ 0.95 成功率+20 疊圖、⑤ 人工檢核均完成;M14 已宣告 | 使用者 | 2026-08-05 |
-| OQ-S4-9 | presentation 窗界切片有三份實作(t2 parity generator / t3-sweep runner / T-exit 一鍵 script) | 🟡 一鍵 script 已對齊 parity generator;真實 sweep 另證實 runner 尚未套 D-28.12 leading-ω 切尾(S-28.10)。整併與 runner 對齊由擁有 peek 窗重建的 WP-29 執行 | WP-29 | WP-29 T-exit 前 |
+| ~~OQ-S4-9~~ | ~~presentation 窗界切片有三份實作(t2 parity generator / t3-sweep runner / T-exit 一鍵 script)~~ | ✅ **關閉(2026-08-05,WP-29 T1 atomic commit)**:三者皆改用 `metrics.algorithms.peek.build_peek_windows`;三份 fixture 的窗內 tick 索引逐位一致,pipeline `dtReport`/`segmentation` 逐位不變,t3 21 列分段形狀不變且 leading-ω `non_finite_interpolated` 旗標 21→0 | WP-29 | 2026-08-05 |
 | OQ-S4-2 | 分段閾值 / SG window 的 128Hz 起點數值 | ✅ `seg-v1` 已在看真實資料前 pre-register 凍結(D-28.7);2026-08-05 真實樣本 19/20 + 疊圖人工檢核支持保留(D-28.15) | 研究者 | 2026-08-05 |
