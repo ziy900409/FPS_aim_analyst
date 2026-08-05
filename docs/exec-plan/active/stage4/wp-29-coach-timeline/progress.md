@@ -11,8 +11,8 @@
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-05 | 上游只引用、不重跑；`compute.ts` 五項基準、`counter` 條件性語意、`sync-v1` 三分支與 KI-004 使用界線已凍結；OQ-S4-12 關閉及 OQ-S4-10/11 已對帳至 stage4 |
 | T1 逐 peek 時間軸 + 交叉驗證 | ✅ | 2026-08-05 | targeted `31 passed` + final metrics/purity `16 passed`;完整 `uv run pytest` **89 passed**;`npm run test:ci` **83 files / 644 Vitest + 19 Playwright passed**;三份 parity ≤1e-9;共享窗界與 t3 leading-ω 對帳完成 |
-| T2 Sync 族 + 精度判定 | ⬜ | — | — |
-| T3 additive key 事件(gated) | ⬜ gated | — | 觸發條件 = T2 判定 `insufficient` |
+| T2 Sync 族 + 精度判定 | ✅ | 2026-08-05 | `sync-v1` 三指標 + flags + 三分支；targeted **35 passed**、完整 research **106 passed**、engine **644 Vitest + 19 Playwright passed**；三 fixture deterministic report 完成 |
+| T3 additive key 事件(gated) | ⏭ skipped | 2026-08-05 | **觸發 = 否**；09:39 `release_to_fire_ms` / `counter_hold_ms` 均為 `sufficient` |
 | T-exit 教練報告 v0 | ⬜ | — | — |
 
 ---
@@ -131,6 +131,44 @@
 
 ---
 
+## T2 Evidence(2026-08-05)
+
+### `sync-v1` 三 fixture 結果
+
+有效樣本規則 = 指標值有限且該列 `flags == ()`；任何 peek/Sync flag 都排除整列，故
+`release_inferred_no_counter` 預設不進正式聚合。`counter_hold_ms` 若延伸出窗，以最後一個
+窗內 held tick 回傳截斷值並標 `counter_hold_truncated`，保留可檢視性但不進判定。
+
+| fixture | `release_to_fire_ms` n / mean / sample SD / verdict | `counter_hold_ms` n / mean / sample SD / verdict | `counter_to_fire_ms` n / mean / sample SD | flags 計數 |
+|---|---|---|---|---|
+| 合成 `synthetic_timeline.json` | **1** / 70.3125 / `None` / `blocked-by-data` | **1** / 15.625 / `None` / `blocked-by-data` | 1 / 54.6875 / `None` | `hit_outside_window` 1、`missing_counter` 1、`missing_release` 1、`no_counter` 1、`no_key_transition` 1、`release_inferred_no_counter` 1 |
+| 真實 08:03 | **0** / `None` / `None` / `blocked-by-data` | **0** / `None` / `None` / `blocked-by-data` | 0 / `None` / `None` | `missing_counter` 20、`missing_release` 20、`no_counter` 20、`no_key_transition` 20 |
+| 真實 09:39 | **13** / 137.80673076935972 / **46.044857876328535** / `sufficient` | **13** / 103.44076923066034 / **16.480640422417093** / `sufficient` | 13 / 144.49269230771236 / 45.731036307070696 | `multiple_counters` 4、`counter_hold_truncated` 3、`missing_release` 1、`no_key_transition` 1 |
+
+08:03 的 `None` 值保持為合法缺錨點語意，無補 0 / NaN / crash。09:39 是唯一真實 precision
+gate：兩個量均有 `n=13 >= 10`，量化 SD `2.255274489021976 ms` 分別小於樣本 SD 的
+三分之一(`15.348285958776178 ms` / `5.493546807472364 ms`)；因此兩者都為
+`sufficient`，**T3 觸發 = 否，狀態 = skipped**。本 slice 到此停止，未開 T3。
+
+### Pre-registration / deterministic artifact
+
+- `DEFAULT_SYNC_PARAMS == SyncParams(min_samples=10, sd_ratio_threshold=1/3, version="sync-v1")`，逐位符合 D-29.1；equality boundary test 釘死 `>=` 屬 `insufficient`。
+- 128 Hz `tick = 7.8125 ms`；公式 `(1000/128)/sqrt(12)` 的精確結果為 **2.255274489021976 ms**，測試相對誤差 `<=1e-12`。
+- committed report：`research/src/modules/metrics/notebooks/t2/outputs/sync-precision.json`；重產前後 SHA-256 均為 `4700A7D0C9E2CAE3632EABE14CD63114A9FBD0EA2CA29D5AD92279D39FA0D7C1`。
+- 合成 fixture 由 `meta.weapon.bullet` 判為 projectile；兩份真實 fixture 判為 hitscan。兩份真實 fixture 仍無 ADS-on / projectile cell，OQ-S4-11 保持 open。
+
+### Gates / scope
+
+- Targeted：metrics + fixture consistency + algorithms purity → **35 passed in 3.47s**。
+- Research：`uv run pytest -q -p no:cacheprovider --basetemp .pytest_tmp_t2_full` → **106 passed in 7.20s**。
+- Engine：`npm run test:ci` → `tsc --noEmit` exit 0、**83 files / 644 Vitest passed**、**19 Playwright passed**。
+- `algorithms/sync.py` 無寫檔、matplotlib 或 TS dependency；寫檔只在 `notebooks/t2/generate_sync_precision_report.py`。
+- `src/` 生產碼零 diff；未修改 TS、既有真實 fixture、`synthetic_counterstrafe.json`、T1 parity 或 frozen `compute-v1` / `timeline-v1` / `seg-v1` 語意。
+- WP-29 T2 新碼只讀 `events`、`ticks[].t/keys` 與 `meta.weapon.bullet`；**完全未讀 `px/pz`**，D-29.2 維持有效；09:39 `meta.suspect=true` 仍只歸因 KI-004。
+- WP-29 worktree CodeGraph 仍未初始化；依規則未自行初始化。只讀 main index不含 T1 branch 新模組，未提供可用的 T2 symbol impact；graphify 顯示新 Sync 模組只接 `PeekWindow` / `Export` notebook 路徑，blast radius 為 research metrics/tests/docs 的 local additive slice。
+
+---
+
 ## Decision Log
 
 > 格式沿用 WP-28:`D-29.n | 決策 | 理由(含 Alternatives Considered) | 證據`。跨 WP/跨文件者改寫 [DECISIONS.md](../../../DECISIONS.md)。
@@ -142,6 +180,9 @@
 | D-29.2 | 09:39 fixture 雖有 `meta.suspect=true`，仍可供 WP-29 T1/T2 使用；界線是本 WP 只消費 `events` 與 `ticks[].keys`，不得消費 `px/pz` | KI-004 的 suspect 成因是 corridor gate 單位域錯誤與 ε 原點缺陷，不是效能、overflow 或事件鏈失敗；counter 24 與鍵狀態可作本 WP 證據。若任何 WP-29 指標開始消費 `px/pz`，本決議立即失效並須重新評估。Alternatives Considered:整份 fixture 禁用(拒絕:會丟棄不受缺陷影響的事件/鍵資料)；忽略 suspect 不設界線(拒絕:可能讓未來指標誤用位置資料) | [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-1、K-2、K-3；09:39 fixture 21.27s、counter 24、三個對表量各 n=20 |
 | D-29.3 | 更正 08:03 `firstShotHitRate` 為 **90**,並以 fixture + frozen `compute-v1` 為權威覆寫 README/T1/progress 的殘留 100 | TS parity 首跑在固定期望 100 時失敗，但 Python 與 `computeMetrics` 已一致為 90；逐窗稽核找到 peek 1/4 的相容首發 `hit=false` 且無 projectile hit，20 個首發命中 18 個。兩窗後續補槍命中，故 outcome 仍為 hit。Alternatives Considered:修改 fixture(拒絕:抹除真實事實)；改 Python/TS 分母或把補槍算首發(拒絕:違反 D-29.0 `compute-v1`)；標 TS bug(拒絕:實作符合 raw events) | `timeline-parity.test.ts` 的 100→90 紅/綠證據；fixture 首發 misses = `(peek 1,t1)`、`(peek 4,t4)` |
 | D-29.4 | `build_peek_windows` 成為 research 唯一窗界；既有 consumer 只保留 tuple/presentation adapter，t3 在共享切片後切除 undefined leading ω 並把 indices +1 映回 tick frame | 單一 `[visible,nextVisible)` + 1e-9 tolerance 避免三份漂移；切尾落在 consumer 能保留 frozen `seg-v1`。Alternatives Considered:保留三份公式只加 tests(拒絕:仍可分叉)；改 `omega_deg_s` 首值契約(拒絕:跨模組且非 T1 scope)；改 `seg-v1` 處理 nan(拒絕:破壞 pre-registration) | 三 fixture tick indices 相同；pipeline summary 相同；t3 21 rows shape 相同、non-finite flags 21→0 |
+| D-29.5 | `sync-v1` 正式聚合只納入「數值有限且整列零 flags」樣本；inferred / truncated 數字仍保留在逐列輸出 | T2 明定帶 flag 的列不進分母，並要求 `release_inferred_no_counter` 預設排除；整列規則比逐 metric 例外表更封閉、可稽核。Alternatives Considered:只排除直接影響該 metric 的 flags(拒絕:違反 T2 明文且讓分母依欄位漂移)；把 inferred / truncated 直接清成 `None`(拒絕:丟失可檢視證據) | 09:39 20 peeks 中 7 列帶 flag，兩個 precision metrics 各 `n=13`；flagged-row exclusion test 釘死 SD 不受極端值影響 |
+| D-29.6 | `sync_metrics(peeks,ticks)` 保留兩參數預設介面，並以 optional keyword `weapon_mode` 接收 notebook 邊界從 `meta.weapon.bullet` 推導的分層值 | 純演算法不應隱式讀完整 Export/meta，但 T2 又要求逐列帶 weapon mode。Alternatives Considered:把 `Export` 整體傳入(拒絕:擴大耦合且偏離 README 介面)；在算法內固定 hitscan(拒絕:合成 projectile 分層錯誤) | deterministic report：合成 `projectile`、08:03/09:39 `hitscan`；單元測試覆蓋 explicit projectile keyword |
+| D-29.7 | T3 組合 gate：09:39 任一 tick-quantized metric 為 `insufficient` → triggered/pending；兩者全為 `sufficient` → skipped；其餘含 `blocked-by-data` → deferred | T2 對兩個量各自判定，但 T3 是單一引擎變更，需把雙 verdict 收斂成唯一狀態。Alternatives Considered:只看 `release_to_fire_ms`(拒絕:忽略同樣 tick-quantized 的 counter hold)；多數決(拒絕:可能掩蓋單一失敗構念) | report generator 對 09:39 兩個 `sufficient` 產出 `t3Gate.status=skipped`；fixture test 釘死 |
 
 ---
 
@@ -155,6 +196,8 @@
 | S-29.3 | T1 parity 固定期望首次揭露 README/T1/progress 把 08:03 首發率誤記為 100；raw events 與兩側實作皆為 90 | 若照文件硬改演算法會破壞 frozen `compute-v1` 並掩蓋兩個真實首發 miss | 依 DoD ④暫停 PASS、逐窗稽核後作 D-29.3 文件更正；不動 TS 生產碼與真實 fixture |
 | S-29.4 | t3-sweep 基線有 21/21 segment rows 帶 `non_finite_interpolated`，比 WP-28 S-28.10 當時記錄的 19/19 多 2 列 | 數量隨 09:39 fixture/分段結果演進，但缺陷機制相同；不影響 segment 邊界，只污染品質 flags | 套 D-28.12 切尾 + indices 映回；21 列 shape 逐位相同、污染 21→0，OQ-S4-9 關閉 |
 | S-29.5 | 最終 `test:ci` 複跑一次出現 3 個既有 Playwright app-ready/backend 5s timeout，該 run 仍有 644/644 Vitest 與 16/19 E2E 通過 | 失敗不在 T1 路徑且先前同命令 19/19；不可為環境 flake 修改無關 E2E/生產碼 | 原命令立即重跑後 **644/644 + 19/19** 全綠；保留 flake 證據但不擴 scope |
+| S-29.6 | 任務文字把 `7.8125/sqrt(12)` 約寫成 `2.2551 ms`，實際公式值為 `2.255274489021976 ms` | 若把近似文字當常數會違反 DoD 的公式與 `<=1e-12` 測試；本次分支判定不受此小差異影響 | 以凍結公式為權威，不硬編碼近似；artifact 與 boundary test 都記精確計算值 |
+| S-29.7 | 09:39 雖有 20 個 raw Sync anchor 組合，嚴格零-flags 聚合後只有 13 列，而非 planning 期的 `n≈20` | 4 列 `multiple_counters` + 3 列 `counter_hold_truncated` 被排除；仍高於 `min_samples=10`，不是 blocked-by-data 假綠 | 保留全部 20 列與 flag 計數於 artifact；precision 只用 13 列並得到兩個明確 `sufficient` verdict |
 
 ---
 

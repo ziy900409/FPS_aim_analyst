@@ -54,10 +54,51 @@ uses only the compatible first shot and divides by all visible events. Consequen
 | `no_key_transition` | No eligible held-to-released transition exists; `t_release=None`. |
 | `no_first_shot` | No target-compatible first-shot fire exists in the window. |
 | `hit_outside_window` | A shot fired in this window hit at or after the next visible event. |
+| `missing_release` | Sync cannot compute a release-anchored value because `t_release=None`. |
+| `missing_counter` | Sync cannot compute a counter-anchored value because `t_counter=None`. |
+| `missing_first_shot` | Sync cannot compute a fire-anchored value because `t_first_shot=None`. |
+| `counter_hold_truncated` | The counter key remains held at the last in-window tick; the reported hold is clipped there and excluded from aggregation. |
 
 The algorithm asserts that every emitted flag is in this table. Missing anchors are explicit
 semantics: they remain `None` and do not enter the corresponding `compute-v1` aggregate; they are
 never replaced with zero or NaN.
+
+## Release-to-Click Sync contract (`sync-v1`)
+
+`research/src/modules/metrics/algorithms/sync.py` is authoritative for the new Sync family. It emits
+one row per `PeekWindow`; no row is dropped. The three time columns preserve signed differences and
+use Python `None` when an endpoint is absent.
+
+| Metric | `sync-v1` definition | Timing precision |
+|---|---|---|
+| `release_to_fire_ms` | `t_first_shot - t_release` | Tick-derived release endpoint, up to one tick of quantization. |
+| `counter_hold_ms` | From sub-tick `t_counter` to the last observed tick on which the counter key remains continuously held. A release observed in the next tick closes the interval. If the key is still held at the final in-window tick, return the clipped duration with `counter_hold_truncated`. | Tick-derived release endpoint, up to one tick of quantization. |
+| `counter_to_fire_ms` | `t_first_shot - t_counter`; identical to frozen `compute-v1` `fireTimingAlignmentMs`. | Sub-tick input timestamps at both endpoints; not precision-judged here. |
+
+Every row also carries `peek_index`, `side`, `ads`, `weapon_mode`, and the combined peek/Sync flags.
+`weapon_mode` is `projectile` when `meta.weapon.bullet` is present and otherwise `hitscan`; the
+notebook boundary resolves that metadata and passes the explicit value into the pure algorithm.
+
+The formal aggregate eligibility rule is deliberately conservative: a metric value enters `n` and
+sample SD only when it is finite and the row's `flags` tuple is empty. Thus
+`release_inferred_no_counter`, `multiple_counters`, unrelated outcome flags, and clipped holds are
+all inspectable in row output but excluded by default. This keeps OQ-S4-10 open without silently
+admitting inferred release anchors.
+
+### Pre-registered precision decision
+
+`SyncParams(min_samples=10, sd_ratio_threshold=1/3, version="sync-v1")` is frozen. With 128 Hz
+ticks, `tick_ms = 7.8125` and uniform-quantization SD is exactly
+`tick_ms / sqrt(12) = 2.255274489021976 ms`. `sample_sd_ms` uses sample SD (division by `n - 1`).
+
+| Condition, evaluated independently for `release_to_fire_ms` and `counter_hold_ms` | Verdict | T3 consequence |
+|---|---|---|
+| `n < 10` | `blocked-by-data` | Do not trigger T3. |
+| `n >= 10` and `quantization_sd_ms >= sample_sd_ms * (1/3)` | `insufficient` | Trigger T3, but implement it only in the T3 slice. |
+| `n >= 10` and `quantization_sd_ms < sample_sd_ms * (1/3)` | `sufficient` | Skip T3 and retain tick-derived release timing. |
+
+Equality belongs to `insufficient`. The threshold may not be adjusted after seeing fixture results;
+a changed definition requires a new version and a full rerun.
 
 ## Aggregate parity contract
 
@@ -73,8 +114,9 @@ version change rather than in-place redefinition.
 
 ## Known limitations
 
-1. Release timing has up to one 128 Hz tick of quantization error; T2 owns the pre-registered
-   precision verdict.
+1. Release timing has up to one 128 Hz tick of quantization error. T2's 09:39 evidence judged both
+   tick-derived metrics `sufficient`, but that verdict is fixture-specific rather than a population
+   inference.
 2. Real evidence is two runs from one participant. The 08:03 run has no A/D transition, while 09:39
    contributes only 20 counter/alignment samples; neither supports population-level inference.
 3. Both real fixtures are hitscan and provide no ADS-on comparison. Projectile, ADS grouping, and
