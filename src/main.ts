@@ -207,16 +207,41 @@ cameraController.setAdsConfig(activeWeaponConfig().ads);
 // WP-1 / T5（FR-1.5）— sensitivity/FOV 設定面板（DOM overlay, D1）：拖動即時生效。
 // 面板為這兩個設定的單一真實來源（建構時推預設給 controller），值供 WP-7 metadata。
 // 鎖定中隱藏、解除時顯示（OQ-1.3）。
+const topLeftControls = document.createElement('div');
+topLeftControls.id = 'top-left-controls';
+topLeftControls.style.cssText = [
+  'position:fixed',
+  'top:16px',
+  'left:16px',
+  'display:flex',
+  'flex-direction:column',
+  'align-items:stretch',
+  'gap:12px',
+  'pointer-events:auto',
+].join(';');
+const sessionLaunchControls = document.createElement('div');
+sessionLaunchControls.id = 'session-launch-controls';
+sessionLaunchControls.setAttribute('aria-label', 'Session launch controls');
+sessionLaunchControls.style.cssText = [
+  'position:relative',
+  'display:flex',
+  'flex-direction:column',
+  'gap:8px',
+  'z-index:40',
+].join(';');
+topLeftControls.appendChild(sessionLaunchControls);
+document.body.appendChild(topLeftControls);
+
 const settingsPanel = createSettingsPanel({
   onSensitivityChange: (s) => cameraController.setSensitivity(s),
   onFovChange: (deg) => cameraController.setFov(deg),
   initialResolutionMode: activeResolutionMode,
+  parent: topLeftControls,
   onResolutionModeChange: (mode) => {
     activeResolutionMode = mode;
     resize();
   },
 });
-pointerLock.onChange((locked) => settingsPanel.setVisible(!locked));
 
 // WP-4 / T4（FR-4.4）— 螢幕中心準心（DOM overlay, D1）：瞄準參考 + §5 準心對齊偏移的視覺基準。
 // 恆顯示（不隨鎖定切換）：第一人稱射線走 camera 中心，準心即射線方向指示。
@@ -270,9 +295,7 @@ experimentButton.type = 'button';
 experimentButton.textContent = '實驗 session';
 experimentButton.title = '進入資格閘（GD-10 防線①）';
 experimentButton.style.cssText = [
-  'position:fixed',
-  'top:12px',
-  'left:12px',
+  'width:100%',
   'height:34px',
   'padding:0 14px',
   'border:1px solid rgba(255,255,255,0.18)',
@@ -281,40 +304,35 @@ experimentButton.style.cssText = [
   'color:#e6e9ec',
   'background:rgba(15,18,21,0.96)',
   'cursor:pointer',
-  'z-index:40',
 ].join(';');
 experimentButton.addEventListener('click', () => {
   pendingSessionMode = 'session';
   sessionSetupForm.open();
 });
-document.body.appendChild(experimentButton);
+sessionLaunchControls.appendChild(experimentButton);
 
 const protocolButton = document.createElement('button');
 protocolButton.type = 'button';
 protocolButton.textContent = '解析度 protocol';
 protocolButton.title = '執行受試者內解析度 × 偵測 protocol';
 protocolButton.style.cssText = experimentButton.style.cssText;
-protocolButton.style.top = '54px'; // 顯式設值：cssText getter 會序列化為 'top: 12px'（含空格），字串 .replace 會失效 → 三顆按鈕重疊。
 protocolButton.addEventListener('click', () => {
   pendingSessionMode = 'resolution-protocol';
   sessionSetupForm.open();
 });
-document.body.appendChild(protocolButton);
+sessionLaunchControls.appendChild(protocolButton);
 const brProtocolButton = document.createElement('button');
 brProtocolButton.type = 'button';
 brProtocolButton.textContent = 'BR protocol';
 brProtocolButton.title = '執行 BR 跟槍 ADS × 彈道 × 角尺寸 protocol';
 brProtocolButton.style.cssText = experimentButton.style.cssText;
-brProtocolButton.style.top = '96px'; // 同上：顯式設 top,避免與 protocol/experiment 按鈕重疊。
 brProtocolButton.addEventListener('click', () => {
   pendingSessionMode = 'br-tracking-protocol';
   sessionSetupForm.open();
 });
-document.body.appendChild(brProtocolButton);
+sessionLaunchControls.appendChild(brProtocolButton);
 pointerLock.onChange((locked) => {
-  experimentButton.style.display = locked ? 'none' : 'block';
-  protocolButton.style.display = locked ? 'none' : 'block';
-  brProtocolButton.style.display = locked ? 'none' : 'block';
+  topLeftControls.style.display = locked ? 'none' : 'flex';
 });
 
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。

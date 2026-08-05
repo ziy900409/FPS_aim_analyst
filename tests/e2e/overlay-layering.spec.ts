@@ -43,3 +43,35 @@ test('export panel and drill controls stack above the result-screen backdrop', a
   expect(exportZ).toBeGreaterThan(resultZ);
   expect(controlsZ).toBeGreaterThan(resultZ);
 });
+
+test('session launch controls do not overlap the settings panel', async ({ page }) => {
+  await page.goto(URL, { waitUntil: 'networkidle' });
+
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const settingsPanel = document.querySelector('#settings-panel');
+          const launchLabels = ['實驗 session', '解析度 protocol', 'BR protocol'];
+          const launchButtons = [...document.querySelectorAll('button')].filter((button) =>
+            launchLabels.includes(button.textContent ?? ''),
+          );
+          if (settingsPanel === null || launchButtons.length !== launchLabels.length) return null;
+
+          const panelRect = settingsPanel.getBoundingClientRect();
+          return launchButtons
+            .filter((button) => {
+              const buttonRect = button.getBoundingClientRect();
+              return !(
+                buttonRect.right <= panelRect.left ||
+                buttonRect.left >= panelRect.right ||
+                buttonRect.bottom <= panelRect.top ||
+                buttonRect.top >= panelRect.bottom
+              );
+            })
+            .map((button) => button.textContent);
+        }),
+      { timeout: 15_000 },
+    )
+    .toEqual([]);
+});

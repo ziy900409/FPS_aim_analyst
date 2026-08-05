@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-003](KI-003-top-left-controls-overlap.md) | 左上角 session/protocol 啟動按鈕覆蓋 SettingsPanel 的 Sensitivity/FOV/Resolution | BD-003(§3) | ✅ 已修(2026-08-05) |
 | [KI-002](KI-002-br-field-camera-anchor-protocol-load.md) | br-field camera 未錨定 sim origin(D1)+ protocol 場景載入驗證舊 drill(D2)(PR #34 review) | BD-002(§3) | ✅ D1+D2 已修(2026-07-15) |
 | [KI-001](KI-001-input-lag-sim-clock-drift.md) | 開火/鍵盤嚴重輸入延遲(sim 邏輯時鐘漂移) | BD-001(§3) | ✅ Task 1+2 已修(2026-07-09) |
 
@@ -32,6 +33,19 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-003 ✅ KI-003 — 左上角 controls 改用共用 flow 容器(2026-08-05)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 使用者截圖顯示「實驗 session／解析度 protocol／BR protocol」覆蓋 SettingsPanel。追碼確認兩組 overlay 同時直接掛在 `document.body`，SettingsPanel 固定於 `top:16px;left:16px;z-index:11`，三顆按鈕固定於 `left:12px;top:12/54/96px;z-index:40`；解鎖時又同時顯示，形成確定性的座標衝突。完整紀錄見 [KI-003](KI-003-top-left-controls-overlap.md)。 |
+| **決策** | 建立唯一 fixed 的 `#top-left-controls`，以 column flex 正常排列 `#session-launch-controls` 與 `#settings-panel`；`createSettingsPanel` 增加 optional `parent` 掛載點並保留未傳入時的相容行為；Pointer Lock 統一切換外層容器。 |
+| **理由** | 流式版面由內容尺寸決定間距，不依賴按鈕文字、縮放或控制項數量；比調整固定 `top/left` 更能避免同類回歸，且不改 protocol/解析度業務邏輯。 |
+| **偏離計畫** | 無。依 TDD 先以 Playwright bounding-box 測試重現三顆按鈕皆相交（RED），再落共用容器使同一測試轉綠（GREEN）。 |
+| **影響面** | `src/main.ts`、`src/ui/SettingsPanel.ts`、`tests/e2e/overlay-layering.spec.ts`；不觸及 sim、輸入、recorder、匯出或 ResolutionMode 語意。 |
+| **狀態** | ✅ 已修。驗證：`tsc --noEmit` 0、Vitest 82 files / 641 tests 全綠、Playwright 19 tests 全綠。 |
+
+---
 
 ### BD-002 ✅ KI-002 — br-field camera 錨定 sim origin(eyeZ)+ protocol 原子載入(2026-07-15)
 

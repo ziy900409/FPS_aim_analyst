@@ -37,6 +37,8 @@ export interface SettingsPanelOptions {
   onResolutionModeChange?: (mode: ResolutionMode) => void;
   /** 初始解析度模式；預設 native。 */
   initialResolutionMode?: ResolutionMode;
+  /** 掛載容器；未提供時維持固定於 viewport 左上角的獨立 overlay。 */
+  parent?: HTMLElement;
 }
 
 export interface SettingsPanelHandle {
@@ -63,9 +65,8 @@ export function createSettingsPanel(opts: SettingsPanelOptions): SettingsPanelHa
   const root = document.createElement('div');
   root.id = 'settings-panel';
   root.style.cssText = [
-    'position:fixed',
-    'top:16px',
-    'left:16px',
+    opts.parent === undefined ? 'position:fixed' : 'position:relative',
+    ...(opts.parent === undefined ? ['top:16px', 'left:16px'] : []),
     'display:flex',
     'flex-direction:column',
     'gap:12px',
@@ -88,7 +89,7 @@ export function createSettingsPanel(opts: SettingsPanelOptions): SettingsPanelHa
   const fovRow = makeRow('FOV', FOV_MIN, FOV_MAX, FOV_STEP, fov, fmtFov);
   const resolutionRow = makeSelectRow('Resolution', resolutionMode);
   root.append(sens.row, fovRow.row, resolutionRow.row);
-  document.body.appendChild(root);
+  (opts.parent ?? document.body).appendChild(root);
 
   sens.input.addEventListener('input', () => {
     sensitivity = sens.input.valueAsNumber;
