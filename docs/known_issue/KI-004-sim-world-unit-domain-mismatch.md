@@ -1,7 +1,9 @@
 # KI-004 — sim domain(source unit)與 world domain 混用:corridor gate 100× 過緊 + 離線 ε(t) 原點錯尺度
 
 > 類型:單位域(unit domain)一致性 bugfix 診斷 + 修改計畫(tech spec)。
-> 狀態:**🔴 診斷完成,修法待拍板**(2026-08-05)。**尚未動任何程式碼。**
+> 狀態:**🟡 已定解法待落地**(修法方向 2026-08-05 由使用者拍板;見 §5)。**尚未動任何程式碼。**
+>
+> ⚠️ **2026-08-05 更正**:本文件初版稱「08:03 匯出 `px ≡ 0`,ε 碰巧正確,M14 數值不撤回」。**該敘述已證實為誤** —— D2 實際上有**兩個獨立缺陷**,其中 D2a(遺漏 camera base offset)與 `px` 無關,在 08:03 上同樣造成 ~12.5° 誤差。**M14 ② 撤回**(§3、§4)。
 > 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-004。
 > 發現路徑:排查「[counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json](../../research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json) 為何零位移」時,重現用的第二份匯出暴露此問題。
 
@@ -25,9 +27,27 @@
 
 `suspect` 的唯一觸發者是 [main.ts:527](../../src/main.ts#L527) 的 `playerCorridorExceeded`。也就是說:**只有完全不移動的 run 才會被判定「可信」,任何照 drill 要求做急停的 run 都會被判定「可疑」** —— 旗標語意完全反轉。
 
-### 1.2 潛在症狀(更嚴重):離線 ε(t) 的觀察者原點錯 100 倍
+### 1.2 更嚴重的症狀:離線 ε(t) 的量測原點是錯的(兩個獨立缺陷)
 
-同一根因也落在 [`trackingDerivation.ts`](../../src/metrics/trackingDerivation.ts) / [`detectionDerivation.ts`](../../src/metrics/detectionDerivation.ts) 的 `p_eye`。ε(t)、on-target、TOT%、`t_acquire`、`t_detect`、`eccentricity_at_spawn` 在 `px ≠ 0` 時全部失真。**08:03 那份 `px ≡ 0`,恰好把這個 bug 完全遮住**(見 §4)。
+[`trackingDerivation.ts`](../../src/metrics/trackingDerivation.ts) / [`detectionDerivation.ts`](../../src/metrics/detectionDerivation.ts) 把射線原點寫死為 `p_eye = (px, eyeY, pz)`。這相對於**真實的**射線原點(= camera world pose)有兩個各自獨立的錯誤:
+
+| # | 缺陷 | 條件 | 說明 |
+|---|---|---|---|
+| **D2a** | 遺漏 camera base offset | **恆成立,與 `px` 無關** | 真實原點 = `(0, eyeHeight, eyeZ)`,`field-low` 的 `eyeZ = depth/2 − standoff = 10/2 − 1 = **4**`([SceneManager.ts:67](../../src/render/SceneManager.ts#L67))。推導假設 `z = 0` → 目標在 `z = −4` 時把交戰距離算成 4 而非 8 |
+| **D2b** | 遺漏 `SIM_TO_WORLD` | 僅 `px ≠ 0` | 再疊一層 100× 尺度誤差 |
+
+**實測**(以引擎自身在開火當下用真實 camera 算出的 `fire.offsetDeg` 為 ground truth):
+
+| fixture | \|ε_推導 − offsetDeg\| 中位數 | \|ε_正確 − offsetDeg\| 中位數 |
+|---|---|---|
+| 08:03(`px ≡ 0`,只有 D2a) | **12.52°**(max 12.73) | 0.21° |
+| 09:39(`px` → 169,D2a + D2b) | **67.11°**(max 88.55) | 0.14° |
+
+> `ε_正確` = 以 `p_eye = (baseX + px·0.01, 1.6, baseZ + pz·0.01)`、`base = (0, 1.6, 4)` 計算。殘差 0.1–0.2° 來自「fire 時間戳 vs 最近 tick」的取樣差,非系統性偏差。
+
+⇒ **ε(t)、on-target、TOT%、`t_acquire`、`t_detect`、`eccentricity_at_spawn` 在目前所有匯出上都是錯的**,不只是 `px ≠ 0` 的情況。
+
+**關聯**:[KI-002 / D1](KI-002-br-field-camera-anchor-protocol-load.md) 於 2026-07-15 正是為了修正射線原點而引入 `eyeZ`(br-field 設 0、其餘沿用 `depth/2 − standoff`)。**離線推導從未跟上那次改動** —— 同一個構念的兩個實作,只有 render/sim 那一側被修。這是 D2a 的直接來源。
 
 ---
 
@@ -75,7 +95,21 @@ if (Math.abs(state.player.x) > activeSceneConfig.playerCorridor.halfWidthU) {
 
 ⇒ 閘門實際門檻 = 1 source unit = **0.01 world unit**,比設計意圖(±1 world unit)**緊 100 倍**。以 `vStrafe = 250 u/s` 計,玩家在 **4 ms**(不到一個 sim tick)內就會越界。
 
-### 2.3 D2 — 離線推導的 `p_eye`
+### 2.3 D2 — 離線推導的 `p_eye`(量測原點從未被記錄)
+
+**結構性根因**:匯出記了射線的**方向**(`ticks[].aim.yaw/pitch`),卻沒記射線的**原點**。真實原點由三個分處不同層的片段組成,而**三者都不在匯出裡**:
+
+| 片段 | 持有者 | 域 |
+|---|---|---|
+| `eyeHeight` / `eyeZ ?? depth/2 − standoff` | `SceneConfig` + `SceneManager`(render 層) | world |
+| `SIM_TO_WORLD = 0.01` | `main.ts` module 常數 | 換算 |
+| `player.x / z` | `SharedState`(sim 層) | source |
+
+`meta.scene` 只記 `sceneId`,沒有 camera 幾何。⇒ **離線分析者在數學上無法從匯出檔還原正確原點**,只能依「約定」猜 —— 而約定猜錯了兩次(D2a、D2b)。
+
+依 GD-7 的 raw-over-derived 原則,**射線原點屬於 raw(儀器姿態,與 `aim` 同級),不屬於 derived**。目前的資料模型缺這一欄。
+
+### 2.3.1 具體落點
 
 [trackingDerivation.ts:191-193](../../src/metrics/trackingDerivation.ts#L191) 與 [:222-224](../../src/metrics/trackingDerivation.ts#L222):
 
@@ -100,9 +134,11 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 | 面向 | 影響 | 嚴重度 |
 |---|---|---|
 | `meta.suspect` 研究效度旗標 | 語意反轉:有做急停 = suspect,不動 = 可信。所有含真實橫移的 pilot 資料都會帶旗標 | **High**(資料判讀) |
-| 離線 ε(t)/on-target/TOT%/`t_acquire` | `px ≠ 0` 時原點錯 100×,值無效 | **High**(研究效度) |
+| 離線 ε(t)/on-target/TOT%/`t_acquire` | **所有**匯出皆錯:D2a 恆成立(08:03 實測 12.5°),`px ≠ 0` 再疊 D2b(09:39 實測 67°) | **High**(研究效度) |
 | `t_detect`/`eccentricity_at_spawn`(GD-8) | 同上 | **High** |
-| **M14 ② ε parity** | 數值仍成立(Python 與 TS 逐位一致),但**只在 `px ≡ 0` 的 fixture 上有意義**;構念正確性未被驗證 | **需加註,非撤回** |
+| **M14 ② ε parity** | **撤回**(2026-08-05 使用者拍板)。parity 機制本身有效且仍綠(Python 與 TS 逐位一致),但兩側**一致地錯** → 「ε 層地基成立」的宣告無效。M14 ①③④⑤⑥ 不受影響(分段走 ω(t),只依賴 `aim`,與 `px`/原點無關) | **撤回,S1 後重新宣告** |
+| **WP-30 / WP-31 entry** | 兩者全部逐段軌跡指標建在 ε(t) 上 → **entry blocker 恢復**,須待 S1 落地並重新宣告 M14 ② | **High**(排程) |
+| `run_pipeline` 的 `mean_epsilon_deg` 逐段診斷欄(D-28.13) | 錯值 | Med(僅診斷用,未進教練報告) |
 | stage4 WP-30/31 | 全部逐段軌跡指標建在 ε(t) 上 → 一旦用含橫移的匯出即失真 | **High**(阻塞) |
 | WP-29 T1/T2 | **不受影響**:peek 時間軸與 Sync 族只吃 `events` 與 `ticks[].keys`,不碰 `px/pz` | 無 |
 | 引擎命中/彈道/offsetDeg | **不受影響**:全部經 camera,兩端同為 world domain | 無 |
@@ -114,13 +150,34 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 
 三層防護同時失效,值得記錄:
 
-1. **唯一的真實 fixture `px ≡ 0`**。08:03 那份完全沒有鍵盤輸入 → `p_eye = (0, 1.6, 0)` 恰好等於真正的 world 原點 → ε(t) 在該檔上**碰巧正確**。M14 的真實資料檢核因此無法暴露 D2。
+1. **沒有任何正確性 oracle**。M14 的真實資料檢核只看「分段成功率 + 疊圖」(走 ω(t)),從未把 ε 的**絕對值**與任何獨立來源比對。ε 只要「數值穩定、量級看似合理」就過關 —— 而 12.5° 的系統性偏差在單一 fixture 上肉眼不可見。
+   > 初版本文件在此處誤判為「`px ≡ 0` 使 ε 碰巧正確」。實測推翻:D2a 與 `px` 無關,08:03 同樣錯 12.5°。
 2. **ε parity 是對表,不是效度驗證**。Python [angular.py:127](../../research/src/modules/kinematics/algorithms/angular.py#L127) 忠實移植了 TS 的 `origins = (px, eye_height, pz)`,兩側**同樣錯**,相對誤差仍 ≤1e-9 → 閘門綠燈。這是 C-D4「TS 為既有構念權威」的固有盲區:對表只能保證兩實作一致,不能保證構念正確。
 3. **合成 fixture 不含橫移**。`make_synthetic_export` 的 `px` 由 `vx * dt` 累加,但幾何 fixture 用的是 ε=0 / 已知偏角的靜態情境,未涵蓋「玩家橫移 + 固定目標」的交叉。
 
 ---
 
-## 5. 修法候選(待拍板;本文件不預設結論)
+## 5. 修法決策(2026-08-05 使用者拍板)
+
+### 5.0 三項拍板
+
+| # | 決策 | 理由 |
+|---|---|---|
+| **K-1** | **採「雙域 + 顯式換算」,不統一單位**。明文宣告:**kinematics 域 = Source unit**(`vx`/`vStrafe`/`CS2_PROFILE`/`residualSpeed`)、**geometry 域 = world unit**(位置/`hitbox`/`eyeHeight`/場景/camera);橋樑 `SIM_TO_WORLD` 升為引擎級具名常數並進匯出 | 幾何**早已整體是 world domain**,只有 `player.x/z` 是離群值 —— 搬離群值,不搬子系統。反向(全改 source unit)需重標 GLTF 資產與 `propBounds`、`DrillConfig` 座標 ×100、**改動 `hitbox` 預設值(直接違反 WP-23/GD-7「省略時逐位等同 H1 `{1,2,1}`」)**、`tx/ty/tz` 語意變更 → 必須 bump `schemaVersion` + 全部 golden/determinism 重錄,是 stage 級工程量,而 ε 是角度、scale-invariant,只要同域即正確。CS2 校準(WP-15/GD-13)活在速度與加速度常數,不在位置單位,保留 `vx` = u/s 即保住校準價值 |
+| **K-2** | **M14 ② 撤回,S1 落地後重新宣告**;M14 ①③④⑤⑥ 維持 | ε 在兩份 fixture 上分別錯 12.5° / 67°,非「加註」可處理。分段(③④⑤)走 ω(t),只依賴 `aim`,不受影響 |
+| **K-3** | **允許選手自由位移** ⇒ corridor **不再是移動紀律**,改為「場景淨空覆蓋」的**觀測項**,且**不得**再單獨觸發 `meta.suspect` | 自由位移是研究設計的選擇。越出淨空走廊的真實後果是**視覺遮擋**(道具可能擋住目標),而依 GD-6 場景幾何永不進 sim,**不可能**影響命中判定 —— 所以它是「該記錄的觀測」,不是「該作廢的 run」 |
+
+### 5.1 落地階段
+
+| 階段 | 內容 | 對資料語意的影響 |
+|---|---|---|
+| **S1 修正性** | ① `SIM_TO_WORLD` 從 `main.ts` module 常數升為引擎級具名常數(置 `src/loop/constants.ts` 同級,**不掛 `SceneConfig`** —— 掛上去會讓同一 drill 在不同場景產生不同幾何,且讓 sim 行為依賴場景資料,踩 GD-6 精神)② corridor gate 改 world 域比較 + 依 K-3 脫離 `suspect` ③ `trackingDerivation`/`detectionDerivation` 改為接受 eye pose(base + scale),不再寫死 `(px, eyeY, pz)` ④ Python 側同步 ⑤ 重產 parity fixture ⑥ 加 §6 的兩道正確性閘 | 匯出**欄位與值不變**;ε/t_detect 系列的**計算結果會變**(本來就是錯的)。sim 未動 → determinism baseline 零影響 |
+| **S2 資料模型**(additive) | ① 逐 tick 記錄 **eye world pose**(射線原點,與 `aim` 方向並列)② `meta.simToWorld` ③ `meta.validity = { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow }`(`suspect` 保留為 OR,向後相容) | additive、**不 bump `schemaVersion`**;舊匯出缺欄 → fallback 重建 + flag |
+| **S3 文件/ADR** | ① `CONTEXT.md` 正規單位一節改寫(現行「資料不得用公尺」**在今天就是假的**,留著會繼續誘導同類 bug)② `analysis-tracking.md`/`analysis-t-detect.md`/`schema.md` 單位敘述對帳 ③ (選配)`SimU`/`WorldU` branded type 慣例入 CLAUDE.md §4 | 純文件 |
+
+> **S2 實作坑(必讀)**:eye pose **不可**從 render camera 讀進 tick 記錄 —— camera 位置是 render 以 `alpha` 內插的,讀它會讓 tick 記錄依賴 render 幀率,**破壞決定性並違反 ADR-2**。正確做法:在 **data 層**以 `base + (player.x, 0, player.z) × SIM_TO_WORLD` 決定性算出,`base`/`factor` 以注入方式提供(`src/data` 不在 GD-6 的禁引用清單內,`meta.scene` 本就已進匯出,合規)。
+
+### 5.2 原始候選(保留供追溯)
 
 ### D1 — corridor gate
 
@@ -138,15 +195,24 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 | **B** 匯出直接寫 world domain 的 `px/pz` | recorder 寫入時就換算 | 消費端零改動 | **破壞既有 schema 語意**(同名欄位改尺度),舊匯出無法辨識;違 additive 政策 |
 | **C** 新增 `pxWorld/pzWorld` 欄位並存 | additive,舊欄位不動 | 向後相容 | 同一物理量兩個欄位,與 CONTEXT「單一定義」精神相衝 |
 
-**先決問題**:`CONTEXT.md` 的「正規單位 = source unit、資料不得用公尺」與現況(目標/hitbox/eyeHeight 皆為公尺尺度)牴觸。修法拍板前需先決定**哪一個域是資料層的正規域**,否則任何修法都只是把不一致搬家。此為 §7 的 OQ-KI4-1。
+**先決問題已解決**:OQ-KI4-1 由 K-1 拍板為「雙域 + 顯式換算」,`CONTEXT.md` 的敘述於 S3 改寫。上表 D1-A + D2-A 即 K-1 的落地形式(D2 另加 S2 的逐 tick eye pose,使匯出自我描述、免除重建)。
 
 ---
 
 ## 6. 驗證計畫(修法落地時的 DoD)
 
+> **架構層結論**:parity 是**一致性閘**(A == B),設計上不可能發現 A 與 B 一起錯 —— 這正是本案發生的事。S1 必須補上專案目前缺的**正確性閘**。
+
+**新增閘 ①(免費 oracle,最高優先)**:`fire.offsetDeg` 是引擎在開火當下用**真實 camera** 算出的「準心 → 目標中心」夾角([SimLoop.ts:408](../../src/loop/SimLoop.ts#L408) `targetCenterOffsetDeg`),與 ε(t) 是**同一構念、不同實作路徑、不同資料來源**。
+
+> 回歸測試:對任一匯出,ε(t) 在 first-shot fire 所屬 tick 的值必須與該 `fire.offsetDeg` 相符(容差需涵蓋 tick 取樣與 sub-tick 內插;實測殘差 0.1–0.2°)。
+> 限制:`offsetDeg` 含視覺 punch,故僅對 `aimPunchPitch/Yaw == 0` 的首發成立 —— 覆蓋率已足夠。**此閘若早存在,D2a 與 D2b 在第一天就會被抓到。**
+
+**新增閘 ②**:合成幾何 fixture 必須涵蓋 **`eyeZ ≠ 0` 且 `px ≠ 0`** 的交叉情境。現行 WP-28 T2 幾何 fixture 全為原點 `(0,·,0)` 的靜態情境,結構上看不見這個 bug。
+
 1. **紅測試先行**(比照 BD-001 的 TDD 偏離慣例:紅綠合併為單一已驗證 commit):
-   - D1:以 `px` 掃過 `halfWidthU * (1/SIM_TO_WORLD)` 邊界的合成 state,斷言 gate 在**正確門檻**翻轉。
-   - D2:合成「玩家橫移 + 已知目標幾何」fixture(手算 ε),斷言 `deriveTrackingMetrics` 回傳手算值;此測試在修法前必須**紅**。
+   - D1:以 `px` 掃過 `halfWidthU / SIM_TO_WORLD` 邊界的合成 state,斷言 gate 在**正確門檻**翻轉,且依 K-3 **不**觸發 `suspect`。
+   - D2:上述閘 ①、閘 ② 在修法前必須**紅**(以 08:03 fixture 即可重現 12.5° 偏差)。
 2. `npm run test:ci` exit 0(既有 82 files / 641 tests + 19 e2e 零迴歸)。
 3. `uv run pytest` exit 0;Python 側同步修正後**重產** `research/fixtures/parity/epsilon-*.json`,並在 [WP-28 progress.md](../exec-plan/active/stage4/wp-28-research-foundation/progress.md) 補記 M14 ② 的重新宣告。
 4. 以 [09:39 匯出](../../research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json)(含真實橫移)實跑:確認 `suspect` 判定符合修法後意圖,且 ε(t) 落在合理量級。
@@ -156,12 +222,14 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 
 ## 7. Open Questions
 
-| # | 問題 | 影響 | Owner |
+| # | 問題 | 現況 | Owner |
 |---|---|---|---|
-| **OQ-KI4-1** | 資料層的正規單位域到底是 source unit 還是 world unit?`CONTEXT.md` 聲明前者,但 `tx/ty/tz`/`hitbox`/`eyeHeight` 實作為後者 | 決定 D1/D2 所有 Option 的取捨;不決定就修 = 把不一致搬家 | 使用者 / 研究者 |
-| **OQ-KI4-2** | 修法後 09:39 這份(world domain 位移 −1.69,超出 ±1 走廊)**仍會**是 suspect。走廊 ±1 world unit 對 counter-strafe drill 是否合理?或應改為「單向漂移量」而非絕對位移? | 走廊寬度定值;影響往後每份 pilot 資料的可用性 | 研究者 |
-| **OQ-KI4-3** | 09:39 的 `px` 從 0 單調漂到 −169(未在原點附近振盪)。屬受試者行為,還是 drill 缺少歸位機制? | 影響 OQ-KI4-2 的定值方式 | 研究者(**已於 2026-08-05 詢問,未回覆**) |
-| **OQ-KI4-4** | M14 ② 是否需要重新宣告?(數值未變,但構念正確性的證據基礎改變) | stage4 里程碑帳面 | 使用者 |
+| ~~**OQ-KI4-1**~~ | ~~資料層的正規單位域~~ | ✅ **關閉(2026-08-05)**:K-1 「雙域 + 顯式換算」;`CONTEXT.md` 於 S3 改寫 | 使用者 |
+| ~~**OQ-KI4-3**~~ | ~~`px` 單調漂移屬行為還是缺歸位機制~~ | ✅ **關閉(2026-08-05)**:研究設計**允許選手自由位移**;不新增歸位機制,不對位移設紀律門檻 | 使用者 |
+| ~~**OQ-KI4-4**~~ | ~~M14 ② 是否重新宣告~~ | ✅ **關閉(2026-08-05)**:K-2 撤回,S1 後重新宣告 | 使用者 |
+| **OQ-KI4-2**(改寫) | 自由位移下,corridor 觀測項該記錄什麼粒度?(建議:`max|lateral|`(world u)+ 越界 tick 佔比,而非單一布林) | 🟡 S2 落地前需定;不阻塞 S1 | 研究者 |
+| **OQ-KI4-5**(新) | 自由位移下,選手可能移出**場景淨空走廊**導致目標被道具視覺遮擋。依 GD-6 這**不會**影響命中判定,但會影響偵測/追蹤類 drill 的刺激可見性 —— 是否需要在報告層對「越界期間的 peek」加註? | 🟡 影響 WP-30/31 的資料篩選;不阻塞 S1 | 研究者 |
+| **OQ-KI4-6**(新) | 走廊語意拆分:`clearance.halfWidthU`(場景淨空取樣,現行 [clearance.ts:248](../../src/scene/clearance.ts#L248) 用途)與執行期觀測門檻是否拆成兩個欄位?後者在 K-3 下已非 gate,可能不需要獨立欄位 | 🟡 S1 實作時決定 | 實作者 |
 
 ---
 

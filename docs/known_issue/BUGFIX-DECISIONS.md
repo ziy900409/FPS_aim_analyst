@@ -18,7 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
-| [KI-004](KI-004-sim-world-unit-domain-mismatch.md) | sim(source unit)與 world domain 混用:corridor gate 緊 100× → 真實急停 run 全被標 `suspect`;離線 ε(t) 的 `p_eye` 原點錯尺度 | BD-004(§2,**待拍板**) | 🔴 診斷完成,修法待拍板 |
+| [KI-004](KI-004-sim-world-unit-domain-mismatch.md) | sim(source unit)與 world domain 混用:corridor gate 緊 100× → 真實急停 run 全被標 `suspect`;離線 ε(t) 量測原點錯誤(D2a base offset + D2b scale)→ **實測偏差 12.5°/67°,M14 ② 撤回** | BD-004(§2,K-1/K-2/K-3 已拍板) | 🟡 已定解法待落地(S1/S2/S3) |
 | [KI-003](KI-003-top-left-controls-overlap.md) | 左上角 session/protocol 啟動按鈕覆蓋 SettingsPanel 的 Sensitivity/FOV/Resolution | BD-003(§3) | ✅ 已修(2026-08-05) |
 | [KI-002](KI-002-br-field-camera-anchor-protocol-load.md) | br-field camera 未錨定 sim origin(D1)+ protocol 場景載入驗證舊 drill(D2)(PR #34 review) | BD-002(§3) | ✅ D1+D2 已修(2026-07-15) |
 | [KI-001](KI-001-input-lag-sim-clock-drift.md) | 開火/鍵盤嚴重輸入延遲(sim 邏輯時鐘漂移) | BD-001(§3) | ✅ Task 1+2 已修(2026-07-09) |
@@ -34,12 +34,14 @@
 | | |
 |---|---|
 | **發現處 / 根因** | 排查「08:03 匯出零位移」時,重現用的 09:39 匯出(含真實 A/D 橫移)暴露:`meta.suspect` 在**有做急停**時為 true、**完全不動**時為 false。追碼確認唯一觸發者為 [main.ts:527](../../src/main.ts#L527) 的 corridor gate,它拿 **source unit** 的 `state.player.x` 去比 **world unit** 的 `playerCorridor.halfWidthU`。根因是全案有兩個單位域,而橋樑 `SIM_TO_WORLD = 0.01`([main.ts:628](../../src/main.ts#L628),註解自陳為「佔位;WP-6 drill config 接管」,從未接管)**只被套用在 render camera 一處**;所有繞過 camera 直接讀 sim 量的消費者都少乘這個因子。第二處落點在離線推導 `p_eye = (px, eyeY, pz)`([trackingDerivation.ts:191](../../src/metrics/trackingDerivation.ts#L191)、`detectionDerivation.ts` 同實作)。完整診斷見 [KI-004](KI-004-sim-world-unit-domain-mismatch.md)。 |
-| **決策** | **尚未拍板。** KI-004 §5 列 D1 三案(換算後比較 / 走廊改存 sim domain / `SIM_TO_WORLD` 升為 config 欄位)與 D2 三案(匯出 `meta.simToWorld` / 改寫 `px/pz` 尺度 / 並存 `pxWorld`)。**先決問題 = OQ-KI4-1**:資料層的正規域到底是 source unit 還是 world unit —— `CONTEXT.md` 聲明前者,但 `tx/ty/tz`/`hitbox`/`eyeHeight` 實作為後者。未決前任何修法只是把不一致搬家。 |
-| **理由(為何先入帳不先修)** | 此缺陷會污染往後**每一份**含橫移的 pilot 資料(`suspect` 旗標 + ε 系列指標),越早定調越好;但修法選擇取決於一個尚未回答的規格問題(OQ-KI4-1),依 CLAUDE.md §3.9 先落 KI tech spec 與本帳本,拍板後再走 TDD 落地。 |
-| **偏離計畫** | 無。本次僅診斷與入帳,零程式碼改動(`git diff` 僅 docs + 新 fixture)。 |
-| **遺留 OQ** | **OQ-KI4-1** 正規單位域(先決)· **OQ-KI4-2** 修法後 ±1 world unit 走廊對 counter-strafe 是否合理(09:39 位移 −1.69 world u,修好仍會 suspect)· **OQ-KI4-3** 09:39 的 `px` 單調漂移是受試者行為還是 drill 缺歸位機制(已詢問使用者,未回覆)· **OQ-KI4-4** M14 ② 是否需重新宣告。 |
-| **影響面(診斷結論)** | **受影響**:`meta.suspect` 語意、離線 ε(t)/on-target/TOT%/`t_acquire`/`t_detect`/`eccentricity_at_spawn`(僅 `px ≠ 0` 時)、stage4 WP-30/31 的全部逐段軌跡指標。**不受影響**:引擎命中/彈道/`offsetDeg`(全走 camera,兩端同域)、sim 決定性、WP-29 T1/T2(只吃 events 與 `ticks[].keys`)。**M14 ② 數值不撤回**(Python 與 TS 仍逐位一致),但其效度僅限 `px ≡ 0` 的 fixture —— 三層防護同時失效的原因見 KI-004 §4。 |
-| **狀態** | 🔴 診斷完成、修法待拍板。 |
+| **診斷更正(2026-08-05)** | 初版判定「08:03 因 `px ≡ 0` 使 ε 碰巧正確、M14 ② 不撤回」**經實測推翻**。D2 實為**兩個獨立缺陷**:**D2a** 遺漏 camera base offset(`field-low` 的 `eyeZ = depth/2 − standoff = 4`,[SceneManager.ts:67](../../src/render/SceneManager.ts#L67)),**與 `px` 無關、恆成立**;**D2b** 遺漏 `SIM_TO_WORLD`,僅 `px ≠ 0` 時再疊 100×。以引擎自身的 `fire.offsetDeg` 為 ground truth 實測:08:03 偏差中位數 **12.52°**、09:39 **67.11°**(正確公式為 0.21° / 0.14°)。D2a 的來源是 [KI-002 / D1](KI-002-br-field-camera-anchor-protocol-load.md) 引入 `eyeZ` 修正射線原點時,**離線推導從未跟上**。 |
+| **決策(2026-08-05 使用者拍板)** | **K-1 雙域 + 顯式換算**(不統一單位):kinematics 域 = Source unit、geometry 域 = world unit,`SIM_TO_WORLD` 升為引擎級具名常數並進匯出。**K-2 M14 ② 撤回**,S1 落地後重新宣告(①③④⑤⑥ 維持:分段走 ω(t),只依賴 `aim`)。**K-3 允許選手自由位移** → corridor 由「移動紀律 gate」降為「場景淨空覆蓋觀測項」,**不再觸發 `suspect`**。落地分 S1 修正性 / S2 additive 資料模型(逐 tick eye pose + `meta.validity` 拆解)/ S3 文件 ADR,詳見 [KI-004 §5](KI-004-sim-world-unit-domain-mismatch.md)。 |
+| **理由** | **K-1**:幾何早已整體是 world domain,只有 `player.x/z` 是離群值 —— 搬離群值成本 O(1),搬子系統要重標 GLTF 資產/`propBounds`、`DrillConfig` 座標 ×100、**改 `hitbox` 預設值(違反 WP-23/GD-7 逐位不變)**、bump `schemaVersion` 並重錄全部 golden,是 stage 級工程;而 ε 為角度、scale-invariant,同域即正確。CS2 校準(WP-15/GD-13)活在速度常數不在位置單位,保留 `vx`=u/s 即保住校準。**K-2**:12.5°/67° 的系統性偏差非加註可處理。**K-3**:自由位移是研究設計選擇;越出淨空走廊的真實後果是**視覺遮擋**,依 GD-6 場景幾何永不進 sim,不可能影響命中判定 → 屬「該記錄的觀測」而非「該作廢的 run」。 |
+| **架構層結論(跨 WP,故入本帳本而非 KI 內)** | **parity 是一致性閘,無法發現兩側一起錯** —— 本案即為實證(C-D4 只約束 Python 對 TS,未約束 TS 內 render 與 metrics 兩層)。S1 必須補**正確性閘**,且 oracle 已存在且免費:`fire.offsetDeg` 與 ε(t) 是同一構念、不同實作路徑、不同資料來源,可直接互驗(限 `aimPunch == 0` 的首發)。此閘若早存在,D2a/D2b 第一天即被抓到。 |
+| **偏離計畫** | 無。本階段仍為診斷 + 決策入帳,零程式碼改動。 |
+| **遺留 OQ** | **OQ-KI4-2**(改寫)corridor 觀測項的記錄粒度 · **OQ-KI4-5**(新)自由位移下越出淨空走廊造成的視覺遮擋是否需在報告層加註 · **OQ-KI4-6**(新)`clearance.halfWidthU` 與執行期觀測門檻是否拆欄。OQ-KI4-1/3/4 已隨 K-1/K-3/K-2 關閉。 |
+| **影響面(診斷結論)** | **受影響**:`meta.suspect` 語意、離線 ε(t)/on-target/TOT%/`t_acquire`/`t_detect`/`eccentricity_at_spawn`(**所有**匯出,非僅 `px ≠ 0`)、**M14 ② 撤回**、**WP-30/31 entry blocker 恢復**(全部逐段軌跡指標建在 ε 上)、`run_pipeline` 的 `mean_epsilon_deg` 診斷欄。**不受影響**:引擎命中/彈道/`offsetDeg`(全走 camera,兩端同域)、sim 決定性(S1 不動 sim)、submovement 分段與 M14 ①③④⑤⑥(走 ω(t),只依賴 `aim`)、WP-29 T1/T2(只吃 events 與 `ticks[].keys`)。 |
+| **狀態** | 🟡 已定解法待落地(S1/S2/S3)。 |
 
 ---
 
