@@ -12,7 +12,7 @@
 | T0 entry gate | ✅ | 2026-08-05 | 上游只引用、不重跑；`compute.ts` 五項基準、`counter` 條件性語意、`sync-v1` 三分支與 KI-004 使用界線已凍結；OQ-S4-12 關閉及 OQ-S4-10/11 已對帳至 stage4 |
 | T1 逐 peek 時間軸 + 交叉驗證 | ✅ | 2026-08-05 | targeted `31 passed` + final metrics/purity `16 passed`;完整 `uv run pytest` **89 passed**;`npm run test:ci` **83 files / 644 Vitest + 19 Playwright passed**;三份 parity ≤1e-9;共享窗界與 t3 leading-ω 對帳完成 |
 | T2 Sync 族 + 精度判定 | ✅ | 2026-08-05 | `sync-v1` 三指標 + flags + 三分支；targeted **35 passed**、完整 research **106 passed**、engine **644 Vitest + 19 Playwright passed**；三 fixture deterministic report 完成 |
-| T3 additive key 事件(gated) | 🟡 進行中（使用者 override） | 2026-08-05 | **原 gate 判定：skipped**（09:39 兩量皆 `sufficient`，未變更）。使用者於 2026-08-05 明確 override「skipped」，要求以 **additive observability / direct key-event evidence** 定位實作 T3（非因量化精度不足）。見 D-29.8~D-29.11、S-29.8~S-29.10 |
+| T3 additive key 事件(gated) | ✅（使用者 override 實作） | 2026-08-05 | **原 gate 判定：skipped**（09:39 兩量皆 `sufficient`，**未變更**）。使用者 override「skipped」→ 以 **additive observability / direct key-event evidence** 實作。commit `dcdafbd`；targeted **43 passed**、full research **118 passed**、engine `tsc` exit 0 / **651 Vitest** / **19 Playwright** 全綠；`sync-precision.json` 逐位未變。見下方 T3 Evidence + D-29.8~D-29.11、S-29.8~S-29.10 |
 | T-exit 教練報告 v0 | ⬜ | — | — |
 
 ---
@@ -166,6 +166,32 @@ gate：兩個量均有 `n=13 >= 10`，量化 SD `2.255274489021976 ms` 分別小
 - `src/` 生產碼零 diff；未修改 TS、既有真實 fixture、`synthetic_counterstrafe.json`、T1 parity 或 frozen `compute-v1` / `timeline-v1` / `seg-v1` 語意。
 - WP-29 T2 新碼只讀 `events`、`ticks[].t/keys` 與 `meta.weapon.bullet`；**完全未讀 `px/pz`**，D-29.2 維持有效；09:39 `meta.suspect=true` 仍只歸因 KI-004。
 - WP-29 worktree CodeGraph 仍未初始化；依規則未自行初始化。只讀 main index不含 T1 branch 新模組，未提供可用的 T2 symbol impact；graphify 顯示新 Sync 模組只接 `PeekWindow` / `Export` notebook 路徑，blast radius 為 research metrics/tests/docs 的 local additive slice。
+
+---
+
+## T3 Evidence(2026-08-05，使用者 override slice；commit `dcdafbd`)
+
+### Gate override 如何記錄（未竄改 T2 sufficient verdict）
+
+- T2 09:39 verdict 維持 `release_to_fire_ms` n=13 sample SD `46.044857876328535` `sufficient` / `counter_hold_ms` n=13 sample SD `16.480640422417093` `sufficient`（本頁 T2 Evidence 逐字未動）。
+- `notebooks/t2/outputs/sync-precision.json` **未修改**（`git status` 未列該檔；`test_sync_fixture.py` 綠：n=13/sufficient/`t3Gate.status=skipped`）。
+- override 帳本 = D-29.8~D-29.11、S-29.8~S-29.10；T3 doc 加 override addendum 使前提誠實。
+
+### 修改檔案與主要設計
+
+- **engine（opt-in、預設 OFF）**:`DataRecorder` 加 `key` variant `{type,code,down,t}` + `recordKeyEvents`（預設 `false`）；`SimLoop.applyInput` 在 A/D 分支旗標為真時並列 `counter` 寫 `key`（先 raw、後 derived；`state.held` 更新序與 counter 條件逐位不變）；`export.ts` 加 `key` CSV 分支（沿用 `key`/`down` 欄）。
+- **schema/docs**:`schema.md` 加 `key` 事件表 + CSV 對帳 + additive/`schemaVersion=2` 政策；`analysis-peek-timeline.md` 加 additive `t_release_event`/`release_source`（不動 frozen `t_release`/`flags`）。
+- **research ingest/consume**:`loader.py` 接受 `key` 事件（`code`→既有 `key` 欄，`EVENT_COLUMNS` 不變）；`peek.py` 加 additive `t_release_event`（in-window 原方向鍵 keyup 的 input timeStamp，sub-tick）+ `release_source`（`key_event`/`tick_keys`）。`sync.py` 未動 → `sync-v1` 逐位不變。
+
+### 驗證
+
+- **targeted**：peek/loader key + 既有 peek/sync/**sync_fixture**/loader → `43 passed`（`--basetemp .pytest_tmp_t3`）。
+- **full research**：`uv run pytest` → **118 passed**（T2 期 106 + 新 12：peek key 8 + loader key 4）。
+- **engine**：`tsc --noEmit` exit 0；`vitest run` **83 files / 651 passed**（644 + 新 7：SimLoop 3 + DataRecorder 2 + export 2）；`playwright test` **19 passed**（首跑無 flake）。
+- **key event 測試涵蓋**：deterministic ordering（key 先於 counter、unordered 同結果）、keydown/keyup（僅 keyup 錨釋放）、跨 tick（sub-tick `t_release_event=1.6` vs tick-derived `t_release=1.0`）、跨 window（次窗 keyup 不回洩）、缺事件（fallback `tick_keys`）、unsupported counter key、no-counter fallback。
+- **additive/backward-compat**：`schemaVersion` 仍 `2`；`EVENT_COLUMNS` 不變；預設 recorder 不發 key 事件 → 既有 determinism 契約 / golden / 真實+合成 fixture / `sync-precision.json` 逐位不變；full-drill E2E 匯出 shape 未變。
+- **scope/紅線**：`git diff --check` 淨；`src/` diff 僅 data/event surface（DataRecorder/export/SimLoop + 測試）；research 零 TS import；**未新增 `px/pz` 消費**（D-29.2 維持）；未引用任何 ε 產物（M14 ② 撤回）；`algorithms/` 無寫檔/matplotlib。
+- **worktree**:branch `wp-29-coach-timeline`、`dcdafbd`；主 worktree 未觸碰。
 
 ---
 
