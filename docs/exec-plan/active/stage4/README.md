@@ -10,7 +10,7 @@
 | **上游門檻** | M4 ✅(schema v2 匯出鏈)+ WP-16 ✅(v2 欄位)+ **M11/M12 ✅**(`meta.targets.hitbox`/tick `ads`/`hit` 事件語意已鎖);**引擎零改動**(例外:WP-29 T3 選配 key-event 記錄、WP-32 metrics/UI 層,皆不碰 sim)。M13 手動回填(#32)**不阻塞** |
 | **技術棧** | 新增:**Python 3.12 + uv + pyproject**(numpy/pandas/scipy;pytest)於 `research/`(OQ-S4-1 ✅);既有 TS 棧觸及點 = 對表 vitest(WP-28 T2、WP-32 T1)+ `src/metrics/` 與結果頁(WP-32) |
 | **估時** | 11–16 dev-days(WP-28~32) |
-| **狀態** | 🟡 **已採納;WP-28 完成,但 M14 ② 於 2026-08-05 撤回**([KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)· WP-29 ⬜(**不受影響,可展開**)· WP-30 ⬜(**entry blocker 恢復**)· WP-31 ⬜(**entry blocker 恢復**)· WP-32 ⬜。M14 ①③④⑤⑥ 維持(分段走 ω(t),只依賴 `aim`);② ε parity 因量測原點錯誤(實測偏差 12.5°/67°)撤回,待 KI-004 S1 落地後重新宣告 |
+| **狀態** | 🟡 **已採納;WP-28 完成,但 M14 ② 於 2026-08-05 撤回**([KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)· WP-29 🟡(**T0 entry gate ✅,不受 KI-004 阻塞**)· WP-30 ⬜(**entry blocker 恢復**)· WP-31 ⬜(**entry blocker 恢復**)· WP-32 ⬜。M14 ①③④⑤⑥ 維持(分段走 ω(t),只依賴 `aim`);② ε parity 因量測原點錯誤(實測偏差 12.5°/67°)撤回,待 KI-004 S1 落地後重新宣告 |
 
 ---
 
@@ -322,7 +322,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 | WP | 子資料夾 | 目標 | 優先序 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|---|
 | **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 🟡** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 **task 全數完成,但 M14 ② 於 2026-08-05 撤回**(KI-004);①③④⑤⑥ 維持 |
-| **WP-29** | `wp-29-coach-timeline/` | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件) | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ⬜ |
+| **WP-29** | [wp-29-coach-timeline/](wp-29-coach-timeline/README.md) | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件) | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | 🟡 **T0 entry gate ✅(2026-08-05)** |
 | **WP-30** | `wp-30-trajectory-metrics/` | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14** | 2–3 | ⬜ |
 | **WP-31** | `wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14** | 2–3 | ⬜ |
 | **WP-32** | `wp-32-dashboard-integration/` | 晉升整合:golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | — | **M15** | WP-29 + WP-30(WP-31 選項) | 2–3 | ⬜ |
@@ -436,6 +436,9 @@ WP-28(地基,M14)──┤                                                      
 | **OQ-S4-4** | 晉升 dashboard 的指標清單 | phase 時長統計 + sync 統計 + L/R 曲線縮圖(P0/P1 全數;P2 視 gate) | 使用者 | WP-32 T0 | WP-32 scope 不定 |
 | **OQ-S4-5** | 101 點正規化窗口錨 | **`[t_visible, t_firstShot]`**(counter-strafe 錨定首發,CONTEXT §A;t_kill 版含補槍屬「清目標節奏」,留分析端副版) | 研究者 | WP-30 T2 | 曲線語意不定 |
 | **OQ-S4-6** | 教練報告載體 | notebook → 靜態 HTML(單檔可寄送);觸發升級 = 教練需要互動篩選 | 使用者 | WP-29 T-exit | 報告形式不定 |
+| ~~**OQ-S4-12**~~ | ~~缺「含真實 A/D strafe」的 counter-strafe 匯出~~ | ✅ **關閉(2026-08-05)**:09:39 匯出已補錄並進 `research/fixtures/exports/`(21.27s ≤30s、匿名 `P001`、PII-like 掃描無命中、counter 24、三個對表量各 n=20) | 使用者 | 2026-08-05 | unblocked；T2 可依 `sync-v1` 作實質判定 |
+| **OQ-S4-10** | `t_release` 在無 counter 事件時的 fallback 是否足以支撐跨 peek 比較 | 先採窗內最後一次 A/D held→released + `release_inferred_no_counter` flag，聚合預設排除；09:39 樣本到位後於 T-exit 複核 | 研究者 | WP-29 T-exit | Sync 族分母與跨 peek 可比性仍待驗證 |
+| **OQ-S4-11** | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan | `--group-by` 仍須實作並以合成 fixture 驗證；真實報告明示條件分層只有單一 cell 有樣本 | 研究者 | WP-29 T-exit | 條件分層缺真實對照，但不阻塞實作 |
 
 > parity 方向(既有構念 TS 權威、新構念 Python 權威)**不列為 OQ**:C-D4 已定為硬約束,理由是「同一構念兩個定義」本身即效度缺陷,無取捨空間。
 

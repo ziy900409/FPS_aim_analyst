@@ -9,7 +9,7 @@
 
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
-| T0 entry gate | ⬜ | — | — |
+| T0 entry gate | ✅ | 2026-08-05 | 上游只引用、不重跑；`compute.ts` 五項基準、`counter` 條件性語意、`sync-v1` 三分支與 KI-004 使用界線已凍結；OQ-S4-12 關閉及 OQ-S4-10/11 已對帳至 stage4 |
 | T1 逐 peek 時間軸 + 交叉驗證 | ⬜ | — | — |
 | T2 Sync 族 + 精度判定 | ⬜ | — | — |
 | T3 additive key 事件(gated) | ⬜ gated | — | 觸發條件 = T2 判定 `insufficient` |
@@ -61,13 +61,57 @@
 
 ---
 
+## T0 Entry Gate Evidence(2026-08-05)
+
+### 上游 exit-gate 引用(不重跑)
+
+| 上游 | 狀態 / 可引用範圍 | 證據 |
+|---|---|---|
+| WP-28 T1 | ✅ schema v2 `load_export` / `check_dt` / deterministic synthetic export 可直接作 WP-29 輸入地基 | [WP-28 progress](../wp-28-research-foundation/progress.md):T1 targeted `12 passed in 0.92s`;合成 fixture 48 ticks / 11 events且 round-trip 通過 |
+| M14 可引用範圍 | 🟡 ①③④⑤⑥ 維持；WP-29 可引用 `seg-v1`、一鍵 pipeline 與單樣本效度限制。② ε parity 已撤回，且不是本 entry gate 的必要條件 | [WP-28 progress](../wp-28-research-foundation/progress.md)與 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md)；本 WP 不引用任何 ε(t) 產物 |
+| T0 scope gate | ✅ `git diff --stat` 僅列 4 份文件 | 全部位於 `docs/exec-plan/active/stage4/`；`src/` 與 `research/` 變更數皆為 0 |
+
+### `compute.ts` 對表基準清單(`compute-v1`,T1 逐位重現)
+
+> 權威來源:[`src/metrics/compute.ts`](../../../../../src/metrics/compute.ts)。本清單於看到 T1 parity 結果前凍結；差異先視為 Python 重現問題，若證據指向 TS bug 或規格分歧，須入 DECISIONS / known issue 後才可變更。
+
+| 量 / 契約 | 凍結語意 | 權威行號 |
+|---|---|---|
+| `counterReactionMs` | 每個 visible 建窗 `[t_visible,nextVisible.t)`；取窗內第一個 `counter`(不分鍵)，計 `counter.t - visible.t`；缺 `counter` 的 peek 不進聚合 | [`compute.ts:58–66`](../../../../../src/metrics/compute.ts#L58-L66),[`compute.ts:148–166`](../../../../../src/metrics/compute.ts#L148-L166) |
+| `fireTimingAlignmentMs` | 僅在同一 peek 同時有 `counter` 與相容 `firstFire` 時，計 `firstFire.t - counter.t`；任一錨點缺席即不進聚合 | [`compute.ts:70–74`](../../../../../src/metrics/compute.ts#L70-L74),[`compute.ts:148–166`](../../../../../src/metrics/compute.ts#L148-L166) |
+| `firstShotHitRate` | `(命中的首發數 / 全部 visible 事件數) × 100`；命中為 `fire.hit === true`，或 `fire.shotSeq` 存在於 `hit` 事件的 `shotSeq` 集合；無 visible 時為 0 | [`compute.ts:58–67`](../../../../../src/metrics/compute.ts#L58-L67),[`compute.ts:85–92`](../../../../../src/metrics/compute.ts#L85-L92),[`compute.ts:185–192`](../../../../../src/metrics/compute.ts#L185-L192) |
+| `firstFire` 選取 | 窗內第一個 `firstShot === true` 且 `targetId` 缺席或等於該 visible `targetId` 的 fire | [`compute.ts:148–163`](../../../../../src/metrics/compute.ts#L148-L163) |
+| `stat()` | 先濾除非有限值；空集合為 `{mean:0,p50:0,sd:0,n:0}`；`p50` 用排序後索引的線性插值；`sd` 為母體標準差(除以 n) | [`compute.ts:139–145`](../../../../../src/metrics/compute.ts#L139-L145),[`compute.ts:259–269`](../../../../../src/metrics/compute.ts#L259-L269) |
+
+### `counter` 是條件性事件，不是必填資料
+
+[`SimLoop.ts:66–78`](../../../../../src/loop/SimLoop.ts#L66-L78) 顯示 `applyInput` 只在新的反向按鍵 keydown 且當下 `vx` 與該鍵方向相反時記錄事件：`KeyD` 需 `ev.down && !held.right && vx < 0`；`KeyA` 需 `ev.down && !held.left && vx > 0`。因此未 strafe、已停住才開槍、或窗內沒有符合反向速度條件的 peek，本來就沒有 `counter`。T1/T2 必須以 flag 表達缺錨點並排除對應聚合，不得補 0 或吞成 NaN。
+
+### Sync 量化精度 pre-registration(`sync-v1`)
+
+- 量化來源:`t_release` 從 128 Hz `ticks[].keys` 推導，`dt = 7.8125 ms`；均勻量化誤差 SD = `dt / √12 ≈ 2.2551 ms`。`t_counter` / `t_fire` 為 input `timeStamp`，不套此量化誤差。
+- 凍結參數:`SyncParams(min_samples=10, sd_ratio_threshold=1/3, version="sync-v1")`。
+- `release_to_fire_ms` 與 `counter_hold_ms` 各自獨立判定；有效樣本先依旗標過濾。
+
+| 條件 | 判定 | T3 行為 |
+|---|---|---|
+| `n < 10` | `blocked-by-data` | 不得觸發 T3；OQ-S4-12 已因 09:39 樣本到位而關閉，但未來任一輸入 n 不足仍走此分支 |
+| `n ≥ 10` 且 `quantization_sd ≥ sample_sd × 1/3`(等價於 128 Hz 下 `sample_sd ≤ 約 6.765 ms`) | `insufficient` | 觸發 T3 additive key events |
+| `n ≥ 10` 且 `quantization_sd < sample_sd × 1/3` | `sufficient` | T3 標記 skipped，保留 tick-derived release |
+
+凍結時點:2026-08-05 11:43+02:00(原 T0 commit `4778c76`)，早於 09:39 fixture 進入 `main` 的 `c1440cb`(13:22+02:00)，且尚未產生 T2 precision 結果。不得依事後真實資料原地調整；若需變更，只能升 version 並重跑全鏈。
+
+---
+
 ## Decision Log
 
 > 格式沿用 WP-28:`D-29.n | 決策 | 理由(含 Alternatives Considered) | 證據`。跨 WP/跨文件者改寫 [DECISIONS.md](../../../DECISIONS.md)。
 
 | # | 決策 | 理由 | 證據 |
 |---|---|---|---|
-| — | (待 T0 填入:`compute.ts` 對表基準凍結、`SyncParams` = `sync-v1` 凍結) | | |
+| D-29.0 | 凍結 `compute-v1` 五項 parity 基準：窗界/第一 counter、雙錨點 fire alignment、first-shot hit 分母與命中路徑、target-compatible firstFire、線性 p50 + 母體 SD | T1 必須逐位重現既有 TS 權威，避免看 parity 結果後改分母、窗界或統計定義。Alternatives Considered:只對最終 mean(拒絕:會漏掉 n/p50/sd 與個別窗界漂移)；把 Python 定為既有量權威(拒絕:C-D4) | `compute.ts:58–92,139–166,185–192,259–269`;本頁 T0 基準表 |
+| D-29.1 | 凍結 `SyncParams(min_samples=10,sd_ratio_threshold=1/3,version="sync-v1")` 與 `blocked-by-data` / `insufficient` / `sufficient` 三分支；事後不得依真實資料調整，只能升版重跑 | `n<10` 時不以小樣本噪音決定引擎變更；1/3 將量化 SD 控制在樣本變異的明確比例。Alternatives Considered:`min_samples=2`(拒絕:SD 極不穩定)；n 不足直接判 insufficient(拒絕:讓缺資料錯誤觸發 T3)；看完真實資料再定門檻(拒絕:事後調參) | 2026-08-05 11:43+02:00 pre-registration(`4778c76`)；早於 09:39 fixture commit `c1440cb`；128 Hz `dt/√12 ≈ 2.2551 ms`，臨界 sample SD ≈ 6.765 ms |
+| D-29.2 | 09:39 fixture 雖有 `meta.suspect=true`，仍可供 WP-29 T1/T2 使用；界線是本 WP 只消費 `events` 與 `ticks[].keys`，不得消費 `px/pz` | KI-004 的 suspect 成因是 corridor gate 單位域錯誤與 ε 原點缺陷，不是效能、overflow 或事件鏈失敗；counter 24 與鍵狀態可作本 WP 證據。若任何 WP-29 指標開始消費 `px/pz`，本決議立即失效並須重新評估。Alternatives Considered:整份 fixture 禁用(拒絕:會丟棄不受缺陷影響的事件/鍵資料)；忽略 suspect 不設界線(拒絕:可能讓未來指標誤用位置資料) | [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-1、K-2、K-3；09:39 fixture 21.27s、counter 24、三個對表量各 n=20 |
 
 ---
 
