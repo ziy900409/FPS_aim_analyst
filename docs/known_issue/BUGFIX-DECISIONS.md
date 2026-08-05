@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-004](KI-004-sim-world-unit-domain-mismatch.md) | sim(source unit)與 world domain 混用:corridor gate 緊 100× → 真實急停 run 全被標 `suspect`;離線 ε(t) 的 `p_eye` 原點錯尺度 | BD-004(§2,**待拍板**) | 🔴 診斷完成,修法待拍板 |
 | [KI-003](KI-003-top-left-controls-overlap.md) | 左上角 session/protocol 啟動按鈕覆蓋 SettingsPanel 的 Sensitivity/FOV/Resolution | BD-003(§3) | ✅ 已修(2026-08-05) |
 | [KI-002](KI-002-br-field-camera-anchor-protocol-load.md) | br-field camera 未錨定 sim origin(D1)+ protocol 場景載入驗證舊 drill(D2)(PR #34 review) | BD-002(§3) | ✅ D1+D2 已修(2026-07-15) |
 | [KI-001](KI-001-input-lag-sim-clock-drift.md) | 開火/鍵盤嚴重輸入延遲(sim 邏輯時鐘漂移) | BD-001(§3) | ✅ Task 1+2 已修(2026-07-09) |
@@ -28,7 +29,19 @@
 
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
 
-目前無 OPEN 項。
+### BD-004 🔴 KI-004 — sim/world 單位域混用(corridor gate + 離線 ε 原點);**診斷完成,修法待拍板**(2026-08-05)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 排查「08:03 匯出零位移」時,重現用的 09:39 匯出(含真實 A/D 橫移)暴露:`meta.suspect` 在**有做急停**時為 true、**完全不動**時為 false。追碼確認唯一觸發者為 [main.ts:527](../../src/main.ts#L527) 的 corridor gate,它拿 **source unit** 的 `state.player.x` 去比 **world unit** 的 `playerCorridor.halfWidthU`。根因是全案有兩個單位域,而橋樑 `SIM_TO_WORLD = 0.01`([main.ts:628](../../src/main.ts#L628),註解自陳為「佔位;WP-6 drill config 接管」,從未接管)**只被套用在 render camera 一處**;所有繞過 camera 直接讀 sim 量的消費者都少乘這個因子。第二處落點在離線推導 `p_eye = (px, eyeY, pz)`([trackingDerivation.ts:191](../../src/metrics/trackingDerivation.ts#L191)、`detectionDerivation.ts` 同實作)。完整診斷見 [KI-004](KI-004-sim-world-unit-domain-mismatch.md)。 |
+| **決策** | **尚未拍板。** KI-004 §5 列 D1 三案(換算後比較 / 走廊改存 sim domain / `SIM_TO_WORLD` 升為 config 欄位)與 D2 三案(匯出 `meta.simToWorld` / 改寫 `px/pz` 尺度 / 並存 `pxWorld`)。**先決問題 = OQ-KI4-1**:資料層的正規域到底是 source unit 還是 world unit —— `CONTEXT.md` 聲明前者,但 `tx/ty/tz`/`hitbox`/`eyeHeight` 實作為後者。未決前任何修法只是把不一致搬家。 |
+| **理由(為何先入帳不先修)** | 此缺陷會污染往後**每一份**含橫移的 pilot 資料(`suspect` 旗標 + ε 系列指標),越早定調越好;但修法選擇取決於一個尚未回答的規格問題(OQ-KI4-1),依 CLAUDE.md §3.9 先落 KI tech spec 與本帳本,拍板後再走 TDD 落地。 |
+| **偏離計畫** | 無。本次僅診斷與入帳,零程式碼改動(`git diff` 僅 docs + 新 fixture)。 |
+| **遺留 OQ** | **OQ-KI4-1** 正規單位域(先決)· **OQ-KI4-2** 修法後 ±1 world unit 走廊對 counter-strafe 是否合理(09:39 位移 −1.69 world u,修好仍會 suspect)· **OQ-KI4-3** 09:39 的 `px` 單調漂移是受試者行為還是 drill 缺歸位機制(已詢問使用者,未回覆)· **OQ-KI4-4** M14 ② 是否需重新宣告。 |
+| **影響面(診斷結論)** | **受影響**:`meta.suspect` 語意、離線 ε(t)/on-target/TOT%/`t_acquire`/`t_detect`/`eccentricity_at_spawn`(僅 `px ≠ 0` 時)、stage4 WP-30/31 的全部逐段軌跡指標。**不受影響**:引擎命中/彈道/`offsetDeg`(全走 camera,兩端同域)、sim 決定性、WP-29 T1/T2(只吃 events 與 `ticks[].keys`)。**M14 ② 數值不撤回**(Python 與 TS 仍逐位一致),但其效度僅限 `px ≡ 0` 的 fixture —— 三層防護同時失效的原因見 KI-004 §4。 |
+| **狀態** | 🔴 診斷完成、修法待拍板。 |
+
+---
 
 ---
 

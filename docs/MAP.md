@@ -228,6 +228,7 @@ docs/exec-plan/
 | [known_issue/BUGFIX-DECISIONS.md](known_issue/BUGFIX-DECISIONS.md) | 修 bug 決策帳本（`BD-n` 對應 `KI-NNN`）+ Known Issues 索引；除錯 episodic memory 的入口 |
 | `known_issue/KI-NNN-*.md` | 每個 bug 一支 tech spec（症狀/根因/修改計畫/風險/任務拆解）；source of truth |
 | [known_issue/KI-001-input-lag-sim-clock-drift.md](known_issue/KI-001-input-lag-sim-clock-drift.md) | KI-001：開火/鍵盤嚴重輸入延遲（sim 邏輯時鐘漂移）— 已修（re-anchor，BD-001） |
+| [known_issue/KI-004-sim-world-unit-domain-mismatch.md](known_issue/KI-004-sim-world-unit-domain-mismatch.md) | KI-004：sim(source unit)/world domain 混用 — corridor gate 緊 100×（真實急停 run 全被標 `suspect`）+ 離線 ε(t) 原點錯尺度。**🔴 修法待拍板；碰 `px/pz` 或 ε 系列前必讀** |
 
 ---
 
