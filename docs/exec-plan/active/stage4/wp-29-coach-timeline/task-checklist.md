@@ -8,7 +8,7 @@
 | ✅ | **T0** entry gate(上游複驗 + `compute.ts` 對表基準凍結 + Sync 精度判準 pre-registration;無演算法碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ✅ | **T1** 逐 peek 時間軸 + **交叉驗證閘(含反 vacuous)** + 窗界實作消重 | [T1-peek-timeline.md](T1-peek-timeline.md) | T0 | **Med** |
 | ✅ | **T2** Release-to-Click Sync 族 + 量化精度**明確判定** | [T2-sync-precision.md](T2-sync-precision.md) | T1 | Med |
-| ⏭ | **T3(gated)** skipped —— 09:39 兩個 tick-quantized 指標皆為 `sufficient`，未觸發 `DataRecorder` 變更 | [T3-key-events.md](T3-key-events.md) | T2 判定 | Med |
+| 🟡 | **T3(gated)** 使用者 override（非 gate 正常觸發）—— 09:39 兩量仍 `sufficient`、未改寫；以 **additive observability / direct key-event evidence** 實作（opt-in `DataRecorder.recordKeyEvents`、`key` 事件、peek `t_release_event`/`release_source`）。見 D-29.8~D-29.11、T3 doc override addendum | [T3-key-events.md](T3-key-events.md) | 使用者 override | Med |
 | ⬜ | **T-exit** 教練報告 v0 + `analysis-peek-timeline.md` 定稿 + 文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1–T2(T3 依判定) | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))

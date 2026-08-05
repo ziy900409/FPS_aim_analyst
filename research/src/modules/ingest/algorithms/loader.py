@@ -89,6 +89,10 @@ _EVENT_REQUIRED: dict[str, tuple[str, ...]] = {
     "ads": ("down",),
     "fire": ("hit", "firstShot", "residualSpeed"),
     "hit": ("timeOfFlightMs", "shotSeq"),
+    # WP-29 / T3 (additive, opt-in engine emission): raw key down/up at input timeStamp. The JSON field is
+    # ``code`` (canonical A/D/W/S); it is mapped into the existing ``key`` column below so EVENT_COLUMNS and
+    # the sparse CSV surface stay unchanged. Absence in older/opt-out exports is normal, not an error.
+    "key": ("code", "down"),
 }
 
 _EVENT_NUMBERS = (
@@ -244,8 +248,16 @@ def _validate_event(value: Any, index: int) -> dict[str, Any]:
     elif event_type == "hit":
         _number(event["timeOfFlightMs"], f"{base}.timeOfFlightMs")
         _number(event["shotSeq"], f"{base}.shotSeq")
+    elif event_type == "key":
+        _non_empty_string(event["code"], f"{base}.code")
+        _type(event["down"], bool, f"{base}.down")
 
-    return {column: event.get(column) for column in EVENT_COLUMNS}
+    row = {column: event.get(column) for column in EVENT_COLUMNS}
+    if event_type == "key":
+        # Canonical key name lives under the shared ``key`` column (same values as counter.key); consumers
+        # disambiguate by ``type``. Keeps EVENT_COLUMNS and the CSV column surface additive-stable.
+        row["key"] = event["code"]
+    return row
 
 
 def _required(container: dict[str, Any], field: str, field_path: str) -> Any:

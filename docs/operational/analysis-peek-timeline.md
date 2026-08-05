@@ -25,6 +25,24 @@ the existing `1e-9 ms` boundary tolerance. No window is dropped or merged.
 timestamp. At 128 Hz its quantization is one tick (`7.8125 ms`) and is assessed formally in T2;
 T1 does not aggregate Release-to-Click Sync metrics.
 
+### Additive key-event release evidence (WP-29 / T3, user override)
+
+`build_peek_windows` also carries two **additive** fields that never redefine the frozen `t_release`
+above and never enter `flags`:
+
+| Field | Meaning |
+|---|---|
+| `t_release_event` | The original-direction key's **up** transition inside the window, taken from the additive `events[].key` stream at input `timeStamp` (sub-tick). `None` when no such key event exists. The original-direction key is the opposite of the counter key; with no counter, the latest in-window A/D key up wins (same `(t, key)` tie-break as the tick fallback); an unsupported counter key yields `None`, matching the tick-derived path. |
+| `release_source` | `key_event` when `t_release_event` is present, else `tick_keys` (only the frozen tick-derived `t_release` is available). |
+
+This is opt-in observability from the engine's `DataRecorder.recordKeyEvents` (default off): it provides a
+direct input-timestamp release anchor that avoids the ±1-tick quantization of tick-derived `t_release`. It is
+**not** consumed by frozen `timeline-v1`/`compute-v1`/`sync-v1` — `release_to_fire_ms` still uses the frozen
+tick-derived `t_release`, so the pre-registered `sync-v1` precision verdicts are unchanged. Because the source
+is expressed as a dedicated `release_source` field rather than a `flags` member, adding it does not alter the
+`sync-v1` aggregate `n` (which excludes any flagged row). This T3 slice was implemented under an explicit user
+gate override; the frozen `sync-v1` verdict remained `sufficient` and was not re-run or changed.
+
 ## Hit association and outcome
 
 Hitscan uses `fire.hit === true`, with `t_hit = fire.t`. Projectile association uses `shotSeq`

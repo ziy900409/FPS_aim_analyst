@@ -18,6 +18,11 @@ export type DrillEvent =
     }
   | { type: 'counter'; key: string; t: number }
   | { type: 'ads'; down: boolean; t: number }
+  // WP-29 / T3（使用者 override，additive observability）：鍵 down/up 以 input `timeStamp`（sub-tick）記錄，
+  // 供離線推導「鬆原方向鍵」的直接釋放時刻（補 tick-derived release 的 ±1 tick 量化）。`code` 為 canonical
+  // 鍵名（`A`/`D`/`W`/`S`，對齊 `ticks[].keys`，不引入第二套鍵名慣例）。**opt-in**：僅 `recordKeyEvents` 啟用時
+  // 由 `SimLoop.applyInput` 寫入（預設關閉 → 既有匯出/測試/golden 逐位不變，additive 相容）。
+  | { type: 'key'; code: string; down: boolean; t: number }
   | {
       type: 'fire';
       t: number;
@@ -58,6 +63,11 @@ export interface DataRecorder {
   readonly fireCount: number;
   readonly hitCount: number;
   readonly recorderOverflow: boolean;
+  /**
+   * WP-29 / T3：是否讓 `SimLoop.applyInput` 記錄 additive `key` 事件（預設 `false`）。旗標讀自本 recorder，
+   * 故 `applyInput`/`simStep` 簽章不變；停用時 `applyInput` 完全不配置 key 事件物件（GC 紀律 §4）。
+   */
+  readonly recordKeyEvents: boolean;
   recordTick(record: TickRecordInput): void;
   recordTickFromState(t: number, state: TickSourceState): void;
   recordEvent(event: DrillEvent): void;
@@ -70,10 +80,13 @@ export interface DataRecorderOptions {
   maxDrillSeconds?: number;
   extraTicks?: number;
   capacity?: number;
+  /** WP-29 / T3：啟用 additive `key` 事件記錄（預設 `false`；見 `DataRecorder.recordKeyEvents`）。 */
+  recordKeyEvents?: boolean;
 }
 
 export function createDataRecorder(options: DataRecorderOptions = {}): DataRecorder {
   const capacity = options.capacity ?? capacityForDrill(options.simHz ?? 128, options.maxDrillSeconds, options.extraTicks);
+  const recordKeyEvents = options.recordKeyEvents ?? false;
   const ticks = new TickArena(capacity);
   const events: DrillEvent[] = [];
   let fireCount = 0;
@@ -81,6 +94,7 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
 
   return {
     capacity,
+    recordKeyEvents,
     get tickCount(): number {
       return ticks.count;
     },

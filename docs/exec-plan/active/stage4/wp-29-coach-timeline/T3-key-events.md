@@ -3,12 +3,25 @@
 > Part of [WP-29 coach-timeline](README.md)。Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 > **本 task 預設不執行。** 只有 [T2](T2-sync-precision.md) 判定為 `insufficient` 時才展開;判定為 `sufficient` → 標 **skipped**;判定為 `blocked-by-data` → 標 **deferred**(等 OQ-S4-12 樣本後重跑 T2 評估)。
 
+> ## ⚠️ 使用者 gate override addendum（2026-08-05）— **權威，覆寫下方原 gated 前提**
+>
+> 09:39 的 T2 兩個 precision verdict 皆 `sufficient`（原 D-29.7 判 **skipped**）。**使用者明確 override「skipped」並要求實作 T3**，定位改為 **additive observability / direct key-event evidence**，而非修復已證足夠的量化精度。以下硬性偏離**取代**本 doc 原文，理由與帳本見 progress.md **D-29.8~D-29.11 / S-29.8~S-29.10**：
+>
+> 1. **相依前提失效**：本 doc 表格「相依 = T2 判定 `insufficient`（唯一觸發條件）」在此 override 下**不成立**。T3 是使用者授權的 additive slice，不是 gate 正常觸發。**T2 verdict 維持 `sufficient`，不得改寫為 insufficient**。
+> 2. **不重跑 / 不升版 / 不調參**：下方 In scope 的「重跑 T2 判定」「以新精度重跑 `evaluate_release_precision`」步驟**superseded、不執行**。`SyncParams` 與 `sync-v1` 逐位凍結;`sync-precision.json`、`t3Gate.status=skipped` 皆不得變。
+> 3. **記錄採 opt-in default-off**（D-29.9）：`DataRecorder.recordKeyEvents`（預設 `false`）；`applyInput` 僅在旗標為真時並列 `counter` 寫入 `key` 事件。保證既有測試/fixture/golden/決定性契約 byte-for-byte 不變。生產接線留 OQ-S4-13。
+> 4. **peek 雙路徑以 additive 欄位表達、不動 frozen 構念**（D-29.10）：新增 `PeekWindow.t_release_event`（sub-tick,input timeStamp）＋ `release_source`（`key_event`/`tick_keys`）。**不改** frozen tick-derived `t_release`、**不新增任何 flag**（否則 `sync-v1` 分母 13→0）。下方 In scope「build_peek_windows 在 key 事件存在時以其推導 `t_release`」與「以 flag 區分兩條路徑」據此改為「以獨立 `release_source` 欄位區分，`t_release` 維持 tick-derived 不變」。
+> 5. **JSON 欄位 `code`（canonical A/D），CSV/loader 沿用既有 `key`/`down` 欄不新增欄**（D-29.11）。
+> 6. **不消費 `px/pz`**（D-29.2 維持）；**不引用任何 ε 產物**（M14 ② 已撤回）。
+>
+> 下方原始 Objective / In scope / Steps / DoD 保留作歷史脈絡;凡與本 addendum 衝突處**以 addendum 為準**。
+
 | | |
 |---|---|
 | **相依** | **T2 判定 = `insufficient`**(唯一觸發條件) |
 | **Risk / Cplx** | Med / Low — 改動小但**跨越 research/engine 邊界**,是本 stage 唯一動 `src/` 的非 WP-32 task |
 | **Touches** | MODIFY [`src/data/DataRecorder.ts`](../../../../../src/data/DataRecorder.ts)(`DrillEvent` 加 `key` variant)、[`src/loop/SimLoop.ts`](../../../../../src/loop/SimLoop.ts) `applyInput`(記錄點)、[`schema.md`](../../../../operational/schema.md)(additive 對帳)、對應 vitest;MODIFY `research/src/modules/metrics/algorithms/peek.py`(優先取 `key` 事件) |
-| **狀態** | ⬜ (gated) |
+| **狀態** | 🟡 進行中（使用者 override，見上方 addendum；非 gate 正常觸發） |
 
 ## Objective
 

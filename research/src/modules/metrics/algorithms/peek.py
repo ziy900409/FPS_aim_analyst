@@ -28,6 +28,10 @@ KNOWN_PEEK_FLAGS = frozenset(
 
 Key = Literal["A", "D"]
 Outcome = Literal["hit", "timeout", "no_shot"]
+# WP-29 / T3 (user override, additive observability): which source produced ``t_release_event``.
+# ``key_event`` = an in-window input-timestamp key up of the original-direction key (sub-tick).
+# ``tick_keys`` = no such key event in the window, so only the frozen tick-derived ``t_release`` is available.
+ReleaseSource = Literal["key_event", "tick_keys"]
 
 
 @dataclass(frozen=True)
@@ -50,6 +54,11 @@ class PeekWindow:
     ads: bool | None
     flags: tuple[str, ...]
     tick_slice: slice
+    # WP-29 / T3 additive fields (defaults keep every existing constructor/consumer intact). ``t_release`` above
+    # stays frozen tick-derived ``timeline-v1``; these carry the opt-in key-event evidence WITHOUT redefining it
+    # and WITHOUT entering ``flags`` (which would change the frozen ``sync-v1`` aggregate n). See D-29.10.
+    t_release_event: float | None = None
+    release_source: ReleaseSource = "tick_keys"
 
 
 def build_peek_windows(export: Export) -> list[PeekWindow]:
@@ -61,6 +70,7 @@ def build_peek_windows(export: Export) -> list[PeekWindow]:
     counter_events = events.loc[events["type"] == "counter"].reset_index(drop=True)
     fire_events = events.loc[events["type"] == "fire"].reset_index(drop=True)
     hit_events = events.loc[events["type"] == "hit"].reset_index(drop=True)
+    key_events = events.loc[events["type"] == "key"].reset_index(drop=True)  # WP-29 / T3 (additive, opt-in)
     hit_times_by_shot = _hit_times_by_shot(hit_events)
     tick_times = ticks["t"].to_numpy(dtype=float)
 
@@ -94,15 +104,27 @@ def build_peek_windows(export: Export) -> list[PeekWindow]:
             if len(counters) > 1:
                 flags.append("multiple_counters")
 
+        counter_present_invalid = t_counter is not None and counter_key is None
         t_release, release_key = (
             (None, None)
-            if t_counter is not None and counter_key is None
+            if counter_present_invalid
             else _release_anchor(window_ticks, counter_key)
         )
         if t_counter is None and t_release is not None:
             flags.append("release_inferred_no_counter")
         if t_release is None:
             flags.append("no_key_transition")
+
+        # WP-29 / T3 additive: derive the sub-tick release from in-window key up events (input timeStamp),
+        # mirroring the tick-derived anchor's original-key / no-counter tie-break. Absent → keep None and
+        # report ``tick_keys``. This does NOT feed frozen ``t_release`` / ``sync-v1`` (D-29.10).
+        key_in_window = _events_in_window(key_events, t_visible, t_end)
+        t_release_event = _release_event_anchor(
+            key_in_window, counter_key, counter_present_invalid
+        )
+        release_source: ReleaseSource = (
+            "key_event" if t_release_event is not None else "tick_keys"
+        )
 
         target_id = str(visible["targetId"])
         first_shot = _first_compatible_fire(fires, target_id)
@@ -143,6 +165,8 @@ def build_peek_windows(export: Export) -> list[PeekWindow]:
                 ads=ads,
                 flags=unique_flags,
                 tick_slice=tick_slice,
+                t_release_event=t_release_event,
+                release_source=release_source,
             )
         )
     return windows
@@ -179,6 +203,47 @@ def _release_anchor(ticks: pd.DataFrame, counter_key: Key | None) -> tuple[float
         return None, None
     release, key = max(candidates, key=lambda item: (item[0], item[1]))
     return release, key
+
+
+def _release_event_anchor(
+    key_in_window: pd.DataFrame, counter_key: Key | None, counter_present_invalid: bool
+) -> float | None:
+    """Sub-tick release time from in-window key up events, parity with :func:`_release_anchor`.
+
+    ``counter_present_invalid`` (a counter fired but its key is not A/D) yields ``None`` just like the
+    tick-derived path. With a valid counter, the original-direction key is the opposite of the counter key.
+    Without a counter, both A and D key ups are considered and the latest ``(t, key)`` wins.
+    """
+
+    if counter_present_invalid:
+        return None
+    if counter_key is not None:
+        original_key: Key = "A" if counter_key == "D" else "D"
+        return _last_key_up(key_in_window, original_key)
+
+    candidates = [
+        (release, key)
+        for key in ("A", "D")
+        if (release := _last_key_up(key_in_window, key)) is not None
+    ]
+    if not candidates:
+        return None
+    release, _ = max(candidates, key=lambda item: (item[0], item[1]))
+    return release
+
+
+def _last_key_up(key_in_window: pd.DataFrame, key: Key) -> float | None:
+    """Latest in-window ``key`` up (``down`` is False) timestamp, or ``None`` when none exists."""
+
+    release: float | None = None
+    for _, event in key_in_window.iterrows():
+        if _key(event.get("key")) == key and _false(event.get("down")):
+            release = float(event["t"])
+    return release
+
+
+def _false(value: object) -> bool:
+    return isinstance(value, (bool, np.bool_)) and not bool(value)
 
 
 def _last_release_transition(ticks: pd.DataFrame, key: Key) -> float | None:

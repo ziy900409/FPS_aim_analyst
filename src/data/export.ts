@@ -165,6 +165,34 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         '',
         '',
       ]);
+    } else if (event.type === 'key') {
+      // WP-29 / T3（additive）：沿用既有 `key` 欄承載 canonical `code`（A/D）、`down` 欄承載 down，不新增欄。
+      rows.push([
+        event.type,
+        formatNumber(event.t),
+        '',
+        '',
+        event.code,
+        formatBoolean(event.down),
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+      ]);
     } else if (event.type === 'fire') {
       rows.push([
         event.type,

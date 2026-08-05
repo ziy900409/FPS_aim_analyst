@@ -10,7 +10,7 @@
 | **相依** | **WP-28 T1 ✅**(ingest 綠即可;**不需 M14**)。M14 ① ③④⑤⑥ 可引用(分段 / ω(t) / 一鍵 pipeline);**② ε parity 已於 2026-08-05 撤回**([KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)→ **ε(t) 相關產物一律不得引用**,但本 WP 本就不消費 ε,故**不受阻塞** |
 | **對應 FR** | FR-D7 / FR-D8 / FR-D9 / FR-D10(gated)+ FR-D16 首版(報告 v0) |
 | **估時** | 1.5–2.5 dev-days(T3 若觸發 +0.5–1) |
-| **狀態** | 🟡 進行中(T0–T2 ✅；09:39 precision sufficient → T3 skipped；T-exit pending,2026-08-05) |
+| **狀態** | 🟡 進行中(T0–T2 ✅；09:39 precision sufficient；T3 原判 skipped，**使用者 override 於 2026-08-05 實作 T3** 為 additive observability，T2 verdict 未改；T-exit pending) |
 
 ---
 
