@@ -32,6 +32,12 @@
 | 2026-08-04 | T-exit gate ③ | ✅ 合成 fixture 邊界 ≤2 tick 維持綠 | `test_known_submovement_boundaries_are_within_two_ticks`(T3 掃參實測 max error = 1 tick) |
 | 2026-08-04 | T-exit docs | ✅ `analysis-segments.md` 補一鍵 script 契約 + omega index 慣例 + 三條新限制;`research/README.md` 補指令 | [analysis-segments.md](../../../../operational/analysis-segments.md) §One-command pipeline / §Known limits |
 | 2026-08-04 | **T-exit M14** | 🟡 **未宣告**:②③⑥ 綠,①④⑤ 阻塞於 OQ-S4-8 | [T-exit-gate.md](T-exit-gate.md) DoD 表;**WP-30/31 不得開工**,WP-29 可依 T1 ingest + 一鍵 script 先行 |
+| 2026-08-05 | T-exit real fixture | ✅ OQ-S4-8 樣本到位且符合 fixture 政策 | `counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json`:27.390625s / 3,507 ticks / 20 visible / 22 fire / `participantId=P001`;PII-like literal scan 無命中;`suspect=false`,0 late events,無 overflow,display gate PASS |
+| 2026-08-05 | T-exit gate ① | ✅ 真實 ingest + dt report | `run_pipeline.py --export ...` exit 0:3,507 ticks / median=expected=7.8125ms / gaps=0 / uniform=true |
+| 2026-08-05 | T-exit gate ④ | ✅ 真實分段成功率 + 疊圖報告 | `seg-v1`:19/20 peeks,success rate=**0.95**,19 segments;20 張 `real-peek-*-overlay.svg` + summary/segments CSV 產出 |
+| 2026-08-05 | T-exit gate ⑤ | ✅ 全 20 張疊圖人工檢核支持保留 `seg-v1` | 19 段皆包住主要 ω burst,起訖落在合理起升/回落處;15 個 `merged_adjacent_peaks` 均為同一 noisy burst 內合併,未見跨兩個獨立 burst;peek 0 長靜止窗為 `below_floor|no_segment`;單樣本效度限制回寫 `analysis-segments.md` |
+| 2026-08-05 | T-exit regression | ✅ 雙閘複驗 | `uv run pytest --basetemp .pytest_tmp_t_exit_20260805`:**74 passed in 4.52s**;`npm.cmd run test:ci`:tsc PASS + Vitest **82 files / 641 tests** + Playwright **19 passed** |
+| 2026-08-05 | **T-exit M14** | ✅ **六項 DoD 全綠,M14 正式宣告** | OQ-S4-8 關閉;[T-exit-gate.md](T-exit-gate.md);**WP-30/31 entry blocker 解除** |
 
 ---
 
@@ -54,6 +60,7 @@
 | D-28.12 | 一鍵 script 只把 `omega[1:]` 餵給 `segment_submovements`，回報索引以 `_OMEGA_INDEX_OFFSET` 映回 tick frame | `omega[0]` 依契約為 `nan`（描述區間 `(i-1, i]`，首筆**未定義**而非缺值）。整條餵入雖被 T3 接受，卻讓每個 export 的每一段都掛 `non_finite_interpolated`，而 `summarize_with_flags` 排除任何有旗標的列 → 品質摘要恆為 `n=0`，聚合形同廢掉。切尾不製造樣本，索引映射為精確 +1（合成 fixture 的 `start_idx=1`/`end_idx=9` 前後逐位一致）。Alternatives Considered:改 T3 的 flag 行為(拒絕:動已凍結契約，須升版)、把 `omega[0]` 補 0(拒絕:對未定義樣本造值)、只在文件註明 `n=0` 屬預期(拒絕:等於交付一份無用的品質摘要) | T-exit `test_undefined_leading_omega_sample_does_not_flag_segments`(2026-08-04) |
 | D-28.13 | 一鍵 script 的逐段值（`duration_ms`/`peak_omega_deg_s`/`mean_epsilon_deg`）明文標為 pipeline 診斷，不是教練報告指標 | 三者皆為既有權威量的直述（段界時間戳、`Segment.peak_omega`、權威 ε(t) 的段內均值），不新增構念；但未過構念驗證，依 C-D3/GD-20 不得進教練報告。Alternatives Considered:加段內 on-target%(拒絕:TOT 定義在 `t_acquire` 起的追蹤窗，段內版本 = 第二定義，違 C-D4)、完全不出逐段值(拒絕:`per_segment_apply` 與品質摘要就沒有可示範的載體) | T-exit script docstring + [analysis-segments.md](../../../../operational/analysis-segments.md)(2026-08-04) |
 | D-28.14 | `non_uniform_dt` 只掛在**含該 gap 的 presentation 窗**，不由 export 層 dt 報告一律下掛;export 層 gap 數/清單仍完整寫入 summary | 全域下掛時，30s 真實匯出只要掉一個 tick 就讓 100% 的段帶旗標 → `summarize_with_flags` 再次回 `n=0`，與 D-28.12 同一類「聚合被廢掉」缺陷。窗界切片本就按序分割 ticks，故以 gap 的全域 tick index 落在哪個窗來歸屬是精確的，不是近似。Alternatives Considered:全域下掛(拒絕:如上)、完全不下掛只留 summary(拒絕:逐段消費者看不到自己這段不可信) | T-exit `test_dt_gap_flags_only_the_peek_that_contains_it`(2026-08-04) |
+| D-28.15 | 一份匿名真實匯出的 0.95 成功率 + 20 張疊圖人工檢核足以支持 M14 保留 `seg-v1` 不調參;效度聲稱限於本樣本 | Gate 要求的是真實成功率、疊圖與 pre-registered 參數效度檢核,不是 population validation。19 個成功區段皆合理包住主要 burst,15 個 merge flag 未見跨獨立 burst;依 D-28.7 不因單樣本看結果調參。T3 evidence runner 的 leading-`nan` flag 污染只影響其 CSV flags,不影響疊圖幾何/成功率;權威 pipeline 已依 D-28.12 正確切尾 | 真實 fixture + pipeline/sweep/人工檢核(2026-08-05) |
 
 ---
 
@@ -71,6 +78,7 @@
 | S-28.7 | T4 文案列出的 vocabulary 未包含 T3 已實際產生的 `zero_motion`/`no_peak`/SG 與 non-finite flags | 若逐字只建六個 exact flags，T3→T4 的正常資料會被改寫成 compute failure | 依「新增 flag 必須加入詞彙表」將全部既有 T3 flags 納入常數與 `analysis-segments.md`，並用 closure test 鎖定 |
 | S-28.8 | T3/T4 各自綠燈，但把兩者串成一鍵 pipeline 後才暴露:`omega[0]` 的契約 `nan` 會讓**每一段**掛 `non_finite_interpolated`，`summarize_with_flags` 因此排除 100% 的列 | 品質摘要恆為 `n=0`/`mean=null`，WP-29/30/31 拿到的聚合層形同廢掉;單元測試看不到,因為 T3 測試直餵合成 ω 陣列(無 leading nan),T4 測試直建 `Segment` | D-28.12 在 pipeline 側切尾 + 索引映回;新增 `test_undefined_leading_omega_sample_does_not_flag_segments` 鎖住「乾淨匯出不得整批掛旗標」 |
 | S-28.9 | presentation 窗界切片邏輯已在 t2 parity generator 與 t3-sweep runner 各有一份，一鍵 script 是第三份 | 三份若漂移，ε/分段/parity 會各自對到不同 tick 窗，M14 ② 綠但下游全錯 | 一鍵 script 逐字沿用 parity generator 的 tolerance 慣例並在原始碼註明;整併留給擁有 peek 窗重建的 WP-29(記為 OQ-S4-9) |
+| S-28.10 | 真實 sweep 才暴露 `run_sweep.py` 仍把 leading `omega[0]=nan` 整條餵入分段器,使 19/19 CSV rows 掛 `non_finite_interpolated` | 疊圖幾何與 19/20 成功率仍正確,但 sweep CSV flags 不可作乾淨品質證據;若不註記會與 D-28.12/operational contract 矛盾 | M14 以權威 pipeline 的乾淨品質摘要 + sweep 疊圖幾何判定;限制回寫 `analysis-segments.md`;runner 對齊併入 OQ-S4-9 的窗界實作整併 |
 
 ---
 
@@ -78,6 +86,6 @@
 
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
-| OQ-S4-8(樣本) | 真實 drill 匯出樣本(≤30s、匿名)未取得 | 🟡 使用者後補;**M14 ①④⑤ 阻塞項,M14 未宣告**;T-exit 一鍵 script 已備妥,樣本落 `research/fixtures/exports/` 後兩道指令即可補齊證據(見 [T-exit-gate.md](T-exit-gate.md) 判定段) | 使用者 | M14 宣告前 |
-| OQ-S4-9 | presentation 窗界切片有三份實作(t2 parity generator / t3-sweep runner / T-exit 一鍵 script) | 🟡 一鍵 script 已對齊 parity generator 的 tolerance 慣例並在原始碼註明;整併由擁有 peek 窗重建的 WP-29 執行(S-28.9) | WP-29 | WP-29 T-exit 前 |
-| OQ-S4-2 | 分段閾值 / SG window 的 128Hz 起點數值 | ✅ `seg-v1` 已在看真實資料前 pre-register 凍結(D-28.7);真實效度驗證仍由 OQ-S4-8 阻塞 | 研究者 | 2026-08-04 |
+| OQ-S4-8(樣本) | 真實 drill 匯出樣本(≤30s、匿名)未取得 | ✅ **關閉(2026-08-05)**:`counterstrafe_ad_v1` 27.390625s / `P001`;① ingest/dt、④ 0.95 成功率+20 疊圖、⑤ 人工檢核均完成;M14 已宣告 | 使用者 | 2026-08-05 |
+| OQ-S4-9 | presentation 窗界切片有三份實作(t2 parity generator / t3-sweep runner / T-exit 一鍵 script) | 🟡 一鍵 script 已對齊 parity generator;真實 sweep 另證實 runner 尚未套 D-28.12 leading-ω 切尾(S-28.10)。整併與 runner 對齊由擁有 peek 窗重建的 WP-29 執行 | WP-29 | WP-29 T-exit 前 |
+| OQ-S4-2 | 分段閾值 / SG window 的 128Hz 起點數值 | ✅ `seg-v1` 已在看真實資料前 pre-register 凍結(D-28.7);2026-08-05 真實樣本 19/20 + 疊圖人工檢核支持保留(D-28.15) | 研究者 | 2026-08-05 |

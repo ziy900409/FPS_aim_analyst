@@ -10,7 +10,7 @@
 | **相依** | M4 ✅ + WP-16 ✅ + **M11/M12 ✅**(`meta.targets.hitbox` / tick `ads` / `hit` 事件語意已鎖) |
 | **對應 FR** | FR-D1 ~ FR-D6 |
 | **估時** | 3.5–4.5 dev-days |
-| **狀態** | 🟡 進行中(T0–T4 ✅ + T-exit 交付物 ✅ 2026-08-04;**M14 未宣告**:②③⑥ 綠,①④⑤ 阻塞於真實匯出樣本 OQ-S4-8 → **WP-30/31 不得開工**) |
+| **狀態** | ✅ **完成(2026-08-05);M14 已宣告**。六項 DoD 全綠;真實匯出 3,507 ticks、dt uniform、`seg-v1` 19/20 peeks(0.95)+20 張疊圖人工檢核;WP-30/31 entry blocker 已解除 |
 
 ---
 
@@ -50,7 +50,7 @@ CLAUDE.md §4                                     ← MODIFY C-D1~C-D4 四條硬
 |---|---|---|
 | Python ε 與 TS 不一致(座標慣例/窗界/hitbox fallback) | 全部逐段指標建在錯誤地基,M14 假綠 | parity 為 T2 DoD 首項;不一致先修 Python;若屬 spec 分歧 → 入 [DECISIONS.md](../../../DECISIONS.md) 後才算 PASS |
 | 分段閾值在 128Hz/deg/s 不穩(碎段/漏段) | 逐段指標全失真 | 合成 fixture 釘死已知邊界(≤2 tick);真實掃參 + 疊圖人工檢核;fallback = 加大 SG window / 遲滯雙門檻 |
-| 真實匯出樣本未到位 | M14 ①④ 無法宣告 | T1 合成產生器解鎖開發;阻塞項明列 T-exit,樣本到位後補跑 |
+| 真實匯出樣本未到位 | M14 ①④ 無法宣告 | ✅ 2026-08-05 樣本到位並完成 pipeline/sweep/人工檢核;OQ-S4-8 關閉 |
 | `algorithms/` 混入 I/O 或繪圖 | 純度紀律腐化,notebook 與演算法糾纏 | 純度測試(import 掃描 + 無寫檔斷言)為 T1 DoD |
 | flags 被吞成 NaN | 品質失敗變成「缺資料」,聚合被污染 | `per_segment_apply` 對 fn 拋錯改記 `compute_failed:<reason>` flag;T4 注入測試 |
 | dt 非均勻(掉 tick)未被發現 | ω(t) 微分錯,分段全歪 | `check_dt` 報告 gap_count/gaps;非 uniform → 下游 flag |
@@ -64,4 +64,4 @@ CLAUDE.md §4                                     ← MODIFY C-D1~C-D4 四條硬
 | **T2 ✅** | [T2-angular-kinematics.md](T2-angular-kinematics.md) | ω(t)/ε(t)/on_target + **ε 層雙向 parity 閘** | T1 | **High** |
 | **T3 ✅** | [T3-submovement-segments.md](T3-submovement-segments.md) | SG 平滑 + submovement 分段 + `seg-v1` 參數凍結(合成 DoD;真實資料證據留 M14 blocker) | T2 | **High** |
 | **T4 ✅** | [T4-per-segment-flags.md](T4-per-segment-flags.md) | `per_segment_apply` + quality flags | T3 | Low |
-| **T-exit 🟡** | [T-exit-gate.md](T-exit-gate.md) | 一鍵 script(`src/report/run_pipeline.py`)+ `analysis-segments.md` + M14 六項證據;**②③⑥ 綠、①④⑤ 阻塞 → M14 未宣告** | T1–T4 | — |
+| **T-exit ✅** | [T-exit-gate.md](T-exit-gate.md) | 一鍵 script(`src/report/run_pipeline.py`)+ `analysis-segments.md` + M14 六項證據;**2026-08-05 全綠,M14 已宣告** | T1–T4 | — |

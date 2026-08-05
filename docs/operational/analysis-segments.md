@@ -56,9 +56,18 @@ C-D3). Real-export overlay SVGs and the parameter sweep come from
 
 The pre-registration sweep evaluated 243 combinations over six deterministic synthetic cases; 108
 passed all cases and `seg-v1` had zero case failures with a maximum boundary error of one tick.
-Changing any numeric value requires a new version and a full-chain rerun. Real-export overlay and
-segmentation-success evidence remain pending until an anonymized export is available; synthetic
-evidence does not clear that M14 gate.
+Changing any numeric value requires a new version and a full-chain rerun.
+
+Real-export validation was completed on 2026-08-05 with the anonymized 27.390625-second
+`counterstrafe_ad_v1` export (`participantId=P001`, 3,507 ticks at nominal 128 Hz). The one-command
+pipeline reported 20 peeks, 19 primary flicks, one `below_floor|no_segment` peek, and a 0.95
+segmentation success rate. Manual inspection of all 20 overlay SVGs found that each of the 19
+accepted intervals enclosed the principal angular-speed burst with plausible onset and offset
+boundaries; the unsegmented first peek was a long stationary window. Fifteen accepted segments
+carry `merged_adjacent_peaks`, but the overlays showed merges within one noisy principal burst and
+no merge spanning two visually distinct bursts. This single-export check supports retaining
+`seg-v1` unchanged and clears M14's real-data validity gate; it does not establish population-level
+validity.
 
 ## Quality flag vocabulary
 
@@ -94,10 +103,16 @@ reports excluded `n_flagged` separately alongside mean, p50, and sample standard
 - The synthetic sweep exercises the current binary counter-strafe movement profiles, not arbitrary
   continuous-speed movement.
 - Per-drill and per-condition sample sizes may be small; reports must display `n` and `n_flagged`.
-- Real-data validation scope is not yet established because the anonymized sample is still missing.
-  Every claim in this document therefore rests on deterministic synthetic traces; `seg-v1` is
-  pre-registered, not validated. See M14 ①④⑤ in
-  [WP-28 T-exit](../exec-plan/active/stage4/wp-28-research-foundation/T-exit-gate.md).
+- Real-data validation currently covers one anonymized participant and one 27.390625-second
+  `counterstrafe_ad_v1` export (20 peeks). The observed 0.95 success rate and visually plausible
+  boundaries support `seg-v1` for the M14 foundation gate, but must not be generalized to other
+  drills, participants, sampling rates, or continuous-speed movement without additional evidence.
+- The T3 evidence runner currently passes the undefined leading `omega[0]` into
+  `segment_submovements`, so its `real-peek-segments.csv` stamps `non_finite_interpolated` on all
+  19 accepted rows. This is a runner-reporting artifact: the overlay geometry and success count are
+  still usable, while the authoritative one-command pipeline follows D-28.12 (`omega[1:]` plus
+  index offset) and produces uncontaminated quality aggregates. Do not use the T3 CSV flags as
+  quality evidence until the runner is aligned with the pipeline.
 - `summarize_with_flags` excludes any flagged row, so a single quality flag removes a segment from
   every aggregate. Aggregates must be read together with `n_flagged` and the flag histogram.
 - Segment boundaries are inclusive tick indices, not milliseconds. Converting them to durations

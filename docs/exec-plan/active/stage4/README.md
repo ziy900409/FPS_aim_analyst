@@ -10,7 +10,7 @@
 | **上游門檻** | M4 ✅(schema v2 匯出鏈)+ WP-16 ✅(v2 欄位)+ **M11/M12 ✅**(`meta.targets.hitbox`/tick `ads`/`hit` 事件語意已鎖);**引擎零改動**(例外:WP-29 T3 選配 key-event 記錄、WP-32 metrics/UI 層,皆不碰 sim)。M13 手動回填(#32)**不阻塞** |
 | **技術棧** | 新增:**Python 3.12 + uv + pyproject**(numpy/pandas/scipy;pytest)於 `research/`(OQ-S4-1 ✅);既有 TS 棧觸及點 = 對表 vitest(WP-28 T2、WP-32 T1)+ `src/metrics/` 與結果頁(WP-32) |
 | **估時** | 11–16 dev-days(WP-28~32) |
-| **狀態** | 🟡 **已採納,WP-28 展開中**;WP-28 T0–T4 ✅ + T-exit 交付物 ✅(**M14 未宣告**)· WP-29 ⬜ · WP-30 ⬜(**M14 未過,不得開工**)· WP-31 ⬜(同)· WP-32 ⬜。**已知阻塞項**:真實 drill 匯出樣本未取得(使用者後補)→ M14 ①④⑤ 阻塞、M14 不得宣告(§4);演算法開發已由合成匯出產生器解鎖(WP-28 T1),一鍵 pipeline 已備妥待樣本(WP-28 T-exit) |
+| **狀態** | 🟡 **已採納;WP-28 ✅ 完成,M14 ✅ 達成(2026-08-05)** · WP-29 ⬜ · WP-30 ⬜(entry 已解鎖)· WP-31 ⬜(entry 已解鎖)· WP-32 ⬜。真實 `counterstrafe_ad_v1` 匯出完成 ingest/dt、`seg-v1` 19/20(0.95)+20 張疊圖人工檢核;雙測試閘全綠 |
 
 ---
 
@@ -321,7 +321,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 
 | WP | 子資料夾 | 目標 | 優先序 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|---|
-| **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 T0–T4 ✅ + T-exit 交付物 ✅;**M14 ②③⑥ 綠 / ①④⑤ 阻塞 → 未宣告** |
+| **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 ✅** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | ✅ **完成(2026-08-05);M14 六項全綠** |
 | **WP-29** | `wp-29-coach-timeline/` | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件) | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ⬜ |
 | **WP-30** | `wp-30-trajectory-metrics/` | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14** | 2–3 | ⬜ |
 | **WP-31** | `wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14** | 2–3 | ⬜ |
@@ -333,7 +333,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 
 | 里程碑 | 完成條件(可機械判定) | 對應 WP | 意義 |
 |---|---|---|---|
-| **M14** | ① **真實** drill 匯出 ingest 綠 + dt 報告產出 ② **ε 層 parity:`npm run test:ci` 內 vitest 對表綠(≤1e-9)** ③ 合成 fixture 分段邊界誤差 ≤ 2 tick ④ **真實**資料分段成功率 + 疊圖報告產出 ⑤ 分段參數 pre-registered 凍結並記 `analysis-segments.md` ⑥ `uv run pytest` 全綠 | WP-28 | 分段 + ε 是單點故障;**M14 未過不展開 WP-30/31**(比照 M1 脊椎邏輯)。WP-29 例外:只依賴 T1 ingest。**①④ 需真實匯出樣本 → 樣本未到 M14 不得宣告** |
+| **M14 ✅ (2026-08-05)** | ① 真實匯出 ingest/dt:3,507 ticks / 7.8125ms / gap 0 ② ε parity:`test:ci` 綠(82 files / 641 tests + 19 e2e) ③ 合成邊界 max error 1 tick ④ 真實 `seg-v1`:19/20(0.95)+20 張疊圖 ⑤ pre-registered 參數保留且人工檢核/限制已記 `analysis-segments.md` ⑥ `uv run pytest`:74 passed | WP-28 | research 地基成立;**WP-30/31 entry blocker 已解除**。真實效度目前限單一匿名 counter-strafe 樣本 |
 | **M15** | 驗收清單 D 全項通過:教練報告一鍵產出(FR-D16)、晉升指標 TS golden 對表綠、`test:ci` exit 0 **且** `uv run pytest` 綠、每指標附效度證據(fixture + 真實檢核 + 限制)、P2 三指標各有明確進退判定 | WP-32 | **stage4 交付**:瞄準 × 急停教練分析管線 pilot-ready |
 
 ---
@@ -349,7 +349,7 @@ WP-28(地基,M14)──┤                                                      
 ```
 
 - **最短價值路徑 = WP-28 T1 → WP-29 T1/T2**:教練最快拿到逐 peek 時間軸與 sync(兩者只吃 ingest 與 events,不吃分段)。
-- **M14 未過不進 WP-30/31**(分段參數未凍結,逐段指標全是沙上建塔)。
+- **M14 已於 2026-08-05 通過**,WP-30/31 entry 已解鎖;兩者須固定引用 `seg-v1` 與本次單樣本效度限制。
 - WP-31 三個 task 互不相依,可依資料就緒度亂序執行(Fitts 等偵測 drill 資料;xcorr 等 reliability 判定)。
 - 目前**無 active WP**,零檔案熱區競爭。
 
@@ -414,7 +414,7 @@ WP-28(地基,M14)──┤                                                      
 |---|---|---|
 | **ε(t) 雙實作分裂**(Python vs 既有 TS) | **High** | 採納期加固:FR-D4 parity 為 WP-28 T2 DoD 首項、閘門在既有 `test:ci`、對表面用 TS 既有公開輸出(零新 TS API);分歧一律入帳不靜默 |
 | 分段參數在 128Hz/deg/s 不穩 | **High** | M14 硬閘;合成 fixture 釘死 + 真實掃參 + 疊圖人工檢核;fallback = 遲滯雙門檻/加大 window;參數凍結 + version |
-| 真實匯出樣本未到位 | Med | T1 交付合成產生器解鎖演算法/parity;M14 的真實資料兩項(①④)明文列為阻塞項,不以合成替代 |
+| 真實匯出樣本未到位 | Med | ✅ 2026-08-05 樣本到位;真實 ingest/dt、19/20 成功率與 20 張疊圖人工檢核完成,M14 阻塞解除;合成證據未被用來替代真實檢核 |
 | t_release ±1 tick 量化不足 | Med | T2 精度評估 + pre-registered 判準(§2.4d)+ T3 additive 升級路徑(data 層,零 sim 侵入,不 bump schema) |
 | xcorr 構念不可靠 | Med | reliability gate 前置(C-D3);最壞情況 = 降級研究向,不影響 P0/P1 交付 |
 | Python 閘在 engine CI 之外 → 靜默腐化 | Med | 每 task DoD 貼 pytest 輸出;雙向 golden fixture 進 `test:ci`;M15 需雙閘證據 |
@@ -430,7 +430,7 @@ WP-28(地基,M14)──┤                                                      
 |---|---|---|---|---|---|
 | **OQ-S4-1** | research 層語言/工具鏈 | ✅ **決議(2026-08-04):Python 3.12 + uv + pyproject**(環境已驗:Python 3.12.10 / uv 0.9.18)。移植對象是 performance_analysis Python 實作,scipy 生態必要;TS 僅承接晉升後生產實作 | 使用者 | WP-28 T0 ✅ | unblocked |
 | **OQ-S4-7** | Python 閘是否進 `npm run test:ci` | ✅ **決議(2026-08-04):不進**。`test:ci` 是每 stage 的引擎不變式閘,加 Python 相依會讓純引擎工作在無 uv 機器上卡住。改為:① `uv run pytest` 為 research 獨立閘 ② 雙向 golden/parity fixture 進 `test:ci`(跨語言漂移仍紅)③ M15 要求雙閘證據 | 使用者 | WP-28 T0 ✅ | unblocked |
-| **OQ-S4-8** | 真實匯出 fixture 政策 | ✅ **決議(2026-08-04):≤30s drill(≈3840 ticks)+ `participantId` 匿名化 + 存 `research/fixtures/exports/`**;上限寫入 `research/README.md`;長 drill 只在本機分析不進 repo。**樣本本身由使用者後補**(M14 阻塞項) | 使用者 | WP-28 T3 前 | M14 ①④ 無法宣告 |
+| **OQ-S4-8** | 真實匯出 fixture 政策 | ✅ **關閉(2026-08-05)**:政策維持 ≤30s + 匿名 ID;27.390625s `counterstrafe_ad_v1`/`P001` 已進 `research/fixtures/exports/` 並完成 M14 ①④⑤ | 使用者 | 2026-08-05 | unblocked;M14 已宣告 |
 | **OQ-S4-2** | 分段閾值 deg/s 起點(peak 門檻、low/stop 比例、SG window) | 骨架沿 performance_analysis(mean+0.5σ、0.1×/0.2× peak、w=7 起點);數值由 T3 掃參定,**pre-registered 記錄後凍結** | 研究者 | WP-28 T3 | M14 無法判定 |
 | **OQ-S4-3** | reliability gate 門檻(split-half r、shuffle 顯著水準) | split-half r ≥ 0.7 + shuffle p < 0.01(T0 拍板凍結) | 研究者 | WP-31 T0 | P2 指標無法判定進退 |
 | **OQ-S4-4** | 晉升 dashboard 的指標清單 | phase 時長統計 + sync 統計 + L/R 曲線縮圖(P0/P1 全數;P2 視 gate) | 使用者 | WP-32 T0 | WP-32 scope 不定 |
@@ -458,4 +458,4 @@ WP-28(地基,M14)──┤                                                      
 
 ## 10. 執行規則
 
-沿用 [exec-plan/README.md §5](../../README.md):一 task = 一垂直切片 = 一原子 commit;task 完成更新該 WP `progress.md` + checklist;跨 WP 先驗上游 exit-gate;**M14 未過不展開 WP-30/31**(分段地基未鎖不做逐段指標)。WP 展開格式以 [`completed/stage5/wp-25-ballistics-tracer/`](../../completed/stage5/wp-25-ballistics-tracer/README.md) 為模板。Python 側紅綠燈證據(`uv run pytest` 輸出)比照 CI 紀律記 progress。
+沿用 [exec-plan/README.md §5](../../README.md):一 task = 一垂直切片 = 一原子 commit;task 完成更新該 WP `progress.md` + checklist;跨 WP 先驗上游 exit-gate。**M14 已於 2026-08-05 通過,WP-30/31 可展開**;後續仍須引用 WP-28 的單樣本效度限制與 `seg-v1` version。WP 展開格式以 [`completed/stage5/wp-25-ballistics-tracer/`](../../completed/stage5/wp-25-ballistics-tracer/README.md) 為模板。Python 側紅綠燈證據(`uv run pytest` 輸出)比照 CI 紀律記 progress。
