@@ -7,7 +7,7 @@
 | **相依** | T1–T4 全綠 |
 | **Risk / Cplx** | — / Low |
 | **Touches** | ADD `docs/operational/analysis-segments.md`;ADD 一鍵 script(`research/` 內:匯出 → 分段 + 品質報告);MODIFY [../README.md](../README.md) §3 狀態、[../../../README.md](../../../README.md) §2/§3 |
-| **狀態** | 🔴 **M14 ②③④⑤ 已撤回;僅 ①⑥ 維持**(② 於 2026-08-05 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md);③④⑤ 於 2026-08-06 [KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md) + [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md)) |
+| **狀態** | 🟡 **M14 ①②⑥ 維持;③④⑤ 已撤回**(② 於 2026-08-05 因 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) 撤回,**已於 2026-08-06 KI-004 S1 落地後重新宣告**;③④⑤ 於 2026-08-06 因 [KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md) + [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md) 撤回、尚未落地)。**WP-30/31 entry blocker 仍維持**(三條獨立理由中僅 KI-004 一條解除) |
 
 ## Objective
 
@@ -37,7 +37,7 @@
 | # | 條件 | 判定方式 | 結果(2026-08-05) |
 |---|---|---|---|
 | ① | **真實** drill 匯出 ingest 綠 + dt 報告產出 | 一鍵 script 於真實匯出 exit 0;dt 報告含 tick 數/缺口/中位間隔 | ✅ `counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json`:exit 0;3,507 ticks / median dt 7.8125ms / gap 0 / uniform;27.390625s、`participantId=P001`、PII-like literal scan 無命中、`suspect=false`、無 overflow |
-| ② | **ε 層 parity 綠** | `npm run test:ci` exit 0 且 `epsilon-parity.test.ts` 五個量 ≤1e-9 | ❌ **撤回(2026-08-05,[KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)**。機制面仍綠(`test:ci` exit 0、逐 presentation ≤1e-9),但**兩側一致地錯**:ε 的量測原點寫死 `(px, eyeY, pz)`,遺漏 camera base offset(`eyeZ = depth/2 − standoff = 4`)與 `SIM_TO_WORLD`。以引擎 `fire.offsetDeg` 為 ground truth 實測偏差:08:03 = **12.52°**、09:39 = **67.11°**(正確公式 0.21°/0.14°)。待 KI-004 S1 落地 + 重產 parity fixture 後重新宣告 |
+| ② | **ε 層 parity 綠** | `npm run test:ci` exit 0 且 `epsilon-parity.test.ts` 五個量 ≤1e-9 | ✅ **重新宣告(2026-08-06)**。原判定(2026-08-05,[KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)因兩側一致地錯(遺漏 camera base offset + `SIM_TO_WORLD`,實測偏差 08:03=12.52°/09:39=67.11°)撤回;KI-004 S1 落地後(commits `43675ab`/`f6027ed`/`465f986`/`6f4b540`)以新證據重新宣告:閘 ①(`fire.offsetDeg` oracle)08:03/09:39 修法後 0.000°/0.030°(≤0.5° 容差)、閘 ② 閉式幾何 ≤1e-9、parity fixture 重產且 `test:ci`/`uv run pytest` 全綠。詳見 [WP-28 progress.md](progress.md)「M14 ② 重新宣告」段 |
 | ③ | 合成 fixture 分段邊界誤差 ≤ 2 tick | T3 六個 fixture 測試綠 | ❌ **撤回(2026-08-06,[KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md))**。測試本身仍綠(max error = 1 tick),但**證據力失效**:`make_synthetic_export` 直接產生 `aim`/ω 序列,**完全不經 render path**,故合成訊號結構上不可能含 render/sim aliasing。此閘無法保證分段器在真實訊號上的行為 |
 | ④ | **真實**資料分段成功率 + 疊圖報告 | `notebooks/t3-sweep/outputs/` 產出 + progress 記錄 | ❌ **撤回(2026-08-06)**,兩條**相互獨立**的理由:**(a) [KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md)** — ω(t) 受 240/128 Hz beat 汙染,每 8 tick 一個假凹口;0.95 計入被假象切碎後又合併的段,真正未 flag 的逐段指標僅 **n = 4 / 19(21%)**(`merged_adjacent_peaks` 15/19)。人工檢核的「merges within one noisy principal burst」方向正確,但把確定性儀器假象歸因為 noise。**(b) [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md)** — 該樣本 `vx ≠ 0` 的 tick = **0**、`keys` 全空、`counter` 事件 **0**,是站樁純 flick,**counter-strafe 構念從未被執行**。即使 (a) 修好,以此樣本重跑仍不構成效度證據 |
 | ⑤ | 分段參數 pre-registered 凍結並記 `analysis-segments.md` | 文件含凍結值 + `version` + 掃參證據 | ❌ **撤回(2026-08-06,[KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md) + [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md))**。`seg-v1` 的 SG window = **7 tick**,而 beat 週期 = **8 tick** —— **濾波窗短於假象週期,數學上不可能濾除**;且 243 組掃參全在不含此假象的合成訊號上進行。凍結值於真實資料不適用,須待 KI-005 修法落地後**升版 `seg-v2` 重掃**(依 D-28.7 不得原地調參)。[analysis-segments.md](../../../../operational/analysis-segments.md) 的 “Real-export validation” 段已加註撤回 |
@@ -45,16 +45,16 @@
 
 ~~**宣告規則已滿足**:匿名真實匯出已完成 ① ingest/dt、④ 成功率/疊圖與 ⑤ 人工效度回填;②③⑥ 亦於 2026-08-05 複驗全綠。~~(2026-08-06 作廢,見下)
 
-### 判定:M14 🔴 —— ② 於 2026-08-05 撤回;③④⑤ 於 2026-08-06 撤回
+### 判定:M14 🟡 —— ①②⑥ 維持;③④⑤ 於 2026-08-06 撤回
 
-原判定(六項全綠、WP-30/31 解除 blocker)已分兩次撤銷,**目前僅 ①⑥ 維持**:
+原判定(六項全綠、WP-30/31 解除 blocker)已分兩次撤銷,其中 ② 已於 KI-004 S1 落地後重新宣告,**目前 ①②⑥ 維持,③④⑤ 仍撤回**:
 
-- **② 撤回(2026-08-05,[KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md))** —— parity 綠燈是「兩個實作一致地錯」,不構成 ε 地基成立的證據。待 KI-004 S1(修正原點 + Python 同步 + 重產 parity fixture + 新增 `fire.offsetDeg` 正確性閘)後重新宣告。
-- **③④⑤ 撤回(2026-08-06,[KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md) + [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md))** —— 見下方「豁免撤銷」。
+- **② 撤回(2026-08-05,[KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md))→ 重新宣告(2026-08-06)** —— 原判定的 parity 綠燈是「兩個實作一致地錯」,不構成 ε 地基成立的證據。**KI-004 S1 已落地**(修正原點 + Python 同步 + 重產 parity fixture + 新增 `fire.offsetDeg` 正確性閘),以上表 ② 列的新證據重新宣告。
+- **③④⑤ 撤回(2026-08-06,[KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md) + [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md))** —— 見下方「豁免撤銷」。**尚未落地**。
 - **① 維持** —— ingest/dt 屬 schema 與取樣層檢核,與 aim 差分及行為內容皆無關;3,507 ticks / gap 0 / uniform 仍有效。
-- **⑥ 維持** —— `uv run pytest` 74 passed / exit 0,與上述缺陷無關。
-- **WP-30/31 entry blocker 維持**,現有**三條相互獨立**的理由:KI-004(ε 原點)、KI-005(ω 汙染)、KI-006(樣本無構念)。
-- **WP-29 不受影響**(只吃 `events` 與 `ticks[].keys`)。
+- **⑥ 維持** —— `uv run pytest` 74→183 passed / exit 0,與上述缺陷無關。
+- **WP-30/31 entry blocker 仍維持**,原有**三條相互獨立**的理由:KI-004(ε 原點)、KI-005(ω 汙染)、KI-006(樣本無構念)——**KI-004 這條已於 2026-08-06 解除**,KI-005/KI-006 兩條仍未落地,entry blocker 整體不得視為解除。
+- **WP-29 不受影響**(只吃 `events` 與 `ticks[].keys`),已於 2026-08-05 完成交付。
 - OQ-S4-8 維持關閉(fixture 政策與此無關)。
 
 #### 豁免撤銷:「分段走 ω(t) 故不受影響」不再成立

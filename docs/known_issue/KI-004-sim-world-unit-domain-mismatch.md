@@ -1,9 +1,9 @@
 # KI-004 — sim domain(source unit)與 world domain 混用:corridor gate 100× 過緊 + 離線 ε(t) 原點錯尺度
 
 > 類型:單位域(unit domain)一致性 bugfix 診斷 + 修改計畫(tech spec)。
-> 狀態:**🟡 已定解法待落地**(修法方向 2026-08-05 由使用者拍板;見 §5)。**尚未動任何程式碼。**
+> 狀態:**✅ S1 已落地(2026-08-06)**;S2(逐 tick eye pose)/ S3(文件/ADR)待辦(見 §5.1)。M14 ② 已於 S1 落地後重新宣告([BD-004](BUGFIX-DECISIONS.md) S1 落地段)。**WP-30/31 entry blocker 仍維持** —— 該 blocker 有三條相互獨立的理由(KI-004/KI-005/KI-006),本次僅解除 KI-004 這一條;KI-005/KI-006 尚未落地。
 >
-> ⚠️ **2026-08-05 更正**:本文件初版稱「08:03 匯出 `px ≡ 0`,ε 碰巧正確,M14 數值不撤回」。**該敘述已證實為誤** —— D2 實際上有**兩個獨立缺陷**,其中 D2a(遺漏 camera base offset)與 `px` 無關,在 08:03 上同樣造成 ~12.5° 誤差。**M14 ② 撤回**(§3、§4)。
+> ⚠️ **2026-08-05 更正**:本文件初版稱「08:03 匯出 `px ≡ 0`,ε 碰巧正確,M14 數值不撤回」。**該敘述已證實為誤** —— D2 實際上有**兩個獨立缺陷**,其中 D2a(遺漏 camera base offset)與 `px` 無關,在 08:03 上同樣造成 ~12.5° 誤差。**M14 ② 撤回**(§3、§4;**已於 S1 落地後重新宣告,見上**)。
 > 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-004。
 > 發現路徑:排查「[counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json](../../research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json) 為何零位移」時,重現用的第二份匯出暴露此問題。
 >
@@ -145,8 +145,8 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 | `meta.suspect` 研究效度旗標 | 語意反轉:有做急停 = suspect,不動 = 可信。所有含真實橫移的 pilot 資料都會帶旗標 | **High**(資料判讀) |
 | 離線 ε(t)/on-target/TOT%/`t_acquire` | **所有**匯出皆錯:D2a 恆成立(08:03 實測 12.5°),`px ≠ 0` 再疊 D2b(09:39 實測 67°) | **High**(研究效度) |
 | `t_detect`/`eccentricity_at_spawn`(GD-8) | 同上 | **High** |
-| **M14 ② ε parity** | **撤回**(2026-08-05 使用者拍板)。parity 機制本身有效且仍綠(Python 與 TS 逐位一致),但兩側**一致地錯** → 「ε 層地基成立」的宣告無效。M14 ①③④⑤⑥ 不受影響(分段走 ω(t),只依賴 `aim`,與 `px`/原點無關) | **撤回,S1 後重新宣告** |
-| **WP-30 / WP-31 entry** | 兩者全部逐段軌跡指標建在 ε(t) 上 → **entry blocker 恢復**,須待 S1 落地並重新宣告 M14 ② | **High**(排程) |
+| **M14 ② ε parity** | **撤回**(2026-08-05 使用者拍板)。parity 機制本身有效且仍綠(Python 與 TS 逐位一致),但兩側**一致地錯** → 「ε 層地基成立」的宣告無效。M14 ①③④⑤⑥ 不受影響(分段走 ω(t),只依賴 `aim`,與 `px`/原點無關) | **✅ S1 落地後重新宣告(2026-08-06)** |
+| **WP-30 / WP-31 entry** | 兩者全部逐段軌跡指標建在 ε(t) 上 → entry blocker 恢復,須待 S1 落地並重新宣告 M14 ② | **維持**(見下)—— KI-004 這條理由已解除,但 KI-005(ω 汙染)/ KI-006(樣本無構念)兩條獨立理由仍未落地,entry blocker 整體未解除 |
 | `run_pipeline` 的 `mean_epsilon_deg` 逐段診斷欄(D-28.13) | 錯值 | Med(僅診斷用,未進教練報告) |
 | stage4 WP-30/31 | 全部逐段軌跡指標建在 ε(t) 上 → 一旦用含橫移的匯出即失真 | **High**(阻塞) |
 | WP-29 T1/T2 | **不受影響**:peek 時間軸與 Sync 族只吃 `events` 與 `ticks[].keys`,不碰 `px/pz` | 無 |
@@ -178,13 +178,13 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 
 ### 5.1 落地階段
 
-> **S1 的可執行計畫**:[KI-004-S1/](KI-004-S1/README.md)(tech spec + T0–T5 + T-exit;task 索引 [task-checklist.md](KI-004-S1/task-checklist.md))。
+> **S1 的可執行計畫**:[KI-004-S1/](KI-004-S1/README.md)(tech spec + T0–T6 + T-exit;task 索引 [task-checklist.md](KI-004-S1/task-checklist.md))。**S1 已於 2026-08-06 落地**(commits `43675ab`/`f6027ed`/`465f986`/`6f4b540`;帳本見 [BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-004 的「S1 落地」段)。
 
 | 階段 | 內容 | 對資料語意的影響 |
 |---|---|---|
-| **S1 修正性** | ① `SIM_TO_WORLD` 從 `main.ts` module 常數升為引擎級具名常數(置 `src/loop/constants.ts` 同級,**不掛 `SceneConfig`** —— 掛上去會讓同一 drill 在不同場景產生不同幾何,且讓 sim 行為依賴場景資料,踩 GD-6 精神)② corridor gate 改 world 域比較 + 依 K-3 脫離 `suspect` ③ `trackingDerivation`/`detectionDerivation` 改為接受 eye pose(base + scale),不再寫死 `(px, eyeY, pz)` ④ Python 側同步 ⑤ 重產 parity fixture ⑥ 加 §6 的兩道正確性閘 | 匯出**欄位與值不變**;ε/t_detect 系列的**計算結果會變**(本來就是錯的)。sim 未動 → determinism baseline 零影響 |
-| **S2 資料模型**(additive) | ① 逐 tick 記錄 **eye world pose**(射線原點,與 `aim` 方向並列)② `meta.simToWorld` ③ `meta.validity = { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow }`(`suspect` 保留為 OR,向後相容) | additive、**不 bump `schemaVersion`**;舊匯出缺欄 → fallback 重建 + flag |
-| **S3 文件/ADR** | ① `CONTEXT.md` 正規單位一節改寫(現行「資料不得用公尺」**在今天就是假的**,留著會繼續誘導同類 bug)② `analysis-tracking.md`/`analysis-t-detect.md`/`schema.md` 單位敘述對帳 ③ (選配)`SimU`/`WorldU` branded type 慣例入 CLAUDE.md §4 | 純文件 |
+| **S1 修正性 ✅ 已落地(2026-08-06)** | ① `SIM_TO_WORLD` 從 `main.ts` module 常數升為引擎級具名常數(置 `src/loop/constants.ts` 同級,**不掛 `SceneConfig`** —— 掛上去會讓同一 drill 在不同場景產生不同幾何,且讓 sim 行為依賴場景資料,踩 GD-6 精神)② corridor gate 改 world 域比較 + 依 K-3 脫離 `suspect` ③ `trackingDerivation`/`detectionDerivation` 改為接受 eye pose(base + scale),不再寫死 `(px, eyeY, pz)` ④ Python 側同步 ⑤ 重產 parity fixture ⑥ 加 §6 的兩道正確性閘。**前拉**:`meta.simToWorld` + `meta.scene.eye`(靜態 base)+ `meta.validity` 三個 additive 區塊(原規劃於 S2,2026-08-05 使用者拍板前拉,見 [KI-004-S1/README.md §2.3a](KI-004-S1/README.md)) | 匯出**欄位與值不變**(前拉的三個區塊為 additive 新增);ε/t_detect 系列的**計算結果已變**(本來就是錯的,實測 08:03/09:39 偏差 12.52°/67.11° → ≤0.5°)。sim 未動 → determinism baseline 零影響 |
+| **S2 資料模型**(additive,**範圍已縮小**) | 因 2026-08-05 前拉,S2 只剩**逐 tick** 記錄 **eye world pose**(射線原點,與 `aim` 方向並列;TD-1,對還原能力零增益,純粹是 GD-7 raw-over-derived 的完整形式) | additive、**不 bump `schemaVersion`** |
+| **S3 文件/ADR** | ① `CONTEXT.md` 正規單位一節改寫(現行「資料不得用公尺」**在今天就是假的**,留著會繼續誘導同類 bug)② `analysis-tracking.md`/`analysis-t-detect.md`/`schema.md` 單位敘述對帳(部分已隨 S1 T2/T4 同步射線原點段落,其餘既有欄位單位敘述留 S3)③ (選配)`SimU`/`WorldU` branded type 慣例入 CLAUDE.md §4 | 純文件 |
 
 > **S2 實作坑(必讀)**:eye pose **不可**從 render camera 讀進 tick 記錄 —— camera 位置是 render 以 `alpha` 內插的,讀它會讓 tick 記錄依賴 render 幀率,**破壞決定性並違反 ADR-2**。正確做法:在 **data 層**以 `base + (player.x, 0, player.z) × SIM_TO_WORLD` 決定性算出,`base`/`factor` 以注入方式提供(`src/data` 不在 GD-6 的禁引用清單內,`meta.scene` 本就已進匯出,合規)。
 
@@ -238,12 +238,24 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 | ~~**OQ-KI4-1**~~ | ~~資料層的正規單位域~~ | ✅ **關閉(2026-08-05)**:K-1 「雙域 + 顯式換算」;`CONTEXT.md` 於 S3 改寫 | 使用者 |
 | ~~**OQ-KI4-3**~~ | ~~`px` 單調漂移屬行為還是缺歸位機制~~ | ✅ **關閉(2026-08-05)**:研究設計**允許選手自由位移**;不新增歸位機制,不對位移設紀律門檻 | 使用者 |
 | ~~**OQ-KI4-4**~~ | ~~M14 ② 是否重新宣告~~ | ✅ **關閉(2026-08-05)**:K-2 撤回,S1 後重新宣告 | 使用者 |
-| **OQ-KI4-2**(改寫) | 自由位移下,corridor 觀測項該記錄什麼粒度?(建議:`max|lateral|`(world u)+ 越界 tick 佔比,而非單一布林) | 🟡 S2 落地前需定;不阻塞 S1 | 研究者 |
+| **OQ-KI4-2**(改寫) | 自由位移下,corridor 觀測項該記錄什麼粒度?(建議:`max|lateral|`(world u)+ 越界 tick 佔比,而非單一布林) | 🟡 **S1 已落布林**(`meta.validity.corridorExceeded`,見 T2);粒度升級待 S2 或研究者定義後另開 task。不阻塞 S1 | 研究者 |
 | **OQ-KI4-5**(新) | 自由位移下,選手可能移出**場景淨空走廊**導致目標被道具視覺遮擋。依 GD-6 這**不會**影響命中判定,但會影響偵測/追蹤類 drill 的刺激可見性 —— 是否需要在報告層對「越界期間的 peek」加註? | 🟡 影響 WP-30/31 的資料篩選;不阻塞 S1 | 研究者 |
-| **OQ-KI4-6**(新) | 走廊語意拆分:`clearance.halfWidthU`(場景淨空取樣,現行 [clearance.ts:248](../../src/scene/clearance.ts#L248) 用途)與執行期觀測門檻是否拆成兩個欄位?後者在 K-3 下已非 gate,可能不需要獨立欄位 | 🟡 S1 實作時決定 | 實作者 |
+| ~~**OQ-KI4-6**~~(新) | ~~走廊語意拆分:`clearance.halfWidthU`(場景淨空取樣,現行 [clearance.ts:248](../../src/scene/clearance.ts#L248) 用途)與執行期觀測門檻是否拆成兩個欄位?後者在 K-3 下已非 gate,可能不需要獨立欄位~~ | ✅ **關閉(2026-08-06,T3)**:**不拆**。K-3 下 corridor 已非 gate,拆欄會新增兩個需人工同步的數字(D1-Option B 的既知缺點);`isOutsideCorridor` 直接消費現有 `SceneConfig.playerCorridor.halfWidthU`,零新增欄位(見 [KI-004-S1/progress.md](KI-004-S1/progress.md) S1-D11) | 實作者 |
 
 ---
 
 ## 8. 修改紀錄
 
-尚未修改任何程式碼。本文件僅為診斷 + 修改計畫。
+**S1 已於 2026-08-06 落地**(K-1/K-2/K-3 全數兌現;詳細任務拆解/DoD 見 [KI-004-S1/](KI-004-S1/README.md),決策見 [BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-004「S1 落地」段)。
+
+| Commit | Task | 內容 |
+|---|---|---|
+| `43675ab` | T1 | `SIM_TO_WORLD` 升引擎級常數(`src/loop/constants.ts`)+ `resolveEyeWorldBase` 單一來源(`src/scene/eyePose.ts`);四場景 camera 初始位置逐位不變 |
+| `f6027ed` | T2 | 匯出自我描述:`meta.simToWorld` / `meta.scene.eye` / `meta.validity` 三個 additive 區塊(2026-08-05 拍板前拉自 S2);`meta.suspect` 逐位不變 |
+| `465f986` | T3 | corridor gate 改 world 域比較(`src/scene/corridor.ts`)+ 依 K-3 脫離 `meta.suspect`(仍落 `meta.validity.corridorExceeded`) |
+| `6f4b540` | T4+T5(合併,BD-001 TDD 偏離慣例) | 離線 ε(t) 原點改用 `eyeOrigin = base + (px,0,pz) × simToWorld`(`src/metrics/eyeOrigin.ts`);新增正確性閘 ①(`fire.offsetDeg` oracle)與 ②(閉式幾何,TS+Python 各一份);Python `angular.py` 同步 + 重產 parity fixture |
+| （本次）| T6 | 帳本 / 里程碑對帳:M14 ② 重新宣告(見 [WP-28 progress.md](../exec-plan/active/stage4/wp-28-research-foundation/progress.md))+ 跨文件狀態收斂 |
+
+**實測結果**(閘 ①,以引擎自身 `fire.offsetDeg` 為 ground truth;篩選 `aimPunchPitch/Yaw==0` 的合格首發,兩份真實 fixture 各僅 N=1):08:03 修法前 8.19°(紅)→ 修法後 0.000°(綠);09:39 修法前 88.53°(紅)→ 修法後 0.030°(綠)。閘 ② 兩側對閉式解相對誤差 ≤1e-9。回歸:`tsc --noEmit` exit 0、`npm run test:ci` 88 files/694 tests + 19 e2e 全綠、`uv run pytest` 183 passed,`src/sim`/`SharedState`/`SimLoop.step` 零 diff。
+
+**S2(逐 tick eye world pose)/ S3(文件/ADR 單位敘述全面對帳)尚未落地**,不阻塞 M14 ② 的重新宣告。

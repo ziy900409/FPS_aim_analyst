@@ -10,7 +10,7 @@
 | **上游門檻** | M4 ✅(schema v2 匯出鏈)+ WP-16 ✅(v2 欄位)+ **M11/M12 ✅**(`meta.targets.hitbox`/tick `ads`/`hit` 事件語意已鎖);**引擎零改動**(例外:WP-29 T3 選配 key-event 記錄、WP-32 metrics/UI 層,皆不碰 sim)。M13 手動回填(#32)**不阻塞** |
 | **技術棧** | 新增:**Python 3.12 + uv + pyproject**(numpy/pandas/scipy;pytest)於 `research/`(OQ-S4-1 ✅);既有 TS 棧觸及點 = 對表 vitest(WP-28 T2、WP-32 T1)+ `src/metrics/` 與結果頁(WP-32) |
 | **估時** | 11–16 dev-days(WP-28~32) |
-| **狀態** | 🟡 **已採納;WP-28 完成,但 M14 ② 於 2026-08-05 撤回**([KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)· WP-29 🟡(**T0 entry gate ✅,不受 KI-004 阻塞**)· WP-30 ⬜(**entry blocker 恢復**)· WP-31 ⬜(**entry blocker 恢復**)· WP-32 ⬜。M14 ①③④⑤⑥ 維持(分段走 ω(t),只依賴 `aim`);② ε parity 因量測原點錯誤(實測偏差 12.5°/67°)撤回,待 KI-004 S1 落地後重新宣告 |
+| **狀態** | 🟡 **已採納;WP-28 task 全數完成,M14 現狀①⑥維持/②已重新宣告/③④⑤ 撤回**(見下)· WP-29 ✅ 完成(2026-08-05,**不受 KI-004/005/006 阻塞**,只吃 `events`/`ticks[].keys`)· WP-30 ⬜(**entry blocker 維持**)· WP-31 ⬜(**entry blocker 維持**)· WP-32 ⬜。**M14 ①⑥ 維持**(ingest/dt、pytest 綠,與 aim 差分/行為內容無關)。**M14 ②** 因 ε(t) 量測原點錯誤(D2a/D2b,實測偏差 12.5°/67°)於 2026-08-05 撤回,**已於 [KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) S1 落地後重新宣告(2026-08-06)**。**M14 ③④⑤** 另因 [KI-005](../../../known_issue/KI-005-omega-render-sim-aliasing.md)(ω(t) render/sim aliasing)+ [KI-006](../../../known_issue/KI-006-m14-sample-no-counterstrafe.md)(真實樣本無 counter-strafe 構念)於 2026-08-06 撤回,**尚未落地**。**WP-30/31 entry blocker 因 KI-005/KI-006 兩條獨立理由仍維持**(KI-004 這條理由已解除) |
 
 ---
 
@@ -321,7 +321,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 
 | WP | 子資料夾 | 目標 | 優先序 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|---|
-| **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 🟡** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 **task 全數完成,但 M14 ② 於 2026-08-05 撤回**(KI-004);①③④⑤⑥ 維持 |
+| **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 🟡** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 **task 全數完成;M14 ①⑥ 維持,② 已於 KI-004 S1 落地後重新宣告(2026-08-06),③④⑤ 因 KI-005/KI-006 撤回(尚未落地)** |
 | **WP-29** | [wp-29-coach-timeline/](wp-29-coach-timeline/README.md) | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件)+ 教練報告 v0 | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ✅ **完成(2026-08-05)**:T0–T2 + T3(使用者 override)+ T-exit 全綠;`timeline-v1`/`sync-v1` 定稿,OQ-S4-6 關閉 |
 | **WP-30** | `wp-30-trajectory-metrics/` | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14** | 2–3 | ⬜ |
 | **WP-31** | `wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14** | 2–3 | ⬜ |
@@ -333,7 +333,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 
 | 里程碑 | 完成條件(可機械判定) | 對應 WP | 意義 |
 |---|---|---|---|
-| **M14 🟡 (② 撤回,2026-08-05)** | ① ✅ 真實匯出 ingest/dt:3,507 ticks / 7.8125ms / gap 0 ② ❌ **撤回** —— ε parity 機制仍綠(Python 與 TS 逐位一致),但兩側**一致地錯**:量測原點遺漏 camera base offset(D2a)與 `SIM_TO_WORLD`(D2b),對引擎 `fire.offsetDeg` 實測偏差 12.52°(08:03)/ 67.11°(09:39),見 [KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) ③ ✅ 合成邊界 max error 1 tick ④ ✅ 真實 `seg-v1`:19/20(0.95)+20 張疊圖 ⑤ ✅ pre-registered 參數保留且人工檢核/限制已記 `analysis-segments.md` ⑥ ✅ `uv run pytest`:74 passed | WP-28 | ③④⑤ 的分段地基走 ω(t)(只依賴 `aim`),**不受 KI-004 影響**;ε 地基未成立 → **WP-30/31 entry blocker 恢復**,待 KI-004 S1 落地 + ② 重新宣告 |
+| **M14 🟡 (①⑥ 維持;② 重新宣告 2026-08-06;③④⑤ 撤回 2026-08-06)** | ① ✅ 真實匯出 ingest/dt:3,507 ticks / 7.8125ms / gap 0 ② ✅ **重新宣告(2026-08-06)** —— 原判定(2026-08-05)因 ε(t) 量測原點錯誤(D2a camera base offset + D2b `SIM_TO_WORLD`,對 `fire.offsetDeg` 實測偏差 12.52°/67.11°)撤回;[KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) S1 落地後以新證據重新宣告:閘 ① `fire.offsetDeg` oracle ≤0.5°(08:03/09:39 修法後 0.000°/0.030°)、閘 ② 閉式幾何 ≤1e-9、parity fixture 重產且 `test:ci`/`uv run pytest` 全綠 ③ ❌ **撤回(2026-08-06,[KI-005](../../../known_issue/KI-005-omega-render-sim-aliasing.md))** —— 合成邊界測試仍綠但證據力失效(合成訊號不經 render path,結構上看不見 render/sim aliasing) ④ ❌ **撤回(2026-08-06,KI-005+[KI-006](../../../known_issue/KI-006-m14-sample-no-counterstrafe.md))** —— 真實產率僅 4/19(21%),且樣本不含 counter-strafe 構念 ⑤ ❌ **撤回(同上)** —— `seg-v1` 的 SG window(7 tick)短於 beat 週期(8 tick),數學上不可能濾除 ⑥ ✅ `uv run pytest`:74→183 passed | WP-28 | ①⑥ 與 aim 差分/行為內容無關,不受影響;**ε 地基(KI-004 部分)已修正**,但分段地基(③④⑤)因 KI-005/KI-006 仍未成立 → **WP-30/31 entry blocker 仍維持**(三條理由中僅 KI-004 一條解除),待 KI-005 修法落地 + KI-006 重新採樣 + `seg-v2` 重掃後才可能全數解除 |
 | **M15** | 驗收清單 D 全項通過:教練報告一鍵產出(FR-D16)、晉升指標 TS golden 對表綠、`test:ci` exit 0 **且** `uv run pytest` 綠、每指標附效度證據(fixture + 真實檢核 + 限制)、P2 三指標各有明確進退判定 | WP-32 | **stage4 交付**:瞄準 × 急停教練分析管線 pilot-ready |
 
 ---
@@ -349,7 +349,7 @@ WP-28(地基,M14)──┤                                                      
 ```
 
 - **最短價值路徑 = WP-28 T1 → WP-29 T1/T2**:教練最快拿到逐 peek 時間軸與 sync(兩者只吃 ingest 與 events,不吃分段)。
-- **M14 ② 已於 2026-08-05 撤回**([KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)→ **WP-30/31 entry blocker 恢復**,須待 KI-004 S1 落地並重新宣告 ② 後才可展開;`seg-v1` 與單樣本效度限制的引用要求不變。**WP-29 不受影響**(只吃 `events` 與 `ticks[].keys`,不碰 `px/pz`),為目前唯一可展開的 WP。
+- **M14 ② 已於 [KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) S1 落地後重新宣告(2026-08-06)**,該理由已解除;但 **M14 ③④⑤ 另因 [KI-005](../../../known_issue/KI-005-omega-render-sim-aliasing.md)/[KI-006](../../../known_issue/KI-006-m14-sample-no-counterstrafe.md) 於 2026-08-06 撤回、尚未落地**,故 **WP-30/31 entry blocker 仍維持**(三條獨立理由中僅 KI-004 一條解除),須待 KI-005 修法落地 + KI-006 重新採樣 + `seg-v2` 重掃後才可能展開;`seg-v1` 與單樣本效度限制的引用要求不變。**WP-29 不受影響**(只吃 `events` 與 `ticks[].keys`,不碰 `px/pz`),已於 2026-08-05 完成交付。
 - WP-31 三個 task 互不相依,可依資料就緒度亂序執行(Fitts 等偵測 drill 資料;xcorr 等 reliability 判定)。
 - 目前**無 active WP**,零檔案熱區競爭。
 
@@ -462,4 +462,4 @@ WP-28(地基,M14)──┤                                                      
 
 ## 10. 執行規則
 
-沿用 [exec-plan/README.md §5](../../README.md):一 task = 一垂直切片 = 一原子 commit;task 完成更新該 WP `progress.md` + checklist;跨 WP 先驗上游 exit-gate。**M14 已於 2026-08-05 通過,WP-30/31 可展開**;後續仍須引用 WP-28 的單樣本效度限制與 `seg-v1` version。WP 展開格式以 [`completed/stage5/wp-25-ballistics-tracer/`](../../completed/stage5/wp-25-ballistics-tracer/README.md) 為模板。Python 側紅綠燈證據(`uv run pytest` 輸出)比照 CI 紀律記 progress。
+沿用 [exec-plan/README.md §5](../../README.md):一 task = 一垂直切片 = 一原子 commit;task 完成更新該 WP `progress.md` + checklist;跨 WP 先驗上游 exit-gate。**M14 原六項全綠宣告(2026-08-05)已分兩次撤回;② 已於 KI-004 S1 落地後重新宣告(2026-08-06),但 WP-30/31 entry blocker 因 KI-005/KI-006 仍維持,尚不得展開**;後續仍須引用 WP-28 的單樣本效度限制與 `seg-v1` version。WP 展開格式以 [`completed/stage5/wp-25-ballistics-tracer/`](../../completed/stage5/wp-25-ballistics-tracer/README.md) 為模板。Python 側紅綠燈證據(`uv run pytest` 輸出)比照 CI 紀律記 progress。

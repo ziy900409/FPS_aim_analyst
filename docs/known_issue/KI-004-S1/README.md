@@ -461,7 +461,7 @@ T0 ──► T1 ──► T2 ──► T3 ──► T4 ──► T5 ──► T6
 | **G-7** | **匯出自我描述**:新產生的匯出含 `meta.simToWorld` + `meta.scene.eye` + `meta.validity`,且 derivation 對該匯出解析出 `source === 'meta'`(無需顯式傳參) | round-trip 測試 + `npm run test:ci` |
 | **G-8** | **`suspect` 只減不加**:同一組輸入下,`meta.suspect` 相對 S1 前的唯一差異是移除 corridor 項;`bufferOverflow` 未被併入 | NFR-S1-2b 的釘死測試 |
 
-**M14 ② 重新宣告**(FR-S1-12)在 G-1~G-8 全綠後於 T6 執行;宣告後 **WP-30 / WP-31 entry blocker 解除**。
+**M14 ② 重新宣告**(FR-S1-12)在 G-1~G-8 全綠後於 T6 執行(已完成,2026-08-06)。⚠️ **本行訂於 2026-08-05,KI-005/KI-006 發現前已作廢**:重新宣告 ② 只解除 WP-30/31 entry blocker 三條相互獨立理由中的 KI-004 這一條;KI-005(ω 汙染)/ KI-006(樣本無構念)兩條仍未落地,**entry blocker 整體未解除**,詳見 [KI-004 §3](../KI-004-sim-world-unit-domain-mismatch.md)「WP-30/WP-31 entry」列。
 
 ---
 

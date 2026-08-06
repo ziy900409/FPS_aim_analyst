@@ -10,7 +10,7 @@
 | **交付範圍** | 階段 A：F1–F4 + 1 個完整 counter-strafe drill（簡化「立即停止」急停） |
 | **技術棧** | Three.js `WebGPURenderer`（`three/webgpu`）+ TypeScript + Vite；UI = 純 TS + DOM overlay；測試 = Vitest + Playwright |
 | **估時** | 25–39 dev-days（≈5–8 週，含 WebGPU 設定與學習爬升） |
-| **狀態** | ✅ **階段 A 交付**（WP-0 ~ WP-9 全部完成，**M4 達成 2026-07-03**；已移入 `completed/stage1/`）· ✅ **階段 B 交付**（WP-10~17 於 `completed/stage2/`，**M8 達成 2026-07-07**；**WP-18 F5 ✅ 交付 2026-07-09**，於 `completed/stage2/`）· ✅ **階段 C 交付**（WP-19~22 於 `completed/stage3/`；**WP-19 ✅ M9 2026-07-08 + WP-20 ✅ + WP-21 ✅ 2026-07-09 + WP-22 ✅ M10 2026-07-10**；兩感知實驗端到端成立且 pilot-ready、`test:ci` exit 0 + 清單 C 全 10 項（C-5 真 fullscreen 實機證據）；研究決議 GD-6~10 已全數拍板；已移入 `completed/stage3/`）· 🟡 **階段 E 已歸檔 `completed/stage5/`**（2026-07-15;**WP-23 ✅ M11 + WP-24 ✅ + WP-25 ✅ M12 + WP-26 T-exit 自動閘 ✅（`test:ci` exit 0）/ M13 待研究者實機手動回填（#32）正式宣告交付**；BR 遠距跟槍測試模組；編號分配見 [DECISIONS.md](DECISIONS.md) GD-15） · 🟡 **階段 D 已採納**（2026-08-04，[`active/stage4/`](active/stage4/README.md)：選手表現分析管線 research 層，WP-28~32 / M14~M15；GD-19/GD-20；**WP-28 ✅ 完成,M14 ✅ 達成 2026-08-05，WP-30/31 entry 已解鎖**） |
+| **狀態** | ✅ **階段 A 交付**（WP-0 ~ WP-9 全部完成，**M4 達成 2026-07-03**；已移入 `completed/stage1/`）· ✅ **階段 B 交付**（WP-10~17 於 `completed/stage2/`，**M8 達成 2026-07-07**；**WP-18 F5 ✅ 交付 2026-07-09**，於 `completed/stage2/`）· ✅ **階段 C 交付**（WP-19~22 於 `completed/stage3/`；**WP-19 ✅ M9 2026-07-08 + WP-20 ✅ + WP-21 ✅ 2026-07-09 + WP-22 ✅ M10 2026-07-10**；兩感知實驗端到端成立且 pilot-ready、`test:ci` exit 0 + 清單 C 全 10 項（C-5 真 fullscreen 實機證據）；研究決議 GD-6~10 已全數拍板；已移入 `completed/stage3/`）· 🟡 **階段 E 已歸檔 `completed/stage5/`**（2026-07-15;**WP-23 ✅ M11 + WP-24 ✅ + WP-25 ✅ M12 + WP-26 T-exit 自動閘 ✅（`test:ci` exit 0）/ M13 待研究者實機手動回填（#32）正式宣告交付**；BR 遠距跟槍測試模組；編號分配見 [DECISIONS.md](DECISIONS.md) GD-15） · 🟡 **階段 D 已採納**（2026-08-04，[`active/stage4/`](active/stage4/README.md)：選手表現分析管線 research 層，WP-28~32 / M14~M15；GD-19/GD-20；**WP-28 ✅ 完成,M14 ①⑥維持/②已於 [KI-004](../known_issue/KI-004-sim-world-unit-domain-mismatch.md) S1 落地後重新宣告(2026-08-06)/③④⑤ 因 [KI-005](../known_issue/KI-005-omega-render-sim-aliasing.md)/[KI-006](../known_issue/KI-006-m14-sample-no-counterstrafe.md) 撤回,WP-30/31 entry blocker 仍維持**） |
 
 ---
 
@@ -93,11 +93,11 @@
 **階段 D（`active/stage4/`，🟡 已採納 2026-08-04；tech spec：[`active/stage4/README.md`](active/stage4/README.md)；編號分配 [DECISIONS.md](DECISIONS.md) GD-19 · 教練報告紅線 GD-20）**
 
 > 選手表現分析管線（research 層：瞄準 × 急停診斷指標）。新增 `research/` Python 離線分析層（Python 3.12 + uv），**引擎零改動**（例外：WP-29 T3 選配 key 事件、WP-32 metrics/UI）。parity 雙向：既有構念（ε(t)/t_acquire）TS 為權威、Python 對表；新構念 Python 為權威、TS 對表——兩向的對表閘皆落在既有 `test:ci`。
-> **M14 已達成(2026-08-05)**：匿名真實 drill 匯出完成 ingest/dt、19/20 分段成功率與 20 張疊圖人工檢核；WP-30/31 entry 已解鎖。效度範圍仍限單一 counter-strafe 樣本。
+> **M14 🟡**：①⑥ 維持,②於 KI-004 S1 落地後重新宣告(2026-08-06),③④⑤ 因 KI-005/KI-006 於 2026-08-06 撤回(詳見 §3 M14 列)。**WP-30/31 entry blocker 因 KI-005/KI-006 兩條獨立、尚未落地的理由仍維持**。效度範圍仍限單一 counter-strafe 樣本。
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
-| **WP-28** | [`active/stage4/wp-28-research-foundation/`](active/stage4/wp-28-research-foundation/README.md) | research 地基：四目錄制 + schema v2 ingest + ω(t)/ε(t)（**含 ε 雙向 parity 閘**）+ submovement 分段（參數凍結）+ quality flags + 一鍵 pipeline | **M14 ✅** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | ✅ **完成(2026-08-05);M14 六項全綠** |
+| **WP-28** | [`active/stage4/wp-28-research-foundation/`](active/stage4/wp-28-research-foundation/README.md) | research 地基：四目錄制 + schema v2 ingest + ω(t)/ε(t)（**含 ε 雙向 parity 閘**）+ submovement 分段（參數凍結）+ quality flags + 一鍵 pipeline | **M14 🟡** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | ✅ **task 全數完成(2026-08-05);M14 ①⑥維持/②已重新宣告(2026-08-06)/③④⑤ 撤回(KI-005/KI-006)** |
 | **WP-29** | [`active/stage4/wp-29-coach-timeline/`](active/stage4/wp-29-coach-timeline/README.md) | 教練第一層：逐 peek 時間軸（交叉驗證 `compute.ts`）+ Release-to-Click Sync 族（+ 選配 `key` 事件）+ 教練報告 v0（單檔靜態 HTML，條件分層） | — | WP-28 **T1**（僅 ingest） | 1.5–2.5 | ✅ **完成(2026-08-05)**；`timeline-v1`/`sync-v1` 定稿，OQ-S4-6 關閉 |
 | **WP-30** | `active/stage4/wp-30-trajectory-metrics/` | 軌跡診斷：REC/MR/V phase 分解 + L/R 101 點正規化曲線 | — | **M14** | 2–3 | ⬜ |
 | **WP-31** | `active/stage4/wp-31-advanced-diagnostics/` | 進階診斷：SPARC + Key-Velocity xcorr（reliability gate，GD-20）+ Fitts | — | **M14** | 2–3 | ⬜ |
@@ -122,7 +122,7 @@
 | **M11 ✅**<br>(2026-07-10) | hitbox config 化零破壞(舊 drill 逐位不變)+ 命中 ⇔ on-target 同幾何斷言 + `tracking_longrange_v1` round-trip(推導誤差 ≤ 1 tick)+ 遠距 fixture 決定性綠 | WP-23 | 遠距追蹤效度地基;**WP-25 T2+ entry 前提自此可引用** |
 | **M12 ✅**<br>(2026-07-14) | hitscan 逐位回歸綠(baseline 零重錄)+ projectile golden(位置序列/命中 tick)綠 + tracer 交付(單 draw call/sim 零改動)+ shot/hit 事件 schema 對帳 | WP-25 | 彈道模型門控:**M12 已過 → `bullet` 欄自此可進 drill config(WP-26 T3 解鎖)** |
 | **M13 🟡**<br>(自動閘 2026-07-14) | 驗收清單 E 全項通過:BR 整合 drill E2E、三條決定性不變性(場景/ADS/彈道 gate)、ads/hit/追蹤欄匯出 round-trip、資產 attribution 可稽核;`test:ci` exit 0。**自動項 E-1~E-10 全綠 + `test:ci` exit 0(branch-guarded);清單 E §2 手動視覺/手感回填為 M13 阻塞項,待研究者實機**——回填後正式宣告 stage5 交付 | WP-26 | **stage5 交付**:BR 遠距跟槍測試(含 ADS 與彈道條件)pilot-ready |
-| **M14 ✅**<br>(2026-08-05) | research 地基六項全綠：① 真實匯出 3,507 ticks / dt 7.8125ms / gap 0 ② ε parity `test:ci` 綠（82 files / 641 tests + 19 e2e）③ 合成邊界 max error 1 tick ④ 真實資料 `seg-v1` 19/20(0.95)+20 張疊圖 ⑤ pre-registered 參數不變且真實人工檢核/限制回寫 `analysis-segments.md` ⑥ `uv run pytest` 74 passed。證據見 [WP-28 T-exit](active/stage4/wp-28-research-foundation/T-exit-gate.md) | WP-28 | research 分段 + ε 地基成立;**WP-30/31 entry blocker 已解除**。效度聲稱限單一匿名 counter-strafe 樣本 |
+| **M14 🟡**<br>(①⑥ 維持;②於 [KI-004](../known_issue/KI-004-sim-world-unit-domain-mismatch.md) S1 落地後重新宣告 2026-08-06;③④⑤ 因 [KI-005](../known_issue/KI-005-omega-render-sim-aliasing.md)/[KI-006](../known_issue/KI-006-m14-sample-no-counterstrafe.md) 撤回) | ① 真實匯出 3,507 ticks / dt 7.8125ms / gap 0(維持)⑥ `uv run pytest` 74→183 passed(維持)。**②** 原六項全綠宣告(2026-08-05)因 ε(t) 量測原點錯誤(D2a/D2b,實測偏差 12.52°/67.11°)撤回;**KI-004 S1 落地後以新證據重新宣告**(閘 ① `fire.offsetDeg` oracle ≤0.5°、閘 ② 閉式幾何 ≤1e-9、parity fixture 重產綠、`test:ci` 88 files/694 tests + 19 e2e、`uv run pytest` 183 passed;詳見 [WP-28 progress.md](active/stage4/wp-28-research-foundation/progress.md)「M14 ② 重新宣告」段)。**③④⑤ 另因 KI-005(ω(t) render/sim aliasing)+ KI-006(真實樣本無 counter-strafe 構念)於 2026-08-06 撤回,兩者尚未落地** | WP-28 | research ingest/parity 機制 + ε 地基(僅 KI-004 原因)已修正;**WP-30/31 entry blocker 因 KI-005/KI-006 兩條獨立、尚未落地的理由仍維持**,尚不得展開。效度聲稱限單一匿名 counter-strafe 樣本 |
 | **M15 ⬜** | 驗收清單 D 全項通過：教練報告一鍵產出（FR-D16）、晉升指標 TS golden 對表綠、`test:ci` exit 0 **且** `uv run pytest` 綠、每指標附效度證據（fixture + 真實檢核 + 限制）、P2 三指標各有明確進退判定（GD-20） | WP-32 | **stage4 交付**：瞄準 × 急停教練分析管線 pilot-ready |
 
 ---
@@ -183,7 +183,7 @@ WP-28（地基，M14）──┤                                              �
                      └─(M14)─────────────→ WP-31（SPARC/xcorr/Fitts）┘
 ```
 
-- 階段 D 全在 `research/`（Python 離線）＋兩個對表閘，引擎零改動（例外：WP-29 T3 選配 `key` 事件、WP-32 metrics/UI）；與其他 stage 零檔案熱區重疊。**M14 已於 2026-08-05 通過,WP-30/31 可進場**；WP-31 為 M15 選項（未過 reliability gate 的指標不晉升，GD-20）。詳見 [`active/stage4/README.md §5`](active/stage4/README.md)。
+- 階段 D 全在 `research/`（Python 離線）＋兩個對表閘，引擎零改動（例外：WP-29 T3 選配 `key` 事件、WP-32 metrics/UI）；與其他 stage 零檔案熱區重疊。**M14 原六項全綠宣告(2026-08-05)已分兩次撤回**（② 因 KI-004、③④⑤ 因 KI-005/KI-006）；**② 已於 KI-004 S1 落地後重新宣告(2026-08-06)**，但 **WP-30/31 entry blocker 因 KI-005/KI-006 兩條獨立、尚未落地的理由仍維持，尚不得進場**；WP-31 為 M15 選項（未過 reliability gate 的指標不晉升，GD-20）。詳見 [`active/stage4/README.md §5`](active/stage4/README.md)。
 
 ---
 
