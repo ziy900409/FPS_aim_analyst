@@ -13,7 +13,7 @@
 | 2026-08-06 | 計畫 | ✅ **OQ-A-1 / OQ-A-2 拍板** | OQ-A-1 = **全域開啟**(不做「實驗 session 才開」);OQ-A-2 = 本次**不動** `recordKeyEvents`,登錄 TD-5,須在 A2-T1 採樣前由研究者決定 |
 | 2026-08-06 | 計畫 | ✅ 查碼發現兩個缺口並納入範圍 | ① `pushMouse` 無 pointer-lock 閘(→ T3 / FR-A-8)② `main.ts` 從未啟用 `recordKeyEvents`(→ FR-A-7 的前車之鑑)。見 [README §2.4](README.md) |
 | 2026-08-06 | T0 | ✅ | 基線紅綠燈記錄(§2);§2.4 兩缺口行號複核(§2b);RED 基線可重現(§2a,notch 數 27/34 精確重現);受影響測試盤點(§3);`suspect`/`bufferOverflow` 口徑抄錄(§2c) |
-| | T1 | ⬜ | |
+| 2026-08-06 | T1 | ✅ | 新增 `src/input/mouseGain.ts`(`RAD_PER_COUNT`/`MAX_PITCH`/`resolveMouseGain`/`createAimIntegrator`,12 個新測試);`CameraController` 改為消費(`#adsGain` → `#currentStep`,由 `resolveMouseGain` 於原有觸發點——`setSensitivity`/`setAdsConfig`(active 中)/`setAds`(轉場)——重算,避免逐幀/逐 mousemove 重新配置);`applyDelta` 委派 `AimIntegrator`。新增 2 個 golden 測試(hip→ADS→hip 混合序列 camera quaternion + aimSink 逐位斷言、pitch 撞夾角後 dPitch 語意)。`grep "0\.022"`/`grep "MAX_PITCH"` 僅 `mouseGain.ts` 命中定義。`npx tsc --noEmit` exit 0;`npm run test:ci` vitest **89 files/708 tests 全綠**(694 基線 + 14 新增,零既有期望值變更);Playwright 18/19 通過,`input-sampler.spec.ts` 2 案在整套並行下逾時、單獨重跑 3/3 全綠(與 T0 記錄同一支既有環境雜訊,詳 §3,非本次迴歸)。`git diff --stat` 僅 `src/input/mouseGain.ts`(新)+ `src/view/CameraController.ts`/`.test.ts`,未觸及 `src/sim/`、`SharedState`、`SimLoop`、`src/data/` |
 | | T2 | ⬜ | |
 | | T3 | ⬜ | |
 | | T4 | ⬜ | |

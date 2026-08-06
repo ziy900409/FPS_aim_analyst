@@ -174,4 +174,62 @@ describe('CameraController', () => {
     controller.setFov(103);
     expect(camera.fov).toBeCloseTo(103, 6);
   });
+
+  // ── KI-005 / A · T1：mouseGain 抽取為純重構,camera quaternion 逐位不變（FM-3） ──
+
+  it('T1：hip→ADS→hip 混合序列下,camera quaternion 與 aimSink 逐位不變(手算 golden)', () => {
+    const aim: AimState = { yaw: 0, pitch: 0 };
+    const camera = new THREE.PerspectiveCamera(90); // hipFov = 90
+    const controller = new CameraController(camera, aim);
+    controller.setSensitivity(1);
+    controller.setAdsConfig({ fovDeg: 45, sensitivityRatio: 0.8 });
+
+    const hipStep = THREE.MathUtils.degToRad(0.022);
+    const adsStep = hipStep * (0.8 * (45 / 90));
+    const MAX_PITCH_LOCAL = Math.PI / 2 - 0.01;
+
+    let expectedYaw = 0;
+    let expectedPitch = 0;
+    const accumulate = (dx: number, dy: number, step: number) => {
+      expectedYaw -= dx * step;
+      expectedPitch = THREE.MathUtils.clamp(expectedPitch - dy * step, -MAX_PITCH_LOCAL, MAX_PITCH_LOCAL);
+    };
+
+    // 段 1：hip 態。
+    controller.applyDelta(500, -300);
+    accumulate(500, -300, hipStep);
+
+    // 段 2：切到 ADS,gain 立即階躍(t=0,不受 FOV 內插中值影響)。
+    controller.setAds(true, 0);
+    controller.applyDelta(200, 150);
+    accumulate(200, 150, adsStep);
+
+    // 段 3：放開鏡回 hip(FOV 過渡完成後才推進,不影響 gain 已是階躍)。
+    controller.setAds(false, 120);
+    controller.applyDelta(-400, 100);
+    accumulate(-400, 100, hipStep);
+
+    const expected = new THREE.Quaternion()
+      .setFromAxisAngle(new THREE.Vector3(0, 1, 0), expectedYaw)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), expectedPitch));
+
+    expect(camera.quaternion.x).toBeCloseTo(expected.x, 12);
+    expect(camera.quaternion.y).toBeCloseTo(expected.y, 12);
+    expect(camera.quaternion.z).toBeCloseTo(expected.z, 12);
+    expect(camera.quaternion.w).toBeCloseTo(expected.w, 12);
+    expect(aim.yaw).toBeCloseTo(expectedYaw, 12);
+    expect(aim.pitch).toBeCloseTo(expectedPitch, 12);
+  });
+
+  it('T1：pitch 撞上 ±MAX_PITCH 後再同向推,aimSink 保持貼在夾角(dPitch 語意的外顯行為)', () => {
+    const aim: AimState = { yaw: 0, pitch: 0 };
+    const controller = new CameraController(new THREE.PerspectiveCamera(), aim);
+    const MAX_PITCH_LOCAL = Math.PI / 2 - 0.01;
+
+    controller.applyDelta(0, -1e9); // 巨量向上 → 撞上 +MAX_PITCH
+    expect(aim.pitch).toBeCloseTo(MAX_PITCH_LOCAL, 12);
+
+    controller.applyDelta(0, -1e9); // 再往同方向推,已在邊界不再變化
+    expect(aim.pitch).toBeCloseTo(MAX_PITCH_LOCAL, 12);
+  });
 });

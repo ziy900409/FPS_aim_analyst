@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu';
+import { RAD_PER_COUNT, resolveMouseGain, createAimIntegrator, type AimIntegrator } from '../input/mouseGain.ts';
 
 /**
  * CameraController — WP-1 / T4（FR-1.4）
@@ -13,14 +14,13 @@ import * as THREE from 'three/webgpu';
  *
  * 單位：`sensitivity × RAD_PER_COUNT` 為 CS2 counts→radians 線性換算（GD-5）；
  * RAD_PER_COUNT 固定為 0.022°/count，sensitivity 使用者可調（T5）。
+ *
+ * counts→rad / gain 公式 / yaw-pitch 累加的**唯一定義**在 `src/input/mouseGain.ts`
+ * （KI-005 / A，FR-A-2/3）——tick 窗積分器（量測）共用同一套，兩者不可能發散。
  */
 
-/** CS2 counts→radians 固定線性係數（GD-5：0.022°/count）。 */
-const RAD_PER_COUNT = THREE.MathUtils.degToRad(0.022);
 /** sensitivity 預設值（T5 設定面板可即時改）。 */
 const DEFAULT_SENSITIVITY = 1.0;
-/** pitch 夾角 ±89°（Math.PI/2 - ε），避免翻轉（R2 明確專案級限制）。 */
-const MAX_PITCH = Math.PI / 2 - 0.01;
 /**
  * ADS 開鏡 FOV 過渡時長（ms，render-only，OQ-24.1）。視覺淡入專用——**不進 sim/記錄**
  * （記錄的是 heldAds 事件與逐 tick flag，非此視覺過渡）。感度切換為階躍，不受此內插影響。
@@ -47,8 +47,8 @@ export interface AdsConfig {
 export class CameraController {
   #camera: THREE.PerspectiveCamera;
   readonly #aimSink?: AimState;
-  #yaw = 0;
-  #pitch = 0;
+  // yaw/pitch 累加委派 AimIntegrator（mouseGain.ts 單一實作，與 tick 窗積分器共用）。
+  readonly #integrator: AimIntegrator = createAimIntegrator();
   #sensitivity = DEFAULT_SENSITIVITY;
   // recoil 視覺 punch（rad，WP-13 / T2）：每幀由 render loop 以 setViewPunch 餵入（aimPunch 內插後
   // 經 adapter 轉 three rad）。與使用者 yaw/pitch 分離：punch 只組進 camera 朝向、**不**寫回 aimSink
@@ -59,8 +59,10 @@ export class CameraController {
   // ADS 開鏡（WP-24 / T2，FR-E5）：只落 render/input 層（GD-16），不進 sim/命中/彈道。
   #adsConfig?: AdsConfig;
   #adsActive = false;
-  // 感度 gain 為**階躍**（切換 ADS 立即生效，非隨 FOV 內插）：hip=1、ads=ratio×(adsFov/hipFov)。
-  #adsGain = 1;
+  // 感度 gain 為**階躍**（切換 ADS 立即生效，非隨 FOV 內插）：hip=sensitivity×RAD_PER_COUNT、
+  // ads=hipStep×ratio×(adsFov/hipFov)（resolveMouseGain 產出，FR-A-3）；只在原本會重算 #adsGain
+  // 的觸發點（setSensitivity / setAdsConfig(active 中) / setAds 轉場）重算，避免逐幀重新配置。
+  #currentStep = DEFAULT_SENSITIVITY * RAD_PER_COUNT;
   // FOV 內插狀態（render-only；#hipFov 為使用者/相機基準 FOV，setFov 維護）。
   #hipFov: number;
   #fovFrom: number;
@@ -87,15 +89,24 @@ export class CameraController {
 
   /** 鎖定中的滑鼠 delta → 累積 yaw/pitch（pitch 夾角）→ 套到 camera。ADS 態乘 GD-16 gain。 */
   applyDelta(dx: number, dy: number): void {
-    const step = this.#sensitivity * RAD_PER_COUNT * this.#adsGain;
-    this.#yaw -= dx * step; // dx>0（右移）→ yaw 減 → 向右看
-    this.#pitch = THREE.MathUtils.clamp(this.#pitch - dy * step, -MAX_PITCH, MAX_PITCH);
+    this.#integrator.applyDelta(dx, dy, this.#currentStep);
     this.#applyToCamera();
   }
 
   /** 設定 sensitivity（T5 設定面板；即時生效於下一次 applyDelta）。 */
   setSensitivity(s: number): void {
     this.#sensitivity = s;
+    this.#recomputeStep();
+  }
+
+  /** 依當前 sensitivity / hipFov / adsConfig / adsActive 重算 #currentStep（resolveMouseGain，FR-A-3）。 */
+  #recomputeStep(): void {
+    const gain = resolveMouseGain({
+      sensitivity: this.#sensitivity,
+      hipFovDeg: this.#hipFov,
+      ads: this.#adsConfig,
+    });
+    this.#currentStep = this.#adsActive ? gain.adsStep : gain.hipStep;
   }
 
   /**
@@ -131,7 +142,7 @@ export class CameraController {
     this.#adsConfig = ads;
     if (this.#adsActive) {
       this.#fovTarget = ads ? ads.fovDeg : this.#hipFov;
-      this.#adsGain = ads ? ads.sensitivityRatio * (ads.fovDeg / this.#hipFov) : 1;
+      this.#recomputeStep();
     }
   }
 
@@ -151,10 +162,7 @@ export class CameraController {
       this.#fovTarget = effectiveActive && this.#adsConfig ? this.#adsConfig.fovDeg : this.#hipFov;
       this.#transitionStartMs = nowMs;
       // gain 階躍：立即以目標態計算（切換感度為分析可分的階躍，非隨 FOV 漸變）。
-      this.#adsGain =
-        effectiveActive && this.#adsConfig
-          ? this.#adsConfig.sensitivityRatio * (this.#adsConfig.fovDeg / this.#hipFov)
-          : 1;
+      this.#recomputeStep();
     }
     const t =
       ADS_FOV_TRANSITION_MS <= 0
@@ -179,15 +187,17 @@ export class CameraController {
   #applyToCamera(): void {
     // recoil 視覺 punch 疊加於使用者 yaw/pitch 之上組進 camera；使用者 pitch 已於 applyDelta 夾角，
     // punch 加在夾角之外（夾角只約束使用者視角，不夾 punch，避免高後座時卡在 ±89°）。
-    this.#qYaw.setFromAxisAngle(WORLD_UP, this.#yaw + this.#punchYaw);
-    this.#qPitch.setFromAxisAngle(LOCAL_RIGHT, this.#pitch + this.#punchPitch);
+    const yaw = this.#integrator.yaw;
+    const pitch = this.#integrator.pitch;
+    this.#qYaw.setFromAxisAngle(WORLD_UP, yaw + this.#punchYaw);
+    this.#qPitch.setFromAxisAngle(LOCAL_RIGHT, pitch + this.#punchPitch);
     // qYaw · qPitch：先繞 local X（pitch）再繞 world Y（yaw），組合後無 roll。
     this.#camera.quaternion.copy(this.#qYaw).multiply(this.#qPitch);
     if (this.#aimSink !== undefined) {
       // aimSink = 使用者視角（**不含** punch）：彈道另加 rawPunch=aimPunch×2（SimLoop），
       // 若此處寫入含 punch 的角度會使彈道雙重計入 punch。
-      this.#aimSink.yaw = this.#yaw;
-      this.#aimSink.pitch = this.#pitch;
+      this.#aimSink.yaw = yaw;
+      this.#aimSink.pitch = pitch;
     }
   }
 }
