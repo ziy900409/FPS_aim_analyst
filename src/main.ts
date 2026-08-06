@@ -50,6 +50,7 @@ import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } fro
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
 import type { SceneConfig } from './scene/SceneConfig.ts';
+import { resolveEyeWorldBase } from './scene/eyePose.ts';
 import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
@@ -380,6 +381,15 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       sharedState.validity.playerCorridorExceeded ||
       (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
       frames.summary.p95 > PERF_FLOOR_MS,
+    simToWorld: SIM_TO_WORLD,
+    // meta.validity(KI-004 / S1 T2,FR-S1-15):與上面的 suspect **不是同一集合**,純觀測拆解,
+    // 前拉自 OQ-S1-2;`suspect` 本身的 OR 集合逐位不變。
+    validity: {
+      corridorExceeded: sharedState.validity.playerCorridorExceeded,
+      perfFloor: frames.summary.p95 > PERF_FLOOR_MS,
+      recorderOverflow: snapshot.recorderOverflow,
+      bufferOverflow: sharedState.inputMeta.bufferOverflow > 0,
+    },
     weapon: {
       id: weaponConfig.id,
       ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
@@ -405,6 +415,9 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       assetPackVersion: activeSceneConfig.assetPackVersion,
       clutterTier: activeSceneConfig.clutterTier,
       fallback: activeSceneFallback,
+      // eye world base(KI-004 / S1 T2,FR-S1-14):data 層純函式決定性算出,**不**從
+      // sceneManager.camera.position 讀(camera 經 alpha 內插,讀它會破壞決定性 + 違反 ADR-2)。
+      eye: resolveEyeWorldBase(activeSceneConfig),
     },
     display: currentDisplay,
     frames,

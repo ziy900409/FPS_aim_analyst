@@ -41,6 +41,7 @@ describe('collectMeta', () => {
       bufferOverflow: true,
       recorderOverflow: false,
       suspect: true,
+      simToWorld: 0.01,
     });
   });
 
@@ -210,6 +211,157 @@ describe('collectMeta', () => {
         fallback: true,
       },
     });
+  });
+
+  it('accepts scene.eye world base including zero and negative components (KI-004 / S1 T2)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      scene: {
+        sceneId: 'br-field',
+        assetPackVersion: 'br-field-v1',
+        clutterTier: 'high',
+        fallback: false,
+        eye: { x: 0, y: 1.6, z: 0 },
+      },
+    });
+
+    expect(meta.scene?.eye).toEqual({ x: 0, y: 1.6, z: 0 });
+  });
+
+  it('rejects non-finite scene.eye components', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        scene: {
+          sceneId: 'field-low',
+          assetPackVersion: 'field-low-v1',
+          clutterTier: 'low',
+          fallback: false,
+          eye: { x: 0, y: Number.NaN, z: 4 },
+        },
+      }),
+    ).toThrow('scene.eye.y');
+  });
+
+  it('defaults meta.simToWorld to the engine SIM_TO_WORLD constant (KI-004 / S1 T2, FR-S1-13)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    });
+
+    expect(meta.simToWorld).toBe(0.01);
+  });
+
+  it('rejects a non-positive meta.simToWorld override', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        simToWorld: 0,
+      }),
+    ).toThrow('simToWorld must be a positive finite number');
+  });
+
+  it('accepts meta.validity as a runtime observation block distinct from suspect (FR-S1-15)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      validity: {
+        corridorExceeded: true,
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: false,
+      },
+    });
+
+    expect(meta.validity).toEqual({
+      corridorExceeded: true,
+      perfFloor: false,
+      recorderOverflow: false,
+      bufferOverflow: false,
+    });
+    // NFR-S1-2b:validity.corridorExceeded 為 true 不得單獨把 suspect 拉成 true。
+    expect(meta.suspect).toBe(false);
+  });
+
+  it('rejects malformed meta.validity fields', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        validity: {
+          corridorExceeded: true,
+          perfFloor: false,
+          recorderOverflow: false,
+          bufferOverflow: 1 as unknown as boolean,
+        },
+      }),
+    ).toThrow('validity.bufferOverflow must be a boolean');
+  });
+
+  it('leaves meta.suspect bit-for-bit unchanged when simToWorld/scene.eye/validity are added (NFR-S1-2b)', () => {
+    const before = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      bufferOverflow: true,
+      suspect: true,
+    });
+    const after = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      bufferOverflow: true,
+      suspect: true,
+      scene: {
+        sceneId: 'field-low',
+        assetPackVersion: 'field-low-v1',
+        clutterTier: 'low',
+        fallback: false,
+        eye: { x: 0, y: 1.6, z: 4 },
+      },
+      validity: {
+        corridorExceeded: false,
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: true,
+      },
+    });
+
+    expect(after.suspect).toBe(before.suspect);
+    expect(after.suspect).toBe(true);
   });
 
   it('accepts WP-20 display metadata with explicit buffer and refresh estimate', () => {

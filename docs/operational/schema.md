@@ -77,13 +77,15 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `bufferOverflow` | boolean | `true` / `false` | Yes | input buffer telemetry | Marks dropped/late input-buffer data. |
 | `recorderOverflow` | boolean | `true` / `false` | Yes | recorder snapshot | If true, arena refused later tick writes and preserved oldest rows. |
 | `suspect` | boolean | `true` / `false` | Yes | derived validity flag | `true` if overflow or a runtime validity observer marks the run suspect. |
+| `simToWorld` | number | world unit per source unit | No | `SIM_TO_WORLD` (`src/loop/constants.ts`) | Additive; absence means pre-S1 export → offline consumers fall back and mark the source as `legacy-default`. TODO(S3): reconcile the existing unit prose for `ticks[].px/pz`/`tx/ty/tz` against this. |
 | `weapon` | object | active weapon snapshot | No | active `WeaponConfig` | Additive v2 block. Production exports include `{ id, ads?, bullet?, projectileOverflow? }`; `ads` stores ADS optics and `bullet` stores projectile ballistics when enabled. |
 | `targets` | object | optional target geometry snapshot | No | active `DrillConfig` after defaults resolve | Additive v2 block. `targets.hitbox` stores the H1 hitbox used by sim/render/offline derivation. |
 | `spawn` | object | reserved optional | No | stage3/WP-21 | v2 reserved block for `seed`, motion, and spawn-area snapshots. WP-16 writes seed/motion when available. |
-| `scene` | object | scene condition | No | stage3/WP-19 | `{ sceneId, assetPackVersion, clutterTier, fallback }`. Additive; absence means scene system not active. |
+| `scene` | object | scene condition | No | stage3/WP-19 | `{ sceneId, assetPackVersion, clutterTier, fallback, eye? }`. Additive; absence means scene system not active. |
 | `display` | object | reserved optional | No | stage3/WP-20 | v2 reserved display/session setup metadata block. |
 | `frames` | object | frame deltas and summary | No | stage3/WP-20 | `{ series, summary }`; complete delta series is JSON-only. |
 | `session` | object | reserved optional | No | stage3/WP-20 | `participantId` / `sessionLabel` cross-session join keys. |
+| `validity` | object | runtime validity observation breakdown | No | `sharedState.validity` / frame log / recorder snapshot | Additive; absence means pre-S1 export. **Not the same set as `suspect`** — see [`meta.validity`](#metavalidity) below. |
 
 `buildExportPayload()` also ORs `meta.recorderOverflow` with `snapshot.recorderOverflow`, then preserves any existing `meta.suspect` flag.
 
@@ -126,6 +128,7 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `assetPackVersion` | string | asset/config version | Yes | active `SceneConfig` | Lets analyses group exports by scene asset revision. |
 | `clutterTier` | string | `low`, `mid`, `high` | Yes | active `SceneConfig` | Scene clutter condition. |
 | `fallback` | boolean | `true` / `false` | Yes | scene loader | `true` when the requested scene asset failed and render fell back to placeholder-room. |
+| `eye` | object | world base `{ x, y, z }` | No | `resolveEyeWorldBase(sceneConfig)` (`src/scene/eyePose.ts`) | Additive; absence means pre-S1 export → offline consumers fall back and mark the source as `legacy-default`. Computed deterministically in the data layer — **never** read from `sceneManager.camera.position` (camera is `alpha`-interpolated for render, which would make the export depend on render frame rate and break determinism / violate ADR-2). Components allow `0` and negative values (e.g. `br-field`'s `eyeZ: 0`). TODO(S3): reconcile with the canonical unit prose. |
 
 #### `meta.display`
 
@@ -180,6 +183,22 @@ The exported series stores frame-to-frame deltas in milliseconds, not raw timest
 | `overflow` | boolean | `true` / `false` | Yes | True when the fixed-capacity arena stopped accepting later deltas. |
 
 If `summary.p95 > PERF_FLOOR_MS`, `collectMeta()` marks `meta.suspect = true`.
+
+#### `meta.validity`
+
+Additive v2 block (KI-004 / S1 T2). Records four runtime observation booleans without changing `suspect`
+semantics. Absence means a pre-S1 export.
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `corridorExceeded` | boolean | `true` / `false` | Yes when `validity` exists | `sharedState.validity.playerCorridorExceeded` | Purely observational (GD-6); does **not** by itself invalidate a run. |
+| `perfFloor` | boolean | `true` / `false` | Yes when `validity` exists | `frames.summary.p95 > PERF_FLOOR_MS` | Same condition that contributes to `suspect`. |
+| `recorderOverflow` | boolean | `true` / `false` | Yes when `validity` exists | recorder snapshot | `buildExportPayload()` ORs this with `snapshot.recorderOverflow`, same as the top-level `meta.recorderOverflow`. |
+| `bufferOverflow` | boolean | `true` / `false` | Yes when `validity` exists | `sharedState.inputMeta.bufferOverflow > 0` | **Not** part of `meta.suspect`'s OR set — recorded here as an observation only. |
+
+**`meta.validity` is not the same set as `meta.suspect`.** `meta.suspect`'s OR set is unchanged by this block:
+it remains `explicitSuspect (corridor/session/protocol/perfFloor) || bufferOverflow || recorderOverflow || perfFloor`,
+computed independently in `collectMeta()`/`buildExportPayload()`. Adding `validity` never widens or narrows `suspect`.
 
 ### `ticks[]`
 

@@ -176,6 +176,7 @@ def make_synthetic_export(spec: SyntheticSpec) -> dict[str, Any]:
             "bufferOverflow": False,
             "recorderOverflow": False,
             "suspect": False,
+            "simToWorld": 0.01,
             "weapon": {
                 "id": "ak47_synthetic",
                 "ads": {"fovDeg": 40.0, "sensitivityRatio": 1.0},
@@ -183,7 +184,13 @@ def make_synthetic_export(spec: SyntheticSpec) -> dict[str, Any]:
                 "projectileOverflow": False,
             },
             "targets": {"hitbox": {"widthU": 1.0, "heightU": 2.0, "depthU": 1.0}},
-            "scene": {"sceneId": "placeholder-room", "assetPackVersion": "synthetic-v1", "clutterTier": "low", "fallback": False},
+            "scene": {
+                "sceneId": "placeholder-room",
+                "assetPackVersion": "synthetic-v1",
+                "clutterTier": "low",
+                "fallback": False,
+                "eye": {"x": 0.0, "y": 1.6, "z": 4.0},
+            },
             "display": {
                 "mode": "fhd-1080",
                 "bufferW": 1920,
