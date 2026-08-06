@@ -29,15 +29,25 @@ f_aim = (-sin(yaw) cos(pitch), sin(pitch), -cos(yaw) cos(pitch))
 For target vector, use the tick target center when present:
 
 ```text
-p_eye = (px, eyeY, pz)
+p_eye = eyeBase + (px, 0, pz) * simToWorld
 p_target = (tx, ty, tz)
 ```
 
-`eyeY` defaults to `1.6` source units, matching the current scene/player eye height. If a later schema exports
-eye height explicitly, the explicit field wins.
+`p_eye` is in **world domain** (same domain as `p_target`/hitbox/scene geometry); `(px, pz)` are
+**source units** and must be scaled by `simToWorld` before combining with `eyeBase` — mixing the
+two domains unscaled was KI-004's root cause (D2a/D2b).
+
+`eyeBase` (world) and `simToWorld` come from the export's `meta.scene.eye` / `meta.simToWorld`
+(present on S1-and-later exports; TS reference implementation: `resolveEyeOrigin` in
+`src/metrics/eyeOrigin.ts`). Pre-S1 exports lack both fields; callers must supply an explicit eye
+base or accept the `'legacy-default'` fallback `eyeBase = (0, 1.6, 0)` (still scaled by
+`simToWorld`), which cannot recover a scene's true `eyeBase.z`.
 
 When computing the pre-stimulus baseline before `t_visible`, the target is not visible yet, so use the matching
 `visible.targetX/targetY/targetZ` as the future target center.
+
+<!-- TODO(S3): CONTEXT.md's "positions are source units" convention still needs a global rewrite
+     to state which fields are world vs source domain; out of scope for this section's fix. -->
 
 ## Eccentricity
 

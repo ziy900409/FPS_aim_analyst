@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import type { ProceduralRoomConfig, SceneConfig } from '../scene/SceneConfig.ts';
 import { disposeScene, loadScene, type SceneAssetLoader } from './sceneLoader.ts';
 import { placeholderRoom } from '../scene/scenes/placeholder-room.ts';
+import { DEFAULT_PROCEDURAL_ROOM, resolveEyeWorldBase } from '../scene/eyePose.ts';
 
 /**
  * SceneManager — WP-1 / T1（FR-1.1）+ WP-19 / T2（FR-C2）
@@ -21,22 +22,6 @@ import { placeholderRoom } from '../scene/scenes/placeholder-room.ts';
  * 定義（CONTEXT.md §C 正規單位：sim/資料一律 u/s，render 可另套 display scale）。
  * 此處的數字不得流入 sim 或匯出資料。
  */
-
-const DEFAULT_PROCEDURAL_ROOM: ProceduralRoomConfig = {
-  roomSize: [10, 10, 3],
-  eyeHeight: 1.6,
-  fovDeg: 75,
-  colors: {
-    floor: 0x33373c,
-    wall: 0x4d545c,
-    background: 0x202428,
-  },
-  lights: {
-    ambientIntensity: 0.6,
-    directionalIntensity: 1.2,
-    directionalPosition: { x: 3, y: 4.5, z: 2.5 },
-  },
-};
 
 export class SceneManager {
   readonly scene: THREE.Scene;
@@ -60,12 +45,10 @@ export class SceneManager {
     // T4 的 CameraController 之後接管 yaw/pitch；此 lookAt 為 yaw=pitch=0 的基準朝向。
     // aspect 先給 1，由 main 在 resize() 帶入真實視窗比例。
     this.camera = new THREE.PerspectiveCamera(room.fovDeg, 1, 0.1, 1000);
-    const standoff = 1; // 與背牆保持距離，避免 camera 卡進牆面
-    // KI-002 / D1:eyeZ 顯式錨定射線/彈道原點的 world z。省略時 = depth/2 - standoff(背牆站位,
-    // 逐位相容既有場景);radial-spawn 場景(br-field)設 eyeZ:0 使原點落在 sim origin,實際交戰距離
-    // == config distance。camera z 不進 sim(目標靠 age 純函式演進;GD-6);syncCameraBase 直接讀此 z。
-    const eyeZ = room.eyeZ ?? depth / 2 - standoff;
-    this.camera.position.set(0, room.eyeHeight, eyeZ);
+    // KI-004 / S1 T1:射線/彈道原點的 world base 抽為單一純函式（`resolveEyeWorldBase`），
+    // camera 與離線推導共用同一定義，防止日後再度只改一邊（D2a 的成因）。
+    const eye = resolveEyeWorldBase(config);
+    this.camera.position.set(eye.x, eye.y, eye.z);
     this.camera.lookAt(0, room.eyeHeight, -depth / 2); // 維持 -Z 基準朝向
   }
 

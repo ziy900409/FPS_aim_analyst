@@ -5,6 +5,7 @@ import { PERF_FLOOR_MS } from '../display/constants.ts';
 import type { FrameLogExport } from '../display/frameLog.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
 import type { TargetHitboxConfig } from '../drill/DrillConfig.ts';
+import { SIM_TO_WORLD } from '../loop/constants.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
@@ -48,6 +49,14 @@ export interface SceneMeta {
   assetPackVersion: string;
   clutterTier: 'low' | 'mid' | 'high';
   fallback: boolean;
+  /**
+   * 射線/彈道原點的 world base（KI-004 / S1 T2,FR-S1-14）。三分量皆 finite,
+   * **允許 0 與負值**（`br-field` 的 `eyeZ: 0`,KI-002/D1）。由 data 層以
+   * `resolveEyeWorldBase(sceneConfig)` 決定性算出 —— **不得**從 render camera 讀
+   * （camera 位置經 alpha 內插,讀它會讓匯出依賴 render 幀率,破壞決定性並違反 ADR-2）。
+   * 缺席 = pre-S1 匯出;`resolveEyeOrigin`(S1 T4)退 `legacy-default`。TODO(S3): 正規單位敘述對帳。
+   */
+  eye?: { x: number; y: number; z: number };
 }
 
 export interface SessionMeta {
@@ -83,6 +92,21 @@ export interface Meta {
   bufferOverflow: boolean;
   recorderOverflow: boolean;
   suspect: boolean;
+  /**
+   * world unit per source unit —— sim domain 與 world domain 之間的唯一橋樑
+   * （KI-004 / S1 T2,FR-S1-13）。缺席 = pre-S1 匯出。
+   */
+  simToWorld?: number;
+  /**
+   * runtime validity 觀測拆解（KI-004 / S1 T2,FR-S1-15）。與 `suspect` **不是同一集合**：
+   * `suspect` 的 OR 集合逐位不變（本欄位純 additive,不改變 `suspect` 語意）。
+   */
+  validity?: {
+    corridorExceeded: boolean;
+    perfFloor: boolean;
+    recorderOverflow: boolean;
+    bufferOverflow: boolean;
+  };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
   spawn?: SpawnMeta;
@@ -111,6 +135,13 @@ export interface CollectMetaArgs {
   bufferOverflow?: boolean | number;
   recorderOverflow?: boolean;
   suspect?: boolean;
+  simToWorld?: number;
+  validity?: {
+    corridorExceeded: boolean;
+    perfFloor: boolean;
+    recorderOverflow: boolean;
+    bufferOverflow: boolean;
+  };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
   spawn?: SpawnMeta;
@@ -153,6 +184,8 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const bufferOverflow = normalizeOverflow(args.bufferOverflow ?? false, 'bufferOverflow');
   const recorderOverflow = requireBoolean(args.recorderOverflow ?? false, 'recorderOverflow');
   const explicitSuspect = requireBoolean(args.suspect ?? false, 'suspect');
+  const simToWorld = requirePositiveFiniteNumber(args.simToWorld ?? SIM_TO_WORLD, 'simToWorld');
+  const validity = args.validity === undefined ? undefined : requireValidity(args.validity);
   const scene = args.scene === undefined ? undefined : requireSceneMeta(args.scene);
   const display = args.display === undefined ? undefined : requireDisplayState(args.display);
   const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
@@ -184,6 +217,8 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     bufferOverflow,
     recorderOverflow,
     suspect: explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect,
+    simToWorld,
+    ...(validity !== undefined ? { validity } : {}),
     ...(weapon !== undefined ? { weapon } : {}),
     ...(targets !== undefined ? { targets } : {}),
     ...(args.spawn !== undefined ? { spawn: args.spawn } : {}),
@@ -326,6 +361,26 @@ function requireSceneMeta(value: SceneMeta): SceneMeta {
     assetPackVersion: requireNonEmptyString(scene.assetPackVersion, 'scene.assetPackVersion'),
     clutterTier: requireClutterTier(scene.clutterTier, 'scene.clutterTier'),
     fallback: requireBoolean(scene.fallback, 'scene.fallback'),
+    ...(scene.eye !== undefined ? { eye: requireEyeWorldBase(scene.eye) } : {}),
+  };
+}
+
+function requireEyeWorldBase(value: unknown): NonNullable<SceneMeta['eye']> {
+  const eye = requireRecord(value, 'scene.eye');
+  return {
+    x: requireFiniteNumber(eye.x, 'scene.eye.x'),
+    y: requireFiniteNumber(eye.y, 'scene.eye.y'),
+    z: requireFiniteNumber(eye.z, 'scene.eye.z'),
+  };
+}
+
+function requireValidity(value: unknown): NonNullable<Meta['validity']> {
+  const validity = requireRecord(value, 'validity');
+  return {
+    corridorExceeded: requireBoolean(validity.corridorExceeded, 'validity.corridorExceeded'),
+    perfFloor: requireBoolean(validity.perfFloor, 'validity.perfFloor'),
+    recorderOverflow: requireBoolean(validity.recorderOverflow, 'validity.recorderOverflow'),
+    bufferOverflow: requireBoolean(validity.bufferOverflow, 'validity.bufferOverflow'),
   };
 }
 

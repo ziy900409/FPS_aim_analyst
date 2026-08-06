@@ -81,6 +81,29 @@ describe('data export', () => {
     expect(payload.meta.suspect).toBe(true);
   });
 
+  it('syncs meta.validity.recorderOverflow with the recorder snapshot (KI-004 / S1 T2)', () => {
+    const validityMeta: Meta = {
+      ...meta,
+      validity: { corridorExceeded: false, perfFloor: false, recorderOverflow: false, bufferOverflow: false },
+    };
+    const payload = buildExportPayload(validityMeta, { ...snapshot, recorderOverflow: true });
+
+    expect(payload.meta.validity).toEqual({
+      corridorExceeded: false,
+      perfFloor: false,
+      recorderOverflow: true,
+      bufferOverflow: false,
+    });
+    expect(payload.meta.suspect).toBe(true);
+  });
+
+  it('leaves meta.suspect unchanged when meta.validity is absent (pre-S1 export shape, NFR-S1-2b)', () => {
+    const payload = buildExportPayload(meta, snapshot);
+
+    expect(payload.meta.validity).toBeUndefined();
+    expect(payload.meta.suspect).toBe(false);
+  });
+
   it('serializes JSON as meta, ticks, and events', () => {
     const json = serializeJSON(buildExportPayload(meta, snapshot));
     const parsed = JSON.parse(json) as ExportPayload;

@@ -8,7 +8,7 @@ import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from '../loop/SimLoop.t
 import { punchToThreeRad } from '../recoil/adapter.ts';
 import { loadDrill } from '../drill/DrillLoader.ts';
 import { resolveTargetHitbox, targetHitboxToConfig, type DrillConfig } from '../drill/DrillConfig.ts';
-import { SIM_HZ } from '../loop/constants.ts';
+import { SIM_HZ, SIM_TO_WORLD } from '../loop/constants.ts';
 import { createDataRecorder, type DataRecorder, type DataRecorderSnapshot } from '../data/DataRecorder.ts';
 import { collectMeta } from '../data/metadata.ts';
 import { buildExportPayload, type ExportPayload } from '../data/export.ts';
@@ -29,6 +29,7 @@ import { deriveTrackingMetrics, type TrackingDerivationResult } from '../metrics
 import type { Clock } from '../loop/clock.ts';
 import type { RenderBackend } from '../render/createRenderer.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
+import { resolveEyeWorldBase } from '../scene/eyePose.ts';
 import { getWeapon } from '../weapon/weapons.ts';
 
 /**
@@ -233,12 +234,18 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
     state.aim.pitch = targetPitch - raw.pitchRad;
   }
 
+  /**
+   * eye world pose = resolveEyeWorldBase(scene) + (player.x, 0, player.z) × SIM_TO_WORLD ——
+   * 與 `eyeOriginForTick`(KI-004 / S1 T4)同一公式,避免這裡的合成瞄準假設 eye.z = 0
+   * 與離線 derivation 的真實 eye base 不一致(field-low/urban-high 的 base.z = 4 ≠ 0)。
+   */
   function aimAtActiveTargetFromPlayerOrigin(): void {
     const target = activeTarget();
     if (target === undefined) return;
-    const dx = target.pos.x - state.player.x;
-    const dy = target.pos.y - EYE_HEIGHT;
-    const dz = target.pos.z - state.player.z;
+    const eyeBase = sceneConfig !== undefined ? resolveEyeWorldBase(sceneConfig) : { x: 0, y: EYE_HEIGHT, z: 0 };
+    const dx = target.pos.x - (eyeBase.x + state.player.x * SIM_TO_WORLD);
+    const dy = target.pos.y - eyeBase.y;
+    const dz = target.pos.z - (eyeBase.z + state.player.z * SIM_TO_WORLD);
     const len = Math.hypot(dx, dy, dz);
     if (len === 0) return;
     state.aim.yaw = Math.atan2(-dx, -dz);
@@ -367,6 +374,9 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
               assetPackVersion: sceneConfig.assetPackVersion,
               clutterTier: sceneConfig.clutterTier,
               fallback: false,
+              // eye world base(KI-004 / S1 T4,G-7):data 層純函式決定性算出,鏡射 main.ts 的
+              // 匯出路徑,使 harness 匯出的 `'meta'` 分支在 e2e 實際受測(而非顯式傳參繞過)。
+              eye: resolveEyeWorldBase(sceneConfig),
             },
           }
         : {}),

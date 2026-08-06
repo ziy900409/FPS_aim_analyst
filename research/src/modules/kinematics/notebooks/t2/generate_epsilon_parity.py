@@ -16,16 +16,29 @@ RESEARCH_ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(RESEARCH_ROOT / "src"))
 
 from modules.ingest.algorithms.loader import Export, load_export  # noqa: E402
-from modules.kinematics.algorithms.angular import epsilon_deg, on_target  # noqa: E402
+from modules.kinematics.algorithms.angular import (  # noqa: E402
+    EyeOrigin,
+    epsilon_deg,
+    on_target,
+    resolve_eye_origin,
+)
 from modules.metrics.algorithms.peek import build_peek_windows  # noqa: E402
 
 
 _DEFAULT_HITBOX = {"width": 1.0, "height": 2.0, "depth": 1.0}
 
 
-def build_parity_payload(export: Export, eye_height: float = 1.6) -> dict[str, Any]:
-    """Derive presentation metrics using only Python research functions."""
+def build_parity_payload(export: Export) -> dict[str, Any]:
+    """Derive presentation metrics using only Python research functions.
 
+    KI-004/S1 T5 (FR-S1-8/10/11): resolves ``eye_origin`` with ``strict=True`` — this
+    generator is a research entry point (README §2.4) and must not silently fall back
+    to a guessed origin (D2a's recurrence). ``synthetic_counterstrafe.json`` carries
+    ``meta.scene.eye``/``meta.simToWorld`` since T2, so resolution here is expected to
+    land on ``source="meta"``.
+    """
+
+    eye_origin = resolve_eye_origin(export.meta, strict=True)
     ticks = export.ticks.sort_values("t", kind="stable").reset_index(drop=True)
     visible_events = (
         export.events.loc[export.events["type"] == "visible"]
@@ -40,14 +53,29 @@ def build_parity_payload(export: Export, eye_height: float = 1.6) -> dict[str, A
                 presentation_ticks,
                 visible_events.iloc[window.index],
                 export.meta,
-                eye_height,
+                eye_origin,
             )
         )
 
     return {
         "source": export.source_path.name,
-        "options": {"eyeHeight": eye_height, "hitbox": _resolved_hitbox(export.meta)},
+        "options": {
+            "eyeHeight": eye_origin.base[1],
+            "hitbox": _resolved_hitbox(export.meta),
+            "eyeOrigin": _eye_origin_to_json(eye_origin),
+        },
         "presentations": presentations,
+    }
+
+
+def _eye_origin_to_json(eye_origin: EyeOrigin) -> dict[str, Any]:
+    """Mirror TS ``ResolvedEyeOrigin`` JSON shape so `actual.options` deep-equals this fixture."""
+
+    x, y, z = eye_origin.base
+    return {
+        "base": {"x": x, "y": y, "z": z},
+        "simToWorld": eye_origin.sim_to_world,
+        "source": eye_origin.source,
     }
 
 
@@ -55,20 +83,20 @@ def _derive_presentation(
     ticks: pd.DataFrame,
     visible: pd.Series,
     meta: dict[str, Any],
-    eye_height: float,
+    eye_origin: EyeOrigin,
 ) -> dict[str, Any]:
     visible_ms = float(visible["t"])
     fallback = _visible_or_first_tick_target(visible, ticks)
     epsilon = epsilon_deg(
         ticks,
         meta,
-        eye_height,
+        eye_origin=eye_origin,
         fallback_target=fallback,
     )
     covered = on_target(
         ticks,
         meta,
-        eye_height,
+        eye_origin=eye_origin,
         fallback_target=fallback,
     )
     acquired_indices = np.flatnonzero(covered)

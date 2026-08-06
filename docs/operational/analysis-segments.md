@@ -58,6 +58,29 @@ The pre-registration sweep evaluated 243 combinations over six deterministic syn
 passed all cases and `seg-v1` had zero case failures with a maximum boundary error of one tick.
 Changing any numeric value requires a new version and a full-chain rerun.
 
+> ⚠️ **WITHDRAWN 2026-08-06.** The real-export validation recorded below no longer supports either
+> `seg-v1` or M14's real-data validity gate. Two independent defects were confirmed after it was
+> written — see [KI-005](../known_issue/KI-005-omega-render-sim-aliasing.md) and
+> [KI-006](../known_issue/KI-006-m14-sample-no-counterstrafe.md). The paragraph is kept verbatim as
+> the historical record of what was claimed; **do not cite it as evidence.**
+>
+> 1. **The angular-speed trace was contaminated by render/sim aliasing** (KI-005). `ticks[].aim` is
+>    written on the render path (~240 Hz) and read on the sim path (128 Hz), so one tick in every
+>    eight captures only half a frame's displacement. The `merged_adjacent_peaks` reading below is
+>    the direct symptom: the SG window is **7** ticks while the artefact period is **8**, so the
+>    filter cannot remove it. Effective clean yield was **4 of 19** segments (`n=4, n_flagged=15` in
+>    `pipeline-summary.json`), not the 0.95 headline. The 243-combination synthetic sweep that froze
+>    `seg-v1` could not have detected this: `make_synthetic_export` produces the `aim` series
+>    directly and never traverses the render path.
+> 2. **The export contains no counter-strafe behaviour** (KI-006). In the sample cited below,
+>    `vx ≠ 0` on **0** of 3,507 ticks, `keys` is empty throughout, and there are **0** `counter`
+>    events. It is stationary flick data, so the drill's core construct was never exercised.
+>
+> Re-validation requires a sample that exercises the construct — the same-day
+> `counterstrafe_ad_v1-2026-08-05T09_39_06.031Z` export has 1,415 strafing ticks and 24 `counter`
+> events — and must wait until the KI-005 fix lands, since that export is subject to the same
+> aliasing. `seg-v1` must then be re-swept and version-bumped rather than adjusted in place.
+
 Real-export validation was completed on 2026-08-05 with the anonymized 27.390625-second
 `counterstrafe_ad_v1` export (`participantId=P001`, 3,507 ticks at nominal 128 Hz). The one-command
 pipeline reported 20 peeks, 19 primary flicks, one `below_floor|no_segment` peek, and a 0.95

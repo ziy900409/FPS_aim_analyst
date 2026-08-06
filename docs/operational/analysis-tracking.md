@@ -37,13 +37,26 @@ For the target vector, use the tick target center when present (the target moves
 per-tick center, not the spawn center):
 
 ```text
-p_eye = (px, eyeY, pz)
+p_eye = eyeBase + (px, 0, pz) * simToWorld
 p_target = (tx, ty, tz)
 ```
 
-`eyeY` defaults to `1.6` source units, matching the current scene/player eye height. If a later
-schema exports eye height explicitly, the explicit field wins. When a tick has no target center
-(gap before the first active tick), fall back to the `visible.targetX/targetY/targetZ` center.
+`p_eye` is in **world domain** (the same domain as `p_target`, hitbox, and scene geometry);
+`(px, pz)` are **source units** (sim domain) and must be scaled by `simToWorld` before combining
+with `eyeBase` — mixing the two domains without the scale factor was KI-004's root cause (D2a/D2b).
+
+`eyeBase` (world) and `simToWorld` (world unit per source unit) come from the export's
+`meta.scene.eye` and `meta.simToWorld` (present on S1-and-later exports; TS reference
+implementation: `resolveEyeOrigin` in `src/metrics/eyeOrigin.ts`). Pre-S1 exports lack both fields;
+callers must then supply an explicit eye base (source = `'explicit'`) or accept the
+`'legacy-default'` fallback `eyeBase = (0, 1.6, 0)` (still scaled by `simToWorld`) — `'explicit'`
+and `'legacy-default'` are the only two safety nets, and `'legacy-default'` cannot recover a
+scene's true `eyeBase.z`. When a tick has no target center (gap before the first active tick),
+fall back to the `visible.targetX/targetY/targetZ` center.
+
+<!-- TODO(S3): CONTEXT.md's "positions are source units" convention still needs a global rewrite
+     to state which fields are world domain (geometry/eyeBase/target) vs source domain
+     (px/pz/vx/vStrafe); out of scope for this section's origin-definition fix. -->
 
 ## on-target (per-tick binary)
 

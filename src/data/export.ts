@@ -24,6 +24,11 @@ export function buildExportPayload(meta: Meta, snapshot: DataRecorderSnapshot): 
       ...meta,
       recorderOverflow,
       suspect: meta.suspect || recorderOverflow,
+      // meta.validity 與 suspect 是不同集合(KI-004 / S1 T2),但兩者的 recorderOverflow
+      // 來源相同 —— 同步 OR 上 snapshot.recorderOverflow,否則兩者會對不上。
+      ...(meta.validity !== undefined
+        ? { validity: { ...meta.validity, recorderOverflow } }
+        : {}),
     },
     ticks: snapshot.ticks,
     events: snapshot.events,

@@ -42,7 +42,7 @@ import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts
 import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
-import { SIM_HZ } from './loop/constants.ts';
+import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
@@ -50,6 +50,8 @@ import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } fro
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
 import type { SceneConfig } from './scene/SceneConfig.ts';
+import { resolveEyeWorldBase } from './scene/eyePose.ts';
+import { isOutsideCorridor } from './scene/corridor.ts';
 import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
@@ -374,12 +376,22 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
-    // 純觀測 suspect:玩家逸出走廊(GD-6)、實驗 session 中途退出 fullscreen(GD-10 failure mode)、
-    // 或 drill frame p95 超過效能地板(GD-10 防線③)。
+    // 純觀測 suspect:實驗 session 中途退出 fullscreen(GD-10 failure mode)、或 drill frame p95
+    // 超過效能地板(GD-10 防線③)。玩家逸出走廊**不在此列**(K-3,KI-004 / S1 T3):越界的真實
+    // 後果是視覺遮擋,而場景幾何永不進 sim(GD-6),不可能影響命中判定 —— 屬「該記錄的觀測」而非
+    // 「該作廢的 run」,越界事實改由下方 meta.validity.corridorExceeded 記錄。
     suspect:
-      sharedState.validity.playerCorridorExceeded ||
       (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
       frames.summary.p95 > PERF_FLOOR_MS,
+    simToWorld: SIM_TO_WORLD,
+    // meta.validity(KI-004 / S1 T2,FR-S1-15):與上面的 suspect **不是同一集合**,純觀測拆解,
+    // 前拉自 OQ-S1-2;`suspect` 本身的 OR 集合逐位不變。
+    validity: {
+      corridorExceeded: sharedState.validity.playerCorridorExceeded,
+      perfFloor: frames.summary.p95 > PERF_FLOOR_MS,
+      recorderOverflow: snapshot.recorderOverflow,
+      bufferOverflow: sharedState.inputMeta.bufferOverflow > 0,
+    },
     weapon: {
       id: weaponConfig.id,
       ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
@@ -405,6 +417,9 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       assetPackVersion: activeSceneConfig.assetPackVersion,
       clutterTier: activeSceneConfig.clutterTier,
       fallback: activeSceneFallback,
+      // eye world base(KI-004 / S1 T2,FR-S1-14):data 層純函式決定性算出,**不**從
+      // sceneManager.camera.position 讀(camera 經 alpha 內插,讀它會破壞決定性 + 違反 ADR-2)。
+      eye: resolveEyeWorldBase(activeSceneConfig),
     },
     display: currentDisplay,
     frames,
@@ -524,7 +539,7 @@ function buildSimLoop(): SimLoop {
     activeDrillConfig.sequence.seed,
     {
       afterTick(state): void {
-        if (Math.abs(state.player.x) > activeSceneConfig.playerCorridor.halfWidthU) {
+        if (isOutsideCorridor(state.player.x, activeSceneConfig.playerCorridor.halfWidthU, SIM_TO_WORLD)) {
           state.validity.playerCorridorExceeded = true;
         }
       },
@@ -619,13 +634,13 @@ if (recoilDebug) {
   document.body.appendChild(recoilDebug);
 }
 
-// player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。
-// **display scale 佔位**（SIM_TO_WORLD，render-only）：sim/資料一律 source unit（u，CONTEXT 正規單位、
-// CLAUDE.md §4；vStrafe=250 u/s 為 canonical CS 值，不得改），但佔位房間僅 ~10 world unit，若 1:1 疊加
-// 則 250 u/s 每 tick 移 ~1.95 world unit、~40ms 撞牆＝無法目視橫移/急停。故 render 端把 sim position 乘
-// 一個佔位 display scale（1 world unit = 100 u），使 250 u/s 呈現為 ~2.5 world-u/s（可控、急停可目視）。
-// **只影響 render，不流入 sim/匯出資料**（雙迴圈邊界 + 單位硬約束）；真 display scale 由 WP-6 drill config 定。
-const SIM_TO_WORLD = 0.01; // world unit per source unit（佔位；WP-6 drill config 接管）
+// player 位置原點對應 camera 起始 world 位置；位移以 SIM_TO_WORLD 疊加。
+// sim/資料一律 source unit（u，CONTEXT 正規單位、CLAUDE.md §4；vStrafe=250 u/s 為 canonical CS 值，
+// 不得改），但佔位房間僅 ~10 world unit，若 1:1 疊加則 250 u/s 每 tick 移 ~1.95 world unit、~40ms
+// 撞牆＝無法目視橫移/急停。故 render 端把 sim position 乘 SIM_TO_WORLD（1 world unit = 100 u），
+// 使 250 u/s 呈現為 ~2.5 world-u/s（可控、急停可目視）。
+// **`SIM_TO_WORLD` 是 sim domain 與 world domain 之間的唯一橋樑**（`src/loop/constants.ts`，
+// KI-004 / K-1）：corridor 觀測與離線 ε(t) 推導亦消費同一常數，不得在此另存第二份字面值。
 
 // WP-13 / T2 — 視覺 recoil 跟隨比例（OQ-S2-4）：aimPunch(視覺)乘此常數後才組進 camera 朝向。
 // 1.0 = 全量視覺後座（渲染 = viewAngles + aimPunch×1）;調小可弱化鏡頭上跳、0 = 關閉視覺跟隨。
@@ -949,7 +964,7 @@ const renderLoop = createRenderLoop((now) => {
   // 2) render 唯讀內插 player 位置（prev→curr）——**不寫回 sharedState**（雙迴圈邊界，render 唯讀）。
   const px = lerp(sharedState.prev.x, sharedState.curr.x, alpha);
   const pz = lerp(sharedState.prev.z, sharedState.curr.z, alpha);
-  // 3) player 位移驅動 camera 位置；sim source unit → world 乘 SIM_TO_WORLD 佔位 display scale（見上）。
+  // 3) player 位移驅動 camera 位置；sim source unit → world 乘 SIM_TO_WORLD（見上）。
   //    視角朝向（yaw/pitch）由 CameraController 走輸入路徑、**不內插**（人眼對視角延遲敏感，且視角非 sim 狀態）。
   sceneManager.camera.position.set(baseX + px * SIM_TO_WORLD, baseY, baseZ + pz * SIM_TO_WORLD);
   // 3b) recoil 視覺 punch（WP-13 / T2）：sim 每 tick 寫 recoil.prev/curr(aimPunch deg,視覺 ×1),
