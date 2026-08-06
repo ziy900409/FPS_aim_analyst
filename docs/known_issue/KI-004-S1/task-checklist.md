@@ -7,7 +7,7 @@
 
 | # | Task | 交付 FR | 風險 | Done |
 |---|---|---|---|---|
-| T0 | [Entry gate:基線量測與受影響面盤點](T0-entry-gate.md) | — | Low | ⬜ |
+| T0 | [Entry gate:基線量測與受影響面盤點](T0-entry-gate.md) | — | Low | ✅ |
 | T1 | [`SIM_TO_WORLD` 升引擎級常數 + eye world base 單一來源](T1-sim-to-world-constant.md) | FR-S1-1 · FR-S1-2 | Med | ⬜ |
 | T2 | [匯出自我描述:`meta.simToWorld` + `scene.eye` + `validity`](T2-export-meta-additive.md) | FR-S1-13/14/15 | Med | ⬜ |
 | T3 | [corridor gate 改 world 域 + 依 K-3 脫離 `suspect`](T3-corridor-observation.md) | FR-S1-3 · FR-S1-4 | Med | ⬜ |
