@@ -632,3 +632,51 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     ]);
   });
 });
+
+describe('SimLoop applyInput — WP-29 / T3 additive key 事件（opt-in，預設關閉）', () => {
+  it('預設 recorder 不記 key 事件（既有基準逐位不變）', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    expect(recorder.recordKeyEvents).toBe(false);
+
+    pushEvent(state, { type: 'key', code: 'KeyD', down: true, t: 2 });
+    pushEvent(state, { type: 'key', code: 'KeyD', down: false, t: 9 });
+    simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+    simStep(state, 1 / SIM_HZ, 2 * TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+
+    expect(recorder.snapshot().events.filter((event) => event.type === 'key')).toEqual([]);
+  });
+
+  it('啟用時：key down 先於 counter 並列記錄、canonical code、down/up 各一、順序決定性', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8, recordKeyEvents: true });
+    expect(recorder.recordKeyEvents).toBe(true);
+    state.player.vx = -250; // 左移中 → KeyD 為反向鍵（counter 'D'）
+    state.held.right = false;
+
+    pushEvent(state, { type: 'key', code: 'KeyD', down: true, t: 2 });
+    simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+    pushEvent(state, { type: 'key', code: 'KeyD', down: false, t: 9 });
+    simStep(state, 1 / SIM_HZ, 2 * TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+
+    // raw key 轉換先寫、derived counter 後寫（同 t）；keyup 只記 key、無 counter。
+    expect(recorder.snapshot().events).toEqual([
+      { type: 'key', code: 'D', down: true, t: 2 },
+      { type: 'counter', key: 'D', t: 2 },
+      { type: 'key', code: 'D', down: false, t: 9 },
+    ]);
+  });
+
+  it('啟用時：非反向 keydown 仍記 key 事件但不產 counter；KeyA → canonical A', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8, recordKeyEvents: true });
+    state.player.vx = 0; // 非反向 → 無 counter
+
+    pushEvent(state, { type: 'key', code: 'KeyA', down: true, t: 3 });
+    simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+
+    const events = recorder.snapshot().events;
+    expect(events.filter((event) => event.type === 'key')).toEqual([{ type: 'key', code: 'A', down: true, t: 3 }]);
+    expect(events.filter((event) => event.type === 'counter')).toEqual([]);
+  });
+});

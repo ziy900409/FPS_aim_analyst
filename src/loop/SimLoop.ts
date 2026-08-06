@@ -70,9 +70,13 @@ function applyInput(
 ): void {
   if (ev.type === 'key') {
     if (ev.code === 'KeyD') {
+      // WP-29 / T3（opt-in，預設關閉）：先記 raw 鍵轉換（canonical `D`，input timeStamp），再走既有 counter
+      // 判定 —— counter 條件仍讀 **更新前** 的 `state.held.right` 與 `vx`，`state.held` 更新順序逐位不變。
+      if (recorder?.recordKeyEvents) recorder.recordEvent({ type: 'key', code: 'D', down: ev.down, t: ev.t });
       if (ev.down && !state.held.right && state.player.vx < 0) recorder?.recordEvent({ type: 'counter', key: 'D', t: ev.t });
       state.held.right = ev.down;
     } else if (ev.code === 'KeyA') {
+      if (recorder?.recordKeyEvents) recorder.recordEvent({ type: 'key', code: 'A', down: ev.down, t: ev.t });
       if (ev.down && !state.held.left && state.player.vx > 0) recorder?.recordEvent({ type: 'counter', key: 'A', t: ev.t });
       state.held.left = ev.down;
     }

@@ -7,7 +7,7 @@
 | **相依** | T1(`PeekWindow` 錨點齊備) |
 | **Risk / Cplx** | Med / Low–Med — 演算法簡單,風險在**判定**:判準若被事後調整,T3(動引擎)就失去正當性 |
 | **Touches** | ADD `research/src/modules/metrics/algorithms/sync.py` + tests;ADD `research/src/modules/metrics/notebooks/t2/outputs/`(精度評估報告);MODIFY `docs/operational/analysis-peek-timeline.md`(Sync 族定義段) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-08-05；09:39 兩個量皆 `sufficient`，T3 skipped |
 
 ## Objective
 

@@ -16,6 +16,8 @@ def test_algorithm_imports_have_no_output_plotting_or_cwd_writes(tmp_path) -> No
         "import modules.ingest.algorithms.loader; "
         "import modules.ingest.algorithms.dt; "
         "import modules.ingest.algorithms.synthetic; "
+        "import modules.metrics.algorithms.peek; "
+        "import modules.metrics.algorithms.timeline; "
         "assert not any(name == 'matplotlib' or name.startswith('matplotlib.') for name in sys.modules)"
     )
 

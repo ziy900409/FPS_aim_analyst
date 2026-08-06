@@ -1,0 +1,191 @@
+{
+  "version": "timeline-v1",
+  "computeVersion": "compute-v1",
+  "source": "counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json",
+  "metrics": {
+    "counterReactionMs": {
+      "mean": 600.0861250001471,
+      "p50": 427.21249999990687,
+      "sd": 875.3085613911904,
+      "n": 20
+    },
+    "fireTimingAlignmentMs": {
+      "mean": 152.04599999999627,
+      "p50": 126.5,
+      "sd": 189.24442747143772,
+      "n": 20
+    },
+    "firstShotHitRate": 90.0
+  },
+  "peeks": [
+    {
+      "index": 0,
+      "targetId": "t0",
+      "tVisible": 634369.9824999999,
+      "tEnd": 638901.2324999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 1,
+      "targetId": "t1",
+      "tVisible": 638901.2324999999,
+      "tEnd": 639612.1699999999,
+      "outcome": "hit",
+      "flags": [
+        "multiple_counters",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 2,
+      "targetId": "t2",
+      "tVisible": 639612.1699999999,
+      "tEnd": 640237.1699999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 3,
+      "targetId": "t3",
+      "tVisible": 640237.1699999999,
+      "tEnd": 640901.2324999999,
+      "outcome": "hit",
+      "flags": [
+        "multiple_counters"
+      ]
+    },
+    {
+      "index": 4,
+      "targetId": "t4",
+      "tVisible": 640901.2324999999,
+      "tEnd": 641494.9824999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 5,
+      "targetId": "t5",
+      "tVisible": 641494.9824999999,
+      "tEnd": 642213.7324999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 6,
+      "targetId": "t6",
+      "tVisible": 642213.7324999999,
+      "tEnd": 643018.4199999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 7,
+      "targetId": "t7",
+      "tVisible": 643018.4199999999,
+      "tEnd": 643580.9199999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 8,
+      "targetId": "t8",
+      "tVisible": 643580.9199999999,
+      "tEnd": 644119.9824999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 9,
+      "targetId": "t9",
+      "tVisible": 644119.9824999999,
+      "tEnd": 644666.8574999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 10,
+      "targetId": "t10",
+      "tVisible": 644666.8574999999,
+      "tEnd": 645190.2949999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 11,
+      "targetId": "t11",
+      "tVisible": 645190.2949999999,
+      "tEnd": 645776.2324999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 12,
+      "targetId": "t12",
+      "tVisible": 645776.2324999999,
+      "tEnd": 646354.3574999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 13,
+      "targetId": "t13",
+      "tVisible": 646354.3574999999,
+      "tEnd": 646940.2949999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 14,
+      "targetId": "t14",
+      "tVisible": 646940.2949999999,
+      "tEnd": 647479.3574999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 15,
+      "targetId": "t15",
+      "tVisible": 647479.3574999999,
+      "tEnd": 648065.2949999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 16,
+      "targetId": "t16",
+      "tVisible": 648065.2949999999,
+      "tEnd": 648627.7949999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 17,
+      "targetId": "t17",
+      "tVisible": 648627.7949999999,
+      "tEnd": 649143.4199999999,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 18,
+      "targetId": "t18",
+      "tVisible": 649143.4199999999,
+      "tEnd": 650276.2324999999,
+      "outcome": "hit",
+      "flags": [
+        "multiple_counters"
+      ]
+    },
+    {
+      "index": 19,
+      "targetId": "t19",
+      "tVisible": 650276.2324999999,
+      "tEnd": null,
+      "outcome": "hit",
+      "flags": [
+        "multiple_counters"
+      ]
+    }
+  ]
+}

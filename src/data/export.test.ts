@@ -218,3 +218,49 @@ describe('data export', () => {
     ).toThrow('export payload contains a non-finite number');
   });
 });
+
+describe('data export — WP-29 / T3 additive key 事件', () => {
+  const keySnapshot: DataRecorderSnapshot = {
+    ticks: [],
+    events: [
+      { type: 'key', code: 'A', down: true, t: 12 },
+      { type: 'key', code: 'A', down: false, t: 40 },
+    ],
+    recorderOverflow: false,
+  };
+
+  it('round-trips key events verbatim in JSON (code/down/t)', () => {
+    const parsed = JSON.parse(serializeJSON(buildExportPayload(meta, keySnapshot))) as ExportPayload;
+
+    expect(parsed.events).toEqual([
+      { type: 'key', code: 'A', down: true, t: 12 },
+      { type: 'key', code: 'A', down: false, t: 40 },
+    ]);
+  });
+
+  it('writes key events into the existing key/down CSV columns without adding a column', () => {
+    const files = serializeCSV(buildExportPayload(meta, keySnapshot));
+    const eventsCsv = files.find((file) => file.filename.endsWith('-events.csv'))!.content;
+    const lines = eventsCsv.trimEnd().split('\n');
+
+    // header unchanged (24 columns, no new `code` column)
+    expect(lines[0]).toBe(
+      'type,t,targetId,side,key,down,hit,firstShot,residualSpeed,shotSeq,timeOfFlightMs,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ',
+    );
+
+    const down = lines[1].split(',');
+    expect(down).toHaveLength(24);
+    expect(down[0]).toBe('key');
+    expect(down[1]).toBe('12');
+    expect(down[2]).toBe('');
+    expect(down[3]).toBe('');
+    expect(down[4]).toBe('A'); // canonical code reuses the existing `key` column
+    expect(down[5]).toBe('true'); // reuses the existing `down` column
+    expect(down.slice(6).every((cell) => cell === '')).toBe(true);
+
+    const up = lines[2].split(',');
+    expect(up[0]).toBe('key');
+    expect(up[4]).toBe('A');
+    expect(up[5]).toBe('false');
+  });
+});

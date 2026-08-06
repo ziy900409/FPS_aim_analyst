@@ -40,7 +40,7 @@ All numeric data fields must be finite. `collectMeta()` validates metadata numer
 | Position (`px`, `pz`, `tx`, `ty`, `tz`) | source units |
 | Keyboard state | canonical key names: `A`, `D`, `W`, `S` |
 
-Tick rows are recorded inside the sim tick. Event rows use their source timestamp: visible events use sim tick time; counter/fire events use the input event `timeStamp`, which shares the `performance.now()` basis.
+Tick rows are recorded inside the sim tick. Event rows use their source timestamp: visible events use sim tick time; counter/fire/key events use the input event `timeStamp`, which shares the `performance.now()` basis.
 
 ## JSON Schema
 
@@ -229,6 +229,22 @@ If `summary.p95 > PERF_FLOOR_MS`, `collectMeta()` marks `meta.suspect = true`.
 | `down` | boolean | `true` / `false` | Yes | input event | `true` means ADS pressed; `false` means released. |
 | `t` | number | ms | Yes | input event timestamp | `performance.now()` basis. |
 
+#### `key`
+
+Additive WP-29 / T3 event (opt-in engine emission via `DataRecorder.recordKeyEvents`; default off). Records a
+raw A/D key down/up transition at the input `timeStamp` (sub-tick), enabling offline derivation of the "release
+the original-direction key" moment at input-timestamp precision instead of the ±1-tick `ticks[].keys`
+quantization. It does not bump `schemaVersion` (stays `2`); absence in older or opt-out exports means the
+feature was not enabled, not an error. It never changes any existing field, tick semantics, or hit/metric
+value; the frozen `compute-v1` / `timeline-v1` / `sync-v1` constructs do not consume it.
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `type` | string | `key` | Yes | input consume hook | Raw A/D key transition. |
+| `code` | string | canonical key name (`A`, `D`, `W`, `S`) | Yes | input event, mapped from `KeyboardEvent.code` | Same canonical vocabulary as `ticks[].keys`; no second key-name convention. Stage A emits only `A`/`D`. |
+| `down` | boolean | `true` / `false` | Yes | input event | `true` means key pressed; `false` means released (the release edge anchors offline `t_release_event`). |
+| `t` | number | ms | Yes | input event timestamp | `performance.now()` basis, same clock as `counter`/`fire`. |
+
 #### `fire`
 
 | Field | Type | Unit / Values | Required | Source | Notes |
@@ -299,32 +315,36 @@ type,t,targetId,side,key,down,hit,firstShot,residualSpeed,shotSeq,timeOfFlightMs
 
 Rows are sparse because event variants have different fields.
 
-| Column | `visible` | `counter` | `ads` | `fire` | `hit` |
-|---|---|---|---|---|---|
-| `type` | `visible` | `counter` | `ads` | `fire` | `hit` |
-| `t` | event time | event time | event time | event time | `t_hit` |
-| `targetId` | target id | empty | empty | active/hit target id, or empty | hit target id, or empty |
-| `side` | `L` / `R` | empty | empty | empty | empty |
-| `key` | empty | counter key | empty | empty | empty |
-| `down` | empty | empty | `true` / `false` | empty | empty |
-| `hit` | empty | empty | empty | `true` / `false` | empty |
-| `firstShot` | empty | empty | empty | `true` / `false` | empty |
-| `residualSpeed` | empty | empty | empty | source u/s | empty |
-| `shotSeq` | empty | empty | empty | projectile shot seq, or empty | projectile shot seq |
-| `timeOfFlightMs` | empty | empty | empty | empty | projectile time of flight |
-| `viewYaw` | empty | empty | empty | radians | empty |
-| `viewPitch` | empty | empty | empty | radians | empty |
-| `aimPunchPitch` | empty | empty | empty | degrees | empty |
-| `aimPunchYaw` | empty | empty | empty | degrees | empty |
-| `spreadX` | empty | empty | empty | tangent offset | empty |
-| `spreadY` | empty | empty | empty | tangent offset | empty |
-| `recoilIndex` | empty | empty | empty | shot index used by this shot | empty |
-| `ammo` | empty | empty | empty | pre-shot ammo | empty |
-| `offsetDeg` | empty | empty | empty | camera-forward to target-center angle in degrees, or empty | empty |
-| `part` | empty | empty | empty | `head`, `body`, or empty | `head`, `body`, or empty |
-| `targetX` | source u target center x | empty | empty | empty | empty |
-| `targetY` | source u target center y | empty | empty | empty | empty |
-| `targetZ` | source u target center z | empty | empty | empty | empty |
+The additive `key` event reuses the existing `key` and `down` columns (no new column is added): `key` carries
+the canonical `code` (`A`/`D`), `down` carries the boolean. Consumers disambiguate `key`-column meaning by the
+row's `type`.
+
+| Column | `visible` | `counter` | `ads` | `key` | `fire` | `hit` |
+|---|---|---|---|---|---|---|
+| `type` | `visible` | `counter` | `ads` | `key` | `fire` | `hit` |
+| `t` | event time | event time | event time | event time | event time | `t_hit` |
+| `targetId` | target id | empty | empty | empty | active/hit target id, or empty | hit target id, or empty |
+| `side` | `L` / `R` | empty | empty | empty | empty | empty |
+| `key` | empty | counter key | empty | key `code` (`A`/`D`) | empty | empty |
+| `down` | empty | empty | `true` / `false` | `true` / `false` | empty | empty |
+| `hit` | empty | empty | empty | empty | `true` / `false` | empty |
+| `firstShot` | empty | empty | empty | empty | `true` / `false` | empty |
+| `residualSpeed` | empty | empty | empty | empty | source u/s | empty |
+| `shotSeq` | empty | empty | empty | empty | projectile shot seq, or empty | projectile shot seq |
+| `timeOfFlightMs` | empty | empty | empty | empty | empty | projectile time of flight |
+| `viewYaw` | empty | empty | empty | empty | radians | empty |
+| `viewPitch` | empty | empty | empty | empty | radians | empty |
+| `aimPunchPitch` | empty | empty | empty | empty | degrees | empty |
+| `aimPunchYaw` | empty | empty | empty | empty | degrees | empty |
+| `spreadX` | empty | empty | empty | empty | tangent offset | empty |
+| `spreadY` | empty | empty | empty | empty | tangent offset | empty |
+| `recoilIndex` | empty | empty | empty | empty | shot index used by this shot | empty |
+| `ammo` | empty | empty | empty | empty | pre-shot ammo | empty |
+| `offsetDeg` | empty | empty | empty | empty | camera-forward to target-center angle in degrees, or empty | empty |
+| `part` | empty | empty | empty | empty | `head`, `body`, or empty | `head`, `body`, or empty |
+| `targetX` | source u target center x | empty | empty | empty | empty | empty |
+| `targetY` | source u target center y | empty | empty | empty | empty | empty |
+| `targetZ` | source u target center z | empty | empty | empty | empty | empty |
 
 ### `<basename>-frames.csv`
 

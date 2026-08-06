@@ -1,0 +1,61 @@
+{
+  "version": "timeline-v1",
+  "computeVersion": "compute-v1",
+  "source": "synthetic_timeline.json",
+  "metrics": {
+    "counterReactionMs": {
+      "mean": 39.0625,
+      "p50": 39.0625,
+      "sd": 0.0,
+      "n": 3
+    },
+    "fireTimingAlignmentMs": {
+      "mean": 54.6875,
+      "p50": 54.6875,
+      "sd": 0.0,
+      "n": 3
+    },
+    "firstShotHitRate": 75.0
+  },
+  "peeks": [
+    {
+      "index": 0,
+      "targetId": "target-1",
+      "tVisible": 0.0,
+      "tEnd": 187.5,
+      "outcome": "hit",
+      "flags": []
+    },
+    {
+      "index": 1,
+      "targetId": "target-2",
+      "tVisible": 187.5,
+      "tEnd": 375.0,
+      "outcome": "hit",
+      "flags": [
+        "hit_outside_window"
+      ]
+    },
+    {
+      "index": 2,
+      "targetId": "target-3",
+      "tVisible": 375.0,
+      "tEnd": 562.5,
+      "outcome": "timeout",
+      "flags": [
+        "no_counter",
+        "release_inferred_no_counter"
+      ]
+    },
+    {
+      "index": 3,
+      "targetId": "target-4",
+      "tVisible": 562.5,
+      "tEnd": null,
+      "outcome": "hit",
+      "flags": [
+        "no_key_transition"
+      ]
+    }
+  ]
+}

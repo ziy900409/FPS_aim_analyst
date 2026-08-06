@@ -1,0 +1,242 @@
+{
+  "version": "timeline-v1",
+  "computeVersion": "compute-v1",
+  "source": "counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json",
+  "metrics": {
+    "counterReactionMs": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "fireTimingAlignmentMs": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "firstShotHitRate": 90.0
+  },
+  "peeks": [
+    {
+      "index": 0,
+      "targetId": "t0",
+      "tVisible": 29938.992499999702,
+      "tEnd": 42681.1799999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 1,
+      "targetId": "t1",
+      "tVisible": 42681.1799999997,
+      "tEnd": 43470.2424999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 2,
+      "targetId": "t2",
+      "tVisible": 43470.2424999997,
+      "tEnd": 44103.0549999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 3,
+      "targetId": "t3",
+      "tVisible": 44103.0549999997,
+      "tEnd": 44610.8674999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 4,
+      "targetId": "t4",
+      "tVisible": 44610.8674999997,
+      "tEnd": 45095.2424999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 5,
+      "targetId": "t5",
+      "tVisible": 45095.2424999997,
+      "tEnd": 45540.5549999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 6,
+      "targetId": "t6",
+      "tVisible": 45540.5549999997,
+      "tEnd": 46087.4299999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 7,
+      "targetId": "t7",
+      "tVisible": 46087.4299999997,
+      "tEnd": 46587.4299999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 8,
+      "targetId": "t8",
+      "tVisible": 46587.4299999997,
+      "tEnd": 47173.3674999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 9,
+      "targetId": "t9",
+      "tVisible": 47173.3674999997,
+      "tEnd": 47587.4299999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 10,
+      "targetId": "t10",
+      "tVisible": 47587.4299999997,
+      "tEnd": 48048.3674999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 11,
+      "targetId": "t11",
+      "tVisible": 48048.3674999997,
+      "tEnd": 48610.8674999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 12,
+      "targetId": "t12",
+      "tVisible": 48610.8674999997,
+      "tEnd": 49048.3674999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 13,
+      "targetId": "t13",
+      "tVisible": 49048.3674999997,
+      "tEnd": 49517.1174999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 14,
+      "targetId": "t14",
+      "tVisible": 49517.1174999997,
+      "tEnd": 50009.3049999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 15,
+      "targetId": "t15",
+      "tVisible": 50009.3049999997,
+      "tEnd": 50681.1799999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 16,
+      "targetId": "t16",
+      "tVisible": 50681.1799999997,
+      "tEnd": 51173.3674999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 17,
+      "targetId": "t17",
+      "tVisible": 51173.3674999997,
+      "tEnd": 51681.1799999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 18,
+      "targetId": "t18",
+      "tVisible": 51681.1799999997,
+      "tEnd": 52142.1174999997,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    },
+    {
+      "index": 19,
+      "targetId": "t19",
+      "tVisible": 52142.1174999997,
+      "tEnd": null,
+      "outcome": "hit",
+      "flags": [
+        "no_counter",
+        "no_key_transition"
+      ]
+    }
+  ]
+}

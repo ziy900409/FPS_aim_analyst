@@ -148,4 +148,24 @@ describe('DataRecorder tick arena', () => {
       recorderOverflow: false,
     });
   });
+
+  it('recordKeyEvents defaults to false and is opt-in (WP-29 / T3)', () => {
+    expect(createDataRecorder({ capacity: 1 }).recordKeyEvents).toBe(false);
+    expect(createDataRecorder({ capacity: 1, recordKeyEvents: false }).recordKeyEvents).toBe(false);
+    expect(createDataRecorder({ capacity: 1, recordKeyEvents: true }).recordKeyEvents).toBe(true);
+  });
+
+  it('stores additive key events verbatim without touching fire/hit counts (WP-29 / T3)', () => {
+    const recorder = createDataRecorder({ capacity: 1, recordKeyEvents: true });
+
+    recorder.recordEvent({ type: 'key', code: 'A', down: true, t: 5 });
+    recorder.recordEvent({ type: 'key', code: 'A', down: false, t: 20 });
+
+    expect(recorder.fireCount).toBe(0);
+    expect(recorder.hitCount).toBe(0);
+    expect(recorder.snapshot().events).toEqual([
+      { type: 'key', code: 'A', down: true, t: 5 },
+      { type: 'key', code: 'A', down: false, t: 20 },
+    ]);
+  });
 });

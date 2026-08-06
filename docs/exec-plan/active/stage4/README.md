@@ -10,7 +10,7 @@
 | **上游門檻** | M4 ✅(schema v2 匯出鏈)+ WP-16 ✅(v2 欄位)+ **M11/M12 ✅**(`meta.targets.hitbox`/tick `ads`/`hit` 事件語意已鎖);**引擎零改動**(例外:WP-29 T3 選配 key-event 記錄、WP-32 metrics/UI 層,皆不碰 sim)。M13 手動回填(#32)**不阻塞** |
 | **技術棧** | 新增:**Python 3.12 + uv + pyproject**(numpy/pandas/scipy;pytest)於 `research/`(OQ-S4-1 ✅);既有 TS 棧觸及點 = 對表 vitest(WP-28 T2、WP-32 T1)+ `src/metrics/` 與結果頁(WP-32) |
 | **估時** | 11–16 dev-days(WP-28~32) |
-| **狀態** | 🟡 **已採納;WP-28 完成,但 M14 ② 於 2026-08-05 撤回**([KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)· WP-29 ⬜(**不受影響,可展開**)· WP-30 ⬜(**entry blocker 恢復**)· WP-31 ⬜(**entry blocker 恢復**)· WP-32 ⬜。M14 ①③④⑤⑥ 維持(分段走 ω(t),只依賴 `aim`);② ε parity 因量測原點錯誤(實測偏差 12.5°/67°)撤回,待 KI-004 S1 落地後重新宣告 |
+| **狀態** | 🟡 **已採納;WP-28 完成,但 M14 ② 於 2026-08-05 撤回**([KI-004](../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)· WP-29 🟡(**T0 entry gate ✅,不受 KI-004 阻塞**)· WP-30 ⬜(**entry blocker 恢復**)· WP-31 ⬜(**entry blocker 恢復**)· WP-32 ⬜。M14 ①③④⑤⑥ 維持(分段走 ω(t),只依賴 `aim`);② ε parity 因量測原點錯誤(實測偏差 12.5°/67°)撤回,待 KI-004 S1 落地後重新宣告 |
 
 ---
 
@@ -322,7 +322,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 | WP | 子資料夾 | 目標 | 優先序 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|---|
 | **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 🟡** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 **task 全數完成,但 M14 ② 於 2026-08-05 撤回**(KI-004);①③④⑤⑥ 維持 |
-| **WP-29** | `wp-29-coach-timeline/` | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件) | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ⬜ |
+| **WP-29** | [wp-29-coach-timeline/](wp-29-coach-timeline/README.md) | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件)+ 教練報告 v0 | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ✅ **完成(2026-08-05)**:T0–T2 + T3(使用者 override)+ T-exit 全綠;`timeline-v1`/`sync-v1` 定稿,OQ-S4-6 關閉 |
 | **WP-30** | `wp-30-trajectory-metrics/` | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14** | 2–3 | ⬜ |
 | **WP-31** | `wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14** | 2–3 | ⬜ |
 | **WP-32** | `wp-32-dashboard-integration/` | 晉升整合:golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | — | **M15** | WP-29 + WP-30(WP-31 選項) | 2–3 | ⬜ |
@@ -375,8 +375,8 @@ WP-28(地基,M14)──┤                                                      
 | **T0 entry-gate** | 驗 WP-28 T1 exit;記錄 `compute.ts` 交叉驗證基準清單與其**條件性語意**(counter 事件缺席場景) | ingest 綠;基準清單 + 語意註記記 progress | Low |
 | **T1 逐 peek 時間軸** | `build_peek_windows`(窗界沿用 TS;t_hit/timeout 由 `fire.hit`/`hit` 事件推導);每 peek 時間軸圖 + drill 摘要表 | ① 重算 `counterReactionMs`/`fireTimingAlignmentMs`/`firstShotHitRate` 與 `compute.ts` 相對誤差 ≤ 1e-9(不一致 → bug 或語意分歧須入 DECISIONS)② ≥1 drill 全 peek 時間軸產出 ③ `outcome` 分類單元測試綠 | Med |
 | **T2 Sync 族 + 精度評估** | `t_fire − t_release`(ticks.keys)、counter 持續時間、`t_fire − t_counter`;缺事件標 flag 不進聚合;量化精度評估 | 單元測試(正常/缺 release/缺 counter/亂序 fixture)綠;精度評估報告依 §2.4d 判準給出**明確判定**(觸發 T3 或不觸發 + 理由) | Med |
-| **T3(選配,gated)key 事件** | **僅當 T2 判定不足**:`DataRecorder` 增 `key` 事件(down/up + input timeStamp);additive v2 optional;schema.md 對帳 | 既有決定性 baseline 綠(**零重錄**);新事件 vitest 綠;schema.md 更新;未觸發則記 skipped + 判定證據 | Med |
-| **T-exit** | 教練報告 v0(時間軸 + sync,含條件分層) | 一鍵 script 綠;報告含每指標 n + flags + 參數版本;範例報告存 `notebooks/*/outputs/` | — |
+| **T3(選配,gated)key 事件** ✅ | 原 gate = 僅當 T2 判定不足;09:39 判 `sufficient` → 原判 skipped,**使用者 override 後仍實作**為 additive observability:`DataRecorder` 增 opt-in `key` 事件(down/up + input timeStamp);additive v2 optional;schema.md 對帳 | ✅ 既有決定性 baseline 綠(**零重錄**,預設 OFF 故 byte-for-byte 不變);新事件 vitest 綠;schema.md 已更新;override 判定與偏離記 D-29.8~D-29.11 | Med |
+| **T-exit** ✅ | 教練報告 v0(時間軸 + sync,含條件分層) | ✅ 一鍵 `coach_report.py` 綠(單檔自足靜態 HTML);六個指標各帶 n + flags 計數 + 版本 + 效度層級;四份範例報告存 `notebooks/t-exit/outputs/` 且 deterministic | — |
 
 ### WP-30 trajectory-metrics(P1;entry = M14;2–3d)
 
@@ -435,7 +435,10 @@ WP-28(地基,M14)──┤                                                      
 | **OQ-S4-3** | reliability gate 門檻(split-half r、shuffle 顯著水準) | split-half r ≥ 0.7 + shuffle p < 0.01(T0 拍板凍結) | 研究者 | WP-31 T0 | P2 指標無法判定進退 |
 | **OQ-S4-4** | 晉升 dashboard 的指標清單 | phase 時長統計 + sync 統計 + L/R 曲線縮圖(P0/P1 全數;P2 視 gate) | 使用者 | WP-32 T0 | WP-32 scope 不定 |
 | **OQ-S4-5** | 101 點正規化窗口錨 | **`[t_visible, t_firstShot]`**(counter-strafe 錨定首發,CONTEXT §A;t_kill 版含補槍屬「清目標節奏」,留分析端副版) | 研究者 | WP-30 T2 | 曲線語意不定 |
-| **OQ-S4-6** | 教練報告載體 | notebook → 靜態 HTML(單檔可寄送);觸發升級 = 教練需要互動篩選 | 使用者 | WP-29 T-exit | 報告形式不定 |
+| ~~**OQ-S4-6**~~ | ~~教練報告載體~~ | ✅ **關閉(2026-08-05,WP-29 T-exit)**:`research/src/report/coach_report.py` 一鍵產出單檔自足靜態 HTML(inline CSS + inline SVG,零外部資源、可直接寄送),四份 committed 範例 deterministic。升級為互動式的觸發條件(教練需互動篩選)未達,維持技術債登錄 §7⑤ | 使用者 | 2026-08-05 | unblocked |
+| ~~**OQ-S4-12**~~ | ~~缺「含真實 A/D strafe」的 counter-strafe 匯出~~ | ✅ **關閉(2026-08-05)**:09:39 匯出已補錄並進 `research/fixtures/exports/`(21.27s ≤30s、匿名 `P001`、PII-like 掃描無命中、counter 24、三個對表量各 n=20) | 使用者 | 2026-08-05 | unblocked；T2 可依 `sync-v1` 作實質判定 |
+| **OQ-S4-10** | `t_release` 在無 counter 事件時的 fallback 是否足以支撐跨 peek 比較 | 🟡 **維持 open(T-exit 已複核,證據不足以關閉)**:兩份真實 fixture 的 `release_inferred_no_counter` 樣本數為 **0**,無法驗證跨 peek 可比性;fallback + flag 保留,**聚合預設排除不變** | 研究者 | 有 inferred 樣本的真實錄製後 | Sync 族分母與跨 peek 可比性仍待驗證 |
+| **OQ-S4-11** | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan | 🟡 **維持 open(T-exit 已複核)**:`--group-by side/ads/weapon_mode` 三種皆已實作並由測試釘死;真實資料實測 ads → 只有 `off`、weapon_mode → 只有 `hitscan`,projectile cell 僅合成 fixture 有樣本。需 ADS-on / projectile 真實錄製才能關閉 | 研究者 | WP-30 或補錄後 | 條件分層缺真實對照，但不阻塞實作 |
 
 > parity 方向(既有構念 TS 權威、新構念 Python 權威)**不列為 OQ**:C-D4 已定為硬約束,理由是「同一構念兩個定義」本身即效度缺陷,無取捨空間。
 
@@ -448,11 +451,12 @@ WP-28(地基,M14)──┤                                                      
 - [x] [exec-plan/README.md](../../README.md):§2 加階段 D 索引表;§3 加 M14–M15;§4 相依圖擴充;§6 目錄慣例。(2026-08-04 本計畫)
 - [x] [docs/MAP.md](../../../MAP.md):§3 導航更新(stage4 已採納 + research 層入口)。(2026-08-04 本計畫)
 - [x] [CLAUDE.md](../../../../CLAUDE.md) §4 硬約束追加 C-D1~C-D4(WP-28 T0,2026-08-04)。
-- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 task 隨切片回寫):submovement 分段(primary_flick/micro_adjustment)、ω(t) 角速度、REC/MR/V phase、Release-to-Click Sync、101 點正規化曲線、reliability gate、parity fixture;§B 增 research 層元件列。
+- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 task 隨切片回寫):submovement 分段(primary_flick/micro_adjustment)、ω(t) 角速度、REC/MR/V phase、Release-to-Click Sync、101 點正規化曲線、reliability gate、parity fixture;§B 增 research 層元件列。**WP-29 T-exit 已回寫**:peek 時間軸(`timeline-v1`)、`t_release`、`outcome`、peek/Sync quality flags、Release-to-Click Sync(`sync-v1`)、教練報告 v0;REC/MR/V phase 與 101 點曲線待 WP-30。
 - [x] `docs/operational/analysis-segments.md`(新:`seg-v1` 參數 registry + flags 詞彙表 + 一鍵 pipeline 契約 + 已知限制;WP-28 T3 建立、T-exit 補齊,2026-08-04)。
 - [ ] `docs/operational/acceptance-stage-d.md`(新,WP-32 T-exit:驗收清單 D)。
 - [ ] 規格書版本對帳:新增「階段 D」節 + 附錄 E 增「驗收清單 D」(M15 前完成)。
-- [ ] (WP-29 T3 若觸發)[schema.md](../../../operational/schema.md):`key` 事件 additive 對帳。
+- [x] `docs/operational/analysis-peek-timeline.md`(新:`timeline-v1` 窗界/錨點/outcome/封閉 flags 詞彙表 + `sync-v1` 定義與 pre-registered 判準 + 報告載體契約 + 五項已知限制;WP-29 T1 建立、T-exit 定稿,2026-08-05)。
+- [x] (WP-29 T3 使用者 override 已實作)[schema.md](../../../operational/schema.md):`key` 事件 additive 對帳。(2026-08-05,commit `dcdafbd`)
 
 ---
 
