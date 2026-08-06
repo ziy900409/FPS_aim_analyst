@@ -206,3 +206,27 @@ def test_invalid_export_exits_non_zero_without_writing_artifacts(tmp_path: Path)
 def test_cli_returns_zero_on_the_synthetic_export(tmp_path: Path) -> None:
     assert main(["--export", str(DEFAULT_EXPORT), "--out", str(tmp_path)]) == 0
     assert (tmp_path / SUMMARY_FILENAME).is_file()
+
+
+# --- KI-005 / A T5 — omega source surfaced in pipeline-summary.json (FR-A-11/R-5) ---
+
+_REAL_LEGACY_EXPORT = (
+    Path(__file__).resolve().parents[3]
+    / "fixtures"
+    / "exports"
+    / "counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json"
+)
+
+
+def test_summary_reports_tick_integral_source_for_the_synthetic_export(tmp_path: Path) -> None:
+    summary = run(DEFAULT_EXPORT, tmp_path)
+
+    assert summary["export"]["omegaSource"] == "tick-integral"
+    assert "omegaSourceWarning" not in summary["export"]
+
+
+def test_summary_reports_legacy_source_and_warning_for_a_pre_ki005_export(tmp_path: Path) -> None:
+    summary = run(_REAL_LEGACY_EXPORT, tmp_path)
+
+    assert summary["export"]["omegaSource"] == "aim-diff-legacy"
+    assert "KI-005" in summary["export"]["omegaSourceWarning"]

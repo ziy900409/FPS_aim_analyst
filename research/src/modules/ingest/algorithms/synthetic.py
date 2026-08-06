@@ -12,6 +12,13 @@ import math
 from typing import Any
 
 
+#: counts->radians fixed linear coefficient (GD-5: 0.022 deg/count). Independent constant --
+#: research cannot import the engine's copy (C-D1) -- reconciled instead against a real export's
+#: self-describing meta.mouseIntegration.radPerCount (TD-4).
+_RAD_PER_COUNT = math.radians(0.022)
+_HIP_FOV_DEG = 90.0
+
+
 @dataclass(frozen=True)
 class SyntheticSpec:
     peek_count: int = 2
@@ -58,6 +65,11 @@ def make_synthetic_export(spec: SyntheticSpec) -> dict[str, Any]:
     events: list[dict[str, Any]] = []
     player_x = 0.0
     shot_seq = 1
+    # KI-005 / A (FR-A-4/FR-A-11): d_yaw/d_pitch self-consistent with the exported aim
+    # sequence -- the delta between this tick and the previous *exported* tick, so a
+    # dropped tick's window is simply absent rather than folded into its successor.
+    prev_yaw = 0.0
+    prev_pitch = 0.0
 
     for peek_index in range(spec.peek_count):
         side = spec.sides[peek_index % len(spec.sides)]
@@ -82,6 +94,10 @@ def make_synthetic_export(spec: SyntheticSpec) -> dict[str, Any]:
             player_x += vx * dt_sec
             if global_index in dropped:
                 continue
+            pitch = 0.0
+            d_yaw = yaw - prev_yaw
+            d_pitch = pitch - prev_pitch
+            prev_yaw, prev_pitch = yaw, pitch
             ticks.append(
                 {
                     "t": global_index * dt_ms,
@@ -92,7 +108,9 @@ def make_synthetic_export(spec: SyntheticSpec) -> dict[str, Any]:
                     "tx": target_x,
                     "ty": target_y,
                     "tz": target_z,
-                    "aim": {"yaw": yaw, "pitch": 0.0},
+                    "aim": {"yaw": yaw, "pitch": pitch},
+                    "dYaw": d_yaw,
+                    "dPitch": d_pitch,
                     "keys": keys,
                     "ads": 8 <= local_index <= 12,
                 }
@@ -167,6 +185,7 @@ def make_synthetic_export(spec: SyntheticSpec) -> dict[str, Any]:
             "sensitivity": 1.0,
             "sensitivityModel": "cs2-0.022deg",
             "movementModel": "cs2-source",
+            "fovDeg": _HIP_FOV_DEG,
             "crossOriginIsolated": True,
             "startedAt": "2026-01-01T00:00:00.000Z",
             "unit": "source",
@@ -184,6 +203,12 @@ def make_synthetic_export(spec: SyntheticSpec) -> dict[str, Any]:
                 "projectileOverflow": False,
             },
             "targets": {"hitbox": {"widthU": 1.0, "heightU": 2.0, "depthU": 1.0}},
+            "mouseIntegration": {
+                "model": "tick-window-integral",
+                "radPerCount": _RAD_PER_COUNT,
+                "hipStep": _RAD_PER_COUNT,
+                "adsStep": _RAD_PER_COUNT * (40.0 / _HIP_FOV_DEG),
+            },
             "scene": {
                 "sceneId": "placeholder-room",
                 "assetPackVersion": "synthetic-v1",

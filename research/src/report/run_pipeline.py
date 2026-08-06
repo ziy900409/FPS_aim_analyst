@@ -104,6 +104,10 @@ def run(
     # tick exclude every segment from every aggregate.
     gap_indices = {index for index, _ in dt_report.gaps}
 
+    # KI-005 / A (FR-A-11/R-5): which omega derivation this export carries, surfaced once at the
+    # export level rather than re-derived per peek -- every window shares the same tick columns.
+    omega_source = omega_deg_s(export.ticks.sort_values("t", kind="stable").reset_index(drop=True)).source
+
     peek_rows: list[dict[str, Any]] = []
     segment_rows: list[dict[str, Any]] = []
     frames: list[pd.DataFrame] = []
@@ -126,6 +130,7 @@ def run(
             "schemaVersion": export.meta.get("schemaVersion"),
             "simHz": export.meta.get("simHz"),
             "suspect": export.meta.get("suspect"),
+            "omegaSource": omega_source,
         },
         "dtReport": {
             "tickCount": dt_report.tick_count,
@@ -150,6 +155,12 @@ def run(
         },
         "flagCounts": _flag_counts(peek_rows, segment_rows),
     }
+    if omega_source == "aim-diff-legacy":
+        summary["export"]["omegaSourceWarning"] = (
+            "this export has no ticks.dYaw/dPitch (pre-KI-005); omega_deg_s fell back to the "
+            "aim-difference derivation, which carries the render/sim beat-aliasing bug -- see "
+            "docs/known_issue/KI-005-*"
+        )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / SUMMARY_FILENAME).write_text(
@@ -168,7 +179,7 @@ def _analyze_peek(
 ) -> tuple[pd.DataFrame, dict[str, Any], list[dict[str, Any]]]:
     ordinal, visible, ticks, global_indices = window
     uniform = not gap_indices.intersection(global_indices.tolist())
-    omega = omega_deg_s(ticks)
+    omega = omega_deg_s(ticks).values
     epsilon = _epsilon_or_none(ticks, visible, meta)
 
     # omega[i] describes the interval (i-1, i], so omega[0] is undefined rather

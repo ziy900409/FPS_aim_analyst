@@ -118,11 +118,31 @@ def _finite_vec3(values: Sequence[float], name: str) -> tuple[float, float, floa
     return (x, y, z)
 
 
-def omega_deg_s(ticks: pd.DataFrame) -> np.ndarray:
+OmegaSource = Literal["tick-integral", "aim-diff-legacy"]
+
+
+@dataclass(frozen=True)
+class OmegaResult:
+    """Angular speed samples plus which derivation produced them (KI-005 / A, FR-A-11)."""
+
+    values: np.ndarray
+    source: OmegaSource
+
+
+def omega_deg_s(ticks: pd.DataFrame, *, strict: bool = False) -> OmegaResult:
     """Return angular speed for each tick, with ``nan`` at index zero.
 
-    The pitch correction uses the midpoint pitch of each adjacent tick pair.
-    Tick timestamps are milliseconds and exported aim angles are radians.
+    Prefers the tick-window mouse integral (``ticks.d_yaw``/``d_pitch``, KI-005 / A) when both
+    columns are present and every value is finite -- this delta is structurally immune to the
+    render/sim beat-aliasing bug the legacy derivation carries, not merely a closer approximation
+    of it. Falls back to the legacy aim-difference derivation when either column is absent or
+    carries a non-finite value; a half-present pair (e.g. ``d_yaw`` without ``d_pitch``) is treated
+    as a miss rather than a half-guess. ``strict=True`` raises instead of silently falling back.
+
+    The pitch correction uses the midpoint pitch of each adjacent tick pair (legacy) or the tick's
+    own pitch net of half its integrated delta (tick-integral, algebraically the same midpoint --
+    see the module's KI-005 / A T5 design notes). Tick timestamps are milliseconds and exported aim
+    angles are radians.
     """
 
     t_ms = _finite_column(ticks, "t")
@@ -132,18 +152,41 @@ def omega_deg_s(ticks: pd.DataFrame) -> np.ndarray:
 
     result = np.full(t_ms.shape, np.nan, dtype=float)
     if len(t_ms) < 2:
-        return result
+        return OmegaResult(values=result, source="aim-diff-legacy")
 
     dt_s = np.diff(t_ms) / 1000.0
     if np.any(dt_s <= 0):
         raise ValueError("tick timestamps must be strictly increasing")
 
-    delta_yaw = np.diff(yaw)
-    delta_pitch = np.diff(pitch)
-    midpoint_pitch = (pitch[:-1] + pitch[1:]) / 2.0
+    tick_integral = _tick_integral_deltas(ticks)
+    if tick_integral is not None:
+        delta_yaw, delta_pitch = tick_integral
+        midpoint_pitch = pitch[1:] - delta_pitch / 2.0
+        source: OmegaSource = "tick-integral"
+    elif strict:
+        raise ValueError(
+            "omega_deg_s: this export has no ticks.d_yaw/d_pitch (pre-KI-005); omega would carry "
+            "the render/sim beat-aliasing bug -- see docs/known_issue/KI-005-*"
+        )
+    else:
+        delta_yaw = np.diff(yaw)
+        delta_pitch = np.diff(pitch)
+        midpoint_pitch = (pitch[:-1] + pitch[1:]) / 2.0
+        source = "aim-diff-legacy"
+
     speed_rad_s = np.hypot(delta_yaw * np.cos(midpoint_pitch), delta_pitch) / dt_s
     result[1:] = np.degrees(speed_rad_s)
-    return result
+    return OmegaResult(values=result, source=source)
+
+
+def _tick_integral_deltas(ticks: pd.DataFrame) -> tuple[np.ndarray, np.ndarray] | None:
+    if "d_yaw" not in ticks.columns or "d_pitch" not in ticks.columns:
+        return None
+    d_yaw = ticks["d_yaw"].to_numpy(dtype=float, copy=True)[1:]
+    d_pitch = ticks["d_pitch"].to_numpy(dtype=float, copy=True)[1:]
+    if not (np.all(np.isfinite(d_yaw)) and np.all(np.isfinite(d_pitch))):
+        return None
+    return d_yaw, d_pitch
 
 
 def epsilon_deg(

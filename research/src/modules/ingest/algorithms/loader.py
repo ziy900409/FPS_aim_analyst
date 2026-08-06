@@ -28,6 +28,8 @@ TICK_COLUMNS = (
     "tz",
     "yaw",
     "pitch",
+    "d_yaw",
+    "d_pitch",
     "keys",
     "ads",
 )
@@ -200,6 +202,11 @@ def _validate_tick(value: Any, index: int) -> dict[str, Any]:
     row["yaw"] = _number(_required(aim, "yaw", f"{base}.aim.yaw"), f"{base}.aim.yaw")
     row["pitch"] = _number(_required(aim, "pitch", f"{base}.aim.pitch"), f"{base}.aim.pitch")
 
+    # KI-005 / A (FR-A-12): additive tick-window mouse integral. Absent on pre-KI-005
+    # exports -- filled with nan rather than erroring; present values must be finite.
+    row["d_yaw"] = _optional_number(tick.get("dYaw"), f"{base}.dYaw")
+    row["d_pitch"] = _optional_number(tick.get("dPitch"), f"{base}.dPitch")
+
     keys = _list(_required(tick, "keys", f"{base}.keys"), f"{base}.keys")
     for key_index, key in enumerate(keys):
         _type(key, str, f"{base}.keys[{key_index}]")
@@ -290,6 +297,12 @@ def _number(value: Any, field_path: str) -> int | float:
     if not math.isfinite(value):
         raise SchemaError(field_path, "must be finite")
     return value
+
+
+def _optional_number(value: Any, field_path: str) -> float:
+    if value is None:
+        return math.nan
+    return _number(value, field_path)
 
 
 def _non_empty_string(value: Any, field_path: str) -> None:

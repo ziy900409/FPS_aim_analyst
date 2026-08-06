@@ -61,3 +61,40 @@ def test_load_export_accepts_absent_stage5_additive_fields(tmp_path) -> None:
     assert "weapon" not in export.meta
     assert "targets" not in export.meta
     assert export.events.loc[export.events["type"] == "fire", "shotSeq"].isna().all()
+
+
+# --- KI-005 / A T5 — ticks.dYaw/dPitch (FR-A-12) ---
+
+
+def test_load_export_fills_nan_when_mouse_integration_ticks_are_absent(tmp_path) -> None:
+    payload = deepcopy(make_synthetic_export(SyntheticSpec()))
+    for tick in payload["ticks"]:
+        tick.pop("dYaw")
+        tick.pop("dPitch")
+    payload["meta"].pop("mouseIntegration")
+
+    export = load_export(_write_payload(tmp_path, payload))
+
+    assert export.ticks["d_yaw"].isna().all()
+    assert export.ticks["d_pitch"].isna().all()
+    assert "mouseIntegration" not in export.meta
+
+
+def test_load_export_reads_present_mouse_integration_ticks(tmp_path) -> None:
+    payload = make_synthetic_export(SyntheticSpec())
+
+    export = load_export(_write_payload(tmp_path, payload))
+
+    assert export.ticks["d_yaw"].notna().all()
+    assert export.ticks["d_pitch"].notna().all()
+    assert export.ticks["d_yaw"].tolist() == [tick["dYaw"] for tick in payload["ticks"]]
+
+
+def test_load_export_rejects_non_finite_mouse_integration_tick(tmp_path) -> None:
+    payload = deepcopy(make_synthetic_export(SyntheticSpec()))
+    payload["ticks"][12]["dYaw"] = float("inf")
+
+    with pytest.raises(SchemaError) as captured:
+        load_export(_write_payload(tmp_path, payload))
+
+    assert captured.value.field_path == "ticks[12].dYaw"

@@ -199,7 +199,7 @@ def write_real_evidence(path: Path) -> tuple[Path, Path]:
 
     for window in build_peek_windows(export):
         window_ticks = ticks.iloc[window.tick_slice].reset_index(drop=True)
-        omega = omega_deg_s(window_ticks)
+        omega = omega_deg_s(window_ticks).values
         raw_segments = segment_submovements(omega[1:])
         segments = [
             Segment(

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
 import math
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from modules.ingest.algorithms.loader import load_export
+from modules.ingest.algorithms.synthetic import SyntheticSpec, make_synthetic_export
 from modules.kinematics.algorithms.angular import (
     SIM_TO_WORLD,
     EyeOrigin,
@@ -65,8 +68,9 @@ def test_omega_known_geometry(
 ) -> None:
     result = omega_deg_s(_ticks(yaws=yaws, pitches=pitches))
 
-    assert math.isnan(result[0])
-    assert result[1] == pytest.approx(expected_deg_s, rel=1e-6)
+    assert result.source == "aim-diff-legacy"
+    assert math.isnan(result.values[0])
+    assert result.values[1] == pytest.approx(expected_deg_s, rel=1e-6)
 
 
 def test_omega_uses_adjacent_midpoint_pitch() -> None:
@@ -78,7 +82,79 @@ def test_omega_uses_adjacent_midpoint_pitch() -> None:
     )
     expected = math.hypot(60.0 * math.cos(math.radians(70.0)), 20.0)
 
-    assert result[1] == pytest.approx(expected, rel=1e-6)
+    assert result.values[1] == pytest.approx(expected, rel=1e-6)
+
+
+# --- KI-005 / A T5 — omega source resolution (FR-A-11) ---
+
+
+def test_omega_falls_back_to_legacy_when_tick_columns_are_absent() -> None:
+    result = omega_deg_s(_ticks())
+
+    assert result.source == "aim-diff-legacy"
+
+
+def test_omega_prefers_tick_integral_when_both_columns_are_finite() -> None:
+    ticks = _ticks()
+    ticks["d_yaw"] = [0.0, 0.0]
+    ticks["d_pitch"] = [0.0, 0.0]
+
+    result = omega_deg_s(ticks)
+
+    assert result.source == "tick-integral"
+
+
+def test_omega_treats_half_present_pair_as_a_miss() -> None:
+    ticks = _ticks()
+    ticks["d_yaw"] = [0.0, 0.0]
+    ticks["d_pitch"] = [float("nan"), float("nan")]
+
+    result = omega_deg_s(ticks)
+
+    assert result.source == "aim-diff-legacy"
+
+
+def test_omega_strict_raises_when_tick_columns_are_absent() -> None:
+    with pytest.raises(ValueError, match="d_yaw|d_pitch|KI-005"):
+        omega_deg_s(_ticks(), strict=True)
+
+
+def test_omega_strict_does_not_raise_when_tick_columns_are_present() -> None:
+    ticks = _ticks()
+    ticks["d_yaw"] = [0.0, 0.0]
+    ticks["d_pitch"] = [0.0, 0.0]
+
+    result = omega_deg_s(ticks, strict=True)
+
+    assert result.source == "tick-integral"
+
+
+def test_omega_index_zero_is_nan_under_both_sources() -> None:
+    legacy = omega_deg_s(_ticks())
+    ticks = _ticks()
+    ticks["d_yaw"] = [0.0, 0.0]
+    ticks["d_pitch"] = [0.0, 0.0]
+    tick_integral = omega_deg_s(ticks)
+
+    assert math.isnan(legacy.values[0])
+    assert math.isnan(tick_integral.values[0])
+
+
+def test_omega_two_derivations_agree_on_self_consistent_synthetic_fixture(tmp_path) -> None:
+    """No second definition (FM-5/C-D4): d_yaw/d_pitch mirror the aim series exactly here, so the
+    tick-integral and legacy derivations must agree bit-for-bit on the synthetic fixture."""
+
+    payload = make_synthetic_export(SyntheticSpec())
+    source = tmp_path / "synthetic.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    ticks = load_export(source).ticks
+
+    tick_integral = omega_deg_s(ticks)
+    legacy = omega_deg_s(ticks.drop(columns=["d_yaw", "d_pitch"]))
+
+    assert tick_integral.source == "tick-integral"
+    assert legacy.source == "aim-diff-legacy"
+    np.testing.assert_array_equal(tick_integral.values, legacy.values)
 
 
 def test_epsilon_is_zero_at_target_center() -> None:
