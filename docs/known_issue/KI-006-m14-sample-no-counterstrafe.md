@@ -90,6 +90,22 @@ KI-005 選項 A/B 落地後重新採集,並在採集前明確要求受試者執�
 此閘若早存在,08:03 第一天就會被擋下。它補的是與 [KI-004 §「架構層結論」](KI-004-sim-world-unit-domain-mismatch.md)
 同一類的缺口:**一致性閘與目視檢核無法發現「量錯了對象」**。
 
+> **選項 C 的可執行計畫**:[KI-006-C/](KI-006-C/README.md)(tech spec + T0–T3 + T-exit;task 索引
+> [task-checklist.md](KI-006-C/task-checklist.md))。**尚未動任何程式碼。** 2026-08-06 拍板三項設計取捨:
+> ① 構念宣告落 **Python registry**(`research/src/modules/ingest/algorithms/construct.py`,凍結為
+> `construct-v1`),**不**做引擎 `DrillConfig` / `meta.construct` 自我描述欄 —— 換取零引擎改動,且閘
+> **可回溯套用到既有匯出**(最需要被擋下的正是既有的 08:03);② 閘紅 = session 級 flag +
+> `run_pipeline` 專屬非零 exit code,**不**在 `load_export` 拋錯 —— 資料仍可載入診斷,受限的是**用途**
+> (C-D3);③ **選項 B(重新採樣)不在該計畫內**,委派 [KI-005-A / A2-T1](KI-005-A/A2-blocked-plan.md)
+> (兩個 KI 的採集已收斂為同一次),該計畫只交付 A2 直接引用的驗收清單(其 §6 B-1~B-5)。
+>
+> 計畫階段查碼另發現兩件事:① committed 合成 fixture 的 `drillId` 是 `synthetic_counterstrafe_v2`,
+> **不以 `counterstrafe` 開頭** —— 天真的前綴比對會讓閘在 `run_pipeline` 的預設路徑上失效且測試仍綠;
+> ② 上表三個家族中,`tracking_*`(目標 motion)與 `detection_*`(宣告 peek 數)的判準值**不在 `meta` 內**
+> ⇒ 本輪只實作 `counterstrafe_*`,另兩家族誠實回 `construct_unknown`(而非靜默通過)。
+>
+> ⚠️ **C 落地不解除任何 M14 撤回** —— 它交付的是「下次不會再量錯對象」,不是「這次量對了」。
+
 ## 5. 影響面
 
 | 對象 | 影響 |
