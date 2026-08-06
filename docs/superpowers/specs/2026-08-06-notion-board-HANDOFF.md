@@ -16,17 +16,24 @@
 |---|---|
 | 需求釐清 | ✅ 完成(使用者確認:受眾=自己/工作台;四個痛點全中) |
 | 設計 + 使用者核准 | ✅ 完成(含 `⚠️ 交付 caveated` 狀態,使用者要求後加入) |
-| spec 落檔 | ✅ 已寫,**尚未 commit(使用者指示先不 commit)** |
+| spec 落檔 | ✅ 已 commit(2026-08-06,`0e29f70 add notion plan`) |
 | active 部分資料蒐集 | ✅ 完成(見 §6 附錄) |
 | §6 資料對 repo 覆核 | ✅ 完成(2026-08-06 第二次接手;見 §6.0) |
 | workspace 拍板 | ✅ 完成(見 §4) |
-| 在 Notion 實際建立 | ⛔ **未開始 — 仍被工具阻塞**(見 §3.1;解除路徑已定,見 §3.2) |
+| 在 Notion 實際建立 | ✅ **已完成(2026-08-06 第三次接手)** — 阻塞已解除,見 §10 落地紀錄 |
 
 **使用者最後一個範圍指示**:先建骨架 + active 部分(4 張 DB + active/KI 的 Work Items 及其 Tasks + 5 個 view),28 個已交付 WP 之後再補。
 
-## 3. ⛔ 阻塞:Notion 寫入工具未載入
+## 3. ~~⛔ 阻塞:Notion 寫入工具未載入~~ → ✅ 已解除(2026-08-06)
 
-**這是接手時第一個要驗證的事。**
+> **本節保留為歷史紀錄。** 第三次接手時 §3.2 的解除路徑已生效:`ToolSearch` 查得
+> `notion-create-database` / `notion-create-pages` / `notion-update-page` /
+> `notion-create-view` / `notion-update-view` / `notion-update-data-source` 全部可呼叫,
+> 且 `fetch self` 仍回報全部 `available`。**未使用任何繞道方案**(無 CSV 匯入、
+> 無 integration token、無瀏覽器點 UI),全程走 MCP,spec §6「C 階段不寫任何程式碼」維持。
+> 落地結果見 §10。
+
+**以下為阻塞期間的原始紀錄。**
 
 用 `notion-fetch` 帶 `id: "self"` 查過,**Notion 端授權與方案完全沒問題**——`create_pages` / `create_database` / `update_page` / `create_view` / `update_view` / `update_data_source` / `move_pages` / `duplicate_page` 全部回報 `available`。
 
@@ -205,3 +212,60 @@ OQ-A-5(新採樣時機與規模,待研究者拍板)
 - 使用者要求加入 `⚠️ 交付 caveated`(spec N-10)。「保留原因」必填欄是**我加的**,理由:單獨一個 ⚠️ 標籤沒有內容,三個月後還是得回翻 repo。使用者未反對。
 - spec §5.3「兩週後沒真的用就刪掉」這條硬條款,使用者明確回覆「接受」。**不要軟化它。**
 - 沒有跑 `writing-plans` 產獨立實作計畫,因為 spec §5.1 本身就是可執行步驟清單。已向使用者說明。
+
+---
+
+## 10. 落地紀錄(2026-08-06 第三次接手)
+
+### 10.1 已建立什麼
+
+Workspace「Yang Hsin的空間」頂層新頁 **`FPS Aim Analyst · 工作台`**(§4 拍板位置,未掛既有頁、未進 `BenQ` database)。
+
+| 物件 | 數量 | 備註 |
+|---|---|---|
+| 四張 database | 4 | schema 照 spec §3 |
+| Work Items | 10 | 照 §6.1(含 §6.0 指定的 WP-28 `保留原因` 措辭) |
+| Tasks | 31 | 照 §6.2 五個 `task-checklist.md` 機械式取出 |
+| Milestones | 15 | 照 §6.3,M7/M13/M14 的宣告/撤回欄位完整填入 |
+| Open Questions | 11 | 照 §6.4,最舊優先 |
+| linked views | 5 | 照 spec §4 |
+
+**Relation 全部接妥**:`Milestone`、`Parent`、`來源`、`Blocked by`(self-relation,附 `Blocks` 反向欄)。
+`Blocked by`:WP-30 ← KI-005-A1 + KI-006-C;WP-31 ← 同;WP-32 ← WP-30;KI-005-A2 ← KI-005-A1 + KI-006-C。
+
+### 10.2 §5 步驟 6 的驗收 — ✅ 通過
+
+「🎯 今天」view 實際查詢結果 = **KI-005-A1 的 T4 / T5 / T6 / T-exit**,與 §5 指定的驗收標準逐項相符 ⇒ relation 接線正確。
+
+### 10.3 偏離 spec 之處(四項,均已入帳)
+
+| # | 偏離 | 原因 | 影響 / 待辦 |
+|---|---|---|---|
+| **N-C1** | 「🎯 今天」的 filter **不是** `Parent.Status ∈ {…}`,而是 Tasks 上新增的 checkbox **`父項在動`** | MCP 的 view DSL **無法過濾 relation 與 rollup**——寫進去會被靜默丟成空 filter group(實測:`IN`、`CONTAINS`、rollup、relation `CONTAINS <page-id>` 全部落空;只有 relation `IS NOT EMPTY` 有效)。跨 database 的 formula 也被 API 以 `Type error with formula` 拒絕 | **這是去正規化欄位,會漂移。** 同步 repo 時必須一併更新。旁邊保留 `Parent Status` rollup 作為真值可對照。若要改回 spec 原意,在 Notion UI 手動把 filter 改成 rollup 條件即可(UI 支援,MCP 不支援) |
+| **N-C2** | `Milestones.Status` 多一個 `⚠️ 達成 caveated` 選項(spec §3.3 只列三個) | §6.3 要求 M7 為 caveated 狀態,但 spec §3.3 的 enum 沒有這個值。壓成 `✅ 達成` 會犯 N-10 明文反對的錯誤(把帶保留的交付當作可直接引用的上游前提) | 命名用 `達成` 而非 `交付` 以對齊 Milestones 語彙;M7 的 `撤回原因` 欄同時填入 GD-14 caveat |
+| **N-C3** | WP-30 / WP-31 / WP-32 的 `Repo` 指向 `active/stage4/README.md` | 這三個 WP 的資料夾**尚未存在**(stage4 目前只有 `wp-28-*` 與 `wp-29-*`) | 等資料夾建立後改指各自 `README.md`,否則是死連結 |
+| **N-C4** | Open Questions 的 `提出日` 為推得值 | §6.4 已自陳「日期是推得的,不是逐條查證的」 | 若要精確,回各 `progress.md` 核對 |
+
+### 10.4 一個必須記住的教訓 — repo 讀取請先 `git fetch`
+
+第三次接手時本地分支 **落後 `origin/main` 4 個 commit**,導致一度誤判 §6.2 的 KI-005-A1 資料有錯(本地 checklist 只有 T0 ✅,§6 說 T0–T3 ✅)。
+**§6 是對的,錯的是沒同步的工作區。** 那 4 個 commit 正好含 `feat(ki-005): meta.fovDeg / meta.mouseIntegration`(T2)與 `fix(ki-005): pointermove 入 ring 補 pointer-lock 閘`(T3)。
+已 fast-forward 到 `0e29f70` 後修正 Notion 的 T1/T2/T3 Done box。
+
+> **下次同步 Notion 前,先 `git fetch origin main` 再讀 checklist。** 否則會把陳舊狀態寫進看板。
+
+### 10.5 資料完整性複核
+
+建立過程中因 unicode escape 失誤,曾把 `閘` 寫成 `闘`(U+9598 → U+95D8)、`椎` 寫成 `椽`(U+690E → U+693D),共 10 處。**已全數修正並複核**:把 Notion 側所有 CJK 字元與 repo 全部 `*.md` 的字元集做差集,剩餘僅 `壁`/`拱`/`擱` 三字,分別來自本次新寫的欄位說明與 spec/HANDOFF 本身的用語(「隔壁」「拱心石」「擱最久」),非錯字。
+
+### 10.6 未做的事(維持 §8 的紅線)
+
+- 28 個已交付 WP(stage1/2/3/5 + muzzle-tracer)**未建** — 依 §2 使用者範圍指示,等看過骨架再說。
+- 未建任何 sync script / front-matter / CI / webhook(spec §5.3 的 B 階段觸發條件尚未到)。
+- Notion **未回寫 repo**,本次對 repo 的唯一改動就是這份 HANDOFF 的落地紀錄。
+- 未做 timeline / gantt、未做 commit 動能圖、未把 GD-n / BD-n 搬進 Notion。
+
+### 10.7 ⏰ 兩週後的硬條款(spec §5.3,使用者已明確接受)
+
+**2026-08-20 前後複查:若使用者沒有真的用「🎯 今天」view 決定過當天要做什麼(不只是打開看過)→ 刪掉整個 Notion 工作台。**
+留一個沒人看又不同步的看板比沒有更糟:它會讓人誤以為進度有被追蹤。**這條不要軟化。**
