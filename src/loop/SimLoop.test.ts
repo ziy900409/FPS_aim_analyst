@@ -13,6 +13,8 @@ import type { WeaponConfig } from '../weapon/WeaponConfig.ts';
 import { CS2_PROFILE } from '../sim/MovementController.ts';
 import { generateRecoilTable } from '../recoil/recoilTable.ts';
 import { createRan1 } from '../recoil/rng.ts';
+import { CameraController } from '../view/CameraController.ts';
+import { resolveMouseGain } from '../input/mouseGain.ts';
 
 /** 固定基準的注入式 clock（OQ-2.3）。 */
 function fixedClock(t: number): Clock {
@@ -678,5 +680,263 @@ describe('SimLoop applyInput — WP-29 / T3 additive key 事件（opt-in，預�
     const events = recorder.snapshot().events;
     expect(events.filter((event) => event.type === 'key')).toEqual([{ type: 'key', code: 'A', down: true, t: 3 }]);
     expect(events.filter((event) => event.type === 'counter')).toEqual([]);
+  });
+});
+
+describe('SimLoop applyInput — KI-005 / A tick 窗 mouse 積分（T4，FR-A-1/4/9/10）', () => {
+  const HIP_GAIN = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75 }); // 75 = cameraLookingDownZ() 預設 fov
+
+  it('mouse 事件只寫 recorder，不寫 state（NFR-A-1）；未配置 mouseIntegration 時無 dYaw/dPitch key', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 4 });
+
+    pushEvent(state, { type: 'mouse', dx: 5, dy: -2, t: 3 });
+    simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+
+    expect(state.aim.yaw).toBe(0); // mouse 分支不寫 state.aim（render/camera 才寫）
+    expect(state.aim.pitch).toBe(0);
+    const tick = recorder.snapshot().ticks[0];
+    expect(Object.keys(tick)).not.toContain('dYaw');
+    expect(Object.keys(tick)).not.toContain('dPitch');
+  });
+
+  it('啟用時：tick 窗內多筆 mouse delta 積分進 ticks[].dYaw/dPitch（依事件序，跨 tick 邊界正確分桶）', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 4, mouseIntegration: { gain: HIP_GAIN } });
+
+    // tick1 窗 [0, TICK_MS)：兩筆事件；tick2 窗 [TICK_MS, 2*TICK_MS)：無事件。
+    pushEvent(state, { type: 'mouse', dx: 3, dy: 1, t: 2 });
+    pushEvent(state, { type: 'mouse', dx: -1, dy: 2, t: 5 });
+    simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+    simStep(state, 1 / SIM_HZ, 2 * TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+
+    const [tick1, tick2] = recorder.snapshot().ticks;
+    expect(tick1.dYaw).toBeCloseTo(-(3 - 1) * HIP_GAIN.hipStep, 15);
+    expect(tick1.dPitch).toBeCloseTo(-(1 + 2) * HIP_GAIN.hipStep, 15);
+    expect(tick2.dYaw).toBe(0);
+    expect(tick2.dPitch).toBe(0);
+  });
+
+  it('ads 事件與 mouse 事件同 tick 依 timeStamp 排序，accumulateMouse 讀事件時刻的 heldAds', () => {
+    const state = createSharedState();
+    const gain = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75, ads: { fovDeg: 40, sensitivityRatio: 2 } });
+    const recorder = createDataRecorder({ capacity: 4, mouseIntegration: { gain } });
+
+    pushEvent(state, { type: 'mouse', dx: 4, dy: 0, t: 1 }); // hip（ads 尚未 down）
+    pushEvent(state, { type: 'ads', down: true, t: 2 });
+    pushEvent(state, { type: 'mouse', dx: 4, dy: 0, t: 3 }); // ads 中
+    simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+
+    const tick = recorder.snapshot().ticks[0];
+    expect(tick.dYaw).toBeCloseTo(-4 * gain.hipStep + -4 * gain.adsStep, 12);
+  });
+
+  describe('閘② 守恆（FR-A-9）：Σ dYaw/dPitch ≡ Δaim.yaw/pitch（hip-only）', () => {
+    function runConservation(events: Array<{ dx: number; dy: number; t: number }>) {
+      const state = createSharedState();
+      const cam = cameraLookingDownZ();
+      const cameraController = new CameraController(cam, state.aim);
+      const recorder = createDataRecorder({ capacity: 256, mouseIntegration: { gain: HIP_GAIN } });
+      const loop = createSimLoop(state, fixedClock(0), SIM_HZ, undefined, undefined, undefined, recorder);
+
+      for (const ev of events) {
+        cameraController.applyDelta(ev.dx, ev.dy); // render 路徑（camera 側，獨立 AimIntegrator 實例）
+        state.input.pushMouse(ev.dx, ev.dy, ev.t); // 量測路徑（同一批事件送進 ring）
+      }
+      const advanceTo = tickAdvancer(loop);
+      advanceTo(20 * TICK_MS);
+
+      const ticks = recorder.snapshot().ticks;
+      const sumDYaw = ticks.reduce((s, tk) => s + (tk.dYaw ?? 0), 0);
+      const sumDPitch = ticks.reduce((s, tk) => s + (tk.dPitch ?? 0), 0);
+      return { sumDYaw, sumDPitch, aim: { yaw: state.aim.yaw, pitch: state.aim.pitch } };
+    }
+
+    it('一般序列（未撞夾角）', () => {
+      const { sumDYaw, sumDPitch, aim } = runConservation([
+        { dx: 3, dy: 1, t: 2 },
+        { dx: -5, dy: 2, t: 9 },
+        { dx: 10, dy: -3, t: 40 },
+        { dx: 0.5, dy: 0.25, t: 41 },
+        { dx: -2, dy: 4, t: 100 },
+      ]);
+      expect(Math.abs(sumDYaw - aim.yaw)).toBeLessThanOrEqual(1e-12);
+      expect(Math.abs(sumDPitch - aim.pitch)).toBeLessThanOrEqual(1e-12);
+    });
+
+    it('pitch 撞 ±MAX_PITCH 夾角仍守恆（D-A2）', () => {
+      const bigDy = -20000; // 遠超 MAX_PITCH 所需，強制撞頂
+      const { sumDYaw, sumDPitch, aim } = runConservation([
+        { dx: 1, dy: bigDy, t: 2 },
+        { dx: 1, dy: bigDy, t: 9 },
+        { dx: 1, dy: bigDy, t: 16 },
+      ]);
+      expect(Math.abs(aim.pitch)).toBeGreaterThan(Math.PI / 2 - 0.02); // 確認真的撞到夾角
+      expect(Math.abs(sumDYaw - aim.yaw)).toBeLessThanOrEqual(1e-12);
+      expect(Math.abs(sumDPitch - aim.pitch)).toBeLessThanOrEqual(1e-12);
+    });
+  });
+
+  describe('閘① 刷新率不變性（FR-A-10）：固定合成事件序列 × 4 種 pump 節奏', () => {
+    // 事件時間戳固定、與「以何種節奏呼叫 pump()」無關——consume() 只比較 event.t 與固定 128Hz tick
+    // 邊界（架構解耦，見 progress.md 的推導）。事件先整批塞進 ring，pump 節奏只決定何時把它們排空。
+    function buildFixedEvents(): Array<{ dx: number; dy: number; t: number }> {
+      const events: Array<{ dx: number; dy: number; t: number }> = [];
+      let t = 0;
+      // ≥64 tick（64 * TICK_MS ≈ 500ms）等速段：每 3ms 一筆固定 dx=2。
+      while (t < 400) {
+        t += 3;
+        events.push({ dx: 2, dy: 0.5, t });
+      }
+      // 一段 flick：短窗內大 dx。
+      for (let i = 0; i < 5; i++) {
+        t += 1;
+        events.push({ dx: 40, dy: -10, t });
+      }
+      // 收尾等速段，確保覆蓋 ≥64 tick 並留邊界緩衝。
+      while (t < 600) {
+        t += 3;
+        events.push({ dx: 2, dy: 0.5, t });
+      }
+      return events;
+    }
+
+    function runAtPumpCadence(events: ReturnType<typeof buildFixedEvents>, pumpIntervalMs: number) {
+      const state = createSharedState();
+      const recorder = createDataRecorder({ capacity: 512, mouseIntegration: { gain: HIP_GAIN } });
+      const loop = createSimLoop(state, fixedClock(0), SIM_HZ, undefined, undefined, undefined, recorder);
+
+      for (const ev of events) state.input.pushMouse(ev.dx, ev.dy, ev.t);
+
+      const lastT = events.at(-1)?.t ?? 0;
+      let now = 0;
+      while (now < lastT + TICK_MS) {
+        now += pumpIntervalMs;
+        loop.pump(now);
+      }
+      return recorder.snapshot().ticks.map((tk) => ({ dYaw: tk.dYaw, dPitch: tk.dPitch }));
+    }
+
+    it('240/165/144/60 Hz 四種 pump 節奏下 dYaw/dPitch 逐位相同（差 = 0，非容差）', () => {
+      const events = buildFixedEvents();
+      const cadences = [240, 165, 144, 60].map((hz) => 1000 / hz);
+      const [ref, ...rest] = cadences.map((interval) => runAtPumpCadence(events, interval));
+
+      expect(ref.length).toBeGreaterThanOrEqual(64);
+      for (const run of rest) {
+        expect(run).toEqual(ref); // 逐位相同：deepEqual 已是逐位數值比較（無 toBeCloseTo 容差）
+      }
+    });
+  });
+
+  describe('閘③ opt-in 關閉時逐位不變（NFR-A-2）', () => {
+    it('mouseIntegration 未啟用：mouse 事件不影響匯出，JSON 序列化不含 dYaw/dPitch key', () => {
+      const state = createSharedState();
+      const recorder = createDataRecorder({ capacity: 4 });
+
+      pushEvent(state, { type: 'mouse', dx: 100, dy: 100, t: 1 });
+      pushEvent(state, { type: 'mouse', dx: -50, dy: 30, t: 5 });
+      simStep(state, 1 / SIM_HZ, TICK_MS, undefined, undefined, undefined, undefined, undefined, recorder);
+
+      const tick = recorder.snapshot().ticks[0];
+      expect(tick).toEqual({
+        t: TICK_MS,
+        vx: 0,
+        vz: 0,
+        px: 0,
+        pz: 0,
+        tx: null,
+        ty: null,
+        tz: null,
+        aim: { yaw: 0, pitch: 0 },
+        keys: [],
+        ads: false,
+      });
+      expect(JSON.stringify(tick)).not.toContain('dYaw');
+    });
+  });
+});
+
+describe('KI-005 / A — RED 基線（修法前）：aim-diff ω 的 ZOH aliasing 簽名（T4 §6 閘①佐證）', () => {
+  const HIP_GAIN = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75 });
+  // raw 滑鼠取樣率刻意取 SIM_HZ 的整數倍（8×128=1024，貼近真實 ~1000 Hz 滑鼠），使每個 128 Hz
+  // tick 窗恰好含整數個 raw 樣本——這是讓「新法」CV→0 的關鍵對齊（非任意選擇）。
+  const RAW_HZ = SIM_HZ * 8;
+  const RAW_DT_MS = 1000 / RAW_HZ;
+  const DX_PER_RAW_SAMPLE = 0.25; // 等速訊號（counts/raw-sample，常數角速度）
+
+  /**
+   * 重現 KI-005 根因的關鍵不對稱：`PointerLock.onMove`（render/camera 路徑）只用**單次 dispatched
+   * mousemove 的聚合** `movementX/Y`（一次 render 幀一筆），而 `InputSampler.onPointerMove`
+   * （量測路徑）用 `getCoalescedEvents()` 把**同一次 dispatch 內的次幀 raw 樣本**逐一各帶自己的
+   * `timeStamp` 推進 ring（見 InputSampler.ts:135-140）。兩條路徑消費的是同一組 raw 樣本的
+   * **兩種聚合粒度**——camera 每 frame 聚合一次（ZOH 來源）、ring 保留每個 raw 樣本的原始時刻
+   * （tick-window 積分的精度來源）。
+   */
+  function driveRenderAndSim(renderHz: number, totalTicks: number) {
+    const state = createSharedState();
+    const cam = cameraLookingDownZ();
+    const cameraController = new CameraController(cam, state.aim);
+    const recorder = createDataRecorder({ capacity: totalTicks + 32, mouseIntegration: { gain: HIP_GAIN } });
+    const loop = createSimLoop(state, fixedClock(0), SIM_HZ, undefined, undefined, undefined, recorder);
+
+    const frameDtMs = 1000 / renderHz;
+    const totalMs = (totalTicks + 8) * TICK_MS;
+
+    let rawT = 0;
+    let nextFrameT = frameDtMs;
+    let frameAccumDx = 0;
+    while (rawT < totalMs) {
+      rawT += RAW_DT_MS;
+      state.input.pushMouse(DX_PER_RAW_SAMPLE, 0, rawT); // 新法：每個 raw 樣本各自入 ring（各帶自己的 timeStamp）
+      frameAccumDx += DX_PER_RAW_SAMPLE;
+
+      while (rawT >= nextFrameT) {
+        cameraController.applyDelta(frameAccumDx, 0); // 舊法：camera 只收「一次 dispatch 的聚合量」
+        loop.pump(nextFrameT);
+        frameAccumDx = 0;
+        nextFrameT += frameDtMs;
+      }
+    }
+    return recorder.snapshot().ticks;
+  }
+
+  function coefficientOfVariation(values: number[]): number {
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length;
+    return Math.sqrt(variance) / Math.abs(mean);
+  }
+
+  it('240 Hz：舊法（ticks[].aim 差分）重現 KI-005 §3.3 簽名；新法（dYaw）同批資料變異係數 ≈ 0', () => {
+    const ticks = driveRenderAndSim(240, 96).slice(16, -8); // 去頭去尾暫態
+    const oldDiffs: number[] = [];
+    for (let i = 1; i < ticks.length; i++) oldDiffs.push(Math.abs(ticks[i].aim.yaw - ticks[i - 1].aim.yaw));
+
+    const mean = oldDiffs.reduce((a, b) => a + b, 0) / oldDiffs.length;
+    const normalized = oldDiffs.map((d) => d / mean);
+    const low = normalized.filter((n) => n < 0.8);
+    const high = normalized.filter((n) => n >= 0.8);
+
+    const dYaw = ticks.map((tk) => tk.dYaw as number);
+    // KI-005 §3.3：240/128 = 1.875 = 15/8 → 每 8 tick 週期 7 個「2 幀 tick」+ 1 個「1 幀 tick」。
+    // 實測（見 progress.md）：lowRatio≈0.115、lowMean≈0.553、highMean≈1.058、dYawCV≈1.1e-15。
+    expect(low.length / normalized.length).toBeGreaterThan(0.08);
+    expect(low.length / normalized.length).toBeLessThan(0.18);
+    expect(low.reduce((a, b) => a + b, 0) / low.length).toBeGreaterThan(0.4);
+    expect(low.reduce((a, b) => a + b, 0) / low.length).toBeLessThan(0.65);
+    expect(high.reduce((a, b) => a + b, 0) / high.length).toBeGreaterThan(0.95);
+    expect(high.reduce((a, b) => a + b, 0) / high.length).toBeLessThan(1.2);
+    expect(coefficientOfVariation(dYaw)).toBeLessThanOrEqual(1e-9);
+  });
+
+  it.each([165, 144, 60])('%d Hz：舊法 aim-diff ω 亦有顯著非零變異係數（結構性 aliasing，非 240 Hz 特例）', (hz) => {
+    const ticks = driveRenderAndSim(hz, 96).slice(16, -8);
+    const oldDiffs: number[] = [];
+    for (let i = 1; i < ticks.length; i++) oldDiffs.push(Math.abs(ticks[i].aim.yaw - ticks[i - 1].aim.yaw));
+
+    const dYaw = ticks.map((tk) => tk.dYaw as number);
+    // 實測（見 progress.md）：165Hz oldCV≈0.351、144Hz oldCV≈0.280、60Hz oldCV≈1.040；三者 dYawCV≈1.1e-15。
+    expect(coefficientOfVariation(oldDiffs)).toBeGreaterThan(0.05);
+    expect(coefficientOfVariation(dYaw)).toBeLessThanOrEqual(1e-9);
   });
 });

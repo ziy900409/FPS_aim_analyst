@@ -13,7 +13,7 @@
 | T1 | [`mouseGain.ts` — counts→rad / gain / 角度累加單一來源](T1-mouse-gain-single-source.md) | FR-A-2 · FR-A-3 | **High** | ✅ |
 | T2 | [匯出自我描述:`meta.fovDeg` + `meta.mouseIntegration`](T2-export-meta-additive.md) | FR-A-5 · FR-A-6 | Low | ✅ |
 | T3 | [`pushMouse` 補 pointer-lock 閘](T3-pointer-lock-gate.md) | FR-A-8 | Low | ✅ |
-| T4 | [tick 窗積分:`ticks[].dYaw/dPitch` + 三個閘](T4-tick-window-integration.md) | FR-A-1/4/7/9/10 | **High** | ⬜ |
+| T4 | [tick 窗積分:`ticks[].dYaw/dPitch` + 三個閘](T4-tick-window-integration.md) | FR-A-1/4/7/9/10 | **High** | ✅ |
 | T5 | [Python `omega_deg_s` 新欄位路徑 + `source` 揭露](T5-python-omega-source.md) | FR-A-11 · FR-A-12 | Med | ⬜ |
 | T6 | [文件 / 帳本對帳 + M14 解除條件明文化](T6-docs-ledger-reconcile.md) | FR-A-13 · FR-A-14 | Low | ⬜ |
 | T-exit | [A1 Exit gate:交付判定](T-exit-gate.md) | — | Low | ⬜ |

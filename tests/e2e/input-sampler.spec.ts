@@ -26,6 +26,7 @@ type AimDebug = {
     inputMeta: { lateEventCount: number; bufferOverflow: number };
   };
   pointerLock: { locked: boolean };
+  recorder: { mouseIntegration?: { gain: { hipStep: number; adsStep: number } } };
 };
 
 /** 等待 async bootstrap 完成、dev 觀測縫掛上。 */
@@ -127,5 +128,22 @@ test.describe('WP-3 InputSampler — 真實瀏覽器端到端（Edge）', () => 
     });
 
     expect(delta).toBe(0); // 自動化無 Pointer Lock → 閘門擋下，coalesced 子樣本一律不入 ring
+  });
+
+  test('KI-005 / A（FR-A-7）：app 佈線層真的對正式單例啟用 mouse 積分（非僅 API 層 opt-in）', async ({
+    page,
+  }) => {
+    await gotoAppReady(page);
+
+    // recordKeyEvents（WP-29）至今未在 main.ts 啟用是前車之鑑——本斷言直接讀正式單例的
+    // recorder.mouseIntegration，證明 FR-A-7「app 佈線層必須啟用」不是只有 API 層 opt-in 存在。
+    const mouseIntegration = await page.evaluate(
+      () => (window as unknown as { __aimDebug: AimDebug }).__aimDebug.recorder.mouseIntegration,
+    );
+
+    expect(mouseIntegration).toBeDefined();
+    expect(Number.isFinite(mouseIntegration?.gain.hipStep)).toBe(true);
+    expect(Number.isFinite(mouseIntegration?.gain.adsStep)).toBe(true);
+    expect((mouseIntegration?.gain.hipStep ?? 0) > 0).toBe(true);
   });
 });

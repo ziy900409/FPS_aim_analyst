@@ -16,7 +16,7 @@
 | 2026-08-06 | T1 | ✅ | 新增 `src/input/mouseGain.ts`(`RAD_PER_COUNT`/`MAX_PITCH`/`resolveMouseGain`/`createAimIntegrator`,12 個新測試);`CameraController` 改為消費(`#adsGain` → `#currentStep`,由 `resolveMouseGain` 於原有觸發點——`setSensitivity`/`setAdsConfig`(active 中)/`setAds`(轉場)——重算,避免逐幀/逐 mousemove 重新配置);`applyDelta` 委派 `AimIntegrator`。新增 2 個 golden 測試(hip→ADS→hip 混合序列 camera quaternion + aimSink 逐位斷言、pitch 撞夾角後 dPitch 語意)。`grep "0\.022"`/`grep "MAX_PITCH"` 僅 `mouseGain.ts` 命中定義。`npx tsc --noEmit` exit 0;`npm run test:ci` vitest **89 files/708 tests 全綠**(694 基線 + 14 新增,零既有期望值變更);Playwright 18/19 通過,`input-sampler.spec.ts` 2 案在整套並行下逾時、單獨重跑 3/3 全綠(與 T0 記錄同一支既有環境雜訊,詳 §3,非本次迴歸)。`git diff --stat` 僅 `src/input/mouseGain.ts`(新)+ `src/view/CameraController.ts`/`.test.ts`,未觸及 `src/sim/`、`SharedState`、`SimLoop`、`src/data/` |
 | 2026-08-06 | T2 | ✅ | `Meta`/`CollectMetaArgs` 新增 optional `fovDeg` + `mouseIntegration`(`MouseIntegrationMeta`);新增 `requireMouseIntegrationMeta`(`model` 封閉值域 + 三個 step 正有限性驗證)。`main.ts` 的 `buildCurrentExportPayload` 以 `resolveMouseGain({ sensitivity: settingsPanel.sensitivity, hipFovDeg: settingsPanel.fov, ads: weaponConfig.ads })` 產出 gain,`fovDeg: settingsPanel.fov`(**未**讀 `camera.fov`,`git diff` 複查僅新增行,無讀取路徑變動)+ `mouseIntegration: { model: 'tick-window-integral', radPerCount: RAD_PER_COUNT, hipStep, adsStep }` 一併填入,依 README §2.3 註記「本 task 就填」擇一落地。7 個新測試(happy path × 2、非正數/錯值拒絕案 × 4、`meta.suspect` 逐位不變 × 1)。`schema.md` 新增 `meta.fovDeg` 表列 + `meta.mouseIntegration` 新小節。`npx tsc --noEmit` exit 0;`npm run test` vitest **89 files/715 tests 全綠**(708 基線 + 7 新增,零既有期望值變更);`npx playwright test` **19/19 全綠**(含 T1 記錄過的 flaky `input-sampler.spec.ts` 案,本次未重現)。`git diff --stat` 僅 `docs/operational/schema.md` + `src/data/metadata.ts`/`.test.ts` + `src/main.ts`,未觸及 `src/sim/`、`SharedState`、`SimLoop`。 |
 | 2026-08-06 | T3 | ✅ | `InputSampler.onPointerMove` 補 `isLocked()` 閘(措辭與 `onMouseDown` fire/ads 閘同源),註解說明此閘是 KI-005 / A tick 窗積分(T4)守恆閘的前提。5 個新測試(未鎖定不入 ring + `bufferOverflow` 不累加、未鎖定 legacy fallback 亦不入、鎖定中行為逐位不變(既有案沿用)、解鎖→移動→重新鎖定→移動只收鎖定期間樣本、detach 後不再入緩衝)。既有 e2e `input-sampler.spec.ts` 的「pointermove coalesced 子樣本各入 ring」案因閘門生效而轉紅(自動化無真實 Pointer Lock,`locked` 恆為 `false`,見同檔前一案的既有斷言)——比照該檔既有 fire 案的**負向路徑**慣例改寫斷言(未鎖定 → `delta` 應為 0),檔頭 docstring 與案名同步更新,歸因記於本行(FM-4 紀律)。`bufferOverflow` 口徑變更(mouse 分支自此只可能在鎖定中累加,只減不增)記入 [schema.md](../../operational/schema.md)`meta.validity` 段(日期 + 理由 + 舊新不可直接比較)。`npx tsc --noEmit` exit 0;`npm run test:ci` vitest **89 files/718 tests 全綠**(715 基線 + 3 新增(mouseGain/CameraController 已計入既有 InputSampler 案數變化);見下方 §3 更新);Playwright **19/19 全綠**(含改寫的 pointermove 案)。`git diff --stat` 僅 `src/input/InputSampler.ts`/`.test.ts` + `tests/e2e/input-sampler.spec.ts` + `docs/operational/schema.md`,未觸及 `src/sim/`、`SharedState`、`SimLoop`、`src/data/` |
-| | T4 | ⬜ | |
+| 2026-08-06 | T4 | ✅ | `TickArena` 新增 `dYaw`/`dPitch`（`Float64Array`）+ `hasMouseIntegration`（`Uint8Array`，preallocated，逐 row 決定 `snapshot()` 是否輸出 key，C-7）；`recordFields`/`recordTick`/`recordState` 新增 optional 尾參數。`DataRecorder` 新增 `mouseIntegration`/`configureMouseIntegration`/`accumulateMouse`（閉包持 `AimIntegrator` + 兩個累加器；`consumeMouseAccum()` 在每次 `recordTick`/`recordTickFromState` 呼叫時**無條件**歸零，含 overflow 路徑——歸零發生在呼叫 `ticks.recordTick/recordState` 之前，與 arena 是否接受寫入無關）。`SimLoop.applyInput` 新增 `mouse` 分支：`recorder?.mouseIntegration !== undefined` 時呼叫 `recorder.accumulateMouse(ev.dx, ev.dy, state.heldAds)`，**只寫 recorder,不寫 `state`**（`git diff` 複查：`src/loop/SimLoop.ts` diff 僅 +6/-1 行,無 `state.*` 賦值）。`export.ts::serializeTicksCSV` 依 `ticks[0].dYaw !== undefined` 決定是否追加 `dYaw,dPitch` 兩欄（缺席時表頭逐位不變）。`main.ts`：新增 `currentMouseGain()`（`resolveMouseGain({ sensitivity: settingsPanel.sensitivity, hipFovDeg: settingsPanel.fov, ads: activeWeaponConfig().ads })`），`createDataRecorder` 帶 `mouseIntegration: { gain: currentMouseGain() }`（**全域開**,OQ-A-1）,`loadDrillById` 在 `cameraController.setAdsConfig(...)` 同一批動作後補 `recorder.configureMouseIntegration({ gain: currentMouseGain() })`；`buildCurrentExportPayload` 既有的 `mouseGain`（T2）與此處用**同一公式**（`resolveMouseGain` 純函式,同輸入同輸出,非同一物件參照但數值必然相同——settingsPanel/weapon 在 drill 進行中不可能變動,KI-003）。<br><br>**三個閘**（[T4 §6](T4-tick-window-integration.md)）：① 刷新率不變性——固定合成事件序列（等速+flick,涵蓋 96 tick）分別以 240/165/144/60 Hz 節奏 `pump()`,`ticks[].dYaw/dPitch` 陣列 `toEqual` 逐位相同；② 守恆——`\|Σ dYaw − Δaim.yaw\| ≤ 1e-12`（hip-only,含 pitch 撞 ±MAX_PITCH 案）；③ opt-in 關閉——`TickRecord` 不含 `dYaw`/`dPitch` key（非 `undefined`,是 key 不存在）。<br><br>**RED 基線實測**（見下方 §2d）：240 Hz 組 lowRatio≈0.1154（預期 0.125）、lowMean≈0.553（預期 0.533）、highMean≈1.058（預期 1.067）——精確重現 KI-005 §3.3 簽名；同批資料 dYaw 變異係數≈1.12e-15（≤1e-9 達標）。165/144/60 Hz 舊法 CV 分別≈0.351/0.280/1.040（顯著非零,證明非 240 Hz 特例）,三者 dYaw CV 皆≈1.1e-15。<br><br>**回歸**：`npx tsc --noEmit` exit 0；`npm run test`（vitest）**89 files / 739 tests 全綠**（718 基線 + 21 新增：`DataRecorder.test.ts` +7、`SimLoop.test.ts` +11、`export.test.ts` +3,零既有期望值變更）；`npx playwright test` **20/20 全綠**（19 基線 + 1 新增的 `input-sampler.spec.ts` FR-A-7 案；T0 記錄過的並行環境 flaky 本次未重現）。`git diff --stat` 未觸及 `src/sim/`、`SharedState`、`simStep` 狀態轉移；`src/loop/SimLoop.ts` diff 僅新增 mouse 分支注釋與 4 行邏輯。 |
 | | T5 | ⬜ | |
 | | T6 | ⬜ | |
 | | T-exit | ⬜ | |
@@ -108,6 +108,26 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 
 **T3 落地後複核(2026-08-06)**:#7(`onPointerMove` → `pushMouse`)已改為**是**,措辭與 #3/#4 逐字同源;#1/#2/#5/#6/#8 五列逐位不變(未動)。與預期完全一致。
 
+### 2d. T4 RED 基線實測(2026-08-06,`src/loop/SimLoop.test.ts` 的 KI-005 / A RED 基線 describe block)
+
+> 模型見 T4 測試檔內 `driveRenderAndSim` 的 docstring:重現 KI-005 根因的關鍵不對稱——`PointerLock.onMove`
+> (camera 路徑)只收**單次 dispatched mousemove 的聚合** `movementX/Y`(一次 render 幀一筆);
+> `InputSampler.onPointerMove`(量測路徑)用 `getCoalescedEvents()` 把同一次 dispatch 內的**次幀 raw
+> 樣本**逐一各帶自己的 `timeStamp` 推進 ring(`InputSampler.ts:135-140`)。測試以 `RAW_HZ = SIM_HZ×8
+> = 1024`(整除 128 Hz,貼近真實 ~1000 Hz 滑鼠)產生等速訊號,camera 端把每個 render 幀窗內的 raw
+> 樣本聚合成一次 `applyDelta` 呼叫(重現舊法),ring 端逐個 raw 樣本各自 `pushMouse`(餵新法)。
+
+| render Hz | 舊法 aim-diff ω 變異係數(CV) | 新法 dYaw 變異係數(CV) | 備註 |
+|---|---|---|---|
+| 240 | lowRatio≈0.1154(預期 0.125)、lowMean≈0.553(預期 0.533)、highMean≈1.058(預期 1.067) | ≈1.12e-15 | 精確重現 KI-005 §3.3 簽名(1/8 幀比例、量級皆對上) |
+| 165 | ≈0.351 | ≈1.12e-15 | 顯著非零,證明 aliasing 非 240 Hz 特例 |
+| 144 | ≈0.280 | ≈1.12e-15 | 同上 |
+| 60 | ≈1.040 | ≈1.13e-15 | 同上(render 遠慢於 sim,誤差量級最大) |
+
+**誠實記錄**:240 Hz 組的 `lowRatio`/`lowMean`/`highMean` 為實測值,與 KI-005 §3.3 文件數字(0.125/0.533/1.067)
+量級一致但非逐位相符(取樣去頭去尾暫態各 16/8 tick 後仍有少量統計噪音,見測試斷言採區間而非
+`toBeCloseTo` 精確值)。四組 dYaw CV 皆落在浮點精度量級(1e-15),遠低於 NFR-A-6 的 1e-9 門檻。
+
 ---
 
 ## 3. 受影響測試清單(T0 回填,2026-08-06,FM-4 歸因表)
@@ -141,6 +161,7 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | **A-D3** | `omega[0]` 契約**不改**,維持 `nan` | `analysis-segments.md` 與 D-28.12 已凍結;為一個樣本改契約會連動 `seg-v1` 與全部既有測試。登錄 TD-3,`seg-v2` 時決定 | [README D-A3](README.md) |
 | **A-D4** | 積分器狀態放 `DataRecorder` 閉包,**不進 `SharedState`** | 保住「`SharedState` 演進零 diff」(NFR-A-1)與 ADR-2 三迴圈邊界;`applyInput` 已持有 `recorder` 參數,無需改簽章(比照 WP-29/T3 的 `recordKeyEvents` 模式) | [README §2.7](README.md) |
 | **A-D5** | app 佈線層**啟用**(OQ-A-1 全域開) | opt-in 只保 golden 逐位不變,不是運行時可選;分兩種模式會產生「哪些 run 有 ω」的新不確定性。`recordKeyEvents` 至今未啟用即是前車之鑑 | [README §2.4 ②](README.md) |
+| **A-D6** | 驗證 FR-A-7(main.ts 已啟用)改走 `__aimDebug.recorder`,**不**擴大改動 `fpsTestHarness.ts` | T4 開工後才發現:`src/testharness/fpsTestHarness.ts` 是刻意獨立於 `main.ts` live 單例的另一條 sim 管線(自建 `createDataRecorder`/`collectMeta`,不驅動 rAF 單例,見其檔頭 docstring)。README §1.4 的 In-scope 檔案清單本就**不含** `fpsTestHarness.ts`——若要讓 `full-drill.spec.ts` 的 `forceExportJSON()` 也帶 `meta.mouseIntegration`/`ticks[].dYaw`,需另外佈線該獨立管線,屬於擴大範圍。改為在既有 dev-only 觀測縫 `__aimDebug`(`main.ts`,已在 T4 In-scope)多暴露一個唯讀 `recorder` 欄位,直接讀正式單例的 `recorder.mouseIntegration`,以 `tests/e2e/input-sampler.spec.ts` 新增一案驗證——精準對應 FR-A-7 字面(「app 佈線層必須啟用」),不動 harness | 本行 + Surprises T4-S1(下方) |
 
 ---
 
@@ -151,6 +172,7 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | **T0-S1** | 純 `uv run pytest`(無參數)在本機因 `C:\Users\Hsin.YH.Yang\AppData\Local\Temp\pytest-of-Hsin.YH.Yang` 目錄權限被拒(`PermissionError: [WinError 5]`,連 `Get-Acl` 都無權限讀取,疑為前次異常中斷或端點防護鎖定)而在 setup 階段炸出 56 個 ERROR,與程式碼無關(git status 全程乾淨)。以 `uv run pytest --basetemp=<專案內臨時目錄>` 繞過後得到 **183 passed, exit 0**,與 KI-004/S1 基線逐位相同,證實純環境問題。**未修改**該系統目錄(權限層級超出本次授權範圍),僅記錄繞過法供後續 task 需要重跑 pytest 時參考;若該目錄權限問題自行恢復,原生 `uv run pytest` 應可直接綠燈。 | 不阻塞 T0(已用 workaround 取得可信基線數字);後續 task 跑 pytest 若遇同錳訊息,套用同一 `--basetemp` 繞過即可,不代表迴歸 | 記錄,不修復系統目錄 |
 | **T0-S2** | KI-005 §3.3 的幀數比對只寫「唯一自由參數 = frame log 起始錨點」,未留存原始診斷腳本、未寫明「高速平順 tick」篩選口徑與正規化分母。本次 T0 以推定口徑重現(見 §2a)得到方向一致但量值有落差的結果(`corr` 0.618–0.626 vs 文件 0.805;n=239/258 vs 307)。凹口總數(27/34)本身**精確重現**,不受此影響。 | A2-T2 若要逐位重跑幀數比對(而非僅重跑凹口計數),需先確認是否有原始診斷腳本可重建,否則本推定口徑即為權威 | 記錄為已知落差,不在 T0 範圍內解決(T0 僅需可重現的 RED 證據,凹口計數已達標) |
 | **T0-S3** | T0 執行期間,`git status` 出現與本計畫無關的異動:`docs/known_issue/KI-006-m14-sample-no-counterstrafe.md`(改動)+ 新資料夾 `docs/known_issue/KI-006-C/`(8 個未追蹤檔案)。T0 開始前已確認 `git status` 乾淨(README/T0 step 1 前提成立時拍照),此為**執行期間由外部併發產生**(非本 session 建立),判斷為另一支平行進行的 KI-006 相關工作。**本次 T0 commit 僅 stage `docs/known_issue/KI-005-A/` 下的檔案,不動、不 stage KI-006-C 的任何內容**。 | 不影響 T0 本身的 DoD(§範圍界定清楚);提醒後續 task 開工前重新確認 `git status` | 保留不動,只精準 stage 本次切片檔案 |
+| **T4-S1** | `src/testharness/fpsTestHarness.ts`(供 `full-drill.spec.ts`/`br-tracking.spec.ts`/`spray-drill.spec.ts` 用)自建一條與 `main.ts` live 單例**完全獨立**的 sim 管線(自己的 `createDataRecorder`/`collectMeta`/`buildExportPayload`,不驅動 rAF、不共用 `recorder`)。一開始以 `harness.feedInput([{type:'mouse',...}])` + `forceExportJSON()` 驗證 FR-A-7 的 e2e 案因此得到 `meta.mouseIntegration === undefined`——不是迴歸,是驗證了**錯的管線**。 | 若照原計畫在 `full-drill.spec.ts` 驗 FR-A-7,需一併佈線 harness(擴大 README §1.4 In-scope 之外的檔案) | 改走 `main.ts` 既有 `__aimDebug` dev-only 縫,多暴露 `recorder` 一個唯讀欄位;於 `input-sampler.spec.ts`(已在 In-scope 的 e2e 觀測管道)新增案直讀 `__aimDebug.recorder.mouseIntegration`,精準驗證「app 佈線層」而不動 harness(見 [Decision Log A-D6](#4-decision-log)) |
 
 ---
 

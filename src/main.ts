@@ -338,9 +338,21 @@ pointerLock.onChange((locked) => {
   topLeftControls.style.display = locked ? 'none' : 'flex';
 });
 
+// KI-005 / A（FR-A-1/7）— tick 窗 mouse 積分的感度 gain：與 collectMeta 的 meta.mouseIntegration
+// 用**同一個 MouseGain 物件**產生（buildCurrentExportPayload 內另算一份，值必然相同），故兩者不可能發散。
+function currentMouseGain() {
+  return resolveMouseGain({
+    sensitivity: settingsPanel.sensitivity,
+    hipFovDeg: settingsPanel.fov,
+    ads: activeWeaponConfig().ads,
+  });
+}
+
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
 // 讀取與序列化只在 click handler 內發生，不進 sim tick 熱路徑。
-const recorder = createDataRecorder({ simHz: SIM_HZ });
+// KI-005 / A（FR-A-7，OQ-A-1「全域開」）：app 佈線層啟用 mouse 積分——opt-in 只保 golden 逐位不變，
+// 不得成為「功能上線但實務未生效」（recordKeyEvents 至今未啟用即是前車之鑑，見 README §2.4 ②）。
+const recorder = createDataRecorder({ simHz: SIM_HZ, mouseIntegration: { gain: currentMouseGain() } });
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(protocolContext?: ProtocolConditionContext): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
@@ -566,7 +578,9 @@ let simLoop = buildSimLoop();
 // 單例,供 Playwright 端到端斷言「事件帶 timeStamp 入 ring → sim 依時序消費」。不影響三迴圈
 // （ADR-2;只讀不寫）;e2e 用法見 tests/e2e/input-sampler.spec.ts + WP-3 manual-verification.md。
 if (import.meta.env.DEV) {
-  (window as unknown as { __aimDebug?: unknown }).__aimDebug = { state: sharedState, pointerLock };
+  // KI-005 / A（FR-A-7）：一併唯讀暴露 recorder，供 e2e 驗證 app 佈線層（非僅 API 層 opt-in）真的
+  // 對正式單例啟用了 mouse 積分——不透過此縫，`recordKeyEvents` 至今未啟用即無法被 e2e 觀測到。
+  (window as unknown as { __aimDebug?: unknown }).__aimDebug = { state: sharedState, pointerLock, recorder };
 }
 
 // WP-10 / T4 — dev-only recoil pattern viewer. Dynamic import keeps the canvas tool out of production.
@@ -755,6 +769,7 @@ async function loadDrillById(drillId: string): Promise<void> {
   resetRunPresentation();
   simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
   cameraController.setAdsConfig(activeWeaponConfig().ads); // WP-24 / T2：新 drill 武器的 ADS 光學。
+  recorder.configureMouseIntegration({ gain: currentMouseGain() }); // KI-005 / A：新 drill 武器的感度 gain（同一批動作）。
   drillRunner.start(activeDrillConfig);
   controls.setSelectedDrill(option.id);
   syncControlsVisibility();

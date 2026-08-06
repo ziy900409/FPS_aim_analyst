@@ -21,6 +21,10 @@ export interface TickRecord {
   aim: { yaw: number; pitch: number };
   keys: KeyName[];
   ads: boolean;
+  /** 本 tick 窗內積分的 yaw 角位移（rad）。缺席 = 未啟用 mouse 積分的匯出（KI-005 / A，FR-A-4）。 */
+  dYaw?: number;
+  /** 本 tick 窗內積分的 pitch 角位移（rad，已含 ±MAX_PITCH 夾角效果）。 */
+  dPitch?: number;
 }
 
 export interface TickRecordInput {
@@ -110,6 +114,11 @@ export class TickArena {
   private readonly pitch: Float64Array;
   private readonly keyMask: Uint8Array;
   private readonly ads: Uint8Array;
+  // KI-005 / A（FR-A-4）：tick 窗積分 mouse delta，preallocated（固定佈局紀律，C-7）。
+  // `hasMouseIntegration` 逐 row 記錄該 tick 是否帶積分（決定 snapshot() 是否輸出 dYaw/dPitch key）。
+  private readonly dYaw: Float64Array;
+  private readonly dPitch: Float64Array;
+  private readonly hasMouseIntegration: Uint8Array;
   private countValue = 0;
   private overflowValue = false;
 
@@ -128,6 +137,9 @@ export class TickArena {
     this.pitch = new Float64Array(capacity);
     this.keyMask = new Uint8Array(capacity);
     this.ads = new Uint8Array(capacity);
+    this.dYaw = new Float64Array(capacity);
+    this.dPitch = new Float64Array(capacity);
+    this.hasMouseIntegration = new Uint8Array(capacity);
   }
 
   get count(): number {
@@ -138,7 +150,7 @@ export class TickArena {
     return this.overflowValue;
   }
 
-  recordTick(record: TickRecordInput): boolean {
+  recordTick(record: TickRecordInput, dYaw?: number, dPitch?: number): boolean {
     return this.recordFields(
       record.t,
       record.vx,
@@ -152,10 +164,12 @@ export class TickArena {
       record.aim.pitch,
       keyMaskFromKeys(record.keys),
       record.ads === true,
+      dYaw,
+      dPitch,
     );
   }
 
-  recordState(t: number, state: TickSourceState): boolean {
+  recordState(t: number, state: TickSourceState, dYaw?: number, dPitch?: number): boolean {
     let tx: number | null = null;
     let ty: number | null = null;
     let tz: number | null = null;
@@ -181,6 +195,8 @@ export class TickArena {
       state.aim.pitch,
       keyMaskFromState(state),
       state.heldAds,
+      dYaw,
+      dPitch,
     );
   }
 
@@ -197,6 +213,8 @@ export class TickArena {
     pitch: number,
     keyMask: number,
     ads: boolean,
+    dYaw?: number,
+    dPitch?: number,
   ): boolean {
     if (this.countValue >= this.capacity) {
       this.overflowValue = true;
@@ -221,6 +239,13 @@ export class TickArena {
     this.pitch[i] = pitch;
     this.keyMask[i] = keyMask;
     this.ads[i] = ads ? 1 : 0;
+    if (dYaw !== undefined && dPitch !== undefined) {
+      this.dYaw[i] = dYaw;
+      this.dPitch[i] = dPitch;
+      this.hasMouseIntegration[i] = 1;
+    } else {
+      this.hasMouseIntegration[i] = 0;
+    }
     this.countValue++;
     return true;
   }
@@ -240,6 +265,7 @@ export class TickArena {
         aim: { yaw: this.yaw[i], pitch: this.pitch[i] },
         keys: keysFromMask(this.keyMask[i]),
         ads: this.ads[i] === 1,
+        ...(this.hasMouseIntegration[i] === 1 ? { dYaw: this.dYaw[i], dPitch: this.dPitch[i] } : {}),
       };
     }
     return { ticks, recorderOverflow: this.overflowValue };

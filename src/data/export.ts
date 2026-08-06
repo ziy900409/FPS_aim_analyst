@@ -64,9 +64,14 @@ export function downloadCSV(payload: ExportPayload, options: DownloadOptions = {
 }
 
 function serializeTicksCSV(ticks: TickRecord[]): string {
-  const rows = [['t', 'vx', 'vz', 'px', 'pz', 'tx', 'ty', 'tz', 'yaw', 'pitch', 'keys', 'ads']];
+  // KI-005 / A（FM-7）：依 payload 是否含 dYaw 決定表頭——缺席時與既有格式逐位相同（NFR-A-2）；
+  // 啟用時所有 tick 皆有此欄（非 some），故只需檢查首列。
+  const hasMouseIntegration = ticks.length > 0 && ticks[0].dYaw !== undefined;
+  const header = ['t', 'vx', 'vz', 'px', 'pz', 'tx', 'ty', 'tz', 'yaw', 'pitch', 'keys', 'ads'];
+  if (hasMouseIntegration) header.push('dYaw', 'dPitch');
+  const rows = [header];
   for (const tick of ticks) {
-    rows.push([
+    const row = [
       formatNumber(tick.t),
       formatNumber(tick.vx),
       formatNumber(tick.vz),
@@ -79,7 +84,11 @@ function serializeTicksCSV(ticks: TickRecord[]): string {
       formatNumber(tick.aim.pitch),
       tick.keys.join('|'),
       formatBoolean(tick.ads),
-    ]);
+    ];
+    if (hasMouseIntegration) {
+      row.push(formatNumber(tick.dYaw ?? 0), formatNumber(tick.dPitch ?? 0));
+    }
+    rows.push(row);
   }
   return rowsToCSV(rows);
 }
@@ -301,6 +310,8 @@ function assertFinitePayload(payload: ExportPayload): void {
     formatOptionalNumber(tick.tz);
     formatNumber(tick.aim.yaw);
     formatNumber(tick.aim.pitch);
+    if (tick.dYaw !== undefined) formatNumber(tick.dYaw);
+    if (tick.dPitch !== undefined) formatNumber(tick.dPitch);
   }
   for (const event of payload.events) {
     formatNumber(event.t);

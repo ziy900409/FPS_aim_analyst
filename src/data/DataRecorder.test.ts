@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { createSharedState } from '../state/SharedState.ts';
 import { createDataRecorder } from './DataRecorder.ts';
 import { capacityForDrill } from './RingBuffer.ts';
+import { resolveMouseGain } from '../input/mouseGain.ts';
+
+const HIP_GAIN = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75 });
+const ADS_GAIN = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75, ads: { fovDeg: 40, sensitivityRatio: 1 } });
 
 describe('DataRecorder tick arena', () => {
   it('estimates capacity from drill duration and sim rate with spare ticks', () => {
@@ -167,5 +171,97 @@ describe('DataRecorder tick arena', () => {
       { type: 'key', code: 'A', down: true, t: 5 },
       { type: 'key', code: 'A', down: false, t: 20 },
     ]);
+  });
+});
+
+describe('DataRecorder mouse 積分 — KI-005 / A（FR-A-1/4）', () => {
+  it('mouseIntegration 預設未配置：不出現 dYaw/dPitch key（NFR-A-2）', () => {
+    const recorder = createDataRecorder({ capacity: 2 });
+    expect(recorder.mouseIntegration).toBeUndefined();
+
+    recorder.accumulateMouse(5, -2, false); // 未配置時為 no-op（防呆）
+    recorder.recordTick({ t: 1, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+
+    const tick = recorder.snapshot().ticks[0];
+    expect(Object.keys(tick)).not.toContain('dYaw');
+    expect(Object.keys(tick)).not.toContain('dPitch');
+  });
+
+  it('累加多筆 mouse delta 後寫入 tick，寫入後立即歸零（下一 tick 不殘留）', () => {
+    const recorder = createDataRecorder({ capacity: 2, mouseIntegration: { gain: HIP_GAIN } });
+
+    recorder.accumulateMouse(3, 1, false);
+    recorder.accumulateMouse(-1, 2, false);
+    recorder.recordTick({ t: 1, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+    recorder.recordTick({ t: 2, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] }); // 無新 mouse delta
+
+    const [first, second] = recorder.snapshot().ticks;
+    expect(first.dYaw).toBeCloseTo(-(3 + -1) * HIP_GAIN.hipStep, 15);
+    expect(first.dPitch).toBeCloseTo(-(1 + 2) * HIP_GAIN.hipStep, 15);
+    expect(second.dYaw).toBe(0); // 歸零後、無新輸入 → 0（非缺席，仍是 number key）
+    expect(second.dPitch).toBe(0);
+  });
+
+  it('ads=true 時使用 adsStep，false 時使用 hipStep', () => {
+    const recorder = createDataRecorder({
+      capacity: 2,
+      mouseIntegration: { gain: { hipStep: HIP_GAIN.hipStep, adsStep: ADS_GAIN.adsStep } },
+    });
+
+    recorder.accumulateMouse(4, 0, true);
+    recorder.recordTick({ t: 1, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+
+    expect(recorder.snapshot().ticks[0].dYaw).toBeCloseTo(-4 * ADS_GAIN.adsStep, 15);
+  });
+
+  it('recordTickFromState 走相同的累加/歸零路徑', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 2, mouseIntegration: { gain: HIP_GAIN } });
+
+    recorder.accumulateMouse(2, 0, false);
+    recorder.recordTickFromState(1, state);
+    recorder.recordTickFromState(2, state);
+
+    const [first, second] = recorder.snapshot().ticks;
+    expect(first.dYaw).toBeCloseTo(-2 * HIP_GAIN.hipStep, 15);
+    expect(second.dYaw).toBe(0);
+  });
+
+  it('configureMouseIntegration 可在執行期切換啟用/停用', () => {
+    const recorder = createDataRecorder({ capacity: 2 });
+    recorder.accumulateMouse(9, 9, false); // 尚未配置 → no-op
+    recorder.recordTick({ t: 1, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+    expect(Object.keys(recorder.snapshot().ticks[0])).not.toContain('dYaw');
+
+    recorder.configureMouseIntegration({ gain: HIP_GAIN });
+    expect(recorder.mouseIntegration).toEqual({ gain: HIP_GAIN });
+    recorder.accumulateMouse(1, 0, false);
+    recorder.recordTick({ t: 2, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+    expect(recorder.snapshot().ticks[1].dYaw).toBeCloseTo(-1 * HIP_GAIN.hipStep, 15);
+  });
+
+  it('overflow 時累加/寫入呼叫仍安全（不拋錯），且 overflow 旗標正確浮現（C-7 / arena 滿）', () => {
+    const recorder = createDataRecorder({ capacity: 1, mouseIntegration: { gain: HIP_GAIN } });
+
+    recorder.accumulateMouse(5, 0, false);
+    recorder.recordTick({ t: 1, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] }); // 寫入 slot 0，累加器歸零
+    expect(recorder.recorderOverflow).toBe(false);
+
+    recorder.accumulateMouse(7, 0, false);
+    // arena 已滿：consumeMouseAccum 在呼叫 ticks.recordTick 之前即已把累加器歸零（見 DataRecorder.recordTick
+    // 實作），與 arena 本身是否接受寫入無關——overflow 之後每次呼叫恆重新歸零，不會累積成長。
+    expect(() => recorder.recordTick({ t: 2, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] })).not.toThrow();
+    expect(recorder.recorderOverflow).toBe(true);
+    expect(recorder.snapshot().ticks).toHaveLength(1); // 第二筆被拒收，最舊的一筆保留（GD-2）
+  });
+
+  it('reset() 重置累加器與內部 AimIntegrator（drill restart）', () => {
+    const recorder = createDataRecorder({ capacity: 2, mouseIntegration: { gain: HIP_GAIN } });
+
+    recorder.accumulateMouse(6, 0, false);
+    recorder.reset();
+    recorder.recordTick({ t: 1, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+
+    expect(recorder.snapshot().ticks[0].dYaw).toBe(0); // 累加器已隨 reset 歸零
   });
 });

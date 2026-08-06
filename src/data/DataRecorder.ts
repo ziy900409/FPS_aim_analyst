@@ -5,6 +5,7 @@ import {
   type TickRecordInput,
   type TickSourceState,
 } from './RingBuffer.ts';
+import { createAimIntegrator, type MouseGain } from '../input/mouseGain.ts';
 
 export type DrillEvent =
   | {
@@ -57,6 +58,11 @@ export interface DataRecorderSnapshot {
   recorderOverflow: boolean;
 }
 
+/** KI-005 / A（FR-A-1）：tick 窗積分 mouse delta 所需的感度 gain（來源 = `resolveMouseGain`）。 */
+export interface MouseIntegrationConfig {
+  gain: MouseGain;
+}
+
 export interface DataRecorder {
   readonly capacity: number;
   readonly tickCount: number;
@@ -68,6 +74,18 @@ export interface DataRecorder {
    * 故 `applyInput`/`simStep` 簽章不變；停用時 `applyInput` 完全不配置 key 事件物件（GC 紀律 §4）。
    */
   readonly recordKeyEvents: boolean;
+  /** KI-005 / A（FR-A-1）：未啟用時為 `undefined`；`applyInput` 以此判定是否進入 mouse 分支。 */
+  readonly mouseIntegration?: MouseIntegrationConfig;
+  /**
+   * KI-005 / A：drill 開始時由 main.ts 以當前 settings/weapon 重新佈線。SettingsPanel 於 Pointer
+   * Lock 鎖定中整組隱藏（KI-003）⇒ drill 內 sensitivity/FOV 不可能變動，單一快照即足夠。
+   */
+  configureMouseIntegration(config: MouseIntegrationConfig | undefined): void;
+  /**
+   * KI-005 / A：`applyInput` 專用，依事件自身順序累加進當前 tick 的累加器。`ads` 取**事件時刻**的
+   * `state.heldAds`（ads 事件與 mouse 事件在同一 consume 迴圈內依 timeStamp 排序）。
+   */
+  accumulateMouse(dx: number, dy: number, ads: boolean): void;
   recordTick(record: TickRecordInput): void;
   recordTickFromState(t: number, state: TickSourceState): void;
   recordEvent(event: DrillEvent): void;
@@ -82,6 +100,8 @@ export interface DataRecorderOptions {
   capacity?: number;
   /** WP-29 / T3：啟用 additive `key` 事件記錄（預設 `false`；見 `DataRecorder.recordKeyEvents`）。 */
   recordKeyEvents?: boolean;
+  /** KI-005 / A（FR-A-1）：啟用 tick 窗 mouse 積分；省略 = 關閉 ⇒ 匯出逐位不變（NFR-A-2）。 */
+  mouseIntegration?: MouseIntegrationConfig;
 }
 
 export function createDataRecorder(options: DataRecorderOptions = {}): DataRecorder {
@@ -91,10 +111,27 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
   const events: DrillEvent[] = [];
   let fireCount = 0;
   let hitCount = 0;
+  let mouseIntegration = options.mouseIntegration;
+  // KI-005 / A：積分器狀態放本閉包（data 層），不進 SharedState（README §2.7）；累加器在寫入
+  // arena 後歸零，含 overflow 路徑（見 consumeMouseAccum）。
+  const aimIntegrator = createAimIntegrator();
+  let dYawAccum = 0;
+  let dPitchAccum = 0;
+
+  function consumeMouseAccum(): { dYaw: number; dPitch: number } | undefined {
+    if (mouseIntegration === undefined) return undefined;
+    const out = { dYaw: dYawAccum, dPitch: dPitchAccum };
+    dYawAccum = 0;
+    dPitchAccum = 0;
+    return out;
+  }
 
   return {
     capacity,
     recordKeyEvents,
+    get mouseIntegration(): MouseIntegrationConfig | undefined {
+      return mouseIntegration;
+    },
     get tickCount(): number {
       return ticks.count;
     },
@@ -107,11 +144,23 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
     get recorderOverflow(): boolean {
       return ticks.recorderOverflow;
     },
+    configureMouseIntegration(config: MouseIntegrationConfig | undefined): void {
+      mouseIntegration = config;
+    },
+    accumulateMouse(dx: number, dy: number, ads: boolean): void {
+      if (mouseIntegration === undefined) return;
+      const step = ads ? mouseIntegration.gain.adsStep : mouseIntegration.gain.hipStep;
+      const delta = aimIntegrator.applyDelta(dx, dy, step);
+      dYawAccum += delta.dYaw;
+      dPitchAccum += delta.dPitch;
+    },
     recordTick(record: TickRecordInput): void {
-      ticks.recordTick(record);
+      const m = consumeMouseAccum();
+      ticks.recordTick(record, m?.dYaw, m?.dPitch);
     },
     recordTickFromState(t: number, state: TickSourceState): void {
-      ticks.recordState(t, state);
+      const m = consumeMouseAccum();
+      ticks.recordState(t, state, m?.dYaw, m?.dPitch);
     },
     recordEvent(event: DrillEvent): void {
       events.push(event);
@@ -135,6 +184,9 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
       events.length = 0;
       fireCount = 0;
       hitCount = 0;
+      aimIntegrator.reset();
+      dYawAccum = 0;
+      dPitchAccum = 0;
     },
   };
 }

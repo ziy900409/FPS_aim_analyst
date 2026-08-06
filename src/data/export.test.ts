@@ -287,3 +287,65 @@ describe('data export — WP-29 / T3 additive key 事件', () => {
     expect(up[5]).toBe('false');
   });
 });
+
+describe('data export — KI-005 / A additive dYaw/dPitch（FM-7 / NFR-A-2）', () => {
+  const mouseSnapshot: DataRecorderSnapshot = {
+    ticks: [
+      {
+        t: 10,
+        vx: 0,
+        vz: 0,
+        px: 0,
+        pz: 0,
+        tx: null,
+        ty: null,
+        tz: null,
+        aim: { yaw: 0.1, pitch: 0 },
+        keys: [],
+        ads: false,
+        dYaw: 0.01,
+        dPitch: -0.002,
+      },
+      {
+        t: 17.8125,
+        vx: 0,
+        vz: 0,
+        px: 0,
+        pz: 0,
+        tx: null,
+        ty: null,
+        tz: null,
+        aim: { yaw: 0.1, pitch: 0 },
+        keys: [],
+        ads: false,
+        dYaw: 0,
+        dPitch: 0,
+      },
+    ],
+    events: [],
+    recorderOverflow: false,
+  };
+
+  it('CSV 在 pitch 之後、keys 之前追加 dYaw/dPitch 兩欄（依 payload 是否含此欄決定表頭）', () => {
+    const files = serializeCSV(buildExportPayload(meta, mouseSnapshot));
+    const lines = files[0].content.trimEnd().split('\n');
+
+    expect(lines[0]).toBe('t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys,ads,dYaw,dPitch');
+    expect(lines[1]).toBe('10,0,0,0,0,,,,0.1,0,,false,0.01,-0.002');
+    expect(lines[2]).toBe('17.8125,0,0,0,0,,,,0.1,0,,false,0,0');
+  });
+
+  it('JSON 逐位保留 dYaw/dPitch', () => {
+    const parsed = JSON.parse(serializeJSON(buildExportPayload(meta, mouseSnapshot))) as ExportPayload;
+
+    expect(parsed.ticks[0]).toMatchObject({ dYaw: 0.01, dPitch: -0.002 });
+    expect(parsed.ticks[1]).toMatchObject({ dYaw: 0, dPitch: 0 });
+  });
+
+  it('既有（無 dYaw）snapshot 的 CSV 表頭維持 12 欄，逐位不變（NFR-A-2）', () => {
+    const files = serializeCSV(buildExportPayload(meta, snapshot));
+    const lines = files[0].content.trimEnd().split('\n');
+
+    expect(lines[0]).toBe('t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys,ads');
+  });
+});

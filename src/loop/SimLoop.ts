@@ -58,7 +58,8 @@ const defaultMovement = createMovementController();
  * 輸入套用（handle）：鍵事件更新 A/D **held 狀態**（`MovementController.step` 每 tick 讀 held 積分
  * velocity + stopped gate）。fire down/up 只維護 `heldFire` 與首發排程時間；實際產彈由
  * `scheduleFire` 依 weapon cycletime 在 tick 內累加產生。ads down/up 只翻 `heldAds`（WP-24 / T1，
- * render/data 層消費，不進 sim）。mouse 事件仍忽略。
+ * render/data 層消費，不進 sim）。mouse 事件（KI-005 / A，FR-A-1）只在 `recorder.mouseIntegration`
+ * 啟用時依 `state.heldAds` 積分進 recorder 累加器——**只寫 recorder，不寫 `state`**（NFR-A-1）。
  *
  * 依時序、無遺漏的排序消費與排空責任已抽到 [`consume`](../input/consume.ts)（T4）；本函式只負責
  * 「每個到期事件如何改狀態」，不管排序/分桶/排空。
@@ -90,6 +91,10 @@ function applyInput(
     // **不**觸發 raycast / weapon schedule / 目標演進（GD-16：ADS 不進 sim）；render/data 層再消費。
     state.heldAds = ev.down;
     recorder?.recordEvent({ type: 'ads', down: ev.down, t: ev.t });
+  } else if (ev.type === 'mouse') {
+    // KI-005 / A（FR-A-1）：tick 窗內依事件自身 timeStamp 積分角位移。**只寫 recorder，不寫 state**
+    // —— sim 演進、命中、彈道一律不受影響（NFR-A-1）；未啟用時完全不進此分支（GC 紀律 §4）。
+    if (recorder?.mouseIntegration !== undefined) recorder.accumulateMouse(ev.dx, ev.dy, state.heldAds);
   }
 }
 
