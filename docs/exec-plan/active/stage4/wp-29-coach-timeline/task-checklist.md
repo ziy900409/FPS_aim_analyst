@@ -9,7 +9,7 @@
 | ✅ | **T1** 逐 peek 時間軸 + **交叉驗證閘(含反 vacuous)** + 窗界實作消重 | [T1-peek-timeline.md](T1-peek-timeline.md) | T0 | **Med** |
 | ✅ | **T2** Release-to-Click Sync 族 + 量化精度**明確判定** | [T2-sync-precision.md](T2-sync-precision.md) | T1 | Med |
 | ✅ | **T3(gated)** 使用者 override（非 gate 正常觸發）— commit `dcdafbd`；43/118 pytest + 651 Vitest + 19 Playwright 全綠、`sync-precision.json` 逐位未變。—— 09:39 兩量仍 `sufficient`、未改寫；以 **additive observability / direct key-event evidence** 實作（opt-in `DataRecorder.recordKeyEvents`、`key` 事件、peek `t_release_event`/`release_source`）。見 D-29.8~D-29.11、T3 doc override addendum | [T3-key-events.md](T3-key-events.md) | 使用者 override | Med |
-| ⬜ | **T-exit** 教練報告 v0 + `analysis-peek-timeline.md` 定稿 + 文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1–T2(T3 依判定) | — |
+| ✅ | **T-exit** 教練報告 v0 + `analysis-peek-timeline.md` 定稿 + 文件對帳 —— 一鍵 `coach_report.py` 產單檔自足靜態 HTML(inline CSS/SVG、零外部資源);六量各帶 n/flags/版本/效度層級;`--group-by side|ads|weapon_mode` 三種綠且參數區塊逐位相同;四份 committed 範例 deterministic;research **168 passed**、engine **651 Vitest + 19 Playwright**;`src/` 零 diff。OQ-S4-6 關閉,OQ-S4-10/11/13 依證據維持 open | [T-exit-gate.md](T-exit-gate.md) | T1–T2(T3 依判定) | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 

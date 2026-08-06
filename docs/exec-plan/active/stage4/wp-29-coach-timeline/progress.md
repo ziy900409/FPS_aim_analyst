@@ -13,7 +13,7 @@
 | T1 逐 peek 時間軸 + 交叉驗證 | ✅ | 2026-08-05 | targeted `31 passed` + final metrics/purity `16 passed`;完整 `uv run pytest` **89 passed**;`npm run test:ci` **83 files / 644 Vitest + 19 Playwright passed**;三份 parity ≤1e-9;共享窗界與 t3 leading-ω 對帳完成 |
 | T2 Sync 族 + 精度判定 | ✅ | 2026-08-05 | `sync-v1` 三指標 + flags + 三分支；targeted **35 passed**、完整 research **106 passed**、engine **644 Vitest + 19 Playwright passed**；三 fixture deterministic report 完成 |
 | T3 additive key 事件(gated) | ✅（使用者 override 實作） | 2026-08-05 | **原 gate 判定：skipped**（09:39 兩量皆 `sufficient`，**未變更**）。使用者 override「skipped」→ 以 **additive observability / direct key-event evidence** 實作。commit `dcdafbd`；targeted **43 passed**、full research **118 passed**、engine `tsc` exit 0 / **651 Vitest** / **19 Playwright** 全綠；`sync-precision.json` 逐位未變。見下方 T3 Evidence + D-29.8~D-29.11、S-29.8~S-29.10 |
-| T-exit 教練報告 v0 | ⬜ | — | — |
+| T-exit 教練報告 v0 | ✅ | 2026-08-05 | 一鍵 `coach_report.py` → 單檔自足靜態 HTML;六量各帶 n/flags/版本/效度層級;三種 `--group-by` 綠且參數區塊逐位相同;四份 committed 範例 deterministic;targeted **64 passed**、完整 research **168 passed**、engine **83 files / 651 Vitest + 19 Playwright passed**;`analysis-peek-timeline.md` 定稿、OQ-S4-6 關閉 |
 
 ---
 
@@ -195,6 +195,76 @@ gate：兩個量均有 `n=13 >= 10`，量化 SD `2.255274489021976 ms` 分別小
 
 ---
 
+## T-exit Evidence(2026-08-05)
+
+### 交付:教練報告 v0(`coach-report-v0`)
+
+一道指令 `uv run python src/report/coach_report.py --export <path> [--group-by side|ads|weapon_mode] [--out <dir>]`
+產出**單一自足靜態 HTML**:inline `<style>` + inline `<svg>`,全檔 `http` 出現次數 **0**,
+無 `<script>`/`<link>`/`@import`/`url(`/`src=`(測試逐項斷言)。九個區塊 = drill 摘要 /
+① 時間軸三量 / ② Sync 三量 / ③ 精度判定 / ④ 逐 peek 時間軸 SVG / ⑤ 逐 peek 明細 /
+⑥ flags 計數 / ⑦ 條件分層 / ⑧ 凍結參數與版本 / ⑨ 效度紅線與已知限制。
+
+### 六個指標的 n / flags / 版本 / 效度層級(09:39 主要真實 fixture)
+
+| 指標 | 版本 | 效度層級 | n | 統計 | flags 計數(未入聚合者) |
+|---|---|---|---:|---|---|
+| `counterReactionMs` | `compute-v1` | 已驗證:與結果頁逐量 parity ≤1e-9 | 20 | mean 600.0861250001471 / p50 427.21249999990687 / sd 875.3085613911904 | — |
+| `fireTimingAlignmentMs` | `compute-v1` | 同上 | 20 | mean 152.04599999999627 / p50 126.5 / sd 189.24442747143772 | — |
+| `firstShotHitRate` | `compute-v1` | 同上 | 20(分母 = 全部 visible) | 90 %(18/20) | — |
+| `release_to_fire_ms` | `sync-v1` | 新構念 + pre-registered 精度判定 | 13 | mean 137.80673076935972 / sample SD 46.044857876328535 | `counter_hold_truncated` 3 · `missing_release` 1 · `multiple_counters` 4 · `no_key_transition` 1 |
+| `counter_hold_ms` | `sync-v1` | 同上 | 13 | mean 103.44076923066034 / sample SD 16.480640422417093 | 同上 |
+| `counter_to_fire_ms` | `sync-v1` | 新構念;兩端 sub-tick,本版不判精度 | 13 | mean 144.49269230771236 / sample SD 45.731036307070696 | 同上 |
+
+精度判定逐位沿用 T2 frozen 結果:兩個 tick-quantized 量 `n=13 ≥ 10`,量化 SD
+`2.255274489021976 ms` 均小於樣本 SD 的三分之一 → 兩者皆 **`sufficient`**。報告只
+**顯示**該判定,未重跑、未改寫。
+
+### 三份 fixture 的報告結果
+
+| fixture | peeks | outcome | firstShotHitRate | Sync n(三量) | 判定 |
+|---|---:|---|---:|---:|---|
+| 合成 `synthetic_timeline.json` | 4 | hit 3 / timeout 1 | 75 % | 1 / 1 / 1 | 兩量 `blocked-by-data` |
+| 真實 08:03(零輸入邊界) | 20 | hit 20 | 90 % | 0 / 0 / 0 | 兩量 `blocked-by-data` |
+| 真實 09:39(主要效度樣本) | 20 | hit 20 | 90 % | 13 / 13 / 13 | 兩量 `sufficient` |
+
+**08:03 安全輸出**:三個 Sync 量 `n=0`、`mean`/`sampleSdMs` 皆為 `None`、判定
+`blocked-by-data`,不 crash、不補 0、不吞成 NaN;測試另釘死報告內不得出現 `>NaN<`
+與 `mean 0 · p50 0 · sd 0`(見 S-29.11)。
+
+### 條件分層(三種 `--group-by` 皆 exit 0)
+
+| group-by | 分組 | 逐組 Sync n(`release_to_fire_ms`) | 驗證 |
+|---|---|---|---|
+| `side` | `L` 10 peeks / `R` 10 peeks | 7 + 6 = 13 | 逐組 flags 相加 = drill 全域 flags |
+| `ads` | 僅 `off`(20) | 13 | 真實資料無 ADS-on cell → OQ-S4-11 |
+| `weapon_mode` | 僅 `hitscan`(20) | 13 | projectile cell 只有合成 fixture 有樣本 |
+
+**分層不改參數**:`parameters` / `precisionVerdicts` / `syncMetrics` 三個區塊在分層前後
+物件相等,且渲染後的 `<section id="parameters">` **字串逐位相同**(測試斷言)。
+
+### Gates / scope
+
+- Targeted:`src/report` → **64 passed**(新增 50:報告契約 46 + 層級純度 4)。
+- Research:`uv run pytest -q -p no:cacheprovider` → **168 passed**(T3 期 118 + 新 50)。
+- Engine:`npm run test:ci` → `tsc --noEmit` exit 0、**83 files / 651 Vitest passed**、
+  **19 Playwright passed** —— 與 T3 基線逐數相同,證明本切片 TS 零改動。
+- `git diff -- src/` **空**;`research/fixtures/`、T1 `notebooks/t1/outputs/`、T2
+  `notebooks/t2/outputs/sync-precision.json` 皆零 diff。
+- `algorithms/` 純度維持:寫檔只在 `src/report/coach_report.py` 與
+  `notebooks/t-exit/generate_coach_reports.py`;`build_report`/`render_html` 為純函式,
+  由測試在空 tmp 目錄斷言零檔案產出。C-D1 由既有
+  `modules/kinematics/algorithms/tests/test_purity.py` 覆蓋(未重複實作,見 S-29.12)。
+- **完全未讀 `px`/`pz`**:測試掃描 `coach_report.py` 原始碼確認零出現,D-29.2 界線維持;
+  09:39 `meta.suspect=true` 在報告內明示歸因 KI-004 且聲明不消費位置欄。
+- 未引用任何 ε 產物(M14 ② 撤回);報告不含 ε/phase/SPARC/xcorr/Fitts 任何數值。
+- WP-29 worktree CodeGraph 仍未初始化(本 session 再次確認 `codegraph_explore` 回
+  "isn't indexed"),依 AGENTS.md 停用並改用內建工具 + graphify;新模組 blast radius 為
+  research report 層的 local additive slice,唯一跨檔改動是 `timeline.py` 的
+  behaviour-preserving 公開化(D-29.12)。
+
+---
+
 ## Decision Log
 
 > 格式沿用 WP-28:`D-29.n | 決策 | 理由(含 Alternatives Considered) | 證據`。跨 WP/跨文件者改寫 [DECISIONS.md](../../../DECISIONS.md)。
@@ -212,6 +282,10 @@ gate：兩個量均有 `n=13 >= 10`，量化 SD `2.255274489021976 ms` 分別小
 | D-29.8 | **使用者 gate override**：在 09:39 兩個 precision verdict 皆 `sufficient`（D-29.7 判 skipped）下，使用者於 2026-08-05 明確要求仍實作 T3，定位改為 **additive observability / direct key-event evidence**，**非**修復已證足夠的量化精度。**不重跑/不改寫 T2 verdict（維持 `sufficient`）、不調整 `SyncParams`、不升 `sync-v1` 版**；frozen `compute-v1`/`timeline-v1`/`sync-v1`/`seg-v1` 全數維持。此 override 使 T3 doc 的硬性前提「相依 = T2 判定 insufficient」失效——見 S-29.8 與 T3 doc override addendum | 原 gate 邏輯正確且不被竄改（`sync-precision.json` 逐位未變、`t3Gate.status` 仍 `skipped`）；override 的研究理由 = 讓「鬆原方向鍵」的釋放時刻有 **input-timestamp（sub-tick）直接證據**，補足 tick-derived release 的 ±1 tick 量化，供未來教練報告在**有 key 事件的新錄製**上更精細標註（本 slice 不重錄 fixture）。Alternatives Considered:①遵原 gate 標 skipped 不做（拒絕:使用者明確 override）；②改寫 T2 為 insufficient 以「正常觸發」T3（拒絕:違事實、竄改凍結 verdict）；③升 `sync-v2` 把 key-event release 併入既有指標（拒絕:破壞 pre-registration 與 C-D4，且非本 override 意圖） | `test_sync_fixture.py` 仍綠（n=13/sufficient/`skipped` 未變）；本頁 T2 Evidence 未改 |
 | D-29.9 | **key 事件記錄採 opt-in、預設 OFF**：`DataRecorder` 新增 optional `recordKeyEvents`（預設 `false`）；`applyInput` 僅在 `recorder?.recordKeyEvents` 為真時於 A/D 分支並列 `counter` 寫入 `key` 事件。既有所有 recorder 皆未帶此旗標 → **零既有測試/fixture/golden/決定性契約變動**（byte-for-byte） | 無條件記錄會讓 `src/loop/SimLoop.test.ts` 既有「整份 events 陣列」斷言（含 KeyA 輸入）新增 key 事件而破裂（S-29.10）。opt-in default-off 完全不動任何既有基準，符合 incremental-implementation 的 Safe Defaults / Feature Flag 紀律，並最大化尊重 override 的「既有決定性測試零修改全綠」硬要求。偏離 T3 doc「並列 counter 無條件寫入」的文字——記於 override addendum。Alternatives Considered:①無條件記錄 + 更新 `SimLoop.test.ts` 整份陣列字面（拒絕:動既有測試,雖有 `ads` 前例但 override 要求零改）；②在 `recordEvent` 內吞 key（拒絕:hot-path 仍配置事件物件,違 GC 紀律 §4）。旗標檢查在 `applyInput`，停用時零配置 | `applyInput`/`simStep` 簽章零變更（旗標讀自 recorder，不新增位置參數）；生產啟用 = 傳入 `recordKeyEvents:true` 的 recorder（本 slice 不接線，記 OQ-S4-13） |
 | D-29.10 | **peek.py 以 additive 欄位承載 key-event release，不動 frozen `t_release`/`flags`**：新增 `PeekWindow.t_release_event`（input timeStamp，sub-tick，缺 key 事件 → `None`）與 `release_source`（`"key_event"`/`"tick_keys"`）。既有 `t_release`（tick-derived，`timeline-v1`）語意逐位不變；**不新增任何 flag** 到 `flags` tuple | T3 doc 原文要「以 flag 區分兩條路徑（release_from_key_event/release_from_tick_keys）」，但 `sync-v1` 聚合規則 = 整列零 flags 才入 `n`；若把來源塞進 `flags`，09:39 全 20 列都會帶新 flag → `n` 由 13→0，破壞 frozen T2 verdict 與 `test_sync_fixture.py`（S-29.9）。改用**獨立欄位** `release_source` 表達兩條路徑，達成「可辨識」而不污染凍結旗標詞彙。`sync.py` 完全不消費新欄位 → `release_to_fire_ms` 仍 = `t_first_shot − t_release`（tick-derived），`sync-v1` byte-for-byte 不變。Alternatives Considered:①把 `t_release` 改優先取 key 事件（拒絕:就地重定義 `timeline-v1` 且改 `sync-v1` 數值,違凍結）；②新增 flags（拒絕:破壞 sync-v1 分母,見 S-29.9） | `timeline_parity_payload` 只序列化具名欄位（非 `asdict(peek)`）→ timeline parity JSON 未變；`generate_sync_precision_report` 只讀 `sync_metrics` 輸出 → `sync-precision.json` 未變 |
+| D-29.12 | **把逐 peek 首發命中指標公開為 `timeline.first_shot_hits`**,`_first_shot_hit_count` 改為其 `sum()`;報告的分層首發命中率一律走此單一實作 | 分層報告需要「該組的首發命中數」,但 `firstShotHitRate` 的命中判定(相容首發選取 + `hit`/`shotSeq` 兩條命中路徑)是 frozen `compute-v1` 語意。在 report 層自行重算等於替既有構念寫第二個定義,直接違反 C-D4;把同一段邏輯公開成逐 peek 布林則是 behaviour-preserving 的重構,權威仍只有一處。Alternatives Considered:①報告不顯示逐組首發命中率(拒絕:分層失去最重要的教練面指標);②在 `coach_report.py` 複製判定邏輯(拒絕:C-D4 第二定義);③把 `TimelineMetrics` 加欄位(拒絕:改 frozen dataclass 面,parity payload 要跟著動) | 重構後 `src/modules/metrics` **40 passed**、三份 timeline parity JSON 逐位未變、`timeline-parity.test.ts` 綠;`firstShotHitRate` 09:39 仍為 90、08:03 仍為 90 |
+| D-29.13 | **pre-registered 精度判定維持 drill 層級,`--group-by` 不逐組重跑** | `sync-v1` 的 `min_samples=10` 與 1/3 門檻是對「一次 drill 的樣本」pre-register 的;逐組重判等於在看過資料後把一個判定拆成 N 個(09:39 分 side 後每組 n=7/6,全數會掉進 `blocked-by-data`),既是事後多重比較,也會讓同一份資料因分層方式不同而出現互相矛盾的 verdict。Alternatives Considered:①逐組重跑 `evaluate_release_precision`(拒絕:上述);②逐組顯示 drill 層 verdict(拒絕:會讓讀者以為該組已達判準) | 分層報告逐組只輸出 `n`/統計/flags;`precisionVerdicts` 區塊在分層前後物件相等,渲染後 `<section id="parameters">` 逐位相同 |
+| D-29.14 | **committed 範例報告取四份**:合成、08:03、09:39,再加 09:39 `--group-by side` | T-exit 文件只要求「合成 + 真實各一份」,但 08:03 的零輸入輸出正是 DoD ④「不 crash、不補 0」唯一能**人工檢核**的載體,而分層版是條件分層唯一的靜態證據;四份合計 ~88 KB,且由 deterministic 測試釘死,腐化會在閘上變紅。Alternatives Considered:①只留兩份(拒絕:零輸入與分層退化成只有測試碼可證);②連三種分層都 commit(拒絕:ads/weapon_mode 在真實資料上退化成單組,資訊量重複) | `test_committed_example_reports_match_a_fresh_run` 逐檔 byte 比對;`notebooks/t-exit/generate_coach_reports.py` 為唯一產生器 |
+| D-29.15 | **空聚合在報告上顯示為「—」而非 `compute-v1` 的 `{mean:0,p50:0,sd:0}`**;模型層仍逐位保留該零值 | frozen `stat()` 對空集合回傳零是對的(TS 逐位一致,不得改),但把「mean 0」印在教練眼前、旁邊只有一個小小的 `n 0`,正是 C-D3 要防的「會說錯話的指標」。分離「模型保真」與「呈現不誤導」可兩者兼得。Alternatives Considered:①原樣印 0(拒絕:誤導);②改 `stat()` 回傳 `None`(拒絕:破壞 frozen `compute-v1` 與 parity) | 08:03 報告的兩個時間軸量顯示「—」+ `n 0`;測試斷言 `"mean 0 · p50 0 · sd 0" not in html`;parity JSON 未變 |
 | D-29.11 | **key 事件 JSON 欄位 = `code`（canonical `A`/`D`），CSV/loader 沿用既有 `key`/`down` 欄不新增欄**：`DrillEvent` variant = `{ type:'key'; code:string; down:boolean; t:number }`（依 T3 doc 契約）；`applyInput` 由 `KeyD`/`KeyA` 映射為 canonical `D`/`A`（對齊 `ticks[].keys`，不引入第二套鍵名）。CSV events 列以 `key` 欄承載 `code`、`down` 欄承載 `down`；Python loader 把 JSON `code` 映入既有 `key` DataFrame 欄，`EVENT_COLUMNS` 不變 | T3 doc「以不新增欄為優先」。`EVENT_COLUMNS` 不變 → `test_peek.py`/`test_sync.py` 的 `reindex(columns=EVENT_COLUMNS)` 不受影響。Alternatives Considered:①新增 `code` CSV/loader 欄（拒絕:違「不新增欄為優先」且動 `EVENT_COLUMNS` 面）；②JSON 欄改名 `key`（拒絕:偏離 T3 doc 契約 `code`） | schema.md 已補 `key` 事件表 + CSV 對帳；peek.py 依 `type=='key'` 過濾後讀 `key` 欄,與 counter 無碰撞 |
 
 ---
@@ -231,6 +305,10 @@ gate：兩個量均有 `n=13 >= 10`，量化 SD `2.255274489021976 ms` 分別小
 | S-29.8 | T3 doc 的硬性前提「相依 = T2 判定 `insufficient`（唯一觸發條件）」與使用者 override 直接矛盾——實際 T2 = `sufficient`，且 override 明令不得改寫為 insufficient | 照字面 T3 不該展開；但使用者明確 override | 依 override 指示先誠實化狀態：T3 doc 加 override addendum，把 T3 重定位為 additive observability（非 gate 正常觸發），Steps 中「重跑 T2 判定 / 以 flag 改 `t_release`」被 superseded（見 D-29.8/D-29.10）；progress 明記 override 非 precision 觸發 |
 | S-29.9 | 若照 T3 doc 把兩條 release 路徑塞進 `flags`（`release_from_*`），`sync-v1` 的「整列零 flags 才入 `n`」規則會把 09:39 全部列排除 → `n` 13→0，破壞 frozen T2 verdict 與 `test_sync_fixture.py` | 直接以 flag 表達來源會污染凍結聚合分母、竄改已凍結證據 | 改用獨立欄位 `PeekWindow.release_source`（`key_event`/`tick_keys`）＋ `t_release_event`，不動 `flags`/`t_release`；`sync.py` 不消費新欄位 → `sync-v1` 逐位不變（D-29.10） |
 | S-29.10 | 無條件記錄 key 事件會讓 `src/loop/SimLoop.test.ts` 既有「整份 events 陣列」斷言（該 test 於 t=101 推 KeyA）新增 key 事件而破裂，與 override「既有決定性測試零修改全綠」衝突 | 需在「無條件記錄（有 `ads` 前例）」與「零動既有測試」間取捨 | 採 opt-in default-off（D-29.9）：既有 recorder 不帶旗標 → 完全不發 key 事件 → `SimLoop.test.ts`、determinism 契約、golden、真實/合成 fixture 全數 byte-for-byte 不變；新行為由新測試以 `recordKeyEvents:true` 覆蓋 |
+| S-29.11 | 08:03 報告首版把 frozen `compute-v1` 空聚合的 `{mean:0,p50:0,sd:0}` 原樣印出,和旁邊的 `n=0` 併排後讀起來像「急停反應 0 ms」 | 這是**呈現層**的誤導,不是資料錯誤;但正是 C-D3 紅線要擋的那種「會說錯話的指標」 | 以 D-29.15 分離模型與呈現:模型逐位保留零值供 parity,報告在 `n=0` 時顯示「—」;測試釘死 `mean 0 · p50 0 · sd 0` 不得出現在 HTML |
+| S-29.12 | 新寫的 report 層純度測試與既有 `modules/kinematics/algorithms/tests/test_purity.py::test_research_python_has_no_typescript_dependencies` 重複,且該既有測試以 AST 掃描**所有** research `.py` 的字串常數、禁止任何 TS 副檔名字面 —— `coach_report.py` 的 docstring 與報告表格寫了引擎 compute 模組的完整檔名,直接把既有閘掃紅 | 若照抄一份新的 C-D1 測試,等於同一條硬約束有兩個實作(C-D4 的同型問題),且真正的違規沒被修掉 | 刪掉重複測試、改在檔案 docstring 指回既有閘;`coach_report.py` 兩處字串改寫為「引擎 src/metrics 的 TS 權威實作」,既有閘恢復綠。**額外收穫**:證明既有 C-D1 閘是活的,不是裝飾 |
+| S-29.13 | 進場時 branch HEAD 為 `58ab62e`(T3 的兩個 commit)而非交辦文字假設的 `1d46023`,且交辦要求「T3 維持 skipped」與 repo 事實(T3 已於使用者 override 下實作並標 ✅)直接衝突 | 若照字面把 T-exit 文件寫成「T3 skipped」,會讓帳本與 git history 說相反的話,破壞可稽核性 | 依證據落帳:T-exit **不做任何 T3 工作**(未碰 gate、未改 `DataRecorder`、未改寫 T2 verdict),但文件一律記錄真實狀態「原 gate 判定 skipped → 使用者 override 實作完成」;衝突本身記於此並於回報中明示 |
+| S-29.14 | T-exit 文件的已知限制清單仍寫「單一真實樣本且零 strafe」,該描述已被 09:39 fixture 推翻 | 若原樣寫入定稿文件,會把過期事實凍進 `timeline-v1` 契約 | 定稿改寫為「兩份真實 fixture,分工為零輸入邊界(08:03)與主要效度樣本(09:39)」,並明記先前說法已被推翻;限制數由 3 補到 5(補上「schema v2 無 kill/timeout 事件故 outcome 由 fire/hit 推導」與「inferred fallback 未驗證」) |
 
 ---
 
@@ -240,8 +318,47 @@ gate：兩個量均有 `n=13 >= 10`，量化 SD `2.255274489021976 ms` 分別小
 |---|---|---|---|---|
 | ~~OQ-S4-12~~ | ~~缺「含真實 A/D strafe」的 counter-strafe 匯出~~ | ✅ **關閉(2026-08-05)**:09:39 已補錄並進 `research/fixtures/exports/`(21.27s、`P001`、PII-like 掃描無命中) | 使用者 | 2026-08-05 |
 | ~~OQ-S4-9~~ | ~~research presentation 窗界切片三份實作 + t3 leading-ω 污染~~ | ✅ **關閉(2026-08-05,T1)**:`build_peek_windows` 單一實作；三 fixture tick indices 相同；pipeline summary 不漂移；t3 non-finite flags 21→0 | WP-29 | 2026-08-05 |
-| OQ-S4-10 | `t_release` 無 counter 事件時的 fallback 是否可跨 peek 比較 | 🟡 open;先落 fallback + `release_inferred_no_counter` flag,聚合預設排除 | 研究者 | WP-29 T-exit |
-| OQ-S4-11 | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan → 條件分層無真實對照 | 🟡 open;`--group-by` 仍實作,以合成 fixture 驗證 | 研究者 | WP-29 T-exit |
-| OQ-S4-6 | 教練報告載體(既有) | 🟡 open;本 WP T-exit 落靜態單檔 HTML 後關閉 | 使用者 | WP-29 T-exit |
-| OQ-S4-13 | T3 key 事件記錄採 opt-in default-off（D-29.9），本 slice 未接生產（app `createDataRecorder` 未傳 `recordKeyEvents:true`），故現有匯出流程仍不發 key 事件 | 🟡 open;生產啟用需一行 app 接線 + 重錄一份帶 key 事件的 fixture 才有真實 sub-tick release 證據。本 override slice 明令不重錄 fixture，故留待後續 | 使用者 / 研究者 | WP-29 T-exit 或後續 |
-| (外部) | KI-004 修法落地(K-1 雙域 / K-2 M14 ② 撤回 / K-3 自由位移已拍板) | 🟡 待 S1 落地;**不阻塞 WP-29**,阻塞 WP-30/31 | 使用者 / 研究者 | WP-30 T0 前 |
+| OQ-S4-10 | `t_release` 無 counter 事件時的 fallback 是否可跨 peek 比較 | 🟡 **維持 open(T-exit 已依證據複核)**:兩份真實 fixture 的 `release_inferred_no_counter` 樣本數為 **0**(09:39 有 release 的 peek 都有 counter;08:03 兩者皆無),故沒有任何真實樣本可驗證跨 peek 可比性。**沒有充分證據 → 不假裝關閉**;fallback + flag 保留,聚合**預設排除不變** | 研究者 | 有 inferred 樣本的真實錄製後 |
+| OQ-S4-11 | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan → 條件分層無真實對照 | 🟡 **維持 open**:三種 `--group-by` 已實作並由測試釘死;實測 09:39 `ads` → 只有 `off` 一組、`weapon_mode` → 只有 `hitscan` 一組,projectile cell 僅合成 fixture 有樣本。仍缺 ADS-on / projectile 真實對照 | 研究者 | WP-30 或補錄後 |
+| ~~OQ-S4-6~~ | ~~教練報告載體(既有)~~ | ✅ **關閉(2026-08-05,T-exit)**:`coach_report.py` 一鍵產出單檔自足靜態 HTML(inline CSS + inline SVG、零外部資源、可直接寄送),四份 committed 範例 deterministic。升級為互動式的觸發條件(教練需互動篩選)未達 | 使用者 | 2026-08-05 |
+| OQ-S4-13 | T3 key 事件記錄採 opt-in default-off（D-29.9），本 slice 未接生產（app `createDataRecorder` 未傳 `recordKeyEvents:true`），故現有匯出流程仍不發 key 事件 | 🟡 **維持 open**;生產啟用需一行 app 接線 + 重錄一份帶 key 事件的 fixture 才有真實 sub-tick release 證據。T-exit 已把此缺口做成**可觀測**:報告的「release 來源」欄在兩份真實 fixture 上皆顯示 `tick_keys 20`,一旦生產接線即可直接在報告上看出差異 | 使用者 / 研究者 | 後續(不阻塞 WP-29 收斂) |
+| (外部) | KI-004 修法落地(K-1 雙域 / K-2 M14 ② 撤回 / K-3 自由位移已拍板) | 🟡 待 S1 落地(計畫已於 main `8e6e442` 落 `docs/known_issue/KI-004-S1/`);**不阻塞 WP-29**,阻塞 WP-30/31 | 使用者 / 研究者 | WP-30 T0 前 |
+---
+
+## Outcomes & Retrospective(WP-29 收斂,2026-08-05)
+
+### 交付了什麼
+
+教練拿到的第一層可用產物 = **一道指令 → 一個可寄送的 HTML 檔**,裡面六個數字每一個都
+自帶「n / flags / 版本 / 為什麼可以相信它」。這是 stage4 第一次把「指標」變成「可以拿給
+人看的東西」,也是 WP-30/31 疊加報告 v1/v2 與 WP-32 晉升清單的骨架。
+
+| 產出 | 落點 |
+|---|---|
+| `timeline-v1` 窗界 + 五錨點 + outcome + 封閉 flags 詞彙表 | `metrics/algorithms/peek.py` · [analysis-peek-timeline.md](../../../../operational/analysis-peek-timeline.md) |
+| `compute-v1` 逐量交叉驗證閘(≤1e-9,含反 vacuous) | `metrics/algorithms/timeline.py` · `tests/golden/research/timeline-parity.test.ts` |
+| `sync-v1` 三指標 + pre-registered 三分支精度判定 | `metrics/algorithms/sync.py` · `notebooks/t2/outputs/sync-precision.json` |
+| additive key 事件(opt-in,使用者 override) | `src/data/DataRecorder.ts` · `peek.py` 的 `t_release_event`/`release_source` |
+| 教練報告 v0(單檔靜態 HTML,條件分層) | `src/report/coach_report.py` · `notebooks/t-exit/outputs/`(四份) |
+
+### 四件值得記住的事
+
+1. **對表閘保證一致,不保證正確**(S-29.2)。ε parity 兩側同錯仍恆綠,是 M14 ② 撤回的
+   根因。本 WP 因此在 parity 之外一律要求「反 vacuous」斷言 —— 閘必須證明自己有東西可比。
+2. **凍結的價值在於它擋得住你自己**。`sync-v1` 在看到 09:39 之前就定案,所以 `sufficient`
+   是一個有意義的結果而不是事後合理化;同理 D-29.13 拒絕逐組重跑判定。
+3. **缺資料是資料**。08:03 的 `n=0` 一路從 flag → 聚合規則 → 報告呈現都沒有被補成 0,
+   最後一哩(S-29.11 的 `mean 0`)是呈現層才發現的,說明紅線要一路守到像素為止。
+4. **既有的閘會在你不注意時救你一次**(S-29.12)。C-D1 的 AST 掃描抓到了新模組的違規,
+   而我原本正打算再寫一份重複的同款測試。
+
+### 遺留(不阻塞本 WP 收斂)
+
+- **OQ-S4-10 / OQ-S4-11 / OQ-S4-13 維持 open**,三者都缺同一件東西:**新的真實錄製**
+  (帶 inferred release 樣本 / 帶 ADS-on 或 projectile 條件 / 帶 key 事件)。本 WP 明令不
+  重錄 fixture,故三者一併留待後續,並已在報告與文件上做成可觀測。
+- **KI-004 S1 尚未落地**;WP-29 不受影響(全程未讀 `px`/`pz`),但 WP-30/31 的 entry
+  blocker 仍在。
+- **stage4/exec-plan 的 M14 ② 敘述仍互相矛盾**(exec-plan README 寫「六項全綠」vs stage4
+  README 寫「② 撤回」)。此矛盾已由 main 的 `8e6e442` 記為 S-S1.1 並指派給 **KI-004-S1
+  T6**,不屬 WP-29 scope,本切片刻意未動。

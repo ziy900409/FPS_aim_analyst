@@ -10,7 +10,7 @@
 | **相依** | **WP-28 T1 ✅**(ingest 綠即可;**不需 M14**)。M14 ① ③④⑤⑥ 可引用(分段 / ω(t) / 一鍵 pipeline);**② ε parity 已於 2026-08-05 撤回**([KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) / K-2)→ **ε(t) 相關產物一律不得引用**,但本 WP 本就不消費 ε,故**不受阻塞** |
 | **對應 FR** | FR-D7 / FR-D8 / FR-D9 / FR-D10(gated)+ FR-D16 首版(報告 v0) |
 | **估時** | 1.5–2.5 dev-days(T3 若觸發 +0.5–1) |
-| **狀態** | 🟡 進行中(T0–T2 ✅；09:39 precision sufficient；T3 原判 skipped，**使用者 override 於 2026-08-05 實作 T3 ✅**（commit `dcdafbd`）為 additive observability，T2 verdict 未改；T-exit pending) |
+| **狀態** | ✅ **完成(2026-08-05)** —— T0–T2 ✅；09:39 precision sufficient；T3 原判 skipped，**使用者 override 實作 T3 ✅**（commit `dcdafbd`）為 additive observability，T2 verdict 未改；**T-exit ✅** 教練報告 v0(單檔靜態 HTML,條件分層)+ `analysis-peek-timeline.md` 定稿 + OQ-S4-6 關閉 |
 
 ---
 
@@ -58,6 +58,8 @@ research/src/modules/metrics/notebooks/t2/outputs/       ← ADD 精度評估報
 research/fixtures/parity/timeline-*.json                 ← ADD 時間軸交叉驗證 parity JSON            [T1]
 tests/golden/research/timeline-parity.test.ts            ← ADD vitest 對表閘(既有 test:ci 內)      [T1]
 research/src/report/coach_report.py                      ← ADD 教練報告 v0(靜態 HTML,條件分層)     [T-exit]
+research/src/report/tests/test_coach_report*.py          ← ADD 報告契約 + 層級純度測試              [T-exit]
+research/src/modules/metrics/notebooks/t-exit/outputs/   ← ADD 四份 committed 範例報告(deterministic) [T-exit]
 research/src/report/run_pipeline.py                      ← MODIFY 改用共享 peek 模組(消重)          [T1]
 research/src/modules/kinematics/notebooks/t2/generate_epsilon_parity.py ← MODIFY 同上(只驗窗界 index;ε 非證據) [T1]
 research/src/modules/segments/notebooks/t3-sweep/run_sweep.py ← MODIFY 同上 + leading-ω 切尾 [T1]
@@ -117,8 +119,8 @@ graph LR
 | **T0** | [T0-entry-gate.md](T0-entry-gate.md) | 驗 WP-28 T1 exit;凍結 `compute.ts` 對表基準清單 + 缺事件語意 + **精度判準三分支與最小 n** | — | Low | 0.25d |
 | **T1** | [T1-peek-timeline.md](T1-peek-timeline.md) | `build_peek_windows` + `timeline_metrics` + **交叉驗證閘**(含反 vacuous)+ 三份窗界實作消重 | T0 | **Med** | 0.75–1d |
 | **T2** | [T2-sync-precision.md](T2-sync-precision.md) | Sync 族三指標 + flags + **量化精度評估與明確判定** | T1 | Med | 0.5–0.75d |
-| **T3(選配,gated)** | [T3-key-events.md](T3-key-events.md) | **僅當 T2 判定 `insufficient`**:`DataRecorder` additive `key` 事件 | T2 判定 | Med | 0.5–1d |
-| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 教練報告 v0(一鍵、條件分層)+ `analysis-peek-timeline.md` 定稿 + OQ-S4-6 關閉 | T1–T2(T3 依判定) | — | 0.25–0.5d |
+| **T3(選配,gated)** ✅ | [T3-key-events.md](T3-key-events.md) | 原 gate = **僅當 T2 判定 `insufficient`**;09:39 兩量皆 `sufficient` → 原判 skipped。**使用者 override 後仍實作**(commit `dcdafbd`),定位為 additive observability 而非精度修復:`DataRecorder.recordKeyEvents`(opt-in,預設 OFF)+ `key` 事件 + peek `t_release_event`/`release_source`。T2 verdict 與 `sync-v1` 逐位未改。見 D-29.8~D-29.11 | T2 判定 + 使用者 override | Med | 0.5–1d |
+| **T-exit** ✅ | [T-exit-gate.md](T-exit-gate.md) | 教練報告 v0(一鍵、條件分層)+ `analysis-peek-timeline.md` 定稿 + OQ-S4-6 關閉 | T1–T2(T3 依判定) | — | 0.25–0.5d |
 
 ## 5. Interface contracts
 
@@ -198,6 +200,6 @@ def evaluate_release_precision(sync: pd.DataFrame, params: SyncParams,
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
 | ~~**OQ-S4-12**~~ | ~~真實 counter-strafe 樣本缺席~~ | ✅ **關閉(2026-08-05)**:09:39 匯出已補錄並進 `research/fixtures/exports/`(21.27s ≤30s、`participantId=P001`、PII-like 掃描無命中、counter 24、三個對表量各 n=20) | 使用者 | 2026-08-05 | unblocked |
-| **OQ-S4-11**(新) | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan | §2.4c 的條件分層(ads on/off × hitscan/projectile)在真實資料上**只有一個 cell 有樣本**。T-exit 的 `--group-by` 仍須實作並以合成 fixture 驗證,但真實報告的分層欄位會退化成單值 | 研究者 | WP-29 T-exit | 條件分層無真實對照;不阻塞實作 |
-| **OQ-S4-10** | `t_release` 在無 counter 事件時的 fallback 定義是否足以支撐跨 peek 比較 | 先落「窗內最後一次 A/D held→released」+ `release_inferred_no_counter` flag,聚合預設**排除**該 flag;OQ-S4-12 樣本到位後以真實資料複核是否改為預設納入 | 研究者 | WP-29 T-exit | Sync 族的 n 與可比性;報告 v0 的分母定義 |
-| **OQ-S4-6**(既有) | 教練報告載體 | notebook → 靜態 HTML 單檔;本 WP T-exit 落地即關閉 | 使用者 | WP-29 T-exit | 報告形式不定 |
+| **OQ-S4-11**(新) | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan | 🟡 **維持 open(T-exit 已複核)**:`--group-by` 三種分層皆已實作並由測試釘死,但真實資料實測 `--group-by ads` → 只有 `off` 一組、`--group-by weapon_mode` → 只有 `hitscan` 一組;projectile cell 只有合成 fixture 有樣本。需一次 ADS-on / projectile 真實錄製才能關閉 | 研究者 | WP-30 或補錄後 | 條件分層無真實對照;不阻塞實作 |
+| **OQ-S4-10** | `t_release` 在無 counter 事件時的 fallback 定義是否足以支撐跨 peek 比較 | 🟡 **維持 open(T-exit 已依證據更新)**:兩份真實 fixture 提供的 `release_inferred_no_counter` 樣本數為 **0**(09:39 有 release 的 peek 都有 counter;08:03 兩者皆無),故仍無證據支持納入聚合。fallback + flag 保留,**預設排除不變** | 研究者 | 有 inferred 樣本的真實錄製後 | Sync 族的 n 與可比性;報告 v0 的分母定義 |
+| ~~**OQ-S4-6**~~(既有) | ~~教練報告載體~~ | ✅ **關閉(2026-08-05,T-exit)**:`coach_report.py` 一鍵產出單檔自足靜態 HTML(inline CSS + inline SVG,零外部資源),四份 committed 範例報告 deterministic。升級為互動式報告的觸發條件(教練需互動篩選)未達 | 使用者 | 2026-08-05 | 已解 |

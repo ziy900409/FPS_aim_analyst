@@ -1,0 +1,441 @@
+"""Contract tests for the one-command coach report v0 (WP-29 T-exit).
+
+Covers the DoD surface: a single self-contained HTML file, the six metrics with n /
+flags / version / validity tier, the pre-registered precision verdicts, the three
+``--group-by`` stratifications with unchanged parameter metadata, safe zero-sample
+output, HTML escaping, and byte-level determinism.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import re
+
+import pytest
+
+from modules.ingest.algorithms import SyntheticSpec, load_export, make_synthetic_export
+from modules.metrics.algorithms.sync import DEFAULT_SYNC_PARAMS
+from report.coach_report import (
+    DEFAULT_EXPORT,
+    GROUP_BY_CHOICES,
+    REPORT_VERSION,
+    SYNC_COLUMNS,
+    build_report,
+    generate,
+    main,
+    render_html,
+    report_filename,
+)
+
+
+RESEARCH_ROOT = Path(__file__).resolve().parents[3]
+EXPORT_DIR = RESEARCH_ROOT / "fixtures" / "exports"
+SYNTHETIC = EXPORT_DIR / "synthetic_timeline.json"
+REAL_ZERO = EXPORT_DIR / "counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json"
+REAL_VALIDITY = EXPORT_DIR / "counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json"
+ALL_FIXTURES = (SYNTHETIC, REAL_ZERO, REAL_VALIDITY)
+
+TIMELINE_KEYS = ("counterReactionMs", "fireTimingAlignmentMs", "firstShotHitRate")
+FROZEN_VERSIONS = ("compute-v1", "timeline-v1", "sync-v1", "seg-v1")
+
+
+def _section(html: str, section_id: str) -> str:
+    match = re.search(rf'<section id="{section_id}">.*?</section>', html, re.S)
+    assert match is not None, f"missing section #{section_id}"
+    return match.group(0)
+
+
+# ---------------------------------------------------------------------------- artifact
+
+
+def test_one_command_writes_exactly_one_self_contained_html(tmp_path: Path) -> None:
+    path = generate(REAL_VALIDITY, tmp_path)
+
+    assert list(tmp_path.iterdir()) == [path]
+    assert path.suffix == ".html"
+    html = path.read_text(encoding="utf-8")
+    assert html.startswith("<!doctype html>")
+    # A coach must be able to open or forward the file with no server and no network.
+    for forbidden in ("http", "<script", "<link", "@import", "url(", "src=", "srcset"):
+        assert forbidden not in html, f"report references an external resource: {forbidden}"
+
+
+@pytest.mark.parametrize("fixture", ALL_FIXTURES, ids=lambda path: path.stem[:28])
+def test_every_fixture_produces_a_report(fixture: Path, tmp_path: Path) -> None:
+    assert main(["--export", str(fixture), "--out", str(tmp_path)]) == 0
+    assert (tmp_path / report_filename(fixture, None)).is_file()
+
+
+def test_report_names_its_source_fixture(tmp_path: Path) -> None:
+    html = generate(REAL_VALIDITY, tmp_path).read_text(encoding="utf-8")
+
+    assert REAL_VALIDITY.name in html
+    assert REPORT_VERSION in html
+
+
+# ----------------------------------------------------------------------- required parts
+
+
+def test_report_contains_every_required_block() -> None:
+    html = render_html(build_report(REAL_VALIDITY))
+
+    for section_id in ("summary", "precision", "timeline", "peeks", "flags", "groups", "parameters", "limits"):
+        _section(html, section_id)
+    assert "<svg" in _section(html, "timeline")
+
+
+def test_all_six_metrics_carry_n_flags_version_and_validity_tier() -> None:
+    model = build_report(REAL_VALIDITY)
+    html = render_html(model)
+
+    entries = model["timelineMetrics"] + model["syncMetrics"]
+    assert [entry["key"] for entry in entries] == [*TIMELINE_KEYS, *SYNC_COLUMNS]
+    for entry in entries:
+        assert isinstance(entry["n"], int)
+        assert isinstance(entry["flagCounts"], dict)
+        assert entry["version"] in FROZEN_VERSIONS
+        assert entry["validity"], f"{entry['key']} has an empty validity tier"
+        assert entry["label"] in html
+        assert entry["validity"] in html
+
+
+def test_timeline_metrics_are_labelled_parity_and_sync_metrics_new_construct() -> None:
+    model = build_report(REAL_VALIDITY)
+
+    for entry in model["timelineMetrics"]:
+        assert entry["version"] == "compute-v1"
+        assert "compute-v1" in entry["validity"] and "parity" in entry["validity"]
+    for entry in model["syncMetrics"]:
+        assert entry["version"] == "sync-v1"
+        assert "新構念" in entry["validity"]
+
+
+def test_tick_derived_sync_metrics_carry_a_precision_verdict() -> None:
+    model = build_report(REAL_VALIDITY)
+    by_key = {entry["key"]: entry for entry in model["syncMetrics"]}
+
+    for key in ("release_to_fire_ms", "counter_hold_ms"):
+        verdict = by_key[key]["verdict"]
+        assert verdict["verdict"] == "sufficient"
+        assert verdict["n"] == 13
+        assert verdict["quantization_sd_ms"] == pytest.approx(2.255274489021976, rel=1e-12)
+        assert verdict["reason"]
+    # Both endpoints are sub-tick input timestamps, so sync-v1 does not judge it.
+    assert by_key["counter_to_fire_ms"]["verdict"] is None
+
+
+def test_frozen_version_strings_and_sync_params_are_reported() -> None:
+    html = render_html(build_report(REAL_VALIDITY))
+    parameters = _section(html, "parameters")
+
+    for version in FROZEN_VERSIONS:
+        assert version in parameters
+    assert f"min_samples={DEFAULT_SYNC_PARAMS.min_samples}" in parameters
+    assert "2.255274489021976" in parameters
+    assert "7.8125" in parameters
+
+
+def test_unvalidated_constructs_never_reach_the_report() -> None:
+    """C-D3 / GD-20: a metric without a construct gate must not appear as a number."""
+
+    html = render_html(build_report(REAL_VALIDITY))
+
+    for banned in ("SPARC", "xcorr", "Fitts", "epsilon_deg", "REC/MR/V", "101"):
+        assert banned not in _section(html, "summary")
+    # They may only be named in the limitations block, as explicit exclusions.
+    assert "SPARC" in _section(html, "limits")
+
+
+def test_drill_summary_reports_peeks_outcomes_and_first_shot_hit_rate() -> None:
+    model = build_report(REAL_VALIDITY)
+    summary = model["drillSummary"]
+
+    assert summary["peekCount"] == 20
+    assert summary["outcomes"] == {"hit": 20, "timeout": 0, "no_shot": 0}
+    assert summary["firstShotHitRate"] == pytest.approx(90.0)
+    assert summary["firstShotHits"] == 18
+
+
+def test_per_peek_timeline_covers_every_visible_event_in_order() -> None:
+    model = build_report(REAL_VALIDITY)
+    peeks = model["peeks"]
+
+    assert [peek["index"] for peek in peeks] == list(range(20))
+    assert len(re.findall(r"<circle", _section(render_html(model), "timeline"))) >= len(peeks)
+
+
+def test_flag_counts_match_the_frozen_t2_evidence() -> None:
+    model = build_report(REAL_VALIDITY)
+
+    assert model["flagCounts"] == {
+        "counter_hold_truncated": 3,
+        "missing_release": 1,
+        "multiple_counters": 4,
+        "no_key_transition": 1,
+    }
+
+
+# ------------------------------------------------------------------- zero-sample safety
+
+
+def test_zero_input_fixture_reports_n_zero_without_crashing_or_filling_zeros() -> None:
+    model = build_report(REAL_ZERO)
+    html = render_html(model)
+
+    for entry in model["syncMetrics"]:
+        assert entry["n"] == 0
+        # Missing anchors stay missing: no 0 substitute, no NaN swallow.
+        assert entry["mean"] is None
+        assert entry["sampleSdMs"] is None
+    for verdict in model["precisionVerdicts"]:
+        assert verdict["verdict"] == "blocked-by-data"
+        assert verdict["n"] == 0
+        assert verdict["sample_sd_ms"] is None
+    assert "blocked-by-data" in html
+    # No cell may render a non-finite value, and an empty compute-v1 aggregate must not
+    # show its {mean:0,p50:0,sd:0} placeholder as if it were a measurement.
+    assert ">NaN<" not in html and ">nan<" not in html
+    assert "mean 0 · p50 0 · sd 0" not in html
+
+
+def test_zero_input_fixture_still_reports_its_parity_verified_hit_rate() -> None:
+    model = build_report(REAL_ZERO)
+
+    assert model["drillSummary"]["firstShotHitRate"] == pytest.approx(90.0)
+    counter_reaction = model["timelineMetrics"][0]
+    assert counter_reaction["n"] == 0
+    assert counter_reaction["excludedCount"] == 20
+
+
+def test_export_without_visible_events_produces_a_valid_empty_report(tmp_path: Path) -> None:
+    payload = make_synthetic_export(SyntheticSpec())
+    payload["events"] = [event for event in payload["events"] if event["type"] != "visible"]
+    source = tmp_path / "no-visible.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    model = build_report(source)
+
+    assert model["drillSummary"]["peekCount"] == 0
+    assert model["peeks"] == []
+    assert "<svg" in render_html(model)
+
+
+# -------------------------------------------------------------------------- group-by
+
+
+@pytest.mark.parametrize("group_by", GROUP_BY_CHOICES)
+def test_group_by_runs_and_names_every_group(group_by: str, tmp_path: Path) -> None:
+    assert main(
+        ["--export", str(REAL_VALIDITY), "--group-by", group_by, "--out", str(tmp_path)]
+    ) == 0
+
+    path = tmp_path / report_filename(REAL_VALIDITY, group_by)
+    assert path.is_file()
+    html = path.read_text(encoding="utf-8")
+    for group in build_report(REAL_VALIDITY, group_by)["groups"]:
+        assert group["label"] in html
+
+
+@pytest.mark.parametrize("group_by", GROUP_BY_CHOICES)
+def test_every_group_carries_its_own_n_stats_and_flags(group_by: str) -> None:
+    model = build_report(REAL_VALIDITY, group_by)
+
+    assert model["groups"], f"--group-by {group_by} produced no group"
+    assert [group["key"] for group in model["groups"]] == sorted(
+        group["key"] for group in model["groups"]
+    )
+    for group in model["groups"]:
+        assert group["peekCount"] > 0
+        assert [entry["key"] for entry in group["timelineMetrics"]] == list(TIMELINE_KEYS)
+        assert [entry["key"] for entry in group["syncMetrics"]] == list(SYNC_COLUMNS)
+        for entry in group["timelineMetrics"] + group["syncMetrics"]:
+            assert isinstance(entry["n"], int)
+            assert isinstance(entry["flagCounts"], dict)
+
+
+@pytest.mark.parametrize("group_by", GROUP_BY_CHOICES)
+def test_groups_partition_the_drill_without_losing_or_duplicating_rows(group_by: str) -> None:
+    ungrouped = build_report(REAL_VALIDITY)
+    grouped = build_report(REAL_VALIDITY, group_by)
+
+    assert sum(group["peekCount"] for group in grouped["groups"]) == ungrouped["drillSummary"]["peekCount"]
+    for column in SYNC_COLUMNS:
+        drill_n = next(entry for entry in ungrouped["syncMetrics"] if entry["key"] == column)["n"]
+        group_n = sum(
+            next(entry for entry in group["syncMetrics"] if entry["key"] == column)["n"]
+            for group in grouped["groups"]
+        )
+        assert group_n == drill_n
+    merged: dict[str, int] = {}
+    for group in grouped["groups"]:
+        for flag, count in group["flagCounts"].items():
+            merged[flag] = merged.get(flag, 0) + count
+    assert merged == ungrouped["flagCounts"]
+
+
+def test_group_by_side_reproduces_the_known_left_right_split() -> None:
+    groups = {group["key"]: group for group in build_report(REAL_VALIDITY, "side")["groups"]}
+
+    assert set(groups) == {"L", "R"}
+    assert groups["L"]["peekCount"] == 10 and groups["R"]["peekCount"] == 10
+    left_release = next(
+        entry for entry in groups["L"]["syncMetrics"] if entry["key"] == "release_to_fire_ms"
+    )
+    right_release = next(
+        entry for entry in groups["R"]["syncMetrics"] if entry["key"] == "release_to_fire_ms"
+    )
+    assert left_release["n"] + right_release["n"] == 13
+
+
+def test_real_fixtures_degenerate_to_one_cell_for_ads_and_weapon_mode() -> None:
+    """OQ-S4-11 evidence: no ADS-on and no projectile cell exists in real data."""
+
+    ads = build_report(REAL_VALIDITY, "ads")["groups"]
+    weapon = build_report(REAL_VALIDITY, "weapon_mode")["groups"]
+
+    assert [group["key"] for group in ads] == ["off"]
+    assert [group["key"] for group in weapon] == ["hitscan"]
+
+
+def test_synthetic_fixture_exercises_the_projectile_group() -> None:
+    weapon = build_report(SYNTHETIC, "weapon_mode")["groups"]
+
+    assert [group["key"] for group in weapon] == ["projectile"]
+
+
+@pytest.mark.parametrize("group_by", GROUP_BY_CHOICES)
+def test_grouping_never_changes_parameter_metadata(group_by: str, tmp_path: Path) -> None:
+    ungrouped = build_report(REAL_VALIDITY)
+    grouped = build_report(REAL_VALIDITY, group_by)
+
+    assert grouped["parameters"] == ungrouped["parameters"]
+    assert grouped["precisionVerdicts"] == ungrouped["precisionVerdicts"]
+    assert grouped["syncMetrics"] == ungrouped["syncMetrics"]
+    # ...and the rendered contract block is byte-identical, not merely equal in memory.
+    assert _section(render_html(grouped), "parameters") == _section(
+        render_html(ungrouped), "parameters"
+    )
+
+
+def test_group_by_rejects_an_unknown_key() -> None:
+    with pytest.raises(ValueError):
+        build_report(REAL_VALIDITY, "recoilIndex")
+
+
+# -------------------------------------------------------------------------- escaping
+
+
+def test_drill_id_cannot_inject_html(tmp_path: Path) -> None:
+    payload = make_synthetic_export(SyntheticSpec())
+    payload["meta"]["drillId"] = '<img src=x onerror="alert(1)">'
+    source = tmp_path / "injected.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    html = render_html(build_report(source))
+
+    # The payload must survive only as inert text, never as a live tag.
+    assert "<img" not in html
+    assert '<img src=x onerror="alert(1)">' not in html
+    assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in html
+
+
+@pytest.mark.parametrize("field", ("weaponId", "browser", "movementModel"))
+def test_unrendered_meta_strings_never_reach_the_page(field: str, tmp_path: Path) -> None:
+    payload = make_synthetic_export(SyntheticSpec())
+    payload["meta"][field] = "SENTINEL-DO-NOT-RENDER"
+    source = tmp_path / f"unrendered-{field}.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert "SENTINEL-DO-NOT-RENDER" not in render_html(build_report(source))
+
+
+def test_target_ids_cannot_inject_html_into_the_table_or_svg(tmp_path: Path) -> None:
+    payload = make_synthetic_export(SyntheticSpec())
+    for event in payload["events"]:
+        if "targetId" in event:
+            event["targetId"] = "</svg><script>alert(1)</script>"
+    source = tmp_path / "injected-target.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    html = render_html(build_report(source))
+
+    assert "<script>" not in html
+    assert "</svg><script" not in html
+    assert "&lt;" in html
+
+
+def test_fixture_filename_is_escaped(tmp_path: Path) -> None:
+    # Windows forbids <> in filenames, so & is the escapable character available here.
+    payload = make_synthetic_export(SyntheticSpec())
+    source = tmp_path / "a&b'c.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    html = render_html(build_report(source))
+
+    assert "a&amp;b&#x27;c.json" in html
+    assert "a&b'c.json" not in html
+
+
+# ----------------------------------------------------------------------- determinism
+
+
+@pytest.mark.parametrize("fixture", ALL_FIXTURES, ids=lambda path: path.stem[:28])
+def test_repeated_generation_is_byte_identical(fixture: Path, tmp_path: Path) -> None:
+    first = generate(fixture, tmp_path / "a")
+    second = generate(fixture, tmp_path / "b")
+
+    assert first.read_bytes() == second.read_bytes()
+
+
+def test_report_embeds_no_wall_clock_or_random_identifier() -> None:
+    html = render_html(build_report(REAL_VALIDITY))
+
+    # A generated-at stamp or uuid would make every regeneration a spurious diff.
+    assert not re.search(r"\b20\d\d-\d\d-\d\dT\d\d:\d\d", html)
+    assert not re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}", html)
+
+
+def test_committed_example_reports_match_a_fresh_run(tmp_path: Path) -> None:
+    outputs = (
+        RESEARCH_ROOT / "src" / "modules" / "metrics" / "notebooks" / "t-exit" / "outputs"
+    )
+    committed = sorted(outputs.glob("coach-report-*.html"))
+    assert committed, "the T-exit slice must commit at least one example report"
+
+    for index, path in enumerate(committed):
+        match = re.fullmatch(r"coach-report-(.+?)(?:-by-(side|ads|weapon_mode))?\.html", path.name)
+        assert match is not None, path.name
+        export = EXPORT_DIR / f"{match.group(1)}.json"
+        # Short output dir: the fixture names are long enough to hit Windows MAX_PATH.
+        fresh = generate(export, tmp_path / str(index), match.group(2))
+        assert fresh.read_bytes() == path.read_bytes(), f"{path.name} is stale"
+
+
+# ------------------------------------------------------------------------------ CLI
+
+
+def test_cli_defaults_to_the_synthetic_timeline_fixture(tmp_path: Path) -> None:
+    assert main(["--out", str(tmp_path)]) == 0
+    assert (tmp_path / report_filename(DEFAULT_EXPORT, None)).is_file()
+
+
+def test_invalid_export_exits_non_zero_without_writing_a_report(tmp_path: Path) -> None:
+    payload = make_synthetic_export(SyntheticSpec())
+    payload["meta"]["schemaVersion"] = 1
+    source = tmp_path / "bad.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    out_dir = tmp_path / "out"
+
+    assert main(["--export", str(source), "--out", str(out_dir)]) == 1
+    assert not out_dir.exists()
+
+
+def test_report_reads_no_position_columns() -> None:
+    """D-29.2 boundary: the KI-004 defect only touches px/pz, which this WP never reads."""
+
+    source = (RESEARCH_ROOT / "src" / "report" / "coach_report.py").read_text(encoding="utf-8")
+
+    assert '"px"' not in source and "'px'" not in source
+    assert '"pz"' not in source and "'pz'" not in source
+    assert load_export(REAL_VALIDITY).meta["suspect"] is True

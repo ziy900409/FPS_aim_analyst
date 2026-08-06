@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import math
-from typing import Iterable
+from typing import Iterable, Sequence
 
 import numpy as np
 
@@ -98,7 +98,14 @@ def timeline_parity_payload(export: Export) -> dict[str, object]:
     }
 
 
-def _first_shot_hit_count(export: Export, peeks: tuple[PeekWindow, ...]) -> int:
+def first_shot_hits(export: Export, peeks: Sequence[PeekWindow]) -> tuple[bool, ...]:
+    """Per-peek compatible-first-shot hit indicator under frozen ``compute-v1``.
+
+    ``firstShotHitRate`` is exactly ``sum(...) / len(peeks) * 100``. The per-peek form is
+    exposed so the report tier can stratify the rate by side/ads/weapon mode without
+    writing a second definition of the frozen rule (C-D4).
+    """
+
     events = export.events.sort_values("t", kind="stable").reset_index(drop=True)
     fires = events.loc[events["type"] == "fire"].reset_index(drop=True)
     hits = events.loc[events["type"] == "hit"].reset_index(drop=True)
@@ -107,11 +114,12 @@ def _first_shot_hit_count(export: Export, peeks: tuple[PeekWindow, ...]) -> int:
         for value in hits["shotSeq"].tolist()
         if _finite(value)
     }
-    count = 0
+    indicators: list[bool] = []
     for peek in peeks:
         candidates = fires.loc[
             (fires["t"] >= peek.t_visible) & (fires["t"] < peek.t_end)
         ]
+        indicator = False
         for _, fire in candidates.iterrows():
             target_id = fire.get("targetId")
             if not _true(fire.get("firstShot")):
@@ -119,10 +127,16 @@ def _first_shot_hit_count(export: Export, peeks: tuple[PeekWindow, ...]) -> int:
             if isinstance(target_id, str) and target_id != peek.target_id:
                 continue
             shot_seq = fire.get("shotSeq")
-            if _true(fire.get("hit")) or (_finite(shot_seq) and float(shot_seq) in hit_shot_seqs):
-                count += 1
+            indicator = _true(fire.get("hit")) or (
+                _finite(shot_seq) and float(shot_seq) in hit_shot_seqs
+            )
             break
-    return count
+        indicators.append(indicator)
+    return tuple(indicators)
+
+
+def _first_shot_hit_count(export: Export, peeks: tuple[PeekWindow, ...]) -> int:
+    return sum(first_shot_hits(export, peeks))
 
 
 def _finite(value: object) -> bool:

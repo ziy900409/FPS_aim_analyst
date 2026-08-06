@@ -1,10 +1,26 @@
-# Peek timeline analysis contract (`timeline-v1`)
+# Peek timeline analysis contract (`timeline-v1` + `sync-v1`)
 
-WP-29 T1 defines the offline, per-peek event timeline used by later coach-facing metrics. The
-implementation authority for the new reconstruction is
-`research/src/modules/metrics/algorithms/peek.py`; the three established aggregate metrics remain
-governed by frozen `compute-v1` in `src/metrics/compute.ts` and are parity-tested at relative error
-`<= 1e-9`.
+> **Status: 定稿 (2026-08-05, WP-29 T-exit).** `timeline-v1` and `sync-v1` are frozen from this
+> point on: a semantic change requires a new version string and a full rerun of the chain, never an
+> in-place redefinition (same discipline as `seg-v1` / D-28.7).
+
+WP-29 defines the offline, per-peek event timeline and the Release-to-Click Sync family used by
+coach-facing metrics. The implementation authority for the new reconstruction is
+`research/src/modules/metrics/algorithms/peek.py` (windows and anchors) plus
+`research/src/modules/metrics/algorithms/sync.py` (Sync family and precision verdicts); the three
+established aggregate metrics remain governed by frozen `compute-v1` in the engine's
+`src/metrics/compute` implementation and are parity-tested at relative error `<= 1e-9`.
+
+| Contract | Version | Authority | Validity tier |
+|---|---|---|---|
+| `counterReactionMs` / `fireTimingAlignmentMs` / `firstShotHitRate` | `compute-v1` | TypeScript (engine) | Parity-verified against the engine at `<= 1e-9` |
+| Peek windows, anchors, `outcome`, flag vocabulary | `timeline-v1` | Python (`peek.py`) | New construct, documented here |
+| `release_to_fire_ms` / `counter_hold_ms` / `counter_to_fire_ms` | `sync-v1` | Python (`sync.py`) | New construct + pre-registered precision verdict |
+| submovement segmentation | `seg-v1` | Python (`submovement.py`) | Frozen upstream; **not consumed** by this contract |
+
+The coach report v0 (`research/src/report/coach_report.py`) is the single-command consumer: it
+renders exactly these six metrics, each annotated with its `n`, flag counts, version string and
+validity tier, and refuses to display any construct that has not passed a gate (C-D3 / GD-20).
 
 ## Window and anchors
 
@@ -130,16 +146,51 @@ Committed parity covers `synthetic_timeline.json`, the 08:03 zero-input fixture,
 counter-strafe fixture. `timeline-v1`, `compute-v1`, and frozen `seg-v1` semantics require an explicit
 version change rather than in-place redefinition.
 
+## Report carrier (`coach-report-v0`)
+
+One command turns an export into one self-contained static HTML file:
+
+```
+uv run python src/report/coach_report.py --export <path> [--group-by side|ads|weapon_mode] [--out <dir>]
+```
+
+The page embeds its own CSS and an inline SVG timeline and references no external resource, so it
+can be opened or forwarded without a server (OQ-S4-6 closed on this carrier; an interactive report
+remains the documented upgrade trigger). Output is deterministic — no wall-clock stamp, no random
+identifier, stable ordering — so a diff in a committed example report always means the data or a
+frozen contract changed. Committed examples live in
+`research/src/modules/metrics/notebooks/t-exit/outputs/`.
+
+`--group-by` only *partitions* rows the pure algorithms already produced. Every parameter, threshold
+and version string is byte-identical across groupings, and the pre-registered precision verdict is
+deliberately **not** re-run per group: `sync-v1` was pre-registered at drill level, and re-judging
+each stratum would be post-hoc multiple comparison. Per-group output is therefore `n`, statistics
+and flag counts only.
+
 ## Known limitations
 
-1. Release timing has up to one 128 Hz tick of quantization error. T2's 09:39 evidence judged both
-   tick-derived metrics `sufficient`, but that verdict is fixture-specific rather than a population
-   inference.
-2. Real evidence is two runs from one participant. The 08:03 run has no A/D transition, while 09:39
-   contributes only 20 counter/alignment samples; neither supports population-level inference.
-3. Both real fixtures are hitscan and provide no ADS-on comparison. Projectile, ADS grouping, and
-   cross-window hit behavior therefore rely on synthetic coverage (OQ-S4-11 remains open).
+1. **Release timing carries up to one 128 Hz tick (`7.8125 ms`) of quantization error.** The 09:39
+   evidence judged both tick-derived metrics `sufficient`, but that is a verdict about this fixture,
+   not a population inference. The additive `t_release_event` path above can remove the quantization
+   entirely, but only for recordings made with `DataRecorder.recordKeyEvents` enabled — neither
+   committed real fixture has it, so every real row reports `release_source = tick_keys`.
+2. **Real evidence is two runs from one participant**, with complementary rather than cumulative
+   roles: 08:03 is the zero-input boundary (no A/D transition at all, so every Sync anchor is absent
+   and `n = 0`), and 09:39 is the primary validity sample (20 peeks, 13 unflagged Sync rows). Neither
+   supports population-level inference, and the earlier claim that the only real sample had zero
+   strafe was superseded when 09:39 was recorded.
+3. **Both real fixtures are hitscan with no ADS-on peek.** `--group-by ads` and `--group-by
+   weapon_mode` therefore degenerate to a single cell on real data; projectile behaviour, ADS
+   grouping and cross-window hits rely on synthetic coverage (OQ-S4-11 remains open).
+4. **There is no `kill` or `timeout` event in schema v2**, so `outcome` is *derived* from the fire
+   and hit streams by the table above. A peek that was abandoned without a shot is indistinguishable
+   from one that never got a shot off in time; both report `no_shot`.
+5. **The no-counter release fallback is unvalidated.** `release_inferred_no_counter` rows are
+   excluded from every aggregate by default, and the real fixtures contribute **zero** such rows
+   (09:39 has a counter wherever it has a release; 08:03 has neither), so there is still no evidence
+   base for admitting the fallback into cross-peek comparison. OQ-S4-10 stays open on that ground.
 
 KI-004 boundary: timeline reconstruction does not consume `px` or `pz`. The 09:39 fixture's
 `meta.suspect=true` originates from the unrelated sim/world-unit corridor defect and does not affect
-event timestamps or `ticks[].keys` used here.
+event timestamps or `ticks[].keys` used here. If any future metric in this contract starts consuming
+`px`/`pz`, decision D-29.2 lapses immediately and the fixture's usability must be re-assessed.
