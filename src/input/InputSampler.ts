@@ -128,8 +128,12 @@ export function createInputSampler(
    * 每筆帶各自的 `event.timeStamp`（保留次幀時間解析度）；`movementX/Y` 在 Pointer Lock +
    * `unadjustedMovement` 下為原始位移（WP-1 T3）。與 WP-1 視角互不干擾：WP-1 走 `pointerLock.onMove`
    * 即時驅動 camera；本 task 只把樣本入緩衝供量測（兩者獨立、不在此套用視角）。
+   * 僅 Pointer Lock 鎖定中採計（KI-005 / A，FR-A-8）——比照 fire-down / ads-down 的同一理由：
+   * 未鎖定不採計，避免取鎖點擊 / UI 滑鼠移動污染量測；且是 tick 窗積分（T4）守恆閘的前提
+   * （未鎖定時的移動若入 ring，會被積分成 camera 從未套用的角位移）。
    */
   function onPointerMove(e: PointerEvent): void {
+    if (!isLocked()) return; // 未鎖定不採計（避免取鎖點擊 / UI 移動污染量測）
     const samples = e.getCoalescedEvents?.() ?? [e];
     for (const ev of samples) {
       if (!ring.pushMouse(ev.movementX, ev.movementY, ev.timeStamp)) meta.bufferOverflow++;

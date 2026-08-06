@@ -305,19 +305,21 @@ describe('InputSampler — ADS 開鏡採集（右鍵 mousedown/mouseup + context
   });
 });
 
-describe('InputSampler — 滑鼠 coalesced 採集（pointermove + getCoalescedEvents 次幀採樣）', () => {
+describe('InputSampler — 滑鼠 coalesced 採集（pointermove + getCoalescedEvents 次幀採樣，僅鎖定中，KI-005/A T3）', () => {
   let state: ReturnType<typeof createSharedState>;
   let target: ReturnType<typeof makeFakeTarget>;
   let sampler: ReturnType<typeof createInputSampler>;
+  let locked: boolean; // 可變 Pointer Lock 狀態，注入為 isLocked 閘門（比照 fire/ads describe）
 
   beforeEach(() => {
     state = createSharedState();
     target = makeFakeTarget();
-    sampler = createInputSampler(state);
+    locked = true;
+    sampler = createInputSampler(state, () => locked);
     sampler.attach(target as unknown as EventTarget);
   });
 
-  it('單一 pointermove 的多個 coalesced 子事件各記一筆（次幀樣本無遺漏）', () => {
+  it('鎖定中：單一 pointermove 的多個 coalesced 子事件各記一筆（次幀樣本無遺漏、行為逐位不變）', () => {
     target.dispatch(
       'pointermove',
       pointerMoveEvent([
@@ -338,12 +340,44 @@ describe('InputSampler — 滑鼠 coalesced 採集（pointermove + getCoalescedE
     expect(times).toEqual([...times].sort((a, b) => a - b)); // 遞增
   });
 
-  it('getCoalescedEvents 不存在（舊瀏覽器）時 fallback 到單筆頂層事件', () => {
+  it('鎖定中：getCoalescedEvents 不存在（舊瀏覽器）時 fallback 到單筆頂層事件', () => {
     target.dispatch('pointermove', legacyPointerMoveEvent(7, -4, 250));
     expect(drainToArray(state)).toEqual([{ type: 'mouse', dx: 7, dy: -4, t: 250 }]);
   });
 
-  it('detach 後移除 pointermove 監聽、後續移動不再入緩衝', () => {
+  it('未鎖定時 pointermove 不入 ring、bufferOverflow 不累加（FR-A-8）', () => {
+    locked = false;
+    target.dispatch(
+      'pointermove',
+      pointerMoveEvent([coalescedSample(3, -1, 100), coalescedSample(5, 0, 100.5)]),
+    );
+    expect(state.input.size()).toBe(0);
+    expect(state.inputMeta.bufferOverflow).toBe(0);
+  });
+
+  it('未鎖定時 legacy（無 getCoalescedEvents）pointermove 亦不入 ring', () => {
+    locked = false;
+    target.dispatch('pointermove', legacyPointerMoveEvent(7, -4, 250));
+    expect(state.input.size()).toBe(0);
+  });
+
+  it('解鎖 → 移動 → 重新鎖定 → 移動：只有鎖定期間的樣本入 ring（涵蓋 Esc / 失焦情境）', () => {
+    locked = false;
+    target.dispatch('pointermove', pointerMoveEvent([coalescedSample(1, 1, 10)])); // 不入
+    locked = true;
+    target.dispatch('pointermove', pointerMoveEvent([coalescedSample(2, 2, 20)])); // 入
+    locked = false;
+    target.dispatch('pointermove', pointerMoveEvent([coalescedSample(3, 3, 30)])); // 不入
+    locked = true;
+    target.dispatch('pointermove', pointerMoveEvent([coalescedSample(4, 4, 40)])); // 入
+
+    expect(drainToArray(state)).toEqual([
+      { type: 'mouse', dx: 2, dy: 2, t: 20 },
+      { type: 'mouse', dx: 4, dy: 4, t: 40 },
+    ]);
+  });
+
+  it('detach 後移除 pointermove 監聽、後續移動不再入緩衝（鎖定中）', () => {
     sampler.detach();
     expect(target.count('pointermove')).toBe(0);
 

@@ -205,6 +205,14 @@ Exports produced **before T3** landed carry `validity.corridorExceeded` computed
 source-unit comparison (`|player.x| > halfWidthU` instead of `|player.x| × SIM_TO_WORLD > halfWidthU`) and are
 **not** comparable to post-T3 exports for this field.
 
+**`meta.bufferOverflow` / `meta.validity.bufferOverflow` gating change (2026-08-06, KI-005 / A T3, FR-A-8).**
+`InputSampler.onPointerMove` gained the same `isLocked()` gate `fire`/`ads` already had — pointer moves while
+not Pointer-Locked no longer reach the input ring, so they can no longer contribute to `bufferOverflow`. This
+only **shrinks** the set of events that can trigger overflow (it cannot create new overflows), but it means
+**exports produced before this change are not directly comparable to exports produced after it** for this
+field: a pre-T3 export's `bufferOverflow` may include unlocked-mouse-move pressure that a post-T3 export
+under otherwise identical conditions would not exhibit.
+
 #### `meta.mouseIntegration`
 
 Additive v2 block (KI-005 / A T2, FR-A-6). Self-describes the model that produced `ticks[].dYaw`/`dPitch`

@@ -15,7 +15,7 @@
 | 2026-08-06 | T0 | ✅ | 基線紅綠燈記錄(§2);§2.4 兩缺口行號複核(§2b);RED 基線可重現(§2a,notch 數 27/34 精確重現);受影響測試盤點(§3);`suspect`/`bufferOverflow` 口徑抄錄(§2c) |
 | 2026-08-06 | T1 | ✅ | 新增 `src/input/mouseGain.ts`(`RAD_PER_COUNT`/`MAX_PITCH`/`resolveMouseGain`/`createAimIntegrator`,12 個新測試);`CameraController` 改為消費(`#adsGain` → `#currentStep`,由 `resolveMouseGain` 於原有觸發點——`setSensitivity`/`setAdsConfig`(active 中)/`setAds`(轉場)——重算,避免逐幀/逐 mousemove 重新配置);`applyDelta` 委派 `AimIntegrator`。新增 2 個 golden 測試(hip→ADS→hip 混合序列 camera quaternion + aimSink 逐位斷言、pitch 撞夾角後 dPitch 語意)。`grep "0\.022"`/`grep "MAX_PITCH"` 僅 `mouseGain.ts` 命中定義。`npx tsc --noEmit` exit 0;`npm run test:ci` vitest **89 files/708 tests 全綠**(694 基線 + 14 新增,零既有期望值變更);Playwright 18/19 通過,`input-sampler.spec.ts` 2 案在整套並行下逾時、單獨重跑 3/3 全綠(與 T0 記錄同一支既有環境雜訊,詳 §3,非本次迴歸)。`git diff --stat` 僅 `src/input/mouseGain.ts`(新)+ `src/view/CameraController.ts`/`.test.ts`,未觸及 `src/sim/`、`SharedState`、`SimLoop`、`src/data/` |
 | 2026-08-06 | T2 | ✅ | `Meta`/`CollectMetaArgs` 新增 optional `fovDeg` + `mouseIntegration`(`MouseIntegrationMeta`);新增 `requireMouseIntegrationMeta`(`model` 封閉值域 + 三個 step 正有限性驗證)。`main.ts` 的 `buildCurrentExportPayload` 以 `resolveMouseGain({ sensitivity: settingsPanel.sensitivity, hipFovDeg: settingsPanel.fov, ads: weaponConfig.ads })` 產出 gain,`fovDeg: settingsPanel.fov`(**未**讀 `camera.fov`,`git diff` 複查僅新增行,無讀取路徑變動)+ `mouseIntegration: { model: 'tick-window-integral', radPerCount: RAD_PER_COUNT, hipStep, adsStep }` 一併填入,依 README §2.3 註記「本 task 就填」擇一落地。7 個新測試(happy path × 2、非正數/錯值拒絕案 × 4、`meta.suspect` 逐位不變 × 1)。`schema.md` 新增 `meta.fovDeg` 表列 + `meta.mouseIntegration` 新小節。`npx tsc --noEmit` exit 0;`npm run test` vitest **89 files/715 tests 全綠**(708 基線 + 7 新增,零既有期望值變更);`npx playwright test` **19/19 全綠**(含 T1 記錄過的 flaky `input-sampler.spec.ts` 案,本次未重現)。`git diff --stat` 僅 `docs/operational/schema.md` + `src/data/metadata.ts`/`.test.ts` + `src/main.ts`,未觸及 `src/sim/`、`SharedState`、`SimLoop`。 |
-| | T3 | ⬜ | |
+| 2026-08-06 | T3 | ✅ | `InputSampler.onPointerMove` 補 `isLocked()` 閘(措辭與 `onMouseDown` fire/ads 閘同源),註解說明此閘是 KI-005 / A tick 窗積分(T4)守恆閘的前提。5 個新測試(未鎖定不入 ring + `bufferOverflow` 不累加、未鎖定 legacy fallback 亦不入、鎖定中行為逐位不變(既有案沿用)、解鎖→移動→重新鎖定→移動只收鎖定期間樣本、detach 後不再入緩衝)。既有 e2e `input-sampler.spec.ts` 的「pointermove coalesced 子樣本各入 ring」案因閘門生效而轉紅(自動化無真實 Pointer Lock,`locked` 恆為 `false`,見同檔前一案的既有斷言)——比照該檔既有 fire 案的**負向路徑**慣例改寫斷言(未鎖定 → `delta` 應為 0),檔頭 docstring 與案名同步更新,歸因記於本行(FM-4 紀律)。`bufferOverflow` 口徑變更(mouse 分支自此只可能在鎖定中累加,只減不增)記入 [schema.md](../../operational/schema.md)`meta.validity` 段(日期 + 理由 + 舊新不可直接比較)。`npx tsc --noEmit` exit 0;`npm run test:ci` vitest **89 files/718 tests 全綠**(715 基線 + 3 新增(mouseGain/CameraController 已計入既有 InputSampler 案數變化);見下方 §3 更新);Playwright **19/19 全綠**(含改寫的 pointermove 案)。`git diff --stat` 僅 `src/input/InputSampler.ts`/`.test.ts` + `tests/e2e/input-sampler.spec.ts` + `docs/operational/schema.md`,未觸及 `src/sim/`、`SharedState`、`SimLoop`、`src/data/` |
 | | T4 | ⬜ | |
 | | T5 | ⬜ | |
 | | T6 | ⬜ | |
@@ -106,6 +106,8 @@ anchor*             = argmax_{anchor ∈ [-frame_period/2, +frame_period/2]} |co
 
 T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 一列改「是」,其餘七列逐位不變。
 
+**T3 落地後複核(2026-08-06)**:#7(`onPointerMove` → `pushMouse`)已改為**是**,措辭與 #3/#4 逐字同源;#1/#2/#5/#6/#8 五列逐位不變(未動)。與預期完全一致。
+
 ---
 
 ## 3. 受影響測試清單(T0 回填,2026-08-06,FM-4 歸因表)
@@ -117,8 +119,9 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | `src/view/CameraController.test.ts` | **不變**(T1 純重構) | 存在,現綠 | 有變動 ⇒ 浮點運算順序被改(R-1),停 |
 | `src/scene/eyePose.test.ts` | 不變 | 存在,現綠(8 tests) | 四場景 camera 逐幀 quaternion 斷言;T1 抽取 `AimIntegrator` 的逐位不變 golden |
 | `src/data/metadata.test.ts` / `export.test.ts` | 只增不改 | 存在,現綠 | T2 新增 `meta.fovDeg`/`meta.mouseIntegration`、T4 新增 `ticks[].dYaw/dPitch`,皆 optional |
-| `src/state/InputRing.test.ts` / `src/input/InputSampler.test.ts` | T3 可能變動(未鎖定 pointermove 案) | 存在,現綠;`InputSampler.test.ts` 已有「容量滿→bufferOverflow」案(L134),**尚無**「未鎖定 pointermove 不入 ring」案 | T3 新增案,lock 閘;既有案（鎖定中行為）預期逐位不變 |
-| e2e 匯出 round-trip(`full-drill.spec.ts` / `br-tracking.spec.ts` / `input-sampler.spec.ts`) | **T4 變動** | 三檔皆存在;整套 19 e2e 現 **18/19**(1 flaky,見下) | 新增 additive 欄(FM-4:逐條書面歸因,**不得**關掉旗標) |
+| `src/state/InputRing.test.ts` / `src/input/InputSampler.test.ts` | T3 可能變動（未鎖定 pointermove 案） | ✅ T3 落地:`InputRing.test.ts` 0 diff;`InputSampler.test.ts` pointermove describe 改注入 `isLocked`（比照 fire/ads describe），新增 5 案，整套 vitest 89 files/**718 tests** 全綠 | T3 新增案，lock 閘;既有案（鎖定中行為）逐位不變（已驗證） |
+| e2e 匯出 round-trip(`full-drill.spec.ts` / `br-tracking.spec.ts` / `input-sampler.spec.ts`) | **T4 變動** | 三檔皆存在;整套 19 e2e **19/19**（T0 記錄的 1 flaky 本次未重現） | 新增 additive 欄(FM-4:逐條書面歸因,**不得**關掉旗標)——**另見下方 T3 專屬歸因**:`input-sampler.spec.ts` 的 pointermove 案因本次閘門生效而改寫（非 T4） |
+| `tests/e2e/input-sampler.spec.ts`「pointermove coalesced 子樣本各入 ring」案 | **T3 變動**（轄下，非 T4） | ✅ 案名/斷言改寫為「未鎖定 pointermove 被閘門擋、coalesced 子樣本亦不入 ring」，`expect(delta).toBe(3)` → `toBe(0)` | 自動化無真實 Pointer Lock（該檔前一案已斷言 `locked === false`），T3 新閘門下原本「入緩衝」的正向斷言不再成立;比照同檔既有 fire 案的**負向路徑**慣例改寫,正向路徑改由 `src/input/InputSampler.test.ts` 覆蓋。檔頭 docstring 同步更新 |
 | 決定性回歸 / golden(`tests/regression/*.test.ts` ×9、`tests/golden/{calibration,recoil,research}/*.test.ts` ×4) | **零變動** | 9+4=13 檔,現綠(計入整套 694) | 有變動 ⇒ 誤觸 sim(NFR-A-1),停 |
 | Python `test_angular.py` 既有案 | 不變 | 存在,現綠 | 舊 fixture 走 `aim-diff-legacy`(T5 新增 `source` 分支) |
 | `test_run_pipeline.py` / `test_parity_fixture.py` / `test_purity.py` / `test_loader.py` | T5 可能變動(合成 fixture 補欄) | 四檔皆存在,現綠 | 合成 fixture 補欄影響依賴其 shape 的既有案(見 task-checklist commit 顆粒度說明) |

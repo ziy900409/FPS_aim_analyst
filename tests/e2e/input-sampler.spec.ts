@@ -10,8 +10,10 @@ import { test, expect } from '@playwright/test';
  * 生產 InputSampler → SharedState ring → SimLoop 消費**整條路徑端到端不丟例外、行為正確。
  *
  * 只跑 dev（5173）：preview（4173）為 production build、無 __aimDebug 縫（刻意）。
- * Pointer Lock 需真實使用者手勢、無法在自動化中穩定取得 → 「鎖定中 fire 入緩衝」的**正向**路徑
- * 由 manual-verification.md 手動驗；此處驗其**負向**（未鎖定 → fire 被閘門擋）。
+ * Pointer Lock 需真實使用者手勢、無法在自動化中穩定取得 → 「鎖定中 fire/pointermove 入緩衝」的
+ * **正向**路徑由 manual-verification.md 手動驗（pointermove 的正向路徑另由
+ * src/input/InputSampler.test.ts 的假 target 注入覆蓋）；此處驗其**負向**（未鎖定 → 被閘門擋，
+ * KI-005 / A T3 起 pointermove 與 fire/ads 同套閘門）。
  */
 
 const URL = 'http://localhost:5173/';
@@ -100,11 +102,15 @@ test.describe('WP-3 InputSampler — 真實瀏覽器端到端（Edge）', () => 
     expect(probe.fireDelta).toBe(0); // 未鎖定 → fire 被閘門擋、不入緩衝
   });
 
-  test('同步探針：pointermove getCoalescedEvents 子樣本各入 ring（次幀無遺漏，FR-3.2）', async ({
+  test('同步探針：未鎖定 pointermove 被閘門擋、coalesced 子樣本亦不入 ring（KI-005 / A T3，FR-A-8）', async ({
     page,
   }) => {
     await gotoAppReady(page);
 
+    // KI-005 / A T3：pointermove 補上與 fire/ads 相同的 isLocked() 閘。自動化無法穩定取得
+    // 真實 Pointer Lock（見上一個測試的 locked === false 斷言），故比照 fire 的既有模式——
+    // 只驗負向路徑（未鎖定 → 不入 ring）；正向路徑（鎖定中 coalesced 子樣本各入一筆）由
+    // src/input/InputSampler.test.ts（假 target 注入 isLocked）覆蓋，行為與 T3 前逐位不變。
     const delta = await page.evaluate(() => {
       const ring = (window as unknown as { __aimDebug: AimDebug }).__aimDebug.state.input;
       const base = ring.size();
@@ -120,6 +126,6 @@ test.describe('WP-3 InputSampler — 真實瀏覽器端到端（Edge）', () => 
       return ring.size() - base;
     });
 
-    expect(delta).toBe(3); // 3 個 coalesced 子樣本各記一筆（次幀採樣無遺漏）
+    expect(delta).toBe(0); // 自動化無 Pointer Lock → 閘門擋下，coalesced 子樣本一律不入 ring
   });
 });
