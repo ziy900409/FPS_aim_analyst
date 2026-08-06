@@ -191,14 +191,18 @@ semantics. Absence means a pre-S1 export.
 
 | Field | Type | Unit / Values | Required | Source | Notes |
 |---|---|---|---:|---|---|
-| `corridorExceeded` | boolean | `true` / `false` | Yes when `validity` exists | `sharedState.validity.playerCorridorExceeded` | Purely observational (GD-6); does **not** by itself invalidate a run. |
+| `corridorExceeded` | boolean | `true` / `false` | Yes when `validity` exists | `sharedState.validity.playerCorridorExceeded` (world-domain comparison, `src/scene/corridor.ts`'s `isOutsideCorridor`, KI-004 / S1 T3) | Purely observational (K-3, GD-6); does **not** by itself invalidate a run — corridor exit only means visual occlusion, and scene geometry never reaches sim (GD-6), so it cannot affect hit detection. |
 | `perfFloor` | boolean | `true` / `false` | Yes when `validity` exists | `frames.summary.p95 > PERF_FLOOR_MS` | Same condition that contributes to `suspect`. |
 | `recorderOverflow` | boolean | `true` / `false` | Yes when `validity` exists | recorder snapshot | `buildExportPayload()` ORs this with `snapshot.recorderOverflow`, same as the top-level `meta.recorderOverflow`. |
-| `bufferOverflow` | boolean | `true` / `false` | Yes when `validity` exists | `sharedState.inputMeta.bufferOverflow > 0` | **Not** part of `meta.suspect`'s OR set — recorded here as an observation only. |
+| `bufferOverflow` | boolean | `true` / `false` | Yes when `validity` exists | `sharedState.inputMeta.bufferOverflow > 0` | **Not** part of `main.ts`'s explicit `suspect` OR set — recorded here as an observation only (it does still fold into `meta.suspect` via `collectMeta()`'s own internal OR, a pre-existing, S1-unrelated coupling; see KI-004-S1 progress.md S-S1.6). |
 
-**`meta.validity` is not the same set as `meta.suspect`.** `meta.suspect`'s OR set is unchanged by this block:
-it remains `explicitSuspect (corridor/session/protocol/perfFloor) || bufferOverflow || recorderOverflow || perfFloor`,
-computed independently in `collectMeta()`/`buildExportPayload()`. Adding `validity` never widens or narrows `suspect`.
+**`meta.validity` is not the same set as `meta.suspect`.** As of **KI-004 / S1 T3**, `main.ts`'s explicit
+`suspect` OR set no longer includes corridor exit (K-3): it is
+`explicitSuspect (session/protocol/perfFloor) || bufferOverflow || recorderOverflow || perfFloor`, computed
+independently in `collectMeta()`/`buildExportPayload()`. Adding `validity` never widens or narrows `suspect`.
+Exports produced **before T3** landed carry `validity.corridorExceeded` computed from the pre-fix, 100×-too-tight
+source-unit comparison (`|player.x| > halfWidthU` instead of `|player.x| × SIM_TO_WORLD > halfWidthU`) and are
+**not** comparable to post-T3 exports for this field.
 
 ### `ticks[]`
 

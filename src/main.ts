@@ -51,6 +51,7 @@ import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
 import type { SceneConfig } from './scene/SceneConfig.ts';
 import { resolveEyeWorldBase } from './scene/eyePose.ts';
+import { isOutsideCorridor } from './scene/corridor.ts';
 import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
@@ -375,10 +376,11 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
-    // 純觀測 suspect:玩家逸出走廊(GD-6)、實驗 session 中途退出 fullscreen(GD-10 failure mode)、
-    // 或 drill frame p95 超過效能地板(GD-10 防線③)。
+    // 純觀測 suspect:實驗 session 中途退出 fullscreen(GD-10 failure mode)、或 drill frame p95
+    // 超過效能地板(GD-10 防線③)。玩家逸出走廊**不在此列**(K-3,KI-004 / S1 T3):越界的真實
+    // 後果是視覺遮擋,而場景幾何永不進 sim(GD-6),不可能影響命中判定 —— 屬「該記錄的觀測」而非
+    // 「該作廢的 run」,越界事實改由下方 meta.validity.corridorExceeded 記錄。
     suspect:
-      sharedState.validity.playerCorridorExceeded ||
       (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
       frames.summary.p95 > PERF_FLOOR_MS,
     simToWorld: SIM_TO_WORLD,
@@ -537,7 +539,7 @@ function buildSimLoop(): SimLoop {
     activeDrillConfig.sequence.seed,
     {
       afterTick(state): void {
-        if (Math.abs(state.player.x) > activeSceneConfig.playerCorridor.halfWidthU) {
+        if (isOutsideCorridor(state.player.x, activeSceneConfig.playerCorridor.halfWidthU, SIM_TO_WORLD)) {
           state.validity.playerCorridorExceeded = true;
         }
       },

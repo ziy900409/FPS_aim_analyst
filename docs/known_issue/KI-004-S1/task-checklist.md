@@ -10,7 +10,7 @@
 | T0 | [Entry gate:基線量測與受影響面盤點](T0-entry-gate.md) | — | Low | ✅ |
 | T1 | [`SIM_TO_WORLD` 升引擎級常數 + eye world base 單一來源](T1-sim-to-world-constant.md) | FR-S1-1 · FR-S1-2 | Med | ✅ |
 | T2 | [匯出自我描述:`meta.simToWorld` + `scene.eye` + `validity`](T2-export-meta-additive.md) | FR-S1-13/14/15 | Med | ✅ |
-| T3 | [corridor gate 改 world 域 + 依 K-3 脫離 `suspect`](T3-corridor-observation.md) | FR-S1-3 · FR-S1-4 | Med | ⬜ |
+| T3 | [corridor gate 改 world 域 + 依 K-3 脫離 `suspect`](T3-corridor-observation.md) | FR-S1-3 · FR-S1-4 | Med | ✅ |
 | T4 | [離線推導 eye pose 契約 + 正確性閘 ①②](T4-eye-origin-derivation.md) | FR-S1-5/6/7/9/10 | **High** | ⬜ |
 | T5 | [Python `angular.py` 同步 + parity fixture 重產](T5-python-parity-sync.md) | FR-S1-8/10/11 | Med | ⬜ |
 | T6 | [帳本 / 里程碑對帳 + M14 ② 重新宣告](T6-ledger-m14-reconcile.md) | FR-S1-12 | Low | ⬜ |
