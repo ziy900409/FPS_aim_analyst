@@ -14,7 +14,7 @@
 | T4 | [離線推導 eye pose 契約 + 正確性閘 ①②](T4-eye-origin-derivation.md) | FR-S1-5/6/7/9/10 | **High** | ✅ |
 | T5 | [Python `angular.py` 同步 + parity fixture 重產](T5-python-parity-sync.md) | FR-S1-8/10/11 | Med | ✅ |
 | T6 | [帳本 / 里程碑對帳 + M14 ② 重新宣告](T6-ledger-m14-reconcile.md) | FR-S1-12 | Low | ✅ |
-| T-exit | [Exit gate:交付判定](T-exit-gate.md) | — | Low | ⬜ |
+| T-exit | [Exit gate:交付判定](T-exit-gate.md) | — | Low | ✅ |
 
 **commit 顆粒度**:T4 + T5 **合併為單一已驗證綠的 commit**(TS 修法會讓 parity 必紅,與 repo 硬規「每個 commit 綠」衝突;比照 [BD-001](../BUGFIX-DECISIONS.md) 的 TDD 偏離慣例)。其餘各自一個 commit。
 
