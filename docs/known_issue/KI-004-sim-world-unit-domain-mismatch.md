@@ -6,6 +6,15 @@
 > ⚠️ **2026-08-05 更正**:本文件初版稱「08:03 匯出 `px ≡ 0`,ε 碰巧正確,M14 數值不撤回」。**該敘述已證實為誤** —— D2 實際上有**兩個獨立缺陷**,其中 D2a(遺漏 camera base offset)與 `px` 無關,在 08:03 上同樣造成 ~12.5° 誤差。**M14 ② 撤回**(§3、§4)。
 > 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-004。
 > 發現路徑:排查「[counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json](../../research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json) 為何零位移」時,重現用的第二份匯出暴露此問題。
+>
+> ⚠️ **2026-08-06 後續更正(本文件的一條推論已被推翻)**:本文件 §「影響面」與 §「決策 K-2」three 處主張
+> 「**M14 ①③④⑤⑥ 不受影響 —— 分段走 ω(t),只依賴 `aim`,與量測原點無關**」。該推論**就本 KI 的量測原點
+> 缺陷而言仍正確**,但 `ticks[].aim` 另有一個**獨立**缺陷:它以 render 速率(~240 Hz)寫入、以 sim 速率
+> (128 Hz)讀取,逐 tick 差分後產生 zero-order-hold aliasing → 見 **[KI-005](KI-005-omega-render-sim-aliasing.md)**。
+> 此外,本文件 §2 對照表記載的「08:03 **無**鍵盤輸入」這個事實,其對 M14 ④/⑤ **構念效度**的後果當時未被追下去
+> → 見 **[KI-006](KI-006-m14-sample-no-counterstrafe.md)**。
+> **結果:M14 ③④⑤ 亦已撤回(2026-08-06),僅 ①⑥ 維持。**本文件其餘診斷(D1 corridor gate / D2a 遺漏
+> camera base offset / D2b 遺漏 `SIM_TO_WORLD` / K-1 雙域 / K-3 自由位移)**全部不受影響,S1 修法照原計畫進行**。
 
 ---
 

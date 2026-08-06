@@ -229,6 +229,8 @@ docs/exec-plan/
 | `known_issue/KI-NNN-*.md` | 每個 bug 一支 tech spec（症狀/根因/修改計畫/風險/任務拆解）；source of truth |
 | [known_issue/KI-001-input-lag-sim-clock-drift.md](known_issue/KI-001-input-lag-sim-clock-drift.md) | KI-001：開火/鍵盤嚴重輸入延遲（sim 邏輯時鐘漂移）— 已修（re-anchor，BD-001） |
 | [known_issue/KI-004-sim-world-unit-domain-mismatch.md](known_issue/KI-004-sim-world-unit-domain-mismatch.md) | KI-004：sim(source unit)/world domain 混用 — corridor gate 緊 100×（真實急停 run 全被標 `suspect`）+ 離線 ε(t) 原點錯尺度。**🔴 修法待拍板；碰 `px/pz` 或 ε 系列前必讀** |
+| [known_issue/KI-005-omega-render-sim-aliasing.md](known_issue/KI-005-omega-render-sim-aliasing.md) | KI-005：ω(t) 受 render(~240Hz)/sim(128Hz) **zero-order-hold aliasing** 汙染 — 每 8 tick 一個假凹口，`merged_adjacent_peaks` 15/19、有效產率 4/19。**🟡 已定解法待落地（選項 A：tick 窗內積分 mouse delta + 補 `meta.fovDeg`）；碰 `ticks[].aim` 逐 tick 差分（ω/角加速度/jerk）或 `seg-*` 參數前必讀。既有匯出的 ω(t) 一律不可用（不做回溯清洗）** |
+| [known_issue/KI-006-m14-sample-no-counterstrafe.md](known_issue/KI-006-m14-sample-no-counterstrafe.md) | KI-006：M14 ④/⑤ 效度閘所用樣本（08:03）**不含 counter-strafe 構念** — `vx ≡ 0`、`keys` 全空、`counter` 事件 0。**🔴 處置待拍板；挑選真實匯出樣本或宣告效度閘前必讀** |
 
 ---
 

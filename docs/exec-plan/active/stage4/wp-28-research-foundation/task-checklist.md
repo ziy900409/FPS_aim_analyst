@@ -19,4 +19,4 @@
 - task 完成:更新 [progress.md](progress.md)(Progress / Decision Log / Surprises / OQ)與切片一起 stage;把上表 Done 翻 ✅。
 - WP 完成:把 [../README.md §3](../README.md) 的 WP-28 狀態翻 ✅。
 - **兩個閘都要貼證據**:`uv run pytest`(research)+ `npm run test:ci`(engine,含 parity 對表)。
-- **M14 已於 2026-08-05 宣告**;WP-30/31 entry blocker 已解除。未來若新真實資料否證 `seg-v1`,依 D-28.7 升版重跑,不得原地調參。
+- ~~**M14 已於 2026-08-05 宣告**;WP-30/31 entry blocker 已解除。~~ ⚠️ **已作廢**:M14 **②③④⑤ 分兩次撤回**(② 2026-08-05 [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md);③④⑤ 2026-08-06 [KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md) + [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md)),**僅 ①⑥ 維持**;**WP-30/31 entry blocker 維持**(三條獨立理由)。`seg-v1` 已被真實資料否證(SG window 7 < beat 週期 8),依 D-28.7 須**升版 `seg-v2` 重跑全鏈,不得原地調參**。

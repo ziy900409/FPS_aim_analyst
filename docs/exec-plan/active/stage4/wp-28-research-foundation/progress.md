@@ -49,7 +49,21 @@
 - **實測**(ground truth = 引擎自身的 `fire.offsetDeg`):08:03 偏差中位數 **12.52°**、09:39 **67.11°**;正確公式為 0.21° / 0.14°。
 - **為何 T2 的 parity 閘沒抓到**:parity 是**一致性**閘,Python 忠實移植了同一個錯誤原點 → 兩側一致地錯,≤1e-9 恆綠。這是 S-28.0 當初擔心的「假綠」的另一種形態:不是 Python 與 TS 分裂,而是**兩者一起偏離構念**。
 - **處置**:M14 ② 撤回,①③④⑤⑥ 維持(分段走 ω(t),只依賴 `aim`,與原點無關)。T2/T-exit 的 task 交付物本身不需重做,但 S1 落地後須**重產 parity fixture 並重新宣告 ②**。
+  > ⚠️ **2026-08-06 更正**:上一句「①③④⑤⑥ 維持」中的 **③④⑤ 已撤回**,見下方「事後更正(2026-08-06)」。就本條的**量測原點**缺陷而言該推論仍正確,但 `aim` 另有獨立缺陷。
 - **新增閘(S1 DoD)**:`fire.offsetDeg` 與 ε(t) 互驗(同構念、不同實作路徑、不同資料來源),以及涵蓋 `eyeZ ≠ 0 且 px ≠ 0` 的合成幾何 fixture —— 現行 T2 幾何 fixture 全為原點 `(0,·,0)` 的靜態情境,結構上看不見此 bug。
+
+---
+
+## 事後更正(2026-08-06)— M14 ③④⑤ 撤回
+
+檢視 [overlay-contact-sheet.png](../../../../../research/out/overlay-contact-sheet.png) 時發現 ω(t) 主 burst 內有規律的單 tick 深凹口,追查後確認**兩個相互獨立**的缺陷,詳見 [KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md) / [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md) 與 BD-005 / BD-006。
+
+- **缺陷 1(KI-005)**:`state.aim` 由 **render path**(`CameraController.applyDelta`,~240 Hz)寫入、由 **sim path**(128 Hz)讀取 → zero-order-hold aliasing。240/128 = 1.875 幀/tick ⇒ 每 **8 tick** 有一個只夾到 1 幀位移。**角位移總量正確,錯的是歸屬到哪個 tick。**
+- **決定性驗證**:以 `meta.frames.series` 重建逐幀時間、預測每 tick 夾到幾幀,再與實測 ω 比對 —— `corr = 0.805`;1 幀 tick 正規化 ω **0.550**(ZOH 模型預測 0.533)、2 幀 tick **1.108**(預測 1.067)、1 幀 tick 佔比 **12.7%**(預測 12.5%)。三項預測全中,ω 側未做任何擬合。
+- **缺陷 2(KI-006)**:M14 ④/⑤ 引用的 08:03 樣本 `vx ≠ 0` 的 tick = **0**、`keys` 全程 `[]`、`counter` 事件 **0** —— 是站樁純 flick,**counter-strafe 構念從未被執行**。此事實首見於 [KI-004 §2 對照表](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md),但當時未追究其對構念效度的後果。
+- **為何合成掃參沒抓到 KI-005**:`make_synthetic_export` 直接產生 `aim`/ω 序列,**完全不經 render path**,合成訊號結構上不可能含此假象。243 組掃參與 `seg-v1` 凍結值(**SG window = 7**)全在理想訊號上調出;而 beat 週期 = **8 tick**,**濾波窗短於假象週期,數學上不可能濾除** —— 這正是 `merged_adjacent_peaks` 15/19、有效產率僅 **4/19(21%)** 的直接成因。
+- **處置**:**③④⑤ 撤回,①⑥ 維持**(① ingest/dt 屬 schema 與取樣層,⑥ 為 pytest 綠燈,皆不涉 aim 差分與行為內容)。**WP-30/31 entry blocker 維持**,現有三條獨立理由(KI-004 / KI-005 / KI-006)。重新宣告條件見 [T-exit-gate.md](T-exit-gate.md)。
+- **架構層教訓**:BD-004 的結論是「parity 是一致性閘,無法發現兩側一起錯」;本次再加兩條同構的 —— **合成 fixture 看不見 render/sim 交界的缺陷**,以及**一致性閘與目視檢核無法發現「量錯了對象」**(疊圖不顯示 `vx`/`keys`,站樁 flick 本就會產生漂亮單峰)。
 
 ## Decision Log
 

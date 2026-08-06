@@ -18,6 +18,8 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-006](KI-006-m14-sample-no-counterstrafe.md) | M14 ④/⑤ 的真實資料效度閘所用樣本(08:03)**不含 counter-strafe 構念**:`vx ≡ 0`、`keys` 全空、`counter` 事件 0 → 量到的是站樁純 flick。**M14 ④⑤ 撤回**(理由獨立於 KI-005) | BD-006(§2,處置待拍板) | 🔴 已確認,處置待拍板 |
+| [KI-005](KI-005-omega-render-sim-aliasing.md) | ω(t) 受 render(240Hz)/sim(128Hz)**zero-order-hold aliasing** 汙染:每 8 tick 一個假凹口 → `merged_adjacent_peaks` 15/19,有效產率僅 4/19。**推翻 KI-004「①③④⑤⑥ 不受影響」的豁免,M14 ③④⑤ 撤回** | BD-005(§2,**修法已拍板**:選項 A + 感度由 meta 重建 + 不做過渡期 C) | 🟡 已定解法待落地 |
 | [KI-004](KI-004-sim-world-unit-domain-mismatch.md) | sim(source unit)與 world domain 混用:corridor gate 緊 100× → 真實急停 run 全被標 `suspect`;離線 ε(t) 量測原點錯誤(D2a base offset + D2b scale)→ **實測偏差 12.5°/67°,M14 ② 撤回** | BD-004(§2,K-1/K-2/K-3 已拍板) | 🟡 已定解法待落地(S1/S2/S3) |
 | [KI-003](KI-003-top-left-controls-overlap.md) | 左上角 session/protocol 啟動按鈕覆蓋 SettingsPanel 的 Sensitivity/FOV/Resolution | BD-003(§3) | ✅ 已修(2026-08-05) |
 | [KI-002](KI-002-br-field-camera-anchor-protocol-load.md) | br-field camera 未錨定 sim origin(D1)+ protocol 場景載入驗證舊 drill(D2)(PR #34 review) | BD-002(§3) | ✅ D1+D2 已修(2026-07-15) |
@@ -28,6 +30,41 @@
 ## 2. 未解 / 進行中(OPEN)
 
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
+
+### BD-006 🔴 KI-006 — M14 效度閘樣本不含 counter-strafe 構念;**已確認,處置待拍板**(2026-08-06)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 為 BD-005 清點兩份真實匯出的行為內容時確認:M14 ④/⑤ 引用的 08:03 匯出 `vx ≠ 0` 的 tick = **0**、`keys` 全程為 `[]`、`counter` 事件 **0**;同日 09:39 則有 1,415 個橫移 tick 與 24 個 `counter` 事件。`counter` 的產生條件為「反向鍵按下且 `vx` 反向」([SimLoop.ts:76](../../src/loop/SimLoop.ts#L76)),`vx ≡ 0` 使其恆不成立 —— **記錄邏輯正確,是樣本裡沒有該行為**。完整診斷見 [KI-006](KI-006-m14-sample-no-counterstrafe.md)。 |
+| **與 BD-004 的界線(避免重複記帳)** | 「08:03 無鍵盤輸入 / 零位移」這個**原始事實**首見於 [KI-004 §2 對照表](KI-004-sim-world-unit-domain-mismatch.md),當時作為排查 `suspect` 反直覺行為的線索,**未**就 M14 ④/⑤ 的構念效度作出結論。BD-006 只處理那個未被追下去的結論,不重複單位域診斷。 |
+| **決策(部分確定 2026-08-06)** | 原三選項中,**A(改用 09:39)已自動出局** —— 這是 BD-005 拍板「不做過渡期選項 C」的**邏輯後果而非獨立決策**:選項 A 的修法改變的是「記錄什麼」,09:39 檔內的 `aim` 已把 beat 假象寫死且不會回溯清洗,故無法產出有效 ω(t) 證據。**剩 B**(修法後重新採樣,明確要求受試者執行完整 counter-strafe)**為唯一路徑**,採集時機與規模待定(= OQ-KI5-6 / OQ-KI6-1,同一件事)。**C**(於 `research/src/modules/ingest/` 新增 **construct presence gate**:由 drill 宣告核心構念,ingest 時斷言其存在,否則產 `construct_absent:*` flag)**建議無論如何都做**,仍待拍板。<br>註:09:39 的**構念完整性**不受影響(1,415 橫移 tick / 24 `counter` 事件),仍可用於**不依賴 ω** 的分析(counter 時序、`t_stop`、`residualSpeed`、首發時機);出局的只是「作為分段效度樣本」這個用途。 |
+| **理由(C 的部分)** | 既有閘門(schema / dt / 純度)全部只驗**形式**,沒有任何一關會問「這份 counter-strafe 匯出裡有 counter 嗎」。更糟的是 `meta.suspect` 當時因 BD-004 的 corridor 單位域錯誤而**是反的** —— 有做急停的被標 suspect、完全不動的反而乾淨,挑樣本時的「乾淨」訊號**系統性地偏好了構念缺席的那一份**。此閘若早存在,08:03 第一天即被擋下。 |
+| **架構層結論(與 BD-004 同源)** | BD-004 的結論是「parity 是一致性閘,無法發現兩側一起錯」;本案再加一條同構的:**一致性閘與目視檢核無法發現「量錯了對象」**。疊圖不顯示 `vx`/`keys`,檢核者無從察覺受試者沒在動,而站樁 flick 本來就會產生漂亮的單峰波形。兩者共同指向:量測層需要的是**內容層面的正確性閘**,不只是形式閘。 |
+| **偏離計畫** | 無。本階段為診斷 + 決策入帳,零程式碼改動。 |
+| **遺留 OQ** | **OQ-KI6-1**(收斂)A 已出局,剩 B;採集時機與規模待定(= OQ-KI5-6)· **OQ-KI6-2** construct presence gate 是否納入本輪 · **OQ-KI6-3** 構念存在性門檻如何 pre-register 以免事後調參 · **OQ-KI6-4** M14 真實資料項是否應要求 n ≥ 2 個 session(建議趁重新採樣一併滿足)。 |
+| **影響面** | **受影響**:**M14 ④⑤ 撤回**(理由與 BD-005 相互獨立 —— 即使 aliasing 完全修好,以 08:03 重跑仍不構成 counter-strafe drill 的效度證據)、[analysis-segments.md](../operational/analysis-segments.md) 的 “Real-export validation” 段、**WP-30/31 entry blocker**(第三條獨立理由)。**不受影響**:M14 ①(ingest/dt 屬 schema 與取樣層,與行為內容無關)、②③⑥、**引擎程式碼零改動**。 |
+| **狀態** | 🔴 已確認,處置待拍板。 |
+
+---
+
+### BD-005 🟡 KI-005 — ω(t) 受 render/sim beat 汙染;**根因已證實 + 修法已拍板,待落地**(2026-08-06)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 檢視 [overlay-contact-sheet.png](../../research/out/overlay-contact-sheet.png) 時注意到多數 peek 主 burst 中央有單 tick 深凹口且間距規律。追碼確認:`state.aim` 由 **render path** 寫入(`pointerLock.onMove → CameraController.applyDelta`,[main.ts:202](../../src/main.ts#L202))、由 **sim path** 以 128 Hz 讀取([RingBuffer.ts](../../src/data/RingBuffer.ts) `recordTickFromState`)。240/128 = **1.875 幀/tick**,小數部 0.125 ⇒ 每 **8 tick** 有一個只夾到 1 幀位移 —— 典型 **zero-order-hold aliasing**。角位移總量正確,錯的是「歸屬到哪個 tick」。完整診斷見 [KI-005](KI-005-omega-render-sim-aliasing.md)。 |
+| **證據(根因已證實,非推定)** | ① 凹口間距在**兩份 session 各自獨立**皆為 8 的倍數;② 位移守恆 + 物理不可能(peek 14 的 `302 → 17` deg/s 需 ~37,000 deg/s²);③ **決定性證據**:以 `meta.frames.series` 重建逐幀時間、預測每 tick 夾到幾幀,與實測 ω 比對 —— `corr = 0.805`,1 幀 tick 正規化 ω **0.550**(ZOH 模型預測 0.533)、2 幀 tick **1.108**(預測 1.067)、1 幀 tick 佔比 **12.7%**(預測 12.5%)。**三項預測全部命中,誤差 < 4%,且 ω 側未做任何擬合。** |
+| **推翻 BD-004 的一條豁免(關鍵)** | BD-004 / [KI-004](KI-004-sim-world-unit-domain-mismatch.md) / [T-exit-gate](../exec-plan/active/stage4/wp-28-research-foundation/T-exit-gate.md) 三處主張「M14 ①③④⑤⑥ 維持 —— 分段走 ω(t),只依賴 `aim`,與量測原點無關」。該推論就**量測原點**而言正確,但 `ticks[].aim` 另有一個獨立缺陷:它是 render 速率寫入、sim 速率讀取的訊號。**M14 ③④⑤ 因此同樣撤回**;① 與 ⑥ 不涉 ω 差分,維持。 |
+| **決策(2026-08-06 使用者拍板)** | **採選項 A**;**感度由 meta 重建**(OQ-KI5-1);**A 先、B 另案**(OQ-KI5-2);**不做過渡期選項 C,直接等 A**(OQ-KI5-3)。<br>**連帶必要條件**:拍板後核對匯出 schema 發現 **`meta` 缺 hip 基準 FOV** —— `WeaponMeta.ads.fovDeg`(ADS)與 `sensitivity` 都在,但基準 FOV 從未接進 [metadata.ts](../../src/data/metadata.ts)([SettingsPanel.ts:47](../../src/ui/SettingsPanel.ts#L47) 的 `fov` getter 註解自陳「(WP-7 metadata)」卻漏接)。ADS gain = `sensitivityRatio × (adsFovDeg / hipFov)` ⇒ **選項 A 落地時必須同時補 `meta.fovDeg`(additive v2 欄)**,否則 WP-24 的 ADS drill 無法重建增益。hip 期間 gain ≡ 1 不受影響,現有兩份樣本全程未開鏡故以今日 meta 即可重建。<br>**連帶後果(重要)**:既然不落 C,**既有 08:03 / 09:39 兩份匯出在 A 落地後仍不具備可用的 ω(t)** —— 選項 A 改變的是「記錄什麼」,舊檔的 `aim` 已把假象寫死。故 M14 ③④⑤ 的重新宣告**必須等新採樣**,與 BD-006 選項 B 收斂為同一次採集。 |
+| **選項明細(存查)** | **選項 A**:於 [`applyInput`](../../src/loop/SimLoop.ts#L66) 在 tick 窗內積分 mouse delta —— `consume` 已依 `event.timeStamp` 精確交付落窗事件,改為以同一套 `sensitivity × RAD_PER_COUNT × adsGain` 累加成 `dYawTick/dPitchTick` 寫入 TickRecord。**選項 B(與 A 互補)**:以 preallocated arena opt-in 記錄 ~1000 Hz 原始 mouse sample(`getCoalescedEvents` 已收下、目前丟棄),約 0.7 MB/30s。**選項 C**:純分析側緩解(依 session 算 beat 週期 → 前置 notch + `render_sim_beat` flag),可回溯套用。**選項 D 不採**:對齊速率需動 `SIM_HZ = 128`(綁 CS2 64 Hz recoil 子節奏與決定性 golden),且 240/144/165 Hz 為主流硬體。 |
+| **理由** | **A** 讓每個輸入事件依自身時間戳落進唯一正確的 tick ⇒ 結構上不可能有 aliasing,且**與 displayHz 完全無關**;不碰 render path,`state.aim`/camera/手感/ADR-2 雙迴圈邊界全部不變;比照 `recordKeyEvents` 做 opt-in ⇒ 關閉時逐位不變,golden 與決定性回歸保住。**B** 補的是解析度而非正確性:128 Hz 下一次 200 ms flick 僅 25 點,3–4 點寬的修正動作無法分辨,WP-31 的 submovement/SPARC/Fitts 需要 ~1000 Hz。**A 修正錯誤,B 提高解析度,兩者非互斥。** |
+| **架構層結論(跨 WP,故入本帳本)** | **合成 fixture 結構上不可能重現此缺陷** —— `make_synthetic_export` 直接產生 ω/`aim` 序列,完全不經 render path。T3 的 243 組合掃參與 `seg-v1` 凍結值(含 **SG window = 7**)因此全部是在一條不含此假象的理想訊號上調出來的;而 beat 週期為 **8 tick**,**濾波窗短於假象週期,數學上不可能濾除**。這是「合成 fixture 解鎖開發」這條 WP-28 核心策略的一個結構性盲區:凡缺陷源自 render/sim 交界,合成路徑永遠看不到。 |
+| **硬體 confound(研究效度)** | `beat_period = 1 / |displayHz/simHz − round(displayHz/simHz)|`:240 Hz → 8 tick、144 Hz → 8、**165 Hz → ~3.5**(落進 flick 主峰帶寬,更糟)、60 Hz → 過半 tick 讀到 ω = 0。**受試者的螢幕刷新率會系統性改變量到的 ω 波形**,修復前跨受試者比較不成立。 |
+| **偏離計畫** | 無。本階段為診斷 + 決策入帳,零程式碼改動。診斷所需的測試 A 僅讀取既有匯出,未新增採集。 |
+| **遺留 OQ** | ✅ **OQ-KI5-1/2/3 已關閉**(見「決策」列);✅ **OQ-KI5-4 隨之關閉** —— 無 C 清洗路徑,`seg-v2` 重掃必須用修法後的新匯出。🟡 **OQ-KI5-5** 是否把 `beat_period_ticks` 納入 `meta.display.gate`(A 落地後價值降為稽核舊匯出/偵測回歸)· 🟡 **OQ-KI5-6**(新)新採樣的時機與規模,是否與 BD-006 選項 B 合併並順帶滿足 OQ-KI6-4(n ≥ 2 session)。 |
+| **影響面** | **受影響**:所有匯出的 `ticks[].aim` 逐 tick 差分量(ω(t)、角加速度、jerk),汙染幅度隨螢幕刷新率變動;**M14 ③④⑤ 撤回**(③ 結論成立但證據力失效 —— 合成訊號不含此假象;④ 的 0.95 計入被假象切碎後又合併的段,有效產率實為 **4/19**;⑤ 的 SG window 7 < beat 8,凍結值於真實資料不適用);**WP-30/31 entry blocker 維持**(本 KI 為獨立於 KI-004 的第二條理由);`seg-v1` 落地後須升版 `seg-v2` 重掃(依 D-28.7 不得原地調參)。**不受影響**:引擎命中/彈道/`fire.offsetDeg`/sim 決定性(皆不做逐 tick aim 差分)、遊戲手感與 camera 表現(render path 本身無 bug)、WP-29(只吃 `events` 與 `ticks[].keys`)、M14 ①⑥。 |
+| **狀態** | 🟡 **已定解法待落地**。根因經測試 A 證實;修法 2026-08-06 拍板(A / meta 重建 / 不做 C)。**尚未動任何程式碼。**落地範圍:`applyInput` tick 窗積分(opt-in)+ `meta.fovDeg` additive 欄 + 決定性回歸測試 + 新採樣 + `seg-v2` 重掃。 |
+
+---
 
 ### BD-004 🔴 KI-004 — sim/world 單位域混用(corridor gate + 離線 ε 原點);**診斷完成,修法待拍板**(2026-08-05)
 
@@ -41,6 +78,7 @@
 | **偏離計畫** | 無。本階段仍為診斷 + 決策入帳,零程式碼改動。 |
 | **遺留 OQ** | **OQ-KI4-2**(改寫)corridor 觀測項的記錄粒度 · **OQ-KI4-5**(新)自由位移下越出淨空走廊造成的視覺遮擋是否需在報告層加註 · **OQ-KI4-6**(新)`clearance.halfWidthU` 與執行期觀測門檻是否拆欄。OQ-KI4-1/3/4 已隨 K-1/K-3/K-2 關閉。 |
 | **影響面(診斷結論)** | **受影響**:`meta.suspect` 語意、離線 ε(t)/on-target/TOT%/`t_acquire`/`t_detect`/`eccentricity_at_spawn`(**所有**匯出,非僅 `px ≠ 0`)、**M14 ② 撤回**、**WP-30/31 entry blocker 恢復**(全部逐段軌跡指標建在 ε 上)、`run_pipeline` 的 `mean_epsilon_deg` 診斷欄。**不受影響**:引擎命中/彈道/`offsetDeg`(全走 camera,兩端同域)、sim 決定性(S1 不動 sim)、submovement 分段與 M14 ①③④⑤⑥(走 ω(t),只依賴 `aim`)、WP-29 T1/T2(只吃 events 與 `ticks[].keys`)。 |
+| **後續更正(2026-08-06)** | 本條的「**M14 ①③④⑤⑥ 維持:分段走 ω(t),只依賴 `aim`**」(見上方「決策」與「影響面」兩列)**已被推翻**。該推論就本條的量測原點缺陷而言仍正確,但 `ticks[].aim` 另有獨立缺陷 —— render 速率寫入 / sim 速率讀取的 ZOH aliasing(**BD-005** / [KI-005](KI-005-omega-render-sim-aliasing.md));且本條 §2 對照表所載「08:03 無鍵盤輸入」對 M14 ④/⑤ 構念效度的後果當時未被追下去(**BD-006** / [KI-006](KI-006-m14-sample-no-counterstrafe.md))。**現況:M14 ②③④⑤ 撤回,僅 ①⑥ 維持。** 本條其餘診斷(D1 / D2a / D2b / K-1 / K-3)與 **S1 修法計畫全部不受影響,照原計畫進行**。 |
 | **狀態** | 🟡 已定解法待落地(S1/S2/S3)。 |
 
 ---

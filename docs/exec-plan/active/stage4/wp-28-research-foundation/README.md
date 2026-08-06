@@ -10,7 +10,7 @@
 | **相依** | M4 ✅ + WP-16 ✅ + **M11/M12 ✅**(`meta.targets.hitbox` / tick `ads` / `hit` 事件語意已鎖) |
 | **對應 FR** | FR-D1 ~ FR-D6 |
 | **估時** | 3.5–4.5 dev-days |
-| **狀態** | ✅ **完成(2026-08-05);M14 已宣告**。六項 DoD 全綠;真實匯出 3,507 ticks、dt uniform、`seg-v1` 19/20 peeks(0.95)+20 張疊圖人工檢核;WP-30/31 entry blocker 已解除 |
+| **狀態** | 🔴 **M14 ②③④⑤ 已撤回,僅 ①⑥ 維持**(2026-08-06)。程式碼交付物(T1–T4 + `run_pipeline.py`)仍在且測試綠,但**真實資料效度證據全部失效**:② [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md)(ε 量測原點)· ③④⑤ [KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md)(ω(t) 受 render/sim beat 汙染,有效產率 4/19)+ [KI-006](../../../../known_issue/KI-006-m14-sample-no-counterstrafe.md)(效度閘樣本 `vx ≡ 0`、`counter` 事件 0,無 counter-strafe 構念)。**WP-30/31 entry blocker 維持**(三條獨立理由);WP-29 不受影響。重新宣告條件見 [T-exit-gate.md](T-exit-gate.md) |
 
 ---
 
@@ -64,4 +64,4 @@ CLAUDE.md §4                                     ← MODIFY C-D1~C-D4 四條硬
 | **T2 ✅** | [T2-angular-kinematics.md](T2-angular-kinematics.md) | ω(t)/ε(t)/on_target + **ε 層雙向 parity 閘** | T1 | **High** |
 | **T3 ✅** | [T3-submovement-segments.md](T3-submovement-segments.md) | SG 平滑 + submovement 分段 + `seg-v1` 參數凍結(合成 DoD;真實資料證據留 M14 blocker) | T2 | **High** |
 | **T4 ✅** | [T4-per-segment-flags.md](T4-per-segment-flags.md) | `per_segment_apply` + quality flags | T3 | Low |
-| **T-exit ✅** | [T-exit-gate.md](T-exit-gate.md) | 一鍵 script(`src/report/run_pipeline.py`)+ `analysis-segments.md` + M14 六項證據;**2026-08-05 全綠,M14 已宣告** | T1–T4 | — |
+| **T-exit 🔴** | [T-exit-gate.md](T-exit-gate.md) | 一鍵 script(`src/report/run_pipeline.py`)+ `analysis-segments.md` + M14 六項證據;2026-08-05 宣告後**分兩次撤回**:② (08-05, KI-004)、③④⑤ (08-06, KI-005/KI-006);**僅 ①⑥ 維持** | T1–T4 | — |
