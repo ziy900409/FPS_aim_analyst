@@ -9,7 +9,7 @@
 
 | # | Task | 交付 FR | 風險 | Done |
 |---|---|---|---|---|
-| T0 | [Entry gate:基線量測與受影響面盤點](T0-entry-gate.md) | — | Low | ⬜ |
+| T0 | [Entry gate:基線量測與受影響面盤點](T0-entry-gate.md) | — | Low | ✅ |
 | T1 | [`mouseGain.ts` — counts→rad / gain / 角度累加單一來源](T1-mouse-gain-single-source.md) | FR-A-2 · FR-A-3 | **High** | ⬜ |
 | T2 | [匯出自我描述:`meta.fovDeg` + `meta.mouseIntegration`](T2-export-meta-additive.md) | FR-A-5 · FR-A-6 | Low | ⬜ |
 | T3 | [`pushMouse` 補 pointer-lock 閘](T3-pointer-lock-gate.md) | FR-A-8 | Low | ⬜ |
