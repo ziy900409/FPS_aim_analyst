@@ -658,6 +658,154 @@ describe('collectMeta', () => {
     expect(meta.suspect).toBe(false);
   });
 
+  it('accepts meta.fovDeg as the hip-baseline FOV for offline ADS gain reconstruction (KI-005 / A, FR-A-5)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      fovDeg: 75,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    });
+
+    expect(meta.fovDeg).toBe(75);
+  });
+
+  it('omits meta.fovDeg for pre-KI-005 exports without a default', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    });
+
+    expect(meta.fovDeg).toBeUndefined();
+    expect('fovDeg' in meta).toBe(false);
+  });
+
+  it('rejects a non-positive meta.fovDeg', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        fovDeg: 0,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+      }),
+    ).toThrow('fovDeg must be a positive finite number');
+  });
+
+  it('accepts meta.mouseIntegration self-describing the tick-window-integral model (KI-005 / A, FR-A-6)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      mouseIntegration: {
+        model: 'tick-window-integral',
+        radPerCount: 0.022,
+        hipStep: 0.022,
+        adsStep: 0.0088,
+      },
+    });
+
+    expect(meta.mouseIntegration).toEqual({
+      model: 'tick-window-integral',
+      radPerCount: 0.022,
+      hipStep: 0.022,
+      adsStep: 0.0088,
+    });
+  });
+
+  it('rejects a meta.mouseIntegration.model other than tick-window-integral', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        mouseIntegration: {
+          model: 'aim-diff-legacy' as unknown as 'tick-window-integral',
+          radPerCount: 0.022,
+          hipStep: 0.022,
+          adsStep: 0.0088,
+        },
+      }),
+    ).toThrow('mouseIntegration.model must be tick-window-integral');
+  });
+
+  it('rejects non-positive meta.mouseIntegration step fields', () => {
+    const valid: CollectMetaArgs = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() =>
+      collectMeta({
+        ...valid,
+        mouseIntegration: { model: 'tick-window-integral', radPerCount: 0, hipStep: 0.022, adsStep: 0.0088 },
+      }),
+    ).toThrow('mouseIntegration.radPerCount');
+    expect(() =>
+      collectMeta({
+        ...valid,
+        mouseIntegration: { model: 'tick-window-integral', radPerCount: 0.022, hipStep: -1, adsStep: 0.0088 },
+      }),
+    ).toThrow('mouseIntegration.hipStep');
+    expect(() =>
+      collectMeta({
+        ...valid,
+        mouseIntegration: { model: 'tick-window-integral', radPerCount: 0.022, hipStep: 0.022, adsStep: Number.NaN },
+      }),
+    ).toThrow('mouseIntegration.adsStep');
+  });
+
+  it('leaves meta.suspect bit-for-bit unchanged when fovDeg/mouseIntegration are added (KI-005 / A T2)', () => {
+    const before = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      bufferOverflow: true,
+      suspect: true,
+    });
+    const after = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      bufferOverflow: true,
+      suspect: true,
+      fovDeg: 75,
+      mouseIntegration: {
+        model: 'tick-window-integral',
+        radPerCount: 0.022,
+        hipStep: 0.022,
+        adsStep: 0.022,
+      },
+    });
+
+    expect(after.suspect).toBe(before.suspect);
+    expect(after.suspect).toBe(true);
+  });
+
   it('rejects malformed frame log metadata', () => {
     expect(() =>
       collectMeta({

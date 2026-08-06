@@ -46,6 +46,7 @@ import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
+import { RAD_PER_COUNT, resolveMouseGain } from './input/mouseGain.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { getWeapon } from './weapon/weapons.ts';
@@ -362,6 +363,12 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
     // GD-10 防線①:資格閘全量明細,僅實驗 session 進入時填入（事後審查依據）。
     ...(experimentSession.gate !== undefined ? { gate: experimentSession.gate } : {}),
   };
+  // KI-005 / A T2(FR-A-5/6):meta 自我描述滑鼠感度鏈,ADS gain 才可離線重建。
+  const mouseGain = resolveMouseGain({
+    sensitivity: settingsPanel.sensitivity,
+    hipFovDeg: settingsPanel.fov,
+    ads: weaponConfig.ads,
+  });
   const meta = collectMeta({
     drillId: activeDrillConfig.drillId,
     weaponId: weaponConfig.id,
@@ -371,6 +378,7 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
     displayHz,
     simHz: SIM_HZ,
     sensitivity: settingsPanel.sensitivity,
+    fovDeg: settingsPanel.fov,
     crossOriginIsolated: isolation.crossOriginIsolated,
     startedAt: recorderStartedAt,
     lateEventCount: sharedState.inputMeta.lateEventCount,
@@ -397,6 +405,12 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
       ...(weaponConfig.bullet !== undefined ? { bullet: weaponConfig.bullet } : {}),
       ...(weaponConfig.bullet !== undefined ? { projectileOverflow: sharedState.bullets.overflowCount > 0 } : {}),
+    },
+    mouseIntegration: {
+      model: 'tick-window-integral',
+      radPerCount: RAD_PER_COUNT,
+      hipStep: mouseGain.hipStep,
+      adsStep: mouseGain.adsStep,
     },
     targets: {
       hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),

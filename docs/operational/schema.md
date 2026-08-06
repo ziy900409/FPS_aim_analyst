@@ -68,6 +68,7 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `sensitivity` | number | app setting | Yes | settings panel | Positive finite number. |
 | `sensitivityModel` | string | `cs2-0.022deg` | Yes | `collectMeta()` fixed value | Current count conversion model: `degrees = movementX * sensitivity * 0.022`. Missing in older exports means phase-A placeholder semantics (`0.0022 rad/count`). |
 | `movementModel` | string | `cs2-source` | Yes | `collectMeta()` fixed value | Stage2 movement profile semantic break. Future Valorant-style profiles use a new value, not reinterpretation. |
+| `fovDeg` | number | degrees | No | `SettingsPanel.fov` | Additive (KI-005 / A). Hip-baseline vertical FOV — the denominator of ADS gain (`sensitivityRatio × (weapon.ads.fovDeg / fovDeg)`). **Never** read from `sceneManager.camera.fov`: during ADS the camera FOV is a render-only alpha-interpolated value, and reading it would make the export depend on render frame rate (same trap as `scene.eye`, KI-004 T2). Absence means a pre-KI-005 export → the ADS-period sensitivity chain for that export is not reconstructable. |
 | `crossOriginIsolated` | boolean | `true` / `false` | Yes | runtime global | `false` is valid metadata, not a missing value. |
 | `startedAt` | string | ISO-8601 | Yes | export/session start | Normalized by `collectMeta()`. |
 | `unit` | string | `source` | Yes | fixed phase-A value | Velocity unit namespace. |
@@ -203,6 +204,21 @@ independently in `collectMeta()`/`buildExportPayload()`. Adding `validity` never
 Exports produced **before T3** landed carry `validity.corridorExceeded` computed from the pre-fix, 100×-too-tight
 source-unit comparison (`|player.x| > halfWidthU` instead of `|player.x| × SIM_TO_WORLD > halfWidthU`) and are
 **not** comparable to post-T3 exports for this field.
+
+#### `meta.mouseIntegration`
+
+Additive v2 block (KI-005 / A T2, FR-A-6). Self-describes the model that produced `ticks[].dYaw`/`dPitch`
+(see [`ticks[]`](#ticks) below) — offline consumers must check for this block's presence rather than assume
+which ω(t) derivation an export carries. **Absence means `ticks[].dYaw`/`dPitch` are also absent**, and
+`omega_deg_s` must fall back to the legacy aim-difference derivation (`source: 'aim-diff-legacy'`), which
+carries the render/sim beat-aliasing bug this KI fixes.
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `model` | string | `tick-window-integral` | Yes when `mouseIntegration` exists | `collectMeta()` fixed value | Closed value domain — the only model this codebase currently produces. A future model would use a new value, not reinterpretation. |
+| `radPerCount` | number | rad/count | Yes when `mouseIntegration` exists | `RAD_PER_COUNT` (`src/input/mouseGain.ts`, GD-5: 0.022°/count) | Lets raw mouse counts be reconstructed from `dYaw`/`dPitch` and lets the Python side reconcile its independent constant against this export (C-D1: `research/` cannot import TS, so this field is the audit trail instead of a shared source, TD-4). |
+| `hipStep` | number | rad/count | Yes when `mouseIntegration` exists | `resolveMouseGain()` (`src/input/mouseGain.ts`) | `sensitivity × RAD_PER_COUNT`, the per-count angle applied while not aiming down sights. |
+| `adsStep` | number | rad/count | Yes when `mouseIntegration` exists | `resolveMouseGain()` (`src/input/mouseGain.ts`) | Per-count angle while ADS is held; equals `hipStep` when the active weapon has no ADS optics. |
 
 ### `ticks[]`
 

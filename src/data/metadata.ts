@@ -83,6 +83,13 @@ export interface Meta {
   sensitivity: number;
   sensitivityModel: 'cs2-0.022deg';
   movementModel: 'cs2-source';
+  /**
+   * hip 基準垂直 FOV(度)(KI-005 / A T2,FR-A-5)。ADS gain 的分母:
+   * `sensitivityRatio × (weapon.ads.fovDeg / fovDeg)`。缺席 = pre-KI-005 匯出
+   * ⇒ 該匯出的 ADS 期間感度鏈**不可稽核**。來源 = `settingsPanel.fov`,**不得**從
+   * `camera.fov` 讀(ADS FOV 內插中值會污染,見 KI-004 T2 的 scene.eye 同一個坑)。
+   */
+  fovDeg?: number;
   crossOriginIsolated: boolean;
   startedAt: string;
   unit: 'source';
@@ -115,6 +122,21 @@ export interface Meta {
   frames?: FrameLogExport;
   session?: SessionMeta;
   protocol?: ProtocolMeta;
+  /**
+   * 逐 tick 角位移的產生模型(KI-005 / A T2,FR-A-6)。缺席 ⇒ `ticks[].dYaw`/`dPitch`
+   * 亦缺席,離線消費者必須退回 aim 差分並標記 source(`aim-diff-legacy`)。
+   */
+  mouseIntegration?: MouseIntegrationMeta;
+}
+
+export interface MouseIntegrationMeta {
+  model: 'tick-window-integral';
+  /** counts→rad 係數,供 raw counts 反推與 Python 端對帳(C-4/TD-4)。 */
+  radPerCount: number;
+  /** hip 態每 count 的 rad。 */
+  hipStep: number;
+  /** ADS 態每 count 的 rad。 */
+  adsStep: number;
 }
 
 export interface CollectMetaArgs {
@@ -127,6 +149,7 @@ export interface CollectMetaArgs {
   simHz?: number;
   browser?: string;
   sensitivity: number;
+  fovDeg?: number;
   crossOriginIsolated: boolean;
   startedAt?: string | Date;
   vStrafe?: number;
@@ -150,6 +173,7 @@ export interface CollectMetaArgs {
   frames?: FrameLogExport;
   session?: SessionMeta;
   protocol?: ProtocolMeta;
+  mouseIntegration?: MouseIntegrationMeta;
 }
 
 export interface MeasureDisplayHzOptions {
@@ -173,6 +197,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const simHz = requirePositiveFiniteNumber(args.simHz ?? DEFAULT_SIM_HZ, 'simHz');
   const browser = args.browser ?? globalThis.navigator?.userAgent ?? 'unknown';
   const sensitivity = requirePositiveFiniteNumber(args.sensitivity, 'sensitivity');
+  const fovDeg = args.fovDeg === undefined ? undefined : requirePositiveFiniteNumber(args.fovDeg, 'fovDeg');
   const crossOriginIsolated = requireBoolean(args.crossOriginIsolated, 'crossOriginIsolated');
   const startedAt = normalizeStartedAt(args.startedAt);
   const vStrafe = requirePositiveFiniteNumber(args.vStrafe ?? DEFAULT_V_STRAFE, 'vStrafe');
@@ -191,6 +216,8 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
   const session = args.session === undefined ? undefined : requireSessionMeta(args.session);
   const protocol = args.protocol === undefined ? undefined : requireProtocolMeta(args.protocol);
+  const mouseIntegration =
+    args.mouseIntegration === undefined ? undefined : requireMouseIntegrationMeta(args.mouseIntegration);
   const weapon = args.weapon === undefined ? undefined : requireWeaponMeta(args.weapon);
   const targets = args.targets === undefined ? undefined : requireTargetsMeta(args.targets);
   const frameFloorSuspect = frames !== undefined && frames.summary.p95 > PERF_FLOOR_MS;
@@ -208,6 +235,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     sensitivity,
     sensitivityModel: 'cs2-0.022deg',
     movementModel: DEFAULT_MOVEMENT_MODEL,
+    ...(fovDeg !== undefined ? { fovDeg } : {}),
     crossOriginIsolated,
     startedAt,
     unit: 'source',
@@ -227,6 +255,20 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(frames !== undefined ? { frames } : {}),
     ...(session !== undefined ? { session } : {}),
     ...(protocol !== undefined ? { protocol } : {}),
+    ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
+  };
+}
+
+function requireMouseIntegrationMeta(value: unknown): MouseIntegrationMeta {
+  const mouseIntegration = requireRecord(value, 'mouseIntegration');
+  if (mouseIntegration.model !== 'tick-window-integral') {
+    throw new Error('mouseIntegration.model must be tick-window-integral');
+  }
+  return {
+    model: 'tick-window-integral',
+    radPerCount: requirePositiveFiniteNumber(mouseIntegration.radPerCount, 'mouseIntegration.radPerCount'),
+    hipStep: requirePositiveFiniteNumber(mouseIntegration.hipStep, 'mouseIntegration.hipStep'),
+    adsStep: requirePositiveFiniteNumber(mouseIntegration.adsStep, 'mouseIntegration.adsStep'),
   };
 }
 
