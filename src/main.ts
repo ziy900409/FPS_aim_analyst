@@ -42,7 +42,7 @@ import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts
 import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
-import { SIM_HZ } from './loop/constants.ts';
+import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
@@ -619,13 +619,13 @@ if (recoilDebug) {
   document.body.appendChild(recoilDebug);
 }
 
-// player 位置原點對應 camera 起始 world 位置；位移以 display scale 疊加。
-// **display scale 佔位**（SIM_TO_WORLD，render-only）：sim/資料一律 source unit（u，CONTEXT 正規單位、
-// CLAUDE.md §4；vStrafe=250 u/s 為 canonical CS 值，不得改），但佔位房間僅 ~10 world unit，若 1:1 疊加
-// 則 250 u/s 每 tick 移 ~1.95 world unit、~40ms 撞牆＝無法目視橫移/急停。故 render 端把 sim position 乘
-// 一個佔位 display scale（1 world unit = 100 u），使 250 u/s 呈現為 ~2.5 world-u/s（可控、急停可目視）。
-// **只影響 render，不流入 sim/匯出資料**（雙迴圈邊界 + 單位硬約束）；真 display scale 由 WP-6 drill config 定。
-const SIM_TO_WORLD = 0.01; // world unit per source unit（佔位；WP-6 drill config 接管）
+// player 位置原點對應 camera 起始 world 位置；位移以 SIM_TO_WORLD 疊加。
+// sim/資料一律 source unit（u，CONTEXT 正規單位、CLAUDE.md §4；vStrafe=250 u/s 為 canonical CS 值，
+// 不得改），但佔位房間僅 ~10 world unit，若 1:1 疊加則 250 u/s 每 tick 移 ~1.95 world unit、~40ms
+// 撞牆＝無法目視橫移/急停。故 render 端把 sim position 乘 SIM_TO_WORLD（1 world unit = 100 u），
+// 使 250 u/s 呈現為 ~2.5 world-u/s（可控、急停可目視）。
+// **`SIM_TO_WORLD` 是 sim domain 與 world domain 之間的唯一橋樑**（`src/loop/constants.ts`，
+// KI-004 / K-1）：corridor 觀測與離線 ε(t) 推導亦消費同一常數，不得在此另存第二份字面值。
 
 // WP-13 / T2 — 視覺 recoil 跟隨比例（OQ-S2-4）：aimPunch(視覺)乘此常數後才組進 camera 朝向。
 // 1.0 = 全量視覺後座（渲染 = viewAngles + aimPunch×1）;調小可弱化鏡頭上跳、0 = 關閉視覺跟隨。
@@ -949,7 +949,7 @@ const renderLoop = createRenderLoop((now) => {
   // 2) render 唯讀內插 player 位置（prev→curr）——**不寫回 sharedState**（雙迴圈邊界，render 唯讀）。
   const px = lerp(sharedState.prev.x, sharedState.curr.x, alpha);
   const pz = lerp(sharedState.prev.z, sharedState.curr.z, alpha);
-  // 3) player 位移驅動 camera 位置；sim source unit → world 乘 SIM_TO_WORLD 佔位 display scale（見上）。
+  // 3) player 位移驅動 camera 位置；sim source unit → world 乘 SIM_TO_WORLD（見上）。
   //    視角朝向（yaw/pitch）由 CameraController 走輸入路徑、**不內插**（人眼對視角延遲敏感，且視角非 sim 狀態）。
   sceneManager.camera.position.set(baseX + px * SIM_TO_WORLD, baseY, baseZ + pz * SIM_TO_WORLD);
   // 3b) recoil 視覺 punch（WP-13 / T2）：sim 每 tick 寫 recoil.prev/curr(aimPunch deg,視覺 ×1),

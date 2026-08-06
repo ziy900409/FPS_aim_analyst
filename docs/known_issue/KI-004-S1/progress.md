@@ -12,7 +12,7 @@
 | 2026-08-05 | 計畫 | ✅ S1 tech spec + T0–T6 + T-exit 產出 | 本資料夾;上游 [KI-004 §5.1](../KI-004-sim-world-unit-domain-mismatch.md) / [BD-004](../BUGFIX-DECISIONS.md) K-1/K-2/K-3 |
 | 2026-08-05 | 計畫修訂 | ✅ **OQ-S1-1 + OQ-S1-2 拍板前拉** → 新增 T2(匯出自我描述),T2–T5 順延編號 | 使用者裁示;R-2 / R-6 / FM-5 消除,TD-1 縮為「逐 tick eye pose」 |
 | 2026-08-06 | T0 | ✅ 基線量測 + 受影響面盤點完成(§2/§3 已填) | 三條基線指令 exit 0;閘 ① 偏差重現於 scratchpad(未進 repo);見 §5 S-S1.2/S-S1.3 |
-| | T1 | ⬜ | |
+| 2026-08-06 | T1 | ✅ `SIM_TO_WORLD` 升引擎級常數 + `resolveEyeWorldBase` 單一來源 | `src/loop/constants.ts` 新增 `SIM_TO_WORLD`;`src/main.ts` import 取代 module 字面值;新檔 `src/scene/eyePose.ts`(`EyeWorldBase` / `CAMERA_STANDOFF` / `resolveEyeWorldBase` / `DEFAULT_PROCEDURAL_ROOM`);`SceneManager` 建構子改為消費該純函式,不再自行算 standoff/eyeZ。新測試 `src/scene/eyePose.test.ts`:四個已註冊場景(`placeholder-room`/`field-low`/`urban-high`/`br-field`)逐位斷言 + `SceneManager.camera.position` 與函式輸出綁定。`npx tsc --noEmit` exit 0;`npm run test:ci` vitest **659/659**(基線 651 + 新增 8 案)全綠、零既有期望值變動;Playwright edge 19/19 見 S-S1.4(單獨/全量重跑皆綠,唯 14-worker 並發下偶發 2 案逐次不同的 timeout,判定為環境並發爭用而非本次改動所致)。`git diff --stat` 僅 `constants.ts`/`main.ts`/`SceneManager.ts` 三檔,未觸及 `src/sim/`、`SharedState`、`SimLoop` |
 | | T2 | ⬜ | |
 | | T3 | ⬜ | |
 | | T4+T5 | ⬜ | 合併 commit |
@@ -90,6 +90,7 @@ suspect =
 | **S-S1.1** | M14 ② 撤回**未傳播到所有文件**:[exec-plan/README.md:125](../../exec-plan/README.md) 仍寫「M14 ✅ 六項全綠 / entry blocker 已解除」、[MAP.md:38](../../MAP.md) 寫「②③⑥ 綠 / ①④⑤ 阻塞」,兩者互相矛盾也與 stage4/README 矛盾 | 讀到不同文件會得到相反的排程結論 | 併入 **T5** 一次收斂;寫法改為「權威在一處、其餘指路」 |
 | **S-S1.2** | 用「僅 `aimPunchPitch/Yaw == 0` 的首發」過濾兩份真實 fixture 時,08:03 與 09:39 **各只剩 1 筆合格 fire**(N=1)。改用「全部 20 筆 firstShot fire」重現 KI-004 §1.2 的 median/max,量級與方向完全吻合(現行公式偏差 8~93°,正確公式 <0.25°),08:03 的 max 甚至逐位吻合(12.73° = 12.73°);但 median 有小數點差異(08:03: 12.26° vs 12.52°;09:39: 68.10°/93.53° vs 67.11°/88.55°)。腳本存於 scratchpad(不進 repo),未提交 | 差異來源疑為**tick 選取口徑**未拍板(README §5 OQ-S1-3:`argmin \|Δt\|` vs 「最近的 t ≤ fire.t」)——KI-004 原始診斷用的確切口徑未逐字記錄;差異量級遠小於「bug 存在」本身的訊噪比(~50-500×),不影響診斷結論成立 | 不阻塞 T0;**OQ-S1-3 必須在 T4 實作時定案**,定案後可用同一腳本逐位核對是否收斂到 12.52/67.11 |
 | **S-S1.3** | `uv run pytest`(不帶參數)在本機環境對**預設 basetemp**(`%TEMP%\pytest-of-<user>`)拋 `PermissionError: [WinError 5] Access is denied`,10 案於 `research/src/report/tests/test_coach_report.py` 等處失敗;改用短路徑 `--basetemp=C:\pytest-tmp` 後 **168 passed**,零失敗 | 純環境問題(Windows ACL + Claude Code scratchpad 路徑過長觸及 `test_coach_report.py` 內建的 MAX_PATH 規避邏輯),與 KI-004 程式碼無關;若未來 CI/其他機器重現同樣的 basetemp 問題,`uv run pytest` 的「正常」呼叫方式需要外部處理(非本 repo 範疇) | 記錄於此供未來 session 參考;不視為受影響測試,不計入 R-1 |
+| **S-S1.4** | T1 落地後 `npx playwright test --project=edge`(19 案,14 workers 並發)首輪出現 2 案 timeout(`backend.spec.ts` 未收到 `[render backend]` console log;`input-sampler.spec.ts` 的 `__aimDebug` 未就位),疑似 T1 動了 `SceneManager`/`main.ts` 造成 bootstrap 迴歸。逐一隔離重跑(`--project=edge` 單檔/單案)兩案皆綠;**不帶** `-uall`git stash 回到 T1 前基線後同一全量指令仍偶發(換了一組不同的 2 案失敗),隔離重跑同樣全綠;再重跑一次全量(T1 後)19/19 全綠 | 環境並發爭用(14 workers 同時起 dev server headless 瀏覽器 + WebGPU context),與本次改動無因果關係——每輪失敗的案子不同、隔離跑必過,且 stash 前基線同樣重現 | 不阻塞 T1;`npx tsc --noEmit` + vitest 659/659 為零 flake 的權威回歸依據,playwright 全量偶發性 flake 記錄於此供未來 session 參考,不計入 R-1 |
 | | *(執行中追加)* | | |
 
 ---
