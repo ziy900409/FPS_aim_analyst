@@ -1,5 +1,13 @@
 import type { ExportPayload } from '../data/export.ts';
 import { DEFAULT_TARGET_HITBOX } from '../drill/DrillConfig.ts';
+import {
+  aimForward,
+  angularEccentricityDeg,
+  resolveEyeOrigin,
+  eyeOriginForTick,
+  type EyeOriginOptions,
+  type ResolvedEyeOrigin,
+} from './eyeOrigin.ts';
 
 /**
  * WP-18 / T4 tracking metrics offline derivation (GD-7).
@@ -28,9 +36,7 @@ export interface HitboxSize {
   depth: number;
 }
 
-export interface TrackingDerivationOptions {
-  /** Player eye height (source units); defaults to 1.6, matching the scene/player eye height. */
-  eyeHeight?: number;
+export interface TrackingDerivationOptions extends EyeOriginOptions {
   /**
    * H1 hitbox dimensions used to reconstruct the on-target box (source units). Defaults to the
    * engine H1 box (width 1, height 2, depth 1). This is a structural constant of the target, not
@@ -41,8 +47,10 @@ export interface TrackingDerivationOptions {
 }
 
 export interface ResolvedTrackingDerivationOptions {
+  /** @deprecated 相容別名,等於 `eyeOrigin.base.y`(KI-004 / S1 T4,TD-2)。 */
   eyeHeight: number;
   hitbox: HitboxSize;
+  eyeOrigin: ResolvedEyeOrigin;
 }
 
 export interface TrackingPresentationDerivation {
@@ -91,11 +99,6 @@ interface TrackingSample {
   onTarget: boolean;
   epsilonDeg: number;
 }
-
-const DEFAULT_OPTIONS: ResolvedTrackingDerivationOptions = {
-  eyeHeight: 1.6,
-  hitbox: DEFAULT_TARGET_HITBOX,
-};
 
 const EPSILON = 1e-9;
 
@@ -175,7 +178,7 @@ function trackingSamples(
     samples.push({
       t: tick.t,
       onTarget: isOnTarget(tick, target, options),
-      epsilonDeg: angularEccentricityDeg(tick, target, options.eyeHeight),
+      epsilonDeg: angularEccentricityDeg(tick, target, options.eyeOrigin),
     });
   }
   return samples;
@@ -188,9 +191,10 @@ function trackingSamples(
  */
 function isOnTarget(tick: Tick, target: TargetPoint, options: ResolvedTrackingDerivationOptions): boolean {
   const dir = aimForward(tick.aim.yaw, tick.aim.pitch);
-  const ox = tick.px;
-  const oy = options.eyeHeight;
-  const oz = tick.pz;
+  const origin = eyeOriginForTick(tick, options.eyeOrigin);
+  const ox = origin.x;
+  const oy = origin.y;
+  const oz = origin.z;
   const hw = options.hitbox.width / 2;
   const hh = options.hitbox.height / 2;
   const hd = options.hitbox.depth / 2;
@@ -217,27 +221,6 @@ function isOnTarget(tick: Tick, target: TargetPoint, options: ResolvedTrackingDe
   return tmax >= Math.max(tmin, 0); // intersection lies at t ≥ 0 (in front of the aim origin)
 }
 
-function angularEccentricityDeg(tick: Tick, target: TargetPoint, eyeHeight: number): number {
-  const aim = aimForward(tick.aim.yaw, tick.aim.pitch);
-  const dx = target.x - tick.px;
-  const dy = target.y - eyeHeight;
-  const dz = target.z - tick.pz;
-  const len = Math.hypot(dx, dy, dz);
-  if (len === 0) return 0;
-
-  const dot = aim.x * (dx / len) + aim.y * (dy / len) + aim.z * (dz / len);
-  return radToDeg(Math.acos(clamp(dot, -1, 1)));
-}
-
-function aimForward(yaw: number, pitch: number): TargetPoint {
-  const cosPitch = Math.cos(pitch);
-  return {
-    x: -Math.sin(yaw) * cosPitch,
-    y: Math.sin(pitch),
-    z: -Math.cos(yaw) * cosPitch,
-  };
-}
-
 function targetFromVisibleOrFirstTick(visible: VisibleEvent, ticks: readonly Tick[]): TargetPoint {
   if (isFiniteNumber(visible.targetX) && isFiniteNumber(visible.targetY) && isFiniteNumber(visible.targetZ)) {
     return { x: visible.targetX, y: visible.targetY, z: visible.targetZ };
@@ -255,14 +238,16 @@ function targetForTick(tick: Tick, fallback: TargetPoint): TargetPoint {
 }
 
 function resolveOptions(payload: ExportPayload, options: TrackingDerivationOptions): ResolvedTrackingDerivationOptions {
-  const hitbox = hitboxFromMeta(payload) ?? options.hitbox ?? DEFAULT_OPTIONS.hitbox;
+  const hitbox = hitboxFromMeta(payload) ?? options.hitbox ?? DEFAULT_TARGET_HITBOX;
+  const eyeOrigin = resolveEyeOrigin(payload, options);
   return {
-    eyeHeight: finite(options.eyeHeight ?? DEFAULT_OPTIONS.eyeHeight, 'eyeHeight'),
+    eyeHeight: eyeOrigin.base.y,
     hitbox: {
       width: positiveFinite(hitbox.width, 'hitbox.width'),
       height: positiveFinite(hitbox.height, 'hitbox.height'),
       depth: positiveFinite(hitbox.depth, 'hitbox.depth'),
     },
+    eyeOrigin,
   };
 }
 
@@ -294,19 +279,6 @@ function positiveFinite(value: number, name: string): number {
   return value;
 }
 
-function finite(value: number, name: string): number {
-  if (!Number.isFinite(value)) throw new Error(`${name} must be a finite number`);
-  return value;
-}
-
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function radToDeg(value: number): number {
-  return (value * 180) / Math.PI;
 }

@@ -24,7 +24,10 @@ def test_parity_fixture_covers_failure_and_acquisition_paths() -> None:
 
     assert [item["acquisitionFailure"] for item in presentations] == [True, False]
     assert presentations[0]["tAcquireMs"] is None
-    assert presentations[1]["tAcquireMs"] == 54.6875
+    # KI-004/S1 T5: was 54.6875 pre-fix. eyeBase.z=4 (D2a) now shifts which tick first
+    # lands on-target, so the acquired tick itself moves earlier — the old value was
+    # measured against a ray origin missing the camera's world-z offset.
+    assert presentations[1]["tAcquireMs"] == 39.0625
 
 
 def test_parity_falls_back_from_visible_event_to_first_tick_target(tmp_path) -> None:

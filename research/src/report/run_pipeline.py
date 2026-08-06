@@ -41,7 +41,7 @@ from modules.ingest.algorithms import (  # noqa: E402
     check_dt,
     load_export,
 )
-from modules.kinematics.algorithms.angular import epsilon_deg, omega_deg_s  # noqa: E402
+from modules.kinematics.algorithms.angular import epsilon_deg, omega_deg_s, resolve_eye_origin  # noqa: E402
 from modules.metrics.algorithms.peek import build_peek_windows  # noqa: E402
 from modules.segments.algorithms import (  # noqa: E402
     DEFAULT_SEGMENT_PARAMS,
@@ -285,12 +285,23 @@ def _epsilon_or_none(
     visible: pd.Series,
     meta: dict[str, Any],
 ) -> np.ndarray | None:
-    """Return authoritative epsilon, or ``None`` when target geometry is missing."""
+    """Return authoritative epsilon, or ``None`` when the eye origin or target geometry is missing.
+
+    KI-004/S1 T5 (FR-S1-7): resolves ``eye_origin`` with ``strict=True`` — a pre-S1
+    export with no ``meta.scene.eye``/``meta.simToWorld`` must not silently fall back
+    to a guessed origin here. The ``None`` result still surfaces through the existing
+    ``missing_target`` quality flag at the call site, so the row is never silently
+    dropped — it is left unmeasured rather than measured against a guess.
+    """
 
     if not len(ticks):
         return None
     try:
-        return epsilon_deg(ticks, meta, fallback_target=_visible_target(visible, ticks))
+        eye_origin = resolve_eye_origin(meta, strict=True)
+    except ValueError:
+        return None
+    try:
+        return epsilon_deg(ticks, meta, eye_origin=eye_origin, fallback_target=_visible_target(visible, ticks))
     except ValueError:
         return None
 

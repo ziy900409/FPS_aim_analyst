@@ -176,6 +176,22 @@ describe('deriveTrackingMetrics', () => {
     expect(simAndOfflineOnTarget(0.24, hitbox)).toEqual({ simHit: true, offlineOnTarget: true });
     expect(simAndOfflineOnTarget(0.3, hitbox)).toEqual({ simHit: false, offlineOnTarget: false });
   });
+
+  it('resolves eyeOrigin from meta.scene.eye / meta.simToWorld without any options (G-7 round-trip)', () => {
+    const payload = makeRoundTripPayload({ visibleTick: 0, totalTicks: 0, mode: 'edge-inside' });
+    const withSceneMeta: ExportPayload = {
+      ...payload,
+      meta: {
+        ...payload.meta,
+        simToWorld: 0.01,
+        scene: { sceneId: 'field-low', assetPackVersion: 'field-low-v1', clutterTier: 'low', fallback: false, eye: { x: 0, y: 1.6, z: 4 } },
+      },
+    };
+
+    const result = deriveTrackingMetrics(withSceneMeta);
+
+    expect(result.options.eyeOrigin).toEqual({ base: { x: 0, y: 1.6, z: 4 }, simToWorld: 0.01, source: 'meta' });
+  });
 });
 
 interface FixtureOptions {

@@ -6,6 +6,15 @@
       "width": 1.0,
       "height": 2.0,
       "depth": 1.0
+    },
+    "eyeOrigin": {
+      "base": {
+        "x": 0.0,
+        "y": 1.6,
+        "z": 4.0
+      },
+      "simToWorld": 0.01,
+      "source": "meta"
     }
   },
   "presentations": [
@@ -22,11 +31,11 @@
     {
       "targetId": "target-2",
       "tVisibleMs": 187.5,
-      "tAcquireMs": 54.6875,
+      "tAcquireMs": 39.0625,
       "totPercent": 100.0,
-      "rmsEpsilonDeg": 1.465899435769622,
-      "medianEpsilonDeg": 1.7031249999996494,
-      "p95EpsilonDeg": 1.7031249999996494,
+      "rmsEpsilonDeg": 0.43215206385369026,
+      "medianEpsilonDeg": 0.11716385752047999,
+      "p95EpsilonDeg": 0.6715725768002887,
       "acquisitionFailure": false
     }
   ]
