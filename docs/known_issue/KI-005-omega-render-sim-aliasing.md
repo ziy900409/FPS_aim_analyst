@@ -144,6 +144,16 @@ peek 14:`... 214, **302, 17**, 152 ...` deg/s。302 + 17 = 319 ≈ 2 × 160(鄰�
 M14 ③④⑤ 的重新宣告因此必須等新採樣,無法用既有樣本搶跑(與 [KI-006](KI-006-m14-sample-no-counterstrafe.md)
 的選項 B「重新採樣」自然合流 —— **兩個 KI 的重新宣告路徑收斂為同一次採集**)。
 
+> **選項 A 的可執行計畫**:[KI-005-A/](KI-005-A/README.md)(tech spec + T0–T6 + T-exit;task 索引
+> [task-checklist.md](KI-005-A/task-checklist.md))。切為兩個 stage —— **A1** 為引擎/分析側修法,
+> 全部可由測試客觀判定;**A2**(新採樣 → 複驗 → `seg-v2` → M14 重新宣告)⛔ blocked on 新採樣,
+> 見 [A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md)。**尚未動任何程式碼。**
+>
+> 該計畫在查碼階段另發現兩個必須同刀處理的缺口(見其 §2.4):① [`InputSampler.onPointerMove`](../../src/input/InputSampler.ts#L132)
+> **沒有** pointer-lock 閘(fire/ads 都有)—— A 落地後會把未鎖定期間的滑鼠移動積分成 camera 從未
+> 套用的角位移;② [main.ts:342](../../src/main.ts#L342) **從未啟用** `recordKeyEvents` —— 若 A 照抄
+> 「opt-in 預設關閉」而不動 `main.ts`,新採樣仍不會帶 `dYaw`,修法對研究零效果。
+
 ### 6.2 落地前必須補的缺口 — `meta` 缺 hip FOV
 
 拍板「由 meta 重建」後,實際核對匯出 schema 發現:
