@@ -18,29 +18,31 @@
 
 | 項目 | 基線值 | 實測 |
 |---|---|---|
-| `npx tsc --noEmit` | exit 0 | |
-| `npm run test:ci` | (T0 量測;G-5 的對照基準) | |
-| `uv run pytest` | (T0 量測) | |
+| `npx tsc --noEmit` | exit 0 | ✅ exit 0(無輸出) |
+| `npm run test:ci` | (T0 量測;G-5 的對照基準) | ✅ exit 0 — Vitest **89 files / 739 tests** 全綠 + Playwright **20 tests** 全綠 |
+| `uv run pytest` | (T0 量測) | ✅ exit 0 — **195 passed**(見下方 Windows 註記) |
+
+> **Windows 註記**:直接 `uv run pytest` 遇到與 KI-004/S1 T-exit 相同的 `PermissionError: [WinError 5] Access is denied: 'AppData\Local\Temp\pytest-of-Hsin.YH.Yang'`(62 個 ERROR,非測試失敗,是 setup/teardown 階段清 tmp 目錄被 ACL 擋)。解法照抄:於 `research/` 內建立 `.pytest_tmp/`,以 `TMP=<research>/.pytest_tmp TEMP=<research>/.pytest_tmp uv run pytest` 執行 → 195 passed,0 error。**不視為紅**(T0-entry-gate.md 步驟 2 已預先註記此情境)。`.pytest_tmp/` 為執行期產物,未加入 git。
 
 ### 2a. 四份 fixture 的構念統計(T0 重現;T1 測試期望值的唯一來源)
 
 | fixture | `drillId` | ticks | `vx ≠ 0` | 佔比 | `counter` | 預期判定 | 實測 |
 |---|---|---:|---:|---:|---:|---|---|
-| `...08_03_45.617Z` | `counterstrafe_ad_v1` | 3,507 | 0 | 0.0000 | 0 | absent | |
-| `...09_39_06.031Z` | `counterstrafe_ad_v1` | 2,723 | 1,415 | 0.5196 | 24 | present | |
-| `synthetic_counterstrafe.json` | `synthetic_counterstrafe_v2` | 48 | 14 | 0.2917 | 2 | present | |
-| `synthetic_timeline.json` | `synthetic_timeline_v1` | 96 | 39 | 0.4062 | 3 | unknown | |
+| `...08_03_45.617Z` | `counterstrafe_ad_v1` | 3,507 | 0 | 0.0000 | 0 | absent | ✅ 逐格相符(ticks=3507, vx≠0=0, 佔比=0.0000, counter=0) |
+| `...09_39_06.031Z` | `counterstrafe_ad_v1` | 2,723 | 1,415 | 0.5196 | 24 | present | ✅ 逐格相符(ticks=2723, vx≠0=1415, 佔比=0.5196, counter=24) |
+| `synthetic_counterstrafe.json` | `synthetic_counterstrafe_v2` | 48 | 14 | 0.2917 | 2 | present | ✅ 逐格相符;`drillId` 確認為 **`synthetic_counterstrafe_v2`**(§2.4① 家族解析陷阱來源,已核實不以 `counterstrafe` 開頭) |
+| `synthetic_timeline.json` | `synthetic_timeline_v1` | 96 | 39 | 0.4062 | 3 | unknown | ✅ 逐格相符(ticks=96, vx≠0=39, 佔比=0.4062, counter=3);家族 `timeline` 確認未註冊 |
 
-> 預期值取自 [README §2.3](README.md)(計畫階段實測)。T0 必須**獨立重現**;對不上即停。
+> 預期值取自 [README §2.3](README.md)(計畫階段實測)。T0 已**獨立重現**,四格全數相符,無需停下。重現腳本為臨時腳本(僅讀 `meta.drillId` / `ticks[].vx` / `ticks[].keys` / `events[].type`,單次掃描,無寫檔),置於 session scratchpad,**未進 repo**。
 
 ### 2b. 消費者盤點(R-3 / FM-4)
 
 | 項目 | 結論 |
 |---|---|
-| `run_pipeline` exit code 是否被 CI / npm script / 其他腳本消費 | |
-| `test_run_pipeline.py` 現有案數 | |
-| `QUALITY_FLAG_VOCABULARY` 現有成員數 | |
-| `test_purity.py` 檢查項 | |
+| `run_pipeline` exit code 是否被 CI / npm script / 其他腳本消費 | ✅ **無**。repo 內無 `.github/` workflow 目錄(無 CI)。`grep -rn run_pipeline` 對 `*.py` 命中僅 3 檔:`run_pipeline.py` 本體、`test_run_pipeline.py`、`modules/kinematics/algorithms/angular.py`(僅 docstring 提及,非呼叫)。`package.json` 無相符腳本。R-3 的風險前提(FM-4)在今日不成立,但 exit code 2 仍應保留分流設計以防未來新增消費者 |
+| `test_run_pipeline.py` 現有案數 | **15 案**(`pytest --collect-only` 逐條列出;T2 只能新增,不得改寫既有期望值,NFR-C-4) |
+| `QUALITY_FLAG_VOCABULARY` 現有成員數 | **14 個成員**(13 個 exact + 1 個 templated `compute_failed:<reason>`),定義於 [apply.py:21](../../../research/src/modules/segments/algorithms/apply.py#L21)。[analysis-segments.md](../../operational/analysis-segments.md) 對應表**目前無 Level 欄**(全平鋪,隱含皆為 peek/segment 級)——T1/T3 需新增 Level 欄以區隔即將加入的 session 級 flag(FR-C-10) |
+| `test_purity.py` 檢查項 | `research/src/modules/ingest/algorithms/tests/test_purity.py`(construct.py 落地目錄)現存 **1 個測試函式** `test_algorithm_imports_have_no_output_plotting_or_cwd_writes`,以 subprocess 匯入 `loader`/`dt`/`synthetic`(+ `metrics.peek`/`timeline`)並斷言:① subprocess exit 0、② stdout 為空、③ `sys.modules` 不含 `matplotlib`、④ `tmp_path`(cwd)無任何檔案寫入。新模組 `construct.py` 落地後必須被納入此匯入清單並通過同一組斷言(NFR-C-3) |
 
 ---
 
