@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-007](KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) | `experimentSession.exit()` 只在多條件 protocol 流程呼叫,單一「實驗 session」drill 流程從未呼叫 → `active` 對整頁生命週期恆 true → drill 結束後正常退出全螢幕(去抓匯出檔)也會被誤判為條件失效,`meta.suspect` 誤標 `true` | BD-007(§2,**F-1 已落地**:`handleFullscreenChange` 新增 `recording` 參數,只在 drill 錄製中才判定失效) | ✅ 已修(2026-08-07) |
 | [KI-006](KI-006-m14-sample-no-counterstrafe.md) | M14 ④/⑤ 的真實資料效度閘所用樣本(08:03)**不含 counter-strafe 構念**:`vx ≡ 0`、`keys` 全空、`counter` 事件 0 → 量到的是站樁純 flick。**M14 ④⑤ 撤回**(理由獨立於 KI-005) | BD-006(§2,**C 已落地**:construct presence gate;B 待 [A2](KI-005-A/A2-blocked-plan.md)) | 🟡 C 已落地(2026-08-07),B 待新採樣 |
 | [KI-005](KI-005-omega-render-sim-aliasing.md) | ω(t) 受 render(240Hz)/sim(128Hz)**zero-order-hold aliasing** 汙染:每 8 tick 一個假凹口 → `merged_adjacent_peaks` 15/19,有效產率僅 4/19。**推翻 KI-004「①③④⑤⑥ 不受影響」的豁免,M14 ③④⑤ 撤回** | BD-005(§2,**A1 已落地**:選項 A + 感度由 meta 重建 + 不做過渡期 C)· 計畫 [KI-005-A/](KI-005-A/README.md) | 🟡 A1 已落地,A2 待新採樣 |
 | [KI-004](KI-004-sim-world-unit-domain-mismatch.md) | sim(source unit)與 world domain 混用:corridor gate 緊 100× → 真實急停 run 全被標 `suspect`;離線 ε(t) 量測原點錯誤(D2a base offset + D2b scale)→ **實測偏差 12.5°/67°,M14 ② 撤回,S1 落地後重新宣告** | BD-004(§2,K-1/K-2/K-3 已拍板;S1 已落地) | 🟡 S1 ✅ 已落地(2026-08-06)/ S2·S3 待辦 |
@@ -90,6 +91,22 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-007 ✅ KI-007 — `experimentSession.exit()` 未接單一 session 流程;`suspect` 對正常收尾誤判(2026-08-07)
+
+| | |
+|---|---|
+| **發現處 / 根因** | [KI-005-A / A2-T1](KI-005-A/A2-blocked-plan.md) 新採樣驗證時,09:18/09:24 兩份匯出 `meta.suspect === true`,但研究者確認錄製期間**未**中途退出全螢幕,只在整個測試結束後才退。追碼確認:`experimentSession.exit()` 只在多條件 protocol 流程呼叫([main.ts:939](../../src/main.ts#L939)/[970](../../src/main.ts#L970)),單一「實驗 session」drill 流程完全不呼叫。`active` 因此對整頁生命週期恆 `true`,drill 結束後研究者為了下載匯出檔而退出全螢幕的正常動作,和「錄製中途意外掉出全螢幕」在程式碼眼中無法區分,兩者都會把 `suspect` 釘死為 `true`(無重置路徑)。完整診斷見 [KI-007](KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md)。 |
+| **為何不是一行修法** | 「實驗 session」流程刻意支援同一次資格閘通過後連續跑多個 drill(`restartActiveDrill()`/`onLoadDrill` 不需重新過閘)。若天真地在 drill `ended` 時對所有模式呼叫 `exit()`,會讓連續多 drill 用例的偵測窗口在第一個 drill 後就永久關閉,後續 drill 若真的中途掉出全螢幕反而測不到——方向錯了。真正該問的是「這次退出發生在 drill 正在錄製,還是已經結束、正在等下一步」。 |
+| **候選修法** | **F-1(建議)**:`handleFullscreenChange` 的判定改為 `active && drillRunner.phase` 屬於 `'countdown'`/`'running'`(排除 `'idle'`/`'ended'`),精準對應 GD-10 原意,不影響連續多 drill 支援。F-2:在 `phase === 'ended'` 時對非 protocol 模式呼叫 `exit()`(需額外追蹤啟動模式,且會誤關連續多 drill 的偵測窗口)。F-3:不修,靠操作紀律規避(治標不治本)。詳見 [KI-007 §4](KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md)。 |
+| **對既有資料的影響** | **不需要重採**——`ticks`/`events`/`omegaSource`/`constructPresence` 皆不讀 `suspect`,[A2-T1](KI-005-A/A2-blocked-plan.md) 的 DoD 判定不受影響。09:18/09:24 的 `suspect === true` 記錄為**已確認的誤判**,不影響其作為 M14 效度證據的可信度。A2-T2 四項複驗只讀 `ticks`,可正常進行。 |
+| **F-1 落地(2026-08-07)** | `experimentSession.handleFullscreenChange` 新增 `recording: boolean` 參數,guard 改為 `if (!active || !recording || present || suspect) return;`;唯一呼叫點 [main.ts](../../src/main.ts) 的 `fullscreenchange` listener 傳入 `recording = drillRunner.phase === 'countdown' || drillRunner.phase === 'running'`(**OQ-KI7-1 拍板:涵蓋 countdown**)。`markProtocolFullscreenExit`(protocol condition 層級的獨立機制)不受影響,原樣保留。新增 3 案([experimentSession.test.ts](../../src/display/experimentSession.test.ts)):非錄製期間退出不標記(核心回歸)、非錄製期間退出後錄製恢復仍能偵測真實失效(證明不是整個關掉偵測)、既有五案改傳 `recording=true` 延續覆蓋。**回歸**:`npx tsc --noEmit` exit 0;`npm run test:ci` Vitest **89 files/741 tests**(739+2)全綠、Playwright 21/21 不變;`git diff --stat` 僅 `src/display/experimentSession.ts`/`.test.ts` + `src/main.ts` 三檔。 |
+| **偏離計畫** | 無。診斷由 A2-T1 驗證過程中的異常觀察觸發,修法當日拍板當日落地(小型獨立修復,無 TDD 偏離)。 |
+| **遺留 OQ** | ~~OQ-KI7-1~~ ✅ 已關閉(涵蓋 countdown)· **OQ-KI7-2** 舊有 08:03/09:39 fixture 是否需回溯核對(建議不需要,無相關欄位可比對) |
+| **影響面** | **受影響**:`meta.suspect` 對單一「實驗 session」流程的可信度(僅此欄位,不影響任何 sim/命中/匯出核心資料)——修復後應能正確區分「錄製中掉出全螢幕」與「錄完正常退出去抓檔案」。**不受影響**:construct presence gate、`omega_deg_s`、`ticks`/`events` 記錄邏輯、KI-005/KI-006 的既有結論與資料。 |
+| **狀態** | ✅ **已修(2026-08-07)**。09:18/09:24 兩份既有匯出的 `suspect === true` 是修法**前**採集,不回溯清洗(比照 KI-005 OQ-KI5-3 拍板精神),已於 [KI-005-A/progress.md](KI-005-A/progress.md) 記錄為已確認誤判。 |
+
+---
 
 ### BD-003 ✅ KI-003 — 左上角 controls 改用共用 flow 容器(2026-08-05)
 

@@ -288,7 +288,11 @@ const sessionSetupForm = createSessionSetupForm({
 });
 document.addEventListener('fullscreenchange', () => {
   const fullscreen = document.fullscreenElement != null;
-  experimentSession.handleFullscreenChange(fullscreen);
+  // KI-007（2026-08-07）：只在 drill 實際錄製中（countdown/running）才視為 GD-10 條件失效；idle
+  // （drill 之間,單一「實驗 session」流程不會為此呼叫 experimentSession.exit()）與 ended（已收工,
+  // 準備匯出)退出全螢幕不算,避免把「錄完正常退出全螢幕去抓匯出檔」誤判為錄製中途失效。
+  const recording = drillRunner.phase === 'countdown' || drillRunner.phase === 'running';
+  experimentSession.handleFullscreenChange(fullscreen, recording);
   if (!fullscreen) markProtocolFullscreenExit?.();
 });
 
