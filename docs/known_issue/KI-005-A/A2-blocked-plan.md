@@ -1,7 +1,7 @@
 # Stage A2 — 新採樣、複驗、`seg-v2`(**blocked**)
 
 > 上游:[A README §4](README.md) · [KI-005 §7.4 / §7.5](../KI-005-omega-render-sim-aliasing.md) · [KI-006](../KI-006-m14-sample-no-counterstrafe.md)
-> 狀態:⛔ **blocked on 研究者排程**。A1(T0–T-exit)已完成。**OQ-A-5/OQ-KI5-6、OQ-A-2/TD-5、OQ-KI6-4 三項前置決策已於 2026-08-07 拍板並全數落地**(見下「前置條件」,含 `recordKeyEvents` 的 `main.ts:355` 接線)。**所有決策與程式碼前置條件已滿足**,唯一剩下的是研究者實際排程執行採集。
+> 狀態:🟡 **A2-T1 已完成(2026-08-07)**。A1(T0–T-exit)已完成,三項前置決策已拍板並全數落地(見下「前置條件」)。研究者已提交 3 個 counter-strafe session,DoD 逐項核對通過(見 [progress.md](progress.md))。**下一步:A2-T2 四項複驗**。
 
 ---
 
@@ -32,19 +32,19 @@ KI-005 §7.4 於 2026-08-06 **自我更正**:
 
 ---
 
-## A2-T1 — 新採樣
+## A2-T1 — 新採樣 ✅ 已完成(2026-08-07)
 
 **執行者**:研究者(非 agent 可代勞)。
 
-- [ ] 同一台 **240 Hz** 機器(使 §3.1 的凹口偵測器與 T0 的基線可直接對照)。
-- [ ] drill 必須實際含 **counter-strafe 構念**:`vx` 非恆零、`keys` 非全空、`counter` 事件 > 0(KI-006 的撤回理由)。
-- [ ] 匯出必須含 `meta.mouseIntegration` + `ticks[].dYaw/dPitch`(A1 的 FR-A-7 保證);**採完立即檢查,沒有就是 A1 沒真的啟用**。
-- [ ] **`recordKeyEvents` 已開啟**(OQ-A-2/TD-5,2026-08-07 拍板):採集**前**於瀏覽器 console 確認 `__aimDebug.recorder.recordKeyEvents === true`;採完立即檢查匯出 `events` 是否含 `type === 'key'` 的項目,沒有就代表接線沒真的生效(比照 FR-A-7 `mouseIntegration` 的同一檢查紀律)。
-- [ ] 記錄採集條件:受試者、螢幕型號/刷新率、sensitivity/FOV、drill config、session 數。
-- [ ] session 數 **n > 2**(至少 3 個,OQ-KI6-4 已於 2026-08-07 拍板)。
-- [ ] **採完立即**跑 construct presence gate(`run_pipeline` 消費新匯出);`constructPresence.present == false` 即**當場重採**,不得事後才發現構念缺席([KI-006-C/README.md §6 B-3](../KI-006-C/README.md))。
+- [x] 同一台 **240 Hz** 機器(使 §3.1 的凹口偵測器與 T0 的基線可直接對照)。三份匯出 `meta.display.refreshEstimateHz == 240`。
+- [x] drill 必須實際含 **counter-strafe 構念**:`vx` 非恆零、`keys` 非全空、`counter` 事件 > 0(KI-006 的撤回理由)。三份匯出 `counter` 事件數 23/25/20,橫移 tick 佔比 0.656/0.654/0.644。
+- [x] 匯出必須含 `meta.mouseIntegration` + `ticks[].dYaw/dPitch`(A1 的 FR-A-7 保證)。三份皆確認存在,`omega_deg_s(strict=True)` 皆解出 `source == "tick-integral"`,不拋錯。
+- [x] **`recordKeyEvents` 已開啟**(OQ-A-2/TD-5,2026-08-07 拍板)。三份匯出 `events` 分別含 86/84/78 筆 `type === 'key'`,確認接線在真實採集中生效。
+- [x] 記錄採集條件:受試者、螢幕型號/刷新率、sensitivity/FOV、drill config、session 數。session 資訊見三份匯出 `meta`;**觀察**:09:18/09:24 兩份 `meta.suspect == true`(觸發源 = `experimentSession.suspect`,session 中途退出 fullscreen,非走廊越界),09:37 為 `false`,待研究者確認是否確有中途退出。
+- [x] session 數 **n > 2**(至少 3 個,OQ-KI6-4 已於 2026-08-07 拍板)。實得 **3 個**(09:18/09:24/09:37)。
+- [x] **採完立即**跑 construct presence gate(`run_pipeline` 消費新匯出);`constructPresence.present == false` 即**當場重採**,不得事後才發現構念缺席([KI-006-C/README.md §6 B-3](../KI-006-C/README.md))。三份皆 `present == true`。
 
-**DoD**:新匯出通過 `load_export` 且 `omega_deg_s(..., strict=True)` **不拋錯**(即 `source == "tick-integral"`);`counter` 事件數 > 0;`events` 含至少一筆 `type === 'key'`(證明 `recordKeyEvents` 接線生效,OQ-A-2/TD-5);`run_pipeline` 對每一份新匯出 exit 0 且 `constructPresence.present == true`(KI-006-C §6 B-2/B-3);session 數 n > 2。
+**DoD**(全數通過,獨立重跑 `run_pipeline` 覆核,非僅信任提交的產物):新匯出通過 `load_export` 且 `omega_deg_s(..., strict=True)` **不拋錯**(即 `source == "tick-integral"`);`counter` 事件數 > 0;`events` 含至少一筆 `type === 'key'`(證明 `recordKeyEvents` 接線生效,OQ-A-2/TD-5);`run_pipeline` 對每一份新匯出 exit 0 且 `constructPresence.present == true`(KI-006-C §6 B-2/B-3);session 數 n > 2。詳細數字見 [progress.md](progress.md) 2026-08-07 A2-T1 列。
 
 ---
 
