@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 | T0 | [Entry gate:基線量測 + fixture 構念統計重現](T0-entry-gate.md) | — | Low | ✅ |
 | T1 | [`construct.py`:registry `construct-v1` + 家族解析 + 檢查純函式](T1-construct-registry.md) | FR-C-1~6 · FR-C-9 · FR-C-10 | Med | ✅ |
-| T2 | [`run_pipeline` 佈線:`constructPresence` + 專屬 exit code](T2-pipeline-wiring.md) | FR-C-7 · FR-C-8 · FR-C-11 | Low | ⬜ |
+| T2 | [`run_pipeline` 佈線:`constructPresence` + 專屬 exit code](T2-pipeline-wiring.md) | FR-C-7 · FR-C-8 · FR-C-11 | Low | ✅ |
 | T3 | [文件 / 帳本對帳 + A2 前置條件回寫](T3-docs-ledger-reconcile.md) | FR-C-10 · FR-C-12~14 | Low | ⬜ |
 | T-exit | [Exit gate:交付判定](T-exit-gate.md) | — | Low | ⬜ |
 

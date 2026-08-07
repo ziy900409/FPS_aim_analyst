@@ -17,6 +17,7 @@ from modules.ingest.algorithms import (
 from modules.segments.algorithms import DEFAULT_SEGMENT_PARAMS, is_known_quality_flag
 from report.run_pipeline import (
     DEFAULT_EXPORT,
+    EXIT_CONSTRUCT_ABSENT,
     METRIC_COLUMNS,
     PEEK_FILENAME,
     SEGMENT_FILENAME,
@@ -230,3 +231,82 @@ def test_summary_reports_legacy_source_and_warning_for_a_pre_ki005_export(tmp_pa
 
     assert summary["export"]["omegaSource"] == "aim-diff-legacy"
     assert "KI-005" in summary["export"]["omegaSourceWarning"]
+
+
+# --- KI-006 / C T2 — constructPresence block + dedicated exit code (FR-C-7/8) ---
+
+_REAL_VALID_EXPORT = (
+    Path(__file__).resolve().parents[3]
+    / "fixtures"
+    / "exports"
+    / "counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json"
+)
+
+_SYNTHETIC_TIMELINE_EXPORT = (
+    Path(__file__).resolve().parents[3] / "fixtures" / "exports" / "synthetic_timeline.json"
+)
+
+
+def test_construct_absent_export_exits_two_but_still_writes_all_artifacts(tmp_path: Path) -> None:
+    exit_code = main(["--export", str(_REAL_LEGACY_EXPORT), "--out", str(tmp_path)])
+
+    assert exit_code == EXIT_CONSTRUCT_ABSENT
+    for name in (SUMMARY_FILENAME, PEEK_FILENAME, SEGMENT_FILENAME):
+        assert (tmp_path / name).is_file()
+
+    summary = json.loads((tmp_path / SUMMARY_FILENAME).read_text(encoding="utf-8"))
+    construct = summary["constructPresence"]
+    assert construct["present"] is False
+    assert construct["flags"] == ["construct_absent:counter-strafe"]
+    assert construct["paramsVersion"] == "construct-v1"
+    assert construct["thresholds"] == {"minCounterEvents": 1, "minMovingTickRatio": 0.05}
+
+
+def test_construct_absent_export_stderr_names_drill_and_measured_values(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    main(["--export", str(_REAL_LEGACY_EXPORT), "--out", str(tmp_path)])
+
+    captured = capsys.readouterr()
+    assert "failed" not in captured.err
+    assert "counterstrafe_ad_v1" in captured.err
+    assert "counter-strafe" in captured.err
+
+
+def test_construct_present_export_exits_zero(tmp_path: Path) -> None:
+    exit_code = main(["--export", str(_REAL_VALID_EXPORT), "--out", str(tmp_path)])
+
+    assert exit_code == 0
+    summary = json.loads((tmp_path / SUMMARY_FILENAME).read_text(encoding="utf-8"))
+    assert summary["constructPresence"]["present"] is True
+
+
+def test_default_synthetic_export_construct_present_on_default_path(tmp_path: Path) -> None:
+    """FM-6: the gate must actually fire on run_pipeline's own default fixture."""
+
+    exit_code = main(["--export", str(DEFAULT_EXPORT), "--out", str(tmp_path)])
+
+    assert exit_code == 0
+    summary = json.loads((tmp_path / SUMMARY_FILENAME).read_text(encoding="utf-8"))
+    construct = summary["constructPresence"]
+    assert construct["present"] is True
+    assert construct["family"] == "counterstrafe"
+
+
+def test_unknown_drill_family_exits_zero_and_flags_unknown(tmp_path: Path) -> None:
+    exit_code = main(["--export", str(_SYNTHETIC_TIMELINE_EXPORT), "--out", str(tmp_path)])
+
+    assert exit_code == 0
+    summary = json.loads((tmp_path / SUMMARY_FILENAME).read_text(encoding="utf-8"))
+    construct = summary["constructPresence"]
+    assert construct["present"] is None
+    assert construct["flags"] == ["construct_unknown"]
+    assert construct["thresholds"] is None
+
+
+def test_construct_presence_summary_json_has_no_nan_literal(tmp_path: Path) -> None:
+    run(_REAL_LEGACY_EXPORT, tmp_path)
+
+    text = (tmp_path / SUMMARY_FILENAME).read_text(encoding="utf-8")
+    assert "NaN" not in text and "Infinity" not in text
+    json.loads(text, parse_constant=_reject_constant)

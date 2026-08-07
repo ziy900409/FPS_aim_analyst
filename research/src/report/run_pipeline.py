@@ -13,6 +13,13 @@ Usage from ``research/``::
 The per-segment values written here (segment duration, peak angular speed, mean
 epsilon) are pipeline diagnostics, not coach-report metrics: they restate
 already-authoritative quantities and have not passed a construct-validity gate.
+
+Exit codes:
+    0   pipeline completed; construct present or family unknown (FR-C-9)
+    1   schema/IO failure -- no artifacts written
+    2   pipeline completed but the drill's core construct is absent (FR-C-8);
+        artifacts are still written (KI-006-C D-C2) but the session must not be
+        used as validity evidence for that drill
 """
 
 from __future__ import annotations
@@ -38,6 +45,7 @@ if str(_SOURCE_ROOT) not in sys.path:
 from modules.ingest.algorithms import (  # noqa: E402
     Export,
     SchemaError,
+    check_construct_presence,
     check_dt,
     load_export,
 )
@@ -59,6 +67,10 @@ DEFAULT_OUT_DIR = RESEARCH_ROOT / "out"
 SUMMARY_FILENAME = "pipeline-summary.json"
 PEEK_FILENAME = "peek-quality.csv"
 SEGMENT_FILENAME = "peek-segments.csv"
+
+#: Construct-absent exit code; kept distinct from the schema/IO failure code (1) so automation
+#: can tell "pipeline broke" apart from "pipeline ran, this session isn't valid evidence" (D-C3).
+EXIT_CONSTRUCT_ABSENT = 2
 
 METRIC_COLUMNS = ("duration_ms", "peak_omega_deg_s", "mean_epsilon_deg")
 
@@ -98,6 +110,7 @@ def run(
 
     export = load_export(export_path)
     dt_report = check_dt(export.ticks, _sim_hz(export.meta))
+    construct_report = check_construct_presence(export)
 
     # A dt gap is attributed only to the presentation window that contains it.
     # Flagging every window from the export-wide report would let one dropped
@@ -139,6 +152,26 @@ def run(
             "gapCount": dt_report.gap_count,
             "gaps": [{"tickIndex": index, "dtMs": value} for index, value in dt_report.gaps],
             "uniform": dt_report.uniform,
+        },
+        "constructPresence": {
+            "drillId": construct_report.drill_id,
+            "family": construct_report.family,
+            "construct": construct_report.construct,
+            "present": construct_report.present,
+            "paramsVersion": construct_report.params_version,
+            "counterEventCount": construct_report.counter_event_count,
+            "tickCount": construct_report.tick_count,
+            "movingTickCount": construct_report.moving_tick_count,
+            "movingTickRatio": construct_report.moving_tick_ratio,
+            "thresholds": (
+                {
+                    "minCounterEvents": construct_report.thresholds.min_counter_events,
+                    "minMovingTickRatio": construct_report.thresholds.min_moving_tick_ratio,
+                }
+                if construct_report.thresholds is not None
+                else None
+            ),
+            "flags": list(construct_report.flags),
         },
         "segmentation": {
             "paramsVersion": params.version,
@@ -400,9 +433,16 @@ def main(argv: list[str] | None = None) -> int:
 
     dt_report = summary["dtReport"]
     segmentation = summary["segmentation"]
+    construct = summary["constructPresence"]
     print(f"export           {summary['export']['path']}")
     print(f"ticks            {dt_report['tickCount']} (median dt {dt_report['medianDtMs']} ms)")
     print(f"dt gaps          {dt_report['gapCount']} (uniform={dt_report['uniform']})")
+    if construct["present"] is True:
+        print(f"construct        present ({construct['construct']}, {construct['paramsVersion']})")
+    elif construct["present"] is None:
+        print("construct        unknown (drill family not registered)")
+    else:
+        print(f"construct        absent ({construct['construct']}, {construct['paramsVersion']})")
     print(f"peeks            {segmentation['peekCount']}")
     print(
         f"segmented        {segmentation['peeksWithPrimaryFlick']}"
@@ -411,6 +451,18 @@ def main(argv: list[str] | None = None) -> int:
     print(f"segments         {segmentation['segmentCount']} ({segmentation['paramsVersion']})")
     for name in (SUMMARY_FILENAME, PEEK_FILENAME, SEGMENT_FILENAME):
         print(args.out / name)
+
+    if construct["present"] is False:
+        print(
+            f"construct absent: drill '{construct['drillId']}' declares '{construct['construct']}' "
+            f"but counter_event_count={construct['counterEventCount']} "
+            f"(threshold {construct['thresholds']['minCounterEvents']}), "
+            f"moving_tick_ratio={construct['movingTickRatio']} "
+            f"(threshold {construct['thresholds']['minMovingTickRatio']}). "
+            f"this session must not be used for a validity claim about '{construct['drillId']}'.",
+            file=sys.stderr,
+        )
+        return EXIT_CONSTRUCT_ABSENT
     return 0
 
 
