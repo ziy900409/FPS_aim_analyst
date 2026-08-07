@@ -10,7 +10,7 @@
 | **相依** | **M14 全六項**(含 ③④⑤ 重新宣告)。M14 ③④⑤ 的解除已由 [KI-005-A / A2-T4](../../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 交付(2026-08-07),**本 WP 只驗證、不代辦**(協議 §6) |
 | **對應 FR** | FR-D11 / FR-D12 + FR-D16 第二版(報告 v1) |
 | **估時** | 2.5–3.25 dev-days(**高於 [../README.md §3](../README.md) 編列的 2–3d**,超出部分全在 T1;理由見 §4 與 [progress.md](progress.md) D-30.0) |
-| **狀態** | ⬜ **未開始;entry blocker 已解除(2026-08-07)** —— [KI-005-A / A2-T4](../../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 已落地,M14 ③④⑤ 已重新宣告,KI-006 CLOSED;**T0 待執行以正式驗證並開工**(協議 §6:entry-gate 仍須自行覆核上游 exit-gate,不因帳本已更新而略過) |
+| **狀態** | 🔶 **進行中(2026-08-07)** —— T0(entry gate)+ T1(`t_detect` parity)已完成;T2(phase 分解)/T3(101 點曲線)/T-exit 待開工。詳見 [progress.md](progress.md) |
 
 ---
 

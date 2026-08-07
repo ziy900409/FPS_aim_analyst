@@ -1,0 +1,41 @@
+{
+  "source": "synthetic_counterstrafe.json",
+  "version": "detect-v1",
+  "options": {
+    "preStimulusMs": 500.0,
+    "thresholdSdMultiplier": 3.0,
+    "sustainedTicks": 4,
+    "anticipationMs": 100.0,
+    "eyeOrigin": {
+      "base": {
+        "x": 0.0,
+        "y": 1.6,
+        "z": 4.0
+      },
+      "simToWorld": 0.01,
+      "source": "meta"
+    }
+  },
+  "presentations": [
+    {
+      "targetId": "target-1",
+      "tVisibleMs": 0.0,
+      "status": "detected",
+      "tDetectMs": 15.625,
+      "eccentricityAtSpawnDeg": 7.70451117002164,
+      "baselineInsufficient": true,
+      "anticipation": true,
+      "flags": []
+    },
+    {
+      "targetId": "target-2",
+      "tVisibleMs": 187.5,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 4.375023642475213,
+      "baselineInsufficient": true,
+      "anticipation": false,
+      "flags": []
+    }
+  ]
+}

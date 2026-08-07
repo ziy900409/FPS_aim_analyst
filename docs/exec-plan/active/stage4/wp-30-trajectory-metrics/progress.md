@@ -12,6 +12,7 @@
 | 2026-08-07 | (規劃) | 📋 | 使用者拍板三項規劃期決策:**D-30.1** phase 邊界複用 `seg-v2`(剩多段取法 D-30.1b 待真實資料)、**D-30.0** t_detect 獨立 task + parity 閘、**WP-30 等 A2-T4 完成後才開工** |
 | 2026-08-07 | (對帳) | ✅ | [KI-005-A / A2-T4](../../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 已落地:M14 ③④⑤ 重新宣告,KI-006 CLOSED,**entry blocker 三條理由全數解除**。WP-30 仍**未開工**——本行只更新阻塞狀態,T0 本身仍待執行(不得跳過自行覆核) |
 | 2026-08-07 | **T0** | ✅ | entry gate 完成:M14 六項逐項自行覆核通過(§1 表);fixture roster 凍結 + strict 閘獨立覆核(§2);`suspect` 使用界線重立,引 [KI-007](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) §5 一手證詞關閉 OQ-S4-16;D-30.1b 以三份真實匯出的 segment 數分佈拍板(候選①);`phase-v1`/`curve-v1` pre-registration 骨架寫定;`../README.md` §3/§6/§8 對帳。零 `research/`/`src/` 變更 |
+| 2026-08-07 | **T1** | ✅ | `research/src/modules/metrics/algorithms/detect.py` 新增 `detect_samples`/`detect_parity_payload`(逐位重現 `detectionDerivation.ts`,§4 D-30.5 逐欄核對);`tests/golden/research/detect-parity.test.ts` 對四份 fixture(合成 + 09:18/09:24/09:37)逐 presentation 相對誤差 ≤1e-9,`npm run test:ci` 90 檔 748 test 全綠;`uv run pytest` 243 passed(新增 test_detect.py 15 案例、test_detect_fixture.py、test_detect_purity.py);反 vacuous 斷言兩側皆綠(合計 23 個 `detected` 樣本 ≥ T0 門檻 10,OQ-S4-15 非 blocked-by-data);legacy(08:03/09:39)負向測試兩側皆釘死 strict 拋錯。零 `src/` 生產碼變更 |
 
 ---
 
@@ -99,6 +100,8 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | **D-30.2** | ✅ **T0 拍板(2026-08-07):fixture roster 凍結 + `strict=True` 機械閘**。09:18/09:24/09:37 + `synthetic_counterstrafe.json` 為**唯一**可用 fixture(前三者為真實效度樣本,後者為演算法邊界 + 短窗退化案例);08:03/09:39 **全面禁用**,僅可作為「strict 閘必定拋錯」的負向測試輸入。機械化手段:WP-30 全部 notebook/測試入口一律 `omega_deg_s(..., strict=True)` 解 ω、`resolve_eye_origin(meta, strict=True)` 解 ε 射線原點;legacy 匯出當場拋 `ValueError` 而非降級輸出 aliased 曲線 | 08:03/09:39 是 `aim-diff-legacy`(無 `ticks.dYaw/dPitch`)且無 `meta.scene.eye`/`simToWorld`,ω 與 ε 兩條路都建立在已知錯誤的量測基礎上(KI-005 beat aliasing、KI-004 原點錯誤)。若靠文件自律(「請不要用這兩份」)而非程式碼機械閘,下一個 task 作者仍可能誤用——這正是 KI-005 §7.4 自我更正過的教訓(「以為重跑分析能讓假象消失」)。Alternatives Considered:僅在文件標註禁用範圍、不加程式碼閘(拒絕:S-30.1 已證明兩份舊 fixture 表面看起來仍可解析,`load_export` 不會報錯,唯有主動呼叫 `strict=True` 才會暴露問題,文件自律無法防止誤用) | T0 獨立重跑 `strict=True` 負向測試(本檔 §2):08:03/09:39 於 `omega_deg_s` 與 `resolve_eye_origin` 兩處皆確認拋 `ValueError`;09:18/09:24/09:37/`synthetic_counterstrafe.json` 皆不拋錯(`run_pipeline.py` 全鏈跑通,§2 表格) |
 | **D-30.3** | ✅ **T0 拍板(2026-08-07):[D-29.2](../wp-29-coach-timeline/progress.md) 在本 WP 不適用,改採新界線**——09:18/09:24 的 `meta.suspect = true` 判定為**已確認的誤判**,可正常作為本 WP 的 ω/ε 效度證據使用,不需額外排除或降權。**失效條件**:若日後出現與研究者本人陳述矛盾的書面/系統紀錄(例如 session log 顯示這兩次錄製期間確實有 `fullscreenchange` 事件發生在 `drillRunner.phase ∈ {countdown, running}` 期間),本決議立即失效,須重新評估這兩份匯出作為效度證據的資格,並回溯檢查 WP-30 當時已產出的任何分析結論 | D-29.2 的成立條件是「不消費 `px/pz`」;ε(t) 的射線原點為 `eye_origin.base + (px,0,pz) * simToWorld`,WP-30 必然消費,故 D-29.2 自動失效(README §0.3 已載明)。新界線改為:直接查清 `suspect` 觸發源。[KI-007](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) §1/§5 已載明根因(`experimentSession.active` 在單一 session 流程下沒有 `exit()` 呼叫,drill 結束後研究者按正常流程退出全螢幕去抓檔案,與「錄製中途意外掉出」在修法前的程式碼眼中無法區分)與研究者的**第一手確認**(「三次錄製過程中皆未中途退出全螢幕,只在整個測試結束後才退出」)。此確認的證據地位比照 [A2-T4 B-1](../../../../known_issue/KI-005-A/A2-blocked-plan.md#ki-006-解除判定2026-08-07) 已接受的先例——採集者本人對「錄製當下發生了什麼」有第一手權威,即使沒有同步書面記錄。09:37 的 `suspect=false` 是反證(`corridorExceeded=true` 但 `suspect=false`,證明 corridor 與 suspect 確已於 KI-004/S1 解耦,09:18/09:24 的 `suspect=true` 另有來源而非同一機制重演)。Alternatives Considered:① 保守起見仍排除 09:18/09:24(拒絕:唯一理由撤回後仍排除等於浪費兩份通過 KI-006 construct presence gate 的合格樣本,且與 A2-T4 已接受同類第一手證詞的先例不一致,標準不能雙重);② 要求研究者提供額外書面佐證才採信(拒絕:KI-007 §1 已明載這是 F-1 修法**之前**的已知系統性 bug,即便有書面記錄也只能佐證「使用者確實在某時間點退出全螢幕」,無法區分是 drill 中還是 drill 後——書面記錄在這個 bug 存在期間不具鑑別力,要求它只是形式主義) | [KI-007](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) §1(症狀)/§2(根因,commit 修法前的 `experimentSession` 無 `exit()` 呼叫路徑)/§5(對 A2-T1/A2-T2 既有資料的影響,含研究者確認文字);[A2-T4 KI-006 解除判定 B-1](../../../../known_issue/KI-005-A/A2-blocked-plan.md#ki-006-解除判定2026-08-07)(同類第一手證詞先例) |
 | **D-30.4** | ✅ **T0 拍板(2026-08-07):`phase-v1`/`curve-v1` pre-registration 骨架**(詳見本檔 §3;規則與通過條件現在寫死,數值於 T2/T3 掃參/凍結,凍結後僅能升版) | 沿用 `seg-v2` 的雙維度掃參紀律(合成 + 真實),防止重演 `seg-v1` 只在合成資料上校參、凍結值在真實資料上不適用的錯誤(README §3 failure modes 表已列此風險) | 本檔 §3;[analysis-segments.md](../../../operational/analysis-segments.md) `seg-v2` 先例;[analysis-peek-timeline.md](../../../operational/analysis-peek-timeline.md) `sync-v1`(`min_samples=10`)先例 |
+| **D-30.5** | ✅ **T1 參數逐欄核對(2026-08-07):`detectionDerivation.ts` 的 `DEFAULT_OPTIONS` 與 `analysis-t-detect.md` 文件敘述**完全一致**,無需入 DECISIONS 或回寫文件**:`preStimulusMs=500` / `thresholdSdMultiplier=3` / `sustainedTicks=4` / `anticipationMs=100`。Python `DetectParams` 預設值逐欄照抄,由 `test_default_params_match_ts_authoritative_defaults` 釘死 | T1 Steps 第一步要求「文件與程式碼若不一致,以程式碼為權威」;本次核對結果是兩者本就一致(文件雖自稱 provisional,但尚未偏離),故不需要決策,只需要留下核對紀錄供未來校準(analysis-t-detect.md §Sensitivity Analysis)時比對基準 | [detectionDerivation.ts](../../../../../src/metrics/detectionDerivation.ts) `DEFAULT_OPTIONS`;[analysis-t-detect.md](../../../operational/analysis-t-detect.md) `## t_detect` 段落;`research/src/modules/metrics/algorithms/tests/test_detect_fixture.py::test_default_params_match_ts_authoritative_defaults` |
+| **D-30.6** | ✅ **T1 拍板:目標中心「兩者皆缺」時 Python 側用 `flags=("missing_target_position",)` 取代 TS 的 `throw`**,不算 C-D4 第二定義 | TS `targetFromVisibleOrTick` 每次只推導一個 presentation,拋錯後由呼叫端決定;Python `detect_samples` 是**批次**推導一整份匯出的所有 presentations(供 parity fixture 產生器使用),單一 presentation 資料缺陷不該讓整份匯出的推導全部中止。這不是對「目標中心缺席時怎麼辦」重新下定義——兩側對「該不該猜」給出的答案相同(不得猜),只是暴露失敗的機制不同(逐筆例外 vs 批次旗標)。三份真實 fixture 與合成 fixture 皆無此旗標出現(§4 證據) | `research/src/modules/metrics/algorithms/detect.py` `KNOWN_DETECT_FLAGS`;`test_detect.py::test_both_target_sources_missing_flags_instead_of_crashing` |
 
 ## 3. `phase-v1` / `curve-v1` pre-registration 骨架(T0;規則與通過條件寫死,數值留待 T2/T3 掃參凍結)
 
@@ -140,6 +143,7 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | **S-30.3** | 合成 fixture 只有 **48 ticks / 2 peeks**,而 `butter_filter` 對 `樣本數 ≤ 3*max(len(b),len(a))` 直接拋 `ValueError` → 合成資料在 phase 濾波路徑上是**必然退化**的 | 短窗退化必須是「flag + fallback」的必跑回歸案例,不能列為「已知不支援」(T2 DoD ③) |
 | **S-30.4** | T0 獨立重跑 `run_pipeline.py` 取得的逐 peek `segment_count` 分佈顯示:60 個真實 peek 中 **58 個(96.7%)恰有 1 個 segment**,只有 1 個 0-segment、1 個 2-segment —— D-30.1b 原先預期的「MR 取法分歧」在此樣本上幾乎不曾發生,三個候選規則的實際差異只影響 1/60 個 peek 的 V 段起點 | 大幅簡化 D-30.1b 的拍板:候選①②③在本樣本上高度一致,採最簡單的候選①即可,不需要為稀有情境引入排序/合併邏輯;但**效度聲稱不可外推**——樣本一多、drill 涵蓋更寬動作範圍後,多段比例可能上升,屆時需重新檢視此決策 |
 | **S-30.5** | T0 獨立重跑三份真實匯出的分段統計(§2),與 [analysis-segments.md](../../../operational/analysis-segments.md) `seg-v2` real-export validation 段落宣稱的 98.3% success rate / 38.3% `merged_adjacent_peaks` **逐位吻合** | 交叉驗證 A2-T3 的 exit-gate 證據未被竄改或選擇性引用,T0「不得只信任帳本文字」的覆核要求確實執行且通過 |
+| **S-30.6** | T1 實測三份真實匯出 + 合成 fixture 的 `t_detect` 推導:60 個真實 peek 中 `detected`=22、`timeout`=38(+ 合成 2 peek 各 1 detected/1 timeout,合計 23 detected);`baselineInsufficient` 在三份真實匯出**全數為 0**(60/60 皆有充足前刺激基線,因為每個 peek 的前 500ms 落在上一個 peek 的尾段而非真空),只有合成 fixture 的 2 個 peek(視角開場即刺激,無前置資料)觸發 | 直接回答 OQ-S4-15:23 ≥ T0 pre-registered 門檻(≥10),T2 的 REC-vs-`t_detect` 一致性檢查**不會**是 `blocked-by-data`;同時排除了「baseline_insufficient 污染真實資料 threshold=3×SD=0」的疑慮(該退化模式只在合成邊界案例出現,不影響真實效度樣本) |
 
 ## Open Questions
 
@@ -148,10 +152,10 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
 | **OQ-S4-14** | phase 邊界複用 `seg-v2` primary_flick,或獨立 Butterworth 偵測器(FR-D11 字面) | ✅ **關閉(2026-08-07,T0)**:複用 `seg-v2`(D-30.1),多段 peek 取法採候選①(D-30.1b)。三候選在真實資料上未出現「各切各的雙峰」,不觸發回頭重開獨立偵測器的條款 | 使用者 / 研究者 | WP-30 T0 |
-| **OQ-S4-15** | `t_detect` 在 counter-strafe drill 上是否有足夠 `detected` 樣本支撐 REC 一致性檢查 | 🟡 T1 以資料判定;不足即 `blocked-by-data`;最小樣本數已 pre-register 為 ≥10(§3.1) | 研究者 | WP-30 T1 |
+| **OQ-S4-15** | `t_detect` 在 counter-strafe drill 上是否有足夠 `detected` 樣本支撐 REC 一致性檢查 | 🟡 **可行性已由 T1 確認(2026-08-07):23 個 `detected` 樣本 ≥ 門檻 10(S-30.6)**,非 `blocked-by-data`;實際的 REC-end vs `t_detect` **一致性結論**仍留給 T2 產出,故 OQ 本身留到 T2 完成時關閉 | 研究者 | WP-30 T2 |
 | **OQ-S4-16** | 09:18 / 09:24 的 `suspect = true` 是否為 [KI-007](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) 的 false positive,抑或 session 中途真的退出 fullscreen | ✅ **關閉(2026-08-07,T0)**:[KI-007 §5](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) 已載研究者第一手確認為誤判(F-1 修法前的已知 bug,drill 結束後才退出全螢幕);D-30.3 已拍板使用界線與失效條件 | 使用者 / 研究者 | WP-30 T0 |
 
-## 4. Scope 證據(DoD ⑦)
+## 4. T0 Scope 證據(DoD ⑦)
 
 ```
 $ git diff --stat
@@ -163,3 +167,40 @@ $ git diff --stat
 ```
 
 四檔皆在 `docs/exec-plan/active/stage4/` 之下,零 `src/`、零 `research/` 變更,符合 T0-entry-gate.md 的 Touches 限制。
+
+## 5. T1 對表閘 + 反 vacuous 證據
+
+**新增檔案**(`git status --short`,零修改既有 `src/`;`research/src/modules/metrics/algorithms/__init__.py` 只新增 export,未改既有符號):
+
+```
+ M research/src/modules/metrics/algorithms/__init__.py
+?? research/fixtures/parity/detect-counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json
+?? research/fixtures/parity/detect-counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json
+?? research/fixtures/parity/detect-counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json
+?? research/fixtures/parity/detect-synthetic_counterstrafe.json
+?? research/src/modules/metrics/algorithms/detect.py
+?? research/src/modules/metrics/algorithms/tests/test_detect.py
+?? research/src/modules/metrics/algorithms/tests/test_detect_fixture.py
+?? research/src/modules/metrics/algorithms/tests/test_detect_purity.py
+?? research/src/modules/metrics/notebooks/t1/generate_detect_parity.py
+?? tests/golden/research/detect-parity.test.ts
+```
+
+**`uv run pytest`**(research,含新增 15 個 `test_detect.py` 案例 + `test_detect_fixture.py` 對表迴歸/反 vacuous/legacy 負向 + `test_detect_purity.py`):
+
+```
+243 passed in 29.18s
+```
+
+**`npm run test:ci`**(engine,含 `detect-parity.test.ts` 7 案例:4 份 fixture 逐 presentation 對表、反 vacuous 門檻、2 份 legacy 負向):
+
+```
+Test Files  90 passed (90)
+     Tests  748 passed (748)
+...
+21 passed (32.6s)   # Playwright e2e(test:ci 的第二段)
+```
+
+**反 vacuous 證據**(S-30.6):三份真實匯出 + 合成 fixture 合計 23 個 `detected` 樣本(≥ T0 門檻 10),`test_anti_vacuous_detected_sample_count_meets_t0_threshold`(Python)與 TS 測試中「has enough detected samples」案例雙側斷言;`baselineInsufficient` 在三份真實匯出全數為 0(僅合成短窗案例觸發),見 Surprises 表 S-30.6。
+
+**參數稽核**(D-30.5):`DetectParams` 預設值與 `detectionDerivation.ts` `DEFAULT_OPTIONS` 逐欄相同,無需決策或回寫文件。

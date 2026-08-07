@@ -7,7 +7,7 @@
 | **相依** | T0(roster + pre-registration 凍結) |
 | **Risk / Cplx** | Med / Med — 風險不在演算法,而在 **① 參數來源**(文件自稱 provisional,程式碼才是權威)與 **② 假綠**(counter-strafe drill 上若全 `timeout`,parity 會在空集合上通過) |
 | **Touches** | ADD `research/src/modules/metrics/algorithms/detect.py` + tests;ADD `research/fixtures/parity/detect-*.json`;ADD `tests/golden/research/detect-parity.test.ts`;ADD `notebooks/t1/` 產生器 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-07) |
 
 ## Objective
 

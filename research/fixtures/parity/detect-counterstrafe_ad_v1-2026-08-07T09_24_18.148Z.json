@@ -1,0 +1,221 @@
+{
+  "source": "counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json",
+  "version": "detect-v1",
+  "options": {
+    "preStimulusMs": 500.0,
+    "thresholdSdMultiplier": 3.0,
+    "sustainedTicks": 4,
+    "anticipationMs": 100.0,
+    "eyeOrigin": {
+      "base": {
+        "x": 0.0,
+        "y": 1.6,
+        "z": 4.0
+      },
+      "simToWorld": 0.01,
+      "source": "meta"
+    }
+  },
+  "presentations": [
+    {
+      "targetId": "t0",
+      "tVisibleMs": 536709.1274999995,
+      "status": "detected",
+      "tDetectMs": 536716.9399999995,
+      "eccentricityAtSpawnDeg": 11.159067867555452,
+      "baselineInsufficient": false,
+      "anticipation": true,
+      "flags": []
+    },
+    {
+      "targetId": "t1",
+      "tVisibleMs": 537170.0649999995,
+      "status": "detected",
+      "tDetectMs": 537279.4399999995,
+      "eccentricityAtSpawnDeg": 28.490124198830866,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t2",
+      "tVisibleMs": 537732.5649999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 26.89490302559811,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t3",
+      "tVisibleMs": 538341.9399999995,
+      "status": "detected",
+      "tDetectMs": 538466.9399999995,
+      "eccentricityAtSpawnDeg": 24.87349159584216,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t4",
+      "tVisibleMs": 538849.7524999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 26.21150150276593,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t5",
+      "tVisibleMs": 539349.7524999995,
+      "status": "detected",
+      "tDetectMs": 539490.3774999995,
+      "eccentricityAtSpawnDeg": 27.283056133097435,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t6",
+      "tVisibleMs": 539834.1274999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 24.81443863873347,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t7",
+      "tVisibleMs": 540349.7524999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 26.567015312924987,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t8",
+      "tVisibleMs": 540857.5649999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 25.48272305058778,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t9",
+      "tVisibleMs": 541310.6899999995,
+      "status": "detected",
+      "tDetectMs": 541420.0649999995,
+      "eccentricityAtSpawnDeg": 26.770816123745632,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t10",
+      "tVisibleMs": 541795.0649999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 27.957498463276508,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t11",
+      "tVisibleMs": 542310.6899999995,
+      "status": "detected",
+      "tDetectMs": 542435.6899999995,
+      "eccentricityAtSpawnDeg": 26.042710629138334,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t12",
+      "tVisibleMs": 542756.0024999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 27.49730664277036,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t13",
+      "tVisibleMs": 543177.8774999995,
+      "status": "detected",
+      "tDetectMs": 543365.3774999995,
+      "eccentricityAtSpawnDeg": 25.21295233779422,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t14",
+      "tVisibleMs": 543748.1899999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 27.111396390636198,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t15",
+      "tVisibleMs": 544263.8149999995,
+      "status": "detected",
+      "tDetectMs": 544412.2524999995,
+      "eccentricityAtSpawnDeg": 27.730993920257852,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t16",
+      "tVisibleMs": 544771.6274999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 27.225924217583167,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t17",
+      "tVisibleMs": 545240.3774999995,
+      "status": "detected",
+      "tDetectMs": 545420.0649999995,
+      "eccentricityAtSpawnDeg": 27.091984857007624,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t18",
+      "tVisibleMs": 545795.0649999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 26.31866916692689,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    },
+    {
+      "targetId": "t19",
+      "tVisibleMs": 546256.0024999995,
+      "status": "timeout",
+      "tDetectMs": null,
+      "eccentricityAtSpawnDeg": 27.506968121504784,
+      "baselineInsufficient": false,
+      "anticipation": false,
+      "flags": []
+    }
+  ]
+}
