@@ -22,6 +22,7 @@
 | 2026-08-07 | T-exit | ✅ | 八道 A1 exit gate 已回填於 [T-exit-gate.md](T-exit-gate.md):G-1/G-2/G-3/G-5/G-6/G-7/G-8 由既有 KI-005 / A 測試與文件對帳覆蓋;T-exit 現場回歸:`npx.cmd tsc --noEmit` exit 0;`npm.cmd run test:ci` exit 0(vitest **89 files / 739 tests**,Playwright **20/20**);`uv run pytest` 原生仍受 T0-S1 的外部 Temp ACL 問題阻擋,以 workspace-local `--basetemp ..\codex_pytest_tmp_t_exit` 重跑 **195 passed**。`git diff --stat` 在回填前為空;本切片只修改 `docs/known_issue/KI-005-A/T-exit-gate.md`、`progress.md`、`task-checklist.md`。A1 交付判定:✅ **量測儀器修好**;A2(新採樣/複驗/`seg-v2`)仍 blocked;M14 ③④⑤ 與 WP-30/31 entry blocker 仍未解除。 |
 | 2026-08-07 | A2-T1 | ✅ | 研究者於同一台 240 Hz 機器實際執行三個 counter-strafe session(09:18/09:24/09:37,`counterstrafe_ad_v1`),提交匯出 + `construct_presence` 產物。逐項核對 DoD(見 [A2-blocked-plan.md](A2-blocked-plan.md) A2-T1):`omega_deg_s(..., strict=True)` 三份皆不拋錯、`export.omegaSource == "tick-integral"`(A1 修法生效);`counter` 事件數 23/25/20,皆 > 0;`events` 含 `type === 'key'` 86/84/78 筆(OQ-A-2/TD-5 的 `recordKeyEvents` 接線在真實採集中確認生效,非僅測試);橫移 tick 佔比 0.656/0.654/0.644,遠高於 `construct-v1` 下限 0.05、亦優於舊 09:39 樣本的 0.520。`run_pipeline` 對三份匯出**獨立重跑**(不僅信任提交的產物)皆 exit **0** 且 `constructPresence.present == true`。session 數 = 3 > 2(OQ-KI6-4 決議達標)。240 Hz(`meta.display.refreshEstimateHz`)、`meta.mouseIntegration` 皆確認存在(B-5)。**觀察 → 已確認為 bug,升級為 [KI-007](../KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md)**:09:18/09:24 兩份 `meta.suspect == true`,追碼([main.ts:410-412](../../../src/main.ts#L410-L412))確認觸發源是 `experimentSession.suspect`(GD-10)。研究者確認錄製期間**未**中途退出全螢幕,只在整個測試結束後才退。根因:`experimentSession.exit()` 只在多條件 protocol 流程呼叫,單一「實驗 session」drill 流程從未呼叫,`active` 對整頁生命週期恆 true,drill 結束後正常退出全螢幕去抓匯出檔的動作因此被誤判為條件失效。**非**走廊越界(`meta.validity.corridorExceeded` 三份皆 `true`,K-3 下純觀測、不影響效度)。**確認為誤判,不影響 09:18/09:24 作為 M14 效度證據的可信度**;修法已於同日落地(`experimentSession.handleFullscreenChange` 新增 `recording` 參數,只在 drill 錄製中才判定失效),見 [KI-007](../KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) / BD-007。 |
 | 2026-08-07 | A2-T2 | ✅ 四項複驗完成,使用者確認判讀,整體通過;③ 有確認的外部混淆因子(記錄不隱藏),詳見下方 §2e | **方法**:凹口偵測器逐字沿用 T0 §2a 記錄的公式(`w[i]<0.6×min(w[i-1],w[i+1])` 且兩鄰居 `>80`),直接呼叫既有 `research/src/modules/kinematics/algorithms/angular.py::omega_deg_s`(不重新實作演算法)取得 `w`;守恆檢查同樣直接讀匯出 `ticks[].dYaw/dPitch` 與 `ticks[].aim.{yaw,pitch}`。腳本為臨時腳本,置於 session scratchpad,未進 repo(比照 T0 慣例)。**① 凹口偵測器**:09:39 基準(legacy ω,今日重跑,作為腳本正確性 sanity check)= **34 個**,間距眾數 8(與 T0 記錄逐位相符,證明腳本一致);三份新匯出(tick-integral ω)= **3/2/2 個**,較基準降 >90%,但**非literal 0**。逐一核對:三份匯出的殘餘凹口間距皆非 8 的倍數(09:18: 3 tick 間距;09:24: 相隔 1029 tick;09:37: 4 tick 間距),且與 `vx`(橫移速度)在同一窗口內**單調變化**(無反向/急停事件重合)——非 render/sim beat 的週期性訊號,較符合真實滑鼠輸入的偶發微變異。**② `merged_adjacent_peaks` 比例**:09:39 基準(legacy ω,今日重跑)= 20/21(**95.2%**;KI-005 文件原載 15/19≈79%,今日重跑數字更高但方向相同,見下 Surprise);三份新匯出 = 12/21(57.1%)、11/19(57.9%)、13/20(65.0%)——**顯著下降**,不論對照哪個基準數字結論皆成立。**③ 未 flag 樣本數**:09:39 基準(今日重跑)`quality` 為**空字典**(0 個未 flag 樣本,全數因 `missing_target` 被排除);三份新匯出 = 9、8、7 個未 flag 樣本——方向與預期相符(上升),但**確認為混淆**:09:39 的 `meta.scene` 缺少 `eye` 欄位(2026-08-05 捕獲,早於 2026-08-06 落地的 KI-004/S1),`run_pipeline.py` 的 `resolve_eye_origin(meta, strict=True)` 對此類舊匯出正確拒絕猜測、回傳 `None`,連帶 `missing_target` flag 蓋滿所有 peek/segment([run_pipeline.py:344](../../../research/src/report/run_pipeline.py#L344) 的 docstring 明載此為 KI-004/S1 T5 的刻意設計,非本次迴歸)。**此項改善混雜了 KI-004/S1(eye origin)與 KI-005/A1(ω aliasing)兩個獨立修法的效果,無法用 09:39 單獨隔離出 A1 的貢獻**。**④ 守恆(FM-1)**:三份新匯出 `Σ dYaw` vs `Δaim.yaw`(hip-only,`ads_events=0`)殘差皆 **≤ 5.6e-16**(浮點雜訊量級,非近似相等而是機器精度內完全相等);另補測 `Σ dPitch` vs `Δaim.pitch`,殘差同樣 ≤ 7.1e-16。**FM-1 視為關閉**:coalesced mouse 樣本在真實硬體上未遺失或重複計入,修的確實是歸屬而非量值,不觸發「選項 B 提前」的升級條件。 |
+| 2026-08-07 | A2-T3 | ✅ `seg-v2` 重掃、視覺覆核、凍結、佈線、全鏈重跑完成,見 §2f | `SEG_V2_PARAMS`(window=11/σ=0.75/floor=60)凍結,`seg-v1` 原地保留;`run_pipeline.py` 依 omega source 自動選版;TD-3 拍板不改;`uv run pytest` 221→228 passed(既有僅 1 案期望值改寫,預期且刻意) |
 
 ---
 
@@ -149,13 +150,14 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 
 | 匯出 | merged_adjacent_peaks | segmentCount | 比例 |
 |---|---:|---:|---:|
-| 09:39(今日重跑) | 20 | 21 | **95.2%** |
+| **08:03(今日重跑)** | 15 | 19 | **78.9%**(≈79%) |
 | KI-005 原文件基準(2026-08-05/06 診斷時) | 15 | 19 | **78.9%**(≈79%) |
+| 09:39(今日重跑,次要參照) | 20 | 21 | 95.2% |
 | 09:18(新) | 12 | 21 | **57.1%** |
 | 09:24(新) | 11 | 19 | **57.9%** |
 | 09:37(新) | 13 | 20 | **65.0%** |
 
-09:39 今日重跑(95.2%)高於文件原載基準(78.9%)——兩者用**同一份輸入檔案 + 同一套 `seg-v1` 參數**,理論上應逐位相同;差異推測來自原始診斷當時的 `research/out/pipeline-summary.json` 快照,其產生時點與寫入文件之間可能歷經了未被追蹤的中間版本迭代(原始腳本與快照皆未留存,無法逆向核實)。**不阻塞判讀**:不論取哪個基準數字,三份新匯出(57–65%)都顯著低於兩者(79–95%),方向結論不受影響。
+**更正(A2-T3 執行期間發現)**:A2-T2 當時誤認 KI-005 文件基準取自 09:39,實測 09:39 今日重跑為 95.2% 而非文件的 78.9%,一度記為「未解落差」(見下方 A2-S4)。A2-T3 全鏈重跑時複查發現 **08:03(非 09:39)今日重跑逐位精確重現原文件基準**:`successRate 19/20=0.95`、`merged_adjacent_peaks 15/19=78.9%(≈79%)`,兩項與 KI-005 §1 表列數字**完全一致**——原始診斷當時使用的匯出應為 08:03。A2-S4 的「不追查」處置予以撤銷,改記為已解;09:39 保留為次要參照(同為 legacy 樣本,佐證 legacy ω 在不同真實樣本上皆易觸發高比例 merge,不影響②的方向結論)。**不影響結論**:不論取哪個 legacy 基準(78.9% 或 95.2%),三份新匯出(57–65%)都顯著更低。
 
 **③ 未 flag 樣本數**(`duration_ms`/`peak_omega_deg_s`/`mean_epsilon_deg`):
 
@@ -184,6 +186,38 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 **① 的視覺化覆核(2026-08-07,使用者要求)**:針對「殘餘凹口是否為根因復發」畫圖覆核而非只看數字。09:39 基準圖(legacy ω)顯示典型症狀簽名——尖銳、孤立的單 tick 深凹,坐落在其餘相對平滑的 burst 波形中,與 KI-005 §1 描述的「302→17」樣態一致。三份新匯出(tick-integral ω)的圖顯示**整段 burst 皆呈細碎鋸齒狀**——不只在被偵測器標記的點,`vx`(鍵盤驅動,背景橘線)在每個放大視窗內都平滑升降,而 ω 逐 tick 鋸齒震盪貫穿整個 burst;被標記的「凹口」只是這個貫穿性鋸齒紋理偶然跨過偵測器固定門檻(`0.6×min(鄰居)`)的位置,不是獨立於背景噪訊之外的孤立異常。判讀:tick-integral 是**更高解析度**的訊號(直接讀每個 tick 窗的原始滑鼠增量),天生比「差分一個較粗、render 速率量化過的訊號」更有紋理雜訊;凹口偵測器的門檻是針對舊訊號的「平滑但週期性斷裂」特徵校準的,新訊號整體雜訊底噪略高但**不週期、不孤立**,不構成同一根因復發的證據。**使用者已看圖確認此解讀,A2-T2 整體判定為通過**。 |
 
 **A2-T2 最終判定(2026-08-07,使用者確認)**:四項複驗**整體通過**,支持 A1(KI-005 選項 A)修法在真實硬體資料上有效。逐項結論:④ 機器精度通過(FM-1 關閉);② 顯著下降,通過;① 系統性訊號消除,視覺覆核確認殘餘為訊號雜訊底噪而非根因復發,通過;③ 方向相符但與 KI-004/S1 混淆,記錄為觀察不作為 A1 獨立證據。**不觸發**選項 B 提前的升級條件。下一步:[A2-T3](A2-blocked-plan.md#a2-t3--seg-v2-重掃與凍結) `seg-v2` 重掃與凍結。
+
+---
+
+## 2f. A2-T3:`seg-v2` 重掃與凍結(2026-08-07)
+
+**方法**:沿用 `run_sweep.py` 既有的合成案例評分邏輯(6 個手寫預期邊界案例,通過條件 = 零案例失敗 + 邊界誤差 ≤2 tick),**放寬** SG window 搜尋空間至 `{5,7,9,11,13}`(seg-v1 原本受限於 beat=8 的隱性顧慮已隨 A1 落地解除);**新增**第二個評分維度——對 A2-T1 三份真實 tick-integral 匯出計算 `merged_adjacent_peaks` 比例(seg-v1 原始掃參從未能用真實資料驗證,因為當時真實匯出必然帶 aliasing)。243→放寬後 1215 組候選,135 組通過全部合成案例。
+
+**結果**:候選集中在 `sg_window=11, peak_sigma_k=0.75` 一帶,顯著優於 seg-v1(`window=7, sigma=0.5`)。呈給使用者的兩個候選:
+
+| 候選 | window | σ | floor | merged(三份真實匯出合計) | success rate |
+|---|---:|---:|---:|---:|---:|
+| A(採用) | 11 | 0.75 | 60 | **38.3%**(23/60) | **98.3%**(與 seg-v1 持平) |
+| B | 11 | 0.75 | 100 | 35.1%(更低) | 93.3%(較低) |
+| seg-v1(對照) | 7 | 0.5 | 80 | 60.0%(36/60) | 98.3% |
+
+**視覺覆核(使用者要求)**:針對候選 A,畫出 9 個代表性 peek(6 個 seg-v1 判定 merged、3 個 seg-v1 判定 clean)的 seg-v1 vs 候選 A 疊圖比較。結果:**segment 起訖邊界(start_idx/end_idx)在所有檢視案例中逐位不變**,唯一改變的是 `merged_adjacent_peaks` 內部分類——window=11 讓峰值偵測不再把單一 burst 內的雜訊小波動誤判為兩個需合併的相鄰峰。此發現直接回應「window 加寬是否會模糊真實反向轉折時機」的疑慮:**不會,時機邊界不受影響**。使用者看圖後確認採用**候選 A**。
+
+**凍結**:`SEG_V2_PARAMS`(`sg_window=11, sg_poly=3, peak_sigma_k=0.75, peak_floor_deg_s=60.0, low_ratio=0.1, stop_ratio=0.2, version="seg-v2"`)新增於 `research/src/modules/segments/algorithms/submovement.py`,`DEFAULT_SEGMENT_PARAMS`(seg-v1)逐位不變、原地保留(D-28.7 不得原地調參)。
+
+**佈線**:`run_pipeline.py::run()` 的 `params` 參數改為 `SegmentParams | None = None`;未顯式傳入時,依 `omega_deg_s(...).source` 自動選版——`tick-integral` → `seg-v2`、`aim-diff-legacy` → `seg-v1`(`DEFAULT_SEGMENT_PARAMS`)。顯式傳入 `params` 時仍以呼叫端為準(供比較用途覆寫)。`segment_submovements()` 自身的預設值不變(仍是 `DEFAULT_SEGMENT_PARAMS`/seg-v1),自動選版邏輯只存在於 `run_pipeline.py` 這一層,`algorithms/` 保持純函式無時鐘/無 I/O 紀律不變。
+
+**TD-3(omega[0]=nan 契約)**:使用者拍板**不改**,維持 `omega[0]=nan` 兩個 source 共用同一契約。理由:雖然 tick-integral 下 `ticks[0].dYaw` 確實有真實值(`0.0`,非缺失),但下游多處(`run_pipeline.py` 的 `_OMEGA_INDEX_OFFSET` 等)已假設「index 0 恆 nan、統一位移」,改動會強迫這些呼叫點依 source 分支,換取的只是每個視窗 1 個 tick(~7.8ms)的資料,不划算。已寫入 [analysis-segments.md](../../operational/analysis-segments.md) 取代原本「待 seg-v2 時決定」的 TD-3 註記。
+
+**全鏈重跑**(D-28.7 DoD 要求):
+- 08:03(legacy)→ `seg-v1`,`successRate=0.95`、`merged=15/19≈78.9%` —— **逐位精確重現 KI-005 原文件基準**(見下方更正說明)。
+- 09:39(legacy)→ `seg-v1`,`successRate=0.95`、`merged=20/21≈95.2%`(次要參照)。
+- 09:18/09:24/09:37(tick-integral)→ `seg-v2`,`successRate=1.00/0.95/1.00`、`merged=6/21、8/19、9/20`(合計 38.3%)。
+- `synthetic_counterstrafe.json`(預設匯出,tick-integral)→ `seg-v2`,`successRate=1.0`、`merged=0`(2 個 segment)。
+
+**回歸**:`npx tsc --noEmit` exit 0(零 TS 改動);`npm run test:ci` Vitest 89 files/741 tests 不變 + Playwright 21/21 不變;`uv run pytest` 221→**228 passed**(+7:`test_seg_v2_selected_automatically_for_tick_integral_omega`、`test_seg_v1_selected_automatically_for_legacy_omega`、`test_explicit_params_override_the_omega_source_auto_selection`、`test_seg_v2_known_submovement_boundaries_are_within_two_ticks`×3 參數化案、`test_seg_v2_params_are_frozen_versioned_and_distinct_from_seg_v1`)。**既有測試僅一案期望值改寫**(`test_synthetic_export_produces_all_three_artifacts`:`segmentation.paramsVersion` 從 `DEFAULT_SEGMENT_PARAMS.version` 改為 `SEG_V2_PARAMS.version`,因預設合成匯出帶 dYaw/dPitch,自動選版邏輯正確選中 seg-v2;此為**預期且刻意**的行為改變,非迴歸)。`git diff --stat` 命中 `research/src/modules/segments/algorithms/{submovement,__init__}.py`、`research/src/report/run_pipeline.py`、三個測試檔、`docs/operational/analysis-segments.md`,未觸及任何 TS 原始檔、`src/sim/`、`SharedState`。
+
+**更正(A2-T2 誤植)**:A2-T2 §2e 記錄「09:39 今日重跑 95.2% vs 文件基準 78.9%,未解落差」(A2-S4)。A2-T3 全鏈重跑複查發現 KI-005 原文件的 `successRate=0.95`/`merged_adjacent_peaks=15/19≈79%` 基準其實取自 **08:03**(`analysis-segments.md` 的 real-export validation 段本就明確記載匯出檔名為 `...T08_03_45.617Z`,A2-T2 撰寫時未交叉核對而誤用 09:39 比較)。08:03 今日重跑逐位精確重現,A2-S4 已改標關閉。
 
 ---
 
@@ -224,6 +258,8 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | **A-D9** | `synthetic_timeline.json` 與其 3 份 parity fixture **刻意不 regenerate** | 兩者共用 `make_synthetic_export`,理論上也會連帶長出 `dYaw`/`dPitch`/`meta.mouseIntegration`,但**沒有**類似 `synthetic_counterstrafe.json` 的「必須與生成器逐位相符」的測試(`test_committed_synthetic_fixture_matches_generator`)在釘住它,且 T5 spec 的 In-scope 檔案清單只列 `synthetic_counterstrafe.json`。不動 = 讓它自然留作另一個 pre-KI-005 / `aim-diff-legacy` 回歸樣本(與兩份真實 fixture 同一角色),範圍更小、風險更低 | 本行 |
 | **A-D10** | A2-T1 前置決策批次(2026-08-07,使用者拍板):**OQ-A-5/OQ-KI5-6** 新採樣與 KI-006 選項 B **合併為同一次採集**;**OQ-A-2/TD-5** 重新開放後決議**開啟** `recordKeyEvents`;**OQ-KI6-4**(KI-006 側)n > 2 session | 三者互相依賴,一次拍板才能一次採到位(比照 [A2-blocked-plan.md 前置條件](A2-blocked-plan.md)的設計初衷)。`recordKeyEvents` 開啟後才有 sub-tick 鍵釋放時刻,是這輪採樣要支援 KI-006 構念分析的必要欄位 | [README OQ-A-2/A-5](README.md) · [KI-006-C/progress.md §6](../KI-006-C/progress.md) · [BUGFIX-DECISIONS.md](../BUGFIX-DECISIONS.md) BD-005 |
 | **A-D11** | TD-5 落地:`main.ts:355` 的 `createDataRecorder(...)` 加上 `recordKeyEvents: true`,不另建切換或設定項 | A-D10 已拍板為全域決議,比照 OQ-A-1(mouse 積分)/A-D5 的同一紀律——opt-in 只保 golden 逐位不變,不做「哪些 run 有 key 事件」的運行時可選,避免重蹈 `recordKeyEvents` 至今未啟用的前車之鑑 | 本行 + Surprises A2-S1 |
+| **A-D12** | `seg-v2` 凍結為 `sg_window=11, peak_sigma_k=0.75, peak_floor_deg_s=60.0`(候選 A,使用者拍板 2026-08-07),而非 merged 比例更低的候選 B(`floor=100.0`) | 候選 A 的 success rate(98.3%)與 seg-v1 持平,候選 B 降至 93.3%(少偵測到幾個 flick)。使用者看過 seg-v1 vs 候選 A 的疊圖覆核後確認:segment 起訖邊界逐位不變,只有 `merged_adjacent_peaks` 內部分類改善,故優先選擇不犧牲 success rate 的候選 | [analysis-segments.md](../../operational/analysis-segments.md) Frozen parameter registry · progress.md §2f |
+| **A-D13** | TD-3(`omega[0]=nan` 契約)拍板**不改**,兩個 omega source 繼續共用同一契約 | `ticks[0].dYaw` 雖為真實值(`0.0`,非缺失),但 `run_pipeline.py` 等下游已多處假設「index 0 恆 nan、統一位移」;改動需讓這些呼叫點依 source 分支,換取的只是每個視窗 1 個 tick(~7.8ms)的資料,不划算 | [analysis-segments.md](../../operational/analysis-segments.md) `omega[0]` 段落 |
 
 ---
 
@@ -238,7 +274,7 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | **A2-S1** | 記錄 A-D10(OQ-A-2 決議「開」)的過程中發現:單純把 OQ 標成「已決」不會讓決議生效——`main.ts:355` 當時仍硬編碼未傳 `recordKeyEvents`,若不補這行,A2-T1 採到的匯出還是不會有 `key` 事件,決策與程式碼會**悄悄脫節**(TD-5 差點從「刻意妥協」漂移成「忘記接線」)。 | 決策記錄與程式碼落地必須同一批查核,不能假設「拍板 = 生效」 | 立即補 A-D11(`main.ts` 一行改動 + `input-sampler.spec.ts` 新增驗證案),不留一個「已決但未接線」的空窗期 |
 | **A2-S2** | A2-T2 check①(凹口偵測器)對三份新匯出跑出 3/2/2 個殘餘凹口,**非**原始預期的 literal 0。逐一核對間距與 `vx` 窗口後判讀為真實滑鼠輸入的偶發微變異(非週期性、不與鍵盤反轉重合),而非 render/sim beat 假象復發 | A2-blocked-plan.md 的 pre-register 期望寫死「回傳 0」,面對真實(非合成)資料的雜訊時失準——合成資料可以絕對乾淨,真實人類操作不行 | 如實記錄非 0 的結果與判讀依據(§2e),不事後把門檻悄悄改成「趨近 0」;若後續要凍結一個明確的殘餘容忍度,應另開 OQ 並在下次新採樣**前**寫下 |
 | **A2-S3** | A2-T2 check③ 的「未 flag 樣本數上升」與 KI-004/S1 的 `resolve_eye_origin(strict=True)` 混在一起:09:39(舊匯出,缺 `meta.scene.eye`)全數樣本因 `missing_target` 被排除,與 09:39 比較會把 KI-004/S1 的效果也算進 A1 的功勞 | 選兩個獨立 KI 都涉及的舊匯出當基準,天生無法只隔離其中一個修法的貢獻 | 誠實標記為混淆,不宣稱③單獨證明 A1;判讀改依賴①②④(尤其④,不受此混淆影響) |
-| **A2-S4** | check②的 09:39 今日重跑比例(95.2%)高於 KI-005 原文件記載的基準(78.9%),同一份輸入檔案理論上應逐位相同 | 原始診斷腳本與快照(`research/out/pipeline-summary.json`)皆未留存於 repo,無法逆向核對是否經歷過中間版本迭代 | 不追查(超出 A2-T2 範圍,原始腳本已知不可考,見 T0-S2 同類記錄);兩個基準數字都用上做交叉檢查,兩者皆顯示新匯出顯著更低,結論不受影響 |
+| ~~A2-S4~~ | ~~check②的 09:39 今日重跑比例(95.2%)高於 KI-005 原文件記載的基準(78.9%),同一份輸入檔案理論上應逐位相同~~ | ~~原始診斷腳本與快照皆未留存,無法逆向核對~~ | **✅ 已於 A2-T3 解開(2026-08-07)**:誤認基準取自 09:39,實為 **08:03**——08:03 今日重跑逐位精確重現原文件的 `successRate=0.95`、`merged_adjacent_peaks=15/19≈79%`。非資料/程式碼問題,是本次記錄時認錯了對照的匯出檔案 |
 
 ---
 

@@ -11,6 +11,7 @@ import pytest
 
 from modules.segments.algorithms import (
     DEFAULT_SEGMENT_PARAMS,
+    SEG_V2_PARAMS,
     SegmentList,
     SegmentParams,
     segment_submovements,
@@ -78,6 +79,51 @@ def test_known_submovement_boundaries_are_within_two_ticks(
         assert abs(segment.end_idx - expected_end) <= 2
 
 
+@pytest.mark.parametrize(
+    ("name", "signal", "expected"),
+    [
+        (
+            "single_flick",
+            _profile(48, ((10, 26, 720.0),)),
+            (("primary_flick", 10, 26),),
+        ),
+        (
+            "flick_plus_one_micro",
+            _profile(64, ((6, 20, 720.0), (34, 44, 360.0))),
+            (("primary_flick", 6, 20), ("micro_adjustment", 34, 44)),
+        ),
+        (
+            "flick_plus_three_micro",
+            _profile(
+                88,
+                ((4, 18, 720.0), (28, 38, 390.0), (48, 58, 360.0), (68, 78, 330.0)),
+            ),
+            (
+                ("primary_flick", 4, 18),
+                ("micro_adjustment", 28, 38),
+                ("micro_adjustment", 48, 58),
+                ("micro_adjustment", 68, 78),
+            ),
+        ),
+    ],
+    ids=lambda value: value if isinstance(value, str) else None,
+)
+def test_seg_v2_known_submovement_boundaries_are_within_two_ticks(
+    name: str,
+    signal: np.ndarray,
+    expected: tuple[tuple[str, int, int], ...],
+) -> None:
+    """KI-005-A / A2-T3: seg-v2 must pass the same pre-registered synthetic cases as seg-v1."""
+    del name
+
+    result = segment_submovements(signal, SEG_V2_PARAMS)
+
+    assert [segment.kind for segment in result] == [item[0] for item in expected]
+    for segment, (_, expected_start, expected_end) in zip(result, expected, strict=True):
+        assert abs(segment.start_idx - expected_start) <= 2
+        assert abs(segment.end_idx - expected_end) <= 2
+
+
 def test_zero_motion_returns_empty_segments_with_flags() -> None:
     result = segment_submovements(np.zeros(32))
 
@@ -125,6 +171,14 @@ def test_segment_params_are_frozen_and_versioned() -> None:
     assert DEFAULT_SEGMENT_PARAMS.version == "seg-v1"
     with pytest.raises(FrozenInstanceError):
         DEFAULT_SEGMENT_PARAMS.sg_window = 9  # type: ignore[misc]
+
+
+def test_seg_v2_params_are_frozen_versioned_and_distinct_from_seg_v1() -> None:
+    """KI-005-A / A2-T3 (D-28.7): seg-v2 is additive -- seg-v1 stays unchanged alongside it."""
+    assert SEG_V2_PARAMS.version == "seg-v2"
+    assert SEG_V2_PARAMS.sg_window != DEFAULT_SEGMENT_PARAMS.sg_window
+    with pytest.raises(FrozenInstanceError):
+        SEG_V2_PARAMS.sg_window = 7  # type: ignore[misc]
 
 
 @pytest.mark.parametrize(

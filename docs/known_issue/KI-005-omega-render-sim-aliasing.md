@@ -1,7 +1,7 @@
 # KI-005 — ω(t) 受 render/sim 速率 beat 汙染(zero-order-hold aliasing)
 
 > 類型:量測管線缺陷(research 效度)。
-> 狀態:✅ **選項 A 已落地(A1,2026-08-06);A2-T1(新採樣)+ A2-T2(四項複驗,FM-1 關閉)已完成(2026-08-07)**;**A2-T3(`seg-v2` 重掃)+ A2-T4(M14 重新宣告)待辦**(見 [A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md))。**A1+A2-T1/T2 交付的是量測儀器的正確性且已在真實硬體上驗證有效,證據力的正式恢復仍待 A2-T3/T4**——M14 ③④⑤ 仍維持撤回,見 §7 與「A1 落地後的殘餘限制」。
+> 狀態:✅ **選項 A 已落地(A1,2026-08-06);A2-T1(新採樣)+ A2-T2(四項複驗,FM-1 關閉)+ A2-T3(`seg-v2` 重掃凍結)已完成(2026-08-07)**;**A2-T4(M14 重新宣告)待辦**(見 [A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md))。**A1+A2-T1/T2/T3 交付的是量測儀器的正確性且已在真實硬體上驗證有效,證據力的正式恢復僅待 A2-T4**——M14 ③④⑤ 仍維持撤回,見 §7 與「A1 落地後的殘餘限制」。
 > 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-005。落地計畫:[KI-005-A/README.md](KI-005-A/README.md)。
 >
 > ⚠️ **本 KI 推翻 [KI-004](KI-004-sim-world-unit-domain-mismatch.md) / BD-004 的一條豁免**。KI-004 三處
@@ -237,8 +237,13 @@ golden,不可動;而 240/144/165 Hz 是主流硬體,不可能要求受試者更�
    literal 0,但波形視覺化覆核確認殘餘凹口為貫穿整段 burst 的細碎雜訊底噪(非孤立週期性深凹),
    非根因復發。**③ 未 flag 樣本數**方向相符但與 KI-004/S1(`meta.scene.eye` 缺席)混淆,不單獨
    歸功於 A1。
-5. ⛔ **A2(blocked on 新採樣)**——參數重掃:選項 A 落地後 `seg-v1` 必須以**修法後的新匯出**重新掃參並升版(`seg-v2`),
-   依 D-28.7 不得原地調參。
+5. ✅ **A2-T3 已完成(2026-08-07)**——參數重掃:沿用 `seg-v1` 原始的 6 個合成邊界案例評分法,放寬 SG
+   window 搜尋至 `{5,7,9,11,13}`(不再受 beat=8 隱性限制),**新增**以三份真實 tick-integral 匯出的
+   `merged_adjacent_peaks` 比例作為第二評分維度。凍結 `seg-v2`(`sg_window=11, peak_sigma_k=0.75,
+   peak_floor_deg_s=60.0`),真實資料 `merged_adjacent_peaks` 由 60.0% 降至 38.3%,success rate 與
+   `seg-v1` 持平(98.3%);疊圖覆核確認 segment 起訖邊界逐位不變。`seg-v1` 依 D-28.7 原地凍結不變,
+   `run_pipeline.py` 依 omega source 自動選版。詳見 [analysis-segments.md](../operational/analysis-segments.md)
+   與 [KI-005-A/progress.md §2f](KI-005-A/progress.md)。
 6. ✅ **A1 已交付**——`meta.fovDeg` 補欄(§6.2):additive,缺席時既有匯出仍可載入;新增後 ADS drill 的感度鏈可稽核。同批交付 `meta.mouseIntegration`(自我描述積分模型,FR-A-6)與 `ticks[].dYaw/dPitch`。
 
 > **A1 落地後的殘餘限制**(誠實列出,防止「儀器修好」被誤讀成「效度恢復」):
@@ -246,7 +251,7 @@ golden,不可動;而 240/144/165 Hz 是主流硬體,不可能要求受試者更�
 > - **TD-1 — 仍是 128 Hz 解析度**。選項 A 修的是**歸屬錯誤**,不是取樣率。128 Hz 下 200 ms flick 僅 25 點,細部修正動作(3–4 點寬)仍無法分辨;需選項 B(~1000 Hz raw sample stream,WP-31 開工前再議)。
 > - **TD-2 — ADS 切換幀的歸屬殘差**。camera 的 gain 階躍量化到 render 幀,積分器量化到事件時刻;守恆閘目前只對 hip-only 樣本宣告 exact,含 ADS 切換的樣本以「切換 tick 排除」處理。根治需 render 側也走事件時刻(選項 B 範圍)。
 > - ~~FM-1 未證偽~~ ✅ **已於 A2-T2(2026-08-07)關閉**——三份真實新匯出的 `Σ dYaw` vs `Δaim.yaw` 殘差 ≤ 5.6e-16(機器精度),coalesced sum 在真實硬體上未遺失/重複計入,不觸發選項 B 提前。
-> - **M14 ③④⑤ 仍撤回**。A1+A2-T1/T2 交付的是「量測儀器修好了、且在真實硬體上驗證有效」,不是「證據力恢復了」——證據力的正式恢復仍需 [A2-T3](KI-005-A/A2-blocked-plan.md#a2-t3--seg-v2-重掃與凍結)(`seg-v2` 重掃凍結)與 [A2-T4](KI-005-A/A2-blocked-plan.md#a2-t4--m14-重新宣告)(逐項重新宣告),且 M14 ④⑤ 另被 [KI-006](KI-006-m14-sample-no-counterstrafe.md)(真實樣本無 counter-strafe 構念)以獨立理由擋著——**該理由已由 [KI-006-C](KI-006-C/README.md) 的 construct presence gate 驗證 A2-T1 三份新匯出皆 present**,見 A2-T1 落地記錄。WP-30/31 entry blocker 未解除(待 A2-T4 逐項判定)。
+> - **M14 ③④⑤ 仍撤回**。A1+A2-T1/T2/T3 交付的是「量測儀器修好了、在真實硬體上驗證有效、且 `seg-v2` 已重掃凍結」,不是「證據力恢復了」——證據力的正式恢復僅待 [A2-T4](KI-005-A/A2-blocked-plan.md#a2-t4--m14-重新宣告)(逐項重新宣告),且 M14 ④⑤ 另被 [KI-006](KI-006-m14-sample-no-counterstrafe.md)(真實樣本無 counter-strafe 構念)以獨立理由擋著——**該理由已由 [KI-006-C](KI-006-C/README.md) 的 construct presence gate 驗證 A2-T1 三份新匯出皆 present**,見 A2-T1 落地記錄。WP-30/31 entry blocker 未解除(待 A2-T4 逐項判定)。
 
 ## 8. 遺留 Open Questions
 

@@ -65,15 +65,17 @@ KI-005 §7.4 於 2026-08-06 **自我更正**:
 
 ---
 
-## A2-T3 — `seg-v2` 重掃與凍結
+## A2-T3 — `seg-v2` 重掃與凍結 ✅ 已完成(2026-08-07)
 
-- [ ] 以**修法後的新匯出**重新掃參(**不得原地調 `seg-v1`**,D-28.7)。
-- [ ] 重點:SG window 不再受「beat 週期 8」的約束 ⇒ 掃參空間與 `seg-v1` 的結論可能完全不同。
-- [ ] 一併決定 **TD-3**:`tick-integral` 下 `omega[0]` 已有定義,是否改 `omega_deg_s` 的 index 0 = `nan` 契約與 D-28.12(`omega[1:]`)。
-- [ ] 於 [analysis-segments.md](../../operational/analysis-segments.md) §Frozen parameter registry 新增 `seg-v2` 列,並註明掃參所用匯出的識別。
-- [ ] 全鏈重跑(`run_pipeline.py` + 疊圖)。
+- [x] 以**修法後的新匯出**重新掃參(**不得原地調 `seg-v1`**,D-28.7)。沿用 `run_sweep.py` 既有合成案例評分邏輯,放寬 SG window 至 `{5,7,9,11,13}`,**新增**以 A2-T1 三份真實匯出的 `merged_adjacent_peaks` 比例作為第二評分維度(seg-v1 原始掃參從未能用真實資料驗證)。
+- [x] 重點:SG window 不再受「beat 週期 8」的約束 ⇒ 掃參空間與 `seg-v1` 的結論確實不同——最佳候選集中在 `window=11`(seg-v1 為 7)。
+- [x] 一併決定 **TD-3**:使用者拍板**不改** `omega[0]=nan` 契約(A-D13)。
+- [x] 於 [analysis-segments.md](../../operational/analysis-segments.md) §Frozen parameter registry 新增 `seg-v2` 列(`sg_window=11, peak_sigma_k=0.75, peak_floor_deg_s=60.0, low_ratio=0.1, stop_ratio=0.2`),並記錄真實匯出驗證段落。
+- [x] 全鏈重跑(`run_pipeline.py`,含疊圖式視覺覆核):08:03/09:39(legacy)→ `seg-v1` 不變;09:18/09:24/09:37 + `synthetic_counterstrafe.json`(tick-integral)→ `seg-v2` 自動選版。
 
-**DoD**:`seg-v2` 已註冊;`seg-v1` 列保留但標為「僅適用於帶 aliasing 的 pre-KI-005 匯出」;全鏈重跑產物可重現。
+**候選確認**:使用者要求先看 seg-v1 vs 候選 A 在真實資料上的疊圖比較,確認 segment 起訖邊界逐位不變(只有 `merged_adjacent_peaks` 內部分類改善)後,才拍板採用候選 A(`floor=60`,merged 38.3%、success rate 98.3%,與 seg-v1 持平)而非 merged 更低但 success rate 較差的候選 B(`floor=100`)。
+
+**DoD**:`seg-v2` 已註冊 [SEG_V2_PARAMS](../../../research/src/modules/segments/algorithms/submovement.py);`seg-v1`(`DEFAULT_SEGMENT_PARAMS`)列保留、原地不變,標為「僅適用於帶 aliasing 的 pre-KI-005 匯出」;`run_pipeline.py::run()` 依 `omega_deg_s(...).source` 自動選版;全鏈重跑產物可重現(見 [progress.md §2f](progress.md))。回歸:`tsc --noEmit` exit 0、`npm run test:ci` 不變、`uv run pytest` 221→228 passed(既有僅 1 案期望值刻意改寫)。
 
 ---
 

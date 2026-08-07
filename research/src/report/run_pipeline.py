@@ -53,6 +53,7 @@ from modules.kinematics.algorithms.angular import epsilon_deg, omega_deg_s, reso
 from modules.metrics.algorithms.peek import build_peek_windows  # noqa: E402
 from modules.segments.algorithms import (  # noqa: E402
     DEFAULT_SEGMENT_PARAMS,
+    SEG_V2_PARAMS,
     Segment,
     SegmentParams,
     per_segment_apply,
@@ -104,9 +105,17 @@ _SEGMENT_FIELDS = (
 def run(
     export_path: Path,
     out_dir: Path,
-    params: SegmentParams = DEFAULT_SEGMENT_PARAMS,
+    params: SegmentParams | None = None,
 ) -> dict[str, Any]:
-    """Run the full chain and write the three artifacts into *out_dir*."""
+    """Run the full chain and write the three artifacts into *out_dir*.
+
+    KI-005-A / A2-T3 (2026-08-07): *params* defaults to `None`, which auto-selects the
+    segmentation version matched to this export's omega derivation -- ``seg-v2`` for
+    ``tick-integral`` (calibrated against real post-KI-005 captures), ``seg-v1`` for
+    ``aim-diff-legacy`` (pre-KI-005 exports only ever validated seg-v1 against synthetic
+    data, since real exports of that era were beat-aliasing-contaminated). Pass an explicit
+    *params* to override this selection, e.g. to force one version for comparison.
+    """
 
     export = load_export(export_path)
     dt_report = check_dt(export.ticks, _sim_hz(export.meta))
@@ -120,6 +129,8 @@ def run(
     # KI-005 / A (FR-A-11/R-5): which omega derivation this export carries, surfaced once at the
     # export level rather than re-derived per peek -- every window shares the same tick columns.
     omega_source = omega_deg_s(export.ticks.sort_values("t", kind="stable").reset_index(drop=True)).source
+    if params is None:
+        params = SEG_V2_PARAMS if omega_source == "tick-integral" else DEFAULT_SEGMENT_PARAMS
 
     peek_rows: list[dict[str, Any]] = []
     segment_rows: list[dict[str, Any]] = []

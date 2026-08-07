@@ -39,13 +39,15 @@ carries.
 
 `omega[0]` is `nan` under both sources because `omega[i]` describes the interval `(i-1, i]`; that
 sample is undefined, not missing. `tick-integral` could in principle give index 0 a real value (the
-first tick has its own integration window), but the contract is kept unchanged on purpose — index 0
-stays `nan` under both sources — to avoid touching the frozen `seg-v1` / D-28.12 (`omega[1:]`)
-contract. This is a deliberate, logged deferral (TD-3), to be revisited only alongside the `seg-v2`
-resweep. Callers segment the measured tail and shift reported indices back into the tick frame, so a
-segment never starts at tick index 0. Passing the undefined sample into `segment_submovements` is
-accepted but stamps `non_finite_interpolated` on every segment of every export, which makes
-`summarize_with_flags` exclude all rows.
+first tick has its own integration window: `ticks[0].dYaw` is `0.0`, not absent), but **TD-3 was
+decided at the `seg-v2` resweep (2026-08-07, KI-005-A / A2-T3): the contract stays unchanged** —
+index 0 stays `nan` under both sources. Reasoning: many downstream call sites hard-code the
+"index 0 is undefined, shift by one" contract (e.g. `run_pipeline.py`'s `_OMEGA_INDEX_OFFSET`);
+making it source-conditional would force every consumer to branch on `.source` for the sake of
+recovering one tick (~7.8 ms) per presentation window. Callers segment the measured tail and shift
+reported indices back into the tick frame, so a segment never starts at tick index 0. Passing the
+undefined sample into `segment_submovements` is accepted but stamps `non_finite_interpolated` on
+every segment of every export, which makes `summarize_with_flags` exclude all rows.
 
 ## One-command pipeline
 
@@ -75,9 +77,17 @@ C-D3). Real-export overlay SVGs and the parameter sweep come from
 
 ## Frozen parameter registry
 
-| Version | SG window/poly | Peak k | Floor | Low ratio | Stop ratio |
-|---|---:|---:|---:|---:|---:|
-| `seg-v1` | 7 / 3 | 0.5 | 80 deg/s | 0.1 | 0.2 |
+| Version | SG window/poly | Peak k | Floor | Low ratio | Stop ratio | Applies to |
+|---|---:|---:|---:|---:|---:|---|
+| `seg-v1` | 7 / 3 | 0.5 | 80 deg/s | 0.1 | 0.2 | `aim-diff-legacy` omega only (pre-KI-005 exports) |
+| `seg-v2` | 11 / 3 | 0.75 | 60 deg/s | 0.1 | 0.2 | `tick-integral` omega only (post-KI-005-A exports) |
+
+`research/src/report/run_pipeline.py::run()` selects between the two automatically by the export's
+`omega_deg_s(...).source` — callers never need to pick a version by hand. `seg-v1` is not
+deprecated: it stays the correct, frozen choice for any export that only ever carries
+`aim-diff-legacy` omega (it can never regain `tick-integral`, since that requires `ticks[].dYaw`/
+`dPitch` recorded at capture time), so both versions coexist per D-28.7 rather than one replacing
+the other in place.
 
 | Version | Scope | `min_counter_events` | `min_moving_tick_ratio` |
 |---|---|---:|---:|
@@ -89,10 +99,19 @@ string alongside the judgement (`constructPresence.paramsVersion`).
 
 > ⚠️ `seg-v1`'s SG window (7 ticks) was swept on synthetic signal that cannot contain the KI-005
 > render/sim beat artifact — the artifact's period is **8 ticks**, so a 7-tick window is
-> mathematically incapable of removing it (see the withdrawal note below). **`seg-v1`'s validity on
-> real data is unproven until it is re-swept on a post-KI-005-A export and re-frozen as `seg-v2`**
-> (D-28.7: never re-tune a frozen version in place). Until then, treat `seg-v1` as validated only on
-> the synthetic suite.
+> mathematically incapable of removing it (see the withdrawal note below). **`seg-v1` stays frozen
+> as the correct version for `aim-diff-legacy` exports only** — it is not "fixed" by `seg-v2`,
+> because it was never wrong for the signal it was calibrated on; it was only ever asked to
+> segment a signal (render/sim-aliased `ticks[].aim`) that no synthetic case represented.
+>
+> ✅ **`seg-v2` resweep completed 2026-08-07 (KI-005-A / A2-T3).** Same six pre-registered synthetic
+> cases, same pass bar (zero case failures, max boundary error ≤2 ticks) — 135 of the widened
+> candidate grid passed (window ∈ {5,7,9,11,13} now that the 8-tick beat no longer constrains the
+> choice). Frozen `seg-v2` cuts `merged_adjacent_peaks` from 60.0% (`seg-v1` on the same three
+> real exports) to 38.3%, holding the identical 98.3% success rate — see the real-export validation
+> below. Segment boundaries are unaffected by the version change; only which segments get flagged
+> `merged_adjacent_peaks` changes (confirmed by direct overlay comparison, not aggregate counts
+> alone).
 
 The pre-registration sweep evaluated 243 combinations over six deterministic synthetic cases; 108
 passed all cases and `seg-v1` had zero case failures with a maximum boundary error of one tick.
@@ -145,6 +164,34 @@ validity.
 > ④/⑤ requires a new sample that satisfies both: aliasing-free `ω(t)` (KI-005 A2) and
 > `check_construct_presence(...).present == True` (KI-006-C §6 B-1~B-5).
 
+### `seg-v2` real-export validation (2026-08-07, KI-005-A / A2-T2/T3)
+
+Three new `counterstrafe_ad_v1` exports were captured on the same 240 Hz machine
+(`counterstrafe_ad_v1-2026-08-07T09_18_05.631Z`/`T09_24_18.148Z`/`T09_37_24.351Z`), each with
+`omega_deg_s(..., strict=True)` resolving to `tick-integral` (KI-005 A1 engaged) and
+`check_construct_presence(...).present == True` (KI-006-C construct presence gate; both
+conditions this table's earlier withdrawal note required). Running the one-command pipeline with
+`seg-v2` auto-selected:
+
+| Export | Peeks | Success rate | `merged_adjacent_peaks` |
+|---|---:|---:|---:|
+| 09:18 | 21 | 1.00 | 6/21 (28.6%) |
+| 09:24 | 19 | 0.95 | 8/19 (42.1%) |
+| 09:37 | 20 | 1.00 | 9/20 (45.0%) |
+| **combined** | 60 | — | **23/60 (38.3%)** |
+
+For comparison, re-running the same three exports with `seg-v1` unchanged (forcing the pre-A1
+parameter set onto post-A1 data) gives 36/60 (60.0%) `merged_adjacent_peaks` — the number the
+sweep in [KI-005-A/progress.md §2e](../known_issue/KI-005-A/progress.md) reports and the basis for
+selecting `seg-v2`. Segment start/end boundaries are identical between the two versions on every
+inspected peek; only the `merged_adjacent_peaks` classification changes, confirmed by direct SVG
+overlay comparison (not just the aggregate counts above). This clears M14's real-data segmentation
+quality bar on aliasing-free, construct-present data — the two conditions the earlier `seg-v1`
+withdrawal note above named as required. It does not by itself re-establish M14 ④/⑤: that also
+needs the four-check real-data verification in [KI-005-A/progress.md §2e](../known_issue/KI-005-A/progress.md)
+(closed 2026-08-07, FM-1 resolved) and the formal re-declaration in
+[A2-T4](../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-重新宣告).
+
 ## Quality flag vocabulary
 
 The vocabulary is closed by `QUALITY_FLAG_VOCABULARY`. A new exact flag must be added to that
@@ -192,10 +239,11 @@ reports excluded `n_flagged` separately alongside mean, p50, and sample standard
 - The synthetic sweep exercises the current binary counter-strafe movement profiles, not arbitrary
   continuous-speed movement.
 - Per-drill and per-condition sample sizes may be small; reports must display `n` and `n_flagged`.
-- Real-data validation currently covers one anonymized participant and one 27.390625-second
-  `counterstrafe_ad_v1` export (20 peeks). The observed 0.95 success rate and visually plausible
-  boundaries support `seg-v1` for the M14 foundation gate, but must not be generalized to other
-  drills, participants, sampling rates, or continuous-speed movement without additional evidence.
+- Real-data validation currently covers one anonymized participant across four `counterstrafe_ad_v1`
+  exports: one `seg-v1`/`aim-diff-legacy` export (withdrawn as M14 evidence, see above — construct
+  absent) and three `seg-v2`/`tick-integral` exports (2026-08-07, KI-005-A / A2-T2). Neither version's
+  validation must be generalized to other drills, participants, sampling rates, or continuous-speed
+  movement without additional evidence.
 - The T3 evidence runner currently passes the undefined leading `omega[0]` into
   `segment_submovements`, so its `real-peek-segments.csv` stamps `non_finite_interpolated` on all
   19 accepted rows. This is a runner-reporting artifact: the overlay geometry and success count are

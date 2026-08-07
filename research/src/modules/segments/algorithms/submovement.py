@@ -134,6 +134,27 @@ DEFAULT_SEGMENT_PARAMS = SegmentParams(
     version="seg-v1",
 )
 
+#: KI-005-A / A2-T3 (2026-08-07): re-swept once real tick-integral omega was available (three
+#: A2-T1 captures) in addition to the original synthetic boundary cases -- the sg_window=7
+#: ceiling in ``seg-v1`` predates KI-005 and was never validated against real data because real
+#: exports were always beat-aliasing-contaminated at the time. ``seg-v2`` widens the
+#: Savitzky-Golay window now that the 8-tick beat no longer applies, cutting the real-data
+#: ``merged_adjacent_peaks`` ratio from 60% (seg-v1) to 38% while holding the same 98.3% success
+#: rate and passing every seg-v1 synthetic boundary case (max error <=2 ticks). Segment
+#: boundaries are unaffected -- only which segments get flagged as merged adjacent peaks
+#: changes (verified by direct overlay comparison, not just aggregate counts).
+#: ``seg-v1`` remains frozen and in use for pre-KI-005 exports that only carry
+#: ``aim-diff-legacy`` omega (D-28.7: versions are additive, never edited in place).
+SEG_V2_PARAMS = SegmentParams(
+    sg_window=11,
+    sg_poly=3,
+    peak_sigma_k=0.75,
+    peak_floor_deg_s=60.0,
+    low_ratio=0.1,
+    stop_ratio=0.2,
+    version="seg-v2",
+)
+
 
 @dataclass
 class _Candidate:

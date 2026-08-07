@@ -328,7 +328,7 @@ export interface Meta {
 |---|---|---|---|---|
 | **TD-1** | 仍是 **128 Hz** 解析度 | 選項 A 修的是**錯誤**,不是解析度。128 Hz 下 200 ms flick 僅 25 點,3–4 點寬的修正動作無法分辨 | **選項 B**(~1000 Hz raw sample stream,KI-005 §6.3) | WP-31 的 submovement 分解 / SPARC / Fitts 開工前 |
 | **TD-2** | ADS 切換幀的歸屬殘差(FM-2) | 根治需 render 側也走事件時刻,屬選項 B 的範圍 | 選項 B | WP-24 ADS drill 進入分析時 |
-| **TD-3** | `omega[0]` 已有值但刻意捨棄(D-A3) | 保 `seg-v1` / D-28.12 的凍結契約 | `seg-v2` 重掃(A2-T3)時一併決定 | Stage A2 |
+| ~~**TD-3**~~ | ~~`omega[0]` 已有值但刻意捨棄(D-A3)~~ | ✅ **已於 A2-T3(2026-08-07)拍板:不改**,保 `seg-v1`/`seg-v2` 共用的 D-28.12 凍結契約 | 已解除(A-D13,[KI-005-A/progress.md](progress.md)) | — |
 | **TD-4** | Python 端 `RAD_PER_COUNT` 為獨立常數 | C-D1 禁止 Python import TS | 以 `meta.mouseIntegration.radPerCount` 對帳(**匯出自我描述**,不靠人工同步);與 KI-004 TD-3 同一模式 | 若 Python 端需要 counts 反推時 |
 | ~~**TD-5**~~ | ~~`recordKeyEvents` 仍未在 app 啟用(OQ-A-2)~~ | 本次(A1)刻意不擴大範圍 | ✅ **已落地(2026-08-07)**:`main.ts:355` 的 `createDataRecorder(...)` 已傳入 `recordKeyEvents: true`;`tests/e2e/input-sampler.spec.ts` 新增案直讀 `__aimDebug.recorder.recordKeyEvents === true`(比照 FR-A-7 模式)。回歸:`tsc --noEmit` exit 0、`npm run test:ci` Vitest 89 files/739 tests 不變 + Playwright **21/21**(新增 1 案)、`uv run pytest` 221 passed 不變 | 無(已解除) |
 

@@ -14,7 +14,7 @@ from modules.ingest.algorithms import (
     load_export,
     make_synthetic_export,
 )
-from modules.segments.algorithms import DEFAULT_SEGMENT_PARAMS, is_known_quality_flag
+from modules.segments.algorithms import DEFAULT_SEGMENT_PARAMS, SEG_V2_PARAMS, is_known_quality_flag
 from report.run_pipeline import (
     DEFAULT_EXPORT,
     EXIT_CONSTRUCT_ABSENT,
@@ -43,7 +43,10 @@ def test_synthetic_export_produces_all_three_artifacts(tmp_path: Path) -> None:
     for name in (SUMMARY_FILENAME, PEEK_FILENAME, SEGMENT_FILENAME):
         assert (tmp_path / name).is_file()
     assert summary["export"]["schemaVersion"] == 2
-    assert summary["segmentation"]["paramsVersion"] == DEFAULT_SEGMENT_PARAMS.version
+    # KI-005-A / A2-T3: the default synthetic fixture carries dYaw/dPitch (tick-integral),
+    # so run() auto-selects seg-v2, not the module-level DEFAULT_SEGMENT_PARAMS (seg-v1).
+    assert summary["export"]["omegaSource"] == "tick-integral"
+    assert summary["segmentation"]["paramsVersion"] == SEG_V2_PARAMS.version
     assert summary["segmentation"]["peekCount"] > 0
 
 
@@ -231,6 +234,32 @@ def test_summary_reports_legacy_source_and_warning_for_a_pre_ki005_export(tmp_pa
 
     assert summary["export"]["omegaSource"] == "aim-diff-legacy"
     assert "KI-005" in summary["export"]["omegaSourceWarning"]
+
+
+# --- KI-005-A / A2-T3 — seg-v2 auto-selected by omega source (D-28.7: seg-v1 stays frozen
+# for pre-KI-005 exports that can only ever produce aim-diff-legacy omega) ---
+
+
+def test_seg_v2_selected_automatically_for_tick_integral_omega(tmp_path: Path) -> None:
+    summary = run(DEFAULT_EXPORT, tmp_path)
+
+    assert summary["export"]["omegaSource"] == "tick-integral"
+    assert summary["segmentation"]["paramsVersion"] == SEG_V2_PARAMS.version
+
+
+def test_seg_v1_selected_automatically_for_legacy_omega(tmp_path: Path) -> None:
+    summary = run(_REAL_LEGACY_EXPORT, tmp_path)
+
+    assert summary["export"]["omegaSource"] == "aim-diff-legacy"
+    assert summary["segmentation"]["paramsVersion"] == DEFAULT_SEGMENT_PARAMS.version
+
+
+def test_explicit_params_override_the_omega_source_auto_selection(tmp_path: Path) -> None:
+    # A tick-integral export forced onto seg-v1 -- explicit caller intent always wins.
+    summary = run(DEFAULT_EXPORT, tmp_path, params=DEFAULT_SEGMENT_PARAMS)
+
+    assert summary["export"]["omegaSource"] == "tick-integral"
+    assert summary["segmentation"]["paramsVersion"] == DEFAULT_SEGMENT_PARAMS.version
 
 
 # --- KI-006 / C T2 — constructPresence block + dedicated exit code (FR-C-7/8) ---

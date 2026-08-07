@@ -9,6 +9,7 @@ from modules.segments.algorithms.apply import (
 )
 from modules.segments.algorithms.submovement import (
     DEFAULT_SEGMENT_PARAMS,
+    SEG_V2_PARAMS,
     Segment,
     SegmentList,
     SegmentParams,
@@ -18,6 +19,7 @@ from modules.segments.algorithms.submovement import (
 __all__ = [
     "DEFAULT_SEGMENT_PARAMS",
     "QUALITY_FLAG_VOCABULARY",
+    "SEG_V2_PARAMS",
     "Segment",
     "SegmentList",
     "SegmentParams",
