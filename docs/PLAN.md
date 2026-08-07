@@ -1,5 +1,33 @@
 # 執行計畫 — FPS 反向急停瞄準訓練器（階段 A）
 
+> # 🧊 本檔已凍結，不再維護
+>
+> **停寫於 2026-06（commit `a1e6500`），內容停在階段 A 交付前（M4，2026-07-03）。**
+> 此後專案已跑完階段 B/C/E/D 共 WP-0~32、M1~M15，本檔**未同步**。
+>
+> | 想找什麼 | 現行權威 |
+> |---|---|
+> | WP 狀態 / 里程碑門控 M1–M15 / 跨階段相依圖 / 執行規則 | **[`exec-plan/README.md`](./exec-plan/README.md)** |
+> | 全部文件導航 | [`MAP.md`](./MAP.md) |
+> | 需求 / ADR-1~9 / 驗收清單 / 風險 | [規格書](./規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) |
+> | 執行期與執行緒模型（三迴圈的真相） | [`DESIGN.md`](./DESIGN.md) |
+> | 全域決策 / 跨文件矛盾 | [`exec-plan/DECISIONS.md`](./exec-plan/DECISIONS.md) |
+> | 專有名詞 | [`../CONTEXT.md`](../CONTEXT.md) |
+>
+> **本檔唯一仍被引用的內容 = [§1 規劃補充決策 D1–D5 的理由欄](#1-規劃補充決策本計畫新增規格未定)**（結論另見 [`exec-plan/README.md §1`](./exec-plan/README.md)、[`DECISIONS.md §1`](./exec-plan/DECISIONS.md)）。其餘一律視為**階段 A 的歷史紀錄**，不得作為現況依據。
+>
+> <details><summary>已知過期處（點開）</summary>
+>
+> - **§3.1**「雙迴圈」敘事已被 [`DESIGN.md §1.1`](./DESIGN.md) 推翻 —— 階段 A 真相是「一條 rAF 超級迴圈（固定步長子步進）＋ 一個事件驅動採樣器」，單執行緒。
+> - **§2 技術棧** 缺階段 D 的 `research/` Python 離線分析層（Python 3.12 + uv）。
+> - **§4 里程碑** 只到 M4；實際已至 M15。
+> - **§5 執行階段** 只到 WP-9；實際已至 WP-32。
+> - **§6 關鍵路徑** 只涵蓋階段 A；跨階段相依圖見 [`exec-plan/README.md §4`](./exec-plan/README.md)。
+> - **§9 不在範圍**「移動目標 drill 與追蹤指標」已由 WP-18 交付（2026-07-09）；「頭/身部位 hitbox」已由 WP-23 config 化。
+> - **§10 階段 B 預留** friction/acceleration integrator 與 velocity gate 已由 WP-14 交付、`cl_showpos` 校準已由 WP-15 交付（M7 caveated）；**僅 Worker 化 + `SharedArrayBuffer` 仍未做**（見 [`DESIGN.md §1.3`](./DESIGN.md)）。
+>
+> </details>
+
 > 對應規格書：[`規格書_Three.js_WebGPU_反向急停瞄準訓練器.md`](./規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) v1.0
 > 本文件為「大框架執行計畫」。技術骨幹與架構決策以規格書的 ADR-1~9 為準；本文件補充規格未釘死、但執行必須先定的決策，並把 WBS 轉成 **agent 可執行的階段步驟**（保留原 dev-days 估時供人工參考）。
 > 專有名詞定義見 [`../CONTEXT.md`](../CONTEXT.md)。

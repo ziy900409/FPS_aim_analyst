@@ -13,8 +13,8 @@
 | ⓪ | [`../CLAUDE.md`](../CLAUDE.md) | 執行協議 + 導航（agent 開場即載入；repo 根） |
 | ① | [`../CONTEXT.md`](../CONTEXT.md) | 專有名詞 / ubiquitous language（repo 根） |
 | ② | [規格書](規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 需求、ADR-1~9、WBS、功能 F1–F5（source of truth） |
-| ③ | [PLAN.md](PLAN.md) | 大框架執行計畫：補充決策 D1–D5、技術棧、架構總覽、WP-0~9 |
-| ④ | [exec-plan/README.md](exec-plan/README.md) | 執行計畫頂層索引：把 WP-0~27（階段 A+B+C+E + 單 WP muzzle-tracer）展開成可執行子資料夾 |
+| ③ | [DESIGN.md](DESIGN.md) | 執行期與執行緒模型：三迴圈在階段 A 的單執行緒真相、兩時鐘、階段 B 跨界縫 |
+| ④ | [exec-plan/README.md](exec-plan/README.md) | **大框架的現行權威**：WP-0~32（階段 A+B+C+E+D + 單 WP muzzle-tracer）狀態表、里程碑門控 M1–M15、跨階段相依圖、執行規則 |
 | ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/completed/stage2/wp-N-*/`（階段 B 已交付）、`exec-plan/completed/stage3/wp-N-*/`（階段 C 已交付；導航見 [stage3 MAP](exec-plan/completed/stage3/MAP.md)）、`exec-plan/completed/stage5/wp-N-*/`（階段 E 已歸檔;M13 待手動回填；tech spec 見 [stage5 README](exec-plan/completed/stage5/README.md)）、**[`exec-plan/completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md)（WP-27，✅ 已交付）** | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
 
 ---
@@ -25,8 +25,8 @@
 |---|---|---|
 | [MAP.md](MAP.md) | 本檔 — 文件地圖 / 目錄 | — |
 | [規格書_Three.js_WebGPU_反向急停瞄準訓練器.md](規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 規格書 v1.1 + WBS（含 F5 移動目標）；ADR-1~9 為架構決策準繩 | ✅ |
-| [PLAN.md](PLAN.md) | 階段 A 執行計畫；決策 D1–D5、技術棧、雙迴圈架構、相依圖 | ✅ |
 | [DESIGN.md](DESIGN.md) | 執行期/執行緒模型（§1 單執行緒真相 + 後果 a；兩時鐘、跨界縫指路） | ✅ |
+| [PLAN.md](PLAN.md) | 階段 A 執行計畫（歷史紀錄）。**仍被引用者僅 §1 決策 D1–D5 的理由欄**；WP/里程碑/相依/範圍各段一律以 [exec-plan/README.md](exec-plan/README.md) 為準 | 🧊 **已凍結**（停寫 2026-06，不再維護） |
 | [FRONTEND.md](FRONTEND.md) | 前端 / UI 設計（預留） | ⬜ 空檔 |
 
 ---

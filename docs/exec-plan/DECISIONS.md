@@ -13,7 +13,7 @@
 | 類別 | 出處 | 內容 |
 |---|---|---|
 | 架構決策 **ADR-1~9** | [規格書](../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 1 WebGPU+fallback、2 雙迴圈、3 固定步長 128Hz、4 計時/cross-origin、5 Pointer Lock 原始輸入、6 目標 motion registry、7 兩個時鐘、8 peek 推進 P2、9 source unit |
-| 規劃補充決策 **D1~D5** | [PLAN.md §1](../PLAN.md) | 2D UI 技術、測試框架、COOP/COEP 部署、文件語言、PLAN 顆粒度 |
+| 規劃補充決策 **D1~D5** | [PLAN.md §1](../PLAN.md)（該檔 🧊 **已凍結**;僅 §1 仍為權威,其餘段落停在階段 A 不得引用) | 2D UI 技術、測試框架、COOP/COEP 部署、文件語言、PLAN 顆粒度 |
 
 > 上述為已定案的權威決策,改動須回原文件並在此記一筆變更。
 

@@ -18,8 +18,10 @@
 | 全部文件目錄 / 導航 | [docs/MAP.md](docs/MAP.md) ← **先看這個** |
 | 專有名詞 / 正規術語(semantic memory) | [CONTEXT.md](CONTEXT.md) |
 | 需求 / ADR-1~9 / WBS(source of truth) | [docs/規格書_Three.js_WebGPU_反向急停瞄準訓練器.md](docs/規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) |
-| 大框架計畫 / 決策 D1–D5 / 架構總覽 | [docs/PLAN.md](docs/PLAN.md) |
+| **大框架 / WP 狀態 / 里程碑 M1–M15 / 相依圖** | [docs/exec-plan/README.md](docs/exec-plan/README.md) ← **現行權威** |
 | 可執行任務(要做什麼) | [docs/exec-plan/README.md](docs/exec-plan/README.md) → `active/wp-N-*/` |
+| 執行期 / 執行緒模型(三迴圈真相) | [docs/DESIGN.md](docs/DESIGN.md) |
+| 規劃補充決策 D1–D5 的理由 | [docs/PLAN.md §1](docs/PLAN.md) 🧊 **已凍結**(停在階段 A,其餘段落不得作為現況依據) |
 | 全域決策 / 跨文件矛盾帳本(feature/WP) | [docs/exec-plan/DECISIONS.md](docs/exec-plan/DECISIONS.md) |
 | 已知 bug / 修 bug 決策帳本 | [docs/known_issue/](docs/known_issue/) → 診斷計畫 `KI-NNN-*.md` · 決策 [BUGFIX-DECISIONS.md](docs/known_issue/BUGFIX-DECISIONS.md) |
 
