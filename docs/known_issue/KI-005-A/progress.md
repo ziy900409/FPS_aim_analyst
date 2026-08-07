@@ -21,6 +21,7 @@
 | 2026-08-06 | T6 | ✅ | 零程式碼改動,純文件/帳本對帳(FR-A-13/14)。`analysis-segments.md`:`omega_deg_s` 段改寫為雙 source(`tick-integral`/`aim-diff-legacy`)敘述,明記同一構念、同一數學核心,只差 delta 來源(C-D4);`seg-v1` 列加註「SG window 7 < beat 週期 8,對真實資料的適用性未經驗證,須 `seg-v2` 重掃」。`schema.md`:補 `ticks[].dYaw`/`dPitch` 兩欄(單位/語意/D-A2 夾角效果/缺席條件)+ CSV 條件表頭說明(FM-7);複查既有 T2/T3 寫入的 `meta.fovDeg`/`meta.mouseIntegration`/`bufferOverflow` 口徑段落與實作一致(已在,無需改動)。`KI-005-omega-render-sim-aliasing.md`:狀態翻「✅ 選項 A 已落地(A1);A2 待排程」;§6.2 缺口標已補;§7 驗證計畫逐項標記 1/2/3/6(A1 已交付)· 4/5(⛔ A2 blocked);新增「A1 落地後的殘餘限制」段(TD-1/TD-2/**FM-1 未證偽**);§6.1 引用段的兩個新發現(pointer-lock 閘/`main.ts` 啟用)標記已隨 T3/T4 處理。`BUGFIX-DECISIONS.md`:§1 索引 KI-005 列 → 「🟡 A1 已落地,A2 待新採樣」;BD-005 新增「A1 落地(2026-08-06)」段,含實測前後數字(240 Hz lowRatio/lowMean/highMean 三項、165/144/60 Hz 舊法 CV、新法四節奏 CV≈1.1e-15)、兩個計畫階段新發現、偏離協議(T4/T5 顆粒度)、明確未交付項(M14 ③④⑤ 未重新宣告、WP-30/31 entry blocker 未解除)。`MAP.md`/`exec-plan/README.md`/`stage4/README.md`/`WP-28 progress.md`:M14 相關敘述全數對帳為「③④⑤ 仍撤回,KI-005 A1 已落地/A2 待排程,KI-006 待拍板,解除條件均未滿足」——WP-28 progress.md 為 running log,**不改寫既有歷史列**,改以新增一列(2026-08-06 KI-005 A1 落地)+ 在既有「WP-30/31 entry blocker 現況」段落後追加一行「對帳」註記的方式處理,避免竄改 episodic memory。全文複查:未出現任何「儀器修好」被寫成「效度恢復」或「M14 已恢復」的措辭。`git diff` 只命中 `docs/` 下的檔案。 |
 | 2026-08-07 | T-exit | ✅ | 八道 A1 exit gate 已回填於 [T-exit-gate.md](T-exit-gate.md):G-1/G-2/G-3/G-5/G-6/G-7/G-8 由既有 KI-005 / A 測試與文件對帳覆蓋;T-exit 現場回歸:`npx.cmd tsc --noEmit` exit 0;`npm.cmd run test:ci` exit 0(vitest **89 files / 739 tests**,Playwright **20/20**);`uv run pytest` 原生仍受 T0-S1 的外部 Temp ACL 問題阻擋,以 workspace-local `--basetemp ..\codex_pytest_tmp_t_exit` 重跑 **195 passed**。`git diff --stat` 在回填前為空;本切片只修改 `docs/known_issue/KI-005-A/T-exit-gate.md`、`progress.md`、`task-checklist.md`。A1 交付判定:✅ **量測儀器修好**;A2(新採樣/複驗/`seg-v2`)仍 blocked;M14 ③④⑤ 與 WP-30/31 entry blocker 仍未解除。 |
 | 2026-08-07 | A2-T1 | ✅ | 研究者於同一台 240 Hz 機器實際執行三個 counter-strafe session(09:18/09:24/09:37,`counterstrafe_ad_v1`),提交匯出 + `construct_presence` 產物。逐項核對 DoD(見 [A2-blocked-plan.md](A2-blocked-plan.md) A2-T1):`omega_deg_s(..., strict=True)` 三份皆不拋錯、`export.omegaSource == "tick-integral"`(A1 修法生效);`counter` 事件數 23/25/20,皆 > 0;`events` 含 `type === 'key'` 86/84/78 筆(OQ-A-2/TD-5 的 `recordKeyEvents` 接線在真實採集中確認生效,非僅測試);橫移 tick 佔比 0.656/0.654/0.644,遠高於 `construct-v1` 下限 0.05、亦優於舊 09:39 樣本的 0.520。`run_pipeline` 對三份匯出**獨立重跑**(不僅信任提交的產物)皆 exit **0** 且 `constructPresence.present == true`。session 數 = 3 > 2(OQ-KI6-4 決議達標)。240 Hz(`meta.display.refreshEstimateHz`)、`meta.mouseIntegration` 皆確認存在(B-5)。**觀察 → 已確認為 bug,升級為 [KI-007](../KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md)**:09:18/09:24 兩份 `meta.suspect == true`,追碼([main.ts:410-412](../../../src/main.ts#L410-L412))確認觸發源是 `experimentSession.suspect`(GD-10)。研究者確認錄製期間**未**中途退出全螢幕,只在整個測試結束後才退。根因:`experimentSession.exit()` 只在多條件 protocol 流程呼叫,單一「實驗 session」drill 流程從未呼叫,`active` 對整頁生命週期恆 true,drill 結束後正常退出全螢幕去抓匯出檔的動作因此被誤判為條件失效。**非**走廊越界(`meta.validity.corridorExceeded` 三份皆 `true`,K-3 下純觀測、不影響效度)。**確認為誤判,不影響 09:18/09:24 作為 M14 效度證據的可信度**;修法已於同日落地(`experimentSession.handleFullscreenChange` 新增 `recording` 參數,只在 drill 錄製中才判定失效),見 [KI-007](../KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) / BD-007。 |
+| 2026-08-07 | A2-T2 | ✅ 四項複驗完成,使用者確認判讀,整體通過;③ 有確認的外部混淆因子(記錄不隱藏),詳見下方 §2e | **方法**:凹口偵測器逐字沿用 T0 §2a 記錄的公式(`w[i]<0.6×min(w[i-1],w[i+1])` 且兩鄰居 `>80`),直接呼叫既有 `research/src/modules/kinematics/algorithms/angular.py::omega_deg_s`(不重新實作演算法)取得 `w`;守恆檢查同樣直接讀匯出 `ticks[].dYaw/dPitch` 與 `ticks[].aim.{yaw,pitch}`。腳本為臨時腳本,置於 session scratchpad,未進 repo(比照 T0 慣例)。**① 凹口偵測器**:09:39 基準(legacy ω,今日重跑,作為腳本正確性 sanity check)= **34 個**,間距眾數 8(與 T0 記錄逐位相符,證明腳本一致);三份新匯出(tick-integral ω)= **3/2/2 個**,較基準降 >90%,但**非literal 0**。逐一核對:三份匯出的殘餘凹口間距皆非 8 的倍數(09:18: 3 tick 間距;09:24: 相隔 1029 tick;09:37: 4 tick 間距),且與 `vx`(橫移速度)在同一窗口內**單調變化**(無反向/急停事件重合)——非 render/sim beat 的週期性訊號,較符合真實滑鼠輸入的偶發微變異。**② `merged_adjacent_peaks` 比例**:09:39 基準(legacy ω,今日重跑)= 20/21(**95.2%**;KI-005 文件原載 15/19≈79%,今日重跑數字更高但方向相同,見下 Surprise);三份新匯出 = 12/21(57.1%)、11/19(57.9%)、13/20(65.0%)——**顯著下降**,不論對照哪個基準數字結論皆成立。**③ 未 flag 樣本數**:09:39 基準(今日重跑)`quality` 為**空字典**(0 個未 flag 樣本,全數因 `missing_target` 被排除);三份新匯出 = 9、8、7 個未 flag 樣本——方向與預期相符(上升),但**確認為混淆**:09:39 的 `meta.scene` 缺少 `eye` 欄位(2026-08-05 捕獲,早於 2026-08-06 落地的 KI-004/S1),`run_pipeline.py` 的 `resolve_eye_origin(meta, strict=True)` 對此類舊匯出正確拒絕猜測、回傳 `None`,連帶 `missing_target` flag 蓋滿所有 peek/segment([run_pipeline.py:344](../../../research/src/report/run_pipeline.py#L344) 的 docstring 明載此為 KI-004/S1 T5 的刻意設計,非本次迴歸)。**此項改善混雜了 KI-004/S1(eye origin)與 KI-005/A1(ω aliasing)兩個獨立修法的效果,無法用 09:39 單獨隔離出 A1 的貢獻**。**④ 守恆(FM-1)**:三份新匯出 `Σ dYaw` vs `Δaim.yaw`(hip-only,`ads_events=0`)殘差皆 **≤ 5.6e-16**(浮點雜訊量級,非近似相等而是機器精度內完全相等);另補測 `Σ dPitch` vs `Δaim.pitch`,殘差同樣 ≤ 7.1e-16。**FM-1 視為關閉**:coalesced mouse 樣本在真實硬體上未遺失或重複計入,修的確實是歸屬而非量值,不觸發「選項 B 提前」的升級條件。 |
 
 ---
 
@@ -131,6 +132,61 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 
 ---
 
+### 2e. A2-T2 四項複驗明細(2026-08-07 回填)
+
+**① 凹口偵測器**(公式逐字沿用 §2a,直接呼叫 `omega_deg_s`,不重新實作):
+
+| 匯出 | ω source | 凹口數 | 間距 |
+|---|---|---:|---|
+| 09:39(今日重跑,legacy,腳本正確性 sanity check) | `aim-diff-legacy` | **34** | 眾數 **8**(與 T0 記錄逐位相符) |
+| 09:18(新) | `tick-integral` | **3** | idx 626/629/631,間距 3、2(非 8 倍數) |
+| 09:24(新) | `tick-integral` | **2** | idx 541/1570,相隔 1029 tick(非週期性) |
+| 09:37(新) | `tick-integral` | **2** | idx 1286/1290,間距 4(非 8 倍數) |
+
+三份新匯出的殘餘凹口與同窗口的 `ticks[].vx` 逐一核對:`vx` 在每個凹口窗口內皆**單調變化**(無鍵盤方向反轉、無急停事件重合),殘餘凹口的間距也**不是** 8 的倍數或呈現任何週期性——與 09:39 基準「間距眾數 8」的系統性訊號特徵不同。判讀:**系統性 render/sim beat 假象已消除**(降幅 >90%),殘餘的 2–3 個凹口較符合真實滑鼠輸入本身的偶發微變異(人手不可能絕對等速),而非同一根因復發。**非 literal 0**,與 A2-blocked-plan.md 原始預期的字面表述有落差,已如實記錄,不強行判讀為「完全通過」。
+
+**② `merged_adjacent_peaks` 比例**:
+
+| 匯出 | merged_adjacent_peaks | segmentCount | 比例 |
+|---|---:|---:|---:|
+| 09:39(今日重跑) | 20 | 21 | **95.2%** |
+| KI-005 原文件基準(2026-08-05/06 診斷時) | 15 | 19 | **78.9%**(≈79%) |
+| 09:18(新) | 12 | 21 | **57.1%** |
+| 09:24(新) | 11 | 19 | **57.9%** |
+| 09:37(新) | 13 | 20 | **65.0%** |
+
+09:39 今日重跑(95.2%)高於文件原載基準(78.9%)——兩者用**同一份輸入檔案 + 同一套 `seg-v1` 參數**,理論上應逐位相同;差異推測來自原始診斷當時的 `research/out/pipeline-summary.json` 快照,其產生時點與寫入文件之間可能歷經了未被追蹤的中間版本迭代(原始腳本與快照皆未留存,無法逆向核實)。**不阻塞判讀**:不論取哪個基準數字,三份新匯出(57–65%)都顯著低於兩者(79–95%),方向結論不受影響。
+
+**③ 未 flag 樣本數**(`duration_ms`/`peak_omega_deg_s`/`mean_epsilon_deg`):
+
+| 匯出 | n(未 flag) | n_flagged |
+|---|---:|---:|
+| 09:39(今日重跑) | **0**(`quality` 為空字典) | 21(全數 `missing_target`) |
+| KI-005 原文件基準 | 4 | 15 |
+| 09:18(新) | 9 | 12 |
+| 09:24(新) | 8 | 11 |
+| 09:37(新) | 7 | 13 |
+
+09:39 今日重跑 `missing_target` 蓋滿全部 peek/segment,追碼確認為 [`run_pipeline.py:344`](../../../research/src/report/run_pipeline.py#L344) 的 `resolve_eye_origin(meta, strict=True)`——09:39 的 `meta.scene` 缺 `eye` 欄位(2026-08-05 捕獲,早於 2026-08-06 落地的 KI-004/S1),strict 模式對此類舊匯出正確拒絕猜測、回傳 `None`,docstring 明載此為 **KI-004/S1 T5(FR-S1-7)的刻意設計**,非本次迴歸、非本次新引入。**確認為混淆變數**:③ 的改善同時包含 KI-004/S1(eye origin 修復)與 KI-005/A1(ω aliasing 修復)兩者效果,無法用 09:39 單獨隔離出 A1 一項的貢獻;方向與預期相符,但不視為 A1 單獨的乾淨證據。
+
+**④ 守恆(關閉 FM-1)**:
+
+| 匯出 | `Σ dYaw` vs `Δaim.yaw` 殘差 | `Σ dPitch` vs `Δaim.pitch` 殘差 |
+|---|---:|---:|
+| 09:18 | 3.47e-16 | 7.03e-16 |
+| 09:24 | 1.11e-16 | 4.44e-16 |
+| 09:37 | 5.55e-17 | 3.61e-16 |
+
+三份新匯出皆為 hip-only(`events` 中 `ads` 事件數 = 0)。殘差全數落在浮點精度雜訊量級(< 1e-15),**非近似相等,是機器精度內完全相等**。**FM-1(A1 內無法證偽的唯一假設)視為關閉**:coalesced mouse 樣本在真實硬體上與 render path 消費的總量完全一致,未遺失、未重複計入;證實選項 A 修的確實是**歸屬**(哪個 tick 拿到這段角位移)而非**量值**(總角位移多少)。**不觸發**「立即把選項 B 提前」的升級條件(A2-blocked-plan.md §A2-T2 的 ⚠️ 條款)。
+
+**總結判讀**:④(最關鍵、FM-1 的唯一驗證點)以機器精度通過;②方向清楚顯著下降;①系統性訊號消除(降幅 >90%,殘餘訊號特徵與原根因不符)但非 literal 0;③方向相符但與 KI-004/S1 混淆,不能單獨歸功於 A1。整體判讀為**四項複驗支持 A1 修法有效**,但 ①③ 的字面表述與原始 pre-register 期望(「回傳 0」「n=4 對照」)有需要解讀的落差,已誠實記錄,不做事後降低門檻的合理化。
+
+**① 的視覺化覆核(2026-08-07,使用者要求)**:針對「殘餘凹口是否為根因復發」畫圖覆核而非只看數字。09:39 基準圖(legacy ω)顯示典型症狀簽名——尖銳、孤立的單 tick 深凹,坐落在其餘相對平滑的 burst 波形中,與 KI-005 §1 描述的「302→17」樣態一致。三份新匯出(tick-integral ω)的圖顯示**整段 burst 皆呈細碎鋸齒狀**——不只在被偵測器標記的點,`vx`(鍵盤驅動,背景橘線)在每個放大視窗內都平滑升降,而 ω 逐 tick 鋸齒震盪貫穿整個 burst;被標記的「凹口」只是這個貫穿性鋸齒紋理偶然跨過偵測器固定門檻(`0.6×min(鄰居)`)的位置,不是獨立於背景噪訊之外的孤立異常。判讀:tick-integral 是**更高解析度**的訊號(直接讀每個 tick 窗的原始滑鼠增量),天生比「差分一個較粗、render 速率量化過的訊號」更有紋理雜訊;凹口偵測器的門檻是針對舊訊號的「平滑但週期性斷裂」特徵校準的,新訊號整體雜訊底噪略高但**不週期、不孤立**,不構成同一根因復發的證據。**使用者已看圖確認此解讀,A2-T2 整體判定為通過**。 |
+
+**A2-T2 最終判定(2026-08-07,使用者確認)**:四項複驗**整體通過**,支持 A1(KI-005 選項 A)修法在真實硬體資料上有效。逐項結論:④ 機器精度通過(FM-1 關閉);② 顯著下降,通過;① 系統性訊號消除,視覺覆核確認殘餘為訊號雜訊底噪而非根因復發,通過;③ 方向相符但與 KI-004/S1 混淆,記錄為觀察不作為 A1 獨立證據。**不觸發**選項 B 提前的升級條件。下一步:[A2-T3](A2-blocked-plan.md#a2-t3--seg-v2-重掃與凍結) `seg-v2` 重掃與凍結。
+
+---
+
 ## 3. 受影響測試清單(T0 回填,2026-08-06,FM-4 歸因表)
 
 > 現值:全部存在,目前隨整套 vitest(88 files/694 tests)/ pytest(183 passed)全綠一併通過(見 §2)。
@@ -180,6 +236,9 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | **T0-S3** | T0 執行期間,`git status` 出現與本計畫無關的異動:`docs/known_issue/KI-006-m14-sample-no-counterstrafe.md`(改動)+ 新資料夾 `docs/known_issue/KI-006-C/`(8 個未追蹤檔案)。T0 開始前已確認 `git status` 乾淨(README/T0 step 1 前提成立時拍照),此為**執行期間由外部併發產生**(非本 session 建立),判斷為另一支平行進行的 KI-006 相關工作。**本次 T0 commit 僅 stage `docs/known_issue/KI-005-A/` 下的檔案,不動、不 stage KI-006-C 的任何內容**。 | 不影響 T0 本身的 DoD(§範圍界定清楚);提醒後續 task 開工前重新確認 `git status` | 保留不動,只精準 stage 本次切片檔案 |
 | **T4-S1** | `src/testharness/fpsTestHarness.ts`(供 `full-drill.spec.ts`/`br-tracking.spec.ts`/`spray-drill.spec.ts` 用)自建一條與 `main.ts` live 單例**完全獨立**的 sim 管線(自己的 `createDataRecorder`/`collectMeta`/`buildExportPayload`,不驅動 rAF、不共用 `recorder`)。一開始以 `harness.feedInput([{type:'mouse',...}])` + `forceExportJSON()` 驗證 FR-A-7 的 e2e 案因此得到 `meta.mouseIntegration === undefined`——不是迴歸,是驗證了**錯的管線**。 | 若照原計畫在 `full-drill.spec.ts` 驗 FR-A-7,需一併佈線 harness(擴大 README §1.4 In-scope 之外的檔案) | 改走 `main.ts` 既有 `__aimDebug` dev-only 縫,多暴露 `recorder` 一個唯讀欄位;於 `input-sampler.spec.ts`(已在 In-scope 的 e2e 觀測管道)新增案直讀 `__aimDebug.recorder.mouseIntegration`,精準驗證「app 佈線層」而不動 harness(見 [Decision Log A-D6](#4-decision-log)) |
 | **A2-S1** | 記錄 A-D10(OQ-A-2 決議「開」)的過程中發現:單純把 OQ 標成「已決」不會讓決議生效——`main.ts:355` 當時仍硬編碼未傳 `recordKeyEvents`,若不補這行,A2-T1 採到的匯出還是不會有 `key` 事件,決策與程式碼會**悄悄脫節**(TD-5 差點從「刻意妥協」漂移成「忘記接線」)。 | 決策記錄與程式碼落地必須同一批查核,不能假設「拍板 = 生效」 | 立即補 A-D11(`main.ts` 一行改動 + `input-sampler.spec.ts` 新增驗證案),不留一個「已決但未接線」的空窗期 |
+| **A2-S2** | A2-T2 check①(凹口偵測器)對三份新匯出跑出 3/2/2 個殘餘凹口,**非**原始預期的 literal 0。逐一核對間距與 `vx` 窗口後判讀為真實滑鼠輸入的偶發微變異(非週期性、不與鍵盤反轉重合),而非 render/sim beat 假象復發 | A2-blocked-plan.md 的 pre-register 期望寫死「回傳 0」,面對真實(非合成)資料的雜訊時失準——合成資料可以絕對乾淨,真實人類操作不行 | 如實記錄非 0 的結果與判讀依據(§2e),不事後把門檻悄悄改成「趨近 0」;若後續要凍結一個明確的殘餘容忍度,應另開 OQ 並在下次新採樣**前**寫下 |
+| **A2-S3** | A2-T2 check③ 的「未 flag 樣本數上升」與 KI-004/S1 的 `resolve_eye_origin(strict=True)` 混在一起:09:39(舊匯出,缺 `meta.scene.eye`)全數樣本因 `missing_target` 被排除,與 09:39 比較會把 KI-004/S1 的效果也算進 A1 的功勞 | 選兩個獨立 KI 都涉及的舊匯出當基準,天生無法只隔離其中一個修法的貢獻 | 誠實標記為混淆,不宣稱③單獨證明 A1;判讀改依賴①②④(尤其④,不受此混淆影響) |
+| **A2-S4** | check②的 09:39 今日重跑比例(95.2%)高於 KI-005 原文件記載的基準(78.9%),同一份輸入檔案理論上應逐位相同 | 原始診斷腳本與快照(`research/out/pipeline-summary.json`)皆未留存於 repo,無法逆向核對是否經歷過中間版本迭代 | 不追查(超出 A2-T2 範圍,原始腳本已知不可考,見 T0-S2 同類記錄);兩個基準數字都用上做交叉檢查,兩者皆顯示新匯出顯著更低,結論不受影響 |
 
 ---
 
