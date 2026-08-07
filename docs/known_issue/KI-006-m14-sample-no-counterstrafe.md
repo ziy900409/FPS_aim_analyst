@@ -1,7 +1,7 @@
 # KI-006 — M14 真實資料效度閘所用樣本不含 counter-strafe 構念
 
 > 類型:研究效度 / 閘門設計缺陷。
-> 狀態:🔴 **已確認,處置待拍板**(2026-08-06)。
+> 狀態:🟡 **C(construct presence gate)已落地**(2026-08-06 計畫拍板、2026-08-07 [KI-006-C/](KI-006-C/README.md) T0–T3 落地);**B(重新採樣)待 [A2](KI-005-A/A2-blocked-plan.md)**,M14 ④⑤ 撤回維持。
 > 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-006。
 >
 > **與 [KI-004](KI-004-sim-world-unit-domain-mismatch.md) 的關係(重要)**:「08:03 匯出無鍵盤輸入 /
@@ -74,7 +74,7 @@ drill id 為 `counterstrafe_ad_v1`,但 08:03 那份實質上是**純 flick 資�
 KI-005 選項 A/B 落地後重新採集,並在採集前明確要求受試者執行完整 counter-strafe 動作。
 同時取得未受 beat 汙染的 ω(t) 與(若 KI-005-B 落地)1000 Hz 原始滑鼠軌跡。
 
-### 選項 C — 新增 construct presence gate(**結構性修補,建議無論 A/B 都做**)
+### 選項 C — 新增 construct presence gate(**結構性修補,建議無論 A/B 都做**)✅ **已落地(2026-08-07)**
 
 在 `research/src/modules/ingest/` 增加一道**構念存在性檢查**:由 drill 宣告其核心構念,ingest 時斷言
 該構念在資料中確實出現,否則產出明確的 session 級 flag(如 `construct_absent:counter`)。
@@ -121,7 +121,7 @@ KI-005 選項 A/B 落地後重新採集,並在採集前明確要求受試者執�
 
 | OQ | 問題 | 待決者 |
 |---|---|---|
-| **OQ-KI6-1** | ~~採選項 A(換 09:39)、B(重採)或兩者併行~~ → **A 已於 2026-08-06 隨 [KI-005](KI-005-omega-render-sim-aliasing.md) 「不做選項 C」的拍板自動出局**(§4)。**剩 B(重新採樣)為唯一路徑**,待確認採集時機與規模(與 OQ-KI5-6 同一件事) | 使用者 |
-| **OQ-KI6-2** | construct presence gate(選項 C)是否納入本輪,或另開 WP-28 追加 task | 使用者 |
-| **OQ-KI6-3** | 構念存在性的量化門檻(如「橫移 tick 佔比下限」)如何 pre-register,避免事後調參 | 使用者 |
-| **OQ-KI6-4** | M14 的真實資料項是否應要求 **n ≥ 2 個 session**,以免單一 session 的行為特異性再次成為單點故障 | 使用者 |
+| **OQ-KI6-1** | ~~採選項 A(換 09:39)、B(重採)或兩者併行~~ → **A 已於 2026-08-06 隨 [KI-005](KI-005-omega-render-sim-aliasing.md) 「不做選項 C」的拍板自動出局**(§4)。**剩 B(重新採樣)為唯一路徑**,待確認採集時機與規模(與 OQ-KI5-6 同一件事)。**維持未決** —— B 的驗收清單已交付於 [KI-006-C/README.md §6](KI-006-C/README.md)(B-1~B-5),採集時機與規模仍待研究者拍板 | 使用者 |
+| ~~**OQ-KI6-2**~~ | ~~construct presence gate(選項 C)是否納入本輪,或另開 WP-28 追加 task~~ | ✅ **關閉(2026-08-06)**:納入本輪,計畫見 [KI-006-C/](KI-006-C/README.md)(T0–T3 已落地 2026-08-07) |
+| ~~**OQ-KI6-3**~~ | ~~構念存在性的量化門檻(如「橫移 tick 佔比下限」)如何 pre-register,避免事後調參~~ | ✅ **關閉(2026-08-07)**:以 `construct-v1` 凍結(`min_counter_events=1`、`min_moving_tick_ratio=0.05`);pre-register 證據(四份 fixture 實測、門檻落在數量級空隙)見 [KI-006-C/README.md §2.3](KI-006-C/README.md) |
+| **OQ-KI6-4** | M14 的真實資料項是否應要求 **n ≥ 2 個 session**,以免單一 session 的行為特異性再次成為單點故障 | 使用者。**維持未決** —— [KI-006-C/README.md §6 B-4](KI-006-C/README.md) 已預留欄位,建議 n ≥ 2 並趁 [A2-T1](KI-005-A/A2-blocked-plan.md) 一次滿足,決議仍待 A2-T1 前拍板 |

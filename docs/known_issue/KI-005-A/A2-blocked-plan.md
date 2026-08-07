@@ -22,8 +22,8 @@ KI-005 §7.4 於 2026-08-06 **自我更正**:
 - [ ] A1 的 [T-exit-gate](T-exit-gate.md) 八道硬閘全綠。
 - [ ] **OQ-A-5**(= OQ-KI5-6)採樣時機與規模已定。
 - [ ] **OQ-A-2 / TD-5** 決定:採樣時是否一併開啟 `recordKeyEvents`(KI-006 的構念驗證會想要 sub-tick 鍵釋放時刻)。
-- [ ] **KI-006 的處置已拍板**(OQ-KI6-1 已收斂到選項 B「重新採樣」;OQ-KI6-2/3 的 construct presence gate 是否納入本輪需先定,否則採完才發現要補條件)。
-- [ ] **OQ-KI6-4** 決定:是否要求 n ≥ 2 個 session。
+- [ ] **KI-006 的採集條件已滿足**:construct presence gate(選項 C)已落地([KI-006-C/](../KI-006-C/README.md),OQ-KI6-2/3 已關閉),B(重新採樣)的 KI-006 條件見 [KI-006-C/README.md §6](../KI-006-C/README.md) **B-1~B-5**(不在本檔重複列出)。
+- [ ] **OQ-KI6-4**(= [KI-006-C/README.md §6 B-4](../KI-006-C/README.md))決定:是否要求 n ≥ 2 個 session。
 
 > **兩個 KI 的重新宣告路徑收斂為同一次採集**(KI-005 §6.1 連帶結論)。採之前沒把 KI-006 的條件想清楚,就得採第二次。
 
@@ -38,8 +38,9 @@ KI-005 §7.4 於 2026-08-06 **自我更正**:
 - [ ] 匯出必須含 `meta.mouseIntegration` + `ticks[].dYaw/dPitch`(A1 的 FR-A-7 保證);**採完立即檢查,沒有就是 A1 沒真的啟用**。
 - [ ] 記錄採集條件:受試者、螢幕型號/刷新率、sensitivity/FOV、drill config、session 數。
 - [ ] 依 OQ-KI6-4 的決議決定 session 數。
+- [ ] **採完立即**跑 construct presence gate(`run_pipeline` 消費新匯出);`constructPresence.present == false` 即**當場重採**,不得事後才發現構念缺席([KI-006-C/README.md §6 B-3](../KI-006-C/README.md))。
 
-**DoD**:新匯出通過 `load_export` 且 `omega_deg_s(..., strict=True)` **不拋錯**(即 `source == "tick-integral"`);`counter` 事件數 > 0。
+**DoD**:新匯出通過 `load_export` 且 `omega_deg_s(..., strict=True)` **不拋錯**(即 `source == "tick-integral"`);`counter` 事件數 > 0;`run_pipeline` 對新匯出 exit 0 且 `constructPresence.present == true`(KI-006-C §6 B-2/B-3)。
 
 ---
 

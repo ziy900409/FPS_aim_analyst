@@ -18,7 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
-| [KI-006](KI-006-m14-sample-no-counterstrafe.md) | M14 ④/⑤ 的真實資料效度閘所用樣本(08:03)**不含 counter-strafe 構念**:`vx ≡ 0`、`keys` 全空、`counter` 事件 0 → 量到的是站樁純 flick。**M14 ④⑤ 撤回**(理由獨立於 KI-005) | BD-006(§2,處置待拍板) | 🔴 已確認,處置待拍板 |
+| [KI-006](KI-006-m14-sample-no-counterstrafe.md) | M14 ④/⑤ 的真實資料效度閘所用樣本(08:03)**不含 counter-strafe 構念**:`vx ≡ 0`、`keys` 全空、`counter` 事件 0 → 量到的是站樁純 flick。**M14 ④⑤ 撤回**(理由獨立於 KI-005) | BD-006(§2,**C 已落地**:construct presence gate;B 待 [A2](KI-005-A/A2-blocked-plan.md)) | 🟡 C 已落地(2026-08-07),B 待新採樣 |
 | [KI-005](KI-005-omega-render-sim-aliasing.md) | ω(t) 受 render(240Hz)/sim(128Hz)**zero-order-hold aliasing** 汙染:每 8 tick 一個假凹口 → `merged_adjacent_peaks` 15/19,有效產率僅 4/19。**推翻 KI-004「①③④⑤⑥ 不受影響」的豁免,M14 ③④⑤ 撤回** | BD-005(§2,**A1 已落地**:選項 A + 感度由 meta 重建 + 不做過渡期 C)· 計畫 [KI-005-A/](KI-005-A/README.md) | 🟡 A1 已落地,A2 待新採樣 |
 | [KI-004](KI-004-sim-world-unit-domain-mismatch.md) | sim(source unit)與 world domain 混用:corridor gate 緊 100× → 真實急停 run 全被標 `suspect`;離線 ε(t) 量測原點錯誤(D2a base offset + D2b scale)→ **實測偏差 12.5°/67°,M14 ② 撤回,S1 落地後重新宣告** | BD-004(§2,K-1/K-2/K-3 已拍板;S1 已落地) | 🟡 S1 ✅ 已落地(2026-08-06)/ S2·S3 待辦 |
 | [KI-003](KI-003-top-left-controls-overlap.md) | 左上角 session/protocol 啟動按鈕覆蓋 SettingsPanel 的 Sensitivity/FOV/Resolution | BD-003(§3) | ✅ 已修(2026-08-05) |
@@ -31,7 +31,7 @@
 
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
 
-### BD-006 🔴 KI-006 — M14 效度閘樣本不含 counter-strafe 構念;**已確認,處置待拍板**(2026-08-06)
+### BD-006 🟡 KI-006 — M14 效度閘樣本不含 counter-strafe 構念;**C(construct presence gate)已落地,B(重新採樣)待 A2**(2026-08-07)
 
 | | |
 |---|---|
@@ -40,10 +40,11 @@
 | **決策(部分確定 2026-08-06)** | 原三選項中,**A(改用 09:39)已自動出局** —— 這是 BD-005 拍板「不做過渡期選項 C」的**邏輯後果而非獨立決策**:選項 A 的修法改變的是「記錄什麼」,09:39 檔內的 `aim` 已把 beat 假象寫死且不會回溯清洗,故無法產出有效 ω(t) 證據。**剩 B**(修法後重新採樣,明確要求受試者執行完整 counter-strafe)**為唯一路徑**,採集時機與規模待定(= OQ-KI5-6 / OQ-KI6-1,同一件事)。**C**(於 `research/src/modules/ingest/` 新增 **construct presence gate**:由 drill 宣告核心構念,ingest 時斷言其存在,否則產 `construct_absent:*` flag)**建議無論如何都做**,仍待拍板。<br>註:09:39 的**構念完整性**不受影響(1,415 橫移 tick / 24 `counter` 事件),仍可用於**不依賴 ω** 的分析(counter 時序、`t_stop`、`residualSpeed`、首發時機);出局的只是「作為分段效度樣本」這個用途。 |
 | **理由(C 的部分)** | 既有閘門(schema / dt / 純度)全部只驗**形式**,沒有任何一關會問「這份 counter-strafe 匯出裡有 counter 嗎」。更糟的是 `meta.suspect` 當時因 BD-004 的 corridor 單位域錯誤而**是反的** —— 有做急停的被標 suspect、完全不動的反而乾淨,挑樣本時的「乾淨」訊號**系統性地偏好了構念缺席的那一份**。此閘若早存在,08:03 第一天即被擋下。 |
 | **架構層結論(與 BD-004 同源)** | BD-004 的結論是「parity 是一致性閘,無法發現兩側一起錯」;本案再加一條同構的:**一致性閘與目視檢核無法發現「量錯了對象」**。疊圖不顯示 `vx`/`keys`,檢核者無從察覺受試者沒在動,而站樁 flick 本來就會產生漂亮的單峰波形。兩者共同指向:量測層需要的是**內容層面的正確性閘**,不只是形式閘。 |
-| **偏離計畫** | 無。本階段為診斷 + 決策入帳,零程式碼改動。 |
-| **遺留 OQ** | **OQ-KI6-1**(收斂)A 已出局,剩 B;採集時機與規模待定(= OQ-KI5-6)· **OQ-KI6-2** construct presence gate 是否納入本輪 · **OQ-KI6-3** 構念存在性門檻如何 pre-register 以免事後調參 · **OQ-KI6-4** M14 真實資料項是否應要求 n ≥ 2 個 session(建議趁重新採樣一併滿足)。 |
-| **影響面** | **受影響**:**M14 ④⑤ 撤回**(理由與 BD-005 相互獨立 —— 即使 aliasing 完全修好,以 08:03 重跑仍不構成 counter-strafe drill 的效度證據)、[analysis-segments.md](../operational/analysis-segments.md) 的 “Real-export validation” 段、**WP-30/31 entry blocker**(第三條獨立理由)。**不受影響**:M14 ①(ingest/dt 屬 schema 與取樣層,與行為內容無關)、②③⑥、**引擎程式碼零改動**。 |
-| **狀態** | 🔴 已確認,處置待拍板。 |
+| **偏離計畫** | 無。診斷/決策階段零程式碼改動;C 落地階段(見下)為新增,非修改既有程式碼,`git diff --stat` 不觸 `src/`(NFR-C-1)。 |
+| **C 落地(2026-08-07)** | **交付**:`research/src/modules/ingest/algorithms/construct.py`(registry `construct-v1` + 家族解析 + 檢查純函式 + session 級 flag 詞彙)+ `run_pipeline` 佈線(`constructPresence` summary 區塊 + 專屬 exit code **2**,與 schema/IO 失敗的 exit 1 可區分)。**四份 committed fixture 判定與實測值**(pre-registration 證據,詳見 [KI-006-C/README.md §2.3](KI-006-C/README.md)):08:03(`counterstrafe_ad_v1`)——3,507 ticks、`vx≠0`=0、佔比 **0.0000**、`counter`=**0** → **absent**;09:39(`counterstrafe_ad_v1`)——2,723 ticks、`vx≠0`=1,415、佔比 0.5196、`counter`=24 → present;`synthetic_counterstrafe_v2`——48 ticks、佔比 0.2917、`counter`=2 → present(家族經 `synthetic_` 前綴剝離解析,§2.4①);`synthetic_timeline_v1`——96 ticks、佔比 0.4062、`counter`=3,但家族 `timeline` 未註冊 → **unknown**(誠實揭露,不擴大猜測範圍,§2.4②)。**凍結門檻(D-C5)**:`min_counter_events=1`(二元、無門檻,單獨即可擋下 08:03)、`min_moving_tick_ratio=0.05`(輔助判準,距最小通過樣本 0.2917 有 5.8× 邊際、距缺席樣本 0.0000 為無窮大,落在數量級空隙而非事後擬合到決策邊界)。**D-C1 取捨**:構念宣告落 **Python registry**、不做引擎 `DrillConfig`/`meta.construct` 自我描述欄 —— 換取零引擎改動 + 可回溯套用到既有的 08:03(自我描述欄對「補欄之後」的匯出才有效,而最需要被擋下的正是既有匯出);**殘餘風險**:新增 drill 不被強制宣告,以 `construct_unknown` 兜底(TD-3,見 KI-006-C R-5)。**回歸**:`uv run pytest` 195→**221 passed**、`npx tsc --noEmit` exit 0、`npm run test:ci` 案數與期望值逐條不變、`git diff --stat` 僅 `research/` 四檔,無 `src/` 路徑。**⚠️ 明確聲明:C 落地不解除任何 M14 撤回** —— 它交付的是「下次不會再量錯對象」,不是「這次量對了」;M14 ④⑤ 的重新宣告仍需 [A2-T2/T3/T4](KI-005-A/A2-blocked-plan.md) 的新採樣 + `seg-v2`,且 ④ 的 KI-006 理由**只能由新樣本本身**解除。B(重新採樣)的 KI-006 條件已交付為驗收清單([KI-006-C/README.md §6](KI-006-C/README.md) B-1~B-5),委派 A2-T1 執行。 |
+| **遺留 OQ** | **OQ-KI6-1**(收斂)A 已出局,剩 B;採集時機與規模待定(= OQ-KI5-6),**維持未決** —— 驗收清單已交付([KI-006-C/README.md §6](KI-006-C/README.md) B-1~B-5),時機/規模仍待拍板 · ~~OQ-KI6-2~~ ✅ 關閉(2026-08-06):construct presence gate 納入本輪 · ~~OQ-KI6-3~~ ✅ 關閉(2026-08-07):門檻以 `construct-v1` 凍結,證據見上 · **OQ-KI6-4** M14 真實資料項是否應要求 n ≥ 2 個 session,**維持未決**,建議趁 A2-T1 一併滿足([KI-006-C/README.md §6](KI-006-C/README.md) B-4)。 |
+| **影響面** | **受影響**:**M14 ④⑤ 撤回維持**(理由與 BD-005 相互獨立 —— 即使 aliasing 完全修好,以 08:03 重跑仍不構成 counter-strafe drill 的效度證據;C 落地不改變此結論)、[analysis-segments.md](../operational/analysis-segments.md) 的 “Real-export validation” 段(已加註)、**WP-30/31 entry blocker**(第三條獨立理由,C 落地不解除)。**不受影響**:M14 ①(ingest/dt 屬 schema 與取樣層,與行為內容無關)、②③⑥、**引擎程式碼零改動**。 |
+| **狀態** | 🟡 **C 已落地(2026-08-07)**;**B(重新採樣)⛔ blocked on 新採樣**,見 [A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md)。KI-006 整體仍 OPEN(B 未落地,M14 ④⑤ 未重新宣告)。 |
 
 ---
 

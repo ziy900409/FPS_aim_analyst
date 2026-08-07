@@ -43,15 +43,23 @@ Fixtures live in `fixtures/exports/`; cross-language files live in `fixtures/par
 
 ### Committed real exports
 
-| File | Character | Caveat |
-|---|---|---|
-| `counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json` | 27.39s, 3,507 ticks, 20 peeks | **No keyboard input at all** (`keys` empty in every tick, `vx` always 0, zero `counter` events). Confirmed to be a run without A/D input, not an engine defect. Use as the zero-input boundary case; it cannot support any counter-strafe timing metric. |
-| `counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json` | 21.27s, 2,723 ticks, 20 peeks, 24 `counter` events | Primary real-validity sample for counter-strafe timing. Carries `meta.suspect = true` caused by the corridor-gate unit bug in `docs/known_issue/KI-004-sim-world-unit-domain-mismatch.md`, **not** by performance, overflow, or a failed display gate. |
+| File | Character | `construct-v1` judgement | Caveat |
+|---|---|---|---|
+| `counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json` | 27.39s, 3,507 ticks, 20 peeks | **absent** (`counter`=0, moving-tick ratio=0.0000; `run_pipeline` exits **2**) | **No keyboard input at all** (`keys` empty in every tick, `vx` always 0, zero `counter` events). Confirmed to be a run without A/D input, not an engine defect. Use as the zero-input boundary case; it cannot support any counter-strafe timing metric. |
+| `counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json` | 21.27s, 2,723 ticks, 20 peeks, 24 `counter` events | **present** (`counter`=24, moving-tick ratio=0.5196; `run_pipeline` exits 0) | Primary real-validity sample for counter-strafe timing. `meta.suspect = true` was caused by the corridor-gate unit bug in `docs/known_issue/KI-004-sim-world-unit-domain-mismatch.md`; that bug is fixed as of KI-004/S1 (2026-08-06), so this flag is historical and no longer reflects the export's current validity. |
 
 ⚠️ Until KI-004 is resolved, any derivation that reads `ticks[].px/pz` together with `tx/ty/tz`,
 `meta.targets.hitbox`, or `eyeHeight` mixes two unit domains (source units vs world units). That
 includes epsilon, on-target, TOT%, `t_acquire`, and `t_detect`. The 08:03 fixture hides the defect
-because its `px` is identically zero.
+because its `px` is identically zero. **Update (2026-08-06):** KI-004/S1 has landed this fix; see
+[docs/known_issue/KI-004-sim-world-unit-domain-mismatch.md](../docs/known_issue/KI-004-sim-world-unit-domain-mismatch.md)
+for the current status.
+
+`construct-v1` ([KI-006-C](../docs/known_issue/KI-006-C/README.md)) is the session-level gate
+asserting a drill's core behavioural construct (e.g. counter-strafe) actually appears in an
+export, independent of schema/dt validity above. It complements, not replaces, the unit-domain
+caveat: an export can be schema-valid and unit-correct while still containing none of the
+behaviour the drill claims to measure — the 08:03 fixture is exactly that case.
 
 ## Kinematics conventions
 
@@ -80,3 +88,9 @@ Submovement parameters are pre-registered in `DEFAULT_SEGMENT_PARAMS` as `seg-v1
 requires a version bump and a full-chain rerun. The final registry and real-data validation will be
 published in [`docs/operational/analysis-segments.md`](../docs/operational/analysis-segments.md) at
 WP-28 exit.
+
+Construct presence thresholds are pre-registered in `CONSTRUCT_REGISTRY` as `construct-v1` (the
+`counterstrafe_*` family): `min_counter_events=1`, `min_moving_tick_ratio=0.05`. Same rule as
+`seg-v1` — any adjustment requires a version bump, never an in-place edit. See
+[KI-006-C](../docs/known_issue/KI-006-C/README.md) and
+[`docs/operational/analysis-segments.md`](../docs/operational/analysis-segments.md).

@@ -79,6 +79,14 @@ C-D3). Real-export overlay SVGs and the parameter sweep come from
 |---|---:|---:|---:|---:|---:|
 | `seg-v1` | 7 / 3 | 0.5 | 80 deg/s | 0.1 | 0.2 |
 
+| Version | Scope | `min_counter_events` | `min_moving_tick_ratio` |
+|---|---|---:|---:|
+| `construct-v1` | `counterstrafe_*` family, session-level construct presence gate ([KI-006-C](../known_issue/KI-006-C/README.md)) | 1 | 0.05 |
+
+`construct-v1` is frozen the same way as `seg-v1`: a change to either threshold requires a new
+version (`construct-v2`), never an in-place edit; every `pipeline-summary.json` records the version
+string alongside the judgement (`constructPresence.paramsVersion`).
+
 > ⚠️ `seg-v1`'s SG window (7 ticks) was swept on synthetic signal that cannot contain the KI-005
 > render/sim beat artifact — the artifact's period is **8 ticks**, so a 7-tick window is
 > mathematically incapable of removing it (see the withdrawal note below). **`seg-v1`'s validity on
@@ -124,28 +132,54 @@ no merge spanning two visually distinct bursts. This single-export check support
 `seg-v1` unchanged and clears M14's real-data validity gate; it does not establish population-level
 validity.
 
+> ⚠️ **Sample does not contain counter-strafe (2026-08-06, KI-006).** The 27.390625 s / 3,507-tick
+> sample described above is the `counterstrafe_ad_v1-2026-08-05T08_03_45.617Z` export: `vx ≡ 0` on
+> every tick, `keys` is empty throughout, and there are **0** `counter` events. The subject only
+> aimed and fired — the drill's core construct (horizontal strafe → counter-strafe stop → aligned
+> first shot) was never exercised. `check_construct_presence` ([KI-006-C](../known_issue/KI-006-C/README.md))
+> judges this export **`absent`**. The sentence above stating this check "clears M14's real-data
+> validity gate" is **withdrawn** — a segmentation success rate measured on stationary flick data is
+> not evidence for a counter-strafe drill. This is a **second, independent** withdrawal reason from
+> the render/sim aliasing one already noted earlier in this section (KI-005) — even a fully
+> aliasing-free re-run of this same sample would still not restore M14 ④/⑤. Re-establishing M14
+> ④/⑤ requires a new sample that satisfies both: aliasing-free `ω(t)` (KI-005 A2) and
+> `check_construct_presence(...).present == True` (KI-006-C §6 B-1~B-5).
+
 ## Quality flag vocabulary
 
 The vocabulary is closed by `QUALITY_FLAG_VOCABULARY`. A new exact flag must be added to that
 constant and this table before it is emitted. `compute_failed:<reason>` is the sole templated form;
 the suffix must be non-empty.
 
-| Flag | Meaning |
-|---|---|
-| `insufficient_samples` | The inclusive segment contains fewer than two samples. |
-| `no_segment` | A peek-level record has no accepted segment. |
-| `truncated_at_window_edge` | A segment boundary remained above threshold at a window edge. |
-| `below_floor` | The trace did not reach the registered absolute speed floor. |
-| `non_uniform_dt` | Tick spacing is unsuitable for uniform-rate downstream calculations. |
-| `missing_target` | Required target geometry is unavailable. |
-| `empty_signal` | The input trace contains no samples. |
-| `zero_motion` | The cleaned trace contains no positive angular speed. |
-| `no_peak` | No local maximum passed the registered peak gate. |
-| `sg_fallback_short_signal` | The trace was shorter than the SG window and used raw values. |
-| `non_finite_replaced` | A wholly non-finite trace was replaced by zeros. |
-| `non_finite_interpolated` | Interior non-finite samples were interpolated. |
-| `merged_adjacent_peaks` | Overlapping peak intervals were merged into one segment. |
-| `compute_failed:<reason>` | A metric function failed or returned a non-finite numeric result. |
+`QUALITY_FLAG_VOCABULARY` (this module, `segments/algorithms/apply.py`) covers the **peek** and
+**segment** levels below — one export can have many peeks, each with zero or more segments.
+`CONSTRUCT_FLAG_VOCABULARY` (`research/src/modules/ingest/algorithms/construct.py`, KI-006 /
+[KI-006-C](../known_issue/KI-006-C/README.md)) is a **separate, session-level** vocabulary — one
+verdict per export, asking whether the drill's core behavioural construct (e.g. counter-strafe)
+is present at all, upstream of whether any individual peek or segment measured it well. The two
+constants are deliberately **not merged**: `ingest` (where construct presence is checked) must not
+reverse-depend on `segments`. Both are registered in the same table below, distinguished by the
+**Level** column, because a reader auditing "what can a flag mean" needs the full closed vocabulary
+regardless of which module emits it.
+
+| Flag | Level | Meaning |
+|---|---|---|
+| `insufficient_samples` | segment | The inclusive segment contains fewer than two samples. |
+| `no_segment` | peek | A peek-level record has no accepted segment. |
+| `truncated_at_window_edge` | segment | A segment boundary remained above threshold at a window edge. |
+| `below_floor` | peek | The trace did not reach the registered absolute speed floor. |
+| `non_uniform_dt` | peek, segment | Tick spacing is unsuitable for uniform-rate downstream calculations; raised on the peek's presentation window and propagated onto every segment computed from it. |
+| `missing_target` | peek, segment | Required target geometry is unavailable; raised on the peek and propagated onto every segment computed from it. |
+| `empty_signal` | peek | The input trace contains no samples. |
+| `zero_motion` | peek | The cleaned trace contains no positive angular speed. |
+| `no_peak` | peek | No local maximum passed the registered peak gate. |
+| `sg_fallback_short_signal` | peek, segment | The trace was shorter than the SG window and used raw values; a trace-level outcome carried onto every segment produced from that trace. |
+| `non_finite_replaced` | peek, segment | A wholly non-finite trace was replaced by zeros; a trace-level outcome carried onto every segment produced from that trace. |
+| `non_finite_interpolated` | peek, segment | Interior non-finite samples were interpolated; a trace-level outcome carried onto every segment produced from that trace. |
+| `merged_adjacent_peaks` | segment | Overlapping peak intervals were merged into one segment. |
+| `compute_failed:<reason>` | segment | A metric function failed or returned a non-finite numeric result. |
+| `construct_absent:<construct>` | session | The drill family's declared core construct (e.g. `counter-strafe`) did not appear in this export; the session must not be used for that drill's validity claims. See [KI-006-C](../known_issue/KI-006-C/README.md). |
+| `construct_unknown` | session | The export's drill family is not registered in `CONSTRUCT_REGISTRY`; construct presence was **not checked** (this is not the same as "passed"). See [KI-006-C](../known_issue/KI-006-C/README.md). |
 
 `per_segment_apply` returns one row per input segment with tuple-valued `flags` and nullable integer
 `peek_index` columns. A failed row remains present with metric values set to `NaN`; other rows are
