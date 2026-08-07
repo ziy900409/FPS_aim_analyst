@@ -323,7 +323,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 |---|---|---|---|---|---|---|---|
 | **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 ✅** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | ✅ **task 全數完成;M14 六項全數恢復/重新宣告**(①⑥維持,② 已於 KI-004 S1 落地後重新宣告(2026-08-06),③④⑤ 已於 [A2-T4](../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 重新宣告(2026-08-07);KI-005 A1+A2 全數落地、KI-006 CLOSED) |
 | **WP-29** | [wp-29-coach-timeline/](wp-29-coach-timeline/README.md) | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件)+ 教練報告 v0 | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ✅ **完成(2026-08-05)**:T0–T2 + T3(使用者 override)+ T-exit 全綠;`timeline-v1`/`sync-v1` 定稿,OQ-S4-6 關閉 |
-| **WP-30** | [wp-30-trajectory-metrics/](wp-30-trajectory-metrics/README.md) | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14 ✅** | 2–3 → **2.5–3.25**(D-30.0) | ⬜ **計畫已建立(2026-08-07);entry blocker 已解除(2026-08-07)** —— [KI-005-A / A2-T4](../../../known_issue/KI-005-A/A2-blocked-plan.md) 已完成 M14 ③④⑤ 重新宣告,可展開 |
+| **WP-30** | [wp-30-trajectory-metrics/](wp-30-trajectory-metrics/README.md) | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14 ✅** | 2–3 → **2.5–3.25**(D-30.0) | 🟡 **T0 完成(2026-08-07)** —— M14 六項自行覆核通過、fixture roster 凍結、`suspect` 使用界線拍板(D-30.3)、`phase-v1`/`curve-v1` pre-registration 骨架寫定;詳見 [wp-30 progress.md](wp-30-trajectory-metrics/progress.md)。**T1(t_detect parity)待開工** |
 | **WP-31** | `wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14 ✅** | 2–3 | ⬜(entry blocker 已解除,可展開) |
 | **WP-32** | `wp-32-dashboard-integration/` | 晉升整合:golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | — | **M15** | WP-29 + WP-30(WP-31 選項) | 2–3 | ⬜ |
 
@@ -378,13 +378,16 @@ WP-28(地基,M14)──┤                                                      
 | **T3(選配,gated)key 事件** ✅ | 原 gate = 僅當 T2 判定不足;09:39 判 `sufficient` → 原判 skipped,**使用者 override 後仍實作**為 additive observability:`DataRecorder` 增 opt-in `key` 事件(down/up + input timeStamp);additive v2 optional;schema.md 對帳 | ✅ 既有決定性 baseline 綠(**零重錄**,預設 OFF 故 byte-for-byte 不變);新事件 vitest 綠;schema.md 已更新;override 判定與偏離記 D-29.8~D-29.11 | Med |
 | **T-exit** ✅ | 教練報告 v0(時間軸 + sync,含條件分層) | ✅ 一鍵 `coach_report.py` 綠(單檔自足靜態 HTML);六個指標各帶 n + flags 計數 + 版本 + 效度層級;四份範例報告存 `notebooks/t-exit/outputs/` 且 deterministic | — |
 
-### WP-30 trajectory-metrics(P1;entry = M14;2–3d)
+### WP-30 trajectory-metrics(P1;entry = M14;2–3d → **2.5–3.25d,D-30.0**)
+
+> **與規劃稿的偏離(D-30.0,2026-08-07 T0 落地回寫)**:插入獨立的 **T1 = t_detect Python 推導 + 對表閘**(原因:FR-D11 的 REC 邊界一致性檢查需要 Python 側 t_detect,而 `t_detect` 是既有構念,C-D4 要求對表閘,對表閘本身是獨立垂直切片,不得折進 phase task)。原規劃的 T1(phase)/T2(101pt)順延為 **T2/T3**。理由與 alternatives considered 詳見 [wp-30 progress.md D-30.0](wp-30-trajectory-metrics/progress.md)。
 
 | Task | Scope | Definition of Done | Risk |
 |---|---|---|---|
-| **T0 entry-gate** | 驗 M14 六項;t_detect 推導參數(θ_v/k)對表 [analysis-t-detect.md](../../../operational/analysis-t-detect.md) | M14 證據確認記 progress;t_detect 參數引用記錄 | Low |
-| **T1 REC/MR/V phase** | Butterworth 零相位邊界偵測(參數校 128Hz);每 peek rec/mr/v 時長 + peak ω + flags;REC-end vs t_detect 一致性檢查 | 合成 fixture 相位邊界誤差 ≤ 2 tick;真實資料 phase 分佈報告;REC-end 與 t_detect 差異分佈報告(系統性分歧 → 記 OQ);cutoff ≥ Nyquist 等退化走 fallback + flag(不 crash) | Med |
-| **T2 L/R 101 點曲線** | `[t_visible, t_firstShot]`(OQ-S4-5)重採樣 101 點;ω(t)/ε(t) 逐 side 平均 + 分佈帶 + 疊圖 | 插值單元測試(<2 樣本/全零/缺值/端點重合)綠;≥1 真實 drill L/R 曲線圖產出且圖上顯示 n(L)/n(R) | Low |
+| **T0 entry-gate** ✅ | 驗 M14 六項;fixture roster 凍結 + `strict=True` 機械閘;`suspect` 使用界線重立(D-29.2 不適用);`phase-v1`/`curve-v1` pre-registration 骨架 | ✅ 完成(2026-08-07):M14 六項逐項覆核記 progress;fixture roster 六份逐列凍結;strict 閘負向測試獨立驗證;D-30.1b(多段 peek MR 取法)以三份真實匯出 segment 數分佈拍板;pre-registration 骨架寫定 | Low |
+| **T1 t_detect parity**(新增,D-30.0) | Python 推導 `t_detect`/`eccentricity_at_spawn`(對表 [analysis-t-detect.md](../../../operational/analysis-t-detect.md) 已解析預設值);vitest 對表閘 ≤1e-9(含反 vacuous) | `detect-parity.test.ts` 對三 presentation 量對表通過;`detected` 樣本數 ≥10(pre-registered,見 wp-30 T0 pre-registration)否則 `blocked-by-data` | Med |
+| **T2 REC/MR/V phase**(原 T1) | `MR = seg-v2 primary_flick`(D-30.1/D-30.1b);Butterworth 僅報告用平滑;每 peek rec/mr/v 時長 + peak ω + flags;REC-end vs t_detect 一致性檢查 | 合成 fixture 相位邊界誤差 ≤ 2 tick;真實資料三段非退化佔比 ≥90%(pre-registered);REC-end 與 t_detect 差異分佈報告(系統性分歧 → 記 OQ);cutoff ≥ Nyquist 等退化走 fallback + flag(不 crash) | Med |
+| **T3 L/R 101 點曲線**(原 T2,不依賴 T1/T2,可並行) | `[t_visible, t_firstShot]`(OQ-S4-5)重採樣 101 點,線性插值;ω(t)/ε(t) 逐 side 平均 + IQR 分佈帶(D-30.4)+ 疊圖 | 插值單元測試(<2 樣本/全零/缺值/端點重合)綠;≥1 真實 drill L/R 曲線圖產出且圖上顯示 n(L)/n(R) | Low |
 | **T-exit** | phase + 曲線併入報告 v1 | 報告 v1 一鍵綠;新增段落含解讀指引(哪段長 → 練什麼);`uv run pytest` 綠 | — |
 
 ### WP-31 advanced-diagnostics(P2;entry = M14;2–3d)
@@ -438,7 +441,10 @@ WP-28(地基,M14)──┤                                                      
 | ~~**OQ-S4-6**~~ | ~~教練報告載體~~ | ✅ **關閉(2026-08-05,WP-29 T-exit)**:`research/src/report/coach_report.py` 一鍵產出單檔自足靜態 HTML(inline CSS + inline SVG,零外部資源、可直接寄送),四份 committed 範例 deterministic。升級為互動式的觸發條件(教練需互動篩選)未達,維持技術債登錄 §7⑤ | 使用者 | 2026-08-05 | unblocked |
 | ~~**OQ-S4-12**~~ | ~~缺「含真實 A/D strafe」的 counter-strafe 匯出~~ | ✅ **關閉(2026-08-05)**:09:39 匯出已補錄並進 `research/fixtures/exports/`(21.27s ≤30s、匿名 `P001`、PII-like 掃描無命中、counter 24、三個對表量各 n=20) | 使用者 | 2026-08-05 | unblocked；T2 可依 `sync-v1` 作實質判定 |
 | **OQ-S4-10** | `t_release` 在無 counter 事件時的 fallback 是否足以支撐跨 peek 比較 | 🟡 **維持 open(T-exit 已複核,證據不足以關閉)**:兩份真實 fixture 的 `release_inferred_no_counter` 樣本數為 **0**,無法驗證跨 peek 可比性;fallback + flag 保留,**聚合預設排除不變** | 研究者 | 有 inferred 樣本的真實錄製後 | Sync 族分母與跨 peek 可比性仍待驗證 |
-| **OQ-S4-11** | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan | 🟡 **維持 open(T-exit 已複核)**:`--group-by side/ads/weapon_mode` 三種皆已實作並由測試釘死;真實資料實測 ads → 只有 `off`、weapon_mode → 只有 `hitscan`,projectile cell 僅合成 fixture 有樣本。需 ADS-on / projectile 真實錄製才能關閉 | 研究者 | WP-30 或補錄後 | 條件分層缺真實對照，但不阻塞實作 |
+| **OQ-S4-11** | 兩份真實 fixture 皆無 `ads` 事件、皆為 hitscan | 🟡 **維持 open(T-exit 已複核)**:`--group-by side/ads/weapon_mode` 三種皆已實作並由測試釘死;真實資料實測 ads → 只有 `off`、weapon_mode → 只有 `hitscan`,projectile cell 僅合成 fixture 有樣本。需 ADS-on / projectile 真實錄製才能關閉 | 研究者 | WP-30 或補錄後 | 條件分層缺真實對照,但不阻塞實作 |
+| **OQ-S4-14** | phase 邊界複用 `seg-v2` primary_flick,或獨立 Butterworth 偵測器(FR-D11 字面) | ✅ **關閉(2026-08-07,WP-30 T0)**:複用 `seg-v2`(D-30.1);多段 peek 的 MR 取法採候選①(D-30.1b,以三份真實匯出 60 peeks 的 segment 數分佈拍板,詳見 [wp-30 progress.md](wp-30-trajectory-metrics/progress.md)) | 使用者 / 研究者 | WP-30 T0 ✅ | unblocked |
+| **OQ-S4-15** | `t_detect` 在 counter-strafe drill 上是否有足夠 `detected` 樣本支撐 REC 一致性檢查(FR-D11) | 🟡 **WP-30 T1 以資料判定**;不足即 `blocked-by-data`,最小樣本數已 pre-register 為 ≥10(比照 `sync-v1` `min_samples`) | 研究者 | WP-30 T1 | FR-D11 的一致性檢查能否交付 |
+| **OQ-S4-16** | 09:18/09:24 兩份新真實 fixture 的 `meta.suspect = true` 是否為 [KI-007](../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) 的 fullscreen false positive | ✅ **關閉(2026-08-07,WP-30 T0)**:KI-007 §5 已載研究者第一手確認為誤判(drill 結束後才退出全螢幕,非中途);D-30.3 已拍板新使用界線與失效條件(若出現與研究者陳述矛盾的書面/系統紀錄則重新評估) | 使用者 / 研究者 | WP-30 T0 ✅ | unblocked |
 
 > parity 方向(既有構念 TS 權威、新構念 Python 權威)**不列為 OQ**:C-D4 已定為硬約束,理由是「同一構念兩個定義」本身即效度缺陷,無取捨空間。
 

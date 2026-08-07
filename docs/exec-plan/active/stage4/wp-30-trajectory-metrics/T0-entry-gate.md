@@ -7,7 +7,7 @@
 | **相依** | **[KI-005-A / A2-T4](../../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-345-重新宣告) 必須先落地**(M14 ③④⑤ 重新宣告);上游 = WP-28 全部 + WP-29 T1 |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 僅本 WP 文件(README/checklist/progress)+ [../README.md](../README.md) §3/§6/§8 對帳;**零程式碼** |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-07) |
 
 ## Objective
 
@@ -52,15 +52,15 @@
 
 ## Steps
 
-- [ ] 驗 A2-T4 已落地且 M14 ③④⑤ 已重新宣告;逐項抄錄宣告文字與效度限制進 progress。
-- [ ] 引用 WP-28 T-exit / WP-29 T1 / `seg-v2` 凍結證據(不重跑)。
-- [ ] 逐份記錄六個 fixture 的 ω source / eye origin / key 事件 / peek 數 / L-R 分佈,凍結 roster 表。
-- [ ] Decision Log 記 strict 閘機械化(`omega_deg_s(strict=True)` + `resolve_eye_origin(strict=True)`)。
-- [ ] 查清三份新 fixture 的 `suspect` 觸發源;Decision Log 記使用界線 + 失效條件;必要時開 OQ-S4-16。
-- [ ] 抄錄 D-30.1(phase 邊界複用 `seg-v2`,已拍板)進 Decision Log;**先寫下 D-30.1b 的判準**,再跑 `run_pipeline.py` 取三份真實匯出的逐 peek segment 數分佈,依判準拍板多段 peek 的 MR 取法。
-- [ ] 寫下 `phase-v1` / `curve-v1` 的 pre-registration 骨架(規則 + 通過條件 + 最小樣本數 + flags 草案),明文標「事後不得依結果調整,只能升版重跑」。
-- [ ] 於 [../README.md §6](../README.md) 補記 WP-30 的 task 拆解偏離(插入 T1)與估時上修;§8 補列 OQ-S4-14/15/16。
-- [ ] 更新 [../README.md §3](../README.md) WP-30 狀態 ⬜ → 🟡。
+- [x] 驗 A2-T4 已落地且 M14 ③④⑤ 已重新宣告;逐項抄錄宣告文字與效度限制進 progress(§1)。
+- [x] 引用 WP-28 T-exit / WP-29 T1 / `seg-v2` 凍結證據(不重跑)。
+- [x] 逐份記錄六個 fixture 的 ω source / eye origin / key 事件 / peek 數 / L-R 分佈,凍結 roster 表(progress §0.2 + §2)。
+- [x] Decision Log 記 strict 閘機械化(`omega_deg_s(strict=True)` + `resolve_eye_origin(strict=True)`);獨立跑負向測試證實 08:03/09:39 兩處皆拋錯(D-30.2)。
+- [x] 查清三份新 fixture 的 `suspect` 觸發源;Decision Log 記使用界線 + 失效條件(D-30.3);OQ-S4-16 已查明並關閉(引 KI-007 §5)。
+- [x] 抄錄 D-30.1(phase 邊界複用 `seg-v2`,已拍板)進 Decision Log;**先寫下 D-30.1b 的判準**(多段佔比 ≤15% 取候選①),再跑 `run_pipeline.py` 取三份真實匯出的逐 peek segment 數分佈(58/60 單段、1/60 零段、1/60 雙段),依判準拍板取候選①。
+- [x] 寫下 `phase-v1` / `curve-v1` 的 pre-registration 骨架(規則 + 通過條件 + 最小樣本數 + flags 草案,progress §3),明文標「事後不得依結果調整,只能升版重跑」。
+- [x] 於 [../README.md §6](../README.md) 補記 WP-30 的 task 拆解偏離(插入 T1)與估時上修;§8 補列 OQ-S4-14/15/16。
+- [x] 更新 [../README.md §3](../README.md) WP-30 狀態 ⬜ → 🟡。
 
 ## Definition of Done
 
