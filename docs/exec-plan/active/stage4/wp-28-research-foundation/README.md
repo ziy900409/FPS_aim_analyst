@@ -64,4 +64,4 @@ CLAUDE.md §4                                     ← MODIFY C-D1~C-D4 四條硬
 | **T2 ✅** | [T2-angular-kinematics.md](T2-angular-kinematics.md) | ω(t)/ε(t)/on_target + **ε 層雙向 parity 閘** | T1 | **High** |
 | **T3 ✅** | [T3-submovement-segments.md](T3-submovement-segments.md) | SG 平滑 + submovement 分段 + `seg-v1` 參數凍結(合成 DoD;真實資料證據留 M14 blocker) | T2 | **High** |
 | **T4 ✅** | [T4-per-segment-flags.md](T4-per-segment-flags.md) | `per_segment_apply` + quality flags | T3 | Low |
-| **T-exit 🟡** | [T-exit-gate.md](T-exit-gate.md) | 一鍵 script(`src/report/run_pipeline.py`)+ `analysis-segments.md` + M14 六項證據;2026-08-05 宣告後**分兩次撤回**:② (08-05, KI-004)、③④⑤ (08-06, KI-005/KI-006);② 已於 2026-08-06 KI-004 S1 落地後**重新宣告**;**①②⑥ 維持,③④⑤ 仍撤回** | T1–T4 | — |
+| **T-exit ✅** | [T-exit-gate.md](T-exit-gate.md) | 一鍵 script(`src/report/run_pipeline.py`)+ `analysis-segments.md` + M14 六項證據;2026-08-05 宣告後**分兩次撤回**:② (08-05, KI-004)、③④⑤ (08-06, KI-005/KI-006);② 已於 2026-08-06 KI-004 S1 落地後**重新宣告**,③④⑤ 已於 2026-08-07 [A2-T4](../../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07)**重新宣告**;**M14 六項全數恢復** | T1–T4 | — |

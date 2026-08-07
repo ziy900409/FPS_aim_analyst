@@ -190,7 +190,15 @@ quality bar on aliasing-free, construct-present data — the two conditions the 
 withdrawal note above named as required. It does not by itself re-establish M14 ④/⑤: that also
 needs the four-check real-data verification in [KI-005-A/progress.md §2e](../known_issue/KI-005-A/progress.md)
 (closed 2026-08-07, FM-1 resolved) and the formal re-declaration in
-[A2-T4](../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-重新宣告).
+[A2-T4](../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07).
+
+> ✅ **M14 ④/⑤ re-declared (2026-08-07, A2-T4).** Both preconditions above are satisfied: the
+> four-check verification closed with FM-1 resolved (KI-005-A/progress.md §2e), and KI-006's
+> §6 B-1~B-5 acceptance checklist was independently re-verified and satisfied in full — KI-006
+> is now **CLOSED**. M14 ③④⑤ are formally re-declared; the WP-30/WP-31 entry blocker (three
+> independent reasons: KI-004, KI-005, KI-006) is fully lifted. The validity scope is **not**
+> widened: this remains evidence from a single anonymized subject across n=3 sessions, not
+> population-level validity. See [KI-005-A/A2-blocked-plan.md § A2-T4](../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07).
 
 ## Quality flag vocabulary
 

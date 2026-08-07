@@ -30,7 +30,7 @@
 
 ---
 
-## Stage A2 —— ⛔ **blocked on 新採樣**
+## Stage A2 —— ✅ 全數完成(2026-08-07)
 
 > 詳見 [A2-blocked-plan.md](A2-blocked-plan.md)。**A1 的 exit gate 不包含這四項**。
 
@@ -39,7 +39,7 @@
 | A2-T1 | 新採樣(240 Hz 機器,含 counter-strafe 構念;與 KI-006 選項 B 合流) | ✅ 已完成(2026-08-07):3 個 session(09:18/09:24/09:37),DoD 逐項核對通過,見 [progress.md](progress.md) | ✅ |
 | A2-T2 | 四項複驗(含**關閉 FM-1 假設**的守恆檢查) | ✅ 已完成(2026-08-07):④ 機器精度通過(FM-1 關閉)、②顯著下降、①視覺覆核後通過、③方向相符但與 KI-004/S1 混淆,見 [progress.md §2e](progress.md) | ✅ |
 | A2-T3 | `seg-v2` 重掃 + 凍結(D-28.7 不得原地調參) | ✅ 已完成(2026-08-07):`SEG_V2_PARAMS` 凍結、`run_pipeline.py` 依 omega source 自動選版、TD-3 拍板不改,見 [progress.md §2f](progress.md) | ✅ |
-| A2-T4 | M14 ③④⑤ 逐項重新宣告 | A2-T3 **+ KI-006 獨立解除** | ⛔ |
+| A2-T4 | M14 ③④⑤ 逐項重新宣告 | ✅ 已完成(2026-08-07):③④⑤ 逐項重新宣告,KI-006 五項驗收條件(B-1~B-5)全數滿足並轉 CLOSED,WP-30/31 entry blocker 三條理由全數解除,見 [A2-blocked-plan.md](A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) | ✅ |
 
 ---
 
@@ -56,3 +56,12 @@
 - [x] [analysis-segments.md](../../operational/analysis-segments.md) · [schema.md](../../operational/schema.md) 同步
 - [x] [exec-plan/README.md](../../exec-plan/README.md) · `stage4/README.md` · [MAP.md](../../MAP.md) 三處對帳 —— **M14 ③④⑤ 仍為撤回,只寫解除條件**
 - [x] 複查全文:**沒有任何一處把「儀器修好」寫成「效度恢復」**
+
+## A2 全部完成時(2026-08-07)
+
+- [x] [KI-005](../KI-005-omega-render-sim-aliasing.md) 狀態翻「✅ A1+A2 全數完成;M14 ③④⑤ 已重新宣告」
+- [x] [KI-006](../KI-006-m14-sample-no-counterstrafe.md) 狀態翻「✅ CLOSED(C+B 全數落地,B-1~B-5 驗收清單全滿足)」
+- [x] [BUGFIX-DECISIONS.md](../BUGFIX-DECISIONS.md) BD-005/BD-006 補 A2-T4 落地段,兩者移至 §3(CLOSED)
+- [x] [exec-plan/README.md](../../exec-plan/README.md) §3 M14 列 · `stage4/README.md` · [MAP.md](../../MAP.md) 三處對帳 —— **M14 ③④⑤ 已重新宣告,WP-30/31 entry blocker 已解除**
+- [x] WP-28 `progress.md` 新增「M14 ③④⑤ 重新宣告」段(比照既有「M14 ② 重新宣告」段慣例,不改寫歷史列)
+- [x] 複查全文(`grep -rn "M14"` / `grep -rn "KI-006"`):無矛盾殘留

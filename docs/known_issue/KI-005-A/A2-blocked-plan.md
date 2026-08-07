@@ -1,7 +1,7 @@
 # Stage A2 — 新採樣、複驗、`seg-v2`(**blocked**)
 
 > 上游:[A README §4](README.md) · [KI-005 §7.4 / §7.5](../KI-005-omega-render-sim-aliasing.md) · [KI-006](../KI-006-m14-sample-no-counterstrafe.md)
-> 狀態:🟡 **A2-T1 已完成(2026-08-07)**。A1(T0–T-exit)已完成,三項前置決策已拍板並全數落地(見下「前置條件」)。研究者已提交 3 個 counter-strafe session,DoD 逐項核對通過(見 [progress.md](progress.md))。**下一步:A2-T2 四項複驗**。
+> 狀態:✅ **A2(T1–T4)全數完成(2026-08-07)**。A1(T0–T-exit)已完成;A2-T1(新採樣)/A2-T2(四項複驗)/A2-T3(`seg-v2` 重掃凍結)/A2-T4(M14 ③④⑤ 重新宣告 + KI-006 解除)依序完成,見 [progress.md](progress.md)。**M14 ③④⑤ 已重新宣告,WP-30/31 entry blocker 已解除**。
 
 ---
 
@@ -79,27 +79,54 @@ KI-005 §7.4 於 2026-08-06 **自我更正**:
 
 ---
 
-## A2-T4 — M14 ③④⑤ 重新宣告
+## A2-T4 — M14 ③④⑤ 重新宣告 ✅ 已完成(2026-08-07)
 
 > **三項的解除條件不同,必須逐項判**。
 
-| 項 | 撤回理由 | 解除條件 | 阻塞 |
-|---|---|---|---|
-| **③** 合成 fixture 邊界誤差 ≤ 2 tick | 結論成立但**證據力失效**(合成訊號不含此假象,無法保證真實資料行為) | 以新匯出跑同一閘 | A2-T2 |
-| **④** 真實資料分段成功率 0.95 | ①aliasing(KI-005)②**樣本無 counter-strafe 構念**(KI-006,**獨立理由**) | 兩者**同時**滿足 | A2-T2 **且** KI-006 解除 |
-| **⑤** `seg-v1` 參數凍結 | SG window 7 < beat 8,凍結值在真實資料上不適用 | `seg-v2` 於新匯出上重掃並凍結 | A2-T3 |
+| 項 | 撤回理由 | 解除條件 | 阻塞 | 判定 |
+|---|---|---|---|---|
+| **③** 合成 fixture 邊界誤差 ≤ 2 tick | 結論成立但**證據力失效**(合成訊號不含此假象,無法保證真實資料行為) | 以新匯出跑同一閘 | A2-T2 | ✅ **重新宣告** |
+| **④** 真實資料分段成功率 0.95 | ①aliasing(KI-005)②**樣本無 counter-strafe 構念**(KI-006,**獨立理由**) | 兩者**同時**滿足 | A2-T2 **且** KI-006 解除 | ✅ **重新宣告** |
+| **⑤** `seg-v1` 參數凍結 | SG window 7 < beat 8,凍結值在真實資料上不適用 | `seg-v2` 於新匯出上重掃並凍結 | A2-T3 | ✅ **重新宣告** |
 
-- [ ] 重新宣告的措辭必須沿用 WP-28 既有的**效度限制**(樣本數、匿名單一受試者等);不得因為儀器修好就擴大效度聲稱(比照 [KI-004 R-7](../KI-004-S1/README.md) 的同一紀律)。
-- [ ] 對帳:[exec-plan/README.md](../../exec-plan/README.md) §3 M14 列 · `stage4/README.md` · [MAP.md](../../MAP.md) · WP-28 `progress.md`。
-- [ ] **WP-30 / WP-31 entry blocker** 只有在三條理由全綠時才解除:
+### 逐項判定理由
+
+**③**:A2-T2 已完成(§DoD)。A2-T3 進一步以**同一組**合成邊界案例重掃(放寬 SG window 至 `{5,7,9,11,13}`),135 組候選全數通過全部合成案例、`seg-v2`(`window=11`)max boundary error 仍 ≤ 2 tick——證據力較 A2-T2 當下更紮實(不只是「解除條件滿足」,凍結後的參數本身也重新過了同一道閘)。**重新宣告**。
+
+**④**:兩個獨立撤回理由(KI-005 aliasing、KI-006 構念缺席)均已解除。
+- KI-005 側:A2-T2 ④(守恆閘)以機器精度通過(殘差 ≤ 5.6e-16/7.1e-16),FM-1 關閉;A2-T3 的 `seg-v2` 已凍結並在三份真實匯出上驗證(success rate 1.00/0.95/1.00,合計 98.3%,與 `seg-v1` 持平)。
+- KI-006 側:見下方「**KI-006 解除判定**」——B-1~B-5 五項驗收條件全數滿足,KI-006 本身自 OPEN 轉 CLOSED。
+- 兩條件同時滿足,**重新宣告**。
+
+**⑤**:A2-T3 已完成:`seg-v2`(`sg_window=11, peak_sigma_k=0.75, peak_floor_deg_s=60.0`)於三份真實 tick-integral 匯出上重掃並凍結,`seg-v1` 原地保留(D-28.7),`run_pipeline.py` 依 omega source 自動選版。**重新宣告**。
+
+### KI-006 解除判定(2026-08-07)
+
+依 [KI-006-C/README.md §6](../KI-006-C/README.md) B-1~B-5 逐項核對(獨立重跑 `run_pipeline` 覆核,見 [progress.md](progress.md)):
+
+| # | 條件 | 判定 | 證據 |
+|---|---|---|---|
+| B-1 | 採集前明確要求受試者執行完整 counter-strafe(而非站樁 flick) | ✅ 滿足 | 使用者(研究者本人)於 2026-08-07 A2-T4 覆核時確認:採集前確實口頭要求過。此確認**發生於事後**(採集當時未留書面記錄,登記為 Surprise A2-S5),但研究者即採集者本人,對此事實有第一手權威 |
+| B-2 | 每份新匯出通過 `check_construct_presence` 且 `present == true` | ✅ 滿足 | 三份新匯出獨立重跑 `run_pipeline` 皆 `constructPresence.present == true`,family=`counterstrafe` |
+| B-3 | 採完立即跑本閘,不合格即當場重採 | ✅ 滿足 | A2-T1 checklist 逐項記錄「採完立即跑」,三份皆一次通過,無需重採 |
+| B-4 | session 數 n > 2(至少 3 個) | ✅ 滿足 | 實得 3 個(09:18/09:24/09:37),OQ-KI6-4 已拍板達標 |
+| B-5 | 同時滿足 KI-005 A2-T1 條件(240 Hz、`meta.mouseIntegration` + `dYaw/dPitch`) | ✅ 滿足 | 三份皆 240 Hz、`omega_deg_s(strict=True)` 皆解出 `source == "tick-integral"` |
+
+**五項全數滿足 ⇒ KI-006 自 OPEN 轉 CLOSED**。B-1 的書面記錄缺口已如實記入 Surprise(A2-S5),不影響判定本身,因確認來源是採集者本人的第一手陳述,非事後臆測或合理化。
+
+> **效度聲稱不擴大**:重新宣告僅恢復「儀器測到的訊號真實反映了 counter-strafe 行為」這一構念效度,措辭沿用既有限制——**單一匿名受試者、n=3 session、非母體層級證據**(比照 [KI-004-S1/README.md R-7](../KI-004-S1/README.md))。引用 A2-T2 四項複驗時必須誠實帶出:①非 literal 0(視覺覆核確認非根因復發,非「回傳 0」的原始 pre-register 字面表述)、③與 KI-004/S1 混淆(方向相符但非 A1 單獨證據,不單獨作為④的支持證據)。
+
+- [x] 重新宣告的措辭已沿用 WP-28 既有的**效度限制**(樣本數、匿名單一受試者等);未因儀器修好就擴大效度聲稱(比照 [KI-004 R-7](../KI-004-S1/README.md) 的同一紀律)。
+- [x] 對帳:[exec-plan/README.md](../../exec-plan/README.md) §3 M14 列 · `stage4/README.md` · [MAP.md](../../MAP.md) · WP-28 `progress.md`。
+- [x] **WP-30 / WP-31 entry blocker** 三條理由全綠,**解除**:
 
   | 理由 | 出處 | 解除於 |
   |---|---|---|
-  | ε(t) 量測原點錯誤 | KI-004 / S1 | ✅ 已解除 |
-  | ω(t) render/sim aliasing | KI-005 | A2-T2 / A2-T3 |
-  | 樣本無 counter-strafe 構念 | KI-006 | KI-006 自身 |
+  | ε(t) 量測原點錯誤 | KI-004 / S1 | ✅ 已解除(2026-08-06) |
+  | ω(t) render/sim aliasing | KI-005 | ✅ 已解除(A2-T2/A2-T3,2026-08-07) |
+  | 樣本無 counter-strafe 構念 | KI-006 | ✅ 已解除(A2-T4,2026-08-07,KI-006 CLOSED) |
 
-**DoD**:三項逐項判定並記錄;WP-30/31 blocker 狀態明確(解除 / 仍擋,附理由)。
+**DoD**:三項逐項判定並記錄(見上表與判定理由);WP-30/31 blocker **三條理由全數解除,entry blocker 正式解除**——WP-30/WP-31 可展開。
 
 ---
 

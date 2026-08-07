@@ -1,7 +1,7 @@
 # KI-004 — sim domain(source unit)與 world domain 混用:corridor gate 100× 過緊 + 離線 ε(t) 原點錯尺度
 
 > 類型:單位域(unit domain)一致性 bugfix 診斷 + 修改計畫(tech spec)。
-> 狀態:**✅ S1 已落地(2026-08-06)**;S2(逐 tick eye pose)/ S3(文件/ADR)待辦(見 §5.1)。M14 ② 已於 S1 落地後重新宣告([BD-004](BUGFIX-DECISIONS.md) S1 落地段)。**WP-30/31 entry blocker 仍維持** —— 該 blocker 有三條相互獨立的理由(KI-004/KI-005/KI-006),本次僅解除 KI-004 這一條;KI-005/KI-006 尚未落地。
+> 狀態:**✅ S1 已落地(2026-08-06)**;S2(逐 tick eye pose)/ S3(文件/ADR)待辦(見 §5.1)。M14 ② 已於 S1 落地後重新宣告([BD-004](BUGFIX-DECISIONS.md) S1 落地段)。**WP-30/31 entry blocker 已解除(2026-08-07)** —— 該 blocker 有三條相互獨立的理由(KI-004/KI-005/KI-006);KI-004 這條理由於 2026-08-06 解除,KI-005/KI-006 兩條理由已於 [A2-T4](KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07)(2026-08-07)全數解除,entry blocker 三條理由全數解除。
 >
 > ⚠️ **2026-08-05 更正**:本文件初版稱「08:03 匯出 `px ≡ 0`,ε 碰巧正確,M14 數值不撤回」。**該敘述已證實為誤** —— D2 實際上有**兩個獨立缺陷**,其中 D2a(遺漏 camera base offset)與 `px` 無關,在 08:03 上同樣造成 ~12.5° 誤差。**M14 ② 撤回**(§3、§4;**已於 S1 落地後重新宣告,見上**)。
 > 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-004。
@@ -146,7 +146,7 @@ const dx = target.x - tick.px; // world unit − source unit ❌
 | 離線 ε(t)/on-target/TOT%/`t_acquire` | **所有**匯出皆錯:D2a 恆成立(08:03 實測 12.5°),`px ≠ 0` 再疊 D2b(09:39 實測 67°) | **High**(研究效度) |
 | `t_detect`/`eccentricity_at_spawn`(GD-8) | 同上 | **High** |
 | **M14 ② ε parity** | **撤回**(2026-08-05 使用者拍板)。parity 機制本身有效且仍綠(Python 與 TS 逐位一致),但兩側**一致地錯** → 「ε 層地基成立」的宣告無效。M14 ①③④⑤⑥ 不受影響(分段走 ω(t),只依賴 `aim`,與 `px`/原點無關) | **✅ S1 落地後重新宣告(2026-08-06)** |
-| **WP-30 / WP-31 entry** | 兩者全部逐段軌跡指標建在 ε(t) 上 → entry blocker 恢復,須待 S1 落地並重新宣告 M14 ② | **維持**(見下)—— KI-004 這條理由已解除,但 KI-005(ω 汙染)/ KI-006(樣本無構念)兩條獨立理由仍未落地,entry blocker 整體未解除 |
+| **WP-30 / WP-31 entry** | 兩者全部逐段軌跡指標建在 ε(t) 上 → entry blocker 恢復,須待 S1 落地並重新宣告 M14 ② | **已解除(2026-08-07)** —— KI-004 這條理由已解除(2026-08-06),KI-005(ω 汙染)/ KI-006(樣本無構念)兩條獨立理由已於 [A2-T4](KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 全數落地,entry blocker 整體已解除 |
 | `run_pipeline` 的 `mean_epsilon_deg` 逐段診斷欄(D-28.13) | 錯值 | Med(僅診斷用,未進教練報告) |
 | stage4 WP-30/31 | 全部逐段軌跡指標建在 ε(t) 上 → 一旦用含橫移的匯出即失真 | **High**(阻塞) |
 | WP-29 T1/T2 | **不受影響**:peek 時間軸與 Sync 族只吃 `events` 與 `ticks[].keys`,不碰 `px/pz` | 無 |
