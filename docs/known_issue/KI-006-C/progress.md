@@ -11,6 +11,7 @@
 |---|---|---|---|
 | 2026-08-06 | 計畫 | ✅ C tech spec + T0–T3 + T-exit 產出 | 本資料夾;上游 [KI-006 §4-C](../KI-006-m14-sample-no-counterstrafe.md) / [BD-006](../BUGFIX-DECISIONS.md) |
 | 2026-08-06 | 計畫拍板 | ✅ 三項設計取捨定案:**D-C1** Python registry(非引擎自我描述)· **D-C2** flag + 非零 exit(非 `load_export` 拋錯)· 選項 **B 委派** [KI-005-A / A2](../KI-005-A/A2-blocked-plan.md) | 使用者裁示;連帶關閉 OQ-C-0,並使本階段 NFR-C-1「引擎零改動」成立 |
+| 2026-08-07 | [T1](T1-construct-registry.md) | ✅ `construct.py`(registry `construct-v1` + 家族解析 + 檢查純函式 + flag 詞彙)落地 | 新增 `research/src/modules/ingest/algorithms/construct.py` + `tests/test_construct.py`(20 案);`__init__.py` 匯出新符號;`test_purity.py` 匯入清單納入 `construct` 模組。四份 committed fixture 判定與 T0 重現值逐格相符(08:03 absent / 09:39 present / synthetic_counterstrafe present 家族=`counterstrafe` / synthetic_timeline unknown)。`uv run pytest` 195→**215 passed**,既有案期望值零改寫。`git status --short` 僅 4 個 ingest/algorithms 檔,無 `src/`、無 `run_pipeline.py` |
 
 ---
 
