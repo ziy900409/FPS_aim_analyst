@@ -1,7 +1,7 @@
 # Stage A2 — 新採樣、複驗、`seg-v2`(**blocked**)
 
 > 上游:[A README §4](README.md) · [KI-005 §7.4 / §7.5](../KI-005-omega-render-sim-aliasing.md) · [KI-006](../KI-006-m14-sample-no-counterstrafe.md)
-> 狀態:⛔ **blocked on 新採樣**(OQ-A-5 / OQ-KI5-6 未決)。A1(T0–T-exit)完成後才可開始,且需研究者實際執行採集。
+> 狀態:⛔ **blocked on 研究者排程**。A1(T0–T-exit)已完成。**OQ-A-5/OQ-KI5-6、OQ-A-2/TD-5、OQ-KI6-4 三項前置決策已於 2026-08-07 拍板並全數落地**(見下「前置條件」,含 `recordKeyEvents` 的 `main.ts:355` 接線)。**所有決策與程式碼前置條件已滿足**,唯一剩下的是研究者實際排程執行採集。
 
 ---
 
@@ -19,13 +19,16 @@ KI-005 §7.4 於 2026-08-06 **自我更正**:
 
 ## 前置條件(全部滿足才可開 A2-T1)
 
-- [ ] A1 的 [T-exit-gate](T-exit-gate.md) 八道硬閘全綠。
-- [ ] **OQ-A-5**(= OQ-KI5-6)採樣時機與規模已定。
-- [ ] **OQ-A-2 / TD-5** 決定:採樣時是否一併開啟 `recordKeyEvents`(KI-006 的構念驗證會想要 sub-tick 鍵釋放時刻)。
-- [ ] **KI-006 的採集條件已滿足**:construct presence gate(選項 C)已落地([KI-006-C/](../KI-006-C/README.md),OQ-KI6-2/3 已關閉),B(重新採樣)的 KI-006 條件見 [KI-006-C/README.md §6](../KI-006-C/README.md) **B-1~B-5**(不在本檔重複列出)。
-- [ ] **OQ-KI6-4**(= [KI-006-C/README.md §6 B-4](../KI-006-C/README.md))決定:是否要求 n ≥ 2 個 session。
+- [x] A1 的 [T-exit-gate](T-exit-gate.md) 八道硬閘全綠。
+- [x] **OQ-A-5**(= OQ-KI5-6)採樣時機與規模已定:✅ 2026-08-07 拍板,與 KI-006 選項 B **合併為同一次採集**。
+- [x] **OQ-A-2 / TD-5** 決定:✅ 2026-08-07 拍板,採樣時**開啟** `recordKeyEvents`。
+- [x] **`recordKeyEvents` 程式碼接線**(TD-5 落地,2026-08-07):[main.ts:355](../../src/main.ts#L355) 的 `createDataRecorder(...)` 已傳入 `recordKeyEvents: true`;`tests/e2e/input-sampler.spec.ts` 新增驗證案(`__aimDebug.recorder.recordKeyEvents === true`)。回歸:`tsc --noEmit` exit 0、`npm run test:ci` Vitest 89 files/739 tests 不變 + Playwright 21/21(新增 1 案)、`uv run pytest` 221 passed 不變。
+- [x] **KI-006 的採集條件已滿足**:construct presence gate(選項 C)已落地([KI-006-C/](../KI-006-C/README.md),OQ-KI6-2/3 已關閉),B(重新採樣)的 KI-006 條件見 [KI-006-C/README.md §6](../KI-006-C/README.md) **B-1~B-5**(不在本檔重複列出)。
+- [x] **OQ-KI6-4**(= [KI-006-C/README.md §6 B-4](../KI-006-C/README.md))決定:✅ 2026-08-07 拍板,**n > 2**(至少 3 個 session),嚴於原建議的 n ≥ 2。
 
 > **兩個 KI 的重新宣告路徑收斂為同一次採集**(KI-005 §6.1 連帶結論)。採之前沒把 KI-006 的條件想清楚,就得採第二次。
+>
+> **決策與接線全數落地於 2026-08-07**,詳見 [BUGFIX-DECISIONS.md](../BUGFIX-DECISIONS.md) BD-005「A2-T1 前置決策」段與 [KI-005-A/progress.md A-D10/A-D11](progress.md)。**A2-T1 唯一剩下的是研究者實際排程執行採集**,不再有任何決策性或程式碼性的阻塞。
 
 ---
 
@@ -36,11 +39,12 @@ KI-005 §7.4 於 2026-08-06 **自我更正**:
 - [ ] 同一台 **240 Hz** 機器(使 §3.1 的凹口偵測器與 T0 的基線可直接對照)。
 - [ ] drill 必須實際含 **counter-strafe 構念**:`vx` 非恆零、`keys` 非全空、`counter` 事件 > 0(KI-006 的撤回理由)。
 - [ ] 匯出必須含 `meta.mouseIntegration` + `ticks[].dYaw/dPitch`(A1 的 FR-A-7 保證);**採完立即檢查,沒有就是 A1 沒真的啟用**。
+- [ ] **`recordKeyEvents` 已開啟**(OQ-A-2/TD-5,2026-08-07 拍板):採集**前**於瀏覽器 console 確認 `__aimDebug.recorder.recordKeyEvents === true`;採完立即檢查匯出 `events` 是否含 `type === 'key'` 的項目,沒有就代表接線沒真的生效(比照 FR-A-7 `mouseIntegration` 的同一檢查紀律)。
 - [ ] 記錄採集條件:受試者、螢幕型號/刷新率、sensitivity/FOV、drill config、session 數。
-- [ ] 依 OQ-KI6-4 的決議決定 session 數。
+- [ ] session 數 **n > 2**(至少 3 個,OQ-KI6-4 已於 2026-08-07 拍板)。
 - [ ] **採完立即**跑 construct presence gate(`run_pipeline` 消費新匯出);`constructPresence.present == false` 即**當場重採**,不得事後才發現構念缺席([KI-006-C/README.md §6 B-3](../KI-006-C/README.md))。
 
-**DoD**:新匯出通過 `load_export` 且 `omega_deg_s(..., strict=True)` **不拋錯**(即 `source == "tick-integral"`);`counter` 事件數 > 0;`run_pipeline` 對新匯出 exit 0 且 `constructPresence.present == true`(KI-006-C §6 B-2/B-3)。
+**DoD**:新匯出通過 `load_export` 且 `omega_deg_s(..., strict=True)` **不拋錯**(即 `source == "tick-integral"`);`counter` 事件數 > 0;`events` 含至少一筆 `type === 'key'`(證明 `recordKeyEvents` 接線生效,OQ-A-2/TD-5);`run_pipeline` 對每一份新匯出 exit 0 且 `constructPresence.present == true`(KI-006-C §6 B-2/B-3);session 數 n > 2。
 
 ---
 

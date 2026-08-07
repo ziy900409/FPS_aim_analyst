@@ -360,7 +360,7 @@ T0 ──► T1 ──► T2 ──► T3 ──► T-exit
 | **B-1** | 採集**前**明確要求受試者執行完整 counter-strafe(橫移 → 反向急停 → 停穩首發),而非站樁 flick | 採集條件記錄於 `progress.md` |
 | **B-2** | 每份新匯出通過 `check_construct_presence` 且 `present == true` | `run_pipeline` exit 0 + summary `constructPresence` |
 | **B-3** | 採完**立即**跑本閘;不合格即當場重採,不得事後才發現 | A2-T1 的 DoD |
-| **B-4** | session 數依 **OQ-KI6-4** 決議(建議 n ≥ 2,以免單一 session 的行為特異性再度成為單點故障) | 待研究者拍板;A2-T1 前必須有結論 |
+| **B-4** | session 數 **n > 2**(至少 3 個),以免單一 session 的行為特異性再度成為單點故障 | ✅ **OQ-KI6-4 已於 2026-08-07 拍板**(嚴於原建議的 n ≥ 2) |
 | **B-5** | 同時滿足 KI-005 A2-T1 的條件(240 Hz 機台、匯出含 `meta.mouseIntegration` + `ticks[].dYaw/dPitch`) | 見 [A2-blocked-plan.md](../KI-005-A/A2-blocked-plan.md) |
 
 ---
@@ -371,7 +371,7 @@ T0 ──► T1 ──► T2 ──► T3 ──► T-exit
 |---|---|---|---|---|---|
 | ~~**OQ-C-0**~~ | ~~構念宣告放引擎還是 Python registry?~~ | ✅ **關閉(2026-08-06)**:**Python registry**(D-C1)。連帶:閘紅為 flag + 非零 exit(D-C2)、選項 B 委派 A2(§6) | 使用者 | — | T1 · T2 |
 | **OQ-C-1** | `tracking_*` / `detection_*` 家族的條件如何定義?其宣告值今日不在 meta(§2.4 ③) | 🟡 兩條路:① 研究者改寫成可用今日欄位表達的條件;② engine 補 additive 宣告欄(`meta.targets.motion` / `endCondition.value`)。本階段一律 `construct_unknown` | 研究者 | 該家族 drill **首次產出 committed 匯出前** | 無(TD-1) |
-| **OQ-C-2** | **OQ-KI6-4**(n ≥ 2 session)的決議 | 🟡 **未決**;建議 n ≥ 2 並趁 A2-T1 一次滿足。本檔 §6 B-4 已預留欄位 | 研究者 | **A2-T1 前** | 無(§6) |
+| ~~**OQ-C-2**~~ | ~~**OQ-KI6-4**(n ≥ 2 session)的決議~~ | ✅ **關閉(2026-08-07)**:**n > 2**(至少 3 個 session)。本檔 §6 B-4 已更新 | 研究者 | — | 無(§6) |
 | **OQ-C-3** | 構念判定是否也要進 `peek-quality.csv` / `coach_report` 的效度層級欄? | 🟡 建議**先不做**(TD-4);紅線目前由 exit code 守住。教練報告開始吃真實資料時再議 | 研究者 | 教練報告消費真實資料前 | 無 |
 | **OQ-C-4** | 構念缺席的 exit code 用 `2`,是否與未來其他「資料可用但不可宣告」的閘共用? | 🟡 建議 `2` 保留給**構念層**拒絕;其他類別另取號並在 `run_pipeline` docstring 列表 | 實作者 | **T2 實作時** | T2 |
 | **OQ-C-5** | 是否要求 `run_pipeline` 在構念缺席時**額外**拒絕輸出 `peek-segments.csv`(避免有人拿去做分段效度宣告)? | 🟡 建議**不拒絕**(D-C2:資料可診斷、用途才受限);若日後發生誤用再收緊 | 研究者 | — | 無 |

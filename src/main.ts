@@ -351,8 +351,15 @@ function currentMouseGain() {
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
 // 讀取與序列化只在 click handler 內發生，不進 sim tick 熱路徑。
 // KI-005 / A（FR-A-7，OQ-A-1「全域開」）：app 佈線層啟用 mouse 積分——opt-in 只保 golden 逐位不變，
-// 不得成為「功能上線但實務未生效」（recordKeyEvents 至今未啟用即是前車之鑑，見 README §2.4 ②）。
-const recorder = createDataRecorder({ simHz: SIM_HZ, mouseIntegration: { gain: currentMouseGain() } });
+// 不得成為「功能上線但實務未生效」。
+// KI-005-A / OQ-A-2 / TD-5（2026-08-07 A2-T1 前置決策再拍板：開）：啟用 additive `key` 事件記錄，
+// 供離線推導原移動鍵的 sub-tick 釋放時刻（KI-006 構念分析需要，補 tick-derived release 的 ±1 tick
+// 量化）。關閉時匯出逐位不變（NFR-A-2 同一紀律），開啟只新增資料，不改既有欄位語意。
+const recorder = createDataRecorder({
+  simHz: SIM_HZ,
+  mouseIntegration: { gain: currentMouseGain() },
+  recordKeyEvents: true,
+});
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(protocolContext?: ProtocolConditionContext): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();

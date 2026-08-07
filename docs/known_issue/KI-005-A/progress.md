@@ -165,6 +165,8 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | **A-D7** | 合成 fixture 的 `dYaw`/`dPitch` 以「上一個已匯出 tick」為基準累加(跨 peek 邊界不重置,drop 掉的 tick 視窗直接遺失、不折算進下一筆) | 唯一能同時滿足 T5 §「設計要點」逐字要求(`d_yaw[i] ≡ yaw[i]−yaw[i−1]`、`d_yaw[0] ≡ yaw[0]−初始 yaw`)且不需引入額外「物理連續性」假設的定義;因 `pitch` 恆 0、`d_yaw` 恆等於 aim yaw 序列差,副作用是 tick-integral 與 legacy 兩路徑在此 fixture 上數學上必然逐位相同(FM-5 證據,而非另外構造的巧合) | [README FM-5](README.md) |
 | **A-D8** | `omega_deg_s` 的 `source` 判定改在 `run_pipeline.run()` 頂層對整份排序後 `export.ticks` 算一次,**不**逐 peek 視窗各自呼叫後彙總 | column 是否存在/有限是全匯出層級的屬性(同一匯出的所有 tick 列共用同一份 schema),逐 peek 彙總只是多做工;若剛好無任何 `visible` 事件(零 peek 視窗)也仍需要能回報 `source`,逐 peek 彙總在該邊界情形會拿不到值 | 本行 |
 | **A-D9** | `synthetic_timeline.json` 與其 3 份 parity fixture **刻意不 regenerate** | 兩者共用 `make_synthetic_export`,理論上也會連帶長出 `dYaw`/`dPitch`/`meta.mouseIntegration`,但**沒有**類似 `synthetic_counterstrafe.json` 的「必須與生成器逐位相符」的測試(`test_committed_synthetic_fixture_matches_generator`)在釘住它,且 T5 spec 的 In-scope 檔案清單只列 `synthetic_counterstrafe.json`。不動 = 讓它自然留作另一個 pre-KI-005 / `aim-diff-legacy` 回歸樣本(與兩份真實 fixture 同一角色),範圍更小、風險更低 | 本行 |
+| **A-D10** | A2-T1 前置決策批次(2026-08-07,使用者拍板):**OQ-A-5/OQ-KI5-6** 新採樣與 KI-006 選項 B **合併為同一次採集**;**OQ-A-2/TD-5** 重新開放後決議**開啟** `recordKeyEvents`;**OQ-KI6-4**(KI-006 側)n > 2 session | 三者互相依賴,一次拍板才能一次採到位(比照 [A2-blocked-plan.md 前置條件](A2-blocked-plan.md)的設計初衷)。`recordKeyEvents` 開啟後才有 sub-tick 鍵釋放時刻,是這輪採樣要支援 KI-006 構念分析的必要欄位 | [README OQ-A-2/A-5](README.md) · [KI-006-C/progress.md §6](../KI-006-C/progress.md) · [BUGFIX-DECISIONS.md](../BUGFIX-DECISIONS.md) BD-005 |
+| **A-D11** | TD-5 落地:`main.ts:355` 的 `createDataRecorder(...)` 加上 `recordKeyEvents: true`,不另建切換或設定項 | A-D10 已拍板為全域決議,比照 OQ-A-1(mouse 積分)/A-D5 的同一紀律——opt-in 只保 golden 逐位不變,不做「哪些 run 有 key 事件」的運行時可選,避免重蹈 `recordKeyEvents` 至今未啟用的前車之鑑 | 本行 + Surprises A2-S1 |
 
 ---
 
@@ -176,6 +178,7 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | **T0-S2** | KI-005 §3.3 的幀數比對只寫「唯一自由參數 = frame log 起始錨點」,未留存原始診斷腳本、未寫明「高速平順 tick」篩選口徑與正規化分母。本次 T0 以推定口徑重現(見 §2a)得到方向一致但量值有落差的結果(`corr` 0.618–0.626 vs 文件 0.805;n=239/258 vs 307)。凹口總數(27/34)本身**精確重現**,不受此影響。 | A2-T2 若要逐位重跑幀數比對(而非僅重跑凹口計數),需先確認是否有原始診斷腳本可重建,否則本推定口徑即為權威 | 記錄為已知落差,不在 T0 範圍內解決(T0 僅需可重現的 RED 證據,凹口計數已達標) |
 | **T0-S3** | T0 執行期間,`git status` 出現與本計畫無關的異動:`docs/known_issue/KI-006-m14-sample-no-counterstrafe.md`(改動)+ 新資料夾 `docs/known_issue/KI-006-C/`(8 個未追蹤檔案)。T0 開始前已確認 `git status` 乾淨(README/T0 step 1 前提成立時拍照),此為**執行期間由外部併發產生**(非本 session 建立),判斷為另一支平行進行的 KI-006 相關工作。**本次 T0 commit 僅 stage `docs/known_issue/KI-005-A/` 下的檔案,不動、不 stage KI-006-C 的任何內容**。 | 不影響 T0 本身的 DoD(§範圍界定清楚);提醒後續 task 開工前重新確認 `git status` | 保留不動,只精準 stage 本次切片檔案 |
 | **T4-S1** | `src/testharness/fpsTestHarness.ts`(供 `full-drill.spec.ts`/`br-tracking.spec.ts`/`spray-drill.spec.ts` 用)自建一條與 `main.ts` live 單例**完全獨立**的 sim 管線(自己的 `createDataRecorder`/`collectMeta`/`buildExportPayload`,不驅動 rAF、不共用 `recorder`)。一開始以 `harness.feedInput([{type:'mouse',...}])` + `forceExportJSON()` 驗證 FR-A-7 的 e2e 案因此得到 `meta.mouseIntegration === undefined`——不是迴歸,是驗證了**錯的管線**。 | 若照原計畫在 `full-drill.spec.ts` 驗 FR-A-7,需一併佈線 harness(擴大 README §1.4 In-scope 之外的檔案) | 改走 `main.ts` 既有 `__aimDebug` dev-only 縫,多暴露 `recorder` 一個唯讀欄位;於 `input-sampler.spec.ts`(已在 In-scope 的 e2e 觀測管道)新增案直讀 `__aimDebug.recorder.mouseIntegration`,精準驗證「app 佈線層」而不動 harness(見 [Decision Log A-D6](#4-decision-log)) |
+| **A2-S1** | 記錄 A-D10(OQ-A-2 決議「開」)的過程中發現:單純把 OQ 標成「已決」不會讓決議生效——`main.ts:355` 當時仍硬編碼未傳 `recordKeyEvents`,若不補這行,A2-T1 採到的匯出還是不會有 `key` 事件,決策與程式碼會**悄悄脫節**(TD-5 差點從「刻意妥協」漂移成「忘記接線」)。 | 決策記錄與程式碼落地必須同一批查核,不能假設「拍板 = 生效」 | 立即補 A-D11(`main.ts` 一行改動 + `input-sampler.spec.ts` 新增驗證案),不留一個「已決但未接線」的空窗期 |
 
 ---
 
@@ -184,8 +187,8 @@ T3 只會在 #7 加閘;FM-8 的口徑基準 = 上表現況,T3 之後預期 #7 �
 | # | 問題 | 狀態 | Owner |
 |---|---|---|---|
 | ~~OQ-A-1~~ | app 啟用範圍 | ✅ 2026-08-06 關閉:**全域開** | 使用者 |
-| ~~OQ-A-2~~ | 是否一併開 `recordKeyEvents` | ✅ 2026-08-06 關閉:**本次否**,登錄 TD-5 | 使用者 → 研究者 |
+| ~~OQ-A-2~~ | 是否一併開 `recordKeyEvents` | ✅ 2026-08-06 關閉(本次否)→ **2026-08-07 A2-T1 前再拍板:開**(A-D10)。落地見 TD-5 | 使用者 → 研究者 |
 | OQ-A-3 | dPitch 夾角情形是否需 quality flag | 🟡 建議先不加 | 研究者 |
 | OQ-A-4 | `beat_period_ticks` 進 `meta.display.gate`(= OQ-KI5-5) | 🟡 未決,不阻塞 A1 | 使用者 |
-| OQ-A-5 | 新採樣時機與規模(= OQ-KI5-6) | 🟡 未決 → [A2-T1](A2-blocked-plan.md) | 研究者 |
+| ~~OQ-A-5~~ | 新採樣時機與規模(= OQ-KI5-6) | ✅ 2026-08-07 關閉:合併 KI-006 選項 B 同一次採集(A-D10) → [A2-T1](A2-blocked-plan.md) | 研究者 |
 | OQ-A-6 | 守恆閘在 ADS 樣本上的容差 | 🟡 A1 只宣告 hip-only exact | 實作者 → 研究者 |

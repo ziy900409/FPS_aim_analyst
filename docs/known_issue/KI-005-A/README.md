@@ -330,7 +330,7 @@ export interface Meta {
 | **TD-2** | ADS 切換幀的歸屬殘差(FM-2) | 根治需 render 側也走事件時刻,屬選項 B 的範圍 | 選項 B | WP-24 ADS drill 進入分析時 |
 | **TD-3** | `omega[0]` 已有值但刻意捨棄(D-A3) | 保 `seg-v1` / D-28.12 的凍結契約 | `seg-v2` 重掃(A2-T3)時一併決定 | Stage A2 |
 | **TD-4** | Python 端 `RAD_PER_COUNT` 為獨立常數 | C-D1 禁止 Python import TS | 以 `meta.mouseIntegration.radPerCount` 對帳(**匯出自我描述**,不靠人工同步);與 KI-004 TD-3 同一模式 | 若 Python 端需要 counts 反推時 |
-| **TD-5** | `recordKeyEvents` 仍未在 app 啟用(OQ-A-2) | 本次刻意不擴大範圍 | **A2-T1 採樣前**由研究者決定 | KI-006 的 counter-strafe 構念驗證需要 sub-tick 鍵釋放時刻時 |
+| ~~**TD-5**~~ | ~~`recordKeyEvents` 仍未在 app 啟用(OQ-A-2)~~ | 本次(A1)刻意不擴大範圍 | ✅ **已落地(2026-08-07)**:`main.ts:355` 的 `createDataRecorder(...)` 已傳入 `recordKeyEvents: true`;`tests/e2e/input-sampler.spec.ts` 新增案直讀 `__aimDebug.recorder.recordKeyEvents === true`(比照 FR-A-7 模式)。回歸:`tsc --noEmit` exit 0、`npm run test:ci` Vitest 89 files/739 tests 不變 + Playwright **21/21**(新增 1 案)、`uv run pytest` 221 passed 不變 | 無(已解除) |
 
 ---
 
@@ -394,10 +394,10 @@ T0 ──► T1 ──► T2 ──► T3 ──► T4 ──► T5 ──► T6
 | # | 問題 | 現況 / 決議 | Owner | Deadline | 影響 Task |
 |---|---|---|---|---|---|
 | ~~**OQ-A-1**~~ | ~~`main.ts` 啟用 mouse 積分是否要做成「實驗 session 才開」?~~ | ✅ **關閉(2026-08-06)**:**全域開**。opt-in 的目的是保 golden 逐位不變,不是保運行時可選;分兩種模式會產生「哪些 run 有 ω」的新不確定性 | 使用者 | — | T4 |
-| ~~**OQ-A-2**~~ | ~~既然要動 `main.ts` 的 recorder 佈線,是否一併開啟 `recordKeyEvents`?~~ | ✅ **關閉(2026-08-06)**:本次**否**(不擴大範圍)。但**必須在 A2-T1 採樣前**由研究者決定——KI-006 的構念驗證會想要 sub-tick 鍵釋放時刻。記為 TD-5 | 使用者 → 研究者 | **A2-T1 前** | A2-T1 |
+| ~~**OQ-A-2**~~ | ~~既然要動 `main.ts` 的 recorder 佈線,是否一併開啟 `recordKeyEvents`?~~ | ✅ **關閉(2026-08-06)**:本次**否**(不擴大範圍)。**A2-T1 採樣前再決策(2026-08-07):開**,已落地(TD-5) | 使用者 → 研究者 | ✅ 已決且已落地 | A2-T1 |
 | **OQ-A-3** | D-A2(dPitch 套夾角)在受試者長時間看天/地時,ω 會出現「手在動但視角不動」的 0 值。是否需要 quality flag? | 🟡 建議**先不加**——`pitch` 是否貼齊 ±`MAX_PITCH` 事後可由 `ticks[].aim.pitch` 判定,不需新欄位;若 pilot 實際出現再補 | 研究者 | A2-T2 | — |
 | **OQ-A-4** | 是否把 `beat_period_ticks` 加進 `meta.display.gate`(= 上游 OQ-KI5-5) | 🟡 **未決**。A 落地後價值降為「稽核舊匯出 + 偵測未來回歸」,不阻塞 A1 | 使用者 | — | 無(可另案) |
-| **OQ-A-5** | 新採樣的時機與規模(= 上游 OQ-KI5-6):是否與 KI-006 選項 B 合併,並順帶滿足 OQ-KI6-4(n ≥ 2 session) | 🟡 **未決**;建議合併為同一次採集 | 研究者 | **A2-T1** | A2-T1 |
+| ~~**OQ-A-5**~~ | ~~新採樣的時機與規模(= 上游 OQ-KI5-6):是否與 KI-006 選項 B 合併,並順帶滿足 OQ-KI6-4(n ≥ 2 session)~~ | ✅ **關閉(2026-08-07)**:**合併為同一次採集**;規模 = n > 2 session(OQ-KI6-4 決議) | 研究者 | — | A2-T1 |
 | **OQ-A-6** | 守恆閘在 ADS 樣本上的容差(FM-2 殘差量級)如何訂? | 🟡 建議 A1 **只宣告 hip-only exact**,ADS 樣本的容差待 A2 有真實 ADS 匯出後再量測 | 實作者 → 研究者 | WP-24 ADS drill 進分析前 | T4 |
 
 ---

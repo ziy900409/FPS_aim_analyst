@@ -85,7 +85,20 @@
 |---|---|
 | ~~OQ-C-0~~ 宣告放引擎還是 Python | ✅ 關閉(2026-08-06):Python registry |
 | OQ-C-1 tracking/detection 家族條件 | 🟡 未決;需 meta 補宣告值或研究者改寫條件 |
-| OQ-C-2 n ≥ 2 session(= OQ-KI6-4) | 🟡 未決;A2-T1 前須有結論 |
+| ~~OQ-C-2~~ n ≥ 2 session(= OQ-KI6-4) | ✅ 關閉(2026-08-07):**n > 2**(至少 3 個),嚴於原建議的 n ≥ 2 |
 | OQ-C-3 判定進 coach_report | 🟡 建議延後 |
 | OQ-C-4 exit code 編號慣例 | 🟡 T2 實作時定案 |
 | OQ-C-5 缺席時是否拒絕輸出 segments CSV | 🟡 建議不拒絕 |
+
+---
+
+## 6. 2026-08-07 追加:A2-T1 採樣前置決策批次
+
+> 使用者於 T-exit 之後拍板三項與新採樣直接相關的決策,同時關閉 KI-005 側的 OQ-A-5(=OQ-KI5-6)與本檔 OQ-C-2(=OQ-KI6-4)、KI-005-A 的 OQ-A-2/TD-5。三者記在 KI-005-A/progress.md 與 [BUGFIX-DECISIONS.md](../BUGFIX-DECISIONS.md) BD-005/BD-006,本節僅記與本檔直接相關的兩項結論供快速查閱。
+
+| 決策 | 內容 |
+|---|---|
+| 採樣時機與規模(OQ-A-5/OQ-KI5-6) | 與 KI-005 A2-T1 **合併為同一次採集**,不分兩次採 |
+| session 數(OQ-C-2/OQ-KI6-4) | **n > 2**(至少 3 個) |
+
+`recordKeyEvents` 是否開啟(OQ-A-2/TD-5)屬 KI-005-A 範圍,決議為**開**,已於同日落地:`main.ts:355` 接上旗標 + `input-sampler.spec.ts` 新增驗證案(詳見 [KI-005-A/progress.md A-D10/A-D11](../KI-005-A/progress.md))。

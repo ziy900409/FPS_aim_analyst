@@ -26,7 +26,10 @@ type AimDebug = {
     inputMeta: { lateEventCount: number; bufferOverflow: number };
   };
   pointerLock: { locked: boolean };
-  recorder: { mouseIntegration?: { gain: { hipStep: number; adsStep: number } } };
+  recorder: {
+    mouseIntegration?: { gain: { hipStep: number; adsStep: number } };
+    recordKeyEvents: boolean;
+  };
 };
 
 /** 等待 async bootstrap 完成、dev 觀測縫掛上。 */
@@ -145,5 +148,19 @@ test.describe('WP-3 InputSampler — 真實瀏覽器端到端（Edge）', () => 
     expect(Number.isFinite(mouseIntegration?.gain.hipStep)).toBe(true);
     expect(Number.isFinite(mouseIntegration?.gain.adsStep)).toBe(true);
     expect((mouseIntegration?.gain.hipStep ?? 0) > 0).toBe(true);
+  });
+
+  test('KI-005-A / OQ-A-2（TD-5，2026-08-07 拍板）：app 佈線層真的對正式單例啟用 recordKeyEvents（非僅 API 層 opt-in）', async ({
+    page,
+  }) => {
+    await gotoAppReady(page);
+
+    // 比照上一案同一紀律：recordKeyEvents（WP-29）至今未啟用曾是前車之鑑（見 main.ts 註解），
+    // 本斷言直接讀正式單例的 recorder.recordKeyEvents，證明 A2-T1 前置決策不是只有 API 層 opt-in 存在。
+    const recordKeyEvents = await page.evaluate(
+      () => (window as unknown as { __aimDebug: AimDebug }).__aimDebug.recorder.recordKeyEvents,
+    );
+
+    expect(recordKeyEvents).toBe(true);
   });
 });
