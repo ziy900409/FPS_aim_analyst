@@ -1,8 +1,8 @@
 # KI-005 — ω(t) 受 render/sim 速率 beat 汙染(zero-order-hold aliasing)
 
 > 類型:量測管線缺陷(research 效度)。
-> 狀態:🟡 **已定解法待落地**(根因 2026-08-06 經測試 A 證實;修法方向同日由使用者拍板 —— **選項 A、感度由 meta 重建、不做過渡期選項 C**,見 §6.1)。**尚未動任何程式碼。**
-> 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-005。
+> 狀態:✅ **選項 A 已落地(A1,2026-08-06)**;**A2(新採樣 + 複驗 + `seg-v2` 重掃 + M14 重新宣告)待排程,⛔ blocked on 新採樣**(見 [A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md))。**A1 交付的是量測儀器的正確性,不是效度恢復**——M14 ③④⑤ 仍維持撤回,見 §7 與「A1 落地後的殘餘限制」。
+> 決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-005。落地計畫:[KI-005-A/README.md](KI-005-A/README.md)。
 >
 > ⚠️ **本 KI 推翻 [KI-004](KI-004-sim-world-unit-domain-mismatch.md) / BD-004 的一條豁免**。KI-004 三處
 > 主張「M14 ①③④⑤⑥ 不受影響 —— 分段走 ω(t),只依賴 `ticks[].aim`,與量測原點無關」。該推論就
@@ -145,16 +145,22 @@ M14 ③④⑤ 的重新宣告因此必須等新採樣,無法用既有樣本搶�
 的選項 B「重新採樣」自然合流 —— **兩個 KI 的重新宣告路徑收斂為同一次採集**)。
 
 > **選項 A 的可執行計畫**:[KI-005-A/](KI-005-A/README.md)(tech spec + T0–T6 + T-exit;task 索引
-> [task-checklist.md](KI-005-A/task-checklist.md))。切為兩個 stage —— **A1** 為引擎/分析側修法,
-> 全部可由測試客觀判定;**A2**(新採樣 → 複驗 → `seg-v2` → M14 重新宣告)⛔ blocked on 新採樣,
-> 見 [A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md)。**尚未動任何程式碼。**
+> [task-checklist.md](KI-005-A/task-checklist.md))。切為兩個 stage —— **A1 ✅ 已落地(2026-08-06)** 為引擎/分析側修法,
+> 全部由測試客觀判定;**A2**(新採樣 → 複驗 → `seg-v2` → M14 重新宣告)⛔ blocked on 新採樣,
+> 見 [A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md)。
 >
-> 該計畫在查碼階段另發現兩個必須同刀處理的缺口(見其 §2.4):① [`InputSampler.onPointerMove`](../../src/input/InputSampler.ts#L132)
-> **沒有** pointer-lock 閘(fire/ads 都有)—— A 落地後會把未鎖定期間的滑鼠移動積分成 camera 從未
-> 套用的角位移;② [main.ts:342](../../src/main.ts#L342) **從未啟用** `recordKeyEvents` —— 若 A 照抄
-> 「opt-in 預設關閉」而不動 `main.ts`,新採樣仍不會帶 `dYaw`,修法對研究零效果。
+> 計畫在查碼階段另發現兩個必須同刀處理的缺口(見其 §2.4),**兩者皆已隨 A1 處理**:
+> ① [`InputSampler.onPointerMove`](../../src/input/InputSampler.ts#L132) 原**沒有** pointer-lock 閘
+> (fire/ads 都有)—— 若不補,A 落地後會把未鎖定期間的滑鼠移動積分成 camera 從未套用的角位移;
+> **已於 [T3](KI-005-A/T3-pointer-lock-gate.md) 補齊**(措辭與 fire/ads 閘同源),`bufferOverflow` 口徑因此**只減不增**(記入 [schema.md](../operational/schema.md))。
+> ② [main.ts:342](../../src/main.ts#L342) 原**從未啟用** `recordKeyEvents` 的前車之鑑——若 A 照抄
+> 「opt-in 預設關閉」而不動 `main.ts`,新採樣仍不會帶 `dYaw`,修法對研究零效果;
+> **已於 [T4](KI-005-A/T4-tick-window-integration.md) 在 app 佈線層全域啟用**(OQ-A-1 拍板),`recordKeyEvents` 本身仍維持關閉(TD-5,登錄於 [KI-005-A/progress.md](KI-005-A/progress.md))。
 
 ### 6.2 落地前必須補的缺口 — `meta` 缺 hip FOV
+
+> ✅ **已補(2026-08-06,[KI-005-A/T2](KI-005-A/T2-export-meta-additive.md))**:`meta.fovDeg` 已上線,additive v2 欄,來源
+> `settingsPanel.fov`(未讀 `camera.fov`)。同批也上線 `meta.mouseIntegration`(§2.3 型別見 T2)。
 
 拍板「由 meta 重建」後,實際核對匯出 schema 發現:
 
@@ -217,21 +223,26 @@ golden,不可動;而 240/144/165 Hz 是主流硬體,不可能要求受試者更�
 
 ## 7. 驗證計畫
 
-1. **測試 A 已完成**(§3.3)—— 根因確立,無需新資料。
-2. **決定性單元測試(RED→GREEN)**:餵等速合成滑鼠輸入,分別以 4.1667 ms 與 7.8125 ms 的 rAF
-   節奏 pump。修法前 240 Hz 組須出現 ±35% 週期性跳動、整數組不出現(**RED**);選項 A 落地後
-   兩組皆為常數(**GREEN**)。此測試留為回歸閘。
-3. **既有 golden / 決定性回歸**:opt-in 關閉時 `npm run test:ci` 逐位不變。
-4. **真實資料複驗 —— 必須用修法後的新匯出**。
+1. ✅ **測試 A 已完成**(§3.3)—— 根因確立,無需新資料。
+2. ✅ **A1 已交付**——決定性單元測試(RED→GREEN):[KI-005-A/T4](KI-005-A/T4-tick-window-integration.md) 餵等速合成滑鼠輸入,以 240/165/144/60 Hz 四種 pump 節奏。修法前(舊法 aim-diff)240 Hz 組實測 lowRatio≈0.1154(預期 0.125)、lowMean≈0.553(預期 0.533)、highMean≈1.058(預期 1.067)——精確重現本文 §3.3 簽名;165/144/60 Hz 舊法 CV 皆顯著非零(≈0.351/0.280/1.040),證明非 240 Hz 特例。**新法**(`dYaw`/`dPitch`)四種節奏下 CV ≈1.1e-15,達 GREEN。此測試留為回歸閘(**刷新率不變性閘**,NFR-A-4)。
+3. ✅ **A1 已交付**——既有 golden / 決定性回歸:[KI-005-A/T4](KI-005-A/T4-tick-window-integration.md) 的 opt-in 關閉逐位不變測試;`npm run test:ci`(vitest 89 files/739 tests)全綠,`src/sim/`/`SharedState`/`simStep` 零 diff。另加**守恆閘**(NFR-A-5):`|Σ dYaw − Δaim.yaw| ≤ 1e-12`(hip-only)。
+4. ⛔ **A2(blocked on 新採樣)**——真實資料複驗 —— 必須用修法後的新匯出。
    > ⚠️ 本項於 2026-08-06 更正。初稿寫「以 09:39 匯出重跑 `run_pipeline.py`」是**錯的**:選項 A 改變的是
    > **記錄什麼**,既有匯出的 `ticks[].aim` 已經帶著假象寫死在檔案裡,重跑分析不可能讓它變乾淨。
    > 加上 OQ-KI5-3 拍板不做選項 C(不回溯清洗),**既有兩份匯出在本 KI 修好後仍不可用於 ω(t)**。
    複驗須:採一份新匯出(同一台 240 Hz 機器),確認 ① 凹口消失(§3.1 的偵測器回傳 0)、
    ② `merged_adjacent_peaks` 比例顯著下降、③ 未 flag 樣本數上升、④ 新舊欄位的角位移總量一致
-   (守恆檢查,證明修的是歸屬而非量值)。
-5. **參數重掃**:選項 A 落地後 `seg-v1` 必須以**修法後的新匯出**重新掃參並升版(`seg-v2`),
+   (守恆檢查,證明修的是歸屬而非量值)。**A1 只在合成資料上證明了④(守恆閘 G-2);真實資料上是否成立 —— 即 coalesced sum 是否等於 dispatched movement(FM-1)—— 是 A1 落地後仍未證偽的唯一假設**,見「A1 落地後的殘餘限制」。
+5. ⛔ **A2(blocked on 新採樣)**——參數重掃:選項 A 落地後 `seg-v1` 必須以**修法後的新匯出**重新掃參並升版(`seg-v2`),
    依 D-28.7 不得原地調參。
-6. **`meta.fovDeg` 補欄**(§6.2):additive,缺席時既有匯出仍可載入;新增後 ADS drill 的感度鏈可稽核。
+6. ✅ **A1 已交付**——`meta.fovDeg` 補欄(§6.2):additive,缺席時既有匯出仍可載入;新增後 ADS drill 的感度鏈可稽核。同批交付 `meta.mouseIntegration`(自我描述積分模型,FR-A-6)與 `ticks[].dYaw/dPitch`。
+
+> **A1 落地後的殘餘限制**(誠實列出,防止「儀器修好」被誤讀成「效度恢復」):
+>
+> - **TD-1 — 仍是 128 Hz 解析度**。選項 A 修的是**歸屬錯誤**,不是取樣率。128 Hz 下 200 ms flick 僅 25 點,細部修正動作(3–4 點寬)仍無法分辨;需選項 B(~1000 Hz raw sample stream,WP-31 開工前再議)。
+> - **TD-2 — ADS 切換幀的歸屬殘差**。camera 的 gain 階躍量化到 render 幀,積分器量化到事件時刻;守恆閘目前只對 hip-only 樣本宣告 exact,含 ADS 切換的樣本以「切換 tick 排除」處理。根治需 render 側也走事件時刻(選項 B 範圍)。
+> - **FM-1 未證偽 — coalesced sum 是否等於 dispatched movement**。合成注入路徑上守恆閘為 exact(數學保證),但這是否對**真實滑鼠硬體**成立(即 render 端與量測端是否看到同一份輸入流)在 A1 內無法驗證,必須等 A2-T2 用真實新匯出覆核。若不成立,代表選項 B 是唯一能仲裁的資料來源,須提前。
+> - **M14 ③④⑤ 仍撤回**。A1 交付的是「量測儀器修好了」,不是「證據力恢復了」——證據力只能由**修法後的新匯出**建立,且 M14 ④⑤ 另被 [KI-006](KI-006-m14-sample-no-counterstrafe.md)(真實樣本無 counter-strafe 構念)以獨立理由擋著。WP-30/31 entry blocker 未解除。
 
 ## 8. 遺留 Open Questions
 
@@ -241,5 +252,5 @@ golden,不可動;而 240/144/165 Hz 是主流硬體,不可能要求受試者更�
 | ~~**OQ-KI5-2**~~ | ~~選項 A 與 B 的落地順序~~ | ✅ **關閉(2026-08-06)**:**A 先**;B 另案,WP-31 開工前再議 | 使用者 |
 | ~~**OQ-KI5-3**~~ | ~~過渡期是否落選項 C~~ | ✅ **關閉(2026-08-06)**:**不做,直接等 A**。既有兩份匯出不回溯清洗 | 使用者 |
 | ~~**OQ-KI5-4**~~ | ~~`seg-v2` 重掃是否需先取得新樣本~~ | ✅ **關閉(2026-08-06)**:隨 OQ-KI5-3 自動確定 —— **必須用修法後的新匯出**,無 C 清洗路徑可用 | 使用者 |
-| **OQ-KI5-5** | 是否把 `beat_period_ticks` 加入 `meta.display.gate` 作為 session 級警示欄 | 🟡 **未決**。註:A 落地後 ω 不再受 displayHz 影響,此欄的價值降為「稽核既有舊匯出」與「偵測未來回歸」 | 使用者 |
-| **OQ-KI5-6**(新) | 新採樣的時機與規模:是否與 [KI-006](KI-006-m14-sample-no-counterstrafe.md) 選項 B 合併為同一次採集,以及是否趁此滿足 OQ-KI6-4(n ≥ 2 session) | 使用者 |
+| **OQ-KI5-5** | 是否把 `beat_period_ticks` 加入 `meta.display.gate` 作為 session 級警示欄 | 🟡 **未決**。註:A 落地後 ω 不再受 displayHz 影響,此欄的價值降為「稽核既有舊匯出」與「偵測未來回歸」;不阻塞 A1 | 使用者 |
+| **OQ-KI5-6**(新) | 新採樣的時機與規模:是否與 [KI-006](KI-006-m14-sample-no-counterstrafe.md) 選項 B 合併為同一次採集,以及是否趁此滿足 OQ-KI6-4(n ≥ 2 session) | 🟡 **未決** → 待辦計畫見 [KI-005-A/A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md) | 使用者 |

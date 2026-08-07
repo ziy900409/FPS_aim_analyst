@@ -39,6 +39,7 @@
 | 2026-08-05 | T-exit regression | ✅ 雙閘複驗 | `uv run pytest --basetemp .pytest_tmp_t_exit_20260805`:**74 passed in 4.52s**;`npm.cmd run test:ci`:tsc PASS + Vitest **82 files / 641 tests** + Playwright **19 passed** |
 | 2026-08-05 | **T-exit M14** | ✅ **六項 DoD 全綠,M14 正式宣告** | OQ-S4-8 關閉;[T-exit-gate.md](T-exit-gate.md);**WP-30/31 entry blocker 解除** |
 | 2026-08-06 | **M14 ② 重新宣告** | ✅ [KI-004](../../../../known_issue/KI-004-sim-world-unit-domain-mismatch.md) S1 落地後,以閘 ①/② + 重產 parity 為證據重新宣告 ② | 見下方「M14 ② 重新宣告」段;**WP-30/31 entry blocker 因 KI-005/KI-006 仍維持** |
+| 2026-08-06 | KI-005 A1 落地(見 [KI-005-A/](../../../../known_issue/KI-005-A/README.md)) | ✅ 量測儀器修法(選項 A)已落地,**不是 M14 ③④⑤ 的重新宣告** | `ticks[].dYaw/dPitch` 依事件時間戳積分上線 + `omega_deg_s` 雙 source(`tick-integral`/`aim-diff-legacy`);對帳詳見 [KI-005-A/T6](../../../../known_issue/KI-005-A/T6-docs-ledger-reconcile.md)。**M14 ③④⑤ 仍撤回**——解除需 A2(新採樣 → 複驗 → `seg-v2`,⛔ blocked)完成;**WP-30/31 entry blocker 仍維持** |
 
 ---
 
@@ -85,6 +86,8 @@
 **效度限制不擴大**:本次重新宣告只恢復 ε(t) 地基的**正確性**(量測原點修正 + 兩道正確性閘上線),**不增加樣本效度**——沿用既有措辭「效度聲稱限單一匿名 counter-strafe 樣本」。
 
 **WP-30/31 entry blocker 現況**:M14 ②③④⑤ 曾因三條**相互獨立**的理由撤回:KI-004(ε 原點)、KI-005(ω(t) render/sim aliasing)、KI-006(真實樣本無 counter-strafe 構念)。**本次重新宣告只解除 KI-004 這一條**——② 恢復。**KI-005(🟡 已定解法待落地)與 KI-006(🔴 已確認、處置待拍板)仍未落地,③④⑤ 依舊撤回,WP-30/31 entry blocker 整體維持**,尚不得展開。①⑥ 不受任何一條缺陷影響,持續維持。
+
+> **對帳(2026-08-06,KI-005-A/T6)**:KI-005 一列現況更新為「🟡 A1(量測儀器修法)已落地,A2(新採樣)待排程」——上一段寫作時 KI-005 尚在「已定解法待落地」階段,現已完成 A1。這**不改變本段結論**:A1 交付的是儀器正確性,不是效度證據,③④⑤ 的解除仍需 A2 的新採樣 + 複驗 + `seg-v2` 重掃,KI-006 仍待拍板,**WP-30/31 entry blocker 依舊維持**。
 
 ## Decision Log
 

@@ -321,7 +321,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 
 | WP | 子資料夾 | 目標 | 優先序 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|---|
-| **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 🟡** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 **task 全數完成;M14 ①⑥ 維持,② 已於 KI-004 S1 落地後重新宣告(2026-08-06),③④⑤ 因 KI-005/KI-006 撤回(尚未落地)** |
+| **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 🟡** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | 🟡 **task 全數完成;M14 ①⑥ 維持,② 已於 KI-004 S1 落地後重新宣告(2026-08-06),③④⑤ 仍撤回**(KI-005 A1 量測儀器修法已落地 2026-08-06/A2 新採樣待排程,KI-006 處置待拍板) |
 | **WP-29** | [wp-29-coach-timeline/](wp-29-coach-timeline/README.md) | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件)+ 教練報告 v0 | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ✅ **完成(2026-08-05)**:T0–T2 + T3(使用者 override)+ T-exit 全綠;`timeline-v1`/`sync-v1` 定稿,OQ-S4-6 關閉 |
 | **WP-30** | `wp-30-trajectory-metrics/` | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14** | 2–3 | ⬜ |
 | **WP-31** | `wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14** | 2–3 | ⬜ |

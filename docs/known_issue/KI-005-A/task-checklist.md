@@ -15,7 +15,7 @@
 | T3 | [`pushMouse` 補 pointer-lock 閘](T3-pointer-lock-gate.md) | FR-A-8 | Low | ✅ |
 | T4 | [tick 窗積分:`ticks[].dYaw/dPitch` + 三個閘](T4-tick-window-integration.md) | FR-A-1/4/7/9/10 | **High** | ✅ |
 | T5 | [Python `omega_deg_s` 新欄位路徑 + `source` 揭露](T5-python-omega-source.md) | FR-A-11 · FR-A-12 | Med | ✅ |
-| T6 | [文件 / 帳本對帳 + M14 解除條件明文化](T6-docs-ledger-reconcile.md) | FR-A-13 · FR-A-14 | Low | ⬜ |
+| T6 | [文件 / 帳本對帳 + M14 解除條件明文化](T6-docs-ledger-reconcile.md) | FR-A-13 · FR-A-14 | Low | ✅ |
 | T-exit | [A1 Exit gate:交付判定](T-exit-gate.md) | — | Low | ⬜ |
 
 **相依**:嚴格序列 `T0 → T1 → T2 → T3 → T4 → T5 → T6 → T-exit`。T1–T4 都動 `main.ts`,並行只會製造衝突。

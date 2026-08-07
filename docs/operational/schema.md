@@ -243,6 +243,8 @@ carries the render/sim beat-aliasing bug this KI fixes.
 | `aim` | `{ yaw: number; pitch: number }` | radians | Yes | `state.aim` | Camera orientation snapshot; canonical tick-level aim trajectory. |
 | `keys` | string[] | `A`, `D`, `W`, `S` | Yes | key mask snapshot | Empty array means no tracked movement key held. |
 | `ads` | boolean | `true` / `false` | Yes | `state.heldAds` after input consumption | Tick-level ADS state. Use with `events.ads` to reconstruct ADS windows. |
+| `dYaw` | number | radians | No | tick-window mouse integral (KI-005 / A) | Additive. Angular displacement integrated over this tick's window `[tickStart, tickEnd)` from each mouse event's own `timeStamp` — attribution is exact regardless of `displayHz`, unlike a difference of `aim`. Absent ⇔ `meta.mouseIntegration` absent (pre-KI-005 export or opt-out); `omega_deg_s` must then fall back to `aim-diff-legacy`. |
+| `dPitch` | number | radians | No | tick-window mouse integral (KI-005 / A) | Additive. Same tick-window integral as `dYaw`, for pitch. **Already includes** the ±`MAX_PITCH` clamp effect (`src/input/mouseGain.ts`) — it measures the view's angular displacement, not raw hand input, so `Σ dPitch` over hip-only samples equals `Δaim.pitch` exactly. Absent ⇔ `dYaw` absent. |
 
 ### `events[]`
 
@@ -351,6 +353,7 @@ t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys,ads
 | `pitch` | `tick.aim.pitch` | Camera pitch in radians. |
 | `keys` | `tick.keys.join('|')` | Empty when no tracked key is held. |
 | `ads` | `tick.ads` | `true` / `false`. |
+| `dYaw`, `dPitch` | `tick.dYaw`, `tick.dPitch` | **Conditional columns** (KI-005 / A). Appended only when the export's first tick carries `dYaw` — i.e. `meta.mouseIntegration` is present; the header for exports without tick-window mouse integration is byte-identical to before this feature (no empty trailing columns). |
 
 ### `<basename>-events.csv`
 

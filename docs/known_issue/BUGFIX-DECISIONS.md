@@ -19,7 +19,7 @@
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
 | [KI-006](KI-006-m14-sample-no-counterstrafe.md) | M14 ④/⑤ 的真實資料效度閘所用樣本(08:03)**不含 counter-strafe 構念**:`vx ≡ 0`、`keys` 全空、`counter` 事件 0 → 量到的是站樁純 flick。**M14 ④⑤ 撤回**(理由獨立於 KI-005) | BD-006(§2,處置待拍板) | 🔴 已確認,處置待拍板 |
-| [KI-005](KI-005-omega-render-sim-aliasing.md) | ω(t) 受 render(240Hz)/sim(128Hz)**zero-order-hold aliasing** 汙染:每 8 tick 一個假凹口 → `merged_adjacent_peaks` 15/19,有效產率僅 4/19。**推翻 KI-004「①③④⑤⑥ 不受影響」的豁免,M14 ③④⑤ 撤回** | BD-005(§2,**修法已拍板**:選項 A + 感度由 meta 重建 + 不做過渡期 C)· 計畫 [KI-005-A/](KI-005-A/README.md) | 🟡 已定解法待落地 |
+| [KI-005](KI-005-omega-render-sim-aliasing.md) | ω(t) 受 render(240Hz)/sim(128Hz)**zero-order-hold aliasing** 汙染:每 8 tick 一個假凹口 → `merged_adjacent_peaks` 15/19,有效產率僅 4/19。**推翻 KI-004「①③④⑤⑥ 不受影響」的豁免,M14 ③④⑤ 撤回** | BD-005(§2,**A1 已落地**:選項 A + 感度由 meta 重建 + 不做過渡期 C)· 計畫 [KI-005-A/](KI-005-A/README.md) | 🟡 A1 已落地,A2 待新採樣 |
 | [KI-004](KI-004-sim-world-unit-domain-mismatch.md) | sim(source unit)與 world domain 混用:corridor gate 緊 100× → 真實急停 run 全被標 `suspect`;離線 ε(t) 量測原點錯誤(D2a base offset + D2b scale)→ **實測偏差 12.5°/67°,M14 ② 撤回,S1 落地後重新宣告** | BD-004(§2,K-1/K-2/K-3 已拍板;S1 已落地) | 🟡 S1 ✅ 已落地(2026-08-06)/ S2·S3 待辦 |
 | [KI-003](KI-003-top-left-controls-overlap.md) | 左上角 session/protocol 啟動按鈕覆蓋 SettingsPanel 的 Sensitivity/FOV/Resolution | BD-003(§3) | ✅ 已修(2026-08-05) |
 | [KI-002](KI-002-br-field-camera-anchor-protocol-load.md) | br-field camera 未錨定 sim origin(D1)+ protocol 場景載入驗證舊 drill(D2)(PR #34 review) | BD-002(§3) | ✅ D1+D2 已修(2026-07-15) |
@@ -47,7 +47,7 @@
 
 ---
 
-### BD-005 🟡 KI-005 — ω(t) 受 render/sim beat 汙染;**根因已證實 + 修法已拍板,待落地**(2026-08-06)
+### BD-005 🟡 KI-005 — ω(t) 受 render/sim beat 汙染;**A1 已落地,A2 待新採樣**(2026-08-06)
 
 | | |
 |---|---|
@@ -62,7 +62,8 @@
 | **偏離計畫** | 無。本階段為診斷 + 決策入帳,零程式碼改動。診斷所需的測試 A 僅讀取既有匯出,未新增採集。 |
 | **遺留 OQ** | ✅ **OQ-KI5-1/2/3 已關閉**(見「決策」列);✅ **OQ-KI5-4 隨之關閉** —— 無 C 清洗路徑,`seg-v2` 重掃必須用修法後的新匯出。🟡 **OQ-KI5-5** 是否把 `beat_period_ticks` 納入 `meta.display.gate`(A 落地後價值降為稽核舊匯出/偵測回歸)· 🟡 **OQ-KI5-6**(新)新採樣的時機與規模,是否與 BD-006 選項 B 合併並順帶滿足 OQ-KI6-4(n ≥ 2 session)。 |
 | **影響面** | **受影響**:所有匯出的 `ticks[].aim` 逐 tick 差分量(ω(t)、角加速度、jerk),汙染幅度隨螢幕刷新率變動;**M14 ③④⑤ 撤回**(③ 結論成立但證據力失效 —— 合成訊號不含此假象;④ 的 0.95 計入被假象切碎後又合併的段,有效產率實為 **4/19**;⑤ 的 SG window 7 < beat 8,凍結值於真實資料不適用);**WP-30/31 entry blocker 維持**(本 KI 為獨立於 KI-004 的第二條理由);`seg-v1` 落地後須升版 `seg-v2` 重掃(依 D-28.7 不得原地調參)。**不受影響**:引擎命中/彈道/`fire.offsetDeg`/sim 決定性(皆不做逐 tick aim 差分)、遊戲手感與 camera 表現(render path 本身無 bug)、WP-29(只吃 `events` 與 `ticks[].keys`)、M14 ①⑥。 |
-| **狀態** | 🟡 **已定解法待落地**。根因經測試 A 證實;修法 2026-08-06 拍板(A / meta 重建 / 不做 C)。**尚未動任何程式碼。**落地範圍:`applyInput` tick 窗積分(opt-in)+ `meta.fovDeg` additive 欄 + 決定性回歸測試 + 新採樣 + `seg-v2` 重掃。 |
+| **A1 落地(2026-08-06)** | **實作形狀**:`applyInput` 於 tick 窗內依事件 `timeStamp` 積分 mouse delta(`dYaw`/`dPitch`,rad),寫入 `TickRecord`;`meta.fovDeg`/`meta.mouseIntegration` additive 欄;app 佈線層**全域啟用**(OQ-A-1);Python `omega_deg_s` 新增 `tick-integral`/`aim-diff-legacy` 雙 source + `strict` 模式。**實測前後數字**(240 Hz pump,合成資料):修法前(舊法 aim-diff)lowRatio≈0.1154/lowMean≈0.553/highMean≈1.058(對照本文預測 0.125/0.533/1.067,精確重現簽名);165/144/60 Hz 舊法 CV 分別≈0.351/0.280/1.040(顯著非零,證明非 240 Hz 特例)。修法後四種節奏 `dYaw` CV 皆≈1.1e-15(達 NFR-A-6 的 ≤1e-9 門檻)。守恆閘(hip-only)`\|Σ dYaw − Δaim.yaw\| ≤ 1e-12`。**兩個計畫階段新發現的缺口**(見 [KI-005 §6.1](KI-005-omega-render-sim-aliasing.md) 引用段 / [KI-005-A §2.4](KI-005-A/README.md)):① `InputSampler.onPointerMove` 原無 pointer-lock 閘 → T3 補齊,措辭與 fire/ads 同源,`bufferOverflow` 口徑因此只減不增;② `main.ts` 從未啟用 `recordKeyEvents` 的前車之鑑 → T4 在 app 佈線層全域啟用 mouse 積分(不等同啟用 `recordKeyEvents` 本身,那維持關閉,見下)。**偏離協議**:T4(`applyInput`/recorder/`main.ts` 佈線)與 T5(Python 雙路徑 + 合成 fixture 補欄)因合成 fixture 補欄會連動 Python 既有測試期望值,依實作順序擇一合併或分離,已記入 [KI-005-A/progress.md](KI-005-A/progress.md);本次選擇**保持 T4/T5 各自獨立綠燈 commit**(合成 fixture 補欄留在 T5)。OQ-A-1(app 全域開啟)/ OQ-A-2(`recordKeyEvents` 本次不動,登錄 TD-5,須在 A2-T1 採樣前由研究者決定)已拍板,見 [KI-005-A/progress.md §6](KI-005-A/progress.md)。**明確未交付項**:M14 ③④⑤ **未重新宣告**(需 A2 的新採樣,現有 08:03/09:39 兩份匯出因不做選項 C 回溯清洗,在 A1 修法後仍不具備可用的 ω(t));WP-30/31 entry blocker **未解除**——三條理由中僅 KI-004 那條已由 KI-004/S1 解除,KI-005 本身(A1 落地但 A2 未完成)與 KI-006(處置待拍板)兩條仍在。回歸:`npx tsc --noEmit` exit 0、`npm run test` vitest 89 files/739 tests 全綠、`npx playwright test` 20/20 全綠、`uv run pytest` 195 passed;`src/sim/`/`SharedState`/`simStep` 零 diff。 |
+| **狀態** | 🟡 **A1 已落地(2026-08-06)**;根因經測試 A 證實,修法依 2026-08-06 拍板(A / meta 重建 / 不做 C)落地。**A2(新採樣 → 複驗 → `seg-v2` 重掃 → M14 重新宣告)待排程**,⛔ blocked on 新採樣,見 [A2-blocked-plan.md](KI-005-A/A2-blocked-plan.md)。A1 交付的是量測儀器的正確性,**不是效度恢復**——M14 ③④⑤ 仍撤回。 |
 
 ---
 

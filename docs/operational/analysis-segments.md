@@ -16,11 +16,36 @@ Each `Segment` may carry a non-negative `peek_index`. WP-29 owns reconstruction 
 WP-28 only preserves that index through `per_segment_apply` so peek- and segment-level results can
 be joined without reconstructing windows inside metric functions.
 
-`omega_deg_s` returns `nan` at index zero because `omega[i]` describes the interval `(i-1, i]`; that
-sample is undefined, not missing. Callers segment the measured tail and shift reported indices back
-into the tick frame, so a segment never starts at tick index 0. Passing the undefined sample into
-`segment_submovements` is accepted but stamps `non_finite_interpolated` on every segment of every
-export, which makes `summarize_with_flags` exclude all rows.
+`omega_deg_s` returns an `OmegaResult` (`values`, `source`). The two sources compute the same
+construct — instantaneous view angular speed, one number per tick — from the same math core; they
+differ only in where the per-tick delta comes from, never in what is being measured (C-D4: an
+existing construct may not acquire a second definition):
+
+- `tick-integral` — `values` derive from `ticks[].dYaw`/`dPitch`, the tick-window mouse integral
+  (KI-005 / A). Each mouse event is attributed to the tick containing its own `timeStamp`, so this
+  source is structurally immune to render/sim beat aliasing and independent of `displayHz`. Present
+  only on exports carrying `meta.mouseIntegration`.
+- `aim-diff-legacy` — `values` derive from a per-tick difference of `ticks[].aim`, the only source
+  available on exports without `meta.mouseIntegration` (pre-KI-005 exports, including every export
+  committed before 2026-08-06). This source carries the render(~240 Hz)/sim(128 Hz)
+  zero-order-hold aliasing described in
+  [KI-005](../known_issue/KI-005-omega-render-sim-aliasing.md) — a spurious notch roughly every 8
+  ticks at 240 Hz, worse at other refresh rates — and must not be treated as a clean trace.
+
+`omega_deg_s` selects `tick-integral` when both new columns exist and are finite for the requested
+window, otherwise falls back to `aim-diff-legacy`; `strict=True` raises instead of falling back
+silently. Callers must read `.source` off the result rather than assume which derivation an export
+carries.
+
+`omega[0]` is `nan` under both sources because `omega[i]` describes the interval `(i-1, i]`; that
+sample is undefined, not missing. `tick-integral` could in principle give index 0 a real value (the
+first tick has its own integration window), but the contract is kept unchanged on purpose — index 0
+stays `nan` under both sources — to avoid touching the frozen `seg-v1` / D-28.12 (`omega[1:]`)
+contract. This is a deliberate, logged deferral (TD-3), to be revisited only alongside the `seg-v2`
+resweep. Callers segment the measured tail and shift reported indices back into the tick frame, so a
+segment never starts at tick index 0. Passing the undefined sample into `segment_submovements` is
+accepted but stamps `non_finite_interpolated` on every segment of every export, which makes
+`summarize_with_flags` exclude all rows.
 
 ## One-command pipeline
 
@@ -53,6 +78,13 @@ C-D3). Real-export overlay SVGs and the parameter sweep come from
 | Version | SG window/poly | Peak k | Floor | Low ratio | Stop ratio |
 |---|---:|---:|---:|---:|---:|
 | `seg-v1` | 7 / 3 | 0.5 | 80 deg/s | 0.1 | 0.2 |
+
+> ⚠️ `seg-v1`'s SG window (7 ticks) was swept on synthetic signal that cannot contain the KI-005
+> render/sim beat artifact — the artifact's period is **8 ticks**, so a 7-tick window is
+> mathematically incapable of removing it (see the withdrawal note below). **`seg-v1`'s validity on
+> real data is unproven until it is re-swept on a post-KI-005-A export and re-frozen as `seg-v2`**
+> (D-28.7: never re-tune a frozen version in place). Until then, treat `seg-v1` as validated only on
+> the synthetic suite.
 
 The pre-registration sweep evaluated 243 combinations over six deterministic synthetic cases; 108
 passed all cases and `seg-v1` had zero case failures with a maximum boundary error of one tick.
