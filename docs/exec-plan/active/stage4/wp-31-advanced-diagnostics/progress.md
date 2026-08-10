@@ -11,6 +11,7 @@
 |---|---|---|
 | 2026-08-10 | — | WP-31 規劃完成(五 task 自足檔建立)。**尚未開工**;T0 尚未執行,下方規劃期決議**尚未正式凍結**。 |
 | 2026-08-10 | **T0** | ✅ entry gate 完成:M14 六項 + WP-30 T-exit 逐項自行覆核(§1);fixture roster 沿用 + strict 閘**獨立負向/正向重跑**(§2);`gate-v1` 三件組凍結(**D-31.4**,含 seed,關閉 OQ-S4-3);`sparc-v1`/`xcorr-v1`/`fitts-v1` pre-registration 凍結(**D-31.5**,含 SPARC 段來源契約);D-31.0~D-31.3 由規劃期決議正式轉為凍結態;新開 OQ-S4-18/OQ-S4-19;`../README.md` §3/§6/§8 對帳。**零 `research/`、零 `src/` 變更**(§5) |
+| 2026-08-10 | **T1** | ✅ `sparc-v1` 落地:`compute_sparc`/`compute_sparc_traced` 逐位移植 + 兩份跨 repo golden 對表 ≤1e-9(PA parity 8 個量、128Hz 域 8 case)+ `sparc_table`(逐 MR 段,59/60 與 `phase-v1` 機械一致)+ `sparc_length_sensitivity` 階梯診斷 → verdict **`stratified_only`**(step_ratio **0.7643** ≥ 0.5,**D-31.6**,關閉 OQ-S4-18)+ `analysis-advanced-diagnostics.md` 首版。`uv run pytest` **303 → 365 passed**;`npm run test:ci` exit 0 且 `src/`/`tests/` **零 diff**(§6) |
 
 ---
 
@@ -199,6 +200,25 @@ T0 **不執行**任何 shuffle / bootstrap / 回歸 / xcorr / SPARC 計算(見 T
 - `xcorr-v1.min_ticks` 取 53(真實最短窗)— 否決:那是對現有樣本量身訂做的門檻,新錄製稍短就整批排除;32 = `max_lag` 的 tick 數,是有結構理由的下限。
 - `fitts-v1.min_samples` 取 10(比照 `sync-v1`)— 否決:Fitts 交付的是**回歸**(兩個自由度 + r²),不是單點統計量,20 是逐 session 全數有效時的自然下限。
 
+### D-31.6 — SPARC 階梯判定:`stratified_only`(T1 執行 T0 的 pre-registration,2026-08-10;**關閉 OQ-S4-18**)
+
+`sparc_length_sensitivity` 對三份真實 fixture pooled(n=59,排除 1 個 `no_primary_flick`)的實測:
+
+| `padded_n` | ≤20Hz bins | n | 中位 SPARC | IQR |
+|---:|---:|---:|---:|---:|
+| 32 | 6 | 32 | −1.39255 | 0.08234 |
+| 64 | 11 | 27 | −1.47577 | 0.10888 |
+
+`median_gap = 0.08322` ÷ `max_iqr = 0.10888` → **`step_ratio = 0.7643`**,超過 T0 pre-registered 的 `step_ratio_threshold = 0.5` → **verdict = `stratified_only`**。
+
+**這是執行 pre-registration,不是新決策**:門檻與公式都在 T0(D-31.5)凍結,T1 只把資料代進去。判定的效果是**使用限制**:SPARC 僅可在同一 `padded_n` bucket 內比較,報告須明文標示。`FC_HZ` / `AMP_THRESH` / padding / `MIN_SAMPLES` 一律未動(D-31.2),亦未新增固定 N 的第二版本。
+
+**必須隨判定一起出現的歸因限制(T1 新增,不在 T0 的預想內)**:`step_ratio` 量的是「bucket 間中位數差」對「bucket 內離散度」的比值,它**不區分**兩種解釋 —— ① 零填充解析度差異(方法學假象);② 較長的主要動作本來就比較不平滑(真實效應)。段長同時決定 `padded_n` 與動作本身的性質,兩者在本設計下**共變且不可分離**。因此判定只能是「跨 bucket 的 SPARC 差異**不可單一解讀**」,**不能**是「扣掉一個 padding 修正項」。要分離需在同一 bucket 內操弄段長,屬新設計,不在本 WP。此段已逐字寫入 `analysis-advanced-diagnostics.md`。
+
+**Alternatives considered**:
+- ①「既然階梯疑似有真實成分,就把 verdict 放寬成 `comparable` 並加註」— 否決:pre-registration 的門檻是為了防止「看到結果再解釋」;不可分離**正是**限制成立的理由,不是放寬的理由(GD-20)。
+- ②「以 bucket 中位數差為固定修正項,把 N=64 的 SPARC 平移後跨 bucket 比較」— 否決:那等於假設階梯 100% 來自 padding(上段已說明無法確認),且會產生一個未經驗證的第二定義(C-D4)。
+
 ---
 
 ## 4. OQ 對帳(T0)
@@ -206,7 +226,7 @@ T0 **不執行**任何 shuffle / bootstrap / 回歸 / xcorr / SPARC 計算(見 T
 | # | 動作 | 內容 |
 |---|---|---|
 | **OQ-S4-3** | ✅ **關閉** | 改寫理由見 D-31.4 前提段(split-half r 在 1×3×20 樣本結構下不可計算);拍板時點 2026-08-10(使用者);凍結值 = `GateThresholds` 七欄位 + `seed=20260810`;上限條款(`coach_report` 不可達)已入 D-31.4。[../README.md §8](../README.md) 已同步 |
-| **OQ-S4-18** | 🆕 **新開** | SPARC 在 128Hz 的 N=32/64 padding 階梯是否大到讓「跨段長比較」不成立。owner 研究者 / deadline WP-31 T1 / 未決影響:SPARC 分佈報告能否跨段長解讀。判準已 pre-register(`step_ratio_threshold = 0.5`);**不得**為此改 padding 規則 |
+| **OQ-S4-18** | ✅ **T1 關閉**(D-31.6) | 判定 **不成立**:pooled n=59 實測 `step_ratio = 0.7643 ≥ 0.5` → **`stratified_only`**,SPARC 僅限同 `padded_n` bucket 內比較。padding 規則未動。附帶歸因限制(階梯無法歸因為純 padding 假象,段長與 `padded_n` 共變不可分離)一併入帳 |
 | **OQ-S4-19** | 🆕 **新開** | Fitts 的 D 為內生(玩家上一 peek 留下的準星位置),回歸結果能否作為 TP 個人基線。owner 研究者 / deadline pilot 後 / 未決影響:TP 解讀範圍,不阻塞 T3 交付 |
 | **OQ-S4-17** | 🟡 維持 open | 本 WP **不消費 REC 邊界**(SPARC 用 MR 區間),無新證據。若日後 T3 要做 RT 扣除的 MT 才會再撞到 |
 | **OQ-S4-11** | 🟡 維持 open | 三份真實 fixture 皆無 ADS、皆為 hitscan → 本 WP 三指標的 `--group-by ads`/`weapon_mode` 同樣退化成單格 |
@@ -241,6 +261,51 @@ $ uv run pytest -q --no-header -p no:cacheprovider --basetemp=<短路徑>
 
 ---
 
+## 6. T1 Scope 與閘門證據(T1 DoD ⑥⑦)
+
+**Touches**(全部為新增檔;`git status --short`):
+
+```
+docs/operational/analysis-advanced-diagnostics.md                      (ADD 首版)
+research/fixtures/golden/sparc-pa-parity.json                          (ADD 逐位元組移入)
+research/fixtures/golden/sparc-128hz-domain.json                       (ADD 由 PA 產生)
+research/src/modules/metrics/algorithms/sparc.py                       (ADD)
+research/src/modules/metrics/algorithms/tests/test_sparc.py            (ADD 48 tests)
+research/src/modules/metrics/algorithms/tests/test_sparc_fixture.py    (ADD 9 tests)
+research/src/modules/metrics/algorithms/tests/test_sparc_purity.py     (ADD 5 tests)
+research/src/modules/metrics/notebooks/t1/generate_sparc_domain_golden.py (ADD 一次性)
+research/src/modules/metrics/notebooks/t1/generate_sparc_report.py     (ADD)
+research/src/modules/metrics/notebooks/t1/outputs/*.csv|.json|.svg     (ADD 7 檔)
+```
+
+```
+$ git diff --stat -- src tests
+(空)
+```
+
+**零 `src/`、零 `tests/` 變更**,符合 [task-checklist.md](task-checklist.md) 紀律 2(本 WP 的 `npm run test:ci` 是回歸閘不是對表閘)。
+
+**閘門**:
+
+```
+$ uv run pytest -q --no-header -p no:cacheprovider --basetemp=<短路徑>
+365 passed in 56.74s          # WP-30 T-exit 的 303 + 本 task 新增 62,零回歸
+
+$ npm run test:ci             # tsc --noEmit && vitest run && playwright test
+Test Files  90 passed (90)
+     Tests  748 passed (748)
+21 passed (35.4s)             # exit 0;與 WP-30 T-exit 逐位相同(TS 零變更)
+```
+
+> **環境註記**:`--basetemp` 沿用 T0 §5 的短路徑做法(Windows `MAX_PATH`)。本次另遇一個新症狀:不指定 `--basetemp` 時,pytest 掃描預設 temp root 會拋 `PermissionError: [WinError 5]`,影響 `test_sparc_purity.py` 兩個用 `tmp_path` 的測試。指定短 `--basetemp` 後全綠。同樣是環境限制,不是程式碼缺陷。
+
+**跨 repo 隔離(DoD ⑥)採「import 掃描」而非「刪除該 repo」**,四層斷言(`test_sparc_purity.py`):
+① import `sparc` 後 `sys.modules` 中**無任何模組的 `__file__` 落在 PA repo 路徑下**(檔案路徑檢查比名稱檢查強,連被 shadow 進來的同名模組都抓得到);② `sparc.py` + 三份測試的 import 行逐行掃描,零 `performance_analysis` / `modules.analysis`;③ `notebooks/` 全域掃描為 **allow-list**,唯一允許提及該 repo 的是一次性 golden 產生腳本,出現第二個穿越點即 fail;④ `sparc.py` 零 file I/O / 零 `print` / 零 matplotlib(C-D2)。跨 repo golden 以 committed JSON 移入,PA commit `c1aa3f78a1a7c65ec280dffb6a849821c4ab0c10` 記在 golden 的 `provenance` 區塊、產生腳本 header 與 `analysis-advanced-diagnostics.md` 三處。
+
+**段來源一致性(DoD ④)為機械斷言不是文件自律**:`test_sparc_fixture.py` 在同一個測試內**各自**算出 `sparc_table` 的有效列數與 `phase_decompose` 的非退化 MR 數,逐 fixture 比對 **20 / 19 / 20**,pooled **59**。改用整條軌跡分段會讓這條斷言掉到 3,當場 fail。
+
+---
+
 ## 規劃期實測資料(供 T0 覆核,非結論)
 
 > 以下數值由規劃期一次性腳本產出,**尚未經 task 的測試釘死**;T0/T1/T2/T3 須以自己的測試重新確立,不得直接引用為證據。
@@ -265,10 +330,14 @@ $ uv run pytest -q --no-header -p no:cacheprovider --basetemp=<短路徑>
 | 2026-08-10(規劃期) | `seg-v2` 對整條軌跡分段只切出 1 個 `primary_flick`/session —— 峰值門檻 `mean + kσ` 被整條 trace 的統計吃掉。若照 FR-D13 字面「逐 primary_flick」直接實作而未察覺 WP-30 用的是逐 peek 分段,SPARC 的 pooled n 會是 3 而不是 59,且沒有任何測試會抓到。 |
 | 2026-08-10(規劃期) | SPARC 的零填充規則在 1kHz 上無害,在 128Hz 上讓中位段長恰好卡在解析度加倍的邊界。移植「同輸入同輸出」正確,不代表「同一指標在新取樣率下同樣可解讀」。 |
 | **S-31.1**(2026-08-10,T0) | **`max_lag_ms = 250`(±32 tick)相對於真實窗中位 62–65 tick 並不小**:在 \|lag\| 接近上限時,兩序列的重疊只剩約 30 個樣本,correlogram 兩端的 r 天生比中央不穩。規劃期只核對了「250ms 涵蓋 MR 中位段長」這一側,沒有核對另一側的重疊代價。**處理方式不是改門檻**(pre-registration 已凍結),而是在 D-31.5 追加 T2 的呈現契約:每個 lag 帶出有效樣本數、重疊段零標準差回 NaN 轉 flag。若沒發現這點,T2 很可能產出一張兩端翹起的 correlogram 而讀者無從判斷那是耦合還是樣本數效應。 |
+| **S-31.3**(2026-08-10,T1) | **階梯診斷的 verdict 是 `stratified_only`,但「階梯有多少來自 padding」在本設計下不可回答**。規劃期把 OQ-S4-18 想成一個二選一的方法學問題(padding 假象大不大),T1 跑出數字後才看清:段長**同時**決定 `padded_n` 與動作本身的性質,`step_ratio` 量的是兩者的**混合**。所以 `stratified_only` 這個 verdict 名副其實(不可跨 bucket 解讀),但它的**理由**比 pre-registration 當時設想的更強一層——不是「padding 造成偏差、應校正」,而是「兩個解釋不可分離、不得單一解讀」。這個差別直接決定了不可以做「扣掉中位數差再跨 bucket 比」的修正(D-31.6 Alternatives ②),而 pre-registration 的文字並沒有擋住那條路。 |
+| **S-31.4**(2026-08-10,T1) | **合成 fixture 在 `sparc-v1` 與 `phase-v1` 上走的是不同的退化分支**:同一份 `synthetic_counterstrafe.json`,`phase-v1` 判 `window_too_short`(24 tick < `min_window_ticks=30`),`sparc-v1` 判 `too_few_samples`(MR 段 9 tick < 移植常數 `MIN_SAMPLES=16`)。兩者都是「確定性觸發、明確失敗、不捏造數值」,但**原因不同**——若把「合成 fixture 應該觸發哪個 flag」當成跨構念的共通期望寫進斷言,會得到一條假的一致性要求。與 `curve-v1` 對同一 fixture **不**觸發 `window_too_short` 是同一類提醒(analysis-phase-curves.md 已記):同一份退化輸入在不同構念上的正確行為,本來就可以不一樣。 |
 | **S-31.2**(2026-08-10,T0) | 規劃期 README §0.6 的 `keys` 非空比例(1128/2038、1103/2104、990/1904)與 `key` 事件數(86/84/78)在 T0 獨立重跑下**逐位吻合**;`eccentricityAtSpawnDeg` 亦自 committed parity JSON 重算得 pooled 8.70–30.72°(3.53×),與規劃期一致。與 WP-30 T0 的 S-30.5 同性質:覆核「不得只信任帳本文字」這條紀律確實執行且通過。 |
 
 ---
 
 ## Open Questions
 
-見 [README.md §7](README.md) 與本檔 §4 對帳表。本 WP 相關:**OQ-S4-3**(✅ **T0 關閉**,D-31.4)· **OQ-S4-18**(SPARC padding 階梯,T1 判定;判準 `step_ratio_threshold=0.5` 已 pre-register)· **OQ-S4-19**(Fitts 的 D 內生性,pilot 後)· OQ-S4-17 / OQ-S4-11 / OQ-S4-10 維持 open 且不阻塞本 WP。
+見 [README.md §7](README.md) 與本檔 §4 對帳表。本 WP 相關:**OQ-S4-3**(✅ **T0 關閉**,D-31.4)· **OQ-S4-18**(✅ **T1 關閉**,D-31.6:`stratified_only`,step_ratio 0.7643)· **OQ-S4-19**(Fitts 的 D 內生性,pilot 後)· OQ-S4-17 / OQ-S4-11 / OQ-S4-10 維持 open 且不阻塞本 WP。
+
+**T1 未開新 OQ**。階梯的歸因不可分離(S-31.3)已在 D-31.6 內以限制條款處理,不另開 OQ:要分離需在同一 `padded_n` bucket 內操弄段長,那是**新錄製 + 新設計**,與 OQ-S4-19 的「是否升級為受控設計」同屬 stage4 之外的題目。SPARC 是否進教練報告由 **T-exit** 依 C-D3 收斂,本 task 只交付效度證據與使用限制。

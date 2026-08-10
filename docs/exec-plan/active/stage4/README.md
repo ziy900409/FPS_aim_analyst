@@ -468,6 +468,7 @@ WP-28(地基,M14)──┤                                                      
 - [ ] 規格書版本對帳:新增「階段 D」節 + 附錄 E 增「驗收清單 D」(M15 前完成)。
 - [x] `docs/operational/analysis-peek-timeline.md`(新:`timeline-v1` 窗界/錨點/outcome/封閉 flags 詞彙表 + `sync-v1` 定義與 pre-registered 判準 + 報告載體契約 + 五項已知限制;WP-29 T1 建立、T-exit 定稿,2026-08-05)。
 - [x] `docs/operational/analysis-phase-curves.md`(`phase-v1`/`curve-v1` registry、封閉 flags、frozen parameters、報告載體契約與 sample limits;WP-30 T-exit 定稿,2026-08-10)。
+- [ ] `docs/operational/analysis-advanced-diagnostics.md`(新:進階診斷層 registry。**WP-31 T1 已建立首版** —— `sparc-v1` 定義/常數表/段來源契約/封閉 flags/兩份跨 repo golden 出處與產生方式/N=32/64 階梯判定(`stratified_only`)/已知限制,2026-08-10;待 T2 追加 `xcorr-v1`+`gate-v1`、T3 追加 `fitts-v1`,T-exit 定稿)。
 - [x] (WP-29 T3 使用者 override 已實作)[schema.md](../../../operational/schema.md):`key` 事件 additive 對帳。(2026-08-05,commit `dcdafbd`)
 
 ---

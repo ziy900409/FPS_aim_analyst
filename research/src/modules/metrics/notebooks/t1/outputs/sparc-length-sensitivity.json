@@ -1,0 +1,31 @@
+{
+  "version": "sparc-v1",
+  "step_ratio_threshold": 0.5,
+  "n_valid": 59,
+  "n_excluded": 1,
+  "buckets": [
+    {
+      "padded_n": 32,
+      "bins_le_fc": 6,
+      "n": 32,
+      "median": -1.3925529414468487,
+      "p25": -1.4637054902696085,
+      "p75": -1.3813698034158028,
+      "iqr": 0.08233568685380566
+    },
+    {
+      "padded_n": 64,
+      "bins_le_fc": 11,
+      "n": 27,
+      "median": -1.475771161478809,
+      "p25": -1.5528875478647866,
+      "p75": -1.444010502348268,
+      "iqr": 0.10887704551651844
+    }
+  ],
+  "median_gap": 0.08321822003196022,
+  "max_iqr": 0.10887704551651844,
+  "step_ratio": 0.7643320925652289,
+  "verdict": "stratified_only",
+  "reason": "step_ratio=0.7643 >= step_ratio_threshold=0.5"
+}
