@@ -7,7 +7,7 @@
 | **相依** | T0(`curve-v1` pre-registration)。**不依賴 T1/T2** —— 只吃 `build_peek_windows` + ω/ε,可與 T2 並行或提前交付 |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | ADD `research/src/modules/metrics/algorithms/curves.py` + tests;ADD `notebooks/t3/outputs/`(L/R 疊圖 + 曲線資料);MODIFY `docs/operational/analysis-phase-curves.md`(補 `curve-v1` 段) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ **完成(2026-08-10)**。詳見 [progress.md §7](progress.md) |
 
 ## Objective
 

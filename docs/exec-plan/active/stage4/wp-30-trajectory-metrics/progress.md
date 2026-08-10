@@ -14,6 +14,7 @@
 | 2026-08-07 | **T0** | ✅ | entry gate 完成:M14 六項逐項自行覆核通過(§1 表);fixture roster 凍結 + strict 閘獨立覆核(§2);`suspect` 使用界線重立,引 [KI-007](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) §5 一手證詞關閉 OQ-S4-16;D-30.1b 以三份真實匯出的 segment 數分佈拍板(候選①);`phase-v1`/`curve-v1` pre-registration 骨架寫定;`../README.md` §3/§6/§8 對帳。零 `research/`/`src/` 變更 |
 | 2026-08-07 | **T1** | ✅ | `research/src/modules/metrics/algorithms/detect.py` 新增 `detect_samples`/`detect_parity_payload`(逐位重現 `detectionDerivation.ts`,§4 D-30.5 逐欄核對);`tests/golden/research/detect-parity.test.ts` 對四份 fixture(合成 + 09:18/09:24/09:37)逐 presentation 相對誤差 ≤1e-9,`npm run test:ci` 90 檔 748 test 全綠;`uv run pytest` 243 passed(新增 test_detect.py 15 案例、test_detect_fixture.py、test_detect_purity.py);反 vacuous 斷言兩側皆綠(合計 23 個 `detected` 樣本 ≥ T0 門檻 10,OQ-S4-15 非 blocked-by-data);legacy(08:03/09:39)負向測試兩側皆釘死 strict 拋錯。零 `src/` 生產碼變更 |
 | 2026-08-10 | **T2** | ✅ | `research/src/modules/metrics/algorithms/phase.py` 新增 `PhaseParams`/`PhaseSample`/`phase_decompose`/`phase_table`/`smooth_report_omega`(MR 逐位等於 `seg-v2` `primary_flick`,零第二套運動起點偵測);`phase-v1` 以 `notebooks/t2/sweep_phase_params.py` 雙維度掃參凍結(`cutoff_hz=12.0, butter_order=4, min_window_ticks=30`):合成六案例 0 失敗、真實 60 peeks 中 59 個(98.33%)三段皆非退化,≥90% 門檻通過;`notebooks/t2/generate_phase_report.py` 產出逐 session 分佈(不併池)+ REC-vs-`t_detect` 一致性檢查(結論:**系統性分歧**,pooled n=21,median −78.1ms,開 OQ-S4-17)+ 60 真實 + 2 合成 peek 疊圖。`docs/operational/analysis-phase-curves.md` 新建(`phase-v1` 定稿 + `curve-v1` 佔位)。`uv run pytest` 全綠(新增 test_phase.py 25 案例 + test_phase_purity.py);`npm run test:ci` 未受影響(零 TS 變更)。零 `src/` 變更、零凍結參數變更 |
+| 2026-08-10 | **T3** | ✅ | `research/src/modules/metrics/algorithms/curves.py` 新增 `CurveParams`/`normalize_101`/`curve_table`/`curve_summary`(每 peek 兩列:`omega`/`epsilon` 各一,101 點線性插值,退化輸入拋 `ValueError` 由 `curve_table` 轉 flag,零 crash);`curve-v1` 依 T0 pre-registration 凍結格式性參數(`points=101`、`band=iqr`),`min_ticks=3` 為本 task 依真實/合成資料分佈拍板(D-30.11);`notebooks/t3/generate_curves_report.py` 產出三真實 session(不併池)逐 side × signal 曲線 + IQR 帶 + L/R 疊圖(SVG),60 真實 peek(20/session,L10/R10)全數 0 排除(無 `no_first_shot`/`window_too_short`/`missing_epsilon`);合成短窗回歸(2 peek/13 in-window ticks)確定性**不**觸發 `window_too_short`(與 phase-v1 相反,已斷言釘死)。`docs/operational/analysis-phase-curves.md` 補完 `curve-v1` 段(退化表、凍結 registry、真實證據、已知限制)。`uv run pytest` 全綠(新增 test_curves.py 28 案例 + test_curves_purity.py,297 passed);`npm run test:ci` 未受影響(零 TS 變更)。零 `src/` 變更 |
 
 ---
 
@@ -106,6 +107,7 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | **D-30.7** | ✅ **T2 拍板:`anchor_before_onset` 判準由 spec 字面「`t_first_shot` 早於 MR 起點」擴大為「`t_first_shot` 早於 MR 終點」**(即整個 MR 區間) | 若只檢查「早於 MR 起點」,一發在 flick 尾段、MR 起點之後但 MR 終點之前擊發的 shot 會讓 `v_ms = t_anchor - t_mr_end` 變成負值,違反 §2「不硬給負值」的一般原則。字面案例(早於起點)是這個一般原則的特例,不是唯一觸發條件。Alternatives Considered:只檢查早於起點(拒絕:會漏掉「早於終點但晚於起點」的負值 `v_ms`,與同一節「不硬給負值」的原則矛盾) | `research/src/modules/metrics/algorithms/phase.py::phase_decompose`;`test_phase.py::test_anchor_before_mr_end_nulls_all_three_durations_without_going_negative`;真實 60 peeks 中 0 例觸發(見 §6) |
 | **D-30.8** | ✅ **T2 拍板:`non_uniform_dt` 在 `phase.py` 內以「本窗自身中位數間隔」局部判定,不透過 `meta.simHz` 全域比對**,與 `run_pipeline.py` 既有的「歸屬到含 gap 的那個窗」語意相容但範圍更窄 | `phase_decompose` 是純演算法函式,只收到單一 peek 的 tick 切片,沒有 `meta`,無法呼叫需要 `sim_hz` 的 `check_dt`。局部中位數比對達成同一目的(避免让 dt gap 汙染其他窗)且不需要把 `meta` 或 sim_hz 穿透進 `algorithms/` 層。Alternatives Considered:①要求呼叫端額外傳入預算好的 `uniform: bool`(拒絕:README §5 的介面契約未列此參數,且會讓每個呼叫端各自重算一次 `check_dt` 交集邏輯,無實益);②不做局部檢查,只靠呼叫端的 `run_pipeline.py` 全域報告(拒絕:`phase.py` 若完全不自我檢查,單元測試就無法獨立驗證這個退化路徑) | `research/src/modules/metrics/algorithms/phase.py::_is_locally_uniform`;`test_phase.py::test_non_uniform_dt_is_flagged_but_does_not_null_the_computed_phases`;`docs/operational/analysis-phase-curves.md` 已載明此為窄化但同義的檢查 |
 | **D-30.9** | ✅ **`phase-v1` 凍結:`cutoff_hz=12.0, butter_order=4, min_window_ticks=30`**,雙維度掃參證據見 §6 | 合成六案例(3 個已知 profile × 有/無首發)0 案例失敗(MR 逐位等於 segment,屬結構性保證);真實 60 peeks 中 59 個(98.33%)三段皆非退化,通過 T0 pre-registered ≥90% 門檻,唯一例外為 09:24 已知的 `below_floor`/0-segment peek(與 D-30.1b 一致)。18 組候選(`cutoff_hz`∈{8,12,16}×`butter_order`∈{2,4}×`min_window_ticks`∈{24,30,40})全數通過兩維度——因三份真實 fixture 每個 peek 的 tick 數下限(53)遠高於候選網格的所有 `min_window_ticks`/`filtfilt` padlen 需求,平滑退化路徑在真實資料尺度上從未觸發。`min_window_ticks=30` 從這組同分候選中選出,理由是它能讓合成 fixture(24 ticks/peek)確定性觸發 `window_too_short`(S-30.3 的天然短窗案例),而不是恰好選到一個會放行它的數值 | `research/src/modules/metrics/notebooks/t2/sweep_phase_params.py`;`outputs/phase-sweep.csv`(18 列全數 `passes=True`);`docs/operational/analysis-phase-curves.md` §「Frozen phase-v1 parameter registry」 |
+| **D-30.11** | ✅ **T3 拍板:`curve-v1` 的 `min_ticks=3`**(窗內 tick 數低於此值才排除;`points=101`/`band=iqr` 為 T0 已凍結的格式性選擇,本決策只補上需要資料才能決定的數值) | 合成 fixture 的兩個 peek 在 `[t_visible, t_first_shot]` 子窗內各僅 13 個 tick(遠低於 `phase-v1` 的 `min_window_ticks=30`,但 `curve-v1` 的窗界本身就窄得多,且沒有 Butterworth `filtfilt` 的樣本數需求),必須**不**被排除(README T3-lr-curves.md 明文:它們是短窗退化的正向測試案例)。真正該擋的是 1–2 tick 的病態窗(101 點插值除了頭尾兩點外沒有任何中間形狀可言)。`min_ticks=3` 同時滿足兩條件:遠低於合成 fixture 的 13(不誤傷),又高於 raw `normalize_101` 本身的 2-樣本地板(排除病態窗)。真實資料的最小子窗 tick 數為 52(遠高於門檻,見下方證據),故本決策對三份真實 fixture 無影響。Alternatives Considered:① 沿用 `phase-v1` 的 `min_window_ticks=30`(拒絕:會誤判合成 fixture 的兩個正向測試案例為退化,且該數字是為 Butterworth `filtfilt` 的 padlen 需求校準的,`curve-v1` 沒有濾波步驟,套用會是張冠李戴的第二種語意);② 不設 `min_ticks`,只靠 `normalize_101` 自身的 2-樣本地板(拒絕:會讓 1–2 tick 的病態窗產出一條技術上合法但毫無形狀資訊的「曲線」,違反 curve-v1 存在的目的——呈現動作簽名形狀) | `research/src/modules/metrics/notebooks/t3/generate_curves_report.py`(合成回歸斷言 `window_too_short` 不得出現);T0 規劃期以 `run_pipeline.py` 手動核算三份真實 fixture 的子窗 tick 數分佈(最小 52,見本檔 §7) |
 | **D-30.10** | ✅ **REC-end(`MR.start`)與 `t_detect` 的一致性檢查結論為「系統性分歧」,不調整 REC 定義,也不重調 `t_detect` 參數** | pooled n=21(≥ T0 門檻 10,非 vacuous)、三個 session 各自 median 偏移 −66.4/−74.2/−85.9ms,方向與量級一致,非單一極端值拉偏;−78.1ms(≈10 tick)遠大於 ±1 tick 的一致性門檻。C-D4 禁止為了對齊而重新定義既有構念——REC 的權威定義是 `seg-v2 primary_flick`(D-30.1),`t_detect` 的權威定義與參數是 TS `detectionDerivation`(T1 對表已凍結);兩者分歧是待研究的訊號,不是任一方的 bug。Alternatives Considered:①悄悄調寬 `theta_v`/`k` 讓兩者對齊(拒絕:違反 C-D4,且會在未經驗證的情況下重新校準一個已凍結、已對表的既有構念);②把 REC 邊界改成以 `t_detect` 為準(拒絕:違反 D-30.1,且會讓 REC 定義依賴一個為完全不同 drill 校準的參數) | `research/src/modules/metrics/notebooks/t2/generate_phase_report.py`;`outputs/rec-vs-detect-verdict.txt`、`outputs/rec-minus-detect.csv`;新開 OQ-S4-17(README §8) |
 
 ## 3. `phase-v1` / `curve-v1` pre-registration 骨架(T0;規則與通過條件寫死,數值留待 T2/T3 掃參凍結)
@@ -132,7 +134,7 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | `points` | `101` | ✅ 已凍結 |
 | 插值法 | 線性插值,正規化時間 `[0,1]` 等距 101 點;端點值 = `t0`/`t1` 樣本本身(不外插) | ✅ 本 task 凍結(格式性選擇,不需資料) |
 | `band` | **IQR**(非 mean±SD) | ✅ 本 task 拍板 |
-| `min_ticks` | 待 T3 依合成短窗案例(48 ticks/2 peeks)與真實資料窗長分佈決定;規則:選取後須能讓 `synthetic_counterstrafe.json` 的兩個 peek **不被此門檻誤傷排除**(它們是短窗退化的正向測試案例,不是要被 `min_ticks` 擋掉的反面案例——真正該被擋的是窗內樣本不足以支撐 101 點插值品質的病態輸入,例如 1–2 tick 的窗) | ⬜ T3 |
+| `min_ticks` | **3**(D-30.11,T3 拍板):合成 fixture 兩個 peek 的子窗各 13 tick,遠高於門檻不被誤傷;真實三份 fixture 子窗最小 52 tick,門檻對其零影響;僅排除 1–2 tick 的病態窗 | ✅ 已凍結(D-30.11) |
 | 納入規則 | 沿用 D-29.5:值有限**且**整列 flags 為空才進聚合分母 `n`;被排除列仍完整輸出並計數,`n` 與圖上標示同源 | ✅ 已凍結 |
 | flags 封閉詞彙表(草案) | `no_first_shot`、`window_too_short`、`missing_epsilon`、`non_uniform_dt`、`degenerate_window` | ✅ 草案凍結(T3-lr-curves.md 已列同一份清單) |
 | `version` | `"curve-v1"` | ✅ |
@@ -149,6 +151,7 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | **S-30.4** | T0 獨立重跑 `run_pipeline.py` 取得的逐 peek `segment_count` 分佈顯示:60 個真實 peek 中 **58 個(96.7%)恰有 1 個 segment**,只有 1 個 0-segment、1 個 2-segment —— D-30.1b 原先預期的「MR 取法分歧」在此樣本上幾乎不曾發生,三個候選規則的實際差異只影響 1/60 個 peek 的 V 段起點 | 大幅簡化 D-30.1b 的拍板:候選①②③在本樣本上高度一致,採最簡單的候選①即可,不需要為稀有情境引入排序/合併邏輯;但**效度聲稱不可外推**——樣本一多、drill 涵蓋更寬動作範圍後,多段比例可能上升,屆時需重新檢視此決策 |
 | **S-30.5** | T0 獨立重跑三份真實匯出的分段統計(§2),與 [analysis-segments.md](../../../operational/analysis-segments.md) `seg-v2` real-export validation 段落宣稱的 98.3% success rate / 38.3% `merged_adjacent_peaks` **逐位吻合** | 交叉驗證 A2-T3 的 exit-gate 證據未被竄改或選擇性引用,T0「不得只信任帳本文字」的覆核要求確實執行且通過 |
 | **S-30.6** | T1 實測三份真實匯出 + 合成 fixture 的 `t_detect` 推導:60 個真實 peek 中 `detected`=22、`timeout`=38(+ 合成 2 peek 各 1 detected/1 timeout,合計 23 detected);`baselineInsufficient` 在三份真實匯出**全數為 0**(60/60 皆有充足前刺激基線,因為每個 peek 的前 500ms 落在上一個 peek 的尾段而非真空),只有合成 fixture 的 2 個 peek(視角開場即刺激,無前置資料)觸發 | 直接回答 OQ-S4-15:23 ≥ T0 pre-registered 門檻(≥10),T2 的 REC-vs-`t_detect` 一致性檢查**不會**是 `blocked-by-data`;同時排除了「baseline_insufficient 污染真實資料 threshold=3×SD=0」的疑慮(該退化模式只在合成邊界案例出現,不影響真實效度樣本) |
+| **S-30.8** | T3 首次跑 `generate_curves_report.py` 時,三份真實 fixture 的 `epsilon` 曲線**全數**(60/60)被標記 `missing_epsilon`,即使 `resolve_eye_origin(strict=True)` 本身並未拋錯——根因是 `epsilon_deg` 在未提供 `fallback_target` 時,只要窗內**任一** tick 缺 `tx/ty/tz`(這三份 fixture 確有少數 tick 缺目標座標,`run_pipeline.py` 早就用 `missing_target` flag 記錄過同一現象)就整段拋 `ValueError`,而 notebook 最初的呼叫沒有比照 `run_pipeline.py._visible_target` 補上 fallback | 補上與 `run_pipeline.py` 相同的 fallback 優先序(visible 事件座標 → 該窗第一個 tick 的座標)後,60/60 真實 peek 的 `epsilon` 曲線全數正常產出、零排除。此非 `curve-v1` 的新語意,只是 notebook 漏接了 `epsilon_deg` 既有的公開參數;记录以防未來的消費端重犯同一遺漏 |
 | **S-30.7** | T2 一致性檢查發現 REC-end(`seg-v2 MR.start`)系統性地**早於** `t_detect`:pooled n=21,median `rec_minus_detect_ms = t_onset - t_detect = -78.1ms`(≈10 tick),三個 session 各自 median(−66.4/−74.2/−85.9ms)同方向、同量級,非單一 session 拉偏。遠超 ±1 tick(7.8ms)的一致性門檻,不是雜訊 | 這不是任一構念的 bug——`seg-v2` 的角速度峰值閘可能在原始角速度剛越過閾值時就接受 `primary_flick` 起點,而 `detectionDerivation` 要求 eccentricity 連續下降 4 個 tick 才確認 `t_detect`,兩者測的是同一動作的不同「已經開始」判準,對 counter-strafe 這種瞬間甩動的動作可能特別容易分岔(`analysis-t-detect.md` 的參數是為較和緩的 detection pop-in drill 校準)。記為 D-30.10 決策(不調整任一定義)+ 新開 OQ-S4-17(根因待驗證) |
 
 ## Open Questions
@@ -258,3 +261,57 @@ Test Files  90 passed (90)
 **合成 fixture 回歸**(S-30.3 的天然短窗案例):`synthetic_counterstrafe.json` 兩個 24-tick peek 皆確定性觸發 `window_too_short`(`min_window_ticks=30`),`generate_phase_report.py` 內建斷言釘死此行為,不算「已知不支援」。
 
 **C-D4 無第二定義佐證**:`test_phase.py::test_known_boundaries_reproduce_seg_v2_primary_flick_exactly` 對六個案例斷言 `t_onset`/`t_mr_end` 逐位等於 `Segment.start_idx`/`end_idx` 映回的 tick 時間戳;`phase.py` 原始碼內零運動起點偵測邏輯,Butterworth 平滑僅出現在 `smooth_report_omega`(報告路徑),不影響任何邊界欄位(`test_cutoff_at_or_above_nyquist_flags_filter_degenerate_without_raising` 等測試佐證)。
+
+## 7. T3 101 點正規化曲線證據
+
+**新增檔案**(`git status --short`,零修改既有 `src/` 生產碼;`algorithms/__init__.py` 只新增 export):
+
+```
+ M research/src/modules/metrics/algorithms/__init__.py
+?? research/src/modules/metrics/algorithms/curves.py
+?? research/src/modules/metrics/algorithms/tests/test_curves.py
+?? research/src/modules/metrics/algorithms/tests/test_curves_purity.py
+?? research/src/modules/metrics/notebooks/t3/generate_curves_report.py
+?? research/src/modules/metrics/notebooks/t3/outputs/curve-table-*.csv (4 files: 3 real + synthetic)
+?? research/src/modules/metrics/notebooks/t3/outputs/curve-summary.csv
+?? research/src/modules/metrics/notebooks/t3/outputs/overlays/ (6 SVG: 3 sessions x 2 signals)
+```
+
+**`uv run pytest`**(research;含新增 28 個 `test_curves.py` 案例 + `test_curves_purity.py`):
+
+```
+297 passed in 89.82s
+```
+
+(Includes all 269 pre-existing tests through T2 plus 28 new — 269 + 28 = 297, zero regressions.)
+
+`npm run test:ci` 未受影響(本 task 零 TS 變更,未重跑;沿用 T1 已滿足的 TS 側證據)。
+
+**插入邊界測試證據**(DoD ①):`normalize_101` 七個情境全部覆蓋 ——
+`test_normalize_101_raises_on_fewer_than_two_samples`、`test_normalize_101_handles_all_zero_values`、
+`test_normalize_101_drops_non_finite_samples_before_interpolating`、
+`test_normalize_101_raises_when_all_values_are_non_finite`、
+`test_normalize_101_raises_on_coincident_endpoints`、
+`test_normalize_101_raises_when_t1_precedes_t0`、
+`test_normalize_101_endpoints_equal_the_t0_t1_samples_and_stay_monotonic`、
+`test_normalize_101_matches_the_analytic_linear_ramp`。全數綠,退化輸入皆拋 `ValueError` 而非回傳補值。
+
+**真實曲線產出**(DoD ②):`research/src/modules/metrics/notebooks/t3/generate_curves_report.py` 對三份真實 fixture(09:18/09:24/09:37)逐 session 產出 L/R 疊圖(ω + ε 共兩組/份,`outputs/overlays/`)與逐 peek 曲線表(`outputs/curve-table-<fixture>.csv`);彙總於 `outputs/curve-summary.csv`:
+
+| Session | n(L) ω | n(R) ω | n(L) ε | n(R) ε | 排除數 |
+|---|---:|---:|---:|---:|---:|
+| 09:18 | 10 | 10 | 10 | 10 | 0 |
+| 09:24 | 10 | 10 | 10 | 10 | 0 |
+| 09:37 | 10 | 10 | 10 | 10 | 0 |
+
+`n` 與 `curve_summary` 逐位同源(疊圖直接消費 `curve_summary` 回傳值,無第二次計算路徑)。60 個真實 peek 全數零排除——無 `no_first_shot`/`window_too_short`/`missing_epsilon`。
+
+**epsilon fallback 插曲**(S-30.8):首次執行時三份真實 fixture 的 epsilon 曲線全數(60/60)被標記 `missing_epsilon`,根因是 notebook 未替 `epsilon_deg` 補上 `fallback_target`(窗內少數 tick 缺 `tx/ty/tz`,與 `run_pipeline.py` 早已記錄過的 `missing_target` 現象相同);補上與 `run_pipeline.py._visible_target` 相同的 fallback 優先序後,60/60 全數正常產出。此為 notebook 遺漏,非 `curve-v1` 新語意。
+
+**`curve-v1` 凍結**(DoD ③):`docs/operational/analysis-phase-curves.md` 已補完窗界、插值法、`points`、`band`、`min_ticks`、納入規則與 flags 詞彙表,並明文「升版才可改」。
+
+**納入規則可稽核**(DoD ④):`curve_summary` 回傳值逐 side × signal 皆含 `n`/`n_excluded`;`test_curve_summary_excludes_flagged_rows_but_counts_them` 斷言排除邏輯正確。
+
+**合成短窗跑通**(DoD ⑤):`synthetic_counterstrafe.json` 兩個 13-in-window-tick peek **不**觸發 `window_too_short`(與 `phase-v1` 對同一 fixture 的判定相反,已於 `generate_curves_report.py` 內建斷言釘死此行為並在本次執行中通過)。
+
+**C-D2 純度佐證**(DoD ⑥):`test_curves_purity.py` 以子行程驗證 `import modules.metrics.algorithms.curves` 不匯入 `matplotlib`、不寫入 CWD;`curves.py` 原始碼內零 I/O、零 `print`。零 `src/` 變更。

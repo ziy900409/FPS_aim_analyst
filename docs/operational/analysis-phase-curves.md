@@ -180,8 +180,126 @@ and the systematic REC/`t_detect` offset above was found by that review.
 
 ## `curve-v1`
 
-Pending WP-30 / T3 (101-point normalized L/R ω(t)/ε(t) curves). Pre-registered format decisions
-(window `[t_visible, t_first_shot]`, `points=101`, linear interpolation with no extrapolation past
-the endpoints, IQR distribution bands, D-29.5 inclusion rule) are recorded in
-[WP-30 progress.md §3.2](../exec-plan/active/stage4/wp-30-trajectory-metrics/progress.md); `min_ticks`
-and the frozen registry entry are added when T3 lands.
+### What it answers
+
+Every peek's `[t_visible, t_first_shot]` window is resampled onto 101 equally spaced
+normalized-time points, so peeks of different real duration become directly comparable curves. Each
+peek produces **two** rows — one ω(t) curve and one ε(t) curve — which are then averaged per side
+(L/R) into a mean curve + distribution band, answering "what does an L peek's movement look like,
+shape-wise, versus an R peek's."
+
+`research/src/modules/metrics/algorithms/curves.py`'s `normalize_101` is a generic linear
+resampler: it drops non-finite samples (this is how ω's contractual leading `nan` — TD-3, D-29.4 —
+disappears without the caller needing to slice it out, expressed as a value mask instead of an index
+offset since this function works in the time domain, not `phase.py`'s tick-index domain) and raises
+`ValueError` on genuinely degenerate input (fewer than two finite samples, or `t1 <= t0`) rather than
+returning a guessed curve. `curve_table` turns that exception into a flag per row so a whole export's
+resampling never aborts on one bad peek.
+
+### Degenerate handling (never crashes)
+
+| Condition | Flag | Effect |
+|---|---|---|
+| `peek.t_first_shot` is absent | `no_first_shot` | Both signal rows for this peek get an all-`NaN` curve. |
+| Fewer than `min_ticks` ticks fall inside `[t_visible, t_first_shot]` | `window_too_short` | Both signal rows get an all-`NaN` curve. |
+| `t_first_shot <= t_visible` (defensive; not observed in real data) | `degenerate_window` | Both signal rows get an all-`NaN` curve. |
+| Caller could not resolve ε for this peek (missing eye origin/target geometry) | `missing_epsilon` | Only the `epsilon` row is affected; the `omega` row is unaffected. |
+| This window's own tick spacing is not self-consistent | `non_uniform_dt` | Additive/diagnostic only (same D-29.5 pattern as `phase-v1`) — the curve is still computed; the row is excluded from `curve_summary` aggregation, not from `curve_table`. |
+| `normalize_101` itself raises on data it did not expect (e.g. every in-window sample non-finite despite passing the tick-count check) | `degenerate_window` | Safety-net fallback so a resampling failure never propagates as an exception (Failure modes table, README §3, "退化不得 crash"). |
+
+Flags are a closed vocabulary (`KNOWN_CURVE_FLAGS`); an unrecognized flag raises `AssertionError`
+rather than being silently emitted, mirroring `peek.py`/`detect.py`/`phase.py`.
+
+### Inclusion rule (`curve_summary`)
+
+Same D-29.5 rule as every other WP-29/30 aggregate: a row's curve only enters the mean/band
+computation when every one of its `p000..p100` values is finite **and** its `flags` tuple is empty.
+Excluded rows are still counted (`n_excluded`) and remain in `curve_table`'s output for inspection —
+only the aggregate step drops them. `n` in `curve_summary`'s output and `n` shown on any overlay are
+the same number by construction (the overlay is built directly from `curve_summary`'s return value,
+never a separately recomputed count).
+
+## Frozen `curve-v1` parameter registry
+
+| `points` | `min_ticks` | `band` | Version |
+|---:|---:|---|---|
+| 101 | 3 | `iqr` | `curve-v1` |
+
+- **`points=101`** and **`band=iqr`** were pre-registered as format decisions before T3 ran (WP-30
+  progress.md §3.2) — they do not need real data to decide, only a documented rule to freeze. IQR was
+  chosen over mean±SD because each side has only n≈10 peeks per session; a small-sample distribution
+  band is more robust to one noisy peek under IQR than mean±SD, and does not implicitly claim a
+  normal distribution the raw aim-trajectory data hasn't been checked against (progress.md §3.2 has
+  the full comparison).
+- **`min_ticks=3`** is the one value T3 needed real data to set, per
+  [`research/src/modules/metrics/notebooks/t3/generate_curves_report.py`](../../research/src/modules/metrics/notebooks/t3/generate_curves_report.py):
+  the committed synthetic fixture's two peeks have **13** in-window ticks each (the natural
+  short-window case for `curve-v1` — unlike `phase-v1`, where the *same* fixture's 24-tick full peeks
+  deliberately DO trip `window_too_short`; `curve-v1`'s window is the narrower
+  `[t_visible, t_first_shot]` sub-range and its threshold answers a different question — "enough
+  points for a 101-point resample to represent more than a single stretched line segment" rather than
+  "enough samples for a Butterworth `filtfilt`"). The pathological case the threshold guards against
+  is a 1–2 tick window, not the synthetic fixture's 13. All 60 real peeks (09:18/09:24/09:37) have
+  **>= 52** in-window ticks — `min_ticks=3` never excludes real data; it only excludes windows too
+  short to be worth resampling at all. Changing any of the three values requires a new version
+  (`curve-v2`) and a full-chain rerun — never an in-place edit (D-30.4, D-28.7 precedent).
+
+### `synthetic_counterstrafe.json` regression
+
+Unlike `phase-v1`'s synthetic case, `curve-v1`'s two synthetic peeks are asserted to **NOT** trip
+`window_too_short` — `generate_curves_report.py` hard-fails if either does. This is the intentional
+"short but valid window still produces a curve" regression case for this construct, distinct from
+`phase-v1`'s "too short to filter, gracefully degrades" case on the same fixture.
+
+## Real-data evidence (2026-08, P001, n=3 sessions)
+
+Source: `research/src/modules/metrics/notebooks/t3/generate_curves_report.py`, run against the T0
+fixture roster. Per-session, non-pooled (KI-004-S1/README §R-7 discipline, same as `phase-v1` above):
+
+| Session | n(L) omega | n(R) omega | n(L) epsilon | n(R) epsilon | excluded |
+|---|---:|---:|---:|---:|---:|
+| 09:18 | 10 | 10 | 10 | 10 | 0 |
+| 09:24 | 10 | 10 | 10 | 10 | 0 |
+| 09:37 | 10 | 10 | 10 | 10 | 0 |
+
+All 60 real peeks (20 per session, 10 L / 10 R) produced a complete, unflagged curve for both
+signals in every session — none hit `no_first_shot` (WP-29 T1 already established
+`firstShotHitRate`'s underlying first-shot presence is 20/20 for all three sessions),
+`window_too_short`, or `missing_epsilon` (resolving ε required the same visible-event-then-first-tick
+target fallback `run_pipeline.py` already uses for its own epsilon derivation — a tick-level target
+gap exists in a minority of ticks per peek in these exports, same as the pipeline's own
+`missing_target` handling, not a new gap `curve-v1` introduces).
+
+Per-signal shape (qualitative, from the generated overlays,
+`research/src/modules/metrics/notebooks/t3/outputs/overlays/`): every session's ω(t) mean curve is
+near zero at both window endpoints and peaks near the middle of the normalized window (the flick
+itself), and every session's ε(t) mean curve starts near its session's peak eccentricity and
+decreases monotonically toward zero as the window approaches the first shot (aim converging on the
+target) — both shapes are the expected qualitative signature for a counter-strafe peek and appear
+consistently across all three sessions, though this review is structural/numeric (per-peek CSV
+values and SVG polyline/band coordinates), not an eyeballed visual pass, per the same environment
+limitation noted in `phase-v1`'s review above.
+
+Full per-peek curve tables: `research/src/modules/metrics/notebooks/t3/outputs/curve-table-<fixture>.csv`.
+Per-session summary: `outputs/curve-summary.csv`. L/R overlays (ω and ε, one file each per session):
+`outputs/overlays/<fixture>-<signal>-lr-overlay.svg`.
+
+## Known limits (`curve-v1`)
+
+- Real-data evidence covers the same one participant (P001), three sessions, one 240 Hz machine, one
+  drill config as `phase-v1` — not population-level validity (KI-004-S1/README §R-7).
+- `curve-v1`'s ω(t) curve's first normalized point is necessarily derived from the first *defined*
+  angular-speed sample (`omega_deg_s`'s index 1, since index 0 is contractually `nan`), not a
+  genuine measurement at `t_visible` itself — there is no such measurement, angular speed being a
+  between-tick quantity. In practice this is a single tick's (~7.8 ms) difference from
+  `t_visible` out of a multi-hundred-ms window, but it means `p000` for the `omega` signal is a
+  flat-held value rather than an interpolated one.
+- `curve-v1`'s `non_uniform_dt` check is local to each peek's own tick slice (identical rationale to
+  `phase-v1`'s, see above) — the export-wide `check_dt` report in `run_pipeline.py`'s summary remains
+  authoritative for anything beyond this module's own diagnostic flag.
+- `degenerate_window` (`t1 <= t0`) and the `normalize_101`-raises safety-net path did not occur in
+  any of the 60 real peeks or the 4 synthetic-fixture rows in this sample; both are verified by unit
+  test only, not by a real-data instance.
+- Three sessions from one participant are shown side by side, never pooled into a single curve —
+  any claim about "the" L or R shape should be read as "this participant's, in these three
+  sessions," not a population statement.
