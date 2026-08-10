@@ -1,7 +1,8 @@
-# 進階診斷層:SPARC(`sparc-v1`)
+# 進階診斷層:SPARC(`sparc-v1`)· Key-Velocity xcorr(`xcorr-v1` / `gate-v1`)
 
-本檔是 WP-31 進階診斷層的 operational registry。首版(T1)只涵蓋 **`sparc-v1`**(逐段平滑度,
-FR-D13);`xcorr-v1` / `gate-v1`(T2)與 `fitts-v1`(T3)由後續 task 追加,T-exit 定稿。
+本檔是 WP-31 進階診斷層的 operational registry。目前涵蓋 **`sparc-v1`**(逐段平滑度,FR-D13,T1)
+與 **`xcorr-v1` / `gate-v1`**(key-velocity 耦合與其效度判定,FR-D14,T2);`fitts-v1`(T3)由後續
+task 追加,T-exit 定稿。
 
 三個構念的交付物都是**判定**,不是數字(C-D3 / GD-20):「算得出來」不等於「可以對選手講」。
 每個構念的章節末尾都必須有一段明確的使用限制。
@@ -222,3 +223,208 @@ padding 修正項」的理由:能確定的是**跨 bucket 的 SPARC 差異不可
   僅由單元測試驗證,尚無真實資料實例(比照 `phase-v1` 的 `anchor_before_onset`)。
 - **尚未進教練報告**:C-D3 下,SPARC 是否晉升為報告指標由 T-exit 收斂判定;本檔只交付效度證據與
   使用限制。跨段長比較的限制若無法在報告介面上明示,SPARC 就不應進主表。
+
+---
+
+## `xcorr-v1`
+
+### 回答什麼
+
+一次 peek 之內,**signed A/D 鍵狀態**與**視角角速度 ω(t)** 之間有沒有帶時延的耦合(strafe-aim 干擾),
+以及誰領先。輸出是完整 correlogram(每個 lag 的 signed Pearson r)+ 峰值 lag/強度。
+
+### 通道與對齊:本專案免對時(這是相對 performance_analysis 的結構性優勢)
+
+- **key-state 一律取自 `ticks[].keys`**:`D` → **+1**、`A` → **−1**、**同按或都沒按** → **0**。
+  「A+D 同按 = 0」是編碼語意不是丟樣本 —— 兩鍵同按不產生淨 strafe 輸入(09:18 session 2,038 tick
+  中有 40 個),不得算成其中一邊贏。W/S 不存在於階段 A drill,故 `signed_ad` 比 PA 的 `signed_wasd`
+  窄是設計而非遺漏。
+- **免對時**:key-state 與 ω 由**同一個 128 Hz sim 迴圈**取樣,天然同格 → **沒有時鐘對齊步驟,也沒有
+  對齊誤差要編列**。PA 的 key 流與 mouse 流來自不同時鐘,那一層成本在本專案是零。
+- **兩個通道一起丟 index 0**:`omega_deg_s` 契約上 index 0 為 `nan`(TD-3 / D-29.4),故 key-state 與
+  ω 同時切掉第一個樣本 → 配對樣本數 = 窗長 − 1,`min_ticks` 套用在**配對樣本數**上(沿用 `sparc.py`
+  以 `MIN_SAMPLES + 1` 推導窗門檻的作法,不新增第二個可調參數)。
+- **`key` 事件僅作交叉檢核**(見下節),不作主資料源。
+
+### lag 符號慣例(逐字保留,否則會被讀反)
+
+> **負 lag = key 狀態領先 ω;正 lag = ω 領先 key 狀態。**
+
+逐位沿用 performance_analysis `metrics_key_velocity_coupling_xcorr.py` 的
+`_xcorr_peak`:`lag > 0` 比對 `key[t+lag]` 與 `omega[t]`。
+
+### 演算法
+
+| 元件 | 作法 | 來源 |
+|---|---|---|
+| 逐 lag r | signed Pearson,對**該 lag 的重疊區段**計算 | PA `_pearson` |
+| `MIN_PEARSON_SAMPLES` | **4** —— 重疊少於 4 個樣本回 `nan`(不是相關,是雜訊) | PA `_pearson` |
+| 零標準差 | 回 `nan`(**不是 0.0**):常數序列與任何東西都沒有線性關係,填 0 會被讀成「量過了,沒耦合」 | PA `_pearson` |
+| 峰值 | `|r|` 最大者;`PEAK_TIE_EPSILON = 1e-12` 內同分 → 取 `|lag|` 較小者 | PA `_xcorr_peak` |
+| 退化 lag | r 為 `nan` 的 lag **不參與峰值**,但**保留在 correlogram**,曲線上的洞看得見 | 本專案 |
+
+**實作偏離(僅效能,不改語意)**:`_pearson` 直接以 `dx·dy / (‖dx‖‖dy‖)` 計算,而非 `np.corrcoef`
+(permutation null 要呼叫它約 130 萬次,直接算快 5×)。`test_coupling.py` 以 200 組隨機輸入斷言兩者
+差 ≤1e-12,讓「比較快」不會變成「比較不一樣」。
+
+### correlogram 每個 lag 都帶有效樣本數(不是裝飾)
+
+`correlogram` 的每一項是 **`(lag_ms, r, n_overlap)`**。理由(S-31.1):`max_lag_ms = 250`(±32 tick)
+相對真實窗中位 62–65 tick **並不小** —— `|lag|` 接近上限時兩序列只剩約 30 個配對樣本,correlogram
+兩端天生比中央不穩。**只印 r 不印 n 會邀請讀者把樣本稀少讀成耦合**;D-31.5 因此要求 n 隨每個點一起
+輸出(CSV `n_overlap` 欄 + SVG 的灰色 overlap 曲線)。這是**呈現完整性要求**,不得反過來用作事後放寬
+`max_lag_ms` / `min_ticks` 的理由。
+
+### 封閉 flags 詞彙表
+
+`KNOWN_XCORR_FLAGS`;未知 flag 拋 `AssertionError`,比照 `peek.py` / `phase.py` / `sparc.py`。
+
+| 條件 | flag | `peak_*` |
+|---|---|---|
+| 配對樣本數 < `min_ticks`(32) | `window_too_short` | `None`;correlogram 為空 tuple |
+| key-state 標準差為 0(整窗只按一邊或都沒按) | `key_state_constant` | `None` |
+| ω 標準差為 0 | `omega_constant` | `None` |
+| ω 含非有限值 | `non_finite_omega` | `None` |
+| 上述皆不成立,但每個 lag 的重疊都低於 `MIN_PEARSON_SAMPLES` | `no_finite_lag` | `None` |
+
+`no_finite_lag` 刻意與 `window_too_short` 分開:兩者的成因不同,合併會讓表看不出是哪一種。
+
+### 聚合納入規則
+
+沿用 D-29.5:一列只有在**數值有限且整列 flags 為空**時才進 `n` 與分佈。被排除的列仍完整輸出供檢視。
+
+### 凍結 `xcorr-v1` 參數 registry
+
+| `max_lag_ms` | `min_ticks` | `key_encoding` | Version |
+|---:|---:|---|---|
+| 250.0 | 32 | `signed_ad` | `xcorr-v1` |
+
+2026-08-10 由 WP-31 T0 凍結(progress.md **D-31.5**),**在看到任何真實 xcorr 值之前**。
+
+- **`max_lag_ms = 250`** = 32 tick @ 7.8125 ms,涵蓋實測 MR 中位段長 ≈250 ms。
+- **`min_ticks = 32`** 是**結構性下限**(= lag 預算的 tick 數),刻意**不**取真實最短窗 53 —— 那是對現
+  有樣本量身訂做的門檻,新錄製稍短就整批排除。
+- 改任一值一律升 `xcorr-v2` + 全鏈重跑。
+
+### `key` 事件交叉檢核(獨立報告,**不**進 flags)
+
+`key_event_crosscheck()` 把 `ticks[].keys` 推出的每個 A/D 狀態轉換,與 WP-29 / T3 的 additive `key`
+事件貪婪就近配對,容差 `(tolerance_ticks + 1)` tick(1 tick 給量化本身 —— 輸入時戳的事件會落在下一個
+tick —— 加上要求的容差)。
+
+**當次結果(2026-08-10)**:
+
+| fixture | tick 轉換 | `key` 事件 | 配對 | 最大殘差 | status |
+|---|---:|---:|---:|---:|---|
+| 09:18 | 86 | 86 | **86** | 7.7675 ms | `agree` |
+| 09:24 | 84 | 84 | **84** | 7.7725 ms | `agree` |
+| 09:37 | 78 | 78 | **78** | 7.7150 ms | `agree` |
+| `synthetic_counterstrafe` | 7 | 0 | 0 | — | `no_key_events` |
+
+三份真實 fixture **零不符**,且最大殘差 **< 1 tick**(7.8125 ms)—— 正是「輸入時戳事件被取樣到下一個
+tick」應有的樣子。合成 fixture 沒有 `key` 事件(additive 欄位未輸出),status 為 `no_key_events`:
+**證人缺席不是證詞不符**。
+
+**為何不做成 `xcorr_table` 的 flag**(D-31.8):交叉檢核驗的是**輸入通道**,不是某個窗的可計算性;把它
+折進 `flags` 會讓一個**可觀測性檢查**沉默地改變已凍結 gate 的 `n`,而 D-29.5 的納入規則正是為了讓這種
+耦合看得見。不符時報告 status 與逐項計數,由人判讀。
+
+---
+
+## `gate-v1`
+
+### 為什麼不是「換個門檻」,而是「換一個算得出來的量」
+
+OQ-S4-3 原提案 `split-half r ≥ 0.7`。split-half reliability 問的是「同一群**個體**的個體差異,用一半
+題目估與用另一半估是否一致」,需要一個**跨受試者的變異維度**。現行樣本 = **1 受試者(P001)× 3
+session × 20 peeks**,跨受試者維度 **n = 1** → 分母(受試者間變異)為零,**r 在數學上不可計算**。把 3
+個 session 當 3 個單位硬算得到的是 n=3 的相關係數,它估的是 session 間穩定性,不是個體差異可靠度。
+
+所以這不是把門檻調鬆,是把**不可計算的量換成可計算的量**;代價寫在下面的上限條款裡。
+
+### 三件組操作化(T2 只執行,不得修改)
+
+session 級統計量 = 該 session 通過納入規則的 peek 的 **中位 `|peak_strength|`**。
+
+| # | 條件 | 操作化 |
+|---|---|---|
+| ① | **shuffle / permutation null** | 逐 peek 對 `key_state` 作**循環位移**(circular shift),位移量自 `rng` 取樣於 `[1, n_ticks−1]`(**避開 0 與全長**);重算該 peek 的 peak strength → session 級統計量;重複 1000 次構成 null;`p` = null 中 **≥ 觀測值**的比例(單尾) |
+| ② | **bootstrap CI** | 逐 session 對 peek **有放回**重抽 2000 次,取 session 級統計量的 **95% percentile CI**;比對 `ci_width_max` |
+| ③ | **奇偶半分** | 同 session 內奇數 / 偶數 `peek_index` 各算一次 session 級統計量;`|Δ|` 須落在 ② 的 CI 寬度內 |
+
+**位移必須是循環的**:完全隨機重排會破壞 key-state 自身的自相關結構,null 會過度樂觀 → 假顯著。
+
+### 凍結 `gate-v1` registry(七欄位 + seed)
+
+| `min_samples` | `shuffle_iters` | `shuffle_alpha` | `bootstrap_iters` | `ci_width_max` | `half_agreement_within_ci` | `seed` | Version |
+|---:|---:|---:|---:|---:|---|---:|---|
+| 10 | 1000 | 0.01 | 2000 | 0.20 | `True` | **20260810** | `gate-v1` |
+
+2026-08-10 由 WP-31 T0 凍結(progress.md **D-31.4**),**在看到任何真實 xcorr 值之前**。**不得依 T2 的
+實際結果調整**;要改只能整組升 `gate-v2` + 重跑全鏈 + 入 [DECISIONS.md](../exec-plan/DECISIONS.md)。
+
+**決定性**:每個 session 以 `default_rng([seed, blake2b(session)])` 取亂數 —— 因此一個 session 的判定
+**不依賴表裡還有哪些 session、也不依賴它們的順序**,單獨重跑一個 session 會逐位重現批次跑的結果。
+`gate-v1` 全程**單執行緒**:平行化會重排 seeded RNG 的取樣順序,直接摧毀這條性質(WP-31 README §6;
+由 `test_coupling_purity.py` 斷言原始碼不含 thread/process pool)。
+
+### 判定規則(三分支,pre-registered;不得新增第四種)
+
+| 條件 | verdict |
+|---|---|
+| 該 session 有效 n < `min_samples` | **`blocked-by-data`**,`reason = insufficient_n` |
+| n 足夠但 ①②③ 任一未過 | **`research_only`**,`reason = failed:<逐條>` |
+| n 足夠且 ①②③ 全過 | **`research_only`**,`reason = all_criteria_passed`(= 「訊號非偶然且估計穩定」註記) |
+
+`reason` 為封閉詞彙表 `KNOWN_GATE_REASONS`(9 個字串);所有數值都已是 `GateVerdict` 的具名欄位,
+故 reason 本身保持可枚舉而非格式化字串。
+
+### ⚠️ 上限條款(逐字進報告,且由程式碼保證)
+
+> **`gate-v1` 比 split-half r 弱。** 它證明「**訊號非偶然 + 估計量穩定**」,**不證明個體差異可靠度**。
+> 因此在 C-D3 下,xcorr 於本樣本結構(1 受試者 × 3 session × 20 peeks)**最高只能到 `research_only`**,
+> **`coach_report` 不可達**。
+
+這條由**程式碼**保證,不是文件自律:`GateVerdict` 全模組只有一個建構點(`_gate_verdict`),而所有
+`verdict=` 引數都是 `{'research_only', 'blocked-by-data'}` 的字面值 —— 由
+[`test_coupling.py`](../../research/src/modules/metrics/algorithms/tests/test_coupling.py) 以 AST 掃描
+斷言(而非抽樣輸入)。`'coach_report'` 只存活在型別註記裡,留給日後有足夠受試者的 `gate-v2`。
+
+### 當次判定(2026-08-10,`gate-v1`,逐 session,不併池)
+
+| Session | n | 觀測(中位 \|r\|) | ① `shuffle_p` | ② CI(寬) | ③ \|Δ\| | verdict | reason |
+|---|---:|---:|---:|---|---:|---|---|
+| 09:18 | 20 | 0.9041 | **0.056** ✗ | [0.8870, 0.9188](0.0319)✓ | 0.0119 ✓ | `research_only` | `failed:shuffle_p` |
+| 09:24 | 20 | 0.9179 | **0.000** ✓ | [0.8749, 0.9265](0.0516)✓ | 0.0364 ✓ | `research_only` | `all_criteria_passed` |
+| 09:37 | 20 | 0.8953 | **0.173** ✗ | [0.8707, 0.9206](0.0499)✓ | 0.0300 ✓ | `research_only` | `failed:shuffle_p` |
+
+> `shuffle_p = 0.000` 表示「低於 1000 次 null 的解析度(< 1/1000)」,不是「恰為零」。
+
+**這張表最重要的一行不是 0.90,是 0.056 與 0.173。** 中位 `|peak r| ≈ 0.90` 看起來像很強的耦合,但
+**循環位移後的 null 在 5.6% / 17.3% 的抽樣中也達到同一水準** —— 因為 session 統計量是「逐 peek 對 65
+個 lag 取最大 `|r|`」,本身是**最大化統計量**:在 ±250 ms 的帶寬內,一段緩慢的方波 key-state 就算被
+整體位移,通常仍能在某個 lag 上與 ω 對得很好。**若沒有 ① 這條反向對照,0.90 會被當成強耦合寫進報告。**
+這正是 pre-registration 的 null 存在的理由(見 OQ-S4-20)。
+
+演算法本身的正確性與效度判定分離,由合成訊號驗證(`test_coupling.py`):已知 lag → 回推誤差 ≤1 tick
+且符號方向正確;**純雜訊 → `shuffle_p` 不顯著**(一個會對雜訊判「非偶然」的 gate 沒有價值);同一組
+合成強耦合 → `shuffle_p` 顯著(證明上一條是資料的性質,不是一個永遠不會觸發的 gate)。
+
+### 已知限制(`xcorr-v1` / `gate-v1`)
+
+- **上限條款**:見上。本樣本結構下最高 `research_only`,`coach_report` 不可達。
+- **三件組全部只看 `|r|` 的大小,不看方向**:實測 median signed strength 為 **−0.13 / +0.82 / +0.84**,
+  median peak lag 為 **−183.6 / −136.7 / +179.7 ms** —— 方向跨 session **不穩定**。因此即使某 session
+  ①②③ 全過(09:24),也**不得**據以宣稱「key 領先 ω 多少 ms」。T2 交付 lag 分佈,不交付單一方向結論。
+- **`max_lag_ms` 與窗長的比例**:±32 tick vs 中位 62–65 tick;correlogram 兩端的 r 建立在約 30 個配對
+  樣本上(S-31.1)。讀圖必須同時讀 `n_overlap`。
+- **樣本效度**:三份真實 fixture 為**同一匿名受試者 P001、同一台 240 Hz 機器、同一 drill config、同一
+  天三個 session**。非母體層級證據(KI-004 R-7)。
+- **不跨 session 併池**:gate 逐 session 執行;跨 session 推論 out of scope。
+- **只做 ω 通道**:階段 A 的二元 strafe 速度使 `vx` 通道退化;`projected_target` 通道需目標 metadata,
+  兩者皆未做(stage4 README §7 技術債②)。
+- **合成 fixture 走 `window_too_short`**:24 tick 窗 → 23 個配對樣本 < `min_ticks = 32`,**確定性**觸發。
+  注意這與同一份 fixture 在 `phase-v1`(`window_too_short`,門檻不同)與 `sparc-v1`(`too_few_samples`)
+  上的退化分支**各自不同**:三個構念量的不是同一件事,觸底原因本來就可以不一樣(S-31.4)。
+- **尚未進教練報告**:C-D3 下由 T-exit 收斂;依上限條款,xcorr 最多只能進報告的研究向區塊並附上全部
+  限制。

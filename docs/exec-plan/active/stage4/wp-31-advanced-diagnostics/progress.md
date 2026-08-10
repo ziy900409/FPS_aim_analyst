@@ -12,6 +12,7 @@
 | 2026-08-10 | — | WP-31 規劃完成(五 task 自足檔建立)。**尚未開工**;T0 尚未執行,下方規劃期決議**尚未正式凍結**。 |
 | 2026-08-10 | **T0** | ✅ entry gate 完成:M14 六項 + WP-30 T-exit 逐項自行覆核(§1);fixture roster 沿用 + strict 閘**獨立負向/正向重跑**(§2);`gate-v1` 三件組凍結(**D-31.4**,含 seed,關閉 OQ-S4-3);`sparc-v1`/`xcorr-v1`/`fitts-v1` pre-registration 凍結(**D-31.5**,含 SPARC 段來源契約);D-31.0~D-31.3 由規劃期決議正式轉為凍結態;新開 OQ-S4-18/OQ-S4-19;`../README.md` §3/§6/§8 對帳。**零 `research/`、零 `src/` 變更**(§5) |
 | 2026-08-10 | **T1** | ✅ `sparc-v1` 落地:`compute_sparc`/`compute_sparc_traced` 逐位移植 + 兩份跨 repo golden 對表 ≤1e-9(PA parity 8 個量、128Hz 域 8 case)+ `sparc_table`(逐 MR 段,59/60 與 `phase-v1` 機械一致)+ `sparc_length_sensitivity` 階梯診斷 → verdict **`stratified_only`**(step_ratio **0.7643** ≥ 0.5,**D-31.6**,關閉 OQ-S4-18)+ `analysis-advanced-diagnostics.md` 首版。`uv run pytest` **303 → 365 passed**;`npm run test:ci` exit 0 且 `src/`/`tests/` **零 diff**(§6) |
+| 2026-08-10 | **T2** | ✅ `xcorr-v1` + `gate-v1` 落地:`key_state_signed` / `key_velocity_xcorr`(逐 lag Pearson + PA tie-break,correlogram 每點帶 `n_overlap`)/ `xcorr_table` / `reliability_gate`(三件組,per-session seeded)+ `key_event_crosscheck`。**三 session 全 `research_only`**,其中 **09:18 / 09:37 未過 ① shuffle null**(p=0.056 / 0.173)、09:24 三件全過(**D-31.9**);`coach_report` 不可達由 AST 掃描斷言(DoD ③)。`key` 事件交叉檢核 **86/86 · 84/84 · 78/78 全對、最大殘差 < 1 tick**(D-31.8)。新開 **OQ-S4-20**(最大化統計量的多重比較效應)。`uv run pytest` **365 → 431 passed**;`npm run test:ci` exit 0 且 `src/`/`tests/` **零 diff**(§7) |
 
 ---
 
@@ -219,6 +220,47 @@ T0 **不執行**任何 shuffle / bootstrap / 回歸 / xcorr / SPARC 計算(見 T
 - ①「既然階梯疑似有真實成分,就把 verdict 放寬成 `comparable` 並加註」— 否決:pre-registration 的門檻是為了防止「看到結果再解釋」;不可分離**正是**限制成立的理由,不是放寬的理由(GD-20)。
 - ②「以 bucket 中位數差為固定修正項,把 N=64 的 SPARC 平移後跨 bucket 比較」— 否決:那等於假設階梯 100% 來自 padding(上段已說明無法確認),且會產生一個未經驗證的第二定義(C-D4)。
 
+### D-31.7 — `xcorr-v1` 介面落地:與 [README §5](README.md) 契約的三處偏離(T2,2026-08-10)
+
+README §5 的 `Interface contracts` 是規劃期草圖(不在 [README §6](README.md) 列舉的**五條凍結**之內 —— 那五條凍的是 fixture roster、`gate-v1` 值與 seed、三個 pre-registration 的**參數值**、上游版本)。T2 落地時有三處偏離,逐項理由如下:
+
+| # | 契約 | 落地 | 理由 |
+|---|---|---|---|
+| ① | `correlogram: tuple[tuple[float, float], ...]`(`(lag_ms, r)`) | **`tuple[tuple[float, float, int], ...]`**(`(lag_ms, r, n_overlap)`) | **由 D-31.5 的 T2 呈現契約要求**:「在 correlogram 輸出中帶出每個 lag 的有效樣本數」。§5 的 2-tuple 寫在 S-31.1 被發現之前;兩者衝突時以較晚、且明確針對此問題的 D-31.5 為準 |
+| ② | `XcorrResult` 的 `peek_index: int` / `side: Literal['L','R']` | 同名欄位但 **`| None`,預設 `None`**,由 `xcorr_table` 以 `dataclasses.replace` 補上 | `key_velocity_xcorr` 是兩條序列的純函式,**不可能**知道 peek 身分;硬給必填欄位會逼合成測試捏造一個假身分。與 `sparc.py` 把 `compute_sparc`(純數值)與 `_sparc_sample`(帶身分)分層是同一個作法 |
+| ③ | `reliability_gate(table, thresholds)` | 追加 **`params: XcorrParams = DEFAULT_XCORR_PARAMS`**(具預設值,呼叫相容);`xcorr_table` 追加 keyword-only **`session: str = ""`** | ① null 需要**重算**位移後的 peak strength,故 `xcorr_table` 必須把逐 peek 的 `key_state` / `omega` / `dt_ms` / `max_lag_ticks` 留在表上(這正是讓 gate 維持「`(table, thresholds)` 的純函式」的代價,契約精神未變);② `session` 欄由 `xcorr_table` 產生,使**併池必須顯式 `concat`** —— 跨 session 併池在 diff 裡看得見,不會意外發生 |
+
+**Alternatives considered**:
+- 「correlogram 維持 2-tuple,另開一個 `overlap_by_lag` 欄位」— 否決:同一條曲線的兩個平行陣列,消費端一定會有人只取其中一個;綁在同一個 tuple 裡才讓「讀 r 就會看到 n」成為預設。
+- 「`reliability_gate` 改吃 `(table, series_by_peek)` 兩個參數」— 否決:那讓 gate 的決定性取決於呼叫端有沒有把對的序列傳進來,契約更弱。
+
+### D-31.8 — `key` 事件交叉檢核為獨立報告,**不**進 `xcorr_table` 的 flags(T2,2026-08-10)
+
+[T2 §①](T2-key-velocity-xcorr.md) 寫「矛盾 → 標 flag 並記 progress」。落地為 **`key_event_crosscheck()` 獨立函式**(逐 export 一份報告),`KNOWN_XCORR_FLAGS` **不含** `key_event_mismatch`。
+
+**理由**:交叉檢核驗的是**輸入通道的完整性**,不是某個窗的可計算性。若折進 `flags`,依 D-29.5 的納入規則它會**直接改變已凍結 gate 的 `n`** —— 一個可觀測性檢查沉默地改動效度判定的分母,正是 D-29.5 要避免的耦合。實測三份真實 fixture **零不符**(86/86、84/84、78/78,最大殘差 7.77 ms < 1 tick),故此決策在本次資料上**不改變任何數字**,只影響「日後若真的不符會發生什麼」:報告 status 與逐項計數、由人判讀,而不是自動縮小 gate 分母。
+
+**失效條件**:若日後出現 `status = mismatch` 的真實 fixture,必須在該 task 明確裁決「該 session 是否仍可作效度樣本」,不得因為它不在 flags 裡就當作沒發生。
+
+### D-31.9 — `gate-v1` 判定:三 session 全 `research_only`,2/3 未過 ①(T2 執行 T0 的 pre-registration,2026-08-10)
+
+| Session | n | 觀測(中位 \|r\|) | ① `shuffle_p` | ② CI 寬 | ③ \|Δ\| | verdict | reason |
+|---|---:|---:|---:|---:|---:|---|---|
+| 09:18 | 20 | 0.9041 | **0.056** ✗ | 0.0319 ✓ | 0.0119 ✓ | `research_only` | `failed:shuffle_p` |
+| 09:24 | 20 | 0.9179 | **0.000** ✓ | 0.0516 ✓ | 0.0364 ✓ | `research_only` | `all_criteria_passed` |
+| 09:37 | 20 | 0.8953 | **0.173** ✗ | 0.0499 ✓ | 0.0300 ✓ | `research_only` | `failed:shuffle_p` |
+
+**這是執行 pre-registration,不是新決策**:門檻、迭代次數與 seed 都在 T0(D-31.4)凍結,T2 只把資料代進去。三個 session 皆為 `research_only` —— 這在 `gate-v1` 下是**上限**,不是「差一點就能進報告」。
+
+**判定未被結果污染的證據**:`gate-v1` 的凍結 commit 為 **`944abc3`**(T0,2026-08-10,`docs(wp-31): T0 entry gate — gate-v1 三件組重新操作化凍結`),早於本 task 對真實資料的第一次執行;`DEFAULT_GATE_THRESHOLDS` 的七個值由 `test_coupling.py` 逐值釘死,任何調整都會讓該測試當場紅。
+
+**發現了門檻不合適但沒有修改**(DoD ⑤):見 [S-31.5](#surprises) 與新開的 **OQ-S4-20** —— 問題不在 `shuffle_alpha` 的數值,而在 session 統計量本身是「逐 peek 對 65 個 lag 取最大 `|r|`」的**最大化統計量**。依協議記錄並帶到下一版,**本 task 不動 `xcorr-v1` 或 `gate-v1` 的任何一個值**。
+
+**Alternatives considered**:
+- ①「既然 ① 只差在多重比較,就把 session 統計量改成固定 lag 的 r」— 否決:那是換一個構念(`xcorr-v2`),且是在**看過結果之後**換,pre-registration 精神當場失效。正確處置是開 OQ。
+- ②「把 `shuffle_alpha` 從 0.01 放寬到 0.05」— 否決:09:37 的 p=0.173 連 0.05 都過不了,而且「為了讓它過而調門檻」正是 [README §3](README.md) 明列的 failure mode。
+- ③「只報 09:24 的通過結果」— 否決:三 session 並列呈現是 KI-004 R-7 紀律;挑通過的那一個報告,等於用選擇性呈現偽造可靠度(GD-20)。
+
 ---
 
 ## 4. OQ 對帳(T0)
@@ -228,6 +270,7 @@ T0 **不執行**任何 shuffle / bootstrap / 回歸 / xcorr / SPARC 計算(見 T
 | **OQ-S4-3** | ✅ **關閉** | 改寫理由見 D-31.4 前提段(split-half r 在 1×3×20 樣本結構下不可計算);拍板時點 2026-08-10(使用者);凍結值 = `GateThresholds` 七欄位 + `seed=20260810`;上限條款(`coach_report` 不可達)已入 D-31.4。[../README.md §8](../README.md) 已同步 |
 | **OQ-S4-18** | ✅ **T1 關閉**(D-31.6) | 判定 **不成立**:pooled n=59 實測 `step_ratio = 0.7643 ≥ 0.5` → **`stratified_only`**,SPARC 僅限同 `padded_n` bucket 內比較。padding 規則未動。附帶歸因限制(階梯無法歸因為純 padding 假象,段長與 `padded_n` 共變不可分離)一併入帳 |
 | **OQ-S4-19** | 🆕 **新開** | Fitts 的 D 為內生(玩家上一 peek 留下的準星位置),回歸結果能否作為 TP 個人基線。owner 研究者 / deadline pilot 後 / 未決影響:TP 解讀範圍,不阻塞 T3 交付 |
+| **OQ-S4-20** | 🆕 **T2 新開**(D-31.9) | `xcorr-v1` 的 session 統計量是「逐 peek 對 65 個 lag 取最大 \|r\|」—— 一個**最大化統計量**。實測 circular-shift null 在 5.6% / 17.3% 的抽樣中也達到觀測水準(0.90),兩個 session 因此未過 ①。問題不在 `shuffle_alpha` 的數值,而在統計量的選擇:是否應改用**固定 lag 的 r**、或對 lag 數作多重比較校正(→ `xcorr-v2`)。owner 研究者 / deadline WP-32 或補錄後 / 未決影響:xcorr 的效度天花板;**不阻塞 T-exit**(判定已明確且方向保守)。依 DoD ⑤「記錄但不修改」處置 |
 | **OQ-S4-17** | 🟡 維持 open | 本 WP **不消費 REC 邊界**(SPARC 用 MR 區間),無新證據。若日後 T3 要做 RT 扣除的 MT 才會再撞到 |
 | **OQ-S4-11** | 🟡 維持 open | 三份真實 fixture 皆無 ADS、皆為 hitscan → 本 WP 三指標的 `--group-by ads`/`weapon_mode` 同樣退化成單格 |
 | **OQ-S4-10** | 🟡 維持 open | 本 WP **不消費 `t_release`**(xcorr 取逐 tick key-state,非事件錨點) |
@@ -306,6 +349,58 @@ Test Files  90 passed (90)
 
 ---
 
+## 7. T2 Scope 與閘門證據(T2 DoD ⑧)
+
+**Touches**(全部為新增檔;`git status --short`):
+
+```
+research/src/modules/metrics/algorithms/coupling.py                       (ADD)
+research/src/modules/metrics/algorithms/tests/test_coupling.py            (ADD 50 tests)
+research/src/modules/metrics/algorithms/tests/test_coupling_fixture.py    (ADD 11 tests)
+research/src/modules/metrics/algorithms/tests/test_coupling_purity.py     (ADD 5 tests)
+research/src/modules/metrics/notebooks/t2/generate_xcorr_report.py        (ADD)
+research/src/modules/metrics/notebooks/t2/outputs/xcorr-*.csv|.json|.svg  (ADD 14 檔)
+docs/operational/analysis-advanced-diagnostics.md                         (MODIFY:+ xcorr-v1 / gate-v1)
+```
+
+```
+$ git diff --stat -- src tests
+(空)
+```
+
+**零 `src/`、零 `tests/` 變更**,符合 [task-checklist.md](task-checklist.md) 紀律 2。
+
+**閘門**:
+
+```
+$ uv run pytest -q --no-header -p no:cacheprovider --basetemp=<短路徑>
+431 passed in 103.30s         # T1 的 365 + 本 task 新增 66,零回歸
+
+$ npm run test:ci             # tsc --noEmit && vitest run && playwright test
+Test Files  90 passed (90)
+     Tests  748 passed (748)
+21 passed                     # exit 0;與 T1 逐位相同(TS 零變更)
+```
+
+> **環境註記**:`--basetemp` 沿用 §5 的短路徑做法(Windows `MAX_PATH` + `PermissionError`)。本次 pytest 從 57s 增至 **103s**,增量幾乎全在 `test_coupling_fixture.py` 的**單一 session 完整 gate 重算**(1000 次 permutation × 20 peeks × 65 lags ≈ 10s)、`test_coupling.py` 的合成訊號 gate 測試(FAST thresholds)與三份 fixture 的重複 `build_xcorr_frame`。這是本 WP 目前唯一一次測試時間顯著上升,原因是效度判定本身就是 Monte-Carlo;若日後成為負擔,正確作法是**降低測試用的 iteration**(FAST thresholds 已是此模式),不是刪掉重現性斷言。
+
+**決定性與「判定未被結果污染」(DoD ②⑤)**:
+- 同一輸入 + 同一 `GateThresholds` 連續兩次 `reliability_gate` → `GateVerdict` 全欄位逐位相同(`test_coupling.py`)。
+- **逐 session 獨立 seed**(`default_rng([seed, blake2b(session)])`):單獨跑一個 session 與在三 session 表中跑,結果逐位相同(測試斷言)。這比「跑完整批才能重現」強,也讓 T-exit 可以只重跑一個 session 覆核。
+- 委任 fixture 測試把 **committed `xcorr-gate-verdicts.json` 的第一個 session 逐欄位重算比對**;另外兩個 session 的 `observed`(不需 RNG)全部重算比對。三個 session 全量重算約 30s,對每次跑測試都要付的成本與證據增量不成比例 —— 三者共用同一條 RNG 路徑,重現一個即證明該路徑。
+
+**`coach_report` 不可達(DoD ③)以 AST 掃描證明,而非抽樣輸入**:`test_coupling.py` 解析 `coupling.py` 的語法樹,斷言 ① `GateVerdict` 全模組只有**一個**建構點;② 所有 `_gate_verdict(...)` 的 `verdict=` 引數都是 `{'research_only','blocked-by-data'}` 的**字面常數**。兩條合起來封死所有輸入相依路徑;`'coach_report'` 只存活在型別註記,留給日後樣本結構足夠的 `gate-v2`(D-31.4 失效條件)。
+
+**單執行緒紀律以測試釘死**:`test_coupling_purity.py` 斷言 `coupling.py` 原始碼不含 `concurrent.futures` / `multiprocessing` / `threading` / `*Pool` —— [README §6](README.md) 的 concurrency 條款(平行化會重排 seeded RNG 的取樣順序,判定就不可重現)因此不是文件自律。
+
+**合成訊號驗證(DoD ①)四案例**:已知 lag(−8/−3/0/+3/+8 tick)回推誤差 ≤1 tick 且符號方向正確;**純雜訊 → `shuffle_p` 不顯著**;key-state 恆定 → `key_state_constant`;窗長 < `min_ticks` → `window_too_short`。另加一條**正向對照**(合成強耦合 → `shuffle_p` 顯著),否則「雜訊不顯著」也可能只是因為 gate 永遠不會觸發。
+
+**上層文件對帳(本 task 順手補齊,含兩處 T1 遺留)**:[../README.md](../README.md) 頁首狀態表、§1 FR-D14 列(字面 split-half → 註明已由 `gate-v1` 取代)、§3 WP-31 列、§6 WP-31 task 表(**T1 列一併補 ✅** —— T1 落地時未回寫)、§8 OQ 表(**OQ-S4-18 一併改為關閉** —— 同為 T1 遺留;新增 OQ-S4-20)、§9 文件清單。
+
+**`key` 事件交叉檢核(DoD ⑦)**:86/86 · 84/84 · 78/78 **全數相符**,最大殘差 7.7675 / 7.7725 / 7.7150 ms 皆 **< 1 tick(7.8125 ms)** —— 正是「輸入時戳事件被取樣到下一個 tick」應有的形狀。合成 fixture 無 `key` 事件 → `no_key_events`(證人缺席,不是證詞不符)。**零不符,無須解釋條目**。
+
+---
+
 ## 規劃期實測資料(供 T0 覆核,非結論)
 
 > 以下數值由規劃期一次性腳本產出,**尚未經 task 的測試釘死**;T0/T1/T2/T3 須以自己的測試重新確立,不得直接引用為證據。
@@ -332,12 +427,17 @@ Test Files  90 passed (90)
 | **S-31.1**(2026-08-10,T0) | **`max_lag_ms = 250`(±32 tick)相對於真實窗中位 62–65 tick 並不小**:在 \|lag\| 接近上限時,兩序列的重疊只剩約 30 個樣本,correlogram 兩端的 r 天生比中央不穩。規劃期只核對了「250ms 涵蓋 MR 中位段長」這一側,沒有核對另一側的重疊代價。**處理方式不是改門檻**(pre-registration 已凍結),而是在 D-31.5 追加 T2 的呈現契約:每個 lag 帶出有效樣本數、重疊段零標準差回 NaN 轉 flag。若沒發現這點,T2 很可能產出一張兩端翹起的 correlogram 而讀者無從判斷那是耦合還是樣本數效應。 |
 | **S-31.3**(2026-08-10,T1) | **階梯診斷的 verdict 是 `stratified_only`,但「階梯有多少來自 padding」在本設計下不可回答**。規劃期把 OQ-S4-18 想成一個二選一的方法學問題(padding 假象大不大),T1 跑出數字後才看清:段長**同時**決定 `padded_n` 與動作本身的性質,`step_ratio` 量的是兩者的**混合**。所以 `stratified_only` 這個 verdict 名副其實(不可跨 bucket 解讀),但它的**理由**比 pre-registration 當時設想的更強一層——不是「padding 造成偏差、應校正」,而是「兩個解釋不可分離、不得單一解讀」。這個差別直接決定了不可以做「扣掉中位數差再跨 bucket 比」的修正(D-31.6 Alternatives ②),而 pre-registration 的文字並沒有擋住那條路。 |
 | **S-31.4**(2026-08-10,T1) | **合成 fixture 在 `sparc-v1` 與 `phase-v1` 上走的是不同的退化分支**:同一份 `synthetic_counterstrafe.json`,`phase-v1` 判 `window_too_short`(24 tick < `min_window_ticks=30`),`sparc-v1` 判 `too_few_samples`(MR 段 9 tick < 移植常數 `MIN_SAMPLES=16`)。兩者都是「確定性觸發、明確失敗、不捏造數值」,但**原因不同**——若把「合成 fixture 應該觸發哪個 flag」當成跨構念的共通期望寫進斷言,會得到一條假的一致性要求。與 `curve-v1` 對同一 fixture **不**觸發 `window_too_short` 是同一類提醒(analysis-phase-curves.md 已記):同一份退化輸入在不同構念上的正確行為,本來就可以不一樣。 |
+| **S-31.5**(2026-08-10,T2) | **中位 \|peak r\| ≈ 0.90 幾乎全部是「取最大值」造成的,不是耦合強度**。三個 session 的觀測值 0.9041 / 0.9179 / 0.8953 看起來像非常強的 strafe-aim 干擾;但把 key-state **整體循環位移**(波形完全保留、只是對不上原本的時間點)之後,null 分佈仍有 **5.6% / 17.3%** 的抽樣達到同一水準。原因是 session 統計量取的是「逐 peek 在 65 個 lag 中的最大 \|r\|」—— 在 ±250 ms 帶寬內,一段緩慢的方波 key-state 幾乎總能在**某個** lag 上與 ω 對得很好。**規劃期完全沒有預期到這一點**:README §0.6 與 D-31.5 討論的是通道選擇與 lag 範圍,沒有人問過「這個統計量在虛無假設下長什麼樣」。若 `gate-v1` 沒有 ① 這條反向對照,0.90 會直接被寫進報告當成強耦合證據 —— 這是本 WP 到目前為止,pre-registration 唯一一次**實際擋下一個錯誤結論**。處置依 DoD ⑤:記錄、開 OQ-S4-20,**不改任何門檻**。 |
+| **S-31.6**(2026-08-10,T2) | **三件組全部只看 \|r\| 的大小,沒有一條看方向 —— 而方向恰好是不穩的**。三 session 的 median signed strength 為 **−0.13 / +0.82 / +0.84**,median peak lag 為 **−183.6 / −136.7 / +179.7 ms**:連「key 領先還是 ω 領先」都跨 session 翻號。09:24 三件組全過,但它的「通過」只表示 `|r|` 這個量非偶然且穩定,**不表示可以講出一句帶方向的話**。這條限制不在 T0 的預想內(D-31.4 設計三件組時,隱含假設「統計量穩定」就等於「結論可用」),已逐字進 `analysis-advanced-diagnostics.md` 的已知限制,並由 `test_coupling_fixture.py` 斷言方向跨 session 確實翻號 —— 讓這條限制不會在資料更新後悄悄不再成立卻沒人發現。 |
+| **S-31.7**(2026-08-10,T2) | `key` 事件與 tick 推導狀態的交叉檢核**逐項全對**(86/86 · 84/84 · 78/78),且最大殘差 7.7675 ms **恰好落在一個 tick(7.8125 ms)之內** —— 也就是每個輸入時戳事件都精確地在**下一個** tick 現形,沒有一次跨兩個 tick。這比「不矛盾」強得多:它把 README §0.6「key-state 與 ω 天然同格、免對時」從論證升級為實測。與 S-31.2 同性質 —— 覆核「不得只信任帳本文字」確實執行且通過。 |
 | **S-31.2**(2026-08-10,T0) | 規劃期 README §0.6 的 `keys` 非空比例(1128/2038、1103/2104、990/1904)與 `key` 事件數(86/84/78)在 T0 獨立重跑下**逐位吻合**;`eccentricityAtSpawnDeg` 亦自 committed parity JSON 重算得 pooled 8.70–30.72°(3.53×),與規劃期一致。與 WP-30 T0 的 S-30.5 同性質:覆核「不得只信任帳本文字」這條紀律確實執行且通過。 |
 
 ---
 
 ## Open Questions
 
-見 [README.md §7](README.md) 與本檔 §4 對帳表。本 WP 相關:**OQ-S4-3**(✅ **T0 關閉**,D-31.4)· **OQ-S4-18**(✅ **T1 關閉**,D-31.6:`stratified_only`,step_ratio 0.7643)· **OQ-S4-19**(Fitts 的 D 內生性,pilot 後)· OQ-S4-17 / OQ-S4-11 / OQ-S4-10 維持 open 且不阻塞本 WP。
+見 [README.md §7](README.md) 與本檔 §4 對帳表。本 WP 相關:**OQ-S4-3**(✅ **T0 關閉**,D-31.4)· **OQ-S4-18**(✅ **T1 關閉**,D-31.6:`stratified_only`,step_ratio 0.7643)· **OQ-S4-19**(Fitts 的 D 內生性,pilot 後)· **OQ-S4-20**(🆕 **T2 新開**,D-31.9:最大化統計量的多重比較效應)· OQ-S4-17 / OQ-S4-11 / OQ-S4-10 維持 open 且不阻塞本 WP。
 
 **T1 未開新 OQ**。階梯的歸因不可分離(S-31.3)已在 D-31.6 內以限制條款處理,不另開 OQ:要分離需在同一 `padded_n` bucket 內操弄段長,那是**新錄製 + 新設計**,與 OQ-S4-19 的「是否升級為受控設計」同屬 stage4 之外的題目。SPARC 是否進教練報告由 **T-exit** 依 C-D3 收斂,本 task 只交付效度證據與使用限制。
+
+**T2 開一個新 OQ(OQ-S4-20)**,理由是它**不能**用限制條款處理:S-31.5 指出的問題不是「這個數字要小心讀」,而是「這個統計量在虛無假設下就已經很大」——那是構念定義層級的疑慮,只能由 `xcorr-v2` 回答。相對地,S-31.6(方向不穩)**已**以限制條款處理並上測試,不另開 OQ:它是同一個構念的正確使用邊界,不是構念本身要重新定義。xcorr 是否進教練報告由 **T-exit** 依 C-D3 收斂;依上限條款,最高只能是研究向區塊 + 全部限制。
