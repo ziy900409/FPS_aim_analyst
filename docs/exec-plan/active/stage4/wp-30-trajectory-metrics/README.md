@@ -10,7 +10,7 @@
 | **相依** | **M14 全六項**(含 ③④⑤ 重新宣告)。M14 ③④⑤ 的解除已由 [KI-005-A / A2-T4](../../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 交付(2026-08-07),**本 WP 只驗證、不代辦**(協議 §6) |
 | **對應 FR** | FR-D11 / FR-D12 + FR-D16 第二版(報告 v1) |
 | **估時** | 2.5–3.25 dev-days(**高於 [../README.md §3](../README.md) 編列的 2–3d**,超出部分全在 T1;理由見 §4 與 [progress.md](progress.md) D-30.0) |
-| **狀態** | 🔶 **進行中(2026-08-10)** —— T0(entry gate)+ T1(`t_detect` parity)+ T2(phase 分解)+ T3(101 點曲線)已完成;T-exit 待開工。詳見 [progress.md](progress.md) |
+| **狀態** | ✅ **完成(2026-08-10)** —— T0(entry gate)、T1(`t_detect` parity)、T2(phase 分解)、T3(101 點曲線)、T-exit(`coach-report-v1` + 文件定稿)全數完成；REC/`t_detect` 系統性分歧保留為研究向 OQ-S4-17。詳見 [progress.md](progress.md) |
 
 ---
 

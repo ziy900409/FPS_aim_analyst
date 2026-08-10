@@ -323,7 +323,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 |---|---|---|---|---|---|---|---|
 | **WP-28** | [wp-28-research-foundation/](wp-28-research-foundation/README.md) | research 地基:scaffold + ingest + 角運動學(**含 ε parity**)+ submovement 分段 + quality flags + 一鍵 pipeline | P0-2 | **M14 ✅** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | ✅ **task 全數完成;M14 六項全數恢復/重新宣告**(①⑥維持,② 已於 KI-004 S1 落地後重新宣告(2026-08-06),③④⑤ 已於 [A2-T4](../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 重新宣告(2026-08-07);KI-005 A1+A2 全數落地、KI-006 CLOSED) |
 | **WP-29** | [wp-29-coach-timeline/](wp-29-coach-timeline/README.md) | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件)+ 教練報告 v0 | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ✅ **完成(2026-08-05)**:T0–T2 + T3(使用者 override)+ T-exit 全綠;`timeline-v1`/`sync-v1` 定稿,OQ-S4-6 關閉 |
-| **WP-30** | [wp-30-trajectory-metrics/](wp-30-trajectory-metrics/README.md) | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14 ✅** | 2–3 → **2.5–3.25**(D-30.0) | 🟡 **T0 完成(2026-08-07)** —— M14 六項自行覆核通過、fixture roster 凍結、`suspect` 使用界線拍板(D-30.3)、`phase-v1`/`curve-v1` pre-registration 骨架寫定;詳見 [wp-30 progress.md](wp-30-trajectory-metrics/progress.md)。**T1(t_detect parity)待開工** |
+| **WP-30** | [wp-30-trajectory-metrics/](wp-30-trajectory-metrics/README.md) | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14 ✅** | 2–3 → **2.5–3.25**(D-30.0) | ✅ **完成(2026-08-10)**：T0 strict roster/使用界線、T1 `t_detect` parity、T2 `phase-v1`、T3 `curve-v1`、T-exit `coach-report-v1` 全數交付；REC/`t_detect` 系統性分歧保留 OQ-S4-17 研究向 |
 | **WP-31** | `wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14 ✅** | 2–3 | ⬜(entry blocker 已解除,可展開) |
 | **WP-32** | `wp-32-dashboard-integration/` | 晉升整合:golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | — | **M15** | WP-29 + WP-30(WP-31 選項) | 2–3 | ⬜ |
 
@@ -385,10 +385,10 @@ WP-28(地基,M14)──┤                                                      
 | Task | Scope | Definition of Done | Risk |
 |---|---|---|---|
 | **T0 entry-gate** ✅ | 驗 M14 六項;fixture roster 凍結 + `strict=True` 機械閘;`suspect` 使用界線重立(D-29.2 不適用);`phase-v1`/`curve-v1` pre-registration 骨架 | ✅ 完成(2026-08-07):M14 六項逐項覆核記 progress;fixture roster 六份逐列凍結;strict 閘負向測試獨立驗證;D-30.1b(多段 peek MR 取法)以三份真實匯出 segment 數分佈拍板;pre-registration 骨架寫定 | Low |
-| **T1 t_detect parity**(新增,D-30.0) | Python 推導 `t_detect`/`eccentricity_at_spawn`(對表 [analysis-t-detect.md](../../../operational/analysis-t-detect.md) 已解析預設值);vitest 對表閘 ≤1e-9(含反 vacuous) | `detect-parity.test.ts` 對三 presentation 量對表通過;`detected` 樣本數 ≥10(pre-registered,見 wp-30 T0 pre-registration)否則 `blocked-by-data` | Med |
-| **T2 REC/MR/V phase**(原 T1) | `MR = seg-v2 primary_flick`(D-30.1/D-30.1b);Butterworth 僅報告用平滑;每 peek rec/mr/v 時長 + peak ω + flags;REC-end vs t_detect 一致性檢查 | 合成 fixture 相位邊界誤差 ≤ 2 tick;真實資料三段非退化佔比 ≥90%(pre-registered);REC-end 與 t_detect 差異分佈報告(系統性分歧 → 記 OQ);cutoff ≥ Nyquist 等退化走 fallback + flag(不 crash) | Med |
-| **T3 L/R 101 點曲線**(原 T2,不依賴 T1/T2,可並行) | `[t_visible, t_firstShot]`(OQ-S4-5)重採樣 101 點,線性插值;ω(t)/ε(t) 逐 side 平均 + IQR 分佈帶(D-30.4)+ 疊圖 | 插值單元測試(<2 樣本/全零/缺值/端點重合)綠;≥1 真實 drill L/R 曲線圖產出且圖上顯示 n(L)/n(R) | Low |
-| **T-exit** | phase + 曲線併入報告 v1 | 報告 v1 一鍵綠;新增段落含解讀指引(哪段長 → 練什麼);`uv run pytest` 綠 | — |
+| **T1 t_detect parity** ✅(新增,D-30.0) | Python 推導 `t_detect`/`eccentricity_at_spawn`(對表 [analysis-t-detect.md](../../../operational/analysis-t-detect.md) 已解析預設值);vitest 對表閘 ≤1e-9(含反 vacuous) | ✅ 四份 fixture 對表、反 vacuous pooled `detected=23`、legacy strict 負向測試全綠 | Med |
+| **T2 REC/MR/V phase** ✅(原 T1) | `MR = seg-v2 primary_flick`(D-30.1/D-30.1b);Butterworth 僅報告用平滑;每 peek rec/mr/v 時長 + peak ω + flags;REC-end vs t_detect 一致性檢查 | ✅ 合成邊界 0 tick 誤差；真實 59/60 非退化；REC-end 與 `t_detect` 為系統性分歧(OQ-S4-17) | Med |
+| **T3 L/R 101 點曲線** ✅(原 T2,不依賴 T1/T2,可並行) | `[t_visible, t_firstShot]`(OQ-S4-5)重採樣 101 點,線性插值;ω(t)/ε(t) 逐 side 平均 + IQR 分佈帶(D-30.4)+ 疊圖 | ✅ 三份真實 drill 各 L/R `n=10`、零排除；合成短窗正向回歸綠 | Low |
+| **T-exit** ✅ | phase + 曲線併入報告 v1 | ✅ `coach-report-v1` 一鍵產出三份真實 + 合成 HTML；phase/curve 帶 n、flags、version、效度層級；REC/`t_detect` 系統性分歧維持研究向；9 份 committed examples deterministic；雙閘綠 | — |
 
 ### WP-31 advanced-diagnostics(P2;entry = M14;2–3d)
 
@@ -458,11 +458,12 @@ WP-28(地基,M14)──┤                                                      
 - [x] [exec-plan/README.md](../../README.md):§2 加階段 D 索引表;§3 加 M14–M15;§4 相依圖擴充;§6 目錄慣例。(2026-08-04 本計畫)
 - [x] [docs/MAP.md](../../../MAP.md):§3 導航更新(stage4 已採納 + research 層入口)。(2026-08-04 本計畫)
 - [x] [CLAUDE.md](../../../../CLAUDE.md) §4 硬約束追加 C-D1~C-D4(WP-28 T0,2026-08-04)。
-- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 task 隨切片回寫):submovement 分段(primary_flick/micro_adjustment)、ω(t) 角速度、REC/MR/V phase、Release-to-Click Sync、101 點正規化曲線、reliability gate、parity fixture;§B 增 research 層元件列。**WP-29 T-exit 已回寫**:peek 時間軸(`timeline-v1`)、`t_release`、`outcome`、peek/Sync quality flags、Release-to-Click Sync(`sync-v1`)、教練報告 v0;REC/MR/V phase 與 101 點曲線待 WP-30。
+- [x] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 task 隨切片回寫):submovement 分段(primary_flick/micro_adjustment)、ω(t) 角速度、REC/MR/V phase、Release-to-Click Sync、101 點正規化曲線、reliability gate、parity fixture;§B 增 research 層元件列。**WP-30 T-exit 已回寫**:REC/MR/V(`phase-v1`)、101 點 L/R ω(t)/ε(t)(`curve-v1`)、research-side `t_detect`、教練報告 v1 與其 sample limits。
 - [x] `docs/operational/analysis-segments.md`(新:`seg-v1` 參數 registry + flags 詞彙表 + 一鍵 pipeline 契約 + 已知限制;WP-28 T3 建立、T-exit 補齊,2026-08-04)。
 - [ ] `docs/operational/acceptance-stage-d.md`(新,WP-32 T-exit:驗收清單 D)。
 - [ ] 規格書版本對帳:新增「階段 D」節 + 附錄 E 增「驗收清單 D」(M15 前完成)。
 - [x] `docs/operational/analysis-peek-timeline.md`(新:`timeline-v1` 窗界/錨點/outcome/封閉 flags 詞彙表 + `sync-v1` 定義與 pre-registered 判準 + 報告載體契約 + 五項已知限制;WP-29 T1 建立、T-exit 定稿,2026-08-05)。
+- [x] `docs/operational/analysis-phase-curves.md`(`phase-v1`/`curve-v1` registry、封閉 flags、frozen parameters、報告載體契約與 sample limits;WP-30 T-exit 定稿,2026-08-10)。
 - [x] (WP-29 T3 使用者 override 已實作)[schema.md](../../../operational/schema.md):`key` 事件 additive 對帳。(2026-08-05,commit `dcdafbd`)
 
 ---

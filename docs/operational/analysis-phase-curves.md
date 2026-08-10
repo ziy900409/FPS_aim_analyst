@@ -303,3 +303,27 @@ Per-session summary: `outputs/curve-summary.csv`. L/R overlays (ω and ε, one f
 - Three sessions from one participant are shown side by side, never pooled into a single curve —
   any claim about "the" L or R shape should be read as "this participant's, in these three
   sessions," not a population statement.
+
+## Coach-report v1 carrier contract
+
+`research/src/report/coach_report.py` carries these frozen constructs into one deterministic,
+self-contained HTML report (`coach-report-v1`). It computes phase rows and curve rows **once per
+export** with the frozen defaults, then `--group-by side|ads|weapon_mode` only partitions those
+already-computed rows; it never re-runs a threshold, detector, or parameter search for a subgroup.
+The parameter block remains byte-identical across groupings.
+
+- The REC/MR/V main table shows mean, p50, sample SD, `n`, excluded-row flag counts,
+  `phase-v1`, and its new-construct validity tier. `curve-v1` renders inline L/R SVGs for ω(t) and
+  ε(t), with IQR bands and the same `n`/excluded counts returned by `curve_summary`.
+- `REC-end − t_detect` is deliberately a **research-only** section, never a coach main-table
+  correction. A single session can be `session-insufficient`; the registered three-session
+  anti-vacuous result is pooled `n=21`, p50 −78.1 ms, **systematic divergence**. Its cause remains
+  OQ-S4-17, so neither REC nor `detect-v1` is retuned here.
+- All trajectory derivation begins with `resolve_eye_origin(..., strict=True)` and
+  `omega_deg_s(..., strict=True)`. Pre-WP-30 legacy exports can still render their frozen timeline
+  and Sync evidence, but the v1 trajectory sections state that the strict source gate rejected the
+  export and emit no phase or curve numbers.
+- Real trajectory claims are limited to P001, one 240 Hz machine, one drill configuration, and the
+  three same-day sessions. Reports are session-local; the HTML does not pool them or claim a
+  population/training effect. Short windows, missing anchors, filter degradation, and all closed
+  flags remain visible through the corresponding `n` and exclusion counts.

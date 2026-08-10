@@ -1,4 +1,4 @@
-"""Contract tests for the one-command coach report v0 (WP-29 T-exit).
+"""Contract tests for the one-command coach report v1 (WP-30 T-exit).
 
 Covers the DoD surface: a single self-contained HTML file, the six metrics with n /
 flags / version / validity tier, the pre-registered precision verdicts, the three
@@ -34,10 +34,16 @@ EXPORT_DIR = RESEARCH_ROOT / "fixtures" / "exports"
 SYNTHETIC = EXPORT_DIR / "synthetic_timeline.json"
 REAL_ZERO = EXPORT_DIR / "counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json"
 REAL_VALIDITY = EXPORT_DIR / "counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json"
-ALL_FIXTURES = (SYNTHETIC, REAL_ZERO, REAL_VALIDITY)
+SYNTHETIC_COUNTERSTRAFE = EXPORT_DIR / "synthetic_counterstrafe.json"
+REAL_TRAJECTORY = (
+    EXPORT_DIR / "counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json",
+    EXPORT_DIR / "counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json",
+    EXPORT_DIR / "counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json",
+)
+ALL_FIXTURES = (SYNTHETIC_COUNTERSTRAFE, *REAL_TRAJECTORY)
 
 TIMELINE_KEYS = ("counterReactionMs", "fireTimingAlignmentMs", "firstShotHitRate")
-FROZEN_VERSIONS = ("compute-v1", "timeline-v1", "sync-v1", "seg-v1")
+FROZEN_VERSIONS = ("compute-v1", "timeline-v1", "sync-v1", "seg-v2", "phase-v1", "curve-v1", "detect-v1")
 
 
 def _section(html: str, section_id: str) -> str:
@@ -78,9 +84,9 @@ def test_report_names_its_source_fixture(tmp_path: Path) -> None:
 
 
 def test_report_contains_every_required_block() -> None:
-    html = render_html(build_report(REAL_VALIDITY))
+    html = render_html(build_report(REAL_TRAJECTORY[0]))
 
-    for section_id in ("summary", "precision", "timeline", "peeks", "flags", "groups", "parameters", "limits"):
+    for section_id in ("summary", "precision", "phase", "rec-detect", "curves", "timeline", "peeks", "flags", "groups", "parameters", "limits"):
         _section(html, section_id)
     assert "<svg" in _section(html, "timeline")
 
@@ -126,7 +132,7 @@ def test_tick_derived_sync_metrics_carry_a_precision_verdict() -> None:
 
 
 def test_frozen_version_strings_and_sync_params_are_reported() -> None:
-    html = render_html(build_report(REAL_VALIDITY))
+    html = render_html(build_report(REAL_TRAJECTORY[0]))
     parameters = _section(html, "parameters")
 
     for version in FROZEN_VERSIONS:
@@ -136,15 +142,48 @@ def test_frozen_version_strings_and_sync_params_are_reported() -> None:
     assert "7.8125" in parameters
 
 
-def test_unvalidated_constructs_never_reach_the_report() -> None:
-    """C-D3 / GD-20: a metric without a construct gate must not appear as a number."""
+def test_only_registered_trajectory_constructs_reach_the_report() -> None:
+    """C-D3 / GD-20: registered phase/curve constructs are labeled; unregistered ones stay out."""
 
-    html = render_html(build_report(REAL_VALIDITY))
+    html = render_html(build_report(REAL_TRAJECTORY[0]))
 
-    for banned in ("SPARC", "xcorr", "Fitts", "epsilon_deg", "REC/MR/V", "101"):
+    for banned in ("SPARC", "xcorr", "Fitts"):
         assert banned not in _section(html, "summary")
-    # They may only be named in the limitations block, as explicit exclusions.
+    assert "phase-v1" in _section(html, "phase")
+    assert "curve-v1" in _section(html, "curves")
+    assert "detect-v1" in _section(html, "rec-detect")
+    # Unregistered constructs may only be named in the limitations block, as exclusions.
     assert "SPARC" in _section(html, "limits")
+
+
+@pytest.mark.parametrize("fixture", REAL_TRAJECTORY, ids=lambda path: path.stem[-17:-1])
+def test_trajectory_sections_have_complete_annotations_and_expected_side_counts(fixture: Path) -> None:
+    model = build_report(fixture)
+    html = render_html(model)
+
+    assert model["trajectory"]["available"] is True
+    for entry in model["phaseMetrics"]:
+        assert entry["n"] > 0
+        assert isinstance(entry["flagCounts"], dict)
+        assert entry["version"] == "phase-v1"
+        assert entry["validity"]
+    consistency = model["recDetectConsistency"]
+    assert consistency["n"] >= 5
+    assert consistency["verdict"] == "session-insufficient"
+    assert consistency["validity"] in _section(html, "rec-detect")
+    assert "pooled 結論為系統性分歧" in _section(html, "rec-detect")
+    for side in ("L", "R"):
+        for signal in ("omega", "epsilon"):
+            assert model["trajectory"]["curveSummary"][side][signal]["n"] == 10
+            assert model["trajectory"]["curveSummary"][side][signal]["n_excluded"] == 0
+
+
+def test_legacy_fixture_never_generates_aliased_trajectory_metrics() -> None:
+    model = build_report(REAL_VALIDITY)
+
+    assert model["trajectory"]["available"] is False
+    assert all(entry["n"] == 0 for entry in model["phaseMetrics"])
+    assert "strict trajectory source gate" in _section(render_html(model), "phase")
 
 
 def test_drill_summary_reports_peeks_outcomes_and_first_shot_hit_rate() -> None:
@@ -431,11 +470,11 @@ def test_invalid_export_exits_non_zero_without_writing_a_report(tmp_path: Path) 
     assert not out_dir.exists()
 
 
-def test_report_reads_no_position_columns() -> None:
-    """D-29.2 boundary: the KI-004 defect only touches px/pz, which this WP never reads."""
+def test_report_uses_strict_trajectory_gate_before_consuming_position_columns() -> None:
+    """WP-30 supersedes D-29.2: trajectory metrics consume px/pz only via strict eye geometry."""
 
     source = (RESEARCH_ROOT / "src" / "report" / "coach_report.py").read_text(encoding="utf-8")
 
-    assert '"px"' not in source and "'px'" not in source
-    assert '"pz"' not in source and "'pz'" not in source
-    assert load_export(REAL_VALIDITY).meta["suspect"] is True
+    assert "resolve_eye_origin(export.meta, strict=True)" in source
+    assert "omega_deg_s(window_ticks, strict=True)" in source
+    assert load_export(REAL_TRAJECTORY[0]).meta["suspect"] is True

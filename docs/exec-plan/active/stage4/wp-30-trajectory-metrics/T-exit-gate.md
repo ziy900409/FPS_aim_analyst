@@ -7,7 +7,7 @@
 | **相依** | T2 + T3 全綠(T1 為 T2 的前置,已含) |
 | **Risk / Cplx** | — / Low |
 | **Touches** | MODIFY `research/src/report/coach_report.py` + tests;ADD 範例報告至 `notebooks/t-exit/outputs/`;MODIFY `docs/operational/analysis-phase-curves.md`(定稿)、[../README.md](../README.md) §3/§8/§9、[exec-plan/README.md](../../../README.md) §2、[CONTEXT.md](../../../../../CONTEXT.md) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-10) |
 
 ## Objective
 
@@ -37,13 +37,13 @@ FR-D16 第二版:把 T2 的三段分解與 T3 的 L/R 曲線疊進**同一個一
 
 ## Steps
 
-- [ ] `coach_report.py` 擴充三個區塊 + 測試(區塊存在、n/flags/version 標註非空、`--group-by` 三種皆 exit 0、無樣本時顯示 `n=0` 而非 crash)。
-- [ ] 三份真實 + 合成 fixture 各產一份報告 → `notebooks/t-exit/outputs/`(committed、deterministic)。
-- [ ] 既有四份 v0 範例報告重跑:差異須逐項可解釋(資料或凍結契約改變),否則視為 determinism 破損。
-- [ ] `analysis-phase-curves.md` 定稿(定義 + registry + 詞彙表 + 載體契約 + 已知限制)。
-- [ ] 文件對帳四處(WP README §3/§6/§8/§9、exec-plan README §2、CONTEXT.md、DECISIONS 確認)。
-- [ ] `uv run pytest` + `npm run test:ci` 兩份輸出貼 progress。
-- [ ] [task-checklist.md](task-checklist.md) 全列翻 ✅;progress.md 收斂段落(Progress / Decision Log / Surprises / OQ)。
+- [x] `coach_report.py` 擴充三個區塊 + 測試(區塊存在、n/flags/version 標註非空、`--group-by` 三種皆 exit 0、無樣本時顯示 `n=0` 而非 crash)。
+- [x] 三份真實 + 合成 fixture 各產一份報告 → `notebooks/t-exit/outputs/`(committed、deterministic)。
+- [x] 既有四份 v0 範例報告重跑:差異須逐項可解釋(資料或凍結契約改變),否則視為 determinism 破損。
+- [x] `analysis-phase-curves.md` 定稿(定義 + registry + 詞彙表 + 載體契約 + 已知限制)。
+- [x] 文件對帳四處(WP README §3/§6/§8/§9、exec-plan README §2、CONTEXT.md、DECISIONS 確認)。
+- [x] `uv run pytest` + `npm run test:ci` 兩份輸出貼 progress。
+- [x] [task-checklist.md](task-checklist.md) 全列翻 ✅;progress.md 收斂段落(Progress / Decision Log / Surprises / OQ)。
 
 ## Definition of Done
 

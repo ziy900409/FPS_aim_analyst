@@ -1,13 +1,12 @@
-"""Regenerate the committed WP-29 T-exit example coach reports.
+"""Regenerate the committed WP-29/v1 WP-30 coach-report examples.
 
 The three fixtures cover the three things the report must survive:
 
-* ``synthetic_timeline.json`` -- algorithm boundaries (projectile, cross-window hit,
-  missing counter, missing release);
-* the 08:03 run -- the zero-input boundary, where every Sync anchor is absent and the
-  report must show ``n=0`` / ``blocked-by-data`` rather than fabricated zeros;
-* the 09:39 run -- the primary real validity sample, also emitted with
-  ``--group-by side`` to show the stratified layout.
+* The four legacy WP-29 reports retain their v0 metric evidence while showing that their
+  source is rejected for v1 trajectory derivation.
+* ``synthetic_counterstrafe.json`` is phase-v1's short-window regression.
+* The three 2026-08-07 tick-integral exports are WP-30's only real trajectory evidence;
+  09:18 is also emitted with ``--group-by side`` to exercise stratification.
 
 Writing files is legal here (notebook/report boundary, D-28.11); the algorithms this
 calls stay pure. Output is deterministic, so a diff in ``outputs/`` always means the data
@@ -34,12 +33,21 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "outputs"
 SYNTHETIC_EXPORT = EXPORT_DIR / "synthetic_timeline.json"
 REAL_ZERO_EXPORT = EXPORT_DIR / "counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json"
 REAL_VALIDITY_EXPORT = EXPORT_DIR / "counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json"
+SYNTHETIC_COUNTERSTRAFE = EXPORT_DIR / "synthetic_counterstrafe.json"
+REAL_TRAJECTORY_EXPORTS = (
+    EXPORT_DIR / "counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json",
+    EXPORT_DIR / "counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json",
+    EXPORT_DIR / "counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json",
+)
 
 REPORTS: tuple[tuple[Path, str | None], ...] = (
     (SYNTHETIC_EXPORT, None),
     (REAL_ZERO_EXPORT, None),
     (REAL_VALIDITY_EXPORT, None),
     (REAL_VALIDITY_EXPORT, "side"),
+    (SYNTHETIC_COUNTERSTRAFE, None),
+    *((path, None) for path in REAL_TRAJECTORY_EXPORTS),
+    (REAL_TRAJECTORY_EXPORTS[0], "side"),
 )
 
 

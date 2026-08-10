@@ -100,7 +100,7 @@
 |---|---|---|---|---|---|---|
 | **WP-28** | [`active/stage4/wp-28-research-foundation/`](active/stage4/wp-28-research-foundation/README.md) | research 地基:四目錄制 + schema v2 ingest + ω(t)/ε(t)(**含 ε 雙向 parity 閘**)+ submovement 分段(參數凍結)+ quality flags + 一鍵 pipeline | **M14 ✅** | M4 ✅ + WP-16 ✅ + M11/M12 ✅ | 3.5–4.5 | ✅ **task 全數完成(2026-08-05);M14 六項全數恢復/重新宣告**(①⑥維持,②已於 2026-08-06 重新宣告,③④⑤ 已於 [A2-T4](../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 2026-08-07 重新宣告,KI-005 A1+A2 全數落地、KI-006 CLOSED) |
 | **WP-29** | [`active/stage4/wp-29-coach-timeline/`](active/stage4/wp-29-coach-timeline/README.md) | 教練第一層：逐 peek 時間軸（交叉驗證 `compute.ts`）+ Release-to-Click Sync 族（+ 選配 `key` 事件）+ 教練報告 v0（單檔靜態 HTML，條件分層） | — | WP-28 **T1**（僅 ingest） | 1.5–2.5 | ✅ **完成(2026-08-05)**；`timeline-v1`/`sync-v1` 定稿，OQ-S4-6 關閉 |
-| **WP-30** | `active/stage4/wp-30-trajectory-metrics/` | 軌跡診斷：REC/MR/V phase 分解 + L/R 101 點正規化曲線 | — | **M14 ✅**(entry blocker 已解除) | 2–3 | ⬜(可展開) |
+| **WP-30** | `active/stage4/wp-30-trajectory-metrics/` | 軌跡診斷：REC/MR/V phase 分解 + L/R 101 點正規化曲線 + 教練報告 v1 | — | **M14 ✅**(entry blocker 已解除) | 2.5–3.25 | ✅ **完成(2026-08-10)**：`phase-v1`／`curve-v1` 定稿、`coach-report-v1` 一鍵與雙閘綠；REC/`t_detect` 系統性分歧保留研究向 OQ-S4-17 |
 | **WP-31** | `active/stage4/wp-31-advanced-diagnostics/` | 進階診斷:SPARC + Key-Velocity xcorr（reliability gate，GD-20）+ Fitts | — | **M14 ✅**(entry blocker 已解除) | 2–3 | ⬜(可展開) |
 | **WP-32** | `active/stage4/wp-32-dashboard-integration/` | 晉升整合：golden parity → `src/metrics/` TS 實作 + 結果頁擴充 + 驗收清單 D | **M15** | WP-29 + WP-30（WP-31 選項） | 2–3 | ⬜ |
 

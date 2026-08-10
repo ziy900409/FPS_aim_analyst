@@ -1,4 +1,4 @@
-"""Coach report v0: per-peek timeline + Release-to-Click Sync, optionally stratified.
+"""Coach report v1: timeline, Sync, trajectory phases, and normalized L/R curves.
 
 One command turns a schema v2 export into a single self-contained static HTML file a
 coach can open or forward without a server::
@@ -8,13 +8,13 @@ coach can open or forward without a server::
 This module belongs to the report tier, so file writes and console output are allowed
 here; every ``algorithms/`` package it calls stays pure (C-D2).
 
-Red line (C-D3 / GD-20): only constructs that passed a validity gate reach the main
+Red line (C-D3 / GD-20): only constructs with an explicit validity tier reach the main
 table. The three timeline aggregates are parity-tested against the engine's frozen
 ``compute-v1`` implementation at relative error ``<= 1e-9``; the three Sync metrics are
 new constructs governed by pre-registered ``sync-v1``, and the two tick-quantized ones
-carry their precision verdict inline. Pipeline diagnostics that have not passed a construct
-gate -- epsilon(t), REC/MR/V phase, SPARC, key-velocity xcorr, Fitts -- are deliberately
-absent.
+carry their precision verdict inline. ``phase-v1`` and ``curve-v1`` are registered new
+constructs with their sample limits shown inline. The unresolved REC/``t_detect`` divergence
+is research-only; SPARC, key-velocity xcorr, and Fitts remain absent.
 
 The rendered page is deterministic: no clock reads, no random identifiers, and every
 collection is emitted in a stable order, so a committed example report only changes when
@@ -25,12 +25,15 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from html import escape
 import math
 from pathlib import Path
 import sys
 from typing import Any, Iterable, Sequence
+
+import numpy as np
+import pandas as pd
 
 
 RESEARCH_ROOT = Path(__file__).resolve().parents[2]
@@ -39,6 +42,21 @@ if str(_SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(_SOURCE_ROOT))
 
 from modules.ingest.algorithms import Export, load_export  # noqa: E402
+from modules.kinematics.algorithms.angular import (  # noqa: E402
+    epsilon_deg,
+    omega_deg_s,
+    resolve_eye_origin,
+)
+from modules.metrics.algorithms.curves import (  # noqa: E402
+    DEFAULT_CURVE_PARAMS,
+    curve_summary,
+    curve_table,
+)
+from modules.metrics.algorithms.detect import detect_samples  # noqa: E402
+from modules.metrics.algorithms.phase import (  # noqa: E402
+    DEFAULT_PHASE_PARAMS,
+    phase_decompose,
+)
 from modules.metrics.algorithms.peek import PeekWindow, build_peek_windows  # noqa: E402
 from modules.metrics.algorithms.sync import (  # noqa: E402
     DEFAULT_SYNC_PARAMS,
@@ -55,10 +73,14 @@ from modules.metrics.algorithms.timeline import (  # noqa: E402
     stat,
     timeline_metrics,
 )
-from modules.segments.algorithms import DEFAULT_SEGMENT_PARAMS  # noqa: E402
+from modules.segments.algorithms import (  # noqa: E402
+    DEFAULT_SEGMENT_PARAMS,
+    SEG_V2_PARAMS,
+    segment_submovements,
+)
 
 
-REPORT_VERSION = "coach-report-v0"
+REPORT_VERSION = "coach-report-v1"
 DEFAULT_EXPORT = RESEARCH_ROOT / "fixtures" / "exports" / "synthetic_timeline.json"
 DEFAULT_OUT_DIR = RESEARCH_ROOT / "out"
 GROUP_BY_CHOICES = ("side", "ads", "weapon_mode")
@@ -71,6 +93,9 @@ SYNC_COLUMNS = ("release_to_fire_ms", "counter_hold_ms", "counter_to_fire_ms")
 VALIDITY_PARITY = "已驗證：與結果頁 compute-v1 逐量 parity 通過(相對誤差 ≤1e-9)"
 VALIDITY_NEW_JUDGED = "新構念(sync-v1);tick-derived 端點,附 pre-registered 精度判定"
 VALIDITY_NEW_SUBTICK = "新構念(sync-v1);兩端皆 sub-tick input timestamp,本版不作精度判定"
+VALIDITY_NEW_PHASE = "新構念(phase-v1);已凍結定義，限本受試者/機器/drill 樣本"
+VALIDITY_NEW_CURVE = "新構念(curve-v1);逐 session L/R 軌跡，不作跨 session 推論"
+VALIDITY_RESEARCH = "研究向：REC-end 與 detect-v1 已測得系統性分歧，非主表判定"
 
 _TIMELINE_METRICS = (
     ("counterReactionMs", "急停反應 counterReactionMs", "t_counter − t_visible"),
@@ -83,6 +108,14 @@ _SYNC_LABELS = {
     "counter_hold_ms": ("反向鍵持壓 counter_hold_ms", "t_counter → 最後一個仍持壓的窗內 tick"),
     "counter_to_fire_ms": ("反向鍵→開火 counter_to_fire_ms", "t_first_shot − t_counter"),
 }
+
+_PHASE_LABELS = {
+    "rec_ms": ("反應期 REC", "t_onset − t_visible"),
+    "mr_ms": ("主運動期 MR", "t_mr_end − t_onset"),
+    "v_ms": ("驗證期 V", "t_first_shot − t_mr_end"),
+}
+_PHASE_COLUMNS = tuple(_PHASE_LABELS)
+_CURVE_COLORS = {"L": "#2563eb", "R": "#ea580c"}
 
 
 # --------------------------------------------------------------------------------------
@@ -113,6 +146,7 @@ def build_report(
     sync_rows = [_sync_row(row) for _, row in sync.iterrows()]
     verdicts = evaluate_release_precision(sync, params, sim_hz=sim_hz)
     hits = first_shot_hits(export, peeks)
+    trajectory = _trajectory_data(export, peeks)
 
     return {
         "reportVersion": REPORT_VERSION,
@@ -133,13 +167,26 @@ def build_report(
         "timelineMetrics": _timeline_entries(metrics, peeks),
         "syncMetrics": _sync_entries(sync_rows, verdicts),
         "precisionVerdicts": [asdict(verdict) for verdict in verdicts],
+        "trajectory": trajectory,
+        "phaseMetrics": _phase_entries(trajectory["phaseRows"], trajectory["available"]),
+        "recDetectConsistency": _rec_detect_consistency(
+            trajectory["phaseRows"], trajectory["available"]
+        ),
         # Sync rows start from ``peek.flags`` and only append, so they already carry the
         # complete closed vocabulary for the drill; counting them twice would inflate it.
         "flagCounts": _flag_counts(row["flags"] for row in sync_rows),
         "releaseSources": _counts(peek.release_source for peek in peeks),
         "peeks": [_peek_row(peek, sync_rows[index], hits[index]) for index, peek in enumerate(peeks)],
         "groupBy": group_by,
-        "groups": _groups(export, peeks, sync_rows, hits, weapon_mode, group_by),
+        "groups": _groups(
+            export,
+            peeks,
+            sync_rows,
+            hits,
+            trajectory["phaseRows"],
+            weapon_mode,
+            group_by,
+        ),
     }
 
 
@@ -150,6 +197,9 @@ def _parameters(params: SyncParams, sim_hz: int) -> dict[str, Any]:
         "timelineVersion": TIMELINE_VERSION,
         "syncVersion": params.version,
         "segmentVersion": DEFAULT_SEGMENT_PARAMS.version,
+        "phaseVersion": DEFAULT_PHASE_PARAMS.version,
+        "curveVersion": DEFAULT_CURVE_PARAMS.version,
+        "detectVersion": "detect-v1",
         "syncParams": asdict(params),
         "simHz": sim_hz,
         "tickMs": tick_ms,
@@ -261,11 +311,184 @@ def _sync_stats(sync_rows: Sequence[dict[str, Any]], column: str) -> dict[str, A
     }
 
 
+def _trajectory_data(export: Export, peeks: Sequence[PeekWindow]) -> dict[str, Any]:
+    """Derive phase/curve rows once, then let rendering and grouping only partition them.
+
+    The strict source checks deliberately remain at this report boundary.  Historical WP-29
+    fixtures may still render their frozen v0 metrics, but cannot silently acquire aliased
+    trajectory numbers: their v1 trajectory sections explicitly report the rejected source.
+    """
+
+    try:
+        eye_origin = resolve_eye_origin(export.meta, strict=True)
+    except ValueError:
+        return _unavailable_trajectory()
+
+    detects = {
+        sample.peek_index: sample
+        for sample in detect_samples(export, peeks, eye_origin=eye_origin)
+    }
+    ticks = export.ticks.sort_values("t", kind="stable").reset_index(drop=True)
+    visible_events = (
+        export.events.loc[export.events["type"] == "visible"]
+        .sort_values("t", kind="stable")
+        .reset_index(drop=True)
+    )
+    phase_rows: list[dict[str, Any]] = []
+    peek_ticks: list[pd.DataFrame] = []
+    omega_values: list[np.ndarray] = []
+    epsilon_values: list[np.ndarray | None] = []
+    for peek in peeks:
+        window_ticks = ticks.iloc[peek.tick_slice].reset_index(drop=True)
+        try:
+            omega = omega_deg_s(window_ticks, strict=True).values
+        except ValueError:
+            return _unavailable_trajectory()
+        raw_segments = segment_submovements(omega[1:], SEG_V2_PARAMS) if len(omega) > 1 else []
+        segments = [
+            replace(
+                segment,
+                start_idx=segment.start_idx + 1,
+                end_idx=segment.end_idx + 1,
+                peek_index=peek.index,
+            )
+            for segment in raw_segments
+        ]
+        phase = phase_decompose(
+            peek, omega, window_ticks, segments, DEFAULT_PHASE_PARAMS, detects.get(peek.index)
+        )
+        phase_rows.append(asdict(phase))
+        peek_ticks.append(window_ticks)
+        omega_values.append(omega)
+        epsilon_values.append(
+            _epsilon_or_none(
+                window_ticks,
+                export.meta,
+                eye_origin,
+                _visible_target(visible_events.iloc[peek.index], window_ticks),
+            )
+        )
+    curves = curve_table(peeks, omega_values, epsilon_values, peek_ticks, DEFAULT_CURVE_PARAMS)
+
+    return {
+        "available": True,
+        "reason": None,
+        "phaseRows": phase_rows,
+        "curveSummary": curve_summary(curves, DEFAULT_CURVE_PARAMS),
+        "curveFlagCounts": _flag_counts(curves["flags"]),
+    }
+
+
+def _unavailable_trajectory() -> dict[str, Any]:
+    return {
+        "available": False,
+        "reason": "strict trajectory source gate rejected this pre-WP-30 export",
+        "phaseRows": [],
+        "curveSummary": None,
+        "curveFlagCounts": {},
+    }
+
+
+def _epsilon_or_none(
+    ticks: pd.DataFrame, meta: dict[str, Any], eye_origin: Any, fallback_target: tuple[float, float, float] | None
+) -> np.ndarray | None:
+    try:
+        return epsilon_deg(ticks, meta, eye_origin=eye_origin, fallback_target=fallback_target)
+    except ValueError:
+        return None
+
+
+def _visible_target(visible: pd.Series, ticks: pd.DataFrame) -> tuple[float, float, float] | None:
+    event_target = tuple(visible[field] for field in ("targetX", "targetY", "targetZ"))
+    if all(_finite(value) for value in event_target):
+        return tuple(float(value) for value in event_target)
+    if len(ticks):
+        first_target = tuple(ticks.iloc[0][field] for field in ("tx", "ty", "tz"))
+        if all(_finite(value) for value in first_target):
+            return tuple(float(value) for value in first_target)
+    return None
+
+
+def _phase_entries(rows: Sequence[dict[str, Any]], available: bool) -> list[dict[str, Any]]:
+    entries = []
+    for column in _PHASE_COLUMNS:
+        label, definition = _PHASE_LABELS[column]
+        stats = _row_stats(rows, column) if available else _empty_stats()
+        entries.append(
+            {
+                "key": column,
+                "label": label,
+                "definition": definition,
+                "version": DEFAULT_PHASE_PARAMS.version,
+                "validity": VALIDITY_NEW_PHASE,
+                "unit": "ms",
+                **stats,
+                "note": "數值有限且整列 flags 為空才進聚合；缺錨點不補 0。",
+            }
+        )
+    return entries
+
+
+def _rec_detect_consistency(rows: Sequence[dict[str, Any]], available: bool) -> dict[str, Any]:
+    stats = _row_stats(rows, "rec_minus_detect_ms") if available else _empty_stats()
+    if not available:
+        verdict = "unavailable"
+    elif stats["n"] < 10:
+        # The pre-registered anti-vacuous gate applies across the three named sessions. A single
+        # report stays session-local, so it must not pretend its smaller n reverses the registered
+        # pooled WP-30 conclusion (n=21, systematic divergence).
+        verdict = "session-insufficient"
+    elif abs(stats["p50"]) <= 1000.0 / 128:
+        verdict = "consistent"
+    else:
+        verdict = "systematic-divergence"
+    return {
+        "key": "rec_minus_detect_ms",
+        "label": "REC-end − t_detect 一致性檢查",
+        "definition": "t_onset − t_detect；只檢查、不改寫 REC 邊界",
+        "version": f"{DEFAULT_PHASE_PARAMS.version} / detect-v1",
+        "validity": VALIDITY_RESEARCH,
+        "unit": "ms",
+        "verdict": verdict,
+        **stats,
+    }
+
+
+def _row_stats(rows: Sequence[dict[str, Any]], column: str) -> dict[str, Any]:
+    values = [row[column] for row in rows if not row["flags"] and _finite(row[column])]
+    excluded = [row for row in rows if row["flags"] or not _finite(row[column])]
+    if not values:
+        return _empty_stats(len(excluded), _flag_counts(row["flags"] for row in excluded))
+    ordered = sorted(float(value) for value in values)
+    middle = len(ordered) // 2
+    p50 = ordered[middle] if len(ordered) % 2 else (ordered[middle - 1] + ordered[middle]) / 2
+    return {
+        "mean": sum(ordered) / len(ordered),
+        "p50": p50,
+        "sampleSdMs": _sample_sd(ordered),
+        "n": len(ordered),
+        "excludedCount": len(excluded),
+        "flagCounts": _flag_counts(row["flags"] for row in excluded),
+    }
+
+
+def _empty_stats(excluded_count: int = 0, flag_counts: dict[str, int] | None = None) -> dict[str, Any]:
+    return {
+        "mean": None,
+        "p50": None,
+        "sampleSdMs": None,
+        "n": 0,
+        "excludedCount": excluded_count,
+        "flagCounts": {} if flag_counts is None else flag_counts,
+    }
+
+
 def _groups(
     export: Export,
     peeks: Sequence[PeekWindow],
     sync_rows: Sequence[dict[str, Any]],
     hits: Sequence[bool],
+    phase_rows: Sequence[dict[str, Any]],
     weapon_mode: str,
     group_by: str | None,
 ) -> list[dict[str, Any]]:
@@ -281,6 +504,7 @@ def _groups(
         member_peeks = [peeks[index] for index in indices]
         member_rows = [sync_rows[index] for index in indices]
         member_hits = [hits[index] for index in indices]
+        member_phase_rows = [phase_rows[index] for index in indices] if phase_rows else []
         counter_reactions = [
             peek.t_counter - peek.t_visible for peek in member_peeks if peek.t_counter is not None
         ]
@@ -339,6 +563,7 @@ def _groups(
                     }
                     for column in SYNC_COLUMNS
                 ],
+                "phaseMetrics": _phase_entries(member_phase_rows, bool(phase_rows)),
                 "flagCounts": _flag_counts(row["flags"] for row in member_rows),
             }
         )
@@ -381,7 +606,7 @@ def render_html(model: dict[str, Any]) -> str:
     """Render the model to one self-contained HTML document (no external resources)."""
 
     source = model["source"]
-    title = f"教練報告 v0 — {source['drillId']}"
+    title = f"教練報告 v1 — {source['drillId']}"
     parts = [
         "<!doctype html>",
         '<html lang="zh-Hant">',
@@ -399,6 +624,9 @@ def render_html(model: dict[str, Any]) -> str:
         _render_metric_table("① 時間軸三量(已通過 compute-v1 對表)", model["timelineMetrics"]),
         _render_sync_table("② Release-to-Click Sync 三量(新構念,sync-v1)", model["syncMetrics"]),
         _render_verdicts(model),
+        _render_phase_table(model),
+        _render_rec_detect_consistency(model),
+        _render_curve_sections(model),
         _render_timeline_svg(model),
         _render_peek_table(model),
         _render_flags(model),
@@ -415,14 +643,20 @@ def render_html(model: dict[str, Any]) -> str:
 def _render_summary(model: dict[str, Any]) -> str:
     summary = model["drillSummary"]
     source = model["source"]
+    trajectory = model["trajectory"]
     outcomes = " · ".join(
         f"{escape(name)} {summary['outcomes'][name]}" for name in OUTCOMES
     )
     suspect = (
-        '<p class="warn">meta.suspect = true —— 成因為 KI-004 的 sim/world 單位域缺陷'
-        "(corridor gate),與本報告使用的 events / ticks[].keys 無關;本報告完全不消費 px/pz。</p>"
-        if source["suspect"]
-        else ""
+        '<p class="warn">meta.suspect = true —— 此匯出在 trajectory 嚴格來源閘之外，'
+        "僅保留已凍結的 timeline/Sync 報告；不產生 phase 或曲線數值。</p>"
+        if source["suspect"] and not trajectory["available"]
+        else (
+            '<p class="warn">meta.suspect = true —— 已依 WP-30 D-30.3 判定為 KI-007 的已知 false '
+            "positive；strict trajectory source gate 已通過，效度限制仍適用。</p>"
+            if source["suspect"]
+            else ""
+        )
     )
     return (
         '<section id="summary"><h2>drill 摘要</h2>'
@@ -526,6 +760,116 @@ def _render_verdicts(model: dict[str, Any]) -> str:
         "<th>判定</th><th>理由</th></tr></thead>"
         f"<tbody>{rows}</tbody></table></section>"
     )
+
+
+def _render_phase_table(model: dict[str, Any]) -> str:
+    trajectory = model["trajectory"]
+    if not trajectory["available"]:
+        return (
+            '<section id="phase"><h2>④ REC / MR / V 三段(phase-v1)</h2>'
+            f'<p class="warn">{escape(trajectory["reason"])}；本區不產生任何軌跡數值。</p></section>'
+        )
+    rows = "".join(
+        "<tr>"
+        f"<td>{escape(entry['label'])}<div class=\"def\">{escape(entry['definition'])}</div></td>"
+        f"<td>mean {_num(entry['mean'])} · p50 {_num(entry['p50'])} · sample SD {_num(entry['sampleSdMs'])}</td>"
+        f"<td class=\"n\">{entry['n']}</td>"
+        f"<td>{escape(_counts_text(entry['flagCounts']))}</td>"
+        f"<td><code>{escape(entry['version'])}</code></td>"
+        f"<td class=\"tier\">{escape(entry['validity'])}<div class=\"def\">{escape(entry['note'])}</div></td>"
+        "</tr>"
+        for entry in model["phaseMetrics"]
+    )
+    return (
+        '<section id="phase"><h2>④ REC / MR / V 三段(phase-v1)</h2><table>'
+        "<thead><tr><th>指標</th><th>統計</th><th>n</th><th>flags 計數(未入聚合者)</th>"
+        "<th>版本</th><th>效度層級</th></tr></thead>"
+        f"<tbody>{rows}</tbody></table></section>"
+    )
+
+
+def _render_rec_detect_consistency(model: dict[str, Any]) -> str:
+    entry = model["recDetectConsistency"]
+    status_text = {
+        "consistent": "一致",
+        "session-insufficient": "本 session 樣本不足；WP-30 pooled 結論為系統性分歧",
+        "systematic-divergence": "系統性分歧",
+        "unavailable": "unavailable",
+    }[entry["verdict"]]
+    return (
+        '<section id="rec-detect"><h2>⑤ REC-end / t_detect 一致性(研究向)</h2>'
+        "<table><thead><tr><th>統計</th><th>n</th><th>flags 計數</th><th>版本</th><th>效度層級</th>"
+        "<th>判定</th></tr></thead><tbody><tr>"
+        f"<td>mean {_num(entry['mean'])} · p50 {_num(entry['p50'])} · sample SD {_num(entry['sampleSdMs'])}</td>"
+        f"<td class=\"n\">{entry['n']}</td><td>{escape(_counts_text(entry['flagCounts']))}</td>"
+        f"<td><code>{escape(entry['version'])}</code></td><td class=\"tier\">{escape(entry['validity'])}</td>"
+        f"<td><span class=\"v-{escape(entry['verdict'])}\">{escape(status_text)}</span></td>"
+        "</tr></tbody></table><p class=\"def\">此檢查不改寫 phase 邊界；系統性分歧不進主表。"
+        "三個 session 的預先登錄 pooled 檢查為 n=21、p50 −78.1 ms，結論是系統性分歧；"
+        "本樣本的根因仍是 OQ-S4-17。</p></section>"
+    )
+
+
+def _render_curve_sections(model: dict[str, Any]) -> str:
+    trajectory = model["trajectory"]
+    if not trajectory["available"]:
+        return (
+            '<section id="curves"><h2>⑥ L/R 101 點正規化曲線(curve-v1)</h2>'
+            f'<p class="warn">{escape(trajectory["reason"])}；本區不產生任何軌跡曲線。</p></section>'
+        )
+    summary = trajectory["curveSummary"]
+    return (
+        '<section id="curves"><h2>⑥ L/R 101 點正規化曲線(curve-v1)</h2>'
+        '<p class="def">每個 session 報告只消費本匯出的 L/R peek；IQR 帶與 n 由同一曲線摘要計算，'
+        "不跨 session 併池。</p>"
+        f"{_render_curve_svg(summary, 'omega', 'ω(t) angular speed (deg/s)')}"
+        f"{_render_curve_svg(summary, 'epsilon', 'ε(t) eccentricity (deg)')}"
+        f"<p class=\"def\">flags 計數(逐 signal row): {escape(_counts_text(trajectory['curveFlagCounts']))} · "
+        f"<code>{DEFAULT_CURVE_PARAMS.version}</code> · {escape(VALIDITY_NEW_CURVE)}</p></section>"
+    )
+
+
+def _render_curve_svg(summary: dict[str, Any], signal: str, label: str) -> str:
+    width, height, margin = 900, 280, 48
+    entries = [(side, summary[side][signal]) for side in ("L", "R")]
+    values = [
+        value
+        for _, entry in entries
+        for key in ("mean", "band_lower", "band_upper")
+        if entry[key] is not None
+        for value in entry[key]
+    ]
+    lower, upper = (min(values), max(values)) if values else (0.0, 1.0)
+    if lower == upper:
+        lower, upper = lower - 1.0, upper + 1.0
+
+    def x(index: int) -> float:
+        return margin + index / (DEFAULT_CURVE_PARAMS.points - 1) * (width - 2 * margin)
+
+    def y(value: float) -> float:
+        return height - margin - (value - lower) / (upper - lower) * (height - 2 * margin)
+
+    def path(values: list[float]) -> str:
+        return " ".join(f"{x(index):.2f},{y(value):.2f}" for index, value in enumerate(values))
+
+    parts = [f'<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img">']
+    parts.append(f'<rect width="{width}" height="{height}" fill="#ffffff"></rect>')
+    for side, entry in entries:
+        if entry["mean"] is None:
+            continue
+        color = _CURVE_COLORS[side]
+        band = f"{path(entry['band_upper'])} {path(list(reversed(entry['band_lower'])))}"
+        parts.append(f'<polygon points="{band}" fill="{color}" fill-opacity="0.15"></polygon>')
+        parts.append(f'<polyline points="{path(entry["mean"])}" fill="none" stroke="{color}" stroke-width="2"></polyline>')
+    legend = " · ".join(
+        f"{side}: n={entry['n']}, excluded={entry['n_excluded']}" for side, entry in entries
+    )
+    parts.append(
+        f'<text x="{margin}" y="20" font-size="13" fill="#334155">{escape(label)} — '
+        f"blue=L, orange=R; {escape(legend)}</text>"
+    )
+    parts.append("</svg>")
+    return f'<div class="scroll"><h3>{escape(label)}</h3>{"".join(parts)}</div>'
 
 
 def _render_timeline_svg(model: dict[str, Any]) -> str:
@@ -668,6 +1012,16 @@ def _render_groups(model: dict[str, Any]) -> str:
             "</tr>"
             for entry in group["syncMetrics"]
         )
+        phase_rows = "".join(
+            "<tr>"
+            f"<td>{escape(entry['label'])}</td>"
+            f"<td>mean {_num(entry['mean'])} · p50 {_num(entry['p50'])} · sample SD {_num(entry['sampleSdMs'])}</td>"
+            f"<td class=\"n\">{entry['n']}</td>"
+            f"<td>{escape(_counts_text(entry['flagCounts']))}</td>"
+            f"<td><code>{escape(entry['version'])}</code></td>"
+            "</tr>"
+            for entry in group["phaseMetrics"]
+        )
         outcomes = " · ".join(
             f"{escape(name)} {group['outcomes'][name]}" for name in OUTCOMES
         )
@@ -676,7 +1030,7 @@ def _render_groups(model: dict[str, Any]) -> str:
             f'<p class="def">peek {group["peekCount"]} · {outcomes} · '
             f'flags {escape(_counts_text(group["flagCounts"]))}</p>'
             "<table><thead><tr><th>指標</th><th>統計</th><th>n</th><th>flags 計數</th>"
-            f"<th>版本</th></tr></thead><tbody>{timeline_rows}{sync_rows}</tbody></table></div>"
+            f"<th>版本</th></tr></thead><tbody>{timeline_rows}{sync_rows}{phase_rows}</tbody></table></div>"
         )
     return (
         f'<section id="groups"><h2>⑦ 條件分層(--group-by {escape(group_by)})</h2>'
@@ -695,7 +1049,10 @@ def _render_parameters(model: dict[str, Any]) -> str:
         ("compute-v1", params["computeVersion"], "引擎 src/metrics 的 TS 權威實作(parity ≤1e-9)"),
         ("timeline-v1", params["timelineVersion"], "peek 窗界 / 錨點 / outcome / flags 詞彙表"),
         ("sync-v1", params["syncVersion"], "Release-to-Click Sync 定義與 pre-registered 判準"),
-        ("seg-v1", params["segmentVersion"], "submovement 分段參數(本報告未消費,列出以標明凍結面)"),
+        ("seg-v2", params["segmentVersion"], "phase-v1 唯一的 primary_flick 邊界來源"),
+        ("phase-v1", params["phaseVersion"], "REC / MR / V 分解；新構念，僅本樣本限制下呈現"),
+        ("curve-v1", params["curveVersion"], "101 點 L/R ω(t) / ε(t) 曲線與 IQR 帶"),
+        ("detect-v1", params["detectVersion"], "既有 TS 推導的 Python parity 構念；僅作一致性檢查"),
     ]
     version_rows = "".join(
         f"<tr><td>{escape(name)}</td><td><code>{escape(str(value))}</code></td>"
@@ -720,16 +1077,19 @@ def _render_parameters(model: dict[str, Any]) -> str:
 
 def _render_limitations(model: dict[str, Any]) -> str:
     return (
-        '<section id="limits"><h2>⑨ 效度紅線與已知限制</h2><ul>'
-        "<li>未通過構念驗證的量一律不進本報告:ε(t)、REC/MR/V phase、SPARC、"
-        "key-velocity xcorr、Fitts 皆不在此。</li>"
+        '<section id="limits"><h2>⑪ 效度紅線與已知限制</h2><ul>'
+        "<li>REC/MR/V 與 L/R 曲線是已登錄的新構念，帶 version/n/flags 與本段限制；"
+        "SPARC、key-velocity xcorr、Fitts 仍不在此。</li>"
         "<li>release 端點為 tick-derived,量化上界為一個 128 Hz tick(7.8125 ms);"
         "精度判定為本 fixture 的判定,不是母體推論。</li>"
         "<li>缺錨點是合法語意:不補 0、不吞成 NaN;帶 flag 的整列不進正式聚合,"
         "<code>release_inferred_no_counter</code> 因此預設排除(OQ-S4-10 仍 open)。</li>"
-        "<li>真實證據為單一受試者的兩次 run;條件分層在真實資料上只有單一 cell 有樣本"
-        "(OQ-S4-11 仍 open)。</li>"
-        "<li>本報告完全不消費 px/pz,故不受 KI-004 的 sim/world 單位域缺陷影響。</li>"
+        "<li>trajectory 真實證據為單一受試者 P001、同一台 240 Hz 機器、同一 drill config、"
+        "同日三 session；逐 session 呈現，絕不併池成訓練效果或族群推論。</li>"
+        "<li>REC-end 與 detect-v1 在此樣本有系統性分歧；它只在研究向檢查呈現，"
+        "不作教練主表的判定或校正值(OQ-S4-17)。</li>"
+        "<li>trajectory 會消費 px/pz；因此只接受 strict=True 的 tick-integral + eye-origin 匯出。"
+        "舊匯出保留 v0 指標但顯式不產生 trajectory 數值。</li>"
         "</ul></section>"
     )
 
@@ -752,7 +1112,7 @@ _STYLE = (
     "div.scroll{overflow-x:auto}div.group{margin-top:14px}"
     "p.warn{margin:12px 0 0;padding:8px 10px;background:#fef3c7;border-radius:6px;font-size:12px}"
     ".v-sufficient{color:#15803d;font-weight:600}.v-insufficient{color:#b91c1c;font-weight:600}"
-    ".v-blocked-by-data{color:#a16207;font-weight:600}.v-none{color:#64748b}"
+    ".v-blocked-by-data,.v-session-insufficient{color:#a16207;font-weight:600}.v-none{color:#64748b}"
     "ul{margin:0;padding-left:18px;font-size:13px}li{margin-bottom:4px}"
 )
 
