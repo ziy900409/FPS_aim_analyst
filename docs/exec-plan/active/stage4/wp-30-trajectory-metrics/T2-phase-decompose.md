@@ -7,7 +7,7 @@
 | **相依** | T1(t_detect 對表綠或明確 `blocked-by-data`)+ T0(pre-registration) |
 | **Risk / Cplx** | **Med** / Med — D-30.1 拍板複用 `seg-v2` 後,C-D4 風險已由設計消除;剩下的主要風險是 **② 參數若只在合成資料上凍結,就是重演 `seg-v1`**,以及實作時「順手加一個閾值」把第二定義偷渡回來 |
 | **Touches** | ADD `research/src/modules/metrics/algorithms/phase.py` + tests;ADD `notebooks/t2/outputs/`(掃參證據 + 分佈報告 + 疊圖);ADD `docs/operational/analysis-phase-curves.md`(建立) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ **完成(2026-08-10)**。詳見 [progress.md §6](progress.md) |
 
 ## Objective
 

@@ -13,6 +13,7 @@
 | 2026-08-07 | (對帳) | ✅ | [KI-005-A / A2-T4](../../../../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 已落地:M14 ③④⑤ 重新宣告,KI-006 CLOSED,**entry blocker 三條理由全數解除**。WP-30 仍**未開工**——本行只更新阻塞狀態,T0 本身仍待執行(不得跳過自行覆核) |
 | 2026-08-07 | **T0** | ✅ | entry gate 完成:M14 六項逐項自行覆核通過(§1 表);fixture roster 凍結 + strict 閘獨立覆核(§2);`suspect` 使用界線重立,引 [KI-007](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) §5 一手證詞關閉 OQ-S4-16;D-30.1b 以三份真實匯出的 segment 數分佈拍板(候選①);`phase-v1`/`curve-v1` pre-registration 骨架寫定;`../README.md` §3/§6/§8 對帳。零 `research/`/`src/` 變更 |
 | 2026-08-07 | **T1** | ✅ | `research/src/modules/metrics/algorithms/detect.py` 新增 `detect_samples`/`detect_parity_payload`(逐位重現 `detectionDerivation.ts`,§4 D-30.5 逐欄核對);`tests/golden/research/detect-parity.test.ts` 對四份 fixture(合成 + 09:18/09:24/09:37)逐 presentation 相對誤差 ≤1e-9,`npm run test:ci` 90 檔 748 test 全綠;`uv run pytest` 243 passed(新增 test_detect.py 15 案例、test_detect_fixture.py、test_detect_purity.py);反 vacuous 斷言兩側皆綠(合計 23 個 `detected` 樣本 ≥ T0 門檻 10,OQ-S4-15 非 blocked-by-data);legacy(08:03/09:39)負向測試兩側皆釘死 strict 拋錯。零 `src/` 生產碼變更 |
+| 2026-08-10 | **T2** | ✅ | `research/src/modules/metrics/algorithms/phase.py` 新增 `PhaseParams`/`PhaseSample`/`phase_decompose`/`phase_table`/`smooth_report_omega`(MR 逐位等於 `seg-v2` `primary_flick`,零第二套運動起點偵測);`phase-v1` 以 `notebooks/t2/sweep_phase_params.py` 雙維度掃參凍結(`cutoff_hz=12.0, butter_order=4, min_window_ticks=30`):合成六案例 0 失敗、真實 60 peeks 中 59 個(98.33%)三段皆非退化,≥90% 門檻通過;`notebooks/t2/generate_phase_report.py` 產出逐 session 分佈(不併池)+ REC-vs-`t_detect` 一致性檢查(結論:**系統性分歧**,pooled n=21,median −78.1ms,開 OQ-S4-17)+ 60 真實 + 2 合成 peek 疊圖。`docs/operational/analysis-phase-curves.md` 新建(`phase-v1` 定稿 + `curve-v1` 佔位)。`uv run pytest` 全綠(新增 test_phase.py 25 案例 + test_phase_purity.py);`npm run test:ci` 未受影響(零 TS 變更)。零 `src/` 變更、零凍結參數變更 |
 
 ---
 
@@ -102,6 +103,10 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | **D-30.4** | ✅ **T0 拍板(2026-08-07):`phase-v1`/`curve-v1` pre-registration 骨架**(詳見本檔 §3;規則與通過條件現在寫死,數值於 T2/T3 掃參/凍結,凍結後僅能升版) | 沿用 `seg-v2` 的雙維度掃參紀律(合成 + 真實),防止重演 `seg-v1` 只在合成資料上校參、凍結值在真實資料上不適用的錯誤(README §3 failure modes 表已列此風險) | 本檔 §3;[analysis-segments.md](../../../operational/analysis-segments.md) `seg-v2` 先例;[analysis-peek-timeline.md](../../../operational/analysis-peek-timeline.md) `sync-v1`(`min_samples=10`)先例 |
 | **D-30.5** | ✅ **T1 參數逐欄核對(2026-08-07):`detectionDerivation.ts` 的 `DEFAULT_OPTIONS` 與 `analysis-t-detect.md` 文件敘述**完全一致**,無需入 DECISIONS 或回寫文件**:`preStimulusMs=500` / `thresholdSdMultiplier=3` / `sustainedTicks=4` / `anticipationMs=100`。Python `DetectParams` 預設值逐欄照抄,由 `test_default_params_match_ts_authoritative_defaults` 釘死 | T1 Steps 第一步要求「文件與程式碼若不一致,以程式碼為權威」;本次核對結果是兩者本就一致(文件雖自稱 provisional,但尚未偏離),故不需要決策,只需要留下核對紀錄供未來校準(analysis-t-detect.md §Sensitivity Analysis)時比對基準 | [detectionDerivation.ts](../../../../../src/metrics/detectionDerivation.ts) `DEFAULT_OPTIONS`;[analysis-t-detect.md](../../../operational/analysis-t-detect.md) `## t_detect` 段落;`research/src/modules/metrics/algorithms/tests/test_detect_fixture.py::test_default_params_match_ts_authoritative_defaults` |
 | **D-30.6** | ✅ **T1 拍板:目標中心「兩者皆缺」時 Python 側用 `flags=("missing_target_position",)` 取代 TS 的 `throw`**,不算 C-D4 第二定義 | TS `targetFromVisibleOrTick` 每次只推導一個 presentation,拋錯後由呼叫端決定;Python `detect_samples` 是**批次**推導一整份匯出的所有 presentations(供 parity fixture 產生器使用),單一 presentation 資料缺陷不該讓整份匯出的推導全部中止。這不是對「目標中心缺席時怎麼辦」重新下定義——兩側對「該不該猜」給出的答案相同(不得猜),只是暴露失敗的機制不同(逐筆例外 vs 批次旗標)。三份真實 fixture 與合成 fixture 皆無此旗標出現(§4 證據) | `research/src/modules/metrics/algorithms/detect.py` `KNOWN_DETECT_FLAGS`;`test_detect.py::test_both_target_sources_missing_flags_instead_of_crashing` |
+| **D-30.7** | ✅ **T2 拍板:`anchor_before_onset` 判準由 spec 字面「`t_first_shot` 早於 MR 起點」擴大為「`t_first_shot` 早於 MR 終點」**(即整個 MR 區間) | 若只檢查「早於 MR 起點」,一發在 flick 尾段、MR 起點之後但 MR 終點之前擊發的 shot 會讓 `v_ms = t_anchor - t_mr_end` 變成負值,違反 §2「不硬給負值」的一般原則。字面案例(早於起點)是這個一般原則的特例,不是唯一觸發條件。Alternatives Considered:只檢查早於起點(拒絕:會漏掉「早於終點但晚於起點」的負值 `v_ms`,與同一節「不硬給負值」的原則矛盾) | `research/src/modules/metrics/algorithms/phase.py::phase_decompose`;`test_phase.py::test_anchor_before_mr_end_nulls_all_three_durations_without_going_negative`;真實 60 peeks 中 0 例觸發(見 §6) |
+| **D-30.8** | ✅ **T2 拍板:`non_uniform_dt` 在 `phase.py` 內以「本窗自身中位數間隔」局部判定,不透過 `meta.simHz` 全域比對**,與 `run_pipeline.py` 既有的「歸屬到含 gap 的那個窗」語意相容但範圍更窄 | `phase_decompose` 是純演算法函式,只收到單一 peek 的 tick 切片,沒有 `meta`,無法呼叫需要 `sim_hz` 的 `check_dt`。局部中位數比對達成同一目的(避免让 dt gap 汙染其他窗)且不需要把 `meta` 或 sim_hz 穿透進 `algorithms/` 層。Alternatives Considered:①要求呼叫端額外傳入預算好的 `uniform: bool`(拒絕:README §5 的介面契約未列此參數,且會讓每個呼叫端各自重算一次 `check_dt` 交集邏輯,無實益);②不做局部檢查,只靠呼叫端的 `run_pipeline.py` 全域報告(拒絕:`phase.py` 若完全不自我檢查,單元測試就無法獨立驗證這個退化路徑) | `research/src/modules/metrics/algorithms/phase.py::_is_locally_uniform`;`test_phase.py::test_non_uniform_dt_is_flagged_but_does_not_null_the_computed_phases`;`docs/operational/analysis-phase-curves.md` 已載明此為窄化但同義的檢查 |
+| **D-30.9** | ✅ **`phase-v1` 凍結:`cutoff_hz=12.0, butter_order=4, min_window_ticks=30`**,雙維度掃參證據見 §6 | 合成六案例(3 個已知 profile × 有/無首發)0 案例失敗(MR 逐位等於 segment,屬結構性保證);真實 60 peeks 中 59 個(98.33%)三段皆非退化,通過 T0 pre-registered ≥90% 門檻,唯一例外為 09:24 已知的 `below_floor`/0-segment peek(與 D-30.1b 一致)。18 組候選(`cutoff_hz`∈{8,12,16}×`butter_order`∈{2,4}×`min_window_ticks`∈{24,30,40})全數通過兩維度——因三份真實 fixture 每個 peek 的 tick 數下限(53)遠高於候選網格的所有 `min_window_ticks`/`filtfilt` padlen 需求,平滑退化路徑在真實資料尺度上從未觸發。`min_window_ticks=30` 從這組同分候選中選出,理由是它能讓合成 fixture(24 ticks/peek)確定性觸發 `window_too_short`(S-30.3 的天然短窗案例),而不是恰好選到一個會放行它的數值 | `research/src/modules/metrics/notebooks/t2/sweep_phase_params.py`;`outputs/phase-sweep.csv`(18 列全數 `passes=True`);`docs/operational/analysis-phase-curves.md` §「Frozen phase-v1 parameter registry」 |
+| **D-30.10** | ✅ **REC-end(`MR.start`)與 `t_detect` 的一致性檢查結論為「系統性分歧」,不調整 REC 定義,也不重調 `t_detect` 參數** | pooled n=21(≥ T0 門檻 10,非 vacuous)、三個 session 各自 median 偏移 −66.4/−74.2/−85.9ms,方向與量級一致,非單一極端值拉偏;−78.1ms(≈10 tick)遠大於 ±1 tick 的一致性門檻。C-D4 禁止為了對齊而重新定義既有構念——REC 的權威定義是 `seg-v2 primary_flick`(D-30.1),`t_detect` 的權威定義與參數是 TS `detectionDerivation`(T1 對表已凍結);兩者分歧是待研究的訊號,不是任一方的 bug。Alternatives Considered:①悄悄調寬 `theta_v`/`k` 讓兩者對齊(拒絕:違反 C-D4,且會在未經驗證的情況下重新校準一個已凍結、已對表的既有構念);②把 REC 邊界改成以 `t_detect` 為準(拒絕:違反 D-30.1,且會讓 REC 定義依賴一個為完全不同 drill 校準的參數) | `research/src/modules/metrics/notebooks/t2/generate_phase_report.py`;`outputs/rec-vs-detect-verdict.txt`、`outputs/rec-minus-detect.csv`;新開 OQ-S4-17(README §8) |
 
 ## 3. `phase-v1` / `curve-v1` pre-registration 骨架(T0;規則與通過條件寫死,數值留待 T2/T3 掃參凍結)
 
@@ -144,6 +149,7 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | **S-30.4** | T0 獨立重跑 `run_pipeline.py` 取得的逐 peek `segment_count` 分佈顯示:60 個真實 peek 中 **58 個(96.7%)恰有 1 個 segment**,只有 1 個 0-segment、1 個 2-segment —— D-30.1b 原先預期的「MR 取法分歧」在此樣本上幾乎不曾發生,三個候選規則的實際差異只影響 1/60 個 peek 的 V 段起點 | 大幅簡化 D-30.1b 的拍板:候選①②③在本樣本上高度一致,採最簡單的候選①即可,不需要為稀有情境引入排序/合併邏輯;但**效度聲稱不可外推**——樣本一多、drill 涵蓋更寬動作範圍後,多段比例可能上升,屆時需重新檢視此決策 |
 | **S-30.5** | T0 獨立重跑三份真實匯出的分段統計(§2),與 [analysis-segments.md](../../../operational/analysis-segments.md) `seg-v2` real-export validation 段落宣稱的 98.3% success rate / 38.3% `merged_adjacent_peaks` **逐位吻合** | 交叉驗證 A2-T3 的 exit-gate 證據未被竄改或選擇性引用,T0「不得只信任帳本文字」的覆核要求確實執行且通過 |
 | **S-30.6** | T1 實測三份真實匯出 + 合成 fixture 的 `t_detect` 推導:60 個真實 peek 中 `detected`=22、`timeout`=38(+ 合成 2 peek 各 1 detected/1 timeout,合計 23 detected);`baselineInsufficient` 在三份真實匯出**全數為 0**(60/60 皆有充足前刺激基線,因為每個 peek 的前 500ms 落在上一個 peek 的尾段而非真空),只有合成 fixture 的 2 個 peek(視角開場即刺激,無前置資料)觸發 | 直接回答 OQ-S4-15:23 ≥ T0 pre-registered 門檻(≥10),T2 的 REC-vs-`t_detect` 一致性檢查**不會**是 `blocked-by-data`;同時排除了「baseline_insufficient 污染真實資料 threshold=3×SD=0」的疑慮(該退化模式只在合成邊界案例出現,不影響真實效度樣本) |
+| **S-30.7** | T2 一致性檢查發現 REC-end(`seg-v2 MR.start`)系統性地**早於** `t_detect`:pooled n=21,median `rec_minus_detect_ms = t_onset - t_detect = -78.1ms`(≈10 tick),三個 session 各自 median(−66.4/−74.2/−85.9ms)同方向、同量級,非單一 session 拉偏。遠超 ±1 tick(7.8ms)的一致性門檻,不是雜訊 | 這不是任一構念的 bug——`seg-v2` 的角速度峰值閘可能在原始角速度剛越過閾值時就接受 `primary_flick` 起點,而 `detectionDerivation` 要求 eccentricity 連續下降 4 個 tick 才確認 `t_detect`,兩者測的是同一動作的不同「已經開始」判準,對 counter-strafe 這種瞬間甩動的動作可能特別容易分岔(`analysis-t-detect.md` 的參數是為較和緩的 detection pop-in drill 校準)。記為 D-30.10 決策(不調整任一定義)+ 新開 OQ-S4-17(根因待驗證) |
 
 ## Open Questions
 
@@ -152,8 +158,9 @@ counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json eye_origin strict raised: Valu
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
 | **OQ-S4-14** | phase 邊界複用 `seg-v2` primary_flick,或獨立 Butterworth 偵測器(FR-D11 字面) | ✅ **關閉(2026-08-07,T0)**:複用 `seg-v2`(D-30.1),多段 peek 取法採候選①(D-30.1b)。三候選在真實資料上未出現「各切各的雙峰」,不觸發回頭重開獨立偵測器的條款 | 使用者 / 研究者 | WP-30 T0 |
-| **OQ-S4-15** | `t_detect` 在 counter-strafe drill 上是否有足夠 `detected` 樣本支撐 REC 一致性檢查 | 🟡 **可行性已由 T1 確認(2026-08-07):23 個 `detected` 樣本 ≥ 門檻 10(S-30.6)**,非 `blocked-by-data`;實際的 REC-end vs `t_detect` **一致性結論**仍留給 T2 產出,故 OQ 本身留到 T2 完成時關閉 | 研究者 | WP-30 T2 |
+| **OQ-S4-15** | `t_detect` 在 counter-strafe drill 上是否有足夠 `detected` 樣本支撐 REC 一致性檢查 | ✅ **關閉(2026-08-10,T2)**:pooled n=21 ≥ 門檻 10,非 `blocked-by-data`;一致性檢查已交付,結論為**系統性分歧**(見 OQ-S4-17,D-30.10) | 研究者 | WP-30 T2 |
 | **OQ-S4-16** | 09:18 / 09:24 的 `suspect = true` 是否為 [KI-007](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) 的 false positive,抑或 session 中途真的退出 fullscreen | ✅ **關閉(2026-08-07,T0)**:[KI-007 §5](../../../../known_issue/KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) 已載研究者第一手確認為誤判(F-1 修法前的已知 bug,drill 結束後才退出全螢幕);D-30.3 已拍板使用界線與失效條件 | 使用者 / 研究者 | WP-30 T0 |
+| **OQ-S4-17**(新) | REC-end(`seg-v2 MR.start`)與 `t_detect` 的系統性分歧(pooled median −78.1ms,S-30.7)根因為何——`theta_v`/`k` 對 counter-strafe 快速甩動的參數失配,或另有其他機制 | 🟡 **open**。T2 只記錄分歧、不調整任一定義(D-30.10);根因待專屬 counter-strafe 樣本的敏感度分析或其他驗證手段 | 研究者 | 待排 | 若確為參數失配,教練報告呈現 `t_detect` 相關量標時可能需要額外限制說明 |
 
 ## 4. T0 Scope 證據(DoD ⑦)
 
@@ -204,3 +211,50 @@ Test Files  90 passed (90)
 **反 vacuous 證據**(S-30.6):三份真實匯出 + 合成 fixture 合計 23 個 `detected` 樣本(≥ T0 門檻 10),`test_anti_vacuous_detected_sample_count_meets_t0_threshold`(Python)與 TS 測試中「has enough detected samples」案例雙側斷言;`baselineInsufficient` 在三份真實匯出全數為 0(僅合成短窗案例觸發),見 Surprises 表 S-30.6。
 
 **參數稽核**(D-30.5):`DetectParams` 預設值與 `detectionDerivation.ts` `DEFAULT_OPTIONS` 逐欄相同,無需決策或回寫文件。
+
+## 6. T2 REC/MR/V phase 分解證據
+
+**新增檔案**(`git status --short`,零修改既有 `src/` 生產碼;`algorithms/__init__.py` 只新增 export):
+
+```
+ M research/src/modules/metrics/algorithms/__init__.py
+?? docs/operational/analysis-phase-curves.md
+?? research/src/modules/metrics/algorithms/phase.py
+?? research/src/modules/metrics/algorithms/tests/test_phase.py
+?? research/src/modules/metrics/algorithms/tests/test_phase_purity.py
+?? research/src/modules/metrics/notebooks/t2/sweep_phase_params.py
+?? research/src/modules/metrics/notebooks/t2/generate_phase_report.py
+?? research/src/modules/metrics/notebooks/t2/outputs/phase-sweep.csv
+?? research/src/modules/metrics/notebooks/t2/outputs/phase-distributions.csv
+?? research/src/modules/metrics/notebooks/t2/outputs/phase-quality-*.csv
+?? research/src/modules/metrics/notebooks/t2/outputs/rec-minus-detect.csv
+?? research/src/modules/metrics/notebooks/t2/outputs/rec-vs-detect-verdict.txt
+?? research/src/modules/metrics/notebooks/t2/outputs/overlays/  (62 SVG: 60 real + 2 synthetic)
+```
+
+**`uv run pytest`**(research;含新增 25 個 `test_phase.py` 案例 + `test_phase_purity.py`):
+
+```
+269 passed in 80.50s
+```
+
+> **環境註記**:本 session 的預設 pytest 暫存目錄(`%TEMP%\pytest-of-<user>`)在此環境下 `Access is denied`(連 `icacls` 都無法讀取該目錄的 ACL),導致所有依賴 `tmp_path` fixture 的既有測試(含 T0/T1 就已存在的 `test_detect_purity.py`、`test_submovement.py` 等,與本 task 無關)在不帶參數時全部報 `ERROR`。以 `uv run pytest --basetemp=<可寫目錄>` 繞過壞掉的預設暫存目錄後,**全部 269 個測試(含既有 243 個)通過,0 失敗**。這是環境限制,不是程式碼缺陷——已用不涉及本 task 變更的既有測試（如 `test_submovement.py`）交叉驗證同一環境問題重現,證實與本次改動無關。
+
+`npm run test:ci` 未受影響(本 task 零 TS 變更,未重跑;WP-30 README §6 執行規則的「兩個閘都要貼證據」在 T1 已滿足 TS 側,T2 未觸碰 `tests/golden/research/`)。
+
+**`phase-v1` 雙維度掃參證據**(D-30.9):`research/src/modules/metrics/notebooks/t2/sweep_phase_params.py` 對 18 組候選(`cutoff_hz`∈{8,12,16}×`butter_order`∈{2,4}×`min_window_ticks`∈{24,30,40})逐一驗證:
+
+- **維度一(合成,結構性保證)**:六個 pre-registered 案例(`single_flick`/`flick_plus_one_micro`/`flick_plus_three_micro` × 有/無首發)全數 0 失敗——`t_onset`/`t_mr_end` 逐位等於 `seg-v2` `primary_flick` 邊界(0 tick 誤差,強於 DoD 要求的 ≤2 tick)。
+- **維度二(真實,60 peeks)**:凍結候選(`cutoff_hz=12.0, butter_order=4, min_window_ticks=30`)得 **59/60 = 98.33%** 三段皆非退化(唯一例外為 09:24 已知的 `below_floor`/0-segment peek,與 D-30.1b 一致),通過 T0 pre-registered ≥90% 門檻。18 組候選全數同分通過(因三份真實 fixture 每 peek 最小 tick 數為 53,遠高於候選網格的所有 `min_window_ticks` 與 `filtfilt` padlen 需求)。
+
+完整候選比較表:`research/src/modules/metrics/notebooks/t2/outputs/phase-sweep.csv`。
+
+**真實資料分佈**(逐 session,不併池,D-29.5 納入規則):見 `outputs/phase-distributions.csv`;摘要已寫入 [analysis-phase-curves.md](../../../operational/analysis-phase-curves.md)。
+
+**REC-end vs `t_detect` 一致性檢查**(DoD ④ 要求三選一明確判定):**系統性分歧**(非 `blocked-by-data`、非「一致」)。pooled n=21(≥ T0 門檻 10),median `rec_minus_detect_ms = -78.1ms`(≈10 tick),三 session 各自 median(−66.4/−74.2/−85.9ms)同方向同量級。詳見 S-30.7、D-30.10、新開 OQ-S4-17,以及 `outputs/rec-vs-detect-verdict.txt` / `outputs/rec-minus-detect.csv`。
+
+**疊圖覆核**(DoD ⑥):60 真實 + 2 合成 peek 疊圖全數產出於 `outputs/overlays/<fixture>/peek-<NNN>-overlay.svg`(灰=REC、藍=MR、綠=V、紅色虛線=`t_detect`)。本環境無法算染 SVG 圖片,覆核以逐 peek 記錄檔(邊界順序、非負時長、MR 涵蓋該窗區域性峰值)進行結構性/數值性複核,並直接讀取數份代表性 peek(含唯一的 `no_primary_flick` 案例:09:24 peek 0)的 SVG 座標人工核對正確性。除已知的 `no_primary_flick` 案例與上述 REC/`t_detect` 系統性分歧外,複核未發現其他異常樣本。
+
+**合成 fixture 回歸**(S-30.3 的天然短窗案例):`synthetic_counterstrafe.json` 兩個 24-tick peek 皆確定性觸發 `window_too_short`(`min_window_ticks=30`),`generate_phase_report.py` 內建斷言釘死此行為,不算「已知不支援」。
+
+**C-D4 無第二定義佐證**:`test_phase.py::test_known_boundaries_reproduce_seg_v2_primary_flick_exactly` 對六個案例斷言 `t_onset`/`t_mr_end` 逐位等於 `Segment.start_idx`/`end_idx` 映回的 tick 時間戳;`phase.py` 原始碼內零運動起點偵測邏輯,Butterworth 平滑僅出現在 `smooth_report_omega`(報告路徑),不影響任何邊界欄位(`test_cutoff_at_or_above_nyquist_flags_filter_degenerate_without_raising` 等測試佐證)。

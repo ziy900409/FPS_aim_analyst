@@ -1,0 +1,1 @@
+pooled_n=21 (threshold 10); verdict=systematic divergence: median REC-end - t_detect = -78.125 ms (> 1 tick = 7.8125 ms)

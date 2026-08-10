@@ -1,0 +1,3 @@
+peek_index,side,t_onset,t_mr_end,t_anchor,rec_ms,mr_ms,v_ms,peak_omega_deg_s,t_detect,rec_minus_detect_ms,flags
+0,L,,,,,,,,15.625,,"('window_too_short',)"
+1,R,,,,,,,,,,"('window_too_short',)"

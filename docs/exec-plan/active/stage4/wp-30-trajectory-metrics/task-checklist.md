@@ -7,7 +7,7 @@
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(驗 M14 六項含 A2-T4 + fixture roster 凍結 + suspect 使用界線 + `phase-v1`/`curve-v1` pre-registration;無演算法碼) | [T0-entry-gate.md](T0-entry-gate.md) | **A2-T4** | Low |
 | ✅ | **T1** `t_detect` / eccentricity Python 推導 + **對表閘 ≤1e-9**(含反 vacuous) | [T1-detect-parity.md](T1-detect-parity.md) | T0 | Med |
-| ⬜ | **T2** REC/MR/V phase 分解 + `phase-v1` 雙維度掃參凍結 + REC-end vs t_detect 一致性檢查 | [T2-phase-decompose.md](T2-phase-decompose.md) | T1 | **Med** |
+| ✅ | **T2** REC/MR/V phase 分解 + `phase-v1` 雙維度掃參凍結 + REC-end vs t_detect 一致性檢查 | [T2-phase-decompose.md](T2-phase-decompose.md) | T1 | **Med** |
 | ⬜ | **T3** L/R 101 點正規化曲線(`curve-v1`)+ 逐 side 平均與分佈帶 | [T3-lr-curves.md](T3-lr-curves.md) | T0(**不依賴 T1/T2**) | Low |
 | ⬜ | **T-exit** 教練報告 v1 + `analysis-phase-curves.md` 定稿 + 文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T2 + T3 | — |
 
