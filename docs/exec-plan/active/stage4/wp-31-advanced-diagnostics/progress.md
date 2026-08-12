@@ -14,6 +14,7 @@
 | 2026-08-10 | **T1** | ✅ `sparc-v1` 落地:`compute_sparc`/`compute_sparc_traced` 逐位移植 + 兩份跨 repo golden 對表 ≤1e-9(PA parity 8 個量、128Hz 域 8 case)+ `sparc_table`(逐 MR 段,59/60 與 `phase-v1` 機械一致)+ `sparc_length_sensitivity` 階梯診斷 → verdict **`stratified_only`**(step_ratio **0.7643** ≥ 0.5,**D-31.6**,關閉 OQ-S4-18)+ `analysis-advanced-diagnostics.md` 首版。`uv run pytest` **303 → 365 passed**;`npm run test:ci` exit 0 且 `src/`/`tests/` **零 diff**(§6) |
 | 2026-08-10 | **T2** | ✅ `xcorr-v1` + `gate-v1` 落地:`key_state_signed` / `key_velocity_xcorr`(逐 lag Pearson + PA tie-break,correlogram 每點帶 `n_overlap`)/ `xcorr_table` / `reliability_gate`(三件組,per-session seeded)+ `key_event_crosscheck`。**三 session 全 `research_only`**,其中 **09:18 / 09:37 未過 ① shuffle null**(p=0.056 / 0.173)、09:24 三件全過(**D-31.9**);`coach_report` 不可達由 AST 掃描斷言(DoD ③)。`key` 事件交叉檢核 **86/86 · 84/84 · 78/78 全對、最大殘差 < 1 tick**(D-31.8)。新開 **OQ-S4-20**(最大化統計量的多重比較效應)。`uv run pytest` **365 → 431 passed**;`npm run test:ci` exit 0 且 `src/`/`tests/` **零 diff**(§7) |
 | 2026-08-12 | **T3** | ✅ `fitts-v1` 落地:`D` 重用 `epsilon_deg`/`detect-v1` spawn eccentricity 語意,`W` 重用 angular `_hitbox`(GD-7),輸出 D/W/ID/MT/TP + `blocked-by-data` 判準 + D 內生性/MT 含 RT 限制。逐 session verdict:**09:18 `blocked-by-data`**(`d_ratio=1.8343 < 2.0`),**09:24 `ok`**(slope 60.1975 ms/bit,r² 0.0669,TP 16.6120),**09:37 `ok`**(slope 39.6014 ms/bit,r² 0.0339,TP 25.2516)(**D-31.10**)。T0 pooled 3.5x 預期不等於逐 session 通過(**S-31.8**);門檻未放寬、未跨 session 併池。`uv run pytest` **431 → 452 passed**;`npm run test:ci` exit 0(90 files/748 tests + 21 Playwright)且 `src/`/`tests/` **零 diff**(§8) |
+| 2026-08-12 | **T-exit** | ✅ 三份判定收斂表 + `coach_report.py` 升 `coach-report-v2`:新增研究向區塊(`#advanced`,SPARC 恆呈現 + xcorr `research_only` 時呈現 + Fitts `ok` 時呈現)與缺口說明區塊(`#advanced-gaps`,Fitts 09:18 `blocked-by-data` 落此)。三構念皆復用 `_trajectory_data` 已算好的逐 peek 中間值,不二次推導(C-D4)。9 份既有 committed 範例已重跑,差異限於 `REPORT_VERSION`/標題/新增區塊,①~⑧ 逐位不變。`analysis-advanced-diagnostics.md` 定稿(補 T-exit 收斂表 + 報告載體契約 + WP-32 交接結論:空清單)。`uv run pytest` **452 → 457 passed**(`test_coach_report.py` 新增 5 條測試釘死 P2 納入規則 / gap note / coach_report 不可達 / SPARC 無 blocked 分支 / legacy 缺席,既有測試零回歸);`npm run test:ci` exit 0、`src/`/`tests/` 零 diff(**D-31.11**)(§9) |
 
 ---
 
@@ -279,6 +280,36 @@ README §5 的 `Interface contracts` 是規劃期草圖(不在 [README §6](READ
 - ②「把 `min_d_ratio` 從 2.0 放寬到 1.8」— 否決:這是看過結果後調門檻,違反 `fitts-v1` pre-registration;要改只能升 `fitts-v2` 並重跑全鏈。
 - ③「保留 09:24/09:37 的 TP,忽略 r²」— 否決:r² 是解讀邊界的一部分。`ok` 代表資料門檻可計算,不是效度足以對選手做主張。
 
+### D-31.11 — T-exit:三份判定收斂為 `coach-report-v2` 研究向區塊 + WP-32 交接清單為空(2026-08-12)
+
+**收斂,不重算**:T-exit 只讀 T1/T2/T3 已 commit 的判定(D-31.6/D-31.9/D-31.10),不重跑任何 gate 或
+diagnostic 的計算邏輯。三份判定收斂表見 [analysis-advanced-diagnostics.md「T-exit」章節](../../../../operational/analysis-advanced-diagnostics.md#t-exit--三份判定收斂--報告載體契約--wp-32-交接)。
+
+**報告落地**:`coach_report.py` 的 `_advanced_diagnostics()` 復用 `_trajectory_data()` 已算好的
+逐 peek `omega_deg_s(strict=True)` / `resolve_eye_origin(strict=True)` 中間值(`peekTicks` /
+`omegaValues` / `segmentsByPeek` / `eyeOrigin`),分別餵給 `sparc_table` / `xcorr_table` +
+`reliability_gate` / `fitts_samples` —— **零二次推導**(C-D4):trajectory 不可用時,SPARC/xcorr/
+Fitts 隨 phase/curves 一起回報 `unavailable`,不產生任何數值。
+
+**納入規則由程式碼決定,不是渲染時的 if-else 裝飾**:SPARC 恆呈現(無 `blocked-by-data` 分支);
+xcorr 依 `GateVerdict.verdict`(`research_only` 呈現 / `blocked-by-data` 改列缺口說明);Fitts 依
+`FittsResult.status`(`ok` 呈現 / `blocked-by-data` 改列缺口說明)。三者的「呈現與否」旗標
+(`block["blocked"]`)由 `_xcorr_block`/`_fitts_block` 直接讀判定物件的欄位計算,不是另立一套字串比對。
+
+**WP-32 交接清單為空,不留白**:C-D3 上限下,三個構念在本樣本結構(1 受試者 × 3 session × 20 peeks)
+下沒有一個達到晉升門檻(`gate-v1` 甚至由程式碼保證 `coach_report` 不可達)。詳細「為何不建議晉升 /
+升級路徑」逐指標列於 `analysis-advanced-diagnostics.md` 的 WP-32 交接表,WP-32 T0 若要重評估
+任一項須先完成對應升級路徑(≥3 受試者樣本 / `gate-v2` / 受控 Fitts 設計 / 同 bucket 段長操弄),
+不得直接把研究向數字搬進 dashboard。
+
+**Alternatives considered**:
+- ①「等三個指標都通過再一起收斂」— 否決:C-D3 已明文「三個全判研究向也是合格交付」;等待通過會把
+  「沒有一個能過」誤讀成任務失敗,而如實記錄判定才是本 task 的目的。
+- ②「把研究向區塊併進主表,只加一個『研究向』標籤」— 否決:視覺上與主表同一張表格會讓讀者以為
+  兩者可比較;獨立 `#advanced` 區塊 + 獨立 CSS 警示色才是 C-D3 上限條款「不進主表」的字面落地。
+- ③「blocked-by-data 的指標完全不提」— 否決:那是留白讓 WP-32 自行猜測「為什麼沒有這個指標」;
+  `#advanced-gaps` 的一行說明是本 task DoD 明訂的最低要求。
+
 ---
 
 ## 4. OQ 對帳(T0)
@@ -473,6 +504,60 @@ Test Files  90 passed (90)
 
 ---
 
+## 9. T-exit Scope 與閘門證據(T-exit DoD ⑥)
+
+**Touches**:
+
+```
+research/src/report/coach_report.py                                      (MODIFY:coach-report-v2)
+research/src/report/tests/test_coach_report.py                           (MODIFY:P2 納入規則測試)
+research/src/modules/metrics/notebooks/t-exit/outputs/coach-report-*.html (MODIFY:9 份重跑)
+docs/operational/analysis-advanced-diagnostics.md                        (MODIFY:T-exit 收斂表定稿)
+docs/exec-plan/active/stage4/README.md                                   (MODIFY:§3/§6/§8/§9 對帳)
+docs/exec-plan/active/stage4/wp-31-advanced-diagnostics/*.md             (MODIFY:T-exit 狀態/進度)
+CONTEXT.md                                                                (MODIFY:xcorr-v1/gate-v1/fitts-v1/報告 v2 新術語)
+```
+
+```
+$ git diff --stat -- src tests
+(空)
+```
+
+**零 `src/`、零 top-level `tests/` 變更**,符合 [task-checklist.md](task-checklist.md) 紀律 2。
+
+**閘門**:
+
+```
+$ uv run pytest -q --no-header -p no:cacheprovider --basetemp=<短路徑>
+457 passed in 327.89s (0:05:27)   # T3 的 452 + 本 task 新增 5,零回歸
+
+$ npm run test:ci             # tsc --noEmit && vitest run && playwright test
+Test Files  90 passed (90)
+     Tests  748 passed (748)
+21 passed (29.6s)              # Playwright; exit 0;與 T3 逐位相同(TS 零變更)
+```
+
+**9 份 committed 範例重跑證據**:`test_committed_example_reports_match_a_fresh_run` 對每一份既有
+`coach-report-*.html` 動態重算並逐 byte 比對(檔名自動解析 fixture + `--group-by`,不需手動列舉);
+重跑前該測試因版本字串/新增區塊而 fail(舊 v1 檔案 stale),`generate()` 覆寫 9 份後轉綠 —— 這就是
+「差異已逐份確認」的機械證據,不是人工目視。
+
+**新增測試涵蓋 DoD ③ 的三條斷言**:
+1. `test_passing_p2_diagnostics_render_in_the_research_block_with_full_annotations`(09:24,三構念
+   全通過)—— 逐區塊斷言 n / flags 計數 / version / 效度層級句 / 限制句皆存在,且缺口說明區塊回報
+   「無缺口」。
+2. `test_blocked_by_data_p2_diagnostic_produces_a_gap_note_not_a_metric_block`(09:18,Fitts
+   `blocked-by-data`)—— 斷言研究向區塊沒有 `<h3>Fitts(` 這個指標區塊,缺口說明區塊有一行人類可讀
+   原因(而非原始 enum 字串)。
+3. `test_xcorr_and_fitts_never_reach_coach_report_verdict` —— 三份真實 fixture 逐一斷言 xcorr
+   verdict ∈ {`research_only`,`blocked-by-data`},`coach_report` 不曾出現(C-D3 上限的報告層覆核)。
+
+另加 `test_sparc_has_no_blocked_branch_and_always_reaches_the_research_block`(合成 fixture,SPARC
+n=0 仍算「有輸出」)與 `test_advanced_diagnostics_are_absent_for_pre_wp30_legacy_exports`(legacy
+匯出三構念皆 `unavailable`,不隨 trajectory 一起假裝可用)。
+
+---
+
 ## 規劃期實測資料(供 T0 覆核,非結論)
 
 > 以下數值由規劃期一次性腳本產出,**尚未經 task 的測試釘死**;T0/T1/T2/T3 須以自己的測試重新確立,不得直接引用為證據。
@@ -516,3 +601,5 @@ Test Files  90 passed (90)
 **T2 開一個新 OQ(OQ-S4-20)**,理由是它**不能**用限制條款處理:S-31.5 指出的問題不是「這個數字要小心讀」,而是「這個統計量在虛無假設下就已經很大」——那是構念定義層級的疑慮,只能由 `xcorr-v2` 回答。相對地,S-31.6(方向不穩)**已**以限制條款處理並上測試,不另開 OQ:它是同一個構念的正確使用邊界,不是構念本身要重新定義。xcorr 是否進教練報告由 **T-exit** 依 C-D3 收斂;依上限條款,最高只能是研究向區塊 + 全部限制。
 
 **T3 未新開 OQ**。09:18 的 `blocked-by-data` 是凍結判準正常工作,不是新方法學問題;OQ-S4-19 已覆蓋 D 內生性與 TP 個人基線能否成立。09:24/09:37 r² 低同樣作為 OQ-S4-19 的限制證據,不另開題。
+
+**T-exit 未新開 OQ,亦未關閉 OQ-S4-19 / OQ-S4-20**。兩者的問題本身(D 的內生性設計 / xcorr 統計量的多重比較效應)不因報告層收斂而解決 —— T-exit 只是把「已知限制」逐字落到 `coach-report-v2` 與 `analysis-advanced-diagnostics.md`,並在 stage4 README §8 補記「T-exit 已複核,結論不變」。兩題的升級路徑(受控 Fitts 設計 / `xcorr-v2`)維持記錄在案,owner/deadline 不變。

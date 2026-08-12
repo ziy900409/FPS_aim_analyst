@@ -1,8 +1,9 @@
 # 進階診斷層:SPARC(`sparc-v1`)· Key-Velocity xcorr(`xcorr-v1` / `gate-v1`)· Fitts(`fitts-v1`)
 
-本檔是 WP-31 進階診斷層的 operational registry。目前涵蓋 **`sparc-v1`**(逐段平滑度,FR-D13,T1)
-與 **`xcorr-v1` / `gate-v1`**(key-velocity 耦合與其效度判定,FR-D14,T2),以及
-**`fitts-v1`**(Fitts ID/MT/TP,FR-D15,T3);T-exit 定稿。
+本檔是 WP-31 進階診斷層的 operational registry,**已於 T-exit 定稿**(2026-08-12)。涵蓋
+**`sparc-v1`**(逐段平滑度,FR-D13,T1)、**`xcorr-v1` / `gate-v1`**(key-velocity 耦合與其效度判定,
+FR-D14,T2)、**`fitts-v1`**(Fitts ID/MT/TP,FR-D15,T3),以及 T-exit 收斂的三份判定表 + 報告載體
+契約(`coach-report-v2` 研究向區塊)+ WP-32 交接結論(見文末 [T-exit 章節](#t-exit--三份判定收斂--報告載體契約--wp-32-交接))。
 
 三個構念的交付物都是**判定**,不是數字(C-D3 / GD-20):「算得出來」不等於「可以對選手講」。
 每個構念的章節末尾都必須有一段明確的使用限制。
@@ -221,8 +222,9 @@ padding 修正項」的理由:能確定的是**跨 bucket 的 SPARC 差異不可
 - **參數註冊於標稱 128 Hz**(同 `seg-v1`/`seg-v2`/`phase-v1`/`curve-v1` 慣例);不同取樣率需新版本。
 - **`window_too_short` 在本樣本上從未觸發**(真實最短窗 53 tick,合成 24 tick 亦達 17):該分支
   僅由單元測試驗證,尚無真實資料實例(比照 `phase-v1` 的 `anchor_before_onset`)。
-- **尚未進教練報告**:C-D3 下,SPARC 是否晉升為報告指標由 T-exit 收斂判定;本檔只交付效度證據與
-  使用限制。跨段長比較的限制若無法在報告介面上明示,SPARC 就不應進主表。
+- **T-exit 收斂結果(2026-08-12)**:SPARC 已進 `coach-report-v2` 的**研究向區塊**(`#advanced`),
+  逐段 SPARC 分佈 + `padded_n` bucket 摘要 + `stratified_only` 使用限制逐字隨每份報告輸出;
+  **不進主表**(C-D3)。SPARC 無 `blocked-by-data` 分支,故不會出現在「缺口說明」區塊。
 
 ---
 
@@ -426,8 +428,11 @@ session 級統計量 = 該 session 通過納入規則的 peek 的 **中位 `|pea
 - **合成 fixture 走 `window_too_short`**:24 tick 窗 → 23 個配對樣本 < `min_ticks = 32`,**確定性**觸發。
   注意這與同一份 fixture 在 `phase-v1`(`window_too_short`,門檻不同)與 `sparc-v1`(`too_few_samples`)
   上的退化分支**各自不同**:三個構念量的不是同一件事,觸底原因本來就可以不一樣(S-31.4)。
-- **尚未進教練報告**:C-D3 下由 T-exit 收斂;依上限條款,xcorr 最多只能進報告的研究向區塊並附上全部
-  限制。
+- **T-exit 收斂結果(2026-08-12)**:xcorr + `gate-v1` 已進 `coach-report-v2` 的**研究向區塊**
+  (`#advanced`),逐 session 附完整 `GateVerdict`(shuffle p / CI / 奇偶 Δ)+ 上限條款 + 方向不穩
+  限制逐字輸出。三份真實 fixture 的 verdict 皆為 `research_only`,故三者皆不出現在「缺口說明」
+  區塊;若日後某 session 的有效 n < `gate-v1.min_samples`,該 session 的報告會改列缺口說明,
+  **不會**出現在研究向區塊(由 `reliability_gate` 的 `verdict` 欄位機械判定,非文件自律)。
 
 ---
 
@@ -516,4 +521,77 @@ TP 數字可以作研究向探索,不應在 T-exit 前被當成教練主表指�
   同一天三個 session。非母體層級證據(KI-004 R-7)。
 - **不跨 session 併池推論**:pooled D ratio 可說明資料母體有變異,但 `fitts-v1` verdict 逐 session
   給出。09:18 因逐 session D ratio 不足而 blocked。
-- **尚未進教練報告**:C-D3 下由 T-exit 收斂;以目前 r2 與設計限制,最多只能作研究向材料。
+- **T-exit 收斂結果(2026-08-12)**:`fitts-v1` 已進 `coach-report-v2` 的**研究向區塊**(`#advanced`)
+  ——但只限 `status='ok'` 的 session:09:24/09:37 附回歸(slope/intercept/r²/TP)+ D 內生性與 MT
+  含 RT 兩項限制逐字輸出。09:18(`blocked-by-data`,`insufficient_d_ratio`)**不**出現在研究向區塊,
+  改於「缺口說明」區塊列一行:原因(spawn 偏心角變異低於 `min_d_ratio=2.0`)+ 需要什麼樣本
+  (更大範圍的 spawn 位置變異,受目前 drill 設計限制,OQ-S4-19)。
+
+---
+
+## T-exit — 三份判定收斂 + 報告載體契約 + WP-32 交接
+
+> 2026-08-12。收斂來源:T1(`sparc-v1`)· T2(`xcorr-v1`/`gate-v1`)· T3(`fitts-v1`)三份既定判定
+> (逐條 commit 見 [progress.md](../exec-plan/active/stage4/wp-31-advanced-diagnostics/progress.md)
+> D-31.6 / D-31.9 / D-31.10)。**本節不重算任何判定**,只把三份既有結果收斂成一張表 + 落地成
+> `coach-report-v2` 的報告契約。
+
+### 三份判定收斂表
+
+| 指標 | 判定來源(commit) | 判定值 | 進報告與否 | 理由 |
+|---|---|---|---|---|
+| SPARC | T1,`944abc3`→`sparc_length_sensitivity`(D-31.6) | `stratified_only`(step_ratio 0.7643 ≥ 0.5) | ✅ **研究向區塊**(`#advanced`),逐 session | 無 `blocked-by-data` 分支;跨 `padded_n` bucket 的限制可在報告介面逐字呈現,不放大成主表判定 |
+| Key-Velocity xcorr | T2,`reliability_gate`(D-31.9,gate-v1 三件組) | 三 session 全 `research_only`(09:18/09:37 未過①,09:24 全過) | ✅ **研究向區塊**,逐 session;`coach_report` 由程式碼保證不可達 | C-D3 上限條款:三件組只證明「非偶然 + 穩定」,不證明個體可靠度;研究向是本樣本結構下的天花板,不是降級 |
+| Fitts | T3,`fitts_samples`(D-31.10,fitts-v1) | 09:18 `blocked-by-data`(`insufficient_d_ratio`);09:24/09:37 `ok`(r² 0.0669/0.0339) | 09:18 ❌ **缺口說明**;09:24/09:37 ✅ **研究向區塊** | `ok` 只表示資料門檻可計算回歸,不表示效度足以對選手做主張(r² 低);09:18 未達資料門檻,不硬給結論 |
+
+**收斂結論**:三個指標**沒有一個**在本樣本結構下能進主表(C-D3 上限一致);SPARC 與 xcorr 三個 session
+皆有輸出,Fitts 有 2/3 session 有輸出、1/3 為缺口說明。這是**合格的交付**——T-exit 的成功條件從不是
+「三個都要進主表」,而是每一個判定都有證據且可稽核(見 [T-exit-gate.md](../exec-plan/active/stage4/wp-31-advanced-diagnostics/T-exit-gate.md) Objective)。
+
+### 報告載體契約(`coach-report-v2`)
+
+`research/src/report/coach_report.py` 的 `REPORT_VERSION` 自 `coach-report-v1` 升為 `coach-report-v2`。
+新增兩個區塊,兩者互斥(同一構念同一 session 只會出現在其中一個):
+
+| 區塊 | HTML `id` | 內容 | 納入規則 |
+|---|---|---|---|
+| ⑨ 研究向區塊 | `#advanced` | SPARC(恆呈現)、xcorr(`verdict != 'blocked-by-data'` 時呈現)、Fitts(`status == 'ok'` 時呈現) | 每個子區塊帶 `n` / flags 計數 / `version` / 效度層級句 / 限制句(逐項由 `test_coach_report.py::test_passing_p2_diagnostics_render_in_the_research_block_with_full_annotations` 釘死) |
+| ⑩ 缺口說明 | `#advanced-gaps` | xcorr 或 Fitts 為 `blocked-by-data` 時的一行說明:指標名 + version + 「為何沒有 / 需要什麼樣本」 | 不含任何數值指標(無 n/slope/r² 等),只有人類可讀的缺口原因(由 `test_blocked_by_data_p2_diagnostic_produces_a_gap_note_not_a_metric_block` 釘死) |
+
+**上游前提複用,不重算**:SPARC/xcorr 復用 `_trajectory_data` 已算好的 `omega_deg_s(strict=True)` /
+`resolve_eye_origin(strict=True)` 逐 peek 中間值(`peekTicks` / `omegaValues` / `segmentsByPeek` /
+`eyeOrigin`);trajectory 不可用(pre-WP-30 legacy 匯出)時,三個構念**連同**研究向區塊一起回報
+`available=False`,不產生任何數值(與 phase/curves 同一機制)。
+
+**gate-v1 的決定性延伸到報告層**:`reliability_gate` 的 seed(`20260810`)與逐 session 獨立 seed
+(`blake2b(session)`)是報告產生的一部分,故同一 fixture 連續兩次 `generate()` 仍 byte-identical
+(`test_repeated_generation_is_byte_identical` 覆蓋 09:18/09:24/09:37/synthetic 四份,即涵蓋
+SPARC/xcorr/Fitts 三個構念的計算路徑)。
+
+**9 份既有 committed 範例已重跑(2026-08-12)**:差異限於 `REPORT_VERSION` 字串、標題「v1→v2」、
+新增的 ⑨⑩ 兩個區塊、以及 ⑪ 效度紅線清單裡一句話的更新;既有 ①~⑧ 區塊(compute-v1/sync-v1/
+phase-v1/curve-v1/detect-v1 家族)逐位不變,由 `test_frozen_version_strings_and_sync_params_are_reported`
+與 `test_grouping_never_changes_parameter_metadata` 覆蓋。
+
+### Sample limits 總覽(三構念共用,不重複聲明)
+
+三份真實 fixture 皆為**單一匿名受試者 P001、同一台 240 Hz 機器、同一 drill config、同一天三個
+session**;任何 SPARC / xcorr / Fitts 結論皆受此限制,非母體層級證據(KI-004 R-7)。三者皆**不跨
+session 併池**——報告逐 session 呈現,pooled 數字(SPARC 的階梯診斷、Fitts 的 D ratio 預期)只用於
+方法學診斷,不作訓練效果或個人基線主張。
+
+### WP-32 交接結論
+
+依 C-D3,**研究向指標不得晉升 dashboard**——三個構念在本 WP 的最高判定皆為「研究向」或
+「blocked-by-data」,沒有一個達到可晉升的門檻(`gate-v1` 甚至由程式碼保證 xcorr 不可能達到)。
+
+**WP-32 T0 晉升清單評估的交接結果:空清單。** 三個構念**皆不建議**列入 WP-32 的晉升評估:
+
+| 指標 | 為何不建議晉升 | 升級路徑(若要重新評估) |
+|---|---|---|
+| SPARC | 跨段長比較 `stratified_only`,教練介面難以在不使讀者混淆的前提下呈現「僅限同 bucket」的限制 | 若要跨 bucket 可比,需在同一 `padded_n` bucket 內操弄段長的新設計(新 WP) |
+| xcorr | `gate-v1` 的上限條款由程式碼保證 `coach_report` 不可達;OQ-S4-20(最大化統計量的多重比較效應)未解 | 取得 ≥3 受試者樣本 → `gate-v2` 恢復 split-half r;或先解 OQ-S4-20 換一個不受多重比較污染的統計量(`xcorr-v2`) |
+| Fitts | D 內生 + r² 低(0.03–0.07),回歸解釋力不足以對選手做處方建議;09:18 甚至資料門檻不足 | 受控設計(drill 端隨機化 spawn 偏心)+ 更多樣本,屬新 WP/新錄製,見 OQ-S4-19 |
+
+此結論明確,**不留白讓 WP-32 自行猜測**:WP-32 T0 若要重新評估上表任一項,必須先在該項的升級路徑
+完成後才能重新提案,而不是直接把「研究向」數字搬進 dashboard。

@@ -1,4 +1,4 @@
-"""Coach report v1: timeline, Sync, trajectory phases, and normalized L/R curves.
+"""Coach report v2: timeline, Sync, trajectory phases, L/R curves, and WP-31's P2 research block.
 
 One command turns a schema v2 export into a single self-contained static HTML file a
 coach can open or forward without a server::
@@ -14,11 +14,22 @@ table. The three timeline aggregates are parity-tested against the engine's froz
 new constructs governed by pre-registered ``sync-v1``, and the two tick-quantized ones
 carry their precision verdict inline. ``phase-v1`` and ``curve-v1`` are registered new
 constructs with their sample limits shown inline. The unresolved REC/``t_detect`` divergence
-is research-only; SPARC, key-velocity xcorr, and Fitts remain absent.
+is research-only.
+
+v2 (WP-31 T-exit) adds SPARC (``sparc-v1``), key-velocity xcorr + its ``gate-v1``
+reliability verdict, and Fitts (``fitts-v1``) in a **separate research-only block**
+(``#advanced``): none of the three may enter the main table. A ``blocked-by-data`` xcorr or
+Fitts session produces a one-line gap explanation (``#advanced-gaps``) instead of a metric
+block -- no fabricated number ever appears where a construct could not be computed. SPARC
+has no ``blocked-by-data`` branch, so it always renders in the research block, carrying its
+frozen ``stratified_only`` cross-length usage limit (D-31.6). ``gate-v1`` guarantees by
+construction that xcorr can never reach ``'coach_report'`` under this sample structure
+(D-31.4); the report block for it is therefore always research-only or absent.
 
 The rendered page is deterministic: no clock reads, no random identifiers, and every
 collection is emitted in a stable order, so a committed example report only changes when
-the underlying data or contract changes.
+the underlying data or contract changes. ``gate-v1``'s permutation/bootstrap draws use a
+fixed seed (frozen at T0), so re-running the report reproduces byte-identical output.
 """
 
 from __future__ import annotations
@@ -47,17 +58,36 @@ from modules.kinematics.algorithms.angular import (  # noqa: E402
     omega_deg_s,
     resolve_eye_origin,
 )
+from modules.metrics.algorithms.coupling import (  # noqa: E402
+    DEFAULT_GATE_THRESHOLDS,
+    DEFAULT_XCORR_PARAMS,
+    GATE_VERSION,
+    XCORR_VERSION,
+    key_event_crosscheck,
+    reliability_gate,
+    xcorr_table,
+)
 from modules.metrics.algorithms.curves import (  # noqa: E402
     DEFAULT_CURVE_PARAMS,
     curve_summary,
     curve_table,
 )
 from modules.metrics.algorithms.detect import detect_samples  # noqa: E402
+from modules.metrics.algorithms.fitts import (  # noqa: E402
+    DEFAULT_FITTS_PARAMS,
+    FITTS_VERSION,
+    fitts_samples,
+)
 from modules.metrics.algorithms.phase import (  # noqa: E402
     DEFAULT_PHASE_PARAMS,
     phase_decompose,
 )
 from modules.metrics.algorithms.peek import PeekWindow, build_peek_windows  # noqa: E402
+from modules.metrics.algorithms.sparc import (  # noqa: E402
+    DEFAULT_SPARC_PARAMS,
+    SPARC_VERSION,
+    sparc_table,
+)
 from modules.metrics.algorithms.sync import (  # noqa: E402
     DEFAULT_SYNC_PARAMS,
     SYNC_METRICS,
@@ -80,7 +110,7 @@ from modules.segments.algorithms import (  # noqa: E402
 )
 
 
-REPORT_VERSION = "coach-report-v1"
+REPORT_VERSION = "coach-report-v2"
 DEFAULT_EXPORT = RESEARCH_ROOT / "fixtures" / "exports" / "synthetic_timeline.json"
 DEFAULT_OUT_DIR = RESEARCH_ROOT / "out"
 GROUP_BY_CHOICES = ("side", "ads", "weapon_mode")
@@ -96,6 +126,74 @@ VALIDITY_NEW_SUBTICK = "新構念(sync-v1);兩端皆 sub-tick input timestamp,�
 VALIDITY_NEW_PHASE = "新構念(phase-v1);已凍結定義，限本受試者/機器/drill 樣本"
 VALIDITY_NEW_CURVE = "新構念(curve-v1);逐 session L/R 軌跡，不作跨 session 推論"
 VALIDITY_RESEARCH = "研究向：REC-end 與 detect-v1 已測得系統性分歧，非主表判定"
+VALIDITY_RESEARCH_SPARC = (
+    "研究向(WP-31 T-exit;C-D3 上限=研究向,不進主表):sparc-v1 逐位移植;"
+    "跨段長比較判定 stratified_only(pooled 3-session, D-31.6),僅限同一 padded_n bucket 內比較"
+)
+VALIDITY_RESEARCH_XCORR = (
+    "研究向(WP-31 T-exit;C-D3 上限=研究向,不進主表):xcorr-v1 + gate-v1;"
+    "本樣本結構(1 受試者 × 3 session × 20 peeks)下 coach_report 由程式碼保證不可達"
+)
+VALIDITY_RESEARCH_FITTS = (
+    "研究向(WP-31 T-exit;C-D3 上限=研究向,不進主表):fitts-v1;"
+    "觀察性、非受控設計(D 內生 + MT 含 RT),不作因果或個人基線主張"
+)
+
+#: SPARC's cross-length usage limit is a WP-31 T1 pooled (3-session) finding frozen at
+#: D-31.6, not something a single-session report recomputes -- recomputing it per report
+#: on ~20 rows would either be vacuous (fewer than two populated buckets) or silently
+#: relitigate a pre-registered, already-closed question (OQ-S4-18).
+SPARC_STEP_RATIO_VERDICT = "stratified_only"
+SPARC_STEP_RATIO_NOTE = (
+    "⚠️ 使用限制(WP-31 T1,D-31.6,pooled 3-session 診斷,step_ratio=0.7643 ≥ threshold 0.5):"
+    "SPARC 僅可在同一個 padded_n bucket 內比較,跨 bucket 差異不可單一解讀——零填充解析度差異"
+    "(方法學假象)與較長動作本身較不平滑(真實效應)在本設計下共變、無法分離。"
+)
+
+XCORR_UPPER_BOUND_NOTE = (
+    "⚠️ 上限條款(gate-v1,D-31.4):三件組比 split-half r 弱,只證明「訊號非偶然 + 估計量穩定」,"
+    "不證明個體差異可靠度。本樣本結構下 coach_report 不可達,由程式碼保證(reliability_gate 無此分支)。"
+)
+XCORR_DIRECTION_NOTE = (
+    "⚠️ 三件組只看 |r| 的大小,不看方向;peak lag 的符號與大小跨 session 不穩定,"
+    "即使某 session 三件全過,也不得據以宣稱「key 領先 ω 多少 ms」(S-31.6)。"
+)
+
+FITTS_LIMITATIONS = (
+    "D 是內生的,不是實驗操弄的:目標只在兩個固定位置出現,D 的變異幾乎全部來自上一個 peek 結束時"
+    "玩家把準星留在哪——這是相關性觀察,不是 Fitts 典範的受控設計。",
+    "MT = t_firstShot − t_visible,含反應時間與 counter-strafe 停止時間;回歸截距會吸收兩者,"
+    "t_detect 樣本不足以逐 peek 扣除,本版不做 RT 校正。",
+)
+
+#: Gap explanations for a ``blocked-by-data`` xcorr session -- ``insufficient_n`` is the
+#: only reason ``gate-v1`` can return for that verdict (see ``KNOWN_GATE_REASONS``).
+_XCORR_GAP_REASONS = {
+    "insufficient_n": (
+        "有效 peek 數(flags 為空且 peak_strength 有限)低於 gate-v1.min_samples(10)",
+        "需要更多不含 flag 的 peek(更長的 drill,或更多同構 session)",
+    ),
+}
+
+#: Gap explanations for a ``blocked-by-data`` Fitts session (``KNOWN_FITTS_REASONS`` minus ``ok``).
+_FITTS_GAP_REASONS = {
+    "insufficient_n": (
+        "有效 peek 數低於 fitts-v1.min_samples(10)",
+        "需要更多不含 flag 的 peek(更長的 drill,或更多同構 session)",
+    ),
+    "insufficient_d_ratio": (
+        "本 session 的 spawn 偏心角變異(max D / min D)低於 fitts-v1.min_d_ratio(2.0)",
+        "需要 spawn 位置變異更大的資料;在不改變 drill 設計的前提下無法從既有樣本補齊(OQ-S4-19)",
+    ),
+    "insufficient_id_range": (
+        "本 session 的 ID(= log2(1 + D/W))跨度低於 fitts-v1.min_id_range_bits(0.5)",
+        "需要更大範圍的 D/W 組合,理由同上",
+    ),
+    "non_positive_slope": (
+        "ID-MT 回歸 slope 非正,throughput(= 1/slope)無法定義",
+        "需要重新檢視樣本或改用其他分層(--group-by side)",
+    ),
+}
 
 _TIMELINE_METRICS = (
     ("counterReactionMs", "急停反應 counterReactionMs", "t_counter − t_visible"),
@@ -147,6 +245,7 @@ def build_report(
     verdicts = evaluate_release_precision(sync, params, sim_hz=sim_hz)
     hits = first_shot_hits(export, peeks)
     trajectory = _trajectory_data(export, peeks)
+    advanced = _advanced_diagnostics(export, peeks, trajectory)
 
     return {
         "reportVersion": REPORT_VERSION,
@@ -172,6 +271,7 @@ def build_report(
         "recDetectConsistency": _rec_detect_consistency(
             trajectory["phaseRows"], trajectory["available"]
         ),
+        "advancedDiagnostics": advanced,
         # Sync rows start from ``peek.flags`` and only append, so they already carry the
         # complete closed vocabulary for the drill; counting them twice would inflate it.
         "flagCounts": _flag_counts(row["flags"] for row in sync_rows),
@@ -338,6 +438,7 @@ def _trajectory_data(export: Export, peeks: Sequence[PeekWindow]) -> dict[str, A
     peek_ticks: list[pd.DataFrame] = []
     omega_values: list[np.ndarray] = []
     epsilon_values: list[np.ndarray | None] = []
+    segments_by_peek: list[list[Any]] = []
     for peek in peeks:
         window_ticks = ticks.iloc[peek.tick_slice].reset_index(drop=True)
         try:
@@ -360,6 +461,7 @@ def _trajectory_data(export: Export, peeks: Sequence[PeekWindow]) -> dict[str, A
         phase_rows.append(asdict(phase))
         peek_ticks.append(window_ticks)
         omega_values.append(omega)
+        segments_by_peek.append(segments)
         epsilon_values.append(
             _epsilon_or_none(
                 window_ticks,
@@ -376,6 +478,12 @@ def _trajectory_data(export: Export, peeks: Sequence[PeekWindow]) -> dict[str, A
         "phaseRows": phase_rows,
         "curveSummary": curve_summary(curves, DEFAULT_CURVE_PARAMS),
         "curveFlagCounts": _flag_counts(curves["flags"]),
+        # WP-31 T-exit: the same per-peek intermediates phase/curves already derived, reused
+        # (never recomputed a second way, C-D4) by _advanced_diagnostics for SPARC/xcorr/Fitts.
+        "eyeOrigin": eye_origin,
+        "peekTicks": peek_ticks,
+        "omegaValues": omega_values,
+        "segmentsByPeek": segments_by_peek,
     }
 
 
@@ -386,6 +494,10 @@ def _unavailable_trajectory() -> dict[str, Any]:
         "phaseRows": [],
         "curveSummary": None,
         "curveFlagCounts": {},
+        "eyeOrigin": None,
+        "peekTicks": [],
+        "omegaValues": [],
+        "segmentsByPeek": [],
     }
 
 
@@ -407,6 +519,194 @@ def _visible_target(visible: pd.Series, ticks: pd.DataFrame) -> tuple[float, flo
         if all(_finite(value) for value in first_target):
             return tuple(float(value) for value in first_target)
     return None
+
+
+# --------------------------------------------------------------------------------------
+# WP-31 T-exit: SPARC / key-velocity xcorr / Fitts (research-only, C-D3 / GD-20)
+# --------------------------------------------------------------------------------------
+
+
+def _advanced_diagnostics(
+    export: Export, peeks: Sequence[PeekWindow], trajectory: dict[str, Any]
+) -> dict[str, Any]:
+    """Run the three WP-31 P2 diagnostics and shape each into a verdict, not a bare number.
+
+    All three share ``trajectory``'s strict source gate: SPARC and xcorr need ``omega_deg_s``
+    per peek window, Fitts needs ``resolve_eye_origin`` -- exactly the entry points WP-31 T0
+    froze as mandatory (README §0.1). When trajectory is unavailable none of the three can be
+    computed either, so this returns the same "unavailable" shape as phase/curves rather than
+    silently falling back to an unguarded derivation.
+    """
+
+    if not trajectory["available"]:
+        return {"sparc": _unavailable_sparc(), "xcorr": _unavailable_xcorr(), "fitts": _unavailable_fitts()}
+
+    session = export.source_path.stem
+    sparc_frame = sparc_table(
+        peeks, trajectory["omegaValues"], trajectory["segmentsByPeek"], DEFAULT_SPARC_PARAMS
+    )
+    xcorr_frame = xcorr_table(
+        peeks,
+        trajectory["peekTicks"],
+        trajectory["omegaValues"],
+        DEFAULT_XCORR_PARAMS,
+        session=session,
+    )
+    gate_verdicts = reliability_gate(xcorr_frame, DEFAULT_GATE_THRESHOLDS, DEFAULT_XCORR_PARAMS)
+    crosscheck = key_event_crosscheck(export.ticks, export.events)
+    fitts_result = fitts_samples(
+        peeks, export, eye_origin=trajectory["eyeOrigin"], params=DEFAULT_FITTS_PARAMS
+    )
+
+    return {
+        "sparc": _sparc_block(sparc_frame),
+        "xcorr": _xcorr_block(xcorr_frame, gate_verdicts, crosscheck),
+        "fitts": _fitts_block(fitts_result),
+    }
+
+
+def _sparc_block(frame: pd.DataFrame) -> dict[str, Any]:
+    """SPARC has no ``blocked-by-data`` branch -- it always reaches the research block,
+    carrying the frozen (pooled, D-31.6) cross-length usage limit rather than recomputing it.
+    """
+
+    rows = frame.to_dict("records")
+    stats = _row_stats(rows, "sparc")
+    return {
+        "available": True,
+        "version": SPARC_VERSION,
+        "validity": VALIDITY_RESEARCH_SPARC,
+        **stats,
+        "buckets": _sparc_buckets(rows),
+        "stepRatioVerdict": SPARC_STEP_RATIO_VERDICT,
+        "stepRatioNote": SPARC_STEP_RATIO_NOTE,
+    }
+
+
+def _sparc_buckets(rows: Sequence[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    by_padded_n: dict[int, list[float]] = {}
+    for row in rows:
+        if row["flags"] or row["padded_n"] is None or not _finite(row["sparc"]):
+            continue
+        by_padded_n.setdefault(int(row["padded_n"]), []).append(float(row["sparc"]))
+    return {
+        str(padded_n): {"n": len(values), "median": float(np.median(values))}
+        for padded_n, values in sorted(by_padded_n.items())
+    }
+
+
+def _unavailable_sparc() -> dict[str, Any]:
+    return {
+        "available": False,
+        "version": SPARC_VERSION,
+        "validity": VALIDITY_RESEARCH_SPARC,
+        **_empty_stats(),
+        "buckets": {},
+        "stepRatioVerdict": SPARC_STEP_RATIO_VERDICT,
+        "stepRatioNote": SPARC_STEP_RATIO_NOTE,
+    }
+
+
+def _xcorr_block(frame: pd.DataFrame, verdicts: Sequence[Any], crosscheck: dict[str, Any]) -> dict[str, Any]:
+    """``reliability_gate`` has no code path that returns ``'coach_report'`` (D-31.4): the
+    block below is either ``research_only`` (rendered) or ``blocked-by-data`` (a gap note).
+    """
+
+    verdict = verdicts[0] if verdicts else None
+    rows = frame.drop(columns=["key_state", "omega", "correlogram"]).to_dict("records")
+    valid = [row for row in rows if not row["flags"] and _finite(row["peak_strength"])]
+    strengths = [abs(float(row["peak_strength"])) for row in valid]
+    blocked = verdict is not None and verdict.verdict == "blocked-by-data"
+    return {
+        "available": True,
+        "blocked": blocked,
+        "version": XCORR_VERSION,
+        "gateVersion": GATE_VERSION,
+        "validity": VALIDITY_RESEARCH_XCORR,
+        "n": len(valid),
+        "excludedCount": len(rows) - len(valid),
+        "flagCounts": _flag_counts(row["flags"] for row in rows),
+        "medianAbsStrength": float(np.median(strengths)) if strengths else None,
+        "verdict": None if verdict is None else asdict(verdict),
+        "crosscheck": crosscheck,
+        "upperBoundNote": XCORR_UPPER_BOUND_NOTE,
+        "directionNote": XCORR_DIRECTION_NOTE,
+        "gapReason": None if verdict is None else verdict.reason,
+        "gapText": _gap_text(_XCORR_GAP_REASONS, None if verdict is None else verdict.reason),
+    }
+
+
+def _unavailable_xcorr() -> dict[str, Any]:
+    return {
+        "available": False,
+        "blocked": False,
+        "version": XCORR_VERSION,
+        "gateVersion": GATE_VERSION,
+        "validity": VALIDITY_RESEARCH_XCORR,
+        "n": 0,
+        "excludedCount": 0,
+        "flagCounts": {},
+        "medianAbsStrength": None,
+        "verdict": None,
+        "crosscheck": None,
+        "upperBoundNote": XCORR_UPPER_BOUND_NOTE,
+        "directionNote": XCORR_DIRECTION_NOTE,
+        "gapReason": None,
+        "gapText": None,
+    }
+
+
+def _fitts_block(result: Any) -> dict[str, Any]:
+    rows = [asdict(sample) for sample in result.samples]
+    blocked = result.status == "blocked-by-data"
+    return {
+        "available": True,
+        "blocked": blocked,
+        "version": FITTS_VERSION,
+        "validity": VALIDITY_RESEARCH_FITTS,
+        "status": result.status,
+        "reason": result.reason,
+        "n": result.n,
+        "excludedCount": len(result.samples) - result.n,
+        "flagCounts": _flag_counts(row["flags"] for row in rows),
+        "dRatio": result.d_ratio,
+        "idRangeBits": result.id_range_bits,
+        "slopeMsPerBit": result.slope_ms_per_bit,
+        "interceptMs": result.intercept_ms,
+        "r2": result.r2,
+        "throughputBitsS": result.throughput_bits_s,
+        "limitations": FITTS_LIMITATIONS,
+        "gapText": _gap_text(_FITTS_GAP_REASONS, result.reason if blocked else None),
+    }
+
+
+def _unavailable_fitts() -> dict[str, Any]:
+    return {
+        "available": False,
+        "blocked": False,
+        "version": FITTS_VERSION,
+        "validity": VALIDITY_RESEARCH_FITTS,
+        "status": None,
+        "reason": None,
+        "n": 0,
+        "excludedCount": 0,
+        "flagCounts": {},
+        "dRatio": None,
+        "idRangeBits": None,
+        "slopeMsPerBit": None,
+        "interceptMs": None,
+        "r2": None,
+        "throughputBitsS": None,
+        "limitations": FITTS_LIMITATIONS,
+        "gapText": None,
+    }
+
+
+def _gap_text(reasons: dict[str, tuple[str, str]], reason: str | None) -> str | None:
+    if reason is None:
+        return None
+    explanation, needed = reasons.get(reason, (reason, "需要重新檢視樣本"))
+    return f"{explanation};{needed}。"
 
 
 def _phase_entries(rows: Sequence[dict[str, Any]], available: bool) -> list[dict[str, Any]]:
@@ -606,7 +906,7 @@ def render_html(model: dict[str, Any]) -> str:
     """Render the model to one self-contained HTML document (no external resources)."""
 
     source = model["source"]
-    title = f"教練報告 v1 — {source['drillId']}"
+    title = f"教練報告 v2 — {source['drillId']}"
     parts = [
         "<!doctype html>",
         '<html lang="zh-Hant">',
@@ -632,6 +932,8 @@ def render_html(model: dict[str, Any]) -> str:
         _render_flags(model),
         _render_groups(model),
         _render_parameters(model),
+        _render_advanced_diagnostics(model),
+        _render_diagnostics_gaps(model),
         _render_limitations(model),
         "</body>",
         "</html>",
@@ -1075,11 +1377,153 @@ def _render_parameters(model: dict[str, Any]) -> str:
     )
 
 
+def _render_advanced_diagnostics(model: dict[str, Any]) -> str:
+    """⑨ Research-only block (WP-31 T-exit, C-D3 / GD-20): only passing P2 diagnostics land here.
+
+    A ``blocked-by-data`` xcorr/Fitts session, or an unavailable trajectory source, never
+    renders a metric block in this section -- it surfaces in :func:`_render_diagnostics_gaps`
+    instead, so a coach never sees a fabricated number next to an explicit "why not".
+    """
+
+    advanced = model["advancedDiagnostics"]
+    trajectory = model["trajectory"]
+    if not trajectory["available"]:
+        return (
+            '<section id="advanced"><h2>⑨ 研究向區塊:P2 進階診斷(SPARC / Key-Velocity xcorr / '
+            "Fitts;不得作為訓練處方依據)</h2>"
+            f'<p class="warn">{escape(trajectory["reason"])}；本區不產生任何 SPARC / xcorr / '
+            "Fitts 數值。</p></section>"
+        )
+
+    blocks = [_render_sparc_block(advanced["sparc"])]
+    if not advanced["xcorr"]["blocked"]:
+        blocks.append(_render_xcorr_block(advanced["xcorr"]))
+    if not advanced["fitts"]["blocked"]:
+        blocks.append(_render_fitts_block(advanced["fitts"]))
+
+    return (
+        '<section id="advanced"><h2>⑨ 研究向區塊:P2 進階診斷(SPARC / Key-Velocity xcorr / '
+        "Fitts)</h2>"
+        '<p class="warn">研究向 —— 不得作為訓練處方依據。三個構念皆已通過各自的效度判定'
+        "（或本身無 blocked-by-data 分支），但 C-D3 / GD-20 的上限條款不變：本節任何一列都不會"
+        "出現在上方主表。</p>"
+        f'{"".join(blocks)}</section>'
+    )
+
+
+def _render_sparc_block(block: dict[str, Any]) -> str:
+    bucket_text = " · ".join(
+        f"padded_n={padded_n} n={bucket['n']} median={_num(bucket['median'])}"
+        for padded_n, bucket in block["buckets"].items()
+    ) or "—"
+    return (
+        '<div class="group"><h3>SPARC(sparc-v1)—— 逐 primary_flick 平滑度</h3>'
+        f'<table><thead><tr><th>統計</th><th>n</th><th>flags 計數</th><th>padded_n bucket</th>'
+        f"<th>版本</th><th>效度層級</th></tr></thead><tbody><tr>"
+        f'<td>mean {_num(block["mean"])} · p50 {_num(block["p50"])} · sample SD {_num(block["sampleSdMs"])}</td>'
+        f'<td class="n">{block["n"]}</td>'
+        f'<td>{escape(_counts_text(block["flagCounts"]))}</td>'
+        f'<td>{escape(bucket_text)}</td>'
+        f'<td><code>{escape(block["version"])}</code></td>'
+        f'<td class="tier">{escape(block["validity"])}</td>'
+        "</tr></tbody></table>"
+        f'<p class="def">{escape(block["stepRatioNote"])}</p></div>'
+    )
+
+
+def _render_xcorr_block(block: dict[str, Any]) -> str:
+    verdict = block["verdict"]
+    verdict_cell = (
+        f'<span class="v-{escape(verdict["verdict"])}">{escape(verdict["verdict"])}</span>'
+        f' — {escape(verdict["reason"])}<div class="def">'
+        f'shuffle p {_num(verdict["shuffle_p"], 6)} · CI [{_num(verdict["ci_lo"])}, {_num(verdict["ci_hi"])}]'
+        f' (width {_num(verdict["ci_width"])}) · odd/even Δ {_num(verdict["half_delta"])}</div>'
+        if verdict is not None
+        else "—"
+    )
+    crosscheck = block["crosscheck"]
+    crosscheck_text = (
+        f'{escape(crosscheck["status"])} — matched {crosscheck["n_matched"]}/{crosscheck["n_tick_transitions"]}'
+        if crosscheck is not None
+        else "—"
+    )
+    return (
+        '<div class="group"><h3>Key-Velocity xcorr(xcorr-v1 + gate-v1)—— signed A/D vs ω(t)</h3>'
+        "<table><thead><tr><th>統計</th><th>n</th><th>flags 計數</th><th>gate-v1 判定</th>"
+        "<th>key 事件交叉檢核</th><th>版本</th><th>效度層級</th></tr></thead><tbody><tr>"
+        f'<td>median |peak r| {_num(block["medianAbsStrength"])}</td>'
+        f'<td class="n">{block["n"]}</td>'
+        f'<td>{escape(_counts_text(block["flagCounts"]))}</td>'
+        f"<td>{verdict_cell}</td>"
+        f"<td>{crosscheck_text}</td>"
+        f'<td><code>{escape(block["version"])} / {escape(block["gateVersion"])}</code></td>'
+        f'<td class="tier">{escape(block["validity"])}</td>'
+        "</tr></tbody></table>"
+        f'<p class="def">{escape(block["upperBoundNote"])}</p>'
+        f'<p class="def">{escape(block["directionNote"])}</p></div>'
+    )
+
+
+def _render_fitts_block(block: dict[str, Any]) -> str:
+    regression = (
+        f'slope {_num(block["slopeMsPerBit"])} ms/bit · intercept {_num(block["interceptMs"])} ms · '
+        f'r² {_num(block["r2"])} · TP {_num(block["throughputBitsS"])} bits/s'
+        if block["status"] == "ok"
+        else "—"
+    )
+    return (
+        "<div class=\"group\"><h3>Fitts(fitts-v1)—— ID = log2(1 + D/W),MT = t_firstShot − t_visible</h3>"
+        "<table><thead><tr><th>回歸</th><th>n</th><th>d_ratio</th><th>id_range(bits)</th>"
+        "<th>flags 計數</th><th>版本</th><th>效度層級</th></tr></thead><tbody><tr>"
+        f"<td>{regression}</td>"
+        f'<td class="n">{block["n"]}</td>'
+        f'<td>{_num(block["dRatio"])}</td>'
+        f'<td>{_num(block["idRangeBits"])}</td>'
+        f'<td>{escape(_counts_text(block["flagCounts"]))}</td>'
+        f'<td><code>{escape(block["version"])}</code></td>'
+        f'<td class="tier">{escape(block["validity"])}</td>'
+        "</tr></tbody></table>"
+        + "".join(f'<p class="def">{escape(text)}</p>' for text in block["limitations"])
+        + "</div>"
+    )
+
+
+def _render_diagnostics_gaps(model: dict[str, Any]) -> str:
+    """⑩ One-line "why this metric is absent" notes for blocked-by-data P2 diagnostics.
+
+    Per DoD ③: a ``blocked-by-data`` metric never appears in any metric block anywhere in the
+    report, but its absence is never silent -- this section names the reason and what sample
+    would unblock it.
+    """
+
+    advanced = model["advancedDiagnostics"]
+    trajectory = model["trajectory"]
+    rows = []
+    if trajectory["available"]:
+        for label, block in (("Key-Velocity xcorr", advanced["xcorr"]), ("Fitts", advanced["fitts"])):
+            if block["blocked"]:
+                rows.append((label, block["version"], block["gapText"]))
+    if not rows:
+        body = '<p class="def">本 drill 的 P2 指標皆有輸出(或本身無 blocked-by-data 分支);無缺口。</p>'
+    else:
+        gap_rows = "".join(
+            f"<tr><td>{escape(label)}</td><td><code>{escape(version)}</code></td>"
+            f"<td>{escape(text)}</td></tr>"
+            for label, version, text in rows
+        )
+        body = (
+            "<table><thead><tr><th>指標</th><th>版本</th><th>為何沒有這個指標 / 需要什麼樣本</th>"
+            f"</tr></thead><tbody>{gap_rows}</tbody></table>"
+        )
+    return f'<section id="advanced-gaps"><h2>⑩ 缺口說明:尚無法呈現的 P2 指標</h2>{body}</section>'
+
+
 def _render_limitations(model: dict[str, Any]) -> str:
     return (
         '<section id="limits"><h2>⑪ 效度紅線與已知限制</h2><ul>'
-        "<li>REC/MR/V 與 L/R 曲線是已登錄的新構念，帶 version/n/flags 與本段限制；"
-        "SPARC、key-velocity xcorr、Fitts 仍不在此。</li>"
+        "<li>REC/MR/V 與 L/R 曲線是已登錄的新構念，帶 version/n/flags 與本段限制。"
+        "SPARC、key-velocity xcorr、Fitts（WP-31 T-exit）僅出現在上方「⑨ 研究向區塊」，"
+        "C-D3 / GD-20 上限條款下永遠不進本報告主表；blocked-by-data 者改列「⑩ 缺口說明」。</li>"
         "<li>release 端點為 tick-derived,量化上界為一個 128 Hz tick(7.8125 ms);"
         "精度判定為本 fixture 的判定,不是母體推論。</li>"
         "<li>缺錨點是合法語意:不補 0、不吞成 NaN;帶 flag 的整列不進正式聚合,"
@@ -1112,7 +1556,8 @@ _STYLE = (
     "div.scroll{overflow-x:auto}div.group{margin-top:14px}"
     "p.warn{margin:12px 0 0;padding:8px 10px;background:#fef3c7;border-radius:6px;font-size:12px}"
     ".v-sufficient{color:#15803d;font-weight:600}.v-insufficient{color:#b91c1c;font-weight:600}"
-    ".v-blocked-by-data,.v-session-insufficient{color:#a16207;font-weight:600}.v-none{color:#64748b}"
+    ".v-blocked-by-data,.v-session-insufficient,.v-research_only{color:#a16207;font-weight:600}"
+    ".v-none{color:#64748b}"
     "ul{margin:0;padding-left:18px;font-size:13px}li{margin-bottom:4px}"
 )
 
