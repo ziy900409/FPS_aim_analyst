@@ -334,7 +334,11 @@ def _resolve_spawn_target(
 
 
 def _finite(value: object) -> bool:
-    return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value)
+    return (
+        not isinstance(value, bool)
+        and isinstance(value, (int, float, np.number))
+        and math.isfinite(float(value))
+    )
 
 
 def _finite_scalar(value: object) -> float:

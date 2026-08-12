@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="740" height="420" viewBox="0 0 740 420">
+<rect width="100%" height="100%" fill="white" />
+<line x1="62" y1="358" x2="678" y2="358" stroke="#111827" />
+<line x1="62" y1="62" x2="62" y2="358" stroke="#111827" />
+
+<circle cx="104.48" cy="82.41" r="4.5" fill="#16a34a" />
+<circle cx="466.32" cy="97.02" r="4.5" fill="#2563eb" />
+<circle cx="556.22" cy="164.06" r="4.5" fill="#16a34a" />
+<circle cx="549.19" cy="202.67" r="4.5" fill="#2563eb" />
+<circle cx="489.90" cy="183.46" r="4.5" fill="#16a34a" />
+<circle cx="496.65" cy="122.96" r="4.5" fill="#2563eb" />
+<circle cx="532.18" cy="205.11" r="4.5" fill="#16a34a" />
+<circle cx="518.37" cy="269.70" r="4.5" fill="#2563eb" />
+<circle cx="554.51" cy="290.55" r="4.5" fill="#16a34a" />
+<circle cx="504.08" cy="103.83" r="4.5" fill="#2563eb" />
+<circle cx="474.20" cy="230.97" r="4.5" fill="#16a34a" />
+<circle cx="581.94" cy="142.75" r="4.5" fill="#2563eb" />
+<circle cx="491.01" cy="196.24" r="4.5" fill="#16a34a" />
+<circle cx="507.72" cy="305.69" r="4.5" fill="#2563eb" />
+<circle cx="526.83" cy="200.91" r="4.5" fill="#16a34a" />
+<circle cx="598.89" cy="195.53" r="4.5" fill="#2563eb" />
+<circle cx="595.15" cy="198.48" r="4.5" fill="#16a34a" />
+<circle cx="487.10" cy="337.59" r="4.5" fill="#2563eb" />
+<circle cx="635.52" cy="233.58" r="4.5" fill="#16a34a" />
+<circle cx="576.06" cy="273.01" r="4.5" fill="#2563eb" />
+<text x="62" y="26" font-family="sans-serif" font-size="13">Fitts ID-MT -- counterstrafe_ad_v1-2026-08-07T09_18_05.631Z (status=blocked-by-data, reason=insufficient_d_ratio, n=20)</text>
+<text x="62" y="44" font-family="sans-serif" font-size="12">observational, non-controlled design; MT includes RT + counter-strafe stop time</text>
+<text x="370" y="404" font-family="sans-serif" font-size="12" text-anchor="middle">ID (bits)</text>
+<text x="16" y="210" font-family="sans-serif" font-size="12" transform="rotate(-90 16 210)" text-anchor="middle">MT (ms)</text>
+</svg>

@@ -8,7 +8,7 @@
 | **Risk / Cplx** | Low / Low(方法學成熟;風險全在**解讀**而非實作) |
 | **對應 FR** | FR-D15 |
 | **Touches** | `research/src/modules/metrics/algorithms/fitts.py`(ADD)· `.../algorithms/tests/test_fitts*.py`(ADD)· `research/src/modules/metrics/notebooks/t3/`(ADD)· `docs/operational/analysis-advanced-diagnostics.md`(MODIFY) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-08-12 完成:`fitts-v1` core + fixture report;09:18 `blocked-by-data`(`d_ratio=1.8343 < 2.0`),09:24/09:37 `ok` 但 r² 低(0.0669 / 0.0339);D 內生性與 MT 含 RT/急停限制已入 registry 與 artifact |
 
 ## Objective
 

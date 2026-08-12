@@ -10,7 +10,7 @@
 | **相依** | **M14 全六項 ✅**(2026-08-07 重新宣告)+ **WP-30 ✅**(2026-08-10)。WP-30 不是形式相依:T1 的分段來源必須沿用 `phase-v1` 的**逐 peek 窗內 `seg-v2` 分段**慣例,否則會產生 `primary_flick` 的第三定義(C-D4) |
 | **對應 FR** | FR-D13 / FR-D14 / FR-D15 + FR-D16 第三版(報告 v2,**條件性**) |
 | **估時** | 2.5–3.25 dev-days(**高於 [../README.md §6](../README.md) 編列的 2–3d**;超出部分在 T0 的 gate 重新操作化與 T1 的階梯診斷,理由見 §4 與 [progress.md](progress.md) D-31.0) |
-| **狀態** | 🟡 **進行中** — T0 ✅(2026-08-10:`gate-v1` 三件組凍結含 seed、`sparc-v1`/`xcorr-v1`/`fitts-v1` pre-registration、fixture roster 沿用與 strict 閘覆核、OQ-S4-3 關閉);**T1 ✅**(2026-08-10:`sparc-v1` 逐位移植 + 兩份跨 repo golden、59/60 段來源一致、階梯 verdict **`stratified_only`**、OQ-S4-18 關閉);**T2 ✅**(2026-08-10:`xcorr-v1` + `gate-v1` 逐 session 判定 → **三 session 全 `research_only`**,09:18/09:37 未過 ① shuffle null、09:24 三件全過;`coach_report` 由 AST 掃描證明不可達;`key` 事件交叉檢核 248/248 全對;新開 **OQ-S4-20**);T3 / T-exit ⬜ |
+| **狀態** | 🟡 **進行中** — T0 ✅(2026-08-10:`gate-v1` 三件組凍結含 seed、`sparc-v1`/`xcorr-v1`/`fitts-v1` pre-registration、fixture roster 沿用與 strict 閘覆核、OQ-S4-3 關閉);**T1 ✅**(2026-08-10:`sparc-v1` 逐位移植 + 兩份跨 repo golden、59/60 段來源一致、階梯 verdict **`stratified_only`**、OQ-S4-18 關閉);**T2 ✅**(2026-08-10:`xcorr-v1` + `gate-v1` 逐 session 判定 → **三 session 全 `research_only`**,09:18/09:37 未過 ① shuffle null、09:24 三件全過;`coach_report` 由 AST 掃描證明不可達;`key` 事件交叉檢核 248/248 全對;新開 **OQ-S4-20**);**T3 ✅**(2026-08-12:`fitts-v1` D/W/ID/MT/TP + `blocked-by-data`;09:18 因 `d_ratio=1.8343 < 2.0` blocked,09:24/09:37 `ok` 但 r² 低;限制已入 registry/artifact);T-exit ⬜ |
 
 ---
 
@@ -82,7 +82,7 @@ OQ-S4-3 原提案 `split-half r ≥ 0.7 + shuffle p < 0.01`。**split-half r 需
 | 09:24 | 11.16° | 28.49° |
 | 09:37 | 8.70° | 29.45° |
 
-pooled 跨度 8.70°–30.72° ≈ **3.5×**,滿足 [../README.md §2.1](../README.md) 對 velocity-scaling / Fitts 的「D 變異跨 ≥ 2 倍」觸發條件 → **T3 預期不會落 `blocked-by-data`**(仍保留該分支,判準 T0 pre-register)。
+pooled 跨度 8.70°–30.72° ≈ **3.5×**,滿足 [../README.md §2.1](../README.md) 對 velocity-scaling / Fitts 的「D 變異跨 ≥ 2 倍」觸發條件。**T3 實測補充(2026-08-12)**:該預期只對 pooled roster 成立;逐 session 判定下 09:18 的 `d_ratio = 1.8343 < 2.0`,因此依 `fitts-v1` 保守判 `blocked-by-data`。09:24 / 09:37 通過資料門檻,但 r² 低(0.0669 / 0.0339)。門檻未放寬,也未為了讓 09:18 通過而跨 session 併池。
 
 **但兩項效度限制必須寫死在 `fitts-v1` 文件與報告裡**:
 1. **D 是內生的,不是實驗操弄的**。目標只在兩個固定位置((±2, 1.5, −4))出現;D 的變異幾乎全部來自「上一個 peek 結束時玩家把準星留在哪」。這是**相關性觀察**,不是 Fitts 典範的受控設計;D 與前一 peek 的行為(過衝/修正)共變。
@@ -186,7 +186,7 @@ graph LR
 | **T0** ✅ | [T0-entry-gate.md](T0-entry-gate.md) | 驗 M14 六項 + WP-30 T-exit;沿用 fixture roster 與 strict 閘;**`gate-v1` 三件組凍結(含 seed)**;`sparc-v1`/`xcorr-v1`/`fitts-v1` pre-registration;OQ-S4-3 改寫入帳 | **WP-30 T-exit ✅** | Low | 0.25–0.5d |
 | **T1** ✅ | [T1-sparc.md](T1-sparc.md) | `compute_sparc` 逐位移植 + **跨 repo golden 對表 ≤1e-9(含中間值)** + 逐 MR 段 SPARC 表 + **階梯診斷** | T0 | Med | 0.75–1d |
 | **T2** ✅ | [T2-key-velocity-xcorr.md](T2-key-velocity-xcorr.md) | signed A/D state vs ω 的逐 peek xcorr + correlogram + **`gate-v1` 明確判定**(三 session 全 `research_only`,2/3 未過 ①;D-31.9) | T0(不依賴 T1) | **Med** | 0.75–1d |
-| **T3** | [T3-fitts.md](T3-fitts.md) | D/W/ID/MT/TP + ID–MT 回歸 + `blocked-by-data` 判準 + 內生性限制 | T0(不依賴 T1/T2) | Low | 0.5–0.75d |
+| **T3** ✅ | [T3-fitts.md](T3-fitts.md) | D/W/ID/MT/TP + ID–MT 回歸 + `blocked-by-data` 判準 + 內生性限制(09:18 blocked;09:24/09:37 ok 但 r² 低) | T0(不依賴 T1/T2) | Low | 0.5–0.75d |
 | **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 三份判定收斂 + 報告 v2(僅通過者)+ `analysis-advanced-diagnostics.md` 定稿 + 文件對帳 | T1 + T2 + T3 | — | 0.5d |
 
 > **與 [../README.md §6](../README.md) 的偏離(D-31.0,T0 落地時回寫上層)**:上層 spec 編列 2–3d,且 T1 SPARC 的 DoD 只寫「golden 對表 + 分佈報告 + 退化語意」。本計畫**追加兩項**並上修估時至 2.5–3.25d:① T0 增「`gate-v1` 重新操作化」(原 OQ-S4-3 的 split-half r 在 1 受試者 × 3 session 下不可計算,§0.4);② T1 增「N=32/64 階梯診斷」(§0.3 實測中位段長 32 恰在邊界)。兩者皆非可選:前者不做則 T2 的判定無定義,後者不做則 SPARC 的分佈報告可能在報告階梯假象。

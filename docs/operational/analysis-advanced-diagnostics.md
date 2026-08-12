@@ -1,8 +1,8 @@
-# 進階診斷層:SPARC(`sparc-v1`)· Key-Velocity xcorr(`xcorr-v1` / `gate-v1`)
+# 進階診斷層:SPARC(`sparc-v1`)· Key-Velocity xcorr(`xcorr-v1` / `gate-v1`)· Fitts(`fitts-v1`)
 
 本檔是 WP-31 進階診斷層的 operational registry。目前涵蓋 **`sparc-v1`**(逐段平滑度,FR-D13,T1)
-與 **`xcorr-v1` / `gate-v1`**(key-velocity 耦合與其效度判定,FR-D14,T2);`fitts-v1`(T3)由後續
-task 追加,T-exit 定稿。
+與 **`xcorr-v1` / `gate-v1`**(key-velocity 耦合與其效度判定,FR-D14,T2),以及
+**`fitts-v1`**(Fitts ID/MT/TP,FR-D15,T3);T-exit 定稿。
 
 三個構念的交付物都是**判定**,不是數字(C-D3 / GD-20):「算得出來」不等於「可以對選手講」。
 每個構念的章節末尾都必須有一段明確的使用限制。
@@ -428,3 +428,92 @@ session 級統計量 = 該 session 通過納入規則的 peek 的 **中位 `|pea
   上的退化分支**各自不同**:三個構念量的不是同一件事,觸底原因本來就可以不一樣(S-31.4)。
 - **尚未進教練報告**:C-D3 下由 T-exit 收斂;依上限條款,xcorr 最多只能進報告的研究向區塊並附上全部
   限制。
+
+---
+
+## `fitts-v1`
+
+### 回答什麼
+
+每個 peek 的 spawn 偏心角 `D` 是否能解釋首發時間 `MT`,並以 Shannon 形式
+`ID = log2(1 + D/W)` 回歸 `MT = a + b * ID`,輸出 slope / intercept / r2 / throughput。
+
+這不是受控 Fitts 典範。`fitts-v1` 的交付物是「觀察性、非受控設計」下的明確判定:
+`ok` 或 `blocked-by-data`,以及能不能作為後續報告的研究向材料。`ok` 只表示本 session 滿足
+pre-registered 的資料變異門檻並可計算回歸,不表示可做因果主張。
+
+### 幾何來源
+
+| 量 | 來源 | 機械保證 |
+|---|---|---|
+| `D` | spawn tick 上的 `epsilon_deg(..., fallback_target=visible target)` | 與 `detect-v1` 的 `eccentricity_at_spawn_deg` 同一路徑;不另寫角度公式 |
+| `W` | `meta.targets.hitbox.widthU` 的水平角寬;hitbox 缺席時走 H1 `{1,2,1}` fallback | 直接重用 angular 模組的 `_hitbox`,與 `on_target` / tracking derivation 同源(GD-7) |
+| eye origin | `resolve_eye_origin(meta, strict=True)` | legacy fixture 缺 `meta.scene.eye` 時拋錯,不得靜默 fallback |
+| `MT` | `t_first_shot - t_visible` | 沿用 `timeline-v1` / `build_peek_windows` 錨點 |
+
+`W` 的角寬公式是 `2 * atan((width / 2) / eye_to_target_distance)`。若 `D` 或 `W` 非有限、或
+`W <= 0`,該列標 `degenerate_geometry` 並排除回歸。
+
+### 凍結 `fitts-v1` registry
+
+| `min_samples` | `min_d_ratio` | `min_id_range_bits` | Version |
+|---:|---:|---:|---|
+| 10 | 2.0 | 0.5 | `fitts-v1` |
+
+依序檢查:
+
+1. 有效樣本數 `n >= min_samples`;
+2. `d_ratio = max(D) / min(D) >= min_d_ratio`;
+3. `id_range_bits = max(ID) - min(ID) >= min_id_range_bits`;
+4. 通過後才做最小平方回歸。若 slope 非正,`throughput` 不成立,判 `blocked-by-data`。
+
+`blocked-by-data` 時 `slope_ms_per_bit` / `intercept_ms` / `r2` / `throughput_bits_s` 全部為 `None`,
+不得硬給結論。
+
+### 封閉 flags / reasons
+
+`KNOWN_FITTS_FLAGS`:
+
+| flag | 條件 |
+|---|---|
+| `no_first_shot` | 該 peek 沒有 first-shot fire,或 MT 非有限/負值 |
+| `missing_target_position` | visible event 與 spawn tick 都沒有目標中心 |
+| `missing_spawn_tick` | `t_visible` 之後找不到 tick |
+| `degenerate_geometry` | D/W 非有限或 W <= 0 |
+
+`KNOWN_FITTS_REASONS`:`ok` / `insufficient_n` / `insufficient_d_ratio` /
+`insufficient_id_range` / `non_positive_slope`。未知 flag/reason 由測試與模組斷言擋下。
+
+### 當次判定(2026-08-12,逐 session,不併池推論)
+
+| Session | n | `d_ratio` | `id_range_bits` | slope(ms/bit) | intercept(ms) | r2 | TP(bits/s) | status | reason |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| 09:18 | 20 | 1.8343 | 0.6997 | — | — | — | — | `blocked-by-data` | `insufficient_d_ratio` |
+| 09:24 | 20 | 2.5531 | 0.9602 | 60.1975 | 357.2666 | 0.0669 | 16.6120 | `ok` | `ok` |
+| 09:37 | 20 | 3.3833 | 1.2536 | 39.6014 | 389.0146 | 0.0339 | 25.2516 | `ok` | `ok` |
+
+T0 的「D pooled 8.70–30.72 = 3.5x」只證明三 session 合在一起有變異;T3 實作採逐 session 判定,
+因此 09:18 以 `d_ratio = 1.8343 < 2.0` 走 `blocked-by-data`。這不是事後調整門檻的理由:
+若為了讓 09:18 過關而跨 session 併池,會違反 WP-30 / WP-31 的「三 session 並列呈現、不作跨
+session 推論」紀律。
+
+09:24 / 09:37 雖然 `status = ok`,r2 分別只有 0.0669 / 0.0339。這代表 `ID` 只解釋很少的 MT 變異;
+TP 數字可以作研究向探索,不應在 T-exit 前被當成教練主表指標。
+
+證據檔:
+[`fitts-verdicts.json`](../../research/src/modules/metrics/notebooks/t3/outputs/fitts-verdicts.json) ·
+[`fitts-regression-summary.csv`](../../research/src/modules/metrics/notebooks/t3/outputs/fitts-regression-summary.csv) ·
+`fitts-table-<fixture>.csv` · `fitts-scatter-<fixture>.svg`。
+
+### 已知限制(`fitts-v1`)
+
+- **D 是內生的,不是實驗操弄的**。目標只在兩個固定位置((±2, 1.5, −4))出現;D 的變異幾乎全部來自
+  「上一個 peek 結束時玩家把準星留在哪」。這是**相關性觀察**,不是 Fitts 典範的受控設計;D 與前一
+  peek 的行為(過衝/修正)共變。
+- **MT 含反應時間與 counter-strafe 停止時間**。`MT = t_firstShot − t_visible`,回歸截距 `a` 會吸收
+  RT + 急停;`t_detect` 只在 5–9/20 的 peek 上有值,不足以做逐 peek 的 RT 扣除,故本版不做 RT 校正。
+- **樣本效度**:三份真實 fixture 為同一匿名受試者 P001、同一台 240 Hz 機器、同一 drill config、
+  同一天三個 session。非母體層級證據(KI-004 R-7)。
+- **不跨 session 併池推論**:pooled D ratio 可說明資料母體有變異,但 `fitts-v1` verdict 逐 session
+  給出。09:18 因逐 session D ratio 不足而 blocked。
+- **尚未進教練報告**:C-D3 下由 T-exit 收斂;以目前 r2 與設計限制,最多只能作研究向材料。

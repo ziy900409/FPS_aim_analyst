@@ -13,6 +13,7 @@
 | 2026-08-10 | **T0** | ✅ entry gate 完成:M14 六項 + WP-30 T-exit 逐項自行覆核(§1);fixture roster 沿用 + strict 閘**獨立負向/正向重跑**(§2);`gate-v1` 三件組凍結(**D-31.4**,含 seed,關閉 OQ-S4-3);`sparc-v1`/`xcorr-v1`/`fitts-v1` pre-registration 凍結(**D-31.5**,含 SPARC 段來源契約);D-31.0~D-31.3 由規劃期決議正式轉為凍結態;新開 OQ-S4-18/OQ-S4-19;`../README.md` §3/§6/§8 對帳。**零 `research/`、零 `src/` 變更**(§5) |
 | 2026-08-10 | **T1** | ✅ `sparc-v1` 落地:`compute_sparc`/`compute_sparc_traced` 逐位移植 + 兩份跨 repo golden 對表 ≤1e-9(PA parity 8 個量、128Hz 域 8 case)+ `sparc_table`(逐 MR 段,59/60 與 `phase-v1` 機械一致)+ `sparc_length_sensitivity` 階梯診斷 → verdict **`stratified_only`**(step_ratio **0.7643** ≥ 0.5,**D-31.6**,關閉 OQ-S4-18)+ `analysis-advanced-diagnostics.md` 首版。`uv run pytest` **303 → 365 passed**;`npm run test:ci` exit 0 且 `src/`/`tests/` **零 diff**(§6) |
 | 2026-08-10 | **T2** | ✅ `xcorr-v1` + `gate-v1` 落地:`key_state_signed` / `key_velocity_xcorr`(逐 lag Pearson + PA tie-break,correlogram 每點帶 `n_overlap`)/ `xcorr_table` / `reliability_gate`(三件組,per-session seeded)+ `key_event_crosscheck`。**三 session 全 `research_only`**,其中 **09:18 / 09:37 未過 ① shuffle null**(p=0.056 / 0.173)、09:24 三件全過(**D-31.9**);`coach_report` 不可達由 AST 掃描斷言(DoD ③)。`key` 事件交叉檢核 **86/86 · 84/84 · 78/78 全對、最大殘差 < 1 tick**(D-31.8)。新開 **OQ-S4-20**(最大化統計量的多重比較效應)。`uv run pytest` **365 → 431 passed**;`npm run test:ci` exit 0 且 `src/`/`tests/` **零 diff**(§7) |
+| 2026-08-12 | **T3** | ✅ `fitts-v1` 落地:`D` 重用 `epsilon_deg`/`detect-v1` spawn eccentricity 語意,`W` 重用 angular `_hitbox`(GD-7),輸出 D/W/ID/MT/TP + `blocked-by-data` 判準 + D 內生性/MT 含 RT 限制。逐 session verdict:**09:18 `blocked-by-data`**(`d_ratio=1.8343 < 2.0`),**09:24 `ok`**(slope 60.1975 ms/bit,r² 0.0669,TP 16.6120),**09:37 `ok`**(slope 39.6014 ms/bit,r² 0.0339,TP 25.2516)(**D-31.10**)。T0 pooled 3.5x 預期不等於逐 session 通過(**S-31.8**);門檻未放寬、未跨 session 併池。`uv run pytest` **431 → 452 passed**;`npm run test:ci` exit 0(90 files/748 tests + 21 Playwright)且 `src/`/`tests/` **零 diff**(§8) |
 
 ---
 
@@ -261,6 +262,23 @@ README §5 的 `Interface contracts` 是規劃期草圖(不在 [README §6](READ
 - ②「把 `shuffle_alpha` 從 0.01 放寬到 0.05」— 否決:09:37 的 p=0.173 連 0.05 都過不了,而且「為了讓它過而調門檻」正是 [README §3](README.md) 明列的 failure mode。
 - ③「只報 09:24 的通過結果」— 否決:三 session 並列呈現是 KI-004 R-7 紀律;挑通過的那一個報告,等於用選擇性呈現偽造可靠度(GD-20)。
 
+### D-31.10 — `fitts-v1` 判定:09:18 blocked,09:24/09:37 ok 但 r² 低(T3 執行 T0 的 pre-registration,2026-08-12)
+
+| Session | n | `d_ratio` | `id_range_bits` | slope(ms/bit) | intercept(ms) | r² | TP(bits/s) | status | reason |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| 09:18 | 20 | **1.8343** | 0.6997 | — | — | — | — | `blocked-by-data` | `insufficient_d_ratio` |
+| 09:24 | 20 | 2.5531 | 0.9602 | 60.1975 | 357.2666 | 0.0669 | 16.6120 | `ok` | `ok` |
+| 09:37 | 20 | 3.3833 | 1.2536 | 39.6014 | 389.0146 | 0.0339 | 25.2516 | `ok` | `ok` |
+
+**判定**:09:18 不給 slope / r² / TP,因為逐 session `d_ratio = 1.8343 < fitts-v1.min_d_ratio 2.0`。09:24/09:37 通過 `min_samples` / `min_d_ratio` / `min_id_range_bits`,可產生回歸,但 r² 低到只能作研究向探索,不得直接進教練主表。
+
+**判定未被結果污染的證據**:`DEFAULT_FITTS_PARAMS = (min_samples=10,min_d_ratio=2.0,min_id_range_bits=0.5,version='fitts-v1')` 由 T0 D-31.5 pre-register;`test_fitts.py` 逐值釘死。T3 看到 09:18 未過後未修改門檻,也未改用 pooled 資料讓它通過。
+
+**Alternatives considered**:
+- ①「把三 session 併池,利用 pooled 3.5x D ratio 產一個 ok verdict」— 否決:WP-30/WP-31 一直要求三 session 並列呈現、不跨 session 推論;併池會把 session 差異吃掉,且會讓 09:18 的 `blocked-by-data` 消失。
+- ②「把 `min_d_ratio` 從 2.0 放寬到 1.8」— 否決:這是看過結果後調門檻,違反 `fitts-v1` pre-registration;要改只能升 `fitts-v2` 並重跑全鏈。
+- ③「保留 09:24/09:37 的 TP,忽略 r²」— 否決:r² 是解讀邊界的一部分。`ok` 代表資料門檻可計算,不是效度足以對選手做主張。
+
 ---
 
 ## 4. OQ 對帳(T0)
@@ -269,7 +287,7 @@ README §5 的 `Interface contracts` 是規劃期草圖(不在 [README §6](READ
 |---|---|---|
 | **OQ-S4-3** | ✅ **關閉** | 改寫理由見 D-31.4 前提段(split-half r 在 1×3×20 樣本結構下不可計算);拍板時點 2026-08-10(使用者);凍結值 = `GateThresholds` 七欄位 + `seed=20260810`;上限條款(`coach_report` 不可達)已入 D-31.4。[../README.md §8](../README.md) 已同步 |
 | **OQ-S4-18** | ✅ **T1 關閉**(D-31.6) | 判定 **不成立**:pooled n=59 實測 `step_ratio = 0.7643 ≥ 0.5` → **`stratified_only`**,SPARC 僅限同 `padded_n` bucket 內比較。padding 規則未動。附帶歸因限制(階梯無法歸因為純 padding 假象,段長與 `padded_n` 共變不可分離)一併入帳 |
-| **OQ-S4-19** | 🆕 **新開** | Fitts 的 D 為內生(玩家上一 peek 留下的準星位置),回歸結果能否作為 TP 個人基線。owner 研究者 / deadline pilot 後 / 未決影響:TP 解讀範圍,不阻塞 T3 交付 |
+| **OQ-S4-19** | 🟡 **T3 維持 open** | Fitts 的 D 為內生(玩家上一 peek 留下的準星位置),回歸結果能否作為 TP 的個人基線。T3 已交付數值與限制,但不作因果主張;09:24/09:37 r² 低進一步支持「最多研究向」。owner 研究者 / deadline pilot 後 / 未決影響:TP 解讀範圍,不阻塞 T3/T-exit |
 | **OQ-S4-20** | 🆕 **T2 新開**(D-31.9) | `xcorr-v1` 的 session 統計量是「逐 peek 對 65 個 lag 取最大 \|r\|」—— 一個**最大化統計量**。實測 circular-shift null 在 5.6% / 17.3% 的抽樣中也達到觀測水準(0.90),兩個 session 因此未過 ①。問題不在 `shuffle_alpha` 的數值,而在統計量的選擇:是否應改用**固定 lag 的 r**、或對 lag 數作多重比較校正(→ `xcorr-v2`)。owner 研究者 / deadline WP-32 或補錄後 / 未決影響:xcorr 的效度天花板;**不阻塞 T-exit**(判定已明確且方向保守)。依 DoD ⑤「記錄但不修改」處置 |
 | **OQ-S4-17** | 🟡 維持 open | 本 WP **不消費 REC 邊界**(SPARC 用 MR 區間),無新證據。若日後 T3 要做 RT 扣除的 MT 才會再撞到 |
 | **OQ-S4-11** | 🟡 維持 open | 三份真實 fixture 皆無 ADS、皆為 hitscan → 本 WP 三指標的 `--group-by ads`/`weapon_mode` 同樣退化成單格 |
@@ -401,6 +419,60 @@ Test Files  90 passed (90)
 
 ---
 
+## 8. T3 Scope 與閘門證據(T3 DoD ⑥⑦)
+
+**Touches**:
+
+```
+research/src/modules/metrics/algorithms/fitts.py                         (ADD)
+research/src/modules/metrics/algorithms/__init__.py                      (MODIFY: export fitts-v1 API)
+research/src/modules/metrics/algorithms/tests/test_fitts.py              (ADD 16 tests)
+research/src/modules/metrics/algorithms/tests/test_fitts_fixture.py      (ADD 5 tests)
+research/src/modules/metrics/algorithms/tests/test_fitts_purity.py       (ADD 3 tests)
+research/src/modules/metrics/notebooks/t3/generate_fitts_report.py       (ADD)
+research/src/modules/metrics/notebooks/t3/outputs/fitts-*.csv|json|svg   (ADD 10 files)
+docs/operational/analysis-advanced-diagnostics.md                       (MODIFY:+ fitts-v1)
+docs/exec-plan/active/stage4/wp-31-advanced-diagnostics/*.md            (MODIFY:T3 status/progress)
+```
+
+`src/` 與 top-level `tests/` **零 diff**(待 final gate 前再以 `git diff --stat -- src tests` 貼證據),符合 [task-checklist.md](task-checklist.md) 紀律 2。
+
+**Targeted 閘門**:
+
+```
+$ uv run pytest src/modules/metrics/algorithms/tests/test_fitts.py \
+    src/modules/metrics/algorithms/tests/test_fitts_purity.py \
+    src/modules/metrics/algorithms/tests/test_fitts_fixture.py \
+    -q --no-header -p no:cacheprovider --basetemp ../codex_pytest_tmp_fitts_fixture
+21 passed in 4.29s
+```
+
+**演算法證據**:
+- 已知幾何 fixture:D/W/ID/MT 解析解相對/絕對誤差 ≤1e-9;W 缺席走 H1 fallback。
+- `blocked-by-data` 三條主要判準皆有單元測試:`insufficient_n` / `insufficient_d_ratio` / `insufficient_id_range`;非正 slope 另測為 `non_positive_slope`。
+- flags 封閉詞彙表由 `KNOWN_FITTS_FLAGS` + 模組斷言 + 測試釘死;帶 flag 的 peek 不進回歸樣本。
+- `test_fitts_purity.py` 斷言 import 無輸出/無 plotting/無 cwd writes,且 `fitts.py` 使用 `epsilon_deg` 與 `_hitbox`,避免 D/W 來源分裂。
+- `test_fitts_fixture.py` fresh recomputation 對 committed `fitts-verdicts.json` 逐欄比對;`blocked-by-data` 不得填 slope/r²/TP。
+
+**真實 fixture 輸出**:
+`fitts-table-<fixture>.csv`(逐 peek D/W/ID/MT/flags) · `fitts-regression-summary.csv` · `fitts-side-summary.csv` · `fitts-verdicts.json` · `fitts-scatter-<fixture>.svg`。合成 fixture 2 peeks 可計幾何但因 `n < 10` 走 `insufficient_n`,不崩潰、不捏造 TP。
+
+**Full gate**:
+
+```
+$ uv run pytest -q --no-header -p no:cacheprovider --basetemp ../codex_pytest_tmp_wp31_t3_full
+452 passed in 90.94s (0:01:30)
+
+$ npm.cmd run test:ci
+Test Files  90 passed (90)
+     Tests  748 passed (748)
+21 passed (40.8s)             # Playwright; exit 0
+```
+
+`npm.cmd run test:ci` 第一次在 sandbox 內因 `vite.config.ts`/上層目錄讀取權限被擋(`Access is denied`),以 escalated 方式重跑後全綠;這是 sandbox 讀取限制,不是 TS 回歸。
+
+---
+
 ## 規劃期實測資料(供 T0 覆核,非結論)
 
 > 以下數值由規劃期一次性腳本產出,**尚未經 task 的測試釘死**;T0/T1/T2/T3 須以自己的測試重新確立,不得直接引用為證據。
@@ -431,13 +503,16 @@ Test Files  90 passed (90)
 | **S-31.6**(2026-08-10,T2) | **三件組全部只看 \|r\| 的大小,沒有一條看方向 —— 而方向恰好是不穩的**。三 session 的 median signed strength 為 **−0.13 / +0.82 / +0.84**,median peak lag 為 **−183.6 / −136.7 / +179.7 ms**:連「key 領先還是 ω 領先」都跨 session 翻號。09:24 三件組全過,但它的「通過」只表示 `|r|` 這個量非偶然且穩定,**不表示可以講出一句帶方向的話**。這條限制不在 T0 的預想內(D-31.4 設計三件組時,隱含假設「統計量穩定」就等於「結論可用」),已逐字進 `analysis-advanced-diagnostics.md` 的已知限制,並由 `test_coupling_fixture.py` 斷言方向跨 session 確實翻號 —— 讓這條限制不會在資料更新後悄悄不再成立卻沒人發現。 |
 | **S-31.7**(2026-08-10,T2) | `key` 事件與 tick 推導狀態的交叉檢核**逐項全對**(86/86 · 84/84 · 78/78),且最大殘差 7.7675 ms **恰好落在一個 tick(7.8125 ms)之內** —— 也就是每個輸入時戳事件都精確地在**下一個** tick 現形,沒有一次跨兩個 tick。這比「不矛盾」強得多:它把 README §0.6「key-state 與 ω 天然同格、免對時」從論證升級為實測。與 S-31.2 同性質 —— 覆核「不得只信任帳本文字」確實執行且通過。 |
 | **S-31.2**(2026-08-10,T0) | 規劃期 README §0.6 的 `keys` 非空比例(1128/2038、1103/2104、990/1904)與 `key` 事件數(86/84/78)在 T0 獨立重跑下**逐位吻合**;`eccentricityAtSpawnDeg` 亦自 committed parity JSON 重算得 pooled 8.70–30.72°(3.53×),與規劃期一致。與 WP-30 T0 的 S-30.5 同性質:覆核「不得只信任帳本文字」這條紀律確實執行且通過。 |
+| **S-31.8**(2026-08-12,T3) | **pooled D 變異足夠不代表逐 session 都能回歸**。T0 只看 pooled 8.70–30.72°(3.53×),因此預期 T3 不落 `blocked-by-data`;T3 逐 session 執行凍結判準後,09:18 的 `d_ratio` 只有 **1.8343 < 2.0**,必須 blocked。這暴露了 T0 §0.5 的語句太容易被讀成「每個 session 都會 ok」。處置:README 已回寫「pooled 預期只對 roster 層級成立」;門檻未改、未跨 session 併池。 |
 
 ---
 
 ## Open Questions
 
-見 [README.md §7](README.md) 與本檔 §4 對帳表。本 WP 相關:**OQ-S4-3**(✅ **T0 關閉**,D-31.4)· **OQ-S4-18**(✅ **T1 關閉**,D-31.6:`stratified_only`,step_ratio 0.7643)· **OQ-S4-19**(Fitts 的 D 內生性,pilot 後)· **OQ-S4-20**(🆕 **T2 新開**,D-31.9:最大化統計量的多重比較效應)· OQ-S4-17 / OQ-S4-11 / OQ-S4-10 維持 open 且不阻塞本 WP。
+見 [README.md §7](README.md) 與本檔 §4 對帳表。本 WP 相關:**OQ-S4-3**(✅ **T0 關閉**,D-31.4)· **OQ-S4-18**(✅ **T1 關閉**,D-31.6:`stratified_only`,step_ratio 0.7643)· **OQ-S4-19**(🟡 **T3 維持 open**,D 內生性 + r² 低,不作因果/主表主張)· **OQ-S4-20**(🆕 **T2 新開**,D-31.9:最大化統計量的多重比較效應)· OQ-S4-17 / OQ-S4-11 / OQ-S4-10 維持 open 且不阻塞本 WP。
 
 **T1 未開新 OQ**。階梯的歸因不可分離(S-31.3)已在 D-31.6 內以限制條款處理,不另開 OQ:要分離需在同一 `padded_n` bucket 內操弄段長,那是**新錄製 + 新設計**,與 OQ-S4-19 的「是否升級為受控設計」同屬 stage4 之外的題目。SPARC 是否進教練報告由 **T-exit** 依 C-D3 收斂,本 task 只交付效度證據與使用限制。
 
 **T2 開一個新 OQ(OQ-S4-20)**,理由是它**不能**用限制條款處理:S-31.5 指出的問題不是「這個數字要小心讀」,而是「這個統計量在虛無假設下就已經很大」——那是構念定義層級的疑慮,只能由 `xcorr-v2` 回答。相對地,S-31.6(方向不穩)**已**以限制條款處理並上測試,不另開 OQ:它是同一個構念的正確使用邊界,不是構念本身要重新定義。xcorr 是否進教練報告由 **T-exit** 依 C-D3 收斂;依上限條款,最高只能是研究向區塊 + 全部限制。
+
+**T3 未新開 OQ**。09:18 的 `blocked-by-data` 是凍結判準正常工作,不是新方法學問題;OQ-S4-19 已覆蓋 D 內生性與 TP 個人基線能否成立。09:24/09:37 r² 低同樣作為 OQ-S4-19 的限制證據,不另開題。
