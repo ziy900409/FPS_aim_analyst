@@ -1,4 +1,5 @@
 import type { DataRecorderSnapshot, DrillEvent } from '../data/DataRecorder.ts';
+import { buildPeekWindows } from './peekWindows.ts';
 
 export interface Stat {
   mean: number;
@@ -42,27 +43,17 @@ export interface RecoilCompensationPath {
 }
 
 type VisibleEvent = Extract<DrillEvent, { type: 'visible' }>;
-type CounterEvent = Extract<DrillEvent, { type: 'counter' }>;
 type FireEvent = Extract<DrillEvent, { type: 'fire' }>;
 type HitEvent = Extract<DrillEvent, { type: 'hit' }>;
-
-interface PeekWindow {
-  visible: VisibleEvent;
-  nextVisible?: VisibleEvent;
-  counter?: CounterEvent;
-  firstFire?: FireEvent;
-  reactionMs?: number;
-}
 
 export function computeMetrics(snapshot: DataRecorderSnapshot): Metrics {
   const events = snapshot.events.slice().sort((a, b) => a.t - b.t);
   const visibleEvents = events.filter((event): event is VisibleEvent => event.type === 'visible');
-  const counterEvents = events.filter((event): event is CounterEvent => event.type === 'counter');
   const fireEvents = events.filter((event): event is FireEvent => event.type === 'fire');
   const hitEvents = events.filter((event): event is HitEvent => event.type === 'hit');
   const hitShotSeqs = buildHitShotSeqs(hitEvents);
 
-  const peeks = buildPeekWindows(visibleEvents, counterEvents, fireEvents);
+  const peeks = buildPeekWindows({ ticks: snapshot.ticks, events });
   const reactions = finiteValues(peeks.map((peek) => peek.reactionMs));
   const firstShotFires = peeks.map((peek) => peek.firstFire).filter((fire): fire is FireEvent => fire !== undefined);
 
@@ -143,27 +134,6 @@ export function stat(values: readonly number[]): Stat {
   const mean = finite.reduce((sum, value) => sum + value, 0) / finite.length;
   const variance = finite.reduce((sum, value) => sum + (value - mean) ** 2, 0) / finite.length;
   return { mean, p50: percentile(finite, 0.5), sd: Math.sqrt(variance), n: finite.length, values: finite };
-}
-
-function buildPeekWindows(
-  visibleEvents: readonly VisibleEvent[],
-  counterEvents: readonly CounterEvent[],
-  fireEvents: readonly FireEvent[],
-): PeekWindow[] {
-  return visibleEvents.map((visible, index) => {
-    const nextVisible = visibleEvents[index + 1];
-    const windowEnd = nextVisible?.t ?? Infinity;
-    const counter = counterEvents.find((event) => event.t >= visible.t && event.t < windowEnd);
-    const firstFire = fireEvents.find(
-      (event) =>
-        event.firstShot &&
-        event.t >= visible.t &&
-        event.t < windowEnd &&
-        (event.targetId === undefined || event.targetId === visible.targetId),
-    );
-    const reactionMs = counter !== undefined ? counter.t - visible.t : undefined;
-    return { visible, nextVisible, counter, firstFire, reactionMs };
-  });
 }
 
 // 切換時間 = t_next_acquisition − t_prev_kill（CONTEXT:23）：擊殺一目標，到「對下一目標有效對齊」
