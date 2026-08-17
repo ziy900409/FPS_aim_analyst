@@ -14,7 +14,7 @@
 | T2 TS seg-v2 分段 | ✅ | 2026-08-17 | `src/metrics/submovement.ts` + `src/metrics/submovement.test.ts`;`tests/golden/research/promoted-segments.test.ts` 對三份 real fixture 60 peeks 的 `kind/startIdx/endIdx/flags/traceFlags` 逐位相等、`peakOmega` ≤1e-9,pooled `primary_flick=59`;synthetic golden 釘住 scipy `find_peaks` plateau 規則與 merge/flag 分支;新增 generator drift test |
 | T3 phase + sync 晉升 | ✅ | 2026-08-17 | `src/metrics/peekWindows.ts` 共享窗界抽出 + Python `PeekWindow` release/flags 對齊;`src/metrics/researchMetrics.ts` 晉升 `phase-v1`/`sync-v1`;`tests/golden/research/promoted-phase-sync.test.ts` 對四份 phase fixture + 六份 sync fixture 逐 peek/row/aggregate ≤1e-9,flags/verdict exact;pooled phase non-degenerate=59、09:39 sync unflagged=13、08:03 sync n=0 blocked;`analysis-phase-curves.md` 已補 TS 晉升面與 `filter_degenerate` 分歧 |
 | T4 curve 晉升 | ✅ | 2026-08-17 | `src/metrics/trackingDerivation.ts` 匯出同源 `deriveTrackingSamples()` 且既有 ε/tracking 測試零修改全綠;`src/metrics/researchMetrics.ts` 新增 `computeCurveMetrics()` / `normalize101()` / `curve-v1` L/R 101 點聚合;`tests/golden/research/promoted-curve.test.ts` 對四份 fixture 的 ω/ε × L/R × mean/IQR 逐點 ≤1e-9、三份 real `n(L)=n(R)=10`、synthetic 13-tick window 不排除、2-tick window `window_too_short`;`research/src/modules/metrics/notebooks/t4/generate_promoted_curve_golden.py` + drift test 釘住 committed golden |
-| T5 結果頁擴充 | ⬜ | — | — |
+| T5 結果頁擴充 | ✅ | 2026-08-17 | `src/metrics/MetricsDashboard.ts` additive `computePromoted(payload)`;`src/ui/ResultScreen.ts` 新增 research-promoted 區塊(封閉 8 個 `data-metric-id`,六卡+ω/ε L/R 曲線,blocked 態);`src/main.ts` 由同一 `ExportPayload` 派生既有 metrics + promoted metrics;`tests/e2e/full-drill.spec.ts` 斷言 promoted DOM 非 blocked 且 `sync-release-to-fire-ms` 顯示值 = 同一次 export payload 跑 `computePromotedMetrics`;視覺檢查:scrolled promoted view 六卡、兩曲線、n/flags/version 可見,曲線可辨 |
 | T-exit(M15) | ⬜ | — | — |
 
 **兩閘證據**(每 task 完成時貼原始輸出):
@@ -25,6 +25,7 @@
 | T2 | `uv run pytest -q --tb=short --color=no --basetemp .pytest_tmp_t2_full`(於 `research/`) → `462 passed in 553.87s (0:09:13)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `95 passed / 777 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過) |
 | T3 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t3_full`(於 `research/`) → `464 passed in 517.73s (0:08:37)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `97 passed / 793 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤;升權後首次完整跑遇 2 支 Playwright app-ready/backend timeout,重跑失敗 specs `6 passed`,再重跑完整 `test:ci` 通過) |
 | T4 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t4_full`(於 `research/`) → `466 passed in 815.37s (0:13:35)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `98 passed / 805 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過) |
+| T5 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t5_full`(於 `research/`) → `466 passed in 396.47s (0:06:36)`(sandbox 內 `uv` 讀 user cache 權限失敗,升權重跑同指令通過) | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `98 passed / 810 tests` + Playwright `21 passed`(sandbox 內 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過);另 `npx.cmd playwright test tests/e2e/full-drill.spec.ts` → `8 passed` |
 
 ---
 
@@ -180,6 +181,23 @@ T4 的 README 介面草案只要求 `CurveAggregate` 帶 L/R 的 `n` 與 101 點
 - 「只在 `computeCurveMetrics().rows` 暴露 flags,aggregate 不帶」— 否決:結果頁主要消費 `computePromotedMetrics()` 的 aggregate;若不帶, T5 會被迫再呼叫另一條資料路徑或重算 flags,違反「統計 = 匯出」與 C-D4 的方向。
 - 「把 `nExcluded` 塞進每條 `NormalizedCurve`」— 暫不採納:目前 T4 golden 的排除規則以 `flagCounts` + per-side `n` 釘住即可;`nExcluded` 屬 T5 呈現設計,若畫面需要可在 T5 以 additive 欄位補。
 
+### D-32.8 — T5 呈現拍板:分佈摘要 + ω/ε 雙曲線(2026-08-17,T5)
+
+**OQ-S4-22 結論**:結果頁不提供單一分數。Phase/Sync 六張卡以 `p50` 作主值,detail 強制列 `mean` / `SD` / `n`;每卡 meta 強制列 flags 計數與 version。`n=0` 顯示 `No samples`,不把 0 或 `--` 包裝成數字。
+
+**OQ-S4-23 結論**:curve 區塊同時顯示 `omega` 與 `epsilon` 兩張 inline SVG,每張都是 L/R mean 疊線 + IQR band + `n(L)`/`n(R)`。理由是 `omega` 承載 flick 速度形狀,`epsilon` 承載瞄準誤差形狀;只顯示其中一者會把 T4 已晉升的另一半藏起來,也不利於對照教練報告。
+
+**Alternatives considered**:
+- 「只顯示 Sync 數值,Phase/Curve 留到報告」— 否決:違反 T0 晉升清單三項納入的交付邊界,也讓 `curve-v1` 晉升沒有 UI 證據。
+- 「Curve 只列 n 與帶寬摘要,不畫曲線」— 否決:101 點曲線的主要價值是形狀與 L/R 差異;只列摘要會把 `curve-v1` 降格成不可審的單值。
+- 「Phase/Sync 顯示單一平均」— 否決:單 drill n 約 20,必須把 `p50`/`mean`/`SD`/`n` 一起呈現,避免教練把單次均值當穩定能力分數。
+
+### D-32.9 — T5 統計同源接線:結果頁由單一 `ExportPayload` 派生(2026-08-17,T5)
+
+`main.ts` 在 drill ended 時先呼叫 `buildCurrentExportPayload()` 一次,再由該 payload 重建 `DataRecorderSnapshot` 給既有 `computeMetrics`,同一 payload 交 `computePromotedMetrics`。這避免結果頁為既有 metrics 與 promoted metrics 分別呼叫 `recorder.snapshot()` 而產生「統計 ≠ 匯出」的取樣漂移。
+
+E2E 同步擴充:dev harness 新增 `promotedMetricsFromExport(payload)`,且 harness 匯出帶 `meta.mouseIntegration` 與 tick `dYaw`/`dPitch`,避免 T5 關鍵 E2E 永遠只測到 `blocked`。`tests/e2e/full-drill.spec.ts` 以同一次 round-tripped export payload 計算 promoted metrics,再斷言結果頁 `sync-release-to-fire-ms` 的 `data-metric-value` 等於該 payload 的 p50。
+
 ---
 
 ## Surprises
@@ -218,6 +236,12 @@ T3 初版 TS `PrecisionVerdict` 在 `n < min_samples` 的 `blocked-by-data` 分�
 
 **處置**:`src/metrics/researchMetrics.ts` 的 blocked verdict 分支保留 `sampleSdMs`(若 `n >= 2`),與 Python 權威逐欄一致。
 
+### S-32.6 — T5 harness 起初缺 `mouseIntegration`,會讓 promoted E2E 假 blocked(2026-08-17,T5)
+
+T5 讀碼時發現生產 `main.ts` 已啟用 `mouseIntegration`,但 `src/testharness/fpsTestHarness.ts` 每次 `startDrill` 仍用 `createDataRecorder({ simHz })`,且 harness export meta 也沒有 `mouseIntegration`。若不修,E2E 只會證明結果頁能顯示 blocked,不能證明實機路徑上的 promoted 數字接得上。
+
+**處置**:harness 以同一 `resolveMouseGain`/`RAD_PER_COUNT` 產生 recorder config 與 meta,新增 `promotedMetricsFromExport(payload)`。新增 node test 斷言 harness export 有 `meta.mouseIntegration`、ticks 有 `dYaw`/`dPitch`,且 promoted status 為 `ok`。
+
 ---
 
 ## Open Questions
@@ -226,7 +250,7 @@ T3 初版 TS `PrecisionVerdict` 在 `n < min_samples` 的 `blocked-by-data` 分�
 |---|---|---|---|---|
 | ~~**OQ-S4-4**~~ | ~~晉升 dashboard 的指標清單~~ | ✅ **關閉(2026-08-17,T0,本檔 §0.6)**:晉升清單封閉為七列(三進四出)—— `phase-v1`/`sync-v1`/`curve-v1` 納入;`sparc-v1`/`xcorr-v1`/`fitts-v1` 排除(逐項理由 + 證據位置引 WP-31 T-exit D-31.6/D-31.9/D-31.10);`timeline-v1` 三量無事可做 | 使用者 | WP-32 T0 ✅ |
 | ~~**OQ-S4-21**~~ | ~~scipy `savgol_filter(mode='interp')` 的 edge polyfit 以凍結矩陣重現後能否穩定達 ≤1e-9~~ | ✅ **關閉(2026-08-17,T1)**:`promoted-kinematics.test.ts` 在三份真實 fixture 的 `omega.values[1:]` 上逐點比較 `sgSmooth` vs Python `sg_filter`,含前後 edge samples,≤1e-9 通過;SG 係數表本身 ≤1e-12 通過 | 研究者 | WP-32 T1 ✅ |
-| **OQ-S4-22**(新) | 結果頁單 drill n ≈ 20 peeks,phase/sync 均值是否穩定到可對選手呈現 | 🟡 open,T5 以呈現形式解(強制 n + p50 + SD,不給單一分數) | 使用者 / 研究者 | WP-32 T5 |
-| **OQ-S4-23**(新) | `curve-v1` 在結果頁的縮圖形式 | 🟡 open,T5 拍板;建議與教練報告 v1 同形式(inline SVG L/R 疊圖 + IQR 帶 + `n(L)`/`n(R)`) | 使用者 | WP-32 T5 |
+| ~~**OQ-S4-22**~~ | ~~結果頁單 drill n ≈ 20 peeks,phase/sync 均值是否穩定到可對選手呈現~~ | ✅ **關閉(2026-08-17,T5,D-32.8)**:不顯示單一分數;六張 Phase/Sync 卡以 p50 為主值,detail 強制列 mean/SD/n,flags+version 永遠顯示;`n=0` 顯示 `No samples` | 使用者 / 研究者 | WP-32 T5 ✅ |
+| ~~**OQ-S4-23**~~ | ~~`curve-v1` 在結果頁的縮圖形式~~ | ✅ **關閉(2026-08-17,T5,D-32.8)**:結果頁顯示 `omega` 與 `epsilon` 兩張 inline SVG;每張 L/R mean 疊線 + IQR band + `n(L)`/`n(R)` + flags/version | 使用者 | WP-32 T5 ✅ |
 | **OQ-S4-24**(新) | 雙實作維護紀律是否升為硬約束 | 🟢 建議升 **C-D5**(CLAUDE.md §4)+ 候選 **GD-21**(DECISIONS.md);T-exit 落地 | 使用者 | WP-32 T-exit |
 | **OQ-S4-17 / 19 / 20 / 10 / 11** | 承上游,均維持 open | 本 WP 不解;T-exit 須在 `acceptance-stage-d.md` 逐條列為「stage4 交付時的已知限制」 | 研究者 | pilot 後 |

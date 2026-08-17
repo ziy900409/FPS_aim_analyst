@@ -1,6 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Metrics } from '../metrics/compute.ts';
-import { createRecoilOverlayModel, createResultSummary, summarizeResidualSpeed } from './ResultScreen.ts';
+import type { PromotedMetrics } from '../metrics/researchMetrics.ts';
+import {
+  createPromotedSummary,
+  createRecoilOverlayModel,
+  createResultScreen,
+  createResultSummary,
+  PROMOTED_METRIC_IDS,
+  summarizeResidualSpeed,
+} from './ResultScreen.ts';
 
 const metrics: Metrics = {
   counterReactionMs: { mean: 63.33, p50: 60, sd: 12.47, n: 3, values: [50, 80, 60] },
@@ -29,6 +37,50 @@ const metrics: Metrics = {
     diff: 25,
   },
 };
+
+class FakeElement {
+  id = '';
+  textContent = '';
+  readonly dataset: Record<string, string> = {};
+  readonly style: Record<string, string> = { cssText: '', display: '' };
+  readonly attributes = new Map<string, string>();
+  readonly children: FakeElement[] = [];
+
+  append(...children: FakeElement[]): void {
+    this.children.push(...children);
+  }
+
+  appendChild(child: FakeElement): void {
+    this.children.push(child);
+  }
+
+  replaceChildren(...children: FakeElement[]): void {
+    this.children.length = 0;
+    this.children.push(...children);
+  }
+
+  remove(): void {}
+
+  setAttribute(name: string, value: string): void {
+    this.attributes.set(name, value);
+  }
+}
+
+class FakeDocument {
+  readonly body = new FakeElement();
+
+  createElement(): FakeElement {
+    return new FakeElement();
+  }
+
+  createElementNS(): FakeElement {
+    return new FakeElement();
+  }
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('createResultSummary', () => {
   it('maps the eight WP-8 metrics to result cards and reaction distribution values', () => {
@@ -74,6 +126,70 @@ describe('createResultSummary', () => {
     expect(empty.cards.find((card) => card.id === 'counterReactionMs')?.value).toBe('N/A');
     expect(empty.cards.find((card) => card.id === 'residualSpeed')?.value).toBe('N/A');
     expect(empty.cards.find((card) => card.id === 'leftRightSymmetry')?.value).toBe('N/A');
+  });
+});
+
+describe('WP-32 T5 promoted result section', () => {
+  it('pins the closed promoted metric id set and carries n, flags, and versions', () => {
+    const promoted = promotedOk();
+    const summary = createPromotedSummary(promoted);
+    expect(summary.status).toBe('ok');
+    if (summary.status !== 'ok') throw new Error('expected ok summary');
+
+    expect(summary.cards.map((card) => card.id)).toEqual(PROMOTED_METRIC_IDS.slice(0, 6));
+    for (const card of summary.cards) {
+      expect(card.detail).toMatch(/n=|No samples/);
+      expect(card.meta).toMatch(/flagged/);
+      expect(card.meta).toMatch(/phase-v1|sync-v1/);
+    }
+    expect(summary.cards.find((card) => card.id === 'sync-release-to-fire-ms')?.meta).toContain('sufficient');
+    expect(summary.versions).toContain('curve-v1');
+    expect(summary.versions).toContain('sg-seg-v2');
+  });
+
+  it('renders promoted ok state with the closed id set including both curve charts', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(metrics, promotedOk());
+
+    expect(document.body.children[0].style.display).toBe('flex');
+    expect(metricIds(document.body)).toEqual([...PROMOTED_METRIC_IDS]);
+    expect(text(document.body)).toContain('n=3');
+    expect(text(document.body)).toContain('1 flagged');
+    expect(text(document.body)).toContain('phase-v1');
+    expect(text(document.body)).toContain('curve-v1');
+  });
+
+  it('renders n=0 as No samples instead of a numeric zero', () => {
+    const summary = createPromotedSummary({
+      ...promotedOk(),
+      phase: {
+        ...promotedOk().phase,
+        recMs: { mean: 0, p50: 0, sd: 0, n: 0 },
+      },
+    });
+
+    expect(summary.status).toBe('ok');
+    if (summary.status !== 'ok') throw new Error('expected ok summary');
+    expect(summary.cards.find((card) => card.id === 'phase-rec-ms')?.value).toBe('No samples');
+    expect(summary.cards.find((card) => card.id === 'phase-rec-ms')?.detail).toBe('No samples');
+  });
+
+  it('renders blocked state without promoted metric cards or charts', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(metrics, {
+      status: 'blocked',
+      reason: 'meta.mouseIntegration is missing; promoted phase metrics require tick-integral omega (KI-005)',
+    });
+
+    expect(metricIds(document.body)).toEqual([]);
+    expect(text(document.body)).toContain('Promoted diagnostics blocked');
+    expect(text(document.body)).toContain('KI-005');
   });
 });
 
@@ -147,4 +263,72 @@ function formatPointList(points: readonly { x: number; y: number }[]): string {
 
 function formatNumber(value: number): string {
   return value.toFixed(3).replace(/\.?0+$/, '');
+}
+
+function promotedOk(): Extract<PromotedMetrics, { status: 'ok' }> {
+  const curve = {
+    mean: [0, 1, 0],
+    lower: [0, 0.5, 0],
+    upper: [0, 1.5, 0],
+    n: 3,
+  };
+  return {
+    status: 'ok',
+    phase: {
+      recMs: { mean: 32, p50: 30, sd: 4, n: 3 },
+      mrMs: { mean: 45, p50: 44, sd: 5, n: 3 },
+      vMs: { mean: 70, p50: 68, sd: 6, n: 3 },
+      peakOmegaDegPerSec: { mean: 120, p50: 118, sd: 8, n: 3 },
+      flagCounts: { no_primary_flick: 1 },
+      version: 'phase-v1',
+    },
+    sync: {
+      releaseToFireMs: { mean: 81, p50: 80, sd: 3, n: 12 },
+      counterHoldMs: { mean: 24, p50: 23, sd: 2, n: 12 },
+      counterToFireMs: { mean: 55, p50: 54, sd: 4, n: 12 },
+      verdicts: [
+        {
+          metric: 'release_to_fire_ms',
+          n: 12,
+          sampleSdMs: 3,
+          quantizationSdMs: 2.25,
+          verdict: 'sufficient',
+          reason: 'ok',
+        },
+        {
+          metric: 'counter_hold_ms',
+          n: 12,
+          sampleSdMs: 2,
+          quantizationSdMs: 2.25,
+          verdict: 'sufficient',
+          reason: 'ok',
+        },
+      ],
+      flagCounts: {},
+      version: 'sync-v1',
+    },
+    curve: {
+      omega: { left: curve, right: curve },
+      epsilon: { left: curve, right: curve },
+      flagCounts: {},
+      version: 'curve-v1',
+    },
+  };
+}
+
+function metricIds(root: FakeElement): string[] {
+  return flatten(root)
+    .map((node) => node.dataset.metricId)
+    .filter((id): id is string => id !== undefined && PROMOTED_METRIC_IDS.includes(id as never));
+}
+
+function text(root: FakeElement): string {
+  return flatten(root)
+    .map((node) => node.textContent)
+    .filter((value) => value.length > 0)
+    .join(' ');
+}
+
+function flatten(root: FakeElement): FakeElement[] {
+  return [root, ...root.children.flatMap(flatten)];
 }

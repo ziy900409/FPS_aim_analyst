@@ -79,6 +79,22 @@ describe('WP-13 / T2 — harness 整合(分離後仍命中 + recoil 漂移讀數
     expect(m.residualSpeed.n).toBe(20); // tap-fire：每 peek 恰 1 發 → 20 發（對齊 full-drill fireCount）
   });
 
+  it('WP-32 / T5：harness export 帶 mouseIntegration 且 promoted metrics 非 blocked', () => {
+    const harness = makeHarness();
+    harness.startDrill('counterstrafe_ad_v1');
+    harness.runCounterStrafeRound(20);
+
+    const payload = harness.forceExportJSON();
+    const promoted = harness.promotedMetricsFromExport(payload);
+
+    expect(payload.meta.mouseIntegration).toMatchObject({ model: 'tick-window-integral' });
+    expect(payload.ticks.every((tick) => typeof tick.dYaw === 'number' && typeof tick.dPitch === 'number')).toBe(true);
+    expect(promoted.status).toBe('ok');
+    if (promoted.status !== 'ok') throw new Error(promoted.reason);
+    expect(promoted.sync.releaseToFireMs.n).toBeGreaterThan(0);
+    expect(promoted.curve.omega.left.n + promoted.curve.omega.right.n).toBeGreaterThan(0);
+  });
+
   it('② 按住連發 10 發 → rawPunch 重現 M5 向量(pitch −10.18 / yaw −1.56,方向 上+右)', () => {
     const harness = makeHarness();
     harness.startDrill('counterstrafe_ad_v1');

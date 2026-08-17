@@ -10,7 +10,7 @@
 | ✅ | **T2** TS `seg-v2` 分段移植 + segment golden(**index 逐位相等**,非容差) | [T2-ts-segmentation.md](T2-ts-segmentation.md) | T1 | **High** |
 | ✅ | **T3** 共享 peek 窗抽出(零語意變更)+ `phase-v1` + `sync-v1` 晉升 + golden | [T3-phase-sync-promotion.md](T3-phase-sync-promotion.md) | T2 | Med |
 | ✅ | **T4** 逐 tick ε 抽出(零語意變更)+ `curve-v1` 101 點 L/R 晉升 + golden | [T4-curve-promotion.md](T4-curve-promotion.md) | T1 | Med |
-| ⬜ | **T5** 結果頁 research-promoted 區塊 + `blocked` 態 + **統計 = 匯出 E2E** | [T5-result-screen.md](T5-result-screen.md) | T3 + T4 | Med |
+| ✅ | **T5** 結果頁 research-promoted 區塊 + `blocked` 態 + **統計 = 匯出 E2E** | [T5-result-screen.md](T5-result-screen.md) | T3 + T4 | Med |
 | ⬜ | **T-exit(M15)** `acceptance-stage-d.md` + C-D5 入 CLAUDE.md §4 + 文件對帳 + stage4 收斂 | [T-exit-gate.md](T-exit-gate.md) | T5 | — |
 
 **T4 只依賴 T1**(吃 ω 與既有 ε,不吃分段)→ 可與 T2 並行;一 task 一 commit 的紀律不變。

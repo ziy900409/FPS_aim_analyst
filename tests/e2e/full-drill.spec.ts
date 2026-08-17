@@ -41,6 +41,8 @@ async function runFullChain(page: import('@playwright/test').Page) {
         forceExportJSON(): unknown;
         getMetrics(): unknown;
         metricsFromExport(payload: unknown): unknown;
+        promotedMetricsFromExport(payload: unknown): unknown;
+        showResult(): void;
         phase(): string;
       };
       const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
@@ -77,6 +79,28 @@ async function runFullChain(page: import('@playwright/test').Page) {
       const roundTripped = JSON.parse(JSON.stringify(payload));
       const metricsFromExport = harness.metricsFromExport(roundTripped);
       const metricsMatchExport = JSON.stringify(metrics) === JSON.stringify(metricsFromExport);
+      const promoted = harness.promotedMetricsFromExport(roundTripped) as {
+        status: 'ok' | 'blocked';
+        reason?: string;
+        sync?: { releaseToFireMs: { p50: number; n: number }; counterHoldMs: { n: number } };
+        curve?: { omega: { left: { n: number }; right: { n: number } } };
+      };
+      harness.showResult();
+      const promotedSection = document.querySelector<HTMLElement>('#result-screen [data-section="research-promoted"]');
+      const promotedMetricIds = Array.from(
+        document.querySelectorAll<HTMLElement>('#result-screen [data-section="research-promoted"] [data-metric-id]'),
+      ).map((node) => node.dataset.metricId);
+      const releaseCard = document.querySelector<HTMLElement>(
+        '#result-screen [data-metric-id="sync-release-to-fire-ms"]',
+      );
+      const expectedReleaseText =
+        promoted.status === 'ok' && promoted.sync !== undefined
+          ? `${promoted.sync.releaseToFireMs.p50.toFixed(0)} ms`
+          : null;
+      const promotedMatchesExport =
+        promoted.status === 'ok' &&
+        expectedReleaseText !== null &&
+        releaseCard?.dataset.metricValue === expectedReleaseText;
 
       return {
         coi: window.crossOriginIsolated,
@@ -100,6 +124,11 @@ async function runFullChain(page: import('@playwright/test').Page) {
           leftRightSymmetry: { left: { n: number }; right: { n: number } };
         },
         metricsMatchExport,
+        promoted,
+        promotedSectionDisplay: promotedSection?.style.display ?? null,
+        promotedMetricIds,
+        promotedMatchesExport,
+        promotedText: promotedSection?.textContent ?? '',
       };
     },
     { drillId: DRILL_ID, peeks: PEEKS },
@@ -160,6 +189,28 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
 
     // ── 統計＝匯出：結果頁指標與匯出資料逐欄一致（序列化不失真，FR-9.1 交叉驗證）──
     expect(r.metricsMatchExport).toBe(true);
+
+    // ── WP-32 / T5 promoted diagnostics：結果頁與同一次匯出 payload 同源，且非 blocked ──
+    expect(r.promoted.status).toBe('ok');
+    expect(r.promotedSectionDisplay).not.toBe('none');
+    expect(r.promotedMetricIds).toEqual([
+      'phase-rec-ms',
+      'phase-mr-ms',
+      'phase-v-ms',
+      'sync-release-to-fire-ms',
+      'sync-counter-hold-ms',
+      'sync-counter-to-fire-ms',
+      'curve-omega',
+      'curve-epsilon',
+    ]);
+    expect(r.promotedMatchesExport).toBe(true);
+    expect(r.promotedText).toContain('n=');
+    expect(r.promotedText).toContain('flagged');
+    expect(r.promotedText).toContain('phase-v1');
+    expect(r.promotedText).toContain('sync-v1');
+    expect(r.promotedText).toContain('curve-v1');
+    expect(r.promoted.sync?.releaseToFireMs.n).toBeGreaterThan(0);
+    expect((r.promoted.curve?.omega.left.n ?? 0) + (r.promoted.curve?.omega.right.n ?? 0)).toBeGreaterThan(0);
   });
 
   test('WP-24 ADS smoke：export 含 ads event / tick flag / weapon ads snapshot', async ({ page }) => {
