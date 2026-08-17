@@ -1,0 +1,38 @@
+name: Bug 回報
+description: 回報一個目前行為與預期不符的問題
+title: "[bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 發生了什麼事
+      description: 描述目前行為,以及與預期行為的差異
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 重現步驟
+      description: 從乾淨狀態開始,列出可重現此問題的最小步驟
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境資訊
+      description: 瀏覽器與版本、作業系統、`crossOriginIsolated` 是否為 true
+      placeholder: 例如:Chrome 130 / Windows 11 / crossOriginIsolated=true
+    validations:
+      required: false
+  - type: textarea
+    id: additional
+    attributes:
+      label: 相關資料 / 匯出檔 / 截圖
+      description: 若有匯出的量測資料(JSON/CSV)或截圖,請附上或貼上片段
+    validations:
+      required: false

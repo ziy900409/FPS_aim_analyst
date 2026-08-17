@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 專案文件導覽
+    url: https://github.com/ziy900409/FPS_aim_analyst/blob/main/docs/MAP.md
+    about: 需求規格、ADR、執行計畫與決策帳本都從這裡開始找
