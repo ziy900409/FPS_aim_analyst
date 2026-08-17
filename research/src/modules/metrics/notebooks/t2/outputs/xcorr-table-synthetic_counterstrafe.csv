@@ -1,0 +1,3 @@
+session,peek_index,side,n_ticks,dt_ms,max_lag_ticks,peak_lag_ms,peak_strength,flags
+synthetic_counterstrafe,0,L,23,7.8125,0,,,"('window_too_short',)"
+synthetic_counterstrafe,1,R,23,7.8125,0,,,"('window_too_short',)"

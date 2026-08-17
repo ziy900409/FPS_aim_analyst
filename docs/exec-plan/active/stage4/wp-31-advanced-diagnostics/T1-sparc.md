@@ -8,7 +8,7 @@
 | **Risk / Cplx** | Med / Med |
 | **對應 FR** | FR-D13 |
 | **Touches** | `research/src/modules/metrics/algorithms/sparc.py`(ADD)· `.../algorithms/tests/test_sparc*.py`(ADD)· `research/fixtures/golden/sparc-pa-parity.json`(ADD)· `research/fixtures/golden/sparc-128hz-domain.json`(ADD)· `research/src/modules/metrics/notebooks/t1/`(ADD)· `docs/operational/analysis-advanced-diagnostics.md`(ADD 首版) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ **完成(2026-08-10)** — 兩份 golden 對表 ≤1e-9(PA parity 8 個量 + 128Hz 域 8 case)、逐 MR 段表 59/60 與 `phase-v1` 一致、階梯診斷 verdict **`stratified_only`**(step_ratio 0.7643 ≥ 0.5,**關閉 OQ-S4-18**)、`analysis-advanced-diagnostics.md` 首版。`uv run pytest` 365 passed;`src/`/`tests/` 零 diff |
 
 ## Objective
 

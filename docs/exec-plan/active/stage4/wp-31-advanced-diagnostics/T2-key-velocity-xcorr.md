@@ -8,7 +8,7 @@
 | **Risk / Cplx** | **Med** / Med(演算法不難;難在判定的誠實度) |
 | **對應 FR** | FR-D14 |
 | **Touches** | `research/src/modules/metrics/algorithms/coupling.py`(ADD)· `.../algorithms/tests/test_coupling*.py`(ADD)· `research/src/modules/metrics/notebooks/t2/`(ADD)· `docs/operational/analysis-advanced-diagnostics.md`(MODIFY) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ **完成(2026-08-10)** — 三 session 全 `research_only`(09:18 / 09:37 未過 ① shuffle null,09:24 三件全過;**D-31.9**);`coach_report` 由 AST 掃描證明不可達;`key` 事件交叉檢核 248/248 全對(**D-31.8**);新開 **OQ-S4-20**。介面偏離三處見 **D-31.7** |
 
 ## Objective
 
@@ -70,14 +70,14 @@
 
 ## Steps
 
-- [ ] 實作 `key_state_signed` + 單元測試(`A`/`D`/`A+D`/空 四種 tick 狀態)。
-- [ ] 實作 `key_velocity_xcorr`(逐 lag Pearson + tie-break)+ 已知 lag 合成測試。
-- [ ] 實作 `xcorr_table`(逐 peek;flags 封閉詞彙表自我斷言)。
-- [ ] 實作 `reliability_gate` 三件組(seeded RNG)+ 決定性測試(兩次呼叫逐位相同)。
-- [ ] 寫「純雜訊 → p 不顯著」反向對照測試 + 「`coach_report` 不可達」斷言測試。
-- [ ] 對三份真實 fixture 逐 session 跑 gate,產出 `GateVerdict` 表 + correlogram 圖(`notebooks/t2/outputs/`)。
-- [ ] `key` 事件交叉檢核(±1 tick),結果記 progress。
-- [ ] `algorithms/` 純度測試;更新 `analysis-advanced-diagnostics.md`、[progress.md](progress.md)、[task-checklist.md](task-checklist.md)。
+- [x] 實作 `key_state_signed` + 單元測試(`A`/`D`/`A+D`/空 四種 tick 狀態)。
+- [x] 實作 `key_velocity_xcorr`(逐 lag Pearson + tie-break)+ 已知 lag 合成測試。
+- [x] 實作 `xcorr_table`(逐 peek;flags 封閉詞彙表自我斷言)。
+- [x] 實作 `reliability_gate` 三件組(seeded RNG)+ 決定性測試(兩次呼叫逐位相同)。
+- [x] 寫「純雜訊 → p 不顯著」反向對照測試 + 「`coach_report` 不可達」斷言測試(AST 掃描)。
+- [x] 對三份真實 fixture 逐 session 跑 gate,產出 `GateVerdict` 表 + correlogram 圖(`notebooks/t2/outputs/`)。
+- [x] `key` 事件交叉檢核(±1 tick),結果記 progress(248/248 全對,最大殘差 < 1 tick)。
+- [x] `algorithms/` 純度測試;更新 `analysis-advanced-diagnostics.md`、[progress.md](progress.md)、[task-checklist.md](task-checklist.md)。
 
 ## Definition of Done
 

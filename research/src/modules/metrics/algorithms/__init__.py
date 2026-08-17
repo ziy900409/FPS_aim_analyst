@@ -9,6 +9,17 @@ from .detect import (
     detect_parity_payload,
     detect_samples,
 )
+from .fitts import (
+    DEFAULT_FITTS_PARAMS,
+    FITTS_VERSION,
+    KNOWN_FITTS_FLAGS,
+    KNOWN_FITTS_REASONS,
+    FittsParams,
+    FittsResult,
+    FittsSample,
+    fitts_samples,
+    target_width_deg,
+)
 from .peek import KNOWN_PEEK_FLAGS, PeekWindow, build_peek_windows
 from .phase import (
     DEFAULT_PHASE_PARAMS,
@@ -35,15 +46,22 @@ from .timeline import (
 __all__ = [
     "COMPUTE_VERSION",
     "DEFAULT_DETECT_PARAMS",
+    "DEFAULT_FITTS_PARAMS",
     "DEFAULT_PHASE_PARAMS",
     "DETECT_VERSION",
+    "FITTS_VERSION",
     "KNOWN_DETECT_FLAGS",
+    "KNOWN_FITTS_FLAGS",
+    "KNOWN_FITTS_REASONS",
     "KNOWN_PEEK_FLAGS",
     "KNOWN_PHASE_FLAGS",
     "NOMINAL_SIM_HZ",
     "PHASE_VERSION",
     "DetectParams",
     "DetectSample",
+    "FittsParams",
+    "FittsResult",
+    "FittsSample",
     "PeekWindow",
     "PhaseParams",
     "PhaseSample",
@@ -53,6 +71,7 @@ __all__ = [
     "build_peek_windows",
     "detect_parity_payload",
     "detect_samples",
+    "fitts_samples",
     "first_shot_hits",
     "phase_decompose",
     "phase_table",
@@ -60,4 +79,5 @@ __all__ = [
     "stat",
     "timeline_metrics",
     "timeline_parity_payload",
+    "target_width_deg",
 ]

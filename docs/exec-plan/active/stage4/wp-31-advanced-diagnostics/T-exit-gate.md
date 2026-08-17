@@ -8,7 +8,7 @@
 | **Risk / Cplx** | — / Med |
 | **對應 FR** | FR-D16 第三版(報告 v2) |
 | **Touches** | `research/src/report/coach_report.py`(MODIFY)· `research/src/report/tests/test_coach_report*.py`(MODIFY)· `research/src/modules/metrics/notebooks/t-exit/outputs/`(MODIFY committed 範例)· `docs/operational/analysis-advanced-diagnostics.md`(定稿)· [../README.md](../README.md)(§3/§6/§8/§9 對帳) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-12) |
 
 ## Objective
 
@@ -59,13 +59,13 @@
 
 ## Steps
 
-- [ ] 彙整三份判定成收斂表,逐列補證據連結與「進報告與否」理由,寫入 progress。
-- [ ] 改 `coach_report.py`:`coach-report-v2` + 研究向區塊 + `blocked-by-data` 的缺口說明。
-- [ ] 更新報告契約測試:納入規則(通過者進研究向區塊 / `blocked-by-data` 不進)、版本字串、效度層級句、seed 進 metadata。
-- [ ] 重跑 9 份 committed 範例,逐份 diff 檢視並解釋。
-- [ ] `analysis-advanced-diagnostics.md` 定稿。
-- [ ] [../README.md](../README.md) §3/§6/§8/§9 對帳 + [CONTEXT.md](../../../../../CONTEXT.md) 術語回寫。
-- [ ] progress 寫 WP-32 交接結論;task-checklist 全數翻 ✅。
+- [x] 彙整三份判定成收斂表,逐列補證據連結與「進報告與否」理由,寫入 progress。
+- [x] 改 `coach_report.py`:`coach-report-v2` + 研究向區塊 + `blocked-by-data` 的缺口說明。
+- [x] 更新報告契約測試:納入規則(通過者進研究向區塊 / `blocked-by-data` 不進)、版本字串、效度層級句、seed 進 metadata。
+- [x] 重跑 9 份 committed 範例,逐份 diff 檢視並解釋。
+- [x] `analysis-advanced-diagnostics.md` 定稿。
+- [x] [../README.md](../README.md) §3/§6/§8/§9 對帳 + [CONTEXT.md](../../../../../CONTEXT.md) 術語回寫。
+- [x] progress 寫 WP-32 交接結論;task-checklist 全數翻 ✅。
 
 ## Definition of Done
 

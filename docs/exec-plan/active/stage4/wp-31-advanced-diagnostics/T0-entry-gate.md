@@ -7,7 +7,7 @@
 | **相依** | WP-30 T-exit ✅(2026-08-10)+ M14 六項 ✅(2026-08-07) |
 | **Risk / Cplx** | Low / Med(凍結內容的**正確性**是本 task 的全部價值) |
 | **Touches** | 僅本 WP 文件(README/checklist/progress)+ [../README.md §6/§8](../README.md) 對帳;**零程式碼** |
-| **狀態** | ⬜ |
+| **狀態** | ✅ **完成(2026-08-10)** — 覆核紀錄與凍結內容見 [progress.md §1–§5](progress.md) + Decision Log **D-31.4**(`gate-v1`)/ **D-31.5**(三份 pre-registration) |
 
 ## Objective
 
@@ -81,14 +81,14 @@
 
 ## Steps
 
-- [ ] 覆核並記錄 M14 六項 + WP-30 T-exit 的實際證據(貼證據位置,不只寫「已通過」)。
-- [ ] 抄錄 fixture roster 六列 + strict 閘要求 + D-30.3 suspect 界線引用(含失效條件)。
-- [ ] 寫 `gate-v1` 前提段落:為何 split-half r 不可計算(含樣本結構 1×3×20)。
-- [ ] 拍板並凍結 `GateThresholds` 七個欄位 + version + **seed**,寫入 Decision Log(`D-31.n`),明文寫「事後不得依結果調整,只能升 `gate-v2` 重跑全鏈」。
-- [ ] 寫上限條款(`coach_report` 於本樣本結構下不可達)並註明它同時是 T2 DoD 的一部分。
-- [ ] 拍板並凍結 `sparc-v1` / `xcorr-v1` / `fitts-v1` 的 pre-registration 值 + SPARC 段來源契約。
-- [ ] OQ-S4-3 關閉;新開 OQ-S4-18 / OQ-S4-19;同步 [../README.md §8](../README.md)。
-- [ ] 回寫 [../README.md §3](../README.md) 狀態與 [§6](../README.md) task 表 + 偏離註記(D-31.0)。
+- [x] 覆核並記錄 M14 六項 + WP-30 T-exit 的實際證據(貼證據位置,不只寫「已通過」)。→ [progress.md §1](progress.md)
+- [x] 抄錄 fixture roster 六列 + strict 閘要求 + D-30.3 suspect 界線引用(含失效條件)。→ [§2](progress.md)(含 T0 獨立重跑的負向/正向輸出)
+- [x] 寫 `gate-v1` 前提段落:為何 split-half r 不可計算(含樣本結構 1×3×20)。→ D-31.4 前提段
+- [x] 拍板並凍結 `GateThresholds` 七個欄位 + version + **seed**(`20260810`),寫入 Decision Log **D-31.4**,含「事後不得依結果調整,只能升 `gate-v2` 重跑全鏈」。
+- [x] 寫上限條款(`coach_report` 於本樣本結構下不可達)並註明須由**程式碼**保證,是 T2 DoD 的一部分。→ D-31.4 上限條款
+- [x] 拍板並凍結 `sparc-v1` / `xcorr-v1` / `fitts-v1` 的 pre-registration 值 + SPARC 段來源契約。→ **D-31.5**
+- [x] OQ-S4-3 關閉;新開 OQ-S4-18 / OQ-S4-19;同步 [../README.md §8](../README.md)。→ [§4 對帳表](progress.md)
+- [x] 回寫 [../README.md §3](../README.md) 狀態(⬜ → 🟡)與 [§6](../README.md) task 表 + 偏離註記(D-31.0)。
 
 ## Definition of Done
 

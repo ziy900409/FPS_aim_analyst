@@ -1,0 +1,73 @@
+{
+  "fitts_params": {
+    "min_samples": 10,
+    "min_d_ratio": 2.0,
+    "min_id_range_bits": 0.5,
+    "version": "fitts-v1"
+  },
+  "validity_level": "observational_non_controlled",
+  "limitations": [
+    "D is endogenous, not experimentally manipulated. The targets only appear at two fixed positions ((+-2, 1.5, -4)); D mostly comes from where the player left the crosshair after the previous peek. This is observational correlation, not a controlled Fitts design; D covaries with previous-peek overshoot/correction behavior.",
+    "MT includes reaction time and counter-strafe stop time. MT = t_firstShot - t_visible, so the regression intercept absorbs RT and stopping time. t_detect is available for only 5-9 of 20 peeks in the counter-strafe drill, too few for per-peek RT subtraction; fitts-v1 therefore applies no RT correction."
+  ],
+  "sample_limitation": "Single anonymous participant P001, three sessions on one 240 Hz machine, one drill config. Not population-level evidence (KI-004 R-7).",
+  "verdicts": [
+    {
+      "session": "counterstrafe_ad_v1-2026-08-07T09_18_05.631Z",
+      "stratum": "all",
+      "status": "blocked-by-data",
+      "reason": "insufficient_d_ratio",
+      "n": 20,
+      "d_ratio": 1.834304333262974,
+      "id_range_bits": 0.6997456516239708,
+      "slope_ms_per_bit": null,
+      "intercept_ms": null,
+      "r2": null,
+      "throughput_bits_s": null,
+      "n_excluded": 0,
+      "validity_level": "observational_non_controlled",
+      "limitations": [
+        "D is endogenous, not experimentally manipulated. The targets only appear at two fixed positions ((+-2, 1.5, -4)); D mostly comes from where the player left the crosshair after the previous peek. This is observational correlation, not a controlled Fitts design; D covaries with previous-peek overshoot/correction behavior.",
+        "MT includes reaction time and counter-strafe stop time. MT = t_firstShot - t_visible, so the regression intercept absorbs RT and stopping time. t_detect is available for only 5-9 of 20 peeks in the counter-strafe drill, too few for per-peek RT subtraction; fitts-v1 therefore applies no RT correction."
+      ]
+    },
+    {
+      "session": "counterstrafe_ad_v1-2026-08-07T09_24_18.148Z",
+      "stratum": "all",
+      "status": "ok",
+      "reason": "ok",
+      "n": 20,
+      "d_ratio": 2.5530917579294212,
+      "id_range_bits": 0.9602288150511478,
+      "slope_ms_per_bit": 60.197539649809706,
+      "intercept_ms": 357.2665684397472,
+      "r2": 0.06690201018066588,
+      "throughput_bits_s": 16.611974605895064,
+      "n_excluded": 0,
+      "validity_level": "observational_non_controlled",
+      "limitations": [
+        "D is endogenous, not experimentally manipulated. The targets only appear at two fixed positions ((+-2, 1.5, -4)); D mostly comes from where the player left the crosshair after the previous peek. This is observational correlation, not a controlled Fitts design; D covaries with previous-peek overshoot/correction behavior.",
+        "MT includes reaction time and counter-strafe stop time. MT = t_firstShot - t_visible, so the regression intercept absorbs RT and stopping time. t_detect is available for only 5-9 of 20 peeks in the counter-strafe drill, too few for per-peek RT subtraction; fitts-v1 therefore applies no RT correction."
+      ]
+    },
+    {
+      "session": "counterstrafe_ad_v1-2026-08-07T09_37_24.351Z",
+      "stratum": "all",
+      "status": "ok",
+      "reason": "ok",
+      "n": 20,
+      "d_ratio": 3.3832992655960976,
+      "id_range_bits": 1.2535729731293062,
+      "slope_ms_per_bit": 39.60143865131389,
+      "intercept_ms": 389.01457938840497,
+      "r2": 0.033888469537029176,
+      "throughput_bits_s": 25.251607872251434,
+      "n_excluded": 0,
+      "validity_level": "observational_non_controlled",
+      "limitations": [
+        "D is endogenous, not experimentally manipulated. The targets only appear at two fixed positions ((+-2, 1.5, -4)); D mostly comes from where the player left the crosshair after the previous peek. This is observational correlation, not a controlled Fitts design; D covaries with previous-peek overshoot/correction behavior.",
+        "MT includes reaction time and counter-strafe stop time. MT = t_firstShot - t_visible, so the regression intercept absorbs RT and stopping time. t_detect is available for only 5-9 of 20 peeks in the counter-strafe drill, too few for per-peek RT subtraction; fitts-v1 therefore applies no RT correction."
+      ]
+    }
+  ]
+}

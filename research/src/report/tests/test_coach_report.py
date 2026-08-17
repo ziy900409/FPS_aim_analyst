@@ -143,17 +143,113 @@ def test_frozen_version_strings_and_sync_params_are_reported() -> None:
 
 
 def test_only_registered_trajectory_constructs_reach_the_report() -> None:
-    """C-D3 / GD-20: registered phase/curve constructs are labeled; unregistered ones stay out."""
+    """C-D3 / GD-20: registered phase/curve constructs are labeled; SPARC/xcorr/Fitts never
+    leak into the main table -- they live only in the WP-31 T-exit research-only block."""
 
     html = render_html(build_report(REAL_TRAJECTORY[0]))
 
     for banned in ("SPARC", "xcorr", "Fitts"):
-        assert banned not in _section(html, "summary")
+        for section_id in ("summary", "phase", "curves", "rec-detect", "peeks", "groups", "parameters"):
+            assert banned not in _section(html, section_id), f"{banned!r} leaked into #{section_id}"
     assert "phase-v1" in _section(html, "phase")
     assert "curve-v1" in _section(html, "curves")
     assert "detect-v1" in _section(html, "rec-detect")
-    # Unregistered constructs may only be named in the limitations block, as exclusions.
+    # Registered in v2, but only inside the dedicated research-only block / its gap notes.
+    assert "sparc-v1" in _section(html, "advanced")
+    assert "研究向" in _section(html, "advanced")
     assert "SPARC" in _section(html, "limits")
+
+
+# ------------------------------------------------------------ WP-31 T-exit: research block
+
+
+def test_passing_p2_diagnostics_render_in_the_research_block_with_full_annotations() -> None:
+    """DoD ③: every P2 block that lands in the research section carries n / flags / version /
+    a validity-tier sentence / a limitation sentence -- and 09:24 has all three passing."""
+
+    model = build_report(REAL_TRAJECTORY[1])  # 09:24: sparc + xcorr research_only, fitts ok
+    advanced = model["advancedDiagnostics"]
+    html = render_html(model)
+    section = _section(html, "advanced")
+
+    assert advanced["xcorr"]["blocked"] is False
+    assert advanced["fitts"]["blocked"] is False
+    for block, version, needle in (
+        (advanced["sparc"], "sparc-v1", "stratified_only"),
+        (advanced["xcorr"], "xcorr-v1", "research_only"),
+        (advanced["fitts"], "fitts-v1", "fitts-v1"),
+    ):
+        assert isinstance(block["n"], int)
+        assert isinstance(block["flagCounts"], dict)
+        assert block["version"] == version or version in block["version"]
+        assert block["validity"], "P2 block has an empty validity tier"
+        assert version in section
+        assert needle in section
+    # SPARC's frozen cross-length limit and xcorr's frozen upper-bound clause are reproduced
+    # verbatim (not just referenced), so a coach reading one report sees the whole story.
+    assert "stratified_only" in section and "padded_n bucket" in section
+    assert "coach_report 不可達" in section
+    assert "研究向" in section and "不得作為訓練處方依據" in section
+    # A passing metric never also shows up as a "why is this absent" gap.
+    assert "advanced-gaps" in html
+    assert "無缺口" in _section(html, "advanced-gaps")
+
+
+def test_blocked_by_data_p2_diagnostic_produces_a_gap_note_not_a_metric_block() -> None:
+    """DoD ③: ``blocked-by-data`` never appears as a metric block anywhere in the report, but
+    its absence is explained -- 09:18's Fitts is blocked (d_ratio 1.8343 < min_d_ratio 2.0)."""
+
+    model = build_report(REAL_TRAJECTORY[0])  # 09:18
+    advanced = model["advancedDiagnostics"]
+    html = render_html(model)
+
+    assert advanced["fitts"]["blocked"] is True
+    assert advanced["fitts"]["status"] == "blocked-by-data"
+    assert advanced["fitts"]["reason"] == "insufficient_d_ratio"
+    advanced_section = _section(html, "advanced")
+    # The blocked construct's *numbers* (a slope/TP figure) must not appear as a rendered
+    # metric row; only the still-passing SPARC/xcorr blocks and the section heading may
+    # mention "Fitts" (in prose), so check for its metric sub-heading specifically.
+    assert "<h3>Fitts(" not in advanced_section
+    gaps_section = _section(html, "advanced-gaps")
+    assert "Fitts" in gaps_section
+    assert "fitts-v1" in gaps_section
+    assert "insufficient_d_ratio" not in gaps_section  # human text, not the raw enum
+    assert "spawn 偏心角變異" in gaps_section
+
+
+def test_sparc_has_no_blocked_branch_and_always_reaches_the_research_block() -> None:
+    """SPARC's ``sparc-v1`` carries no ``blocked-by-data`` concept; even the synthetic
+    fixture's degenerate (too-short) segments still produce a research-block row with n=0."""
+
+    model = build_report(SYNTHETIC_COUNTERSTRAFE)
+    advanced = model["advancedDiagnostics"]
+
+    assert advanced["sparc"]["available"] is True
+    assert advanced["sparc"]["n"] == 0
+    assert advanced["sparc"]["flagCounts"].get("too_few_samples", 0) > 0
+    assert "SPARC(" in _section(render_html(model), "advanced")
+
+
+def test_xcorr_and_fitts_never_reach_coach_report_verdict() -> None:
+    """C-D3 upper-bound clause made visible at the report layer: gate-v1's xcorr verdict is
+    'research_only' or 'blocked-by-data', never 'coach_report'."""
+
+    for fixture in REAL_TRAJECTORY:
+        verdict = build_report(fixture)["advancedDiagnostics"]["xcorr"]["verdict"]
+        assert verdict is not None
+        assert verdict["verdict"] in ("research_only", "blocked-by-data")
+
+
+def test_advanced_diagnostics_are_absent_for_pre_wp30_legacy_exports() -> None:
+    model = build_report(REAL_VALIDITY)  # pre-WP-30 legacy: no eye origin, no strict omega
+    advanced = model["advancedDiagnostics"]
+
+    assert model["trajectory"]["available"] is False
+    for key in ("sparc", "xcorr", "fitts"):
+        assert advanced[key]["available"] is False
+    html = render_html(model)
+    assert "strict trajectory source gate" in _section(html, "advanced")
 
 
 @pytest.mark.parametrize("fixture", REAL_TRAJECTORY, ids=lambda path: path.stem[-17:-1])

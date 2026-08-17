@@ -5,11 +5,11 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(M14 + WP-30 複驗 · fixture roster 沿用 · **`gate-v1` 三件組重新操作化與凍結** · `sparc-v1`/`xcorr-v1`/`fitts-v1` pre-registration · OQ-S4-3 關閉;無演算法碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-30 T-exit ✅ | Low |
-| ⬜ | **T1** SPARC 逐位移植 + **跨 repo golden 對表 ≤1e-9(含 7 個中間值)** + 逐 MR 段表 + **N=32/64 階梯診斷** | [T1-sparc.md](T1-sparc.md) | T0 | Med |
-| ⬜ | **T2** Key-Velocity xcorr(signed A/D × ω)+ correlogram + **`gate-v1` 明確判定(逐 session,seeded)** | [T2-key-velocity-xcorr.md](T2-key-velocity-xcorr.md) | T0 | **Med** |
-| ⬜ | **T3** Fitts ID/MT/TP + 回歸 + **`blocked-by-data` 判準** + D 內生性/MT 含 RT 限制聲明 | [T3-fitts.md](T3-fitts.md) | T0 | Low |
-| ⬜ | **T-exit** 三份判定收斂 + 教練報告 v2(研究向區塊分離)+ `analysis-advanced-diagnostics.md` 定稿 + 文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1 + T2 + T3 | — |
+| ✅ | **T0** entry gate(M14 + WP-30 複驗 · fixture roster 沿用 · **`gate-v1` 三件組重新操作化與凍結** · `sparc-v1`/`xcorr-v1`/`fitts-v1` pre-registration · OQ-S4-3 關閉;無演算法碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-30 T-exit ✅ | Low |
+| ✅ | **T1** SPARC 逐位移植 + **跨 repo golden 對表 ≤1e-9(含 7 個中間值)** + 逐 MR 段表 + **N=32/64 階梯診斷**(verdict `stratified_only`,OQ-S4-18 關閉) | [T1-sparc.md](T1-sparc.md) | T0 | Med |
+| ✅ | **T2** Key-Velocity xcorr(signed A/D × ω)+ correlogram + **`gate-v1` 明確判定(逐 session,seeded)**:三 session 全 `research_only`,2/3 未過 ① shuffle null(D-31.9);新開 OQ-S4-20 | [T2-key-velocity-xcorr.md](T2-key-velocity-xcorr.md) | T0 | **Med** |
+| ✅ | **T3** Fitts ID/MT/TP + 回歸 + **`blocked-by-data` 判準** + D 內生性/MT 含 RT 限制聲明(09:18 `blocked-by-data`;09:24/09:37 `ok` 但 r² 低) | [T3-fitts.md](T3-fitts.md) | T0 | Low |
+| ✅ | **T-exit** 三份判定收斂 + 教練報告 v2(研究向區塊分離)+ `analysis-advanced-diagnostics.md` 定稿 + 文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1 + T2 + T3 | — |
 
 **T1 / T2 / T3 互不相依,可亂序執行。** 建議序 **T2 → T1 → T3**:T2 是唯一可能改變報告 v2 內容的判定,先跑完它,後兩者的風險就只剩實作。
 
