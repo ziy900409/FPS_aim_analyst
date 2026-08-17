@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-008](KI-008-fitts-v1-threshold-drift-and-xcorr-empty-table.md) | PR #39 Codex review 三則:①`fitts-v1` 門檻偏離 T0 凍結的 pre-registration(`min_samples`/`min_id_range_bits` 各減半),09:24 誤判 `ok`;②`d_ratio` 對 `min(D)<=0` 算出 `+inf` 誤判為未過關,丟棄有效 session;③空 xcorr table(`verdict is None`)誤判為未 blocked,缺口說明謊稱全數有輸出 | BD-008(§2,**D1+D2+D3 全數落地**:恢復凍結門檻 20/2.0/1.0;`d_ratio` 只在有限值時判定;`verdict is None` 視同 blocked) | ✅ 已修(2026-08-17) |
 | [KI-007](KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) | `experimentSession.exit()` 只在多條件 protocol 流程呼叫,單一「實驗 session」drill 流程從未呼叫 → `active` 對整頁生命週期恆 true → drill 結束後正常退出全螢幕(去抓匯出檔)也會被誤判為條件失效,`meta.suspect` 誤標 `true` | BD-007(§2,**F-1 已落地**:`handleFullscreenChange` 新增 `recording` 參數,只在 drill 錄製中才判定失效) | ✅ 已修(2026-08-07) |
 | [KI-006](KI-006-m14-sample-no-counterstrafe.md) | M14 ④/⑤ 的真實資料效度閘所用樣本(08:03)**不含 counter-strafe 構念**:`vx ≡ 0`、`keys` 全空、`counter` 事件 0 → 量到的是站樁純 flick。**M14 ④⑤ 撤回**(理由獨立於 KI-005) | BD-006(§3,**C+B 全數落地**:construct presence gate + 重新採樣,見 [A2](KI-005-A/A2-blocked-plan.md)) | ✅ CLOSED(2026-08-07),M14 ④⑤ 已重新宣告 |
 | [KI-005](KI-005-omega-render-sim-aliasing.md) | ω(t) 受 render(240Hz)/sim(128Hz)**zero-order-hold aliasing** 汙染:每 8 tick 一個假凹口 → `merged_adjacent_peaks` 15/19,有效產率僅 4/19。**推翻 KI-004「①③④⑤⑥ 不受影響」的豁免,M14 ③④⑤ 撤回** | BD-005(§3,**A1+A2(T1–T4)全數落地**:選項 A + 感度由 meta 重建 + 不做過渡期 C;FM-1 關閉、`seg-v2` 凍結、M14 ③④⑤ 重新宣告)· 計畫 [KI-005-A/](KI-005-A/README.md) | ✅ A1+A2 全數完成(2026-08-07),M14 ③④⑤ 已重新宣告 |
@@ -53,6 +54,23 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-008 ✅ KI-008 — `fitts-v1` 門檻偏離 pre-registration + D=0 誤擋 + xcorr 空表未標 blocked(2026-08-17)
+
+| | |
+|---|---|
+| **發現處 / 根因** | [PR #39](https://github.com/ziy900409/FPS_aim_analyst/pull/39)(WP-31 advanced-diagnostics)`chatgpt-codex-connector[bot]` 三則 inline review,追碼逐條證實非 false positive。**D1**:[fitts.py:81](../../research/src/modules/metrics/algorithms/fitts.py#L81) 的 `DEFAULT_FITTS_PARAMS` 為 `min_samples=10, min_id_range_bits=0.5`,對照凍結的 [T0-entry-gate.md D-31.5](../exec-plan/active/stage4/wp-31-advanced-diagnostics/T0-entry-gate.md#L60) 值 `min_samples=20, min_id_range_bits=1.0`,兩欄皆偏離一半。**D2**:同檔 `_result` 的 `d_ratio = math.inf if min_d <= 0 else max_d/min_d`,之後 `not math.isfinite(d_ratio)` 把「D=0 造成比值無定義(其實是展幅最大)」誤判為「展幅不足」。**D3**:[coach_report.py:619](../../research/src/report/coach_report.py#L619)(修法前)`blocked = verdict is not None and verdict.verdict == "blocked-by-data"`,對零 peek 的 export(空 `xcorr_table` → `reliability_gate` 回傳空 tuple,見 [coupling.py:392](../../research/src/modules/metrics/algorithms/coupling.py#L392))得到 `verdict is None`,被誤判為未 blocked。完整診斷見 [KI-008](KI-008-fitts-v1-threshold-drift-and-xcorr-empty-table.md)。 |
+| **為何不是一行修法** | D1 的兩個常數改動會**實際翻轉 09:24 session 的判定**(`ok`→`blocked-by-data`),牽連 `research/src/modules/metrics/notebooks/t3/outputs/` 下 4 份 golden 產物、`notebooks/t-exit/outputs/` 的 09:24 coach report HTML,以及 `docs/operational/analysis-advanced-diagnostics.md` 內載明「09:24 ok」的三處判定表/段落——全部需同步重新產生與改寫,否則文件/golden 產物/程式碼三方會互相矛盾。`test_coach_report.py` 原本以 09:24 作為「三構念皆通過」的範例 fixture,也需改為 09:37。 |
+| **決策** | **D1**:直接改回 T0 凍結值(`min_samples=20, min_d_ratio=2.0, min_id_range_bits=1.0`),不評估其他候選——T0 doc 明文禁止事後調整,偏離值本身就是違規,唯一正確動作是複原。**D2**:只在 `d_ratio` 有限且低於門檻時才擋(`math.isfinite(d_ratio) and d_ratio < params.min_d_ratio`);`+inf` 視為通過,把「D 完全無變異」的把關工作留給本就為此設計的獨立門檻 `id_range_bits`。**D3**:`verdict is None` 與 `verdict.verdict == "blocked-by-data"` 一律視為 blocked,共用 `gate-v1` 唯一的 `insufficient_n` 缺口文案,不新增詞彙——「零 session 可判」與「有 session 但 n 不足」在語意上是同一件事的兩種發生方式。 |
+| **理由** | **D1**:C-D3 的核心是「寧可少一個指標,不能有一個會說錯話的指標」;偏離凍結門檻讓 09:24 的低 r² 回歸數字被端上報告,正是 C-D3 要防的那種錯話。**D2**:`min_d_ratio` 是最小展幅測試,除以零產生的 `+inf` 是展幅的最大可能值,用同一個有限性檢查去擋兩種相反情況是邏輯錯誤,不是門檻鬆緊的問題。**D3**:`verdict is None` 不是「沒有東西可判」的中性狀態,而是「有效樣本數為零」的極端情況,理應收斂到既有的 `insufficient_n` 分支,而非產生一個對應不到任何已知 reason 的「n=0 但未 blocked」異常狀態。 |
+| **架構層結論(跨 WP,故入本帳本)** | 三個缺陷共同指向同一類回歸盲區:**pre-registered 常數與邊界值(0、空集合)不被既有測試套件的「正常路徑」覆蓋**。D1 的 `test_fitts_params_are_frozen` 存在但斷言了錯誤的值(等於把 bug 寫進了回歸測試本身,而非抓住它);D3 的邊界情況(零 peek)已被 `test_export_without_visible_events_produces_a_valid_empty_report` 實際執行過,只是沒有斷言到受影響欄位。**測試涵蓋執行路徑不等於測試涵蓋正確性**——是外部 review(而非既有套件)抓到本案,提醒日後 pre-registered 常數宜考慮加一條「與凍結文件逐字比對」的機制性檢查,不能只靠人工複製貼上。 |
+| **偏離計畫** | 無。三者皆屬 PR review 觸發的既有程式碼修正(非既定 WP task),依協議走 known_issue 流程(KI-008 tech spec + 本帳本);診斷與修法同一 session 完成,拆為與 D1/D2/D3 對應的最小改動集合,搭配同一輪測試 + golden 重新產生一次驗證。 |
+| **落地(2026-08-17)** | **D1**:`fitts.py` 常數改回 20/2.0/1.0;`coach_report.py` 的 `_FITTS_GAP_REASONS` 兩處人類可讀文字同步更新(`min_samples(10)`→`(20)`、`min_id_range_bits(0.5)`→`(1.0)`)。**D2**:`_result` 的 `d_ratio` 判定式改為 `math.isfinite(d_ratio) and d_ratio < params.min_d_ratio`。**D3**:`_xcorr_block` 的 `blocked`/`gapReason`/`gapText` 改用 `verdict is None or verdict.verdict == "blocked-by-data"`。**測試**:`test_fitts_params_are_frozen` 改斷言正確值;新增 `test_zero_eccentricity_sample_does_not_spuriously_block_the_ratio_gate`(D2 直接單元測試 `_result` 純函式);`test_passing_p2_diagnostics_render_in_the_research_block_with_full_annotations` 的範例 fixture 從 09:24 改為 09:37;`test_export_without_visible_events_produces_a_valid_empty_report` 擴充斷言 `xcorr["blocked"] is True`/`gapReason == "insufficient_n"`/研究區塊不含 xcorr 列(D3 回歸)。**Golden 產物重新產生**:`generate_fitts_report.py` 與 `generate_coach_reports.py` 各重跑一次,git diff 僅限 09:24 相關檔案(數值/HTML)與 synthetic_counterstrafe 報告(純文字門檻數字更新,判定不變)。**文件**:`analysis-advanced-diagnostics.md` 三處判定表(凍結 registry、當次判定、T-exit 收斂表)與 WP-32 交接段落同步改寫,標註 KI-008/BD-008 更正。 |
+| **遺留 OQ** | **OQ-KI8-1**(D2 目前無真實 fixture 觸發,是否需專門採集含置中 spawn 的樣本實測)· **OQ-KI8-2**(D3 邊界情況是否需額外匯出驗證層門檻,現況判定不需要,回歸測試已足夠)——詳見 [KI-008 §4](KI-008-fitts-v1-threshold-drift-and-xcorr-empty-table.md#4-open-questions)。 |
+| **影響面** | **受影響**:`fitts-v1` 對 09:24 session 的判定(`ok`→`blocked-by-data`,r²=0.0669 的回歸數字不再進報告)、`coach-report-v2` 的 09:24 研究向/缺口區塊內容、`analysis-advanced-diagnostics.md` 判定表與 WP-32 交接結論的措辭(**結論本身不變**:空清單、無指標建議晉升)。**不受影響**:09:18/09:37 的 Fitts 判定(門檻改動不影響其結果)、SPARC 與 xcorr(gate-v1)三個 session 的判定、任何 `src/` 檔案、任何原始匯出資料(`ticks`/`events`/`omegaSource`/`constructPresence`)。 |
+| **狀態** | ✅ **已修(2026-08-17)**。D1+D2+D3 全數落地;`uv run pytest`/golden 產物/文件三方同步一致。 |
+
+---
 
 ### BD-006 ✅ KI-006 — M14 效度閘樣本不含 counter-strafe 構念;**C+B 全數落地,CLOSED**(2026-08-07)
 

@@ -165,9 +165,15 @@ def test_only_registered_trajectory_constructs_reach_the_report() -> None:
 
 def test_passing_p2_diagnostics_render_in_the_research_block_with_full_annotations() -> None:
     """DoD ③: every P2 block that lands in the research section carries n / flags / version /
-    a validity-tier sentence / a limitation sentence -- and 09:24 has all three passing."""
+    a validity-tier sentence / a limitation sentence -- and 09:37 has all three passing.
 
-    model = build_report(REAL_TRAJECTORY[1])  # 09:24: sparc + xcorr research_only, fitts ok
+    KI-008/BD-008: 09:24 used to be the "all three pass" example, but that relied on the
+    fitts-v1 min_id_range_bits drift (0.5 instead of the frozen 1.0); 09:24's real
+    id_range_bits (0.9602) is below the corrected threshold, so it is blocked-by-data now
+    and 09:37 is the only real session where Fitts also reaches 'ok'.
+    """
+
+    model = build_report(REAL_TRAJECTORY[2])  # 09:37: sparc + xcorr research_only, fitts ok
     advanced = model["advancedDiagnostics"]
     html = render_html(model)
     section = _section(html, "advanced")
@@ -350,10 +356,21 @@ def test_export_without_visible_events_produces_a_valid_empty_report(tmp_path: P
     source.write_text(json.dumps(payload), encoding="utf-8")
 
     model = build_report(source)
+    html = render_html(model)
 
     assert model["drillSummary"]["peekCount"] == 0
     assert model["peeks"] == []
-    assert "<svg" in render_html(model)
+    assert "<svg" in html
+
+    # KI-008/BD-008: zero peeks -> an empty xcorr_table -> reliability_gate has no session
+    # to judge (verdict is None). That must render as blocked-by-data / a gap note, not as
+    # an unblocked n=0 metric row claiming the P2 metric "produced output".
+    xcorr = model["advancedDiagnostics"]["xcorr"]
+    assert xcorr["blocked"] is True
+    assert xcorr["n"] == 0
+    assert xcorr["gapReason"] == "insufficient_n"
+    assert "<h3>Key-Velocity" not in _section(html, "advanced")
+    assert "xcorr-v1" in _section(html, "advanced-gaps")
 
 
 # -------------------------------------------------------------------------- group-by

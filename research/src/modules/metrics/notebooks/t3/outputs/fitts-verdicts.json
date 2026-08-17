@@ -1,8 +1,8 @@
 {
   "fitts_params": {
-    "min_samples": 10,
+    "min_samples": 20,
     "min_d_ratio": 2.0,
-    "min_id_range_bits": 0.5,
+    "min_id_range_bits": 1.0,
     "version": "fitts-v1"
   },
   "validity_level": "observational_non_controlled",
@@ -34,15 +34,15 @@
     {
       "session": "counterstrafe_ad_v1-2026-08-07T09_24_18.148Z",
       "stratum": "all",
-      "status": "ok",
-      "reason": "ok",
+      "status": "blocked-by-data",
+      "reason": "insufficient_id_range",
       "n": 20,
       "d_ratio": 2.5530917579294212,
       "id_range_bits": 0.9602288150511478,
-      "slope_ms_per_bit": 60.197539649809706,
-      "intercept_ms": 357.2665684397472,
-      "r2": 0.06690201018066588,
-      "throughput_bits_s": 16.611974605895064,
+      "slope_ms_per_bit": null,
+      "intercept_ms": null,
+      "r2": null,
+      "throughput_bits_s": null,
       "n_excluded": 0,
       "validity_level": "observational_non_controlled",
       "limitations": [

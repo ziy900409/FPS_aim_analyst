@@ -118,8 +118,12 @@ def _run(tmp_path: Path, payload: dict, *, params: FittsParams = DEFAULT_FITTS_P
 
 
 def test_fitts_params_are_frozen() -> None:
+    """T0-entry-gate.md Sec.4 (D-31.5): min_samples=20 (pooled), min_d_ratio=2.0,
+    min_id_range_bits=1.0. KI-008/BD-008: the implementation previously drifted to
+    10/0.5, silently reclassifying the 09:24 session as 'ok'."""
+
     assert DEFAULT_FITTS_PARAMS == FittsParams(
-        min_samples=10, min_d_ratio=2.0, min_id_range_bits=0.5, version=FITTS_VERSION
+        min_samples=20, min_d_ratio=2.0, min_id_range_bits=1.0, version=FITTS_VERSION
     )
 
 
@@ -225,6 +229,29 @@ def test_result_blocks_when_id_range_is_insufficient() -> None:
     assert result.reason == "insufficient_id_range"
     assert result.id_range_bits == pytest.approx(0.03)
     assert result.slope_ms_per_bit is None
+
+
+def test_zero_eccentricity_sample_does_not_spuriously_block_the_ratio_gate() -> None:
+    """KI-008/BD-008: a perfectly centered spawn (D=0, well-defined ID=0) made min(D) <= 0,
+    so max(D)/min(D) is undefined and got treated as "insufficient" purely from division by
+    zero, discarding an otherwise valid session. min_d_ratio is a minimum-*span* test --
+    an unbounded ratio is the maximal possible span, not the minimal one -- so it must not
+    block; id_range_bits is the gate that would still catch "no real variation at all"."""
+
+    rows = (
+        FittsSample(0, "R", 0.0, 5.0, 0.0, 200.0),
+        FittsSample(1, "R", 5.0, 5.0, 1.0, 250.0),
+        FittsSample(2, "R", 10.0, 5.0, 2.0, 300.0),
+        FittsSample(3, "R", 15.0, 5.0, 3.0, 350.0),
+    )
+
+    result = _result(rows, FittsParams(min_samples=4, min_d_ratio=2.0, min_id_range_bits=1.0))
+
+    assert result.d_ratio == math.inf
+    assert result.status == "ok"
+    assert result.reason == "ok"
+    assert result.id_range_bits == pytest.approx(3.0)
+    assert result.slope_ms_per_bit == pytest.approx(50.0)
 
 
 def test_regression_recovers_known_linear_data() -> None:
