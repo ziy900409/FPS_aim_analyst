@@ -416,6 +416,30 @@ canvas.addEventListener('pointermove', (e) => {
 - [x] **壓 30 發不掉 tick（NFR 抽查）**：30 發 spray 於 60/144/240 FPS pump 下 `final.ticks` 等於 canonical `expectedTicks`（accumulator 全數處理、無 tick 缺口），`impactTotal === 30` — `tests/regression/spray-determinism.test.ts` 綠
 - [x] **`npm run test:ci` exit 0**：`tsc --noEmit` + Vitest 43 files／326 tests + Playwright 10 passed，退出碼 0 — 本機 run（2026-07-07）
 
+## 階段 D：選手表現分析管線（research 層，M14–M15）
+
+> 階段 C/E（場景／BR 遠距跟槍）交付後新增的離線分析層，採納決議與完整 WBS 見
+> [`exec-plan/completed/stage4/README.md`](exec-plan/completed/stage4/README.md)（**source of truth**，本節僅收斂驗收結論、不重複展開需求）。
+> 新增 `research/`（Python 3.12 + uv，四目錄制）離線消費 schema v2 匯出，推導角運動學／submovement 分段／
+> 逐 peek 時間軸／REC-MR-V phase／101 點曲線等診斷指標；`research/` ↔ `src/` 單向隔離（C-D1），
+> 已驗證且過構念驗證的指標以 golden parity 晉升進 `src/metrics/`（WP-32）。**引擎零改動**（例外：
+> WP-29 T3 選配 `key` 事件、WP-32 metrics/UI 層）。效度聲稱範圍：單一匿名受試者、n=3 session、
+> 非母體層級證據。
+
+## 附錄 E-D：驗收清單（階段 D，M15 交付門）
+
+> stage4（選手表現分析管線）交付門。逐項證據見 [`docs/operational/acceptance-stage-d.md`](operational/acceptance-stage-d.md)
+> （D-1~D-8）與 [WP-32 T-exit progress](exec-plan/completed/stage4/wp-32-dashboard-integration/progress.md)。
+
+- [x] **教練報告一鍵產出（FR-D16）**：單一匯出 → 單檔自足靜態 HTML（`coach-report-v2`），含逐 peek 時間軸、Sync／phase／curve 六量、n／flags／version／效度層級 — `research/src/report/coach_report.py` + 9 份 committed 範例 deterministic
+- [x] **晉升指標 TS golden 對表綠**：`phase-v1`／`sync-v1`／`curve-v1` 以四支 `promoted-*.test.ts`（P3 三級容差：SG 係數 ≤1e-12、浮點 ≤1e-9、整數／flag 逐位相等）進 `npm run test:ci`
+- [x] **雙閘綠**：`npm run test:ci` exit 0（98 files／810 tests + 21 e2e）**且** `uv run pytest` 466 passed
+- [x] **每指標附效度證據**：fixture + 真實檢核 + 已知限制三者齊，見 `analysis-peek-timeline.md`／`analysis-phase-curves.md`／`analysis-advanced-diagnostics.md`
+- [x] **P2 三指標（SPARC／xcorr／Fitts）各有明確進退判定**：三者**全數判定不晉升**（`stratified_only`／`research_only`／`blocked-by-data`+r² 過低），合格交付（C-D3）
+- [x] **結果頁晉升區塊統計 = 匯出**：`tests/e2e/full-drill.spec.ts` 於實機路徑證明 research-promoted 區塊非 `blocked` 且顯示值 = 同一次 export payload
+- [x] **引擎不變式未受損**：`src/sim`／`src/input`／`src/loop`／`src/data` 零 diff；`schemaVersion` 未 bump；決定性回歸零重錄
+- [x] **research ↔ src 單向隔離維持（C-D1）**：`research/` 零 TS import；`src/` 生產碼零 fixture 讀取（僅測試路徑）
+
 ## 13. 附錄 F：風險登記（重點）
 | 風險 | 影響 | 緩解 |
 |---|---|---|

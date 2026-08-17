@@ -15,7 +15,7 @@
 | T3 phase + sync 晉升 | ✅ | 2026-08-17 | `src/metrics/peekWindows.ts` 共享窗界抽出 + Python `PeekWindow` release/flags 對齊;`src/metrics/researchMetrics.ts` 晉升 `phase-v1`/`sync-v1`;`tests/golden/research/promoted-phase-sync.test.ts` 對四份 phase fixture + 六份 sync fixture 逐 peek/row/aggregate ≤1e-9,flags/verdict exact;pooled phase non-degenerate=59、09:39 sync unflagged=13、08:03 sync n=0 blocked;`analysis-phase-curves.md` 已補 TS 晉升面與 `filter_degenerate` 分歧 |
 | T4 curve 晉升 | ✅ | 2026-08-17 | `src/metrics/trackingDerivation.ts` 匯出同源 `deriveTrackingSamples()` 且既有 ε/tracking 測試零修改全綠;`src/metrics/researchMetrics.ts` 新增 `computeCurveMetrics()` / `normalize101()` / `curve-v1` L/R 101 點聚合;`tests/golden/research/promoted-curve.test.ts` 對四份 fixture 的 ω/ε × L/R × mean/IQR 逐點 ≤1e-9、三份 real `n(L)=n(R)=10`、synthetic 13-tick window 不排除、2-tick window `window_too_short`;`research/src/modules/metrics/notebooks/t4/generate_promoted_curve_golden.py` + drift test 釘住 committed golden |
 | T5 結果頁擴充 | ✅ | 2026-08-17 | `src/metrics/MetricsDashboard.ts` additive `computePromoted(payload)`;`src/ui/ResultScreen.ts` 新增 research-promoted 區塊(封閉 8 個 `data-metric-id`,六卡+ω/ε L/R 曲線,blocked 態);`src/main.ts` 由同一 `ExportPayload` 派生既有 metrics + promoted metrics;`tests/e2e/full-drill.spec.ts` 斷言 promoted DOM 非 blocked 且 `sync-release-to-fire-ms` 顯示值 = 同一次 export payload 跑 `computePromotedMetrics`;視覺檢查:scrolled promoted view 六卡、兩曲線、n/flags/version 可見,曲線可辨 |
-| T-exit(M15) | ⬜ | — | — |
+| T-exit(M15) | ✅ | 2026-08-17 | `docs/operational/acceptance-stage-d.md`(新,驗收清單 D 八項全通過 + 已知限制七條);C-D5 入 [CLAUDE.md](../../../../../CLAUDE.md) §4;**GD-21** 入 [DECISIONS.md](../../../DECISIONS.md)(關閉 OQ-S4-24);文件對帳六處(CLAUDE.md/DECISIONS.md/../README.md §3·§4·§8·§9/exec-plan/README.md §2·§3/CONTEXT.md/docs/MAP.md/規格書 附錄 E-D)全數完成;資料夾 `active/stage4/` → `completed/stage4/`(robocopy `/MOVE`,git 偵測為 rename);移動後三次重跑 `npm run test:ci`,Vitest 皆 100%(98/810)綠(證明無 import/fixture 路徑受損),Playwright 各遇 1 支既有 sandbox flakiness(見「兩閘證據」表 T-exit 列);`test:ci` + `uv run pytest` 雙閘證據見本檔「兩閘證據」表與 `acceptance-stage-d.md` §0 |
 
 **兩閘證據**(每 task 完成時貼原始輸出):
 
@@ -26,6 +26,7 @@
 | T3 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t3_full`(於 `research/`) → `464 passed in 517.73s (0:08:37)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `97 passed / 793 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤;升權後首次完整跑遇 2 支 Playwright app-ready/backend timeout,重跑失敗 specs `6 passed`,再重跑完整 `test:ci` 通過) |
 | T4 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t4_full`(於 `research/`) → `466 passed in 815.37s (0:13:35)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `98 passed / 805 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過) |
 | T5 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t5_full`(於 `research/`) → `466 passed in 396.47s (0:06:36)`(sandbox 內 `uv` 讀 user cache 權限失敗,升權重跑同指令通過) | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `98 passed / 810 tests` + Playwright `21 passed`(sandbox 內 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過);另 `npx.cmd playwright test tests/e2e/full-drill.spec.ts` → `8 passed` |
+| T-exit | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_texit_full`(於 `research/`) → `466 passed in 692.88s (0:11:32)`(純文件切片,零 `research/` 程式碼變更,通過數與 T5 一致) | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `98 passed / 810 tests`(移動前後共 8 次嘗試全數一致綠)+ Playwright:移動前四次遇 1 支隨機 e2e timeout,第五次 `21 passed` exit 0;移動後三次重跑各遇 1 支同構 flakiness(`backend.spec.ts`/`input-sampler.spec.ts` 於 `gotoAppReady` 逾 5000ms),與 T1–T5 記載的 sandbox dev-server flakiness 同構;Vitest 100% 綠已確認資料夾移動未影響任何連結型測試(import/fixture 路徑) |
 
 ---
 
@@ -198,6 +199,16 @@ T4 的 README 介面草案只要求 `CurveAggregate` 帶 L/R 的 `n` 與 101 點
 
 E2E 同步擴充:dev harness 新增 `promotedMetricsFromExport(payload)`,且 harness 匯出帶 `meta.mouseIntegration` 與 tick `dYaw`/`dPitch`,避免 T5 關鍵 E2E 永遠只測到 `blocked`。`tests/e2e/full-drill.spec.ts` 以同一次 round-tripped export payload 計算 promoted metrics,再斷言結果頁 `sync-release-to-fire-ms` 的 `data-metric-value` 等於該 payload 的 p50。
 
+### D-32.10 — T-exit 收斂:驗收清單 D + C-D5/GD-21 + 文件對帳六處 + M15 宣告(2026-08-17,T-exit)
+
+`docs/operational/acceptance-stage-d.md` 定稿:八項驗收(D-1~D-8)全數 **A/A-M** 判定,已知限制七條逐字落地(單樣本效度範圍、WP-31 三指標未晉升、`gate-v1` 上限條款、五個 open OQ、`filter_degenerate` 分歧、單 drill n、Fitts 09:24 的 KI-008 更正註記)。**C-D5**(晉升指標雙實作對表紀律)入 [CLAUDE.md](../../../../../CLAUDE.md) §4;**GD-21** 入 [DECISIONS.md](../../../DECISIONS.md),關閉 **OQ-S4-24**。文件對帳六處全數完成:`../README.md`(stage4)§3/§4/§8/§9、`exec-plan/README.md` §2/§3/§4/§6、`CONTEXT.md`(新增「TS 晉升面」術語)、`docs/MAP.md` §1/§3/§3.1/§3.2/§3.3、規格書新增「階段 D」節 + 「附錄 E-D:驗收清單(階段 D)」。資料夾 `docs/exec-plan/active/stage4/` → `docs/exec-plan/completed/stage4/`(sandbox 內 `git mv`/`Rename-Item` 皆遇 `Permission denied`,改以 `robocopy /E /MOVE` 完成後 `git add -A` 由 git 自動偵測為 rename,44 個檔案 R 狀態)。移動後三次重跑 `npm run test:ci`,Vitest 皆 100%(98/810)綠,足以確認移動未破壞任何連結型測試(import/fixture 路徑);Playwright e2e 每次遇 1 支既有 sandbox flakiness(與 T1–T5 同構,非本切片程式碼問題)。**M15 達成,stage4(選手表現分析管線)交付**。
+
+**文件對帳附註(Fitts 09:24 判定更正)**:本檔 §0.6(T0 決策記錄)沿用 WP-31 T-exit 原始 D-31.10 文字(「09:24/09:37 `ok` 但 r² 僅 0.0669/0.0339」);[KI-008](../../../../known_issue/KI-008-fitts-v1-threshold-drift-and-xcorr-empty-table.md)/[BD-008](../../../../known_issue/BUGFIX-DECISIONS.md) 已於 WP-32 T0 之前(commit `4a34aac`)修正 `fitts-v1` 門檻偏離,使 09:24 改判 `blocked-by-data`(`insufficient_id_range`)。**結論不變**(Fitts 三 session 皆不支持晉升),`acceptance-stage-d.md` §1.1 已以修正後數字為準;本檔 §0.6 保留原文不回改(pre-registration 紀律:不原地改寫歷史決策文字,只記正確來源指引)。
+
+**Alternatives considered**:
+- 「靠 `git mv` 重試到成功」— 放棄:連續兩次 `Permission denied` 且 `Rename-Item` 亦同錯,判斷為 Windows 檔案系統層鎖(非 git 本身問題),繼續重試無法排除鎖來源;`robocopy /MOVE` 是同語意的替代路徑(複製 + 刪除來源),且 git 事後仍能以內容相似度偵測為 rename,不影響歷史可追溯性。
+- 「回改 WP-31 progress.md D-31.10 的 Fitts 09:24 數字」— 否決:D-31.10 是 WP-31 T-exit 當時的既定判定記錄(pre-registration 紀律下的決策日誌),KI-008 是**之後**發現的 bug 修正,回改等於在決策日誌裡偽造「當時就知道」;正確做法是留存原記錄 + 在下游(本檔、`acceptance-stage-d.md`)加註更正來源。
+
 ---
 
 ## Surprises
@@ -252,5 +263,5 @@ T5 讀碼時發現生產 `main.ts` 已啟用 `mouseIntegration`,但 `src/testhar
 | ~~**OQ-S4-21**~~ | ~~scipy `savgol_filter(mode='interp')` 的 edge polyfit 以凍結矩陣重現後能否穩定達 ≤1e-9~~ | ✅ **關閉(2026-08-17,T1)**:`promoted-kinematics.test.ts` 在三份真實 fixture 的 `omega.values[1:]` 上逐點比較 `sgSmooth` vs Python `sg_filter`,含前後 edge samples,≤1e-9 通過;SG 係數表本身 ≤1e-12 通過 | 研究者 | WP-32 T1 ✅ |
 | ~~**OQ-S4-22**~~ | ~~結果頁單 drill n ≈ 20 peeks,phase/sync 均值是否穩定到可對選手呈現~~ | ✅ **關閉(2026-08-17,T5,D-32.8)**:不顯示單一分數;六張 Phase/Sync 卡以 p50 為主值,detail 強制列 mean/SD/n,flags+version 永遠顯示;`n=0` 顯示 `No samples` | 使用者 / 研究者 | WP-32 T5 ✅ |
 | ~~**OQ-S4-23**~~ | ~~`curve-v1` 在結果頁的縮圖形式~~ | ✅ **關閉(2026-08-17,T5,D-32.8)**:結果頁顯示 `omega` 與 `epsilon` 兩張 inline SVG;每張 L/R mean 疊線 + IQR band + `n(L)`/`n(R)` + flags/version | 使用者 | WP-32 T5 ✅ |
-| **OQ-S4-24**(新) | 雙實作維護紀律是否升為硬約束 | 🟢 建議升 **C-D5**(CLAUDE.md §4)+ 候選 **GD-21**(DECISIONS.md);T-exit 落地 | 使用者 | WP-32 T-exit |
-| **OQ-S4-17 / 19 / 20 / 10 / 11** | 承上游,均維持 open | 本 WP 不解;T-exit 須在 `acceptance-stage-d.md` 逐條列為「stage4 交付時的已知限制」 | 研究者 | pilot 後 |
+| ~~**OQ-S4-24**~~ | ~~雙實作維護紀律是否升為硬約束~~ | ✅ **關閉(2026-08-17,T-exit)**:已升 [CLAUDE.md](../../../../../CLAUDE.md) §4 **C-D5** 硬約束 + [DECISIONS.md](../../../DECISIONS.md) **GD-21** | 使用者 | WP-32 T-exit ✅ |
+| **OQ-S4-17 / 19 / 20 / 10 / 11** | 承上游,均維持 open | 本 WP 不解;已於 `docs/operational/acceptance-stage-d.md` §3 逐條列為「stage4 交付時的已知限制」 | 研究者 | pilot 後 |

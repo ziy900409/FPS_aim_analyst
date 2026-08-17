@@ -15,7 +15,7 @@
 | ② | [規格書](規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 需求、ADR-1~9、WBS、功能 F1–F5（source of truth） |
 | ③ | [DESIGN.md](DESIGN.md) | 執行期與執行緒模型：三迴圈在階段 A 的單執行緒真相、兩時鐘、階段 B 跨界縫 |
 | ④ | [exec-plan/README.md](exec-plan/README.md) | **大框架的現行權威**：WP-0~32（階段 A+B+C+E+D + 單 WP muzzle-tracer）狀態表、里程碑門控 M1–M15、跨階段相依圖、執行規則 |
-| ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/completed/stage2/wp-N-*/`（階段 B 已交付）、`exec-plan/completed/stage3/wp-N-*/`（階段 C 已交付；導航見 [stage3 MAP](exec-plan/completed/stage3/MAP.md)）、`exec-plan/completed/stage5/wp-N-*/`（階段 E 已歸檔;M13 待手動回填；tech spec 見 [stage5 README](exec-plan/completed/stage5/README.md)）、**[`exec-plan/completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md)（WP-27，✅ 已交付）** | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
+| ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/completed/stage2/wp-N-*/`（階段 B 已交付）、`exec-plan/completed/stage3/wp-N-*/`（階段 C 已交付；導航見 [stage3 MAP](exec-plan/completed/stage3/MAP.md)）、`exec-plan/completed/stage4/wp-N-*/`（階段 D 已交付；tech spec 見 [stage4 README](exec-plan/completed/stage4/README.md)）、`exec-plan/completed/stage5/wp-N-*/`（階段 E 已歸檔;M13 待手動回填；tech spec 見 [stage5 README](exec-plan/completed/stage5/README.md)）、**[`exec-plan/completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md)（WP-27，✅ 已交付）** | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
 
 ---
 
@@ -33,9 +33,9 @@
 
 ## 3. 執行計畫（`docs/exec-plan/`）
 
-頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M15）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/completed/stage2/README.md](exec-plan/completed/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/completed/stage3/MAP.md](exec-plan/completed/stage3/MAP.md) · [PLAN.md](exec-plan/completed/stage3/PLAN.md) · [README.md](exec-plan/completed/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/completed/stage5/README.md](exec-plan/completed/stage5/README.md)。
+頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M15）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/completed/stage2/README.md](exec-plan/completed/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/completed/stage3/MAP.md](exec-plan/completed/stage3/MAP.md) · [PLAN.md](exec-plan/completed/stage3/PLAN.md) · [README.md](exec-plan/completed/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/completed/stage5/README.md](exec-plan/completed/stage5/README.md)；stage4（階段 D，選手表現分析管線）tech spec 見 [exec-plan/completed/stage4/README.md](exec-plan/completed/stage4/README.md)。
 
-**進行中（`active/`）**：[`active/stage4/`](exec-plan/active/stage4/README.md) = **階段 D 選手表現分析管線**（✅ 採納 2026-08-04，[DECISIONS.md](exec-plan/DECISIONS.md) **GD-19**/**GD-20**；WP-28~32 / M14~M15 / 驗收清單 D）。新增 **`research/` Python 離線分析層**（Python 3.12 + uv，四目錄制學 performance_analysis），引擎零改動；`research/` ↔ `src/` **單向隔離**，parity **雙向**（既有構念 ε(t)/t_acquire 以 TS + `docs/operational/analysis-*.md` 為權威；新構念 Python 為權威）且兩向對表閘皆落在既有 `npm run test:ci`。當前：[WP-28 research-foundation](exec-plan/active/stage4/wp-28-research-foundation/README.md)（M14 ✅，T0–T4 ✅ + T-exit 交付物 ✅；**M14 六項全數恢復/重新宣告**——①⑥ 維持，② 已於 [KI-004](known_issue/KI-004-sim-world-unit-domain-mismatch.md) S1 落地後重新宣告(2026-08-06)，③④⑤ 已於 [A2-T4](known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 重新宣告(2026-08-07) —— [KI-005](known_issue/KI-005-omega-render-sim-aliasing.md)(A1+A2 全數落地)與 [KI-006](known_issue/KI-006-m14-sample-no-counterstrafe.md)(C+B 全數落地，**CLOSED**)兩條解除條件均已滿足 → **WP-30/31 entry blocker 已解除，可展開**）。分段參數 registry、quality flags 詞彙表與一鍵 pipeline 契約見 [analysis-segments.md](operational/analysis-segments.md)。
+**進行中（`active/`）**：無。**階段 D 選手表現分析管線已於 2026-08-17 完整交付**（M15，WP-32 T-exit），移入 `completed/stage4/`（2026-08-04 採納，[DECISIONS.md](exec-plan/DECISIONS.md) **GD-19**/**GD-20**/**GD-21**；WP-28~32 / M14~M15 / [驗收清單 D](operational/acceptance-stage-d.md)）。新增 **`research/` Python 離線分析層**（Python 3.12 + uv，四目錄制學 performance_analysis），引擎零改動；`research/` ↔ `src/` **單向隔離**，parity **雙向**（既有構念 ε(t)/t_acquire 以 TS + `docs/operational/analysis-*.md` 為權威；新構念 Python 為權威）且兩向對表閘皆落在既有 `npm run test:ci`。三項新構念（`phase-v1`/`sync-v1`/`curve-v1`）已晉升進 `src/metrics/` 並擴充結果頁；WP-31 的 P2 三指標（SPARC/xcorr/Fitts）全數判定不晉升（合格交付，C-D3）。分段參數 registry、quality flags 詞彙表與一鍵 pipeline 契約見 [analysis-segments.md](operational/analysis-segments.md)。
 
 **單 WP（不屬任何 stage）**：[`completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md) = **WP-27**，tracer 視覺起點自準心移至槍口（hip）+ ADS 時移至準心下方；render-only，命中判定/彈道物理/匯出**三不變**。✅ 已交付 2026-08-04（[DECISIONS.md](exec-plan/DECISIONS.md) **GD-18**），無獨立里程碑。Task：[T0](exec-plan/completed/muzzle-tracer/T0-entry-gate.md) · [T1 hip](exec-plan/completed/muzzle-tracer/T1-hip-muzzle-tracer.md) · [T2 ADS](exec-plan/completed/muzzle-tracer/T2-ads-muzzle.md) · [T-exit](exec-plan/completed/muzzle-tracer/T-exit-gate.md)。
 
@@ -45,10 +45,7 @@
 docs/exec-plan/
 ├── README.md              ← 頂層索引（WP 狀態表 + milestones）
 ├── DECISIONS.md           ← 全域決策 / 跨文件矛盾帳本（global episodic）
-├── active/                ← 進行中的 WP
-│   └── stage4/            ← 階段 D（選手表現分析管線，✅ 採納 2026-08-04；GD-19/GD-20）
-│       ├── README.md      ← stage4 頂層索引 + tech spec
-│       └── wp-28-research-foundation/  ← WP-28（M14）；WP-29~32 於各自 entry 前展開
+├── active/                ← 進行中的 WP（現無展開項）
 ├── completed/             ← WP 交付後移入
 │   ├── stage1/            ← 階段 A 已交付（WP-0~9）
 │   │   └── wp-N-*/
@@ -58,6 +55,9 @@ docs/exec-plan/
 │   ├── stage3/            ← 階段 C 已交付（WP-19~22）
 │   │   ├── MAP.md         ← stage3 導航 · PLAN.md ← 大框架 · README.md ← tech spec
 │   │   └── wp-N-*/
+│   ├── stage4/            ← 階段 D 已交付（選手表現分析管線，WP-28~32，2026-08-17；GD-19/GD-20/GD-21）
+│   │   ├── README.md      ← stage4 頂層索引 + tech spec
+│   │   └── wp-28-research-foundation/ … wp-32-dashboard-integration/
 │   ├── stage5/            ← 階段 E 已歸檔（BR 遠距跟槍測試，WP-23~26；M13 待 #32 手動回填）
 │   │   ├── README.md      ← stage5 頂層索引 + tech spec
 │   │   └── wp-N-*/
@@ -136,18 +136,18 @@ docs/exec-plan/
 | **WP-25** | [wp-25-ballistics-tracer/](exec-plan/completed/stage5/wp-25-ballistics-tracer/README.md) | 彈道：tracer 顯示（T1 獨立）+ config-gated projectile | **M12** | T1 獨立；T2+ 需 M11 |
 | **WP-26** | [wp-26-br-scene-integration/](exec-plan/completed/stage5/wp-26-br-scene-integration/README.md) | BR 場景實作與整合：br-field + tracking_br_v1 + protocol + E2E + 驗收清單 E | **M13** | WP-23,24,25 |
 
-#### 階段 D（`active/stage4/`，🟡 已採納 2026-08-04：WP-28~32 / M14~M15 / 驗收清單 D）
+#### 階段 D（`completed/stage4/`，✅ 2026-08-04 採納 → 2026-08-17 交付：WP-28~32 / M14~M15 / 驗收清單 D）
 
-> stage4 tech spec：[README.md](exec-plan/active/stage4/README.md) · 決議：[DECISIONS.md](exec-plan/DECISIONS.md) **GD-19**（編號 + research 邊界 + parity 雙向）/ **GD-20**（教練報告紅線）。
-> 交付物在 **`research/`**（Python 離線分析層，四目錄制）+ 兩個對表閘；引擎零改動（例外：WP-29 T3 選配 `key` 事件、WP-32 metrics/UI）。**已知阻塞**：真實 drill 匯出樣本待補 → M14 ①④⑤。
+> stage4 tech spec：[README.md](exec-plan/completed/stage4/README.md) · 決議：[DECISIONS.md](exec-plan/DECISIONS.md) **GD-19**（編號 + research 邊界 + parity 雙向）/ **GD-20**（教練報告紅線）/ **GD-21**（雙實作對表紀律）。
+> 交付物在 **`research/`**（Python 離線分析層，四目錄制）+ 兩個對表閘；引擎零改動（例外：WP-29 T3 選配 `key` 事件、WP-32 metrics/UI）。三項新構念（`phase-v1`/`sync-v1`/`curve-v1`）已晉升進 `src/metrics/`；驗收清單 D 見 [acceptance-stage-d.md](operational/acceptance-stage-d.md)。
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 |
 |---|---|---|---|---|
-| **WP-28** | [wp-28-research-foundation/](exec-plan/active/stage4/wp-28-research-foundation/README.md) | research 地基：ingest + ω(t)/ε(t)（含 **ε 雙向 parity**）+ submovement 分段 + quality flags | **M14** | M4 + WP-16 + M11/M12 |
-| **WP-29** | `wp-29-coach-timeline/`（未展開） | 逐 peek 時間軸（交叉驗證 `compute.ts`）+ Release-to-Click Sync 族 | — | WP-28 T1 |
-| **WP-30** | `wp-30-trajectory-metrics/`（未展開） | REC/MR/V phase 分解 + L/R 101 點正規化曲線 | — | **M14** |
-| **WP-31** | `wp-31-advanced-diagnostics/`（未展開） | SPARC + Key-Velocity xcorr（reliability gate）+ Fitts | — | **M14** |
-| **WP-32** | `wp-32-dashboard-integration/`（未展開） | golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | **M15** | WP-29 + WP-30 |
+| **WP-28** | [wp-28-research-foundation/](exec-plan/completed/stage4/wp-28-research-foundation/README.md) | research 地基：ingest + ω(t)/ε(t)（含 **ε 雙向 parity**）+ submovement 分段 + quality flags | **M14 ✅** | M4 + WP-16 + M11/M12 |
+| **WP-29** | [wp-29-coach-timeline/](exec-plan/completed/stage4/wp-29-coach-timeline/README.md) | 逐 peek 時間軸（交叉驗證 `compute.ts`）+ Release-to-Click Sync 族 | — | WP-28 T1 |
+| **WP-30** | [wp-30-trajectory-metrics/](exec-plan/completed/stage4/wp-30-trajectory-metrics/README.md) | REC/MR/V phase 分解 + L/R 101 點正規化曲線 | — | **M14 ✅** |
+| **WP-31** | [wp-31-advanced-diagnostics/](exec-plan/completed/stage4/wp-31-advanced-diagnostics/README.md) | SPARC + Key-Velocity xcorr（reliability gate）+ Fitts | — | **M14 ✅** |
+| **WP-32** | [wp-32-dashboard-integration/](exec-plan/completed/stage4/wp-32-dashboard-integration/README.md) | golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | **M15 ✅** | WP-29 ✅ + WP-30 ✅ + WP-31 ✅ |
 
 ### 3.3 各 WP task 一覽
 
@@ -198,12 +198,15 @@ docs/exec-plan/
 | WP-25 | [T0 entry gate](exec-plan/completed/stage5/wp-25-ballistics-tracer/T0-entry-gate.md) ✅ · [T1 tracer](exec-plan/completed/stage5/wp-25-ballistics-tracer/T1-tracer-view.md) · [T2 projectile 數學核心](exec-plan/completed/stage5/wp-25-ballistics-tracer/T2-projectile-math-core.md) · [T3 sim 整合](exec-plan/completed/stage5/wp-25-ballistics-tracer/T3-sim-integration.md) · [T4 指標語意](exec-plan/completed/stage5/wp-25-ballistics-tracer/T4-metrics-semantics.md) · [T-exit](exec-plan/completed/stage5/wp-25-ballistics-tracer/T-exit-gate.md) |
 | WP-26 | [T1 br-field 資產](exec-plan/completed/stage5/wp-26-br-scene-integration/T1-br-scene-assets.md) · [T2 場景上線](exec-plan/completed/stage5/wp-26-br-scene-integration/T2-br-scene-online.md) · [T3 整合 drill + protocol](exec-plan/completed/stage5/wp-26-br-scene-integration/T3-br-tracking-drill.md) · [T4 E2E + 清單 E](exec-plan/completed/stage5/wp-26-br-scene-integration/T4-e2e-acceptance.md) · [T-exit](exec-plan/completed/stage5/wp-26-br-scene-integration/T-exit-gate.md) |
 
-**階段 D（`active/stage4/`）**
+**階段 D（`completed/stage4/`）**
 
 | WP | Tasks（`T0` entry-gate → `Tn` → exit-gate） |
 |---|---|
-| WP-28 | [T0 entry gate](exec-plan/active/stage4/wp-28-research-foundation/T0-entry-gate.md) · [T1 scaffold + ingest](exec-plan/active/stage4/wp-28-research-foundation/T1-scaffold-ingest.md) · [T2 角運動學 + ε parity](exec-plan/active/stage4/wp-28-research-foundation/T2-angular-kinematics.md) · [T3 SG + submovement 分段](exec-plan/active/stage4/wp-28-research-foundation/T3-submovement-segments.md) · [T4 per_segment_apply + flags](exec-plan/active/stage4/wp-28-research-foundation/T4-per-segment-flags.md) · [T-exit（M14）](exec-plan/active/stage4/wp-28-research-foundation/T-exit-gate.md) |
-| WP-29~32 | 未展開（各自 entry 前依 [stage4 §6](exec-plan/active/stage4/README.md) 展開） |
+| WP-28 | [T0 entry gate](exec-plan/completed/stage4/wp-28-research-foundation/T0-entry-gate.md) · [T1 scaffold + ingest](exec-plan/completed/stage4/wp-28-research-foundation/T1-scaffold-ingest.md) · [T2 角運動學 + ε parity](exec-plan/completed/stage4/wp-28-research-foundation/T2-angular-kinematics.md) · [T3 SG + submovement 分段](exec-plan/completed/stage4/wp-28-research-foundation/T3-submovement-segments.md) · [T4 per_segment_apply + flags](exec-plan/completed/stage4/wp-28-research-foundation/T4-per-segment-flags.md) · [T-exit（M14）](exec-plan/completed/stage4/wp-28-research-foundation/T-exit-gate.md) |
+| WP-29 | [T0](exec-plan/completed/stage4/wp-29-coach-timeline/T0-entry-gate.md) · [T1 逐 peek 時間軸](exec-plan/completed/stage4/wp-29-coach-timeline/T1-peek-timeline.md) · [T2 Sync 精度](exec-plan/completed/stage4/wp-29-coach-timeline/T2-sync-precision.md) · [T3 key 事件](exec-plan/completed/stage4/wp-29-coach-timeline/T3-key-events.md) · [T-exit](exec-plan/completed/stage4/wp-29-coach-timeline/T-exit-gate.md) |
+| WP-30 | [T0](exec-plan/completed/stage4/wp-30-trajectory-metrics/T0-entry-gate.md) · [T1 t_detect parity](exec-plan/completed/stage4/wp-30-trajectory-metrics/T1-detect-parity.md) · [T2 phase 分解](exec-plan/completed/stage4/wp-30-trajectory-metrics/T2-phase-decompose.md) · [T3 L/R 曲線](exec-plan/completed/stage4/wp-30-trajectory-metrics/T3-lr-curves.md) · [T-exit](exec-plan/completed/stage4/wp-30-trajectory-metrics/T-exit-gate.md) |
+| WP-31 | [T0](exec-plan/completed/stage4/wp-31-advanced-diagnostics/T0-entry-gate.md) · [T1 SPARC](exec-plan/completed/stage4/wp-31-advanced-diagnostics/T1-sparc.md) · [T2 Key-Velocity xcorr](exec-plan/completed/stage4/wp-31-advanced-diagnostics/T2-key-velocity-xcorr.md) · [T3 Fitts](exec-plan/completed/stage4/wp-31-advanced-diagnostics/T3-fitts.md) · [T-exit](exec-plan/completed/stage4/wp-31-advanced-diagnostics/T-exit-gate.md) |
+| WP-32 | [T0](exec-plan/completed/stage4/wp-32-dashboard-integration/T0-entry-gate.md) · [T1 ω+SG](exec-plan/completed/stage4/wp-32-dashboard-integration/T1-ts-kinematics-sg.md) · [T2 seg-v2](exec-plan/completed/stage4/wp-32-dashboard-integration/T2-ts-segmentation.md) · [T3 phase+sync](exec-plan/completed/stage4/wp-32-dashboard-integration/T3-phase-sync-promotion.md) · [T4 curve](exec-plan/completed/stage4/wp-32-dashboard-integration/T4-curve-promotion.md) · [T5 結果頁](exec-plan/completed/stage4/wp-32-dashboard-integration/T5-result-screen.md) · [T-exit（M15）](exec-plan/completed/stage4/wp-32-dashboard-integration/T-exit-gate.md) |
 
 > 每個 WP 另含 `T0-entry-gate.md`、`task-checklist.md`、`progress.md`（見 §3.1 慣例），此處省略以保持精簡。
 

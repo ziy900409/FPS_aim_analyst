@@ -135,7 +135,7 @@ pooled median offset (−78.1 ms ≈ 10 ticks) is far larger than the ±1-tick (
 in the same direction and of comparable magnitude in every one of the three sessions (not one
 outlier session). `seg-v2`'s velocity-threshold `MR.start` fires **before** `detectionDerivation`'s
 sustained-eccentricity-decrease `t_detect` in every session, by roughly 9–11 ticks. Per §2 of
-[T2-phase-decompose.md](../exec-plan/active/stage4/wp-30-trajectory-metrics/T2-phase-decompose.md),
+[T2-phase-decompose.md](../exec-plan/completed/stage4/wp-30-trajectory-metrics/T2-phase-decompose.md),
 this divergence is recorded as a finding — **REC is not redefined to align with `t_detect`, and
 `t_detect`'s parameters are not retuned here** (both are out of this task's scope; retuning would
 also violate C-D4 by editing an already-frozen construct's calibration based on a different drill's

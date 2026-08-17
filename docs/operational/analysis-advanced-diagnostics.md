@@ -547,7 +547,7 @@ TP 數字可以作研究向探索,不應在 T-exit 前被當成教練主表指�
 
 > 2026-08-12,Fitts 列於 2026-08-17 依 KI-008/BD-008 更正。收斂來源:T1(`sparc-v1`)·
 > T2(`xcorr-v1`/`gate-v1`)· T3(`fitts-v1`)三份既定判定(逐條 commit 見
-> [progress.md](../exec-plan/active/stage4/wp-31-advanced-diagnostics/progress.md)
+> [progress.md](../exec-plan/completed/stage4/wp-31-advanced-diagnostics/progress.md)
 > D-31.6 / D-31.9 / D-31.10)。**本節不重算任何判定**,只把三份既有結果收斂成一張表 + 落地成
 > `coach-report-v2` 的報告契約。
 
@@ -562,7 +562,7 @@ TP 數字可以作研究向探索,不應在 T-exit 前被當成教練主表指�
 **收斂結論**:三個指標**沒有一個**在本樣本結構下能進主表(C-D3 上限一致);SPARC 與 xcorr 三個 session
 皆有輸出,Fitts **僅 1/3 session(09:37)**有輸出、2/3(09:18/09:24)為缺口說明。這是**合格的交付**
 ——T-exit 的成功條件從不是「三個都要進主表」,而是每一個判定都有證據且可稽核(見
-[T-exit-gate.md](../exec-plan/active/stage4/wp-31-advanced-diagnostics/T-exit-gate.md) Objective)。
+[T-exit-gate.md](../exec-plan/completed/stage4/wp-31-advanced-diagnostics/T-exit-gate.md) Objective)。
 
 ### 報告載體契約(`coach-report-v2`)
 
