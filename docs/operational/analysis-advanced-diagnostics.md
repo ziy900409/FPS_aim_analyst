@@ -463,12 +463,19 @@ pre-registered 的資料變異門檻並可計算回歸,不表示可做因果主�
 
 | `min_samples` | `min_d_ratio` | `min_id_range_bits` | Version |
 |---:|---:|---:|---|
-| 10 | 2.0 | 0.5 | `fitts-v1` |
+| 20 | 2.0 | 1.0 | `fitts-v1` |
+
+> **KI-008/BD-008 更正(2026-08-17)**:實作曾偏離為 `min_samples=10`、`min_id_range_bits=0.5`
+> (T0 凍結值的一半),使 09:24 被誤判 `ok` 並把回歸數字端上研究向區塊。已改回本表凍結值,
+> 詳見 [BUGFIX-DECISIONS.md BD-008](../known_issue/BUGFIX-DECISIONS.md)。
 
 依序檢查:
 
 1. 有效樣本數 `n >= min_samples`;
-2. `d_ratio = max(D) / min(D) >= min_d_ratio`;
+2. `d_ratio = max(D) / min(D) >= min_d_ratio`——**若 `min(D) <= 0`(有完全置中的 spawn),
+   `d_ratio` 定義為 `+inf` 且視為通過此步**:比值本身無定義,但這是最大可能的展幅而非最小
+   (KI-008/BD-008 更正——舊實作把除以零得到的 `inf` 誤判為「未過關」,錯誤丟棄本來有效的
+   session;真正該擋「D 完全無變異」的是下一步);
 3. `id_range_bits = max(ID) - min(ID) >= min_id_range_bits`;
 4. 通過後才做最小平方回歸。若 slope 非正,`throughput` 不成立,判 `blocked-by-data`。
 
@@ -489,20 +496,25 @@ pre-registered 的資料變異門檻並可計算回歸,不表示可做因果主�
 `KNOWN_FITTS_REASONS`:`ok` / `insufficient_n` / `insufficient_d_ratio` /
 `insufficient_id_range` / `non_positive_slope`。未知 flag/reason 由測試與模組斷言擋下。
 
-### 當次判定(2026-08-12,逐 session,不併池推論)
+### 當次判定(2026-08-17 更正,逐 session,不併池推論)
 
 | Session | n | `d_ratio` | `id_range_bits` | slope(ms/bit) | intercept(ms) | r2 | TP(bits/s) | status | reason |
 |---|---:|---:|---:|---:|---:|---:|---:|---|---|
 | 09:18 | 20 | 1.8343 | 0.6997 | — | — | — | — | `blocked-by-data` | `insufficient_d_ratio` |
-| 09:24 | 20 | 2.5531 | 0.9602 | 60.1975 | 357.2666 | 0.0669 | 16.6120 | `ok` | `ok` |
+| 09:24 | 20 | 2.5531 | 0.9602 | — | — | — | — | `blocked-by-data` | `insufficient_id_range` |
 | 09:37 | 20 | 3.3833 | 1.2536 | 39.6014 | 389.0146 | 0.0339 | 25.2516 | `ok` | `ok` |
+
+> **KI-008/BD-008 更正**:09:24 原判為 `ok`(見 git history 2026-08-12 版本),是凍結門檻遭偏離
+> (`min_id_range_bits` 誤植為 0.5)所致——`id_range_bits = 0.9602` 在正確的 `min_id_range_bits =
+> 1.0` 下不足,應為 `blocked-by-data`。現以 T0 凍結值重算,三份真實 fixture 中僅 09:37 通過
+> 全部資料門檻。
 
 T0 的「D pooled 8.70–30.72 = 3.5x」只證明三 session 合在一起有變異;T3 實作採逐 session 判定,
 因此 09:18 以 `d_ratio = 1.8343 < 2.0` 走 `blocked-by-data`。這不是事後調整門檻的理由:
 若為了讓 09:18 過關而跨 session 併池,會違反 WP-30 / WP-31 的「三 session 並列呈現、不作跨
 session 推論」紀律。
 
-09:24 / 09:37 雖然 `status = ok`,r2 分別只有 0.0669 / 0.0339。這代表 `ID` 只解釋很少的 MT 變異;
+09:37 雖然 `status = ok`,r2 只有 0.0339。這代表 `ID` 只解釋很少的 MT 變異;
 TP 數字可以作研究向探索,不應在 T-exit 前被當成教練主表指標。
 
 證據檔:
@@ -521,18 +533,21 @@ TP 數字可以作研究向探索,不應在 T-exit 前被當成教練主表指�
   同一天三個 session。非母體層級證據(KI-004 R-7)。
 - **不跨 session 併池推論**:pooled D ratio 可說明資料母體有變異,但 `fitts-v1` verdict 逐 session
   給出。09:18 因逐 session D ratio 不足而 blocked。
-- **T-exit 收斂結果(2026-08-12)**:`fitts-v1` 已進 `coach-report-v2` 的**研究向區塊**(`#advanced`)
-  ——但只限 `status='ok'` 的 session:09:24/09:37 附回歸(slope/intercept/r²/TP)+ D 內生性與 MT
-  含 RT 兩項限制逐字輸出。09:18(`blocked-by-data`,`insufficient_d_ratio`)**不**出現在研究向區塊,
-  改於「缺口說明」區塊列一行:原因(spawn 偏心角變異低於 `min_d_ratio=2.0`)+ 需要什麼樣本
-  (更大範圍的 spawn 位置變異,受目前 drill 設計限制,OQ-S4-19)。
+- **T-exit 收斂結果(2026-08-17 更正)**:`fitts-v1` 已進 `coach-report-v2` 的**研究向區塊**
+  (`#advanced`)——但只限 `status='ok'` 的 session:**僅 09:37** 附回歸(slope/intercept/r²/TP)
+  + D 內生性與 MT 含 RT 兩項限制逐字輸出。09:18(`blocked-by-data`,`insufficient_d_ratio`)與
+  **09:24**(`blocked-by-data`,`insufficient_id_range`,KI-008/BD-008 更正後)**皆不**出現在
+  研究向區塊,改於「缺口說明」區塊各列一行:09:18 原因為 spawn 偏心角變異低於 `min_d_ratio=2.0`
+  (需要更大範圍的 spawn 位置變異,受目前 drill 設計限制,OQ-S4-19);09:24 原因為 ID 跨度低於
+  `min_id_range_bits=1.0`,理由相同。
 
 ---
 
 ## T-exit — 三份判定收斂 + 報告載體契約 + WP-32 交接
 
-> 2026-08-12。收斂來源:T1(`sparc-v1`)· T2(`xcorr-v1`/`gate-v1`)· T3(`fitts-v1`)三份既定判定
-> (逐條 commit 見 [progress.md](../exec-plan/active/stage4/wp-31-advanced-diagnostics/progress.md)
+> 2026-08-12,Fitts 列於 2026-08-17 依 KI-008/BD-008 更正。收斂來源:T1(`sparc-v1`)·
+> T2(`xcorr-v1`/`gate-v1`)· T3(`fitts-v1`)三份既定判定(逐條 commit 見
+> [progress.md](../exec-plan/active/stage4/wp-31-advanced-diagnostics/progress.md)
 > D-31.6 / D-31.9 / D-31.10)。**本節不重算任何判定**,只把三份既有結果收斂成一張表 + 落地成
 > `coach-report-v2` 的報告契約。
 
@@ -542,11 +557,12 @@ TP 數字可以作研究向探索,不應在 T-exit 前被當成教練主表指�
 |---|---|---|---|---|
 | SPARC | T1,`944abc3`→`sparc_length_sensitivity`(D-31.6) | `stratified_only`(step_ratio 0.7643 ≥ 0.5) | ✅ **研究向區塊**(`#advanced`),逐 session | 無 `blocked-by-data` 分支;跨 `padded_n` bucket 的限制可在報告介面逐字呈現,不放大成主表判定 |
 | Key-Velocity xcorr | T2,`reliability_gate`(D-31.9,gate-v1 三件組) | 三 session 全 `research_only`(09:18/09:37 未過①,09:24 全過) | ✅ **研究向區塊**,逐 session;`coach_report` 由程式碼保證不可達 | C-D3 上限條款:三件組只證明「非偶然 + 穩定」,不證明個體可靠度;研究向是本樣本結構下的天花板,不是降級 |
-| Fitts | T3,`fitts_samples`(D-31.10,fitts-v1) | 09:18 `blocked-by-data`(`insufficient_d_ratio`);09:24/09:37 `ok`(r² 0.0669/0.0339) | 09:18 ❌ **缺口說明**;09:24/09:37 ✅ **研究向區塊** | `ok` 只表示資料門檻可計算回歸,不表示效度足以對選手做主張(r² 低);09:18 未達資料門檻,不硬給結論 |
+| Fitts | T3,`fitts_samples`(D-31.10,fitts-v1) | 09:18 `blocked-by-data`(`insufficient_d_ratio`);**09:24 `blocked-by-data`(`insufficient_id_range`,KI-008/BD-008 更正)**;09:37 `ok`(r² 0.0339) | 09:18/09:24 ❌ **缺口說明**;09:37 ✅ **研究向區塊** | `ok` 只表示資料門檻可計算回歸,不表示效度足以對選手做主張(r² 低);09:18/09:24 未達資料門檻,不硬給結論 |
 
 **收斂結論**:三個指標**沒有一個**在本樣本結構下能進主表(C-D3 上限一致);SPARC 與 xcorr 三個 session
-皆有輸出,Fitts 有 2/3 session 有輸出、1/3 為缺口說明。這是**合格的交付**——T-exit 的成功條件從不是
-「三個都要進主表」,而是每一個判定都有證據且可稽核(見 [T-exit-gate.md](../exec-plan/active/stage4/wp-31-advanced-diagnostics/T-exit-gate.md) Objective)。
+皆有輸出,Fitts **僅 1/3 session(09:37)**有輸出、2/3(09:18/09:24)為缺口說明。這是**合格的交付**
+——T-exit 的成功條件從不是「三個都要進主表」,而是每一個判定都有證據且可稽核(見
+[T-exit-gate.md](../exec-plan/active/stage4/wp-31-advanced-diagnostics/T-exit-gate.md) Objective)。
 
 ### 報告載體契約(`coach-report-v2`)
 

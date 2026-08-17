@@ -78,7 +78,9 @@ class FittsParams:
 
 
 # Frozen by WP-31 T0 (progress.md D-31.5), before computing any real Fitts result.
-DEFAULT_FITTS_PARAMS = FittsParams(min_samples=10, min_d_ratio=2.0, min_id_range_bits=0.5)
+# KI-008/BD-008: these three values must match T0-entry-gate.md Sec.4 verbatim -- do not
+# adjust to change a session's verdict without a new version (T0's pre-registration rule).
+DEFAULT_FITTS_PARAMS = FittsParams(min_samples=20, min_d_ratio=2.0, min_id_range_bits=1.0)
 
 
 @dataclass(frozen=True)
@@ -234,7 +236,11 @@ def _result(samples: tuple[FittsSample, ...], params: FittsParams) -> FittsResul
     d_ratio = math.inf if min_d <= 0 else max_d / min_d
     id_range_bits = float(np.max(id_values) - np.min(id_values))
 
-    if not math.isfinite(d_ratio) or d_ratio < params.min_d_ratio:
+    # KI-008/BD-008: min_d <= 0 (a centered spawn, D=0) makes the ratio undefined, not
+    # insufficient -- it is the maximal possible spread, not the minimal one. Only a
+    # *finite* ratio below the threshold indicates too little span; id_range_bits below
+    # is the gate that actually catches "no real variation at all" (all D == 0).
+    if math.isfinite(d_ratio) and d_ratio < params.min_d_ratio:
         return _blocked(samples, n, d_ratio, id_range_bits, "insufficient_d_ratio")
     if id_range_bits < params.min_id_range_bits:
         return _blocked(samples, n, d_ratio, id_range_bits, "insufficient_id_range")

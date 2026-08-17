@@ -1,7 +1,7 @@
 session,stratum,status,reason,n,d_ratio,id_range_bits,slope_ms_per_bit,intercept_ms,r2,throughput_bits_s,n_excluded
-counterstrafe_ad_v1-2026-08-07T09_18_05.631Z,L,blocked-by-data,insufficient_d_ratio,10,1.834304333262974,0.6997456516239708,,,,,0
-counterstrafe_ad_v1-2026-08-07T09_18_05.631Z,R,blocked-by-data,insufficient_d_ratio,10,1.173829867567125,0.17468345410085906,,,,,0
-counterstrafe_ad_v1-2026-08-07T09_24_18.148Z,L,ok,ok,10,2.5053614508933877,0.9340418479770736,46.78684724808577,378.8951580400848,0.059695988208989026,21.3735282203892,0
-counterstrafe_ad_v1-2026-08-07T09_24_18.148Z,R,blocked-by-data,insufficient_d_ratio,10,1.1454010824758218,0.15139816533773764,,,,,0
-counterstrafe_ad_v1-2026-08-07T09_37_24.351Z,L,ok,ok,10,3.3832992655960976,1.2535729731293062,38.30044670478705,384.9506155315918,0.06737528744749866,26.10935605288941,0
-counterstrafe_ad_v1-2026-08-07T09_37_24.351Z,R,blocked-by-data,insufficient_d_ratio,10,1.1442212745089528,0.15565885766222598,,,,,0
+counterstrafe_ad_v1-2026-08-07T09_18_05.631Z,L,blocked-by-data,insufficient_n,10,,,,,,,0
+counterstrafe_ad_v1-2026-08-07T09_18_05.631Z,R,blocked-by-data,insufficient_n,10,,,,,,,0
+counterstrafe_ad_v1-2026-08-07T09_24_18.148Z,L,blocked-by-data,insufficient_n,10,,,,,,,0
+counterstrafe_ad_v1-2026-08-07T09_24_18.148Z,R,blocked-by-data,insufficient_n,10,,,,,,,0
+counterstrafe_ad_v1-2026-08-07T09_37_24.351Z,L,blocked-by-data,insufficient_n,10,,,,,,,0
+counterstrafe_ad_v1-2026-08-07T09_37_24.351Z,R,blocked-by-data,insufficient_n,10,,,,,,,0

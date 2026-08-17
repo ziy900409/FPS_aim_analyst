@@ -178,7 +178,7 @@ _XCORR_GAP_REASONS = {
 #: Gap explanations for a ``blocked-by-data`` Fitts session (``KNOWN_FITTS_REASONS`` minus ``ok``).
 _FITTS_GAP_REASONS = {
     "insufficient_n": (
-        "有效 peek 數低於 fitts-v1.min_samples(10)",
+        "有效 peek 數低於 fitts-v1.min_samples(20)",
         "需要更多不含 flag 的 peek(更長的 drill,或更多同構 session)",
     ),
     "insufficient_d_ratio": (
@@ -186,7 +186,7 @@ _FITTS_GAP_REASONS = {
         "需要 spawn 位置變異更大的資料;在不改變 drill 設計的前提下無法從既有樣本補齊(OQ-S4-19)",
     ),
     "insufficient_id_range": (
-        "本 session 的 ID(= log2(1 + D/W))跨度低於 fitts-v1.min_id_range_bits(0.5)",
+        "本 session 的 ID(= log2(1 + D/W))跨度低於 fitts-v1.min_id_range_bits(1.0)",
         "需要更大範圍的 D/W 組合,理由同上",
     ),
     "non_positive_slope": (
@@ -616,7 +616,12 @@ def _xcorr_block(frame: pd.DataFrame, verdicts: Sequence[Any], crosscheck: dict[
     rows = frame.drop(columns=["key_state", "omega", "correlogram"]).to_dict("records")
     valid = [row for row in rows if not row["flags"] and _finite(row["peak_strength"])]
     strengths = [abs(float(row["peak_strength"])) for row in valid]
-    blocked = verdict is not None and verdict.verdict == "blocked-by-data"
+    # KI-008/BD-008: an empty xcorr_table (no peeks -- e.g. no visible events) leaves
+    # reliability_gate with zero sessions to judge, so verdict is None here. That is an
+    # absent verdict, not a passed one -- treat it as the same insufficient_n gate a
+    # too-small-but-nonempty session would hit, not as "unblocked".
+    reason = "insufficient_n" if verdict is None else verdict.reason
+    blocked = verdict is None or verdict.verdict == "blocked-by-data"
     return {
         "available": True,
         "blocked": blocked,
@@ -631,8 +636,8 @@ def _xcorr_block(frame: pd.DataFrame, verdicts: Sequence[Any], crosscheck: dict[
         "crosscheck": crosscheck,
         "upperBoundNote": XCORR_UPPER_BOUND_NOTE,
         "directionNote": XCORR_DIRECTION_NOTE,
-        "gapReason": None if verdict is None else verdict.reason,
-        "gapText": _gap_text(_XCORR_GAP_REASONS, None if verdict is None else verdict.reason),
+        "gapReason": reason if blocked else None,
+        "gapText": _gap_text(_XCORR_GAP_REASONS, reason) if blocked else None,
     }
 
 
