@@ -12,7 +12,7 @@
 | T0 entry gate | ✅ | 2026-08-17 | 本檔 §0.5(上游複驗)+ §0.6(晉升清單)+ Decision Log D-32.2~D-32.4 + §0.7(fixture roster)+ Open Questions(OQ-S4-4 關閉、OQ-S4-21~24 開帳);`git diff --stat` 只含 `docs/exec-plan/active/stage4/`,`src/`/`research/` 零 diff |
 | T1 TS kinematics + SG | ✅ | 2026-08-17 | `src/metrics/angularKinematics.ts` + `src/metrics/filters/savitzkyGolay.ts`;`tests/golden/research/promoted-kinematics.test.ts` 對 SG 係數表 ≤1e-12、四份 ω fixture ≤1e-9、三份真實 ω 訊號 SG smoothing ≤1e-9;legacy 08:03/09:39 strict 負向測試拋 KI-005;新增 generator drift test |
 | T2 TS seg-v2 分段 | ✅ | 2026-08-17 | `src/metrics/submovement.ts` + `src/metrics/submovement.test.ts`;`tests/golden/research/promoted-segments.test.ts` 對三份 real fixture 60 peeks 的 `kind/startIdx/endIdx/flags/traceFlags` 逐位相等、`peakOmega` ≤1e-9,pooled `primary_flick=59`;synthetic golden 釘住 scipy `find_peaks` plateau 規則與 merge/flag 分支;新增 generator drift test |
-| T3 phase + sync 晉升 | ⬜ | — | — |
+| T3 phase + sync 晉升 | ✅ | 2026-08-17 | `src/metrics/peekWindows.ts` 共享窗界抽出 + Python `PeekWindow` release/flags 對齊;`src/metrics/researchMetrics.ts` 晉升 `phase-v1`/`sync-v1`;`tests/golden/research/promoted-phase-sync.test.ts` 對四份 phase fixture + 六份 sync fixture 逐 peek/row/aggregate ≤1e-9,flags/verdict exact;pooled phase non-degenerate=59、09:39 sync unflagged=13、08:03 sync n=0 blocked;`analysis-phase-curves.md` 已補 TS 晉升面與 `filter_degenerate` 分歧 |
 | T4 curve 晉升 | ⬜ | — | — |
 | T5 結果頁擴充 | ⬜ | — | — |
 | T-exit(M15) | ⬜ | — | — |
@@ -23,6 +23,7 @@
 |---|---|---|
 | T1 | `uv run pytest -q --tb=short --color=no --basetemp .pytest_tmp_t1_full` → `460 passed in 504.02s`(plain `uv run pytest` 因 Windows `%TEMP%/pytest-of-Hsin...` 權限失敗,改以 repo 內 basetemp 重跑) | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `93 passed / 763 tests` + Playwright `21 passed` |
 | T2 | `uv run pytest -q --tb=short --color=no --basetemp .pytest_tmp_t2_full`(於 `research/`) → `462 passed in 553.87s (0:09:13)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `95 passed / 777 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過) |
+| T3 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t3_full`(於 `research/`) → `464 passed in 517.73s (0:08:37)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `97 passed / 793 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤;升權後首次完整跑遇 2 支 Playwright app-ready/backend timeout,重跑失敗 specs `6 passed`,再重跑完整 `test:ci` 通過) |
 
 ---
 
@@ -199,6 +200,14 @@ T2 golden 產生器 `research/src/modules/segments/notebooks/t2/generate_promote
 **Evidence**:`segments-synthetic_submovement_cases.json` 初版的 `merged_adjacent_peaks` case 產生 `flags: []`;改為 6 點短窗 fallback `(0,100,300,100,250,0)` 後,Python golden 與 TS unit test 都產生 `flags: ['merged_adjacent_peaks','sg_fallback_short_signal']`。
 
 **處置**:synthetic segment golden 保留短窗 merge case;real fixture golden 仍照完整 `seg-v2` 路徑跑,不因此改動實機對表。
+
+### S-32.5 — Python blocked precision 仍保留 `sample_sd_ms`(2026-08-17,T3)
+
+T3 初版 TS `PrecisionVerdict` 在 `n < min_samples` 的 `blocked-by-data` 分支省略 `sampleSdMs`,但 Python `evaluate_release_precision` 會先在 `n >= 2`時計算 `sample_sd_ms`,再判 blocked。因此 `sync-synthetic_counterstrafe_t1_long.json` 的兩個 verdict 是 `n=6`, `sampleSdMs=0.0`, `blocked-by-data`。
+
+**Evidence**:`tests/golden/research/promoted-phase-sync.test.ts` 初跑 11/12 passed,唯一失敗為 synthetic sync verdict `expected undefined to be defined`;修正後該測試 `12 passed`。完整 engine 閘最終 `Vitest 97 files / 793 tests` + Playwright `21 passed`。
+
+**處置**:`src/metrics/researchMetrics.ts` 的 blocked verdict 分支保留 `sampleSdMs`(若 `n >= 2`),與 Python 權威逐欄一致。
 
 ---
 

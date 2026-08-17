@@ -237,6 +237,7 @@ function precisionVerdict(
     return {
       metric,
       n,
+      sampleSdMs,
       quantizationSdMs,
       verdict: 'blocked-by-data',
       reason: `n=${n} < min_samples=${SYNC_MIN_SAMPLES}; collect ${SYNC_MIN_SAMPLES - n} more unflagged samples`,
