@@ -13,6 +13,16 @@ export interface PeekWindowTs {
   readonly side: 'L' | 'R';
   readonly tVisible: number;
   readonly tEnd: number;
+  readonly tCounter?: number;
+  readonly counterKey?: 'A' | 'D';
+  readonly tRelease?: number;
+  readonly releaseKey?: 'A' | 'D';
+  readonly tFirstShot?: number;
+  readonly fires: readonly number[];
+  readonly tHit?: number;
+  readonly outcome: 'hit' | 'timeout' | 'no_shot';
+  readonly ads?: boolean;
+  readonly flags: readonly string[];
   readonly visible: VisibleEvent;
   readonly nextVisible?: VisibleEvent;
   readonly counter?: CounterEvent;
@@ -27,31 +37,63 @@ export function buildPeekWindows(payload: Pick<ExportPayload, 'ticks' | 'events'
   const visibleEvents = events.filter((event): event is VisibleEvent => event.type === 'visible');
   const counterEvents = events.filter((event): event is CounterEvent => event.type === 'counter');
   const fireEvents = events.filter((event): event is FireEvent => event.type === 'fire');
+  const hitEvents = events.filter((event) => event.type === 'hit');
+  const hitTimesByShot = hitTimesByShotSeq(hitEvents);
 
   return visibleEvents.map((visible, index) => {
     const nextVisible = visibleEvents[index + 1];
     const windowEnd = nextVisible?.t ?? Infinity;
-    const counter = counterEvents.find((event) => event.t >= visible.t && event.t < windowEnd);
-    const firstFire = fireEvents.find(
-      (event) =>
-        event.firstShot &&
-        event.t >= visible.t &&
-        event.t < windowEnd &&
-        (event.targetId === undefined || event.targetId === visible.targetId),
-    );
+    const tickRange = tickRangeForWindow(ticks, visible.t, windowEnd);
+    const windowTicks = ticks.slice(tickRange.start, tickRange.end);
+    const counters = counterEvents.filter((event) => event.t >= visible.t && event.t < windowEnd);
+    const fires = fireEvents.filter((event) => event.t >= visible.t && event.t < windowEnd);
+    const counter = counters[0];
+    const firstFire = firstCompatibleFire(fires, visible.targetId);
     const reactionMs = counter !== undefined ? counter.t - visible.t : undefined;
+    const flags: string[] = [];
+    if (windowTicks.length === 0) flags.push('empty_window');
+    if (counter === undefined) flags.push('no_counter');
+    if (counters.length > 1) flags.push('multiple_counters');
+
+    const counterKey = counter !== undefined ? normalizeStrafeKey(counter.key) : undefined;
+    if (counter !== undefined && counterKey === undefined) flags.push('unsupported_counter_key');
+    const [tRelease, releaseKey] =
+      counter !== undefined && counterKey === undefined
+        ? [undefined, undefined]
+        : releaseAnchor(windowTicks, counterKey);
+    if (counter === undefined && tRelease !== undefined) flags.push('release_inferred_no_counter');
+    if (tRelease === undefined) flags.push('no_key_transition');
+    if (firstFire === undefined) flags.push('no_first_shot');
+
+    const fireTimes = fires.map((event) => event.t);
+    const hitTimes = windowHitTimes(fires, hitTimesByShot);
+    const tHit = hitTimes.length > 0 ? Math.min(...hitTimes) : undefined;
+    if (hitTimes.some((hitTime) => hitTime >= windowEnd)) flags.push('hit_outside_window');
+    const outcome = fireTimes.length === 0 ? 'no_shot' : hitTimes.length > 0 ? 'hit' : 'timeout';
+    const ads = windowTicks.length > 0 ? windowTicks.some((tick) => tick.ads) : undefined;
+
     return {
       index,
       targetId: visible.targetId,
       side: visible.side,
       tVisible: visible.t,
       tEnd: windowEnd,
+      tCounter: counter?.t,
+      counterKey,
+      tRelease,
+      releaseKey,
+      tFirstShot: firstFire?.t,
+      fires: fireTimes,
+      tHit,
+      outcome,
+      ads,
+      flags: unique(flags),
       visible,
       nextVisible,
       counter,
       firstFire,
       reactionMs,
-      tickRange: tickRangeForWindow(ticks, visible.t, windowEnd),
+      tickRange,
     };
   });
 }
@@ -71,4 +113,77 @@ function firstTickIndexAtOrAfter(ticks: readonly { readonly t: number }[], t: nu
     if (ticks[i].t + WINDOW_EPSILON_MS >= t) return i;
   }
   return ticks.length;
+}
+
+function normalizeStrafeKey(value: string): 'A' | 'D' | undefined {
+  return value === 'A' || value === 'D' ? value : undefined;
+}
+
+function releaseAnchor(
+  ticks: readonly { readonly t: number; readonly keys: readonly string[] }[],
+  counterKey: 'A' | 'D' | undefined,
+): [number | undefined, 'A' | 'D' | undefined] {
+  if (counterKey !== undefined) {
+    const originalKey = counterKey === 'D' ? 'A' : 'D';
+    const release = lastReleaseTransition(ticks, originalKey);
+    return [release, release !== undefined ? originalKey : undefined];
+  }
+
+  const candidates = (['A', 'D'] as const)
+    .map((key) => ({ key, release: lastReleaseTransition(ticks, key) }))
+    .filter((candidate): candidate is { key: 'A' | 'D'; release: number } => candidate.release !== undefined);
+  if (candidates.length === 0) return [undefined, undefined];
+  candidates.sort((a, b) => a.release - b.release || a.key.localeCompare(b.key));
+  const latest = candidates[candidates.length - 1];
+  return [latest.release, latest.key];
+}
+
+function lastReleaseTransition(
+  ticks: readonly { readonly t: number; readonly keys: readonly string[] }[],
+  key: 'A' | 'D',
+): number | undefined {
+  let release: number | undefined;
+  for (let i = 0; i < Math.max(ticks.length - 1, 0); i++) {
+    const held = new Set(ticks[i].keys.map(String));
+    const nextHeld = new Set(ticks[i + 1].keys.map(String));
+    if (held.has(key) && !nextHeld.has(key)) release = ticks[i].t;
+  }
+  return release;
+}
+
+function firstCompatibleFire(fires: readonly FireEvent[], targetId: string): FireEvent | undefined {
+  return fires.find(
+    (event) => event.firstShot && (event.targetId === undefined || event.targetId === targetId),
+  );
+}
+
+function hitTimesByShotSeq(hitEvents: readonly Extract<DrillEvent, { type: 'hit' }>[]): ReadonlyMap<number, readonly number[]> {
+  const values = new Map<number, number[]>();
+  for (const hit of hitEvents) {
+    const shotSeq = hit.shotSeq;
+    if (Number.isFinite(shotSeq)) {
+      const times = values.get(shotSeq) ?? [];
+      times.push(hit.t);
+      values.set(shotSeq, times);
+    }
+  }
+  return values;
+}
+
+function windowHitTimes(
+  fires: readonly FireEvent[],
+  hitTimesByShot: ReadonlyMap<number, readonly number[]>,
+): number[] {
+  const hitTimes: number[] = [];
+  for (const fire of fires) {
+    if (fire.hit) hitTimes.push(fire.t);
+    if (fire.shotSeq !== undefined && Number.isFinite(fire.shotSeq)) {
+      hitTimes.push(...(hitTimesByShot.get(fire.shotSeq) ?? []));
+    }
+  }
+  return hitTimes;
+}
+
+function unique(flags: readonly string[]): string[] {
+  return [...new Set(flags)];
 }
