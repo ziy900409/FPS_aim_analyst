@@ -207,6 +207,10 @@
     "mtime": 1786346132.65284,
     "hash": "c55d1355f4140a2d4a0f66ed6b97866e"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\metrics\\algorithms\\tests\\test_promoted_curve_golden.py": {
+    "mtime": 1786966390.4544508,
+    "hash": "b1e525cfe43cd127838e814ce8d70308"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\metrics\\algorithms\\tests\\test_promoted_phase_sync_golden.py": {
     "mtime": 1786961204.180265,
     "hash": "8f17c01afa119ee8a798932a96e37ac1"
@@ -294,6 +298,10 @@
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\metrics\\notebooks\\t3\\generate_promoted_phase_sync_golden.py": {
     "mtime": 1786961202.513286,
     "hash": "566d00419a7083c3107a240d884bc355"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\metrics\\notebooks\\t4\\generate_promoted_curve_golden.py": {
+    "mtime": 1786966361.0832577,
+    "hash": "3ecd8b55872e65e591a4f56cbd648914"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\segments\\__init__.py": {
     "mtime": 1785920271.7429118,
@@ -708,8 +716,8 @@
     "hash": "8891f92f132e5c2c1c5d43db4747b8d6"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\researchMetrics.ts": {
-    "mtime": 1786961526.9560926,
-    "hash": "d45a0b39b5e1611bb69e24d8b76e654f"
+    "mtime": 1786966317.7177024,
+    "hash": "e2f7afa11288e2abf4991093d0b6f265"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\submovement.test.ts": {
     "mtime": 1786959118.647271,
@@ -724,8 +732,8 @@
     "hash": "e5345da2f484e62cde278223f84b6018"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\trackingDerivation.ts": {
-    "mtime": 1786019233.66094,
-    "hash": "700b8fbe970a20ffcf27cd4f2a2fdbc1"
+    "mtime": 1786966173.1717489,
+    "hash": "fafccadaa61333eb7304cb0f16c3bafa"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\filters\\savitzkyGolay.test.ts": {
     "mtime": 1786956696.1560447,
@@ -1102,6 +1110,10 @@
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\golden\\research\\epsilon-parity.test.ts": {
     "mtime": 1785920271.7732372,
     "hash": "b1126410a9198e07e264e654839f6bfd"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\golden\\research\\promoted-curve.test.ts": {
+    "mtime": 1786966464.9204886,
+    "hash": "a553f98161ea16cc3d4f85341de2733e"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\golden\\research\\promoted-kinematics.test.ts": {
     "mtime": 1786956697.5031433,

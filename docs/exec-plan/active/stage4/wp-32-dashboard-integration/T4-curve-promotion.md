@@ -7,7 +7,7 @@
 | **相依** | T1(ω);**不依賴 T2/T3**,可與 T2 並行 |
 | **Risk / Cplx** | Med / Low–Med — 演算法是線性插值,風險在**逐 tick ε 的來源**:再算一次就違反 C-D4 |
 | **Touches** | **MODIFY** `src/metrics/trackingDerivation.ts`(逐 tick ε 抽為可複用,零語意變更);MODIFY `src/metrics/researchMetrics.ts`(curve 區塊);ADD `research/fixtures/golden/curve-*.json` + 產生腳本;ADD `tests/golden/research/promoted-curve.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -56,13 +56,13 @@ FR-D17 的主體第二半:把 `curve-v1`(L/R 條件化 101 點正規化曲線)�
 
 ## Steps
 
-- [ ] 抽出 `trackingSamples` → 可複用 export;**先跑既有四支 ε 相關測試確認零修改全綠**再往下做。
-- [ ] `researchMetrics.ts`:`normalize101` + L/R 聚合 + IQR 帶。
-- [ ] TS 單元測試:`normalize101` 的已知答案案例(線性斜坡 → 線性輸出)、端點行為、退化輸入拋錯、非有限樣本被 mask 掉。
-- [ ] TS 單元測試:短窗排除(合成 fixture 的 13-tick peek 必須**仍產生曲線**,`min_ticks=3` 的用意;1–2 tick 才排除)。
-- [ ] Python:`curve-*.json` 產生腳本(notebooks)。
-- [ ] `promoted-curve.test.ts` 對表。
-- [ ] 兩閘輸出貼 progress。
+- [x] 抽出 `trackingSamples` → 可複用 export;**先跑既有四支 ε 相關測試確認零修改全綠**再往下做。
+- [x] `researchMetrics.ts`:`normalize101` + L/R 聚合 + IQR 帶。
+- [x] TS 單元測試:`normalize101` 的已知答案案例(線性斜坡 → 線性輸出)、端點行為、退化輸入拋錯、非有限樣本被 mask 掉。
+- [x] TS 單元測試:短窗排除(合成 fixture 的 13-tick peek 必須**仍產生曲線**,`min_ticks=3` 的用意;1–2 tick 才排除)。
+- [x] Python:`curve-*.json` 產生腳本(notebooks)。
+- [x] `promoted-curve.test.ts` 對表。
+- [x] 兩閘輸出貼 progress。
 
 ## Definition of Done
 

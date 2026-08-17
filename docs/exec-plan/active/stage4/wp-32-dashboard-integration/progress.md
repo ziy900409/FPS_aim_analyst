@@ -13,7 +13,7 @@
 | T1 TS kinematics + SG | ✅ | 2026-08-17 | `src/metrics/angularKinematics.ts` + `src/metrics/filters/savitzkyGolay.ts`;`tests/golden/research/promoted-kinematics.test.ts` 對 SG 係數表 ≤1e-12、四份 ω fixture ≤1e-9、三份真實 ω 訊號 SG smoothing ≤1e-9;legacy 08:03/09:39 strict 負向測試拋 KI-005;新增 generator drift test |
 | T2 TS seg-v2 分段 | ✅ | 2026-08-17 | `src/metrics/submovement.ts` + `src/metrics/submovement.test.ts`;`tests/golden/research/promoted-segments.test.ts` 對三份 real fixture 60 peeks 的 `kind/startIdx/endIdx/flags/traceFlags` 逐位相等、`peakOmega` ≤1e-9,pooled `primary_flick=59`;synthetic golden 釘住 scipy `find_peaks` plateau 規則與 merge/flag 分支;新增 generator drift test |
 | T3 phase + sync 晉升 | ✅ | 2026-08-17 | `src/metrics/peekWindows.ts` 共享窗界抽出 + Python `PeekWindow` release/flags 對齊;`src/metrics/researchMetrics.ts` 晉升 `phase-v1`/`sync-v1`;`tests/golden/research/promoted-phase-sync.test.ts` 對四份 phase fixture + 六份 sync fixture 逐 peek/row/aggregate ≤1e-9,flags/verdict exact;pooled phase non-degenerate=59、09:39 sync unflagged=13、08:03 sync n=0 blocked;`analysis-phase-curves.md` 已補 TS 晉升面與 `filter_degenerate` 分歧 |
-| T4 curve 晉升 | ⬜ | — | — |
+| T4 curve 晉升 | ✅ | 2026-08-17 | `src/metrics/trackingDerivation.ts` 匯出同源 `deriveTrackingSamples()` 且既有 ε/tracking 測試零修改全綠;`src/metrics/researchMetrics.ts` 新增 `computeCurveMetrics()` / `normalize101()` / `curve-v1` L/R 101 點聚合;`tests/golden/research/promoted-curve.test.ts` 對四份 fixture 的 ω/ε × L/R × mean/IQR 逐點 ≤1e-9、三份 real `n(L)=n(R)=10`、synthetic 13-tick window 不排除、2-tick window `window_too_short`;`research/src/modules/metrics/notebooks/t4/generate_promoted_curve_golden.py` + drift test 釘住 committed golden |
 | T5 結果頁擴充 | ⬜ | — | — |
 | T-exit(M15) | ⬜ | — | — |
 
@@ -24,6 +24,7 @@
 | T1 | `uv run pytest -q --tb=short --color=no --basetemp .pytest_tmp_t1_full` → `460 passed in 504.02s`(plain `uv run pytest` 因 Windows `%TEMP%/pytest-of-Hsin...` 權限失敗,改以 repo 內 basetemp 重跑) | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `93 passed / 763 tests` + Playwright `21 passed` |
 | T2 | `uv run pytest -q --tb=short --color=no --basetemp .pytest_tmp_t2_full`(於 `research/`) → `462 passed in 553.87s (0:09:13)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `95 passed / 777 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過) |
 | T3 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t3_full`(於 `research/`) → `464 passed in 517.73s (0:08:37)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `97 passed / 793 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤;升權後首次完整跑遇 2 支 Playwright app-ready/backend timeout,重跑失敗 specs `6 passed`,再重跑完整 `test:ci` 通過) |
+| T4 | `uv run pytest -q --tb=short --color=no --basetemp ../.pytest_tmp_t4_full`(於 `research/`) → `466 passed in 815.37s (0:13:35)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `98 passed / 805 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過) |
 
 ---
 
@@ -170,6 +171,14 @@ T2 golden 產生器 `research/src/modules/segments/notebooks/t2/generate_promote
 **Alternatives considered**:
 - 「只用 real peeks」— 否決:real data 未必覆蓋偶數/奇數 plateau 與 endpoint plateau,plateau bug 可能在 CI 綠燈下存活。
 - 「把 synthetic cases 寫成 TS-only unit test,不進 Python golden」— 否決:plateau 規則要對 scipy,不是對手寫期望值;committed golden 讓規則來源可稽核。
+
+### D-32.7 — T4 `CurveAggregate` 保留 `flagCounts` 作為 additive 呈現欄位(2026-08-17,T4)
+
+T4 的 README 介面草案只要求 `CurveAggregate` 帶 L/R 的 `n` 與 101 點 mean/IQR band;落地時在 aggregate 上追加 `flagCounts`。這不改 `curve-v1` 數值語意,只把 `curve_table` row flags 的計數一起帶到 TS promoted payload,方便 T5 結果頁履行 C-D3/GD-20 的「每個晉升量帶 n + flags 計數 + version + 效度層級」紅線。
+
+**Alternatives considered**:
+- 「只在 `computeCurveMetrics().rows` 暴露 flags,aggregate 不帶」— 否決:結果頁主要消費 `computePromotedMetrics()` 的 aggregate;若不帶, T5 會被迫再呼叫另一條資料路徑或重算 flags,違反「統計 = 匯出」與 C-D4 的方向。
+- 「把 `nExcluded` 塞進每條 `NormalizedCurve`」— 暫不採納:目前 T4 golden 的排除規則以 `flagCounts` + per-side `n` 釘住即可;`nExcluded` 屬 T5 呈現設計,若畫面需要可在 T5 以 additive 欄位補。
 
 ---
 
