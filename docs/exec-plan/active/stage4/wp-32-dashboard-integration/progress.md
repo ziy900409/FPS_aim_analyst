@@ -10,7 +10,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-17 | 本檔 §0.5(上游複驗)+ §0.6(晉升清單)+ Decision Log D-32.2~D-32.4 + §0.7(fixture roster)+ Open Questions(OQ-S4-4 關閉、OQ-S4-21~24 開帳);`git diff --stat` 只含 `docs/exec-plan/active/stage4/`,`src/`/`research/` 零 diff |
-| T1 TS kinematics + SG | ⬜ | — | — |
+| T1 TS kinematics + SG | ✅ | 2026-08-17 | `src/metrics/angularKinematics.ts` + `src/metrics/filters/savitzkyGolay.ts`;`tests/golden/research/promoted-kinematics.test.ts` 對 SG 係數表 ≤1e-12、四份 ω fixture ≤1e-9、三份真實 ω 訊號 SG smoothing ≤1e-9;legacy 08:03/09:39 strict 負向測試拋 KI-005;新增 generator drift test |
 | T2 TS seg-v2 分段 | ⬜ | — | — |
 | T3 phase + sync 晉升 | ⬜ | — | — |
 | T4 curve 晉升 | ⬜ | — | — |
@@ -21,7 +21,7 @@
 
 | Task | `uv run pytest` | `npm run test:ci` |
 |---|---|---|
-| — | — | — |
+| T1 | `uv run pytest -q --tb=short --color=no --basetemp .pytest_tmp_t1_full` → `460 passed in 504.02s`(plain `uv run pytest` 因 Windows `%TEMP%/pytest-of-Hsin...` 權限失敗,改以 repo 內 basetemp 重跑) | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `93 passed / 763 tests` + Playwright `21 passed` |
 
 ---
 
@@ -128,6 +128,15 @@ TS 側因 D-32.3/S-32.1 不移植 Butterworth(`smooth_report_omega` 僅供報告
 - 「TS 也移植一個簡化版 Butterworth,湊出 `filter_degenerate`」— 否決:違反 §0.1 的減負理由(Butterworth 從不參與邊界計算,移植它只為了湊 flag 詞彙表完整,是為了對表而對表,且會引入零相位雙向濾波在 TS 重現的額外風險)。
 - 「golden 比較 flags 時改用子集判定(TS ⊆ Python)」— 否決:子集判定會放過「TS 漏掉一個非 `filter_degenerate` 的真實 flag」這種 bug,必須是「排除單一已知項後逐位相等」而非泛用子集容忍。
 
+### D-32.5 — T1 合成 anti-vacuous fixture 另立長版,不改既有 synthetic baseline(2026-08-17,T1)
+
+T1 DoD 要求合成 ω fixture 有 ≥100 finite samples,但既有 `synthetic_counterstrafe.json` 僅 48 ticks(47 finite ω),不足以防 vacuous 對表。T1 因此新增 `research/fixtures/exports/synthetic_counterstrafe_t1_long.json`:沿用既有 deterministic `make_synthetic_export(SyntheticSpec(peek_count=6,ticks_per_peek=24))`,只服務 promoted kinematics golden,不重錄或覆寫既有 `synthetic_counterstrafe.json` baseline。
+
+**Alternatives considered**:
+- 「放寬 synthetic anti-vacuous 門檻」— 否決:會削弱 T1 DoD,且不必要。
+- 「直接改既有 `synthetic_counterstrafe.json`」— 否決:會造成既有 parity/baseline 連鎖 churn,違反 T1 的封閉 scope。
+- 「在 TS test 手寫長合成 ticks」— 否決:會在 TS 側引入第二份 synthetic fixture generator,不如沿用 research 已有 deterministic generator。
+
 ---
 
 ## Surprises
@@ -146,6 +155,10 @@ TS 側因 D-32.3/S-32.1 不移植 Butterworth(`smooth_report_omega` 僅供報告
 
 → 契約改為「由 Python 產出係數矩陣、TS 內嵌為凍結常數」,把問題從**重寫演算法**降為**套用矩陣**。殘餘風險記為 **OQ-S4-21**,T1 驗。
 
+### S-32.3 — 既有合成 fixture 太短,不足 T1 anti-vacuous 門檻(2026-08-17,T1)
+
+`synthetic_counterstrafe.json` 只有 48 ticks,扣掉 index 0 的 `NaN` 後 finite ω = 47,低於 T1 DoD 的 synthetic ≥100。處置見 D-32.5:新增 T1 專用長版合成 export,不改既有 baseline。
+
 ---
 
 ## Open Questions
@@ -153,7 +166,7 @@ TS 側因 D-32.3/S-32.1 不移植 Butterworth(`smooth_report_omega` 僅供報告
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
 | ~~**OQ-S4-4**~~ | ~~晉升 dashboard 的指標清單~~ | ✅ **關閉(2026-08-17,T0,本檔 §0.6)**:晉升清單封閉為七列(三進四出)—— `phase-v1`/`sync-v1`/`curve-v1` 納入;`sparc-v1`/`xcorr-v1`/`fitts-v1` 排除(逐項理由 + 證據位置引 WP-31 T-exit D-31.6/D-31.9/D-31.10);`timeline-v1` 三量無事可做 | 使用者 | WP-32 T0 ✅ |
-| **OQ-S4-21**(新) | scipy `savgol_filter(mode='interp')` 的 edge polyfit 以凍結矩陣重現後能否穩定達 ≤1e-9 | 🟡 **T0 開帳(D-32.3)**,T1 驗;不達標一律停手入帳,**不得靜默放寬容差** | 研究者 | WP-32 T1 |
+| ~~**OQ-S4-21**~~ | ~~scipy `savgol_filter(mode='interp')` 的 edge polyfit 以凍結矩陣重現後能否穩定達 ≤1e-9~~ | ✅ **關閉(2026-08-17,T1)**:`promoted-kinematics.test.ts` 在三份真實 fixture 的 `omega.values[1:]` 上逐點比較 `sgSmooth` vs Python `sg_filter`,含前後 edge samples,≤1e-9 通過;SG 係數表本身 ≤1e-12 通過 | 研究者 | WP-32 T1 ✅ |
 | **OQ-S4-22**(新) | 結果頁單 drill n ≈ 20 peeks,phase/sync 均值是否穩定到可對選手呈現 | 🟡 open,T5 以呈現形式解(強制 n + p50 + SD,不給單一分數) | 使用者 / 研究者 | WP-32 T5 |
 | **OQ-S4-23**(新) | `curve-v1` 在結果頁的縮圖形式 | 🟡 open,T5 拍板;建議與教練報告 v1 同形式(inline SVG L/R 疊圖 + IQR 帶 + `n(L)`/`n(R)`) | 使用者 | WP-32 T5 |
 | **OQ-S4-24**(新) | 雙實作維護紀律是否升為硬約束 | 🟢 建議升 **C-D5**(CLAUDE.md §4)+ 候選 **GD-21**(DECISIONS.md);T-exit 落地 | 使用者 | WP-32 T-exit |

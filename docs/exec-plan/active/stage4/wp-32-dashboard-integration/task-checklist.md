@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(三個上游 exit 複驗 + **晉升清單凍結(關閉 OQ-S4-4)** + 移植紀律五條 + SG 係數策略 + `filter_degenerate` 子集決議;無演算法碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-31 T-exit ✅ | Low |
-| ⬜ | **T1** TS ω(t)(tick-integral,strict)+ **SG 凍結係數表**(≤1e-12 對表)+ ω golden(≤1e-9) | [T1-ts-kinematics-sg.md](T1-ts-kinematics-sg.md) | T0 | **High** |
+| ✅ | **T1** TS ω(t)(tick-integral,strict)+ **SG 凍結係數表**(≤1e-12 對表)+ ω golden(≤1e-9) | [T1-ts-kinematics-sg.md](T1-ts-kinematics-sg.md) | T0 | **High** |
 | ⬜ | **T2** TS `seg-v2` 分段移植 + segment golden(**index 逐位相等**,非容差) | [T2-ts-segmentation.md](T2-ts-segmentation.md) | T1 | **High** |
 | ⬜ | **T3** 共享 peek 窗抽出(零語意變更)+ `phase-v1` + `sync-v1` 晉升 + golden | [T3-phase-sync-promotion.md](T3-phase-sync-promotion.md) | T2 | Med |
 | ⬜ | **T4** 逐 tick ε 抽出(零語意變更)+ `curve-v1` 101 點 L/R 晉升 + golden | [T4-curve-promotion.md](T4-curve-promotion.md) | T1 | Med |
