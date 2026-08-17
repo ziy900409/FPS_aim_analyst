@@ -1,0 +1,355 @@
+{
+  "version": "sync-v1",
+  "source": "counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json",
+  "generatedBy": "research/src/modules/metrics/notebooks/t3/generate_promoted_phase_sync_golden.py",
+  "generatedAt": "2026-08-17",
+  "peekCount": 20,
+  "unflaggedCount": 0,
+  "rows": [
+    {
+      "peekIndex": 0,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 1,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 2,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 3,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 4,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 5,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 6,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 7,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 8,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 9,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 10,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 11,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 12,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 13,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 14,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 15,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 16,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 17,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 18,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    },
+    {
+      "peekIndex": 19,
+      "releaseToFireMs": null,
+      "counterHoldMs": null,
+      "counterToFireMs": null,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "no_counter",
+        "no_key_transition",
+        "missing_release",
+        "missing_counter"
+      ]
+    }
+  ],
+  "aggregate": {
+    "releaseToFireMs": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "counterHoldMs": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "counterToFireMs": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "verdicts": [
+      {
+        "metric": "release_to_fire_ms",
+        "n": 0,
+        "sampleSdMs": null,
+        "quantizationSdMs": 2.255274489021976,
+        "verdict": "blocked-by-data",
+        "reason": "n=0 < min_samples=10; collect 10 more unflagged samples"
+      },
+      {
+        "metric": "counter_hold_ms",
+        "n": 0,
+        "sampleSdMs": null,
+        "quantizationSdMs": 2.255274489021976,
+        "verdict": "blocked-by-data",
+        "reason": "n=0 < min_samples=10; collect 10 more unflagged samples"
+      }
+    ],
+    "flagCounts": {
+      "no_counter": 20,
+      "no_key_transition": 20,
+      "missing_release": 20,
+      "missing_counter": 20
+    },
+    "version": "sync-v1"
+  }
+}

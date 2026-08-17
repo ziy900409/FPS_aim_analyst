@@ -1,0 +1,156 @@
+{
+  "version": "phase-v1",
+  "segmentVersion": "seg-v2",
+  "source": "synthetic_counterstrafe_t1_long.json",
+  "generatedBy": "research/src/modules/metrics/notebooks/t3/generate_promoted_phase_sync_golden.py",
+  "generatedAt": "2026-08-17",
+  "filterDegeneratePolicy": "excluded-from-ts-flags",
+  "peekCount": 6,
+  "nonDegenerateCount": 0,
+  "samples": [
+    {
+      "peekIndex": 0,
+      "side": "L",
+      "tOnset": null,
+      "tMrEnd": null,
+      "tAnchor": null,
+      "recMs": null,
+      "mrMs": null,
+      "vMs": null,
+      "peakOmegaDegPerSec": null,
+      "tDetect": 15.625,
+      "recMinusDetectMs": null,
+      "flags": [
+        "window_too_short"
+      ],
+      "pythonFlags": [
+        "window_too_short"
+      ]
+    },
+    {
+      "peekIndex": 1,
+      "side": "R",
+      "tOnset": null,
+      "tMrEnd": null,
+      "tAnchor": null,
+      "recMs": null,
+      "mrMs": null,
+      "vMs": null,
+      "peakOmegaDegPerSec": null,
+      "tDetect": null,
+      "recMinusDetectMs": null,
+      "flags": [
+        "window_too_short"
+      ],
+      "pythonFlags": [
+        "window_too_short"
+      ]
+    },
+    {
+      "peekIndex": 2,
+      "side": "L",
+      "tOnset": null,
+      "tMrEnd": null,
+      "tAnchor": null,
+      "recMs": null,
+      "mrMs": null,
+      "vMs": null,
+      "peakOmegaDegPerSec": null,
+      "tDetect": null,
+      "recMinusDetectMs": null,
+      "flags": [
+        "window_too_short"
+      ],
+      "pythonFlags": [
+        "window_too_short"
+      ]
+    },
+    {
+      "peekIndex": 3,
+      "side": "R",
+      "tOnset": null,
+      "tMrEnd": null,
+      "tAnchor": null,
+      "recMs": null,
+      "mrMs": null,
+      "vMs": null,
+      "peakOmegaDegPerSec": null,
+      "tDetect": null,
+      "recMinusDetectMs": null,
+      "flags": [
+        "window_too_short"
+      ],
+      "pythonFlags": [
+        "window_too_short"
+      ]
+    },
+    {
+      "peekIndex": 4,
+      "side": "L",
+      "tOnset": null,
+      "tMrEnd": null,
+      "tAnchor": null,
+      "recMs": null,
+      "mrMs": null,
+      "vMs": null,
+      "peakOmegaDegPerSec": null,
+      "tDetect": null,
+      "recMinusDetectMs": null,
+      "flags": [
+        "window_too_short"
+      ],
+      "pythonFlags": [
+        "window_too_short"
+      ]
+    },
+    {
+      "peekIndex": 5,
+      "side": "R",
+      "tOnset": null,
+      "tMrEnd": null,
+      "tAnchor": null,
+      "recMs": null,
+      "mrMs": null,
+      "vMs": null,
+      "peakOmegaDegPerSec": null,
+      "tDetect": null,
+      "recMinusDetectMs": null,
+      "flags": [
+        "window_too_short"
+      ],
+      "pythonFlags": [
+        "window_too_short"
+      ]
+    }
+  ],
+  "aggregate": {
+    "recMs": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "mrMs": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "vMs": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "peakOmegaDegPerSec": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "sd": 0.0,
+      "n": 0
+    },
+    "flagCounts": {
+      "window_too_short": 6
+    },
+    "version": "phase-v1"
+  }
+}
