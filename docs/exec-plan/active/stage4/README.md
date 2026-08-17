@@ -325,7 +325,7 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 | **WP-29** | [wp-29-coach-timeline/](wp-29-coach-timeline/README.md) | 教練第一層:逐 peek 時間軸(交叉驗證 compute.ts)+ Release-to-Click Sync 族(+ 選配 key 事件)+ 教練報告 v0 | P0-1 + P1-2 | — | WP-28 **T1**(僅 ingest) | 1.5–2.5 | ✅ **完成(2026-08-05)**:T0–T2 + T3(使用者 override)+ T-exit 全綠;`timeline-v1`/`sync-v1` 定稿,OQ-S4-6 關閉 |
 | **WP-30** | [wp-30-trajectory-metrics/](wp-30-trajectory-metrics/README.md) | 軌跡診斷:REC/MR/V phase 分解 + L/R 101 點曲線 | P1-1 + P1-3 | — | **M14 ✅** | 2–3 → **2.5–3.25**(D-30.0) | ✅ **完成(2026-08-10)**：T0 strict roster/使用界線、T1 `t_detect` parity、T2 `phase-v1`、T3 `curve-v1`、T-exit `coach-report-v1` 全數交付；REC/`t_detect` 系統性分歧保留 OQ-S4-17 研究向 |
 | **WP-31** | [wp-31-advanced-diagnostics/](wp-31-advanced-diagnostics/README.md) | 進階診斷:SPARC + Key-Velocity xcorr(reliability gate)+ Fitts | P2 | — | **M14 ✅** + WP-30 ✅ | 2–3 → **2.5–3.25**(D-31.0) | ✅ **完成(2026-08-12)**:T0 ✅(2026-08-10)—— `gate-v1` 三件組凍結(含 seed,OQ-S4-3 關閉)+ 三份 pre-registration + fixture roster 沿用與 strict 閘覆核;**T1 ✅**(2026-08-10)—— `sparc-v1` 逐位移植 + 跨 repo golden ≤1e-9 + 階梯 verdict `stratified_only`(OQ-S4-18 關閉);**T2 ✅**(2026-08-10)—— `xcorr-v1`+`gate-v1` 三 session 全 `research_only`(2/3 未過 ① shuffle null),`coach_report` 由 AST 掃描證明不可達,新開 OQ-S4-20;**T3 ✅**(2026-08-12)—— `fitts-v1` D/W/ID/MT/TP + `blocked-by-data`(09:18 blocked,09:24/09:37 `ok` 但 r² 低);**T-exit ✅**(2026-08-12)—— 三份判定收斂 + `coach-report-v2`(研究向區塊 `#advanced` + 缺口說明 `#advanced-gaps`)+ `analysis-advanced-diagnostics.md` 定稿;**WP-32 交接清單為空**(三構念皆止步研究向/`blocked-by-data`) |
-| **WP-32** | `wp-32-dashboard-integration/` | 晉升整合:golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | — | **M15** | WP-29 + WP-30(WP-31 選項) | 2–3 | ⬜ |
+| **WP-32** | [wp-32-dashboard-integration/](wp-32-dashboard-integration/README.md) | 晉升整合:golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | — | **M15** | WP-29 ✅ + WP-30 ✅ + **WP-31 T-exit ✅**([D-32.1](wp-32-dashboard-integration/progress.md)) | 2–3 → **4.5–5.75**([D-32.0](wp-32-dashboard-integration/progress.md)) | 🟡 **T0 完成(2026-08-17)**:三個上游 T-exit 複驗通過;晉升清單封閉七列(`phase-v1`/`sync-v1`/`curve-v1` 納入,`sparc-v1`/`xcorr-v1`/`fitts-v1` 排除,`timeline-v1` 無事可做,關閉 OQ-S4-4);移植紀律 P1–P5 + SG 係數策略(D-32.3)+ `filter_degenerate` 子集決議(D-32.4)全數凍結;新開 OQ-S4-21/22/23/24 |
 
 ---
 
@@ -345,7 +345,8 @@ export function computePromotedMetrics(payload: ExportPayload): PromotedMetrics;
 WP-28(地基,M14)──┤                                                          ├→ WP-32(晉升整合,M15)= stage4 交付
                      ├─(M14 過後)─────────→ WP-30(phase + 101pt 曲線,P1)────┤
                      └─(M14 過後)─────────→ WP-31(SPARC/xcorr/Fitts,P2)─────┘
-                                                    (WP-31 為 M15 選項:未過 reliability gate 的指標不晉升)
+                                                    (WP-31 T-exit ✅ 為 WP-32 T0 硬相依,D-32.1,2026-08-12 使用者拍板;
+                                                     三指標實際判定全數止步研究向/blocked-by-data,晉升清單見 D-32.1 wp-32 progress.md)
 ```
 
 - **最短價值路徑 = WP-28 T1 → WP-29 T1/T2**:教練最快拿到逐 peek 時間軸與 sync(兩者只吃 ingest 與 events,不吃分段)。
@@ -402,14 +403,19 @@ WP-28(地基,M14)──┤                                                      
 | **T3 Fitts** ✅ | D = spawn 偏心角(`visible.targetX/Y/Z` + aim@spawn)、W = 目標角尺寸(`meta.targets.hitbox`,GD-7 單一來源);MT = t_firstShot − t_visible;逐 peek ID/MT → TP + 回歸診斷 | ✅ 完成(2026-08-12):已知幾何 fixture 綠(誤差 ≤1e-9);逐 session 判定 09:18 `blocked-by-data`(`d_ratio=1.8343 < min_d_ratio=2.0`)、09:24/09:37 `ok`(r² 0.0669/0.0339,TP 16.61/25.25 bits/s);**D 內生性與 MT 含 RT 兩項限制**逐字進 `fitts-v1` 與 registry(D-31.10) | Low |
 | **T-exit** ✅ | 三指標效度判定收斂 + `analysis-advanced-diagnostics.md` 定稿 | ✅ 完成(2026-08-12):三指標各一份判定收斂表(SPARC `stratified_only`/xcorr `research_only`/Fitts 09:18 `blocked-by-data`+09:24·09:37 `ok`);`coach_report.py` 升 `coach-report-v2`(研究向區塊 `#advanced` + 缺口說明 `#advanced-gaps`);9 份 committed 範例重跑;**WP-32 交接清單為空**(C-D3 上限下三構念皆止步研究向/blocked-by-data) | — |
 
-### WP-32 dashboard-integration(→ M15;entry = WP-29 + WP-30 exit;2–3d)
+### WP-32 dashboard-integration(→ M15;entry = WP-29 ✅ + WP-30 ✅ + WP-31 T-exit ✅;2–3d → **4.5–5.75d,D-32.0**)
+
+> **與規劃稿的偏離(D-32.0,2026-08-17 T0 落地回寫)**:規劃稿把 WP-32 寫成 T0/T1 golden parity/T2 結果頁/T-exit 四項、2–3d。讀碼後(`grep -rniE "savgol|sg_window|submovement|primary_flick|omega" src/ --include=*.ts` 對 `src/metrics/` 零命中)發現 TS 側沒有 ω(t)、SG、submovement 分段地基,而 `phase-v1` 的 MR 邊界 = `seg-v2` 的 `primary_flick` → 晉升 phase 必然連帶晉升整條分段鏈。故拆為七 task,理由與 alternatives considered 詳見 [wp-32 progress.md D-32.0](wp-32-dashboard-integration/progress.md)。同時 [D-32.1](wp-32-dashboard-integration/progress.md) 把 WP-31 由「M15 選項」升為硬相依(2026-08-12 使用者拍板)。
 
 | Task | Scope | Definition of Done | Risk |
 |---|---|---|---|
-| **T0 entry-gate** | 晉升清單拍板(OQ-S4-4;預設 phase 時長統計 + sync 統計 + L/R 曲線縮圖);WP-31 通過項納入評估 | 晉升清單 + 納入/排除理由記 progress | Low |
-| **T1 golden parity** | Python 產 `fixtures/golden/*.json` → `src/metrics/researchMetrics.ts` + table-driven vitest | TS 測試綠且對表 golden ≤1e-9;「任一端改動須重跑對表」紀律入 CLAUDE.md §4 | Med |
-| **T2 結果頁擴充** | `MetricsDashboard` 增晉升指標區塊(純 TS + DOM,D1);「統計 = 匯出」不變式維持 | vitest 綠;既有 dashboard 測試零修改全綠;手動視覺確認項記 progress | Med |
-| **T-exit(M15)** | 驗收清單 D 定稿 + 全項通過 | `test:ci` exit 0 + `uv run pytest` 綠;`acceptance-stage-d.md` 逐項證據連結;stage4 狀態翻 ✅ + exec-plan/README.md 對帳 + 移入 `completed/stage4/` | — |
+| **T0 entry-gate** ✅ | 三上游 T-exit 複驗;**晉升清單封閉(關閉 OQ-S4-4,三進四出)**+ 移植紀律 P1–P5 + SG 係數策略 + `filter_degenerate` 子集決議;零程式碼 | ✅ 完成(2026-08-17):三上游逐項覆核記 progress;晉升清單 + 排除理由/證據記 progress;P1–P5 入 Decision Log D-32.2;SG 策略入 D-32.3;`filter_degenerate` 決議入 D-32.4;OQ-S4-4 關閉、OQ-S4-21/22/23/24 開帳;`src/`/`research/` 零 diff | Low |
+| **T1 TS ω(t) + SG 凍結係數表** | `angularKinematics.ts`(tick-integral,strict)+ `savitzkyGolay.ts`(凍結係數表,`sg-seg-v2`)+ 兩支 golden | 係數表對 committed golden ≤1e-12;ω golden ≤1e-9;`meta.mouseIntegration` 缺席 → `blocked`(不回退 `aim-diff-legacy`) | **High** |
+| **T2 TS `seg-v2` 分段移植** | `submovement.ts`(`find_peaks` plateau / 邊界 walk / merge / flags) | segment golden(`startIdx`/`endIdx`)逐位相等,非容差 | **High** |
+| **T3 phase + sync 晉升** | 共享 peek 窗抽出(`peekWindows.ts`,零語意變更)+ `phase-v1` + `sync-v1` 晉升(`researchMetrics.ts`)+ golden | TS 測試綠且對表 golden(P3 三級容差);既有 `compute.ts` 測試零修改全綠 | Med |
+| **T4 curve 晉升** | 逐 tick ε 抽出(`trackingDerivation.ts`,零語意變更)+ `curve-v1` 101 點 L/R 晉升 + golden | golden 對表 101 點逐點;既有 `trackingDerivation.ts` 測試零修改全綠;只依賴 T1(可與 T2 並行) | Med |
+| **T5 結果頁擴充** | `MetricsDashboard`/`ResultScreen` 增 research-promoted 區塊(純 TS + DOM,D1,n/flags/version/效度層級 + `blocked` 態);「統計 = 匯出」E2E | vitest 綠;既有 dashboard 測試零修改全綠;metric id 集合 = 封閉晉升清單(多一個即 fail);E2E 證明實機 drill 後晉升區塊非空 | Med |
+| **T-exit(M15)** | 驗收清單 D 定稿 + C-D5 入 CLAUDE.md §4 + 全項通過 | `test:ci` exit 0 + `uv run pytest` 綠;`acceptance-stage-d.md` 逐項證據連結;stage4 狀態翻 ✅ + exec-plan/README.md 對帳 + 移入 `completed/stage4/` | — |
 
 ---
 
@@ -441,7 +447,11 @@ WP-28(地基,M14)──┤                                                      
 | ~~**OQ-S4-18**~~(新) | ~~SPARC 在 128Hz 的 N=32/64 零填充階梯,是否大到讓「跨段長比較」不成立~~ | ✅ **關閉(2026-08-10,WP-31 T1,D-31.6):不成立**。pooled n=59 實測 `step_ratio = 0.7643` ≥ pre-registered 的 `step_ratio_threshold = 0.5` → verdict **`stratified_only`**:SPARC 僅限同 `padded_n` bucket 內比較,報告須明文標限制。`FC_HZ`/`AMP_THRESH`/padding/`MIN_SAMPLES` 一律未動,亦未新增固定 N 的第二版本。**附帶歸因限制**:階梯無法歸因為純 padding 假象 —— 段長同時決定 `padded_n` 與動作本身性質,兩者共變不可分離,故判定為「跨 bucket 不可單一解讀」而非「扣一個修正項」 | 研究者 | WP-31 T1 ✅ | unblocked |
 | **OQ-S4-20**(新) | `xcorr-v1` 的 session 統計量是「逐 peek 對 65 個 lag 取最大 \|r\|」,本身是**最大化統計量**:circular-shift null 在 5.6% / 17.3% 的抽樣中也達到觀測水準(中位 \|r\| ≈ 0.90),三份真實 session 有兩份因此未過 ① | 🟡 **WP-31 T2 開,不在本 WP 解**(D-31.9)。問題不在 `shuffle_alpha` 的數值(09:37 的 p=0.173 連 0.05 都過不了),而在統計量的選擇:是否應改用**固定 lag 的 r**、或對 lag 數作多重比較校正 → 屬 `xcorr-v2` + 全鏈重跑。依 T2 DoD ⑤「發現門檻不合適則記錄但不修改」處置。**這是 stage4 至今唯一一次 pre-registered null 實際擋下錯誤結論**(0.90 差點被當成強耦合寫進報告)。**WP-31 T-exit 已複核(2026-08-12):結論不變,不阻塞收斂**——xcorr 已進 `coach-report-v2` 研究向區塊並附此限制,`xcorr-v2` 留給 WP-32 或補錄後 | 研究者 | WP-32 或補錄後 | xcorr 的效度天花板;不阻塞 WP-31 T-exit(判定已明確且方向保守) |
 | **OQ-S4-19**(新) | Fitts 的 D 為內生(玩家上一 peek 結束時準星停在哪),回歸結果能否作為 TP 的個人基線 | 🟡 **T3 交付數值 + 限制,不作因果主張**。目標只在兩個固定位置出現,D 的變異幾乎全來自前一 peek 的過衝/修正 → 相關性觀察,非 Fitts 典範的受控設計;且 `MT = t_firstShot − t_visible` 含 RT 與 counter-strafe 停止時間,截距 `a` 會吸收兩者(`t_detect` 僅 5–9/20 peek 有值,不足以逐 peek 扣除)。升級為受控設計(drill 端隨機化 spawn 偏心)屬新 WP/新錄製,不在本 stage。**WP-31 T-exit 已複核(2026-08-12):結論不變**——09:24/09:37 已進 `coach-report-v2` 研究向區塊並附兩項限制,09:18 因 `blocked-by-data` 改列缺口說明;WP-32 T0 晉升清單評估結論為「不建議」(見 `analysis-advanced-diagnostics.md` T-exit 章節) | 研究者 | pilot 後 | TP 的解讀範圍;不阻塞 T3 交付 |
-| **OQ-S4-4** | 晉升 dashboard 的指標清單 | phase 時長統計 + sync 統計 + L/R 曲線縮圖(P0/P1 全數;P2 視 gate) | 使用者 | WP-32 T0 | WP-32 scope 不定 |
+| ~~**OQ-S4-4**~~ | ~~晉升 dashboard 的指標清單~~ | ✅ **關閉(2026-08-17,WP-32 T0)**:晉升清單封閉七列(三進四出)—— `phase-v1`/`sync-v1`/`curve-v1` 納入;`sparc-v1`(`stratified_only`,D-31.6)/`xcorr-v1`(`research_only`,D-31.9)/`fitts-v1`(09:18 `blocked-by-data`+09:24·09:37 `ok` 但 r² 低,D-31.10)排除;`timeline-v1` 三量無事可做。逐項理由 + 證據見 [wp-32 progress.md §0.6](wp-32-dashboard-integration/progress.md) | 使用者 | WP-32 T0 ✅ | unblocked |
+| **OQ-S4-21**(新) | scipy `savgol_filter(mode='interp')` 的 edge polyfit 以凍結矩陣重現後,能否在三份真實 fixture 上穩定達 ≤1e-9 | 🟡 **WP-32 T0 開帳(D-32.3)**,T1 驗。若不達標:先查是否為矩陣精度 → 仍不行則停手入帳,提案把 edge 5 個樣本的對表容差分級為 ≤1e-6 並在 `analysis-phase-curves.md` 明載,不得靜默放寬 | 研究者 | WP-32 T1 | phase 晉升可行性;最壞情況 = phase 降級為不晉升,退回 sync+curve 兩項 |
+| **OQ-S4-22**(新) | 結果頁單 drill n ≈ 20 peeks(phase 非退化約 59/60 → 單 drill ~19),phase/sync 的均值是否穩定到可對選手呈現 | 🟡 **WP-32 T0 開帳**,T5 以呈現形式解:強制顯示 n + p50 + SD,不顯示單一「分數」;是否需要跨 drill 累積由 pilot 後決定 | 使用者 / 研究者 | WP-32 T5 | 呈現形式;不阻塞實作 |
+| **OQ-S4-23**(新) | `curve-v1` 在結果頁的縮圖形式(L/R 疊圖 + IQR 帶 vs 只給 n 與帶寬摘要) | 🟡 **WP-32 T0 開帳**,T5 拍板。建議:inline SVG L/R 疊圖 + IQR 帶(與教練報告 v1 同形式),圖上標 `n(L)`/`n(R)` | 使用者 | WP-32 T5 | 結果頁版面;不阻塞對表 |
+| **OQ-S4-24**(新) | 晉升後 Python/TS 雙實作的長期維護紀律要不要升為硬約束 | 🟢 **WP-32 T0 開帳,建議升**:T-exit 將「任一端改動 `seg-v2`/`phase-v1`/`curve-v1`/`sync-v1` 語意須同步重跑 golden 對表」寫入 [CLAUDE.md](../../../../CLAUDE.md) §4 為 **C-D5**,並入 DECISIONS.md(候選 **GD-21**) | 使用者 | WP-32 T-exit | 長期漂移風險 |
 | **OQ-S4-5** | 101 點正規化窗口錨 | **`[t_visible, t_firstShot]`**(counter-strafe 錨定首發,CONTEXT §A;t_kill 版含補槍屬「清目標節奏」,留分析端副版) | 研究者 | WP-30 T2 | 曲線語意不定 |
 | ~~**OQ-S4-6**~~ | ~~教練報告載體~~ | ✅ **關閉(2026-08-05,WP-29 T-exit)**:`research/src/report/coach_report.py` 一鍵產出單檔自足靜態 HTML(inline CSS + inline SVG,零外部資源、可直接寄送),四份 committed 範例 deterministic。升級為互動式的觸發條件(教練需互動篩選)未達,維持技術債登錄 §7⑤ | 使用者 | 2026-08-05 | unblocked |
 | ~~**OQ-S4-12**~~ | ~~缺「含真實 A/D strafe」的 counter-strafe 匯出~~ | ✅ **關閉(2026-08-05)**:09:39 匯出已補錄並進 `research/fixtures/exports/`(21.27s ≤30s、匿名 `P001`、PII-like 掃描無命中、counter 24、三個對表量各 n=20) | 使用者 | 2026-08-05 | unblocked；T2 可依 `sync-v1` 作實質判定 |

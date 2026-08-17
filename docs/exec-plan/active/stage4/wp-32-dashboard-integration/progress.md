@@ -9,7 +9,7 @@
 
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
-| T0 entry gate | ⬜ | — | — |
+| T0 entry gate | ✅ | 2026-08-17 | 本檔 §0.5(上游複驗)+ §0.6(晉升清單)+ Decision Log D-32.2~D-32.4 + §0.7(fixture roster)+ Open Questions(OQ-S4-4 關閉、OQ-S4-21~24 開帳);`git diff --stat` 只含 `docs/exec-plan/active/stage4/`,`src/`/`research/` 零 diff |
 | T1 TS kinematics + SG | ⬜ | — | — |
 | T2 TS seg-v2 分段 | ⬜ | — | — |
 | T3 phase + sync 晉升 | ⬜ | — | — |
@@ -22,6 +22,46 @@
 | Task | `uv run pytest` | `npm run test:ci` |
 |---|---|---|
 | — | — | — |
+
+---
+
+## 0.5 T0 ① 上游三個 T-exit 複驗(只引用,不重跑)
+
+> 協議 §6:entry-gate 的職責是驗上游 exit-gate,不是代辦。以下逐項覆核既有 T-exit 文件與 progress 的證據位置,**未重跑任何上游測試**。
+
+| 上游 | 覆核內容 | 證據位置 |
+|---|---|---|
+| **WP-29 T-exit** | `timeline-v1` 窗界 `[t_visible, nextVisible.t)`(末筆 +∞)+ 封閉 12 項 flags 詞彙表;`sync-v1` 三量定義(`release_to_fire_ms`/`counter_hold_ms`/`counter_to_fire_ms`)+ 凍結 `SyncParams(min_samples=10, sd_ratio_threshold=1/3, version="sync-v1")`;`compute-v1` 三個既有量(`counterReactionMs`/`fireTimingAlignmentMs`/`firstShotHitRate`)為 TS 權威、Python 對表 ≤1e-9 | [analysis-peek-timeline.md](../../../../operational/analysis-peek-timeline.md) L14-18(權威/版本表)、L79-98(封閉 flags)、L100-135(`sync-v1` 定義 + 凍結 `SyncParams` + 精度判準表);[wp-29 progress.md](../wp-29-coach-timeline/progress.md) T-exit 列(六指標各帶 n/flags/version/效度層級,四份範例 deterministic) |
+| **WP-30 T-exit** | `phase-v1` 凍結 `cutoff_hz=12.0, butter_order=4, min_window_ticks=30`(D-30.9)+ `MR = seg-v2 primary_flick` 逐位複用(D-30.1/D-30.1b,多段取候選①)+ 封閉 6 項 flags(含 `filter_degenerate`);`curve-v1` 凍結 `points=101, min_ticks=3(D-30.11), band=iqr`;research-side `t_detect`(`detect.py`)對 TS `detectionDerivation.ts` 逐位 parity ≤1e-9(D-30.5/D-30.6);`seg-v1`/`seg-v2` 依 `mouseIntegration` 存在與否自動選版(`tick-integral` 用 `seg-v2`,`aim-diff-legacy` 用 `seg-v1`) | [analysis-phase-curves.md](../../../../operational/analysis-phase-curves.md) L64-97(`phase-v1` frozen registry)、L37-55(封閉 degenerate flags 表,含 L45 `filter_degenerate` 定義);[wp-30 progress.md](../wp-30-trajectory-metrics/progress.md) D-30.1/D-30.1b/D-30.5/D-30.9/D-30.11;[wp-30 progress.md](../wp-30-trajectory-metrics/progress.md) T-exit 列(`coach-report-v1`,phase/curve 帶 n/flags/version/效度層級,9 份 committed HTML deterministic) |
+| **WP-31 T-exit** | 三份效度判定收斂:SPARC `stratified_only`(D-31.6,`step_ratio=0.7643 ≥ 0.5`)、xcorr `research_only`(D-31.9,三 session 全數,2/3 未過 shuffle null)、Fitts 09:18 `blocked-by-data`(`d_ratio=1.8343<2.0`)+ 09:24/09:37 `ok` 但 r² 低(D-31.10);T-exit 明文「WP-32 交接清單為空」(D-31.11) | [wp-31 progress.md](../wp-31-advanced-diagnostics/progress.md) D-31.6/D-31.9/D-31.10/D-31.11;[analysis-advanced-diagnostics.md](../../../../operational/analysis-advanced-diagnostics.md) 「T-exit — 三份判定收斂 + 報告載體契約 + WP-32 交接」章節 |
+| **M14** | `seg-v1`(legacy)/`seg-v2`(tick-integral)frozen registry;單一匿名受試者、n=3 session、非母體層級的效度聲稱範圍;fixture roster(09:18/09:24/09:37 主用、09:39/08:03 因 beat aliasing + 無 eye origin 禁用於 ω/curve/phase 但仍可用於 sync) | [../README.md §4](../README.md#4-里程碑門控)(M14 六項重新宣告紀錄);[analysis-segments.md](../../../../operational/analysis-segments.md) `seg-v2` frozen registry |
+
+**結論**:三個上游 T-exit 與 M14 逐項覆核通過,無一項需要重跑或補證據。
+
+## 0.6 T0 ② 晉升清單(封閉七列,三進四出;關閉 OQ-S4-4)
+
+| 晉升 | 版本 | 決議 | 理由 + 證據位置 |
+|---|---|---|---|
+| ✅ REC/MR/V phase | `phase-v1` | **納入** | WP-30 T-exit 已交付、對表閘綠、效度限制已記(REC-end 與 `t_detect` 系統性分歧,OQ-S4-17 研究向不阻塞晉升);[wp-30 progress.md](../wp-30-trajectory-metrics/progress.md) T-exit 列 |
+| ✅ Release-to-Click Sync | `sync-v1` | **納入** | WP-29 T-exit 已交付、精度判準已 pre-registered 並判 `sufficient`;[analysis-peek-timeline.md](../../../../operational/analysis-peek-timeline.md) §Pre-registered precision decision |
+| ✅ L/R 101 點曲線 | `curve-v1` | **納入** | WP-30 T-exit 已交付、三份真實 session 各 L/R n=10 零排除;[wp-30 progress.md](../wp-30-trajectory-metrics/progress.md) T3 列 |
+| ❌ SPARC | `sparc-v1` | **排除** | WP-31 T1 判 `stratified_only`(D-31.6):`step_ratio=0.7643 ≥ pre-registered 0.5`,僅限同 `padded_n` bucket 內比較;結果頁單一數字無法承載該限制條件,C-D3 下不得進主表。[wp-31 progress.md D-31.6](../wp-31-advanced-diagnostics/progress.md) |
+| ❌ Key-Velocity xcorr | `xcorr-v1` | **排除** | WP-31 T2 判三 session 全 `research_only`(D-31.9):09:18/09:37 未過 ① shuffle null(p=0.056/0.173),`gate-v1` 上限條款下 `coach_report` 由 AST 掃描證明不可達。[wp-31 progress.md D-31.9](../wp-31-advanced-diagnostics/progress.md) |
+| ❌ Fitts | `fitts-v1` | **排除** | WP-31 T3 判定(D-31.10):09:18 `blocked-by-data`(`d_ratio=1.8343 < min_d_ratio=2.0`);09:24/09:37 `ok` 但 r² 僅 0.0669/0.0339,加上 OQ-S4-19 的 D 內生性(spawn 偏心來自上一 peek 過衝,非受控設計)與 MT 含 RT 兩項限制,結果頁單一 TP 數字會誤導教練當作可靠個人基線。[wp-31 progress.md D-31.10](../wp-31-advanced-diagnostics/progress.md) |
+| ❌ `timeline-v1` 三量 | — | **無事可做** | `counterReactionMs`/`fireTimingAlignmentMs`/`firstShotHitRate` 本來就是 `compute.ts` 既有輸出,TS 已是權威,WP-29 T1 已對表 ≤1e-9;沒有東西要「晉升」。[analysis-peek-timeline.md](../../../../operational/analysis-peek-timeline.md) L14-16 |
+
+**OQ-S4-4 關閉**:晉升清單封閉為上表七列(三進四出),排除項理由與證據皆為既有上游 T-exit 判定的引用,非本 WP 推定。
+
+## 0.7 T0 ⑤ fixture roster 沿用(承 WP-31 T0,不重新談判)
+
+| fixture | phase / curve / ω 相關對表 | sync 相關對表 |
+|---|---|---|
+| 09:18 / 09:24 / 09:37(tick-integral) | ✅ 主用(`strict=True`) | ✅ 可用 |
+| 09:39 | ❌ 禁用(beat aliasing + 無 eye origin) | ✅ 主要真實效度樣本(13 個 unflagged Sync 列) |
+| 08:03 | ❌ 禁用(同上) | ✅ 零輸入邊界案例(`n=0` 不得 crash) |
+| 合成(`synthetic_counterstrafe.json`) | ✅ 演算法邊界 | ✅ 演算法邊界 |
+
+**sync 例外的理由**:`sync-v1` 只吃 `events` 與 `ticks[].keys`,不吃 ω/`px`/`pz`,故 09:39/08:03 的 `aim-diff-legacy`/無 eye origin 禁用理由對 sync 不適用 —— 這是 [wp-29 T0 的 KI-004 使用界線決議](../wp-29-coach-timeline/progress.md)原文,界線未變、本 WP 不重新談判。
 
 ---
 
@@ -52,7 +92,41 @@
 
 **代價**:M15 延後約 0.5–1d。**換得**:晉升清單的排除理由是證據(三份判定 + `analysis-advanced-diagnostics.md` 定稿)而非推定,符合 C-D3「寧可少一個指標,不能有一個會說錯話的指標」的舉證責任方向。
 
-*(以下由各 task 落地時續寫:D-32.2 起)*
+### D-32.2 — 移植紀律 P1–P5 pre-registration(2026-08-17,T0 凍結)
+
+**事後不得依對表結果調整,只能升 version 重跑**。五條:
+
+| # | 紀律 | 理由 |
+|---|---|---|
+| **P1** | **parity 方向**:六個新構念(ω / SG / `seg-v2` / `phase-v1` / `sync-v1` / `curve-v1`)一律 Python 權威、TS port;閘 = committed golden + vitest,落在既有 `npm run test:ci`(engine CI 不引入 Python,OQ-S4-7 不變) | 若方向不定,對不上時會傾向改較好改的 Python,等於讓已凍結的研究層跟著 UI 走 |
+| **P2** | **既有構念禁第二定義(C-D4)**:peek 窗界複用 `compute.ts`、逐 tick ε 複用 `trackingDerivation.ts`、`t_detect` 呼叫 `deriveDetectionMetrics` | `researchMetrics.ts` 是新檔,最方便的寫法就是「順手再算一次」,而那正是 C-D4 禁的 |
+| **P3** | **對表容差三級**:① SG 係數表 vs Python golden ≤1e-12 ② 所有浮點量 ≤1e-9 相對誤差 ③ 整數量(segment `startIdx`/`endIdx`、`n`、flag 集合)= 逐位相等,不設容差 | 分段邊界差 1 tick = 7.8125ms,用相對容差會讓它悄悄過關 |
+| **P4** | **`filter_degenerate` 為刻意的詞彙表子集**(細節見 D-32.4):TS 不移植 Butterworth → 該 flag 不可能產生。golden 比較 flags 時排除此一 flag,其餘 flag 逐 peek 相等(不是子集) | 不先凍結,T3 對表紅了會被誤判為 bug,或被用「flags 只比子集」矇混過去 |
+| **P5** | **`blocked` 優於錯值**:`meta.mouseIntegration` 缺席 → `computePromotedMetrics` 回 `{status:'blocked', reason}`;禁止回退 `aim-diff-legacy` ω | 回退 = 在結果頁顯示 [KI-005](../../../../known_issue/KI-005-omega-render-sim-aliasing.md) 已知錯誤的數字,比不顯示更糟 |
+
+**Alternatives considered**:
+- 「容差一律 ≤1e-9,不特別區分整數量」— 否決:分段 index 差 1 是離散事件(邊界移動一整個 tick),不是浮點捨入誤差,混在同一容差級會掩蓋真實的演算法分歧。
+- 「parity 方向依指標各自決定(部分 TS 權威、部分 Python 權威)」— 否決:六個新構念在本 repo 都沒有既有 TS 實作,分開決定沒有依據可循,只會製造下一個 task 需要另外裁決的分歧點。
+
+### D-32.3 — SG 係數策略:凍結矩陣而非重寫 scipy(2026-08-17,T0 拍板;承 S-32.2)
+
+`sgSmooth` **不重寫 scipy**:由 Python 產出 `sg-coeffs-seg-v2.json`(interior 11 個係數 + 前/後各 5×11 的 edge 轉換矩陣,對應 `scipy.signal.savgol_filter(window_length=11, polyorder=3, mode='interp')` 的 `_fit_edges_polyfit`)→ TS 內嵌為凍結常數表(生產碼不在 runtime 讀 fixture),另以一支測試對 committed golden ≤1e-12。版本字串 `sg-seg-v2`;改動 = 升 `seg` 版號,不得原地改。
+
+**不達標時的處置路徑(OQ-S4-21,T1 驗)**:① 若 ≤1e-9 對不上,先查是否為矩陣精度問題(以更高精度重產生係數)② 仍不行則停手入帳,提案把 edge 5 個樣本的對表容差分級為 ≤1e-6 並在 `analysis-phase-curves.md` 明文記載,**不得靜默放寬**。
+
+**Alternatives considered**:
+- 「在 TS 重寫 `np.polyfit`/`lstsq` 逐位重現 edge fitting」— 否決:`lstsq` 的數值路徑(QR/SVD 分解)在 TS 生態沒有與 numpy/LAPACK 逐位一致的實作,重寫本身就無法保證 ≤1e-9,等於把風險從「套矩陣」轉移到「重寫數值線性代數函式庫」,成本更高且風險不會消失。
+- 「放寬對表容差以容納重寫誤差」— 否決:violates P3,且是先射箭後畫靶。
+
+### D-32.4 — `filter_degenerate` 為刻意的詞彙表子集(2026-08-17,T0 拍板;承契約第 4 條)
+
+TS 側因 D-32.3/S-32.1 不移植 Butterworth(`smooth_report_omega` 僅供報告疊圖平滑,`phase.py` docstring 明寫 "never a boundary input")→ 無法產生 `filter_degenerate` 這一個 flag。golden 對表逐 peek 比較 flags 集合時**排除此一 flag**;**其餘 flag 逐 peek 必須完全相等(不是子集,是相等)**。
+
+**須同步更新的文件位置**:`docs/operational/analysis-phase-curves.md` 補一段「TS 晉升面的 flags 詞彙表 = Python 詞彙表 − {`filter_degenerate`};此 flag 只描述報告疊圖能否平滑,不影響任何 rec/mr/v/peak ω 數值」(T3 落地時補寫,T0 僅在此凍結決議文字)。
+
+**Alternatives considered**:
+- 「TS 也移植一個簡化版 Butterworth,湊出 `filter_degenerate`」— 否決:違反 §0.1 的減負理由(Butterworth 從不參與邊界計算,移植它只為了湊 flag 詞彙表完整,是為了對表而對表,且會引入零相位雙向濾波在 TS 重現的額外風險)。
+- 「golden 比較 flags 時改用子集判定(TS ⊆ Python)」— 否決:子集判定會放過「TS 漏掉一個非 `filter_degenerate` 的真實 flag」這種 bug,必須是「排除單一已知項後逐位相等」而非泛用子集容忍。
 
 ---
 
@@ -78,8 +152,8 @@
 
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
-| **OQ-S4-4** | 晉升 dashboard 的指標清單 | 🟡 **T0 關閉**:已由使用者於 2026-08-12 拍板三項全晉升(`phase-v1` + `sync-v1` + `curve-v1`);T0 須把 WP-31 三指標的逐項排除理由與證據位置寫入 | 使用者 | WP-32 T0 |
-| **OQ-S4-21**(新) | scipy `savgol_filter(mode='interp')` 的 edge polyfit 以凍結矩陣重現後能否穩定達 ≤1e-9 | 🟡 open,T1 驗;不達標一律停手入帳,**不得靜默放寬容差** | 研究者 | WP-32 T1 |
+| ~~**OQ-S4-4**~~ | ~~晉升 dashboard 的指標清單~~ | ✅ **關閉(2026-08-17,T0,本檔 §0.6)**:晉升清單封閉為七列(三進四出)—— `phase-v1`/`sync-v1`/`curve-v1` 納入;`sparc-v1`/`xcorr-v1`/`fitts-v1` 排除(逐項理由 + 證據位置引 WP-31 T-exit D-31.6/D-31.9/D-31.10);`timeline-v1` 三量無事可做 | 使用者 | WP-32 T0 ✅ |
+| **OQ-S4-21**(新) | scipy `savgol_filter(mode='interp')` 的 edge polyfit 以凍結矩陣重現後能否穩定達 ≤1e-9 | 🟡 **T0 開帳(D-32.3)**,T1 驗;不達標一律停手入帳,**不得靜默放寬容差** | 研究者 | WP-32 T1 |
 | **OQ-S4-22**(新) | 結果頁單 drill n ≈ 20 peeks,phase/sync 均值是否穩定到可對選手呈現 | 🟡 open,T5 以呈現形式解(強制 n + p50 + SD,不給單一分數) | 使用者 / 研究者 | WP-32 T5 |
 | **OQ-S4-23**(新) | `curve-v1` 在結果頁的縮圖形式 | 🟡 open,T5 拍板;建議與教練報告 v1 同形式(inline SVG L/R 疊圖 + IQR 帶 + `n(L)`/`n(R)`) | 使用者 | WP-32 T5 |
 | **OQ-S4-24**(新) | 雙實作維護紀律是否升為硬約束 | 🟢 建議升 **C-D5**(CLAUDE.md §4)+ 候選 **GD-21**(DECISIONS.md);T-exit 落地 | 使用者 | WP-32 T-exit |
