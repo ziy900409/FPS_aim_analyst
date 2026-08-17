@@ -11,7 +11,7 @@
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-17 | 本檔 §0.5(上游複驗)+ §0.6(晉升清單)+ Decision Log D-32.2~D-32.4 + §0.7(fixture roster)+ Open Questions(OQ-S4-4 關閉、OQ-S4-21~24 開帳);`git diff --stat` 只含 `docs/exec-plan/active/stage4/`,`src/`/`research/` 零 diff |
 | T1 TS kinematics + SG | ✅ | 2026-08-17 | `src/metrics/angularKinematics.ts` + `src/metrics/filters/savitzkyGolay.ts`;`tests/golden/research/promoted-kinematics.test.ts` 對 SG 係數表 ≤1e-12、四份 ω fixture ≤1e-9、三份真實 ω 訊號 SG smoothing ≤1e-9;legacy 08:03/09:39 strict 負向測試拋 KI-005;新增 generator drift test |
-| T2 TS seg-v2 分段 | ⬜ | — | — |
+| T2 TS seg-v2 分段 | ✅ | 2026-08-17 | `src/metrics/submovement.ts` + `src/metrics/submovement.test.ts`;`tests/golden/research/promoted-segments.test.ts` 對三份 real fixture 60 peeks 的 `kind/startIdx/endIdx/flags/traceFlags` 逐位相等、`peakOmega` ≤1e-9,pooled `primary_flick=59`;synthetic golden 釘住 scipy `find_peaks` plateau 規則與 merge/flag 分支;新增 generator drift test |
 | T3 phase + sync 晉升 | ⬜ | — | — |
 | T4 curve 晉升 | ⬜ | — | — |
 | T5 結果頁擴充 | ⬜ | — | — |
@@ -22,6 +22,7 @@
 | Task | `uv run pytest` | `npm run test:ci` |
 |---|---|---|
 | T1 | `uv run pytest -q --tb=short --color=no --basetemp .pytest_tmp_t1_full` → `460 passed in 504.02s`(plain `uv run pytest` 因 Windows `%TEMP%/pytest-of-Hsin...` 權限失敗,改以 repo 內 basetemp 重跑) | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `93 passed / 763 tests` + Playwright `21 passed` |
+| T2 | `uv run pytest -q --tb=short --color=no --basetemp .pytest_tmp_t2_full`(於 `research/`) → `462 passed in 553.87s (0:09:13)` | `npm.cmd run test:ci` → `tsc --noEmit` + Vitest `95 passed / 777 tests` + Playwright `21 passed`(sandbox 內首次 Vitest config 載入遇 Windows 上層目錄權限錯誤,升權重跑同指令通過) |
 
 ---
 
@@ -62,6 +63,25 @@
 | 合成(`synthetic_counterstrafe.json`) | ✅ 演算法邊界 | ✅ 演算法邊界 |
 
 **sync 例外的理由**:`sync-v1` 只吃 `events` 與 `ticks[].keys`,不吃 ω/`px`/`pz`,故 09:39/08:03 的 `aim-diff-legacy`/無 eye origin 禁用理由對 sync 不適用 —— 這是 [wp-29 T0 的 KI-004 使用界線決議](../wp-29-coach-timeline/progress.md)原文,界線未變、本 WP 不重新談判。
+
+## 0.8 T2 `seg-v2` TS port 來源行號對照(2026-08-17)
+
+> T2 要求先讀 `_candidate` / `_merge_overlapping`,並把 12 步行為對照表的 Python 實際行號入帳。以下對照 `research/src/modules/segments/algorithms/submovement.py`。
+
+| # | Python 行為 | 行號 |
+|---|---|---|
+| 1 | `values.size == 0` → `empty_signal` | L185-L189 |
+| 2 | `_prepare_signal`:全非有限歸零、部分非有限 `np.interp` + 首尾外側歸零 + clip | L227-L241 |
+| 3 | `not np.any(clean > 0)` → `zero_motion` + `below_floor` | L191-L193 |
+| 4 | `clean.size < sg_window` → 不平滑 + `sg_fallback_short_signal` | L195-L199 |
+| 5 | SG 後 `np.clip(smoothed,0,None)` | L199-L200 |
+| 6 | threshold = `max(mean + k*std(ddof=0), floor)` | L202-L205 |
+| 7 | `find_peaks(smoothed)` 後以 `smoothed[i] >= threshold` 過濾 | L206-L207 |
+| 8 | 無 peak → `below_floor` 或 `no_peak` | L208-L210 |
+| 9 | `_candidate`:左右嚴格 `>` walk,邊界 inclusive,edge truncation flag | L244-L267 |
+| 10 | `_merge_overlapping`:只要 `start_idx <= prior.end_idx` 即合併,flag 聯集並加 `merged_adjacent_peaks`,峰值只在 `>` 時更新 | L270-L283 |
+| 11 | merged list 的第 0 段才是 `primary_flick`,其餘 `micro_adjustment` | L214-L222 |
+| 12 | `flags=tuple(sorted(candidate.flags))`;trace flags 由 `SegmentList(..., flags=trace_flags)` 承載 | L220-L224 |
 
 ---
 
@@ -137,6 +157,19 @@ T1 DoD 要求合成 ω fixture 有 ≥100 finite samples,但既有 `synthetic_co
 - 「直接改既有 `synthetic_counterstrafe.json`」— 否決:會造成既有 parity/baseline 連鎖 churn,違反 T1 的封閉 scope。
 - 「在 TS test 手寫長合成 ticks」— 否決:會在 TS 側引入第二份 synthetic fixture generator,不如沿用 research 已有 deterministic generator。
 
+### D-32.6 — T2 segment golden 分 real peek 與 synthetic algorithm cases(2026-08-17,T2)
+
+T2 golden 產生器 `research/src/modules/segments/notebooks/t2/generate_promoted_segments_golden.py` 產四份 JSON:
+
+- 三份 real `segments-counterstrafe_*.json`:逐 peek 按 WP-30 `_dimension_two` 相同路徑切窗,`omega_deg_s(strict=True).values[1:]` 餵 `segment_submovements(..., SEG_V2_PARAMS)`,再把 segment index `+1` 映回 tick frame。對表面含 `tickRange`/`tickCount`/`indexFrame='tick'`,方便 TS test 檢查切窗沒有漂。
+- 一份 `segments-synthetic_submovement_cases.json`:分成 `peakCases`(scipy `find_peaks` plateau/endpoint 規則)與 `segmentCases`(empty/non-finite/zero/below-floor/no-peak/short/truncated/merge flags)。`indexFrame='signal'`。
+
+**採納理由**:real fixture 驗實機 60 peeks 與 anti-vacuous `primary_flick=59`;synthetic cases 驗離散 hazard,尤其 plateau midpoint 與 merge。把兩者放同一個 fake export 會增加 fixture schema 負擔,且 plateau 規則本身不是 export 語意。
+
+**Alternatives considered**:
+- 「只用 real peeks」— 否決:real data 未必覆蓋偶數/奇數 plateau 與 endpoint plateau,plateau bug 可能在 CI 綠燈下存活。
+- 「把 synthetic cases 寫成 TS-only unit test,不進 Python golden」— 否決:plateau 規則要對 scipy,不是對手寫期望值;committed golden 讓規則來源可稽核。
+
 ---
 
 ## Surprises
@@ -158,6 +191,14 @@ T1 DoD 要求合成 ω fixture 有 ≥100 finite samples,但既有 `synthetic_co
 ### S-32.3 — 既有合成 fixture 太短,不足 T1 anti-vacuous 門檻(2026-08-17,T1)
 
 `synthetic_counterstrafe.json` 只有 48 ticks,扣掉 index 0 的 `NaN` 後 finite ω = 47,低於 T1 DoD 的 synthetic ≥100。處置見 D-32.5:新增 T1 專用長版合成 export,不改既有 baseline。
+
+### S-32.4 — T2 merge synthetic 若先經 SG 可能被平滑成單峰(2026-08-17,T2)
+
+起初沿用 `test_submovement.py` 中 32 點 tightly spaced double peak 長訊號作為 TS merge case,但在 `seg-v2` 的 `sg_window=11` 下,該訊號經 SG 後只剩單一 local maximum,因此不會產生 `merged_adjacent_peaks`。這不是 TS port bug,而是測試資料沒有踩到 T2 要驗的 merge 分支。
+
+**Evidence**:`segments-synthetic_submovement_cases.json` 初版的 `merged_adjacent_peaks` case 產生 `flags: []`;改為 6 點短窗 fallback `(0,100,300,100,250,0)` 後,Python golden 與 TS unit test 都產生 `flags: ['merged_adjacent_peaks','sg_fallback_short_signal']`。
+
+**處置**:synthetic segment golden 保留短窗 merge case;real fixture golden 仍照完整 `seg-v2` 路徑跑,不因此改動實機對表。
 
 ---
 

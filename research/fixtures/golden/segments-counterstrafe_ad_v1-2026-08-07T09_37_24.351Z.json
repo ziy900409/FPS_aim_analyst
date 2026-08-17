@@ -1,0 +1,470 @@
+{
+  "version": "segments-v1",
+  "segmentVersion": "seg-v2",
+  "source": "counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json",
+  "generatedBy": "research/src/modules/segments/notebooks/t2/generate_promoted_segments_golden.py",
+  "generatedAt": "2026-08-17",
+  "indexFrame": "tick",
+  "peekCount": 20,
+  "primaryCount": 20,
+  "peeks": [
+    {
+      "peekIndex": 0,
+      "targetId": "t0",
+      "side": "L",
+      "tickRange": {
+        "start": 384,
+        "end": 443
+      },
+      "tickCount": 59,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 19,
+          "endIdx": 49,
+          "peakOmega": 84.45312619555074,
+          "flags": [],
+          "peekIndex": 0
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 1,
+      "targetId": "t1",
+      "side": "R",
+      "tickRange": {
+        "start": 443,
+        "end": 515
+      },
+      "tickCount": 72,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 11,
+          "endIdx": 54,
+          "peakOmega": 125.65265310247767,
+          "flags": [],
+          "peekIndex": 1
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 2,
+      "targetId": "t2",
+      "side": "L",
+      "tickRange": {
+        "start": 515,
+        "end": 587
+      },
+      "tickCount": 72,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 5,
+          "endIdx": 45,
+          "peakOmega": 128.7174624565904,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 2
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 3,
+      "targetId": "t3",
+      "side": "R",
+      "tickRange": {
+        "start": 587,
+        "end": 650
+      },
+      "tickCount": 63,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 9,
+          "endIdx": 41,
+          "peakOmega": 147.66084512551902,
+          "flags": [],
+          "peekIndex": 3
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 4,
+      "targetId": "t4",
+      "side": "L",
+      "tickRange": {
+        "start": 650,
+        "end": 710
+      },
+      "tickCount": 60,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 7,
+          "endIdx": 38,
+          "peakOmega": 163.19539019376404,
+          "flags": [],
+          "peekIndex": 4
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 5,
+      "targetId": "t5",
+      "side": "R",
+      "tickRange": {
+        "start": 710,
+        "end": 770
+      },
+      "tickCount": 60,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 9,
+          "endIdx": 45,
+          "peakOmega": 124.99342356484814,
+          "flags": [],
+          "peekIndex": 5
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 6,
+      "targetId": "t6",
+      "side": "L",
+      "tickRange": {
+        "start": 770,
+        "end": 831
+      },
+      "tickCount": 61,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 9,
+          "endIdx": 50,
+          "peakOmega": 118.84686220975478,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 6
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 7,
+      "targetId": "t7",
+      "side": "R",
+      "tickRange": {
+        "start": 831,
+        "end": 889
+      },
+      "tickCount": 58,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 8,
+          "endIdx": 45,
+          "peakOmega": 133.09435038831828,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 7
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 8,
+      "targetId": "t8",
+      "side": "L",
+      "tickRange": {
+        "start": 889,
+        "end": 948
+      },
+      "tickCount": 59,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 8,
+          "endIdx": 48,
+          "peakOmega": 122.55666787593663,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 8
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 9,
+      "targetId": "t9",
+      "side": "R",
+      "tickRange": {
+        "start": 948,
+        "end": 1010
+      },
+      "tickCount": 62,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 11,
+          "endIdx": 47,
+          "peakOmega": 141.52230899476695,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 9
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 10,
+      "targetId": "t10",
+      "side": "L",
+      "tickRange": {
+        "start": 1010,
+        "end": 1074
+      },
+      "tickCount": 64,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 8,
+          "endIdx": 54,
+          "peakOmega": 115.26138033872294,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 10
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 11,
+      "targetId": "t11",
+      "side": "R",
+      "tickRange": {
+        "start": 1074,
+        "end": 1127
+      },
+      "tickCount": 53,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 7,
+          "endIdx": 46,
+          "peakOmega": 133.92996880815832,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 11
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 12,
+      "targetId": "t12",
+      "side": "L",
+      "tickRange": {
+        "start": 1127,
+        "end": 1202
+      },
+      "tickCount": 75,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 12,
+          "endIdx": 69,
+          "peakOmega": 119.68550146438508,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 12
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 13,
+      "targetId": "t13",
+      "side": "R",
+      "tickRange": {
+        "start": 1202,
+        "end": 1266
+      },
+      "tickCount": 64,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 5,
+          "endIdx": 33,
+          "peakOmega": 161.6021092740417,
+          "flags": [],
+          "peekIndex": 13
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 14,
+      "targetId": "t14",
+      "side": "L",
+      "tickRange": {
+        "start": 1266,
+        "end": 1320
+      },
+      "tickCount": 54,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 8,
+          "endIdx": 33,
+          "peakOmega": 245.39684415839858,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 14
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 15,
+      "targetId": "t15",
+      "side": "R",
+      "tickRange": {
+        "start": 1320,
+        "end": 1401
+      },
+      "tickCount": 81,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 10,
+          "endIdx": 40,
+          "peakOmega": 141.92291128696792,
+          "flags": [],
+          "peekIndex": 15
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 16,
+      "targetId": "t16",
+      "side": "L",
+      "tickRange": {
+        "start": 1401,
+        "end": 1457
+      },
+      "tickCount": 56,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 7,
+          "endIdx": 34,
+          "peakOmega": 149.47850421214986,
+          "flags": [],
+          "peekIndex": 16
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 17,
+      "targetId": "t17",
+      "side": "R",
+      "tickRange": {
+        "start": 1457,
+        "end": 1519
+      },
+      "tickCount": 62,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 13,
+          "endIdx": 37,
+          "peakOmega": 219.1863635816669,
+          "flags": [],
+          "peekIndex": 17
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 18,
+      "targetId": "t18",
+      "side": "L",
+      "tickRange": {
+        "start": 1519,
+        "end": 1575
+      },
+      "tickCount": 56,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 8,
+          "endIdx": 34,
+          "peakOmega": 181.55070863096495,
+          "flags": [],
+          "peekIndex": 18
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 19,
+      "targetId": "t19",
+      "side": "R",
+      "tickRange": {
+        "start": 1575,
+        "end": 1904
+      },
+      "tickCount": 329,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 14,
+          "endIdx": 39,
+          "peakOmega": 205.37595658621183,
+          "flags": [],
+          "peekIndex": 19
+        }
+      ],
+      "traceFlags": []
+    }
+  ]
+}
