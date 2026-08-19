@@ -104,6 +104,20 @@
 | **WP-31** | [`completed/stage4/wp-31-advanced-diagnostics/`](completed/stage4/wp-31-advanced-diagnostics/README.md) | 進階診斷:SPARC + Key-Velocity xcorr（reliability gate，GD-20）+ Fitts | — | **M14 ✅**(entry blocker 已解除) | 2–3 → 2.5–3.25 | ✅ **完成(2026-08-12)**:三份 P2 判定收斂(SPARC `stratified_only`/xcorr `research_only`/Fitts `blocked-by-data`×2+`ok`×1),`coach-report-v2` 研究向區塊;WP-32 交接清單為空 |
 | **WP-32** | [`completed/stage4/wp-32-dashboard-integration/`](completed/stage4/wp-32-dashboard-integration/README.md) | 晉升整合：golden parity → `src/metrics/` TS 實作 + 結果頁擴充 + 驗收清單 D | **M15 ✅** | WP-29 ✅ + WP-30 ✅ + WP-31 T-exit ✅ | 2–3 → 4.5–5.75 | ✅ **完成（2026-08-17）** — 驗收清單 D 八項全通過（[acceptance-stage-d.md](../operational/acceptance-stage-d.md)）；C-D5 入 CLAUDE.md §4 + GD-21 入 DECISIONS.md（關閉 OQ-S4-24）。**stage4 交付** |
 
+**階段 F（`active/stage6/`，🟡 已採納規劃 2026-08-19；WP-33~39 / M16；編號分配 [DECISIONS.md](DECISIONS.md) GD-22）**
+
+> 個人瞄準能力測試框架 v1（架槍挑戰 / Spider Shot / 急停測試 + 診斷推薦 + 縱向追蹤）。原案：[`active/stage6/aim-assessment-framework-v1.md`](active/stage6/aim-assessment-framework-v1.md);tech spec：[`active/stage6/README.md`](active/stage6/README.md)。**WP-34 的可見度時間線列為高風險，先跑獨立 T0 讀碼 spike 才鎖定其 task 切分**；WP-33 子資料夾尚未展開。
+
+| WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
+|---|---|---|---|---|---|---|
+| **WP-33** | `active/stage6/wp-33-assessment-contract/`（⬜ 待建立） | 共同契約：Assessment/Practice 模式分離 + metadata 擴充 + 事件時間線契約 + 相容比較鍵/品質旗標 | — | M4 ✅ + WP-20 ✅ | 2–3 | ⬜ 待建立 |
+| **WP-34** | `active/stage6/wp-34-hold-click-visibility/`（⬜ 待建立） | 架槍 `hold-click-v1` + 遮蔽物可見度時間線（T0 為獨立讀碼 spike） | — | WP-33（T0 spike 可提前） | 3–5 | ⬜ 待建立 |
+| **WP-35** | `active/stage6/wp-35-hold-track/`（⬜ 待建立） | 架槍 `hold-track-v1`：移動期間鎖 fire、停止後解鎖、追蹤窗指標 | — | WP-34 | 2–3 | ⬜ 待建立 |
+| **WP-36** | `active/stage6/wp-36-spider-shot/`（⬜ 待建立） | Spider Shot `spider-shot-v1`：單目標約束 + 中心—周邊 seeded 排程 | — | WP-33 | 2.5–3.5 | ⬜ 待建立 |
+| **WP-37** | `active/stage6/wp-37-counterstrafe-protocols/`（⬜ 待建立） | 急停三協定包裝（`cued`/`reversal`/`free`）+ L/R 對稱指標 | — | WP-33 | 2–3 | ⬜ 待建立 |
+| **WP-38** | `active/stage6/wp-38-diagnosis-recommendation/`（⬜ 待建立） | 診斷規則引擎 + 版本化推薦 + 個人 session history | — | WP-34,35,36,37 | 3–4 | ⬜ 待建立 |
+| **WP-39** | `active/stage6/wp-39-calibration-freeze/`（⬜ 待建立） | Calibration pilot + `protocolVersion = 1.0.0` 凍結 + 驗收清單 F | **M16** | 全部 | 2–3 | ⬜ 待建立 |
+
 ---
 
 ## 3. 里程碑門控（gates）
@@ -125,6 +139,7 @@
 | **M13 🟡**<br>(自動閘 2026-07-14) | 驗收清單 E 全項通過:BR 整合 drill E2E、三條決定性不變性(場景/ADS/彈道 gate)、ads/hit/追蹤欄匯出 round-trip、資產 attribution 可稽核;`test:ci` exit 0。**自動項 E-1~E-10 全綠 + `test:ci` exit 0(branch-guarded);清單 E §2 手動視覺/手感回填為 M13 阻塞項,待研究者實機**——回填後正式宣告 stage5 交付 | WP-26 | **stage5 交付**:BR 遠距跟槍測試(含 ADS 與彈道條件)pilot-ready |
 | **M14 ✅**<br>(①⑥ 維持;②於 [KI-004](../known_issue/KI-004-sim-world-unit-domain-mismatch.md) S1 落地後重新宣告 2026-08-06;③④⑤ 已於 [A2-T4](../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 重新宣告 2026-08-07) | ① 真實匯出 3,507 ticks / dt 7.8125ms / gap 0(維持)⑥ `uv run pytest` 74→228 passed(維持)。**②** 原六項全綠宣告(2026-08-05)因 ε(t) 量測原點錯誤(D2a/D2b,實測偏差 12.52°/67.11°)撤回;**KI-004 S1 落地後以新證據重新宣告**(閘 ① `fire.offsetDeg` oracle ≤0.5°、閘 ② 閉式幾何 ≤1e-9、parity fixture 重產綠、`test:ci` 88 files/694 tests + 19 e2e、`uv run pytest` 183 passed;詳見 [WP-28 progress.md](completed/stage4/wp-28-research-foundation/progress.md)「M14 ② 重新宣告」段)。**③④⑤** 另因 KI-005(ω(t) render/sim aliasing)+ KI-006(真實樣本無 counter-strafe 構念)於 2026-08-06 撤回;**KI-005 的選項 A(A1,2026-08-06)+ A2(新採樣 → 複驗 → `seg-v2` 重掃,2026-08-07)已全數落地**——`ticks[].dYaw/dPitch` 依事件時間戳積分(四種刷新率下逐位相同,NFR-A-4)、守恆閘機器精度通過(FM-1 關閉)、`seg-v2` 重掃凍結並在真實資料驗證優於 `seg-v1`;**KI-006 的 C(construct presence gate,2026-08-06)+ B(重新採樣,[A2-T1](../known_issue/KI-005-A/A2-blocked-plan.md),2026-08-07)已全數落地**,§6 B-1~B-5 驗收清單全數滿足,**KI-006 CLOSED**。兩條理由皆已解除,**③④⑤ 已於 [A2-T4](../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07)(2026-08-07)逐項重新宣告**。效度聲稱不擴大:仍限單一匿名受試者、n=3 session、非母體層級證據 | WP-28 | research ingest/parity 機制 + ε 地基(KI-004 原因)已修正;量測儀器層面 KI-005 A1+A2 全數落地、KI-006 CLOSED,**M14 ③④⑤ 已重新宣告,WP-30/31 entry blocker 三條理由全數解除,可展開**。效度聲稱限單一匿名 counter-strafe 樣本(n=3 session,非母體層級證據) |
 | **M15 ✅**<br>（2026-08-17） | 驗收清單 D 全項通過：教練報告一鍵產出（FR-D16）、晉升指標 TS golden 對表綠、`test:ci` exit 0 **且** `uv run pytest` 綠、每指標附效度證據（fixture + 真實檢核 + 限制）、P2 三指標各有明確進退判定（GD-20） | WP-32 | **stage4 交付達成**：瞄準 × 急停教練分析管線 pilot-ready。驗收清單 D 八項全通過（[acceptance-stage-d.md](../operational/acceptance-stage-d.md)）；P2 三指標（SPARC/xcorr/Fitts）全數判定不晉升（合格交付，C-D3） |
+| **M16 🟡**<br>（規劃 2026-08-19） | 驗收清單 F 全項通過（`docs/operational/acceptance-stage-f.md`，待建）：三家族同名事件時間語意一致、相容比較鍵判定式綠、`hold-click`/`hold-track` 不互相宣稱對方構念、Spider Shot 每次 transition 保存方向/角距/角尺寸、急停三子協定不共用未分層總分、Assessment/Practice 不共用正式 baseline、結果呈現每個診斷帶來源/`n`/flags/版本、不相容 session 不產生進步/退步結論、pilot 參數與正式參數分開保存 | WP-39 | **stage6 交付**：個人瞄準能力測試框架 v1 pilot-ready。**WP-34 可見度時間線待獨立 T0 spike 判定工程量**，詳見 [stage6 README](active/stage6/README.md) |
 
 ---
 
@@ -186,6 +201,16 @@ WP-28（地基，M14）──┤                                              �
 
 - 階段 D 全在 `research/`（Python 離線）＋兩個對表閘，引擎零改動（例外：WP-29 T3 選配 `key` 事件、WP-32 metrics/UI）；與其他 stage 零檔案熱區重疊。**M14 原六項全綠宣告(2026-08-05)曾分兩次撤回**（② 因 KI-004、③④⑤ 因 KI-005/KI-006）；**② 已於 KI-004 S1 落地後重新宣告(2026-08-06)**，**③④⑤ 已於 [A2-T4](../known_issue/KI-005-A/A2-blocked-plan.md#a2-t4--m14-③④⑤-重新宣告-✅-已完成2026-08-07) 重新宣告(2026-08-07)**——KI-005(儀器修法 A1 + 複驗與重掃 A2)與 KI-006(構念存在性閘 C + 重新採樣 B)兩條獨立理由均已全數落地,KI-006 CLOSED。**WP-30/31 entry blocker 三條理由全數解除後展開,WP-31 三個 P2 指標(SPARC/xcorr/Fitts)全數判定不晉升**(合格交付,C-D3/GD-20);**WP-32 於 2026-08-17 完成晉升整合 + T-exit,M15 達成、stage4 交付**。詳見 [`completed/stage4/README.md §5`](completed/stage4/README.md)。
 
+```
+階段 F（active/stage6/；上游門檻 = M4 ✅ + WP-19 ✅ + WP-20 ✅ + WP-21 ✅ + WP-23 ✅ + WP-18 ✅；編號分配 GD-22）
+                     ┌─→ WP-34（hold-click + 可見度，T0 spike 優先跑）──→ WP-35（hold-track）──┐
+WP-33（共同契約）──┤                                                                          ├→ WP-38（診斷/推薦）──→ WP-39（pilot + M16 凍結）
+                     ├─→ WP-36（spider-shot）───────────────────────────────────────────────────┤
+                     └─→ WP-37（急停三協定包裝）───────────────────────────────────────────────┘
+```
+
+- 階段 F 為規劃階段（🟡 已採納 2026-08-19，尚未展開子資料夾）。WP-34 的可見度時間線是全框架唯一觸碰 GD-6 邊界（場景幾何不進 sim runtime）的新能力，**先跑獨立零程式碼 T0 讀碼 spike**（可提前於 WP-33 完成前執行）判定實作方案與工程量，避免重演 WP-32 D-32.0「規劃稿讀碼後上修」的教訓。WP-34/35/36/37 在 WP-33 之後可並行（檔案熱區互不重疊）；**M16 未過不宣告 stage6 交付**。詳見 [`active/stage6/README.md §5`](active/stage6/README.md)。
+
 ---
 
 ## 5. 執行規則（每 task 一個切片）
@@ -205,7 +230,10 @@ WP-28（地基，M14）──┤                                              �
 docs/exec-plan/
 ├── README.md                          ← 本檔（頂層索引）
 ├── DECISIONS.md                       ← 全域決策 / 跨文件矛盾帳本
-├── active/                            ← 進行中的 WP（現無展開項）
+├── active/                            ← 進行中的 WP
+│   └── stage6/                        ← 階段 F（🟡 規劃 2026-08-19，WP-33~39/M16；GD-22）
+│       ├── aim-assessment-framework-v1.md  ← 需求草稿（source of truth）
+│       └── README.md                  ← stage6 頂層索引 + tech spec（wp-N-*/ 子資料夾待展開）
 ├── completed/                         ← WP 交付後移入
 │   ├── stage1/                        ← 階段 A（WP-0~9，✅ 交付；格式模板）
 │   │   └── wp-N-*/
