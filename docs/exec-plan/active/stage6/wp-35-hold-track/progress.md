@@ -12,7 +12,7 @@
 | T0 entry-gate | ✅ | 2026-08-19 | WP-34 T-exit 已覆核;README §0 五條讀碼發現仍成立;OQ-S6-9/OQ-S6-14 已拍板(D-35.1/D-35.2);`TrackingSample`/`deriveTrackingSamples` 匯出面確認可供 T2 消費;零 `src/` diff |
 | T1 fire-gating + target_stop | ✅ | 2026-08-19 | `npm run test:ci`: `tsc --noEmit` + Vitest **105 files / 864 tests passed** + Playwright **21 passed** |
 | T2 tracking + stop-transition metrics | ✅ | 2026-08-19 | `target_stop` additive export + `hold_track_v1` + transition derivations; `npm run test:ci`: `tsc --noEmit` + Vitest **109 files / 872 tests passed** + Playwright **21 passed** |
-| T-exit | ⬜ | — | — |
+| T-exit | ✅ | 2026-08-19 | 驗收條件覆核(見下)+ `analysis-hold-track.md` 定稿 + CONTEXT.md/stage6 README/OQ 對帳;`npm run test:ci`: `tsc --noEmit` + Vitest **109 files / 872 tests passed**(與 T2 結尾一致,T-exit 零 `src/` 變更)+ Playwright **20 passed / 1 failed**(既有 app-ready flake,見下) |
 
 **閘證據**:
 
@@ -21,6 +21,12 @@
 | T0 | 2026-08-19 16:11+02:00: sandbox 內首跑被 Windows 權限擋於 Vitest/Vite config 載入(`Cannot read directory "../../../..": Access is denied`);非 sandbox 重跑同一命令通過:`tsc --noEmit` + Vitest **104 files / 860 tests passed** + Playwright **21 passed** |
 | T1 | 2026-08-19 16:21+02:00: non-sandbox `npm run test:ci` 通過：`tsc --noEmit` + Vitest **105 files / 864 tests passed** + Playwright **21 passed** |
 | T2 | 2026-08-19 16:33+02:00: non-sandbox `npm run test:ci` 通過：`tsc --noEmit` + Vitest **109 files / 872 tests passed** + Playwright **21 passed** |
+| T-exit | 2026-08-19 16:43+02:00: `tsc --noEmit` 通過 + Vitest **109 files / 872 tests passed**(zero diff vs T2,本 task 只動文件)+ Playwright **20 passed**、`input-sampler.spec.ts:44`(鍵盤 A/D → 入緩衝→套用 vx)於 Edge **1 failed**——`gotoAppReady` 的 `__aimDebug` poll 逾時,與既有 WP-34 T-exit 記錄的 app-ready flake(S-34.3/S-34.4/S-34.5)同性質、與本 WP 檔案改動(僅 3 份文件)無關 |
+
+**v1 驗收條件覆核(框架 v1 §"v1 驗收條件"與 hold-track 相關的一條)**:
+
+- ✅「`hold-track` 的追蹤窗不因提早擊殺而縮短」——[`holdTrackWindowInvariant.test.ts`](../../../../../src/metrics/holdTrackWindowInvariant.test.ts):同一 presentation 分別在 `t=10`(提早)、`t=500`(準時)、未開火三案例下,`windowEndMs` 與 `windowEndMs − tVisibleMs` 皆為 `1000`,逐位相同。
+- 補充佐證(非本 WP 專屬但支撐同一不變式的機制):`persistent` + `trackingStopMs` 到期原地凍結(非撤除)由 [`TargetManager.tick()`](../../../../../src/sim/TargetManager.ts) 的 `tStop` 分支保證窗口右界不受玩家何時開火影響;停止轉換與掉靶/重新取得指標分別由 [`stopTransitionDerivation.test.ts`](../../../../../src/metrics/stopTransitionDerivation.test.ts)(3 fixture)與 [`trackingTransitions.test.ts`](../../../../../src/metrics/trackingTransitions.test.ts)(3 fixture)覆蓋。
 
 ---
 
