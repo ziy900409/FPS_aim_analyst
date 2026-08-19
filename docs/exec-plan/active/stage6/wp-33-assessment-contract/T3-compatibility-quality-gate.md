@@ -7,11 +7,11 @@
 | **相依** | T1(需要 `AssessmentMeta` 型別) |
 | **Risk / Cplx** | Med(OQ-S6-10/11 需在本 task 拍板初版) |
 | **Touches** | `src/metrics/compatibilityKey.ts`(新) |
-| **狀態** | ⬜ |
+| **狀態** | ✅(2026-08-19;`npm.cmd run test:ci` exit 0) |
 
 ## Objective
 
-把 FR-F4 的相容比較鍵與品質旗標判定,從「文件描述的九個欄位」變成一支所有下游 WP 都必須呼叫的純函式,杜絕「每個 WP 各自寫一份相容性判斷」(C-D4 的另一種犯法方式:不是重新定義既有構念,而是重複實作同一個新構念)。
+把 FR-F4 的相容比較鍵與品質旗標判定,從「文件描述的十個欄位」變成一支所有下游 WP 都必須呼叫的純函式,杜絕「每個 WP 各自寫一份相容性判斷」(C-D4 的另一種犯法方式:不是重新定義既有構念,而是重複實作同一個新構念)。
 
 ## In scope
 
@@ -42,7 +42,7 @@
    ): CompatibilityKey;
 
    export function checkCompatibility(a: CompatibilityKey, b: CompatibilityKey): boolean;
-   // 九欄位全等才 true;任一欄位不等即 false(非模糊比對)
+   // 十欄位全等才 true;任一欄位不等即 false(非模糊比對)
 
    export type QualityGateStatus = 'ok' | 'insufficient-n' | 'incompatible-protocol' | 'suspect-run';
 
@@ -64,21 +64,21 @@
 
 ## Steps
 
-- [ ] 讀 `WeaponConfig`/`activeWeaponConfig()`,拍板 OQ-S6-10,記入 progress.md。
-- [ ] 拍板 OQ-S6-11(非空字串鍵,格式留家族決定),記入 progress.md。
-- [ ] 實作 `deriveSessionId`/`buildCompatibilityKey`/`checkCompatibility`/`checkQualityGate`。
-- [ ] 單元測試:
+- [x] 讀 `WeaponConfig`/`activeWeaponConfig()`,拍板 OQ-S6-10,記入 progress.md。
+- [x] 拍板 OQ-S6-11(非空字串鍵,格式留家族決定),記入 progress.md。
+- [x] 實作 `deriveSessionId`/`buildCompatibilityKey`/`checkCompatibility`/`checkQualityGate`。
+- [x] 單元測試:
   - `deriveSessionId`:合法 `meta.session` → 穩定字串;缺 `meta.session` → throw。
-  - `checkCompatibility`:九欄位全等 → true;逐一改動任一欄位 → false(9 個反例案例)。
+  - `checkCompatibility`:十欄位全等 → true;逐一改動任一欄位 → false(10 個反例案例)。
   - `checkQualityGate`:`n<minN` → `insufficient-n`;`!compatible` → `incompatible-protocol`;`suspect` → `suspect-run`;三者皆否 → `ok`;優先序需覆蓋多條件同時成立時的判定順序(合成案例)。
-- [ ] 於 `analysis-assessment-contract.md` §1 補相容鍵欄位定義表 + OQ-S6-10/11 拍板結果。
+- [x] 於 `analysis-assessment-contract.md` §1 補相容鍵欄位定義表 + OQ-S6-10/11 拍板結果。
 
 ## Definition of Done
 
 | # | 條件 | 判定方式 |
 |---|---|---|
 | ① | 四支函式落地且為純函式(無副作用/無 I/O) | code review 檢查點 + `tsc --noEmit` |
-| ② | `checkCompatibility` 九欄位全等/任一不等的正反例全覆蓋 | 單元測試 10 案例(1 正 + 9 反)全綠 |
+| ② | `checkCompatibility` 十欄位全等/任一不等的正反例全覆蓋 | 單元測試 11 案例(1 正 + 10 反)全綠 |
 | ③ | `checkQualityGate` 四種狀態 + 優先序案例全覆蓋 | 單元測試全綠 |
 | ④ | OQ-S6-10/OQ-S6-11 拍板結果記入 progress.md 與 `analysis-assessment-contract.md` | 兩處皆有記錄 |
 | ⑤ | `npm run test:ci` 全綠 | 貼原始輸出到 progress.md |

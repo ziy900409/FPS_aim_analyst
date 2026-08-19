@@ -206,7 +206,7 @@ T0 spike 的 DoD 是從三個候選中選一個並記錄成本比較,而不是�
 |---|---|---|---|---|---|---|---|
 | **WP-33** | [`wp-33-assessment-contract/`](wp-33-assessment-contract/README.md) | 共同契約:Assessment/Practice 模式分離 + metadata 擴充 + 事件時間線契約 + 相容比較鍵/品質旗標判定式 | 1 | — | M4 ✅ + WP-20 ✅(`meta.session`) | 2–3d | 🟡 T0 完成 |
 | **WP-34** | [`wp-34-hold-click-visibility/`](wp-34-hold-click-visibility/README.md) | 架槍 `hold-click-v1` + 遮蔽物可見度時間線(T0 讀碼 spike ✅ 完成,候選②拍板) | 2 | — | WP-33;T0 spike 已提前於 WP-33 T-exit 前執行完成 | 2.5–3.5d(T0 spike 後下修,不拆分) | 🟡 T0 完成 |
-| **WP-35** | `wp-35-hold-track/`(⬜ 待建立) | 架槍 `hold-track-v1`:移動期間鎖 fire、停止後解鎖、追蹤窗指標 | 3 | — | WP-34(共用 emergence 機制) | 2–3d | ⬜ |
+| **WP-35** | [`wp-35-hold-track/`](wp-35-hold-track/README.md) | 架槍 `hold-track-v1`:移動期間鎖 fire、停止後解鎖、追蹤窗指標 | 3 | — | WP-34(共用 emergence 機制) | 2–3d | 🟡 執行計畫已展開(讀碼對帳完成;T0 待開工) |
 | **WP-36** | `wp-36-spider-shot/`(⬜ 待建立) | Spider Shot `spider-shot-v1`:單目標約束 + 中心—周邊 seeded 排程 + 五類指標 | 4 | — | WP-33(可與 WP-34/35 並行) | 2.5–3.5d | ⬜ |
 | **WP-37** | `wp-37-counterstrafe-protocols/`(⬜ 待建立) | 急停三協定包裝(`cued`/`reversal`/`free`)+ L/R 對稱指標 | 5 | — | WP-33(可並行) | 2–3d | ⬜ |
 | **WP-38** | `wp-38-diagnosis-recommendation/`(⬜ 待建立) | 診斷規則引擎 + 版本化推薦 + 個人 session history + 結果呈現整合 | 6 | — | WP-34+35+36+37 全部產出逐構念指標 | 3–4d | ⬜ |
@@ -338,8 +338,8 @@ WP-33(共同契約)──┬─────────────→ WP-34(hol
 | ~~**OQ-S6-7**~~ | ~~WP-34 可見度計算若三個候選方案(§2.3a)成本都過高,是否接受降級為離散可見度階梯作為 v1 交付範圍~~ | ✅ **關閉(2026-08-19,WP-34 T0)**:不需要降級。候選②(scene 層封閉幾何離線解析)所需元件皆已存在,可交付連續 `visibleFraction(t)`(N=9 取樣點,非階梯);候選①因決定性風險排除 | 使用者 / 研究者 | WP-34 T0 ✅ | unblocked |
 | **OQ-S6-8**(新) | 診斷推薦引擎落點:TS 即時(`ResultScreen`)或 Python offline(比照 stage4 `research/`) | 🟡 **WP-38 T0 拍板**(見 §2.3d);兩條路徑的讀碼問題已列出 | 使用者 | WP-38 T0 | 是否需要複用 stage4 的 C-D1~C-D4 隔離紀律與 golden parity 機制 |
 | **OQ-S6-9**(新) | WP-35 的 fire-gating 是否會與既有 `WeaponConfig` 開火合法性判定(彈匣/cycletime)產生互動,需要合併判定還是獨立疊加 | 🟡 **WP-35 T0** 讀碼確認 | 研究者 | WP-35 T0 | fire-gating 實作落點與既有開火鏈的整合方式 |
-| **OQ-S6-10**(WP-33 T0 開帳) | `weaponMode`(相容鍵欄位)在單武器現狀下如何取值 | 🟡 **WP-33 T3** 讀碼;暫定等於 `weaponId`,留 TODO 待多武器/ADS Assessment 出現時再拆分 | 研究者 | WP-33 T3 | 相容鍵欄位定義完整度;不阻塞 T3 落地 |
-| **OQ-S6-11**(WP-33 T0 開帳) | `targetConditionCell` 序列化格式是否需要三家族各自 cell builder | 🟡 **WP-33 T3 定初版**(單一字串鍵,家族各自決定內容);不夠用則回本文件升版 | 研究者 | WP-33 T3 | 相容鍵在三家族間是否可互相比較 |
+| ~~**OQ-S6-10**~~(WP-33 T0 開帳) | ~~`weaponMode`(相容鍵欄位)在單武器現狀下如何取值~~ | ✅ **關閉(2026-08-19,WP-33 T3)**:`WeaponConfig` 無獨立 `weaponMode`;現有 `weaponId` 已區分 BR hip/ADS/hitscan/projectile 變體,故 v1 `weaponMode = weaponId`;未來獨立欄位需升 compatibility-key version | 研究者 | WP-33 T3 ✅ | unblocked |
+| ~~**OQ-S6-11**~~(WP-33 T0 開帳) | ~~`targetConditionCell` 序列化格式是否需要三家族各自 cell builder~~ | ✅ **關閉(2026-08-19,WP-33 T3)**:呼叫端自行序列化非空字串,WP-33 不解析內容;三家族格式由 WP-34~37 各自定義,不夠用則回本文件升版 | 研究者 | WP-33 T3 ✅ | unblocked |
 | **OQ-S6-12**(WP-34 T0 開帳) | `visibleFraction` 取樣點數 N=9(中心+8角)是否足以避免「目標邊緣掠過遮蔽物角落」時的離散跳變假象 | 🟡 **WP-34 T1 合成 fixture 驗證**;若不穩定,candidate 為解析式角點插值 | 研究者 | WP-34 T1 | `t_measurement_onset` 的可重現性 |
 | **OQ-S6-13**(WP-34 T0 開帳) | Occlusion-aware 場景是否需要獨立的 `clutterTier`,或沿用既有三階層語意 | 🟡 **WP-34 T2 拍板**;傾向新增獨立 sceneId(如 `peek-corridor`)而非借用既有 clutterTier 語意 | 研究者 | WP-34 T2 | 場景命名與 metadata 分層 |
 

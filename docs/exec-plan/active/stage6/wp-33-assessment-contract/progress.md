@@ -12,7 +12,7 @@
 | T0 entry gate | ✅ | 2026-08-19 | `analysis-assessment-contract.md` 起稿;D-33.1 T0 覆核;D-33.2 七項契約凍結;`npm.cmd run test:ci` exit 0 |
 | T1 metadata extension | ✅ | 2026-08-19 | `AssessmentMode`/`DrillConfig.mode`/`Meta.assessment` additive 型別與 guard;`npm.cmd run test:ci` exit 0 |
 | T2 event timeline contract | ✅ | 2026-08-19 | `AssessmentTimelinePoint`/`VisibleFractionSeries` 純型別契約 + smoke test + event timeline 欄位對照表;`npm.cmd run test:ci` exit 0 |
-| T3 compatibility + quality gate | ⬜ | — | — |
+| T3 compatibility + quality gate | ✅ | 2026-08-19 | `deriveSessionId`/`buildCompatibilityKey`/`checkCompatibility`/`checkQualityGate` 純函式 + 21-case unit tests;`npm.cmd run test:ci` exit 0 |
 | T-exit | ⬜ | — | — |
 
 **閘證據**(每 task 完成時貼原始輸出):
@@ -22,7 +22,7 @@
 | T0 | `npm.cmd run test:ci` exit 0;Vitest 98 files / 810 tests passed;Playwright 21 passed |
 | T1 | `npm.cmd run test:ci` exit 0;Vitest 98 files / 818 tests passed;Playwright 21 passed |
 | T2 | `npm.cmd run test:ci` exit 0;Vitest 99 files / 820 tests passed;Playwright 21 passed |
-| T3 | — |
+| T3 | `npm.cmd run test:ci` exit 0;Vitest 100 files / 841 tests passed;Playwright 21 passed |
 | T-exit | — |
 
 ---
@@ -60,7 +60,7 @@ T0 以 `codegraph_explore` + 直接讀碼覆核 `src/data/metadata.ts`、`src/dr
 4. `recommendationVersion` 與 `qualityGateStatus` 不進 export meta;前者屬 WP-38 診斷規則表/輸出版本,後者是 `checkQualityGate()` 回傳值。
 5. Assessment/Practice 五軸契約凍結:難度、隨機性、即時回饋、歷史比較、重試語意由 `DrillConfig.mode` 與 `Meta.assessment.assessmentFeedbackPolicy` 宣告;省略 mode = Practice 語意。
 6. 事件時間線同名事件禁止跨任務改語意;`AssessmentTimelinePoint` 只定義欄位形狀,不含 WP-34 可見度引擎計算。
-7. 相容比較鍵九欄位封閉;新增欄位需升 compatibility key version 並更新本契約,不得原地插入。
+7. 相容比較鍵十欄位封閉;新增欄位需升 compatibility key version 並更新本契約,不得原地插入。
 
 **Alternatives considered**:
 - 「T1/T2/T3 實作時再各自決定欄位落點」— 否決:會讓三個測試家族與診斷層分裂,重蹈 C-D4 的同名不同義風險。
@@ -86,6 +86,25 @@ T2 新增 `src/data/assessmentTimeline.ts`,只輸出 `AssessmentTimelinePoint` �
 - 「在 T2 順手加入 `visibleFraction(t)` builder 或 helper」— 否決:WP-34 T0 spike 尚未決定可見度計算方案,任何 helper 都會偷渡 engine 假設。
 - 「把 `tFirstVisible` 映射成既有 `events.visible.t` 的 camelCase alias」— 否決:會讓 pop-in 二元事件與後續連續可見度門檻混成同義欄位,違反 C-D4。
 
+### D-33.5 — T3 相容鍵採封閉欄位全等,品質閘採固定優先序(2026-08-19,T3)
+
+T3 新增 `src/metrics/compatibilityKey.ts`,把 FR-F4 落成四支純函式:
+
+- `deriveSessionId(meta)` 只由 `meta.session.participantId + meta.startedAt` 推導,缺 `meta.session` 直接拋錯,不新增 `Meta.sessionId` 儲存欄位。
+- `buildCompatibilityKey(meta, taskId, targetConditionCell, qualityGateStatus)` 要求 `meta.session`、`meta.assessment`、`meta.fovDeg` 與非空 `targetConditionCell`;缺 Assessment provenance 不會默默產生可進趨勢的 key。
+- `checkCompatibility(a,b)` 對 v1 十個封閉欄位做全等比較;任何欄位不等即 `false`,不做模糊比對。
+- `checkQualityGate()` 固定優先序為 `insufficient-n` → `incompatible-protocol` → `suspect-run` → `ok`。
+
+**OQ-S6-10 初版拍板**:`WeaponConfig` 現況沒有獨立 `weaponMode` 欄位;`weapons.ts` 以 `weaponId` 區分 `ak47`/`m4a4`/`m4a1s` 與 BR hip/ADS/hitscan/projectile 變體。T3 v1 因此令 `CompatibilityKey.weaponMode = meta.weaponId`,保留非損失性鍵;若未來 Assessment 真的引入獨立 hip/ADS mode 欄位,需升 compatibility-key version,不得原地改。
+
+**OQ-S6-11 初版拍板**:`targetConditionCell` 是呼叫端自行序列化的非空字串;WP-33 不解析距離、角尺寸或速度,讓 WP-34~37 各家族定自己的 cell builder。若後續發現需要通用格式,回本 WP 文件做 versioned 變更。
+
+**Alternatives considered**:
+- 「沿用既有 research `weaponMode = hitscan|projectile`」— 否決:這會把 AK/M4 與 hip/ADS 變體折疊掉,對正式 Assessment 相容鍵太 lossy。
+- 「WP-33 定一套通用 `targetConditionCell` grammar」— 否決:三家族條件維度尚未在 WP-34~37 實作,現在硬定 grammar 會偷渡下游設計;T3 只需要確保非空且可全等比較。
+
+T3 實作時同步修正文件計數:介面自 T0 起實際列出 `participantId`、`taskId`、`protocolVersion`、`gameMovementProfile`、`weaponId`、`weaponMode`、`sensitivityFovKey`、`targetConditionCell`、`assessmentFeedbackPolicy`、`qualityGateStatus` 共十欄,但部分文字誤寫為九欄/9 反例。實作與測試以列出的十欄介面為準。
+
 ---
 
 ## Surprises
@@ -106,5 +125,5 @@ T2 首次在 sandbox 外跑 `npm.cmd run test:ci` 時,TypeScript/Vitest 已通�
 
 | # | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
-| **OQ-S6-10** | `weaponMode`(相容鍵欄位)在單武器現狀下如何取值 | 🟡 open,見 [README §7](README.md) | 研究者 | WP-33 T3 |
-| **OQ-S6-11** | `targetConditionCell` 序列化格式是否需要三家族各自 cell builder | 🟡 open,見 [README §7](README.md) | 研究者 | WP-33 T3 |
+| **OQ-S6-10** | `weaponMode`(相容鍵欄位)在單武器現狀下如何取值 | ✅ closed by D-33.5:`weaponMode = meta.weaponId` v1 佔位,未來獨立欄位需升版 | 研究者 | WP-33 T3 |
+| **OQ-S6-11** | `targetConditionCell` 序列化格式是否需要三家族各自 cell builder | ✅ closed by D-33.5:呼叫端自行序列化非空字串,WP-33 不解析 | 研究者 | WP-33 T3 |

@@ -32,7 +32,7 @@
 
 ### ③ 七項契約逐條寫入 Decision Log(對應 README §2 ①~⑦)
 
-在 [progress.md](progress.md) 新增 `D-33.2`,把 README §2 的七項契約(`Meta.assessment` 獨立區塊 / `gameMovementProfile` 不新增 / `sessionId` 推導不落地 / `recommendationVersion`+`qualityGateStatus` 不進 export meta / 五軸契約表 / 事件時間線同名禁改語意 / 相容鍵九欄位封閉)逐條列為「事後只能升版,不得原地改」。
+在 [progress.md](progress.md) 新增 `D-33.2`,把 README §2 的七項契約(`Meta.assessment` 獨立區塊 / `gameMovementProfile` 不新增 / `sessionId` 推導不落地 / `recommendationVersion`+`qualityGateStatus` 不進 export meta / 五軸契約表 / 事件時間線同名禁改語意 / 相容鍵十欄位封閉)逐條列為「事後只能升版,不得原地改」。
 
 ### ④ `analysis-assessment-contract.md` 起稿
 

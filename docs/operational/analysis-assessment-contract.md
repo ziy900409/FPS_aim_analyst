@@ -27,13 +27,13 @@ Upstream gates were rechecked by reference, not rerun:
 
 | # | Contract | T1-T3 TS implementation location |
 |---|---|---|
-| 1 | `Meta.assessment` is independent from `Meta.protocol`. It carries `protocolVersion` and `assessmentFeedbackPolicy` only. | T1: pending |
+| 1 | `Meta.assessment` is independent from `Meta.protocol`. It carries `protocolVersion` and `assessmentFeedbackPolicy` only. | T1: [`src/data/metadata.ts`](../../src/data/metadata.ts) |
 | 2 | `gameMovementProfile` is an alias in prose for existing `meta.movementModel`; adding a second metadata key with the same meaning is forbidden. | Existing: `Meta.movementModel`; T3 uses it in compatibility key |
-| 3 | `sessionId` is derived, not stored. The canonical derivation is `meta.session.participantId + meta.startedAt` or an equivalent stable serialization. | T3: pending |
-| 4 | `recommendationVersion` and `qualityGateStatus` are not export metadata. `recommendationVersion` belongs to WP-38 diagnostic output; `qualityGateStatus` is a quality-gate function result. | T3/WP-38: pending |
-| 5 | Assessment/Practice mode is declared by config and interpreted along five axes: difficulty, randomness, feedback, history eligibility, and retry semantics. Missing mode means Practice. | T1: pending |
+| 3 | `sessionId` is derived, not stored. The canonical derivation is `meta.session.participantId + meta.startedAt` or an equivalent stable serialization. | T3: [`deriveSessionId()`](../../src/metrics/compatibilityKey.ts) |
+| 4 | `recommendationVersion` and `qualityGateStatus` are not export metadata. `recommendationVersion` belongs to WP-38 diagnostic output; `qualityGateStatus` is a quality-gate function result. | T3: [`checkQualityGate()`](../../src/metrics/compatibilityKey.ts); WP-38 pending |
+| 5 | Assessment/Practice mode is declared by config and interpreted along five axes: difficulty, randomness, feedback, history eligibility, and retry semantics. Missing mode means Practice. | T1: [`src/drill/assessmentContract.ts`](../../src/drill/assessmentContract.ts), [`src/drill/DrillConfig.ts`](../../src/drill/DrillConfig.ts) |
 | 6 | Event timeline names are shared semantics. Downstream WPs may add task-specific fields, but must not reinterpret existing names such as `t_visible`, `t_detect`, or `t_first_on_target`. | T2: `src/data/assessmentTimeline.ts` |
-| 7 | Compatibility key fields are closed for v1. Adding another field requires a compatibility-key version bump and a decision record. | T3: pending |
+| 7 | Compatibility key fields are closed for v1. Adding another field requires a compatibility-key version bump and a decision record. | T3: [`src/metrics/compatibilityKey.ts`](../../src/metrics/compatibilityKey.ts) |
 
 These seven contracts are versioned: after T0, downstream work may only change them by recording a versioned contract change and rerunning affected compatibility decisions. They must not be edited in place to fit a later task.
 
@@ -54,6 +54,34 @@ T2 adds [`AssessmentTimelinePoint`](../../src/data/assessmentTimeline.ts) as a s
 | `tStop` | New WP-33 contract field; calculation deferred | `AssessmentTimelinePoint` | Assessment timeline stop timestamp. Downstream WPs must define how it maps to a family-specific stop condition before filling it. |
 
 Downstream WPs must import the shared type when they need these new fields, and must keep existing `t_visible` / `t_detect` / `t_first_on_target` semantics intact. A task family may add its own fields, but cannot reuse an existing name with a different meaning.
+
+### 1.2 Compatibility Key and Quality Gate
+
+T3 adds [`CompatibilityKey`](../../src/metrics/compatibilityKey.ts) as the only sanctioned stage6 compatibility comparison surface. Downstream WPs must build keys through `buildCompatibilityKey()` and compare them through `checkCompatibility()`; they must not rewrite partial comparisons in task-family code.
+
+`buildCompatibilityKey(meta, taskId, targetConditionCell, qualityGateStatus)` requires `meta.session`, `meta.assessment`, `meta.fovDeg`, and a non-empty caller-provided `targetConditionCell`. Missing required Assessment provenance throws instead of silently producing a trend-eligible key.
+
+| Field | Source | v1 rule |
+|---|---|---|
+| `participantId` | `meta.session.participantId` | Trimmed non-empty string; same participant only. |
+| `taskId` | Caller argument | Frozen task-family id such as `hold-click-v1`; does not include pilot `conditionIndex`. |
+| `protocolVersion` | `meta.assessment.protocolVersion` | Exact string match only. |
+| `gameMovementProfile` | `meta.movementModel` | Existing metadata field; do not add `gameMovementProfile` to export meta. |
+| `weaponId` | `meta.weaponId` | Exact active weapon id. |
+| `weaponMode` | T3 initial derivation from `meta.weaponId` | OQ-S6-10 initial decision: no independent Assessment `weaponMode` field exists yet. Existing weapon ids already encode current hip/ADS BR variants, so v1 uses `weaponId` as the non-lossy placeholder. Split only through a versioned contract change. |
+| `sensitivityFovKey` | `meta.sensitivity` + `meta.fovDeg` | Deterministic serialization: `sensitivity=<value>;fovDeg=<value>`. `meta.fovDeg` is required for Assessment compatibility. |
+| `targetConditionCell` | Caller argument | OQ-S6-11 initial decision: caller-owned non-empty string. WP-34~37 may choose family-specific formats, but WP-33 does not parse them. |
+| `assessmentFeedbackPolicy` | `meta.assessment.assessmentFeedbackPolicy` | Exact string match only. |
+| `qualityGateStatus` | `checkQualityGate()` result | Exact string match only; not stored in export meta. |
+
+`checkCompatibility(a, b)` is a closed-field exact comparison. Any one field differing returns `false`; there is no fuzzy matching, defaulting, or field omission.
+
+`checkQualityGate({ n, minN, suspect, compatible })` returns the first matching status in this priority order:
+
+1. `insufficient-n` when `n < minN`.
+2. `incompatible-protocol` when `compatible === false`.
+3. `suspect-run` when `suspect === true`.
+4. `ok` otherwise.
 
 ---
 
@@ -78,7 +106,7 @@ T-exit will complete this section after T1-T3 land. Current T0 preregistration:
 | Stage F prerequisite | WP-33 contract hook | Status |
 |---|---|---|
 | Assessment/Practice do not share a formal baseline | `DrillConfig.mode` + history eligibility contract | T1/T3 pending |
-| Incompatible sessions do not produce progress/regression claims | closed `CompatibilityKey` + `checkCompatibility()` | T3 pending |
-| Low-quality sessions do not produce prescriptions | `checkQualityGate()` result, not export metadata | T3 pending |
-| Pilot parameters and formal parameters stay separate | `Meta.protocol` pilot grouping remains independent from `Meta.assessment.protocolVersion` | T1 pending |
-| Shared event names keep the same meaning across task families | `AssessmentTimelinePoint` plus no-reinterpretation rule | T2 pending |
+| Incompatible sessions do not produce progress/regression claims | closed `CompatibilityKey` + `checkCompatibility()` | T3 implemented |
+| Low-quality sessions do not produce prescriptions | `checkQualityGate()` result, not export metadata | T3 implemented |
+| Pilot parameters and formal parameters stay separate | `Meta.protocol` pilot grouping remains independent from `Meta.assessment.protocolVersion` | T1 implemented |
+| Shared event names keep the same meaning across task families | `AssessmentTimelinePoint` plus no-reinterpretation rule | T2 implemented |

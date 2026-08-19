@@ -10,7 +10,7 @@
 | **相依** | **M4 ✅**(schema v2)+ **WP-20 ✅**(`meta.session`/`meta.protocol`/`meta.display` 既有 additive 慣例) |
 | **對應 FR** | FR-F1(模式契約)+ FR-F2(metadata 擴充)+ FR-F3(事件時間線契約)+ FR-F4(相容鍵 + 品質旗標) |
 | **估時** | 2–3 dev-days(見 [../README.md §6](../README.md)) |
-| **狀態** | 🟡 T0/T1/T2 完成(2026-08-19);T3 待開工 |
+| **狀態** | 🟡 T0/T1/T2/T3 完成(2026-08-19);T-exit 待開工 |
 
 ---
 
@@ -155,7 +155,7 @@ export interface CompatibilityKey {
 }
 ```
 
-九個欄位缺一即視為不相容(全等判定,非模糊比對);新增第十個欄位需升 `compatibilityKey` 的內部版本並在文件記錄,不得原地插入。
+十個欄位缺一即視為不相容(全等判定,非模糊比對);新增第十一個欄位需升 `compatibilityKey` 的內部版本並在文件記錄,不得原地插入。
 
 ---
 
@@ -233,7 +233,7 @@ export interface CompatibilityKey {
   readonly qualityGateStatus: string;
 }
 export function deriveSessionId(meta: Meta): string;
-export function buildCompatibilityKey(meta: Meta, targetConditionCell: string, qualityGateStatus: string): CompatibilityKey;
+export function buildCompatibilityKey(meta: Meta, taskId: string, targetConditionCell: string, qualityGateStatus: string): CompatibilityKey;
 export function checkCompatibility(a: CompatibilityKey, b: CompatibilityKey): boolean;
 export type QualityGateStatus = 'ok' | 'insufficient-n' | 'incompatible-protocol' | 'suspect-run';
 export function checkQualityGate(args: { n: number; minN: number; suspect: boolean; compatible: boolean }): QualityGateStatus;
@@ -257,8 +257,8 @@ export function checkQualityGate(args: { n: number; minN: number; suspect: boole
 
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| **OQ-S6-10**(新) | `weaponMode`(相容鍵欄位之一)在單武器(AK47)、無 ADS 變體的現狀下如何取值——是否等於 `weaponId`,還是需要額外欄位區分 hip/ADS 測試變體 | 🟡 **T3 讀碼**:先讀 `WeaponConfig`/`activeWeaponConfig()` 目前有幾種 mode 概念,若目前只有單一武器則 `weaponMode` 暫定等於 `weaponId`,留 TODO 待多武器/ADS Assessment 出現時再拆分 | 研究者 | WP-33 T3 | 相容鍵欄位定義完整度;不阻塞 T3 落地(可先用 `weaponId` 佔位) |
-| **OQ-S6-11**(新) | `targetConditionCell` 的序列化格式(距離/角尺寸/速度如何拼成單一字串鍵)在三家族(架槍近中遠、Spider Shot `D_deg×W_deg`、急停無條件格)下是否需要每家族各自的 cell builder,還是本 WP 就要定出通用格式 | 🟡 **WP-33 T3 定初版**(單一字串鍵,家族各自決定內容,WP-33 只驗證「非空字串即可比較」);若後續家族發現不夠用,回本文件升版 | 研究者 | WP-33 T3 | 相容鍵在三家族間是否可互相比較(理論上不該跨家族比較,但鍵格式不一致會讓 bug 更難發現) |
+| **OQ-S6-10**(新) | `weaponMode`(相容鍵欄位之一)在單武器(AK47)、無 ADS 變體的現狀下如何取值——是否等於 `weaponId`,還是需要額外欄位區分 hip/ADS 測試變體 | ✅ **T3 closed**:`WeaponConfig` 無獨立 `weaponMode`;現有 `weaponId` 已區分 BR hip/ADS/hitscan/projectile 變體,故 v1 `weaponMode = weaponId`;未來獨立欄位需升 compatibility-key version | 研究者 | WP-33 T3 | 已拍板初版;不阻塞 WP-34~37 |
+| **OQ-S6-11**(新) | `targetConditionCell` 的序列化格式(距離/角尺寸/速度如何拼成單一字串鍵)在三家族(架槍近中遠、Spider Shot `D_deg×W_deg`、急停無條件格)下是否需要每家族各自的 cell builder,還是本 WP 就要定出通用格式 | ✅ **T3 closed**:呼叫端自行序列化非空字串,WP-33 不解析內容;三家族格式由 WP-34~37 各自定義,不夠用則回本文件升版 | 研究者 | WP-33 T3 | 已拍板初版;不阻塞 WP-34~37 |
 
 ---
 
