@@ -7,7 +7,7 @@
 | **相依** | T1(可見度時間線)+ T2(occlusion 場景) |
 | **Risk / Cplx** | Low / Med |
 | **Touches** | `src/drill/`(`hold-click-v1` drill config)、`src/metrics/`(指標組裝,複用既有 `detectionDerivation.ts`/`compute.ts`) |
-| **狀態** | ⬜ |
+| **狀態** | 🟡 impl done / gate blocked by existing Playwright app-ready flake(S-34.4) |
 
 ## Objective
 
@@ -30,20 +30,20 @@
 
 ## Steps
 
-- [ ] `hold-click-v1` drill config 落地,套用 T2 的 occlusion 場景。
-- [ ] 指標組裝函式:呼叫 T1 `deriveVisibilityTimeline` + 既有 `deriveDetectionMetrics`/`trackingDerivation`/`compute.ts`,不重推任何既有量。
-- [ ] `anticipation` flag 邏輯(開火時刻早於 `tFirstVisible` 或 `tMeasurementOnset`)。
-- [ ] 端到端測試:合成 drill 跑一輪,驗證各指標數值與時間點合理。
+- [x] `hold-click-v1` drill config 落地,套用 T2 的 occlusion 場景。
+- [x] 指標組裝函式:呼叫 T1 `deriveVisibilityTimeline` + 既有 `deriveDetectionMetrics`/`trackingDerivation`/`peekWindows.ts`,不重推任何既有量。
+- [x] `anticipation` flag 邏輯(開火時刻早於 `tFirstVisible` 或 `tMeasurementOnset`)。
+- [x] 端到端測試:合成 drill 跑一輪,驗證各指標數值與時間點合理。
 
 ## Definition of Done
 
 | # | 條件 | 判定方式 |
 |---|---|---|
-| ① | `hold-click-v1` 不重新定義任何既有構念(`t_detect`/on-target/首發皆呼叫既有函式) | code review 檢查點;grep 確認無重複實作 |
-| ② | 端到端合成 drill 測試綠 | 單元/整合測試 |
-| ③ | `anticipation` flag 正確標記提早開火案例 | 單元測試(提早/準時/逾時三案例) |
-| ④ | 框架 v1 驗收條件「`hold-click` 不宣稱獨立 tracking 能力」成立 | 文件/程式碼未輸出任何 tracking 專屬指標 |
-| ⑤ | `npm run test:ci` 全綠 | 貼原始輸出到 progress.md |
+| ① | `hold-click-v1` 不重新定義任何既有構念(`t_detect`/on-target/首發皆呼叫既有函式) | ✅ `deriveHoldClickMetrics()` 呼叫 `deriveDetectionMetrics`/`deriveTrackingMetrics`/`buildPeekWindows` |
+| ② | 端到端合成 drill 測試綠 | ✅ `src/metrics/holdClickMetrics.test.ts` |
+| ③ | `anticipation` flag 正確標記提早開火案例 | ✅ `src/metrics/holdClickMetrics.test.ts` 三案例(before first visible / at onset / after acquisition) |
+| ④ | 框架 v1 驗收條件「`hold-click` 不宣稱獨立 tracking 能力」成立 | ✅ 新輸出限於預瞄、可見度 onset、detection latency、acquisition、first-shot、anticipation |
+| ⑤ | `npm run test:ci` 全綠 | 🟡 blocked: Vitest/typecheck pass; Playwright full suite 20/21,既有 `input-sampler.spec.ts` app-ready timeout;同檔單跑 5/5 pass(見 progress.md S-34.4) |
 
 ## Commit
 

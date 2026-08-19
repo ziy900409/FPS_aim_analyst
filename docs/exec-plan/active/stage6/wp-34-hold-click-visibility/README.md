@@ -10,7 +10,7 @@
 | **相依** | **WP-33**(共同契約,`AssessmentTimelinePoint`/`DrillConfig.mode`)——T0 spike 本身零程式碼,已提前於 WP-33 完成前執行;T1 起需要 WP-33 T-exit |
 | **對應 FR** | FR-F5(可見度時間線)+ FR-F6(`hold-click-v1`) |
 | **估時** | 2.5–3.5 dev-days(T0 spike 完成後由原估 3–5d 下修,見 [../README.md §6](../README.md) 與 progress.md D-34.1) |
-| **狀態** | 🟡 T0/T1 已完成;T2 implementation done but full `npm run test:ci` gate blocked by existing Playwright app-ready timeout(S-34.3,2026-08-19);T3/T-exit 待展開 |
+| **狀態** | 🟡 T0/T1 已完成;T2/T3 implementation done but full `npm run test:ci` gate blocked by existing Playwright app-ready timeout(S-34.3/S-34.4,2026-08-19);T-exit 待展開 |
 
 ---
 
@@ -114,7 +114,7 @@ docs/operational/analysis-visibility.md   ← ADD 可見度契約文件(取樣�
 | **T0** | [T0-entry-gate.md](T0-entry-gate.md) | 讀碼 spike:候選方案評估 + occlusion-aware 政策拍板;零程式碼 | — | — | ✅ 完成 |
 | **T1** | [T1-visibility-derivation.md](T1-visibility-derivation.md) | `visibilityDerivation.ts`:`visibleFraction`/`tFirstVisible`/`tMeasurementOnset`/`tFullExposure` + 合成 fixture | T0 | ✅ 完成 | 1–1.25d |
 | **T2** | [T2-occlusion-scene-clearance.md](T2-occlusion-scene-clearance.md) | Occlusion-aware `validateClearance` + 新 occlusion 場景內容(程序化牆) | T0(可與 T1 並行,不同檔案) | 🟡 impl done / gate blocked(S-34.3) | 0.75–1d |
-| **T3** | [T3-hold-click-protocol.md](T3-hold-click-protocol.md) | `hold-click-v1` 協定 config + 預瞄/反應/取得/首發指標 | T1 + T2 | Low | 0.5–0.75d |
+| **T3** | [T3-hold-click-protocol.md](T3-hold-click-protocol.md) | `hold-click-v1` 協定 config + 預瞄/反應/取得/首發指標 | T1 + T2 | 🟡 impl done / gate blocked(S-34.4) | 0.5–0.75d |
 | **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 驗收:`hold-click` 不宣稱獨立 tracking 能力;`analysis-visibility.md` 定稿 | T3 | — | 0.25d |
 
 **T1 與 T2 檔案熱區不重疊**(`src/metrics/` vs `src/scene/` + 新 props.json)→ 可並行;一 task 一 commit 的紀律不變。

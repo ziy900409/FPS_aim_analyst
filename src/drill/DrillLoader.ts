@@ -1,7 +1,11 @@
 import type { DrillConfig } from './DrillConfig.ts';
 import { validateDrill } from './schema.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
-import { formatClearanceViolations, validateClearance } from '../scene/clearance.ts';
+import { formatClearanceViolations, validateClearance, type ClearanceOptions } from '../scene/clearance.ts';
+
+export interface DrillLoadOptions {
+  readonly clearance?: ClearanceOptions;
+}
 
 /**
  * loadDrill — WP-6 / T2（FR-6.2，OQ-6.4）
@@ -18,7 +22,7 @@ import { formatClearanceViolations, validateClearance } from '../scene/clearance
  * 接受字串與物件兩型:Vite `import x from './x.json'` 給已解析物件;`fetch().then(r=>r.text())`
  * 給字串——兩路皆走同一驗證,避免呼叫端各自 `JSON.parse`。
  */
-export function loadDrill(source: unknown, scene?: SceneConfig): DrillConfig {
+export function loadDrill(source: unknown, scene?: SceneConfig, options: DrillLoadOptions = {}): DrillConfig {
   let json: unknown = source;
   if (typeof source === 'string') {
     try {
@@ -29,7 +33,7 @@ export function loadDrill(source: unknown, scene?: SceneConfig): DrillConfig {
   }
   const drill = validateDrill(json);
   if (scene !== undefined) {
-    const violations = validateClearance(scene, drill);
+    const violations = validateClearance(scene, drill, options.clearance);
     if (violations.length > 0) {
       throw new Error(`DrillConfig 載入失敗: clearance 驗證失敗 — ${formatClearanceViolations(violations)}`);
     }

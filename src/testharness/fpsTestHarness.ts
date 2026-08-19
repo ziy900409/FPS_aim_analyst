@@ -6,7 +6,7 @@ import { createTargetManager, type TargetManager } from '../sim/TargetManager.ts
 import { createDrillRunner, type DrillRunner } from '../drill/DrillRunner.ts';
 import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from '../loop/SimLoop.ts';
 import { punchToThreeRad } from '../recoil/adapter.ts';
-import { loadDrill } from '../drill/DrillLoader.ts';
+import { loadDrill, type DrillLoadOptions } from '../drill/DrillLoader.ts';
 import { resolveTargetHitbox, targetHitboxToConfig, type DrillConfig } from '../drill/DrillConfig.ts';
 import { SIM_HZ, SIM_TO_WORLD } from '../loop/constants.ts';
 import { createDataRecorder, type DataRecorder, type DataRecorderSnapshot } from '../data/DataRecorder.ts';
@@ -115,7 +115,7 @@ export interface FpsTestHarness {
 
 export interface HarnessDeps {
   /** 可載入的 drill（id → 未解析 JSON 來源，交 loadDrill 驗證）。 */
-  availableDrills: ReadonlyArray<{ id: string; source: unknown; scene?: SceneConfig }>;
+  availableDrills: ReadonlyArray<{ id: string; source: unknown; scene?: SceneConfig; loadOptions?: DrillLoadOptions }>;
   /** 可載入的場景 config（protocol condition 的 sceneId 解析用）。 */
   availableScenes?: ReadonlyArray<SceneConfig>;
   /** 真實 render backend（createRenderer seam），寫入匯出 metadata。 */
@@ -310,7 +310,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       const entry = deps.availableDrills.find((candidate) => candidate.id === id);
       if (entry === undefined) throw new Error(`Unknown drill: ${id}`);
       sceneConfig = sceneOverride ?? entry.scene;
-      config = loadDrill(entry.source, sceneConfig);
+      config = loadDrill(entry.source, sceneConfig, entry.loadOptions);
 
       // 全新管線（乾淨起步、與 live 單例隔離）。
       clockMs = 0;

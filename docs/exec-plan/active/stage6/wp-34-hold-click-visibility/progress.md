@@ -12,7 +12,7 @@
 | T0 讀碼 spike | ✅ | 2026-08-19 | D-34.1(候選方案評估)+ D-34.2(occlusion-aware 政策拍板);零 `src/` diff;`npm run test:ci` 證據見下(含與本 WP 無關的既有紅燈說明,S-34.1) |
 | T1 visibility derivation | ✅ | 2026-08-19 | 新增 `src/metrics/visibilityDerivation.ts` + 4 個合成 fixture 單測;`analysis-visibility.md` 起稿;`npm run test:ci` 全綠(見閘證據) |
 | T2 occlusion scene + clearance | 🟡 impl done / gate blocked | 2026-08-19 | `ClearanceOptions` additive API + `peek-corridor` procedural scene; strict legacy clearance remains unchanged; targeted scene/clearance tests green. Full `npm run test:ci` blocked by existing Playwright app-ready timeout in `input-sampler.spec.ts`(見 S-34.3) |
-| T3 hold-click protocol | ⬜ | — | — |
+| T3 hold-click protocol | 🟡 impl done / gate blocked | 2026-08-19 | `hold_click_v1` scene-drill config + `deriveHoldClickMetrics()` assembly; targeted T3 gate green. Full `npm run test:ci` blocked by existing Playwright app-ready timeout in `input-sampler.spec.ts`(見 S-34.4) |
 | T-exit | ⬜ | — | — |
 
 **閘證據**:
@@ -22,7 +22,8 @@
 | T0 | 見 S-34.1——當前 working tree(含 WP-33 T1 未提交變更)跑出 `Test Files 1 failed \| 97 passed (98)`、`Tests 2 failed \| 808 passed (810)`(`src/metrics/trackingDerivation.test.ts` 兩案例 `raycastWithRay is not a function`)。以 `git stash`(不含 untracked)復現乾淨 HEAD(`33e4ebb docs(wp-33): freeze T0 assessment contract`)驗證:**810/810 全綠**,證明失敗由 WP-33 T1 的未提交變更引入,與本 WP-34 T0 的零 `src/` diff 無關 |
 | T1 | 2026-08-19 14:40+02:00:首跑在 sandbox 內被 Windows 權限擋於 Vitest config 載入(`Cannot read directory "../../../..": Access is denied`);非 sandbox 重跑同一命令通過:`tsc --noEmit` + Vitest **101 files / 845 tests passed** + Playwright **21 passed** |
 | T2 | 2026-08-19 14:48+02:00:`npx.cmd vitest run src\scene\clearance.test.ts` 通過(**16 tests passed**);14:49+02:00 scene/clearance targeted gate 通過(**5 files / 34 tests passed**);`npm run typecheck` 通過。完整 `npm run test:ci` sandbox 內因 Windows 權限無法載入 Vite config;非 sandbox 重跑兩次皆通過 `tsc --noEmit` + Vitest **102 files / 853 tests passed**,但 Playwright full suite 皆 **20/21 passed, 1 failed**於既有 `tests/e2e/input-sampler.spec.ts` app-ready timeout。單跑 `npx.cmd playwright test tests/e2e/input-sampler.spec.ts` 通過(**5 passed**) |
-| T3~T-exit | — |
+| T3 | 2026-08-19 15:09+02:00 targeted: `npm run typecheck` 通過;`npx.cmd vitest run src\drill\hold_click_v1.test.ts src\metrics\holdClickMetrics.test.ts src\drill\DrillLoader.test.ts src\testharness\fpsTestHarness.test.ts` 通過(**4 files / 25 tests passed**)。15:15+02:00 非 sandbox `npm run test:ci`: `tsc --noEmit` + Vitest **104 files / 860 tests passed**,Playwright full suite **20/21 passed, 1 failed**於既有 `tests/e2e/input-sampler.spec.ts` app-ready polling timeout。15:18+02:00 非 sandbox 單跑 `npx.cmd playwright test tests/e2e/input-sampler.spec.ts` 通過(**5 passed**) |
+| T-exit | — |
 
 ---
 
@@ -79,6 +80,16 @@ T2 以新增 `sceneId='peek-corridor'` 承載 hold-click emergence 的遮蔽物�
 - 新增 `clutterTier: 'occlusion'` 或類似值——未採用:這會把「可見度設計語意」混入「雜亂度層級」,並迫使 `SceneConfig` 驗證、既有協定與測試更新。
 - 直接把 `peek-corridor` 接到 `loadDrill(source, scene)` 的自動例外——未採用:會讓場景 ID 隱式改變 clearance policy,違反 T0/T2 的「明確列名 propBounds 才可遮蔽」要求。
 
+### D-34.5 — T3 hold-click 組裝:協定入口帶 explicit clearance options,metrics 只做既有推導的時間差組裝(2026-08-19,T3)
+
+T3 新增 `holdClickV1` scene-drill config,使用 `sceneId='peek-corridor'`、`mode='assessment'`、固定 seed,並把 T2 的 `allowedOcclusionPropIds=['cover-wall']` 與 `exposedRestEnvelope` 包成 protocol-level `clearanceOptions`。`loadDrill(source, scene)` 的既有呼叫仍走 strict clearance;只有 `loadDrill(source, scene, { clearance })` opt-in 時才套用 occlusion-aware 模式。`main.ts` 與 dev `fpsTestHarness` 的 available drill entry 會傳遞此 options,避免場景 ID 隱式改變 clearance policy。
+
+metrics 端新增 `deriveHoldClickMetrics(payload, scene, options)`:呼叫 T1 `deriveVisibilityTimeline()` 取得 per-window `tFirstVisible`/`tMeasurementOnset`/`tFullExposure`,呼叫既有 `deriveDetectionMetrics()` 取得 `t_detect`,呼叫既有 `deriveTrackingMetrics()` 取得 `t_first_on_target`,呼叫既有 `buildPeekWindows()` 取得首發。T3 自己只計算 hold-click 協定需要的差值與旗標:`t_detect - tMeasurementOnset`、`t_first_on_target - t_detect`、`t_fire - t_first_on_target`、pre-aim 偏差、`anticipation`。
+
+**Alternatives considered**:
+- 讓 `peek-corridor` 在 `loadDrill(source, scene)` 自動例外通過——未採用:會把 policy 藏在 sceneId,違反 D-34.4 的 explicit opt-in。
+- 在 hold-click metrics 內重新實作 on-target 或 first-shot 判定——未採用:會和 `trackingDerivation.ts`/`peekWindows.ts` 形成第二套構念,違反 T3 DoD ①。
+
 ---
 
 ## Surprises
@@ -98,6 +109,12 @@ T2 以新增 `sceneId='peek-corridor'` 承載 hold-click emergence 的遮蔽物�
 T2 驗證時,完整 `npm run test:ci` 在 sandbox 內先因 Windows 權限無法讀取 Vite config(`Cannot read directory "../../../..": Access is denied`)失敗;非 sandbox 重跑後,`tsc --noEmit` 與 Vitest 皆全綠(**102 files / 853 tests passed**),但 Playwright full suite 兩次各在 `tests/e2e/input-sampler.spec.ts` 的不同案例等待 `window.__aimDebug` timeout,結果皆為 **20/21 passed, 1 failed**。單跑同一檔 `npx.cmd playwright test tests/e2e/input-sampler.spec.ts` 通過(**5 passed**),且 T2 相關 scene/clearance targeted gate **5 files / 34 tests passed**。
 
 **Evidence**:失敗點都在 `gotoAppReady()` 的 app readiness polling,不是 `src/scene/clearance.ts`、`peek-corridor` 或 GLTF/SceneConfig 測試路徑。T2 code 目前不 commit,等待使用者決定是否接受帶此既有 E2E flake 的 slice,或先另開/處理 input-sampler E2E 穩定性。
+
+### S-34.4 — T3 full `npm run test:ci` 仍被同一既有 Playwright app-ready timeout 擋住
+
+T3 驗證時,sandbox 內完整 `npm run test:ci` 先因 Windows 權限無法讀取 Vite config(`Cannot read directory "../../../..": Access is denied`)失敗;非 sandbox 重跑同一命令後,`tsc --noEmit` 與 Vitest 皆全綠(**104 files / 860 tests passed**),但 Playwright full suite **20/21 passed, 1 failed**於 `tests/e2e/input-sampler.spec.ts:109` 的 `gotoAppReady()` polling `window.__aimDebug` timeout。非 sandbox 單跑同一檔 `npx.cmd playwright test tests/e2e/input-sampler.spec.ts` 通過(**5 passed**)。
+
+**Evidence**:失敗點與 T2 的 S-34.3 同屬 input-sampler app readiness polling,不是 `hold_click_v1`、`deriveHoldClickMetrics`、`loadDrill` options 或 `peek-corridor` 場景載入路徑。T3 targeted gate 與 typecheck 全綠;完整 gate 是否接受此既有 E2E flake 仍需使用者/後續 task 決定。
 
 ---
 

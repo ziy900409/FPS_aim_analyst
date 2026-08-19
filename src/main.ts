@@ -35,7 +35,7 @@ import {
 } from './ui/SessionSetup.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
-import { loadDrill } from './drill/DrillLoader.ts';
+import { loadDrill, type DrillLoadOptions } from './drill/DrillLoader.ts';
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
 import { resolveTargetHitbox, targetHitboxToConfig, type DrillConfig } from './drill/DrillConfig.ts';
 import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts';
@@ -57,11 +57,13 @@ import { placeholderRoom } from './scene/scenes/placeholder-room.ts';
 import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
 import { brField } from './scene/scenes/br-field.ts';
+import { peekCorridor } from './scene/scenes/peek-corridor.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
+import { holdClickV1 } from './drill/hold_click_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -80,6 +82,7 @@ interface AvailableDrill {
   label: string;
   source: unknown;
   sceneId?: string;
+  loadOptions?: DrillLoadOptions;
 }
 
 interface AvailableScene {
@@ -93,6 +96,7 @@ const availableScenes: AvailableScene[] = [
   { id: fieldLow.sceneId, label: 'field-low', config: fieldLow },
   { id: urbanHigh.sceneId, label: 'urban-high', config: urbanHigh },
   { id: brField.sceneId, label: 'br-field', config: brField },
+  { id: peekCorridor.sceneId, label: 'peek-corridor', config: peekCorridor },
 ];
 let activeSceneConfig: SceneConfig = fieldLow;
 let activeSceneFallback = false;
@@ -114,6 +118,13 @@ const availableDrills: AvailableDrill[] = [
     source: trackingLongrangeV1.drill,
     sceneId: trackingLongrangeV1.sceneId,
   },
+  {
+    id: holdClickV1.id,
+    label: holdClickV1.id,
+    source: holdClickV1.drill,
+    sceneId: holdClickV1.sceneId,
+    loadOptions: { clearance: holdClickV1.clearanceOptions },
+  },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,
     label: variant.id,
@@ -123,6 +134,7 @@ const availableDrills: AvailableDrill[] = [
 ];
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
+let activeDrillLoadOptions: DrillLoadOptions = {};
 let recorderStartedAt = new Date().toISOString();
 
 // WP-1 / T1（FR-1.1）+ WP-19 / T2（FR-C2）— 舞台 + camera:async 場景載入管線。
@@ -617,10 +629,11 @@ if (import.meta.env.DEV) {
   const { createFpsTestHarness } = await import('./testharness/fpsTestHarness.ts');
   const displayHz = await measureDisplayHz({ samples: 10 });
   const fpsTestHarness = createFpsTestHarness({
-    availableDrills: availableDrills.map(({ id, source, sceneId }) => ({
+    availableDrills: availableDrills.map(({ id, source, sceneId, loadOptions }) => ({
       id,
       source,
       ...(sceneId !== undefined ? { scene: findSceneOption(sceneId).config } : {}),
+      ...(loadOptions !== undefined ? { loadOptions } : {}),
     })),
     availableScenes: availableScenes.map(({ config }) => config),
     backend,
@@ -774,7 +787,7 @@ async function loadDrillById(drillId: string): Promise<void> {
 
   const requiredScene = option.sceneId !== undefined ? findSceneOption(option.sceneId) : undefined;
   const targetSceneConfig = requiredScene?.config ?? activeSceneConfig;
-  const nextConfig = loadDrill(option.source, targetSceneConfig);
+  const nextConfig = loadDrill(option.source, targetSceneConfig, option.loadOptions);
   const needsSceneLoad =
     requiredScene !== undefined &&
     (requiredScene.config.sceneId !== activeSceneConfig.sceneId || activeSceneFallback);
@@ -784,6 +797,7 @@ async function loadDrillById(drillId: string): Promise<void> {
   drillRunner.restart();
   activeDrillConfig = nextConfig;
   activeDrillSource = option.source;
+  activeDrillLoadOptions = option.loadOptions ?? {};
   activeTargetManager = createTargetManager(nextConfig);
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
@@ -799,7 +813,7 @@ async function loadSceneById(sceneId: string): Promise<void> {
   const option = findSceneOption(sceneId);
   if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
 
-  const nextDrillConfig = loadDrill(activeDrillSource, option.config);
+  const nextDrillConfig = loadDrill(activeDrillSource, option.config, activeDrillLoadOptions);
   const nextScene = await createSceneManagerWithStatus(option.config);
 
   installSceneLoad(option, nextScene);
