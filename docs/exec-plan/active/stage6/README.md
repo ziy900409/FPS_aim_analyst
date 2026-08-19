@@ -3,7 +3,7 @@
 > stage6 頂層索引 + tech spec。🟡 **已採納規劃(2026-08-19,GD-22)**;原案 [`active/stage6/aim-assessment-framework-v1.md`](aim-assessment-framework-v1.md)(2026-08-19 提案)為需求 source of truth,本檔為拆解後的執行計畫。
 > 整合輸入:框架 v1 草稿(三測試家族 + 共同契約 + 診斷推薦層)+ 讀碼對帳(2026-08-19,見 §0.1)。
 > 格式沿用 [exec-plan/README.md](../../README.md)(每 WP 一個自足子資料夾;task = 垂直切片 = 原子 commit)。文件語言:繁體中文,術語保留英文(D4)。
-> **本階段狀態**:規劃已拍板(WP 編號/里程碑/交付順序);**WP-33 ✅ 完成**(`wp-33-assessment-contract/`,T0~T3+T-exit 全數完成 2026-08-19,契約定稿於 [`docs/operational/analysis-assessment-contract.md`](../../operational/analysis-assessment-contract.md),開放 WP-34~37 entry);**WP-34 ✅ 完成**(`wp-34-hold-click-visibility/`,T0~T3+T-exit 全數完成 2026-08-19——候選②(scene 層封閉幾何離線解析)+ occlusion-aware `validateClearance` 政策選項①落地,`hold-click-v1` 協定與 `analysis-visibility.md` 契約定稿,開放 WP-35 entry;見 §6 WP-34 與 [wp-34 progress.md](wp-34-hold-click-visibility/progress.md))。
+> **本階段狀態**:規劃已拍板(WP 編號/里程碑/交付順序);**WP-33 ✅ 完成**(`wp-33-assessment-contract/`,T0~T3+T-exit 全數完成 2026-08-19,契約定稿於 [`docs/operational/analysis-assessment-contract.md`](../../operational/analysis-assessment-contract.md),開放 WP-34~37 entry);**WP-34 ✅ 完成**(`wp-34-hold-click-visibility/`,T0~T3+T-exit 全數完成 2026-08-19——候選②(scene 層封閉幾何離線解析)+ occlusion-aware `validateClearance` 政策選項①落地,`hold-click-v1` 協定與 `analysis-visibility.md` 契約定稿,開放 WP-35 entry;見 §6 WP-34 與 [wp-34 progress.md](wp-34-hold-click-visibility/progress.md));**WP-35 T0 ✅ 完成**(`wp-35-hold-track/`,fire-gating 落點與 `trackingStopMs` 欄位已拍板,開放 T1)。
 
 | | |
 |---|---|
@@ -11,7 +11,7 @@
 | **上游門檻** | M4 ✅(schema v2)+ WP-19 ✅(場景系統,GD-6 邊界)+ WP-21 ✅(seeded spawn + `t_detect` 偵測推導)+ WP-23 ✅(hitbox 單一來源,GD-7)+ WP-18 ✅(`trackingDerivation.ts` 追蹤指標);stage4(WP-28~32)非硬相依,但 WP-38 的報告呈現紀律(n/flags/version/效度層級)沿用其先例 |
 | **技術棧** | 全部落在既有 TS 引擎棧(`src/drill`/`src/sim`/`src/scene`/`src/metrics`/`src/ui`);**不預設**新增 Python 層——WP-38 是否比照 stage4 走 `research/` 離線分析或留在 TS 即時結果頁,列為 T0 待決(OQ-S6-8) |
 | **估時** | 16–23 dev-days(WP-33~39;WP-34 已由 T0 spike 下修為 2.5–3.5d,見 §6) |
-| **狀態** | 🟡 **規劃已採納(2026-08-19,GD-22)**:WP 編號 WP-33~39、里程碑 M16、交付順序拍板。**WP-33 ✅ 完成**(2026-08-19,T0~T-exit 全數完成,契約定稿,開放 WP-34~37 entry);**WP-34 ✅ 完成**(2026-08-19,T0~T3+T-exit 全數完成,可見度時間線 + occlusion-aware clearance + `hold-click-v1` 落地,`analysis-visibility.md` 定稿,開放 WP-35 entry)。**下一步**:WP-35~37 T0 entry-gate 可展開。 |
+| **狀態** | 🟡 **規劃已採納(2026-08-19,GD-22)**:WP 編號 WP-33~39、里程碑 M16、交付順序拍板。**WP-33 ✅ 完成**(2026-08-19,T0~T-exit 全數完成,契約定稿,開放 WP-34~37 entry);**WP-34 ✅ 完成**(2026-08-19,T0~T3+T-exit 全數完成,可見度時間線 + occlusion-aware clearance + `hold-click-v1` 落地,`analysis-visibility.md` 定稿,開放 WP-35 entry);**WP-35 T0 ✅ 完成**(fire-gating/`target_stop` 契約拍板)。**下一步**:WP-35 T1 或 WP-36/WP-37 T0 可展開。 |
 
 ---
 
@@ -206,7 +206,7 @@ T0 spike 的 DoD 是從三個候選中選一個並記錄成本比較,而不是�
 |---|---|---|---|---|---|---|---|
 | **WP-33** | [`wp-33-assessment-contract/`](wp-33-assessment-contract/README.md) | 共同契約:Assessment/Practice 模式分離 + metadata 擴充 + 事件時間線契約 + 相容比較鍵/品質旗標判定式 | 1 | — | M4 ✅ + WP-20 ✅(`meta.session`) | 2–3d | ✅ |
 | **WP-34** | [`wp-34-hold-click-visibility/`](wp-34-hold-click-visibility/README.md) | 架槍 `hold-click-v1` + 遮蔽物可見度時間線(T0~T-exit ✅ 全數完成,候選②落地) | 2 | — | WP-33;T0 spike 已提前於 WP-33 T-exit 前執行完成 | 2.5–3.5d(T0 spike 後下修,不拆分) | ✅ |
-| **WP-35** | [`wp-35-hold-track/`](wp-35-hold-track/README.md) | 架槍 `hold-track-v1`:移動期間鎖 fire、停止後解鎖、追蹤窗指標 | 3 | — | WP-34(共用 emergence 機制) | 2–3d | 🟡 執行計畫已展開(讀碼對帳完成;T0 待開工) |
+| **WP-35** | [`wp-35-hold-track/`](wp-35-hold-track/README.md) | 架槍 `hold-track-v1`:移動期間鎖 fire、停止後解鎖、追蹤窗指標 | 3 | — | WP-34(共用 emergence 機制) | 2–3d | 🟡 T0 ✅;T1 可開工 |
 | **WP-36** | [`wp-36-spider-shot/`](wp-36-spider-shot/README.md) | Spider Shot `spider-shot-v1`:單目標約束 + 中心—周邊 seeded 排程 + 五類指標(讀碼對帳完成;T0 待開工) | 4 | — | WP-33 ✅(可與 WP-34/35 並行) | 2.5–3.5d | 🟡 執行計畫已展開 |
 | **WP-37** | `wp-37-counterstrafe-protocols/`(⬜ 待建立) | 急停三協定包裝(`cued`/`reversal`/`free`)+ L/R 對稱指標 | 5 | — | WP-33(可並行) | 2–3d | ⬜ |
 | **WP-38** | `wp-38-diagnosis-recommendation/`(⬜ 待建立) | 診斷規則引擎 + 版本化推薦 + 個人 session history + 結果呈現整合 | 6 | — | WP-34+35+36+37 全部產出逐構念指標 | 3–4d | ⬜ |

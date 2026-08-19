@@ -1,6 +1,6 @@
 # WP-35 — hold-track:移動期間鎖 fire + 停止後解鎖首發 + 追蹤窗/停止轉換指標
 
-> stage6 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 需求 source of truth:[../aim-assessment-framework-v1.md](../aim-assessment-framework-v1.md) · 決議依據:**GD-22**(stage6 採納)+ 本 WP T0 讀碼待執行。
+> stage6 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 需求 source of truth:[../aim-assessment-framework-v1.md](../aim-assessment-framework-v1.md) · 決議依據:**GD-22**(stage6 採納)+ 本 WP T0 讀碼拍板(D-35.1~D-35.3)。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |
@@ -10,7 +10,7 @@
 | **相依** | **WP-34 T-exit**(共用 emergence/exposure 機制;[../README.md §5](../README.md) 相依圖) |
 | **對應 FR** | FR-F7(`hold-track-v1`) |
 | **估時** | 2–3 dev-days([../README.md §6](../README.md));讀碼發現追蹤窗核心指標多數已有實作,T0 若確認掉靶/重新取得時間可用既有 `TrackingSample[]` 離線推導(不碰既有幾何函式),估時傾向落在下緣;若發現需要更深的 `trackingDerivation.ts` 改動則上修,由 T0 記錄判斷 |
-| **狀態** | ⬜ 尚未開工(entry 條件:WP-34 T-exit ✅) |
+| **狀態** | 🟡 T0 entry-gate ✅(2026-08-19);T1 可開工 |
 
 ---
 
@@ -41,11 +41,11 @@
 **In scope**:
 
 ```
-src/state/types.ts                        ← MODIFY TargetState additive:fireLocked?(名稱待 T0/T1 定案) [T1]
+src/state/types.ts                        ← MODIFY TargetState additive:fireLocked?(D-35.1)              [T1]
 src/state/SharedState.ts                  ← MODIFY 新增 tStop 記錄結構(比照既有 tVisible 慣例)         [T1]
 src/loop/SimLoop.ts                       ← MODIFY scheduleFire 開火合法性閘追加 fireLocked 條件(additive) [T1]
 src/sim/TargetManager.ts                  ← MODIFY 新增「原地凍結」到期行為分支(additive,不改既有 markKilled 路徑) [T1]
-src/drill/DrillConfig.ts                  ← MODIFY timing additive 修飾欄位(區分 hold-track 到期行為 vs 既有 presentationMs) [T1]
+src/drill/DrillConfig.ts                  ← MODIFY timing.trackingStopMs additive 修飾欄位(D-35.2)       [T1]
 src/drill/hold_track_v1.ts                ← ADD hold-track-v1 drill config(比照 tracking_br_v1.ts 形狀)  [T2]
 src/metrics/trackingDerivation.ts         ← 讀,不改核心幾何(deriveTrackingSamples/derivePresentation,C-D4) [T2]
 src/metrics/trackingTransitions.ts        ← ADD 掉靶次數/重新取得時間(消費既有 TrackingSample[])          [T2]
@@ -63,22 +63,22 @@ docs/operational/analysis-hold-track.md   ← ADD 契約文件(fire-gating 語�
 
 ---
 
-## 2. 關鍵契約(T0 待凍結項;以下為讀碼後的建議方向,非最終定案)
+## 2. 關鍵契約(T0 已凍結;詳見 progress.md D-35.1~D-35.3)
 
 ### ① fire-gating 落點:additive `TargetState` 欄位,sim 唯讀(承 §0-3)
 
-比照既有 `persistent`(WP-18 T3)的先例——由 `TargetManager` 依 `DrillConfig` 寫入 `TargetState`,`SimLoop.scheduleFire` 只**讀**該欄位、不持有獨立狀態機。既有 `state.heldFire && state.weapon.ammo > 0 && state.weapon.nextFireT <= untilMs` 判定式追加 **AND** 條件(如 `activeTarget?.fireLocked !== true`);省略該欄位(既有 63+ drill)行為逐位不變。**這不是新的 sim 狀態機**——與 `persistent` 同一層級的附加旗標,職責仍是「這個 tick 要不要接受開火」的**判定**,不改變 sim 的物理狀態演進(承 [../README.md §2.3(b)](../README.md))。
+比照既有 `persistent`(WP-18 T3)的先例——由 `TargetManager` 依 `DrillConfig` 寫入 `TargetState.fireLocked`,`SimLoop.scheduleFire` 只**讀**該欄位、不持有獨立狀態機。既有 `state.heldFire && state.weapon.ammo > 0 && state.weapon.nextFireT <= untilMs` 判定式追加 **AND** 條件(`activeTarget?.fireLocked !== true`);省略該欄位(既有 63+ drill)行為逐位不變。**這不是新的 sim 狀態機**——與 `persistent` 同一層級的附加旗標,職責仍是「這個 tick 要不要接受開火」的**判定**,不改變 sim 的物理狀態演進(承 [../README.md §2.3(b)](../README.md))。
 
 ### ② target_stop = 原地凍結,不是撤除(承 §0-4)
 
-到期(`presentationMs` 或新增修飾欄位所定義的時長)後,目標**不** `markKilled`:
+到期(`timing.trackingStopMs`)後,目標**不** `markKilled`:
 
 1. 停止驅動 `motion`(`age` 不再累加,`pos` 定格在到期瞬間)。
 2. `fireLocked` 翻為 `false`(解鎖開火)。
 3. 記錄 `tStop`(比照 `state.tVisible` 的 `Map<targetId, number>` 慣例,sim clock 時間源,ADR-4)。
 4. 玩家下一次開火(命中或未命中皆計首發,沿用既有 `firstShot` 語意)後,該目標恢復**非 persistent** 行為——命中即 `markKilled`(既有路徑,零改動),推進下一目標。
 
-此行為只在 hold-track-v1 專屬的 additive 修飾欄位存在時啟用;既有 `tracking_br_v1`(只給 `presentationMs`,不給新欄位)維持現行「到期即 `markKilled`」路徑,零回溯相容成本。
+此行為只在 hold-track-v1 專屬的 `timing.trackingStopMs` 存在時啟用;既有 `tracking_br_v1`(只給 `presentationMs`,不給新欄位)維持現行「到期即 `markKilled`」路徑,零回溯相容成本。T1 schema 必須拒絕 `presentationMs` 與 `trackingStopMs` 同時出現,避免同一 config 同時宣告 advance 與 stop。
 
 ### ③ 停止轉換指標必須複用既有首發判定(C-D4)
 
@@ -119,7 +119,7 @@ docs/operational/analysis-hold-track.md   ← ADD 契約文件(fire-gating 語�
 
 ---
 
-## 5. Interface contracts(草案;確切簽名與命名留給 T0/T1 定稿)
+## 5. Interface contracts(T0 凍結的 T1/T2 起點;T1 可依實作細節微調註解,不得改語意)
 
 ```ts
 // src/state/types.ts                                                            [T1,additive]
@@ -127,7 +127,7 @@ export interface TargetState {
   // …既有欄位(id/side/pos/visible/alive/hitbox/age/posPrev/motion?/persistent?)不變
   /**
    * hold-track-v1 專屬:為 true 時 `scheduleFire` 拒絕對本目標的開火消費(輸入仍留在緩衝,
-   * 解鎖後正常消費,不遺失事件)。省略 = 現行行為(既有 drill 零回溯相容成本)。命名待 T0 定案。
+   * 解鎖後正常消費,不遺失事件)。省略 = 現行行為(既有 drill 零回溯相容成本)。
    */
   fireLocked?: boolean;
 }
@@ -157,8 +157,7 @@ export interface DrillConfig {
     /**
      * hold-track-v1 專屬:達此時長 → 目標原地凍結(非撤除)+ 解鎖開火,取代 presentationMs 到期即
      * markKilled 的既有行為。省略 = 現行 presentationMs 語意不變(既有 tracking_br_v1 零回溯相容)。
-     * 命名/是否與 presentationMs 合併一欄位待 T0/T1 定案(候選:獨立欄位 vs presentationMs + 一個
-     * 'kill' | 'freeze' 判別子)。
+     * 不得與 presentationMs 同時提供;presentationMs 維持既有「到期撤除/advance」語意。
      */
     trackingStopMs?: number;
   };
@@ -204,8 +203,8 @@ export function deriveStopTransitions(payload: ExportPayload): StopTransition[];
 
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| **OQ-S6-9**(承 [../README.md](../README.md),本 WP 收斂) | fire-gating 是否會與既有 `WeaponConfig` 開火合法性判定(彈匣/cycletime)產生互動,需要合併判定還是獨立疊加 | 🟡 **T0 讀碼確認**;讀碼已知落點為 `scheduleFire`(SimLoop.ts:505-511)的既有 while 迴圈,建議以獨立 `&&` 條件疊加(不合併進 `nextFireT` 語意),但需要 T0 驗證是否有邊界案例(如解鎖瞬間剛好 `nextFireT` 到期)產生非預期的雙重觸發 | 研究者 | WP-35 T0 | fire-gating 實作落點與既有開火鏈的整合方式 |
-| **OQ-S6-14**(新) | `presentationMs` 到期行為的「kill」vs「freeze」是否該用同一欄位加判別子,還是兩個獨立欄位(`presentationMs` + `trackingStopMs`) | 🟡 **T0/T1 拍板**;傾向獨立欄位(§2②),因為判別子會讓 `presentationMs` 一個欄位承載兩種到期語意,較貼近 C-D4 精神的做法是新語意用新欄位 | 研究者 | WP-35 T1 | `DrillConfig.timing` 型別形狀;是否需要在 `schema.ts` 加額外互斥驗證(`presentationMs` 與 `trackingStopMs` 不應同時提供) |
+| ~~**OQ-S6-9**~~(承 [../README.md](../README.md),本 WP 收斂) | ~~fire-gating 是否會與既有 `WeaponConfig` 開火合法性判定(彈匣/cycletime)產生互動,需要合併判定還是獨立疊加~~ | ✅ **關閉(2026-08-19,T0,D-35.1)**:`scheduleFire` 追加 `TargetState.fireLocked` active-target additive AND 條件,不併入 `nextFireT`/彈匣語意;解鎖瞬間沿用既有 cadence 消費 | 研究者 | WP-35 T0 ✅ | unblocked |
+| ~~**OQ-S6-14**~~(新) | ~~`presentationMs` 到期行為的「kill」vs「freeze」是否該用同一欄位加判別子,還是兩個獨立欄位(`presentationMs` + `trackingStopMs`)~~ | ✅ **關閉(2026-08-19,T0,D-35.2)**:新增獨立 `timing.trackingStopMs`;`presentationMs` 維持到期撤除語意;T1 schema 拒絕兩者併用 | 研究者 | WP-35 T0 ✅ | unblocked |
 | **OQ-S6-15**(新) | 「重新取得時間」在玩家掉靶後直到窗口結束都未重新 on-target 時,如何呈現(不計入平均 vs 記為窗口剩餘時間的上界) | 🟡 **T2 拍板**;建議不計入平均(避免用武斷上界污染統計),但需在 `analysis-hold-track.md` 明文記載排除規則與其對樣本數 `n` 的影響 | 研究者 | WP-35 T2 | 掉靶/重新取得時間的統計呈現方式;不阻塞引擎實作 |
 
 ---
