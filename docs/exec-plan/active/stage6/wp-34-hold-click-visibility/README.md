@@ -10,7 +10,7 @@
 | **相依** | **WP-33**(共同契約,`AssessmentTimelinePoint`/`DrillConfig.mode`)——T0 spike 本身零程式碼,已提前於 WP-33 完成前執行;T1 起需要 WP-33 T-exit |
 | **對應 FR** | FR-F5(可見度時間線)+ FR-F6(`hold-click-v1`) |
 | **估時** | 2.5–3.5 dev-days(T0 spike 完成後由原估 3–5d 下修,見 [../README.md §6](../README.md) 與 progress.md D-34.1) |
-| **狀態** | 🟡 T0 已完成(讀碼 spike + 政策拍板,2026-08-19);T1~T3 待展開 |
+| **狀態** | 🟡 T0/T1 已完成(讀碼 spike + visibility derivation,2026-08-19);T2~T3 待展開 |
 
 ---
 
@@ -112,7 +112,7 @@ docs/operational/analysis-visibility.md   ← ADD 可見度契約文件(取樣�
 | Task | 檔案 | Objective | 相依 | Risk | 估時 |
 |---|---|---|---|---|---|
 | **T0** | [T0-entry-gate.md](T0-entry-gate.md) | 讀碼 spike:候選方案評估 + occlusion-aware 政策拍板;零程式碼 | — | — | ✅ 完成 |
-| **T1** | [T1-visibility-derivation.md](T1-visibility-derivation.md) | `visibilityDerivation.ts`:`visibleFraction`/`tFirstVisible`/`tMeasurementOnset`/`tFullExposure` + 合成 fixture | T0 | Med | 1–1.25d |
+| **T1** | [T1-visibility-derivation.md](T1-visibility-derivation.md) | `visibilityDerivation.ts`:`visibleFraction`/`tFirstVisible`/`tMeasurementOnset`/`tFullExposure` + 合成 fixture | T0 | ✅ 完成 | 1–1.25d |
 | **T2** | [T2-occlusion-scene-clearance.md](T2-occlusion-scene-clearance.md) | Occlusion-aware `validateClearance` + 新 occlusion 場景內容(程序化牆) | T0(可與 T1 並行,不同檔案) | Med | 0.75–1d |
 | **T3** | [T3-hold-click-protocol.md](T3-hold-click-protocol.md) | `hold-click-v1` 協定 config + 預瞄/反應/取得/首發指標 | T1 + T2 | Low | 0.5–0.75d |
 | **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 驗收:`hold-click` 不宣稱獨立 tracking 能力;`analysis-visibility.md` 定稿 | T3 | — | 0.25d |
@@ -176,5 +176,5 @@ export function validateClearance(scene: SceneConfig, drill: DrillConfig, option
 ## 8. 文件對帳清單
 
 - [ ] [../README.md](../README.md) §3/§6:WP-34 狀態與估時已於本次 T0 更新(2026-08-19)。
-- [ ] `docs/operational/analysis-visibility.md`(新,T1 起稿/T-exit 定稿)。
+- [x] `docs/operational/analysis-visibility.md`(新,T1 起稿/T-exit 定稿)。
 - [ ] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`visibleFraction`、`t_measurement_onset`、`occlusion-aware clearance`)於 T-exit 回寫。

@@ -7,7 +7,7 @@
 | **相依** | T0(候選②拍板) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | `src/metrics/visibilityDerivation.ts`(新)、`docs/operational/analysis-visibility.md`(起稿) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-19) |
 
 ## Objective
 
@@ -31,11 +31,11 @@
 
 ## Steps
 
-- [ ] 讀 `clearance.ts` 的 `sampleAabb`/`segmentIntersectsAabb`/`eyeOrigin.ts` 的 `eyeOriginForTick`,確認可直接 import 重用(不重寫)。
-- [ ] 實作 `deriveVisibilityTimeline()`。
-- [ ] 合成 fixture:至少四案例(全遮蔽/全曝光/部分遮蔽/邊緣掠過)+ OQ-S6-12 的 N 敏感度分析。
-- [ ] 起稿 `analysis-visibility.md`。
-- [ ] 單元測試涵蓋:`propBounds` 為空陣列(零遮蔽,等同現行 pop-in 語意的邊界情況)、目標為 `null`(無目標 tick)。
+- [x] 讀 `clearance.ts` 的 `sampleAabb`/`segmentIntersectsAabb`/`eyeOrigin.ts` 的 `eyeOriginForTick`,確認可直接 import 重用(不重寫)。
+- [x] 實作 `deriveVisibilityTimeline()`。
+- [x] 合成 fixture:至少四案例(全遮蔽/全曝光/部分遮蔽/邊緣掠過)+ OQ-S6-12 的 N 敏感度分析。
+- [x] 起稿 `analysis-visibility.md`。
+- [x] 單元測試涵蓋:`propBounds` 為空陣列(零遮蔽,等同現行 pop-in 語意的邊界情況)、目標為 `null`(無目標 tick)。
 
 ## Definition of Done
 

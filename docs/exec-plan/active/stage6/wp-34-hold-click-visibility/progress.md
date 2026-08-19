@@ -10,7 +10,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 讀碼 spike | ✅ | 2026-08-19 | D-34.1(候選方案評估)+ D-34.2(occlusion-aware 政策拍板);零 `src/` diff;`npm run test:ci` 證據見下(含與本 WP 無關的既有紅燈說明,S-34.1) |
-| T1 visibility derivation | ⬜ | — | — |
+| T1 visibility derivation | ✅ | 2026-08-19 | 新增 `src/metrics/visibilityDerivation.ts` + 4 個合成 fixture 單測;`analysis-visibility.md` 起稿;`npm run test:ci` 全綠(見閘證據) |
 | T2 occlusion scene + clearance | ⬜ | — | — |
 | T3 hold-click protocol | ⬜ | — | — |
 | T-exit | ⬜ | — | — |
@@ -20,7 +20,8 @@
 | Task | `npm run test:ci` |
 |---|---|
 | T0 | 見 S-34.1——當前 working tree(含 WP-33 T1 未提交變更)跑出 `Test Files 1 failed \| 97 passed (98)`、`Tests 2 failed \| 808 passed (810)`(`src/metrics/trackingDerivation.test.ts` 兩案例 `raycastWithRay is not a function`)。以 `git stash`(不含 untracked)復現乾淨 HEAD(`33e4ebb docs(wp-33): freeze T0 assessment contract`)驗證:**810/810 全綠**,證明失敗由 WP-33 T1 的未提交變更引入,與本 WP-34 T0 的零 `src/` diff 無關 |
-| T1~T-exit | — |
+| T1 | 2026-08-19 14:40+02:00:首跑在 sandbox 內被 Windows 權限擋於 Vitest config 載入(`Cannot read directory "../../../..": Access is denied`);非 sandbox 重跑同一命令通過:`tsc --noEmit` + Vitest **101 files / 845 tests passed** + Playwright **21 passed** |
+| T2~T-exit | — |
 
 ---
 
@@ -59,6 +60,14 @@
 - 「② hold-click 場景整個繞過 `validateClearance`,走獨立驗證邏輯」——未採用:會製造兩套淨空驗證邏輯,增加維護面且喪失既有 `segmentIntersectsAabb`/`CLEARANCE_MARGIN_U` 的一致安全邊界。
 - 「③ 混合(沿用既有函式簽名 + 白名單參數)」——與選項①在效果上等價,選項①的表述(政策層級)已隱含選項③的實作形狀,不需要另立第三案。
 
+### D-34.3 — `visibility-v1` T1 取樣介面:凍結候選 N=9,保留 N=1 診斷模式(2026-08-19,T1)
+
+T1 實作接受 `sampleCount: 9`(中心 + 8 hitbox corners)作為 `visibility-v1` 的 pre-registered candidate,另接受 `sampleCount: 1` 作為 OQ-S6-12 的敏感度診斷模式;其餘 N 值 loud fail。`onsetThreshold` 仍為建構參數,等待 WP-39 pilot 凍結。
+
+**Alternatives considered**:
+- 任意整數 N——未採用:需要定義更多取樣拓撲(表面格點、體積格點或解析式),超出 T1 範圍且會讓 `t_measurement_onset` 的版本語意變模糊。
+- 只允許 N=9——未採用:會使 T1 無法以 executable fixture 量化 OQ-S6-12 的取樣密度敏感度。
+
 ---
 
 ## Surprises
@@ -68,6 +77,10 @@
 ### S-34.1 — `npm run test:ci` 在當前 working tree 有兩個既有紅燈,與 WP-34 無關但需要留痕
 
 執行本 WP T0 的證據閘時,`npm run test:ci` 回報 `src/metrics/trackingDerivation.test.ts` 兩案例失敗(`raycastWithRay is not a function`)。**根因排查**:`git status` 顯示 working tree 已有 WP-33 T1 的未提交變更(`src/data/metadata.ts`/`src/drill/DrillConfig.ts`/`src/drill/schema.ts`/新檔 `src/drill/assessmentContract.ts`)。用 `git stash`(不含 untracked)復現乾淨 HEAD(`33e4ebb docs(wp-33): freeze T0 assessment contract`)重跑,**810/810 全綠**——確認失敗由 WP-33 T1 的未提交變更引入,與本 WP-34(零 `src/` diff)無關。**未進一步排查 WP-33 T1 側的根因**(不屬本 WP 範圍);記錄於此供 WP-33 進度追蹤參考,WP-33 T1 落地時應把這兩個測試失敗一併解決或在 WP-33 progress.md 記錄根因。
+
+### S-34.2 — T1 edge-grazing fixture 顯示 N=1 與 N=9 可跨越 onset threshold
+
+合成 edge-grazing 案例中,同一個 target/prop 幾何在 center-only (`N=1`) 下 `visibleFraction=1.0`,但在 `N=9` 下 `visibleFraction=5/9`。這證明 OQ-S6-12 不是純理論風險:取樣密度可直接改變靠近遮蔽物邊界時的 `t_measurement_onset`。T1 已把此案例寫入 `src/metrics/visibilityDerivation.test.ts` 與 `docs/operational/analysis-visibility.md`;最終 N/threshold 仍留給 WP-39 pilot 凍結。
 
 ---
 

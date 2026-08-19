@@ -284,7 +284,7 @@ function inflateAabb(aabb: PropBound, amount: number): Aabb {
   };
 }
 
-function segmentIntersectsAabb(from: Vec3, to: Vec3, box: Aabb): boolean {
+export function segmentIntersectsAabb(from: Vec3, to: Vec3, box: Aabb): boolean {
   let tMin = 0;
   let tMax = 1;
   const dx = to.x - from.x;
