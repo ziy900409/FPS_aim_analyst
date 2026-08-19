@@ -10,7 +10,7 @@
 | **相依** | **WP-29 ✅**(`timeline-v1`/`sync-v1`)+ **WP-30 ✅**(`phase-v1`/`curve-v1`/research-side `t_detect`)+ **WP-31 T-exit ✅**(三份效度判定收斂;**2026-08-12 使用者拍板由「選項」升為硬相依**,見 §0.2 與 D-32.0) |
 | **對應 FR** | FR-D17(晉升機制)+ FR-D16 收尾(報告 v2 已由 WP-31 T-exit 交付,本 WP 只做結果頁側) |
 | **估時** | **4.5–5.75 dev-days**(規劃稿 2–3d → 上修,理由見 §0.1 與 D-32.0) |
-| **狀態** | ⬜ 未開始 |
+| **狀態** | ✅ **完成(2026-08-17)** — T0~T5 + T-exit 全數交付:晉升清單封閉三項(`phase-v1`/`sync-v1`/`curve-v1`)進 `src/metrics/` 並以 golden 對表(P3 三級容差)進 `npm run test:ci`;結果頁 research-promoted 區塊(封閉 8 個 metric id、n/flags/version/效度層級、`blocked` 態)+ 統計=匯出 E2E;`acceptance-stage-d.md` 驗收清單 D 八項全通過;C-D5 入 [CLAUDE.md](../../../../../CLAUDE.md) §4 + **GD-21** 入 [DECISIONS.md](../../../DECISIONS.md)(關閉 OQ-S4-24);**M15 達成 → stage4 交付** |
 
 ---
 

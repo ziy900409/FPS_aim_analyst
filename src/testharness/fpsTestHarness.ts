@@ -25,8 +25,10 @@ import {
 import { brTrackingProtocol } from '../display/brTrackingProtocol.ts';
 import { resolutionDetectionProtocol } from '../display/resolutionDetectionProtocol.ts';
 import { computeMetrics, type Metrics } from '../metrics/compute.ts';
+import { computePromotedMetrics, type PromotedMetrics } from '../metrics/researchMetrics.ts';
 import { deriveTrackingMetrics, type TrackingDerivationResult } from '../metrics/trackingDerivation.ts';
 import type { Clock } from '../loop/clock.ts';
+import { RAD_PER_COUNT, resolveMouseGain } from '../input/mouseGain.ts';
 import type { RenderBackend } from '../render/createRenderer.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
 import { resolveEyeWorldBase } from '../scene/eyePose.ts';
@@ -97,6 +99,8 @@ export interface FpsTestHarness {
   getMetrics(): Metrics;
   /** 由（可能經 JSON round-trip 的）匯出 payload 反算指標；供「統計＝匯出」一致性斷言。 */
   metricsFromExport(payload: ExportPayload): Metrics;
+  /** 由同一匯出 payload 反算 WP-32 promoted metrics；供 T5「統計＝匯出」一致性斷言。 */
+  promotedMetricsFromExport(payload: ExportPayload): PromotedMetrics;
   /** 由匯出 payload 反算 tracking 指標；供 WP-22 T1 tracking scene E2E sanity。 */
   trackingMetricsFromExport(payload: ExportPayload): TrackingDerivationResult;
   /** 跑完 stage3 解析度 x 偵測 protocol，回傳每個條件的匯出 payload。 */
@@ -156,6 +160,14 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
 
   function activeWeaponConfig(): ReturnType<typeof getWeapon> {
     return getWeapon(config?.weaponId ?? 'ak47');
+  }
+
+  function currentHarnessMouseGain() {
+    return resolveMouseGain({
+      sensitivity: deps.sensitivity,
+      hipFovDeg: camera.fov,
+      ads: activeWeaponConfig().ads,
+    });
   }
 
   function findSceneConfig(sceneId: string): SceneConfig {
@@ -303,7 +315,11 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       // 全新管線（乾淨起步、與 live 單例隔離）。
       clockMs = 0;
       state = createSharedState();
-      recorder = createDataRecorder({ simHz: SIM_HZ });
+      recorder = createDataRecorder({
+        simHz: SIM_HZ,
+        mouseIntegration: { gain: currentHarnessMouseGain() },
+        recordKeyEvents: true,
+      });
       targetManager = createTargetManager(config);
       drillRunner = createDrillRunner(state, targetManager);
       simLoop = createSimLoop(
@@ -345,6 +361,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       displayHz: deps.displayHz,
       simHz: SIM_HZ,
       sensitivity: deps.sensitivity,
+      fovDeg: camera.fov,
       crossOriginIsolated: deps.crossOriginIsolated,
       startedAt,
       lateEventCount: state.inputMeta.lateEventCount,
@@ -356,6 +373,12 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         ...(weaponConfig.ads !== undefined ? { ads: weaponConfig.ads } : {}),
         ...(weaponConfig.bullet !== undefined ? { bullet: weaponConfig.bullet } : {}),
         ...(weaponConfig.bullet !== undefined ? { projectileOverflow: state.bullets.overflowCount > 0 } : {}),
+      },
+      mouseIntegration: {
+        model: 'tick-window-integral',
+        radPerCount: RAD_PER_COUNT,
+        hipStep: currentHarnessMouseGain().hipStep,
+        adsStep: currentHarnessMouseGain().adsStep,
       },
       targets: {
         hitbox: targetHitboxToConfig(resolveTargetHitbox(config)),
@@ -549,6 +572,10 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         recorderOverflow: payload.meta.recorderOverflow,
       };
       return computeMetrics(snapshot);
+    },
+
+    promotedMetricsFromExport(payload: ExportPayload): PromotedMetrics {
+      return computePromotedMetrics(payload);
     },
 
     trackingMetricsFromExport(payload: ExportPayload): TrackingDerivationResult {

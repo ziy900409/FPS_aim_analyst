@@ -1,0 +1,271 @@
+{
+  "version": "sync-v1",
+  "source": "counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json",
+  "generatedBy": "research/src/modules/metrics/notebooks/t3/generate_promoted_phase_sync_golden.py",
+  "generatedAt": "2026-08-17",
+  "peekCount": 20,
+  "unflaggedCount": 13,
+  "rows": [
+    {
+      "peekIndex": 0,
+      "releaseToFireMs": 101.2875000005588,
+      "counterHoldMs": 109.17999999970198,
+      "counterToFireMs": 140.15500000026077,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 1,
+      "releaseToFireMs": null,
+      "counterHoldMs": 507.17499999981374,
+      "counterToFireMs": 604.8600000003353,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "multiple_counters",
+        "no_key_transition",
+        "missing_release"
+      ]
+    },
+    {
+      "peekIndex": 2,
+      "releaseToFireMs": 89.90249999985099,
+      "counterHoldMs": 91.67499999981374,
+      "counterToFireMs": 111.26499999966472,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 3,
+      "releaseToFireMs": 46.922500000335276,
+      "counterHoldMs": 442.60999999940395,
+      "counterToFireMs": 575.4699999997392,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "multiple_counters"
+      ]
+    },
+    {
+      "peekIndex": 4,
+      "releaseToFireMs": 131.85250000003725,
+      "counterHoldMs": 111.80750000011176,
+      "counterToFireMs": 149.910000000149,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 5,
+      "releaseToFireMs": 176.152499999851,
+      "counterHoldMs": 136.64749999996275,
+      "counterToFireMs": 187.79999999981374,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 6,
+      "releaseToFireMs": 259.1875,
+      "counterHoldMs": 121.12749999947846,
+      "counterToFireMs": 270.93999999947846,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 7,
+      "releaseToFireMs": 139.47750000003725,
+      "counterHoldMs": 99.78249999973923,
+      "counterToFireMs": 145.50999999977648,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 8,
+      "releaseToFireMs": 101.73000000044703,
+      "counterHoldMs": 87.32000000029802,
+      "counterToFireMs": 110.92500000074506,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 9,
+      "releaseToFireMs": 92.99000000022352,
+      "counterHoldMs": 84.9375,
+      "counterToFireMs": 91.99000000022352,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 10,
+      "releaseToFireMs": 154.36749999970198,
+      "counterHoldMs": 79.05999999959022,
+      "counterToFireMs": 116.2399999992922,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 11,
+      "releaseToFireMs": 100.2675000000745,
+      "counterHoldMs": 93.41500000003725,
+      "counterToFireMs": 92.12000000011176,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "counter_hold_truncated"
+      ]
+    },
+    {
+      "peekIndex": 12,
+      "releaseToFireMs": 155.535000000149,
+      "counterHoldMs": 90.49500000011176,
+      "counterToFireMs": 152.28000000026077,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 13,
+      "releaseToFireMs": 135.38250000029802,
+      "counterHoldMs": 115.71499999985099,
+      "counterToFireMs": 133.910000000149,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 14,
+      "releaseToFireMs": 82.47750000003725,
+      "counterHoldMs": 89.42999999970198,
+      "counterToFireMs": 85.96999999973923,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "counter_hold_truncated"
+      ]
+    },
+    {
+      "peekIndex": 15,
+      "releaseToFireMs": 153.50250000040978,
+      "counterHoldMs": 111.8925000000745,
+      "counterToFireMs": 156.0200000004843,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 16,
+      "releaseToFireMs": -359.71999999973923,
+      "counterHoldMs": 89.81749999988824,
+      "counterToFireMs": -387.089999999851,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "counter_hold_truncated"
+      ]
+    },
+    {
+      "peekIndex": 17,
+      "releaseToFireMs": 100.12000000011176,
+      "counterHoldMs": 105.08999999985099,
+      "counterToFireMs": 111.45999999996275,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 18,
+      "releaseToFireMs": -416.1974999997765,
+      "counterHoldMs": 89.97499999962747,
+      "counterToFireMs": 119.08999999985099,
+      "side": "L",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "multiple_counters"
+      ]
+    },
+    {
+      "peekIndex": 19,
+      "releaseToFireMs": 51.28249999973923,
+      "counterHoldMs": 83.3125,
+      "counterToFireMs": 72.09499999973923,
+      "side": "R",
+      "ads": false,
+      "weaponMode": "hitscan",
+      "flags": [
+        "multiple_counters"
+      ]
+    }
+  ],
+  "aggregate": {
+    "releaseToFireMs": {
+      "mean": 137.80673076935972,
+      "p50": 135.38250000029802,
+      "sd": 44.238468503724675,
+      "n": 13
+    },
+    "counterHoldMs": {
+      "mean": 103.44076923066034,
+      "p50": 105.08999999985099,
+      "sd": 15.834087146202842,
+      "n": 13
+    },
+    "counterToFireMs": {
+      "mean": 144.49269230771236,
+      "p50": 140.15500000026077,
+      "sd": 43.93695849266784,
+      "n": 13
+    },
+    "verdicts": [
+      {
+        "metric": "release_to_fire_ms",
+        "n": 13,
+        "sampleSdMs": 46.044857876328535,
+        "quantizationSdMs": 2.255274489021976,
+        "verdict": "sufficient",
+        "reason": "quantization_sd_ms=2.25527448902 < sample_sd_ms=46.0448578763 * sd_ratio_threshold=0.333333333333"
+      },
+      {
+        "metric": "counter_hold_ms",
+        "n": 13,
+        "sampleSdMs": 16.480640422417093,
+        "quantizationSdMs": 2.255274489021976,
+        "verdict": "sufficient",
+        "reason": "quantization_sd_ms=2.25527448902 < sample_sd_ms=16.4806404224 * sd_ratio_threshold=0.333333333333"
+      }
+    ],
+    "flagCounts": {
+      "multiple_counters": 4,
+      "no_key_transition": 1,
+      "missing_release": 1,
+      "counter_hold_truncated": 3
+    },
+    "version": "sync-v1"
+  }
+}

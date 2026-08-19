@@ -43,7 +43,7 @@ import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
-import { createDataRecorder } from './data/DataRecorder.ts';
+import { createDataRecorder, type DataRecorderSnapshot } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
 import { RAD_PER_COUNT, resolveMouseGain } from './input/mouseGain.ts';
@@ -489,6 +489,14 @@ function exportBasename(payload: ExportPayload): string {
   return `${payload.meta.drillId}${condition}-${payload.meta.startedAt}`;
 }
 
+function snapshotFromExportPayload(payload: ExportPayload): DataRecorderSnapshot {
+  return {
+    ticks: payload.ticks,
+    events: payload.events,
+    recorderOverflow: payload.meta.recorderOverflow,
+  };
+}
+
 createExportPanel({
   async onExportJSON(): Promise<void> {
     const payload = await buildCurrentExportPayload();
@@ -623,7 +631,8 @@ if (import.meta.env.DEV) {
   (window as unknown as { __fpsTest?: unknown }).__fpsTest = {
     ...fpsTestHarness,
     showResult(): void {
-      resultScreen.show(fpsTestHarness.getMetrics());
+      const payload = fpsTestHarness.forceExportJSON();
+      resultScreen.show(fpsTestHarness.metricsFromExport(payload), fpsTestHarness.promotedMetricsFromExport(payload));
     },
   };
 }
@@ -1031,10 +1040,13 @@ const renderLoop = createRenderLoop((now) => {
   if (!resultShown && phase === 'ended') {
     frameLog.freeze();
     if (document.pointerLockElement !== null) document.exitPointerLock();
-    resultScreen.show(metricsDashboard.compute(recorder.snapshot()));
     resultShown = true;
     syncControlsVisibility();
-    void completeActiveProtocolCondition();
+    void (async () => {
+      const payload = await buildCurrentExportPayload();
+      resultScreen.show(metricsDashboard.compute(snapshotFromExportPayload(payload)), metricsDashboard.computePromoted(payload));
+      await completeActiveProtocolCondition();
+    })();
   }
   hud.update(createHUDStats(sharedState, phase, hudElapsedMs, recorder.hitCount, recorder.fireCount, recorder.hitCount, hudStats));
   // dev-only：更新急停 readout（vx / stopped）——手動驗證用，production 剝除。

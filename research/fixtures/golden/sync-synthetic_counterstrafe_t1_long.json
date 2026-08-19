@@ -1,0 +1,110 @@
+{
+  "version": "sync-v1",
+  "source": "synthetic_counterstrafe_t1_long.json",
+  "generatedBy": "research/src/modules/metrics/notebooks/t3/generate_promoted_phase_sync_golden.py",
+  "generatedAt": "2026-08-17",
+  "peekCount": 6,
+  "unflaggedCount": 6,
+  "rows": [
+    {
+      "peekIndex": 0,
+      "releaseToFireMs": 70.3125,
+      "counterHoldMs": 15.625,
+      "counterToFireMs": 54.6875,
+      "side": "L",
+      "ads": true,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 1,
+      "releaseToFireMs": 70.3125,
+      "counterHoldMs": 15.625,
+      "counterToFireMs": 54.6875,
+      "side": "R",
+      "ads": true,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 2,
+      "releaseToFireMs": 70.3125,
+      "counterHoldMs": 15.625,
+      "counterToFireMs": 54.6875,
+      "side": "L",
+      "ads": true,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 3,
+      "releaseToFireMs": 70.3125,
+      "counterHoldMs": 15.625,
+      "counterToFireMs": 54.6875,
+      "side": "R",
+      "ads": true,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 4,
+      "releaseToFireMs": 70.3125,
+      "counterHoldMs": 15.625,
+      "counterToFireMs": 54.6875,
+      "side": "L",
+      "ads": true,
+      "weaponMode": "hitscan",
+      "flags": []
+    },
+    {
+      "peekIndex": 5,
+      "releaseToFireMs": 70.3125,
+      "counterHoldMs": 15.625,
+      "counterToFireMs": 54.6875,
+      "side": "R",
+      "ads": true,
+      "weaponMode": "hitscan",
+      "flags": []
+    }
+  ],
+  "aggregate": {
+    "releaseToFireMs": {
+      "mean": 70.3125,
+      "p50": 70.3125,
+      "sd": 0.0,
+      "n": 6
+    },
+    "counterHoldMs": {
+      "mean": 15.625,
+      "p50": 15.625,
+      "sd": 0.0,
+      "n": 6
+    },
+    "counterToFireMs": {
+      "mean": 54.6875,
+      "p50": 54.6875,
+      "sd": 0.0,
+      "n": 6
+    },
+    "verdicts": [
+      {
+        "metric": "release_to_fire_ms",
+        "n": 6,
+        "sampleSdMs": 0.0,
+        "quantizationSdMs": 2.255274489021976,
+        "verdict": "blocked-by-data",
+        "reason": "n=6 < min_samples=10; collect 4 more unflagged samples"
+      },
+      {
+        "metric": "counter_hold_ms",
+        "n": 6,
+        "sampleSdMs": 0.0,
+        "quantizationSdMs": 2.255274489021976,
+        "verdict": "blocked-by-data",
+        "reason": "n=6 < min_samples=10; collect 4 more unflagged samples"
+      }
+    ],
+    "flagCounts": {},
+    "version": "sync-v1"
+  }
+}

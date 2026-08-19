@@ -1,0 +1,472 @@
+{
+  "version": "segments-v1",
+  "segmentVersion": "seg-v2",
+  "source": "counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json",
+  "generatedBy": "research/src/modules/segments/notebooks/t2/generate_promoted_segments_golden.py",
+  "generatedAt": "2026-08-17",
+  "indexFrame": "tick",
+  "peekCount": 20,
+  "primaryCount": 20,
+  "peeks": [
+    {
+      "peekIndex": 0,
+      "targetId": "t0",
+      "side": "L",
+      "tickRange": {
+        "start": 384,
+        "end": 458
+      },
+      "tickCount": 74,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 26,
+          "endIdx": 67,
+          "peakOmega": 95.3754130717615,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 0
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 1,
+      "targetId": "t1",
+      "side": "R",
+      "tickRange": {
+        "start": 458,
+        "end": 531
+      },
+      "tickCount": 73,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 10,
+          "endIdx": 36,
+          "peakOmega": 151.11753103344688,
+          "flags": [],
+          "peekIndex": 1
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 2,
+      "targetId": "t2",
+      "side": "L",
+      "tickRange": {
+        "start": 531,
+        "end": 599
+      },
+      "tickCount": 68,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 6,
+          "endIdx": 40,
+          "peakOmega": 131.32400330333655,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 2
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 3,
+      "targetId": "t3",
+      "side": "R",
+      "tickRange": {
+        "start": 599,
+        "end": 664
+      },
+      "tickCount": 65,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 7,
+          "endIdx": 37,
+          "peakOmega": 156.42182903541502,
+          "flags": [],
+          "peekIndex": 3
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 4,
+      "targetId": "t4",
+      "side": "L",
+      "tickRange": {
+        "start": 664,
+        "end": 730
+      },
+      "tickCount": 66,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 7,
+          "endIdx": 36,
+          "peakOmega": 160.30060769597105,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 4
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 5,
+      "targetId": "t5",
+      "side": "R",
+      "tickRange": {
+        "start": 730,
+        "end": 801
+      },
+      "tickCount": 71,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 12,
+          "endIdx": 40,
+          "peakOmega": 146.2288971502495,
+          "flags": [],
+          "peekIndex": 5
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 6,
+      "targetId": "t6",
+      "side": "L",
+      "tickRange": {
+        "start": 801,
+        "end": 866
+      },
+      "tickCount": 65,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 4,
+          "endIdx": 39,
+          "peakOmega": 129.44506006765846,
+          "flags": [],
+          "peekIndex": 6
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 7,
+      "targetId": "t7",
+      "side": "R",
+      "tickRange": {
+        "start": 866,
+        "end": 926
+      },
+      "tickCount": 60,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 7,
+          "endIdx": 34,
+          "peakOmega": 186.5690643665061,
+          "flags": [],
+          "peekIndex": 7
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 8,
+      "targetId": "t8",
+      "side": "L",
+      "tickRange": {
+        "start": 926,
+        "end": 984
+      },
+      "tickCount": 58,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 5,
+          "endIdx": 37,
+          "peakOmega": 155.85090178337342,
+          "flags": [],
+          "peekIndex": 8
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 9,
+      "targetId": "t9",
+      "side": "R",
+      "tickRange": {
+        "start": 984,
+        "end": 1056
+      },
+      "tickCount": 72,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 10,
+          "endIdx": 41,
+          "peakOmega": 144.07560564834745,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 9
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 10,
+      "targetId": "t10",
+      "side": "L",
+      "tickRange": {
+        "start": 1056,
+        "end": 1119
+      },
+      "tickCount": 63,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 6,
+          "endIdx": 39,
+          "peakOmega": 155.63494164715436,
+          "flags": [],
+          "peekIndex": 10
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 11,
+      "targetId": "t11",
+      "side": "R",
+      "tickRange": {
+        "start": 1119,
+        "end": 1188
+      },
+      "tickCount": 69,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 10,
+          "endIdx": 38,
+          "peakOmega": 168.27884543958373,
+          "flags": [],
+          "peekIndex": 11
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 12,
+      "targetId": "t12",
+      "side": "L",
+      "tickRange": {
+        "start": 1188,
+        "end": 1253
+      },
+      "tickCount": 65,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 8,
+          "endIdx": 39,
+          "peakOmega": 147.19082445181942,
+          "flags": [],
+          "peekIndex": 12
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 13,
+      "targetId": "t13",
+      "side": "R",
+      "tickRange": {
+        "start": 1253,
+        "end": 1310
+      },
+      "tickCount": 57,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 5,
+          "endIdx": 41,
+          "peakOmega": 125.93501499775594,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 13
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 14,
+      "targetId": "t14",
+      "side": "L",
+      "tickRange": {
+        "start": 1310,
+        "end": 1421
+      },
+      "tickCount": 111,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 9,
+          "endIdx": 38,
+          "peakOmega": 143.6259090950526,
+          "flags": [],
+          "peekIndex": 14
+        },
+        {
+          "kind": "micro_adjustment",
+          "startIdx": 76,
+          "endIdx": 108,
+          "peakOmega": 126.0227207828656,
+          "flags": [
+            "merged_adjacent_peaks"
+          ],
+          "peekIndex": 14
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 15,
+      "targetId": "t15",
+      "side": "R",
+      "tickRange": {
+        "start": 1421,
+        "end": 1486
+      },
+      "tickCount": 65,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 8,
+          "endIdx": 55,
+          "peakOmega": 166.07792349173423,
+          "flags": [],
+          "peekIndex": 15
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 16,
+      "targetId": "t16",
+      "side": "L",
+      "tickRange": {
+        "start": 1486,
+        "end": 1551
+      },
+      "tickCount": 65,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 7,
+          "endIdx": 37,
+          "peakOmega": 151.97160221196225,
+          "flags": [],
+          "peekIndex": 16
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 17,
+      "targetId": "t17",
+      "side": "R",
+      "tickRange": {
+        "start": 1551,
+        "end": 1606
+      },
+      "tickCount": 55,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 8,
+          "endIdx": 31,
+          "peakOmega": 246.42000043133015,
+          "flags": [],
+          "peekIndex": 17
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 18,
+      "targetId": "t18",
+      "side": "L",
+      "tickRange": {
+        "start": 1606,
+        "end": 1668
+      },
+      "tickCount": 62,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 7,
+          "endIdx": 38,
+          "peakOmega": 170.36316059976323,
+          "flags": [],
+          "peekIndex": 18
+        }
+      ],
+      "traceFlags": []
+    },
+    {
+      "peekIndex": 19,
+      "targetId": "t19",
+      "side": "R",
+      "tickRange": {
+        "start": 1668,
+        "end": 2038
+      },
+      "tickCount": 370,
+      "indexFrame": "tick",
+      "segments": [
+        {
+          "kind": "primary_flick",
+          "startIdx": 10,
+          "endIdx": 34,
+          "peakOmega": 236.2705819237571,
+          "flags": [],
+          "peekIndex": 19
+        }
+      ],
+      "traceFlags": []
+    }
+  ]
+}

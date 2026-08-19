@@ -1,11 +1,26 @@
 import { CS2_PROFILE } from '../sim/MovementController.ts';
 import type { AimOffset, CompensationError, Metrics, RecoilCompensationPath, Stat } from '../metrics/compute.ts';
+import type { NormalizedCurve, PrecisionVerdict, PromotedMetrics, PromotedStat } from '../metrics/researchMetrics.ts';
+
+export const PROMOTED_METRIC_IDS = [
+  'phase-rec-ms',
+  'phase-mr-ms',
+  'phase-v-ms',
+  'sync-release-to-fire-ms',
+  'sync-counter-hold-ms',
+  'sync-counter-to-fire-ms',
+  'curve-omega',
+  'curve-epsilon',
+] as const;
+
+export type PromotedMetricId = (typeof PROMOTED_METRIC_IDS)[number];
 
 export interface ResultCard {
   id: string;
   title: string;
   value: string;
   detail: string;
+  meta?: string;
 }
 
 export interface ResultSummary {
@@ -35,7 +50,7 @@ export interface RecoilOverlayModel {
 
 export interface ResultScreenHandle {
   readonly visible: boolean;
-  show(metrics: Metrics): void;
+  show(metrics: Metrics, promoted?: PromotedMetrics): void;
   hide(): void;
   dispose(): void;
 }
@@ -122,11 +137,23 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     'border-radius:6px',
   ].join(';');
 
-  panel.append(title, method, grid, chartTitle, chart, recoilTitle, recoilChart);
+  const promotedSection = document.createElement('section');
+  promotedSection.dataset.section = 'research-promoted';
+  promotedSection.style.cssText = 'display:none;margin-top:18px';
+
+  const promotedTitle = document.createElement('h3');
+  promotedTitle.textContent = 'Research-promoted diagnostics';
+  promotedTitle.style.cssText = 'margin:0 0 8px;font:700 14px/1.25 system-ui,sans-serif;letter-spacing:0';
+
+  const promotedBody = document.createElement('div');
+  promotedBody.style.cssText = 'display:grid;gap:10px';
+  promotedSection.append(promotedTitle, promotedBody);
+
+  panel.append(title, method, grid, chartTitle, chart, recoilTitle, recoilChart, promotedSection);
   root.appendChild(panel);
   parent.appendChild(root);
 
-  function render(summary: ResultSummary): void {
+  function render(summary: ResultSummary, promoted?: PromotedMetrics): void {
     method.textContent = summary.methodNote;
     grid.replaceChildren(...summary.cards.map(renderCard));
     chart.replaceChildren(renderReactionDistribution(summary.reactionValues));
@@ -134,14 +161,16 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     recoilTitle.style.display = recoilModel !== undefined ? '' : 'none';
     recoilChart.style.display = recoilModel !== undefined ? '' : 'none';
     recoilChart.replaceChildren(...(recoilModel !== undefined ? [renderRecoilCompensation(recoilModel)] : []));
+    promotedSection.style.display = promoted === undefined ? 'none' : '';
+    promotedBody.replaceChildren(...(promoted === undefined ? [] : [renderPromotedMetrics(promoted)]));
   }
 
   return {
     get visible(): boolean {
       return visible;
     },
-    show(metrics: Metrics): void {
-      render(createResultSummary(metrics));
+    show(metrics: Metrics, promoted?: PromotedMetrics): void {
+      render(createResultSummary(metrics), promoted);
       visible = true;
       root.style.display = 'flex';
     },
@@ -258,6 +287,7 @@ function statCard(id: string, title: string, stat: Stat, unit: string, decimals:
 function renderCard(card: ResultCard): HTMLElement {
   const node = document.createElement('article');
   node.dataset.metricId = card.id;
+  node.dataset.metricValue = card.value;
   node.style.cssText = [
     'min-height:92px',
     'box-sizing:border-box',
@@ -280,7 +310,304 @@ function renderCard(card: ResultCard): HTMLElement {
   detail.style.cssText = 'margin-top:6px;color:#c8d0d8;font:500 12px/1.35 system-ui,sans-serif';
 
   node.append(title, value, detail);
+  if (card.meta !== undefined) {
+    const meta = document.createElement('div');
+    meta.textContent = card.meta;
+    meta.style.cssText = 'margin-top:6px;color:#91a0ad;font:600 11px/1.35 system-ui,sans-serif';
+    node.appendChild(meta);
+  }
   return node;
+}
+
+export function createPromotedSummary(promoted: PromotedMetrics): { status: 'blocked'; reason: string } | {
+  status: 'ok';
+  cards: ResultCard[];
+  flags: { phase: number; sync: number; curve: number };
+  versions: string;
+} {
+  if (promoted.status === 'blocked') return promoted;
+
+  const phaseFlags = countFlags(promoted.phase.flagCounts);
+  const syncFlags = countFlags(promoted.sync.flagCounts);
+  const curveFlags = countFlags(promoted.curve.flagCounts);
+  const verdictByMetric = new Map(promoted.sync.verdicts.map((verdict) => [verdict.metric, verdict]));
+
+  return {
+    status: 'ok',
+    flags: { phase: phaseFlags, sync: syncFlags, curve: curveFlags },
+    versions: `${promoted.phase.version} / ${promoted.sync.version} / ${promoted.curve.version} / seg-v2 / sg-seg-v2`,
+    cards: [
+      promotedStatCard('phase-rec-ms', 'REC', promoted.phase.recMs, 'ms', promoted.phase.version, phaseFlags),
+      promotedStatCard('phase-mr-ms', 'MR', promoted.phase.mrMs, 'ms', promoted.phase.version, phaseFlags),
+      promotedStatCard('phase-v-ms', 'V', promoted.phase.vMs, 'ms', promoted.phase.version, phaseFlags),
+      promotedStatCard(
+        'sync-release-to-fire-ms',
+        'Release to fire',
+        promoted.sync.releaseToFireMs,
+        'ms',
+        promoted.sync.version,
+        syncFlags,
+        verdictByMetric.get('release_to_fire_ms'),
+      ),
+      promotedStatCard(
+        'sync-counter-hold-ms',
+        'Counter hold',
+        promoted.sync.counterHoldMs,
+        'ms',
+        promoted.sync.version,
+        syncFlags,
+        verdictByMetric.get('counter_hold_ms'),
+      ),
+      promotedStatCard(
+        'sync-counter-to-fire-ms',
+        'Counter to fire',
+        promoted.sync.counterToFireMs,
+        'ms',
+        promoted.sync.version,
+        syncFlags,
+      ),
+    ],
+  };
+}
+
+function renderPromotedMetrics(promoted: PromotedMetrics): HTMLElement {
+  if (promoted.status === 'blocked') return renderPromotedBlocked(promoted.reason);
+  const summary = createPromotedSummary(promoted);
+  if (summary.status === 'blocked') return renderPromotedBlocked(summary.reason);
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display:grid;gap:10px';
+
+  const cards = document.createElement('div');
+  cards.style.cssText = [
+    'display:grid',
+    'grid-template-columns:repeat(auto-fit,minmax(174px,1fr))',
+    'gap:10px',
+  ].join(';');
+  cards.replaceChildren(...summary.cards.map(renderCard));
+
+  const curves = document.createElement('div');
+  curves.style.cssText = [
+    'display:grid',
+    'grid-template-columns:repeat(auto-fit,minmax(260px,1fr))',
+    'gap:10px',
+  ].join(';');
+  curves.replaceChildren(
+    renderCurvePanel(
+      'curve-omega',
+      'Angular speed',
+      promoted.curve.omega.left,
+      promoted.curve.omega.right,
+      promoted.curve.version,
+      summary.flags.curve,
+      'deg/s',
+    ),
+    renderCurvePanel(
+      'curve-epsilon',
+      'Aim error',
+      promoted.curve.epsilon.left,
+      promoted.curve.epsilon.right,
+      promoted.curve.version,
+      summary.flags.curve,
+      'deg',
+    ),
+  );
+
+  const footer = document.createElement('p');
+  footer.textContent =
+    `Versions ${summary.versions}. Single-drill distributions are pilot diagnostics; read p50/SD/n together.`;
+  footer.style.cssText = 'margin:0;color:#aeb9c4;font:600 11px/1.4 system-ui,sans-serif';
+
+  wrapper.append(cards, curves, footer);
+  return wrapper;
+}
+
+function renderPromotedBlocked(reason: string): HTMLElement {
+  const node = document.createElement('article');
+  node.dataset.promotedBlocked = 'true';
+  node.style.cssText = [
+    'box-sizing:border-box',
+    'padding:12px',
+    'background:rgba(255,207,110,0.09)',
+    'border:1px solid rgba(255,207,110,0.22)',
+    'border-radius:6px',
+    'color:#f4d78a',
+  ].join(';');
+
+  const title = document.createElement('div');
+  title.textContent = 'Promoted diagnostics blocked';
+  title.style.cssText = 'font:750 13px/1.3 system-ui,sans-serif';
+
+  const detail = document.createElement('div');
+  detail.textContent = `${reason}. Re-run with tick-window mouse integration enabled; KI-005 forbids legacy aim-diff fallback.`;
+  detail.style.cssText = 'margin-top:6px;color:#e7d7a5;font:600 12px/1.4 system-ui,sans-serif';
+
+  node.append(title, detail);
+  return node;
+}
+
+function promotedStatCard(
+  id: PromotedMetricId,
+  title: string,
+  stat: PromotedStat,
+  unit: string,
+  version: string,
+  flagged: number,
+  verdict?: PrecisionVerdict,
+): ResultCard {
+  const detail =
+    stat.n > 0
+      ? `mean ${formatNumber(stat.mean, 0)} ${unit} · SD ${formatNumber(stat.sd, 0)} ${unit} · n=${stat.n}`
+      : 'No samples';
+  const verdictText = verdict === undefined ? '' : ` · ${verdict.verdict}`;
+  return {
+    id,
+    title,
+    value: stat.n > 0 ? `${formatNumber(stat.p50, 0)} ${unit}` : 'No samples',
+    detail,
+    meta: `${flagged} flagged · ${version}${verdictText}`,
+  };
+}
+
+function renderCurvePanel(
+  id: Extract<PromotedMetricId, 'curve-omega' | 'curve-epsilon'>,
+  title: string,
+  left: NormalizedCurve,
+  right: NormalizedCurve,
+  version: string,
+  flagged: number,
+  unit: string,
+): HTMLElement {
+  const node = document.createElement('article');
+  node.dataset.metricId = id;
+  node.style.cssText = [
+    'box-sizing:border-box',
+    'padding:12px',
+    'background:rgba(255,255,255,0.045)',
+    'border:1px solid rgba(255,255,255,0.10)',
+    'border-radius:6px',
+  ].join(';');
+
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:8px';
+
+  const name = document.createElement('div');
+  name.textContent = title;
+  name.style.cssText = 'color:#aeb9c4;font:700 12px/1.25 system-ui,sans-serif';
+
+  const counts = document.createElement('div');
+  counts.textContent = `L n=${left.n} · R n=${right.n}`;
+  counts.style.cssText = 'color:#d9e2ec;font:700 11px/1.25 system-ui,sans-serif;font-variant-numeric:tabular-nums';
+  header.append(name, counts);
+
+  const meta = document.createElement('div');
+  meta.textContent = `${flagged} flagged · ${version}`;
+  meta.style.cssText = 'margin-top:8px;color:#91a0ad;font:600 11px/1.35 system-ui,sans-serif';
+
+  node.append(header, renderCurveSvg(left, right, title, unit), meta);
+  return node;
+}
+
+function renderCurveSvg(left: NormalizedCurve, right: NormalizedCurve, title: string, unit: string): SVGSVGElement {
+  const width = 420;
+  const height = 150;
+  const margin = { left: 28, right: 12, top: 12, bottom: 18 };
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '150');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `${title} left and right normalized curves with IQR bands`);
+
+  const values = finiteCurveValues(left, right);
+  if (values.length === 0 || (left.n === 0 && right.n === 0)) {
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', '14');
+    text.setAttribute('y', '78');
+    text.setAttribute('fill', '#b8c4cf');
+    text.setAttribute('font-size', '12');
+    text.textContent = 'No samples';
+    svg.appendChild(text);
+    return svg;
+  }
+
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const span = Math.max(maxValue - minValue, 1e-9);
+  const plotW = width - margin.left - margin.right;
+  const plotH = height - margin.top - margin.bottom;
+  const mapX = (index: number, count: number): number => margin.left + (index / Math.max(count - 1, 1)) * plotW;
+  const mapY = (value: number): number => margin.top + (1 - (value - minValue) / span) * plotH;
+
+  appendGuideLine(svg, margin.left, margin.top + plotH, width - margin.right, margin.top + plotH);
+  appendCurveBand(svg, left, mapX, mapY, 'rgba(124,199,255,0.14)');
+  appendCurveBand(svg, right, mapX, mapY, 'rgba(255,207,110,0.14)');
+  appendCurveLine(svg, left.mean, mapX, mapY, '#7cc7ff');
+  appendCurveLine(svg, right.mean, mapX, mapY, '#ffcf6e');
+
+  const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  label.setAttribute('x', String(margin.left));
+  label.setAttribute('y', String(height - 4));
+  label.setAttribute('fill', '#91a0ad');
+  label.setAttribute('font-size', '10');
+  label.textContent = `${formatNumber(minValue, 1)}-${formatNumber(maxValue, 1)} ${unit}`;
+  svg.appendChild(label);
+  return svg;
+}
+
+function appendCurveBand(
+  svg: SVGSVGElement,
+  curve: NormalizedCurve,
+  mapX: (index: number, count: number) => number,
+  mapY: (value: number) => number,
+  color: string,
+): void {
+  if (curve.n === 0 || curve.lower.length === 0 || curve.upper.length === 0) return;
+  const count = Math.min(curve.lower.length, curve.upper.length);
+  const upper = [];
+  const lower = [];
+  for (let i = 0; i < count; i++) {
+    if (Number.isFinite(curve.upper[i])) upper.push(`${formatSvgNumber(mapX(i, count))},${formatSvgNumber(mapY(curve.upper[i]))}`);
+    if (Number.isFinite(curve.lower[i])) lower.push(`${formatSvgNumber(mapX(i, count))},${formatSvgNumber(mapY(curve.lower[i]))}`);
+  }
+  if (upper.length === 0 || lower.length === 0) return;
+
+  const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  polygon.setAttribute('points', [...upper, ...lower.reverse()].join(' '));
+  polygon.setAttribute('fill', color);
+  svg.appendChild(polygon);
+}
+
+function appendCurveLine(
+  svg: SVGSVGElement,
+  values: readonly number[],
+  mapX: (index: number, count: number) => number,
+  mapY: (value: number) => number,
+  color: string,
+): void {
+  const points = values
+    .map((value, index) =>
+      Number.isFinite(value) ? `${formatSvgNumber(mapX(index, values.length))},${formatSvgNumber(mapY(value))}` : '',
+    )
+    .filter((point) => point.length > 0);
+  if (points.length === 0) return;
+
+  const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  polyline.setAttribute('points', points.join(' '));
+  polyline.setAttribute('fill', 'none');
+  polyline.setAttribute('stroke', color);
+  polyline.setAttribute('stroke-width', '2.5');
+  polyline.setAttribute('stroke-linecap', 'round');
+  polyline.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(polyline);
+}
+
+function finiteCurveValues(...curves: readonly NormalizedCurve[]): number[] {
+  return curves.flatMap((curve) => [...curve.mean, ...curve.lower, ...curve.upper]).filter(Number.isFinite);
+}
+
+function countFlags(flags: Readonly<Record<string, number>>): number {
+  return Object.values(flags).reduce((total, count) => total + count, 0);
 }
 
 function renderRecoilCompensation(model: RecoilOverlayModel): HTMLElement {

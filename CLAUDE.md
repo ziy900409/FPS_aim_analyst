@@ -77,6 +77,7 @@
 - **C-D2 — `algorithms/` 純函式紀律**:禁 matplotlib / print / file I/O;繪圖與 I/O 一律落在 `notebooks/`。
 - **C-D3 — 教練報告紅線**:未通過構念驗證(reliability gate)的指標不得進教練報告;寧可少一個指標,不能有一個會說錯話的指標(GD-20)。
 - **C-D4 — 既有構念不得有第二定義**:ε(t) / on-target / t_acquire / t_detect / peek 窗界以 `docs/operational/analysis-*.md` + `src/metrics/` TS 實作為權威;Python 側任何差異視為 bug,或屬須入帳的語意分歧(不得靜默各算一套)。
+- **C-D5 — 晉升指標雙實作對表紀律**:`seg-v2` / `phase-v1` / `curve-v1` / `sync-v1` / `sg-seg-v2` 任一端(Python `research/` 或 TS `src/metrics/`)語意或參數變更,**必須同步重跑 `research/fixtures/golden/` 產生腳本並讓 `promoted-*.test.ts` 全綠**;版本字串只能升版,不得原地改語意(WP-32/GD-21)。
 
 ---
 

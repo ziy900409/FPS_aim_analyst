@@ -94,10 +94,22 @@ interface TargetPoint {
   z: number;
 }
 
-interface TrackingSample {
+export interface TrackingSample {
   t: number;
   onTarget: boolean;
   epsilonDeg: number;
+}
+
+export interface TrackingPresentationSamples {
+  targetId: string;
+  tVisibleMs: number;
+  windowEndMs: number;
+  samples: TrackingSample[];
+}
+
+export interface TrackingSamplesResult {
+  options: ResolvedTrackingDerivationOptions;
+  presentations: TrackingPresentationSamples[];
 }
 
 const EPSILON = 1e-9;
@@ -106,6 +118,17 @@ export function deriveTrackingMetrics(
   payload: ExportPayload,
   options: TrackingDerivationOptions = {},
 ): TrackingDerivationResult {
+  const sampleResult = deriveTrackingSamples(payload, options);
+  const presentations = sampleResult.presentations.map(derivePresentation);
+  const failures = presentations.filter((p) => p.acquisitionFailure).length;
+  const acquisitionFailureRate = presentations.length > 0 ? failures / presentations.length : 0;
+  return { options: sampleResult.options, presentations, acquisitionFailureRate };
+}
+
+export function deriveTrackingSamples(
+  payload: ExportPayload,
+  options: TrackingDerivationOptions = {},
+): TrackingSamplesResult {
   const resolved = resolveOptions(payload, options);
   const ticks = payload.ticks.slice().sort((a, b) => a.t - b.t);
   const visibleEvents = payload.events
@@ -114,47 +137,53 @@ export function deriveTrackingMetrics(
     .sort((a, b) => a.t - b.t);
 
   const presentations = visibleEvents.map((visible, index) =>
-    derivePresentation(visible, visibleEvents[index + 1], ticks, resolved),
+    derivePresentationSamples(visible, visibleEvents[index + 1], ticks, resolved),
   );
-  const failures = presentations.filter((p) => p.acquisitionFailure).length;
-  const acquisitionFailureRate = presentations.length > 0 ? failures / presentations.length : 0;
-  return { options: resolved, presentations, acquisitionFailureRate };
+  return { options: resolved, presentations };
 }
 
-function derivePresentation(
+function derivePresentationSamples(
   visible: VisibleEvent,
   nextVisible: VisibleEvent | undefined,
   ticks: readonly Tick[],
   options: ResolvedTrackingDerivationOptions,
-): TrackingPresentationDerivation {
+): TrackingPresentationSamples {
   const windowEnd = nextVisible?.t ?? Infinity;
   const fallbackTarget = targetFromVisibleOrFirstTick(visible, ticks);
   const samples = trackingSamples(ticks, visible.t, windowEnd, fallbackTarget, options);
+  return {
+    targetId: visible.targetId,
+    tVisibleMs: visible.t,
+    windowEndMs: windowEnd,
+    samples,
+  };
+}
 
-  const firstOnTarget = samples.find((sample) => sample.onTarget);
+function derivePresentation(presentation: TrackingPresentationSamples): TrackingPresentationDerivation {
+  const firstOnTarget = presentation.samples.find((sample) => sample.onTarget);
   if (firstOnTarget === undefined) {
     return {
-      targetId: visible.targetId,
-      tVisibleMs: visible.t,
-      windowEndMs: windowEnd,
-      presentationTickCount: samples.length,
+      targetId: presentation.targetId,
+      tVisibleMs: presentation.tVisibleMs,
+      windowEndMs: presentation.windowEndMs,
+      presentationTickCount: presentation.samples.length,
       acquisitionFailure: true,
     };
   }
 
   const tFirstOnTargetMs = firstOnTarget.t;
-  const windowSamples = samples.filter((sample) => sample.t + EPSILON >= tFirstOnTargetMs);
+  const windowSamples = presentation.samples.filter((sample) => sample.t + EPSILON >= tFirstOnTargetMs);
   const onTargetTickCount = windowSamples.filter((sample) => sample.onTarget).length;
   const epsilons = windowSamples.map((sample) => sample.epsilonDeg);
 
   return {
-    targetId: visible.targetId,
-    tVisibleMs: visible.t,
-    windowEndMs: windowEnd,
-    presentationTickCount: samples.length,
+    targetId: presentation.targetId,
+    tVisibleMs: presentation.tVisibleMs,
+    windowEndMs: presentation.windowEndMs,
+    presentationTickCount: presentation.samples.length,
     acquisitionFailure: false,
     tFirstOnTargetMs,
-    tAcquireMs: tFirstOnTargetMs - visible.t,
+    tAcquireMs: tFirstOnTargetMs - presentation.tVisibleMs,
     trackingWindowTickCount: windowSamples.length,
     onTargetTickCount,
     totPercent: windowSamples.length > 0 ? (onTargetTickCount / windowSamples.length) * 100 : 0,
