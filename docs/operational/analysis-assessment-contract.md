@@ -1,6 +1,6 @@
 # Analysis Assessment Contract
 
-> WP-33 T0 draft. Source WP: [`wp-33-assessment-contract`](../exec-plan/active/stage6/wp-33-assessment-contract/README.md). This document freezes the shared Assessment/Practice, metadata, timeline, compatibility, and quality-gate contract for stage6. T1-T3 will add TypeScript implementation locations; T-exit will finalize this document.
+> WP-33 T-exit final. Source WP: [`wp-33-assessment-contract`](../exec-plan/active/stage6/wp-33-assessment-contract/README.md) (T0–T3 + T-exit all ✅, 2026-08-19). This document freezes the shared Assessment/Practice, metadata, timeline, compatibility, and quality-gate contract for stage6. All seven contracts in §1 and the five-axis table in §2 are implemented and test-covered as listed below. WP-34~37 may enter on this contract; changes after this point require a versioned contract change recorded here, not an in-place edit.
 
 ---
 
@@ -101,12 +101,12 @@ T3 adds [`CompatibilityKey`](../../src/metrics/compatibilityKey.ts) as the only 
 
 ## 3. Acceptance Checklist F Prerequisites
 
-T-exit will complete this section after T1-T3 land. Current T0 preregistration:
+WP-33 delivers the contract hooks below; WP-38/WP-39 own the runtime enforcement (rule engine, session history, `acceptance-stage-f.md` itself). WP-34~37 T0 entry-gates and the eventual Stage F acceptance checklist (`docs/operational/acceptance-stage-f.md`, WP-39 T-exit) may cite this table directly.
 
-| Stage F prerequisite | WP-33 contract hook | Status |
-|---|---|---|
-| Assessment/Practice do not share a formal baseline | `DrillConfig.mode` + history eligibility contract | T1/T3 pending |
-| Incompatible sessions do not produce progress/regression claims | closed `CompatibilityKey` + `checkCompatibility()` | T3 implemented |
-| Low-quality sessions do not produce prescriptions | `checkQualityGate()` result, not export metadata | T3 implemented |
-| Pilot parameters and formal parameters stay separate | `Meta.protocol` pilot grouping remains independent from `Meta.assessment.protocolVersion` | T1 implemented |
-| Shared event names keep the same meaning across task families | `AssessmentTimelinePoint` plus no-reinterpretation rule | T2 implemented |
+| Stage F prerequisite | WP-33 contract hook | Status | Test evidence |
+|---|---|---|---|
+| Assessment/Practice do not share a formal baseline | `DrillConfig.mode` declares the mode; history eligibility is read by WP-38 off `mode` | Contract type + validation implemented (T1); history-eligibility enforcement is WP-38's responsibility, not WP-33's | [`src/drill/schema.test.ts`](../../src/drill/schema.test.ts), [`src/drill/DrillConfig.ts`](../../src/drill/DrillConfig.ts) |
+| Incompatible sessions do not produce progress/regression claims | closed 10-field `CompatibilityKey` + `checkCompatibility()` exact-match comparison | Implemented (T3) | [`src/metrics/compatibilityKey.test.ts`](../../src/metrics/compatibilityKey.test.ts) |
+| Low-quality sessions do not produce prescriptions | `checkQualityGate()` returns a status; not stored in export metadata so it cannot be silently trusted from an earlier run | Implemented (T3) | [`src/metrics/compatibilityKey.test.ts`](../../src/metrics/compatibilityKey.test.ts) |
+| Pilot parameters and formal parameters stay separate | `Meta.protocol` (pilot condition grouping, WP-20) remains independent from `Meta.assessment.protocolVersion` (Assessment task protocol version); both may coexist without overwriting each other | Implemented (T1) | [`src/data/metadata.test.ts`](../../src/data/metadata.test.ts) |
+| Shared event names keep the same meaning across task families | `AssessmentTimelinePoint` field-shape contract plus the no-reinterpretation rule for `t_visible`/`t_detect`/`t_first_on_target` (§1.1) | Implemented (T2); WP-34 owns the actual visibility computation | [`src/data/assessmentTimeline.test.ts`](../../src/data/assessmentTimeline.test.ts) |

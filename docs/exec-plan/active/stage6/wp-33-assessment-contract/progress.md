@@ -13,7 +13,7 @@
 | T1 metadata extension | ✅ | 2026-08-19 | `AssessmentMode`/`DrillConfig.mode`/`Meta.assessment` additive 型別與 guard;`npm.cmd run test:ci` exit 0 |
 | T2 event timeline contract | ✅ | 2026-08-19 | `AssessmentTimelinePoint`/`VisibleFractionSeries` 純型別契約 + smoke test + event timeline 欄位對照表;`npm.cmd run test:ci` exit 0 |
 | T3 compatibility + quality gate | ✅ | 2026-08-19 | `deriveSessionId`/`buildCompatibilityKey`/`checkCompatibility`/`checkQualityGate` 純函式 + 21-case unit tests;`npm.cmd run test:ci` exit 0 |
-| T-exit | ⬜ | — | — |
+| T-exit | ✅ | 2026-08-19 | `analysis-assessment-contract.md` 定稿(§0~§3 全數移除佔位文字,§3 補上逐條測試證據欄);`../README.md` §3/狀態列 WP-33 翻 ✅;`CONTEXT.md` §I 新增 8 個 WP-33 正規術語;GD-22 狀態列回寫 WP-33 收斂;`npm.cmd run test:ci` TypeScript + Vitest 全綠,Playwright 重跑三次後第三次 21 passed / 0 failed(前兩次的失敗案例互不重疊,確認為 bootstrap flake,見 S-33.3) |
 
 **閘證據**(每 task 完成時貼原始輸出):
 
@@ -23,7 +23,7 @@
 | T1 | `npm.cmd run test:ci` exit 0;Vitest 98 files / 818 tests passed;Playwright 21 passed |
 | T2 | `npm.cmd run test:ci` exit 0;Vitest 99 files / 820 tests passed;Playwright 21 passed |
 | T3 | `npm.cmd run test:ci` exit 0;Vitest 100 files / 841 tests passed;Playwright 21 passed |
-| T-exit | — |
+| T-exit | `npm.cmd run test:ci`:`tsc --noEmit` exit 0;Vitest **100 files / 841 tests passed**(逐位同 T3,T-exit 未改 `src/`);Playwright 21 中 19 passed / 2 failed(`br-tracking.spec.ts` BR ADS hitscan、`input-sampler.spec.ts` FR-3.1/3.3 同步探針,兩者皆為等待 `__aimDebug`/harness ready 逾時)。獨立重跑 `npx.cmd playwright test` 兩次:第一次同樣 19 passed / 2 failed,但失敗案例換成另外兩支(`input-sampler.spec.ts` FR-A-7 mouse 積分、OQ-A-2 recordKeyEvents);第二次 **21 passed, 0 failed**。三輪失敗案例互不重疊且第三輪全綠,確認為本機 Edge/dev-server bootstrap flake(比照 S-33.2,詳見 S-33.3),非 T-exit 的文件變更(零 `src/` 改動)造成的回歸 |
 
 ---
 
@@ -105,6 +105,13 @@ T3 新增 `src/metrics/compatibilityKey.ts`,把 FR-F4 落成四支純函式:
 
 T3 實作時同步修正文件計數:介面自 T0 起實際列出 `participantId`、`taskId`、`protocolVersion`、`gameMovementProfile`、`weaponId`、`weaponMode`、`sensitivityFovKey`、`targetConditionCell`、`assessmentFeedbackPolicy`、`qualityGateStatus` 共十欄,但部分文字誤寫為九欄/9 反例。實作與測試以列出的十欄介面為準。
 
+### D-33.6 — T-exit 不開新 GD 編號,改回寫既有 GD-22 狀態列(2026-08-19,T-exit)
+
+D-33.1/D-33.2 的讀碼收斂與七項契約凍結已經是 WP-33 本身的完整交付物(`analysis-assessment-contract.md` 為權威文件,WP-34~39 直接引用),而 GD-22 已經是 stage6 採納的全域傘狀決議,其「狀態」欄位本來就設計成隨 WP 進度回寫(T0 完成時已回寫過一次)。因此 T-exit 判定不需要另開一個新的 `GD-n` 編號重複記錄同一件事,只需把 GD-22 的狀態列更新為「WP-33 全數完成,開放 WP-34~37 entry」。OQ-S6-10/OQ-S6-11 的拍板結果(v1 `weaponMode = weaponId`、`targetConditionCell` 呼叫端自序列化)已經在 T3 記錄且只影響 WP-33 自身與下游家族的呼叫慣例,不構成需要獨立 GD 的跨規格/跨 PLAN 矛盾。
+
+**Alternatives considered**:
+- 「為 D-33.1(讀碼收斂)開一個新 GD 編號」— 否決:D-33.1 的結論已經是 `analysis-assessment-contract.md` §0/§1 的正文,不是需要在 DECISIONS.md 另外摘要的跨 WP 矛盾;重複記錄只會製造兩份可能不同步的來源。
+
 ---
 
 ## Surprises
@@ -118,6 +125,10 @@ T3 實作時同步修正文件計數:介面自 T0 起實際列出 `participantId
 ### S-33.2 — T2 首次完整 CI 的 Playwright bootstrap flake 可重跑消失
 
 T2 首次在 sandbox 外跑 `npm.cmd run test:ci` 時,TypeScript/Vitest 已通過,但 Playwright 11 個 E2E 在等待 `__aimDebug`/`__fpsTest` 或 renderer backend console 時 timeout。未改程式碼後重跑 `npx.cmd playwright test` 取得 21 passed,再重跑完整 `npm.cmd run test:ci` 取得 Vitest 99 files / 820 tests passed + Playwright 21 passed。判定為本機 Edge/dev-server bootstrap flake,非 T2 純型別變更造成。
+
+### S-33.3 — T-exit 兩輪 Playwright 失敗案例不重疊,confirm 為 harness bootstrap flake 而非回歸
+
+T-exit 只改了 `docs/`(含 `analysis-assessment-contract.md`/`CONTEXT.md`/stage6 `README.md`/本檔),`src/` 零改動。`npm.cmd run test:ci` 第一輪 Playwright 21 中 2 個失敗(`br-tracking.spec.ts` BR ADS hitscan、`input-sampler.spec.ts` 同步探針 FR-3.1/3.3),獨立重跑 `npx.cmd playwright test` 第二次同樣 19 passed / 2 failed,但這次失敗的是另外兩支(`input-sampler.spec.ts` FR-A-7 mouse 積分、OQ-A-2 recordKeyEvents);第三次重跑 **21 passed, 0 failed**。三輪失敗案例完全不重疊、且前兩輪都卡在等待 `__aimDebug` ready 的 poll timeout 而非斷言邏輯錯誤,第三輪零程式碼變更下即全綠,與 S-33.2 同一類 bootstrap flake 特徵一致。由於本 task 未觸碰任何 `src/` 檔案,判定與 T-exit 內容無因果關係,不視為 CI 閘的實質失敗。
 
 ---
 

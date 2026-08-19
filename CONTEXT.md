@@ -187,3 +187,20 @@
 | **子彈 arena（`BulletArena` / `BULLET_CAP`）** | `SharedState` 的欄位式 typed-array arena（preallocated、物件重用、跨 loop 重用），`BULLET_CAP = 60`（AK `magSize × 2`；一匣連發 + 飛行殘留裕度，OQ-25.2）。滿載 = 拒發、不扣 ammo、不記 fire row、遞增 `state.bullets.overflowCount`；projectile export 於 `meta.weapon.projectileOverflow` 記旗標。simStep 內子彈演進排在「目標 motion 更新到本 tick」**之後**、記錄之前。 |
 | **time-of-flight（`timeOfFlightMs` / `t_hit`）** | projectile 專屬 additive `type:'hit'` 事件：`timeOfFlightMs = t_hit − t_fire`，關聯產出它的 shot 序號 `shotSeq`。既有 `type:'fire'` row 語意（= 一發 shot）**不變**；**既有八指標的時序錨不從 `fire.t` 搬到 `hit.t`**（§A 首發／切換時間、§G「fire 正名」）。首發命中率 = 首發 shot 的 outcome，由同 `shotSeq` 的 `hit` 事件回填（hitscan 仍直接讀 `fire.hit`）。 |
 | **lead 誤差（提前量，spec-only 離線）** | 移動目標 × 飛行彈下，玩家應提前瞄準的量與實際瞄準的差。**引擎零新計算**——僅 `docs/operational/analysis-lead.md` spec + [leadDerivation.ts](src/metrics/leadDerivation.ts) 離線 verifier，消費 schema v2 export + `meta.weapon.bullet` + fire-time view angles + 目標 tick 軌跡；命中彈用 linked `hit.timeOfFlightMs`，未命中 exploratory sample 標 `timeOfFlightSource:'estimated'`。**不進正式結果頁/八指標**（OQ-S5-5）；pilot 顯示構念有效再另案晉升 pre-registered metric。 |
+
+---
+
+## I. Assessment 契約術語(WP-33,M16;共同契約 `docs/operational/analysis-assessment-contract.md`)
+
+> stage6(個人瞄準能力測試框架 v1)三家族(架槍/Spider Shot/急停)與診斷層共用的契約層;WP-33 只交付型別/純函式,零引擎邏輯。詳見 [analysis-assessment-contract.md](docs/operational/analysis-assessment-contract.md)。
+
+| 術語 | 定義 |
+|---|---|
+| **`AssessmentMode`**([assessmentContract.ts](src/drill/assessmentContract.ts)) | `'assessment' \| 'practice'` 二態列舉,由 `DrillConfig.mode?` 宣告。**省略 = `'practice'` 語意超集**,既有 63+ 份 drill config 零回溯相容成本。五軸契約(難度/隨機性/即時回饋/歷史比較/重試)見契約文件 §2。 |
+| **`Meta.assessment`**([metadata.ts](src/data/metadata.ts)) | 獨立於既有 `Meta.protocol`(WP-20 pilot 條件分組)的 additive 區塊,只承載 `protocolVersion`(凍結的 Assessment 任務協定版本字串,如 `hold-click-v1@1.0.0`)與 `assessmentFeedbackPolicy`(`'minimal-end-of-block' \| 'unrestricted'`)。兩區塊可同時存在、互不覆寫、互不推導對方(C-D4 精神)。 |
+| **`gameMovementProfile`** | stage6 文件的概念命名,**權威欄位仍是既有 `Meta.movementModel`**(首版固定 `'cs2-source'`)。禁止新增第二個攜帶相同語意的 metadata key。 |
+| **`sessionId`**(推導,非儲存) | 由 `meta.session.participantId + meta.startedAt` 或等價穩定序列化決定性推導,**不**是 `SessionMeta` 的儲存欄位。權威實作為 [`deriveSessionId()`](src/metrics/compatibilityKey.ts);下游一律呼叫此函式,不得另行拼接。 |
+| **`CompatibilityKey`**([compatibilityKey.ts](src/metrics/compatibilityKey.ts)) | 十欄位封閉的相容比較鍵(`participantId`/`taskId`/`protocolVersion`/`gameMovementProfile`/`weaponId`/`weaponMode`/`sensitivityFovKey`/`targetConditionCell`/`assessmentFeedbackPolicy`/`qualityGateStatus`)。由 `buildCompatibilityKey()` 組裝、`checkCompatibility()` 全等比較(非模糊比對,任一欄不等即不相容)。新增第十一個欄位須升版並記錄,不得原地插入。v1 `weaponMode = meta.weaponId`(OQ-S6-10 拍板,單武器現況下的非損失性佔位)。 |
+| **`qualityGateStatus`** | [`checkQualityGate()`](src/metrics/compatibilityKey.ts) 的**回傳值**(`'insufficient-n' \| 'incompatible-protocol' \| 'suspect-run' \| 'ok'`,固定優先序判定),**不是**逐 drill 記錄的 export metadata 欄位——由呼叫端在診斷/呈現時機當場計算。 |
+| **`recommendationVersion`**(WP-38,尚未實作) | 診斷規則表本身攜帶的版本字串,屬 WP-38 診斷輸出物件欄位,**不進 export meta**——使同一份原始匯出可用新版規則表重新診斷,不被第一次診斷結果綁死。 |
+| **`AssessmentTimelinePoint`**([assessmentTimeline.ts](src/data/assessmentTimeline.ts)) | 事件時間線**欄位形狀**契約(`tFirstVisible`/`tMeasurementOnset`/`tFullExposure`/`tStop`,皆 optional readonly),不含計算。既有 `t_visible`/`t_detect`/`t_first_on_target` 等既有構念名稱**禁止**被下游 WP 重新賦予不同語意;新可見度計算由 WP-34 實作。 |

@@ -10,7 +10,7 @@
 | **相依** | **M4 ✅**(schema v2)+ **WP-20 ✅**(`meta.session`/`meta.protocol`/`meta.display` 既有 additive 慣例) |
 | **對應 FR** | FR-F1(模式契約)+ FR-F2(metadata 擴充)+ FR-F3(事件時間線契約)+ FR-F4(相容鍵 + 品質旗標) |
 | **估時** | 2–3 dev-days(見 [../README.md §6](../README.md)) |
-| **狀態** | 🟡 T0/T1/T2/T3 完成(2026-08-19);T-exit 待開工 |
+| **狀態** | ✅ 全數完成(T0~T-exit,2026-08-19);契約定稿於 [`docs/operational/analysis-assessment-contract.md`](../../../../operational/analysis-assessment-contract.md),開放 WP-34~37 entry |
 
 ---
 
@@ -264,7 +264,7 @@ export function checkQualityGate(args: { n: number; minN: number; suspect: boole
 
 ## 8. 文件對帳清單
 
-- [ ] [DECISIONS.md](../../../DECISIONS.md):若 §0.1 的讀碼收斂(`gameMovementProfile`/`sessionId`/`recommendationVersion` 落點)被判定為跨 WP 硬約束,T-exit 時評估是否升 GD 編號。
-- [ ] [../README.md](../README.md) §3:WP-33 狀態 ⬜ → ✅(T-exit)。
-- [ ] `docs/operational/analysis-assessment-contract.md`(新,T0 起稿/T-exit 定稿)。
-- [ ] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`AssessmentMode`、`CompatibilityKey`、`qualityGateStatus`)於 T-exit 回寫。
+- [x] [DECISIONS.md](../../../DECISIONS.md):評估結果為**不新增 GD 編號**——§0.1 讀碼收斂與七項契約已是本 WP 的正文交付物(`analysis-assessment-contract.md`),GD-22 狀態列已回寫 WP-33 全數完成,見 [progress.md D-33.6](progress.md)。(2026-08-19)
+- [x] [../README.md](../README.md) §3:WP-33 狀態 🟡 → ✅(T-exit)。(2026-08-19)
+- [x] `docs/operational/analysis-assessment-contract.md`(新,T0 起稿/T-exit 定稿)。(2026-08-19)
+- [x] [CONTEXT.md](../../../../../CONTEXT.md):新術語(§I,共 8 項:`AssessmentMode`、`Meta.assessment`、`gameMovementProfile`、`sessionId`、`CompatibilityKey`、`qualityGateStatus`、`recommendationVersion`、`AssessmentTimelinePoint`)於 T-exit 回寫。(2026-08-19)

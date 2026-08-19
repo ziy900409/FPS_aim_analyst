@@ -9,7 +9,7 @@
 | ✅ | **T1** `DrillConfig.mode` + `Meta.assessment` additive 型別/驗證 | [T1-metadata-extension.md](T1-metadata-extension.md) | T0 | Low |
 | ✅ | **T2** 共同事件時間線型別凍結(欄位形狀,不含計算) | [T2-event-timeline-contract.md](T2-event-timeline-contract.md) | T0(可與 T1 並行) | Low |
 | ✅ | **T3** `checkCompatibility()` / `checkQualityGate()` 純函式 + 單元測試 | [T3-compatibility-quality-gate.md](T3-compatibility-quality-gate.md) | T1 | Med |
-| ⬜ | **T-exit** `analysis-assessment-contract.md` 定稿 + 文件對帳 + WP-33 狀態收斂,開放 WP-34~37 entry | [T-exit-gate.md](T-exit-gate.md) | T2 + T3 | — |
+| ✅ | **T-exit** `analysis-assessment-contract.md` 定稿 + 文件對帳 + WP-33 狀態收斂,開放 WP-34~37 entry | [T-exit-gate.md](T-exit-gate.md) | T2 + T3 | — |
 
 **T2 只依賴 T0**(不需要 `AssessmentMeta` 型別)→ 可與 T1 並行;一 task 一 commit 的紀律不變。
 

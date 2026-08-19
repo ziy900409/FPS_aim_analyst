@@ -7,7 +7,7 @@
 | **相依** | T2 + T3 |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | `docs/operational/analysis-assessment-contract.md`(定稿)、[../README.md](../README.md)、[CONTEXT.md](../../../../../CONTEXT.md)、[DECISIONS.md](../../../DECISIONS.md)(視需要) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -31,11 +31,11 @@
 
 ## Steps
 
-- [ ] 彙整 T0~T3 的 progress.md 記錄,定稿 `analysis-assessment-contract.md` §0~§3。
-- [ ] 更新 [../README.md](../README.md) §3 WP-33 狀態為 ✅,並確認 §5 相依圖與實際交付一致(WP-33 完成即開放 WP-34/35/36/37 entry)。
-- [ ] 評估本 WP 的讀碼收斂(D-33.1/D-33.2)與 OQ-S6-10/11 拍板是否需要升為全域 GD;若需要,入 [DECISIONS.md](../../../DECISIONS.md)。
-- [ ] 回寫 [CONTEXT.md](../../../../../CONTEXT.md) 新術語。
-- [ ] 執行 `npm run test:ci` 作為最終閘,貼原始輸出到 progress.md。
+- [x] 彙整 T0~T3 的 progress.md 記錄,定稿 `analysis-assessment-contract.md` §0~§3。
+- [x] 更新 [../README.md](../README.md) §3 WP-33 狀態為 ✅,並確認 §5 相依圖與實際交付一致(WP-33 完成即開放 WP-34/35/36/37 entry)。
+- [x] 評估本 WP 的讀碼收斂(D-33.1/D-33.2)與 OQ-S6-10/11 拍板是否需要升為全域 GD;結論不新增 GD,回寫既有 GD-22 狀態列(見 [progress.md D-33.6](progress.md))。
+- [x] 回寫 [CONTEXT.md](../../../../../CONTEXT.md) 新術語(§I,8 項)。
+- [x] 執行 `npm run test:ci` 作為最終閘,貼原始輸出到 progress.md。
 
 ## Definition of Done
 
