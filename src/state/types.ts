@@ -175,4 +175,6 @@ export interface TargetState {
   age?: number; //                        自 spawn 起的邏輯秒數（sim tick 累加；motion 用）
   posPrev?: Vec3; //                       tick 起始位置快照（motion drive 之前）；sub-tick 命中內插基準（WP-18/T2，FR-B17）
   persistent?: boolean; //                timed presentation 目標：命中不撤除，只由 DrillRunner 呈現時長到期推進（WP-18/T3）；省略＝命中即撤（既有政策）
+  /** hold-track-v1：true 時開火排程不消費 held fire；target_stop 時與 tStop 同 tick 解鎖。 */
+  fireLocked?: boolean;
 }

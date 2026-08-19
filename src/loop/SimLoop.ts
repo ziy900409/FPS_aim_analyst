@@ -504,7 +504,7 @@ function scheduleFire(
   recoilRuntime?: RecoilRuntime,
 ): void {
   const cycleMs = weapon.cycletimeSec * 1000;
-  while (state.heldFire && state.weapon.ammo > 0 && state.weapon.nextFireT <= untilMs) {
+  while (state.heldFire && state.weapon.ammo > 0 && state.weapon.nextFireT <= untilMs && !isFireLockedForActiveTarget(state)) {
     const fired = fireOneShot(state, state.weapon.nextFireT, tickStartMs, tickMs, camera, targetManager, recorder, weapon, recoilRuntime);
     if (fired) state.weapon.ammo--;
     state.weapon.nextFireT += cycleMs;
@@ -513,6 +513,15 @@ function scheduleFire(
     state.heldFire = false;
     state.weapon.nextFireT = Infinity;
   }
+}
+
+/** 讀第一個存活可見目標；沒有目標或省略 fireLocked 均維持既有開火語意。 */
+function isFireLockedForActiveTarget(state: SharedState): boolean {
+  for (let i = 0; i < state.targets.length; i++) {
+    const target = state.targets[i];
+    if (target.alive && target.visible) return target.fireLocked === true;
+  }
+  return false;
 }
 
 function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecorder): void {

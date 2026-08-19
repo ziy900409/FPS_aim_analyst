@@ -65,6 +65,11 @@ export function validateDrill(json: unknown): DrillConfig {
   // presentationMs（WP-18 / T3）:追蹤 drill 每目標呈現時長,正有限（比照 peekTimeoutMs 驗證）。
   const presentationMs =
     timing.presentationMs === undefined ? undefined : requirePositiveNumber(timing.presentationMs, 'timing.presentationMs');
+  const trackingStopMs =
+    timing.trackingStopMs === undefined ? undefined : requirePositiveNumber(timing.trackingStopMs, 'timing.trackingStopMs');
+  if (presentationMs !== undefined && trackingStopMs !== undefined) {
+    throw err('timing', 'presentationMs 與 trackingStopMs 不可同時提供');
+  }
 
   // endCondition — type 列舉、value 正數（雙閘,OQ-6.3）。
   const endCondition = requireObject(root.endCondition, 'endCondition');
@@ -96,6 +101,7 @@ export function validateDrill(json: unknown): DrillConfig {
       ...(peekTimeoutMs !== undefined ? { peekTimeoutMs } : {}),
       ...(timeLimitMs !== undefined ? { timeLimitMs } : {}),
       ...(presentationMs !== undefined ? { presentationMs } : {}),
+      ...(trackingStopMs !== undefined ? { trackingStopMs } : {}),
     },
     endCondition: { type, value },
   };

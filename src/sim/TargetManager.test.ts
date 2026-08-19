@@ -114,6 +114,53 @@ describe('TargetManager — 可見性 + t_visible 在 sim tick 內蓋戳（FR-4.
   });
 });
 
+describe('TargetManager — hold-track target_stop（WP-35 / T1）', () => {
+  it('到期同 tick 解鎖並記 tStop，且之後原地凍結但維持可見存活', () => {
+    const state = createSharedState();
+    const cfg: DrillConfig = {
+      drillId: 'hold-track-test',
+      targets: { count: 1, distance: 4, motion: { type: 'pingpong', axis: 'horizontal', speed: 128, range: 100 } },
+      sequence: { alternation: 'RL' },
+      timing: { countdownMs: 0, trackingStopMs: TICK_MS * 2 },
+      endCondition: { type: 'targetCount', value: 1 },
+    };
+    const tm = createTargetManager(cfg);
+
+    tm.tick(state, TICK_MS);
+    const target = state.targets[0];
+    const positionBeforeStop = { ...target.pos };
+    expect(target.age).toBeCloseTo(1 / SIM_HZ, 12);
+    expect(target.fireLocked).toBe(true);
+    expect(state.tStop.has(target.id)).toBe(false);
+
+    tm.tick(state, TICK_MS * 2);
+    expect(target.fireLocked).toBe(false);
+    expect(state.tStop.get(target.id)).toBe(TICK_MS * 2);
+    expect(target.pos).toEqual(positionBeforeStop);
+    expect(target.visible).toBe(true);
+    expect(target.alive).toBe(true);
+
+    tm.tick(state, TICK_MS * 3);
+    expect(target.pos).toEqual(positionBeforeStop);
+    expect(state.tStop.get(target.id)).toBe(TICK_MS * 2);
+  });
+
+  it('markKilled 與 reset 會清除 tStop', () => {
+    const state = createSharedState();
+    const tm = createTargetManager();
+    tm.tick(state, 100);
+    const id = state.targets[0].id;
+    state.tStop.set(id, 100);
+
+    tm.markKilled(state, id);
+    expect(state.tStop.has(id)).toBe(false);
+
+    state.tStop.set('stale', 200);
+    tm.reset(state);
+    expect(state.tStop.size).toBe(0);
+  });
+});
+
 describe('TargetManager — 左右交替序列（FR-4.3）', () => {
   /** 驅動一輪「擊殺 → 下一 tick 生成對側」;回傳每次 spawn 的 side（依序）。 */
   function killSequence(seq: 'LR' | 'RL', rounds: number): Array<'L' | 'R'> {

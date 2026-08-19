@@ -75,6 +75,11 @@ export interface DrillConfig {
      * detection 的「peek→到期撤除」),故獨立欄位;兩者不應併用同一 drill。省略＝不啟用(既有政策)。
      */
     presentationMs?: number;
+    /**
+     * hold-track-v1：可見後達此時長即 target_stop——原地凍結、解鎖開火並記錄 tStop。
+     * 與 `presentationMs` 互斥；省略時既有 presentation/advance 語意不變。
+     */
+    trackingStopMs?: number;
   };
   /**
    * 結束條件（雙閘,OQ-6.3）:預設 `targetCount`（目標數達標,如 20 個 peek）;`timeLimit` 為時限後援。

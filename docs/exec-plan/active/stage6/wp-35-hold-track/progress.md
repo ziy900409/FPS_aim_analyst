@@ -10,7 +10,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry-gate | ✅ | 2026-08-19 | WP-34 T-exit 已覆核;README §0 五條讀碼發現仍成立;OQ-S6-9/OQ-S6-14 已拍板(D-35.1/D-35.2);`TrackingSample`/`deriveTrackingSamples` 匯出面確認可供 T2 消費;零 `src/` diff |
-| T1 fire-gating + target_stop | ⬜ | — | — |
+| T1 fire-gating + target_stop | ✅ | 2026-08-19 | `npm run test:ci`: `tsc --noEmit` + Vitest **105 files / 864 tests passed** + Playwright **21 passed** |
 | T2 tracking + stop-transition metrics | ⬜ | — | — |
 | T-exit | ⬜ | — | — |
 
@@ -19,7 +19,7 @@
 | Task | `npm run test:ci` |
 |---|---|
 | T0 | 2026-08-19 16:11+02:00: sandbox 內首跑被 Windows 權限擋於 Vitest/Vite config 載入(`Cannot read directory "../../../..": Access is denied`);非 sandbox 重跑同一命令通過:`tsc --noEmit` + Vitest **104 files / 860 tests passed** + Playwright **21 passed** |
-| T1~T-exit | — |
+| T1 | 2026-08-19 16:21+02:00: non-sandbox `npm run test:ci` 通過：`tsc --noEmit` + Vitest **105 files / 864 tests passed** + Playwright **21 passed** |
 
 ---
 
@@ -68,13 +68,24 @@
 
 - 在 `derivePresentation()` 裡直接擴充聚合。未採用:T2 的新指標不是既有追蹤幾何本體,加進核心 derivation 會擴大已穩定測試路徑的回歸面。
 
+### D-35.4 — `tStop` 同時作為 target_stop 時間戳與 freeze witness；不新增第二個 TargetState 旗標(2026-08-19,T1)
+
+`TargetManager.tick()` 到期時在同一分支將 `fireLocked` 設為 `false`、寫入 `state.tStop`，往後每 tick 以 `tStop.has(target.id)` 跳過 motion drive。這使「原地凍結」的運行狀態與 T2 要消費的測量時間戳只有一份權威來源；`markKilled`/`reset`/`resetState` 均同步清除，避免 stale target id 汙染下一輪。
+
+**Alternatives considered**:
+
+- 另加 `TargetState.motionFrozen?: boolean`。未採用:會建立只服務於引擎而非測量的第二份 stop 狀態，並增加 reset/撤除時的同步義務；`tStop` 已是 target_stop 的權威事件紀錄。
+- 解除 `fireLocked` 後保留現有 motion drive。未採用:針對性測試顯示下一 tick 位置會由 `x=3` 繼續到 `x=4`，違反「原地凍結」。
+
 ---
 
 ## Surprises
 
 > 編號 `S-35.n`。
 
-_(T0 無意外;WP-34 記錄過的 sandbox/Vite config 權限問題在本 WP T0 首跑重現,非 sandbox 重跑通過。)_
+### S-35.1 — 解鎖本身不會停止既有 motion drive(2026-08-19,T1)
+
+第一輪 `TargetManager` 定向測試失敗：target_stop 後第三個 tick 的 position 為 `x=4`，預期凍結在 `x=3`。原因是 `fireLocked=false` 後仍符合既有 `isDrivenMotion` 路徑。以 `tStop.has(id)` 作為 freeze witness 後，同一組測試 **68 passed**；完整 CI 亦全綠。
 
 ---
 

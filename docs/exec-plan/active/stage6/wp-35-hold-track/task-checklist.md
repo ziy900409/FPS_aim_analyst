@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(驗 WP-34 T-exit + 讀碼確認 README §0 對帳結論 + 拍板 fire-gating 落點/OQ-S6-9/target_stop 修飾欄位命名;無演算法碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-34 T-exit | Low |
-| ⬜ | **T1** `TargetState.fireLocked` + `tStop` 記錄 + `scheduleFire` additive 閘 + `TargetManager` 原地凍結到期分支 | [T1-fire-gating-stop.md](T1-fire-gating-stop.md) | T0 | Med |
+| ✅ | **T1** `TargetState.fireLocked` + `tStop` 記錄 + `scheduleFire` additive 閘 + `TargetManager` 原地凍結到期分支 | [T1-fire-gating-stop.md](T1-fire-gating-stop.md) | T0 | Med |
 | ⬜ | **T2** `hold-track-v1` drill config + 掉靶/重新取得時間函式 + 停止轉換三指標(複用既有首發判定) | [T2-tracking-stop-metrics.md](T2-tracking-stop-metrics.md) | T1 | Med |
 | ⬜ | **T-exit** 驗收(追蹤窗不因提早擊殺而縮短)+ `analysis-hold-track.md` 定稿 + 文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T2 | — |
 

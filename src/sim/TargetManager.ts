@@ -86,6 +86,8 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   // timed presentation（WP-18 / T3）:config.timing.presentationMs 提供即把目標標為 persistent
   //（命中不撤除,只由 DrillRunner 呈現時長到期推進）。省略＝命中即撤(既有政策,persistent 為 undefined)。
   const persistent = config?.timing.presentationMs !== undefined;
+  // hold-track target_stop 不用 persistent：停止後的首發命中應依既有命中路徑撤除目標。
+  const trackingStopMs = config?.timing.trackingStopMs;
   // 首側:config.sequence.alternation 首字(對齊 reset 語意);無 config 時預設 'R'(WP-4)。
   const defaultFirstSide: 'L' | 'R' = config ? (config.sequence.alternation[0] as 'L' | 'R') : 'R';
   const spawnArea = config?.targets.spawnArea;
@@ -143,6 +145,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       posPrev: { x: pose.pos.x, y: pose.pos.y, z: pose.pos.z },
       ...(motion ? { motion: { ...motion } } : {}),
       ...(persistent ? { persistent: true } : {}),
+      ...(trackingStopMs !== undefined ? { fireLocked: true } : {}),
     });
     spawnedCount++;
   }
@@ -183,10 +186,28 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       //    static / waypoints 跳過(pos 逐位不變,既有 drill 零破壞)。z 恆不動(走廊縱深,GD-6)。
       for (let i = 0; i < state.targets.length; i++) {
         const t = state.targets[i];
-        if (!isDrivenMotion(t.motion)) continue;
+        // 已觸發 target_stop 的目標保留 motion config 供資料/診斷讀取，但不再進 motion drive。
+        if (state.tStop.has(t.id)) continue;
+        const pendingStop = trackingStopMs !== undefined && t.fireLocked === true;
+        if (!isDrivenMotion(t.motion)) {
+          if (!pendingStop) continue;
+          const nextAge = (t.age ?? 0) + TICK_SEC;
+          t.age = nextAge;
+          if (nextAge * 1000 >= trackingStopMs) {
+            t.fireLocked = false;
+            state.tStop.set(t.id, nowMs);
+          }
+          continue;
+        }
         const prevAge = t.age ?? 0;
         const nextAge = prevAge + TICK_SEC;
         t.age = nextAge;
+        // target_stop 是同一 tick 的原子事件：解鎖與 tStop 一起寫入，並從此不再 drive motion。
+        if (pendingStop && nextAge * 1000 >= trackingStopMs) {
+          t.fireLocked = false;
+          state.tStop.set(t.id, nowMs);
+          continue;
+        }
         // 位移差 offset(age) − offset(age−TICK_SEC):等價 pos = spawn 原點 + offset(age) 的增量形式
         //（免存原點;offset(_,0)=0 → 首個 drive tick 由 spawn 位置起步)。
         motionOffset(t.motion, prevAge, offsetPrev);
@@ -212,12 +233,14 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
         nextSide = nextSide === 'R' ? 'L' : 'R';
         // t_visible 隨目標撤除清掉;下次 spawn 為新 id、重新蓋戳(可見→不可見→再可見視為新目標)。
         state.tVisible.delete(id);
+        state.tStop.delete(id);
       }
     },
 
     reset(state: SharedState, seq?: 'LR' | 'RL'): void {
       state.targets.length = 0;
       state.tVisible.clear();
+      state.tStop.clear();
       nextId = 0;
       spawnedCount = 0;
       pendingSpawnAtMs = null;

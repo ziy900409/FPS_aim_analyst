@@ -7,7 +7,7 @@
 | **相依** | T0(fire-gating 落點 + 欄位命名拍板) |
 | **Risk / Cplx** | Med / Med(觸碰 `SimLoop.ts` 熱路徑,零回溯相容成本要求最高) |
 | **Touches** | `src/state/types.ts`、`src/state/SharedState.ts`、`src/loop/SimLoop.ts`、`src/sim/TargetManager.ts`、`src/drill/DrillConfig.ts`、`src/drill/schema.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅(2026-08-19) |
 
 ## Objective
 
@@ -32,11 +32,11 @@
 
 ## Steps
 
-- [ ] 依 T0 拍板結論,在 `TargetState`/`SharedState`/`DrillConfig` 落地 additive 型別。
-- [ ] `TargetManager.tick()` 新增凍結分支,單元測試涵蓋:到期前 `fireLocked=true`/`age` 持續累加、到期瞬間 `fireLocked→false` 且 `pos` 定格、`tStop` 於同一 tick 寫入。
-- [ ] `SimLoop.ts` `scheduleFire` 追加判定,單元測試涵蓋:`fireLocked=true` 時 `heldFire` 輸入不消費(彈藥/`nextFireT` 不變)、解鎖後正常消費(比照既有 `fire-determinism.test.ts` 的判定式風格)。
-- [ ] 既有回歸測試零修改跑一遍確認全綠:`SimLoop.test.ts`、`fire-determinism.test.ts`、`recoil-wiring.test.ts`、`ballistic-compose.test.ts`,以及涉及 `tracking_br_v1`/`presentationMs` 的既有測試。
-- [ ] `schema.ts` 新增驗證的單元測試(含互斥案例,若 T0 判定需要互斥)。
+- [x] 依 T0 拍板結論,在 `TargetState`/`SharedState`/`DrillConfig` 落地 additive 型別。
+- [x] `TargetManager.tick()` 新增凍結分支,單元測試涵蓋:到期前 `fireLocked=true`/`age` 持續累加、到期瞬間 `fireLocked→false` 且 `pos` 定格、`tStop` 於同一 tick 寫入。
+- [x] `SimLoop.ts` `scheduleFire` 追加判定,單元測試涵蓋:`fireLocked=true` 時 `heldFire` 輸入不消費(彈藥/`nextFireT` 不變)、解鎖後正常消費(比照既有 `fire-determinism.test.ts` 的判定式風格)。
+- [x] 既有回歸測試零修改跑一遍確認全綠:`SimLoop.test.ts`、`fire-determinism.test.ts`、`recoil-wiring.test.ts`、`ballistic-compose.test.ts`,以及涉及 `tracking_br_v1`/`presentationMs` 的既有測試。
+- [x] `schema.ts` 新增驗證的單元測試(含互斥案例,若 T0 判定需要互斥)。
 
 ## Definition of Done
 

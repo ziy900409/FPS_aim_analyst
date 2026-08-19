@@ -186,6 +186,21 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
     expect(() => validateDrill(str)).toThrow(/timing\.presentationMs/);
   });
 
+  it('trackingStopMs ≤ 0 / 非有限，或與 presentationMs 併用 → throw 指名 timing', () => {
+    expect(validateDrill({ ...(minimalValid() as object), timing: { countdownMs: 3000, trackingStopMs: 2500 } }).timing.trackingStopMs).toBe(
+      2500,
+    );
+    expect(() => validateDrill({ ...(minimalValid() as object), timing: { countdownMs: 3000, trackingStopMs: 0 } })).toThrow(
+      /timing\.trackingStopMs/,
+    );
+    expect(() => validateDrill({ ...(minimalValid() as object), timing: { countdownMs: 3000, trackingStopMs: 'soon' } })).toThrow(
+      /timing\.trackingStopMs/,
+    );
+    expect(() =>
+      validateDrill({ ...(minimalValid() as object), timing: { countdownMs: 3000, presentationMs: 1000, trackingStopMs: 2000 } }),
+    ).toThrow(/timing/);
+  });
+
   it('非物件輸入（null / 陣列 / 字串）→ throw root', () => {
     expect(() => validateDrill(null)).toThrow(/root/);
     expect(() => validateDrill([])).toThrow(/root/);
