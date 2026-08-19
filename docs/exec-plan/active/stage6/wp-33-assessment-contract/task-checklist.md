@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(驗 M4/WP-20 exit + §0.1 讀碼對帳凍結 + §2 七項契約凍結;`analysis-assessment-contract.md` 起稿;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | M4 ✅ + WP-20 ✅ | Low |
+| ✅ | **T0** entry gate(驗 M4/WP-20 exit + §0.1 讀碼對帳凍結 + §2 七項契約凍結;`analysis-assessment-contract.md` 起稿;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | M4 ✅ + WP-20 ✅ | Low |
 | ⬜ | **T1** `DrillConfig.mode` + `Meta.assessment` additive 型別/驗證 | [T1-metadata-extension.md](T1-metadata-extension.md) | T0 | Low |
 | ⬜ | **T2** 共同事件時間線型別凍結(欄位形狀,不含計算) | [T2-event-timeline-contract.md](T2-event-timeline-contract.md) | T0(可與 T1 並行) | Low |
 | ⬜ | **T3** `checkCompatibility()` / `checkQualityGate()` 純函式 + 單元測試 | [T3-compatibility-quality-gate.md](T3-compatibility-quality-gate.md) | T1 | Med |

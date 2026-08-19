@@ -7,7 +7,7 @@
 | **相依** | M4 ✅(schema v2)· WP-20 ✅(`meta.session`/`meta.protocol`/`meta.display` additive 慣例) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 僅本 WP 文件(README/checklist/progress)+ `docs/operational/analysis-assessment-contract.md`(新,起稿);**零程式碼** |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-19) |
 
 ## Objective
 
@@ -51,11 +51,11 @@
 
 ## Steps
 
-- [ ] 覆核 M4/WP-20 兩個上游的既有 additive 慣例與具體型別,記錄證據位置(不重跑既有測試)。
-- [ ] 逐項覆核 README §0.1 五列讀碼對帳,若有出入在 progress.md 記新 Decision 並回頭修 README §0.1(不得默默改而不留痕)。
-- [ ] 把 README §2 七項契約寫入 progress.md Decision Log `D-33.2`,標注「事後只能升版重跑」。
-- [ ] 起稿 `docs/operational/analysis-assessment-contract.md`(§0/§1/§2,§3 佔位)。
-- [ ] 確認 OQ-S6-10/OQ-S6-11 已在 README §7 開帳(owner/deadline/未決影響齊全)。
+- [x] 覆核 M4/WP-20 兩個上游的既有 additive 慣例與具體型別,記錄證據位置(不重跑既有測試)。
+- [x] 逐項覆核 README §0.1 五列讀碼對帳,若有出入在 progress.md 記新 Decision 並回頭修 README §0.1(不得默默改而不留痕)。
+- [x] 把 README §2 七項契約寫入 progress.md Decision Log `D-33.2`,標注「事後只能升版重跑」。
+- [x] 起稿 `docs/operational/analysis-assessment-contract.md`(§0/§1/§2,§3 佔位)。
+- [x] 確認 OQ-S6-10/OQ-S6-11 已在 README §7 開帳(owner/deadline/未決影響齊全)。
 
 ## Definition of Done
 

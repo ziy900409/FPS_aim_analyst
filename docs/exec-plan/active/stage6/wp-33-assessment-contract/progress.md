@@ -9,7 +9,7 @@
 
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
-| T0 entry gate | ⬜ | — | — |
+| T0 entry gate | ✅ | 2026-08-19 | `analysis-assessment-contract.md` 起稿;D-33.1 T0 覆核;D-33.2 七項契約凍結;`npm.cmd run test:ci` exit 0 |
 | T1 metadata extension | ⬜ | — | — |
 | T2 event timeline contract | ⬜ | — | — |
 | T3 compatibility + quality gate | ⬜ | — | — |
@@ -19,7 +19,7 @@
 
 | Task | `npm run test:ci` |
 |---|---|
-| T0 | — |
+| T0 | `npm.cmd run test:ci` exit 0;Vitest 98 files / 810 tests passed;Playwright 21 passed |
 | T1 | — |
 | T2 | — |
 | T3 | — |
@@ -31,20 +31,40 @@
 
 > 編號 `D-33.n`。跨 WP / 跨文件的決策改入 [DECISIONS.md](../../../DECISIONS.md)。
 
-### D-33.1 — §0.1 讀碼收斂:FR-F2 六個「新」欄位裡只有兩個真的新(2026-08-19,規劃期讀碼;T0 待覆核落地)
+### D-33.1 — §0.1 讀碼收斂:FR-F2 六個「新」欄位裡只有兩個真的新(2026-08-19,T0 覆核落地)
 
-`grep`/`codegraph_explore` 對 `src/data/metadata.ts`、`src/drill/DrillConfig.ts`、`docs/operational/schema.md`、`docs/operational/pilot-protocol-stage3.md` 的讀碼發現:
+T0 以 `codegraph_explore` + 直接讀碼覆核 `src/data/metadata.ts`、`src/drill/DrillConfig.ts`、`src/drill/schema.ts`、`docs/operational/schema.md`、`docs/operational/pilot-protocol-stage3.md`;結論與規劃期 §0.1 一致:
 
-- `gameMovementProfile` = 既有 `Meta.movementModel`(`schema.md` 早已預告未來 profile 用新值而非重新解讀同一欄位)→ **不新增欄位**。
-- `meta.protocol.{protocolId,conditionIndex,conditionLabel}`(WP-20)是 stage3 pilot 多條件分組,與 stage6 的 `protocolVersion`(凍結任務協定版本)是不同構念 → 新欄位落獨立區塊 `Meta.assessment`,不共用 `meta.protocol`。
-- `sessionId` 未曾存在於 `SessionMeta`;框架 v1 的「session」本來就可由 `participantId + startedAt` 決定性推導 → 不新增儲存欄位,由 T3 推導函式產生。
+- `gameMovementProfile` = 既有 `Meta.movementModel`:`src/data/metadata.ts` 固定 `movementModel: 'cs2-source'`;`docs/operational/schema.md` 已寫未來 profile 用新值而非重新解讀 → **不新增欄位**。
+- `meta.protocol.{protocolId,conditionIndex,conditionLabel}`(WP-20)是 stage3 pilot 多條件分組:`pilot-protocol-stage3.md` 的 `resolution_detection_v1` 範例使用 conditionIndex/conditionLabel 表示同一 session 內解析度條件,與 stage6 的 `protocolVersion`(凍結任務協定版本)是不同構念 → 新欄位落獨立區塊 `Meta.assessment`,不共用 `meta.protocol`。
+- `sessionId` 未曾存在於 `SessionMeta`;`SessionMeta` 只有 `participantId`/`sessionLabel?`,框架 v1 的「session」可由 `participantId + startedAt` 決定性推導 → 不新增儲存欄位,由 T3 推導函式產生。
 - `recommendationVersion`/`qualityGateStatus` 依賴 WP-38 的診斷規則表版本與相容鍵判定**結果**,匯出時尚不存在 → 不進 `Meta.assessment`,落在 WP-38 的診斷輸出型別。
 
-**真正新增的 export meta 欄位只有** `protocolVersion` 與 `assessmentFeedbackPolicy`(封裝於 `Meta.assessment`)。此收斂於本 WP T0 覆核並落地為 README §0.1/§2 契約①~④;若 T0 執行時發現讀碼有誤,於此處更新並記新的 `D-33.n`。
+**真正新增的 export meta 欄位只有** `protocolVersion` 與 `assessmentFeedbackPolicy`(封裝於 `Meta.assessment`)。T0 未發現與 README §0.1/§2 契約①~④ 不一致的讀碼出入。
+
+**上游複驗證據**:
+- **M4/schema v2**:`docs/exec-plan/README.md` 宣告 M4 ✅(2026-07-03);`src/data/metadata.ts` 固定 `SCHEMA_VERSION = 2`;`Meta`/`CollectMetaArgs` 的 v2 擴充欄位沿用 optional + conditional spread 組裝。
+- **WP-20**:`docs/exec-plan/completed/stage3/wp-20-display-pipeline/progress.md` 宣告 WP-20 ✅;`src/data/metadata.ts` 已有 `session?`/`protocol?`/`display?`/`frames?` additive 區塊與 guard;`metadata.test.ts`/`export.test.ts` 已覆蓋 `meta.session`/`meta.protocol` 寫入。
 
 **Alternatives considered**:
 - 「`protocolVersion` 直接掛在 `meta.protocol.protocolId` 尾端(如 `'resolution_detection_v1@hold-click-v1'`)」— 否決:會讓 WP-39 pilot 的 `conditionIndex/Label` 語意與任務協定版本糾纏,且既有 `pilot-protocol-stage3.md` 的既定用法會被污染。
 - 「`sessionId` 另開儲存欄位以簡化下游查詢」— 否決:違反單一來源原則,`participantId+startedAt` 已經是決定性鍵,多一個儲存欄位只會製造「兩者不一致時信哪個」的新問題。
+
+### D-33.2 — 七項 Assessment 契約凍結為 versioned contract(2026-08-19,T0)
+
+以下七項契約是 WP-33 T0 凍結的共同 contract;事後只能升 version 重跑,不得原地改寫或讓下游 WP 各自重定義:
+
+1. `Meta.assessment` 是獨立區塊,只承載 `protocolVersion` 與 `assessmentFeedbackPolicy`;不得與既有 `Meta.protocol` 的 pilot 條件分組混用。
+2. `gameMovementProfile` 是 stage6 文件概念名,TS/export 權威欄位仍是既有 `meta.movementModel`;不得新增第二個同義 metadata key。
+3. `sessionId` 是推導值,由 `meta.session.participantId + meta.startedAt` 或等價穩定序列化取得;不得新增儲存欄位。
+4. `recommendationVersion` 與 `qualityGateStatus` 不進 export meta;前者屬 WP-38 診斷規則表/輸出版本,後者是 `checkQualityGate()` 回傳值。
+5. Assessment/Practice 五軸契約凍結:難度、隨機性、即時回饋、歷史比較、重試語意由 `DrillConfig.mode` 與 `Meta.assessment.assessmentFeedbackPolicy` 宣告;省略 mode = Practice 語意。
+6. 事件時間線同名事件禁止跨任務改語意;`AssessmentTimelinePoint` 只定義欄位形狀,不含 WP-34 可見度引擎計算。
+7. 相容比較鍵九欄位封閉;新增欄位需升 compatibility key version 並更新本契約,不得原地插入。
+
+**Alternatives considered**:
+- 「T1/T2/T3 實作時再各自決定欄位落點」— 否決:會讓三個測試家族與診斷層分裂,重蹈 C-D4 的同名不同義風險。
+- 「先把 FR-F2 字面欄位全放入 `Meta.assessment`」— 否決:其中四項已有既有欄位、推導來源或下游診斷歸屬,全放入 export meta 會製造第二來源。
 
 ---
 
@@ -52,9 +72,9 @@
 
 > 編號 `S-33.n`。
 
-### S-33.1 — 既有程式碼完全沒有 Assessment/Practice 概念(規劃期讀碼)
+### S-33.1 — 既有程式碼完全沒有 Assessment/Practice 概念(T0 覆核)
 
-`grep -rniE "Assessment|Practice mode|feedbackPolicy" src/` 對 `src/` 零命中(`SessionSetup.ts` 命中是既有 session 設定面板,語意不同)。這確認 FR-F1 的五軸契約在本 repo 是**全新**構念,沒有可複用的既有型別可延伸——T1 需要從零定義 `AssessmentMode`,不是擴充既有列舉。
+`rg -n "Assessment|Practice mode|feedbackPolicy" src` 對 `src/` 的相關概念零命中(`SessionSetup`/`Protocol` 命名屬既有 session/protocol 流程,語意不同)。這確認 FR-F1 的五軸契約在本 repo 是**全新**構念,沒有可複用的既有型別可延伸——T1 需要從零定義 `AssessmentMode`,不是擴充既有列舉。
 
 ---
 
