@@ -106,12 +106,12 @@
 
 **階段 F（`active/stage6/`，🟡 已採納規劃 2026-08-19；WP-33~39 / M16；編號分配 [DECISIONS.md](DECISIONS.md) GD-22）**
 
-> 個人瞄準能力測試框架 v1（架槍挑戰 / Spider Shot / 急停測試 + 診斷推薦 + 縱向追蹤）。原案：[`active/stage6/aim-assessment-framework-v1.md`](active/stage6/aim-assessment-framework-v1.md);tech spec：[`active/stage6/README.md`](active/stage6/README.md)。**WP-34 的可見度時間線列為高風險，先跑獨立 T0 讀碼 spike 才鎖定其 task 切分**；WP-33 子資料夾尚未展開。
+> 個人瞄準能力測試框架 v1（架槍挑戰 / Spider Shot / 急停測試 + 診斷推薦 + 縱向追蹤）。原案：[`active/stage6/aim-assessment-framework-v1.md`](active/stage6/aim-assessment-framework-v1.md);tech spec：[`active/stage6/README.md`](active/stage6/README.md)。**WP-33/WP-34 T0 皆已完成（2026-08-19）**：WP-34 的可見度時間線 spike 已拍板實作路線（候選②），風險由 High 下修為 Med,估時由 3–5d 下修為 2.5–3.5d,不需拆分 WP。
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
-| **WP-33** | `active/stage6/wp-33-assessment-contract/`（⬜ 待建立） | 共同契約：Assessment/Practice 模式分離 + metadata 擴充 + 事件時間線契約 + 相容比較鍵/品質旗標 | — | M4 ✅ + WP-20 ✅ | 2–3 | ⬜ 待建立 |
-| **WP-34** | `active/stage6/wp-34-hold-click-visibility/`（⬜ 待建立） | 架槍 `hold-click-v1` + 遮蔽物可見度時間線（T0 為獨立讀碼 spike） | — | WP-33（T0 spike 可提前） | 3–5 | ⬜ 待建立 |
+| **WP-33** | [`active/stage6/wp-33-assessment-contract/`](active/stage6/wp-33-assessment-contract/README.md) | 共同契約：Assessment/Practice 模式分離 + metadata 擴充 + 事件時間線契約 + 相容比較鍵/品質旗標 | — | M4 ✅ + WP-20 ✅ | 2–3 | 🟡 T0 完成 |
+| **WP-34** | [`active/stage6/wp-34-hold-click-visibility/`](active/stage6/wp-34-hold-click-visibility/README.md) | 架槍 `hold-click-v1` + 遮蔽物可見度時間線（T0 讀碼 spike ✅ 完成,候選②拍板） | — | WP-33 | 2.5–3.5 | 🟡 T0 完成 |
 | **WP-35** | `active/stage6/wp-35-hold-track/`（⬜ 待建立） | 架槍 `hold-track-v1`：移動期間鎖 fire、停止後解鎖、追蹤窗指標 | — | WP-34 | 2–3 | ⬜ 待建立 |
 | **WP-36** | `active/stage6/wp-36-spider-shot/`（⬜ 待建立） | Spider Shot `spider-shot-v1`：單目標約束 + 中心—周邊 seeded 排程 | — | WP-33 | 2.5–3.5 | ⬜ 待建立 |
 | **WP-37** | `active/stage6/wp-37-counterstrafe-protocols/`（⬜ 待建立） | 急停三協定包裝（`cued`/`reversal`/`free`）+ L/R 對稱指標 | — | WP-33 | 2–3 | ⬜ 待建立 |
@@ -209,7 +209,7 @@ WP-33（共同契約）──┤                                                
                      └─→ WP-37（急停三協定包裝）───────────────────────────────────────────────┘
 ```
 
-- 階段 F 為規劃階段（🟡 已採納 2026-08-19，尚未展開子資料夾）。WP-34 的可見度時間線是全框架唯一觸碰 GD-6 邊界（場景幾何不進 sim runtime）的新能力，**先跑獨立零程式碼 T0 讀碼 spike**（可提前於 WP-33 完成前執行）判定實作方案與工程量，避免重演 WP-32 D-32.0「規劃稿讀碼後上修」的教訓。WP-34/35/36/37 在 WP-33 之後可並行（檔案熱區互不重疊）；**M16 未過不宣告 stage6 交付**。詳見 [`active/stage6/README.md §5`](active/stage6/README.md)。
+- 階段 F 為規劃階段（🟡 已採納 2026-08-19；WP-33/WP-34 T0 已展開並完成，其餘子資料夾尚未展開）。WP-34 的可見度時間線是全框架唯一觸碰 GD-6 邊界（場景幾何不進 sim runtime）的新能力，**已跑完獨立零程式碼 T0 讀碼 spike**（提前於 WP-33 T-exit 前執行）：候選②（scene 層封閉幾何離線解析）拍板，四個關鍵元件皆已存在，風險由 High 下修為 Med、估時由 3–5d 下修為 2.5–3.5d，**不需要拆分 WP**——避免了 WP-32 D-32.0「規劃稿讀碼後上修」式的排程衝擊。WP-34/35/36/37 在 WP-33 之後可並行（檔案熱區互不重疊）；**M16 未過不宣告 stage6 交付**。詳見 [`active/stage6/README.md §5`](active/stage6/README.md)。
 
 ---
 

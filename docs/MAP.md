@@ -154,12 +154,12 @@ docs/exec-plan/
 
 #### 階段 F（`active/stage6/`，🟡 規劃 2026-08-19：WP-33~39/M16；[DECISIONS.md](exec-plan/DECISIONS.md) GD-22）
 
-> stage6 tech spec：[README.md](exec-plan/active/stage6/README.md) · 需求草稿：[aim-assessment-framework-v1.md](exec-plan/active/stage6/aim-assessment-framework-v1.md)。子資料夾尚未展開；**WP-34 先跑獨立 T0 讀碼 spike** 判定可見度時間線工程量。
+> stage6 tech spec：[README.md](exec-plan/active/stage6/README.md) · 需求草稿：[aim-assessment-framework-v1.md](exec-plan/active/stage6/aim-assessment-framework-v1.md)。**WP-33/WP-34 T0 皆已完成（2026-08-19）**：WP-34 可見度時間線 spike 拍板候選②,估時由 3–5d 下修為 2.5–3.5d,不需拆分。
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 |
 |---|---|---|---|---|
-| **WP-33** | `wp-33-assessment-contract/`（⬜） | 共同 Assessment/Practice 契約 + metadata + 事件時間線 + 品質旗標 | — | M4 + WP-20 |
-| **WP-34** | `wp-34-hold-click-visibility/`（⬜） | 架槍 `hold-click-v1` + 遮蔽物可見度時間線（T0 = 讀碼 spike） | — | WP-33（spike 可提前） |
+| **WP-33** | [`wp-33-assessment-contract/`](exec-plan/active/stage6/wp-33-assessment-contract/README.md)（🟡 T0 完成） | 共同 Assessment/Practice 契約 + metadata + 事件時間線 + 品質旗標 | — | M4 + WP-20 |
+| **WP-34** | [`wp-34-hold-click-visibility/`](exec-plan/active/stage6/wp-34-hold-click-visibility/README.md)（🟡 T0 完成） | 架槍 `hold-click-v1` + 遮蔽物可見度時間線 | — | WP-33 |
 | **WP-35** | `wp-35-hold-track/`（⬜） | 架槍 `hold-track-v1`：移動期間鎖 fire + 追蹤窗指標 | — | WP-34 |
 | **WP-36** | `wp-36-spider-shot/`（⬜） | Spider Shot `spider-shot-v1`：單目標約束 + 中心—周邊排程 | — | WP-33 |
 | **WP-37** | `wp-37-counterstrafe-protocols/`（⬜） | 急停三協定包裝（cued/reversal/free）+ 對稱指標 | — | WP-33 |

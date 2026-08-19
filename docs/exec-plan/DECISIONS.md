@@ -33,7 +33,7 @@
 | **理由** | ① **可見度時間線是全框架唯一觸碰 GD-6 邊界的新能力**,若不先驗證可行性就依框架草稿的樂觀估時排程,後段 WP-35(依賴 WP-34 的 emergence 機制)與整體交付順序都可能被打亂,重演 WP-32 D-32.0「規劃稿 2–3d → 讀碼後上修為 4.5–5.75d」的教訓。② **獨立 spike 可提前跑**是因為它是純調查、零程式碼,不佔用 WP-33 的檔案熱區,提前暴露風險的成本趨近零。③ 三個候選方案分別對應專案已有的三種先例做法(WP-20 frame-time log 的 render 層記錄模式、`clearance.ts` 的封閉幾何驗證模式、WP-21 的離線推導模式),spike 的產出應優先評估能否複用既有模式而非發明新機制。 |
 | **未決** | WP-38 診斷推薦引擎的落點(TS 即時 vs 比照 stage4 走 Python offline `research/`)列為 **OQ-S6-8**,留待 WP-38 T0 讀碼後拍板,不在本次採納預先假設。框架草稿的六項 calibration 數值(可見門檻/世界距離/角距角尺寸/樣本數/回饋時機)維持 pilot 後凍結(OQ-S6-1~6),不阻塞本次 WP 拆分採納。 |
 | **影響面** | [stage6 README](active/stage6/README.md) 全篇;[exec-plan/README.md](README.md) §2/§3/§4/§6;[docs/MAP.md](../MAP.md) §3。 |
-| **狀態** | 🟡 規劃已採納(2026-08-19);WP-33 子資料夾尚未展開,下一步為 WP-34 T0 讀碼 spike。 |
+| **狀態** | 🟡 規劃已採納(2026-08-19);WP-33 T0 ✅ 完成(契約凍結)+ WP-34 T0 ✅ 完成(候選②拍板 + occlusion-aware clearance 政策選項①拍板,估時 3–5d→2.5–3.5d,不拆分 WP),詳見 [wp-34 progress.md](active/stage6/wp-34-hold-click-visibility/progress.md)。下一步:WP-33 T1 與 WP-34 T1 可並行展開。 |
 
 ### GD-21 ✅ 晉升指標雙實作對表紀律升為硬約束(2026-08-17,WP-32 T-exit;關閉 OQ-S4-24)
 
