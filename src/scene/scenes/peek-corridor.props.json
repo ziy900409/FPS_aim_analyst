@@ -1,0 +1,11 @@
+{
+  "_comment": "peek-corridor authoritative prop list (WP-34 T2). Single source: scripts/gen-peek-corridor-gltf.mjs reads this file to generate public/assets/scenes/peek-corridor/peek-corridor.gltf, while peek-corridor.ts maps it to SceneConfig.propBounds. The cover-wall is intentionally allowed to occlude the slide-in target before emergence; the exposed rest envelope remains clear via occlusion-aware validateClearance options.",
+  "props": [
+    {
+      "id": "cover-wall",
+      "kind": "wall",
+      "min": { "x": -2.5, "y": 0, "z": -4.4 },
+      "max": { "x": -2.3, "y": 3, "z": -3.6 }
+    }
+  ]
+}

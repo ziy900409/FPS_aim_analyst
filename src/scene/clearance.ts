@@ -30,6 +30,13 @@ export interface ClearanceViolation {
   segment: string;
 }
 
+export interface ClearanceOptions {
+  /** Props listed here may occlude the pre-emergence envelope; omitted preserves strict legacy clearance. */
+  allowedOcclusionPropIds?: readonly string[];
+  /** Exposed/resting target sub-envelope that must remain clear against every prop, including allowed occluders. */
+  exposedRestEnvelope?: TargetEnvelope;
+}
+
 export function targetHitboxRadius(hitbox: TargetHitboxSize): number {
   return Math.sqrt((hitbox.width / 2) ** 2 + (hitbox.height / 2) ** 2 + (hitbox.depth / 2) ** 2);
 }
@@ -40,31 +47,35 @@ interface Segment {
   description: string;
 }
 
-export function validateClearance(scene: SceneConfig, drill: DrillConfig): ClearanceViolation[] {
+export function validateClearance(
+  scene: SceneConfig,
+  drill: DrillConfig,
+  options: ClearanceOptions = {},
+): ClearanceViolation[] {
   const hitbox = resolveTargetHitbox(drill);
   const propInflationU = targetHitboxRadius(hitbox) + CLEARANCE_MARGIN_U;
   const playerSamples = samplePlayerCorridor(scene.playerCorridor.halfWidthU);
   const targetSamples = deriveTargetEnvelopes(drill).flatMap(sampleAabb);
   const violations: ClearanceViolation[] = [];
+  const allowedOccluders = new Set(options.allowedOcclusionPropIds ?? []);
 
-  for (const prop of scene.propBounds) {
-    const inflated = inflateAabb(prop, propInflationU);
-    let propViolated = false;
-    for (let i = 0; i < playerSamples.length; i++) {
-      for (let j = 0; j < targetSamples.length; j++) {
-        const segment: Segment = {
-          from: playerSamples[i],
-          to: targetSamples[j].point,
-          description: `player[${i}] -> ${targetSamples[j].description}`,
-        };
-        if (segmentIntersectsAabb(segment.from, segment.to, inflated)) {
-          violations.push({ propId: prop.id, segment: segment.description });
-          propViolated = true;
-          break;
-        }
-      }
-      if (propViolated) break;
-    }
+  collectClearanceViolations({
+    props: scene.propBounds.filter((prop) => !allowedOccluders.has(prop.id)),
+    propInflationU,
+    playerSamples,
+    targetSamples,
+    violations,
+  });
+
+  if (options.exposedRestEnvelope !== undefined) {
+    assertFiniteEnvelope(options.exposedRestEnvelope);
+    collectClearanceViolations({
+      props: scene.propBounds,
+      propInflationU,
+      playerSamples,
+      targetSamples: sampleAabb(options.exposedRestEnvelope),
+      violations,
+    });
   }
 
   return violations;
@@ -275,6 +286,34 @@ function sampleAabb(aabb: TargetEnvelope): Array<{ point: Vec3; description: str
     }
   }
   return points;
+}
+
+function collectClearanceViolations(args: {
+  props: readonly PropBound[];
+  propInflationU: number;
+  playerSamples: readonly Vec3[];
+  targetSamples: ReadonlyArray<{ point: Vec3; description: string }>;
+  violations: ClearanceViolation[];
+}): void {
+  for (const prop of args.props) {
+    const inflated = inflateAabb(prop, args.propInflationU);
+    let propViolated = false;
+    for (let i = 0; i < args.playerSamples.length; i++) {
+      for (let j = 0; j < args.targetSamples.length; j++) {
+        const segment: Segment = {
+          from: args.playerSamples[i],
+          to: args.targetSamples[j].point,
+          description: `player[${i}] -> ${args.targetSamples[j].description}`,
+        };
+        if (segmentIntersectsAabb(segment.from, segment.to, inflated)) {
+          args.violations.push({ propId: prop.id, segment: segment.description });
+          propViolated = true;
+          break;
+        }
+      }
+      if (propViolated) break;
+    }
+  }
 }
 
 function inflateAabb(aabb: PropBound, amount: number): Aabb {

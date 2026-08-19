@@ -11,7 +11,7 @@
 |---|---|---|---|
 | T0 讀碼 spike | ✅ | 2026-08-19 | D-34.1(候選方案評估)+ D-34.2(occlusion-aware 政策拍板);零 `src/` diff;`npm run test:ci` 證據見下(含與本 WP 無關的既有紅燈說明,S-34.1) |
 | T1 visibility derivation | ✅ | 2026-08-19 | 新增 `src/metrics/visibilityDerivation.ts` + 4 個合成 fixture 單測;`analysis-visibility.md` 起稿;`npm run test:ci` 全綠(見閘證據) |
-| T2 occlusion scene + clearance | ⬜ | — | — |
+| T2 occlusion scene + clearance | 🟡 impl done / gate blocked | 2026-08-19 | `ClearanceOptions` additive API + `peek-corridor` procedural scene; strict legacy clearance remains unchanged; targeted scene/clearance tests green. Full `npm run test:ci` blocked by existing Playwright app-ready timeout in `input-sampler.spec.ts`(見 S-34.3) |
 | T3 hold-click protocol | ⬜ | — | — |
 | T-exit | ⬜ | — | — |
 
@@ -21,7 +21,8 @@
 |---|---|
 | T0 | 見 S-34.1——當前 working tree(含 WP-33 T1 未提交變更)跑出 `Test Files 1 failed \| 97 passed (98)`、`Tests 2 failed \| 808 passed (810)`(`src/metrics/trackingDerivation.test.ts` 兩案例 `raycastWithRay is not a function`)。以 `git stash`(不含 untracked)復現乾淨 HEAD(`33e4ebb docs(wp-33): freeze T0 assessment contract`)驗證:**810/810 全綠**,證明失敗由 WP-33 T1 的未提交變更引入,與本 WP-34 T0 的零 `src/` diff 無關 |
 | T1 | 2026-08-19 14:40+02:00:首跑在 sandbox 內被 Windows 權限擋於 Vitest config 載入(`Cannot read directory "../../../..": Access is denied`);非 sandbox 重跑同一命令通過:`tsc --noEmit` + Vitest **101 files / 845 tests passed** + Playwright **21 passed** |
-| T2~T-exit | — |
+| T2 | 2026-08-19 14:48+02:00:`npx.cmd vitest run src\scene\clearance.test.ts` 通過(**16 tests passed**);14:49+02:00 scene/clearance targeted gate 通過(**5 files / 34 tests passed**);`npm run typecheck` 通過。完整 `npm run test:ci` sandbox 內因 Windows 權限無法載入 Vite config;非 sandbox 重跑兩次皆通過 `tsc --noEmit` + Vitest **102 files / 853 tests passed**,但 Playwright full suite 皆 **20/21 passed, 1 failed**於既有 `tests/e2e/input-sampler.spec.ts` app-ready timeout。單跑 `npx.cmd playwright test tests/e2e/input-sampler.spec.ts` 通過(**5 passed**) |
+| T3~T-exit | — |
 
 ---
 
@@ -68,6 +69,16 @@ T1 實作接受 `sampleCount: 9`(中心 + 8 hitbox corners)作為 `visibility-v1
 - 任意整數 N——未採用:需要定義更多取樣拓撲(表面格點、體積格點或解析式),超出 T1 範圍且會讓 `t_measurement_onset` 的版本語意變模糊。
 - 只允許 N=9——未採用:會使 T1 無法以 executable fixture 量化 OQ-S6-12 的取樣密度敏感度。
 
+### D-34.4 — T2 occlusion 場景命名:新增獨立 `peek-corridor`,不擴充 `clutterTier`(2026-08-19,T2)
+
+T2 以新增 `sceneId='peek-corridor'` 承載 hold-click emergence 的遮蔽物語意,並沿用既有 `clutterTier: 'low'`。`clutterTier` 保持「雜亂度」分類,不新增 occlusion 專用 tier,避免為單一 WP 擴大 `SceneConfig` enum 與所有場景/協定驗證面。
+
+實作上,`loadDrill(source, scene)` 仍只呼叫舊式 strict `validateClearance(scene, drill)`,因此 `peek-corridor` 搭配 T2 fixture drill 會被舊載入閘拒載;T3 若要使用此場景,必須明確呼叫 `validateClearance(scene, drill, { allowedOcclusionPropIds, exposedRestEnvelope })` 或在新協定入口接上同等選項。這保留既有 drill 的零回溯相容成本,也讓 occlusion-aware 成為 opt-in。
+
+**Alternatives considered**:
+- 新增 `clutterTier: 'occlusion'` 或類似值——未採用:這會把「可見度設計語意」混入「雜亂度層級」,並迫使 `SceneConfig` 驗證、既有協定與測試更新。
+- 直接把 `peek-corridor` 接到 `loadDrill(source, scene)` 的自動例外——未採用:會讓場景 ID 隱式改變 clearance policy,違反 T0/T2 的「明確列名 propBounds 才可遮蔽」要求。
+
 ---
 
 ## Surprises
@@ -82,8 +93,14 @@ T1 實作接受 `sampleCount: 9`(中心 + 8 hitbox corners)作為 `visibility-v1
 
 合成 edge-grazing 案例中,同一個 target/prop 幾何在 center-only (`N=1`) 下 `visibleFraction=1.0`,但在 `N=9` 下 `visibleFraction=5/9`。這證明 OQ-S6-12 不是純理論風險:取樣密度可直接改變靠近遮蔽物邊界時的 `t_measurement_onset`。T1 已把此案例寫入 `src/metrics/visibilityDerivation.test.ts` 與 `docs/operational/analysis-visibility.md`;最終 N/threshold 仍留給 WP-39 pilot 凍結。
 
+### S-34.3 — T2 full `npm run test:ci` 被既有 Playwright app-ready timeout 擋住,但 T2 相關 gate 全綠
+
+T2 驗證時,完整 `npm run test:ci` 在 sandbox 內先因 Windows 權限無法讀取 Vite config(`Cannot read directory "../../../..": Access is denied`)失敗;非 sandbox 重跑後,`tsc --noEmit` 與 Vitest 皆全綠(**102 files / 853 tests passed**),但 Playwright full suite 兩次各在 `tests/e2e/input-sampler.spec.ts` 的不同案例等待 `window.__aimDebug` timeout,結果皆為 **20/21 passed, 1 failed**。單跑同一檔 `npx.cmd playwright test tests/e2e/input-sampler.spec.ts` 通過(**5 passed**),且 T2 相關 scene/clearance targeted gate **5 files / 34 tests passed**。
+
+**Evidence**:失敗點都在 `gotoAppReady()` 的 app readiness polling,不是 `src/scene/clearance.ts`、`peek-corridor` 或 GLTF/SceneConfig 測試路徑。T2 code 目前不 commit,等待使用者決定是否接受帶此既有 E2E flake 的 slice,或先另開/處理 input-sampler E2E 穩定性。
+
 ---
 
 ## Open Questions
 
-見 [README.md §7](README.md):OQ-S6-12(取樣點數 N 的邊界穩定性)、OQ-S6-13(occlusion 場景是否需要獨立 clutterTier)。
+見 [README.md §7](README.md):OQ-S6-12(取樣點數 N 的邊界穩定性)。OQ-S6-13 已由 D-34.4 解決:新增獨立 `peek-corridor` sceneId,不新增 `clutterTier`。

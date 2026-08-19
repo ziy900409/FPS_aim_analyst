@@ -7,7 +7,7 @@
 |------|------|------|------|------|
 | ✅ | **T0** 讀碼 spike(候選方案評估 + occlusion-aware 政策拍板;零程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | — | — |
 | ✅ | **T1** `visibilityDerivation.ts`:`visibleFraction`/`tFirstVisible`/`tMeasurementOnset`/`tFullExposure` + 合成 fixture | [T1-visibility-derivation.md](T1-visibility-derivation.md) | T0 | Med |
-| ⬜ | **T2** Occlusion-aware `validateClearance` + 新 occlusion 場景內容 | [T2-occlusion-scene-clearance.md](T2-occlusion-scene-clearance.md) | T0(可與 T1 並行) | Med |
+| 🟡 | **T2** Occlusion-aware `validateClearance` + 新 occlusion 場景內容(impl done; full gate blocked by existing Playwright app-ready timeout) | [T2-occlusion-scene-clearance.md](T2-occlusion-scene-clearance.md) | T0(可與 T1 並行) | Med |
 | ⬜ | **T3** `hold-click-v1` 協定 config + 預瞄/反應/取得/首發指標 | [T3-hold-click-protocol.md](T3-hold-click-protocol.md) | T1 + T2 | Low |
 | ⬜ | **T-exit** 驗收 + `analysis-visibility.md` 定稿 + 文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
 

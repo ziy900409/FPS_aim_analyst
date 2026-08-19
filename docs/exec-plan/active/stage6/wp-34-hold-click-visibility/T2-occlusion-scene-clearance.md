@@ -7,7 +7,7 @@
 | **相依** | T0(occlusion-aware 政策選項①拍板);可與 T1 並行(不同檔案) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | `src/scene/clearance.ts`(additive)、新場景 `src/scene/scenes/*.ts` + `*.props.json` |
-| **狀態** | ⬜ |
+| **狀態** | 🟡 Implementation done; full `npm run test:ci` gate blocked by existing Playwright app-ready timeout(S-34.3,2026-08-19) |
 
 ## Objective
 
@@ -31,11 +31,11 @@
 
 ## Steps
 
-- [ ] 設計 `ClearanceOptions` 的驗證流程(排除清單 + 曝光後範圍雙重檢查)。
-- [ ] 既有 `clearance.test.ts` 全部案例(既有三場景 + 既有 drill)跑一遍,確認零修改全綠(機械判準)。
-- [ ] 新增 `peek-corridor.props.json` + 生成腳本呼叫 + `peek-corridor.ts`。
-- [ ] 新場景搭配一個示範 drill(`targets.spawnArea` + `motion: 'linear'`)驗證:emergence 前 `allowedOcclusionPropIds` 遮蔽成立、曝光後 `exposedRestEnvelope` 零遮蔽成立。
-- [ ] 單元測試:`allowedOcclusionPropIds` 省略時逐位等同現行行為(既有 63+ drill 零回溯相容成本)。
+- [x] 設計 `ClearanceOptions` 的驗證流程(排除清單 + 曝光後範圍雙重檢查)。
+- [x] 既有 `clearance.test.ts` 全部案例(既有三場景 + 既有 drill)跑一遍,確認零修改全綠(機械判準)。
+- [x] 新增 `peek-corridor.props.json` + 生成腳本呼叫 + `peek-corridor.ts`。
+- [x] 新場景搭配一個示範 drill(`targets.spawnArea` + `motion: 'linear'`)驗證:emergence 前 `allowedOcclusionPropIds` 遮蔽成立、曝光後 `exposedRestEnvelope` 零遮蔽成立。
+- [x] 單元測試:`allowedOcclusionPropIds` 省略時逐位等同現行行為(既有 63+ drill 零回溯相容成本)。
 
 ## Definition of Done
 

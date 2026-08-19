@@ -8,11 +8,22 @@ import {
   TARGET_HITBOX_RADIUS_U,
   deriveTargetEnvelopes,
   targetHitboxRadius,
+  type TargetEnvelope,
   validateClearance,
 } from './clearance.ts';
 
 const EPS = 1e-3;
 const INFLATION = TARGET_HITBOX_RADIUS_U + CLEARANCE_MARGIN_U;
+const EMERGENCE_OCCLUDER = {
+  id: 'cover-wall',
+  min: { x: -2.5, y: 0, z: -4.4 },
+  max: { x: -2.3, y: 3, z: -3.6 },
+};
+const EXPOSED_REST_ENVELOPE: TargetEnvelope = {
+  side: 'R',
+  min: { x: 1.5, y: 0.5, z: -8.5 },
+  max: { x: 2.5, y: 2.5, z: -7.5 },
+};
 
 function drill(overrides: Partial<DrillConfig> = {}): DrillConfig {
   return {
@@ -216,5 +227,82 @@ describe('validateClearance', () => {
       1,
     );
     expect(validateClearance(fieldLowClearFixture, loadDrill(drillJson))).toEqual([]);
+  });
+
+  it('省略 ClearanceOptions 時仍以完整 envelope 嚴格拒絕遮蔽', () => {
+    const emerging = drill({
+      targets: {
+        count: 1,
+        distance: 8,
+        motion: { type: 'linear', axis: 'horizontal', range: 4, speed: 4, spawnKind: 'slide-in' },
+      },
+    });
+
+    const violations = validateClearance(scene([EMERGENCE_OCCLUDER], 1), emerging);
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0].propId).toBe('cover-wall');
+  });
+
+  it('allowedOcclusionPropIds 只排除 emergence envelope,曝光後 rest envelope 仍對全部 props 淨空', () => {
+    const emerging = drill({
+      targets: {
+        count: 1,
+        distance: 8,
+        motion: { type: 'linear', axis: 'horizontal', range: 4, speed: 4, spawnKind: 'slide-in' },
+      },
+    });
+
+    expect(
+      validateClearance(scene([EMERGENCE_OCCLUDER], 1), emerging, {
+        allowedOcclusionPropIds: ['cover-wall'],
+        exposedRestEnvelope: EXPOSED_REST_ENVELOPE,
+      }),
+    ).toEqual([]);
+  });
+
+  it('未列名 prop 即使在 occlusion-aware 模式仍不能遮蔽完整 envelope', () => {
+    const emerging = drill({
+      targets: {
+        count: 1,
+        distance: 8,
+        motion: { type: 'linear', axis: 'horizontal', range: 4, speed: 4, spawnKind: 'slide-in' },
+      },
+    });
+    const unlistedBlocker = {
+      id: 'unexpected-blocker',
+      min: { x: -1.4, y: 0, z: -4.4 },
+      max: { x: -1.2, y: 3, z: -3.6 },
+    };
+
+    const violations = validateClearance(scene([EMERGENCE_OCCLUDER, unlistedBlocker], 1), emerging, {
+      allowedOcclusionPropIds: ['cover-wall'],
+      exposedRestEnvelope: EXPOSED_REST_ENVELOPE,
+    });
+
+    expect(violations.some((v) => v.propId === 'unexpected-blocker')).toBe(true);
+  });
+
+  it('allowed occluder 若仍遮住 exposedRestEnvelope 會被第二階段檢查抓出', () => {
+    const emerging = drill({
+      targets: {
+        count: 1,
+        distance: 8,
+        motion: { type: 'linear', axis: 'horizontal', range: 4, speed: 4, spawnKind: 'slide-in' },
+      },
+    });
+    const hiddenRestEnvelope: TargetEnvelope = {
+      side: 'L',
+      min: { x: -2.5, y: 0.5, z: -8.5 },
+      max: { x: -1.5, y: 2.5, z: -7.5 },
+    };
+
+    const violations = validateClearance(scene([EMERGENCE_OCCLUDER], 1), emerging, {
+      allowedOcclusionPropIds: ['cover-wall'],
+      exposedRestEnvelope: hiddenRestEnvelope,
+    });
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0].propId).toBe('cover-wall');
   });
 });
