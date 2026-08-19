@@ -32,10 +32,28 @@ Upstream gates were rechecked by reference, not rerun:
 | 3 | `sessionId` is derived, not stored. The canonical derivation is `meta.session.participantId + meta.startedAt` or an equivalent stable serialization. | T3: pending |
 | 4 | `recommendationVersion` and `qualityGateStatus` are not export metadata. `recommendationVersion` belongs to WP-38 diagnostic output; `qualityGateStatus` is a quality-gate function result. | T3/WP-38: pending |
 | 5 | Assessment/Practice mode is declared by config and interpreted along five axes: difficulty, randomness, feedback, history eligibility, and retry semantics. Missing mode means Practice. | T1: pending |
-| 6 | Event timeline names are shared semantics. Downstream WPs may add task-specific fields, but must not reinterpret existing names such as `t_visible`, `t_detect`, or `t_first_on_target`. | T2: pending |
+| 6 | Event timeline names are shared semantics. Downstream WPs may add task-specific fields, but must not reinterpret existing names such as `t_visible`, `t_detect`, or `t_first_on_target`. | T2: `src/data/assessmentTimeline.ts` |
 | 7 | Compatibility key fields are closed for v1. Adding another field requires a compatibility-key version bump and a decision record. | T3: pending |
 
 These seven contracts are versioned: after T0, downstream work may only change them by recording a versioned contract change and rerunning affected compatibility decisions. They must not be edited in place to fit a later task.
+
+### 1.1 Event Timeline Field Mapping
+
+T2 adds [`AssessmentTimelinePoint`](../../src/data/assessmentTimeline.ts) as a shared field-shape contract only. It does not compute visibility, detection, acquisition, stopping, or firing times.
+
+| Field / event | Status | Owner / source | Contract meaning |
+|---|---|---|---|
+| `events.visible.t` / `t_visible` | Existing; do not redefine | WP-21 pop-in target visibility event, recorded by `TargetManager` / `DrillEvent.type === 'visible'` | Binary pop-in visibility timestamp. It anchors current reaction, detection, phase, and tracking windows. |
+| `t_detect` | Existing; do not redefine | `src/metrics/detectionDerivation.ts` and `docs/operational/analysis-t-detect.md` | Offline sustained aim-onset proxy derived from eccentricity after `t_visible`. |
+| `t_first_on_target` | Existing; do not redefine | `src/metrics/trackingDerivation.ts` and `docs/operational/analysis-tracking.md` | First tick in a presentation window where on-target is true; anchors `t_acquire` and tracking windows. |
+| `target_stop` | Existing concept; do not redefine | `src/metrics/compute.ts` / peek-window metrics | Counter-strafe stop timing currently derived from existing counter/fire/velocity semantics. |
+| `t_fire` | Existing; do not redefine | `DrillEvent.type === 'fire'`, `src/metrics/compute.ts`, and projectile/recoil tests | Fire timestamp used by first-shot, lead, recoil, and timing metrics. |
+| `tFirstVisible` | New WP-33 contract field; calculation deferred | `AssessmentTimelinePoint` | Geometric first visibility under the future continuous visibility model. In pop-in scenarios it may equal `t_visible`, but it is not the same field: pop-in has no gradual visibility fraction. |
+| `tMeasurementOnset` | New WP-33 contract field; calculation deferred | `AssessmentTimelinePoint` | Versioned measurement-onset timestamp after the visibility threshold definition is chosen by WP-34. |
+| `tFullExposure` | New WP-33 contract field; calculation deferred | `AssessmentTimelinePoint` | Timestamp when full exposure is reached under the future visibility model. |
+| `tStop` | New WP-33 contract field; calculation deferred | `AssessmentTimelinePoint` | Assessment timeline stop timestamp. Downstream WPs must define how it maps to a family-specific stop condition before filling it. |
+
+Downstream WPs must import the shared type when they need these new fields, and must keep existing `t_visible` / `t_detect` / `t_first_on_target` semantics intact. A task family may add its own fields, but cannot reuse an existing name with a different meaning.
 
 ---
 

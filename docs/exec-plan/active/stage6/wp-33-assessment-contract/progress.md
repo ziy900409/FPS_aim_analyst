@@ -11,7 +11,7 @@
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-19 | `analysis-assessment-contract.md` 起稿;D-33.1 T0 覆核;D-33.2 七項契約凍結;`npm.cmd run test:ci` exit 0 |
 | T1 metadata extension | ✅ | 2026-08-19 | `AssessmentMode`/`DrillConfig.mode`/`Meta.assessment` additive 型別與 guard;`npm.cmd run test:ci` exit 0 |
-| T2 event timeline contract | ⬜ | — | — |
+| T2 event timeline contract | ✅ | 2026-08-19 | `AssessmentTimelinePoint`/`VisibleFractionSeries` 純型別契約 + smoke test + event timeline 欄位對照表;`npm.cmd run test:ci` exit 0 |
 | T3 compatibility + quality gate | ⬜ | — | — |
 | T-exit | ⬜ | — | — |
 
@@ -21,7 +21,7 @@
 |---|---|
 | T0 | `npm.cmd run test:ci` exit 0;Vitest 98 files / 810 tests passed;Playwright 21 passed |
 | T1 | `npm.cmd run test:ci` exit 0;Vitest 98 files / 818 tests passed;Playwright 21 passed |
-| T2 | — |
+| T2 | `npm.cmd run test:ci` exit 0;Vitest 99 files / 820 tests passed;Playwright 21 passed |
 | T3 | — |
 | T-exit | — |
 
@@ -76,6 +76,16 @@ T1 實作將 `DrillConfig.mode?: 'assessment' | 'practice'` 與 `Meta.assessment
 - 「在 `mode === 'assessment'` 時預設/自動填入 `assessmentFeedbackPolicy`」— 否決:回饋政策屬 export metadata 的明示 provenance,不可由 drill config 靜默推導,也避免 Practice/Assessment 寫入時機混淆。
 - 「將缺 `mode` 的 config 正規化成 `mode: 'practice'` 回傳」— 否決:會讓既有 config round-trip 多出新 key,不符合 T1 的零回溯相容成本;省略即 practice 是語意規則,不是強制序列化規則。
 
+### D-33.4 — T2 事件時間線只凍結欄位形狀,不把可見度算法提前落地(2026-08-19,T2)
+
+T2 新增 `src/data/assessmentTimeline.ts`,只輸出 `AssessmentTimelinePoint` 與 `VisibleFractionSeries` 型別;檔案內容不含函式、不讀 sim/render/scene 狀態,維持 WP-33 的零引擎邏輯邊界。`AssessmentTimelinePoint` 欄位皆為 optional readonly,讓 WP-34~37 可逐家族補齊可取得的時間點,但不能藉由本型別重新解釋既有 `t_visible`/`t_detect`/`t_first_on_target`。
+
+`docs/operational/analysis-assessment-contract.md` 新增事件時間線欄位對照表,明確區分既有欄位與新增契約欄位:`t_visible` 是 WP-21 pop-in 的二元 visible event timestamp;`tFirstVisible` 是 WP-34 連續可見度模型下的幾何首次可見。兩者在 pop-in 場景數值上可能相等,但概念上不是同一欄位。
+
+**Alternatives considered**:
+- 「在 T2 順手加入 `visibleFraction(t)` builder 或 helper」— 否決:WP-34 T0 spike 尚未決定可見度計算方案,任何 helper 都會偷渡 engine 假設。
+- 「把 `tFirstVisible` 映射成既有 `events.visible.t` 的 camelCase alias」— 否決:會讓 pop-in 二元事件與後續連續可見度門檻混成同義欄位,違反 C-D4。
+
 ---
 
 ## Surprises
@@ -85,6 +95,10 @@ T1 實作將 `DrillConfig.mode?: 'assessment' | 'practice'` 與 `Meta.assessment
 ### S-33.1 — 既有程式碼完全沒有 Assessment/Practice 概念(T0 覆核)
 
 `rg -n "Assessment|Practice mode|feedbackPolicy" src` 對 `src/` 的相關概念零命中(`SessionSetup`/`Protocol` 命名屬既有 session/protocol 流程,語意不同)。這確認 FR-F1 的五軸契約在本 repo 是**全新**構念,沒有可複用的既有型別可延伸——T1 需要從零定義 `AssessmentMode`,不是擴充既有列舉。
+
+### S-33.2 — T2 首次完整 CI 的 Playwright bootstrap flake 可重跑消失
+
+T2 首次在 sandbox 外跑 `npm.cmd run test:ci` 時,TypeScript/Vitest 已通過,但 Playwright 11 個 E2E 在等待 `__aimDebug`/`__fpsTest` 或 renderer backend console 時 timeout。未改程式碼後重跑 `npx.cmd playwright test` 取得 21 passed,再重跑完整 `npm.cmd run test:ci` 取得 Vitest 99 files / 820 tests passed + Playwright 21 passed。判定為本機 Edge/dev-server bootstrap flake,非 T2 純型別變更造成。
 
 ---
 

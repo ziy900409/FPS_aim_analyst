@@ -7,7 +7,7 @@
 | **相依** | T0(可與 T1 並行,不需要 `AssessmentMeta`) |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | `src/data/assessmentTimeline.ts`(新) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-19) |
 
 ## Objective
 
@@ -47,10 +47,10 @@
 
 ## Steps
 
-- [ ] 新增 `src/data/assessmentTimeline.ts`,定義 `AssessmentTimelinePoint`/`VisibleFractionSeries`。
-- [ ] 型別層單元測試:斷言介面欄位存在性(TypeScript 編譯期即可保證,額外補一個 smoke test 建構最小合法物件,確認全欄位可省略)。
-- [ ] `analysis-assessment-contract.md` 補「事件時間線欄位對照表」小節,含既有 vs 新增的差異說明。
-- [ ] 覆核:`grep -rn "tFirstVisible\|tMeasurementOnset\|t_visible\|t_detect" src/` 確認新型別的命名不與既有 camelCase/snake_case 混用慣例衝突(既有匯出欄位多為 camelCase,如 `t_visible` 實際型別欄位需以 `src/metrics/peekWindows.ts` 現行命名為準核對)。
+- [x] 新增 `src/data/assessmentTimeline.ts`,定義 `AssessmentTimelinePoint`/`VisibleFractionSeries`。
+- [x] 型別層單元測試:斷言介面欄位存在性(TypeScript 編譯期即可保證,額外補一個 smoke test 建構最小合法物件,確認全欄位可省略)。
+- [x] `analysis-assessment-contract.md` 補「事件時間線欄位對照表」小節,含既有 vs 新增的差異說明。
+- [x] 覆核:`grep -rn "tFirstVisible\|tMeasurementOnset\|t_visible\|t_detect" src/` 確認新型別的命名不與既有 camelCase/snake_case 混用慣例衝突(既有匯出欄位多為 camelCase,如 `t_visible` 實際型別欄位需以 `src/metrics/peekWindows.ts` 現行命名為準核對)。
 
 ## Definition of Done
 
