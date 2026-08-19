@@ -1,4 +1,5 @@
 import type { TargetMotion } from '../state/types.ts';
+import type { AssessmentMode } from './assessmentContract.ts';
 
 export interface TargetHitboxConfig {
   widthU: number;
@@ -40,6 +41,8 @@ export interface SpawnAreaConfig {
 export interface DrillConfig {
   /** 對齊匯出 metadata（規格附錄 C `"drillId": "counterstrafe_ad_v1"`）——drill 的穩定識別。 */
   drillId: string;
+  /** WP-33 Assessment/Practice 契約;省略 = practice 語意,保留既有 drill 行為。 */
+  mode?: AssessmentMode;
   /** 選填武器 id；省略時使用預設 AK-47（`ak47`）。 */
   weaponId?: string;
   targets: {

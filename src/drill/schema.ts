@@ -1,4 +1,5 @@
 import { MAX_TARGET_HITBOX_U, type DrillConfig, type SpawnAreaConfig, type TargetHitboxConfig } from './DrillConfig.ts';
+import type { AssessmentMode } from './assessmentContract.ts';
 import type { TargetMotion } from '../state/types.ts';
 
 /**
@@ -19,6 +20,7 @@ export function validateDrill(json: unknown): DrillConfig {
   if (typeof drillId !== 'string' || drillId.length === 0) {
     throw err('drillId', '必須為非空字串');
   }
+  const mode = root.mode === undefined ? undefined : requireAssessmentMode(root.mode, 'mode');
   const weaponId =
     root.weaponId === undefined ? undefined : requireNonEmptyString(root.weaponId, 'weaponId');
 
@@ -47,6 +49,9 @@ export function validateDrill(json: unknown): DrillConfig {
   if (spawnDelayMsRange !== undefined && seed === undefined) {
     throw err('sequence.spawnDelayMsRange', '需搭配 sequence.seed');
   }
+  if (mode === 'assessment' && seed === undefined) {
+    throw err('sequence.seed', "mode='assessment' 時必填");
+  }
 
   // timing — countdownMs 非負必填;其餘非負選填。
   const timing = requireObject(root.timing, 'timing');
@@ -71,6 +76,7 @@ export function validateDrill(json: unknown): DrillConfig {
 
   return {
     drillId,
+    ...(mode !== undefined ? { mode } : {}),
     ...(weaponId !== undefined ? { weaponId } : {}),
     targets: {
       count,
@@ -171,6 +177,11 @@ function requireFiniteNumber(v: unknown, path: string): number {
 
 function requireNonEmptyString(v: unknown, path: string): string {
   if (typeof v !== 'string' || v.length === 0) throw err(path, '必須為非空字串');
+  return v;
+}
+
+function requireAssessmentMode(v: unknown, path: string): AssessmentMode {
+  if (v !== 'assessment' && v !== 'practice') throw err(path, "必須為 'assessment' 或 'practice'");
   return v;
 }
 

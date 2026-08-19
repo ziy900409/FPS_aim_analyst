@@ -65,6 +65,27 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
     expect(cfg.weaponId).toBeUndefined();
   });
 
+  it('省略 mode → 保持 undefined（語意上為 practice,既有 drill 零回溯成本）', () => {
+    const cfg = validateDrill(minimalValid());
+    expect(cfg.mode).toBeUndefined();
+  });
+
+  it("mode='practice' 不要求 sequence.seed", () => {
+    const cfg = validateDrill({ ...(minimalValid() as object), mode: 'practice' });
+    expect(cfg.mode).toBe('practice');
+    expect(cfg.sequence.seed).toBeUndefined();
+  });
+
+  it("mode='assessment' 有 sequence.seed 時通過", () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      mode: 'assessment',
+      sequence: { alternation: 'RL', seed: 20260819 },
+    });
+    expect(cfg.mode).toBe('assessment');
+    expect(cfg.sequence.seed).toBe(20260819);
+  });
+
   it('seeded spawn range 允許退化為固定值（min=max）', () => {
     const cfg = validateDrill({
       ...(minimalValid() as object),
@@ -108,6 +129,16 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
   it('未知 alternation → throw 指名 sequence.alternation', () => {
     const bad = { ...(minimalValid() as object), sequence: { alternation: 'XY' } };
     expect(() => validateDrill(bad)).toThrow(/sequence\.alternation/);
+  });
+
+  it('未知 mode → throw 指名 mode', () => {
+    const bad = { ...(minimalValid() as object), mode: 'calibration' };
+    expect(() => validateDrill(bad)).toThrow(/mode/);
+  });
+
+  it("mode='assessment' 缺 sequence.seed → throw 指名 sequence.seed", () => {
+    const bad = { ...(minimalValid() as object), mode: 'assessment' };
+    expect(() => validateDrill(bad)).toThrow(/sequence\.seed/);
   });
 
   it('未知 endCondition.type → throw', () => {

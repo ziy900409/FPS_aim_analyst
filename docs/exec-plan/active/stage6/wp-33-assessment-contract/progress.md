@@ -10,7 +10,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-19 | `analysis-assessment-contract.md` 起稿;D-33.1 T0 覆核;D-33.2 七項契約凍結;`npm.cmd run test:ci` exit 0 |
-| T1 metadata extension | ⬜ | — | — |
+| T1 metadata extension | ✅ | 2026-08-19 | `AssessmentMode`/`DrillConfig.mode`/`Meta.assessment` additive 型別與 guard;`npm.cmd run test:ci` exit 0 |
 | T2 event timeline contract | ⬜ | — | — |
 | T3 compatibility + quality gate | ⬜ | — | — |
 | T-exit | ⬜ | — | — |
@@ -20,7 +20,7 @@
 | Task | `npm run test:ci` |
 |---|---|
 | T0 | `npm.cmd run test:ci` exit 0;Vitest 98 files / 810 tests passed;Playwright 21 passed |
-| T1 | — |
+| T1 | `npm.cmd run test:ci` exit 0;Vitest 98 files / 818 tests passed;Playwright 21 passed |
 | T2 | — |
 | T3 | — |
 | T-exit | — |
@@ -65,6 +65,16 @@ T0 以 `codegraph_explore` + 直接讀碼覆核 `src/data/metadata.ts`、`src/dr
 **Alternatives considered**:
 - 「T1/T2/T3 實作時再各自決定欄位落點」— 否決:會讓三個測試家族與診斷層分裂,重蹈 C-D4 的同名不同義風險。
 - 「先把 FR-F2 字面欄位全放入 `Meta.assessment`」— 否決:其中四項已有既有欄位、推導來源或下游診斷歸屬,全放入 export meta 會製造第二來源。
+
+### D-33.3 — T1 僅落 additive 型別/guard,不引入 engine 行為分支(2026-08-19,T1)
+
+T1 實作將 `DrillConfig.mode?: 'assessment' | 'practice'` 與 `Meta.assessment?` 落地為可省略欄位;省略 `mode` 與省略 `assessment` 均保持輸出物件不新增 key,既有 drill/export 行為不變。`validateDrill()` 僅做兩個存在性檢查:mode 值域必須封閉;`mode === 'assessment'` 時必須有 `sequence.seed`。它不檢查 difficulty、schedule 內容、feedback 顯示、history 或 retry 行為,避免把 WP-34~38 的 engine/UI/diagnostic 職責提前塞入 WP-33。
+
+`Meta.assessment` 以獨立 `requireAssessmentMeta()` guard 驗證 `protocolVersion` 與 `assessmentFeedbackPolicy`,並允許它與既有 `Meta.protocol` 同時存在;測試覆蓋兩者互不覆寫。T1 沒有新增 `gameMovementProfile`、`sessionId`、`recommendationVersion`、`qualityGateStatus` 四個被 T0 排除的欄位。
+
+**Alternatives considered**:
+- 「在 `mode === 'assessment'` 時預設/自動填入 `assessmentFeedbackPolicy`」— 否決:回饋政策屬 export metadata 的明示 provenance,不可由 drill config 靜默推導,也避免 Practice/Assessment 寫入時機混淆。
+- 「將缺 `mode` 的 config 正規化成 `mode: 'practice'` 回傳」— 否決:會讓既有 config round-trip 多出新 key,不符合 T1 的零回溯相容成本;省略即 practice 是語意規則,不是強制序列化規則。
 
 ---
 

@@ -7,7 +7,7 @@
 | **相依** | T0 |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | `src/drill/DrillConfig.ts`、`src/drill/assessmentContract.ts`(新)、`src/drill/schema.ts`、`src/data/metadata.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-19) |
 
 ## Objective
 

@@ -510,6 +510,77 @@ describe('collectMeta', () => {
     });
   });
 
+  it('omits assessment metadata when assessment is not provided', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    });
+
+    expect(meta.assessment).toBeUndefined();
+    expect('assessment' in meta).toBe(false);
+  });
+
+  it('accepts assessment metadata independently from pilot protocol metadata', () => {
+    const meta = collectMeta({
+      drillId: 'hold_click_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      protocol: {
+        protocolId: ' resolution_detection_v1 ',
+        conditionIndex: 1,
+        conditionLabel: ' qhd-1440-field-low-detection ',
+      },
+      assessment: {
+        protocolVersion: ' hold-click-v1@1.0.0 ',
+        assessmentFeedbackPolicy: 'minimal-end-of-block',
+      },
+    });
+
+    expect(meta.protocol).toEqual({
+      protocolId: 'resolution_detection_v1',
+      conditionIndex: 1,
+      conditionLabel: 'qhd-1440-field-low-detection',
+    });
+    expect(meta.assessment).toEqual({
+      protocolVersion: 'hold-click-v1@1.0.0',
+      assessmentFeedbackPolicy: 'minimal-end-of-block',
+    });
+  });
+
+  it('rejects malformed assessment metadata', () => {
+    const valid: CollectMetaArgs = {
+      drillId: 'hold_click_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() =>
+      collectMeta({
+        ...valid,
+        assessment: { protocolVersion: ' ', assessmentFeedbackPolicy: 'minimal-end-of-block' },
+      }),
+    ).toThrow('assessment.protocolVersion');
+    expect(() =>
+      collectMeta({
+        ...valid,
+        assessment: {
+          protocolVersion: 'hold-click-v1@1.0.0',
+          assessmentFeedbackPolicy: 'full-live' as unknown as 'minimal-end-of-block',
+        },
+      }),
+    ).toThrow('assessment.assessmentFeedbackPolicy');
+  });
+
   it('rejects malformed protocol metadata', () => {
     const valid: CollectMetaArgs = {
       drillId: 'detection_popin_v1',

@@ -10,7 +10,7 @@
 | **相依** | **M4 ✅**(schema v2)+ **WP-20 ✅**(`meta.session`/`meta.protocol`/`meta.display` 既有 additive 慣例) |
 | **對應 FR** | FR-F1(模式契約)+ FR-F2(metadata 擴充)+ FR-F3(事件時間線契約)+ FR-F4(相容鍵 + 品質旗標) |
 | **估時** | 2–3 dev-days(見 [../README.md §6](../README.md)) |
-| **狀態** | 🟡 T0 完成(2026-08-19);T1 待開工 |
+| **狀態** | 🟡 T0/T1 完成(2026-08-19);T2 待開工 |
 
 ---
 

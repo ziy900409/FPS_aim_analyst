@@ -70,6 +70,11 @@ export interface ProtocolMeta {
   conditionLabel: string;
 }
 
+export interface AssessmentMeta {
+  protocolVersion: string;
+  assessmentFeedbackPolicy: 'minimal-end-of-block' | 'unrestricted';
+}
+
 export interface Meta {
   schemaVersion: 2;
   drillId: string;
@@ -122,6 +127,7 @@ export interface Meta {
   frames?: FrameLogExport;
   session?: SessionMeta;
   protocol?: ProtocolMeta;
+  assessment?: AssessmentMeta;
   /**
    * 逐 tick 角位移的產生模型(KI-005 / A T2,FR-A-6)。缺席 ⇒ `ticks[].dYaw`/`dPitch`
    * 亦缺席,離線消費者必須退回 aim 差分並標記 source(`aim-diff-legacy`)。
@@ -173,6 +179,7 @@ export interface CollectMetaArgs {
   frames?: FrameLogExport;
   session?: SessionMeta;
   protocol?: ProtocolMeta;
+  assessment?: AssessmentMeta;
   mouseIntegration?: MouseIntegrationMeta;
 }
 
@@ -216,6 +223,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const frames = args.frames === undefined ? undefined : requireFrameLogExport(args.frames);
   const session = args.session === undefined ? undefined : requireSessionMeta(args.session);
   const protocol = args.protocol === undefined ? undefined : requireProtocolMeta(args.protocol);
+  const assessment = args.assessment === undefined ? undefined : requireAssessmentMeta(args.assessment);
   const mouseIntegration =
     args.mouseIntegration === undefined ? undefined : requireMouseIntegrationMeta(args.mouseIntegration);
   const weapon = args.weapon === undefined ? undefined : requireWeaponMeta(args.weapon);
@@ -255,6 +263,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(frames !== undefined ? { frames } : {}),
     ...(session !== undefined ? { session } : {}),
     ...(protocol !== undefined ? { protocol } : {}),
+    ...(assessment !== undefined ? { assessment } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
   };
 }
@@ -442,6 +451,18 @@ function requireProtocolMeta(value: unknown): ProtocolMeta {
     protocolId: requireTrimmedNonEmptyString(protocol.protocolId, 'protocol.protocolId'),
     conditionIndex: requireNonNegativeInteger(protocol.conditionIndex, 'protocol.conditionIndex'),
     conditionLabel: requireTrimmedNonEmptyString(protocol.conditionLabel, 'protocol.conditionLabel'),
+  };
+}
+
+function requireAssessmentMeta(value: unknown): AssessmentMeta {
+  const assessment = requireRecord(value, 'assessment');
+  const assessmentFeedbackPolicy = assessment.assessmentFeedbackPolicy;
+  if (assessmentFeedbackPolicy !== 'minimal-end-of-block' && assessmentFeedbackPolicy !== 'unrestricted') {
+    throw new Error('assessment.assessmentFeedbackPolicy must be minimal-end-of-block or unrestricted');
+  }
+  return {
+    protocolVersion: requireTrimmedNonEmptyString(assessment.protocolVersion, 'assessment.protocolVersion'),
+    assessmentFeedbackPolicy,
   };
 }
 
