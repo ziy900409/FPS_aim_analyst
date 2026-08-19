@@ -13,7 +13,17 @@
 | T1 visibility derivation | ✅ | 2026-08-19 | 新增 `src/metrics/visibilityDerivation.ts` + 4 個合成 fixture 單測;`analysis-visibility.md` 起稿;`npm run test:ci` 全綠(見閘證據) |
 | T2 occlusion scene + clearance | 🟡 impl done / gate blocked | 2026-08-19 | `ClearanceOptions` additive API + `peek-corridor` procedural scene; strict legacy clearance remains unchanged; targeted scene/clearance tests green. Full `npm run test:ci` blocked by existing Playwright app-ready timeout in `input-sampler.spec.ts`(見 S-34.3) |
 | T3 hold-click protocol | 🟡 impl done / gate blocked | 2026-08-19 | `hold_click_v1` scene-drill config + `deriveHoldClickMetrics()` assembly; targeted T3 gate green. Full `npm run test:ci` blocked by existing Playwright app-ready timeout in `input-sampler.spec.ts`(見 S-34.4) |
-| T-exit | ⬜ | — | — |
+| T-exit | ✅ | 2026-08-19 | 框架 v1 驗收條件逐項覆核(見下);`analysis-visibility.md` 定稿(補 occlusion-aware clearance 政策 + Known Limitations);CONTEXT.md 回寫 `visibleFraction`/`occlusion-aware clearance`;OQ-S6-12 明確記錄為未阻塞、延後 WP-39 pilot,OQ-S6-13 維持 D-34.4 已關閉;`npm run test:ci` 證據見下(S-34.5) |
+
+**框架 v1 驗收條件逐項覆核**(範圍限本 WP 可交付項,其餘留給 WP-35~39):
+
+| 條件([aim-assessment-framework-v1.md §驗收條件](../aim-assessment-framework-v1.md)) | 狀態 | 證據 |
+|---|---|---|
+| 相同 config、seed 與輸入序列可得到相同逐 tick／event 結果 | ✅ | `visibilityDerivation.ts`/`holdClickMetrics.ts` 皆為離線純函式,零時鐘/隨機依賴;既有決定性 regression 測試(`tests/regression/*.test.ts`)不受本 WP 影響,`npm run test:ci` Vitest 全綠 |
+| 架槍的可見比例、正式 onset、停止與開火事件可被重建 | 🟡 部分(本 WP 範圍) | `visibleFraction(t)`/`t_first_visible`/`t_measurement_onset`/`t_full_exposure` 可由 `ExportPayload` + `SceneConfig` 離線重建(T1);「停止」事件屬 `hold-track-v1`(WP-35)範圍,本 WP 不宣稱 |
+| **`hold-click` 不宣稱輸出獨立 tracking 能力** | ✅ | `HoldClickPresentationMetrics` 只輸出預瞄/可見度 onset/detection latency/acquisition/first-shot/anticipation;呼叫既有 `deriveTrackingMetrics()` 只取 `tFirstOnTargetMs` 一個既有量,不新增任何 TOT%/RMS(ε) 等 tracking 構念(T3 DoD ④,`hold_click_v1.ts`/`holdClickMetrics.ts` 零 tracking 輸出欄位) |
+| 不相容 session 不會產生進步/退步結論 | N/A(本 WP 範圍外) | 屬 WP-38 診斷/縱向追蹤層,本 WP 不產生任何 session 比較邏輯 |
+| 所有新指標先通過現有 validity／quality gate 才能進推薦規則 | N/A(本 WP 範圍外) | 本 WP 的 `visibleFraction`/`hold-click-v1` 指標尚未接入任何教練報告/推薦規則;reliability gate 接入屬後續 WP |
 
 **閘證據**:
 
@@ -23,7 +33,7 @@
 | T1 | 2026-08-19 14:40+02:00:首跑在 sandbox 內被 Windows 權限擋於 Vitest config 載入(`Cannot read directory "../../../..": Access is denied`);非 sandbox 重跑同一命令通過:`tsc --noEmit` + Vitest **101 files / 845 tests passed** + Playwright **21 passed** |
 | T2 | 2026-08-19 14:48+02:00:`npx.cmd vitest run src\scene\clearance.test.ts` 通過(**16 tests passed**);14:49+02:00 scene/clearance targeted gate 通過(**5 files / 34 tests passed**);`npm run typecheck` 通過。完整 `npm run test:ci` sandbox 內因 Windows 權限無法載入 Vite config;非 sandbox 重跑兩次皆通過 `tsc --noEmit` + Vitest **102 files / 853 tests passed**,但 Playwright full suite 皆 **20/21 passed, 1 failed**於既有 `tests/e2e/input-sampler.spec.ts` app-ready timeout。單跑 `npx.cmd playwright test tests/e2e/input-sampler.spec.ts` 通過(**5 passed**) |
 | T3 | 2026-08-19 15:09+02:00 targeted: `npm run typecheck` 通過;`npx.cmd vitest run src\drill\hold_click_v1.test.ts src\metrics\holdClickMetrics.test.ts src\drill\DrillLoader.test.ts src\testharness\fpsTestHarness.test.ts` 通過(**4 files / 25 tests passed**)。15:15+02:00 非 sandbox `npm run test:ci`: `tsc --noEmit` + Vitest **104 files / 860 tests passed**,Playwright full suite **20/21 passed, 1 failed**於既有 `tests/e2e/input-sampler.spec.ts` app-ready polling timeout。15:18+02:00 非 sandbox 單跑 `npx.cmd playwright test tests/e2e/input-sampler.spec.ts` 通過(**5 passed**) |
-| T-exit | — |
+| T-exit | 2026-08-19:targeted gate 重跑(`npx.cmd vitest run src/scene/clearance.test.ts src/scene/scenes/peek-corridor.test.ts src/drill/hold_click_v1.test.ts src/metrics/holdClickMetrics.test.ts src/drill/DrillLoader.test.ts src/testharness/fpsTestHarness.test.ts`)通過(**6 files / 45 tests passed**);`npm run typecheck` 通過。完整 `npm run test:ci`: `tsc --noEmit` + Vitest **104 files / 860 tests passed**;Playwright full suite **19/21 passed, 2 failed**(`tests/e2e/backend.spec.ts` + `tests/e2e/input-sampler.spec.ts:65`),皆為既有 `gotoAppReady()` app-ready polling timeout(見 S-34.5)。單跑該兩檔 `npx.cmd playwright test tests/e2e/backend.spec.ts tests/e2e/input-sampler.spec.ts` 通過(**6 passed**) |
 
 ---
 
@@ -116,8 +126,12 @@ T3 驗證時,sandbox 內完整 `npm run test:ci` 先因 Windows 權限無法讀�
 
 **Evidence**:失敗點與 T2 的 S-34.3 同屬 input-sampler app readiness polling,不是 `hold_click_v1`、`deriveHoldClickMetrics`、`loadDrill` options 或 `peek-corridor` 場景載入路徑。T3 targeted gate 與 typecheck 全綠;完整 gate 是否接受此既有 E2E flake 仍需使用者/後續 task 決定。
 
+### S-34.5 — T-exit 全綠 gate 重跑顯示同一既有 flake 的失敗案例集合會變動(2 案例,含新出現的 `backend.spec.ts`),確認與本 WP 無關
+
+T-exit 驗收時重跑完整 `npm run test:ci`:`tsc --noEmit` 與 Vitest 仍 **104 files / 860 tests passed**(逐位同 T2/T3),但 Playwright full suite 這次是 **19/21 passed, 2 failed**——失敗案例從 S-34.3/S-34.4 的單一 `input-sampler.spec.ts` 案例,變成 `tests/e2e/backend.spec.ts`(`backends.length` 5s poll timeout)與 `tests/e2e/input-sampler.spec.ts:65`(`window.__aimDebug` 5s poll timeout)兩個不同案例。兩者皆是 `gotoAppReady()`/dev server 就緒的計時 flake,與 `backend.spec.ts` 本身(不觸碰 `peek-corridor`/`hold_click_v1`/`holdClickMetrics`)以及本 WP 新增程式碼路徑無關。單獨重跑這兩檔(`npx.cmd playwright test tests/e2e/backend.spec.ts tests/e2e/input-sampler.spec.ts`)**6/6 全綠**——與 S-34.3/S-34.4 同一 flake 家族(dev server 啟動計時,非測試邏輯錯誤),但**失敗案例集合並非固定**,提示此既有 flake 的根因可能是並行 worker 下的 dev-server 啟動時序競態,值得後續獨立追蹤(未開 KI,因非本 WP 引入且不影響 WP-34 交付範圍)。
+
 ---
 
 ## Open Questions
 
-見 [README.md §7](README.md):OQ-S6-12(取樣點數 N 的邊界穩定性)。OQ-S6-13 已由 D-34.4 解決:新增獨立 `peek-corridor` sceneId,不新增 `clutterTier`。
+見 [README.md §7](README.md)。**OQ-S6-13** 已由 D-34.4 關閉:新增獨立 `peek-corridor` sceneId,不新增 `clutterTier`。**OQ-S6-12**(取樣點數 N 的邊界穩定性)於 T-exit 明確記錄為**不阻塞本 WP 收斂**:T1 合成 fixture 已量化敏感度(N=1 報 1.0、N=9 報 5/9),`N=9`/`onsetThreshold=0.5` 已作為 pre-registered candidate 寫入 `analysis-visibility.md` 並由 `hold_click_v1.ts` 凍結引用;最終數值凍結留給 **WP-39 calibration pilot**(對應框架文件 OQ-AF-01),不因 WP-34 收斂而搶先凍結。

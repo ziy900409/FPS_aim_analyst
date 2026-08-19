@@ -10,7 +10,7 @@
 | **相依** | **WP-33**(共同契約,`AssessmentTimelinePoint`/`DrillConfig.mode`)——T0 spike 本身零程式碼,已提前於 WP-33 完成前執行;T1 起需要 WP-33 T-exit |
 | **對應 FR** | FR-F5(可見度時間線)+ FR-F6(`hold-click-v1`) |
 | **估時** | 2.5–3.5 dev-days(T0 spike 完成後由原估 3–5d 下修,見 [../README.md §6](../README.md) 與 progress.md D-34.1) |
-| **狀態** | 🟡 T0/T1 已完成;T2/T3 implementation done but full `npm run test:ci` gate blocked by existing Playwright app-ready timeout(S-34.3/S-34.4,2026-08-19);T-exit 待展開 |
+| **狀態** | ✅ T0~T3+T-exit 全數完成(2026-08-19)。`npm run test:ci` 的 `tsc --noEmit` + Vitest 全綠;Playwright 既有 `input-sampler.spec.ts`/`backend.spec.ts` app-ready flake 與本 WP 無關(S-34.3/S-34.4/S-34.5,單跑皆綠)。開放 WP-35(`hold-track-v1`)entry |
 
 ---
 
@@ -115,7 +115,7 @@ docs/operational/analysis-visibility.md   ← ADD 可見度契約文件(取樣�
 | **T1** | [T1-visibility-derivation.md](T1-visibility-derivation.md) | `visibilityDerivation.ts`:`visibleFraction`/`tFirstVisible`/`tMeasurementOnset`/`tFullExposure` + 合成 fixture | T0 | ✅ 完成 | 1–1.25d |
 | **T2** | [T2-occlusion-scene-clearance.md](T2-occlusion-scene-clearance.md) | Occlusion-aware `validateClearance` + 新 occlusion 場景內容(程序化牆) | T0(可與 T1 並行,不同檔案) | 🟡 impl done / gate blocked(S-34.3) | 0.75–1d |
 | **T3** | [T3-hold-click-protocol.md](T3-hold-click-protocol.md) | `hold-click-v1` 協定 config + 預瞄/反應/取得/首發指標 | T1 + T2 | 🟡 impl done / gate blocked(S-34.4) | 0.5–0.75d |
-| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 驗收:`hold-click` 不宣稱獨立 tracking 能力;`analysis-visibility.md` 定稿 | T3 | — | 0.25d |
+| **T-exit** | [T-exit-gate.md](T-exit-gate.md) | 驗收:`hold-click` 不宣稱獨立 tracking 能力;`analysis-visibility.md` 定稿 | T3 | ✅ 完成 | 0.25d |
 
 **T1 與 T2 檔案熱區不重疊**(`src/metrics/` vs `src/scene/` + 新 props.json)→ 可並行;一 task 一 commit 的紀律不變。
 
@@ -168,13 +168,14 @@ export function validateClearance(scene: SceneConfig, drill: DrillConfig, option
 
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| **OQ-S6-12**(新) | `visibleFraction` 取樣點數 N=9(中心+8角)是否足以避免「目標邊緣掠過遮蔽物角落」時的離散跳變假象 | 🟡 **T1 合成 fixture 驗證**;若不穩定,candidate 為解析式角點插值(非離散取樣) | 研究者 | WP-34 T1 | `t_measurement_onset` 的可重現性 |
+| **OQ-S6-12**(新) | `visibleFraction` 取樣點數 N=9(中心+8角)是否足以避免「目標邊緣掠過遮蔽物角落」時的離散跳變假象 | 🟡 **T1 合成 fixture 已量化**(N=1 報 1.0、N=9 報 5/9);**不阻塞本 WP T-exit**——N=9/onsetThreshold=0.5 已作為 pre-registered candidate 寫入 `analysis-visibility.md`,最終凍結留給 **WP-39 pilot** | 研究者 | WP-39 | `t_measurement_onset` 的可重現性(v1 走候選值) |
 | **OQ-S6-13**(新) | Occlusion-aware 場景是否需要獨立的 `clutterTier`,或沿用既有三階層語意 | ✅ **T2 已拍板(D-34.4)**:新增獨立 `peek-corridor` sceneId,沿用 `clutterTier: 'low'`;不擴充 clutter taxonomy | 研究者 | WP-34 T2 | 已解決 |
 
 ---
 
 ## 8. 文件對帳清單
 
-- [ ] [../README.md](../README.md) §3/§6:WP-34 狀態與估時已於本次 T0 更新(2026-08-19)。
-- [x] `docs/operational/analysis-visibility.md`(新,T1 起稿/T-exit 定稿)。
-- [ ] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`visibleFraction`、`t_measurement_onset`、`occlusion-aware clearance`)於 T-exit 回寫。
+- [x] [../README.md](../README.md) §3/§6/§9:WP-34 狀態於 T0 更新(2026-08-19),T-exit 翻 ✅、T2/T3 Task 表與 OQ-S6-12/13 狀態同步更新(2026-08-19)。
+- [x] `docs/operational/analysis-visibility.md`(新,T1 起稿/T-exit 定稿:補 occlusion-aware clearance 政策章節 + Known Limitations)。
+- [x] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`visibleFraction`／可見度時間線、`occlusion-aware clearance`)於 T-exit 回寫(§A/§C)。`t_measurement_onset` 併入 `visibleFraction` 條目說明,未獨立立條。
+- [x] [../../README.md](../../README.md)(exec-plan 頂層 WP 索引):WP-34 狀態翻 ✅。

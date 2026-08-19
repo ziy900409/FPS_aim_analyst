@@ -111,7 +111,7 @@
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
 | **WP-33** | [`active/stage6/wp-33-assessment-contract/`](active/stage6/wp-33-assessment-contract/README.md) | 共同契約：Assessment/Practice 模式分離 + metadata 擴充 + 事件時間線契約 + 相容比較鍵/品質旗標 | — | M4 ✅ + WP-20 ✅ | 2–3 | 🟡 T0 完成 |
-| **WP-34** | [`active/stage6/wp-34-hold-click-visibility/`](active/stage6/wp-34-hold-click-visibility/README.md) | 架槍 `hold-click-v1` + 遮蔽物可見度時間線（T0 讀碼 spike ✅ 完成,候選②拍板） | — | WP-33 | 2.5–3.5 | 🟡 T0 完成 |
+| **WP-34** | [`active/stage6/wp-34-hold-click-visibility/`](active/stage6/wp-34-hold-click-visibility/README.md) | 架槍 `hold-click-v1` + 遮蔽物可見度時間線（T0~T-exit ✅ 全數完成,開放 WP-35 entry） | — | WP-33 | 2.5–3.5 | ✅ |
 | **WP-35** | `active/stage6/wp-35-hold-track/`（⬜ 待建立） | 架槍 `hold-track-v1`：移動期間鎖 fire、停止後解鎖、追蹤窗指標 | — | WP-34 | 2–3 | ⬜ 待建立 |
 | **WP-36** | `active/stage6/wp-36-spider-shot/`（⬜ 待建立） | Spider Shot `spider-shot-v1`：單目標約束 + 中心—周邊 seeded 排程 | — | WP-33 | 2.5–3.5 | ⬜ 待建立 |
 | **WP-37** | `active/stage6/wp-37-counterstrafe-protocols/`（⬜ 待建立） | 急停三協定包裝（`cued`/`reversal`/`free`）+ L/R 對稱指標 | — | WP-33 | 2–3 | ⬜ 待建立 |
