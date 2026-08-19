@@ -542,6 +542,24 @@ function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecor
   }
 }
 
+/** Export each target_stop once, from the same sim tick that TargetManager records in state.tStop. */
+function recordTargetStopEvents(state: SharedState, t: number, recorder?: DataRecorder): void {
+  if (recorder === undefined) return;
+  for (let i = 0; i < state.targets.length; i++) {
+    const target = state.targets[i];
+    if (state.tStop.get(target.id) === t) {
+      recorder.recordEvent({
+        type: 'target_stop',
+        targetId: target.id,
+        t,
+        targetX: target.pos.x,
+        targetY: target.pos.y,
+        targetZ: target.pos.z,
+      });
+    }
+  }
+}
+
 /**
  * 推進一個固定 tick（純函式邊界，OQ-2.4：只讀寫傳入 state、不讀 `performance.now()`、不碰 DOM；
  * 預留階段 B Worker 搬遷）。`tickEndMs` = 本 tick 邏輯窗結束時間（量測時鐘域 ms），供輸入分桶。
@@ -606,6 +624,7 @@ export function simStep(
   if (drillRunner !== undefined) drillRunner.tick(state, tickEndMs);
   else targetManager?.tick(state, tickEndMs);
   recordVisibleEvents(state, tickEndMs, recorder);
+  recordTargetStopEvents(state, tickEndMs, recorder);
   advanceProjectiles(state, dtSec, tickStartMs, tickEndMs, targetManager, recorder, weapon);
 
   // recoil 衰減（WP-13 / T1）：64Hz 子節奏 = 偶數 tick（128Hz sim）；dtSec **恆常數 1/64**（GD-5，

@@ -64,6 +64,7 @@ import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
 import { holdClickV1 } from './drill/hold_click_v1.ts';
+import { holdTrackV1 } from './drill/hold_track_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -124,6 +125,13 @@ const availableDrills: AvailableDrill[] = [
     source: holdClickV1.drill,
     sceneId: holdClickV1.sceneId,
     loadOptions: { clearance: holdClickV1.clearanceOptions },
+  },
+  {
+    id: holdTrackV1.id,
+    label: holdTrackV1.id,
+    source: holdTrackV1.drill,
+    sceneId: holdTrackV1.sceneId,
+    loadOptions: { clearance: holdTrackV1.clearanceOptions },
   },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,

@@ -7,7 +7,7 @@
 | **相依** | T1(`fireLocked`/`tStop` 落地) |
 | **Risk / Cplx** | Med / Med |
 | **Touches** | `src/drill/hold_track_v1.ts`(新)、`src/metrics/trackingTransitions.ts`(新)、`src/metrics/stopTransitionDerivation.ts`(新) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-19) |
 
 ## Objective
 
@@ -30,12 +30,12 @@
 
 ## Steps
 
-- [ ] 確認 `tStop` 是否需要匯出面(`ExportPayload`/`meta`)攜帶;若需要,additive 補上(比照既有 `t_visible` 匯出慣例)。
-- [ ] 實作 `hold_track_v1.ts`。
-- [ ] 實作 `deriveTrackingTransitions`,合成 fixture 覆蓋:持續 on-target 無掉靶 / 單次掉靶後重新取得 / 掉靶至窗口結束未重新取得三案例。
-- [ ] 實作 `deriveStopTransitions`,合成 fixture 覆蓋:停止後立即開火 / 延遲開火 / 完全未開火三案例。
-- [ ] 端到端合成 drill 測試:提早開火(命中)/準時開火/逾時未開火三案例,斷言追蹤窗(`windowEndMs − tVisibleMs`)三案例數值相同(不受開火時機影響)。
-- [ ] 確認新 drill 不誤用 WP-31/既有 research-only 指標(若涉及呈現層,沿用 C-D3;本 task 只到指標計算,不涉及呈現)。
+- [x] `tStop` 未存在於 `ExportPayload`;已以 additive `target_stop` event 匯出時間戳與凍結座標(比照 `visible` event)。
+- [x] 實作 `hold_track_v1.ts`。
+- [x] 實作 `deriveTrackingTransitions`,合成 fixture 覆蓋:持續 on-target 無掉靶 / 單次掉靶後重新取得 / 掉靶至窗口結束未重新取得三案例。
+- [x] 實作 `deriveStopTransitions`,合成 fixture 覆蓋:停止後立即開火 / 延遲開火 / 完全未開火三案例。
+- [x] 合成 drill fixture:提早開火(命中)/準時開火/逾時未開火三案例,斷言追蹤窗(`windowEndMs − tVisibleMs`)三案例數值相同(不受開火時機影響)。
+- [x] 確認新 drill 不誤用 WP-31/既有 research-only 指標(本 task 只到指標計算,不涉及呈現)。
 
 ## Definition of Done
 

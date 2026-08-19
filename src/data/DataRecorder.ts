@@ -19,6 +19,8 @@ export type DrillEvent =
     }
   | { type: 'counter'; key: string; t: number }
   | { type: 'ads'; down: boolean; t: number }
+  /** hold-track target_stop: target motion froze and fire gating was released on this sim tick. */
+  | { type: 'target_stop'; targetId: string; t: number; targetX: number; targetY: number; targetZ: number }
   // WP-29 / T3（使用者 override，additive observability）：鍵 down/up 以 input `timeStamp`（sub-tick）記錄，
   // 供離線推導「鬆原方向鍵」的直接釋放時刻（補 tick-derived release 的 ±1 tick 量化）。`code` 為 canonical
   // 鍵名（`A`/`D`/`W`/`S`，對齊 `ticks[].keys`，不引入第二套鍵名慣例）。**opt-in**：僅 `recordKeyEvents` 啟用時

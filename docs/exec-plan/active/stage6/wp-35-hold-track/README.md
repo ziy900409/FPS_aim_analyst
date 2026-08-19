@@ -10,7 +10,7 @@
 | **相依** | **WP-34 T-exit**(共用 emergence/exposure 機制;[../README.md §5](../README.md) 相依圖) |
 | **對應 FR** | FR-F7(`hold-track-v1`) |
 | **估時** | 2–3 dev-days([../README.md §6](../README.md));讀碼發現追蹤窗核心指標多數已有實作,T0 若確認掉靶/重新取得時間可用既有 `TrackingSample[]` 離線推導(不碰既有幾何函式),估時傾向落在下緣;若發現需要更深的 `trackingDerivation.ts` 改動則上修,由 T0 記錄判斷 |
-| **狀態** | 🟡 T0 entry-gate ✅(2026-08-19);T1 可開工 |
+| **狀態** | 🟡 T0–T2 ✅(2026-08-19);T-exit 可開工 |
 
 ---
 

@@ -11,7 +11,7 @@
 |---|---|---|---|
 | T0 entry-gate | ✅ | 2026-08-19 | WP-34 T-exit 已覆核;README §0 五條讀碼發現仍成立;OQ-S6-9/OQ-S6-14 已拍板(D-35.1/D-35.2);`TrackingSample`/`deriveTrackingSamples` 匯出面確認可供 T2 消費;零 `src/` diff |
 | T1 fire-gating + target_stop | ✅ | 2026-08-19 | `npm run test:ci`: `tsc --noEmit` + Vitest **105 files / 864 tests passed** + Playwright **21 passed** |
-| T2 tracking + stop-transition metrics | ⬜ | — | — |
+| T2 tracking + stop-transition metrics | ✅ | 2026-08-19 | `target_stop` additive export + `hold_track_v1` + transition derivations; `npm run test:ci`: `tsc --noEmit` + Vitest **109 files / 872 tests passed** + Playwright **21 passed** |
 | T-exit | ⬜ | — | — |
 
 **閘證據**:
@@ -20,6 +20,7 @@
 |---|---|
 | T0 | 2026-08-19 16:11+02:00: sandbox 內首跑被 Windows 權限擋於 Vitest/Vite config 載入(`Cannot read directory "../../../..": Access is denied`);非 sandbox 重跑同一命令通過:`tsc --noEmit` + Vitest **104 files / 860 tests passed** + Playwright **21 passed** |
 | T1 | 2026-08-19 16:21+02:00: non-sandbox `npm run test:ci` 通過：`tsc --noEmit` + Vitest **105 files / 864 tests passed** + Playwright **21 passed** |
+| T2 | 2026-08-19 16:33+02:00: non-sandbox `npm run test:ci` 通過：`tsc --noEmit` + Vitest **109 files / 872 tests passed** + Playwright **21 passed** |
 
 ---
 
@@ -77,6 +78,17 @@
 - 另加 `TargetState.motionFrozen?: boolean`。未採用:會建立只服務於引擎而非測量的第二份 stop 狀態，並增加 reset/撤除時的同步義務；`tStop` 已是 target_stop 的權威事件紀錄。
 - 解除 `fireLocked` 後保留現有 motion drive。未採用:針對性測試顯示下一 tick 位置會由 `x=3` 繼續到 `x=4`，違反「原地凍結」。
 
+### D-35.5 — `tStop` 以 additive `target_stop` event 匯出；終止未重新取得的掉靶不納入 reacquire 平均(2026-08-19,T2)
+
+`SharedState.tStop` 是執行期 Map，不屬於 `ExportPayload`。T2 在 `TargetManager` 已於同 tick 寫入後，由 `SimLoop` 記錄一次 `{ type: 'target_stop', targetId, t, targetX, targetY, targetZ }`；此事件同時固定停止位置，讓離線的停止後首發角度誤差能複用 `eyeOrigin.ts`，而不需要第二套 target-position 推導。
+
+`deriveStopTransitions()` 以 `buildPeekWindows()` 的既有 `firstFire` 選擇首發，僅接受 `t_fire ≥ t_stop` 的首發；`firstShotHitAfterStop` 沿用該 fire event 的既有 hit outcome。`deriveTrackingTransitions()` 僅在第一個 on-target 後計 true→false，並只在窗口結束前 false→true 時記錄 reacquire duration；掉靶直到窗口結束未恢復者仍計 `dropCount`，但不加入 `reacquireMs`，避免以任意上界污染平均值與樣本數。
+
+**Alternatives considered**:
+
+- 把 `tStop` 寫入 `meta`。未採用:meta 是 drill/run 層資料，無法表示每個 target 的時間與停止座標；event timeline 與既有 `visible` 語意一致。
+- 對未重新取得者填入「窗口剩餘時間」。未採用:這會把右截尾觀測誤作已觀測 duration；保留在 dropCount 並由後續呈現層明示有效 `reacquireMs` 樣本數。
+
 ---
 
 ## Surprises
@@ -91,4 +103,4 @@
 
 ## Open Questions
 
-見 [README.md §7](README.md)。**OQ-S6-9** 已由 D-35.1 關閉:fire-gating 以 `TargetState.fireLocked` + `scheduleFire` additive AND 條件實作,不併入 `nextFireT`/彈匣語意。**OQ-S6-14** 已由 D-35.2 關閉:新增獨立 `timing.trackingStopMs`,並在 T1 schema 拒絕與 `presentationMs` 併用。**OQ-S6-15** 留給 T2 拍板,不阻塞 T1。
+見 [README.md §7](README.md)。**OQ-S6-9** 已由 D-35.1 關閉:fire-gating 以 `TargetState.fireLocked` + `scheduleFire` additive AND 條件實作,不併入 `nextFireT`/彈匣語意。**OQ-S6-14** 已由 D-35.2 關閉:新增獨立 `timing.trackingStopMs`,並在 T1 schema 拒絕與 `presentationMs` 併用。**OQ-S6-15** 已由 D-35.5 關閉:終止未重新取得的 drop 不納入 `reacquireMs`，其 `dropCount` 仍保留。

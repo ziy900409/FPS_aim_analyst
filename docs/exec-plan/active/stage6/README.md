@@ -206,7 +206,7 @@ T0 spike 的 DoD 是從三個候選中選一個並記錄成本比較,而不是�
 |---|---|---|---|---|---|---|---|
 | **WP-33** | [`wp-33-assessment-contract/`](wp-33-assessment-contract/README.md) | 共同契約:Assessment/Practice 模式分離 + metadata 擴充 + 事件時間線契約 + 相容比較鍵/品質旗標判定式 | 1 | — | M4 ✅ + WP-20 ✅(`meta.session`) | 2–3d | ✅ |
 | **WP-34** | [`wp-34-hold-click-visibility/`](wp-34-hold-click-visibility/README.md) | 架槍 `hold-click-v1` + 遮蔽物可見度時間線(T0~T-exit ✅ 全數完成,候選②落地) | 2 | — | WP-33;T0 spike 已提前於 WP-33 T-exit 前執行完成 | 2.5–3.5d(T0 spike 後下修,不拆分) | ✅ |
-| **WP-35** | [`wp-35-hold-track/`](wp-35-hold-track/README.md) | 架槍 `hold-track-v1`:移動期間鎖 fire、停止後解鎖、追蹤窗指標 | 3 | — | WP-34(共用 emergence 機制) | 2–3d | 🟡 T0 ✅;T1 可開工 |
+| **WP-35** | [`wp-35-hold-track/`](wp-35-hold-track/README.md) | 架槍 `hold-track-v1`:移動期間鎖 fire、停止後解鎖、追蹤窗指標 | 3 | — | WP-34(共用 emergence 機制) | 2–3d | 🟡 T0–T2 ✅;T-exit 可開工 |
 | **WP-36** | [`wp-36-spider-shot/`](wp-36-spider-shot/README.md) | Spider Shot `spider-shot-v1`:單目標約束 + 中心—周邊 seeded 排程 + 五類指標(讀碼對帳完成;T0 待開工) | 4 | — | WP-33 ✅(可與 WP-34/35 並行) | 2.5–3.5d | 🟡 執行計畫已展開 |
 | **WP-37** | `wp-37-counterstrafe-protocols/`(⬜ 待建立) | 急停三協定包裝(`cued`/`reversal`/`free`)+ L/R 對稱指標 | 5 | — | WP-33(可並行) | 2–3d | ⬜ |
 | **WP-38** | `wp-38-diagnosis-recommendation/`(⬜ 待建立) | 診斷規則引擎 + 版本化推薦 + 個人 session history + 結果呈現整合 | 6 | — | WP-34+35+36+37 全部產出逐構念指標 | 3–4d | ⬜ |

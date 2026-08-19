@@ -207,6 +207,33 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         '',
         '',
       ]);
+    } else if (event.type === 'target_stop') {
+      rows.push([
+        event.type,
+        formatNumber(event.t),
+        event.targetId,
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        formatNumber(event.targetX),
+        formatNumber(event.targetY),
+        formatNumber(event.targetZ),
+      ]);
     } else if (event.type === 'fire') {
       rows.push([
         event.type,
@@ -234,7 +261,7 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         '',
         '',
       ]);
-    } else {
+    } else if (event.type === 'hit') {
       rows.push([
         event.type,
         formatNumber(event.t),
