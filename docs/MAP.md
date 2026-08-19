@@ -14,7 +14,7 @@
 | ① | [`../CONTEXT.md`](../CONTEXT.md) | 專有名詞 / ubiquitous language（repo 根） |
 | ② | [規格書](規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 需求、ADR-1~9、WBS、功能 F1–F5（source of truth） |
 | ③ | [DESIGN.md](DESIGN.md) | 執行期與執行緒模型：三迴圈在階段 A 的單執行緒真相、兩時鐘、階段 B 跨界縫 |
-| ④ | [exec-plan/README.md](exec-plan/README.md) | **大框架的現行權威**：WP-0~32（階段 A+B+C+E+D + 單 WP muzzle-tracer）狀態表、里程碑門控 M1–M15、跨階段相依圖、執行規則 |
+| ④ | [exec-plan/README.md](exec-plan/README.md) | **大框架的現行權威**：WP-0~39（階段 A+B+C+E+D+F + 單 WP muzzle-tracer）狀態表、里程碑門控 M1–M16、跨階段相依圖、執行規則 |
 | ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/completed/stage2/wp-N-*/`（階段 B 已交付）、`exec-plan/completed/stage3/wp-N-*/`（階段 C 已交付；導航見 [stage3 MAP](exec-plan/completed/stage3/MAP.md)）、`exec-plan/completed/stage4/wp-N-*/`（階段 D 已交付；tech spec 見 [stage4 README](exec-plan/completed/stage4/README.md)）、`exec-plan/completed/stage5/wp-N-*/`（階段 E 已歸檔;M13 待手動回填；tech spec 見 [stage5 README](exec-plan/completed/stage5/README.md)）、**[`exec-plan/completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md)（WP-27，✅ 已交付）** | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
 
 ---
@@ -35,7 +35,9 @@
 
 頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M15）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/completed/stage2/README.md](exec-plan/completed/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/completed/stage3/MAP.md](exec-plan/completed/stage3/MAP.md) · [PLAN.md](exec-plan/completed/stage3/PLAN.md) · [README.md](exec-plan/completed/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/completed/stage5/README.md](exec-plan/completed/stage5/README.md)；stage4（階段 D，選手表現分析管線）tech spec 見 [exec-plan/completed/stage4/README.md](exec-plan/completed/stage4/README.md)。
 
-**進行中（`active/`）**：無。**階段 D 選手表現分析管線已於 2026-08-17 完整交付**（M15，WP-32 T-exit），移入 `completed/stage4/`（2026-08-04 採納，[DECISIONS.md](exec-plan/DECISIONS.md) **GD-19**/**GD-20**/**GD-21**；WP-28~32 / M14~M15 / [驗收清單 D](operational/acceptance-stage-d.md)）。新增 **`research/` Python 離線分析層**（Python 3.12 + uv，四目錄制學 performance_analysis），引擎零改動；`research/` ↔ `src/` **單向隔離**，parity **雙向**（既有構念 ε(t)/t_acquire 以 TS + `docs/operational/analysis-*.md` 為權威；新構念 Python 為權威）且兩向對表閘皆落在既有 `npm run test:ci`。三項新構念（`phase-v1`/`sync-v1`/`curve-v1`）已晉升進 `src/metrics/` 並擴充結果頁；WP-31 的 P2 三指標（SPARC/xcorr/Fitts）全數判定不晉升（合格交付，C-D3）。分段參數 registry、quality flags 詞彙表與一鍵 pipeline 契約見 [analysis-segments.md](operational/analysis-segments.md)。
+**進行中（`active/`）**：[`active/stage6/`](exec-plan/active/stage6/README.md) — 階段 F,個人瞄準能力測試框架 v1(架槍挑戰/Spider Shot/急停測試 + 診斷推薦 + 縱向追蹤)。🟡 **已採納規劃(2026-08-19,[DECISIONS.md](exec-plan/DECISIONS.md) GD-22)**:WP-33~39/M16 編號拍板;**WP-34 可見度時間線列高風險,先跑獨立 T0 讀碼 spike**;WP-33 子資料夾尚未展開。原案:[aim-assessment-framework-v1.md](exec-plan/active/stage6/aim-assessment-framework-v1.md)。
+
+**階段 D 選手表現分析管線已於 2026-08-17 完整交付**（M15，WP-32 T-exit），移入 `completed/stage4/`（2026-08-04 採納，[DECISIONS.md](exec-plan/DECISIONS.md) **GD-19**/**GD-20**/**GD-21**；WP-28~32 / M14~M15 / [驗收清單 D](operational/acceptance-stage-d.md)）。新增 **`research/` Python 離線分析層**（Python 3.12 + uv，四目錄制學 performance_analysis），引擎零改動；`research/` ↔ `src/` **單向隔離**，parity **雙向**（既有構念 ε(t)/t_acquire 以 TS + `docs/operational/analysis-*.md` 為權威；新構念 Python 為權威）且兩向對表閘皆落在既有 `npm run test:ci`。三項新構念（`phase-v1`/`sync-v1`/`curve-v1`）已晉升進 `src/metrics/` 並擴充結果頁；WP-31 的 P2 三指標（SPARC/xcorr/Fitts）全數判定不晉升（合格交付，C-D3）。分段參數 registry、quality flags 詞彙表與一鍵 pipeline 契約見 [analysis-segments.md](operational/analysis-segments.md)。
 
 **單 WP（不屬任何 stage）**：[`completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md) = **WP-27**，tracer 視覺起點自準心移至槍口（hip）+ ADS 時移至準心下方；render-only，命中判定/彈道物理/匯出**三不變**。✅ 已交付 2026-08-04（[DECISIONS.md](exec-plan/DECISIONS.md) **GD-18**），無獨立里程碑。Task：[T0](exec-plan/completed/muzzle-tracer/T0-entry-gate.md) · [T1 hip](exec-plan/completed/muzzle-tracer/T1-hip-muzzle-tracer.md) · [T2 ADS](exec-plan/completed/muzzle-tracer/T2-ads-muzzle.md) · [T-exit](exec-plan/completed/muzzle-tracer/T-exit-gate.md)。
 
@@ -45,7 +47,8 @@
 docs/exec-plan/
 ├── README.md              ← 頂層索引（WP 狀態表 + milestones）
 ├── DECISIONS.md           ← 全域決策 / 跨文件矛盾帳本（global episodic）
-├── active/                ← 進行中的 WP（現無展開項）
+├── active/                ← 進行中的 WP
+│   └── stage6/            ← 階段 F（🟡 規劃 2026-08-19，WP-33~39/M16；GD-22）
 ├── completed/             ← WP 交付後移入
 │   ├── stage1/            ← 階段 A 已交付（WP-0~9）
 │   │   └── wp-N-*/
@@ -80,7 +83,7 @@ docs/exec-plan/
 
 ### 3.2 WP 索引
 
-> 里程碑：M1 = 脊椎（WP-2）· M2 = 核心玩法（WP-5）· M3 = 可匯出資料（WP-7）· M4 = 階段 A 交付（WP-9）· M5 = recoil 核心（WP-10）· M6 = 壓槍玩法（WP-13）· M7 = 校準效度（WP-14+15）· M8 = 階段 B 交付（WP-17）· M9 = 場景脊椎（WP-19）· M10 = 階段 C 交付（WP-22）· M11 = 遠距追蹤地基（WP-23）· M12 = 彈道模型門控（WP-25）· M13 = 階段 E 交付（WP-26）· **M14 = research 地基（WP-28）· M15 = 階段 D 交付（WP-32）**。
+> 里程碑：M1 = 脊椎（WP-2）· M2 = 核心玩法（WP-5）· M3 = 可匯出資料（WP-7）· M4 = 階段 A 交付（WP-9）· M5 = recoil 核心（WP-10）· M6 = 壓槍玩法（WP-13）· M7 = 校準效度（WP-14+15）· M8 = 階段 B 交付（WP-17）· M9 = 場景脊椎（WP-19）· M10 = 階段 C 交付（WP-22）· M11 = 遠距追蹤地基（WP-23）· M12 = 彈道模型門控（WP-25）· M13 = 階段 E 交付（WP-26）· M14 = research 地基（WP-28）· M15 = 階段 D 交付（WP-32）· **M16 🟡 = 階段 F 交付（WP-39，規劃中）**。
 > 詳細狀態以 [exec-plan/README.md §2](exec-plan/README.md) 為準。
 
 #### 階段 A（`completed/stage1/`，WP-0~9 ✅ 已交付 M4 2026-07-03）
@@ -148,6 +151,20 @@ docs/exec-plan/
 | **WP-30** | [wp-30-trajectory-metrics/](exec-plan/completed/stage4/wp-30-trajectory-metrics/README.md) | REC/MR/V phase 分解 + L/R 101 點正規化曲線 | — | **M14 ✅** |
 | **WP-31** | [wp-31-advanced-diagnostics/](exec-plan/completed/stage4/wp-31-advanced-diagnostics/README.md) | SPARC + Key-Velocity xcorr（reliability gate）+ Fitts | — | **M14 ✅** |
 | **WP-32** | [wp-32-dashboard-integration/](exec-plan/completed/stage4/wp-32-dashboard-integration/README.md) | golden parity → TS metrics + 結果頁擴充 + 驗收清單 D | **M15 ✅** | WP-29 ✅ + WP-30 ✅ + WP-31 ✅ |
+
+#### 階段 F（`active/stage6/`，🟡 規劃 2026-08-19：WP-33~39/M16；[DECISIONS.md](exec-plan/DECISIONS.md) GD-22）
+
+> stage6 tech spec：[README.md](exec-plan/active/stage6/README.md) · 需求草稿：[aim-assessment-framework-v1.md](exec-plan/active/stage6/aim-assessment-framework-v1.md)。子資料夾尚未展開；**WP-34 先跑獨立 T0 讀碼 spike** 判定可見度時間線工程量。
+
+| WP | 子資料夾 | 目標 | 里程碑 | 相依 |
+|---|---|---|---|---|
+| **WP-33** | `wp-33-assessment-contract/`（⬜） | 共同 Assessment/Practice 契約 + metadata + 事件時間線 + 品質旗標 | — | M4 + WP-20 |
+| **WP-34** | `wp-34-hold-click-visibility/`（⬜） | 架槍 `hold-click-v1` + 遮蔽物可見度時間線（T0 = 讀碼 spike） | — | WP-33（spike 可提前） |
+| **WP-35** | `wp-35-hold-track/`（⬜） | 架槍 `hold-track-v1`：移動期間鎖 fire + 追蹤窗指標 | — | WP-34 |
+| **WP-36** | `wp-36-spider-shot/`（⬜） | Spider Shot `spider-shot-v1`：單目標約束 + 中心—周邊排程 | — | WP-33 |
+| **WP-37** | `wp-37-counterstrafe-protocols/`（⬜） | 急停三協定包裝（cued/reversal/free）+ 對稱指標 | — | WP-33 |
+| **WP-38** | `wp-38-diagnosis-recommendation/`（⬜） | 診斷規則引擎 + 版本化推薦 + session history | — | WP-34,35,36,37 |
+| **WP-39** | `wp-39-calibration-freeze/`（⬜） | Calibration pilot + `protocolVersion=1.0.0` 凍結 + 驗收清單 F | **M16** | 全部 |
 
 ### 3.3 各 WP task 一覽
 
