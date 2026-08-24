@@ -31,13 +31,13 @@
 
 ## Steps
 
-- [ ] `spider_shot_v1.ts` drill config 落地(比照既有 `*_v1.ts` drill 形狀,套用 T1 的 `spiderShot` 排程)。
-- [ ] `deriveSpiderShotTransitions()`:direction/象限/`D_deg`/`W_deg`/hitbox/世界距離/seed/`targetConditionCell`。
-- [ ] 若需要抽出共用夾角輔助函式:確認 `eyeOrigin.test.ts`/`detectionDerivation.test.ts`/`holdClickMetrics.test.ts` 零修改全綠。
-- [ ] OQ-S6-17 拍板(回中心 transition 是否計入 `deriveSpiderShotTransitions` 輸出;建議:仍輸出方向/角距等幾何欄位供節奏指標使用,但象限標記為 `undefined`,承 README interface contract)。
-- [ ] 合成 fixture:四象限 + 兩斜向的 `D_deg`/`W_deg`/象限標記端到端驗證(復用 T1 的座標,但驗證條件格計算,非重複驗證幾何換算)。
-- [ ] `analysis-spider-shot.md` 起稿。
-- [ ] `npx vitest run` 全綠。
+- [x] (2026-08-24) `spider_shot_v1.ts` drill config 落地(比照既有 `*_v1.ts` drill 形狀,套用 T1 的 `spiderShot` 排程)。
+- [x] (2026-08-24) `deriveSpiderShotTransitions()`:direction/象限/`D_deg`/`W_deg`/hitbox/世界距離/seed/`targetConditionCell`。
+- [x] (2026-08-24) 抽出共用夾角輔助函式;`eyeOrigin.test.ts`/`detectionDerivation.test.ts`/`holdClickMetrics.test.ts` 零修改全綠。
+- [x] (2026-08-24) OQ-S6-17 拍板:回中心 transition 保留在 `deriveSpiderShotTransitions` 輸出供節奏使用,但象限為 `undefined`(D-36.4)。
+- [x] (2026-08-24) 合成 fixture:四象限 + 兩斜向的 `D_deg`/`W_deg`/象限標記端到端驗證(驗證條件格計算,非重複驗證幾何換算)。
+- [x] (2026-08-24) `analysis-spider-shot.md` 起稿。
+- [x] (2026-08-24) `npm run test:ci` 全綠: typecheck ✅, Vitest **111 files / 882 tests**, Playwright **21 passed**。
 
 ## Definition of Done
 
@@ -47,7 +47,7 @@
 | ② | `W_deg` 唯一輸入來源是 GD-7 單一 hitbox | 測試斷言換不同 `meta.targets.hitbox` 值時 `W_deg` 隨之改變,無第二尺寸常數 |
 | ③ | 四象限 + 兩斜向合成 fixture 條件格計算正確 | 測試綠 |
 | ④ | `targetConditionCell` 格式一致且可被 `buildCompatibilityKey()` 消費(非空字串) | 端到端測試呼叫 `buildCompatibilityKey()` 不拋錯 |
-| ⑤ | OQ-S6-17 拍板 | Decision Log D-36.3 |
+| ⑤ | OQ-S6-17 拍板 | Decision Log D-36.4 |
 | ⑥ | `npm run test:ci` 全綠 | CI 輸出貼 progress.md |
 
 ## Commit

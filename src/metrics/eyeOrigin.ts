@@ -90,6 +90,12 @@ export interface TargetPoint {
   z: number;
 }
 
+/** Two normalized direction vectors' unsigned angular separation in degrees. */
+export function angularDistanceDeg(a: TargetPoint, b: TargetPoint): number {
+  const dot = a.x * b.x + a.y * b.y + a.z * b.z;
+  return radToDeg(Math.acos(clamp(dot, -1, 1)));
+}
+
 export function aimForward(yaw: number, pitch: number): TargetPoint {
   const cosPitch = Math.cos(pitch);
   return {
@@ -112,9 +118,7 @@ export function angularEccentricityDeg(
   const dz = target.z - eye.z;
   const len = Math.hypot(dx, dy, dz);
   if (len === 0) return 0;
-
-  const dot = aim.x * (dx / len) + aim.y * (dy / len) + aim.z * (dz / len);
-  return radToDeg(Math.acos(clamp(dot, -1, 1)));
+  return angularDistanceDeg(aim, { x: dx / len, y: dy / len, z: dz / len });
 }
 
 function isFiniteNumber(value: unknown): value is number {
