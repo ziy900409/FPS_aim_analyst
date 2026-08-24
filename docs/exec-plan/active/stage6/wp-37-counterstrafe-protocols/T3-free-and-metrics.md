@@ -7,7 +7,7 @@
 | **相依** | T2(`cues[]` 於 cued/reversal 兩協定皆已落地) |
 | **Risk / Cplx** | Med / Med(新增制動推導模組,但幾何簡單——單一速度門檻 + 逐 tick 掃描;主要風險是門檻常數第二定義,見 README Failure modes) |
 | **Touches** | ADD `src/metrics/brakingDerivation.ts`、`src/metrics/counterstrafeMetrics.ts`、`src/drill/counterstrafe_free_v1.ts`;可能 MODIFY 呼叫端(`main.ts`/`ResultScreen.ts`)的 `mode` 守門斷言(依 T0 OQ-S6-21 初判) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-24 16:00Z) |
 
 ## Objective
 
@@ -35,12 +35,12 @@
 
 ## Steps
 
-- [ ] `brakingDerivation.ts` + 合成 fixture(涵蓋:正常制動、未變號(`no_zero_crossing`)、fire 截斷窗口(`window_truncated_by_fire`)三案例)。
-- [ ] 斷言 `brakingDerivation.ts` 的門檻常數為動態 `CS2_PROFILE.accuracyThreshold` 讀取(測試以修改 profile 常數驗證,非硬編字面數字比對)。
-- [ ] `counterstrafeMetrics.ts` + 端到端合成 drill 測試(cued/reversal/free 三種 config 各跑一次,斷言 `cueToKeyMs` 僅 cued/reversal 有值、free 為 `undefined`)。
-- [ ] `counterstrafe_free_v1.ts` + `mode:'practice'` 守門測試(依 T0 OQ-S6-21 結論)。
-- [ ] 斷言 `CounterstrafeMetrics` 型別與匯出不含任何合成總分欄位(型別檢查 + 執行期 keys 集合斷言)。
-- [ ] `npx vitest run` 全綠。
+- [x] `brakingDerivation.ts` + 合成 fixture(涵蓋:正常制動、未變號(`no_zero_crossing`)、fire 截斷窗口(`window_truncated_by_fire`)三案例)。
+- [x] 斷言 `brakingDerivation.ts` 的門檻常數為動態 `CS2_PROFILE.accuracyThreshold` 讀取(測試以修改 profile 常數驗證,非硬編字面數字比對)。
+- [x] `counterstrafeMetrics.ts` + 端到端合成 drill 測試(cued/reversal/free 三種 config 各跑一次,斷言 `cueToKeyMs` 僅 cued/reversal 有值、free 為 `undefined`)。
+- [x] `counterstrafe_free_v1.ts` + `mode:'practice'` 守門測試(依 T0 OQ-S6-21 結論)。
+- [x] 斷言 `CounterstrafeMetrics` 型別與匯出不含任何合成總分欄位(型別檢查 + 執行期 keys 集合斷言)。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

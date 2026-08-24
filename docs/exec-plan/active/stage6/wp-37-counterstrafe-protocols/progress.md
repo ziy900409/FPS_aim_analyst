@@ -11,6 +11,8 @@ T1 ✅ (2026-08-24 11:23Z):交付 `counterstrafe-cued-v1` 的 additive `DrillEve
 
 T2 ✅ (2026-08-24 11:52Z):交付 `counterstrafe-reversal-v1` assessment config 與 `DrillRunner` 的目標可見→連續 hold→反向 cue 狀態機。第一 cue 在 target visible tick 寫入，對應 A/D 按住達 `holdDurationMs` 後同 tick 寫入反向 cue；放開即重算，且既有 `peekTimeoutMs` / `presentationMs` 先撤目標、再執行 tracking，沒有第二套逾時語意。`PeekWindowTs.cues` 現可把同 visible tick 的 first cue 與該 window 的 reversal cue 一起歸屬。改動前基準 100 tests 全綠；改動後 T2 針對性回歸 109 tests 全綠；`npm run test:ci` 全綠（116 Vitest files / 903 tests；21 Playwright tests）。
 
+T3 ✅ (2026-08-24 16:00Z):交付 practice-only `counterstrafe-free-v1`（既有 free-form config 的等價 TS 包裝，無 `cue`）、`deriveBrakingSamples()` 與 `deriveCounterstrafeMetrics()`。制動從 counter tick 掃至首發；速度 gate 唯一讀取 `CS2_PROFILE.accuracyThreshold`，未變號與首發截斷都保留 flags，絕不以 0 補值。共同指標直接消費 `computeSyncMetrics()` 的 sync-v1 rows，依既有 `stat()` L/R 分層型式組裝，且型別/執行期 keys 均無合成總分。針對性回歸 4 files / 12 tests 與 typecheck 全綠；`npm run test:ci` 全綠（118 Vitest files / 911 tests；21 Playwright tests）。
+
 ## Decision Log
 
 ### D-37.1 — Cue schedule contract 與 reversal 狀態機歸屬(2026-08-24)
@@ -40,9 +42,16 @@ T2 ✅ (2026-08-24 11:52Z):交付 `counterstrafe-reversal-v1` assessment config 
 - **Rationale:** 前者讓 expiration 同 tick 不會寫出過期 reversal cue，且不創造第二 timeout；後者在不擴張 frozen `DrillEvent.cue`（不加 target ID）的前提下，正確收納 `hold-reversal` 的可見同 tick cue 和後續 reversal cue，同時維持 `single` 的 foreperiod 語意。
 - **Alternatives considered:** (1) 在 cue 事件加 target ID；未採用，因為 T1 已凍結的 additive contract 不需要為此擴張。(2) 一律以前一 visible 到目前 visible 間的 cues 歸屬；未採用，因為會遺漏或錯置 reversal 的第二 cue。(3) 新增 reversal 專屬逾時；未採用，因為既有撤除閘已能表達生命週期。
 
+### D-37.5 — 制動觀測邊界與指標組裝(2026-08-24)
+
+- **Decision:** 制動掃描從 `tCounter` 的第一筆可用 tick 開始，至首發（若有）或 peek window 結束；首發前仍未變號時回傳 `undefined` 並記 `no_zero_crossing` 與 `window_truncated_by_fire`，不以零值補缺。
+- **Decision:** `releaseToFireMs` / `counterHoldMs` / `counterToFireMs` 直接讀 `computeSyncMetrics(payload).rows`；所有側別統計統一以 `compute.ts` 的 `stat()` 型式產生 `{left,right,diff}`。`fireBeforeGateRate` 以有 compatible first fire 的 peeks 為分母；`firstShotHitRate` 以全部 peeks 的既有 `outcome === 'hit'` 為分母。
+- **Rationale:** 首發後的移動已不屬於同一次瞄準/制動決策；顯式 flags 保住離線分析的樣本品質。sync rows 與既有統計函式維持 C-D4 的單一定義，且沒有必要建立跨構念分數。
+- **Alternatives considered:** (1) 首發後持續掃描到下一次 visible；未採用，會混入 post-shot lifecycle。(2) 在新模組重推 release/hold/counter timing 或另寫統計器；未採用，會違反既有構念單一來源。(3) 將無首發也納入門檻前開火率分母；未採用，該率衡量的是實際首發發生時的門檻違反，`firstShotHitRate` 已獨立保留 no-shot 懲罰。
+
 ## Surprises
 
-`PeekWindowTs.cues` 的 T1 初始語意只涵蓋 visible 前的 foreperiod cue；T2 的第一 cue 與 visible 同 tick、第二 cue 位於 window 內，故需新增同-tick 分流。證據：`src/drill/counterstrafe_reversal_v1.test.ts` 覆蓋完整 cue→hold→reversal cue→counter→fire 分析序列；`npm run test:ci` 全綠。OQ-S6-21 仍為唯一未解的跨 WP 缺口。
+`PeekWindowTs.cues` 的 T1 初始語意只涵蓋 visible 前的 foreperiod cue；T2 的第一 cue 與 visible 同 tick、第二 cue 位於 window 內，故需新增同-tick 分流。證據：`src/drill/counterstrafe_reversal_v1.test.ts` 覆蓋完整 cue→hold→reversal cue→counter→fire 分析序列；`npm run test:ci` 全綠。T3 讀碼亦確認 `buildCompatibilityKey()` 尚無 main/UI 呼叫點，因此 free-v1 config 本身不可能在既有路徑觸發它；正式歷史守門留給 WP-38 整合。
 
 ## Open Questions 狀態
 
@@ -52,5 +61,5 @@ T2 ✅ (2026-08-24 11:52Z):交付 `counterstrafe-reversal-v1` assessment config 
 |---|---|---|
 | OQ-S6-19 | reversal 狀態機落點:`DrillRunner` vs `TargetManager` | ✅ closed — `DrillRunner`（D-37.1） |
 | OQ-S6-20 | reversal 逾時機制:沿用 `peekTimeoutMs` 或獨立 | ✅ closed — 沿用既有 `peekTimeoutMs` / `presentationMs`；兩者撤除 target 後 tracking 同 tick 取消，測試覆蓋，未新增第二逾時（D-37.4）。 |
-| OQ-S6-21 | free-v1 Practice 匯出是否已有守門 | 🟡 T3/WP-38 dependency — `main.ts`/`ResultScreen.ts` 尚無 `mode` 分流，`buildCompatibilityKey()` 目前僅由 tests/研究 metrics 呼叫；凍結契約指定正式歷史執行期強制由 WP-38 擁有。T3 僅可確保 free config 標記 `practice` 且自身不建立 compatibility key。 |
+| OQ-S6-21 | free-v1 Practice 匯出是否已有守門 | ✅ closed for T3 — `buildCompatibilityKey()` 目前僅由 tests/研究 metrics 呼叫，沒有 main/UI 匯出呼叫點可觸發；`counterstrafeFreeV1` 僅標記 `mode:'practice'` 且不依賴 compatibility-key 模組。正式歷史執行期守門仍由既有凍結契約指定 WP-38 整合。 |
 | OQ-S6-22 | `cueToKeyMs` 錨點是否需雙重報告 | 🟢 open(不阻塞開工) |
