@@ -5,15 +5,27 @@
 
 ## Progress
 
-尚未開工(2026-08-19 規劃完成;entry 條件 WP-33 T-exit ✅ 已滿足)。
+T0 ✅ (2026-08-24):覆核 WP-33 T-exit 與 README §0 八項讀碼對帳；無程式碼或測試異動。T1 可依已凍結的 cue contract 開工。
 
 ## Decision Log
 
-尚無(T0 執行時開始記錄 `D-37.1` 起)。
+### D-37.1 — Cue schedule contract 與 reversal 狀態機歸屬(2026-08-24)
+
+- **Decision:** 保留 top-level `DrillConfig.cue?: CueScheduleConfig` 命名；將設定定義為 discriminated union：`{ kind: 'single'; holdDurationMs?: never } | { kind: 'hold-reversal'; holdDurationMs: number }`。`schema.ts` 必須在執行期強制同一互斥/必填規則。
+- **Decision:** `hold-reversal` 的 hold→reversal 狀態機落在 `DrillRunner.tick()`，不是 `TargetManager`。
+- **Rationale:** `DrillRunner` 已持有 `state.held`、running/ended 的生命週期及 `resetAll()` 邊界；hold 是玩家輸入持續時間的判定。`TargetManager` 保持目標 spawn、可見性與 `nextSide` 排程職責，避免把輸入生命週期混入 target 管理。
+- **Alternatives considered:** (1) `TargetManager` 可貼近 single-cue 的 foreperiod 蓋章，但無輸入生命週期職責，會擴大其依賴面；未採用。(2) 保留 `holdDurationMs?` 的寬鬆介面並只靠 schema 排除無效組合；未採用，因為辨別聯集可同時防止 TypeScript 呼叫端建立無效設定。
+
+### D-37.2 — cue 與既有時間閘的併用規則(2026-08-24)
+
+- **Decision:** `single` cue 在既有 `pendingSpawnAtMs` 首次設定的同一 tick 蓋章，方向取當下已決定的 `nextSide`；它是 foreperiod 起點的加性事件，不改 spawn delay、spawn 時刻或 target side。
+- **Decision:** `hold-reversal` 第一個 cue 以目標可見為起點；`DrillRunner` 只在該目標仍存活時追蹤連續 hold，達 `holdDurationMs` 的同 tick 記第二個反向 cue。它不延長、重設或取代 `peekTimeoutMs` / `presentationMs`；目標被任一既有到期閘撤除時，reversal tracking 取消並在下一個目標重新開始。
+- **Rationale:** cue 是量測時間戳，不得改寫既有 target/timeout 語意；保留 `config.cue` 省略時逐位相容。
+- **Alternatives considered:** 新增 reversal 專屬逾時或由 cue 直接驅動 target lifecycle；均會創造第二套到期語意，留待 T2 僅在既有閘無法表達需求時重新評估。
 
 ## Surprises
 
-尚無(T0/T1 讀碼時記錄任何與 README §0 讀碼對帳不符的發現)。
+無。README §0 的八項讀碼對帳均成立；唯一需追蹤的缺口已列為 OQ-S6-21（正式歷史守門尚未接進主匯出路徑）。
 
 ## Open Questions 狀態
 
@@ -21,7 +33,7 @@
 
 | # | 問題 | 狀態 |
 |---|---|---|
-| OQ-S6-19 | reversal 狀態機落點:`DrillRunner` vs `TargetManager` | 🟡 open |
-| OQ-S6-20 | reversal 逾時機制:沿用 `peekTimeoutMs` 或獨立 | 🟡 open |
-| OQ-S6-21 | free-v1 Practice 匯出是否已有守門 | 🟡 open |
+| OQ-S6-19 | reversal 狀態機落點:`DrillRunner` vs `TargetManager` | ✅ closed — `DrillRunner`（D-37.1） |
+| OQ-S6-20 | reversal 逾時機制:沿用 `peekTimeoutMs` 或獨立 | 🟡 T2 open — 現有 `peekTimeoutMs` / `presentationMs` 迴圈可機械共存；T2 需驗證撤除時取消 tracking，暫不新增第二逾時。 |
+| OQ-S6-21 | free-v1 Practice 匯出是否已有守門 | 🟡 T3/WP-38 dependency — `main.ts`/`ResultScreen.ts` 尚無 `mode` 分流，`buildCompatibilityKey()` 目前僅由 tests/研究 metrics 呼叫；凍結契約指定正式歷史執行期強制由 WP-38 擁有。T3 僅可確保 free config 標記 `practice` 且自身不建立 compatibility key。 |
 | OQ-S6-22 | `cueToKeyMs` 錨點是否需雙重報告 | 🟢 open(不阻塞開工) |

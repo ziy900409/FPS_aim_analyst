@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(驗 WP-33 T-exit;覆核 §0 讀碼對帳八條發現;拍板 `cue` 落點 + reversal 狀態機歸屬(`DrillRunner` vs `TargetManager`)) | [T0-entry-gate.md](T0-entry-gate.md) | WP-33 T-exit ✅ | Low |
+| ✅ | **T0** entry gate(驗 WP-33 T-exit;覆核 §0 讀碼對帳八條發現;拍板 `cue` 落點 + reversal 狀態機歸屬(`DrillRunner` vs `TargetManager`)) | [T0-entry-gate.md](T0-entry-gate.md) | WP-33 T-exit ✅ | Low |
 | ⬜ | **T1** `counterstrafe-cued-v1`:`DrillEvent.cue` + `CueScheduleConfig(kind:'single')` + `TargetManager` 插入分支 + `CueOverlay` UI + `PeekWindowTs.cues` | [T1-cued-protocol.md](T1-cued-protocol.md) | T0 | Med |
 | ⬜ | **T2** `counterstrafe-reversal-v1`:`CueScheduleConfig(kind:'hold-reversal')` + 獨立 hold→reversal 狀態機 + 反向輸入離線判定 | [T2-reversal-protocol.md](T2-reversal-protocol.md) | T1 | **Med–High** |
 | ⬜ | **T3** `counterstrafe-free-v1`(Practice)+ `brakingDerivation.ts` + `counterstrafeMetrics.ts`(共同指標組裝) | [T3-free-and-metrics.md](T3-free-and-metrics.md) | T2 | Med |

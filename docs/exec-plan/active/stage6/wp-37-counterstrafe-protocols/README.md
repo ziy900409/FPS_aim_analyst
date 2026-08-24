@@ -1,6 +1,6 @@
 # WP-37 — counterstrafe-protocols:急停三協定包裝(cued/reversal/free)+ 制動/對稱指標
 
-> stage6 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 需求 source of truth:[../aim-assessment-framework-v1.md](../aim-assessment-framework-v1.md) · 決議依據:**GD-22**(stage6 採納)+ 本 WP T0 讀碼待執行。
+> stage6 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 需求 source of truth:[../aim-assessment-framework-v1.md](../aim-assessment-framework-v1.md) · 決議依據:**GD-22**(stage6 採納)+ T0 讀碼/落點決策已於 2026-08-24 完成。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |
@@ -10,7 +10,7 @@
 | **相依** | **WP-33 T-exit ✅**(共同契約:`AssessmentMode`、`Meta.assessment`、`CompatibilityKey`/`checkQualityGate`);與 WP-34/35/36 並行,無檔案熱區重疊([../README.md §5](../README.md)) |
 | **對應 FR** | FR-F10 + FR-F11 + FR-F12 + FR-F13 |
 | **估時** | 2–3 dev-days([../README.md §6](../README.md));讀碼發現既有 counter-strafe 引擎(WP-5/6/14/23/29/32)已經覆蓋本 WP 一半以上的構念——`PeekWindowTs`(`tCounter`/`counterKey`/`tRelease`/`releaseKey`/`tFirstShot`)與已晉升的 `sync-v1`(`releaseToFireMs`/`counterHoldMs`/`counterToFireMs`)、`compute.ts` 的 `fireTimingAlignmentMs`/`leftRightSymmetry` 皆可直接複用;真正的淨新增只有(a)「系統提示方向」的 cue 事件與 UI、(b)`reversal` 的固定持續按住→反向提示狀態機、(c)制動量化(time-to-accuracy-gate/zero-crossing/停止距離/過度反向量)。估時落在下緣,由 T0/T1 讀碼結果收斂 |
-| **狀態** | ⬜ 尚未開工(entry 條件:WP-33 T-exit ✅ 已滿足,可隨時開工) |
+| **狀態** | 🟡 T0 entry gate ✅；T1 可開工 |
 
 ---
 
@@ -73,7 +73,7 @@ docs/operational/analysis-counterstrafe.md ← ADD 契約文件(cue 語意/rever
 
 ---
 
-## 2. 關鍵契約(T0 待凍結項;以下為讀碼後的建議方向,非最終定案)
+## 2. 關鍵契約(T0 已凍結)
 
 ### ① `cue` 事件:additive `DrillEvent` 變體 + `PeekWindowTs.cues` 擴充(承 §0-2/§0-8)
 
@@ -98,11 +98,10 @@ export interface PeekWindowTs {
 ### ② `cued-v1` 的 cue 插入點:既有 foreperiod 起點,方向取自既有排程(承 §0-8)
 
 ```ts
-// src/drill/DrillConfig.ts                                                     [T1,additive]
-export interface CueScheduleConfig {
-  /** 'single' = cued-v1(foreperiod 起點發一次方向 cue);'hold-reversal' = reversal-v1(§③)。 */
-  kind: 'single' | 'hold-reversal';
-}
+// src/drill/DrillConfig.ts                                                     [T1/T2,additive]
+export type CueScheduleConfig =
+  | { readonly kind: 'single'; readonly holdDurationMs?: never }
+  | { readonly kind: 'hold-reversal'; readonly holdDurationMs: number };
 export interface DrillConfig {
   // …既有欄位不變…
   /** 急停 cue 排程(WP-37,FR-F10/F11)。省略 = 既有 drill 零回溯相容成本(無 cue 事件產生)。 */
@@ -114,16 +113,7 @@ export interface DrillConfig {
 
 ### ③ `reversal-v1` 的獨立 hold→reversal 狀態機(承 §0-8;本 WP 唯一新狀態機)
 
-```ts
-// src/drill/DrillConfig.ts                                                     [T2,additive]
-export interface CueScheduleConfig {
-  kind: 'single' | 'hold-reversal';
-  /** hold-reversal 專屬:玩家按住第一個提示方向的固定持續時間(ms),達標才發反向提示。 */
-  holdDurationMs?: number;
-}
-```
-
-`kind: 'hold-reversal'` 時,`DrillRunner`(或 `TargetManager`,依 T0 讀碼落點拍板)在目標可見後獨立追蹤「玩家是否已按住 `cues[0].direction` 對應鍵達 `holdDurationMs`」;達標的**當下 tick** push 第二個 `cue` 事件(`direction` = 相反鍵)。判定只讀 `state.held.left/right`(既有欄位,`MovementController` 同一來源),**不**新增第二套鍵位追蹤。「執行反向輸入」的成功/失敗留給 T3 離線判定(`counter.key === cues[1].direction` 且 `tCounter` 落在反向提示之後),不在 sim 內即時判定合格/不合格(比照既有「sim 只記錄事件,合法性由離線 metrics 判定」慣例,例如 `outcome`/`flags` 皆離線算)。
+`kind: 'hold-reversal'` 時,`DrillRunner` 在目標可見後獨立追蹤「玩家是否已按住 `cues[0].direction` 對應鍵達 `holdDurationMs`」;達標的**當下 tick** push 第二個 `cue` 事件(`direction` = 相反鍵)。判定只讀 `state.held.left/right`(既有欄位,`MovementController` 同一來源),**不**新增第二套鍵位追蹤。`schema.ts` 須將此辨別聯集做執行期驗證:`single` 不可帶 `holdDurationMs`;`hold-reversal` 必須帶正有限的 `holdDurationMs`。「執行反向輸入」的成功/失敗留給 T3 離線判定(`counter.key === cues[1].direction` 且 `tCounter` 落在反向提示之後),不在 sim 內即時判定合格/不合格(比照既有「sim 只記錄事件,合法性由離線 metrics 判定」慣例,例如 `outcome`/`flags` 皆離線算)。
 
 ### ④ 制動推導:單一速度門檻來源,新模組不重推既有玩法幾何(承 §0-3)
 
@@ -190,7 +180,7 @@ export interface CounterstrafeMetrics {
 
 ---
 
-## 5. Interface contracts(草案;確切簽名與命名留給 T0/T1/T2 定稿)
+## 5. Interface contracts(T0 已定 `CueScheduleConfig` 與 reversal 落點;其餘由後續 task 定稿)
 
 ```ts
 // src/data/DataRecorder.ts                                                     [T1,additive]
@@ -199,11 +189,9 @@ export type DrillEvent =
   | { type: 'cue'; t: number; direction: 'A' | 'D' };
 
 // src/drill/DrillConfig.ts                                                     [T1/T2,additive]
-export interface CueScheduleConfig {
-  kind: 'single' | 'hold-reversal';
-  /** hold-reversal 專屬;kind==='single' 時必須省略(schema 互斥檢查)。 */
-  holdDurationMs?: number;
-}
+export type CueScheduleConfig =
+  | { readonly kind: 'single'; readonly holdDurationMs?: never }
+  | { readonly kind: 'hold-reversal'; readonly holdDurationMs: number };
 export interface DrillConfig {
   cue?: CueScheduleConfig;
 }
@@ -262,7 +250,7 @@ export function deriveCounterstrafeMetrics(payload: ExportPayload): Counterstraf
 
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| **OQ-S6-19**(新) | `reversal-v1` 的 hold→reversal 狀態機該落在 `DrillRunner`(生命週期判定層,比照 WP-35 fire-gating 先例)還是 `TargetManager`(spawn/事件蓋章層,比照 WP-36 zone 先例) | 🟡 **T0 拍板**;初判傾向 `DrillRunner`(因為判定對象是「玩家按鍵持續時間」而非「目標狀態」,更貼近生命週期判定語意) | 研究者 | WP-37 T0 | T2 的程式碼落點與既有測試零修改範圍 |
+| **OQ-S6-19**(新) | `reversal-v1` 的 hold→reversal 狀態機該落在 `DrillRunner`(生命週期判定層,比照 WP-35 fire-gating 先例)還是 `TargetManager`(spawn/事件蓋章層,比照 WP-36 zone 先例) | ✅ **T0 已定 `DrillRunner`**:判定對象是玩家按鍵持續時間,且其 `tick` 已持有 `state.held`、生命週期與 reset 邊界；`TargetManager` 保持 spawn/可見性職責。 | 研究者 | 2026-08-24 | T2 依此落點實作 |
 | **OQ-S6-20**(新) | `reversal-v1` 玩家未在合理時間內完成第一段 hold(例如全程沒按鍵)時,是否需要獨立逾時機制,或沿用既有 `peekTimeoutMs` | 🟡 **T2 拍板**;初判傾向沿用 `peekTimeoutMs`(不新增第二套逾時語意),但需驗證與 hold→reversal 狀態機不衝突(承 Failure modes 表第二列) | 研究者 | WP-37 T2 | reversal 協定的資料完整性;若沖突需新增獨立逾時欄位 |
 | **OQ-S6-21**(新) | `counterstrafe-free-v1` 的 Practice 匯出是否已有現成的「不併入正式歷史」守門(呼叫端 `mode` 判斷),或需要本 WP 新增 | 🟡 **T3 讀碼確認**;若現有呼叫端(`main.ts`/結果頁)尚未依 `mode` 分流,記錄為本 WP 的守門斷言範圍(不是新機制,只是補斷言) | 研究者 | WP-37 T3 | Practice/Assessment 資料汙染風險;若需新增機制則影響估時 |
 | **OQ-S6-22**(新) | `cueToKeyMs` 是否應該同時報告「以 cue 為錨點」與「以既有 `visible` 為錨點」的雙重反應值,還是只報告前者(`hold-click-v1` 的 `t_detect − t_measurement_onset` 是後者) | 🟢 **建議**:只報告以 cue 為錨點的值,並在 `analysis-counterstrafe.md` 明文記載「`cued-v1`/`reversal-v1` 的反應構念錨點 = cue,與 `hold-click-v1`/`hold-track-v1` 的錨點(可見度 onset)不同,不可跨家族直接比較」(承 C-D4「同名事件不得有不同語意」的反面提醒——這裡是**故意不同名**,避免混淆) | 使用者 | WP-37 T3 | 結果呈現與跨家族比較邊界;不阻塞實作 |

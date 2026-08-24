@@ -7,7 +7,7 @@
 | **相依** | WP-33 T-exit |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 無程式碼;產出決策記錄於 `progress.md` + 本 WP README §2/§7 覆核 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-24) |
 
 ## Objective
 
@@ -28,12 +28,12 @@
 
 ## Steps
 
-- [ ] 讀 `analysis-assessment-contract.md` 確認七項契約仍為權威。
-- [ ] `grep -rn "pendingSpawnAtMs\|nextSide\|accuracyThreshold" src/sim/` 覆核 §0-1/§0-3/§0-8 讀碼發現是否仍準確。
-- [ ] `grep -rn "peekTimeoutMs\|presentationMs" src/drill/DrillRunner.ts` 覆核到期迴圈與 hold→reversal 狀態機的共存風險(OQ-S6-20 初判)。
-- [ ] `grep -rn "mode\b" src/main.ts src/ui/ResultScreen.ts src/metrics/compatibilityKey.ts` 覆核 Practice 守門現況(OQ-S6-21 初判)。
-- [ ] 針對 `CueScheduleConfig` 欄位命名與 reversal 狀態機落點寫決策記錄(D-37.1)。
-- [ ] 針對 `cue` 與既有 `spawnDelayMsRange`/`peekTimeoutMs`/`presentationMs` 的併用規則拍板,記錄理由(D-37.2)。
+- [x] (2026-08-24) 讀 `analysis-assessment-contract.md` 確認七項契約仍為權威。
+- [x] (2026-08-24) 覆核 `pendingSpawnAtMs`/`nextSide`/`accuracyThreshold`，§0-1/§0-3/§0-8 發現仍準確。
+- [x] (2026-08-24) 覆核 `peekTimeoutMs`/`presentationMs` 到期迴圈與 hold→reversal 的共存風險(OQ-S6-20 初判)。
+- [x] (2026-08-24) 覆核 `mode`、主匯出與 `buildCompatibilityKey` 呼叫端，記錄 Practice 守門現況(OQ-S6-21 初判)。
+- [x] (2026-08-24) 針對 `CueScheduleConfig` 欄位命名與 reversal 狀態機落點寫決策記錄(D-37.1)。
+- [x] (2026-08-24) 針對 `cue` 與既有 `spawnDelayMsRange`/`peekTimeoutMs`/`presentationMs` 的併用規則拍板,記錄理由(D-37.2)。
 
 ## Definition of Done
 
