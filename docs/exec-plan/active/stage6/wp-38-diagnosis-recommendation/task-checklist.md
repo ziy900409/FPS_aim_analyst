@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(驗 WP-34+35+36+37 T-exit;重新覆核 WP-36/37 最終落地介面;拍板 OQ-S6-8 兩個子決策;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-34+35+36+37 T-exit | Med |
+| ✅ | **T0** entry gate(驗 WP-34+35+36+37 T-exit;重新覆核 WP-36/37 最終落地介面;拍板 OQ-S6-8 兩個子決策;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-34+35+36+37 T-exit | Med |
 | ⬜ | **T1** `diagnosisRules.ts`:七模式規則表 + `evaluateDiagnosis()` + `recommendationVersion` + 優先序規則 | [T1-rule-engine.md](T1-rule-engine.md) | T0 | Med |
 | ⬜ | **T2** `sessionHistory.ts` 聚合 + 依 T0 候選落地的 loader + Assessment/Practice 守門 | [T2-session-history.md](T2-session-history.md) | T1 | **Med–High** |
 | ⬜ | **T3** `ResultScreen` diagnosis 區塊(封閉 metric id + n/flags/version)+ 個人歷史呈現 | [T3-result-presentation.md](T3-result-presentation.md) | T2 | Med |

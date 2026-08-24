@@ -7,7 +7,7 @@
 | **相依** | WP-34 T-exit ✅ + WP-35 T-exit ✅ + WP-36 T-exit + WP-37 T-exit |
 | **Risk / Cplx** | Med / Low(無新程式碼,但阻塞於 WP-36/37 進度且要拍板兩個懸而未決的架構決策) |
 | **Touches** | 無程式碼;產出決策記錄於 `progress.md` + 本 WP README §2/§7 覆核 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ completed 2026-08-24 |
 
 ## Objective
 
@@ -28,11 +28,11 @@
 
 ## Steps
 
-- [ ] 讀 WP-34/35/36/37 四份 `progress.md` 確認 T-exit 狀態;若任一未達,記錄阻塞並停止本 task。
-- [ ] `grep -n "export interface\|export function" src/metrics/spiderShotMetrics.ts src/metrics/counterstrafeMetrics.ts` 覆核 README §5 草案介面。
-- [ ] 讀 `research/fixtures/` 現有結構與 `docs/operational/` 既有慣例,評估 OQ-S6-23 候選①②的粗略工時。
-- [ ] 讀框架 v1 §"診斷輸出" 表格,逐列檢查證據鏈互斥性,記錄 OQ-S6-24 初判。
-- [ ] 寫決策記錄 D-38.1(OQ-S6-8 兩個子決策)、D-38.2(OQ-S6-23 候選拍板)。
+- [x] 讀 WP-34/35/36/37 四份 `progress.md` 確認 T-exit 狀態;四者皆 ✅。
+- [x] 覆核 `src/metrics/spiderShotMetrics.ts` 與 `src/metrics/counterstrafeMetrics.ts` 最終介面;README §5 已標記 T0 覆核。
+- [x] 讀 `research/fixtures/` 現有結構與 `docs/operational/` 既有慣例，評估 OQ-S6-23 候選①②的粗略工時。
+- [x] 讀框架 v1 §"診斷輸出" 表格，逐列檢查證據鏈互斥性，記錄 OQ-S6-24 初判。
+- [x] 寫決策記錄 D-38.1(OQ-S6-8 兩個子決策)、D-38.2(OQ-S6-23 候選拍板)；另以 D-38.3 記錄 OQ-S6-24 初判。
 
 ## Definition of Done
 

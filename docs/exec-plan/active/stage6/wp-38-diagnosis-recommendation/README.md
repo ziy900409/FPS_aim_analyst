@@ -7,10 +7,10 @@
 |---|---|
 | **目標** | 交付 FR-F14(證據規則引擎:每 Assessment session 最多輸出一主一次弱項,附來源指標/`n`/flags/相容條件,規則版本化)+ FR-F15(相容比較鍵複測判定 + 個人 session history:近期 session 中位數與變異,能力與 speed–accuracy trade-off 並陳)+ FR-F16(結果呈現整合:每個晉升指標帶來源/`n`/flags/版本,樣本不足顯示「資料不足」而非箭頭) |
 | **里程碑** | 無獨立里程碑;是 **M16** 的直接前置(WP-39 pilot 需要診斷輸出已可運作才能收正式 baseline) |
-| **相依** | **WP-34 T-exit ✅** + **WP-35 T-exit ✅** + **WP-36 T-exit**(🟡 執行計畫已展開,尚未開工)+ **WP-37 T-exit**(🟡 執行計畫已展開,尚未開工)—— **entry 條件尚未滿足**;本檔為超前規劃(anticipatory planning,比照 WP-36/37 在 WP-33 T-exit 後即先展開執行計畫的先例),T0 執行時必須重新驗證四個上游 WP 的**最終落地介面**,尤其 WP-36/WP-37 的 interface contracts 在其各自 README 中明文標記為「草案,確切簽名留給 T0/T1 定稿」(見 §0-1) |
+| **相依** | **WP-34/35/36/37 T-exit 均 ✅**(T0 於 2026-08-24 覆核);`SpiderShotMetrics` 與 `CounterstrafeMetrics` 的最終落地介面已由本 WP T0 重讀實檔確認(見 §0-1/§5),後續 task 必須消費該實際契約。 |
 | **對應 FR** | FR-F14 + FR-F15 + FR-F16 |
 | **估時** | 3–4 dev-days([../README.md §3](../README.md));讀碼發現「個人 session history」需要一個**目前全 repo 都不存在**的能力——跨多個匯出檔案讀取(見 §0-4),不是既有 `ResultScreen.ts` 或 `coach_report.py` 任一邊已具備、只需擴充的東西;這是本 WP 除 OQ-S6-8 落點之外的第二個未知數,估時傾向落在上緣,由 T0 讀碼結果收斂 |
-| **狀態** | ⬜ 尚未開工(entry 條件:WP-34 ✅ + WP-35 ✅ 已滿足;WP-36/37 尚待 T-exit) |
+| **狀態** | 🟡 T0 ✅(2026-08-24);T1 可開工 |
 
 ---
 
@@ -20,7 +20,7 @@
 
 | # | 框架 v1 / stage6 README 假設 | 讀碼發現 | 對本 WP 的影響 |
 |---|---|---|---|
-| **0-1** | WP-34~37 的逐構念指標介面在 WP-38 開工時皆已凍結,可直接消費 | [`HoldClickMetrics`](../../../../../src/metrics/holdClickMetrics.ts)/[`analysis-hold-track.md`](../../../../operational/analysis-hold-track.md) 已落地(WP-34/35 T-exit ✅)。但 [wp-36 README §5](../wp-36-spider-shot/README.md#5-interface-contracts草案確切簽名與命名留給-t0t1-定稿)的 `SpiderShotMetrics` 與 [wp-37 README §5](../wp-37-counterstrafe-protocols/README.md#5-interface-contracts草案確切簽名與命名留給-t0t1t2-定稿)的 `CounterstrafeMetrics` 皆明文標記「草案,確切簽名留給 T0/T1/T2 定稿」——尚未落地 | WP-38 T0 的「驗上游 exit」不能只讀 README 草案介面;**必須等 WP-36/37 各自 T-exit 後,重新讀取實際落地的 `src/metrics/*.ts` 檔案**確認欄位名稱與型別。本檔 §5 的 interface contracts 對 WP-36/37 部分**一律標記為「引用自其 README 草案,T0 需覆核」**,不視為凍結 |
+| **0-1** | WP-34~37 的逐構念指標介面在 WP-38 開工時皆已凍結,可直接消費 | T0 已重讀 [`spiderShotMetrics.ts`](../../../../../src/metrics/spiderShotMetrics.ts) 與 [`counterstrafeMetrics.ts`](../../../../../src/metrics/counterstrafeMetrics.ts):前者輸出逐 target 的 `switchReaction`/`movementExecution`/`stopControl`/`firstShot` 與 session `rhythm`;後者輸出 `SidedStat` 的制動/同步量與兩個 rate。欄位名稱與 §5 草案的 `SpiderShotMetrics`/`CounterstrafeMetrics` 型別引用一致。 | §5 的 WP-36/37 型別引用已於 **2026-08-24 T0 覆核**，後續不得再依 README 草案推定標量形狀；T1 必須從逐 target 陣列或 `SidedStat` 明確取出 evidence 與 `n`。 |
 | **0-2** | 診斷規則引擎的落點(TS `ResultScreen` vs Python `coach_report.py`,OQ-S6-8)取決於哪一邊「已經有」個人歷史聚合能力 | `grep -n "class \|def " research/src/report/coach_report.py` 顯示 `coach_report.py` 是**單一 session/單一匯出檔**的報告產生器(`build_report(export, peeks, ...)`),沒有任何跨檔案/跨 session 迴圈或聚合函式;`ResultScreen.ts` 同樣是單次 drill 結束後的即時畫面(`createResultScreen`/`createResultSummary`/`createPromotedSummary`),沒有讀取歷史匯出的機制。**兩邊都不具備個人歷史能力**,§2.3(d) 原本「Python 更接近歷史聚合形狀」的假設不成立 | OQ-S6-8 不能簡化為「哪邊已經有歷史能力」,必須拆成兩個獨立子問題(見 §2①):(a) 單次 session 的診斷標籤與呈現落在哪裡、(b) 跨 session 歷史聚合的資料從哪裡來、落在哪裡。這移除了 README 原本假設的「二選一」框架,T0 需要新的決策結構 |
 | **0-3** | `research-promoted` 區塊(WP-32)的呈現型式可直接沿用給診斷區塊 | [`ResultScreen.ts`](../../../../../src/ui/ResultScreen.ts) 已有 `PROMOTED_METRIC_IDS`(封閉 metric id 清單,WP-32 C-D3 紀律)、`createPromotedSummary()`(status: `'blocked'` vs 正常態,附 n/flags/version)——這是一個**已驗證、可直接複製的型式**,不是新設計 | T3 的診斷卡片可比照 `createPromotedSummary` 的形狀:封閉 `DIAGNOSIS_METRIC_IDS`、`status: 'insufficient-data'` 取代 `'blocked'`、每卡帶來源指標/`n`/flags/`recommendationVersion`。降低 T3 的設計風險 |
 | **0-4** | 「個人 session history」是既有匯出/呈現管線的延伸 | `grep -rn "history\|localStorage\|indexedDB"` 對 `src/` 零命中——**全 repo 沒有任何跨瀏覽器 session 的持久化機制**。此應用是純前端、單次執行的訓練器(D1),每次匯出是一個獨立 JSON/CSV 檔案落地到使用者磁碟,沒有內建「讀回先前匯出」的介面(無 `<input type=file>`、無 IndexedDB) | 這是本 WP**真正的新增能力**,而不是既有機制的包裝。T0 必須把它當一個獨立的小型架構決策處理(比照 WP-34 T0 spike 的規格),見 §2②;不能假設 T2 只是「寫一個聚合函式」那麼簡單 |
@@ -69,8 +69,8 @@ graph LR
   subgraph upstream["WP-34/35/36/37(逐構念指標,已存在或待落地)"]
     HC["HoldClickMetrics"]
     HT["hold-track 追蹤/停止指標"]
-    SS["SpiderShotMetrics(草案)"]
-    CS["CounterstrafeMetrics(草案)"]
+    SS["SpiderShotMetrics(T0 已覆核)"]
+    CS["CounterstrafeMetrics(T0 已覆核)"]
   end
   subgraph rules["T1 diagnosisRules.ts"]
     EV["evaluateDiagnosis()<br/>七模式規則表 + recommendationVersion"]
@@ -101,8 +101,8 @@ stage6 README §2.3(d) 把 OQ-S6-8 寫成「診斷推薦引擎落點:TS 即時 v
 
 | 子問題 | 建議方向 | 理由 |
 |---|---|---|
-| **(a) 單次 session 診斷標籤 + 呈現** | **TS**,擴充 `ResultScreen.ts`(比照 §0-3 的 `createPromotedSummary` 型式) | 訓練當下就能看到診斷是框架 v1 的核心產品訴求之一(教練即時調整訓練);規則引擎本身是純函式判定邏輯(§0-5),消費的所有指標都已經是 TS 計算結果,沒有必要為了套用 Python 而重新序列化;維持 D1(純 TS + DOM)邊界,不新增 Python 依賴(NFR §1.2「工具鏈」) |
-| **(b) 跨 session 歷史聚合** | **待 T0 確認**:兩個候選——① 純 TS,新增一個獨立的多檔載入視圖(`<input type=file multiple>`,D1 相容,使用者手動重新選取先前的匯出 JSON,無自動持久化);② Python `research/` offline 工具(比照 `coach_report.py` 但改為掃描一個目錄下屬於同一 `participantId` 的多個匯出檔) | 兩者都是**全新能力**,不是既有機制的延伸,成本相近;決策依據應該是「教練實際工作流是否已經把匯出檔案整理進 `research/fixtures/`」(如 stage4 的既有慣例)而非哪邊工程量更低。**若選①**:純瀏覽器內操作,不需要離開訓練器,但每次都要重新選檔,無跨裝置延續性。**若選②**:可以和 stage4 的離線分析慣例接軌(`research/` 已經是跨 session 檔案處理的既有場域),但需要 C-D1(單向隔離)+ 可能的 C-D5(若診斷規則之後被判定需要雙向對表)——但因為規則引擎本身留在 TS(子問題 a),Python 側只需要「讀 TS 已計算好的診斷結果 JSON 並聚合」,不需要重新實作規則判定,C-D5 風險較低 |
+| **(a) 單次 session 診斷標籤 + 呈現** | **TS(2026-08-24 T0 定案)**,擴充 `ResultScreen.ts`(比照 §0-3 的 `createPromotedSummary` 型式) | `ResultScreen` 仍維持既有的 optional promoted-metrics render seam；規則引擎消費的指標亦都在 TS 端。診斷可在訓練結束時立即呈現，並維持 D1(純 TS + DOM)邊界。 |
+| **(b) 跨 session 歷史聚合** | **候選①純 TS 多檔載入(2026-08-24 T0 定案)**：新增獨立 `<input type=file multiple>` history view，使用者每次手動選取先前 export JSON，無自動持久化。 | `research/fixtures/exports/` 是受控、匿名化、每檔最多 30 秒的測試 corpus；現有 `research` 的 shared pipeline 與 `coach_report.py` 均只接受一個 export，沒有可沿用的教練目錄掃描慣例。Python 候選還需新增診斷結果 sidecar／跨語言聚合與另一個呈現通道，不能如原先假設般只讀既有 TS 診斷輸出。粗估候選① **1.25–1.75 dev-days**(TS parser/assessment guard/pure aggregation/DOM view/測試);候選② **2.0–2.75 dev-days**(目錄 CLI、跨檔驗證、診斷 sidecar 合約、Python report/view、雙 gate)。因此選①；代價是無跨裝置持久化，這不在本 WP 範圍。 |
 
 **T0 的實際待辦**:讀碼確認教練/研究者現有的匯出檔案管理慣例(訪談或查 `research/fixtures/` 現有結構),再拍板 (b) 的候選。不阻塞 (a) 的落地——(a) 無論 (b) 選哪個候選都成立。
 
@@ -222,7 +222,7 @@ export const DIAGNOSIS_METRIC_IDS = [
 
 ---
 
-## 5. Interface contracts(草案;WP-36/37 部分待其 T-exit 後由 T0 覆核)
+## 5. Interface contracts(T0 已覆核;WP-36/37 來源為實際落地檔案)
 
 ```ts
 // src/metrics/diagnosisRules.ts                                                  [T1,新增]
@@ -262,8 +262,8 @@ export interface DiagnosisThresholds {
 export interface DiagnosisInputs {
   readonly holdClick?: HoldClickMetrics;                    // WP-34,已落地
   readonly holdTrack?: { readonly totPercent: number; readonly dropCount: number };  // WP-35,已落地(trackingDerivation + trackingTransitions)
-  readonly spiderShot?: SpiderShotMetrics;                  // WP-36,草案(T0 需覆核最終型別)
-  readonly counterstrafe?: CounterstrafeMetrics;            // WP-37,草案(T0 需覆核最終型別)
+  readonly spiderShot?: SpiderShotMetrics;                  // WP-36,T0 已覆核 src/metrics/spiderShotMetrics.ts
+  readonly counterstrafe?: CounterstrafeMetrics;            // WP-37,T0 已覆核 src/metrics/counterstrafeMetrics.ts
 }
 
 export function evaluateDiagnosis(
@@ -321,8 +321,8 @@ export function buildSessionHistory(
 
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| **OQ-S6-23**(新) | 個人歷史的資料來源機制(§2②):純 TS 多檔上傳視圖,或 Python `research/` 目錄掃描 offline 工具 | 🟡 **T0 拍板**,需先確認教練/研究者現有匯出檔案管理慣例;不阻塞 T1(規則引擎與此決策解耦,§2②) | 使用者 | WP-38 T0 | T2 的程式碼落點與估時;若選 Python 候選需另評估 C-D1/C-D5 適用範圍 |
-| **OQ-S6-24**(新) | 七模式規則表在「同時符合兩個以上模式」時的優先序 | 🟡 **T1 拍板**;初判傾向框架 v1 表格由上而下的證據鏈順序(每個模式的排除條件即前一模式的反面),需 T1 讀碼細看框架 v1 §"診斷輸出" 表格的證據鏈邏輯是否確實互斥 | 研究者 | WP-38 T1 | 診斷結果穩定性;若表格證據鏈本身有重疊區,需要額外決策記錄 |
+| **OQ-S6-23**(新) | 個人歷史的資料來源機制(§2②):純 TS 多檔上傳視圖,或 Python `research/` 目錄掃描 offline 工具 | ✅ **T0 closed**:採純 TS 多檔上傳(D-38.2)。`research/` 現況是單檔分析與受控 fixtures，Python 候選還需新增診斷 sidecar；不阻塞 T1。 | 使用者 | 2026-08-24 | T2 使用 `sessionHistoryLoader.ts` + DOM history view；無自動持久化。 |
+| **OQ-S6-24**(新) | 七模式規則表在「同時符合兩個以上模式」時的優先序 | 🟡 **T1 拍板**;T0 已確認證據鏈不互斥(`click-timing`/`fire-commitment` 可同時成立)，候選為框架 v1 表格順序，T1 必須定義明確 exclusion 與 primary/secondary 去重(D-38.3)。 | 研究者 | WP-38 T1 | 診斷結果穩定性;需要合成 fixture 鎖定同時成立案例。 |
 | **OQ-S6-25**(新) | `recommendationVersion` 與 WP-33 已凍結的 `protocolVersion`/`CompatibilityKey` 是否需要聯動(例如規則表升版是否影響歷史可比較性) | 🟢 **建議**:兩者獨立——`protocolVersion` 描述測試協定本身,`recommendationVersion` 描述診斷規則,同一 session 的原始指標值不因規則表升版而改變,只有「診斷標籤」的解讀會變;`analysis-diagnosis.md` 需明文記載「舊 session 的原始指標可重新套用新規則表重跑診斷,但不得回改歷史紀錄的原始診斷標籤」(pre-registration 精神延伸,比照 WP-32 D-32.10 對 KI-008 更正的處理方式) | 使用者 | WP-38 T1/T-exit | 歷史資料的可重新詮釋性;不阻塞開工 |
 | **OQ-S6-26**(新) | 「speed–accuracy trade-off」在 FR-F15 中要求「同時呈現」,具體用哪一對指標作為 speed/accuracy 代表因家族而異(架槍 vs Spider Shot vs 急停) | 🟡 **T2/T3 拍板**;初判傾向每個測試家族各自定義一對(架槍:`acquisitionFromDetectMs` vs `firstShotHit` 率;Spider Shot:`rhythm.medianMs` vs 首發命中率;急停:`counterToFireMs` vs `firstShotHitRate`),`SessionSummary.speedMetric`/`accuracyMetric` 型別已預留欄位供各家族填入,不強制單一全域定義 | 研究者 | WP-38 T2 | 呈現層的具體指標選擇;不影響型別契約(已是 additive `{id, value}` 形狀) |
 
