@@ -114,6 +114,16 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
     });
   });
 
+  it("保留 cue single schedule", () => {
+    const cfg = validateDrill({ ...(minimalValid() as object), cue: { kind: 'single' } });
+    expect(cfg.cue).toEqual({ kind: 'single' });
+  });
+
+  it("保留 cue hold-reversal schedule", () => {
+    const cfg = validateDrill({ ...(minimalValid() as object), cue: { kind: 'hold-reversal', holdDurationMs: 350 } });
+    expect(cfg.cue).toEqual({ kind: 'hold-reversal', holdDurationMs: 350 });
+  });
+
   it('seeded spawn range 允許退化為固定值（min=max）', () => {
     const cfg = validateDrill({
       ...(minimalValid() as object),
@@ -212,6 +222,22 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
     expect(() => validateDrill(neg)).toThrow(/timing\.presentationMs/);
     const str = { ...(minimalValid() as object), timing: { countdownMs: 3000, presentationMs: 'long' } };
     expect(() => validateDrill(str)).toThrow(/timing\.presentationMs/);
+  });
+
+  it("未知 cue kind → throw 指名 cue.kind", () => {
+    expect(() => validateDrill({ ...(minimalValid() as object), cue: { kind: 'unknown' } })).toThrow(/cue\.kind/);
+  });
+
+  it("single cue 不可帶 holdDurationMs", () => {
+    expect(() => validateDrill({ ...(minimalValid() as object), cue: { kind: 'single', holdDurationMs: 100 } })).toThrow(
+      /cue\.holdDurationMs/,
+    );
+  });
+
+  it("hold-reversal cue 必須帶正 holdDurationMs", () => {
+    expect(() => validateDrill({ ...(minimalValid() as object), cue: { kind: 'hold-reversal' } })).toThrow(
+      /cue\.holdDurationMs/,
+    );
   });
 
   it('trackingStopMs ≤ 0 / 非有限，或與 presentationMs 併用 → throw 指名 timing', () => {

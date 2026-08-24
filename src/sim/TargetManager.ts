@@ -93,6 +93,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   const spawnArea = config?.targets.spawnArea;
   const spawnDelayMsRange = config?.sequence.spawnDelayMsRange;
   const spiderShot = config?.spiderShot;
+  const cue = config?.cue;
   const usesSeededSpawn =
     config?.sequence.seed !== undefined && (spawnArea !== undefined || spawnDelayMsRange !== undefined);
 
@@ -201,7 +202,11 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   }
 
   function spawnWhenDue(state: SharedState, nowMs: number): void {
-    if (pendingSpawnAtMs === null) pendingSpawnAtMs = nowMs + sampleDelayMs();
+    if (pendingSpawnAtMs === null) {
+      pendingSpawnAtMs = nowMs + sampleDelayMs();
+      // The cue begins the existing foreperiod and never changes its sampled delay or side schedule.
+      if (cue?.kind === 'single') state.cues.push({ t: nowMs, direction: nextSide === 'L' ? 'A' : 'D' });
+    }
     if (nowMs >= pendingSpawnAtMs) {
       pendingSpawnAtMs = null;
       spawn(state);
@@ -220,7 +225,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       // ① spawn:無存活目標且未達 spawn 上限時補一個(單 active 目標;side 由 nextSide 交替)。
       //    達 spawnLimit(config.targets.count)後不再補生——drill 目標序列耗盡(結束判定屬 T4)。
       if (!hasAliveTarget(state) && spawnedCount < spawnLimit) {
-        if (usesSeededSpawn) spawnWhenDue(state, nowMs);
+        if (usesSeededSpawn || cue?.kind === 'single') spawnWhenDue(state, nowMs);
         else spawn(state);
       }
       // ② 蓋 t_visible:可見且尚未蓋過者蓋一次(sim clock nowMs)——只在可見轉換 tick 蓋。
@@ -295,6 +300,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       state.targets.length = 0;
       state.tVisible.clear();
       state.tStop.clear();
+      state.cues.length = 0;
       nextId = 0;
       spawnedCount = 0;
       pendingSpawnAtMs = null;

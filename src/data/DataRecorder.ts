@@ -19,6 +19,8 @@ export type DrillEvent =
       targetY?: number;
       targetZ?: number;
     }
+  /** Counter-strafe protocol direction prompt; `t` is the start of its foreperiod. */
+  | { type: 'cue'; t: number; direction: 'A' | 'D' }
   | { type: 'counter'; key: string; t: number }
   | { type: 'ads'; down: boolean; t: number }
   /** hold-track target_stop: target motion froze and fire gating was released on this sim tick. */

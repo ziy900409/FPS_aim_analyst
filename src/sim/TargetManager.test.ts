@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Clock } from '../loop/clock.ts';
 import { SIM_HZ } from '../loop/constants.ts';
 import { createSimLoop } from '../loop/SimLoop.ts';
+import { simStep } from '../loop/SimLoop.ts';
+import { createDataRecorder } from '../data/DataRecorder.ts';
 import { createSharedState } from '../state/SharedState.ts';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
 import { createTargetManager } from './TargetManager.ts';
@@ -158,6 +160,50 @@ describe('TargetManager — hold-track target_stop（WP-35 / T1）', () => {
     state.tStop.set('stale', 200);
     tm.reset(state);
     expect(state.tStop.size).toBe(0);
+  });
+});
+
+describe('TargetManager — counter-strafe single cue (WP-37 / T1)', () => {
+  const cueConfig: DrillConfig = {
+    drillId: 'counterstrafe-cued-test',
+    mode: 'assessment',
+    cue: { kind: 'single' },
+    targets: { count: 2, distance: 4 },
+    sequence: { alternation: 'LR', seed: 37, spawnDelayMsRange: [100, 100] },
+    timing: { countdownMs: 0 },
+    endCondition: { type: 'targetCount', value: 2 },
+  };
+
+  it('issues each cue at foreperiod start with the side-matched A/D direction', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(cueConfig);
+
+    tm.tick(state, 100);
+    expect(state.targets).toEqual([]);
+    expect(state.cues).toEqual([{ t: 100, direction: 'A' }]);
+
+    tm.tick(state, 200);
+    expect(state.targets[0].side).toBe('L');
+    expect(state.tVisible.get(state.targets[0].id)).toBe(200);
+
+    tm.markKilled(state, state.targets[0].id);
+    tm.tick(state, 300);
+    expect(state.cues).toEqual([{ t: 100, direction: 'A' }, { t: 300, direction: 'D' }]);
+  });
+
+  it('exports cue before its visible event through the standard SimLoop recorder handshake', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder();
+    const tm = createTargetManager(cueConfig);
+
+    simStep(state, 1 / SIM_HZ, 100, tm, undefined, undefined, undefined, undefined, recorder);
+    simStep(state, 1 / SIM_HZ, 200, tm, undefined, undefined, undefined, undefined, recorder);
+
+    expect(recorder.snapshot().events).toEqual([
+      { type: 'cue', t: 100, direction: 'A' },
+      expect.objectContaining({ type: 'visible', side: 'L', t: 200 }),
+    ]);
+    expect(state.cues).toEqual([]);
   });
 });
 

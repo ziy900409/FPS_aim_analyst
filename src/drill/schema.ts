@@ -1,6 +1,7 @@
 import {
   MAX_TARGET_HITBOX_U,
   type DrillConfig,
+  type CueScheduleConfig,
   type SpawnAreaConfig,
   type SpiderShotScheduleConfig,
   type TargetHitboxConfig,
@@ -29,6 +30,7 @@ export function validateDrill(json: unknown): DrillConfig {
   const mode = root.mode === undefined ? undefined : requireAssessmentMode(root.mode, 'mode');
   const weaponId =
     root.weaponId === undefined ? undefined : requireNonEmptyString(root.weaponId, 'weaponId');
+  const cue = root.cue === undefined ? undefined : validateCueSchedule(root.cue);
 
   // targets — count 正整數、distance 正有限數、hitbox / spawnArea / motion 選填。
   const targets = requireObject(root.targets, 'targets');
@@ -95,6 +97,7 @@ export function validateDrill(json: unknown): DrillConfig {
     drillId,
     ...(mode !== undefined ? { mode } : {}),
     ...(weaponId !== undefined ? { weaponId } : {}),
+    ...(cue !== undefined ? { cue } : {}),
     targets: {
       count,
       distance,
@@ -118,6 +121,20 @@ export function validateDrill(json: unknown): DrillConfig {
     },
     endCondition: { type, value },
   };
+}
+
+function validateCueSchedule(json: unknown): CueScheduleConfig {
+  const cue = requireObject(json, 'cue');
+  if (cue.kind === 'single') {
+    if (cue.holdDurationMs !== undefined) {
+      throw err('cue.holdDurationMs', "kind='single' 時不可提供");
+    }
+    return { kind: 'single' };
+  }
+  if (cue.kind === 'hold-reversal') {
+    return { kind: 'hold-reversal', holdDurationMs: requirePositiveNumber(cue.holdDurationMs, 'cue.holdDurationMs') };
+  }
+  throw err('cue.kind', "必須為 'single' 或 'hold-reversal'");
 }
 
 function validateSpiderShotSchedule(json: unknown): SpiderShotScheduleConfig {

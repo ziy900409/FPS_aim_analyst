@@ -7,7 +7,7 @@
 | **相依** | T0(cue schedule 落點拍板) |
 | **Risk / Cplx** | **Med** / Med(觸碰 `TargetManager`/`DataRecorder` 熱路徑,但方向取自既有 `nextSide` 排程,不涉新幾何——零破壞不變式是主要風險所在) |
 | **Touches** | MODIFY `src/data/DataRecorder.ts`(`DrillEvent` additive `{type:'cue'}`)、`src/drill/DrillConfig.ts`(新增 `cue?: CueScheduleConfig`)、`src/drill/schema.ts`(`validateCueSchedule`)、`src/sim/TargetManager.ts`(cue 插入分支)、`src/metrics/peekWindows.ts`(additive `cues[]`);ADD `src/ui/CueOverlay.ts`、`src/drill/counterstrafe_cued_v1.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-24) |
 
 ## Objective
 
@@ -33,14 +33,14 @@
 
 ## Steps
 
-- [ ] `DataRecorder.ts` 新增 `cue` 變體 + 既有 `DrillEvent` 消費端(`export.ts`/`compute.ts`/golden 測試)零修改確認。
-- [ ] `DrillConfig.ts`/`schema.ts` 擴欄 + 驗證測試(合法/非法/互斥規則)。
-- [ ] **既有決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
-- [ ] `TargetManager.ts` cue 插入分支 + 同 seed 重現測試 + 「cue 方向 === 對應 spawn 側」斷言。
-- [ ] `peekWindows.ts` additive `cues[]` + 既有 `PeekWindowTs` 消費端(`compute.ts`/`researchMetrics.ts`)零修改確認。
-- [ ] `CueOverlay.ts` 單元測試(`show`/`hide`/DOM 內容斷言)。
-- [ ] `counterstrafe_cued_v1.ts` + 端到端合成 drill 測試(cue → foreperiod → visible → counter → fire 全鏈可跑)。
-- [ ] `npx vitest run` 全綠。
+- [x] `DataRecorder.ts` 新增 `cue` 變體 + 既有 `DrillEvent` 消費端(`export.ts`/`compute.ts`/golden 測試)零修改確認。
+- [x] `DrillConfig.ts`/`schema.ts` 擴欄 + 驗證測試(合法/非法/互斥規則)。
+- [x] **既有決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
+- [x] `TargetManager.ts` cue 插入分支 + 同 seed 重現測試 + 「cue 方向 === 對應 spawn 側」斷言。
+- [x] `peekWindows.ts` additive `cues[]` + 既有 `PeekWindowTs` 消費端(`compute.ts`/`researchMetrics.ts`)零修改確認。
+- [x] `CueOverlay.ts` 單元測試(`show`/`hide`/DOM 內容斷言)。
+- [x] `counterstrafe_cued_v1.ts` + 端到端合成 drill 測試(cue → foreperiod → visible → counter → fire 全鏈可跑)。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 

@@ -280,6 +280,8 @@ export interface SharedState {
   tVisible: Map<string, number>;
   /** 各目標 target_stop 的 sim-clock 時間戳；目標撤除或 reset 時同步清除。 */
   tStop: Map<string, number>;
+  /** Pending counter-strafe cue stamps; SimLoop exports and drains these after TargetManager advances. */
+  cues: Array<{ t: number; direction: 'A' | 'D' }>;
   /** runtime validity observations;純觀測旗標，不 clamp、不改 sim 演進。 */
   validity: { playerCorridorExceeded: boolean };
   /**
@@ -400,6 +402,7 @@ export function createSharedState(): SharedState {
     targets: [],
     tVisible: new Map(),
     tStop: new Map(),
+    cues: [],
     validity: { playerCorridorExceeded: false },
     firstShotPeekId: null,
   };
@@ -449,6 +452,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.targets.length = 0;
   state.tVisible.clear();
   state.tStop.clear();
+  state.cues.length = 0;
   state.validity.playerCorridorExceeded = false;
   state.firstShotPeekId = null; // 首發旗標記憶歸零（重開 drill → 首發重新從第一 peek 計）
 }

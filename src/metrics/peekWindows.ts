@@ -6,6 +6,7 @@ export const WINDOW_EPSILON_MS = 1e-9;
 export type VisibleEvent = Extract<DrillEvent, { type: 'visible' }>;
 export type CounterEvent = Extract<DrillEvent, { type: 'counter' }>;
 export type FireEvent = Extract<DrillEvent, { type: 'fire' }>;
+export type CueEvent = Extract<DrillEvent, { type: 'cue' }>;
 
 export interface PeekWindowTs {
   readonly index: number;
@@ -24,6 +25,8 @@ export interface PeekWindowTs {
   readonly ads?: boolean;
   readonly flags: readonly string[];
   readonly visible: VisibleEvent;
+  /** Cues issued during the foreperiod immediately preceding this visible target. */
+  readonly cues: readonly CueEvent[];
   readonly nextVisible?: VisibleEvent;
   readonly counter?: CounterEvent;
   readonly firstFire?: FireEvent;
@@ -37,11 +40,13 @@ export function buildPeekWindows(payload: Pick<ExportPayload, 'ticks' | 'events'
   const visibleEvents = events.filter((event): event is VisibleEvent => event.type === 'visible');
   const counterEvents = events.filter((event): event is CounterEvent => event.type === 'counter');
   const fireEvents = events.filter((event): event is FireEvent => event.type === 'fire');
+  const cueEvents = events.filter((event): event is CueEvent => event.type === 'cue');
   const hitEvents = events.filter((event) => event.type === 'hit');
   const hitTimesByShot = hitTimesByShotSeq(hitEvents);
 
   return visibleEvents.map((visible, index) => {
     const nextVisible = visibleEvents[index + 1];
+    const priorVisibleT = index === 0 ? -Infinity : visibleEvents[index - 1].t;
     const windowEnd = nextVisible?.t ?? Infinity;
     const tickRange = tickRangeForWindow(ticks, visible.t, windowEnd);
     const windowTicks = ticks.slice(tickRange.start, tickRange.end);
@@ -71,6 +76,7 @@ export function buildPeekWindows(payload: Pick<ExportPayload, 'ticks' | 'events'
     if (hitTimes.some((hitTime) => hitTime >= windowEnd)) flags.push('hit_outside_window');
     const outcome = fireTimes.length === 0 ? 'no_shot' : hitTimes.length > 0 ? 'hit' : 'timeout';
     const ads = windowTicks.length > 0 ? windowTicks.some((tick) => tick.ads) : undefined;
+    const cues = cueEvents.filter((event) => event.t >= priorVisibleT && event.t < visible.t);
 
     return {
       index,
@@ -89,6 +95,7 @@ export function buildPeekWindows(payload: Pick<ExportPayload, 'ticks' | 'events'
       ads,
       flags: unique(flags),
       visible,
+      cues,
       nextVisible,
       counter,
       firstFire,

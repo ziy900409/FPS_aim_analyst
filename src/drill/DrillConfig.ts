@@ -42,6 +42,11 @@ export interface SpiderShotScheduleConfig {
   peripheral: SpiderPeripheralConfig;
 }
 
+/** Counter-strafe cue schedule. `hold-reversal` is activated by WP-37/T2. */
+export type CueScheduleConfig =
+  | { readonly kind: 'single'; readonly holdDurationMs?: never }
+  | { readonly kind: 'hold-reversal'; readonly holdDurationMs: number };
+
 /**
  * DrillConfig — WP-6 / T1（FR-6.1，OQ-6.1~6.3）
  *
@@ -63,6 +68,8 @@ export interface DrillConfig {
   mode?: AssessmentMode;
   /** 選填武器 id；省略時使用預設 AK-47（`ak47`）。 */
   weaponId?: string;
+  /** Optional counter-strafe cue protocol; omitted preserves legacy drill timing exactly. */
+  cue?: CueScheduleConfig;
   targets: {
     /** 目標總數（正整數;與 endCondition.targetCount 搭配,見 §endCondition）。 */
     count: number;

@@ -7,6 +7,8 @@
 
 T0 ✅ (2026-08-24):覆核 WP-33 T-exit 與 README §0 八項讀碼對帳；無程式碼或測試異動。T1 可依已凍結的 cue contract 開工。
 
+T1 ✅ (2026-08-24 11:23Z):交付 `counterstrafe-cued-v1` 的 additive `DrillEvent.cue`、`CueScheduleConfig(kind:'single')` 與 schema guard、既有 foreperiod 起點的 cue 排程、`PeekWindowTs.cues`、純 DOM `CueOverlay` 和協定 config。先跑未修改的 `TargetManager` / `schema` / `DrillRunner` / `counterstrafe_ad_v1` / WP-22 determinism 基準（91 tests）全綠；完成後 `npm run test:ci` 全綠（115 Vitest files / 896 tests；21 Playwright tests）。
+
 ## Decision Log
 
 ### D-37.1 — Cue schedule contract 與 reversal 狀態機歸屬(2026-08-24)
@@ -22,6 +24,12 @@ T0 ✅ (2026-08-24):覆核 WP-33 T-exit 與 README §0 八項讀碼對帳；無�
 - **Decision:** `hold-reversal` 第一個 cue 以目標可見為起點；`DrillRunner` 只在該目標仍存活時追蹤連續 hold，達 `holdDurationMs` 的同 tick 記第二個反向 cue。它不延長、重設或取代 `peekTimeoutMs` / `presentationMs`；目標被任一既有到期閘撤除時，reversal tracking 取消並在下一個目標重新開始。
 - **Rationale:** cue 是量測時間戳，不得改寫既有 target/timeout 語意；保留 `config.cue` 省略時逐位相容。
 - **Alternatives considered:** 新增 reversal 專屬逾時或由 cue 直接驅動 target lifecycle；均會創造第二套到期語意，留待 T2 僅在既有閘無法表達需求時重新評估。
+
+### D-37.3 — cue 的 sim→data 記錄握手(2026-08-24)
+
+- **Decision:** `TargetManager` 在 single-cue foreperiod 起點將 `{t,direction}` 寫入 `SharedState.cues`；`SimLoop` 於目標 manager 推進後、`visible` 事件前匯出並清空此暫態佇列。
+- **Rationale:** 與既有 `TargetManager → SharedState.tVisible → SimLoop.recordVisibleEvents → DataRecorder` 路徑同型，讓 target 管理保持不依賴 data recorder，且保證同 tick cue 先於 visible 寫入。
+- **Alternatives considered:** (1) 讓 `TargetManager` 直接依賴 `DataRecorder`；未採用，因為會把資料層耦進 spawn 管理。(2) 在 `TargetManager` 公開 callback/drain API；未採用，因為會擴張 22 個既有 TargetManager 使用點的介面契約。
 
 ## Surprises
 

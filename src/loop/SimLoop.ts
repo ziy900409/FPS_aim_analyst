@@ -543,6 +543,14 @@ function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecor
   }
 }
 
+/** Export each cue before same-tick visibility events, then drain the transient schedule marker. */
+function recordCueEvents(state: SharedState, recorder?: DataRecorder): void {
+  if (recorder !== undefined) {
+    for (const cue of state.cues) recorder.recordEvent({ type: 'cue', t: cue.t, direction: cue.direction });
+  }
+  state.cues.length = 0;
+}
+
 /** Export each target_stop once, from the same sim tick that TargetManager records in state.tStop. */
 function recordTargetStopEvents(state: SharedState, t: number, recorder?: DataRecorder): void {
   if (recorder === undefined) return;
@@ -624,6 +632,7 @@ export function simStep(
   // WP-6 / T4：有 drillRunner 則由其相位機驅動目標（running 才 spawn）；否則 WP-4 直驅（向後相容）。
   if (drillRunner !== undefined) drillRunner.tick(state, tickEndMs);
   else targetManager?.tick(state, tickEndMs);
+  recordCueEvents(state, recorder);
   recordVisibleEvents(state, tickEndMs, recorder);
   recordTargetStopEvents(state, tickEndMs, recorder);
   advanceProjectiles(state, dtSec, tickStartMs, tickEndMs, targetManager, recorder, weapon);
