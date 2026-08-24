@@ -7,7 +7,7 @@
 | **相依** | T3 |
 | **Risk / Cplx** | — |
 | **Touches** | `docs/operational/analysis-spider-shot.md`、[CONTEXT.md](../../../../../CONTEXT.md)、本 WP README/task-checklist、[../README.md](../README.md) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-24;見 [progress.md](progress.md) Progress 表 T-exit 列) |
 
 ## Objective
 

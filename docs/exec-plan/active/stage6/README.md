@@ -3,7 +3,7 @@
 > stage6 頂層索引 + tech spec。🟡 **已採納規劃(2026-08-19,GD-22)**;原案 [`active/stage6/aim-assessment-framework-v1.md`](aim-assessment-framework-v1.md)(2026-08-19 提案)為需求 source of truth,本檔為拆解後的執行計畫。
 > 整合輸入:框架 v1 草稿(三測試家族 + 共同契約 + 診斷推薦層)+ 讀碼對帳(2026-08-19,見 §0.1)。
 > 格式沿用 [exec-plan/README.md](../../README.md)(每 WP 一個自足子資料夾;task = 垂直切片 = 原子 commit)。文件語言:繁體中文,術語保留英文(D4)。
-> **本階段狀態**:規劃已拍板(WP 編號/里程碑/交付順序);**WP-33 ✅ 完成**(`wp-33-assessment-contract/`,T0~T3+T-exit 全數完成 2026-08-19,契約定稿於 [`docs/operational/analysis-assessment-contract.md`](../../operational/analysis-assessment-contract.md),開放 WP-34~37 entry);**WP-34 ✅ 完成**(`wp-34-hold-click-visibility/`,T0~T3+T-exit 全數完成 2026-08-19——候選②(scene 層封閉幾何離線解析)+ occlusion-aware `validateClearance` 政策選項①落地,`hold-click-v1` 協定與 `analysis-visibility.md` 契約定稿,開放 WP-35 entry;見 §6 WP-34 與 [wp-34 progress.md](wp-34-hold-click-visibility/progress.md));**WP-35 ✅ 完成**(`wp-35-hold-track/`,T0~T2+T-exit 全數完成 2026-08-19,fire-gating + `target_stop` 原地凍結 + 追蹤/停止轉換指標落地,`analysis-hold-track.md` 契約定稿,開放 WP-38 entry 其中一個條件——尚需 WP-36/37 一併 T-exit)。
+> **本階段狀態**:規劃已拍板(WP 編號/里程碑/交付順序);**WP-33 ✅ 完成**(`wp-33-assessment-contract/`,T0~T3+T-exit 全數完成 2026-08-19,契約定稿於 [`docs/operational/analysis-assessment-contract.md`](../../operational/analysis-assessment-contract.md),開放 WP-34~37 entry);**WP-34 ✅ 完成**(`wp-34-hold-click-visibility/`,T0~T3+T-exit 全數完成 2026-08-19——候選②(scene 層封閉幾何離線解析)+ occlusion-aware `validateClearance` 政策選項①落地,`hold-click-v1` 協定與 `analysis-visibility.md` 契約定稿,開放 WP-35 entry;見 §6 WP-34 與 [wp-34 progress.md](wp-34-hold-click-visibility/progress.md));**WP-35 ✅ 完成**(`wp-35-hold-track/`,T0~T2+T-exit 全數完成 2026-08-19,fire-gating + `target_stop` 原地凍結 + 追蹤/停止轉換指標落地,`analysis-hold-track.md` 契約定稿,開放 WP-38 entry 其中一個條件——尚需 WP-36/37 一併 T-exit);**WP-36 ✅ 完成**(`wp-36-spider-shot/`,T0~T3+T-exit 全數完成 2026-08-24,中心—周邊 seeded 排程 + `D_deg`/`W_deg`/象限離線推導 + 五類指標落地,`analysis-spider-shot.md` 契約定稿,開放 WP-38 entry 其中一個條件——尚需 WP-37 一併 T-exit)。
 
 | | |
 |---|---|
@@ -11,7 +11,7 @@
 | **上游門檻** | M4 ✅(schema v2)+ WP-19 ✅(場景系統,GD-6 邊界)+ WP-21 ✅(seeded spawn + `t_detect` 偵測推導)+ WP-23 ✅(hitbox 單一來源,GD-7)+ WP-18 ✅(`trackingDerivation.ts` 追蹤指標);stage4(WP-28~32)非硬相依,但 WP-38 的報告呈現紀律(n/flags/version/效度層級)沿用其先例 |
 | **技術棧** | 全部落在既有 TS 引擎棧(`src/drill`/`src/sim`/`src/scene`/`src/metrics`/`src/ui`);**不預設**新增 Python 層——WP-38 是否比照 stage4 走 `research/` 離線分析或留在 TS 即時結果頁,列為 T0 待決(OQ-S6-8) |
 | **估時** | 16–23 dev-days(WP-33~39;WP-34 已由 T0 spike 下修為 2.5–3.5d,見 §6) |
-| **狀態** | 🟡 **規劃已採納(2026-08-19,GD-22)**:WP 編號 WP-33~39、里程碑 M16、交付順序拍板。**WP-33 ✅ 完成**(2026-08-19,T0~T-exit 全數完成,契約定稿,開放 WP-34~37 entry);**WP-34 ✅ 完成**(2026-08-19,T0~T3+T-exit 全數完成,可見度時間線 + occlusion-aware clearance + `hold-click-v1` 落地,`analysis-visibility.md` 定稿,開放 WP-35 entry);**WP-35 ✅ 完成**(2026-08-19,T0~T2+T-exit 全數完成,fire-gating + `target_stop` 原地凍結 + 追蹤/停止轉換指標落地,`analysis-hold-track.md` 定稿)。**下一步**:WP-36/WP-37 T-exit 後可展開 WP-38。 |
+| **狀態** | 🟡 **規劃已採納(2026-08-19,GD-22)**:WP 編號 WP-33~39、里程碑 M16、交付順序拍板。**WP-33 ✅ 完成**(2026-08-19,T0~T-exit 全數完成,契約定稿,開放 WP-34~37 entry);**WP-34 ✅ 完成**(2026-08-19,T0~T3+T-exit 全數完成,可見度時間線 + occlusion-aware clearance + `hold-click-v1` 落地,`analysis-visibility.md` 定稿,開放 WP-35 entry);**WP-35 ✅ 完成**(2026-08-19,T0~T2+T-exit 全數完成,fire-gating + `target_stop` 原地凍結 + 追蹤/停止轉換指標落地,`analysis-hold-track.md` 定稿);**WP-36 ✅ 完成**(2026-08-24,T0~T3+T-exit 全數完成,中心—周邊 seeded 排程 + 五類指標落地,`analysis-spider-shot.md` 定稿)。**下一步**:WP-37 T-exit 後可展開 WP-38。 |
 
 ---
 
@@ -207,7 +207,7 @@ T0 spike 的 DoD 是從三個候選中選一個並記錄成本比較,而不是�
 | **WP-33** | [`wp-33-assessment-contract/`](wp-33-assessment-contract/README.md) | 共同契約:Assessment/Practice 模式分離 + metadata 擴充 + 事件時間線契約 + 相容比較鍵/品質旗標判定式 | 1 | — | M4 ✅ + WP-20 ✅(`meta.session`) | 2–3d | ✅ |
 | **WP-34** | [`wp-34-hold-click-visibility/`](wp-34-hold-click-visibility/README.md) | 架槍 `hold-click-v1` + 遮蔽物可見度時間線(T0~T-exit ✅ 全數完成,候選②落地) | 2 | — | WP-33;T0 spike 已提前於 WP-33 T-exit 前執行完成 | 2.5–3.5d(T0 spike 後下修,不拆分) | ✅ |
 | **WP-35** | [`wp-35-hold-track/`](wp-35-hold-track/README.md) | 架槍 `hold-track-v1`:移動期間鎖 fire、停止後解鎖、追蹤窗指標 | 3 | — | WP-34(共用 emergence 機制) | 2–3d | ✅ |
-| **WP-36** | [`wp-36-spider-shot/`](wp-36-spider-shot/README.md) | Spider Shot `spider-shot-v1`:單目標約束 + 中心—周邊 seeded 排程 + 五類指標(讀碼對帳完成;T0 待開工) | 4 | — | WP-33 ✅(可與 WP-34/35 並行) | 2.5–3.5d | 🟡 執行計畫已展開 |
+| **WP-36** | [`wp-36-spider-shot/`](wp-36-spider-shot/README.md) | Spider Shot `spider-shot-v1`:單目標約束 + 中心—周邊 seeded 排程 + 五類指標(T0~T-exit 全數完成,`analysis-spider-shot.md` 定稿) | 4 | — | WP-33 ✅(可與 WP-34/35 並行) | 2.5–3.5d | ✅ |
 | **WP-37** | [`wp-37-counterstrafe-protocols/`](wp-37-counterstrafe-protocols/README.md) | 急停三協定包裝(`cued`/`reversal`/`free`)+ 制動/L-R 對稱指標(讀碼對帳完成;T0 待開工) | 5 | — | WP-33 ✅(可與 WP-34/35/36 並行) | 2–3d | 🟡 執行計畫已展開 |
 | **WP-38** | [`wp-38-diagnosis-recommendation/`](wp-38-diagnosis-recommendation/README.md) | 診斷規則引擎 + 版本化推薦 + 個人 session history + 結果呈現整合(讀碼對帳完成;T0 待開工,阻塞於 WP-36/37 T-exit) | 6 | — | WP-34+35+36+37 全部產出逐構念指標 | 3–4d | 🟡 執行計畫已展開 |
 | **WP-39** | `wp-39-calibration-freeze/`(⬜ 待建立) | Calibration pilot 工具 + 數值凍結 + `protocolVersion = 1.0.0` + 驗收清單 F | 7 | **M16** | 全部 | 2–3d | ⬜ |
@@ -279,7 +279,7 @@ WP-33(共同契約)──┬─────────────→ WP-34(hol
 | **T1** | 單目標存在約束 + 中心—周邊 seeded polar schedule | 單元測試:任一時刻場上恰有一個可命中目標;seed 相同 → 排程逐位相同 | Med |
 | **T2** | 條件格:`D_deg`/`W_deg`(換算自 GD-7 單一 hitbox 來源)+ 象限/距離標記,每次 transition 記錄 | 單元測試對表(座標→角度換算)+ 既有 hitbox 決定性零修改全綠 | Med |
 | **T3** | 五類指標:切換反應/移動執行/停止控制/首發/節奏 | 合成 fixture 驗證各指標計算;真實資料人工檢核 | Med |
-| **T-exit** | 驗收:每次 transition 保存方向/角距/角尺寸(框架 v1 驗收條件) | `npm run test:ci` exit 0 | — |
+| **T-exit** ✅ | 驗收:每次 transition 保存方向/角距/角尺寸(框架 v1 驗收條件) | ✅ 完成:`npm run test:ci` exit 0;`analysis-spider-shot.md` 定稿(排程機制/`zone`/`D_deg`/`W_deg`/象限/`targetConditionCell`/五類指標);CONTEXT.md 回寫 WP-36 術語 | — |
 
 ### WP-37 counterstrafe-protocols(優先序 5;entry = WP-33 T-exit;2–3d)
 
@@ -350,8 +350,9 @@ WP-33(共同契約)──┬─────────────→ WP-34(hol
 - [x] [DECISIONS.md](../../DECISIONS.md) **GD-22**(stage6 採納:WP-33~39/M16 編號 + WP-34 獨立 T0 spike 決議)入帳。(2026-08-19 本計畫)
 - [x] [exec-plan/README.md](../../README.md):§2 加階段 F 索引表;§3 加 M16;§4 相依圖擴充;§6 目錄慣例加 `active/stage6/`。(2026-08-19 本計畫)
 - [x] [docs/MAP.md](../../../MAP.md):§3「進行中(`active/`)」由「無」更新為 stage6。(2026-08-19 本計畫)
-- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 WP T-exit 隨切片回寫):WP-33 部分已於 T-exit 回寫(§I:`AssessmentMode`/`Meta.assessment`/`gameMovementProfile`/`sessionId`/`CompatibilityKey`/`qualityGateStatus`/`recommendationVersion`/`AssessmentTimelinePoint`);WP-34 部分已於本次 T-exit 回寫(§A:`visibleFraction(t)`／可見度時間線;§C:occlusion-aware clearance);WP-35 部分已於本次 T-exit 回寫(§A:`fireLocked`/`target_stop`/掉靶次數與重新取得時間/停止轉換指標);尚缺 WP-36~37 術語:`spider-shot-v1`、`counterstrafe-cued-v1`/`-reversal-v1`/`-free-v1`。
+- [ ] [CONTEXT.md](../../../../CONTEXT.md) 新術語(各 WP T-exit 隨切片回寫):WP-33 部分已於 T-exit 回寫(§I:`AssessmentMode`/`Meta.assessment`/`gameMovementProfile`/`sessionId`/`CompatibilityKey`/`qualityGateStatus`/`recommendationVersion`/`AssessmentTimelinePoint`);WP-34 部分已於本次 T-exit 回寫(§A:`visibleFraction(t)`／可見度時間線;§C:occlusion-aware clearance);WP-35 部分已於本次 T-exit 回寫(§A:`fireLocked`/`target_stop`/掉靶次數與重新取得時間/停止轉換指標);WP-36 部分已於本次 T-exit 回寫(§A:`spider-shot-v1`/`spiderShot` schedule、`zone`、`D_deg`/`W_deg`/象限標籤、五類指標);尚缺 WP-37 術語:`counterstrafe-cued-v1`/`-reversal-v1`/`-free-v1`。
 - [x] `docs/operational/analysis-assessment-contract.md`(新,WP-33 T0 起稿 / T-exit 定稿)。(2026-08-19)
 - [x] `docs/operational/analysis-hold-track.md`(新,WP-35 T-exit 定稿:fire-gating 語意、`target_stop` 定義、掉靶/重新取得時間排除規則、停止轉換指標公式)。(2026-08-19)
+- [x] `docs/operational/analysis-spider-shot.md`(新,WP-36 T2 起稿 / T-exit 定稿:中心—周邊排程機制、`zone` 定義、`D_deg`/`W_deg`/象限公式、`targetConditionCell` 格式、五類指標公式、與既有 L/R 交替/`SpawnAreaConfig` 差異說明)。(2026-08-24)
 - [ ] `docs/operational/acceptance-stage-f.md`(新,WP-39 T-exit,驗收清單 F)。
 - [ ] 規格書:視 WP-38/WP-39 交付結果決定是否新增「階段 F」節(WP-39 T-exit 評估)。

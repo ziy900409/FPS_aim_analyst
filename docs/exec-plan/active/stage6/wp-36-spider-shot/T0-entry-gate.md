@@ -7,7 +7,7 @@
 | **相依** | WP-33 T-exit |
 | **Risk / Cplx** | Low / Low |
 | **Touches** | 無程式碼;產出決策記錄於 `progress.md` + 本 WP README §2/§7 覆核 |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-24;見 [progress.md](progress.md) D-36.1/D-36.2) |
 
 ## Objective
 

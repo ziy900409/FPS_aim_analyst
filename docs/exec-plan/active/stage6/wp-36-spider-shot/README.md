@@ -1,6 +1,6 @@
 # WP-36 — spider-shot:單目標中心—周邊 seeded 排程 + 切換/移動/停止/首發/節奏五類指標
 
-> stage6 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 需求 source of truth:[../aim-assessment-framework-v1.md](../aim-assessment-framework-v1.md) · 決議依據:**GD-22**(stage6 採納)+ 本 WP T0 讀碼待執行。
+> stage6 執行計畫的 WP 子資料夾。上層 spec:[../README.md](../README.md) · 需求 source of truth:[../aim-assessment-framework-v1.md](../aim-assessment-framework-v1.md) · 決議依據:**GD-22**(stage6 採納)+ 本 WP T0 讀碼拍板(D-36.1/D-36.2)。
 > Companion:[task-checklist.md](task-checklist.md) · [progress.md](progress.md)
 
 | | |
@@ -10,7 +10,7 @@
 | **相依** | **WP-33 T-exit ✅**(共同契約:Assessment/Practice 模式、metadata、事件時間線、`CompatibilityKey`/`checkQualityGate`);與 WP-34/35/37 並行,無檔案熱區重疊([../README.md §5](../README.md)) |
 | **對應 FR** | FR-F8(`spider-shot-v1`)+ FR-F9(五類指標) |
 | **估時** | 2.5–3.5 dev-days([../README.md §6](../README.md));讀碼發現「單目標存在」約束已由既有 `TargetManager.tick()` spawn 閘天然滿足、`buildPeekWindows`/`deriveDetectionMetrics`/`omegaDegPerSec` 可覆蓋五類指標中三類的骨架,但「中心—周邊」排程需要一個既有 `SpawnAreaConfig`(僅水平 yaw)沒有的**二維極角幾何**(繞中心視線的方位角 + 徑向角距),且「停止控制」的 overshoot/逸出量尚未確認 `trackingDerivation.ts` 是否已產出——估時傾向落在上緣,由 T0/T3 讀碼結果收斂 |
-| **狀態** | ⬜ 尚未開工(entry 條件:WP-33 T-exit ✅ 已滿足,可隨時開工) |
+| **狀態** | ✅ 完成(T0~T-exit 全數完成,2026-08-24;`analysis-spider-shot.md` 定稿,開放 WP-38 entry 其中一個條件——尚需 WP-37 一併 T-exit) |
 
 ---
 
@@ -64,7 +64,7 @@ docs/operational/analysis-spider-shot.md  ← ADD 契約文件(排程語意/象�
 
 ---
 
-## 2. 關鍵契約(T0 待凍結項;以下為讀碼後的建議方向,非最終定案)
+## 2. 關鍵契約(T0 已凍結;詳見 progress.md D-36.1/D-36.2)
 
 ### ① 排程落點:top-level additive `DrillConfig.spiderShot`,`TargetManager` 獨立分支(承 §0-3)
 
@@ -98,7 +98,7 @@ export interface DrillConfig {
 }
 ```
 
-`TargetManager` 內部以 `config?.spiderShot !== undefined` 判斷進入獨立排程分支:內部狀態 `zone: 'center' | 'peripheral'`(初始 `'center'`)取代該分支的 `nextSide` 邏輯;`markKilled` 時翻轉 `zone`,翻入 `'peripheral'` 時以 `createRan1(seed)` 建的 stream 依序取樣 `(azimuthDeg, angularRadiusDeg, distanceU)` 並換算世界座標(繞中心視線的球面偏移,`y` 分量隨方位角變化,非既有 `TARGET_Y` 常數水平模型);翻入 `'center'` 時位置固定為 `centerDistanceU` 正前方。既有 `nextSide`/`alternation` 分支**零改動**,兩分支由 config 存在與否互斥選擇。
+`TargetManager` 內部以 `config?.spiderShot !== undefined` 判斷進入獨立排程分支:內部狀態 `zone: 'center' | 'peripheral'`(初始 `'center'`)取代該分支的 `nextSide` 邏輯;`markKilled` 時翻轉 `zone`,翻入 `'peripheral'` 時以 `createRan1(seed)` 建的 stream 依序取樣 `(azimuthDeg, angularRadiusDeg, distanceU)` 並換算世界座標(繞中心視線的球面偏移,`y` 分量隨方位角變化,非既有 `TARGET_Y` 常數水平模型);翻入 `'center'` 時位置固定為 `centerDistanceU` 正前方。既有 `nextSide`/`alternation` 分支**零改動**,兩分支由 config 存在與否互斥選擇。`spiderShot.seed` 是此分支唯一 RNG source；T1 schema 將拒絕與 `targets.spawnArea`、`sequence.spawnDelayMsRange` 或 `sequence.seed` 併用，避免雙重排程／seed 權威。
 
 ### ② `visible` 事件與 `Meta.spawn` 的 additive 回顯(承 §0-4)
 
@@ -223,7 +223,7 @@ export function deriveSpiderShotMetrics(payload: ExportPayload, options: SpiderS
 
 | # | 問題 | 建議 / 待決 | Owner | Deadline | 未決影響 |
 |---|---|---|---|---|---|
-| **OQ-S6-16**(新) | `trackingDerivation.ts`/`TrackingSample[]` 現有輸出是否已足以推導 overshoot 角度量與微調次數,或需要新的消費函式(比照 WP-35 `deriveTrackingTransitions`) | 🟡 **T0/T3 讀碼確認**;若不足,傾向新增獨立消費函式而非擴充既有幾何(承 §0-5、Failure modes 表) | 研究者 | WP-36 T0(初判)/ T3(定案) | 「停止控制」指標的落地方式;可能影響 T3 估時上修 |
+| **OQ-S6-16**(新) | `trackingDerivation.ts`/`TrackingSample[]` 現有輸出是否已足以推導 overshoot 角度量與微調次數,或需要新的消費函式(比照 WP-35 `deriveTrackingTransitions`) | 🟡 **T0 初判完成**:`deriveTrackingTransitions()` 可直接複用 drop/reacquire；`TrackingSample` 缺有號誤差／反轉資訊，overshoot 與 micro-adjust 仍傾向新增獨立消費層，不擴充既有幾何；T3 定案 | 研究者 | WP-36 T3 | 「停止控制」指標的落地方式;可能影響 T3 估時上修 |
 | **OQ-S6-17**(新) | Spider Shot 的「回中心」transition 是否需要與「進周邊」transition 同等量測切換反應/停止控制,還是只計入節奏分布(承 §1.1 out of scope 條款) | 🟡 **T2/T3 拍板**;初判傾向只計入節奏(框架 v1 原文只描述 center→peripheral 與 peripheral→center 的通用 transition 記錄義務,五類指標敘述以「切換到新目標」為構念核心,回中心是否算「新目標」需要 T2 讀碼後定案) | 研究者 | WP-36 T2 | 五類指標的樣本範圍定義;影響 `n` 的計算基礎,連帶影響 WP-38 品質旗標判定 |
 | **OQ-S6-18**(新) | 象限分箱門檻(建議 45°,契約⑤)是否需要在 pilot 前先徵求教練意見,或直接由工程側暫定再交 WP-39 pilot 調整 | 🟢 **建議**:先暫定 45° 對稱分箱(不阻塞開工),T-exit 於 `analysis-spider-shot.md` 明文記載為「呈現層標籤,可在不升版的前提下調整」(承契約⑤/Failure modes 表) | 使用者 | WP-36 T2(暫定)/ WP-39(pilot 覆核) | 象限敘述的教練可讀性;不阻塞相容鍵或指標計算 |
 
@@ -231,6 +231,6 @@ export function deriveSpiderShotMetrics(payload: ExportPayload, options: SpiderS
 
 ## 8. 文件對帳清單
 
-- [ ] [../README.md](../README.md) §3:WP-36 狀態列由「⬜ 待建立」更新為本資料夾連結(本次規劃已建立,執行時隨 T0 更新狀態)。
-- [ ] `docs/operational/analysis-spider-shot.md`(新,T1 起稿/T-exit 定稿):中心—周邊排程語意、`zone` 欄位定義、`D_deg`/`W_deg`/象限公式、`targetConditionCell` 格式、五類指標公式。
-- [ ] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`spiderShot` schedule、`zone`、`D_deg`、`W_deg`、象限標籤、`spider-shot-v1`)於 T-exit 回寫。
+- [x] [../README.md](../README.md) §3:WP-36 狀態列翻 ✅(2026-08-24 T-exit)。
+- [x] `docs/operational/analysis-spider-shot.md`(T2 起稿,T-exit 定稿):中心—周邊排程語意、`zone` 欄位定義、`D_deg`/`W_deg`/象限公式、`targetConditionCell` 格式、五類指標公式、與既有 L/R 交替/`SpawnAreaConfig` 差異說明。
+- [x] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`spiderShot` schedule、`zone`、`D_deg`、`W_deg`、象限標籤、五類指標)於 T-exit 回寫(2026-08-24)。

@@ -5,11 +5,11 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(驗 WP-33 T-exit;讀碼確認 §0 對帳結論;拍板排程落點 + `zone`/`Meta.spawn.spiderShot` 欄位命名;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-33 T-exit ✅ | Low |
-| ⬜ | **T1** `DrillConfig.spiderShot` + schema 驗證 + `TargetManager` center-peripheral 排程分支 + `zone` 事件欄位 + `Meta.spawn.spiderShot` 回顯 | [T1-schedule-engine.md](T1-schedule-engine.md) | T0 | **Med–High** |
-| ⬜ | **T2** `spider-shot-v1` drill config + `D_deg`/`W_deg`/象限/`targetConditionCell` 離線推導 | [T2-condition-cell.md](T2-condition-cell.md) | T1 | Med |
-| ⬜ | **T3** 五類指標組裝(切換反應/移動執行/停止控制/首發/節奏) | [T3-five-metrics.md](T3-five-metrics.md) | T2 | Med |
-| ⬜ | **T-exit** 驗收:每次 transition 保存方向/角距/角尺寸;`analysis-spider-shot.md` 定稿;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
+| ✅ | **T0** entry gate(驗 WP-33 T-exit;讀碼確認 §0 對帳結論;拍板排程落點 + `zone`/`Meta.spawn.spiderShot` 欄位命名;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | WP-33 T-exit ✅ | Low |
+| ✅ | **T1** `DrillConfig.spiderShot` + schema 驗證 + `TargetManager` center-peripheral 排程分支 + `zone` 事件欄位 + `Meta.spawn.spiderShot` 回顯 | [T1-schedule-engine.md](T1-schedule-engine.md) | T0 | **Med–High** |
+| ✅ | **T2** `spider-shot-v1` drill config + `D_deg`/`W_deg`/象限/`targetConditionCell` 離線推導 | [T2-condition-cell.md](T2-condition-cell.md) | T1 | Med |
+| ✅ | **T3** 五類指標組裝(切換反應/移動執行/停止控制/首發/節奏) | [T3-five-metrics.md](T3-five-metrics.md) | T2 | Med |
+| ✅ | **T-exit** 驗收:每次 transition 保存方向/角距/角尺寸;`analysis-spider-shot.md` 定稿;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
 
 **T1 是關鍵路徑與風險集中點**(唯一觸碰 `TargetManager` 熱路徑分支 + 唯一真正新幾何);一 task = 一垂直切片 = 一原子 commit 紀律不變。
 
