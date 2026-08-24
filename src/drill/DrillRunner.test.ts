@@ -252,6 +252,82 @@ describe('DrillRunner — 生命週期（FR-6.4）', () => {
   });
 });
 
+describe('DrillRunner — hold-reversal cue schedule (WP-37/T2)', () => {
+  function reversalConfig(timing: DrillConfig['timing'] = { countdownMs: 0 }): DrillConfig {
+    return makeConfig({
+      cue: { kind: 'hold-reversal', holdDurationMs: 100 },
+      timing,
+      targets: { count: 2, distance: 4 },
+      endCondition: { type: 'targetCount', value: 2 },
+    });
+  }
+
+  it('emits the visible-side cue then the opposite cue after a continuous hold', () => {
+    const config = reversalConfig();
+    const { state, runner } = setup(config);
+
+    runner.start(config);
+    state.held.left = true;
+    runner.tick(state, 0);
+    expect(state.cues).toEqual([{ t: 0, direction: 'A' }]);
+
+    runner.tick(state, 99);
+    expect(state.cues).toHaveLength(1);
+    runner.tick(state, 100);
+    expect(state.cues).toEqual([{ t: 0, direction: 'A' }, { t: 100, direction: 'D' }]);
+  });
+
+  it('resets the hold timer when the prompted key is released instead of accumulating segments', () => {
+    const config = reversalConfig();
+    const { state, runner } = setup(config);
+
+    runner.start(config);
+    state.held.left = true;
+    runner.tick(state, 0);
+    runner.tick(state, 50);
+    state.held.left = false;
+    runner.tick(state, 51);
+    state.held.left = true;
+    runner.tick(state, 52);
+    runner.tick(state, 151);
+    expect(state.cues).toEqual([{ t: 0, direction: 'A' }]);
+
+    runner.tick(state, 152);
+    expect(state.cues).toEqual([{ t: 0, direction: 'A' }, { t: 152, direction: 'D' }]);
+  });
+
+  it.each([
+    ['peek timeout', { countdownMs: 0, peekTimeoutMs: 100 }],
+    ['timed presentation', { countdownMs: 0, presentationMs: 100 }],
+  ] as const)('cancels reversal tracking when %s removes the target', (_name, timing) => {
+    const config = reversalConfig(timing);
+    const { state, runner } = setup(config);
+
+    runner.start(config);
+    state.held.left = true;
+    runner.tick(state, 0);
+    runner.tick(state, 100);
+    expect(state.targets).toHaveLength(0);
+    expect(state.cues).toEqual([{ t: 0, direction: 'A' }]);
+
+    runner.tick(state, 101);
+    expect(state.cues).toEqual([{ t: 0, direction: 'A' }, { t: 101, direction: 'D' }]);
+  });
+
+  it('produces identical cue timestamps for the same hold timeline', () => {
+    const run = (): Array<{ t: number; direction: 'A' | 'D' }> => {
+      const config = reversalConfig();
+      const { state, runner } = setup(config);
+      runner.start(config);
+      state.held.left = true;
+      for (const nowMs of [0, 25, 100]) runner.tick(state, nowMs);
+      return state.cues.slice();
+    };
+
+    expect(run()).toEqual(run());
+  });
+});
+
 describe('DrillRunner — SimLoop 整合（sim tick 呼叫 DrillRunner.tick）', () => {
   const TICK_MS = 1000 / SIM_HZ;
 

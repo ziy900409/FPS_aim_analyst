@@ -48,6 +48,50 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
   let runStartMs = 0;
   // 已見過的目標 id 集合：擊殺數 = seen − 目前存活（單 active 目標，peek 節奏）；驅動 targetCount 判定。
   const seenIds = new Set<string>();
+  // hold-reversal 只追蹤目前可見目標。目標撤除或玩家放開第一個提示鍵時皆歸零，
+  // 因此不會把不同目標或不連續按住時間累加在一起。
+  let reversalTargetId: string | null = null;
+  let reversalHoldStartedAtMs: number | null = null;
+  let reversalCueSent = false;
+
+  function resetReversalTracking(): void {
+    reversalTargetId = null;
+    reversalHoldStartedAtMs = null;
+    reversalCueSent = false;
+  }
+
+  function tickHoldReversal(s: SharedState, nowMs: number): void {
+    const cue = config?.cue;
+    if (cue?.kind !== 'hold-reversal') return;
+
+    const target = s.targets.find((candidate) => candidate.alive && candidate.visible);
+    if (target === undefined) {
+      resetReversalTracking();
+      return;
+    }
+
+    const direction = target.side === 'L' ? 'A' : 'D';
+    if (target.id !== reversalTargetId) {
+      reversalTargetId = target.id;
+      reversalHoldStartedAtMs = null;
+      reversalCueSent = false;
+      // hold-reversal 的第一個提示以目標可見為量測起點，不耦合 foreperiod/spawn 排程。
+      s.cues.push({ t: nowMs, direction });
+    }
+
+    const isHoldingCueDirection = direction === 'A' ? s.held.left : s.held.right;
+    if (!isHoldingCueDirection) {
+      reversalHoldStartedAtMs = null;
+      return;
+    }
+    if (reversalCueSent) return;
+
+    if (reversalHoldStartedAtMs === null) reversalHoldStartedAtMs = nowMs;
+    if (nowMs - reversalHoldStartedAtMs >= cue.holdDurationMs) {
+      s.cues.push({ t: nowMs, direction: direction === 'A' ? 'D' : 'A' });
+      reversalCueSent = true;
+    }
+  }
 
   /** 全 reset（start / restart 共用）：state + targetManager + 內部游標歸零。 */
   function resetAll(): void {
@@ -57,6 +101,7 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
     seenIds.clear();
     countdownStartMs = null;
     runStartMs = 0;
+    resetReversalTracking();
   }
 
   return {
@@ -114,6 +159,10 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
             }
           }
         }
+
+        // 不建立第二套到期語意：先讓既有 timeout/presentation 閘撤除目標，再追蹤仍存活的
+        // 可見目標；撤除同 tick 不會產生過期的 reversal cue。
+        tickHoldReversal(s, nowMs);
 
         const killed = seenIds.size - s.targets.length;
         const ec = config.endCondition;

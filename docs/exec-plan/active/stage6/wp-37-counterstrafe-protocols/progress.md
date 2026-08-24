@@ -9,6 +9,8 @@ T0 ✅ (2026-08-24):覆核 WP-33 T-exit 與 README §0 八項讀碼對帳；無�
 
 T1 ✅ (2026-08-24 11:23Z):交付 `counterstrafe-cued-v1` 的 additive `DrillEvent.cue`、`CueScheduleConfig(kind:'single')` 與 schema guard、既有 foreperiod 起點的 cue 排程、`PeekWindowTs.cues`、純 DOM `CueOverlay` 和協定 config。先跑未修改的 `TargetManager` / `schema` / `DrillRunner` / `counterstrafe_ad_v1` / WP-22 determinism 基準（91 tests）全綠；完成後 `npm run test:ci` 全綠（115 Vitest files / 896 tests；21 Playwright tests）。
 
+T2 ✅ (2026-08-24 11:52Z):交付 `counterstrafe-reversal-v1` assessment config 與 `DrillRunner` 的目標可見→連續 hold→反向 cue 狀態機。第一 cue 在 target visible tick 寫入，對應 A/D 按住達 `holdDurationMs` 後同 tick 寫入反向 cue；放開即重算，且既有 `peekTimeoutMs` / `presentationMs` 先撤目標、再執行 tracking，沒有第二套逾時語意。`PeekWindowTs.cues` 現可把同 visible tick 的 first cue 與該 window 的 reversal cue 一起歸屬。改動前基準 100 tests 全綠；改動後 T2 針對性回歸 109 tests 全綠；`npm run test:ci` 全綠（116 Vitest files / 903 tests；21 Playwright tests）。
+
 ## Decision Log
 
 ### D-37.1 — Cue schedule contract 與 reversal 狀態機歸屬(2026-08-24)
@@ -31,9 +33,16 @@ T1 ✅ (2026-08-24 11:23Z):交付 `counterstrafe-cued-v1` 的 additive `DrillEve
 - **Rationale:** 與既有 `TargetManager → SharedState.tVisible → SimLoop.recordVisibleEvents → DataRecorder` 路徑同型，讓 target 管理保持不依賴 data recorder，且保證同 tick cue 先於 visible 寫入。
 - **Alternatives considered:** (1) 讓 `TargetManager` 直接依賴 `DataRecorder`；未採用，因為會把資料層耦進 spawn 管理。(2) 在 `TargetManager` 公開 callback/drain API；未採用，因為會擴張 22 個既有 TargetManager 使用點的介面契約。
 
+### D-37.4 — reversal cue 追蹤與 peek 歸屬(2026-08-24)
+
+- **Decision:** `DrillRunner.tick()` 先執行既有 `peekTimeoutMs` / `presentationMs` 撤除，再只追蹤仍存活可見的 target；hold 計時器以玩家首次在該 target 可見後持有其 cue 對應 A/D 的 sim tick 起算，放開即設回 `null`。達時只發一次相反方向 cue。
+- **Decision:** `buildPeekWindows()` 若某 visible tick 有 cue，將該 cue 起至下一個 visible 前的 cues 歸給目前 peek；否則維持既有「前一 visible 至目前 visible 的 foreperiod cue」歸屬。
+- **Rationale:** 前者讓 expiration 同 tick 不會寫出過期 reversal cue，且不創造第二 timeout；後者在不擴張 frozen `DrillEvent.cue`（不加 target ID）的前提下，正確收納 `hold-reversal` 的可見同 tick cue 和後續 reversal cue，同時維持 `single` 的 foreperiod 語意。
+- **Alternatives considered:** (1) 在 cue 事件加 target ID；未採用，因為 T1 已凍結的 additive contract 不需要為此擴張。(2) 一律以前一 visible 到目前 visible 間的 cues 歸屬；未採用，因為會遺漏或錯置 reversal 的第二 cue。(3) 新增 reversal 專屬逾時；未採用，因為既有撤除閘已能表達生命週期。
+
 ## Surprises
 
-無。README §0 的八項讀碼對帳均成立；唯一需追蹤的缺口已列為 OQ-S6-21（正式歷史守門尚未接進主匯出路徑）。
+`PeekWindowTs.cues` 的 T1 初始語意只涵蓋 visible 前的 foreperiod cue；T2 的第一 cue 與 visible 同 tick、第二 cue 位於 window 內，故需新增同-tick 分流。證據：`src/drill/counterstrafe_reversal_v1.test.ts` 覆蓋完整 cue→hold→reversal cue→counter→fire 分析序列；`npm run test:ci` 全綠。OQ-S6-21 仍為唯一未解的跨 WP 缺口。
 
 ## Open Questions 狀態
 
@@ -42,6 +51,6 @@ T1 ✅ (2026-08-24 11:23Z):交付 `counterstrafe-cued-v1` 的 additive `DrillEve
 | # | 問題 | 狀態 |
 |---|---|---|
 | OQ-S6-19 | reversal 狀態機落點:`DrillRunner` vs `TargetManager` | ✅ closed — `DrillRunner`（D-37.1） |
-| OQ-S6-20 | reversal 逾時機制:沿用 `peekTimeoutMs` 或獨立 | 🟡 T2 open — 現有 `peekTimeoutMs` / `presentationMs` 迴圈可機械共存；T2 需驗證撤除時取消 tracking，暫不新增第二逾時。 |
+| OQ-S6-20 | reversal 逾時機制:沿用 `peekTimeoutMs` 或獨立 | ✅ closed — 沿用既有 `peekTimeoutMs` / `presentationMs`；兩者撤除 target 後 tracking 同 tick 取消，測試覆蓋，未新增第二逾時（D-37.4）。 |
 | OQ-S6-21 | free-v1 Practice 匯出是否已有守門 | 🟡 T3/WP-38 dependency — `main.ts`/`ResultScreen.ts` 尚無 `mode` 分流，`buildCompatibilityKey()` 目前僅由 tests/研究 metrics 呼叫；凍結契約指定正式歷史執行期強制由 WP-38 擁有。T3 僅可確保 free config 標記 `practice` 且自身不建立 compatibility key。 |
 | OQ-S6-22 | `cueToKeyMs` 錨點是否需雙重報告 | 🟢 open(不阻塞開工) |

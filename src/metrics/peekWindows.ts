@@ -25,7 +25,7 @@ export interface PeekWindowTs {
   readonly ads?: boolean;
   readonly flags: readonly string[];
   readonly visible: VisibleEvent;
-  /** Cues issued during the foreperiod immediately preceding this visible target. */
+  /** Cues issued for this target: foreperiod cues, or same-tick-visible reversal cues and their follow-up. */
   readonly cues: readonly CueEvent[];
   readonly nextVisible?: VisibleEvent;
   readonly counter?: CounterEvent;
@@ -76,7 +76,14 @@ export function buildPeekWindows(payload: Pick<ExportPayload, 'ticks' | 'events'
     if (hitTimes.some((hitTime) => hitTime >= windowEnd)) flags.push('hit_outside_window');
     const outcome = fireTimes.length === 0 ? 'no_shot' : hitTimes.length > 0 ? 'hit' : 'timeout';
     const ads = windowTicks.length > 0 ? windowTicks.some((tick) => tick.ads) : undefined;
-    const cues = cueEvents.filter((event) => event.t >= priorVisibleT && event.t < visible.t);
+    // single-cue protocols stamp the cue in the preceding foreperiod; hold-reversal stamps its
+    // first cue in the same tick as visibility and its second cue later in this target window.
+    // A same-tick cue unambiguously selects the latter association without adding target IDs to
+    // the frozen cue event contract.
+    const hasVisibleCue = cueEvents.some((event) => event.t === visible.t);
+    const cues = hasVisibleCue
+      ? cueEvents.filter((event) => event.t >= visible.t && event.t < windowEnd)
+      : cueEvents.filter((event) => event.t >= priorVisibleT && event.t < visible.t);
 
     return {
       index,

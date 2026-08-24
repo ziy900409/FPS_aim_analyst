@@ -7,7 +7,7 @@
 | **相依** | T1(`CueScheduleConfig`/`DrillEvent.cue`/`cues[]` 基礎設施) |
 | **Risk / Cplx** | **Med–High** / Med–High(本 WP 唯一新狀態機;必須與既有 `peekTimeoutMs`/`presentationMs` 到期迴圈零干擾——耦合入既有 `DrillRunner.tick()` running 分支是主要風險所在) |
 | **Touches** | MODIFY `src/drill/DrillConfig.ts`(`CueScheduleConfig.holdDurationMs`)、`src/drill/schema.ts`(`kind==='hold-reversal'` 時必填驗證)、依 T0 D-37.1 拍板落點 MODIFY `src/drill/DrillRunner.ts` **或** `src/sim/TargetManager.ts`(hold→reversal 追蹤);ADD `src/drill/counterstrafe_reversal_v1.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-24) |
 
 ## Objective
 
@@ -29,12 +29,12 @@
 
 ## Steps
 
-- [ ] `DrillConfig.ts`/`schema.ts` 擴欄 + 驗證測試(合法/非法/必填規則)。
-- [ ] **既有 + T1 決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
-- [ ] hold→reversal 追蹤實作(依 T0 拍板落點)+ 決定性測試:同 seed → 反向 cue 時刻逐位一致;放開鍵重算計時器的合成 fixture(按 0.5×holdDurationMs → 放開 → 重新按住 → 應從頭計時,不是累加)。
-- [ ] `peekTimeoutMs`/`presentationMs` 共存合成 fixture(依 T0 OQ-S6-20 初判,驗證或明文排除併用)。
-- [ ] `counterstrafe_reversal_v1.ts` + 端到端合成 drill 測試(cue① → hold 達標 → cue② → 反向 counter → fire 全鏈可跑)。
-- [ ] `npx vitest run` 全綠。
+- [x] `DrillConfig.ts`/`schema.ts` 的 discriminated union 與合法/非法/必填驗證已於 T1 就緒，T2 沿用。
+- [x] **既有 + T1 決定性回歸全綠**（改動前 100 tests；改動後 109 tests，證據見 progress）。
+- [x] hold→reversal 追蹤實作於 `DrillRunner`；同一輸入時間線 cue timestamp 可重現，且合成 fixture 驗證放開後從頭計時。
+- [x] `peekTimeoutMs` / `presentationMs` 共存 fixture：撤除 target 後同 tick 取消 tracking（D-37.4）。
+- [x] `counterstrafe_reversal_v1.ts` + cue① → hold 達標 → cue② → counter → fire 分析鏈合成測試。
+- [x] `npx vitest run` 與 `npm run test:ci` 全綠。
 
 ## Definition of Done
 
