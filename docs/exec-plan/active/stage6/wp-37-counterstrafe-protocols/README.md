@@ -10,7 +10,7 @@
 | **相依** | **WP-33 T-exit ✅**(共同契約:`AssessmentMode`、`Meta.assessment`、`CompatibilityKey`/`checkQualityGate`);與 WP-34/35/36 並行,無檔案熱區重疊([../README.md §5](../README.md)) |
 | **對應 FR** | FR-F10 + FR-F11 + FR-F12 + FR-F13 |
 | **估時** | 2–3 dev-days([../README.md §6](../README.md));讀碼發現既有 counter-strafe 引擎(WP-5/6/14/23/29/32)已經覆蓋本 WP 一半以上的構念——`PeekWindowTs`(`tCounter`/`counterKey`/`tRelease`/`releaseKey`/`tFirstShot`)與已晉升的 `sync-v1`(`releaseToFireMs`/`counterHoldMs`/`counterToFireMs`)、`compute.ts` 的 `fireTimingAlignmentMs`/`leftRightSymmetry` 皆可直接複用;真正的淨新增只有(a)「系統提示方向」的 cue 事件與 UI、(b)`reversal` 的固定持續按住→反向提示狀態機、(c)制動量化(time-to-accuracy-gate/zero-crossing/停止距離/過度反向量)。估時落在下緣,由 T0/T1 讀碼結果收斂 |
-| **狀態** | 🟡 T0 entry gate ✅；T1 可開工 |
+| **狀態** | ✅ T0~T3+T-exit 全數完成(2026-08-24);`analysis-counterstrafe.md` 契約定稿,開放 WP-38 entry 最後一個條件(WP-34/35/36/37 全數 T-exit) |
 
 ---
 
@@ -259,6 +259,6 @@ export function deriveCounterstrafeMetrics(payload: ExportPayload): Counterstraf
 
 ## 8. 文件對帳清單
 
-- [ ] [../README.md](../README.md) §3:WP-37 狀態列由「⬜ 待建立」更新為本資料夾連結(本次規劃已建立,執行時隨 T0 更新狀態)。
-- [ ] `docs/operational/analysis-counterstrafe.md`(新,T1 起稿/T-exit 定稿):`cue` 事件語意、`CueScheduleConfig` 兩種 `kind`、reversal 狀態機、制動四量公式(含 `CS2_PROFILE.accuracyThreshold` 單一來源聲明)、共同指標組裝與型式來源。
-- [ ] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`cue` 事件、`CueScheduleConfig`、`holdDurationMs`、`timeToAccuracyGateMs`/`zeroCrossingMs`/`stopDistanceU`/`overReversalUPerS`、`counterstrafe-cued-v1`/`-reversal-v1`/`-free-v1`)於 T-exit 回寫。
+- [x] [../README.md](../README.md) §3:WP-37 狀態列由「🟡 執行計畫已展開」更新為 ✅(T-exit 完成,`analysis-counterstrafe.md` 定稿)。
+- [x] `docs/operational/analysis-counterstrafe.md`(新,T-exit 定稿):`cue` 事件語意、`CueScheduleConfig` 兩種 `kind`、reversal 狀態機、制動四量公式(含 `CS2_PROFILE.accuracyThreshold` 單一來源聲明)、共同指標組裝與型式來源。
+- [x] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`cue` 事件、`CueScheduleConfig`、`holdDurationMs`、`timeToAccuracyGateMs`/`zeroCrossingMs`/`stopDistanceU`/`overReversalUPerS`、`counterstrafe-cued-v1`/`-reversal-v1`/`-free-v1`)於 T-exit 回寫。

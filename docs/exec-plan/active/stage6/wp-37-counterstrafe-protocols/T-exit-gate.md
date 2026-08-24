@@ -7,7 +7,7 @@
 | **相依** | T3 |
 | **Risk / Cplx** | — |
 | **Touches** | `docs/operational/analysis-counterstrafe.md`、[CONTEXT.md](../../../../../CONTEXT.md)、本 WP README/task-checklist、[../README.md](../README.md) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -27,12 +27,12 @@
 
 ## Steps
 
-- [ ] 逐一覆核框架 v1 急停測試相關驗收條件,附證據連結(測試檔案/合成 fixture 名稱)。
-- [ ] 定稿 `analysis-counterstrafe.md`。
-- [ ] 回寫 CONTEXT.md 新術語。
-- [ ] 翻 stage6 README §3 WP-37 狀態。
-- [ ] 覆核 §7 OQ 逐條關閉或移交狀態。
-- [ ] 最終 `npm run test:ci` 全綠證據貼 progress.md。
+- [x] 逐一覆核框架 v1 急停測試相關驗收條件,附證據連結(測試檔案/合成 fixture 名稱)。
+- [x] 定稿 `analysis-counterstrafe.md`。
+- [x] 回寫 CONTEXT.md 新術語。
+- [x] 翻 stage6 README §3 WP-37 狀態。
+- [x] 覆核 §7 OQ 逐條關閉或移交狀態。
+- [x] 最終 `npm run test:ci` 全綠證據貼 progress.md。
 
 ## Definition of Done
 

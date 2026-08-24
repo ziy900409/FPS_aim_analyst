@@ -13,6 +13,8 @@ T2 ✅ (2026-08-24 11:52Z):交付 `counterstrafe-reversal-v1` assessment config 
 
 T3 ✅ (2026-08-24 16:00Z):交付 practice-only `counterstrafe-free-v1`（既有 free-form config 的等價 TS 包裝，無 `cue`）、`deriveBrakingSamples()` 與 `deriveCounterstrafeMetrics()`。制動從 counter tick 掃至首發；速度 gate 唯一讀取 `CS2_PROFILE.accuracyThreshold`，未變號與首發截斷都保留 flags，絕不以 0 補值。共同指標直接消費 `computeSyncMetrics()` 的 sync-v1 rows，依既有 `stat()` L/R 分層型式組裝，且型別/執行期 keys 均無合成總分。針對性回歸 4 files / 12 tests 與 typecheck 全綠；`npm run test:ci` 全綠（118 Vitest files / 911 tests；21 Playwright tests）。
 
+T-exit ✅ (2026-08-24 16:40Z):覆核框架 v1「三個急停子協定不共用未分層總分」驗收條件——`CounterstrafeMetrics` 型別與 `deriveCounterstrafeMetrics()` 執行期 keys 皆不含任何單一分數欄位,證據見 `counterstrafeMetrics.test.ts:49-`「exports only stratified measures, never a composite counter-strafe score」。定稿 [analysis-counterstrafe.md](../../../../operational/analysis-counterstrafe.md):`cue` 事件語意、`CueScheduleConfig` 兩種 `kind`、reversal 狀態機(含放開鍵重算計時器規則)、制動四量公式(含 `CS2_PROFILE.accuracyThreshold` 單一來源聲明)、共同指標組裝與型式來源、`cueToKeyMs` 錨點與 `hold-click-v1`/`hold-track-v1` 錨點不同的明文提醒(OQ-S6-22,採納 README §7 建議:只報告 cue 錨點值)。CONTEXT.md §A 回寫六則新術語:`cue` 事件、`CueScheduleConfig`、`holdDurationMs`/hold→reversal 狀態機、制動四量、`counterstrafe-cued-v1`/`-reversal-v1`/`-free-v1`。[../README.md](../README.md) §3 WP-37 狀態翻 ✅,並更新 WP-38 entry 條件敘述(WP-34/35/36/37 全數 T-exit)。最終 `npm run test:ci` 全綠(118 Vitest files / 911 tests;21 Playwright tests,與 T3 相同)。
+
 ## Decision Log
 
 ### D-37.1 — Cue schedule contract 與 reversal 狀態機歸屬(2026-08-24)
@@ -62,4 +64,4 @@ T3 ✅ (2026-08-24 16:00Z):交付 practice-only `counterstrafe-free-v1`（既有
 | OQ-S6-19 | reversal 狀態機落點:`DrillRunner` vs `TargetManager` | ✅ closed — `DrillRunner`（D-37.1） |
 | OQ-S6-20 | reversal 逾時機制:沿用 `peekTimeoutMs` 或獨立 | ✅ closed — 沿用既有 `peekTimeoutMs` / `presentationMs`；兩者撤除 target 後 tracking 同 tick 取消，測試覆蓋，未新增第二逾時（D-37.4）。 |
 | OQ-S6-21 | free-v1 Practice 匯出是否已有守門 | ✅ closed for T3 — `buildCompatibilityKey()` 目前僅由 tests/研究 metrics 呼叫，沒有 main/UI 匯出呼叫點可觸發；`counterstrafeFreeV1` 僅標記 `mode:'practice'` 且不依賴 compatibility-key 模組。正式歷史執行期守門仍由既有凍結契約指定 WP-38 整合。 |
-| OQ-S6-22 | `cueToKeyMs` 錨點是否需雙重報告 | 🟢 open(不阻塞開工) |
+| OQ-S6-22 | `cueToKeyMs` 錨點是否需雙重報告 | ✅ closed — 採納 README §7 建議,只報告以 cue 為錨點的值;`analysis-counterstrafe.md`「`cueToKeyMs` 錨點提醒」節明文記載與 `hold-click-v1`/`hold-track-v1` 可見度 onset 錨點不同,不可跨家族直接比較。 |

@@ -9,7 +9,7 @@
 | ✅ | **T1** `counterstrafe-cued-v1`:`DrillEvent.cue` + `CueScheduleConfig(kind:'single')` + `TargetManager` 插入分支 + `CueOverlay` UI + `PeekWindowTs.cues` | [T1-cued-protocol.md](T1-cued-protocol.md) | T0 | Med |
 | ✅ | **T2** `counterstrafe-reversal-v1`:`CueScheduleConfig(kind:'hold-reversal')` + 獨立 hold→reversal 狀態機 + 反向輸入離線判定 | [T2-reversal-protocol.md](T2-reversal-protocol.md) | T1 | **Med–High** |
 | ✅ | **T3** `counterstrafe-free-v1`(Practice)+ `brakingDerivation.ts` + `counterstrafeMetrics.ts`(共同指標組裝) | [T3-free-and-metrics.md](T3-free-and-metrics.md) | T2 | Med |
-| ⬜ | **T-exit** 驗收:三個急停子協定不共用未分層總分;`analysis-counterstrafe.md` 定稿;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
+| ✅ | **T-exit** 驗收:三個急停子協定不共用未分層總分;`analysis-counterstrafe.md` 定稿;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
 
 **T2 是關鍵路徑與風險集中點**(本 WP 唯一新狀態機,須與既有 `peekTimeoutMs`/`presentationMs` 到期閘零干擾);一 task = 一垂直切片 = 一原子 commit 紀律不變。
 
