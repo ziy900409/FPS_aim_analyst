@@ -416,7 +416,7 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
     drillId: activeDrillConfig.drillId,
     weaponId: weaponConfig.id,
     weaponSeed: weaponConfig.recoil.seed,
-    rngSeed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
+    rngSeed: activeDrillConfig.spiderShot?.seed ?? activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
     backend,
     displayHz,
     simHz: SIM_HZ,
@@ -459,8 +459,9 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),
     },
     spawn: {
-      seed: activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
+      seed: activeDrillConfig.spiderShot?.seed ?? activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.spawnArea !== undefined ? { spawnArea: activeDrillConfig.targets.spawnArea } : {}),
+      ...(activeDrillConfig.spiderShot !== undefined ? { spiderShot: activeDrillConfig.spiderShot } : {}),
       ...(activeDrillConfig.sequence.spawnDelayMsRange !== undefined
         ? { spawnDelayMsRange: activeDrillConfig.sequence.spawnDelayMsRange }
         : {}),
@@ -601,7 +602,7 @@ function buildSimLoop(): SimLoop {
     drillRunner,
     recorder,
     activeWeaponConfig(),
-    activeDrillConfig.sequence.seed,
+    activeDrillConfig.spiderShot?.seed ?? activeDrillConfig.sequence.seed,
     {
       afterTick(state): void {
         if (isOutsideCorridor(state.player.x, activeSceneConfig.playerCorridor.halfWidthU, SIM_TO_WORLD)) {

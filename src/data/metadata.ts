@@ -19,6 +19,8 @@ export interface SpawnMeta {
   seed: number;
   motion?: unknown;
   spawnArea?: unknown;
+  /** Opaque WP-36 center/peripheral schedule replay contract. */
+  spiderShot?: unknown;
   spawnDelayMsRange?: unknown;
   /** timed presentation 呈現時長(ms,WP-18 / T3)——追蹤 drill 重現/追蹤窗口右界所需。 */
   presentationMs?: number;

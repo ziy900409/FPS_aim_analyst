@@ -1,4 +1,10 @@
-import { MAX_TARGET_HITBOX_U, type DrillConfig, type SpawnAreaConfig, type TargetHitboxConfig } from './DrillConfig.ts';
+import {
+  MAX_TARGET_HITBOX_U,
+  type DrillConfig,
+  type SpawnAreaConfig,
+  type SpiderShotScheduleConfig,
+  type TargetHitboxConfig,
+} from './DrillConfig.ts';
 import type { AssessmentMode } from './assessmentContract.ts';
 import type { TargetMotion } from '../state/types.ts';
 
@@ -43,13 +49,19 @@ export function validateDrill(json: unknown): DrillConfig {
     sequence.spawnDelayMsRange === undefined
       ? undefined
       : requireNonNegativeRange(sequence.spawnDelayMsRange, 'sequence.spawnDelayMsRange');
+  const spiderShot = root.spiderShot === undefined ? undefined : validateSpiderShotSchedule(root.spiderShot);
   if (spawnArea !== undefined && seed === undefined) {
     throw err('targets.spawnArea', '需搭配 sequence.seed');
   }
   if (spawnDelayMsRange !== undefined && seed === undefined) {
     throw err('sequence.spawnDelayMsRange', '需搭配 sequence.seed');
   }
-  if (mode === 'assessment' && seed === undefined) {
+  if (spiderShot !== undefined) {
+    if (spawnArea !== undefined) throw err('targets.spawnArea', '不可與 spiderShot 同時提供');
+    if (spawnDelayMsRange !== undefined) throw err('sequence.spawnDelayMsRange', '不可與 spiderShot 同時提供');
+    if (seed !== undefined) throw err('sequence.seed', '不可與 spiderShot 同時提供');
+  }
+  if (mode === 'assessment' && seed === undefined && spiderShot === undefined) {
     throw err('sequence.seed', "mode='assessment' 時必填");
   }
 
@@ -95,6 +107,7 @@ export function validateDrill(json: unknown): DrillConfig {
       ...(seed !== undefined ? { seed } : {}),
       ...(spawnDelayMsRange !== undefined ? { spawnDelayMsRange } : {}),
     },
+    ...(spiderShot !== undefined ? { spiderShot } : {}),
     timing: {
       countdownMs,
       ...(spawnDelayMs !== undefined ? { spawnDelayMs } : {}),
@@ -104,6 +117,30 @@ export function validateDrill(json: unknown): DrillConfig {
       ...(trackingStopMs !== undefined ? { trackingStopMs } : {}),
     },
     endCondition: { type, value },
+  };
+}
+
+function validateSpiderShotSchedule(json: unknown): SpiderShotScheduleConfig {
+  const spiderShot = requireObject(json, 'spiderShot');
+  if (spiderShot.kind !== 'center-peripheral') {
+    throw err('spiderShot.kind', "必須為 'center-peripheral'");
+  }
+  const peripheral = requireObject(spiderShot.peripheral, 'spiderShot.peripheral');
+  return {
+    kind: 'center-peripheral',
+    seed: requireFiniteNumber(spiderShot.seed, 'spiderShot.seed'),
+    centerDistanceU: requirePositiveNumber(spiderShot.centerDistanceU, 'spiderShot.centerDistanceU'),
+    peripheral: {
+      angularRadiusDegRange: requirePositiveDegreeRange(
+        peripheral.angularRadiusDegRange,
+        'spiderShot.peripheral.angularRadiusDegRange',
+      ),
+      azimuthDegRange: requireNonNegativeDegreeRange(
+        peripheral.azimuthDegRange,
+        'spiderShot.peripheral.azimuthDegRange',
+      ),
+      distanceURange: requirePositiveRange(peripheral.distanceURange, 'spiderShot.peripheral.distanceURange'),
+    },
   };
 }
 
@@ -214,6 +251,18 @@ function requireNonNegativeRange(v: unknown, path: string): [number, number] {
 function requirePositiveRange(v: unknown, path: string): [number, number] {
   const range = requireRange(v, path);
   if (range[0] <= 0 || range[1] <= 0) throw err(path, '必須 > 0');
+  return range;
+}
+
+function requirePositiveDegreeRange(v: unknown, path: string): [number, number] {
+  const range = requirePositiveRange(v, path);
+  if (range[1] > 360) throw err(path, '必須 ≤ 360');
+  return range;
+}
+
+function requireNonNegativeDegreeRange(v: unknown, path: string): [number, number] {
+  const range = requireNonNegativeRange(v, path);
+  if (range[1] > 360) throw err(path, '必須 ≤ 360');
   return range;
 }
 

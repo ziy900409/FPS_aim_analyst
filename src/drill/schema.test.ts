@@ -86,6 +86,34 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
     expect(cfg.sequence.seed).toBe(20260819);
   });
 
+  it("mode='assessment' accepts a self-contained spiderShot seed without sequence.seed", () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      mode: 'assessment',
+      spiderShot: {
+        kind: 'center-peripheral',
+        seed: 20260824,
+        centerDistanceU: 4,
+        peripheral: {
+          angularRadiusDegRange: [10, 30],
+          azimuthDegRange: [0, 360],
+          distanceURange: [3.5, 4.5],
+        },
+      },
+    });
+    expect(cfg.sequence.seed).toBeUndefined();
+    expect(cfg.spiderShot).toEqual({
+      kind: 'center-peripheral',
+      seed: 20260824,
+      centerDistanceU: 4,
+      peripheral: {
+        angularRadiusDegRange: [10, 30],
+        azimuthDegRange: [0, 360],
+        distanceURange: [3.5, 4.5],
+      },
+    });
+  });
+
   it('seeded spawn range 允許退化為固定值（min=max）', () => {
     const cfg = validateDrill({
       ...(minimalValid() as object),
@@ -263,6 +291,58 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
       validateDrill({
         ...(minimalValid() as object),
         sequence: { alternation: 'RL', seed: 7, spawnDelayMsRange: [-1, 100] },
+      }),
+    ).toThrow(/sequence\.spawnDelayMsRange/);
+  });
+
+  it('spiderShot validates its geometry and rejects legacy seeded-spawn settings', () => {
+    const spiderShot = {
+      kind: 'center-peripheral',
+      seed: 7,
+      centerDistanceU: 4,
+      peripheral: {
+        angularRadiusDegRange: [10, 30],
+        azimuthDegRange: [0, 360],
+        distanceURange: [3.5, 4.5],
+      },
+    };
+    expect(() =>
+      validateDrill({ ...(minimalValid() as object), spiderShot: { ...spiderShot, kind: 'orbit' } }),
+    ).toThrow(/spiderShot\.kind/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        spiderShot: { ...spiderShot, peripheral: { ...spiderShot.peripheral, angularRadiusDegRange: [0, 30] } },
+      }),
+    ).toThrow(/spiderShot\.peripheral\.angularRadiusDegRange/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        spiderShot: { ...spiderShot, peripheral: { ...spiderShot.peripheral, azimuthDegRange: [0, 361] } },
+      }),
+    ).toThrow(/spiderShot\.peripheral\.azimuthDegRange/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        spiderShot: { ...spiderShot, peripheral: { ...spiderShot.peripheral, distanceURange: [0, 4.5] } },
+      }),
+    ).toThrow(/spiderShot\.peripheral\.distanceURange/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: { count: 20, distance: 4, spawnArea: { yawDegRange: [0, 0], distanceURange: [4, 4] } },
+        sequence: { alternation: 'RL', seed: 1 },
+        spiderShot,
+      }),
+    ).toThrow(/targets\.spawnArea/);
+    expect(() =>
+      validateDrill({ ...(minimalValid() as object), sequence: { alternation: 'RL', seed: 1 }, spiderShot }),
+    ).toThrow(/sequence\.seed/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        sequence: { alternation: 'RL', spawnDelayMsRange: [1, 2] },
+        spiderShot,
       }),
     ).toThrow(/sequence\.spawnDelayMsRange/);
   });

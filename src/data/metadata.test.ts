@@ -143,6 +143,24 @@ describe('collectMeta', () => {
     });
   });
 
+  it('preserves an opaque spiderShot replay schedule in spawn metadata', () => {
+    const spiderShot = {
+      kind: 'center-peripheral',
+      seed: 20260824,
+      centerDistanceU: 4,
+      peripheral: { angularRadiusDegRange: [10, 30], azimuthDegRange: [0, 360], distanceURange: [3.5, 4.5] },
+    };
+    const meta = collectMeta({
+      drillId: 'spider-shot-v1',
+      backend: 'webgl2',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      spawn: { seed: spiderShot.seed, spiderShot },
+    });
+    expect(meta.spawn).toEqual({ seed: 20260824, spiderShot });
+  });
+
   it('rejects malformed weapon ads metadata', () => {
     expect(() =>
       collectMeta({

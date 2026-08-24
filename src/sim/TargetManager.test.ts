@@ -574,3 +574,107 @@ describe('TargetManager — WP-21 seeded spawn（FR-C10）', () => {
     }
   });
 });
+
+describe('TargetManager — WP-36 spider-shot center/peripheral schedule', () => {
+  function spiderConfig(
+    seed: number,
+    peripheral: NonNullable<DrillConfig['spiderShot']>['peripheral'] = {
+      angularRadiusDegRange: [10, 30],
+      azimuthDegRange: [0, 360],
+      distanceURange: [3.5, 4.5],
+    },
+  ): DrillConfig {
+    return {
+      drillId: 'spider-shot-test',
+      targets: { count: 6, distance: 4 },
+      sequence: { alternation: 'LR' },
+      spiderShot: { kind: 'center-peripheral', seed, centerDistanceU: 4, peripheral },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: 6 },
+    };
+  }
+
+  function collectSequence(cfg: DrillConfig): Array<{ zone: 'center' | 'peripheral'; x: number; y: number; z: number }> {
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+    const sequence: Array<{ zone: 'center' | 'peripheral'; x: number; y: number; z: number }> = [];
+    for (let i = 0; i < cfg.targets.count; i++) {
+      tm.tick(state, 100 + i * 100);
+      const target = state.targets[0];
+      sequence.push({ zone: target.zone!, x: target.pos.x, y: target.pos.y, z: target.pos.z });
+      tm.markKilled(state, target.id);
+    }
+    return sequence;
+  }
+
+  it('alternates center → peripheral → center while keeping only one active target', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(spiderConfig(77));
+
+    tm.tick(state, 100);
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0]).toMatchObject({ zone: 'center', pos: { x: 0, y: 1.5, z: -4 } });
+    tm.markKilled(state, state.targets[0].id);
+
+    tm.tick(state, 200);
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0].zone).toBe('peripheral');
+    tm.markKilled(state, state.targets[0].id);
+
+    tm.tick(state, 300);
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0]).toMatchObject({ zone: 'center', pos: { x: 0, y: 1.5, z: -4 } });
+  });
+
+  it('replays the same peripheral sequence after reset, while a different seed changes it', () => {
+    const cfg = spiderConfig(77);
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+    const run = (): Array<{ zone: 'center' | 'peripheral'; x: number; y: number; z: number }> => {
+      const sequence: Array<{ zone: 'center' | 'peripheral'; x: number; y: number; z: number }> = [];
+      for (let i = 0; i < cfg.targets.count; i++) {
+        tm.tick(state, 100 + i * 100);
+        const target = state.targets[0];
+        sequence.push({ zone: target.zone!, x: target.pos.x, y: target.pos.y, z: target.pos.z });
+        tm.markKilled(state, target.id);
+      }
+      return sequence;
+    };
+
+    const first = run();
+    tm.reset(state);
+    expect(run()).toEqual(first);
+    expect(collectSequence(spiderConfig(78))).not.toEqual(first);
+  });
+
+  it('maps four cardinal azimuths and two diagonals to independently calculated world coordinates', () => {
+    const expected = [
+      { azimuthDeg: 0, x: 0, y: 7.490633420552356, z: 2.8089875327071336 },
+      { azimuthDeg: 90, x: 8, y: 0, z: 0 },
+      { azimuthDeg: 180, x: 0, y: -7.490633420552356, z: -2.8089875327071336 },
+      { azimuthDeg: 270, x: -8, y: 0, z: 0 },
+      { azimuthDeg: 45, x: 5.65685424949238, y: 5.296677687055156, z: 1.9862541326456833 },
+      { azimuthDeg: 225, x: -5.65685424949238, y: -5.296677687055156, z: -1.9862541326456833 },
+    ] as const;
+
+    for (const sample of expected) {
+      const state = createSharedState();
+      const tm = createTargetManager(
+        spiderConfig(1, {
+          angularRadiusDegRange: [90, 90],
+          azimuthDegRange: [sample.azimuthDeg, sample.azimuthDeg],
+          distanceURange: [8, 8],
+        }),
+      );
+      tm.tick(state, 100);
+      tm.markKilled(state, state.targets[0].id);
+      tm.tick(state, 200);
+
+      const peripheral = state.targets[0];
+      expect(peripheral.zone).toBe('peripheral');
+      expect(peripheral.pos.x).toBeCloseTo(sample.x, 12);
+      expect(peripheral.pos.y).toBeCloseTo(sample.y, 12);
+      expect(peripheral.pos.z).toBeCloseTo(sample.z, 12);
+    }
+  });
+});

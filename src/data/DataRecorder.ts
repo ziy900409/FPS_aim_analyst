@@ -12,6 +12,8 @@ export type DrillEvent =
       type: 'visible';
       targetId: string;
       side: 'L' | 'R';
+      /** Spider Shot schedule marker; omitted for legacy drills. */
+      zone?: 'center' | 'peripheral';
       t: number;
       targetX?: number;
       targetY?: number;

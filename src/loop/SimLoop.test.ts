@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { BULLET_CAP, createSharedState } from '../state/SharedState.ts';
 import { pushEvent } from '../state/inputRingTestUtil.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
+import { createTargetManager } from '../sim/TargetManager.ts';
 import type { TargetState } from '../state/types.ts';
+import type { DrillConfig } from '../drill/DrillConfig.ts';
 import type { Clock } from './clock.ts';
 import { SIM_HZ } from './constants.ts';
 import { createSimLoop, simStep, type RecoilRuntime } from './SimLoop.ts';
@@ -580,6 +582,38 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     }
 
     expect(run(4242)).toEqual(run(4242));
+  });
+
+  it('exports spider-shot visible events with their additive center/peripheral zone', () => {
+    const config: DrillConfig = {
+      drillId: 'spider-shot-test',
+      targets: { count: 2, distance: 4 },
+      sequence: { alternation: 'LR' },
+      spiderShot: {
+        kind: 'center-peripheral',
+        seed: 7,
+        centerDistanceU: 4,
+        peripheral: {
+          angularRadiusDegRange: [30, 30],
+          azimuthDegRange: [90, 90],
+          distanceURange: [4, 4],
+        },
+      },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: 2 },
+    };
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const tm = createTargetManager(config);
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, undefined, undefined, undefined, undefined, recorder);
+    tm.markKilled(state, state.targets[0].id);
+    simStep(state, 1 / SIM_HZ, TICK_MS * 2, tm, undefined, undefined, undefined, undefined, recorder);
+
+    expect(recorder.snapshot().events.filter((event) => event.type === 'visible')).toMatchObject([
+      { targetId: 't0', zone: 'center' },
+      { targetId: 't1', zone: 'peripheral' },
+    ]);
   });
 
   it('records visible, counter, and fire events from a synthetic drill', () => {

@@ -92,15 +92,22 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   const defaultFirstSide: 'L' | 'R' = config ? (config.sequence.alternation[0] as 'L' | 'R') : 'R';
   const spawnArea = config?.targets.spawnArea;
   const spawnDelayMsRange = config?.sequence.spawnDelayMsRange;
+  const spiderShot = config?.spiderShot;
   const usesSeededSpawn =
     config?.sequence.seed !== undefined && (spawnArea !== undefined || spawnDelayMsRange !== undefined);
 
   let nextId = 0;
   // 下一個 spawn 側;`markKilled` 每次擊殺翻面以實現左右交替(FR-4.3)。首側由 reset 設。
   let nextSide: 'L' | 'R' = defaultFirstSide;
+  // Spider Shot keeps independent center/peripheral state; it never reads or mutates legacy nextSide.
+  let nextSpiderZone: 'center' | 'peripheral' = 'center';
   // 已 spawn 目標數(對照 spawnLimit;reset 歸零)——config 驅動的「換 config 即換數量」判準。
   let spawnedCount = 0;
-  let spawnRng: Rng | undefined = usesSeededSpawn ? createRan1(config.sequence.seed!) : undefined;
+  let spawnRng: Rng | undefined = usesSeededSpawn
+    ? createRan1(config.sequence.seed!)
+    : spiderShot !== undefined
+      ? createRan1(spiderShot.seed)
+      : undefined;
   let pendingSpawnAtMs: number | null = null;
 
   function sampleDelayMs(): number {
@@ -108,7 +115,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     return randomFloat(spawnRng, spawnDelayMsRange[0], spawnDelayMsRange[1]);
   }
 
-  function sampleSpawnPose(): { side: 'L' | 'R'; pos: { x: number; y: number; z: number } } {
+  function sampleSpawnPose(): { side: 'L' | 'R'; zone?: 'center' | 'peripheral'; pos: { x: number; y: number; z: number } } {
     if (spawnRng === undefined || spawnArea === undefined) {
       return { side: nextSide, pos: { x: sideX(nextSide), y: TARGET_Y, z: -distance } };
     }
@@ -125,13 +132,56 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     };
   }
 
+  function sampleSpiderShotPose(): {
+    side: 'L' | 'R';
+    zone: 'center' | 'peripheral';
+    pos: { x: number; y: number; z: number };
+  } {
+    if (spiderShot === undefined) throw new Error('spiderShot schedule is required');
+    if (nextSpiderZone === 'center') {
+      return {
+        side: 'R',
+        zone: 'center',
+        pos: { x: 0, y: TARGET_Y, z: -spiderShot.centerDistanceU },
+      };
+    }
+
+    const { peripheral } = spiderShot;
+    const azimuthRad =
+      randomFloat(spawnRng!, peripheral.azimuthDegRange[0], peripheral.azimuthDegRange[1]) * DEG_TO_RAD;
+    const radiusRad =
+      randomFloat(spawnRng!, peripheral.angularRadiusDegRange[0], peripheral.angularRadiusDegRange[1]) * DEG_TO_RAD;
+    const distanceU = randomFloat(spawnRng!, peripheral.distanceURange[0], peripheral.distanceURange[1]);
+    // Center sightline is (0, TARGET_Y, -centerDistanceU). Its projected world-up axis makes
+    // azimuth 0/90/180/270 map to up/right/down/left without reusing legacy horizontal yaw.
+    const centerLength = Math.hypot(TARGET_Y, spiderShot.centerDistanceU);
+    const forwardY = TARGET_Y / centerLength;
+    const forwardZ = -spiderShot.centerDistanceU / centerLength;
+    const upY = spiderShot.centerDistanceU / centerLength;
+    const upZ = TARGET_Y / centerLength;
+    const radialSin = Math.sin(radiusRad);
+    const radialCos = Math.cos(radiusRad);
+    const azimuthSin = Math.sin(azimuthRad);
+    const azimuthCos = Math.cos(azimuthRad);
+    return {
+      side: 'R',
+      zone: 'peripheral',
+      pos: {
+        x: distanceU * radialSin * azimuthSin,
+        y: distanceU * (radialCos * forwardY + radialSin * azimuthCos * upY),
+        z: distanceU * (radialCos * forwardZ + radialSin * azimuthCos * upZ),
+      },
+    };
+  }
+
   /** 生成一個目標(OQ-4.2:spawn 瞬間即可見)。spawn 屬低頻事件(peek 節奏),非每 tick 熱路徑。 */
   function spawn(state: SharedState): void {
-    const pose = sampleSpawnPose();
+    const pose = spiderShot !== undefined ? sampleSpiderShotPose() : sampleSpawnPose();
     state.weapon.ammo = state.weapon.magSize;
     state.targets.push({
       id: `t${nextId++}`,
       side: pose.side,
+      ...(spiderShot !== undefined ? { zone: pose.zone } : {}),
       pos: pose.pos,
       visible: true,
       alive: true,
@@ -230,7 +280,11 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       // 只有真的撤除了目標才翻面(擊殺不存在 id 不推進序列)——確定性輪替 L↔R(FR-4.3),
       // 下一個可見 tick 於對側 spawn 並蓋新 t_visible。
       if (removed) {
-        nextSide = nextSide === 'R' ? 'L' : 'R';
+        if (spiderShot !== undefined) {
+          nextSpiderZone = nextSpiderZone === 'center' ? 'peripheral' : 'center';
+        } else {
+          nextSide = nextSide === 'R' ? 'L' : 'R';
+        }
         // t_visible 隨目標撤除清掉;下次 spawn 為新 id、重新蓋戳(可見→不可見→再可見視為新目標)。
         state.tVisible.delete(id);
         state.tStop.delete(id);
@@ -244,9 +298,14 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       nextId = 0;
       spawnedCount = 0;
       pendingSpawnAtMs = null;
-      spawnRng = usesSeededSpawn ? createRan1(config!.sequence.seed!) : undefined;
+      spawnRng = usesSeededSpawn
+        ? createRan1(config!.sequence.seed!)
+        : spiderShot !== undefined
+          ? createRan1(spiderShot.seed)
+          : undefined;
       // seq 顯式優先(既有 WP-4 呼叫);省略時退回 config 首側(或無 config 的預設 'R')。
       nextSide = seq ? (seq[0] as 'L' | 'R') : defaultFirstSide;
+      nextSpiderZone = 'center';
     },
   };
 }

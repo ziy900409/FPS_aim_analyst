@@ -24,6 +24,24 @@ export interface SpawnAreaConfig {
   distanceURange: [number, number];
 }
 
+/** Center/peripheral schedule for spider-shot; independent from legacy L/R sequencing. */
+export interface SpiderPeripheralConfig {
+  /** Angular displacement from the center sightline (degrees). */
+  angularRadiusDegRange: [number, number];
+  /** 0° = up, 90° = right, 180° = down, 270° = left around the center sightline. */
+  azimuthDegRange: [number, number];
+  /** Peripheral target distance from the player origin (source units). */
+  distanceURange: [number, number];
+}
+
+export interface SpiderShotScheduleConfig {
+  kind: 'center-peripheral';
+  seed: number;
+  /** Center target distance from the player origin (source units). */
+  centerDistanceU: number;
+  peripheral: SpiderPeripheralConfig;
+}
+
 /**
  * DrillConfig — WP-6 / T1（FR-6.1，OQ-6.1~6.3）
  *
@@ -59,6 +77,8 @@ export interface DrillConfig {
   };
   /** 左右交替序列:`alternation` 首字定首側（對齊 `TargetManager.reset(seq)`）;`seed` 驅動 WP-21 seeded spawn。 */
   sequence: { alternation: 'LR' | 'RL'; seed?: number; spawnDelayMsRange?: [number, number] };
+  /** WP-36 spider-shot schedule. Presence selects an independent center/peripheral spawn path. */
+  spiderShot?: SpiderShotScheduleConfig;
   timing: {
     /** 開始前倒數（ms;DrillRunner countdown phase,T4）。 */
     countdownMs: number;

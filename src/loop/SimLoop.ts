@@ -533,6 +533,7 @@ function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecor
         type: 'visible',
         targetId: target.id,
         side: target.side,
+        ...(target.zone !== undefined ? { zone: target.zone } : {}),
         t,
         targetX: target.pos.x,
         targetY: target.pos.y,

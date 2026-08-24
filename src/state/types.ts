@@ -167,6 +167,8 @@ export interface TargetMotion {
 export interface TargetState {
   id: string;
   side: 'L' | 'R'; //                     左右交替 peek 槽位（T3）
+  /** Spider Shot schedule marker; omitted for all legacy targets. */
+  zone?: 'center' | 'peripheral';
   pos: Vec3; //                           世界座標（source unit，u）
   visible: boolean; //                    是否可見（決定 render 顯示 + t_visible 蓋戳，T2）
   alive: boolean; //                      是否未被擊殺（P2：命中才撤，WP-5）

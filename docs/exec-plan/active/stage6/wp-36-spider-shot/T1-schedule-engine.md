@@ -7,7 +7,7 @@
 | **相依** | T0(排程落點/欄位命名拍板) |
 | **Risk / Cplx** | **Med–High** / Med(唯一觸碰 `TargetManager` 熱路徑分支 + 唯一新增二維極座標幾何——零破壞不變式是主要風險所在) |
 | **Touches** | MODIFY `src/drill/DrillConfig.ts`(新增 `spiderShot?: SpiderShotScheduleConfig`)、`src/drill/schema.ts`(`validateSpiderShotSchedule` + 互斥規則)、`src/sim/TargetManager.ts`(center-peripheral 分支)、`src/data/DataRecorder.ts`(`DrillEvent.visible.zone?`)、`src/data/metadata.ts`(`SpawnMeta.spiderShot?`);REUSE `src/recoil/rng.ts`(`createRan1`/`randomFloat`,不改) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 完成(2026-08-24;見 [progress.md](progress.md) D-36.3) |
 
 ## Objective
 
@@ -31,12 +31,12 @@
 
 ## Steps
 
-- [ ] `DrillConfig.ts`/`schema.ts` 擴欄 + 驗證測試(合法/非法/與既有 spawn 機制併用規則,依 T0 D-36.2 拍板結果)。
-- [ ] **既有決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
-- [ ] `TargetManager.ts` center-peripheral 分支 + 同 seed 重現測試 + `reset()` 重建 stream 測試。
-- [ ] 四象限 + 兩斜向合成 fixture 世界座標斷言。
-- [ ] `DataRecorder.ts`/`metadata.ts` additive 欄位 + 既有匯出決定性 baseline 零重錄的斷言。
-- [ ] `npx vitest run` 全綠。
+- [x] `DrillConfig.ts`/`schema.ts` 擴欄 + 驗證測試(合法/非法/與既有 spawn 機制併用規則,依 T0 D-36.2 拍板結果)。
+- [x] **既有決定性回歸全綠**(改動前基準 → 改動後重跑,證據記 progress)。
+- [x] `TargetManager.ts` center-peripheral 分支 + 同 seed 重現測試 + `reset()` 重建 stream 測試。
+- [x] 四象限 + 兩斜向合成 fixture 世界座標斷言。
+- [x] `DataRecorder.ts`/`metadata.ts` additive 欄位 + 既有匯出決定性 baseline 零重錄的斷言。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 
