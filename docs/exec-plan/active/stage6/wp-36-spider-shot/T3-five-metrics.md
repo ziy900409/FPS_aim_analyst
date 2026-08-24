@@ -7,7 +7,7 @@
 | **相依** | T2(條件格 + `spider-shot-v1` drill config) |
 | **Risk / Cplx** | Med(停止控制子項視 §0-5/OQ-S6-16 讀碼結果可能上修) / Med |
 | **Touches** | ADD `src/metrics/spiderShotMetrics.ts`;可能 ADD 一個消費 `TrackingSample[]` 的加法擴充函式(視 OQ-S6-16 結論);REUSE `detectionDerivation.ts`/`angularKinematics.ts`/`peekWindows.ts`/`trackingDerivation.ts`/`eyeOrigin.ts`(皆不改既有簽名/語意) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-24) |
 
 ## Objective
 
@@ -30,12 +30,12 @@
 
 ## Steps
 
-- [ ] 讀碼確認 OQ-S6-16(`trackingDerivation.ts`/WP-35 `trackingTransitions.ts` 的覆蓋面),決定停止控制的實作路徑(直接複用 vs 新增加法擴充函式)。
-- [ ] 切換反應/移動執行/首發/節奏四類指標組裝函式,逐一複用既有函式,不重推。
-- [ ] 停止控制指標函式(依上一步結論)。
-- [ ] `deriveSpiderShotMetrics()` 彙整五類輸出。
-- [ ] 端到端合成 drill 測試(涵蓋 center→peripheral、peripheral→center、若拍板納入則含回中心案例)。
-- [ ] `npx vitest run` 全綠。
+- [x] 讀碼確認 OQ-S6-16(`trackingDerivation.ts`/WP-35 `trackingTransitions.ts` 的覆蓋面),決定停止控制的實作路徑(直接複用 vs 新增加法擴充函式)。
+- [x] 切換反應/移動執行/首發/節奏四類指標組裝函式,逐一複用既有函式,不重推。
+- [x] 停止控制指標函式(依上一步結論)。
+- [x] `deriveSpiderShotMetrics()` 彙整五類輸出。
+- [x] 端到端合成 drill 測試(涵蓋 center→peripheral、peripheral→center、若拍板納入則含回中心案例)。
+- [x] `npx vitest run` 全綠。
 
 ## Definition of Done
 
