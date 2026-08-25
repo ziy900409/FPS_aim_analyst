@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '{print $5, $9}')",
+      "Bash(gh issue *)",
+      "mcp__codegraph__codegraph_explore",
+      "Bash(uv run *)",
+      "Read(//c/Users/Hsin.YH.Yang/BenQ/03_external/gitgit/FPS_aim_analyst-WP-29/**)",
+      "Bash(graphify update *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "codegraph"
+  ]
+}
