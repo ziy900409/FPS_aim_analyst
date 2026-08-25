@@ -9,7 +9,7 @@
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-25 | 覆核四個 assessment config、`TargetManager` RNG 消費點與 `CompatibilityKey`；README §0 的結論仍成立，並完成 D-41.1/D-41.2。 |
 | T1 build family order | ✅ | 2026-08-25 | Added `TestFamilyId` and deterministic Latin-square `buildFamilyOrder()`; focused unit suite passed (5 tests) and `npm run test:ci` passed (126 Vitest files / 955 tests + Playwright). |
-| T2 condition schedule scope | ⬜ | — | — |
+| T2 condition schedule scope | ✅ | 2026-08-25 | 依 D-41.2 執行關閉分支：在 [`analysis-spider-shot.md`](../../../../operational/analysis-spider-shot.md) 記錄四協定的 FR-G7 現況、讀碼證據與不覆寫 seed 的理由；零程式碼、零測試改動。 |
 | T-exit 驗收 + 文件定稿 | ⬜ | — | — |
 
 ## Decision Log
@@ -42,6 +42,6 @@ _無意外；README §0 的讀碼證據在當前 `src/` 仍成立。_
 
 | # | 問題 | 狀態 |
 |---|---|---|
-| OQ-S7-1 | 既有 seed 是否已決定「家族內條件呈現順序」,使 FR-G7 與既有決定性測試衝突 | ✅ 已關閉（D-41.1/D-41.2）：既有 seed 不代表可平衡的家族內條件區塊；不覆寫協定 seed。 |
+| OQ-S7-1 | 既有 seed 是否已決定「家族內條件呈現順序」,使 FR-G7 與既有決定性測試衝突 | ✅ 已關閉（D-41.1/D-41.2；T2 文件記錄完成）：既有 seed 不代表可平衡的家族內條件區塊；不覆寫協定 seed。 |
 | OQ-S7-9 | Spider Shot 覆寫 seed(若採納)是否需要 WP-42 UI 呈現 | ✅ 不適用（D-41.2）：覆寫分支未採納，WP-42 無需新增 UI 呈現點。 |
 | OQ-S7-10 | Latin-square 輪轉是否需要更強的一階順序平衡設計 | 🟡 待研究者確認,不阻塞 T1 |

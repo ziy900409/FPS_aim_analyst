@@ -46,6 +46,18 @@ pos = distanceU × direction
 
 故方位角 0°/90°/180°/270° 對應上/右/下/左,45°/135°/225°/315° 為斜向。中心目標固定在 `centerDistanceU` 正前方,不取樣。
 
+## FR-G7 condition-schedule scope (closed)
+
+WP-41 T0 已關閉「以外部 seed 再次排程家族內條件區塊」的分支（D-41.1/D-41.2）。Assessment v1 保持各協定凍結的 seed，不新增 `buildSpiderShotOverrideSeed()`、config clone 或 metadata 同步路徑。
+
+| 協定 | 現況與讀碼證據 | FR-G7 結論 |
+|---|---|---|
+| hold-click / hold-track | `near`、`mid`、`far` 常數雖存在，但 assessment config 只接入 `mid`；`spawnArea` 的 yaw 與 distance 範圍均退化為單點。seed 只取樣 700–1700 ms 的 spawn 延遲，L/R 則由 `TargetManager.markKilled()` 確定性交替。 | 沒有多層級條件格可做區塊平衡；不覆寫 seed。 |
+| counterstrafe-reversal | 未定義 `spawnArea`，且 `spawnDelayMsRange` 固定為 `[500, 500]`；seed 沒有可觀測的隨機效果。 | 沒有可排程條件；不覆寫 seed。 |
+| Spider Shot | `spiderShot.seed = 36036` 會取樣周邊點的連續方位、徑向角距與距離；唯一非退化範圍是 `azimuthDegRange: [0, 360]`。這不是固定的 L/R、近/中/遠或象限條件區塊，seed 改變取樣軌跡也不保證條件格平衡。 | 不覆寫 seed；若日後要平衡多個 `D_deg`/`W_deg` 條件格，應另開協定設計工作。 |
+
+這個關閉決定不影響 `buildFamilyOrder()` 的跨 session 家族順序平衡（FR-G6）。`CompatibilityKey` 亦未包含 seed；不覆寫的理由是其無法達成條件區塊平衡，而不是相容性限制。完整覆核證據見 [WP-41 README §0](../exec-plan/active/stage7/wp-41-seeded-counterbalance/README.md#0-讀碼對帳規劃階段2026-08-25決定本-wp-淨新增工作量與-fr-g7-範圍) 與 [progress.md D-41.1/D-41.2](../exec-plan/active/stage7/wp-41-seeded-counterbalance/progress.md#decision-log)。
+
 ## Event anchors and transition direction
 
 每個目標生成時記錄既有 `visible` 事件，Spider Shot 額外帶：

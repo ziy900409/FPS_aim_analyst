@@ -7,7 +7,7 @@
 | **相依** | T0(§2② 判定結果決定本 task 走哪個分支) |
 | **Risk / Cplx** | Low(關閉分支)~Med(採納分支,新增 seed 覆寫 + metadata 稽核) |
 | **Touches** | 關閉分支:僅 `docs/`;採納分支:`src/session/sessionSchedule.ts` + 對應測試 |
-| **狀態** | ⬜ 待開工(分支未定,待 T0) |
+| **狀態** | ✅ 已完成(2026-08-25；依 D-41.2 執行分支 A) |
 
 ## Objective
 
@@ -40,10 +40,10 @@
 
 ## Steps(依分支)
 
-- [ ] 讀 `progress.md` 的 `D-41.2`,確認分支。
-- [ ] (分支 A)撰寫文件記錄 + 關閉 OQ-S7-1。
-- [ ] (分支 B)實作兩個函式 + 測試 + 文件契約。
-- [ ] `npm run test:ci` 全綠(分支 B)或確認測試套件無新增異動(分支 A)。
+- [x] 讀 `progress.md` 的 `D-41.2`,確認分支 A(關閉)。
+- [x] (分支 A)在 [`docs/operational/analysis-spider-shot.md`](../../../../operational/analysis-spider-shot.md) 撰寫文件記錄 + 關閉 OQ-S7-1。
+- [ ] (分支 B)實作兩個函式 + 測試 + 文件契約。(不適用；D-41.2 已關閉)
+- [x] 確認測試套件無新增異動(分支 A)。
 
 ## Definition of Done
 
