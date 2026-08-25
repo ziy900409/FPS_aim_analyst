@@ -20,7 +20,15 @@ export const MAX_DISPLAY_HZ = 240;
 
 /**
  * 實驗最高條件（原生解析度需 ≥ 此值,單位 = 實體像素 = CSS 尺寸 × devicePixelRatio）。
- * = qhd-1440 buffer（2560×1440）。資格閘「原生解析度」檢查以此為門檻:
- * FHD 面板（1920×1080）跑 QHD 條件 = 方向性錯誤資料的統計必然,故拒入（GD-10 防線①）。
+ * = qhd-1440 buffer（2560×1440）。resolution/BR 兩個「受試者內解析度操弄」protocol 的資格閘
+ * 以此為門檻:FHD 面板（1920×1080）跑 QHD 條件 = 方向性錯誤資料的統計必然,故拒入（GD-10 防線①）。
  */
 export const EXPERIMENT_MAX_CONDITION = { minW: 2560, minH: 1440 } as const;
+
+/**
+ * Session Plan（選手表現測試,WP-42）資格閘的原生解析度門檻。
+ * Session Plan 不操弄/比較解析度條件（四家族一律 native 載入,見 `SessionRunner.ts`）,
+ * 不適用 `EXPERIMENT_MAX_CONDITION` 的 QHD 門檻(那是給 resolution/BR protocol 的解析度操弄
+ * 研究效度用的);只需排除明顯過小的面板(< FHD)即可,故獨立於 `EXPERIMENT_MAX_CONDITION`。
+ */
+export const SESSION_PLAN_MIN_CONDITION = { minW: 1920, minH: 1080 } as const;

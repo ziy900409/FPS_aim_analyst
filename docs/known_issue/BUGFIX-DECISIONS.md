@@ -19,6 +19,7 @@
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
 | [KI-010](KI-010-rest-overlay-stuck-on-failed-auto-advance.md) | Session Plan 休息倒數結束後自動載入下一家族失敗時（`SessionRunner.poll()`）錯誤被 `void` 靜默丟棄，`phase` 永遠卡在 `'rest'`，`restOverlay` 因此永不消失 | BD-010(§3,`poll()` 自動 advance 補 `.catch()`：`onStatus` 回報 + 強制轉 `{kind:'done'}`；`runTransition()` 的 `.finally()` 鏈補 `.catch(() => {})` 避免衍生 unhandled rejection) | ✅ 已修(2026-08-25) |
+| [KI-009](KI-009-session-plan-qhd-gate-too-strict.md) | Session Plan（不操弄解析度條件）誤用 resolution/BR protocol 專屬的 QHD（2560×1440）資格閘門檻，FHD 面板無法測試選手 | BD-009(§3,新增 `SESSION_PLAN_MIN_CONDITION`(1920×1080)，`EligibilityGate.required` 改支援函式型、依 `pendingSessionMode` 動態解析) | ✅ 已修(2026-08-25) |
 | [KI-008](KI-008-fitts-v1-threshold-drift-and-xcorr-empty-table.md) | PR #39 Codex review 三則:①`fitts-v1` 門檻偏離 T0 凍結的 pre-registration(`min_samples`/`min_id_range_bits` 各減半),09:24 誤判 `ok`;②`d_ratio` 對 `min(D)<=0` 算出 `+inf` 誤判為未過關,丟棄有效 session;③空 xcorr table(`verdict is None`)誤判為未 blocked,缺口說明謊稱全數有輸出 | BD-008(§2,**D1+D2+D3 全數落地**:恢復凍結門檻 20/2.0/1.0;`d_ratio` 只在有限值時判定;`verdict is None` 視同 blocked) | ✅ 已修(2026-08-17) |
 | [KI-007](KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) | `experimentSession.exit()` 只在多條件 protocol 流程呼叫,單一「實驗 session」drill 流程從未呼叫 → `active` 對整頁生命週期恆 true → drill 結束後正常退出全螢幕(去抓匯出檔)也會被誤判為條件失效,`meta.suspect` 誤標 `true` | BD-007(§2,**F-1 已落地**:`handleFullscreenChange` 新增 `recording` 參數,只在 drill 錄製中才判定失效) | ✅ 已修(2026-08-07) |
 | [KI-006](KI-006-m14-sample-no-counterstrafe.md) | M14 ④/⑤ 的真實資料效度閘所用樣本(08:03)**不含 counter-strafe 構念**:`vx ≡ 0`、`keys` 全空、`counter` 事件 0 → 量到的是站樁純 flick。**M14 ④⑤ 撤回**(理由獨立於 KI-005) | BD-006(§3,**C+B 全數落地**:construct presence gate + 重新採樣,見 [A2](KI-005-A/A2-blocked-plan.md)) | ✅ CLOSED(2026-08-07),M14 ④⑤ 已重新宣告 |
@@ -68,6 +69,20 @@
 | **遺留 OQ** | **OQ-KI10-1**：失敗即整場 Session Plan 中止,不嘗試略過該家族續跑其餘家族——屬產品行為決策,需另開 task。**OQ-KI10-2**：未實測真實硬體上具體是哪種錯誤觸發 `loadDrillById` 失敗;本次診斷聚焦於「無論何種原因失敗,狀態機都不該卡死且靜默」這個更上層的健壯性缺口。 |
 | **影響面** | **受影響**:`src/session/SessionRunner.ts`(`poll()`/`runTransition()`)。**不受影響**:正常(成功)路徑的狀態轉移、`RestOverlay` show/hide 時機、`buildFamilyOrder` 排程邏輯(WP-41/D-42.6)、sim、輸入、命中判定、匯出資料語意。 |
 | **狀態** | ✅ **已修(2026-08-25)**。驗證:`tsc --noEmit` exit 0;`vitest run` 130 files / 968 tests 全綠(含新增 1 案);修法前先以 RED 測試重現卡死,修法後轉 GREEN 且無殘留 unhandled rejection。 |
+
+---
+
+### BD-009 ✅ KI-009 — Session Plan 誤用 QHD 資格閘門檻，改依模式動態解析(2026-08-25)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 使用者以 QA 角色排查「測試實驗的效能地板解析度」時回報：Session Plan 資格閘要求原生解析度 ≥ 2560×1440(QHD),但 Session Plan 本身不操弄或比較任何解析度條件(四家族皆以 `native` 模式載入)。追碼確認 [main.ts](../../src/main.ts) 只建立一個共用 `eligibilityGateScreen`,供「實驗 session」/「解析度 protocol」/「BR protocol」/「Session Plan」四種模式共用,建立時 `required` 寫死為 `resolutionDetectionProtocol.requiredDisplay`(即 `EXPERIMENT_MAX_CONDITION`)。該 QHD 門檻的理由(GD-10 防線①)只適用於會真的切換 `fhd-1080`/`qhd-1440` render 模式、在同一面板上操弄/比較解析度條件的 resolution/BR 兩個 protocol,對 Session Plan 沒有依據。完整診斷見 [KI-009](KI-009-session-plan-qhd-gate-too-strict.md)。 |
+| **決策** | 新增 `SESSION_PLAN_MIN_CONDITION = {minW:1920, minH:1080}`([constants.ts](../../src/display/constants.ts)),與 `EXPERIMENT_MAX_CONDITION` 並列、語意分離。`EligibilityGateScreenOptions.required` 型別放寬為 `EligibilityRequirement \| (() => EligibilityRequirement)`;`main.ts` 改傳入函式,依 `pendingSessionMode === 'session-plan'` 動態回傳對應門檻;`EligibilityGate.ts` 的說明文字改在 `open()` 當下才 resolve 並重繪。 |
+| **理由** | 不採「Session Plan 另建一個獨立的 `createEligibilityGateScreen` 實例」——會複製 fullscreen/perf 探測與 UI 邏輯,且與 [WP-42 T0 §0-3](../exec-plan/completed/stage7/wp-42-session-orchestrator/README.md) 已拍板「沿用既有 `sessionSetupForm`→`eligibilityGate` 接線型式」的結論衝突;函式型 `required` 是改動面最小、且不影響其餘三個模式既有門檻與行為的作法。 |
+| **偏離計畫** | 無。診斷由使用者直接回報觸發(非既定 WP task),依協議走 known_issue 流程(KI-009 tech spec + 本帳本)。 |
+| **遺留 OQ** | 無。修法只影響 Session Plan 一個模式的門檻與說明文字時機,其餘三個模式逐位不變。 |
+| **影響面** | **受影響**:`src/display/constants.ts`、`src/ui/EligibilityGate.ts`、`src/main.ts` 的 Session Plan 啟動路徑。**不受影響**:`runEligibilityGate` 判定邏輯本體、`實驗 session`／`解析度 protocol`／`BR protocol` 三個模式的門檻與行為、sim、輸入、匯出語意。 |
+| **狀態** | ✅ **已修(2026-08-25)**。驗證:`tsc --noEmit` exit 0;`vitest run` 130 files / 968 tests 全綠(含新增 1 案)。 |
 
 ---
 

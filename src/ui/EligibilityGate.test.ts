@@ -135,4 +135,25 @@ describe('createEligibilityGateScreen', () => {
     expect(root.style.display).toBe('none');
     expect(onEnter).not.toHaveBeenCalled();
   });
+
+  it('resolves a function-typed `required` freshly on each open (e.g. per-mode threshold)', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    let currentRequired = { minW: 1920, minH: 1080 };
+    const handle = createEligibilityGateScreen({
+      required: () => currentRequired,
+      requestFullscreen: () => Promise.resolve(),
+      probeWarmupP95Ms: () => Promise.resolve(8),
+      runGate: () => PASS_REPORT,
+      onEnter: vi.fn(),
+    });
+    const desc = document.created.filter((el) => el.tag === 'p')[0]!;
+
+    handle.open();
+    expect(desc.textContent).toContain('1920×1080');
+
+    currentRequired = { minW: 2560, minH: 1440 };
+    handle.open();
+    expect(desc.textContent).toContain('2560×1440');
+  });
 });

@@ -9,8 +9,8 @@ import { runEligibilityGate, type EligibilityRequirement, type GateReport } from
  */
 
 export interface EligibilityGateScreenOptions {
-  /** 實驗最高條件（原生解析度門檻）。 */
-  required: EligibilityRequirement;
+  /** 原生解析度門檻。不同啟動模式（實驗/protocol vs Session Plan）門檻不同時傳函式,依 open() 當下狀態解析。 */
+  required: EligibilityRequirement | (() => EligibilityRequirement);
   /** 請求 fullscreen（須在 user gesture 內呼叫;通常 = `element.requestFullscreen()`）。 */
   requestFullscreen: () => Promise<void>;
   /** warmup 探測 frame-time p95。 */
@@ -37,7 +37,9 @@ export function createEligibilityGateScreen(
   options: EligibilityGateScreenOptions,
 ): EligibilityGateScreenHandle {
   const parent = options.parent ?? document.body;
-  const runGate = options.runGate ?? ((p95: number) => runEligibilityGate(options.required, p95));
+  const resolveRequired = (): EligibilityRequirement =>
+    typeof options.required === 'function' ? options.required() : options.required;
+  const runGate = options.runGate ?? ((p95: number) => runEligibilityGate(resolveRequired(), p95));
 
   const root = document.createElement('section');
   root.id = 'eligibility-gate';
@@ -53,7 +55,6 @@ export function createEligibilityGateScreen(
   title.style.cssText = 'margin:0;font:750 18px/1.3 system-ui,sans-serif;color:#edf2f7';
 
   const desc = document.createElement('p');
-  desc.textContent = `進入實驗 session 前須通過:原生解析度 ≥ ${options.required.minW}×${options.required.minH}、fullscreen 已進入、效能地板。不合格將拒入(一般練習不受限)。`;
   desc.style.cssText = 'margin:0;font:500 13px/1.5 system-ui,sans-serif;color:#aeb6bf';
 
   const status = document.createElement('p');
@@ -125,6 +126,8 @@ export function createEligibilityGateScreen(
   }
 
   function open(): void {
+    const required = resolveRequired();
+    desc.textContent = `進入實驗 session 前須通過:原生解析度 ≥ ${required.minW}×${required.minH}、fullscreen 已進入、效能地板。不合格將拒入(一般練習不受限)。`;
     status.textContent = '';
     report.style.display = 'none';
     startButton.textContent = '進入 fullscreen 並開始';

@@ -26,7 +26,7 @@ import { brTrackingProtocol } from './display/brTrackingProtocol.ts';
 import { resolutionDetectionProtocol } from './display/resolutionDetectionProtocol.ts';
 import { probeWarmupP95Ms } from './display/eligibilityGate.ts';
 import { createExperimentSession } from './display/experimentSession.ts';
-import { PERF_FLOOR_MS } from './display/constants.ts';
+import { PERF_FLOOR_MS, SESSION_PLAN_MIN_CONDITION } from './display/constants.ts';
 import { createFrameLog, frameLogCapacity } from './display/frameLog.ts';
 import { createEligibilityGateScreen } from './ui/EligibilityGate.ts';
 import {
@@ -304,7 +304,13 @@ let activeSessionPlanPreset: string | undefined;
 let pendingSessionMode: 'session' | 'resolution-protocol' | 'br-tracking-protocol' | 'session-plan' = 'session';
 let markProtocolFullscreenExit: (() => void) | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
-  required: resolutionDetectionProtocol.requiredDisplay,
+  // Session Plan（選手表現測試,WP-42）不操弄/比較解析度條件——四家族一律 native 載入,
+  // 不適用 resolution/BR protocol 的 QHD 門檻(那是給「受試者內解析度操弄」研究效度用的,見
+  // constants.ts GD-10)。其餘模式（實驗 session、解析度/BR protocol）維持既有 QHD 門檻。
+  required: () =>
+    pendingSessionMode === 'session-plan'
+      ? SESSION_PLAN_MIN_CONDITION
+      : resolutionDetectionProtocol.requiredDisplay,
   requestFullscreen: () => document.documentElement.requestFullscreen(),
   probeWarmupP95Ms: () => probeWarmupP95Ms(),
   onEnter: (report) => {
