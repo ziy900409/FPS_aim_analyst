@@ -11,7 +11,7 @@
 | **相依** | 無(獨立;不相依任何未交付的上游 WP,stage6/stage7 皆已交付) |
 | **對應 FR** | FR-H1 + FR-H2 + FR-H3 + FR-H4 |
 | **估時** | 2–3 dev-days(規劃稿粗估,未讀碼;T0 讀碼後可能收斂或上修,見 §7 風險) |
-| **狀態** | ⬜ 待開工(本檔為 T0 展開前的規劃稿,依 stage4/stage6/stage7 慣例——**尚未執行任何 task**,§0/§2 的讀碼發現/決策建議皆為擬定,不是已拍板事實) |
+| **狀態** | 🟡 執行中(T0 已於 2026-08-25 完成;T1/T2 待開工。決策與未決預設見 [progress.md](progress.md) D-43.1～D-43.5) |
 
 ---
 
@@ -21,11 +21,11 @@
 
 | # | stage8 README / 既有假設 | 讀碼發現 | 對本 WP 的影響 |
 |---|---|---|---|
-| **0-1** | 啟動畫面 4 顆按鈕平鋪 | 確認成立:[`main.ts:357-407`](../../../../../src/main.ts#L357-L407)——`experimentButton`/`protocolButton`/`brProtocolButton`/`sessionPlanButton` 依序 `appendChild` 進同一個 `sessionLaunchControls`,四者視覺上完全對等 | FR-H1 的「兩分岔」需要重組這個容器的內容與點擊行為,細節見 §2① |
-| **0-2** | `Controls.ts` 是常駐 floating toolbar | 確認成立,但讀碼發現一個 stage8 README 未提及的細節:[`main.ts:1089-1094`](../../../../../src/main.ts#L1089-L1094) 的 `syncControlsVisibility()` 只依 `pointerLock.locked`/`drillRunner.phase === 'ended'` 決定顯隱,**與 `pendingSessionMode`/任何「模式」完全無關**——也就是說,現況這個面板在頁面剛載入、尚未點任何按鈕時就已經可能顯示(只要 pointer 未鎖定)。它跟啟動按鈕群同時可見,是 stage8 README §0-2 描述的「混雜」的真正機制成因。 | FR-H4「包成獨立畫面而非常駐 bar」不能只改「掛載時機」,必須新增一個**與 `syncControlsVisibility()` 並列的顯隱條件**(是否處於「研究員模式」),兩個條件要 AND 起來;否則兩分岔啟動畫面顯示時,底下的 Controls 面板可能同時穿透可見。 |
+| **0-1** | 啟動畫面 4 顆按鈕平鋪 | 確認成立:[`main.ts:359-410`](../../../../../src/main.ts#L359-L410)——`experimentButton`/`protocolButton`/`brProtocolButton`/`sessionPlanButton` 依序 `appendChild` 進同一個 `sessionLaunchControls`,四者視覺上完全對等 | FR-H1 的「兩分岔」需要重組這個容器的內容與點擊行為,細節見 §2① |
+| **0-2** | `Controls.ts` 是常駐 floating toolbar | 確認成立,但讀碼發現一個 stage8 README 未提及的細節:[`main.ts:1092-1094`](../../../../../src/main.ts#L1092-L1094) 的 `syncControlsVisibility()` 只依 `pointerLock.locked`/`drillRunner.phase === 'ended'` 決定顯隱,**與 `pendingSessionMode`/任何「模式」完全無關**——也就是說,現況這個面板在頁面剛載入、尚未點任何按鈕時就已經可能顯示(只要 pointer 未鎖定)。它跟啟動按鈕群同時可見,是 stage8 README §0-2 描述的「混雜」的真正機制成因。 | FR-H4「包成獨立畫面而非常駐 bar」不能只改「掛載時機」,必須新增一個**與 `syncControlsVisibility()` 並列的顯隱條件**(是否處於「研究員模式」),兩個條件要 AND 起來;否則兩分岔啟動畫面顯示時,底下的 Controls 面板可能同時穿透可見。 |
 | **0-3** | Session Plan 的家族順序目前由 `buildFamilyOrder()` 決定 | 確認成立,且比 stage8 README 描述得更緊密:[`SessionRunner.ts:129-131`](../../../../../src/session/SessionRunner.ts#L129-L131) 的 `start()` 永遠呼叫 `buildFamilyOrder(plan.participantId, plan.sessionIndex)` 產生順序,再用 `plan.families.includes(family)` 過濾子集——**`plan.families` 目前只承擔「子集」語意,完全不承擔「順序」語意**,即使呼叫端傳入有序陣列,順序也會被丟棄重算。 | FR-H2 不是「新增排序功能」,而是要**移除**這一段 `buildFamilyOrder()` 呼叫(至少對這條路徑),改成直接信任 `plan.families` 陣列本身的順序。這比 stage8 README §2.2 預期的「型別擴充」更小——不需要新欄位,只需要改變 `start()` 內部一行邏輯的語意,但影響面要覆核 WP-41 T3 的既有測試(`SessionRunner.test.ts`)是否斷言了「順序由 `buildFamilyOrder` 決定」這件事。 |
 | **0-4** | 休息秒數只能選具名 preset | 確認成立:[`SessionPlan.presetId`](../../../../../src/session/SessionRunner.ts#L13) → `findSessionPlanPreset()` → `preset.restSeconds`([SessionRunner.ts:127-133](../../../../../src/session/SessionRunner.ts#L127-L133))。`metadata.ts` 的 `sessionPlanPreset` 欄位([metadata.ts:286-287](../../../../../src/data/metadata.ts#L286-L287))經 `requireSessionPlanPreset()` **強制驗證必須是 `SESSION_PLAN_PRESETS` 封閉清單裡的 id**,自由字串會擲錯。 | FR-H3 的自由數字輸入若直接塞進 `presetId`,會被 `requireSessionPlanPreset()` 擋下。**必須新增一個獨立欄位**(例如 `SessionPlan.restSeconds: number`)取代目前經由 `presetId` 間接取得休息秒數的路徑;`metadata.ts` 的 `sessionPlanPreset` 欄位語意(封閉具名 preset)不能被挪用來承載自由數字,需要新增 additive metadata 欄位記錄實際使用的休息秒數與家族順序(供研究稽核用,見 §2③)。 |
-| **0-5**(新發現,先前對話未涵蓋) | 「研究員模式」只需收納「解析度 protocol」「BR protocol」「單一 drill 調整」三項 | 讀碼發現現況還有第四個入口:[`main.ts:357-376`](../../../../../src/main.ts#L357-L376) 的 `experimentButton`(「實驗 session」,`pendingSessionMode='session'`)——它會先過既有資格閘(fullscreen/解析度/效能地板),再呼叫 `experimentSession.enter(report)`,但**不**透過 Session Plan,測的是「當前 Controls.ts 選中的任一 drill」。這個模式的語意介於「選手正式測試」與「研究員快速試跑」之間,stage8 README 沒有明確分類它該去哪。 | 這是**規劃階段未決的缺口**,不是本 WP 可以自行拍板的小事——列入 §7 Open Question,T0 需要使用者確認:併入研究員模式(當作另一種單一 drill 測試方式)、視為「選手測試 Session」的舊版流程(可能該淘汰)、或保留原樣但移出主畫面。本 WP 的 T1 不假設答案,先列出讀碼發現。 |
+| **0-5**(新發現,先前對話未涵蓋) | 「研究員模式」只需收納「解析度 protocol」「BR protocol」「單一 drill 調整」三項 | 讀碼發現現況還有第四個入口:[`main.ts:359-378`](../../../../../src/main.ts#L359-L378) 的 `experimentButton`(「實驗 session」,`pendingSessionMode='session'`)——它會先過既有資格閘(fullscreen/解析度/效能地板),再呼叫 `experimentSession.enter(report)`,但**不**透過 Session Plan,測的是「當前 Controls.ts 選中的任一 drill」。這個模式的語意介於「選手正式測試」與「研究員快速試跑」之間,stage8 README 沒有明確分類它該去哪。 | 這是**規劃階段未決的缺口**,不是本 WP 可以自行拍板的小事——列入 §7 Open Question,T0 需要使用者確認:併入研究員模式(當作另一種單一 drill 測試方式)、視為「選手測試 Session」的舊版流程(可能該淘汰)、或保留原樣但移出主畫面。本 WP 的 T1 不假設答案,先列出讀碼發現。 |
 | **0-6** | `SessionPlanSetup.ts` 現況是 checkbox + `<select>` preset 的既有表單型式 | 確認成立([SessionPlanSetup.ts:40-96](../../../../../src/ui/SessionPlanSetup.ts#L40-L96)):`familyInputs` 是純 checkbox 陣列,DOM 順序固定 = `options.families` 傳入順序(目前是 `TEST_FAMILY_IDS` 常數順序),沒有任何拖曳/排序相關程式碼或套件依賴。 | T2 的拖曳排序是**從零實作**(手刻,不依賴外部套件——專案既有紀律是純 TS + DOM,`package.json` 目前無拖曳套件依賴,新增外部套件需另外評估,不在本 WP 預設範圍內)。最小可行做法:每列一個 ▲/▼ 按鈕升降序,或 HTML5 native drag-and-drop(`draggable="true"` + `dragstart`/`dragover`/`drop`),T0 需要選一個並記錄理由。 |
 
 **結論**:FR-H2(拖曳排序)比原規劃更單純——只是讓 `SessionRunner` 不要覆寫呼叫端傳入的順序,不需要新的資料結構;FR-H3(自由休息秒數)需要新增一個欄位並讓它不經過 `SESSION_PLAN_PRESETS` 封閉驗證;FR-H4(研究員子選單)比原規劃複雜——顯隱邏輯需要新增一個獨立條件而非只是「延後掛載」,且發現了一個未分類的第四入口(§0-5)需要使用者拍板;FR-H1(兩分岔啟動畫面)的實作成本主要在於重組現有事件監聽,邏輯本身不複雜。
@@ -100,7 +100,7 @@ graph LR
 
 ---
 
-## 2. 關鍵設計決策(T0 待凍結項;以下為讀碼後的建議方向,非最終定案)
+## 2. 關鍵設計決策(T0 已凍結;正式理由與替代方案見 [progress.md](progress.md) D-43.1～D-43.4)
 
 ### ① 啟動畫面重組:新增 `appMode` 狀態,取代目前「按鈕各自設 `pendingSessionMode` 後開表單」的扁平結構(承 §0-1/§0-2)
 
@@ -134,7 +134,7 @@ export interface SessionPlan {
 }
 ```
 
-`start()` 內移除 `buildFamilyOrder(...)` 呼叫與其 `.filter()`,改成直接以 `plan.families`(需驗證非空、元素皆為合法 `TestFamilyId`、無重複)作為 `families`;`presetRestMs = plan.restSeconds * 1000`,不再呼叫 `findSessionPlanPreset()`。**`presetId` 欄位整個移除**(不再有任何路徑消費它)——`sessionPlanPresets.ts`/`SESSION_PLAN_PRESETS` 保留檔案本身但暫時無消費者,供 §7 OQ-S8-2 的「並存自動 counterbalance 模式」未來使用。
+`start()` 內移除 `buildFamilyOrder(...)` 呼叫與其 `.filter()`,改成直接以 `plan.families`(需驗證非空、元素皆為合法 `TestFamilyId`、無重複)作為 `families`;`presetRestMs = plan.restSeconds * 1000`,不再呼叫 `findSessionPlanPreset()`。**`SessionPlan.presetId` 欄位整個移除**(手動排序的 runner 路徑不再消費它)——`sessionPlanPresets.ts`/`SESSION_PLAN_PRESETS` 保留給既有 `metadata.ts` 的 `sessionPlanPreset` 封閉清單驗證,也保留供 §7 OQ-S8-2 的「並存自動 counterbalance 模式」未來使用。
 
 ### ④ Metadata 稽核欄位:additive 記錄實際使用的順序與休息秒數(承 §0-4)
 
@@ -158,7 +158,7 @@ export interface Meta {
 | HTML5 native drag-and-drop(`draggable`/`dragstart`/`dragover`/`drop`) | 符合先前討論拍板的「拖曳排序」互動;不需外部套件 | 觸控裝置支援較弱(本專案鎖 Chrome/Edge 桌面版,CLAUDE.md §4 已有此硬約束,風險可接受) |
 | 每列 ▲/▼ 按鈕升降序 | 實作最簡單,無瀏覽器相容性疑慮,鍵盤可操作 | 與先前討論拍板的「拖曳」字面不符,需要跟使用者確認是否可接受 |
 
-初判傾向 native drag-and-drop(符合原始互動決策),但 T0 需要正式拍板並記錄理由。
+T0 已拍板採 native drag-and-drop(符合原始互動決策且不新增依賴);理由與替代方案見 D-43.3。
 
 ---
 
@@ -248,7 +248,7 @@ export interface CollectMetaArgs {
 |---|---|---|---|---|
 | **OQ-S8-5**(新,承 §0-5) | 既有「實驗 session」按鈕(`pendingSessionMode='session'`,資格閘 + `experimentSession` 追蹤,但不透過 Session Plan)在兩分岔啟動畫面裡該歸類到哪:併入研究員模式、視為選手測試 Session 的替代路徑、或維持獨立第三入口? | 本 WP 不自行拍板(見 §3 失效模式最後一項);T0 需要正式提給使用者選擇 | 使用者 | 決定 T1 的啟動畫面究竟是「兩個」還是「兩個 + 一個未分類」按鈕,直接影響 FR-H1 的驗收判定 |
 | **OQ-S8-6**(新,承 §2⑤) | 拖曳排序元件用 HTML5 native drag-and-drop 還是升降序按鈕? | 初判傾向 native drag-and-drop(符合先前討論拍板的互動決策);T0 正式拍板 | 使用者/工程 | 決定 T2 的 UI 實作複雜度與瀏覽器相容性風險範圍 |
-| **OQ-S8-7**(新,承 §2③) | 移除 `buildFamilyOrder()` 呼叫後,`SessionPlan.presetId`/`sessionPlanPresets.ts` 完全無消費者——是否要在本 WP 就標記為「保留供未來 OQ-S8-2 使用」,還是應該連同移除以避免死碼? | 初判保留(理由:stage7 README §2.3(c) 已記錄「並存兩種排程模式」是合理的未來方向,現在刪除等於關掉這個選項);T0 拍板 | 使用者/研究者 | 若判定移除,`sessionPlanPresets.ts`/`SESSION_PLAN_PRESETS` 需要一併清理,`findSessionPlanPreset` 的既有測試需要處理 |
+| **OQ-S8-7**(新,承 §2③) | 移除 `buildFamilyOrder()` 呼叫後,`SessionRunner` 不再消費 `SessionPlan.presetId`;但 `metadata.ts` 的 legacy `sessionPlanPreset` 驗證仍消費 `sessionPlanPresets.ts`——是否保留該模組供相容驗證與未來 OQ-S8-2 使用? | T0 決定保留(見 D-43.4):刪除會連帶改變既有 metadata 契約,超出本 WP 範圍 | 使用者/研究者 | 已關閉;T2 不修改 `sessionPlanPresets.ts`/`SESSION_PLAN_PRESETS` |
 | **OQ-S8-8**(新) | 休息秒數 input 的邊界值(如 0–3600 秒)由誰拍板——UI 防呆邊界(工程可自行決定,比照 wp-40 DPI 先例)還是需要研究者核准? | 初判 UI 防呆邊界,工程可自行決定,T2 執行時定案並記錄理由即可,不需要走凍結常數升版流程 | 工程 | 若研究者認為休息秒數上下限有效度意涵(例如過短休息影響資料可比較性),則需要升級為研究者核准項目 |
 | **OQ-S8-4**(承 [../README.md](../README.md) §4) | WP 編號(WP-43)/里程碑(M18)/GD 條目何時正式指派 | 待使用者於 T0 確認開工時,一次性寫入 [DECISIONS.md](../../../DECISIONS.md)/[exec-plan/README.md](../../../README.md)/[docs/MAP.md](../../../../MAP.md) | 使用者 | 若不指派,文件圖譜的全域索引(exec-plan/README.md §2/§3/§4、MAP.md §3)暫時不會列出本 WP,不影響本 WP 自身執行,但會造成之後回溯時的索引缺口 |
 

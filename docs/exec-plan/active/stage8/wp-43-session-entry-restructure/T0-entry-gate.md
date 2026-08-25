@@ -7,7 +7,7 @@
 | **相依** | 無 |
 | **Risk / Cplx** | Med(§2③ 的型別變更與 §0-5 的缺口直接決定 T1/T2 骨架,且需要使用者輸入,非工程可獨立拍板) |
 | **Touches** | 無程式碼;決策記錄於 `progress.md` |
-| **狀態** | ⬜ 待開工 |
+| **狀態** | ✅ 已完成(2026-08-25;決策與證據見 [progress.md](progress.md)) |
 
 ## Objective
 
@@ -31,10 +31,10 @@
 
 ## Steps
 
-- [ ] 重新讀取 `src/main.ts`(`sessionLaunchControls`、`syncControlsVisibility`、`experimentButton`/`sessionPlanButton`)、`src/session/SessionRunner.ts`(`start()`、`SessionPlan`)、`src/ui/SessionPlanSetup.ts`(`familyInputs`、`preset`)、`src/data/metadata.ts`(`sessionPlanPreset`),確認 README §0 表格逐行仍成立。
-- [ ] 讀 `src/session/SessionRunner.test.ts`、`src/session/SessionRunnerPoll.test.ts`,列出是否有斷言依賴 `buildFamilyOrder()` 的具體排列。
-- [ ] 向使用者提出 OQ-S8-5(實驗 session 按鈕去向)、OQ-S8-6(拖曳元件選型)、OQ-S8-7(preset 保留)三個問題,記錄回覆。
-- [ ] 寫決策記錄 `D-43.1`(§2①appMode 設計)、`D-43.2`(§2③型別變更範圍確認)、`D-43.3`(OQ-S8-6 拍板)、`D-43.4`(OQ-S8-7 拍板)、`D-43.5`(OQ-S8-5 使用者回覆記錄)。
+- [x] 重新讀取 `src/main.ts`(`sessionLaunchControls`、`syncControlsVisibility`、`experimentButton`/`sessionPlanButton`)、`src/session/SessionRunner.ts`(`start()`、`SessionPlan`)、`src/ui/SessionPlanSetup.ts`(`familyInputs`、`preset`)、`src/data/metadata.ts`(`sessionPlanPreset`),確認 README §0 表格逐行仍成立。
+- [x] 讀 `src/session/SessionRunner.test.ts`、`src/session/SessionRunnerPoll.test.ts`,列出是否有斷言依賴 `buildFamilyOrder()` 的具體排列。
+- [x] 向使用者提出 OQ-S8-5(實驗 session 按鈕去向)、OQ-S8-6(拖曳元件選型)、OQ-S8-7(preset 保留)三個問題,記錄回覆/安全預設。
+- [x] 寫決策記錄 `D-43.1`(§2①appMode 設計)、`D-43.2`(§2③型別變更範圍確認)、`D-43.3`(OQ-S8-6 拍板)、`D-43.4`(OQ-S8-7 拍板)、`D-43.5`(OQ-S8-5 使用者回覆記錄)。
 
 ## Definition of Done
 
