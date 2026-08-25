@@ -10,7 +10,7 @@
 | T0 entry gate | ✅ | 2026-08-25 | CodeGraph + `rg` 覆核 §0：四個目標 config 仍未登記於 `availableDrills`，`loadDrillById()` 仍只可載入已登記項目；`ProtocolRunner` 仍強制 `ResolutionMode` 並由外部手動推進；四家族 mode 現況未變。完成 D-42.1～D-42.5，T1 可依 README §2.6 開工。 |
 | T1 session plan + runner | 🟡 已實作 | 2026-08-25 | 新增 availableDrills 三項、SessionRunner／preset／setup UI 與 additive metadata；SessionRunner、SessionPlanSetup 與 metadata 測試皆由 `npm.cmd run test:ci` 通過。待實機驗證三個新增 drill 的完整選取→倒數→目標→結束→匯出流程。 |
 | T2 rest overlay | 🟡 已實作 | 2026-08-25 | `src/ui/RestOverlay.test.ts` verifies inert DOM-only overlay, countdown formatting, hide, and disposal. `src/session/SessionRunnerPoll.test.ts` verifies no-op outside rest and automatic advance at expiry; `main.ts` supplies the existing render-loop timestamp to `sessionPlanRunner.poll(now)`. `npm.cmd run test:ci` passed (130 Vitest files / 965 tests + Playwright). 待實機驗證含休息的 session plan。 |
-| T3 family order wiring | ⬜ | — | — |
+| T3 family order wiring | ✅ | 2026-08-25 | `SessionRunner` 以 `buildFamilyOrder(participantId, sessionIndex)` 產生完整順序後，只篩除未勾選家族；`SessionRunner.test.ts` 斷言呼叫參數、相對順序與 session index 變化。`npm.cmd run test:ci` passed (130 Vitest files / 966 tests + Playwright). |
 | T-exit 驗收 + 文件定稿 | ⬜ | — | — |
 
 ## Decision Log
@@ -44,6 +44,12 @@
 - **決定**：T2 由既有 `renderLoop` 的 `now` 呼叫 `SessionRunner.poll(nowMs)`；`RestOverlay` 僅渲染剩餘時間，不建立 `setInterval`、`setTimeout`、worker 或 sim 狀態互動。
 - **證據**：既有 drill countdown 屬 sim tick；本 WP 的休息期必須是純 DOM orchestration，且不得讀寫 `SharedState`。
 - **Alternatives Considered**：在 overlay 內自行計時。這會形成第二個時鐘源，可能與 rAF 畫面節奏脫鉤。
+
+### D-42.6 — 先產生全排列，再篩選本次選取的家族
+
+- **決定**：`SessionRunner.start()` 呼叫 `buildFamilyOrder(plan.participantId, plan.sessionIndex)` 後，僅以 `plan.families` 篩選其輸出；不得依 UI 勾選順序重排。
+- **證據**：T3 單元測試斷言 `buildFamilyOrder` 的 participant/session 參數、子集保留的相對順序，以及同一 participant 的相鄰 session index 產生不同首家族。`npm.cmd run test:ci` 通過（130 Vitest files / 966 tests + Playwright）。
+- **Alternatives Considered**：直接依 `plan.families` 的勾選順序執行。這會繞過 WP-41 的平衡順序，違反 FR-G6 與 T3 contract。
 
 ## Surprises
 

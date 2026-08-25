@@ -4,7 +4,7 @@ import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
 import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
 import { findSessionPlanPreset } from './sessionPlanPresets.ts';
-import { TEST_FAMILY_IDS, type TestFamilyId } from './sessionSchedule.ts';
+import { buildFamilyOrder, type TestFamilyId } from './sessionSchedule.ts';
 
 export interface SessionPlan {
   readonly participantId: string;
@@ -121,7 +121,9 @@ export function createSessionRunner(options: SessionRunnerOptions): SessionRunne
         }
         const preset = findSessionPlanPreset(plan.presetId);
         if (preset === undefined) throw new Error(`Unknown session plan preset: ${plan.presetId}`);
-        families = TEST_FAMILY_IDS.filter((family) => plan.families.includes(family));
+        families = buildFamilyOrder(plan.participantId, plan.sessionIndex).filter((family) =>
+          plan.families.includes(family),
+        );
         if (families.length === 0) throw new Error('Session plan must include at least one family');
         presetRestMs = preset.restSeconds * 1000;
         restStartedAt = undefined;

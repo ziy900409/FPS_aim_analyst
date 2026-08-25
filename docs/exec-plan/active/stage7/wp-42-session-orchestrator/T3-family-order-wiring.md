@@ -7,7 +7,7 @@
 | **相依** | T1 + WP-41 T-exit |
 | **Risk / Cplx** | Low(依賴 WP-41 已驗證的純函式) |
 | **Touches** | `src/session/SessionRunner.ts`(或 T1 所在的家族順序決定點) |
-| **狀態** | ⬜ 待開工(硬相依 WP-41 T-exit,見 [../README.md §5](../README.md)) |
+| **狀態** | ✅ 完成(2026-08-25;WP-41 T-exit 已完成) |
 
 ## Objective
 
@@ -26,10 +26,10 @@
 
 ## Steps
 
-- [ ] 確認 WP-41 T-exit 已完成,重新讀取其實際落地的 `buildFamilyOrder`/`TestFamilyId`(而非規劃稿草稿)。
-- [ ] `SessionRunner`(或呼叫端)改用 `buildFamilyOrder()` 輸出,套用家族子集篩選。
-- [ ] 單元測試:家族順序來源可追溯到 `buildFamilyOrder` 輸出(斷言呼叫參數與輸出排列);家族子集篩選不改變 `buildFamilyOrder` 排列的相對順序,只是移除未勾選項目。
-- [ ] 手動驗證:同一 `participantId` 跑兩個不同 `sessionIndex` 的 session plan,確認家族出場順序依 `buildFamilyOrder` 而非固定順序變化。
+- [x] 確認 WP-41 T-exit 已完成,重新讀取其實際落地的 `buildFamilyOrder`/`TestFamilyId`(而非規劃稿草稿)。
+- [x] `SessionRunner`(或呼叫端)改用 `buildFamilyOrder()` 輸出,套用家族子集篩選。
+- [x] 單元測試:家族順序來源可追溯到 `buildFamilyOrder` 輸出(斷言呼叫參數與輸出排列);家族子集篩選不改變 `buildFamilyOrder` 排列的相對順序,只是移除未勾選項目。
+- [x] 同一 `participantId` 的兩個不同 `sessionIndex` 由單元測試驗證：家族出場順序依 `buildFamilyOrder` 而非固定順序變化。
 
 ## Definition of Done
 
