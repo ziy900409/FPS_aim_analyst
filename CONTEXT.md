@@ -245,3 +245,15 @@
 | **`STAGE6_PROTOCOL_VERSION`**([protocolVersion.ts](src/drill/protocolVersion.ts)) | 凍結後 `main.ts` 產生 `Meta.assessment.protocolVersion` 的顯式來源常數(`'1.0.0'`),取代先前讀 `activeDrillConfig.drillId` 充當版本字串的舊行為。與 `STAGE6_BASELINE_WINDOW_SIZE`/`STAGE6_BASELINE_MIN_N`(`5`/`3`)同檔案定義,為 `sessionHistory.ts` 生產呼叫點的具名凍結常數。凍結一律升版,不得原地改語意(GD-23)。 |
 | **`DIAGNOSIS_THRESHOLDS_V1`**([diagnosisRules.ts](src/metrics/diagnosisRules.ts)) | 正式版本化診斷門檻常數,`version: 'recommendation-v1.0.0'`,由 `PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS`(舊 pilot-candidate 版本,原地保留供追溯,`version: 'recommendation-pilot-candidate-v1'`)升版而來,8 個門檻值逐一沿用既有候選數值(GD-23:無真人 pilot 匯出,暫定凍結以驗證發布機制)。`main.ts` 生產呼叫改讀此常數。 |
 | **Pilot seed roster 慣例** | 任何新增測試家族的 pilot 探索,一律在 `PILOT_SEED_ROSTER_START` 之後取下一個未用的 `familyOffset`,不得回頭挪用既有家族的 offset 區段;凍結後的正式 assessment seed 維持在各協定原有數值,不因 pilot 存在而改變。 |
+
+---
+
+## L. Quality-flag 呈現 / DPI 自陳術語(WP-40,stage7;`ResultScreen.ts` + `metadata.ts`)
+
+> `ResultScreen` 新增一組獨立於 WP-38 診斷卡片(§J)的呈現單元,消費既有匯出旗標(不新增觀測邏輯);`dpi` 是純 additive 自陳 metadata 欄位,不接入任何 `src/metrics/*` 運算。
+
+| 術語 | 定義 |
+|---|---|
+| **`QualityFlagId`**([ResultScreen.ts](src/ui/ResultScreen.ts)) | 六個 quality-flag 卡片的封閉詞彙表(`quality-flag-late-events`/`quality-flag-buffer-overflow`/`quality-flag-recorder-overflow`/`quality-flag-corridor-exceeded`/`quality-flag-perf-floor`/`quality-flag-suspect`),比照 `PROMOTED_METRIC_IDS`/`DIAGNOSIS_METRIC_IDS`(§J)既有型式,但為獨立陣列——不與兩者共用型別,亦不修改 `createDiagnosisSummary()`(D-40.1)。 |
+| **`QualityFlagSeverity`**([ResultScreen.ts](src/ui/ResultScreen.ts)) | 三值嚴重度(`'ok' \| 'warn' \| 'retest-recommended'`)。`createQualityFlagSummary()` 依旗標語意分兩層:`suspect`/`recorderOverflow`(資料遺失或既有 OR 聚合的不可信觀測)→ `retest-recommended`;`bufferOverflow`/`lateEventCount>0`/`validity.corridorExceeded`/`validity.perfFloor`(可接受的邊界觀測)→ `warn`。`overallSeverity` 取六卡最高層級,不得由呈現層自行對六個布林值做二次判斷(D-40.2)。 |
+| **`dpi`(滑鼠 DPI 自陳)**([metadata.ts](src/data/metadata.ts)/[SessionSetup.ts](src/ui/SessionSetup.ts)) | `Meta`/`CollectMetaArgs`/`SessionSetupValues` 的 optional 頂層欄位,與 `sensitivity`/`fovDeg`/`displayHz` 同一 `Meta` 區塊記錄,但**資料來源機制不同**——瀏覽器無法讀取外部滑鼠硬體 DPI,故走 `SessionSetupValues` 自陳表單(比照既有 `monitorModel`/`panelInches`),非程式可讀量測。表單防呆邊界 `100–32000`(UI 層,非科學凍結常數,可隨時調整,D-40.4)。純記錄欄位,不流入任何 eDPI/cm-per-360 等指標換算(`rg "\.dpi\b" src/metrics` 須零命中)。 |

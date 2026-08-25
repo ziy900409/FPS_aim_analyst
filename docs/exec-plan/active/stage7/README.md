@@ -146,9 +146,9 @@ FR-G9 的核心是**不對稱的可調性**,不是「這個畫面能不能編輯
 
 | WP | 子資料夾(各 WP T0 時展開) | 目標 | 優先序 | 里程碑 | 相依 | 估時(粗估) | 狀態 |
 |---|---|---|---|---|---|---|---|
-| **WP-40** | [`wp-40-quality-flag-visibility/`](wp-40-quality-flag-visibility/README.md)(🟡 已展開,待 T0) | `ResultScreen` quality-gate 卡片動態化(讀真實旗標)+ metadata 補 DPI 欄位 | 1 | — | 無(獨立) | 1–1.5d | 🟡 已展開,待 T0 |
-| **WP-41** | `wp-41-seeded-counterbalance/`(⬜ 待展開) | 純函式:`buildFamilyOrder` 決定性家族順序;家族內條件排程範圍待 T0 判定(FR-G7) | 2 | — | 無(獨立,可與 WP-40 並行) | 1–2d(依 T0 判定範圍浮動) | ⬜ 待展開 |
-| **WP-42** | `wp-42-session-orchestrator/`(⬜ 待展開) | `SessionRunner`:session plan 狀態機 + 休息 overlay + 熱身步驟 + 家族子集/preset 選擇(FR-G9);T3 接入 WP-41 排程 | 3 | **M17** | WP-41(僅 T3 接線相依;T0~T2 可用手動固定順序先行) | 2–3d | ⬜ 待展開 |
+| **WP-40** | [`wp-40-quality-flag-visibility/`](wp-40-quality-flag-visibility/README.md)(✅ 完成) | `ResultScreen` quality-gate 卡片動態化(讀真實旗標)+ metadata 補 DPI 欄位 | 1 | — | 無(獨立) | 1–1.5d | ✅ 完成 |
+| **WP-41** | [`wp-41-seeded-counterbalance/`](wp-41-seeded-counterbalance/README.md)(🟡 已展開,待 T0) | 純函式:`buildFamilyOrder` 決定性家族順序;家族內條件排程範圍待 T0 判定(FR-G7) | 2 | — | 無(獨立,可與 WP-40 並行) | 1–2d(依 T0 判定範圍浮動) | 🟡 已展開,待 T0 |
+| **WP-42** | [`wp-42-session-orchestrator/`](wp-42-session-orchestrator/README.md)(🟡 已展開,待 T0) | `SessionRunner`:session plan 狀態機 + 休息 overlay + 熱身步驟 + 家族子集/preset 選擇(FR-G9);T3 接入 WP-41 排程 | 3 | **M17** | WP-41(僅 T3 接線相依;T0~T2 可用手動固定順序先行) | 規劃稿原估 2–3d;WP-42 T0 讀碼發現 `availableDrills` 可達性缺口(見 [wp-42 README §0-2](wp-42-session-orchestrator/README.md#0-讀碼對帳規劃階段2026-08-25決定本-wp-淨新增工作量)),上修為 3–4.5d | 🟡 已展開,待 T0 |
 
 **合計估時(粗估,未讀碼)**:4–6.5 dev-days。各 WP 展開時需自己的 T0 entry-gate 讀碼覆核此估時(比照 stage4/stage6 慣例,規劃稿估時不是承諾)。
 
@@ -225,6 +225,7 @@ WP-42 T0~T2(手動固定順序骨架,不等 WP-41)──────────
 - [x] [DECISIONS.md](../../DECISIONS.md):新開 **GD-24** 記錄 stage7 採納、WP-40~42 / M17 編號分配、階段字母 G、FR-G9 preset 分層決策。(2026-08-25 本次)
 - [x] [exec-plan/README.md](../../README.md):§2 加階段 G 索引表;§3 加 M17;§4 相依圖擴充;§6 目錄慣例加 `active/stage7/`。(2026-08-25 本次)
 - [x] [docs/MAP.md](../../../MAP.md):§3「進行中(`active/`)」補上 stage7;§3.2 加階段 G 索引。(2026-08-25 本次)
-- [ ] [CONTEXT.md](../../../CONTEXT.md):新術語(`SessionPlan`/`buildFamilyOrder`/…)於各 WP T-exit 回寫,新增 §K(尚未有 WP 進入 T-exit,待後續)。
+- [x] [CONTEXT.md](../../../CONTEXT.md):WP-40 T-exit 新增 **§L**(`QualityFlagId`/`QualityFlagSeverity`/`dpi`)——原計畫寫「§K」已被 WP-39 佔用(OQ-S7-8),故本次落地為 §L。(2026-08-25)
+- [ ] [CONTEXT.md](../../../CONTEXT.md):WP-41/WP-42 新術語(`buildFamilyOrder`/`SessionPlan`/…)於各自 T-exit 回寫,續接 **§M 起**(§L 已被本次 WP-40 佔用)。
 - [ ] `docs/operational/acceptance-stage-g.md`(新,WP-42 T3/T-exit 起稿/定稿)。
 - [ ] 依 §3 表格展開 `wp-40-quality-flag-visibility/`、`wp-41-seeded-counterbalance/`、`wp-42-session-orchestrator/` 三個子資料夾(各含 README/task-checklist/progress/T0~T-exit)——**待各 WP 實際開工時才展開**,不在本次採納動作內。

@@ -7,7 +7,7 @@
 | **相依** | T1 + T2 |
 | **Risk / Cplx** | — |
 | **Touches** | [CONTEXT.md](../../../../CONTEXT.md)、[../README.md](../README.md)、`docs/operational/*.md`(視 §0-5/§8 判定)、本 WP README/task-checklist |
-| **狀態** | ⬜ 待執行 |
+| **狀態** | ✅ 完成(2026-08-25) |
 
 ## Objective
 
@@ -28,13 +28,13 @@
 
 ## Steps
 
-- [ ] 覆核 FR-G1 驗收條件(六旗標即時反應、非硬編、`--warn` 正確、兩層嚴重度)附測試證據連結。
-- [ ] 覆核 FR-G2 驗收條件(`dpi` additive、既有匯出零重錄)附測試證據連結。
-- [ ] 判定並記錄 `docs/operational/*.md` 文件需求(新增或不需要,附理由)。
-- [ ] CONTEXT.md 新增 §L。
-- [ ] stage7 README §3 WP-40 狀態翻 ✅;§8 章節號描述若需修正一併處理。
-- [ ] 覆核 OQ-S7-6/7/8 逐條關閉狀態記入 progress.md。
-- [ ] 最終 `npm run test:ci` 全綠證據貼 progress.md。
+- [x] 覆核 FR-G1 驗收條件(六旗標即時反應、非硬編、`--warn` 正確、兩層嚴重度)附測試證據連結。
+- [x] 覆核 FR-G2 驗收條件(`dpi` additive、既有匯出零重錄)附測試證據連結。
+- [x] 判定並記錄 `docs/operational/*.md` 文件需求(新增或不需要,附理由)——判定不需要(D-40.5)。
+- [x] CONTEXT.md 新增 §L。
+- [x] stage7 README §3 WP-40 狀態翻 ✅;§8 章節號描述修正(§K→§L,並記錄 WP-41/42 續接 §M)。
+- [x] 覆核 OQ-S7-6/7/8 逐條關閉狀態記入 progress.md。
+- [x] 最終 `npm run test:ci` 全綠證據貼 progress.md。
 
 ## Definition of Done
 
