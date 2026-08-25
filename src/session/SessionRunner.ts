@@ -103,9 +103,14 @@ export function createSessionRunner(options: SessionRunnerOptions): SessionRunne
     if (disposed) return Promise.resolve();
     const next = (transition ?? Promise.resolve()).then(action);
     transition = next;
-    void next.finally(() => {
-      if (transition === next) transition = undefined;
-    });
+    // Bookkeeping only — the caller of runTransition() (start/advance's own return value) is
+    // responsible for handling a rejection; without this .catch() the derived `.finally()`
+    // promise would report its own separate "unhandled rejection" even when `next` is handled.
+    next
+      .finally(() => {
+        if (transition === next) transition = undefined;
+      })
+      .catch(() => {});
     return next;
   }
 
@@ -136,7 +141,15 @@ export function createSessionRunner(options: SessionRunnerOptions): SessionRunne
       restStartedAt ??= nowMs;
       const remainingMs = Math.max(0, presetRestMs - (nowMs - restStartedAt));
       if (remainingMs === 0) {
-        void this.advance();
+        // Auto-advance runs unattended (no caller to await it); a rejection here (e.g. the next
+        // family's drill/scene fails to load) must not leave `phase` stuck at 'rest' forever —
+        // that would freeze the rest overlay on screen with no recovery (see SessionRunnerPoll.test.ts).
+        void this.advance().catch((error: unknown) => {
+          options.onStatus?.(
+            `Session Plan 家族切換失敗，本次 session 已中止：${error instanceof Error ? error.message : String(error)}`,
+          );
+          setPhase({ kind: 'done' });
+        });
         return;
       }
       setPhase({ ...phase, remainingMs });

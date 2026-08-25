@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-010](KI-010-rest-overlay-stuck-on-failed-auto-advance.md) | Session Plan 休息倒數結束後自動載入下一家族失敗時（`SessionRunner.poll()`）錯誤被 `void` 靜默丟棄，`phase` 永遠卡在 `'rest'`，`restOverlay` 因此永不消失 | BD-010(§3,`poll()` 自動 advance 補 `.catch()`：`onStatus` 回報 + 強制轉 `{kind:'done'}`；`runTransition()` 的 `.finally()` 鏈補 `.catch(() => {})` 避免衍生 unhandled rejection) | ✅ 已修(2026-08-25) |
 | [KI-008](KI-008-fitts-v1-threshold-drift-and-xcorr-empty-table.md) | PR #39 Codex review 三則:①`fitts-v1` 門檻偏離 T0 凍結的 pre-registration(`min_samples`/`min_id_range_bits` 各減半),09:24 誤判 `ok`;②`d_ratio` 對 `min(D)<=0` 算出 `+inf` 誤判為未過關,丟棄有效 session;③空 xcorr table(`verdict is None`)誤判為未 blocked,缺口說明謊稱全數有輸出 | BD-008(§2,**D1+D2+D3 全數落地**:恢復凍結門檻 20/2.0/1.0;`d_ratio` 只在有限值時判定;`verdict is None` 視同 blocked) | ✅ 已修(2026-08-17) |
 | [KI-007](KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md) | `experimentSession.exit()` 只在多條件 protocol 流程呼叫,單一「實驗 session」drill 流程從未呼叫 → `active` 對整頁生命週期恆 true → drill 結束後正常退出全螢幕(去抓匯出檔)也會被誤判為條件失效,`meta.suspect` 誤標 `true` | BD-007(§2,**F-1 已落地**:`handleFullscreenChange` 新增 `recording` 參數,只在 drill 錄製中才判定失效) | ✅ 已修(2026-08-07) |
 | [KI-006](KI-006-m14-sample-no-counterstrafe.md) | M14 ④/⑤ 的真實資料效度閘所用樣本(08:03)**不含 counter-strafe 構念**:`vx ≡ 0`、`keys` 全空、`counter` 事件 0 → 量到的是站樁純 flick。**M14 ④⑤ 撤回**(理由獨立於 KI-005) | BD-006(§3,**C+B 全數落地**:construct presence gate + 重新採樣,見 [A2](KI-005-A/A2-blocked-plan.md)) | ✅ CLOSED(2026-08-07),M14 ④⑤ 已重新宣告 |
@@ -54,6 +55,21 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-010 ✅ KI-010 — Session Plan rest overlay 於自動 advance 失敗時卡死不消失(2026-08-25)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 使用者以 QA 角色排查 Session Plan 測試流程時回報：休息倒數結束後 `RestOverlay` 仍留在畫面上。追碼確認 [SessionRunner.ts poll()](../../src/session/SessionRunner.ts) 在倒數歸零時以 `void this.advance()` fire-and-forget 觸發下一家族載入，未接 `.catch()`；若 `startFamily()` 內 `options.loadDrillById(...)`（`main.ts`,可能含場景切換的 `await createSceneManagerWithStatus(...)`）拒絕，`phase` 永遠停在 `{kind:'rest', ...}`，`main.ts` 的 `onPhaseChange`（只在 `kind !== 'rest'` 才呼叫 `restOverlay.hide()`）因此永不觸發。完整診斷見 [KI-010](KI-010-rest-overlay-stuck-on-failed-auto-advance.md)。 |
+| **與既有測試覆蓋的落差** | [acceptance-stage-g.md §1.1](../../docs/operational/acceptance-stage-g.md#11-g-2-的證據組成與範圍限定誠實記錄非阻塞) 已誠實記錄：WP-42 T-exit 從未有真人在真實硬體上完整走過一次含休息倒數的 Session Plan 全場；`SessionRunnerPoll.test.ts` 原本唯一的 poll 測試只覆蓋 `loadDrillById` 恆成功的情境，這條錯誤路徑此前無任何自動化或人工驗收覆蓋。 |
+| **決策** | **F-1**：`poll()` 的自動 advance 呼叫加 `.catch()`——失敗時 `onStatus` 回報錯誤訊息 + `setPhase({kind:'done'})` 安全終止 session（非 sim 相關,不違反 GD-6/D-42.5 的 orchestration-層純 DOM 邊界）。**F-2**：`runTransition()` 的 `void next.finally(...)` 鏈補 `.catch(() => {})`——這是修法過程中發現的獨立同源漏洞:`.finally()` 回傳的衍生 promise 即使 `next` 本身已被呼叫方妥善處理,仍會被 runtime 標記為獨立的 unhandled rejection。 |
+| **理由** | 不採「靜默重試」:若錯誤是永久性的(如缺少場景資產),會形成使用者看不到、但持續執行的無限迴圈。不採「退回 `'family'` 重跑當前家族」:`startFamily` 失敗前可能已執行到一半的 `drillRunner.restart()` 等副作用,狀態已不可信,承認 session 無法可靠續跑並中止是唯一安全的作法。F-2 只補內部簿記鏈的 `.catch()`,不改變 `next` 本身傳給呼叫方（F-1 的 `.catch()`、或 `main.ts` 既有 `await sessionPlanRunner.advance()`）的錯誤資訊。 |
+| **偏離計畫** | 無。診斷由使用者直接回報觸發(非既定 WP task),依協議走 known_issue 流程(KI-010 tech spec + 本帳本)。依 TDD 先寫 RED 測試（修法前斷言 `phase.kind !== 'rest'` 失敗,證實卡住)、F-1 落地後轉 GREEN;F-2 是驗證 F-1 時,vitest 額外回報一個獨立 `Unhandled Rejection` 才發現的追加修正,同一 commit 一併處理(同源、同檔案,不足以拆成獨立 task)。 |
+| **遺留 OQ** | **OQ-KI10-1**：失敗即整場 Session Plan 中止,不嘗試略過該家族續跑其餘家族——屬產品行為決策,需另開 task。**OQ-KI10-2**：未實測真實硬體上具體是哪種錯誤觸發 `loadDrillById` 失敗;本次診斷聚焦於「無論何種原因失敗,狀態機都不該卡死且靜默」這個更上層的健壯性缺口。 |
+| **影響面** | **受影響**:`src/session/SessionRunner.ts`(`poll()`/`runTransition()`)。**不受影響**:正常(成功)路徑的狀態轉移、`RestOverlay` show/hide 時機、`buildFamilyOrder` 排程邏輯(WP-41/D-42.6)、sim、輸入、命中判定、匯出資料語意。 |
+| **狀態** | ✅ **已修(2026-08-25)**。驗證:`tsc --noEmit` exit 0;`vitest run` 130 files / 968 tests 全綠(含新增 1 案);修法前先以 RED 測試重現卡死,修法後轉 GREEN 且無殘留 unhandled rejection。 |
+
+---
 
 ### BD-008 ✅ KI-008 — `fitts-v1` 門檻偏離 pre-registration + D=0 誤擋 + xcorr 空表未標 blocked(2026-08-17)
 
