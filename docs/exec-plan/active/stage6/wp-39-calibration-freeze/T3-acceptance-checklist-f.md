@@ -7,7 +7,7 @@
 | **相依** | T2(凍結完成,`protocolVersion`/診斷門檻/四協定數值已定案) |
 | **Risk / Cplx** | Med / Med(本 task 的新增測試是**跨** WP-34/35/36/37 匯出格式的整合測試,需要同時載入四個協定的匯出型式) |
 | **Touches** | ADD `docs/operational/acceptance-stage-f.md`、`tests/regression/stage6-cross-family-consistency.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-25) |
 
 ## Objective
 

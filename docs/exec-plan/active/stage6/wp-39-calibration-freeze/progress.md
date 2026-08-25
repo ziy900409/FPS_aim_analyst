@@ -8,6 +8,7 @@
 - [x] (2026-08-25 07:50Z) **T0 entry gate** — WP-33、WP-34、WP-35、WP-36、WP-37、WP-38 的 task checklist 均確認 T-exit 為 ✅，WP-39 已放行。重新搜尋 `src/` 的 `pilot candidate|WP-39` 標記，現有候選位置為 `hold_track_v1.ts`、`spider_shot_v1.ts` 與 `diagnosisRules.ts`；沒有發現 WP-38 新增的 history candidate。既有 assessment seeds 為 hold-click `34034`、hold-track `35035`、spider-shot `36036`、counterstrafe-cued `37001`、counterstrafe-reversal `37002`，故 T1 使用自 `90000` 起的不相交 pilot roster。
 - [x] (2026-08-25 07:50Z) **T1 pilot config tool** — 新增四個 deterministic practice config builders、`90000` 起的分家族 seed roster、feedback-policy 候選與 `main.ts` 的可覆寫 export policy 參數；新增 `pilotConfigs.test.ts`（5 passed）並通過完整 `npm run test:ci`（123 files / 940 Vitest tests + 21 Playwright tests）。`pilot-protocol-stage6.md` 已起稿。
 - [x] (2026-08-25 07:50Z) **T2 numeric freeze** — `main.ts` 的 Assessment 匯出已改讀 `STAGE6_PROTOCOL_VERSION = '1.0.0'`，診斷改讀 `DIAGNOSIS_THRESHOLDS_V1`，舊 pilot candidate 保留；四個協定與歷史 window/minN 使用具名凍結常數。目標回歸 6 files / 22 tests、`npm run typecheck` 與完整 `npm run test:ci` 均通過。
+- [x] (2026-08-25 07:50Z) **T3 acceptance F** — 新增 12 項可追溯驗收清單與跨家族 shared/exclusive event contract 回歸測試。
 
 ## Decision Log
 
