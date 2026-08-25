@@ -775,6 +775,36 @@ describe('collectMeta', () => {
     expect('fovDeg' in meta).toBe(false);
   });
 
+  it('records optional self-reported mouse DPI without changing pre-DPI exports', () => {
+    const base: CollectMetaArgs = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(collectMeta({ ...base, dpi: 1600 }).dpi).toBe(1600);
+    const withoutDpi = collectMeta(base);
+    expect(withoutDpi.dpi).toBeUndefined();
+    expect('dpi' in withoutDpi).toBe(false);
+  });
+
+  it('rejects non-positive and non-finite self-reported mouse DPI', () => {
+    const base: CollectMetaArgs = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() => collectMeta({ ...base, dpi: 0 })).toThrow('dpi must be a positive finite number');
+    expect(() => collectMeta({ ...base, dpi: Number.NaN })).toThrow('dpi must be a positive finite number');
+  });
+
   it('rejects a non-positive meta.fovDeg', () => {
     expect(() =>
       collectMeta({

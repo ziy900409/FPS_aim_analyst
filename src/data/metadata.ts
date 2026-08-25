@@ -88,6 +88,8 @@ export interface Meta {
   simHz: number;
   browser: string;
   sensitivity: number;
+  /** Self-reported mouse DPI; browsers cannot read this external hardware setting. */
+  dpi?: number;
   sensitivityModel: 'cs2-0.022deg';
   movementModel: 'cs2-source';
   /**
@@ -157,6 +159,7 @@ export interface CollectMetaArgs {
   simHz?: number;
   browser?: string;
   sensitivity: number;
+  dpi?: number;
   fovDeg?: number;
   crossOriginIsolated: boolean;
   startedAt?: string | Date;
@@ -206,6 +209,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const simHz = requirePositiveFiniteNumber(args.simHz ?? DEFAULT_SIM_HZ, 'simHz');
   const browser = args.browser ?? globalThis.navigator?.userAgent ?? 'unknown';
   const sensitivity = requirePositiveFiniteNumber(args.sensitivity, 'sensitivity');
+  const dpi = args.dpi === undefined ? undefined : requirePositiveFiniteNumber(args.dpi, 'dpi');
   const fovDeg = args.fovDeg === undefined ? undefined : requirePositiveFiniteNumber(args.fovDeg, 'fovDeg');
   const crossOriginIsolated = requireBoolean(args.crossOriginIsolated, 'crossOriginIsolated');
   const startedAt = normalizeStartedAt(args.startedAt);
@@ -243,6 +247,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     simHz,
     browser,
     sensitivity,
+    ...(dpi !== undefined ? { dpi } : {}),
     sensitivityModel: 'cs2-0.022deg',
     movementModel: DEFAULT_MOVEMENT_MODEL,
     ...(fovDeg !== undefined ? { fovDeg } : {}),

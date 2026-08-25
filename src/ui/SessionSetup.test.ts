@@ -95,6 +95,7 @@ describe('createSessionSetupForm', () => {
     input('nativeH').value = '1440';
     input('panelInches').value = '24.5';
     input('viewingDistanceCm').value = '60';
+    input('dpi').value = '1600';
     document.forms[0].dispatch('submit');
 
     expect(onSubmit).toHaveBeenCalledWith({
@@ -105,6 +106,7 @@ describe('createSessionSetupForm', () => {
       nativeH: 1440,
       panelInches: 24.5,
       viewingDistanceCm: 60,
+      dpi: 1600,
     });
     expect(root.style.display).toBe('none');
   });
@@ -142,6 +144,21 @@ describe('createSessionSetupForm', () => {
     expect(onSubmit).not.toHaveBeenCalled();
     expect(root.style.display).toBe('flex');
     expect(document.created.some((el) => el.textContent.includes('Native width'))).toBe(true);
+  });
+
+  it('keeps mouse DPI optional and rejects values outside its self-report bounds', () => {
+    const { document, handle, input, onSubmit, root } = setup();
+    handle.open();
+    input('participantId').value = 'P004';
+    document.forms[0].dispatch('submit');
+    expect(onSubmit).toHaveBeenLastCalledWith({ participantId: 'P004' });
+
+    handle.open();
+    input('dpi').value = '32001';
+    document.forms[0].dispatch('submit');
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(root.style.display).toBe('flex');
+    expect(document.created.some((el) => el.textContent.includes('Mouse DPI'))).toBe(true);
   });
 });
 

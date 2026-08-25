@@ -13,6 +13,8 @@ export interface SessionSetupValues {
   nativeH?: number;
   panelInches?: number;
   viewingDistanceCm?: number;
+  /** Self-reported mouse DPI; browsers cannot read this external hardware setting. */
+  dpi?: number;
   selfReportUncertain?: boolean;
 }
 
@@ -36,6 +38,8 @@ const PANEL_INCHES_MIN = 10;
 const PANEL_INCHES_MAX = 80;
 const VIEWING_DISTANCE_MIN_CM = 20;
 const VIEWING_DISTANCE_MAX_CM = 200;
+const DPI_MIN = 100;
+const DPI_MAX = 32000;
 
 export function displaySelfReportFromSessionSetup(
   values: SessionSetupValues,
@@ -71,7 +75,7 @@ export function createSessionSetupForm(options: SessionSetupOptions): SessionSet
   title.style.cssText = 'grid-column:1 / -1;margin:0;font:750 18px/1.3 system-ui,sans-serif;color:#edf2f7';
 
   const desc = document.createElement('p');
-  desc.textContent = '請填研究者發放代號;顯示硬體欄位為自陳資料,不知道可留空或勾選不確定。';
+  desc.textContent = '請填研究者發放代號;顯示與滑鼠硬體欄位為自陳資料,不知道可留空或勾選不確定。';
   desc.style.cssText = 'grid-column:1 / -1;margin:0;font:500 13px/1.5 system-ui,sans-serif;color:#aeb6bf';
 
   const detectedText = document.createElement('p');
@@ -99,6 +103,7 @@ export function createSessionSetupForm(options: SessionSetupOptions): SessionSet
     VIEWING_DISTANCE_MAX_CM,
     1,
   );
+  const dpi = makeNumberField('Mouse DPI', 'dpi', 'DPI', DPI_MIN, DPI_MAX, 1);
 
   const uncertainRow = document.createElement('label');
   uncertainRow.style.cssText =
@@ -131,6 +136,7 @@ export function createSessionSetupForm(options: SessionSetupOptions): SessionSet
     nativeH.row,
     panelInches.row,
     viewingDistanceCm.row,
+    dpi.row,
     uncertainRow,
     status,
     buttonRow,
@@ -159,6 +165,7 @@ export function createSessionSetupForm(options: SessionSetupOptions): SessionSet
       nativeH: nativeH.input,
       panelInches: panelInches.input,
       viewingDistanceCm: viewingDistanceCm.input,
+      dpi: dpi.input,
       selfReportUncertain: uncertain,
     });
     if (!result.ok) {
@@ -188,6 +195,7 @@ interface FormInputs {
   nativeH: HTMLInputElement;
   panelInches: HTMLInputElement;
   viewingDistanceCm: HTMLInputElement;
+  dpi: HTMLInputElement;
   selfReportUncertain: HTMLInputElement;
 }
 
@@ -237,6 +245,7 @@ function readValues(inputs: FormInputs): ReadValuesResult {
       VIEWING_DISTANCE_MAX_CM,
       false,
     );
+    assignOptionalNumber(values, 'dpi', inputs.dpi.value, 'Mouse DPI', DPI_MIN, DPI_MAX, true);
     if (inputs.selfReportUncertain.checked) values.selfReportUncertain = true;
     return { ok: true, values };
   } catch (error) {
@@ -253,7 +262,7 @@ function assignOptionalText<T extends 'sessionLabel' | 'monitorModel'>(
   if (value !== undefined) values[key] = value;
 }
 
-function assignOptionalNumber<T extends 'nativeW' | 'nativeH' | 'panelInches' | 'viewingDistanceCm'>(
+function assignOptionalNumber<T extends 'nativeW' | 'nativeH' | 'panelInches' | 'viewingDistanceCm' | 'dpi'>(
   values: SessionSetupValues,
   key: T,
   raw: string,
@@ -296,7 +305,7 @@ function makeTextField(
 
 function makeNumberField(
   labelText: string,
-  name: keyof Pick<SessionSetupValues, 'nativeW' | 'nativeH' | 'panelInches' | 'viewingDistanceCm'>,
+  name: keyof Pick<SessionSetupValues, 'nativeW' | 'nativeH' | 'panelInches' | 'viewingDistanceCm' | 'dpi'>,
   suffix: string,
   min: number,
   max: number,

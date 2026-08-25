@@ -7,7 +7,7 @@
 | **相依** | T0(可與 T1 並行,檔案熱區不重疊) |
 | **Risk / Cplx** | Low(additive optional 欄位 + 一個表單輸入) |
 | **Touches** | `src/data/metadata.ts`(MODIFY,additive)、`src/data/metadata.test.ts`(ADD)、`src/ui/SessionSetup.ts`(MODIFY,additive)、`src/ui/SessionSetup.test.ts`(ADD)、`src/main.ts`(MODIFY,`collectMeta()` 呼叫點) |
-| **狀態** | ⬜ 待執行 |
+| **狀態** | ✅ 完成(2026-08-25) |
 
 ## Objective
 
@@ -33,13 +33,13 @@
 
 ## Steps
 
-- [ ] `metadata.ts`:新增 `dpi?: number` 於 `Meta`/`CollectMetaArgs`;`collectMeta()` 補驗證與寫入邏輯。
-- [ ] `metadata.test.ts`:新增測試——提供 `dpi` 時正確驗證與寫入;不提供時 `Meta` 不含該鍵;提供非正數/非 finite 值時拋錯(比照既有 `sensitivity` 驗證測試型式)。
-- [ ] `SessionSetup.ts`:新增 `dpi` 表單欄位(`makeNumberField()`)+ `readValues()` 解析。
-- [ ] `SessionSetup.test.ts`:新增測試——填 `dpi` 正確產出 `SessionSetupValues.dpi`;留空時該欄位不存在於回傳值;超出 `DPI_MIN`/`DPI_MAX` 邊界時的既有驗證行為(比照 `panelInches` 既有測試型式)。
-- [ ] `main.ts`:`collectMeta()` 呼叫點補 `dpi` 引數。
-- [ ] 既有匯出/相容性回歸測試(WP-33/38 既有 fixture)零修改,確認 `npm run test:ci` 全綠。
-- [ ] `rg "\.dpi\b" src/metrics` 確認零命中(README §3 失效模式)。
+- [x] `metadata.ts`:新增 `dpi?: number` 於 `Meta`/`CollectMetaArgs`;`collectMeta()` 補驗證與寫入邏輯。
+- [x] `metadata.test.ts`:新增測試——提供 `dpi` 時正確驗證與寫入;不提供時 `Meta` 不含該鍵;提供非正數/非 finite 值時拋錯(比照既有 `sensitivity` 驗證測試型式)。
+- [x] `SessionSetup.ts`:新增 `dpi` 表單欄位(`makeNumberField()`)+ `readValues()` 解析。
+- [x] `SessionSetup.test.ts`:新增測試——填 `dpi` 正確產出 `SessionSetupValues.dpi`;留空時該欄位不存在於回傳值;超出 `DPI_MIN`/`DPI_MAX` 邊界時的既有驗證行為(比照 `panelInches` 既有測試型式)。
+- [x] `main.ts`:`collectMeta()` 呼叫點補 `dpi` 引數。
+- [x] 既有匯出/相容性回歸測試(WP-33/38 既有 fixture)零修改,確認 `npm run test:ci` 全綠。
+- [x] `rg "\.dpi\b" src/metrics` 確認零命中(README §3 失效模式)。
 
 ## Definition of Done
 

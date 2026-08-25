@@ -432,6 +432,7 @@ async function buildCurrentExportPayload(
     displayHz,
     simHz: SIM_HZ,
     sensitivity: settingsPanel.sensitivity,
+    ...(sessionSetupValues?.dpi !== undefined ? { dpi: sessionSetupValues.dpi } : {}),
     fovDeg: settingsPanel.fov,
     crossOriginIsolated: isolation.crossOriginIsolated,
     startedAt: recorderStartedAt,
