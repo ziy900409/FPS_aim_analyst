@@ -47,31 +47,31 @@ test('export panel and drill controls stack above the result-screen backdrop', a
 test('session launch controls do not overlap the settings panel', async ({ page }) => {
   await page.goto(URL, { waitUntil: 'networkidle' });
 
-  await expect
-    .poll(
-      () =>
-        page.evaluate(() => {
-          const settingsPanel = document.querySelector('#settings-panel');
-          const launchLabels = ['實驗 session', '解析度 protocol', 'BR protocol', 'Session Plan'];
-          const launchButtons = [...document.querySelectorAll('button')].filter((button) =>
-            launchLabels.includes(button.textContent ?? ''),
-          );
-          if (settingsPanel === null || launchButtons.length !== launchLabels.length) return null;
+  const overlapsSettingsPanel = (expectedVisibleButtons: number) =>
+    page.evaluate((expectedCount) => {
+      const settingsPanel = document.querySelector('#settings-panel');
+      const launchButtons = [...document.querySelectorAll<HTMLButtonElement>('#session-launch-controls button')]
+        .filter((button) => button.getBoundingClientRect().height > 0);
+      if (settingsPanel === null || launchButtons.length !== expectedCount) return null;
 
-          const panelRect = settingsPanel.getBoundingClientRect();
-          return launchButtons
-            .filter((button) => {
-              const buttonRect = button.getBoundingClientRect();
-              return !(
-                buttonRect.right <= panelRect.left ||
-                buttonRect.left >= panelRect.right ||
-                buttonRect.bottom <= panelRect.top ||
-                buttonRect.top >= panelRect.bottom
-              );
-            })
-            .map((button) => button.textContent);
-        }),
-      { timeout: 15_000 },
-    )
-    .toEqual([]);
+      const panelRect = settingsPanel.getBoundingClientRect();
+      return launchButtons
+        .filter((button) => {
+          const buttonRect = button.getBoundingClientRect();
+          return !(
+            buttonRect.right <= panelRect.left ||
+            buttonRect.left >= panelRect.right ||
+            buttonRect.bottom <= panelRect.top ||
+            buttonRect.top >= panelRect.bottom
+          );
+        })
+        .map((button) => button.textContent);
+    }, expectedVisibleButtons);
+
+  // WP-43 T1：兩個主入口 + 保留的 legacy「實驗 session」。
+  await expect.poll(() => overlapsSettingsPanel(3), { timeout: 15_000 }).toEqual([]);
+
+  // 展開研究員三項子選單後，top-left flex layout 仍須把 Settings panel 往下推開。
+  await page.getByRole('button', { name: '研究員模式', exact: true }).click();
+  await expect.poll(() => overlapsSettingsPanel(6), { timeout: 15_000 }).toEqual([]);
 });

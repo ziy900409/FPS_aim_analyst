@@ -15,6 +15,12 @@ import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen, type QualityFlagsInput } from './ui/ResultScreen.ts';
 import { createHistoryView } from './ui/HistoryView.ts';
 import { createControls } from './ui/Controls.ts';
+import {
+  createResearcherMenu,
+  shouldShowResearcherControls,
+  type AppMode,
+  type ResearcherMenuHandle,
+} from './ui/ResearcherMenu.ts';
 import { applyResolutionMode, type DisplayState, type ResolutionMode } from './display/resolutionMode.ts';
 import {
   createProtocolRunner,
@@ -304,7 +310,10 @@ let pendingSessionSetupValues: SessionSetupValues | undefined;
 let sessionSetupValues: SessionSetupValues | undefined;
 let pendingSessionPlanSelection: SessionPlanSelection | undefined;
 let activeSessionPlanPreset: string | undefined;
-let pendingSessionMode: 'session' | 'resolution-protocol' | 'br-tracking-protocol' | 'session-plan' = 'session';
+type PendingSessionMode = 'session' | 'resolution-protocol' | 'br-tracking-protocol' | 'session-plan';
+let pendingSessionMode: PendingSessionMode = 'session';
+let appMode: AppMode = 'launch';
+let researcherMenu: ResearcherMenuHandle | undefined;
 let markProtocolFullscreenExit: (() => void) | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
   // Session Plan（選手表現測試,WP-42）不操弄/比較解析度條件——四家族一律 native 載入,
@@ -356,12 +365,9 @@ document.addEventListener('fullscreenchange', () => {
   if (!fullscreen) markProtocolFullscreenExit?.();
 });
 
-// 最小啟動器：解鎖時可開資格閘（fullscreen 請求須在 user gesture 內,故走按鈕點擊）。
-const experimentButton = document.createElement('button');
-experimentButton.type = 'button';
-experimentButton.textContent = '實驗 session';
-experimentButton.title = '進入資格閘（GD-10 防線①）';
-experimentButton.style.cssText = [
+// WP-43 / T1（FR-H1/H4）— 啟動器收斂為選手測試 / 研究員模式兩個主入口。未獲產品歸類的
+// legacy「實驗 session」依 D-43.5 保留為次要第三入口；三條 eligibility 路徑仍沿用既有 routing。
+const launchButtonCss = [
   'width:100%',
   'height:34px',
   'padding:0 14px',
@@ -372,42 +378,57 @@ experimentButton.style.cssText = [
   'background:rgba(15,18,21,0.96)',
   'cursor:pointer',
 ].join(';');
-experimentButton.addEventListener('click', () => {
-  pendingSessionMode = 'session';
-  sessionSetupForm.open();
-});
-sessionLaunchControls.appendChild(experimentButton);
 
-const protocolButton = document.createElement('button');
-protocolButton.type = 'button';
-protocolButton.textContent = '解析度 protocol';
-protocolButton.title = '執行受試者內解析度 × 偵測 protocol';
-protocolButton.style.cssText = experimentButton.style.cssText;
-protocolButton.addEventListener('click', () => {
-  pendingSessionMode = 'resolution-protocol';
+function setAppMode(next: AppMode): void {
+  appMode = next;
+  if (next === 'researcher') researcherMenu?.open();
+  else researcherMenu?.close();
+  syncControlsVisibility();
+}
+
+function openSessionSetup(mode: PendingSessionMode): void {
+  setAppMode('session');
+  pendingSessionMode = mode;
   sessionSetupForm.open();
+}
+
+const mainLaunchActions = document.createElement('div');
+mainLaunchActions.setAttribute('data-launch-tier', 'primary');
+mainLaunchActions.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+
+const participantSessionButton = document.createElement('button');
+participantSessionButton.type = 'button';
+participantSessionButton.textContent = '選手測試 Session';
+participantSessionButton.title = '選擇家族與具名 preset 後執行 session plan';
+participantSessionButton.style.cssText = launchButtonCss;
+participantSessionButton.addEventListener('click', () => openSessionSetup('session-plan'));
+
+const researcherModeButton = document.createElement('button');
+researcherModeButton.type = 'button';
+researcherModeButton.textContent = '研究員模式';
+researcherModeButton.title = '開啟單一 Drill 調整與研究 protocol';
+researcherModeButton.style.cssText = launchButtonCss;
+researcherModeButton.addEventListener('click', () => setAppMode('researcher'));
+mainLaunchActions.append(participantSessionButton, researcherModeButton);
+
+const experimentButton = document.createElement('button');
+experimentButton.type = 'button';
+experimentButton.textContent = '實驗 session';
+experimentButton.title = '尚待歸類的既有入口：進入資格閘（GD-10 防線①）';
+experimentButton.style.cssText = `${launchButtonCss};opacity:0.72`;
+experimentButton.setAttribute('data-launch-tier', 'legacy');
+experimentButton.addEventListener('click', () => openSessionSetup('session'));
+
+sessionLaunchControls.append(mainLaunchActions, experimentButton);
+researcherMenu = createResearcherMenu({
+  parent: sessionLaunchControls,
+  onSelectDrillControls: () => {
+    researcherMenu?.close();
+    syncControlsVisibility();
+  },
+  onSelectResolutionProtocol: () => openSessionSetup('resolution-protocol'),
+  onSelectBrProtocol: () => openSessionSetup('br-tracking-protocol'),
 });
-sessionLaunchControls.appendChild(protocolButton);
-const brProtocolButton = document.createElement('button');
-brProtocolButton.type = 'button';
-brProtocolButton.textContent = 'BR protocol';
-brProtocolButton.title = '執行 BR 跟槍 ADS × 彈道 × 角尺寸 protocol';
-brProtocolButton.style.cssText = experimentButton.style.cssText;
-brProtocolButton.addEventListener('click', () => {
-  pendingSessionMode = 'br-tracking-protocol';
-  sessionSetupForm.open();
-});
-sessionLaunchControls.appendChild(brProtocolButton);
-const sessionPlanButton = document.createElement('button');
-sessionPlanButton.type = 'button';
-sessionPlanButton.textContent = 'Session Plan';
-sessionPlanButton.title = '選擇家族與具名 preset 後執行 session plan';
-sessionPlanButton.style.cssText = experimentButton.style.cssText;
-sessionPlanButton.addEventListener('click', () => {
-  pendingSessionMode = 'session-plan';
-  sessionSetupForm.open();
-});
-sessionLaunchControls.appendChild(sessionPlanButton);
 pointerLock.onChange((locked) => {
   topLeftControls.style.display = locked ? 'none' : 'flex';
 });
@@ -1090,7 +1111,9 @@ const controls = createControls({
 });
 
 function syncControlsVisibility(): void {
-  controls.setVisible(!pointerLock.locked || drillRunner.phase === 'ended');
+  controls.setVisible(
+    shouldShowResearcherControls(appMode, !pointerLock.locked || drillRunner.phase === 'ended'),
+  );
 }
 
 pointerLock.onChange(syncControlsVisibility);

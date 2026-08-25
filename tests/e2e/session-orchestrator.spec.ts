@@ -37,6 +37,41 @@ async function waitForHarness(page: import('@playwright/test').Page): Promise<vo
 }
 
 test.describe('WP-42 T-exit — session orchestrator', () => {
+  test('WP-43 T1 啟動分岔與研究員選單接回既有 Controls / protocol setup', async ({ page }) => {
+    await waitForHarness(page);
+
+    const launchControls = page.locator('#session-launch-controls');
+    const primaryButtons = launchControls.locator('[data-launch-tier="primary"] > button');
+    await expect(primaryButtons).toHaveCount(2);
+    await expect(primaryButtons.nth(0)).toHaveText('選手測試 Session');
+    await expect(primaryButtons.nth(1)).toHaveText('研究員模式');
+    await expect(launchControls.locator('button[data-launch-tier="legacy"]')).toHaveText('實驗 session');
+
+    const drillControls = page.locator('#drill-controls');
+    await expect(drillControls).toBeHidden();
+
+    await page.getByRole('button', { name: '研究員模式', exact: true }).click();
+    const researcherMenu = page.locator('#researcher-menu');
+    await expect(researcherMenu).toBeVisible();
+    await expect(researcherMenu.locator('button')).toHaveCount(3);
+    await expect(drillControls).toBeVisible();
+
+    await researcherMenu.getByRole('button', { name: '單一 Drill 調整', exact: true }).click();
+    await expect(researcherMenu).toBeHidden();
+    await expect(drillControls).toBeVisible();
+
+    await page.getByRole('button', { name: '研究員模式', exact: true }).click();
+    await researcherMenu.getByRole('button', { name: '解析度 protocol', exact: true }).click();
+    await expect(page.locator('#session-setup')).toBeVisible();
+    await expect(drillControls).toBeHidden();
+
+    await page.locator('#session-setup button[type="button"]').click();
+    await page.getByRole('button', { name: '研究員模式', exact: true }).click();
+    await researcherMenu.getByRole('button', { name: 'BR protocol', exact: true }).click();
+    await expect(page.locator('#session-setup')).toBeVisible();
+    await expect(drillControls).toBeHidden();
+  });
+
   test('三個新登記 drill（spider-shot / counterstrafe-reversal / counterstrafe-free）走完整 loadDrill 鏈路', async ({
     page,
   }) => {
@@ -97,8 +132,8 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
   }) => {
     await waitForHarness(page);
 
-    // main.ts:392-401 — 第 4 顆啟動按鈕，比照既有三顆的接線型式。
-    await page.getByRole('button', { name: 'Session Plan', exact: true }).click();
+    // WP-43 T1：選手測試主入口沿用既有 Session Plan 接線。
+    await page.getByRole('button', { name: '選手測試 Session', exact: true }).click();
     await expect(page.locator('#session-setup')).toBeVisible();
 
     // SessionSetup.ts：唯一必填欄位是 Participant ID。

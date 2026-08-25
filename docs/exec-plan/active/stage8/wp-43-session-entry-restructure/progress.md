@@ -8,7 +8,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-25 | CodeGraph(current on-disk source)+指定檔案直讀+`rg` 覆核 README §0:六項行為判定仍成立;`main.ts` 三處連結行號漂移但簽名/行為未變。確認 `SessionRunner.test.ts` 有兩項測試直接依賴 `buildFamilyOrder()` 排列,`SessionRunnerPoll.test.ts` 無直接 mock/呼叫斷言但兩個 fixture 均需由 `presetId` 改為 `restSeconds`。完成 D-43.1～D-43.5;T1/T2 可依未決項安全預設開工,使用者後續回覆可在開工前覆寫。 |
-| T1 launch + researcher menu | ⬜ 待開工 | — | — |
+| T1 launch + researcher menu | ✅ | 2026-08-25 | (2026-08-25 15:06Z) 新增 callback-only `ResearcherMenu`、`appMode`/`setAppMode()` 與 Controls AND 顯隱規則;兩個 primary 入口加依 D-43.5 保留的 legacy「實驗 session」均走真 DOM E2E。`npm run build` 通過;`npm run test:ci` 全綠(131 Vitest files/973 tests + 24 Playwright tests)。`src/ui/Controls.ts` 與兩個 protocol 模組本體零 diff。 |
 | T2 session plan reorder + rest | ⬜ 待開工 | — | — |
 | T-exit 驗收 + 文件定稿 | ⬜ 待開工 | — | — |
 
@@ -45,11 +45,18 @@
 - **證據**：`main.ts:359-378` 的入口會通過資格閘後呼叫 `experimentSession.enter(report)`,但不經 Session Plan;其產品語意無法由程式結構單獨判定。
 - **Alternatives Considered**：歸入研究員模式、當成選手 Session 舊版路徑,或刪除。三者都會改變使用者可見資訊架構或既有能力,需要產品/研究者明確拍板。
 
+### D-43.6 — 兩個 primary 入口與 legacy 入口分層;ResearcherMenu 留在 launch controls 版面流內
+
+- **決定**：`sessionLaunchControls` 以 `data-launch-tier="primary"` 群組「選手測試 Session」/「研究員模式」兩個主入口,legacy「實驗 session」保留同容器但標為次要入口。`ResearcherMenu` 掛在同一容器內,展開時由既有 column flex 自動把 `SettingsPanel` 往下推;「單一 Drill 調整」關閉子選單但保留 `appMode='researcher'` 與 Controls,解析度/BR 則共用 `openSessionSetup()` 切回 session mode。
+- **證據**：`tests/e2e/session-orchestrator.spec.ts` 斷言兩個 primary + 一個 legacy、三個研究員 callback 與 Controls 顯隱;`tests/e2e/overlay-layering.spec.ts` 分別在子選單關閉(3 buttons)與展開(6 buttons)時驗證不與 `SettingsPanel` 重疊。
+- **Alternatives Considered**：把 legacy 入口塞進研究員選單會違反 D-43.5 的未決保留原則;把 ResearcherMenu 掛到 `document.body` 需新增另一套 pointer-lock 顯隱/定位同步,沒有帶來功能收益。
+
 ## Surprises
 
 - T0 覆核時 `main.ts` 相較規劃稿有純行號漂移:`sessionLaunchControls` 四按鈕為 359–410(原記 357–407)、`syncControlsVisibility()` 為 1092–1094(原記 1089–1094)、`experimentButton` 為 359–378(原記 357–376);行為與簽名未變,README 連結已校正。
 - README §7 原稱 runner 停用 preset 後 `sessionPlanPresets.ts`「完全無消費者」;實際上 `metadata.ts:285-288` 的 legacy `requireSessionPlanPreset()` 仍呼叫 `findSessionPlanPreset()`,且 `metadata.test.ts:155-157` 有契約測試。已修正文案並以 D-43.4 關閉 OQ-S8-7。
 - `SessionRunner.test.ts` 不只是可能隱含依賴 counterbalance:第一項直接 mock/斷言 `buildFamilyOrder()` 的呼叫與輸出順序,第二項直接斷言 `sessionIndex` 改變首家族。T2 必須把兩項改寫成「傳入順序逐位保持」與相應邊界驗證;`SessionRunnerPoll.test.ts` 僅需更新 plan fixture/休息秒數來源。
+- T1 第一次完整 `npm run test:ci` 為 23/24 Playwright:既有 `overlay-layering.spec.ts` 仍以舊四按鈕文字(`實驗 session`/`解析度 protocol`/`BR protocol`/`Session Plan`)等待 DOM,因此回傳 `null` 超時,並非實際重疊。改以 WP-43 結構 selector 後,targeted 2/2 與完整 Playwright 24/24 全綠;同時新增子選單展開狀態的無重疊覆蓋。
 
 ## Open Questions 狀態
 

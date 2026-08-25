@@ -7,7 +7,7 @@
 | **相依** | T0 |
 | **Risk / Cplx** | Med(重組既有事件監聽;需覆核既有 e2e 對啟動按鈕/`#drill-controls` 可見性的斷言) |
 | **Touches** | `src/main.ts`(MODIFY)、`src/ui/ResearcherMenu.ts`(ADD) |
-| **狀態** | ⬜ 待開工 |
+| **狀態** | ✅ 已完成(2026-08-25) |
 
 ## Objective
 
@@ -29,12 +29,12 @@
 
 ## Steps
 
-- [ ] 依 D-43.1 在 `main.ts` 新增 `appMode` 變數與其 setter。
-- [ ] 重組 `sessionLaunchControls` 的按鈕群:兩顆主按鈕 + (依 D-43.5)實驗 session 按鈕的去向。
-- [ ] 新增 `src/ui/ResearcherMenu.ts`(依 README §6 interface contract),三個回呼分別接線既有邏輯。
-- [ ] 修改 `syncControlsVisibility()` 加入 `appMode === 'researcher'` 條件。
-- [ ] 覆核既有 Playwright/e2e 測試對啟動按鈕文字/`#drill-controls` 可見性的斷言,同步調整。
-- [ ] 新增/調整單元測試:`appMode` 切換時,`ResearcherMenu`/`Controls` 面板顯隱正確;既有選手測試 Session 入口行為零改變。
+- [x] 依 D-43.1 在 `main.ts` 新增 `appMode` 變數與其 setter。
+- [x] 重組 `sessionLaunchControls` 的按鈕群:兩顆主按鈕 + (依 D-43.5)實驗 session 按鈕的去向。
+- [x] 新增 `src/ui/ResearcherMenu.ts`(依 README §6 interface contract),三個回呼分別接線既有邏輯。
+- [x] 修改 `syncControlsVisibility()` 加入 `appMode === 'researcher'` 條件。
+- [x] 覆核既有 Playwright/e2e 測試對啟動按鈕文字/`#drill-controls` 可見性的斷言,同步調整。
+- [x] 新增/調整單元測試:`appMode` 切換時,`ResearcherMenu`/`Controls` 面板顯隱正確;既有選手測試 Session 入口行為零改變。
 
 ## Definition of Done
 
