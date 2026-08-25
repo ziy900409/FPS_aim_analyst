@@ -52,7 +52,7 @@ test('session launch controls do not overlap the settings panel', async ({ page 
       () =>
         page.evaluate(() => {
           const settingsPanel = document.querySelector('#settings-panel');
-          const launchLabels = ['實驗 session', '解析度 protocol', 'BR protocol'];
+          const launchLabels = ['實驗 session', '解析度 protocol', 'BR protocol', 'Session Plan'];
           const launchButtons = [...document.querySelectorAll('button')].filter((button) =>
             launchLabels.includes(button.textContent ?? ''),
           );

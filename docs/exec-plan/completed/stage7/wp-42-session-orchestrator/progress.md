@@ -8,10 +8,10 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-25 | CodeGraph + `rg` 覆核 §0：四個目標 config 仍未登記於 `availableDrills`，`loadDrillById()` 仍只可載入已登記項目；`ProtocolRunner` 仍強制 `ResolutionMode` 並由外部手動推進；四家族 mode 現況未變。完成 D-42.1～D-42.5，T1 可依 README §2.6 開工。 |
-| T1 session plan + runner | 🟡 已實作 | 2026-08-25 | 新增 availableDrills 三項、SessionRunner／preset／setup UI 與 additive metadata；SessionRunner、SessionPlanSetup 與 metadata 測試皆由 `npm.cmd run test:ci` 通過。待實機驗證三個新增 drill 的完整選取→倒數→目標→結束→匯出流程。 |
-| T2 rest overlay | 🟡 已實作 | 2026-08-25 | `src/ui/RestOverlay.test.ts` verifies inert DOM-only overlay, countdown formatting, hide, and disposal. `src/session/SessionRunnerPoll.test.ts` verifies no-op outside rest and automatic advance at expiry; `main.ts` supplies the existing render-loop timestamp to `sessionPlanRunner.poll(now)`. `npm.cmd run test:ci` passed (130 Vitest files / 965 tests + Playwright). 待實機驗證含休息的 session plan。 |
+| T1 session plan + runner | ✅ | 2026-08-25 | 新增 availableDrills 三項、SessionRunner／preset／setup UI 與 additive metadata；SessionRunner、SessionPlanSetup 與 metadata 測試皆由 `npm.cmd run test:ci` 通過。三個新增 drill 的完整選取→倒數→目標→結束→匯出流程已於 T-exit 用 `tests/e2e/session-orchestrator.spec.ts` 補證(見該 task 列)。 |
+| T2 rest overlay | ✅ | 2026-08-25 | `src/ui/RestOverlay.test.ts` verifies inert DOM-only overlay, countdown formatting, hide, and disposal. `src/session/SessionRunnerPoll.test.ts` verifies no-op outside rest and automatic advance at expiry; `main.ts` supplies the existing render-loop timestamp to `sessionPlanRunner.poll(now)`. `npm.cmd run test:ci` passed (130 Vitest files / 965 tests + Playwright). 含休息的 session plan 已於 T-exit 用真實 DOM 接線 e2e 補證(見 T-exit 列;真人真硬體全場走查範圍限定見 [acceptance-stage-g.md §1.1](../../../operational/acceptance-stage-g.md#11-g-2-的證據組成與範圍限定誠實記錄非阻塞))。 |
 | T3 family order wiring | ✅ | 2026-08-25 | `SessionRunner` 以 `buildFamilyOrder(participantId, sessionIndex)` 產生完整順序後，只篩除未勾選家族；`SessionRunner.test.ts` 斷言呼叫參數、相對順序與 session index 變化。`npm.cmd run test:ci` passed (130 Vitest files / 966 tests + Playwright). |
-| T-exit 驗收 + 文件定稿 | ⬜ | — | — |
+| T-exit 驗收 + 文件定稿 | ✅ | 2026-08-25 | 新增 [`tests/e2e/session-orchestrator.spec.ts`](../../../../tests/e2e/session-orchestrator.spec.ts)(三個新登記 drill 全鏈路 + Session Plan 真實 DOM 接線)、修復 [`overlay-layering.spec.ts`](../../../../tests/e2e/overlay-layering.spec.ts) 的 `launchLabels` 缺口;`npm run test:ci` 全綠(Vitest 130 files / 966 tests;Playwright 23 tests);建立 [acceptance-stage-g.md](../../../operational/acceptance-stage-g.md)(G-1~G-5 全數 ✅);stage7 README §3/§4/§8、exec-plan/README.md、docs/MAP.md、CONTEXT.md §N、DECISIONS.md GD-24 皆已定稿;`active/stage7/` 已移入 `completed/stage7/`(比照 stage6 慣例,使用者拍板)。 |
 
 ## Decision Log
 
@@ -51,11 +51,19 @@
 - **證據**：T3 單元測試斷言 `buildFamilyOrder` 的 participant/session 參數、子集保留的相對順序，以及同一 participant 的相鄰 session index 產生不同首家族。`npm.cmd run test:ci` 通過（130 Vitest files / 966 tests + Playwright）。
 - **Alternatives Considered**：直接依 `plan.families` 的勾選順序執行。這會繞過 WP-41 的平衡順序，違反 FR-G6 與 T3 contract。
 
+### D-42.7 — T-exit「無人工介入」驗收以分層自動化證據滿足，不做真人真硬體全場走查
+
+- **決定**：T-exit-gate.md DoD②「端到端無人工介入手動驗證」以三層自動化證據組成滿足：① `SessionRunner`/`SessionRunnerPoll` 既有單元測試證明狀態機自動推進(rest 到期免按鈕自動 `advance()`)；② 新增 `tests/e2e/session-orchestrator.spec.ts` 第二個測試,在真瀏覽器點擊真實「Session Plan」按鈕、填真實表單、勾選真實 checkbox,驗證接線與 FR-G9②(無自由數字輸入)；③ 同檔第一個測試證明三個新登記 drill 走完整 `loadDrill()`→`createTargetManager()`→`createSimLoop()` 鏈路不拋錯,兩個 counter-strafe 變體並跑滿一輪到 `ended`+匯出。真人戴 pointer lock、真滑鼠、實際等滿 60 秒休息倒數的單一連續 session 全場走查**未執行**。
+- **理由**：與既有先例一致(`tests/e2e/full-drill.spec.ts` 檔頭「真原生滑鼠無加速 / Pointer Lock 正向路徑 → 手動驗收(T4)」)——本 repo 對所有涉及 `EligibilityGate`(需要真實原生解析度/`requestFullscreen()`)的流程，一律用 `__fpsTest` 隔離管線在 CI 驗證邏輯正確性，headless/CI 環境無法可靠取得原生螢幕解析度與 pointer lock 權限，把「真人真滑鼠走一遍」留給 CI 之外的人工驗收。詳細範圍限定記於 [acceptance-stage-g.md §1.1](../../../operational/acceptance-stage-g.md#11-g-2-的證據組成與範圍限定誠實記錄非阻塞)。
+- **Alternatives Considered**：於本 session 內用 Playwright 驅動真實 `EligibilityGate`/pointer lock 走完整場。此路徑需要可靠取得 CI 環境下的原生螢幕解析度與 `requestFullscreen()` 授權，本 repo 既有全部 protocol/session 類 E2E(`full-drill`/`br-tracking`/`overlay-layering`)皆未走這條路，貿然新開一條會製造與既有慣例不一致的驗證基礎設施，且無法保證比既有 `__fpsTest` 隔離管線更可靠;若研究者需要,建議另開一次獨立的人工 pilot session 走查記錄，不在本 WP 範圍內臨時拼湊。
+
 ## Surprises
 
 - 規劃階段讀碼(README §0-2)發現:stage7 README 原文把「四個測試家族的既有能力」當作既定事實,但 `main.ts` 的 `availableDrills` 實際上只登記了 hold-click/hold-track 兩個家族——spider-shot 與 counterstrafe 三個變體全部只存在於 unit test 與 `pilotConfigs.ts`,從未被 `loadDrillById()` 實際載入過。這不是 stage7 README 或 WP-41 讀碼已發現的落差,是本 WP 規劃階段新發現,已反映進估時上修(2–3d → 3–4.5d)。
 - T0 覆核差異:README §2② 的「既有 9 個項目」計數已過時；目前 registry 是 7 個直接項目加上 3 個 `trackingBrVariants` 展開項目。此差異不影響缺口判定或 T1 的 additive 策略。
 - T2 verification environment: sandboxed Vitest/Vite could not read `vite.config.ts` (`Cannot read directory "../../../..": Access is denied`). The same targeted tests and full `npm.cmd run test:ci` passed when run with the approved local build/test permission; this is a sandbox filesystem limitation, not a product test failure.
+- T-exit 新增 `tests/e2e/session-orchestrator.spec.ts` 第一版把 `runCounterStrafeRound(4)` 誤當作可讓 `counterstrafe-reversal-v1`/`counterstrafe-free-v1` 跑到 `ended`,實際上兩者 `endCondition.value=20`,只跑 4 peek 停在 `running`,首次執行即失敗;改為不傳 `maxPeeks`(跑滿一輪)後複驗通過。順帶發現 `tests/e2e/overlay-layering.spec.ts` 的 `launchLabels` 陣列自 WP-42 T1 新增第 4 顆「Session Plan」啟動按鈕後就沒有同步更新,既有疊層回歸測試因此對這顆新按鈕零覆蓋——已一併補上。
+- 折衷發現:`main.ts`/`fpsTestHarness.ts` 的 `availableDrills` 陣列共用同一份 `.map()` 來源,故 `__fpsTest.startDrill(id)` 與 `loadDrillById(id)` 走的是同一批 `loadDrill()`/`createTargetManager()`/`createSimLoop()` 建構函式(harness 自建獨立管線副本,非驅動 live 單例)。這代表 T1 §0-2 擔心的「新登記 drill 走完整鏈路可能踩到未預期錯誤」風險,可以直接用既有 harness 在真瀏覽器覆蓋,不需要另建一套接線。
 
 ## Open Questions 狀態
 
@@ -66,4 +74,4 @@
 | OQ-S7-2 | 三個家族是否需要新增 Practice-mode 變體供熱身使用 | ✅ 已關閉(D-42.2)：本 WP 不新增 Practice config；三個無變體家族明示略過熱身。 |
 | OQ-S7-11 | SessionRunner 引擎:新建 vs 重用 `ProtocolRunner` | ✅ 已關閉(D-42.1)：新建小型、語意專屬狀態機；只沿用既有啟動接線。 |
 | OQ-S7-12 | Counterstrafe assessment 步驟載入 reversal 還是同時涵蓋 cued | ✅ 已關閉(D-42.3)：僅使用 reversal；cued 保持未登記。 |
-| OQ-S7-13 | `perFamilyTrialShape` 實際數值來源 | 🟡 不阻塞 T1(D-42.4)：直接引用現有凍結量值；實作時確認各欄位對應。 |
+| OQ-S7-13 | `perFamilyTrialShape` 實際數值來源 | ✅ 已關閉(D-42.4,T1 實作確認)：`sessionPlanPresets.ts` 直接引用 `holdClickV1.drill.endCondition.value`/`holdTrackV1.drill.endCondition.value`/`spiderShotV1.targets.count`+`timing.timeLimitMs`/`counterstrafeReversalV1.endCondition.value`，逐欄位對應無分歧。 |

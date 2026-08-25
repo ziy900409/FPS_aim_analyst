@@ -148,7 +148,7 @@ FR-G9 的核心是**不對稱的可調性**,不是「這個畫面能不能編輯
 |---|---|---|---|---|---|---|---|
 | **WP-40** | [`wp-40-quality-flag-visibility/`](wp-40-quality-flag-visibility/README.md)(✅ 完成) | `ResultScreen` quality-gate 卡片動態化(讀真實旗標)+ metadata 補 DPI 欄位 | 1 | — | 無(獨立) | 1–1.5d | ✅ 完成 |
 | **WP-41** | [`wp-41-seeded-counterbalance/`](wp-41-seeded-counterbalance/README.md)(✅ 完成) | 純函式:`buildFamilyOrder` 決定性家族順序;FR-G7 判定關閉(記錄現況,不實作二次排程) | 2 | — | 無(獨立,可與 WP-40 並行) | 1–2d(依 T0 判定範圍浮動) | ✅ 完成 |
-| **WP-42** | [`wp-42-session-orchestrator/`](wp-42-session-orchestrator/README.md)(🟡 已展開,待 T0) | `SessionRunner`:session plan 狀態機 + 休息 overlay + 熱身步驟 + 家族子集/preset 選擇(FR-G9);T3 接入 WP-41 排程 | 3 | **M17** | WP-41(僅 T3 接線相依;T0~T2 可用手動固定順序先行) | 規劃稿原估 2–3d;WP-42 T0 讀碼發現 `availableDrills` 可達性缺口(見 [wp-42 README §0-2](wp-42-session-orchestrator/README.md#0-讀碼對帳規劃階段2026-08-25決定本-wp-淨新增工作量)),上修為 3–4.5d | 🟡 已展開,待 T0 |
+| **WP-42** | [`wp-42-session-orchestrator/`](wp-42-session-orchestrator/README.md)(✅ 完成) | `SessionRunner`:session plan 狀態機 + 休息 overlay + 熱身步驟 + 家族子集/preset 選擇(FR-G9);T3 接入 WP-41 排程 | 3 | **M17** | WP-41(僅 T3 接線相依;T0~T2 可用手動固定順序先行) | 規劃稿原估 2–3d;WP-42 T0 讀碼發現 `availableDrills` 可達性缺口(見 [wp-42 README §0-2](wp-42-session-orchestrator/README.md#0-讀碼對帳規劃階段2026-08-25決定本-wp-淨新增工作量)),上修為 3–4.5d | ✅ 完成 |
 
 **合計估時(粗估,未讀碼)**:4–6.5 dev-days。各 WP 展開時需自己的 T0 entry-gate 讀碼覆核此估時(比照 stage4/stage6 慣例,規劃稿估時不是承諾)。
 
@@ -156,9 +156,9 @@ FR-G9 的核心是**不對稱的可調性**,不是「這個畫面能不能編輯
 
 ## 4. 里程碑門控
 
-| 里程碑 | 完成條件(已採納;細節由 WP-42 T-exit 定稿為驗收清單 G) | 對應 WP | 意義 |
+| 里程碑 | 完成條件(已定稿為驗收清單 G,2026-08-25) | 對應 WP | 意義 |
 |---|---|---|---|
-| **M17**(stage7 交付,草案) | quality-gate 卡片對任一真實旗標即時反應且非硬編;session orchestrator 可無人工介入跑完「熱身→四家族→收操」全流程,休息計時正確;`buildFamilyOrder` 同 participantId 跨 sessionIndex 產生不同排列且可重現;既有四家族決定性回歸測試零修改全綠;DPI 進入匯出 metadata | WP-42 | 選手測試 SOP 的「怎麼操作一整場測試」在前端有實際支撐,不再需要人工排班 + 事後扒 JSON |
+| **M17**(stage7 交付)✅ | quality-gate 卡片對任一真實旗標即時反應且非硬編 ✅;session orchestrator 可無人工介入跑完「熱身→四家族→收操」全流程,休息計時正確 ✅(範圍限定見 [acceptance-stage-g.md §1.1](../../operational/acceptance-stage-g.md#11-g-2-的證據組成與範圍限定誠實記錄非阻塞));`buildFamilyOrder` 同 participantId 跨 sessionIndex 產生不同排列且可重現 ✅;既有四家族決定性回歸測試零修改全綠 ✅;DPI 進入匯出 metadata ✅ | WP-42 | 選手測試 SOP 的「怎麼操作一整場測試」在前端有實際支撐,不再需要人工排班 + 事後扒 JSON。驗收清單詳見 [acceptance-stage-g.md](../../operational/acceptance-stage-g.md) |
 
 ---
 
@@ -227,6 +227,6 @@ WP-42 T0~T2(手動固定順序骨架,不等 WP-41)──────────
 - [x] [docs/MAP.md](../../../MAP.md):§3「進行中(`active/`)」補上 stage7;§3.2 加階段 G 索引。(2026-08-25 本次)
 - [x] [CONTEXT.md](../../../CONTEXT.md):WP-40 T-exit 新增 **§L**(`QualityFlagId`/`QualityFlagSeverity`/`dpi`)——原計畫寫「§K」已被 WP-39 佔用(OQ-S7-8),故本次落地為 §L。(2026-08-25)
 - [x] [CONTEXT.md](../../../CONTEXT.md):WP-41 T-exit 新增 **§M**(`TestFamilyId`/`buildFamilyOrder`)。(2026-08-25)
-- [ ] [CONTEXT.md](../../../CONTEXT.md):WP-42 新術語(`SessionPlan`/…)於其 T-exit 回寫,續接 **§N 起**(§M 已被本次 WP-41 佔用)。
-- [ ] `docs/operational/acceptance-stage-g.md`(新,WP-42 T3/T-exit 起稿/定稿)。
-- [ ] 依 §3 表格展開 `wp-40-quality-flag-visibility/`、`wp-41-seeded-counterbalance/`、`wp-42-session-orchestrator/` 三個子資料夾(各含 README/task-checklist/progress/T0~T-exit)——**待各 WP 實際開工時才展開**,不在本次採納動作內。
+- [x] [CONTEXT.md](../../../CONTEXT.md):WP-42 新術語(`SessionPlan`/`SessionRunnerPhase`/`resolveWarmupDrillId`/`SessionPlanPreset`/`sessionPlanPreset`)於 **§N** 落地(2026-08-25,WP-42 T-exit)。
+- [x] `docs/operational/acceptance-stage-g.md`(新,2026-08-25,WP-42 T-exit 定稿)。
+- [x] 依 §3 表格展開 `wp-40-quality-flag-visibility/`、`wp-41-seeded-counterbalance/`、`wp-42-session-orchestrator/` 三個子資料夾(各含 README/task-checklist/progress/T0~T-exit)——三者皆已展開並 T-exit。

@@ -328,7 +328,7 @@ export interface CollectMetaArgs {
 
 ## 8. 文件對帳清單
 
-- [ ] [../README.md](../README.md) §3:WP-42 狀態列更新;M17 驗收清單 G 完成後翻 ✅。
-- [ ] [CONTEXT.md](../../../../CONTEXT.md):新術語(`SessionPlan`、`SessionRunner`、`SessionPlanPreset`、`resolveWarmupDrillId`)於 T-exit 回寫(章節號需與 WP-40/41 協調,見 [wp-40 OQ-S7-8](../wp-40-quality-flag-visibility/README.md#7-open-questions))。
-- [ ] `docs/operational/acceptance-stage-g.md`(新,T3/T-exit 起稿/定稿)。
-- [ ] [DECISIONS.md](../../../DECISIONS.md):若 T0 §2①(引擎選擇)或 §0-2(availableDrills 缺口補齊範圍)被判定為跨 WP 影響(例如影響 WP-39 pilot 工具的既有假設),另開 GD 條目;目前預期不需要(pilotConfigs.ts 消費的是同一批 config 的 export,不受 `availableDrills` 陣列變動影響),留待 T0 覆核。
+- [x] [../README.md](../README.md) §3:WP-42 狀態列更新;M17 驗收清單 G 完成後翻 ✅。
+- [x] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`SessionPlan`、`SessionRunnerPhase`、`resolveWarmupDrillId`、`SessionPlanPreset`、`sessionPlanPreset`)於 T-exit 回寫至 **§N**(章節號承接 WP-41 已佔用的 §M)。
+- [x] `docs/operational/acceptance-stage-g.md`(新,T-exit 定稿)。
+- [x] [DECISIONS.md](../../../DECISIONS.md):T0 §2①(引擎選擇)與 §0-2(availableDrills 缺口)判定確認不影響 WP-39 pilot 工具既有假設(`pilotConfigs.ts` 消費同一批 config export,不受 `availableDrills` 陣列變動影響),未另開 GD 條目;GD-24 狀態已於 T-exit 更新為 ✅ 交付。

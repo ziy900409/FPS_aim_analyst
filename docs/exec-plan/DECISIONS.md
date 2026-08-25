@@ -23,18 +23,18 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
-### GD-24 🟡 stage7 採納 — 選手測試流程前端優化:WP-40~42 / M17 + Session Plan preset 分層決策(2026-08-25)
+### GD-24 ✅ stage7 採納 — 選手測試流程前端優化:WP-40~42 / M17 + Session Plan preset 分層決策(2026-08-25 採納;M17 達成 2026-08-25)
 
 | | |
 |---|---|
-| **發現處** | 使用者提出選手測試流程(pilot 階段版)SOP,要求盤點現有前端能否支撐;讀碼稽核(對話紀錄)發現 stage6(WP-33~39)交付的是四個測試家族的**引擎/指標能力**,但「一整場測試怎麼被操作」這層幾乎不存在:無跨家族排程(僅 `loadDrillById()` 單次載入一個 drill)、無家族順序 seeded counterbalance、`ResultScreen` quality-gate 卡片值硬編 `'ok'`([`ResultScreen.ts:383`](../../src/ui/ResultScreen.ts#L383))、metadata 缺 DPI 欄位。詳細落差表見 [stage7 README §0](active/stage7/README.md#0-背景與讀碼依據)。 |
+| **發現處** | 使用者提出選手測試流程(pilot 階段版)SOP,要求盤點現有前端能否支撐;讀碼稽核(對話紀錄)發現 stage6(WP-33~39)交付的是四個測試家族的**引擎/指標能力**,但「一整場測試怎麼被操作」這層幾乎不存在:無跨家族排程(僅 `loadDrillById()` 單次載入一個 drill)、無家族順序 seeded counterbalance、`ResultScreen` quality-gate 卡片值硬編 `'ok'`([`ResultScreen.ts:383`](../../src/ui/ResultScreen.ts#L383))、metadata 缺 DPI 欄位。詳細落差表見 [stage7 README §0](completed/stage7/README.md#0-背景與讀碼依據)。 |
 | **決議(編號)** | 採納為 **WP-40~42 / M17 / 驗收清單 G**(`docs/operational/acceptance-stage-g.md`,待建)。依 GD-15「先採納先得」,字母標籤取下一個未用字母 **G**(A=stage1、B=stage2、C=stage3、D=stage4、E=stage5、F=stage6)。三個 WP:WP-40 quality-flag 呈現(`ResultScreen` 動態化 + DPI)、WP-41 seeded 家族順序純函式(`buildFamilyOrder`,家族內條件排程範圍待 T0 判定)、WP-42 session orchestrator(`SessionRunner` 狀態機 + 休息 overlay + 熱身 + 家族子集/preset 選擇)。 |
 | **決議(FR-G9,Session Plan 兩類可調性)** | Session Plan 總覽允許操作者調整兩類參數,可調性刻意不對稱:① **家族子集**——自由勾選,不動任何凍結數值,對應 SOP 本身「聚焦診斷可只跑部分家族但仍需跑滿平衡條件」的既有允許。② **session-plan preset**(trial 數/休息秒數的具名組合)——**只能選既有具名 preset,不得渲染任何自由數字輸入框**。理由:相容比較鍵(`compatibilityKey.ts`)未把這些數字納入判定式,若可自由填數字,同一 `protocolVersion` 下的 session 可能悄悄變得不可比較;且自由輸入會重開「調參數到資料好看為止」的門(GD-20 要防的事)。「切換既有 preset」對任何操作者開放,「新增/修改 preset 本身」限研究者,走跟協定凍結常數(WP-39 模式)同一套「新增具名常數 + 記錄」流程。 |
 | **決議(Spider Shot 特例)** | Spider Shot 的「量」參數形狀與其他三家族不同:v1 只有**單一總目標數**(`targets.count`/`endCondition.value`,現 20)+ 時間上限 backstop(`timing.timeLimitMs`),沒有「每個條件格 N trial」這個維度(因為目前只有一個 `D_deg`/`W_deg` 條件格,已由 GD-23 凍結)。`SessionPlan` preset 的型別設計不得對四家族假設同一套「trial 數」欄位形狀,須用 discriminated union 分開表達;若未來 Spider Shot 需要多個條件格水準,那是 stage6 **OQ-S6-4** 範疇,stage7 不越俎代庖新增。 |
 | **決議(與 stage6 邊界)** | 本階段**不修改**stage6 已交付的任何協定/指標邏輯或 `pilotConfigs.ts`;stage6 的 pilot-candidate 常數(校準用)與 stage7 的 session-plan preset(操作排程用)獨立管理,不共用同一套「pilot 態」標記機制(關閉 OQ-S7-3)。 |
 | **理由** | 呼應既有 GD-5/GD-8/GD-20 pre-registration 紀律(凍結參數不得為了讓資料好看而事後調整)與 C-D4(既有構念不得有第二定義):Session Plan UI 若允許自由改動協定層數值,等同在 orchestration 層開一個繞過協定凍結流程的後門。三層架構(協定原始碼 → DECISIONS.md 記錄 → stage7 preset 呈現)把「真正改參數」與「操作當下選哪組」明確分開。 |
-| **影響面** | [stage7 README](active/stage7/README.md) 全篇;[exec-plan/README.md](README.md) §2/§3/§4/§6;[docs/MAP.md](../MAP.md) §3。 |
-| **狀態** | 🟡 規劃已採納(2026-08-25);WP-40/41/42 子資料夾尚未展開,待各 WP 自己的 T0 讀碼時開工(比照 stage4/stage6 慣例)。 |
+| **影響面** | [stage7 README](completed/stage7/README.md) 全篇;[exec-plan/README.md](README.md) §2/§3/§4/§6;[docs/MAP.md](../MAP.md) §3。 |
+| **狀態** | ✅ **stage7 全數交付(2026-08-25),M17 達成**:WP-40~42 全部 T0~T-exit 完成,驗收清單 G(`docs/operational/acceptance-stage-g.md`)G-1~G-5 全項通過。`active/stage7/` 已於 T-exit 移入 `completed/stage7/`(使用者拍板,2026-08-25)。 |
 
 ### GD-23 ✅ Stage6 v1 provisional numeric freeze and coordinated release (2026-08-25, WP-39 T2)
 

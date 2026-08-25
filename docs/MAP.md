@@ -14,7 +14,7 @@
 | ① | [`../CONTEXT.md`](../CONTEXT.md) | 專有名詞 / ubiquitous language（repo 根） |
 | ② | [規格書](規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) | 需求、ADR-1~9、WBS、功能 F1–F5（source of truth） |
 | ③ | [DESIGN.md](DESIGN.md) | 執行期與執行緒模型：三迴圈在階段 A 的單執行緒真相、兩時鐘、階段 B 跨界縫 |
-| ④ | [exec-plan/README.md](exec-plan/README.md) | **大框架的現行權威**：WP-0~39（階段 A+B+C+E+D+F + 單 WP muzzle-tracer）狀態表、里程碑門控 M1–M16、跨階段相依圖、執行規則 |
+| ④ | [exec-plan/README.md](exec-plan/README.md) | **大框架的現行權威**：WP-0~42（階段 A+B+C+E+D+F+G + 單 WP muzzle-tracer）狀態表、里程碑門控 M1–M17、跨階段相依圖、執行規則 |
 | ⑤ | `exec-plan/completed/stage1/wp-N-*/`（階段 A 已交付）、`exec-plan/completed/stage2/wp-N-*/`（階段 B 已交付）、`exec-plan/completed/stage3/wp-N-*/`（階段 C 已交付；導航見 [stage3 MAP](exec-plan/completed/stage3/MAP.md)）、`exec-plan/completed/stage4/wp-N-*/`（階段 D 已交付；tech spec 見 [stage4 README](exec-plan/completed/stage4/README.md)）、`exec-plan/completed/stage5/wp-N-*/`（階段 E 已歸檔;M13 待手動回填；tech spec 見 [stage5 README](exec-plan/completed/stage5/README.md)）、**[`exec-plan/completed/muzzle-tracer/`](exec-plan/completed/muzzle-tracer/README.md)（WP-27，✅ 已交付）** | 進入要做的 WP，從該 WP 的 `README.md` 開始 |
 
 ---
@@ -35,7 +35,9 @@
 
 頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M15）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/completed/stage2/README.md](exec-plan/completed/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/completed/stage3/MAP.md](exec-plan/completed/stage3/MAP.md) · [PLAN.md](exec-plan/completed/stage3/PLAN.md) · [README.md](exec-plan/completed/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/completed/stage5/README.md](exec-plan/completed/stage5/README.md)；stage4（階段 D，選手表現分析管線）tech spec 見 [exec-plan/completed/stage4/README.md](exec-plan/completed/stage4/README.md)。
 
-**進行中（`active/`）**：[`active/stage7/`](exec-plan/active/stage7/README.md)(階段 G,選手測試流程前端優化)🟡 已採納規劃(2026-08-25,[DECISIONS.md](exec-plan/DECISIONS.md) **GD-24**;WP-40~42 / M17)。與 stage6(協定/指標本身)正交,不修改任何已凍結協定參數,只處理「一場測試怎麼被操作」(quality-flag 即時呈現 / session orchestrator / seeded 家族 counterbalance)。子資料夾待各 WP 自己的 T0 展開;附一份設計故事板 [ui-storyboard.html](exec-plan/active/stage7/ui-storyboard.html)。
+**進行中（`active/`）**：目前為空——最近一批工作（階段 F/G）皆已交付並移入 `completed/`。
+
+[`completed/stage7/`](exec-plan/completed/stage7/README.md)(階段 G,選手測試流程前端優化)已於 2026-08-25 交付,**M17 達成**(WP-40~42 全部 T-exit ✅,[DECISIONS.md](exec-plan/DECISIONS.md) **GD-24**,驗收清單見 [acceptance-stage-g.md](operational/acceptance-stage-g.md)),資料夾已隨 T-exit 由 `active/` 移入 `completed/`。與 stage6(協定/指標本身)正交,不修改任何已凍結協定參數,只處理「一場測試怎麼被操作」(quality-flag 即時呈現 / session orchestrator / seeded 家族 counterbalance)。附一份設計故事板 [ui-storyboard.html](exec-plan/completed/stage7/ui-storyboard.html)。
 
 [`completed/stage6/`](exec-plan/completed/stage6/README.md)(階段 F,個人瞄準能力測試框架 v1)已於 2026-08-25 交付,**M16 達成**(WP-33~39 全部 T-exit ✅,[DECISIONS.md](exec-plan/DECISIONS.md) GD-22/GD-23,驗收清單 F 見 [acceptance-stage-f.md](operational/acceptance-stage-f.md)),資料夾已隨 T-exit 由 `active/` 移入 `completed/`。原案:[aim-assessment-framework-v1.md](exec-plan/completed/stage6/aim-assessment-framework-v1.md)。
 
@@ -49,8 +51,7 @@
 docs/exec-plan/
 ├── README.md              ← 頂層索引（WP 狀態表 + milestones）
 ├── DECISIONS.md           ← 全域決策 / 跨文件矛盾帳本（global episodic）
-├── active/                ← 進行中的 WP
-│   └── stage7/            ← 階段 G 🟡 已採納規劃（選手測試流程前端優化，WP-40~42/M17，2026-08-25；GD-24）
+├── active/                ← 進行中的 WP（目前為空）
 ├── completed/             ← WP 交付後移入
 │   ├── stage1/            ← 階段 A 已交付（WP-0~9）
 │   │   └── wp-N-*/
@@ -68,6 +69,9 @@ docs/exec-plan/
 │   │   └── wp-N-*/
 │   ├── stage6/            ← 階段 F 已交付（個人瞄準能力測試框架 v1，WP-33~39，2026-08-25；M16 達成；GD-22/GD-23）
 │   │   ├── README.md      ← stage6 頂層索引 + tech spec
+│   │   └── wp-N-*/
+│   ├── stage7/            ← 階段 G 已交付（選手測試流程前端優化，WP-40~42，2026-08-25；M17 達成；GD-24）
+│   │   ├── README.md      ← stage7 頂層索引 + tech spec
 │   │   └── wp-N-*/
 │   └── muzzle-tracer/     ← WP-27（✅ 已交付 2026-08-04，GD-18）
 └── superseded/            ← 被取代的計畫
@@ -88,7 +92,7 @@ docs/exec-plan/
 
 ### 3.2 WP 索引
 
-> 里程碑：M1 = 脊椎（WP-2）· M2 = 核心玩法（WP-5）· M3 = 可匯出資料（WP-7）· M4 = 階段 A 交付（WP-9）· M5 = recoil 核心（WP-10）· M6 = 壓槍玩法（WP-13）· M7 = 校準效度（WP-14+15）· M8 = 階段 B 交付（WP-17）· M9 = 場景脊椎（WP-19）· M10 = 階段 C 交付（WP-22）· M11 = 遠距追蹤地基（WP-23）· M12 = 彈道模型門控（WP-25）· M13 = 階段 E 交付（WP-26）· M14 = research 地基（WP-28）· M15 = 階段 D 交付（WP-32）· **M16 ✅ = 階段 F 交付（WP-39，2026-08-25）**· **M17 🟡 = 階段 G 交付（WP-42，規劃 2026-08-25）**。
+> 里程碑：M1 = 脊椎（WP-2）· M2 = 核心玩法（WP-5）· M3 = 可匯出資料（WP-7）· M4 = 階段 A 交付（WP-9）· M5 = recoil 核心（WP-10）· M6 = 壓槍玩法（WP-13）· M7 = 校準效度（WP-14+15）· M8 = 階段 B 交付（WP-17）· M9 = 場景脊椎（WP-19）· M10 = 階段 C 交付（WP-22）· M11 = 遠距追蹤地基（WP-23）· M12 = 彈道模型門控（WP-25）· M13 = 階段 E 交付（WP-26）· M14 = research 地基（WP-28）· M15 = 階段 D 交付（WP-32）· **M16 ✅ = 階段 F 交付（WP-39，2026-08-25）**· **M17 ✅ = 階段 G 交付（WP-42，2026-08-25）**。
 > 詳細狀態以 [exec-plan/README.md §2](exec-plan/README.md) 為準。
 
 #### 階段 A（`completed/stage1/`，WP-0~9 ✅ 已交付 M4 2026-07-03）
@@ -171,15 +175,15 @@ docs/exec-plan/
 | **WP-38** | [`wp-38-diagnosis-recommendation/`](exec-plan/completed/stage6/wp-38-diagnosis-recommendation/README.md)（✅） | 診斷規則引擎 + 版本化推薦 + session history | — | WP-34,35,36,37 |
 | **WP-39** | [`wp-39-calibration-freeze/`](exec-plan/completed/stage6/wp-39-calibration-freeze/README.md)（✅） | Calibration pilot + `protocolVersion=1.0.0` 凍結 + 驗收清單 F | **M16 ✅** | 全部 |
 
-#### 階段 G（`active/stage7/`，🟡 已採納規劃 2026-08-25：WP-40~42/M17；[DECISIONS.md](exec-plan/DECISIONS.md) GD-24）
+#### 階段 G（`completed/stage7/`，✅ 已交付 2026-08-25：WP-40~42/M17；[DECISIONS.md](exec-plan/DECISIONS.md) GD-24）
 
-> tech spec：[README.md](exec-plan/active/stage7/README.md)。與 stage6 正交,不修改任何已凍結協定參數,只處理「一場測試怎麼被操作」。子資料夾待各 WP 自己的 T0 展開,故下表無連結。
+> tech spec：[README.md](exec-plan/completed/stage7/README.md)。驗收清單：[acceptance-stage-g.md](operational/acceptance-stage-g.md)。與 stage6 正交,不修改任何已凍結協定參數,只處理「一場測試怎麼被操作」。
 
-| WP | 目標 | 里程碑 | 相依 |
-|---|---|---|---|
-| **WP-40** | `ResultScreen` quality-gate 卡片動態化(讀真實旗標)+ metadata 補 DPI 欄位 | — | 無 |
-| **WP-41** | 純函式 `buildFamilyOrder`:決定性家族順序;家族內條件排程範圍待 T0 判定 | — | 無 |
-| **WP-42** | `SessionRunner`:session plan 狀態機 + 休息 overlay + 熱身 + 家族子集/preset 選擇 | **M17** | WP-41(僅 T3) |
+| WP | 子資料夾 | 目標 | 里程碑 | 相依 |
+|---|---|---|---|---|
+| **WP-40** | [`wp-40-quality-flag-visibility/`](exec-plan/completed/stage7/wp-40-quality-flag-visibility/README.md)（✅） | `ResultScreen` quality-gate 卡片動態化(讀真實旗標)+ metadata 補 DPI 欄位 | — | 無 |
+| **WP-41** | [`wp-41-seeded-counterbalance/`](exec-plan/completed/stage7/wp-41-seeded-counterbalance/README.md)（✅） | 純函式 `buildFamilyOrder`:決定性家族順序;FR-G7 判定關閉 | — | 無 |
+| **WP-42** | [`wp-42-session-orchestrator/`](exec-plan/completed/stage7/wp-42-session-orchestrator/README.md)（✅） | `SessionRunner`:session plan 狀態機 + 休息 overlay + 熱身 + 家族子集/preset 選擇 | **M17 ✅** | WP-41(僅 T3) |
 
 ### 3.3 各 WP task 一覽
 

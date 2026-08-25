@@ -266,4 +266,20 @@
 |---|---|
 | **`TestFamilyId`**([sessionSchedule.ts](src/session/sessionSchedule.ts)) | 四個測試家族(`'hold-click' \| 'hold-track' \| 'spider-shot' \| 'counterstrafe'`)的封閉詞彙表,由 `TEST_FAMILY_IDS` 定義。比 `taskId`/`drillId`(`payload.meta.drillId`,如 `'hold-click-v1'`)更粗的分組概念——一個家族可能對應 practice/assessment 兩個 `drillId`;`sessionSchedule.ts` 不 import 任何 `src/drill/*.ts` 的 `DrillConfig` 常數,不與 `taskId`/`drillId` 混用(WP-41 README §1.1/§6)。 |
 | **`buildFamilyOrder(participantId, sessionIndex)`**([sessionSchedule.ts](src/session/sessionSchedule.ts)) | 決定性 Latin-square 輪轉純函式(FR-G6):以 `participantId` 的確定性字串雜湊(FNV-1a 風格,純算術、非 `crypto`)決定起始輪轉位,`(start + sessionIndex) mod 4` 對 `TEST_FAMILY_IDS` 做 cyclic rotate。同一參與者連續四個 `sessionIndex` 恰好走完四種輪轉(每個家族在每個出場位置各出現一次),`sessionIndex` 每 4 週期性 wrap(任意非負整數合法)。禁用 `Math.random()`/`Date.now()`(CLAUDE.md §4)。**不是**隨機排列——目的是位置平衡(避免疲勞系統性偏誤),不是「看起來隨機」,比照 `pilotSeed()`(§K)「純算術優先於取樣」的既有風格。 |
-| **FR-G7(家族內條件區塊隨機化)判定關閉** | 三協定(hold-click/hold-track/counterstrafe)的既有 seed 只影響 spawn 延遲抖動或已惰性(無可觀測隨機性),L/R 已由 `TargetManager.markKilled()` 確定性交替天然平衡,無可排序的條件維度;Spider Shot 雖有 peripheral azimuth 的真實隨機性,但覆寫需額外 config-clone/metadata 同步機制,價值不足以納入 WP-41 範圍。本 WP 不新增任何 seed 覆寫函式或條件排程 API。詳見 [wp-41 progress.md D-41.1/D-41.2](docs/exec-plan/active/stage7/wp-41-seeded-counterbalance/progress.md)、[analysis-spider-shot.md](docs/operational/analysis-spider-shot.md)。 |
+| **FR-G7(家族內條件區塊隨機化)判定關閉** | 三協定(hold-click/hold-track/counterstrafe)的既有 seed 只影響 spawn 延遲抖動或已惰性(無可觀測隨機性),L/R 已由 `TargetManager.markKilled()` 確定性交替天然平衡,無可排序的條件維度;Spider Shot 雖有 peripheral azimuth 的真實隨機性,但覆寫需額外 config-clone/metadata 同步機制,價值不足以納入 WP-41 範圍。本 WP 不新增任何 seed 覆寫函式或條件排程 API。詳見 [wp-41 progress.md D-41.1/D-41.2](docs/exec-plan/completed/stage7/wp-41-seeded-counterbalance/progress.md)、[analysis-spider-shot.md](docs/operational/analysis-spider-shot.md)。 |
+
+---
+
+## N. Session orchestrator 術語(WP-42,M17;純 UI/DOM 層 `src/session/SessionRunner.ts` + `src/ui/SessionPlanSetup.ts` + `src/ui/RestOverlay.ts`)
+
+> 把「手動點選下一個 drill」換成「依 session plan 自動排程」的純 orchestration 層;不讀寫 `SharedState`,只呼叫既有 `loadDrillById()`(README §2⑤,D-42.1/D-42.5)。詳見 [wp-42 README](docs/exec-plan/completed/stage7/wp-42-session-orchestrator/README.md)、[acceptance-stage-g.md](docs/operational/acceptance-stage-g.md)。
+
+| 術語 | 定義 |
+|---|---|
+| **`SessionPlan`**([SessionRunner.ts](src/session/SessionRunner.ts)) | 一次 session 排程的完整輸入:`participantId`/`sessionIndex`(餵給 §M 的 `buildFamilyOrder`)、`families`(操作者勾選的家族子集,FR-G9①)、`presetId`(只能是既有具名 `SessionPlanPreset`,FR-G9②)、`includeWarmup`。 |
+| **`SessionRunnerPhase`**([SessionRunner.ts](src/session/SessionRunner.ts)) | 排程狀態機的封閉判別聯集:`idle`/`warmup`(附 `WarmupAvailability`)/`family`(附 `familyIndex`)/`rest`(附 `remainingMs`)/`done`。`SessionRunner.poll(nowMs)` 只在 `rest` 相位輪詢,倒數歸零時**自動** `advance()`,不需要外部按鈕觸發(D-42.5)。 |
+| **`resolveWarmupDrillId(family)`**([SessionRunner.ts](src/session/SessionRunner.ts)) | 家族 → practice 變體 `drillId` 的封閉對照表;只有 `counterstrafe` 回傳 `available`(載入 `counterstrafe-free-v1`),其餘三家族回傳 `unavailable`,`SessionRunner` 據此直接跳到該家族的 assessment step 並顯示明確訊息「本家族無熱身,直接開始正式測試」——不得靜默跳過(D-42.2,FR-G4)。 |
+| **`SessionPlanPreset`**([sessionPlanPresets.ts](src/session/sessionPlanPresets.ts)) | Session-plan 唯一可調的具名組合(目前僅 `pilot-default`)。`perFamilyTrialShape` 是 discriminated union:三家族(`hold-click`/`hold-track`/`counterstrafe`)是 `{ trialsPerCell }`,Spider Shot 是 `{ targetCount, timeLimitMs }`(README §2④);數值一律直接引用各協定既有凍結常數,不新造第二套數字來源(D-42.4)。UI(`SessionPlanSetup.ts`)只能從既有 preset 中選,不得渲染任何 `<input type="number">`(FR-G9②)。 |
+| **`sessionPlanPreset`(匯出 metadata additive 欄位)**([metadata.ts](src/data/metadata.ts)) | 比照 §L `dpi` 的 additive 型式:`Meta`/`CollectMetaArgs` 選填頂層欄位,只在 `family` 相位寫入所選 preset id,純記錄用途,不流入任何 `src/sim`/`src/metrics` 計算或判定(`rg "sessionPlanPreset" src/sim src/metrics` 須零命中)。 |
+
+
