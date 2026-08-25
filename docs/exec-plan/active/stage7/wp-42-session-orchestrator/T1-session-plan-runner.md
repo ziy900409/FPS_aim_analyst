@@ -7,7 +7,7 @@
 | **相依** | T0 |
 | **Risk / Cplx** | **Med–High**(本 WP 工作量與風險集中點:涵蓋可達性缺口接線 + 新狀態機 + 新 UI 三件事) |
 | **Touches** | `src/main.ts`(additive)、`src/session/SessionRunner.ts`(新)、`src/session/sessionPlanPresets.ts`(新)、`src/ui/SessionPlanSetup.ts`(新)、`src/data/metadata.ts`(additive) |
-| **狀態** | ⬜ 待開工 |
+| **狀態** | 🟡 已實作並提交，待實機驗證新增 drill 完整流程(2026-08-25) |
 
 ## Objective
 

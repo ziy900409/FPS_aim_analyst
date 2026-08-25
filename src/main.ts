@@ -34,6 +34,11 @@ import {
   displaySelfReportFromSessionSetup,
   type SessionSetupValues,
 } from './ui/SessionSetup.ts';
+import { createSessionPlanSetup, type SessionPlanSelection } from './ui/SessionPlanSetup.ts';
+import { createRestOverlay } from './ui/RestOverlay.ts';
+import { createSessionRunner, type SessionRunnerHandle } from './session/SessionRunner.ts';
+import { SESSION_PLAN_PRESETS } from './session/sessionPlanPresets.ts';
+import { TEST_FAMILY_IDS } from './session/sessionSchedule.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill, type DrillLoadOptions } from './drill/DrillLoader.ts';
@@ -73,6 +78,9 @@ import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
 import { HOLD_CLICK_ONSET_THRESHOLD, HOLD_CLICK_VISIBILITY_SAMPLE_COUNT, holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
+import { spiderShotV1 } from './drill/spider_shot_v1.ts';
+import { counterstrafeReversalV1 } from './drill/counterstrafe_reversal_v1.ts';
+import { counterstrafeFreeV1 } from './drill/counterstrafe_free_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -141,6 +149,9 @@ const availableDrills: AvailableDrill[] = [
     sceneId: holdTrackV1.sceneId,
     loadOptions: { clearance: holdTrackV1.clearanceOptions },
   },
+  { id: spiderShotV1.drillId, label: spiderShotV1.drillId, source: spiderShotV1 },
+  { id: counterstrafeReversalV1.drillId, label: counterstrafeReversalV1.drillId, source: counterstrafeReversalV1 },
+  { id: counterstrafeFreeV1.drillId, label: counterstrafeFreeV1.drillId, source: counterstrafeFreeV1 },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,
     label: variant.id,
@@ -288,7 +299,9 @@ const experimentSession = createExperimentSession({
 });
 let pendingSessionSetupValues: SessionSetupValues | undefined;
 let sessionSetupValues: SessionSetupValues | undefined;
-let pendingSessionMode: 'session' | 'resolution-protocol' | 'br-tracking-protocol' = 'session';
+let pendingSessionPlanSelection: SessionPlanSelection | undefined;
+let activeSessionPlanPreset: string | undefined;
+let pendingSessionMode: 'session' | 'resolution-protocol' | 'br-tracking-protocol' | 'session-plan' = 'session';
 let markProtocolFullscreenExit: (() => void) | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
   required: resolutionDetectionProtocol.requiredDisplay,
@@ -305,13 +318,23 @@ const eligibilityGateScreen = createEligibilityGateScreen({
     experimentSession.enter(report);
     if (requestedMode === 'resolution-protocol') void startResolutionProtocol();
     else if (requestedMode === 'br-tracking-protocol') void startBrTrackingProtocol();
+    else if (requestedMode === 'session-plan') void startSessionPlan();
+  },
+});
+const sessionPlanSetup = createSessionPlanSetup({
+  presets: SESSION_PLAN_PRESETS,
+  families: TEST_FAMILY_IDS,
+  onSubmit: (selection) => {
+    pendingSessionPlanSelection = selection;
+    eligibilityGateScreen.open();
   },
 });
 const sessionSetupForm = createSessionSetupForm({
   getDetectedDisplay: () => ({ screenW: displayState.screenW, screenH: displayState.screenH }),
   onSubmit: (values) => {
     pendingSessionSetupValues = values;
-    eligibilityGateScreen.open();
+    if (pendingSessionMode === 'session-plan') sessionPlanSetup.open();
+    else eligibilityGateScreen.open();
   },
 });
 document.addEventListener('fullscreenchange', () => {
@@ -366,6 +389,16 @@ brProtocolButton.addEventListener('click', () => {
   sessionSetupForm.open();
 });
 sessionLaunchControls.appendChild(brProtocolButton);
+const sessionPlanButton = document.createElement('button');
+sessionPlanButton.type = 'button';
+sessionPlanButton.textContent = 'Session Plan';
+sessionPlanButton.title = '選擇家族與具名 preset 後執行 session plan';
+sessionPlanButton.style.cssText = experimentButton.style.cssText;
+sessionPlanButton.addEventListener('click', () => {
+  pendingSessionMode = 'session-plan';
+  sessionSetupForm.open();
+});
+sessionLaunchControls.appendChild(sessionPlanButton);
 pointerLock.onChange((locked) => {
   topLeftControls.style.display = locked ? 'none' : 'flex';
 });
@@ -433,6 +466,9 @@ async function buildCurrentExportPayload(
     simHz: SIM_HZ,
     sensitivity: settingsPanel.sensitivity,
     ...(sessionSetupValues?.dpi !== undefined ? { dpi: sessionSetupValues.dpi } : {}),
+    ...(sessionPlanRunner.phase.kind === 'family' && activeSessionPlanPreset !== undefined
+      ? { sessionPlanPreset: activeSessionPlanPreset }
+      : {}),
     fovDeg: settingsPanel.fov,
     crossOriginIsolated: isolation.crossOriginIsolated,
     startedAt: recorderStartedAt,
@@ -1100,6 +1136,40 @@ function setProtocolStatus(text: string, showNext: boolean): void {
   protocolStatus.style.display = 'flex';
 }
 
+const restOverlay = createRestOverlay();
+const sessionPlanRunner: SessionRunnerHandle = createSessionRunner({
+  loadDrillById,
+  onStatus: (text) => setProtocolStatus(text, false),
+  onPhaseChange: (nextPhase) => {
+    if (nextPhase.kind === 'rest') restOverlay.show(nextPhase.remainingMs);
+    else restOverlay.hide();
+  },
+});
+
+async function startSessionPlan(): Promise<void> {
+  const selection = pendingSessionPlanSelection;
+  const setup = sessionSetupValues;
+  pendingSessionPlanSelection = undefined;
+  if (selection === undefined || setup === undefined) {
+    setProtocolStatus('Session Plan 啟動失敗：缺少受試者或計畫選擇。', false);
+    return;
+  }
+  activeSessionPlanPreset = selection.presetId;
+  try {
+    // T1 retains the literal TEST_FAMILY_IDS order; T3 wires the counterbalanced index.
+    await sessionPlanRunner.start({
+      participantId: setup.participantId,
+      sessionIndex: 0,
+      families: selection.families,
+      presetId: selection.presetId,
+      includeWarmup: selection.includeWarmup,
+    });
+  } catch (error) {
+    activeSessionPlanPreset = undefined;
+    setProtocolStatus(`Session Plan 啟動失敗：${error instanceof Error ? error.message : String(error)}`, false);
+  }
+}
+
 async function startProtocol(runner: ProtocolRunner<ExportPayload>): Promise<void> {
   activeProtocolRunner = runner;
   activeProtocolRunner.reset();
@@ -1179,6 +1249,7 @@ function protocolRunningText(context: ProtocolConditionContext): string {
 protocolNextButton.addEventListener('click', () => void beginNextProtocolCondition());
 
 const renderLoop = createRenderLoop((now) => {
+  sessionPlanRunner.poll(now);
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
   const { alpha } = simLoop.pump(now);
   const phase = drillRunner.phase;
@@ -1244,7 +1315,16 @@ const renderLoop = createRenderLoop((now) => {
         diagnosis,
         qualityFlagsForPayload(payload),
       );
-      await completeActiveProtocolCondition();
+      const sessionPhase = sessionPlanRunner.phase;
+      if (sessionPhase.kind === 'warmup') {
+        await sessionPlanRunner.advance();
+      } else if (sessionPhase.kind === 'family') {
+        downloadJSON(payload, { basename: exportBasename(payload) });
+        await sessionPlanRunner.advance();
+        if (sessionPlanRunner.phase.kind === 'done') experimentSession.exit();
+      } else {
+        await completeActiveProtocolCondition();
+      }
     })();
   }
   hud.update(createHUDStats(sharedState, phase, hudElapsedMs, recorder.hitCount, recorder.fireCount, recorder.hitCount, hudStats));

@@ -7,7 +7,7 @@
 | **相依** | T1 |
 | **Risk / Cplx** | Low |
 | **Touches** | `src/ui/RestOverlay.ts`(新)、`src/session/SessionRunner.ts`(擴充 `poll()`)、`src/main.ts`(renderLoop 回呼接線) |
-| **狀態** | ⬜ 待開工 |
+| **狀態** | 🟡 已實作並提交，待實機 session-plan 驗證(2026-08-25) |
 
 ## Objective
 
@@ -26,11 +26,11 @@
 
 ## Steps
 
-- [ ] 建立 `RestOverlay.ts`(比照 `CueOverlay.ts`/`SessionSetup.ts` 既有 DOM overlay 型式:`position:fixed`/`z-index`/純文字更新)。
-- [ ] `SessionRunner.ts` 新增 `poll(nowMs)`:`rest` phase 內以 `nowMs - restStartedAtMs` 計算 `remainingMs`,到期呼叫 `advance()`。
-- [ ] `main.ts` 的 `renderLoop` 回呼新增 `sessionRunner?.poll(now)` 呼叫,確認呼叫順序不影響既有 `simLoop.pump(now)`/`drillRunner.tick` 既有邏輯(`git diff` 對這兩者應為空)。
-- [ ] 單元測試:`SessionRunner.poll()` 在 `rest` phase 倒數至 0 時觸發 `advance()`;非 `rest` phase 呼叫 `poll()` 為 no-op。
-- [ ] 手動驗證:實機跑一次含休息的 session plan,確認倒數視覺正確、休息期間無法開火/无目標生成(因為此時 `drillRunner.phase` 應為 `idle`,不受本 WP 直接控制,只需確認 overlay 不干擾既有鎖定/解鎖流程)。
+- [x] (2026-08-25) 建立 `RestOverlay.ts`(比照 `CueOverlay.ts`/`SessionSetup.ts` 既有 DOM overlay 型式:`position:fixed`/`z-index`/純文字更新)。
+- [x] (2026-08-25) `SessionRunner.ts` 的既有 `poll(nowMs)` 以 `nowMs - restStartedAt` 計算 `remainingMs`,到期呼叫 `advance()`。
+- [x] (2026-08-25) `main.ts` 的 `renderLoop` 回呼新增 `sessionPlanRunner.poll(now)`；呼叫置於 `simLoop.pump(now)` 前，且本切片未修改 `src/sim/*`、`SharedState.ts` 或 `DrillRunner.ts`。
+- [x] (2026-08-25) 單元測試覆蓋:`SessionRunner.poll()` 在 `rest` phase 倒數至 0 時觸發 `advance()`;非 `rest` phase 呼叫 `poll()` 為 no-op。
+- [x] (2026-08-25) 自動化驗證: `npm.cmd run test:ci` 通過(130 Vitest 檔/965 tests + Playwright);`RestOverlay` 的 `pointer-events:none` 由單元測試覆蓋，因此不會攔截既有 pointer-lock/canvas input。
 
 ## Definition of Done
 

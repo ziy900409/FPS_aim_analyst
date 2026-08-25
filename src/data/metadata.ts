@@ -6,6 +6,7 @@ import type { FrameLogExport } from '../display/frameLog.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
 import type { TargetHitboxConfig } from '../drill/DrillConfig.ts';
 import { SIM_TO_WORLD } from '../loop/constants.ts';
+import { findSessionPlanPreset } from '../session/sessionPlanPresets.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
@@ -90,6 +91,8 @@ export interface Meta {
   sensitivity: number;
   /** Self-reported mouse DPI; browsers cannot read this external hardware setting. */
   dpi?: number;
+  /** Named Session Plan preset used for this export; absent outside session-plan runs. */
+  sessionPlanPreset?: string;
   sensitivityModel: 'cs2-0.022deg';
   movementModel: 'cs2-source';
   /**
@@ -160,6 +163,7 @@ export interface CollectMetaArgs {
   browser?: string;
   sensitivity: number;
   dpi?: number;
+  sessionPlanPreset?: string;
   fovDeg?: number;
   crossOriginIsolated: boolean;
   startedAt?: string | Date;
@@ -210,6 +214,8 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const browser = args.browser ?? globalThis.navigator?.userAgent ?? 'unknown';
   const sensitivity = requirePositiveFiniteNumber(args.sensitivity, 'sensitivity');
   const dpi = args.dpi === undefined ? undefined : requirePositiveFiniteNumber(args.dpi, 'dpi');
+  const sessionPlanPreset =
+    args.sessionPlanPreset === undefined ? undefined : requireSessionPlanPreset(args.sessionPlanPreset);
   const fovDeg = args.fovDeg === undefined ? undefined : requirePositiveFiniteNumber(args.fovDeg, 'fovDeg');
   const crossOriginIsolated = requireBoolean(args.crossOriginIsolated, 'crossOriginIsolated');
   const startedAt = normalizeStartedAt(args.startedAt);
@@ -248,6 +254,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     browser,
     sensitivity,
     ...(dpi !== undefined ? { dpi } : {}),
+    ...(sessionPlanPreset !== undefined ? { sessionPlanPreset } : {}),
     sensitivityModel: 'cs2-0.022deg',
     movementModel: DEFAULT_MOVEMENT_MODEL,
     ...(fovDeg !== undefined ? { fovDeg } : {}),
@@ -273,6 +280,12 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(assessment !== undefined ? { assessment } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
   };
+}
+
+function requireSessionPlanPreset(value: unknown): string {
+  const preset = requireTrimmedNonEmptyString(value, 'sessionPlanPreset');
+  if (findSessionPlanPreset(preset) === undefined) throw new Error('sessionPlanPreset must name a configured preset');
+  return preset;
 }
 
 function requireMouseIntegrationMeta(value: unknown): MouseIntegrationMeta {

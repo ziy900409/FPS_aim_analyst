@@ -8,8 +8,8 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-25 | CodeGraph + `rg` 覆核 §0：四個目標 config 仍未登記於 `availableDrills`，`loadDrillById()` 仍只可載入已登記項目；`ProtocolRunner` 仍強制 `ResolutionMode` 並由外部手動推進；四家族 mode 現況未變。完成 D-42.1～D-42.5，T1 可依 README §2.6 開工。 |
-| T1 session plan + runner | ⬜ | — | — |
-| T2 rest overlay | ⬜ | — | — |
+| T1 session plan + runner | 🟡 已實作 | 2026-08-25 | 新增 availableDrills 三項、SessionRunner／preset／setup UI 與 additive metadata；SessionRunner、SessionPlanSetup 與 metadata 測試皆由 `npm.cmd run test:ci` 通過。待實機驗證三個新增 drill 的完整選取→倒數→目標→結束→匯出流程。 |
+| T2 rest overlay | 🟡 已實作 | 2026-08-25 | `src/ui/RestOverlay.test.ts` verifies inert DOM-only overlay, countdown formatting, hide, and disposal. `src/session/SessionRunnerPoll.test.ts` verifies no-op outside rest and automatic advance at expiry; `main.ts` supplies the existing render-loop timestamp to `sessionPlanRunner.poll(now)`. `npm.cmd run test:ci` passed (130 Vitest files / 965 tests + Playwright). 待實機驗證含休息的 session plan。 |
 | T3 family order wiring | ⬜ | — | — |
 | T-exit 驗收 + 文件定稿 | ⬜ | — | — |
 
@@ -49,6 +49,7 @@
 
 - 規劃階段讀碼(README §0-2)發現:stage7 README 原文把「四個測試家族的既有能力」當作既定事實,但 `main.ts` 的 `availableDrills` 實際上只登記了 hold-click/hold-track 兩個家族——spider-shot 與 counterstrafe 三個變體全部只存在於 unit test 與 `pilotConfigs.ts`,從未被 `loadDrillById()` 實際載入過。這不是 stage7 README 或 WP-41 讀碼已發現的落差,是本 WP 規劃階段新發現,已反映進估時上修(2–3d → 3–4.5d)。
 - T0 覆核差異:README §2② 的「既有 9 個項目」計數已過時；目前 registry 是 7 個直接項目加上 3 個 `trackingBrVariants` 展開項目。此差異不影響缺口判定或 T1 的 additive 策略。
+- T2 verification environment: sandboxed Vitest/Vite could not read `vite.config.ts` (`Cannot read directory "../../../..": Access is denied`). The same targeted tests and full `npm.cmd run test:ci` passed when run with the approved local build/test permission; this is a sandbox filesystem limitation, not a product test failure.
 
 ## Open Questions 狀態
 

@@ -143,6 +143,21 @@ describe('collectMeta', () => {
     });
   });
 
+  it('records only configured session-plan preset identifiers additively', () => {
+    const base: CollectMetaArgs = {
+      drillId: 'hold_click_v1',
+      backend: 'webgl2',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+    };
+
+    expect(collectMeta({ ...base, sessionPlanPreset: 'pilot-default' }).sessionPlanPreset).toBe('pilot-default');
+    expect(() => collectMeta({ ...base, sessionPlanPreset: 'operator-typed' })).toThrow(
+      'sessionPlanPreset must name a configured preset',
+    );
+  });
+
   it('preserves an opaque spiderShot replay schedule in spawn metadata', () => {
     const spiderShot = {
       kind: 'center-peripheral',
