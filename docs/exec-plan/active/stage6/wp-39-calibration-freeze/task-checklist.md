@@ -5,13 +5,13 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(驗 WP-33~38 全部 T-exit——現況阻塞於 WP-38 T3/T-exit;彙整 pilot-candidate 清單;開新 OQ-S6-24/25) | [T0-entry-gate.md](T0-entry-gate.md) | WP-33~38 T-exit | Low(進度阻塞風險 High) |
+| ✅ | **T0** entry gate(驗 WP-33~38 全部 T-exit;彙整 pilot-candidate 清單;開新 OQ-S6-24/25) | [T0-entry-gate.md](T0-entry-gate.md) | WP-33~38 T-exit | Low |
 | ⬜ | **T1** `src/pilot/pilotConfigs.ts`:近/中/遠距離、可見門檻候選、Spider Shot 角度範圍、`holdDurationMs`、`assessmentFeedbackPolicy` 候選產生器 + pilot seed roster | [T1-pilot-config-tool.md](T1-pilot-config-tool.md) | T0 | Med |
 | ⬜ | **T2** 凍結機制:`STAGE6_PROTOCOL_VERSION`、`DIAGNOSIS_THRESHOLDS_V1`、四協定 config 定案數值、`DECISIONS.md` 記錄 | [T2-numeric-freeze.md](T2-numeric-freeze.md) | T1 | Med |
 | ⬜ | **T3** `acceptance-stage-f.md` 驗收清單 F + 跨家族一致性回歸測試 | [T3-acceptance-checklist-f.md](T3-acceptance-checklist-f.md) | T2 | Med |
 | ⬜ | **T-exit(M16)** 驗收清單 F 全項通過;`pilot-protocol-stage6.md` 定稿;文件對帳;stage6 狀態翻 ✅ | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
 
-**T0 是本 WP 的進度風險集中點**(硬相依 WP-38 T3/T-exit,現況尚未達成——見 [wp-38 task-checklist.md](../wp-38-diagnosis-recommendation/task-checklist.md));一旦 T0 放行,T1/T2/T3 皆是收斂既有 pilot-candidate 標記的工作,設計複雜度低。一 task = 一垂直切片 = 一原子 commit 紀律不變。
+**T0 已於 2026-08-25 放行**:WP-33~38 的 T-exit 均已驗證 ✅;T1/T2/T3 皆為收斂既有 pilot-candidate 標記的工作,設計複雜度低。一 task = 一垂直切片 = 一原子 commit 紀律不變。
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 
