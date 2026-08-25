@@ -11,6 +11,16 @@
 | T1 rule engine | ✅ | 2026-08-25 | 新增純函式 `diagnosisRules.ts`，以版本化注入門檻實作七種模式、quality-gate 短路與 deterministic primary-only 優先序；新增 12 組合成測試，含七模式、重疊證據、品質短路、單家族與門檻邊界。`npm run test:ci` 通過：TypeScript、Vitest 119 files / 923 tests、Playwright 21 tests。 |
 | T2 session history | ✅ | 2026-08-25 | 新增純 `sessionHistory.ts`（相容性／quality-gate 守門、最新固定窗口、中位數與 population SD）與 TS 多檔 JSON loader（只接受 `meta.assessment`）；新增 7 個合成測試，覆蓋窗口、相容性排除、metric ID 排除、`minN` 短路、目前 quality gate、Practice 排除與無效 JSON。`npm.cmd run test:ci` 通過：TypeScript、Vitest 121 files / 930 tests、Playwright 21 tests。 |
 | T3 result presentation | ✅ | 2026-08-25 | `ResultScreen` 新增封閉 `DIAGNOSIS_METRIC_IDS` 六卡呈現（label/evidence/version/quality gate），每筆 evidence 顯示來源、值、`n`、flags；`insufficient-data` 僅顯示「資料不足」原因。新增純 TS `HistoryView`，以手動多檔 Assessment JSON 選取呈現相容 history 的 speed/accuracy median + population SD，沒有趨勢箭頭或持久化。`main.ts` 由同一 `buildCurrentExportPayload()` 評估診斷、保存 Assessment provenance 並供 history loader 建立 current/past `SessionSummary`。`npm.cmd run test:ci` 通過：TypeScript、Vitest 122 files / 935 tests、Playwright 21 tests。 |
+| T-exit 驗收 + 文件定稿 | ✅ | 2026-08-25 | 兩項框架 v1 驗收條件覆核見下方「T-exit 驗收證據」表；`analysis-diagnosis.md` 定稿補上 OQ-S6-25(`recommendationVersion`/`protocolVersion` 獨立關係)與 OQ-S6-8/23 落點決策最終記載，並加 T-exit final 頭註；CONTEXT.md §I `recommendationVersion` 移除「尚未實作」註記、新增 §J（`DiagnosisLabel`/`SessionSummary`/`SessionHistoryResult`）；stage6 README §3 WP-38 狀態翻 ✅、關閉 OQ-S6-8、修正 WP-39 entry 阻塞敘述為 unblocked。`npm.cmd run test:ci` 重跑全綠：TypeScript、Vitest 122 files / 935 tests、Playwright 21 tests（見下方原始輸出摘要）。 |
+
+## T-exit 驗收證據
+
+| 框架 v1 驗收條件 | 證據 |
+|---|---|
+| 結果頁對每個診斷顯示來源指標/`n`/flags/版本 | [`ResultScreen.test.ts:200-217`](../../../../../src/ui/ResultScreen.test.ts)「pins the closed diagnosis metric id set and carries source, n, flags, and version」；封閉 `DIAGNOSIS_METRIC_IDS` 六卡由 [`ResultScreen.test.ts:220-240`](../../../../../src/ui/ResultScreen.test.ts) 覆核 render 路徑；`insufficient-data` 僅顯示「資料不足」由 [`ResultScreen.test.ts:233-241`](../../../../../src/ui/ResultScreen.test.ts)「renders insufficient data without findings or progress arrows」覆核；來源證據本身的 `metricId`/`value`/`n`/`flags` 由 [`diagnosisRules.test.ts:74`](../../../../../src/metrics/diagnosisRules.test.ts)「keeps source flags and aggregates every valid presentation instead of selecting a best value」覆核。 |
+| 不相容 session 不會產生進步/退步結論 | [`sessionHistory.test.ts:44`](../../../../../src/metrics/sessionHistory.test.ts)「excludes incompatible sessions before calculating the baseline」與 `:76`「does not build a baseline for a current session that failed its quality gate」；呈現層無方向箭頭由 [`HistoryView.test.ts:29`](../../../../../src/ui/HistoryView.test.ts)「shows compatible speed and accuracy baselines together without a directional arrow」（斷言 `not.toMatch(/[↑↓]/)`）與 `:42`「shows 資料不足 when compatibility or sample requirements do not produce a baseline」覆核；`SessionHistoryResult` 型別本身不含 delta/方向欄位（僅 median + population SD，見 [sessionHistory.ts](../../../../../src/metrics/sessionHistory.ts)）。 |
+
+**`npm.cmd run test:ci` 最終重跑**(2026-08-25):TypeScript 型別檢查通過；Vitest `122 passed (122)` test files / `935 passed (935)` tests；Playwright `21 passed (27.9s)`。無異動於本 task 之外的原始碼(僅文件)，故測試組合與 T3 完成時一致，本次重跑用於確認文件變更不影響 CI 閘。
 
 ## Decision Log
 
@@ -76,6 +86,14 @@
 
 **Alternatives considered:** 從即時 shared state 另建診斷/history 資料——未採用：會破壞「統計＝匯出」同源驗證，也無法讓先前匯出的 Assessment 檔案通過 T2 guard。
 
+### D-38.9 — T-exit 定案 OQ-S6-25/OQ-S6-26(2026-08-25,T-exit)
+
+**Decision:** `recommendationVersion` 與 `protocolVersion` 維持獨立、不聯動——後者凍結任務協定本身，前者只描述規則表對已記錄指標的解讀版本；已保存的 `DiagnosisResult.recommendationVersion` 不因規則表升版被回改，僅供研究端另以新門檻重跑診斷。speed–accuracy trade-off 的各家族代表指標維持 T2/T3 已用的四組配對（架槍 `acquisitionFromDetectMs` vs first-shot-hit rate；hold-track 平均進靶時間 vs TOT%；Spider Shot `rhythm.medianMs` vs first-shot-hit rate；急停 `counterToFireMs` vs `firstShotHitRate`），不強制單一全域定義。兩者皆已寫入 `analysis-diagnosis.md`,正式關閉 README §7 的 OQ-S6-25/26。
+
+**Rationale:** T1/T2/T3 實作時已隱含這兩個決定（`DiagnosisThresholds.version` 與 export 的 `protocolVersion` 從未被同一函式讀寫；`SessionSummary.speedMetric`/`accuracyMetric` 的 `{id, value}` 形狀本就是 additive、不強制家族一致）。T-exit 的工作是把既成事實明文寫入契約文件，避免下游（WP-39 pilot）誤以為這兩點仍待決。
+
+**Alternatives considered:** 讓規則表升版連動 `protocolVersion` 升版——未採用：會把協定本身的效度凍結與規則解讀的迭代綁在一起，任何門檻微調都會誤觸協定版本語意；為 speed/accuracy 訂單一全域指標——未採用：四個測試家族的時間與命中率量測單位不共通，統一定義只會製造沒有意義的跨家族比較。
+
 ## Surprises
 
 ### S-38.1 — Python history 候選缺少原先假設的可讀診斷輸出(2026-08-24,T0)
@@ -94,5 +112,5 @@
 |---|---|---|
 | OQ-S6-23 | 個人歷史資料來源機制(TS 多檔上傳 vs Python 目錄掃描) | ✅ closed — 純 TS 多檔上傳(D-38.2) |
 | OQ-S6-24 | 七模式規則表優先序 | ✅ closed — 框架表格順序，第一個完整證據鏈為唯一 primary(D-38.4) |
-| OQ-S6-25 | `recommendationVersion` 與 `protocolVersion` 是否聯動 | 🟢 open(不阻塞開工) |
-| OQ-S6-26 | speed–accuracy trade-off 各家族代表指標 | 🟡 open |
+| OQ-S6-25 | `recommendationVersion` 與 `protocolVersion` 是否聯動 | ✅ closed — 兩者獨立，`analysis-diagnosis.md`「Recommendation versioning vs protocol versioning」段落定案(D-38.9) |
+| OQ-S6-26 | speed–accuracy trade-off 各家族代表指標 | ✅ closed — 四家族代表指標對照表已寫入 `analysis-diagnosis.md`（架槍 acquisitionFromDetectMs、hold-track 平均進靶時間、Spider Shot rhythm.medianMs、急停 counterToFireMs，準確度側對應 first-shot-hit rate / TOT% / firstShotHitRate,D-38.9) |

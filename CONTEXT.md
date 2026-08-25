@@ -217,5 +217,17 @@
 | **`sessionId`**(推導,非儲存) | 由 `meta.session.participantId + meta.startedAt` 或等價穩定序列化決定性推導,**不**是 `SessionMeta` 的儲存欄位。權威實作為 [`deriveSessionId()`](src/metrics/compatibilityKey.ts);下游一律呼叫此函式,不得另行拼接。 |
 | **`CompatibilityKey`**([compatibilityKey.ts](src/metrics/compatibilityKey.ts)) | 十欄位封閉的相容比較鍵(`participantId`/`taskId`/`protocolVersion`/`gameMovementProfile`/`weaponId`/`weaponMode`/`sensitivityFovKey`/`targetConditionCell`/`assessmentFeedbackPolicy`/`qualityGateStatus`)。由 `buildCompatibilityKey()` 組裝、`checkCompatibility()` 全等比較(非模糊比對,任一欄不等即不相容)。新增第十一個欄位須升版並記錄,不得原地插入。v1 `weaponMode = meta.weaponId`(OQ-S6-10 拍板,單武器現況下的非損失性佔位)。 |
 | **`qualityGateStatus`** | [`checkQualityGate()`](src/metrics/compatibilityKey.ts) 的**回傳值**(`'insufficient-n' \| 'incompatible-protocol' \| 'suspect-run' \| 'ok'`,固定優先序判定),**不是**逐 drill 記錄的 export metadata 欄位——由呼叫端在診斷/呈現時機當場計算。 |
-| **`recommendationVersion`**(WP-38,尚未實作) | 診斷規則表本身攜帶的版本字串,屬 WP-38 診斷輸出物件欄位,**不進 export meta**——使同一份原始匯出可用新版規則表重新診斷,不被第一次診斷結果綁死。 |
+| **`recommendationVersion`**([diagnosisRules.ts](src/metrics/diagnosisRules.ts),WP-38) | 診斷規則表本身攜帶的版本字串,屬 `DiagnosisResult`(status `'ok'`)欄位,**不進 export meta**——與 `protocolVersion` 獨立(OQ-S6-25):同一份原始匯出可用新版規則表重新診斷,原始指標不變、只有規則解讀可能不同,已記錄的診斷標籤不因規則表升版被回改。門檻改動一律升 `DiagnosisThresholds.version`,見 [analysis-diagnosis.md](docs/operational/analysis-diagnosis.md)。 |
 | **`AssessmentTimelinePoint`**([assessmentTimeline.ts](src/data/assessmentTimeline.ts)) | 事件時間線**欄位形狀**契約(`tFirstVisible`/`tMeasurementOnset`/`tFullExposure`/`tStop`,皆 optional readonly),不含計算。既有 `t_visible`/`t_detect`/`t_first_on_target` 等既有構念名稱**禁止**被下游 WP 重新賦予不同語意;新可見度計算由 WP-34 實作。 |
+
+---
+
+## J. 診斷 / 個人歷史術語(WP-38,M16;共同契約 `docs/operational/analysis-diagnosis.md`)
+
+> 消費 WP-34/35/36/37 已落地的逐構念指標,產生單一 session 的診斷標籤與跨 session 個人歷史聚合;零新幾何/時間推導(C-D4 精神延伸)。
+
+| 術語 | 定義 |
+|---|---|
+| **`DiagnosisLabel`**([diagnosisRules.ts](src/metrics/diagnosisRules.ts)) | 七個訓練限制模式的封閉列舉(`preaim-placement`/`visual-motor-onset`/`flick-control`/`click-timing`/`tracking-maintenance`/`counterstrafe-braking`/`fire-commitment`)。`evaluateDiagnosis()` 依框架 v1 表格順序判定,第一個完整證據鏈為唯一 `primary`,並排除後續模式(`secondary` 恆缺席,D-38.4)。 |
+| **`SessionSummary`**([sessionHistory.ts](src/metrics/sessionHistory.ts)) | 個人歷史聚合的輸入單位(`compatibilityKey`/`sessionId`/`startedAt`/`diagnosis`/`speedMetric`/`accuracyMetric`)。純資料形狀,不含載入邏輯——由獨立 loader([sessionHistoryLoader.ts](src/data/sessionHistoryLoader.ts))把磁碟匯出檔轉成陣列,只接受含 `meta.assessment` 的 Assessment 匯出(D-38.6)。 |
+| **`SessionHistoryResult`**([sessionHistory.ts](src/metrics/sessionHistory.ts)) | `buildSessionHistory()` 的回傳型別:`status: 'ok'`(附相容 `eligible` 陣列 + median/population SD 的 speed/accuracy)或 `'insufficient-data'`。不含德爾塔或箭頭方向欄位——不相容或 `n < minN` 一律短路,不產生進步/退步結論(FR-F15)。 |

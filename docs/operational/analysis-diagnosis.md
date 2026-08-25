@@ -1,5 +1,7 @@
 # Diagnosis rules
 
+> WP-38 T-exit final. Source WP: [`wp-38-diagnosis-recommendation`](../exec-plan/active/stage6/wp-38-diagnosis-recommendation/README.md) (T0–T3 + T-exit all ✅, 2026-08-25). Freezes the seven-mode evidence table and its precedence, threshold versioning discipline, the `recommendationVersion`/`protocolVersion` relationship, and the personal session history contract for stage6. WP-39 may enter on this contract; threshold value changes still require a new `DiagnosisThresholds.version` (§Quality and version contract), not an in-place edit.
+
 `src/metrics/diagnosisRules.ts` turns already-derived Assessment metrics into at most one
 training diagnosis. It does not calculate geometry, timing, or a cross-construct score.
 
@@ -12,6 +14,34 @@ Every caller supplies `DiagnosisThresholds`. The exported
 `PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS` is explicitly a pilot-before candidate, not a frozen
 athlete-facing standard. Threshold changes require a new `version`; consumers preserve the
 version returned with the original result rather than re-evaluating old sessions with new values.
+
+## Placement decision (OQ-S6-8, OQ-S6-23)
+
+Single-session diagnosis stays in TS, wired into `ResultScreen`'s existing optional
+promoted-metrics render seam (D-38.1): every diagnosis input is already produced by a TS metrics
+module, and this keeps the diagnosis available the moment a drill ends without adding a Python
+dependency or a second rule implementation. Personal history is a new capability rather than an
+extension of an existing one — no export before WP-38 carries a TS diagnosis result, and neither
+`ResultScreen.ts` nor `research/src/report/coach_report.py` had any multi-file or cross-session
+aggregation entry point (`ExportPayload` only carries `meta`, `ticks`, `events`). History therefore
+uses a manual multi-file `<input type=file multiple>` loader living in TS (D-38.2), not a Python
+directory-scan tool: `research/fixtures/exports/` is a controlled test fixture corpus rather than a
+coach folder workflow, and a Python path would still need a new diagnosis sidecar contract plus a
+second presentation surface. The trade-off is explicit: there is no cross-device persistence,
+which stays out of this WP's scope.
+
+## Recommendation versioning vs protocol versioning (OQ-S6-25)
+
+`recommendationVersion` and `protocolVersion` vary independently and are never combined into one
+version string. `protocolVersion` (`meta.assessment`, WP-33) freezes the Assessment task protocol
+itself — the geometry, timing, and feedback rules a session was run under. `recommendationVersion`
+(this document) freezes only the diagnosis rule table's thresholds and evidence chain — how an
+already-recorded session's metrics are interpreted. A session's raw metrics do not change when the
+rule table is revised; only which label, if any, that session would receive under the new
+thresholds can change. A stored `DiagnosisResult.recommendationVersion` is never rewritten in place
+to reflect a newer rule table: old sessions may be re-evaluated with a newer `DiagnosisThresholds`
+for research purposes, but the diagnosis label recorded against a session's own history entry is
+not retroactively altered by a later rule-table version bump.
 
 ## Evidence table and precedence
 

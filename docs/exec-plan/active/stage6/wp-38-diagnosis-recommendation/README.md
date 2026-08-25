@@ -10,7 +10,7 @@
 | **相依** | **WP-34/35/36/37 T-exit 均 ✅**(T0 於 2026-08-24 覆核);`SpiderShotMetrics` 與 `CounterstrafeMetrics` 的最終落地介面已由本 WP T0 重讀實檔確認(見 §0-1/§5),後續 task 必須消費該實際契約。 |
 | **對應 FR** | FR-F14 + FR-F15 + FR-F16 |
 | **估時** | 3–4 dev-days([../README.md §3](../README.md));讀碼發現「個人 session history」需要一個**目前全 repo 都不存在**的能力——跨多個匯出檔案讀取(見 §0-4),不是既有 `ResultScreen.ts` 或 `coach_report.py` 任一邊已具備、只需擴充的東西;這是本 WP 除 OQ-S6-8 落點之外的第二個未知數,估時傾向落在上緣,由 T0 讀碼結果收斂 |
-| **狀態** | 🟡 T0 ✅(2026-08-24);T1 可開工 |
+| **狀態** | ✅ T0~T-exit 全數完成(2026-08-25);`analysis-diagnosis.md` 定稿,WP-39(M16)entry 條件之一已滿足 |
 
 ---
 
@@ -330,7 +330,7 @@ export function buildSessionHistory(
 
 ## 8. 文件對帳清單
 
-- [ ] [../README.md](../README.md) §3:WP-38 狀態列由「⬜ 待建立」更新為本資料夾連結 + 狀態改「🟡 執行計畫已展開」(本次規劃)。
-- [ ] `docs/operational/analysis-diagnosis.md`(新,T1 起稿/T-exit 定稿):七模式規則表 + 門檻版本化紀律、`recommendationVersion` 語意、個人歷史聚合定義(中位數/變異/speed-accuracy 家族對照表)。
-- [ ] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`DiagnosisLabel`、`recommendationVersion`、`SessionSummary`、`SessionHistoryResult`)於 T-exit 回寫。
-- [ ] [DECISIONS.md](../../../DECISIONS.md):若 OQ-S6-23 的落點決策影響工具鏈邊界(例如新增 Python 依賴或新增 `research/` 職責),升 GD 記錄(承 NFR §1.2「工具鏈」)。
+- [x] [../README.md](../README.md) §3:WP-38 狀態列更新為「T0~T-exit 全數完成」+ 狀態翻 ✅(2026-08-25);OQ-S6-8 同步關閉,WP-39 entry 敘述修正為 unblocked。
+- [x] `docs/operational/analysis-diagnosis.md`(T1 起稿/T-exit 定稿):七模式規則表 + 門檻版本化紀律、`recommendationVersion` 語意(含與 `protocolVersion` 的獨立關係,OQ-S6-25)、個人歷史聚合定義(中位數/變異/speed-accuracy 家族對照表,OQ-S6-26)、OQ-S6-8/23 落點決策最終記載。
+- [x] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`DiagnosisLabel`、`recommendationVersion`、`SessionSummary`、`SessionHistoryResult`)已於 T-exit 回寫(§I 更新 + 新增 §J)。
+- [x] [DECISIONS.md](../../../DECISIONS.md):覆核後不需升 GD——OQ-S6-23 選純 TS 多檔上傳,未新增 Python 依賴或擴大 `research/` 職責,不影響工具鏈邊界(NFR §1.2)。

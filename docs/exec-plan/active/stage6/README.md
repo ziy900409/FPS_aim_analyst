@@ -209,8 +209,8 @@ T0 spike 的 DoD 是從三個候選中選一個並記錄成本比較,而不是�
 | **WP-35** | [`wp-35-hold-track/`](wp-35-hold-track/README.md) | 架槍 `hold-track-v1`:移動期間鎖 fire、停止後解鎖、追蹤窗指標 | 3 | — | WP-34(共用 emergence 機制) | 2–3d | ✅ |
 | **WP-36** | [`wp-36-spider-shot/`](wp-36-spider-shot/README.md) | Spider Shot `spider-shot-v1`:單目標約束 + 中心—周邊 seeded 排程 + 五類指標(T0~T-exit 全數完成,`analysis-spider-shot.md` 定稿) | 4 | — | WP-33 ✅(可與 WP-34/35 並行) | 2.5–3.5d | ✅ |
 | **WP-37** | [`wp-37-counterstrafe-protocols/`](wp-37-counterstrafe-protocols/README.md) | 急停三協定包裝(`cued`/`reversal`/`free`)+ 制動/L-R 對稱指標(T0~T-exit 全數完成,`analysis-counterstrafe.md` 定稿) | 5 | — | WP-33 ✅(可與 WP-34/35/36 並行) | 2–3d | ✅ |
-| **WP-38** | [`wp-38-diagnosis-recommendation/`](wp-38-diagnosis-recommendation/README.md) | 診斷規則引擎 + 版本化推薦 + 個人 session history + 結果呈現整合(讀碼對帳完成;T0 待開工) | 6 | — | WP-34+35+36+37 全部產出逐構念指標(WP-34/35/36/37 皆 ✅) | 3–4d | 🟡 執行計畫已展開 |
-| **WP-39** | `wp-39-calibration-freeze/`(⬜ 待建立) | Calibration pilot 工具 + 數值凍結 + `protocolVersion = 1.0.0` + 驗收清單 F | 7 | **M16** | 全部 | 2–3d | ⬜ |
+| **WP-38** | [`wp-38-diagnosis-recommendation/`](wp-38-diagnosis-recommendation/README.md) | 診斷規則引擎 + 版本化推薦 + 個人 session history + 結果呈現整合(T0~T-exit 全數完成,`analysis-diagnosis.md` 定稿) | 6 | — | WP-34+35+36+37 全部產出逐構念指標(WP-34/35/36/37 皆 ✅) | 3–4d | ✅ |
+| **WP-39** | [`wp-39-calibration-freeze/`](wp-39-calibration-freeze/README.md) | Calibration pilot 工具 + 數值凍結 + `protocolVersion = 1.0.0` + 驗收清單 F(T0~T-exit 任務拆解已展開,2026-08-25) | 7 | **M16** | 全部(WP-34+35+36+37+38 皆 ✅,entry unblocked) | 2–3d | ⬜ 執行計畫已展開 |
 
 **合計估時**:16–23 dev-days(WP-34 已由 T0 spike 定案為 2.5–3.5d,不需要拆分成兩個 WP;見 [wp-34 progress.md D-34.1/D-34.2](wp-34-hold-click-visibility/progress.md))。
 
@@ -336,7 +336,7 @@ WP-33(共同契約)──┬─────────────→ WP-34(hol
 | **OQ-S6-5**(承 OQ-AF-05) | trial/block/baseline session 數 | pilot 估計 session 內外變異後決定 | 研究者 | WP-39 | 縱向比較的統計效力 |
 | **OQ-S6-6**(承 OQ-AF-06) | Assessment 是否顯示即時命中回饋 | 比較最小回饋與無策略回饋版本,WP-39 pilot | 使用者 | WP-39 | 回饋政策凍結值 |
 | ~~**OQ-S6-7**~~ | ~~WP-34 可見度計算若三個候選方案(§2.3a)成本都過高,是否接受降級為離散可見度階梯作為 v1 交付範圍~~ | ✅ **關閉(2026-08-19,WP-34 T0)**:不需要降級。候選②(scene 層封閉幾何離線解析)所需元件皆已存在,可交付連續 `visibleFraction(t)`(N=9 取樣點,非階梯);候選①因決定性風險排除 | 使用者 / 研究者 | WP-34 T0 ✅ | unblocked |
-| **OQ-S6-8**(新) | 診斷推薦引擎落點:TS 即時(`ResultScreen`)或 Python offline(比照 stage4 `research/`) | 🟡 **WP-38 T0 拍板**(見 §2.3d);兩條路徑的讀碼問題已列出 | 使用者 | WP-38 T0 | 是否需要複用 stage4 的 C-D1~C-D4 隔離紀律與 golden parity 機制 |
+| ~~**OQ-S6-8**~~(新) | ~~診斷推薦引擎落點:TS 即時(`ResultScreen`)或 Python offline(比照 stage4 `research/`)~~ | ✅ **關閉(2026-08-24,WP-38 T0,D-38.1/D-38.2)**:單次診斷留在 TS(接入既有 `ResultScreen` promoted-metrics render seam);個人歷史採純 TS 多檔上傳,不新增 Python 依賴或 golden parity 機制——兩邊皆無現成歷史聚合能力,不需複用 stage4 C-D1~C-D4 隔離紀律 | 使用者 | WP-38 T0 ✅ | unblocked |
 | ~~**OQ-S6-9**~~(新) | ~~WP-35 的 fire-gating 是否會與既有 `WeaponConfig` 開火合法性判定(彈匣/cycletime)產生互動,需要合併判定還是獨立疊加~~ | ✅ **關閉(2026-08-19,WP-35 T0,D-35.1)**:`scheduleFire` 追加 `TargetState.fireLocked` active-target additive AND 條件,不併入 `nextFireT`/彈匣語意 | 研究者 | WP-35 T0 ✅ | unblocked |
 | ~~**OQ-S6-10**~~(WP-33 T0 開帳) | ~~`weaponMode`(相容鍵欄位)在單武器現狀下如何取值~~ | ✅ **關閉(2026-08-19,WP-33 T3)**:`WeaponConfig` 無獨立 `weaponMode`;現有 `weaponId` 已區分 BR hip/ADS/hitscan/projectile 變體,故 v1 `weaponMode = weaponId`;未來獨立欄位需升 compatibility-key version | 研究者 | WP-33 T3 ✅ | unblocked |
 | ~~**OQ-S6-11**~~(WP-33 T0 開帳) | ~~`targetConditionCell` 序列化格式是否需要三家族各自 cell builder~~ | ✅ **關閉(2026-08-19,WP-33 T3)**:呼叫端自行序列化非空字串,WP-33 不解析內容;三家族格式由 WP-34~37 各自定義,不夠用則回本文件升版 | 研究者 | WP-33 T3 ✅ | unblocked |

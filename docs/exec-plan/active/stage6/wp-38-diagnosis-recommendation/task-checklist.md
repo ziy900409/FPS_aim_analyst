@@ -9,7 +9,7 @@
 | ✅ | **T1** `diagnosisRules.ts`:七模式規則表 + `evaluateDiagnosis()` + `recommendationVersion` + 優先序規則 | [T1-rule-engine.md](T1-rule-engine.md) | T0 | Med |
 | ✅ | **T2** `sessionHistory.ts` 聚合 + 依 T0 候選落地的 loader + Assessment/Practice 守門 | [T2-session-history.md](T2-session-history.md) | T1 | **Med–High** |
 | ✅ | **T3** `ResultScreen` diagnosis 區塊(封閉 metric id + n/flags/version)+ 個人歷史呈現 | [T3-result-presentation.md](T3-result-presentation.md) | T2 | Med |
-| ⬜ | **T-exit** 驗收:診斷帶來源/`n`/flags/版本、不相容 session 不產生結論;`analysis-diagnosis.md` 定稿;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
+| ✅ | **T-exit** 驗收:診斷帶來源/`n`/flags/版本、不相容 session 不產生結論;`analysis-diagnosis.md` 定稿;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
 
 **T0 是關鍵路徑與風險集中點**(需等待 WP-36/37 進度、拍板本 WP 最大兩個未知數 OQ-S6-8/OQ-S6-23);一旦 T0 拍板完成,T1 是純函式工作、風險最低。一 task = 一垂直切片 = 一原子 commit 紀律不變。
 
