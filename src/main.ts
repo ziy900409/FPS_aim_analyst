@@ -46,7 +46,7 @@ import { realClock } from './loop/clock.ts';
 import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
 import { createDataRecorder, type DataRecorderSnapshot } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
-import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
+import { collectMeta, measureDisplayHz, measureDisplayRefresh, type AssessmentMeta } from './data/metadata.ts';
 import { RAD_PER_COUNT, resolveMouseGain } from './input/mouseGain.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { loadAssessmentSessionSummaries } from './data/sessionHistoryLoader.ts';
@@ -392,7 +392,10 @@ const recorder = createDataRecorder({
   recordKeyEvents: true,
 });
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
-async function buildCurrentExportPayload(protocolContext?: ProtocolConditionContext): Promise<ExportPayload> {
+async function buildCurrentExportPayload(
+  protocolContext?: ProtocolConditionContext,
+  assessmentFeedbackPolicy: AssessmentMeta['assessmentFeedbackPolicy'] = 'minimal-end-of-block',
+): Promise<ExportPayload> {
   const snapshot = recorder.snapshot();
   const weaponConfig = activeWeaponConfig();
   const frames = frameLog.export(PERF_FLOOR_MS);
@@ -511,7 +514,7 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
       ? {
           assessment: {
             protocolVersion: activeDrillConfig.drillId,
-            assessmentFeedbackPolicy: 'minimal-end-of-block' as const,
+            assessmentFeedbackPolicy,
           },
         }
       : {}),

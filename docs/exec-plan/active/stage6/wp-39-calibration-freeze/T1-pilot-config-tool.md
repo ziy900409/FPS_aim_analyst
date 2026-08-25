@@ -7,7 +7,7 @@
 | **相依** | T0(阻塞解除 + OQ-S6-24/25 拍板 + seed roster 區間確認) |
 | **Risk / Cplx** | Med / Med(觸碰 `main.ts` 的 `assessmentFeedbackPolicy` 寫死值,但只是把常數改為參數,不改判定邏輯) |
 | **Touches** | ADD `src/pilot/pilotConfigs.ts`、`src/pilot/pilotConfigs.test.ts`、`docs/operational/pilot-protocol-stage6.md`(起稿);MODIFY `src/main.ts`(`assessmentFeedbackPolicy` 可覆寫) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-25) |
 
 ## Objective
 
