@@ -234,7 +234,7 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
       'diagnosis-recommendation-version',
       'diagnosis-quality-gate-status',
     ]);
-    expect(r.diagnosisText).toContain('recommendation-pilot-candidate-v1');
+    expect(r.diagnosisText).toContain('recommendation-v1.0.0');
   });
 
   test('WP-24 ADS smoke：export 含 ads event / tick flag / weapon ads snapshot', async ({ page }) => {

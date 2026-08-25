@@ -1,6 +1,6 @@
 # Diagnosis rules
 
-> WP-38 T-exit final. Source WP: [`wp-38-diagnosis-recommendation`](../exec-plan/active/stage6/wp-38-diagnosis-recommendation/README.md) (T0–T3 + T-exit all ✅, 2026-08-25). Freezes the seven-mode evidence table and its precedence, threshold versioning discipline, the `recommendationVersion`/`protocolVersion` relationship, and the personal session history contract for stage6. WP-39 may enter on this contract; threshold value changes still require a new `DiagnosisThresholds.version` (§Quality and version contract), not an in-place edit.
+> WP-38 T-exit final. Source WP: [`wp-38-diagnosis-recommendation`](../exec-plan/completed/stage6/wp-38-diagnosis-recommendation/README.md) (T0–T3 + T-exit all ✅, 2026-08-25). Freezes the seven-mode evidence table and its precedence, threshold versioning discipline, the `recommendationVersion`/`protocolVersion` relationship, and the personal session history contract for stage6. WP-39 may enter on this contract; threshold value changes still require a new `DiagnosisThresholds.version` (§Quality and version contract), not an in-place edit.
 
 `src/metrics/diagnosisRules.ts` turns already-derived Assessment metrics into at most one
 training diagnosis. It does not calculate geometry, timing, or a cross-construct score.

@@ -231,3 +231,17 @@
 | **`DiagnosisLabel`**([diagnosisRules.ts](src/metrics/diagnosisRules.ts)) | 七個訓練限制模式的封閉列舉(`preaim-placement`/`visual-motor-onset`/`flick-control`/`click-timing`/`tracking-maintenance`/`counterstrafe-braking`/`fire-commitment`)。`evaluateDiagnosis()` 依框架 v1 表格順序判定,第一個完整證據鏈為唯一 `primary`,並排除後續模式(`secondary` 恆缺席,D-38.4)。 |
 | **`SessionSummary`**([sessionHistory.ts](src/metrics/sessionHistory.ts)) | 個人歷史聚合的輸入單位(`compatibilityKey`/`sessionId`/`startedAt`/`diagnosis`/`speedMetric`/`accuracyMetric`)。純資料形狀,不含載入邏輯——由獨立 loader([sessionHistoryLoader.ts](src/data/sessionHistoryLoader.ts))把磁碟匯出檔轉成陣列,只接受含 `meta.assessment` 的 Assessment 匯出(D-38.6)。 |
 | **`SessionHistoryResult`**([sessionHistory.ts](src/metrics/sessionHistory.ts)) | `buildSessionHistory()` 的回傳型別:`status: 'ok'`(附相容 `eligible` 陣列 + median/population SD 的 speed/accuracy)或 `'insufficient-data'`。不含德爾塔或箭頭方向欄位——不相容或 `n < minN` 一律短路,不產生進步/退步結論(FR-F15)。 |
+
+---
+
+## K. Calibration pilot / 凍結術語(WP-39,M16;`docs/operational/pilot-protocol-stage6.md` + `docs/operational/acceptance-stage-f.md`)
+
+> stage6 四個測試家族數值凍結前的參數化探索工具與凍結後的正式版本常數;pilot 資料流唯一守門是既有 `AssessmentMode`(§I),不新增第三個模式。詳見 [pilot-protocol-stage6.md](docs/operational/pilot-protocol-stage6.md)。
+
+| 術語 | 定義 |
+|---|---|
+| **`PILOT_SEED_ROSTER_START`**([pilotConfigs.ts](src/pilot/pilotConfigs.ts)) | Pilot 專用 seed 區間起點(`90000`),與四個協定既有 assessment seed(`34034`/`35035`/`36036`/`37001`/`37002`)不相交;各家族以 `familyOffset*1000 + index` 分家族取號,避免探索序列與正式協定撞號。 |
+| **Pilot config builders**(`buildHoldClickPilotConfigs`/`buildHoldTrackPilotConfigs`/`buildSpiderShotPilotConfigs`/`buildCounterstrafeReversalPilotConfigs`,[pilotConfigs.ts](src/pilot/pilotConfigs.ts)) | 純函式、seeded、決定性的候選 `DrillConfig` 產生器;回傳值一律 `mode: 'practice'`,不可達 `buildCompatibilityKey()`,故 pilot 探索資料不進正式歷史(FR-F17)。Hold-click 額外回傳 `PilotHoldClickConfig.visibility`(`sampleCount`/`onsetThreshold`)——可見度門檻不是 `DrillConfig` schema 欄位,只在 pilot config 旁保留供離線 `deriveVisibilityTimeline()` 重跑消費(D-39.2)。 |
+| **`STAGE6_PROTOCOL_VERSION`**([protocolVersion.ts](src/drill/protocolVersion.ts)) | 凍結後 `main.ts` 產生 `Meta.assessment.protocolVersion` 的顯式來源常數(`'1.0.0'`),取代先前讀 `activeDrillConfig.drillId` 充當版本字串的舊行為。與 `STAGE6_BASELINE_WINDOW_SIZE`/`STAGE6_BASELINE_MIN_N`(`5`/`3`)同檔案定義,為 `sessionHistory.ts` 生產呼叫點的具名凍結常數。凍結一律升版,不得原地改語意(GD-23)。 |
+| **`DIAGNOSIS_THRESHOLDS_V1`**([diagnosisRules.ts](src/metrics/diagnosisRules.ts)) | 正式版本化診斷門檻常數,`version: 'recommendation-v1.0.0'`,由 `PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS`(舊 pilot-candidate 版本,原地保留供追溯,`version: 'recommendation-pilot-candidate-v1'`)升版而來,8 個門檻值逐一沿用既有候選數值(GD-23:無真人 pilot 匯出,暫定凍結以驗證發布機制)。`main.ts` 生產呼叫改讀此常數。 |
+| **Pilot seed roster 慣例** | 任何新增測試家族的 pilot 探索,一律在 `PILOT_SEED_ROSTER_START` 之後取下一個未用的 `familyOffset`,不得回頭挪用既有家族的 offset 區段;凍結後的正式 assessment seed 維持在各協定原有數值,不因 pilot 存在而改變。 |

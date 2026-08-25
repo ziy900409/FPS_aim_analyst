@@ -32,17 +32,17 @@
 | **Alternatives considered** | (1) Leave the candidate version in production until a human study completes: rejected because it prevents a versioned formal baseline and leaves athlete-facing diagnosis marked pilot-only. (2) Freeze each family independently: rejected for this release; one coordinated `1.0.0` makes compatibility behavior unambiguous. (3) Store `W_deg` as a second constant: rejected because `deriveSpiderShotTransitions()` must remain the sole geometry conversion authority. |
 | **Impact** | `main.ts` reads formal version, diagnosis table, and history constants; four protocol configs expose their frozen values as named constants; pilot candidate thresholds stay in source for audit. |
 
-### GD-22 🟡 stage6 採納 — 個人瞄準能力測試框架 v1:WP-33~39 / M16 + WP-34 獨立 T0 spike(2026-08-19)
+### GD-22 ✅ stage6 採納 — 個人瞄準能力測試框架 v1:WP-33~39 / M16 + WP-34 獨立 T0 spike(2026-08-19;M16 達成 2026-08-25)
 
 | | |
 |---|---|
-| **發現處** | [stage6 計畫](active/stage6/README.md)(源自 [`active/stage6/aim-assessment-framework-v1.md`](active/stage6/aim-assessment-framework-v1.md),2026-08-19 提案)採納規劃。讀碼對帳發現框架草稿隱含的「架槍可見度時間線是既有能力延伸」與現況不符:`events` 目前只有二元 `visible`(WP-21 pop-in),而場景幾何依 **GD-6** 硬約束永不進 sim runtime,只能被 render/scene validation 層讀取——連續 `visibleFraction(t)` 是全新能力,工程量未知,結構上類似 WP-32 讀碼後才發現隱藏 ω/SG/分段鏈的情況(見 GD-19/GD-21 先例)。 |
+| **發現處** | [stage6 計畫](completed/stage6/README.md)(源自 [`completed/stage6/aim-assessment-framework-v1.md`](completed/stage6/aim-assessment-framework-v1.md),2026-08-19 提案)採納規劃。讀碼對帳發現框架草稿隱含的「架槍可見度時間線是既有能力延伸」與現況不符:`events` 目前只有二元 `visible`(WP-21 pop-in),而場景幾何依 **GD-6** 硬約束永不進 sim runtime,只能被 render/scene validation 層讀取——連續 `visibleFraction(t)` 是全新能力,工程量未知,結構上類似 WP-32 讀碼後才發現隱藏 ω/SG/分段鏈的情況(見 GD-19/GD-21 先例)。 |
 | **決議(編號)** | 採納為 **WP-33~39 / M16**、驗收清單 F(`docs/operational/acceptance-stage-f.md`,待建)。依 GD-15「先採納先得」,字母標籤取下一個未用字母 **F**(A=stage1、B=stage2、C=stage3、D=stage4、E=stage5)。七個 WP:WP-33 共同契約、WP-34 `hold-click-v1`+可見度、WP-35 `hold-track-v1`、WP-36 `spider-shot-v1`、WP-37 急停三協定包裝、WP-38 診斷推薦、WP-39 calibration pilot + 凍結(M16)。 |
 | **決議(WP-34 獨立 T0 spike)** | **WP-34 的 task 切分與估時不在本次採納鎖定**。WP-34 T0 定義為零程式碼的獨立讀碼 spike:評估三個可見度計算候選方案(render 層逐幀投影/raycast、scene validation 層封閉幾何解析、兩者混合的離線重建)的成本,允許降級為離散可見度階梯作為 fallback。spike 可提前於 WP-33 完成前執行(不寫入任何 `DrillConfig`/`TargetManager` 欄位,無跨 WP 依賴風險)。若 spike 判定成本過高需要拆分 WP,**WP-35 起編號依 GD-15 原則順延**,回本檔補一筆決議。 |
 | **理由** | ① **可見度時間線是全框架唯一觸碰 GD-6 邊界的新能力**,若不先驗證可行性就依框架草稿的樂觀估時排程,後段 WP-35(依賴 WP-34 的 emergence 機制)與整體交付順序都可能被打亂,重演 WP-32 D-32.0「規劃稿 2–3d → 讀碼後上修為 4.5–5.75d」的教訓。② **獨立 spike 可提前跑**是因為它是純調查、零程式碼,不佔用 WP-33 的檔案熱區,提前暴露風險的成本趨近零。③ 三個候選方案分別對應專案已有的三種先例做法(WP-20 frame-time log 的 render 層記錄模式、`clearance.ts` 的封閉幾何驗證模式、WP-21 的離線推導模式),spike 的產出應優先評估能否複用既有模式而非發明新機制。 |
 | **未決** | WP-38 診斷推薦引擎的落點(TS 即時 vs 比照 stage4 走 Python offline `research/`)列為 **OQ-S6-8**,留待 WP-38 T0 讀碼後拍板,不在本次採納預先假設。框架草稿的六項 calibration 數值(可見門檻/世界距離/角距角尺寸/樣本數/回饋時機)維持 pilot 後凍結(OQ-S6-1~6),不阻塞本次 WP 拆分採納。 |
-| **影響面** | [stage6 README](active/stage6/README.md) 全篇;[exec-plan/README.md](README.md) §2/§3/§4/§6;[docs/MAP.md](../MAP.md) §3。 |
-| **狀態** | 🟡 規劃已採納(2026-08-19);**WP-33 ✅ 全數完成**(T0~T-exit,契約定稿於 [analysis-assessment-contract.md](../operational/analysis-assessment-contract.md),開放 WP-34~37 entry,詳見 [wp-33 progress.md](active/stage6/wp-33-assessment-contract/progress.md))+ WP-34 T0 ✅ 完成(候選②拍板 + occlusion-aware clearance 政策選項①拍板,估時 3–5d→2.5–3.5d,不拆分 WP),詳見 [wp-34 progress.md](active/stage6/wp-34-hold-click-visibility/progress.md)。下一步:WP-34 T1、WP-35~37 T0 entry-gate 可展開。 |
+| **影響面** | [stage6 README](completed/stage6/README.md) 全篇;[exec-plan/README.md](README.md) §2/§3/§4/§6;[docs/MAP.md](../MAP.md) §3。 |
+| **狀態** | ✅ **stage6 全數交付(2026-08-25),M16 達成**:WP-33~39 全部 T0~T-exit 完成,驗收清單 F(`docs/operational/acceptance-stage-f.md`)F-1~F-12 全項通過。凍結細節另記 **GD-23**。`active/stage6/` 已於 T-exit 移入 `completed/stage6/`(使用者拍板,2026-08-25)。 |
 
 ### GD-21 ✅ 晉升指標雙實作對表紀律升為硬約束(2026-08-17,WP-32 T-exit;關閉 OQ-S4-24)
 

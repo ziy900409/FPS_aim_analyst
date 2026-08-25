@@ -16,7 +16,7 @@
 
 ## 0. 讀碼對帳(規劃階段,2026-08-19;決定本 WP 淨新增工作量)
 
-> 動筆前對 `src/ui/ResultScreen.ts`、`research/src/report/coach_report.py`、`src/metrics/compatibilityKey.ts`、`src/metrics/holdClickMetrics.ts`、`docs/operational/analysis-hold-track.md`、`docs/exec-plan/active/stage6/wp-36-spider-shot/README.md`、`wp-37-counterstrafe-protocols/README.md` 的讀碼結果。目的與 WP-33~37 §0 同:找出框架 v1 假設為既有能力延伸的項目,實際上有多少缺口。
+> 動筆前對 `src/ui/ResultScreen.ts`、`research/src/report/coach_report.py`、`src/metrics/compatibilityKey.ts`、`src/metrics/holdClickMetrics.ts`、`docs/operational/analysis-hold-track.md`、`docs/exec-plan/completed/stage6/wp-36-spider-shot/README.md`、`wp-37-counterstrafe-protocols/README.md` 的讀碼結果。目的與 WP-33~37 §0 同:找出框架 v1 假設為既有能力延伸的項目,實際上有多少缺口。
 
 | # | 框架 v1 / stage6 README 假設 | 讀碼發現 | 對本 WP 的影響 |
 |---|---|---|---|

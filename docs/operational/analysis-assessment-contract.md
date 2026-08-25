@@ -1,6 +1,6 @@
 # Analysis Assessment Contract
 
-> WP-33 T-exit final. Source WP: [`wp-33-assessment-contract`](../exec-plan/active/stage6/wp-33-assessment-contract/README.md) (T0–T3 + T-exit all ✅, 2026-08-19). This document freezes the shared Assessment/Practice, metadata, timeline, compatibility, and quality-gate contract for stage6. All seven contracts in §1 and the five-axis table in §2 are implemented and test-covered as listed below. WP-34~37 may enter on this contract; changes after this point require a versioned contract change recorded here, not an in-place edit.
+> WP-33 T-exit final. Source WP: [`wp-33-assessment-contract`](../exec-plan/completed/stage6/wp-33-assessment-contract/README.md) (T0–T3 + T-exit all ✅, 2026-08-19). This document freezes the shared Assessment/Practice, metadata, timeline, compatibility, and quality-gate contract for stage6. All seven contracts in §1 and the five-axis table in §2 are implemented and test-covered as listed below. WP-34~37 may enter on this contract; changes after this point require a versioned contract change recorded here, not an in-place edit.
 
 ---
 

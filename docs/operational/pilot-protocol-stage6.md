@@ -1,6 +1,6 @@
 # Stage6 Pilot Protocol — Calibration and Freeze
 
-> WP-39 T1 pilot procedure. This document defines reproducible candidate generation and collection; it does not execute human participant sessions or choose final frozen values.
+> Finalized at WP-39 T-exit (2026-08-25, M16). This document defines reproducible candidate generation and collection; it does not execute human participant sessions or choose final frozen values.
 
 ## 1. Purpose and separation
 
@@ -48,3 +48,7 @@ For each candidate family, retain the raw practice exports and a calculation rec
 - Spider Shot records retain exported hitbox and spawn information for the canonical `D_deg`/`W_deg` derivation.
 - Counterstrafe reversal records retain the exact `holdDurationMs` candidate and both cue events where completed.
 - The collection log records policy candidate, participant/session identifiers, suspect state, and exclusions.
+
+## 7. Freeze outcome (2026-08-25, informational)
+
+WP-39 T2 released `protocolVersion = 1.0.0` for all four assessment task ids without a committed human pilot export ([DECISIONS.md](../exec-plan/DECISIONS.md) GD-23). The provisional formal values are: baseline window/minimum `5/3`; hold-click/hold-track distance `near/mid/far = 6/8/10u` (formal default `mid`); Spider Shot `D_deg = 15` with hitbox `1×2×1u`; reversal `holdDurationMs = 500`; visibility `N=9` / onset threshold `0.5`; default feedback policy `minimal-end-of-block`. Any future data-backed change must cite the pilot sessions and statistic behind it, and must version the affected constant rather than overwrite this record — the candidate constants named throughout this document remain in source for that comparison.

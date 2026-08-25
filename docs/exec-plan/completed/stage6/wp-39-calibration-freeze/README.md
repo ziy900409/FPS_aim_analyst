@@ -10,7 +10,7 @@
 | **相依** | **WP-33+34+35+36+37+38 全部 T-exit**([../README.md §5](../README.md))。**現況(2026-08-25)阻塞**:WP-38 僅 T0~T2 完成,T3(`ResultScreen` 呈現整合)與 T-exit 尚未交付([wp-38 task-checklist.md](../wp-38-diagnosis-recommendation/task-checklist.md))——**本 WP 的 T0 entry-gate 在 WP-38 T-exit 綠燈前不得放行**,此規劃先行產出,執行時序仍受 WP-38 進度控制 |
 | **對應 FR** | FR-F17 + FR-F18 |
 | **估時** | 2–3 dev-days([../README.md §6](../README.md));讀碼發現六個測試家族 WP 已各自留下顯式 pilot-candidate 標記(見 §0),故本 WP 的淨新增工作量集中在「產生候選配置的參數化工具」與「凍結後把候選常數換成正式常數並升版」兩點,不需要重新設計任何協定骨架 |
-| **狀態** | ⬜ 規劃已展開(本檔,2026-08-25);entry 待 WP-38 T-exit |
+| **狀態** | ✅ **T0~T3+T-exit 全數完成(2026-08-25),M16(stage6 交付)達成**;驗收清單 F 全項通過(`docs/operational/acceptance-stage-f.md`) |
 
 ---
 

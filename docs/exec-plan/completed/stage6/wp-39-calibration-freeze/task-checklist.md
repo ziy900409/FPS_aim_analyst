@@ -9,9 +9,9 @@
 | ✅ | **T1** `src/pilot/pilotConfigs.ts`:近/中/遠距離、可見門檻候選、Spider Shot 角度範圍、`holdDurationMs`、`assessmentFeedbackPolicy` 候選產生器 + pilot seed roster | [T1-pilot-config-tool.md](T1-pilot-config-tool.md) | T0 | Med |
 | ✅ | **T2** 凍結機制:`STAGE6_PROTOCOL_VERSION`、`DIAGNOSIS_THRESHOLDS_V1`、四協定 config 定案數值、`DECISIONS.md` 記錄 | [T2-numeric-freeze.md](T2-numeric-freeze.md) | T1 | Med |
 | ✅ | **T3** `acceptance-stage-f.md` 驗收清單 F + 跨家族一致性回歸測試 | [T3-acceptance-checklist-f.md](T3-acceptance-checklist-f.md) | T2 | Med |
-| ⬜ | **T-exit(M16)** 驗收清單 F 全項通過;`pilot-protocol-stage6.md` 定稿;文件對帳;stage6 狀態翻 ✅ | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
+| ✅ | **T-exit(M16)** 驗收清單 F 全項通過;`pilot-protocol-stage6.md` 定稿;文件對帳;stage6 狀態翻 ✅ | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
 
-**T0 已於 2026-08-25 放行**:WP-33~38 的 T-exit 均已驗證 ✅;T1/T2/T3 皆為收斂既有 pilot-candidate 標記的工作,設計複雜度低。一 task = 一垂直切片 = 一原子 commit 紀律不變。
+**T0 已於 2026-08-25 放行**:WP-33~38 的 T-exit 均已驗證 ✅;T1/T2/T3 皆為收斂既有 pilot-candidate 標記的工作,設計複雜度低。一 task = 一垂直切片 = 一原子 commit 紀律不變。**T-exit 已於 2026-08-25 完成,M16(stage6 交付)達成。**
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../README.md))
 
