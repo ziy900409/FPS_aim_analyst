@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Metrics } from '../metrics/compute.ts';
+import type { DiagnosisResult } from '../metrics/diagnosisRules.ts';
 import type { PromotedMetrics } from '../metrics/researchMetrics.ts';
 import {
+  createDiagnosisSummary,
   createPromotedSummary,
   createRecoilOverlayModel,
   createResultScreen,
   createResultSummary,
+  DIAGNOSIS_METRIC_IDS,
   PROMOTED_METRIC_IDS,
   summarizeResidualSpeed,
 } from './ResultScreen.ts';
@@ -193,6 +196,55 @@ describe('WP-32 T5 promoted result section', () => {
   });
 });
 
+describe('WP-38 T3 diagnosis result section', () => {
+  it('pins the closed diagnosis metric id set and carries source, n, flags, and version', () => {
+    const summary = createDiagnosisSummary(diagnosisOk());
+    expect(summary.status).toBe('ok');
+    if (summary.status !== 'ok') throw new Error('expected ok summary');
+
+    expect(summary.cards.map((card) => card.id)).toEqual(DIAGNOSIS_METRIC_IDS);
+    expect(summary.cards.find((card) => card.id === 'diagnosis-primary-label')).toMatchObject({
+      value: 'flick-control',
+      detail: '降速 Spider Shot、一次乾淨停止',
+    });
+    const evidence = summary.cards.find((card) => card.id === 'diagnosis-primary-evidence');
+    expect(evidence?.value).toContain('spider-shot.movement-execution-ms 320.00');
+    expect(evidence?.detail).toContain('n=4');
+    expect(evidence?.detail).toContain('1 flagged');
+    expect(evidence?.meta).toBe('n=8 · 1 flagged');
+    expect(summary.cards.find((card) => card.id === 'diagnosis-recommendation-version')?.value).toBe(
+      'recommendation-test-v1',
+    );
+  });
+
+  it('renders the diagnosis cards with only the closed metric ids', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(metrics, undefined, diagnosisOk());
+
+    expect(diagnosisMetricIds(document.body)).toEqual([...DIAGNOSIS_METRIC_IDS]);
+    expect(text(document.body)).toContain('recommendation-test-v1');
+    expect(text(document.body)).toContain('n=4');
+    expect(text(document.body)).toContain('1 flagged');
+  });
+
+  it('renders insufficient data without findings or progress arrows', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(metrics, undefined, { status: 'insufficient-data', reason: 'quality gate status: suspect-run' });
+
+    expect(diagnosisMetricIds(document.body)).toEqual([]);
+    expect(text(document.body)).toContain('資料不足');
+    expect(text(document.body)).toContain('quality gate status: suspect-run');
+    expect(text(document.body)).not.toContain('flick-control');
+    expect(text(document.body)).not.toMatch(/[↑↓]/);
+  });
+});
+
 describe('createRecoilOverlayModel', () => {
   it('creates a stable recoil path overlay model with actual and ideal series plus mean and RMS', () => {
     const summary = createResultSummary({
@@ -316,10 +368,31 @@ function promotedOk(): Extract<PromotedMetrics, { status: 'ok' }> {
   };
 }
 
+function diagnosisOk(): Extract<DiagnosisResult, { status: 'ok' }> {
+  return {
+    status: 'ok',
+    recommendationVersion: 'recommendation-test-v1',
+    primary: {
+      label: 'flick-control',
+      nextTrainingDirection: '降速 Spider Shot、一次乾淨停止',
+      evidence: [
+        { metricId: 'spider-shot.movement-execution-ms', value: 320, n: 4, flags: ['late-correct'] },
+        { metricId: 'spider-shot.stop-control-overshoot-deg', value: 2.5, n: 4, flags: [] },
+      ],
+    },
+  };
+}
+
 function metricIds(root: FakeElement): string[] {
   return flatten(root)
     .map((node) => node.dataset.metricId)
     .filter((id): id is string => id !== undefined && PROMOTED_METRIC_IDS.includes(id as never));
+}
+
+function diagnosisMetricIds(root: FakeElement): string[] {
+  return flatten(root)
+    .map((node) => node.dataset.metricId)
+    .filter((id): id is string => id !== undefined && DIAGNOSIS_METRIC_IDS.includes(id as never));
 }
 
 function text(root: FakeElement): string {

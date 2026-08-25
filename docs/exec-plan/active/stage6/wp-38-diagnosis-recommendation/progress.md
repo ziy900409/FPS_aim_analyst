@@ -10,6 +10,7 @@
 | T0 entry gate | ✅ | 2026-08-24 | WP-34/35/36/37 的 T-exit 列皆為 ✅；重讀 `src/metrics/spiderShotMetrics.ts`、`counterstrafeMetrics.ts` 完成最終介面覆核；D-38.1/D-38.2 定案。零程式碼、零測試異動。 |
 | T1 rule engine | ✅ | 2026-08-25 | 新增純函式 `diagnosisRules.ts`，以版本化注入門檻實作七種模式、quality-gate 短路與 deterministic primary-only 優先序；新增 12 組合成測試，含七模式、重疊證據、品質短路、單家族與門檻邊界。`npm run test:ci` 通過：TypeScript、Vitest 119 files / 923 tests、Playwright 21 tests。 |
 | T2 session history | ✅ | 2026-08-25 | 新增純 `sessionHistory.ts`（相容性／quality-gate 守門、最新固定窗口、中位數與 population SD）與 TS 多檔 JSON loader（只接受 `meta.assessment`）；新增 7 個合成測試，覆蓋窗口、相容性排除、metric ID 排除、`minN` 短路、目前 quality gate、Practice 排除與無效 JSON。`npm.cmd run test:ci` 通過：TypeScript、Vitest 121 files / 930 tests、Playwright 21 tests。 |
+| T3 result presentation | ✅ | 2026-08-25 | `ResultScreen` 新增封閉 `DIAGNOSIS_METRIC_IDS` 六卡呈現（label/evidence/version/quality gate），每筆 evidence 顯示來源、值、`n`、flags；`insufficient-data` 僅顯示「資料不足」原因。新增純 TS `HistoryView`，以手動多檔 Assessment JSON 選取呈現相容 history 的 speed/accuracy median + population SD，沒有趨勢箭頭或持久化。`main.ts` 由同一 `buildCurrentExportPayload()` 評估診斷、保存 Assessment provenance 並供 history loader 建立 current/past `SessionSummary`。`npm.cmd run test:ci` 通過：TypeScript、Vitest 122 files / 935 tests、Playwright 21 tests。 |
 
 ## Decision Log
 
@@ -66,6 +67,14 @@
 **Rationale:** 這保留「目前觀測」與既有 baseline 的區分；同一 task 的不同指標不能形成可解釋的 speed–accuracy 聚合。各家族對照表已寫入 `analysis-diagnosis.md`。
 
 **Alternatives considered:** 把 current 直接併入 baseline——未採用：會讓欲呈現的當前表現反過來影響自己的參考值；對不同 metric ID 只比較 task key——未採用：會產生沒有共同單位的中位數。
+
+### D-38.8 — T3 以 export payload 作診斷與 history 的唯一來源(2026-08-25,T3)
+
+**Decision:** drill 結束時先建立一次 `ExportPayload`，由該 payload 評估診斷、建立 current `SessionSummary`，並作為 ResultScreen 與 history import 的共同輸入。Assessment drill 同時在 export 寫入 `meta.assessment` provenance；Practice 不會建立正式 baseline。
+
+**Rationale:** 避免結果頁統計、診斷、下載檔案各自從不同 recorder snapshot 讀取。T2 loader 已把 `meta.assessment` 設為唯一的 formal-history 守門，故 provenance 必須在這條既有匯出路徑落地。
+
+**Alternatives considered:** 從即時 shared state 另建診斷/history 資料——未採用：會破壞「統計＝匯出」同源驗證，也無法讓先前匯出的 Assessment 檔案通過 T2 guard。
 
 ## Surprises
 

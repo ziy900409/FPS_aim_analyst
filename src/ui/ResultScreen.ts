@@ -1,5 +1,6 @@
 import { CS2_PROFILE } from '../sim/MovementController.ts';
 import type { AimOffset, CompensationError, Metrics, RecoilCompensationPath, Stat } from '../metrics/compute.ts';
+import type { DiagnosisEvidence, DiagnosisFinding, DiagnosisResult } from '../metrics/diagnosisRules.ts';
 import type { NormalizedCurve, PrecisionVerdict, PromotedMetrics, PromotedStat } from '../metrics/researchMetrics.ts';
 
 export const PROMOTED_METRIC_IDS = [
@@ -14,6 +15,18 @@ export const PROMOTED_METRIC_IDS = [
 ] as const;
 
 export type PromotedMetricId = (typeof PROMOTED_METRIC_IDS)[number];
+
+/** Closed presentation contract for WP-38 diagnosis cards. */
+export const DIAGNOSIS_METRIC_IDS = [
+  'diagnosis-primary-label',
+  'diagnosis-primary-evidence',
+  'diagnosis-secondary-label',
+  'diagnosis-secondary-evidence',
+  'diagnosis-recommendation-version',
+  'diagnosis-quality-gate-status',
+] as const;
+
+export type DiagnosisMetricId = (typeof DIAGNOSIS_METRIC_IDS)[number];
 
 export interface ResultCard {
   id: string;
@@ -50,13 +63,14 @@ export interface RecoilOverlayModel {
 
 export interface ResultScreenHandle {
   readonly visible: boolean;
-  show(metrics: Metrics, promoted?: PromotedMetrics): void;
+  show(metrics: Metrics, promoted?: PromotedMetrics, diagnosis?: DiagnosisResult): void;
   hide(): void;
   dispose(): void;
 }
 
 export interface ResultScreenOptions {
   parent?: HTMLElement;
+  historyView?: HTMLElement;
 }
 
 export function createResultScreen(options: ResultScreenOptions = {}): ResultScreenHandle {
@@ -149,11 +163,34 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
   promotedBody.style.cssText = 'display:grid;gap:10px';
   promotedSection.append(promotedTitle, promotedBody);
 
-  panel.append(title, method, grid, chartTitle, chart, recoilTitle, recoilChart, promotedSection);
+  const diagnosisSection = document.createElement('section');
+  diagnosisSection.dataset.section = 'diagnosis';
+  diagnosisSection.style.cssText = 'display:none;margin-top:18px';
+
+  const diagnosisTitle = document.createElement('h3');
+  diagnosisTitle.textContent = 'Training diagnosis';
+  diagnosisTitle.style.cssText = 'margin:0 0 8px;font:700 14px/1.25 system-ui,sans-serif;letter-spacing:0';
+
+  const diagnosisBody = document.createElement('div');
+  diagnosisBody.style.cssText = 'display:grid;gap:10px';
+  diagnosisSection.append(diagnosisTitle, diagnosisBody);
+
+  panel.append(
+    title,
+    method,
+    grid,
+    chartTitle,
+    chart,
+    recoilTitle,
+    recoilChart,
+    promotedSection,
+    diagnosisSection,
+    ...(options.historyView === undefined ? [] : [options.historyView]),
+  );
   root.appendChild(panel);
   parent.appendChild(root);
 
-  function render(summary: ResultSummary, promoted?: PromotedMetrics): void {
+  function render(summary: ResultSummary, promoted?: PromotedMetrics, diagnosis?: DiagnosisResult): void {
     method.textContent = summary.methodNote;
     grid.replaceChildren(...summary.cards.map(renderCard));
     chart.replaceChildren(renderReactionDistribution(summary.reactionValues));
@@ -163,14 +200,16 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     recoilChart.replaceChildren(...(recoilModel !== undefined ? [renderRecoilCompensation(recoilModel)] : []));
     promotedSection.style.display = promoted === undefined ? 'none' : '';
     promotedBody.replaceChildren(...(promoted === undefined ? [] : [renderPromotedMetrics(promoted)]));
+    diagnosisSection.style.display = diagnosis === undefined ? 'none' : '';
+    diagnosisBody.replaceChildren(...(diagnosis === undefined ? [] : [renderDiagnosis(diagnosis)]));
   }
 
   return {
     get visible(): boolean {
       return visible;
     },
-    show(metrics: Metrics, promoted?: PromotedMetrics): void {
-      render(createResultSummary(metrics), promoted);
+    show(metrics: Metrics, promoted?: PromotedMetrics, diagnosis?: DiagnosisResult): void {
+      render(createResultSummary(metrics), promoted, diagnosis);
       visible = true;
       root.style.display = 'flex';
     },
@@ -317,6 +356,112 @@ function renderCard(card: ResultCard): HTMLElement {
     node.appendChild(meta);
   }
   return node;
+}
+
+export function createDiagnosisSummary(
+  diagnosis: DiagnosisResult,
+): { status: 'insufficient-data'; reason: string } | { status: 'ok'; cards: ResultCard[] } {
+  if (diagnosis.status === 'insufficient-data') return diagnosis;
+
+  return {
+    status: 'ok',
+    cards: [
+      diagnosisFindingCard('diagnosis-primary-label', 'Primary training limitation', diagnosis.primary),
+      diagnosisEvidenceCard('diagnosis-primary-evidence', 'Primary evidence', diagnosis.primary?.evidence),
+      diagnosisFindingCard('diagnosis-secondary-label', 'Secondary training limitation', diagnosis.secondary),
+      diagnosisEvidenceCard('diagnosis-secondary-evidence', 'Secondary evidence', diagnosis.secondary?.evidence),
+      {
+        id: 'diagnosis-recommendation-version',
+        title: 'Recommendation rules',
+        value: diagnosis.recommendationVersion,
+        detail: 'Versioned rule set used to interpret this session.',
+        meta: diagnosis.recommendationVersion,
+      },
+      {
+        id: 'diagnosis-quality-gate-status',
+        title: 'Quality gate',
+        value: 'ok',
+        detail: 'Evidence was evaluated only after the session quality gate passed.',
+        meta: diagnosis.recommendationVersion,
+      },
+    ],
+  };
+}
+
+function renderDiagnosis(diagnosis: DiagnosisResult): HTMLElement {
+  const summary = createDiagnosisSummary(diagnosis);
+  if (summary.status === 'insufficient-data') return renderDiagnosisInsufficient(summary.reason);
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display:grid;gap:10px';
+  const cards = document.createElement('div');
+  cards.style.cssText = [
+    'display:grid',
+    'grid-template-columns:repeat(auto-fit,minmax(174px,1fr))',
+    'gap:10px',
+  ].join(';');
+  cards.replaceChildren(...summary.cards.map(renderCard));
+  wrapper.appendChild(cards);
+  return wrapper;
+}
+
+function renderDiagnosisInsufficient(reason: string): HTMLElement {
+  const node = document.createElement('article');
+  node.dataset.diagnosisStatus = 'insufficient-data';
+  node.style.cssText = [
+    'box-sizing:border-box',
+    'padding:12px',
+    'background:rgba(255,207,110,0.09)',
+    'border:1px solid rgba(255,207,110,0.22)',
+    'border-radius:6px',
+    'color:#f4d78a',
+  ].join(';');
+
+  const title = document.createElement('div');
+  title.textContent = '資料不足';
+  title.style.cssText = 'font:750 13px/1.3 system-ui,sans-serif';
+  const detail = document.createElement('div');
+  detail.textContent = reason;
+  detail.style.cssText = 'margin-top:6px;color:#e7d7a5;font:600 12px/1.4 system-ui,sans-serif';
+  node.append(title, detail);
+  return node;
+}
+
+function diagnosisFindingCard(
+  id: Extract<DiagnosisMetricId, 'diagnosis-primary-label' | 'diagnosis-secondary-label'>,
+  title: string,
+  finding: DiagnosisFinding | undefined,
+): ResultCard {
+  return {
+    id,
+    title,
+    value: finding?.label ?? 'No finding',
+    detail: finding?.nextTrainingDirection ?? 'No additional training direction was selected.',
+    meta: finding === undefined ? 'No supporting evidence' : diagnosisEvidenceMeta(finding.evidence),
+  };
+}
+
+function diagnosisEvidenceCard(
+  id: Extract<DiagnosisMetricId, 'diagnosis-primary-evidence' | 'diagnosis-secondary-evidence'>,
+  title: string,
+  evidenceItems: readonly DiagnosisEvidence[] | undefined,
+): ResultCard {
+  if (evidenceItems === undefined || evidenceItems.length === 0) {
+    return { id, title, value: 'No evidence', detail: 'No source metrics were selected.', meta: 'n=0 · 0 flagged' };
+  }
+  return {
+    id,
+    title,
+    value: evidenceItems.map((item) => `${item.metricId} ${formatNumber(item.value, 2)}`).join(' · '),
+    detail: evidenceItems.map((item) => `${item.metricId}: n=${item.n} · ${item.flags.length} flagged`).join(' · '),
+    meta: diagnosisEvidenceMeta(evidenceItems),
+  };
+}
+
+function diagnosisEvidenceMeta(evidenceItems: readonly DiagnosisEvidence[]): string {
+  const n = evidenceItems.reduce((sum, item) => sum + item.n, 0);
+  const flags = evidenceItems.reduce((sum, item) => sum + item.flags.length, 0);
+  return `n=${n} · ${flags} flagged`;
 }
 
 export function createPromotedSummary(promoted: PromotedMetrics): { status: 'blocked'; reason: string } | {

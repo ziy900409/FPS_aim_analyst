@@ -13,6 +13,7 @@ import { createScopeOverlay } from './ui/ScopeOverlay.ts';
 import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
+import { createHistoryView } from './ui/HistoryView.ts';
 import { createControls } from './ui/Controls.ts';
 import { applyResolutionMode, type DisplayState, type ResolutionMode } from './display/resolutionMode.ts';
 import {
@@ -48,7 +49,13 @@ import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh } from './data/metadata.ts';
 import { RAD_PER_COUNT, resolveMouseGain } from './input/mouseGain.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
+import { loadAssessmentSessionSummaries } from './data/sessionHistoryLoader.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
+import { buildCompatibilityKey, checkQualityGate, deriveSessionId, type QualityGateStatus } from './metrics/compatibilityKey.ts';
+import { evaluateDiagnosis, PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS, type DiagnosisInputs, type DiagnosisResult } from './metrics/diagnosisRules.ts';
+import { deriveHoldClickMetrics } from './metrics/holdClickMetrics.ts';
+import { deriveTrackingMetrics } from './metrics/trackingDerivation.ts';
+import { buildSessionHistory, type SessionSummary } from './metrics/sessionHistory.ts';
 import { getWeapon } from './weapon/weapons.ts';
 import type { SceneConfig } from './scene/SceneConfig.ts';
 import { resolveEyeWorldBase } from './scene/eyePose.ts';
@@ -63,7 +70,7 @@ import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
-import { holdClickV1 } from './drill/hold_click_v1.ts';
+import { HOLD_CLICK_ONSET_THRESHOLD, HOLD_CLICK_VISIBILITY_SAMPLE_COUNT, holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
@@ -500,8 +507,118 @@ async function buildCurrentExportPayload(protocolContext?: ProtocolConditionCont
           },
         }
       : {}),
+    ...(activeDrillConfig.mode === 'assessment'
+      ? {
+          assessment: {
+            protocolVersion: activeDrillConfig.drillId,
+            assessmentFeedbackPolicy: 'minimal-end-of-block' as const,
+          },
+        }
+      : {}),
   });
   return buildExportPayload(meta, snapshot);
+}
+
+function diagnosisForPayload(payload: ExportPayload): DiagnosisResult {
+  return evaluateDiagnosis(
+    diagnosisInputsForPayload(payload),
+    PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS,
+    qualityGateStatusFor(payload),
+  );
+}
+
+function sessionSummaryFromPayload(payload: ExportPayload): SessionSummary {
+  const qualityGateStatus = qualityGateStatusFor(payload);
+  const inputs = diagnosisInputsForPayload(payload);
+  const diagnosis = evaluateDiagnosis(inputs, PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS, qualityGateStatus);
+  const historyMetrics = historyMetricsFor(payload, inputs);
+  return {
+    compatibilityKey: buildCompatibilityKey(payload.meta, payload.meta.drillId, targetConditionCell(payload), qualityGateStatus),
+    sessionId: deriveSessionId(payload.meta),
+    startedAt: payload.meta.startedAt,
+    diagnosis,
+    speedMetric: historyMetrics.speedMetric,
+    accuracyMetric: historyMetrics.accuracyMetric,
+  };
+}
+
+function diagnosisInputsForPayload(payload: ExportPayload): DiagnosisInputs {
+  const trackingOptions = payload.meta.targets === undefined ? {} : { hitbox: targetHitboxFromMeta(payload) };
+  if (payload.meta.drillId === holdClickV1.drill.drillId) {
+    const scene = sceneForPayload(payload);
+    return {
+      holdClick: deriveHoldClickMetrics(payload, scene, {
+        sampleCount: HOLD_CLICK_VISIBILITY_SAMPLE_COUNT,
+        onsetThreshold: HOLD_CLICK_ONSET_THRESHOLD,
+        ...trackingOptions,
+      }),
+    };
+  }
+  if (payload.meta.drillId === holdTrackV1.drill.drillId) {
+    const tracking = deriveTrackingMetrics(payload, trackingOptions);
+    const totValues = tracking.presentations.flatMap((presentation) =>
+      presentation.totPercent === undefined ? [] : [presentation.totPercent],
+    );
+    return {
+      holdTrack: {
+        totPercent: average(totValues),
+        dropCount: 0,
+      },
+    };
+  }
+  return {};
+}
+
+function historyMetricsFor(
+  payload: ExportPayload,
+  inputs: DiagnosisInputs,
+): Pick<SessionSummary, 'speedMetric' | 'accuracyMetric'> {
+  if (inputs.holdClick !== undefined) {
+    const acquisition = inputs.holdClick.presentations.flatMap((item) =>
+      item.acquisitionFromDetectMs === undefined ? [] : [item.acquisitionFromDetectMs],
+    );
+    const firstShots = inputs.holdClick.presentations.flatMap((item) => (item.firstShotHit === undefined ? [] : [item.firstShotHit]));
+    return {
+      speedMetric: { id: 'hold-click.acquisition-ms', value: average(acquisition) },
+      accuracyMetric: { id: 'hold-click.first-shot-hit-rate', value: firstShots.filter(Boolean).length / firstShots.length },
+    };
+  }
+  if (inputs.holdTrack !== undefined) {
+    const tracking = deriveTrackingMetrics(payload, { hitbox: targetHitboxFromMeta(payload) });
+    const acquisition = tracking.presentations.flatMap((item) => (item.tAcquireMs === undefined ? [] : [item.tAcquireMs]));
+    return {
+      speedMetric: { id: 'hold-track.acquisition-ms', value: average(acquisition) },
+      accuracyMetric: { id: 'hold-track.tot-percent', value: inputs.holdTrack.totPercent },
+    };
+  }
+  throw new Error(`No history metric mapping for drill ${payload.meta.drillId}`);
+}
+
+function qualityGateStatusFor(payload: ExportPayload): QualityGateStatus {
+  const visibleSampleCount = payload.events.filter((event) => event.type === 'visible').length;
+  return checkQualityGate({ n: visibleSampleCount, minN: 1, suspect: payload.meta.suspect, compatible: true });
+}
+
+function targetConditionCell(payload: ExportPayload): string {
+  const hitbox = targetHitboxFromMeta(payload);
+  return `scene=${payload.meta.scene?.sceneId ?? 'unspecified'};hitbox=${hitbox.width}x${hitbox.height}x${hitbox.depth}`;
+}
+
+function targetHitboxFromMeta(payload: ExportPayload): { width: number; height: number; depth: number } {
+  const hitbox = payload.meta.targets?.hitbox;
+  return hitbox === undefined
+    ? resolveTargetHitbox()
+    : { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU };
+}
+
+function sceneForPayload(payload: ExportPayload): SceneConfig {
+  const sceneId = payload.meta.scene?.sceneId;
+  return availableScenes.find((candidate) => candidate.id === sceneId)?.config ?? activeSceneConfig;
+}
+
+function average(values: readonly number[]): number {
+  if (values.length === 0) throw new Error('No finite samples are available for this history metric');
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function exportBasename(payload: ExportPayload): string {
@@ -531,7 +648,17 @@ createExportPanel({
 
 // WP-8 / T2（FR-8.2）— 賽後結果頁：drill ended 後以同一 recorder snapshot 計算並呈現 §5 指標。
 const metricsDashboard = createMetricsDashboard();
-const resultScreen = createResultScreen();
+let currentHistorySession: SessionSummary | undefined;
+const historyView = createHistoryView({
+  async onFilesSelected(files) {
+    if (currentHistorySession === undefined) {
+      return { status: 'insufficient-data', reason: 'Complete an Assessment session before loading history exports.' };
+    }
+    const past = await loadAssessmentSessionSummaries(files, sessionSummaryFromPayload);
+    return buildSessionHistory(currentHistorySession, past, 5, 3);
+  },
+});
+const resultScreen = createResultScreen({ historyView: historyView.element });
 // WP-8 / T3（FR-8.3）— 即時 HUD：rAF 只讀 SharedState + recorder counters，不進 sim、不 snapshot。
 const hud = createHUD();
 
@@ -654,7 +781,11 @@ if (import.meta.env.DEV) {
     ...fpsTestHarness,
     showResult(): void {
       const payload = fpsTestHarness.forceExportJSON();
-      resultScreen.show(fpsTestHarness.metricsFromExport(payload), fpsTestHarness.promotedMetricsFromExport(payload));
+      resultScreen.show(
+        fpsTestHarness.metricsFromExport(payload),
+        fpsTestHarness.promotedMetricsFromExport(payload),
+        diagnosisForPayload(payload),
+      );
     },
   };
 }
@@ -747,6 +878,8 @@ function resetRunPresentation(): void {
   recorder.reset();
   frameLog.reset();
   resultScreen.hide();
+  currentHistorySession = undefined;
+  historyView.render(undefined);
   resultShown = false;
   hudRunStartMs = null;
   hudElapsedMs = 0;
@@ -1067,7 +1200,22 @@ const renderLoop = createRenderLoop((now) => {
     syncControlsVisibility();
     void (async () => {
       const payload = await buildCurrentExportPayload();
-      resultScreen.show(metricsDashboard.compute(snapshotFromExportPayload(payload)), metricsDashboard.computePromoted(payload));
+      const diagnosis = diagnosisForPayload(payload);
+      try {
+        currentHistorySession = payload.meta.assessment === undefined ? undefined : sessionSummaryFromPayload(payload);
+        historyView.render(
+          currentHistorySession === undefined
+            ? { status: 'insufficient-data', reason: 'This is a Practice session; it cannot establish a formal history baseline.' }
+            : undefined,
+        );
+      } catch (error) {
+        currentHistorySession = undefined;
+        historyView.render({
+          status: 'insufficient-data',
+          reason: error instanceof Error ? error.message : 'Current session could not establish a history baseline.',
+        });
+      }
+      resultScreen.show(metricsDashboard.compute(snapshotFromExportPayload(payload)), metricsDashboard.computePromoted(payload), diagnosis);
       await completeActiveProtocolCondition();
     })();
   }

@@ -101,6 +101,13 @@ async function runFullChain(page: import('@playwright/test').Page) {
         promoted.status === 'ok' &&
         expectedReleaseText !== null &&
         releaseCard?.dataset.metricValue === expectedReleaseText;
+      const diagnosisSection = document.querySelector<HTMLElement>('#result-screen [data-section="diagnosis"]');
+      const diagnosisMetricIds = Array.from(
+        document.querySelectorAll<HTMLElement>('#result-screen [data-section="diagnosis"] [data-metric-id]'),
+      ).map((node) => node.dataset.metricId);
+      const diagnosisInsufficient = document.querySelector<HTMLElement>(
+        '#result-screen [data-section="diagnosis"] [data-diagnosis-status="insufficient-data"]',
+      );
 
       return {
         coi: window.crossOriginIsolated,
@@ -129,6 +136,10 @@ async function runFullChain(page: import('@playwright/test').Page) {
         promotedMetricIds,
         promotedMatchesExport,
         promotedText: promotedSection?.textContent ?? '',
+        diagnosisSectionDisplay: diagnosisSection?.style.display ?? null,
+        diagnosisMetricIds,
+        diagnosisInsufficient: diagnosisInsufficient !== null,
+        diagnosisText: diagnosisSection?.textContent ?? '',
       };
     },
     { drillId: DRILL_ID, peeks: PEEKS },
@@ -211,6 +222,19 @@ test.describe('WP-9 E2E — 完整 drill → 匯出 → 統計（Edge）', () =>
     expect(r.promotedText).toContain('curve-v1');
     expect(r.promoted.sync?.releaseToFireMs.n).toBeGreaterThan(0);
     expect((r.promoted.curve?.omega.left.n ?? 0) + (r.promoted.curve?.omega.right.n ?? 0)).toBeGreaterThan(0);
+
+    // ── WP-38 / T3 diagnosis：same export payload 觸發版本化診斷；非資料不足時封閉卡片契約完整。 ──
+    expect(r.diagnosisSectionDisplay).not.toBe('none');
+    expect(r.diagnosisInsufficient).toBe(false);
+    expect(r.diagnosisMetricIds).toEqual([
+      'diagnosis-primary-label',
+      'diagnosis-primary-evidence',
+      'diagnosis-secondary-label',
+      'diagnosis-secondary-evidence',
+      'diagnosis-recommendation-version',
+      'diagnosis-quality-gate-status',
+    ]);
+    expect(r.diagnosisText).toContain('recommendation-pilot-candidate-v1');
   });
 
   test('WP-24 ADS smoke：export 含 ads event / tick flag / weapon ads snapshot', async ({ page }) => {

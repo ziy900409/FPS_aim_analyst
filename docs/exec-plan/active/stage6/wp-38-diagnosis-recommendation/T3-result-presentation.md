@@ -7,7 +7,7 @@
 | **相依** | T2(`SessionHistoryResult` + T1 `DiagnosisResult`) |
 | **Risk / Cplx** | Med(比照 WP-32 `research-promoted` 既有型式,設計風險低,組裝工作量中等) |
 | **Touches** | MODIFY `src/ui/ResultScreen.ts`(新增 diagnosis 區塊)、`src/main.ts`(additive 參數);ADD `src/ui/HistoryView.ts`(若 T0 候選①落地) |
-| **狀態** | ⬜ |
+| **狀態** | ✅(2026-08-25;`npm.cmd run test:ci` exit 0 — TypeScript、Vitest 122 files / 935 tests、Playwright 21 tests) |
 
 ## Objective
 
@@ -29,12 +29,12 @@
 
 ## Steps
 
-- [ ] `ResultScreen.ts` 新增 diagnosis 區塊 + 封閉 metric id 測試(斷言 id 集合等於封閉清單,多一個即 fail,比照 WP-32 C-D3 紀律)。
-- [ ] `insufficient-data` 態 UI 測試。
-- [ ] 依 T0 候選落地歷史呈現(`HistoryView.ts` 或靜態連結說明)。
-- [ ] `main.ts` 接線 + 統計=匯出同源測試。
-- [ ] E2E 斷言擴充。
-- [ ] `npm run test:ci` 全綠。
+- [x] `ResultScreen.ts` 新增 diagnosis 區塊 + 封閉 metric id 測試(斷言 id 集合等於封閉清單,多一個即 fail,比照 WP-32 C-D3 紀律)。
+- [x] `insufficient-data` 態 UI 測試。
+- [x] 依 T0 候選落地歷史呈現(`HistoryView.ts` 或靜態連結說明)。
+- [x] `main.ts` 接線 + 統計=匯出同源測試。
+- [x] E2E 斷言擴充。
+- [x] `npm run test:ci` 全綠。
 
 ## Definition of Done
 
