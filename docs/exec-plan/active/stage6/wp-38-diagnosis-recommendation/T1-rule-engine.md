@@ -7,7 +7,7 @@
 | **相依** | T0(落點拍板 + 上游介面覆核) |
 | **Risk / Cplx** | Med(純函式,零新幾何;風險集中在優先序規則與門檻版本化紀律是否落實) |
 | **Touches** | ADD `src/metrics/diagnosisRules.ts`;REUSE `src/metrics/holdClickMetrics.ts`/`trackingDerivation.ts`/`spiderShotMetrics.ts`/`counterstrafeMetrics.ts`(只讀,不改) |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-25 07:04Z) |
 
 ## Objective
 
@@ -30,13 +30,13 @@
 
 ## Steps
 
-- [ ] 定義型別 + `evaluateDiagnosis()` 骨架。
-- [ ] 逐模式實作判定邏輯,對照 README §0-5 的家族輸入對照表。
-- [ ] 優先序規則實作 + 邊界案例測試。
-- [ ] `qualityGateStatus` 短路邏輯 + 測試(品質閘失敗但指標數值正常的案例)。
-- [ ] 單家族案例測試(只有架槍/只有 Spider Shot 資料)。
-- [ ] `analysis-diagnosis.md` 起稿:七模式表 + 優先序規則 + 門檻版本化紀律。
-- [ ] `npx vitest run` 全綠。
+- [x] 定義型別 + `evaluateDiagnosis()` 骨架。
+- [x] 逐模式實作判定邏輯,對照 README §0-5 的家族輸入對照表。
+- [x] 優先序規則實作 + 邊界案例測試。
+- [x] `qualityGateStatus` 短路邏輯 + 測試(品質閘失敗但指標數值正常的案例)。
+- [x] 單家族案例測試(只有架槍/只有 Spider Shot 資料)。
+- [x] `analysis-diagnosis.md` 起稿:七模式表 + 優先序規則 + 門檻版本化紀律。
+- [x] `npx vitest run` 全綠;`npm run test:ci` 完整通過(119 Vitest files / 923 tests;21 Playwright tests)。
 
 ## Definition of Done
 

@@ -8,6 +8,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-24 | WP-34/35/36/37 的 T-exit 列皆為 ✅；重讀 `src/metrics/spiderShotMetrics.ts`、`counterstrafeMetrics.ts` 完成最終介面覆核；D-38.1/D-38.2 定案。零程式碼、零測試異動。 |
+| T1 rule engine | ✅ | 2026-08-25 | 新增純函式 `diagnosisRules.ts`，以版本化注入門檻實作七種模式、quality-gate 短路與 deterministic primary-only 優先序；新增 12 組合成測試，含七模式、重疊證據、品質短路、單家族與門檻邊界。`npm run test:ci` 通過：TypeScript、Vitest 119 files / 923 tests、Playwright 21 tests。 |
 
 ## Decision Log
 
@@ -33,6 +34,22 @@
 
 **T1 requirement:** 以框架表格順序作為候選 deterministic ordering，明確定義每個模式的 evidence/exclusion 與 primary/secondary 的去重規則；至少以 click-timing + fire-commitment 的合成 fixture 覆蓋同時成立案例。此 T0 僅完成初判，未凍結優先序。
 
+### D-38.4 — OQ-S6-24 定案:框架表格順序、第一個完整證據鏈為唯一 primary(2026-08-25,T1)
+
+**Decision:** `evaluateDiagnosis()` 按框架 v1 的七列順序檢查；第一個完整證據鏈產生唯一 `primary`，並排除後續所有模式，`secondary` 保持 absent。
+
+**Rationale:** 規則可以重疊，而「先成立即排除後續」是 T1 的明確要求。primary-only 仍符合 FR-F14「至多一主一次弱項」，且避免將相同表現重複標記為兩種訓練限制。
+
+**Alternatives considered:** 回傳後續第一個模式作為 secondary——未採用：會違反已定義的後續模式排除資格，且增加診斷重複的風險。
+
+### D-38.5 — pilot 前門檻為顯式候選，函式一律注入版本化集合(2026-08-25,T1)
+
+**Decision:** 匯出 `PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS` 只供開發／pilot 前測試；`evaluateDiagnosis()` 不使用隱藏常數，呼叫端必須傳入含 version 的 `DiagnosisThresholds`。
+
+**Rationale:** 門檻校正尚屬 WP-39 範圍。把版本與數值作為輸入，可保存原 session 產出的 recommendation version，避免新門檻追寫舊結論。
+
+**Alternatives considered:** 將數字內嵌於每條規則——未採用：無法建立可追溯版本，也違反 T1/C-D3 門檻注入紀律。
+
 ## Surprises
 
 ### S-38.1 — Python history 候選缺少原先假設的可讀診斷輸出(2026-08-24,T0)
@@ -50,6 +67,6 @@
 | # | 問題 | 狀態 |
 |---|---|---|
 | OQ-S6-23 | 個人歷史資料來源機制(TS 多檔上傳 vs Python 目錄掃描) | ✅ closed — 純 TS 多檔上傳(D-38.2) |
-| OQ-S6-24 | 七模式規則表優先序 | 🟡 T1 定案 — T0 確認非兩兩互斥，候選為框架表格順序(D-38.3) |
+| OQ-S6-24 | 七模式規則表優先序 | ✅ closed — 框架表格順序，第一個完整證據鏈為唯一 primary(D-38.4) |
 | OQ-S6-25 | `recommendationVersion` 與 `protocolVersion` 是否聯動 | 🟢 open(不阻塞開工) |
 | OQ-S6-26 | speed–accuracy trade-off 各家族代表指標 | 🟡 open |
