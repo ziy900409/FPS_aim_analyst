@@ -7,7 +7,7 @@
 | **相依** | T0(概念上;實作本身不需要 T0 判定結果,可並行草擬) |
 | **Risk / Cplx** | Low(零協定依賴的純函式) |
 | **Touches** | 新增 `src/session/sessionSchedule.ts` + `sessionSchedule.test.ts` |
-| **狀態** | ⬜ 待開工 |
+| **狀態** | ✅ 已完成（2026-08-25） |
 
 ## Objective
 
@@ -29,11 +29,11 @@
 
 ## Steps
 
-- [ ] 新增 `TEST_FAMILY_IDS`/`TestFamilyId`。
-- [ ] 實作確定性字串雜湊(純算術,不使用 `crypto`/外部套件)。
-- [ ] 實作 `buildFamilyOrder()`。
-- [ ] 撰寫決定性測試(見 DoD)。
-- [ ] `npm run test:ci` 全綠。
+- [x] 新增 `TEST_FAMILY_IDS`/`TestFamilyId`。
+- [x] 實作確定性字串雜湊(純算術,不使用 `crypto`/外部套件)。
+- [x] 實作 `buildFamilyOrder()`。
+- [x] 撰寫決定性測試(見 DoD)。
+- [x] `npm run test:ci` 全綠。
 
 ## Definition of Done
 

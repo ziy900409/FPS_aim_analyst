@@ -8,7 +8,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-25 | 覆核四個 assessment config、`TargetManager` RNG 消費點與 `CompatibilityKey`；README §0 的結論仍成立，並完成 D-41.1/D-41.2。 |
-| T1 build family order | ⬜ | — | — |
+| T1 build family order | ✅ | 2026-08-25 | Added `TestFamilyId` and deterministic Latin-square `buildFamilyOrder()`; focused unit suite passed (5 tests) and `npm run test:ci` passed (126 Vitest files / 955 tests + Playwright). |
 | T2 condition schedule scope | ⬜ | — | — |
 | T-exit 驗收 + 文件定稿 | ⬜ | — | — |
 

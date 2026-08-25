@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(覆核 §0 讀碼發現;正式拍板 FR-G7 三協定關閉 + Spider Shot 分支去留;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Med |
-| ⬜ | **T1** `sessionSchedule.ts`:`TestFamilyId` + `buildFamilyOrder()`(Latin-square 輪轉)+ 決定性測試 | [T1-build-family-order.md](T1-build-family-order.md) | T0 | Low |
+| ✅ | **T1** `sessionSchedule.ts`:`TestFamilyId` + `buildFamilyOrder()`(Latin-square 輪轉)+ 決定性測試 | [T1-build-family-order.md](T1-build-family-order.md) | T0 | Low |
 | ⬜ | **T2** 依 T0 判定:關閉分支只補文件;採納分支交付 Spider Shot seed 覆寫函式 | [T2-condition-schedule-scope.md](T2-condition-schedule-scope.md) | T0(可與 T1 並行) | Low~Med |
 | ⬜ | **T-exit** 驗收 FR-G6 全綠 + FR-G7 判定已記錄;`npm run test:ci` 全綠;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1 + T2 | — |
 

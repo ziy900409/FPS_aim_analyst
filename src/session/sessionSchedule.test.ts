@@ -1,0 +1,37 @@
+import { describe, expect, it } from 'vitest';
+import { buildFamilyOrder, TEST_FAMILY_IDS } from './sessionSchedule.ts';
+
+describe('buildFamilyOrder', () => {
+  it('returns the same order for the same participant and session', () => {
+    expect(buildFamilyOrder('participant-1', 2)).toEqual(buildFamilyOrder('participant-1', 2));
+  });
+
+  it('uses four distinct rotations that position-balance every family', () => {
+    const orders = [0, 1, 2, 3].map((sessionIndex) => buildFamilyOrder('participant-1', sessionIndex));
+
+    expect(new Set(orders.map((order) => order.join(','))).size).toBe(4);
+    for (let position = 0; position < TEST_FAMILY_IDS.length; position += 1) {
+      expect(new Set(orders.map((order) => order[position]))).toEqual(new Set(TEST_FAMILY_IDS));
+    }
+  });
+
+  it('repeats the rotation every four sessions', () => {
+    for (let sessionIndex = 0; sessionIndex < 4; sessionIndex += 1) {
+      expect(buildFamilyOrder('participant-1', sessionIndex + 4)).toEqual(
+        buildFamilyOrder('participant-1', sessionIndex),
+      );
+    }
+  });
+
+  it('uses different start positions for distinct participant fixtures', () => {
+    expect(buildFamilyOrder('participant-1', 0)).not.toEqual(buildFamilyOrder('participant-2', 0));
+  });
+
+  it('always returns a complete permutation of the test families', () => {
+    for (const participantId of ['participant-1', 'participant-2', 'another-participant']) {
+      const order = buildFamilyOrder(participantId, 100);
+      expect(order).toHaveLength(TEST_FAMILY_IDS.length);
+      expect(new Set(order)).toEqual(new Set(TEST_FAMILY_IDS));
+    }
+  });
+});
