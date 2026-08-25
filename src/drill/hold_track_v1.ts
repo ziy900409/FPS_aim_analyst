@@ -2,6 +2,7 @@ import type { ClearanceOptions, TargetEnvelope } from '../scene/clearance.ts';
 import type { DrillConfig } from './DrillConfig.ts';
 
 const HIDDEN_YAW_DEG = -(Math.asin(2 / 8) * 180) / Math.PI;
+export const HOLD_TRACK_DISTANCE_LEVELS_V1 = { near: 6, mid: 8, far: 10 } as const;
 
 export const HOLD_TRACK_EXPOSED_REST_ENVELOPE: TargetEnvelope = {
   side: 'R',
@@ -34,8 +35,11 @@ export const holdTrackV1: HoldTrackProtocolConfig = {
     mode: 'assessment',
     targets: {
       count: 20,
-      distance: 8,
-      spawnArea: { yawDegRange: [HIDDEN_YAW_DEG, HIDDEN_YAW_DEG], distanceURange: [8, 8] },
+      distance: HOLD_TRACK_DISTANCE_LEVELS_V1.mid,
+      spawnArea: {
+        yawDegRange: [HIDDEN_YAW_DEG, HIDDEN_YAW_DEG],
+        distanceURange: [HOLD_TRACK_DISTANCE_LEVELS_V1.mid, HOLD_TRACK_DISTANCE_LEVELS_V1.mid],
+      },
       motion: { type: 'linear', axis: 'horizontal', range: 4, speed: 4, spawnKind: 'slide-in' },
     },
     sequence: {

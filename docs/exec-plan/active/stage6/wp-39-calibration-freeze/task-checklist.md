@@ -7,7 +7,7 @@
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(驗 WP-33~38 全部 T-exit;彙整 pilot-candidate 清單;開新 OQ-S6-24/25) | [T0-entry-gate.md](T0-entry-gate.md) | WP-33~38 T-exit | Low |
 | ✅ | **T1** `src/pilot/pilotConfigs.ts`:近/中/遠距離、可見門檻候選、Spider Shot 角度範圍、`holdDurationMs`、`assessmentFeedbackPolicy` 候選產生器 + pilot seed roster | [T1-pilot-config-tool.md](T1-pilot-config-tool.md) | T0 | Med |
-| ⬜ | **T2** 凍結機制:`STAGE6_PROTOCOL_VERSION`、`DIAGNOSIS_THRESHOLDS_V1`、四協定 config 定案數值、`DECISIONS.md` 記錄 | [T2-numeric-freeze.md](T2-numeric-freeze.md) | T1 | Med |
+| ✅ | **T2** 凍結機制:`STAGE6_PROTOCOL_VERSION`、`DIAGNOSIS_THRESHOLDS_V1`、四協定 config 定案數值、`DECISIONS.md` 記錄 | [T2-numeric-freeze.md](T2-numeric-freeze.md) | T1 | Med |
 | ⬜ | **T3** `acceptance-stage-f.md` 驗收清單 F + 跨家族一致性回歸測試 | [T3-acceptance-checklist-f.md](T3-acceptance-checklist-f.md) | T2 | Med |
 | ⬜ | **T-exit(M16)** 驗收清單 F 全項通過;`pilot-protocol-stage6.md` 定稿;文件對帳;stage6 狀態翻 ✅ | [T-exit-gate.md](T-exit-gate.md) | T3 | — |
 

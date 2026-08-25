@@ -1,5 +1,8 @@
 import type { DrillConfig } from './DrillConfig.ts';
 
+export const SPIDER_SHOT_ANGULAR_RADIUS_DEG_V1 = 15;
+export const SPIDER_SHOT_HITBOX_V1 = { widthU: 1, heightU: 2, depthU: 1 } as const;
+
 /**
  * Assessment Spider Shot protocol. The fixed values are v1 candidates; WP-39
  * calibrates future condition levels without changing the schedule contract.
@@ -10,7 +13,7 @@ export const spiderShotV1: DrillConfig = {
   targets: {
     count: 20,
     distance: 8,
-    hitbox: { widthU: 1, heightU: 2, depthU: 1 },
+    hitbox: SPIDER_SHOT_HITBOX_V1,
   },
   // Required legacy compatibility field; ignored by the spiderShot branch.
   sequence: { alternation: 'LR' },
@@ -19,7 +22,7 @@ export const spiderShotV1: DrillConfig = {
     seed: 36036,
     centerDistanceU: 8,
     peripheral: {
-      angularRadiusDegRange: [15, 15],
+      angularRadiusDegRange: [SPIDER_SHOT_ANGULAR_RADIUS_DEG_V1, SPIDER_SHOT_ANGULAR_RADIUS_DEG_V1],
       azimuthDegRange: [0, 360],
       distanceURange: [8, 8],
     },

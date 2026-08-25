@@ -52,7 +52,8 @@ import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } fro
 import { loadAssessmentSessionSummaries } from './data/sessionHistoryLoader.ts';
 import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
 import { buildCompatibilityKey, checkQualityGate, deriveSessionId, type QualityGateStatus } from './metrics/compatibilityKey.ts';
-import { evaluateDiagnosis, PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS, type DiagnosisInputs, type DiagnosisResult } from './metrics/diagnosisRules.ts';
+import { evaluateDiagnosis, DIAGNOSIS_THRESHOLDS_V1, type DiagnosisInputs, type DiagnosisResult } from './metrics/diagnosisRules.ts';
+import { STAGE6_BASELINE_MIN_N, STAGE6_BASELINE_WINDOW_SIZE, STAGE6_PROTOCOL_VERSION } from './drill/protocolVersion.ts';
 import { deriveHoldClickMetrics } from './metrics/holdClickMetrics.ts';
 import { deriveTrackingMetrics } from './metrics/trackingDerivation.ts';
 import { buildSessionHistory, type SessionSummary } from './metrics/sessionHistory.ts';
@@ -513,7 +514,7 @@ async function buildCurrentExportPayload(
     ...(activeDrillConfig.mode === 'assessment'
       ? {
           assessment: {
-            protocolVersion: activeDrillConfig.drillId,
+            protocolVersion: STAGE6_PROTOCOL_VERSION,
             assessmentFeedbackPolicy,
           },
         }
@@ -525,7 +526,7 @@ async function buildCurrentExportPayload(
 function diagnosisForPayload(payload: ExportPayload): DiagnosisResult {
   return evaluateDiagnosis(
     diagnosisInputsForPayload(payload),
-    PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS,
+    DIAGNOSIS_THRESHOLDS_V1,
     qualityGateStatusFor(payload),
   );
 }
@@ -533,7 +534,7 @@ function diagnosisForPayload(payload: ExportPayload): DiagnosisResult {
 function sessionSummaryFromPayload(payload: ExportPayload): SessionSummary {
   const qualityGateStatus = qualityGateStatusFor(payload);
   const inputs = diagnosisInputsForPayload(payload);
-  const diagnosis = evaluateDiagnosis(inputs, PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS, qualityGateStatus);
+  const diagnosis = evaluateDiagnosis(inputs, DIAGNOSIS_THRESHOLDS_V1, qualityGateStatus);
   const historyMetrics = historyMetricsFor(payload, inputs);
   return {
     compatibilityKey: buildCompatibilityKey(payload.meta, payload.meta.drillId, targetConditionCell(payload), qualityGateStatus),
@@ -658,7 +659,7 @@ const historyView = createHistoryView({
       return { status: 'insufficient-data', reason: 'Complete an Assessment session before loading history exports.' };
     }
     const past = await loadAssessmentSessionSummaries(files, sessionSummaryFromPayload);
-    return buildSessionHistory(currentHistorySession, past, 5, 3);
+    return buildSessionHistory(currentHistorySession, past, STAGE6_BASELINE_WINDOW_SIZE, STAGE6_BASELINE_MIN_N);
   },
 });
 const resultScreen = createResultScreen({ historyView: historyView.element });

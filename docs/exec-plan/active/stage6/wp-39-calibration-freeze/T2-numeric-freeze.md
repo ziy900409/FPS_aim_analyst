@@ -7,7 +7,7 @@
 | **相依** | T1(pilot 工具已可產生候選配置並收集 pilot 匯出資料) |
 | **Risk / Cplx** | Med / Med(觸碰四個協定 config 與 `main.ts` 版本來源,但皆為既有欄位改值,不改結構) |
 | **Touches** | ADD `STAGE6_PROTOCOL_VERSION` 常數(`src/main.ts` 或新增 `src/drill/protocolVersion.ts`);MODIFY `src/metrics/diagnosisRules.ts`(`DIAGNOSIS_THRESHOLDS_V1`)、`src/drill/hold_click_v1.ts`、`src/drill/hold_track_v1.ts`、`src/drill/spider_shot_v1.ts`、`src/drill/counterstrafe_reversal_v1.ts`;MODIFY `docs/exec-plan/DECISIONS.md` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ (2026-08-25) |
 
 ## Objective
 

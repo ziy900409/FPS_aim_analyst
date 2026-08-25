@@ -23,6 +23,15 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-23 ✅ Stage6 v1 provisional numeric freeze and coordinated release (2026-08-25, WP-39 T2)
+
+| | |
+|---|---|
+| **Decision** | Freeze `STAGE6_PROTOCOL_VERSION = '1.0.0'`, `DIAGNOSIS_THRESHOLDS_V1.version = 'recommendation-v1.0.0'`, baseline window/minimum `5/3`, hold-click/hold-track distance levels `near/mid/far = 6/8/10u` (formal default = mid), Spider Shot `D_deg = 15` with hitbox `1×2×1u` (canonical `W_deg` remains derived from exported geometry), reversal `holdDurationMs = 500`, visibility `N=9` / threshold `0.5`, and default feedback policy `minimal-end-of-block`. All four assessment task ids release together on 2026-08-25. |
+| **Evidence / limitation** | No human pilot export is committed in this repository. Per WP-39 T2, the existing pre-registered candidates are provisionally frozen to validate the release mechanism; a future data-backed change must preserve this record, create a new version string, and cite its pilot sessions/statistic rather than mutate these values in place. |
+| **Alternatives considered** | (1) Leave the candidate version in production until a human study completes: rejected because it prevents a versioned formal baseline and leaves athlete-facing diagnosis marked pilot-only. (2) Freeze each family independently: rejected for this release; one coordinated `1.0.0` makes compatibility behavior unambiguous. (3) Store `W_deg` as a second constant: rejected because `deriveSpiderShotTransitions()` must remain the sole geometry conversion authority. |
+| **Impact** | `main.ts` reads formal version, diagnosis table, and history constants; four protocol configs expose their frozen values as named constants; pilot candidate thresholds stay in source for audit. |
+
 ### GD-22 🟡 stage6 採納 — 個人瞄準能力測試框架 v1:WP-33~39 / M16 + WP-34 獨立 T0 spike(2026-08-19)
 
 | | |

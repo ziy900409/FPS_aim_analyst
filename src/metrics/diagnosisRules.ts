@@ -79,6 +79,12 @@ export const PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS: DiagnosisThresholds = {
   fireCommitmentSlowMs: 250,
 };
 
+/** Formal v1 table. Keep the pilot candidate above as an auditable historical record. */
+export const DIAGNOSIS_THRESHOLDS_V1: DiagnosisThresholds = {
+  ...PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS,
+  version: 'recommendation-v1.0.0',
+};
+
 const TRAINING_DIRECTIONS: Readonly<Record<DiagnosisLabel, string>> = {
   'preaim-placement': '架槍線與弱側位置校準',
   'visual-motor-onset': '隨機 foreperiod 出現偵測',
