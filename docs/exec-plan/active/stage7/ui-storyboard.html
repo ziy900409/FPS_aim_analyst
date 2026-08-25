@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<title>Stage 7 — 前端測試介面故事板</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg-0: #0f1113;
+    --bg-1: #16191d;
+    --bg-2: #1e2227;
+    --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(255,255,255,0.14);
+    --text-hi: #edeff2;
+    --text-mid: #aeb4bc;
+    --text-lo: #6e757e;
+    --accent: #e8285a;
+    --accent-hi: #ff3d6e;
+    --accent-dim: rgba(232,40,90,0.14);
+    --ok: #2ecc71;
+    --ok-dim: rgba(46,204,113,0.14);
+    --warn: #f5a623;
+    --warn-dim: rgba(245,166,35,0.14);
+    --bad: #ff5470;
+    --cat-1: #e83a6a;
+    --cat-2: #f5a623;
+    --cat-3: #3fa9f5;
+    --cat-4: #9b6dff;
+    --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+    --r-card: 12px;
+    --r-control: 8px;
+    --r-pill: 999px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg-0);
+    color: var(--text-hi);
+    font: 400 14px/1.55 var(--font-ui);
+    margin: 0;
+    padding: 0 0 96px 0;
+  }
+
+  a { color: var(--accent-hi); }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 48px 28px 0; }
+
+  /* ---------- page header ---------- */
+  header.page {
+    display: flex; flex-direction: column; gap: 14px;
+    padding-bottom: 32px; margin-bottom: 40px;
+    border-bottom: 1px solid var(--line);
+  }
+  .kicker {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent-hi); font-weight: 700;
+  }
+  h1 { margin: 0; font-size: 30px; line-height: 1.2; letter-spacing: -0.01em; }
+  .lede { color: var(--text-mid); max-width: 720px; font-size: 15px; }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: var(--r-pill);
+    font-size: 11px; letter-spacing: 0.03em; font-weight: 600;
+    border: 1px solid var(--line-strong); color: var(--text-mid);
+    font-family: var(--font-mono);
+  }
+  .badge.mock { color: var(--warn); border-color: rgba(245,166,35,0.35); background: var(--warn-dim); }
+
+  /* ---------- flow tracker ---------- */
+  .tracker {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+    margin-bottom: 56px;
+  }
+  .tracker a { text-decoration: none; }
+  .tracker-step {
+    background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--r-control);
+    padding: 10px 10px 12px; text-align: center; transition: border-color 120ms ease;
+  }
+  .tracker-step:hover { border-color: var(--accent); }
+  .tracker-step .n {
+    font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--accent-hi);
+  }
+  .tracker-step .t { font-size: 10.5px; color: var(--text-mid); margin-top: 2px; line-height: 1.3; }
+
+  /* ---------- step section ---------- */
+  section.step { margin-bottom: 72px; }
+  .step-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; flex-wrap: wrap; }
+  .step-head .idx {
+    font-family: var(--font-mono); font-size: 13px; color: var(--text-lo);
+    border: 1px solid var(--line-strong); border-radius: var(--r-control);
+    padding: 2px 8px;
+  }
+  .step-head h2 { margin: 0; font-size: 19px; }
+  .wp-tag {
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;
+    padding: 2px 8px; border-radius: var(--r-pill); letter-spacing: 0.02em;
+  }
+  .wp-40 { color: var(--cat-3); background: rgba(63,169,245,0.14); }
+  .wp-41 { color: var(--cat-4); background: rgba(155,109,255,0.14); }
+  .wp-42 { color: var(--cat-1); background: var(--accent-dim); }
+  .wp-existing { color: var(--text-lo); background: rgba(255,255,255,0.06); }
+
+  .step-desc { color: var(--text-mid); font-size: 13.5px; max-width: 760px; margin: 6px 0 20px; }
+  .step-desc code { font-family: var(--font-mono); font-size: 12px; color: var(--text-hi); background: var(--bg-2); padding: 1px 5px; border-radius: 4px; }
+
+  /* ---------- device frame ---------- */
+  .frame {
+    background: var(--bg-1); border: 1px solid var(--line-strong); border-radius: 14px;
+    overflow: hidden; box-shadow: 0 20px 48px rgba(0,0,0,0.35);
+  }
+  .frame .chrome {
+    background: var(--bg-2); padding: 9px 14px; display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .frame .chrome .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); }
+  .frame .chrome .title {
+    margin-left: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-lo);
+  }
+  .frame .screen { padding: 24px; background: var(--bg-0); }
+
+  .annotation {
+    margin-top: 14px; padding: 12px 16px; background: var(--bg-1); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); border-radius: 8px; font-size: 12.5px; color: var(--text-mid);
+  }
+  .annotation b { color: var(--text-hi); }
+
+  /* ---------- shared mock components ---------- */
+  .label { font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-lo); }
+  .metric-value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-hi); }
+
+  .card {
+    background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: 16px 18px;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+  .stat-card .label { margin-bottom: 6px; }
+  .stat-card .val { font: 750 20px/1.15 var(--font-mono); }
+  .stat-card .detail { margin-top: 6px; color: var(--text-mid); font-size: 12px; }
+  .stat-card.warn { border-color: rgba(245,166,35,0.4); background: linear-gradient(180deg, var(--warn-dim), var(--bg-1) 60%); }
+  .stat-card.warn .val { color: var(--warn); }
+  .stat-card.ok .val { color: var(--ok); }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700; letter-spacing: 0.02em; }
+  .pill.ok { color: #06331d; background: var(--ok); }
+  .pill.warn { color: #382200; background: var(--warn); }
+  .pill.assessment { color: var(--text-hi); background: var(--accent); }
+  .pill.practice { color: var(--text-hi); background: rgba(255,255,255,0.12); border: 1px solid var(--line-strong); }
+  .pill.rest { color: var(--text-hi); background: var(--cat-3); }
+
+  .btn {
+    font: 600 12.5px var(--font-ui); padding: 9px 16px; border-radius: var(--r-control);
+    border: 1px solid var(--line-strong); background: transparent; color: var(--text-hi); cursor: default;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); }
+
+  /* step 1: session plan overview */
+  .plan-list { display: flex; flex-direction: column; gap: 8px; }
+  .plan-row {
+    display: grid; grid-template-columns: 28px 1fr auto auto; align-items: center; gap: 14px;
+    padding: 12px 14px; background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px;
+  }
+  .plan-row.active { border-color: var(--accent); background: linear-gradient(90deg, var(--accent-dim), var(--bg-1) 40%); }
+  .plan-row.rest-row { background: var(--bg-2); border-style: dashed; }
+  .plan-idx { font-family: var(--font-mono); color: var(--text-lo); font-size: 12px; }
+  .plan-name { font-weight: 600; }
+  .plan-sub { color: var(--text-mid); font-size: 11.5px; margin-top: 2px; }
+
+  /* step 3: rest overlay */
+  .rest-overlay {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 56px 0; text-align: center;
+  }
+  .rest-timer { font: 700 64px/1 var(--font-mono); color: var(--text-hi); letter-spacing: -0.02em; }
+  .rest-timer .unit { font-size: 22px; color: var(--text-lo); margin-left: 6px; }
+
+  /* step 4: live hud strip */
+  .hud-strip {
+    display: flex; align-items: center; gap: 18px; padding: 10px 16px;
+    background: rgba(15,17,19,0.88); border: 1px solid var(--line); border-radius: 10px;
+    font-family: var(--font-mono); font-size: 12px;
+  }
+  .hud-strip .seg { display: flex; flex-direction: column; gap: 2px; }
+  .hud-strip .seg .k { color: var(--text-lo); font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--font-ui); }
+  .hud-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); display: inline-block; margin-right: 5px; }
+
+  /* trace svg (signature element, small) */
+  .trace-wrap { background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px 18px 8px; }
+
+  table.compare { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.compare th, table.compare td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  table.compare th { color: var(--text-lo); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+  table.compare td.no { color: var(--bad); }
+  table.compare td.yes { color: var(--ok); }
+
+  footer.page { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--text-lo); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <div class="kicker">Stage 7 — 提案設計稿</div>
+    <h1>選手測試流程前端 · 使用流程故事板</h1>
+    <p class="lede">
+      這份文件描繪 <code>docs/exec-plan/active/stage7/README.md</code> 提案完成後，測試操作者實際會看到什麼畫面、按什麼順序操作。
+      每個畫面標注對應的 WP，方便對照提案裡的任務拆解一起審。
+    </p>
+    <div class="badge-row">
+      <span class="badge mock">⚠ 非最終畫面 — 設計 mock，未接程式邏輯</span>
+      <span class="badge">依循 aim-analyst-ui design tokens</span>
+      <span class="badge">對應 stage7 README.md WP-40 / WP-41 / WP-42</span>
+    </div>
+  </header>
+
+  <nav class="tracker">
+    <a href="#step0"><div class="tracker-step"><div class="n">0</div><div class="t">環境 &amp; metadata</div></div></a>
+    <a href="#step1"><div class="tracker-step"><div class="n">1</div><div class="t">Session Plan 總覽</div></div></a>
+    <a href="#step2"><div class="tracker-step"><div class="n">2</div><div class="t">熱身 Practice</div></div></a>
+    <a href="#step3"><div class="tracker-step"><div class="n">3</div><div class="t">家族進行中</div></div></a>
+    <a href="#step4"><div class="tracker-step"><div class="n">4</div><div class="t">休息倒數</div></div></a>
+    <a href="#step5"><div class="tracker-step"><div class="n">5</div><div class="t">單次結果 + Quality Gate</div></div></a>
+    <a href="#step6"><div class="tracker-step"><div class="n">6</div><div class="t">收操 + Session History</div></div></a>
+  </nav>
+
+  <!-- ================= STEP 0 ================= -->
+  <section class="step" id="step0">
+    <div class="step-head">
+      <span class="idx">STEP 0</span>
+      <h2>環境資格閘 + 一次性 Metadata（新增 DPI）</h2>
+      <span class="wp-tag wp-40">WP-40 · FR-G2</span>
+    </div>
+    <p class="step-desc">
+      沿用既有 <code>EligibilityGate</code>（crossOriginIsolated / fullscreen 檢查不變）。表單新增一格 <code>DPI</code>，
+      additive 欄位、不影響既有 <code>sensitivity</code>/<code>fovDeg</code>/<code>displayHz</code> 匯出。
+    </p>
+    <div class="frame">
+      <div class="chrome"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="title">session-setup.html</div></div>
+      <div class="screen">
+        <div class="card" style="max-width:520px;margin:0 auto;">
+          <div class="label" style="margin-bottom:14px;">Session setup</div>
+          <div class="card-grid" style="grid-template-columns:1fr 1fr;">
+            <div><div class="label">Participant ID</div><div class="metric-value" style="margin-top:4px;">P-0142</div></div>
+            <div><div class="label">Sensitivity</div><div class="metric-value" style="margin-top:4px;">2.10 · 0.022°/count</div></div>
+            <div><div class="label">FOV</div><div class="metric-value" style="margin-top:4px;">103°</div></div>
+            <div><div class="label">Refresh rate</div><div class="metric-value" style="margin-top:4px;">240 Hz</div></div>
+            <div style="border:1px solid var(--accent);border-radius:8px;padding:8px 10px;background:var(--accent-dim);">
+              <div class="label" style="color:var(--accent-hi);">DPI <span style="font-weight:700;">· new</span></div>
+              <div class="metric-value" style="margin-top:4px;">800</div>
+            </div>
+            <div><div class="label">gameMovementProfile</div><div class="metric-value" style="margin-top:4px;">cs2-source</div></div>
+          </div>
+          <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+            <button class="btn primary">Start session →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <b>與現況差異：</b> DPI 目前完全沒有欄位（<code>rg "dpi" src</code> 零命中）。其餘欄位皆已存在，僅示意排版。
+    </div>
+  </section>
+
+  <!-- ================= STEP 1 ================= -->
+  <section class="step" id="step1">
+    <div class="step-head">
+      <span class="idx">STEP 1</span>
+      <h2>Session Plan 總覽（家族順序由 seeded counterbalance 產生）</h2>
+      <span class="wp-tag wp-41">WP-41 · FR-G6</span>
+      <span class="wp-tag wp-42">WP-42 · FR-G3/FR-G4</span>
+    </div>
+    <p class="step-desc">
+      這是全新畫面——現況沒有任何頁面能一次看到「這場 session 要跑什麼順序」。順序由 <code>buildFamilyOrder(participantId, sessionIndex)</code> 決定性產生；
+      本例 <code>sessionIndex = 3</code>，順序恰好與最近一次不同，避免同一家族總是排最後。
+    </p>
+    <div class="frame">
+      <div class="chrome"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="title">session-runner.html — plan overview</div></div>
+      <div class="screen">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+          <div>
+            <div class="label">Session #3 · P-0142</div>
+            <div style="font-size:15px;font-weight:600;margin-top:2px;">今日排程（seed 衍生，可重現）</div>
+          </div>
+          <span class="pill practice" style="background:var(--bg-2);">family order seed: 90142-03</span>
+        </div>
+
+        <div class="card" style="margin-bottom:18px;">
+          <div class="label" style="margin-bottom:12px;">開始前可設定（FR-G9）</div>
+          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:24px;">
+            <div>
+              <div class="label" style="margin-bottom:8px;color:var(--text-mid);">家族子集 <span style="color:var(--ok);">· 自由勾選</span></div>
+              <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;">
+                <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" checked disabled /> Spider Shot</label>
+                <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" checked disabled /> 急停（cued）</label>
+                <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" checked disabled /> 架槍（hold-click）</label>
+                <label style="display:flex;align-items:center;gap:8px;opacity:0.55;"><input type="checkbox" disabled /> 架槍（hold-track）<span class="label" style="margin-left:4px;">— 本次不跑（聚焦診斷）</span></label>
+              </div>
+            </div>
+            <div>
+              <div class="label" style="margin-bottom:8px;color:var(--text-mid);">Session-plan preset <span style="color:var(--warn);">· 只能選，不能填數字</span></div>
+              <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-2);border:1px solid var(--line-strong);border-radius:var(--r-control);font-family:var(--font-mono);font-size:12.5px;">
+                <span>pilot-default</span>
+                <span style="margin-left:auto;color:var(--text-lo);">▾</span>
+              </div>
+              <div class="detail" style="margin-top:8px;color:var(--text-mid);font-size:11.5px;">8–12 trial／格 · 90s 休息 · 沿用 stage6 pilot 常數</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="plan-list">
+          <div class="plan-row">
+            <div class="plan-idx">00</div>
+            <div><div class="plan-name">熱身（Practice）</div><div class="plan-sub">counterstrafe-free-v1 · 不記錄，手感回溫</div></div>
+            <span class="pill practice">PRACTICE</span>
+            <span class="label">3–5 min</span>
+          </div>
+          <div class="plan-row active">
+            <div class="plan-idx">01</div>
+            <div><div class="plan-name">Spider Shot</div><div class="plan-sub">spider-shot-v1 · 象限 × D_deg/W_deg 條件格</div></div>
+            <span class="pill assessment">ASSESSMENT</span>
+            <span class="label">進行中</span>
+          </div>
+          <div class="plan-row rest-row">
+            <div class="plan-idx">—</div>
+            <div><div class="plan-name" style="color:var(--text-mid);">休息</div></div>
+            <span class="pill rest">REST</span>
+            <span class="label">90 s</span>
+          </div>
+          <div class="plan-row">
+            <div class="plan-idx">02</div>
+            <div><div class="plan-name">急停（cued）</div><div class="plan-sub">counterstrafe-cued-v1 · 每側 8–12 trial</div></div>
+            <span class="pill" style="background:var(--bg-2);color:var(--text-mid);">待開始</span>
+            <span class="label">—</span>
+          </div>
+          <div class="plan-row rest-row">
+            <div class="plan-idx">—</div>
+            <div><div class="plan-name" style="color:var(--text-mid);">休息</div></div>
+            <span class="pill rest">REST</span>
+            <span class="label">90 s</span>
+          </div>
+          <div class="plan-row">
+            <div class="plan-idx">03</div>
+            <div><div class="plan-name">架槍（hold-click）</div><div class="plan-sub">hold-click-v1 · L/R × 近/中/遠</div></div>
+            <span class="pill" style="background:var(--bg-2);color:var(--text-mid);">待開始</span>
+            <span class="label">—</span>
+          </div>
+          <div class="plan-row" style="opacity:0.4;">
+            <div class="plan-idx">✕</div>
+            <div><div class="plan-name">架槍（hold-track）</div><div class="plan-sub">未勾選 · 本次不排入 session plan</div></div>
+            <span class="pill" style="background:var(--bg-2);color:var(--text-lo);">已排除</span>
+            <span class="label">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <b>與現況差異：</b> 現況沒有這一層——測試者要自己記得「下一個跑哪個 drill」。此畫面把家族順序、休息秒數、目前進度收斂到單一總覽。
+      <b>FR-G7 提醒：</b>家族<b>內</b>條件（如 Spider Shot 象限順序）是否也走這一層區塊隨機化，待 WP-41 T0 讀碼判定，本畫面暫不預先假設已解決。
+      <br /><br />
+      <b>FR-G9（本次新增）：</b>兩類可調性刻意不對稱——<b style="color:var(--ok);">家族子集</b>可自由勾選（不動任何凍結數值，本例排除了 hold-track，SOP 本身允許「聚焦診斷可只跑部分家族」）；
+      <b style="color:var(--warn);">trial 數／休息秒數</b>只能從既有具名 preset 選，**不提供自由數字輸入框**——開放任意數字會讓相容比較鍵漏掉這個維度、也會重開「調參數到資料好看為止」的門（GD-20 要防的事）。所選 preset 會 additive 寫入匯出 metadata。
+    </div>
+  </section>
+
+  <!-- ================= STEP 2 ================= -->
+  <section class="step" id="step2">
+    <div class="step-head">
+      <span class="idx">STEP 2</span>
+      <h2>熱身（Practice）進行中 — 不記錄</h2>
+      <span class="wp-tag wp-42">WP-42 · FR-G4</span>
+      <span class="wp-tag wp-existing">既有 live HUD 不變</span>
+    </div>
+    <p class="step-desc">
+      Session plan 的第一步預設載入已存在的 Practice 變體（本例 <code>counterstrafe-free-v1</code>）。live HUD 本身完全沿用既有元件，
+      唯一新增的是角落一個小標籤，讓操作者確認「現在這筆不會進正式歷史」。
+    </p>
+    <div class="frame">
+      <div class="chrome"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="title">live HUD — practice mode</div></div>
+      <div class="screen" style="background:radial-gradient(ellipse at 50% 40%, #1a2530 0%, #0a0c0d 70%);min-height:220px;position:relative;">
+        <div style="position:absolute;top:14px;left:14px;" class="pill practice">PRACTICE · not recorded</div>
+        <div style="position:absolute;top:14px;right:14px;" class="hud-strip" style="padding:6px 12px;">
+          <span class="hud-dot"></span><span style="color:var(--text-mid);">warmup 02:14</span>
+        </div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border:1.5px solid var(--text-mid);border-radius:50%;"></div>
+      </div>
+    </div>
+    <div class="annotation">
+      <b>與現況差異：</b>熱身步驟需要對應家族已有 Practice 變體才能直接沿用——目前只確認 <code>counterstrafe-free-v1</code> 存在，
+      其餘三家族是否需要補一個 Practice 變體列為 <b>OQ-S7-2</b>，本畫面示意成立情境。
+    </div>
+  </section>
+
+  <!-- ================= STEP 3 ================= -->
+  <section class="step" id="step3">
+    <div class="step-head">
+      <span class="idx">STEP 3</span>
+      <h2>家族進行中 — 最小化 Session 進度列</h2>
+      <span class="wp-tag wp-42">WP-42</span>
+      <span class="wp-tag wp-existing">既有 live HUD 不變</span>
+    </div>
+    <p class="step-desc">
+      量測進行中維持「不干擾、零 layout thrash」紀律（live HUD 既有原則）——進度列只是一條細長 mono 文字條，不作動畫、不重排版面。
+    </p>
+    <div class="frame">
+      <div class="chrome"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="title">live HUD — assessment in progress</div></div>
+      <div class="screen" style="background:#0a0c0d;min-height:180px;position:relative;">
+        <div style="position:absolute;top:14px;left:14px;right:14px;" class="hud-strip">
+          <div class="seg"><span class="k">Family</span><span>2 / 4 · Spider Shot</span></div>
+          <div class="seg"><span class="k">Mode</span><span style="color:var(--accent-hi);">Assessment</span></div>
+          <div class="seg"><span class="k">Trial</span><span>07 / 40</span></div>
+          <div class="seg"><span class="k">Condition</span><span>NE · D14° · W6°</span></div>
+        </div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border:1.5px solid var(--text-mid);border-radius:50%;"></div>
+      </div>
+    </div>
+    <div class="annotation">
+      <b>邊界：</b>此列只讀既有 <code>DrillConfig</code>/session plan 狀態顯示，不讀寫 <code>SharedState</code> 或 sim tick——與 GD-6 精神一致，orchestrator 不得變成第二套引擎邏輯。
+    </div>
+  </section>
+
+  <!-- ================= STEP 4 ================= -->
+  <section class="step" id="step4">
+    <div class="step-head">
+      <span class="idx">STEP 4</span>
+      <h2>家族間休息 — 倒數 Overlay</h2>
+      <span class="wp-tag wp-42">WP-42 · FR-G5</span>
+    </div>
+    <p class="step-desc">
+      家族之間強制休息，計時用 <code>performance.now()</code>（禁 <code>Date.now()</code>），期間不寫入任何匯出/sim 狀態。
+    </p>
+    <div class="frame">
+      <div class="chrome"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="title">rest-overlay.html</div></div>
+      <div class="screen">
+        <div class="rest-overlay">
+          <div class="label">Rest before next family</div>
+          <div class="rest-timer">47<span class="unit">s</span></div>
+          <div style="color:var(--text-mid);font-size:13px;">接下來：<b style="color:var(--text-hi);">急停（cued）· counterstrafe-cued-v1</b></div>
+          <button class="btn" style="margin-top:8px;">Skip rest（研究者選配，預設隱藏）</button>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <b>設計取捨：</b>「跳過休息」預設不出現在畫面上——SOP 明文休息是為了避免疲勞系統性偏誤，若允許操作者隨手跳過會侵蝕這個設計初衷；
+      是否保留為研究者專用選配見提案 <b>OQ-S7-3</b>。
+    </div>
+  </section>
+
+  <!-- ================= STEP 5 ================= -->
+  <section class="step" id="step5">
+    <div class="step-head">
+      <span class="idx">STEP 5</span>
+      <h2>單次 Drill 結果頁 — Quality Gate 卡片動態化</h2>
+      <span class="wp-tag wp-40">WP-40 · FR-G1</span>
+      <span class="wp-tag wp-existing">其餘卡片沿用既有 ResultScreen</span>
+    </div>
+    <p class="step-desc">
+      現況 <code>ResultScreen.ts:383</code> 的 quality-gate 卡片 <b>值寫死成 <code>'ok'</code></b>。下方左右兩張卡示意同一元件在
+      「乾淨資料」與「觸發旗標」兩種情境下應該長什麼樣——不是新元件，是既有 <code>createDiagnosisSummary</code> 卡片讀真實值後的兩種狀態。
+    </p>
+    <div class="frame">
+      <div class="chrome"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="title">result-screen.html — after drill</div></div>
+      <div class="screen">
+        <div class="card-grid" style="margin-bottom:14px;">
+          <div class="card stat-card">
+            <div class="label">Primary training limitation</div>
+            <div class="val" style="font-size:15px;">Counter-input latency</div>
+            <div class="detail">L side median 182 ms vs R 141 ms</div>
+          </div>
+          <div class="card stat-card">
+            <div class="label">Recommendation rules</div>
+            <div class="val" style="font-size:15px;">recommendation-v1.0.0</div>
+            <div class="detail">Versioned rule set used to interpret this session.</div>
+          </div>
+          <div class="card stat-card ok">
+            <div class="label">Quality gate</div>
+            <div class="val">OK</div>
+            <div class="detail">0 late events · 0 overflow · not suspect</div>
+          </div>
+        </div>
+        <div class="label" style="margin:22px 0 8px;">同一張卡，換一批資料 →</div>
+        <div class="card-grid">
+          <div class="card stat-card">
+            <div class="label">Primary training limitation</div>
+            <div class="val" style="font-size:15px;color:var(--text-lo);">—</div>
+            <div class="detail">Suppressed pending quality review below</div>
+          </div>
+          <div class="card stat-card">
+            <div class="label">Recommendation rules</div>
+            <div class="val" style="font-size:15px;">recommendation-v1.0.0</div>
+            <div class="detail">Versioned rule set used to interpret this session.</div>
+          </div>
+          <div class="card stat-card warn">
+            <div class="label">Quality gate <span class="pill warn" style="margin-left:6px;">WARN</span></div>
+            <div class="val">3 flags</div>
+            <div class="detail">lateEventCount=3 · bufferOverflow=false · suspect=true</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="annotation">
+      <b>與現況差異：</b>右側「WARN」狀態現在完全看不到——旗標只存在匯出 JSON 裡。這是整個提案裡優先序最高、成本最低的一項（WP-40）。
+    </div>
+  </section>
+
+  <!-- ================= STEP 6 ================= -->
+  <section class="step" id="step6">
+    <div class="step-head">
+      <span class="idx">STEP 6</span>
+      <h2>收操 + 個人 Session History</h2>
+      <span class="wp-tag wp-existing">既有 HistoryView.ts，本提案不擴充</span>
+    </div>
+    <p class="step-desc">
+      WP-38 已交付的 <code>HistoryView.ts</code> 維持原樣：手動選多個匯出 JSON、看相容 session 的中位數/變異，
+      刻意沒有趨勢箭頭與持久化（C-D3 精神）。本提案不在此擴充，只是讓整場 session 結束後很自然地導向這個既有畫面。
+    </p>
+    <div class="frame">
+      <div class="chrome"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="title">history-view.html — 既有元件，僅供銜接示意</div></div>
+      <div class="screen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="label">Session 完成 — 選擇相容歷史檔案比較</div>
+          <button class="btn">+ Add exported session file</button>
+        </div>
+        <table class="compare">
+          <thead><tr><th>指標</th><th>方向</th><th>本次</th><th>近 3 session 中位數</th><th>變異</th></tr></thead>
+          <tbody>
+            <tr><td>Spider Shot 首發命中率</td><td>higher → good</td><td class="metric-value">71.2%</td><td class="metric-value">68.4%</td><td class="metric-value">±4.1</td></tr>
+            <tr><td>急停制動時間</td><td>lower → good</td><td class="metric-value">214 ms</td><td class="metric-value">228 ms</td><td class="metric-value">±19</td></tr>
+            <tr><td>L/R 對稱性</td><td>consistent → good</td><td class="metric-value">Δ12 ms</td><td class="metric-value">Δ18 ms</td><td class="metric-value">±6</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="annotation">
+      <b>邊界：</b>此畫面既有交付，不在 stage7 範圍內修改；放在故事板最後只是讓「一整場流程」有始有終。
+    </div>
+  </section>
+
+  <!-- ================= SUMMARY ================= -->
+  <section class="step">
+    <div class="step-head"><h2 style="margin:0;">現況 vs Stage 7 完成後</h2></div>
+    <table class="compare">
+      <thead><tr><th>能力</th><th>現況</th><th>Stage 7 後</th></tr></thead>
+      <tbody>
+        <tr><td>家族→休息→家族排程</td><td class="no">✕ 不存在，手動記順序</td><td class="yes">✓ Session Plan 總覽自動推進</td></tr>
+        <tr><td>家族順序抗疲勞偏誤</td><td class="no">✕ 無隨機化</td><td class="yes">✓ seeded 決定性輪替</td></tr>
+        <tr><td>Quality flag 即時可見</td><td class="no">✕ 卡片寫死 'ok'</td><td class="yes">✓ 動態讀真實旗標 + WARN 狀態</td></tr>
+        <tr><td>休息計時</td><td class="no">✕ 靠操作者自己看錶</td><td class="yes">✓ 倒數 overlay，禁用 Date.now()</td></tr>
+        <tr><td>DPI metadata</td><td class="no">✕ 無欄位</td><td class="yes">✓ additive 欄位</td></tr>
+        <tr><td>個人 session history</td><td class="yes" style="color:var(--text-mid);">既有 HistoryView.ts（手動、無趨勢箭頭，刻意如此）</td><td class="yes" style="color:var(--text-mid);">不變</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="page">
+    對應提案：<code>docs/exec-plan/active/stage7/README.md</code>（🟡 提案待審）。本檔為靜態設計 mock，無互動邏輯，僅供畫面與流程審閱。
+  </footer>
+
+</div>
+</body>
+</html>
