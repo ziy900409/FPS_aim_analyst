@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(覆核 §0 讀碼發現;正式拍板引擎選擇/availableDrills 缺口範圍/熱身降級語意;關閉 OQ-S7-2;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Med |
+| ✅ | **T0** entry gate(覆核 §0 讀碼發現;正式拍板引擎選擇/availableDrills 缺口範圍/熱身降級語意;關閉 OQ-S7-2;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Med |
 | ⬜ | **T1** `availableDrills` 補三個缺口 config;`SessionPlan`/`sessionPlanPresets.ts`/`SessionRunner`(手動固定順序)+ 熱身降級;`SessionPlanSetup.ts`;`main.ts` 接線;`metadata.ts` additive `sessionPlanPreset` | [T1-session-plan-runner.md](T1-session-plan-runner.md) | T0 | **Med–High** |
 | ⬜ | **T2** `RestOverlay.ts` + `SessionRunner.poll(nowMs)` 接入既有 renderLoop | [T2-rest-overlay.md](T2-rest-overlay.md) | T1 | Low |
 | ⬜ | **T3** 接入 WP-41 `buildFamilyOrder()`,取代手動固定順序 | [T3-family-order-wiring.md](T3-family-order-wiring.md) | T1 + WP-41 T-exit | Low |
