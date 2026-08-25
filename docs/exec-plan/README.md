@@ -125,7 +125,7 @@
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
 | **WP-40** | `active/stage7/wp-40-quality-flag-visibility/`(⬜ 待展開) | `ResultScreen` quality-gate 卡片動態化(讀真實旗標,取代硬編 `'ok'`)+ metadata 補 DPI 欄位 | — | 無(獨立) | 1–1.5 | ⬜ 待展開 |
-| **WP-41** | `active/stage7/wp-41-seeded-counterbalance/`(⬜ 待展開) | 純函式 `buildFamilyOrder`:決定性家族順序;家族內條件排程範圍待 T0 判定(FR-G7) | — | 無(獨立,可與 WP-40 並行) | 1–2 | ⬜ 待展開 |
+| **WP-41** | [`active/stage7/wp-41-seeded-counterbalance/`](active/stage7/wp-41-seeded-counterbalance/README.md) | 純函式 `buildFamilyOrder`:決定性家族順序;FR-G7 判定關閉(記錄現況,不實作二次排程) | — | 無(獨立,可與 WP-40 並行) | 1–2 | ✅ |
 | **WP-42** | `active/stage7/wp-42-session-orchestrator/`(⬜ 待展開) | `SessionRunner`:session plan 狀態機 + 休息 overlay + 熱身步驟 + 家族子集/preset 選擇(FR-G9);T3 接入 WP-41 排程 | **M17** | WP-41(僅 T3 接線相依) | 2–3 | ⬜ 待展開 |
 
 ---

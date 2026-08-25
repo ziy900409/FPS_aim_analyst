@@ -10,7 +10,7 @@
 | **相依** | 無(獨立;stage7 README §5 標記可與 WP-40/42 T0~T2 並行) |
 | **對應 FR** | FR-G6 + FR-G7 |
 | **估時** | 1–2 dev-days([../README.md §3](../README.md);依 T0 對 FR-G7 的判定範圍浮動) |
-| **狀態** | ⬜ 待開工(本檔為 T0 展開前的規劃稿,依 stage4/stage6/WP-40 慣例) |
+| **狀態** | ✅ 完成(2026-08-25;T0~T-exit 全數交付,詳見 [progress.md](progress.md)) |
 
 ---
 
@@ -198,7 +198,7 @@ export function withOverriddenSpiderShotSeed(config: DrillConfig, seed: number):
 
 ## 8. 文件對帳清單
 
-- [ ] [../README.md](../README.md) §3:WP-41 狀態列更新為已展開/完成進度。
-- [ ] [CONTEXT.md](../../../../CONTEXT.md):新術語(`TestFamilyId`、`buildFamilyOrder`)於 T-exit 回寫(§L 已被 WP-40 佔用,需與 WP-40 T-exit 協調實際章節號,見 [wp-40 OQ-S7-8](../wp-40-quality-flag-visibility/README.md#7-open-questions))。
-- [ ] `docs/operational/*.md`:FR-G7 判定記錄(可行則新增契約,不可行則記錄關閉理由 + 本檔 §0 讀碼證據的精簡版)。
-- [ ] [DECISIONS.md](../../../DECISIONS.md):若 T0 判定 Spider Shot 覆寫分支採納且被認為有跨 WP 影響(例如需要 WP-42 配合呈現),另開 GD 條目;目前預期不需要,留待 T0 覆核。
+- [x] [../README.md](../README.md) §3:WP-41 狀態列更新為 ✅ 完成;§7 OQ-S7-1 正式關閉。(2026-08-25)
+- [x] [CONTEXT.md](../../../../CONTEXT.md):新術語(`TestFamilyId`、`buildFamilyOrder`)於 T-exit 回寫為 **§M**(§L 已被 WP-40 佔用,WP-42 續接 §N)。(2026-08-25)
+- [x] `docs/operational/analysis-spider-shot.md`:FR-G7 判定記錄(T2 已完成,關閉理由 + 讀碼證據)。
+- [x] [DECISIONS.md](../../../DECISIONS.md):覆核後判定不需要另開 GD 條目——Spider Shot 覆寫分支未採納(D-41.2),無跨 WP 影響。

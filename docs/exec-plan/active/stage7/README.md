@@ -147,7 +147,7 @@ FR-G9 的核心是**不對稱的可調性**,不是「這個畫面能不能編輯
 | WP | 子資料夾(各 WP T0 時展開) | 目標 | 優先序 | 里程碑 | 相依 | 估時(粗估) | 狀態 |
 |---|---|---|---|---|---|---|---|
 | **WP-40** | [`wp-40-quality-flag-visibility/`](wp-40-quality-flag-visibility/README.md)(✅ 完成) | `ResultScreen` quality-gate 卡片動態化(讀真實旗標)+ metadata 補 DPI 欄位 | 1 | — | 無(獨立) | 1–1.5d | ✅ 完成 |
-| **WP-41** | [`wp-41-seeded-counterbalance/`](wp-41-seeded-counterbalance/README.md)(🟡 已展開,待 T0) | 純函式:`buildFamilyOrder` 決定性家族順序;家族內條件排程範圍待 T0 判定(FR-G7) | 2 | — | 無(獨立,可與 WP-40 並行) | 1–2d(依 T0 判定範圍浮動) | 🟡 已展開,待 T0 |
+| **WP-41** | [`wp-41-seeded-counterbalance/`](wp-41-seeded-counterbalance/README.md)(✅ 完成) | 純函式:`buildFamilyOrder` 決定性家族順序;FR-G7 判定關閉(記錄現況,不實作二次排程) | 2 | — | 無(獨立,可與 WP-40 並行) | 1–2d(依 T0 判定範圍浮動) | ✅ 完成 |
 | **WP-42** | [`wp-42-session-orchestrator/`](wp-42-session-orchestrator/README.md)(🟡 已展開,待 T0) | `SessionRunner`:session plan 狀態機 + 休息 overlay + 熱身步驟 + 家族子集/preset 選擇(FR-G9);T3 接入 WP-41 排程 | 3 | **M17** | WP-41(僅 T3 接線相依;T0~T2 可用手動固定順序先行) | 規劃稿原估 2–3d;WP-42 T0 讀碼發現 `availableDrills` 可達性缺口(見 [wp-42 README §0-2](wp-42-session-orchestrator/README.md#0-讀碼對帳規劃階段2026-08-25決定本-wp-淨新增工作量)),上修為 3–4.5d | 🟡 已展開,待 T0 |
 
 **合計估時(粗估,未讀碼)**:4–6.5 dev-days。各 WP 展開時需自己的 T0 entry-gate 讀碼覆核此估時(比照 stage4/stage6 慣例,規劃稿估時不是承諾)。
@@ -212,7 +212,7 @@ WP-42 T0~T2(手動固定順序骨架,不等 WP-41)──────────
 
 | # | 問題 | 建議 / 待決 | Owner | 未決影響 |
 |---|---|---|---|---|
-| **OQ-S7-1** | 四個協定的既有 seed 是否已經決定「家族內條件呈現順序」,使 FR-G7(外部區塊隨機化)與協定既有決定性測試衝突 | WP-41 T0 讀碼後拍板;若衝突,縮小 FR-G7 範圍為「記錄現況」 | 研究者 | 決定 WP-41 的實際交付範圍與估時 |
+| ~~**OQ-S7-1**~~ | ~~四個協定的既有 seed 是否已經決定「家族內條件呈現順序」,使 FR-G7(外部區塊隨機化)與協定既有決定性測試衝突~~ | ✅ **關閉(2026-08-25,WP-41 T0/T-exit)**:三協定(hold-click/hold-track/counterstrafe)無可排序維度,seed 只影響 spawn 延遲抖動;Spider Shot 雖有真實 azimuth 隨機性,但覆寫價值不足以納入本 WP 範圍。詳見 [wp-41 progress.md D-41.1/D-41.2](wp-41-seeded-counterbalance/progress.md) | 研究者 | unblocked;WP-41 交付範圍收斂為僅 FR-G6 |
 | **OQ-S7-2** | `hold-track`/`spider-shot`/`counterstrafe-cued` 是否需要新增 Practice-mode `DrillConfig` 變體供熱身使用 | WP-42 T0 讀碼盤點;若需要,工程量另計,不隱藏在本階段估時內 | 研究者 | 決定熱身步驟的實際涵蓋範圍 |
 | ~~**OQ-S7-3**~~ | ~~Session plan 的休息秒數/trial 數是否要與 stage6 WP-39 的 pilot-candidate 常數共用同一個「pilot 態」標記機制,還是各自獨立管理~~ | ✅ **關閉(2026-08-25,採納時拍板)**:獨立管理——orchestration 參數(休息秒數/家族清單)與協定校準參數(D_deg/holdDurationMs 等)是不同層級的數值,共用標記機制會混淆「這是排程參數」與「這是協定凍結參數」兩件事 | 使用者 | unblocked;WP-42 T1 的 `SessionPlan` config 型別與 stage6 的 `pilotConfigs.ts` 各自獨立 |
 | ~~**OQ-S7-5**~~(承 FR-G9) | ~~Session-plan preset 選單預設要不要限制成「僅研究者角色可見/新增」,或任何測試操作者都能在既有 preset 間切換~~ | ✅ **關閉(2026-08-25,採納時拍板)**:「切換既有 preset」對任何操作者開放(不影響 pre-registration,只是選一組已審過的組合);「新增/修改 preset 本身」限研究者,比照 WP-39 凍結常數的變更門檻(改 preset 定義 = 改協定 layer,需走 DECISIONS.md) | 使用者 | unblocked;WP-42 T1 UI 不需要區分操作者/研究者角色,只需區分「選 preset」與「編輯 preset 原始碼」兩個不同操作介面(後者不在本階段 UI 範圍內) |
@@ -226,6 +226,7 @@ WP-42 T0~T2(手動固定順序骨架,不等 WP-41)──────────
 - [x] [exec-plan/README.md](../../README.md):§2 加階段 G 索引表;§3 加 M17;§4 相依圖擴充;§6 目錄慣例加 `active/stage7/`。(2026-08-25 本次)
 - [x] [docs/MAP.md](../../../MAP.md):§3「進行中(`active/`)」補上 stage7;§3.2 加階段 G 索引。(2026-08-25 本次)
 - [x] [CONTEXT.md](../../../CONTEXT.md):WP-40 T-exit 新增 **§L**(`QualityFlagId`/`QualityFlagSeverity`/`dpi`)——原計畫寫「§K」已被 WP-39 佔用(OQ-S7-8),故本次落地為 §L。(2026-08-25)
-- [ ] [CONTEXT.md](../../../CONTEXT.md):WP-41/WP-42 新術語(`buildFamilyOrder`/`SessionPlan`/…)於各自 T-exit 回寫,續接 **§M 起**(§L 已被本次 WP-40 佔用)。
+- [x] [CONTEXT.md](../../../CONTEXT.md):WP-41 T-exit 新增 **§M**(`TestFamilyId`/`buildFamilyOrder`)。(2026-08-25)
+- [ ] [CONTEXT.md](../../../CONTEXT.md):WP-42 新術語(`SessionPlan`/…)於其 T-exit 回寫,續接 **§N 起**(§M 已被本次 WP-41 佔用)。
 - [ ] `docs/operational/acceptance-stage-g.md`(新,WP-42 T3/T-exit 起稿/定稿)。
 - [ ] 依 §3 表格展開 `wp-40-quality-flag-visibility/`、`wp-41-seeded-counterbalance/`、`wp-42-session-orchestrator/` 三個子資料夾(各含 README/task-checklist/progress/T0~T-exit)——**待各 WP 實際開工時才展開**,不在本次採納動作內。

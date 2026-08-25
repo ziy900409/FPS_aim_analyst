@@ -10,7 +10,7 @@
 | T0 entry gate | ✅ | 2026-08-25 | 覆核四個 assessment config、`TargetManager` RNG 消費點與 `CompatibilityKey`；README §0 的結論仍成立，並完成 D-41.1/D-41.2。 |
 | T1 build family order | ✅ | 2026-08-25 | Added `TestFamilyId` and deterministic Latin-square `buildFamilyOrder()`; focused unit suite passed (5 tests) and `npm run test:ci` passed (126 Vitest files / 955 tests + Playwright). |
 | T2 condition schedule scope | ✅ | 2026-08-25 | 依 D-41.2 執行關閉分支：在 [`analysis-spider-shot.md`](../../../../operational/analysis-spider-shot.md) 記錄四協定的 FR-G7 現況、讀碼證據與不覆寫 seed 的理由；零程式碼、零測試改動。 |
-| T-exit 驗收 + 文件定稿 | ⬜ | — | — |
+| T-exit 驗收 + 文件定稿 | ✅ | 2026-08-25 | `npm run test:ci` 全綠(126 Vitest 檔 / 955 tests + 21 Playwright tests)；`git diff` 對四個 `src/drill/*.ts` 協定檔為空；FR-G6 驗收證據 [`src/session/sessionSchedule.test.ts:1-37`](../../../../../src/session/sessionSchedule.test.ts)；文件對帳清單完成(見下)。 |
 
 ## Decision Log
 
@@ -34,7 +34,9 @@
 
 ## Surprises
 
-_無意外；README §0 的讀碼證據在當前 `src/` 仍成立。_
+_T0~T2 執行期無意外；README §0 的讀碼證據在當前 `src/` 仍成立。_
+
+- **T-exit 發現**:[`docs/exec-plan/README.md` §2 階段 G 表](../../../README.md)的 WP-40 列在 WP-40 T-exit 完成後仍停留在「⬜ 待展開」,未同步翻 ✅(疑似 WP-40 T-exit 遺漏頂層 README 這一步)。本次已修正 WP-41 自己的列,但未動 WP-40 的列(非本 WP 範圍);留給 WP-42 T-exit 或下一次文件housekeeping 一併處理。
 
 ## Open Questions 狀態
 
@@ -44,4 +46,4 @@ _無意外；README §0 的讀碼證據在當前 `src/` 仍成立。_
 |---|---|---|
 | OQ-S7-1 | 既有 seed 是否已決定「家族內條件呈現順序」,使 FR-G7 與既有決定性測試衝突 | ✅ 已關閉（D-41.1/D-41.2；T2 文件記錄完成）：既有 seed 不代表可平衡的家族內條件區塊；不覆寫協定 seed。 |
 | OQ-S7-9 | Spider Shot 覆寫 seed(若採納)是否需要 WP-42 UI 呈現 | ✅ 不適用（D-41.2）：覆寫分支未採納，WP-42 無需新增 UI 呈現點。 |
-| OQ-S7-10 | Latin-square 輪轉是否需要更強的一階順序平衡設計 | 🟡 待研究者確認,不阻塞 T1 |
+| OQ-S7-10 | Latin-square 輪轉是否需要更強的一階順序平衡設計 | 🟡 延後(非本 WP 阻塞項):T1 交付的位置平衡輪轉已滿足 FR-G6 字面要求;若研究端日後需要更嚴謹的一階順序平衡設計,屬加強項,留待研究者提出後另開任務,不阻塞 WP-41 T-exit 或 WP-42 T3 接線。 |

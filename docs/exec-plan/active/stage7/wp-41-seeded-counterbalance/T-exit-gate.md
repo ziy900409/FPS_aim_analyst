@@ -7,7 +7,7 @@
 | **相依** | T1 + T2 |
 | **Risk / Cplx** | Low |
 | **Touches** | `docs/`(CONTEXT.md、stage7 README、必要的 `analysis-*.md`) |
-| **狀態** | ⬜ 待開工 |
+| **狀態** | ✅ 完成(2026-08-25) |
 
 ## Objective
 
@@ -26,11 +26,11 @@
 
 ## Steps
 
-- [ ] `npm run test:ci` 全綠(記錄檔案數/測試數,比照 wp-38/wp-40 先例格式)。
-- [ ] 覆核 FR-G6/FR-G7 驗收證據,逐項附測試檔案/行號引用。
-- [ ] 更新 [../README.md](../README.md) §3 WP-41 狀態列。
-- [ ] 更新 [CONTEXT.md](../../../../CONTEXT.md)(新術語章節,與 WP-40 協調章節號)。
-- [ ] 更新 `progress.md` Open Questions 狀態表,全部關閉或明確標記延後理由。
+- [x] `npm run test:ci` 全綠(126 Vitest 檔 / 955 tests + 21 Playwright tests)。
+- [x] 覆核 FR-G6/FR-G7 驗收證據,逐項附測試檔案/行號引用(見 progress.md)。
+- [x] 更新 [../README.md](../README.md) §3 WP-41 狀態列 + §7 OQ-S7-1 關閉。
+- [x] 更新 [CONTEXT.md](../../../../CONTEXT.md) §M(新術語章節,續接 WP-40 §L)。
+- [x] 更新 `progress.md` Open Questions 狀態表,全部關閉或明確標記延後理由。
 
 ## Definition of Done
 
