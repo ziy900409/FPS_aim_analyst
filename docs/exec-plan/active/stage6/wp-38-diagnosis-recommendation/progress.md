@@ -9,6 +9,7 @@
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-24 | WP-34/35/36/37 的 T-exit 列皆為 ✅；重讀 `src/metrics/spiderShotMetrics.ts`、`counterstrafeMetrics.ts` 完成最終介面覆核；D-38.1/D-38.2 定案。零程式碼、零測試異動。 |
 | T1 rule engine | ✅ | 2026-08-25 | 新增純函式 `diagnosisRules.ts`，以版本化注入門檻實作七種模式、quality-gate 短路與 deterministic primary-only 優先序；新增 12 組合成測試，含七模式、重疊證據、品質短路、單家族與門檻邊界。`npm run test:ci` 通過：TypeScript、Vitest 119 files / 923 tests、Playwright 21 tests。 |
+| T2 session history | ✅ | 2026-08-25 | 新增純 `sessionHistory.ts`（相容性／quality-gate 守門、最新固定窗口、中位數與 population SD）與 TS 多檔 JSON loader（只接受 `meta.assessment`）；新增 7 個合成測試，覆蓋窗口、相容性排除、metric ID 排除、`minN` 短路、目前 quality gate、Practice 排除與無效 JSON。`npm.cmd run test:ci` 通過：TypeScript、Vitest 121 files / 930 tests、Playwright 21 tests。 |
 
 ## Decision Log
 
@@ -49,6 +50,22 @@
 **Rationale:** 門檻校正尚屬 WP-39 範圍。把版本與數值作為輸入，可保存原 session 產出的 recommendation version，避免新門檻追寫舊結論。
 
 **Alternatives considered:** 將數字內嵌於每條規則——未採用：無法建立可追溯版本，也違反 T1/C-D3 門檻注入紀律。
+
+### D-38.6 — T2 history loader 以 `meta.assessment` 作 Assessment 守門(2026-08-25,T2)
+
+**Decision:** 多檔 loader 僅接受含 `meta.assessment` 的 export；缺席者（含 legacy export）一律視為 Practice，不會傳入 `SessionSummary` 建構器。
+
+**Rationale:** `DrillConfig.mode` 沒有序列化到 export，且既有契約已定義缺 mode 為 Practice。`meta.assessment` 是正式 Assessment provenance 的唯一可從已匯出 JSON 驗證的訊號。
+
+**Alternatives considered:** 依 drillId allow-list 推定 Assessment——未採用：Practice 可執行同一 drill，會將正式 baseline 的 eligibility 由設定猜測而不是已保存 provenance 決定。
+
+### D-38.7 — 固定窗口只聚合先前 session，速度／準確度 metric ID 必須一致(2026-08-25,T2)
+
+**Decision:** current session 只作相容性參考，不納入自己的 history baseline；選取最新的相容 prior sessions，計算 median 與 population SD。不同 speed/accuracy metric ID 不混合，視為資料不足。
+
+**Rationale:** 這保留「目前觀測」與既有 baseline 的區分；同一 task 的不同指標不能形成可解釋的 speed–accuracy 聚合。各家族對照表已寫入 `analysis-diagnosis.md`。
+
+**Alternatives considered:** 把 current 直接併入 baseline——未採用：會讓欲呈現的當前表現反過來影響自己的參考值；對不同 metric ID 只比較 task key——未採用：會產生沒有共同單位的中位數。
 
 ## Surprises
 

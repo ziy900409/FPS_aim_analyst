@@ -7,7 +7,7 @@
 | **相依** | T1(`DiagnosisResult` 作為 `SessionSummary.diagnosis` 的輸入) |
 | **Risk / Cplx** | **Med–High**(依 T0 OQ-S6-23 候選,個人歷史資料來源是全新能力,見 README §0-4/§2②) |
 | **Touches** | ADD `src/metrics/sessionHistory.ts`;ADD `src/data/sessionHistoryLoader.ts`(或 Python 對應物,依 T0 候選);REUSE `src/metrics/compatibilityKey.ts`(`checkCompatibility`/`checkQualityGate`,只讀) |
-| **狀態** | ⬜ |
+| **狀態** | ✅(2026-08-25;`npm.cmd run test:ci` exit 0) |
 
 ## Objective
 
@@ -31,12 +31,12 @@
 
 ## Steps
 
-- [ ] `sessionHistory.ts` 型別 + `buildSessionHistory()` + 相容性過濾測試。
-- [ ] `n < minN` 短路測試。
-- [ ] Practice 守門測試(混入 Practice 匯出案例)。
-- [ ] 依 T0 候選落地 loader(TS 多檔上傳 或 Python 目錄掃描)。
-- [ ] OQ-S6-26 speed/accuracy 對照表定案,寫入 `analysis-diagnosis.md`。
-- [ ] `npm run test:ci` 全綠(若候選②,另跑 `uv run pytest`)。
+- [x] `sessionHistory.ts` 型別 + `buildSessionHistory()` + 相容性過濾測試。
+- [x] `n < minN` 短路測試。
+- [x] Practice 守門測試(混入 Practice 匯出案例)。
+- [x] 依 T0 候選落地 loader(TS 多檔上傳)。
+- [x] OQ-S6-26 speed/accuracy 對照表定案,寫入 `analysis-diagnosis.md`。
+- [x] `npm.cmd run test:ci` 全綠(TypeScript、Vitest 121 files / 930 tests、Playwright 21 tests)。
 
 ## Definition of Done
 

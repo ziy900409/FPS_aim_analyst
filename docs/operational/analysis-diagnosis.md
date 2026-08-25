@@ -38,3 +38,25 @@ available `overReversalUPerS` braking proxy and is labelled as such in the evide
 Each evidence item carries its closed metric ID, finite-sample mean, `n`, and any source flags.
 Hold-click and Spider Shot per-target values are aggregated across every finite sample, rather than
 choosing a best result. Counter-strafe left/right means are pooled with their original sample counts.
+
+## Personal session history
+
+`buildSessionHistory()` uses the current session only as a compatibility reference. It selects the
+newest compatible prior sessions up to the configured fixed window, returns them oldest-to-newest
+for presentation, and reports their median plus population standard deviation. It does not produce
+a delta or an up/down arrow. A current non-`ok` quality gate, fewer than `minN` eligible sessions,
+or a different speed/accuracy metric ID returns `insufficient-data` instead.
+
+Assessment eligibility is deliberately strict: the multi-file loader accepts only exports containing
+`meta.assessment`. `DrillConfig.mode` is not serialized into export metadata; therefore missing
+`meta.assessment` is treated as Practice (including legacy exports) and excluded from formal history.
+The loader parses files and applies this guard only. Family-specific metric reconstruction remains
+with its caller because raw exports do not persist every scene and condition input needed to rebuild
+diagnosis metrics.
+
+| Test family | Speed metric | Accuracy metric |
+| --- | --- | --- |
+| Hold-click | mean `acquisitionFromDetectMs` | first-shot-hit rate |
+| Hold-track | mean acquisition time | TOT percent |
+| Spider Shot | `rhythm.medianMs` | first-shot-hit rate |
+| Counter-strafe | mean `counterToFireMs` | `firstShotHitRate` |
