@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(覆核 §0 讀碼發現;拍板 §2①②③④ 四個小決策;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Low |
-| ⬜ | **T1** `ResultScreen.ts`:`QUALITY_FLAG_IDS` + `createQualityFlagSummary()` + `show()` additive 第 4 參數 + 兩層嚴重度 | [T1-quality-flag-card.md](T1-quality-flag-card.md) | T0 | Low |
+| ✅ | **T1** `ResultScreen.ts`:`QUALITY_FLAG_IDS` + `createQualityFlagSummary()` + `show()` additive 第 4 參數 + 兩層嚴重度 | [T1-quality-flag-card.md](T1-quality-flag-card.md) | T0 | Low |
 | ⬜ | **T2** `metadata.ts`/`SessionSetup.ts` additive `dpi`;`main.ts` `collectMeta` 接線 | [T2-dpi-metadata.md](T2-dpi-metadata.md) | T0(可與 T1 並行) | Low |
 | ⬜ | **T-exit** 驗收 FR-G1/FR-G2;`npm run test:ci` 全綠;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1 + T2 | — |
 

@@ -12,7 +12,7 @@ import { createCrosshair } from './ui/Crosshair.ts';
 import { createScopeOverlay } from './ui/ScopeOverlay.ts';
 import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
-import { createResultScreen } from './ui/ResultScreen.ts';
+import { createResultScreen, type QualityFlagsInput } from './ui/ResultScreen.ts';
 import { createHistoryView } from './ui/HistoryView.ts';
 import { createControls } from './ui/Controls.ts';
 import { applyResolutionMode, type DisplayState, type ResolutionMode } from './display/resolutionMode.ts';
@@ -531,6 +531,23 @@ function diagnosisForPayload(payload: ExportPayload): DiagnosisResult {
   );
 }
 
+function qualityFlagsForPayload(payload: ExportPayload): QualityFlagsInput {
+  return {
+    lateEventCount: payload.meta.lateEventCount,
+    bufferOverflow: payload.meta.bufferOverflow,
+    recorderOverflow: payload.meta.recorderOverflow,
+    suspect: payload.meta.suspect,
+    ...(payload.meta.validity === undefined
+      ? {}
+      : {
+          validity: {
+            corridorExceeded: payload.meta.validity.corridorExceeded,
+            perfFloor: payload.meta.validity.perfFloor,
+          },
+        }),
+  };
+}
+
 function sessionSummaryFromPayload(payload: ExportPayload): SessionSummary {
   const qualityGateStatus = qualityGateStatusFor(payload);
   const inputs = diagnosisInputsForPayload(payload);
@@ -789,6 +806,7 @@ if (import.meta.env.DEV) {
         fpsTestHarness.metricsFromExport(payload),
         fpsTestHarness.promotedMetricsFromExport(payload),
         diagnosisForPayload(payload),
+        qualityFlagsForPayload(payload),
       );
     },
   };
@@ -1219,7 +1237,12 @@ const renderLoop = createRenderLoop((now) => {
           reason: error instanceof Error ? error.message : 'Current session could not establish a history baseline.',
         });
       }
-      resultScreen.show(metricsDashboard.compute(snapshotFromExportPayload(payload)), metricsDashboard.computePromoted(payload), diagnosis);
+      resultScreen.show(
+        metricsDashboard.compute(snapshotFromExportPayload(payload)),
+        metricsDashboard.computePromoted(payload),
+        diagnosis,
+        qualityFlagsForPayload(payload),
+      );
       await completeActiveProtocolCondition();
     })();
   }

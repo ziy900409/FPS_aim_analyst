@@ -28,6 +28,39 @@ export const DIAGNOSIS_METRIC_IDS = [
 
 export type DiagnosisMetricId = (typeof DIAGNOSIS_METRIC_IDS)[number];
 
+/** Closed presentation contract for WP-40 quality-flag cards. */
+export const QUALITY_FLAG_IDS = [
+  'quality-flag-late-events',
+  'quality-flag-buffer-overflow',
+  'quality-flag-recorder-overflow',
+  'quality-flag-corridor-exceeded',
+  'quality-flag-perf-floor',
+  'quality-flag-suspect',
+] as const;
+
+export type QualityFlagId = (typeof QUALITY_FLAG_IDS)[number];
+
+export type QualityFlagSeverity = 'ok' | 'warn' | 'retest-recommended';
+
+export interface QualityFlagsInput {
+  readonly lateEventCount: number;
+  readonly bufferOverflow: boolean;
+  readonly recorderOverflow: boolean;
+  readonly suspect: boolean;
+  readonly validity?: {
+    readonly corridorExceeded: boolean;
+    readonly perfFloor: boolean;
+  };
+}
+
+export interface QualityFlagCard extends ResultCard {
+  readonly id: QualityFlagId;
+  readonly severity: QualityFlagSeverity;
+}
+
+/** Aligns with aim-analyst-ui tokens.css:29 `--warn` (suspect / overflow flag). */
+const QUALITY_FLAG_WARN_COLOR = '#f5a623';
+
 export interface ResultCard {
   id: string;
   title: string;
@@ -63,7 +96,12 @@ export interface RecoilOverlayModel {
 
 export interface ResultScreenHandle {
   readonly visible: boolean;
-  show(metrics: Metrics, promoted?: PromotedMetrics, diagnosis?: DiagnosisResult): void;
+  show(
+    metrics: Metrics,
+    promoted?: PromotedMetrics,
+    diagnosis?: DiagnosisResult,
+    qualityFlags?: QualityFlagsInput,
+  ): void;
   hide(): void;
   dispose(): void;
 }
@@ -175,6 +213,18 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
   diagnosisBody.style.cssText = 'display:grid;gap:10px';
   diagnosisSection.append(diagnosisTitle, diagnosisBody);
 
+  const qualityFlagsSection = document.createElement('section');
+  qualityFlagsSection.dataset.section = 'quality-flags';
+  qualityFlagsSection.style.cssText = 'display:none;margin-top:18px';
+
+  const qualityFlagsTitle = document.createElement('h3');
+  qualityFlagsTitle.textContent = 'Data quality flags';
+  qualityFlagsTitle.style.cssText = 'margin:0 0 8px;font:700 14px/1.25 system-ui,sans-serif;letter-spacing:0';
+
+  const qualityFlagsBody = document.createElement('div');
+  qualityFlagsBody.style.cssText = 'display:grid;gap:10px';
+  qualityFlagsSection.append(qualityFlagsTitle, qualityFlagsBody);
+
   panel.append(
     title,
     method,
@@ -185,12 +235,18 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     recoilChart,
     promotedSection,
     diagnosisSection,
+    qualityFlagsSection,
     ...(options.historyView === undefined ? [] : [options.historyView]),
   );
   root.appendChild(panel);
   parent.appendChild(root);
 
-  function render(summary: ResultSummary, promoted?: PromotedMetrics, diagnosis?: DiagnosisResult): void {
+  function render(
+    summary: ResultSummary,
+    promoted?: PromotedMetrics,
+    diagnosis?: DiagnosisResult,
+    qualityFlags?: QualityFlagsInput,
+  ): void {
     method.textContent = summary.methodNote;
     grid.replaceChildren(...summary.cards.map(renderCard));
     chart.replaceChildren(renderReactionDistribution(summary.reactionValues));
@@ -202,14 +258,21 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     promotedBody.replaceChildren(...(promoted === undefined ? [] : [renderPromotedMetrics(promoted)]));
     diagnosisSection.style.display = diagnosis === undefined ? 'none' : '';
     diagnosisBody.replaceChildren(...(diagnosis === undefined ? [] : [renderDiagnosis(diagnosis)]));
+    qualityFlagsSection.style.display = qualityFlags === undefined ? 'none' : '';
+    qualityFlagsBody.replaceChildren(...(qualityFlags === undefined ? [] : [renderQualityFlags(qualityFlags)]));
   }
 
   return {
     get visible(): boolean {
       return visible;
     },
-    show(metrics: Metrics, promoted?: PromotedMetrics, diagnosis?: DiagnosisResult): void {
-      render(createResultSummary(metrics), promoted, diagnosis);
+    show(
+      metrics: Metrics,
+      promoted?: PromotedMetrics,
+      diagnosis?: DiagnosisResult,
+      qualityFlags?: QualityFlagsInput,
+    ): void {
+      render(createResultSummary(metrics), promoted, diagnosis, qualityFlags);
       visible = true;
       root.style.display = 'flex';
     },
@@ -356,6 +419,123 @@ function renderCard(card: ResultCard): HTMLElement {
     node.appendChild(meta);
   }
   return node;
+}
+
+export function createQualityFlagSummary(flags: QualityFlagsInput): {
+  readonly overallSeverity: QualityFlagSeverity;
+  readonly cards: readonly QualityFlagCard[];
+} {
+  const corridorExceeded = flags.validity?.corridorExceeded ?? false;
+  const perfFloor = flags.validity?.perfFloor ?? false;
+  const cards: readonly QualityFlagCard[] = [
+    qualityFlagCard(
+      'quality-flag-late-events',
+      'Late input events',
+      flags.lateEventCount > 0 ? `${flags.lateEventCount}` : '0',
+      'Input events that arrived after their intended simulation tick.',
+      flags.lateEventCount > 0 ? 'warn' : 'ok',
+    ),
+    qualityFlagCard(
+      'quality-flag-buffer-overflow',
+      'Input buffer overflow',
+      flags.bufferOverflow ? 'Detected' : 'Clear',
+      'The input ring buffer overflowed during this run.',
+      flags.bufferOverflow ? 'warn' : 'ok',
+    ),
+    qualityFlagCard(
+      'quality-flag-recorder-overflow',
+      'Recorder overflow',
+      flags.recorderOverflow ? 'Detected' : 'Clear',
+      'Recorder capacity was exceeded; recorded data may be incomplete.',
+      flags.recorderOverflow ? 'retest-recommended' : 'ok',
+    ),
+    qualityFlagCard(
+      'quality-flag-corridor-exceeded',
+      'Player corridor',
+      corridorExceeded ? 'Exceeded' : 'Within corridor',
+      'Observed player movement beyond the configured corridor.',
+      corridorExceeded ? 'warn' : 'ok',
+    ),
+    qualityFlagCard(
+      'quality-flag-perf-floor',
+      'Performance floor',
+      perfFloor ? 'Exceeded' : 'Within floor',
+      'Frame p95 crossed the configured performance floor.',
+      perfFloor ? 'warn' : 'ok',
+    ),
+    qualityFlagCard(
+      'quality-flag-suspect',
+      'Run confidence',
+      flags.suspect ? 'Suspect' : 'Clear',
+      'This run is marked as potentially unreliable.',
+      flags.suspect ? 'retest-recommended' : 'ok',
+    ),
+  ];
+  const overallSeverity = cards.some((card) => card.severity === 'retest-recommended')
+    ? 'retest-recommended'
+    : cards.some((card) => card.severity === 'warn')
+      ? 'warn'
+      : 'ok';
+
+  return { overallSeverity, cards };
+}
+
+function renderQualityFlags(flags: QualityFlagsInput): HTMLElement {
+  const summary = createQualityFlagSummary(flags);
+  const wrapper = document.createElement('div');
+  wrapper.dataset.qualityFlagOverallSeverity = summary.overallSeverity;
+  wrapper.style.cssText = 'display:grid;gap:10px';
+
+  const overall = document.createElement('p');
+  overall.textContent = `Overall: ${qualitySeverityLabel(summary.overallSeverity)}`;
+  overall.style.cssText = [
+    'margin:0',
+    `color:${summary.overallSeverity === 'ok' ? '#aeb9c4' : QUALITY_FLAG_WARN_COLOR}`,
+    'font:650 12px/1.4 system-ui,sans-serif',
+  ].join(';');
+
+  const cards = document.createElement('div');
+  cards.style.cssText = [
+    'display:grid',
+    'grid-template-columns:repeat(auto-fit,minmax(174px,1fr))',
+    'gap:10px',
+  ].join(';');
+  cards.replaceChildren(...summary.cards.map(renderQualityFlagCard));
+  wrapper.append(overall, cards);
+  return wrapper;
+}
+
+function renderQualityFlagCard(card: QualityFlagCard): HTMLElement {
+  const node = renderCard(card);
+  node.dataset.qualityFlagSeverity = card.severity;
+  if (card.severity !== 'ok') {
+    node.style.cssText = `${node.style.cssText};border-color:${QUALITY_FLAG_WARN_COLOR};color:${QUALITY_FLAG_WARN_COLOR}`;
+    const [title, value] = Array.from(node.children) as HTMLElement[];
+    if (title !== undefined) title.style.color = QUALITY_FLAG_WARN_COLOR;
+    if (value !== undefined) value.style.color = QUALITY_FLAG_WARN_COLOR;
+  }
+  return node;
+}
+
+function qualityFlagCard(
+  id: QualityFlagId,
+  title: string,
+  value: string,
+  detail: string,
+  severity: QualityFlagSeverity,
+): QualityFlagCard {
+  return { id, title, value, detail, severity };
+}
+
+function qualitySeverityLabel(severity: QualityFlagSeverity): string {
+  switch (severity) {
+    case 'retest-recommended':
+      return 'Re-test recommended';
+    case 'warn':
+      return 'Warning';
+    case 'ok':
+      return 'Clear';
+  }
 }
 
 export function createDiagnosisSummary(

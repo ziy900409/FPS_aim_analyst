@@ -8,7 +8,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-25 | CodeGraph + `rg` 覆核 §0: `DIAGNOSIS_METRIC_IDS`/`createDiagnosisSummary()`/三參數 `show()`、`Meta`/`CollectMetaArgs`/`collectMeta()`、`SessionSetupValues`、`main.ts` 的兩個 `resultScreen.show()` 與一個 `collectMeta()` 呼叫點皆與 README 一致;`src/` 尚無 `dpi`。`npm run test:ci` 綠燈(125 files / 944 tests + 21 Playwright tests)。 |
-| T1 quality-flag card | ⬜ | — | — |
+| T1 quality-flag card | ✅ | 2026-08-25 | `npx vitest run src/ui/ResultScreen.test.ts` green (16 tests); `npm run test:ci` exit 0 (125 files / 947 tests + Playwright). Added six closed `QUALITY_FLAG_IDS`, two-tier `overallSeverity`, optional `show()` input with zero rendering when absent, and both `main.ts` result-flow call sites pass export metadata flags. WP-38 diagnosis summary remains unchanged. |
 | T2 dpi metadata | ⬜ | — | — |
 | T-exit 驗收 + 文件定稿 | ⬜ | — | — |
 

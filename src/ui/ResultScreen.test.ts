@@ -5,11 +5,14 @@ import type { PromotedMetrics } from '../metrics/researchMetrics.ts';
 import {
   createDiagnosisSummary,
   createPromotedSummary,
+  createQualityFlagSummary,
   createRecoilOverlayModel,
   createResultScreen,
   createResultSummary,
   DIAGNOSIS_METRIC_IDS,
   PROMOTED_METRIC_IDS,
+  QUALITY_FLAG_IDS,
+  type QualityFlagsInput,
   summarizeResidualSpeed,
 } from './ResultScreen.ts';
 
@@ -245,6 +248,60 @@ describe('WP-38 T3 diagnosis result section', () => {
   });
 });
 
+describe('WP-40 T1 quality-flag result section', () => {
+  it('pins the six quality-flag cards and maps each individual flag to its severity', () => {
+    const cases: readonly {
+      readonly flags: QualityFlagsInput;
+      readonly id: (typeof QUALITY_FLAG_IDS)[number];
+      readonly severity: 'warn' | 'retest-recommended';
+    }[] = [
+      { flags: { ...qualityFlags(), lateEventCount: 1 }, id: 'quality-flag-late-events', severity: 'warn' },
+      { flags: { ...qualityFlags(), bufferOverflow: true }, id: 'quality-flag-buffer-overflow', severity: 'warn' },
+      { flags: { ...qualityFlags(), recorderOverflow: true }, id: 'quality-flag-recorder-overflow', severity: 'retest-recommended' },
+      {
+        flags: { ...qualityFlags(), validity: { corridorExceeded: true, perfFloor: false } },
+        id: 'quality-flag-corridor-exceeded',
+        severity: 'warn',
+      },
+      {
+        flags: { ...qualityFlags(), validity: { corridorExceeded: false, perfFloor: true } },
+        id: 'quality-flag-perf-floor',
+        severity: 'warn',
+      },
+      { flags: { ...qualityFlags(), suspect: true }, id: 'quality-flag-suspect', severity: 'retest-recommended' },
+    ];
+
+    for (const testCase of cases) {
+      const summary = createQualityFlagSummary(testCase.flags);
+      expect(summary.cards.map((card) => card.id)).toEqual(QUALITY_FLAG_IDS);
+      expect(summary.cards.find((card) => card.id === testCase.id)?.severity).toBe(testCase.severity);
+      expect(summary.overallSeverity).toBe(testCase.severity);
+    }
+  });
+
+  it('keeps a single late event as a warning rather than recommending a re-test', () => {
+    expect(createQualityFlagSummary({ ...qualityFlags(), lateEventCount: 1 }).overallSeverity).toBe('warn');
+  });
+
+  it('renders real quality flags with warn styling, and renders no section when they are absent', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(metrics, undefined, undefined, { ...qualityFlags(), lateEventCount: 1 });
+
+    expect(qualityFlagMetricIds(document.body)).toEqual(QUALITY_FLAG_IDS);
+    const lateEvents = flatten(document.body).find((node) => node.dataset.metricId === 'quality-flag-late-events');
+    expect(lateEvents?.dataset.qualityFlagSeverity).toBe('warn');
+    expect(lateEvents?.style.cssText).toContain('#f5a623');
+    expect(text(document.body)).toContain('Overall: Warning');
+
+    screen.show(metrics);
+
+    expect(qualityFlagMetricIds(document.body)).toEqual([]);
+  });
+});
+
 describe('createRecoilOverlayModel', () => {
   it('creates a stable recoil path overlay model with actual and ideal series plus mean and RMS', () => {
     const summary = createResultSummary({
@@ -383,6 +440,16 @@ function diagnosisOk(): Extract<DiagnosisResult, { status: 'ok' }> {
   };
 }
 
+function qualityFlags(): QualityFlagsInput {
+  return {
+    lateEventCount: 0,
+    bufferOverflow: false,
+    recorderOverflow: false,
+    suspect: false,
+    validity: { corridorExceeded: false, perfFloor: false },
+  };
+}
+
 function metricIds(root: FakeElement): string[] {
   return flatten(root)
     .map((node) => node.dataset.metricId)
@@ -393,6 +460,12 @@ function diagnosisMetricIds(root: FakeElement): string[] {
   return flatten(root)
     .map((node) => node.dataset.metricId)
     .filter((id): id is string => id !== undefined && DIAGNOSIS_METRIC_IDS.includes(id as never));
+}
+
+function qualityFlagMetricIds(root: FakeElement): string[] {
+  return flatten(root)
+    .map((node) => node.dataset.metricId)
+    .filter((id): id is string => id !== undefined && QUALITY_FLAG_IDS.includes(id as never));
 }
 
 function text(root: FakeElement): string {
