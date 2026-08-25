@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-011](KI-011-spider-shot-v1-clearance-rejected-in-field-low.md) | drill 選單選 `spider-shot-v1` 擲出「clearance 驗證失敗」，完全無法載入——`availableDrills` 缺 `sceneId`，fallback 到預設 field-low，其 tree/rock 道具與目標距離重疊 | BD-011(§3,`main.ts` 補 `sceneId: 'placeholder-room'`(唯一零 propBounds 的既有場景)) | ✅ 已修(2026-08-25) |
 | [KI-010](KI-010-rest-overlay-stuck-on-failed-auto-advance.md) | Session Plan 休息倒數結束後自動載入下一家族失敗時（`SessionRunner.poll()`）錯誤被 `void` 靜默丟棄，`phase` 永遠卡在 `'rest'`，`restOverlay` 因此永不消失 | BD-010(§3,`poll()` 自動 advance 補 `.catch()`：`onStatus` 回報 + 強制轉 `{kind:'done'}`；`runTransition()` 的 `.finally()` 鏈補 `.catch(() => {})` 避免衍生 unhandled rejection) | ✅ 已修(2026-08-25) |
 | [KI-009](KI-009-session-plan-qhd-gate-too-strict.md) | Session Plan（不操弄解析度條件）誤用 resolution/BR protocol 專屬的 QHD（2560×1440）資格閘門檻，FHD 面板無法測試選手 | BD-009(§3,新增 `SESSION_PLAN_MIN_CONDITION`(1920×1080)，`EligibilityGate.required` 改支援函式型、依 `pendingSessionMode` 動態解析) | ✅ 已修(2026-08-25) |
 | [KI-008](KI-008-fitts-v1-threshold-drift-and-xcorr-empty-table.md) | PR #39 Codex review 三則:①`fitts-v1` 門檻偏離 T0 凍結的 pre-registration(`min_samples`/`min_id_range_bits` 各減半),09:24 誤判 `ok`;②`d_ratio` 對 `min(D)<=0` 算出 `+inf` 誤判為未過關,丟棄有效 session;③空 xcorr table(`verdict is None`)誤判為未 blocked,缺口說明謊稱全數有輸出 | BD-008(§2,**D1+D2+D3 全數落地**:恢復凍結門檻 20/2.0/1.0;`d_ratio` 只在有限值時判定;`verdict is None` 視同 blocked) | ✅ 已修(2026-08-17) |
@@ -56,6 +57,21 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-011 ✅ KI-011 — spider-shot-v1 缺 sceneId，fallback 到 field-low 撞上 tree/rock 道具(2026-08-25)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 使用者回報 drill 選單選 `spider-shot-v1` 擲出「DrillConfig 載入失敗: clearance 驗證失敗 — tree-b1/tree-b2/rock-b1/rock-b2」。直接呼叫 `validateClearance(fieldLow, spiderShotV1)` 逐字重現。追碼確認兩層原因疊加：**①** [main.ts](../../src/main.ts) 的 `availableDrills` 登記 `spider-shot-v1` 時缺 `sceneId`，`loadDrillById()` 對缺 `sceneId` 的項目 fallback 到目前 `activeSceneConfig`（app 預設 `field-low`），而非「不驗證」。**②** `spiderShotV1.targets.distance=8` 與 `spiderShot.centerDistanceU=8` 恰與 field-low 的 tree/rock 道具座落距離（z≈-7.5~-9）重疊；以 `TargetManager.sampleSpiderShotPose` 的真實中心/周邊錐形公式數值模擬（`x∈[-2.07,2.07]`,`y∈[-0.61,3.46]`,`z∈[-8,-7.21]`），確認即使 `clearance.ts` 正確理解 `spiderShot` 欄位（目前完全沒有對應分支），算出的真實包絡在 field-low 案例仍會相交——不只是驗證公式算錯，是 field-low 本身對 spider-shot 的全向錐形分佈而言並非淨空場景。完整診斷與四場景掃描證據見 [KI-011](KI-011-spider-shot-v1-clearance-rejected-in-field-low.md)。 |
+| **既有測試為何沒抓到** | `tests/e2e/session-orchestrator.spec.ts` 透過 `__fpsTest.startDrill()` 走 `fpsTestHarness.ts` 的 `entry.scene`（由 `sceneId !== undefined ? findSceneOption(sceneId).config : undefined` 產生），與 live app 的 `activeSceneConfig` fallback 語意不同——spider-shot-v1 缺 `sceneId` 時，harness 端 `scene===undefined`，`loadDrill()` 的 clearance 檢查整段跳過，使這條真實會發生的使用者路徑此前對 e2e 不可見。 |
+| **決策** | `main.ts` 的 `availableDrills` 補 `sceneId: 'placeholder-room'`(比照 hold-click/hold-track 既有「指定 home scene」先例)。`placeholder-room` 是唯一 `propBounds: []` 的既有場景，四個候選場景（`field-low`/`urban-high`/`peek-corridor`/`placeholder-room`）實測掃描僅它零 violation。 |
+| **理由** | 不採「修正 `deriveTargetEnvelopes()` 使其理解 `spiderShot` 欄位」作為唯一修法——如根因所述，正確算出的包絡在 field-low 案例仍會相交，單獨修正公式不足以解決本次錯誤；`clearance.ts` 是多 drill 家族共用、已測試的核心驗證邏輯，改動其幾何公式本體的正確性驗證成本遠高於「指到一個乾淨場景」的修復範圍，留為遺留 OQ。 |
+| **偏離計畫** | 無。診斷由使用者直接回報觸發(非既定 WP task)，依協議走 known_issue 流程(KI-011 tech spec + 本帳本)；修法前以直接呼叫 `validateClearance` 重現錯誤訊息、掃描候選場景取得實測證據，再落地修法。 |
+| **遺留 OQ** | **OQ-KI11-1**：`deriveTargetEnvelopes()` 對任何無 `spawnArea` 的 drill 一律套用 legacy L/R 公式，對 spider-shot 只是近似值（本次恰好與真實包絡重疊，未來參數調整可能顯著偏離）；若日後需要讓 spider-shot 使用有裝飾道具的視覺場景，須先補 `spiderShot` 專屬包絡計算分支。**OQ-KI11-2**：harness 與 live app 對「drill 缺 `sceneId`」的語意分歧（harness 跳過驗證 vs live app fallback 驗證）本身仍存在，其餘缺 `sceneId` 的 drill（`counterstrafe-reversal-v1`/`counterstrafe-free-v1`/`trackingV1`）目前因 `distance` 較短未撞上道具，但同類回歸風險原則上未關閉。**OQ-KI11-3**：`placeholder-room` 是空白房間，spider-shot 真實 y 軸包絡（−0.61~3.46）比其 `roomSize` 高度(3)更寬；若日後要換視覺場景需一併考慮室內尺寸，屬產品/美術決策。 |
+| **影響面** | **受影響**:`src/main.ts` 的 `spider-shot-v1` `availableDrills` 登記(+`sceneId`)，連帶 `__fpsTest` harness deps 的 `scene` 欄位（透過既有轉換自動生效，零額外改動）。**不受影響**:`spider_shot_v1.ts`(協定凍結)、`clearance.ts`/`TargetManager.ts` 任何邏輯、其他 drill 的場景綁定或 clearance 結果。 |
+| **狀態** | ✅ **已修(2026-08-25)**。驗證:`tsc --noEmit` exit 0；`vitest run` 130 files / 968 tests 全綠；`playwright test tests/e2e/session-orchestrator.spec.ts` 2/2（含 spider-shot-v1 完整 `loadDrill()` 鏈路首次真正驗證 clearance 且不拋錯）；全量 e2e 19/23（`input-sampler.spec.ts` 5 案為既有並行負載 flake，單獨執行 5/5 全綠，與本次改動無關）。 |
+
+---
 
 ### BD-010 ✅ KI-010 — Session Plan rest overlay 於自動 advance 失敗時卡死不消失(2026-08-25)
 

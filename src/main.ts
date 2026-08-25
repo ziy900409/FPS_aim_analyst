@@ -149,7 +149,10 @@ const availableDrills: AvailableDrill[] = [
     sceneId: holdTrackV1.sceneId,
     loadOptions: { clearance: holdTrackV1.clearanceOptions },
   },
-  { id: spiderShotV1.drillId, label: spiderShotV1.drillId, source: spiderShotV1 },
+  // KI-011: spider-shot 的目標包絡跨越前方 ±15° 圓錐(見 TargetManager.sampleSpiderShotPose),
+  // 未綁定場景時繼承 activeSceneConfig(預設 field-low)——與其 tree/rock 裝飾道具重疊、拒入。
+  // placeholder-room 是唯一零 propBounds 的場景,鎖定為固定家(不得改回無 sceneId)。
+  { id: spiderShotV1.drillId, label: spiderShotV1.drillId, source: spiderShotV1, sceneId: 'placeholder-room' },
   { id: counterstrafeReversalV1.drillId, label: counterstrafeReversalV1.drillId, source: counterstrafeReversalV1 },
   { id: counterstrafeFreeV1.drillId, label: counterstrafeFreeV1.drillId, source: counterstrafeFreeV1 },
   ...trackingBrVariants.map((variant) => ({
