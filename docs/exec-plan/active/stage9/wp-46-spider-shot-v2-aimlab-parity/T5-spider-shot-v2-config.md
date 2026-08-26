@@ -7,7 +7,7 @@
 | **相依** | T2, T3, T4 |
 | **Risk / Cplx** | Low / Low(純資料值變更,引擎能力已在 T2–T4 就緒;風險在遺漏移除冗餘欄位或 `targets.count` 設太低卡住 spawn) |
 | **Touches** | MODIFY `src/drill/spider_shot_v2.ts`、`src/drill/spider_shot_v2.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 

@@ -1,5 +1,18 @@
-import type { DrillConfig } from './DrillConfig.ts';
-import { SPIDER_SHOT_HITBOX_V1 } from './spider_shot_v1.ts';
+import type { DrillConfig, TargetHitboxConfig } from './DrillConfig.ts';
+
+const SPIDER_SHOT_V2_DISTANCE_U = 8;
+// Aim Lab Ultimate/Standard 1.8°–2.2° candidate midpoint.
+const SPIDER_SHOT_V2_ANGULAR_DIAMETER_DEG = 2.0;
+const SPIDER_SHOT_V2_HITBOX_DIAMETER_U =
+  2 * SPIDER_SHOT_V2_DISTANCE_U * Math.tan((SPIDER_SHOT_V2_ANGULAR_DIAMETER_DEG / 2) * (Math.PI / 180));
+
+/** Sphere diameter subtending 2.0° at the fixed 8u spider-shot-v2 target distance. */
+export const SPIDER_SHOT_HITBOX_V2: TargetHitboxConfig = {
+  widthU: SPIDER_SHOT_V2_HITBOX_DIAMETER_U,
+  heightU: SPIDER_SHOT_V2_HITBOX_DIAMETER_U,
+  depthU: SPIDER_SHOT_V2_HITBOX_DIAMETER_U,
+  shape: 'sphere',
+};
 
 /**
  * WP-44 candidate range: split into 3 equal-solid-angle tiers (near/mid/far off the center
@@ -21,9 +34,10 @@ export const spiderShotV2: DrillConfig = {
   drillId: 'spider-shot-v2',
   mode: 'assessment',
   targets: {
-    count: 20,
-    distance: 8,
-    hitbox: SPIDER_SHOT_HITBOX_V1,
+    // Safety ceiling only; the 60s time limit is the actual completion condition.
+    count: 300,
+    distance: SPIDER_SHOT_V2_DISTANCE_U,
+    hitbox: SPIDER_SHOT_HITBOX_V2,
   },
   // Required legacy compatibility field; ignored by the spiderShot branch.
   sequence: { alternation: 'LR' },
@@ -34,14 +48,14 @@ export const spiderShotV2: DrillConfig = {
     peripheral: {
       angularRadiusDegRange: SPIDER_SHOT_ANGULAR_RADIUS_DEG_RANGE_V2,
       azimuthDegRange: [0, 360],
-      distanceURange: [8, 8],
+      distanceURange: [SPIDER_SHOT_V2_DISTANCE_U, SPIDER_SHOT_V2_DISTANCE_U],
     },
     grid: { azimuthQuadrants: 4, radiusTiers: 3 },
+    centerExemptFromTimeout: true,
   },
   timing: {
     countdownMs: 3000,
-    peekTimeoutMs: 1500,
-    timeLimitMs: 120000,
+    peekTimeoutMs: 1750,
   },
-  endCondition: { type: 'targetCount', value: 20 },
+  endCondition: { type: 'timeLimit', value: 60000 },
 };

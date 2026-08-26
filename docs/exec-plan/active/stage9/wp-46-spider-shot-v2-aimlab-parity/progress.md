@@ -11,6 +11,7 @@
 
 - **2026-08-26 T3**:`TargetView` 建構子邏輯抽出私有 `#createGeometry(shape)`(box → `BoxGeometry(1,1,1)`;sphere → `SphereGeometry(0.5,24,16)`);新增公開 `setShape(shape)`——同形狀 no-op,否則 dispose 舊 geometry、建新的、遍歷既有 pool 把每個 mesh 的 `geometry` 參照就地換新(mesh 本身不重建)。`main.ts` 三處接線:初始建立 `targetView` 後、`loadDrillById`(`recorder.configureMouseIntegration` 之後、`drillRunner.start` 之前)、`loadSceneById`(`buildSimLoop` 之後、`drillRunner.start` 之前),皆呼叫 `targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape)`(單一來源,沿用 T1 的 `resolveTargetHitbox`,不手寫 `config.targets.hitbox?.shape ?? 'box'`)。`TargetView.test.ts` 新增 3 個測試(sphere geometry 型別、既有 pool mesh identity 不變但 geometry 換新、同形狀重複呼叫不重複 dispose)。`npx tsc --noEmit` 全專案綠;`npx vitest run` 全專案 137 個測試檔 / 1069 個測試全綠(新增 3 個)。✅ T3 DoD①–⑤達成,可進 T4。
 - **2026-08-26 T4**:`SpiderShotCenterPeripheralConfig` 與 `SpiderShotStratifiedConfig` 新增選填 `centerExemptFromTimeout`;schema 兩個分支皆以選填布林欄位保留其值(省略時不寫入輸出)。`DrillRunner.tick()` 的 `peekTimeoutMs` 迴圈於讀取 `visibleAt` 前跳過設定此旗標的 center 目標；peripheral 與非 spiderShot 路徑不變。新增回歸測試覆蓋 center 不逾時、peripheral 仍逾時、實際 `spiderShotV1` 設定省略旗標時 center 仍逾時，並驗證兩種 spiderShot schema 形狀的欄位保真。`npx.cmd vitest run src/drill/DrillRunner.test.ts src/drill/schema.test.ts src/drill/spider_shot_v2.test.ts` 全綠(3 檔 / 67 tests);`npx.cmd tsc --noEmit` 全綠。✅ T4 DoD①–⑤達成,可進 T5。
+- **2026-08-26 T5**:`spiderShotV2` 改用 `SPIDER_SHOT_HITBOX_V2`——以具名常數計算距離 8u、視角直徑 2.0° 的 sphere 直徑，三軸共用同一數值；設定 `centerExemptFromTimeout: true`、`peekTimeoutMs: 1750`、安全 spawn 上限 `targets.count: 300`，並移除冗餘 `timing.timeLimitMs`，只以 `{ type: 'timeLimit', value: 60000 }` 結束。新增設定合約測試覆蓋 sphere 幾何、60 秒單一時限與 spawn 上限，同時保留 v1 凍結回歸案例不變。`npx.cmd vitest run src/drill/spider_shot_v2.test.ts` 全綠(1 檔 / 5 tests);`npx.cmd tsc --noEmit` 全綠;完整 `npm.cmd run test:ci` 的 TypeScript + Vitest 137 檔 / 1074 tests 全綠，另行確認 Playwright 25 tests 全綠。✅ T5 DoD①–⑥達成，可進 T-exit。
 
 ## Decision Log
 
@@ -27,5 +28,5 @@
 
 ## Open Questions(狀態)
 
-- OQ-46.1(`targets.count` 安全上限精確值):暫定 300,待 T5 前確認,不阻塞 T0–T4。
+- OQ-46.1(`targets.count` 安全上限精確值):✅ 已採用 300 作為 60 秒時限下的安全上限；它不是實際結束條件。
 - OQ-46.2(正式 WP/GD 編號指派時機):延後,比照 stage9 OQ-S9-2,不阻塞本 WP 交付。
