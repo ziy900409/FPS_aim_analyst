@@ -2,7 +2,7 @@
 
 ## Status
 
-- **Current**:T4 完成（`derivePeekClickTransferMetrics` transfer assembler：targetId join、completion metrics、flags/缺失值 policy），T1–T4 皆已就緒。T5 等 stage8 WP-43 T-exit gate（已開放）。
+- **Current**:T5 完成（versioned `transfer-pilot-v1` session：三家族 roster、`buildFamilyOrderForRoster` 泛化排序、`SessionRunner` additive family 解析、preset），T1–T5 皆已就緒，可開始 T-exit。
 - **Scope state**:`peek-click-transfer-pilot-v1` 為 Practice/pilot-only；正式 Assessment freeze 不在本 WP。
 - **Dependency state**:T3 依賴的 WP-44 T-exit 已完成(`c44270e`)；T5 依賴的 stage8 WP-43 T-exit 已完成(`61db0ba`)；HEAD(`41d3bd5`)已包含兩者，兩個 gate 皆已開放，T3/T5 不再受阻。
 
@@ -72,6 +72,16 @@
 - **測試**新增 `src/metrics/peekClickTransferMetrics.test.ts`（8 tests）：first-hit、first-miss→second-hit（`shotsToKill=2`）、timeout-before-onset、pre-fire（fire_before_first_visible/fire_before_measurement_onset）、no-counter、player_corridor_exceeded、事件陣列反轉 join 穩定性、public key-set（排除 `score`/`compositeScore`）。
 - **驗證**：`npm.cmd test -- src/metrics/peekClickTransferMetrics.test.ts src/metrics/counterstrafeMetrics.test.ts src/metrics/holdClickMetrics.test.ts` → exit 0，16 tests passed（T4 DoD 指定套件，含新檔 8 tests + 既有 counterstrafe/holdClick 各 4 tests 零修改回歸）；`npx vitest run`（全專案）→ exit 0，136 files / 1045 tests passed（較 T3 baseline 135 files/1037 tests 增加 1 file/8 tests，皆為本次新增）；`npm run typecheck` exit 0；`git status --short` 只有本 task 兩個新檔（`peekClickTransferMetrics.ts`/`.test.ts`）。
 
+### 2026-08-26 — T5 versioned transfer-pilot session roster/preset
+
+- **改** `src/session/sessionSchedule.ts`：新增 `TRANSFER_PILOT_FAMILY_IDS = ['hold-click','counterstrafe','peek-click-transfer']` + `TransferPilotFamilyId`/`SessionFamilyId`（= `TestFamilyId | TransferPilotFamilyId`)聯集型別。`participantOffset` 泛化為接受 `rosterLength` 參數；新增 `buildFamilyOrderForRoster<T extends string>(participantId, sessionIndex, roster)` 取代原本寫死 `TEST_FAMILY_IDS.length` 的版本,內部驗證 roster 非空、無重複、`sessionIndex` 為非負整數。既有 `buildFamilyOrder()` 改為 `buildFamilyOrderForRoster(participantId, sessionIndex, TEST_FAMILY_IDS)` 的薄封裝——因為對 `TEST_FAMILY_IDS`(length 4)呼叫時雜湊/取模算式逐位相同,四家族 golden 測試零修改全綠,證明泛化未改變既有輸出（DoD「buildFamilyOrder() golden cases 不變」以既有 `sessionSchedule.test.ts` 原始 5 個測試零修改通過驗證）。
+- **改** `src/session/SessionRunner.ts`：`SessionPlan.families`/`SessionRunnerPhase` 各 family 欄位/`resolveWarmupDrillId`/`resolveFamilyDrillId` 型別由 `TestFamilyId` 泛化為 `SessionFamilyId`。`requireFamilyOrder` 的合法性檢查改用內部 `KNOWN_SESSION_FAMILY_IDS`(`TEST_FAMILY_IDS ∪ TRANSFER_PILOT_FAMILY_IDS` 的 Set,未 export)取代原本只認 `TEST_FAMILY_IDS.includes`——如此第五家族可通過驗證,但仍是固定已知集合,不開放 operator 任意字串（design doc「不放寬 operator 任意 drill id」的機械落實)。`resolveFamilyDrillId` 新增 `case 'peek-click-transfer': return peekClickTransferPilotV1.id`（T3 匯出的 researcher-mode 預設 2° cell,同一個 `holdClickV1.id`/`holdTrackV1.id` 直接讀頂層 `.id` 慣例)。
+- **決策**:transfer 家族**不**提供 warmup drill——`resolveWarmupDrillId` 對 `'peek-click-transfer'` 落在既有 `else` 分支回 `{availability:'unavailable'}`,零新增程式碼。理由:T3 只交付了單一 pilot drill,沒有為 transfer task 建立獨立熱身 config;design doc 明確把這個決定留給「T5 entry 時依 WP-43 UI contract拍板」,而 WP-43 UI contract 沒有為第五家族定義熱身入口,現在發明一個屬於臆造未定案設計（同 D-45.14 對 T4 ResultScreen UI 的態度)。見新決策 D-45.16。
+- **改** `src/session/sessionPlanPresets.ts`：`SessionPlanPreset.perFamilyTrialShape` 型別由 `Readonly<Record<TestFamilyId, PerFamilyTrialShape>>` 放寬為 `Readonly<Partial<Record<SessionFamilyId, PerFamilyTrialShape>>>`（`Partial` 是必要的,因為 `transfer-pilot-v1` preset 只涵蓋 3 個家族,若維持 non-optional 4-key Record 會強迫該 preset 也塞入不屬於它的 `hold-track`/`spider-shot` 欄位)。新增 `SESSION_PLAN_PRESET_TRANSFER_PILOT_V1`(`id:'transfer-pilot-v1'`、`restSeconds:60`、`perFamilyTrialShape` 只含 `hold-click`/`counterstrafe`/`peek-click-transfer` 三鍵,`peek-click-transfer` 讀 `peekClickTransferPilotV1.drill.endCondition.value`)。`SESSION_PLAN_PRESET_PILOT_DEFAULT` 逐位不變（型別放寬為 superset,既有 4-key 物件字面量仍合法);`SESSION_PLAN_PRESETS` 陣列新增第二個元素,`findSessionPlanPreset('pilot-default')` 行為不變。
+- **範圍決策(D-45.15)**：T5 **不修改 `src/main.ts`**（不新增第二個 `SessionPlanSetup`/researcher-menu 入口,也不動 `src/data/metadata.ts` 的 `requireSessionPlanFamilyOrder`）。理由:(1) README §2.1 file scope 對 T5 只列出 `sessionSchedule.ts`/`SessionRunner.ts`/`sessionPlanPresets.ts` 三檔,未列 `main.ts`/`metadata.ts`；(2) 現況 `buildFamilyOrder()` 本身從 stage7 定案至今就**從未被 `main.ts` 呼叫**(`grep buildFamilyOrder src/main.ts` 零結果)——既有四家族 Session Plan 的排序完全來自操作員手動拖曳 UI,不是系統算出的 balanced order;`sessionIndex` 也從未出現在任何匯出 metadata 欄位（`Meta` 介面沒有 `sessionIndex`,`main.ts` 呼叫 `sessionPlanRunner.start()` 時寫死 `sessionIndex:0`）。T5 新增的 `buildFamilyOrderForRoster`/preset 延續同一個「先交付可測試的資料層 primitive,UI 接線留待後續」慣例,而非無中生有替四家族補一條新路徑；(3) 若現在接 UI,勢必要同時放寬 `metadata.ts` 的 `requireSessionPlanFamilyOrder`（目前對 `TEST_FAMILY_IDS` 硬編碼白名單,會讓 transfer 匯出直接 throw）——這屬於未在 README/T5 task 檔任何介面契約中定義的第二個變更面,風險與範圍都超出本 task 的三檔宣告。DoD「Session Plan 入口只在 versioned preset 顯示 transfer family」與「三個 exports 含相同 participant/session block context」以 `SessionRunner`/preset 層級的 flow 測試驗證（見下方測試段落),UI/匯出接線留給後續 wiring task(同 D-45.14 對 T4 ResultScreen 的處理方式)。
+- **測試**：`sessionSchedule.test.ts` 新增 `buildFamilyOrderForRoster` describe block（7 tests：對 `TEST_FAMILY_IDS` 呼叫與 `buildFamilyOrder` 逐位相同；transfer roster 三個連續 sessionIndex 每 position 各出現一次;同 participant/session 決定性 + 不同 participant offset（`participant-1`/`participant-3` 為手算驗證過 mod-3 offset 不同的 pair,避免像最初誤用 `participant-2` 巧合同 offset 導致假陽性失敗）;empty/duplicate/negative/non-integer sessionIndex 各自 throw)。`SessionRunner.test.ts` 新增：`resolveFamilyDrillId('peek-click-transfer')`/`resolveWarmupDrillId` 斷言、transfer 家族 unavailable-warmup 直接開始正式測試、以及完整 `TRANSFER_PILOT_FAMILY_IDS` 三家族 warmup→family→rest(60s)→family→rest(60s)→family→done flow(比照既有「preserves the selected-family sequence」測試手法,驗證 `loadDrillById` 呼叫序列與 `plan.families.map(resolveFamilyDrillId)` 逐位相同)。新增 `src/session/sessionPlanPresets.test.ts`（3 tests,此檔先前無測試覆蓋)：預設 preset 4 鍵不變、transfer preset 只含 3 鍵且 `hold-track`/`spider-shot` 為 `undefined`、兩個 preset 皆可由 `findSessionPlanPreset` 解析。
+- **驗證**：`npm.cmd test -- src/session/sessionSchedule.test.ts src/session/SessionRunner.test.ts src/ui/SessionPlanSetup.test.ts src/session/sessionPlanPresets.test.ts` → exit 0，35 tests passed（T5 DoD 指定套件 + 新增 preset 測試檔）；`npx vitest run`（全專案）→ exit 0，137 files / 1057 tests passed（較 T4 baseline 136 files/1045 tests 增加 1 file/12 tests，皆為本次新增）；`npm run typecheck` exit 0；`git status --short` 只有本 task 預期檔案（`sessionSchedule.ts`/`.test.ts`、`SessionRunner.ts`/`.test.ts`、`sessionPlanPresets.ts` 修改 + `sessionPlanPresets.test.ts` 新檔）；worktree 另有與本 WP 無關的既存未 staged 變更（`docs/exec-plan/active/stage9/README.md` 1 行 + 新資料夾 `wp-46-spider-shot-v2-aimlab-parity/`），本 task 未觸碰、不 staged。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -89,7 +99,9 @@
 | **D-45.5** | 不建立 composite score | 沿用 stage6「不同構念分層報告」紀律 | Confirmed，T4 落地 |
 | **D-45.13** | `PeekClickTransferMetrics` 頂層 `firstShotHitRate`/`fireBeforeGateRate`/`anticipationRate` 直接回傳 `counterstrafe`/`holdClick` 既有聚合值，不重新計算；`validFirstShotRate` 是唯一新聚合值 | objective 明文「不重推 frozen 構念，新增 completion metrics」；三者皆已是 hold-click/counterstrafe 的 frozen 構念，重算會製造第二定義風險 | Confirmed，T4 |
 | **D-45.14** | T4 不新增 ResultScreen UI transfer section，只驗證既有 Practice history guard 不受影響 | T4 task 檔 DoD 未把新 UI section 列為可驗證項；`deriveCounterstrafeMetrics` 本身都尚未接線任何 UI；README 未提供該 section 的卡片 ID/介面契約，此刻新增等於臆造未定案設計 | Confirmed，T4；UI 呈現留待後續 wiring task |
-| **D-45.6** | Session 採 versioned roster，不改 stage6 default family list | 防止既有 participant order 全數漂移 | Proposed，T5 |
+| **D-45.6** | Session 採 versioned roster，不改 stage6 default family list | 防止既有 participant order 全數漂移 | Confirmed，T5 落地 |
+| **D-45.15** | T5 不修改 `main.ts`（不新增 researcher-menu 入口）與 `metadata.ts`（不放寬 `requireSessionPlanFamilyOrder`） | README §2.1 T5 file scope 只列 3 個 session 層檔案；`buildFamilyOrder()` 本身自 stage7 定案後從未被 `main.ts` 呼叫，四家族 Session Plan 排序現況完全來自操作員手動拖曳，非系統算出——T5 延續同一個「資料層 primitive 先行，UI 接線留待後續」慣例；接 UI 必然要求同步放寬 `metadata.ts` 白名單，屬未在任何介面契約中定義的第二個變更面 | Confirmed，T5 |
+| **D-45.16** | `peek-click-transfer` 家族的 `resolveWarmupDrillId` 落在既有 `else` 分支回 `unavailable`，不新增專屬熱身 drill | T3 只交付單一 pilot drill,未建熱身 config；WP-43 UI contract 未定義第五家族熱身入口,現在發明屬臆造未定案設計(同 D-45.14 對 ResultScreen 的態度) | Confirmed，T5 |
 
 ## Surprises / blockers
 
@@ -130,3 +142,7 @@
 | 2026-08-26 | `npx vitest run`（全專案，T4 wiring 後） | exit 0，136 files / 1045 tests passed |
 | 2026-08-26 | `npm run typecheck`（T4 wiring 後） | exit 0 |
 | 2026-08-26 | `git status --short`（T4 完成後） | 只有本 task 兩個新檔（`peekClickTransferMetrics.ts`/`.test.ts`） |
+| 2026-08-26 | `npm.cmd test -- src/session/sessionSchedule.test.ts src/session/SessionRunner.test.ts src/ui/SessionPlanSetup.test.ts src/session/sessionPlanPresets.test.ts` | exit 0，35 tests passed（T5 DoD 指定套件 + 新增 preset 測試檔） |
+| 2026-08-26 | `npx vitest run`（全專案，T5 wiring 後） | exit 0，137 files / 1057 tests passed |
+| 2026-08-26 | `npm run typecheck`（T5 wiring 後） | exit 0 |
+| 2026-08-26 | `git status --short`（T5 完成後） | 本 task 預期檔案（5 檔修改 + 1 新檔）；另有與本 WP 無關的既存未 staged 變更（stage9 README 1 行 + wp-46 新資料夾），未觸碰、不 staged |

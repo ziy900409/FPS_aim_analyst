@@ -42,11 +42,11 @@
 
 ## T5 — Versioned pilot session
 
-- [ ] 等 stage8 WP-43 T-exit
-- [ ] versioned three-family roster/order
-- [ ] transfer-pilot-v1 preset + 60s rest
-- [ ] stage6 order golden unchanged
-- [ ] session UI/E2E/export context tests
+- [x] 等 stage8 WP-43 T-exit
+- [x] versioned three-family roster/order
+- [x] transfer-pilot-v1 preset + 60s rest
+- [x] stage6 order golden unchanged
+- [x] session UI/E2E/export context tests（SessionRunner flow-level；main.ts 入口有意識延後，見 progress.md D-45.15）
 
 ## T-exit
 

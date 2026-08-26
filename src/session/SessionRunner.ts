@@ -2,13 +2,18 @@ import { counterstrafeFreeV1 } from '../drill/counterstrafe_free_v1.ts';
 import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
 import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
+import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
 import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
-import { TEST_FAMILY_IDS, type TestFamilyId } from './sessionSchedule.ts';
+import {
+  TEST_FAMILY_IDS,
+  TRANSFER_PILOT_FAMILY_IDS,
+  type SessionFamilyId,
+} from './sessionSchedule.ts';
 
 export interface SessionPlan {
   readonly participantId: string;
   readonly sessionIndex: number;
-  readonly families: readonly TestFamilyId[];
+  readonly families: readonly SessionFamilyId[];
   readonly restSeconds: number;
   readonly includeWarmup: boolean;
 }
@@ -17,9 +22,9 @@ export type WarmupAvailability = 'available' | 'unavailable';
 
 export type SessionRunnerPhase =
   | { readonly kind: 'idle' }
-  | { readonly kind: 'warmup'; readonly family: TestFamilyId; readonly availability: WarmupAvailability }
-  | { readonly kind: 'family'; readonly family: TestFamilyId; readonly familyIndex: number }
-  | { readonly kind: 'rest'; readonly nextFamily: TestFamilyId; readonly remainingMs: number }
+  | { readonly kind: 'warmup'; readonly family: SessionFamilyId; readonly availability: WarmupAvailability }
+  | { readonly kind: 'family'; readonly family: SessionFamilyId; readonly familyIndex: number }
+  | { readonly kind: 'rest'; readonly nextFamily: SessionFamilyId; readonly remainingMs: number }
   | { readonly kind: 'done' };
 
 export interface SessionRunnerHandle {
@@ -39,11 +44,18 @@ export interface SessionRunnerOptions {
   readonly onPhaseChange?: (phase: SessionRunnerPhase) => void;
 }
 
-function requireFamilyOrder(value: readonly TestFamilyId[]): readonly TestFamilyId[] {
+// WP-45 T5 — pilot family ids are additive to the frozen four-family assessment roster; a session
+// plan may draw from either known roster but not from an arbitrary operator-supplied id.
+const KNOWN_SESSION_FAMILY_IDS: ReadonlySet<SessionFamilyId> = new Set([
+  ...TEST_FAMILY_IDS,
+  ...TRANSFER_PILOT_FAMILY_IDS,
+]);
+
+function requireFamilyOrder(value: readonly SessionFamilyId[]): readonly SessionFamilyId[] {
   if (value.length === 0) throw new Error('Session plan must include at least one family');
-  const seen = new Set<TestFamilyId>();
+  const seen = new Set<SessionFamilyId>();
   for (const family of value) {
-    if (!TEST_FAMILY_IDS.includes(family)) throw new Error(`Unknown session plan family: ${family}`);
+    if (!KNOWN_SESSION_FAMILY_IDS.has(family)) throw new Error(`Unknown session plan family: ${family}`);
     if (seen.has(family)) throw new Error('Session plan families must not contain duplicates');
     seen.add(family);
   }
@@ -51,14 +63,14 @@ function requireFamilyOrder(value: readonly TestFamilyId[]): readonly TestFamily
 }
 
 export function resolveWarmupDrillId(
-  family: TestFamilyId,
+  family: SessionFamilyId,
 ): { availability: WarmupAvailability; drillId?: string } {
   return family === 'counterstrafe'
     ? { availability: 'available', drillId: counterstrafeFreeV1.drillId }
     : { availability: 'unavailable' };
 }
 
-export function resolveFamilyDrillId(family: TestFamilyId): string {
+export function resolveFamilyDrillId(family: SessionFamilyId): string {
   switch (family) {
     case 'hold-click':
       return holdClickV1.id;
@@ -68,12 +80,14 @@ export function resolveFamilyDrillId(family: TestFamilyId): string {
       return spiderShotV1.drillId;
     case 'counterstrafe':
       return counterstrafeReversalV1.drillId;
+    case 'peek-click-transfer':
+      return peekClickTransferPilotV1.id;
   }
 }
 
 export function createSessionRunner(options: SessionRunnerOptions): SessionRunnerHandle {
   let phase: SessionRunnerPhase = { kind: 'idle' };
-  let families: readonly TestFamilyId[] = [];
+  let families: readonly SessionFamilyId[] = [];
   let restDurationMs = 0;
   let restStartedAt: number | undefined;
   let disposed = false;

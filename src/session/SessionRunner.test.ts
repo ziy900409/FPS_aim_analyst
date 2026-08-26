@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { TRANSFER_PILOT_FAMILY_IDS } from './sessionSchedule.ts';
 import {
   createSessionRunner,
   resolveFamilyDrillId,
@@ -114,9 +115,62 @@ describe('SessionRunner', () => {
     expect(resolveFamilyDrillId('hold-track')).toBe('hold_track_v1');
     expect(resolveFamilyDrillId('spider-shot')).toBe('spider-shot-v1');
     expect(resolveFamilyDrillId('counterstrafe')).toBe('counterstrafe-reversal-v1');
+    expect(resolveFamilyDrillId('peek-click-transfer')).toBe('peek_click_transfer_pilot_v1_2deg');
     expect(resolveWarmupDrillId('counterstrafe')).toEqual({
       availability: 'available',
       drillId: 'counterstrafe-free-v1',
     });
+  });
+
+  it('reports unavailable warmup for the peek-click-transfer pilot family and loads it directly', async () => {
+    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const onStatus = vi.fn();
+    const runner = createSessionRunner({ loadDrillById, onStatus });
+    await runner.start({
+      participantId: 'P001',
+      sessionIndex: 0,
+      families: ['peek-click-transfer'],
+      restSeconds: 60,
+      includeWarmup: true,
+    });
+
+    expect(runner.phase).toEqual({ kind: 'family', family: 'peek-click-transfer', familyIndex: 0 });
+    expect(onStatus).toHaveBeenCalledWith('本家族無熱身，直接開始正式測試。');
+    expect(loadDrillById).toHaveBeenCalledWith(resolveFamilyDrillId('peek-click-transfer'));
+    expect(resolveWarmupDrillId('peek-click-transfer')).toEqual({ availability: 'unavailable' });
+  });
+
+  it('runs the versioned transfer-pilot roster end to end with 60s rest between families (WP-45 T5)', async () => {
+    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const runner = createSessionRunner({ loadDrillById });
+    const plan: SessionPlan = {
+      participantId: 'P001',
+      sessionIndex: 0,
+      families: [...TRANSFER_PILOT_FAMILY_IDS],
+      restSeconds: 60,
+      includeWarmup: true,
+    };
+
+    await runner.start(plan);
+    // hold-click has no warmup drill — starts the family directly (README §T5 design decision).
+    expect(runner.phase).toEqual({ kind: 'family', family: 'hold-click', familyIndex: 0 });
+
+    await runner.advance();
+    expect(runner.phase).toEqual({ kind: 'rest', nextFamily: 'counterstrafe', remainingMs: 60_000 });
+    runner.poll(1_000);
+    runner.poll(61_000);
+    await settleTransitions();
+    expect(runner.phase).toEqual({ kind: 'family', family: 'counterstrafe', familyIndex: 1 });
+
+    await runner.advance();
+    expect(runner.phase).toEqual({ kind: 'rest', nextFamily: 'peek-click-transfer', remainingMs: 60_000 });
+    runner.poll(100_000);
+    runner.poll(160_000);
+    await settleTransitions();
+    expect(runner.phase).toEqual({ kind: 'family', family: 'peek-click-transfer', familyIndex: 2 });
+
+    await runner.advance();
+    expect(runner.phase).toEqual({ kind: 'done' });
+    expect(loadDrillById.mock.calls.map(([id]) => id)).toEqual(plan.families.map(resolveFamilyDrillId));
   });
 });
