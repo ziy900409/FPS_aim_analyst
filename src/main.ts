@@ -194,6 +194,7 @@ activeSceneFallback = initialSceneLoad.fallback;
 
 // WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
 let targetView = new TargetView(sceneManager.scene);
+targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：初始 drill 的 hitbox shape 生效。
 
 // WP-13 / T3（FR-B10）— 彈孔渲染:唯讀 sharedState.impacts（sim 命中時寫入）以單一 InstancedMesh
 // 繪彈孔（1 draw call）。狀態由 sim 寫、本層唯讀（雙迴圈邊界）。
@@ -1053,6 +1054,7 @@ async function loadDrillById(drillId: string): Promise<void> {
   simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
   cameraController.setAdsConfig(activeWeaponConfig().ads); // WP-24 / T2：新 drill 武器的 ADS 光學。
   recorder.configureMouseIntegration({ gain: currentMouseGain() }); // KI-005 / A：新 drill 武器的感度 gain（同一批動作）。
+  targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：新 drill 的 hitbox shape 生效。
   drillRunner.start(activeDrillConfig);
   controls.setSelectedDrill(option.id);
   syncControlsVisibility();
@@ -1073,6 +1075,7 @@ async function loadSceneById(sceneId: string): Promise<void> {
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
   simLoop = buildSimLoop();
+  targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：場景切換後沿用同一 drill 的 hitbox shape。
   drillRunner.start(activeDrillConfig);
   syncControlsVisibility();
 }

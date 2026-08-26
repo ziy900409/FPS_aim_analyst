@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { TargetState } from '../state/types.ts';
 import { TargetView } from './TargetView.ts';
 
@@ -113,6 +113,46 @@ describe('TargetView — 依 state 唯讀顯示/隱藏目標 mesh(FR-4.1)', () =
     view.sync([t], 0.5);
     expect(t.pos).toEqual({ x: 4, y: 1.5, z: -8 });
     expect(t.posPrev).toEqual({ x: 0, y: 1.5, z: -8 });
+  });
+
+  it('setShape(\'sphere\') 後新 spawn 的目標渲染為 SphereGeometry（WP-46/T3 FR-46.3）', () => {
+    const scene = new THREE.Scene();
+    const view = new TargetView(scene);
+
+    view.setShape('sphere');
+    view.sync([target()]);
+
+    expect(meshes(scene)[0].geometry).toBeInstanceOf(THREE.SphereGeometry);
+  });
+
+  it('既有 pool mesh（非新建）換形狀後 geometry 參照同步更新（WP-46/T3）', () => {
+    const scene = new THREE.Scene();
+    const view = new TargetView(scene);
+
+    view.sync([target()]);
+    const existingMesh = meshes(scene)[0];
+    expect(existingMesh.geometry).toBeInstanceOf(THREE.BoxGeometry);
+
+    view.setShape('sphere');
+
+    // 同一個 mesh 物件（identity 不變），geometry 已換成新的。
+    expect(meshes(scene)[0]).toBe(existingMesh);
+    expect(existingMesh.geometry).toBeInstanceOf(THREE.SphereGeometry);
+  });
+
+  it('連續呼叫 setShape(\'box\') 同形狀為 no-op：不重複 dispose 舊 geometry（WP-46/T3）', () => {
+    const scene = new THREE.Scene();
+    const view = new TargetView(scene);
+
+    view.sync([target()]);
+    const geometryBefore = meshes(scene)[0].geometry;
+    const disposeSpy = vi.spyOn(geometryBefore, 'dispose');
+
+    view.setShape('box');
+    view.setShape('box');
+
+    expect(disposeSpy).not.toHaveBeenCalled();
+    expect(meshes(scene)[0].geometry).toBe(geometryBefore);
   });
 
   it('dispose 後場景清空且池歸零', () => {

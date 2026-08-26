@@ -21,19 +21,34 @@ const TARGET_COLOR = 0xd94f4f;
 
 export class TargetView {
   readonly #scene: THREE.Scene;
-  /** 單位 box(1×1×1);各目標以 mesh.scale 套 hitbox 尺寸,故只需一份 geometry。 */
-  readonly #geometry: THREE.BoxGeometry;
+  /** 單位 geometry(box 1×1×1 / sphere 半徑 0.5);各目標以 mesh.scale 套 hitbox 尺寸,故只需一份。 */
+  #geometry: THREE.BufferGeometry;
+  #shape: 'box' | 'sphere' = 'box';
   readonly #material: THREE.MeshStandardMaterial;
   /** mesh 重用池:index 對應本幀第 n 個顯示中的目標;多出者隱藏留用。 */
   readonly #pool: THREE.Mesh[] = [];
 
   constructor(scene: THREE.Scene) {
     this.#scene = scene;
-    this.#geometry = new THREE.BoxGeometry(1, 1, 1);
+    this.#geometry = this.#createGeometry('box');
     this.#material = new THREE.MeshStandardMaterial({
       color: TARGET_COLOR,
       roughness: 0.6,
     });
+  }
+
+  /** 建立單位 geometry;'sphere' 半徑 0.5 配合既有 mesh.scale 縮放慣例(三軸相等時仍為正圓球)。 */
+  #createGeometry(shape: 'box' | 'sphere'): THREE.BufferGeometry {
+    return shape === 'sphere' ? new THREE.SphereGeometry(0.5, 24, 16) : new THREE.BoxGeometry(1, 1, 1);
+  }
+
+  /** 切換 pool 共用 geometry(box/sphere);既有 pool mesh 就地換 geometry,不重建/不銷毀 mesh。 */
+  setShape(shape: 'box' | 'sphere'): void {
+    if (shape === this.#shape) return;
+    this.#geometry.dispose();
+    this.#geometry = this.#createGeometry(shape);
+    this.#shape = shape;
+    for (const mesh of this.#pool) mesh.geometry = this.#geometry;
   }
 
   /**

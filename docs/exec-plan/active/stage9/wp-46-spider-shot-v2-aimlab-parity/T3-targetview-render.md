@@ -7,7 +7,7 @@
 | **相依** | T1 |
 | **Risk / Cplx** | Low / Low(純渲染,不影響判定/資料;檔案與 T2 不重疊,可與 T2 並行) |
 | **Touches** | MODIFY `src/render/TargetView.ts`、`src/main.ts`、`src/render/TargetView.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 
@@ -15,11 +15,11 @@
 
 ## Steps
 
-- [ ] `TargetView` 建構子邏輯抽出「建立 box geometry」為私有方法(供 constructor 與 `setShape('box')` 共用)。
-- [ ] 新增 `#createGeometry(shape)`:`'box'` → `new THREE.BoxGeometry(1,1,1)`;`'sphere'` → `new THREE.SphereGeometry(0.5, 24, 16)`(半徑 0.5,配合既有 `mesh.scale.set(hitbox.width, height, depth)` 的縮放慣例——sphere 因三軸強制相等,縮放後仍是正圓球)。
-- [ ] 新增公開方法 `setShape(shape: 'box' | 'sphere'): void`:若與目前形狀相同則 no-op(避免重複 dispose/建立);否則 `this.#geometry.dispose()`,`this.#geometry = this.#createGeometry(shape)`,遍歷 `this.#pool` 把每個既有 mesh 的 `mesh.geometry = this.#geometry`。
-- [ ] `main.ts`:找到目前載入 drill(`loadDrillById`/初始化路徑)呼叫 `targetView` 的地方,新增 `targetView.setShape(config.targets.hitbox?.shape ?? 'box')`(初始載入與 drill 切換都要呼叫到)。
-- [ ] 新增 `TargetView.test.ts` 測試:①`setShape('sphere')` 後,`sync()` 顯示的 mesh 之 `geometry` 為 `SphereGeometry` 實例;②先 `sync()` 建立過 pool mesh 後再 `setShape('sphere')`,原本的 mesh 物件(比對 identity,非新建)其 `geometry` 也已換成新的;③連續呼叫 `setShape('box')` 兩次(同形狀)不拋錯、不重複 dispose(可用 spy 驗證 dispose 只呼叫一次或行為冪等)。
+- [x] `TargetView` 建構子邏輯抽出「建立 box geometry」為私有方法(供 constructor 與 `setShape('box')` 共用)。
+- [x] 新增 `#createGeometry(shape)`:`'box'` → `new THREE.BoxGeometry(1,1,1)`;`'sphere'` → `new THREE.SphereGeometry(0.5, 24, 16)`(半徑 0.5,配合既有 `mesh.scale.set(hitbox.width, height, depth)` 的縮放慣例——sphere 因三軸強制相等,縮放後仍是正圓球)。
+- [x] 新增公開方法 `setShape(shape: 'box' | 'sphere'): void`:若與目前形狀相同則 no-op(避免重複 dispose/建立);否則 `this.#geometry.dispose()`,`this.#geometry = this.#createGeometry(shape)`,遍歷 `this.#pool` 把每個既有 mesh 的 `mesh.geometry = this.#geometry`。
+- [x] `main.ts`:找到目前載入 drill(`loadDrillById`/初始化路徑)呼叫 `targetView` 的地方,新增 `targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape)`(初始載入、`loadDrillById`、`loadSceneById` 三處都呼叫到,單一來源沿用 T1 的 `resolveTargetHitbox`)。
+- [x] 新增 `TargetView.test.ts` 測試:①`setShape('sphere')` 後,`sync()` 顯示的 mesh 之 `geometry` 為 `SphereGeometry` 實例;②先 `sync()` 建立過 pool mesh 後再 `setShape('sphere')`,原本的 mesh 物件(比對 identity,非新建)其 `geometry` 也已換成新的;③連續呼叫 `setShape('box')` 兩次(同形狀)不拋錯、不重複 dispose(可用 spy 驗證 dispose 只呼叫一次或行為冪等)。
 
 ## Definition of Done
 
