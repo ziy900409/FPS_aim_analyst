@@ -153,6 +153,39 @@ describe('HitDetector — raycastWithRay（注入式射線方向，FR-B8）', ()
   });
 });
 
+describe('HitDetector — sphere hitbox 相交（WP-46 / T2，GD-7 擴充：box|sphere）', () => {
+  const origin = new THREE.Vector3(0, 1.5, 5);
+  function sphereTarget(): TargetState {
+    return makeTarget('t0', 0, -8, { hitbox: { width: 2, height: 2, depth: 2, shape: 'sphere' } });
+  }
+
+  it('①射線穿過球心 → hit', () => {
+    const dir = rayToPoint(origin, 0, 1.5, -8);
+    expect(raycastWithRay(origin, dir, [sphereTarget()])).toEqual({
+      hit: true,
+      targetId: 't0',
+      part: undefined,
+    });
+  });
+
+  it('②射線落在外接方塊角落附近、但在球體外 → miss（區分於 box 近似；若誤用 box 分支會變成 hit）', () => {
+    // 外接方塊 half-extent = radius = 1；點 (0.9,2.4,-7.1) 落在方塊內，但距球心 ≈1.56 > 半徑 1。
+    const dir = rayToPoint(origin, 0.9, 2.4, -7.1);
+    expect(raycastWithRay(origin, dir, [sphereTarget()]).hit).toBe(false);
+  });
+
+  it('③射線落在球體邊緣內側（距球心略小於半徑） → hit', () => {
+    const dir = rayToPoint(origin, 0.9, 1.5, -8); // 距球心 0.9 < 半徑 1
+    expect(raycastWithRay(origin, dir, [sphereTarget()]).hit).toBe(true);
+  });
+
+  it('④同一組座標若 shape:box（或省略） → 應 hit（對照組：box 分支未被 sphere 分支污染）', () => {
+    const boxTarget = makeTarget('t0', 0, -8, { hitbox: { width: 2, height: 2, depth: 2, shape: 'box' } });
+    const dir = rayToPoint(origin, 0.9, 2.4, -7.1);
+    expect(raycastWithRay(origin, dir, [boxTarget]).hit).toBe(true);
+  });
+});
+
 describe('HitDetector — 目標 sub-tick 命中內插（WP-18 / T2，FR-B17）', () => {
   const origin = new THREE.Vector3(0, 1.5, 5);
   const centerDir = new THREE.Vector3(0, 0, -1); // 準心中心射線（x=0）

@@ -26,6 +26,7 @@ const raycaster = new THREE.Raycaster();
 const box = new THREE.Box3();
 const boxMin = new THREE.Vector3();
 const boxMax = new THREE.Vector3();
+const sphere = new THREE.Sphere();
 const hitPoint = new THREE.Vector3();
 const cameraWorld = new THREE.Vector3();
 const cameraForward = new THREE.Vector3();
@@ -98,11 +99,17 @@ export function raycastWithRay(
       cy = t.posPrev.y + (t.pos.y - t.posPrev.y) * subAlpha;
       cz = t.posPrev.z + (t.pos.z - t.posPrev.z) * subAlpha;
     }
-    boxMin.set(cx - hw, cy - hh, cz - hd);
-    boxMax.set(cx + hw, cy + hh, cz + hd);
-    box.set(boxMin, boxMax);
-
-    const point = raycaster.ray.intersectBox(box, hitPoint);
+    let point: THREE.Vector3 | null;
+    if (t.hitbox.shape === 'sphere') {
+      sphere.center.set(cx, cy, cz);
+      sphere.radius = t.hitbox.width / 2;
+      point = raycaster.ray.intersectSphere(sphere, hitPoint);
+    } else {
+      boxMin.set(cx - hw, cy - hh, cz - hd);
+      boxMax.set(cx + hw, cy + hh, cz + hd);
+      box.set(boxMin, boxMax);
+      point = raycaster.ray.intersectBox(box, hitPoint);
+    }
     if (point === null) continue; // 射線未穿過此 hitbox
 
     const distSq = raycaster.ray.origin.distanceToSquared(point);

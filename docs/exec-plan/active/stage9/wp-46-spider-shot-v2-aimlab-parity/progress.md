@@ -7,6 +7,7 @@
 - **2026-08-26 規劃**:經使用者實機測試回報 + `systematic-debugging` 排查(排除 sim 邏輯 bug)+ `brainstorming` 對話(確認要對齊 Aim Lab Spidershot,含一輪 GD-7 修訂範圍的明確人為確認)產出本 WP 計畫。尚未執行任何 task。
 - **2026-08-26 T0**:覆核 README §0 六項讀碼假設 + entry-gate 七項 Steps,對照現行程式碼與文件。六項成立;第七項(`docs/exec-plan/DECISIONS.md` GD-25 狀態)發現與實際不符,已修正 README Constraints 與本檔 D-46.2(見下方 Surprises / Decision Log)。✅ T0 DoD 達成,可進 T1。
 - **2026-08-26 T1**:`TargetHitboxConfig`/`TargetHitboxSize`/`TargetState.hitbox` 新增 `shape?:'box'|'sphere'`(`TargetHitboxSize`/`TargetState.hitbox` 側恆填實值);`schema.ts` `validateHitbox` 新增 sphere 三軸相等驗證;`metadata.ts` `requireTargetHitboxConfig` 補上 `shape` 選填讀取(export/import 往返保真);`CLAUDE.md §4` GD-7 措辭擴充為 box|sphere。`npx tsc --noEmit` 揪出 26 處既有 hitbox 字面量/斷言缺少必填 `shape`(13 個檔案,含 1 個 production 檔 `visibilityDerivation.ts`),逐一補 `shape:'box'` 後 tsc 全綠;`npx vitest run` 全專案 1062 個測試全綠(含新增 3 個 sphere 驗證測試)。✅ T1 DoD①–⑤達成,可進 T2。
+- **2026-08-26 T2**:`HitDetector.raycastWithRay` 新增模組層級重用 `THREE.Sphere` 實例;per-target 迴圈依 `t.hitbox.shape` 分派 `intersectSphere`(sphere,半徑 = `width/2`,球心沿用既有 `cx/cy/cz` subAlpha 內插變數)或既有 `intersectBox`(box/省略,逐位不變),nearest-hit 比較邏輯兩分支共用不重複寫。`HitDetector.test.ts` 新增 4 個 sphere 案例(球心命中、外接方塊角落內但球外 miss、球體邊緣內側 hit、同座標 box 分支對照組 hit)。`npx tsc --noEmit` 全專案綠;`npx vitest run` 全專案 137 個測試檔 / 1066 個測試全綠(新增 4 個)。✅ T2 DoD①–⑤達成,可進 T3。
 
 ## Decision Log
 
