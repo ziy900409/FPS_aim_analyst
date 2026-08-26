@@ -8,6 +8,8 @@
 
 - **2026-08-26 T2**:`TargetManager.ts` 抽出共用 `peripheralPos()` 三角函式(v1 `center-peripheral` 路徑改呼叫它,既有 WP-36 世界座標精確斷言 44 個測試全綠,零回歸);新增 `SpiderZoneCell`/`buildSpiderZoneCells()`(等立體角 `cos` 分層)/`shuffleInPlace()`(seeded Fisher–Yates)/`sampleStratifiedPeripheralPos()`;`reset()` 新增 `spiderZoneQueue` 清空。新增 4 個 `TargetManager.test.ts` 測試(單目標存在+交替、reset 後決定性重放+換 seed 改變序列、12 格耗盡前不重複+重洗後再次覆蓋、世界距離落在宣告值)。全專案 `npx tsc --noEmit` 綠、`npx vitest run`(全 131 檔 995 測試)全綠。
 
+- **2026-08-26 T3**:新增 `src/drill/spider_shot_v2.ts`(`angularRadiusDegRange=[10,25]` 候選值、`grid: {azimuthQuadrants:4, radiusTiers:3}`、獨立 seed 260826,不與 v1 的 36036 共用),`main.ts` 註冊沿用 `sceneId: 'placeholder-room'`(KI-011 修法)。新增 3 個 `spider_shot_v2.test.ts` 測試(形狀正確、與 v1 seed 不同、v1 逐位不變)。`npm run test:ci`(`tsc --noEmit` + `vitest run` 995 測試 + `playwright test` 24 e2e)全綠。
+
 ## Decision Log
 
 - **D-44.1**(2026-08-26,brainstorming 對話拍板):新增 `spider-shot-v2` 而非改寫 `spider-shot-v1`。**Why**:WP-39 已把 v1 的 `angularRadiusDegRange=[15,15]`/`centerDistanceU=8`/`distanceURange=[8,8]` 列為正式凍結校準值(`STAGE6_PROTOCOL_VERSION = '1.0.0'`),直接改會打破「除凍結欄位外逐位不變」的既有回歸契約與既有 pilot/acceptance 資料的可比性。**Alternatives considered**:直接改 v1(使用者選項之一,但需同步處理 `DECISIONS.md` 凍結記錄與 `protocolVersion`,取捨成本高於開新檔)。

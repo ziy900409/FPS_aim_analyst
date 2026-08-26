@@ -8,7 +8,7 @@
 | ✅ | **T0** entry gate(覆核 §0 讀碼假設仍成立;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Low |
 | ✅ | **T1** `DrillConfig.ts` union 擴充 + `schema.ts` 新分支驗證 | [T1-schema-types.md](T1-schema-types.md) | T0 | Low |
 | ✅ | **T2** `TargetManager.ts` 共用三角函式抽取 + 12 格洗牌佇列 | [T2-target-manager-stratified.md](T2-target-manager-stratified.md) | T1 | Med |
-| ⬜ | **T3** `spider_shot_v2.ts` + `main.ts` 註冊 | [T3-drill-v2-registration.md](T3-drill-v2-registration.md) | T2 | Low |
+| ✅ | **T3** `spider_shot_v2.ts` + `main.ts` 註冊 | [T3-drill-v2-registration.md](T3-drill-v2-registration.md) | T2 | Low |
 | ⬜ | **T-exit** 驗收;`npm run test:ci` 全綠;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1+T2+T3 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../../README.md))

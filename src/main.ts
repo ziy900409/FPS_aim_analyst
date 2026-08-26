@@ -84,6 +84,7 @@ import { trackingBrVariants } from './drill/tracking_br_v1.ts';
 import { HOLD_CLICK_ONSET_THRESHOLD, HOLD_CLICK_VISIBILITY_SAMPLE_COUNT, holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
 import { spiderShotV1 } from './drill/spider_shot_v1.ts';
+import { spiderShotV2 } from './drill/spider_shot_v2.ts';
 import { counterstrafeReversalV1 } from './drill/counterstrafe_reversal_v1.ts';
 import { counterstrafeFreeV1 } from './drill/counterstrafe_free_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
@@ -158,6 +159,8 @@ const availableDrills: AvailableDrill[] = [
   // 未綁定場景時繼承 activeSceneConfig(預設 field-low)——與其 tree/rock 裝飾道具重疊、拒入。
   // placeholder-room 是唯一零 propBounds 的場景,鎖定為固定家(不得改回無 sceneId)。
   { id: spiderShotV1.drillId, label: spiderShotV1.drillId, source: spiderShotV1, sceneId: 'placeholder-room' },
+  // WP-44: stratified peripheral schedule variant; same KI-011 zero-propBounds scene as v1.
+  { id: spiderShotV2.drillId, label: spiderShotV2.drillId, source: spiderShotV2, sceneId: 'placeholder-room' },
   { id: counterstrafeReversalV1.drillId, label: counterstrafeReversalV1.drillId, source: counterstrafeReversalV1 },
   { id: counterstrafeFreeV1.drillId, label: counterstrafeFreeV1.drillId, source: counterstrafeFreeV1 },
   ...trackingBrVariants.map((variant) => ({
