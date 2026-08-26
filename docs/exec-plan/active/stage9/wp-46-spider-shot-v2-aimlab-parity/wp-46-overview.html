@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WP-46 — spider-shot-v2 對齊 Aim Lab Spidershot</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f5f6f8;
+    --text: #1b1f24;
+    --text-dim: #55606b;
+    --border: #dde1e6;
+    --accent: #2f6fed;
+    --accent-bg: #eaf1ff;
+    --ok: #1a7f4b;
+    --ok-bg: #e6f6ee;
+    --warn: #9a6700;
+    --warn-bg: #fff4e0;
+    --pending: #6b7280;
+    --pending-bg: #eef0f2;
+    --code-bg: #f0f2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c;
+      --bg-alt: #1b1f26;
+      --text: #e8eaed;
+      --text-dim: #9aa4af;
+      --border: #2b313a;
+      --accent: #6ea1ff;
+      --accent-bg: #1c2a45;
+      --ok: #4fd18c;
+      --ok-bg: #143528;
+      --warn: #e0b34d;
+      --warn-bg: #3a2f10;
+      --pending: #9aa4af;
+      --pending-bg: #22262c;
+      --code-bg: #1e2229;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.7;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
+  header { margin-bottom: 28px; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    background: var(--accent-bg);
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+  h1 { font-size: 26px; margin: 0 0 6px; line-height: 1.35; }
+  .subtitle { color: var(--text-dim); font-size: 15px; margin: 0; }
+  h2 {
+    font-size: 18px;
+    margin: 40px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 15.5px; margin: 22px 0 8px; }
+  p { color: var(--text); font-size: 15px; }
+  .dim { color: var(--text-dim); }
+  code {
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: 0.88em;
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 20px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 14px;
+  }
+  .meta-grid dt { color: var(--text-dim); font-weight: 600; }
+  .meta-grid dd { margin: 0; }
+  ul, ol { padding-left: 22px; font-size: 15px; }
+  li { margin: 5px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.6px;
+    margin: 10px 0 4px;
+  }
+  caption { text-align: left; caption-side: top; color: var(--text-dim); font-size: 13px; margin-bottom: 6px; }
+  th, td {
+    text-align: left;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { color: var(--text-dim); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .badge-pending { background: var(--pending-bg); color: var(--pending); }
+  .badge-med { background: var(--warn-bg); color: var(--warn); }
+  .badge-low { background: var(--ok-bg); color: var(--ok); }
+  .overflow-x { overflow-x: auto; }
+  .callout {
+    border: 1px solid var(--border);
+    background: var(--bg-alt);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 14px;
+    margin: 14px 0;
+  }
+  .callout.warn { background: var(--warn-bg); border-color: transparent; }
+  .callout strong { color: var(--text); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: var(--bg-alt);
+  }
+  .card h4 { margin: 0 0 6px; font-size: 14px; }
+  .card p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 12.5px;
+  }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">stage9 · WP-46(暫用編號)</span>
+    <h1>spider-shot-v2 對齊 Aim Lab Spidershot</h1>
+    <p class="subtitle">球體目標判定 + 中心免逾時 + 60 秒時限 + 視角直徑換算 hitbox</p>
+  </header>
+
+  <dl class="meta-grid">
+    <dt>目標</dt>
+    <dd>讓 <code>spider-shot-v2</code> 在幾何 / 時序 / 命中判定三個維度對齊 Aim Lab Spidershot 的實測手感</dd>
+    <dt>相依</dt>
+    <dd>WP-44(已交付;本 WP 修改其產出的 <code>spider_shot_v2.ts</code>)</dd>
+    <dt>估時</dt>
+    <dd>2.5–4 dev-days</dd>
+    <dt>狀態</dt>
+    <dd>規劃完成,尚未開跑 T0</dd>
+    <dt>完整文件</dt>
+    <dd><a href="README.md">README.md</a>(tech spec)· <a href="task-checklist.md">task-checklist.md</a> · <a href="progress.md">progress.md</a></dd>
+  </dl>
+
+  <h2>為什麼會有這個 WP</h2>
+  <p>
+    使用者實機測試 WP-44 交付的 <code>spider-shot-v2</code> 後回報「生成邏輯不符預期」。經
+    systematic-debugging 排查,確認 sim 端的 center↔peripheral 交替 / 重置 / spawn 時序邏輯全部正確、
+    且已有測試覆蓋——真正落差是三件事:外圍目標在 10°–25° 全向搜尋沒有提示、目標外觀是方塊而非球體、
+    沒有對齊 Aim Lab 的 60 秒整場時限與「中心不設逾時」語意。經 brainstorming 對話與使用者逐項核對後,
+    拍板本 WP 範圍。
+  </p>
+
+  <h2>要完成的五件事(Functional Requirements)</h2>
+  <div class="card-grid">
+    <div class="card">
+      <h4>① 真球體碰撞判定</h4>
+      <p><code>shape:'sphere'</code> 目標必須用真正的球體相交運算判定命中,不是視覺近似(方塊仍照現行判定)。</p>
+    </div>
+    <div class="card">
+      <h4>② 零回歸</h4>
+      <p><code>shape</code> 省略 / <code>'box'</code> 時,命中判定與渲染必須與現行行為逐位不變——尤其
+      <code>spider-shot-v1</code> 完全不受影響。</p>
+    </div>
+    <div class="card">
+      <h4>③ 視覺與判定同幾何</h4>
+      <p>球體渲染大小必須等於判定用直徑,不會有「看起來沒中卻算命中」或反過來的落差。</p>
+    </div>
+    <div class="card">
+      <h4>④ 中心目標免逾時</h4>
+      <p>spider-shot-v2 的中心目標不受 <code>peekTimeoutMs</code> 影響,只靠整場時限收尾;v1 逐位不變。</p>
+    </div>
+    <div class="card">
+      <h4>⑤ 60 秒整場時限</h4>
+      <p><code>endCondition</code> 改為 60 秒時限,並確保 spawn 上限不會在時間到之前提前耗盡。</p>
+    </div>
+  </div>
+
+  <h2>Task 拆解</h2>
+  <div class="overflow-x">
+  <table>
+    <caption>七個垂直切片,依序執行;每個 task 一個自足檔 + 一個原子 commit</caption>
+    <thead>
+      <tr><th>Task</th><th>要做什麼</th><th>相依</th><th>風險</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>T0</strong></td>
+        <td>覆核 brainstorming 對話的讀碼假設仍成立(WP-44/45 交付後有沒有東西被改動);無程式碼</td>
+        <td class="dim">無</td>
+        <td><span class="badge badge-low">Low</span></td>
+      </tr>
+      <tr>
+        <td><strong>T1</strong></td>
+        <td>hitbox 型別新增 <code>shape?: 'box' | 'sphere'</code> 欄位、<code>schema.ts</code> 驗證球體三軸相等、更新
+          <code>CLAUDE.md</code> §4 的 GD-7 措辭(box → box|sphere)</td>
+        <td class="dim">T0</td>
+        <td><span class="badge badge-med">Med</span></td>
+      </tr>
+      <tr>
+        <td><strong>T2</strong></td>
+        <td><code>HitDetector.raycastWithRay</code> 新增球體 ray-intersection 分支</td>
+        <td class="dim">T1</td>
+        <td><span class="badge badge-med">Med</span></td>
+      </tr>
+      <tr>
+        <td><strong>T3</strong></td>
+        <td><code>TargetView.setShape()</code> 切換渲染幾何(box/sphere)+ <code>main.ts</code> 載入 drill 時接線</td>
+        <td class="dim">T1</td>
+        <td><span class="badge badge-low">Low</span></td>
+      </tr>
+      <tr>
+        <td><strong>T4</strong></td>
+        <td>新增 <code>centerExemptFromTimeout</code> 欄位 + <code>DrillRunner.ts</code> 邏輯:中心目標跳過逾時撤除</td>
+        <td class="dim">T1</td>
+        <td><span class="badge badge-low">Low-Med</span></td>
+      </tr>
+      <tr>
+        <td><strong>T5</strong></td>
+        <td>把上面能力實際套進 <code>spider_shot_v2.ts</code>:球體 hitbox 數值、<code>peekTimeoutMs</code>、
+          <code>centerExemptFromTimeout</code>、<code>endCondition</code>、<code>targets.count</code></td>
+        <td class="dim">T2, T3, T4</td>
+        <td><span class="badge badge-low">Low</span></td>
+      </tr>
+      <tr>
+        <td><strong>T-exit</strong></td>
+        <td><code>npm run test:ci</code> 全綠、補契約文件、文件對帳(WP/GD 正式編號延後)</td>
+        <td class="dim">T1–T5</td>
+        <td><span class="badge badge-pending">—</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>三個關鍵設計決策</h2>
+
+  <h3>擴充 GD-7,而非繞過它</h3>
+  <p>
+    專案硬約束 GD-7 原本把命中判定的幾何釘死在 <code>Box3</code>(方塊)。使用者明確要求「真球體碰撞」而
+    非「方塊判定 + 視覺球體近似」,所以本 WP 選擇把 GD-7 擴充為「<code>box</code> 或 <code>sphere</code>,
+    但仍是單一來源」——命中判定與渲染永遠讀同一個 <code>TargetState.hitbox</code>,只是幾何種類多了一種選擇,
+    沒有違反「不得新增第二套尺寸常數」的精神。
+  </p>
+
+  <h3>hitbox 直徑用公式算,不手打數字</h3>
+  <p>
+    直徑 = 視角直徑(2.0°,Aim Lab Ultimate/Standard 1.8°–2.2° 的中點)換算成距離 8u 處的世界單位:
+  </p>
+  <div class="callout">
+    <code>diameter = 2 × distance × tan(angularDiameter / 2)</code><br />
+    <code>≈ 2 × 8 × tan(1°) ≈ 0.279u</code>
+  </div>
+
+  <h3>GD 正式編號延後,比照 WP-44 / WP-45</h3>
+  <p>
+    <code>DECISIONS.md</code> 目前 GD-25 被 stage8 提案暫用但尚未正式落帳,現在搶號有衝突風險。本 WP
+    的實質決策先記在自己的 <code>progress.md</code> Decision Log,<code>CLAUDE.md</code> §4 的措辭照舊
+    直接更新(比照 WP-23 前例),正式編號留待使用者一次性指派時補上。
+  </p>
+
+  <h2>刻意不做的事(Out of scope)</h2>
+  <ul>
+    <li><code>spider_shot_v1.ts</code>、<code>spiderShotConditions.ts</code>、<code>spiderShotMetrics.ts</code>、<code>trackingDerivation.ts</code> —— 零改動</li>
+    <li>真人 pilot / 正式校準凍結 —— 本次數值仍是候選值,比照 WP-44 的聲明方式</li>
+    <li>音效 / 視覺方向提示(cue)—— 使用者在 brainstorming 對話中明確選擇不需要</li>
+    <li>外圍目標存活時間隨機化 —— 使用者選擇固定單一值(1750ms),不做範圍抽樣</li>
+  </ul>
+
+  <div class="callout warn">
+    <strong>目前狀態:</strong> 這份文件只涵蓋<em>規劃</em>——尚未執行任何 T0–T5 的程式碼變更,也還沒有
+    commit。完整細節(Interface contracts、Failure modes、每個 task 的 Definition of Done)請見同資料夾的
+    <a href="README.md">README.md</a> 與各 <code>T*.md</code> 檔案。
+  </div>
+
+  <footer>
+    產生於 2026-08-26 · docs/exec-plan/active/stage9/wp-46-spider-shot-v2-aimlab-parity/
+  </footer>
+
+</div>
+</body>
+</html>
