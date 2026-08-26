@@ -276,10 +276,24 @@
 
 | 術語 | 定義 |
 |---|---|
-| **`SessionPlan`**([SessionRunner.ts](src/session/SessionRunner.ts)) | 一次 session 排程的完整輸入:`participantId`/`sessionIndex`(餵給 §M 的 `buildFamilyOrder`)、`families`(操作者勾選的家族子集,FR-G9①)、`presetId`(只能是既有具名 `SessionPlanPreset`,FR-G9②)、`includeWarmup`。 |
+| **`SessionPlan`**([SessionRunner.ts](src/session/SessionRunner.ts)) | 一次 session 排程的完整輸入:`participantId`/`sessionIndex`、`families`(操作者勾選子集,FR-G9①)、`includeWarmup`。⚠️ **WP-43(stage8)起 `families` 的陣列順序即實際執行順序**——`start()` 不再呼叫 §M `buildFamilyOrder` 覆寫順序(手動排序,見 §O);`presetId` 欄位已移除,改用 §O `restSeconds`。舊版(依 `sessionIndex` 自動 counterbalance + `presetId`)語意僅保留在 §M `buildFamilyOrder` 本體與本節下方 `sessionPlanPreset` legacy metadata 驗證,不再被本流程消費。 |
 | **`SessionRunnerPhase`**([SessionRunner.ts](src/session/SessionRunner.ts)) | 排程狀態機的封閉判別聯集:`idle`/`warmup`(附 `WarmupAvailability`)/`family`(附 `familyIndex`)/`rest`(附 `remainingMs`)/`done`。`SessionRunner.poll(nowMs)` 只在 `rest` 相位輪詢,倒數歸零時**自動** `advance()`,不需要外部按鈕觸發(D-42.5)。 |
 | **`resolveWarmupDrillId(family)`**([SessionRunner.ts](src/session/SessionRunner.ts)) | 家族 → practice 變體 `drillId` 的封閉對照表;只有 `counterstrafe` 回傳 `available`(載入 `counterstrafe-free-v1`),其餘三家族回傳 `unavailable`,`SessionRunner` 據此直接跳到該家族的 assessment step 並顯示明確訊息「本家族無熱身,直接開始正式測試」——不得靜默跳過(D-42.2,FR-G4)。 |
 | **`SessionPlanPreset`**([sessionPlanPresets.ts](src/session/sessionPlanPresets.ts)) | Session-plan 唯一可調的具名組合(目前僅 `pilot-default`)。`perFamilyTrialShape` 是 discriminated union:三家族(`hold-click`/`hold-track`/`counterstrafe`)是 `{ trialsPerCell }`,Spider Shot 是 `{ targetCount, timeLimitMs }`(README §2④);數值一律直接引用各協定既有凍結常數,不新造第二套數字來源(D-42.4)。UI(`SessionPlanSetup.ts`)只能從既有 preset 中選,不得渲染任何 `<input type="number">`(FR-G9②)。 |
-| **`sessionPlanPreset`(匯出 metadata additive 欄位)**([metadata.ts](src/data/metadata.ts)) | 比照 §L `dpi` 的 additive 型式:`Meta`/`CollectMetaArgs` 選填頂層欄位,只在 `family` 相位寫入所選 preset id,純記錄用途,不流入任何 `src/sim`/`src/metrics` 計算或判定(`rg "sessionPlanPreset" src/sim src/metrics` 須零命中)。 |
+| **`sessionPlanPreset`(匯出 metadata additive 欄位)**([metadata.ts](src/data/metadata.ts)) | 比照 §L `dpi` 的 additive 型式:`Meta`/`CollectMetaArgs` 選填頂層欄位,只在 `family` 相位寫入所選 preset id,純記錄用途,不流入任何 `src/sim`/`src/metrics` 計算或判定(`rg "sessionPlanPreset" src/sim src/metrics` 須零命中)。⚠️ **WP-43(stage8)起無任何路徑再寫入此欄位**——手動排序流程改記 §O `sessionPlanRestSeconds`/`sessionPlanFamilyOrder`;本欄位定義與其驗證(`requireSessionPlanPreset()`)保留純供舊資料相容(D-43.4)。 |
 
+---
 
+## O. 入口重構 / 研究員子選單術語(WP-43,暫定 M18;純 UI/DOM 層 `src/main.ts` + `src/ui/ResearcherMenu.ts` + `src/ui/SessionPlanSetup.ts`)
+
+> 把啟動畫面「四顆按鈕平鋪 + 常駐 Controls toolbar」收斂成「選手測試 Session / 研究員模式」兩分岔,並讓 Session Plan 從「勾選家族子集 + 選具名 preset」放寬為「操作者拖曳排序 + 全域休息秒數自由輸入」(README §0-1~§0-4,D-43.1~D-43.3/D-43.6/D-43.7)。詳見 [wp-43 README](docs/exec-plan/active/stage8/wp-43-session-entry-restructure/README.md)。
+
+| 術語 | 定義 |
+|---|---|
+| **`AppMode`**([main.ts](src/main.ts)) | 啟動畫面的封閉狀態:`'launch' \| 'session' \| 'researcher'`。與既有 `pendingSessionMode`(資格閘/session setup 路由狀態)是**兩個獨立變數**——`AppMode` 只管畫面層級(哪個入口群可見),不進 eligibility gate(D-43.1)。`Controls.ts` 的顯隱由既有 `(!pointerLock.locked \|\| drillRunner.phase==='ended')` 條件與 `appMode==='researcher'` 做 **AND**(README §0-2 發現的既有缺口)。 |
+| **`ResearcherMenu`**([ResearcherMenu.ts](src/ui/ResearcherMenu.ts)) | Callback-only 選單 handle(`open()`/`close()`/`dispose()`),收納三個既有入口:「單一 Drill 調整」(掛 `Controls.ts`)、「解析度 protocol」、「BR protocol」(FR-H4)。不重寫任何既有 handler 邏輯,三個回呼直接複用 `main.ts` 既有 `protocolButton`/`brProtocolButton` click handler 內容(README §2②)。 |
+| **啟動入口分層(`data-launch-tier`)**([main.ts](src/main.ts)) | `#session-launch-controls` 內以 `data-launch-tier="primary"` 群組兩個主入口(「選手測試 Session」/「研究員模式」),既有「實驗 session」(`pendingSessionMode==='session'`)標為 `data-launch-tier="legacy"` 且保留原樣——未歸類前不刪除、不併入研究員模式(D-43.5,OQ-S8-5 待使用者拍板)。 |
+| **`SessionPlan.restSeconds`**([SessionRunner.ts](src/session/SessionRunner.ts)) | 取代 §N `presetId` 的自由數字欄位:操作者於 Session Plan 畫面輸入的全域休息秒數,套用在清單每個家族之間。Runner 邊界只驗證 finite 且 non-negative(不設上限——上限是 UI 防呆,見下一列);`presetRestMs = restSeconds * 1000`,不再呼叫 `findSessionPlanPreset()`(D-43.2)。 |
+| **家族拖曳排序**([SessionPlanSetup.ts](src/ui/SessionPlanSetup.ts)) | HTML5 native drag-and-drop(`draggable`/`dragstart`/`dragover`/`drop`,不新增外部套件,D-43.3)。每列 `data-session-family="<TestFamilyId>"`,DOM 順序即 `SessionPlanSelection.families` 的提交順序;`SessionRunner.start()` 直接信任該順序(驗證非空、皆為合法 `TestFamilyId`、無重複),不再由 §M `buildFamilyOrder` 覆寫(README §2③)。 |
+| **休息秒數 UI 防呆邊界(0–3600 秒)**([SessionPlanSetup.ts](src/ui/SessionPlanSetup.ts)) | `<input type="number" min="0" max="3600">`,預設 60 秒,允許小數;送出時再驗證非空、finite 且含端點範圍內。**表單防呆,非凍結研究常數**——與 Runner/metadata 的「僅要求 finite/non-negative」是不同層級的邊界(D-43.7,比照 §L DPI 邊界的性質)。 |
+| **`sessionPlanRestSeconds` / `sessionPlanFamilyOrder`(匯出 metadata additive 欄位)**([metadata.ts](src/data/metadata.ts)) | 比照 §L `dpi`/§N `sessionPlanPreset` 的 additive 型式:`Meta`/`CollectMetaArgs` 選填頂層欄位,分別記錄本次 session **實際使用**的休息秒數與**實際執行**的家族順序,純稽核記錄用途,不驗證封閉清單(它們是「操作者這次選了什麼」而非凍結協定參數),不流入任何 `src/sim`/`src/metrics` 計算或判定(README §2④)。 |

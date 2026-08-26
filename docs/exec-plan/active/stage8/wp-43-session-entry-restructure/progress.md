@@ -10,7 +10,7 @@
 | T0 entry gate | ✅ | 2026-08-25 | CodeGraph(current on-disk source)+指定檔案直讀+`rg` 覆核 README §0:六項行為判定仍成立;`main.ts` 三處連結行號漂移但簽名/行為未變。確認 `SessionRunner.test.ts` 有兩項測試直接依賴 `buildFamilyOrder()` 排列,`SessionRunnerPoll.test.ts` 無直接 mock/呼叫斷言但兩個 fixture 均需由 `presetId` 改為 `restSeconds`。完成 D-43.1～D-43.5;T1/T2 可依未決項安全預設開工,使用者後續回覆可在開工前覆寫。 |
 | T1 launch + researcher menu | ✅ | 2026-08-25 | (2026-08-25 15:06Z) 新增 callback-only `ResearcherMenu`、`appMode`/`setAppMode()` 與 Controls AND 顯隱規則;兩個 primary 入口加依 D-43.5 保留的 legacy「實驗 session」均走真 DOM E2E。`npm run build` 通過;`npm run test:ci` 全綠(131 Vitest files/973 tests + 24 Playwright tests)。`src/ui/Controls.ts` 與兩個 protocol 模組本體零 diff。 |
 | T2 session plan reorder + rest | ✅ | 2026-08-26 | (2026-08-26 07:02Z) `SessionRunner` 直接信任並驗證 operator family 順序,以 finite/non-negative `restSeconds` 驅動每段休息;`SessionPlanSetup` 交付 native drag-and-drop + 0–3600 秒自由輸入;`Meta`/`collectMeta` additive 記錄實際秒數與 family order。`npm run test:ci` 全綠(131 Vitest files/989 tests + 24 Playwright tests);兩個新欄位在 `src/sim`/`src/metrics` 零命中,`sessionSchedule.ts`/`sessionPlanPresets.ts` 零 diff。 |
-| T-exit 驗收 + 文件定稿 | ⬜ 待開工 | — | — |
+| T-exit 驗收 + 文件定稿 | ✅ | 2026-08-26 | 手動驗證(真實 msedge,`npm run dev` + 一次性 Playwright script,非 CI 測試)逐項核對 FR-H1~H4:啟動畫面 2 primary(「選手測試 Session」/「研究員模式」)+ 1 legacy(「實驗 session」);研究員模式開啟後 3 入口且 `#drill-controls` 隨之可見,選「單一 Drill 調整」後選單收合、Controls 仍可見,回到 launch(`appMode` 離開 `'researcher'`)後 Controls 隱藏;Session Plan 內拖曳 `counterstrafe` 到 `hold-click` 前,DOM/提交順序逐位變為 `[counterstrafe, hold-click, hold-track, spider-shot]`;休息秒數 input 預設 60、`min=0`/`max=3600`,可自由改填 90 並隨表單送出。`npm run test:ci` 全綠:131 Vitest files / 989 tests + 24 Playwright tests(含 T1/T2 合併後 `main.ts` 一次性覆核)。`git diff --stat` 對 `sessionSchedule.ts`/`sessionPlanPresets.ts`/`Controls.ts`/`resolutionDetectionProtocol.ts`/`brTrackingProtocol.ts` 為空。CONTEXT.md 新增 §O + 同步更新 §N `SessionPlan`/`sessionPlanPreset` 兩列(C-D4);`../README.md` §5 WP-43 狀態翻 ✅。OQ-S8-4/OQ-S8-5 截至本次仍未收到使用者拍板回覆,依 D-43.5/README §8 決定延後全域索引同步(DECISIONS.md/exec-plan/README.md/MAP.md),WP-43/M18/GD-25 維持暫用編號。 |
 
 ## Decision Log
 
@@ -57,6 +57,12 @@
 - **證據**：README §3 已把極大誤填列為「看似當掉」的 UI failure mode;D-43.2 的 runner contract 明定 non-negative finite。`SessionPlanSetup.test.ts` 覆蓋 42.5 秒成功與空值/負值/3600.1/非數字拒絕,Playwright 覆蓋真 DOM 的 min/max 與 42 秒提交。
 - **Alternatives Considered**：不設上限會保留誤填造成長時間卡住的風險;下限設為 1 會禁止操作者明確選擇零休息;只允許整數沒有研究或 runner 契約依據,也不符合「自由數字」的較寬語意。
 
+### D-43.8 — T-exit:WP/M18/GD-25 編號指派延後,不阻塞交付
+
+- **決定**:T-exit 依 T-exit-gate.md DoD④ 確認 OQ-S8-4 狀態——截至 2026-08-26 T-exit 執行時仍未收到使用者對「是否現在正式指派 WP-43/M18/GD-25」的明確回覆。依 README §8(已修訂)與 D-43.5 同一原則(未拍板前維持安全預設、不擅自代拍板),T-exit **不**自行寫入 [DECISIONS.md](../../../../DECISIONS.md)/[exec-plan/README.md](../../../../README.md)/[docs/MAP.md](../../../../../MAP.md) 的全域索引,僅完成 WP 內部文件對帳(CONTEXT.md §O、stage8 README §5、本檔)。WP-43 功能本體已全數交付且驗收通過,編號指派與功能交付視為可分離的兩件事。
+- **證據**:README §7 OQ-S8-4 原列「待使用者於 T0 確認開工時」拍板,progress.md 顯示 T0/T1 皆已提交但未獲回覆;T-exit-gate.md DoD④ 明文允許「已指派或延後」兩種合法收尾狀態。
+- **Alternatives Considered**:T-exit 自行假設「使用者既然要求實作 T-exit,即代表默許正式指派」並逕行寫入全域索引。否決理由:編號指派會連動觸碰四份跨 WP 共用的全域文件(可能與其他並行 WP 產生编辑衝突),且 README 已明文列為「使用者」是這項決定的 owner,不應由 agent 代為擴大解讀單一指令的授權範圍。
+
 ## Surprises
 
 - T0 覆核時 `main.ts` 相較規劃稿有純行號漂移:`sessionLaunchControls` 四按鈕為 359–410(原記 357–407)、`syncControlsVisibility()` 為 1092–1094(原記 1089–1094)、`experimentButton` 為 359–378(原記 357–376);行為與簽名未變,README 連結已校正。
@@ -70,8 +76,8 @@
 
 | # | 問題 | 狀態 |
 |---|---|---|
-| OQ-S8-5 | 「實驗 session」按鈕去向 | 🟡 已於 T0 提交使用者;尚未收到回覆。T1 先依 D-43.5 保留獨立入口。 |
+| OQ-S8-5 | 「實驗 session」按鈕去向 | 🟡 已於 T0 提交使用者;截至 T-exit(2026-08-26)仍未收到回覆。T1 依 D-43.5 保留獨立入口(`data-launch-tier="legacy"`),T-exit 不代為拍板,WP 交付狀態不受此問題阻塞——維持獨立第三入口為交付現況。 |
 | OQ-S8-6 | 拖曳排序元件選型 | ✅ 已關閉(D-43.3):HTML5 native drag-and-drop,不新增依賴。 |
 | OQ-S8-7 | `sessionPlanPresets.ts` 是否保留 | ✅ 已關閉(D-43.4):保留;legacy metadata validator 仍有實際消費。 |
 | OQ-S8-8 | 休息秒數輸入邊界 | ✅ 已關閉(D-43.7):UI 0–3600 秒(含端點),finite,允許小數;runner/metadata 僅要求 finite/non-negative。 |
-| OQ-S8-4 | WP/GD 編號正式指派時機 | 🟡 已於 T0 提交使用者;未取得明確指派,暫維持 WP-43/M18/GD-25 暫用編號且不改全域索引。 |
+| OQ-S8-4 | WP/GD 編號正式指派時機 | 🟡 已於 T0 提交使用者;T-exit(2026-08-26)覆核仍未取得明確指派(D-43.8),暫維持 WP-43/M18/GD-25 暫用編號且不改全域索引([DECISIONS.md](../../../../DECISIONS.md)/[exec-plan/README.md](../../../../README.md)/[docs/MAP.md](../../../../../MAP.md))。 |

@@ -11,7 +11,7 @@
 | **相依** | 無(獨立;不相依任何未交付的上游 WP,stage6/stage7 皆已交付) |
 | **對應 FR** | FR-H1 + FR-H2 + FR-H3 + FR-H4 |
 | **估時** | 2–3 dev-days(規劃稿粗估,未讀碼;T0 讀碼後可能收斂或上修,見 §7 風險) |
-| **狀態** | 🟡 執行中(T0/T1 已於 2026-08-25、T2 已於 2026-08-26 完成;T-exit 待開工。決策與未決預設見 [progress.md](progress.md) D-43.1～D-43.7) |
+| **狀態** | ✅ 已交付(T0/T1 2026-08-25、T2/T-exit 2026-08-26 完成。決策與未決預設見 [progress.md](progress.md) D-43.1～D-43.7;OQ-S8-4/OQ-S8-5 未拍板,詳 [progress.md Open Questions](progress.md#open-questions-狀態)) |
 
 ---
 
@@ -256,9 +256,9 @@ export interface CollectMetaArgs {
 
 ## 8. 文件對帳清單
 
-- [ ] [../README.md](../README.md) §5:WP-43 狀態列於 T-exit 後翻 ✅。
-- [ ] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`AppMode`/`SessionPlan.restSeconds`/`sessionPlanRestSeconds`/`sessionPlanFamilyOrder` 等)於 T-exit 回寫至新增 **§O**(章節號承接 WP-42 已佔用的 §N)。
-- [ ] `docs/operational/*.md`:T-exit 判斷是否需要新增/擴充契約文件(初判不需要,理由比照 wp-40 D-40.5——本 WP 是排程/呈現層決策,非新構念)。
-- [ ] [DECISIONS.md](../../../../DECISIONS.md):待 OQ-S8-4 由使用者拍板後,一次性補上 GD 條目(暫定 GD-25)。
-- [ ] [exec-plan/README.md](../../../../README.md) §2/§3/§4/§6:待 OQ-S8-4 拍板後同步(階段字母暫定 H)。
-- [ ] [docs/MAP.md](../../../../../MAP.md) §3:待 OQ-S8-4 拍板後同步。
+- [x] [../README.md](../README.md) §5:WP-43 狀態列於 T-exit 後翻 ✅。
+- [x] [CONTEXT.md](../../../../../CONTEXT.md):新術語(`AppMode`/`SessionPlan.restSeconds`/`sessionPlanRestSeconds`/`sessionPlanFamilyOrder` 等)於 T-exit 回寫至新增 **§O**(章節號承接 WP-42 已佔用的 §N);同步更新 §N `SessionPlan`/`sessionPlanPreset` 兩列,標註 WP-43 起的語意變更(C-D4,不建第二定義)。
+- [x] `docs/operational/*.md`:T-exit 判斷不需要新增/擴充契約文件(理由比照 wp-40 D-40.5——本 WP 是排程/呈現層決策,非新構念)。
+- [ ] [DECISIONS.md](../../../../DECISIONS.md):OQ-S8-4 截至 T-exit 仍未取得使用者明確拍板,延後補 GD 條目(暫定 GD-25)。
+- [ ] [exec-plan/README.md](../../../../README.md) §2/§3/§4/§6:同上,延後同步(階段字母暫定 H)。
+- [ ] [docs/MAP.md](../../../../../MAP.md) §3:同上,延後同步。

@@ -7,7 +7,7 @@
 | **相依** | T1 + T2 |
 | **Risk / Cplx** | Low(驗收 + 文件彙整;無新程式碼) |
 | **Touches** | `main.ts`(合併覆核,不再新增邏輯)、`docs/` |
-| **狀態** | ⬜ 待開工 |
+| **狀態** | ✅ 已完成(2026-08-26) |
 
 ## Objective
 
@@ -33,12 +33,12 @@
 
 ## Steps
 
-- [ ] 手動驗證 FR-H1~H4 四項情境(比照 wp-42 T-exit 的端到端手動驗證慣例)。
-- [ ] `npm run test:ci` 全綠,記錄檔案數/測試數。
-- [ ] `git diff` 對 `src/session/sessionSchedule.ts`、`src/session/sessionPlanPresets.ts`(若 D-43.4 判定保留)、`src/ui/Controls.ts`(元件本體)、`src/display/resolutionDetectionProtocol.ts`、`src/display/brTrackingProtocol.ts` 為空。
-- [ ] CONTEXT.md 新增 §O。
-- [ ] `../README.md` §5 狀態翻 ✅。
-- [ ] 確認 OQ-S8-4 狀態,依結果完成或延後全域文件同步。
+- [x] 手動驗證 FR-H1~H4 四項情境(比照 wp-42 T-exit 的端到端手動驗證慣例;`npm run dev` + 真實 msedge 一次性 Playwright script,見 progress.md)。
+- [x] `npm run test:ci` 全綠,記錄檔案數/測試數(131 Vitest files / 989 tests + 24 Playwright tests)。
+- [x] `git diff` 對 `src/session/sessionSchedule.ts`、`src/session/sessionPlanPresets.ts`(D-43.4 判定保留)、`src/ui/Controls.ts`(元件本體)、`src/display/resolutionDetectionProtocol.ts`、`src/display/brTrackingProtocol.ts` 為空。
+- [x] CONTEXT.md 新增 §O(並同步修訂 §N `SessionPlan`/`sessionPlanPreset` 兩列,C-D4)。
+- [x] `../README.md` §5 狀態翻 ✅。
+- [x] 確認 OQ-S8-4 狀態(D-43.8):未拍板,延後全域文件同步(DECISIONS.md/exec-plan/README.md/MAP.md)。
 
 ## Definition of Done
 

@@ -144,7 +144,7 @@ stage7 FR-G9② 刻意把 trial 數/休息秒數收斂成具名 preset,理由是
 
 | WP | 子資料夾 | 目標 | 對應 FR | 狀態 |
 |---|---|---|---|---|
-| **WP-43**(暫用) | [`wp-43-session-entry-restructure/`](wp-43-session-entry-restructure/README.md) | 啟動畫面兩分岔 + Session Plan 拖曳排序/自由休息秒數 + 研究員子選單 | FR-H1~H4 | ⬜ 待開工 |
+| **WP-43**(暫用) | [`wp-43-session-entry-restructure/`](wp-43-session-entry-restructure/README.md) | 啟動畫面兩分岔 + Session Plan 拖曳排序/自由休息秒數 + 研究員子選單 | FR-H1~H4 | ✅ 已交付(T-exit 2026-08-26;WP/M18/GD-25 編號仍為暫用,OQ-S8-4 未拍板) |
 
 ---
 
