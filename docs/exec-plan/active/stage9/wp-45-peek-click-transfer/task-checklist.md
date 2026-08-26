@@ -4,10 +4,10 @@
 
 ## T0 — Entry gate
 
-- [ ] 記錄 HEAD/status/CodeGraph pending/baseline tests
-- [ ] 覆核核心 symbols blast radius
-- [ ] 決議 OQ-S9-4
-- [ ] 記錄 WP-44/WP-43 dependency gate
+- [x] 記錄 HEAD/status/CodeGraph pending/baseline tests
+- [x] 覆核核心 symbols blast radius
+- [x] 決議 OQ-S9-4
+- [x] 記錄 WP-44/WP-43 dependency gate
 
 ## T1 — Occlusion kernel / hit gate
 

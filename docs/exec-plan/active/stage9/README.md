@@ -78,7 +78,7 @@
 | WP | 子資料夾 | 目標 | 狀態 |
 |---|---|---|---|
 | **WP-44**(暫用) | [`wp-44-spider-shot-v2-stratified/`](wp-44-spider-shot-v2-stratified/README.md) | `spider-shot-v2`:12 格 stratified 周邊排程,保留 center↔peripheral 交替 | 🟡 進行中 |
-| **WP-45**(暫用) | [`wp-45-peek-click-transfer/`](wp-45-peek-click-transfer/README.md) | `peek-click-transfer-pilot-v1`:對稱掩體、自體移動曝光、急停首發與分層 metrics；Practice/pilot only | 🟡 計畫完成,待 T0 |
+| **WP-45**(暫用) | [`wp-45-peek-click-transfer/`](wp-45-peek-click-transfer/README.md) | `peek-click-transfer-pilot-v1`:對稱掩體、自體移動曝光、急停首發與分層 metrics；Practice/pilot only | 🟡 T0 完成,可開始 T1 |
 
 ### 5.1 執行排程避免熱區衝突
 
