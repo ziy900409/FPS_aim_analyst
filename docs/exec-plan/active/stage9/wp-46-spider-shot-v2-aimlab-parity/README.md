@@ -10,7 +10,7 @@
 | **里程碑** | 無獨立里程碑(T-exit gate 即交付判定,比照 WP-27/WP-44 精神);暫定併入字母 I(stage9,未正式指派,見 [../README.md](../README.md) OQ-S9-2) |
 | **相依** | [WP-44](../wp-44-spider-shot-v2-stratified/README.md)(已交付;本 WP 修改其產出的 `spider_shot_v2.ts`) |
 | **估時** | 2.5–4 dev-days |
-| **狀態** | ⬜ 規劃完成,尚未開跑 T0 |
+| **狀態** | ✅ T-exit — `spider-shot-v2` 球體 hitbox / 60 秒時限 / 中心免逾時全交付,`npm run test:ci` 全綠 |
 
 ---
 

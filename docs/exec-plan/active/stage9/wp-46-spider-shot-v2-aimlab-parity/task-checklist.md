@@ -11,7 +11,7 @@
 | ✅ | **T3** `TargetView.ts` `setShape()` + `main.ts` 接線 | [T3-targetview-render.md](T3-targetview-render.md) | T1 | Low |
 | ✅ | **T4** `centerExemptFromTimeout` + `DrillRunner.ts` 邏輯 | [T4-center-timeout-exemption.md](T4-center-timeout-exemption.md) | T1 | Low-Med |
 | ✅ | **T5** `spider_shot_v2.ts` 數值更新(hitbox/timing/spiderShot/endCondition) | [T5-spider-shot-v2-config.md](T5-spider-shot-v2-config.md) | T2, T3, T4 | Low |
-| ⬜ | **T-exit** 驗收;`npm run test:ci` 全綠;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1+T2+T3+T4+T5 | — |
+| ✅ | **T-exit** 驗收;`npm run test:ci` 全綠;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1+T2+T3+T4+T5 | — |
 
 ## 執行規則(沿用 [exec-plan/README.md §5](../../../../README.md))
 

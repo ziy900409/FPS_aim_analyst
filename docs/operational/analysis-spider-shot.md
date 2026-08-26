@@ -127,6 +127,16 @@ spider:d=<D_deg>;w=<W_deg>
 
 `spider_shot_v2.ts` 目前的 `angularRadiusDegRange = [10, 25]` 是**未經 pilot 校準的候選值**(比照 v1 當年的候選值聲明方式),測試手感後可調整,不受 WP-39 凍結紀律約束(v2 是全新 drill,尚未走凍結流程)。
 
+## `spider-shot-v2` — sphere hitbox / 60s time limit / center exempt from timeout (WP-46)
+
+WP-46 對齊 Aim Lab Spidershot 手感,在 WP-44 交付的 stratified schedule 之上,再對幾何/時序/命中判定三個維度做調整。**只改 `spider-shot-v2`**,`spider-shot-v1` 逐位不變。
+
+**① `shape: 'sphere'` 的命中判定與渲染同幾何來源**——GD-7 第二次修訂(`docs/exec-plan/DECISIONS.md` 正式編號延後,見下方誠實記錄):`TargetHitboxConfig`/`TargetHitboxSize`/`TargetState.hitbox` 新增 `shape?: 'box' | 'sphere'`。省略或 `'box'` 時行為逐位不變;`'sphere'` 時要求 `widthU === heightU === depthU`([schema.ts](../../src/drill/schema.ts) 拒絕不相等的三軸),`HitDetector.raycastWithRay`([HitDetector.ts](../../src/sim/HitDetector.ts))改用 `THREE.Ray.intersectSphere`(半徑 = `width/2`,球心沿用既有 subAlpha 內插座標)取代 Box3 相交;`TargetView.setShape()`([TargetView.ts](../../src/render/TargetView.ts))同步把 pool mesh 的 geometry 換成半徑相等的 `SphereGeometry`。單一來源原則不變——命中判定與視覺渲染永遠讀同一個 `TargetState.hitbox`,不新增第二套 sphere 專屬尺寸常數。
+
+**② `centerExemptFromTimeout` 只影響 v2,v1 逐位不變**——`SpiderShotCenterPeripheralConfig`/`SpiderShotStratifiedConfig` 新增選填 `centerExemptFromTimeout?: boolean`。為 `true` 時,`DrillRunner.tick()` 的 `peekTimeoutMs` 迴圈跳過 `zone === 'center'` 的目標,只靠 `endCondition`/`timing.timeLimitMs` 的整場後援閘防止卡死;省略(含 `spider-shot-v1`,未設此欄位)時中心目標仍照既有 `peekTimeoutMs` 逾時規則。周邊目標不受此旗標影響,恆照常逾時。
+
+**③ hitbox 直徑公式(視角直徑 2.0° @ 距離 8u)**——`spider_shot_v2.ts` 的 `SPIDER_SHOT_HITBOX_V2` 由具名常數推導:`SPIDER_SHOT_V2_HITBOX_DIAMETER_U = 2 × 8 × tan(2.0°/2 × π/180)`,即距離 8u 處視角直徑 2.0° 對應的球體直徑,三軸共用同一數值。2.0° 是 Aim Lab Ultimate/Standard 1.8°–2.2° 候選範圍的中點,**未經真人 pilot 校準**(比照 v1 當年 `angularRadiusDegRange` 的候選值聲明方式,測試手感後可調整)。同時整場結束條件改為單一 `endCondition: { type: 'timeLimit', value: 60000 }`(60 秒),移除冗餘的 `timing.timeLimitMs`;`targets.count: 300` 只是 spawn 安全上限,不是實際結束條件(60 秒內任何合理擊殺速率都到不了)。
+
 ## Verified test evidence
 
 - 排程機制（單目標存在、seed 決定性、四象限+兩斜向世界座標）：[TargetManager.test.ts:578-](../../src/sim/TargetManager.test.ts)「WP-36 spider-shot center/peripheral schedule」。
@@ -135,4 +145,7 @@ spider:d=<D_deg>;w=<W_deg>
 - 五類指標端到端組裝：[spiderShotMetrics.test.ts](../../src/metrics/spiderShotMetrics.test.ts)「assembles the five metrics for peripheral arrivals and keeps center returns in rhythm only」。
 - `spider-shot-v1` drill config：[spider_shot_v1.test.ts](../../src/drill/spider_shot_v1.test.ts)。
 - `spider-shot-v2` 排程機制（單目標存在+交替、reset 後決定性重放+換 seed 改變序列、12 格耗盡前不重複+重洗後再次覆蓋、世界距離落在宣告值）：[TargetManager.test.ts](../../src/sim/TargetManager.test.ts)「WP-44 spider-shot stratified 12-cell peripheral schedule」。
-- `spider-shot-v2` drill config（含與 v1 seed 互斥、v1 逐位不變回歸）：[spider_shot_v2.test.ts](../../src/drill/spider_shot_v2.test.ts)。
+- `spider-shot-v2` drill config（含與 v1 seed 互斥、v1 逐位不變回歸;WP-46 sphere 幾何/60 秒時限/spawn 上限合約)：[spider_shot_v2.test.ts](../../src/drill/spider_shot_v2.test.ts)。
+- sphere ray-intersection(球心命中、外接方塊角落內但球外 miss、球體邊緣內側 hit、box 分支對照組):[HitDetector.test.ts](../../src/sim/HitDetector.test.ts)。
+- `TargetView.setShape()`(sphere geometry 型別、既有 pool mesh identity 不變但 geometry 換新、同形狀重複呼叫不重複 dispose):[TargetView.test.ts](../../src/render/TargetView.test.ts)。
+- `centerExemptFromTimeout`(center 不逾時、peripheral 仍逾時、v1 省略旗標時 center 仍逾時、兩種 spiderShot schema 形狀欄位保真):[DrillRunner.test.ts](../../src/drill/DrillRunner.test.ts)、[schema.test.ts](../../src/drill/schema.test.ts)。
