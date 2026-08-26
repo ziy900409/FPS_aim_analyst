@@ -114,6 +114,36 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
     });
   });
 
+  it("mode='assessment' accepts a center-peripheral-stratified spiderShot schedule", () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      mode: 'assessment',
+      spiderShot: {
+        kind: 'center-peripheral-stratified',
+        seed: 20260826,
+        centerDistanceU: 8,
+        peripheral: {
+          angularRadiusDegRange: [10, 25],
+          azimuthDegRange: [0, 360],
+          distanceURange: [8, 8],
+        },
+        grid: { azimuthQuadrants: 4, radiusTiers: 3 },
+      },
+    });
+    expect(cfg.sequence.seed).toBeUndefined();
+    expect(cfg.spiderShot).toEqual({
+      kind: 'center-peripheral-stratified',
+      seed: 20260826,
+      centerDistanceU: 8,
+      peripheral: {
+        angularRadiusDegRange: [10, 25],
+        azimuthDegRange: [0, 360],
+        distanceURange: [8, 8],
+      },
+      grid: { azimuthQuadrants: 4, radiusTiers: 3 },
+    });
+  });
+
   it("保留 cue single schedule", () => {
     const cfg = validateDrill({ ...(minimalValid() as object), cue: { kind: 'single' } });
     expect(cfg.cue).toEqual({ kind: 'single' });
@@ -371,6 +401,41 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
         spiderShot,
       }),
     ).toThrow(/sequence\.spawnDelayMsRange/);
+  });
+
+  it('center-peripheral-stratified spiderShot validates grid and rejects a degenerate radius range', () => {
+    const stratified = {
+      kind: 'center-peripheral-stratified',
+      seed: 7,
+      centerDistanceU: 8,
+      peripheral: {
+        angularRadiusDegRange: [10, 25],
+        azimuthDegRange: [0, 360],
+        distanceURange: [8, 8],
+      },
+      grid: { azimuthQuadrants: 4, radiusTiers: 3 },
+    };
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        spiderShot: { ...stratified, peripheral: { ...stratified.peripheral, angularRadiusDegRange: [15, 15] } },
+      }),
+    ).toThrow(/spiderShot\.peripheral\.angularRadiusDegRange/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        spiderShot: { ...stratified, grid: { azimuthQuadrants: 0, radiusTiers: 3 } },
+      }),
+    ).toThrow(/spiderShot\.grid\.azimuthQuadrants/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        spiderShot: { ...stratified, grid: { azimuthQuadrants: 4, radiusTiers: 1.5 } },
+      }),
+    ).toThrow(/spiderShot\.grid\.radiusTiers/);
+    expect(() =>
+      validateDrill({ ...(minimalValid() as object), spiderShot: { ...stratified, kind: 'orbit' } }),
+    ).toThrow(/spiderShot\.kind/);
   });
 
   // 非 Vec3 waypoint 元素若放行,clearance envelope 會變 NaN 而靜默跳過淨空檢查（PR #10 review）。

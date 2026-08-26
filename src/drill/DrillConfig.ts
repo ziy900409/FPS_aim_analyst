@@ -34,13 +34,45 @@ export interface SpiderPeripheralConfig {
   distanceURange: [number, number];
 }
 
-export interface SpiderShotScheduleConfig {
+export interface SpiderShotCenterPeripheralConfig {
   kind: 'center-peripheral';
   seed: number;
   /** Center target distance from the player origin (source units). */
   centerDistanceU: number;
   peripheral: SpiderPeripheralConfig;
 }
+
+/**
+ * Spawn-scheduling partition for {@link SpiderShotStratifiedConfig} (WP-44): how many equal-width
+ * azimuth bins and equal-solid-angle radius bins make up the shuffled zone queue. This is a
+ * scheduling-only concept — independent from the presentation-layer `SpiderQuadrant` labels
+ * (`horizontal`/`vertical`/`oblique`) derived downstream in `spiderShotConditions.ts`; the two
+ * partitions use different boundaries and serve different purposes (spawn balance vs. reporting).
+ */
+export interface SpiderShotStratifiedGridConfig {
+  /** Number of equal-width bins spanning `peripheral.azimuthDegRange`. */
+  azimuthQuadrants: number;
+  /** Number of equal-solid-angle bins spanning `peripheral.angularRadiusDegRange`. */
+  radiusTiers: number;
+}
+
+/**
+ * Stratified center/peripheral schedule (WP-44): peripheral targets are drawn from a shuffled
+ * queue of `azimuthQuadrants × radiusTiers` cells (rebuilt and reshuffled whenever exhausted) so
+ * consecutive peripheral spawns don't repeat the same azimuth bin/radius tier before the others
+ * have appeared. `angularRadiusDegRange` must be non-degenerate (`min < max`) — a fixed radius has
+ * nothing to tier. Center-zone spawning and all downstream metrics/condition-cell derivation are
+ * unchanged from `center-peripheral`.
+ */
+export interface SpiderShotStratifiedConfig {
+  kind: 'center-peripheral-stratified';
+  seed: number;
+  centerDistanceU: number;
+  peripheral: SpiderPeripheralConfig;
+  grid: SpiderShotStratifiedGridConfig;
+}
+
+export type SpiderShotScheduleConfig = SpiderShotCenterPeripheralConfig | SpiderShotStratifiedConfig;
 
 /** Counter-strafe cue schedule. `hold-reversal` is activated by WP-37/T2. */
 export type CueScheduleConfig =

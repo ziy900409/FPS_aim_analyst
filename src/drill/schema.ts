@@ -3,6 +3,7 @@ import {
   type DrillConfig,
   type CueScheduleConfig,
   type SpawnAreaConfig,
+  type SpiderShotCenterPeripheralConfig,
   type SpiderShotScheduleConfig,
   type TargetHitboxConfig,
 } from './DrillConfig.ts';
@@ -139,25 +140,48 @@ function validateCueSchedule(json: unknown): CueScheduleConfig {
 
 function validateSpiderShotSchedule(json: unknown): SpiderShotScheduleConfig {
   const spiderShot = requireObject(json, 'spiderShot');
-  if (spiderShot.kind !== 'center-peripheral') {
-    throw err('spiderShot.kind', "必須為 'center-peripheral'");
+  if (spiderShot.kind === 'center-peripheral') {
+    return {
+      kind: 'center-peripheral',
+      seed: requireFiniteNumber(spiderShot.seed, 'spiderShot.seed'),
+      centerDistanceU: requirePositiveNumber(spiderShot.centerDistanceU, 'spiderShot.centerDistanceU'),
+      peripheral: validateSpiderPeripheral(requireObject(spiderShot.peripheral, 'spiderShot.peripheral'), 'spiderShot.peripheral'),
+    };
   }
-  const peripheral = requireObject(spiderShot.peripheral, 'spiderShot.peripheral');
+  if (spiderShot.kind === 'center-peripheral-stratified') {
+    const grid = requireObject(spiderShot.grid, 'spiderShot.grid');
+    return {
+      kind: 'center-peripheral-stratified',
+      seed: requireFiniteNumber(spiderShot.seed, 'spiderShot.seed'),
+      centerDistanceU: requirePositiveNumber(spiderShot.centerDistanceU, 'spiderShot.centerDistanceU'),
+      peripheral: validateSpiderPeripheral(requireObject(spiderShot.peripheral, 'spiderShot.peripheral'), 'spiderShot.peripheral', {
+        requireNonDegenerateRadius: true,
+      }),
+      grid: {
+        azimuthQuadrants: requirePositiveInt(grid.azimuthQuadrants, 'spiderShot.grid.azimuthQuadrants'),
+        radiusTiers: requirePositiveInt(grid.radiusTiers, 'spiderShot.grid.radiusTiers'),
+      },
+    };
+  }
+  throw err('spiderShot.kind', "必須為 'center-peripheral' 或 'center-peripheral-stratified'");
+}
+
+function validateSpiderPeripheral(
+  peripheral: Record<string, unknown>,
+  path: string,
+  options: { requireNonDegenerateRadius?: boolean } = {},
+): SpiderShotCenterPeripheralConfig['peripheral'] {
+  const angularRadiusDegRange = requirePositiveDegreeRange(
+    peripheral.angularRadiusDegRange,
+    `${path}.angularRadiusDegRange`,
+  );
+  if (options.requireNonDegenerateRadius && angularRadiusDegRange[0] >= angularRadiusDegRange[1]) {
+    throw err(`${path}.angularRadiusDegRange`, '必須 min < max（stratified 分層需要非退化區間)');
+  }
   return {
-    kind: 'center-peripheral',
-    seed: requireFiniteNumber(spiderShot.seed, 'spiderShot.seed'),
-    centerDistanceU: requirePositiveNumber(spiderShot.centerDistanceU, 'spiderShot.centerDistanceU'),
-    peripheral: {
-      angularRadiusDegRange: requirePositiveDegreeRange(
-        peripheral.angularRadiusDegRange,
-        'spiderShot.peripheral.angularRadiusDegRange',
-      ),
-      azimuthDegRange: requireNonNegativeDegreeRange(
-        peripheral.azimuthDegRange,
-        'spiderShot.peripheral.azimuthDegRange',
-      ),
-      distanceURange: requirePositiveRange(peripheral.distanceURange, 'spiderShot.peripheral.distanceURange'),
-    },
+    angularRadiusDegRange,
+    azimuthDegRange: requireNonNegativeDegreeRange(peripheral.azimuthDegRange, `${path}.azimuthDegRange`),
+    distanceURange: requirePositiveRange(peripheral.distanceURange, `${path}.distanceURange`),
   };
 }
 
