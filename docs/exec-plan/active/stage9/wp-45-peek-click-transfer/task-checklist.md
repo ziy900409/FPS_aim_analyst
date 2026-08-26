@@ -34,11 +34,11 @@
 
 ## T4 — Metrics
 
-- [ ] targetId-based transfer assembler
-- [ ] per-trial + aggregate metrics
-- [ ] flags/缺失值 policy
-- [ ] ResultScreen Practice section / history guard
-- [ ] no-composite-score contract test
+- [x] targetId-based transfer assembler
+- [x] per-trial + aggregate metrics
+- [x] flags/缺失值 policy
+- [x] Practice history guard 驗證（ResultScreen UI section 有意識延後，見 progress.md D-45.13）
+- [x] no-composite-score contract test
 
 ## T5 — Versioned pilot session
 

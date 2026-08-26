@@ -2,7 +2,7 @@
 
 ## Status
 
-- **Current**:T3 完成（1.5°/2.0°/3.0° pilot config builder + 20-trial LR/cue/timeout/backstop gameplay 契約 + hitscan occlusion miss/hit 契約 + researcher mode 2.0° default 註冊），T1–T3 皆已就緒。T4 可開始。
+- **Current**:T4 完成（`derivePeekClickTransferMetrics` transfer assembler：targetId join、completion metrics、flags/缺失值 policy），T1–T4 皆已就緒。T5 等 stage8 WP-43 T-exit gate（已開放）。
 - **Scope state**:`peek-click-transfer-pilot-v1` 為 Practice/pilot-only；正式 Assessment freeze 不在本 WP。
 - **Dependency state**:T3 依賴的 WP-44 T-exit 已完成(`c44270e`)；T5 依賴的 stage8 WP-43 T-exit 已完成(`61db0ba`)；HEAD(`41d3bd5`)已包含兩者，兩個 gate 皆已開放，T3/T5 不再受阻。
 
@@ -62,6 +62,16 @@
 - **測試設計決策**:`fpsTestHarness.ts` 的合成 camera 固定於世界原點(從不隨 `state.player.x` 位移——只有 `main.ts` render loop 才把 `sceneManager.camera.position` 綁 player 位置),故無法透過該 harness 端到端驗證「玩家橫移曝光」幾何;改在 `peek_click_transfer_pilot_v1.test.ts` 內用 `simStep()` 低階直呼(比照 T1 `SimLoop.test.ts` 的兩個 occlusion tests 手法:`weapon`/`recoilRuntime` 皆省略以避開武器 spread 對 1.5°/2.0°/3.0° 極小 hitbox 的隨機脫靶風險),自建 camera + stub `TargetManager` 直接斷言 occlusion/hit 契約,不修改 `fpsTestHarness.ts`(README §2.1 file scope 未列該檔於 T3)。20-trial/cue/alternation/timeout/backstop/restart 契約則用 `createTargetManager`+`createDrillRunner` 直驅(免 camera/fire),因為這些語意完全由既有 `DrillRunner.tick`/`TargetManager.tick` 決定,不需經過完整 SimLoop。
 - **驗證**:`npx vitest run src/drill/peek_click_transfer_pilot_v1.test.ts src/testharness/fpsTestHarness.test.ts` → exit 0,23 tests passed(T3 DoD 指定套件,`fpsTestHarness.test.ts` 為零修改回歸)；`npx vitest run`（全專案）→ exit 0,135 files / 1037 tests passed（較 T2 baseline 134 files/1026 tests 增加 1 file/11 tests,皆為本次新增)；`npm run typecheck` exit 0；`git status --short` 只有本 task 預期檔案（`peek_click_transfer_pilot_v1.ts`/`.test.ts` 新檔,`main.ts`/`pilot/pilotConfigs.ts`/`pilot/pilotConfigs.test.ts` 修改)。
 
+### 2026-08-26 — T4 transfer metrics assembler
+
+- **新增** `src/metrics/peekClickTransferMetrics.ts`：`derivePeekClickTransferMetrics(payload, scene, options)` 以 `targetId` 組裝 `deriveHoldClickMetrics`（曝光/擷取/anticipation）與 `deriveCounterstrafeMetrics`（braking/sync/firstShotHitRate/fireBeforeGateRate）——兩者皆呼叫一次、逐位重用其輸出，不重推任何 frozen 構念。真正新增的欄位僅：`validFirstShot`/`validFirstShotRate`（README §2.3 D 定義的唯一新 construct）、`onsetToFirstShotMs`/`onsetToHitMs`（onset 相對時間，hold-click 只提供 on-target 相對時間）、`shotsToKill`（以 `peek.fires` 對 `peek.tHit` 計數）、per-presentation flags。`firstShotHitRate`/`fireBeforeGateRate`/`anticipationRate` 三個聚合值直接回傳 `counterstrafe.firstShotHitRate`/`counterstrafe.fireBeforeGateRate`/`holdClick.anticipationRate`（同一數字，非重算），對應 objective「不重推 frozen 構念」。
+- **Join 設計**：`buildPeekWindows(payload)` 產生的 `peeks`（提供 `side`/`tHit`/`fires`/`outcome`/`tickRange`，hold-click 不外露這些欄位）與 `deriveHoldClickMetrics` 的 `presentations`（提供 `tMeasurementOnsetMs`/`tFirstShotMs`/`firstShotHit`/`fireBeforeFirstVisible`/`fireBeforeMeasurementOnset`）以 `Map<targetId, presentation>` 交會，不假設陣列 index 對齊；`peekClickTransferMetrics.test.ts` 的「event array 反轉仍得到逐位相同結果」測試直接驗證這個 join 對事件順序不敏感（DoD 明確要求項）。
+- **Flags 設計**：`fire_before_first_visible`/`fire_before_measurement_onset` 直接讀 hold-click presentation 對應布林（非重新判定）；`no_measurement_onset`/`no_counter` 分別讀 hold-click onset 缺席與 `peek.flags` 既有 `'no_counter'`；`fire_before_gate` 是 `peek.firstFire.residualSpeed >= CS2_PROFILE.accuracyThreshold` 的逐 trial 版本（與 counterstrafe 聚合值同一判準，只是曝光到 per-trial 粒度，非第二定義）；`timeout` = `peek.outcome !== 'hit'`（涵蓋既有 `'timeout'`/`'no_shot'` 兩種未擊殺結果，因為本 pilot 的 spawn-anchored 總 timeout 是兩者共同的終止原因，FM-P45-5）；`timeout_before_onset` = `timeout && tMeasurementOnsetMs === undefined`；`player_corridor_exceeded` 用既有 `isOutsideCorridor`（`corridor.ts`）對該 trial tick window 內的 `px` 逐 tick 檢查，複用 `payload.meta.simToWorld` 與 `scene.playerCorridor.halfWidthU`，未新增第二套邊界判準；`suspect` 直接鏡射 `payload.meta.suspect`（README FR-P45-9「既有 display suspect 狀態」的落地——沒有找到任何既有的「per-trial suspect」先例，故採 session-level `meta.suspect` 逐 trial 鏡射，是本 task 最貼近既有慣例的解讀）。
+- **缺失值 policy**：`tMeasurementOnsetMs`/`tFirstShotMs`/`onsetToFirstShotMs`/`onsetToHitMs`/`shotsToKill` 全部用 spread 條件式省略欄位（`undefined`，非 `0`）；`firstShotHit`/`validFirstShot` 依 README interface 為非 optional boolean，故無資料時明確給 `false`（不是「缺失」，而是「沒發生」的合法值，與 hold-click 的 optional 版本語意不同，是此 interface 刻意的設計差異）。
+- **範圍決策**：README §2.1 scope 列出 `ResultScreen/研究員輸出新增獨立 transfer section` 但 T4 task 檔的 Definition of Done 並未把它列為可驗證項（只列出「ResultScreen 值來自同一 export snapshot；Practice history guard 全綠」）。現況 `deriveCounterstrafeMetrics` 本身都尚未被任何 UI 接線（僅 `deriveHoldClickMetrics` 接進 `main.ts` 的 diagnosis/history 路徑），且 README 沒有為 transfer section 定義任何卡片 ID/介面契約——若現在新增會是無契約可循的臆造 UI。決定不在 T4 新增 ResultScreen UI，只驗證「Practice 不進正式 history」既有 guard（`loadAssessmentSessionSummaries` 排除 `meta.assessment===undefined`）不受影響（本 task 未觸碰 `main.ts`/`sessionHistoryLoader.ts`，guard 邏輯零改動）。UI 呈現留給後續 wiring task（T5 或另開），避免此刻讓 metrics 契約被尚未定案的 UI 設計綁架。
+- **測試**新增 `src/metrics/peekClickTransferMetrics.test.ts`（8 tests）：first-hit、first-miss→second-hit（`shotsToKill=2`）、timeout-before-onset、pre-fire（fire_before_first_visible/fire_before_measurement_onset）、no-counter、player_corridor_exceeded、事件陣列反轉 join 穩定性、public key-set（排除 `score`/`compositeScore`）。
+- **驗證**：`npm.cmd test -- src/metrics/peekClickTransferMetrics.test.ts src/metrics/counterstrafeMetrics.test.ts src/metrics/holdClickMetrics.test.ts` → exit 0，16 tests passed（T4 DoD 指定套件，含新檔 8 tests + 既有 counterstrafe/holdClick 各 4 tests 零修改回歸）；`npx vitest run`（全專案）→ exit 0，136 files / 1045 tests passed（較 T3 baseline 135 files/1037 tests 增加 1 file/8 tests，皆為本次新增）；`npm run typecheck` exit 0；`git status --short` 只有本 task 兩個新檔（`peekClickTransferMetrics.ts`/`.test.ts`）。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -76,7 +86,9 @@
 | **D-45.4** | pilot 保留 box target、AK-47、嚴格 LR、miss 補槍 | 最小化新引擎分支並對齊影片循環；正式值留給 pilot | Confirmed，T3 落地 |
 | **D-45.11** | `buildPeekClickTransferPilotConfigs`（`pilotConfigs.ts`）回傳扁平 `DrillConfig[]`，不回傳 wrapper（`PeekClickTransferPilotConfig[]`） | 比照既有四個 pilot 家族 builder 慣例（呼叫端自帶 sceneId/clearanceOptions 常數，同 `holdClickV1` 模式）；避免該檔出現兩種回傳形狀 | Confirmed，T3 |
 | **D-45.12** | T3 gameplay/occlusion 測試不經 `fpsTestHarness.ts`，改在 drill 測試檔內直呼 `simStep`/`TargetManager`/`DrillRunner` | harness 合成 camera 固定於世界原點、不隨 `state.player.x` 位移（只有 `main.ts` render loop 才做這件事），無法端到端驗證「玩家橫移曝光」；直呼底層原語可控 camera 位置且比照 T1 `SimLoop.test.ts` 省略 weapon/recoilRuntime 避開極小 hitbox 的 spread 脫靶風險 | Confirmed，T3 |
-| **D-45.5** | 不建立 composite score | 沿用 stage6「不同構念分層報告」紀律 | Proposed，T4 |
+| **D-45.5** | 不建立 composite score | 沿用 stage6「不同構念分層報告」紀律 | Confirmed，T4 落地 |
+| **D-45.13** | `PeekClickTransferMetrics` 頂層 `firstShotHitRate`/`fireBeforeGateRate`/`anticipationRate` 直接回傳 `counterstrafe`/`holdClick` 既有聚合值，不重新計算；`validFirstShotRate` 是唯一新聚合值 | objective 明文「不重推 frozen 構念，新增 completion metrics」；三者皆已是 hold-click/counterstrafe 的 frozen 構念，重算會製造第二定義風險 | Confirmed，T4 |
+| **D-45.14** | T4 不新增 ResultScreen UI transfer section，只驗證既有 Practice history guard 不受影響 | T4 task 檔 DoD 未把新 UI section 列為可驗證項；`deriveCounterstrafeMetrics` 本身都尚未接線任何 UI；README 未提供該 section 的卡片 ID/介面契約，此刻新增等於臆造未定案設計 | Confirmed，T4；UI 呈現留待後續 wiring task |
 | **D-45.6** | Session 採 versioned roster，不改 stage6 default family list | 防止既有 participant order 全數漂移 | Proposed，T5 |
 
 ## Surprises / blockers
@@ -114,3 +126,7 @@
 | 2026-08-26 | `npx vitest run`（全專案，T3 wiring 後） | exit 0，135 files / 1037 tests passed |
 | 2026-08-26 | `npm run typecheck`（T3 wiring 後） | exit 0 |
 | 2026-08-26 | `git status --short`（T3 完成後） | 只有本 task 預期檔案（2 新檔 + `main.ts`/`pilot/pilotConfigs.ts`/`pilot/pilotConfigs.test.ts` 修改） |
+| 2026-08-26 | `npm.cmd test -- src/metrics/peekClickTransferMetrics.test.ts src/metrics/counterstrafeMetrics.test.ts src/metrics/holdClickMetrics.test.ts` | exit 0，16 tests passed（T4 DoD 指定套件） |
+| 2026-08-26 | `npx vitest run`（全專案，T4 wiring 後） | exit 0，136 files / 1045 tests passed |
+| 2026-08-26 | `npm run typecheck`（T4 wiring 後） | exit 0 |
+| 2026-08-26 | `git status --short`（T4 完成後） | 只有本 task 兩個新檔（`peekClickTransferMetrics.ts`/`.test.ts`） |
