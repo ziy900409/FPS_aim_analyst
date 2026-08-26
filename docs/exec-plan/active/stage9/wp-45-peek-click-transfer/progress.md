@@ -2,7 +2,7 @@
 
 ## Status
 
-- **Current**:T2 完成（左右對稱 `peek-ad-corridor-v1` 場景 + clearance/visibility symmetry tests），T1+T2 皆已就緒，T3 等 WP-44 T-exit(已開放)。
+- **Current**:T3 完成（1.5°/2.0°/3.0° pilot config builder + 20-trial LR/cue/timeout/backstop gameplay 契約 + hitscan occlusion miss/hit 契約 + researcher mode 2.0° default 註冊），T1–T3 皆已就緒。T4 可開始。
 - **Scope state**:`peek-click-transfer-pilot-v1` 為 Practice/pilot-only；正式 Assessment freeze 不在本 WP。
 - **Dependency state**:T3 依賴的 WP-44 T-exit 已完成(`c44270e`)；T5 依賴的 stage8 WP-43 T-exit 已完成(`61db0ba`)；HEAD(`41d3bd5`)已包含兩者，兩個 gate 皆已開放，T3/T5 不再受阻。
 
@@ -54,6 +54,14 @@
   - visibility symmetry：中心兩側 `<0.5`；往正確方向移動達 50% onset 且對側仍 `<0.5`；`±halfWidthU` 達 full exposure `=1` 對側 `=0`；左右 crossing px 絕對值誤差 `<= CS2_PROFILE.maxSpeed/SIM_HZ`（1 tick 空間容差,exact mirror 故實際誤差 `~0`）；`propBounds` x 軸鏡像逐欄驗證。
 - **驗證**：`npx vitest run src/scene/scenes/peek-ad-corridor.test.ts src/scene/clearance.test.ts` → exit 0，2 files / 28 tests 全綠；`npx vitest run`（全專案）→ exit 0，134 files / 1026 tests 全綠（較 T1 baseline 1014 增加 12，皆為本次新增）；`npm run typecheck` exit 0。`git status --short` 只有本 task 新檔（`peek-ad-corridor.*`、`gen-peek-ad-corridor-gltf.mjs`、`public/assets/scenes/peek-ad-corridor/`）,frozen `peek-corridor` 三檔零 diff。
 
+### 2026-08-26 — T3 pilot drill（1.5°/2.0°/3.0° angular-size cells）
+
+- **新增** `src/drill/peek_click_transfer_pilot_v1.ts`：`PEEK_CLICK_ANGULAR_SIZE_CANDIDATES_DEG = [1.5,2,3]`（型別為文字聯集,非 `number`,故 operator 無法傳入未校準數值——README §2.3 C 的機械落實)；`angularSizeToHitboxWidthU(deg, distanceU) = 2·distanceU·tan(deg/2 in rad)` 純函式；`buildPeekClickTransferPilotConfig(angularSizeDeg)` 組出 `PeekClickTransferPilotConfig`（`id`/`sceneId='peek-ad-corridor-v1'`/`drill`/`clearanceOptions`/`visibility`/`angularSizeDeg`)。`drill` 沿用既有 engine 能力,零新狀態機:`cue:{kind:'single'}` + `sequence.spawnDelayMsRange:[500,500]`（cue foreperiod 500ms,對齊 `counterstrafe_cued_v1` 既有模式)、`targets.distance=8`（D-45.10 沿用 T2 校準值)、`timing.peekTimeoutMs=3000`（OQ-S9-4 決議的 spawn-anchored 總 timeout)、`timing.timeLimitMs=120000`（backstop)、`endCondition={type:'targetCount',value:20}`。first-miss-retain/second-hit-advance 與 L/R 交替皆是 `TargetManager`/`DrillRunner` 既有語意,本檔不新增判定邏輯。seed 用獨立 family base(`94000`,家族 offset 4,接續 `pilotConfigs.ts` 既有 0–3)避免與既有四個 pilot 家族或 assessment seed(1–37002)碰撞。`peekClickTransferPilotV1 = buildPeekClickTransferPilotConfig(2)` 為 researcher-mode 預設(OQ-S9-5)。
+- **改** `src/pilot/pilotConfigs.ts`：新增 `buildPeekClickTransferPilotConfigs(candidates)`,回傳扁平 `DrillConfig[]`（`.drill` 已展開)——比照既有 `buildSpiderShotPilotConfigs`/`buildCounterstrafeReversalPilotConfigs` 慣例(呼叫端自行搭配 drill 檔匯出的 `sceneId`/`clearanceOptions`,同 `holdClickV1` 模式),不引入第二種 wrapper 形狀。`pilotConfigs.test.ts` 的 `allConfigs()` 併入新家族,沿用既有「practice-only / seed 不碰撞 / deterministic」斷言。
+- **改** `src/main.ts`：新增 `peekAdCorridor` 進 `availableScenes`;新增 `peekClickTransferPilotV1` 進 `availableDrills`（`loadOptions.clearance = peekClickTransferPilotV1.clearanceOptions`,比照 `holdClickV1` 註冊模式)——研究員模式「單一 Drill 調整」下拉即可選取 2.0° pilot cell,scene/drill atomic load 沿用既有 `loadDrillById` 路徑,零新入口程式碼。
+- **測試設計決策**:`fpsTestHarness.ts` 的合成 camera 固定於世界原點(從不隨 `state.player.x` 位移——只有 `main.ts` render loop 才把 `sceneManager.camera.position` 綁 player 位置),故無法透過該 harness 端到端驗證「玩家橫移曝光」幾何;改在 `peek_click_transfer_pilot_v1.test.ts` 內用 `simStep()` 低階直呼(比照 T1 `SimLoop.test.ts` 的兩個 occlusion tests 手法:`weapon`/`recoilRuntime` 皆省略以避開武器 spread 對 1.5°/2.0°/3.0° 極小 hitbox 的隨機脫靶風險),自建 camera + stub `TargetManager` 直接斷言 occlusion/hit 契約,不修改 `fpsTestHarness.ts`(README §2.1 file scope 未列該檔於 T3)。20-trial/cue/alternation/timeout/backstop/restart 契約則用 `createTargetManager`+`createDrillRunner` 直驅(免 camera/fire),因為這些語意完全由既有 `DrillRunner.tick`/`TargetManager.tick` 決定,不需經過完整 SimLoop。
+- **驗證**:`npx vitest run src/drill/peek_click_transfer_pilot_v1.test.ts src/testharness/fpsTestHarness.test.ts` → exit 0,23 tests passed(T3 DoD 指定套件,`fpsTestHarness.test.ts` 為零修改回歸)；`npx vitest run`（全專案）→ exit 0,135 files / 1037 tests passed（較 T2 baseline 134 files/1026 tests 增加 1 file/11 tests,皆為本次新增)；`npm run typecheck` exit 0；`git status --short` 只有本 task 預期檔案（`peek_click_transfer_pilot_v1.ts`/`.test.ts` 新檔,`main.ts`/`pilot/pilotConfigs.ts`/`pilot/pilotConfigs.test.ts` 修改)。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -65,7 +73,9 @@
 | **D-45.3** | 新建 `peek-ad-corridor-v1`，不改 frozen `peek-corridor` | 避免改變 stage6 hold-click geometry/history compatibility | Confirmed，T2 落地 |
 | **D-45.9** | `peek-ad-corridor-v1` 用「單一中心柱沿 x=0 對半切」為 `cover-wall-l`/`cover-wall-r`,而非複製 `peek-corridor` 式「貼近各自目標」的側牆 | 貼近目標側的牆在玩家置中時無法遮住雙側視線(數值驗證：sightline 在該 z 帶穿過的 x 落在牆外);中心柱幾何才能同時滿足「置中雙側皆隱藏」與「x 軸鏡像」兩個 README invariant | Confirmed，T2 |
 | **D-45.10** | T2 geometry tests 假設 target distance=8(沿用 peek-corridor 尺度),於 test 檔頂部註記為 T3 相容假設 | cover-wall 幾何常數是針對特定 distance 校準;T3 若改變 pilot distance 必須重驗本檔 invariants,避免悄悄失真 | Confirmed，T2；待 T3 覆核 |
-| **D-45.4** | pilot 保留 box target、AK-47、嚴格 LR、miss 補槍 | 最小化新引擎分支並對齊影片循環；正式值留給 pilot | Proposed，T3 |
+| **D-45.4** | pilot 保留 box target、AK-47、嚴格 LR、miss 補槍 | 最小化新引擎分支並對齊影片循環；正式值留給 pilot | Confirmed，T3 落地 |
+| **D-45.11** | `buildPeekClickTransferPilotConfigs`（`pilotConfigs.ts`）回傳扁平 `DrillConfig[]`，不回傳 wrapper（`PeekClickTransferPilotConfig[]`） | 比照既有四個 pilot 家族 builder 慣例（呼叫端自帶 sceneId/clearanceOptions 常數，同 `holdClickV1` 模式）；避免該檔出現兩種回傳形狀 | Confirmed，T3 |
+| **D-45.12** | T3 gameplay/occlusion 測試不經 `fpsTestHarness.ts`，改在 drill 測試檔內直呼 `simStep`/`TargetManager`/`DrillRunner` | harness 合成 camera 固定於世界原點、不隨 `state.player.x` 位移（只有 `main.ts` render loop 才做這件事），無法端到端驗證「玩家橫移曝光」；直呼底層原語可控 camera 位置且比照 T1 `SimLoop.test.ts` 省略 weapon/recoilRuntime 避開極小 hitbox 的 spread 脫靶風險 | Confirmed，T3 |
 | **D-45.5** | 不建立 composite score | 沿用 stage6「不同構念分層報告」紀律 | Proposed，T4 |
 | **D-45.6** | Session 採 versioned roster，不改 stage6 default family list | 防止既有 participant order 全數漂移 | Proposed，T5 |
 
@@ -98,3 +108,9 @@
 | 2026-08-26 | `npx vitest run`（全專案，T2 wiring 後） | exit 0，134 files / 1026 tests passed |
 | 2026-08-26 | `npm run typecheck`（T2 wiring 後） | exit 0 |
 | 2026-08-26 | `git status --short`（T2 完成後） | 只有本 task 新檔;frozen `peek-corridor` 三檔零 diff |
+| 2026-08-26 | `npx vitest run src/pilot/pilotConfigs.test.ts` | exit 0，5 tests passed（新 builder 加入 `allConfigs()` 後仍全綠） |
+| 2026-08-26 | `npx vitest run src/drill/peek_click_transfer_pilot_v1.test.ts` | exit 0，11 tests passed |
+| 2026-08-26 | `npx vitest run src/drill/peek_click_transfer_pilot_v1.test.ts src/testharness/fpsTestHarness.test.ts` | exit 0，23 tests passed（T3 DoD 指定套件） |
+| 2026-08-26 | `npx vitest run`（全專案，T3 wiring 後） | exit 0，135 files / 1037 tests passed |
+| 2026-08-26 | `npm run typecheck`（T3 wiring 後） | exit 0 |
+| 2026-08-26 | `git status --short`（T3 完成後） | 只有本 task 預期檔案（2 新檔 + `main.ts`/`pilot/pilotConfigs.ts`/`pilot/pilotConfigs.test.ts` 修改） |

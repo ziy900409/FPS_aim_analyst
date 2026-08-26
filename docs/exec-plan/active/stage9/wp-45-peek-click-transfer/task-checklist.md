@@ -26,11 +26,11 @@
 
 ## T3 — Pilot drill
 
-- [ ] 等 WP-44 T-exit
-- [ ] 1.5°/2.0°/3.0° pilot config builder
-- [ ] 20-trial LR/cue/timeout/backstop contract
-- [ ] first miss→second hit / restart determinism tests
-- [ ] researcher mode 註冊 2.0° default cell
+- [x] 等 WP-44 T-exit
+- [x] 1.5°/2.0°/3.0° pilot config builder
+- [x] 20-trial LR/cue/timeout/backstop contract
+- [x] first miss→second hit / restart determinism tests
+- [x] researcher mode 註冊 2.0° default cell
 
 ## T4 — Metrics
 

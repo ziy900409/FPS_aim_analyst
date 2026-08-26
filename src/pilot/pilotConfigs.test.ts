@@ -5,10 +5,12 @@ import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
 import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
 import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
+import { PEEK_CLICK_ANGULAR_SIZE_CANDIDATES_DEG } from '../drill/peek_click_transfer_pilot_v1.ts';
 import {
   buildCounterstrafeReversalPilotConfigs,
   buildHoldClickPilotConfigs,
   buildHoldTrackPilotConfigs,
+  buildPeekClickTransferPilotConfigs,
   buildSpiderShotPilotConfigs,
   PILOT_FEEDBACK_POLICY_CANDIDATES,
   PILOT_SEED_ROSTER_START,
@@ -26,6 +28,7 @@ describe('stage6 pilot configs', () => {
     ...buildHoldTrackPilotConfigs(distances),
     ...buildSpiderShotPilotConfigs([{ angularRadiusDeg: 15, widthU: 1, heightU: 2 }]),
     ...buildCounterstrafeReversalPilotConfigs([{ holdDurationMs: 400 }, { holdDurationMs: 600 }]),
+    ...buildPeekClickTransferPilotConfigs(PEEK_CLICK_ANGULAR_SIZE_CANDIDATES_DEG),
   ];
 
   it('is deterministic and produces only practice configs', () => {
@@ -46,6 +49,11 @@ describe('stage6 pilot configs', () => {
       kind: 'hold-reversal',
       holdDurationMs: 600,
     });
+
+    const [peekClick2Deg] = buildPeekClickTransferPilotConfigs([2]);
+    expect(peekClick2Deg.cue).toEqual({ kind: 'single' });
+    expect(peekClick2Deg.targets.hitbox).toMatchObject({ depthU: 1 });
+    expect(peekClick2Deg.targets.hitbox!.widthU).toBeCloseTo(peekClick2Deg.targets.hitbox!.heightU, 12);
   });
 
   it('uses a pilot-only seed roster that cannot collide with assessment seeds', () => {

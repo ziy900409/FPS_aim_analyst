@@ -4,6 +4,10 @@ import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
 import { holdClickV1, HOLD_CLICK_VISIBILITY_SAMPLE_COUNT } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
 import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
+import {
+  buildPeekClickTransferPilotConfig,
+  type PeekClickAngularSizeDeg,
+} from '../drill/peek_click_transfer_pilot_v1.ts';
 
 /** Pilot-only seed range; it is deliberately outside every assessment protocol's 1–37002 range. */
 export const PILOT_SEED_ROSTER_START = 90000;
@@ -103,6 +107,15 @@ export function buildCounterstrafeReversalPilotConfigs(
     cue: { kind: 'hold-reversal', holdDurationMs: candidate.holdDurationMs },
     sequence: { ...counterstrafeReversalV1.sequence, seed: pilotSeed(3, index) },
   }));
+}
+
+/** WP-45 / T3: one flat DrillConfig per requested angular-size candidate (`.drill` unwrapped, matching
+ * the other builders' flat shape — pair with `PEEK_CLICK_TRANSFER_CLEARANCE_OPTIONS`/`sceneId` from
+ * the drill file itself, same convention as `holdClickV1.clearanceOptions`/`sceneId`). */
+export function buildPeekClickTransferPilotConfigs(
+  candidates: readonly PeekClickAngularSizeDeg[],
+): readonly DrillConfig[] {
+  return candidates.map((angularSizeDeg) => buildPeekClickTransferPilotConfig(angularSizeDeg).drill);
 }
 
 function practiceDistanceConfig(

@@ -76,6 +76,7 @@ import { fieldLow } from './scene/scenes/field-low.ts';
 import { urbanHigh } from './scene/scenes/urban-high.ts';
 import { brField } from './scene/scenes/br-field.ts';
 import { peekCorridor } from './scene/scenes/peek-corridor.ts';
+import { peekAdCorridor } from './scene/scenes/peek-ad-corridor.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
@@ -87,6 +88,7 @@ import { spiderShotV1 } from './drill/spider_shot_v1.ts';
 import { spiderShotV2 } from './drill/spider_shot_v2.ts';
 import { counterstrafeReversalV1 } from './drill/counterstrafe_reversal_v1.ts';
 import { counterstrafeFreeV1 } from './drill/counterstrafe_free_v1.ts';
+import { peekClickTransferPilotV1 } from './drill/peek_click_transfer_pilot_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -120,6 +122,7 @@ const availableScenes: AvailableScene[] = [
   { id: urbanHigh.sceneId, label: 'urban-high', config: urbanHigh },
   { id: brField.sceneId, label: 'br-field', config: brField },
   { id: peekCorridor.sceneId, label: 'peek-corridor', config: peekCorridor },
+  { id: peekAdCorridor.sceneId, label: 'peek-ad-corridor-v1', config: peekAdCorridor },
 ];
 let activeSceneConfig: SceneConfig = fieldLow;
 let activeSceneFallback = false;
@@ -163,6 +166,13 @@ const availableDrills: AvailableDrill[] = [
   { id: spiderShotV2.drillId, label: spiderShotV2.drillId, source: spiderShotV2, sceneId: 'placeholder-room' },
   { id: counterstrafeReversalV1.drillId, label: counterstrafeReversalV1.drillId, source: counterstrafeReversalV1 },
   { id: counterstrafeFreeV1.drillId, label: counterstrafeFreeV1.drillId, source: counterstrafeFreeV1 },
+  {
+    id: peekClickTransferPilotV1.id,
+    label: peekClickTransferPilotV1.id,
+    source: peekClickTransferPilotV1.drill,
+    sceneId: peekClickTransferPilotV1.sceneId,
+    loadOptions: { clearance: peekClickTransferPilotV1.clearanceOptions },
+  },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,
     label: variant.id,
