@@ -45,6 +45,14 @@ describe('spider-shot-v2 drill config', () => {
     expect(spiderShotV2.spiderShot?.seed).not.toBe(spiderShotV1.spiderShot?.seed);
   });
 
+  it('centerDistanceU/peripheral.distanceURange 落在 placeholder-room 半深內（KI-012：z=-distance 越過北牆會被遮擋，見 TargetManager.ts DEFAULT_DISTANCE 註解）', () => {
+    const config = loadDrill(spiderShotV2);
+    const spiderShot = config.spiderShot!;
+    // placeholder-room roomSize depth=20 → 北牆 z=-10（KI-012 修復前為 depth=10 → z=-5）。
+    expect(spiderShot.centerDistanceU).toBeLessThan(10);
+    expect(spiderShot.peripheral.distanceURange[1]).toBeLessThan(10);
+  });
+
   it('leaves spider-shot-v1 untouched (WP-39 frozen values)', () => {
     const config = loadDrill(spiderShotV1);
     expect(config.spiderShot).toEqual({

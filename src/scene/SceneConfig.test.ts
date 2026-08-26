@@ -24,7 +24,7 @@ describe('validateScene', () => {
     expect(placeholderRoom.sceneId).toBe('placeholder-room');
     expect(placeholderRoom.asset).toBeNull();
     expect(placeholderRoom.propBounds).toEqual([]);
-    expect(placeholderRoom.proceduralRoom?.roomSize).toEqual([10, 10, 3]);
+    expect(placeholderRoom.proceduralRoom?.roomSize).toEqual([10, 20, 3]);
   });
 
   it('asset.displayScale 必須為正有限數', () => {

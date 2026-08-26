@@ -45,8 +45,10 @@ import { isDrivenMotion, motionOffset } from './targetMotion.ts';
 
 /**
  * 目標距玩家的前方(-Z)距離(u,source unit;佔位,WP-6 drill config 接管)。
- * ⚠️ 須 < 佔位房間半深(SceneManager `roomSize` 預設 [10,10,3] → 北牆 z=−5),否則目標生在牆後
- * 被遮擋(WP-5 T1 手動驗證發現:距離 8 → z=−8 落在北牆後方)。4 → z=−4,落在房間內、camera 前方。
+ * ⚠️ 須 < 佔位房間半深(`placeholder-room` `roomSize` depth=20 → 北牆 z=−10;KI-012 修復前
+ * depth=10 → z=−5),否則目標生在牆後被遮擋(WP-5 T1 手動驗證發現:距離 8 → z=−8 落在北牆後方；
+ * spider-shot-v1/v2 的 `centerDistanceU`/`distanceURange=8` 曾重蹈此坑,見 KI-012)。
+ * 4 → z=−4,落在房間內、camera 前方。
  */
 const DEFAULT_DISTANCE = 4;
 /** 目標中心高(u;略低於眼高 1.6,使準心正對軀幹)。 */

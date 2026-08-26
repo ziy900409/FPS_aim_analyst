@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-012](KI-012-spider-shot-target-occluded-by-placeholder-room-back-wall.md) | WP-46 T-exit 手動驗收回報「spider-shot-v2 沒有看到任何球體」——追碼證實 v1 的方塊目標在同一位置也一樣看不到:`placeholder-room` 北牆(z=-5)比 spider-shot 目標距離(z=-8)更靠近相機,整顆目標(不分形狀)被牆體完全遮擋;這正是 WP-5 T1 早已文件化過但被 WP-36 重蹈的坑 | BD-012(§3,只放大 `placeholder-room` 的 `roomSize` depth 10→20(北牆退到 z=-10),明確釘住 `eyeZ:4` 避免連動改變 camera/raycast 原點;不動任何 drill config 凍結值) | ✅ 已修(2026-08-26) |
 | [KI-011](KI-011-spider-shot-v1-clearance-rejected-in-field-low.md) | drill 選單選 `spider-shot-v1` 擲出「clearance 驗證失敗」，完全無法載入——`availableDrills` 缺 `sceneId`，fallback 到預設 field-low，其 tree/rock 道具與目標距離重疊 | BD-011(§3,`main.ts` 補 `sceneId: 'placeholder-room'`(唯一零 propBounds 的既有場景)) | ✅ 已修(2026-08-25) |
 | [KI-010](KI-010-rest-overlay-stuck-on-failed-auto-advance.md) | Session Plan 休息倒數結束後自動載入下一家族失敗時（`SessionRunner.poll()`）錯誤被 `void` 靜默丟棄，`phase` 永遠卡在 `'rest'`，`restOverlay` 因此永不消失 | BD-010(§3,`poll()` 自動 advance 補 `.catch()`：`onStatus` 回報 + 強制轉 `{kind:'done'}`；`runTransition()` 的 `.finally()` 鏈補 `.catch(() => {})` 避免衍生 unhandled rejection) | ✅ 已修(2026-08-25) |
 | [KI-009](KI-009-session-plan-qhd-gate-too-strict.md) | Session Plan（不操弄解析度條件）誤用 resolution/BR protocol 專屬的 QHD（2560×1440）資格閘門檻，FHD 面板無法測試選手 | BD-009(§3,新增 `SESSION_PLAN_MIN_CONDITION`(1920×1080)，`EligibilityGate.required` 改支援函式型、依 `pendingSessionMode` 動態解析) | ✅ 已修(2026-08-25) |
@@ -57,6 +58,21 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-012 ✅ KI-012 — spider-shot-v1/v2 目標被 placeholder-room 北牆遮擋，完全看不見(2026-08-26)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 使用者於 WP-46 T-exit 手動驗收 `spider-shot-v2` 回報「沒有看到任何球體」。用 Playwright 驅動真實 Edge 重現操作流程，於 `TargetView.sync()` 加暫時性 log 確認目標確實 spawn 於 `(0,1.5,-8)`、`shape='sphere'`、幾何正確——WP-46 交付的 sphere 渲染管線本身無誤。改測 `spider-shot-v1` 的方塊目標於同一位置，**一樣完全看不到**，排除 WP-46 回歸。追碼確認 [`SceneManager.ts` `#buildRoom()`](../../src/render/SceneManager.ts) 把北牆放在 `z=-depth/2`；`placeholder-room` 原 `roomSize:[10,10,3]`(depth=10)使北牆在 z=-5，而 spider-shot 的 `centerDistanceU`/`distanceURange` 皆為 8(z=-8)，目標整顆埋在牆後。**這是重蹈覆轍**：`TargetManager.ts` 的 `DEFAULT_DISTANCE` 常數旁，WP-5 T1 早已留下「距離須 < 房間半深，否則目標生在牆後被遮擋(距離 8 → z=-8 落在北牆後方)」的明確警語，並把預設距離從 8 降到 4；WP-36 引入 spider-shot 時開了新欄位(`centerDistanceU`/`distanceURange`，非 `targets.distance`)，沒對照到這條同檔案內的警語，原地重踩十二個 WP 之前踩過的坑，WP-44/46 沿用未查覺。完整診斷（含 30° 放大對照實驗、v1/v2 對照證據）見 [KI-012](KI-012-spider-shot-target-occluded-by-placeholder-room-back-wall.md)。 |
+| **為何拖了超過一年沒被發現** | ① `HitDetector` 的 raycast 只測 hitbox，不查牆的視覺遮擋（occlusion gate 只在 `propBounds` 非空時觸發，`placeholder-room` 恆空）——中心目標「看不見但打得中」，玩家盲開火不需要真的看到它。② 周邊目標的方位角有時把 Y 座標推出牆高（3u，無天花板），探出牆頂而可見——這正是使用者過去抱怨「太難搜尋」而非「完全看不到」的原因：真正被拿來練習/抱怨的是**周邊**目標（部分可見），必被遮的**中心**目標反而沒人靠視覺瞄過。③ `validateClearance()` 只查 `propBounds`，完全不查房間牆體本身的幾何。 |
+| **決策** | 只放大 `placeholder-room` 的 `roomSize` depth(10→20，北牆退到 z=-10，給 distance=8 目標 2u 淨空)，並新增顯式 `eyeZ:4` 釘住 `resolveEyeWorldBase()` 原本 `depth/2-standoff` 的 fallback 值——避免 depth 改動連動搬動 camera/raycast 原點，牽動 `placeholder-room` 上其他既有 drill 的命中判定距離。只改 depth，不改 width/height(是否讓周邊目標完全不探頭是產品決策，留 OQ)。 |
+| **理由** | 不採「縮短 spider-shot 的 `centerDistanceU`/`distanceURange`」——這是 v1 的 WP-39 凍結校準值，且 `spiderShotConditions.ts` 的 `W_deg`/`D_deg` 與 WP-46 視角直徑公式皆以 distance=8 為基準，改動會牽動已凍結協定與既有指標校準；場景幾何依 GD-6 本就可自由調整、不進 sim runtime，放大房間是唯一不驚動 sim/drill config 的修法。 |
+| **偏離計畫** | 無。診斷由使用者於 WP-46 T-exit 手動驗收時回報觸發(非既定 task)，依協議走 known_issue 流程(KI-012 tech spec + 本帳本)；診斷手段（暫時性 log + 30° 放大對照 + v1/v2 交叉驗證）與所有暫時性除錯程式碼(log、e2e spec)均已於修復前清除，`git status` 確認乾淨後才提交修法。 |
+| **遺留 OQ** | **OQ-KI12-1**：周邊目標在特定方位角/角距組合下仍可能探出牆頂(牆高 3u、無天花板)，修復前後皆存在，是否要讓其完全落在可見範圍屬產品/訓練設計決策。**OQ-KI12-2**：`clearance.ts` 仍不查房間牆體幾何，只查 `propBounds`；若日後新 drill 又選到超出房間邊界的 distance，同一類坑可能第三次發生，是否要補一個房間邊界檢查屬獨立架構決策。**OQ-KI12-3**：`DEFAULT_PROCEDURAL_ROOM`(`eyePose.ts`)與 `field-low`/`urban-high` 的 `roomSize` 仍是舊值(depth=10)未動——這些場景要嘛是 GLTF 資產(牆體來自 `.gltf`，不受 `roomSize` 影響)要嘛實務上未曾以 `asset:null` 形態建構，本次未發現受影響路徑。 |
+| **影響面** | **受影響**：`placeholder-room` 場景的房間深度視覺呈現。**不受影響**：`spider_shot_v1.ts`(協定凍結，零改動)、`spider_shot_v2.ts`、`TargetManager.ts`/`HitDetector.ts` 任何判定邏輯、`clearance.ts` 驗證結果、`placeholder-room` 上其他既有 drill 的 camera/raycast 原點(`eyeZ` 明確釘住)、匯出資料格式。 |
+| **狀態** | ✅ **已修(2026-08-26)**。驗證：`tsc --noEmit` exit 0；`vitest run` 137 files / 1076 tests 全綠(含新增 2 個 spider-shot 距離回歸測試)；`playwright test` 23/25 通過，2 個失敗(`input-sampler.spec.ts` 逾時)單獨執行 5/5 全綠——與 [KI-011](KI-011-spider-shot-v1-clearance-rejected-in-field-low.md) 記錄過的同一種既有沙盒並行負載 flake 完全一致，與本次改動無關。 |
+
+---
 
 ### BD-011 ✅ KI-011 — spider-shot-v1 缺 sceneId，fallback 到 field-low 撞上 tree/rock 道具(2026-08-25)
 

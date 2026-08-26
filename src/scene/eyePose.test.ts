@@ -7,7 +7,7 @@ import { urbanHigh } from './scenes/urban-high.ts';
 import { brField } from './scenes/br-field.ts';
 
 describe('resolveEyeWorldBase — 逐場景逐位斷言（FM-4）', () => {
-  it('placeholder-room：無 eyeZ → depth/2 − standoff', () => {
+  it('placeholder-room：顯式 eyeZ:4（KI-012，釘住 depth=10 時代 fallback 值，depth 已改 20）', () => {
     expect(resolveEyeWorldBase(placeholderRoom)).toEqual({ x: 0, y: 1.6, z: 4 });
   });
 
