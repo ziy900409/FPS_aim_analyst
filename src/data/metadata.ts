@@ -79,6 +79,12 @@ export interface AssessmentMeta {
   assessmentFeedbackPolicy: 'minimal-end-of-block' | 'unrestricted';
 }
 
+/** Registered visibility-sampling candidate used to derive an occlusion-aware measurement onset. */
+export interface VisibilityMeta {
+  sampleCount: 1 | 9;
+  onsetThreshold: number;
+}
+
 export interface Meta {
   schemaVersion: 2;
   drillId: string;
@@ -140,6 +146,8 @@ export interface Meta {
   session?: SessionMeta;
   protocol?: ProtocolMeta;
   assessment?: AssessmentMeta;
+  /** Additive pilot visibility contract; absent when the drill has no registered visibility onset. */
+  visibility?: VisibilityMeta;
   /**
    * 逐 tick 角位移的產生模型(KI-005 / A T2,FR-A-6)。缺席 ⇒ `ticks[].dYaw`/`dPitch`
    * 亦缺席,離線消費者必須退回 aim 差分並標記 source(`aim-diff-legacy`)。
@@ -196,6 +204,7 @@ export interface CollectMetaArgs {
   session?: SessionMeta;
   protocol?: ProtocolMeta;
   assessment?: AssessmentMeta;
+  visibility?: VisibilityMeta;
   mouseIntegration?: MouseIntegrationMeta;
 }
 
@@ -251,6 +260,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const session = args.session === undefined ? undefined : requireSessionMeta(args.session);
   const protocol = args.protocol === undefined ? undefined : requireProtocolMeta(args.protocol);
   const assessment = args.assessment === undefined ? undefined : requireAssessmentMeta(args.assessment);
+  const visibility = args.visibility === undefined ? undefined : requireVisibilityMeta(args.visibility);
   const mouseIntegration =
     args.mouseIntegration === undefined ? undefined : requireMouseIntegrationMeta(args.mouseIntegration);
   const weapon = args.weapon === undefined ? undefined : requireWeaponMeta(args.weapon);
@@ -295,8 +305,20 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(session !== undefined ? { session } : {}),
     ...(protocol !== undefined ? { protocol } : {}),
     ...(assessment !== undefined ? { assessment } : {}),
+    ...(visibility !== undefined ? { visibility } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
   };
+}
+
+function requireVisibilityMeta(value: VisibilityMeta): VisibilityMeta {
+  if (value.sampleCount !== 1 && value.sampleCount !== 9) {
+    throw new Error('visibility.sampleCount must be 1 or 9');
+  }
+  const onsetThreshold = requireFiniteNumber(value.onsetThreshold, 'visibility.onsetThreshold');
+  if (onsetThreshold < 0 || onsetThreshold > 1) {
+    throw new Error('visibility.onsetThreshold must be between 0 and 1');
+  }
+  return { sampleCount: value.sampleCount, onsetThreshold };
 }
 
 function requireSessionPlanPreset(value: unknown): string {

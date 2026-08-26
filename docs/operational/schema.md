@@ -86,6 +86,7 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `display` | object | reserved optional | No | stage3/WP-20 | v2 reserved display/session setup metadata block. |
 | `frames` | object | frame deltas and summary | No | stage3/WP-20 | `{ series, summary }`; complete delta series is JSON-only. |
 | `session` | object | reserved optional | No | stage3/WP-20 | `participantId` / `sessionLabel` cross-session join keys. |
+| `visibility` | object | registered onset candidate | No | occlusion-aware pilot drill | `{ sampleCount: 1 \| 9, onsetThreshold: 0..1 }`; records the geometry-sampling contract used for a visibility-derived measurement onset. |
 | `validity` | object | runtime validity observation breakdown | No | `sharedState.validity` / frame log / recorder snapshot | Additive; absence means pre-S1 export. **Not the same set as `suspect`** — see [`meta.validity`](#metavalidity) below. |
 
 `buildExportPayload()` also ORs `meta.recorderOverflow` with `snapshot.recorderOverflow`, then preserves any existing `meta.suspect` flag.

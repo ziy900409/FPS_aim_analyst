@@ -10,7 +10,7 @@
 | **里程碑** | Pilot-ready；不在本 WP 凍結正式 Assessment 數值或新增跨構念總分 |
 | **相依** | stage6 WP-34/WP-37 已完成；T3 等 WP-44 T-exit；T5 等 stage8 WP-43 T-exit |
 | **估時** | 6–9 dev-days，不含真人 pilot 招募、資料蒐集與 sample-size/power 決定 |
-| **狀態** | 🟡 T1–T5 完成，可開始 T-exit |
+| **狀態** | ✅ T-exit 自動化與文件對帳完成；pilot-ready，真人原生 pointer-lock／視覺走查待研究者回填 |
 
 ---
 

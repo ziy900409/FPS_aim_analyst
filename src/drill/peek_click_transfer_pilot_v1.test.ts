@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { describe, expect, it } from 'vitest';
+import { createDataRecorder } from '../data/DataRecorder.ts';
 import { createSharedState, type SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
 import { createTargetManager } from '../sim/TargetManager.ts';
@@ -17,7 +18,7 @@ import type { PropBound } from '../scene/SceneConfig.ts';
 import { peekAdCorridor } from '../scene/scenes/peek-ad-corridor.ts';
 import { resolveEyeWorldBase } from '../scene/eyePose.ts';
 import { SIM_HZ } from '../loop/constants.ts';
-import { simStep, type HitscanOcclusionContext } from '../loop/SimLoop.ts';
+import { createSimLoop, simStep, type HitscanOcclusionContext } from '../loop/SimLoop.ts';
 import {
   angularSizeToHitboxWidthU,
   buildPeekClickTransferPilotConfig,
@@ -149,7 +150,48 @@ describe('peek_click_transfer_pilot_v1 gameplay contract (2° cell, no fire)', (
     expect(second.cueDirections).toEqual(first.cueDirections);
     expect(second.endedAtMs).toBe(first.endedAtMs);
   });
+
+  it('produces a tick/event-identical 20-trial timeout export at 60/120/240 Hz pump cadence', () => {
+    const expected = runCadenceTimeoutExport(60);
+    for (const hz of [60, 120, 240]) {
+      const actual = runCadenceTimeoutExport(hz);
+      expect(actual.phase).toBe('ended');
+      expect(actual.snapshot).toEqual(expected.snapshot);
+    }
+  });
 });
+
+function runCadenceTimeoutExport(hz: number) {
+  const drill = buildPeekClickTransferPilotConfig(2).drill;
+  const state = createSharedState();
+  const recorder = createDataRecorder({ simHz: SIM_HZ });
+  const targetManager = createTargetManager(drill);
+  const runner = createDrillRunner(state, targetManager);
+  let clockMs = 0;
+  const loop = createSimLoop(
+    state,
+    { now: () => clockMs },
+    SIM_HZ,
+    targetManager,
+    undefined,
+    runner,
+    recorder,
+    undefined,
+    drill.sequence.seed,
+    { hitscanOcclusion: { propBounds: peekAdCorridor.propBounds } },
+  );
+
+  runner.start(drill);
+  const endMs = 80_000;
+  const frameMs = 1000 / hz;
+  for (let nowMs = frameMs; nowMs < endMs; nowMs += frameMs) {
+    clockMs = nowMs;
+    loop.pump(clockMs);
+  }
+  clockMs = endMs;
+  loop.pump(clockMs);
+  return { phase: runner.phase, snapshot: recorder.snapshot() };
+}
 
 describe('peek_click_transfer_pilot_v1 hitscan occlusion contract (2° cell)', () => {
   function aimAt(state: SharedState, from: THREE.Vector3, to: TargetState['pos']): void {

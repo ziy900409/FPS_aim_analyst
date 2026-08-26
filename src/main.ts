@@ -600,6 +600,9 @@ async function buildCurrentExportPayload(
           },
         }
       : {}),
+    ...(activeDrillConfig.drillId === peekClickTransferPilotV1.id
+      ? { visibility: peekClickTransferPilotV1.visibility }
+      : {}),
   });
   return buildExportPayload(meta, snapshot);
 }

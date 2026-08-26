@@ -143,6 +143,27 @@ describe('collectMeta', () => {
     });
   });
 
+  it('preserves a registered visibility candidate as additive metadata', () => {
+    const meta = collectMeta({
+      drillId: 'peek_click_transfer_pilot_v1_2deg',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      visibility: { sampleCount: 9, onsetThreshold: 0.5 },
+    });
+
+    expect(meta.visibility).toEqual({ sampleCount: 9, onsetThreshold: 0.5 });
+    expect(() =>
+      collectMeta({ ...meta, visibility: { sampleCount: 3, onsetThreshold: 0.5 } } as unknown as CollectMetaArgs),
+    ).toThrow(
+      'visibility.sampleCount must be 1 or 9',
+    );
+    expect(() => collectMeta({ ...meta, visibility: { sampleCount: 9, onsetThreshold: 1.1 } })).toThrow(
+      'visibility.onsetThreshold must be between 0 and 1',
+    );
+  });
+
   it('records only configured session-plan preset identifiers additively', () => {
     const base: CollectMetaArgs = {
       drillId: 'hold_click_v1',

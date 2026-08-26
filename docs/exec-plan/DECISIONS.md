@@ -23,6 +23,17 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-25 ✅ WP-45 pilot-ready — peek-click transfer 與元件量測邊界、共用遮擋 kernel(2026-08-26)
+
+| | |
+|---|---|
+| **發現處** | 使用者將 Kovaak's Peek and Click 的「移出掩體→目標曝光→反向急停→首發／補槍」循環帶入本專案。讀碼確認既有 `hold-click-v1` 已量測目標自身移動造成的曝光、`counterstrafe-reversal-v1` 已量測固定 hold→reversal 制動，但沒有「玩家自身 A/D 位移造成曝光」的整合情境；同時既有 hitscan 只測 target AABB，會穿過 scene prop。 |
+| **決議** | 交付 `peek-click-transfer-pilot-v1` 作為 **Practice/pilot-only integrated transfer test**：20 個嚴格 L/R presentations、A/D cue、9-point `0.5` visibility onset、反向急停首發、miss 可補槍、hit/3000 ms timeout 推進。它不取代 hold-click 或 counterstrafe component assessments，沒有 composite score，不進 stage6 Assessment history/compatibility/diagnosis。正式 Assessment、樣本數/power、target size/timeout numeric freeze 必須由真人 pilot 後另立 WP。 |
+| **決議(遮擋)** | 新增 `occlusionGeometry` 作為 offline visibility derivation 與 runtime hitscan gate 的共同 segment/AABB 權威：target ray 先碰 prop 時不 kill，impact/tracer 停在 blocker。`hitscanOcclusion` 是 `SimLoop` 的 additive context；省略時既有 drills 走原路，projectile 不讀該 context。 |
+| **理由** | 同一個遊戲循環同時混合曝光、獲取、制動、首發與補槍；把它壓成一個診斷或分數會失去可歸因性。共用幾何 kernel 防止「畫面已曝光但射擊仍穿牆／或反之」的雙重定義。以 versioned transfer roster 而非修改 stage6 四家族 roster，確保既有順序與 frozen protocol 不漂移。 |
+| **影響面** | `src/scene/occlusionGeometry.ts`、visibility/hitscan path、`peek-ad-corridor-v1`、pilot drill/metrics、transfer-pilot session roster；術語與操作契約見 [CONTEXT.md](../../CONTEXT.md) 與 [analysis-peek-click-transfer.md](../operational/analysis-peek-click-transfer.md)。 |
+| **狀態** | ✅ WP-45 T-exit：程式與自動化驗收已完成，僅宣告 pilot-ready；不等於構念效度、信度或 Assessment 採納。 |
+
 ### GD-24 ✅ stage7 採納 — 選手測試流程前端優化:WP-40~42 / M17 + Session Plan preset 分層決策(2026-08-25 採納;M17 達成 2026-08-25)
 
 | | |

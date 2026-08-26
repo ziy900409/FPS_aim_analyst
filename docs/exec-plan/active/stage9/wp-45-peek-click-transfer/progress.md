@@ -2,11 +2,19 @@
 
 ## Status
 
-- **Current**:T5 完成（versioned `transfer-pilot-v1` session：三家族 roster、`buildFamilyOrderForRoster` 泛化排序、`SessionRunner` additive family 解析、preset），T1–T5 皆已就緒，可開始 T-exit。
-- **Scope state**:`peek-click-transfer-pilot-v1` 為 Practice/pilot-only；正式 Assessment freeze 不在本 WP。
+- **Current**:✅ T-exit 自動化與文件對帳完成；`peek-click-transfer-pilot-v1` 可作為 Practice/pilot tool 交付。真人 native pointer-lock／視覺手感清單仍待研究者回填。
+- **Scope state**:`peek-click-transfer-pilot-v1` 為 Practice/pilot-only；正式 Assessment freeze 與採納不在本 WP，故 `docs/exec-plan/README.md`／`docs/MAP.md` 保持 proposal 狀態。
 - **Dependency state**:T3 依賴的 WP-44 T-exit 已完成(`c44270e`)；T5 依賴的 stage8 WP-43 T-exit 已完成(`61db0ba`)；HEAD(`41d3bd5`)已包含兩者，兩個 gate 皆已開放，T3/T5 不再受阻。
 
 ## Progress
+
+### 2026-08-26 — T-exit pilot-ready automated gate and documentation reconciliation
+
+- **補缺口**：T-exit 稽核發現 transfer visibility candidate 原本只存在 config wrapper，未進匯出 metadata。新增 additive `Meta.visibility?: { sampleCount: 1 | 9; onsetThreshold: number }`，只在 2° researcher default transfer drill 寫入；既有 export 不帶該欄，schema version 不變。live `main.ts` 與 browser `fpsTestHarness` 共用同一條件，避免測試匯出與正式匯出漂移。
+- **新增測試**：`peek_click_transfer_pilot_v1.test.ts` 以生產 `createSimLoop` 跑完整 20-presentation timeout block，60/120/240 Hz pump cadence 的 `DataRecorder` tick/event snapshot deep-equal。新增 `metadata.test.ts` 的 visibility validation；新增 `tests/e2e/peek-click-transfer.spec.ts`，真 Edge 瀏覽器跑滿 Practice timeout block，驗證 20 個 unique targets、10L/10R、`peek-ad-corridor-v1`、seed `94020`、hitbox、`visibility={sampleCount:9,onsetThreshold:0.5}`，且無 `assessment` metadata。
+- **文件**：新增 `docs/operational/analysis-peek-click-transfer.md`，回寫 `CONTEXT.md`／`DECISIONS.md`（GD-25）與 stage9 WP 狀態。因使用者尚未把本 pilot proposal 升格為 Assessment，未修改 `docs/exec-plan/README.md`／`docs/MAP.md`；此決策明記於本檔與 T-exit gate。
+- **驗證**：`npm run typecheck` exit 0；focused metadata/pilot tests 63 passed；`npm test` exit 0（137 files / 1059 tests）；`npm run test:e2e` exit 0（25 passed）；`npm run test:ci` exit 0（同一 TypeScript + Vitest + Playwright 組合）。
+- **人工驗收限制**：中心掩體、cue direction、wall block、補槍、timeout、candidate/metadata、history guard 與 session roster 均有自動測試證據；但真實 native pointer-lock/視覺手感全場走查不能由 headless browser 取代，保留 T-exit manual checklist 供研究者回填。
 
 ### 2026-08-26 — Planning
 
