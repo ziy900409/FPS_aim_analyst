@@ -14,7 +14,7 @@ function makeTarget(id: string, x: number, z: number, over: Partial<TargetState>
     pos: { x, y: 1.5, z },
     visible: true,
     alive: true,
-    hitbox: { width: 1, height: 2, depth: 1 },
+    hitbox: { width: 1, height: 2, depth: 1, shape: 'box' },
     ...over,
   };
 }

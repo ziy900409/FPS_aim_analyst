@@ -23,7 +23,7 @@ function makeTarget(id: string, x: number, z: number, over: Partial<TargetState>
     pos: { x, y: 1.5, z },
     visible: true,
     alive: true,
-    hitbox: { width: 1, height: 2, depth: 1 },
+    hitbox: { width: 1, height: 2, depth: 1, shape: 'box' },
     ...over,
   };
 }
@@ -101,7 +101,7 @@ describe('HitDetector — raycastWithRay（注入式射線方向，FR-B8）', ()
     const cam = cameraLookingDownZ();
     const targets = [
       makeTarget('far', 0, -8),
-      makeTarget('near', 0, -4, { hitbox: { width: 1, height: 2, depth: 1, part: 'head' } }),
+      makeTarget('near', 0, -4, { hitbox: { width: 1, height: 2, depth: 1, shape: 'box', part: 'head' } }),
     ];
     const { origin, direction } = cameraCenterRay(cam);
 
@@ -111,7 +111,7 @@ describe('HitDetector — raycastWithRay（注入式射線方向，FR-B8）', ()
   it('注入偏移方向可命中側向目標', () => {
     const origin = new THREE.Vector3(0, 1.5, 5);
     const sideTarget = makeTarget('side', 3, -8, {
-      hitbox: { width: 1, height: 2, depth: 1, part: 'body' },
+      hitbox: { width: 1, height: 2, depth: 1, shape: 'box', part: 'body' },
     });
     const direction = rayTowardTarget(origin, sideTarget);
 

@@ -104,6 +104,7 @@ function resolveOptions(payload: ExportPayload, options: VisibilityDerivationOpt
       width: positiveFinite(hitbox.width, 'hitbox.width'),
       height: positiveFinite(hitbox.height, 'hitbox.height'),
       depth: positiveFinite(hitbox.depth, 'hitbox.depth'),
+      shape: hitbox.shape,
     },
     eyeOrigin: resolveEyeOrigin(payload, options),
   };
@@ -112,7 +113,7 @@ function resolveOptions(payload: ExportPayload, options: VisibilityDerivationOpt
 function hitboxFromMeta(payload: ExportPayload): TargetHitboxSize | undefined {
   const hitbox = payload.meta.targets?.hitbox;
   if (hitbox === undefined) return undefined;
-  return { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU };
+  return { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU, shape: hitbox.shape ?? 'box' };
 }
 
 function positiveFinite(value: number, name: string): number {

@@ -142,7 +142,8 @@ describe('validateClearance', () => {
 
   it('config.targets.hitbox 會縮小 prop inflation 半徑（小目標 smoke）', () => {
     const small = drill({ targets: { count: 1, distance: 4, hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } } });
-    const smallInflation = targetHitboxRadius({ width: 0.5, height: 1, depth: 0.5 }) + CLEARANCE_MARGIN_U;
+    const smallInflation =
+      targetHitboxRadius({ width: 0.5, height: 1, depth: 0.5, shape: 'box' }) + CLEARANCE_MARGIN_U;
     expect(smallInflation).toBeLessThan(INFLATION);
     expect(
       validateClearance(

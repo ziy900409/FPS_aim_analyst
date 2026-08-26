@@ -5,16 +5,20 @@ export interface TargetHitboxConfig {
   widthU: number;
   heightU: number;
   depthU: number;
+  /** 省略 = 'box'(既有行為逐位不變)。'sphere' 要求 widthU === heightU === depthU（schema.ts 驗證）。 */
+  shape?: 'box' | 'sphere';
 }
 
 export interface TargetHitboxSize {
   width: number;
   height: number;
   depth: number;
+  /** resolveTargetHitbox() 恆填實值,預設 'box'。 */
+  shape: 'box' | 'sphere';
 }
 
 /** Single-source default H1 hitbox (source units). Omitted drill config must resolve to this exactly. */
-export const DEFAULT_TARGET_HITBOX: TargetHitboxSize = { width: 1, height: 2, depth: 1 } as const;
+export const DEFAULT_TARGET_HITBOX: TargetHitboxSize = { width: 1, height: 2, depth: 1, shape: 'box' } as const;
 export const MAX_TARGET_HITBOX_U = 10;
 
 export interface SpawnAreaConfig {
@@ -150,9 +154,14 @@ export interface DrillConfig {
 export function resolveTargetHitbox(config?: DrillConfig): TargetHitboxSize {
   const hitbox = config?.targets.hitbox;
   if (hitbox === undefined) return DEFAULT_TARGET_HITBOX;
-  return { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU };
+  return {
+    width: hitbox.widthU,
+    height: hitbox.heightU,
+    depth: hitbox.depthU,
+    shape: hitbox.shape ?? 'box',
+  };
 }
 
 export function targetHitboxToConfig(hitbox: TargetHitboxSize): TargetHitboxConfig {
-  return { widthU: hitbox.width, heightU: hitbox.height, depthU: hitbox.depth };
+  return { widthU: hitbox.width, heightU: hitbox.height, depthU: hitbox.depth, shape: hitbox.shape };
 }

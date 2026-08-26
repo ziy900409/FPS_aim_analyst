@@ -187,11 +187,19 @@ function validateSpiderPeripheral(
 
 function validateHitbox(json: unknown): TargetHitboxConfig {
   const hitbox = requireObject(json, 'targets.hitbox');
-  return {
-    widthU: requireHitboxDimension(hitbox.widthU, 'targets.hitbox.widthU'),
-    heightU: requireHitboxDimension(hitbox.heightU, 'targets.hitbox.heightU'),
-    depthU: requireHitboxDimension(hitbox.depthU, 'targets.hitbox.depthU'),
-  };
+  const widthU = requireHitboxDimension(hitbox.widthU, 'targets.hitbox.widthU');
+  const heightU = requireHitboxDimension(hitbox.heightU, 'targets.hitbox.heightU');
+  const depthU = requireHitboxDimension(hitbox.depthU, 'targets.hitbox.depthU');
+  const shape = hitbox.shape === undefined ? undefined : requireHitboxShape(hitbox.shape, 'targets.hitbox.shape');
+  if (shape === 'sphere' && (widthU !== heightU || heightU !== depthU)) {
+    throw err('targets.hitbox.shape', 'sphere 要求 widthU/heightU/depthU 三軸相等');
+  }
+  return { widthU, heightU, depthU, ...(shape !== undefined ? { shape } : {}) };
+}
+
+function requireHitboxShape(v: unknown, path: string): 'box' | 'sphere' {
+  if (v !== 'box' && v !== 'sphere') throw err(path, "必須為 'box' 或 'sphere'");
+  return v;
 }
 
 function validateSpawnArea(json: unknown): SpawnAreaConfig {

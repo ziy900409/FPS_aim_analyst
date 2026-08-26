@@ -219,6 +219,31 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
     expect(() => validateDrill(bad)).toThrow(/targets\.distance/);
   });
 
+  it('hitbox shape 省略或 box → 既有驗證行為逐位不變(WP-46/T1)', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5, shape: 'box' } },
+    });
+    expect(cfg.targets.hitbox).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5, shape: 'box' });
+  });
+
+  it('hitbox shape sphere 且三軸相等 → 通過驗證(WP-46/T1)', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, hitbox: { widthU: 0.6, heightU: 0.6, depthU: 0.6, shape: 'sphere' } },
+    });
+    expect(cfg.targets.hitbox).toEqual({ widthU: 0.6, heightU: 0.6, depthU: 0.6, shape: 'sphere' });
+  });
+
+  it('hitbox shape sphere 但三軸不等 → throw 指名 targets.hitbox.shape(WP-46/T1)', () => {
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: { count: 20, distance: 4, hitbox: { widthU: 0.6, heightU: 0.8, depthU: 0.6, shape: 'sphere' } },
+      }),
+    ).toThrow(/targets\.hitbox\.shape/);
+  });
+
   it('hitbox 非正、非有限或超過 sanity 上限 → throw 指名 targets.hitbox 欄位', () => {
     expect(() =>
       validateDrill({

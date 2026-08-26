@@ -80,7 +80,7 @@ describe('DataRecorder tick arena', () => {
       pos: { x: 4, y: 1.6, z: -8 },
       visible: true,
       alive: true,
-      hitbox: { width: 1, height: 2, depth: 1 },
+      hitbox: { width: 1, height: 2, depth: 1, shape: 'box' },
     });
 
     recorder.recordTickFromState(10, state);

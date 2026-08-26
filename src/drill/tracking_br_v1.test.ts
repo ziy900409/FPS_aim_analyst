@@ -32,7 +32,12 @@ describe('tracking_br_v1 drill config', () => {
       yawDegRange: [0, 0],
       distanceURange: [cfg.targets.distance, cfg.targets.distance],
     });
-    expect(targetHitboxToConfig(resolveTargetHitbox(cfg))).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5 });
+    expect(targetHitboxToConfig(resolveTargetHitbox(cfg))).toEqual({
+      widthU: 0.5,
+      heightU: 1,
+      depthU: 0.5,
+      shape: 'box',
+    });
   });
 
   it('covers the pre-registered 2 x 2 x 2 condition matrix with unique drill ids', () => {

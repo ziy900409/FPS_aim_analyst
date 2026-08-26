@@ -6,6 +6,7 @@
 
 - **2026-08-26 規劃**:經使用者實機測試回報 + `systematic-debugging` 排查(排除 sim 邏輯 bug)+ `brainstorming` 對話(確認要對齊 Aim Lab Spidershot,含一輪 GD-7 修訂範圍的明確人為確認)產出本 WP 計畫。尚未執行任何 task。
 - **2026-08-26 T0**:覆核 README §0 六項讀碼假設 + entry-gate 七項 Steps,對照現行程式碼與文件。六項成立;第七項(`docs/exec-plan/DECISIONS.md` GD-25 狀態)發現與實際不符,已修正 README Constraints 與本檔 D-46.2(見下方 Surprises / Decision Log)。✅ T0 DoD 達成,可進 T1。
+- **2026-08-26 T1**:`TargetHitboxConfig`/`TargetHitboxSize`/`TargetState.hitbox` 新增 `shape?:'box'|'sphere'`(`TargetHitboxSize`/`TargetState.hitbox` 側恆填實值);`schema.ts` `validateHitbox` 新增 sphere 三軸相等驗證;`metadata.ts` `requireTargetHitboxConfig` 補上 `shape` 選填讀取(export/import 往返保真);`CLAUDE.md §4` GD-7 措辭擴充為 box|sphere。`npx tsc --noEmit` 揪出 26 處既有 hitbox 字面量/斷言缺少必填 `shape`(13 個檔案,含 1 個 production 檔 `visibilityDerivation.ts`),逐一補 `shape:'box'` 後 tsc 全綠;`npx vitest run` 全專案 1062 個測試全綠(含新增 3 個 sphere 驗證測試)。✅ T1 DoD①–⑤達成,可進 T2。
 
 ## Decision Log
 
@@ -17,6 +18,8 @@
 ## Surprises
 
 - **T0(2026-08-26)**:README §0-3/Constraints 引用的「GD-25 是 stage8 暫用、未正式落帳」與 `docs/exec-plan/DECISIONS.md` 現況不符——GD-25 早已是 WP-45(本 stage9,非 stage8)的正式決議,2026-08-26 隨 WP-45 T-exit 落帳。判斷:此為規劃階段(WP-46 README 撰寫時)的認知落差,非本 WP 執行期間的新變化(WP-45 T-exit 與 WP-46 規劃同日,可能是撰寫順序誤植)。已修正 README Constraints 段落與 D-46.2;不影響 T0 DoD② 判定(結論——延後入帳——不變,只是理由與目標號碼從「避免衝突」改為「不搶跑,下一個可用號為 GD-26」)。
+
+- **T1(2026-08-26)**:README §2 藍圖預估「23 個消費 `.hitbox` 的檔案」,實際 `TargetHitboxSize`/`TargetState.hitbox` 新增必填 `shape` 後 `tsc --noEmit` 命中 26 處字面量/斷言(13 個檔案),其中 `src/metrics/visibilityDerivation.ts` 是 production code(`resolveOptions`/`hitboxFromMeta` 兩處建構 hitbox,需補 `shape` 傳遞才維持型別正確;行為不變,因為該模組不讀 `shape` 欄位)。判斷:數量差異來自「消費 `.hitbox` 讀取欄位」與「建構 `.hitbox` 物件字面量」是兩個不同集合,原估計只涵蓋前者;不影響 T1 DoD(逐一補齊後 tsc/vitest 全綠)。
 
 ## Open Questions(狀態)
 

@@ -6,7 +6,7 @@
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(覆核 §0 讀碼假設仍成立;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Low |
-| ⬜ | **T1** hitbox `shape` 型別擴充 + `schema.ts` sphere 驗證 + `CLAUDE.md §4` GD-7 措辭更新 | [T1-hitbox-shape-gd7.md](T1-hitbox-shape-gd7.md) | T0 | Med |
+| ✅ | **T1** hitbox `shape` 型別擴充 + `schema.ts` sphere 驗證 + `CLAUDE.md §4` GD-7 措辭更新 | [T1-hitbox-shape-gd7.md](T1-hitbox-shape-gd7.md) | T0 | Med |
 | ⬜ | **T2** `HitDetector.ts` sphere ray-intersection 分支 | [T2-hitdetector-sphere.md](T2-hitdetector-sphere.md) | T1 | Med |
 | ⬜ | **T3** `TargetView.ts` `setShape()` + `main.ts` 接線 | [T3-targetview-render.md](T3-targetview-render.md) | T1 | Low |
 | ⬜ | **T4** `centerExemptFromTimeout` + `DrillRunner.ts` 邏輯 | [T4-center-timeout-exemption.md](T4-center-timeout-exemption.md) | T1 | Low-Med |

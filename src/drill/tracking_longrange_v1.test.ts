@@ -43,7 +43,12 @@ describe('tracking_longrange_v1 drill config', () => {
   it('exports the resolved small hitbox shape used by sim/render/offline metrics', () => {
     const cfg = loadDrill(trackingLongrangeV1.drill, fieldLow);
 
-    expect(targetHitboxToConfig(resolveTargetHitbox(cfg))).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5 });
+    expect(targetHitboxToConfig(resolveTargetHitbox(cfg))).toEqual({
+      widthU: 0.5,
+      heightU: 1,
+      depthU: 0.5,
+      shape: 'box',
+    });
   });
 
   it('passes field-low clearance for the long-range moving envelope', () => {

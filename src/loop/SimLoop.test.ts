@@ -40,7 +40,7 @@ function makeTarget(id: string, x: number, z: number, over: Partial<TargetState>
     pos: { x, y: 1.5, z },
     visible: true,
     alive: true,
-    hitbox: { width: 1, height: 2, depth: 1 },
+    hitbox: { width: 1, height: 2, depth: 1, shape: 'box' },
     ...over,
   };
 }
@@ -683,7 +683,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     const tm: TargetManager = {
       tick(s, nowMs) {
         if (spawned) return;
-        s.targets.push(makeTarget('t0', 0, -8, { hitbox: { width: 1, height: 2, depth: 1, part: 'head' } }));
+        s.targets.push(makeTarget('t0', 0, -8, { hitbox: { width: 1, height: 2, depth: 1, shape: 'box', part: 'head' } }));
         s.tVisible.set('t0', nowMs);
         spawned = true;
       },

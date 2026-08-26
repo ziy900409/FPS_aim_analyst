@@ -27,7 +27,7 @@ function farTarget(): TargetState {
     pos: { x: 0, y: 0, z: -100 },
     visible: true,
     alive: true,
-    hitbox: { width: 0.5, height: 0.5, depth: 0.5, part: 'body' },
+    hitbox: { width: 0.5, height: 0.5, depth: 0.5, shape: 'box', part: 'body' },
   };
 }
 

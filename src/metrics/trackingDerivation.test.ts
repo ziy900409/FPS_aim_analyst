@@ -66,7 +66,7 @@ describe('deriveTrackingMetrics', () => {
     const presentation = onlyPresentation(result);
 
     expect(payload.meta.drillId).toBe('tracking_longrange_v1');
-    expect(payload.meta.targets?.hitbox).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5 });
+    expect(payload.meta.targets?.hitbox).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5, shape: 'box' });
     expect(result.options.hitbox).toEqual({ width: 0.5, height: 1, depth: 0.5 });
     expect(angularHeightDeg(longrangeHitbox.heightU, longrangeConfig.targets.distance)).toBeCloseTo(0.5, 12);
     expect(presentation.acquisitionFailure).toBe(false);
@@ -381,7 +381,12 @@ function makeLongrangeInterpolatedTarget(): TargetState {
     pos: { x: 1, y: LONGRANGE_TARGET_Y, z: -longrangeConfig.targets.distance },
     visible: true,
     alive: true,
-    hitbox: { width: longrangeHitbox.widthU, height: longrangeHitbox.heightU, depth: longrangeHitbox.depthU },
+    hitbox: {
+      width: longrangeHitbox.widthU,
+      height: longrangeHitbox.heightU,
+      depth: longrangeHitbox.depthU,
+      shape: 'box',
+    },
   };
 }
 
@@ -479,7 +484,7 @@ function makeHitboxTarget(hitbox: HitboxMeta): TargetState {
     pos: { x: 0, y: TARGET_Y, z: TARGET_Z },
     visible: true,
     alive: true,
-    hitbox: { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU },
+    hitbox: { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU, shape: 'box' },
   };
 }
 

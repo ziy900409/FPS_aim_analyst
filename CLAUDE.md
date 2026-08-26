@@ -67,7 +67,7 @@
 - **場景幾何永不進 sim runtime**:`propBounds`/GLTF mesh/場景 collision 只可被 render/scene validation 層讀取;`src/sim`、`SharedState`、`HitDetector`、`TargetManager` 不得引用任何場景資料(GD-6)。
 - **場景資產授權白名單**:可 commit 的場景資產僅限 CC0 或 CC-BY 且需在 `ATTRIBUTIONS.md` 可稽核;CC-BY-NC、遊戲抽取資產、付費包原始檔禁止進 repo(GD-9)。
 - **解析度/場景切換不改 sim**:解析度模式、fullscreen、場景切換與 frame log 僅可落在 render/UI/data/validation 層;不得改變 `SIM_HZ`、sim 狀態演進、輸入鏈或命中判定(GD-6/GD-10)。
-- **目標 hitbox 單一來源**:`DrillConfig.targets.hitbox?` 省略時必須逐位等同現行 H1 `{1,2,1}`;命中判定(`HitDetector`)與 on-target 離線推導(`trackingDerivation`)必須使用同一 AABB 來源(`TargetState.hitbox` / export `meta.targets.hitbox`),不得新增另一套閾值或尺寸常數(WP-23/GD-7)。
+- **目標 hitbox 單一來源**:`DrillConfig.targets.hitbox?` 省略時必須逐位等同現行 H1 `{1,2,1}`;命中判定(`HitDetector`)與 on-target 離線推導(`trackingDerivation`)必須使用同一幾何來源(`TargetState.hitbox` / export `meta.targets.hitbox`),不得新增另一套閾值或尺寸常數(WP-23/GD-7)。`shape?` 省略/`'box'` 時維持既有 Box3 判定;`shape:'sphere'` 時命中判定與渲染改用球體相交,但仍須同一個 `TargetState.hitbox` 單一來源,不得為 sphere 另開一套尺寸常數(WP-46/GD-7 擴充)。
 - **ADS 只落輸入/render/data 層**:`EV_ADS`/`heldAds` 可影響 `CameraController` FOV 與滑鼠 gain,但不得改 `SIM_HZ`、目標演進、命中幾何或彈道語意;ads 狀態必須同時記錄事件與逐 tick flag,否則 ADS drill 分析無效(WP-24/GD-16)。
 - **彈道模型必須 config-gated**:`WeaponConfig.bullet` 省略時必須走現行 hitscan 路徑且逐位不變;projectile 演進只能是固定 128Hz 步長純函式,禁時鐘、禁 `Math.random`,參數由 config 注入(WP-25/GD-17)。
 - **子彈永不與場景幾何互動**:projectile / hitscan 只可測目標 hitbox;不得讓 `propBounds`、GLTF mesh 或場景 collision 進入彈道命中語意,以維持 GD-6 純裝飾場景本體論(WP-25/GD-6)。

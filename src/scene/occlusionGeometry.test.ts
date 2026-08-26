@@ -56,7 +56,7 @@ describe('firstBlockingIntersection', () => {
 });
 
 describe('visibleFractionForTarget', () => {
-  const HITBOX = { width: 2, height: 2, depth: 2 };
+  const HITBOX = { width: 2, height: 2, depth: 2, shape: 'box' as const };
 
   it('sampleCount=1：只測中心，未遮擋回 1', () => {
     const fraction = visibleFractionForTarget({ x: 0, y: 1.5, z: 5 }, { x: 0, y: 1.5, z: -5 }, HITBOX, [], 1);

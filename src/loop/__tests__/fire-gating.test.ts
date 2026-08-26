@@ -19,7 +19,7 @@ describe('scheduleFire — hold-track fire gate (WP-35 / T1)', () => {
       pos: { x: 0, y: 1.5, z: -4 },
       visible: true,
       alive: true,
-      hitbox: { width: 1, height: 2, depth: 1 },
+      hitbox: { width: 1, height: 2, depth: 1, shape: 'box' },
       fireLocked: true,
     });
     pushEvent(state, { type: 'fire', down: true, t: 5 });

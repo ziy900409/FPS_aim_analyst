@@ -394,7 +394,13 @@ function requireTargetHitboxConfig(value: unknown, name: string): TargetHitboxCo
     widthU: requirePositiveFiniteNumber(hitbox.widthU, `${name}.widthU`),
     heightU: requirePositiveFiniteNumber(hitbox.heightU, `${name}.heightU`),
     depthU: requirePositiveFiniteNumber(hitbox.depthU, `${name}.depthU`),
+    ...(hitbox.shape !== undefined ? { shape: requireHitboxShape(hitbox.shape, `${name}.shape`) } : {}),
   };
+}
+
+function requireHitboxShape(value: unknown, name: string): 'box' | 'sphere' {
+  if (value !== 'box' && value !== 'sphere') throw new Error(`${name} must be box or sphere`);
+  return value;
 }
 
 function requireDisplayState(value: DisplayState): DisplayState {

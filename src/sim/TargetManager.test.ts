@@ -26,7 +26,7 @@ describe('TargetManager — 可見性 + t_visible 在 sim tick 內蓋戳（FR-4.
     expect(state.targets[0].visible).toBe(true);
     expect(state.targets[0].alive).toBe(true);
     // hitbox 與 mesh 同來源（box）。
-    expect(state.targets[0].hitbox).toEqual({ width: 1, height: 2, depth: 1 });
+    expect(state.targets[0].hitbox).toEqual({ width: 1, height: 2, depth: 1, shape: 'box' });
   });
 
   it('tick：每次 spawn 以當前 weapon.magSize 回滿 ammo（OQ-11.2）', () => {
@@ -328,11 +328,11 @@ describe('TargetManager — config 驅動（WP-6 / T2，FR-6.2；換 config 即�
     createTargetManager(
       config({ count: 1, alternation: 'RL', hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } }),
     ).tick(small, 100);
-    expect(small.targets[0].hitbox).toEqual({ width: 0.5, height: 1, depth: 0.5 });
+    expect(small.targets[0].hitbox).toEqual({ width: 0.5, height: 1, depth: 0.5, shape: 'box' });
 
     const omitted = createSharedState();
     createTargetManager(config({ count: 1, alternation: 'RL' })).tick(omitted, 100);
-    expect(omitted.targets[0].hitbox).toEqual({ width: 1, height: 2, depth: 1 });
+    expect(omitted.targets[0].hitbox).toEqual({ width: 1, height: 2, depth: 1, shape: 'box' });
   });
 
   it('首側來自 sequence.alternation 首字（LR→L、RL→R）', () => {

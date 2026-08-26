@@ -11,7 +11,7 @@ function target(over: Partial<TargetState> = {}): TargetState {
     pos: over.pos ?? { x: 0, y: 1, z: 8 },
     visible: over.visible ?? true,
     alive: over.alive ?? true,
-    hitbox: over.hitbox ?? { width: 1, height: 2, depth: 1 },
+    hitbox: over.hitbox ?? { width: 1, height: 2, depth: 1, shape: 'box' },
     motion: over.motion,
     age: over.age,
     posPrev: over.posPrev,
@@ -28,7 +28,7 @@ describe('TargetView — 依 state 唯讀顯示/隱藏目標 mesh(FR-4.1)', () =
     const scene = new THREE.Scene();
     const view = new TargetView(scene);
 
-    view.sync([target({ pos: { x: -2, y: 1.5, z: 6 }, hitbox: { width: 1, height: 3, depth: 2 } })]);
+    view.sync([target({ pos: { x: -2, y: 1.5, z: 6 }, hitbox: { width: 1, height: 3, depth: 2, shape: 'box' } })]);
 
     const ms = meshes(scene);
     expect(ms).toHaveLength(1);
