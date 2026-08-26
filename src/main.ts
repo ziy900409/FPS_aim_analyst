@@ -14,7 +14,7 @@ import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen, type QualityFlagsInput } from './ui/ResultScreen.ts';
 import { createHistoryView } from './ui/HistoryView.ts';
-import { createControls } from './ui/Controls.ts';
+import { createControls, type ControlsHandle } from './ui/Controls.ts';
 import {
   createResearcherMenu,
   shouldShowResearcherControls,
@@ -327,6 +327,11 @@ type PendingSessionMode = 'session' | 'resolution-protocol' | 'br-tracking-proto
 let pendingSessionMode: PendingSessionMode = 'session';
 let appMode: AppMode = 'launch';
 let researcherMenu: ResearcherMenuHandle | undefined;
+// KI-013：宣告放在 syncControlsVisibility()（下方）的定義點之前，讓 setAppMode()/researcherMenu
+// 的按鈕 handler（早於本檔 controls 賦值點就掛上）在 controls 尚未建好前呼叫 syncControlsVisibility()
+// 時能安全 no-op，而不是撞 TDZ ReferenceError（controls 賦值點之前有 top-level await，使用者/自動化
+// 測試的點擊可能落在這個視窗內）。
+let controls: ControlsHandle | undefined;
 let markProtocolFullscreenExit: (() => void) | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
   // Session Plan（選手表現測試,WP-42）不操弄/比較解析度條件——四家族一律 native 載入,
@@ -1028,7 +1033,7 @@ function installSceneLoad(
   syncCameraBase();
   activeSceneConfig = option.config;
   activeSceneFallback = nextScene.fallback;
-  controls.setSelectedScene(activeSceneConfig.sceneId);
+  controls?.setSelectedScene(activeSceneConfig.sceneId);
 }
 
 async function loadDrillById(drillId: string): Promise<void> {
@@ -1056,7 +1061,7 @@ async function loadDrillById(drillId: string): Promise<void> {
   recorder.configureMouseIntegration({ gain: currentMouseGain() }); // KI-005 / A：新 drill 武器的感度 gain（同一批動作）。
   targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：新 drill 的 hitbox shape 生效。
   drillRunner.start(activeDrillConfig);
-  controls.setSelectedDrill(option.id);
+  controls?.setSelectedDrill(option.id);
   syncControlsVisibility();
 }
 
@@ -1116,7 +1121,7 @@ let activeProtocolRunner: ProtocolRunner<ExportPayload> = resolutionProtocolRunn
 markProtocolFullscreenExit = () => activeProtocolRunner.markCurrentConditionSuspect('fullscreen-exit');
 
 // WP-8 / T4（FR-8.4）— 重來 / 換 drill 控制。解鎖時可操作；結果頁顯示時也保持可操作。
-const controls = createControls({
+controls = createControls({
   drills: availableDrills.map(({ id, label }) => ({ id, label })),
   scenes: availableScenes.map(({ id, label }) => ({ id, label })),
   selectedDrillId: activeDrillConfig.drillId,
@@ -1132,6 +1137,9 @@ const controls = createControls({
 });
 
 function syncControlsVisibility(): void {
+  // KI-013：controls 尚未建好時（top-level await 期間的早期點擊）無事可同步，安全略過——
+  // controls 建好當下會立即呼叫本函式一次，補上當時的 appMode/pointerLock 狀態。
+  if (controls === undefined) return;
   controls.setVisible(
     shouldShowResearcherControls(appMode, !pointerLock.locked || drillRunner.phase === 'ended'),
   );

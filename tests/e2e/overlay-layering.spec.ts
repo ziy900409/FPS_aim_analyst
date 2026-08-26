@@ -75,3 +75,20 @@ test('session launch controls do not overlap the settings panel', async ({ page 
   await page.getByRole('button', { name: '研究員模式', exact: true }).click();
   await expect.poll(() => overlapsSettingsPanel(6), { timeout: 15_000 }).toEqual([]);
 });
+
+test('KI-013：切換研究員模式 / 單一 Drill 調整不拋 TDZ ReferenceError', async ({ page }) => {
+  // controls（main.ts 的 drill-select 控制面板）建於檔案尾端，其前有兩個 top-level await
+  // （measureDisplayRefresh/measureDisplayHz）；此測試模擬使用者在 controls 建好前就點擊
+  // 「研究員模式」→「單一 Drill 調整」，兩者的 click handler 皆會呼叫 syncControlsVisibility()。
+  // 修復前（KI-013）controls 是 const，這個時間窗內存取會撞 TDZ 丟出未捕捉的
+  // ReferenceError: Cannot access 'controls' before initialization。
+  const pageErrors: string[] = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  await page.goto(URL, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: '研究員模式', exact: true }).click();
+  await page.getByRole('button', { name: '單一 Drill 調整' }).click();
+  await expect.poll(() => page.evaluate(() => document.querySelector('#drill-select') !== null), { timeout: 15_000 }).toBe(true);
+
+  expect(pageErrors).toEqual([]);
+});
