@@ -309,8 +309,9 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
   function startDrillWithScene(id: string, sceneOverride?: SceneConfig): void {
       const entry = deps.availableDrills.find((candidate) => candidate.id === id);
       if (entry === undefined) throw new Error(`Unknown drill: ${id}`);
-      sceneConfig = sceneOverride ?? entry.scene;
-      config = loadDrill(entry.source, sceneConfig, entry.loadOptions);
+      const resolvedScene = sceneOverride ?? entry.scene;
+      sceneConfig = resolvedScene;
+      config = loadDrill(entry.source, resolvedScene, entry.loadOptions);
 
       // 全新管線（乾淨起步、與 live 單例隔離）。
       clockMs = 0;
@@ -332,6 +333,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         recorder,
         activeWeaponConfig(),
         config.sequence.seed,
+        resolvedScene !== undefined ? { hitscanOcclusion: { propBounds: resolvedScene.propBounds } } : undefined,
       );
       startedAt = new Date().toISOString(); // wall-clock session metadata（非量測時鐘；main.ts 亦如此）
 

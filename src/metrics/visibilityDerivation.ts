@@ -1,8 +1,7 @@
 import type { ExportPayload } from '../data/export.ts';
 import { DEFAULT_TARGET_HITBOX, type TargetHitboxSize } from '../drill/DrillConfig.ts';
-import { segmentIntersectsAabb } from '../scene/clearance.ts';
+import { visibleFractionForTarget } from '../scene/occlusionGeometry.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
-import type { Vec3 } from '../state/types.ts';
 import {
   eyeOriginForTick,
   resolveEyeOrigin,
@@ -64,14 +63,13 @@ function visibleFractionForTick(tick: Tick, scene: SceneConfig, options: Resolve
   if (tick.tx === null || tick.ty === null || tick.tz === null) return 0;
 
   const eye = eyeOriginForTick(tick, options.eyeOrigin);
-  const samplePoints = sampleTargetAabb({ x: tick.tx, y: tick.ty, z: tick.tz }, options.hitbox, options.sampleCount);
-  let visible = 0;
-
-  for (const point of samplePoints) {
-    if (!isBlocked(eye, point, scene.propBounds)) visible++;
-  }
-
-  return visible / samplePoints.length;
+  return visibleFractionForTarget(
+    eye,
+    { x: tick.tx, y: tick.ty, z: tick.tz },
+    options.hitbox,
+    scene.propBounds,
+    options.sampleCount,
+  );
 }
 
 function firstCrossingTimes(
@@ -87,35 +85,6 @@ function firstCrossingTimes(
     ...(measurementOnset !== undefined ? { tMeasurementOnset: measurementOnset.t } : {}),
     ...(fullExposure !== undefined ? { tFullExposure: fullExposure.t } : {}),
   };
-}
-
-function sampleTargetAabb(center: Vec3, hitbox: TargetHitboxSize, sampleCount: 1 | 9): Vec3[] {
-  const half = {
-    x: hitbox.width / 2,
-    y: hitbox.height / 2,
-    z: hitbox.depth / 2,
-  };
-  const points: Vec3[] = [{ x: center.x, y: center.y, z: center.z }];
-  if (sampleCount === 1) return points;
-
-  const xs = [center.x - half.x, center.x + half.x];
-  const ys = [center.y - half.y, center.y + half.y];
-  const zs = [center.z - half.z, center.z + half.z];
-  for (const x of xs) {
-    for (const y of ys) {
-      for (const z of zs) {
-        points.push({ x, y, z });
-      }
-    }
-  }
-  return points;
-}
-
-function isBlocked(eye: Vec3, point: Vec3, props: SceneConfig['propBounds']): boolean {
-  for (const prop of props) {
-    if (segmentIntersectsAabb(eye, point, prop)) return true;
-  }
-  return false;
 }
 
 function resolveOptions(payload: ExportPayload, options: VisibilityDerivationOptions): ResolvedVisibilityOptions {

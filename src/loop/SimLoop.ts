@@ -4,6 +4,8 @@ import { consume } from '../input/consume.ts';
 import { pushImpact, pushShotRay, resetBulletArena, type SharedState } from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
 import { raycastWithRay, targetCenterOffsetDeg, type HitPointOut, type RaycastResult } from '../sim/HitDetector.ts';
+import { firstBlockingIntersection } from '../scene/occlusionGeometry.ts';
+import type { PropBound } from '../scene/SceneConfig.ts';
 import { spawnBullet, stepBullet, type BulletState } from '../ballistics/bullet.ts';
 import { sweptHitTest, type Aabb } from '../ballistics/sweptHit.ts';
 import { punchToThreeRad } from '../recoil/adapter.ts';
@@ -380,6 +382,7 @@ function fireOneShot(
   recorder?: DataRecorder,
   weapon?: WeaponConfig,
   recoilRuntime?: RecoilRuntime,
+  hitscanOcclusion?: HitscanOcclusionContext,
 ): boolean {
   // 開火：首發旗標**先於命中判定**——peek 錨為 fire 當下的 active 目標；命中即擊殺會撤除該目標、
   // 換 peek，故 firstShot 須在 markKilled 之前對「當前 peek」判定（FR-5.2，OQ-5.3）。未命中亦計首發
@@ -426,7 +429,14 @@ function fireOneShot(
     if (weapon?.bullet === undefined) {
       const result = ballisticRaycast(camera, state, subAlpha);
       computeMuzzleOrigin(ballisticOrigin, ballisticQ, state.heldAds, DEFAULT_MUZZLE_OFFSETS, muzzleScratch);
-      hit = accurate && result.hit;
+      // WP-45 / T1：scene occlusion gate（FR-P45-2/3）——目標 hitbox 已命中時,再測 origin→hit point
+      // 線段是否先被 scene prop 阻擋;有 blocker 時本發視為隔牆未命中（不計 hit、不 markKilled），
+      // 彈孔/tracer 終點改用 blocker 交點。省略 `hitscanOcclusion` 時本段零作用（逐位相容，NFR-P45-2）。
+      const blocker =
+        result.hit && hitscanOcclusion !== undefined && ballisticHitPoint.valid
+          ? firstBlockingIntersection(ballisticOrigin, ballisticHitPoint, hitscanOcclusion.propBounds)
+          : undefined;
+      hit = accurate && result.hit && blocker === undefined;
       part = hit ? result.part : undefined;
       if (result.targetId !== undefined) targetId = result.targetId;
       // persistent 目標（timed presentation,WP-18 / T3）:命中只記 fire 事件、**不** markKilled——窗內
@@ -441,17 +451,13 @@ function fireOneShot(
       // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
       // `ImpactView` 唯讀繪製）；環狀覆寫最舊。脫靶彈孔使壓槍漂移 pattern 可視化;`ballisticHitPoint`
       // 由 `ballisticRaycast` 統一回填（命中→目標近面;脫靶→交戰平面;無存活目標→valid=false 不產）。
+      // blocker 存在時（WP-45 / T1）改寫終點為 prop 交點,而非目標近面（隔牆彈孔停在牆面）。
       if (ballisticHitPoint.valid) {
-        pushImpact(state.impacts, ballisticHitPoint.x, ballisticHitPoint.y, ballisticHitPoint.z);
-        pushShotRay(
-          state.shotRays,
-          muzzleScratch.x,
-          muzzleScratch.y,
-          muzzleScratch.z,
-          ballisticHitPoint.x,
-          ballisticHitPoint.y,
-          ballisticHitPoint.z,
-        );
+        const endX = blocker !== undefined ? blocker.point.x : ballisticHitPoint.x;
+        const endY = blocker !== undefined ? blocker.point.y : ballisticHitPoint.y;
+        const endZ = blocker !== undefined ? blocker.point.z : ballisticHitPoint.z;
+        pushImpact(state.impacts, endX, endY, endZ);
+        pushShotRay(state.shotRays, muzzleScratch.x, muzzleScratch.y, muzzleScratch.z, endX, endY, endZ);
       }
     } else {
       composeProjectileRay(camera, state);
@@ -502,10 +508,22 @@ function scheduleFire(
   targetManager?: TargetManager,
   recorder?: DataRecorder,
   recoilRuntime?: RecoilRuntime,
+  hitscanOcclusion?: HitscanOcclusionContext,
 ): void {
   const cycleMs = weapon.cycletimeSec * 1000;
   while (state.heldFire && state.weapon.ammo > 0 && state.weapon.nextFireT <= untilMs && !isFireLockedForActiveTarget(state)) {
-    const fired = fireOneShot(state, state.weapon.nextFireT, tickStartMs, tickMs, camera, targetManager, recorder, weapon, recoilRuntime);
+    const fired = fireOneShot(
+      state,
+      state.weapon.nextFireT,
+      tickStartMs,
+      tickMs,
+      camera,
+      targetManager,
+      recorder,
+      weapon,
+      recoilRuntime,
+      hitscanOcclusion,
+    );
     if (fired) state.weapon.ammo--;
     state.weapon.nextFireT += cycleMs;
   }
@@ -604,6 +622,7 @@ export function simStep(
   weapon: WeaponConfig = ak47,
   tickIndex = 0,
   recoilRuntime?: RecoilRuntime,
+  hitscanOcclusion?: HitscanOcclusionContext,
 ): void {
   const tickMs = dtSec * 1000;
   const tickStartMs = tickEndMs - tickMs;
@@ -647,11 +666,11 @@ export function simStep(
   // tick 窗 [tickStartMs, tickEndMs) 供 sub-tick 命中內插:fire 時間戳 t → subAlpha（WP-18/T2，FR-B17）。
   const apply = handle ?? ((ev: InputEvent) => applyInput(state, ev, recorder));
   consume(state, tickEndMs, (ev) => {
-    scheduleFire(state, ev.t, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime);
+    scheduleFire(state, ev.t, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime, hitscanOcclusion);
     apply(ev);
-    scheduleFire(state, ev.t, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime);
+    scheduleFire(state, ev.t, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime, hitscanOcclusion);
   });
-  scheduleFire(state, tickEndMs, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime);
+  scheduleFire(state, tickEndMs, weapon, tickStartMs, tickMs, camera, targetManager, recorder, recoilRuntime, hitscanOcclusion);
 
   // MovementController：依 held 以 friction/accelerate 積分 vx，並以固定 dtSec 推進 x（WP-14 T1）。
   movement.step(state, dtSec);
@@ -671,9 +690,20 @@ export interface SimLoop {
   pump(nowMs: number): { ticks: number; alpha: number };
 }
 
+/**
+ * hitscan wall-block gate 的注入 context（WP-45 / T1，FR-P45-2）：active scene 的 `propBounds`。
+ * 省略時 hitscan fire path 逐位維持既有行為（NFR-P45-2）；projectile path（`weapon.bullet` 已定義）
+ * 不受本 context 影響（out of scope，README §1.3）。
+ */
+export interface HitscanOcclusionContext {
+  readonly propBounds: readonly PropBound[];
+}
+
 export interface SimLoopOptions {
   /** 每個 sim tick 完成後的純觀測 hook；不得 clamp 或改寫演進來源。 */
   afterTick?: (state: SharedState, tickEndMs: number, tickIndex: number) => void;
+  /** 省略時 hitscan fire path 不套用 scene occlusion gate（WP-45 / T1）。 */
+  hitscanOcclusion?: HitscanOcclusionContext;
 }
 
 /**
@@ -725,7 +755,21 @@ export function createSimLoop(
       let ticks = 0;
       while (accSec >= tickSec) {
         simTimeMs += tickMs;
-        simStep(state, tickSec, simTimeMs, targetManager, camera, movement, handleInput, drillRunner, recorder, weapon, tickIndex, recoilRuntime);
+        simStep(
+          state,
+          tickSec,
+          simTimeMs,
+          targetManager,
+          camera,
+          movement,
+          handleInput,
+          drillRunner,
+          recorder,
+          weapon,
+          tickIndex,
+          recoilRuntime,
+          loopOptions?.hitscanOcclusion,
+        );
         loopOptions?.afterTick?.(state, simTimeMs, tickIndex);
         accSec -= tickSec;
         ticks++;

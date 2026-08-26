@@ -828,6 +828,7 @@ function buildSimLoop(): SimLoop {
           state.validity.playerCorridorExceeded = true;
         }
       },
+      hitscanOcclusion: { propBounds: activeSceneConfig.propBounds },
     },
   );
 }

@@ -464,6 +464,65 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.shotRays.ez[0]).toBeCloseTo(state.impacts.z[0], 12);
   });
 
+  it('WP-45 / T1：scene occlusion 阻擋隔牆命中——目標未撤除、彈孔/tracer 終點停在牆面', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ(); // (0,1.5,5) 朝 -z；state.aim 預設 yaw/pitch=0 → 射線沿 (0,1.5,z)
+    const killed: string[] = [];
+    const tm: TargetManager = {
+      tick() {},
+      markKilled(s, id) {
+        killed.push(id);
+        const i = s.targets.findIndex((target) => target.id === id);
+        if (i >= 0) s.targets.splice(i, 1);
+      },
+      reset() {},
+    };
+    state.targets.push(makeTarget('t0', 0, -8)); // 命中點近面 z=-7.5（未阻擋時）
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+    // 牆面涵蓋整條 (0,1.5,z) 射線在 z∈[-1,1] 的路徑，落在 camera(z=5) 與目標近面(z=-7.5) 之間。
+    const hitscanOcclusion = { propBounds: [{ id: 'cover-wall', min: { x: -1, y: 0, z: -1 }, max: { x: 1, y: 3, z: 1 } }] };
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder, undefined, undefined, undefined, hitscanOcclusion);
+
+    expect(recorder.snapshot().events.find((e) => e.type === 'fire')).toMatchObject({ hit: false });
+    expect(killed).toEqual([]); // 隔牆未擊殺，目標仍存活
+    expect(state.targets).toHaveLength(1);
+    // 彈孔/tracer 終點停在牆近面（z=max.z=1），非目標近面（z=-7.5）。
+    expect(state.impacts.total).toBe(1);
+    expect(state.impacts.z[0]).toBeCloseTo(1, 9);
+    expect(state.shotRays.total).toBe(1);
+    expect(state.shotRays.ez[0]).toBeCloseTo(1, 9);
+  });
+
+  it('WP-45 / T1：省略 hitscanOcclusion context 的曝空目標維持既有命中/擊殺行為（NFR-P45-2）', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const cam = cameraLookingDownZ();
+    const killed: string[] = [];
+    const tm: TargetManager = {
+      tick() {},
+      markKilled(s, id) {
+        killed.push(id);
+        const i = s.targets.findIndex((target) => target.id === id);
+        if (i >= 0) s.targets.splice(i, 1);
+      },
+      reset() {},
+    };
+    state.targets.push(makeTarget('t0', 0, -8));
+    state.heldFire = true;
+    state.weapon.nextFireT = 0;
+    // props=[] 情境（context 存在但無阻擋道具）——與省略 context 應等效，皆命中即擊殺。
+    const hitscanOcclusion = { propBounds: [] };
+
+    simStep(state, 1 / SIM_HZ, TICK_MS, tm, cam, undefined, undefined, undefined, recorder, undefined, undefined, undefined, hitscanOcclusion);
+
+    expect(recorder.snapshot().events.find((e) => e.type === 'fire')).toMatchObject({ hit: true });
+    expect(killed).toEqual(['t0']);
+    expect(state.impacts.z[0]).toBeCloseTo(-7.5, 9); // 目標近面，未被牆截斷
+  });
+
   it('projectile fire spawns a bullet and later records a swept hit event with time of flight', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 16 });

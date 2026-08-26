@@ -309,6 +309,58 @@ describe('WP-13 / T2 — harness 整合(分離後仍命中 + recoil 漂移讀數
     }
   });
 
+  it('WP-45 / T1 FM-P45-1：切換 drill/scene 後重建 loop，不殘留舊場景 propBounds（隔牆阻擋不外溢）', () => {
+    const wallScene: SceneConfig = {
+      sceneId: 'test-wall-scene',
+      assetPackVersion: 'test',
+      clutterTier: 'low',
+      asset: null,
+      // 涵蓋 harness camera (0,1.6,4) 到任一側 counterstrafe target (x=±2, y=1.5, z=-4) 的整段路徑。
+      propBounds: [{ id: 'full-block-wall', min: { x: -3, y: 0, z: -1 }, max: { x: 3, y: 3, z: 1 } }],
+      playerCorridor: { halfWidthU: 10 },
+    };
+    const openScene: SceneConfig = {
+      sceneId: 'test-open-scene',
+      assetPackVersion: 'test',
+      clutterTier: 'low',
+      asset: null,
+      propBounds: [],
+      playerCorridor: { halfWidthU: 10 },
+    };
+    const harness = createFpsTestHarness({
+      availableDrills: [
+        {
+          id: 'wall-drill',
+          source: drillSource,
+          scene: wallScene,
+          loadOptions: { clearance: { allowedOcclusionPropIds: ['full-block-wall'] } },
+        },
+        { id: 'open-drill', source: drillSource, scene: openScene },
+      ],
+      backend: 'webgl2',
+      crossOriginIsolated: true,
+      displayHz: 240,
+      sensitivity: 1,
+    });
+
+    harness.startDrill('wall-drill');
+    harness.feedInput([
+      { type: 'fire', down: true, t: 0 },
+      { type: 'fire', down: false, t: 1 },
+    ]);
+    const wallFire = harness.forceExportJSON().events.find((event) => event.type === 'fire');
+    expect(wallFire).toMatchObject({ hit: false }); // 隔牆阻擋
+
+    // 切換到無 prop 的場景：若舊 loop 的 propBounds 殘留，這裡仍會被誤判阻擋（FM-P45-1 紅燈）。
+    harness.startDrill('open-drill');
+    harness.feedInput([
+      { type: 'fire', down: true, t: 0 },
+      { type: 'fire', down: false, t: 1 },
+    ]);
+    const openFire = harness.forceExportJSON().events.find((event) => event.type === 'fire');
+    expect(openFire).toMatchObject({ hit: true }); // 無殘留阻擋 → 正常命中
+  });
+
   it('WP-26 / T3 BR ADS smoke：open ADS, track, fire-hit, and export on br-field', () => {
     const variant = trackingBrVariants[5]; // ads_on / hitscan / 2deg
     const harness = makeBrTrackingProtocolHarness();

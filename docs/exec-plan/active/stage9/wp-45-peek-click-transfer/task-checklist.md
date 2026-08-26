@@ -11,11 +11,11 @@
 
 ## T1 — Occlusion kernel / hit gate
 
-- [ ] 共用 segment/AABB + visible fraction kernel
-- [ ] visibilityDerivation refactor，輸出零變更
-- [ ] SimLoop additive hitscan occlusion context
-- [ ] main/harness active scene injection
-- [ ] behind/exposed/no-context/parity/determinism tests
+- [x] 共用 segment/AABB + visible fraction kernel
+- [x] visibilityDerivation refactor，輸出零變更
+- [x] SimLoop additive hitscan occlusion context
+- [x] main/harness active scene injection
+- [x] behind/exposed/no-context/parity/determinism tests
 
 ## T2 — Symmetric scene
 

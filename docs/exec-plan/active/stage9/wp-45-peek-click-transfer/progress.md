@@ -2,7 +2,7 @@
 
 ## Status
 
-- **Current**:T0 entry gate 完成，可開始 T1。
+- **Current**:T1 完成（共用 occlusion kernel + hitscan wall-block gate + visibility refactor），可開始 T2。
 - **Scope state**:`peek-click-transfer-pilot-v1` 為 Practice/pilot-only；正式 Assessment freeze 不在本 WP。
 - **Dependency state**:T3 依賴的 WP-44 T-exit 已完成(`c44270e`)；T5 依賴的 stage8 WP-43 T-exit 已完成(`61db0ba`)；HEAD(`41d3bd5`)已包含兩者，兩個 gate 皆已開放，T3/T5 不再受阻。
 
@@ -34,13 +34,23 @@
 - **OQ-S9-4 決議**：維持 README 既定預設 — T3 先用 spawn-anchored `3000 ms` 總 timeout，同時輸出 `cue→onset`/`onset→hit` 分段時間與 `timeout_before_onset` flag（FM-P45-5）；split timeout 是否成為第二段獨立狀態機，留待真人 pilot 後另評估。理由：此為既有 README 預設且不阻塞 T1/T2/T3 介面設計；T0 未發現需要提前拍板的新資訊。若真人 pilot 後改採 split timeout，須先新增獨立 task/interface，不得沿用本決議悄悄改 `peekTimeoutMs` 語意。
 - Production code diff：空（T0 僅讀碼與跑既有測試，未修改 `src/**`）。
 
+### 2026-08-26 — T1 共用 occlusion kernel + hitscan wall-block gate
+
+- **新增** `src/scene/occlusionGeometry.ts`：`firstBlockingIntersection`（segment→AABB 最近阻擋交點，含 `propId`/`alpha`/`point`）+ `visibleFractionForTarget`（1/9-point 可見比例）。核心 `segmentAabbEntryAlpha`/`clipAxis` 為純 scalar 運算、模組層級 `clipTMin`/`clipTMax` 重用暫存，`visibleFractionForTarget` 全程零配置（不建立 `Vec3[]`），`firstBlockingIntersection` 唯一配置是命中時回傳的單一物件（比照既有 `RaycastResult` 低頻開火事件慣例）。與 `clearance.ts` 既有 `segmentIntersectsAabb`（pre-spawn 淨空驗證，僅回 boolean）刻意分離——README scope 未列 `clearance.ts`，兩者用途不同（pre-spawn 驗證 vs. runtime 曝光/命中），FR-P45-3「同一 kernel」僅約束 visibility 與 hitscan 兩者之間。
+- **改** `src/metrics/visibilityDerivation.ts`：`visibleFractionForTick` 改呼叫 `visibleFractionForTarget`，移除本地 `sampleTargetAabb`/`isBlocked`；既有 4 個 fixture 測試零修改全綠（含 edge-grazing tangent 案例），證明新 kernel 與舊 `segmentIntersectsAabb` 數學等價。
+- **改** `src/loop/SimLoop.ts`：新增 `HitscanOcclusionContext`（`{propBounds}`）+ `SimLoopOptions.hitscanOcclusion?`；`fireOneShot` 在 hitscan 命中後、`markKilled`/彈孔寫入前，用 `firstBlockingIntersection(ballisticOrigin, ballisticHitPoint, propBounds)` 判定牆面阻擋——有 blocker 時 `hit=false`、不 `markKilled`，彈孔/tracer 終點改用 blocker 交點；`targetId` 欄位維持既有語意（射線幾何命中的目標，不受阻擋影響）。`hitscanOcclusion` 以 additive 參數逐層串（`simStep`→`scheduleFire`→`fireOneShot`；`createSimLoop.pump`→`simStep`），省略時三者簽名/呼叫序列與既有路徑逐位相同。projectile 分支（`weapon.bullet !== undefined`）完全不讀本 context。
+- **改** `src/testharness/fpsTestHarness.ts` / `src/main.ts`：`buildSimLoop`/`startDrillWithScene` 建 loop 時注入 active scene 的 `propBounds`（`main.ts` 讀 `activeSceneConfig`，每次 `buildSimLoop()` 呼叫時取最新值；harness 讀 `resolvedScene`，無 scene 時整個 `hitscanOcclusion` 省略，維持既有無 context 行為）。`main.ts` 既有 scene 切換流程（`installSceneLoad` 先寫 `activeSceneConfig` 再 `buildSimLoop()`）天然滿足 FM-P45-1（無需額外改動）。
+- **測試**新增：`src/scene/occlusionGeometry.test.ts`（13 tests：`firstBlockingIntersection` 空/outside/inside/tangent/endpoint/nearest/tie；`visibleFractionForTarget` 1-point/9-point/partial/mirror/非法 sampleCount throw）；`src/loop/SimLoop.test.ts` 新增 2 tests（隔牆阻擋:未擊殺+彈孔停牆面；`propBounds:[]` context 與省略 context 等效命中即殺）；`src/testharness/fpsTestHarness.test.ts` 新增 1 test（FM-P45-1：切換 wall-drill→open-drill 後 loop 重建、無殘留 propBounds，需搭配 `loadOptions.clearance.allowedOcclusionPropIds` 放行測試用全阻擋牆通過 `loadDrill` 的 pre-spawn clearance 驗證）。
+- **驗證**：`npx vitest run`（全專案）→ 133 files / 1014 tests 全綠（含既有 baseline 零 fixture 修改）；`npm run typecheck` exit 0。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
 |---|---|---|---|
 | **D-45.7** | OQ-S9-4：T0 維持 spawn-anchored `3000 ms` 總 timeout 預設，不提前拍板 split timeout | README 既定預設已滿足「不阻塞 T1/T2/T3」；split timeout 需要真人 pilot 資料才能判斷是否值得新增第二套狀態機 | Confirmed，T0 |
 | **D-45.1** | 新任務定位為 integrated transfer test，不取代 hold-click/counterstrafe component assessments | 混合構念適合驗證技能轉移，不適合單一診斷分數 | Confirmed，T0 覆核通過 |
-| **D-45.2** | 先修共用 occlusion kernel，再允許 scene-aware hit | 現況 target-only raycast 可穿牆；不修即無有效 peek task | Proposed，T1 |
+| **D-45.2** | 先修共用 occlusion kernel，再允許 scene-aware hit | 現況 target-only raycast 可穿牆；不修即無有效 peek task | Confirmed，T1 落地 |
+| **D-45.8** | `occlusionGeometry.ts` 為獨立新 kernel，不與 `clearance.ts` 既有 `segmentIntersectsAabb` 合併 | `clearance.ts` 不在 T1 scope（README §2.1 未列）；用途不同（pre-spawn 驗證 boolean vs. runtime 曝光/命中 alpha+point）；FR-P45-3「同一 kernel」約束的是 visibility 與 hitscan 兩者之間，非全 repo 唯一一套 | Confirmed，T1 |
 | **D-45.3** | 新建 `peek-ad-corridor-v1`，不改 frozen `peek-corridor` | 避免改變 stage6 hold-click geometry/history compatibility | Proposed，T2 |
 | **D-45.4** | pilot 保留 box target、AK-47、嚴格 LR、miss 補槍 | 最小化新引擎分支並對齊影片循環；正式值留給 pilot | Proposed，T3 |
 | **D-45.5** | 不建立 composite score | 沿用 stage6「不同構念分層報告」紀律 | Proposed，T4 |
@@ -51,6 +61,8 @@
 - None at planning time。
 - T0 覆核：WP-44/WP-43 均已 T-exit 且早於本 WP 目前 HEAD，T3/T5 熱區未被同時修改，dependency gate 皆已開放，不需延後。
 - CodeGraph 標記 `fireOneShot` 現況零測試覆蓋——非本 WP 引入的既有缺口，記錄供 T1 新增 occlusion gate 時一併補測試意識，不在 T0 修。
+- T1：測試用「全阻擋牆」場景在 `loadDrill` 的 pre-spawn clearance 驗證（`validateClearance`）會直接拒入（牆同時擋住 spawn 前的玩家↔目標可見性），須以 `DrillLoadOptions.clearance.allowedOcclusionPropIds` 放行——這正是 `clearance.ts` 既有機制（供設計上「玩家淨空但允許遮擋」的牆體），不需新增介面；記錄供 T2 設計 `peek-ad-corridor-v1` 的 `cover-wall` 參考同一放行模式。
+- T1：`fpsTestHarness.ts` 的 `sceneConfig`（outer `let SceneConfig | undefined`）在 `startDrillWithScene` 內被 closure 捕捉，導致賦值後的 narrowing 在後續呼叫其他函式後失效（TS18048）；改用區域 `const resolvedScene` 承接後即恢復型別窄化，此為一般 TS control-flow 對可變 closure 變數的已知限制，非本 WP 邏輯問題。
 
 ## Open Questions
 
@@ -64,3 +76,7 @@
 | 2026-08-26 | `npm.cmd test -- src/metrics/visibilityDerivation.test.ts src/sim/HitDetector.test.ts src/loop/SimLoop.test.ts` | exit 0，3 files / 73 tests passed |
 | 2026-08-26 | `npm.cmd test -- src/session/sessionSchedule.test.ts src/session/SessionRunner.test.ts` | exit 0，2 files / 15 tests passed |
 | 2026-08-26 | `mcp__codegraph__codegraph_explore`(6 core symbols) | blast radius 記錄如上；無 staleness banner |
+| 2026-08-26 | `npx vitest run src/metrics/visibilityDerivation.test.ts src/loop/SimLoop.test.ts src/sim/HitDetector.test.ts` | exit 0，3 files / 73 tests passed（T1 wiring 後，DoD 指定套件） |
+| 2026-08-26 | `npx vitest run tests/regression src/loop/__tests__ src/testharness src/scene` | exit 0，27 files / 167 tests passed（blast-radius 回歸） |
+| 2026-08-26 | `npx vitest run`（全專案） | exit 0，133 files / 1014 tests passed |
+| 2026-08-26 | `npm run typecheck` | exit 0 |
