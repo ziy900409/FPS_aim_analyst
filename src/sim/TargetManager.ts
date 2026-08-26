@@ -1,5 +1,5 @@
 import type { SharedState } from '../state/SharedState.ts';
-import { resolveTargetHitbox, type DrillConfig } from '../drill/DrillConfig.ts';
+import { resolveTargetHitbox, type DrillConfig, type SpiderShotStratifiedConfig } from '../drill/DrillConfig.ts';
 import type { Vec3 } from '../state/types.ts';
 import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
 import { SIM_HZ } from '../loop/constants.ts';
@@ -67,6 +67,76 @@ function sideX(side: 'L' | 'R'): number {
   return side === 'R' ? SIDE_OFFSET : -SIDE_OFFSET;
 }
 
+/**
+ * Converts a center-relative spherical offset (azimuth around the center sightline, radial angle
+ * off it, and distance from the player) into a world position. Shared by both `spiderShot` kinds
+ * (WP-36 `center-peripheral` and WP-44 `center-peripheral-stratified`) — pure function, no RNG
+ * consumption, so extracting it does not change either kind's sampling sequence or output.
+ */
+function peripheralPos(centerDistanceU: number, azimuthRad: number, radiusRad: number, distanceU: number): Vec3 {
+  // Center sightline is (0, TARGET_Y, -centerDistanceU). Its projected world-up axis makes
+  // azimuth 0/90/180/270 map to up/right/down/left without reusing legacy horizontal yaw.
+  const centerLength = Math.hypot(TARGET_Y, centerDistanceU);
+  const forwardY = TARGET_Y / centerLength;
+  const forwardZ = -centerDistanceU / centerLength;
+  const upY = centerDistanceU / centerLength;
+  const upZ = TARGET_Y / centerLength;
+  const radialSin = Math.sin(radiusRad);
+  const radialCos = Math.cos(radiusRad);
+  const azimuthSin = Math.sin(azimuthRad);
+  const azimuthCos = Math.cos(azimuthRad);
+  return {
+    x: distanceU * radialSin * azimuthSin,
+    y: distanceU * (radialCos * forwardY + radialSin * azimuthCos * upY),
+    z: distanceU * (radialCos * forwardZ + radialSin * azimuthCos * upZ),
+  };
+}
+
+/**
+ * One cell of the WP-44 stratified peripheral schedule: an azimuth bin (equal-width) crossed with
+ * a radius bin (equal solid angle, via `cos` — the sphere-correct analog of an equal-area annulus
+ * slice; NOT the flat `sqrt(area)` approximation a screen-projected radius would use). Scheduling
+ * only — independent from the presentation-layer `SpiderQuadrant` labels in spiderShotConditions.ts.
+ */
+interface SpiderZoneCell {
+  readonly azimuthDegRange: readonly [number, number];
+  /** [cosLower, cosUpper]; a sample's radiusRad = acos(uniform draw in this range). */
+  readonly cosRadiusRange: readonly [number, number];
+}
+
+/** Builds the `azimuthQuadrants × radiusTiers` cells covering one stratified schedule's declared ranges. */
+function buildSpiderZoneCells(config: SpiderShotStratifiedConfig): SpiderZoneCell[] {
+  const { peripheral, grid } = config;
+  const [azMin, azMax] = peripheral.azimuthDegRange;
+  const azimuthStep = (azMax - azMin) / grid.azimuthQuadrants;
+  const [radMinDeg, radMaxDeg] = peripheral.angularRadiusDegRange;
+  const cosInner = Math.cos(radMinDeg * DEG_TO_RAD);
+  const cosOuter = Math.cos(radMaxDeg * DEG_TO_RAD);
+  const cosSpan = cosInner - cosOuter; // > 0 (schema requires radMinDeg < radMaxDeg for this kind)
+
+  const cells: SpiderZoneCell[] = [];
+  for (let a = 0; a < grid.azimuthQuadrants; a++) {
+    const azimuthDegRange: [number, number] = [azMin + a * azimuthStep, azMin + (a + 1) * azimuthStep];
+    for (let r = 0; r < grid.radiusTiers; r++) {
+      // Tier r=0 is innermost (nearest the center sightline); tiers cover equal solid angle.
+      const cosUpper = cosInner - (cosSpan * r) / grid.radiusTiers;
+      const cosLower = cosInner - (cosSpan * (r + 1)) / grid.radiusTiers;
+      cells.push({ azimuthDegRange, cosRadiusRange: [cosLower, cosUpper] });
+    }
+  }
+  return cells;
+}
+
+/** Seeded Fisher–Yates in place (GD-5: no `Math.random`; consumes the same spawn RNG as sampling). */
+function shuffleInPlace<T>(items: T[], rng: Rng): void {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(randomFloat(rng, 0, i + 1));
+    const tmp = items[i];
+    items[i] = items[j];
+    items[j] = tmp;
+  }
+}
+
 export interface TargetManager {
   /** sim tick 內呼叫:spawn/可見性 → 可見轉換即蓋 `t_visible`(nowMs = sim clock)。 */
   tick(state: SharedState, nowMs: number): void;
@@ -102,6 +172,8 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   let nextSide: 'L' | 'R' = defaultFirstSide;
   // Spider Shot keeps independent center/peripheral state; it never reads or mutates legacy nextSide.
   let nextSpiderZone: 'center' | 'peripheral' = 'center';
+  // WP-44 stratified schedule only: shuffled zone-cell queue, rebuilt+reshuffled whenever exhausted.
+  let spiderZoneQueue: SpiderZoneCell[] = [];
   // 已 spawn 目標數(對照 spawnLimit;reset 歸零)——config 驅動的「換 config 即換數量」判準。
   let spawnedCount = 0;
   let spawnRng: Rng | undefined = usesSeededSpawn
@@ -147,32 +219,31 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       };
     }
 
+    if (spiderShot.kind === 'center-peripheral-stratified') {
+      return { side: 'R', zone: 'peripheral', pos: sampleStratifiedPeripheralPos(spiderShot) };
+    }
+
     const { peripheral } = spiderShot;
     const azimuthRad =
       randomFloat(spawnRng!, peripheral.azimuthDegRange[0], peripheral.azimuthDegRange[1]) * DEG_TO_RAD;
     const radiusRad =
       randomFloat(spawnRng!, peripheral.angularRadiusDegRange[0], peripheral.angularRadiusDegRange[1]) * DEG_TO_RAD;
     const distanceU = randomFloat(spawnRng!, peripheral.distanceURange[0], peripheral.distanceURange[1]);
-    // Center sightline is (0, TARGET_Y, -centerDistanceU). Its projected world-up axis makes
-    // azimuth 0/90/180/270 map to up/right/down/left without reusing legacy horizontal yaw.
-    const centerLength = Math.hypot(TARGET_Y, spiderShot.centerDistanceU);
-    const forwardY = TARGET_Y / centerLength;
-    const forwardZ = -spiderShot.centerDistanceU / centerLength;
-    const upY = spiderShot.centerDistanceU / centerLength;
-    const upZ = TARGET_Y / centerLength;
-    const radialSin = Math.sin(radiusRad);
-    const radialCos = Math.cos(radiusRad);
-    const azimuthSin = Math.sin(azimuthRad);
-    const azimuthCos = Math.cos(azimuthRad);
-    return {
-      side: 'R',
-      zone: 'peripheral',
-      pos: {
-        x: distanceU * radialSin * azimuthSin,
-        y: distanceU * (radialCos * forwardY + radialSin * azimuthCos * upY),
-        z: distanceU * (radialCos * forwardZ + radialSin * azimuthCos * upZ),
-      },
-    };
+    return { side: 'R', zone: 'peripheral', pos: peripheralPos(spiderShot.centerDistanceU, azimuthRad, radiusRad, distanceU) };
+  }
+
+  /** WP-44: pop one shuffled zone cell (rebuilding+reshuffling on exhaustion) and sample within it. */
+  function sampleStratifiedPeripheralPos(config: SpiderShotStratifiedConfig): Vec3 {
+    if (spiderZoneQueue.length === 0) {
+      spiderZoneQueue = buildSpiderZoneCells(config);
+      shuffleInPlace(spiderZoneQueue, spawnRng!);
+    }
+    const cell = spiderZoneQueue.pop()!;
+    const azimuthRad = randomFloat(spawnRng!, cell.azimuthDegRange[0], cell.azimuthDegRange[1]) * DEG_TO_RAD;
+    const cosSample = randomFloat(spawnRng!, cell.cosRadiusRange[0], cell.cosRadiusRange[1]);
+    const radiusRad = Math.acos(cosSample);
+    const distanceU = randomFloat(spawnRng!, config.peripheral.distanceURange[0], config.peripheral.distanceURange[1]);
+    return peripheralPos(config.centerDistanceU, azimuthRad, radiusRad, distanceU);
   }
 
   /** 生成一個目標(OQ-4.2:spawn 瞬間即可見)。spawn 屬低頻事件(peek 節奏),非每 tick 熱路徑。 */
@@ -312,6 +383,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       // seq 顯式優先(既有 WP-4 呼叫);省略時退回 config 首側(或無 config 的預設 'R')。
       nextSide = seq ? (seq[0] as 'L' | 'R') : defaultFirstSide;
       nextSpiderZone = 'center';
+      spiderZoneQueue = [];
     },
   };
 }

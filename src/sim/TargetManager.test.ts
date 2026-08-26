@@ -724,3 +724,145 @@ describe('TargetManager — WP-36 spider-shot center/peripheral schedule', () =>
     }
   });
 });
+
+describe('TargetManager — WP-44 spider-shot stratified 12-cell peripheral schedule', () => {
+  const AZIMUTH_QUADRANTS = 4;
+  const RADIUS_TIERS = 3;
+  const CELL_COUNT = AZIMUTH_QUADRANTS * RADIUS_TIERS;
+
+  function stratifiedConfig(seed: number, spawnCount = CELL_COUNT): DrillConfig {
+    return {
+      drillId: 'spider-shot-stratified-test',
+      targets: { count: spawnCount, distance: 8 },
+      sequence: { alternation: 'LR' },
+      spiderShot: {
+        kind: 'center-peripheral-stratified',
+        seed,
+        centerDistanceU: 8,
+        peripheral: {
+          angularRadiusDegRange: [10, 25],
+          azimuthDegRange: [0, 360],
+          distanceURange: [8, 8],
+        },
+        grid: { azimuthQuadrants: AZIMUTH_QUADRANTS, radiusTiers: RADIUS_TIERS },
+      },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: spawnCount },
+    };
+  }
+
+  it('single active target at all times, alternating center → peripheral', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(stratifiedConfig(11));
+
+    tm.tick(state, 100);
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0]).toMatchObject({ zone: 'center', pos: { x: 0, y: 1.5, z: -8 } });
+    tm.markKilled(state, state.targets[0].id);
+
+    tm.tick(state, 200);
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0].zone).toBe('peripheral');
+  });
+
+  it('replays the same stratified peripheral sequence after reset, while a different seed changes it', () => {
+    const run = (cfg: DrillConfig): Array<{ x: number; y: number; z: number }> => {
+      const state = createSharedState();
+      const tm = createTargetManager(cfg);
+      const sequence: Array<{ x: number; y: number; z: number }> = [];
+      for (let i = 0; i < cfg.targets.count; i++) {
+        tm.tick(state, 100 + i * 100);
+        const target = state.targets[0];
+        sequence.push({ x: target.pos.x, y: target.pos.y, z: target.pos.z });
+        tm.markKilled(state, target.id);
+      }
+      return sequence;
+    };
+
+    const cfg = stratifiedConfig(11, CELL_COUNT * 2);
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+    const replay = (): Array<{ x: number; y: number; z: number }> => {
+      const sequence: Array<{ x: number; y: number; z: number }> = [];
+      for (let i = 0; i < cfg.targets.count; i++) {
+        tm.tick(state, 100 + i * 100);
+        const target = state.targets[0];
+        sequence.push({ x: target.pos.x, y: target.pos.y, z: target.pos.z });
+        tm.markKilled(state, target.id);
+      }
+      return sequence;
+    };
+
+    const first = replay();
+    tm.reset(state);
+    expect(replay()).toEqual(first);
+    expect(run(stratifiedConfig(12, CELL_COUNT * 2))).not.toEqual(first);
+  });
+
+  it('covers all 12 azimuth-quadrant × radius-tier cells exactly once before any repeats, then reshuffles for the next round', () => {
+    // Total spawn count must be 4× the cell count: center↔peripheral alternation means only half
+    // of all spawns are peripheral, and we want two full 12-cell rounds among those.
+    const cfg = stratifiedConfig(11, CELL_COUNT * 4);
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+
+    function cellKey(pos: { x: number; y: number; z: number }): string {
+      // Recover azimuth (around the center sightline) and radius (off it) from world pos by
+      // inverting the same forward/up basis peripheralPos() uses, independent of implementation.
+      const centerDistanceU = 8;
+      const targetY = 1.5;
+      const centerLength = Math.hypot(targetY, centerDistanceU);
+      const forwardY = targetY / centerLength;
+      const forwardZ = -centerDistanceU / centerLength;
+      const upY = centerDistanceU / centerLength;
+      const upZ = targetY / centerLength;
+      const distanceU = Math.hypot(pos.x, pos.y, pos.z);
+      const forwardComponent = (pos.y * forwardY + pos.z * forwardZ) / distanceU;
+      const radiusRad = Math.acos(forwardComponent);
+      const upComponent = pos.y * upY + pos.z * upZ;
+      const radialSin = Math.sin(radiusRad);
+      const azimuthCos = radialSin === 0 ? 1 : upComponent / distanceU / radialSin;
+      const azimuthSin = radialSin === 0 ? 0 : pos.x / distanceU / radialSin;
+      const azimuthDeg = ((Math.atan2(azimuthSin, azimuthCos) * 180) / Math.PI + 360) % 360;
+      const radiusDeg = (radiusRad * 180) / Math.PI;
+      const azimuthQuadrant = Math.min(AZIMUTH_QUADRANTS - 1, Math.floor(azimuthDeg / (360 / AZIMUTH_QUADRANTS)));
+      // Radius tiers are equal-solid-angle (non-uniform in degrees); classify by cos boundary.
+      const cosInner = Math.cos((10 * Math.PI) / 180);
+      const cosOuter = Math.cos((25 * Math.PI) / 180);
+      const cosSpan = cosInner - cosOuter;
+      const cosValue = Math.cos((radiusDeg * Math.PI) / 180);
+      const radiusTier = Math.min(RADIUS_TIERS - 1, Math.floor(((cosInner - cosValue) / cosSpan) * RADIUS_TIERS));
+      return `${azimuthQuadrant}:${radiusTier}`;
+    }
+
+    const peripheralKeys: string[] = [];
+    for (let i = 0; i < cfg.targets.count; i++) {
+      tm.tick(state, 100 + i * 100);
+      const target = state.targets[0];
+      if (target.zone === 'peripheral') peripheralKeys.push(cellKey(target.pos));
+      tm.markKilled(state, target.id);
+    }
+
+    expect(peripheralKeys).toHaveLength(CELL_COUNT * 2);
+    const firstRound = peripheralKeys.slice(0, CELL_COUNT);
+    const secondRound = peripheralKeys.slice(CELL_COUNT);
+    expect(new Set(firstRound).size).toBe(CELL_COUNT);
+    expect(new Set(secondRound).size).toBe(CELL_COUNT);
+  });
+
+  it('samples fall within the declared azimuth/radius bounds', () => {
+    const cfg = stratifiedConfig(99);
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+
+    for (let i = 0; i < cfg.targets.count; i++) {
+      tm.tick(state, 100 + i * 100);
+      const target = state.targets[0];
+      if (target.zone === 'peripheral') {
+        const distanceU = Math.hypot(target.pos.x, target.pos.y, target.pos.z);
+        expect(distanceU).toBeCloseTo(8, 9);
+      }
+      tm.markKilled(state, target.id);
+    }
+  });
+});

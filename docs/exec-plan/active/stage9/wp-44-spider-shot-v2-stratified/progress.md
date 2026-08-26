@@ -6,6 +6,8 @@
 
 - **2026-08-26 T0+T1**:覆核 brainstorming 對話中的 §0 讀碼假設仍成立(v1 凍結值未變、`sampleSpiderShotPose()` 形狀未變、`main.ts` sceneId 修法未變、`spiderShotConditions.ts`/`spiderShotMetrics.ts` 未讀 `DrillConfig.spiderShot`)。`DrillConfig.SpiderShotScheduleConfig` 改為 union(`center-peripheral` / `center-peripheral-stratified`),`schema.ts` 新分支驗證(含 `grid` 正整數 + 拒絕退化 radius range)。既有 39 個 `schema.test.ts` 案例零改動全綠,新增 2 個測試案例全綠,`npx tsc --noEmit` 全專案型別檢查綠。
 
+- **2026-08-26 T2**:`TargetManager.ts` 抽出共用 `peripheralPos()` 三角函式(v1 `center-peripheral` 路徑改呼叫它,既有 WP-36 世界座標精確斷言 44 個測試全綠,零回歸);新增 `SpiderZoneCell`/`buildSpiderZoneCells()`(等立體角 `cos` 分層)/`shuffleInPlace()`(seeded Fisher–Yates)/`sampleStratifiedPeripheralPos()`;`reset()` 新增 `spiderZoneQueue` 清空。新增 4 個 `TargetManager.test.ts` 測試(單目標存在+交替、reset 後決定性重放+換 seed 改變序列、12 格耗盡前不重複+重洗後再次覆蓋、世界距離落在宣告值)。全專案 `npx tsc --noEmit` 綠、`npx vitest run`(全 131 檔 995 測試)全綠。
+
 ## Decision Log
 
 - **D-44.1**(2026-08-26,brainstorming 對話拍板):新增 `spider-shot-v2` 而非改寫 `spider-shot-v1`。**Why**:WP-39 已把 v1 的 `angularRadiusDegRange=[15,15]`/`centerDistanceU=8`/`distanceURange=[8,8]` 列為正式凍結校準值(`STAGE6_PROTOCOL_VERSION = '1.0.0'`),直接改會打破「除凍結欄位外逐位不變」的既有回歸契約與既有 pilot/acceptance 資料的可比性。**Alternatives considered**:直接改 v1(使用者選項之一,但需同步處理 `DECISIONS.md` 凍結記錄與 `protocolVersion`,取捨成本高於開新檔)。
