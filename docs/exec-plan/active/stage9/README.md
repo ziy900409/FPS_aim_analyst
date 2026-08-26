@@ -1,7 +1,8 @@
-# 階段 I(stage9)提案 — Spider Shot 12 格 stratified 排程變體(`spider-shot-v2`)
+# 階段 I(stage9)提案 — Assessment / transfer-test 擴充提案集合
 
-> **本檔狀態:🟡 討論定案,尚未正式採納**。方向已於對話中拍板(見下方 §0/§2),尚未指派正式 WP 編號 / 里程碑字母 / [DECISIONS.md](../../DECISIONS.md) GD 條目,亦未同步 [exec-plan/README.md](../../README.md)、[docs/MAP.md](../../../MAP.md)。比照 stage8 先例(見 [stage8/README.md §4 OQ-S8-4](../stage8/README.md)),這些文件對帳動作留到 T-exit 或使用者確認正式開工時一併補上,本檔暫用 **WP-44** 作為文中指稱用的工作代號。
-> 觸發:使用者研究了一份第三方 Three.js aim trainer demo(`3d_fps_12 1.html`)的 SpiderShot 模式,與本專案已交付的 `spider-shot-v1`(stage6 WP-36)做完整對照後,希望把該 demo 的「4 象限 × 3 距離 tier stratified 排程」與「擊殺即出下一個」兩個特性帶進本專案。
+> **本檔狀態:🟡 討論定案,尚未正式採納**。stage9 目前收納兩個彼此獨立、皆不修改 stage6 frozen v1 協定的 additive 提案:WP-44 `spider-shot-v2` 與 WP-45 `peek-click-transfer-pilot-v1`。尚未指派正式里程碑字母 / [DECISIONS.md](../../DECISIONS.md) GD 條目,亦未同步 [exec-plan/README.md](../../README.md)、[docs/MAP.md](../../../MAP.md)。比照 stage8 先例(見 [stage8/README.md §4 OQ-S8-4](../stage8/README.md)),這些文件對帳動作留到各 WP T-exit 或使用者確認正式開工時一併補上。
+> WP-44 觸發:使用者研究了一份第三方 Three.js aim trainer demo(`3d_fps_12 1.html`)的 SpiderShot 模式,與本專案已交付的 `spider-shot-v1`(stage6 WP-36)做完整對照後,希望把該 demo 的「4 象限 × 3 距離 tier stratified 排程」與「擊殺即出下一個」兩個特性帶進本專案。
+> WP-45 觸發:使用者研究 Kovaak's `Peek and Click` 錄影後,決定把「自體移動造成目標曝光 → 反向急停 → 首發／補槍」轉譯成本專案可量測的 transfer test；完整 spec 見 [`wp-45-peek-click-transfer/README.md`](wp-45-peek-click-transfer/README.md)。
 > 與 stage6 的關係:**不修改** `spider-shot-v1` 本身或其凍結數值(WP-39 `STAGE6_PROTOCOL_VERSION = '1.0.0'`)——本提案開一個新 drill `spider-shot-v2`,`spider-shot-v1` 逐位不變。
 > 文件語言:繁體中文,術語保留英文(D4)。
 
@@ -77,3 +78,10 @@
 | WP | 子資料夾 | 目標 | 狀態 |
 |---|---|---|---|
 | **WP-44**(暫用) | [`wp-44-spider-shot-v2-stratified/`](wp-44-spider-shot-v2-stratified/README.md) | `spider-shot-v2`:12 格 stratified 周邊排程,保留 center↔peripheral 交替 | 🟡 進行中 |
+| **WP-45**(暫用) | [`wp-45-peek-click-transfer/`](wp-45-peek-click-transfer/README.md) | `peek-click-transfer-pilot-v1`:對稱掩體、自體移動曝光、急停首發與分層 metrics；Practice/pilot only | 🟡 計畫完成,待 T0 |
+
+### 5.1 執行排程避免熱區衝突
+
+- WP-45 T0/T1/T2(讀碼、共用 occlusion kernel、獨立場景資產)可在 WP-44 尚未 T-exit 時獨立進行。
+- WP-45 T3 會觸及 `DrillConfig.ts`/`schema.ts`/`main.ts`，必須等 WP-44 T-exit 或確認其變更已合併，避免兩個 active WP 同時修改同一熱區。
+- WP-45 T5 會觸及 Session Plan 入口，必須等 stage8 WP-43 T-exit，再依重構後的入口契約接線。
