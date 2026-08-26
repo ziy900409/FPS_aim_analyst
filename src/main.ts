@@ -43,7 +43,7 @@ import {
 import { createSessionPlanSetup, type SessionPlanSelection } from './ui/SessionPlanSetup.ts';
 import { createRestOverlay } from './ui/RestOverlay.ts';
 import { createSessionRunner, type SessionRunnerHandle } from './session/SessionRunner.ts';
-import { SESSION_PLAN_PRESETS } from './session/sessionPlanPresets.ts';
+import { findSessionPlanPreset, SESSION_PLAN_PRESETS } from './session/sessionPlanPresets.ts';
 import { TEST_FAMILY_IDS } from './session/sessionSchedule.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
@@ -1186,6 +1186,11 @@ async function startSessionPlan(): Promise<void> {
     setProtocolStatus('Session Plan 啟動失敗：缺少受試者或計畫選擇。', false);
     return;
   }
+  const preset = findSessionPlanPreset(selection.presetId);
+  if (preset === undefined) {
+    setProtocolStatus(`Session Plan 啟動失敗：未知 preset ${selection.presetId}。`, false);
+    return;
+  }
   activeSessionPlanPreset = selection.presetId;
   try {
     // T1 retains the literal TEST_FAMILY_IDS order; T3 wires the counterbalanced index.
@@ -1193,7 +1198,7 @@ async function startSessionPlan(): Promise<void> {
       participantId: setup.participantId,
       sessionIndex: 0,
       families: selection.families,
-      presetId: selection.presetId,
+      restSeconds: preset.restSeconds,
       includeWarmup: selection.includeWarmup,
     });
   } catch (error) {

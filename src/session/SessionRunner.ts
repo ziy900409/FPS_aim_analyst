@@ -3,14 +3,13 @@ import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
 import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
 import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
-import { findSessionPlanPreset } from './sessionPlanPresets.ts';
-import { buildFamilyOrder, type TestFamilyId } from './sessionSchedule.ts';
+import { TEST_FAMILY_IDS, type TestFamilyId } from './sessionSchedule.ts';
 
 export interface SessionPlan {
   readonly participantId: string;
   readonly sessionIndex: number;
   readonly families: readonly TestFamilyId[];
-  readonly presetId: string;
+  readonly restSeconds: number;
   readonly includeWarmup: boolean;
 }
 
@@ -40,6 +39,17 @@ export interface SessionRunnerOptions {
   readonly onPhaseChange?: (phase: SessionRunnerPhase) => void;
 }
 
+function requireFamilyOrder(value: readonly TestFamilyId[]): readonly TestFamilyId[] {
+  if (value.length === 0) throw new Error('Session plan must include at least one family');
+  const seen = new Set<TestFamilyId>();
+  for (const family of value) {
+    if (!TEST_FAMILY_IDS.includes(family)) throw new Error(`Unknown session plan family: ${family}`);
+    if (seen.has(family)) throw new Error('Session plan families must not contain duplicates');
+    seen.add(family);
+  }
+  return [...value];
+}
+
 export function resolveWarmupDrillId(
   family: TestFamilyId,
 ): { availability: WarmupAvailability; drillId?: string } {
@@ -64,7 +74,7 @@ export function resolveFamilyDrillId(family: TestFamilyId): string {
 export function createSessionRunner(options: SessionRunnerOptions): SessionRunnerHandle {
   let phase: SessionRunnerPhase = { kind: 'idle' };
   let families: readonly TestFamilyId[] = [];
-  let presetRestMs = 0;
+  let restDurationMs = 0;
   let restStartedAt: number | undefined;
   let disposed = false;
   let transition: Promise<void> | undefined;
@@ -124,13 +134,11 @@ export function createSessionRunner(options: SessionRunnerOptions): SessionRunne
         if (!Number.isInteger(plan.sessionIndex) || plan.sessionIndex < 0) {
           throw new Error('sessionIndex must be a non-negative integer');
         }
-        const preset = findSessionPlanPreset(plan.presetId);
-        if (preset === undefined) throw new Error(`Unknown session plan preset: ${plan.presetId}`);
-        families = buildFamilyOrder(plan.participantId, plan.sessionIndex).filter((family) =>
-          plan.families.includes(family),
-        );
-        if (families.length === 0) throw new Error('Session plan must include at least one family');
-        presetRestMs = preset.restSeconds * 1000;
+        if (!Number.isFinite(plan.restSeconds) || plan.restSeconds < 0) {
+          throw new Error('restSeconds must be a non-negative finite number');
+        }
+        families = requireFamilyOrder(plan.families);
+        restDurationMs = plan.restSeconds * 1000;
         restStartedAt = undefined;
         if (plan.includeWarmup) await startWarmupOrFamily(0);
         else await startFamily(0);
@@ -139,7 +147,7 @@ export function createSessionRunner(options: SessionRunnerOptions): SessionRunne
     poll(nowMs): void {
       if (phase.kind !== 'rest' || disposed || transition !== undefined) return;
       restStartedAt ??= nowMs;
-      const remainingMs = Math.max(0, presetRestMs - (nowMs - restStartedAt));
+      const remainingMs = Math.max(0, restDurationMs - (nowMs - restStartedAt));
       if (remainingMs === 0) {
         // Auto-advance runs unattended (no caller to await it); a rejection here (e.g. the next
         // family's drill/scene fails to load) must not leave `phase` stuck at 'rest' forever —
@@ -169,7 +177,7 @@ export function createSessionRunner(options: SessionRunnerOptions): SessionRunne
             return;
           }
           restStartedAt = undefined;
-          setPhase({ kind: 'rest', nextFamily, remainingMs: presetRestMs });
+          setPhase({ kind: 'rest', nextFamily, remainingMs: restDurationMs });
           options.onStatus?.(`休息後開始: ${nextFamily}`);
           return;
         }

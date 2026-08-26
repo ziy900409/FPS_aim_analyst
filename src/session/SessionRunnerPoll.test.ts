@@ -13,7 +13,7 @@ describe('SessionRunner.poll', () => {
       participantId: 'P001',
       sessionIndex: 0,
       families: ['hold-click', 'hold-track'],
-      presetId: 'pilot-default',
+      restSeconds: 60,
       includeWarmup: false,
     });
 
@@ -45,7 +45,7 @@ describe('SessionRunner.poll', () => {
       participantId: 'P001',
       sessionIndex: 0,
       families: ['hold-click', 'hold-track'],
-      presetId: 'pilot-default',
+      restSeconds: 60,
       includeWarmup: false,
     });
 
