@@ -43,7 +43,6 @@ import {
 import { createSessionPlanSetup, type SessionPlanSelection } from './ui/SessionPlanSetup.ts';
 import { createRestOverlay } from './ui/RestOverlay.ts';
 import { createSessionRunner, type SessionRunnerHandle } from './session/SessionRunner.ts';
-import { findSessionPlanPreset, SESSION_PLAN_PRESETS } from './session/sessionPlanPresets.ts';
 import { TEST_FAMILY_IDS } from './session/sessionSchedule.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
@@ -309,7 +308,6 @@ const experimentSession = createExperimentSession({
 let pendingSessionSetupValues: SessionSetupValues | undefined;
 let sessionSetupValues: SessionSetupValues | undefined;
 let pendingSessionPlanSelection: SessionPlanSelection | undefined;
-let activeSessionPlanPreset: string | undefined;
 type PendingSessionMode = 'session' | 'resolution-protocol' | 'br-tracking-protocol' | 'session-plan';
 let pendingSessionMode: PendingSessionMode = 'session';
 let appMode: AppMode = 'launch';
@@ -340,7 +338,6 @@ const eligibilityGateScreen = createEligibilityGateScreen({
   },
 });
 const sessionPlanSetup = createSessionPlanSetup({
-  presets: SESSION_PLAN_PRESETS,
   families: TEST_FAMILY_IDS,
   onSubmit: (selection) => {
     pendingSessionPlanSelection = selection;
@@ -496,9 +493,6 @@ async function buildCurrentExportPayload(
     simHz: SIM_HZ,
     sensitivity: settingsPanel.sensitivity,
     ...(sessionSetupValues?.dpi !== undefined ? { dpi: sessionSetupValues.dpi } : {}),
-    ...(sessionPlanRunner.phase.kind === 'family' && activeSessionPlanPreset !== undefined
-      ? { sessionPlanPreset: activeSessionPlanPreset }
-      : {}),
     fovDeg: settingsPanel.fov,
     crossOriginIsolated: isolation.crossOriginIsolated,
     startedAt: recorderStartedAt,
@@ -1186,23 +1180,15 @@ async function startSessionPlan(): Promise<void> {
     setProtocolStatus('Session Plan 啟動失敗：缺少受試者或計畫選擇。', false);
     return;
   }
-  const preset = findSessionPlanPreset(selection.presetId);
-  if (preset === undefined) {
-    setProtocolStatus(`Session Plan 啟動失敗：未知 preset ${selection.presetId}。`, false);
-    return;
-  }
-  activeSessionPlanPreset = selection.presetId;
   try {
-    // T1 retains the literal TEST_FAMILY_IDS order; T3 wires the counterbalanced index.
     await sessionPlanRunner.start({
       participantId: setup.participantId,
       sessionIndex: 0,
       families: selection.families,
-      restSeconds: preset.restSeconds,
+      restSeconds: selection.restSeconds,
       includeWarmup: selection.includeWarmup,
     });
   } catch (error) {
-    activeSessionPlanPreset = undefined;
     setProtocolStatus(`Session Plan 啟動失敗：${error instanceof Error ? error.message : String(error)}`, false);
   }
 }

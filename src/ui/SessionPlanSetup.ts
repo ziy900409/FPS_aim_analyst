@@ -1,15 +1,14 @@
-import type { SessionPlanPreset } from '../session/sessionPlanPresets.ts';
 import type { TestFamilyId } from '../session/sessionSchedule.ts';
 
 export interface SessionPlanSelection {
   readonly families: readonly TestFamilyId[];
-  readonly presetId: string;
+  readonly restSeconds: number;
   readonly includeWarmup: boolean;
 }
 
 export interface SessionPlanSetupOptions {
-  readonly presets: readonly SessionPlanPreset[];
   readonly families: readonly TestFamilyId[];
+  readonly restSecondsBounds?: { readonly min: number; readonly max: number };
   readonly onSubmit: (selection: SessionPlanSelection) => void;
   readonly parent?: HTMLElement;
 }
@@ -20,7 +19,19 @@ export interface SessionPlanSetupHandle {
   dispose(): void;
 }
 
+const DEFAULT_REST_SECONDS = 60;
+const DEFAULT_REST_SECONDS_BOUNDS = { min: 0, max: 3600 } as const;
+
 export function createSessionPlanSetup(options: SessionPlanSetupOptions): SessionPlanSetupHandle {
+  const restSecondsBounds = options.restSecondsBounds ?? DEFAULT_REST_SECONDS_BOUNDS;
+  if (
+    !Number.isFinite(restSecondsBounds.min) ||
+    !Number.isFinite(restSecondsBounds.max) ||
+    restSecondsBounds.min < 0 ||
+    restSecondsBounds.max < restSecondsBounds.min
+  ) {
+    throw new Error('restSecondsBounds must define a finite non-negative range');
+  }
   const parent = options.parent ?? document.body;
   const root = document.createElement('section');
   root.id = 'session-plan-setup';
@@ -34,7 +45,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
   title.textContent = 'Session Plan';
   title.style.cssText = headingCss;
   const desc = document.createElement('p');
-  desc.textContent = '勾選本次要執行的測試家族；trial 與休息設定只能選已命名 preset。';
+  desc.textContent = '勾選並拖曳排列本次要執行的測試家族，並設定各家族之間的全域休息秒數。';
   desc.style.cssText = descriptionCss;
 
   const familyFieldset = document.createElement('fieldset');
@@ -43,37 +54,60 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
   legend.textContent = '測試家族';
   legend.style.cssText = labelCss;
   familyFieldset.appendChild(legend);
-  const familyInputs = options.families.map((family) => {
+  let draggedFamily: TestFamilyId | undefined;
+  const familyRows = options.families.map((family) => {
     const row = document.createElement('label');
     row.style.cssText = rowCss;
+    row.draggable = true;
+    row.setAttribute('data-session-family', family);
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.name = 'sessionFamily';
     input.value = family;
     input.checked = true;
     const text = document.createElement('span');
-    text.textContent = family;
+    text.textContent = `⋮⋮ ${family}`;
     row.append(input, text);
     familyFieldset.appendChild(row);
-    return input;
+    row.addEventListener('dragstart', (event) => {
+      draggedFamily = family;
+      event.dataTransfer?.setData('text/plain', family);
+      if (event.dataTransfer !== null) event.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      if (event.dataTransfer !== null) event.dataTransfer.dropEffect = 'move';
+    });
+    row.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const sourceId = draggedFamily ?? event.dataTransfer?.getData('text/plain');
+      const sourceIndex = familyRows.findIndex((entry) => entry.family === sourceId);
+      const targetIndex = familyRows.findIndex((entry) => entry.family === family);
+      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+      const [source] = familyRows.splice(sourceIndex, 1);
+      familyRows.splice(targetIndex, 0, source);
+      for (const entry of familyRows) familyFieldset.appendChild(entry.row);
+    });
+    row.addEventListener('dragend', () => {
+      draggedFamily = undefined;
+    });
+    return { family, input, row };
   });
 
-  const presetLabel = document.createElement('label');
-  presetLabel.style.cssText = 'display:grid;gap:6px';
-  const presetText = document.createElement('span');
-  presetText.textContent = 'Session-plan preset';
-  presetText.style.cssText = labelCss;
-  const preset = document.createElement('select');
-  preset.name = 'sessionPlanPreset';
-  preset.style.cssText = selectCss;
-  for (const presetConfig of options.presets) {
-    const option = document.createElement('option');
-    option.value = presetConfig.id;
-    option.textContent = `${presetConfig.id}（休息 ${presetConfig.restSeconds} 秒）`;
-    preset.appendChild(option);
-  }
-  preset.value = options.presets[0]?.id ?? '';
-  presetLabel.append(presetText, preset);
+  const restSecondsLabel = document.createElement('label');
+  restSecondsLabel.style.cssText = 'display:grid;gap:6px';
+  const restSecondsText = document.createElement('span');
+  restSecondsText.textContent = '家族間休息秒數';
+  restSecondsText.style.cssText = labelCss;
+  const restSeconds = document.createElement('input');
+  restSeconds.type = 'number';
+  restSeconds.name = 'sessionPlanRestSeconds';
+  restSeconds.min = String(restSecondsBounds.min);
+  restSeconds.max = String(restSecondsBounds.max);
+  restSeconds.step = 'any';
+  restSeconds.value = String(Math.min(restSecondsBounds.max, Math.max(restSecondsBounds.min, DEFAULT_REST_SECONDS)));
+  restSeconds.style.cssText = inputCss;
+  restSecondsLabel.append(restSecondsText, restSeconds);
 
   const warmupRow = document.createElement('label');
   warmupRow.style.cssText = rowCss;
@@ -92,7 +126,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
   const buttonRow = document.createElement('div');
   buttonRow.style.cssText = 'display:flex;gap:8px';
   buttonRow.append(submit, cancel);
-  form.append(title, desc, familyFieldset, presetLabel, warmupRow, status, buttonRow);
+  form.append(title, desc, familyFieldset, restSecondsLabel, warmupRow, status, buttonRow);
   root.appendChild(form);
   parent.appendChild(root);
 
@@ -107,16 +141,23 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    const families = options.families.filter((_family, index) => familyInputs[index].checked);
+    const families = familyRows.filter((entry) => entry.input.checked).map((entry) => entry.family);
     if (families.length === 0) {
       status.textContent = '至少選擇一個測試家族。';
       return;
     }
-    if (!options.presets.some((candidate) => candidate.id === preset.value)) {
-      status.textContent = '請選擇有效的 session-plan preset。';
+    const restSecondsTextValue = restSeconds.value.trim();
+    const parsedRestSeconds = Number(restSecondsTextValue);
+    if (
+      restSecondsTextValue === '' ||
+      !Number.isFinite(parsedRestSeconds) ||
+      parsedRestSeconds < restSecondsBounds.min ||
+      parsedRestSeconds > restSecondsBounds.max
+    ) {
+      status.textContent = `休息秒數必須介於 ${restSecondsBounds.min} 到 ${restSecondsBounds.max} 秒。`;
       return;
     }
-    options.onSubmit({ families, presetId: preset.value, includeWarmup: includeWarmup.checked });
+    options.onSubmit({ families, restSeconds: parsedRestSeconds, includeWarmup: includeWarmup.checked });
     close();
   });
   cancel.addEventListener('click', close);
@@ -140,5 +181,5 @@ const headingCss = 'margin:0;font:750 18px/1.3 system-ui,sans-serif';
 const descriptionCss = 'margin:0;font:500 13px/1.5 system-ui,sans-serif;color:#aeb6bf';
 const labelCss = 'font:700 13px/1.4 system-ui,sans-serif';
 const rowCss = 'display:flex;align-items:center;gap:8px;font:600 13px/1.4 system-ui,sans-serif';
-const selectCss = 'height:36px;padding:0 8px;border:1px solid rgba(255,255,255,0.18);border-radius:6px;background:#171a1e;color:#edf2f7;font:600 13px/1 system-ui,sans-serif';
+const inputCss = 'height:36px;padding:0 8px;border:1px solid rgba(255,255,255,0.18);border-radius:6px;background:#171a1e;color:#edf2f7;font:600 13px/1 system-ui,sans-serif';
 const statusCss = 'margin:0;min-height:18px;font:650 13px/1.4 system-ui,sans-serif;color:#f0c674';

@@ -127,7 +127,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     expect(r.freeDrillId).toBe('counterstrafe-free-v1');
   });
 
-  test('Session Plan 真實 DOM 接線：按鈕 → 表單 → 家族勾選/preset 選單（無自由數字輸入）→ eligibility gate', async ({
+  test('Session Plan 真實 DOM 接線：按鈕 → 表單 → 家族拖曳排序/自由休息秒數 → eligibility gate', async ({
     page,
   }) => {
     await waitForHarness(page);
@@ -149,10 +149,22 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     await expect(familyCheckboxes).toHaveCount(4);
     for (let i = 0; i < 4; i++) await expect(familyCheckboxes.nth(i)).toBeChecked();
 
-    // FR-G9②：preset 只能選既有具名常數，UI 不得渲染任何自由數字輸入框。
-    const presetSelect = planSetup.locator('select[name="sessionPlanPreset"]');
-    await expect(presetSelect).toHaveValue('pilot-default');
-    await expect(planSetup.locator('input[type="number"]')).toHaveCount(0);
+    // FR-H2：拖曳後 DOM 與提交順序都以操作者排列為準。
+    await planSetup
+      .locator('[data-session-family="counterstrafe"]')
+      .dragTo(planSetup.locator('[data-session-family="hold-click"]'));
+    await expect(planSetup.locator('[data-session-family]').first()).toHaveAttribute(
+      'data-session-family',
+      'counterstrafe',
+    );
+
+    // FR-H3：具名 preset 下拉已移除，改為含邊界的自由休息秒數。
+    await expect(planSetup.locator('select[name="sessionPlanPreset"]')).toHaveCount(0);
+    const restSeconds = planSetup.locator('input[name="sessionPlanRestSeconds"]');
+    await expect(restSeconds).toHaveValue('60');
+    await expect(restSeconds).toHaveAttribute('min', '0');
+    await expect(restSeconds).toHaveAttribute('max', '3600');
+    await restSeconds.fill('42');
 
     await planSetup.locator('button[type="submit"]').click();
 
