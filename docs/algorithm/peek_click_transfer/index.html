@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Peek Click Transfer：個人每日訓練診斷演算法討論稿</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1220;
+      --surface: #111a2c;
+      --surface-2: #18243a;
+      --text: #e9eff8;
+      --muted: #aebbd0;
+      --line: #31415e;
+      --blue: #6db5ff;
+      --green: #54d49b;
+      --amber: #f2c66d;
+      --red: #ff8d8d;
+      --violet: #b6a1ff;
+      --code: #d8e7ff;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% -8%, rgba(81, 137, 224, .22), transparent 30rem),
+        radial-gradient(circle at 92% 12%, rgba(92, 210, 166, .12), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+    }
+
+    a { color: var(--blue); }
+    a:hover { text-decoration-thickness: 2px; }
+
+    code, pre {
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    code {
+      color: var(--code);
+      background: rgba(109, 181, 255, .10);
+      border-radius: .3rem;
+      padding: .08rem .3rem;
+    }
+
+    header, main, footer {
+      width: min(var(--max), calc(100% - 2rem));
+      margin-inline: auto;
+    }
+
+    header { padding: 4rem 0 2rem; }
+
+    .eyebrow {
+      margin: 0 0 .6rem;
+      color: var(--green);
+      font-size: .8rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4.2rem);
+      line-height: 1.05;
+      letter-spacing: -.035em;
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      font-size: clamp(1.45rem, 3vw, 2.2rem);
+      line-height: 1.2;
+    }
+
+    h3 { margin: 1.6rem 0 .6rem; }
+    p { margin: .6rem 0 1rem; }
+
+    .lede {
+      max-width: 820px;
+      margin-top: 1.4rem;
+      color: var(--muted);
+      font-size: 1.15rem;
+    }
+
+    .meta, .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      margin-top: 1.5rem;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: .35rem .7rem;
+      color: var(--muted);
+      background: rgba(17, 26, 44, .72);
+      font-size: .86rem;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      border-block: 1px solid var(--line);
+      background: rgba(11, 18, 32, .9);
+      backdrop-filter: blur(12px);
+    }
+
+    nav > div {
+      width: min(var(--max), calc(100% - 2rem));
+      margin-inline: auto;
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      padding: .75rem 0;
+    }
+
+    nav a {
+      flex: none;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .88rem;
+    }
+
+    nav a:hover { color: var(--text); }
+
+    section {
+      margin: 1.1rem 0;
+      padding: clamp(1.25rem, 3vw, 2.2rem);
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: linear-gradient(145deg, rgba(24, 36, 58, .94), rgba(17, 26, 44, .94));
+      box-shadow: 0 18px 60px rgba(0, 0, 0, .18);
+    }
+
+    .callout {
+      border-left: 4px solid var(--blue);
+      padding: 1rem 1.1rem;
+      background: rgba(109, 181, 255, .08);
+      border-radius: .3rem .7rem .7rem .3rem;
+    }
+
+    .callout.warning {
+      border-left-color: var(--amber);
+      background: rgba(242, 198, 109, .08);
+    }
+
+    .callout.danger {
+      border-left-color: var(--red);
+      background: rgba(255, 141, 141, .08);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: .8rem;
+    }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: .75rem;
+      padding: 1rem;
+      background: rgba(8, 15, 28, .36);
+    }
+
+    .card h3 { margin-top: 0; }
+    .card .value { color: var(--green); font-size: 1.35rem; font-weight: 800; }
+    .card p:last-child { margin-bottom: 0; }
+
+    .badge {
+      display: inline-block;
+      margin-right: .35rem;
+      border-radius: .35rem;
+      padding: .14rem .42rem;
+      font-size: .76rem;
+      font-weight: 800;
+      letter-spacing: .03em;
+    }
+
+    .existing { color: #b8ddff; background: rgba(109, 181, 255, .18); }
+    .proposed { color: #d8ceff; background: rgba(182, 161, 255, .18); }
+    .decision { color: #ffe3a5; background: rgba(242, 198, 109, .18); }
+    .confirmed { color: #baf3d8; background: rgba(84, 212, 155, .18); }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .93rem;
+    }
+
+    th, td {
+      padding: .72rem .65rem;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th { color: var(--muted); font-weight: 700; }
+    tr:last-child td { border-bottom: 0; }
+
+    .formula {
+      margin: .8rem 0;
+      padding: .8rem 1rem;
+      overflow-x: auto;
+      border: 1px dashed var(--line);
+      border-radius: .6rem;
+      color: var(--code);
+      background: rgba(8, 15, 28, .55);
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+
+    .mermaid {
+      overflow-x: auto;
+      border-radius: .75rem;
+      padding: 1rem;
+      background: #f8fafc;
+      color: #172033;
+    }
+
+    figure.diagram {
+      margin: 1.4rem 0;
+      border: 1px solid var(--line);
+      border-radius: .85rem;
+      overflow: hidden;
+      background: rgba(8, 15, 28, .32);
+    }
+
+    figure.diagram .mermaid {
+      margin: 0;
+      border-radius: 0;
+    }
+
+    figcaption {
+      padding: .9rem 1rem 1rem;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: .9rem;
+    }
+
+    figcaption strong { color: var(--text); }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: .65rem;
+      margin: 1rem 0;
+    }
+
+    .timeline > div {
+      position: relative;
+      padding: .8rem;
+      border: 1px solid var(--line);
+      border-radius: .6rem;
+      background: rgba(8, 15, 28, .4);
+    }
+
+    .timeline > div:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -.62rem;
+      top: 50%;
+      z-index: 1;
+      color: var(--blue);
+      font-weight: 900;
+      transform: translateY(-50%);
+    }
+
+    .timeline strong { display: block; color: var(--green); }
+
+    ul, ol { padding-left: 1.25rem; }
+    li + li { margin-top: .35rem; }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: .65rem;
+      padding: .75rem 1rem;
+      background: rgba(8, 15, 28, .3);
+    }
+
+    details + details { margin-top: .65rem; }
+    summary { cursor: pointer; font-weight: 750; }
+
+    .status-good { color: var(--green); }
+    .status-watch { color: var(--amber); }
+    .status-bad { color: var(--red); }
+
+    footer {
+      padding: 2rem 0 4rem;
+      color: var(--muted);
+      font-size: .86rem;
+    }
+
+    @media (max-width: 760px) {
+      header { padding-top: 2.5rem; }
+      .timeline { grid-template-columns: 1fr; }
+      .timeline > div:not(:last-child)::after {
+        content: "↓";
+        top: auto;
+        right: 50%;
+        bottom: -.9rem;
+        transform: translateX(50%);
+      }
+    }
+
+    @media print {
+      :root { color-scheme: light; }
+      body { background: white; color: #172033; }
+      nav { display: none; }
+      section, .card { background: white; box-shadow: none; break-inside: avoid; }
+      .pill, code, .formula { color: #172033; background: #f1f5f9; }
+      a { color: #1d4ed8; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Algorithm discussion draft · v0.3</p>
+    <h1>Peek Click Transfer<br>個人每日訓練診斷演算法</h1>
+    <p class="lede">
+      本文件把 <code>peek_click_transfer_pilot_v1_2deg</code> 定位為個人縱向診斷工具：
+      不與其他選手排名、不產生 composite score，而是判斷今天相對於自己的近期穩定狀態，
+      並沿著動作鏈找出最早出現的問題。
+    </p>
+    <div class="meta">
+      <span class="pill">對象：單一選手</span>
+      <span class="pill">頻率：每日</span>
+      <span class="pill">固定條件：2° / 20 presentations / strict L-R</span>
+      <span class="pill">已確認：首發速度低於 accuracy threshold 才算急停成功</span>
+      <span class="pill">狀態：討論稿，尚未凍結</span>
+    </div>
+  </header>
+
+  <nav aria-label="文件章節">
+    <div>
+      <a href="#principles">設計原則</a>
+      <a href="#pipeline">演算法流程</a>
+      <a href="#metrics">指標契約</a>
+      <a href="#strategy">策略辨識</a>
+      <a href="#baseline">個人基準</a>
+      <a href="#diagnosis">診斷規則</a>
+      <a href="#output">每日輸出</a>
+      <a href="#risks">風險</a>
+      <a href="#decisions">待討論</a>
+    </div>
+  </nav>
+
+  <main>
+    <section id="principles">
+      <h2>1. 設計原則</h2>
+      <div class="callout">
+        <strong>核心目標：</strong>在不犧牲有效首發率的前提下，逐步縮短曝光到首發的時間；
+        若結果惡化，指出動作鏈中最早發生的異常環節。
+      </div>
+
+      <div class="grid" style="margin-top: 1rem">
+        <article class="card">
+          <h3>個人縱向，而非常模排名</h3>
+          <p>所有「變好／變差」都比較選手自己的 rolling baseline。不同選手之間不直接比較分數。</p>
+        </article>
+        <article class="card">
+          <h3>結果與原因分離</h3>
+          <p><code>validFirstShot</code> 與 <code>counterstrafeSuccess</code> 是結果；曝光、急停過程、開火與瞄準指標用來解釋原因。</p>
+        </article>
+        <article class="card">
+          <h3>不丟棄行為失敗</h3>
+          <p>早開火、未曝光、未 counter、timeout 都是訓練結果，留在 operational denominator；只有技術污染才排除。</p>
+        </article>
+        <article class="card">
+          <h3>不做單一總分</h3>
+          <p>相同成功率可能來自完全不同的問題。輸出最多一至兩項主要診斷與一個可執行提示。</p>
+        </article>
+      </div>
+
+      <h3>明確非目標</h3>
+      <ul>
+        <li>不進 Assessment history、排行榜或跨玩家 percentile。</li>
+        <li>不以固定的「職業級反應時間」門檻評價玩家。</li>
+        <li>不把 20 個 presentation 當成 20 個獨立受試者。</li>
+        <li>不讓補槍後擊殺掩蓋首發失誤。</li>
+      </ul>
+    </section>
+
+    <section id="pipeline">
+      <h2>2. 每日診斷演算法流程</h2>
+      <figure class="diagram">
+        <pre class="mermaid">
+flowchart TB
+    accTitle: 每日個人訓練診斷流程
+    accDescr: 從單次匯出資料開始，先檢查技術品質，再建立逐 trial 特徵、每日摘要、個人基準比較，最後輸出根因與訓練提示
+
+    export_data([📥 讀取當日 export]) --> technical_gate{🛡️ 技術品質合格?}
+    technical_gate -->|否| invalid_session[⚠️ 標記不可診斷]
+    technical_gate -->|是| trial_features[⚙️ 建立逐 trial 特徵]
+    trial_features --> daily_summary[📊 聚合每日摘要]
+    daily_summary --> baseline_ready{🔍 個人基準已建立?}
+    baseline_ready -->|否| collect_baseline[📝 累積基準 session]
+    baseline_ready -->|是| compare_baseline[📊 比較 rolling baseline]
+    compare_baseline --> find_earliest[🔍 找最早異常環節]
+    find_earliest --> trend_gate{🔄 單日或持續趨勢?}
+    trend_gate -->|單日| watch_result[⚠️ 觀察，不下定論]
+    trend_gate -->|持續| action_result[✅ 輸出主要診斷]
+    action_result --> training_cue([🎯 給一個訓練提示])
+
+    classDef process fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a5f
+    classDef decision fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#713f12
+    classDef success fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d
+    classDef warning fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#7f1d1d
+
+    class export_data,trial_features,daily_summary,compare_baseline,find_earliest process
+    class technical_gate,baseline_ready,trend_gate decision
+    class action_result,training_cue success
+    class invalid_session,collect_baseline,watch_result warning
+        </pre>
+        <figcaption>
+          <strong>圖 1｜每日診斷總流程。</strong>
+          每次 export 先通過技術品質閘門，再建立 presentation 級特徵與每日摘要；
+          個人基準不足時只累積資料，基準成立後才判斷偏離、根因與是否值得給出當日訓練提示。
+        </figcaption>
+      </figure>
+
+      <h3>動作鏈時間軸</h3>
+      <div class="timeline" aria-label="曝光、反向、停穩、首發與擊殺的時間順序">
+        <div><strong>Exposure</strong><code>tMeasurementOnset</code></div>
+        <div><strong>Reverse</strong><code>tCounter</code></div>
+        <div><strong>Accurate</strong><code>tAccuracyGate</code></div>
+        <div><strong>Commit</strong><code>tFirstShot</code></div>
+        <div><strong>Complete</strong><code>tHit</code></div>
+      </div>
+
+      <div class="formula">onsetToCounterMs = tCounter − tMeasurementOnset</div>
+      <div class="formula">timeToAccuracyGateMs = tAccuracyGate − tCounter</div>
+      <div class="formula">gateToFirstShotMs = tFirstShot − tAccuracyGate</div>
+      <div class="formula">onsetToFirstShotMs = tFirstShot − tMeasurementOnset</div>
+
+      <p>
+        這四段分別回答：看到後是否立即反向、多久首次進入 accuracy gate、進入 gate 後是否猶豫，以及整體完成首發花多久。
+        <code>tAccuracyGate</code> 只是過程錨點，不是急停成功本身；急停成功以<strong>首發當下</strong>的 residual speed 判定，
+        避免把「曾停穩、之後又加速開槍」誤算為成功。
+      </p>
+    </section>
+
+    <section id="metrics">
+      <h2>3. 指標與資料契約</h2>
+      <p>
+        <span class="badge existing">現有</span>代表目前程式已有的欄位或可直接取得的 frozen derivation；
+        <span class="badge proposed">提議</span>代表每日診斷需要新增或重新聚合；
+        <span class="badge confirmed">已確認</span>代表本輪已拍板的演算法語意；
+        <span class="badge decision">待決策</span>代表語意尚需共同拍板。
+      </p>
+
+      <div class="callout" style="margin-bottom: 1rem">
+        <strong>已確認的急停成功定義：</strong>
+        <code>counterstrafeSuccess = firstFire exists AND firstFire.residualSpeed &lt; CS2_PROFILE.accuracyThreshold</code>。
+        threshold 必須直接引用專案的 <code>CS2_PROFILE.accuracyThreshold</code>，不可在分析層複製第二個常數。
+        此結果只表示移動速度不再造成彈道失準；不保證滑鼠瞄準、recoil 或 spread 一定命中。
+      </div>
+
+      <h3>逐 presentation</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>欄位</th><th>狀態</th><th>定義</th><th>診斷用途</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>counterstrafeSuccess</code></td><td><span class="badge confirmed">已確認</span></td><td>首發存在，且 <code>firstFire.residualSpeed &lt; accuracyThreshold</code></td><td>判定首發是否不受移動速度失準影響</td></tr>
+            <tr><td><code>counterstrafeStatus</code></td><td><span class="badge proposed">提議</span></td><td><code>success</code>／<code>no_first_shot</code>／<code>moving_inaccuracy_risk</code></td><td>保留失敗原因，不用單一 false 混在一起</td></tr>
+            <tr><td><code>validFirstShot</code></td><td><span class="badge existing">現有</span></td><td>首發命中、未早於 onset、且 <code>counterstrafeSuccess</code></td><td>整合任務的主要 operational outcome</td></tr>
+            <tr><td><code>firstShotHit</code></td><td><span class="badge existing">現有</span></td><td>相容的第一發是否命中</td><td>把首發品質與補槍擊殺分開</td></tr>
+            <tr><td><code>onsetToFirstShotMs</code></td><td><span class="badge existing">現有</span></td><td>曝光 onset 到第一發</td><td>整體首發速度</td></tr>
+            <tr><td><code>onsetToHitMs</code></td><td><span class="badge existing">現有</span></td><td>曝光 onset 到擊殺；未擊殺保持缺失</td><td>完成時間，需連同 timeout 解讀</td></tr>
+            <tr><td><code>shotsToKill</code></td><td><span class="badge existing">現有</span></td><td>到擊殺為止的射擊數</td><td>補槍成本</td></tr>
+            <tr><td><code>onsetToCounterMs</code></td><td><span class="badge proposed">提議</span></td><td><code>tCounter − tMeasurementOnset</code></td><td>曝光後反向啟動速度</td></tr>
+            <tr><td><code>gateToFirstShotMs</code></td><td><span class="badge proposed">提議</span></td><td><code>tFirstShot − tAccuracyGate</code></td><td>停穩後的瞄準／確認時間</td></tr>
+            <tr><td><code>onsetToAimStartMs</code></td><td><span class="badge proposed">提議</span></td><td><code>tAimStart − tMeasurementOnset</code>；沿用 sustained movement detection</td><td>看到敵人後多久開始有效滑鼠輸入</td></tr>
+            <tr><td><code>aimMovementMs</code></td><td><span class="badge proposed">提議</span></td><td><code>tFirstOnTarget − tAimStart</code></td><td>主瞄準移動所需時間</td></tr>
+            <tr><td><code>onTargetToFirstShotMs</code></td><td><span class="badge proposed">提議</span></td><td><code>tFirstShot − tFirstOnTarget</code></td><td>首次到位後的確認／猶豫時間</td></tr>
+            <tr><td><code>mousePathDeg</code></td><td><span class="badge proposed">提議</span></td><td>onset→指定 shot 間，以 tick-integral <code>dYaw/dPitch</code> 累計角路徑</td><td>描述實際手部修正量與路徑效率</td></tr>
+            <tr><td><code>peakOmegaDegPerSec</code></td><td><span class="badge proposed">提議</span></td><td>onset→指定 shot 間的最大 tick-integral 角速度</td><td>描述主移動強度</td></tr>
+            <tr><td><code>overshootDeg</code>／<code>reacquireCount</code></td><td><span class="badge proposed">提議</span></td><td>首次 on-target 後離開的最大角誤差與重新進入次數</td><td>描述煞停、過衝與微調</td></tr>
+            <tr><td><code>firstShotErrorDeg</code></td><td><span class="badge proposed">提議</span></td><td>首發 tick 的準心到目標中心角誤差</td><td>把瞄準失誤與移動失誤分開</td></tr>
+            <tr><td><code>hitShotIndex</code></td><td><span class="badge proposed">提議</span></td><td>以 <code>fire.hit</code> 或 <code>fire.shotSeq ↔ hit.shotSeq</code> 找到 killing shot</td><td>區分首發命中與第 N 發補槍命中</td></tr>
+            <tr><td><code>hitShotOffsetDeg</code></td><td><span class="badge proposed">提議</span></td><td>killing shot 的中心角誤差，並保留 view/recoil/spread 欄位</td><td>描述真正命中彈的開火狀態</td></tr>
+            <tr><td><code>missToHitCorrectionMs/Deg</code></td><td><span class="badge proposed">提議</span></td><td>前一發 miss 到 killing shot 的時間與滑鼠角修正量</td><td>描述補槍修正效率</td></tr>
+            <tr><td><code>protocolCompliantValidFirstShot</code></td><td><span class="badge confirmed">已確認</span></td><td><code>validFirstShot</code> 且存在正確 counter event</td><td>與 functional 結果並存，區分結果成功與指定技術成功</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>四組量測的計算規則</h3>
+      <div class="grid">
+        <article class="card">
+          <h3>1. 看見 → 反向鍵</h3>
+          <div class="formula">onsetToCounterMs = tCounter − tMeasurementOnsetMs</div>
+          <p>
+            「看見」固定使用 50% visibility onset，不使用 target spawn 的 visible event。
+            負值保留為 <code>anticipated</code>，表示玩家在量測 onset 前已反向；缺少 counter 則保持 missing 並加 flag。
+          </p>
+        </article>
+        <article class="card">
+          <h3>2. 急停成功</h3>
+          <div class="formula">success = firstFire != null &amp;&amp; firstFire.residualSpeed &lt; accuracyThreshold</div>
+          <p>
+            第一個進入 gate 的 tick 用來計算急停速度、距離與過度反向，但最終成功只看首發當下速度。
+            <code>residualSpeed &gt;= threshold</code> 為 movement-inaccuracy risk；無首發標成 <code>no_first_shot</code>。
+          </p>
+        </article>
+        <article class="card">
+          <h3>3. 曝光後瞄準</h3>
+          <div class="formula">reaction + main movement + confirmation</div>
+          <p>
+            依序計算 onset→aim-start、aim-start→first-on-target、first-on-target→first-shot；
+            同時輸出 dYaw/dPitch 路徑、角速度、epsilon curve、overshoot 與 reacquisition。
+          </p>
+        </article>
+        <article class="card">
+          <h3>4. 首發與 killing shot</h3>
+          <div class="formula">fire.shotSeq ↔ hit.shotSeq</div>
+          <p>
+            首發命中由逐 trial 的第一發直接聚合。killing shot 分析命中前的滑鼠路徑、角誤差、速度與前一發 miss 的修正；
+            未擊殺 trial 保持 missing，另報分析 coverage。
+          </p>
+        </article>
+      </div>
+
+      <h3>急停成功率</h3>
+      <div class="formula">counterstrafeSuccessRate = counterstrafeSuccessCount / presentationCount</div>
+      <div class="formula">counterstrafeSuccessWhenFiredRate = counterstrafeSuccessCount / firstShotCount</div>
+      <p>
+        第一個是每日 operational 主指標：no-shot 仍留在 20 次分母中。第二個只回答「有開首發時，有多少次已低於速度門檻」。
+        兩者都儲存為 0–1，只有 UI 格式化為百分比。<code>no_counter</code> 是技術遵從 flag，
+        但不覆寫以首發 residual speed 為準的急停成功判定。
+      </p>
+
+      <h3>瞄準行為的兩條訊號</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>訊號</th><th>代表什麼</th><th>使用方式</th></tr></thead>
+          <tbody>
+            <tr><td><code>dYaw/dPitch</code></td><td>玩家實際滑鼠輸入造成的 tick-integral 視角變化</td><td>計算 mouse path、angular velocity、修正方向與微調次數</td></tr>
+            <tr><td><code>epsilonDeg/onTarget</code></td><td>包含玩家側移視差後，準心與目標的最終幾何關係</td><td>計算 acquisition、overshoot、reacquisition 與 shot-time error</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        兩者不可互相取代：玩家側移時，即使滑鼠不動，目標在畫面上的角位置仍會改變。
+        因此手部輸入品質看 <code>dYaw/dPitch</code>，任務結果看 <code>epsilonDeg/onTarget</code>。
+      </p>
+
+      <h3>首發與 killing-shot 分母</h3>
+      <div class="formula">operationalFirstShotHitRate = firstShotHitCount / presentationCount</div>
+      <div class="formula">conditionalFirstShotAccuracy = firstShotHitCount / firstShotCount</div>
+      <div class="formula">killingShotAnalysisCoverage = killedPresentationCount / presentationCount</div>
+      <p>
+        killing-shot 指標是成功 trial 的條件式描述，不能單獨拿來評價整體瞄準能力；
+        必須搭配 coverage、timeout 與所有 miss 的首發行為，避免 survivorship bias。
+      </p>
+
+      <h3>每日 aggregate</h3>
+      <div class="grid">
+        <article class="card">
+          <h3>整合主結果</h3>
+          <div class="value">x / 20</div>
+          <p><code>validFirstShotCount / presentationCount</code>。UI 同時顯示次數與百分比。</p>
+        </article>
+        <article class="card">
+          <h3>急停成功</h3>
+          <div class="value">x / 20</div>
+          <p><code>counterstrafeSuccessCount / presentationCount</code>；另報有首發時的 conditional rate。</p>
+        </article>
+        <article class="card">
+          <h3>瞄準時間與路徑</h3>
+          <div class="value">Median + P90</div>
+          <p>onset→counter、aim start、first-on-target、first shot，以及 mouse path／overshoot。</p>
+        </article>
+        <article class="card">
+          <h3>射擊結果</h3>
+          <div class="value">First + Killing</div>
+          <p>真正首發命中率、kill-before-timeout rate、hit-shot index 與補槍修正行為。</p>
+        </article>
+      </div>
+
+      <h3>分母規則</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>情況</th><th>是否留在主結果分母</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td>首發 miss、首發速度高於 threshold、沒有 counter、no-shot、timeout</td><td class="status-good">保留</td><td>這些是選手行為或任務結果；急停成功率與 valid-first-shot rate 的主分母皆為全部 presentations。</td></tr>
+            <tr><td>沒有達到 measurement onset</td><td class="status-good">保留</td><td>代表沒有完成有效曝光；另以 <code>noMeasurementOnsetRate</code> 呈現。</td></tr>
+            <tr><td>session-level <code>suspect</code>、recorder overflow、必要 tick 欄位損壞</td><td class="status-bad">整個 session 不進診斷</td><td>屬技術污染，無法可靠歸因給選手。</td></tr>
+            <tr><td><code>player_corridor_exceeded</code></td><td class="status-watch">待決策</td><td>可能是技術違規，也可能正是移動控制問題；建議同時報 operational 與 protocol-clean 結果。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="strategy">
+      <h2>4. 瞄準—急停策略辨識</h2>
+      <div class="callout">
+        <strong>分類單位是 presentation，不是選手。</strong>
+        每次 peek 先依事件順序分類，之後才以比例描述選手近期偏好。不要因為某天多數 trial 屬於一類，
+        就永久把選手標成該策略。
+      </div>
+
+      <h3>分類錨點</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>符號</th><th>欄位</th><th>定義</th></tr></thead>
+          <tbody>
+            <tr><td><code>O</code></td><td><code>tMeasurementOnset</code></td><td>目標第一次達到 50% visibility 的 tick；「看到敵人」的量測錨點</td></tr>
+            <tr><td><code>M</code></td><td><code>tAimStart</code></td><td>沿用 sustained mouse-movement detection 的有效瞄準開始時間</td></tr>
+            <tr><td><code>A</code></td><td><code>tStableOnTarget</code></td><td>第一個連續至少 2 ticks <code>onTarget=true</code> 的區段起點</td></tr>
+            <tr><td><code>C</code></td><td><code>tCounter</code></td><td>反向鍵 counter event 的時間</td></tr>
+            <tr><td><code>G</code></td><td><code>tAccuracyGate</code></td><td>counter 後第一次 <code>|vx| &lt; accuracyThreshold</code> 的 tick</td></tr>
+            <tr><td><code>F</code></td><td><code>tFirstShot</code></td><td>該 presentation 的相容首發</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        <code>A</code> 不直接使用第一個單獨的 on-target tick，因為準心可能只是掃過目標。
+        初版用連續 2 ticks（128 Hz 下約 15.6 ms）定義 stable acquisition；正式凍結前應比較 2／3 ticks 的敏感度。
+      </p>
+
+      <figure class="diagram">
+        <pre class="mermaid">
+flowchart TB
+    accTitle: 三種瞄準急停事件順序
+    accDescr: 比較先瞄準再急停、先急停再瞄準，以及瞄準和急停重疊三種 presentation 級事件順序
+
+    subgraph aim_first ["🎯 策略一：先瞄準再急停"]
+        af_onset([🔍 目標達 onset]) --> af_aim[⚙️ 開始滑鼠瞄準]
+        af_aim --> af_acquire[🎯 穩定進入目標]
+        af_acquire --> af_counter[⚡ 按下反向鍵]
+        af_counter --> af_gate[✅ 速度低於門檻]
+        af_gate --> af_fire([⚡ 首發])
+    end
+
+    subgraph counter_first ["⚡ 策略二：先急停再瞄準"]
+        cf_onset([🔍 目標達 onset]) --> cf_counter[⚡ 按下反向鍵]
+        cf_counter --> cf_gate[✅ 速度低於門檻]
+        cf_counter --> cf_aim[⚙️ 開始滑鼠瞄準]
+        cf_aim --> cf_acquire[🎯 穩定進入目標]
+        cf_gate --> cf_ready{{瞄準與速度完成}}
+        cf_acquire --> cf_ready
+        cf_ready --> cf_fire([⚡ 首發])
+    end
+
+    subgraph overlap ["🔄 第三類：瞄準與急停重疊"]
+        ov_onset([🔍 目標達 onset]) --> ov_aim[⚙️ 開始滑鼠瞄準]
+        ov_aim --> ov_counter[⚡ 按下反向鍵]
+        ov_counter --> ov_acquire[🎯 反向後完成瞄準]
+        ov_counter --> ov_gate[✅ 速度低於門檻]
+        ov_acquire --> ov_ready{{瞄準與速度完成}}
+        ov_gate --> ov_ready
+        ov_ready --> ov_fire([⚡ 首發])
+    end
+
+    classDef exposure fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a5f
+    classDef action fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#3b0764
+    classDef success fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d
+
+    class af_onset,cf_onset,ov_onset exposure
+    class af_aim,af_counter,cf_counter,cf_aim,ov_aim,ov_counter action
+    class af_acquire,af_gate,af_fire,cf_gate,cf_acquire,cf_ready,cf_fire,ov_acquire,ov_gate,ov_ready,ov_fire success
+        </pre>
+        <figcaption>
+          <strong>圖 2｜三種策略的事件順序。</strong>
+          策略一要求準心穩定到位後才按反向鍵；策略二要求反向鍵早於有效滑鼠瞄準開始，急停與瞄準可平行完成；
+          第三類表示滑鼠已開始移動，但按反向鍵時尚未完成瞄準。首發只有在準心與速度條件都準備好後才有機會成為有效首發。
+        </figcaption>
+      </figure>
+
+      <h3>逐 presentation 分類規則</h3>
+      <div class="formula">toleranceMs = 1000 / simHz；128 Hz 時為 7.8125 ms</div>
+      <p>
+        tolerance 用來吸收 onset／acquisition 的 tick 量化誤差。落在容差帶內時不強迫判斷先後；
+        正式凍結前應以 0、1、2 ticks 重跑，確認策略比例不會因門檻微調而翻轉。
+      </p>
+
+      <figure class="diagram">
+        <pre class="mermaid">
+flowchart TB
+    accTitle: Presentation 策略分類決策
+    accDescr: 先檢查必要事件，再用瞄準開始、穩定到位與反向鍵的相對順序，把每次 presentation 分為兩種純策略、重疊或不確定
+
+    trial([📥 一次 presentation]) --> anchors{🔍 O M A C F 都存在?}
+    anchors -->|否| unclassifiable([⚠️ Unclassifiable])
+    anchors -->|是| compare_order[[⚙️ 比較 M A C 與 tolerance]]
+    compare_order -->|A 早於 C| aim_then_counter([🎯 Aim then counter])
+    compare_order -->|C 早於 M| counter_then_aim([⚡ Counter then aim])
+    compare_order -->|M 早於 C 早於 A| overlapping([🔄 Overlapping])
+    compare_order -->|落在容差帶| uncertain([⚠️ Coupled or uncertain])
+
+    classDef input fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a5f
+    classDef process fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#3b0764
+    classDef outcome fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d
+    classDef warning fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#713f12
+
+    class trial input
+    class anchors,compare_order process
+    class aim_then_counter,counter_then_aim,overlapping outcome
+    class unclassifiable,uncertain warning
+        </pre>
+        <figcaption>
+          <strong>圖 3｜策略分類決策樹。</strong>
+          分類只使用有完整 O、M、A、C、F 錨點的 trial。<code>A &lt; C − tolerance</code> 為先瞄準再急停；
+          <code>C &lt; M − tolerance</code> 為先急停再瞄準；<code>M &lt; C − tolerance</code> 且
+          <code>C &lt; A − tolerance</code> 為重疊策略。其餘保留為 coupled／uncertain，不以猜測補類別。
+        </figcaption>
+      </figure>
+
+      <h3>輔助驗證特徵</h3>
+      <div class="formula">strategyOrderMs = tCounter − tStableOnTarget</div>
+      <div class="formula">aimPathBeforeCounterRatio = mousePath(O → C) / mousePath(O → F)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>特徵</th><th>先瞄準再急停</th><th>先急停再瞄準</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td><code>strategyOrderMs</code></td><td>通常為正</td><td>通常為負</td><td>主要連續策略軸，不只保存離散類別</td></tr>
+            <tr><td><code>onTargetAtCounter</code></td><td>通常 true</td><td>通常 false</td><td>驗證 counter 當下是否已完成瞄準</td></tr>
+            <tr><td><code>epsilonAtCounterDeg</code></td><td>通常較小</td><td>通常較大</td><td>量化 counter 當下離目標多遠</td></tr>
+            <tr><td><code>aimPathBeforeCounterRatio</code></td><td>通常較高</td><td>通常較低</td><td>當 stable acquisition 缺失時仍提供連續證據</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>每日策略輸出</h3>
+      <p>每日先顯示策略分布，再分策略比較結果；不要只輸出「你是策略一」之類的永久標籤。</p>
+      <div class="grid">
+        <article class="card"><h3>Aim then counter</h3><div class="value">8 / 20</div><p>準心穩定到位後才反向。</p></article>
+        <article class="card"><h3>Counter then aim</h3><div class="value">6 / 20</div><p>反向鍵早於有效滑鼠瞄準。</p></article>
+        <article class="card"><h3>Overlapping</h3><div class="value">4 / 20</div><p>瞄準先開始，反向後才完成。</p></article>
+        <article class="card"><h3>Unclassified</h3><div class="value">2 / 20</div><p>錨點缺失或順序落在容差帶。</p></article>
+      </div>
+
+      <div class="table-wrap" style="margin-top: 1rem">
+        <table>
+          <thead><tr><th>每種策略分別比較</th><th>目的</th></tr></thead>
+          <tbody>
+            <tr><td>急停成功率、valid-first-shot rate、真正首發命中率</td><td>比較結果品質</td></tr>
+            <tr><td>onset→first-shot、counter→gate、gate→shot median</td><td>比較時間成本落在哪一段</td></tr>
+            <tr><td>mouse path、peak omega、overshoot、reacquire count</td><td>比較瞄準動作效率</td></tr>
+            <tr><td>L/R、pre-aim error、trial index</td><td>檢查策略差異是否其實來自側向、起始難度或疲勞</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warning" style="margin-top: 1rem">
+        <strong>解讀限制：</strong>自然發生的策略與命中結果只能視為關聯。玩家可能在較難、弱側或 pre-aim 較差的 trial
+        改用另一策略。若要判斷策略本身是否造成表現差異，應另做 instructed A/B block，並跨日交換 AB／BA 順序。
+      </div>
+    </section>
+
+    <section id="baseline">
+      <h2>5. 個人 rolling baseline</h2>
+      <div class="callout warning">
+        以下參數是第一版提案，不是已驗證門檻：至少 7 個合格 session 才啟用診斷，之後使用最近 14 個合格 session 作基準。
+      </div>
+
+      <h3>基準納入條件</h3>
+      <ul>
+        <li>同一 drill id：<code>peek_click_transfer_pilot_v1_2deg</code>。</li>
+        <li>相同 sensitivity model、武器／movement model、FOV 與關鍵場景版本。</li>
+        <li>無 <code>suspect</code>、overflow 或資料契約錯誤。</li>
+        <li>session 未被手動標為熱身、測試設備或中途干擾。</li>
+      </ul>
+
+      <h3>比較方法</h3>
+      <div class="grid">
+        <article class="card">
+          <h3>比例指標</h3>
+          <p>使用「成功次數／嘗試次數」與 baseline 的 Beta posterior 比較，而非只比較百分點。</p>
+          <div class="formula">p_today ~ Beta(1 + x_today, 1 + n_today − x_today)</div>
+          <div class="formula">p_base ~ Beta(1 + Σx_base, 1 + Σn_base − Σx_base)</div>
+        </article>
+        <article class="card">
+          <h3>時間與距離</h3>
+          <p>每日先聚合為 session median，再與 baseline session medians 比較，避免把同一天的 20 trials 當成 20 個獨立日。</p>
+          <div class="formula">robustZ = 0.6745 × (today − baselineMedian) / baselineMAD</div>
+        </article>
+      </div>
+
+      <h3>狀態建議</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>狀態</th><th>第一版規則</th><th>呈現方式</th></tr></thead>
+          <tbody>
+            <tr><td class="status-good">穩定</td><td>未達 practical change，或 posterior／robust deviation 證據不足</td><td>「落在近期正常波動」</td></tr>
+            <tr><td class="status-watch">觀察</td><td>單日出現具實務大小的偏離，但尚未持續</td><td>指出變化，不給強制處方</td></tr>
+            <tr><td class="status-bad">需要介入</td><td>大型單日偏離，或最近 3 天至少 2 天同方向異常</td><td>輸出一項主要診斷與一項訓練提示</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        <strong>Practical change</strong> 必須先由真人資料校準；初版不應硬寫成「10 ms 一定有意義」或「少 1 次命中就是退步」。
+        在資料不足前，只顯示原始值與趨勢，不產生紅燈。
+      </p>
+    </section>
+
+    <section id="diagnosis">
+      <h2>6. 根因診斷規則</h2>
+      <p>
+        診斷按照因果時間順序評估，優先回報最早的異常環節。後段結果可能只是前段失敗的結果，
+        例如 gate 前開火已足以解釋首發命中下降時，不再把「瞄準失常」列為第一診斷。
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>優先序</th><th>判斷訊號</th><th>診斷標籤</th><th>教練提示範例</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>no_measurement_onset</code> 或 timeout-before-onset 增加</td><td>曝光完成度下降</td><td>先完成乾淨曝光，不急著找首發速度。</td></tr>
+            <tr><td>2</td><td>onset→counter 變慢，或 <code>no_counter</code> 增加</td><td>反向啟動遲疑</td><td>看到目標即反向；本組暫不追求快槍。</td></tr>
+            <tr><td>3</td><td>counter→gate、stop distance 或 over-reversal 變差</td><td>急停過程效率下降</td><td>縮短同向鍵拖延，避免反向壓過頭。</td></tr>
+            <tr><td>4</td><td><code>counterstrafeSuccessRate</code> 下降，且 onset→shot 同時變快</td><td>用移動準確率交換速度</td><td>把第一發延後到 residual speed 低於 accuracy threshold。</td></tr>
+            <tr><td>5</td><td>gate 後首發仍 miss，first-shot error 增加</td><td>首發瞄準下降</td><td>維持停穩節奏，調整出掩體預瞄落點。</td></tr>
+            <tr><td>6</td><td>gate→shot 變慢，但命中率不變</td><td>停穩後過度確認</td><td>小幅提前 commit，確認準確率能否維持。</td></tr>
+            <tr><td>7</td><td>上述問題集中於單側且跨日持續</td><td>左右技術不對稱</td><td>弱側另做技術組；正式診斷組仍維持 L/R 平衡。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>診斷排序</h3>
+      <ol>
+        <li>先排除技術污染，否則不做技能歸因。</li>
+        <li>找出相對 baseline 有實務大小且有趨勢支持的異常指標。</li>
+        <li>依上表時間順序選出最早的異常環節。</li>
+        <li>最多顯示兩個 finding；第一個必須有直接 evidence。</li>
+        <li>每個 finding 只配一個當天可以執行的訓練提示。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>速度—準確率保護：</strong>若 onset→shot 變快，但 valid-first-shot posterior 同時下降，
+        不判定為速度進步；標記為「速度交換」。只有成功率穩定時，時間縮短才算有效改善。
+      </div>
+    </section>
+
+    <section id="output">
+      <h2>7. 每日輸出草案</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>有效首發</h3>
+          <div class="value">14 / 20 · 70%</div>
+          <p>近期基準 16/20。單日偏低，狀態：觀察。</p>
+        </article>
+        <article class="card">
+          <h3>曝光 → 首發</h3>
+          <div class="value">284 ms</div>
+          <p>median，較基準快 24 ms；P90 361 ms，n=19。</p>
+        </article>
+        <article class="card">
+          <h3>急停成功</h3>
+          <div class="value">15 / 20 · 75%</div>
+          <p>首發 residual speed 低於 threshold；近期基準 18/20。</p>
+        </article>
+        <article class="card">
+          <h3>左右差</h3>
+          <div class="value">L 8/10 · R 6/10</div>
+          <p>只標為線索；需跨日持續才診斷弱側。</p>
+        </article>
+      </div>
+
+      <div class="callout warning" style="margin-top: 1rem">
+        <strong>今日判讀：</strong>首發時間縮短，但有效首發下降主要由急停成功從 18/20 降到 15/20 造成。
+        目前較像「用準確率交換速度」，不是有效速度進步。
+        <br><strong>下一組提示：</strong>只專注讓首發 residual speed 低於 accuracy threshold，不刻意追求更快 onset→shot。
+      </div>
+
+      <h3>Machine-readable output sketch</h3>
+      <pre class="formula" aria-label="每日診斷輸出 JSON 範例">{
+  "algorithmVersion": "peek-transfer-daily-v0.3",
+  "sessionStatus": "diagnosable",
+  "baselineStatus": "ready",
+  "headline": {
+    "validFirstShots": 14,
+    "presentations": 20,
+    "rate": 0.70,
+    "baselineRate": 0.80,
+    "counterstrafeSuccesses": 15,
+    "counterstrafeSuccessRate": 0.75,
+    "counterstrafeSuccessWhenFiredRate": 0.79
+  },
+  "strategy": {
+    "toleranceMs": 7.8125,
+    "aimThenCounter": 8,
+    "counterThenAim": 6,
+    "overlapping": 4,
+    "unclassified": 2
+  },
+  "state": "watch",
+  "findings": [
+    {
+      "code": "speed_accuracy_tradeoff",
+      "evidence": ["onset_to_first_shot_faster", "counterstrafe_success_rate_decreased"],
+      "trainingCue": "首發 residual speed 低於 accuracy threshold 後再開槍"
+    }
+  ]
+}</pre>
+    </section>
+
+    <section id="risks">
+      <h2>8. 現有實作風險與必要修正</h2>
+
+      <div class="callout danger">
+        <strong>首發命中率語意不一致：</strong>transfer aggregate 目前沿用 counter-strafe 的
+        <code>firstShotHitRate</code>，但該值以 <code>peek.outcome === 'hit'</code> 聚合。
+        在允許補槍的 drill 中，這其實可能是「最終擊殺率」。每日診斷必須改由逐 presentation
+        的 <code>firstShotHit</code> 重新聚合，並另設 <code>killBeforeTimeoutRate</code>。
+      </div>
+
+      <div class="table-wrap" style="margin-top: 1rem">
+        <table>
+          <thead><tr><th>風險</th><th>影響</th><th>提議處理</th></tr></thead>
+          <tbody>
+            <tr><td><code>validFirstShot</code> 不要求存在 counter event</td><td>功能成功與技術遵從混在一起</td><td>依本輪決定同時保留 functional 與 protocol-compliant 結果；首頁以 functional 為主，技術遵從作 evidence。</td></tr>
+            <tr><td>rate 有 0–1 與 0–100 兩種慣例</td><td>UI 格式化可能造成 100 倍誤讀</td><td>資料契約一律存 0–1，UI 才格式化百分比，並在欄位文件寫明。</td></tr>
+            <tr><td>spawn-anchored 3000 ms timeout</td><td>慢曝光者的 post-onset 可用時間較少</td><td>同時報 no-onset、onset→hit 與 timeout；不可只分析成功 trial。</td></tr>
+            <tr><td>嚴格 L/R 可預測</td><td>量到的是預期方向下的 execution，不是 choice reaction</td><td>維持現有 drill 定位；報表文字不可稱為一般視覺反應速度。</td></tr>
+            <tr><td>單日每側只有約 10 次</td><td>L/R 差異波動很大</td><td>單日只顯示，跨日趨勢才診斷。</td></tr>
+            <tr><td>目前沒有 coach-facing transfer section</td><td>計算存在但尚未形成每日使用閉環</td><td>演算法拍板後再接 ResultScreen／history，避免 UI 先凍結未定義語意。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="decisions">
+      <h2>9. 已確認與下一輪待拍板</h2>
+      <details open>
+        <summary>已確認 — 急停成功的唯一結果判準</summary>
+        <p>
+          首發存在且 <code>firstFire.residualSpeed &lt; CS2_PROFILE.accuracyThreshold</code> 才是急停成功。
+          曾經進入 gate、zero crossing、stop distance 與 over-reversal 都是過程證據，不可取代首發當下的成功判準。
+        </p>
+      </details>
+      <details>
+        <summary>已確認 — functional 與 protocol-compliant 結果並存</summary>
+        <p>
+          <code>validFirstShot</code> 以實際結果為主；另保留
+          <code>protocolCompliantValidFirstShot</code> 檢查是否觀測到正確 counter。前者放首頁，後者用於診斷 evidence。
+        </p>
+      </details>
+      <details>
+        <summary>Q1 — 個人基準窗口用 7/14 是否合適？</summary>
+        <p>提案為至少 7 個合格日後啟用，使用最近 14 個合格日；也可改為 10/20，以較慢但更穩定的方式更新。</p>
+      </details>
+      <details>
+        <summary>Q2 — corridor exceeded 是失敗還是排除？</summary>
+        <p>建議 operational rate 中算失敗，但另報 protocol-clean rate，避免刪掉真實移動控制問題。</p>
+      </details>
+      <details>
+        <summary>Q3 — 每日只給一項還是最多兩項訓練提示？</summary>
+        <p>我的偏好是首頁只給一項；第二項放在展開的 evidence 區，避免同一天同時修改太多動作。</p>
+      </details>
+      <details>
+        <summary>Q4 — 是否加入主觀狀態資料？</summary>
+        <p>可選擇記錄睡眠、疲勞、手感或疼痛，但應只作 context，不用來覆寫客觀量測。</p>
+      </details>
+    </section>
+
+    <section id="references">
+      <h2>10. 專案內依據</h2>
+      <ul>
+        <li><a href="../../operational/analysis-peek-click-transfer.md">Peek-click transfer pilot contract</a></li>
+        <li><a href="../../../src/metrics/peekClickTransferMetrics.ts">Transfer metrics implementation</a></li>
+        <li><a href="../../../src/metrics/counterstrafeMetrics.ts">Counter-strafe metrics implementation</a></li>
+        <li><a href="../../../src/drill/peek_click_transfer_pilot_v1.ts">2° pilot drill configuration</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      討論稿 v0.3。此文件描述提案中的每日診斷演算法，不代表已凍結的 assessment contract。
+      Mermaid 圖若無法載入外部模組，原始流程文字仍會保留顯示。
+    </p>
+  </footer>
+
+  <script type="module">
+    try {
+      const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+      mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'strict' });
+    } catch (error) {
+      console.warn('Mermaid module unavailable; leaving the readable source in place.', error);
+    }
+  </script>
+</body>
+</html>
