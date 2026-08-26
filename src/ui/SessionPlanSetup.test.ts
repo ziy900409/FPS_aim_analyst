@@ -142,4 +142,16 @@ describe('createSessionPlanSetup', () => {
       true,
     );
   });
+
+  it.each(['0', '3600'])('accepts an inclusive rest boundary: %s', (value) => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const onSubmit = vi.fn();
+    createSessionPlanSetup({ families: TEST_FAMILY_IDS, onSubmit });
+    document.created.find((element) => element.name === 'sessionPlanRestSeconds')!.value = value;
+
+    document.created.find((element) => element.tag === 'form')!.dispatch('submit');
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ restSeconds: Number(value) }));
+  });
 });

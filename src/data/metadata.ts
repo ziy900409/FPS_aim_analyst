@@ -7,6 +7,7 @@ import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
 import type { TargetHitboxConfig } from '../drill/DrillConfig.ts';
 import { SIM_TO_WORLD } from '../loop/constants.ts';
 import { findSessionPlanPreset } from '../session/sessionPlanPresets.ts';
+import { TEST_FAMILY_IDS } from '../session/sessionSchedule.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
@@ -91,8 +92,12 @@ export interface Meta {
   sensitivity: number;
   /** Self-reported mouse DPI; browsers cannot read this external hardware setting. */
   dpi?: number;
-  /** Named Session Plan preset used for this export; absent outside session-plan runs. */
+  /** Stage7 named-preset flow; stage8 manual plans use the additive audit fields below. */
   sessionPlanPreset?: string;
+  /** Actual global rest duration used by a stage8 manual Session Plan. */
+  sessionPlanRestSeconds?: number;
+  /** Operator-selected execution order used by a stage8 manual Session Plan. */
+  sessionPlanFamilyOrder?: readonly string[];
   sensitivityModel: 'cs2-0.022deg';
   movementModel: 'cs2-source';
   /**
@@ -164,6 +169,8 @@ export interface CollectMetaArgs {
   sensitivity: number;
   dpi?: number;
   sessionPlanPreset?: string;
+  sessionPlanRestSeconds?: number;
+  sessionPlanFamilyOrder?: readonly string[];
   fovDeg?: number;
   crossOriginIsolated: boolean;
   startedAt?: string | Date;
@@ -216,6 +223,14 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const dpi = args.dpi === undefined ? undefined : requirePositiveFiniteNumber(args.dpi, 'dpi');
   const sessionPlanPreset =
     args.sessionPlanPreset === undefined ? undefined : requireSessionPlanPreset(args.sessionPlanPreset);
+  const sessionPlanRestSeconds =
+    args.sessionPlanRestSeconds === undefined
+      ? undefined
+      : requireNonNegativeFiniteNumber(args.sessionPlanRestSeconds, 'sessionPlanRestSeconds');
+  const sessionPlanFamilyOrder =
+    args.sessionPlanFamilyOrder === undefined
+      ? undefined
+      : requireSessionPlanFamilyOrder(args.sessionPlanFamilyOrder);
   const fovDeg = args.fovDeg === undefined ? undefined : requirePositiveFiniteNumber(args.fovDeg, 'fovDeg');
   const crossOriginIsolated = requireBoolean(args.crossOriginIsolated, 'crossOriginIsolated');
   const startedAt = normalizeStartedAt(args.startedAt);
@@ -255,6 +270,8 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     sensitivity,
     ...(dpi !== undefined ? { dpi } : {}),
     ...(sessionPlanPreset !== undefined ? { sessionPlanPreset } : {}),
+    ...(sessionPlanRestSeconds !== undefined ? { sessionPlanRestSeconds } : {}),
+    ...(sessionPlanFamilyOrder !== undefined ? { sessionPlanFamilyOrder } : {}),
     sensitivityModel: 'cs2-0.022deg',
     movementModel: DEFAULT_MOVEMENT_MODEL,
     ...(fovDeg !== undefined ? { fovDeg } : {}),
@@ -286,6 +303,16 @@ function requireSessionPlanPreset(value: unknown): string {
   const preset = requireTrimmedNonEmptyString(value, 'sessionPlanPreset');
   if (findSessionPlanPreset(preset) === undefined) throw new Error('sessionPlanPreset must name a configured preset');
   return preset;
+}
+
+function requireSessionPlanFamilyOrder(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) throw new Error('sessionPlanFamilyOrder must be an array');
+  return value.map((family, index) => {
+    if (typeof family !== 'string' || !(TEST_FAMILY_IDS as readonly string[]).includes(family)) {
+      throw new Error(`sessionPlanFamilyOrder[${index}] must be a configured test family`);
+    }
+    return family;
+  });
 }
 
 function requireMouseIntegrationMeta(value: unknown): MouseIntegrationMeta {

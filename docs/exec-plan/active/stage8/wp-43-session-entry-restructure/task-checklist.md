@@ -7,7 +7,7 @@
 |------|------|------|------|------|
 | ✅ | **T0** entry gate(覆核 §0 讀碼發現;拍板 §2①②③④⑤ 五個決策;正式提出 §0-5/§7 缺口供使用者拍板;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Med |
 | ✅ | **T1** 啟動畫面兩分岔 + `ResearcherMenu.ts` + `Controls.ts` 顯隱條件 | [T1-launch-researcher-menu.md](T1-launch-researcher-menu.md) | T0 | Med |
-| ⬜ | **T2** `SessionPlanSetup.ts` 排序清單 + 休息秒數 input;`SessionRunner.ts`/`metadata.ts` 型別與邏輯變更 | [T2-session-plan-reorder-rest.md](T2-session-plan-reorder-rest.md) | T0(可與 T1 並行) | Med–High |
+| ✅ | **T2** `SessionPlanSetup.ts` 排序清單 + 休息秒數 input;`SessionRunner.ts`/`metadata.ts` 型別與邏輯變更 | [T2-session-plan-reorder-rest.md](T2-session-plan-reorder-rest.md) | T0(可與 T1 並行) | Med–High |
 | ⬜ | **T-exit** 驗收 FR-H1~H4;`npm run test:ci` 全綠;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1 + T2 | — |
 
 T1/T2 檔案熱區大致不重疊,可並行;`main.ts` 為共用檔案但改動區塊不同,T-exit 需等兩者完成才能一次性覆核零衝突。一 task = 一垂直切片 = 一原子 commit 紀律不變。

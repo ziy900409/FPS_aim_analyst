@@ -158,6 +158,63 @@ describe('collectMeta', () => {
     );
   });
 
+  it('records manual session-plan rest and family order additively without changing absent exports', () => {
+    const base: CollectMetaArgs = {
+      drillId: 'hold_click_v1',
+      backend: 'webgl2',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+    };
+
+    const withSessionPlan = collectMeta({
+      ...base,
+      sessionPlanRestSeconds: 42.5,
+      sessionPlanFamilyOrder: ['counterstrafe', 'hold-click'],
+    });
+    expect(withSessionPlan.sessionPlanRestSeconds).toBe(42.5);
+    expect(withSessionPlan.sessionPlanFamilyOrder).toEqual(['counterstrafe', 'hold-click']);
+
+    const withoutSessionPlan = collectMeta(base);
+    expect(withoutSessionPlan.sessionPlanRestSeconds).toBeUndefined();
+    expect(withoutSessionPlan.sessionPlanFamilyOrder).toBeUndefined();
+    expect('sessionPlanRestSeconds' in withoutSessionPlan).toBe(false);
+    expect('sessionPlanFamilyOrder' in withoutSessionPlan).toBe(false);
+  });
+
+  it.each([-1, Number.NaN, Number.POSITIVE_INFINITY])(
+    'rejects an invalid session-plan rest duration: %s',
+    (sessionPlanRestSeconds) => {
+      expect(() =>
+        collectMeta({
+          drillId: 'hold_click_v1',
+          backend: 'webgl2',
+          displayHz: 144,
+          sensitivity: 1,
+          crossOriginIsolated: true,
+          sessionPlanRestSeconds,
+        }),
+      ).toThrow('sessionPlanRestSeconds must be a non-negative finite number');
+    },
+  );
+
+  it('rejects malformed session-plan family audit order', () => {
+    const base: CollectMetaArgs = {
+      drillId: 'hold_click_v1',
+      backend: 'webgl2',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+    };
+
+    expect(() =>
+      collectMeta({ ...base, sessionPlanFamilyOrder: ['hold-click', 'unknown'] }),
+    ).toThrow('sessionPlanFamilyOrder[1] must be a configured test family');
+    expect(() =>
+      collectMeta({ ...base, sessionPlanFamilyOrder: 'hold-click' as unknown as readonly string[] }),
+    ).toThrow('sessionPlanFamilyOrder must be an array');
+  });
+
   it('preserves an opaque spiderShot replay schedule in spawn metadata', () => {
     const spiderShot = {
       kind: 'center-peripheral',

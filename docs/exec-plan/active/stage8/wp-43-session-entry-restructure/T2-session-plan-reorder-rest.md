@@ -7,7 +7,7 @@
 | **相依** | T0(可與 T1 並行,檔案熱區不重疊) |
 | **Risk / Cplx** | Med–High(移除 `buildFamilyOrder()` 呼叫需覆核既有測試斷言;型別變更影響 `SessionPlan`/`SessionPlanSelection` 兩處) |
 | **Touches** | `src/ui/SessionPlanSetup.ts`(MODIFY)、`src/session/SessionRunner.ts`(MODIFY)、`src/data/metadata.ts`(ADD additive)、`src/main.ts`(MODIFY,Session Plan 接線段落) |
-| **狀態** | ⬜ 待開工 |
+| **狀態** | ✅ 已完成(2026-08-26) |
 
 ## Objective
 
@@ -30,12 +30,12 @@
 
 ## Steps
 
-- [ ] 讀 `SessionRunner.test.ts`/`SessionRunnerPoll.test.ts`(T0 已列出的依賴斷言),先調整/新增測試釘住新語意(`plan.families` 順序即執行順序)。
-- [ ] 修改 `SessionRunner.ts`:型別變更 + `start()` 邏輯變更。
-- [ ] 修改 `SessionPlanSetup.ts`:排序清單 + 休息秒數輸入,對應調整 `SessionPlanSetup.test.ts`。
-- [ ] `metadata.ts` additive 新增兩欄位 + 驗證函式;`metadata.test.ts` 補測試(有值/缺值/邊界)。
-- [ ] `main.ts` 接線:`startSessionPlan()`、`collectMeta()` 呼叫點。
-- [ ] `rg "sessionPlanFamilyOrder|sessionPlanRestSeconds" src/sim src/metrics` 確認零命中(WP-43 紀律 2)。
+- [x] 讀 `SessionRunner.test.ts`/`SessionRunnerPoll.test.ts`(T0 已列出的依賴斷言),先調整/新增測試釘住新語意(`plan.families` 順序即執行順序)。
+- [x] 修改 `SessionRunner.ts`:型別變更 + `start()` 邏輯變更。
+- [x] 修改 `SessionPlanSetup.ts`:排序清單 + 休息秒數輸入,對應調整 `SessionPlanSetup.test.ts`。
+- [x] `metadata.ts` additive 新增兩欄位 + 驗證函式;`metadata.test.ts` 補測試(有值/缺值/邊界)。
+- [x] `main.ts` 接線:`startSessionPlan()`、`collectMeta()` 呼叫點。
+- [x] `rg "sessionPlanFamilyOrder|sessionPlanRestSeconds" src/sim src/metrics` 確認零命中(WP-43 紀律 2)。
 
 ## Definition of Done
 
@@ -47,6 +47,18 @@
 | ④ | `buildFamilyOrder()`/`sessionSchedule.ts` 本體零修改;其既有測試全綠 | `git diff` 對該檔為空 + `npm run test:ci` |
 | ⑤ | `rg "sessionPlanFamilyOrder\|sessionPlanRestSeconds" src/sim src/metrics` 零命中 | grep |
 
-## Commit
+## Completion evidence(2026-08-26)
 
-`feat(wp-43): T2 — Session Plan 拖曳排序 + 全域休息秒數`
+- ① `SessionRunner.test.ts`/`SessionRunnerPoll.test.ts`:12 tests 全綠;自訂順序逐位保持、17 秒休息、空/重複/未知 family 與非法 `restSeconds` 均有覆蓋。
+- ② `SessionPlanSetup.test.ts`:8 tests 全綠;native drag-and-drop、自由小數秒數、0/3600 含端點與邊界錯誤訊息有覆蓋。Playwright 真 DOM Session Plan 接線 1/1 全綠。
+- ③ `metadata.test.ts`:50 tests 全綠;兩欄位有值/缺值、非法秒數、未知 family 與非陣列皆有覆蓋。
+- ④ `npm run test:ci`:TypeScript 通過、Vitest 131 files/989 tests、Playwright 24/24;`git diff` 確認 `sessionSchedule.ts`/`sessionPlanPresets.ts` 零修改。
+- ⑤ `rg "sessionPlanFamilyOrder|sessionPlanRestSeconds" src/sim src/metrics` 無輸出(exit 1,即零命中)。
+
+## Commits
+
+依 `incremental-implementation` skill 拆為三個已獨立驗證的原子切片:
+
+- `a4a0000 feat(wp-43): preserve session plan order and rest duration`
+- `53a23bf feat(wp-43): add draggable session plan and free rest input`
+- `feat(wp-43): record manual session plan audit metadata`(本 task 收尾提交)

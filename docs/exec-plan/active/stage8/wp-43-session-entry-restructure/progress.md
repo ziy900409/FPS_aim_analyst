@@ -9,7 +9,7 @@
 |---|---|---|---|
 | T0 entry gate | ✅ | 2026-08-25 | CodeGraph(current on-disk source)+指定檔案直讀+`rg` 覆核 README §0:六項行為判定仍成立;`main.ts` 三處連結行號漂移但簽名/行為未變。確認 `SessionRunner.test.ts` 有兩項測試直接依賴 `buildFamilyOrder()` 排列,`SessionRunnerPoll.test.ts` 無直接 mock/呼叫斷言但兩個 fixture 均需由 `presetId` 改為 `restSeconds`。完成 D-43.1～D-43.5;T1/T2 可依未決項安全預設開工,使用者後續回覆可在開工前覆寫。 |
 | T1 launch + researcher menu | ✅ | 2026-08-25 | (2026-08-25 15:06Z) 新增 callback-only `ResearcherMenu`、`appMode`/`setAppMode()` 與 Controls AND 顯隱規則;兩個 primary 入口加依 D-43.5 保留的 legacy「實驗 session」均走真 DOM E2E。`npm run build` 通過;`npm run test:ci` 全綠(131 Vitest files/973 tests + 24 Playwright tests)。`src/ui/Controls.ts` 與兩個 protocol 模組本體零 diff。 |
-| T2 session plan reorder + rest | ⬜ 待開工 | — | — |
+| T2 session plan reorder + rest | ✅ | 2026-08-26 | (2026-08-26 07:02Z) `SessionRunner` 直接信任並驗證 operator family 順序,以 finite/non-negative `restSeconds` 驅動每段休息;`SessionPlanSetup` 交付 native drag-and-drop + 0–3600 秒自由輸入;`Meta`/`collectMeta` additive 記錄實際秒數與 family order。`npm run test:ci` 全綠(131 Vitest files/989 tests + 24 Playwright tests);兩個新欄位在 `src/sim`/`src/metrics` 零命中,`sessionSchedule.ts`/`sessionPlanPresets.ts` 零 diff。 |
 | T-exit 驗收 + 文件定稿 | ⬜ 待開工 | — | — |
 
 ## Decision Log
@@ -51,6 +51,12 @@
 - **證據**：`tests/e2e/session-orchestrator.spec.ts` 斷言兩個 primary + 一個 legacy、三個研究員 callback 與 Controls 顯隱;`tests/e2e/overlay-layering.spec.ts` 分別在子選單關閉(3 buttons)與展開(6 buttons)時驗證不與 `SettingsPanel` 重疊。
 - **Alternatives Considered**：把 legacy 入口塞進研究員選單會違反 D-43.5 的未決保留原則;把 ResearcherMenu 掛到 `document.body` 需新增另一套 pointer-lock 顯隱/定位同步,沒有帶來功能收益。
 
+### D-43.7 — 手動 Session Plan 的 UI 防呆邊界為 0–3600 秒(含端點)
+
+- **決定**：`SessionPlanSetup` 的自由數字 input 採 `min=0`、`max=3600`、`step=any`,預設 60 秒;送出時再次驗證非空、finite 且在含端點範圍內。Runner 與 metadata 邊界只要求 finite/non-negative,不把 UI 防呆上限升格成資料或排程層的凍結研究常數。
+- **證據**：README §3 已把極大誤填列為「看似當掉」的 UI failure mode;D-43.2 的 runner contract 明定 non-negative finite。`SessionPlanSetup.test.ts` 覆蓋 42.5 秒成功與空值/負值/3600.1/非數字拒絕,Playwright 覆蓋真 DOM 的 min/max 與 42 秒提交。
+- **Alternatives Considered**：不設上限會保留誤填造成長時間卡住的風險;下限設為 1 會禁止操作者明確選擇零休息;只允許整數沒有研究或 runner 契約依據,也不符合「自由數字」的較寬語意。
+
 ## Surprises
 
 - T0 覆核時 `main.ts` 相較規劃稿有純行號漂移:`sessionLaunchControls` 四按鈕為 359–410(原記 357–407)、`syncControlsVisibility()` 為 1092–1094(原記 1089–1094)、`experimentButton` 為 359–378(原記 357–376);行為與簽名未變,README 連結已校正。
@@ -67,5 +73,5 @@
 | OQ-S8-5 | 「實驗 session」按鈕去向 | 🟡 已於 T0 提交使用者;尚未收到回覆。T1 先依 D-43.5 保留獨立入口。 |
 | OQ-S8-6 | 拖曳排序元件選型 | ✅ 已關閉(D-43.3):HTML5 native drag-and-drop,不新增依賴。 |
 | OQ-S8-7 | `sessionPlanPresets.ts` 是否保留 | ✅ 已關閉(D-43.4):保留;legacy metadata validator 仍有實際消費。 |
-| OQ-S8-8 | 休息秒數輸入邊界 | 🟡 待 T2 執行時定案 |
+| OQ-S8-8 | 休息秒數輸入邊界 | ✅ 已關閉(D-43.7):UI 0–3600 秒(含端點),finite,允許小數;runner/metadata 僅要求 finite/non-negative。 |
 | OQ-S8-4 | WP/GD 編號正式指派時機 | 🟡 已於 T0 提交使用者;未取得明確指派,暫維持 WP-43/M18/GD-25 暫用編號且不改全域索引。 |

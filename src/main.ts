@@ -308,6 +308,7 @@ const experimentSession = createExperimentSession({
 let pendingSessionSetupValues: SessionSetupValues | undefined;
 let sessionSetupValues: SessionSetupValues | undefined;
 let pendingSessionPlanSelection: SessionPlanSelection | undefined;
+let activeSessionPlanSelection: SessionPlanSelection | undefined;
 type PendingSessionMode = 'session' | 'resolution-protocol' | 'br-tracking-protocol' | 'session-plan';
 let pendingSessionMode: PendingSessionMode = 'session';
 let appMode: AppMode = 'launch';
@@ -493,6 +494,12 @@ async function buildCurrentExportPayload(
     simHz: SIM_HZ,
     sensitivity: settingsPanel.sensitivity,
     ...(sessionSetupValues?.dpi !== undefined ? { dpi: sessionSetupValues.dpi } : {}),
+    ...(sessionPlanRunner.phase.kind === 'family' && activeSessionPlanSelection !== undefined
+      ? {
+          sessionPlanRestSeconds: activeSessionPlanSelection.restSeconds,
+          sessionPlanFamilyOrder: activeSessionPlanSelection.families,
+        }
+      : {}),
     fovDeg: settingsPanel.fov,
     crossOriginIsolated: isolation.crossOriginIsolated,
     startedAt: recorderStartedAt,
@@ -1180,6 +1187,7 @@ async function startSessionPlan(): Promise<void> {
     setProtocolStatus('Session Plan 啟動失敗：缺少受試者或計畫選擇。', false);
     return;
   }
+  activeSessionPlanSelection = selection;
   try {
     await sessionPlanRunner.start({
       participantId: setup.participantId,
@@ -1189,6 +1197,7 @@ async function startSessionPlan(): Promise<void> {
       includeWarmup: selection.includeWarmup,
     });
   } catch (error) {
+    activeSessionPlanSelection = undefined;
     setProtocolStatus(`Session Plan 啟動失敗：${error instanceof Error ? error.message : String(error)}`, false);
   }
 }
