@@ -769,7 +769,18 @@ const historyView = createHistoryView({
     return buildSessionHistory(currentHistorySession, past, STAGE6_BASELINE_WINDOW_SIZE, STAGE6_BASELINE_MIN_N);
   },
 });
-const resultScreen = createResultScreen({ historyView: historyView.element });
+const resultScreen = createResultScreen({
+  historyView: historyView.element,
+  onRestart: restartActiveDrill,
+  async onExportJSON(): Promise<void> {
+    const payload = await buildCurrentExportPayload();
+    downloadJSON(payload, { basename: exportBasename(payload) });
+  },
+  async onExportCSV(): Promise<void> {
+    const payload = await buildCurrentExportPayload();
+    downloadCSV(payload, { basename: exportBasename(payload) });
+  },
+});
 // WP-8 / T3（FR-8.3）— 即時 HUD：rAF 只讀 SharedState + recorder counters，不進 sim、不 snapshot。
 const hud = createHUD();
 

@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-015](KI-015-drill-results-retest-discoverability.md) | Drill Results 以全螢幕遮罩呈現，但 Restart／匯出入口位於頁外；使用者不易發現重測，且未被提醒重測會清除本輪結果 | BD-015(§3,Results 內新增 sticky 操作列；UI 只用 callbacks 重用既有 restart/export path，Restart 前確認資料清除) | ✅ 已修(2026-08-26) |
 | [KI-014](KI-014-spider-shot-peripheral-target-sunk-below-floor.md) | KI-012 修復北牆遮擋後,使用者回報「現在地板高度也會遮蓋球體」——`spider-shot-v2` 的 `angularRadiusDegRange` 上限 25° 搭配 azimuth 朝下時,周邊目標世界 y 可低至約 -1.99,`placeholder-room` 地板原在 y=0,目標幾乎全沉入地板 | BD-014(§3,只放大 `placeholder-room` 的地板深度:新增 `floorY:-3` 並讓牆體下緣一併延伸,不動任何 drill config 凍結值) | ✅ 已修(2026-08-26) |
 | [KI-013](KI-013-controls-tdz-referenceerror-on-early-researcher-click.md) | 於 KI-012 診斷過程中意外發現:過早連續點擊「研究員模式」→「單一 Drill 調整」會拋出未捕捉的 `ReferenceError: Cannot access 'controls' before initialization`——`controls` 是頂層 `const`,兩個 top-level await 期間按鈕已可點但 `controls` 仍在 TDZ | BD-013(§3,`controls` 改為提早宣告的 `let \| undefined` + `syncControlsVisibility()` 補 guard,比照既有 `researcherMenu` 慣例) | ✅ 已修(2026-08-26) |
 | [KI-012](KI-012-spider-shot-target-occluded-by-placeholder-room-back-wall.md) | WP-46 T-exit 手動驗收回報「spider-shot-v2 沒有看到任何球體」——追碼證實 v1 的方塊目標在同一位置也一樣看不到:`placeholder-room` 北牆(z=-5)比 spider-shot 目標距離(z=-8)更靠近相機,整顆目標(不分形狀)被牆體完全遮擋;這正是 WP-5 T1 早已文件化過但被 WP-36 重蹈的坑 | BD-012(§3,只放大 `placeholder-room` 的 `roomSize` depth 10→20(北牆退到 z=-10),明確釘住 `eyeZ:4` 避免連動改變 camera/raycast 原點;不動任何 drill config 凍結值) | ✅ 已修(2026-08-26) |
@@ -60,6 +61,17 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-015 ✅ KI-015 — Drill Results 的重測／匯出操作不可發現(2026-08-26)
+
+| | |
+|---|---|
+| **發現處 / 根因** | Results 是 `position:fixed; inset:0` 的全螢幕 overlay；底部 `#drill-controls` 雖因較高 z-index 仍可點，但被 backdrop 視覺上切離結果內容。Restart 會重置 recorder 與隱藏結果，使用者卻無法在 Results 內得知此後果或先行匯出。完整診斷見 [KI-015](KI-015-drill-results-retest-discoverability.md)。 |
+| **決策** | `ResultScreen` 新增 sticky 操作列，以 optional `onRestart` / `onExportJSON` / `onExportCSV` callbacks 表達意圖；`main.ts` 注入既有 `restartActiveDrill()` 與 export 流程。Restart 為 primary action，顯示資料清除提醒並要求確認；「返回設定」只關閉 Results。 |
+| **理由** | 不讓 UI 直接依賴 DrillRunner、recorder 或 export 模組，可保留 UI → main orchestration → core 的依賴方向，也不會產生第二套重置或匯出語意。把操作放在 Results 內處理的是可發現性問題，不需要改動現有 overlay layering。 |
+| **影響面** | 受影響：Results DOM、main UI 接線與 ResultScreen 單測。未受影響：DrillRunner、SimLoop、SharedState、recorder、metrics 計算、匯出 schema、SessionRunner / protocol 排程。 |
+| **遺留 OQ** | 正式 Assessment / Session Plan 裡「重測是否計入正式資料」需另行訂定協定規則；本次只把既有單一 drill Restart 能力移到可發現的位置，不變更 session 語意。 |
+| **狀態** | ✅ 已修(2026-08-26)。 |
 
 ### BD-014 ✅ KI-014 — spider-shot 周邊目標朝下沉入 placeholder-room 地板(2026-08-26)
 

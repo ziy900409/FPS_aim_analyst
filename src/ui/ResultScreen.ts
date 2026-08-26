@@ -109,6 +109,12 @@ export interface ResultScreenHandle {
 export interface ResultScreenOptions {
   parent?: HTMLElement;
   historyView?: HTMLElement;
+  /** Starts a clean run of the currently selected drill. */
+  onRestart?: () => void | Promise<void>;
+  /** Exports the current result before the user starts another run. */
+  onExportJSON?: () => void | Promise<void>;
+  /** Exports the current result before the user starts another run. */
+  onExportCSV?: () => void | Promise<void>;
 }
 
 export function createResultScreen(options: ResultScreenOptions = {}): ResultScreenHandle {
@@ -225,6 +231,58 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
   qualityFlagsBody.style.cssText = 'display:grid;gap:10px';
   qualityFlagsSection.append(qualityFlagsTitle, qualityFlagsBody);
 
+  // Results may be long enough to scroll. Keep the next actions in the dialog itself so the
+  // user does not need to discover the separate, dimmed drill-controls overlay underneath.
+  const actions = document.createElement('footer');
+  actions.dataset.section = 'result-actions';
+  actions.style.cssText = [
+    'position:sticky',
+    'bottom:-20px',
+    'display:flex',
+    'flex-wrap:wrap',
+    'align-items:center',
+    'gap:8px',
+    'margin:18px -20px -20px',
+    'padding:12px 20px',
+    'background:rgba(24,27,30,0.98)',
+    'border-top:1px solid rgba(255,255,255,0.12)',
+  ].join(';');
+
+  const restartHint = document.createElement('span');
+  restartHint.textContent = '重新測試會清除目前畫面結果；請先匯出需要保留的資料。';
+  restartHint.style.cssText = 'flex:1 1 260px;color:#c8d0d8;font:500 12px/1.35 system-ui,sans-serif';
+
+  const restartButton = makeResultActionButton('再測目前 Drill', 'restart', true);
+  const exportJSONButton = makeResultActionButton('匯出 JSON', 'export-json');
+  const exportCSVButton = makeResultActionButton('匯出 CSV', 'export-csv');
+  const closeButton = makeResultActionButton('返回設定', 'close');
+  const actionButtons = [restartButton, exportJSONButton, exportCSVButton, closeButton];
+
+  restartButton.style.display = options.onRestart === undefined ? 'none' : '';
+  exportJSONButton.style.display = options.onExportJSON === undefined ? 'none' : '';
+  exportCSVButton.style.display = options.onExportCSV === undefined ? 'none' : '';
+  if (options.onRestart === undefined && options.onExportJSON === undefined && options.onExportCSV === undefined) {
+    restartHint.style.display = 'none';
+  }
+
+  restartButton.addEventListener('click', () => {
+    if (options.onRestart === undefined) return;
+    if (!window.confirm('重新測試會清除目前這輪結果。若需要保留，請先匯出 JSON 或 CSV。要重新開始嗎？')) return;
+    void runResultAction(actionButtons, options.onRestart);
+  });
+  exportJSONButton.addEventListener('click', () => {
+    if (options.onExportJSON !== undefined) void runResultAction(actionButtons, options.onExportJSON);
+  });
+  exportCSVButton.addEventListener('click', () => {
+    if (options.onExportCSV !== undefined) void runResultAction(actionButtons, options.onExportCSV);
+  });
+  closeButton.addEventListener('click', () => {
+    visible = false;
+    root.style.display = 'none';
+  });
+
+  actions.append(restartHint, restartButton, exportJSONButton, exportCSVButton, closeButton);
+
   panel.append(
     title,
     method,
@@ -237,6 +295,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     diagnosisSection,
     qualityFlagsSection,
     ...(options.historyView === undefined ? [] : [options.historyView]),
+    actions,
   );
   root.appendChild(panel);
   parent.appendChild(root);
@@ -284,6 +343,39 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
       root.remove();
     },
   };
+}
+
+function makeResultActionButton(label: string, action: string, primary = false): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.dataset.resultAction = action;
+  button.style.cssText = [
+    'height:34px',
+    'padding:0 12px',
+    'border:1px solid rgba(255,255,255,0.18)',
+    'border-radius:6px',
+    'font:750 12px/1 system-ui,sans-serif',
+    'color:#e6e9ec',
+    `background:${primary ? '#176b9c' : 'rgba(15,18,21,0.96)'}`,
+    'cursor:pointer',
+  ].join(';');
+  return button;
+}
+
+async function runResultAction(
+  buttons: readonly HTMLButtonElement[],
+  action: () => void | Promise<void>,
+): Promise<void> {
+  for (const button of buttons) button.disabled = true;
+  try {
+    await action();
+  } catch (error) {
+    console.error('[result-screen]', error);
+    window.alert(error instanceof Error ? error.message : 'Result action failed');
+  } finally {
+    for (const button of buttons) button.disabled = false;
+  }
 }
 
 export function createResultSummary(metrics: Metrics): ResultSummary {

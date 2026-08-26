@@ -47,10 +47,13 @@ const metrics: Metrics = {
 class FakeElement {
   id = '';
   textContent = '';
+  type = '';
+  disabled = false;
   readonly dataset: Record<string, string> = {};
   readonly style: Record<string, string> = { cssText: '', display: '' };
   readonly attributes = new Map<string, string>();
   readonly children: FakeElement[] = [];
+  readonly listeners = new Map<string, () => void>();
 
   append(...children: FakeElement[]): void {
     this.children.push(...children);
@@ -66,6 +69,14 @@ class FakeElement {
   }
 
   remove(): void {}
+
+  addEventListener(type: string, listener: () => void): void {
+    this.listeners.set(type, listener);
+  }
+
+  click(): void {
+    this.listeners.get('click')?.();
+  }
 
   setAttribute(name: string, value: string): void {
     this.attributes.set(name, value);
@@ -302,6 +313,50 @@ describe('WP-40 T1 quality-flag result section', () => {
   });
 });
 
+describe('result actions', () => {
+  it('keeps export and restart actions inside Results, with restart confirmation before clearing the run', () => {
+    const document = new FakeDocument();
+    const onRestart = vi.fn();
+    const onExportJSON = vi.fn();
+    const onExportCSV = vi.fn();
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal('document', document);
+    vi.stubGlobal('window', { confirm, alert: vi.fn() });
+    const screen = createResultScreen({ onRestart, onExportJSON, onExportCSV });
+
+    screen.show(metrics);
+
+    const restart = action(document.body, 'restart');
+    const json = action(document.body, 'export-json');
+    const csv = action(document.body, 'export-csv');
+    const close = action(document.body, 'close');
+    expect(text(document.body)).toContain('重新測試會清除目前畫面結果');
+
+    json.click();
+    csv.click();
+    restart.click();
+    close.click();
+
+    expect(onExportJSON).toHaveBeenCalledOnce();
+    expect(onExportCSV).toHaveBeenCalledOnce();
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(onRestart).toHaveBeenCalledOnce();
+    expect(screen.visible).toBe(false);
+  });
+
+  it('does not restart when the user cancels the data-loss confirmation', () => {
+    const document = new FakeDocument();
+    const onRestart = vi.fn();
+    vi.stubGlobal('document', document);
+    vi.stubGlobal('window', { confirm: vi.fn(() => false), alert: vi.fn() });
+    createResultScreen({ onRestart });
+
+    action(document.body, 'restart').click();
+
+    expect(onRestart).not.toHaveBeenCalled();
+  });
+});
+
 describe('createRecoilOverlayModel', () => {
   it('creates a stable recoil path overlay model with actual and ideal series plus mean and RMS', () => {
     const summary = createResultSummary({
@@ -423,6 +478,12 @@ function promotedOk(): Extract<PromotedMetrics, { status: 'ok' }> {
       version: 'curve-v1',
     },
   };
+}
+
+function action(root: FakeElement, name: string): FakeElement {
+  const node = flatten(root).find((candidate) => candidate.dataset.resultAction === name);
+  if (node === undefined) throw new Error(`Missing result action: ${name}`);
+  return node;
 }
 
 function diagnosisOk(): Extract<DiagnosisResult, { status: 'ok' }> {

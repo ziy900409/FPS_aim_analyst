@@ -44,6 +44,33 @@ test('export panel and drill controls stack above the result-screen backdrop', a
   expect(controlsZ).toBeGreaterThan(resultZ);
 });
 
+test('Drill Results keeps export, return, and confirmed re-test actions within the dialog', async ({ page }) => {
+  await page.goto(URL, { waitUntil: 'networkidle' });
+  await expect
+    .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), {
+      timeout: 15_000,
+    })
+    .toBe(true);
+
+  await page.evaluate(() => {
+    const harness = (window as unknown as {
+      __fpsTest: { startDrill(id: string): void; showResult(): void };
+    }).__fpsTest;
+    harness.startDrill('counterstrafe_ad_v1');
+    harness.showResult();
+  });
+
+  const results = page.locator('#result-screen');
+  await expect(results.getByRole('button', { name: '再測目前 Drill' })).toBeVisible();
+  await expect(results.getByRole('button', { name: '匯出 JSON' })).toBeVisible();
+  await expect(results.getByRole('button', { name: '匯出 CSV' })).toBeVisible();
+  await expect(results.getByRole('button', { name: '返回設定' })).toBeVisible();
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await results.getByRole('button', { name: '再測目前 Drill' }).click();
+  await expect(results).toBeHidden();
+});
+
 test('session launch controls do not overlap the settings panel', async ({ page }) => {
   await page.goto(URL, { waitUntil: 'networkidle' });
 
