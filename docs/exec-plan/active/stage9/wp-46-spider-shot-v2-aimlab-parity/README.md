@@ -46,7 +46,7 @@
 
 - 不得修改 `src/drill/spider_shot_v1.ts`(WP-39 凍結值)。
 - 不得修改 `src/metrics/spiderShotConditions.ts`/`spiderShotMetrics.ts`(§0-4 讀碼結論)。
-- `docs/exec-plan/DECISIONS.md` 本次**不**寫入正式 GD 編號(避免與 stage8 暫用 GD-25 衝突,比照 WP-44/WP-45 T-exit 的延後處置)——實質決策記在本 WP `progress.md` Decision Log,`CLAUDE.md §4` 直接更新措辭(比照 WP-23 前例:CLAUDE.md 更新早於正式 GD 編號落帳)。
+- `docs/exec-plan/DECISIONS.md` 本次**不**寫入正式 GD 編號(T0 覆核修正:GD-25 已於 WP-45 T-exit 正式落帳為完整決議,非「stage8 暫用」佔位——下一個可用號為 GD-26;本 WP 仍延後指派,比照 WP-44/WP-45 T-exit 的延後處置,理由不變)——實質決策記在本 WP `progress.md` Decision Log,`CLAUDE.md §4` 直接更新措辭(比照 WP-23 前例:CLAUDE.md 更新早於正式 GD 編號落帳)。
 
 ### Open Questions
 
