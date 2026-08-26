@@ -10,6 +10,8 @@
 
 - **2026-08-26 T3**:新增 `src/drill/spider_shot_v2.ts`(`angularRadiusDegRange=[10,25]` 候選值、`grid: {azimuthQuadrants:4, radiusTiers:3}`、獨立 seed 260826,不與 v1 的 36036 共用),`main.ts` 註冊沿用 `sceneId: 'placeholder-room'`(KI-011 修法)。新增 3 個 `spider_shot_v2.test.ts` 測試(形狀正確、與 v1 seed 不同、v1 逐位不變)。`npm run test:ci`(`tsc --noEmit` + `vitest run` 995 測試 + `playwright test` 24 e2e)全綠。
 
+- **2026-08-26 T-exit**:`npm run test:ci`(`tsc --noEmit` + `vitest run` 995 測試 + `playwright test` 24 e2e)全綠。`docs/operational/analysis-spider-shot.md` 補上 `spider-shot-v2` 契約說明一節與 Verified test evidence 條目。**發現**:stage9 頂層 `README.md` 在本次 T-exit 期間有另一個並行工作(WP-45 `peek-click-transfer` 提案)的未提交異動——本 WP 選擇不觸碰該共用檔案,避免衝突;WP-44 交付狀態改記在本 WP 自己的 `README.md`/本檔。`DECISIONS.md`/`exec-plan/README.md`/`docs/MAP.md` 的正式編號指派延後(理由見 [T-exit-gate.md](T-exit-gate.md))。WP-44 六個 task 全數完成,交付。
+
 ## Decision Log
 
 - **D-44.1**(2026-08-26,brainstorming 對話拍板):新增 `spider-shot-v2` 而非改寫 `spider-shot-v1`。**Why**:WP-39 已把 v1 的 `angularRadiusDegRange=[15,15]`/`centerDistanceU=8`/`distanceURange=[8,8]` 列為正式凍結校準值(`STAGE6_PROTOCOL_VERSION = '1.0.0'`),直接改會打破「除凍結欄位外逐位不變」的既有回歸契約與既有 pilot/acceptance 資料的可比性。**Alternatives considered**:直接改 v1(使用者選項之一,但需同步處理 `DECISIONS.md` 凍結記錄與 `protocolVersion`,取捨成本高於開新檔)。

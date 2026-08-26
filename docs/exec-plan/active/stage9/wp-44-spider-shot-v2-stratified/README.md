@@ -10,7 +10,7 @@
 | **里程碑** | 無獨立里程碑(T-exit gate 即交付判定,比照 WP-27 muzzle-tracer 精神);暫定字母 I(未正式指派,見 [../README.md](../README.md) OQ-S9-2) |
 | **相依** | 無(獨立;不修改任何已交付的 stage6 協定) |
 | **估時** | 1.5–2.5 dev-days |
-| **狀態** | 🟡 進行中 |
+| **狀態** | ✅ 已交付(T-exit 2026-08-26;WP 編號/里程碑/GD 條目仍為暫用,見 [T-exit-gate.md](T-exit-gate.md)「誠實記錄」段) |
 
 ---
 
@@ -141,7 +141,7 @@ function shuffleInPlace<T>(items: T[], rng: Rng): void { /* Fisher–Yates,消�
 
 ## 6. 文件對帳清單
 
-- [ ] [../README.md](../README.md) §5:WP-44 狀態於 T-exit 後翻 ✅。
-- [ ] `docs/operational/analysis-spider-shot.md`:T-exit 新增一節說明 v2 排程機制,並點名新的排程用 quadrant/tier 分箱與既有 `SpiderQuadrant`(呈現層)是兩套不同分類。
-- [ ] [DECISIONS.md](../../../DECISIONS.md):T-exit 記一筆「為何開 v2 而非改 v1」+ 等立體角公式選擇,WP/GD 編號視使用者當下決定是否正式指派(比照 OQ-S9-2)。
-- [ ] [exec-plan/README.md](../../../README.md) §2/§4/§6、[docs/MAP.md](../../../../MAP.md):同上,視使用者決定是否現在同步。
+- [x] `docs/operational/analysis-spider-shot.md`:T-exit 新增一節說明 v2 排程機制,並點名新的排程用 quadrant/tier 分箱與既有 `SpiderQuadrant`(呈現層)是兩套不同分類;補上 v2 的 Verified test evidence。
+- [ ] [../README.md](../README.md) §5:WP-44 狀態列——**本次未動**。`../README.md`(stage9 頂層)於本 T-exit 執行期間偵測到另一個並行工作(WP-45 `peek-click-transfer` 提案)的未提交異動,為避免與該工作衝突,本 WP 不觸碰這個共用檔案;WP-44 自身的交付狀態已完整記錄在本檔與 [task-checklist.md](task-checklist.md)/[progress.md](progress.md)。之後任一方提交時可一併同步此列。
+- [ ] [DECISIONS.md](../../../DECISIONS.md):延後,理由見 [T-exit-gate.md](T-exit-gate.md)「誠實記錄」段(避免與 stage8 暫用的 GD-25 編號衝突)。
+- [ ] [exec-plan/README.md](../../../README.md) §2/§4/§6、[docs/MAP.md](../../../../MAP.md):同上,延後同步。
