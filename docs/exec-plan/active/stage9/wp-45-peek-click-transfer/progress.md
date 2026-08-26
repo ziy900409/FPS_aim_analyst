@@ -2,7 +2,7 @@
 
 ## Status
 
-- **Current**:T1 完成（共用 occlusion kernel + hitscan wall-block gate + visibility refactor），可開始 T2。
+- **Current**:T2 完成（左右對稱 `peek-ad-corridor-v1` 場景 + clearance/visibility symmetry tests），T1+T2 皆已就緒，T3 等 WP-44 T-exit(已開放)。
 - **Scope state**:`peek-click-transfer-pilot-v1` 為 Practice/pilot-only；正式 Assessment freeze 不在本 WP。
 - **Dependency state**:T3 依賴的 WP-44 T-exit 已完成(`c44270e`)；T5 依賴的 stage8 WP-43 T-exit 已完成(`61db0ba`)；HEAD(`41d3bd5`)已包含兩者，兩個 gate 皆已開放，T3/T5 不再受阻。
 
@@ -43,6 +43,17 @@
 - **測試**新增：`src/scene/occlusionGeometry.test.ts`（13 tests：`firstBlockingIntersection` 空/outside/inside/tangent/endpoint/nearest/tie；`visibleFractionForTarget` 1-point/9-point/partial/mirror/非法 sampleCount throw）；`src/loop/SimLoop.test.ts` 新增 2 tests（隔牆阻擋:未擊殺+彈孔停牆面；`propBounds:[]` context 與省略 context 等效命中即殺）；`src/testharness/fpsTestHarness.test.ts` 新增 1 test（FM-P45-1：切換 wall-drill→open-drill 後 loop 重建、無殘留 propBounds，需搭配 `loadOptions.clearance.allowedOcclusionPropIds` 放行測試用全阻擋牆通過 `loadDrill` 的 pre-spawn clearance 驗證）。
 - **驗證**：`npx vitest run`（全專案）→ 133 files / 1014 tests 全綠（含既有 baseline 零 fixture 修改）；`npm run typecheck` exit 0。
 
+### 2026-08-26 — T2 左右對稱 `peek-ad-corridor-v1` 場景
+
+- **新增** `src/scene/scenes/peek-ad-corridor.props.json` + `peek-ad-corridor.ts`：不改 frozen `peek-corridor`。propBounds 為一組「以 x=0 對半切」的中心柱：`cover-wall-l` `x∈[-1.2,0]`、`cover-wall-r` `x∈[0,1.2]`（`y∈[0,3]`、`z∈[-4.5,-3.5]`），兩者互為 x 軸鏡像（`cover-wall-r` = mirror(`cover-wall-l`)）。`playerCorridor.halfWidthU:2`，`proceduralRoom.eyeZ:0`、`fovDeg:75`（README §T2 geometry invariants）。
+- **幾何設計依據**：用 `TargetManager` 預設(無 spawnArea)L/R 位置(`x=∓2, y=1.5`)與 `DEFAULT_TARGET_HITBOX`，經由 scratch 數值掃描（非 repo 程式碼,僅用於挑選常數；scratch 腳本未進 repo）驗證：中心 `px=0` 對兩側 9-point visible fraction 皆為 `0`；`px=∓halfWidthU=∓2`（往 cue 方向峰值移動）該側 fraction 達 `1`、對側維持 `0`；50% onset crossing 落在 `px≈∓0.58`,遠早於 `halfWidthU`,corridor 內有充足行程可達 full exposure（`px≈∓0.99`)。此設計假設 target distance `=8`（沿用 `peek-corridor` 同尺度）,已在 `peek-ad-corridor.test.ts` 頂部註記為 T3 pilot config 的相容假設——若 T3 改變 distance,須重驗此處 invariants。
+- **新增** `scripts/gen-peek-ad-corridor-gltf.mjs`（改寫自 `gen-peek-corridor-gltf.mjs`，KIND 只留 `wall`/`ground`，無 `guide` 視覺輔助線,因為本場景無 slide-in 移動目標語意）→ 產生 `public/assets/scenes/peek-ad-corridor/peek-ad-corridor.gltf`（原創 CC0 box primitives）。已手動連跑兩次並 `diff` 確認 byte-identical。
+- **新增** `src/scene/scenes/peek-ad-corridor.test.ts`（12 tests）：
+  - SceneConfig 自驗 + propBound AABB 合法性 + GLTF mesh 節點/AABB 與 props JSON 逐項相同。
+  - clearance：strict 拒絕兩側 cover-wall；只放行一側時另一側仍被拒絕（驗證「非允許 prop 仍拒絕」）；兩側皆放行後 `validateClearance` 零違規且 `loadDrill` 不 throw。
+  - visibility symmetry：中心兩側 `<0.5`；往正確方向移動達 50% onset 且對側仍 `<0.5`；`±halfWidthU` 達 full exposure `=1` 對側 `=0`；左右 crossing px 絕對值誤差 `<= CS2_PROFILE.maxSpeed/SIM_HZ`（1 tick 空間容差,exact mirror 故實際誤差 `~0`）；`propBounds` x 軸鏡像逐欄驗證。
+- **驗證**：`npx vitest run src/scene/scenes/peek-ad-corridor.test.ts src/scene/clearance.test.ts` → exit 0，2 files / 28 tests 全綠；`npx vitest run`（全專案）→ exit 0，134 files / 1026 tests 全綠（較 T1 baseline 1014 增加 12，皆為本次新增）；`npm run typecheck` exit 0。`git status --short` 只有本 task 新檔（`peek-ad-corridor.*`、`gen-peek-ad-corridor-gltf.mjs`、`public/assets/scenes/peek-ad-corridor/`）,frozen `peek-corridor` 三檔零 diff。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -51,7 +62,9 @@
 | **D-45.1** | 新任務定位為 integrated transfer test，不取代 hold-click/counterstrafe component assessments | 混合構念適合驗證技能轉移，不適合單一診斷分數 | Confirmed，T0 覆核通過 |
 | **D-45.2** | 先修共用 occlusion kernel，再允許 scene-aware hit | 現況 target-only raycast 可穿牆；不修即無有效 peek task | Confirmed，T1 落地 |
 | **D-45.8** | `occlusionGeometry.ts` 為獨立新 kernel，不與 `clearance.ts` 既有 `segmentIntersectsAabb` 合併 | `clearance.ts` 不在 T1 scope（README §2.1 未列）；用途不同（pre-spawn 驗證 boolean vs. runtime 曝光/命中 alpha+point）；FR-P45-3「同一 kernel」約束的是 visibility 與 hitscan 兩者之間，非全 repo 唯一一套 | Confirmed，T1 |
-| **D-45.3** | 新建 `peek-ad-corridor-v1`，不改 frozen `peek-corridor` | 避免改變 stage6 hold-click geometry/history compatibility | Proposed，T2 |
+| **D-45.3** | 新建 `peek-ad-corridor-v1`，不改 frozen `peek-corridor` | 避免改變 stage6 hold-click geometry/history compatibility | Confirmed，T2 落地 |
+| **D-45.9** | `peek-ad-corridor-v1` 用「單一中心柱沿 x=0 對半切」為 `cover-wall-l`/`cover-wall-r`,而非複製 `peek-corridor` 式「貼近各自目標」的側牆 | 貼近目標側的牆在玩家置中時無法遮住雙側視線(數值驗證：sightline 在該 z 帶穿過的 x 落在牆外);中心柱幾何才能同時滿足「置中雙側皆隱藏」與「x 軸鏡像」兩個 README invariant | Confirmed，T2 |
+| **D-45.10** | T2 geometry tests 假設 target distance=8(沿用 peek-corridor 尺度),於 test 檔頂部註記為 T3 相容假設 | cover-wall 幾何常數是針對特定 distance 校準;T3 若改變 pilot distance 必須重驗本檔 invariants,避免悄悄失真 | Confirmed，T2；待 T3 覆核 |
 | **D-45.4** | pilot 保留 box target、AK-47、嚴格 LR、miss 補槍 | 最小化新引擎分支並對齊影片循環；正式值留給 pilot | Proposed，T3 |
 | **D-45.5** | 不建立 composite score | 沿用 stage6「不同構念分層報告」紀律 | Proposed，T4 |
 | **D-45.6** | Session 採 versioned roster，不改 stage6 default family list | 防止既有 participant order 全數漂移 | Proposed，T5 |
@@ -80,3 +93,8 @@
 | 2026-08-26 | `npx vitest run tests/regression src/loop/__tests__ src/testharness src/scene` | exit 0，27 files / 167 tests passed（blast-radius 回歸） |
 | 2026-08-26 | `npx vitest run`（全專案） | exit 0，133 files / 1014 tests passed |
 | 2026-08-26 | `npm run typecheck` | exit 0 |
+| 2026-08-26 | `node scripts/gen-peek-ad-corridor-gltf.mjs`（連跑兩次 + `diff`） | 產物 byte-identical |
+| 2026-08-26 | `npx vitest run src/scene/scenes/peek-ad-corridor.test.ts src/scene/clearance.test.ts` | exit 0，2 files / 28 tests passed（T2 DoD 指定套件） |
+| 2026-08-26 | `npx vitest run`（全專案，T2 wiring 後） | exit 0，134 files / 1026 tests passed |
+| 2026-08-26 | `npm run typecheck`（T2 wiring 後） | exit 0 |
+| 2026-08-26 | `git status --short`（T2 完成後） | 只有本 task 新檔;frozen `peek-corridor` 三檔零 diff |

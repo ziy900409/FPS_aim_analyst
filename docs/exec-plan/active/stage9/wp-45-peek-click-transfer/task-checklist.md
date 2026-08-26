@@ -19,10 +19,10 @@
 
 ## T2 — Symmetric scene
 
-- [ ] props JSON + SceneConfig
-- [ ] deterministic GLTF generator + asset
-- [ ] hidden/onset/full exposure tests
-- [ ] left/right mirror + clearance tests
+- [x] props JSON + SceneConfig
+- [x] deterministic GLTF generator + asset
+- [x] hidden/onset/full exposure tests
+- [x] left/right mirror + clearance tests
 
 ## T3 — Pilot drill
 
