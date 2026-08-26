@@ -6,6 +6,7 @@ import { createSharedState, type SharedState } from '../state/SharedState.ts';
 import { createTargetManager, type TargetManager } from '../sim/TargetManager.ts';
 import type { DrillConfig } from './DrillConfig.ts';
 import { createDrillRunner } from './DrillRunner.ts';
+import { spiderShotV1 } from './spider_shot_v1.ts';
 
 /** 最小合法 config；各測試以 spread 覆寫需要的欄位。 */
 function makeConfig(overrides: Partial<DrillConfig> = {}): DrillConfig {
@@ -152,6 +153,71 @@ describe('DrillRunner — 生命週期（FR-6.4）', () => {
 
     runner.tick(state, 201);
     expect(runner.phase).toBe('ended');
+    expect(state.targets).toHaveLength(0);
+  });
+
+  it('spiderShot.centerExemptFromTimeout=true：center 目標超過 peekTimeoutMs 仍存活', () => {
+    const config = makeConfig({
+      timing: { countdownMs: 0, peekTimeoutMs: 100 },
+      targets: { count: 2, distance: 8 },
+      spiderShot: {
+        kind: 'center-peripheral',
+        seed: 7,
+        centerDistanceU: 8,
+        peripheral: { angularRadiusDegRange: [15, 15], azimuthDegRange: [0, 360], distanceURange: [8, 8] },
+        centerExemptFromTimeout: true,
+      },
+    });
+    const { state, runner } = setup(config);
+
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(state.targets[0]).toMatchObject({ id: 't0', zone: 'center' });
+
+    runner.tick(state, 100);
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0]).toMatchObject({ id: 't0', zone: 'center', alive: true });
+  });
+
+  it('spiderShot.centerExemptFromTimeout=true：peripheral 目標仍在 peekTimeoutMs 到期時撤除', () => {
+    const config = makeConfig({
+      timing: { countdownMs: 0, peekTimeoutMs: 100 },
+      targets: { count: 2, distance: 8 },
+      endCondition: { type: 'targetCount', value: 2 },
+      spiderShot: {
+        kind: 'center-peripheral',
+        seed: 7,
+        centerDistanceU: 8,
+        peripheral: { angularRadiusDegRange: [15, 15], azimuthDegRange: [0, 360], distanceURange: [8, 8] },
+        centerExemptFromTimeout: true,
+      },
+    });
+    const { state, tm, runner } = setup(config);
+
+    runner.start(config);
+    runner.tick(state, 0);
+    killCurrentTarget(state, tm);
+    runner.tick(state, 1);
+    expect(state.targets[0]).toMatchObject({ id: 't1', zone: 'peripheral' });
+
+    runner.tick(state, 101);
+    expect(state.targets).toHaveLength(0);
+  });
+
+  it('spider-shot-v1：未設 centerExemptFromTimeout 時 center 仍在 peekTimeoutMs 到期時撤除', () => {
+    const config: DrillConfig = {
+      ...spiderShotV1,
+      targets: { ...spiderShotV1.targets, count: 2 },
+      timing: { ...spiderShotV1.timing, countdownMs: 0, peekTimeoutMs: 100 },
+      endCondition: { type: 'targetCount', value: 2 },
+    };
+    const { state, runner } = setup(config);
+
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(state.targets[0]).toMatchObject({ id: 't0', zone: 'center' });
+
+    runner.tick(state, 100);
     expect(state.targets).toHaveLength(0);
   });
 

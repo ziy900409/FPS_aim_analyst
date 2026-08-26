@@ -7,7 +7,7 @@
 | **相依** | T1 |
 | **Risk / Cplx** | Low-Med / Low(邏輯是一個條件式,風險在「必須同時證明新行為生效 + v1 不受影響」兩個方向都要測到) |
 | **Touches** | MODIFY `src/drill/DrillConfig.ts`、`src/drill/schema.ts`、`src/drill/DrillRunner.ts`、`src/drill/DrillRunner.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ 2026-08-26 |
 
 ## Objective
 

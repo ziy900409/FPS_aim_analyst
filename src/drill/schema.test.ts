@@ -94,6 +94,7 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
         kind: 'center-peripheral',
         seed: 20260824,
         centerDistanceU: 4,
+        centerExemptFromTimeout: true,
         peripheral: {
           angularRadiusDegRange: [10, 30],
           azimuthDegRange: [0, 360],
@@ -106,6 +107,7 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
       kind: 'center-peripheral',
       seed: 20260824,
       centerDistanceU: 4,
+      centerExemptFromTimeout: true,
       peripheral: {
         angularRadiusDegRange: [10, 30],
         azimuthDegRange: [0, 360],
@@ -122,6 +124,7 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
         kind: 'center-peripheral-stratified',
         seed: 20260826,
         centerDistanceU: 8,
+        centerExemptFromTimeout: false,
         peripheral: {
           angularRadiusDegRange: [10, 25],
           azimuthDegRange: [0, 360],
@@ -135,6 +138,7 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
       kind: 'center-peripheral-stratified',
       seed: 20260826,
       centerDistanceU: 8,
+      centerExemptFromTimeout: false,
       peripheral: {
         angularRadiusDegRange: [10, 25],
         azimuthDegRange: [0, 360],

@@ -137,6 +137,7 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
         if (peekTimeoutMs !== undefined) {
           for (let i = 0; i < s.targets.length; i++) {
             const target = s.targets[i];
+            if (target.zone === 'center' && config.spiderShot?.centerExemptFromTimeout === true) continue;
             const visibleAt = s.tVisible.get(target.id);
             if (target.alive && visibleAt !== undefined && nowMs - visibleAt >= peekTimeoutMs) {
               targetManager.markKilled(s, target.id);

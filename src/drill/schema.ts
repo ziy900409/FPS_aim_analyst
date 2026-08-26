@@ -141,15 +141,24 @@ function validateCueSchedule(json: unknown): CueScheduleConfig {
 function validateSpiderShotSchedule(json: unknown): SpiderShotScheduleConfig {
   const spiderShot = requireObject(json, 'spiderShot');
   if (spiderShot.kind === 'center-peripheral') {
+    const centerExemptFromTimeout =
+      spiderShot.centerExemptFromTimeout === undefined
+        ? undefined
+        : requireBoolean(spiderShot.centerExemptFromTimeout, 'spiderShot.centerExemptFromTimeout');
     return {
       kind: 'center-peripheral',
       seed: requireFiniteNumber(spiderShot.seed, 'spiderShot.seed'),
       centerDistanceU: requirePositiveNumber(spiderShot.centerDistanceU, 'spiderShot.centerDistanceU'),
       peripheral: validateSpiderPeripheral(requireObject(spiderShot.peripheral, 'spiderShot.peripheral'), 'spiderShot.peripheral'),
+      ...(centerExemptFromTimeout !== undefined ? { centerExemptFromTimeout } : {}),
     };
   }
   if (spiderShot.kind === 'center-peripheral-stratified') {
     const grid = requireObject(spiderShot.grid, 'spiderShot.grid');
+    const centerExemptFromTimeout =
+      spiderShot.centerExemptFromTimeout === undefined
+        ? undefined
+        : requireBoolean(spiderShot.centerExemptFromTimeout, 'spiderShot.centerExemptFromTimeout');
     return {
       kind: 'center-peripheral-stratified',
       seed: requireFiniteNumber(spiderShot.seed, 'spiderShot.seed'),
@@ -161,6 +170,7 @@ function validateSpiderShotSchedule(json: unknown): SpiderShotScheduleConfig {
         azimuthQuadrants: requirePositiveInt(grid.azimuthQuadrants, 'spiderShot.grid.azimuthQuadrants'),
         radiusTiers: requirePositiveInt(grid.radiusTiers, 'spiderShot.grid.radiusTiers'),
       },
+      ...(centerExemptFromTimeout !== undefined ? { centerExemptFromTimeout } : {}),
     };
   }
   throw err('spiderShot.kind', "必須為 'center-peripheral' 或 'center-peripheral-stratified'");
@@ -264,6 +274,11 @@ function requireObject(v: unknown, path: string): Record<string, unknown> {
 
 function requireFiniteNumber(v: unknown, path: string): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) throw err(path, '必須為有限數字');
+  return v;
+}
+
+function requireBoolean(v: unknown, path: string): boolean {
+  if (typeof v !== 'boolean') throw err(path, '必須為布林值');
   return v;
 }
 

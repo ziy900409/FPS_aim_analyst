@@ -44,6 +44,8 @@ export interface SpiderShotCenterPeripheralConfig {
   /** Center target distance from the player origin (source units). */
   centerDistanceU: number;
   peripheral: SpiderPeripheralConfig;
+  /** true 時中心目標不受 timing.peekTimeoutMs 撤除；省略/false 維持既有行為。 */
+  centerExemptFromTimeout?: boolean;
 }
 
 /**
@@ -74,6 +76,8 @@ export interface SpiderShotStratifiedConfig {
   centerDistanceU: number;
   peripheral: SpiderPeripheralConfig;
   grid: SpiderShotStratifiedGridConfig;
+  /** true 時中心目標不受 timing.peekTimeoutMs 撤除；省略/false 維持既有行為。 */
+  centerExemptFromTimeout?: boolean;
 }
 
 export type SpiderShotScheduleConfig = SpiderShotCenterPeripheralConfig | SpiderShotStratifiedConfig;
