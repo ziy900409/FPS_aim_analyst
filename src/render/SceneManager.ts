@@ -37,7 +37,7 @@ export class SceneManager {
 
     // 程序化房間幾何只在無 GLTF 資產時建;GLTF 場景自帶地形/props(見類別註解)。
     if (config.asset === null) {
-      this.#buildRoom(width, depth, height, room.colors);
+      this.#buildRoom(width, depth, height, room.floorY ?? 0, room.colors);
     }
     this.#buildLights(room.lights);
 
@@ -74,20 +74,25 @@ export class SceneManager {
     this.#assetGroup = null;
   }
 
-  #buildRoom(width: number, depth: number, height: number, colors: ProceduralRoomConfig['colors']): void {
+  #buildRoom(width: number, depth: number, height: number, floorY: number, colors: ProceduralRoomConfig['colors']): void {
     const hw = width / 2;
     const hd = depth / 2;
+    // 牆體縱深(KI-014):下緣 = floorY(省略時 0,逐位不變)、上緣固定 = height——降低 floorY
+    // 會連動加高牆體,牆與地板之間不留視覺縫隙(背景色不會從中透出)。
+    const wallHeight = height - floorY;
+    const wallCenterY = (floorY + height) / 2;
 
-    // 地板：平面鋪在 XZ（y=0），法線朝 +Y。
+    // 地板：平面鋪在 XZ（y=floorY），法線朝 +Y。
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(width, depth),
       new THREE.MeshStandardMaterial({ color: colors.floor, roughness: 0.95 }),
     );
     floor.rotation.x = -Math.PI / 2;
+    floor.position.y = floorY;
     this.scene.add(floor);
 
     // 四牆：PlaneGeometry 預設法線 +Z，以 rotation.y 轉到「朝房間內側」(FrontSide
-    // 即可從室內看見且被正確打光)。牆高 = height。
+    // 即可從室內看見且被正確打光)。牆高 = wallHeight,縱向置中於 [floorY, height]。
     const wallMat = new THREE.MeshStandardMaterial({
       color: colors.wall,
       roughness: 0.9,
@@ -101,10 +106,10 @@ export class SceneManager {
     ];
     for (const [planeWidth, x, z, rotY] of walls) {
       const wall = new THREE.Mesh(
-        new THREE.PlaneGeometry(planeWidth, height),
+        new THREE.PlaneGeometry(planeWidth, wallHeight),
         wallMat,
       );
-      wall.position.set(x, height / 2, z);
+      wall.position.set(x, wallCenterY, z);
       wall.rotation.y = rotY;
       this.scene.add(wall);
     }

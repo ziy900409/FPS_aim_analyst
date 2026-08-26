@@ -18,6 +18,12 @@ export interface ProceduralRoomConfig {
    * radial-spawn drill(前向目標 z=−distance)需 `eyeZ:0`,使實際交戰距離 == config distance。
    */
   eyeZ?: number;
+  /**
+   * 地板世界 y(KI-014)。省略時 = 0,逐位相容既有場景放置。牆體(`#buildRoom`)以此為下緣、
+   * `roomSize[2]`(height)為上緣,故降低 `floorY` 會連動加高牆體,不留視覺縫隙。
+   * 可為 0 或負值(finite number;不可 NaN/Infinity)——**不套** positive 驗證。
+   */
+  floorY?: number;
   colors: {
     floor: number;
     wall: number;
@@ -118,11 +124,14 @@ function validateProceduralRoom(v: unknown): ProceduralRoomConfig {
   const lights = requireObject(room.lights, 'proceduralRoom.lights');
   // eyeZ 為可省略的 world z(可為 0/負;finite);省略者維持 depth/2-standoff 逐位不變(KI-002/D1)。
   const eyeZ = room.eyeZ === undefined ? undefined : requireFiniteNumber(room.eyeZ, 'proceduralRoom.eyeZ');
+  // floorY 為可省略的地板 world y(可為 0/負;finite);省略者維持 y=0 逐位不變(KI-014)。
+  const floorY = room.floorY === undefined ? undefined : requireFiniteNumber(room.floorY, 'proceduralRoom.floorY');
   return {
     roomSize: validatePositiveNumberTuple3(room.roomSize, 'proceduralRoom.roomSize'),
     eyeHeight: requirePositiveNumber(room.eyeHeight, 'proceduralRoom.eyeHeight'),
     fovDeg: requirePositiveNumber(room.fovDeg, 'proceduralRoom.fovDeg'),
     ...(eyeZ !== undefined ? { eyeZ } : {}),
+    ...(floorY !== undefined ? { floorY } : {}),
     colors: {
       floor: requireColorNumber(colors.floor, 'proceduralRoom.colors.floor'),
       wall: requireColorNumber(colors.wall, 'proceduralRoom.colors.wall'),

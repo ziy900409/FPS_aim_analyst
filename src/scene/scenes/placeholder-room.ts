@@ -15,6 +15,11 @@ export const placeholderRoom: SceneConfig = validateScene({
     // camera/raycast 原點,牽動本場景其他既有 drill 的實際交戰距離。
     roomSize: [10, 20, 3],
     eyeZ: 4,
+    // floorY=-3（KI-014）：spider-shot-v2 的 angularRadiusDegRange 上限 25°、azimuth 朝下時，
+    // peripheral 目標世界 y 可低至約 -1.99（centerDistanceU=8、TARGET_Y=1.5 代入
+    // TargetManager.peripheralPos 公式）；地板原本在 y=0 會把這類目標下半部埋進地板。
+    // -3 留給 hitbox 半徑（~0.14）與未來候選值微調的安全邊界。
+    floorY: -3,
     eyeHeight: 1.6,
     fovDeg: 75,
     colors: {

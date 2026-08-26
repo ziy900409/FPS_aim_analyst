@@ -18,6 +18,8 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-014](KI-014-spider-shot-peripheral-target-sunk-below-floor.md) | KI-012 修復北牆遮擋後,使用者回報「現在地板高度也會遮蓋球體」——`spider-shot-v2` 的 `angularRadiusDegRange` 上限 25° 搭配 azimuth 朝下時,周邊目標世界 y 可低至約 -1.99,`placeholder-room` 地板原在 y=0,目標幾乎全沉入地板 | BD-014(§3,只放大 `placeholder-room` 的地板深度:新增 `floorY:-3` 並讓牆體下緣一併延伸,不動任何 drill config 凍結值) | ✅ 已修(2026-08-26) |
+| [KI-013](KI-013-controls-tdz-referenceerror-on-early-researcher-click.md) | 於 KI-012 診斷過程中意外發現:過早連續點擊「研究員模式」→「單一 Drill 調整」會拋出未捕捉的 `ReferenceError: Cannot access 'controls' before initialization`——`controls` 是頂層 `const`,兩個 top-level await 期間按鈕已可點但 `controls` 仍在 TDZ | BD-013(§3,`controls` 改為提早宣告的 `let \| undefined` + `syncControlsVisibility()` 補 guard,比照既有 `researcherMenu` 慣例) | ✅ 已修(2026-08-26) |
 | [KI-012](KI-012-spider-shot-target-occluded-by-placeholder-room-back-wall.md) | WP-46 T-exit 手動驗收回報「spider-shot-v2 沒有看到任何球體」——追碼證實 v1 的方塊目標在同一位置也一樣看不到:`placeholder-room` 北牆(z=-5)比 spider-shot 目標距離(z=-8)更靠近相機,整顆目標(不分形狀)被牆體完全遮擋;這正是 WP-5 T1 早已文件化過但被 WP-36 重蹈的坑 | BD-012(§3,只放大 `placeholder-room` 的 `roomSize` depth 10→20(北牆退到 z=-10),明確釘住 `eyeZ:4` 避免連動改變 camera/raycast 原點;不動任何 drill config 凍結值) | ✅ 已修(2026-08-26) |
 | [KI-011](KI-011-spider-shot-v1-clearance-rejected-in-field-low.md) | drill 選單選 `spider-shot-v1` 擲出「clearance 驗證失敗」，完全無法載入——`availableDrills` 缺 `sceneId`，fallback 到預設 field-low，其 tree/rock 道具與目標距離重疊 | BD-011(§3,`main.ts` 補 `sceneId: 'placeholder-room'`(唯一零 propBounds 的既有場景)) | ✅ 已修(2026-08-25) |
 | [KI-010](KI-010-rest-overlay-stuck-on-failed-auto-advance.md) | Session Plan 休息倒數結束後自動載入下一家族失敗時（`SessionRunner.poll()`）錯誤被 `void` 靜默丟棄，`phase` 永遠卡在 `'rest'`，`restOverlay` 因此永不消失 | BD-010(§3,`poll()` 自動 advance 補 `.catch()`：`onStatus` 回報 + 強制轉 `{kind:'done'}`；`runTransition()` 的 `.finally()` 鏈補 `.catch(() => {})` 避免衍生 unhandled rejection) | ✅ 已修(2026-08-25) |
@@ -58,6 +60,35 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-014 ✅ KI-014 — spider-shot 周邊目標朝下沉入 placeholder-room 地板(2026-08-26)
+
+| | |
+|---|---|
+| **發現處 / 根因** | [KI-012](KI-012-spider-shot-target-occluded-by-placeholder-room-back-wall.md)(北牆遮擋)修復後,使用者實機重測回報「現在地板高度也會遮蓋球體」。追碼確認 `TargetManager.ts` 的 `peripheralPos()` 公式在 azimuth=180°(朝下)、`angularRadiusDegRange` 取上限時,y 座標最負。代入 `spider-shot-v2` 實際參數(`centerDistanceU=8`、`TARGET_Y=1.5`、角距上限 25°)算出 y≈−1.99,而 `placeholder-room` 地板在 y=0——目標中心已埋進地板近 2 個單位,加上 hitbox 半徑幾乎全沉。`spider-shot-v1`(角距固定 15°)同公式算出最深僅 y≈−0.61,這正是 [KI-011](KI-011-spider-shot-v1-clearance-rejected-in-field-low.md) OQ-KI11-3 當年記錄過的數字,但只點出「比房高更寬」沒有追「已是負值、沉入地板」這一半;WP-44/46 把角距上限從 15° 放寬到 25°,把原本輕微的邊界情況推到幾乎全沉的程度。與 KI-012 同一族問題(drill 目標幾何 vs. 場景固定房間邊界不相容),但這次是地板(下邊界)而非北牆(遠邊界),兩者是房間六個面中獨立的兩面。完整診斷(含公式代入與 v1/v2 對照)見 [KI-014](KI-014-spider-shot-peripheral-target-sunk-below-floor.md)。 |
+| **決策** | 比照 KI-012 做法:`SceneConfig.ts` 的 `ProceduralRoomConfig` 新增選填 `floorY?: number`(比照既有 `eyeZ?` 慣例,省略=0 逐位不變);`SceneManager.ts` 的 `#buildRoom()` 用 `floorY` 定位地板,並讓四面牆下緣跟著一起下移(牆高=`height-floorY`,置中於 `[floorY,height]`,上緣仍固定於 `height`,不影響 KI-012 §6 OQ-KI12-1 記錄過的「周邊目標探出牆頂仍可見」行為);`placeholder-room.ts` 設 `floorY:-3`,覆蓋 v2 實測最深 y≈−1.99,留約 0.87 安全邊界。 |
+| **理由** | 不採「縮小 `angularRadiusDegRange` 上限」——這是 WP-44/46 未經 pilot 校準的候選值,拍板時已明確保留調整空間,為場景幾何限制反向遷就它本末倒置;場景幾何依 GD-6 本就可自由調整、不驚動 sim/drill config,是唯一不影響已定案協定數值的修法,與 KI-012 的修復哲學一致。 |
+| **偏離計畫** | 無。於使用者對 KI-012 修復的實機重測中回報觸發,依協議走 known_issue 流程(KI-014 tech spec + 本帳本);修復同時在 `spider_shot_v1.test.ts`/`spider_shot_v2.test.ts` 各新增回歸測試,透過真實 `TargetManager`/`createSharedState` 程式碼路徑(非手算公式斷言)鎖死 azimuth=180°/角距上限驗證世界 y 落在地板之上,防止角距上限日後再調大時第三次重蹈覆轍(不夠時測試會轉紅)。 |
+| **遺留 OQ** | **OQ-KI14-1**:2.0° 角直徑的中心目標即使完全無遮擋,螢幕投影直徑仍偏小(本次以 4°/8° 對照驗證過「越小越難看見」的趨勢),但這是尺寸感知問題不是遮擋問題,是否調整候選值屬 WP-46 校準範圍的產品決策。**OQ-KI14-2**:`floorY=-3` 是針對 v2 目前角距上限(25°)算出的安全邊界,若日後上限再調大(約超過 29°)需要重新驗證;新增的回歸測試會在那種情況下轉紅充當守門員。**OQ-KI14-3**(承 KI-012 OQ-KI12-2):`clearance.ts` 仍不查房間牆體/地板/天花板幾何,這已是同一類問題第二次靠人工重現找到,是否要補房間邊界檢查屬獨立架構決策。 |
+| **影響面** | **受影響**:`placeholder-room` 場景的地板/牆體下緣視覺呈現。**不受影響**:`spider_shot_v1.ts`(協定凍結,零改動)、`spider_shot_v2.ts`、`TargetManager.ts`/`HitDetector.ts` 任何判定邏輯、`clearance.ts` 驗證結果、`placeholder-room` 上其他既有 drill 的 camera/raycast 原點、匯出資料格式。`floorY` 為新增選填欄位,省略時對其他所有場景逐位不變。 |
+| **狀態** | ✅ **已修(2026-08-26)**。驗證:新增的 v1/v2 回歸測試經真實 `TargetManager` 程式碼路徑跑出朝下最深周邊目標 y(v1≈−0.61、v2≈−1.99),皆 `> floorY(-3) + hitbox 半徑`,測試全綠;視覺截圖確認房間幾何延伸無縫(牆體下緣跟地板一起延伸,無背景色透縫);`tsc --noEmit` exit 0;完整 `npm run test:ci` 全綠。 |
+
+---
+
+### BD-013 ✅ KI-013 — 過早點擊研究員模式/單一 Drill 調整撞 controls 的 TDZ(2026-08-26)
+
+| | |
+|---|---|
+| **發現處 / 根因** | 於 [KI-012](KI-012-spider-shot-target-occluded-by-placeholder-room-back-wall.md) 用 Playwright 重現使用者操作流程時,`page.on('pageerror', ...)` 意外攔到 `ReferenceError: Cannot access 'controls' before initialization`。追碼確認:`main.ts` 的 `setAppMode()`(~L394)與傳給 `createResearcherMenu()` 的 `onSelectDrillControls` callback(~L437)皆呼叫 `syncControlsVisibility()`,而它讀取的 `const controls = createControls(...)` 要到檔案尾端(~L1119)才執行,中間隔著兩個 top-level `await`(`measureDisplayRefresh()`/`measureDisplayHz()`,各自要跑數個 rAF 取樣、耗時可觀)。對應按鈕在這兩個 `await` 之前就已建立並掛上 click handler,故使用者若在懸置期間點擊,會在仍屬 TDZ 的 `controls` 上觸發 `ReferenceError`。`const`/`let` 的 TDZ 存取(含 `typeof`)一律拋錯,不像未宣告全域變數那樣能安全判斷「尚不存在」。 |
+| **為何肉眼不易察覺** | `setAppMode()`/`onSelectDrillControls` 呼叫 `syncControlsVisibility()` **之前**已完成真正該做的事(`appMode = next`、`researcherMenu.open()/close()`);例外只在函式最後一步、於事件 handler 內拋出,不中斷模組其餘頂層程式碼。等執行終於跑到 `controls = createControls(...)`,緊接著有一次**無條件**的 `syncControlsVisibility()` 呼叫,會用當下(已被使用者點擊改變過的)`appMode` 正確套用一次可見性——表面上功能正常,例外只安靜留在 console。 |
+| **決策** | `controls` 由檔案尾端的 `const` 改為提早宣告的 `let controls: ControlsHandle \| undefined`(比照既有 `researcherMenu`/`markProtocolFullscreenExit` 慣例),`syncControlsVisibility()` 開頭補 `if (controls === undefined) return;` guard;另外 `loadDrillById`/`loadSceneById` 內兩處 `controls.setSelectedScene/setSelectedDrill` 改用 `?.`(型別層級防禦,執行期行為不變,因為這兩個函式實際只會在 `controls` 已建好後才被呼叫)。 |
+| **理由** | 不採「把 `createControls(...)` 搬到檔案更前面」——它依賴 `restartActiveDrill`/`loadDrillById`/`loadSceneById`/`tracerView` 等一長串在它之後才定義的變數/函式,搬遷成本與回歸風險遠高於本次修法;`controls` 未就緒時本來就沒有面板可同步,no-op 是唯一正確(非僅「不報錯」)的行為——真正的狀態同步由 `controls` 建好後緊接的無條件呼叫負責,修復前後這條路徑不變。 |
+| **偏離計畫** | 無。於 KI-012 診斷過程中意外發現,依協議走 known_issue 流程(KI-013 tech spec + 本帳本);修復後在 `tests/e2e/overlay-layering.spec.ts` 新增一個永久回歸測試(模擬同一按鈕點擊序列並斷言無 `pageerror`),而非僅留一次性重現腳本。 |
+| **遺留 OQ** | **OQ-KI13-1**:同一類「頂層 `const` 依賴,中間隔 `await`,但 UI 已可互動」的結構性風險,原則上可能出現在 `main.ts`(~1300 行單一模組作用域)其他晚宣告的頂層 `const`;本次只處理實際重現到的 `controls` 一處,未做全檔案掃描式稽核,留給日後有動機系統性重構時再評估。 |
+| **影響面** | **受影響**:`src/main.ts` 的 `controls` 宣告形式與三個既有存取點寫法。**不受影響**:`syncControlsVisibility()`/`loadDrillById()`/`loadSceneById()` 在正常(非競態)路徑下的行為逐位不變、`Controls.ts`/`ResearcherMenu.ts` 元件本身、任何 drill/sim/export 邏輯。 |
+| **狀態** | ✅ **已修(2026-08-26)**。驗證:Playwright 連續點擊兩按鈕重現例外後,修復並以 `--repeat-each=5` 跑 5 次無 `pageerror`;新增的 e2e 回歸測試以 `--repeat-each=3` 跑 9 個測試全綠;`tsc --noEmit` exit 0。 |
+
+---
 
 ### BD-012 ✅ KI-012 — spider-shot-v1/v2 目標被 placeholder-room 北牆遮擋，完全看不見(2026-08-26)
 
