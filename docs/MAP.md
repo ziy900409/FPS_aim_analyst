@@ -256,6 +256,10 @@ docs/exec-plan/
 |---|---|
 | [research/FPSci_評估與建議.md](research/FPSci_評估與建議.md) | NVlabs FPSci（SIGGRAPH 2022）與本專案逐軸比較；建議 R1–R7（schema 對映 → WP-16、click-to-photon 校準 → WP-20、CC BY-NC-SA 授權紅線） |
 
+### 4.1 指標設計文件（`docs/algorithm/metrix_design/`，移植自 `performance_analysis`）
+
+> 另一個獨立專案 `performance_analysis` 的指標設計 guide，**靜態複製於 2026-08-27**，不隨來源自動同步；索引與逐份移植狀態見 [algorithm/metrix_design/README.md](algorithm/metrix_design/README.md)。同樣非 source of truth——權威定義一律是 [operational/analysis-*.md](operational/) + `src/metrics/`（CLAUDE.md C-D4）。供 stage4（WP-28~32，[completed/stage4/README.md](exec-plan/completed/stage4/README.md)）已移植/晉升指標（`sync-v1`/SPARC/Key-Velocity xcorr）回溯設計脈絡，以及評估尚未移植的指標（LDJ-V、KeyboardTrace Overlap 等）。
+
 ---
 
 ## 5. 已知問題與修 bug 決策（`docs/known_issue/`）

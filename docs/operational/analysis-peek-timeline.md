@@ -18,6 +18,11 @@ established aggregate metrics remain governed by frozen `compute-v1` in the engi
 | `release_to_fire_ms` / `counter_hold_ms` / `counter_to_fire_ms` | `sync-v1` | Python (`sync.py`) | New construct + pre-registered precision verdict |
 | submovement segmentation | `seg-v1` | Python (`submovement.py`) | Frozen upstream; **not consumed** by this contract |
 
+> `sync-v1`'s original design context from the source project (`performance_analysis`) is statically
+> copied at [`docs/algorithm/metrix_design/release-to-click-sync-guide-2026-05-22.md`](../algorithm/metrix_design/release-to-click-sync-guide-2026-05-22.md)
+> (index: [`docs/algorithm/metrix_design/README.md`](../algorithm/metrix_design/README.md)). This file
+> remains the authority for `sync-v1` (C-D4); the copy is background only.
+
 The coach report v0 (`research/src/report/coach_report.py`) is the single-command consumer: it
 renders exactly these six metrics, each annotated with its `n`, flag counts, version string and
 validity tier, and refuses to display any construct that has not passed a gate (C-D3 / GD-20).

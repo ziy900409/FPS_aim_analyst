@@ -4,6 +4,14 @@ This document is the operational registry for WP-28's offline segmentation layer
 consume angular speed in degrees per second at the export's nominal 128 Hz tick rate. Radian to
 degree conversion remains confined to `research/src/modules/kinematics/algorithms/angular.py`.
 
+> Related design context from the source project (`performance_analysis`) is statically copied at
+> [`docs/algorithm/metrix_design/`](../algorithm/metrix_design/README.md):
+> [primary-submovement-ratio-guide](../algorithm/metrix_design/primary-submovement-ratio-guide-2026-05-20.md)
+> (primary_flick/micro_adjustment classification concept behind this segmentation) and
+> [per-segment-ldj-v-guide](../algorithm/metrix_design/per-segment-ldj-v-guide-2026-05-21.md) (LDJ-V
+> smoothness metric — **not yet ported** into this project). This file remains the authority for
+> `seg-v2`/quality flags (C-D4); the copies are background only.
+
 ## Segment definition
 
 `segment_submovements` smooths a finite trace with Savitzky-Golay filtering, gates peaks at the

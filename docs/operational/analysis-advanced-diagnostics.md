@@ -8,6 +8,13 @@ FR-D14,T2)、**`fitts-v1`**(Fitts ID/MT/TP,FR-D15,T3),以及 T-exit 收斂的三
 三個構念的交付物都是**判定**,不是數字(C-D3 / GD-20):「算得出來」不等於「可以對選手講」。
 每個構念的章節末尾都必須有一段明確的使用限制。
 
+> 三個構念在來源專案(`performance_analysis`)的原始設計脈絡(目的/公式推導/notebook 用法),已靜態複製於
+> [`docs/algorithm/metrix_design/`](../algorithm/metrix_design/README.md):
+> [per-segment-sparc-tracking-guide](../algorithm/metrix_design/per-segment-sparc-tracking-guide-2026-05-21.md)(`sparc-v1`)、
+> [key-velocity-coupling-guide](../algorithm/metrix_design/key-velocity-coupling-guide-2026-05-22.md)(`xcorr-v1`/`gate-v1`)、
+> [velocity-scaling-consistency-guide](../algorithm/metrix_design/velocity-scaling-consistency-guide-2026-05-21.md)(`fitts-v1` 相關背景)。
+> 本檔仍是本專案的權威定義(C-D4);複製文件僅供回溯設計脈絡,不可覆寫本檔的凍結 registry。
+
 ---
 
 ## `sparc-v1`
