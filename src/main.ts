@@ -1135,11 +1135,14 @@ markProtocolFullscreenExit = () => activeProtocolRunner.markCurrentConditionSusp
 controls = createControls({
   drills: availableDrills.map(({ id, label }) => ({ id, label })),
   scenes: availableScenes.map(({ id, label }) => ({ id, label })),
+  weapons: [],
   selectedDrillId: activeDrillConfig.drillId,
   selectedSceneId: activeSceneConfig.sceneId,
+  selectedWeaponId: 'ak47',
   onRestart: restartActiveDrill,
   onLoadDrill: loadDrillById,
   onLoadScene: loadSceneById,
+  onLoadWeapon: () => {},
   initialTracerEnabled: tracerEnabled,
   onTracerEnabledChange: (enabled) => {
     tracerEnabled = enabled;

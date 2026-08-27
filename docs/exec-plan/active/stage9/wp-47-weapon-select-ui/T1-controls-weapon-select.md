@@ -7,7 +7,7 @@
 | **相依** | T0 |
 | **Risk / Cplx** | Low / Low(純 UI 元件擴充,逐行照抄既有 `sceneSelect` pattern) |
 | **Touches** | MODIFY `src/ui/Controls.ts`、`src/ui/Controls.test.ts` |
-| **狀態** | ⬜ |
+| **狀態** | ✅ |
 
 ## Objective
 

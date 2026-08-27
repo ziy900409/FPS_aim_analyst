@@ -8,14 +8,22 @@ export interface SceneControlOption {
   label: string;
 }
 
+export interface WeaponControlOption {
+  id: string;
+  label: string;
+}
+
 export interface ControlsOptions {
   drills: DrillControlOption[];
   scenes: SceneControlOption[];
+  weapons: WeaponControlOption[];
   selectedDrillId: string;
   selectedSceneId: string;
+  selectedWeaponId: string;
   onRestart: () => void | Promise<void>;
   onLoadDrill: (drillId: string) => void | Promise<void>;
   onLoadScene: (sceneId: string) => void | Promise<void>;
+  onLoadWeapon: (weaponId: string) => void | Promise<void>;
   initialTracerEnabled?: boolean;
   onTracerEnabledChange?: (enabled: boolean) => void;
   parent?: HTMLElement;
@@ -25,6 +33,7 @@ export interface ControlsHandle {
   setVisible(visible: boolean): void;
   setSelectedDrill(drillId: string): void;
   setSelectedScene(sceneId: string): void;
+  setSelectedWeapon(weaponId: string): void;
   setTracerEnabled(enabled: boolean): void;
   dispose(): void;
 }
@@ -77,6 +86,15 @@ export function createControls(options: ControlsOptions): ControlsHandle {
   }
   sceneSelect.value = options.selectedSceneId;
   const loadSceneButton = makeButton('Scene', 'Load selected scene');
+  const weaponSelect = makeSelect('weapon-select', 'Select weapon');
+  for (const weapon of options.weapons) {
+    const option = document.createElement('option');
+    option.value = weapon.id;
+    option.textContent = weapon.label;
+    weaponSelect.appendChild(option);
+  }
+  weaponSelect.value = options.selectedWeaponId;
+  const loadWeaponButton = makeButton('Weapon', 'Load selected weapon');
   const tracerToggle = options.onTracerEnabledChange === undefined
     ? undefined
     : makeToggle('tracer-toggle', 'Tracer', options.initialTracerEnabled ?? true);
@@ -86,6 +104,8 @@ export function createControls(options: ControlsOptions): ControlsHandle {
     loadButton,
     sceneSelect,
     loadSceneButton,
+    weaponSelect,
+    loadWeaponButton,
     ...(tracerToggle === undefined ? [] : [tracerToggle.input]),
   ];
 
@@ -95,6 +115,8 @@ export function createControls(options: ControlsOptions): ControlsHandle {
     loadButton,
     sceneSelect,
     loadSceneButton,
+    weaponSelect,
+    loadWeaponButton,
     ...(tracerToggle === undefined ? [] : [tracerToggle.label]),
   );
   parent.appendChild(root);
@@ -111,6 +133,11 @@ export function createControls(options: ControlsOptions): ControlsHandle {
   loadSceneButton.addEventListener('click', () =>
     void runControl(allControls, () => options.onLoadScene(sceneSelect.value)),
   );
+  // 按鈕確認才套用（比照 loadSceneButton）：換武器是重量級動作（simLoop 重建、recoil/ammo 歸零），
+  // 不監聽 weaponSelect 的 change，避免下拉選單意外滾動觸發。
+  loadWeaponButton.addEventListener('click', () =>
+    void runControl(allControls, () => options.onLoadWeapon(weaponSelect.value)),
+  );
   tracerToggle?.input.addEventListener('change', () => {
     options.onTracerEnabledChange?.(tracerToggle.input.checked);
   });
@@ -126,6 +153,9 @@ export function createControls(options: ControlsOptions): ControlsHandle {
     },
     setSelectedScene(sceneId: string): void {
       sceneSelect.value = sceneId;
+    },
+    setSelectedWeapon(weaponId: string): void {
+      weaponSelect.value = weaponId;
     },
     setTracerEnabled(enabled: boolean): void {
       if (tracerToggle === undefined) return;
