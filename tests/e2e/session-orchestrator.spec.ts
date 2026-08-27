@@ -42,9 +42,11 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
 
     const launchControls = page.locator('#session-launch-controls');
     const primaryButtons = launchControls.locator('[data-launch-tier="primary"] > button');
-    await expect(primaryButtons).toHaveCount(2);
+    // WP-49 T1 新增第三個主入口「歷史紀錄」。
+    await expect(primaryButtons).toHaveCount(3);
     await expect(primaryButtons.nth(0)).toHaveText('選手測試 Session');
     await expect(primaryButtons.nth(1)).toHaveText('研究員模式');
+    await expect(primaryButtons.nth(2)).toHaveText('歷史紀錄');
     await expect(launchControls.locator('button[data-launch-tier="legacy"]')).toHaveText('實驗 session');
 
     const drillControls = page.locator('#drill-controls');

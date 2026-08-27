@@ -7,7 +7,7 @@
 | Done | Task | Objective | Dependencies | Risk | Estimate |
 |---|---|---|---|---|---|
 | ✅ | **T0** Entry gate／handoff audit／PoC／決策凍結 | [T0-entry-gate.md](T0-entry-gate.md) | WP-48 contract | High | 0.5–1d |
-| ⬜ | **T1** Navigation/controller shell | [T1-navigation-controller.md](T1-navigation-controller.md) | T0 | High | 1.5–2.5d |
+| ✅ | **T1** Navigation/controller shell | [T1-navigation-controller.md](T1-navigation-controller.md) | T0 | High | 1.5–2.5d |
 | ⬜ | **T2** Participant／exact-drill browser | [T2-participant-drill-browser.md](T2-participant-drill-browser.md) | T1 + WP-48 T4 | Med | 1.5–2.5d |
 | ⬜ | **T3** Run list／historical Result | [T3-run-list-result-detail.md](T3-run-list-result-detail.md) | T2 + WP-48 loadRun | High | 2–3d |
 | ⬜ | **T4** Metric registry／analysis API／trend domain | [T4-metric-registry-trend-domain.md](T4-metric-registry-trend-domain.md) | T0 + WP-48 T2/T3 | High | 2–3d |

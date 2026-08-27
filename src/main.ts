@@ -17,6 +17,9 @@ import { createHistoryView } from './ui/HistoryView.ts';
 import { createHistorySaveStatus } from './ui/HistorySaveStatus.ts';
 import { createHistoryClient } from './history/HistoryClient.ts';
 import { createHistoryPersistence, type HistorySaveState } from './history/HistoryPersistence.ts';
+import { createHistoryLibraryController } from './history/HistoryLibraryController.ts';
+import { createHistoryNavigator } from './history/navigation/HistoryNavigator.ts';
+import { createHistoryScreen, type HistoryScreenHandle } from './ui/history/HistoryScreen.ts';
 import { createControls, type ControlsHandle } from './ui/Controls.ts';
 import {
   createResearcherMenu,
@@ -224,6 +227,11 @@ function activeWeaponConfig() {
   return getWeapon(activeWeaponOverride ?? activeDrillConfig.weaponId ?? 'ak47');
 }
 
+// WP-49 T1 — 宣告放在這裡（而非稍後 History 元件實際建構的賦值點）讓 canvas click handler
+// （下方,早於 History 實際建好前就掛上）在其間任何 top-level await 期間讀到安全的
+// `undefined`,而不是撞 TDZ ReferenceError（同 KI-013 對 `controls` 的處理方式）。
+let historyScreenHandle: HistoryScreenHandle | undefined;
+
 // WP-1 / T2（FR-1.2）— Pointer Lock：click 取得、Esc/失焦解除、可重取。
 const pointerLock = createPointerLock(canvas);
 
@@ -261,6 +269,11 @@ pointerLock.onChange((locked) => {
 
 canvas.addEventListener('click', () => {
   if (pointerLock.locked) return;
+  // WP-49 T1（FM-49.10）— History 為 z-index 最高的 full-screen application surface,理論上
+  // 其 pointer-events:auto backdrop 已讓 canvas click 收不到事件;此處仍顯式擋一層，避免未來
+  // overlay z-index 回歸（WP-9 曾發生 export panel z-index 低於 backdrop 的先例）重新引入
+  // 「History 開著卻取得 Pointer Lock」。
+  if (historyScreenHandle?.visible === true) return;
   // 失敗時由 pointerlockerror 事件驅動 UI 復原，故吞掉 request 的 rejection。
   void pointerLock.request().catch(() => {});
 });
@@ -431,7 +444,17 @@ researcherModeButton.textContent = '研究員模式';
 researcherModeButton.title = '開啟單一 Drill 調整與研究 protocol';
 researcherModeButton.style.cssText = launchButtonCss;
 researcherModeButton.addEventListener('click', () => setAppMode('researcher'));
-mainLaunchActions.append(participantSessionButton, researcherModeButton);
+
+// WP-49 T1（FR-49.1）— 所有使用者都能進入的歷史紀錄入口；`historyScreenHandle` 已於檔案上方
+// 宣告避免 TDZ（KI-013 pattern），實際 handle 於下方 History 元件建構區塊賦值。
+const historyButton = document.createElement('button');
+historyButton.type = 'button';
+historyButton.textContent = '歷史紀錄';
+historyButton.title = '瀏覽 Participant 過去的 Assessment 結果與趨勢';
+historyButton.style.cssText = launchButtonCss;
+historyButton.addEventListener('click', () => historyScreenHandle?.open());
+
+mainLaunchActions.append(participantSessionButton, researcherModeButton, historyButton);
 
 const experimentButton = document.createElement('button');
 experimentButton.type = 'button';
@@ -780,6 +803,15 @@ const historyClient = createHistoryClient();
 const historyPersistence = createHistoryPersistence(historyClient);
 const historySaveStatus = createHistorySaveStatus({ onRetry: () => void historyPersistence.retry() });
 historyPersistence.subscribe((state) => historySaveStatus.render(state));
+
+// WP-49 T1（FR-49.1/49.6）— navigation/controller/shell only；real Participant/drill/run
+// browsing UI is T2/T3, drill metric trends are T4. `historyLibraryController` already reacts
+// to route changes against the real `historyClient` (WP-48) — T2 just adds the list-rendering
+// components that consume `historyLibraryController.state`.
+const historyNavigator = createHistoryNavigator();
+const historyLibraryController = createHistoryLibraryController({ navigator: historyNavigator, client: historyClient });
+historyScreenHandle = createHistoryScreen({ navigator: historyNavigator, controller: historyLibraryController });
+historyLibraryController.start();
 
 const resultScreen = createResultScreen({
   historyView: historyView.element,

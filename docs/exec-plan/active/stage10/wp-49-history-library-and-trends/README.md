@@ -16,7 +16,7 @@
 | **Scale target** | 5,000 個 Assessment run summaries；單一 drill 可有數百至數千 runs，列表與分析必須分頁／漸進載入 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | High：新 navigation state、歷史／當前 Result 共用、metric 語意與大量 payload 分析 |
-| **Status** | 🟡 **T0 完成（2026-08-27）**：handoff 對帳零 mismatch、route/Result-seam/100-run projection 三個 PoC 皆有實測證據、baseline `test:ci` 綠燈、production diff=0。OQ-49.1～5 已與使用者收斂（詳見 [progress.md](progress.md)）：僅註冊 `spider-shot-v2`（peek-click-transfer 需另立跨 WP 決定；`spider-shot-v2` metric descriptor 待 T4 前由研究設計 owner 定義）、latest-eligible cohort 預設+selector、T3 移除人工 picker、cursor 分頁漸進趨勢、Participant 頁只顯示分類 count。T1 可開始 |
+| **Status** | 🟡 **T1 完成（2026-08-27）**：`HistoryRoute`/`HistoryNavigator`/`HistoryLibraryController`/`HistoryScreen` 四個新模組 + 77 個 unit test 全綠，`main.ts` 接上「歷史紀錄」launch 入口與 Pointer Lock gate（FM-49.10），5 個新 Playwright E2E 涵蓋 launch/Back-Forward/reload/close/pointer-lock 負向斷言。`npm run test:ci` 全綠（151 test files / 1297 tests + 41 e2e）。詳見 [progress.md](progress.md) D-49.P14～P19。T0 決議：OQ-49.1～5 已與使用者收斂：僅註冊 `spider-shot-v2`（peek-click-transfer 需另立跨 WP 決定；`spider-shot-v2` metric descriptor 待 T4 前由研究設計 owner 定義）、latest-eligible cohort 預設+selector、T3 移除人工 picker、cursor 分頁漸進趨勢、Participant 頁只顯示分類 count。T2 可開始 |
 
 ---
 

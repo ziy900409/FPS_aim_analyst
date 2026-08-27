@@ -95,12 +95,12 @@ test('session launch controls do not overlap the settings panel', async ({ page 
         .map((button) => button.textContent);
     }, expectedVisibleButtons);
 
-  // WP-43 T1：兩個主入口 + 保留的 legacy「實驗 session」。
-  await expect.poll(() => overlapsSettingsPanel(3), { timeout: 15_000 }).toEqual([]);
+  // WP-43 T1：兩個主入口 + WP-49 T1「歷史紀錄」入口 + 保留的 legacy「實驗 session」。
+  await expect.poll(() => overlapsSettingsPanel(4), { timeout: 15_000 }).toEqual([]);
 
   // 展開研究員三項子選單後，top-left flex layout 仍須把 Settings panel 往下推開。
   await page.getByRole('button', { name: '研究員模式', exact: true }).click();
-  await expect.poll(() => overlapsSettingsPanel(6), { timeout: 15_000 }).toEqual([]);
+  await expect.poll(() => overlapsSettingsPanel(7), { timeout: 15_000 }).toEqual([]);
 });
 
 test('KI-013：切換研究員模式 / 單一 Drill 調整不拋 TDZ ReferenceError', async ({ page }) => {

@@ -1,0 +1,228 @@
+/**
+ * WP-49 T1 — single owner of History route-driven async data (README §2.4). DOM views never
+ * fetch: they send navigation/retry intent here and render the immutable `state` snapshot this
+ * controller publishes. Each scope (participants/drills/runs/run-detail) is generation-tracked so
+ * a response for a route the user has since navigated away from is discarded instead of clobbering
+ * newer state (FM-49.1).
+ *
+ * `observations` (drill-level metric trend data) stays `idle` for the lifetime of T1: it depends on
+ * the paged analysis endpoint README §2.6 defines, which does not exist until WP-49 T4. Wiring it
+ * up is explicitly T4's job (WP-49 README task table); `retry('observations')` and
+ * `loadNextObservationPage()` are present here only to satisfy the full T1 interface shape and are
+ * no-ops until then.
+ */
+
+import type { ExportPayload } from '../data/export.ts';
+import { HistoryClientError, type HistoryClient } from './HistoryClient.ts';
+import type { HistoryDrillSummary, HistoryIndexReport, HistoryParticipantSummary, HistoryRunSummary } from './contracts.ts';
+import type { HistoryNavigator } from './navigation/HistoryNavigator.ts';
+import type { HistoryRoute } from './navigation/HistoryRoute.ts';
+
+export type AsyncState<T> =
+  | { readonly status: 'idle' }
+  | { readonly status: 'loading'; readonly previous?: T }
+  | { readonly status: 'ready'; readonly value: T }
+  | { readonly status: 'empty' }
+  | { readonly status: 'error'; readonly code: string; readonly message: string; readonly retryable: boolean };
+
+const IDLE: AsyncState<never> = { status: 'idle' };
+
+/** T4 replaces this with the real paged collection derived from `HistoryObservationPage`
+ * (README §2.6). The slot exists now so `HistoryLibraryState`'s shape matches the spec; nothing in
+ * T1 ever constructs a `'ready'` value for it. */
+export type HistoryObservationCollection = never;
+
+/** T3 replaces this with the full `ResultPresentation`-wrapped historical view (README §2.8). Until
+ * `ResultPresentation.ts` exists, run detail is exactly what `HistoryClient.loadRun` returns. */
+export type HistoricalRunPresentation = ExportPayload;
+
+export type HistoryLibraryScope = 'participants' | 'drills' | 'runs' | 'observations' | 'run-detail';
+
+export interface HistoryLibraryState {
+  readonly route?: HistoryRoute;
+  readonly participants: AsyncState<readonly HistoryParticipantSummary[]>;
+  readonly drills: AsyncState<readonly HistoryDrillSummary[]>;
+  readonly runs: AsyncState<readonly HistoryRunSummary[]>;
+  readonly observations: AsyncState<HistoryObservationCollection>;
+  readonly runDetail: AsyncState<HistoricalRunPresentation>;
+  readonly health?: HistoryIndexReport;
+}
+
+export interface HistoryLibraryController {
+  readonly state: HistoryLibraryState;
+  start(): void;
+  retry(scope: HistoryLibraryScope): void;
+  loadNextObservationPage(): void;
+  subscribe(listener: (state: HistoryLibraryState) => void): () => void;
+  dispose(): void;
+}
+
+export interface HistoryLibraryControllerOptions {
+  readonly navigator: HistoryNavigator;
+  readonly client: HistoryClient;
+}
+
+const INITIAL_STATE: HistoryLibraryState = {
+  route: undefined,
+  participants: IDLE,
+  drills: IDLE,
+  runs: IDLE,
+  observations: IDLE,
+  runDetail: IDLE,
+};
+
+function previousValue<T>(current: AsyncState<T>): T | undefined {
+  if (current.status === 'ready') return current.value;
+  if (current.status === 'loading') return current.previous;
+  return undefined;
+}
+
+function errorState(error: unknown): AsyncState<never> {
+  if (error instanceof HistoryClientError) {
+    return { status: 'error', code: error.code, message: error.message, retryable: error.retryable };
+  }
+  return {
+    status: 'error',
+    code: 'UNKNOWN',
+    message: error instanceof Error ? error.message : 'unknown error',
+    retryable: false,
+  };
+}
+
+type FetchableScope = Exclude<HistoryLibraryScope, 'observations'>;
+
+export function createHistoryLibraryController(options: HistoryLibraryControllerOptions): HistoryLibraryController {
+  const { navigator, client } = options;
+  let state: HistoryLibraryState = INITIAL_STATE;
+  let disposed = false;
+  const listeners = new Set<(state: HistoryLibraryState) => void>();
+
+  // Per-scope generation counter: a response is only applied if the generation captured when its
+  // request started still matches when it resolves — a superseded request's outcome (success,
+  // error, or abort) is silently dropped (FM-49.1).
+  const generations: Record<FetchableScope, number> = { participants: 0, drills: 0, runs: 0, 'run-detail': 0 };
+  const controllers: Partial<Record<FetchableScope, AbortController>> = {};
+
+  function setState(patch: Partial<HistoryLibraryState>): void {
+    if (disposed) return;
+    state = { ...state, ...patch };
+    for (const listener of listeners) listener(state);
+  }
+
+  function beginRequest(scope: FetchableScope): { readonly generation: number; readonly signal: AbortSignal } {
+    controllers[scope]?.abort();
+    const controller = new AbortController();
+    controllers[scope] = controller;
+    const generation = generations[scope] + 1;
+    generations[scope] = generation;
+    return { generation, signal: controller.signal };
+  }
+
+  function isCurrent(scope: FetchableScope, generation: number): boolean {
+    return !disposed && generations[scope] === generation;
+  }
+
+  async function loadParticipants(): Promise<void> {
+    const { generation, signal } = beginRequest('participants');
+    setState({ participants: { status: 'loading', previous: previousValue(state.participants) } });
+    try {
+      const items = await client.listParticipants(signal);
+      if (!isCurrent('participants', generation)) return;
+      setState({ participants: items.length === 0 ? { status: 'empty' } : { status: 'ready', value: items } });
+    } catch (error) {
+      if (!isCurrent('participants', generation)) return;
+      setState({ participants: errorState(error) });
+    }
+  }
+
+  async function loadDrills(participantId: string): Promise<void> {
+    const { generation, signal } = beginRequest('drills');
+    setState({ drills: { status: 'loading', previous: previousValue(state.drills) } });
+    try {
+      const items = await client.listDrills(participantId, signal);
+      if (!isCurrent('drills', generation)) return;
+      setState({ drills: items.length === 0 ? { status: 'empty' } : { status: 'ready', value: items } });
+    } catch (error) {
+      if (!isCurrent('drills', generation)) return;
+      setState({ drills: errorState(error) });
+    }
+  }
+
+  async function loadRuns(participantId: string, drillId: string): Promise<void> {
+    const { generation, signal } = beginRequest('runs');
+    setState({ runs: { status: 'loading', previous: previousValue(state.runs) } });
+    try {
+      const items = await client.listRuns(participantId, drillId, signal);
+      if (!isCurrent('runs', generation)) return;
+      setState({ runs: items.length === 0 ? { status: 'empty' } : { status: 'ready', value: items } });
+    } catch (error) {
+      if (!isCurrent('runs', generation)) return;
+      setState({ runs: errorState(error) });
+    }
+  }
+
+  async function loadRunDetail(runId: string): Promise<void> {
+    const { generation, signal } = beginRequest('run-detail');
+    setState({ runDetail: { status: 'loading', previous: previousValue(state.runDetail) } });
+    try {
+      const payload = await client.loadRun(runId, signal);
+      if (!isCurrent('run-detail', generation)) return;
+      setState({ runDetail: { status: 'ready', value: payload } });
+    } catch (error) {
+      if (!isCurrent('run-detail', generation)) return;
+      setState({ runDetail: errorState(error) });
+    }
+  }
+
+  function reactToRoute(route: HistoryRoute | undefined): void {
+    setState({ route });
+    if (route === undefined) return;
+    switch (route.kind) {
+      case 'participants':
+        void loadParticipants();
+        return;
+      case 'drills':
+        void loadDrills(route.participantId);
+        return;
+      case 'drill':
+        void loadRuns(route.participantId, route.drillId);
+        return;
+      case 'run':
+        void loadRunDetail(route.runId);
+        return;
+    }
+  }
+
+  const unsubscribeNavigator = navigator.subscribe(reactToRoute);
+
+  return {
+    get state() {
+      return state;
+    },
+    start(): void {
+      reactToRoute(navigator.current);
+    },
+    retry(scope: HistoryLibraryScope): void {
+      const route = state.route;
+      if (route === undefined) return;
+      if (scope === 'participants' && route.kind === 'participants') void loadParticipants();
+      else if (scope === 'drills' && route.kind === 'drills') void loadDrills(route.participantId);
+      else if (scope === 'runs' && route.kind === 'drill') void loadRuns(route.participantId, route.drillId);
+      else if (scope === 'run-detail' && route.kind === 'run') void loadRunDetail(route.runId);
+      // 'observations': no-op until T4 (see module doc comment).
+    },
+    loadNextObservationPage(): void {
+      // No-op until T4 wires cursor-paged fetches against the not-yet-built analysis endpoint.
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    dispose(): void {
+      disposed = true;
+      unsubscribeNavigator();
+      for (const scope of Object.keys(controllers) as FetchableScope[]) controllers[scope]?.abort();
+      listeners.clear();
+    },
+  };
+}

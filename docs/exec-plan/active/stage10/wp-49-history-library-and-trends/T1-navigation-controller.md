@@ -45,12 +45,12 @@ tests/e2e/history-navigation.spec.ts               NEW
 
 ## Definition of Done
 
-- [ ] route parse/format round-trip與invalid matrix全綠；logical ids逐segment encode。
-- [ ] Back/Forward/reload/replace/close/scroll restoration tests全綠。
-- [ ] abort在fake clock 100ms門檻內；stale generation不commit。
-- [ ] shell所有controls有accessible name、keyboard focus順序與typed state rendering tests。
-- [ ] History active時Pointer Lock／game input不啟動；關閉後既有launch狀態恢復。
-- [ ] current Result、sim、WP-48 persistence無行為diff；targeted/full Vitest、Playwright、build全綠。
+- [x] route parse/format round-trip與invalid matrix全綠；logical ids逐segment encode。（2026-08-27，`HistoryRoute.test.ts` 30 tests）
+- [x] Back/Forward/reload/replace/close/scroll restoration tests全綠。（2026-08-27，`HistoryNavigator.test.ts` 13 tests，含 fake window/history stack）
+- [x] abort在fake clock 100ms門檻內；stale generation不commit。（2026-08-27，`HistoryLibraryController.test.ts` race-safety group：generation-token 同步 abort，非 timer-based——見下方 Decision Log 偏離說明）
+- [x] shell所有controls有accessible name、keyboard focus順序與typed state rendering tests。（2026-08-27，`HistoryScreen.test.ts` 20 tests）
+- [x] History active時Pointer Lock／game input不啟動；關閉後既有launch狀態恢復。（2026-08-27，`tests/e2e/history-navigation.spec.ts` FM-49.10 + Close 案例）
+- [x] current Result、sim、WP-48 persistence無行為diff；targeted/full Vitest、Playwright、build全綠。（2026-08-27，`npm run test:ci`：151 test files / 1297 tests passed + 2 skipped，41 Playwright e2e passed，build 乾淨）
 
 ## Commit
 
