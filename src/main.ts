@@ -67,7 +67,7 @@ import { STAGE6_BASELINE_MIN_N, STAGE6_BASELINE_WINDOW_SIZE, STAGE6_PROTOCOL_VER
 import { deriveHoldClickMetrics } from './metrics/holdClickMetrics.ts';
 import { deriveTrackingMetrics } from './metrics/trackingDerivation.ts';
 import { buildSessionHistory, type SessionSummary } from './metrics/sessionHistory.ts';
-import { getWeapon } from './weapon/weapons.ts';
+import { getWeapon, WEAPONS, type WeaponId } from './weapon/weapons.ts';
 import type { SceneConfig } from './scene/SceneConfig.ts';
 import { resolveEyeWorldBase } from './scene/eyePose.ts';
 import { isOutsideCorridor } from './scene/corridor.ts';
@@ -215,8 +215,10 @@ function resize(): void {
 resize();
 window.addEventListener('resize', resize);
 
+let activeWeaponOverride: WeaponId | undefined;
+
 function activeWeaponConfig() {
-  return getWeapon(activeDrillConfig.weaponId ?? 'ak47');
+  return getWeapon(activeWeaponOverride ?? activeDrillConfig.weaponId ?? 'ak47');
 }
 
 // WP-1 / T2（FR-1.2）— Pointer Lock：click 取得、Esc/失焦解除、可重取。
@@ -1020,6 +1022,18 @@ function restartActiveDrill(): void {
   syncControlsVisibility();
 }
 
+function loadWeaponById(weaponId: WeaponId): void {
+  activeWeaponOverride = weaponId;
+  drillRunner.restart();
+  resetRunPresentation();
+  simLoop = buildSimLoop(); // WP-47 / T2：重建 loop 重置 recoil rng stream + tickIndex（決定性,同 restartActiveDrill/loadDrillById）。
+  cameraController.setAdsConfig(activeWeaponConfig().ads);
+  recorder.configureMouseIntegration({ gain: currentMouseGain() });
+  drillRunner.start(activeDrillConfig);
+  controls?.setSelectedWeapon(weaponId);
+  syncControlsVisibility();
+}
+
 function findSceneOption(sceneId: string): AvailableScene {
   const option = availableScenes.find((candidate) => candidate.id === sceneId);
   if (option === undefined) throw new Error(`Unknown scene: ${sceneId}`);
@@ -1048,6 +1062,7 @@ function installSceneLoad(
 }
 
 async function loadDrillById(drillId: string): Promise<void> {
+  activeWeaponOverride = undefined; // WP-47 / T2：reset-per-drill，避免 BR 專屬武器條件被手動選擇靜默覆蓋。
   const option = availableDrills.find((candidate) => candidate.id === drillId);
   if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
 
@@ -1073,10 +1088,12 @@ async function loadDrillById(drillId: string): Promise<void> {
   targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：新 drill 的 hitbox shape 生效。
   drillRunner.start(activeDrillConfig);
   controls?.setSelectedDrill(option.id);
+  controls?.setSelectedWeapon(nextConfig.weaponId ?? 'ak47');
   syncControlsVisibility();
 }
 
 async function loadSceneById(sceneId: string): Promise<void> {
+  activeWeaponOverride = undefined; // WP-47 / T2：reset-per-drill，換 scene 亦重建 activeDrillConfig，武器 override 語意應與換 drill 一致。
   const option = findSceneOption(sceneId);
   if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
 
@@ -1093,6 +1110,7 @@ async function loadSceneById(sceneId: string): Promise<void> {
   simLoop = buildSimLoop();
   targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：場景切換後沿用同一 drill 的 hitbox shape。
   drillRunner.start(activeDrillConfig);
+  controls?.setSelectedWeapon(activeDrillConfig.weaponId ?? 'ak47'); // WP-47 / T2：reset-per-drill，下拉選單顯示值回到該 drill 自帶武器。
   syncControlsVisibility();
 }
 
@@ -1135,14 +1153,14 @@ markProtocolFullscreenExit = () => activeProtocolRunner.markCurrentConditionSusp
 controls = createControls({
   drills: availableDrills.map(({ id, label }) => ({ id, label })),
   scenes: availableScenes.map(({ id, label }) => ({ id, label })),
-  weapons: [],
+  weapons: Object.keys(WEAPONS).map((id) => ({ id, label: id })),
   selectedDrillId: activeDrillConfig.drillId,
   selectedSceneId: activeSceneConfig.sceneId,
-  selectedWeaponId: 'ak47',
+  selectedWeaponId: activeDrillConfig.weaponId ?? 'ak47',
   onRestart: restartActiveDrill,
   onLoadDrill: loadDrillById,
   onLoadScene: loadSceneById,
-  onLoadWeapon: () => {},
+  onLoadWeapon: (weaponId) => loadWeaponById(weaponId as WeaponId),
   initialTracerEnabled: tracerEnabled,
   onTracerEnabledChange: (enabled) => {
     tracerEnabled = enabled;
