@@ -16,7 +16,7 @@
 | **Scale target** | 5,000 個 Assessment run summaries；單一 drill 可有數百至數千 runs，列表與分析必須分頁／漸進載入 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | High：新 navigation state、歷史／當前 Result 共用、metric 語意與大量 payload 分析 |
-| **Status** | 🟡 規劃完成，T0 尚未開始 |
+| **Status** | 🟡 **T0 完成（2026-08-27）**：handoff 對帳零 mismatch、route/Result-seam/100-run projection 三個 PoC 皆有實測證據、baseline `test:ci` 綠燈、production diff=0。OQ-49.1～5 已與使用者收斂（詳見 [progress.md](progress.md)）：僅註冊 `spider-shot-v2`（peek-click-transfer 需另立跨 WP 決定；`spider-shot-v2` metric descriptor 待 T4 前由研究設計 owner 定義）、latest-eligible cohort 預設+selector、T3 移除人工 picker、cursor 分頁漸進趨勢、Participant 頁只顯示分類 count。T1 可開始 |
 
 ---
 
@@ -102,6 +102,8 @@
 | **OQ-49.3** | 舊 Result Screen 的人工 JSON HistoryView 是否保留？ | WP-49 T3 移除，避免兩套 history；保留 Download JSON/CSV 作資料攜出，不保留人工 baseline picker | 使用者 | T0 exit、T3 前 | 決定 `HistoryView.ts` 是刪除、redirect 或 temporary fallback |
 | **OQ-49.4** | 趨勢是否必須一次載完同 drill 所有 runs？ | 分頁投影並漸進補齊全部資料；首屏先顯示 summaries/最近一頁，UI 明示 `loaded / total` | 架構師／使用者 | T0 exit、T4 前 | 決定 analysis endpoint pagination、cache 與 NFR fixture |
 | **OQ-49.5** | WP-48 回報的 invalid／unsupported／excluded-Practice files 在 UI 顯示到什麼程度？ | Participant頁頂端只顯示不阻塞的分類count與說明，不列檔名／路徑、不做quarantine操作 | 使用者／UI owner | T0 exit、T2 前 | 關閉WP-48 OQ-48.3；決定health warning與diagnostic scope |
+
+**T0 決議（2026-08-27）**：OQ-49.1～5 全數收斂（使用者拍板，詳見 [progress.md](progress.md) D-49.P9～P13）。**OQ-49.1 偏離推薦預設**：不採用 hold-click/hold-track，改為只註冊 `spider-shot-v2`（exact drillId `'spider-shot-v2'`）；`peek_click_transfer_pilot_v1` 因 `mode: 'practice'` 結構上無法進入 Assessment-only 歷史邊界（[DECISIONS.md GD-25](../../../DECISIONS.md) 既有決議），需另立跨 WP 決定才能討論納入，非本 WP 範圍。`spider-shot-v2` 目前無既有 metric mapping，其具體 metric descriptor 仍待研究設計 owner 於 T4 開工前定義。OQ-49.2～49.5 採用推薦預設。
 
 ---
 

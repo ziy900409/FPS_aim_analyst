@@ -42,7 +42,7 @@
 | **決議(遮擋)** | 新增 `occlusionGeometry` 作為 offline visibility derivation 與 runtime hitscan gate 的共同 segment/AABB 權威：target ray 先碰 prop 時不 kill，impact/tracer 停在 blocker。`hitscanOcclusion` 是 `SimLoop` 的 additive context；省略時既有 drills 走原路，projectile 不讀該 context。 |
 | **理由** | 同一個遊戲循環同時混合曝光、獲取、制動、首發與補槍；把它壓成一個診斷或分數會失去可歸因性。共用幾何 kernel 防止「畫面已曝光但射擊仍穿牆／或反之」的雙重定義。以 versioned transfer roster 而非修改 stage6 四家族 roster，確保既有順序與 frozen protocol 不漂移。 |
 | **影響面** | `src/scene/occlusionGeometry.ts`、visibility/hitscan path、`peek-ad-corridor-v1`、pilot drill/metrics、transfer-pilot session roster；術語與操作契約見 [CONTEXT.md](../../CONTEXT.md) 與 [analysis-peek-click-transfer.md](../operational/analysis-peek-click-transfer.md)。 |
-| **狀態** | ✅ WP-45 T-exit：程式與自動化驗收已完成，僅宣告 pilot-ready；不等於構念效度、信度或 Assessment 採納。 |
+| **狀態** | ✅ WP-45 T-exit：程式與自動化驗收已完成，僅宣告 pilot-ready；不等於構念效度、信度或 Assessment 採納。**WP-49 T0 應用（2026-08-27）**：使用者原提議 WP-49 metric registry 同時涵蓋 spider-shot-v2 與 peek-click-transfer；稽核確認 `peek_click_transfer_pilot_v1` 仍是 `mode: 'practice'`，依本決議結構上不可能產生 `meta.assessment`、故不可能被 WP-48 保存進歷史，WP-49 T4 registry 因此只註冊 `spider-shot-v2`。peek-click-transfer 要納入 history/trend，前提是先有 assessment-mode 變體，屬另立的跨 WP 決定，本決議不預先假設處置方式。詳見 [wp-49 progress.md D-49.P9](active/stage10/wp-49-history-library-and-trends/progress.md)。 |
 
 ### GD-24 ✅ stage7 採納 — 選手測試流程前端優化:WP-40~42 / M17 + Session Plan preset 分層決策(2026-08-25 採納;M17 達成 2026-08-25)
 

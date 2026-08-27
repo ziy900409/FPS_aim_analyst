@@ -6,7 +6,7 @@
 
 ## Entry gate
 
-- T0的OQ-49.1、OQ-49.2、OQ-49.4已收斂；未收斂部分不得以臆測metric或無界load開工。
+- T0的OQ-49.1、OQ-49.2、OQ-49.4已收斂（2026-08-27，見[progress.md](progress.md) D-49.P9/P10/P12）：**registry只註冊`spider-shot-v2`**（不含hold-click/hold-track；peek-click-transfer因`mode:'practice'`結構上不可能進歷史，另立跨WP決定，不在本task範圍）。`spider-shot-v2`目前無既有metric mapping，其具體metric descriptor（id/label/unit/direction/format）仍待研究設計owner定義，**T4開工前必須先取得**；不得以臆測metric或無界load開工。
 - WP-48 repository/API/client實際interface綠；T3 ResultPresentation pure projector可重用相關derivations。
 - impact：WP-48 repository/loadRun/listRuns、historyApi、HistoryClient/contracts、CompatibilityKey與所有首批metric derivations。
 
@@ -33,7 +33,7 @@ src/history/HistoryClient.test.ts                   MODIFY
 ## Steps
 
 1. 先寫exact registry tests：known ids、near-prefix unknown、descriptor uniqueness/unit/format/primary、registry version。
-2. 依T0 roster實作projectors；移轉既有hold-click/hold-track mapping時用golden payload證明value parity。
+2. 依T0 roster（只有`spider-shot-v2`，D-49.P9）實作projector；descriptor/value語意須先取得研究設計owner定義，再用golden payload（`research/fixtures/exports/`或新建fixture）證明value parity，不得沿用hold-click/hold-track的既有mapping（該兩個drill未在本次roster內）。
 3. 實作projection guard：Assessment required、compatibility key、quality status、finite/id/unit；unknown與invalid回typed result不throw整頁。
 4. 實作HistoryAnalysisService：opaque cursor、limit≤100、stable desc order、concurrency=4、in-flight coalescing、success cache key `(runId,registryVersion)`。
 5. API/client加入observations method；logical ids URL encode、invalid cursor/limit typed 400、item failure仍2xx page。
