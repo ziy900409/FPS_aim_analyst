@@ -6,7 +6,7 @@
 
 | Done | Task | Objective | Dependencies | Risk | Estimate |
 |---|---|---|---|---|---|
-| ⬜ | **T0** Entry gate／filesystem PoC／決策凍結 | [T0-entry-gate.md](T0-entry-gate.md) | None | High | 0.5–1d |
+| ✅ | **T0** Entry gate／filesystem PoC／決策凍結 | [T0-entry-gate.md](T0-entry-gate.md) | None | High | 0.5–1d |
 | ⬜ | **T1** ExportPayload runtime contract | [T1-export-payload-contract.md](T1-export-payload-contract.md) | T0 | High | 1.5–2d |
 | ⬜ | **T2** Filesystem repository | [T2-filesystem-repository.md](T2-filesystem-repository.md) | T1 | High | 2–3d |
 | ⬜ | **T3** Node History API／Vite adapter | [T3-node-history-api.md](T3-node-history-api.md) | T2 | High | 1.5–2.5d |

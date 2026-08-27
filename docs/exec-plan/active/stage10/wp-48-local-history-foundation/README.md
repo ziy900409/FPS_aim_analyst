@@ -16,7 +16,7 @@
 | **Scale target** | 最多 5,000 個 run JSON、單檔最多 16 MiB；現有 8 份 fixture 最大約 1.18 MiB |
 | **Estimate** | 9–14 dev-days（T0～T5 + T-exit） |
 | **Risk** | High：filesystem containment、原子寫入、跨 browser/Node 邊界、完成流程的非同步失敗 |
-| **Status** | 🟡 規劃完成，T0 尚未開始 |
+| **Status** | 🟡 T0 完成（filesystem PoC 綠燈、OQ-48.1／48.2 已凍結），T1 尚未開始 |
 
 ---
 
@@ -111,6 +111,8 @@ flowchart LR
 | **OQ-48.1** | Node API 採獨立 process 還是 Vite dev/preview middleware？ | **Vite plugin middleware**：現有 `vite.config.ts` 已有同型先例，無需新增 process orchestrator；這是 local prototype 妥協 | 使用者／架構師 | T0 exit、T3 前 | 決定 package scripts、preview/E2E 啟動方式與 deployment debt |
 | **OQ-48.2** | history root 是否正式凍結為 `data/session-history/`？ | 是；test 只可由 server factory 注入 temporary root，browser UI 無路徑輸入 | 使用者 | T0 exit、T2 前 | 決定路徑契約、`.gitignore` 與操作文件 |
 | **OQ-48.3** | invalid/corrupt 檔案在 WP-49 UI 如何呈現？ | WP-48 先從正常索引排除並回報 count；詳細 quarantine UI 延至 WP-49 | WP-49 owner | WP-49 T0 | 不阻塞 WP-48；影響後續 researcher diagnostics |
+
+**T0 決議（2026-08-27）**：OQ-48.1／OQ-48.2 已由使用者確認採用推薦預設（見 [progress.md](progress.md) D-48.P8／D-48.P9 與 T0 PoC 證據）。OQ-48.3 維持 deferred to WP-49 T0。
 
 ---
 
