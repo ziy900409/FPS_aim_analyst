@@ -9,6 +9,9 @@
 - **2026-08-27**：依使用者指定的 `.claude/skills/engineering-planning/SKILL.md` 把 WP-48 展開為自足 tech spec + T0～T5 + T-exit。新增 strict payload contract、typed API、failure modes、concurrency model、FR/NFR traceability 與客觀 DoD；仍未開始 production implementation。
 - **2026-08-27**：使用者修改範圍：歷史紀錄改為 Assessment-only。Practice 不自動保存、不依 Participant 瀏覽，也不進任何歷史清單；當次 Result Screen 與手動匯出維持可用。同步修訂 stage10 與 WP-48 規劃。
 - **2026-08-27**：**WP-48 完成 T0～T5＋T-exit**，全部 automated gates／acceptance scenarios／data-safety／architecture-regression 檢查有客觀證據（見 [wp-48-local-history-foundation/progress.md](wp-48-local-history-foundation/progress.md) T-exit 條目）。M18 stage 內首個 WP 落地；WP-49／WP-50 可視 WP-48 對外面（`HistoryClient` 六 method＋typed error codes）為穩定地基開工。
+- **2026-08-27**：依使用者指定的engineering-planning skill完成WP-49自足執行計畫：T0～T5 + T-exit、FR/NFR、route/controller、historical Result共用seam、exact metric registry、paged Node analysis projection、trend cohort與scale/競態驗收。仍未開始production implementation。
+- **2026-08-27**：依使用者指定的engineering-planning skill完成WP-50自足執行計畫：T0～T6 + T-exit、additive replay v1、exact profile/capability分級、pure sampling/seek、exclusive renderer ownership、3D visual adapter、transport/HUD與Result/History整合。仍未開始WP-50 production implementation。
+- **2026-08-27**：依使用者指定的engineering-planning skill完成WP-51自足執行計畫：T0～T5 + T-exit、run-scoped dev/preview roots、fresh server lifecycle、跨WP canonical/failure/race/scale/a11y驗收、defect回流規則、操作文件與manual M18 release dossier。規劃時WP-48實際已推進至T2；WP-51仍須等待WP-48～50各自exit evidence，尚未開始WP-51 implementation。
 
 ## Decision Log
 
@@ -23,12 +26,13 @@
 
 - 現有應用是純 Vite browser runtime；目前 `downloadJSON()` 只建立 Blob 並觸發 `<a download>`，不能自行寫入或掃描專案資料夾。因此固定路徑歷史庫必須新增本機 server boundary，不能只改 UI。
 - 現有 `ticks`／`events` 已提供第一人稱重建所需的大部分狀態，但尚未證明每個 drill 的 target lifecycle、scene 與 weapon visual 都能完整還原。WP-50 T0 必須逐 drill audit，不可用單一 schema version 推定 full replay。
+- WP-50 planning audit進一步確認legacy v2只有第一個visible/alive target座標且沒有target ID/lifecycle；continuous recoil、shot ray/impact與projectile visual亦未完整export。因此舊檔不能一律full，需T1 additive replay contract，legacy按可靠capabilities降級。
 - 現有 `SessionSummary` 固定為 speed／accuracy 兩指標；stage10 需以 registry 包住其既有行為，避免新歷史 UI 永久被兩欄資料形狀限制。
 
 ## Open Questions（狀態）
 
 - **OQ-S10-1**：Node API 啟動形式。WP-48 讀碼後推薦 Vite dev/preview plugin middleware（既有 plugin 先例、無需 process orchestrator），最終於 WP-48 T0 收斂。
 - **OQ-S10-2**：history root。預設 `data/session-history/`；測試只允許啟動參數注入 temporary root，UI 不提供任意路徑輸入。
-- **OQ-S10-3**：逐 drill replay 支援矩陣。待 WP-50 T0 audit；不阻塞 WP-48／WP-49。
+- **OQ-S10-3**：逐 drill replay 支援矩陣。planning audit已確認legacy v2不可一律full；待WP-50 T0以official exact ID fixtures凍結partial/unsupported理由，T1補足future full replay capture；不阻塞WP-48／WP-49。
 - **OQ-S10-4**：各 drill primary metrics。後續另行設計；不阻塞 storage、navigation 與 replay MVP。
 - **OQ-S10-5（已關閉）**：researcher Practice 不需要 Participant context；Practice 已由使用者明確排除於持久化與 Participant 歷史之外。

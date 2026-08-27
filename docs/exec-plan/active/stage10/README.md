@@ -246,9 +246,9 @@ interface MetricDescriptor {
 | WP | 目標 | 主要交付 | Risk | 狀態 |
 |---|---|---|---|---|
 | **WP-48** | [本機歷史儲存基礎](wp-48-local-history-foundation/README.md) | strict payload contract、filesystem repository、Node API、typed client、自動保存與 download fallback | High（path safety／半寫入／啟動方式） | ✅ 已完成（T0～T5＋T-exit 全綠，2026-08-27） |
-| **WP-49** | 歷史紀錄 UI 與趨勢 | Participant／drill／run navigation、歷史 Result Screen、metric registry、Assessment 趨勢 | Med（狀態導航／相容性語意） | ⬜ |
-| **WP-50** | 3D 重播 | replay compatibility audit、playback clock、state sampling、scene adapter、transport/event UI | High（舊資料充分性／scene 狀態還原） | ⬜ |
-| **WP-51** | 整合與 M18 驗收 | 完整流程 E2E、failure states、效能、文件與實機驗收 | Med | ⬜ |
+| **WP-49** | [歷史紀錄 UI 與趨勢](wp-49-history-library-and-trends/README.md) | Participant／exact drill／run navigation、歷史 Result、metric registry、paged analysis與Assessment趨勢 | High（navigation race／Result共用／研究語意／大量payload） | 🟡 已完成規劃，T0未開始 |
+| **WP-50** | [第一人稱 3D 狀態重播](wp-50-3d-state-replay/README.md) | additive replay contract、exact-profile support、pure playback、exclusive scene ownership、transport/event UI、Result/History入口 | High（錄製充分性／seek決定性／renderer lifecycle） | 🟡 已完成規劃，T0未開始 |
+| **WP-51** | [整合與 M18 驗收](wp-51-m18-integration-and-acceptance/README.md) | isolated dev/preview harness、跨WP journeys、failure/data safety、scale/lifecycle/a11y、操作文件與實機release dossier | Med/High（root/process lifecycle／假綠preview／實機fidelity） | 🟡 已完成規劃，T0未開始 |
 
 詳細 task 與 entry／exit 條件見 [task-checklist.md](task-checklist.md)。正式開工前若 stage9 又新增 WP，需重新分配這裡的暫用編號，避免碰撞。
 
@@ -284,5 +284,5 @@ flowchart LR
 |---|---|---|---|
 | OQ-S10-1 | Node API 採獨立 process，或掛在 Vite dev/preview server middleware？ | WP-48 讀碼後推薦 Vite plugin middleware（既有 plugin 先例、少一個 process）；最終於 WP-48 T0 凍結 | WP-48 T0 |
 | OQ-S10-2 | 真正的 history root 是否固定為 `data/session-history/`？ | 是；可由啟動參數覆蓋測試用 temporary root，但 UI 不接受任意路徑 | WP-48 T0 |
-| OQ-S10-3 | 現有每一種 drill 的 schema v2 是否足夠 full replay？ | 不預設；逐 drill audit 後標記 full／partial／unsupported | WP-50 T0 |
+| OQ-S10-3 | 現有每一種 drill 的 schema v2 是否足夠 full replay？ | Planning audit已證明不可一律full：缺target ID/lifecycle與部分weapon/fire visual；WP-50 T0逐exact drill凍結partial/unsupported matrix，T1補additive replay v1 | WP-50 T0/T1 |
 | OQ-S10-4 | 第一批 primary metrics 為何？ | 不阻塞 storage／navigation／replay；先以 registry + 未設定 empty state 交付 | 後續 metric 設計 |

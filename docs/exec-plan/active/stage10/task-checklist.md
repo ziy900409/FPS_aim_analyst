@@ -22,50 +22,59 @@ WP-48 Definition of Done：瀏覽器完成一場 Assessment 後，不需人工�
 
 ## WP-49 — History Library and Trends
 
+> 自足spec：[wp-49-history-library-and-trends/README.md](wp-49-history-library-and-trends/README.md) · checklist：[wp-49-history-library-and-trends/task-checklist.md](wp-49-history-library-and-trends/task-checklist.md)
+
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Navigation model | 定義 route/view state、breadcrumb、back/forward、loading／empty／error state；固定 `Participant → exact drillId → startedAt desc` | WP-48 T4 | Med |
-| ⬜ | **T1** Participant／drill browser | Participant 搜尋與摘要；drill 卡片顯示 exact `drillId`、Assessment 數量、最後測試時間 | T0 + WP-48 API | Low |
-| ⬜ | **T2** Run list／historical result | Assessment runs 時間倒序、quality／trend eligibility badges；從磁碟 payload 重建既有 Result Screen | T1 | Med |
-| ⬜ | **T3** DrillMetricRegistry | 建立 metric descriptor／formatter／direction registry；未知 drill／未設定 primary metric 有可用 empty state，不發明 composite score | T2 | Med |
-| ⬜ | **T4** Assessment trend | 只使用同 `drillId`、quality-ok、compatible、同 metric id/unit 的 Assessment runs；被排除資料仍可見且說明原因 | T3 | High（研究語意） |
-| ⬜ | **T-exit** History UI gate | UI unit tests + navigation E2E；至少驗證多 Participant、多 drill、Practice 不進歷史、incompatible 排除、未知 metric 五種情境 | T1～T4 | — |
+| ⬜ | **T0** Entry gate／handoff audit／PoC／決策凍結 | [T0-entry-gate.md](wp-49-history-library-and-trends/T0-entry-gate.md) | WP-48 contract | High |
+| ⬜ | **T1** Navigation/controller shell | [T1-navigation-controller.md](wp-49-history-library-and-trends/T1-navigation-controller.md) | T0 | High |
+| ⬜ | **T2** Participant／exact-drill browser | [T2-participant-drill-browser.md](wp-49-history-library-and-trends/T2-participant-drill-browser.md) | T1 + WP-48 T4 | Med |
+| ⬜ | **T3** Run list／historical Result | [T3-run-list-result-detail.md](wp-49-history-library-and-trends/T3-run-list-result-detail.md) | T2 + WP-48 loadRun | High |
+| ⬜ | **T4** Metric registry／analysis API／trend domain | [T4-metric-registry-trend-domain.md](wp-49-history-library-and-trends/T4-metric-registry-trend-domain.md) | T0 + WP-48 T2/T3 | High |
+| ⬜ | **T5** Drill overview trend UI／entry integration | [T5-drill-overview-integration.md](wp-49-history-library-and-trends/T5-drill-overview-integration.md) | T1～T4 + WP-48 T5 | High |
+| ⬜ | **T-exit** History UI gate／WP-50 handoff | [T-exit-gate.md](wp-49-history-library-and-trends/T-exit-gate.md) | T1～T5 | Med |
 
-WP-49 Definition of Done：Participant 與研究員可不接觸檔案選擇器完成歷史瀏覽；即使某 drill 尚無 primary metric，結果與紀錄列表仍完整可用。
+WP-49 Definition of Done：Participant與研究員可不接觸檔案選擇器完成`Participant → exact drill → run → historical Result`；Browser navigation與scale gates成立；即使某drill尚無primary metric，結果與紀錄列表仍完整可用，Practice維持零歷史entry。
 
 ## WP-50 — 3D State Replay
 
+> 自足spec：[wp-50-3d-state-replay/README.md](wp-50-3d-state-replay/README.md) · checklist：[wp-50-3d-state-replay/task-checklist.md](wp-50-3d-state-replay/task-checklist.md)
+
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Replay sufficiency audit | 逐 drill 對帳 scene、player/camera、target lifecycle、weapon/fire visual 所需資料；定義 replay schema v1 與 full／partial／unsupported 判定 | WP-48 可載入 payload | High |
-| ⬜ | **T1** Playback core | 純函式 playback clock、binary tick lookup、相鄰 tick interpolation、seek、speed、event cursor；決定性 unit tests | T0 | Med |
-| ⬜ | **T2** Replay scene adapter | 建立與 live gameplay 隔離的 Three.js scene；由 metadata + sampled state 重建 camera／player／target，不啟動 Pointer Lock、InputSampler 或 live SimLoop | T1 | High |
-| ⬜ | **T3** Replay transport UI | 第一人稱 viewport、播放／暫停、seek、0.25×～2×、上一／下一事件、keys／ADS／speed HUD、support badge | T2 | Med |
-| ⬜ | **T4** Result/history entry points | 從剛完成的 Result Screen 與歷史 Run Detail 進入同一 Replay Screen；返回時保留來源頁狀態 | T3 + WP-49 T2 | Low |
-| ⬜ | **T-exit** Replay gate | golden payload replay tests、seek invariants、partial／unsupported UI、瀏覽器手動驗證；證明 live gameplay determinism 未受影響 | T1～T4 | — |
+| ⬜ | **T0** Entry gate／sufficiency audit／PoC | [T0-entry-gate.md](wp-50-3d-state-replay/T0-entry-gate.md) | WP-48 approved load contract | High |
+| ⬜ | **T1** Replay schema／capture／support classifier | [T1-replay-contract-and-capture.md](wp-50-3d-state-replay/T1-replay-contract-and-capture.md) | T0 | High |
+| ⬜ | **T2** Playback domain core | [T2-playback-domain-core.md](wp-50-3d-state-replay/T2-playback-domain-core.md) | T1 | Med/High |
+| ⬜ | **T3** Presentation ownership／base scene | [T3-presentation-and-scene.md](wp-50-3d-state-replay/T3-presentation-and-scene.md) | T1～T2 | High |
+| ⬜ | **T4** Targets／weapon／effects | [T4-replay-visual-state.md](wp-50-3d-state-replay/T4-replay-visual-state.md) | T1～T3 | High |
+| ⬜ | **T5** Replay Screen／transport／HUD | [T5-replay-ui.md](wp-50-3d-state-replay/T5-replay-ui.md) | T2～T4 | Med |
+| ⬜ | **T6** Result／History integration | [T6-entry-and-navigation.md](wp-50-3d-state-replay/T6-entry-and-navigation.md) | T5 + WP-48 + WP-49 T3 | High |
+| ⬜ | **T-exit** Replay gate／WP-51 handoff | [T-exit-gate.md](wp-50-3d-state-replay/T-exit-gate.md) | T1～T6 | Med |
 
-WP-50 Definition of Done：至少一個代表性正式 drill 可由磁碟 JSON 完成第一人稱 3D 重播、任意 seek 與事件跳轉；其餘 drill 依 T0 audit 如實顯示支援程度。
+WP-50 Definition of Done：至少一個代表性official Assessment可由磁碟JSON完成第一人稱3D重播、任意seek與事件跳轉；所有official exact `drillId`依profile/capability如實分級；Replay期間live sim/input停止且direct seek與順播state等價。
 
 ## WP-51 — Integration and M18 Acceptance
 
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** End-to-end happy path | Assessment：`完成測試 → 自動保存 → Result → History → Run Detail → Replay`；Practice：`完成測試 → Result／手動匯出` 且無歷史紀錄 | WP-48～50 | Med |
-| ⬜ | **T1** Failure／recovery | API 未啟動、無寫入權限、invalid/corrupt JSON、duplicate conflict、partial/unsupported replay、空資料夾與 retry/download fallback | T0 | Med |
-| ⬜ | **T2** Scale／responsiveness | 以合成 fixtures 驗證大量 Participant／run 的掃描與 UI responsiveness；必要時只新增可重建的 summary index/cache，JSON 仍為 source of truth | T0 | Med |
-| ⬜ | **T3** Documentation／operations | 更新啟動指令、資料夾契約、schema、使用者操作與 troubleshooting；標示 prototype 無權限邊界 | T1～T2 | Low |
-| ⬜ | **T-exit** M18 gate | 執行 README §10 全部驗收、`npm run build`／unit／E2E 全綠、人工重播驗收、CodeGraph／graphify／exec-plan 對帳 | T0～T3 | — |
+| ⬜ | **T0** Entry／handoff gate | [T0-entry-gate.md](wp-51-m18-integration-and-acceptance/T0-entry-gate.md) | WP-48～50 exit evidence | High |
+| ⬜ | **T1** Acceptance harness／roots／evidence | [T1-acceptance-harness.md](wp-51-m18-integration-and-acceptance/T1-acceptance-harness.md) | T0 seams confirmed | High |
+| ⬜ | **T2** Cross-WP canonical journeys | [T2-cross-wp-happy-paths.md](wp-51-m18-integration-and-acceptance/T2-cross-wp-happy-paths.md) | T1 + WP-48～50 exits | High |
+| ⬜ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](wp-51-m18-integration-and-acceptance/T3-failure-recovery-safety.md) | T1～T2 | High |
+| ⬜ | **T4** Scale／lifecycle／a11y | [T4-scale-lifecycle-a11y.md](wp-51-m18-integration-and-acceptance/T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
+| ⬜ | **T5** Operations／manual release | [T5-operations-manual-release.md](wp-51-m18-integration-and-acceptance/T5-operations-manual-release.md) | T2～T4 | Med |
+| ⬜ | **T-exit** M18 gate | [T-exit-gate.md](wp-51-m18-integration-and-acceptance/T-exit-gate.md) | T0～T5 + upstream exits | High |
 
-WP-51 Definition of Done：README §10 全數通過後才可宣告 M18；不可只因 happy-path demo 可操作就略過資料安全、重啟持久性、Practice 歷史排除或 unsupported replay。
+WP-51 Definition of Done：WP-48～50 exits與README §10全數有客觀證據後才可宣告M18；不可只因happy-path demo可操作就略過隔離root、preview public contract、資料安全、重啟持久性、Practice排除、unsupported replay或實機fidelity。
 
 ## 執行順序
 
 ```text
 WP-48 T0→T5→T-exit
-       ├──→ WP-49 T0→T4→T-exit ──┐
-       └──→ WP-50 T0→T3 ──────────┤
-                    WP-49 T2 ─→ WP-50 T4→T-exit
-                                      └──→ WP-51 T0→T-exit
+       ├──→ WP-49 T0→T5→T-exit ─────────────┐
+       └──→ WP-50 T0→T5 ────────────────────┤
+                    WP-49 T3 ─→ WP-50 T6→T-exit
+                                               └──→ WP-51 T0→T5→T-exit
 ```
 
 - WP-49 與 WP-50 在 WP-48 可穩定讀取 payload 後可並行，但不得同時改動同一 History navigation／Result Screen 熱區。
