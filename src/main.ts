@@ -1093,10 +1093,10 @@ async function loadDrillById(drillId: string): Promise<void> {
 }
 
 async function loadSceneById(sceneId: string): Promise<void> {
-  activeWeaponOverride = undefined; // WP-47 / T2：reset-per-drill，換 scene 亦重建 activeDrillConfig，武器 override 語意應與換 drill 一致。
   const option = findSceneOption(sceneId);
   if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
 
+  activeWeaponOverride = undefined; // WP-47 / T2：reset-per-drill，換 scene 亦重建 activeDrillConfig，武器 override 語意應與換 drill 一致。
   const nextDrillConfig = loadDrill(activeDrillSource, option.config, activeDrillLoadOptions);
   const nextScene = await createSceneManagerWithStatus(option.config);
 

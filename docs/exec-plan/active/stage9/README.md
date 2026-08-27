@@ -80,7 +80,7 @@
 | **WP-44**(暫用) | [`wp-44-spider-shot-v2-stratified/`](wp-44-spider-shot-v2-stratified/README.md) | `spider-shot-v2`:12 格 stratified 周邊排程,保留 center↔peripheral 交替 | 🟡 進行中 |
 | **WP-45**(暫用) | [`wp-45-peek-click-transfer/`](wp-45-peek-click-transfer/README.md) | `peek-click-transfer-pilot-v1`:對稱掩體、自體移動曝光、急停首發與分層 metrics；Practice/pilot only | ✅ T-exit：pilot-ready（非 Assessment 採納） |
 | **WP-46**(暫用) | [`wp-46-spider-shot-v2-aimlab-parity/`](wp-46-spider-shot-v2-aimlab-parity/README.md) | `spider-shot-v2` 對齊 Aim Lab Spidershot:球體目標(真碰撞,擴充 GD-7)、中心免逾時、60 秒時限、視角直徑換算 hitbox | ✅ T-exit(數值為未經 pilot 校準候選值;GD/WP 正式編號延後) |
-| **WP-47**(暫用) | [`wp-47-weapon-select-ui/`](wp-47-weapon-select-ui/README.md) | `Controls.ts` 換武器下拉選單(比照 `sceneSelect`)+ `main.ts` `activeWeaponOverride` 收斂點,不改 `WeaponConfig`/`weapons.ts` 本身 | 🟡 提案,尚未開工 |
+| **WP-47**(暫用) | [`wp-47-weapon-select-ui/`](wp-47-weapon-select-ui/README.md) | `Controls.ts` 換武器下拉選單(比照 `sceneSelect`)+ `main.ts` `activeWeaponOverride` 收斂點,不改 `WeaponConfig`/`weapons.ts` 本身 | ✅ T-exit(GD/WP 正式編號延後) |
 
 ### 5.1 執行排程避免熱區衝突
 
