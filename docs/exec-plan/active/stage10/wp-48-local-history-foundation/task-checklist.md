@@ -10,7 +10,7 @@
 | ✅ | **T1** ExportPayload runtime contract | [T1-export-payload-contract.md](T1-export-payload-contract.md) | T0 | High | 1.5–2d |
 | ✅ | **T2** Filesystem repository | [T2-filesystem-repository.md](T2-filesystem-repository.md) | T1 | High | 2–3d |
 | ✅ | **T3** Node History API／Vite adapter | [T3-node-history-api.md](T3-node-history-api.md) | T2 | High | 1.5–2.5d |
-| ⬜ | **T4** HistoryClient／persistence state machine | [T4-history-client.md](T4-history-client.md) | T3 | Med | 1–1.5d |
+| ✅ | **T4** HistoryClient／persistence state machine | [T4-history-client.md](T4-history-client.md) | T3 | Med | 1–1.5d |
 | ⬜ | **T5** Assessment-only auto-save wiring | [T5-auto-persistence-wiring.md](T5-auto-persistence-wiring.md) | T4 | High | 1.5–2.5d |
 | ⬜ | **T-exit** Acceptance／handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T5 | Med | 0.5–1d |
 
