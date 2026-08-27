@@ -14,6 +14,9 @@ import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
 import { createResultScreen, type QualityFlagsInput } from './ui/ResultScreen.ts';
 import { createHistoryView } from './ui/HistoryView.ts';
+import { createHistorySaveStatus } from './ui/HistorySaveStatus.ts';
+import { createHistoryClient } from './history/HistoryClient.ts';
+import { createHistoryPersistence, type HistorySaveState } from './history/HistoryPersistence.ts';
 import { createControls, type ControlsHandle } from './ui/Controls.ts';
 import {
   createResearcherMenu,
@@ -771,8 +774,16 @@ const historyView = createHistoryView({
     return buildSessionHistory(currentHistorySession, past, STAGE6_BASELINE_WINDOW_SIZE, STAGE6_BASELINE_MIN_N);
   },
 });
+// WP-48 T5（FR-48.1/48.8）— Assessment-only 自動保存：main.ts 只建立/呼叫 HistoryPersistence，
+// 不直接 fetch、組 API URL 或處理 filesystem error（README §2.4 D-48.P1/D-48.P6）。
+const historyClient = createHistoryClient();
+const historyPersistence = createHistoryPersistence(historyClient);
+const historySaveStatus = createHistorySaveStatus({ onRetry: () => void historyPersistence.retry() });
+historyPersistence.subscribe((state) => historySaveStatus.render(state));
+
 const resultScreen = createResultScreen({
   historyView: historyView.element,
+  saveStatusView: historySaveStatus.element,
   onRestart: restartActiveDrill,
   async onExportJSON(): Promise<void> {
     const payload = await buildCurrentExportPayload();
@@ -913,6 +924,35 @@ if (import.meta.env.DEV) {
         qualityFlagsForPayload(payload),
       );
     },
+    // WP-48 T5 — E2E-only hook: drives the *same* `historyPersistence` instance the live
+    // completion seam uses (README §2.4), against the harness's own synthetic payload (the harness
+    // runs an isolated pipeline, not the live singleton — see fpsTestHarness.ts header). Overrides
+    // let tests without a live pointer-lock drill (out of automated scope, full-drill.spec.ts
+    // header) still exercise the Assessment/Practice/missing-participant archive policy end to end
+    // against the real HistoryClient → Node API → temp root path.
+    saveToHistory(overrides?: { readonly participantId?: string; readonly assessment?: boolean }): Promise<HistorySaveState> {
+      const base = fpsTestHarness.forceExportJSON();
+      const payload: ExportPayload =
+        overrides === undefined
+          ? base
+          : {
+              ...base,
+              meta: {
+                ...base.meta,
+                ...(overrides.participantId !== undefined ? { session: { participantId: overrides.participantId } } : {}),
+                ...(overrides.assessment === true
+                  ? { assessment: { protocolVersion: STAGE6_PROTOCOL_VERSION, assessmentFeedbackPolicy: 'minimal-end-of-block' as const } }
+                  : {}),
+              },
+            };
+      return historyPersistence.save(payload);
+    },
+    historySaveState(): HistorySaveState {
+      return historyPersistence.state;
+    },
+    retryHistorySave(): Promise<HistorySaveState> {
+      return historyPersistence.retry();
+    },
   };
 }
 
@@ -1006,6 +1046,7 @@ function resetRunPresentation(): void {
   resultScreen.hide();
   currentHistorySession = undefined;
   historyView.render(undefined);
+  historySaveStatus.render({ kind: 'idle' });
   resultShown = false;
   hudRunStartMs = null;
   hudElapsedMs = 0;
@@ -1407,6 +1448,9 @@ const renderLoop = createRenderLoop((now) => {
         diagnosis,
         qualityFlagsForPayload(payload),
       );
+      // WP-48 T5（FR-48.1/48.9,D-48.P1）— 同一 payload 觸發保存；fire-and-forget，不阻擋下面
+      // sessionPlanRunner.advance()／completeActiveProtocolCondition()（D-48.P6，NFR-48.8）。
+      void historyPersistence.save(payload);
       const sessionPhase = sessionPlanRunner.phase;
       if (sessionPhase.kind === 'warmup') {
         await sessionPlanRunner.advance();

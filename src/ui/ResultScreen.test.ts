@@ -357,6 +357,29 @@ describe('result actions', () => {
   });
 });
 
+describe('WP-48 T5 save-status embed seam', () => {
+  it('embeds saveStatusView inside the panel when provided, and omits it otherwise', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const saveStatusView = document.createElement();
+    saveStatusView.dataset.section = 'history-save-status';
+    createResultScreen({ saveStatusView: saveStatusView as unknown as HTMLElement });
+
+    expect(document.body.children[0]).toBeDefined();
+    const found = flatten(document.body).find((node) => node.dataset.section === 'history-save-status');
+    expect(found).toBe(saveStatusView);
+  });
+
+  it('does not render a save-status node when saveStatusView is omitted', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    createResultScreen();
+
+    const found = flatten(document.body).find((node) => node.dataset.section === 'history-save-status');
+    expect(found).toBeUndefined();
+  });
+});
+
 describe('createRecoilOverlayModel', () => {
   it('creates a stable recoil path overlay model with actual and ideal series plus mean and RMS', () => {
     const summary = createResultSummary({

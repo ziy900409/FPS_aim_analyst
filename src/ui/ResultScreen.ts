@@ -109,6 +109,8 @@ export interface ResultScreenHandle {
 export interface ResultScreenOptions {
   parent?: HTMLElement;
   historyView?: HTMLElement;
+  /** WP-48 T5 — `HistorySaveStatus.element`. Presentation-only embed; this screen owns no payload or client. */
+  saveStatusView?: HTMLElement;
   /** Starts a clean run of the currently selected drill. */
   onRestart?: () => void | Promise<void>;
   /** Exports the current result before the user starts another run. */
@@ -295,6 +297,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     diagnosisSection,
     qualityFlagsSection,
     ...(options.historyView === undefined ? [] : [options.historyView]),
+    ...(options.saveStatusView === undefined ? [] : [options.saveStatusView]),
     actions,
   );
   root.appendChild(panel);
