@@ -5,7 +5,7 @@
 
 | Done | Task | 檔案 | 相依 | Risk |
 |------|------|------|------|------|
-| ⬜ | **T0** entry gate(覆核 §0 讀碼假設仍成立 + 與使用者確認 override 生命週期預設;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Low |
+| ✅ | **T0** entry gate(覆核 §0 讀碼假設仍成立 + 與使用者確認 override 生命週期預設;無程式碼) | [T0-entry-gate.md](T0-entry-gate.md) | 無 | Low |
 | ⬜ | **T1** `Controls.ts` 新增 `weaponSelect` + `Weapon` 按鈕(比照 `sceneSelect`)+ `Controls.test.ts` 新測試 | [T1-controls-weapon-select.md](T1-controls-weapon-select.md) | T0 | Low |
 | ⬜ | **T2** `main.ts`:`activeWeaponOverride` + `loadWeaponById()` + reset-per-drill 接線 + `createControls({...})` 接線 | [T2-main-override-wiring.md](T2-main-override-wiring.md) | T1 | Med |
 | ⬜ | **T-exit** 驗收;`npm run test:ci` 全綠 + 瀏覽器手動驗證;文件對帳 | [T-exit-gate.md](T-exit-gate.md) | T1+T2 | — |
