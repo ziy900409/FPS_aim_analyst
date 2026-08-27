@@ -5,8 +5,12 @@ import type { SessionSummary } from '../metrics/sessionHistory.ts';
 
 describe('loadAssessmentSessionSummaries', () => {
   it('loads Assessment exports and excludes Practice exports before summary construction', async () => {
-    const assessment = file('assessment.json', { meta: { assessment: { protocolVersion: '1.0.0' } }, ticks: [], events: [] });
-    const practice = file('practice.json', { meta: {}, ticks: [], events: [] });
+    const assessment = file('assessment.json', {
+      meta: baseMeta({ assessment: { protocolVersion: '1.0.0', assessmentFeedbackPolicy: 'minimal-end-of-block' } }),
+      ticks: [],
+      events: [],
+    });
+    const practice = file('practice.json', { meta: baseMeta(), ticks: [], events: [] });
     const converted: ExportPayload[] = [];
 
     const summaries = await loadAssessmentSessionSummaries([assessment, practice], (payload) => {
@@ -29,6 +33,33 @@ function file(name: string, contents: unknown): SessionHistoryFile {
   return {
     name,
     text: async () => (typeof contents === 'string' ? contents : JSON.stringify(contents)),
+  };
+}
+
+function baseMeta(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    schemaVersion: 2,
+    drillId: 'counterstrafe_reversal_v1',
+    weaponId: 'ak47',
+    weaponSeed: 1,
+    rngSeed: 1,
+    backend: 'webgpu',
+    displayHz: 144,
+    simHz: 128,
+    browser: 'test-browser',
+    sensitivity: 1,
+    sensitivityModel: 'cs2-0.022deg',
+    movementModel: 'cs2-source',
+    crossOriginIsolated: true,
+    startedAt: '2026-08-25T12:00:00.000Z',
+    unit: 'source',
+    vStrafe: 250,
+    maxDrillSeconds: 60,
+    lateEventCount: 0,
+    bufferOverflow: false,
+    recorderOverflow: false,
+    suspect: false,
+    ...overrides,
   };
 }
 

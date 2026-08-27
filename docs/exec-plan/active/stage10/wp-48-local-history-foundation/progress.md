@@ -36,6 +36,7 @@
   結論：選 A（Vite middleware）。已與使用者確認（AskUserQuestion，2026-08-27）。
 
 - **2026-08-27 / baseline test:ci**：`npm run test:ci` exit 0。`tsc --noEmit` 無錯誤；Vitest 137 test files／1081 tests all pass；Playwright 31 tests all pass（`edge` project，COOP/COEP isolation、WP-3/9/17/21～26/42～47 既有 E2E 全綠）。`git status --short` 於 T0 開工前後皆為空，無 unrelated dirty change（README §0.2 提到的 WP-47 `main.ts` 未提交變更已在 commit `de29cb4`／`4c12f76` 落地，T0 開工時工作樹已乾淨）。
+- **2026-08-27 / T1 完成**：新增 `src/data/exportPayloadSchema.ts`（`parseExportPayload`／`canonicalExportJSON`）與 `src/history/contracts.ts`（pure DTO，無 import）。`sessionHistoryLoader.ts` 移除 shallow `isExportPayload()`，改用共用 parser（本地函式重新命名為 `readExportPayload` 以避免與匯入的 `parseExportPayload` 撞名）。8/8 現有 research export fixtures（含 0 份帶 `meta.assessment` 的 Practice-shape 匯出）與 8 種 `DrillEvent` variant 均有正向測試；negative matrix 涵蓋 16 類 invalid input（root 型別、缺 meta、ticks/events 非陣列、schema 不支援、必填欄位缺失、非法 enum、NaN/Infinity、非法 key/discriminant 等）。canonical 測試證明 top-level／nested 物件 key 順序不影響輸出、tick/event 陣列順序保持不變。`npx tsc --noEmit` 與 `npm run test:ci`（Vitest 138 files／1115 tests + Playwright 31 tests）全綠；`rg "function isExportPayload" src` 已無結果。
 
 ## Decision Log
 
@@ -48,6 +49,8 @@
 - **D-48.P7 / Assessment-only archive**：只有 `meta.assessment !== undefined` 的 payload 可以建立歷史紀錄。Practice 仍是合法 `ExportPayload`，但 client 回 `excluded` 且不送 request；repository/API 對直接 submission 回 `PRACTICE_NOT_ARCHIVABLE`，不得建立任何檔案。此決策取代原本的 Practice 歷史／Participant context 規劃。
 - **D-48.P8 / OQ-48.1 hosting（T0 凍結，使用者確認）**：Node History API 採 **Vite `configureServer`/`configurePreviewServer` middleware**（Option A）。理由：PoC 4 證實 close hook 可靠釋放 root lease，且與現有 `coopCoep()` plugin 同型，不需新增 process orchestrator。標記為 conscious technical debt（README §3.2 #1）；`historyApi.ts` handler 需與 hosting 解耦，未來要換 standalone process 時可重用。
 - **D-48.P9 / OQ-48.2 history root（T0 凍結，使用者確認）**：history root 正式凍結為 `<repo>/data/session-history/`。browser UI 不接受路徑輸入；production 預設路徑由 server 端解析，可用 `FPS_HISTORY_ROOT` 環境變數覆寫（僅供 test/Playwright 使用，見下方 root 注入計畫）。
+- **D-48.P10 / T1 canonical serializer**：`canonicalExportJSON` 採遞迴 key 排序（`JSON.stringify` 前對每個物件的 key 做 `Array.sort()`），陣列元素順序保持不變，而非手動複刻 `Meta` 逐欄位順序。理由：語意等價、更簡單（Rule 0），且對任何未來 additive optional 欄位自動成立，不需要每次新增 Meta 欄位都同步更新 canonical 排序表。
+- **D-48.P11 / T1 spawn 欄位驗證邊界**：`SpawnMeta.motion`／`spawnArea`／`spiderShot`／`spawnDelayMsRange` 在 `metadata.ts` 本身即宣告為 `unknown`（opaque contract，WP-36 comment）；parser 對這些欄位僅原樣傳遞、不深入驗證，只驗證型別具體的 `seed`（必填 finite number）與 `presentationMs`（選填 finite number）。與現有 `collectMeta()` 對 `spawn` 完全不驗證（直接 passthrough）的既有行為相容，不新增比原本更嚴格的隱性契約。
 
 ## Blast Radius Notes
 
@@ -62,6 +65,7 @@
 - 研究員主入口直接進 Drill Controls，不走 Session Setup，因此 Practice 可能缺 `meta.session.participantId`。新範圍明確不封存 Practice，故不再新增 Participant context UI；missing Participant 只作為 malformed Assessment 的防禦性錯誤。
 - `tsconfig.json` 只 typecheck `src`，新增 `server/` 若不建立 Node config，CI 可能在 typecheck 階段看不到錯誤。
 - 制定計畫時 `src/main.ts` 已有未提交 WP-47 變更；本規劃未修改它。T5 前須重新確認 owner/status。
+- T1 撰寫 fixture-driven tests 時發現：`tsconfig.json` 的 `include: ["src"]` 沒有 `types: ["node"]`，`src/**/*.test.ts` 內 `import { readFileSync } from 'node:fs'` 會讓 `tsc --noEmit` 直接報 TS2307（找不到模組）。改用對 `research/fixtures/exports/*.json` 的**靜態** `import`（`resolveJsonModule: true` 已開啟）取代 runtime `fs` 讀取，同時也是 C-D1 例外條款明文允許的「committed golden/parity JSON fixture」匯入方式；`tests/**/*.test.ts`（不在 `include` 內)則不受此限，可自由用 `node:fs`（現有 `tests/golden/research/*.test.ts` 即此模式）。T2（Node repository/API 本體會用到真正的 `node:fs`/`node:path`）需要獨立的 `tsconfig.node.json`（README §2.1／T0 已規劃），此發現印證了該規劃的必要性。
 
 ## Open Questions（status）
 

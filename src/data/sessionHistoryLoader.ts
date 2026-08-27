@@ -1,4 +1,5 @@
 import type { ExportPayload } from './export.ts';
+import { parseExportPayload } from './exportPayloadSchema.ts';
 import type { SessionSummary } from '../metrics/sessionHistory.ts';
 
 /** The subset of the browser File API needed by the multi-file history loader. */
@@ -23,32 +24,21 @@ export async function loadAssessmentSessionSummaries(
 ): Promise<SessionSummary[]> {
   const summaries: SessionSummary[] = [];
   for (const file of files) {
-    const payload = parseExportPayload(await file.text(), file.name);
+    const payload = readExportPayload(await file.text(), file.name);
     if (payload.meta.assessment === undefined) continue;
     summaries.push(toSessionSummary(payload));
   }
   return summaries;
 }
 
-function parseExportPayload(text: string, fileName: string): ExportPayload {
+function readExportPayload(text: string, fileName: string): ExportPayload {
   let value: unknown;
   try {
     value = JSON.parse(text);
   } catch {
     throw new Error(`${fileName} is not valid JSON`);
   }
-  if (!isExportPayload(value)) throw new Error(`${fileName} is not an export payload`);
-  return value;
-}
-
-function isExportPayload(value: unknown): value is ExportPayload {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
-  const payload = value as Record<string, unknown>;
-  return (
-    typeof payload.meta === 'object' &&
-    payload.meta !== null &&
-    !Array.isArray(payload.meta) &&
-    Array.isArray(payload.ticks) &&
-    Array.isArray(payload.events)
-  );
+  const result = parseExportPayload(value);
+  if (!result.ok) throw new Error(`${fileName} is not an export payload`);
+  return result.payload;
 }
