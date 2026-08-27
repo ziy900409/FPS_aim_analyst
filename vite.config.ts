@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import type { ServerResponse } from 'node:http';
+import { historyPlugin } from './server/history/historyPlugin.ts';
 
 // WP-0 / T1：階段 A 鎖 Chrome/Edge 桌面版，故 build target 用 esnext，
 // 以支援 src/main.ts 的 top-level await（WebGPURenderer 需 async init，ADR-1）。
@@ -31,7 +32,9 @@ function coopCoep(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [coopCoep()],
+  // WP-48 T3：history API middleware（Vite dev/preview adapter, D-48.P8）。root/maxPayloadBytes 使用
+  // 預設值——正式路徑 data/session-history/（D-48.P9），Playwright 用 FPS_HISTORY_ROOT 覆寫成 temp root。
+  plugins: [coopCoep(), historyPlugin()],
   // strictPort：固定埠號，讓 Playwright 的 baseURL 斷言可靠（埠被占用時 fail-fast 而非漂移）。
   server: { port: 5173, strictPort: true },
   preview: { port: 4173, strictPort: true },

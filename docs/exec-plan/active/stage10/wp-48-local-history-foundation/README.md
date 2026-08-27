@@ -16,7 +16,7 @@
 | **Scale target** | 最多 5,000 個 run JSON、單檔最多 16 MiB；現有 8 份 fixture 最大約 1.18 MiB |
 | **Estimate** | 9–14 dev-days（T0～T5 + T-exit） |
 | **Risk** | High：filesystem containment、原子寫入、跨 browser/Node 邊界、完成流程的非同步失敗 |
-| **Status** | 🟡 T0／T1／T2 完成(filesystem PoC 綠燈、OQ-48.1／48.2 已凍結;單一 parseExportPayload/canonicalExportJSON 契約落地;`HistoryRepository` 落地含 5,000-run benchmark),T3 尚未開始 |
+| **Status** | 🟡 T0～T3 完成(filesystem PoC 綠燈、OQ-48.1／48.2 已凍結;單一 parseExportPayload/canonicalExportJSON 契約落地;`HistoryRepository` 落地含 5,000-run benchmark;Node History API + Vite dev/preview adapter 落地,六 routes 契約測試全綠),T4 尚未開始 |
 
 ---
 

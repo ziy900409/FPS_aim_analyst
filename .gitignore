@@ -24,3 +24,6 @@ graphify-out/.graphify_root
 # folder's placeholder README (docs/exec-plan/active/stage10/wp-48-local-history-foundation).
 data/session-history/*
 !data/session-history/README.md
+
+# WP-48 T3 — Playwright's dev/preview history roots (NFR-48.6, never the real history root).
+.playwright-tmp/

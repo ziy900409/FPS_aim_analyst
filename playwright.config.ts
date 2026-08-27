@@ -18,12 +18,16 @@ export default defineConfig({
       url: 'http://localhost:5173/',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      // WP-48 T3 (NFR-48.6): dev and preview must never share the real data/session-history/ root —
+      // distinct temp roots also avoid the two servers racing for the same history root lease (FM-48.4).
+      env: { FPS_HISTORY_ROOT: '.playwright-tmp/history-dev' },
     },
     {
       command: 'npm run build && npm run preview',
       url: 'http://localhost:4173/',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      env: { FPS_HISTORY_ROOT: '.playwright-tmp/history-preview' },
     },
   ],
 });
