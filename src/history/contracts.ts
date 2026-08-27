@@ -2,7 +2,11 @@
  * Type-only DTOs shared by the browser `HistoryClient` and the Node history repository/API
  * (WP-48). No runtime code, no Node/DOM imports — safe to import from either side of the
  * browser/Node boundary (WP-48 README §2.4).
+ *
+ * The `HistoryProjectionResult` import below is `import type` only, so it erases at compile time —
+ * this file still ships zero runtime code across the browser/Node boundary (WP-49 T4).
  */
+import type { HistoryProjectionResult } from './DrillMetricRegistry.ts';
 
 /** WP-50 will upgrade this to full/partial/unsupported after a replay schema audit. */
 export type HistoryReplaySupport = 'unchecked';
@@ -43,6 +47,23 @@ export interface HistoryIndexReport {
   readonly rebuiltAt: string;
 }
 
+/** README §2.6 — one run's metric projection, paired with its (already-known) run summary so a
+ * page never needs a second lookup to render a row. */
+export interface HistoryRunProjection {
+  readonly run: HistoryRunSummary;
+  readonly projection: HistoryProjectionResult;
+}
+
+/** A single cursor-paginated page of observations for one exact `participantId`/`drillId` pair.
+ * `total` is the full (unpaginated) run count for that pair, so the UI can show `loaded / total`
+ * (OQ-49.4 / D-49.P12) without a separate count request. */
+export interface HistoryObservationPage {
+  readonly items: readonly HistoryRunProjection[];
+  readonly total: number;
+  readonly nextCursor?: string;
+  readonly registryVersion: string;
+}
+
 export type HistoryApiErrorCode =
   | 'MALFORMED_JSON'
   | 'PAYLOAD_TOO_LARGE'
@@ -54,7 +75,8 @@ export type HistoryApiErrorCode =
   | 'RUN_CONFLICT'
   | 'HISTORY_ROOT_LOCKED'
   | 'STORAGE_IO'
-  | 'HISTORY_UNAVAILABLE';
+  | 'HISTORY_UNAVAILABLE'
+  | 'INVALID_QUERY';
 
 export interface HistoryApiErrorBody {
   readonly ok: false;

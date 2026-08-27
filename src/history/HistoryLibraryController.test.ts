@@ -68,6 +68,7 @@ function fakeClient(overrides: Partial<HistoryClient> = {}): HistoryClient {
     listDrills: vi.fn(async () => []),
     listRuns: vi.fn(async () => []),
     loadRun: vi.fn(async () => ({ meta: {}, ticks: [], events: [] }) as unknown as ExportPayload),
+    observations: vi.fn(async () => ({ items: [], total: 0, registryVersion: '1.0.0' })),
     ...overrides,
   };
 }

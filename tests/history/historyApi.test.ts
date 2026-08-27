@@ -11,8 +11,15 @@ import {
   matchHistoryRoute,
 } from '../../server/history/historyApi.ts';
 import type { HistoryApiState } from '../../server/history/historyApi.ts';
+import { createHistoryAnalysisService } from '../../server/history/HistoryAnalysisService.ts';
 import type { HistoryRepository } from '../../server/history/HistoryRepository.ts';
-import type { HistoryIndexReport, HistoryApiErrorBody, HistoryApiSuccess } from '../../src/history/contracts.ts';
+import { createDrillMetricRegistry } from '../../src/history/DrillMetricRegistry.ts';
+import type {
+  HistoryIndexReport,
+  HistoryApiErrorBody,
+  HistoryApiSuccess,
+  HistoryObservationPage,
+} from '../../src/history/contracts.ts';
 import { makeAssessmentPayload, makeTempRoot, removeTempRoot } from './testHelpers.ts';
 
 /**
@@ -89,7 +96,7 @@ function request(
 }
 
 describe('matchHistoryRoute', () => {
-  it('matches all six documented routes and rejects everything else', () => {
+  it('matches all seven documented routes and rejects everything else', () => {
     expect(matchHistoryRoute('GET', '/api/history/health')).toEqual({ kind: 'health' });
     expect(matchHistoryRoute('POST', '/api/history/runs')).toEqual({ kind: 'saveRun' });
     expect(matchHistoryRoute('GET', '/api/history/participants')).toEqual({ kind: 'listParticipants' });
@@ -109,6 +116,24 @@ describe('matchHistoryRoute', () => {
     expect(matchHistoryRoute('DELETE', '/api/history/runs/abc')).toBeUndefined();
     expect(matchHistoryRoute('GET', '/api/history/unknown')).toBeUndefined();
     expect(matchHistoryRoute('GET', '/api/history/runs/%')).toBeUndefined();
+  });
+
+  it('matches the observations route and parses its query params only when given (WP-49 T4)', () => {
+    expect(matchHistoryRoute('GET', '/api/history/participants/P-1/drills/D-1/observations')).toEqual({
+      kind: 'observations',
+      participantId: 'P-1',
+      drillId: 'D-1',
+      limitRaw: undefined,
+      cursor: undefined,
+    });
+    expect(
+      matchHistoryRoute(
+        'GET',
+        '/api/history/participants/P-1/drills/D-1/observations',
+        new URLSearchParams('limit=10&cursor=abc'),
+      ),
+    ).toEqual({ kind: 'observations', participantId: 'P-1', drillId: 'D-1', limitRaw: '10', cursor: 'abc' });
+    expect(matchHistoryRoute('POST', '/api/history/participants/P-1/drills/D-1/observations')).toBeUndefined();
   });
 });
 
@@ -304,6 +329,65 @@ describe('history API — ready repository (real filesystem, temp root)', () => 
     },
     15_000,
   );
+
+  it('GET .../observations returns a paginated projection page for a registered exact drill', async () => {
+    const payload = makeAssessmentPayload({ drillId: 'spider-shot-v2' });
+    const saved = await request(port, 'POST', '/api/history/runs', {
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    expect(saved.status).toBe(201);
+
+    const res = await request(
+      port,
+      'GET',
+      `/api/history/participants/${payload.meta.session!.participantId}/drills/spider-shot-v2/observations`,
+    );
+    expect(res.status).toBe(200);
+    const body = res.body as HistoryApiSuccess<HistoryObservationPage>;
+    expect(body.ok).toBe(true);
+    expect(body.data.total).toBe(1);
+    expect(body.data.registryVersion).toBe('1.0.0');
+    expect(body.data.items).toHaveLength(1);
+    expect(body.data.items[0].run.drillId).toBe('spider-shot-v2');
+    expect(body.data.nextCursor).toBeUndefined();
+  });
+
+  it('GET .../observations on an unregistered drill still returns 200 with a typed unregistered-drill item', async () => {
+    const payload = makeAssessmentPayload({ drillId: 'hold-click-v1' });
+    await request(port, 'POST', '/api/history/runs', {
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await request(
+      port,
+      'GET',
+      `/api/history/participants/${payload.meta.session!.participantId}/drills/hold-click-v1/observations`,
+    );
+    expect(res.status).toBe(200);
+    const body = res.body as HistoryApiSuccess<HistoryObservationPage>;
+    expect(body.data.items[0].projection).toEqual({ status: 'unregistered-drill', drillId: 'hold-click-v1' });
+    expect(body.data.registryVersion).toBe('unregistered');
+  });
+
+  it('GET .../observations rejects an out-of-range limit or an invalid cursor with 400 INVALID_QUERY', async () => {
+    const tooBig = await request(port, 'GET', '/api/history/participants/P-1/drills/D-1/observations?limit=101');
+    expect(tooBig.status).toBe(400);
+    expect((tooBig.body as HistoryApiErrorBody).error.code).toBe('INVALID_QUERY');
+
+    const notInt = await request(port, 'GET', '/api/history/participants/P-1/drills/D-1/observations?limit=abc');
+    expect(notInt.status).toBe(400);
+    expect((notInt.body as HistoryApiErrorBody).error.code).toBe('INVALID_QUERY');
+
+    const badCursor = await request(
+      port,
+      'GET',
+      '/api/history/participants/P-1/drills/D-1/observations?cursor=not-a-real-cursor',
+    );
+    expect(badCursor.status).toBe(400);
+    expect((badCursor.body as HistoryApiErrorBody).error.code).toBe('INVALID_QUERY');
+  });
 });
 
 describe('history API — non-loopback caller', () => {
@@ -396,6 +480,7 @@ describe('history API — repository failure mapped to 500 STORAGE_IO', () => {
       kind: 'ready',
       repository: fakeRepository,
       report: await fakeRepository.initialize(),
+      analysisService: createHistoryAnalysisService({ repository: fakeRepository, registry: createDrillMetricRegistry() }),
     };
     const payload = makeAssessmentPayload();
     const response = await handleHistoryApiRequest(

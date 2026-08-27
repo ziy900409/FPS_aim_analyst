@@ -20,6 +20,7 @@ function fakeClient(overrides: Partial<HistoryClient> = {}): HistoryClient {
     listDrills: vi.fn(),
     listRuns: vi.fn(),
     loadRun: vi.fn(),
+    observations: vi.fn(),
     ...overrides,
   };
 }

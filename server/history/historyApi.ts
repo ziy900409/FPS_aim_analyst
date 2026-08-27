@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { parseExportPayload } from '../../src/data/exportPayloadSchema.ts';
+import { createDrillMetricRegistry } from '../../src/history/DrillMetricRegistry.ts';
 import type {
   HistoryApiErrorBody,
   HistoryApiErrorCode,
@@ -14,6 +15,7 @@ import {
   createHistoryRepository,
   HistoryRootLockedError,
 } from './HistoryRepository.ts';
+import { createHistoryAnalysisService, type HistoryAnalysisService } from './HistoryAnalysisService.ts';
 
 /**
  * Loopback/same-origin HTTP surface over the T2 `HistoryRepository` (WP-48 T3, README §2.4). Pure
@@ -35,15 +37,30 @@ export type HistoryRoute =
   | { readonly kind: 'listParticipants' }
   | { readonly kind: 'listDrills'; readonly participantId: string }
   | { readonly kind: 'listRuns'; readonly participantId: string; readonly drillId: string }
-  | { readonly kind: 'loadRun'; readonly runId: string };
+  | { readonly kind: 'loadRun'; readonly runId: string }
+  | {
+      readonly kind: 'observations';
+      readonly participantId: string;
+      readonly drillId: string;
+      /** Raw query values, unparsed — `handleHistoryApiRequest` owns limit/cursor validation
+       * (README §2.6), matching how `saveRun`'s body is validated in the handler, not here. */
+      readonly limitRaw: string | undefined;
+      readonly cursor: string | undefined;
+    };
 
 export function isHistoryApiPath(pathname: string): boolean {
   return pathname === API_PREFIX || pathname.startsWith(`${API_PREFIX}/`);
 }
 
 /** Route params are opaque logical IDs compared against the in-memory index — never joined into a
- * filesystem path (FR-48.6) — so no containment/sanitization is needed here, only shape matching. */
-export function matchHistoryRoute(method: string, pathname: string): HistoryRoute | undefined {
+ * filesystem path (FR-48.6) — so no containment/sanitization is needed here, only shape matching.
+ * `searchParams` is only consulted for the `observations` route; every other route ignores it, so
+ * existing callers that omit it (tests, and every other route match) are unaffected. */
+export function matchHistoryRoute(
+  method: string,
+  pathname: string,
+  searchParams?: URLSearchParams,
+): HistoryRoute | undefined {
   if (!isHistoryApiPath(pathname)) return undefined;
   const rest = pathname.slice(API_PREFIX.length);
   const rawSegments = rest.split('/').filter((s) => s.length > 0);
@@ -76,6 +93,21 @@ export function matchHistoryRoute(method: string, pathname: string): HistoryRout
   ) {
     return { kind: 'listRuns', participantId: segments[1] as string, drillId: segments[3] as string };
   }
+  if (
+    method === 'GET' &&
+    segments.length === 5 &&
+    segments[0] === 'participants' &&
+    segments[2] === 'drills' &&
+    segments[4] === 'observations'
+  ) {
+    return {
+      kind: 'observations',
+      participantId: segments[1] as string,
+      drillId: segments[3] as string,
+      limitRaw: searchParams?.get('limit') ?? undefined,
+      cursor: searchParams?.get('cursor') ?? undefined,
+    };
+  }
   if (method === 'GET' && segments.length === 2 && segments[0] === 'runs') {
     return { kind: 'loadRun', runId: segments[1] as string };
   }
@@ -87,7 +119,12 @@ export function matchHistoryRoute(method: string, pathname: string): HistoryRout
 // ---------------------------------------------------------------------------
 
 export type HistoryApiState =
-  | { readonly kind: 'ready'; readonly repository: HistoryRepository; readonly report: HistoryIndexReport }
+  | {
+      readonly kind: 'ready';
+      readonly repository: HistoryRepository;
+      readonly report: HistoryIndexReport;
+      readonly analysisService: HistoryAnalysisService;
+    }
   | { readonly kind: 'locked' }
   | { readonly kind: 'unavailable' };
 
@@ -97,7 +134,8 @@ export async function createHistoryApiState(options: CreateHistoryRepositoryOpti
   const repository = createHistoryRepository(options);
   try {
     const report = await repository.initialize();
-    return { kind: 'ready', repository, report };
+    const analysisService = createHistoryAnalysisService({ repository, registry: createDrillMetricRegistry() });
+    return { kind: 'ready', repository, report, analysisService };
   } catch (err) {
     if (err instanceof HistoryRootLockedError) return { kind: 'locked' };
     return { kind: 'unavailable' };
@@ -146,7 +184,7 @@ export async function handleHistoryApiRequest(
   if (state.kind === 'unavailable') {
     return err(503, 'HISTORY_UNAVAILABLE', 'history storage is unavailable');
   }
-  const { repository } = state;
+  const { repository, analysisService } = state;
 
   switch (route.kind) {
     case 'health':
@@ -162,9 +200,30 @@ export async function handleHistoryApiRequest(
       if (payload === undefined) return err(404, 'RUN_NOT_FOUND', 'run not found');
       return ok(200, payload);
     }
+    case 'observations':
+      return handleObservations(analysisService, route);
     case 'saveRun':
       return handleSaveRun(repository, body);
   }
+}
+
+const DEFAULT_OBSERVATIONS_LIMIT = 100;
+
+async function handleObservations(
+  analysisService: HistoryAnalysisService,
+  route: Extract<HistoryRoute, { kind: 'observations' }>,
+): Promise<HistoryApiResponse> {
+  const limit = route.limitRaw === undefined ? DEFAULT_OBSERVATIONS_LIMIT : Number(route.limitRaw);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    return err(400, 'INVALID_QUERY', 'limit must be an integer between 1 and 100');
+  }
+  const result = await analysisService.observations(route.participantId, route.drillId, limit, route.cursor);
+  if (!result.ok) {
+    return result.reason === 'invalid-cursor'
+      ? err(400, 'INVALID_QUERY', 'cursor is invalid or does not match this participant/drill')
+      : err(400, 'INVALID_QUERY', 'limit must be an integer between 1 and 100');
+  }
+  return ok(200, result.page);
 }
 
 async function handleSaveRun(
@@ -317,7 +376,8 @@ export function createHistoryApiMiddleware(state: HistoryApiState, options: Hist
   return (req, res, next) => {
     const method = req.method ?? 'GET';
     const url = req.url ?? '/';
-    const pathname = url.split('?')[0] ?? '/';
+    const [pathnamePart, queryPart] = url.split('?');
+    const pathname = pathnamePart ?? '/';
 
     if (!isHistoryApiPath(pathname)) {
       next();
@@ -327,7 +387,8 @@ export function createHistoryApiMiddleware(state: HistoryApiState, options: Hist
       next();
       return;
     }
-    const route = matchHistoryRoute(method, pathname);
+    const searchParams = new URLSearchParams(queryPart ?? '');
+    const route = matchHistoryRoute(method, pathname, searchParams);
     if (route === undefined) {
       next();
       return;

@@ -10,7 +10,7 @@
 | ✅ | **T1** Navigation/controller shell | [T1-navigation-controller.md](T1-navigation-controller.md) | T0 | High | 1.5–2.5d |
 | ✅ | **T2** Participant／exact-drill browser | [T2-participant-drill-browser.md](T2-participant-drill-browser.md) | T1 + WP-48 T4 | Med | 1.5–2.5d |
 | ✅ | **T3** Run list／historical Result | [T3-run-list-result-detail.md](T3-run-list-result-detail.md) | T2 + WP-48 loadRun | High | 2–3d |
-| ⬜ | **T4** Metric registry／analysis API／trend domain | [T4-metric-registry-trend-domain.md](T4-metric-registry-trend-domain.md) | T0 + WP-48 T2/T3 | High | 2–3d |
+| ✅ | **T4** Metric registry／analysis API／trend domain | [T4-metric-registry-trend-domain.md](T4-metric-registry-trend-domain.md) | T0 + WP-48 T2/T3 | High | 2–3d |
 | ⬜ | **T5** Drill overview trend UI／entry integration | [T5-drill-overview-integration.md](T5-drill-overview-integration.md) | T1～T4 + WP-48 T5 | High | 2–3d |
 | ⬜ | **T-exit** Acceptance／WP-50 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T5 | Med | 0.5–1d |
 

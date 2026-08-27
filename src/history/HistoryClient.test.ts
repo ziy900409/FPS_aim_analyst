@@ -129,6 +129,27 @@ describe('HistoryClient — URL/method/body construction', () => {
     expect(result).toEqual(payload);
   });
 
+  it('observations() URL-encodes segments and omits the query string when no options are given', async () => {
+    const fetchSpy = fetchFake(async () =>
+      jsonResponse(200, { ok: true, data: { items: [], total: 0, registryVersion: '1.0.0' } }),
+    );
+    const client = createHistoryClient({ fetch: fetchSpy });
+    await client.observations('P 001', 'drill#1');
+    const [url] = fetchSpy.mock.calls[0];
+    expect(url).toBe('/api/history/participants/P%20001/drills/drill%231/observations');
+  });
+
+  it('observations() appends limit/cursor as a query string when given', async () => {
+    const fetchSpy = fetchFake(async () =>
+      jsonResponse(200, { ok: true, data: { items: [], total: 0, registryVersion: '1.0.0' } }),
+    );
+    const client = createHistoryClient({ fetch: fetchSpy });
+    const result = await client.observations('P-1', 'D-1', { limit: 25, cursor: 'abc def' });
+    const [url] = fetchSpy.mock.calls[0];
+    expect(url).toBe('/api/history/participants/P-1/drills/D-1/observations?limit=25&cursor=abc+def');
+    expect(result).toEqual({ items: [], total: 0, registryVersion: '1.0.0' });
+  });
+
   it('prefixes every request with the configured baseUrl', async () => {
     const fetchSpy = fetchFake(async () => jsonResponse(200, { ok: true, data: [] }));
     const client = createHistoryClient({ fetch: fetchSpy, baseUrl: 'http://127.0.0.1:5173' });

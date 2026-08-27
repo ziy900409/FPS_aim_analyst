@@ -5,6 +5,7 @@ import type {
   HistoryApiSuccess,
   HistoryDrillSummary,
   HistoryIndexReport,
+  HistoryObservationPage,
   HistoryParticipantSummary,
   HistoryRunSummary,
   SaveHistoryRunResult,
@@ -58,6 +59,12 @@ export interface HistoryClient {
   listDrills(participantId: string, signal?: AbortSignal): Promise<readonly HistoryDrillSummary[]>;
   listRuns(participantId: string, drillId: string, signal?: AbortSignal): Promise<readonly HistoryRunSummary[]>;
   loadRun(runId: string, signal?: AbortSignal): Promise<ExportPayload>;
+  observations(
+    participantId: string,
+    drillId: string,
+    options?: { readonly limit?: number; readonly cursor?: string },
+    signal?: AbortSignal,
+  ): Promise<HistoryObservationPage>;
 }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -169,5 +176,18 @@ export function createHistoryClient(options: HistoryClientOptions = {}): History
         { signal },
       ),
     loadRun: (runId, signal) => request('GET', `/runs/${encodeURIComponent(runId)}`, { signal }),
+    observations: (participantId, drillId, options = {}, signal) => {
+      const params = new URLSearchParams();
+      if (options.limit !== undefined) params.set('limit', String(options.limit));
+      if (options.cursor !== undefined) params.set('cursor', options.cursor);
+      const query = params.toString();
+      return request(
+        'GET',
+        `/participants/${encodeURIComponent(participantId)}/drills/${encodeURIComponent(drillId)}/observations${
+          query.length > 0 ? `?${query}` : ''
+        }`,
+        { signal },
+      );
+    },
   };
 }

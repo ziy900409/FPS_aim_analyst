@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Spider Shot v2 選手表現量化設計</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f0f5ff;
+      --text: #182033;
+      --muted: #5e687d;
+      --line: #d9e0ec;
+      --blue: #1d5fd1;
+      --blue-soft: #e8f0ff;
+      --green: #087f5b;
+      --green-soft: #e6f7f0;
+      --amber: #a15c00;
+      --amber-soft: #fff3da;
+      --red: #b42318;
+      --red-soft: #ffebe9;
+      --purple: #6f42c1;
+      --purple-soft: #f1eaff;
+      --shadow: 0 12px 34px rgba(24, 32, 51, 0.08);
+      --radius: 16px;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101521;
+        --surface: #171e2d;
+        --surface-soft: #1c2942;
+        --text: #edf2ff;
+        --muted: #aeb9ce;
+        --line: #344057;
+        --blue: #79a8ff;
+        --blue-soft: #1a315a;
+        --green: #72d6b0;
+        --green-soft: #173a32;
+        --amber: #ffc66d;
+        --amber-soft: #45331c;
+        --red: #ff938a;
+        --red-soft: #4a2526;
+        --purple: #c5a4ff;
+        --purple-soft: #33264a;
+        --shadow: none;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--blue) 11%, transparent), transparent 34rem),
+        var(--bg);
+      font-family: var(--sans);
+      line-height: 1.7;
+    }
+    a { color: var(--blue); text-underline-offset: 3px; }
+    code {
+      padding: 0.12rem 0.35rem;
+      border-radius: 5px;
+      background: var(--surface-soft);
+      font-family: var(--mono);
+      font-size: 0.9em;
+    }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 62px 0 34px; }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--blue);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; max-width: 900px; font-size: clamp(2rem, 5vw, 4.2rem); line-height: 1.08; }
+    .lede { max-width: 850px; margin: 20px 0 0; color: var(--muted); font-size: 1.12rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .pill.draft { border-color: color-mix(in srgb, var(--amber) 40%, var(--line)); background: var(--amber-soft); color: var(--amber); }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    nav .shell { display: flex; gap: 22px; overflow-x: auto; padding-top: 11px; padding-bottom: 11px; }
+    nav a { flex: 0 0 auto; color: var(--muted); font-size: 0.86rem; font-weight: 750; text-decoration: none; }
+    nav a:hover { color: var(--blue); }
+    main { padding: 34px 0 72px; }
+    section { scroll-margin-top: 68px; margin-top: 54px; }
+    h2 { margin: 0 0 10px; font-size: clamp(1.45rem, 2.5vw, 2.15rem); line-height: 1.25; }
+    h3 { margin: 28px 0 10px; font-size: 1.12rem; }
+    p { margin: 10px 0; }
+    .section-intro { max-width: 860px; color: var(--muted); }
+    .callout {
+      margin: 20px 0;
+      padding: 18px 20px;
+      border: 1px solid color-mix(in srgb, var(--blue) 30%, var(--line));
+      border-left: 5px solid var(--blue);
+      border-radius: 12px;
+      background: var(--blue-soft);
+    }
+    .callout.warning { border-color: color-mix(in srgb, var(--amber) 35%, var(--line)); border-left-color: var(--amber); background: var(--amber-soft); }
+    .callout.danger { border-color: color-mix(in srgb, var(--red) 35%, var(--line)); border-left-color: var(--red); background: var(--red-soft); }
+    .callout strong { display: block; margin-bottom: 3px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+    .card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .card .step { color: var(--blue); font-family: var(--mono); font-size: 0.78rem; font-weight: 800; }
+    .card h3 { margin: 6px 0; }
+    .card p { color: var(--muted); font-size: 0.93rem; }
+    .flow-arrow { color: var(--blue); font-size: 1.4rem; font-weight: 800; }
+    .formula {
+      margin: 14px 0;
+      padding: 14px 16px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-soft);
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .table-wrap { margin: 20px 0; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: var(--surface-soft); color: var(--muted); font-size: 0.76rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { font-weight: 700; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; white-space: nowrap; }
+    .tag.primary { background: var(--green-soft); color: var(--green); }
+    .tag.secondary { background: var(--blue-soft); color: var(--blue); }
+    .tag.research { background: var(--purple-soft); color: var(--purple); }
+    .tag.blocked { background: var(--amber-soft); color: var(--amber); }
+    .metric-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 20px; }
+    .metric-card { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .metric-card h3 { margin: 8px 0 5px; }
+    .metric-id { color: var(--muted); font-family: var(--mono); font-size: 0.78rem; overflow-wrap: anywhere; }
+    .kv { display: grid; grid-template-columns: 112px 1fr; gap: 7px 12px; margin-top: 15px; font-size: 0.88rem; }
+    .kv dt { color: var(--muted); font-weight: 750; }
+    .kv dd { margin: 0; }
+    .matrix { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
+    .matrix article { min-height: 142px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .matrix h3 { margin-top: 0; }
+    .matrix .good { color: var(--green); }
+    .matrix .watch { color: var(--amber); }
+    .matrix .risk { color: var(--red); }
+    details { margin: 14px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    summary { cursor: pointer; padding: 14px 16px; font-weight: 800; }
+    details > div { padding: 0 16px 16px; color: var(--muted); }
+    ul, ol { padding-left: 1.3rem; }
+    li + li { margin-top: 6px; }
+    .source-list { padding-left: 1.2rem; color: var(--muted); }
+    footer { padding: 26px 0 52px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.84rem; }
+
+    @media (max-width: 820px) {
+      .grid-3, .metric-list { grid-template-columns: 1fr; }
+      .matrix { grid-template-columns: 1fr; }
+      .kv { grid-template-columns: 1fr; gap: 1px; }
+      .kv dd { margin-bottom: 8px; }
+    }
+
+    @media print {
+      :root { color-scheme: light; }
+      body { background: #fff; color: #111; }
+      nav { display: none; }
+      header { padding-top: 24px; }
+      .card, .metric-card, .table-wrap, details { box-shadow: none; break-inside: avoid; }
+      a { color: #111; text-decoration: none; }
+      section { margin-top: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <p class="eyebrow">Performance measurement design</p>
+    <h1>Spider Shot v2<br>選手表現量化設計</h1>
+    <p class="lede">
+      將 60 秒中心—周邊 flick 任務拆成「任務成果、控制機制、條件差異」三層；先建立可重複的歷史趨勢，
+      再用 submovement、velocity scaling、SPARC 與 LDJ-V 解釋選手為何快、準或不穩。
+    </p>
+    <div class="meta">
+      <span class="pill draft">研究設計草案</span>
+      <span class="pill">版本 0.1</span>
+      <span class="pill">2026-08-27</span>
+      <span class="pill">適用：spider-shot-v2</span>
+    </div>
+  </header>
+
+  <nav aria-label="文件導覽">
+    <div class="shell">
+      <a href="#decision">核心決策</a>
+      <a href="#model">量化模型</a>
+      <a href="#registry">歷史指標</a>
+      <a href="#research">研究指標</a>
+      <a href="#interpretation">教練解讀</a>
+      <a href="#contract">資料契約</a>
+      <a href="#validation">驗證計畫</a>
+      <a href="#risks">已知風險</a>
+      <a href="#references">參考資料</a>
+    </div>
+  </nav>
+
+  <main class="shell">
+    <section id="decision">
+      <h2>核心決策</h2>
+      <p class="section-intro">
+        初版不建立單一綜合分數。預設歷史主指標只保留一項：周邊有效命中速度；準確率、時間與停止控制作為同場解釋，
+        smoothness 與 segmentation 指標在完成 schema v2／角度管線驗證前維持研究用途。
+      </p>
+
+      <div class="callout">
+        <strong>建議的預設主指標</strong>
+        <code>spider-v2.peripheral-hits-per-minute</code>。它在固定 60 秒協定下同時受到搜尋、切換、命中、回中心與逾時影響，最接近整體任務產出；但必須與首發命中率一起閱讀，避免把連點補救誤認為高品質表現。
+      </div>
+
+      <div class="callout warning">
+        <strong>尚不定義「優秀／普通／不足」絕對門檻</strong>
+        目前 v2 的 2.0° 目標與 10°–25° radius range 仍屬未經真人 pilot 校準的候選協定。初期只做同一選手、同一相容 cohort 的縱向比較。
+      </div>
+    </section>
+
+    <section id="model">
+      <h2>三層量化模型</h2>
+      <p class="section-intro">成果層回答「做得怎樣」，機制層回答「為什麼」，條件層回答「在哪些方向與難度發生」。</p>
+
+      <div class="grid-3" role="list" aria-label="Spider Shot v2 三層量化模型">
+        <article class="card" role="listitem">
+          <div class="step">LAYER 01</div>
+          <h3>任務成果</h3>
+          <p>周邊 hits/min、首發命中率、命中時間。可直接用於歷史趨勢，但速度與準確率不可拆開排名。</p>
+        </article>
+        <article class="card" role="listitem">
+          <div class="step">LAYER 02</div>
+          <h3>控制機制</h3>
+          <p>反應、速度縮放、細修依賴、進靶逸出、SPARC、LDJ-V。用於定位訓練方向，不直接等於成績。</p>
+        </article>
+        <article class="card" role="listitem">
+          <div class="step">LAYER 03</div>
+          <h3>條件差異</h3>
+          <p>依目標 D_deg、radius tier 與目標 azimuth 分層，並控制 trial index 的學習與疲勞效應。</p>
+        </article>
+      </div>
+
+      <h3>任務難度範圍</h3>
+      <div class="formula">ID = log₂(1 + D / W)；D = 10°–25°，W = 2°，因此 ID ≈ 2.58–3.75 bits</div>
+      <p>
+        v2 的目標角寬固定而位移角度連續變化，適合研究 movement time 與 peak angular velocity 是否隨目標難度系統性調節。
+        分析時應使用目標條件 <code>D_deg</code>，而不是玩家實際 segment 位移，避免 undershoot／overshoot 污染 predictor。
+      </p>
+    </section>
+
+    <section id="registry">
+      <h2>第一版歷史趨勢指標</h2>
+      <p class="section-intro">
+        這些指標可由現有事件或 canonical derivation 取得，語意對選手與教練較直接。所有 aggregate 均須回報有效樣本數 <code>n</code>，
+        quality gate 非 <code>ok</code> 的 run 不進趨勢線。
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Metric ID</th>
+              <th>標籤</th>
+              <th>單位／格式</th>
+              <th>方向</th>
+              <th>角色</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>spider-v2.peripheral-hits-per-minute</code></td>
+              <td>周邊有效命中速度</td>
+              <td>hits/min · decimal-1</td>
+              <td>越高越好</td>
+              <td><span class="tag primary">唯一 Primary</span></td>
+            </tr>
+            <tr>
+              <td><code>spider-v2.peripheral-first-shot-hit-rate</code></td>
+              <td>周邊首發命中率</td>
+              <td>% · percent</td>
+              <td>越高越好</td>
+              <td><span class="tag secondary">成果支援</span></td>
+            </tr>
+            <tr>
+              <td><code>spider-v2.median-peripheral-hit-time-ms</code></td>
+              <td>周邊命中時間中位數</td>
+              <td>ms · decimal-1</td>
+              <td>越低越好</td>
+              <td><span class="tag secondary">成果支援</span></td>
+            </tr>
+            <tr>
+              <td><code>spider-v2.median-fire-angle-error-deg</code></td>
+              <td>首發角度誤差中位數</td>
+              <td>deg · decimal-2</td>
+              <td>越低越好</td>
+              <td><span class="tag secondary">準確機制</span></td>
+            </tr>
+            <tr>
+              <td><code>spider-v2.median-overshoot-deg</code></td>
+              <td>進靶後逸出角度中位數</td>
+              <td>deg · decimal-2</td>
+              <td>越低越好</td>
+              <td><span class="tag secondary">停止控制</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="metric-list">
+        <article class="metric-card">
+          <span class="tag primary">Primary</span>
+          <h3>周邊有效命中速度</h3>
+          <div class="metric-id">spider-v2.peripheral-hits-per-minute</div>
+          <div class="formula">60,000 × peripheral_hit_count / valid_duration_ms</div>
+          <dl class="kv">
+            <dt>分子</dt><dd><code>zone=peripheral</code> 且 window 內存在有效 hit 的目標數</dd>
+            <dt>分母</dt><dd>完整有效測驗時長；正常 v2 run 為 60,000 ms</dd>
+            <dt>排除</dt><dd>提前中止、record overflow、suspect run 或不相容 protocol</dd>
+            <dt>教練語意</dt><dd>整體搜尋、切換、命中與回中心節奏的任務產出</dd>
+          </dl>
+        </article>
+
+        <article class="metric-card">
+          <span class="tag secondary">Accuracy</span>
+          <h3>周邊首發命中率</h3>
+          <div class="metric-id">spider-v2.peripheral-first-shot-hit-rate</div>
+          <div class="formula">100 × first_fire_hit_count / peripheral_presentation_count</div>
+          <dl class="kv">
+            <dt>分子</dt><dd>該目標第一發 fire 的實際 hit outcome 為 true</dd>
+            <dt>分母</dt><dd>所有完整周邊 presentation；no-shot 與 timeout 計為未命中</dd>
+            <dt>排除</dt><dd>僅排除 session 結束造成的截尾 window 或事件鏈不可稽核資料</dd>
+            <dt>教練語意</dt><dd>第一個 click 的落點品質，不被後續補槍稀釋</dd>
+          </dl>
+        </article>
+
+        <article class="metric-card">
+          <span class="tag secondary">Speed</span>
+          <h3>周邊命中時間中位數</h3>
+          <div class="metric-id">spider-v2.median-peripheral-hit-time-ms</div>
+          <div class="formula">median(t_hit − t_visible)，僅限成功命中的周邊 window</div>
+          <dl class="kv">
+            <dt>起點</dt><dd>周邊目標 <code>visible.t</code></dd>
+            <dt>終點</dt><dd>該 window 最早有效 <code>tHit</code></dd>
+            <dt>限制</dt><dd>只看成功 trial 會有 survivorship bias，必須與命中率及 n 同時呈現</dd>
+            <dt>教練語意</dt><dd>從看見目標到完成命中的完整視覺—動作時間</dd>
+          </dl>
+        </article>
+
+        <article class="metric-card">
+          <span class="tag secondary">Control</span>
+          <h3>首發角度誤差與進靶後逸出</h3>
+          <div class="metric-id">median-fire-angle-error-deg / median-overshoot-deg</div>
+          <div class="formula">median(fireAngleErrorDeg)；median(overshootDeg)</div>
+          <dl class="kv">
+            <dt>首發誤差</dt><dd>第一發開火 tick 的準心方向與目標中心方向之角距</dd>
+            <dt>逸出角度</dt><dd>首次進靶後離開 hitbox 的最大無號角度</dd>
+            <dt>限制</dt><dd>現有 overshoot 是無號值，不能區分衝過頭或停在目標前</dd>
+            <dt>教練語意</dt><dd>區分「click 太早／落點偏」與「進靶後停不住」</dd>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="research">
+      <h2>第二階段研究與教練診斷指標</h2>
+      <p class="section-intro">
+        下列指標對機制診斷有價值，但目前參考文件使用舊 schema v1、pixel speed 或舊 segmentation 路徑。正式用於 v2 前，
+        必須轉為 schema v2、target-linked window 與角度運動學，並建立 golden parity 與真人信度證據。
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>研究指標</th>
+              <th>v2 建議定義</th>
+              <th>主要用途</th>
+              <th>目前狀態</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Correction-free acquisition rate</td>
+              <td>成功周邊 trial 中，首次命中前只有一段 primary flick、零 micro-adjustment 的比例</td>
+              <td>第一段 flick 自足性</td>
+              <td><span class="tag research">建議取代 count ratio</span></td>
+            </tr>
+            <tr>
+              <td>Primary Sub-movement Ratio</td>
+              <td><code>n_primary / (n_primary + n_micro)</code></td>
+              <td>保留舊研究 parity</td>
+              <td><span class="tag blocked">不可作主 KPI</span></td>
+            </tr>
+            <tr>
+              <td>Velocity Scaling</td>
+              <td><code>peakOmegaDegPerSec ~ target D_deg</code>；回報 slope、R²、95% CI</td>
+              <td>是否依距離調節出手速度</td>
+              <td><span class="tag research">需角度化</span></td>
+            </tr>
+            <tr>
+              <td>Primary-flick SPARC</td>
+              <td>每段 primary flick 的 angular-speed SPARC 中位數與 IQR</td>
+              <td>速度頻譜平滑度</td>
+              <td><span class="tag research">優先 smoothness 候選</span></td>
+            </tr>
+            <tr>
+              <td>Primary-flick LDJ-V</td>
+              <td>每段 primary flick 的 angular-speed LDJ-V 中位數與 IQR</td>
+              <td>jerk-based convergent validation</td>
+              <td><span class="tag research">驗證用途</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Primary Sub-movement Ratio 的修訂</h3>
+      <p>
+        原指標是整場 segment count ratio。當 segmentation 習慣性地為每個 trial 產生「一個 primary + 一個 micro」時，結果會機械性靠近 0.5，
+        並且多次修正的 trial 會獲得更高權重。v2 應以 trial 為分析單位，優先使用 correction-free acquisition rate；原 ratio 僅保留研究對帳。
+      </p>
+
+      <h3>Velocity Scaling 的修訂</h3>
+      <div class="formula">peakOmegaDegPerSecᵢ = β₀ + β₁ × target_D_degᵢ + direction + trial_index + εᵢ</div>
+      <ul>
+        <li><code>β₁ &gt; 0</code> 才符合「較遠目標使用較高 peak velocity」的預期</li>
+        <li>R² 必須與 slope 符號一起閱讀；負 slope 的高 R² 不是好表現</li>
+        <li>使用 target <code>D_deg</code>，不可使用玩家實際 segment 距離作 predictor</li>
+        <li>至少覆蓋三個 radius tiers，並回報有效 n、D range 與信賴區間</li>
+      </ul>
+
+      <h3>SPARC 與 LDJ-V 的角色</h3>
+      <p>
+        初版教練報告優先使用 primary-flick SPARC；LDJ-V 作為一致性驗證與 outlier 交叉檢查。兩者皆不與 tracking segment 混合，
+        也不跨不同 sampling、filter、resampling、segmentation 或 speed source 比較絕對值。Spider Shot 是 flick-heavy 任務，
+        <code>n_tracking=0</code> 不代表選手沒有 tracking 能力。
+      </p>
+    </section>
+
+    <section id="interpretation">
+      <h2>教練解讀方式</h2>
+      <p class="section-intro">先用 hits/min 與首發命中率判斷速度—準確率型態，再用時間、落點、停止與 smoothness 指標找原因。</p>
+
+      <div class="matrix" aria-label="速度準確率教練解讀矩陣">
+        <article>
+          <h3 class="good">高產出 × 高首發率</h3>
+          <p>快速且首發可靠。再看遠距 tier 與弱方向是否仍維持；避免只因固定 seed 熟悉序列而下結論。</p>
+        </article>
+        <article>
+          <h3 class="watch">高產出 × 低首發率</h3>
+          <p>速度偏置或以連點補救。優先看 fire angle error、miss count、correction-free rate 與 overshoot。</p>
+        </article>
+        <article>
+          <h3 class="watch">低產出 × 高首發率</h3>
+          <p>可能過度保守。拆解 switch reaction、movement execution，以及 peak velocity 是否會隨 D_deg 放大。</p>
+        </article>
+        <article>
+          <h3 class="risk">低產出 × 低首發率</h3>
+          <p>先排除資料品質與設備相容性，再依反應、主 flick 落點、停止控制、細修依賴的順序診斷。</p>
+        </article>
+      </div>
+
+      <h3>建議的診斷順序</h3>
+      <ol>
+        <li>確認 quality gate、完整 60 秒、有效周邊 presentation 數</li>
+        <li>查看 hits/min 與首發命中率的速度—準確率組合</li>
+        <li>用命中時間拆出整體切換效率，再看 switch reaction 與 movement execution</li>
+        <li>用 fire angle error、overshoot、correction-free rate 判斷落點與停止控制</li>
+        <li>最後用 velocity scaling、SPARC、LDJ-V 解釋動作策略，不直接貼能力標籤</li>
+        <li>依 target D_deg、radius tier、azimuth 與 trial index 檢查特定方向、難度、學習或疲勞效應</li>
+      </ol>
+    </section>
+
+    <section id="contract">
+      <h2>資料與相容性契約</h2>
+
+      <h3>分析單位</h3>
+      <p>
+        成果與機制指標的基本單位是一次 <code>center → peripheral</code> transition 對應的周邊 target window。
+        所有 segment、fire、hit、tracking sample 與目標條件必須透過 <code>targetId</code> 或明確 window anchor 對齊，禁止以純時間鄰近猜測歸屬。
+      </p>
+
+      <h3>Session-level condition cell</h3>
+      <div class="formula">spider-v2:radius=10-25deg;width=2deg;grid=4x3;timeout=1750ms;duration=60s;shape=sphere</div>
+      <p>
+        歷史 cohort 使用穩定的 session-level condition cell。每一個實際 transition 的連續 <code>D_deg</code>、azimuth 與 seed position
+        僅用於 per-target 分層和 regression，不應把單一 trial 的 <code>spider:d=...;w=...</code> 當作整場 cohort identity。
+      </p>
+
+      <h3>Condition attribution</h3>
+      <ul>
+        <li>距離：使用目標幾何推導的實際 <code>D_deg</code>，並對映至三個 radius tiers</li>
+        <li>方向：使用目標相對中心視線的 azimuth；不可用實際 mouse path 的 dx/dy 反推目標方向</li>
+        <li>排程格：4 個 spawn azimuth quadrants 與呈現層 horizontal／vertical／oblique 是兩套分類，報告需明確命名</li>
+        <li>難度：保留連續 D/W 與 Fitts ID，不只存 near／mid／far 標籤</li>
+      </ul>
+    </section>
+
+    <section id="validation">
+      <h2>真人 pilot 與統計驗證</h2>
+      <p class="section-intro">指標方向合理不代表已具構念效度。正式門檻與訓練建議必須建立在可重複的真人資料上。</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>階段</th>
+              <th>最低建議</th>
+              <th>主要檢查</th>
+              <th>輸出</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>單人 baseline</td>
+              <td>至少 3 run；理想 5 run、跨 ≥2 天</td>
+              <td>熱身、疲勞、trial order、設備一致性</td>
+              <td>個人中位數、IQR、CV</td>
+            </tr>
+            <tr>
+              <td>Test–retest pilot</td>
+              <td>多位選手、每人多日重測</td>
+              <td>ICC、SEM、MDC、session learning</td>
+              <td>可信變化幅度</td>
+            </tr>
+            <tr>
+              <td>構念驗證</td>
+              <td>不同技術層級與受控難度</td>
+              <td>D/W 效應、速度—準確率、指標收斂／區辨效度</td>
+              <td>保留或淘汰指標</td>
+            </tr>
+            <tr>
+              <td>教練門檻</td>
+              <td>完成前述信度與效度後</td>
+              <td>實務效果量、誤判成本、跨設備泛化</td>
+              <td>版本化門檻與建議</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>每場最低資料門檻（暫定）</h3>
+      <ul>
+        <li>首發命中率：至少 20 個完整周邊 presentation</li>
+        <li>命中時間／角度誤差／overshoot：至少 10 個有效樣本，並顯示 n</li>
+        <li>Velocity scaling：至少 20 個有效 primary flick、涵蓋 3 tiers，且目標 D_deg 有足夠變異</li>
+        <li>SPARC／LDJ-V：至少 20 個有效 primary flick；另報退化、NaN 與品質排除數</li>
+        <li>單一 12-cell 細分若 n 過低，不顯示好壞判斷；跨 run pooling 或使用階層模型</li>
+      </ul>
+      <p><small>以上 n 門檻是工程與閱讀安全起點，不是經 power analysis 或真人 pilot 凍結的標準。</small></p>
+    </section>
+
+    <section id="risks">
+      <h2>已知風險與實作前置</h2>
+
+      <div class="callout danger">
+        <strong>首發命中語意目前有誤判風險</strong>
+        現行 <code>spiderShotMetrics.ts</code> 的 <code>firstShot.hit</code> 使用整個 window 的 outcome；若第一發 miss、後續 fire 命中，可能仍被標為 hit。歷史 projector 必須直接驗證 <code>firstFire</code> 的 hit outcome，或先修正 canonical derivation。
+      </div>
+
+      <details>
+        <summary>Schema v1 指標文件不能直接接入 v2</summary>
+        <div>
+          四份參考 guide 的實作入口、資料欄位與 pixel speed 定義屬舊分析管線。v2 的正式版本需要 schema v2 ingestion、target-linked windows、角度速度、品質 flags、golden parity 與 TypeScript／Python 邊界決策。
+        </div>
+      </details>
+
+      <details>
+        <summary>固定 seed 可能混入序列熟悉效應</summary>
+        <div>
+          相同 seed 有利於 test–retest 標準化，但長期重複也可能使進步部分來自熟悉同一序列，而非一般化 flick 能力。pilot 應估計 run index 效應；若日後採多 seed，需版本化 seed-set，而非任意改動。
+        </div>
+      </details>
+
+      <details>
+        <summary>Smoothness 對處理流程敏感</summary>
+        <div>
+          SPARC 與 LDJ-V 均受 segmentation、sampling、resampling、filtering、訊號雜訊與退化 sentinel 規則影響。任何處理定義改變都必須升 metric version，不與舊值直接畫同一條趨勢線。
+        </div>
+      </details>
+
+      <details>
+        <summary>方向分類不可使用 movement outcome 反推</summary>
+        <div>
+          若用實際 mouse dx/dy 或 segment endpoint 分類方向，undershoot、overshoot 與彎曲軌跡會改變 trial 所屬條件，形成 outcome-dependent attribution。v2 已保存目標座標，應直接由 target geometry 分類。
+        </div>
+      </details>
+    </section>
+
+    <section id="references">
+      <h2>參考資料</h2>
+
+      <h3>專案內部設計</h3>
+      <ol class="source-list">
+        <li><a href="../metrix_design/primary-submovement-ratio-guide-2026-05-20.md">Primary Sub-movement Ratio 指標說明與 Notebook 使用方法</a></li>
+        <li><a href="../metrix_design/velocity-scaling-consistency-guide-2026-05-21.md">Velocity Scaling Consistency 指標說明與 Notebook 使用方法</a></li>
+        <li><a href="../metrix_design/per-segment-ldj-v-guide-2026-05-21.md">Per-segment LDJ-V 指標說明與 Notebook 使用方法</a></li>
+        <li><a href="../metrix_design/per-segment-sparc-tracking-guide-2026-05-21.md">Per-segment SPARC + Tracking Classifier 指標說明與 Notebook 使用方法</a></li>
+        <li><a href="../../operational/analysis-spider-shot.md">Analysis Spider Shot Contract</a></li>
+        <li><a href="../../../src/drill/spider_shot_v2.ts">Spider Shot v2 drill config</a></li>
+        <li><a href="../../../src/metrics/spiderShotMetrics.ts">Spider Shot metric derivation</a></li>
+        <li><a href="../../../src/metrics/peekWindows.ts">Canonical target window derivation</a></li>
+      </ol>
+
+      <h3>外部理論依據</h3>
+      <ol class="source-list">
+        <li>Fitts, P. M. (1954). <a href="https://doi.org/10.1037/h0055392">The information capacity of the human motor system in controlling the amplitude of movement</a>.</li>
+        <li>Meyer, D. E., Abrams, R. A., Kornblum, S., Wright, C. E., &amp; Smith, J. E. K. (1988). <a href="https://public.websites.umich.edu/~kornblum/files/psychological_rev_95-3.pdf">Optimality in human motor performance: Ideal control of rapid aimed movements</a>.</li>
+        <li>Hogan, N., &amp; Sternad, D. (2009). <a href="https://pubmed.ncbi.nlm.nih.gov/19892658/">Sensitivity of smoothness measures to movement duration, amplitude, and arrests</a>.</li>
+        <li>Balasubramanian, S., Melendez-Calderon, A., Roby-Brami, A., &amp; Burdet, E. (2015). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4674971/">On the analysis of movement smoothness</a>.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">
+      <strong>文件狀態：</strong>研究設計草案，不代表已完成真人構念效度、信度或正式 Assessment 門檻凍結。<br>
+      <strong>最後更新：</strong>2026-08-27 · <strong>適用協定：</strong><code>spider-shot-v2</code>
+    </div>
+  </footer>
+</body>
+</html>
