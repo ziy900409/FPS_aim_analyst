@@ -8,6 +8,7 @@
 - **2026-08-27**：建立 stage-level spec、master task checklist 與 M18 驗收條件。尚未開始 WP-48 T0，尚未修改程式碼。
 - **2026-08-27**：依使用者指定的 `.claude/skills/engineering-planning/SKILL.md` 把 WP-48 展開為自足 tech spec + T0～T5 + T-exit。新增 strict payload contract、typed API、failure modes、concurrency model、FR/NFR traceability 與客觀 DoD；仍未開始 production implementation。
 - **2026-08-27**：使用者修改範圍：歷史紀錄改為 Assessment-only。Practice 不自動保存、不依 Participant 瀏覽，也不進任何歷史清單；當次 Result Screen 與手動匯出維持可用。同步修訂 stage10 與 WP-48 規劃。
+- **2026-08-27**：**WP-48 完成 T0～T5＋T-exit**，全部 automated gates／acceptance scenarios／data-safety／architecture-regression 檢查有客觀證據（見 [wp-48-local-history-foundation/progress.md](wp-48-local-history-foundation/progress.md) T-exit 條目）。M18 stage 內首個 WP 落地；WP-49／WP-50 可視 WP-48 對外面（`HistoryClient` 六 method＋typed error codes）為穩定地基開工。
 
 ## Decision Log
 

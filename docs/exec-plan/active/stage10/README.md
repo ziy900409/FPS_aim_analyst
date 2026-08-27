@@ -245,7 +245,7 @@ interface MetricDescriptor {
 
 | WP | 目標 | 主要交付 | Risk | 狀態 |
 |---|---|---|---|---|
-| **WP-48** | [本機歷史儲存基礎](wp-48-local-history-foundation/README.md) | strict payload contract、filesystem repository、Node API、typed client、自動保存與 download fallback | High（path safety／半寫入／啟動方式） | 🟡 已完成規劃，T0 未開始 |
+| **WP-48** | [本機歷史儲存基礎](wp-48-local-history-foundation/README.md) | strict payload contract、filesystem repository、Node API、typed client、自動保存與 download fallback | High（path safety／半寫入／啟動方式） | ✅ 已完成（T0～T5＋T-exit 全綠，2026-08-27） |
 | **WP-49** | 歷史紀錄 UI 與趨勢 | Participant／drill／run navigation、歷史 Result Screen、metric registry、Assessment 趨勢 | Med（狀態導航／相容性語意） | ⬜ |
 | **WP-50** | 3D 重播 | replay compatibility audit、playback clock、state sampling、scene adapter、transport/event UI | High（舊資料充分性／scene 狀態還原） | ⬜ |
 | **WP-51** | 整合與 M18 驗收 | 完整流程 E2E、failure states、效能、文件與實機驗收 | Med | ⬜ |

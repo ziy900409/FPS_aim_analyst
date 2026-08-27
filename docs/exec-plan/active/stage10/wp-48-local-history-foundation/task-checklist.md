@@ -12,16 +12,16 @@
 | ✅ | **T3** Node History API／Vite adapter | [T3-node-history-api.md](T3-node-history-api.md) | T2 | High | 1.5–2.5d |
 | ✅ | **T4** HistoryClient／persistence state machine | [T4-history-client.md](T4-history-client.md) | T3 | Med | 1–1.5d |
 | ✅ | **T5** Assessment-only auto-save wiring | [T5-auto-persistence-wiring.md](T5-auto-persistence-wiring.md) | T4 | High | 1.5–2.5d |
-| ⬜ | **T-exit** Acceptance／handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T5 | Med | 0.5–1d |
+| ✅ | **T-exit** Acceptance／handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T5 | Med | 0.5–1d |
 
 ## WP-48 completion gate
 
-- [ ] FR-48.1～11 與 NFR-48.1～8 每項均在 README §4.1 traceability matrix 有實際 test／measurement evidence。
-- [ ] 至少一條 Assessment auto-save E2E，以及一條 Practice `excluded` E2E（零 POST、零歷史檔案、Result／手動匯出仍可用）。
-- [ ] API restart 後由 JSON 重建並列出相同 run；不依賴 browser storage。
-- [ ] Practice submission、path traversal、symlink escape、partial write、duplicate conflict、root lock、corrupt JSON、missing Participant、API unavailable 全有負向測試。
-- [ ] `npm run build`、Node typecheck、Vitest、Playwright 全綠；無 unhandled rejection。
-- [ ] 測試未接觸真實 `data/session-history/`；git staged names 不含任何 participant JSON。
+- [x] FR-48.1～11 與 NFR-48.1～8 每項均在 README §4.1 traceability matrix 有實際 test／measurement evidence。
+- [x] 至少一條 Assessment auto-save E2E，以及一條 Practice `excluded` E2E（零 POST、零歷史檔案、Result／手動匯出仍可用）。
+- [x] API restart 後由 JSON 重建並列出相同 run；不依賴 browser storage。
+- [x] Practice submission、path traversal、symlink escape、partial write、duplicate conflict、root lock、corrupt JSON、missing Participant、API unavailable 全有負向測試。
+- [x] `npm run build`、Node typecheck、Vitest、Playwright 全綠；無 unhandled rejection。
+- [x] 測試未接觸真實 `data/session-history/`；git staged names 不含任何 participant JSON。
 
 ## Task discipline
 

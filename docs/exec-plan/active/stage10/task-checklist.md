@@ -10,13 +10,13 @@
 
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry gate／filesystem PoC／決策凍結 | [T0-entry-gate.md](wp-48-local-history-foundation/T0-entry-gate.md) | 無 | High |
-| ⬜ | **T1** Strict ExportPayload runtime contract | [T1-export-payload-contract.md](wp-48-local-history-foundation/T1-export-payload-contract.md) | T0 | High |
-| ⬜ | **T2** Filesystem repository | [T2-filesystem-repository.md](wp-48-local-history-foundation/T2-filesystem-repository.md) | T1 | High |
-| ⬜ | **T3** Node History API／Vite adapter | [T3-node-history-api.md](wp-48-local-history-foundation/T3-node-history-api.md) | T2 | High |
-| ⬜ | **T4** HistoryClient／persistence state machine | [T4-history-client.md](wp-48-local-history-foundation/T4-history-client.md) | T3 | Med |
-| ⬜ | **T5** Assessment-only auto-save wiring | [T5-auto-persistence-wiring.md](wp-48-local-history-foundation/T5-auto-persistence-wiring.md) | T4 | High |
-| ⬜ | **T-exit** Foundation acceptance／handoff | [T-exit-gate.md](wp-48-local-history-foundation/T-exit-gate.md) | T1～T5 | Med |
+| ✅ | **T0** Entry gate／filesystem PoC／決策凍結 | [T0-entry-gate.md](wp-48-local-history-foundation/T0-entry-gate.md) | 無 | High |
+| ✅ | **T1** Strict ExportPayload runtime contract | [T1-export-payload-contract.md](wp-48-local-history-foundation/T1-export-payload-contract.md) | T0 | High |
+| ✅ | **T2** Filesystem repository | [T2-filesystem-repository.md](wp-48-local-history-foundation/T2-filesystem-repository.md) | T1 | High |
+| ✅ | **T3** Node History API／Vite adapter | [T3-node-history-api.md](wp-48-local-history-foundation/T3-node-history-api.md) | T2 | High |
+| ✅ | **T4** HistoryClient／persistence state machine | [T4-history-client.md](wp-48-local-history-foundation/T4-history-client.md) | T3 | Med |
+| ✅ | **T5** Assessment-only auto-save wiring | [T5-auto-persistence-wiring.md](wp-48-local-history-foundation/T5-auto-persistence-wiring.md) | T4 | High |
+| ✅ | **T-exit** Foundation acceptance／handoff | [T-exit-gate.md](wp-48-local-history-foundation/T-exit-gate.md) | T1～T5 | Med |
 
 WP-48 Definition of Done：瀏覽器完成一場 Assessment 後，不需人工下載／選檔即可在專案 history root 得到完整 JSON，重新啟動服務後仍可列出並載入；Practice 明確略過持久化但保留當次結果與手動匯出；Practice submission、missing Participant、path escape、partial write、duplicate conflict 與 API unavailable 皆有負向證據。
 

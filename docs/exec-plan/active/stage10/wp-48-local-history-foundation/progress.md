@@ -70,6 +70,43 @@
 
   **範圍內未覆蓋、留待人工驗收或已由既有測試涵蓋的項目**（比照 `full-drill.spec.ts` 對 live pointer-lock 流程的既有慣例,不視為 T5 缺口）：API 逾時/斷線中途失敗、conflict 後 retry、restart 時舊 generation 不覆寫新狀態——這三者已由 T4 `HistoryClient.test.ts`／`HistoryPersistence.test.ts` 的 fake-client 單元測試覆蓋（timeout/network/5xx retryable 分類、generation race、retry 重用 payload),本次 E2E 未重複模擬,因為對共用的 Playwright dev server 注入斷線/逾時會干擾其他平行測試,且 wiring 本身（`void` fire-and-forget 呼叫的位置)已通過程式碼檢視 + 上述 36 條既有 E2E 的零回歸間接佐證未阻擋 session/protocol 前進。
 
+- **2026-08-27 / T-exit 完成**：依 [T-exit-gate.md](T-exit-gate.md) 逐項驗收，WP-48 正式關閉。
+
+  **Automated gates（全綠）**：
+  - `npx tsc --noEmit`（browser）與 `npx tsc --noEmit -p tsconfig.node.json`（Node/server）皆 0 錯誤。
+  - `npm run test:ci`（= 兩層 tsc + `vitest run` + `playwright test`）exit 0：**147 test files passed／1 skipped（148）、1220 tests passed／2 skipped（1222）**；Playwright **36/36 passed**（含 WP-48 三條 history-persistence E2E、既有 33 條 Session Plan／protocol／researcher／COOP-COEP／overlay 零回歸）。
+  - `npm run build` exit 0；對 `dist/assets/*.js` 掃描：`node:` 僅命中 minifier 產生的物件字面量 shorthand（`node:this`／`node:b`／`node:q`／`node:t`，非 import specifier）,`data/session-history`／`historyPlugin`／`createHistoryRepository` 零命中（FR-48.10 客觀證據）。
+  - 5,000-run opt-in benchmark 於 T-exit 重跑一次取得最新數字（`RUN_HISTORY_PERF_BENCHMARK=1 npx vitest run tests/history/historyRepository.perf.test.ts`）：cold rebuild **1868.3ms**（門檻 <10s）、warm list P95 **1.069ms**（門檻 <100ms，30 樣本）。與 T2 量測（1700.8ms／0.748ms）同數量級，確認非單次僥倖，NFR-48.2／48.3 有餘裕（README §3.2 #2 觸發條件仍未達成，維持無 summary cache）。
+
+  **Acceptance scenarios（README §1／T-exit-gate.md 逐條核對，全部有 test 證據，未新增缺口）**：
+
+  | ID | Evidence |
+  |---|---|
+  | A-48.1 Practice complete | `tests/e2e/history-persistence.spec.ts`「Practice (no assessment) short-circuits to excluded」+ `HistoryPersistence.test.ts` Practice 短路 unit tests；Result／download 路徑未被本 WP 修改，既有 `full-drill.spec.ts` 匯出流程零回歸 |
+  | A-48.2 Assessment complete | `tests/e2e/history-persistence.spec.ts`「Assessment save: created then existing on retry...」，round-trip 讀回比對 identity/tick/event 數 |
+  | A-48.3 restart API | `historyRepository.test.ts`「重啟重建」測試：close 後重新 `initialize()`，只靠磁碟 JSON 重建相同 participants/drills/runs |
+  | A-48.4 duplicate same content | `historyRepository.test.ts` idempotent 測試 + E2E「created then existing on retry」，只留 1 個 final file |
+  | A-48.5 duplicate different content | `historyRepository.test.ts` conflict 測試：回 `409`，原檔 byte-identical |
+  | A-48.6 API unavailable | `HistoryClient.test.ts`／`HistoryPersistence.test.ts` 的 timeout/network/5xx→retryable failed 矩陣 + `historyPersistenceUnhandledRejection.test.ts`（斷言 0 unhandled rejection）。未額外做「真的關掉共用 dev server」的 E2E——會干擾其他平行測試，且 wiring 為 `void` fire-and-forget（不阻塞 render loop），已由程式碼檢視 + 36 條既有 E2E 零回歸間接佐證（沿用 T5 progress 記錄的理由） |
+  | A-48.7 missing Participant | `tests/e2e/history-persistence.spec.ts`「Assessment without a Participant ID is rejected as a non-retryable failure, never persisted」 |
+  | A-48.8 malicious paths/symlink | `historyPaths.test.ts`（21 tests）+ `historyRepository.test.ts` symlink/junction containment + T0 PoC1；root 外 sentinel byte-identical |
+  | A-48.9 corrupt/unsupported files | `historyRepository.test.ts` corrupt/unsupported/practice/mislocated 隔離測試；`initialize()` 回報的 `HistoryIndexReport` 分項計數不含絕對路徑 |
+  | A-48.10 5,000 runs | 見上方本次重跑的 benchmark 數字，遠低於 NFR-48.2／48.3 門檻 |
+
+  另：直接 `POST` Practice payload → `historyApi.test.ts`「POST /runs with a Practice payload returns 422 PRACTICE_NOT_ARCHIVABLE and writes nothing」，與 A-48.1 的 UI short-circuit 分屬兩層防禦，缺一不可的要求已滿足。
+
+  **Data-safety checks**：
+  - 全部 filesystem mutation tests 使用 `fs.mkdtemp()` 或 Playwright `FPS_HISTORY_ROOT` 注入的 `.playwright-tmp/history-{dev,preview}`，无一觸碰真實 root（NFR-48.6）。
+  - T-exit 執行完整 `test:ci`／benchmark／build 後檢查真實 `data/session-history/`：僅剩 tracked `README.md`，**零 run JSON**。過程中發現一個 dead-process 遺留的 `.history-root.lease`（pid 已不存在，`tasklist` 交叉確認；內容只有 `{pid,startedAt}`，不含任何 participant/run 資料）——已刪除;此為既有已知現象（見 T3 progress「Surprises」：任何直接對真實 root 跑 `npm run dev`/`preview` 的殘留 process 都會建立 lease，`historyPlugin` 本身有 stale-lease reclaim 邏輯可自動處理，不是 T-exit 新發現的 bug),不影響 NFR-48.6 對「run JSON」的保證。
+  - `git status --short` 於 T-exit 全部驗證跑完後只含本次任務新增/修改的文件（docs）與既有、與 WP-48 無關的 WP-49/50/51 planning 草稿（未追蹤,不屬本次 commit 範圍）；無任何 participant JSON 出現在 staged 或 untracked 清單。
+  - `git check-ignore` 交叉確認：`data/session-history/README.md` 不被忽略（維持可追蹤）,`data/session-history/*.json` 正確被忽略。
+
+  **Architecture regression checks**：
+  - `git diff --stat <WP-48 第一個 commit>~1 HEAD -- src/sim/ src/state/SharedState.ts src/drill/DrillRunner.ts` 輸出為空——WP-48 全部 7 個 commit 對 sim hot path／`SharedState`／`DrillRunner` **零 diff**。
+  - `sessionHistoryLoader.ts` 確認 import 並使用 `parseExportPayload`（`src/data/exportPayloadSchema.ts`），未殘留 T1 移除的 shallow `isExportPayload()`。
+  - `src/main.ts` 內 `grep "fetch(\|'/api/history\|node:"` 零命中——completion wiring 只透過 `historyPersistence.save()`，不含 raw fetch、API URL 組裝或 Node import（FR-48.10／task-checklist 紀律 #4）。
+  - Vite COOP/COEP dev + preview E2E（`isolation.spec.ts`）於本次 `test:ci` 全綠,與 `historyPlugin()` 共存無誤。
+
 ## Decision Log
 
 - **D-48.P1 / payload seam**：自動保存必須使用 render-loop completion 已建立、同時供 metrics/diagnosis/Result Screen 使用的**同一個 `ExportPayload`**；不得二次 snapshot/build。
@@ -117,3 +154,9 @@
 - **OQ-48.2 / history root**：**Closed（2026-08-27）**。凍結為 `data/session-history/`（D-48.P9）。使用者經 AskUserQuestion 確認推薦預設。
 - **OQ-48.3 / corrupt-file UX**：Deferred to WP-49 T0；WP-48 只回 count/safe diagnostics。
 - **原 OQ-48.2 / researcher Participant context**：Closed；Practice 不持久化，因此不需要此 UI。
+
+## T-exit — Documentation and graph reconciliation
+
+- 上層 [../README.md](../README.md)／[../progress.md](../progress.md)／[../task-checklist.md](../task-checklist.md)（stage10）WP-48 狀態已更新為完成；本檔 README/task-checklist/completion gate 同步翻 ✅（見上方 T-exit 條目）。
+- `docs/exec-plan/README.md`（跨 stage 權威）與 `docs/exec-plan/DECISIONS.md`：檢查後確認**尚未收錄 stage10 任何 WP**（`grep -n "WP-48\|stage10"` 零命中）——stage10 目前整體以 M18 為單位規劃，尚未逐 WP 併入頂層 milestone 清單，非 WP-48 T-exit 遺漏；比照既有慣例延後到 stage10／M18 對頂層文件正式收斂時一次處理。`docs/MAP.md` 為通用導覽文件，不逐 WP 更新，本次無需變更。
+- `graphify update .` 已執行（見下方指令與輸出摘要）；CodeGraph 索引透過既有 file watcher/daemon 於程式碼變動時自動同步，T-exit 期間未新增程式碼異動，僅文件更新，無 pending sync 疑慮。
