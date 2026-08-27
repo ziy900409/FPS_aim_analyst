@@ -19,7 +19,7 @@ type HistorySaveState =
   | { kind: 'idle' }
   | { kind: 'excluded'; reason: 'practice' }
   | { kind: 'saving'; runKey: string }
-  | { kind: 'saved'; run: { runId: string }; disposition: 'created' | 'existing' }
+  | { kind: 'saved'; run: { runId: string; startedAt: string }; disposition: 'created' | 'existing' }
   | { kind: 'failed'; message: string; retryable: boolean };
 
 type Harness = {
@@ -48,6 +48,39 @@ async function seedAssessmentRun(
     { drillId, participantId },
   );
   expect(state.kind).toBe('saved');
+}
+
+/** Same as `seedAssessmentRun` but also returns the saved run's identity (runId + startedAt) so a
+ * T3 test can navigate straight to it and assert the downloaded content matches this specific run,
+ * not whichever run happened to load. */
+async function seedAssessmentRunAndCapture(
+  page: import('@playwright/test').Page,
+  drillId: string,
+  participantId: string,
+): Promise<{ runId: string; startedAt: string }> {
+  const state = await page.evaluate(
+    async ({ drillId, participantId }) => {
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+      harness.startDrill(drillId);
+      return harness.saveToHistory({ participantId, assessment: true });
+    },
+    { drillId, participantId },
+  );
+  if (state.kind !== 'saved') throw new Error(`expected a saved run, got ${state.kind}`);
+  return { runId: state.run.runId, startedAt: state.run.startedAt };
+}
+
+async function downloadJSONPayload(
+  page: import('@playwright/test').Page,
+  trigger: () => Promise<void>,
+): Promise<{ meta: { startedAt: string; drillId: string } }> {
+  const downloadPromise = page.waitForEvent('download');
+  await trigger();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(chunk as Buffer);
+  return JSON.parse(Buffer.concat(chunks).toString('utf-8'));
 }
 
 async function openHistory(page: import('@playwright/test').Page): Promise<void> {
@@ -117,5 +150,61 @@ test.describe('WP-49 T2 — Participant search and exact-drill browser', () => {
 
     await search.fill('');
     await expect(screen.getByRole('button', { name: new RegExp(participantId) })).toBeVisible();
+  });
+});
+
+test.describe('WP-49 T3 — run list and historical result detail', () => {
+  test('opens two different Assessment runs from the same drill\'s run list; each download carries that run\'s own content, not the other\'s (FM-49.8)', async ({ page }) => {
+    await waitForHarness(page);
+    const participantId = `t3-runs-${crypto.randomUUID()}`;
+    const drillId = 'spider-shot-v1';
+
+    const runA = await seedAssessmentRunAndCapture(page, drillId, participantId);
+    const runB = await seedAssessmentRunAndCapture(page, drillId, participantId);
+    expect(runA.runId).not.toBe(runB.runId);
+    expect(runA.startedAt).not.toBe(runB.startedAt);
+
+    await openHistory(page);
+    const screen = page.locator('#history-screen');
+    await screen.getByRole('searchbox', { name: '搜尋 Participant' }).fill(participantId);
+    await screen.getByRole('button', { name: new RegExp(participantId) }).click();
+    await screen.getByRole('button', { name: new RegExp(drillId) }).click();
+
+    // drill route — both runs listed (default runFilter=all).
+    await expect(screen.getByRole('button', { name: new RegExp(runA.runId) })).toBeVisible();
+    await expect(screen.getByRole('button', { name: new RegExp(runB.runId) })).toBeVisible();
+
+    await screen.getByRole('button', { name: new RegExp(runA.runId) }).click();
+    await expect(screen.locator('[data-section="result-detail-body"]')).toBeVisible();
+    const payloadA = await downloadJSONPayload(page, () => screen.getByRole('button', { name: '匯出 JSON' }).click());
+    expect(payloadA.meta.startedAt).toBe(runA.startedAt);
+    expect(payloadA.meta.drillId).toBe(drillId);
+
+    // Back returns to the same drill's run list, not the participant/drill roots.
+    await screen.getByRole('button', { name: '返回 Run 列表' }).click();
+    await expect(screen.getByRole('button', { name: new RegExp(runB.runId) })).toBeVisible();
+
+    await screen.getByRole('button', { name: new RegExp(runB.runId) }).click();
+    const payloadB = await downloadJSONPayload(page, () => screen.getByRole('button', { name: '匯出 JSON' }).click());
+    expect(payloadB.meta.startedAt).toBe(runB.startedAt);
+    expect(payloadB.meta.startedAt).not.toBe(payloadA.meta.startedAt);
+  });
+
+  test('a historical run detail has no restart/current-save affordances (FM-49.8)', async ({ page }) => {
+    await waitForHarness(page);
+    const participantId = `t3-no-restart-${crypto.randomUUID()}`;
+    const drillId = 'spider-shot-v1';
+    const run = await seedAssessmentRunAndCapture(page, drillId, participantId);
+
+    await openHistory(page);
+    const screen = page.locator('#history-screen');
+    await screen.getByRole('searchbox', { name: '搜尋 Participant' }).fill(participantId);
+    await screen.getByRole('button', { name: new RegExp(participantId) }).click();
+    await screen.getByRole('button', { name: new RegExp(drillId) }).click();
+    await screen.getByRole('button', { name: new RegExp(run.runId) }).click();
+
+    await expect(screen.locator('[data-section="result-detail-body"]')).toBeVisible();
+    await expect(screen.getByRole('button', { name: '再測目前 Drill' })).toHaveCount(0);
+    await expect(screen.getByRole('button', { name: /^Replay/ })).toHaveCount(0);
   });
 });

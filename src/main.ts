@@ -12,8 +12,8 @@ import { createCrosshair } from './ui/Crosshair.ts';
 import { createScopeOverlay } from './ui/ScopeOverlay.ts';
 import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
-import { createResultScreen, type QualityFlagsInput } from './ui/ResultScreen.ts';
-import { createHistoryView } from './ui/HistoryView.ts';
+import { createResultScreen } from './ui/ResultScreen.ts';
+import { buildResultPresentation, exportBasename } from './results/ResultPresentation.ts';
 import { createHistorySaveStatus } from './ui/HistorySaveStatus.ts';
 import { createHistoryClient } from './history/HistoryClient.ts';
 import { createHistoryPersistence, type HistorySaveState } from './history/HistoryPersistence.ts';
@@ -60,19 +60,12 @@ import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
-import { createDataRecorder, type DataRecorderSnapshot } from './data/DataRecorder.ts';
+import { createDataRecorder } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh, type AssessmentMeta } from './data/metadata.ts';
 import { RAD_PER_COUNT, resolveMouseGain } from './input/mouseGain.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
-import { loadAssessmentSessionSummaries } from './data/sessionHistoryLoader.ts';
-import { createMetricsDashboard } from './metrics/MetricsDashboard.ts';
-import { buildCompatibilityKey, checkQualityGate, deriveSessionId, type QualityGateStatus } from './metrics/compatibilityKey.ts';
-import { evaluateDiagnosis, DIAGNOSIS_THRESHOLDS_V1, type DiagnosisInputs, type DiagnosisResult } from './metrics/diagnosisRules.ts';
-import { STAGE6_BASELINE_MIN_N, STAGE6_BASELINE_WINDOW_SIZE, STAGE6_PROTOCOL_VERSION } from './drill/protocolVersion.ts';
-import { deriveHoldClickMetrics } from './metrics/holdClickMetrics.ts';
-import { deriveTrackingMetrics } from './metrics/trackingDerivation.ts';
-import { buildSessionHistory, type SessionSummary } from './metrics/sessionHistory.ts';
+import { STAGE6_PROTOCOL_VERSION } from './drill/protocolVersion.ts';
 import { getWeapon, WEAPONS, type WeaponId } from './weapon/weapons.ts';
 import type { SceneConfig } from './scene/SceneConfig.ts';
 import { resolveEyeWorldBase } from './scene/eyePose.ts';
@@ -88,7 +81,7 @@ import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
-import { HOLD_CLICK_ONSET_THRESHOLD, HOLD_CLICK_VISIBILITY_SAMPLE_COUNT, holdClickV1 } from './drill/hold_click_v1.ts';
+import { holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
 import { spiderShotV1 } from './drill/spider_shot_v1.ts';
 import { spiderShotV2 } from './drill/spider_shot_v2.ts';
@@ -641,139 +634,6 @@ async function buildCurrentExportPayload(
   return buildExportPayload(meta, snapshot);
 }
 
-function diagnosisForPayload(payload: ExportPayload): DiagnosisResult {
-  return evaluateDiagnosis(
-    diagnosisInputsForPayload(payload),
-    DIAGNOSIS_THRESHOLDS_V1,
-    qualityGateStatusFor(payload),
-  );
-}
-
-function qualityFlagsForPayload(payload: ExportPayload): QualityFlagsInput {
-  return {
-    lateEventCount: payload.meta.lateEventCount,
-    bufferOverflow: payload.meta.bufferOverflow,
-    recorderOverflow: payload.meta.recorderOverflow,
-    suspect: payload.meta.suspect,
-    ...(payload.meta.validity === undefined
-      ? {}
-      : {
-          validity: {
-            corridorExceeded: payload.meta.validity.corridorExceeded,
-            perfFloor: payload.meta.validity.perfFloor,
-          },
-        }),
-  };
-}
-
-function sessionSummaryFromPayload(payload: ExportPayload): SessionSummary {
-  const qualityGateStatus = qualityGateStatusFor(payload);
-  const inputs = diagnosisInputsForPayload(payload);
-  const diagnosis = evaluateDiagnosis(inputs, DIAGNOSIS_THRESHOLDS_V1, qualityGateStatus);
-  const historyMetrics = historyMetricsFor(payload, inputs);
-  return {
-    compatibilityKey: buildCompatibilityKey(payload.meta, payload.meta.drillId, targetConditionCell(payload), qualityGateStatus),
-    sessionId: deriveSessionId(payload.meta),
-    startedAt: payload.meta.startedAt,
-    diagnosis,
-    speedMetric: historyMetrics.speedMetric,
-    accuracyMetric: historyMetrics.accuracyMetric,
-  };
-}
-
-function diagnosisInputsForPayload(payload: ExportPayload): DiagnosisInputs {
-  const trackingOptions = payload.meta.targets === undefined ? {} : { hitbox: targetHitboxFromMeta(payload) };
-  if (payload.meta.drillId === holdClickV1.drill.drillId) {
-    const scene = sceneForPayload(payload);
-    return {
-      holdClick: deriveHoldClickMetrics(payload, scene, {
-        sampleCount: HOLD_CLICK_VISIBILITY_SAMPLE_COUNT,
-        onsetThreshold: HOLD_CLICK_ONSET_THRESHOLD,
-        ...trackingOptions,
-      }),
-    };
-  }
-  if (payload.meta.drillId === holdTrackV1.drill.drillId) {
-    const tracking = deriveTrackingMetrics(payload, trackingOptions);
-    const totValues = tracking.presentations.flatMap((presentation) =>
-      presentation.totPercent === undefined ? [] : [presentation.totPercent],
-    );
-    return {
-      holdTrack: {
-        totPercent: average(totValues),
-        dropCount: 0,
-      },
-    };
-  }
-  return {};
-}
-
-function historyMetricsFor(
-  payload: ExportPayload,
-  inputs: DiagnosisInputs,
-): Pick<SessionSummary, 'speedMetric' | 'accuracyMetric'> {
-  if (inputs.holdClick !== undefined) {
-    const acquisition = inputs.holdClick.presentations.flatMap((item) =>
-      item.acquisitionFromDetectMs === undefined ? [] : [item.acquisitionFromDetectMs],
-    );
-    const firstShots = inputs.holdClick.presentations.flatMap((item) => (item.firstShotHit === undefined ? [] : [item.firstShotHit]));
-    return {
-      speedMetric: { id: 'hold-click.acquisition-ms', value: average(acquisition) },
-      accuracyMetric: { id: 'hold-click.first-shot-hit-rate', value: firstShots.filter(Boolean).length / firstShots.length },
-    };
-  }
-  if (inputs.holdTrack !== undefined) {
-    const tracking = deriveTrackingMetrics(payload, { hitbox: targetHitboxFromMeta(payload) });
-    const acquisition = tracking.presentations.flatMap((item) => (item.tAcquireMs === undefined ? [] : [item.tAcquireMs]));
-    return {
-      speedMetric: { id: 'hold-track.acquisition-ms', value: average(acquisition) },
-      accuracyMetric: { id: 'hold-track.tot-percent', value: inputs.holdTrack.totPercent },
-    };
-  }
-  throw new Error(`No history metric mapping for drill ${payload.meta.drillId}`);
-}
-
-function qualityGateStatusFor(payload: ExportPayload): QualityGateStatus {
-  const visibleSampleCount = payload.events.filter((event) => event.type === 'visible').length;
-  return checkQualityGate({ n: visibleSampleCount, minN: 1, suspect: payload.meta.suspect, compatible: true });
-}
-
-function targetConditionCell(payload: ExportPayload): string {
-  const hitbox = targetHitboxFromMeta(payload);
-  return `scene=${payload.meta.scene?.sceneId ?? 'unspecified'};hitbox=${hitbox.width}x${hitbox.height}x${hitbox.depth}`;
-}
-
-function targetHitboxFromMeta(payload: ExportPayload): { width: number; height: number; depth: number } {
-  const hitbox = payload.meta.targets?.hitbox;
-  return hitbox === undefined
-    ? resolveTargetHitbox()
-    : { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU };
-}
-
-function sceneForPayload(payload: ExportPayload): SceneConfig {
-  const sceneId = payload.meta.scene?.sceneId;
-  return availableScenes.find((candidate) => candidate.id === sceneId)?.config ?? activeSceneConfig;
-}
-
-function average(values: readonly number[]): number {
-  if (values.length === 0) throw new Error('No finite samples are available for this history metric');
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
-function exportBasename(payload: ExportPayload): string {
-  const protocol = payload.meta.protocol;
-  const condition = protocol === undefined ? '' : `-${protocol.conditionIndex + 1}-${protocol.conditionLabel}`;
-  return `${payload.meta.drillId}${condition}-${payload.meta.startedAt}`;
-}
-
-function snapshotFromExportPayload(payload: ExportPayload): DataRecorderSnapshot {
-  return {
-    ticks: payload.ticks,
-    events: payload.events,
-    recorderOverflow: payload.meta.recorderOverflow,
-  };
-}
-
 createExportPanel({
   async onExportJSON(): Promise<void> {
     const payload = await buildCurrentExportPayload();
@@ -785,18 +645,6 @@ createExportPanel({
   },
 });
 
-// WP-8 / T2（FR-8.2）— 賽後結果頁：drill ended 後以同一 recorder snapshot 計算並呈現 §5 指標。
-const metricsDashboard = createMetricsDashboard();
-let currentHistorySession: SessionSummary | undefined;
-const historyView = createHistoryView({
-  async onFilesSelected(files) {
-    if (currentHistorySession === undefined) {
-      return { status: 'insufficient-data', reason: 'Complete an Assessment session before loading history exports.' };
-    }
-    const past = await loadAssessmentSessionSummaries(files, sessionSummaryFromPayload);
-    return buildSessionHistory(currentHistorySession, past, STAGE6_BASELINE_WINDOW_SIZE, STAGE6_BASELINE_MIN_N);
-  },
-});
 // WP-48 T5（FR-48.1/48.8）— Assessment-only 自動保存：main.ts 只建立/呼叫 HistoryPersistence，
 // 不直接 fetch、組 API URL 或處理 filesystem error（README §2.4 D-48.P1/D-48.P6）。
 const historyClient = createHistoryClient();
@@ -814,7 +662,6 @@ historyScreenHandle = createHistoryScreen({ navigator: historyNavigator, control
 historyLibraryController.start();
 
 const resultScreen = createResultScreen({
-  historyView: historyView.element,
   saveStatusView: historySaveStatus.element,
   onRestart: restartActiveDrill,
   async onExportJSON(): Promise<void> {
@@ -949,12 +796,7 @@ if (import.meta.env.DEV) {
     ...fpsTestHarness,
     showResult(): void {
       const payload = fpsTestHarness.forceExportJSON();
-      resultScreen.show(
-        fpsTestHarness.metricsFromExport(payload),
-        fpsTestHarness.promotedMetricsFromExport(payload),
-        diagnosisForPayload(payload),
-        qualityFlagsForPayload(payload),
-      );
+      resultScreen.show(buildResultPresentation(payload));
     },
     // WP-48 T5 — E2E-only hook: drives the *same* `historyPersistence` instance the live
     // completion seam uses (README §2.4), against the harness's own synthetic payload (the harness
@@ -1076,8 +918,6 @@ function resetRunPresentation(): void {
   recorder.reset();
   frameLog.reset();
   resultScreen.hide();
-  currentHistorySession = undefined;
-  historyView.render(undefined);
   historySaveStatus.render({ kind: 'idle' });
   resultShown = false;
   hudRunStartMs = null;
@@ -1459,27 +1299,7 @@ const renderLoop = createRenderLoop((now) => {
     syncControlsVisibility();
     void (async () => {
       const payload = await buildCurrentExportPayload();
-      const diagnosis = diagnosisForPayload(payload);
-      try {
-        currentHistorySession = payload.meta.assessment === undefined ? undefined : sessionSummaryFromPayload(payload);
-        historyView.render(
-          currentHistorySession === undefined
-            ? { status: 'insufficient-data', reason: 'This is a Practice session; it cannot establish a formal history baseline.' }
-            : undefined,
-        );
-      } catch (error) {
-        currentHistorySession = undefined;
-        historyView.render({
-          status: 'insufficient-data',
-          reason: error instanceof Error ? error.message : 'Current session could not establish a history baseline.',
-        });
-      }
-      resultScreen.show(
-        metricsDashboard.compute(snapshotFromExportPayload(payload)),
-        metricsDashboard.computePromoted(payload),
-        diagnosis,
-        qualityFlagsForPayload(payload),
-      );
+      resultScreen.show(buildResultPresentation(payload));
       // WP-48 T5（FR-48.1/48.9,D-48.P1）— 同一 payload 觸發保存；fire-and-forget，不阻擋下面
       // sessionPlanRunner.advance()／completeActiveProtocolCondition()（D-48.P6，NFR-48.8）。
       void historyPersistence.save(payload);

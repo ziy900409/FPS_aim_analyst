@@ -13,6 +13,8 @@
  */
 
 import type { ExportPayload } from '../data/export.ts';
+import { serializeJSON } from '../data/export.ts';
+import { buildResultPresentation, type ResultPresentation } from '../results/ResultPresentation.ts';
 import { HistoryClientError, type HistoryClient } from './HistoryClient.ts';
 import type { HistoryDrillSummary, HistoryIndexReport, HistoryParticipantSummary, HistoryRunSummary } from './contracts.ts';
 import type { HistoryNavigator } from './navigation/HistoryNavigator.ts';
@@ -32,9 +34,35 @@ const IDLE: AsyncState<never> = { status: 'idle' };
  * T1 ever constructs a `'ready'` value for it. */
 export type HistoryObservationCollection = never;
 
-/** T3 replaces this with the full `ResultPresentation`-wrapped historical view (README §2.8). Until
- * `ResultPresentation.ts` exists, run detail is exactly what `HistoryClient.loadRun` returns. */
-export type HistoricalRunPresentation = ExportPayload;
+/** README §2.8 — the full historical run view: the raw payload, a `HistoryRunSummary` derived
+ * from it (byte-identical run identity to what WP-48's repository would report; see
+ * `historyRunSummaryFromPayload` below), and the same `ResultPresentation` the current in-session
+ * Result renders (D-49.P4). Built once when the payload loads, not recomputed per render. */
+export interface HistoricalRunPresentation {
+  readonly run: HistoryRunSummary;
+  readonly payload: ExportPayload;
+  readonly result: ResultPresentation;
+}
+
+/** `HistoryClient.loadRun(runId)` only returns the raw `ExportPayload` (README §2.6 — the list
+ * endpoints carry `HistoryRunSummary`, not a single-run lookup); every field below is either the
+ * requested `runId` itself (the repository already verifies it matches the payload's derived
+ * identity before returning it — an unrelated payload/runId pairing 404s instead) or read straight
+ * off `payload.meta`. `byteLength` mirrors what `downloadJSON` would actually write, computed from
+ * the same `serializeJSON` — no network round-trip needed, so this also works after a direct
+ * reload of a `run` route where the parent `runs` list was never fetched. */
+function historyRunSummaryFromPayload(runId: string, payload: ExportPayload): HistoryRunSummary {
+  return {
+    runId,
+    participantId: payload.meta.session?.participantId ?? '',
+    drillId: payload.meta.drillId,
+    startedAt: payload.meta.startedAt,
+    schemaVersion: payload.meta.schemaVersion,
+    suspect: payload.meta.suspect,
+    byteLength: new TextEncoder().encode(serializeJSON(payload)).length,
+    replaySupport: 'unchecked',
+  };
+}
 
 export type HistoryLibraryScope = 'participants' | 'drills' | 'runs' | 'observations' | 'run-detail';
 
@@ -167,7 +195,16 @@ export function createHistoryLibraryController(options: HistoryLibraryController
     try {
       const payload = await client.loadRun(runId, signal);
       if (!isCurrent('run-detail', generation)) return;
-      setState({ runDetail: { status: 'ready', value: payload } });
+      // A malformed/edge-case payload throwing inside `buildResultPresentation` is caught by this
+      // same try/catch and surfaces as a scoped, retryable run-detail error (FM-49.5's item-level
+      // isolation applies to T4's registry projector; this is the equivalent guard for T3's shared
+      // presentation path) — it never clears the run list or crashes the screen.
+      const value: HistoricalRunPresentation = {
+        run: historyRunSummaryFromPayload(runId, payload),
+        payload,
+        result: buildResultPresentation(payload),
+      };
+      setState({ runDetail: { status: 'ready', value } });
     } catch (error) {
       if (!isCurrent('run-detail', generation)) return;
       setState({ runDetail: errorState(error) });

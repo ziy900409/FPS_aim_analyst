@@ -5,6 +5,7 @@ import type { HistoryDrillSummary, HistoryIndexReport, HistoryParticipantSummary
 import type { HistoryNavigator } from './navigation/HistoryNavigator.ts';
 import type { HistoryRoute } from './navigation/HistoryRoute.ts';
 import type { ExportPayload } from '../data/export.ts';
+import { makeAssessmentPayload } from '../../tests/history/payloadFixtures.ts';
 
 /** Controller tests only need `current` + `subscribe` — the rest of `HistoryNavigator` is exercised
  * by HistoryNavigator.test.ts. `setRoute` drives it the same way a real hash change would. */
@@ -127,15 +128,30 @@ describe('createHistoryLibraryController — happy path per route kind', () => {
     expect(controller.state.runs).toEqual({ status: 'ready', value: [run] });
   });
 
-  it('a run route loads the full payload into runDetail', async () => {
-    const payload = { meta: { drillId: 'd-1' }, ticks: [], events: [] } as unknown as ExportPayload;
+  it('a run route loads the payload into runDetail, wrapped with a derived run summary and the shared ResultPresentation', async () => {
+    const payload = makeAssessmentPayload({ participantId: 'p-1', drillId: 'd-1', startedAt: '2026-01-01T00:00:00.000Z' });
     const client = fakeClient({ loadRun: vi.fn(async () => payload) });
     const navigator = createFakeNavigator({ kind: 'run', participantId: 'p-1', drillId: 'd-1', runId: 'r-1' });
     const controller = createHistoryLibraryController({ navigator, client });
     controller.start();
     await flush();
     expect(client.loadRun).toHaveBeenCalledWith('r-1', expect.any(AbortSignal));
-    expect(controller.state.runDetail).toEqual({ status: 'ready', value: payload });
+    expect(controller.state.runDetail.status).toBe('ready');
+    const value = controller.state.runDetail.status === 'ready' ? controller.state.runDetail.value : undefined;
+    expect(value?.payload).toBe(payload);
+    expect(value?.run).toMatchObject({ runId: 'r-1', participantId: 'p-1', drillId: 'd-1', startedAt: '2026-01-01T00:00:00.000Z', replaySupport: 'unchecked' });
+    expect(value?.run.byteLength).toBeGreaterThan(0);
+    expect(value?.result.summary).toBeDefined();
+  });
+
+  it('does not clear runDetail when the shared ResultPresentation pipeline throws on a malformed payload — it surfaces as a scoped error', async () => {
+    const malformed = { meta: { drillId: 'd-1', session: { participantId: 'p-1' } }, ticks: [{ t: Number.NaN }], events: [] } as unknown as ExportPayload;
+    const client = fakeClient({ loadRun: vi.fn(async () => malformed) });
+    const navigator = createFakeNavigator({ kind: 'run', participantId: 'p-1', drillId: 'd-1', runId: 'r-1' });
+    const controller = createHistoryLibraryController({ navigator, client });
+    controller.start();
+    await flush();
+    expect(controller.state.runDetail.status).toBe('error');
   });
 
   it('observations stays idle for the lifetime of T1 — no endpoint to call yet', async () => {

@@ -1,17 +1,19 @@
 /**
- * WP-49 T1/T2 — full-screen History shell (README §2.9). Owns the breadcrumb and composes the
- * per-route-kind body: `ParticipantBrowser` for `participants`, `DrillBrowser` for `drills` (both
- * T2), and a generic loading/empty/error/not-found/ready-count fallback for `drill`/`run` (their
- * dedicated `DrillOverview`/`HistoricalRunDetail` views arrive in T3/T5). This file owns no fetch
- * calls and no Pointer Lock/game-input logic — visibility is a pure function of `navigator.current`
- * so `main.ts` can gate Pointer Lock off `historyScreen.visible` alone.
+ * WP-49 T1/T2/T3 — full-screen History shell (README §2.9). Owns the breadcrumb and composes the
+ * per-route-kind body: `ParticipantBrowser` for `participants`, `DrillBrowser` for `drills` (T2),
+ * `DrillOverview` for `drill` (T3 run-list; trend arrives T4/T5), and `HistoricalRunDetail` for
+ * `run` (T3). This file owns no fetch calls and no Pointer Lock/game-input logic — visibility is a
+ * pure function of `navigator.current` so `main.ts` can gate Pointer Lock off `historyScreen.visible`
+ * alone.
  */
 
-import type { AsyncState, HistoryLibraryController, HistoryLibraryScope, HistoryLibraryState } from '../../history/HistoryLibraryController.ts';
+import type { HistoryLibraryController } from '../../history/HistoryLibraryController.ts';
 import type { HistoryNavigator } from '../../history/navigation/HistoryNavigator.ts';
 import { historyRouteAncestors, type HistoryRoute } from '../../history/navigation/HistoryRoute.ts';
 import { createParticipantBrowser } from './ParticipantBrowser.ts';
 import { createDrillBrowser } from './DrillBrowser.ts';
+import { createDrillOverview } from './DrillOverview.ts';
+import { createHistoricalRunDetail } from './HistoricalRunDetail.ts';
 
 export interface HistoryScreenOptions {
   readonly navigator: HistoryNavigator;
@@ -39,32 +41,6 @@ function crumbLabel(route: HistoryRoute): string {
       return route.drillId;
     case 'run':
       return route.runId;
-  }
-}
-
-function scopeForRoute(route: HistoryRoute): HistoryLibraryScope {
-  switch (route.kind) {
-    case 'participants':
-      return 'participants';
-    case 'drills':
-      return 'drills';
-    case 'drill':
-      return 'runs';
-    case 'run':
-      return 'run-detail';
-  }
-}
-
-function asyncStateForRoute(route: HistoryRoute, state: HistoryLibraryState): AsyncState<unknown> {
-  switch (route.kind) {
-    case 'participants':
-      return state.participants;
-    case 'drills':
-      return state.drills;
-    case 'drill':
-      return state.runs;
-    case 'run':
-      return state.runDetail;
   }
 }
 
@@ -143,10 +119,25 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
 
   const participantBrowser = createParticipantBrowser({ navigator, controller });
   const drillBrowser = createDrillBrowser({ navigator, controller });
+  const drillOverview = createDrillOverview({ navigator, controller });
+  const historicalRunDetail = createHistoricalRunDetail({
+    onBack(): void {
+      const route = navigator.current;
+      if (route?.kind !== 'run') return;
+      navigator.push({ kind: 'drill', participantId: route.participantId, drillId: route.drillId, runFilter: 'all' });
+    },
+    onRetry(): void {
+      controller.retry('run-detail');
+    },
+    // WP-50 will supply a real handler (README §5 handoff); T3 renders no replay button while
+    // this stays undefined (FR-49.13 — no dead/inert affordance).
+  });
   participantBrowser.element.style.display = 'none';
   drillBrowser.element.style.display = 'none';
+  drillOverview.element.style.display = 'none';
+  historicalRunDetail.element.style.display = 'none';
 
-  main.append(participantBrowser.element, drillBrowser.element, status);
+  main.append(participantBrowser.element, drillBrowser.element, drillOverview.element, historicalRunDetail.element, status);
 
   root.append(header, main);
   parent.appendChild(root);
@@ -184,66 +175,39 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
     status.replaceChildren(message, backHome);
   }
 
-  function renderStatus(route: HistoryRoute | undefined, state: HistoryLibraryState): void {
-    if (route === undefined) {
-      renderNotFound();
-      return;
-    }
-
-    const asyncState = asyncStateForRoute(route, state);
-    status.dataset.historyStatus = asyncState.status;
-
-    if (asyncState.status === 'idle' || asyncState.status === 'loading') {
-      const message = document.createElement('p');
-      message.textContent = '載入中…';
-      status.replaceChildren(message);
-      return;
-    }
-    if (asyncState.status === 'empty') {
-      const message = document.createElement('p');
-      message.textContent = '沒有資料。';
-      status.replaceChildren(message);
-      return;
-    }
-    if (asyncState.status === 'error') {
-      const message = document.createElement('p');
-      message.textContent = `讀取失敗：${asyncState.message}`;
-      const children: HTMLElement[] = [message];
-      if (asyncState.retryable) {
-        const retryButton = makeButton('重試');
-        retryButton.addEventListener('click', () => controller.retry(scopeForRoute(route)));
-        children.push(retryButton);
-      }
-      status.replaceChildren(...children);
-      return;
-    }
-    // 'ready' — generic item-count summary; T2/T3/T5 replace this with the real list/detail UI.
-    const value = asyncState.value;
-    const count = Array.isArray(value) ? value.length : 1;
-    const message = document.createElement('p');
-    message.textContent = `共 ${count} 筆。`;
-    status.replaceChildren(message);
+  function hideAll(): void {
+    participantBrowser.element.style.display = 'none';
+    drillBrowser.element.style.display = 'none';
+    drillOverview.element.style.display = 'none';
+    historicalRunDetail.element.style.display = 'none';
+    status.style.display = 'none';
   }
 
   function render(): void {
     const route = navigator.current;
     renderBreadcrumb(route);
+    hideAll();
 
     if (route?.kind === 'participants') {
-      status.style.display = 'none';
-      drillBrowser.element.style.display = 'none';
       participantBrowser.element.style.display = '';
       participantBrowser.render({ participants: controller.state.participants, query: route.query, health: controller.state.health });
     } else if (route?.kind === 'drills') {
-      status.style.display = 'none';
-      participantBrowser.element.style.display = 'none';
       drillBrowser.element.style.display = '';
       drillBrowser.render({ drills: controller.state.drills, participantId: route.participantId });
+    } else if (route?.kind === 'drill') {
+      drillOverview.element.style.display = '';
+      drillOverview.render({
+        runs: controller.state.runs,
+        participantId: route.participantId,
+        drillId: route.drillId,
+        runFilter: route.runFilter,
+      });
+    } else if (route?.kind === 'run') {
+      historicalRunDetail.element.style.display = '';
+      historicalRunDetail.render({ runDetail: controller.state.runDetail, runId: route.runId });
     } else {
-      participantBrowser.element.style.display = 'none';
-      drillBrowser.element.style.display = 'none';
       status.style.display = '';
-      renderStatus(route, controller.state);
+      renderNotFound();
     }
 
     visible = route !== undefined;
@@ -277,6 +241,8 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
       unsubscribeController();
       participantBrowser.dispose();
       drillBrowser.dispose();
+      drillOverview.dispose();
+      historicalRunDetail.dispose();
       root.remove();
     },
   };

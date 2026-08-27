@@ -254,37 +254,6 @@ describe('createHistoryScreen — typed state rendering', () => {
     expect(text(screen.element as unknown as FakeElement)).toContain(expectedSubstring);
   });
 
-  it('an error status shows a Retry button only when retryable, wired to controller.retry(scope)', () => {
-    const document = new FakeDocument();
-    vi.stubGlobal('document', document);
-    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
-    const controller = createFakeController({
-      ...IDLE_STATE,
-      runs: { status: 'error', code: 'STORAGE_IO', message: 'disk error', retryable: true },
-    });
-    createHistoryScreen({ navigator: navigator as never, controller });
-
-    const status = document.created.find((el) => el.dataset.section === 'history-status')!;
-    const retryButton = status.children.find((el) => el.tag === 'button');
-    expect(retryButton?.textContent).toBe('重試');
-    retryButton!.dispatch('click');
-    expect(controller.retry).toHaveBeenCalledWith('runs');
-  });
-
-  it('a non-retryable error omits the Retry button (generic drill/run path)', () => {
-    const document = new FakeDocument();
-    vi.stubGlobal('document', document);
-    const navigator = createFakeNavigator({ kind: 'run', participantId: 'p-1', drillId: 'd-1', runId: 'r-1' });
-    const controller = createFakeController({
-      ...IDLE_STATE,
-      runDetail: { status: 'error', code: 'RUN_NOT_FOUND', message: 'gone', retryable: false },
-    });
-    createHistoryScreen({ navigator: navigator as never, controller });
-
-    const status = document.created.find((el) => el.dataset.section === 'history-status')!;
-    expect(status.children.some((el) => el.tag === 'button')).toBe(false);
-  });
-
   it('re-renders the status region when the controller publishes a new state for the same route', () => {
     const document = new FakeDocument();
     vi.stubGlobal('document', document);
@@ -333,19 +302,53 @@ describe('createHistoryScreen — composes ParticipantBrowser/DrillBrowser per r
     expect(text(screen.element as unknown as FakeElement)).toContain('exact-drill-1');
   });
 
-  it('falls back to the generic status region for drill/run routes (DrillOverview/HistoricalRunDetail land in T3/T5)', () => {
+  it('shows DrillOverview content and hides every other route body on a drill route (T3)', () => {
     const document = new FakeDocument();
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
-    const controller = createFakeController({ ...IDLE_STATE, runs: { status: 'ready', value: [] as never } });
-    createHistoryScreen({ navigator: navigator as never, controller });
+    const controller = createFakeController({
+      ...IDLE_STATE,
+      runs: { status: 'ready', value: [{ runId: 'r-alpha', participantId: 'p-1', drillId: 'd-1', startedAt: '2026-01-01T00:00:00Z', schemaVersion: 2, suspect: false, byteLength: 10, replaySupport: 'unchecked' }] },
+    });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller });
 
     const participantSection = document.created.find((el) => el.dataset.section === 'participant-browser')!;
     const drillSection = document.created.find((el) => el.dataset.section === 'drill-browser')!;
-    const status = document.created.find((el) => el.dataset.section === 'history-status')!;
+    const overviewSection = document.created.find((el) => el.dataset.section === 'drill-overview')!;
+    const detailSection = document.created.find((el) => el.dataset.section === 'historical-run-detail')!;
     expect(participantSection.style.display).toBe('none');
     expect(drillSection.style.display).toBe('none');
-    expect(status.style.display).not.toBe('none');
+    expect(overviewSection.style.display).not.toBe('none');
+    expect(detailSection.style.display).toBe('none');
+    expect(text(screen.element as unknown as FakeElement)).toContain('r-alpha');
+  });
+
+  it('shows HistoricalRunDetail content and hides every other route body on a run route (T3)', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'run', participantId: 'p-1', drillId: 'd-1', runId: 'r-1' });
+    const controller = createFakeController({
+      ...IDLE_STATE,
+      runDetail: { status: 'empty' },
+    });
+    createHistoryScreen({ navigator: navigator as never, controller });
+
+    const overviewSection = document.created.find((el) => el.dataset.section === 'drill-overview')!;
+    const detailSection = document.created.find((el) => el.dataset.section === 'historical-run-detail')!;
+    expect(overviewSection.style.display).toBe('none');
+    expect(detailSection.style.display).not.toBe('none');
+  });
+
+  it('HistoricalRunDetail Back navigates to the parent drill route with runFilter "all"', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'run', participantId: 'p-1', drillId: 'd-1', runId: 'r-1' });
+    const controller = createFakeController({ ...IDLE_STATE, runDetail: { status: 'empty' } });
+    createHistoryScreen({ navigator: navigator as never, controller });
+
+    const backButton = document.created.find((el) => el.dataset.historyAction === 'back')!;
+    backButton.dispatch('click');
+    expect(navigator.push).toHaveBeenCalledWith({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
   });
 });
 
