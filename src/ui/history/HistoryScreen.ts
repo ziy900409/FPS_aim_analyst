@@ -1,14 +1,17 @@
 /**
- * WP-49 T1 — full-screen History shell (README §2.9). Renders only generic, route-shaped state
- * (breadcrumb + loading/empty/error/not-found/ready status) driven by `HistoryLibraryController`;
- * the dedicated Participant/Drill/Run browsing components arrive in T2/T3/T5. This file owns no
- * fetch calls and no Pointer Lock/game-input logic — visibility is a pure function of
- * `navigator.current` so `main.ts` can gate Pointer Lock off `historyScreen.visible` alone.
+ * WP-49 T1/T2 — full-screen History shell (README §2.9). Owns the breadcrumb and composes the
+ * per-route-kind body: `ParticipantBrowser` for `participants`, `DrillBrowser` for `drills` (both
+ * T2), and a generic loading/empty/error/not-found/ready-count fallback for `drill`/`run` (their
+ * dedicated `DrillOverview`/`HistoricalRunDetail` views arrive in T3/T5). This file owns no fetch
+ * calls and no Pointer Lock/game-input logic — visibility is a pure function of `navigator.current`
+ * so `main.ts` can gate Pointer Lock off `historyScreen.visible` alone.
  */
 
 import type { AsyncState, HistoryLibraryController, HistoryLibraryScope, HistoryLibraryState } from '../../history/HistoryLibraryController.ts';
 import type { HistoryNavigator } from '../../history/navigation/HistoryNavigator.ts';
 import { historyRouteAncestors, type HistoryRoute } from '../../history/navigation/HistoryRoute.ts';
+import { createParticipantBrowser } from './ParticipantBrowser.ts';
+import { createDrillBrowser } from './DrillBrowser.ts';
 
 export interface HistoryScreenOptions {
   readonly navigator: HistoryNavigator;
@@ -137,7 +140,13 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
   status.dataset.section = 'history-status';
   status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite');
-  main.appendChild(status);
+
+  const participantBrowser = createParticipantBrowser({ navigator, controller });
+  const drillBrowser = createDrillBrowser({ navigator, controller });
+  participantBrowser.element.style.display = 'none';
+  drillBrowser.element.style.display = 'none';
+
+  main.append(participantBrowser.element, drillBrowser.element, status);
 
   root.append(header, main);
   parent.appendChild(root);
@@ -219,7 +228,23 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
   function render(): void {
     const route = navigator.current;
     renderBreadcrumb(route);
-    renderStatus(route, controller.state);
+
+    if (route?.kind === 'participants') {
+      status.style.display = 'none';
+      drillBrowser.element.style.display = 'none';
+      participantBrowser.element.style.display = '';
+      participantBrowser.render({ participants: controller.state.participants, query: route.query, health: controller.state.health });
+    } else if (route?.kind === 'drills') {
+      status.style.display = 'none';
+      participantBrowser.element.style.display = 'none';
+      drillBrowser.element.style.display = '';
+      drillBrowser.render({ drills: controller.state.drills, participantId: route.participantId });
+    } else {
+      participantBrowser.element.style.display = 'none';
+      drillBrowser.element.style.display = 'none';
+      status.style.display = '';
+      renderStatus(route, controller.state);
+    }
 
     visible = route !== undefined;
     root.style.display = visible ? 'flex' : 'none';
@@ -250,6 +275,8 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
     dispose(): void {
       unsubscribeNavigator();
       unsubscribeController();
+      participantBrowser.dispose();
+      drillBrowser.dispose();
       root.remove();
     },
   };

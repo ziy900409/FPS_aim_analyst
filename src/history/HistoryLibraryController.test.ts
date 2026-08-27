@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createHistoryLibraryController, type HistoryLibraryState } from './HistoryLibraryController.ts';
 import { HistoryClientError, type HistoryClient } from './HistoryClient.ts';
-import type { HistoryDrillSummary, HistoryParticipantSummary, HistoryRunSummary } from './contracts.ts';
+import type { HistoryDrillSummary, HistoryIndexReport, HistoryParticipantSummary, HistoryRunSummary } from './contracts.ts';
 import type { HistoryNavigator } from './navigation/HistoryNavigator.ts';
 import type { HistoryRoute } from './navigation/HistoryRoute.ts';
 import type { ExportPayload } from '../data/export.ts';
@@ -51,9 +51,17 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
   return { promise, resolve, reject };
 }
 
+const healthFixture: HistoryIndexReport = {
+  validRunCount: 0,
+  invalidFileCount: 0,
+  unsupportedFileCount: 0,
+  excludedPracticeFileCount: 0,
+  rebuiltAt: '2026-01-01T00:00:00Z',
+};
+
 function fakeClient(overrides: Partial<HistoryClient> = {}): HistoryClient {
   return {
-    health: vi.fn(),
+    health: vi.fn(async () => healthFixture),
     saveRun: vi.fn(),
     listParticipants: vi.fn(async () => []),
     listDrills: vi.fn(async () => []),
@@ -259,6 +267,74 @@ describe('createHistoryLibraryController — retry', () => {
     controller.retry('drills');
     await Promise.resolve();
     expect(listDrills).not.toHaveBeenCalled();
+  });
+});
+
+describe('createHistoryLibraryController — health banner (OQ-49.5)', () => {
+  it('start() loads health into state.health independent of route', async () => {
+    const report: HistoryIndexReport = { ...healthFixture, validRunCount: 3, invalidFileCount: 1 };
+    const client = fakeClient({ health: vi.fn(async () => report) });
+    const navigator = createFakeNavigator({ kind: 'participants', query: '' });
+    const controller = createHistoryLibraryController({ navigator, client });
+    controller.start();
+    await flush();
+    expect(controller.state.health).toEqual(report);
+  });
+
+  it('a failed health fetch leaves state.health unset without producing an error state', async () => {
+    const client = fakeClient({ health: vi.fn(async () => Promise.reject(new Error('boom'))) });
+    const navigator = createFakeNavigator({ kind: 'participants', query: '' });
+    const controller = createHistoryLibraryController({ navigator, client });
+    controller.start();
+    await flush();
+    expect(controller.state.health).toBeUndefined();
+    expect(controller.state.participants).toEqual({ status: 'empty' });
+  });
+});
+
+describe('createHistoryLibraryController — re-entering the same route identity does not re-fetch', () => {
+  it('changing only `query` on a participants route does not re-issue listParticipants (client-side search)', async () => {
+    const listParticipants = vi.fn(async () => [participant]);
+    const client = fakeClient({ listParticipants });
+    const navigator = createFakeNavigator({ kind: 'participants', query: '' });
+    const controller = createHistoryLibraryController({ navigator, client });
+    controller.start();
+    await flush();
+    expect(listParticipants).toHaveBeenCalledOnce();
+
+    navigator.setRoute({ kind: 'participants', query: 'p-1' });
+    await flush();
+    expect(listParticipants).toHaveBeenCalledOnce();
+    expect(controller.state.route).toEqual({ kind: 'participants', query: 'p-1' });
+  });
+
+  it('changing metricId/cohortId/runFilter on the same drill route does not re-issue listRuns', async () => {
+    const listRuns = vi.fn(async () => [run]);
+    const client = fakeClient({ listRuns });
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createHistoryLibraryController({ navigator, client });
+    controller.start();
+    await flush();
+    expect(listRuns).toHaveBeenCalledOnce();
+
+    navigator.setRoute({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'trend-eligible', metricId: 'm' });
+    await flush();
+    expect(listRuns).toHaveBeenCalledOnce();
+  });
+
+  it('navigating to a different participantId on a drills route still re-fetches', async () => {
+    const listDrills = vi.fn(async () => [drill]);
+    const client = fakeClient({ listDrills });
+    const navigator = createFakeNavigator({ kind: 'drills', participantId: 'p-1' });
+    const controller = createHistoryLibraryController({ navigator, client });
+    controller.start();
+    await flush();
+    expect(listDrills).toHaveBeenCalledOnce();
+
+    navigator.setRoute({ kind: 'drills', participantId: 'p-2' });
+    await flush();
+    expect(listDrills).toHaveBeenCalledTimes(2);
+    expect(listDrills).toHaveBeenLastCalledWith('p-2', expect.any(AbortSignal));
   });
 });
 

@@ -241,7 +241,7 @@ describe('createHistoryScreen — typed state rendering', () => {
   it.each<[HistoryLibraryState['participants'], string]>([
     [{ status: 'idle' }, '載入中'],
     [{ status: 'loading' }, '載入中'],
-    [{ status: 'empty' }, '沒有資料'],
+    [{ status: 'empty' }, '尚無 Participant 紀錄'],
     [{ status: 'ready', value: [{ participantId: 'p-1', drillCount: 1, runCount: 2, latestStartedAt: 'x' }] }, '共 1 筆'],
     [{ status: 'error', code: 'STORAGE_IO', message: 'disk error', retryable: true }, '讀取失敗：disk error'],
   ])('renders participants %o as %s', (participants, expectedSubstring) => {
@@ -271,13 +271,13 @@ describe('createHistoryScreen — typed state rendering', () => {
     expect(controller.retry).toHaveBeenCalledWith('runs');
   });
 
-  it('a non-retryable error omits the Retry button', () => {
+  it('a non-retryable error omits the Retry button (generic drill/run path)', () => {
     const document = new FakeDocument();
     vi.stubGlobal('document', document);
-    const navigator = createFakeNavigator({ kind: 'participants', query: '' });
+    const navigator = createFakeNavigator({ kind: 'run', participantId: 'p-1', drillId: 'd-1', runId: 'r-1' });
     const controller = createFakeController({
       ...IDLE_STATE,
-      participants: { status: 'error', code: 'INVALID_EXPORT', message: 'bad', retryable: false },
+      runDetail: { status: 'error', code: 'RUN_NOT_FOUND', message: 'gone', retryable: false },
     });
     createHistoryScreen({ navigator: navigator as never, controller });
 
@@ -294,7 +294,58 @@ describe('createHistoryScreen — typed state rendering', () => {
 
     expect(text(screen.element as unknown as FakeElement)).toContain('載入中');
     controller.setState({ ...IDLE_STATE, participants: { status: 'empty' } });
-    expect(text(screen.element as unknown as FakeElement)).toContain('沒有資料');
+    expect(text(screen.element as unknown as FakeElement)).toContain('尚無 Participant 紀錄');
+  });
+});
+
+describe('createHistoryScreen — composes ParticipantBrowser/DrillBrowser per route kind (T2)', () => {
+  it('shows ParticipantBrowser content and hides DrillBrowser content on a participants route', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'participants', query: '' });
+    const controller = createFakeController({
+      ...IDLE_STATE,
+      participants: { status: 'ready', value: [{ participantId: 'p-alpha', drillCount: 1, runCount: 2, latestStartedAt: '2026-01-01T00:00:00Z' }] },
+    });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+
+    const participantSection = document.created.find((el) => el.dataset.section === 'participant-browser')!;
+    const drillSection = document.created.find((el) => el.dataset.section === 'drill-browser')!;
+    expect(participantSection.style.display).not.toBe('none');
+    expect(drillSection.style.display).toBe('none');
+    expect(text(screen.element as unknown as FakeElement)).toContain('p-alpha');
+  });
+
+  it('shows DrillBrowser content and hides ParticipantBrowser content on a drills route', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'drills', participantId: 'p-1' });
+    const controller = createFakeController({
+      ...IDLE_STATE,
+      drills: { status: 'ready', value: [{ drillId: 'exact-drill-1', runCount: 3, latestStartedAt: '2026-01-01T00:00:00Z' }] },
+    });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+
+    const participantSection = document.created.find((el) => el.dataset.section === 'participant-browser')!;
+    const drillSection = document.created.find((el) => el.dataset.section === 'drill-browser')!;
+    expect(drillSection.style.display).not.toBe('none');
+    expect(participantSection.style.display).toBe('none');
+    expect(text(screen.element as unknown as FakeElement)).toContain('exact-drill-1');
+  });
+
+  it('falls back to the generic status region for drill/run routes (DrillOverview/HistoricalRunDetail land in T3/T5)', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createFakeController({ ...IDLE_STATE, runs: { status: 'ready', value: [] as never } });
+    createHistoryScreen({ navigator: navigator as never, controller });
+
+    const participantSection = document.created.find((el) => el.dataset.section === 'participant-browser')!;
+    const drillSection = document.created.find((el) => el.dataset.section === 'drill-browser')!;
+    const status = document.created.find((el) => el.dataset.section === 'history-status')!;
+    expect(participantSection.style.display).toBe('none');
+    expect(drillSection.style.display).toBe('none');
+    expect(status.style.display).not.toBe('none');
   });
 });
 

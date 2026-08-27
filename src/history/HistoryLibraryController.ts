@@ -175,22 +175,56 @@ export function createHistoryLibraryController(options: HistoryLibraryController
   }
 
   function reactToRoute(route: HistoryRoute | undefined): void {
+    // Re-entering the *same* logical route (participantId/drillId/runId unchanged) must not
+    // re-fetch — `query` on a participants route and `metricId`/`cohortId`/`runFilter` on a drill
+    // route are client-side filters over already-loaded data (README §1.4 Assumptions), not fetch
+    // parameters. Only a genuinely different identity (or arriving from a different route kind)
+    // starts a new request.
+    const previousRoute = state.route;
     setState({ route });
     if (route === undefined) return;
     switch (route.kind) {
       case 'participants':
-        void loadParticipants();
+        if (previousRoute?.kind !== 'participants') void loadParticipants();
         return;
       case 'drills':
-        void loadDrills(route.participantId);
+        if (previousRoute?.kind !== 'drills' || previousRoute.participantId !== route.participantId) {
+          void loadDrills(route.participantId);
+        }
         return;
       case 'drill':
-        void loadRuns(route.participantId, route.drillId);
+        if (
+          previousRoute?.kind !== 'drill' ||
+          previousRoute.participantId !== route.participantId ||
+          previousRoute.drillId !== route.drillId
+        ) {
+          void loadRuns(route.participantId, route.drillId);
+        }
         return;
       case 'run':
-        void loadRunDetail(route.runId);
+        if (previousRoute?.kind !== 'run' || previousRoute.runId !== route.runId) void loadRunDetail(route.runId);
         return;
     }
+  }
+
+  let healthController: AbortController | undefined;
+
+  /** Fire-and-forget: the health/exclusion-count banner (OQ-49.5) is a non-blocking diagnostic, not
+   * part of any route's async state — a failed fetch just leaves `state.health` unset rather than
+   * producing an error state anywhere. */
+  function loadHealth(): void {
+    healthController?.abort();
+    const controller = new AbortController();
+    healthController = controller;
+    client.health(controller.signal).then(
+      (report) => {
+        if (disposed) return;
+        setState({ health: report });
+      },
+      () => {
+        // non-blocking — intentionally swallowed.
+      },
+    );
   }
 
   const unsubscribeNavigator = navigator.subscribe(reactToRoute);
@@ -200,6 +234,7 @@ export function createHistoryLibraryController(options: HistoryLibraryController
       return state;
     },
     start(): void {
+      loadHealth();
       reactToRoute(navigator.current);
     },
     retry(scope: HistoryLibraryScope): void {
@@ -221,6 +256,7 @@ export function createHistoryLibraryController(options: HistoryLibraryController
     dispose(): void {
       disposed = true;
       unsubscribeNavigator();
+      healthController?.abort();
       for (const scope of Object.keys(controllers) as FetchableScope[]) controllers[scope]?.abort();
       listeners.clear();
     },

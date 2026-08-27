@@ -16,7 +16,7 @@
 | **Scale target** | 5,000 個 Assessment run summaries；單一 drill 可有數百至數千 runs，列表與分析必須分頁／漸進載入 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | High：新 navigation state、歷史／當前 Result 共用、metric 語意與大量 payload 分析 |
-| **Status** | 🟡 **T1 完成（2026-08-27）**：`HistoryRoute`/`HistoryNavigator`/`HistoryLibraryController`/`HistoryScreen` 四個新模組 + 77 個 unit test 全綠，`main.ts` 接上「歷史紀錄」launch 入口與 Pointer Lock gate（FM-49.10），5 個新 Playwright E2E 涵蓋 launch/Back-Forward/reload/close/pointer-lock 負向斷言。`npm run test:ci` 全綠（151 test files / 1297 tests + 41 e2e）。詳見 [progress.md](progress.md) D-49.P14～P19。T0 決議：OQ-49.1～5 已與使用者收斂：僅註冊 `spider-shot-v2`（peek-click-transfer 需另立跨 WP 決定；`spider-shot-v2` metric descriptor 待 T4 前由研究設計 owner 定義）、latest-eligible cohort 預設+selector、T3 移除人工 picker、cursor 分頁漸進趨勢、Participant 頁只顯示分類 count。T2 可開始 |
+| **Status** | 🟡 **T2 完成（2026-08-27）**：新增 `ParticipantBrowser`/`DrillBrowser` 兩個 UI 元件（26 個 unit test），`HistoryLibraryController` 補上非阻塞 health banner 資料流與「同識別 route 重入不重新 fetch」修正（+5 test），`HistoryScreen` 組裝兩元件取代 T1 的通用 item-count 佔位（+3 test）；3 個新 Playwright E2E 涵蓋 exact-drill 分組（`spider-shot-v1`/`v2`）、Practice 排除、client-side 搜尋。`npm run test:ci` 全綠（153 test files / 1331 tests + 2 skipped + 44 e2e）。詳見 [progress.md](progress.md) D-49.P20～P22。T1 完成狀態見 D-49.P14～P19：`HistoryRoute`/`HistoryNavigator`/`HistoryLibraryController`/`HistoryScreen` 四個新模組、`main.ts` 「歷史紀錄」launch 入口與 Pointer Lock gate（FM-49.10）。T0 決議：OQ-49.1～5 已與使用者收斂：僅註冊 `spider-shot-v2`（peek-click-transfer 需另立跨 WP 決定；`spider-shot-v2` metric descriptor 待 T4 前由研究設計 owner 定義）、latest-eligible cohort 預設+selector、T3 移除人工 picker、cursor 分頁漸進趨勢、Participant 頁只顯示分類 count。T3 可開始 |
 
 ---
 
