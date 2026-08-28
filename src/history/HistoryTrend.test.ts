@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CompatibilityKey, QualityGateStatus } from '../metrics/compatibilityKey.ts';
-import { buildHistoryTrend } from './HistoryTrend.ts';
+import { buildHistoryTrend, listCompatibilityCohorts } from './HistoryTrend.ts';
 import type { DrillMetricRegistration, HistoryProjectionResult, MetricObservation } from './DrillMetricRegistry.ts';
 import type { HistoryRunProjection, HistoryRunSummary } from './contracts.ts';
 
@@ -154,6 +154,33 @@ describe('buildHistoryTrend', () => {
     expect(explicit.status).toBe('ready');
     if (explicit.status !== 'ready') return;
     expect(explicit.points.map((p) => p.runId)).toEqual(['a1']);
+  });
+});
+
+describe('listCompatibilityCohorts', () => {
+  it('lists every quality-ok cohort, most-recently-active first, independent of any metric', () => {
+    const cohortA1 = makeReadyProjection('a1', '2026-08-01T00:00:00.000Z', [obs(100)], { sensitivityFovKey: 'sensitivity=1;fovDeg=90' });
+    const cohortA2 = makeReadyProjection('a2', '2026-08-05T00:00:00.000Z', [obs(110)], { sensitivityFovKey: 'sensitivity=1;fovDeg=90' });
+    const cohortB1 = makeReadyProjection('b1', '2026-08-10T00:00:00.000Z', [obs(200)], { sensitivityFovKey: 'sensitivity=2;fovDeg=100' });
+    const cohorts = listCompatibilityCohorts([cohortA1, cohortA2, cohortB1]);
+    expect(cohorts).toHaveLength(2);
+    expect(cohorts[0].id).toBe(cohortIdFor(cohortB1)); // most recent
+    expect(cohorts[0].runCount).toBe(1);
+    expect(cohorts[1].id).toBe(cohortIdFor(cohortA1));
+    expect(cohorts[1].runCount).toBe(2);
+  });
+
+  it('excludes non-ready and non-ok-quality projections', () => {
+    const ok = makeReadyProjection('r1', '2026-08-10T00:00:00.000Z', [obs(100)]);
+    const suspect = makeReadyProjection('r2', '2026-08-11T00:00:00.000Z', [obs(200)], { qualityGateStatus: 'suspect-run' });
+    const invalid: HistoryRunProjection = { run: makeRun('r3', '2026-08-12T00:00:00.000Z'), projection: { status: 'invalid-metric', reasonCode: 'x' } };
+    const cohorts = listCompatibilityCohorts([ok, suspect, invalid]);
+    expect(cohorts).toHaveLength(1);
+    expect(cohorts[0].runCount).toBe(1);
+  });
+
+  it('returns an empty list when there are no projections', () => {
+    expect(listCompatibilityCohorts([])).toEqual([]);
   });
 });
 

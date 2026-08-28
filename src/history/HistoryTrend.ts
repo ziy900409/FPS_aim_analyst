@@ -169,6 +169,23 @@ function groupByCohort(
   }));
 }
 
+/**
+ * WP-49 T5 (FR-49.10) — every compatibility cohort present among quality-ok, ready projections for
+ * a drill, independent of which metric is selected (a cohort selector must be populate-able before
+ * the user has picked a metric). Sorted most-recently-active first so a selector's default ordering
+ * matches `buildHistoryTrend`'s own "latest eligible cohort" default (D-49.P10).
+ */
+export function listCompatibilityCohorts(projections: readonly HistoryRunProjection[]): readonly CompatibilityCohort[] {
+  const eligible = projections.filter(
+    (item): item is HistoryRunProjection & { readonly projection: Extract<HistoryRunProjection['projection'], { status: 'ready' }> } =>
+      item.projection.status === 'ready' && item.projection.qualityGateStatus === 'ok',
+  );
+  return groupByCohort(eligible)
+    .slice()
+    .sort((a, b) => Date.parse(b.latestStartedAt) - Date.parse(a.latestStartedAt))
+    .map(({ latestStartedAt: _latestStartedAt, ...cohort }) => cohort);
+}
+
 /** Default (D-49.P10): the cohort containing the most recent eligible run. `cohortId`, when given,
  * selects an explicit cohort instead (README §2.7 "provide a selector"). */
 function selectCohort(
