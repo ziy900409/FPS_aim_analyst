@@ -22,11 +22,11 @@
 
 ## Definition of Done
 
-- [ ] old fixtures parse/serialize/metrics/golden結果維持；new replay v1 strict round-trip成立。
-- [ ] exact profile與full/partial/unsupported/invalid reason matrix tests全綠。
-- [ ] recorder hot path與payload size符合T0 gate，無unbounded allocation。
-- [ ] official full候選fixture可追溯到capture path；legacy不被誤升full。
-- [ ] progress記blast radius、測試數、benchmark與實際contract。
+- [x] old fixtures parse/serialize/metrics/golden結果維持；new replay v1 strict round-trip成立。
+- [x] exact profile與full/partial/unsupported/invalid reason matrix tests全綠（`invalid` 屬 `parseExportPayload` 既有職責，classifier 只回傳 full/partial/unsupported，見 progress.md D-50-P14）。
+- [x] recorder hot path與payload size符合T0 gate，無unbounded allocation（preallocated 固定長度陣列，無 push；size 證據見 progress.md Surprises 與 `tests/replay/payload-size-budget.test.ts`）。
+- [x] official full候選fixture可追溯到capture path；legacy不被誤升full（`tests/replay/official-full-candidate.test.ts` + `src/replay/replayCompatibility.test.ts` 的 legacy fixture 矩陣）。
+- [x] progress記blast radius、測試數、benchmark與實際contract（見 [progress.md](progress.md) T1 段落）。
 
 ## Commit
 

@@ -24,6 +24,7 @@
 - **OQ-50.4**：asset pack version mismatch，建議降partial並顯示版本警告。
 
 - **2026-08-28**：完成 **T0 — Entry Gate／Replay Sufficiency Audit／PoC**。Production code diff = 0（僅 progress.md/README.md/task-checklist.md/T0-entry-gate.md 更動 + 已清除的 throwaway PoC test）。詳見下方 Evidence Log 與 Decision Log D-50-P6～P11。OQ-50.1～4 皆已取得 owner（使用者）確認，T1 可開工。
+- **2026-08-28**：完成 **T1 — Additive Replay Contract／Capture／Support Classifier**（4 個垂直切片，各自獨立 commit + 全綠驗證）。詳見下方 T1 Evidence Log 與 Decision Log D-50-P12～P14。
 
 ## T0 Audit — Official Assessment Exact-`drillId` Roster
 
@@ -97,3 +98,33 @@ interface TickRecord {
 - Baseline `npx vitest run`：**159 test files passed / 1426 tests passed / 2 skipped**（0 failed）。
 - T0 PoC 執行結果：`npx vitest run tests/_t0_poc` 最終 **3 files / 6 tests 全綠**（過程中的 2 次失敗屬 PoC 腳本本身的浮點取樣/斷言錯誤，已修正並記錄在上方 Evidence 小節；`payload-size-estimate.test.ts` 的「大小超標」斷言是刻意保留的**發現型**斷言，非腳本錯誤）。
 - T0 收工前：PoC 測試檔已刪除（`rm -rf tests/_t0_poc`），`git status --short` 確認回到與開工前一致的乾淨狀態，production code diff = 0。
+
+## T1 — Additive Replay Contract／Capture／Support Classifier（2026-08-28）
+
+依 D-50-P8 要求，T1 第一個子步驟即為鎖定 target cardinality 假設的 regression test，其餘四個切片依序疊加、逐一 commit：
+
+1. `test(replay): lock D-50-P8 single-active-target invariant for official Assessment drills`（`a8c64e6`）——`tests/replay/target-cardinality-invariant.test.ts`：6 個 official exact drillId 各自跑完整 drill（countdown → running → ended 或 backstop），逐 tick 斷言 `state.targets.length <= 1`。全綠，驗證 D-50-P6 schema 縮小（scalar `replayTargetId?` 而非陣列）的前提成立。
+2. `feat(replay): capture additive replayTargetId tick field and meta.replay marker`（`298f98e`）——`TickRecord.replayTargetId?: string | null`（`src/data/RingBuffer.ts`）、`TickSourceState.targets[].id?`、`TickArena` 新增 preallocated `(string|null)[]`（非 typed array——字串無法進 typed array，但仍固定長度、無 push，符合固定佈局紀律精神）、`Meta.replay?: ReplayMeta{replaySchemaVersion:1}`（`src/data/metadata.ts`，`collectMeta` 無條件填入——目前唯一 production 路徑 `recordTickFromState`→`TickArena.recordState` 一律有此能力）、`exportPayloadSchema.ts` 新增對應 strict parse/serialize。**關鍵設計修正**：`replayTargetId` 採 dYaw/dPitch 的「有值才 spread」慣例（非 tx/ty/tz 的「恆存在、null 表無」慣例）——否則既有大量 `toEqual` 精確比對的 legacy 測試（無 target 的 tick）會全部斷裂；只有「新增有 target 的 tick」才多出這個 key，既有零 target 案例逐位不變。
+3. `feat(replay): add exact-drillId profile registry and support classifier`（`a2e2ff7`）——`src/replay/contracts.ts`（`ReplaySupportStatus`/`ReplayCapability`/`ReplaySupport`/`ReplayProfile` 型別)、`src/replay/replayCompatibility.ts`（`classifyReplaySupport(payload): ReplaySupport`,純函式,分類順序＝timeline structural validity → exact profile lookup → capability 檢查 → overflow;6 個 official exact drillId 各自登記獨立 profile,無 family/prefix fallback)。16 個 reason-matrix 單元測試涵蓋 full/partial/unsupported 與穩定 reason 排序。
+4. `test(replay): lock replayTargetId size win over the rejected array-of-targets draft`（`87b5464`）+ `test(replay): prove capture-to-classifier agreement and legacy-never-full`（`c3b8cd3`）——補 NFR-50.1 payload-size 證據與端到端整合測試（見下方 Surprises 與 Evidence）。
+
+`npm run build` / `npm run typecheck` / `npx vitest run`（1489 tests,167 files,0 failed)全綠;`graphify update .` 已同步（`89c0795`）。
+
+### Decision Log（T1）
+
+- **D-50-P12 / replayTargetId spread 慣例**：不沿用 `tx/ty/tz` 的「恆存在＋null sentinel」慣例,改採 `dYaw/dPitch` 的「有值才 spread」慣例——原因：`tx/ty/tz` 的 null sentinel 慣例是既有欄位,舊測試早已預期它；但 `replayTargetId` 是全新欄位,若比照 tx 恆輸出（即使 null）,會讓數十個既有「無 target tick」的 `toEqual` 精確快照測試全部斷裂。改為「有 active target 才輸出 key」後,無 target 的 tick 逐位不變（零測試需要改動之外的 churn），且語意仍與 README schema 草案「省略／null 皆表無 active target」的文字相容。
+- **D-50-P13 / meta.replay 為單一版本旗標,非完整 capabilities 陣列**：README §2.3 原草案的 `ReplayMeta{replaySchemaVersion,recordingHz,visualSemanticsVersion,capabilities}` 在 D-50-P6 收斂後大部分欄位變成多餘——camera/ADS/shot-hit-cue 皆可從既有 v2 欄位（`weapon.recoil`／`ticks[].ads`／`fire`/`hit` 事件）逐一推導,不需要額外宣告;`recordingHz` 與既有 `meta.simHz` 重複；`visualSemanticsVersion` 无对应可变语意需要版本化。故 T1 只留 `replaySchemaVersion:1` 一個旗標,單純用來讓 classifier 分辨「這份匯出的 recorder 有無填 `replayTargetId`」,不用逐 tick 掃描判斷。
+- **D-50-P14 / classifyReplaySupport 只回傳 full/partial/unsupported,`invalid` 留給 parseExportPayload**：README §2.4 分類順序把「JSON schema 本身不合法」與「結構有效但缺 capability」分成兩層——前者是 `parseExportPayload` 的既有職責（回傳 `ok:false`）,不需要 classifier 重新判定;後者才是 `classifyReplaySupport` 的範圍。這避免 `ReplaySupportStatus` 型別雖仍保留完整四值（供 T5/T6 UI 用一個型別描述完整狀態機）,但 classifier 函式簽章維持單純（輸入必為已通過 strict parse 的 `ExportPayload`）。
+
+### Surprises & Discoveries（T1）
+
+- **NFR-50.1 的「≤4 MiB」不能字面理解為「recorder 滿容量（41,528 ticks）序列化後必須 ≤4 MiB」**：實測發現，即使完全不含任何 WP-50 新欄位的既有 legacy tick（`t/vx/vz/px/pz/tx/ty/tz/aim/keys/ads`）在滿容量、compact JSON.stringify 下就已經是 **~6.0 MiB**（超出 4 MiB 25%+），這是 WP-50 之前就存在的既有系統性質,不是本次新增的回歸。加上 `serializeJSON` 實際使用 2-space pretty-print（比 compact 大 ~1.7 倍）,滿容量 pretty-printed legacy 匯出約 **~10.4 MiB**。因此 NFR-50.1 的 4 MiB/42k-tick 描述應理解為「T2 效能測試要用的一個*寫實*（而非理論滿容量）fixture 的目標大小」——6 個 official exact drillId 實際受 `timing.timeLimitMs`（多數 120000ms）或 `endCondition.value`（spider-shot-v2 為 60000ms）後援閘限制,真實最長匯出約 ≤120s ≈ 15,360 ticks,遠低於理論的 300s／41,528-tick 安全上限。T1 因此把驗證重心改為「scalar `replayTargetId` 相對於 README §2.3 被否決的陣列草案,在同樣滿容量／100% occupancy 最壞情境下所增加的位元組成本」（實測：scalar 每 tick 額外 ~18 bytes,滿容量陣列草案是 scalar 的 ~1.36 倍),而非重申一個連既有系統都不成立的絕對位元組上限。**待辦（T2 owner 確認）**：T2 建 42k-tick 效能 fixture 時,應採「寫實 occupancy pattern 的合成/真實資料」而非「理論滿容量」,並在 T2 progress.md 記錄實際採用的 fixture 大小與其相對於 4 MiB 的關係,避免下一位讀者誤以為既有系統本來就符合這個絕對值。
+- **`DrillRunner` 既有註解已經非正式記載了 D-50-P8 的不變量**：`src/drill/DrillRunner.ts` 第 134-135 行的既有註解「擊殺數 = 見過的 id 數 − 目前存活數（單 active 目標,故 targets.length ∈ {0,1}）」早已隱含這個假設,只是從未有 regression test 鎖定它。T1 新增的 `tests/replay/target-cardinality-invariant.test.ts` 是這個既有隱性契約的第一份顯式測試。
+
+### Evidence Log（T1）
+
+- Baseline（T1 開工前）：`git rev-parse HEAD` = `a8c64e6`（T0 收尾 commit）；`git status --short` 乾淨。
+- 逐切片驗證：每個 commit 前皆執行 `npm run typecheck`（`tsc --noEmit` ×2）與 `npx vitest run`（相關子集 + 全量）,全綠才 commit。
+- T1 收工：`npm run build`（green,既有 1113.72 kB chunk-size 警告,屬既存狀態）；`npx vitest run` 全量 **167 test files / 1489 tests passed / 2 skipped（0 failed）**；`graphify update .` 已同步（commit `89c0795`）。
+- Payload-size 證據（`tests/replay/payload-size-budget.test.ts`）：單一有 target 的 tick 相對於無 target 的同一 tick,`replayTargetId` 只增加位元組數 < 40 bytes；在 41,528-tick 滿容量、100% target occupancy 最壞情境下,scalar 編碼（~6.74 MiB）比 README §2.3 被否決的 `targets:[...]` 陣列草案（~9.19 MiB）省約 27%（陣列草案／scalar ≈ 1.36×）。
+- 端到端證據（`tests/replay/official-full-candidate.test.ts`）：`hold_click_v1` 走完整 production pipeline（`TargetManager`→`DrillRunner`→`SimLoop`→`DataRecorder`→`collectMeta`→`buildExportPayload`）,再經 `canonicalExportJSON`→`parseExportPayload` 走一次 strict wire boundary 往返,`classifyReplaySupport` 回報 `full`、`missing`/`reasonCodes` 皆空——證明 Slice 2（capture）與 Slice 3（classifier）不是各自獨立成立、而是真的能串成完整 pipeline。另以 2 個既有 `research/fixtures/exports/*.json`（pre-WP-50 真實/合成匯出）驗證 `classifyReplaySupport` 永遠不誤判為 `full`（D-50-P3）。
