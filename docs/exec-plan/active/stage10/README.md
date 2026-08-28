@@ -12,7 +12,7 @@
 | **歷史政策** | 只保存與瀏覽 Assessment；Practice 保留即時結果與手動匯出，但不建立歷史紀錄 |
 | **重播語意** | 依記錄狀態重建玩家當時看到的 3D 過程，不重新執行舊輸入或要求錄影檔 |
 | **里程碑** | 暫定 M18：本機自動保存、歷史瀏覽、Assessment 趨勢、3D 重播與 E2E 驗收全數成立 |
-| **狀態** | 🟡 WP-48 本機歷史儲存與 WP-49 History Library/Assessment Trends 已完成 T-exit；WP-50 3D replay 與 WP-51 M18 integration 尚未開始 |
+| **狀態** | 🟡 WP-48 本機歷史儲存與 WP-49 History Library/Assessment Trends 已完成 T-exit；WP-50 3D replay 進行中（T0～T3 完成，2026-08-28）；WP-51 M18 integration 尚未開始 |
 
 ---
 
@@ -247,7 +247,7 @@ interface MetricDescriptor {
 |---|---|---|---|---|
 | **WP-48** | [本機歷史儲存基礎](wp-48-local-history-foundation/README.md) | strict payload contract、filesystem repository、Node API、typed client、自動保存與 download fallback | High（path safety／半寫入／啟動方式） | ✅ 已完成（T0～T5＋T-exit 全綠，2026-08-27） |
 | **WP-49** | [歷史紀錄 UI 與趨勢](wp-49-history-library-and-trends/README.md) | Participant／exact drill／run navigation、歷史 Result、metric registry、paged analysis與Assessment趨勢 | High（navigation race／Result共用／研究語意／大量payload） | ✅ 已完成（T0～T5＋T-exit 全綠，2026-08-28） |
-| **WP-50** | [第一人稱 3D 狀態重播](wp-50-3d-state-replay/README.md) | additive replay contract、exact-profile support、pure playback、exclusive scene ownership、transport/event UI、Result/History入口 | High（錄製充分性／seek決定性／renderer lifecycle） | 🟡 已完成規劃，T0未開始 |
+| **WP-50** | [第一人稱 3D 狀態重播](wp-50-3d-state-replay/README.md) | additive replay contract、exact-profile support、pure playback、exclusive scene ownership、transport/event UI、Result/History入口 | High（錄製充分性／seek決定性／renderer lifecycle） | 🟡 T0～T3 已完成（2026-08-28），T4 進行中 |
 | **WP-51** | [整合與 M18 驗收](wp-51-m18-integration-and-acceptance/README.md) | isolated dev/preview harness、跨WP journeys、failure/data safety、scale/lifecycle/a11y、操作文件與實機release dossier | Med/High（root/process lifecycle／假綠preview／實機fidelity） | 🟡 已完成規劃，T0未開始 |
 
 詳細 task 與 entry／exit 條件見 [task-checklist.md](task-checklist.md)。正式開工前若 stage9 又新增 WP，需重新分配這裡的暫用編號，避免碰撞。

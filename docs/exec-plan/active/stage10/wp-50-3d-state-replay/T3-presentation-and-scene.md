@@ -22,10 +22,10 @@
 
 ## Definition of Done
 
-- [ ] NFR-50.3/5/6 instrumentation通過。
-- [ ] camera base、simToWorld、scene/fallback/version mapping有unit/integration evidence。
-- [ ] resize、rapid run switch、abort、load failure與50-cycle lifecycle tests全綠。
-- [ ] live render/determinism regressions無變化，`main.ts`只留composition/delegation。
+- [x] NFR-50.3/5/6 instrumentation通過（NFR-50.5 以 coordinator-level pump-isolation proxy 證明；NFR-50.6 以同步 abort+late-dispose 證明；NFR-50.3 由 async 非阻塞 load path 架構保證，無獨立瀏覽器計時——見 progress.md T3 Evidence Log）。
+- [x] camera base、simToWorld、scene/fallback/version mapping有unit/integration evidence。
+- [x] resize、rapid run switch、abort、load failure與50-cycle lifecycle tests全綠。
+- [x] live render/determinism regressions無變化，`main.ts`只留composition/delegation（render callback 本體逐字保留，只抽出具名函式；`resize()` wiring 留待 T6，見 progress.md D-50-P19）。
 
 ## Commit
 
