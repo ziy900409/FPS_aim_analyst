@@ -25,6 +25,7 @@ type HistorySaveState =
 type Harness = {
   startDrill(id: string): void;
   saveToHistory(overrides?: { participantId?: string; assessment?: boolean }): Promise<HistorySaveState>;
+  showResultAndSaveToHistory(overrides?: { participantId?: string; assessment?: boolean }): Promise<HistorySaveState>;
 };
 
 async function waitForHarness(page: import('@playwright/test').Page): Promise<void> {
@@ -206,5 +207,124 @@ test.describe('WP-49 T3 — run list and historical result detail', () => {
     await expect(screen.locator('[data-section="result-detail-body"]')).toBeVisible();
     await expect(screen.getByRole('button', { name: '再測目前 Drill' })).toHaveCount(0);
     await expect(screen.getByRole('button', { name: /^Replay/ })).toHaveCount(0);
+  });
+});
+
+test.describe('WP-49 T5 — drill trend and "查看此 Drill 歷史" entry', () => {
+  test('a registered drill (spider-shot-v2) renders a metric selector and a trend chart from real saved runs', async ({ page }) => {
+    await waitForHarness(page);
+    const participantId = `t5-trend-${crypto.randomUUID()}`;
+    await seedAssessmentRun(page, 'spider-shot-v2', participantId);
+    await seedAssessmentRun(page, 'spider-shot-v2', participantId);
+
+    await openHistory(page);
+    const screen = page.locator('#history-screen');
+    await screen.getByRole('searchbox', { name: '搜尋 Participant' }).fill(participantId);
+    await screen.getByRole('button', { name: new RegExp(participantId) }).click();
+    await screen.getByRole('button', { name: /spider-shot-v2/ }).click();
+
+    const trend = screen.locator('[data-section="drill-trend"]');
+    await expect(trend.locator('button[data-metric-id]').first()).toBeVisible();
+    await expect(trend.locator('[data-section="trend-progress"]')).toContainText('已載入 2／2 筆');
+    await expect(trend.locator('[data-section="trend-chart"] table')).toBeVisible();
+  });
+
+  test('an unregistered drill (spider-shot-v1) shows an explicit "not registered" trend message, not silent emptiness (FM-49.6)', async ({ page }) => {
+    await waitForHarness(page);
+    const participantId = `t5-unregistered-${crypto.randomUUID()}`;
+    await seedAssessmentRun(page, 'spider-shot-v1', participantId);
+
+    await openHistory(page);
+    const screen = page.locator('#history-screen');
+    await screen.getByRole('searchbox', { name: '搜尋 Participant' }).fill(participantId);
+    await screen.getByRole('button', { name: new RegExp(participantId) }).click();
+    await screen.getByRole('button', { name: /spider-shot-v1/ }).click();
+
+    const trend = screen.locator('[data-section="drill-trend"]');
+    await expect(trend).toContainText('尚未註冊歷史指標');
+    await expect(trend.locator('button[data-metric-id]')).toHaveCount(0);
+    // The run list itself is unaffected by the missing registry (FR-49.11).
+    await expect(screen.locator('[data-section="run-list-status"]')).toContainText('共 1 筆');
+  });
+
+  test('a saved Assessment Result shows "查看此 Drill 歷史" and it opens the correct Participant/drill (FR-49.12)', async ({ page }) => {
+    await waitForHarness(page);
+    const participantId = `t5-open-history-${crypto.randomUUID()}`;
+    const drillId = 'spider-shot-v2';
+
+    await page.evaluate(
+      async ({ drillId, participantId }) => {
+        const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+        harness.startDrill(drillId);
+        const state = await harness.showResultAndSaveToHistory({ participantId, assessment: true });
+        if (state.kind !== 'saved') throw new Error(`expected a saved run, got ${state.kind}`);
+      },
+      { drillId, participantId },
+    );
+
+    const result = page.locator('#result-screen');
+    await expect(result).toBeVisible();
+    const historyEntry = result.getByRole('button', { name: '查看此 Drill 歷史' });
+    await expect(historyEntry).toBeVisible();
+    await historyEntry.click();
+
+    const screen = page.locator('#history-screen');
+    await expect(screen).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.location.hash))
+      .toBe(`#/history/participants/${encodeURIComponent(participantId)}/drills/${encodeURIComponent(drillId)}`);
+
+    // Closing History leaves the original Result dialog intact underneath (FM-49.8 "close to Result").
+    await screen.getByRole('button', { name: '關閉歷史紀錄' }).click();
+    await expect(screen).toBeHidden();
+    await expect(result).toBeVisible();
+    await expect(result.getByRole('button', { name: '匯出 JSON' })).toBeEnabled();
+  });
+
+  test('a Practice Result never shows "查看此 Drill 歷史" (FR-49.12)', async ({ page }) => {
+    await waitForHarness(page);
+    const participantId = `t5-practice-no-entry-${crypto.randomUUID()}`;
+
+    await page.evaluate(
+      async ({ participantId }) => {
+        const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+        harness.startDrill('spider-shot-v2');
+        // No `assessment: true` -> meta.assessment stays undefined (Practice); historyPersistence
+        // short-circuits to `excluded` without ever calling the History API.
+        const state = await harness.showResultAndSaveToHistory({ participantId });
+        if (state.kind !== 'excluded') throw new Error(`expected excluded, got ${state.kind}`);
+      },
+      { participantId },
+    );
+
+    const result = page.locator('#result-screen');
+    await expect(result).toBeVisible();
+    await expect(result.getByRole('button', { name: '查看此 Drill 歷史' })).not.toBeVisible();
+  });
+
+  test('the selected metric persists in the URL across a reload (FR-49.6)', async ({ page }) => {
+    await waitForHarness(page);
+    const participantId = `t5-metric-persist-${crypto.randomUUID()}`;
+    const drillId = 'spider-shot-v2';
+    await seedAssessmentRun(page, drillId, participantId);
+
+    await openHistory(page);
+    const screen = page.locator('#history-screen');
+    await screen.getByRole('searchbox', { name: '搜尋 Participant' }).fill(participantId);
+    await screen.getByRole('button', { name: new RegExp(participantId) }).click();
+    await screen.getByRole('button', { name: new RegExp(drillId) }).click();
+
+    const secondaryMetricButton = screen.locator('[data-section="drill-trend"] button[data-metric-id]').nth(1);
+    const secondaryMetricId = await secondaryMetricButton.getAttribute('data-metric-id');
+    await secondaryMetricButton.click();
+    await expect
+      .poll(() => page.evaluate(() => window.location.hash))
+      .toContain(`metricId=${encodeURIComponent(secondaryMetricId!)}`);
+
+    await page.reload({ waitUntil: 'networkidle' });
+    const reloadedScreen = page.locator('#history-screen');
+    await expect(reloadedScreen).toBeVisible();
+    const reselected = reloadedScreen.locator(`[data-section="drill-trend"] button[data-metric-id="${secondaryMetricId}"]`);
+    await expect(reselected).toHaveAttribute('aria-pressed', 'true');
   });
 });
