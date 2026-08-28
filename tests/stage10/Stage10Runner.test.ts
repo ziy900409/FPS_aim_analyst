@@ -129,6 +129,60 @@ describe('startStage10Run — startup failure', () => {
   });
 });
 
+describe('startStage10Run — beforeStart hook', () => {
+  it('runs beforeStart with the allocated environment before any server is spawned', async () => {
+    const workspaceRoot = await makeWorkspace();
+    cleanupWorkspaces.push(workspaceRoot);
+    const launcher = fakeLauncher();
+    const seenHistoryRoots: string[] = [];
+
+    const handle = await startStage10Run(
+      {
+        workspaceRoot,
+        runToken: 'before-start-run',
+        servers: [DEV_SPEC],
+        beforeStart: async (env) => {
+          expect(launcher.spawned).toHaveLength(0);
+          await fs.writeFile(path.join(env.previewHistoryRoot, 'bootstrap-corrupt.json'), '{ not json', 'utf8');
+          seenHistoryRoots.push(env.previewHistoryRoot);
+        },
+      },
+      { portCheck: alwaysFreePortCheck(), processLauncher: launcher, readinessCheck: alwaysReadyCheck() },
+    );
+
+    expect(seenHistoryRoots).toHaveLength(1);
+    await expect(fs.readFile(path.join(seenHistoryRoots[0]!, 'bootstrap-corrupt.json'), 'utf8')).resolves.toContain(
+      'not json',
+    );
+    await handle.stopServers();
+    await handle.cleanup();
+  });
+
+  it('tears down when beforeStart throws, before any server is spawned', async () => {
+    const workspaceRoot = await makeWorkspace();
+    cleanupWorkspaces.push(workspaceRoot);
+    const launcher = fakeLauncher();
+
+    await expect(
+      startStage10Run(
+        {
+          workspaceRoot,
+          runToken: 'before-start-throws-run',
+          servers: [DEV_SPEC],
+          beforeStart: async () => {
+            throw new Error('bootstrap write failed');
+          },
+        },
+        { portCheck: alwaysFreePortCheck(), processLauncher: launcher, readinessCheck: alwaysReadyCheck() },
+      ),
+    ).rejects.toThrow('bootstrap write failed');
+
+    expect(launcher.spawned).toHaveLength(0);
+    const recovered = await allocateStage10Environment({ workspaceRoot, runToken: 'before-start-throws-run' });
+    await cleanupStage10Environment(recovered);
+  });
+});
+
 describe('runStage10Acceptance — test failure', () => {
   it('propagates a non-zero scenario exit code and still tears everything down', async () => {
     const workspaceRoot = await makeWorkspace();

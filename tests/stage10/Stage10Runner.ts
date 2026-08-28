@@ -90,13 +90,15 @@ function wrapChildProcess(child: ChildProcess): ManagedProcess {
   };
 }
 
+/** Always shelled out (like Playwright's own `webServer.command`) so a caller can pass a compound
+ * command (e.g. `npm run build && npm run preview`) as a single string with `args: []`. */
 export const realProcessLauncher: ProcessLauncher = {
   spawn(command, args, opts): ManagedProcess {
     const child = spawn(command, args, {
       cwd: opts.cwd,
       env: opts.env,
       stdio: 'inherit',
-      shell: process.platform === 'win32',
+      shell: true,
     });
     return wrapChildProcess(child);
   },
@@ -156,6 +158,10 @@ export interface Stage10RunnerDeps {
 
 export interface Stage10RunOptions extends AllocateStage10EnvironmentOptions {
   readonly servers: readonly Stage10ServerSpec[];
+  /** Runs once, right after the environment is allocated but before any server is spawned — for
+   * writing bootstrap-only corrupt/unsupported fixtures directly into a History root, which must
+   * exist on disk before that server's process starts (README §1.3/§2.3). */
+  readonly beforeStart?: (env: Stage10AcceptanceEnvironment) => Promise<void>;
 }
 
 export interface Stage10RunHandle {
@@ -189,6 +195,7 @@ export async function startStage10Run(options: Stage10RunOptions, deps: Stage10R
   const started = new Map<string, ManagedProcess>();
 
   try {
+    if (options.beforeStart !== undefined) await options.beforeStart(env);
     for (const server of options.servers) {
       const proc = processLauncher.spawn(server.command, server.args, {
         cwd: env.workspaceRoot,
