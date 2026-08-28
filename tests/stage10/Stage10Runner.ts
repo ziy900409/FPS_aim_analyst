@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import http from 'node:http';
 import net from 'node:net';
 import {
@@ -45,7 +45,10 @@ export interface PortCheck {
 }
 
 export const realPortCheck: PortCheck = {
-  isPortFree(port: number, host = '127.0.0.1'): Promise<boolean> {
+  // 'localhost' (not '127.0.0.1'): Vite's dev/preview server (and this repo's playwright.config.ts
+  // baseURL) binds the loopback host Node resolves 'localhost' to, which on some hosts is IPv6-only
+  // ([::1]) — probing 127.0.0.1 directly gets a false "free" read while something is listening.
+  isPortFree(port: number, host = 'localhost'): Promise<boolean> {
     return new Promise((resolve) => {
       const socket = net.connect({ port, host });
       const finish = (free: boolean): void => {
@@ -69,6 +72,18 @@ export interface ProcessLauncher {
   spawn(command: string, args: readonly string[], opts: { readonly cwd: string; readonly env: NodeJS.ProcessEnv }): ManagedProcess;
 }
 
+/** `shell: true` means `child.pid` is the shell's pid (cmd.exe on Windows), not the actual
+ * npm/vite process it launches — `child.kill()` alone only signals that shell and, on Windows,
+ * leaves the real vite/npm descendant running and the port held (no POSIX process-group cleanup).
+ * `taskkill /T /F` kills the whole tree; POSIX gets a SIGTERM-then-SIGKILL grace period instead. */
+function killProcessTree(pid: number): void {
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore' });
+  } else {
+    process.kill(pid, 'SIGTERM');
+  }
+}
+
 function wrapChildProcess(child: ChildProcess): ManagedProcess {
   let exited = false;
   child.once('exit', () => {
@@ -77,12 +92,18 @@ function wrapChildProcess(child: ChildProcess): ManagedProcess {
   return {
     pid: child.pid,
     async stop(): Promise<void> {
-      if (exited) return;
+      if (exited || child.pid === undefined) return;
       await new Promise<void>((resolve) => {
         child.once('exit', () => resolve());
-        child.kill('SIGTERM');
+        killProcessTree(child.pid!);
         const killTimer = setTimeout(() => {
-          if (!exited) child.kill('SIGKILL');
+          if (!exited) {
+            try {
+              child.kill('SIGKILL');
+            } catch {
+              // process already gone
+            }
+          }
         }, 5000);
         killTimer.unref();
       });
@@ -203,7 +224,7 @@ export async function startStage10Run(options: Stage10RunOptions, deps: Stage10R
       });
       started.set(server.label, proc);
       try {
-        await readinessCheck.waitUntilReady(`http://127.0.0.1:${server.port}${server.healthPath}`, startupTimeoutMs);
+        await readinessCheck.waitUntilReady(`http://localhost:${server.port}${server.healthPath}`, startupTimeoutMs);
       } catch (error) {
         throw new Stage10ServerStartupError(server.label, error);
       }

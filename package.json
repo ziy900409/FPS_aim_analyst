@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:stage10": "node scripts/run-stage10-acceptance.mjs",
     "test:ci": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json && vitest run && playwright test"
   },
   "dependencies": {
