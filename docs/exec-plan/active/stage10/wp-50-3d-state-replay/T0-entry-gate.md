@@ -30,12 +30,12 @@
 
 ## Definition of Done
 
-- [ ] official exact ID roster完整；unknown/prefix相近ID負向測試成立。
-- [ ] legacy與new schema支援矩陣有field-level evidence，不以直覺判定。
-- [ ] schema size/hot-path、42k normalize/seek與renderer lease PoC有可重現數據。
-- [ ] OQ-50.1～4有owner-confirmed結論或明確blocked owner/deadline。
-- [ ] T1～T6 paths/contracts按當時WP-48/49 worktree更新。
-- [ ] production code diff=0、PoC artifacts清除、baseline failure若有已證明為既存。
+- [x] official exact ID roster完整；unknown/prefix相近ID負向測試成立（progress.md「Official Assessment Exact-drillId Roster」：6 個 assessment ID + 負向確認 tracking_*/detection_popin_v1/BR variants/practice-only drills）。
+- [x] legacy與new schema支援矩陣有field-level evidence，不以直覺判定（`TickArena.recordState`/`DrillEvent.fire`/`TargetManager.test.ts` 逐檔讀取；6 ID 皆同一套 recorder，profile 差異只在 motion/spiderShot 欄位）。
+- [x] schema size/hot-path、42k normalize/seek與renderer lease PoC有可重現數據（`tests/_t0_poc/*.test.ts`，6 assertions 全綠；capacity=41,528 ticks；naive schema 12,531KiB vs 4,096KiB 預算；scene isolation 50-cycle 零累積）。
+- [x] OQ-50.1～4有owner-confirmed結論或明確blocked owner/deadline（progress.md D-50-P6/P9/P10/P11，使用者 2026-08-28 經 AskUserQuestion 確認）。
+- [x] T1～T6 paths/contracts按當時WP-48/49 worktree更新（讀當前 `HistoryClient.loadRun`/`HistoricalRunDetail.onReplay`/`ResultScreen.ts`，與 README §0 item 10 描述一致，無需修改 §2.1 檔案清單）。
+- [x] production code diff=0、PoC artifacts清除、baseline failure若有已證明為既存（`tests/_t0_poc/` 已刪除；baseline build/vitest 皆 green，無既存 failure）。
 
 ## Commit
 

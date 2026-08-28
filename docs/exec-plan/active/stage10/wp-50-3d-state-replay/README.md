@@ -15,7 +15,7 @@
 | **Compatibility** | exact `drillId` profile + capability inspection；不以 family/prefix 或單一 `schemaVersion` 猜測完整支援 |
 | **Estimate** | 13–20 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：現有錄製不足、單一 renderer ownership、seek 決定性、Three.js resource lifecycle |
-| **Status** | 🟡 規劃完成，T0 尚未開始 |
+| **Status** | 🟢 T0 完成（2026-08-28，見 [progress.md](progress.md)）；OQ-50.1～4 已 owner 確認；T1 可開工 |
 
 ---
 
@@ -101,10 +101,10 @@
 
 | ID | Question | Recommended default | Owner | Deadline | Impact if unresolved |
 |---|---|---|---|---|---|
-| **OQ-50.1** | `full`是否要求重現每一項fire visual（連續recoil、tracer、impact、projectile），或相機+目標+lifecycle+事件提示即可？ | `full`要求玩家視角、target lifecycle、ADS/recoil與shot/hit cue；tracer/impact須能由recorded shot visual還原。projectile drill若無track則`partial`，不假裝完整 | 使用者／遊戲設計owner | T0 exit、T1前 | 決定replay schema大小、capability profile與首批full roster |
-| **OQ-50.2** | Practice不進歷史後，剛完成的Practice Result是否仍可立即Replay？ | 可以；只用in-memory payload，離開後不可再找回 | 使用者 | T0 exit、T6前 | 決定Result action visibility與E2E matrix；不改Assessment-only storage |
-| **OQ-50.3** | `partial`是否允許播放可靠部分，或只能查看結果？ | 允許「有限重播」，進入前與畫面中持續顯示缺失capabilities；只有無可信camera timeline才`unsupported` | 使用者／UI owner | T0 exit、T5前 | 決定action wording、warning與support classifier threshold |
-| **OQ-50.4** | recorded `assetPackVersion`與目前資產不一致時如何處理？ | 降為`partial`，以目前scene呈現並顯示版本差異；asset完全不可載時改placeholder或unsupported依profile最低需求 | 使用者／場景owner | T0 exit、T3前 | 決定scene loader fallback與support reason |
+| **OQ-50.1** | `full`是否要求重現每一項fire visual（連續recoil、tracer、impact、projectile），或相機+目標+lifecycle+事件提示即可？ | ✅ **已確認（2026-08-28，D-50-P6）**：`full`＝camera（punch由recoil純函式推導，不逐tick捕捉）＋單一active target位置/ID（scalar `targetId?`，非陣列）＋ADS＋shot/hit cue（既有事件欄位推導）。**projectile視覺明確排除**——目前6個Assessment exact ID皆非projectile武器。詳見[progress.md](progress.md) | 使用者 | ~~T0 exit、T1前~~ 已收斂 | 決定replay schema大小、capability profile與首批full roster |
+| **OQ-50.2** | Practice不進歷史後，剛完成的Practice Result是否仍可立即Replay？ | ✅ **已確認（D-50-P9）**：Assessment與Practice皆可，只用in-memory payload，離開後不可再找回 | 使用者 | ~~T0 exit、T6前~~ 已收斂 | 決定Result action visibility與E2E matrix；不改Assessment-only storage |
+| **OQ-50.3** | `partial`是否允許播放可靠部分，或只能查看結果？ | ✅ **已確認（D-50-P10）**：允許「有限重播」，畫面持續顯示缺失capabilities（persistent banner）；只有無可信camera timeline才`unsupported` | 使用者 | ~~T0 exit、T5前~~ 已收斂 | 決定action wording、warning與support classifier threshold |
+| **OQ-50.4** | recorded `assetPackVersion`與目前資產不一致時如何處理？ | ✅ **已確認（D-50-P11）**：降為`partial`，以目前scene呈現並顯示版本差異；只有當前資產不滿足drill的`minimumPlayable`時才整體`unsupported` | 使用者 | ~~T0 exit、T3前~~ 已收斂 | 決定scene loader fallback與support reason |
 
 ---
 
