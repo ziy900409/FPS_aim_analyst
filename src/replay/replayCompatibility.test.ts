@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { collectMeta, type CollectMetaArgs } from '../data/metadata.ts';
 import type { ExportPayload } from '../data/export.ts';
 import type { TickRecord } from '../data/RingBuffer.ts';
+import { parseExportPayload } from '../data/exportPayloadSchema.ts';
 import { classifyReplaySupport, replayProfileForExactDrill } from './replayCompatibility.ts';
+// Committed golden export fixtures predating WP-50 (C-D1 exception, see exportPayloadSchema.test.ts).
+import legacyFixture1 from '../../research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json';
+import legacyFixture2 from '../../research/fixtures/exports/synthetic_counterstrafe.json';
 
 const OFFICIAL_DRILL_IDS = [
   'hold_click_v1',
@@ -152,4 +156,15 @@ describe('classifyReplaySupport — reason matrix', () => {
     expect(first.reasonCodes).toEqual(['UNKNOWN_EXACT_DRILL', 'EMPTY_TICKS', 'LEGACY_REPLAY_FIELDS_MISSING', 'SCENE_METADATA_MISSING']);
     expect(second.reasonCodes).toEqual(first.reasonCodes);
   });
+});
+
+describe('classifyReplaySupport — real pre-WP-50 fixtures never classify as full (D-50-P3 legacy honesty)', () => {
+  for (const fixture of [legacyFixture1, legacyFixture2]) {
+    it(`${(fixture as { meta: { drillId: string } }).meta.drillId} fixture is not full`, () => {
+      const parsed = parseExportPayload(fixture);
+      if (!parsed.ok) throw new Error(`expected fixture to parse: ${JSON.stringify(parsed.errors)}`);
+      const support = classifyReplaySupport(parsed.payload);
+      expect(support.status).not.toBe('full');
+    });
+  }
 });
