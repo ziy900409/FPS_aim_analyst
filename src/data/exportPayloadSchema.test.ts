@@ -76,6 +76,34 @@ describe('parseExportPayload — positive: every DrillEvent variant', () => {
   });
 });
 
+describe('parseExportPayload — WP-50 additive replay fields', () => {
+  it('parses a tick with an active replayTargetId', () => {
+    expectOk(minimalPayload({ ticks: [validTick({ replayTargetId: 't0' })] }));
+  });
+
+  it('parses a tick with replayTargetId explicitly null (no active target)', () => {
+    expectOk(minimalPayload({ ticks: [validTick({ replayTargetId: null })] }));
+  });
+
+  it('parses a tick that omits replayTargetId (pre-replay export)', () => {
+    const result = parseExportPayload(minimalPayload({ ticks: [validTick()] }));
+    if (!result.ok) throw new Error('expected payload to parse');
+    expect(result.payload.ticks[0].replayTargetId).toBeUndefined();
+  });
+
+  it('parses meta.replay declaring replaySchemaVersion 1', () => {
+    const result = parseExportPayload(minimalPayload({ meta: minimalMeta({ replay: { replaySchemaVersion: 1 } }) }));
+    if (!result.ok) throw new Error('expected payload to parse');
+    expect(result.payload.meta.replay).toEqual({ replaySchemaVersion: 1 });
+  });
+
+  it('parses a payload that omits meta.replay (pre-replay export)', () => {
+    const result = parseExportPayload(minimalPayload({}));
+    if (!result.ok) throw new Error('expected payload to parse');
+    expect(result.payload.meta.replay).toBeUndefined();
+  });
+});
+
 describe('parseExportPayload — negative matrix', () => {
   const cases: Array<{ name: string; value: unknown }> = [
     { name: 'root is not an object (array)', value: [] },
@@ -97,6 +125,12 @@ describe('parseExportPayload — negative matrix', () => {
     { name: 'tick.keys contains an unsupported key name', value: minimalPayload({ ticks: [validTick({ keys: ['Q'] })] }) },
     { name: 'event.type is an unsupported discriminant', value: minimalPayload({ events: [{ type: 'reload', t: 0 }] }) },
     { name: 'visible event is missing side', value: minimalPayload({ events: [{ type: 'visible', targetId: 't0', t: 0 }] }) },
+    { name: 'tick.replayTargetId is an empty string', value: minimalPayload({ ticks: [validTick({ replayTargetId: '' })] }) },
+    { name: 'tick.replayTargetId is the wrong type', value: minimalPayload({ ticks: [validTick({ replayTargetId: 42 })] }) },
+    {
+      name: 'meta.replay.replaySchemaVersion is unsupported',
+      value: minimalPayload({ meta: minimalMeta({ replay: { replaySchemaVersion: 2 } }) }),
+    },
   ];
 
   for (const testCase of cases) {

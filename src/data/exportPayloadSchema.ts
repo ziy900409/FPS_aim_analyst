@@ -4,6 +4,7 @@ import type {
   Meta,
   MouseIntegrationMeta,
   ProtocolMeta,
+  ReplayMeta,
   SceneMeta,
   SessionMeta,
   SpawnMeta,
@@ -138,6 +139,15 @@ function parseFiniteNumberOrNull(
 ): number | null | undefined {
   if (value === null) return null;
   return parseFiniteNumber(value, path, errors);
+}
+
+function parseNonEmptyStringOrNull(
+  value: unknown,
+  path: string,
+  errors: ExportPayloadParseError[],
+): string | null | undefined {
+  if (value === null) return null;
+  return parseNonEmptyString(value, path, errors);
 }
 
 function parsePositiveFiniteNumber(
@@ -275,6 +285,7 @@ function parseMeta(raw: Record<string, unknown>, errors: ExportPayloadParseError
   const visibility = raw.visibility === undefined ? undefined : parseVisibilityMeta(raw.visibility, 'meta.visibility', errors);
   const mouseIntegration =
     raw.mouseIntegration === undefined ? undefined : parseMouseIntegrationMeta(raw.mouseIntegration, 'meta.mouseIntegration', errors);
+  const replay = raw.replay === undefined ? undefined : parseReplayMeta(raw.replay, 'meta.replay', errors);
 
   if (
     drillId === undefined ||
@@ -342,7 +353,17 @@ function parseMeta(raw: Record<string, unknown>, errors: ExportPayloadParseError
     ...(assessment !== undefined ? { assessment } : {}),
     ...(visibility !== undefined ? { visibility } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
+    ...(replay !== undefined ? { replay } : {}),
   };
+}
+
+function parseReplayMeta(value: unknown, path: string, errors: ExportPayloadParseError[]): ReplayMeta | undefined {
+  const record = parseRecord(value, path, errors);
+  if (record === undefined) return undefined;
+  if (record.replaySchemaVersion !== 1) {
+    return fail(errors, `${path}.replaySchemaVersion`, 'unsupported_schema', `${path}.replaySchemaVersion must be 1`);
+  }
+  return { replaySchemaVersion: 1 };
 }
 
 function parseStringArray(value: unknown, path: string, errors: ExportPayloadParseError[]): string[] | undefined {
@@ -745,6 +766,8 @@ function parseTickRecord(value: unknown, path: string, errors: ExportPayloadPars
   const ads = parseBoolean(record.ads, `${path}.ads`, errors);
   const dYaw = record.dYaw === undefined ? undefined : parseFiniteNumber(record.dYaw, `${path}.dYaw`, errors);
   const dPitch = record.dPitch === undefined ? undefined : parseFiniteNumber(record.dPitch, `${path}.dPitch`, errors);
+  const replayTargetId =
+    record.replayTargetId === undefined ? undefined : parseNonEmptyStringOrNull(record.replayTargetId, `${path}.replayTargetId`, errors);
 
   if (
     t === undefined ||
@@ -777,6 +800,7 @@ function parseTickRecord(value: unknown, path: string, errors: ExportPayloadPars
     ads,
     ...(dYaw !== undefined ? { dYaw } : {}),
     ...(dPitch !== undefined ? { dPitch } : {}),
+    ...(replayTargetId !== undefined ? { replayTargetId } : {}),
   };
 }
 

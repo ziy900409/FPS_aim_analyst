@@ -42,6 +42,7 @@ describe('collectMeta', () => {
       recorderOverflow: false,
       suspect: true,
       simToWorld: 0.01,
+      replay: { replaySchemaVersion: 1 },
     });
   });
 

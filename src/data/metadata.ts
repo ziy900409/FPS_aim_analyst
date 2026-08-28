@@ -85,6 +85,17 @@ export interface VisibilityMeta {
   onsetThreshold: number;
 }
 
+/**
+ * WP-50 / T1（D-50-P6～P8）：additive marker declaring the recorder captured `ticks[].replayTargetId`
+ * on every emitted tick. Absence = pre-replay export; `ticks[].replayTargetId` (even if present from
+ * some other source) must not be treated as an authoritative target-lifecycle capability by the
+ * replay support classifier (README §2.3 backward-compat rule — advertised capability with missing
+ * data is `partial`/`invalid-contract`, never `full`).
+ */
+export interface ReplayMeta {
+  replaySchemaVersion: 1;
+}
+
 export interface Meta {
   schemaVersion: 2;
   drillId: string;
@@ -153,6 +164,8 @@ export interface Meta {
    * 亦缺席,離線消費者必須退回 aim 差分並標記 source(`aim-diff-legacy`)。
    */
   mouseIntegration?: MouseIntegrationMeta;
+  /** WP-50 / T1: present iff the recorder captured `ticks[].replayTargetId` (see `ReplayMeta`). */
+  replay?: ReplayMeta;
 }
 
 export interface MouseIntegrationMeta {
@@ -307,6 +320,9 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(assessment !== undefined ? { assessment } : {}),
     ...(visibility !== undefined ? { visibility } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
+    // WP-50 / T1: `TickArena.recordState` always captures `replayTargetId` (D-50-P6～P8) — this
+    // recorder version never omits it, so the marker is unconditional (not opt-in like mouseIntegration).
+    replay: { replaySchemaVersion: 1 },
   };
 }
 

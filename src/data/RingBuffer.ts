@@ -25,6 +25,13 @@ export interface TickRecord {
   dYaw?: number;
   /** 本 tick 窗內積分的 pitch 角位移（rad，已含 ±MAX_PITCH 夾角效果）。 */
   dPitch?: number;
+  /**
+   * WP-50 / T1（D-50-P6～P8）：本 tick 的 active target id；`null` = 無 active target（與既有
+   * `tx=null` 語意一致）。缺席＝pre-replay 匯出（本 recorder 一律填值,不省略)。Scalar 而非陣列——
+   * 6 個 official Assessment exact drillId 恆 `state.targets.length <= 1`(見
+   * `tests/replay/target-cardinality-invariant.test.ts`)。
+   */
+  replayTargetId?: string | null;
 }
 
 export interface TickRecordInput {
@@ -46,7 +53,8 @@ export interface TickSourceState {
   aim: { yaw: number; pitch: number };
   heldAds: boolean;
   held: { left: boolean; right: boolean };
-  targets: Array<{ pos: { x: number; y: number; z: number }; visible: boolean; alive: boolean }>;
+  /** `id?` — WP-50 additive: optional so pre-existing hand-built test fixtures stay valid. */
+  targets: Array<{ id?: string; pos: { x: number; y: number; z: number }; visible: boolean; alive: boolean }>;
 }
 
 export interface TickArenaSnapshot {
@@ -119,6 +127,9 @@ export class TickArena {
   private readonly dYaw: Float64Array;
   private readonly dPitch: Float64Array;
   private readonly hasMouseIntegration: Uint8Array;
+  // WP-50 / T1: string id can't live in a typed array; preallocated plain array (fixed length,
+  // no push/growth in the hot path) is the closest fit to the arena's fixed-layout discipline.
+  private readonly replayTargetId: (string | null)[];
   private countValue = 0;
   private overflowValue = false;
 
@@ -140,6 +151,7 @@ export class TickArena {
     this.dYaw = new Float64Array(capacity);
     this.dPitch = new Float64Array(capacity);
     this.hasMouseIntegration = new Uint8Array(capacity);
+    this.replayTargetId = new Array(capacity).fill(null);
   }
 
   get count(): number {
@@ -164,6 +176,7 @@ export class TickArena {
       record.aim.pitch,
       keyMaskFromKeys(record.keys),
       record.ads === true,
+      null,
       dYaw,
       dPitch,
     );
@@ -173,12 +186,14 @@ export class TickArena {
     let tx: number | null = null;
     let ty: number | null = null;
     let tz: number | null = null;
+    let replayTargetId: string | null = null;
     for (let i = 0; i < state.targets.length; i++) {
       const target = state.targets[i];
       if (target.visible && target.alive) {
         tx = target.pos.x;
         ty = target.pos.y;
         tz = target.pos.z;
+        replayTargetId = target.id ?? null;
         break;
       }
     }
@@ -195,6 +210,7 @@ export class TickArena {
       state.aim.pitch,
       keyMaskFromState(state),
       state.heldAds,
+      replayTargetId,
       dYaw,
       dPitch,
     );
@@ -213,6 +229,7 @@ export class TickArena {
     pitch: number,
     keyMask: number,
     ads: boolean,
+    replayTargetId: string | null,
     dYaw?: number,
     dPitch?: number,
   ): boolean {
@@ -239,6 +256,7 @@ export class TickArena {
     this.pitch[i] = pitch;
     this.keyMask[i] = keyMask;
     this.ads[i] = ads ? 1 : 0;
+    this.replayTargetId[i] = replayTargetId;
     if (dYaw !== undefined && dPitch !== undefined) {
       this.dYaw[i] = dYaw;
       this.dPitch[i] = dPitch;
@@ -265,6 +283,9 @@ export class TickArena {
         aim: { yaw: this.yaw[i], pitch: this.pitch[i] },
         keys: keysFromMask(this.keyMask[i]),
         ads: this.ads[i] === 1,
+        // Omitted when null (no active target) — byte-identical to pre-WP-50 exports for the
+        // (very common) no-target tick, matching dYaw/dPitch's presence-gated spread convention.
+        ...(this.replayTargetId[i] !== null ? { replayTargetId: this.replayTargetId[i] } : {}),
         ...(this.hasMouseIntegration[i] === 1 ? { dYaw: this.dYaw[i], dPitch: this.dPitch[i] } : {}),
       };
     }
