@@ -12,6 +12,7 @@ const DOMAIN_MODULES = [
   '../../src/replay/contracts.ts',
   '../../src/replay/normalizeReplayRecording.ts',
   '../../src/replay/sampleReplay.ts',
+  '../../src/replay/ReplayPlayer.ts',
 ];
 
 const FORBIDDEN_IMPORT_PATTERNS: readonly RegExp[] = [
