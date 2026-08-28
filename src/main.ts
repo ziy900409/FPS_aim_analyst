@@ -677,7 +677,31 @@ const resultScreen = createResultScreen({
     const payload = await buildCurrentExportPayload();
     downloadCSV(payload, { basename: exportBasename(payload) });
   },
+  // WP-49 T5（FR-49.12）— History 全螢幕層 z-index 高於 Result dialog（HistoryScreen.ts 註解），
+  // 直接 push route 讓 History 蓋上來即可；不需要先 hide() Result——關閉/返回 History 後，這個
+  // Result dialog 原封不動地還在底下（同一 payload/actions，未重算、未替換成 historical payload，
+  // T5 高風險失效模式表「close to Result」要求）。
+  onOpenHistory(target): void {
+    historyNavigator.push({ kind: 'drill', participantId: target.participantId, drillId: target.drillId, runFilter: 'all' });
+  },
 });
+
+/** WP-49 T5（FR-49.12）— 顯示 Result 並串接 History 保存，供 live completion handler 與 dev-only
+ * harness 共用（避免兩份「show + save + 視結果接歷史入口」邏輯各算一套）。Assessment 成功保存後才
+ * `setHistoryTarget()`；Practice（`historyPersistence.save` 回 `excluded`）或保存失敗都不會呼叫，
+ * 按鈕維持隱藏（FR-49.12「Practice Result不顯示歷史入口」／T5 高風險失效模式表）。回傳值供呼叫端
+ * fire-and-forget，不阻擋 session/protocol 後續流程（沿用既有 D-48.P6 NFR-48.8 語意）。*/
+function showResultAndTrackHistory(payload: ExportPayload): Promise<HistorySaveState> {
+  resultScreen.show(buildResultPresentation(payload));
+  const savePromise = historyPersistence.save(payload);
+  void savePromise.then((state) => {
+    if (state.kind === 'saved') {
+      resultScreen.setHistoryTarget({ participantId: state.run.participantId, drillId: state.run.drillId });
+    }
+  });
+  return savePromise;
+}
+
 // WP-8 / T3（FR-8.3）— 即時 HUD：rAF 只讀 SharedState + recorder counters，不進 sim、不 snapshot。
 const hud = createHUD();
 
@@ -797,6 +821,23 @@ if (import.meta.env.DEV) {
     displayHz,
     sensitivity: settingsPanel.sensitivity,
   });
+  function applyHistoryOverrides(
+    base: ExportPayload,
+    overrides?: { readonly participantId?: string; readonly assessment?: boolean },
+  ): ExportPayload {
+    if (overrides === undefined) return base;
+    return {
+      ...base,
+      meta: {
+        ...base.meta,
+        ...(overrides.participantId !== undefined ? { session: { participantId: overrides.participantId } } : {}),
+        ...(overrides.assessment === true
+          ? { assessment: { protocolVersion: STAGE6_PROTOCOL_VERSION, assessmentFeedbackPolicy: 'minimal-end-of-block' as const } }
+          : {}),
+      },
+    };
+  }
+
   (window as unknown as { __fpsTest?: unknown }).__fpsTest = {
     ...fpsTestHarness,
     showResult(): void {
@@ -810,21 +851,19 @@ if (import.meta.env.DEV) {
     // header) still exercise the Assessment/Practice/missing-participant archive policy end to end
     // against the real HistoryClient → Node API → temp root path.
     saveToHistory(overrides?: { readonly participantId?: string; readonly assessment?: boolean }): Promise<HistorySaveState> {
-      const base = fpsTestHarness.forceExportJSON();
-      const payload: ExportPayload =
-        overrides === undefined
-          ? base
-          : {
-              ...base,
-              meta: {
-                ...base.meta,
-                ...(overrides.participantId !== undefined ? { session: { participantId: overrides.participantId } } : {}),
-                ...(overrides.assessment === true
-                  ? { assessment: { protocolVersion: STAGE6_PROTOCOL_VERSION, assessmentFeedbackPolicy: 'minimal-end-of-block' as const } }
-                  : {}),
-              },
-            };
+      const payload = applyHistoryOverrides(fpsTestHarness.forceExportJSON(), overrides);
       return historyPersistence.save(payload);
+    },
+    // WP-49 T5 — E2E-only hook mirroring the live completion handler's
+    // `showResultAndTrackHistory()` (same function, not a re-implementation) so a Playwright test
+    // can exercise FR-49.12's "查看此 Drill 歷史" entry (visible only after a real Assessment save,
+    // absent for Practice) without driving genuine pointer-lock gameplay to a drill's natural end.
+    showResultAndSaveToHistory(overrides?: {
+      readonly participantId?: string;
+      readonly assessment?: boolean;
+    }): Promise<HistorySaveState> {
+      const payload = applyHistoryOverrides(fpsTestHarness.forceExportJSON(), overrides);
+      return showResultAndTrackHistory(payload);
     },
     historySaveState(): HistorySaveState {
       return historyPersistence.state;
@@ -1304,10 +1343,10 @@ const renderLoop = createRenderLoop((now) => {
     syncControlsVisibility();
     void (async () => {
       const payload = await buildCurrentExportPayload();
-      resultScreen.show(buildResultPresentation(payload));
-      // WP-48 T5（FR-48.1/48.9,D-48.P1）— 同一 payload 觸發保存；fire-and-forget，不阻擋下面
-      // sessionPlanRunner.advance()／completeActiveProtocolCondition()（D-48.P6，NFR-48.8）。
-      void historyPersistence.save(payload);
+      // WP-48 T5（FR-48.1/48.9,D-48.P1）／WP-49 T5（FR-49.12）— 顯示 Result 並觸發保存；
+      // fire-and-forget，不阻擋下面 sessionPlanRunner.advance()／completeActiveProtocolCondition()
+      // （D-48.P6，NFR-48.8）。
+      void showResultAndTrackHistory(payload);
       const sessionPhase = sessionPlanRunner.phase;
       if (sessionPhase.kind === 'warmup') {
         await sessionPlanRunner.advance();
