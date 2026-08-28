@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 const DOMAIN_MODULES = [
   '../../src/replay/contracts.ts',
   '../../src/replay/normalizeReplayRecording.ts',
+  '../../src/replay/sampleReplay.ts',
 ];
 
 const FORBIDDEN_IMPORT_PATTERNS: readonly RegExp[] = [
