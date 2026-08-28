@@ -8,9 +8,21 @@
 import { createResultDetailBody } from './ResultDetailBody.ts';
 import type { ResultPresentation } from '../results/ResultPresentation.ts';
 
+/** WP-49 T5 (FR-49.12) — where "查看此 Drill 歷史" navigates: the exact Participant/drill this
+ * result was saved under. Never a runId — the button only becomes visible once the run is known to
+ * be saved (`setHistoryTarget`), so there is nothing to guess (T5 high-risk failure mode table). */
+export interface HistoryDrillTarget {
+  readonly participantId: string;
+  readonly drillId: string;
+}
+
 export interface ResultScreenHandle {
   readonly visible: boolean;
   show(result: ResultPresentation): void;
+  /** Shows "查看此 Drill 歷史" once `target` is known (a successful Assessment save), hides it
+   * otherwise — including for the whole lifetime of a Practice result, which never calls this with
+   * a defined target (FR-49.12 "Practice Result不顯示歷史入口"). */
+  setHistoryTarget(target: HistoryDrillTarget | undefined): void;
   hide(): void;
   dispose(): void;
 }
@@ -25,6 +37,9 @@ export interface ResultScreenOptions {
   onExportJSON?: () => void | Promise<void>;
   /** Exports the current result before the user starts another run. */
   onExportCSV?: () => void | Promise<void>;
+  /** WP-49 T5 (FR-49.12) — navigates to this result's exact Participant/drill history. The button
+   * that triggers this stays hidden until `setHistoryTarget` supplies a target. */
+  onOpenHistory?: (target: HistoryDrillTarget) => void;
 }
 
 export function createResultScreen(options: ResultScreenOptions = {}): ResultScreenHandle {
@@ -93,15 +108,27 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
   const restartButton = makeResultActionButton('再測目前 Drill', 'restart', true);
   const exportJSONButton = makeResultActionButton('匯出 JSON', 'export-json');
   const exportCSVButton = makeResultActionButton('匯出 CSV', 'export-csv');
+  const historyEntryButton = makeResultActionButton('查看此 Drill 歷史', 'open-history');
   const closeButton = makeResultActionButton('返回設定', 'close');
   const actionButtons = [restartButton, exportJSONButton, exportCSVButton, closeButton];
 
   restartButton.style.display = options.onRestart === undefined ? 'none' : '';
   exportJSONButton.style.display = options.onExportJSON === undefined ? 'none' : '';
   exportCSVButton.style.display = options.onExportCSV === undefined ? 'none' : '';
+  historyEntryButton.style.display = 'none'; // shown only via setHistoryTarget (FR-49.12)
   if (options.onRestart === undefined && options.onExportJSON === undefined && options.onExportCSV === undefined) {
     restartHint.style.display = 'none';
   }
+
+  let historyTarget: HistoryDrillTarget | undefined;
+  function setHistoryTarget(target: HistoryDrillTarget | undefined): void {
+    historyTarget = target;
+    historyEntryButton.style.display = options.onOpenHistory !== undefined && target !== undefined ? '' : 'none';
+  }
+  historyEntryButton.addEventListener('click', () => {
+    if (options.onOpenHistory === undefined || historyTarget === undefined) return;
+    options.onOpenHistory(historyTarget);
+  });
 
   restartButton.addEventListener('click', () => {
     if (options.onRestart === undefined) return;
@@ -119,7 +146,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     root.style.display = 'none';
   });
 
-  actions.append(restartHint, restartButton, exportJSONButton, exportCSVButton, closeButton);
+  actions.append(restartHint, restartButton, exportJSONButton, exportCSVButton, historyEntryButton, closeButton);
 
   panel.append(
     title,
@@ -136,9 +163,11 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     },
     show(result: ResultPresentation): void {
       body.render(result);
+      setHistoryTarget(undefined); // a newly shown result has no known history target yet
       visible = true;
       root.style.display = 'flex';
     },
+    setHistoryTarget,
     hide(): void {
       visible = false;
       root.style.display = 'none';

@@ -158,6 +158,71 @@ describe('result actions', () => {
   });
 });
 
+describe('WP-49 T5 — "查看此 Drill 歷史" entry (FR-49.12)', () => {
+  it('is hidden when onOpenHistory is not supplied, even with no target set', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(result);
+
+    expect(action(document.body, 'open-history').style.display).toBe('none');
+  });
+
+  it('stays hidden right after show() even when onOpenHistory is supplied — no target yet (Practice or not-yet-saved)', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const onOpenHistory = vi.fn();
+    const screen = createResultScreen({ onOpenHistory });
+
+    screen.show(result);
+
+    expect(action(document.body, 'open-history').style.display).toBe('none');
+  });
+
+  it('becomes visible once setHistoryTarget supplies a target, and clicking navigates to it', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const onOpenHistory = vi.fn();
+    const screen = createResultScreen({ onOpenHistory });
+
+    screen.show(result);
+    screen.setHistoryTarget({ participantId: 'p-1', drillId: 'd-1' });
+
+    const button = action(document.body, 'open-history');
+    expect(button.style.display).toBe('');
+    button.click();
+    expect(onOpenHistory).toHaveBeenCalledWith({ participantId: 'p-1', drillId: 'd-1' });
+  });
+
+  it('a new show() resets the entry to hidden until setHistoryTarget is called again', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const onOpenHistory = vi.fn();
+    const screen = createResultScreen({ onOpenHistory });
+
+    screen.show(result);
+    screen.setHistoryTarget({ participantId: 'p-1', drillId: 'd-1' });
+    expect(action(document.body, 'open-history').style.display).toBe('');
+
+    screen.show(result); // a fresh result — Practice, or Assessment not yet saved
+    expect(action(document.body, 'open-history').style.display).toBe('none');
+  });
+
+  it('setHistoryTarget(undefined) hides the entry again', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const onOpenHistory = vi.fn();
+    const screen = createResultScreen({ onOpenHistory });
+
+    screen.show(result);
+    screen.setHistoryTarget({ participantId: 'p-1', drillId: 'd-1' });
+    screen.setHistoryTarget(undefined);
+
+    expect(action(document.body, 'open-history').style.display).toBe('none');
+  });
+});
+
 describe('WP-48 T5 save-status embed seam', () => {
   it('embeds saveStatusView inside the panel when provided, and omits it otherwise', () => {
     const document = new FakeDocument();
