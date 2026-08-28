@@ -1,6 +1,6 @@
 # 階段 J（stage10）提案 — 本機歷史紀錄中心與 3D 重播 prototype
 
-> **狀態：🟡 已確認產品方向，尚未開工。** 本階段把目前只能由瀏覽器下載／手動選取的單次 JSON 匯出，提升為專案內固定資料夾的本機紀錄庫，並提供 `Participant ID → drillId → 時間` 的歷史瀏覽、Assessment 趨勢與第一人稱 3D 狀態重建重播。
+> **狀態：🟡 WP-48／WP-49 已完成，WP-50／WP-51 尚未開工。** 本階段把目前只能由瀏覽器下載／手動選取的單次 JSON 匯出，提升為專案內固定資料夾的本機紀錄庫，並提供 `Participant ID → drillId → 時間` 的歷史瀏覽、Assessment 趨勢與第一人稱 3D 狀態重建重播。
 >
 > 本文件記錄 2026-08-27 與使用者確認的需求。技術棧維持 Three.js + TypeScript + Vite + 純 DOM UI；新增一個只存取本專案指定目錄的 Node History API。完整 task 狀態見 [task-checklist.md](task-checklist.md)，進度與決策紀錄見 [progress.md](progress.md)。
 
@@ -12,7 +12,7 @@
 | **歷史政策** | 只保存與瀏覽 Assessment；Practice 保留即時結果與手動匯出，但不建立歷史紀錄 |
 | **重播語意** | 依記錄狀態重建玩家當時看到的 3D 過程，不重新執行舊輸入或要求錄影檔 |
 | **里程碑** | 暫定 M18：本機自動保存、歷史瀏覽、Assessment 趨勢、3D 重播與 E2E 驗收全數成立 |
-| **狀態** | 🟡 規劃完成，尚未開始 T0 |
+| **狀態** | 🟡 WP-48 本機歷史儲存與 WP-49 History Library/Assessment Trends 已完成 T-exit；WP-50 3D replay 與 WP-51 M18 integration 尚未開始 |
 
 ---
 
@@ -246,7 +246,7 @@ interface MetricDescriptor {
 | WP | 目標 | 主要交付 | Risk | 狀態 |
 |---|---|---|---|---|
 | **WP-48** | [本機歷史儲存基礎](wp-48-local-history-foundation/README.md) | strict payload contract、filesystem repository、Node API、typed client、自動保存與 download fallback | High（path safety／半寫入／啟動方式） | ✅ 已完成（T0～T5＋T-exit 全綠，2026-08-27） |
-| **WP-49** | [歷史紀錄 UI 與趨勢](wp-49-history-library-and-trends/README.md) | Participant／exact drill／run navigation、歷史 Result、metric registry、paged analysis與Assessment趨勢 | High（navigation race／Result共用／研究語意／大量payload） | 🟡 已完成規劃，T0未開始 |
+| **WP-49** | [歷史紀錄 UI 與趨勢](wp-49-history-library-and-trends/README.md) | Participant／exact drill／run navigation、歷史 Result、metric registry、paged analysis與Assessment趨勢 | High（navigation race／Result共用／研究語意／大量payload） | ✅ 已完成（T0～T5＋T-exit 全綠，2026-08-28） |
 | **WP-50** | [第一人稱 3D 狀態重播](wp-50-3d-state-replay/README.md) | additive replay contract、exact-profile support、pure playback、exclusive scene ownership、transport/event UI、Result/History入口 | High（錄製充分性／seek決定性／renderer lifecycle） | 🟡 已完成規劃，T0未開始 |
 | **WP-51** | [整合與 M18 驗收](wp-51-m18-integration-and-acceptance/README.md) | isolated dev/preview harness、跨WP journeys、failure/data safety、scale/lifecycle/a11y、操作文件與實機release dossier | Med/High（root/process lifecycle／假綠preview／實機fidelity） | 🟡 已完成規劃，T0未開始 |
 

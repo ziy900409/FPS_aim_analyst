@@ -32,27 +32,37 @@
 
 ## Data and research-safety checks
 
-- [ ] tests只使用resolved workspace temp roots，真實`data/session-history/`無artifact。
-- [ ] trend dataset逐run可追到runId、descriptor/version、compatibility cohort與quality status。
-- [ ] 無composite score、family merge、smoothing、forecast或未確認metric registration。
-- [ ] JSON仍為source of truth；刪除analysis memory cache後結果可重建。
-- [ ] git staged names無participant JSON、download artifact或benchmark temp data。
+- [x] tests只使用resolved workspace temp roots，真實`data/session-history/`無artifact。
+- [x] trend dataset逐run可追到runId、descriptor/version、compatibility cohort與quality status。
+- [x] 無composite score、family merge、smoothing、forecast或未確認metric registration。
+- [x] JSON仍為source of truth；刪除analysis memory cache後結果可重建。
+- [x] git staged names無participant JSON、download artifact或benchmark temp data。
 
 ## Architecture regression checks
 
-- [ ] current Result與historical Result共用presentation/body，actions owner分離。
-- [ ] History controller是唯一fetch/state owner；views無direct HistoryClient/fetch。
-- [ ] `main.ts`只做composition／entry／visibility，不含trend/cohort/domain規則。
-- [ ] `src/sim`、`SharedState`、`DrillRunner`、metrics golden semantics無WP-49行為變更。
-- [ ] History active不取得Pointer Lock，不啟動/改寫live run。
+- [x] current Result與historical Result共用presentation/body，actions owner分離。
+- [x] History controller是唯一fetch/state owner；views無direct HistoryClient/fetch。
+- [x] `main.ts`只做composition／entry／visibility，不含trend/cohort/domain規則。
+- [x] `src/sim`、`SharedState`、`DrillRunner`、metrics golden semantics無WP-49行為變更。
+- [x] History active不取得Pointer Lock，不啟動/改寫live run。
 
 ## Documentation and graph
 
-- [ ] README OQ/assumptions/interfaces更新為實際交付。
-- [ ] progress貼test/perf/acceptance evidence，task-checklist T0～T5/T-exit全✅。
-- [ ] 上層Stage 10 README/checklist/progress WP-49狀態更新。
-- [ ] `graphify update .`完成；CodeGraph pending files同步或已直接讀取。
-- [ ] WP-50 handoff對`run` route、loadRun、optional replay action與return state有contract test。
+- [x] README OQ/assumptions/interfaces更新為實際交付。
+- [x] progress貼test/perf/acceptance evidence，task-checklist T0～T5/T-exit全✅。
+- [x] 上層Stage 10 README/checklist/progress WP-49狀態更新。
+- [x] `graphify update .`完成；CodeGraph pending files同步或已直接讀取。
+- [x] WP-50 handoff對`run` route、loadRun、optional replay action與return state有contract test。
+
+## Exit Evidence（2026-08-28）
+
+- `npm.cmd run typecheck` exit 0。
+- `npm.cmd run test` exit 0：159 passed / 1 skipped test files；1426 passed / 2 skipped tests。
+- `npm.cmd run build` exit 0；Vite only reports the existing chunk-size warning.
+- `npm.cmd run test:ci` exit 0：same Vitest count；Playwright 51/51 passed。
+- Boundary scans passed: History UI has no `fs/path/process/fetch` and no `node:*` import; server projection has no DOM/fetch; metric registry has no wall-clock/random/fs/path; history/result surfaces have no `innerHTML`.
+- T4 scale evidence remains the T-exit NFR witness: cold 100-observation page 55.8ms, warm 0.6ms, full 5,000-run scan across 50 pages 1519.6ms, with concurrency capped at 4.
+- T-exit test-only fix: `tests/e2e/backend.spec.ts` now waits up to 20s for the real `[render backend]` console witness so the non-history backend E2E remains stable in full parallel `test:ci`.
 
 ## Exit criteria
 
@@ -63,4 +73,3 @@ Automated gates、A-49.1～12、research safety與architecture regression全數�
 ```text
 docs(stage10): close WP-49 history library
 ```
-

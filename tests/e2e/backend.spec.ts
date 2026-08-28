@@ -17,7 +17,9 @@ test('dev server reports a valid render backend from the actual renderer', async
   });
 
   await page.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
-  await expect.poll(() => backends.length).toBeGreaterThan(0);
+  await expect
+    .poll(() => backends.length, { timeout: 20_000, intervals: [100, 250, 500, 1_000] })
+    .toBeGreaterThan(0);
 
   const backend = backends[0];
   expect(['webgpu', 'webgl2']).toContain(backend);

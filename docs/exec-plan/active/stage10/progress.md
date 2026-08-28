@@ -12,6 +12,7 @@
 - **2026-08-27**：依使用者指定的engineering-planning skill完成WP-49自足執行計畫：T0～T5 + T-exit、FR/NFR、route/controller、historical Result共用seam、exact metric registry、paged Node analysis projection、trend cohort與scale/競態驗收。仍未開始production implementation。
 - **2026-08-27**：依使用者指定的engineering-planning skill完成WP-50自足執行計畫：T0～T6 + T-exit、additive replay v1、exact profile/capability分級、pure sampling/seek、exclusive renderer ownership、3D visual adapter、transport/HUD與Result/History整合。仍未開始WP-50 production implementation。
 - **2026-08-27**：依使用者指定的engineering-planning skill完成WP-51自足執行計畫：T0～T5 + T-exit、run-scoped dev/preview roots、fresh server lifecycle、跨WP canonical/failure/race/scale/a11y驗收、defect回流規則、操作文件與manual M18 release dossier。規劃時WP-48實際已推進至T2；WP-51仍須等待WP-48～50各自exit evidence，尚未開始WP-51 implementation。
+- **2026-08-28**：**WP-49 完成 T0～T5＋T-exit**，History Library and Assessment Trends 的 FR/NFR evidence matrix、boundary scans、5,000-run projection benchmark、typecheck/build/Vitest/Playwright/test:ci gates 均有客觀證據（詳見 [wp-49-history-library-and-trends/progress.md](wp-49-history-library-and-trends/progress.md) T-exit 條目）。T-exit 期間僅做一個非-history E2E 穩定性修正：`backend.spec.ts` 的 renderer backend console witness poll timeout 從預設 5s 改為 20s，final `npm.cmd run test:ci` exit 0（Vitest 159 passed / 1 skipped files；1426 passed / 2 skipped tests；Playwright 51/51 passed）。
 
 ## Decision Log
 

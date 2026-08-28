@@ -12,18 +12,18 @@
 | ✅ | **T3** Run list／historical Result | [T3-run-list-result-detail.md](T3-run-list-result-detail.md) | T2 + WP-48 loadRun | High | 2–3d |
 | ✅ | **T4** Metric registry／analysis API／trend domain | [T4-metric-registry-trend-domain.md](T4-metric-registry-trend-domain.md) | T0 + WP-48 T2/T3 | High | 2–3d |
 | ✅ | **T5** Drill overview trend UI／entry integration | [T5-drill-overview-integration.md](T5-drill-overview-integration.md) | T1～T4 + WP-48 T5 | High | 2–3d |
-| ⬜ | **T-exit** Acceptance／WP-50 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T5 | Med | 0.5–1d |
+| ✅ | **T-exit** Acceptance／WP-50 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T5 | Med | 0.5–1d |
 
 ## WP-49 completion gate
 
-- [ ] FR-49.1～13與NFR-49.1～8每項均在README §4.1有實際test／measurement evidence。
-- [ ] `Participant → exact drillId → startedAt desc → historical Result`不需file picker即可完成。
-- [ ] Drill overview同時提供全部Assessment run list與正式trend；Practice在API projection與UI均為零entry。
-- [ ] unknown metric drill仍可瀏覽list/detail，且顯示明確trend empty state。
-- [ ] 多compatibility cohorts不混算；quality／metric／cohort排除有domain及UI證據。
-- [ ] Browser Back／Forward／reload／breadcrumb／scroll/filter restoration E2E全綠，stale response不覆蓋新route。
-- [ ] 5,000-run與100-observation projection benchmarks達NFR；browser/server concurrency有界。
-- [ ] `npm run build`、browser/Node typecheck、Vitest、Playwright全綠；live gameplay／current Result／WP-48 persistence零回歸。
+- [x] FR-49.1～13與NFR-49.1～8每項均在README §4.1有實際test／measurement evidence。
+- [x] `Participant → exact drillId → startedAt desc → historical Result`不需file picker即可完成。
+- [x] Drill overview同時提供全部Assessment run list與正式trend；Practice在API projection與UI均為零entry。
+- [x] unknown metric drill仍可瀏覽list/detail，且顯示明確trend empty state。
+- [x] 多compatibility cohorts不混算；quality／metric／cohort排除有domain及UI證據。
+- [x] Browser Back／Forward／reload／breadcrumb／scroll/filter restoration E2E全綠，stale response不覆蓋新route。
+- [x] 5,000-run與100-observation projection benchmarks達NFR；browser/server concurrency有界。
+- [x] `npm run build`、browser/Node typecheck、Vitest、Playwright全綠；live gameplay／current Result／WP-48 persistence零回歸。
 
 ## Task discipline
 
@@ -32,4 +32,3 @@
 3. T3先建立current/historical shared result seam，再加入history wrapper；不得複製整份ResultScreen rendering。
 4. T4 registry必須exact-id、pure、versioned；未知drill不得throw或fallback到family。
 5. T5只整合已測domain與view，不在UI callback內新增trend規則。
-

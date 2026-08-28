@@ -26,13 +26,13 @@ WP-48 Definition of Done：瀏覽器完成一場 Assessment 後，不需人工�
 
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry gate／handoff audit／PoC／決策凍結 | [T0-entry-gate.md](wp-49-history-library-and-trends/T0-entry-gate.md) | WP-48 contract | High |
-| ⬜ | **T1** Navigation/controller shell | [T1-navigation-controller.md](wp-49-history-library-and-trends/T1-navigation-controller.md) | T0 | High |
-| ⬜ | **T2** Participant／exact-drill browser | [T2-participant-drill-browser.md](wp-49-history-library-and-trends/T2-participant-drill-browser.md) | T1 + WP-48 T4 | Med |
-| ⬜ | **T3** Run list／historical Result | [T3-run-list-result-detail.md](wp-49-history-library-and-trends/T3-run-list-result-detail.md) | T2 + WP-48 loadRun | High |
-| ⬜ | **T4** Metric registry／analysis API／trend domain | [T4-metric-registry-trend-domain.md](wp-49-history-library-and-trends/T4-metric-registry-trend-domain.md) | T0 + WP-48 T2/T3 | High |
-| ⬜ | **T5** Drill overview trend UI／entry integration | [T5-drill-overview-integration.md](wp-49-history-library-and-trends/T5-drill-overview-integration.md) | T1～T4 + WP-48 T5 | High |
-| ⬜ | **T-exit** History UI gate／WP-50 handoff | [T-exit-gate.md](wp-49-history-library-and-trends/T-exit-gate.md) | T1～T5 | Med |
+| ✅ | **T0** Entry gate／handoff audit／PoC／決策凍結 | [T0-entry-gate.md](wp-49-history-library-and-trends/T0-entry-gate.md) | WP-48 contract | High |
+| ✅ | **T1** Navigation/controller shell | [T1-navigation-controller.md](wp-49-history-library-and-trends/T1-navigation-controller.md) | T0 | High |
+| ✅ | **T2** Participant／exact-drill browser | [T2-participant-drill-browser.md](wp-49-history-library-and-trends/T2-participant-drill-browser.md) | T1 + WP-48 T4 | Med |
+| ✅ | **T3** Run list／historical Result | [T3-run-list-result-detail.md](wp-49-history-library-and-trends/T3-run-list-result-detail.md) | T2 + WP-48 loadRun | High |
+| ✅ | **T4** Metric registry／analysis API／trend domain | [T4-metric-registry-trend-domain.md](wp-49-history-library-and-trends/T4-metric-registry-trend-domain.md) | T0 + WP-48 T2/T3 | High |
+| ✅ | **T5** Drill overview trend UI／entry integration | [T5-drill-overview-integration.md](wp-49-history-library-and-trends/T5-drill-overview-integration.md) | T1～T4 + WP-48 T5 | High |
+| ✅ | **T-exit** History UI gate／WP-50 handoff | [T-exit-gate.md](wp-49-history-library-and-trends/T-exit-gate.md) | T1～T5 | Med |
 
 WP-49 Definition of Done：Participant與研究員可不接觸檔案選擇器完成`Participant → exact drill → run → historical Result`；Browser navigation與scale gates成立；即使某drill尚無primary metric，結果與紀錄列表仍完整可用，Practice維持零歷史entry。
 

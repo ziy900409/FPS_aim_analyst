@@ -16,7 +16,7 @@
 | **Scale target** | 5,000 個 Assessment run summaries；單一 drill 可有數百至數千 runs，列表與分析必須分頁／漸進載入 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | High：新 navigation state、歷史／當前 Result 共用、metric 語意與大量 payload 分析 |
-| **Status** | 🟡 **T5 完成（2026-08-28）**：`TrendChart.ts`（SVG line/points + accessible table，0/1/2+ 點、direction-aware delta 文字，不靠顏色）、`HistoryTrend.ts` 新增 `listCompatibilityCohorts()`（cohort selector 用，metric-independent）、`HistoryLibraryController.ts` observations 從 T1 佔位改為真正 auto-paginate（進 `drill` route 即背景連續翻頁到底，中途單頁失敗保留已載入內容 + `loadMoreError`，`loadNextObservationPage()`/`retry('observations')` 分別對應恢復續頁／整段重來）、`DrillOverview.ts` 補上 trend 區（metric/cohort selector 寫入 route、exclusion 摘要、loaded/total 進度、未註冊 drill 明確訊息）、`ResultScreen.ts` 新增 `setHistoryTarget()` + 「查看此 Drill 歷史」按鈕（僅 Assessment 成功保存後才顯示，不猜 runId，Practice 全程不呼叫故永遠不顯示）、`main.ts` 串接（`historyNavigator.push()` 直接蓋上 History 全螢幕層，無需另外 hide/show Result——z-index 分層已保證關閉 History 後 Result 原封不動，FM-49.8）。`npm run typecheck`/`vitest run`/`npm run build`/`playwright test` 全綠（159 test files / 1426 tests + 2 skipped，較 T4 末新增 38 tests；51 e2e，較 T4 末新增 5 個 T5 case，零回歸）。詳見 [progress.md](progress.md) D-49.P33～P37。T4 完成狀態見 D-49.P28～P32；T3 見 D-49.P23～P27；T2 見 D-49.P20～P22；T1 見 D-49.P14～P19。T-exit 可開始 |
+| **Status** | ✅ **T-exit 完成（2026-08-28）**：History Library and Assessment Trends 已通過 FR-49.1～13／NFR-49.1～8 evidence matrix、boundary scans、5,000-run projection benchmark 與 automated gates。最終 `npm.cmd run test:ci` exit 0：TypeScript browser/node typecheck、Vitest 159 passed / 1 skipped files（1426 passed / 2 skipped tests）、Playwright 51/51 passed；`npm.cmd run build` exit 0（Vite 僅 chunk-size warning）。T-exit 期間修正 `tests/e2e/backend.spec.ts` 的 renderer backend readiness poll timeout，讓既有非-history E2E 在 full parallel suite 下穩定等待真實 renderer console witness。詳見 [progress.md](progress.md) T-exit 條目與 D-49.P38。 |
 
 ---
 
@@ -471,20 +471,20 @@ Task詳細步驟與local DoD見同資料夾 `T*.md`。
 
 | Requirement | Tasks | Verification |
 |---|---|---|
-| FR-49.1／6 | T1, T5 | navigator unit + launch/result/back/reload E2E |
-| FR-49.2／3 | T2 | participant search + exact drill grouping tests/E2E |
-| FR-49.4 | T2, T5 | drill overview/run order/trend integration |
-| FR-49.5 | T3 | shared presentation parity + historical action E2E |
-| FR-49.7 | T2～T5 | Practice repository/API/UI negative matrix |
-| FR-49.8 | T4 | exact registry contract/projector tests |
-| FR-49.9／10 | T4, T5 | eligibility/cohort domain + UI exclusion evidence |
-| FR-49.11 | T1～T5 | scoped loading/empty/error/not-found/retry tests |
-| FR-49.12 | T5 | saved Assessment vs Practice Result entry E2E |
-| FR-49.13 | T3, T-exit | typed optional replay port + WP-50 handoff contract |
-| NFR-49.1／2／4 | T2, T4, T-exit | 5,000 summaries + projection benchmarks |
-| NFR-49.3 | T1, T-exit | fake clock/abort/generation race tests |
-| NFR-49.5／6 | T1～T5 | keyboard/accessible name/table/XSS-string tests |
-| NFR-49.7／8 | 全 tasks, T-exit | boundary scans、CI/build、live flow regressions |
+| FR-49.1／6 | T1, T5, T-exit | `HistoryRoute.test.ts`、`HistoryNavigator.test.ts`、`HistoryLibraryController.test.ts` route-generation tests；`history-navigation.spec.ts` Back/Forward/reload/close；`history-library.spec.ts` metric URL reload restore。 |
+| FR-49.2／3 | T2, T-exit | `ParticipantBrowser.test.ts` search/raw-id/chunk/XSS states；`DrillBrowser.test.ts` exact-id cards；`history-library.spec.ts` exact prefix split + client-side search E2E。 |
+| FR-49.4 | T3, T5, T-exit | `DrillOverview.test.ts` run list/filter/trend states；`history-library.spec.ts` drill overview renders run list + registered trend from saved Assessment runs。 |
+| FR-49.5 | T3, T-exit | `ResultPresentation.test.ts` + `ResultDetailBody.test.ts` shared presentation/body；`HistoricalRunDetail.test.ts` route-bound downloads；`history-library.spec.ts` two-run download parity + no current restart/save affordances。 |
+| FR-49.7 | T2～T5, T-exit | WP-48 repository/API Practice rejection tests；`DrillMetricRegistry.test.ts` not-assessment guard；`history-library.spec.ts` Practice absent from participants and Practice Result has no history entry。 |
+| FR-49.8 | T4, T-exit | `DrillMetricRegistry.test.ts` exact `spider-shot-v2` registration, near-miss rejects, descriptor id/unit/finite guards, no composite score. |
+| FR-49.9／10 | T4, T5, T-exit | `HistoryTrend.test.ts` quality/compatibility/metric/unit/finite gates and cohort selection; `DrillOverview.test.ts` cohort selector/exclusion labels; `history-library.spec.ts` registered trend UI. |
+| FR-49.11 | T1～T5, T-exit | Controller/browser/detail/component tests cover loading/empty/error/retry/not-found; E2E covers unknown metric empty state without breaking run list. |
+| FR-49.12 | T5, T-exit | `ResultScreen.test.ts` history target visibility/reset; `history-library.spec.ts` saved Assessment opens correct drill and Practice Result hides history entry. |
+| FR-49.13 | T3, T-exit | `HistoricalRunDetail.ts` exposes optional typed `onReplay(runId)` port; `HistoricalRunDetail.test.ts` verifies no replay affordance without handler. |
+| NFR-49.1／2／4 | T2, T4, T-exit | T2 100-row chunk render test <40ms; T4 5,000-run benchmark: cold 100-observation page 55.8ms, warm 0.6ms, 50 pages/5,000 runs 1519.6ms; `historyAnalysisService.test.ts` concurrency ≤4 and cache/coalescing. |
+| NFR-49.3 | T1, T5, T-exit | `HistoryLibraryController.test.ts` abort/stale success/stale error/late page discard; reload/back E2E in `history-navigation.spec.ts` and `history-library.spec.ts`. |
+| NFR-49.5／6 | T1～T5, T-exit | History controls are buttons/inputs/selectors with accessible names; `TrendChart.test.ts` verifies SVG + table fallback; `ParticipantBrowser.test.ts` and boundary scan verify `textContent`/no `innerHTML` history/result metadata injection. |
+| NFR-49.7／8 | 全 tasks, T-exit | Boundary scans: History UI no `fs/path/process/fetch` and no `node:*` import, server projection no DOM/fetch, metric registry no wall-clock/random/fs/path; final `npm.cmd run test:ci` exit 0 and `npm.cmd run build` exit 0. |
 
 ---
 
