@@ -10,6 +10,7 @@
 import type { HistoryLibraryController } from '../../history/HistoryLibraryController.ts';
 import type { HistoryNavigator } from '../../history/navigation/HistoryNavigator.ts';
 import { historyRouteAncestors, type HistoryRoute } from '../../history/navigation/HistoryRoute.ts';
+import type { DrillMetricRegistry } from '../../history/DrillMetricRegistry.ts';
 import { createParticipantBrowser } from './ParticipantBrowser.ts';
 import { createDrillBrowser } from './DrillBrowser.ts';
 import { createDrillOverview } from './DrillOverview.ts';
@@ -18,6 +19,9 @@ import { createHistoricalRunDetail } from './HistoricalRunDetail.ts';
 export interface HistoryScreenOptions {
   readonly navigator: HistoryNavigator;
   readonly controller: HistoryLibraryController;
+  /** WP-49 T5 — client-side metric descriptor lookup for the drill trend section (README §2.5).
+   * Pure and network-free; safe to share the same instance the server-side analysis service uses. */
+  readonly registry: DrillMetricRegistry;
   readonly parent?: HTMLElement;
 }
 
@@ -64,7 +68,7 @@ function makeButton(label: string): HTMLButtonElement {
 }
 
 export function createHistoryScreen(options: HistoryScreenOptions): HistoryScreenHandle {
-  const { navigator, controller } = options;
+  const { navigator, controller, registry } = options;
   const parent = options.parent ?? document.body;
 
   const root = document.createElement('section');
@@ -119,7 +123,7 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
 
   const participantBrowser = createParticipantBrowser({ navigator, controller });
   const drillBrowser = createDrillBrowser({ navigator, controller });
-  const drillOverview = createDrillOverview({ navigator, controller });
+  const drillOverview = createDrillOverview({ navigator, controller, registry });
   const historicalRunDetail = createHistoricalRunDetail({
     onBack(): void {
       const route = navigator.current;
@@ -198,9 +202,12 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
       drillOverview.element.style.display = '';
       drillOverview.render({
         runs: controller.state.runs,
+        observations: controller.state.observations,
         participantId: route.participantId,
         drillId: route.drillId,
         runFilter: route.runFilter,
+        metricId: route.metricId,
+        cohortId: route.cohortId,
       });
     } else if (route?.kind === 'run') {
       historicalRunDetail.element.style.display = '';

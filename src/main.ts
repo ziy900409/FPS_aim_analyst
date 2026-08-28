@@ -20,6 +20,7 @@ import { createHistoryPersistence, type HistorySaveState } from './history/Histo
 import { createHistoryLibraryController } from './history/HistoryLibraryController.ts';
 import { createHistoryNavigator } from './history/navigation/HistoryNavigator.ts';
 import { createHistoryScreen, type HistoryScreenHandle } from './ui/history/HistoryScreen.ts';
+import { createDrillMetricRegistry } from './history/DrillMetricRegistry.ts';
 import { createControls, type ControlsHandle } from './ui/Controls.ts';
 import {
   createResearcherMenu,
@@ -658,7 +659,11 @@ historyPersistence.subscribe((state) => historySaveStatus.render(state));
 // components that consume `historyLibraryController.state`.
 const historyNavigator = createHistoryNavigator();
 const historyLibraryController = createHistoryLibraryController({ navigator: historyNavigator, client: historyClient });
-historyScreenHandle = createHistoryScreen({ navigator: historyNavigator, controller: historyLibraryController });
+// WP-49 T4/T5 — pure, network-free descriptor lookup shared conceptually with the server-side
+// analysis service (`HistoryAnalysisService`, README §2.6): the drill trend section (T5) needs
+// `registrationForExactDrill` for metric labels/units/direction, never `project()` client-side.
+const drillMetricRegistry = createDrillMetricRegistry();
+historyScreenHandle = createHistoryScreen({ navigator: historyNavigator, controller: historyLibraryController, registry: drillMetricRegistry });
 historyLibraryController.start();
 
 const resultScreen = createResultScreen({

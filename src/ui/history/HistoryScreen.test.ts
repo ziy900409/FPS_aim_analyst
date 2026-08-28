@@ -3,6 +3,7 @@ import { createHistoryScreen } from './HistoryScreen.ts';
 import type { HistoryLibraryController, HistoryLibraryState } from '../../history/HistoryLibraryController.ts';
 import type { HistoryNavigator } from '../../history/navigation/HistoryNavigator.ts';
 import type { HistoryRoute } from '../../history/navigation/HistoryRoute.ts';
+import type { DrillMetricRegistry } from '../../history/DrillMetricRegistry.ts';
 
 class FakeElement {
   id = '';
@@ -61,6 +62,18 @@ class FakeDocument {
   createElement(tag: string): FakeElement {
     const element = new FakeElement(tag);
     this.created.push(element);
+    return element;
+  }
+
+  createElementNS(_ns: string, tag: string): FakeElement {
+    const element = new FakeElement(tag);
+    this.created.push(element);
+    return element;
+  }
+
+  createTextNode(text: string): FakeElement {
+    const element = new FakeElement('#text');
+    element.textContent = text;
     return element;
   }
 }
@@ -138,6 +151,14 @@ function createFakeController(initial: HistoryLibraryState = IDLE_STATE): Histor
   };
 }
 
+function createFakeRegistry(): DrillMetricRegistry {
+  return {
+    registrationForExactDrill: vi.fn(() => undefined),
+    project: vi.fn(),
+  };
+}
+const registry = createFakeRegistry();
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe('createHistoryScreen — visibility follows navigator.current', () => {
@@ -146,7 +167,7 @@ describe('createHistoryScreen — visibility follows navigator.current', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator(undefined);
     const controller = createFakeController();
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     expect(screen.visible).toBe(false);
     expect((screen.element as unknown as FakeElement).style.display).toBe('none');
@@ -157,7 +178,7 @@ describe('createHistoryScreen — visibility follows navigator.current', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator(undefined);
     const controller = createFakeController();
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     navigator.setRoute({ kind: 'participants', query: '' });
     expect(screen.visible).toBe(true);
@@ -173,7 +194,7 @@ describe('createHistoryScreen — visibility follows navigator.current', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator(undefined);
     const controller = createFakeController();
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     screen.open();
     expect(navigator.push).toHaveBeenCalledWith({ kind: 'participants', query: '' });
@@ -189,7 +210,7 @@ describe('createHistoryScreen — visibility follows navigator.current', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'participants', query: '' });
     const controller = createFakeController();
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     screen.close();
     expect(navigator.close).toHaveBeenCalledOnce();
@@ -202,7 +223,7 @@ describe('createHistoryScreen — breadcrumb', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
     const controller = createFakeController();
-    createHistoryScreen({ navigator: navigator as never, controller });
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const crumbs = document.created.filter((el) => el.dataset.historyCrumb !== undefined);
     expect(crumbs.map((c) => c.textContent)).toEqual(['歷史紀錄', 'p-1', 'd-1']);
@@ -217,7 +238,7 @@ describe('createHistoryScreen — breadcrumb', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
     const controller = createFakeController();
-    createHistoryScreen({ navigator: navigator as never, controller });
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const crumbs = document.created.filter((el) => el.dataset.historyCrumb !== undefined);
     crumbs[1].dispatch('click'); // 'drills' crumb
@@ -229,7 +250,7 @@ describe('createHistoryScreen — breadcrumb', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator(undefined);
     const controller = createFakeController();
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const breadcrumbNav = document.created.find((el) => el.tag === 'nav')!;
     expect(breadcrumbNav.children.length).toBe(0);
@@ -249,7 +270,7 @@ describe('createHistoryScreen — typed state rendering', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'participants', query: '' });
     const controller = createFakeController({ ...IDLE_STATE, participants });
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     expect(text(screen.element as unknown as FakeElement)).toContain(expectedSubstring);
   });
@@ -259,7 +280,7 @@ describe('createHistoryScreen — typed state rendering', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'participants', query: '' });
     const controller = createFakeController();
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     expect(text(screen.element as unknown as FakeElement)).toContain('載入中');
     controller.setState({ ...IDLE_STATE, participants: { status: 'empty' } });
@@ -276,7 +297,7 @@ describe('createHistoryScreen — composes ParticipantBrowser/DrillBrowser per r
       ...IDLE_STATE,
       participants: { status: 'ready', value: [{ participantId: 'p-alpha', drillCount: 1, runCount: 2, latestStartedAt: '2026-01-01T00:00:00Z' }] },
     });
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const participantSection = document.created.find((el) => el.dataset.section === 'participant-browser')!;
     const drillSection = document.created.find((el) => el.dataset.section === 'drill-browser')!;
@@ -293,7 +314,7 @@ describe('createHistoryScreen — composes ParticipantBrowser/DrillBrowser per r
       ...IDLE_STATE,
       drills: { status: 'ready', value: [{ drillId: 'exact-drill-1', runCount: 3, latestStartedAt: '2026-01-01T00:00:00Z' }] },
     });
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const participantSection = document.created.find((el) => el.dataset.section === 'participant-browser')!;
     const drillSection = document.created.find((el) => el.dataset.section === 'drill-browser')!;
@@ -310,7 +331,7 @@ describe('createHistoryScreen — composes ParticipantBrowser/DrillBrowser per r
       ...IDLE_STATE,
       runs: { status: 'ready', value: [{ runId: 'r-alpha', participantId: 'p-1', drillId: 'd-1', startedAt: '2026-01-01T00:00:00Z', schemaVersion: 2, suspect: false, byteLength: 10, replaySupport: 'unchecked' }] },
     });
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const participantSection = document.created.find((el) => el.dataset.section === 'participant-browser')!;
     const drillSection = document.created.find((el) => el.dataset.section === 'drill-browser')!;
@@ -331,7 +352,7 @@ describe('createHistoryScreen — composes ParticipantBrowser/DrillBrowser per r
       ...IDLE_STATE,
       runDetail: { status: 'empty' },
     });
-    createHistoryScreen({ navigator: navigator as never, controller });
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const overviewSection = document.created.find((el) => el.dataset.section === 'drill-overview')!;
     const detailSection = document.created.find((el) => el.dataset.section === 'historical-run-detail')!;
@@ -344,7 +365,7 @@ describe('createHistoryScreen — composes ParticipantBrowser/DrillBrowser per r
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'run', participantId: 'p-1', drillId: 'd-1', runId: 'r-1' });
     const controller = createFakeController({ ...IDLE_STATE, runDetail: { status: 'empty' } });
-    createHistoryScreen({ navigator: navigator as never, controller });
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const backButton = document.created.find((el) => el.dataset.historyAction === 'back')!;
     backButton.dispatch('click');
@@ -358,7 +379,7 @@ describe('createHistoryScreen — focus management', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator(undefined);
     const controller = createFakeController();
-    createHistoryScreen({ navigator: navigator as never, controller });
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const main = document.created.find((el) => el.tag === 'main')!;
     expect(main.focused).toBe(false);
@@ -372,7 +393,7 @@ describe('createHistoryScreen — focus management', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'participants', query: '' });
     const controller = createFakeController();
-    createHistoryScreen({ navigator: navigator as never, controller });
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const main = document.created.find((el) => el.tag === 'main')!;
     main.focused = false; // reset after the initial-route focus to isolate this assertion
@@ -391,7 +412,7 @@ describe('createHistoryScreen — accessible names', () => {
       ...IDLE_STATE,
       runDetail: { status: 'error', code: 'RUN_NOT_FOUND', message: 'gone', retryable: false },
     });
-    createHistoryScreen({ navigator: navigator as never, controller });
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const buttons = document.created.filter((el) => el.tag === 'button');
     expect(buttons.length).toBeGreaterThan(0);
@@ -406,7 +427,7 @@ describe('createHistoryScreen — accessible names', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator(undefined);
     const controller = createFakeController();
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     const root = screen.element as unknown as FakeElement;
     expect(root.attributes.get('role')).toBe('dialog');
@@ -420,7 +441,7 @@ describe('createHistoryScreen — dispose', () => {
     vi.stubGlobal('document', document);
     const navigator = createFakeNavigator({ kind: 'participants', query: '' });
     const controller = createFakeController();
-    const screen = createHistoryScreen({ navigator: navigator as never, controller });
+    const screen = createHistoryScreen({ navigator: navigator as never, controller, registry });
 
     screen.dispose();
     expect((screen.element as unknown as FakeElement).removed).toBe(true);
