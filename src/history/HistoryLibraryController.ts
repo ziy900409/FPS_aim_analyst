@@ -1,22 +1,32 @@
 /**
- * WP-49 T1 — single owner of History route-driven async data (README §2.4). DOM views never
+ * WP-49 T1/T5 — single owner of History route-driven async data (README §2.4). DOM views never
  * fetch: they send navigation/retry intent here and render the immutable `state` snapshot this
- * controller publishes. Each scope (participants/drills/runs/run-detail) is generation-tracked so
- * a response for a route the user has since navigated away from is discarded instead of clobbering
- * newer state (FM-49.1).
+ * controller publishes. Each scope (participants/drills/runs/observations/run-detail) is
+ * generation-tracked so a response for a route the user has since navigated away from is discarded
+ * instead of clobbering newer state (FM-49.1).
  *
- * `observations` (drill-level metric trend data) stays `idle` for the lifetime of T1: it depends on
- * the paged analysis endpoint README §2.6 defines, which does not exist until WP-49 T4. Wiring it
- * up is explicitly T4's job (WP-49 README task table); `retry('observations')` and
- * `loadNextObservationPage()` are present here only to satisfy the full T1 interface shape and are
- * no-ops until then.
+ * `observations` (drill-level metric projections, README §2.6) auto-paginates: on entering a
+ * `drill` route this controller fetches page 1, then immediately chains further pages until
+ * `nextCursor` is exhausted or a page fails — the trend domain (`HistoryTrend.ts`) needs the full
+ * per-drill observation set to group cohorts and pick eligible points correctly, not just the first
+ * page (OQ-49.4/D-49.P12 "分頁 + 漸進補齊，顯示 loaded/total"). A mid-chain failure keeps whatever
+ * pages already loaded (`status` stays `'ready'`) and records it on `loadMoreError` rather than
+ * discarding progress; `loadNextObservationPage()` resumes from the last known `nextCursor` in that
+ * case. `retry('observations')` instead restarts the whole chain from page 1 (used when even the
+ * first page failed).
  */
 
 import type { ExportPayload } from '../data/export.ts';
 import { serializeJSON } from '../data/export.ts';
 import { buildResultPresentation, type ResultPresentation } from '../results/ResultPresentation.ts';
 import { HistoryClientError, type HistoryClient } from './HistoryClient.ts';
-import type { HistoryDrillSummary, HistoryIndexReport, HistoryParticipantSummary, HistoryRunSummary } from './contracts.ts';
+import type {
+  HistoryDrillSummary,
+  HistoryIndexReport,
+  HistoryParticipantSummary,
+  HistoryRunProjection,
+  HistoryRunSummary,
+} from './contracts.ts';
 import type { HistoryNavigator } from './navigation/HistoryNavigator.ts';
 import type { HistoryRoute } from './navigation/HistoryRoute.ts';
 
@@ -29,10 +39,21 @@ export type AsyncState<T> =
 
 const IDLE: AsyncState<never> = { status: 'idle' };
 
-/** T4 replaces this with the real paged collection derived from `HistoryObservationPage`
- * (README §2.6). The slot exists now so `HistoryLibraryState`'s shape matches the spec; nothing in
- * T1 ever constructs a `'ready'` value for it. */
-export type HistoryObservationCollection = never;
+/** README §2.6 — every `HistoryRunProjection` accumulated so far for the current `drill` route,
+ * across as many pages as have completed. `total`/`registryVersion` come from the most recent page
+ * (both are stable across pages for the same drill). `loadingMore` is true while a next-page fetch
+ * is in flight; `nextCursor` is the cursor for resuming (`undefined` once every page is loaded).
+ * `loadMoreError` is only ever set alongside `loadingMore: false` and a defined `nextCursor` — a
+ * page in the *middle* of the chain failed, not the first one (that produces the whole scope's
+ * `AsyncState` `'error'` instead, per `loadObservations` below). */
+export interface HistoryObservationCollection {
+  readonly items: readonly HistoryRunProjection[];
+  readonly total: number;
+  readonly registryVersion: string;
+  readonly loadingMore: boolean;
+  readonly nextCursor?: string;
+  readonly loadMoreError?: { readonly message: string; readonly retryable: boolean };
+}
 
 /** README §2.8 — the full historical run view: the raw payload, a `HistoryRunSummary` derived
  * from it (byte-identical run identity to what WP-48's repository would report; see
@@ -117,7 +138,12 @@ function errorState(error: unknown): AsyncState<never> {
   };
 }
 
-type FetchableScope = Exclude<HistoryLibraryScope, 'observations'>;
+function errorInfo(error: unknown): { readonly message: string; readonly retryable: boolean } {
+  if (error instanceof HistoryClientError) return { message: error.message, retryable: error.retryable };
+  return { message: error instanceof Error ? error.message : 'unknown error', retryable: false };
+}
+
+type FetchableScope = HistoryLibraryScope;
 
 export function createHistoryLibraryController(options: HistoryLibraryControllerOptions): HistoryLibraryController {
   const { navigator, client } = options;
@@ -128,7 +154,7 @@ export function createHistoryLibraryController(options: HistoryLibraryController
   // Per-scope generation counter: a response is only applied if the generation captured when its
   // request started still matches when it resolves — a superseded request's outcome (success,
   // error, or abort) is silently dropped (FM-49.1).
-  const generations: Record<FetchableScope, number> = { participants: 0, drills: 0, runs: 0, 'run-detail': 0 };
+  const generations: Record<FetchableScope, number> = { participants: 0, drills: 0, runs: 0, observations: 0, 'run-detail': 0 };
   const controllers: Partial<Record<FetchableScope, AbortController>> = {};
 
   function setState(patch: Partial<HistoryLibraryState>): void {
@@ -189,6 +215,75 @@ export function createHistoryLibraryController(options: HistoryLibraryController
     }
   }
 
+  interface ObservationAccumulator {
+    readonly items: readonly HistoryRunProjection[];
+    readonly total: number;
+    readonly registryVersion: string;
+  }
+
+  async function fetchObservationsPage(
+    participantId: string,
+    drillId: string,
+    cursor: string | undefined,
+    generation: number,
+    signal: AbortSignal,
+    previous: ObservationAccumulator | undefined,
+  ): Promise<void> {
+    try {
+      const page = await client.observations(participantId, drillId, { limit: 100, cursor }, signal);
+      if (!isCurrent('observations', generation)) return;
+      const acc: ObservationAccumulator = {
+        items: [...(previous?.items ?? []), ...page.items],
+        total: page.total,
+        registryVersion: page.registryVersion,
+      };
+      if (acc.items.length === 0) {
+        setState({ observations: { status: 'empty' } });
+        return;
+      }
+      setState({
+        observations: {
+          status: 'ready',
+          value: {
+            items: acc.items,
+            total: acc.total,
+            registryVersion: acc.registryVersion,
+            loadingMore: page.nextCursor !== undefined,
+            nextCursor: page.nextCursor,
+          },
+        },
+      });
+      if (page.nextCursor !== undefined) {
+        await fetchObservationsPage(participantId, drillId, page.nextCursor, generation, signal, acc);
+      }
+    } catch (error) {
+      if (!isCurrent('observations', generation)) return;
+      if (previous === undefined) {
+        setState({ observations: errorState(error) });
+        return;
+      }
+      setState({
+        observations: {
+          status: 'ready',
+          value: {
+            items: previous.items,
+            total: previous.total,
+            registryVersion: previous.registryVersion,
+            loadingMore: false,
+            nextCursor: cursor,
+            loadMoreError: errorInfo(error),
+          },
+        },
+      });
+    }
+  }
+
+  function loadObservations(participantId: string, drillId: string): void {
+    const { generation, signal } = beginRequest('observations');
+    setState({ observations: { status: 'loading', previous: previousValue(state.observations) } });
+    void fetchObservationsPage(participantId, drillId, undefined, generation, signal, undefined);
+  }
+
   async function loadRunDetail(runId: string): Promise<void> {
     const { generation, signal } = beginRequest('run-detail');
     setState({ runDetail: { status: 'loading', previous: previousValue(state.runDetail) } });
@@ -236,6 +331,7 @@ export function createHistoryLibraryController(options: HistoryLibraryController
           previousRoute.drillId !== route.drillId
         ) {
           void loadRuns(route.participantId, route.drillId);
+          loadObservations(route.participantId, route.drillId);
         }
         return;
       case 'run':
@@ -280,11 +376,20 @@ export function createHistoryLibraryController(options: HistoryLibraryController
       if (scope === 'participants' && route.kind === 'participants') void loadParticipants();
       else if (scope === 'drills' && route.kind === 'drills') void loadDrills(route.participantId);
       else if (scope === 'runs' && route.kind === 'drill') void loadRuns(route.participantId, route.drillId);
+      else if (scope === 'observations' && route.kind === 'drill') loadObservations(route.participantId, route.drillId);
       else if (scope === 'run-detail' && route.kind === 'run') void loadRunDetail(route.runId);
-      // 'observations': no-op until T4 (see module doc comment).
     },
     loadNextObservationPage(): void {
-      // No-op until T4 wires cursor-paged fetches against the not-yet-built analysis endpoint.
+      const route = state.route;
+      if (route === undefined || route.kind !== 'drill') return;
+      const current = state.observations;
+      if (current.status !== 'ready' || current.value.nextCursor === undefined) return;
+      const { generation, signal } = beginRequest('observations');
+      void fetchObservationsPage(route.participantId, route.drillId, current.value.nextCursor, generation, signal, {
+        items: current.value.items,
+        total: current.value.total,
+        registryVersion: current.value.registryVersion,
+      });
     },
     subscribe(listener) {
       listeners.add(listener);

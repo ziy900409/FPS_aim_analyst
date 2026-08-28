@@ -155,14 +155,158 @@ describe('createHistoryLibraryController — happy path per route kind', () => {
     expect(controller.state.runDetail.status).toBe('error');
   });
 
-  it('observations stays idle for the lifetime of T1 — no endpoint to call yet', async () => {
+  it('a drill route with no observations resolves to status "empty"', async () => {
     const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
     const controller = createHistoryLibraryController({ navigator, client: fakeClient() });
     controller.start();
+    await flush();
+    expect(controller.state.observations).toEqual({ status: 'empty' });
+  });
+});
+
+describe('createHistoryLibraryController — observations auto-pagination (WP-49 T5, README §2.6/OQ-49.4)', () => {
+  const projectionA = { run: { ...run, runId: 'r-a' }, projection: { status: 'unregistered-drill' as const, drillId: 'd-1' } };
+  const projectionB = { run: { ...run, runId: 'r-b' }, projection: { status: 'unregistered-drill' as const, drillId: 'd-1' } };
+  const projectionC = { run: { ...run, runId: 'r-c' }, projection: { status: 'unregistered-drill' as const, drillId: 'd-1' } };
+
+  it('a single page with no nextCursor loads straight to ready with loadingMore=false', async () => {
+    const observations = vi.fn(async () => ({ items: [projectionA], total: 1, registryVersion: '1.0.0' }));
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createHistoryLibraryController({ navigator, client: fakeClient({ observations }) });
+    controller.start();
+    await flush();
+    expect(controller.state.observations).toEqual({
+      status: 'ready',
+      value: { items: [projectionA], total: 1, registryVersion: '1.0.0', loadingMore: false, nextCursor: undefined },
+    });
+    expect(observations).toHaveBeenCalledOnce();
+  });
+
+  it('auto-chains subsequent pages until nextCursor is exhausted, accumulating items in order', async () => {
+    const observations = vi.fn(async (_p: string, _d: string, options?: { limit?: number; cursor?: string }) => {
+      if (options?.cursor === undefined) return { items: [projectionA], total: 3, nextCursor: 'cursor-1', registryVersion: '1.0.0' };
+      if (options.cursor === 'cursor-1') return { items: [projectionB], total: 3, nextCursor: 'cursor-2', registryVersion: '1.0.0' };
+      return { items: [projectionC], total: 3, registryVersion: '1.0.0' };
+    });
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createHistoryLibraryController({ navigator, client: fakeClient({ observations }) });
+    controller.start();
+    await flush();
+    await flush();
+    await flush();
+    expect(controller.state.observations).toEqual({
+      status: 'ready',
+      value: {
+        items: [projectionA, projectionB, projectionC],
+        total: 3,
+        registryVersion: '1.0.0',
+        loadingMore: false,
+        nextCursor: undefined,
+      },
+    });
+    expect(observations).toHaveBeenCalledTimes(3);
+  });
+
+  it('the first page failing produces a scoped error state (not a partial "ready")', async () => {
+    const observations = vi.fn(async () => Promise.reject(new HistoryClientError('STORAGE_IO', 'disk error')));
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createHistoryLibraryController({ navigator, client: fakeClient({ observations }) });
+    controller.start();
+    await flush();
+    expect(controller.state.observations).toEqual({ status: 'error', code: 'STORAGE_IO', message: 'disk error', retryable: true });
+  });
+
+  it('a later page failing keeps the already-loaded items and records loadMoreError instead of discarding progress', async () => {
+    const observations = vi.fn(async (_p: string, _d: string, options?: { cursor?: string }) => {
+      if (options?.cursor === undefined) return { items: [projectionA], total: 2, nextCursor: 'cursor-1', registryVersion: '1.0.0' };
+      return Promise.reject(new HistoryClientError('TIMEOUT', 'request timed out'));
+    });
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createHistoryLibraryController({ navigator, client: fakeClient({ observations }) });
+    controller.start();
+    await flush();
+    await flush();
+    expect(controller.state.observations).toEqual({
+      status: 'ready',
+      value: {
+        items: [projectionA],
+        total: 2,
+        registryVersion: '1.0.0',
+        loadingMore: false,
+        nextCursor: 'cursor-1',
+        loadMoreError: { message: 'request timed out', retryable: true },
+      },
+    });
+  });
+
+  it('loadNextObservationPage() resumes a failed continuation from its recorded nextCursor', async () => {
+    let secondPageAttempts = 0;
+    const observations = vi.fn(async (_p: string, _d: string, options?: { cursor?: string }) => {
+      if (options?.cursor === undefined) return { items: [projectionA], total: 2, nextCursor: 'cursor-1', registryVersion: '1.0.0' };
+      secondPageAttempts += 1;
+      if (secondPageAttempts === 1) return Promise.reject(new HistoryClientError('TIMEOUT', 'request timed out'));
+      return { items: [projectionB], total: 2, registryVersion: '1.0.0' };
+    });
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createHistoryLibraryController({ navigator, client: fakeClient({ observations }) });
+    controller.start();
+    await flush();
+    await flush();
+    expect(controller.state.observations.status).toBe('ready');
+
     controller.loadNextObservationPage();
+    await flush();
+    expect(controller.state.observations).toEqual({
+      status: 'ready',
+      value: { items: [projectionA, projectionB], total: 2, registryVersion: '1.0.0', loadingMore: false, nextCursor: undefined },
+    });
+  });
+
+  it('retry("observations") restarts the whole chain from page 1', async () => {
+    const observations = vi.fn(
+      async (): Promise<Awaited<ReturnType<HistoryClient['observations']>>> =>
+        Promise.reject(new HistoryClientError('STORAGE_IO', 'disk error')),
+    );
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createHistoryLibraryController({ navigator, client: fakeClient({ observations }) });
+    controller.start();
+    await flush();
+    expect(controller.state.observations.status).toBe('error');
+
+    observations.mockImplementation(async () => ({ items: [projectionA], total: 1, registryVersion: '1.0.0' }));
     controller.retry('observations');
-    await Promise.resolve();
-    expect(controller.state.observations).toEqual({ status: 'idle' });
+    await flush();
+    expect(controller.state.observations).toEqual({
+      status: 'ready',
+      value: { items: [projectionA], total: 1, registryVersion: '1.0.0', loadingMore: false, nextCursor: undefined },
+    });
+  });
+
+  it('navigating away mid-chain discards a late-resolving next page (FM-49.1)', async () => {
+    const secondPage = deferred<{ items: (typeof projectionA)[]; total: number; registryVersion: string }>();
+    const observations = vi.fn(async (_p: string, drillId: string, options?: { cursor?: string }) => {
+      if (drillId === 'd-2') return { items: [projectionC], total: 1, registryVersion: '1.0.0' };
+      if (options?.cursor === undefined) return { items: [projectionA], total: 2, nextCursor: 'cursor-1', registryVersion: '1.0.0' };
+      return secondPage.promise;
+    });
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createHistoryLibraryController({ navigator, client: fakeClient({ observations }) });
+    controller.start();
+    await flush();
+
+    navigator.setRoute({ kind: 'drill', participantId: 'p-1', drillId: 'd-2', runFilter: 'all' });
+    await flush();
+    expect(controller.state.observations).toEqual({
+      status: 'ready',
+      value: { items: [projectionC], total: 1, registryVersion: '1.0.0', loadingMore: false, nextCursor: undefined },
+    });
+
+    secondPage.resolve({ items: [projectionB], total: 2, registryVersion: '1.0.0' });
+    await flush();
+    expect(controller.state.observations).toEqual({
+      status: 'ready',
+      value: { items: [projectionC], total: 1, registryVersion: '1.0.0', loadingMore: false, nextCursor: undefined },
+    });
   });
 });
 
