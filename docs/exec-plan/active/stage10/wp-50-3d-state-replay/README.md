@@ -15,7 +15,7 @@
 | **Compatibility** | exact `drillId` profile + capability inspection；不以 family/prefix 或單一 `schemaVersion` 猜測完整支援 |
 | **Estimate** | 13–20 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：現有錄製不足、單一 renderer ownership、seek 決定性、Three.js resource lifecycle |
-| **Status** | 🟢 T0～T3 完成（2026-08-28，見 [progress.md](progress.md)）；OQ-50.1～4 已 owner 確認；T4 可開工 |
+| **Status** | 🟢 T0～T4 完成（2026-08-28，見 [progress.md](progress.md)）；OQ-50.1～4 已 owner 確認；T5 可開工 |
 
 ---
 
