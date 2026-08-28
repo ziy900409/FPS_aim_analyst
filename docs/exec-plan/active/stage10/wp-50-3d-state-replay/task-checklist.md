@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | ✅ | **T0** Entry gate／sufficiency audit／PoC | [T0-entry-gate.md](T0-entry-gate.md) | WP-48 approved load contract | High |
 | ✅ | **T1** Replay schema／capture／support classifier | [T1-replay-contract-and-capture.md](T1-replay-contract-and-capture.md) | T0 | High |
-| ⬜ | **T2** Playback domain core | [T2-playback-domain-core.md](T2-playback-domain-core.md) | T1 | Med/High |
+| ✅ | **T2** Playback domain core | [T2-playback-domain-core.md](T2-playback-domain-core.md) | T1 | Med/High |
 | ⬜ | **T3** Presentation ownership／base scene | [T3-presentation-and-scene.md](T3-presentation-and-scene.md) | T1～T2 | High |
 | ⬜ | **T4** Targets／weapon／effects | [T4-replay-visual-state.md](T4-replay-visual-state.md) | T1～T3 | High |
 | ⬜ | **T5** Replay Screen／transport／HUD | [T5-replay-ui.md](T5-replay-ui.md) | T2～T4 | Med |
