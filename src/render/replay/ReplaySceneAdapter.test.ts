@@ -76,6 +76,38 @@ describe('ReplaySceneAdapter', () => {
     expect(other.scene.children.length).toBeGreaterThan(0);
   });
 
+  it('extras.punch* is summed into base yaw/pitch BEFORE composing qYaw·qPitch (WP-50 T4, D-50-P22)', () => {
+    const sceneManager = new SceneManager(placeholderRoom);
+    const adapter = new ReplaySceneAdapter(sceneManager, placeholderRoom);
+
+    const yaw = 0.2;
+    const pitch = -0.1;
+    const punchYawRad = 0.05;
+    const punchPitchRad = -0.02;
+    adapter.applySample(sample({ yaw, pitch }), { punchYawRad, punchPitchRad, fovDeg: undefined });
+
+    const expected = new THREE.Quaternion()
+      .setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw + punchYawRad)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitch + punchPitchRad));
+
+    expect(sceneManager.camera.quaternion.x).toBeCloseTo(expected.x, 12);
+    expect(sceneManager.camera.quaternion.y).toBeCloseTo(expected.y, 12);
+    expect(sceneManager.camera.quaternion.z).toBeCloseTo(expected.z, 12);
+    expect(sceneManager.camera.quaternion.w).toBeCloseTo(expected.w, 12);
+  });
+
+  it('extras.fovDeg sets camera.fov and updates the projection matrix; omitted extras leaves fov untouched', () => {
+    const sceneManager = new SceneManager(placeholderRoom);
+    const adapter = new ReplaySceneAdapter(sceneManager, placeholderRoom);
+    const initialFov = sceneManager.camera.fov;
+
+    adapter.applySample(sample({}));
+    expect(sceneManager.camera.fov).toBe(initialFov); // no extras -> unchanged
+
+    adapter.applySample(sample({}), { punchPitchRad: 0, punchYawRad: 0, fovDeg: 40 });
+    expect(sceneManager.camera.fov).toBe(40);
+  });
+
   it('two adapters built from the same config carry independent camera state (D-50-P5 isolation)', () => {
     const adapterA = new ReplaySceneAdapter(new SceneManager(placeholderRoom), placeholderRoom);
     const adapterB = new ReplaySceneAdapter(new SceneManager(placeholderRoom), placeholderRoom);
