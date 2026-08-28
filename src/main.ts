@@ -4,6 +4,7 @@ import { createSceneManagerWithStatus } from './render/SceneManager.ts';
 import { TargetView } from './render/TargetView.ts';
 import { ImpactView } from './render/ImpactView.ts';
 import { TracerView } from './render/TracerView.ts';
+import { createPresentationCoordinator } from './render/PresentationCoordinator.ts';
 import { createPointerLock } from './input/PointerLock.ts';
 import { createInputSampler } from './input/InputSampler.ts';
 import { CameraController } from './view/CameraController.ts';
@@ -1297,7 +1298,12 @@ function protocolRunningText(context: ProtocolConditionContext): string {
 
 protocolNextButton.addEventListener('click', () => void beginNextProtocolCondition());
 
-const renderLoop = createRenderLoop((now) => {
+// WP-50 / T3（FR-50.11/NFR-50.5）— live 分支本體不變（逐字保留既有 pump/render/HUD 邏輯），
+// 只是把它從 renderLoop 的 callback 字面量抽成具名函式，交給 PresentationCoordinator 當作
+// live deps 的 `frame`。coordinator 是 render callback 的唯一分流點：目前恆為 live 模式（T6
+// 才會真正呼叫 `enterReplay()`），但往後 replay 分支絕不會落到這段 `simLoop.pump` 之前
+// （README §2.7/執行規則：不把 replay 判斷散落到多處）。
+function liveFrame(now: number): void {
   sessionPlanRunner.poll(now);
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
   const { alpha } = simLoop.pump(now);
@@ -1382,5 +1388,15 @@ const renderLoop = createRenderLoop((now) => {
       `inacc  ${rs.inaccuracyFire.toFixed(4).padStart(8)}\n` +
       `ammo   ${String(sharedState.weapon.ammo).padStart(3)}/${sharedState.weapon.magSize}`;
   }
-}, { frameLog });
+}
+
+// WP-50 / T3 — 唯一的 mode 互斥分流點；replay session 由未來的 T6 entry point 呼叫
+// `presentation.enterReplay(session)` 掛入，目前恆為 live（`resize()` 的 `sceneManager.resize`
+// 直接呼叫暫不改走 coordinator——resize 路由是 T6 wiring 真正需要 replay-active resize 時的
+// 範圍，此處先只解決「render callback 是否落到 `simLoop.pump`」這個核心互斥不變量)。
+const presentation = createPresentationCoordinator({
+  frame: liveFrame,
+  resize: (w, h) => sceneManager.resize(w, h),
+});
+const renderLoop = createRenderLoop((now) => presentation.frame(now), { frameLog });
 renderLoop.start();
