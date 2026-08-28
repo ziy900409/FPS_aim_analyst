@@ -1,3 +1,5 @@
+import type { TargetHitboxConfig } from '../drill/DrillConfig.ts';
+
 /**
  * WP-50 / T1 — replay support/capability contracts (README §2.4).
  *
@@ -99,6 +101,18 @@ export interface ReplayRecording {
   readonly events: readonly NormalizedReplayEvent[];
   readonly eventTimes: Float64Array;
   readonly scene?: ReplaySceneDescriptor;
+  /** Pass-through of `Meta.weaponId` (always present) — WP-50 / T4 (README §2.7 step 2): the sole
+   * input `getWeapon()` needs to resolve the recoil table / ADS optics for camera punch and FOV
+   * replay (`replayRecoil.ts`). Meta's own `weapon?: WeaponMeta` (ads/bullet) is intentionally not
+   * duplicated here — `getWeapon(weaponId)` already returns the same config the run used. */
+  readonly weaponId: string;
+  /** Pass-through of `Meta.targets?.hitbox` (single-source geometry, GD-7) — absent on legacy
+   * exports; `ReplayTargetView` resolves the same `DEFAULT_TARGET_HITBOX` fallback `resolveTargetHitbox`
+   * uses live, so both paths agree without a second hitbox constant (WP-50 / T4). */
+  readonly targetHitbox?: TargetHitboxConfig;
+  /** Pass-through of `Meta.fovDeg` (hip FOV, KI-005) — absent on pre-KI-005 exports; falls back to
+   * the recorded scene's own `fovDeg` (same fallback `SceneManager`'s live camera default uses). */
+  readonly hipFovDeg?: number;
 }
 
 export interface ReplayCameraState {

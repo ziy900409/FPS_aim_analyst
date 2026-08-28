@@ -84,6 +84,11 @@ export function normalizeReplayRecording(payload: ExportPayload, options: Normal
       events,
       eventTimes,
       ...(payload.meta.scene !== undefined ? { scene: toSceneDescriptor(payload.meta.scene) } : {}),
+      // WP-50 / T4: pass-through only — no defaulting here (README §2.7 keeps normalization and
+      // hitbox/FOV fallback resolution separate; `ReplayTargetView`/`replayRecoil.ts` own the defaults).
+      weaponId: payload.meta.weaponId,
+      ...(payload.meta.targets?.hitbox !== undefined ? { targetHitbox: payload.meta.targets.hitbox } : {}),
+      ...(payload.meta.fovDeg !== undefined ? { hipFovDeg: payload.meta.fovDeg } : {}),
     },
   };
 }

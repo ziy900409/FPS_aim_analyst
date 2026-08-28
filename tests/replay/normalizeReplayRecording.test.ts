@@ -71,6 +71,25 @@ describe('WP-50 T2 — normalizeReplayRecording', () => {
     expect(withoutScene.recording.scene).toBeUndefined();
   });
 
+  it('passes meta.weaponId through always, and meta.targets.hitbox/fovDeg only when present (WP-50 T4)', () => {
+    const withExtras = normalizeReplayRecording(
+      makePayload({
+        meta: { weaponId: 'ak47', fovDeg: 103, targets: { hitbox: { widthU: 1, heightU: 2, depthU: 1, shape: 'box' } } },
+        ticks: [makeTick({ t: 0 })],
+      }),
+    );
+    if (!withExtras.ok) throw new Error('expected ok');
+    expect(withExtras.recording.weaponId).toBe('ak47');
+    expect(withExtras.recording.hipFovDeg).toBe(103);
+    expect(withExtras.recording.targetHitbox).toEqual({ widthU: 1, heightU: 2, depthU: 1, shape: 'box' });
+
+    const withoutExtras = normalizeReplayRecording(makePayload({ ticks: [makeTick({ t: 0 })] }));
+    if (!withoutExtras.ok) throw new Error('expected ok');
+    expect(withoutExtras.recording.weaponId).toBe('ak47'); // makeMeta default — weaponId always present
+    expect(withoutExtras.recording.hipFovDeg).toBeUndefined();
+    expect(withoutExtras.recording.targetHitbox).toBeUndefined();
+  });
+
   it('threads an optional runId through to the recording, and omits it when not given', () => {
     const payload = makePayload({ ticks: [makeTick({ t: 0 })] });
     const withRunId = normalizeReplayRecording(payload, { runId: 'run-42' });
