@@ -14,7 +14,7 @@
 | **Release policy** | WP-48、49、50 exit gates 與本 WP exit gate 全綠後才可宣告 M18；上游 domain defect 必須回到 owning WP 修復並重跑交接證據 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | Med/High：跨 process/root lifecycle、dev-only test hooks、preview parity、競態、實機 3D fidelity |
-| **Status** | 🟡 規劃完成，T0 尚未開始 |
+| **Status** | 🟡 T1 完成（2026-08-28，見 [progress.md](progress.md)）；T0 正式 entry-gate 仍未開始——T1 開工前僅逐項確認其依賴的四個 seam（root injection／public History API／DEV completion driver／server commands）存在，不等於 T0 通過。T2 仍 blocked：需 T0 完整 handoff 矩陣 + WP-48～50 各自 exit evidence。 |
 
 ---
 
