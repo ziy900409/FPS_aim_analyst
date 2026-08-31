@@ -553,6 +553,61 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   一列，加上 KI-017／KI-018 兩個真實 upstream defect 仍待 WP-49／WP-50 承接修復——task-checklist.md
   的 T4 因此暫留 ⬜，於下方寫明原因，不假裝全綠。
 
+- **2026-08-31**：**T5 進行中**（第一個切片）— operator runbook 與 M18 dossier 草案（FR-51.15、部分
+  FR-51.16／FR-51.14 traceability）。
+
+  **範圍判斷**：T5.md 把工作分成三塊——operational documentation、manual walkthrough、release
+  dossier。本切片先做前者與後者兩塊**文件/映射性質**的工作（可由讀原始碼+對照既有 T0～T4 evidence
+  完成，不需要真人操作實機）；manual walkthrough 需要真人在真實硬體上操作 Pointer Lock／滑鼠／
+  用肉眼判斷 WebGPU 視覺正確性與螢幕報讀軟體——這是 AI agent 無法誠實代為執行或宣告 pass 的部分
+  （比照本 repo 既有先例，見 acceptance-stage-g.md §1.1 G-2 對「真人真硬體全場走查」的處理方式：
+  留給人工，不假裝機械證據等同於它），因此本切片只交付**尚未執行、可供人工簽核的版本化 checklist
+  模板**，不在 checklist 的任何一格填 pass。
+
+  **交付**：
+  1. [`docs/operational/history-center-replay.md`](../../../../operational/history-center-replay.md)
+     ——啟動指令／History API health 確認／resolved root 固定性／磁碟階層＋atomic write＋restart
+     重建／備份還原（app 停止後複製整個 root，無 delete/import/migration）／manual download vs
+     自動歷史的區別／8 類 troubleshooting（API unavailable／保存失敗重試／corrupt-unsupported／
+     duplicate conflict／空 History／replay partial-unsupported／WebGPU→WebGL2 fallback／scene
+     load failure）／隱私安全邊界（loopback-only、無登入角色、不進 git）。**每一段落先用
+     `codegraph_explore` 對照實際原始碼**（`server/history/historyPlugin.ts` `resolveRoot()`、
+     `historyApi.ts` 的 6 個 route／錯誤碼、`replayCompatibility.ts` 的 `classifyReplaySupport()`／
+     `REASON_ORDER`、`createRenderer.ts` 的 `resolveBackend()`、`HistoryPersistence.ts` 的 Practice
+     短路邏輯），不是憑空寫規格書摘要;§1.2 的 health response 範例額外用本機真實
+     `npm run dev` + `curl http://localhost:5173/api/history/health` 驗證過欄位名稱與格狀
+     （`validRunCount`／`invalidFileCount`／`unsupportedFileCount`／`excludedPracticeFileCount`／
+     `rebuiltAt`——原本猜測的欄位名稱如 `participantCount` 並不存在，驗證後已修正），驗證後用
+     `taskkill /T /F` 收尾避免留下佔用 5173 的孤兒 process（沿用 T1 已記錄的 Windows tree-kill
+     surprise）。
+  2. [`docs/operational/acceptance-stage-j.md`](../../../../operational/acceptance-stage-j.md)——把
+     stage10 README §10 全部 11 項 M18 條件、WP-51 README §1 的 FR-51.1～17／NFR-51.1～9，逐項連到
+     T0～T4 已交付的 automated／measurement／inspection artifact（無 orphan 條件）;額外設
+     Known-limitations 表（KI-017／KI-018／42k P95 jitter／Chrome 未安裝／缺 Chrome+WebGL2
+     fallback project）與一份**尚未執行**的版本化 manual walkthrough checklist（Participant／
+     Researcher／Practice／真實視覺輸入／failure spot-check／keyboard-screen-reader 六組，每格皆
+     空白 checkbox，簽核欄留空）。§5 明確寫「尚未判定通過」與收尾所需的 4 個後續動作，不在草案
+     階段假裝 M18 已達成。
+
+  一個小修正（撰寫時發現，非產品缺陷）：`docs/operational/*.md` 既有慣例用全形括號而非半形
+  `()`，第一次對 §1.2 的欄位清單做 `Edit` 時因為用了半形括號而字串不匹配，重讀檔案確認實際
+  字元後改用全形括號才成功替換。
+
+  **驗證**：`Bash` 確認本切片引用的 13 個既有測試檔案路徑（`historyRepository.test.ts`、
+  `stage10-assessment.spec.ts`、`stage10-restart.integration.test.ts`、
+  `Stage10FixtureFactory.test.ts`、`stage10-preview.spec.ts`、`stage10-failure-recovery.spec.ts`、
+  `stage10-accessibility.spec.ts`、`Stage10AcceptanceEnvironment.ts`、`HistoryPersistence.test.ts`、
+  `stage10-scale.perf.ts`、兩份 KI 文件）全部存在;唯一一個猜錯的路徑
+  （`src/replay/ReplayPlayer.test.ts`，實際在 `tests/replay/ReplayPlayer.test.ts`）已用 `Glob` 找到
+  正確路徑並修正引用，避免 dossier 內出現死連結。純文件交付，不影響 `npm run typecheck`／
+  `npm run test`／`npm run test:e2e`，未重跑（無 production/test code 變更）。
+
+  **T5 尚未完成**（本切片刻意不做，留給人工）：manual browser／GPU／a11y walkthrough 的實際執行與
+  簽核（dossier §4 checklist 全部空白）;由未撰寫本 WP 主要程式碼者依 runbook 重新走一次啟動→定位
+  synthetic record→Replay→處理至少一個 failure state 的獨立驗證。task-checklist.md 的 T5 因此暫留
+  未打勾，5 項 DoD 中 3 項（runbook、dossier traceability 無 orphan、無真實資料/敏感路徑）已完成，
+  2 項（manual checklist 執行+簽核、獨立 operator 重跑）待人工接手。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後
