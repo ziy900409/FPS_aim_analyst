@@ -232,6 +232,33 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   **T2 尚未完成**：dev canonical Assessment 與 current/historical parity、replay full 的
   Stage10-owned automated evidence 仍待後續切片。
 
+- **2026-08-31**：**T2 第三個切片**——`tests/e2e/stage10-assessment.spec.ts`（FR-51.3/51.5）。
+
+  範圍判斷：`history-library.spec.ts`（WP-49）與 `replay.spec.ts`（WP-50）已經把 dev 上
+  完成→autosave→History→exact-drill 瀏覽、以及 History／current→Replay→Back 證明得很完整；這個切片
+  唯一新增的斷言，是兩邊都沒做過的一件事——**同一筆已存 run**，當下（live）Result 畫面與歷史
+  Run Detail 畫面渲染出來的 metric 卡片必須逐一相同（`ResultDetailBody.ts` 檔頭本來就宣稱
+  "current/historical presentation parity"／D-49.P4 是靠共用同一個 component 保證的；這個測試是在真實
+  DOM 上驗證這個宣稱真的成立，不是只信任程式碼共用這件事本身）。
+
+  做法：用 `__fpsTest` 完成一個真實（非空 ticks）的 `hold_click_v1` run（沿用
+  `replay.spec.ts` 的 `SAMPLE_INPUT`）→ `showResultAndSaveToHistory` → 從 live `#result-screen`
+  抓取所有 `[data-section="result-detail-body"] article[data-metric-id]` 的
+  `data-metric-id`→`data-metric-value` → 順便驗證 live Result 的 3D 重播是 `full` →關閉 Result → 從
+  History 導覽到同一個 runId 的 Run Detail → 抓同一組卡片 → 斷言兩邊 deep-equal → 再驗證 History 側的
+  3D 重播同樣是 `full` 且 Back 正確返回。這個 capture 方式刻意不特例化 promoted/diagnosis 區塊
+  （SAMPLE_INPUT 太短，兩邊有可能都落在 blocked/insufficient-data，不經過 `renderCard`）——兩邊卡片數
+  一致就代表兩邊狀態一致，deep-equal 本身已涵蓋這個情況，不需要另外分支斷言。
+
+  驗證：`npx playwright test tests/e2e/stage10-assessment.spec.ts --project=edge` 綠燈；
+  `npx playwright test --project=edge`（61 個 spec 全部）61/61 綠燈；`npm run typecheck` exit 0。
+
+  **T2 尚未完成**：replay `partial` 的 Stage10-owned automated evidence（目前唯一已知可重現路徑需要
+  真實 tick 但缺場景/target-lifecycle/scene 欄位——尚未建立這樣的 fixture）；`invalid` replay 狀態經
+  T0/Explore 確認是目前程式碼中沒有任何路徑會產生的保留分支，不在本 WP 授權範圍內新增。T2 DoD 其餘項目
+  （scenario 3 restart、4 grouping/order、5 parity、6 practice、7 unknown metric、8 full/unsupported
+  replay）已透過前三個切片覆蓋；尚缺 preview `partial` replay 與 T2 checklist 收斂。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後
