@@ -28,6 +28,7 @@
 - **2026-08-28**：完成 **T2 — Playback Domain Core**（4 個垂直切片：contracts+normalizer／sampleReplay／ReplayPlayer／42k-tick perf benchmark，各自獨立 commit + 全綠驗證）。詳見下方 T2 Evidence Log 與 Decision Log D-50-P15～P18。
 - **2026-08-28**：完成 **T3 — Exclusive Presentation Ownership／Base Replay Scene**（5 個垂直切片：PresentationCoordinator／ReplaySceneAdapter+scene-config resolution／ReplayPresentationSession／50-cycle+pump-isolation 整合測試／main.ts wiring，各自獨立 commit + 全綠驗證）。詳見下方 T3 Evidence Log 與 Decision Log D-50-P19～P21。
 - **2026-08-28**：完成 **T4 — Target Lifecycle／ADS-Recoil／Shot-Hit Effect Adapter**（7 個垂直切片：ReplayRecording weaponId/targetHitbox/hipFovDeg pass-through＋replayRecoil.ts 純函式 recoil 重放／ReplaySceneAdapter punch+FOV extras／ReplayTargetView／ReplayEffectView／ReplayPresentationSession 佈線／direct-seek-vs-sequential state-hash 測試／42k-tick render-adapter perf 測試，各自獨立 commit + 全綠驗證）。詳見下方 T4 Evidence Log 與 Decision Log D-50-P22～P24。
+- **2026-08-31**：完成 **T5 — Replay Screen／Transport／Timeline／HUD**（單一垂直切片：`ReplayTransport.ts` + `ReplayScreen.ts` 兩個新檔＋各自 component test，全綠驗證後一次 commit）。詳見下方 T5 Evidence Log 與 Decision Log D-50-P25～P27。
 
 ## T0 Audit — Official Assessment Exact-`drillId` Roster
 
@@ -230,3 +231,33 @@ interface TickRecord {
 - T4 收工：`npm run build`（green,既有 1114.42 kB chunk-size 警告,屬既存狀態非本次引入）；`npm run typecheck` green；`npx vitest run` 全量 **183 test files / 1595 tests（1593 passed + 2 skipped，0 failed）**——與 T3 收工時的 178 files / 1564 tests 相比,新增 5 個 test file、31 個 test,無任何既有 test 被修改或刪除（除 `tests/replay/normalizeReplayRecording.test.ts`/`domain-purity-boundary.test.ts`/`ReplaySceneAdapter.test.ts` 各自新增少量斷言,見對應 commit）。
 - Playwright（`npm run test:e2e`）：本次**未執行**——延續 T0～T3 的既有作法；T4 的 render-adapter 邏輯（mesh pool／effect window／camera composition）已在 vitest headless 用真實（非 fake）Three.js 物件圖驗證,真正需要瀏覽器 WebGPU context 的視覺驗收留給 T-exit。
 - Open follow-up for T5：`ReplayEffectView`/`resolveReplayCameraVisualState` 已把 `adsActive` 算出來,但 ScopeOverlay（DOM UI）尚未接上——T5 建 Replay Screen/HUD 時,若需要開鏡疊加層視覺,直接讀 T4 產出的 `adsActive`（或等價的 sample-derived 值）即可,不需要在 T4 這層碰 DOM。
+
+## T5 — Replay Screen／Transport／Timeline／HUD（2026-08-31）
+
+單一垂直切片（兩個新檔案緊密耦合、component test 同時完成才有意義拆開驗證，不強行拆成多個小 commit）：
+
+`feat(replay): add replay transport and HUD`——
+
+1. `src/ui/replay/ReplayTransport.ts`——底部 transport bar（上一事件／播放-暫停／下一事件／current-duration／seek slider／0.25-0.5-1-2× rate segmented control）＋ seek track 上的事件 marker（`dataset.eventKind`）＋可捲動事件列表（FR-50.8：只收 `cue`/`visible`/`counter`/`fire`/`hit`，排除 `ads`/`target_stop`/`key` 這些逐 tick 輸入狀態而非「事件」）＋一個給 `ReplayScreen` 疊在 viewport 左上的 `hudElement`（keys/ADS/speed/timestamp）。純 DOM component：不擁有 clock、不碰 `ReplayPlayer`/Three.js；呼叫端每 app frame 呼叫一次 `update(sample, playbackState)`，所有顯示值都來自同一次呼叫傳入的 `ReplaySample`（README §2.9「同一 sample 更新」）——本檔完全不讀 live state 或另開一個取樣時鐘。`controls: ReplayTransportControls` 是 `ReplayPlayer` 的窄子集（`play/pause/seek/setRate/previousEvent/nextEvent`），一個完整 `ReplayPlayer` 可直接結構相容傳入，不需轉接層。
+2. `src/ui/replay/ReplayScreen.ts`——全螢幕 shell：top bar（返回／來源識別文字／支援度 badge）＋ 16:9 viewport host（空 `<div>`，供 T6 掛載/resize 共用 renderer 的 canvas——本檔完全不 import Three.js/canvas/WebGPU）＋ 依 `render(state)` 的 `kind` 切換 loading／error／unsupported／ready 四個面板。`ready` 面板在 `support.status==='partial'` 時顯示持續性 warning banner（列出缺少的 capability 標籤與 reasonCode 對應訊息，非只靠顏色，D-50-P10）；`unsupported` 不渲染任何可播放 action，只列 reason 訊息 + 返回。Space 鍵播放/暫停快捷鍵在 `show()`/`hide()` 時掛載/移除（`window` 監聽），焦點不落在 button/input/select/textarea 上時才觸發；`visibilitychange` 隱藏分頁時呼叫 `controls.pause()`，恢復時**不**自動重播（README Assumption §1.4）。狀態切換時把焦點移入新面板的主要控制項（比照 `HistoryScreen` 既有的 focus-on-route-change 慣例）。
+
+`npm run build` / `npm run typecheck` / `npx vitest run`（**184 test files（+2 skip）／ 1621 tests passed + 2 skipped，0 failed**——較 T4 收工時新增剛好 2 個 test file、28 個 test，無任何既有 test 被修改）全綠。
+
+### Decision Log（T5）
+
+- **D-50-P25 / 不用 `instanceof HTMLElement` 判斷 Space 快捷鍵的目標元素**：本 repo 的既有 UI component test 慣例（`ResultScreen.test.ts`／`Controls.test.ts`／`HistoricalRunDetail.test.ts` 等）一律用手刻 `FakeElement`/`FakeDocument` 對 `document`/`window` 做 `vi.stubGlobal`，因為 vitest 設定（`vite.config.ts` `test.include`，未設 `environment:'jsdom'`）預設跑在 Node、**沒有** `HTMLElement` 全域。若 `onKeyDown` 用 `event.target instanceof HTMLElement` 判斷是否落在表單控制項上，會在這個環境下對整個 repo 唯一一處引用不存在的全域，於瀏覽器可通過但在既有 headless component test 慣例下無法測。改為鴨子定型的 `isFormLikeTarget()`（只檢查 `target.tagName` 是否為 `BUTTON`/`INPUT`/`SELECT`/`TEXTAREA` 字串）——瀏覽器執行語意不變，但不需要真正的 `Element`/jsdom 就可測試，維持與其餘 UI 檔案一致的測試策略。
+- **D-50-P26 / `render(state)` 在任何狀態轉換時都無條件重建 transport，不只在離開 `ready` 時才 dispose**：一開始只在 `state.kind !== 'ready'` 時呼叫 `teardownTransport()`，若呼叫端把 `render({kind:'ready',...})` 連續呼叫兩次（例如 support 判定從 `partial` 因為晚到的 scene metadata 升級成 `full`——這正是 T0 討論過的 OQ-50.4 情境的 UI 端反映），第二次會在不 dispose 前一個 transport 的情況下,把新的 `hudElement` 疊加 append 到 `viewportHost`,造成兩個 HUD 重疊顯示、且前一個 transport 的按鈕/監聽器永久留存（記憶體與 DOM 洩漏)。改為 `render()` 一律先 `teardownTransport()` 再依 `kind` 決定要不要重建——因為 `render()` 只在狀態轉換時被呼叫（不是熱路徑，`updateFrame()` 才是逐幀呼叫的路徑),重建成本可忽略。新增 regression test（`re-rendering ready...disposes the previous transport instead of leaking it`）鎖定這個修正,原本的天真版本會讓這個測試在 headless component test 層級直接失敗（`huds` 長度 2 而非 1）,不需要瀏覽器才能發現。
+- **D-50-P27 / HUD（keys/ADS/speed/timestamp）標記 `aria-hidden="true"`，不做成即時 live region**：README NFR-50.7 要求「transport、event controls、speed 與返回可只用 keyboard 操作…slider 有 ARIA min/max/current text」，但沒有要求 60fps 更新的視覺化 HUD 本身要對螢幕報讀器即時朗讀（一個逐幀更新的 `aria-live` 區域對 AT 使用者是噪音,不是資訊)。已經有的「可及性等價物」是 seek slider 的 `aria-valuetext`（每幀更新一次「當下/總長」文字,但只在使用者主動與 slider 互動或查詢時才會被朗讀,不會主動打斷)——HUD 這層純視覺疊層因此標 `aria-hidden`,避免與 slider 的可及文字重複朗讀或互相干擾。
+
+### Surprises & Discoveries（T5）
+
+- **T5 是目前 WP-50 唯一一個「兩個新檔案在同一次 commit 落地」的 task**：T0～T4 全部依「小到可獨立驗證」拆成多個垂直切片各自 commit。T5 的 `ReplayTransport.ts`（純資料呈現元件）與 `ReplayScreen.ts`（消費前者、加上 shell/生命週期）只有兩者都存在時,才可能有一個可執行、可測試的「畫面」；先單獨 commit `ReplayTransport.ts`（沒有任何呼叫端）並不會留下一個可獨立驗證的中間狀態,反而是刻意在半成品上硬做兩次驗證。兩個檔案的 test 各自針對自己的公開 API（`ReplayTransportControls`／`ReplayScreenState`）行為隔離撰寫,不互相 mock 對方的內部細節,因此雖然是同一次 commit,測試本身仍然是獨立、垂直可讀的。
+- **`document.activeElement`／`window.addEventListener`／`document.addEventListener`／`.focus()` 這類「螢幕生命週期」DOM API,在既有 headless test 慣例下完全不存在,必須在每個測試檔自己手刻**：T0～T4 的既有 UI test（`ResultScreen.test.ts` 等）從未用到 `window` 全域或 `visibilitychange`/`keydown` 監聽,因為它們都是「被動渲染 + click」的元件。T5 第一次需要 `vi.stubGlobal('window', ...)`（配合既有的 `vi.stubGlobal('document', ...)`）且 `FakeDocument`/`FakeWindow` 都要補上 `addEventListener`/`removeEventListener`/`dispatch` 三件套,才能測「Space 快捷鍵在 `hide()` 後失效」與「visibilitychange 觸發 pause 但不自動恢復」這兩條 README 明確要求的行為。這組手刻 harness 完全侷限在這兩個新測試檔內,未引入任何新的共用測試工具或 devDependency（例如 jsdom）。
+
+### Evidence Log（T5）
+
+- Baseline（T5 開工前）：`git rev-parse HEAD` 為 T4 收尾的 graphify sync commit（見上方 T4 節）；`git status --short` 僅有 `src/ui/replay/`（本次新增，未追蹤）待加入。
+- 逐步驗證：實作過程中先以 `npx vitest run src/ui/replay/ReplayTransport.test.ts` 與 `.../ReplayScreen.test.ts` 個別跑通（含修正 D-50-P25/P26 兩個在撰寫 test 過程中發現的問題），才執行全量 `npm run typecheck`／`npx vitest run`／`npm run build` 三者皆綠。
+- 全量證據：`npm run typecheck`（`tsc --noEmit` ×2）green；`npx vitest run` **184 test files / 1623 tests（1621 passed + 2 skipped，0 failed）**——較 T4 收工時的 183 files / 1595 tests（1593 passed + 2 skipped）新增 2 個 test file、28 個 test，無任何既有 test 被修改或刪除；`npm run build`（green，既有 1114.42 kB chunk-size 警告，屬既存狀態非本次引入）。
+- Playwright（`npm run test:e2e`）：本次**未執行**——延續 T0～T4 既有作法。T5-replay-ui.md Step 6「以fake player/controller做component tests，再以實際scene做browser visual/manual acceptance」的後半段（1024×768 等常用 viewport 下的真實視覺驗收、markers 在 seek track 上的實際像素對齊、event list 響應式換行）**尚未執行**——這類純視覺/佈局檢驗不是 headless component test 能覆蓋的範圍，留給 T-exit（README 既有慣例：真正需要瀏覽器渲染的驗收集中在 T-exit 一次做）。
+- Open follow-up for T-exit：上一條的瀏覽器視覺驗收待辦；另外 T6 尚未把 `viewportElement`/`updateFrame()`/`render()` 接上任何真正的 `ReplayController`/`ReplayPresentationSession`——T5 的兩個檔案目前只有 component test 驗證過其獨立公開 API 行為，尚未在一個端到端的真實 `ReplayPlayer` + `ReplayPresentationSession` 組合下跑過一次完整 render loop（那正是 T6 的整合範圍）。

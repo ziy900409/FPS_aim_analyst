@@ -9,7 +9,7 @@
 | ✅ | **T2** Playback domain core | [T2-playback-domain-core.md](T2-playback-domain-core.md) | T1 | Med/High |
 | ✅ | **T3** Presentation ownership／base scene | [T3-presentation-and-scene.md](T3-presentation-and-scene.md) | T1～T2 | High |
 | ✅ | **T4** Targets／weapon／effects | [T4-replay-visual-state.md](T4-replay-visual-state.md) | T1～T3 | High |
-| ⬜ | **T5** Replay Screen／transport／HUD | [T5-replay-ui.md](T5-replay-ui.md) | T2～T4 | Med |
+| ✅ | **T5** Replay Screen／transport／HUD | [T5-replay-ui.md](T5-replay-ui.md) | T2～T4 | Med |
 | ⬜ | **T6** Result／History integration | [T6-entry-and-navigation.md](T6-entry-and-navigation.md) | T5 + WP-48 + WP-49 T3 | High |
 | ⬜ | **T-exit** Replay acceptance／WP-51 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T6 | Med |
 
