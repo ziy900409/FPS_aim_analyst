@@ -283,6 +283,87 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   scenario 全數有 automated evidence（dev canonical＋restart integration test＋preview smoke 三個
   spec/test 檔案）；下一步是把 T2 checklist 翻 ✅ 並同步 README 狀態。
 
+- **2026-08-31**：完成 **T3 — Failure, Recovery, Data Safety, and Races**（FR-51.9/51.10）。
+
+  **範圍判斷**：`T3-failure-recovery-safety.md` 的 9 列 failure matrix 中，四列已有真實、無法靠重寫增加
+  信心的既有證據，本次刻意不重做（README §2.6「未核准的新產品語意」/ T2 對 `invalid` Replay 狀態的同一
+  紀律）：
+
+  | Failure matrix 列 | 既有證據 | 判斷 |
+  |---|---|---|
+  | traversal/symlink/root escape | `tests/history/historyRepository.test.ts`「a symlink/junction planted at the participant segment is rejected before any write」；`server/history/historyPaths.ts` `sanitizeSegmentPrefix`/`buildIdentitySegment` 對任何字元一律 hash，無法繞過 | Node/repository 層已證明；重寫等於重新驗證同一段 domain 邏輯 |
+  | scene asset failure/mismatch | `src/ui/replay/ReplayScreen.test.ts`「error shows the message, a retry action ..., and always a back action」 | component-level DOM 已覆蓋 loading/error/retry/back 四態 |
+  | rapid navigation（A→B→Back/close） | `tests/e2e/replay.spec.ts`「Back then re-entering Replay on a different run never shows the previous run's stale content」（A-50.11）、`tests/e2e/history-navigation.spec.ts` | 真實瀏覽器等級已證明 stale-content/generation 防護 |
+  | replay ownership race | `tests/e2e/replay.spec.ts`「Replay never lets a viewport click reach Pointer Lock ...」（A-50.10/NFR-50.5/50.11） | 真實瀏覽器等級已證明單一 owner／Pointer Lock 隔離 |
+
+  這四列的 T3 貢獻是「重跑既有 spec 並取得 repeat×5 evidence」（見下方 repeat-run 結果），不是新增測試碼。
+
+  **新增**（`tests/e2e/stage10-failure-recovery.spec.ts`，5 個 test，兩個 describe block）——涵蓋
+  failure matrix 剩餘、真正沒有既有全端證據的列：
+
+  1. **duplicate same/different content**（public API）：同一 payload 兩次 POST 為 idempotent
+     （`existing` disposition、同 runId）；相同 identity 不同內容（`suspect` 翻轉）第二次 POST 得
+     `409 RUN_CONFLICT`，且用 `GET /api/history/runs/:runId` 驗證原檔內容（`suspect:false`）未被覆寫。
+  2. **not found**：用一個真實已存的 participant/drill（保證 `drills`/`participants` route 可達）搭配一個
+     格式正確但從未存在的 64-hex runId，直接 hash 導覽到 `#/history/participants/.../runs/<fake>`——這是
+     `HistoricalRunDetail.test.ts` 只在元件層用手動注入的 `RUN_NOT_FOUND` state 驗證過的分支，第一次在真實
+     API 404→真實 DOM 路徑上驗證：`[data-section="historical-run-status"]` 顯示 `data-history-status="error"`
+     + 「讀取失敗」文字、無重試按鈕（`RUN_NOT_FOUND` 非 retryable）、點擊「返回 Run 列表」正確回到
+     `drill-overview`。
+  3. **path-traversal participantId（NFR-51.3 outside-sentinel 佐證）**：`participantId` 帶
+     `../../../../etc/passwd-<uuid>`，經真實公開 `POST /api/history/runs` 送出——確認存進去的
+     run 仍可用同一（hash 過的）識別讀回、且用 `Stage10AcceptanceEnvironment.ts` 既有的
+     `writeOutsideSentinel`/`verifyOutsideSentinelUnchanged`（**新 export**，供本檔重用同一份 sentinel
+     機制，不重寫第二套）快照真實 `data/session-history/`，證明整條公開 API 路徑不會讓惡意字元逃出
+     server 自己的隔離 root。這不是重新證明 WP-48 的 containment defense（那是 Node 層已完成的事），
+     是補「全端 + outside sentinel」這個 Stage10 專屬角度。
+  4. **API unavailable**：`page.route('**/api/history/**')` 攔截並 `abort()`（純瀏覽器層網路故障注入，不碰
+     OS ACL／專案資料，符合 T3.md work item 1 的「domain-approved injectable seam」）；History 畫面顯示
+     `[data-section="participant-status"]` 的「讀取失敗」+ 可重試按鈕（`NETWORK_ERROR` retryable:true），
+     解除攔截後點「重試」即恢復並看得到剛才用公開 API 種下的 Participant。這補的是 DOM/UI 恢復流程的真實
+     瀏覽器證據——WP-48 T4 的 `HistoryClient.test.ts`/`HistoryPersistence.test.ts` 已用 fake-fetch 在
+     unit 層驗證同一組 retryable 語意，但從未驗證過真實 `ParticipantBrowser` DOM 真的會依此渲染出重試路徑。
+  5. **save failure + 一次成功 retry 只建立一筆 run**：同一種 `page.route` 技巧只擋 `POST
+     /api/history/runs`，搭配 `__fpsTest.showResultAndSaveToHistory` 產生一次真實（有 ticks/events）的
+     Assessment 完成→保存失敗（`NETWORK_ERROR`, retryable:true）。斷言：（a）當次 Result 畫面
+     （`#result-screen`）仍可見、「匯出 JSON」按鈕仍可用（不受保存失敗影響，FR-51.9「current
+     Result/manual download仍可用」）；（b）`[data-section="history-save-status"]` 顯示
+     「Save to history failed」；（c）解除攔截後呼叫 `__fpsTest.retryHistorySave()` 成功
+     （`disposition:'created'`），且用 `GET .../runs` 確認該 participant/drill 下只有**一筆** run——證明
+     失敗重試不會產生半筆或重複紀錄。
+
+  一個 surprise（已修正，非遺留）：path-traversal 測試最初用固定字串
+  `'../../../../etc/passwd'`（無 uuid 尾碼），第一次獨立跑通過，但接到全部 67 個 spec 一起跑時失敗
+  （`expect(201) received 200`）——因為 `.playwright-tmp/history-dev` 是所有 `tests/e2e/*.spec.ts` 共用、
+  跨次 `npx playwright test` invocation 不會清空的真實 root，固定 identity 在第二次執行時撞到自己上次
+  存的 run（變成 `existing` disposition 而非 `created`）。改成 `${...}-${crypto.randomUUID()}` 後穩定
+  重現 201。其餘 Stage10 fixture 慣例本來就已對 identity 做 `runToken`/uuid 化，這次是漏了一個手寫的
+  ad hoc payload，不是新發現的產品缺陷。
+
+  **驗證**：
+  - `npx playwright test tests/e2e/stage10-failure-recovery.spec.ts --project=edge` 5/5 綠燈（獨立跑）。
+  - `npx playwright test --project=edge`（全部 67 個既有 + 新 spec）67/67 綠燈，無 regression。
+  - `npx playwright test tests/e2e/stage10-failure-recovery.spec.ts tests/e2e/replay.spec.ts --project=edge
+    --repeat-each=5 --retries=0`（NFR-51.2 repeat×5 zero-failure gate）：新 spec 的 5 個 test × 5 repeat
+    = **25/25 綠燈**，零失敗。同批次 `replay.spec.ts` 出現 1 次既有 flake
+    （`event markers ... prev/next` 的 seek 計時性斷言，`afterPrev <= afterNext` 差 85ms）——與 T2 第四個
+    切片（2026-08-31）已記錄的「A-50.5 event-marker prev/next 計時性斷言 flake」是同一個既有問題，非本次
+    改動造成的 regression，不重跑掩蓋，如實記錄。
+  - `npm run typecheck` exit 0；`npm run test`（Vitest）186 files／1654 tests 全綠，無 regression（含
+    `Stage10AcceptanceEnvironment.ts` 新增 `export` 後）。
+
+  **交付檔案**：`tests/e2e/stage10-failure-recovery.spec.ts`（新檔，5 test）；
+  `tests/stage10/Stage10AcceptanceEnvironment.ts`（把既有內部 `writeOutsideSentinel` 改為 `export`，供
+  E2E spec 重用同一份 sentinel 機制，未新增第二套邏輯）。
+
+  **T3 DoD 自評**：failure matrix 9 列皆有 automated evidence（5 列新測試 + 4 列既有測試引用 +
+  repeat×5 重跑）；atomic/idempotent/conflict/path/symlink/sentinel 斷言通過，無半檔與 root escape；
+  API/save failure 不影響 current Result/manual download，retry 只建立一筆 Assessment；
+  corrupt/unsupported/not-found/scene failure 不 crash、不 stale commit（沿用 T1/T2 + 本次 not-found
+  證據）；navigation/payload/scene/presentation races repeat×5 zero failure（既有 flake 除外，如實記錄非
+  掩蓋）；真實 root／outside sentinel 前後 hash/mtime 一致，錯誤訊息無絕對路徑洩漏（`STORAGE_IO`/
+  `RUN_NOT_FOUND` 等錯誤訊息皆為固定文字，不含 root path，見 `historyApi.ts` `err()` 呼叫處）。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後

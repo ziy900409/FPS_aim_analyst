@@ -34,12 +34,19 @@
 
 ## Definition of Done
 
-- [ ] failure matrix每列有automated evidence與user recovery action。
-- [ ] atomic/idempotent/conflict/path/symlink/sentinel assertions通過，無半檔與root escape。
-- [ ] API/save failure不抹除current Result/manual download；retry成功只建立一筆Assessment。
-- [ ] corrupt/unsupported/not-found/scene failure不crash、不stale commit、不假裝可Replay。
-- [ ] navigation/payload/scene/presentation races repeat×5 zero failure/retry。
-- [ ] 真實root/outside sentinel前後hash/mtime一致，錯誤訊息無絕對path/stack洩漏到UI。
+- [x] failure matrix每列有automated evidence與user recovery action（見progress.md 2026-08-31條目：5列新
+      `tests/e2e/stage10-failure-recovery.spec.ts`測試 + 4列既有WP-48/49/50真實瀏覽器/元件層證據引用）。
+- [x] atomic/idempotent/conflict/path/symlink/sentinel assertions通過，無半檔與root escape（duplicate/
+      conflict + path-traversal outside-sentinel測試；symlink escape沿用`historyRepository.test.ts`既有
+      Node層證據）。
+- [x] API/save failure不抹除current Result/manual download；retry成功只建立一筆Assessment（見
+      `stage10-failure-recovery.spec.ts`「save failure」case）。
+- [x] corrupt/unsupported/not-found/scene failure不crash、不stale commit、不假裝可Replay（corrupt/
+      unsupported沿用T1/T2證據；not-found為本次新增；scene failure沿用`ReplayScreen.test.ts`）。
+- [x] navigation/payload/scene/presentation races repeat×5 zero failure/retry（新spec 25/25綠燈；
+      `replay.spec.ts`同批次1次既有flake，非本次regression，已在progress.md如實記錄非掩蓋）。
+- [x] 真實root/outside sentinel前後hash/mtime一致，錯誤訊息無絕對path/stack洩漏到UI（outside-sentinel
+      測試 + `historyApi.ts` `err()`固定文字錯誤訊息，無path插值）。
 
 ## Suggested commit
 

@@ -138,7 +138,10 @@ async function snapshotRealRoot(root: string): Promise<RealRootSnapshot> {
   return { realHistoryRoot: path.resolve(root), existed, entries };
 }
 
-async function writeOutsideSentinel(sentinelPath: string, realHistoryRoot: string): Promise<void> {
+/** Exported for reuse by standalone specs (e.g. `tests/e2e/stage10-failure-recovery.spec.ts`) that
+ * need the same before/after real-root proof without allocating a full `Stage10AcceptanceEnvironment`
+ * (single source of truth for the sentinel format, NFR-51.3). */
+export async function writeOutsideSentinel(sentinelPath: string, realHistoryRoot: string): Promise<void> {
   const snapshot = await snapshotRealRoot(realHistoryRoot);
   await fs.mkdir(path.dirname(sentinelPath), { recursive: true });
   await fs.writeFile(sentinelPath, JSON.stringify(snapshot, null, 2), 'utf8');

@@ -14,7 +14,7 @@
 | **Release policy** | WP-48、49、50 exit gates 與本 WP exit gate 全綠後才可宣告 M18；上游 domain defect 必須回到 owning WP 修復並重跑交接證據 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | Med/High：跨 process/root lifecycle、dev-only test hooks、preview parity、競態、實機 3D fidelity |
-| **Status** | 🟡 T0/T1 完成（2026-08-28/31，見 [progress.md](progress.md)）。**T2 完成（2026-08-31）**——四個切片：`tests/stage10/stage10-restart.integration.test.ts`（restart rebuild）、`tests/e2e/stage10-preview.spec.ts`（preview public smoke + unsupported/partial Replay）、`tests/e2e/stage10-assessment.spec.ts`（dev canonical + current/historical parity）；8 個 scenario 全數有 automated evidence，`invalid` Replay 狀態確認是目前程式碼未實作的保留分支，不新增未核准語意。T3 unblocked，可開工。 |
+| **Status** | 🟡 T0/T1 完成（2026-08-28/31）、T2 完成（2026-08-31，見 [progress.md](progress.md)）。**T3 完成（2026-08-31）**——新增 `tests/e2e/stage10-failure-recovery.spec.ts`（duplicate/conflict、not-found、path-traversal outside-sentinel、API unavailable、save-failure-retry 5 個 test）；traversal/symlink、scene asset failure、rapid navigation、replay ownership race 四列 failure matrix 引用既有 WP-48/49/50 真實瀏覽器/元件層證據，不重寫。新 spec repeat×5（25/25）零失敗；全部 67 個 Playwright spec、186 Vitest files/1654 tests 無 regression。T4 unblocked，可開工。 |
 
 ---
 

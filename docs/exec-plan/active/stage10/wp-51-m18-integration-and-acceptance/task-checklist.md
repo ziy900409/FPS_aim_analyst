@@ -7,7 +7,7 @@
 | ✅ | **T0** Entry／handoff gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-48～50 exit evidence | High |
 | ✅ | **T1** Acceptance harness／roots／evidence | [T1-acceptance-harness.md](T1-acceptance-harness.md) | T0 seams confirmed | High |
 | ✅ | **T2** Cross-WP canonical journeys | [T2-cross-wp-happy-paths.md](T2-cross-wp-happy-paths.md) | T1 + WP-48～50 exits | High |
-| ⬜ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](T3-failure-recovery-safety.md) | T1～T2 | High |
+| ✅ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](T3-failure-recovery-safety.md) | T1～T2 | High |
 | ⬜ | **T4** Scale／lifecycle／a11y | [T4-scale-lifecycle-a11y.md](T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
 | ⬜ | **T5** Operations／manual release | [T5-operations-manual-release.md](T5-operations-manual-release.md) | T2～T4 | Med |
 | ⬜ | **T-exit** M18 gate | [T-exit-gate.md](T-exit-gate.md) | T0～T5 + upstream exits | High |
