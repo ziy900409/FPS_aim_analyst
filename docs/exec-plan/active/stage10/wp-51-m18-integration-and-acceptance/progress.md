@@ -462,6 +462,69 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   **T4 尚未完成**：5,000-run History 首 100 rows P95、100-run analysis cold/warm、42,000-tick Replay
   cached-first-frame/seek 的真實瀏覽器量測（matrix rows 1-3）；acceptance command wall time 記錄。
 
+- **2026-08-31**：**T4 進行中**（第四個切片，opt-in benchmark）— `tests/stage10/stage10-scale.perf.ts` +
+  `scripts/run-stage10-scale-benchmark.mjs` + `package.json` `test:stage10:scale`（README §2.5
+  「measurement」grade，matrix rows 1-3：History 首 100 rows P95、100-run analysis cold/warm、
+  42,000-tick Replay cached-first-frame）。
+
+  **範圍判斷**：`historyRepository.perf.test.ts`（WP-48，opt-in）已覆蓋 5,000-run cold rebuild／warm
+  list 的 Node-level一半；`replay-perf.test.ts`（WP-50）已覆蓋 `normalizeReplayRecording`／
+  `sampleReplay` 在 42,000-tick 規模下的 pure-function P95。這支腳本補跨層那一半：在**真實 dev
+  bundle**上用**真實瀏覽器**（msedge channel）跑這些 gate，而不是再猜一次 pure function 效能。刻意
+  用 `Stage10Runner`（T1 既有的 fresh dev server lifecycle）配一個**專屬、剛配置的隔離 root**，不是
+  全部其他 Playwright spec 共用、從不清空的 `.playwright-tmp/history-dev`——那個共用 root 已在本次
+  session 的 T4 前幾個切片撞過兩次「因為歷史累積筆數太多，P95 樣本失真」的坑（見下方 Surprises），
+  對一支效能量測腳本而言，用被污染的資料集本身就會讓 P95 失去意義。
+
+  Fixture 直接寫檔（bypass 公開 API，比照 WP-48 `historyRepository.perf.test.ts` 既有的
+  `seedFixtures` 手法）：150 個單一 participant（每人 1 drill／1 run，> `ParticipantBrowser` 的
+  `CHUNK_SIZE=100`，讓「首 100 rows」真的有意義）、1 個 participant 在已註冊指標的
+  `spider-shot-v2` 下有 100 筆 run（100-run analysis gate）、1 筆真實 42,000-tick（對齊
+  `replay-perf.test.ts` 自己的 `capacityForDrill(128,300)` 數字）、`scene.assetPackVersion` 對齊真實
+  `peek-corridor-v1`（比照本次 T4 前面切片已修過的同一個坑）的 `full`-classified run。
+
+  **開發過程中的三個 surprise**（皆已修正並記錄，避免下次重踩）：
+
+  1. 檔案開頭的 JSDoc 註解裡寫了 `5,000-run *cold rebuild*/warm-list`——markdown 斜體語法的
+     `*.../*` 剛好組出一個 `*/`，esbuild 把它當成註解提早結束，後面的英文字被當成程式碼解析，直接
+     `Transform failed`。改寫成不含 `*/` 序列的措辭。
+  2. 「100-run analysis cold/warm」第一版兩次都走「關閉 History→重新打開→搜尋→點 participant→點
+     drill」整條鏈——warm（271ms 附近）量到比 cold 還慢，因為兩次量的其實都是同一條「關閉/重開 +
+     150+100 筆 participant 清單重新渲染」鏈路，根本沒有隔離出「同一個 drill overview 被重新造訪」
+     這件事本身的成本。改成 warm 只用麵包屑 `[data-history-crumb="drills"]` 回到 drill 清單、再點同一
+     個 drillId——不離開 History、不重新搜尋——之後 cold=336~401ms／warm=234~287ms，warm 穩定小於
+     cold，符合直覺。
+  3. 「42k-tick Replay cached-reopen」第一版只採**單一樣本**（`Date.now()` 包一次 close→reopen），
+     量到 1502ms／1506ms（budget 1500ms 邊緣）、也有一次 884ms——同一支腳本、同一台機器，數字大幅
+     跳動。改採多樣本 P95（比照本檔自己「History 首 100 rows」已經在用的 10-sample P95 紀律）後，
+     15 個樣本裡混著多數 650-950ms 與少數 1300-1900ms 的離群值，P95 本身仍隨著離群值恰好落在哪個
+     百分位而在 1469ms（過關）與 1927ms（不過關）之間跳動——見下方「尚待釐清」。
+
+  **驗證**：`npm run typecheck` exit 0；`RUN_STAGE10_SCALE_BENCHMARK=1 npm run test:stage10:scale`
+  本機實測 5 次（含改進 sample count 前後），History 首 100 rows P95 穩定 205-213ms（< 500ms
+  budget，穩定通過）；100-run analysis cold 336-401ms（< 2000ms，穩定通過）／warm 234-287ms
+  （< 300ms，穩定通過）；42k-tick cached-reopen P95（15 samples）兩次分別為 1469ms（過關）與
+  1927ms（不過關）——**尚待釐清，未強行判定通過**（見下）。跑完後 `netstat` 確認 5173 port
+  無殘留 LISTENING；`npm run test`（Vitest，確認 `.perf.ts` 副檔名不被既有 `vite.config.ts`
+  `test.include` 收）186 files／1654 tests 不變；`npx playwright test --project=edge`
+  （既有 71 個 spec）本次出現兩個失敗——`history-library.spec.ts`「search filtering is
+  client-side」與`replay.spec.ts`「event markers...prev/next」——獨立重跑（只跑這兩個 test）確認
+  前者為本機此時背景負載（連續跑 5 次 scale benchmark，`Get-Process`確認同時有 20+ 個 msedge／
+  msedgewebview2 process 佔用中）造成的資源競爭 flake（獨立跑綠燈）、後者是已記錄多次的既有
+  `replay.spec.ts` A-50.5 計時性斷言 flake（同一種 off-by-small-margin 訊號：`afterPrev<=afterNext`
+  差 85-95ms 量級），皆非本次改動造成的 regression，如實記錄非掩蓋。
+
+  **尚待釐清（誠實記錄，不強行判定綠燈）**：42,000-tick Replay 的 cached-reopen P95
+  在本機（Windows 11、RTX 4070 Laptop、Edge msedge channel，同一份 T0 記錄的 reference hardware）
+  多次量測落在 884ms～1927ms 之間，對 1500ms budget 而言時而通過時而略微超標——樣本本身（多數落在
+  650-950ms，偶爾出現 1300-1900ms 的離群值）較像是這台開發機當下背景負載造成的 jitter（同一時段
+  `Get-Process` 顯示大量 msedge/msedgewebview2 佔用），而非可重現的效能回歸；但這是主觀判斷，未經
+  乾淨環境（無背景負載）對照驗證，**不排除是真實需要 WP-50 關注的問題**。依 README T4 failure
+  modes 表「benchmark噪音／冷暖混淆 → 固定dataset、warmup與sample count；報告P95/environment，不調寬
+  threshold掩蓋」的紀律：本切片**不**放寬 1500ms budget、**不**捨棄離群樣本、如實記錄全部原始樣本
+  （見 evidence JSON 與上方 log）。此列**留給 T5 或 WP-50 在較安靜的環境下重跑確認**，T4 DoD 的
+  「所有matrix gates達標」暫不能整列打勾。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後
