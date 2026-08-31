@@ -364,6 +364,104 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   掩蓋）；真實 root／outside sentinel 前後 hash/mtime 一致，錯誤訊息無絕對路徑洩漏（`STORAGE_IO`/
   `RUN_NOT_FOUND` 等錯誤訊息皆為固定文字，不含 root path，見 `historyApi.ts` `err()` 呼叫處）。
 
+- **2026-08-31**：**T4 進行中**（第一、二個切片）— `tests/e2e/stage10-accessibility.spec.ts`（FR-51.13/
+  NFR-51.6）與 `tests/e2e/stage10-lifecycle-scale.spec.ts`（FR-51.12/NFR-51.4）。
+
+  **範圍判斷**：既有 spec 全部用 `.click()` 驅動 History/Replay，從未有一支真正只用鍵盤事件
+  （`page.keyboard.press()`）走完整條 launch→History→Participant→drill→run→Replay controls/events→
+  Back 路徑；`tests/replay/presentation-lifecycle.test.ts`（WP-50 T3）已在 Vitest 層對 mocked
+  renderer 證明 50 次 enter/leave 零殘留 scene children，但從未在真實瀏覽器、真實
+  `ReplayScreen`/`ReplayController`/`PresentationCoordinator` 接線下驗證過同一件事，也從未量過真實
+  abort commit 時間。這兩個切片就是補這兩塊。
+
+  **意外發現並診斷兩個真實既有缺陷**（詳見 [KI-017](../../../../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md)／
+  [KI-018](../../../../known_issue/KI-018-history-search-keystroke-focus-steal.md)，已於前一個獨立
+  commit 記錄，本次不重複貼細節）：
+
+  1. **KI-017（WP-50 owner）**：Run Detail「3D 重播」在 `main.ts` 頂層 `const replayController`
+     初始化完成前被點擊／鍵盤觸發會拋出未捕捉的 TDZ `ReferenceError`，靜默無反應——與已修的 KI-013
+     同一類根因，只是換一個變數。第一次撰寫鍵盤流程測試時，因為沒有像其他既有 dev-mode spec 一樣先
+     `await` `window.__fpsTest` 掛上，比一般測試更快走到這一步，意外重現（`page.on('pageerror', ...)`
+     捕捉到完整 stack）。**回應**：不修 `main.ts`（超出 WP-51 授權），測試側比照既有慣例先等
+     `__fpsTest`，繞開這個競態但不掩蓋——已寫入 KI-017 供 WP-50 承接。
+  2. **KI-018（WP-49 owner）**：History「搜尋 Participant」用真實 `page.keyboard.type()` 逐字輸入時，
+     只有第一個字元留在欄位——`navigator.replace()`（search-as-you-type）每次都給
+     `HistoryScreen.render()` 的 focus-on-navigation guard（`route !== lastRoute`，參考相等）一個
+     全新物件，被誤判為真正導覽而把焦點搶回 `<main>`。既有 spec 全部用 `.fill()`（單次設值）填搜尋欄，
+     從未用真實逐字輸入測過這條路徑。**回應**：不修 `HistoryScreen.ts`/`ParticipantBrowser.ts`，測試
+     側改用「fixture `startedAt` 設在極遠的未來，讓它永遠排在未搜尋清單的第一列，直接 Tab 選取」繞開，
+     不執行會觸發此 bug 的逐字搜尋——已寫入 KI-018 供 WP-49 承接。
+
+  **兩個額外的、只在真實迭代中才會發現的測試方法論陷阱**（非產品 bug，記錄避免下次重踩）：
+
+  3. `tabUntilButton` 的第一版斷言用 `document.activeElement?.textContent.includes(needle)` 判斷是否
+     已 Tab 到目標列——但 `<main>`（`HistoryScreen`/`ReplayScreen` 導覽後聚焦的 tabindex=-1 容器）的
+     `textContent` 會遞迴串接所有子孫節點的文字，導致還沒按任何一次 Tab、焦點仍在 `<main>` 本身時
+     斷言就假性成立。改成同時檢查 `tagName === 'BUTTON'`。
+   4. 固定字面值 `FIXTURE_STARTED_AT`（一個寫死的未來日期）在單獨執行時可行，但在
+      `--repeat-each`／全 suite 平行執行下，多個並行 worker 或多次本機重跑會產生多筆
+      **完全相同**的 `startedAt`——`listParticipants` 對相同 `latestStartedAt` 用 `participantId`
+      字面排序 tie-break，導致目標列被擠到 Tab 按壓預算之外。改成
+      `fixtureStartedAt()`（未來錨點 + `Date.now()`），讓每次呼叫都嚴格大於所有過去呼叫，即使在共用、
+      從不清空的 `.playwright-tmp/history-dev` root 上累積再多次歷史紀錄也不會相撞。
+   5. `stage10-lifecycle-scale.spec.ts` 的 50-cycle 測試第一版直接對「每個 `EventTarget`」計數
+      `addEventListener`／`removeEventListener` 淨值，50 次循環後從 228 漲到 678——但這不是真的洩漏：
+      `ReplayTransport` 的按鈕/輸入框本來就設計成「每次 `render()` 整組重建」（`ReplayScreen.ts`
+      自己的註解），而對一個已從 DOM 移除的子樹呼叫 `.remove()`**不會**觸發其子孫節點的
+      `removeEventListener`（瀏覽器改用垃圾回收處理，不是顯式解除註冊）——這是正確實作下的預期行為，
+      不是成長。改成只計 `window`/`document`（唯二真正跨越每個循環存活的對象），並額外加一個
+      `document.querySelectorAll('*').length` 的總 DOM 節點數斷言（作為「有沒有 subtree 真的沒被清
+      乾淨」的獨立訊號），兩者在真實 50 次循環後都精確回到 baseline。
+   6. abort-timing 測試第一版用 `Date.now()`包住一次 Playwright `.click()` +
+      `expect().toBeHidden()`，量到 132ms（略超 100ms 預算）——但讀
+      `ReplayController.close()`/`ReplayScreen.hide()` 原始碼確認整條 abort 路徑是完全同步的單一
+      call stack（無 `await`），132ms 幾乎全部是 Playwright 自己的 IPC／assertion polling
+      overhead，與 app 實際 commit 速度無關。改成整個量測搬進
+      `page.evaluate()`（`performance.now()`包住一次合成 `.click()`，同一 call 內立即讀
+      `root.style.display`），準確反映 NFR-51.4 真正在意的「同步 commit 有多快」，不是「test harness
+      的往返成本」。
+
+  **驗證**：
+  - `npx playwright test tests/e2e/stage10-accessibility.spec.ts --project=edge --repeat-each=5
+    --retries=0`：5/5 綠燈（含平行 worker 下亦綠，證明 surprise #4 的修正確實有效）。
+  - `npx playwright test tests/e2e/stage10-lifecycle-scale.spec.ts --project=edge --repeat-each=3
+    --retries=0`：6/6 綠燈。
+  - `npx playwright test --project=edge`（全部 70 個既有 + 2 新 spec）：70/70 綠燈。同一批次曾出現
+    `full-drill.spec.ts` 兩個 harness-readiness timeout（全 70 個 spec 一次全平行跑的資源競爭），
+    獨立重跑（只跑那兩個 test）100%綠燈，確認是全 suite 平行負載下的既有資源競爭 flake、非本次改動
+    造成的 regression，如實記錄非掩蓋（沿用 T2/T3 已建立的「既有 flake 不重跑掩蓋」紀律）。
+  - `npm run typecheck`：exit 0。
+  - `npm run test`（Vitest）：186 files／1654 tests 全綠，與 T3 baseline 一致，無 regression。
+
+  **T4 尚未完成**：5,000-run History 首 100 rows P95、100-run analysis cold/warm、42,000-tick Replay
+  cached-first-frame/seek 的真實瀏覽器量測（matrix rows 1-3）；acceptance command wall time 記錄。
+  （下一個切片已補上 network/response-shape 直接驗證，見下條。）
+
+- **2026-08-31**：**T4 進行中**（第三個切片）— `tests/e2e/stage10-projection-shape.spec.ts`
+  （FR-51.12，DoD「scale UI只讀summary/analysis projection，未批次下載full payload」）。
+
+  **範圍判斷**：既有全部 spec 都是斷言 DOM 內容，從未有一支直接檢查瀏覽器實際收到的 HTTP response
+  body 形狀——「List/detail 不下載 full payload」目前完全只靠信任 client 程式碼寫得對，沒有真正的
+  network-level 證據。本切片用 `page.on('response', ...)` 攔截整條 History 導覽期間所有
+  `/api/history/*` 回應，對每個 list 端點（`participants`／`.../drills`／`.../drills/:id/runs`）的
+  JSON body 遞迴掃描是否含有 `ticks`/`events` 陣列欄位；同時對 run-detail 端點
+  （`GET /api/history/runs/:runId`）反向斷言**必須**含有兩者，作為「這個掃描方法真的抓得到东西」的
+  sanity check（避免斷言在一個永遠找不到任何東西的壞掃描器上假性通過）。
+
+  一個小 bug（撰寫時發現，非產品缺陷）：檔案頂層原本沿用既有慣例宣告了
+  `const URL = 'http://localhost:5173/'`，這個名稱**遮蔽了 Node 全域的 `URL` 建構子**——測試內用
+  `new URL(url).pathname` 判斷是否為 run-detail 端點時直接拋 `TypeError: URL is not a constructor`。
+  改名為 `BASE_URL`（其餘既有 spec 之所以沒踩到，是因為它們從未在同一個檔案裡同時用到字串常數
+  `URL` 與全域 `URL` 建構子）。
+
+  **驗證**：`npx playwright test tests/e2e/stage10-projection-shape.spec.ts --project=edge
+  --repeat-each=5 --retries=0` 5/5 綠燈；`npx playwright test --project=edge`（全部 71 個既有 + 新
+  spec）71/71 綠燈，無 regression；`npm run typecheck` exit 0；`npm run test`（Vitest）186 files／
+  1654 tests，與 baseline 一致。
+
+  **T4 尚未完成**：5,000-run History 首 100 rows P95、100-run analysis cold/warm、42,000-tick Replay
+  cached-first-frame/seek 的真實瀏覽器量測（matrix rows 1-3）；acceptance command wall time 記錄。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後
