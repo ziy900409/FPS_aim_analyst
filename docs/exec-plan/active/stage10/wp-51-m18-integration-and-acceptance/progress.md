@@ -173,6 +173,34 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   impact**：本次 T0 純讀碼稽核與文件更新，未修改任何既有 symbol，故不適用 impact 分析
   （T0-entry-gate.md 步驟 5 僅在「將修改的既有 symbol」時才要求）。
 
+- **2026-08-31**：**T2 進行中**（第一個切片）— `tests/stage10/stage10-restart.integration.test.ts`。
+
+  範圍判斷：`tests/history/historyRepository.test.ts` 已證明單一 run 的 restart 機制（WP-48 exit
+  evidence）；`Stage10FixtureFactory.test.ts`（T1）已證明 tie-break 不合併、cohort 分離、
+  unregistered-metric 投影、corrupt/unsupported bootstrap 偵測皆在**單一** repository instance 存活期間
+  成立。FR-51.4 真正尚未被證明的，只有這些性質是否在 close()→reopen()（同 root、不共享記憶體）**之後**
+  仍然整批成立——這正是本切片的唯一範圍，刻意不重做上游已覆蓋的部分。
+
+  做法：用 `buildStage10Fixtures` 建立完整 roster，寫入 corrupt/unsupported bootstrap 檔 → 建
+  repository A → initialize → 存入全部 assessment payloads（Practice 確認被拒）→ snapshot（participant
+  順序／每個 participant+drill 的 run 列表／每個 run 的 loadRun payload）→ close → 建 repository B（同
+  root）→ initialize → 重新 snapshot → 斷言兩次 snapshot deep-equal，並額外針對 tie-break 順序、cohort
+  分離（reload 後的 payload 仍被 `DrillMetricRegistry`／`checkCompatibility` 判為不相容）、
+  unregistered-metric 投影、Practice 缺席個別具名斷言（deep-equal 本身失敗時只會說「不一樣」，具名斷言
+  才能指出壞在哪個性質）。
+
+  一個 surprise：`HistoryIndexReport`（`initialize()` 回傳值）是呼叫當下的快照，不是活的計數器——
+  `firstReport`（在 saveRun 之前 initialize）的 `validRunCount` 是 0，不能拿來跟 `secondReport`（restart
+  後、已包含全部 run 的 initialize）比較；改為跟 `assessmentPayloads.length` 比較，`invalidFileCount`／
+  `unsupportedFileCount`（bootstrap 檔案、兩次 initialize 之間未變動）才是可比的部分。
+
+  驗證：`npx vitest run tests/stage10/stage10-restart.integration.test.ts` 綠燈；`npm run typecheck`
+  exit 0。
+
+  **T2 尚未完成**：preview production-bundle smoke（公開 API seed + 公開 UI、無 DEV hook）、dev canonical
+  Assessment 與 current/historical parity、replay full/partial/unsupported 的 Stage10-owned automated
+  evidence 仍待後續切片。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後
