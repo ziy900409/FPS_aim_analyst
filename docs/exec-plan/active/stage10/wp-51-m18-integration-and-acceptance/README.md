@@ -14,7 +14,7 @@
 | **Release policy** | WP-48、49、50 exit gates 與本 WP exit gate 全綠後才可宣告 M18；上游 domain defect 必須回到 owning WP 修復並重跑交接證據 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | Med/High：跨 process/root lifecycle、dev-only test hooks、preview parity、競態、實機 3D fidelity |
-| **Status** | 🟡 T0 完成（2026-08-31，見 [progress.md](progress.md)）——WP-48～50 handoff 矩陣、baseline 重跑、dev/preview/browser matrix 與 OQ-51.1～3 皆已凍結，確認一項既有 handoff blocker（WP-48 Vitest-level OS temp，不阻塞 M18）與一項 planned-vs-actual 落差（無 fs-injection port，T3 改走既有 fake-fetch/真實壞檔機制）。T1 已完成（2026-08-28）。T2 unblocked，可開工。 |
+| **Status** | 🟡 T0/T1 完成（2026-08-28/31，見 [progress.md](progress.md)）。**T2 完成（2026-08-31）**——四個切片：`tests/stage10/stage10-restart.integration.test.ts`（restart rebuild）、`tests/e2e/stage10-preview.spec.ts`（preview public smoke + unsupported/partial Replay）、`tests/e2e/stage10-assessment.spec.ts`（dev canonical + current/historical parity）；8 個 scenario 全數有 automated evidence，`invalid` Replay 狀態確認是目前程式碼未實作的保留分支，不新增未核准語意。T3 unblocked，可開工。 |
 
 ---
 

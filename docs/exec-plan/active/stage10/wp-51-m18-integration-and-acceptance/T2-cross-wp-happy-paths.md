@@ -33,12 +33,25 @@ storage/API/path defect回WP-48；route/result/metric/trend回WP-49；support/se
 
 ## Definition of Done
 
-- [ ] dev canonical Assessment從完成到Replay/Back全程通過，且disk/API/UI identity一致。
-- [ ] preview public smoke通過且無DEV-only hook。
-- [ ] restart後只從JSON重建相同列表、Result與Replay。
-- [ ] exact grouping/order、parity、cohort與unknown metric cases通過。
-- [ ] Practice保留Result/download並有零API/零file/零history證據。
-- [ ] full/partial/unsupported/invalid及source return均有automated evidence。
+- [x] dev canonical Assessment從完成到Replay/Back全程通過，且disk/API/UI identity一致。
+      （`tests/e2e/stage10-assessment.spec.ts`；`tests/e2e/replay.spec.ts`/`history-library.spec.ts`
+      已覆蓋 identity/Back，本切片補上 current/historical metric-card parity 斷言。）
+- [x] preview public smoke通過且無DEV-only hook。（`tests/e2e/stage10-preview.spec.ts`）
+- [x] restart後只從JSON重建相同列表、Result與Replay。
+      （`tests/stage10/stage10-restart.integration.test.ts`：HistoryRepository 層級 close+reopen，
+      涵蓋 tie-break/cohort/unregistered-metric/bootstrap 計數。）
+- [x] exact grouping/order、parity、cohort與unknown metric cases通過。
+      （grouping/order/cohort/unknown-metric：`stage10-preview.spec.ts` + restart integration test；
+      parity：`stage10-assessment.spec.ts`。）
+- [x] Practice保留Result/download並有零API/零file/零history證據。
+      （零 API/history 已由 T1 `cli.ts` FR-51.6 evidence + 本次 restart/preview 測試中的
+      `PRACTICE_NOT_ARCHIVABLE` 斷言覆蓋；Result/download 保留與 in-memory Replay 由既有
+      `replay.spec.ts` A-50.3 覆蓋，未重做。）
+- [x] full/partial/unsupported/invalid及source return均有automated evidence。
+      （full：`stage10-assessment.spec.ts` + `replay.spec.ts`；unsupported/partial：
+      `stage10-preview.spec.ts`；invalid：確認是目前程式碼中沒有路徑會產生的保留分支
+      〈`ReplayScreenState`/`ReplayController` 只實作 idle/loading/error/unsupported/ready〉，
+      不新增未核准語意，見 progress.md 2026-08-31 第四個切片記錄。）
 
 ## Suggested commit
 
