@@ -4,7 +4,7 @@
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry／handoff gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-48～50 exit evidence | High |
+| ✅ | **T0** Entry／handoff gate | [T0-entry-gate.md](T0-entry-gate.md) | WP-48～50 exit evidence | High |
 | ✅ | **T1** Acceptance harness／roots／evidence | [T1-acceptance-harness.md](T1-acceptance-harness.md) | T0 seams confirmed | High |
 | ⬜ | **T2** Cross-WP canonical journeys | [T2-cross-wp-happy-paths.md](T2-cross-wp-happy-paths.md) | T1 + WP-48～50 exits | High |
 | ⬜ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](T3-failure-recovery-safety.md) | T1～T2 | High |

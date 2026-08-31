@@ -57,8 +57,8 @@ WP-50 Definition of Done：至少一個代表性official Assessment可由磁碟J
 
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry／handoff gate | [T0-entry-gate.md](wp-51-m18-integration-and-acceptance/T0-entry-gate.md) | WP-48～50 exit evidence | High |
-| ⬜ | **T1** Acceptance harness／roots／evidence | [T1-acceptance-harness.md](wp-51-m18-integration-and-acceptance/T1-acceptance-harness.md) | T0 seams confirmed | High |
+| ✅ | **T0** Entry／handoff gate | [T0-entry-gate.md](wp-51-m18-integration-and-acceptance/T0-entry-gate.md) | WP-48～50 exit evidence | High |
+| ✅ | **T1** Acceptance harness／roots／evidence | [T1-acceptance-harness.md](wp-51-m18-integration-and-acceptance/T1-acceptance-harness.md) | T0 seams confirmed | High |
 | ⬜ | **T2** Cross-WP canonical journeys | [T2-cross-wp-happy-paths.md](wp-51-m18-integration-and-acceptance/T2-cross-wp-happy-paths.md) | T1 + WP-48～50 exits | High |
 | ⬜ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](wp-51-m18-integration-and-acceptance/T3-failure-recovery-safety.md) | T1～T2 | High |
 | ⬜ | **T4** Scale／lifecycle／a11y | [T4-scale-lifecycle-a11y.md](wp-51-m18-integration-and-acceptance/T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
