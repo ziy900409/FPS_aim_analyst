@@ -40,6 +40,12 @@ export interface ResultScreenOptions {
   /** WP-49 T5 (FR-49.12) — navigates to this result's exact Participant/drill history. The button
    * that triggers this stays hidden until `setHistoryTarget` supplies a target. */
   onOpenHistory?: (target: HistoryDrillTarget) => void;
+  /** WP-50 T6 (FR-50.14) — opens the first-person 3D Replay for the payload backing the currently
+   * shown result. Unlike `onOpenHistory`, this is available immediately (Assessment or Practice,
+   * saved or not — OQ-50.2/D-50-P9): the caller already has the full in-memory `ExportPayload` the
+   * moment `show()` is called, so there is no target to wait for. Full/partial/unsupported is
+   * decided by the Replay screen itself after entry, not here. */
+  onReplay?: () => void;
 }
 
 export function createResultScreen(options: ResultScreenOptions = {}): ResultScreenHandle {
@@ -109,6 +115,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
   const exportJSONButton = makeResultActionButton('匯出 JSON', 'export-json');
   const exportCSVButton = makeResultActionButton('匯出 CSV', 'export-csv');
   const historyEntryButton = makeResultActionButton('查看此 Drill 歷史', 'open-history');
+  const replayButton = makeResultActionButton('3D 重播', 'replay');
   const closeButton = makeResultActionButton('返回設定', 'close');
   const actionButtons = [restartButton, exportJSONButton, exportCSVButton, closeButton];
 
@@ -116,6 +123,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
   exportJSONButton.style.display = options.onExportJSON === undefined ? 'none' : '';
   exportCSVButton.style.display = options.onExportCSV === undefined ? 'none' : '';
   historyEntryButton.style.display = 'none'; // shown only via setHistoryTarget (FR-49.12)
+  replayButton.style.display = options.onReplay === undefined ? 'none' : '';
   if (options.onRestart === undefined && options.onExportJSON === undefined && options.onExportCSV === undefined) {
     restartHint.style.display = 'none';
   }
@@ -129,6 +137,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     if (options.onOpenHistory === undefined || historyTarget === undefined) return;
     options.onOpenHistory(historyTarget);
   });
+  replayButton.addEventListener('click', () => options.onReplay?.());
 
   restartButton.addEventListener('click', () => {
     if (options.onRestart === undefined) return;
@@ -146,7 +155,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     root.style.display = 'none';
   });
 
-  actions.append(restartHint, restartButton, exportJSONButton, exportCSVButton, historyEntryButton, closeButton);
+  actions.append(restartHint, restartButton, exportJSONButton, exportCSVButton, historyEntryButton, replayButton, closeButton);
 
   panel.append(
     title,

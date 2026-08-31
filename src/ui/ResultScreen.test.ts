@@ -223,6 +223,32 @@ describe('WP-49 T5 — "查看此 Drill 歷史" entry (FR-49.12)', () => {
   });
 });
 
+describe('WP-50 T6 — "3D 重播" entry (FR-50.14)', () => {
+  it('is hidden when onReplay is not supplied', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(result);
+
+    expect(action(document.body, 'replay').style.display).toBe('none');
+  });
+
+  it('is visible immediately on show() (no target to wait for) and calls onReplay when clicked', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const onReplay = vi.fn();
+    const screen = createResultScreen({ onReplay });
+
+    screen.show(result);
+
+    const button = action(document.body, 'replay');
+    expect(button.style.display).toBe('');
+    button.click();
+    expect(onReplay).toHaveBeenCalledOnce();
+  });
+});
+
 describe('WP-48 T5 save-status embed seam', () => {
   it('embeds saveStatusView inside the panel when provided, and omits it otherwise', () => {
     const document = new FakeDocument();
