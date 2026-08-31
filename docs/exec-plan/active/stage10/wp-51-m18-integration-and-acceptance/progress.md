@@ -201,6 +201,37 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   Assessment 與 current/historical parity、replay full/partial/unsupported 的 Stage10-owned automated
   evidence 仍待後續切片。
 
+- **2026-08-31**：**T2 進行中**（第二個切片）— `tests/e2e/stage10-preview.spec.ts`（FR-51.5/51.7/
+  51.8/51.11、OQ-51.3）。
+
+  範圍判斷：沒有任何既有 spec 對 preview（4173）跑過完整 UI journey——`history-api-health.spec.ts`／
+  `isolation.spec.ts` 只驗 health/headers，`history-library.spec.ts`／`replay.spec.ts` 只在 dev 跑。本
+  切片用 Stage10FixtureFactory 的完整 roster，只透過公開 `POST /api/history/runs` API seed（不用
+  `__fpsTest`），從公開 History UI 走完 tie-break／exact grouping／unregistered-metric／Practice 排除／
+  unsupported Replay，證明這些既有 UI 契約在**真正 production bundle**（`vite build && vite preview`）
+  上同樣成立，而不只是在 dev。
+
+  兩個 surprise（皆已用真實瀏覽器驗證，非猜測）：
+  1. Stage10 fixture 的 `events: []`（`makeAssessmentPayload` 預設）→ `visibleSampleCount=0` →
+     `qualityGateStatusForPayload`（`src/history/DrillMetricRegistry.ts:265`）判定未過 quality gate →
+     `listCompatibilityCohorts` 過濾掉兩筆 spider-shot-v2 cohort run → cohort 選擇器完全不 render（不是
+     顯示 1 個，是 0 個按鈕）。原本斷言「cohort selector 顯示 2 個按鈕」是錯的——改為斷言兩筆 run 仍各自
+     是獨立 run-list row（未被合併）且 trend 顯示明確的 `insufficient-data` 訊息（README
+     TREND_EMPTY_REASON_LABELS，「目前沒有足夠的合格資料...quality gate 排除」）。這其實是額外收穫：
+     「registered drill 但 0 筆過 quality gate」這個 trend empty-state，WP-49 自己的
+     `history-library.spec.ts` 從未測過（它的 fixture 都靠真實 sim tick 通過 quality gate）。
+  2. `ReplayScreen.ts` 的 unsupported panel（`data-section="replay-unsupported"`）自己另外 append 了一顆
+     文字/action 都是「返回」/`back` 的按鈕，跟 top bar 的返回鈕重複——`getByRole('button',{name:'返回'})`
+     在 `unsupported` 狀態下會撞兩個元素（strict-mode violation）。改用
+     `[data-section="replay-unsupported"] [data-replay-action="back"]` 精準定位到面板內那顆。
+
+  驗證：`npx playwright test tests/e2e/stage10-preview.spec.ts --project=edge` 2/2 綠燈；
+  `npx playwright test --project=edge`（全部 60 個既有 + 新 spec）60/60 綠燈，無 regression；
+  `npm run typecheck` exit 0。
+
+  **T2 尚未完成**：dev canonical Assessment 與 current/historical parity、replay full 的
+  Stage10-owned automated evidence 仍待後續切片。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後
