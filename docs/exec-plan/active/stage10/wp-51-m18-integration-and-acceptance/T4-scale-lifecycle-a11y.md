@@ -41,11 +41,28 @@
 
 ## Definition of Done
 
-- [ ] 所有matrix gates達標並有可比較environment/timing report。
-- [ ] scale UI只讀summary/analysis projection，未批次下載full payload。
-- [ ] 50-cycle與abort gates通過，沒有listener/rAF/presentation/resource growth。
-- [ ] History→Replay全流程keyboard可完成，focus/ARIA/warning assertions通過。
-- [ ] acceptance command wall time有記錄；任何豁免有owner/deadline而非靜默跳過。
+- [ ] 所有matrix gates達標並有可比較environment/timing report（見progress.md 2026-08-31條目：
+      History首100 rows／100-run analysis cold-warm／normalize-seek沿用Node-level既有evidence皆已
+      達標且有environment/timing report；**唯「42k-tick cached-reopen P95」一列在本機重複量測介於
+      884-1927ms、對1500ms budget時而通過時而略超標**，判斷較像是本機當下背景負載造成的jitter但未經
+      乾淨環境對照驗證，如實記錄不強行判定通過，留給T5或WP-50在較安靜環境重跑確認）。
+- [x] scale UI只讀summary/analysis projection，未批次下載full payload（
+      `tests/e2e/stage10-projection-shape.spec.ts`：真實network response-shape inspection，含
+      run-detail端點必須含ticks/events的sanity check）。
+- [x] 50-cycle與abort gates通過，沒有listener/rAF/presentation/resource growth（
+      `tests/e2e/stage10-lifecycle-scale.spec.ts`：真實瀏覽器50次enter/leave canvas/window-document
+      listener/rAF/DOM node count零成長，abort commit在同步call stack內、performance.now()量測
+      遠低於100ms budget）。
+- [x] History→Replay全流程keyboard可完成，focus/ARIA/warning assertions通過（
+      `tests/e2e/stage10-accessibility.spec.ts`：僅用.focus()+page.keyboard.press()走完
+      launch→History→Participant→drill→run→Replay controls/events→Back，含兩段真實Tab-order證明與
+      role/aria-label/aria-pressed/aria-valuetext斷言；過程中發現並記錄兩個真實upstream缺陷
+      [KI-017](../../../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md)／
+      [KI-018](../../../known_issue/KI-018-history-search-keystroke-focus-steal.md)，測試側繞開但未
+      掩蓋，修復留給WP-50／WP-49）。
+- [x] acceptance command wall time有記錄；任何豁免有owner/deadline而非靜默跳過（
+      `tests/stage10/cli.ts`：`npm run test:stage10`本機實測38.5s／41.6s，遠低於600s budget，
+      M18EvidenceRecord記錄且明確排除兩個opt-in benchmark）。
 
 ## Suggested commit
 

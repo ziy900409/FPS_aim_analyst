@@ -8,7 +8,7 @@
 | ✅ | **T1** Acceptance harness／roots／evidence | [T1-acceptance-harness.md](T1-acceptance-harness.md) | T0 seams confirmed | High |
 | ✅ | **T2** Cross-WP canonical journeys | [T2-cross-wp-happy-paths.md](T2-cross-wp-happy-paths.md) | T1 + WP-48～50 exits | High |
 | ✅ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](T3-failure-recovery-safety.md) | T1～T2 | High |
-| ⬜ | **T4** Scale／lifecycle／a11y | [T4-scale-lifecycle-a11y.md](T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
+| ⬜ | **T4** Scale／lifecycle／a11y — 4/5 DoD行綠燈（projection-shape／50-cycle+abort／keyboard journey／wall time）；1行（42k cached-reopen P95）本機noisy未強行判定，另有KI-017/KI-018兩個真實upstream缺陷待WP-50/WP-49承接，故暫不打勾 | [T4-scale-lifecycle-a11y.md](T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
 | ⬜ | **T5** Operations／manual release | [T5-operations-manual-release.md](T5-operations-manual-release.md) | T2～T4 | Med |
 | ⬜ | **T-exit** M18 gate | [T-exit-gate.md](T-exit-gate.md) | T0～T5 + upstream exits | High |
 
