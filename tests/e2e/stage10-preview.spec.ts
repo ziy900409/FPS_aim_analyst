@@ -1,6 +1,8 @@
 import { test, expect, type APIRequestContext, type Page, type Locator } from '@playwright/test';
 import type { ExportPayload } from '../../src/data/export.ts';
+import { buildRunId, buildRunIdentity } from '../../server/history/historyPaths.ts';
 import { buildStage10Fixtures } from '../stage10/Stage10FixtureFactory.ts';
+import { makeMeta, makePayload, makeTick } from '../replay/fixtures.ts';
 
 /**
  * WP-51 T2 — Preview public smoke (FR-51.11, OQ-51.3). The production bundle has no DEV-only
@@ -116,5 +118,56 @@ test.describe('WP-51 T2 — Preview public smoke', () => {
     await expect(screen.getByRole('button', { name: new RegExp(cohortRunIdA) })).toBeVisible();
     await expect(screen.getByRole('button', { name: new RegExp(cohortRunIdB) })).toBeVisible();
     await expect(screen.locator('[data-section="drill-trend"]')).toContainText('目前沒有足夠的合格資料可產生趨勢');
+  });
+
+  test('a run with real ticks but no scene/target-lifecycle capture reaches a partial Replay through the public UI (FR-51.8)', async ({
+    page,
+    request,
+  }) => {
+    // Real (non-empty, monotonic) ticks classify `full`/`partial` by capability, not EMPTY_TICKS —
+    // omitting `scene` (and never declaring the `replay` contract) is the same, non-fabricated
+    // capability gap `tests/replay/fixtures.ts` already uses for Vitest-level partial coverage
+    // (src/replay/ReplayController.test.ts); this just reaches the identical classification through
+    // the real public API + UI instead of a fake, which no existing Playwright spec attempts.
+    const participantId = `stage10-partial-${crypto.randomUUID()}`;
+    const partialPayload: ExportPayload = makePayload({
+      meta: {
+        drillId: 'hold_click_v1',
+        session: { participantId },
+        assessment: { protocolVersion: '1.0.0', assessmentFeedbackPolicy: 'minimal-end-of-block' },
+        startedAt: '2026-08-31T09:00:00.000Z',
+        vStrafe: 250,
+        scene: undefined,
+        replay: undefined,
+      },
+      ticks: [makeTick({ t: 0 }), makeTick({ t: 16 }), makeTick({ t: 32 })],
+    });
+    const runId = buildRunId(
+      buildRunIdentity(partialPayload.meta.schemaVersion, participantId, partialPayload.meta.drillId, partialPayload.meta.startedAt),
+    );
+
+    const seedResult = await postRun(request, partialPayload);
+    expect(seedResult.ok, `seed failed: ${JSON.stringify(seedResult)}`).toBe(true);
+
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    const screen = await openHistory(page);
+    await screen.getByRole('searchbox', { name: '搜尋 Participant' }).fill(participantId);
+    await screen.getByRole('button', { name: new RegExp(participantId) }).click();
+    await screen.getByRole('button', { name: /hold_click_v1/ }).click();
+    await screen.getByRole('button', { name: new RegExp(runId) }).click();
+    await expect(screen.locator('[data-section="result-detail-body"]')).toBeVisible();
+    await expect(screen.locator('[data-history-action="replay"]')).toBeEnabled();
+    await screen.locator('[data-history-action="replay"]').click();
+
+    const replay = page.locator('#replay-screen');
+    await expect(replay.locator('[data-section="replay-ready"]')).toBeVisible({ timeout: 10_000 });
+    await expect(replay.locator('[data-section="replay-support-badge"]')).toHaveText('有限重播');
+    await expect(replay.locator('[data-section="replay-support-badge"]')).toHaveAttribute('data-support-status', 'partial');
+    await expect(replay.locator('[data-section="replay-partial-banner"]')).toBeVisible();
+    // Partial still plays — unlike unsupported, the transport is present, not just a message+Back.
+    await expect(replay.locator('[data-replay-action="play-pause"]')).toBeVisible();
+    await replay.getByRole('button', { name: '返回', exact: true }).click();
+    await expect(replay).toBeHidden();
+    await expect(screen.locator('[data-history-action="replay"]')).toBeEnabled();
   });
 });

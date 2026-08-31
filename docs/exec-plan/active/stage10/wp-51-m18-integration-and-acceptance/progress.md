@@ -253,11 +253,35 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   驗證：`npx playwright test tests/e2e/stage10-assessment.spec.ts --project=edge` 綠燈；
   `npx playwright test --project=edge`（61 個 spec 全部）61/61 綠燈；`npm run typecheck` exit 0。
 
-  **T2 尚未完成**：replay `partial` 的 Stage10-owned automated evidence（目前唯一已知可重現路徑需要
-  真實 tick 但缺場景/target-lifecycle/scene 欄位——尚未建立這樣的 fixture）；`invalid` replay 狀態經
-  T0/Explore 確認是目前程式碼中沒有任何路徑會產生的保留分支，不在本 WP 授權範圍內新增。T2 DoD 其餘項目
-  （scenario 3 restart、4 grouping/order、5 parity、6 practice、7 unknown metric、8 full/unsupported
-  replay）已透過前三個切片覆蓋；尚缺 preview `partial` replay 與 T2 checklist 收斂。
+- **2026-08-31**：**T2 第四個切片（收尾）**——擴充 `tests/e2e/stage10-preview.spec.ts` 加入
+  `partial` Replay case（FR-51.8）。
+
+  做法：沿用 `tests/replay/fixtures.ts`（WP-50 T2 既有的 `makeMeta`/`makeTick`/`makePayload`，Vitest
+  `ReplayController.test.ts` 已用同一手法建構 partial fixture）——建 3 個真實、monotonic 的 tick，但不
+  設 `scene`、不宣告 `replay` 契約，drillId 用已註冊 profile 的 `hold_click_v1`。這與 EMPTY_TICKS
+  （unsupported）不同：`hasTrustworthyCamera` 為真，只是 `requiredForFull` 缺 `scene`／
+  `target-lifecycle`，`classifyStatus` 判定 `partial`。透過公開 API seed（precompute runId 用
+  `buildRunId`/`buildRunIdentity`，不猜 API 回應格狀）→ 公開 UI 導覽到 Run Detail → 點 3D 重播 →
+  斷言 badge 文字「有限重播」、`data-support-status="partial"`、`replay-partial-banner` 可見，且
+  transport（play-pause）仍存在（不是像 unsupported 那樣只有文字＋返回鈕）。
+
+  一個 surprise：`makeMeta()` 預設 `vStrafe: 0` 在直接建構（Vitest 純函式測試）沒問題，但透過真實
+  `POST /api/history/runs`（會跑 `parseExportPayload` 嚴格 schema）會被拒絕
+  （`INVALID_EXPORT`／`meta.vStrafe` `invalid_value`）——這個預設值只在跳過 API 驗證的既有 Vitest 用法
+  下成立，加一個 `vStrafe: 250` override 即可（沿用 `makeAssessmentPayload` 的值）。
+
+  驗證：`npx playwright test tests/e2e/stage10-preview.spec.ts --project=edge` 3/3 綠燈；
+  `npx playwright test --project=edge`（62 個 spec）一次 61/62（`replay.spec.ts` A-50.5 event-marker
+  prev/next 計時性斷言 flake，與本次改動無關）、`--repeat-each=3` 重跑 21/21 全綠，確認是既有 flake非
+  regression；`npm run typecheck` exit 0。
+
+  **T2 範圍收斂**：`invalid` replay 狀態經 T0/Explore 確認是目前程式碼中沒有任何路徑會產生的保留分支
+  （`ReplayScreenState`/`ReplayController` 都只實作 `idle|loading|error|unsupported|ready`），不在本 WP
+  授權範圍內新增這個從未存在的產品語意（§2.6「未核准的新產品語意」）——`invalid`（schema 層解析失敗）
+  的既有覆蓋在 `parseExportPayload`／corrupt-unsupported bootstrap 層（T1 已交付），run 從未進入
+  History 列表，因此永遠不會走到 Replay UI；這不是缺口，是現行設計下該狀態本就不可達。至此 T2 的 8 個
+  scenario 全數有 automated evidence（dev canonical＋restart integration test＋preview smoke 三個
+  spec/test 檔案）；下一步是把 T2 checklist 翻 ✅ 並同步 README 狀態。
 
 ## Surprises & Discoveries
 
