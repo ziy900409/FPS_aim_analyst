@@ -4,7 +4,7 @@ import { DEFAULT_PROCEDURAL_ROOM } from '../../scene/eyePose.ts';
 import type { SceneAssetLoader } from '../sceneLoader.ts';
 import type { SceneConfig } from '../../scene/SceneConfig.ts';
 import { createReplayPlayer } from '../../replay/ReplayPlayer.ts';
-import type { ReplayPlayer, ReplayRecording } from '../../replay/contracts.ts';
+import type { ReplayPlaybackState, ReplayPlayer, ReplayRecording, ReplaySample } from '../../replay/contracts.ts';
 import { buildReplayPunchTimeline, resolveReplayCameraVisualState } from '../../replay/replayRecoil.ts';
 import { getWeapon } from '../../weapon/weapons.ts';
 import type { WeaponConfig } from '../../weapon/WeaponConfig.ts';
@@ -28,6 +28,12 @@ export interface ReplayPresentationSessionDeps {
   readonly loaderOverride?: SceneAssetLoader;
   /** DI seam for tests — defaults to the real async GLTF-capable loader. */
   readonly createSceneManagerWithStatus?: typeof createSceneManagerWithStatus;
+  /** WP-50 / T6 — invoked once per rendered `frame()` call with the exact `ReplaySample`/playback
+   * state that just drove the render, so a caller (the `ReplayScreen` HUD/transport) can stay in
+   * sync without ever calling `player.frame()`/`player.state` a second time itself — `ReplayPlayer`
+   * is a stateful clock (frame() advances `timeMs`), so sampling it twice per app frame would double
+   * -advance playback (README §2.6). Omitted in every existing T3/T4 test — a no-op by default. */
+  readonly onFrame?: (sample: ReplaySample, playback: ReplayPlaybackState) => void;
 }
 
 export interface ReplayPresentationSessionHandle extends ReplayPresentationSession {
@@ -106,6 +112,7 @@ export function createReplayPresentationSession(deps: ReplayPresentationSessionD
       targetView?.sync(sample.targets);
       effectView?.sync(sample, adapter.sceneManager.camera);
       deps.renderer.render(adapter.sceneManager.scene, adapter.sceneManager.camera);
+      deps.onFrame?.(sample, player.state);
     },
 
     resize(w: number, h: number): void {

@@ -144,4 +144,29 @@ describe('createReplayPresentationSession', () => {
     const [, camera] = renderer.render.mock.calls[0] as [unknown, { position: { x: number } }];
     expect(camera.position.x).not.toBe(0); // moved off the eye-base x by the recorded px offset
   });
+
+  it('onFrame() receives the exact sample/playback that drove the render, once per frame() call (WP-50 / T6)', async () => {
+    const renderer = { render: vi.fn() };
+    const onFrame = vi.fn();
+    const session = createReplayPresentationSession({
+      recording: fixtureRecording(),
+      sceneConfig: placeholderRoom,
+      renderer,
+      createSceneManagerWithStatus: instantLoader(),
+      onFrame,
+    });
+
+    session.frame(0); // still loading — must not fire
+    expect(onFrame).not.toHaveBeenCalled();
+
+    await Promise.resolve().then(() => Promise.resolve());
+
+    session.player.seek(1000);
+    session.frame(0);
+
+    expect(onFrame).toHaveBeenCalledTimes(1);
+    const [sample, playback] = onFrame.mock.calls[0] as [{ timeMs: number }, { timeMs: number; status: string }];
+    expect(sample.timeMs).toBe(1000);
+    expect(playback).toEqual(session.player.state);
+  });
 });
