@@ -13,6 +13,7 @@
 - **2026-08-27**：依使用者指定的engineering-planning skill完成WP-50自足執行計畫：T0～T6 + T-exit、additive replay v1、exact profile/capability分級、pure sampling/seek、exclusive renderer ownership、3D visual adapter、transport/HUD與Result/History整合。仍未開始WP-50 production implementation。
 - **2026-08-27**：依使用者指定的engineering-planning skill完成WP-51自足執行計畫：T0～T5 + T-exit、run-scoped dev/preview roots、fresh server lifecycle、跨WP canonical/failure/race/scale/a11y驗收、defect回流規則、操作文件與manual M18 release dossier。規劃時WP-48實際已推進至T2；WP-51仍須等待WP-48～50各自exit evidence，尚未開始WP-51 implementation。
 - **2026-08-28**：**WP-49 完成 T0～T5＋T-exit**，History Library and Assessment Trends 的 FR/NFR evidence matrix、boundary scans、5,000-run projection benchmark、typecheck/build/Vitest/Playwright/test:ci gates 均有客觀證據（詳見 [wp-49-history-library-and-trends/progress.md](wp-49-history-library-and-trends/progress.md) T-exit 條目）。T-exit 期間僅做一個非-history E2E 穩定性修正：`backend.spec.ts` 的 renderer backend console witness poll timeout 從預設 5s 改為 20s，final `npm.cmd run test:ci` exit 0（Vitest 159 passed / 1 skipped files；1426 passed / 2 skipped tests；Playwright 51/51 passed）。
+- **2026-08-31**：**WP-50 完成 T0～T6＋T-exit**，第一人稱 3D 狀態重播的 FR/NFR evidence matrix、boundary scans（replay domain 無 DOM/Three/fs/sim/wall-clock/random、replay path 無 live SimLoop.pump/InputSampler/Pointer Lock、Replay UI 無 `node:*`）、42k-tick/50-cycle 效能與 lifecycle 證據、typecheck/build/全量 Vitest/全量 Playwright 皆全綠（詳見 [wp-50-3d-state-replay/progress.md](wp-50-3d-state-replay/progress.md) T-exit 條目）。T-exit 新增 `tests/e2e/replay.spec.ts`（真瀏覽器 Edge，7 tests）補齊 current/historical Replay 入口、transport、events、Pointer Lock isolation 與 navigation race 的端到端證據；`npx vitest run` 全量 185 files / 1653 passed + 2 skipped；`npx playwright test --project=edge` 全量 58/58 passed。WP-48／WP-49／WP-50 三個 WP 皆已完成，WP-51 可開工整合驗收。
 
 ## Decision Log
 
@@ -34,6 +35,6 @@
 
 - **OQ-S10-1**：Node API 啟動形式。WP-48 讀碼後推薦 Vite dev/preview plugin middleware（既有 plugin 先例、無需 process orchestrator），最終於 WP-48 T0 收斂。
 - **OQ-S10-2**：history root。預設 `data/session-history/`；測試只允許啟動參數注入 temporary root，UI 不提供任意路徑輸入。
-- **OQ-S10-3**：逐 drill replay 支援矩陣。planning audit已確認legacy v2不可一律full；待WP-50 T0以official exact ID fixtures凍結partial/unsupported理由，T1補足future full replay capture；不阻塞WP-48／WP-49。
+- **OQ-S10-3（已關閉）**：逐 drill replay 支援矩陣。WP-50 T0 已以 official exact ID fixtures 凍結 partial/unsupported 理由，T1 補 additive replay v1 capture；T-exit 確認目前 6 個 official Assessment exact drillId 皆 classify 為 `full`。
 - **OQ-S10-4**：各 drill primary metrics。後續另行設計；不阻塞 storage、navigation 與 replay MVP。
 - **OQ-S10-5（已關閉）**：researcher Practice 不需要 Participant context；Practice 已由使用者明確排除於持久化與 Participant 歷史之外。

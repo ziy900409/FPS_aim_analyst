@@ -11,16 +11,16 @@
 | ✅ | **T4** Targets／weapon／effects | [T4-replay-visual-state.md](T4-replay-visual-state.md) | T1～T3 | High |
 | ✅ | **T5** Replay Screen／transport／HUD | [T5-replay-ui.md](T5-replay-ui.md) | T2～T4 | Med |
 | ✅ | **T6** Result／History integration | [T6-entry-and-navigation.md](T6-entry-and-navigation.md) | T5 + WP-48 + WP-49 T3 | High |
-| ⬜ | **T-exit** Replay acceptance／WP-51 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T6 | Med |
+| ✅ | **T-exit** Replay acceptance／WP-51 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T6 | Med |
 
 ## Package Definition of Done
 
-- [ ] 至少一個代表性official Assessment fixture為`full`，可由磁碟JSON完成第一人稱3D播放、任意seek、四種速度與事件跳轉。
-- [ ] 所有已知official exact `drillId`皆有profile/support matrix與客觀reason；legacy/partial/unsupported不假裝完整。
-- [ ] Replay active時live `SimLoop`、Pointer Lock、InputSampler皆無執行，且只有一個rAF/renderer owner。
-- [ ] direct seek與sequential playback到同`t`的scene/HUD/effect state等價。
-- [ ] Current Result與historical Run Detail共用同一Replay path並正確返回來源；Practice維持零history mutation。
-- [ ] performance、a11y、resource lifecycle、build/Vitest/Playwright與live determinism gates全綠。
+- [x] 至少一個代表性official Assessment fixture為`full`，可由磁碟JSON完成第一人稱3D播放、任意seek、四種速度與事件跳轉。（`tests/replay/official-full-candidate.test.ts` + `tests/e2e/replay.spec.ts` A-50.1，`hold_click_v1`）
+- [x] 所有已知official exact `drillId`皆有profile/support matrix與客觀reason；legacy/partial/unsupported不假裝完整。（`src/replay/replayCompatibility.ts` 16-reason-matrix tests、T1/T6 evidence log）
+- [x] Replay active時live `SimLoop`、Pointer Lock、InputSampler皆無執行，且只有一個rAF/renderer owner。（`tests/replay/presentation-lifecycle.test.ts` pump-isolation proxy + `tests/e2e/replay.spec.ts` A-50.10 真瀏覽器 Pointer Lock spy）
+- [x] direct seek與sequential playback到同`t`的scene/HUD/effect state等價。（`sampleReplay.test.ts`／`ReplayPlayer.test.ts`／`replay-visual-seek-purity.test.ts` state-hash equality）
+- [x] Current Result與historical Run Detail共用同一Replay path並正確返回來源；Practice維持零history mutation。（T6 wiring + `tests/e2e/replay.spec.ts` A-50.1/2/3/11）
+- [x] performance、a11y、resource lifecycle、build/Vitest/Playwright與live determinism gates全綠。（T-exit Evidence Log：typecheck／全量 Vitest 1653 passed／`npm run build`／全量 Playwright 58 passed）
 
 ## Commit discipline
 

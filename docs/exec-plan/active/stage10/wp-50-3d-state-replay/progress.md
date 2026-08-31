@@ -303,3 +303,42 @@ Entry gates 重新確認：WP-48 README status ✅ T0～T5＋T-exit 全部完成
 
 - 上方 T5／T6 Evidence Log 累積的瀏覽器視覺與端到端驗收待辦（transport markers 像素對齊、event list 響應式換行、Result/History replay 完整 happy-path、rapid switch/back-during-load/scene late response 的真實瀏覽器行為）需在 T-exit 一次以 Playwright 補齊。
 - WP-50 README Package DoD 剩餘未打勾項目（performance／a11y／resource lifecycle／build/Vitest/Playwright／live determinism gates 全綠）待 T-exit 逐項對表。
+
+## T-exit — Replay Acceptance and WP-51 Handoff（2026-08-31）
+
+單一驗收切片：新增 `tests/e2e/replay.spec.ts`（真瀏覽器 Edge，7 tests）補齊上方 T5/T6 遺留的瀏覽器視覺／端到端待辦，並擴充 `tests/replay/domain-purity-boundary.test.ts` 覆蓋 T-exit-gate.md 自動化 gate #5 尚未鎖定的檔案（`replayCompatibility.ts`／`ReplayController.ts`／`render/replay/*`／`ui/replay/*`）。其餘 automated gates（typecheck／全量 Vitest／build／全量 Playwright）為既有指令重跑，非新增程式碼。
+
+### Acceptance scenario evidence map（A-50.1～12）
+
+| ID | 證據層級 | 出處 |
+|---|---|---|
+| A-50.1 full historical Assessment | Vitest + E2E | `tests/replay/official-full-candidate.test.ts`；`tests/e2e/replay.spec.ts`「a full official Assessment run replays end to end from History」（disk JSON → History Run Detail → Replay，scene/camera/target/badge/canvas reparent 全綠，含 NFR-50.3 cached-scene 二次進入 <1500ms 量測） |
+| A-50.2 current Assessment | E2E | `tests/e2e/replay.spec.ts`「a current Assessment Result replays the very in-memory payload it just saved」（`showResultAndSaveToHistory` → Result「3D 重播」→ Back 回同一 Result dialog） |
+| A-50.3 Practice | E2E | 同檔「a current Practice Result can be replayed in-memory with zero history mutation」（`showResult()` 不呼叫任何 save，`historySaveState()` 全程 `{kind:'idle'}` 證零 mutation） |
+| A-50.4 transport | Vitest + E2E | `ReplayPlayer.test.ts`；`tests/e2e/replay.spec.ts`「transport drives play/pause, seek, rate, and end/restart in sync with the HUD」（真實 rAF 播放推進、pause 凍結、slider 直接 seek、rate 切換、播到自然結尾進 `ended`、`ended` 再播回到 ~0） |
+| A-50.5 events | Vitest + E2E | `sampleReplay.test.ts`；`tests/e2e/replay.spec.ts`「event markers and the event list navigate prev/next and jump-to-event consistently」 |
+| A-50.6 seek invariant | Vitest（主）+ E2E（輔） | `sampleReplay.test.ts`／`ReplayPlayer.test.ts`／`replay-visual-seek-purity.test.ts` 的 direct-seek-vs-sequential state-hash equality；E2E 的 slider 直接 seek → timeText 同步為輔助佐證 |
+| A-50.7 partial | Vitest | `replayCompatibility.test.ts` 16-reason-matrix；`ReplayController.test.ts` scene sceneId-missing／assetPackVersion-mismatch 兩種降 partial 情境；`ReplayScreen.test.ts` persistent partial banner 渲染。**未在 E2E 重建**——見下方 Decision Log D-50-P34 |
+| A-50.8 unsupported/invalid | Vitest | `replayCompatibility.test.ts` unknown-exact-drillId／empty-ticks／non-monotonic 案例；`ReplayController.test.ts` API 失敗與 unknown-drillId 案例。**未在 E2E 重建**——見 D-50-P34 |
+| A-50.9 scene mismatch/failure | Vitest | `ReplayController.test.ts` scene fallback／late-dispose／abort 案例；`ReplayPresentationSession.test.ts` fallback-scene-load |
+| A-50.10 ownership | Vitest + E2E | `presentation-lifecycle.test.ts` NFR-50.5 pump-isolation proxy（50-cycle 內 live frame callback 恆 0 次）；`tests/e2e/replay.spec.ts`「Replay never lets a viewport click reach Pointer Lock」（真瀏覽器 `requestPointerLock` spy，點擊 reparented canvas 與 viewport host 皆為 0 次） |
+| A-50.11 navigation race | Vitest + E2E | `ReplayController.test.ts` 11 cases（stale-generation abort／rapid A→B switch／retry）；`tests/e2e/replay.spec.ts`「Back then re-entering Replay on a different run never shows the previous run's stale content」（真實 History route 間 rapid switch，sourceLabel 逐次正確） |
+| A-50.12 lifecycle/scale | Vitest（Node/V8） | `replay-perf.test.ts`（42,000-tick normalize/sample，NFR-50.1/2/4 皆有 14×～2000× 餘裕）；`replay-visual-perf.test.ts`（42k-tick render-adapter frame P95 0.014ms，見下方 Evidence Log）；`presentation-lifecycle.test.ts` 50-cycle scene dispose 零殘留。瀏覽器層級未重跑 42k-tick／50-cycle 規模測試——Node/V8 headless 測量已在 T2/T3/T4 記錄為量級層級證據（非嚴格 SLA），T-exit 沿用同一慣例 |
+
+### Decision Log（T-exit）
+
+- **D-50-P34 / `partial`／`unsupported`／`invalid` 与 abort/generation race 不在 E2E 重建，沿用既有 Vitest fixtures/fakes 證據**：目前 6 個 official Assessment exact `drillId`（D-50-P7 roster）全部classify為`full`（profile registry 逐一登記且無 family fallback）——這代表透過真實 History／Result 入口，今天**沒有**任何合法路徑能自然抵達`unsupported`；要在 Playwright 重建`partial`/`unsupported`需要偽造非官方 payload 直接打 History API 或竄改 asset version，這會重新做 T1/T6 已經用真 fixture／fakes 做過的同一件事（`replayCompatibility.test.ts`16-reason-matrix、`ReplayController.test.ts`11 cases），且需要額外风险（繞過 UI 直接寫真實 temp history root）換不到新的信心。T-exit-gate.md 的 exit criteria 只要求「至少一個 official full profile、seek invariant、live isolation、partial honesty」四者其中之一有 objective test/measurement，不要求全部 12 個 acceptance ID 都在 E2E 層級——四者皆已有 Vitest 或 E2E 證據（見上表），因此 E2E 集中在真實 DOM／route／canvas／Pointer Lock 這些**只有真瀏覽器能驗證**的面向，domain 分類邏輯留在既有 headless 測試（沿用 T0～T6 一貫的「domain 分層驗證、Playwright 驗真實佈線」慣例）。
+- **D-50-P35 / seek-to-exact-duration 的 E2E 驗證改用真實 play-to-end，而非合成 slider max-value seek**：實作時發現 `<input type="range" step="1">` 的 `.value` IDL setter 在 Edge 會把賦值捨入到最近的 step 倍數（`recording.durationMs` 常是小數,如 `4320.3125`）,若刻意把 slider 設到 `String(recording.durationMs)`,捨入後可能落在 duration**之下**(`4320`),導致 `ReplayPlayer.doSeek()` 的 `clamped >= recording.durationMs` 判斷為 false,永遠不會進入 `ended`——這是測試方法的 DOM-precision 陷阱,不是 product bug（`ReplayPlayer.ts` 的 `clamp()`／`doSeek()` 本身對非 DOM 呼叫路徑完全正確,單元測試已驗證)。改為讓 transport 以 2× rate 真正播放到自然結尾(`frame()` 用浮點時間推進、不經過任何 step-quantized DOM 值),更真實也更穩定。
+
+### Evidence Log（T-exit）
+
+- Baseline（T-exit 開工前）：`git rev-parse HEAD` = `d1f4e53`（T6 收尾／docs commit，見上方 T6 節）；`git status --short` 除本 WP 無關的既有未追蹤檔（`docs/algorithm/spider_shot/...`、`docs/algorithm/tracking_pilot/`、`sources/research_tracking_drill_metrics_...`）外乾淨。
+- `npm run typecheck`（`tsc --noEmit` ×2）：green。
+- `npx vitest run` 全量：**185 test files passed（+1 skipped）／ 1653 tests passed + 2 skipped，0 failed**（較 T6 收工時的 185 files / 1639 tests 增加 14 個 test——全部來自本次擴充的 `domain-purity-boundary.test.ts`：新增 7 個 render/replay 模組 × 2 條 pattern 掃描 + 2 個 UI 模組 node: 掃描，其餘既有 test 未被修改）。
+- `npm run build`：green（`tsc --noEmit` ×2 + `vite build`，既有 1142.05 kB chunk-size 警告，屬既存狀態非本次引入）。
+- `npx playwright test --project=edge`（dev + preview 雙 webServer,全部既有 spec + 新增 `replay.spec.ts`）：**58 tests passed, 0 failed**（含既有 `history-library.spec.ts`「a historical run detail has no restart/current-save affordances」——T6 新增的「3D 重播」按鈕文字為中文，原本斷言 `/^Replay/` 英文 regex 不受影響，該既有測試無需修改仍綠燈）。
+- Live isolation 瀏覽器層級證據：`tests/e2e/replay.spec.ts`「Replay never lets a viewport click reach Pointer Lock」對 reparented canvas（`#app`,已搬進 Replay viewport）與 viewport host 本身各點擊一次，`requestPointerLock` spy 計數皆為 0（D-50-P31 防線的真瀏覽器驗證，非僅 headless）。
+- NFR-50.3 首幀延遲：同一頁面內第二次開啟 Replay（scene asset 已常駐,真實 cached 情境）,click → `[data-section="replay-ready"]` visible 量測 <1500ms（`tests/e2e/replay.spec.ts`「a full official Assessment run replays end to end from History」內嵌斷言）。
+- 42k-tick／50-cycle scale 證據沿用 T2（`replay-perf.test.ts`）、T3（`presentation-lifecycle.test.ts`）、T4（`replay-visual-perf.test.ts`）既有 Node/V8 headless 測量,本次重新隨全量 Vitest 跑過一次確認未回歸,未新增瀏覽器層級 42k-tick 規模測試（README/T-exit-gate 慣例：quantity-scale 證據留在 headless,Playwright 驗證真實佈線/DOM/route,見 D-50-P34）。
+- `graphify update .`：已於文件更新後執行同步（見下方 commit）。
+- 收工前 `git status --short`：只含本次新增/修改的預期檔案（`tests/e2e/replay.spec.ts` 新增、`tests/replay/domain-purity-boundary.test.ts` 修改、本 WP／Stage10 docs 更新），無 payload artifacts、無真實 `data/session-history/` 變動（`.playwright-tmp/history-dev`／`.playwright-tmp/history-preview` 為既有 gitignored temp roots）。

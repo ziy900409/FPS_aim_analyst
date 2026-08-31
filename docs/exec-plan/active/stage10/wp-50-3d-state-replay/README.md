@@ -15,7 +15,7 @@
 | **Compatibility** | exact `drillId` profile + capability inspection；不以 family/prefix 或單一 `schemaVersion` 猜測完整支援 |
 | **Estimate** | 13–20 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：現有錄製不足、單一 renderer ownership、seek 決定性、Three.js resource lifecycle |
-| **Status** | 🟢 T0～T6 完成（2026-08-31，見 [progress.md](progress.md)）；OQ-50.1～4 已 owner 確認；current Result／historical Run Detail 共用同一 Replay path 已落地；T-exit（acceptance／WP-51 handoff，含 Playwright／live determinism regressions）待開工 |
+| **Status** | ✅ T0～T6 + T-exit 全數完成（2026-08-31，見 [progress.md](progress.md)）；OQ-50.1～4 已 owner 確認；current Result／historical Run Detail 共用同一 Replay path 已落地；automated gates／acceptance scenarios A-50.1～12／research-safety／architecture-regression 皆有客觀證據，WP-51 可開工 |
 
 ---
 

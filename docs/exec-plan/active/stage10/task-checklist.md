@@ -42,14 +42,14 @@ WP-49 Definition of Done：Participant與研究員可不接觸檔案選擇器完
 
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry gate／sufficiency audit／PoC | [T0-entry-gate.md](wp-50-3d-state-replay/T0-entry-gate.md) | WP-48 approved load contract | High |
-| ⬜ | **T1** Replay schema／capture／support classifier | [T1-replay-contract-and-capture.md](wp-50-3d-state-replay/T1-replay-contract-and-capture.md) | T0 | High |
-| ⬜ | **T2** Playback domain core | [T2-playback-domain-core.md](wp-50-3d-state-replay/T2-playback-domain-core.md) | T1 | Med/High |
-| ⬜ | **T3** Presentation ownership／base scene | [T3-presentation-and-scene.md](wp-50-3d-state-replay/T3-presentation-and-scene.md) | T1～T2 | High |
-| ⬜ | **T4** Targets／weapon／effects | [T4-replay-visual-state.md](wp-50-3d-state-replay/T4-replay-visual-state.md) | T1～T3 | High |
-| ⬜ | **T5** Replay Screen／transport／HUD | [T5-replay-ui.md](wp-50-3d-state-replay/T5-replay-ui.md) | T2～T4 | Med |
-| ⬜ | **T6** Result／History integration | [T6-entry-and-navigation.md](wp-50-3d-state-replay/T6-entry-and-navigation.md) | T5 + WP-48 + WP-49 T3 | High |
-| ⬜ | **T-exit** Replay gate／WP-51 handoff | [T-exit-gate.md](wp-50-3d-state-replay/T-exit-gate.md) | T1～T6 | Med |
+| ✅ | **T0** Entry gate／sufficiency audit／PoC | [T0-entry-gate.md](wp-50-3d-state-replay/T0-entry-gate.md) | WP-48 approved load contract | High |
+| ✅ | **T1** Replay schema／capture／support classifier | [T1-replay-contract-and-capture.md](wp-50-3d-state-replay/T1-replay-contract-and-capture.md) | T0 | High |
+| ✅ | **T2** Playback domain core | [T2-playback-domain-core.md](wp-50-3d-state-replay/T2-playback-domain-core.md) | T1 | Med/High |
+| ✅ | **T3** Presentation ownership／base scene | [T3-presentation-and-scene.md](wp-50-3d-state-replay/T3-presentation-and-scene.md) | T1～T2 | High |
+| ✅ | **T4** Targets／weapon／effects | [T4-replay-visual-state.md](wp-50-3d-state-replay/T4-replay-visual-state.md) | T1～T3 | High |
+| ✅ | **T5** Replay Screen／transport／HUD | [T5-replay-ui.md](wp-50-3d-state-replay/T5-replay-ui.md) | T2～T4 | Med |
+| ✅ | **T6** Result／History integration | [T6-entry-and-navigation.md](wp-50-3d-state-replay/T6-entry-and-navigation.md) | T5 + WP-48 + WP-49 T3 | High |
+| ✅ | **T-exit** Replay gate／WP-51 handoff | [T-exit-gate.md](wp-50-3d-state-replay/T-exit-gate.md) | T1～T6 | Med |
 
 WP-50 Definition of Done：至少一個代表性official Assessment可由磁碟JSON完成第一人稱3D重播、任意seek與事件跳轉；所有official exact `drillId`依profile/capability如實分級；Replay期間live sim/input停止且direct seek與順播state等價。
 
