@@ -202,10 +202,22 @@ describe('createHistoricalRunDetail — optional replay port (FR-49.13)', () => 
     expect(findByTag(detail.element as unknown as FakeElement, 'button').some((b) => b.dataset.historyAction === 'replay')).toBe(false);
   });
 
-  it('renders a disabled replay button (no working replay yet) when onReplay is provided, wired with the current runId', () => {
+  it('renders an enabled replay button when onReplay is provided and the run is ready, wired with the current runId', () => {
     const onReplay = vi.fn();
     const { detail } = setup({ onBack: vi.fn(), onRetry: vi.fn(), onReplay });
     detail.render({ runDetail: { status: 'ready', value: readyValue({ runId: 'r-1' }) }, runId: 'r-1' });
+    const replayButton = findByTag(detail.element as unknown as FakeElement, 'button').find((b) => b.dataset.historyAction === 'replay')!;
+
+    expect(replayButton.disabled).toBe(false);
+    replayButton.dispatch('click');
+    expect(onReplay).toHaveBeenCalledWith('r-1');
+  });
+
+  it('the replay button is disabled while the run is not ready (loading/error/empty)', () => {
+    const onReplay = vi.fn();
+    const { detail } = setup({ onBack: vi.fn(), onRetry: vi.fn(), onReplay });
+
+    detail.render({ runDetail: { status: 'loading' }, runId: 'r-1' });
     const replayButton = findByTag(detail.element as unknown as FakeElement, 'button').find((b) => b.dataset.historyAction === 'replay')!;
     expect(replayButton.disabled).toBe(true);
   });

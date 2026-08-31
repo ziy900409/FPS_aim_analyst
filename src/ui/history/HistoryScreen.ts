@@ -22,6 +22,9 @@ export interface HistoryScreenOptions {
   /** WP-49 T5 — client-side metric descriptor lookup for the drill trend section (README §2.5).
    * Pure and network-free; safe to share the same instance the server-side analysis service uses. */
   readonly registry: DrillMetricRegistry;
+  /** WP-50 T6 (FR-49.13) — opens the first-person 3D Replay for this exact runId. Passed straight
+   * through to `HistoricalRunDetail`'s `onReplay` port; omitted renders no replay button at all. */
+  readonly onReplay?: (runId: string) => void;
   readonly parent?: HTMLElement;
 }
 
@@ -133,8 +136,7 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
     onRetry(): void {
       controller.retry('run-detail');
     },
-    // WP-50 will supply a real handler (README §5 handoff); T3 renders no replay button while
-    // this stays undefined (FR-49.13 — no dead/inert affordance).
+    onReplay: options.onReplay,
   });
   participantBrowser.element.style.display = 'none';
   drillBrowser.element.style.display = 'none';

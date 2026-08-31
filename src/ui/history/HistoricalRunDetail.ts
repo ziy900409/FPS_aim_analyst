@@ -2,8 +2,8 @@
  * WP-49 T3 — read-only historical Assessment Result (README §2.9 FR-49.5). Renders through the
  * exact same `ResultDetailBody` the current in-session `ResultScreen` uses (D-49.P4); the only
  * actions here are Back, Download JSON/CSV bound to *this* route's loaded payload (never the live
- * in-flight recorder — FM-49.8), and an optional typed `onReplay` port for WP-50 (FR-49.13) that
- * renders no button at all when absent.
+ * in-flight recorder — FM-49.8), and an optional typed `onReplay` port (FR-49.13) that renders no
+ * button at all when absent — wired to a real, working handler by WP-50 T6.
  */
 
 import type { AsyncState, HistoricalRunPresentation } from '../../history/HistoryLibraryController.ts';
@@ -68,9 +68,8 @@ export function createHistoricalRunDetail(options: HistoricalRunDetailOptions): 
 
   let replayButton: HTMLButtonElement | undefined;
   if (options.onReplay !== undefined) {
-    replayButton = makeButton('Replay（尚未提供）');
+    replayButton = makeButton('3D 重播');
     replayButton.dataset.historyAction = 'replay';
-    replayButton.disabled = true;
     actions.appendChild(replayButton);
   }
 
@@ -102,6 +101,7 @@ export function createHistoricalRunDetail(options: HistoricalRunDetailOptions): 
   function setActionsEnabled(enabled: boolean): void {
     exportJSONButton.disabled = !enabled;
     exportCSVButton.disabled = !enabled;
+    if (replayButton !== undefined) replayButton.disabled = !enabled;
   }
 
   function render(input: HistoricalRunDetailInput): void {

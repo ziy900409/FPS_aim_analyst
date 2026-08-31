@@ -435,6 +435,33 @@ describe('createHistoryScreen — accessible names', () => {
   });
 });
 
+describe('createHistoryScreen — WP-50 T6 onReplay passthrough (FR-49.13)', () => {
+  it('forwards the runId of the current run route to the supplied onReplay handler', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'run', participantId: 'p-1', drillId: 'd-1', runId: 'r-1' });
+    const onReplay = vi.fn();
+    const payload = { meta: {}, ticks: [], events: [] };
+    const controller = createFakeController({
+      ...IDLE_STATE,
+      runDetail: {
+        status: 'ready',
+        value: {
+          run: { runId: 'r-1', participantId: 'p-1', drillId: 'd-1', startedAt: '2026-01-01T00:00:00.000Z', schemaVersion: 2, suspect: false, byteLength: 10, replaySupport: 'unchecked' },
+          payload: payload as never,
+          result: { summary: { cards: [], reactionValues: [], recoilCompensation: { error: {} as never, path: { actual: [], ideal: [] } }, methodNote: '' } },
+        },
+      },
+    });
+    createHistoryScreen({ navigator: navigator as never, controller, registry, onReplay });
+
+    const replayButton = document.created.find((el) => el.tag === 'button' && el.dataset.historyAction === 'replay')!;
+    replayButton.dispatch('click');
+
+    expect(onReplay).toHaveBeenCalledWith('r-1');
+  });
+});
+
 describe('createHistoryScreen — dispose', () => {
   it('stops reacting to navigator/controller updates and removes the element', () => {
     const document = new FakeDocument();
