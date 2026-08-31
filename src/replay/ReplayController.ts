@@ -132,9 +132,12 @@ export function createReplayController(deps: ReplayControllerDeps): ReplayContro
 
     session = deps.createSession(recording, sceneConfig);
     deps.presentation.enterReplay(session);
-    deps.mountViewport();
-
+    // `setState` runs subscribers synchronously — by the time it returns, `ReplayScreen.render()`
+    // has already switched the DOM into its 'ready' layout (the viewport host goes from `display:
+    // none` to a real box). Only *then* call `mountViewport()`, so its `getBoundingClientRect()`
+    // measures the actual box instead of a still-hidden ancestor's zero size.
     setState({ kind: 'ready', sourceLabel, support, recording });
+    deps.mountViewport();
   }
 
   return {

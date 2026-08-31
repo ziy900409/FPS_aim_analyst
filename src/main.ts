@@ -22,6 +22,9 @@ import { createHistoryLibraryController } from './history/HistoryLibraryControll
 import { createHistoryNavigator } from './history/navigation/HistoryNavigator.ts';
 import { createHistoryScreen, type HistoryScreenHandle } from './ui/history/HistoryScreen.ts';
 import { createDrillMetricRegistry } from './history/DrillMetricRegistry.ts';
+import { createReplayScreen, type ReplayScreenHandle } from './ui/replay/ReplayScreen.ts';
+import { createReplayController } from './replay/ReplayController.ts';
+import { createReplayPresentationSession } from './render/replay/ReplayPresentationSession.ts';
 import { createControls, type ControlsHandle } from './ui/Controls.ts';
 import {
   createResearcherMenu,
@@ -209,7 +212,21 @@ let tracerEnabled = true;
 let activeResolutionMode: ResolutionMode = 'native';
 let displayState: DisplayState = applyResolutionMode(renderer, activeResolutionMode);
 
+// WP-50 / T6 — 建構挪到這裡（而非檔案最尾端的 T3 原始位置）,好讓下面的 `resize()` 能安全讀
+// `presentation.mode` 而不撞 TDZ：`liveFrame`（模組頂層 `function` 宣告,見檔案後段)本身會 hoist,
+// 建構當下不需要它已經「跑到那一行」,只要在它真正被呼叫（第一個 rAF frame）之前存在即可——這裡遠早
+// 於那個時間點。承接 T3 progress.md 記錄的「resize 路由是 T6 wiring 真正需要 replay-active resize
+// 時的範圍」(D-50-P19)。
+const presentation = createPresentationCoordinator({
+  frame: liveFrame,
+  resize: (w, h) => sceneManager.resize(w, h),
+});
+
 function resize(): void {
+  // Replay 期間 canvas 已被搬進 replay viewport、由 `resizeReplayViewport()` 專責量測/套用尺寸
+  // （見下方 T6 wiring）；這裡若照舊呼叫 `applyResolutionMode` 會把 canvas 拉回全螢幕尺寸，蓋掉
+  // replay 的 viewport 佈局（FR-50.11 exclusive presentation ownership 的 render surface 版本）。
+  if (presentation.mode === 'replay') return;
   displayState = applyResolutionMode(renderer, activeResolutionMode);
   sceneManager.resize(displayState.cssW, displayState.cssH);
 }
@@ -226,6 +243,9 @@ function activeWeaponConfig() {
 // （下方,早於 History 實際建好前就掛上）在其間任何 top-level await 期間讀到安全的
 // `undefined`,而不是撞 TDZ ReferenceError（同 KI-013 對 `controls` 的處理方式）。
 let historyScreenHandle: HistoryScreenHandle | undefined;
+// WP-50 T6 — 同一 KI-013 慣例：Replay 全螢幕層晚於 canvas click handler 建構,先在此宣告安全的
+// `undefined` 佔位。
+let replayScreenHandle: ReplayScreenHandle | undefined;
 
 // WP-1 / T2（FR-1.2）— Pointer Lock：click 取得、Esc/失焦解除、可重取。
 const pointerLock = createPointerLock(canvas);
@@ -269,6 +289,10 @@ canvas.addEventListener('click', () => {
   // overlay z-index 回歸（WP-9 曾發生 export panel z-index 低於 backdrop 的先例）重新引入
   // 「History 開著卻取得 Pointer Lock」。
   if (historyScreenHandle?.visible === true) return;
+  // WP-50 T6 — Replay 期間 canvas 被搬進 replay viewport 內、直接收得到 click（不像 History 背後有
+  // pointer-events:auto backdrop 擋一層）；缺這條會讓使用者點擊 3D replay 畫面時意外取得 live
+  // Pointer Lock，違反 FR-50.11/NFR-50.5（replay 期間 Pointer Lock request 必須為 0）。
+  if (replayScreenHandle?.visible === true) return;
   // 失敗時由 pointerlockerror 事件驅動 UI 復原，故吞掉 request 的 rejection。
   void pointerLock.request().catch(() => {});
 });
@@ -664,8 +688,24 @@ const historyLibraryController = createHistoryLibraryController({ navigator: his
 // analysis service (`HistoryAnalysisService`, README §2.6): the drill trend section (T5) needs
 // `registrationForExactDrill` for metric labels/units/direction, never `project()` client-side.
 const drillMetricRegistry = createDrillMetricRegistry();
-historyScreenHandle = createHistoryScreen({ navigator: historyNavigator, controller: historyLibraryController, registry: drillMetricRegistry });
+historyScreenHandle = createHistoryScreen({
+  navigator: historyNavigator,
+  controller: historyLibraryController,
+  registry: drillMetricRegistry,
+  // WP-50 T6（FR-49.13）— replayController 於檔案尾端建構（需要 renderer/canvas/availableScenes
+  // 皆已就緒）；此處只是 closure 參照,不在此刻讀取——button 只可能在整份模組同步執行完後、由使用者
+  // click 觸發,屆時 replayController 早已初始化完成（檔案其餘段落無 top-level await，見 KI-013 慣例）。
+  onReplay(runId: string): void {
+    const route = historyNavigator.current;
+    const sourceLabel = route?.kind === 'run' ? `${route.drillId} · ${runId}` : runId;
+    replayController.open({ kind: 'historical', runId }, sourceLabel);
+  },
+});
 historyLibraryController.start();
+
+// WP-50 T6（FR-50.14）— 供「當次 Result → 3D 重播」使用；每次 show 都更新,不因保存失敗而消失
+// （OQ-50.2/D-50-P9：Practice 或保存失敗仍可 replay 這份記憶體中的 payload）。
+let lastResultPayload: ExportPayload | undefined;
 
 const resultScreen = createResultScreen({
   saveStatusView: historySaveStatus.element,
@@ -685,6 +725,10 @@ const resultScreen = createResultScreen({
   onOpenHistory(target): void {
     historyNavigator.push({ kind: 'drill', participantId: target.participantId, drillId: target.drillId, runFilter: 'all' });
   },
+  onReplay(): void {
+    if (lastResultPayload === undefined) return;
+    replayController.open({ kind: 'current', payload: lastResultPayload }, '目前結果');
+  },
 });
 
 /** WP-49 T5（FR-49.12）— 顯示 Result 並串接 History 保存，供 live completion handler 與 dev-only
@@ -693,6 +737,7 @@ const resultScreen = createResultScreen({
  * 按鈕維持隱藏（FR-49.12「Practice Result不顯示歷史入口」／T5 高風險失效模式表）。回傳值供呼叫端
  * fire-and-forget，不阻擋 session/protocol 後續流程（沿用既有 D-48.P6 NFR-48.8 語意）。*/
 function showResultAndTrackHistory(payload: ExportPayload): Promise<HistorySaveState> {
+  lastResultPayload = payload;
   resultScreen.show(buildResultPresentation(payload));
   const savePromise = historyPersistence.save(payload);
   void savePromise.then((state) => {
@@ -843,6 +888,7 @@ if (import.meta.env.DEV) {
     ...fpsTestHarness,
     showResult(): void {
       const payload = fpsTestHarness.forceExportJSON();
+      lastResultPayload = payload;
       resultScreen.show(buildResultPresentation(payload));
     },
     // WP-48 T5 — E2E-only hook: drives the *same* `historyPersistence` instance the live
@@ -1390,13 +1436,89 @@ function liveFrame(now: number): void {
   }
 }
 
-// WP-50 / T3 — 唯一的 mode 互斥分流點；replay session 由未來的 T6 entry point 呼叫
-// `presentation.enterReplay(session)` 掛入，目前恆為 live（`resize()` 的 `sceneManager.resize`
-// 直接呼叫暫不改走 coordinator——resize 路由是 T6 wiring 真正需要 replay-active resize 時的
-// 範圍，此處先只解決「render callback 是否落到 `simLoop.pump`」這個核心互斥不變量)。
-const presentation = createPresentationCoordinator({
-  frame: liveFrame,
-  resize: (w, h) => sceneManager.resize(w, h),
+// WP-50 / T6 — Replay entry-point wiring：current Result／historical Run Detail 共用同一 Replay
+// Screen；`presentation`（唯一 mode 互斥分流點，T3）已於檔案前段建構，這裡只負責 canvas/viewport
+// ownership 交接與 ReplayController 的注入 deps（D-50-P5：共用 renderer/canvas，不共用 live scene/
+// camera/SharedState）。
+
+/** Reparents the shared canvas into the Replay viewport and sizes it — called once, right after
+ * `ReplayController` has already switched the screen into its 'ready' layout (so the viewport
+ * host's box has real dimensions to measure, not a still-`display:none` ancestor's zero size). */
+function mountReplayViewport(): void {
+  canvas.style.position = 'absolute';
+  canvas.style.inset = '0';
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  replayScreenHandle!.viewportElement.appendChild(canvas);
+  resizeReplayViewport();
+  window.addEventListener('resize', resizeReplayViewport);
+}
+
+function resizeReplayViewport(): void {
+  const rect = replayScreenHandle!.viewportElement.getBoundingClientRect();
+  const w = Math.max(1, Math.round(rect.width));
+  const h = Math.max(1, Math.round(rect.height));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // updateStyle:false — 沿用 `applyResolutionMode` 固定解析度分支的慣例：buffer 尺寸交給
+  // `renderer.setSize`，CSS 尺寸留給我們自己的 100%/100%（否則 three.js 預設會把 canvas.style
+  // 覆寫成絕對像素值，蓋掉 viewport host 的響應式框）。
+  renderer.setSize(w, h, false);
+  presentation.resize(w, h);
+}
+
+/** Restores the shared canvas to its live full-window position/sizing. Idempotent — safe to call
+ * even when the canvas was never mounted into the Replay viewport (`ReplayController` calls this
+ * on every teardown, not only when a session actually reached 'ready'). */
+function unmountReplayViewport(): void {
+  if (canvas.parentElement !== replayScreenHandle?.viewportElement) return;
+  window.removeEventListener('resize', resizeReplayViewport);
+  canvas.style.position = '';
+  canvas.style.inset = '';
+  canvas.style.width = '';
+  canvas.style.height = '';
+  document.body.prepend(canvas);
+  resize(); // 恢復 live 全螢幕尺寸（presentation.mode 此時已回 'live'，resize() 不會再被 replay 分支擋下）。
+}
+
+replayScreenHandle = createReplayScreen({
+  // `ReplayScreen`'s cancel-load button always calls `onBack()` right after `onCancelLoad()` (its
+  // own doc comment) — `close()` already aborts any in-flight `historyClient.loadRun` and tears
+  // down the session/viewport, so wiring only `onBack` covers both without a redundant second call.
+  onBack: () => replayController.close(),
+  onRetry: () => replayController.retry(),
 });
+
+const replayController = createReplayController({
+  presentation,
+  historyClient,
+  availableScenes: availableScenes.map(({ config }) => config),
+  fallbackSceneConfig: placeholderRoom,
+  createSession: (recording, sceneConfig) =>
+    createReplayPresentationSession({
+      recording,
+      sceneConfig,
+      renderer,
+      onFrame: (sample, playback) => replayScreenHandle?.updateFrame(sample, playback),
+    }),
+  mountViewport: mountReplayViewport,
+  unmountViewport: unmountReplayViewport,
+});
+
+replayController.subscribe(() => {
+  const state = replayController.state;
+  if (state.kind === 'idle') {
+    replayScreenHandle?.hide();
+    return;
+  }
+  replayScreenHandle?.show();
+  if (state.kind === 'ready') {
+    const controls = replayController.player;
+    if (controls === undefined) return; // defensive — 'ready' always implies a live session/player
+    replayScreenHandle?.render({ kind: 'ready', sourceLabel: state.sourceLabel, support: state.support, recording: state.recording, controls });
+    return;
+  }
+  replayScreenHandle?.render(state);
+});
+
 const renderLoop = createRenderLoop((now) => presentation.frame(now), { frameLog });
 renderLoop.start();
