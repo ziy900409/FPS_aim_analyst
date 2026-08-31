@@ -153,6 +153,11 @@ async function main(): Promise<void> {
   });
 
   let outcome: { exitCode: number; cleanup: { ok: boolean; reason?: string } } | undefined;
+  // WP-51 T4 (NFR-51.5, DoD "acceptance command wall time有記錄") — the runner's own root/process
+  // lifecycle + public-API scenario is the whole of what `npm run test:stage10` does today, so timing
+  // this call *is* timing the acceptance command; the opt-in 5k/scale benchmarks NFR-51.5 explicitly
+  // excludes from this budget live in a separate command (`npm run test:stage10:scale`) entirely.
+  const wallClockStart = Date.now();
   try {
     outcome = await runStage10Acceptance(
       {
@@ -168,6 +173,18 @@ async function main(): Promise<void> {
       (handle) => runScenario(handle, reporter),
     );
   } finally {
+    const wallClockMs = Date.now() - wallClockStart;
+    const budgetMs = 10 * 60 * 1000;
+    console.log(`Stage 10 acceptance command wall time: ${(wallClockMs / 1000).toFixed(1)}s (NFR-51.5 budget: 10min, excludes opt-in 5k/scale benchmarks)`);
+    reporter.record({
+      id: 'NFR-51.5-acceptance-command-wall-time',
+      status: wallClockMs < budgetMs ? 'pass' : 'fail',
+      kind: 'measurement',
+      owner: 'wp-51',
+      command: 'npm run test:stage10',
+      artifact: 'tests/stage10/cli.ts#main (Date.now() around runStage10Acceptance)',
+      notes: `${(wallClockMs / 1000).toFixed(1)}s, budget <10min; excludes RUN_HISTORY_PERF_BENCHMARK (Vitest, opt-in) and RUN_STAGE10_SCALE_BENCHMARK (npm run test:stage10:scale, opt-in) per NFR-51.5`,
+    });
     const evidencePath = path.join(workspaceRoot, '.playwright-tmp', 'stage10-evidence', 'stage10-t1-evidence.json');
     await reporter.write(evidencePath);
     console.log(`Stage 10 evidence written to ${path.relative(workspaceRoot, evidencePath)}`);

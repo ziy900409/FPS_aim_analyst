@@ -525,6 +525,34 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   （見 evidence JSON 與上方 log）。此列**留給 T5 或 WP-50 在較安靜的環境下重跑確認**，T4 DoD 的
   「所有matrix gates達標」暫不能整列打勾。
 
+- **2026-08-31**：**T4 進行中**（第五個切片）— `tests/stage10/cli.ts` 補
+  acceptance command wall time 記錄（NFR-51.5、DoD「acceptance command wall time有記錄；任何豁免有
+  owner/deadline而非靜默跳過」）。
+
+  **範圍判斷**：T1 交付的 `npm run test:stage10` 從未記錄過自己的總執行時間，NFR-51.5 的
+  10 分鐘 budget 只停留在文件層級、從未有一次真實量測對過帳。這是 WP-51 自己的 acceptance
+  harness（`tests/stage10/cli.ts`），不是 domain code，修改在授權範圍內。
+
+  **做法**：在 `main()` 包住 `runStage10Acceptance(...)` 呼叫的前後量 `Date.now()`，寫進既有的
+  `M18EvidenceRecord`（`kind:'measurement'`，budget <10 分鐘，`notes` 明確排除
+  `RUN_HISTORY_PERF_BENCHMARK`／`RUN_STAGE10_SCALE_BENCHMARK` 兩個 opt-in benchmark，對應
+  NFR-51.5 原文「不含manual與opt-in 5k benchmark」），console 也印一行人類可讀摘要。
+
+  **驗證**：`npm run test:stage10` 本機實測兩次，wall time 38.5s／41.6s（遠低於 600s budget），
+  `.playwright-tmp/stage10-evidence/stage10-t1-evidence.json` 新增
+  `NFR-51.5-acceptance-command-wall-time` 記錄且 `status:"pass"`；兩次執行 exit code 皆為 0。
+  `npm run typecheck` exit 0；`npm run test`（Vitest）186 files／1654 tests 不變；
+  `npx playwright test --project=edge`（全部 71 個既有 spec）71/71 綠燈（此時背景負載已降，無
+  前一切片記錄的資源競爭 flake 重現）。
+
+  **T4 DoD 現況總結**：matrix gates 除「42k-tick cached-reopen P95」一列尚待較安靜環境重跑確認外，
+  其餘（5,000-run 首 100 rows／100-run analysis cold/warm／normalize/seek 沿用 Node-level 既有
+  evidence）皆有可比較 environment/timing report；scale UI 不下載 full payload、50-cycle／abort
+  resource-lifecycle、keyboard-only History→Replay journey 三項皆有 automated evidence 且全綠；
+  acceptance command wall time 已記錄且遠低於 budget。唯一不能打勾的是上述 cached-reopen P95
+  一列，加上 KI-017／KI-018 兩個真實 upstream defect 仍待 WP-49／WP-50 承接修復——task-checklist.md
+  的 T4 因此暫留 ⬜，於下方寫明原因，不假裝全綠。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後
