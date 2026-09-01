@@ -2,9 +2,9 @@
 
 ## Status
 
-- **Current**：🟡 規劃完成，尚未開工。
-- **Scope state**：根據 WP-52 evidence 新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。
-- **Dependency state**：Blocked until WP-52 T-exit and formal freeze gate are complete.
+- **Current**：🟡 T0 freeze 仍未成立（No-go，真人 pilot evidence 尚未存在）；使用者已明確 override，允許先建 T1~T3 **placeholder 骨架**（見 [DECISIONS.md GD-28](../../../DECISIONS.md#gd-28-🟡-wp-53-no-go-期間-override--允許先建-t1t3-placeholder-骨架凍結值不得引用真人-evidence2026-09-01)）。
+- **Scope state**：根據 WP-52 evidence 新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。骨架階段沿用 pilot v2 2.5° 預設值作 placeholder，protocol version 帶 `-provisional` 後綴，不得視為正式凍結。
+- **Dependency state**：Formal freeze（T0）仍 Blocked until WP-52 真人 pilot evidence 到位；T1~T3 骨架切片本身不受此阻擋（GD-28 override），T4/T5 仍不執行。
 
 ## Progress
 
@@ -29,6 +29,14 @@
 | D-53.1 | `peek_click_transfer_v1` 使用新的 formal drill id | exact history/trend cohort 不能與 pilot ids 混用 | Proposed |
 | D-53.2 | Formal release 需要 `meta.assessment` 與 compatibility key | WP-48/49 只保存與趨勢化 Assessment | Proposed |
 | D-53.3 | formal Session Plan 不改 stage6 default roster | 避免既有四家族 Assessment 順序漂移 | Proposed |
+| D-53.4 | 使用者 2026-09-01 明確 override No-go，允許先建 T1~T3 placeholder 骨架（不含 T4/T5） | 縮短未來真人 evidence 到位後的落地時間；骨架不寫入正式 history/trend，風險收斂在事後換掉 placeholder 數值 | ✅ 已拍板，見全域 [DECISIONS.md GD-28](../../../DECISIONS.md) |
+
+### 2026-09-01 — No-go 期間 override：開始 T1~T3 placeholder 骨架
+
+- **仍未通過 T0 freeze gate**：WP-52 真人 pilot evidence（[T4-manual-pilot-gate.md](../wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)）尚未執行；本節記錄的是使用者明確 override 後的骨架工作，不代表 WP-53 T0 已完成，task-checklist.md 對應項目**不勾選**。
+- 決策見上表 D-53.4 與全域 [DECISIONS.md GD-28](../../../DECISIONS.md)。
+- Placeholder 數值來源：沿用 `peek_click_transfer_pilot_v2` 的 2.5° 預設候選（widthU/heightU/depthU、8u distance、20 count、既有 timing/visibility），因為這是目前唯一有任何（即便只是研究者手動走查）驗證過的候選；protocol version 使用 `peek-click-transfer-v1.0.0-provisional`，刻意不採用 OQ-53-1 預定的正式字串，避免混淆。
+- 真人 evidence 到位、WP-53 T0 真正拍板後，須：(1) 把上述 placeholder 常數換成 freeze decision 產出的實際值；(2) 移除程式碼與文件中的 provisional/placeholder 標記；(3) 回填 task-checklist.md 對應 box；(4) 視差異決定是否需要重新跑一輪 T1~T3 測試。
 
 ## Open Questions
 

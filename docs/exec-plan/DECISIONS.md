@@ -23,6 +23,17 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-28 🟡 WP-53 No-go 期間 override — 允許先建 T1~T3 placeholder 骨架,凍結值不得引用真人 evidence(2026-09-01)
+
+| | |
+|---|---|
+| **發現處** | 執行 `/incremental-implementation` 處理 WP-53 前,讀 [stage11 README §6](active/stage11/README.md#L98-L105)、[WP-53 task-checklist.md](active/stage11/wp-53-peek-click-transfer-v1-formal-release/task-checklist.md)、[WP-52 T4-manual-pilot-gate.md](active/stage11/wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md#L51-L59)三處,確認 WP-53 go/no-go 現況為明確 **No-go**:WP-52 T4 手動 pilot 走查與真人 evidence 尚未執行,`T4-manual-pilot-gate.md` 原文「WP-53...必須不開始凍結數值,除非...」。WP-53 README 的 Constraints 也明文「WP-53 不得在 WP-52 T-exit evidence 缺失時開工」。 |
+| **與既有決議的落差** | CLAUDE.md §3.6「跨 WP 先驗上游 exit-gate 已綠燈」與 WP-53 T0 checklist 第一、二項(確認 WP-52 T-exit / 收集 pilot evidence links)在此刻都不成立;正常協議下不得進 WP-53 T1。 |
+| **決議(使用者拍板,2026-09-01,明確 override No-go)** | 在真人 pilot evidence 仍不存在的前提下,允許先建 WP-53 **T1(formal drill config)/T2(metadata + compatibility condition cell)/T3(metric registry)** 的程式碼骨架,但: (1) 所有原本該由 T0 freeze decision 拍板的數值(角尺寸、protocol version 字串等)一律沿用 pilot v2 的 2.5° 預設候選作占位值,並在程式碼註解與型別/常數命名上明確標記為 **provisional / placeholder**,不得被下游程式碼或文件誤讀為正式凍結值;(2) protocol version 字串使用帶 `-provisional` 後綴的變體,避免與 OQ-53-1 預設的正式字串 `peek-click-transfer-v1.0.0` 混淆;(3) **不做 T4(Session Plan 整合,含 stage6 default roster 相關改動)與 T5(E2E)**——這兩塊 blast radius 最高且使用者本次指示範圍未涵蓋;(4) [task-checklist.md](active/stage11/wp-53-peek-click-transfer-v1-formal-release/task-checklist.md) 的 checkbox **不因本次骨架勾選**,WP-53 formal freeze 仍未成立,待真人 evidence 到位、T0 真正拍板後才能把 placeholder 換成真實凍結值並勾動對應項目。 |
+| **理由** | 使用者已被完整告知 No-go 現況與風險(見本次對話的 AskUserQuestion),仍選擇 override,目的是縮短未來真人 evidence 到位後的落地時間;骨架不涉及需要真人 pointer-lock 手感驗證的部分(T4/T5),風險收斂在「之後要換掉 placeholder 數值」這一件事,不會產生無法回溯的研究效度污染(尚不會寫入任何正式 history/trend)。 |
+| **影響面** | 新增 [src/drill/peek_click_transfer_v1.ts](../../src/drill/peek_click_transfer_v1.ts) 及其 metadata/compatibility/registry 骨架(後續切片逐一列出檔案);[WP-53 progress.md](active/stage11/wp-53-peek-click-transfer-v1-formal-release/progress.md) 同步記錄。 |
+| **狀態** | 🟡 進行中(2026-09-01 起,骨架切片逐一 commit)。**T0 freeze 仍未成立**——真人 pilot evidence 到位前,本 GD 條目與程式碼內的 provisional 標記都不得被移除或視為完成。 |
+
 ### GD-25 ✅ WP-45 pilot-ready — peek-click transfer 與元件量測邊界、共用遮擋 kernel(2026-08-26)
 
 | | |
