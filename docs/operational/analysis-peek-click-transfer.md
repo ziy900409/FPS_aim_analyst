@@ -50,3 +50,26 @@ A valid first shot requires a first fire event that hits, occurs no earlier than
 ## Verification evidence
 
 The pilot configuration, geometry, wall-blocking behavior, metrics, session roster, and 60/120/240 Hz timeout export cadence are covered by the WP-45 unit suite. Full project typecheck, Vitest, and Playwright evidence is recorded in the WP-45 T-exit progress entry.
+
+## Pilot v2 (WP-52)
+
+`peek_click_transfer_pilot_v2` is a fully independent module/id/seed range from `peek-click-transfer-pilot-v1` — it does not replace v1, and v1's file/tests/exported evidence stay untouched (D-52.1). Its purpose is to open a second, independently auditable evidence-collection round: WP-52 T0 found no pilot data supporting a change to any v1 parameter, so v2 currently keeps v1's angular-size candidates (1.5/2/3 deg), spawn-anchored 3000 ms timeout, and no-warmup policy verbatim (D-52.4/D-52.5/D-52.6). Nothing about the trial timeline, geometry, reported values, or flags described above differs between v1 and v2 — only the drill id (`peek_click_transfer_pilot_v2_<size>deg`), seed range (95000-series vs. v1's 94000-series), and evidence cohort are separate.
+
+Operators add the pilot into a Session Plan through the existing free family-checkbox UI (`SessionPlanSetup`) by checking `'peek-click-transfer'` — WP-43 (FR-H3) already removed the named-preset selector project-wide in favor of free selection, so WP-52 T2 did not reintroduce one (see [DECISIONS.md GD-26](../exec-plan/DECISIONS.md)). The family resolves to the same fixed 2-degree default drill id as any other selection; no numeric protocol parameter is exposed in that UI.
+
+### Evidence report
+
+`buildPeekClickTransferPilotEvidenceReport()` (`src/pilot/peekClickTransferPilotEvidence.ts`) is a pure aggregator over one or more pilot sessions' presentations. It reports:
+
+- `presentationCount`, `completionRate`, `timeoutRate`, `validFirstShotRate`;
+- `leftRightBalance` (`{ left, right }` presentation counts, a sanity check against the strict L/R schedule);
+- `flagCounts` — a tally of every flag in the table above across the sample.
+
+It never derives a composite score, never touches file/network I/O, and accepts either `derivePeekClickTransferMetrics()`'s output or a hand-built synthetic fixture (same shape: `{ presentations }`).
+
+### Sampling limitations and what must not be claimed yet
+
+- No committed export in this repository comes from a real human pilot session. Everything currently verified is synthetic (unit tests) or a single-instrumented walkthrough — this is **not** pilot evidence in the WP-52 T4 manual-gate sense.
+- Do not treat any evidence-report output produced before a real manual pilot pass as informative about human completion/timeout/valid-first-shot rates. The report's correctness is proven; its *input* has not yet come from real participants.
+- A handful of participant sessions cannot establish population-level rates with usable precision — WP-52 T4/OQ-52-4 defer the "how many participants is enough" question to the researcher, and WP-53's freeze decision must not be made on n too small to distinguish signal from noise.
+- Left/right balance from the evidence report only detects a *gross* scheduling defect (e.g. a broken alternation); it is not a substitute for the scene-geometry parity test that already covers spatial symmetry at the config level (NFR-52-2).

@@ -57,6 +57,13 @@
 - `peekClickTransferPilotEvidence.test.ts`：一組 committed synthetic fixture（5 個 presentation）覆蓋 timeout、first-miss→second-hit（`shotsToKill:2`）、pre-onset fire（`fire_before_measurement_onset`）、no-counter、外加一個 clean valid-first-shot hit；並驗證跨多 session 聚合不重複計算/不漏算，以及空樣本不除以零。
 - `HistoryPersistence.test.ts` 新增 pilot v2 專屬 practice guard case：`drillId: 'peek_click_transfer_pilot_v2_2deg'` 且 `meta.assessment` 缺席時，`save()` 直接短路成 `excluded`，`client.saveRun` 未被呼叫——證明既有（drill-id-agnostic）practice guard（`payload.meta.assessment === undefined` 短路，`HistoryPersistence.ts:75-80`）自動涵蓋 pilot v2，不需要新增程式碼（D-52.2 保證 pilot v2 永不設 `meta.assessment`）。
 
+### 2026-09-01 — T4 Manual pilot gate and documentation
+
+- 新增 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md)：比照 WP-45 T-exit-gate.md 的「自動化證據 vs. 人工 checklist」分軌慣例。自動化證據小節列出 T1-T3 已綠燈的項目；人工 checklist 小節列出 pointer-lock/視覺手感/三候選手感/timeout 節奏/無 composite score 洩漏等 9 項，全部標記待真人研究者回填,明文聲明自動化測試不得冒充人工證據。
+- 更新 `docs/operational/analysis-peek-click-transfer.md` 新增 §Pilot v2：v2 與 v1 的關係(獨立 module/id/seed,參數逐項沿用)、operator 如何透過既有自由 checkbox 排入 session、evidence report 介面、以及一段「Sampling limitations and what must not be claimed yet」——明確聲明本 repo 尚無真人 pilot 匯出,evidence report 只在 synthetic input 上被驗證過正確性。
+- 更新 `CONTEXT.md`：`peek-click-transfer-pilot-v1` 詞條後新增 `peek_click_transfer_pilot_v2` 詞條,說明其為獨立 evidence-collection round、T0 拍板沿用 v1 數值、operator 如何排入 session、evidence report 用途。
+- **WP-53 go/no-go：No-go,待人工執行**。本輪 WP-52 交付的 config/session wiring/evidence report 皆已機械驗證,但本 repo 尚無任何真人 trial 跑過 pilot v2。WP-53 開始凍結數值前需要:(1) 人工 checklist 回填且標註日期,(2) 至少一批真人 pilot session 的 evidence report,(3) 上述證據附掛回 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 或其後續 addendum。OQ-52-4(最小 participant 數)owner 為研究者,本輪不預設數字。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -68,6 +75,7 @@
 | D-52.5 | OQ-52-2：pilot v2 維持 spawn-anchored `peekTimeoutMs`/`countdownMs` 3000 ms，不改 split timeout | 同上，T0 無明確 evidence 支持變更；v1 現行 3000 ms 已是 WP-45 拍板值，變更門檻應由 pilot 資料而非臆測驅動 | Confirmed，T1 timing 沿用 v1 數值 |
 | D-52.6 | OQ-52-3：pilot v2 不新增獨立 warmup drill，沿用 WP-45 D-45.16（`resolveWarmupDrillId` 對 `'peek-click-transfer'` 落既有 `else` 分支回 `unavailable`） | T3 只交付單一 pilot drill，未建熱身 config；WP-43 UI contract 未定義此家族熱身入口，現在新增屬臆造未定案設計，與 D-45.14/D-45.16 一致的立場 | Confirmed，T2 沿用現行 `resolveWarmupDrillId` 行為，不修改該函式 |
 | D-52.7 | T2 不重新引入 preset `<select>`；`SessionPlanSetup` 改為放寬 `families` 型別至 `SessionFamilyId`，`main.ts` 傳入 `[...KNOWN_SESSION_FAMILY_IDS]`（5 家族），沿用 WP-43 FR-H3 的自由 checkbox 設計 | WP-43（stage8）已用 FR-H3 移除 preset 下拉並有 E2E 鎖定（`session-orchestrator.spec.ts` 斷言 count 0）；WP-52 task-checklist 字面假設的「preset 選擇」與此矛盾，使用者拍板保留已交付/已測試設計而非回退；詳見全域 [DECISIONS.md](../../../DECISIONS.md) GD-26（2026-09-01 已解決） | Confirmed，使用者 2026-09-01 拍板 |
+| D-52.8 | WP-53 go/no-go：**No-go**，待真人執行 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 人工 checklist + 至少一批真人 pilot session evidence | 本 repo 尚無任何真人 trial；不得讓機械驗證(config/wiring/report 正確性)冒充真人 pilot evidence，否則違反 GD-20 pre-registration 紀律精神 | Confirmed，2026-09-01 |
 
 ## Open Questions
 

@@ -36,11 +36,11 @@
 
 ## T4 — Manual pilot gate and documentation
 
-- [ ] 人工 pointer-lock／視覺手感 checklist 建檔
-- [ ] 至少記錄 pilot evidence 的採樣限制與不可宣告事項
-- [ ] 更新 `analysis-peek-click-transfer.md`
-- [ ] 更新 `CONTEXT.md` pilot v2 條目
-- [ ] WP-53 go/no-go 記錄於 progress
+- [x] 人工 pointer-lock／視覺手感 checklist 建檔（[T4-manual-pilot-gate.md](T4-manual-pilot-gate.md)，待真人研究者回填，不得由自動化冒充）
+- [x] 至少記錄 pilot evidence 的採樣限制與不可宣告事項（`analysis-peek-click-transfer.md` §Pilot v2 + T4 文件內）
+- [x] 更新 `analysis-peek-click-transfer.md`（新增 §Pilot v2）
+- [x] 更新 `CONTEXT.md` pilot v2 條目
+- [x] WP-53 go/no-go 記錄於 progress（No-go，待人工執行；見 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 與 progress.md Decision log）
 
 ## T-exit
 
