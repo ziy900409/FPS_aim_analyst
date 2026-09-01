@@ -13,6 +13,17 @@ export type TransferPilotFamilyId = (typeof TRANSFER_PILOT_FAMILY_IDS)[number];
 
 export type SessionFamilyId = TestFamilyId | TransferPilotFamilyId;
 
+/**
+ * KI-016 — single-source allowlist of every family id a session plan may draw from (the frozen
+ * four-family assessment roster plus the additive pilot roster). `SessionRunner.ts` and
+ * `src/data/metadata.ts`'s `requireSessionPlanFamilyOrder` both validate against this constant so
+ * the two allowlists cannot drift apart again.
+ */
+export const KNOWN_SESSION_FAMILY_IDS: ReadonlySet<SessionFamilyId> = new Set([
+  ...TEST_FAMILY_IDS,
+  ...TRANSFER_PILOT_FAMILY_IDS,
+]);
+
 function participantOffset(participantId: string, rosterLength: number): number {
   let hash = 0x811c9dc5;
   for (let index = 0; index < participantId.length; index += 1) {

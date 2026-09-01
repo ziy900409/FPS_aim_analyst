@@ -21,8 +21,8 @@
 
 ## T2 — Pilot session preset UI + metadata unblock
 
-- [ ] `sessionSchedule.ts` 匯出完整 session family allowlist 單一來源
-- [ ] `metadata.ts` 使用同一 allowlist 驗證 `sessionPlanFamilyOrder`
+- [x] `sessionSchedule.ts` 匯出完整 session family allowlist 單一來源（KI-016，T2a）
+- [x] `metadata.ts` 使用同一 allowlist 驗證 `sessionPlanFamilyOrder`（KI-016，T2a）
 - [ ] `SessionPlanSetup` 支援具名 preset 選擇，不提供 protocol numeric free input
 - [ ] `main.ts` session plan 匯出寫入 `sessionPlanPreset`
 - [ ] transfer pilot session E2E：選 preset → 跑 transfer family → 匯出 metadata 不 throw

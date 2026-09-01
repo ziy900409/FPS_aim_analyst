@@ -34,6 +34,14 @@
 - v1 guard 持續有效：本次未修改 `peek_click_transfer_pilot_v1.ts`／`.test.ts` 任何一行；只從中 import 既有 export。
 - Verification：見下方 Verification log；`npx tsc --noEmit` 全專案 exit 0；`graphify update .` 已執行（3826 nodes / 8993 edges / 240 communities）。
 
+### 2026-09-01 — T2a KI-016 fix（session family allowlist single-source）
+
+- 落地 [KI-016](../../../known_issue/KI-016-session-plan-family-order-validator-stale-allowlist.md) §3 修復計畫：`src/session/sessionSchedule.ts` 新增匯出 `KNOWN_SESSION_FAMILY_IDS`（`TEST_FAMILY_IDS ∪ TRANSFER_PILOT_FAMILY_IDS`）；`SessionRunner.ts` 刪除本地重複定義改為 import；`src/data/metadata.ts` 的 `requireSessionPlanFamilyOrder` 改用同一份允許清單，不再寫死 `TEST_FAMILY_IDS`。
+- 新增回歸測試（`metadata.test.ts`）：`sessionPlanFamilyOrder` 含 `'peek-click-transfer'` 時 `buildMetadata()` 不再 throw；既有四家族正向/負向 case 零修改全綠。
+- `SessionRunner.test.ts`/`sessionPlanPresets.test.ts`/`sessionSchedule.test.ts` 既有行為零修改全綠。
+- 已同步更新 [KI-016](../../../known_issue/KI-016-session-plan-family-order-validator-stale-allowlist.md) 狀態頭與 DoD、[BUGFIX-DECISIONS.md](../../../known_issue/BUGFIX-DECISIONS.md) BD-016。
+- T2 尚未完成：`SessionPlanSetup` preset 選擇 UI 與 `main.ts` 的 `sessionPlanPreset` 匯出接線（KI-016 診斷中標記的「preset 切換開放給操作端 UI」本體功能）留待 T2b。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -63,3 +71,5 @@
 | 2026-09-01 | `npx vitest run src/drill/peek_click_transfer_pilot_v2.test.ts src/drill/peek_click_transfer_pilot_v1.test.ts src/pilot/pilotConfigs.test.ts` | 3 files / 25 tests passed（T1，v1 零修改全綠） |
 | 2026-09-01 | `npx tsc --noEmit` | exit 0（全專案） |
 | 2026-09-01 | `graphify update .` | 3826 nodes / 8993 edges / 240 communities rebuilt |
+| 2026-09-01 | `npx vitest run src/session/sessionSchedule.test.ts src/session/SessionRunner.test.ts src/session/SessionRunnerPoll.test.ts src/data/metadata.test.ts src/session/sessionPlanPresets.test.ts` | 5 files / 81 tests passed（T2a KI-016 fix） |
+| 2026-09-01 | `npx tsc --noEmit`（T2a 後） | exit 0（全專案） |

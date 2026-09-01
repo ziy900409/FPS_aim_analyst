@@ -7,7 +7,7 @@ import { DEFAULT_MAX_DRILL_SECONDS } from './RingBuffer.ts';
 import type { TargetHitboxConfig } from '../drill/DrillConfig.ts';
 import { SIM_TO_WORLD } from '../loop/constants.ts';
 import { findSessionPlanPreset } from '../session/sessionPlanPresets.ts';
-import { TEST_FAMILY_IDS } from '../session/sessionSchedule.ts';
+import { KNOWN_SESSION_FAMILY_IDS } from '../session/sessionSchedule.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
@@ -346,7 +346,7 @@ function requireSessionPlanPreset(value: unknown): string {
 function requireSessionPlanFamilyOrder(value: unknown): readonly string[] {
   if (!Array.isArray(value)) throw new Error('sessionPlanFamilyOrder must be an array');
   return value.map((family, index) => {
-    if (typeof family !== 'string' || !(TEST_FAMILY_IDS as readonly string[]).includes(family)) {
+    if (typeof family !== 'string' || !(KNOWN_SESSION_FAMILY_IDS as ReadonlySet<string>).has(family)) {
       throw new Error(`sessionPlanFamilyOrder[${index}] must be a configured test family`);
     }
     return family;

@@ -237,6 +237,22 @@ describe('collectMeta', () => {
     ).toThrow('sessionPlanFamilyOrder must be an array');
   });
 
+  it('accepts a session-plan family order containing the peek-click-transfer pilot family (KI-016)', () => {
+    const base: CollectMetaArgs = {
+      drillId: 'hold_click_v1',
+      backend: 'webgl2',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+    };
+
+    const withTransferFamily = collectMeta({
+      ...base,
+      sessionPlanFamilyOrder: ['hold-click', 'counterstrafe', 'peek-click-transfer'],
+    });
+    expect(withTransferFamily.sessionPlanFamilyOrder).toEqual(['hold-click', 'counterstrafe', 'peek-click-transfer']);
+  });
+
   it('preserves an opaque spiderShot replay schedule in spawn metadata', () => {
     const spiderShot = {
       kind: 'center-peripheral',

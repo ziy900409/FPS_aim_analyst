@@ -4,11 +4,7 @@ import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
 import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
 import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
-import {
-  TEST_FAMILY_IDS,
-  TRANSFER_PILOT_FAMILY_IDS,
-  type SessionFamilyId,
-} from './sessionSchedule.ts';
+import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
 
 export interface SessionPlan {
   readonly participantId: string;
@@ -43,13 +39,6 @@ export interface SessionRunnerOptions {
   readonly onStatus?: (text: string) => void;
   readonly onPhaseChange?: (phase: SessionRunnerPhase) => void;
 }
-
-// WP-45 T5 — pilot family ids are additive to the frozen four-family assessment roster; a session
-// plan may draw from either known roster but not from an arbitrary operator-supplied id.
-const KNOWN_SESSION_FAMILY_IDS: ReadonlySet<SessionFamilyId> = new Set([
-  ...TEST_FAMILY_IDS,
-  ...TRANSFER_PILOT_FAMILY_IDS,
-]);
 
 function requireFamilyOrder(value: readonly SessionFamilyId[]): readonly SessionFamilyId[] {
   if (value.length === 0) throw new Error('Session plan must include at least one family');

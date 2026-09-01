@@ -20,7 +20,7 @@
 |---|---|---|---|
 | [KI-018](KI-018-history-search-keystroke-focus-steal.md) | History「搜尋 Participant」逐字輸入時，`navigator.replace()` 每次都給 focus-on-navigation guard 一個新的 route 物件參考，被誤判為真正導覽而搶焦點，導致除首字元外的按鍵全部遺失 | BD-018(§2，focus-on-navigation guard 改語意比較，或由 `HistoryNavigator` 分辨 push/replace) | 🔴 診斷完成，修法待落地 |
 | [KI-017](KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) | Run Detail「3D 重播」在 `replayController`（頂層 `const`，檔案尾端才賦值）初始化完成前被點擊會拋 `ReferenceError`，與 KI-013 同一類根因、不同變數——KI-013 §6 OQ-KI13-1 預告的風險具體重現 | BD-017(§2，`replayController` 比照 KI-013 改為提早宣告的 `let \| undefined` + `onReplay` 補 guard) | 🔴 診斷完成，修法待落地 |
-| [KI-016](KI-016-session-plan-family-order-validator-stale-allowlist.md) | `metadata.ts` 的 `requireSessionPlanFamilyOrder` 仍寫死驗證 `TEST_FAMILY_IDS`，未跟上 WP-45 T5 在 `SessionRunner.ts` 建立的 `KNOWN_SESSION_FAMILY_IDS` 聯集——目前被「preset 切換未接進操作端 UI」意外遮住未觸發，一旦 `families` 含 `'peek-click-transfer'` 就會在匯出時 throw | BD-016(§2，兩份允許清單收斂成 `sessionSchedule.ts` 匯出的單一來源，`SessionRunner.ts`/`metadata.ts` 皆改為 import) | 🔴 診斷完成，修法待落地 |
+| [KI-016](KI-016-session-plan-family-order-validator-stale-allowlist.md) | `metadata.ts` 的 `requireSessionPlanFamilyOrder` 仍寫死驗證 `TEST_FAMILY_IDS`，未跟上 WP-45 T5 在 `SessionRunner.ts` 建立的 `KNOWN_SESSION_FAMILY_IDS` 聯集——目前被「preset 切換未接進操作端 UI」意外遮住未觸發，一旦 `families` 含 `'peek-click-transfer'` 就會在匯出時 throw | BD-016(§2，兩份允許清單收斂成 `sessionSchedule.ts` 匯出的單一來源，`SessionRunner.ts`/`metadata.ts` 皆改為 import) | ✅ 已修(2026-09-01) |
 | [KI-015](KI-015-drill-results-retest-discoverability.md) | Drill Results 以全螢幕遮罩呈現，但 Restart／匯出入口位於頁外；使用者不易發現重測，且未被提醒重測會清除本輪結果 | BD-015(§3,Results 內新增 sticky 操作列；UI 只用 callbacks 重用既有 restart/export path，Restart 前確認資料清除) | ✅ 已修(2026-08-26) |
 | [KI-014](KI-014-spider-shot-peripheral-target-sunk-below-floor.md) | KI-012 修復北牆遮擋後,使用者回報「現在地板高度也會遮蓋球體」——`spider-shot-v2` 的 `angularRadiusDegRange` 上限 25° 搭配 azimuth 朝下時,周邊目標世界 y 可低至約 -1.99,`placeholder-room` 地板原在 y=0,目標幾乎全沉入地板 | BD-014(§3,只放大 `placeholder-room` 的地板深度:新增 `floorY:-3` 並讓牆體下緣一併延伸,不動任何 drill config 凍結值) | ✅ 已修(2026-08-26) |
 | [KI-013](KI-013-controls-tdz-referenceerror-on-early-researcher-click.md) | 於 KI-012 診斷過程中意外發現:過早連續點擊「研究員模式」→「單一 Drill 調整」會拋出未捕捉的 `ReferenceError: Cannot access 'controls' before initialization`——`controls` 是頂層 `const`,兩個 top-level await 期間按鈕已可點但 `controls` 仍在 TDZ | BD-013(§3,`controls` 改為提早宣告的 `let \| undefined` + `syncControlsVisibility()` 補 guard,比照既有 `researcherMenu` 慣例) | ✅ 已修(2026-08-26) |
@@ -67,17 +67,17 @@
 | **遺留 OQ** | **OQ-KI17-1**(沿用 OQ-KI13-1 的精神)：本檔案(`main.ts`,~1300+ 行單一模組作用域)是否還有其他「早期可互動 UI callback 依賴晚宣告頂層 const」的組合尚未系統性掃描——本次與 KI-013 都只處理實際重現到的單一變數,建議修 KI-017 時一併考慮是否值得做一次全檔案掃描式稽核(見 KI-013 §6 原話)。 |
 | **狀態** | 🔴 診斷完成,修法待落地(2026-08-31)。 |
 
-### BD-016 🔴 KI-016 — `sessionPlanFamilyOrder` metadata 驗證仍鎖死 `TEST_FAMILY_IDS`；診斷完成,修法待落地(2026-08-26)
+### BD-016 🟢 KI-016 — `sessionPlanFamilyOrder` metadata 驗證仍鎖死 `TEST_FAMILY_IDS`；已修復(2026-09-01, WP-52 T2)
 
 | | |
 |---|---|
 | **發現處 / 根因** | 稽核「Session Plan 家族清單能否改成下拉/置換 preset」時讀碼發現:`main.ts:516-521` 把 `activeSessionPlanSelection.families` 塞進匯出的 `sessionPlanFamilyOrder`,但 [metadata.ts:330-338](../../src/data/metadata.ts#L330) 的 `requireSessionPlanFamilyOrder` 只驗證 `TEST_FAMILY_IDS` 四個值。WP-45 T5 在 [SessionRunner.ts:49](../../src/session/SessionRunner.ts#L49) 建了 `KNOWN_SESSION_FAMILY_IDS`(`TEST_FAMILY_IDS ∪ TRANSFER_PILOT_FAMILY_IDS`)當允許清單,但只更新了那一份,`metadata.ts` 這份獨立寫死的驗證從未跟上——兩份允許清單各自維護、其中一份漂移,是 GD-7(hitbox 單一來源)想避免的同一種模式。完整診斷見 [KI-016](KI-016-session-plan-family-order-validator-stale-allowlist.md)。 |
 | **為何從未觸發** | `main.ts:360-361` 的 `createSessionPlanSetup({ families: TEST_FAMILY_IDS, ... })` 目前寫死餵四家族常數,從未把 `TRANSFER_PILOT_FAMILY_IDS` 或 `sessionPlanPresets.ts` 的 preset 註冊表接進操作端 UI,所以 `'peek-click-transfer'` 從未真的流進這條驗證路徑。這是被另一個尚未落地的功能(preset 切換)意外遮住,不是被修好——任何未來讓 `families` 帶到 `'peek-click-transfer'` 的改動都會立刻踩到。 |
-| **決策(修法方向,尚未落地)** | 收斂成單一來源:允許清單搬到 `sessionSchedule.ts` 匯出,`SessionRunner.ts` 與 `metadata.ts` 都改為 import 同一個 export,不在 `metadata.ts` 內另拼一次聯集(否則只是把重複換位置,問題會再發生)。 |
-| **理由** | 這條 gap 目前無外部症狀(未被任何已知操作路徑觸發),但一旦「Session Plan preset 切換」開放給操作端 UI(該功能已在 [DECISIONS.md GD-24 FR-G9](../exec-plan/DECISIONS.md) 被決議為「切換既有具名 preset 對任何操作者開放」但實際尚未接線),就會立刻炸——屬於「著手做那個功能前必須先清的地雷」,故獨立開 KI/BD 帳本追蹤,不與 preset 切換本身的 feature 決策混記。 |
-| **偏離計畫** | 使用者拍板本輪只交診斷文件與修法計畫,不落地程式碼;落地時機留待後續。 |
-| **遺留 OQ** | 無——修法方向已明確,純粹是排程問題(何時落地)。 |
-| **狀態** | 🔴 診斷完成,修法待落地(2026-08-26)。 |
+| **決策(已落地)** | 收斂成單一來源:`KNOWN_SESSION_FAMILY_IDS` 搬到 `sessionSchedule.ts` 匯出,`SessionRunner.ts` 與 `metadata.ts` 都改為 import 同一個 export,`metadata.ts` 未另拼第二次聯集。 |
+| **理由** | 這條 gap 原本無外部症狀(未被任何已知操作路徑觸發),但 WP-52 T2 需要把 `transfer-pilot-v1` preset 接進操作端 UI(見 [DECISIONS.md GD-24 FR-G9](../exec-plan/DECISIONS.md)),一旦接線就會立刻踩到——因此在該功能落地前一併清除此地雷。 |
+| **偏離計畫** | 無;依已定案修法方向直接落地，未偏離 KI-016 §3。 |
+| **遺留 OQ** | 無。 |
+| **狀態** | 🟢 已修復(2026-09-01),見 [KI-016](KI-016-session-plan-family-order-validator-stale-allowlist.md) §5 DoD 與 [wp-52 progress.md](../exec-plan/active/stage11/wp-52-peek-click-transfer-pilot-v2/progress.md)。 |
 
 ### BD-004 🔴 KI-004 — sim/world 單位域混用(corridor gate + 離線 ε 原點);**診斷完成,修法待拍板**(2026-08-05)
 
