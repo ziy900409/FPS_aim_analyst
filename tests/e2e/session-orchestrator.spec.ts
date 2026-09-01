@@ -129,6 +129,34 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     expect(r.freeDrillId).toBe('counterstrafe-free-v1');
   });
 
+  test('WP-52 T4：peek_click_transfer_pilot_v2 是研究員模式可選、可載入的 drill（manual gate 前置條件）', async ({
+    page,
+  }) => {
+    await waitForHarness(page);
+
+    const r = await page.evaluate(() => {
+      type Harness = {
+        startDrill(id: string): void;
+        forceExportJSON(): { meta: Record<string, unknown> };
+        phase(): string;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+
+      harness.startDrill('peek_click_transfer_pilot_v2_2deg');
+      const phase = harness.phase();
+      const meta = harness.forceExportJSON().meta;
+
+      return { phase, drillId: meta.drillId, visibility: meta.visibility };
+    });
+
+    // Same minimal proof as spider-shot-v1 above: the pipeline reaches a visible target without
+    // throwing. A full timeout/hit playthrough needs camera raycast simulation (see
+    // peek_click_transfer_pilot_v2.test.ts's unit-level runTimeoutOnly for that).
+    expect(r.phase).toBe('running');
+    expect(r.drillId).toBe('peek_click_transfer_pilot_v2_2deg');
+    expect(r.visibility).toEqual({ sampleCount: 9, onsetThreshold: 0.5 });
+  });
+
   test('Session Plan 真實 DOM 接線：按鈕 → 表單 → 家族拖曳排序/自由休息秒數 → eligibility gate', async ({
     page,
   }) => {

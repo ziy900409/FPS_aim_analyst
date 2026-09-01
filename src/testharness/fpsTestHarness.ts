@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
+import { peekClickTransferPilotV2 } from '../drill/peek_click_transfer_pilot_v2.ts';
 import { createSharedState, type SharedState } from '../state/SharedState.ts';
 import { KEY_CODE } from '../state/types.ts';
 import type { InputEvent, TargetState } from '../state/types.ts';
@@ -419,6 +420,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
           }
         : {}),
       ...(config.drillId === peekClickTransferPilotV1.id ? { visibility: peekClickTransferPilotV1.visibility } : {}),
+      ...(config.drillId === peekClickTransferPilotV2.id ? { visibility: peekClickTransferPilotV2.visibility } : {}),
     });
     return buildExportPayload(meta, snapshot);
   }

@@ -72,6 +72,15 @@
 - Documentation gate：`analysis-peek-click-transfer.md`／`CONTEXT.md`／`DECISIONS.md` GD-26／`KI-016`／`BUGFIX-DECISIONS.md` BD-016／stage11 `README.md`/`task-checklist.md`/`progress.md` 全數同步。
 - WP-52 README 狀態頭更新為「T0–T4/T-exit 完成；WP-53 No-go 待人工執行」。
 
+### 2026-09-01 — T4 追加：pilot v2 缺研究員模式入口（回答使用者「如何手動驗證」時發現）
+
+- 使用者詢問如何手動驗證 T4 checklist 時,讀碼發現 pilot v2 當時**在跑起來的 app 裡完全點不到**:Session Plan 的 `'peek-click-transfer'` 家族仍解析到 v1 的 drill(`SessionRunner.ts` `resolveFamilyDrillId`,WP-45 既有語意,T2 未改也不該改——v1/v2 是分離 cohort,D-52.1);而 `main.ts` 的 `availableDrills`(研究員模式「單一 Drill 調整」選單)從未登記 v2。T4 checklist 文件本身雖然「就緒」,但沒有入口可實際執行,是本輪交付的一個缺口。
+- 修復:`main.ts` 的 `availableDrills` 新增 `peekClickTransferPilotV2`(2° 預設候選)一筆,比照 v1 既有登記模式(v1 也只登記 2° 預設,1.5°/3° 未進選單——非新引入的限制)。
+- 連帶發現並修復第二個「同一構念兩處定義」漂移:`main.ts` 的 `collectMeta()` 與 `src/testharness/fpsTestHarness.ts` 各自獨立寫了一份 `drillId === peekClickTransferPilotV1.id ? { visibility: ... } : {}` 的 visibility-meta 分支(WP-45 遺留,兩份平行維護)。只改 `main.ts` 那份會讓 `__fpsTest.forceExportJSON()`(Playwright 測試走的路徑)匯出缺 `visibility`——已在 `fpsTestHarness.ts` 同步補上 v2 分支,兩份維持一致(未動 v1 既有行為)。
+- 新增 `tests/e2e/session-orchestrator.spec.ts` 案例：`startDrill('peek_click_transfer_pilot_v2_2deg')` → phase `running` → export 含正確 `drillId`/`visibility`。
+- Verification：`npm run typecheck` exit 0；`npx playwright test tests/e2e/session-orchestrator.spec.ts` 5/5 passed；全專案 `npx vitest run` 188 files / 1672 tests passed（+4 於前次 T-exit，新增 e2e 不計入 vitest 但既有 suite 零回歸）；`graphify update .`（3835 nodes / 9019 edges）。
+- `T4-manual-pilot-gate.md` 新增「How to reach it in the running app」小節，給出具體 dev-server 操作步驟；明確聲明 Session Plan 的 checkbox 路徑仍指向 v1，v2 手動測試要走研究員模式選單。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -114,3 +123,7 @@
 | 2026-09-01 | `npx vitest run`（T-exit，全專案） | 188 files / 1668 tests passed，2 skipped（既有、與本 WP 無關） |
 | 2026-09-01 | `npx playwright test`（T-exit，全專案，edge channel） | 72 passed |
 | 2026-09-01 | `graphify update .`（T-exit 確認） | 3832 nodes / 9004 edges rebuilt，與 T4 後一致 |
+| 2026-09-01 | `npm run typecheck`（researcher-mode 入口修復後） | exit 0 |
+| 2026-09-01 | `npx playwright test tests/e2e/session-orchestrator.spec.ts` | 5/5 passed（新增 v2 入口 case） |
+| 2026-09-01 | `npx vitest run`（全專案） | 188 files / 1672 tests passed |
+| 2026-09-01 | `graphify update .` | 3835 nodes / 9019 edges rebuilt |

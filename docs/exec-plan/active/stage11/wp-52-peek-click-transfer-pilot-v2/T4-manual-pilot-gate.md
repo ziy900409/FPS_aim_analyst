@@ -12,6 +12,20 @@
 
 None of this substitutes for a human actually playing the pilot. Automated tests prove the *mechanism* (config, wiring, math); they cannot prove pointer-lock feel, visual readability, or whether a real player's timing distribution is usable.
 
+## How to reach it in the running app
+
+`peek_click_transfer_pilot_v2_2deg` is registered as a researcher-mode drill (`main.ts` `availableDrills`, added 2026-09-01 alongside this checklist). To run it manually:
+
+1. `npm run dev`, open `http://localhost:5173/` in Chrome or Edge.
+2. Click **研究員模式** → **單一 Drill 調整**.
+3. In the drill dropdown, select `peek_click_transfer_pilot_v2_2deg`.
+4. Click into the canvas to engage Pointer Lock, then play through the countdown → cue → presentations as normal.
+5. Use **Export JSON** after a run to inspect `meta.drillId` (`peek_click_transfer_pilot_v2_2deg`), `meta.visibility` (`{ sampleCount: 9, onsetThreshold: 0.5 }`), and confirm no `meta.assessment` field is present.
+
+Only the 2° default candidate is wired to a menu entry, matching pilot v1's existing convention (v1 also only registers its 2° default in `availableDrills`); the 1.5°/3° candidates exist as configs (`buildPeekClickTransferPilotV2Config(1.5)` / `(3)`) but have no menu entry yet — comparing across candidates by feel currently requires a code-level harness call, same limitation v1 already has.
+
+Session Plan's `'peek-click-transfer'` family checkbox (T2) still resolves to the **v1** drill (`SessionRunner.ts`'s `resolveFamilyDrillId`, unchanged from WP-45) — that family selection proves the KI-016 metadata gap is closed, not that it launches v2. Use the researcher-mode entry point above for v2 specifically.
+
 ## Manual gate (native pointer-lock, real human) — pending, not yet executed
 
 - [ ] pointer lock engages cleanly from the Session Plan → eligibility gate flow for a `'peek-click-transfer'`-only selection (T2's real-DOM path only proves the flow reaches `#eligibility-gate`; going past it into a live pointer-locked round is unverified).

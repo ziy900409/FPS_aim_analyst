@@ -93,6 +93,7 @@ import { spiderShotV2 } from './drill/spider_shot_v2.ts';
 import { counterstrafeReversalV1 } from './drill/counterstrafe_reversal_v1.ts';
 import { counterstrafeFreeV1 } from './drill/counterstrafe_free_v1.ts';
 import { peekClickTransferPilotV1 } from './drill/peek_click_transfer_pilot_v1.ts';
+import { peekClickTransferPilotV2 } from './drill/peek_click_transfer_pilot_v2.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -176,6 +177,14 @@ const availableDrills: AvailableDrill[] = [
     source: peekClickTransferPilotV1.drill,
     sceneId: peekClickTransferPilotV1.sceneId,
     loadOptions: { clearance: peekClickTransferPilotV1.clearanceOptions },
+  },
+  // WP-52 T4: researcher-mode entry point for the pilot v2 manual gate (T4-manual-pilot-gate.md).
+  {
+    id: peekClickTransferPilotV2.id,
+    label: peekClickTransferPilotV2.id,
+    source: peekClickTransferPilotV2.drill,
+    sceneId: peekClickTransferPilotV2.sceneId,
+    loadOptions: { clearance: peekClickTransferPilotV2.clearanceOptions },
   },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,
@@ -662,6 +671,9 @@ async function buildCurrentExportPayload(
       : {}),
     ...(activeDrillConfig.drillId === peekClickTransferPilotV1.id
       ? { visibility: peekClickTransferPilotV1.visibility }
+      : {}),
+    ...(activeDrillConfig.drillId === peekClickTransferPilotV2.id
+      ? { visibility: peekClickTransferPilotV2.visibility }
       : {}),
   });
   return buildExportPayload(meta, snapshot);
