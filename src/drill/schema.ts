@@ -6,6 +6,7 @@ import {
   type SpiderShotCenterPeripheralConfig,
   type SpiderShotScheduleConfig,
   type TargetHitboxConfig,
+  type TargetVisualSizeConfig,
 } from './DrillConfig.ts';
 import type { AssessmentMode } from './assessmentContract.ts';
 import type { TargetMotion } from '../state/types.ts';
@@ -207,6 +208,16 @@ function validateSpiderPeripheral(
   };
 }
 
+/** WP-52 masked-visual pilot：render-only 尺寸驗證，維度規則沿用 hitbox（正值、≤ sanity 上限）。 */
+function validateVisualSize(json: unknown, path: string): TargetVisualSizeConfig {
+  const record = requireObject(json, path);
+  return {
+    widthU: requireHitboxDimension(record.widthU, `${path}.widthU`),
+    heightU: requireHitboxDimension(record.heightU, `${path}.heightU`),
+    depthU: requireHitboxDimension(record.depthU, `${path}.depthU`),
+  };
+}
+
 function validateHitbox(json: unknown): TargetHitboxConfig {
   const hitbox = requireObject(json, 'targets.hitbox');
   const widthU = requireHitboxDimension(hitbox.widthU, 'targets.hitbox.widthU');
@@ -216,7 +227,15 @@ function validateHitbox(json: unknown): TargetHitboxConfig {
   if (shape === 'sphere' && (widthU !== heightU || heightU !== depthU)) {
     throw err('targets.hitbox.shape', 'sphere 要求 widthU/heightU/depthU 三軸相等');
   }
-  return { widthU, heightU, depthU, ...(shape !== undefined ? { shape } : {}) };
+  const visualSize =
+    hitbox.visualSize === undefined ? undefined : validateVisualSize(hitbox.visualSize, 'targets.hitbox.visualSize');
+  return {
+    widthU,
+    heightU,
+    depthU,
+    ...(shape !== undefined ? { shape } : {}),
+    ...(visualSize !== undefined ? { visualSize } : {}),
+  };
 }
 
 function validateHitboxCandidates(json: unknown): readonly TargetHitboxConfig[] {
@@ -233,7 +252,15 @@ function validateHitboxCandidates(json: unknown): readonly TargetHitboxConfig[] 
     if (shape === 'sphere' && (widthU !== heightU || heightU !== depthU)) {
       throw err(`${path}.shape`, 'sphere 要求 widthU/heightU/depthU 三軸相等');
     }
-    return { widthU, heightU, depthU, ...(shape !== undefined ? { shape } : {}) };
+    const visualSize =
+      record.visualSize === undefined ? undefined : validateVisualSize(record.visualSize, `${path}.visualSize`);
+    return {
+      widthU,
+      heightU,
+      depthU,
+      ...(shape !== undefined ? { shape } : {}),
+      ...(visualSize !== undefined ? { visualSize } : {}),
+    };
   });
 }
 

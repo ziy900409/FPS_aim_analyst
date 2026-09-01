@@ -342,6 +342,71 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
     ).toThrow(/targets\.hitbox\.depthU/);
   });
 
+  it('hitbox.visualSize 省略 → 保持 undefined（既有行為逐位不變，WP-52 masked pilot）', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } },
+    });
+    expect(cfg.targets.hitbox).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5 });
+  });
+
+  it('hitbox.visualSize 提供 → 通過驗證並與 hitbox 本身分開回傳（WP-52 masked pilot）', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: {
+        count: 20,
+        distance: 4,
+        hitbox: { widthU: 0.14, heightU: 0.14, depthU: 1, visualSize: { widthU: 0.349, heightU: 0.349, depthU: 1 } },
+      },
+    });
+    expect(cfg.targets.hitbox).toEqual({
+      widthU: 0.14,
+      heightU: 0.14,
+      depthU: 1,
+      visualSize: { widthU: 0.349, heightU: 0.349, depthU: 1 },
+    });
+  });
+
+  it('hitbox.visualSize 非正、非有限或超過 sanity 上限 → throw 指名 targets.hitbox.visualSize 欄位', () => {
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: {
+          count: 20,
+          distance: 4,
+          hitbox: { widthU: 0.14, heightU: 0.14, depthU: 1, visualSize: { widthU: 0, heightU: 0.349, depthU: 1 } },
+        },
+      }),
+    ).toThrow(/targets\.hitbox\.visualSize\.widthU/);
+    expect(() =>
+      validateDrill({
+        ...(minimalValid() as object),
+        targets: {
+          count: 20,
+          distance: 4,
+          hitbox: { widthU: 0.14, heightU: 0.14, depthU: 1, visualSize: { widthU: 0.349, heightU: 10.1, depthU: 1 } },
+        },
+      }),
+    ).toThrow(/targets\.hitbox\.visualSize\.heightU/);
+  });
+
+  it('hitboxCandidates 每個候選皆可攜帶 visualSize（WP-52 masked pilot）', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: {
+        count: 4,
+        distance: 4,
+        hitboxCandidates: [
+          { widthU: 0.14, heightU: 0.14, depthU: 1, visualSize: { widthU: 0.349, heightU: 0.349, depthU: 1 } },
+          { widthU: 0.699, heightU: 0.699, depthU: 1, visualSize: { widthU: 0.349, heightU: 0.349, depthU: 1 } },
+        ],
+      },
+      sequence: { alternation: 'LR', seed: 1 },
+    });
+    expect(cfg.targets.hitboxCandidates?.every((c) => c.visualSize?.widthU === 0.349)).toBe(true);
+    expect(cfg.targets.hitboxCandidates?.map((c) => c.widthU)).toEqual([0.14, 0.699]);
+  });
+
   it('countdownMs 非數字 → throw', () => {
     const bad = { ...(minimalValid() as object), timing: { countdownMs: 'soon' } };
     expect(() => validateDrill(bad)).toThrow(/timing\.countdownMs/);

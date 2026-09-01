@@ -1,12 +1,33 @@
 import type { TargetMotion } from '../state/types.ts';
 import type { AssessmentMode } from './assessmentContract.ts';
 
+/** WP-52 masked-visual pilot：render-only 尺寸（widthU/heightU/depthU），無獨立 shape。 */
+export interface TargetVisualSizeConfig {
+  widthU: number;
+  heightU: number;
+  depthU: number;
+}
+
 export interface TargetHitboxConfig {
   widthU: number;
   heightU: number;
   depthU: number;
   /** 省略 = 'box'(既有行為逐位不變)。'sphere' 要求 widthU === heightU === depthU（schema.ts 驗證）。 */
   shape?: 'box' | 'sphere';
+  /**
+   * WP-52 masked-visual pilot（GD-7 記名例外，見 DECISIONS.md）：render mesh 套用的固定尺寸，
+   * 與 widthU/heightU/depthU 分離——命中判定（HitDetector/SimLoop.targetAabb）、scene clearance、
+   * occlusion 可見度取樣**仍一律讀 widthU/heightU/depthU**，不讀這裡。省略＝視覺與 hitbox 同尺寸
+   * （既有行為逐位不變）。僅供 `peek_click_transfer_pilot_v2_masked` 使用，不得用於其他 drill。
+   */
+  visualSize?: TargetVisualSizeConfig;
+}
+
+/** WP-52 masked-visual pilot：resolved 形態，對齊 TargetHitboxSize 的欄位命名慣例（無 U 後綴）。 */
+export interface TargetVisualSize {
+  width: number;
+  height: number;
+  depth: number;
 }
 
 export interface TargetHitboxSize {
@@ -15,6 +36,8 @@ export interface TargetHitboxSize {
   depth: number;
   /** resolveTargetHitbox() 恆填實值,預設 'box'。 */
   shape: 'box' | 'sphere';
+  /** 見 {@link TargetHitboxConfig.visualSize}；省略＝視覺讀本物件的 width/height/depth。 */
+  visualSize?: TargetVisualSize;
 }
 
 /** Single-source default H1 hitbox (source units). Omitted drill config must resolve to this exactly. */
@@ -169,9 +192,32 @@ export function resolveTargetHitbox(config?: DrillConfig): TargetHitboxSize {
     height: hitbox.heightU,
     depth: hitbox.depthU,
     shape: hitbox.shape ?? 'box',
+    ...(hitbox.visualSize !== undefined
+      ? {
+          visualSize: {
+            width: hitbox.visualSize.widthU,
+            height: hitbox.visualSize.heightU,
+            depth: hitbox.visualSize.depthU,
+          },
+        }
+      : {}),
   };
 }
 
 export function targetHitboxToConfig(hitbox: TargetHitboxSize): TargetHitboxConfig {
-  return { widthU: hitbox.width, heightU: hitbox.height, depthU: hitbox.depth, shape: hitbox.shape };
+  return {
+    widthU: hitbox.width,
+    heightU: hitbox.height,
+    depthU: hitbox.depth,
+    shape: hitbox.shape,
+    ...(hitbox.visualSize !== undefined
+      ? {
+          visualSize: {
+            widthU: hitbox.visualSize.width,
+            heightU: hitbox.visualSize.height,
+            depthU: hitbox.visualSize.depth,
+          },
+        }
+      : {}),
+  };
 }
