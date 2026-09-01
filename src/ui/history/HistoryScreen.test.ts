@@ -401,6 +401,83 @@ describe('createHistoryScreen — focus management', () => {
     controller.setState({ ...IDLE_STATE, participants: { status: 'empty' } });
     expect(main.focused).toBe(false);
   });
+
+  // KI-018 — `HistoryNavigator.replace()` always assigns a brand-new route object literal, so a
+  // reference-equality guard treated every in-place search/filter keystroke as a real navigation
+  // and stole focus back to `<main>` mid-word. These cases pin the semantic (identity-field)
+  // comparison that replaced it.
+  it('does not refocus when a participants route replace() only changes the search query', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'participants', query: '' });
+    const controller = createFakeController();
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
+
+    const main = document.created.find((el) => el.tag === 'main')!;
+    main.focused = false; // reset after the initial-route focus to isolate this assertion
+
+    navigator.setRoute({ kind: 'participants', query: 's' });
+    expect(main.focused).toBe(false);
+    navigator.setRoute({ kind: 'participants', query: 'st' });
+    expect(main.focused).toBe(false);
+  });
+
+  it('does not refocus when a drill route replace() only changes metricId/cohortId/runFilter', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createFakeController();
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
+
+    const main = document.created.find((el) => el.tag === 'main')!;
+    main.focused = false; // reset after the initial-route focus to isolate this assertion
+
+    navigator.setRoute({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all', metricId: 'm-1' });
+    expect(main.focused).toBe(false);
+    navigator.setRoute({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all', metricId: 'm-1', cohortId: 'c-1' });
+    expect(main.focused).toBe(false);
+    navigator.setRoute({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'trend-eligible', metricId: 'm-1', cohortId: 'c-1' });
+    expect(main.focused).toBe(false);
+  });
+
+  it('still refocuses when the route kind changes even via a replace()-shaped update', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'participants', query: '' });
+    const controller = createFakeController();
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
+
+    const main = document.created.find((el) => el.tag === 'main')!;
+    main.focused = false;
+
+    navigator.setRoute({ kind: 'drills', participantId: 'p-1' });
+    expect(main.focused).toBe(true);
+  });
+
+  it('still refocuses when an identity field (participantId/drillId/runId) changes', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const navigator = createFakeNavigator({ kind: 'drill', participantId: 'p-1', drillId: 'd-1', runFilter: 'all' });
+    const controller = createFakeController();
+    createHistoryScreen({ navigator: navigator as never, controller, registry });
+
+    const main = document.created.find((el) => el.tag === 'main')!;
+    main.focused = false;
+    navigator.setRoute({ kind: 'drill', participantId: 'p-1', drillId: 'd-2', runFilter: 'all' });
+    expect(main.focused).toBe(true);
+
+    main.focused = false;
+    navigator.setRoute({ kind: 'drill', participantId: 'p-2', drillId: 'd-2', runFilter: 'all' });
+    expect(main.focused).toBe(true);
+
+    main.focused = false;
+    navigator.setRoute({ kind: 'run', participantId: 'p-2', drillId: 'd-2', runId: 'r-1' });
+    expect(main.focused).toBe(true);
+
+    main.focused = false;
+    navigator.setRoute({ kind: 'run', participantId: 'p-2', drillId: 'd-2', runId: 'r-2' });
+    expect(main.focused).toBe(true);
+  });
 });
 
 describe('createHistoryScreen — accessible names', () => {

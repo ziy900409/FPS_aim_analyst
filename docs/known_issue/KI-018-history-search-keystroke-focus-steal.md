@@ -2,8 +2,8 @@
 
 > 類型：accessibility/keyboard-usability latent bug（`route !== lastRoute` 用參考相等比對，無法區分
 > 「同路由 in-place 精煉」與「真正導覽」）。
-> 狀態：🔴 診斷完成，修法待落地（發現於 WP-51 T4，非 WP-51 職權範圍——本 WP 只驗收，不修
-> `HistoryScreen.ts`/`ParticipantBrowser.ts` domain UI，見 [WP-51 README §2.6](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/README.md)）。
+> 狀態：🟢 已修復（2026-09-01，WP-49 owner）。發現於 WP-51 T4（非 WP-51 職權範圍——WP-51 只驗收，不修
+> `HistoryScreen.ts`/`ParticipantBrowser.ts` domain UI，見 [WP-51 README §2.6](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/README.md)）；修復回流由 WP-49 owner 落地。
 > 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-018。
 > 發現脈絡：WP-51 T4 撰寫 History→Replay keyboard-only 驗收測試時，用真實
 > `page.keyboard.type(participantId)`（而非既有 spec 慣用的 `locator.fill()`）在「搜尋 Participant」
@@ -61,25 +61,44 @@ lastRoute = route;
 
 這個猜測已用真實瀏覽器逐字輸入驗證兩次（見 WP-51 T4 progress.md 的 Surprises 條目），並非讀碼臆測。
 
-## 3. 修復計畫（尚未落地）
+## 3. 修復（已落地，2026-09-01）
 
-`HistoryScreen.ts` 的 focus-on-navigation guard 需要把「真正的導覽」（`push()`/hash 變化/Back-Forward，
-路由的 `kind` 或身分性欄位改變）與「同路由 in-place 精煉」（`replace()` 只改變 `query`/`metricId`/
-`cohortId`/`runFilter` 等篩選欄位，`kind` 與身分性欄位不變）區分開來，只在前者才 `main.focus()`。
-候選作法（尚未拍板，留給 WP-49 決定）：
+採用當初列出的候選 1：**語意比較取代參考比較**，未改 `HistoryNavigator` public 介面。
 
-1. **語意比較取代參考比較**：把 `route !== lastRoute` 換成「`kind` 不同，或同 `kind` 下的身分性欄位
-   （`participantId`/`drillId`/`runId`，視 `kind` 而定）不同」——`query`/`metricId`/`cohortId`/
-   `runFilter` 的變化不算「導覽」。
-2. **由 `HistoryNavigator` 分辨 push vs replace**：`subscribe` 的 callback 多帶一個
-   `{ via: 'push' | 'replace' | 'popstate' }` 標記，`HistoryScreen` 只在 `via !== 'replace'` 時才
-   `main.focus()`。這個作法更明確（不用臆測「這次 replace 算不算導覽」），但要改
-   `HistoryNavigator` 的 public 介面，影響面比選項 1 大。
+`src/ui/history/HistoryScreen.ts` 新增 `isSameNavigationTarget(a, b)`：
 
-兩者都需要確認不會破壞 T1 既有的「focus-on-navigation」既有測試（`HistoryScreen.test.ts`）與 Back/
-Forward、metric/cohort 選擇器切換（`DrillOverview.ts` 同樣透過 `navigator.replace()` driving
-metric/cohort 篩選，可能有同一類但影響較小的表現——切按鈕本身在點擊後通常不需要保留焦點在按鈕上，
-但仍建議一併檢查該路徑是否也不必要地搶焦點）。
+```ts
+function isSameNavigationTarget(a: HistoryRoute | undefined, b: HistoryRoute | undefined): boolean {
+  if (a === b) return true;
+  if (a === undefined || b === undefined) return false;
+  if (a.kind !== b.kind) return false;
+  switch (a.kind) {
+    case 'participants':
+      return true; // 只有 `query` 可能不同——同路由 in-place 搜尋精煉，不是導覽
+    case 'drills':
+      return a.participantId === (b as typeof a).participantId;
+    case 'drill':
+      return a.participantId === (b as typeof a).participantId && a.drillId === (b as typeof a).drillId;
+    case 'run':
+      return (
+        a.participantId === (b as typeof a).participantId &&
+        a.drillId === (b as typeof a).drillId &&
+        a.runId === (b as typeof a).runId
+      );
+  }
+}
+```
+
+`render()` 的 focus guard 由 `route !== lastRoute` 改為 `!isSameNavigationTarget(route, lastRoute)`。
+`kind` 不同（含 `undefined` ↔ 有值）一律視為導覽；同 `kind` 只比對身分性欄位鏈
+（`participantId`/`drillId`/`runId`），`query`/`metricId`/`cohortId`/`runFilter` 等精煉欄位變化不算
+導覽。因為 `HistoryScreen.render()` 是唯一呼叫 `main.focus()` 的地方，這個修法同時涵蓋了 §4 提到的
+`DrillOverview.ts` metric/cohort/run-filter 按鈕（同樣經 `navigator.replace()`）——不需要在
+`DrillOverview.ts` 另外改動。
+
+未採候選 2（`HistoryNavigator.subscribe` 帶 `via: 'push' | 'replace' | 'popstate'`）：影響面更大
+（需改 public 介面與所有 caller/test），而候選 1 已能用 `HistoryRoute` 既有的判別聯集型別精確表達
+「身分性欄位 vs 精煉欄位」的界線，不需臆測。
 
 ## 4. 影響面
 
@@ -97,15 +116,22 @@ metric/cohort 篩選，可能有同一類但影響較小的表現——切按鈕
 
 ## 5. Definition of Done（修法落地時驗收）
 
-- [ ] `HistoryScreen.ts` 的 focus-on-navigation guard 改用語意判斷（或 `HistoryNavigator` 的
-      push/replace 標記），使同路由 in-place 精煉（search query／metric／cohort／run filter 變化）
-      不再搶焦點；真正導覽（`push()`）維持既有搶焦點行為不變。
-- [ ] 新增回歸測試（Playwright，真實 `page.keyboard.type()`，非 `.fill()`）：在「搜尋 Participant」
-      欄位連續輸入多個字元，斷言欄位最終值等於完整輸入字串、且過程中 `document.activeElement`
-      始終停留在該輸入框。
-- [ ] 既有 `HistoryScreen.test.ts`/`ParticipantBrowser.test.ts`/`history-navigation.spec.ts`/
-      `history-library.spec.ts` 零 regression。
-- [ ] `npm run typecheck` exit 0。
+- [x] `HistoryScreen.ts` 的 focus-on-navigation guard 改用語意判斷，使同路由 in-place 精煉
+      （search query／metric／cohort／run filter 變化）不再搶焦點；真正導覽（`push()`/kind 或
+      身分性欄位改變）維持既有搶焦點行為不變。
+- [x] 新增回歸測試（Playwright，真實 `page.keyboard.type()`，非 `.fill()`）：
+      `tests/e2e/history-library.spec.ts` 新增 `KI-018 — Participant search keeps focus through
+      real keystroke-by-keystroke typing`，在「搜尋 Participant」欄位逐字輸入完整
+      participantId，斷言欄位最終值等於完整輸入字串、`document.activeElement` 停留在該輸入框、
+      且能找到該 participant。既有 `.fill()` 測試全數保留未動。
+- [x] 補單元測試：`HistoryScreen.test.ts` 新增 4 個 `isSameNavigationTarget` 語意比較案例
+      （participants query replace 不 focus main、drill metric/cohort/runFilter replace 不
+      focus main、kind 改變仍 focus main、participantId/drillId/runId 改變仍 focus main）。
+- [x] 既有 `HistoryScreen.test.ts`/`ParticipantBrowser.test.ts`/`history-navigation.spec.ts`/
+      `history-library.spec.ts` 零 regression（`npm run test` 1672 passed / 2 skipped；
+      `playwright test history-library.spec.ts history-navigation.spec.ts
+      stage10-accessibility.spec.ts --project=edge` 17/17 passed）。
+- [x] `npm run typecheck` exit 0。
 
 ## 6. Commit（落地時）
 

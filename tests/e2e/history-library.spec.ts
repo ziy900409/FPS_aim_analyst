@@ -167,6 +167,31 @@ test.describe('WP-49 T2 — Participant search and exact-drill browser', () => {
   });
 });
 
+test.describe('KI-018 — Participant search keeps focus through real keystroke-by-keystroke typing', () => {
+  test('typing the participant id one keystroke at a time keeps every character, keeps focus on the searchbox, and finds the participant', async ({ page }) => {
+    await waitForHarness(page);
+    const participantId = `ki018-keystroke-${crypto.randomUUID()}`;
+    await seedAssessmentRun(page, 'spider-shot-v1', participantId);
+
+    await openHistory(page);
+    const screen = page.locator('#history-screen');
+    const search = screen.getByRole('searchbox', { name: '搜尋 Participant' });
+
+    await search.click();
+    // Real, per-character keystrokes (not `.fill()`, which sets the whole value in one `input`
+    // event) — this is exactly the input shape that steals focus back to `<main>` after the first
+    // character when the KI-018 focus-on-navigation guard uses reference equality (see
+    // docs/known_issue/KI-018-history-search-keystroke-focus-steal.md).
+    await page.keyboard.type(participantId);
+
+    await expect(search).toHaveValue(participantId);
+    await expect(search).toBeFocused();
+    await expect(page.evaluate(() => document.activeElement?.getAttribute('aria-label'))).resolves.toBe('搜尋 Participant');
+
+    await expect(screen.getByRole('button', { name: new RegExp(participantId) })).toBeVisible();
+  });
+});
+
 test.describe('WP-49 T3 — run list and historical result detail', () => {
   test('opens two different Assessment runs from the same drill\'s run list; each download carries that run\'s own content, not the other\'s (FM-49.8)', async ({ page }) => {
     await waitForHarness(page);

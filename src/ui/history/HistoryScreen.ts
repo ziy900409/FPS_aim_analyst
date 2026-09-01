@@ -38,6 +38,34 @@ export interface HistoryScreenHandle {
   dispose(): void;
 }
 
+/** KI-018 — `HistoryNavigator.replace()` always assigns a brand-new route object literal, even
+ * when only a refinement field (search `query`, drill `metricId`/`cohortId`/`runFilter`) changed.
+ * Reference equality on `route !== lastRoute` therefore treats every keystroke in the Participant
+ * search box as "a real navigation" and steals focus back to `<main>` mid-word. This compares
+ * routes by navigation *identity* instead: same `kind` and same identity-bearing fields (the
+ * `participantId`/`drillId`/`runId` chain) counts as the same navigation target regardless of
+ * refinement-field differences, so `replace()`-driven filtering never triggers `main.focus()`
+ * while `push()`/Back-Forward navigation (which changes `kind` or an identity field) still does. */
+function isSameNavigationTarget(a: HistoryRoute | undefined, b: HistoryRoute | undefined): boolean {
+  if (a === b) return true;
+  if (a === undefined || b === undefined) return false;
+  if (a.kind !== b.kind) return false;
+  switch (a.kind) {
+    case 'participants':
+      return true; // only `query` can differ — in-place search refinement, not navigation
+    case 'drills':
+      return a.participantId === (b as typeof a).participantId;
+    case 'drill':
+      return a.participantId === (b as typeof a).participantId && a.drillId === (b as typeof a).drillId;
+    case 'run':
+      return (
+        a.participantId === (b as typeof a).participantId &&
+        a.drillId === (b as typeof a).drillId &&
+        a.runId === (b as typeof a).runId
+      );
+  }
+}
+
 function crumbLabel(route: HistoryRoute): string {
   switch (route.kind) {
     case 'participants':
@@ -221,10 +249,10 @@ export function createHistoryScreen(options: HistoryScreenOptions): HistoryScree
 
     visible = route !== undefined;
     root.style.display = visible ? 'flex' : 'none';
-    // Move focus into the shell only when the route itself changed (not on every data-state
-    // tick) — `navigator.current` is a stable reference between navigations (T1 Steps §5
-    // "focus-on-navigation").
-    if (visible && route !== lastRoute) {
+    // Move focus into the shell only on a real navigation (route identity changed — not on every
+    // data-state tick, and not on a same-route `replace()` refinement such as search-query/
+    // metric/cohort/run-filter edits; see `isSameNavigationTarget` — KI-018).
+    if (visible && !isSameNavigationTarget(route, lastRoute)) {
       main.focus();
     }
     lastRoute = route;
