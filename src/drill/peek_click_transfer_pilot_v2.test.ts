@@ -17,9 +17,10 @@ import {
   peekClickTransferPilotV2,
 } from './peek_click_transfer_pilot_v2.ts';
 
-describe('peek_click_transfer_pilot_v2 candidates (WP-52 T1, D-52.4/5)', () => {
-  it('keeps the same angular-size candidate set as pilot v1 (D-52.4)', () => {
-    expect(PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG).toEqual(PEEK_CLICK_ANGULAR_SIZE_CANDIDATES_DEG);
+describe('peek_click_transfer_pilot_v2 candidates (WP-52 T1/T4, D-52.5/9)', () => {
+  it('widens the angular-size candidate set away from pilot v1, per manual pilot feedback (D-52.9)', () => {
+    expect(PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG).toEqual([1, 2.5, 5]);
+    expect(PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG).not.toEqual(PEEK_CLICK_ANGULAR_SIZE_CANDIDATES_DEG);
   });
 
   it('derives world hitbox width/height from the angular-size formula and keeps a fixed depth', () => {
@@ -50,8 +51,8 @@ describe('peek_click_transfer_pilot_v2 candidates (WP-52 T1, D-52.4/5)', () => {
     }
   });
 
-  it('declares the practice/scene/cue/timing/visibility contract, unchanged from v1 (D-52.5)', () => {
-    const cfg = buildPeekClickTransferPilotV2Config(2);
+  it('declares the practice/scene/cue/timing/visibility contract — timing/visibility unchanged from v1 (D-52.5)', () => {
+    const cfg = buildPeekClickTransferPilotV2Config(2.5);
     const drill = loadDrill(cfg.drill);
 
     expect(cfg.sceneId).toBe('peek-ad-corridor-v1');
@@ -66,7 +67,7 @@ describe('peek_click_transfer_pilot_v2 candidates (WP-52 T1, D-52.4/5)', () => {
   });
 
   it('is rejected by strict clearance but accepted with the pilot occlusion options (scene compatibility)', () => {
-    const cfg = buildPeekClickTransferPilotV2Config(2);
+    const cfg = buildPeekClickTransferPilotV2Config(2.5);
     const strict = validateClearance(peekAdCorridor, loadDrill(cfg.drill));
     const strictIds = new Set(strict.map((v) => v.propId));
 
@@ -77,8 +78,8 @@ describe('peek_click_transfer_pilot_v2 candidates (WP-52 T1, D-52.4/5)', () => {
     expect(validateClearance(peekAdCorridor, loadDrill(cfg.drill), cfg.clearanceOptions)).toEqual([]);
   });
 
-  it('registers the 2° candidate as the researcher-mode default', () => {
-    expect(peekClickTransferPilotV2).toEqual(buildPeekClickTransferPilotV2Config(2));
+  it('registers the 2.5° candidate as the researcher-mode default (D-52.9)', () => {
+    expect(peekClickTransferPilotV2).toEqual(buildPeekClickTransferPilotV2Config(2.5));
   });
 });
 
@@ -109,7 +110,7 @@ describe('peek_click_transfer_pilot_v2 determinism (WP-52 NFR-52-1)', () => {
   }
 
   it('replays an identical spawn sequence across an independent restart with the same seed', () => {
-    const drill = buildPeekClickTransferPilotV2Config(2).drill;
+    const drill = buildPeekClickTransferPilotV2Config(2.5).drill;
     const first = runTimeoutOnly(drill);
     const second = runTimeoutOnly(drill);
 
@@ -128,7 +129,7 @@ describe('peek_click_transfer_pilot_v2 determinism (WP-52 NFR-52-1)', () => {
 });
 
 function runCadenceTimeoutExport(hz: number) {
-  const drill = buildPeekClickTransferPilotV2Config(2).drill;
+  const drill = buildPeekClickTransferPilotV2Config(2.5).drill;
   const state = createSharedState();
   const recorder = createDataRecorder({ simHz: SIM_HZ });
   const targetManager = createTargetManager(drill);

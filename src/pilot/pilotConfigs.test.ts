@@ -58,10 +58,11 @@ describe('stage6 pilot configs', () => {
     expect(peekClick2Deg.targets.hitbox).toMatchObject({ depthU: 1 });
     expect(peekClick2Deg.targets.hitbox!.widthU).toBeCloseTo(peekClick2Deg.targets.hitbox!.heightU, 12);
 
-    const [peekClickV2_2Deg] = buildPeekClickTransferPilotV2Configs([2]);
-    expect(peekClickV2_2Deg.drillId).toBe('peek_click_transfer_pilot_v2_2deg');
-    expect(peekClickV2_2Deg.cue).toEqual({ kind: 'single' });
-    expect(peekClickV2_2Deg.targets.hitbox).toEqual(peekClick2Deg.targets.hitbox);
+    const [peekClickV2_2_5Deg] = buildPeekClickTransferPilotV2Configs([2.5]);
+    expect(peekClickV2_2_5Deg.drillId).toBe('peek_click_transfer_pilot_v2_2_5deg');
+    expect(peekClickV2_2_5Deg.cue).toEqual({ kind: 'single' });
+    expect(peekClickV2_2_5Deg.targets.hitbox).toMatchObject({ depthU: 1 });
+    expect(peekClickV2_2_5Deg.targets.hitbox!.widthU).toBeCloseTo(peekClickV2_2_5Deg.targets.hitbox!.heightU, 12);
   });
 
   it('uses a pilot-only seed roster that cannot collide with assessment seeds', () => {

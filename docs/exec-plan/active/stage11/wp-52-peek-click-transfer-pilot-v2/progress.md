@@ -2,7 +2,7 @@
 
 ## Status
 
-- **Current**：🟡 規劃完成，尚未開工。
+- **Current**：✅ T0–T-exit 完成（2026-09-01）。真人手動走查後追加 D-52.9（角尺寸候選拉寬），詳見下方 2026-09-01 T-exit 追加項。WP-53 go/no-go 仍為 **No-go**，待更多真人 pilot 執行。
 - **Scope state**：新增 `peek_click_transfer_pilot_v2` 作為調整後 pilot；不修改 `peek-click-transfer-pilot-v1` 的既有語意。
 - **Dependency state**：依賴 WP-45 T-exit；T2 會處理 GD-26/KI-016 造成的 session wiring 阻塞。
 
@@ -81,6 +81,17 @@
 - Verification：`npm run typecheck` exit 0；`npx playwright test tests/e2e/session-orchestrator.spec.ts` 5/5 passed；全專案 `npx vitest run` 188 files / 1672 tests passed（+4 於前次 T-exit，新增 e2e 不計入 vitest 但既有 suite 零回歸）；`graphify update .`（3835 nodes / 9019 edges）。
 - `T4-manual-pilot-gate.md` 新增「How to reach it in the running app」小節，給出具體 dev-server 操作步驟；明確聲明 Session Plan 的 checkbox 路徑仍指向 v1，v2 手動測試要走研究員模式選單。
 
+### 2026-09-01 — T-exit 追加：D-52.9 拉寬角尺寸候選（使用者真人手動走查回報）
+
+- 使用者依上述步驟實際跑了一輪 `peek_click_transfer_pilot_v2_2deg`（匯出檔已核對：`drillId`/`rngSeed: 95020`/`hitbox.widthU: 0.279` 皆對得上 v2），回報三個角尺寸候選(1.5°/2°/3°)手感差異太小。
+- 換算 widthU（distance 固定 8u,公式 `2×8×tan(deg/2)`）：1.5°→0.2095u,2°→0.2793u,3°→0.4188u——min→max 只差 2×,佐證回報屬實。
+- 用 `AskUserQuestion` 提供三個選項（1/2/4°、1/2.5/5°、自訂），使用者選 **1/2.5/5°**（min→max ≈5×，widthU≈0.140/0.349/0.699u）。
+- 落地：`peek_click_transfer_pilot_v2.ts` 的 `PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG` 改為 `[1, 2.5, 5]`,`PEEK_CLICK_TRANSFER_PILOT_V2_DEFAULT_ANGULAR_SIZE_DEG` 改為 `2.5`(新預設 drill id 因此變成 `peek_click_transfer_pilot_v2_2_5deg`,取代前一則進度所述的 `..._2deg`)。同步更新 `.test.ts`、`pilotConfigs.test.ts`、`HistoryPersistence.test.ts`、`tests/e2e/session-orchestrator.spec.ts`、`T4-manual-pilot-gate.md`、`analysis-peek-click-transfer.md` §Pilot v2、`CONTEXT.md` 的所有 2° 預設參照。
+- 順手修正 `analysis-peek-click-transfer.md` 一處既有錯誤敘述：先前寫「Session Plan checkbox 家族解析到 v2 的預設」，實際上一直是解析到 **v1** 的 drill（`resolveFamilyDrillId`，WP-45 語意，未變）；已改正並在同一段落補充手動測 v2 要走研究員模式選單。
+- v1 guard 持續有效：本次未修改 `peek_click_transfer_pilot_v1.ts`／`.test.ts` 任何一行。
+- Verification：`npm run typecheck` exit 0；全專案 `npx vitest run` 188 files / 1672 tests passed；`npx playwright test tests/e2e/session-orchestrator.spec.ts` 5/5 passed；`graphify update .`（3835 nodes / 9019 edges）。
+- OQ-52-1 狀態由「Resolved（D-52.4）」改記為「Revised（D-52.9）」——這是研究方法上誠實的做法：D-52.4 在「無 evidence」前提下拍板，D-52.9 是在有 evidence 後的修訂，不是同一個決定被推翻，是決策鏈往前走一步。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -93,12 +104,13 @@
 | D-52.6 | OQ-52-3：pilot v2 不新增獨立 warmup drill，沿用 WP-45 D-45.16（`resolveWarmupDrillId` 對 `'peek-click-transfer'` 落既有 `else` 分支回 `unavailable`） | T3 只交付單一 pilot drill，未建熱身 config；WP-43 UI contract 未定義此家族熱身入口，現在新增屬臆造未定案設計，與 D-45.14/D-45.16 一致的立場 | Confirmed，T2 沿用現行 `resolveWarmupDrillId` 行為，不修改該函式 |
 | D-52.7 | T2 不重新引入 preset `<select>`；`SessionPlanSetup` 改為放寬 `families` 型別至 `SessionFamilyId`，`main.ts` 傳入 `[...KNOWN_SESSION_FAMILY_IDS]`（5 家族），沿用 WP-43 FR-H3 的自由 checkbox 設計 | WP-43（stage8）已用 FR-H3 移除 preset 下拉並有 E2E 鎖定（`session-orchestrator.spec.ts` 斷言 count 0）；WP-52 task-checklist 字面假設的「preset 選擇」與此矛盾，使用者拍板保留已交付/已測試設計而非回退；詳見全域 [DECISIONS.md](../../../DECISIONS.md) GD-26（2026-09-01 已解決） | Confirmed，使用者 2026-09-01 拍板 |
 | D-52.8 | WP-53 go/no-go：**No-go**，待真人執行 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 人工 checklist + 至少一批真人 pilot session evidence | 本 repo 尚無任何真人 trial；不得讓機械驗證(config/wiring/report 正確性)冒充真人 pilot evidence，否則違反 GD-20 pre-registration 紀律精神 | Confirmed，2026-09-01 |
+| D-52.9 | 修訂 D-52.4：v2 角尺寸候選由 `[1.5, 2, 3]` deg 改為 `[1, 2.5, 5]` deg，預設候選由 2° 改為 2.5° | 使用者親自跑過 T4 manual gate 後回報「三個候選手感差異太小」——原候選 min→max hitbox 寬度只差約 2×(0.21u→0.42u)；新候選拉大到約 5×(0.14u→0.70u)。這是本輪第一份真人 pilot 證據，D-52.4 當時「無 evidence 支持變更」的前提已不成立，故修訂而非新增平行決策 | Confirmed，使用者 2026-09-01 拍板（AskUserQuestion 三選一：1/2/4°、**1/2.5/5°**、自訂） |
 
 ## Open Questions
 
 | ID | 問題 | Owner | Deadline | Impact |
 |---|---|---|---|---|
-| OQ-52-1 | target angular size policy | 使用者 + 研究者 | T0 | ✅ Resolved（D-52.4） |
+| OQ-52-1 | target angular size policy | 使用者 + 研究者 | T0 | 🔁 Revised（D-52.9，2026-09-01：首份真人手動走查回報候選間距太小，拉寬為 1/2.5/5°；不再是 D-52.4 的 1.5/2/3°） |
 | OQ-52-2 | timeout policy | 使用者 + 研究者 | T0 | ✅ Resolved（D-52.5） |
 | OQ-52-3 | transfer warmup policy | 使用者 | T0 | ✅ Resolved（D-52.6） |
 | OQ-52-4 | formal go/no-go evidence threshold | 研究者 | T4 | WP-53 T0 |
@@ -127,3 +139,7 @@
 | 2026-09-01 | `npx playwright test tests/e2e/session-orchestrator.spec.ts` | 5/5 passed（新增 v2 入口 case） |
 | 2026-09-01 | `npx vitest run`（全專案） | 188 files / 1672 tests passed |
 | 2026-09-01 | `graphify update .` | 3835 nodes / 9019 edges rebuilt |
+| 2026-09-01 | `npm run typecheck`（D-52.9 角尺寸候選拉寬後） | exit 0（全專案） |
+| 2026-09-01 | `npx vitest run`（全專案，D-52.9 後） | 188 files / 1672 tests passed |
+| 2026-09-01 | `npx playwright test tests/e2e/session-orchestrator.spec.ts`（D-52.9 後） | 5/5 passed |
+| 2026-09-01 | `graphify update .`（D-52.9 後） | 3835 nodes / 9019 edges rebuilt |

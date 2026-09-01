@@ -142,7 +142,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
       };
       const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
 
-      harness.startDrill('peek_click_transfer_pilot_v2_2deg');
+      harness.startDrill('peek_click_transfer_pilot_v2_2_5deg');
       const phase = harness.phase();
       const meta = harness.forceExportJSON().meta;
 
@@ -153,7 +153,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     // throwing. A full timeout/hit playthrough needs camera raycast simulation (see
     // peek_click_transfer_pilot_v2.test.ts's unit-level runTimeoutOnly for that).
     expect(r.phase).toBe('running');
-    expect(r.drillId).toBe('peek_click_transfer_pilot_v2_2deg');
+    expect(r.drillId).toBe('peek_click_transfer_pilot_v2_2_5deg');
     expect(r.visibility).toEqual({ sampleCount: 9, onsetThreshold: 0.5 });
   });
 

@@ -14,15 +14,15 @@ None of this substitutes for a human actually playing the pilot. Automated tests
 
 ## How to reach it in the running app
 
-`peek_click_transfer_pilot_v2_2deg` is registered as a researcher-mode drill (`main.ts` `availableDrills`, added 2026-09-01 alongside this checklist). To run it manually:
+`peek_click_transfer_pilot_v2_2_5deg` (the 2.5° default, D-52.9) is registered as a researcher-mode drill (`main.ts` `availableDrills`, added 2026-09-01 alongside this checklist). To run it manually:
 
 1. `npm run dev`, open `http://localhost:5173/` in Chrome or Edge.
 2. Click **研究員模式** → **單一 Drill 調整**.
-3. In the drill dropdown, select `peek_click_transfer_pilot_v2_2deg`.
+3. In the drill dropdown, select `peek_click_transfer_pilot_v2_2_5deg`.
 4. Click into the canvas to engage Pointer Lock, then play through the countdown → cue → presentations as normal.
-5. Use **Export JSON** after a run to inspect `meta.drillId` (`peek_click_transfer_pilot_v2_2deg`), `meta.visibility` (`{ sampleCount: 9, onsetThreshold: 0.5 }`), and confirm no `meta.assessment` field is present.
+5. Use **Export JSON** after a run to inspect `meta.drillId` (`peek_click_transfer_pilot_v2_2_5deg`), `meta.visibility` (`{ sampleCount: 9, onsetThreshold: 0.5 }`), and confirm no `meta.assessment` field is present.
 
-Only the 2° default candidate is wired to a menu entry, matching pilot v1's existing convention (v1 also only registers its 2° default in `availableDrills`); the 1.5°/3° candidates exist as configs (`buildPeekClickTransferPilotV2Config(1.5)` / `(3)`) but have no menu entry yet — comparing across candidates by feel currently requires a code-level harness call, same limitation v1 already has.
+Only the 2.5° default candidate is wired to a menu entry, matching pilot v1's existing convention (v1 also only registers its 2° default in `availableDrills`); the 1°/5° candidates exist as configs (`buildPeekClickTransferPilotV2Config(1)` / `(5)`) but have no menu entry yet — comparing across candidates by feel currently requires a code-level harness call, same limitation v1 already has.
 
 Session Plan's `'peek-click-transfer'` family checkbox (T2) still resolves to the **v1** drill (`SessionRunner.ts`'s `resolveFamilyDrillId`, unchanged from WP-45) — that family selection proves the KI-016 metadata gap is closed, not that it launches v2. Use the researcher-mode entry point above for v2 specifically.
 
@@ -32,7 +32,7 @@ Session Plan's `'peek-click-transfer'` family checkbox (T2) still resolves to th
 - [ ] center start position: both L/R targets read as visually hidden behind the corridor's center cover, matching `peek-ad-corridor.test.ts`'s geometric guarantee.
 - [ ] A/D cue direction matches the side that actually becomes visible after strafing that direction.
 - [ ] a shot fired from the hidden center position visibly does not register (tracer/impact stops at the cover), matching the hitscan-occlusion unit tests.
-- [ ] after strafing the cued direction and reversing (counter-strafe) to brake, the target is reliably hittable — for all three angular-size candidates (1.5° feels meaningfully harder than 3°, not degenerate).
+- [ ] after strafing the cued direction and reversing (counter-strafe) to brake, the target is reliably hittable — for all three angular-size candidates (1°/2.5°/5°, D-52.9's widened spread; 1° should feel meaningfully harder than 5°, not degenerate — this was the exact complaint about the original 1.5°/2°/3° set that motivated the widening).
 - [ ] a first miss allows a second shot before the target advances; a hit correctly advances to the next presentation.
 - [ ] a full 20-presentation block completes in a reasonable, non-frustrating time; the 3000 ms spawn-anchored timeout does not feel arbitrarily punishing at any candidate size.
 - [ ] nothing in the Result/export flow surfaces a composite score, `meta.assessment`, or a "you're being graded" framing — this is a practice pilot, and it should read as one to the player.
