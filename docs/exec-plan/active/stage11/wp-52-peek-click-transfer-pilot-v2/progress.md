@@ -2,7 +2,7 @@
 
 ## Status
 
-- **Current**：✅ T0–T-exit 完成（2026-09-01）。真人手動走查後追加 D-52.9（角尺寸候選拉寬），詳見下方 2026-09-01 T-exit 追加項。WP-53 go/no-go 仍為 **No-go**，待更多真人 pilot 執行。
+- **Current**：✅ T0–T-exit 完成（2026-09-01）。真人手動走查後追加 D-52.9（角尺寸候選拉寬），詳見下方 2026-09-01 T-exit 追加項。**WP-53 go/no-go 已由 No-go 改為 Go（2026-09-01，D-52.13）**：使用者提供 3 場真人 `peek_click_transfer_pilot_v2_masked` session 匯出，加上人工 checklist 全數走查完成，見 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md)「Evidence collected」與全域 [DECISIONS.md GD-29](../../../DECISIONS.md)。
 - **Scope state**：新增 `peek_click_transfer_pilot_v2` 作為調整後 pilot；不修改 `peek-click-transfer-pilot-v1` 的既有語意。
 - **Dependency state**：依賴 WP-45 T-exit；T2 會處理 GD-26/KI-016 造成的 session wiring 阻塞。
 
@@ -112,6 +112,14 @@
 - **已知缺口（記入 GD-27，非本輪範圍）**：匯出稽核軌跡尚未擴及——`SimLoop.ts` 的 `visible` event（`hitboxVaries` 分支）目前只帶真實 `hitboxWidthU` 等欄位，不含 `visualSize`；`ReplayTargetView.ts` replay 仍只會 render 真實 hitbox 尺寸。也就是說：**匯出的 JSON 目前無法回溯「受試者當下實際看到的視覺尺寸」**，只能回溯真實 hitbox。若之後要靠匯出資料做「遮罩是否確實達到視覺無差異」的稽核，需要補這段（`SimLoop.ts` 寫入 + `exportPayloadSchema.ts` 解析 + `ReplayTargetView.ts` 讀取），屆時另開切片。
 - `graphify update .` 待本輪三個 commit 完成後執行一次確認索引狀態。
 
+### 2026-09-01 — T4 manual gate 完成 + WP-53 go/no-go 改為 Go（D-52.13）
+
+- 使用者親自逐項走查 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 的 9 項 manual checklist（直接在 IDE 內勾選），並提供 3 場真人 `peek_click_transfer_pilot_v2_masked` session 匯出（`rngSeed 95200`，同一 seeded 序列重跑 3 次）。
+- 跑過 `derivePeekClickTransferMetrics()`（對真實 `peek-ad-corridor-v1` 場景）+ `buildPeekClickTransferPilotEvidenceReport()`：63 個 presentation、100% 完成率、0% 逾時率、`validFirstShotRate` 依候選呈現清楚梯度（1°=42.9%、2.5°=95.2%、5°=100%），零 flag 異常。完整表格與逐項 checklist 對應說明寫入 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md)「Evidence collected」章節。
+- 使用者被明確告知 T4 文件原文「一兩位研究者是 smoke test，非 population-level pilot sample」的限制後，仍拍板 n=1 對本次 WP-53 T0 已足夠（D-52.13，OQ-52-4 Resolved）。WP-53 go/no-go 由 No-go 改為 Go，記入全域 [DECISIONS.md GD-29](../../../DECISIONS.md)。
+- 本節本身不修改 production code（`derivePeekClickTransferMetrics`/`buildPeekClickTransferPilotEvidenceReport` 皆為既有函式，未變動任何一行）；後續把 WP-53 T1~T3 的 provisional 骨架轉為正式凍結值是 WP-53 自己的 progress.md 條目，不記在這裡。
+- Verification：上述數據透過一次性 scratch 腳本（讀 3 個匯出檔 → `derivePeekClickTransferMetrics` → `buildPeekClickTransferPilotEvidenceReport`）人工核對後刪除，未留痕於 repo；未變動任何既有測試或 production code，故未重跑全專案測試（該次 verification 屬於既有函式的資料層驗算，非程式變更）。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -123,11 +131,12 @@
 | D-52.5 | OQ-52-2：pilot v2 維持 spawn-anchored `peekTimeoutMs`/`countdownMs` 3000 ms，不改 split timeout | 同上，T0 無明確 evidence 支持變更；v1 現行 3000 ms 已是 WP-45 拍板值，變更門檻應由 pilot 資料而非臆測驅動 | Confirmed，T1 timing 沿用 v1 數值 |
 | D-52.6 | OQ-52-3：pilot v2 不新增獨立 warmup drill，沿用 WP-45 D-45.16（`resolveWarmupDrillId` 對 `'peek-click-transfer'` 落既有 `else` 分支回 `unavailable`） | T3 只交付單一 pilot drill，未建熱身 config；WP-43 UI contract 未定義此家族熱身入口，現在新增屬臆造未定案設計，與 D-45.14/D-45.16 一致的立場 | Confirmed，T2 沿用現行 `resolveWarmupDrillId` 行為，不修改該函式 |
 | D-52.7 | T2 不重新引入 preset `<select>`；`SessionPlanSetup` 改為放寬 `families` 型別至 `SessionFamilyId`，`main.ts` 傳入 `[...KNOWN_SESSION_FAMILY_IDS]`（5 家族），沿用 WP-43 FR-H3 的自由 checkbox 設計 | WP-43（stage8）已用 FR-H3 移除 preset 下拉並有 E2E 鎖定（`session-orchestrator.spec.ts` 斷言 count 0）；WP-52 task-checklist 字面假設的「preset 選擇」與此矛盾，使用者拍板保留已交付/已測試設計而非回退；詳見全域 [DECISIONS.md](../../../DECISIONS.md) GD-26（2026-09-01 已解決） | Confirmed，使用者 2026-09-01 拍板 |
-| D-52.8 | WP-53 go/no-go：**No-go**，待真人執行 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 人工 checklist + 至少一批真人 pilot session evidence | 本 repo 尚無任何真人 trial；不得讓機械驗證(config/wiring/report 正確性)冒充真人 pilot evidence，否則違反 GD-20 pre-registration 紀律精神 | Confirmed，2026-09-01 |
+| D-52.8 | WP-53 go/no-go：**No-go**，待真人執行 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 人工 checklist + 至少一批真人 pilot session evidence | 本 repo 尚無任何真人 trial；不得讓機械驗證(config/wiring/report 正確性)冒充真人 pilot evidence，否則違反 GD-20 pre-registration 紀律精神 | ⏭️ Superseded by D-52.13（2026-09-01，真人 checklist + evidence 到位後改為 Go） |
 | D-52.9 | 修訂 D-52.4：v2 角尺寸候選由 `[1.5, 2, 3]` deg 改為 `[1, 2.5, 5]` deg，預設候選由 2° 改為 2.5° | 使用者親自跑過 T4 manual gate 後回報「三個候選手感差異太小」——原候選 min→max hitbox 寬度只差約 2×(0.21u→0.42u)；新候選拉大到約 5×(0.14u→0.70u)。這是本輪第一份真人 pilot 證據，D-52.4 當時「無 evidence 支持變更」的前提已不成立，故修訂而非新增平行決策 | Confirmed，使用者 2026-09-01 拍板（AskUserQuestion 三選一：1/2/4°、**1/2.5/5°**、自訂） |
 | D-52.10 | 新增引擎能力 `DrillConfig.targets.hitboxCandidates`（balanced-shuffle seeded 候選集合）+ 連帶修正 `visibilityDerivation.ts`/`holdClickMetrics.ts` 原本「單一全域 hitbox 快照」對變動尺寸 presentation 算錯 onset 的正確性缺口 | 使用者要求「三個間距隨機出現」；讀碼發現不修正 onset 推導會讓 evidence report 的核心指標（`validFirstShot`/`onsetToFirstShotMs`）算錯，違反 C-D4 單一權威定義——這不是可以跳過的裝飾，是做對這個 feature 的必要前提 | Confirmed，使用者 2026-09-01 拍板「繼續做」（AskUserQuestion 確認範圍後） |
 | D-52.11 | 新增 `peek_click_transfer_pilot_v2_randomized` drill（21 trials，7/7/7 平衡，seed 95100），與既有三個固定候選 drill 並存於研究員模式選單，不取代它們 | 平衡 shuffle（非純 IID）比照 spider-shot WP-44 zone queue 既有機制；21 是能被 3 整除、最接近 v1/v2 既有 20-trial 慣例的數字 | Confirmed，使用者 2026-09-01 拍板（AskUserQuestion：平衡 shuffle + 21 trials） |
 | D-52.12 | 新增 `TargetHitboxConfig.visualSize?`（GD-7 記名例外，見全域 [DECISIONS.md](../../../DECISIONS.md) GD-27）+ 新 drill `peek_click_transfer_pilot_v2_masked`：render 固定套用 2.5° 參考尺寸，hitbox（命中判定/clearance/occlusion）仍逐一使用真實 1°/2.5°/5° 候選 | 使用者要求「受試者看不出目前是哪個候選」以排除意識性視覺線索混淆；`visualSize` 為 opt-in 欄位、省略時任何既有 drill 逐位不變，例外範圍收斂到單一新 drill | Confirmed，使用者 2026-09-01 拍板「明確破例」（AskUserQuestion 呈現 GD-7 衝突與兩個設計選項後） |
+| D-52.13 | OQ-52-4 拍板：n=1（使用者本人）× 3 場 `peek_click_transfer_pilot_v2_masked` session 已足夠支持 WP-53 T0 formal freeze；WP-53 go/no-go 由 No-go 改為 Go | 使用者在被告知 T4-manual-pilot-gate.md 原文「一兩位研究者是 smoke test，非 population-level pilot sample」的前提下，仍明確選擇以此推進——是研究者本人的自主判斷，非本文件逕自假設達標 | Confirmed，使用者 2026-09-01 拍板；詳見全域 [DECISIONS.md GD-29](../../../DECISIONS.md) |
 
 ## Open Questions
 
@@ -136,7 +145,7 @@
 | OQ-52-1 | target angular size policy | 使用者 + 研究者 | T0 | 🔁 Revised（D-52.9，2026-09-01：首份真人手動走查回報候選間距太小，拉寬為 1/2.5/5°；不再是 D-52.4 的 1.5/2/3°） |
 | OQ-52-2 | timeout policy | 使用者 + 研究者 | T0 | ✅ Resolved（D-52.5） |
 | OQ-52-3 | transfer warmup policy | 使用者 | T0 | ✅ Resolved（D-52.6） |
-| OQ-52-4 | formal go/no-go evidence threshold | 研究者 | T4 | WP-53 T0 |
+| OQ-52-4 | formal go/no-go evidence threshold | 研究者 | T4 | ✅ Resolved（D-52.13，2026-09-01：n=1 本人 × 3 session 對本次 WP-53 T0 已足夠；非未來其他 formal assessment 的通用門檻） |
 
 ## Verification log
 

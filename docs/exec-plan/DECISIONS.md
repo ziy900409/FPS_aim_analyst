@@ -23,7 +23,18 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
-### GD-28 🟡 WP-53 No-go 期間 override — 允許先建 T1~T3 placeholder 骨架,凍結值不得引用真人 evidence(2026-09-01)
+### GD-29 ✅ WP-53 T0 formal freeze — n=1 真人 evidence 拍板 Go,GD-28 placeholder 轉正式凍結值(2026-09-01)
+
+| | |
+|---|---|
+| **發現處** | 使用者提供 3 場真人 `peek_click_transfer_pilot_v2_masked` session 匯出（`rngSeed 95200`，同一 seeded 序列重跑三次，63 個 presentation），加上 WP-52 [T4-manual-pilot-gate.md](active/stage11/wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md) 的 9 項人工 checklist 已由研究者本人逐項勾選。跑過 `derivePeekClickTransferMetrics()` + `buildPeekClickTransferPilotEvidenceReport()`：整體 63 個 presentation 完成率 100%、逾時率 0%、`validFirstShotRate` 依候選角尺寸呈現明確梯度——1°=42.9%、2.5°=95.2%、5°=100%，且 63 個 presentation 全數零 flag（無 `timeout`/`fire_before_gate`/`no_counter` 等異常）。 |
+| **與既有決議的落差** | [GD-28](#gd-28-✅-wp-53-no-go-期間-override--允許先建-t1t3-placeholder-骨架凍結值不得引用真人-evidence2026-09-01) 明文「真人 pilot evidence 到位、WP-53 T0 真正拍板後」才能把 T1~T3 的 provisional 占位值換成正式凍結值；[wp-52 T4-manual-pilot-gate.md](active/stage11/wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md) 原本的「Sampling limitations」段也明文「一兩位研究者走查是 smoke test，不是 population-level pilot sample，不得在 WP-53 freeze decision 中援引為 population-level 證據」。OQ-52-4（最小 participant 門檻）明文「研究者的判斷,非本檔逕自假設」——即這個門檻由使用者本人決定,不是自動達成。 |
+| **決議(使用者拍板,2026-09-01)** | 使用者身兼研究者角色，明確裁定 **n=1（本人）× 3 session 已足夠支持 WP-53 T0 formal freeze**（非宣告這對未來其他 Assessment 也是通用門檻，僅本次 WP-53 T0 的當下判斷，OQ-52-4 就此案例 Resolved）。WP-53 go/no-go 由 **No-go 改為 Go**。凍結內容：<br>① **`protocolVersion` = `peek-click-transfer-v1.0.0`**（依 OQ-53-1 預設，移除 `peek_click_transfer_v1.ts` 的 `-provisional` 後綴）；<br>② **`angularSizeDeg` = 2.5°**（數值與 GD-28 placeholder 相同，但現在是 evidence-backed 的正式選擇，非借用 pilot v2 預設值的權宜之計；理由見下）；<br>③ `distanceU=8`／`targetCount=20`／timing（countdown 3000ms／peekTimeout 3000ms／timeLimit 120000ms）／visibility（9-sample／0.5 threshold）沿用 pilot v1/v2 既有值——這些數值已被 pilot v1（WP-45）與 pilot v2（WP-52，含本輪 3 場 masked evidence）多輪真人走查覆蓋，沒有 evidence 建議變更；<br>④ **formal Session Plan policy（OQ-53-2）** = 新增獨立 formal transfer preset，不改 stage6 default 四家族 roster（[D-53.3](active/stage11/wp-53-peek-click-transfer-v1-formal-release/progress.md) 既有立場，此處正式拍板為決議，**實作**仍是 WP-53 T4，本輪不做）；<br>⑤ **primary trend metrics（OQ-53-3）** = `validFirstShotRate` + median `onsetToHitMs`（WP-53 T3 registry 早先已依此預設實作 descriptors，此處正式拍板追認）。 |
+| **理由** | 2.5° 的選擇：real evidence 顯示 1°（`validFirstShotRate` 42.9%）對單一 fixed-condition formal assessment 而言偏難，有 floor-effect 風險；5°（100%）則有 ceiling-effect 風險，兩者都會壓縮這個指標作為個體差異量測工具的鑑別度；2.5°（95.2%）保留足夠往上/往下移動的空間，且是 masked-visual 變體下量到的結果——代表這個難度梯度不是視覺尺寸線索造成的錯覺，是真實瞄準難度效應，適合作為正式版凍結候選。n=1 門檻的理由：使用者作為本專案唯一使用者/研究者，在被明確告知「這是 smoke test 等級的樣本」後仍選擇以此推進，是其研究設計的自主判斷（consistent with OQ-52-4「研究者的判斷」的原始授權）。 |
+| **影響面** | [src/drill/peek_click_transfer_v1.ts](../../src/drill/peek_click_transfer_v1.ts) + `.test.ts`（移除 PLACEHOLDER/provisional 標記與測試，protocolVersion 轉正式值）、[src/metrics/peekClickTransferConditions.ts](../../src/metrics/peekClickTransferConditions.ts) + `.test.ts`（condition cell 數值不變，只更新文件用語）、[src/history/DrillMetricRegistry.ts](../../src/history/DrillMetricRegistry.ts) + `.test.ts`（registry version 由 `0.1.0-provisional` 轉 `1.0.0`）、WP-53 `task-checklist.md`（T0~T3 box 回填）、WP-52 `progress.md`/`task-checklist.md`（go/no-go 狀態同步）、[stage11/README.md](active/stage11/README.md)（stage 狀態同步）。**T4（Session Plan 整合）與 T5（E2E）仍不在本次範圍**——這個 GD 只處理「凍結決策 + T1~T3 骨架轉正式」，不是整個 WP-53 完工。 |
+| **狀態** | ✅ 已拍板(2026-09-01)。取代 GD-28 的「provisional/待真人 evidence」限制——GD-28 因此視為已完成其階段性任務並關閉，見下方 GD-28 狀態更新。 |
+
+### GD-28 ✅ WP-53 No-go 期間 override — 允許先建 T1~T3 placeholder 骨架,凍結值不得引用真人 evidence(2026-09-01;2026-09-01 由 GD-29 轉正)
 
 | | |
 |---|---|
@@ -32,7 +43,7 @@
 | **決議(使用者拍板,2026-09-01,明確 override No-go)** | 在真人 pilot evidence 仍不存在的前提下,允許先建 WP-53 **T1(formal drill config)/T2(metadata + compatibility condition cell)/T3(metric registry)** 的程式碼骨架,但: (1) 所有原本該由 T0 freeze decision 拍板的數值(角尺寸、protocol version 字串等)一律沿用 pilot v2 的 2.5° 預設候選作占位值,並在程式碼註解與型別/常數命名上明確標記為 **provisional / placeholder**,不得被下游程式碼或文件誤讀為正式凍結值;(2) protocol version 字串使用帶 `-provisional` 後綴的變體,避免與 OQ-53-1 預設的正式字串 `peek-click-transfer-v1.0.0` 混淆;(3) **不做 T4(Session Plan 整合,含 stage6 default roster 相關改動)與 T5(E2E)**——這兩塊 blast radius 最高且使用者本次指示範圍未涵蓋;(4) [task-checklist.md](active/stage11/wp-53-peek-click-transfer-v1-formal-release/task-checklist.md) 的 checkbox **不因本次骨架勾選**,WP-53 formal freeze 仍未成立,待真人 evidence 到位、T0 真正拍板後才能把 placeholder 換成真實凍結值並勾動對應項目。 |
 | **理由** | 使用者已被完整告知 No-go 現況與風險(見本次對話的 AskUserQuestion),仍選擇 override,目的是縮短未來真人 evidence 到位後的落地時間;骨架不涉及需要真人 pointer-lock 手感驗證的部分(T4/T5),風險收斂在「之後要換掉 placeholder 數值」這一件事,不會產生無法回溯的研究效度污染(尚不會寫入任何正式 history/trend)。 |
 | **影響面** | 新增 [src/drill/peek_click_transfer_v1.ts](../../src/drill/peek_click_transfer_v1.ts) 及其 metadata/compatibility/registry 骨架(後續切片逐一列出檔案);[WP-53 progress.md](active/stage11/wp-53-peek-click-transfer-v1-formal-release/progress.md) 同步記錄。 |
-| **狀態** | 🟡 進行中(2026-09-01 起,骨架切片逐一 commit)。**T0 freeze 仍未成立**——真人 pilot evidence 到位前,本 GD 條目與程式碼內的 provisional 標記都不得被移除或視為完成。 |
+| **狀態** | ✅ 已完成並關閉(2026-09-01)。T0 freeze 已由 [GD-29](#gd-29-✅-wp-53-t0-formal-freeze--n1-真人-evidence-拍板-go,gd-28-placeholder-轉正式凍結值2026-09-01) 拍板成立(n=1 真人 evidence)，本 GD 授權的骨架切片（T1~T3）已依 GD-29 決議轉為正式凍結值，程式碼內的 provisional/PLACEHOLDER 標記已移除。 |
 
 ### GD-25 ✅ WP-45 pilot-ready — peek-click transfer 與元件量測邊界、共用遮擋 kernel(2026-08-26)
 

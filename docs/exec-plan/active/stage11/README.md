@@ -1,6 +1,6 @@
 # 階段 K（stage11）提案 — Peek-click transfer pilot adjustment and formal release
 
-> **狀態：🟡 WP-52 已交付（2026-09-01），WP-53 尚未開工。** 本階段把 WP-45 交付的 `peek-click-transfer-pilot-v1` 從 practice/pilot tool 推進到可由 evidence 支撐的正式 `peek_click_transfer_v1` Assessment。WP-52（pilot v2 調整/session wiring/evidence tooling）T0–T-exit 全數完成，但 WP-53 go/no-go 為 **No-go**——尚待真人 pilot 執行（見 [wp-52 T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)）。完整 task 狀態見 [task-checklist.md](task-checklist.md)，進度與決策紀錄見 [progress.md](progress.md)。
+> **狀態：🟡 WP-52 已交付（2026-09-01），WP-53 T0 已 freeze（2026-09-01），T1–T3 骨架已轉正式凍結值，T4/T5 尚未開工。** 本階段把 WP-45 交付的 `peek-click-transfer-pilot-v1` 從 practice/pilot tool 推進到可由 evidence 支撐的正式 `peek_click_transfer_v1` Assessment。WP-52（pilot v2 調整/session wiring/evidence tooling）T0–T-exit 全數完成；WP-53 go/no-go 已由 No-go 改為 **Go**（人工 checklist 走查 + n=1 真人 evidence，見 [wp-52 T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」與全域 [DECISIONS.md GD-29](../../DECISIONS.md)）。formal Session Plan 整合（T4）與 E2E（T5）仍未開工。完整 task 狀態見 [task-checklist.md](task-checklist.md)，進度與決策紀錄見 [progress.md](progress.md)。
 
 | | |
 |---|---|
@@ -9,7 +9,7 @@
 | **正式版政策** | 不原地覆寫 `peek-click-transfer-pilot-v1`；正式版使用新 drill id 與 assessment metadata |
 | **Session Plan 政策** | pilot v2 可進 researcher/pilot session；正式 v1 才可進 Assessment history/trend/compatibility |
 | **里程碑** | 暫定 M19：transfer pilot v2 evidence 與 `peek_click_transfer_v1` formal release gate 全數成立 |
-| **狀態** | 🟡 WP-52 已交付；WP-53 尚未開始 T0（No-go，待真人 pilot） |
+| **狀態** | 🟡 WP-52 已交付；WP-53 T0 已 Go/已 freeze，T1–T3 骨架已轉正式，T4/T5 未開工 |
 
 ---
 
@@ -37,13 +37,18 @@ WP-45 已交付：
 WP-52 已補上（2026-09-01）：
 
 1. ✅ 調整後 pilot 參數的版本化來源：`peek_click_transfer_pilot_v2`，獨立 module/id/seed range，不覆寫 `pilot-v1`。
-2. 🟡 真人 pointer-lock / 視覺手感 / timeout / 左右對稱 / flag rate evidence：checklist 文件已就緒（[T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)），**尚待真人執行**。
+2. ✅ 真人 pointer-lock / 視覺手感 / timeout / 左右對稱 / flag rate evidence：checklist 已由研究者本人逐項走查完成，並附 3 場真人 `peek_click_transfer_pilot_v2_masked` session evidence（2026-09-01，見 [T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」）。
 3. ✅ `SessionPlanSetup` family 允許清單與 `metadata.ts` allowlist 的既有缺口（GD-26 / KI-016）：已解決——KI-016 改單一來源允許清單；GD-26 拍板不重新引入 preset 下拉，改擴充既有自由 checkbox 家族清單。
 
-仍需補上（WP-53 範圍）：
+WP-53 已補上（2026-09-01，T1~T3）：
 
-4. 正式 `peek_click_transfer_v1` 的 Assessment metadata、compatibility key、history/trend registry 與 E2E 保存驗證。
-5. 文件上的 formal freeze decision：從 pilot evidence 到正式凍結值的可追溯理由。
+4. ✅ 正式 `peek_click_transfer_v1` 的 Assessment config（T1）、compatibility key/condition cell（T2）、history/trend registry（T3）——凍結值已由全域 [DECISIONS.md GD-29](../../DECISIONS.md) 拍板為正式值（非 provisional）。
+5. ✅ 文件上的 formal freeze decision：見 GD-29（從 pilot evidence 到正式凍結值的可追溯理由）。
+
+仍需補上（WP-53 範圍，T4/T5）：
+
+6. formal Session Plan 整合（不改 stage6 default 四家族 roster）與匯出保存驗證。
+7. E2E 驗收：formal transfer run 完成 → history 列表 → trend 投影，含回歸測試。
 
 ---
 
@@ -97,9 +102,10 @@ WP-53 T0 -> T1 -> T2 -> T3 -> T4 -> T5 -> T-exit
 
 ## 6. Stage Exit Gate
 
-- [x] WP-52 T-exit 完成，包含調整後 pilot v2 automated tests、session wiring、manual evidence table（2026-09-01；manual evidence table 本身待真人回填，見 [T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)）。
-- [ ] WP-53 T-exit 完成，包含正式 `peek_click_transfer_v1` Assessment run 可保存、瀏覽與進入 trend registry。
-- [x] GD-26 已回寫為已解決（2026-09-01）；formal freeze GD 待 WP-53。
+- [x] WP-52 T-exit 完成，包含調整後 pilot v2 automated tests、session wiring、manual evidence table（2026-09-01；manual evidence table 已由真人回填完成，見 [T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」）。
+- [x] WP-53 T0 formal freeze 已拍板（2026-09-01，GD-29）；T1~T3（config/metadata-compatibility/registry）已轉正式凍結值。
+- [ ] WP-53 T-exit 完成，包含正式 `peek_click_transfer_v1` Assessment run 可保存、瀏覽與進入 trend registry（T4 Session Plan 整合 + T5 E2E 仍未開工）。
+- [x] GD-26 已回寫為已解決（2026-09-01）；formal freeze GD 已拍板（2026-09-01，GD-29）。
 - [x] `known_issue/BUGFIX-DECISIONS.md` 與 KI-016 狀態與實作結果一致（已修復，2026-09-01）。
 - [x] `CONTEXT.md` 對 WP-52 pilot v2 狀態同步；`docs/MAP.md`、`docs/exec-plan/README.md` 待 WP-53 T-exit 一併同步（stage 尚未整體完成）。
 - [x] WP-52 範圍內 full CI 與 transfer-focused Playwright E2E 皆通過；WP-53 範圍待其自身 T-exit。

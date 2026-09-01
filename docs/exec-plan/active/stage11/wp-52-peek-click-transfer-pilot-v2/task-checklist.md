@@ -40,7 +40,7 @@
 - [x] 至少記錄 pilot evidence 的採樣限制與不可宣告事項（`analysis-peek-click-transfer.md` §Pilot v2 + T4 文件內）
 - [x] 更新 `analysis-peek-click-transfer.md`（新增 §Pilot v2）
 - [x] 更新 `CONTEXT.md` pilot v2 條目
-- [x] WP-53 go/no-go 記錄於 progress（No-go，待人工執行；見 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 與 progress.md Decision log）
+- [x] WP-53 go/no-go 記錄於 progress（2026-09-01 由 No-go 改為 **Go**：人工 checklist 走查完成 + 3 場真人 evidence session；見 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 與 progress.md D-52.13 / 全域 [DECISIONS.md GD-29](../../../DECISIONS.md)）
 
 ## T-exit
 
