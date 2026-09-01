@@ -277,7 +277,21 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     if (hitboxCandidates === undefined) return { size: hitbox, varies: false };
     const candidate = hitboxQueue.pop()!;
     return {
-      size: { width: candidate.widthU, height: candidate.heightU, depth: candidate.depthU, shape: candidate.shape ?? 'box' },
+      size: {
+        width: candidate.widthU,
+        height: candidate.heightU,
+        depth: candidate.depthU,
+        shape: candidate.shape ?? 'box',
+        ...(candidate.visualSize !== undefined
+          ? {
+              visualSize: {
+                width: candidate.visualSize.widthU,
+                height: candidate.visualSize.heightU,
+                depth: candidate.visualSize.depthU,
+              },
+            }
+          : {}),
+      },
       varies: true,
     };
   }

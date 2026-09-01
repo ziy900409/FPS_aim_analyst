@@ -155,6 +155,28 @@ describe('TargetView — 依 state 唯讀顯示/隱藏目標 mesh(FR-4.1)', () =
     expect(meshes(scene)[0].geometry).toBe(geometryBefore);
   });
 
+  it('hitbox.visualSize 存在時 mesh 改套 visualSize 尺寸，不讀 hitbox.width/height/depth（WP-52 masked pilot，GD-7 記名例外）', () => {
+    const scene = new THREE.Scene();
+    const view = new TargetView(scene);
+
+    view.sync([
+      target({
+        hitbox: { width: 0.14, height: 0.14, depth: 1, shape: 'box', visualSize: { width: 0.349, height: 0.349, depth: 1 } },
+      }),
+    ]);
+
+    expect(meshes(scene)[0].scale.toArray()).toEqual([0.349, 0.349, 1]);
+  });
+
+  it('hitbox.visualSize 省略 → 沿用 hitbox 尺寸（既有行為逐位不變）', () => {
+    const scene = new THREE.Scene();
+    const view = new TargetView(scene);
+
+    view.sync([target({ hitbox: { width: 0.14, height: 0.14, depth: 1, shape: 'box' } })]);
+
+    expect(meshes(scene)[0].scale.toArray()).toEqual([0.14, 0.14, 1]);
+  });
+
   it('dispose 後場景清空且池歸零', () => {
     const scene = new THREE.Scene();
     const view = new TargetView(scene);

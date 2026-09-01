@@ -173,7 +173,15 @@ export interface TargetState {
   pos: Vec3; //                           世界座標（source unit，u）
   visible: boolean; //                    是否可見（決定 render 顯示 + t_visible 蓋戳，T2）
   alive: boolean; //                      是否未被擊殺（P2：命中才撤，WP-5）
-  hitbox: { width: number; height: number; depth: number; shape: 'box' | 'sphere'; part?: 'head' | 'body' }; // 單一 hitbox（H1,box|sphere,WP-46/GD-7）；part 選填保留
+  hitbox: {
+    width: number;
+    height: number;
+    depth: number;
+    shape: 'box' | 'sphere';
+    part?: 'head' | 'body';
+    /** WP-52 masked-visual pilot（GD-7 記名例外）：render-only 尺寸，省略＝視覺讀 width/height/depth。 */
+    visualSize?: { width: number; height: number; depth: number };
+  }; // 單一 hitbox（H1,box|sphere,WP-46/GD-7）；part 選填保留
   motion?: TargetMotion; //               F5 接縫：省略＝static
   age?: number; //                        自 spawn 起的邏輯秒數（sim tick 累加；motion 用）
   posPrev?: Vec3; //                       tick 起始位置快照（motion drive 之前）；sub-tick 命中內插基準（WP-18/T2，FR-B17）

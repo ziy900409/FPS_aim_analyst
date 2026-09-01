@@ -15,6 +15,10 @@ import { lerp } from '../loop/RenderLoop.ts';
  *
  * hitbox 與 mesh 由同一 `TargetState.hitbox`(box:width/height/depth)衍生,確保視覺與
  * WP-5 raycast(`Box3`)判定同來源、不漂移(README failure-mode「hitbox 與 mesh 不一致」)。
+ *
+ * **WP-52 masked-visual pilot 例外(GD-7 記名例外,見 DECISIONS.md)**:`hitbox.visualSize` 存在時
+ * mesh 改套這個尺寸,hit-test(`HitDetector`/`SimLoop.targetAabb`)、clearance、occlusion 仍讀
+ * `hitbox.width/height/depth` 不受影響——render 是唯一讀 `visualSize` 的消費端。省略時逐位不變。
  */
 
 const TARGET_COLOR = 0xd94f4f;
@@ -74,7 +78,8 @@ export class TargetView {
       } else {
         mesh.position.set(t.pos.x, t.pos.y, t.pos.z);
       }
-      mesh.scale.set(t.hitbox.width, t.hitbox.height, t.hitbox.depth);
+      const size = t.hitbox.visualSize ?? t.hitbox;
+      mesh.scale.set(size.width, size.height, size.depth);
       mesh.visible = true;
     }
     // 本幀未用到的池內 mesh 隱藏(重用、不銷毀)。
