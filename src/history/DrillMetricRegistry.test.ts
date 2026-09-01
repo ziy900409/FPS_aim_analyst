@@ -115,6 +115,96 @@ describe('DrillMetricRegistry', () => {
   });
 });
 
+/**
+ * WP-53 / T3 — placeholder scaffold (GD-28). `peek_click_transfer_v1`'s registration itself is
+ * exercised here; a full numeric `ready` projection against `peek-ad-corridor-v1`'s real occlusion
+ * geometry is deliberately NOT attempted — building a hand-crafted tick/event fixture that is
+ * genuinely unoccluded through the corridor's real cover-wall bounds (and correctly scaled by
+ * `SIM_TO_WORLD` for player position vs. source-unit target position) duplicates work the real
+ * SimLoop-driven pilot tests already do (`peek_click_transfer_pilot_v2.test.ts`'s
+ * `runCadenceTimeoutExport`), and getting it subtly wrong would be worse than not having it. The
+ * `not-assessment` guard below only needs `payload.meta.drillId`/`assessment` — it short-circuits
+ * before any scene geometry is touched, so it stays a cheap, reliable smoke test either way.
+ */
+describe('DrillMetricRegistry — peek_click_transfer_v1 (WP-53 T3, GD-28 placeholder scaffold)', () => {
+  it('registers peek_click_transfer_v1 with well-formed descriptors and exactly two primaries', () => {
+    const registry = createDrillMetricRegistry();
+    const registration = registry.registrationForExactDrill('peek_click_transfer_v1');
+    expect(registration).toBeDefined();
+
+    const ids = registration!.descriptors.map((d) => d.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(registration!.descriptors.filter((d) => d.primary).map((d) => d.id)).toEqual([
+      'peek-click-transfer-v1.valid-first-shot-rate',
+      'peek-click-transfer-v1.median-onset-to-hit-ms',
+    ]);
+    for (const descriptor of registration!.descriptors) {
+      expect(descriptor.label.length).toBeGreaterThan(0);
+      expect(descriptor.unit.length).toBeGreaterThan(0);
+      expect(['higher-is-better', 'lower-is-better', 'neutral']).toContain(descriptor.direction);
+      expect(['integer', 'decimal-1', 'decimal-2', 'percent']).toContain(descriptor.format);
+    }
+  });
+
+  it('never falls back to a pilot id — every pilot v1/v2 cohort id stays unregistered (FR-53-6/NFR-53-3)', () => {
+    const registry = createDrillMetricRegistry();
+    const pilotIds = [
+      'peek_click_transfer_pilot_v1_1_5deg',
+      'peek_click_transfer_pilot_v1_2deg',
+      'peek_click_transfer_pilot_v1_3deg',
+      'peek_click_transfer_pilot_v2_1deg',
+      'peek_click_transfer_pilot_v2_2_5deg',
+      'peek_click_transfer_pilot_v2_5deg',
+      'peek_click_transfer_pilot_v2_randomized',
+      'peek_click_transfer_pilot_v2_masked',
+    ];
+    for (const pilotId of pilotIds) {
+      expect(registry.registrationForExactDrill(pilotId)).toBeUndefined();
+      expect(registry.project(minimalPeekClickTransferPayload({ drillId: pilotId }))).toEqual({
+        status: 'unregistered-drill',
+        drillId: pilotId,
+      });
+    }
+  });
+
+  it('excludes a peek_click_transfer_v1 payload with no meta.assessment, even if it slipped past the repository', () => {
+    const registry = createDrillMetricRegistry();
+    const result = registry.project(minimalPeekClickTransferPayload({ drillId: 'peek_click_transfer_v1', assessment: false }));
+    expect(result).toEqual({ status: 'invalid-metric', reasonCode: 'not-assessment' });
+  });
+});
+
+function minimalPeekClickTransferPayload(overrides: { drillId: string; assessment?: boolean }): ExportPayload {
+  const { drillId, assessment = true } = overrides;
+  const meta: Meta = {
+    schemaVersion: 2,
+    drillId,
+    weaponId: 'ak47',
+    weaponSeed: 0,
+    rngSeed: 96000,
+    backend: 'webgl2',
+    displayHz: 144,
+    simHz: 128,
+    browser: 'test-browser',
+    sensitivity: 1,
+    fovDeg: 90,
+    sensitivityModel: 'cs2-0.022deg',
+    movementModel: 'cs2-source',
+    crossOriginIsolated: true,
+    startedAt: '2026-09-01T00:00:00.000Z',
+    unit: 'source',
+    vStrafe: 250,
+    maxDrillSeconds: 120,
+    lateEventCount: 0,
+    bufferOverflow: false,
+    recorderOverflow: false,
+    suspect: false,
+    session: { participantId: 'P-1' },
+    ...(assessment ? { assessment: { protocolVersion: '1.0.0-provisional', assessmentFeedbackPolicy: 'minimal-end-of-block' as const } } : {}),
+  };
+  return { meta, ticks: [], events: [] };
+}
+
 function makePayload(overrides: { drillId?: string; assessment?: boolean; suspect?: boolean }): ExportPayload {
   const { drillId = 'spider-shot-v2', assessment = true, suspect = false } = overrides;
 

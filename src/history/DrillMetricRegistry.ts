@@ -1,19 +1,28 @@
 import type { ExportPayload } from '../data/export.ts';
 import { buildCompatibilityKey, checkQualityGate, type CompatibilityKey, type QualityGateStatus } from '../metrics/compatibilityKey.ts';
 import { buildPeekWindows, type FireEvent } from '../metrics/peekWindows.ts';
+import { buildPeekClickTransferV1ConditionCell } from '../metrics/peekClickTransferConditions.ts';
+import { derivePeekClickTransferMetrics } from '../metrics/peekClickTransferMetrics.ts';
 import { deriveSpiderShotMetrics } from '../metrics/spiderShotMetrics.ts';
 import {
   SPIDER_SHOT_ANGULAR_RADIUS_DEG_RANGE_V2,
   SPIDER_SHOT_HITBOX_V2,
   spiderShotV2,
 } from '../drill/spider_shot_v2.ts';
+import { peekClickTransferV1, PEEK_CLICK_TRANSFER_V1_VISIBILITY } from '../drill/peek_click_transfer_v1.ts';
+import { peekAdCorridor } from '../scene/scenes/peek-ad-corridor.ts';
 
 /**
- * WP-49 T4 — exact-`drillId` history metric registry (README §2.5). Only `spider-shot-v2` is
- * registered (D-49.P9, research-design owner sign-off:
+ * WP-49 T4 — exact-`drillId` history metric registry (README §2.5). `spider-shot-v2` is registered
+ * (D-49.P9, research-design owner sign-off:
  * `docs/algorithm/spider_shot/spider-shot-v2-performance-metrics-design-2026-08-27.html`
- * §registry "第一版歷史趨勢指標"). No prefix/family fallback: an unregistered drill id — including
- * near-miss variants like `spider-shot-v2-alt` — always projects as `unregistered-drill`.
+ * §registry "第一版歷史趨勢指標"). `peek_click_transfer_v1` is also registered but is a **WP-53 / GD-28
+ * placeholder scaffold** — the WP-53 formal freeze decision has not happened yet (real-human pilot
+ * evidence is still pending), so its descriptors/primary-metric choice follow OQ-53-3's stated
+ * default rather than a research sign-off, and its condition cell reads provisional config values
+ * (see `peek_click_transfer_v1.ts`). No prefix/family fallback for either registration: an
+ * unregistered drill id — including near-miss variants like `spider-shot-v2-alt` or any
+ * `peek_click_transfer_pilot_*` id — always projects as `unregistered-drill`.
  */
 
 export interface MetricDescriptor {
@@ -197,10 +206,81 @@ const SPIDER_SHOT_V2_REGISTRATION: DrillMetricRegistration = {
   project: projectSpiderShotV2,
 };
 
-const REGISTRATIONS: readonly DrillMetricRegistration[] = [SPIDER_SHOT_V2_REGISTRATION];
+// ---------------------------------------------------------------------------
+// peek_click_transfer_v1 registration — WP-53 / T3, GD-28 placeholder scaffold (see file header)
+// ---------------------------------------------------------------------------
+
+const PEEK_CLICK_TRANSFER_V1_REGISTRY_VERSION = '0.1.0-provisional';
+
+/** Primary-metric choice follows OQ-53-3's stated default (validFirstShotRate + median
+ * onsetToHitMs); not a research sign-off — revisit once WP-53 T0 actually freezes. */
+const PEEK_CLICK_TRANSFER_V1_DESCRIPTORS: readonly MetricDescriptor[] = [
+  {
+    id: 'peek-click-transfer-v1.valid-first-shot-rate',
+    label: '有效首發命中率',
+    unit: '%',
+    direction: 'higher-is-better',
+    primary: true,
+    format: 'percent',
+  },
+  {
+    id: 'peek-click-transfer-v1.median-onset-to-hit-ms',
+    label: '曝光起算命中時間中位數',
+    unit: 'ms',
+    direction: 'lower-is-better',
+    primary: true,
+    format: 'decimal-1',
+  },
+  {
+    id: 'peek-click-transfer-v1.first-shot-hit-rate',
+    label: '首發命中率',
+    unit: '%',
+    direction: 'higher-is-better',
+    primary: false,
+    format: 'percent',
+  },
+  {
+    id: 'peek-click-transfer-v1.fire-before-gate-rate',
+    label: '制動未完成即開火率',
+    unit: '%',
+    direction: 'lower-is-better',
+    primary: false,
+    format: 'percent',
+  },
+] as const;
+
+function projectPeekClickTransferV1(payload: ExportPayload): readonly MetricObservation[] {
+  const metrics = derivePeekClickTransferMetrics(payload, peekAdCorridor, PEEK_CLICK_TRANSFER_V1_VISIBILITY);
+  const observations: MetricObservation[] = [
+    { metricId: 'peek-click-transfer-v1.valid-first-shot-rate', unit: '%', value: 100 * metrics.validFirstShotRate },
+    { metricId: 'peek-click-transfer-v1.first-shot-hit-rate', unit: '%', value: 100 * metrics.firstShotHitRate },
+    { metricId: 'peek-click-transfer-v1.fire-before-gate-rate', unit: '%', value: 100 * metrics.fireBeforeGateRate },
+  ];
+
+  const onsetToHitTimes = metrics.presentations
+    .map((presentation) => presentation.onsetToHitMs)
+    .filter((value): value is number => value !== undefined);
+  const medianOnsetToHit = median(onsetToHitTimes);
+  if (medianOnsetToHit !== undefined) {
+    observations.push({ metricId: 'peek-click-transfer-v1.median-onset-to-hit-ms', unit: 'ms', value: medianOnsetToHit });
+  }
+
+  return observations;
+}
+
+const PEEK_CLICK_TRANSFER_V1_REGISTRATION: DrillMetricRegistration = {
+  drillId: peekClickTransferV1.drill.drillId,
+  label: 'Peek-click Transfer v1',
+  version: PEEK_CLICK_TRANSFER_V1_REGISTRY_VERSION,
+  descriptors: PEEK_CLICK_TRANSFER_V1_DESCRIPTORS,
+  project: projectPeekClickTransferV1,
+};
+
+const REGISTRATIONS: readonly DrillMetricRegistration[] = [SPIDER_SHOT_V2_REGISTRATION, PEEK_CLICK_TRANSFER_V1_REGISTRATION];
 
 function targetConditionCellForRegistration(drillId: string): string {
   if (drillId === spiderShotV2.drillId) return SPIDER_SHOT_V2_CONDITION_CELL;
+  if (drillId === peekClickTransferV1.drill.drillId) return buildPeekClickTransferV1ConditionCell();
   throw new Error(`no target condition cell configured for drill ${drillId}`);
 }
 

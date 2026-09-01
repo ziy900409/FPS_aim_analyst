@@ -37,6 +37,14 @@
 - 新增 [src/metrics/peekClickTransferConditions.test.ts](../../../../src/metrics/peekClickTransferConditions.test.ts)：condition cell 決定性/欄位覆蓋、`buildCompatibilityKey` 正向組 key、缺 `meta.assessment` 負向 throw、相同 cell 兩場 run 視為 compatible、不同 cell 視為 incompatible。
 - Verification：`npx vitest run src/metrics/` 25 files / 153 tests 全綠；`npx tsc --noEmit` 乾淨。
 
+### 2026-09-01 — T3 placeholder 骨架：`DrillMetricRegistry` 註冊 `peek_click_transfer_v1`
+
+- **不是 T0 freeze 完成**：仍是 GD-28 override 下的骨架切片，task-checklist.md T3 checkbox 維持未勾選。
+- 修改 [src/history/DrillMetricRegistry.ts](../../../../src/history/DrillMetricRegistry.ts)：比照既有 `spider-shot-v2` 的 registration 寫法（同檔案內 colocate condition cell / descriptors / project()，而非另開檔案——沿用既有單一先例，不新建第二套 registry 模式），新增 `peek_click_transfer_v1` 的 `DrillMetricRegistration`：4 個 descriptors（2 個 primary：`valid-first-shot-rate`、`median-onset-to-hit-ms`，對齊 OQ-53-3 預設答案；2 個 non-primary：`first-shot-hit-rate`、`fire-before-gate-rate`），`project()` 呼叫既有 `derivePeekClickTransferMetrics()`（WP-45 交付，未新增/未修改該函式本體）搭配真實 `peek-ad-corridor-v1` 場景與 `peekClickTransferV1.visibility`；`registry version` 標 `0.1.0-provisional`（不是 `1.0.0`，避免被誤認為定案）。`targetConditionCellForRegistration` 分支呼叫 T2 的 `buildPeekClickTransferV1ConditionCell()`。
+- 新增測試（[DrillMetricRegistry.test.ts](../../../../src/history/DrillMetricRegistry.test.ts)）：registration/descriptor 形狀、8 個 pilot v1/v2 cohort id（含 masked/randomized 變體）逐一驗證 `registrationForExactDrill` 回 `undefined` 且 `project()` 回 `unregistered-drill`（FR-53-6/NFR-53-3）、缺 `meta.assessment` 的 `not-assessment` guard。
+- **已知缺口，刻意不補**：沒有寫一個真正 `status:'ready'` 的數值投影測試。原因：`peek-ad-corridor-v1` 的視覺遮蔽（on-target 離線推導)是**真實场景幾何**（`cover-wall-l/r` 的 AABB），玩家必須實際往左右 strafe 才能看到任一側目標；手工拼一組 tick/event fixture 若要通過真實 occlusion 判定，需要正確換算 `SIM_TO_WORLD`(=0.01) 與目標座標的座標系關係，容易做錯而不自知。要正確驗證這條路徑,應該像 `peek_click_transfer_pilot_v2.test.ts` 的 `runCadenceTimeoutExport` 一樣,真的跑一次 `SimLoop`。這件事留給 T5（E2E，目前不在本次骨架範圍內）或未來需要時的獨立切片,不在此處為了「補一個綠燈」而硬做一個可能語意錯誤的 fixture。
+- Verification：`npx vitest run src/history/ src/metrics/ src/drill/` 50 files / 439 tests 全綠；`npx tsc --noEmit` 乾淨。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
