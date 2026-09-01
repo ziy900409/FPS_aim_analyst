@@ -103,6 +103,15 @@
 - 1.5/2/3° 或新 1/2.5/5° 的**單一固定候選** drill（`peek_click_transfer_pilot_v2_<size>deg`）維持原樣、未被 randomized 變體取代——兩者是研究員模式選單裡並存的不同入口，各自服務不同比較方式。
 - 寫 manual gate 文件時發現先前只登記了 2.5° 預設，1°/5° 沒有選單入口——與「比較候選」的目的不符。補上 `PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES`（單一來源，`peek_click_transfer_pilot_v2.ts` 匯出全部三個固定候選），`main.ts`／`fpsTestHarness.ts` 的 `availableDrills` 註冊全部三個 + randomized；順手把兩處各自重複的 `drillId === X ? {visibility...} : {}` 條件鏈（v1 + 3 個 v2 固定候選 + randomized，共 5 條）收斂成一個 `Map` 查表，避免候選數再增加時繼續累加分支。新增 e2e 案例證明 1°/5° 個別可選可載入。全專案 typecheck/vitest（1697）/playwright（77）全綠。
 
+### 2026-09-01 — masked-visual pilot variant（T5 之後，使用者請求）
+
+- 使用者在準備人工走查 T4 checklist 時提出：想要一個受試者全程看到同一固定視覺大小、無法用「這顆看起來比較小」視覺線索猜出目前是哪個角尺寸候選的模式，用來排除意識性策略調整這個混淆。這與 GD-7（CLAUDE.md 硬約束：hitbox render/命中判定單一來源）字面牴觸，已透過 `AskUserQuestion` 呈現利弊，使用者明確拍板破例（見全域 [DECISIONS.md](../../../DECISIONS.md) GD-27）。
+- 落地：`TargetHitboxConfig`/`TargetHitboxSize` 新增 opt-in `visualSize?`（[DrillConfig.ts](../../../../src/drill/DrillConfig.ts)），`schema.ts` 驗證，`TargetManager.pickHitbox()` 往下傳遞，`TargetView.sync()` 是**唯一**消費端——`HitDetector`/`SimLoop.targetAabb`/`clearance.ts`/`occlusionGeometry.ts`/離線 `trackingDerivation.ts` 一律不變,省略時任何既有 drill 逐位不變。
+- 新增獨立 drill `peek_click_transfer_pilot_v2_masked`（同檔）：hitbox 仍逐一使用真實 1°/2.5°/5° 候選（balanced-shuffle,同 randomized cell 機制），每個候選額外帶同一個 2.5° 參考 `visualSize`；獨立 id/seed（95200 系），不影響既有固定候選與 T5 randomized 兩個 config。已註冊進 `main.ts` 研究員模式 drill 清單。
+- 3 個垂直切片、各自 commit：(1) 型別 + schema 驗證（`DrillConfig.ts`/`schema.ts`/`schema.test.ts`），(2) render 佈線（`TargetManager.ts`/`TargetView.ts`/`TargetView.test.ts`/`state/types.ts`），(3) 新 drill + main.ts 註冊 + 專屬測試（`peek_click_transfer_pilot_v2.ts`/`.test.ts`/`main.ts`）。每個切片後 `tsc --noEmit` 全專案 exit 0；切片 3 後跑全專案 `npx vitest run`：188 files / 1708 tests passed（2 skipped，既有、與本次無關），零回歸。
+- **已知缺口（記入 GD-27，非本輪範圍）**：匯出稽核軌跡尚未擴及——`SimLoop.ts` 的 `visible` event（`hitboxVaries` 分支）目前只帶真實 `hitboxWidthU` 等欄位，不含 `visualSize`；`ReplayTargetView.ts` replay 仍只會 render 真實 hitbox 尺寸。也就是說：**匯出的 JSON 目前無法回溯「受試者當下實際看到的視覺尺寸」**，只能回溯真實 hitbox。若之後要靠匯出資料做「遮罩是否確實達到視覺無差異」的稽核，需要補這段（`SimLoop.ts` 寫入 + `exportPayloadSchema.ts` 解析 + `ReplayTargetView.ts` 讀取），屆時另開切片。
+- `graphify update .` 待本輪三個 commit 完成後執行一次確認索引狀態。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -118,6 +127,7 @@
 | D-52.9 | 修訂 D-52.4：v2 角尺寸候選由 `[1.5, 2, 3]` deg 改為 `[1, 2.5, 5]` deg，預設候選由 2° 改為 2.5° | 使用者親自跑過 T4 manual gate 後回報「三個候選手感差異太小」——原候選 min→max hitbox 寬度只差約 2×(0.21u→0.42u)；新候選拉大到約 5×(0.14u→0.70u)。這是本輪第一份真人 pilot 證據，D-52.4 當時「無 evidence 支持變更」的前提已不成立，故修訂而非新增平行決策 | Confirmed，使用者 2026-09-01 拍板（AskUserQuestion 三選一：1/2/4°、**1/2.5/5°**、自訂） |
 | D-52.10 | 新增引擎能力 `DrillConfig.targets.hitboxCandidates`（balanced-shuffle seeded 候選集合）+ 連帶修正 `visibilityDerivation.ts`/`holdClickMetrics.ts` 原本「單一全域 hitbox 快照」對變動尺寸 presentation 算錯 onset 的正確性缺口 | 使用者要求「三個間距隨機出現」；讀碼發現不修正 onset 推導會讓 evidence report 的核心指標（`validFirstShot`/`onsetToFirstShotMs`）算錯，違反 C-D4 單一權威定義——這不是可以跳過的裝飾，是做對這個 feature 的必要前提 | Confirmed，使用者 2026-09-01 拍板「繼續做」（AskUserQuestion 確認範圍後） |
 | D-52.11 | 新增 `peek_click_transfer_pilot_v2_randomized` drill（21 trials，7/7/7 平衡，seed 95100），與既有三個固定候選 drill 並存於研究員模式選單，不取代它們 | 平衡 shuffle（非純 IID）比照 spider-shot WP-44 zone queue 既有機制；21 是能被 3 整除、最接近 v1/v2 既有 20-trial 慣例的數字 | Confirmed，使用者 2026-09-01 拍板（AskUserQuestion：平衡 shuffle + 21 trials） |
+| D-52.12 | 新增 `TargetHitboxConfig.visualSize?`（GD-7 記名例外，見全域 [DECISIONS.md](../../../DECISIONS.md) GD-27）+ 新 drill `peek_click_transfer_pilot_v2_masked`：render 固定套用 2.5° 參考尺寸，hitbox（命中判定/clearance/occlusion）仍逐一使用真實 1°/2.5°/5° 候選 | 使用者要求「受試者看不出目前是哪個候選」以排除意識性視覺線索混淆；`visualSize` 為 opt-in 欄位、省略時任何既有 drill 逐位不變，例外範圍收斂到單一新 drill | Confirmed，使用者 2026-09-01 拍板「明確破例」（AskUserQuestion 呈現 GD-7 衝突與兩個設計選項後） |
 
 ## Open Questions
 

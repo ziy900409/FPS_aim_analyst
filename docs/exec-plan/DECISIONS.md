@@ -286,6 +286,17 @@
 
 ## 3. 已解決(CLOSED)
 
+### GD-27 ✅ 目標 hitbox 單一來源硬約束記名例外 — `visualSize` render-only 尺寸,限 `peek_click_transfer_pilot_v2_masked`(2026-09-01,WP-52)
+
+| | |
+|---|---|
+| **發現處** | 使用者在 WP-52 T4 手動 pilot 走查時提出:想要一種模式,受試者全程看到同一個固定視覺大小,不會因為目前是 1°/2.5°/5° 哪個候選而看出目標「看起來比較小/比較大」——避免受試者用視覺線索意識性地調整瞄準策略,汙染「真實瞄準精度對目標角尺寸的敏感度」量測。 |
+| **與既有決議的落差** | CLAUDE.md 第 4 節硬約束(源自 WP-23/GD-7,WP-46/WP-52-T5 延伸):「目標 hitbox 單一來源——命中判定(`HitDetector`)與 on-target 離線推導(`trackingDerivation`)必須使用同一幾何來源(`TargetState.hitbox`/export `meta.targets.hitbox`),不得新增另一套閾值或尺寸常數」。render mesh 與 hitbox 逐位同尺寸是這條約束的一部分(`TargetView.ts`/`ReplayTargetView.ts` 內文皆明文宣告此不變量)。使用者要的「畫面固定、命中判定仍變」字面上就是新增第二套尺寸常數,直接牴觸此硬約束。 |
+| **決議(使用者拍板,2026-09-01,明確破例)** | 新增 `TargetHitboxConfig.visualSize?: { widthU, heightU, depthU }`(對應 resolved 形態 `TargetHitboxSize.visualSize`)。**只有 render 消費端**(`TargetView.sync()`)在存在時改用它決定 `mesh.scale`;`HitDetector`、`SimLoop.targetAabb`(projectile 命中)、`clearance.ts`、`occlusionGeometry.ts`(可見度取樣)、離線 `trackingDerivation.ts`/`visibilityDerivation.ts` **一律不變**,仍讀 `hitbox.width/height/depth`(真實 hitbox)。省略 `visualSize` 時,任何既有 drill 的行為逐位不變。新增獨立 drill `peek_click_transfer_pilot_v2_masked`([peek_click_transfer_pilot_v2.ts](../../src/drill/peek_click_transfer_pilot_v2.ts)):hitbox 仍逐一使用真實 1°/2.5°/5° 候選(命中判定/clearance/occlusion 依真實候選運作),但每個候選額外帶同一個 2.5° 參考 `visualSize`。既有 `peek_click_transfer_pilot_v2` 固定候選與 T5 randomized 兩個 config 完全不動——它們存在的目的正是讓受試者感受尺寸差異,與這個 masked 變體用途相反。 |
+| **理由** | 完整拿掉 hitbox 單一來源(讓所有 drill 都可能 render≠hit)風險過大,且無此需求;所以例外範圍收斂到單一 opt-in 欄位,預設路徑(省略 `visualSize`)對其餘所有 drill 是 no-op,只有這一個新 pilot drill 主動選用。2.5° 參考尺寸落在既有三候選中已通過 clearance 驗證的最大候選(5°)以內,不引入新的場景穿模風險;可見度取樣(9-sample onset)刻意保留讀真實 hitbox——「目標何時真正可見」是量測契約,不隨這個遮罩效果改變。 |
+| **影響面** | [DrillConfig.ts](../../src/drill/DrillConfig.ts)(`TargetHitboxConfig`/`TargetHitboxSize.visualSize`、`resolveTargetHitbox`/`targetHitboxToConfig` 往返)、[schema.ts](../../src/drill/schema.ts)(`validateHitbox`/`validateHitboxCandidates` 驗證 `visualSize`)、[state/types.ts](../../src/state/types.ts)(`TargetState.hitbox.visualSize`)、[TargetManager.ts](../../src/sim/TargetManager.ts)(`pickHitbox()` 往下傳遞)、[TargetView.ts](../../src/render/TargetView.ts)(render 消費端)、[peek_click_transfer_pilot_v2.ts](../../src/drill/peek_click_transfer_pilot_v2.ts)(新增 `peek_click_transfer_pilot_v2_masked`)、[main.ts](../../src/main.ts)(研究員模式 drill 清單註冊)。**尚未**擴及匯出稽核軌跡(`SimLoop.ts` 的 `visible` event 目前只帶真實 `hitboxWidthU` 等欄位,不含 `visualSize`)與 `ReplayTargetView.ts`(replay 仍只會 render 真實 hitbox 尺寸)——這兩處留待需要匯出資料回溯「當時畫面實際顯示什麼」時再補。 |
+| **狀態** | ✅ 已實作(2026-09-01,WP-52,3 個 commit：型別/驗證、render 佈線、新 drill)。手動 pilot 走查與 evidence 蒐集待 T4 checklist 回填。 |
+
 ### GD-26 ✅ GD-24/FR-G9 缺口 — Session Plan preset 切換不落地,改為擴充自由勾選家族清單(2026-08-26 記錄;2026-09-01 拍板,WP-52 T2)
 
 | | |
