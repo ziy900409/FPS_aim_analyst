@@ -64,6 +64,14 @@
 - 更新 `CONTEXT.md`：`peek-click-transfer-pilot-v1` 詞條後新增 `peek_click_transfer_pilot_v2` 詞條,說明其為獨立 evidence-collection round、T0 拍板沿用 v1 數值、operator 如何排入 session、evidence report 用途。
 - **WP-53 go/no-go：No-go,待人工執行**。本輪 WP-52 交付的 config/session wiring/evidence report 皆已機械驗證,但本 repo 尚無任何真人 trial 跑過 pilot v2。WP-53 開始凍結數值前需要:(1) 人工 checklist 回填且標註日期,(2) 至少一批真人 pilot session 的 evidence report,(3) 上述證據附掛回 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 或其後續 addendum。OQ-52-4(最小 participant 數)owner 為研究者,本輪不預設數字。
 
+### 2026-09-01 — T-exit Pilot v2 acceptance and WP-53 handoff
+
+- 新增 [T-exit-gate.md](T-exit-gate.md)，比照 WP-45 T-exit-gate.md 格式：Automated gate／Manual gate（連結 T4 文件）／Documentation gate／Exit result（明確列出「exit 不代表什麼」，防止過度宣稱）。
+- Automated gate 全綠：`npm run typecheck` exit 0；全專案 `npx vitest run` 188 files / 1668 tests passed（2 skipped，既有、與本 WP 無關）；全專案 `npx playwright test`（edge channel）72 passed，含 WP-45 既有 `peek-click-transfer.spec.ts` 與 WP-52 T2 新增 case。
+- 未修改 production code（本次只更新文件），仍執行 `graphify update .` 確認索引與最終狀態一致（3832 nodes / 9004 edges）。
+- Documentation gate：`analysis-peek-click-transfer.md`／`CONTEXT.md`／`DECISIONS.md` GD-26／`KI-016`／`BUGFIX-DECISIONS.md` BD-016／stage11 `README.md`/`task-checklist.md`/`progress.md` 全數同步。
+- WP-52 README 狀態頭更新為「T0–T4/T-exit 完成；WP-53 No-go 待人工執行」。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -102,3 +110,7 @@
 | 2026-09-01 | `npx playwright test tests/e2e/session-orchestrator.spec.ts`（edge channel） | 4/4 passed（含新增 WP-52 T2 transfer-family case） |
 | 2026-09-01 | `npx vitest run src/pilot/peekClickTransferPilotEvidence.test.ts src/history/HistoryPersistence.test.ts` | 2 files / 17 tests passed（T3） |
 | 2026-09-01 | `npx tsc --noEmit`（T3 後） | exit 0（全專案） |
+| 2026-09-01 | `npm run typecheck`（T-exit） | exit 0（`tsc --noEmit` + `tsc --noEmit -p tsconfig.node.json`） |
+| 2026-09-01 | `npx vitest run`（T-exit，全專案） | 188 files / 1668 tests passed，2 skipped（既有、與本 WP 無關） |
+| 2026-09-01 | `npx playwright test`（T-exit，全專案，edge channel） | 72 passed |
+| 2026-09-01 | `graphify update .`（T-exit 確認） | 3832 nodes / 9004 edges rebuilt，與 T4 後一致 |

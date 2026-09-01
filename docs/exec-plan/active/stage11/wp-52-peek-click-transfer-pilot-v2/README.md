@@ -8,7 +8,7 @@
 | **里程碑** | Pilot v2 evidence-ready；不宣告正式 Assessment |
 | **相依** | WP-45 T-exit；GD-26 / KI-016 作為 session wiring 前置缺口 |
 | **估時** | 4-6 dev-days，不含真人 pilot 招募時間 |
-| **狀態** | 🟡 規劃完成，尚未開工 |
+| **狀態** | ✅ T0–T4/T-exit 完成（2026-09-01）；WP-53 go/no-go：**No-go**，待真人 pilot 執行（[T4-manual-pilot-gate.md](T4-manual-pilot-gate.md)） |
 
 ---
 

@@ -15,7 +15,7 @@
 | ✅ | **T2** Pilot session preset UI + metadata unblock | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | T1 + KI-016/GD-26 | High |
 | ✅ | **T3** Pilot evidence harness and report | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | T1-T2 | Med |
 | ✅ | **T4** Manual pilot gate and documentation | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | T3 | High |
-| ⬜ | **T-exit** Pilot v2 acceptance and WP-53 handoff | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | T1-T4 | Med |
+| ✅ | **T-exit** Pilot v2 acceptance and WP-53 handoff | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | T1-T4 | Med |
 
 WP-52 Definition of Done：調整後 transfer pilot 以新 id 與版本化 config 存在；操作端能選取 pilot session 並匯出不因 `peek-click-transfer` family metadata 失敗；自動化與人工 evidence 足以支撐是否進入 formal freeze，但不宣告 Assessment。
 

@@ -44,9 +44,9 @@
 
 ## T-exit
 
-- [ ] focused tests exit 0
-- [ ] relevant Playwright E2E exit 0
-- [ ] typecheck exit 0
-- [ ] 若修改 code，`graphify update .` 已執行
-- [ ] progress / checklist / stage11 docs synced
-- [ ] staged file audit complete
+- [x] focused tests exit 0（並加碼全專案 `npx vitest run`：188 files / 1668 tests passed）
+- [x] relevant Playwright E2E exit 0（並加碼全專案 `npx playwright test`：72 passed）
+- [x] typecheck exit 0（`npm run typecheck`）
+- [x] 若修改 code，`graphify update .` 已執行
+- [x] progress / checklist / stage11 docs synced
+- [x] staged file audit complete（見 [T-exit-gate.md](T-exit-gate.md)）
