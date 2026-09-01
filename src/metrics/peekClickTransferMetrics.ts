@@ -11,6 +11,9 @@ const EPSILON = 1e-9;
 export interface PeekClickTransferPresentation {
   readonly targetId: string;
   readonly side: 'L' | 'R';
+  /** WP-52 T5: this presentation's hitbox width (u), when the drill's hitbox varies by presentation
+   * (`hitboxCandidates`); omitted for a fixed-hitbox drill, whose value lives in `meta.targets.hitbox`. */
+  readonly hitboxWidthU?: number;
   readonly tMeasurementOnsetMs?: number;
   readonly tFirstShotMs?: number;
   readonly onsetToFirstShotMs?: number;
@@ -81,6 +84,7 @@ export function derivePeekClickTransferMetrics(
     return {
       targetId: peek.targetId,
       side: peek.side,
+      ...(peek.visible.hitboxWidthU !== undefined ? { hitboxWidthU: peek.visible.hitboxWidthU } : {}),
       ...(tMeasurementOnsetMs !== undefined ? { tMeasurementOnsetMs } : {}),
       ...(tFirstShotMs !== undefined ? { tFirstShotMs } : {}),
       ...(tFirstShotMs !== undefined && tMeasurementOnsetMs !== undefined

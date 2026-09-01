@@ -138,6 +138,43 @@ describe('derivePeekClickTransferMetrics', () => {
     expect(shuffled).toEqual(inOrder);
   });
 
+  it('passes through the presentation hitboxWidthU when the drill varies it (WP-52 T5)', () => {
+    const payload = buildPayload({
+      ticks: [tick(10, { tx: -2 }), tick(20, { tx: -2 })],
+      events: [
+        {
+          type: 'visible',
+          targetId: 'target-0',
+          side: 'L',
+          t: 10,
+          hitboxWidthU: 0.7,
+          hitboxHeightU: 0.7,
+          hitboxDepthU: 1,
+          hitboxShape: 'box',
+        },
+        counter(15),
+        fire({ t: 20, hit: true, firstShot: true, residualSpeed: UNDER_GATE, targetId: 'target-0' }),
+      ],
+    });
+
+    const presentation = onlyPresentation(derivePeekClickTransferMetrics(payload, scene(), OPTIONS));
+    expect(presentation.hitboxWidthU).toBe(0.7);
+  });
+
+  it('omits hitboxWidthU for a fixed-hitbox drill (no visible event carries it)', () => {
+    const payload = buildPayload({
+      ticks: [tick(10, { tx: -2 }), tick(20, { tx: -2 })],
+      events: [
+        visible('target-0', 'L', 10),
+        counter(15),
+        fire({ t: 20, hit: true, firstShot: true, residualSpeed: UNDER_GATE, targetId: 'target-0' }),
+      ],
+    });
+
+    const presentation = onlyPresentation(derivePeekClickTransferMetrics(payload, scene(), OPTIONS));
+    expect(presentation.hitboxWidthU).toBeUndefined();
+  });
+
   it('exports only the documented keys and never a composite score', () => {
     const payload = buildPayload({
       ticks: [tick(10, { tx: -2 }), tick(20, { tx: -2 })],

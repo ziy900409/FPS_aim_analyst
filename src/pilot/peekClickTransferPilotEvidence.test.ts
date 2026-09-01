@@ -62,6 +62,41 @@ describe('buildPeekClickTransferPilotEvidenceReport (WP-52 T3)', () => {
       validFirstShotRate: 0,
       leftRightBalance: { left: 0, right: 0 },
       flagCounts: {},
+      byCandidate: {},
     });
+  });
+
+  it('leaves byCandidate empty when no presentation carries hitboxWidthU (fixed-hitbox drill)', () => {
+    const report = buildPeekClickTransferPilotEvidenceReport([{ presentations: SYNTHETIC_PRESENTATIONS }]);
+    expect(report.byCandidate).toEqual({});
+  });
+});
+
+describe('buildPeekClickTransferPilotEvidenceReport — WP-52 T5: byCandidate breakdown', () => {
+  const CANDIDATE_PRESENTATIONS: readonly PeekClickTransferPresentation[] = [
+    { targetId: 't0', side: 'L', hitboxWidthU: 0.14, firstShotHit: false, validFirstShot: false, flags: ['timeout'] },
+    { targetId: 't1', side: 'R', hitboxWidthU: 0.14, firstShotHit: false, validFirstShot: false, flags: ['timeout'] },
+    { targetId: 't2', side: 'L', hitboxWidthU: 0.7, firstShotHit: true, validFirstShot: true, flags: [] },
+    { targetId: 't3', side: 'R', hitboxWidthU: 0.7, firstShotHit: true, validFirstShot: true, flags: [] },
+  ];
+
+  it('groups presentations by hitboxWidthU into separate completion/timeout/valid-first-shot breakdowns', () => {
+    const report = buildPeekClickTransferPilotEvidenceReport([{ presentations: CANDIDATE_PRESENTATIONS }]);
+
+    expect(report.presentationCount).toBe(4);
+    expect(Object.keys(report.byCandidate).sort()).toEqual(['0.14', '0.7']);
+    expect(report.byCandidate['0.14']).toMatchObject({ presentationCount: 2, timeoutRate: 1, validFirstShotRate: 0 });
+    expect(report.byCandidate['0.7']).toMatchObject({ presentationCount: 2, timeoutRate: 0, validFirstShotRate: 1 });
+  });
+
+  it('uses candidateLabelForWidth to name groups when provided', () => {
+    const labels: Record<number, string> = { 0.14: '1°', 0.7: '5°' };
+    const report = buildPeekClickTransferPilotEvidenceReport([{ presentations: CANDIDATE_PRESENTATIONS }], {
+      candidateLabelForWidth: (widthU) => labels[widthU] ?? String(widthU),
+    });
+
+    expect(Object.keys(report.byCandidate).sort()).toEqual(['1°', '5°']);
+    expect(report.byCandidate['1°'].presentationCount).toBe(2);
+    expect(report.byCandidate['5°'].presentationCount).toBe(2);
   });
 });
