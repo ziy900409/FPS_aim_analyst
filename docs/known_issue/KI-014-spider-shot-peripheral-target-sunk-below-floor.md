@@ -54,8 +54,9 @@ azimuth/radius 組合能露出地板一點點邊緣。
   省略 = 0,逐位不變)。
 - `SceneManager.ts` 的 `#buildRoom()` 用 `floorY` 定位地板 mesh,並讓四面牆的**下緣**跟著
   `floorY` 一起下移(牆高 = `height − floorY`,牆體縱向置中於 `[floorY, height]`)——上緣仍固定在
-  `height`,維持 KI-012 §6 OQ-KI12-1 記錄過的「周邊目標探出牆頂進open 空間仍可見」行為不變,只讓
-  下邊界跟著地板一起退開。
+  當時的 `height=3`,維持 KI-012 §6 OQ-KI12-1 記錄過的「周邊目標探出牆頂進 open 空間仍可見」
+  行為不變,只讓下邊界跟著地板一起退開。2026-09-01 後續產品調整把 `height` 提高為 6,不改
+  `floorY` 或 spider-shot 參數。
 - `placeholder-room.ts` 設 `floorY: -3`——覆蓋 `spider-shot-v2` 實測最深 y≈−1.99,留約 0.87
   的安全邊界(hitbox 半徑 + 未來候選值微調空間)。
 
@@ -69,7 +70,7 @@ azimuth/radius 組合能露出地板一點點邊緣。
 |---|---|
 | `src/scene/SceneConfig.ts` | `ProceduralRoomConfig` 新增選填 `floorY?: number`;`validateProceduralRoom` 對應解析(比照 `eyeZ` 寫法) |
 | `src/render/SceneManager.ts` | `#buildRoom()` 簽名新增 `floorY` 參數;地板 `position.y = floorY`;四牆改用 `wallHeight = height - floorY`、`wallCenterY = (floorY + height) / 2` |
-| `src/scene/scenes/placeholder-room.ts` | `proceduralRoom` 新增 `floorY: -3` |
+| `src/scene/scenes/placeholder-room.ts` | `proceduralRoom` 新增 `floorY: -3`;2026-09-01 後續視覺調整維持 `floorY` 不變,只把 `roomSize` 更新為 `[16, 20, 6]` |
 | `src/drill/spider_shot_v1.test.ts`/`spider_shot_v2.test.ts` | 各新增回歸測試:鎖死 `azimuthDegRange=[180,180]`(朝下)、`angularRadiusDegRange` 取上限,經真實 `TargetManager`/`createSharedState` 跑出周邊目標世界 y,斷言落在 `floorY + hitbox 半徑` 之上 |
 
 ## 5. 驗證證據
@@ -106,7 +107,8 @@ azimuth/radius 組合能露出地板一點點邊緣。
 
 ## 7. 影響範圍
 
-**受影響**:`placeholder-room` 場景的地板/牆體下緣視覺呈現(房間看起來更深)。**不受影響**:
+**受影響**:`placeholder-room` 場景的地板/牆體下緣視覺呈現(房間看起來更深);2026-09-01 後續調整另使
+房間更寬、牆面更高。**不受影響**:
 `spider_shot_v1.ts`(協定凍結,零改動)、`spider_shot_v2.ts`、`TargetManager.ts`/`HitDetector.ts`
 任何判定邏輯、`clearance.ts` 驗證結果、`placeholder-room` 上其他既有 drill 的 camera/raycast 原點
 (`eyeZ` 不受影響)、匯出資料格式。`SceneConfig.ts`/`SceneManager.ts` 的 `floorY` 為新增選填欄位,

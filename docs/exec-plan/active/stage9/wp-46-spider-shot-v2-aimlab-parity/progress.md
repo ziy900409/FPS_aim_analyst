@@ -18,6 +18,8 @@
 
 - **2026-08-26 T-exit 後續(第二輪手動驗收發現)**:使用者對 KI-012 修復實機重測,回報「現在地板高度也會遮蓋球體」。追碼確認 `TargetManager.peripheralPos()` 公式在周邊目標 azimuth 朝下(180°)、`angularRadiusDegRange` 取上限(v2 為 25°)時 y 座標最負,代入 v2 實際參數算出 y≈−1.99,而 `placeholder-room` 地板在 y=0——目標幾乎全沉入地板。與 KI-012 同一族問題(drill 目標幾何 vs. 場景固定房間邊界不相容),但這次是地板(下邊界)而非北牆(遠邊界)。已開 [KI-014](../../../../known_issue/KI-014-spider-shot-peripheral-target-sunk-below-floor.md) + [BUGFIX-DECISIONS.md](../../../../known_issue/BUGFIX-DECISIONS.md) BD-014,修法:`SceneConfig.ts`/`SceneManager.ts` 新增選填 `floorY`,`placeholder-room.ts` 設 `floorY:-3`(牆體下緣跟著一起延伸,上緣不變),不動任何 drill config 凍結值。`spider_shot_v1.test.ts`/`spider_shot_v2.test.ts` 各新增回歸測試,經真實 `TargetManager` 程式碼路徑鎖死 azimuth=180°/角距上限驗證世界 y 落在地板之上。診斷過程中另外確認:2.0° 角直徑的中心目標即使完全無遮擋,螢幕投影仍偏小、肉眼不易辨識——這是獨立的尺寸感知問題(見 KI-014 OQ-KI14-1),非本次遮擋修復範圍,是否調整候選值留給使用者實機測試後另行拍板。`npm run test:ci` 全綠。
 
+- **2026-09-01 T-exit 後續(使用者視覺調整拍板)**:使用者依 spider-shot-v2 參考圖要求 `placeholder-room` 有更寬的左右邊界並拉高牆面。採 render-only 場景 config 調整:`roomSize` 由 `[10,20,3]` 改為 `[16,20,6]`,保留 `eyeZ:4` 與 `floorY:-3`,不改 `spider_shot_v2.ts` 的距離、角距範圍、hitbox 或任何 sim/命中/metrics 語意。同步更新 `SceneConfig.test.ts` 固定期望值、KI-012/KI-014/KI-011 與 BD 帳本中對 placeholder room 邊界的紀錄。驗證:`npx.cmd vitest run src/scene/SceneConfig.test.ts src/scene/eyePose.test.ts` 全綠(2 檔 / 14 tests);`graphify update .` 已更新。
+
 ## Decision Log
 
 - **D-46.1**(2026-08-26,brainstorming 對話拍板):GD-7 的 on-target 幾何由「H1 hitbox(Box3)」擴充為「box|sphere,單一來源不變」。**Why**:使用者要求 spider-shot-v2 目標為真正球體碰撞判定(非視覺近似),而 GD-7(WP-23 第一次收斂)原文把幾何釘死在 Box3;維持單一來源原則(命中判定與視覺同一個 `TargetState.hitbox`)的前提下,把「哪一種幾何」參數化為 `shape` 是唯一不違反 GD-7 精神(零新門檻/同幾何)的擴充方式。**Alternatives considered**:只做視覺球體、判定仍用 box(內接或外接近似)——使用者在對話中明確否決,選擇了會動 GD-7 的真實作法。

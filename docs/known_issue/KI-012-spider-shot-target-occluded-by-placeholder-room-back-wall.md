@@ -16,7 +16,7 @@
 - 目標**確實有 spawn**:`visible=true`、位置 `(0, 1.5, -8)`、`hitbox.shape='sphere'`、直徑
   0.279u——WP-46 T1–T5 交付的 sphere 幾何/schema/render 切換管線本身完全正確。
 - 把同一顆目標暫時放大到 30° 角直徑做對照,畫面上只看到目標「探出牆頂」的一小塊圓弧——牆把目標
-  下半部完全遮住,只有超出牆高(3u,無天花板)的上緣曝光在開放空間。
+  下半部完全遮住,只有超出當時牆高(3u,無天花板)的上緣曝光在開放空間。
 - 改測 `spider-shot-v1` 的方塊目標(同一位置 `(0,1.5,-8)`、同一場景),**一樣完全看不到**——證明
   這不是 WP-46 新增 sphere 渲染管線的回歸,是 box/sphere 皆受影響的場景幾何問題。
 
@@ -42,7 +42,7 @@ WP-5 當年把 `DEFAULT_DISTANCE` 從 8 降到 4 來閃開這個坑,`counterstra
 1. `HitDetector` 的 raycast 只測目標 hitbox,不查牆的視覺遮擋——[WP-45](../exec-plan/completed/stage9/wp-45-peek-click-transfer/README.md)
    的 occlusion gate 只在場景 `propBounds` 非空時觸發,`placeholder-room` 的 `propBounds: []`
    恆不觸發。玩家對著準心中線盲開火,中心目標「看不見但打得中」,不需要真的看到它。
-2. 周邊目標的方位角/徑向角會讓部分目標的 Y 座標超出牆高(3u,`#buildRoom()` 不建天花板),使其
+2. 周邊目標的方位角/徑向角會讓部分目標的 Y 座標超出當時牆高(3u,`#buildRoom()` 不建天花板),使其
    探出牆頂、落入開放空間而**可見**——這解釋了為何使用者(WP-44/46 觸發)的抱怨一直是「太難搜尋」
    (峰迴路轉才看到)而非「完全看不到」:中心目標(必被遮)沒被抱怨過,因為沒人靠視覺瞄它;周邊
    目標(部分被遮、部分探頭)才是真正被拿來練習、抱怨的對象。
@@ -57,16 +57,17 @@ WP-5 當年把 `DEFAULT_DISTANCE` 從 8 降到 4 來閃開這個坑,`counterstra
 ```ts
 // src/scene/scenes/placeholder-room.ts
 proceduralRoom: {
-  roomSize: [10, 20, 3],  // depth: 10 → 20，北牆 z=-5 → z=-10（給 distance=8 目標 2u 淨空）
+  roomSize: [16, 20, 6],  // depth: 10 → 20，北牆 z=-5 → z=-10；2026-09-01 width 10→16、height 3→6
   eyeZ: 4,                // 明確釘住舊 depth=10 時的 fallback 值（depth/2-standoff），
-                           // 避免 depth 改動連動改變 camera/raycast 原點
+                           // 避免 roomSize 改動連動改變 camera/raycast 原點
   ...
 }
 ```
 
-- **只改 depth,不改 width/height**:`width=10`(半寬 5)已足夠容納周邊目標最大側向偏移
-  (`8×sin(25°)≈3.38u`,WP-46 v2 的最大角距);`height=3` 維持不動——是否要讓周邊目標完全不
-  探頭(加高牆體或補天花板)是產品/美術決策,不在本次修復範圍(見 §6 遺留 OQ)。
+- **2026-08-26 原修復只改 depth,不改 width/height**:`width=10`(半寬 5)已足夠容納周邊目標最大側向偏移
+  (`8×sin(25°)≈3.38u`,WP-46 v2 的最大角距);`height=3` 是否加高當時留為產品/美術決策。
+  **2026-09-01 後續視覺調整**:使用者依 spider-shot-v2 參考圖拍板 `width=16`、`height=6`，仍不改
+  `eyeZ`、`floorY` 或任何 drill config。
 - **顯式 `eyeZ:4`**:`resolveEyeWorldBase()`(camera 位置與 raycast 原點的單一來源)在缺
   `eyeZ` 時 fallback 為 `depth/2 - CAMERA_STANDOFF`;若放任 depth 改動連動這個 fallback,會把
   `placeholder-room` 上**所有**既有 drill(`hold_click_v1`/`hold_track_v1`/counterstrafe 系列等,
@@ -82,9 +83,9 @@ proceduralRoom: {
 
 | 檔案 | 修改 |
 |---|---|
-| `src/scene/scenes/placeholder-room.ts` | `roomSize` depth 10→20;新增顯式 `eyeZ: 4` 釘住既有 camera/raycast 原點 |
+| `src/scene/scenes/placeholder-room.ts` | `roomSize` depth 10→20;新增顯式 `eyeZ: 4` 釘住既有 camera/raycast 原點。2026-09-01 後續視覺調整:width 10→16、height 3→6 |
 | `src/sim/TargetManager.ts` | `DEFAULT_DISTANCE` 旁的 WP-5 警語補充 KI-012 交叉引用與 placeholder-room 新深度 |
-| `src/scene/SceneConfig.test.ts` | `placeholderRoom.proceduralRoom.roomSize` 斷言值同步 `[10, 20, 3]` |
+| `src/scene/SceneConfig.test.ts` | `placeholderRoom.proceduralRoom.roomSize` 斷言值同步為目前值 `[16, 20, 6]` |
 | `src/scene/eyePose.test.ts` | placeholder-room 的 `resolveEyeWorldBase` 測試標題更正為「顯式 eyeZ」(值不變,仍是 4) |
 | `src/drill/spider_shot_v1.test.ts` | 新增回歸測試:`centerDistanceU`/`peripheral.distanceURange` 須 < 房間半深(10) |
 | `src/drill/spider_shot_v2.test.ts` | 同上,新增對等回歸測試 |
@@ -104,10 +105,9 @@ proceduralRoom: {
 
 ## 6. 遺留 Open Questions
 
-- **OQ-KI12-1**:周邊目標(`azimuthDegRange` 覆蓋 0–360°)在特定方位角/角距組合下,Y 座標仍可能
-  超出牆高(3u,無天花板)而探出牆頂——這在修復前後皆存在,不是本次修復範圍。是否要讓所有周邊
-  目標完全落在牆內可見範圍(加高牆體、補天花板,或縮小 `angularRadiusDegRange` 上限),屬產品/
-  訓練設計決策,建議另開 task 評估(可能與 stage9 使用者對 v2 手感的後續回饋一併考慮)。
+- ~~**OQ-KI12-1**~~ ✅ **關閉(2026-09-01)**:使用者依 spider-shot-v2 目視回饋拍板
+  `placeholder-room` width 10→16、height 3→6。牆面上緣提高後,v2 目前 `angularRadiusDegRange`
+  上限 25° 的最上方周邊目標仍落在 y=6 內;本次不改天花板、不改 `spider_shot_v2.ts` 候選參數。
 - **OQ-KI12-2**:`validateClearance()` 只查 `propBounds`,不查房間牆/地板/天花板幾何本身——
   本次靠人工重現與追碼找到問題,沒有自動化的「目標包絡是否落在房間幾何內」機制。若日後新增
   drill 又選了一個超出房間邊界的 distance,同樣的坑會第三次發生。是否要幫 `clearance.ts` 補一個
@@ -122,8 +122,8 @@ proceduralRoom: {
 
 ## 7. 影響範圍
 
-**受影響**:`placeholder-room` 場景的房間深度視覺呈現(牆更遠,房間看起來更大)。**不受影響**:
+**受影響**:`placeholder-room` 場景的房間寬度/深度/牆高視覺呈現(牆更遠、更寬、更高)。**不受影響**:
 `spider_shot_v1.ts`(協定凍結,零改動)、`spider_shot_v2.ts`、`TargetManager.ts`/`HitDetector.ts`
 任何判定邏輯、`clearance.ts` 驗證結果(propBounds 仍是空陣列,恆通過)、`placeholder-room` 上其他
 既有 drill(`hold_click_v1`/`hold_track_v1` 等)的 camera 位置與命中判定原點(`eyeZ` 明確釘住不變)、
-匯出資料格式/語意。
+匯出資料格式/語意。2026-09-01 的 width/height 後續調整同屬 render-only 視覺調整。

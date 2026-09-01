@@ -95,7 +95,7 @@ task 處理。
 
 - **OQ-KI11-1**：`deriveTargetEnvelopes()`（`src/scene/clearance.ts`）目前完全不認得 `DrillConfig.spiderShot` 欄位，對任何無 `spawnArea` 的 drill 一律套用 legacy L/R side 公式（`x=±TARGET_SIDE_OFFSET_U`, `z=-distance`）。這對 spider-shot 而言只是近似值（本次數值模擬顯示在 field-low 案例中恰好重疊，但未來若 `SPIDER_SHOT_ANGULAR_RADIUS_DEG_V1`/`centerDistanceU` 調整，近似值可能與真實包絡顯著偏離，安靜地產生假陰性或假陽性）。若日後需要讓 spider-shot 使用有裝飾道具的視覺場景（而非 `placeholder-room` 空房間），必須先補上 `spiderShot` 專屬的包絡計算分支（比照既有 `envelopeForSpawnArea` 的模式），否則驗證結果不可信。
 - **OQ-KI11-2**：`__fpsTest` harness（`fpsTestHarness.ts`）與 live app（`main.ts`）對「drill 缺 `sceneId`」的語意不一致——harness 完全跳過 clearance 驗證，live app fallback 到 `activeSceneConfig`。本次修法讓 spider-shot-v1 兩端行為一致（皆解析為 `placeholder-room`），但這個語意分歧本身仍存在，其餘缺 `sceneId` 的 drill（`counterstrafe-reversal-v1`/`counterstrafe-free-v1`/`trackingV1`）目前恰好因 `distance` 較短而不撞上道具，但同一類回歸風險（e2e 測不到、live app 才炸）在原則上仍未關閉。若日後要系統性修正，建議讓 harness 比照 live app 的 fallback 語意（或反過來讓 live app 對缺 `sceneId` 的 drill 直接不驗證），兩端擇一統一，屬獨立於本次修復範圍的架構決策。
-- **OQ-KI11-3**：`placeholder-room` 是空白灰房間（`asset: null`），視覺上不如 `field-low`/`urban-high` 寫實；spider-shot 的真實目標包絡在 y 軸可達 −0.61~3.46（比 `placeholder-room` 的 `roomSize` 高度 3 更寬），這只是 clearance.ts 不檢查的 room 幾何（只檢查 `propBounds`），不影響本次修法的正確性，但若日後要換一個「好看」的場景，需同時考慮 room 尺寸是否放得下這麼寬的錐形分佈，屬產品/美術決策，不在本次修復範圍。
+- ~~**OQ-KI11-3**~~ ✅ **部分關閉(2026-09-01)**：`placeholder-room` 仍是空白灰房間（`asset: null`），視覺上不如 `field-low`/`urban-high` 寫實；但後續 KI-014 已把地板下緣調到 `floorY:-3`，本次又把 `roomSize` 高度 3→6、寬度 10→16，目前足以容納 spider-shot v1/v2 的既有垂直包絡。若日後要換一個「好看」的場景，仍需同時考慮 room 尺寸或補 `spiderShot` 專屬包絡計算，屬產品/美術決策。
 
 ## 7. 影響範圍
 
