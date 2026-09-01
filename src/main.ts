@@ -93,7 +93,10 @@ import { spiderShotV2 } from './drill/spider_shot_v2.ts';
 import { counterstrafeReversalV1 } from './drill/counterstrafe_reversal_v1.ts';
 import { counterstrafeFreeV1 } from './drill/counterstrafe_free_v1.ts';
 import { peekClickTransferPilotV1 } from './drill/peek_click_transfer_pilot_v1.ts';
-import { peekClickTransferPilotV2 } from './drill/peek_click_transfer_pilot_v2.ts';
+import {
+  PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES,
+  peekClickTransferPilotV2Randomized,
+} from './drill/peek_click_transfer_pilot_v2.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -178,13 +181,22 @@ const availableDrills: AvailableDrill[] = [
     sceneId: peekClickTransferPilotV1.sceneId,
     loadOptions: { clearance: peekClickTransferPilotV1.clearanceOptions },
   },
-  // WP-52 T4: researcher-mode entry point for the pilot v2 manual gate (T4-manual-pilot-gate.md).
+  // WP-52 T4/T5: researcher-mode entry points for the pilot v2 manual gate
+  // (T4-manual-pilot-gate.md) — every fixed-size candidate individually, plus the T5 randomized
+  // cell that interleaves all three within one balanced-shuffle-seeded run.
+  ...PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES.map((candidate) => ({
+    id: candidate.id,
+    label: candidate.id,
+    source: candidate.drill,
+    sceneId: candidate.sceneId,
+    loadOptions: { clearance: candidate.clearanceOptions },
+  })),
   {
-    id: peekClickTransferPilotV2.id,
-    label: peekClickTransferPilotV2.id,
-    source: peekClickTransferPilotV2.drill,
-    sceneId: peekClickTransferPilotV2.sceneId,
-    loadOptions: { clearance: peekClickTransferPilotV2.clearanceOptions },
+    id: peekClickTransferPilotV2Randomized.id,
+    label: peekClickTransferPilotV2Randomized.id,
+    source: peekClickTransferPilotV2Randomized.drill,
+    sceneId: peekClickTransferPilotV2Randomized.sceneId,
+    loadOptions: { clearance: peekClickTransferPilotV2Randomized.clearanceOptions },
   },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,
@@ -193,6 +205,17 @@ const availableDrills: AvailableDrill[] = [
     sceneId: variant.sceneId,
   })),
 ];
+// WP-52: single-source lookup for the additive `visibility` meta every peek-click-transfer
+// pilot cell (v1 default, every v2 fixed candidate, and the v2 randomized cell) needs in its
+// export — avoids one `drillId === X` branch per cell as the roster grows.
+const PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID = new Map<string, { sampleCount: 1 | 9; onsetThreshold: number }>([
+  [peekClickTransferPilotV1.id, peekClickTransferPilotV1.visibility],
+  ...PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES.map((candidate): [string, { sampleCount: 1 | 9; onsetThreshold: number }] => [
+    candidate.id,
+    candidate.visibility,
+  ]),
+  [peekClickTransferPilotV2Randomized.id, peekClickTransferPilotV2Randomized.visibility],
+]);
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
 let activeDrillLoadOptions: DrillLoadOptions = {};
@@ -669,11 +692,8 @@ async function buildCurrentExportPayload(
           },
         }
       : {}),
-    ...(activeDrillConfig.drillId === peekClickTransferPilotV1.id
-      ? { visibility: peekClickTransferPilotV1.visibility }
-      : {}),
-    ...(activeDrillConfig.drillId === peekClickTransferPilotV2.id
-      ? { visibility: peekClickTransferPilotV2.visibility }
+    ...(PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID.has(activeDrillConfig.drillId)
+      ? { visibility: PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID.get(activeDrillConfig.drillId) }
       : {}),
   });
   return buildExportPayload(meta, snapshot);

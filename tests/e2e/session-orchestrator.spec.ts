@@ -157,6 +157,57 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     expect(r.visibility).toEqual({ sampleCount: 9, onsetThreshold: 0.5 });
   });
 
+  test('WP-52 T5：peek_click_transfer_pilot_v2_randomized 是研究員模式可選、可載入的 drill', async ({ page }) => {
+    await waitForHarness(page);
+
+    const r = await page.evaluate(() => {
+      type Harness = {
+        startDrill(id: string): void;
+        forceExportJSON(): { meta: Record<string, unknown> };
+        phase(): string;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+
+      harness.startDrill('peek_click_transfer_pilot_v2_randomized');
+      const phase = harness.phase();
+      const meta = harness.forceExportJSON().meta;
+
+      return { phase, drillId: meta.drillId, visibility: meta.visibility };
+    });
+
+    expect(r.phase).toBe('running');
+    expect(r.drillId).toBe('peek_click_transfer_pilot_v2_randomized');
+    expect(r.visibility).toEqual({ sampleCount: 9, onsetThreshold: 0.5 });
+  });
+
+  test('WP-52 T5：v2 的 1°/5° 個別候選也各自可選、可載入（不只 2.5° 預設）', async ({ page }) => {
+    await waitForHarness(page);
+
+    const r = await page.evaluate(() => {
+      type Harness = {
+        startDrill(id: string): void;
+        forceExportJSON(): { meta: Record<string, unknown> };
+        phase(): string;
+      };
+      const harness = (window as unknown as { __fpsTest: Harness }).__fpsTest;
+
+      harness.startDrill('peek_click_transfer_pilot_v2_1deg');
+      const oneDegPhase = harness.phase();
+      const oneDegDrillId = harness.forceExportJSON().meta.drillId;
+
+      harness.startDrill('peek_click_transfer_pilot_v2_5deg');
+      const fiveDegPhase = harness.phase();
+      const fiveDegDrillId = harness.forceExportJSON().meta.drillId;
+
+      return { oneDegPhase, oneDegDrillId, fiveDegPhase, fiveDegDrillId };
+    });
+
+    expect(r.oneDegPhase).toBe('running');
+    expect(r.oneDegDrillId).toBe('peek_click_transfer_pilot_v2_1deg');
+    expect(r.fiveDegPhase).toBe('running');
+    expect(r.fiveDegDrillId).toBe('peek_click_transfer_pilot_v2_5deg');
+  });
+
   test('Session Plan 真實 DOM 接線：按鈕 → 表單 → 家族拖曳排序/自由休息秒數 → eligibility gate', async ({
     page,
   }) => {

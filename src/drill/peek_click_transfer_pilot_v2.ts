@@ -109,3 +109,75 @@ export function buildPeekClickTransferPilotV2Config(
 export const peekClickTransferPilotV2 = buildPeekClickTransferPilotV2Config(
   PEEK_CLICK_TRANSFER_PILOT_V2_DEFAULT_ANGULAR_SIZE_DEG,
 );
+
+/** Every fixed-size candidate cell, single source for researcher-mode drill registration (WP-52 T5). */
+export const PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES = PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.map(
+  (deg) => buildPeekClickTransferPilotV2Config(deg),
+);
+
+/**
+ * WP-52 / T5 — target count for the randomized cell: `targets.count` must divide evenly by
+ * {@link PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG}'s length (`schema.ts`-enforced)
+ * so the balanced shuffle has no remainder; 21 gives exactly 7 presentations per candidate.
+ */
+export const PEEK_CLICK_TRANSFER_PILOT_V2_RANDOMIZED_TARGET_COUNT = 21;
+
+/** Distinct from every fixed-candidate seed (95010/95025/95050) so the two cohorts never collide. */
+const PEEK_CLICK_TRANSFER_PILOT_V2_RANDOMIZED_SEED = 95100;
+
+export interface PeekClickTransferPilotV2RandomizedConfig {
+  readonly id: string;
+  readonly sceneId: 'peek-ad-corridor-v1';
+  readonly drill: DrillConfig;
+  readonly clearanceOptions: ClearanceOptions;
+  readonly visibility: typeof PEEK_CLICK_TRANSFER_PILOT_V2_VISIBILITY;
+  /** Every candidate's hitbox width (u), for mapping an exported `hitboxWidthU` back to its angular-size label. */
+  readonly candidateWidthsU: readonly number[];
+}
+
+/**
+ * WP-52 / T5 — single drill cell drawing all of
+ * {@link PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG} in a seeded balanced-shuffle
+ * order (`DrillConfig.targets.hitboxCandidates`), instead of one fixed size per drill id. Built per
+ * user request after manually pilot-testing the fixed-size cells: comparing candidates one drill at
+ * a time made the size difference hard to judge; interleaving them randomly within one run makes
+ * the contrast direct.
+ */
+export function buildPeekClickTransferPilotV2RandomizedConfig(): PeekClickTransferPilotV2RandomizedConfig {
+  const hitboxCandidates = PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.map((deg) => {
+    const widthU = angularSizeToHitboxWidthU(deg, PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U);
+    return { widthU, heightU: widthU, depthU: 1 };
+  });
+  const drillId = `${PEEK_CLICK_TRANSFER_PILOT_V2_ID}_randomized`;
+
+  return {
+    id: drillId,
+    sceneId: 'peek-ad-corridor-v1',
+    clearanceOptions: PEEK_CLICK_TRANSFER_PILOT_V2_CLEARANCE_OPTIONS,
+    visibility: PEEK_CLICK_TRANSFER_PILOT_V2_VISIBILITY,
+    candidateWidthsU: hitboxCandidates.map((candidate) => candidate.widthU),
+    drill: {
+      drillId,
+      mode: 'practice',
+      cue: { kind: 'single' },
+      targets: {
+        count: PEEK_CLICK_TRANSFER_PILOT_V2_RANDOMIZED_TARGET_COUNT,
+        distance: PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U,
+        hitboxCandidates,
+      },
+      sequence: { alternation: 'LR', seed: PEEK_CLICK_TRANSFER_PILOT_V2_RANDOMIZED_SEED, spawnDelayMsRange: [500, 500] },
+      timing: PEEK_CLICK_TRANSFER_PILOT_V2_TIMING,
+      endCondition: { type: 'targetCount', value: PEEK_CLICK_TRANSFER_PILOT_V2_RANDOMIZED_TARGET_COUNT },
+    },
+  };
+}
+
+export const peekClickTransferPilotV2Randomized = buildPeekClickTransferPilotV2RandomizedConfig();
+
+/** Maps an exported presentation's `hitboxWidthU` back to its angular-size label (e.g. `'2.5°'`). */
+export function peekClickTransferPilotV2CandidateLabel(hitboxWidthU: number): string {
+  const match = PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.find(
+    (deg) => angularSizeToHitboxWidthU(deg, PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U) === hitboxWidthU,
+  );
+  return match !== undefined ? `${match}°` : `${hitboxWidthU}u`;
+}

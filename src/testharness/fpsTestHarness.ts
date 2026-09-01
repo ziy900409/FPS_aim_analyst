@@ -1,6 +1,9 @@
 import * as THREE from 'three/webgpu';
 import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
-import { peekClickTransferPilotV2 } from '../drill/peek_click_transfer_pilot_v2.ts';
+import {
+  PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES,
+  peekClickTransferPilotV2Randomized,
+} from '../drill/peek_click_transfer_pilot_v2.ts';
 import { createSharedState, type SharedState } from '../state/SharedState.ts';
 import { KEY_CODE } from '../state/types.ts';
 import type { InputEvent, TargetState } from '../state/types.ts';
@@ -63,6 +66,17 @@ import { getWeapon } from '../weapon/weapons.ts';
 /** camera 幾何對齊 SceneManager 基準朝向（眼高 1.6、立於房間一端朝 -Z；raycast 純數學、無需 renderer）。 */
 const EYE_HEIGHT = 1.6;
 const CAMERA_Z = 4; // depth(10)/2 - standoff(1)，與 SceneManager 一致
+
+// WP-52: mirrors main.ts's single-source visibility-meta lookup for every peek-click-transfer
+// pilot cell, so this harness's forceExportJSON() matches the real export path.
+const PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID = new Map<string, { sampleCount: 1 | 9; onsetThreshold: number }>([
+  [peekClickTransferPilotV1.id, peekClickTransferPilotV1.visibility],
+  ...PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES.map((candidate): [string, { sampleCount: 1 | 9; onsetThreshold: number }] => [
+    candidate.id,
+    candidate.visibility,
+  ]),
+  [peekClickTransferPilotV2Randomized.id, peekClickTransferPilotV2Randomized.visibility],
+]);
 
 /** 合成輸入序列（`feedInput`）的來源型別：即生產 InputEvent，`t` 為相對本次餵入起點的毫秒偏移。 */
 export type HarnessInputEvent = InputEvent;
@@ -419,8 +433,9 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
             },
           }
         : {}),
-      ...(config.drillId === peekClickTransferPilotV1.id ? { visibility: peekClickTransferPilotV1.visibility } : {}),
-      ...(config.drillId === peekClickTransferPilotV2.id ? { visibility: peekClickTransferPilotV2.visibility } : {}),
+      ...(PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID.has(config.drillId)
+        ? { visibility: PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID.get(config.drillId) }
+        : {}),
     });
     return buildExportPayload(meta, snapshot);
   }

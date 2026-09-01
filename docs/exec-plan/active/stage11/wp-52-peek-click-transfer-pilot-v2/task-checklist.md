@@ -50,3 +50,15 @@
 - [x] 若修改 code，`graphify update .` 已執行
 - [x] progress / checklist / stage11 docs synced
 - [x] staged file audit complete（見 [T-exit-gate.md](T-exit-gate.md)）
+
+## T5 — Randomized hitbox-candidate schedule（T-exit 後、使用者要求新增，D-52.10/11）
+
+- [x] `DrillConfig.targets.hitboxCandidates?` + `schema.ts` 驗證（互斥於 `hitbox`、需整除 `count`、需 `sequence.seed`）
+- [x] `TargetManager` balanced-shuffle 排程（比照 spider-shot WP-44 zone queue），`TargetState.hitboxVaries` 標記
+- [x] `SimLoop` 的 `visible` event 條件式帶出該次 presentation 實際 hitbox；`exportPayloadSchema.ts` 解析
+- [x] `visibilityDerivation.ts`/`holdClickMetrics.ts` 改為 per-tick hitbox-aware（`hitboxAtTick`），修正原本單一全域 hitbox 快照會讓變動尺寸 presentation 算錯 onset 的正確性缺口
+- [x] `peekClickTransferMetrics.ts` 新增 `hitboxWidthU`；`peekClickTransferPilotEvidence.ts` 新增 `byCandidate` 分組
+- [x] `peek_click_transfer_pilot_v2.ts` 新增 `peekClickTransferPilotV2Randomized`（21 trials，7/7/7 平衡）+ `peekClickTransferPilotV2CandidateLabel()`
+- [x] `main.ts`／`fpsTestHarness.ts` 註冊新 drill + visibility meta 分支（兩處平行維護，比照既有 v1/v2 模式）
+- [x] 全專案 `npm run typecheck` / `npx vitest run`（1697 tests）/ `npx playwright test`（76 tests）全綠；`graphify update .` 已執行
+- [x] v1／既有 fixed-candidate v2 drill 零回歸

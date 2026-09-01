@@ -92,6 +92,17 @@
 - Verification：`npm run typecheck` exit 0；全專案 `npx vitest run` 188 files / 1672 tests passed；`npx playwright test tests/e2e/session-orchestrator.spec.ts` 5/5 passed；`graphify update .`（3835 nodes / 9019 edges）。
 - OQ-52-1 狀態由「Resolved（D-52.4）」改記為「Revised（D-52.9）」——這是研究方法上誠實的做法：D-52.4 在「無 evidence」前提下拍板，D-52.9 是在有 evidence 後的修訂，不是同一個決定被推翻，是決策鏈往前走一步。
 
+### 2026-09-01 — T5（T-exit 後追加）：三個角尺寸候選同一輪內平衡隨機出現（使用者要求，D-52.10/11）
+
+使用者問「是否可以讓目標是三個間距，隨機出現？」。讀碼後發現這比表面看起來大：現有架構是「一個 drill instance 建立時算好一個固定 hitbox、整輪共用」，而離線可見度推導（`visibilityDerivation.ts`）也只讀**單一** `meta.targets.hitbox` 快照套用到全部 tick——若不修正，隨機變動 hitbox 會讓非快照尺寸的 presentation 算出錯誤的 `tMeasurementOnsetMs`，進而讓 `validFirstShot`/`onsetToFirstShotMs` 等核心指標失真，違反 C-D4（onset 只能有一個權威定義）。用 `AskUserQuestion` 確認範圍（仍要做）、隨機化方式（平衡 shuffle，非純 IID）、trial 數（21，7/7/7 均分）後，分 6 個 commit 落地：
+
+- **D-52.10**（新增引擎能力）：`DrillConfig.targets.hitboxCandidates?: readonly TargetHitboxConfig[]`——與 `hitbox` 互斥、需 `sequence.seed`、`count` 必須整除候選數（`schema.ts` 驗證）。`TargetManager` 建一個 seeded balanced-shuffle 佇列（比照 spider-shot WP-44 zone queue 模式：每候選出現次數相等、Fisher-Yates 洗牌，一次用完不重洗，因為總數與候選數整除），每次 spawn 彈出一個候選並標記新欄位 `TargetState.hitboxVaries`。`SimLoop` 的 `visible` event 只在 `hitboxVaries===true` 時額外帶出該次 presentation 的實際 hitbox（`hitboxWidthU/HeightU/DepthU/Shape`）——其餘所有既有 drill 的 `visible` event 逐位不變。`visibilityDerivation.ts` 新增選填 `hitboxAtTick` per-tick resolver（省略時行為完全不變）；`holdClickMetrics.ts` 從 `visibleEvents` 建這個 resolver 餵進去，修正了「單一全域 hitbox 快照」的正確性缺口——這是本次最關鍵的修復，不是這個 feature 的裝飾。`peekClickTransferMetrics.ts` 新增 `hitboxWidthU` 透傳；`peekClickTransferPilotEvidence.ts` 新增 `byCandidate` 分組（依 `hitboxWidthU` 或呼叫端提供的 label 函式）。
+- **D-52.11**（新增 v2 randomized drill）：`peek_click_transfer_pilot_v2.ts` 新增 `buildPeekClickTransferPilotV2RandomizedConfig()`/`peekClickTransferPilotV2Randomized`（21 trials、seed 95100，與三個 fixed-candidate seed 95010/95025/95050 不重疊）+ `peekClickTransferPilotV2CandidateLabel(widthU)` 供 evidence report 標籤。註冊進 `main.ts`／`fpsTestHarness.ts` 的 `availableDrills`（兩處平行的 visibility-meta 分支比照既有 v1/v2 慣例各加一條——這是 WP-45 遺留的既有重複模式，本次未重構，只是照樣延伸）。
+- 每個 slice 都先跑 focused tests 再跑全專案 `npx tsc --noEmit`/`npx vitest run`/相關 Playwright，確認零回歸才進下一步（增量實作紀律）；最終跑過一次全專案 `npx playwright test`（76 passed）。
+- v1 guard 持續有效：`peek_click_transfer_pilot_v1.ts`／`.test.ts` 全程未修改一行。
+- 1.5/2/3° 或新 1/2.5/5° 的**單一固定候選** drill（`peek_click_transfer_pilot_v2_<size>deg`）維持原樣、未被 randomized 變體取代——兩者是研究員模式選單裡並存的不同入口，各自服務不同比較方式。
+- 寫 manual gate 文件時發現先前只登記了 2.5° 預設，1°/5° 沒有選單入口——與「比較候選」的目的不符。補上 `PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES`（單一來源，`peek_click_transfer_pilot_v2.ts` 匯出全部三個固定候選），`main.ts`／`fpsTestHarness.ts` 的 `availableDrills` 註冊全部三個 + randomized；順手把兩處各自重複的 `drillId === X ? {visibility...} : {}` 條件鏈（v1 + 3 個 v2 固定候選 + randomized，共 5 條）收斂成一個 `Map` 查表，避免候選數再增加時繼續累加分支。新增 e2e 案例證明 1°/5° 個別可選可載入。全專案 typecheck/vitest（1697）/playwright（77）全綠。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -105,6 +116,8 @@
 | D-52.7 | T2 不重新引入 preset `<select>`；`SessionPlanSetup` 改為放寬 `families` 型別至 `SessionFamilyId`，`main.ts` 傳入 `[...KNOWN_SESSION_FAMILY_IDS]`（5 家族），沿用 WP-43 FR-H3 的自由 checkbox 設計 | WP-43（stage8）已用 FR-H3 移除 preset 下拉並有 E2E 鎖定（`session-orchestrator.spec.ts` 斷言 count 0）；WP-52 task-checklist 字面假設的「preset 選擇」與此矛盾，使用者拍板保留已交付/已測試設計而非回退；詳見全域 [DECISIONS.md](../../../DECISIONS.md) GD-26（2026-09-01 已解決） | Confirmed，使用者 2026-09-01 拍板 |
 | D-52.8 | WP-53 go/no-go：**No-go**，待真人執行 [T4-manual-pilot-gate.md](T4-manual-pilot-gate.md) 人工 checklist + 至少一批真人 pilot session evidence | 本 repo 尚無任何真人 trial；不得讓機械驗證(config/wiring/report 正確性)冒充真人 pilot evidence，否則違反 GD-20 pre-registration 紀律精神 | Confirmed，2026-09-01 |
 | D-52.9 | 修訂 D-52.4：v2 角尺寸候選由 `[1.5, 2, 3]` deg 改為 `[1, 2.5, 5]` deg，預設候選由 2° 改為 2.5° | 使用者親自跑過 T4 manual gate 後回報「三個候選手感差異太小」——原候選 min→max hitbox 寬度只差約 2×(0.21u→0.42u)；新候選拉大到約 5×(0.14u→0.70u)。這是本輪第一份真人 pilot 證據，D-52.4 當時「無 evidence 支持變更」的前提已不成立，故修訂而非新增平行決策 | Confirmed，使用者 2026-09-01 拍板（AskUserQuestion 三選一：1/2/4°、**1/2.5/5°**、自訂） |
+| D-52.10 | 新增引擎能力 `DrillConfig.targets.hitboxCandidates`（balanced-shuffle seeded 候選集合）+ 連帶修正 `visibilityDerivation.ts`/`holdClickMetrics.ts` 原本「單一全域 hitbox 快照」對變動尺寸 presentation 算錯 onset 的正確性缺口 | 使用者要求「三個間距隨機出現」；讀碼發現不修正 onset 推導會讓 evidence report 的核心指標（`validFirstShot`/`onsetToFirstShotMs`）算錯，違反 C-D4 單一權威定義——這不是可以跳過的裝飾，是做對這個 feature 的必要前提 | Confirmed，使用者 2026-09-01 拍板「繼續做」（AskUserQuestion 確認範圍後） |
+| D-52.11 | 新增 `peek_click_transfer_pilot_v2_randomized` drill（21 trials，7/7/7 平衡，seed 95100），與既有三個固定候選 drill 並存於研究員模式選單，不取代它們 | 平衡 shuffle（非純 IID）比照 spider-shot WP-44 zone queue 既有機制；21 是能被 3 整除、最接近 v1/v2 既有 20-trial 慣例的數字 | Confirmed，使用者 2026-09-01 拍板（AskUserQuestion：平衡 shuffle + 21 trials） |
 
 ## Open Questions
 
@@ -143,3 +156,9 @@
 | 2026-09-01 | `npx vitest run`（全專案，D-52.9 後） | 188 files / 1672 tests passed |
 | 2026-09-01 | `npx playwright test tests/e2e/session-orchestrator.spec.ts`（D-52.9 後） | 5/5 passed |
 | 2026-09-01 | `graphify update .`（D-52.9 後） | 3835 nodes / 9019 edges rebuilt |
+| 2026-09-01 | T5 slice 1/N：`npx vitest run src/drill/schema.test.ts src/sim/TargetManager.test.ts` + 全專案 `npx vitest run`（後） | schema 48 tests；TargetManager 49 tests；全專案 1676 tests passed |
+| 2026-09-01 | T5 slice 2/N：`npx vitest run src/loop src/data/exportPayloadSchema.test.ts src/sim/TargetManager.test.ts` + 全專案 | 184 tests（focused）；全專案 1683 tests passed |
+| 2026-09-01 | T5 slice 3/N：`npx vitest run src/metrics/holdClickMetrics.test.ts src/metrics/visibilityDerivation.test.ts src/metrics/peekClickTransferMetrics.test.ts` + 全專案 + `tests/golden` | focused 16 tests；golden/parity 52 tests；全專案 1686 tests passed |
+| 2026-09-01 | T5 slice 4/N：`npx vitest run src/pilot/peekClickTransferPilotEvidence.test.ts src/metrics/peekClickTransferMetrics.test.ts` + 全專案 | focused 16 tests；全專案 1691 tests passed |
+| 2026-09-01 | T5 slice 5/N（randomized config + main.ts/fpsTestHarness.ts 註冊）：`npx vitest run src/drill/peek_click_transfer_pilot_v2.test.ts` + 全專案 + `npx playwright test tests/e2e/session-orchestrator.spec.ts`（6 cases）+ 全專案 `npx playwright test` | v2 config 14 tests；全專案 1697 vitest tests；session-orchestrator 6/6；全專案 playwright 76/76 |
+| 2026-09-01 | `graphify update .`（T5 最終） | 3843 nodes / 9044 edges rebuilt |

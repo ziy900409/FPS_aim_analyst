@@ -12,9 +12,12 @@ import { createSimLoop } from '../loop/SimLoop.ts';
 import { angularSizeToHitboxWidthU, PEEK_CLICK_ANGULAR_SIZE_CANDIDATES_DEG } from './peek_click_transfer_pilot_v1.ts';
 import {
   buildPeekClickTransferPilotV2Config,
+  buildPeekClickTransferPilotV2RandomizedConfig,
   PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG,
   PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U,
   peekClickTransferPilotV2,
+  peekClickTransferPilotV2CandidateLabel,
+  peekClickTransferPilotV2Randomized,
 } from './peek_click_transfer_pilot_v2.ts';
 
 describe('peek_click_transfer_pilot_v2 candidates (WP-52 T1/T4, D-52.5/9)', () => {
@@ -83,6 +86,76 @@ describe('peek_click_transfer_pilot_v2 candidates (WP-52 T1/T4, D-52.5/9)', () =
   });
 });
 
+describe('peek_click_transfer_pilot_v2 randomized cell (WP-52 T5)', () => {
+  it('draws hitboxCandidates matching every angular-size candidate, distinct id/seed from the fixed cells', () => {
+    const cfg = buildPeekClickTransferPilotV2RandomizedConfig();
+    const expectedWidths = PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.map((deg) =>
+      angularSizeToHitboxWidthU(deg, PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U),
+    );
+
+    expect(cfg.id).toBe('peek_click_transfer_pilot_v2_randomized');
+    expect(cfg.candidateWidthsU).toEqual(expectedWidths);
+    expect(cfg.drill.targets.hitboxCandidates?.map((c) => c.widthU)).toEqual(expectedWidths);
+    expect(cfg.drill.targets.hitbox).toBeUndefined();
+    expect(cfg.drill.targets.count).toBe(21);
+    expect(cfg.drill.endCondition).toEqual({ type: 'targetCount', value: 21 });
+
+    const fixedSeeds = PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.map(
+      (deg) => buildPeekClickTransferPilotV2Config(deg).drill.sequence.seed,
+    );
+    expect(fixedSeeds).not.toContain(cfg.drill.sequence.seed);
+    expect(cfg.drill.sequence.seed).toBeGreaterThan(37002);
+  });
+
+  it('validates through loadDrill and produces a balanced-shuffle sequence over a full run', () => {
+    const cfg = buildPeekClickTransferPilotV2RandomizedConfig();
+    const drill = loadDrill(cfg.drill, peekAdCorridor, { clearance: cfg.clearanceOptions });
+    const state = createSharedState();
+    const targetManager = createTargetManager(drill);
+    const runner = createDrillRunner(state, targetManager);
+    runner.start(drill);
+
+    const widths: number[] = [];
+    const seenIds = new Set<string>();
+    const tickMs = 1000 / SIM_HZ;
+    let nowMs = 0;
+    let guard = 0;
+    while (runner.phase !== 'ended' && guard < 30000) {
+      nowMs += tickMs;
+      runner.tick(state, nowMs);
+      for (const t of state.targets) {
+        if (!seenIds.has(t.id)) {
+          seenIds.add(t.id);
+          widths.push(t.hitbox.width);
+        }
+      }
+      guard++;
+    }
+
+    expect(widths).toHaveLength(21);
+    const counts = new Map<number, number>();
+    for (const width of widths) counts.set(width, (counts.get(width) ?? 0) + 1);
+    expect([...counts.values()]).toEqual([7, 7, 7]);
+  });
+
+  it('registers the randomized cell as the module default', () => {
+    expect(peekClickTransferPilotV2Randomized).toEqual(buildPeekClickTransferPilotV2RandomizedConfig());
+  });
+});
+
+describe('peekClickTransferPilotV2CandidateLabel (WP-52 T5)', () => {
+  it('maps each candidate width back to its angular-size label', () => {
+    for (const deg of PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG) {
+      const widthU = angularSizeToHitboxWidthU(deg, PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U);
+      expect(peekClickTransferPilotV2CandidateLabel(widthU)).toBe(`${deg}°`);
+    }
+  });
+
+  it('falls back to a raw-unit label for an unrecognized width', () => {
+    expect(peekClickTransferPilotV2CandidateLabel(0.999)).toBe('0.999u');
+  });
+});
+
 describe('peek_click_transfer_pilot_v2 determinism (WP-52 NFR-52-1)', () => {
   function runTimeoutOnly(drill: DrillConfig): { sides: Array<'L' | 'R'>; endedAtMs: number; phase: string } {
     const state = createSharedState();
@@ -126,10 +199,19 @@ describe('peek_click_transfer_pilot_v2 determinism (WP-52 NFR-52-1)', () => {
       expect(actual.snapshot).toEqual(expected.snapshot);
     }
   });
+
+  it('produces a tick/event-identical 21-trial randomized-hitbox export at 60/120/240 Hz pump cadence', () => {
+    const drill = buildPeekClickTransferPilotV2RandomizedConfig().drill;
+    const expected = runCadenceTimeoutExport(60, drill);
+    for (const hz of [60, 120, 240]) {
+      const actual = runCadenceTimeoutExport(hz, drill);
+      expect(actual.phase).toBe('ended');
+      expect(actual.snapshot).toEqual(expected.snapshot);
+    }
+  });
 });
 
-function runCadenceTimeoutExport(hz: number) {
-  const drill = buildPeekClickTransferPilotV2Config(2.5).drill;
+function runCadenceTimeoutExport(hz: number, drill: DrillConfig = buildPeekClickTransferPilotV2Config(2.5).drill) {
   const state = createSharedState();
   const recorder = createDataRecorder({ simHz: SIM_HZ });
   const targetManager = createTargetManager(drill);

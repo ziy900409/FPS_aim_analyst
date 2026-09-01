@@ -22,9 +22,13 @@ None of this substitutes for a human actually playing the pilot. Automated tests
 4. Click into the canvas to engage Pointer Lock, then play through the countdown → cue → presentations as normal.
 5. Use **Export JSON** after a run to inspect `meta.drillId` (`peek_click_transfer_pilot_v2_2_5deg`), `meta.visibility` (`{ sampleCount: 9, onsetThreshold: 0.5 }`), and confirm no `meta.assessment` field is present.
 
-Only the 2.5° default candidate is wired to a menu entry, matching pilot v1's existing convention (v1 also only registers its 2° default in `availableDrills`); the 1°/5° candidates exist as configs (`buildPeekClickTransferPilotV2Config(1)` / `(5)`) but have no menu entry yet — comparing across candidates by feel currently requires a code-level harness call, same limitation v1 already has.
+Each fixed-size candidate (1°/2.5°/5°) is also individually selectable from the same dropdown as `peek_click_transfer_pilot_v2_1deg` / `_2_5deg` / `_5deg`, matching pilot v1's per-candidate registration.
 
-Session Plan's `'peek-click-transfer'` family checkbox (T2) still resolves to the **v1** drill (`SessionRunner.ts`'s `resolveFamilyDrillId`, unchanged from WP-45) — that family selection proves the KI-016 metadata gap is closed, not that it launches v2. Use the researcher-mode entry point above for v2 specifically.
+### Comparing candidates directly: the randomized cell (WP-52 T5)
+
+`peek_click_transfer_pilot_v2_randomized` (same dropdown) interleaves all three angular-size candidates within one 21-trial run — a seeded balanced shuffle guarantees exactly 7 presentations per candidate, in random order rather than one fixed size per drill. This was added specifically so a researcher can feel the size contrast directly instead of switching between three separate drills. Export JSON afterward and check that presentations show varying implicit hitbox sizes (visible indirectly via hit difficulty; the raw `hitboxWidthU` only appears in the raw `events[].visible` records, not summarized in `meta`) — `buildPeekClickTransferPilotEvidenceReport()`'s `byCandidate` breakdown (pass `peekClickTransferPilotV2CandidateLabel` as `candidateLabelForWidth`) is the intended way to see per-candidate rates from a batch of these runs.
+
+Session Plan's `'peek-click-transfer'` family checkbox (T2) still resolves to the **v1** drill (`SessionRunner.ts`'s `resolveFamilyDrillId`, unchanged from WP-45) — that family selection proves the KI-016 metadata gap is closed, not that it launches v2. Use the researcher-mode entry points above for v2 specifically.
 
 ## Manual gate (native pointer-lock, real human) — pending, not yet executed
 

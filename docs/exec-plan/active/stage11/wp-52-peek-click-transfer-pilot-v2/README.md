@@ -8,7 +8,7 @@
 | **里程碑** | Pilot v2 evidence-ready；不宣告正式 Assessment |
 | **相依** | WP-45 T-exit；GD-26 / KI-016 作為 session wiring 前置缺口 |
 | **估時** | 4-6 dev-days，不含真人 pilot 招募時間 |
-| **狀態** | ✅ T0–T4/T-exit 完成（2026-09-01）；WP-53 go/no-go：**No-go**，待真人 pilot 執行（[T4-manual-pilot-gate.md](T4-manual-pilot-gate.md)） |
+| **狀態** | ✅ T0–T4/T-exit 完成（2026-09-01）；T5 隨機化候選排程追加完成（2026-09-01，使用者要求）；WP-53 go/no-go：**No-go**，待真人 pilot 執行（[T4-manual-pilot-gate.md](T4-manual-pilot-gate.md)） |
 
 ---
 
@@ -144,6 +144,7 @@ Error 情境：
 | T3 | Pilot evidence harness/report | T1-T2 | Med | Med | report 產出 completion/timeout/validFirstShot/LR/flag counts；至少一組 committed synthetic fixture；practice history guard tests 通過 |
 | T4 | Manual pilot gate and documentation | T3 | High | Med | manual checklist 記錄 pointer-lock、視覺手感、timeout、左右對稱；`analysis-peek-click-transfer.md` 新增 v2 evidence；WP-53 go/no-go 明確 |
 | T-exit | Pilot v2 acceptance and handoff | T1-T4 | Med | Low | focused tests + relevant Playwright + typecheck 通過；stage11/progress 更新；若改 code 已執行 `graphify update .`；WP-53 T0 所需 evidence links 完整 |
+| T5（T-exit 後追加） | Randomized hitbox-candidate schedule：三個角尺寸候選在同一輪內平衡隨機出現 | T-exit + 使用者手動走查回饋 | High | High | `DrillConfig.targets.hitboxCandidates` + balanced-shuffle `TargetManager`；per-presentation hitbox 匯出並讓 `visibilityDerivation`/`holdClickMetrics` per-tick 讀取（修正原本單一全域快照的正確性缺口）；evidence report `byCandidate` 分組；新 `peek_click_transfer_pilot_v2_randomized` drill 註冊進研究員模式；全專案 typecheck/vitest/playwright 全綠，v1 與既有 v2 fixed-candidate drill 零回歸（D-52.10/11，詳見 [progress.md](progress.md)） |
 
 ---
 
