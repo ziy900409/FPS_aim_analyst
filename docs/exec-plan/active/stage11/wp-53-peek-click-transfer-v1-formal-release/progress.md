@@ -30,6 +30,13 @@
 - 新增 [src/drill/peek_click_transfer_v1.test.ts](../../../../src/drill/peek_click_transfer_v1.test.ts)：覆蓋 id/mode/scene/cue/count/timeout/visibility/hitbox、seed 不與 pilot v1/v2 衝突、`loadDrill` 對 `peek-ad-corridor-v1` 的 clearance 驗證，以及一個「provisional 標記存在」的測試——這個測試設計成之後若有人直接把正式凍結值套進來卻忘記拿掉 provisional 標記會紅燈。
 - Verification：`npx vitest run src/drill/` 18 files / 154 tests 全綠；`npx tsc --noEmit` 乾淨。
 
+### 2026-09-01 — T2 placeholder 骨架：formal condition cell + compatibility key
+
+- **不是 T0 freeze 完成**：仍是 GD-28 override 下的骨架切片，task-checklist.md T2 checkbox 維持未勾選。
+- 新增 [src/metrics/peekClickTransferConditions.ts](../../../../src/metrics/peekClickTransferConditions.ts)：`buildPeekClickTransferV1ConditionCell()`，單一來源（GD-7 風格）直接從凍結的 `peekClickTransferV1` config 讀 angularSize/distance/timeout/count/visibility，而非另開一份硬寫常數；config 一動這個 cell 就跟著動。沒有另外寫 `meta.assessment` 組裝的 helper——那只是一個物件字面量（`{ protocolVersion, assessmentFeedbackPolicy }`），寫一個函式包一行字面量不划算，測試直接構造。main.ts 的即時組裝（把這個 protocolVersion 接進正式跑一場 formal run 的即時 export）留給 T4（Session Plan 整合，尚未執行），現在的 config 還沒有任何方式能在 app 裡被選到。
+- 新增 [src/metrics/peekClickTransferConditions.test.ts](../../../../src/metrics/peekClickTransferConditions.test.ts)：condition cell 決定性/欄位覆蓋、`buildCompatibilityKey` 正向組 key、缺 `meta.assessment` 負向 throw、相同 cell 兩場 run 視為 compatible、不同 cell 視為 incompatible。
+- Verification：`npx vitest run src/metrics/` 25 files / 153 tests 全綠；`npx tsc --noEmit` 乾淨。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
