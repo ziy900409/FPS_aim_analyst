@@ -2,7 +2,7 @@
 
 > M18（stage10 交付：本機歷史紀錄中心與 3D 重播 prototype）的驗收對照草案，逐項對應 [stage10 README §10 M18 驗收條件](../exec-plan/active/stage10/README.md#10-m18-驗收條件) 與 WP-51 [README §1 FR/NFR](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/README.md#1-需求壓縮requirements)。由 WP-48／WP-49／WP-50 各自 T-exit 證據 + WP-51 T0～T4 新增的跨模組驗收證據覆核。
 >
-> **狀態：草案（T5 進行中）。** T4 尚有一列 measurement gate 與兩個 upstream defect 未收斂，manual browser/GPU walkthrough 尚未由人工執行——本文件如實記錄未完成項，不把它們標成 pass。**尚不能宣告 M18。**
+> **狀態：T-exit automated gates 已重跑（2026-08-31），M18 尚未宣告。** T4 measurement gate 已在較乾淨環境重跑通過，build/typecheck/Vitest/Playwright/Stage10 runner/critical repeat 皆有 pass evidence；manual browser/GPU/a11y walkthrough、獨立 operator 重跑與 KI-017/KI-018 owner 收斂尚未完成——本文件如實記錄未完成項，不把它們標成 pass。
 >
 > Companion：[T5 task spec](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/T5-operations-manual-release.md) · [WP-51 progress.md](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/progress.md) · [history-center-replay.md](history-center-replay.md)
 
@@ -12,7 +12,7 @@
 
 | 項目 | 值 |
 |---|---|
-| Commit | `c52bf07`（WP-50 T-exit，＝ WP-51 T0～T4 進行時的 HEAD） |
+| Commit | working tree based on HEAD `d142baf`（WP-51 T-exit automated gate run；local harness/docs changes not yet committed） |
 | OS | Windows 11 Enterprise 10.0.26100 64-bit |
 | Node | v25.9.0 |
 | GPU | NVIDIA GeForce RTX 4070 Laptop GPU（driver 32.0.15.7703，供 WebGPU 人工驗收）+ Intel UHD Graphics（內顯，供 WebGL2 fallback 對照） |
@@ -22,11 +22,13 @@
 | 命令 | 結果 |
 |---|---|
 | `npm run typecheck` | ✅ exit 0（browser + `tsconfig.node.json` 兩層） |
-| `npm run test`（Vitest） | ✅ exit 0，186 files / 1654 tests passed + 2 skipped |
-| `npm run build` | ✅ exit 0 |
-| `npm run test:e2e`（Playwright `edge` project） | ✅ exit 0，71/71 既有 + Stage10 新增 spec 全綠（累計自 T0 的 58 到 T4 的 71） |
-| `npm run test:stage10` | ✅ exit 0，wall time 38.5s／41.6s（< 600s NFR-51.5 budget） |
-| `npm run test:stage10:scale`（opt-in，非 release gate） | 🟡 見 §1 條件 7／12 |
+| `npm run test`（Vitest） | ✅ exit 0，186 passed + 1 skipped files（187 total）／1654 passed + 2 skipped tests（1656 total） |
+| `npm run build` | ✅ exit 0（Vite build 2.06s；既有 >500kB chunk warning） |
+| `npm run test:e2e`（Playwright `edge` project） | ✅ exit 0，71/71 passed |
+| `npm run test:ci` | ✅ exit 0（typecheck + Vitest + Playwright 71/71） |
+| `npm run test:stage10` | ✅ exit 0，wall time 39.0s（< 600s NFR-51.5 budget） |
+| `npx playwright test tests/e2e/stage10-assessment.spec.ts tests/e2e/stage10-preview.spec.ts tests/e2e/stage10-failure-recovery.spec.ts tests/e2e/stage10-accessibility.spec.ts tests/e2e/stage10-lifecycle-scale.spec.ts tests/e2e/stage10-projection-shape.spec.ts tests/e2e/replay.spec.ts --project=edge --repeat-each=5 --retries=0` | ✅ exit 0，100/100 passed |
+| `npm run test:stage10:scale`（opt-in measurement） | ✅ exit 0；History first-100 P95 244ms、100-run analysis cold/warm 269/267ms、42k Replay cached-reopen P95 480ms |
 
 ---
 
@@ -40,15 +42,15 @@
 | 4 | 完成 Practice 後仍可查看當次結果與手動匯出，但不呼叫保存 API、不產生歷史檔案，也不出現在 Participant 歷史紀錄 | automated | `src/history/HistoryPersistence.test.ts`（`payload.meta.assessment===undefined`→`excluded`，零 API 呼叫）+ [`Stage10FixtureFactory.test.ts`](../../tests/stage10/Stage10FixtureFactory.test.ts)（Practice 排除 round-trip） | ✅ |
 | 5 | 不同 `drillId` 不會被合併；同 drill 的不相容 Assessment 不會被靜默混算 | automated | T2 restart test cohort 分離斷言 + [`tests/e2e/stage10-preview.spec.ts`](../../tests/e2e/stage10-preview.spec.ts)（incompatible cohort 在 production bundle 上仍分離） | ✅ |
 | 6 | 未註冊主要 metric 的 drill 仍可完整使用歷史列表、結果與重播 | automated | `stage10-preview.spec.ts`（`hold_click_v1` unregistered-metric → 明確 empty-state，而非臨時 composite score） | ✅ |
-| 7 | 支援的 JSON 可進行第一人稱 3D 重播、seek、調速與 event navigation | automated + measurement | `tests/replay/ReplayPlayer.test.ts`（WP-50）+ [`stage10-assessment.spec.ts`](../../tests/e2e/stage10-assessment.spec.ts)（live/historical `full` replay parity）；42k-tick cached-reopen P95 見 §1.1 | ✅（功能）／🟡（見 §1.1 效能列） |
+| 7 | 支援的 JSON 可進行第一人稱 3D 重播、seek、調速與 event navigation | automated + measurement | `tests/replay/ReplayPlayer.test.ts`（WP-50）+ [`stage10-assessment.spec.ts`](../../tests/e2e/stage10-assessment.spec.ts)（live/historical `full` replay parity）；42k-tick cached-reopen P95 見 §1.1 | ✅ |
 | 8 | `unsupported`／`partial`／`invalid` 記錄有明確 UI，不 crash、不假裝完整重播 | automated | `stage10-preview.spec.ts`（`partial` banner + transport 仍可用、`unsupported` 面板+返回鍵）；`invalid` 經確認是目前程式碼中不可達的保留分支（schema 層即拒絕，永遠不進 History 列表，見 WP-51 progress.md 2026-08-31「T2 範圍收斂」段） | ✅ |
 | 9 | API 不接受 history root 外的讀寫路徑，且重複保存不會靜默覆寫不同內容 | automated (injected failure) | `tests/history/historyRepository.test.ts`（symlink/traversal 拒絕）+ [`tests/e2e/stage10-failure-recovery.spec.ts`](../../tests/e2e/stage10-failure-recovery.spec.ts)（path-traversal participantId + outside-sentinel 全端驗證、duplicate idempotent/conflict） | ✅ |
 | 10 | Unit／integration／E2E 全綠；測試不寫入真實歷史資料夾 | automated + inspection | §0 baseline；`Stage10AcceptanceEnvironment.ts` containment guard + outside-sentinel（NFR-51.3） | ✅ |
 | 11 | `npm run build` 與既有回歸測試全綠，live gameplay 的 determinism 與結果計算未被 replay path 改變 | automated | §0 baseline；`src/sim/*.test.ts`／`src/drill/*.test.ts` 等既有 determinism 測試零修改全綠（WP-50 T-exit 已對帳，WP-51 未觸碰這些檔案） | ✅ |
 
-### 1.1 條件 7 的效能子項（誠實記錄，非阻塞功能本身）
+### 1.1 條件 7 的效能子項
 
-`42,000-tick Replay cached-reopen` P95（`tests/stage10/stage10-scale.perf.ts`，opt-in benchmark）在本機（RTX 4070 Laptop、Edge msedge）多次量測落在 884ms～1927ms，對 1500ms budget（NFR-51.1）時而通過時而略微超標；樣本本身較像本機背景負載造成的 jitter（未經乾淨環境對照驗證），詳見 [WP-51 progress.md 2026-08-31「T4 進行中（第四個切片）」](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/progress.md)。**這是功能之外的效能 gate**——條件 7 本身要求的「可重播、可 seek、可調速、可 event navigation」已有 automated evidence 全部通過；效能列留給較安靜環境重跑或 WP-50 關注，不阻塞條件 7 的功能判定，但阻塞 §5 的整體 M18 宣告（README T-exit 紀律：不得以較弱證據替代已有可自動驗證的條件，也不得放寬 threshold 掩蓋）。
+`42,000-tick Replay cached-reopen` P95（`tests/stage10/stage10-scale.perf.ts`，opt-in benchmark）曾在 T4 本機背景負載較高時落在 884ms～1927ms，未強行判定通過。T-exit 於同一 reference machine 重跑 `RUN_STAGE10_SCALE_BENCHMARK=1 npm run test:stage10:scale`，結果：cold open 272ms、cached-reopen P95 480ms（15 samples：480, 364, 300, 369, 301, 328, 313, 363, 326, 330, 300, 346, 314, 303, 357ms），低於 1500ms budget。此效能子項已由 measurement evidence 補齊。
 
 ---
 
@@ -60,11 +62,11 @@
 | FR-51.2／FR-51.11／FR-51.14 | T1 | ✅ | isolated dev/preview roots、`npm run test:stage10` 單一命令+report |
 | FR-51.3～FR-51.8 | T2 | ✅ | canonical/restart/parity/Practice/support 全數見 §1 条件1-8 |
 | FR-51.9～FR-51.10 | T3 | ✅ | failure/recovery/race，repeat×5 zero-failure（既有 flake 除外，如實記錄） |
-| FR-51.12 | T4 | 🟡 | scale/lifecycle 4/5 gates 綠燈，1 列（42k P95）見 §1.1 |
+| FR-51.12 | T4 | ✅ | scale/lifecycle gates 全綠，42k P95 重跑見 §1.1 |
 | FR-51.13 | T4 | ✅ | [`stage10-accessibility.spec.ts`](../../tests/e2e/stage10-accessibility.spec.ts) keyboard/focus/ARIA journey |
 | FR-51.15 | T5 | ✅ | [history-center-replay.md](history-center-replay.md) |
 | FR-51.16 | T5 | 🔴 blocked（見 §4） | 人工 browser/GPU walkthrough 尚未執行 |
-| NFR-51.1 | T4 | 🟡 | 同 §1.1 |
+| NFR-51.1 | T4 | ✅ | 同 §1.1 |
 | NFR-51.2 | T3/T4 | ✅ | repeat×5 --retries=0，既有 flake 已標明非本次改動造成 |
 | NFR-51.3 | T1/T3 | ✅ | outside-sentinel + containment |
 | NFR-51.4 | T4 | ✅ | abort <100ms + 50-cycle baseline |
@@ -84,11 +86,10 @@
 |---|---|---|---|
 | [KI-017](../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) — Run Detail「3D 重播」過早點擊 TDZ ReferenceError | WP-50 | 🔴 待修 | 與已修 KI-013 同一類根因；WP-51 測試側已繞開但未修 production code（超出 WP-51 授權） |
 | [KI-018](../known_issue/KI-018-history-search-keystroke-focus-steal.md) — History 搜尋欄逐字輸入焦點被搶走 | WP-49 | 🔴 待修 | `navigator.replace()` 每次給 focus-guard 全新物件引發誤判；WP-51 測試側已繞開 |
-| 42k-tick Replay cached-reopen P95 環境 jitter | WP-50／WP-51 T5 | 🟡 待較安靜環境重跑 | 見 §1.1 |
 | Chrome 未安裝在目前開發機 | T5 前置 | 🔴 阻塞人工 walkthrough | 需另一台機器或先安裝 Chrome 才能執行 §4 的 Chrome 人工 WebGPU walkthrough |
 | Playwright 無 Chrome project／無 WebGL2 fallback project | T4／T5 | 🟡 尚未建立 | OQ-51.2 已凍結方向（見 WP-51 README/progress.md），實際 harness 尚未新增 |
 
-這些項目**不得**作為豁免 M18 核心條件（README §10 條件 1～11）的理由；它們各自阻塞的是：KI-017/KI-018 阻塞其各自涉及的互動路徑在「所有情況下」都正確（非阻塞已驗證的 automated happy-path），42k P95 阻塞 §1.1 效能子項，Chrome 缺席與缺少 project 阻塞 §4 的人工/自動化涵蓋範圍完整性。
+這些項目**不得**作為豁免 M18 核心條件（README §10 條件 1～11）的理由；它們各自阻塞的是：KI-017/KI-018 阻塞其各自涉及的互動路徑在「所有情況下」都正確（非阻塞已驗證的 automated happy-path），Chrome 缺席與缺少 project 阻塞 §4 的人工/自動化涵蓋範圍完整性。
 
 ---
 
@@ -166,11 +167,11 @@
 
 ## 5. M18 判定
 
-**尚未判定通過。** README §10 的 11 項條件中，功能性的 1～11 項皆有 automated evidence（見 §1），但整體 M18 宣告依 WP-51 README §2.6／stage10 README 的紀律，還需要：
+**尚未判定通過。** README §10 的 11 項條件中，automated/measurement 部分皆有 pass evidence（見 §0～§2），但整體 M18 宣告依 WP-51 README §2.6／stage10 README 的紀律，還需要：
 
-1. §1.1 的 42k-tick cached-reopen P95 在較安靜環境重新確認（或由 WP-50 判定是否為真實效能問題）。
-2. [KI-017](../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md)／[KI-018](../known_issue/KI-018-history-search-keystroke-focus-steal.md) 由 WP-50／WP-49 承接修復並重跑受影響的 Stage10 suite。
-3. §4 的人工 browser／GPU／a11y walkthrough 由實際執行者完成並簽核（依 OQ-51.1 預設決策，這是阻塞項；若使用者/產品 owner 最終決定改為非阻塞，需回頭更新 WP-51 README OQ-51.1 段與本節）。
-4. 依 T5 DoD，需有一位未撰寫本 WP 主要程式碼者依 [history-center-replay.md](history-center-replay.md) 重新走一次啟動→定位 synthetic 紀錄→Replay→處理至少一個 failure state，證明文件本身足夠、不依賴作者記憶。
+1. [KI-017](../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md)／[KI-018](../known_issue/KI-018-history-search-keystroke-focus-steal.md) 由 WP-50／WP-49 承接修復並重跑受影響的 Stage10 suite。
+2. §4 的人工 browser／GPU／a11y walkthrough 由實際執行者完成並簽核（依 OQ-51.1 預設決策，這是阻塞項；若使用者/產品 owner 最終決定改為非阻塞，需回頭更新 WP-51 README OQ-51.1 段與本節）。
+3. 依 T5 DoD，需有一位未撰寫本 WP 主要程式碼者依 [history-center-replay.md](history-center-replay.md) 重新走一次啟動→定位 synthetic 紀錄→Replay→處理至少一個 failure state，證明文件本身足夠、不依賴作者記憶。
+4. 依 OQ-51.2 補齊或正式豁免 Chrome 人工 walkthrough 與 WebGL2 fallback 自動化 project 的 coverage gap。
 
 以上 4 項均非「重新設計」或「新增產品語意」——皆是既有已核准範圍內的收尾動作，記錄於此以便下一位 operator/owner 接手，不在本次草案中假裝已完成。

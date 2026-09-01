@@ -608,6 +608,52 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   未打勾，5 項 DoD 中 3 項（runbook、dossier traceability 無 orphan、無真實資料/敏感路徑）已完成，
   2 項（manual checklist 執行+簽核、獨立 operator 重跑）待人工接手。
 
+- **2026-08-31**：**T-exit automated gate run**（working tree based on HEAD `d142baf`，Windows 11/Edge msedge，Node v25.9.0）。
+
+  **結論**：自動化 gate 已補齊並全綠；**不宣告 M18**。阻塞項剩下人工/owner gate：KI-017/KI-018
+  仍待 WP-50/WP-49 owner 收斂，manual Chrome/Edge/GPU/a11y walkthrough 尚未由真人執行簽核，且 T5 要求的
+  independent operator runbook walkthrough 尚未執行。依 T-exit-gate.md，這些不能由 AI agent 代簽，也不能
+  用 automated happy path 豁免。
+
+  **本次修正（test/harness only，無 production behavior change）**：
+  - `tests/e2e/stage10-accessibility.spec.ts`：fixture `startedAt` 從 `2099-01-01 + Date.now()` 改為
+    `2100-01-01 + Date.now()`，晚於同一 shared dev root 內既有 Stage10 future fixtures（例如
+    `stage10-lifecycle-scale` 的固定 `2099-06`），避免本機累積 synthetic rows 把本 spec 目標 participant
+    推出 Tab budget；同時將 drill/run/replay keyboard activation 改為 `locator.press('Enter')`，run-detail
+    wait 提到 10s，`aria-valuetext` 改成 frame-aware poll。這保持 keyboard-only intent，但去除高負載下
+    Playwright dispatch/paint frame 的假陰性。
+  - `tests/e2e/replay.spec.ts`：A-50.5 event next/previous assertion 改為 click 後以 `expect.poll` 等待
+    seek value commit。根因是 transport UI 由下一個 presentation frame 更新，立即讀 range value 會在
+    全 suite/critical repeat 高負載時偶發讀到舊值；修正不改 `ReplayPlayer`/`ReplayTransport` 語意。
+  - `tests/e2e/history-library.spec.ts`：client-side search 清空後不再假設新 seed 的 2026 participant
+    一定位於 restored full list 的前 100 rows。shared dev root 內 Stage10 future fixtures 會依
+    `latestStartedAt` 排在前方；測試現在沿用 UI 的「顯示更多」chunked-list 行為 reveal participant
+    後再斷言，保留原本「清空 query 可回到完整列表」的測試語意。
+
+  **驗證與量測**：
+  - `npm run typecheck`：exit 0。
+  - `npm run build`：exit 0，Vite build 2.06s；既有 chunk >500kB warning，非本次引入。
+  - `npm run test`：exit 0；186 passed + 1 skipped files（187 total），1654 passed + 2 skipped tests（1656 total）。
+  - `npm run test:e2e`：exit 0；71/71 passed（修正後全套重跑）。
+  - `npm run test:ci`：exit 0；typecheck + Vitest + Playwright 71/71 passed（最終 rerun 已涵蓋
+    `history-library.spec.ts` chunked-list harness fix）。
+  - `npm run test:stage10`：exit 0；Stage 10 acceptance command wall time 39.0s，evidence report written to
+    `.playwright-tmp/stage10-evidence/stage10-t1-evidence.json`。
+  - `RUN_STAGE10_SCALE_BENCHMARK=1 npm run test:stage10:scale`：exit 0；History first-100 rows P95 244ms，
+    100-run analysis cold/warm 269/267ms，42k-tick Replay cold open 272ms，cached-reopen P95 480ms over
+    15 samples（480, 364, 300, 369, 301, 328, 313, 363, 326, 330, 300, 346, 314, 303, 357ms），解除 T4
+    先前的 P95 jitter blocker。
+  - Critical repeat bundle：
+    `npx playwright test tests/e2e/stage10-assessment.spec.ts tests/e2e/stage10-preview.spec.ts
+    tests/e2e/stage10-failure-recovery.spec.ts tests/e2e/stage10-accessibility.spec.ts
+    tests/e2e/stage10-lifecycle-scale.spec.ts tests/e2e/stage10-projection-shape.spec.ts
+    tests/e2e/replay.spec.ts --project=edge --repeat-each=5 --retries=0`：exit 0；100/100 passed。
+  - `graphify update .`：exit 0；AST graph rebuilt after test code changes（3819 nodes／8946 edges／236 communities）。
+
+  **狀態同步**：`T4-scale-lifecycle-a11y.md` 第一個 DoD 已改為完成；`task-checklist.md` 將 T4 標為 ✅，
+  T5/T-exit 仍保留 ⬜；`docs/operational/acceptance-stage-j.md` 更新到本次 T-exit automated evidence，
+  並保留 remaining manual/owner blockers。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後

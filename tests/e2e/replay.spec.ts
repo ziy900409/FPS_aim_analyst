@@ -312,11 +312,10 @@ test.describe('WP-50 T-exit — Replay transport, events, ownership, navigation 
     const prevBtn = replay.getByRole('button', { name: '上一個事件' });
     if (markerCount > 1) {
       await nextBtn.click();
+      await expect.poll(async () => Number(await seek.inputValue())).toBeGreaterThan(Number(seekAfterClick));
       const afterNext = Number(await seek.inputValue());
-      expect(afterNext).toBeGreaterThan(Number(seekAfterClick));
       await prevBtn.click();
-      const afterPrev = Number(await seek.inputValue());
-      expect(afterPrev).toBeLessThanOrEqual(afterNext);
+      await expect.poll(async () => Number(await seek.inputValue())).toBeLessThanOrEqual(afterNext);
     }
   });
 

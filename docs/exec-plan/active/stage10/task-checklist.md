@@ -59,11 +59,11 @@ WP-50 Definition of Done：至少一個代表性official Assessment可由磁碟J
 |---|---|---|---|---|
 | ✅ | **T0** Entry／handoff gate | [T0-entry-gate.md](wp-51-m18-integration-and-acceptance/T0-entry-gate.md) | WP-48～50 exit evidence | High |
 | ✅ | **T1** Acceptance harness／roots／evidence | [T1-acceptance-harness.md](wp-51-m18-integration-and-acceptance/T1-acceptance-harness.md) | T0 seams confirmed | High |
-| ⬜ | **T2** Cross-WP canonical journeys | [T2-cross-wp-happy-paths.md](wp-51-m18-integration-and-acceptance/T2-cross-wp-happy-paths.md) | T1 + WP-48～50 exits | High |
-| ⬜ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](wp-51-m18-integration-and-acceptance/T3-failure-recovery-safety.md) | T1～T2 | High |
-| ⬜ | **T4** Scale／lifecycle／a11y | [T4-scale-lifecycle-a11y.md](wp-51-m18-integration-and-acceptance/T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
+| ✅ | **T2** Cross-WP canonical journeys | [T2-cross-wp-happy-paths.md](wp-51-m18-integration-and-acceptance/T2-cross-wp-happy-paths.md) | T1 + WP-48～50 exits | High |
+| ✅ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](wp-51-m18-integration-and-acceptance/T3-failure-recovery-safety.md) | T1～T2 | High |
+| ✅ | **T4** Scale／lifecycle／a11y | [T4-scale-lifecycle-a11y.md](wp-51-m18-integration-and-acceptance/T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
 | ⬜ | **T5** Operations／manual release | [T5-operations-manual-release.md](wp-51-m18-integration-and-acceptance/T5-operations-manual-release.md) | T2～T4 | Med |
-| ⬜ | **T-exit** M18 gate | [T-exit-gate.md](wp-51-m18-integration-and-acceptance/T-exit-gate.md) | T0～T5 + upstream exits | High |
+| ⬜ | **T-exit** M18 gate（automated gates通過，manual/owner gates待完成） | [T-exit-gate.md](wp-51-m18-integration-and-acceptance/T-exit-gate.md) | T0～T5 + upstream exits | High |
 
 WP-51 Definition of Done：WP-48～50 exits與README §10全數有客觀證據後才可宣告M18；不可只因happy-path demo可操作就略過隔離root、preview public contract、資料安全、重啟持久性、Practice排除、unsupported replay或實機fidelity。
 

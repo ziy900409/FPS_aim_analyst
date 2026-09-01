@@ -1,6 +1,6 @@
 # 階段 J（stage10）提案 — 本機歷史紀錄中心與 3D 重播 prototype
 
-> **狀態：🟡 WP-48／WP-49／WP-50 已完成，WP-51 尚未開工。** 本階段把目前只能由瀏覽器下載／手動選取的單次 JSON 匯出，提升為專案內固定資料夾的本機紀錄庫，並提供 `Participant ID → drillId → 時間` 的歷史瀏覽、Assessment 趨勢與第一人稱 3D 狀態重建重播。
+> **狀態：🟡 WP-48／WP-49／WP-50 已完成；WP-51 T-exit automated gates 已通過，M18 尚未宣告。** 本階段把目前只能由瀏覽器下載／手動選取的單次 JSON 匯出，提升為專案內固定資料夾的本機紀錄庫，並提供 `Participant ID → drillId → 時間` 的歷史瀏覽、Assessment 趨勢與第一人稱 3D 狀態重建重播。
 >
 > 本文件記錄 2026-08-27 與使用者確認的需求。技術棧維持 Three.js + TypeScript + Vite + 純 DOM UI；新增一個只存取本專案指定目錄的 Node History API。完整 task 狀態見 [task-checklist.md](task-checklist.md)，進度與決策紀錄見 [progress.md](progress.md)。
 
@@ -12,7 +12,7 @@
 | **歷史政策** | 只保存與瀏覽 Assessment；Practice 保留即時結果與手動匯出，但不建立歷史紀錄 |
 | **重播語意** | 依記錄狀態重建玩家當時看到的 3D 過程，不重新執行舊輸入或要求錄影檔 |
 | **里程碑** | 暫定 M18：本機自動保存、歷史瀏覽、Assessment 趨勢、3D 重播與 E2E 驗收全數成立 |
-| **狀態** | 🟡 WP-48 本機歷史儲存、WP-49 History Library/Assessment Trends 與 WP-50 3D Replay 皆已完成 T-exit；WP-51 M18 integration T0/T1 已完成，T2 起開工 |
+| **狀態** | 🟡 WP-48 本機歷史儲存、WP-49 History Library/Assessment Trends 與 WP-50 3D Replay 皆已完成 T-exit；WP-51 automated T-exit gates 已通過（2026-08-31），仍待 manual browser/GPU/a11y walkthrough、independent operator runbook walkthrough 與 KI-017/KI-018 owner 收斂後才可宣告 M18 |
 
 ---
 
@@ -248,7 +248,7 @@ interface MetricDescriptor {
 | **WP-48** | [本機歷史儲存基礎](wp-48-local-history-foundation/README.md) | strict payload contract、filesystem repository、Node API、typed client、自動保存與 download fallback | High（path safety／半寫入／啟動方式） | ✅ 已完成（T0～T5＋T-exit 全綠，2026-08-27） |
 | **WP-49** | [歷史紀錄 UI 與趨勢](wp-49-history-library-and-trends/README.md) | Participant／exact drill／run navigation、歷史 Result、metric registry、paged analysis與Assessment趨勢 | High（navigation race／Result共用／研究語意／大量payload） | ✅ 已完成（T0～T5＋T-exit 全綠，2026-08-28） |
 | **WP-50** | [第一人稱 3D 狀態重播](wp-50-3d-state-replay/README.md) | additive replay contract、exact-profile support、pure playback、exclusive scene ownership、transport/event UI、Result/History入口 | High（錄製充分性／seek決定性／renderer lifecycle） | ✅ 已完成（T0～T6＋T-exit 全綠，2026-08-31） |
-| **WP-51** | [整合與 M18 驗收](wp-51-m18-integration-and-acceptance/README.md) | isolated dev/preview harness、跨WP journeys、failure/data safety、scale/lifecycle/a11y、操作文件與實機release dossier | Med/High（root/process lifecycle／假綠preview／實機fidelity） | 🟡 T0/T1 已完成，T2起開工 |
+| **WP-51** | [整合與 M18 驗收](wp-51-m18-integration-and-acceptance/README.md) | isolated dev/preview harness、跨WP journeys、failure/data safety、scale/lifecycle/a11y、操作文件與實機release dossier | Med/High（root/process lifecycle／假綠preview／實機fidelity） | 🟡 T-exit automated gates 已通過；M18 manual/owner gate 未完成 |
 
 詳細 task 與 entry／exit 條件見 [task-checklist.md](task-checklist.md)。正式開工前若 stage9 又新增 WP，需重新分配這裡的暫用編號，避免碰撞。
 

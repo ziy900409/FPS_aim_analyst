@@ -1,16 +1,16 @@
-# Graph Report - FPS_aim_analyst  (2026-08-31)
+# Graph Report - FPS_aim_analyst  (2026-09-01)
 
 ## Corpus Check
-- 475 files · ~799,308 words
+- 486 files · ~821,536 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3772 nodes · 8807 edges · 235 communities (198 shown, 37 thin omitted)
-- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 1114 edges (avg confidence: 0.79)
+- 3826 nodes · 8993 edges · 242 communities (207 shown, 35 thin omitted)
+- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 1142 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `915c2f3b`
+- Built from commit: `adb1345c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -180,8 +180,8 @@
 - [[_COMMUNITY_Community 162|Community 162]]
 - [[_COMMUNITY_Community 163|Community 163]]
 - [[_COMMUNITY_Community 164|Community 164]]
-- [[_COMMUNITY_Community 165|Community 165]]
 - [[_COMMUNITY_Community 166|Community 166]]
+- [[_COMMUNITY_Community 167|Community 167]]
 - [[_COMMUNITY_Community 168|Community 168]]
 - [[_COMMUNITY_Community 169|Community 169]]
 - [[_COMMUNITY_Community 170|Community 170]]
@@ -191,58 +191,63 @@
 - [[_COMMUNITY_Community 174|Community 174]]
 - [[_COMMUNITY_Community 175|Community 175]]
 - [[_COMMUNITY_Community 176|Community 176]]
+- [[_COMMUNITY_Community 177|Community 177]]
 - [[_COMMUNITY_Community 178|Community 178]]
 - [[_COMMUNITY_Community 179|Community 179]]
 - [[_COMMUNITY_Community 180|Community 180]]
+- [[_COMMUNITY_Community 182|Community 182]]
 - [[_COMMUNITY_Community 183|Community 183]]
 - [[_COMMUNITY_Community 184|Community 184]]
-- [[_COMMUNITY_Community 185|Community 185]]
-- [[_COMMUNITY_Community 186|Community 186]]
-- [[_COMMUNITY_Community 190|Community 190]]
+- [[_COMMUNITY_Community 187|Community 187]]
+- [[_COMMUNITY_Community 188|Community 188]]
+- [[_COMMUNITY_Community 189|Community 189]]
 - [[_COMMUNITY_Community 191|Community 191]]
-- [[_COMMUNITY_Community 193|Community 193]]
-- [[_COMMUNITY_Community 194|Community 194]]
-- [[_COMMUNITY_Community 199|Community 199]]
+- [[_COMMUNITY_Community 192|Community 192]]
+- [[_COMMUNITY_Community 196|Community 196]]
+- [[_COMMUNITY_Community 197|Community 197]]
+- [[_COMMUNITY_Community 198|Community 198]]
 - [[_COMMUNITY_Community 200|Community 200]]
 - [[_COMMUNITY_Community 201|Community 201]]
-- [[_COMMUNITY_Community 202|Community 202]]
-- [[_COMMUNITY_Community 203|Community 203]]
-- [[_COMMUNITY_Community 210|Community 210]]
-- [[_COMMUNITY_Community 224|Community 224]]
-- [[_COMMUNITY_Community 225|Community 225]]
-- [[_COMMUNITY_Community 226|Community 226]]
-- [[_COMMUNITY_Community 227|Community 227]]
-- [[_COMMUNITY_Community 228|Community 228]]
-- [[_COMMUNITY_Community 229|Community 229]]
-- [[_COMMUNITY_Community 230|Community 230]]
+- [[_COMMUNITY_Community 206|Community 206]]
+- [[_COMMUNITY_Community 207|Community 207]]
+- [[_COMMUNITY_Community 208|Community 208]]
+- [[_COMMUNITY_Community 209|Community 209]]
+- [[_COMMUNITY_Community 216|Community 216]]
 - [[_COMMUNITY_Community 231|Community 231]]
 - [[_COMMUNITY_Community 232|Community 232]]
 - [[_COMMUNITY_Community 233|Community 233]]
 - [[_COMMUNITY_Community 234|Community 234]]
+- [[_COMMUNITY_Community 235|Community 235]]
+- [[_COMMUNITY_Community 236|Community 236]]
+- [[_COMMUNITY_Community 237|Community 237]]
+- [[_COMMUNITY_Community 238|Community 238]]
+- [[_COMMUNITY_Community 239|Community 239]]
+- [[_COMMUNITY_Community 240|Community 240]]
+- [[_COMMUNITY_Community 241|Community 241]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `createSharedState()` - 75 edges
+1. `createSharedState()` - 78 edges
 2. `load_export()` - 69 edges
-3. `build_peek_windows()` - 56 edges
-4. `createDataRecorder()` - 55 edges
-5. `createSimLoop()` - 47 edges
-6. `loadDrill()` - 44 edges
-7. `render_html()` - 41 edges
-8. `createTargetManager()` - 41 edges
+3. `createDataRecorder()` - 57 edges
+4. `build_peek_windows()` - 56 edges
+5. `createSimLoop()` - 49 edges
+6. `loadDrill()` - 45 edges
+7. `createTargetManager()` - 44 edges
+8. `render_html()` - 41 edges
 9. `segment_submovements()` - 36 edges
 10. `make_synthetic_export()` - 35 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `advanceUntilTracer()` --calls--> `simStep()`  [INFERRED]
-  tests/regression/muzzle-tracer-invariants.test.ts → src/loop/SimLoop.ts
-- `timeFor()` --calls--> `sampleReplay()`  [INFERRED]
-  tests/replay/replay-perf.test.ts → src/replay/sampleReplay.ts
+- `realRegistry()` --calls--> `createDrillMetricRegistry()`  [INFERRED]
+  tests/history/historyAnalysisService.test.ts → src/history/DrillMetricRegistry.ts
 - `D1 — 2D UI = 純 TS + DOM overlay` --semantically_similar_to--> `MetricsDashboard 元件`  [INFERRED] [semantically similar]
   docs/PLAN.md → CONTEXT.md
 - `量測時鐘 vs 決定性時鐘 (two-clock model)` --semantically_similar_to--> `主執行緒卡頓污染 sim 計時 (階段 A 隔離不成立)`  [INFERRED] [semantically similar]
   CONTEXT.md → docs/DESIGN.md
-- `createHistoryApiState()` --calls--> `createDrillMetricRegistry()`  [INFERRED]
-  server/history/historyApi.ts → src/history/DrillMetricRegistry.ts
+- `handleSaveRun()` --calls--> `parseExportPayload()`  [INFERRED]
+  server/history/historyApi.ts → src/data/exportPayloadSchema.ts
+- `computeRunId()` --calls--> `buildRunIdentity()`  [INFERRED]
+  tests/stage10/Stage10FixtureFactory.ts → server/history/historyPaths.ts
 
 ## Hyperedges (group relationships)
 - **三迴圈透過 SharedState 溝通 (雙迴圈架構, ADR-2)** — context_input_sampler, context_sim_loop, context_render_loop, context_shared_state, spec_adr2 [EXTRACTED 1.00]
@@ -263,695 +268,723 @@
 - **E2E 全鏈路 (drill→匯出→統計，統計=匯出)** — counterstrafe_ad_v1_drill, wp7_export, wp8_statistics, wp9_stats_equals_export [EXTRACTED 1.00]
 - **M4 階段 A 交付閘 (附錄 E 10 項全綠 → 各上游 WP 證據)** — wp9_milestone_m4, wp9_appendix_e_acceptance, wp9_t5_exit_gate [EXTRACTED 1.00]
 
-## Communities (235 total, 37 thin omitted)
+## Communities (242 total, 35 thin omitted)
 
 ### Community 0 - "Community 0"
+Cohesion: 0.05
+Nodes (58): assertFinitePayload(), buildExportPayload(), downloadCSV(), downloadJSON(), downloadTextFile(), exportBasename(), formatBoolean(), formatNumber() (+50 more)
+
+### Community 1 - "Community 1"
 Cohesion: 0.09
 Nodes (62): fail(), isRecord(), parseAdsEvent(), parseAim(), parseArray(), parseAssessmentMeta(), parseBoolean(), parseCounterEvent() (+54 more)
 
-### Community 1 - "Community 1"
-Cohesion: 0.05
-Nodes (52): runControl(), appendCurveBand(), appendCurveLine(), appendGuideLine(), appendPath(), classifyResidualSpeed(), countFlags(), createDiagnosisSummary() (+44 more)
-
 ### Community 2 - "Community 2"
-Cohesion: 0.08
-Nodes (62): build_peek_windows(), _events_in_window(), _false(), _finite_number(), _first_compatible_fire(), _hit_times_by_shot(), _key(), _keys() (+54 more)
+Cohesion: 0.06
+Nodes (64): _band(), _curve_rows(), curve_summary(), curve_table(), CurveParams, _is_locally_uniform(), normalize_101(), _point_columns() (+56 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.08
-Nodes (44): round(), simulatePurePunchPattern(), toPatternShot(), punchToThreeRad(), buttonCss(), createNumberInput(), drawGrid(), drawPattern() (+36 more)
+Nodes (62): build_peek_windows(), _events_in_window(), _false(), _finite_number(), _first_compatible_fire(), _hit_times_by_shot(), _key(), _keys() (+54 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.07
-Nodes (56): _counter_hold_ms(), _delta(), evaluate_release_precision(), _finite_number(), _keys(), PrecisionVerdict, Pure Release-to-Click Sync metrics and pre-registered precision verdicts., Judge tick-quantized Sync metrics using the frozen ``sync-v1`` branches. (+48 more)
+Cohesion: 0.08
+Nodes (35): createDataRecorder(), capacityForDrill(), createSimLoop(), payloadWithStopTransitions(), canonicalRun(), runFrames(), snap(), syntheticInputs() (+27 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.07
-Nodes (50): createPointerLock(), isOutsideCorridor(), activeWeaponConfig(), applyHistoryOverrides(), average(), beginNextProtocolCondition(), buildCurrentExportPayload(), buildSimLoop() (+42 more)
+Nodes (51): createPointerLock(), activeWeaponConfig(), applyHistoryOverrides(), average(), beginNextProtocolCondition(), buildCurrentExportPayload(), buildSimLoop(), completeActiveProtocolCondition() (+43 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.06
-Nodes (33): spawnBullet(), stepBullet(), clipAxis(), sweptHitTest(), collect64HzSamples(), advanceProjectiles(), applyInput(), ballisticRaycast() (+25 more)
+Cohesion: 0.09
+Nodes (25): resolveTargetHitbox(), createDrillRunner(), makeConfig(), reversalConfig(), run(), setup(), angularSizeToHitboxWidthU(), buildPeekClickTransferPilotConfig() (+17 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.07
-Nodes (53): _band(), _curve_rows(), curve_summary(), curve_table(), CurveParams, _is_locally_uniform(), normalize_101(), _point_columns() (+45 more)
-
-### Community 8 - "Community 8"
-Cohesion: 0.06
-Nodes (43): appendCurveBand(), appendCurveLine(), appendGuideLine(), appendPath(), countFlags(), createDiagnosisSummary(), createPromotedSummary(), createQualityFlagSummary() (+35 more)
-
-### Community 9 - "Community 9"
-Cohesion: 0.07
-Nodes (34): createDrillRunner(), makeConfig(), reversalConfig(), run(), setup(), aimAt(), fireFrom(), runCadenceTimeoutExport() (+26 more)
-
-### Community 10 - "Community 10"
 Cohesion: 0.08
 Nodes (54): counter(), _ads_label(), _advanced_diagnostics(), build_report(), _counts(), _delta(), _drill_summary(), _empty_stats() (+46 more)
 
-### Community 11 - "Community 11"
+### Community 8 - "Community 8"
 Cohesion: 0.06
 Nodes (50): _compute_failed_flag(), is_known_quality_flag(), per_segment_apply(), Per-segment computation with a closed, machine-readable quality vocabulary.  E, Summarize finite, unflagged values while counting excluded flagged rows., Summarize finite, unflagged values while counting excluded flagged rows., Return whether *flag* is an exact or templated vocabulary member., Return whether *flag* is an exact or templated vocabulary member. (+42 more)
 
-### Community 12 - "Community 12"
+### Community 9 - "Community 9"
+Cohesion: 0.1
+Nodes (25): targetHitboxToConfig(), loadDrill(), activeSides(), assertFiniteEnvelope(), clipAxis(), collectClearanceViolations(), criticalYawDegrees(), deriveTargetEnvelopes() (+17 more)
+
+### Community 10 - "Community 10"
+Cohesion: 0.07
+Nodes (19): deriveBrakingSamples(), baseMeta(), payload(), deriveCounterstrafeMetrics(), sidedStat(), payload(), tick(), deriveHoldClickMetrics() (+11 more)
+
+### Community 11 - "Community 11"
 Cohesion: 0.05
 Nodes (51): ADR-2 (three loops communicate via SharedState), ADR-3 (sub-tick), ADR-4 (timing: timeStamp / sim tick time source), Appendix D (stage B physics constants: friction/accelerate/stopspeed), Boolean Accuracy Gate (stopped -> accurate), firstShot / firstShotGate (per-peek first shot flag), Fixed-step Movement (determinism, FPS-independent), HitDetector (Raycaster camera-center hit detection) (+43 more)
 
+### Community 12 - "Community 12"
+Cohesion: 0.1
+Nodes (44): _counter_hold_ms(), _delta(), evaluate_release_precision(), _finite_number(), _keys(), PrecisionVerdict, Pure Release-to-Click Sync metrics and pre-registered precision verdicts., Judge tick-quantized Sync metrics using the frozen ``sync-v1`` branches. (+36 more)
+
 ### Community 13 - "Community 13"
-Cohesion: 0.09
-Nodes (29): createSimLoop(), canonicalRun(), runFrames(), snap(), syntheticInputs(), advanceUntilTracer(), createCamera(), createTarget() (+21 more)
+Cohesion: 0.07
+Nodes (37): ⑩ One-line "why this metric is absent" notes for blocked-by-data P2 diagnostics., Render the model to one self-contained HTML document (no external resources)., Render the model to one self-contained HTML document (no external resources)., Render the model to one self-contained HTML document (no external resources)., Render the model to one self-contained HTML document (no external resources)., _render_diagnostics_gaps(), _render_flags(), render_html() (+29 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.06
-Nodes (38): Render the model to one self-contained HTML document (no external resources)., Render the model to one self-contained HTML document (no external resources)., Render the model to one self-contained HTML document (no external resources)., Render the model to one self-contained HTML document (no external resources)., _render_flags(), render_html(), _render_limitations(), _render_verdicts() (+30 more)
+Cohesion: 0.09
+Nodes (19): consume(), createInputSampler(), isDrivenMotion(), motionOffset(), offsetAt(), triangleWave(), drainAll(), drainToArray() (+11 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.08
-Nodes (15): consume(), createInputSampler(), resetRecoilState(), ImpactView, drainAll(), drainToArray(), snapshot(), createBulletArena() (+7 more)
+Cohesion: 0.13
+Nodes (42): collectMeta(), measureDisplayHz(), measureDisplayRefresh(), nextAnimationFrame(), normalizeOverflow(), normalizeStartedAt(), requireAssessmentMeta(), requireBackend() (+34 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.1
-Nodes (26): createDataRecorder(), buildExportPayload(), capacityForDrill(), assertPositiveFinite(), createAimIntegrator(), resolveMouseGain(), cameraLookingDownZ(), driveRenderAndSim() (+18 more)
+Nodes (42): appendCurveBand(), appendCurveLine(), appendGuideLine(), appendPath(), classifyResidualSpeed(), countFlags(), createDiagnosisSummary(), createPromotedSummary() (+34 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.14
-Nodes (42): collectMeta(), measureDisplayHz(), measureDisplayRefresh(), nextAnimationFrame(), normalizeOverflow(), normalizeStartedAt(), requireAssessmentMeta(), requireBackend() (+34 more)
-
-### Community 18 - "Community 18"
-Cohesion: 0.11
-Nodes (43): epsilon_deg(), EyeOrigin, omega_deg_s(), Return angular speed for each tick, with ``nan`` at index zero.      Prefers t, Return unsigned aim-to-target-center angular error for each tick.      The ray, Return angular speed for each tick, with ``nan`` at index zero.      The pitch, Resolved ray/ballistic origin (world domain) for one export.      Mirrors the, Resolve the eye world base and sim->world scale for ``epsilon_deg``/``on_target` (+35 more)
-
-### Community 19 - "Community 19"
-Cohesion: 0.11
-Nodes (37): DetectSample, One presentation's detection derivation. Mirrors TS ``DetectionPresentationDeriv, _can_smooth(), _finalize(), _is_locally_uniform(), _peak_omega(), phase_decompose(), phase_table() (+29 more)
-
-### Community 20 - "Community 20"
 Cohesion: 0.11
 Nodes (38): _blocked(), _finite(), _finite_scalar(), _first_tick_index_at_or_after(), fitts_samples(), FittsParams, FittsResult, FittsSample (+30 more)
 
-### Community 21 - "Community 21"
-Cohesion: 0.09
-Nodes (17): deriveBrakingSamples(), baseMeta(), payload(), deriveCounterstrafeMetrics(), sidedStat(), payload(), tick(), deriveHoldClickMetrics() (+9 more)
+### Community 18 - "Community 18"
+Cohesion: 0.11
+Nodes (35): _can_smooth(), _finalize(), _is_locally_uniform(), _peak_omega(), phase_decompose(), phase_table(), PhaseParams, PhaseSample (+27 more)
 
-### Community 22 - "Community 22"
+### Community 19 - "Community 19"
 Cohesion: 0.1
-Nodes (25): aimForward(), angularDistanceDeg(), angularEccentricityDeg(), clamp(), eyeOriginForTick(), isFiniteNumber(), radToDeg(), resolveEyeOrigin() (+17 more)
+Nodes (18): isLexicallyContained(), acquireLock(), allocateStage10Environment(), cleanupStage10Environment(), defaultRealHistoryRoot(), lockPath(), releaseLock(), snapshotRealRoot() (+10 more)
 
-### Community 23 - "Community 23"
-Cohesion: 0.15
-Nodes (14): targetHitboxToConfig(), loadDrill(), activeSides(), assertFiniteEnvelope(), clipAxis(), collectClearanceViolations(), deriveTargetEnvelopes(), formatClearanceViolations() (+6 more)
-
-### Community 24 - "Community 24"
+### Community 20 - "Community 20"
 Cohesion: 0.09
 Nodes (26): dot(), sgSmooth(), validateCoefficients(), validateMatrix(), validateRow(), assertKnownFlags(), findPeakIndices(), finiteNonNegative() (+18 more)
 
+### Community 21 - "Community 21"
+Cohesion: 0.12
+Nodes (31): _keys_for_tick(), make_synthetic_export(), _profile(), Deterministic schema v2 synthetic export generation.  No clock or random sourc, Create a schema-faithful deterministic v2 payload without writing it to disk., Create a schema-faithful deterministic v2 payload without writing it to disk., SyntheticSpec, main() (+23 more)
+
+### Community 22 - "Community 22"
+Cohesion: 0.09
+Nodes (22): buildHitShotSeqs(), buildSpiderShotV2ConditionCell(), median(), projectSpiderShotV2(), roundTo(), validDurationMs(), integratedDelta(), omegaDegPerSec() (+14 more)
+
+### Community 23 - "Community 23"
+Cohesion: 0.1
+Nodes (9): createHistoryClient(), HistoryClientError, isErrorBody(), isRecord(), isSuccessBody(), createHistoryLibraryController(), historyRunSummaryFromPayload(), createHistoryPersistence() (+1 more)
+
+### Community 24 - "Community 24"
+Cohesion: 0.11
+Nodes (22): createMovementController(), run(), runBatches(), createTargetManager(), collectImmediateSpawns(), collectSequence(), killSequence(), motionConfig() (+14 more)
+
 ### Community 25 - "Community 25"
 Cohesion: 0.11
-Nodes (30): aggregateCurve(), aggregatePhase(), aggregateSync(), computeCurveMetrics(), computePhaseMetrics(), computePromotedMetrics(), computeSyncMetrics(), counterHoldMsForPeek() (+22 more)
+Nodes (34): appendCurveBand(), appendCurveLine(), appendGuideLine(), appendPath(), countFlags(), createDiagnosisSummary(), createPromotedSummary(), createQualityFlagSummary() (+26 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.12
-Nodes (17): acquireLock(), allocateStage10Environment(), cleanupStage10Environment(), defaultRealHistoryRoot(), lockPath(), releaseLock(), snapshotRealRoot(), Stage10ContainmentViolationError (+9 more)
-
-### Community 27 - "Community 27"
-Cohesion: 0.1
-Nodes (9): buildLargePayload(), ReplayEffectView, clamp(), createReplayPlayer(), createReplayPresentationSession(), resolveWeapon(), ReplayTargetView, resolveReplayTargetHitbox() (+1 more)
-
-### Community 28 - "Community 28"
-Cohesion: 0.08
-Nodes (17): Contract tests for the one-command research pipeline., A clean export must leave rows summarizable, not blanket-flagged., A clean export must leave rows summarizable, not blanket-flagged., One dropped tick must not exclude every segment from every aggregate., One dropped tick must not exclude every segment from every aggregate., FM-6: the gate must actually fire on run_pipeline's own default fixture., _read_csv(), test_default_synthetic_export_construct_present_on_default_path() (+9 more)
-
-### Community 29 - "Community 29"
 Cohesion: 0.08
 Nodes (27): _Candidate, _merge_overlapping(), _prepare_signal(), Submovement segmentation for 128 Hz angular-speed traces., List-compatible result carrying flags when no segment can hold them., List-compatible result carrying flags when no segment can hold them., Segment an angular-speed trace into one primary flick and later adjustments., Segment an angular-speed trace into one primary flick and later adjustments. (+19 more)
 
+### Community 27 - "Community 27"
+Cohesion: 0.08
+Nodes (17): Contract tests for the one-command research pipeline., A clean export must leave rows summarizable, not blanket-flagged., A clean export must leave rows summarizable, not blanket-flagged., One dropped tick must not exclude every segment from every aggregate., One dropped tick must not exclude every segment from every aggregate., FM-6: the gate must actually fire on run_pipeline's own default fixture., _read_csv(), test_default_synthetic_export_construct_present_on_default_path() (+9 more)
+
+### Community 28 - "Community 28"
+Cohesion: 0.15
+Nodes (12): buildFixture(), fixtureStartedAt(), buildFixture(), buildFixture(), buildIdentitySegment(), buildRunFilename(), buildRunId(), buildRunIdentity() (+4 more)
+
+### Community 29 - "Community 29"
+Cohesion: 0.1
+Nodes (17): nextAnimationFrame(), percentile(), probeWarmupP95Ms(), readDevicePixelRatio(), readFullscreenElement(), readScreenDim(), requireNonNegativeInteger(), requireNonNegativeNumber() (+9 more)
+
 ### Community 30 - "Community 30"
 Cohesion: 0.13
-Nodes (8): defaultLoader(), disposeScene(), loadScene(), createSceneManager(), createSceneManagerWithStatus(), SceneManager, ReplaySceneAdapter, resolveEyeWorldBase()
+Nodes (29): aggregateCurve(), aggregatePhase(), aggregateSync(), computeCurveMetrics(), computePhaseMetrics(), counterHoldMsForPeek(), curveRow(), curveRows() (+21 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.14
-Nodes (25): _keys_for_tick(), make_synthetic_export(), _profile(), Deterministic schema v2 synthetic export generation.  No clock or random sourc, Create a schema-faithful deterministic v2 payload without writing it to disk., Create a schema-faithful deterministic v2 payload without writing it to disk., SyntheticSpec, main() (+17 more)
+Cohesion: 0.13
+Nodes (17): aimForward(), angularDistanceDeg(), angularEccentricityDeg(), clamp(), eyeOriginForTick(), isFiniteNumber(), radToDeg(), resolveEyeOrigin() (+9 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.12
-Nodes (7): createHistoryClient(), HistoryClientError, isErrorBody(), isRecord(), isSuccessBody(), createHistoryPersistence(), makeAssessmentPayload()
+Cohesion: 0.14
+Nodes (15): createDrillMetricRegistry(), closeHistoryApiState(), createHistoryApiState(), createHistoryRepository(), HistoryContainmentError, HistoryRepositoryError, HistoryRootLockedError, isProcessAlive() (+7 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.18
-Nodes (14): makeMeta(), makePayload(), makeTick(), normalizeReplayRecording(), toSceneDescriptor(), fixtureRecording(), fixtureRecording(), buildLargePayload() (+6 more)
+Nodes (13): makeMeta(), makePayload(), makeTick(), normalizeReplayRecording(), toSceneDescriptor(), fixtureRecording(), fixtureRecording(), buildLargePayload() (+5 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.14
-Nodes (19): buildHitShotSeqs(), buildIdealPath(), buildPeekWindows(), coefficientOfVariation(), compensationError(), computeMetrics(), computeRecoilCompensationError(), computeRecoilCompensationPath() (+11 more)
+Cohesion: 0.13
+Nodes (25): key_state_signed(), key_velocity_xcorr(), Signed strafe key state per tick: ``D`` -> ``+1``, ``A`` -> ``-1``, both or neit, Signed Pearson r at every lag in ``[-max_lag_ticks, +max_lag_ticks]``, plus the, _key_events(), T2 DoD 3, proven from the source rather than by sampling inputs.      Two fact, Alternating A/D holds at a fixed period: a strafe pattern with real autocorrelat, _square_key() (+17 more)
 
 ### Community 35 - "Community 35"
-Cohesion: 0.19
-Nodes (17): canonicalExportJSON(), canonicalizeValue(), buildIdentitySegment(), buildRunFilename(), buildRunId(), buildRunIdentity(), isLexicallyContained(), sanitizeSegmentPrefix() (+9 more)
+Cohesion: 0.15
+Nodes (23): _aim_forward(), _column(), epsilon_deg(), _finite_column(), _finite_scalar(), _geometry(), _hitbox(), on_target() (+15 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.1
-Nodes (23): detect_parity_payload(), _detect_presentation(), detect_samples(), DetectParams, _epsilon_with_fixed_target(), _eye_origin_to_json(), _first_sustained_decrease(), _first_tick_index_at_or_after() (+15 more)
-
-### Community 37 - "Community 37"
 Cohesion: 0.26
 Nodes (23): err(), requireAssessmentMode(), requireBoolean(), requireFiniteNumber(), requireHitboxDimension(), requireHitboxShape(), requireNonEmptyString(), requireNonNegativeDegreeRange() (+15 more)
 
+### Community 37 - "Community 37"
+Cohesion: 0.16
+Nodes (18): buildHitShotSeqs(), buildIdealPath(), buildPeekWindows(), coefficientOfVariation(), compensationError(), computeMetrics(), computeRecoilCompensationError(), computeRecoilCompensationPath() (+10 more)
+
 ### Community 38 - "Community 38"
 Cohesion: 0.13
-Nodes (12): findSessionPlanPreset(), createSessionRunner(), resolveFamilyDrillId(), resolveWarmupDrillId(), buildFamilyOrder(), buildFamilyOrderForRoster(), participantOffset(), startSessionPlan() (+4 more)
+Nodes (22): Export, Validated export data prepared for offline analysis., Validated export data prepared for offline analysis., Validated export data prepared for offline analysis., _finite(), _first_shot_hit_count(), first_shot_hits(), Drill-level metrics that reproduce the frozen ``compute-v1`` semantics. (+14 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.14
 Nodes (24): check_construct_presence(), ConstructReport, ConstructRule, is_known_construct_flag(), Session-level construct presence gate.  Complements the existing format-only gat, Return whether *flag* is an exact or templated vocabulary member., A drill family's core construct declaration (frozen; changes require a version b, Session-level presence verdict. ``present is None`` iff the family is unregister (+16 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.15
-Nodes (23): _aim_forward(), _column(), _finite_column(), _finite_scalar(), _finite_vec3(), _geometry(), _hitbox(), _meta_eye_origin() (+15 more)
+Cohesion: 0.13
+Nodes (12): findSessionPlanPreset(), createSessionRunner(), resolveFamilyDrillId(), resolveWarmupDrillId(), buildFamilyOrder(), buildFamilyOrderForRoster(), participantOffset(), startSessionPlan() (+4 more)
 
 ### Community 41 - "Community 41"
+Cohesion: 0.1
+Nodes (13): createDrillOverview(), makeButton(), createFakeController(), createFakeNavigator(), createFakeRegistry(), FakeDocument, FakeElement, findByTag() (+5 more)
+
+### Community 42 - "Community 42"
 Cohesion: 0.13
 Nodes (26): counterstrafe_ad_v1 counter-strafe drill, docs/operational/acceptance-stage-a.md, 規格 §5 八指標, WP-0 (bootstrap / COI / 渲染後端偵測), WP-2 (sim 脊椎 / 決定性 T4), WP-3 (movement 邏輯), WP-4 (目標左右交替 / t_visible), WP-5 (急停 / 停止 gate 開火 / 首發命中) (+18 more)
 
-### Community 42 - "Community 42"
-Cohesion: 0.19
-Nodes (22): Run the three frozen ``gate-v1`` criteria per session and return one verdict eac, reliability_gate(), _block_key(), _coupled_window(), _keys_from_state(), _noise_window(), A window whose |ω| is the key state shifted by ``lag`` ticks (key leads when ``l, T2 DoD 3, proven from the source rather than by sampling inputs.      Two fact (+14 more)
-
 ### Community 43 - "Community 43"
-Cohesion: 0.12
-Nodes (8): keyMaskFromKeys(), keyMaskFromState(), keysFromMask(), TickArena, integratedDelta(), omegaDegPerSec(), radToDeg(), requireFiniteNumber()
+Cohesion: 0.11
+Nodes (24): detect_parity_payload(), _detect_presentation(), detect_samples(), DetectParams, DetectSample, _epsilon_with_fixed_target(), _eye_origin_to_json(), _first_sustained_decrease() (+16 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.15
-Nodes (22): aimForward(), angularEccentricityDeg(), clamp(), deriveDetectionMetrics(), derivePresentation(), eccentricitySamples(), finite(), firstSustainedDecrease() (+14 more)
+Cohesion: 0.16
+Nodes (24): omega_deg_s(), OmegaResult, Angular speed samples plus which derivation produced them (KI-005 / A, FR-A-11)., Return angular speed for each tick, with ``nan`` at index zero.      Prefers t, Return angular speed for each tick, with ``nan`` at index zero.      The pitch, _assert_relative_parity(), _gate_two_ticks(), No second definition (FM-5/C-D4): d_yaw/d_pitch mirror the aim series exactly he (+16 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.19
-Nodes (20): DtReport, Fixed-tick interval quality reporting., Uniformity report; each gap index identifies the right-hand tick row., _list(), _mapping(), _non_empty_string(), _number(), _optional_number() (+12 more)
+Cohesion: 0.2
+Nodes (16): round(), simulatePurePunchPattern(), toPatternShot(), punchToThreeRad(), simulatePattern(), createRecoilState(), hybridDecay(), recoilOnFire() (+8 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.13
-Nodes (22): _aligned(), _bootstrap_ci(), _checked_flags(), _gate_verdict(), GateVerdict, _half_agreement(), _median_dt_ms(), Key-velocity coupling cross-correlation + `gate-v1` reliability verdict (WP-31 / (+14 more)
+Cohesion: 0.1
+Nodes (11): createTrendChart(), decimalsFor(), directionWordFor(), formatDelta(), formatMetricValue(), FakeDocument, FakeElement, findByTag() (+3 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.15
-Nodes (13): nextAnimationFrame(), percentile(), probeWarmupP95Ms(), readDevicePixelRatio(), readFullscreenElement(), readScreenDim(), requireNonNegativeInteger(), requireNonNegativeNumber() (+5 more)
+Cohesion: 0.13
+Nodes (22): _ad_key_events(), _aligned(), _bootstrap_ci(), _checked_flags(), _gate_verdict(), GateVerdict, _half_agreement(), key_event_crosscheck() (+14 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.16
-Nodes (18): buildCompatibilityKey(), buildSensitivityFovKey(), checkCompatibility(), checkQualityGate(), deriveSessionId(), requireBoolean(), requireNonNegativeFiniteNumber(), requireNonNegativeInteger() (+10 more)
+Cohesion: 0.11
+Nodes (11): createParticipantBrowser(), makeButton(), createFakeController(), createFakeNavigator(), FakeDocument, FakeElement, findByDataset(), findByTag() (+3 more)
 
 ### Community 49 - "Community 49"
 Cohesion: 0.16
-Nodes (21): aimForward(), angularEccentricityDeg(), clamp(), derivePresentation(), derivePresentationSamples(), deriveTrackingMetrics(), deriveTrackingSamples(), finite() (+13 more)
+Nodes (13): createDrillBrowser(), createHistoryScreen(), makeButton(), createHistoryNavigator(), defaultWindow(), decodeSegment(), formatHistoryHash(), historyRouteAncestors() (+5 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.15
-Nodes (20): Export, Validated export data prepared for offline analysis., Validated export data prepared for offline analysis., Validated export data prepared for offline analysis., _finite(), _first_shot_hit_count(), first_shot_hits(), Drill-level metrics that reproduce the frozen ``compute-v1`` semantics. (+12 more)
+Cohesion: 0.14
+Nodes (19): compute_sparc(), compute_sparc_traced(), Spectral arc length of ``velocity_series`` sampled at ``fs`` Hz (bit-for-bit PA/, :func:`compute_sparc` plus the seven intermediates the cross-repo golden compare, _load(), test_all_zero_series_returns_zero_via_the_max_v_floor(), test_below_min_samples_returns_zero_not_nan(), test_constant_series_returns_zero() (+11 more)
 
 ### Community 51 - "Community 51"
+Cohesion: 0.23
+Nodes (21): _list(), load_export(), _mapping(), _non_empty_string(), _number(), _optional_number(), Load the JSON form of the schema v2 export documented in docs/operational/schema, A schema v2 validation error with a machine-readable JSON field path. (+13 more)
+
+### Community 52 - "Community 52"
 Cohesion: 0.13
 Nodes (11): applyResolutionMode(), readDevicePixelRatio(), readViewport(), requirePositiveInteger(), resolutionModeLabel(), FakeRenderer, createSettingsPanel(), makeRow() (+3 more)
 
-### Community 52 - "Community 52"
-Cohesion: 0.15
-Nodes (18): compute_sparc(), compute_sparc_traced(), Spectral arc length of ``velocity_series`` sampled at ``fs`` Hz (bit-for-bit PA/, :func:`compute_sparc` plus the seven intermediates the cross-repo golden compare, _load(), test_all_zero_series_returns_zero_via_the_max_v_floor(), test_below_min_samples_returns_zero_not_nan(), test_constant_series_returns_zero() (+10 more)
-
 ### Community 53 - "Community 53"
+Cohesion: 0.19
+Nodes (14): applyInput(), ballisticRaycast(), composeProjectileRay(), fireOneShot(), isFireLockedForActiveTarget(), projectMissOntoEngagementPlane(), scheduleFire(), spawnProjectile() (+6 more)
+
+### Community 54 - "Community 54"
 Cohesion: 0.13
 Nodes (12): assignOptionalNumber(), assignOptionalText(), createSessionSetupForm(), displaySelfReportFromSessionSetup(), makeButton(), makeNumberField(), makeTextField(), optionalText() (+4 more)
 
-### Community 54 - "Community 54"
-Cohesion: 0.2
-Nodes (18): aimAtCenter(), aimAtOffTarget(), aimAtPoint(), aimForTick(), longrangeAimForTick(), longrangeMissPoint(), longrangeTargetAt(), makeHitboxTarget() (+10 more)
-
 ### Community 55 - "Community 55"
-Cohesion: 0.27
-Nodes (14): err(), requireColorNumber(), requireFiniteNumber(), requireNonEmptyString(), requireNonNegativeNumber(), requireObject(), requirePositiveNumber(), validateAsset() (+6 more)
+Cohesion: 0.12
+Nodes (10): createHistoricalRunDetail(), makeButton(), FakeDocument, FakeElement, findByTag(), flatten(), readyValue(), setup() (+2 more)
 
 ### Community 56 - "Community 56"
+Cohesion: 0.11
+Nodes (9): createResultSummaryResult(), diagnosisMetricIds(), FakeDocument, FakeElement, flatten(), metricIds(), qualityFlagMetricIds(), renderBody() (+1 more)
+
+### Community 57 - "Community 57"
+Cohesion: 0.19
+Nodes (3): SceneManager, ReplaySceneAdapter, resolveEyeWorldBase()
+
+### Community 58 - "Community 58"
 Cohesion: 0.15
 Nodes (17): _assert_fs(), build_sparc_frame(), main(), WP-31 / T1 -- per-session SPARC distributions over the `phase-v1` MR intervals,, SPARC vs MR length, coloured by padding bucket, with the L=32/33 boundary drawn, Per-peek SPARC rows for one export, using the frozen `phase-v1` MR interval as t, _summarize(), write_reports() (+9 more)
 
-### Community 57 - "Community 57"
+### Community 59 - "Community 59"
 Cohesion: 0.15
 Nodes (21): _counts_text(), _num(), ⑨ Research-only block (WP-31 T-exit, C-D3 / GD-20): only passing P2 diagnostics, Render one timeline aggregate.      Frozen ``compute-v1`` ``stat()`` returns ``{, Render one timeline aggregate.      Frozen ``compute-v1`` ``stat()`` returns `, Render one timeline aggregate.      Frozen ``compute-v1`` ``stat()`` returns `, Render one timeline aggregate.      Frozen ``compute-v1`` ``stat()`` returns `, Render one timeline aggregate.      Frozen ``compute-v1`` ``stat()`` returns ` (+13 more)
 
-### Community 58 - "Community 58"
-Cohesion: 0.17
-Nodes (9): closeHistoryApiState(), createHistoryApiMiddleware(), createHistoryApiState(), historyPlugin(), mountHistoryApi(), resolveRoot(), bootDevServer(), makeTempRoot() (+1 more)
+### Community 60 - "Community 60"
+Cohesion: 0.18
+Nodes (16): qualityGateStatusForPayload(), buildCompatibilityKey(), buildSensitivityFovKey(), checkCompatibility(), checkQualityGate(), deriveSessionId(), requireBoolean(), requireNonNegativeFiniteNumber() (+8 more)
 
-### Community 59 - "Community 59"
+### Community 61 - "Community 61"
+Cohesion: 0.18
+Nodes (18): aimForward(), angularEccentricityDeg(), clamp(), derivePresentation(), derivePresentationSamples(), deriveTrackingMetrics(), finite(), hitboxFromMeta() (+10 more)
+
+### Community 62 - "Community 62"
+Cohesion: 0.19
+Nodes (20): Run the three frozen ``gate-v1`` criteria per session and return one verdict eac, reliability_gate(), _block_key(), _coupled_window(), _keys_from_state(), _noise_window(), A window whose |ω| is the key state shifted by ``lag`` ticks (key leads when ``l, Alternating A/D holds of *random* duration.      A fixed-period square wave wo (+12 more)
+
+### Community 63 - "Community 63"
+Cohesion: 0.2
+Nodes (14): assertPositiveFinite(), createAimIntegrator(), resolveMouseGain(), cameraLookingDownZ(), driveRenderAndSim(), fireAt(), fixedClock(), makeTarget() (+6 more)
+
+### Community 64 - "Community 64"
+Cohesion: 0.2
+Nodes (19): aimForward(), angularEccentricityDeg(), clamp(), deriveDetectionMetrics(), derivePresentation(), eccentricitySamples(), finite(), firstSustainedDecrease() (+11 more)
+
+### Community 65 - "Community 65"
 Cohesion: 0.11
 Nodes (4): FakeDocument, FakeElement, flatten(), text()
 
-### Community 60 - "Community 60"
-Cohesion: 0.21
-Nodes (9): angularSizeToHitboxWidthU(), buildPeekClickTransferPilotConfig(), pilotDrillId(), buildCounterstrafeReversalPilotConfigs(), buildHoldClickPilotConfigs(), buildHoldTrackPilotConfigs(), buildPeekClickTransferPilotConfigs(), buildSpiderShotPilotConfigs() (+1 more)
+### Community 66 - "Community 66"
+Cohesion: 0.15
+Nodes (5): ReplayEffectView, clamp(), createReplayPlayer(), createReplayPresentationSession(), createReplaySampleBuffer()
 
-### Community 61 - "Community 61"
-Cohesion: 0.14
-Nodes (6): resolveTargetHitbox(), pushTarget(), distanceForAngularHeight(), makeVariant(), speedForAngularRate(), variantId()
+### Community 67 - "Community 67"
+Cohesion: 0.18
+Nodes (19): EyeOrigin, _finite_vec3(), _meta_eye_origin(), Resolved ray/ballistic origin (world domain) for one export.      Mirrors the, Resolve the eye world base and sim->world scale for ``epsilon_deg``/``on_target`, resolve_eye_origin(), _meta(), test_resolve_eye_origin_allows_zero_eye_z_br_field() (+11 more)
 
-### Community 62 - "Community 62"
-Cohesion: 0.16
-Nodes (12): deriveSpiderShotMetrics(), isFiniteNumber(), percentile(), rhythmFor(), sortedVisible(), targetForFirstShot(), aimAt(), aimYaw() (+4 more)
-
-### Community 63 - "Community 63"
+### Community 68 - "Community 68"
 Cohesion: 0.11
 Nodes (18): generate(), main(), Write exactly one self-contained HTML report and return its path., Write exactly one self-contained HTML report and return its path., Write exactly one self-contained HTML report and return its path., Write exactly one self-contained HTML report and return its path., Write exactly one self-contained HTML report and return its path., report_filename() (+10 more)
 
-### Community 64 - "Community 64"
+### Community 69 - "Community 69"
 Cohesion: 0.14
 Nodes (10): createHistoryView(), formatNumber(), historyCard(), renderHistoryMessage(), renderHistoryResult(), FakeDocument, FakeElement, flatten() (+2 more)
 
-### Community 65 - "Community 65"
-Cohesion: 0.15
-Nodes (11): createHistoricalRunDetail(), makeButton(), FakeDocument, findByTag(), flatten(), setup(), text(), createHistoryLibraryController() (+3 more)
-
-### Community 66 - "Community 66"
+### Community 70 - "Community 70"
 Cohesion: 0.19
-Nodes (13): assert(), getHealth(), getParticipants(), gitCommit(), main(), postRun(), runScenario(), createStage10EvidenceReporter() (+5 more)
+Nodes (12): createRan1(), randomFloat(), requireNonNegativeFinite(), sampleSpread(), countingRng(), sampleSequence(), sequenceRng(), tickCount() (+4 more)
 
-### Community 67 - "Community 67"
-Cohesion: 0.13
-Nodes (6): createPresentationCoordinator(), createReplayController(), downgradeForScene(), resolveSessionScene(), fullPayload(), resolveReplaySceneConfig()
+### Community 71 - "Community 71"
+Cohesion: 0.26
+Nodes (17): computePromotedMetrics(), average(), buildResultPresentation(), createResultSummary(), diagnosisForPayload(), diagnosisInputsForPayload(), exportBasename(), formatNumber() (+9 more)
 
-### Community 68 - "Community 68"
+### Community 72 - "Community 72"
 Cohesion: 0.18
 Nodes (19): 記憶分層 (Working/Semantic/Episodic/全域/程序), 程序記憶 (procedural memory), CLAUDE.md 專案執行協議與導航, 垂直切片 = 原子 commit 協議, 雙迴圈 (dual-loop), CONTEXT.md 專有名詞詞彙表, sim tick rate (128 Hz), DECISIONS.md 全域決策與矛盾帳本 (+11 more)
 
-### Community 69 - "Community 69"
+### Community 73 - "Community 73"
 Cohesion: 0.17
 Nodes (19): ADR-2 三迴圈經 SharedState 溝通, ADR-3 精準度來源 = sub-tick 輸入時間戳, ADR-4 performance.now() / event.timeStamp 同源, ADR-5 coalesced events, getCoalescedEvents 次幀採樣 (高頻滑鼠不丟樣本), sub-tick 輸入時間戳 (精準度真正來源), 時間戳同源 (event.timeStamp = performance.now() 基準), t_visible 在 sim tick 內蓋一次 (非 render frame) (+11 more)
 
-### Community 70 - "Community 70"
-Cohesion: 0.17
-Nodes (19): ADR-5 Pointer Lock + 原始輸入 + coalesced, D1 UI = 純 TS + DOM overlay, WP-4 — 目標 / 準心, WP-6 — drill config (房間/距離正式值), WP-7 — DataRecorder ring buffer / metadata, NotSupportedError fallback (僅 Chromium 降級路徑), pitch 夾角 (clamp ±~89° 避免翻轉), SceneManager (room/floor/walls/light/PerspectiveCamera) (+11 more)
-
-### Community 71 - "Community 71"
-Cohesion: 0.17
-Nodes (14): load_export(), Read and validate one schema v2 JSON export., Read and validate one schema v2 JSON export., Read and validate one schema v2 JSON export., WP-29 / T3 (user override): loader acceptance of additive ``key`` events.  The, test_export_without_key_events_stays_backward_compatible(), test_key_event_missing_code_reports_field_path(), test_key_event_non_bool_down_reports_field_path() (+6 more)
-
-### Community 72 - "Community 72"
-Cohesion: 0.16
-Nodes (10): createTrendChart(), decimalsFor(), directionWordFor(), formatDelta(), formatMetricValue(), FakeDocument, findByTag(), flatten() (+2 more)
-
-### Community 73 - "Community 73"
-Cohesion: 0.27
-Nodes (16): readyValue(), average(), buildResultPresentation(), createResultSummary(), diagnosisForPayload(), diagnosisInputsForPayload(), formatNumber(), formatPercent() (+8 more)
-
 ### Community 74 - "Community 74"
-Cohesion: 0.17
-Nodes (18): coalesced events (getCoalescedEvents), backend (render backend webgpu/webgl2), 原始輸入 (unadjustedMovement), 技術棧 (Three.js WebGPU + TS + Vite), 附錄 E 驗收清單 (階段 A), ADR-1 WebGPURenderer + WebGL2 fallback, ADR-5 Pointer Lock + 原始輸入 + coalesced events, 附錄 C 匯出資料 schema (+10 more)
+Cohesion: 0.19
+Nodes (3): canonicalExportJSON(), canonicalizeValue(), FilesystemHistoryRepository
 
 ### Community 75 - "Community 75"
+Cohesion: 0.22
+Nodes (13): buildLargeReplayPayload(), gitCommit(), main(), measureHistoryFirstRowsP95(), measureReplayCachedReopen(), openDrillOverviewCold(), p95(), reopenDrillOverviewWarm() (+5 more)
+
+### Community 76 - "Community 76"
+Cohesion: 0.15
+Nodes (4): keyMaskFromKeys(), keyMaskFromState(), keysFromMask(), TickArena
+
+### Community 77 - "Community 77"
+Cohesion: 0.23
+Nodes (16): cross(), deriveSpiderShotTransitions(), dot(), formatConditionValue(), isFiniteNumber(), isFinitePositiveNumber(), normalize(), normalizeAzimuthDeg() (+8 more)
+
+### Community 78 - "Community 78"
+Cohesion: 0.14
+Nodes (9): runControl(), runResultAction(), action(), diagnosisMetricIds(), FakeDocument, flatten(), metricIds(), qualityFlagMetricIds() (+1 more)
+
+### Community 79 - "Community 79"
+Cohesion: 0.14
+Nodes (8): createFakeController(), createFakeNavigator(), FakeDocument, FakeElement, findByTag(), flatten(), setup(), text()
+
+### Community 80 - "Community 80"
+Cohesion: 0.2
+Nodes (10): toTrendCompatibilityKey(), buildHistoryTrend(), cohortKeyId(), groupByCohort(), listCompatibilityCohorts(), selectCohort(), selectDescriptor(), makeKey() (+2 more)
+
+### Community 81 - "Community 81"
+Cohesion: 0.14
+Nodes (5): createPresentationCoordinator(), createReplayController(), downgradeForScene(), resolveSessionScene(), resolveReplaySceneConfig()
+
+### Community 82 - "Community 82"
+Cohesion: 0.19
+Nodes (18): ADR-5 Pointer Lock + 原始輸入 + coalesced, D1 UI = 純 TS + DOM overlay, WP-0 — 環境設置 (scaffold/createRenderer seam), WP-6 — drill config (房間/距離正式值), WP-7 — DataRecorder ring buffer / metadata, NotSupportedError fallback (僅 Chromium 降級路徑), pitch 夾角 (clamp ±~89° 避免翻轉), SceneManager (room/floor/walls/light/PerspectiveCamera) (+10 more)
+
+### Community 83 - "Community 83"
 Cohesion: 0.16
 Nodes (18): 確定性左右交替輪替 (counter-strafe peek 節奏), 依時序排序消費 + 排空 (決定性契約), t_visible (可見時間戳 / 反應時間起點), Crosshair (src/ui/Crosshair.ts), D1 UI = 純 TS + DOM overlay, 里程碑 M1 (WP-2 脊椎 / 決定性驗證), WP-1 場景 (相機 / Pointer Lock), WP-4 Progress Log (+10 more)
 
-### Community 76 - "Community 76"
+### Community 84 - "Community 84"
 Cohesion: 0.18
 Nodes (5): createRenderLoop(), lerp(), TargetView, moving(), target()
 
-### Community 77 - "Community 77"
-Cohesion: 0.14
-Nodes (5): createEligibilityGateScreen(), makeButton(), FakeDocument, FakeElement, setup()
+### Community 85 - "Community 85"
+Cohesion: 0.22
+Nodes (9): distanceForAngularHeight(), makeVariant(), speedForAngularRate(), variantId(), createFpsTestHarness(), makeBrTrackingProtocolHarness(), makeDetectionHarness(), makeHarness() (+1 more)
 
-### Community 78 - "Community 78"
-Cohesion: 0.19
-Nodes (11): angleBetweenDeg(), anglesFromDirection(), clamp(), deriveLeadError(), finite(), interpolateState(), lerp(), radToDeg() (+3 more)
+### Community 86 - "Community 86"
+Cohesion: 0.22
+Nodes (13): deriveVisibilityTimeline(), firstCrossingTimes(), hitboxFromMeta(), isBlocked(), positiveFinite(), resolveOptions(), sampleTargetAabb(), visibleFractionForTick() (+5 more)
 
-### Community 79 - "Community 79"
-Cohesion: 0.29
-Nodes (14): assertFinitePayload(), downloadCSV(), downloadJSON(), downloadTextFile(), exportBasename(), formatBoolean(), formatNumber(), formatOptionalNumber() (+6 more)
-
-### Community 81 - "Community 81"
-Cohesion: 0.17
-Nodes (9): createDrillMetricRegistry(), aimAt(), aimYaw(), makePayload(), targetAt(), visible(), createHistoryAnalysisService(), createSemaphore() (+1 more)
-
-### Community 82 - "Community 82"
+### Community 87 - "Community 87"
 Cohesion: 0.2
 Nodes (12): x(), candidate_params(), main(), _profile(), Deterministic T3 parameter sweep and optional real-data overlay generation., _same_numeric_params(), _score(), synthetic_cases() (+4 more)
 
-### Community 83 - "Community 83"
+### Community 88 - "Community 88"
+Cohesion: 0.18
+Nodes (13): build_parity_payload(), _derive_presentation(), _eye_origin_to_json(), _is_finite_number(), main(), Generate the committed Python side of the T2 epsilon parity gate., Derive presentation metrics using only Python research functions., Derive presentation metrics using only Python research functions.      KI-004/ (+5 more)
+
+### Community 89 - "Community 89"
+Cohesion: 0.17
+Nodes (15): One row per peek: that window's key/ω cross-correlation, or the flag saying why, xcorr_table(), _assert_tick_rate(), build_xcorr_frame(), main(), WP-31 / T2 -- per-session key-velocity coupling correlograms and the `gate-v1` v, Per-peek correlograms in grey with their median in colour, plus the overlap-coun, Per-peek cross-correlation rows for one export, labelled with that export's sess (+7 more)
+
+### Community 90 - "Community 90"
+Cohesion: 0.19
+Nodes (14): _committed_gate(), _frames(), T2 DoD 2/5 on the real artefact: seed in, same permutation null and CI out., A recorded limitation, asserted so it cannot quietly stop being true.      ``g, T2 DoD 7. The tick state is authoritative; this is the witness that it lost no t, test_every_correlogram_carries_its_own_paired_sample_count(), test_every_real_peek_is_scorable_so_the_gate_denominator_is_the_full_roster(), test_the_committed_observed_statistic_matches_a_fresh_recomputation() (+6 more)
+
+### Community 91 - "Community 91"
 Cohesion: 0.17
 Nodes (15): bins_at_or_below_fc(), _compute_traced(), _degenerate(), _finalize(), SPARC spectral-arc-length smoothness (WP-31 / T1, FR-D13).  ``sparc-v1`` answe, One MR interval's SPARC row. ``padded_n``/``bins_le_fc`` are the stratification, Number of spectral bins at or below :data:`FC_HZ` for a ``padded_n``-point FFT a, The port itself. Line order deliberately mirrors performance_analysis `compute_s (+7 more)
 
-### Community 84 - "Community 84"
-Cohesion: 0.21
-Nodes (13): _committed_gate(), _frames(), T2 DoD 2/5 on the real artefact: seed in, same permutation null and CI out., A recorded limitation, asserted so it cannot quietly stop being true.      ``g, T2 DoD 7. The tick state is authoritative; this is the witness that it lost no t, test_every_correlogram_carries_its_own_paired_sample_count(), test_every_real_peek_is_scorable_so_the_gate_denominator_is_the_full_roster(), test_the_committed_observed_statistic_matches_a_fresh_recomputation() (+5 more)
-
-### Community 85 - "Community 85"
-Cohesion: 0.15
-Nodes (15): key_state_signed(), key_velocity_xcorr(), Signed strafe key state per tick: ``D`` -> ``+1``, ``A`` -> ``-1``, both or neit, Signed Pearson r at every lag in ``[-max_lag_ticks, +max_lag_ticks]``, plus the, Alternating A/D holds at a fixed period: a strafe pattern with real autocorrelat, _square_key(), test_a_constant_key_state_is_flagged_rather_than_scored_zero(), test_a_constant_omega_is_flagged() (+7 more)
-
-### Community 86 - "Community 86"
-Cohesion: 0.16
-Nodes (5): createResearcherMenu(), makeButton(), shouldShowResearcherControls(), FakeDocument, FakeElement
-
-### Community 87 - "Community 87"
-Cohesion: 0.17
-Nodes (6): createControls(), makeButton(), makeSelect(), makeToggle(), FakeDocument, FakeElement
-
-### Community 88 - "Community 88"
-Cohesion: 0.25
-Nodes (10): toTrendCompatibilityKey(), buildHistoryTrend(), cohortKeyId(), groupByCohort(), listCompatibilityCohorts(), selectCohort(), selectDescriptor(), makeKey() (+2 more)
-
-### Community 89 - "Community 89"
-Cohesion: 0.19
-Nodes (10): createFakeController(), createFakeNavigator(), createFakeRegistry(), FakeDocument, findByTag(), flatten(), makeKey(), makeProjection() (+2 more)
-
-### Community 90 - "Community 90"
-Cohesion: 0.24
-Nodes (7): createRan1(), randomFloat(), shuffleInPlace(), isDrivenMotion(), motionOffset(), offsetAt(), triangleWave()
-
-### Community 91 - "Community 91"
-Cohesion: 0.27
-Nodes (13): contentLengthExceeds(), dispatch(), err(), handleHistoryApiRequest(), handleObservations(), handleSaveRun(), isHistoryApiPath(), matchHistoryRoute() (+5 more)
-
 ### Community 92 - "Community 92"
-Cohesion: 0.3
-Nodes (15): 里程碑 M1 (WP-2 脊椎門控), 里程碑 M2 (WP-5 核心玩法), 里程碑 M3 (WP-7 可匯出資料), 里程碑 M4 (WP-9 階段 A 交付), exec-plan/README.md 執行計畫索引, WP-0 環境建置與學習爬升, WP-1 FPS 控制 + Pointer Lock, WP-2 SharedState + 雙迴圈骨架 (脊椎) (+7 more)
+Cohesion: 0.4
+Nodes (14): err(), requireColorNumber(), requireFiniteNumber(), requireNonEmptyString(), requireNonNegativeNumber(), requireObject(), requirePositiveNumber(), validateAsset() (+6 more)
 
 ### Community 93 - "Community 93"
 Cohesion: 0.18
-Nodes (15): WP-6 drill 控制 (DrillRunner/DrillLoader), WP-9 整合 + 計時效度驗證, compute.ts (computeMetrics 純函式), Controls (src/ui/Controls.ts), 規格 §5 八項指標, MetricsDashboard, 純機械計算 (無主觀評分), ResultScreen (src/ui/ResultScreen.ts) (+7 more)
+Nodes (16): coalesced events (getCoalescedEvents), backend (render backend webgpu/webgl2), 原始輸入 (unadjustedMovement), 技術棧 (Three.js WebGPU + TS + Vite), 附錄 E 驗收清單 (階段 A), ADR-1 WebGPURenderer + WebGL2 fallback, ADR-5 Pointer Lock + 原始輸入 + coalesced events, 附錄 C 匯出資料 schema (+8 more)
 
 ### Community 94 - "Community 94"
-Cohesion: 0.21
-Nodes (15): ADR-4 performance.now() 計時源, CameraController (yaw/pitch + pitch clamp + sensitivity/FOV), PointerLockHandle (request/locked/onChange/onMove), sensitivity counts→radians 線性係數 (OQ-1.1), clock.ts 注入式時間 (now(): performance.now(), OQ-2.3), prev/curr 雙快照 (內插用), RenderLoop alpha 內插 (lerp prev/curr, 唯讀), spiral of death 夾住 (Math.min(delta,0.25)) (+7 more)
+Cohesion: 0.17
+Nodes (9): check_dt(), DtReport, Fixed-tick interval quality reporting., Uniformity report; each gap index identifies the right-hand tick row., Compare adjacent tick times with ``1000 / sim_hz`` using a 1e-6 ms tolerance., Pure submovement segmentation algorithms., _load(), test_check_dt_reports_dropped_tick_by_right_hand_row_index() (+1 more)
 
 ### Community 95 - "Community 95"
+Cohesion: 0.17
+Nodes (6): createControls(), makeButton(), makeSelect(), makeToggle(), FakeDocument, FakeElement
+
+### Community 96 - "Community 96"
+Cohesion: 0.16
+Nodes (5): createResearcherMenu(), makeButton(), shouldShowResearcherControls(), FakeDocument, FakeElement
+
+### Community 97 - "Community 97"
+Cohesion: 0.2
+Nodes (11): buttonCss(), createNumberInput(), drawGrid(), drawPattern(), maxSpreadRadiusDeg(), mountPatternViewer(), niceStep(), patternBounds() (+3 more)
+
+### Community 98 - "Community 98"
+Cohesion: 0.15
+Nodes (7): collect64HzSamples(), recordCueEvents(), recordTargetStopEvents(), recordVisibleEvents(), simStep(), advanceUntilTracer(), fireOnce()
+
+### Community 99 - "Community 99"
+Cohesion: 0.24
+Nodes (12): buildLargePayload(), buildSmallPayload(), timeFor(), renderAt(), clamp(), eventCursorAt(), fillActiveEffects(), fillTargets() (+4 more)
+
+### Community 100 - "Community 100"
+Cohesion: 0.23
+Nodes (5): defaultLoader(), disposeScene(), loadScene(), createSceneManager(), createSceneManagerWithStatus()
+
+### Community 101 - "Community 101"
+Cohesion: 0.3
+Nodes (15): 里程碑 M1 (WP-2 脊椎門控), 里程碑 M2 (WP-5 核心玩法), 里程碑 M3 (WP-7 可匯出資料), 里程碑 M4 (WP-9 階段 A 交付), exec-plan/README.md 執行計畫索引, WP-0 環境建置與學習爬升, WP-1 FPS 控制 + Pointer Lock, WP-2 SharedState + 雙迴圈骨架 (脊椎) (+7 more)
+
+### Community 102 - "Community 102"
 Cohesion: 0.16
 Nodes (10): butter_filter(), Zero-phase Butterworth low-pass filtering., Low-pass a finite one-dimensional signal without phase shift.      Invalid cut, Savitzky-Golay smoothing with explicit input contracts., Smooth a finite one-dimensional signal.      Degenerate inputs raise :class:`V, sg_filter(), test_butter_filter_is_zero_phase_and_attenuates_high_frequency(), test_butter_filter_rejects_degenerate_inputs() (+2 more)
 
-### Community 96 - "Community 96"
-Cohesion: 0.3
-Nodes (9): assertReadyState(), createProtocolRunner(), requireCondition(), requireNonEmptyString(), requirePositiveInteger(), requireRecord(), validateProtocol(), isResolutionMode() (+1 more)
-
-### Community 97 - "Community 97"
-Cohesion: 0.23
-Nodes (10): createParticipantBrowser(), makeButton(), createFakeController(), createFakeNavigator(), FakeDocument, findByDataset(), findByTag(), flatten() (+2 more)
-
-### Community 98 - "Community 98"
-Cohesion: 0.31
-Nodes (10): createHistoryNavigator(), defaultWindow(), decodeSegment(), formatHistoryHash(), historyRouteAncestors(), isHistoryHash(), isRunFilter(), parseHistoryHash() (+2 more)
-
-### Community 99 - "Community 99"
-Cohesion: 0.22
-Nodes (8): createDrillBrowser(), createFakeController(), createFakeNavigator(), FakeDocument, findByTag(), flatten(), setup(), text()
-
-### Community 101 - "Community 101"
-Cohesion: 0.43
-Nodes (11): err(), pushWarning(), requireFiniteNumber(), requireNonNegativeNumber(), requireObject(), requirePositiveInt(), requirePositiveNumber(), validateAds() (+3 more)
-
-### Community 102 - "Community 102"
-Cohesion: 0.31
-Nodes (13): cross(), deriveSpiderShotTransitions(), dot(), formatConditionValue(), isFiniteNumber(), isFinitePositiveNumber(), normalize(), normalizeAzimuthDeg() (+5 more)
-
 ### Community 103 - "Community 103"
+Cohesion: 0.21
+Nodes (6): brInputs(), createCamera(), runBrVariant(), resolveWeapon(), getWeapon(), isWeaponId()
+
+### Community 105 - "Community 105"
 Cohesion: 0.18
 Nodes (14): DataRecorder 元件 (preallocated arena), 首發 (first shot / firstShot), 首發命中率, HitDetector 元件, 輸入分桶 (input bucketing), InputSampler 元件, MovementController 元件 (狀態機 M1), peek 與 P2 推進政策 (命中才推進) (+6 more)
 
-### Community 104 - "Community 104"
-Cohesion: 0.21
-Nodes (14): ADR-1 backend metadata, ADR-4 時間源 (performance.now()), WP-0 createRenderer backend seam, WP-1 sensitivity, WP-2 sim tick, WP-4 t_visible/命中事件, WP-5 fire/急停/首發 (即時狀態), WP-7 資料記錄與匯出 (F1/F2) ★M3 (+6 more)
-
-### Community 105 - "Community 105"
-Cohesion: 0.2
-Nodes (14): ADR-2 雙迴圈解耦, ADR-3 128 Hz tick, WP-0 — 環境設置 (scaffold/createRenderer seam), WP-3 — 高頻輸入採集 (getCoalescedEvents 入緩衝), WP-5 — movement / 急停物理, WP-1 Progress Log, WP-1 — FPS 控制 + Pointer Lock (exec-plan), 決定性 (同輸入序列不同 render FPS → 逐 tick 一致) (+6 more)
-
 ### Community 106 - "Community 106"
+Cohesion: 0.21
+Nodes (14): ADR-4 時間源 (performance.now()), counterstrafe_ad_v1 drill config, WP-2 sim tick, WP-4 t_visible/命中事件, WP-5 fire/急停/首發 (即時狀態), WP-6 drill 控制 (DrillRunner/DrillLoader), WP-7 資料記錄與匯出 (F1/F2) ★M3, M3 — 完整 drill 能端到端匯出資料 (可開始 pilot) (+6 more)
+
+### Community 107 - "Community 107"
+Cohesion: 0.19
+Nodes (14): ADR-2 雙迴圈解耦, ADR-3 128 Hz tick, ADR-4 performance.now() 計時源, WP-3 — 高頻輸入採集 (getCoalescedEvents 入緩衝), WP-4 — 目標 / 準心, WP-5 — movement / 急停物理, WP-1 Progress Log, WP-1 — FPS 控制 + Pointer Lock (exec-plan) (+6 more)
+
+### Community 108 - "Community 108"
 Cohesion: 0.28
 Nodes (12): candidate_params(), _dimension_one(), _dimension_two(), _fake_peek(), main(), _pulse_profile(), WP-30 / T2 -- dual-dimension ``phase-v1`` parameter sweep (D-30.4 pattern).  Dim, run() (+4 more)
 
-### Community 107 - "Community 107"
-Cohesion: 0.35
-Nodes (13): One row per peek: the SPARC of that peek's MR interval, or the flag saying why t, sparc_table(), _flick(), _omega(), _peek(), test_sparc_sample_rejects_unknown_flags(), test_sparc_table_flags_a_degenerate_spectrum_but_keeps_the_ported_value(), test_sparc_table_flags_a_short_mr_interval_without_computing_a_value() (+5 more)
-
-### Community 108 - "Community 108"
-Cohesion: 0.22
-Nodes (12): padded_length(), Zero-padded FFT length the port uses for ``n_samples`` inputs (``1 << (n-1).bit_, main(), pa_commit(), WP-31 / T1 -- ONE-OFF generator for `research/fixtures/golden/sparc-128hz-domain, Evaluate every case with performance_analysis's own `compute_sparc`, out of proc, Deterministically pick the first `PER_BUCKET` MR intervals found in each padding, real_mr_cases() (+4 more)
-
 ### Community 109 - "Community 109"
+Cohesion: 0.33
+Nodes (12): _flag_counts(), generate_all(), _json_number(), main(), _phase_aggregate(), phase_payload(), _phase_sample_payload(), Generate WP-32/T3 golden fixtures for promoted phase-v1 and sync-v1 parity.  W (+4 more)
+
+### Community 110 - "Community 110"
 Cohesion: 0.15
 Nodes (11): GateThresholds, ``gate-v1``, frozen by WP-31 T0 on 2026-08-10 (D-31.4) before any real xcorr val, Pre-registered ``xcorr-v1`` parameters (T0/D-31.5); changes require a new versio, XcorrParams, PeekWindow, One ``[visible, next visible)`` presentation window in measurement time., One ``[visible, next visible)`` presentation window in measurement time., _peek() (+3 more)
 
-### Community 110 - "Community 110"
-Cohesion: 0.23
-Nodes (13): _ad_key_events(), key_event_crosscheck(), _key_transitions(), Cross-check the tick-derived key state against the additive ``key`` event stream, test_the_synthetic_fixture_has_no_key_events_and_that_is_not_a_disagreement(), _key_events(), test_an_event_beyond_the_tolerance_does_not_match(), test_an_export_without_key_events_is_an_absent_witness_not_a_disagreement() (+5 more)
-
 ### Community 111 - "Community 111"
-Cohesion: 0.23
-Nodes (12): _assert_tick_rate(), build_xcorr_frame(), main(), WP-31 / T2 -- per-session key-velocity coupling correlograms and the `gate-v1` v, Per-peek correlograms in grey with their median in colour, plus the overlap-coun, Per-peek cross-correlation rows for one export, labelled with that export's sess, `max_lag_ms` is converted to ticks through the data's own dt, so the dt is check, _summarize() (+4 more)
+Cohesion: 0.22
+Nodes (12): padded_length(), Zero-padded FFT length the port uses for ``n_samples`` inputs (``1 << (n-1).bit_, main(), pa_commit(), WP-31 / T1 -- ONE-OFF generator for `research/fixtures/golden/sparc-128hz-domain, Evaluate every case with performance_analysis's own `compute_sparc`, out of proc, Deterministically pick the first `PER_BUCKET` MR intervals found in each padding, real_mr_cases() (+4 more)
+
+### Community 112 - "Community 112"
+Cohesion: 0.28
+Nodes (11): assert(), getHealth(), getParticipants(), gitCommit(), main(), postRun(), runScenario(), buildStage10Fixtures() (+3 more)
+
+### Community 113 - "Community 113"
+Cohesion: 0.33
+Nodes (11): contentLengthExceeds(), dispatch(), err(), handleHistoryApiRequest(), handleObservations(), handleSaveRun(), isHistoryApiPath(), matchHistoryRoute() (+3 more)
 
 ### Community 114 - "Community 114"
+Cohesion: 0.22
+Nodes (7): spawnBullet(), stepBullet(), clipAxis(), sweptHitTest(), advanceProjectiles(), deactivateProjectile(), targetAabb()
+
+### Community 117 - "Community 117"
 Cohesion: 0.19
 Nodes (13): accumulator 模式, 準心對齊偏移, DrillConfig 元件, F5 接縫 (seam-in, drills-out), fixed-timestep (128 Hz), simStep 順序 (tick 內), GD-1 F5 是否屬階段 A (規格 v1.1 與 seam-in 不一致), 移動 + counter-strafe 能力混淆 (研究設計問題) (+5 more)
 
-### Community 115 - "Community 115"
+### Community 118 - "Community 118"
+Cohesion: 0.26
+Nodes (13): CameraController (yaw/pitch + pitch clamp + sensitivity/FOV), PointerLockHandle (request/locked/onChange/onMove), sensitivity counts→radians 線性係數 (OQ-1.1), prev/curr 雙快照 (內插用), RenderLoop alpha 內插 (lerp prev/curr, 唯讀), spiral of death 夾住 (Math.min(delta,0.25)), WP-2 T0 — Entry gate, WP-2 T1 — SharedState (型別 + 單例) (+5 more)
+
+### Community 119 - "Community 119"
+Cohesion: 0.39
+Nodes (12): One row per peek: the SPARC of that peek's MR interval, or the flag saying why t, sparc_table(), _flick(), _omega(), _peek(), test_sparc_table_flags_a_degenerate_spectrum_but_keeps_the_ported_value(), test_sparc_table_flags_a_short_mr_interval_without_computing_a_value(), test_sparc_table_flags_a_window_too_short_to_contain_any_scorable_interval() (+4 more)
+
+### Community 120 - "Community 120"
 Cohesion: 0.3
 Nodes (11): _detect_payload(), _only_sample(), Two back-to-back presentations: peek 0 never moves (must stay ``timeout``) while, test_both_target_sources_missing_flags_instead_of_crashing(), test_flags_detections_below_human_rt_lower_bound_as_anticipation(), test_flags_first_presentation_short_baseline_as_insufficient(), test_missing_tick_target_center_falls_back_to_visible_event(), test_recovers_known_onset_within_one_tick() (+3 more)
 
-### Community 116 - "Community 116"
-Cohesion: 0.26
-Nodes (11): build_parity_payload(), _derive_presentation(), _eye_origin_to_json(), _is_finite_number(), main(), Generate the committed Python side of the T2 epsilon parity gate., Derive presentation metrics using only Python research functions., Derive presentation metrics using only Python research functions.      KI-004/ (+3 more)
-
-### Community 117 - "Community 117"
-Cohesion: 0.29
-Nodes (11): build_curve_table(), _epsilon_or_none(), _is_finite(), main(), WP-30 / T3 -- per-session L/R 101-point normalized ω(t)/ε(t) curves + IQR-band o, Same fallback precedence as ``run_pipeline.py``'s ``_visible_target`` helper: pr, _summary_rows(), _visible_target() (+3 more)
-
-### Community 118 - "Community 118"
-Cohesion: 0.18
-Nodes (3): createHistorySaveStatus(), FakeDocument, FakeElement
-
-### Community 119 - "Community 119"
-Cohesion: 0.26
-Nodes (7): serializeJSON(), degToRad(), makeRoundTripPayload(), tickTime(), yawDegAt(), aimAtPoint(), makeLeadPayload()
-
-### Community 120 - "Community 120"
-Cohesion: 0.32
-Nodes (8): clipAxis(), firstBlockingIntersection(), isSegmentBlocked(), segmentAabbEntryAlpha(), visibleFractionForTarget(), findOnsetPx(), fraction(), targetPos()
-
 ### Community 121 - "Community 121"
+Cohesion: 0.32
+Nodes (9): assertReadyState(), createProtocolRunner(), requireCondition(), requireNonEmptyString(), requirePositiveInteger(), requireRecord(), validateProtocol(), isResolutionMode() (+1 more)
+
+### Community 122 - "Community 122"
 Cohesion: 0.32
 Nodes (11): expectNullableParity(), expectPhaseAggregateParity(), expectPhaseSampleParity(), expectRelativeParity(), expectStatParity(), expectSyncAggregateParity(), expectSyncRowParity(), expectVerdictParity() (+3 more)
 
-### Community 122 - "Community 122"
+### Community 123 - "Community 123"
+Cohesion: 0.38
+Nodes (9): round(), simulateAk47TenShot(), toShotSnapshot(), toTickSnapshot(), firstBulletSuppression(), generateRecoilTable(), lerp(), requireFinite() (+1 more)
+
+### Community 124 - "Community 124"
+Cohesion: 0.18
+Nodes (3): createHistorySaveStatus(), FakeDocument, FakeElement
+
+### Community 125 - "Community 125"
+Cohesion: 0.55
+Nodes (11): err(), pushWarning(), requireFiniteNumber(), requireNonNegativeNumber(), requireObject(), requirePositiveInt(), requirePositiveNumber(), validateAds() (+3 more)
+
+### Community 126 - "Community 126"
 Cohesion: 0.21
 Nodes (12): docs/operational/timing-validity.md, 規格 §14 方法論 (受試者內相對值 + 顯示延遲誤差界線), 規格 §9.2 計時效度 150–250 ms, counterReactionMs (急停反應時間), crossOriginIsolated === true (COOP/COEP), 決定性 (determinism, sim 多 FPS 逐 tick 一致), performance.now() (禁用 Date.now), 規格附錄 F — 風險 (+4 more)
 
-### Community 123 - "Community 123"
-Cohesion: 0.24
-Nodes (12): counterstrafe_ad_v1 drill config, SimLoop (src/loop/SimLoop.ts), 附錄 C 匯出 schema (meta/ticks[]/events[]), DataRecorder (src/data/DataRecorder.ts), export.ts (downloadJSON/downloadCSV), M3 — 完整 drill 能端到端匯出資料 (可開始 pilot), RingBuffer (src/data/RingBuffer.ts), WP-7 T1 — Ring buffer 每 tick 記錄 (+4 more)
+### Community 127 - "Community 127"
+Cohesion: 0.18
+Nodes (11): _correlogram(), _peak(), _peak_strength(), _pearson(), Signed Pearson r, or ``nan`` for too-few samples / a zero-variance input (PA ``_, Largest ``|r|`` across the correlogram; ties within :data:`PEAK_TIE_EPSILON` pre, Peak strength only, for the permutation null's inner loop (``dt_ms`` cancels out, _shuffle_p() (+3 more)
 
-### Community 124 - "Community 124"
+### Community 128 - "Community 128"
 Cohesion: 0.31
 Nodes (11): Quantify the zero-padding step: is SPARC comparable across ``padded_n`` buckets?, sparc_length_sensitivity(), _rows(), _shifted(), test_length_sensitivity_calls_a_step_at_or_above_the_threshold_stratified_only(), test_length_sensitivity_computes_the_step_ratio_from_a_known_distribution(), test_length_sensitivity_excludes_flagged_and_non_finite_rows(), test_length_sensitivity_is_stratified_only_when_a_single_bucket_is_populated() (+3 more)
 
-### Community 126 - "Community 126"
-Cohesion: 0.25
-Nodes (4): createDrillOverview(), makeButton(), createHistoryScreen(), makeButton()
-
-### Community 127 - "Community 127"
+### Community 129 - "Community 129"
 Cohesion: 0.27
-Nodes (5): brInputs(), createCamera(), runBrVariant(), getWeapon(), isWeaponId()
+Nodes (5): createHistoryApiMiddleware(), historyPlugin(), mountHistoryApi(), resolveRoot(), bootDevServer()
 
-### Community 128 - "Community 128"
+### Community 131 - "Community 131"
 Cohesion: 0.22
 Nodes (4): FakeDocument, findAll(), findByAction(), flatten()
 
-### Community 129 - "Community 129"
+### Community 132 - "Community 132"
 Cohesion: 0.2
 Nodes (11): 正規單位 (canonical unit, source unit u/s), CS2 physics 常數 (階段 B 校準起點), 決定性 (determinism), RenderSnapshot 窄介面, 速度歸零誤差 (residual speed), 階段 B (Stage B), 量測時鐘 vs 決定性時鐘 (two-clock model), 速度 gate (velocity gate) (+3 more)
 
-### Community 130 - "Community 130"
-Cohesion: 0.36
-Nodes (9): generate_all(), generate_synthetic_t1_export(), _json_floats(), _json_floats_or_null(), main(), omega_payload(), Generate WP-32/T1 golden fixtures for promoted kinematics.  Writes are intenti, Extract scipy's actual linear operator for the frozen SG instance. (+1 more)
+### Community 133 - "Community 133"
+Cohesion: 0.22
+Nodes (11): WP-9 整合 + 計時效度驗證, compute.ts (computeMetrics 純函式), 規格 §5 八項指標, MetricsDashboard, 純機械計算 (無主觀評分), ResultScreen (src/ui/ResultScreen.ts), 統計=匯出同一 snapshot 來源, WP-8 T1 — 指標計算 (§5 八指標純函式) (+3 more)
 
-### Community 131 - "Community 131"
+### Community 134 - "Community 134"
 Cohesion: 0.27
 Nodes (7): build_payload(), generate_all(), main(), Generate the committed Python side of the T1 t_detect parity gate (WP-30).  Fixt, test_all_committed_detect_parity_payloads_match_python_generator(), test_anti_vacuous_detected_sample_count_meets_t0_threshold(), test_legacy_exports_raise_on_strict_eye_origin_resolution()
 
-### Community 132 - "Community 132"
-Cohesion: 0.2
-Nodes (10): _correlogram(), _peak(), _peak_strength(), _pearson(), Signed Pearson r, or ``nan`` for too-few samples / a zero-variance input (PA ``_, Largest ``|r|`` across the correlogram; ties within :data:`PEAK_TIE_EPSILON` pre, Peak strength only, for the permutation null's inner loop (``dt_ms`` cancels out, test_pearson_agrees_with_numpy_corrcoef() (+2 more)
+### Community 135 - "Community 135"
+Cohesion: 0.36
+Nodes (9): generate_all(), generate_synthetic_t1_export(), _json_floats(), _json_floats_or_null(), main(), omega_payload(), Generate WP-32/T1 golden fixtures for promoted kinematics.  Writes are intenti, Extract scipy's actual linear operator for the frozen SG instance. (+1 more)
 
-### Community 133 - "Community 133"
-Cohesion: 0.22
-Nodes (3): createRestOverlay(), FakeDocument, FakeElement
+### Community 136 - "Community 136"
+Cohesion: 0.24
+Nodes (3): createHistoryAnalysisService(), createSemaphore(), realRegistry()
 
-### Community 134 - "Community 134"
+### Community 137 - "Community 137"
 Cohesion: 0.42
 Nodes (9): aggregate(), aggregatePresentationMetric(), aggregateScalar(), aggregateSidedMetric(), aggregateSpiderMetric(), evaluateDiagnosis(), evidence(), match() (+1 more)
 
-### Community 135 - "Community 135"
-Cohesion: 0.29
-Nodes (7): buildHitShotSeqs(), buildSpiderShotV2ConditionCell(), median(), projectSpiderShotV2(), qualityGateStatusForPayload(), roundTo(), validDurationMs()
-
 ### Community 138 - "Community 138"
-Cohesion: 0.4
-Nodes (9): renderAt(), clamp(), eventCursorAt(), fillActiveEffects(), fillTargets(), lerp(), lerpAngle(), lowerBoundIndex() (+1 more)
+Cohesion: 0.22
+Nodes (3): createRestOverlay(), FakeDocument, FakeElement
 
 ### Community 139 - "Community 139"
 Cohesion: 0.27
-Nodes (6): expectCurveAggregateParity(), expectNormalizedCurveParity(), loadCurve(), loadJson(), tick(), twoTickPayload()
+Nodes (3): canonicalLongrangeFrames(), createCamera(), runLongrangeTracking()
 
 ### Community 140 - "Community 140"
-Cohesion: 0.36
-Nodes (8): build_synthetic_timeline_payload(), _delta(), generate_all(), main(), Generate the T1 anti-vacuous fixture, parity payloads, and coach-facing artifact, Build four peeks covering missing anchors, hit/miss, and a cross-window hit., _write_summary_csv(), _write_timeline_svg()
+Cohesion: 0.27
+Nodes (6): expectCurveAggregateParity(), expectNormalizedCurveParity(), loadCurve(), loadJson(), tick(), twoTickPayload()
 
 ### Community 141 - "Community 141"
-Cohesion: 0.22
-Nodes (7): Pre-registered ``sparc-v1`` parameters (T0/D-31.5); changes require a new versio, SparcParams, One inclusive submovement interval., One inclusive submovement interval., Segment, test_segment_rejects_invalid_peek_index(), test_sparc_params_reject_invalid_contracts()
+Cohesion: 0.27
+Nodes (4): cameraLookingDownZ(), makeTarget(), movingSetup(), sphereTarget()
 
-### Community 142 - "Community 142"
+### Community 144 - "Community 144"
 Cohesion: 0.22
 Nodes (6): C-D1 by filesystem path, which also catches a same-named module shadowed in from, The runtime scan above cannot see an import that only fires on an untaken branch, WP-31 README §6: parallelising the permutation null would reorder the seeded RNG, test_coupling_imports_nothing_from_the_source_repo(), test_coupling_sources_contain_no_cross_repo_import_statement(), test_the_gate_never_reaches_for_a_thread_or_process_pool()
 
-### Community 143 - "Community 143"
+### Community 145 - "Community 145"
+Cohesion: 0.22
+Nodes (7): Pre-registered ``sparc-v1`` parameters (T0/D-31.5); changes require a new versio, SparcParams, One inclusive submovement interval., One inclusive submovement interval., Segment, test_segment_rejects_invalid_peek_index(), test_sparc_params_reject_invalid_contracts()
+
+### Community 146 - "Community 146"
 Cohesion: 0.22
 Nodes (6): T1 DoD 6: pytest must be green on a machine where performance_analysis does not, The runtime scan above cannot see an import that only fires on an untaken branch, The generator is the single sanctioned crossing point, and it is never run by py, test_only_the_one_off_generator_may_reference_the_source_repo(), test_sparc_imports_nothing_from_the_source_repo(), test_sparc_sources_contain_no_cross_repo_import_statement()
 
-### Community 144 - "Community 144"
+### Community 147 - "Community 147"
+Cohesion: 0.36
+Nodes (8): build_synthetic_timeline_payload(), _delta(), generate_all(), main(), Generate the T1 anti-vacuous fixture, parity payloads, and coach-facing artifact, Build four peeks covering missing anchors, hit/miss, and a cross-window hit., _write_summary_csv(), _write_timeline_svg()
+
+### Community 148 - "Community 148"
 Cohesion: 0.39
 Nodes (7): addHay(), addShrub(), addTree(), addVisual(), box(), propVisuals(), round()
 
-### Community 145 - "Community 145"
+### Community 149 - "Community 149"
 Cohesion: 0.44
 Nodes (7): createHUD(), createHUDStats(), createHUDSummary(), fillHUDSummary(), formatElapsed(), formatNumber(), renderMetric()
 
-### Community 146 - "Community 146"
+### Community 150 - "Community 150"
 Cohesion: 0.25
 Nodes (3): createScopeOverlay(), FakeDocument, FakeElement
 
-### Community 150 - "Community 150"
+### Community 151 - "Community 151"
 Cohesion: 0.39
 Nodes (6): applyAimFixture(), canonicalSprayFrames(), collectImpacts(), createCamera(), round(), runSpray()
 
-### Community 151 - "Community 151"
+### Community 152 - "Community 152"
 Cohesion: 0.25
 Nodes (3): createCueOverlay(), FakeDocument, FakeElement
 
-### Community 152 - "Community 152"
+### Community 153 - "Community 153"
 Cohesion: 0.36
 Nodes (6): createReplayTransport(), eventItemCss(), formatTimeMs(), keyChipCss(), makeIconButton(), rateButtonCss()
 
-### Community 153 - "Community 153"
-Cohesion: 0.43
-Nodes (7): _band(), build_phase_frame(), main(), WP-30 / T2 -- per-session REC/MR/V distributions, REC-vs-t_detect consistency ch, _verdict(), write_distribution_reports(), _write_overlay()
-
 ### Community 154 - "Community 154"
+Cohesion: 0.33
+Nodes (9): SimLoop (src/loop/SimLoop.ts), 附錄 C 匯出 schema (meta/ticks[]/events[]), DataRecorder (src/data/DataRecorder.ts), export.ts (downloadJSON/downloadCSV), RingBuffer (src/data/RingBuffer.ts), WP-7 T1 — Ring buffer 每 tick 記錄, WP-7 T2 — 事件記錄 (t_visible/命中/首發/急停), WP-7 T4 — JSON/CSV 匯出 (+1 more)
+
+### Community 155 - "Community 155"
 Cohesion: 0.46
 Nodes (7): generate_all(), _json_floats_or_null(), main(), Generate WP-32/T2 golden fixtures for promoted seg-v2 submovement parity.  Wri, real_segments_payload(), _segment_payload(), synthetic_segments_payload()
 
-### Community 155 - "Community 155"
+### Community 156 - "Community 156"
+Cohesion: 0.43
+Nodes (7): _band(), build_phase_frame(), main(), WP-30 / T2 -- per-session REC/MR/V distributions, REC-vs-t_detect consistency ch, _verdict(), write_distribution_reports(), _write_overlay()
+
+### Community 157 - "Community 157"
 Cohesion: 0.32
 Nodes (7): Layer discipline for the coach report: writes live in report/, purity lives belo, ``build_report``/``render_html`` stay side-effect free; only ``generate`` writes, Dependencies point one way: report -> algorithms, never the reverse., _run(), test_algorithms_never_import_the_report_tier(), test_building_the_model_writes_nothing_until_generate_is_called(), test_importing_the_report_writes_nothing_and_pulls_in_no_plotting()
 
-### Community 156 - "Community 156"
-Cohesion: 0.39
-Nodes (5): aimAtPoint(), aimAtTick(), makePayload(), targetAtTick(), tickTime()
-
-### Community 157 - "Community 157"
-Cohesion: 0.39
-Nodes (4): applyAimFixture(), canonicalMovingTargetFrames(), createCamera(), runMovingTarget()
-
-### Community 159 - "Community 159"
-Cohesion: 0.29
-Nodes (8): criticalYawDegrees(), envelopeForSide(), envelopeForSpawnArea(), expandByPoint(), expandForMotion(), expandSpawnAreaForMotion(), spawnAreaCenters(), uniqueNumbers()
-
-### Community 160 - "Community 160"
+### Community 161 - "Community 161"
 Cohesion: 0.43
 Nodes (7): findAll(), findByAction(), flatten(), makeReadyControls(), makeRecording(), state(), text()
 
-### Community 161 - "Community 161"
+### Community 162 - "Community 162"
+Cohesion: 0.36
+Nodes (8): 不可違反的硬約束 (技術), cross-origin isolation (COOP/COEP), MetricsDashboard 元件, D1 — 2D UI = 純 TS + DOM overlay, D3 — COOP/COEP 部署 (Vite plugin + 靜態主機後定), ADR-4 performance.now() + cross-origin isolation, WP-0 T2 Cross-origin isolation, WP-0 T4 Deploy headers
+
+### Community 163 - "Community 163"
 Cohesion: 0.29
 Nodes (8): SharedState (src/state/SharedState.ts), SimLoop (src/loop/SimLoop.ts, 128 Hz), TargetManager (src/sim/TargetManager.ts), TargetState (id/side/pos/visible/alive/hitboxes), TargetView (src/render/TargetView.ts), consume (src/input/consume.ts), InputSampler (src/input/InputSampler.ts), WP-5 命中 / 急停判定 (Raycaster)
 
-### Community 163 - "Community 163"
+### Community 164 - "Community 164"
 Cohesion: 0.33
 Nodes (3): createReplayScreen(), makeButton(), setup()
 
-### Community 164 - "Community 164"
+### Community 166 - "Community 166"
 Cohesion: 0.43
 Nodes (5): openFullReplayFromResult(), openHistoricalRunDetail(), openHistory(), waitForHarness(), waitReplayReady()
 
-### Community 165 - "Community 165"
-Cohesion: 0.53
-Nodes (5): check_dt(), Compare adjacent tick times with ``1000 / sim_hz`` using a 1e-6 ms tolerance., _load(), test_check_dt_reports_dropped_tick_by_right_hand_row_index(), test_check_dt_reports_uniform_128_hz_ticks()
+### Community 167 - "Community 167"
+Cohesion: 0.43
+Nodes (7): ADR-1 backend metadata, WP-0 createRenderer backend seam, WP-1 sensitivity, metadata.ts (collectMeta), 環境 metadata 完整性 (研究效度前提), WP-7 T0 — Entry gate, WP-7 T3 — 環境 metadata
 
-### Community 166 - "Community 166"
+### Community 168 - "Community 168"
 Cohesion: 0.33
 Nodes (6): Frozen contract block. Rendered identically for every ``--group-by`` value., Frozen contract block. Rendered identically for every ``--group-by`` value., Frozen contract block. Rendered identically for every ``--group-by`` value., Frozen contract block. Rendered identically for every ``--group-by`` value., Frozen contract block. Rendered identically for every ``--group-by`` value., _render_parameters()
 
-### Community 168 - "Community 168"
+### Community 169 - "Community 169"
+Cohesion: 0.6
+Nodes (5): aimAt(), aimYaw(), makePayload(), targetAt(), visible()
+
+### Community 170 - "Community 170"
 Cohesion: 0.47
 Nodes (4): counter(), hold(), presentation(), sided()
 
-### Community 169 - "Community 169"
-Cohesion: 0.4
-Nodes (6): 不可違反的硬約束 (技術), cross-origin isolation (COOP/COEP), MetricsDashboard 元件, D1 — 2D UI = 純 TS + DOM overlay, D3 — COOP/COEP 部署 (Vite plugin + 靜態主機後定), ADR-4 performance.now() + cross-origin isolation
-
-### Community 170 - "Community 170"
+### Community 171 - "Community 171"
 Cohesion: 0.8
 Nodes (4): _load_generator(), _load_json(), test_committed_omega_fixtures_match_generator(), test_committed_sg_coefficients_match_generator()
 
-### Community 171 - "Community 171"
+### Community 172 - "Community 172"
 Cohesion: 0.7
 Nodes (4): _load_generator(), _load_json(), test_committed_curve_fixtures_match_generator(), test_real_curve_fixtures_keep_pre_registered_counts()
 
-### Community 172 - "Community 172"
+### Community 173 - "Community 173"
 Cohesion: 0.8
 Nodes (4): _load_generator(), _load_json(), test_committed_phase_fixtures_match_generator(), test_committed_sync_fixtures_match_generator()
 
-### Community 173 - "Community 173"
+### Community 174 - "Community 174"
 Cohesion: 0.8
 Nodes (4): _load_generator(), _load_json(), test_committed_real_segment_fixtures_match_generator(), test_committed_synthetic_segment_fixture_matches_generator()
 
-### Community 174 - "Community 174"
+### Community 176 - "Community 176"
 Cohesion: 0.8
 Nodes (3): createRenderer(), pickBackend(), resolveBackend()
 
 ### Community 178 - "Community 178"
+Cohesion: 0.6
+Nodes (3): loadExport(), loadJson(), loadParity()
+
+### Community 182 - "Community 182"
 Cohesion: 0.7
 Nodes (4): classifyReplaySupport(), classifyStatus(), isMonotonicTimeline(), replayProfileForExactDrill()
 
-### Community 179 - "Community 179"
+### Community 183 - "Community 183"
 Cohesion: 0.4
 Nodes (5): SharedState, Ring buffer + 物件重用 (無 GC 卡頓), HUD (src/ui/HUD.ts), HUD 不污染量測 (rAF 讀值, 不每幀配置), WP-8 T3 — 即時 HUD (DOM)
 
-### Community 183 - "Community 183"
+### Community 187 - "Community 187"
 Cohesion: 0.5
 Nodes (4): _render_peek_table(), _render_timeline_svg(), _sum_or_none(), _truncate()
 
-### Community 184 - "Community 184"
+### Community 188 - "Community 188"
 Cohesion: 0.5
 Nodes (4): OQ-S4-11 evidence: no ADS-on and no projectile cell exists in real data., OQ-S4-11 evidence: no ADS-on and no projectile cell exists in real data., OQ-S4-11 evidence: no ADS-on and no projectile cell exists in real data., test_real_fixtures_degenerate_to_one_cell_for_ads_and_weapon_mode()
 
-### Community 186 - "Community 186"
+### Community 191 - "Community 191"
 Cohesion: 0.5
 Nodes (4): 急停反應時間 (t_counter − t_visible), t_visible, TargetManager 元件, F2 — 記錄 t_visible spawn/可見時間戳
+
+### Community 192 - "Community 192"
+Cohesion: 0.67
+Nodes (3): WP-30 supersedes D-29.2: trajectory metrics consume px/pz only via strict eye ge, WP-30 supersedes D-29.2: trajectory metrics consume px/pz only via strict eye ge, test_report_uses_strict_trajectory_gate_before_consuming_position_columns()
+
+### Community 196 - "Community 196"
+Cohesion: 0.67
+Nodes (3): 視角走輸入/render 路徑不入 sim (雙迴圈邊界), SharedState (三迴圈唯一溝通管道, 單例), 三迴圈只經 SharedState 溝通 (互不直接呼叫)
 
 ## Knowledge Gaps
 - **355 isolated node(s):** `Offline research modules.`, `Schema v2 ingestion and fixture generation.`, `Session-level construct presence gate.  Complements the existing format-only gat`, `Return whether *flag* is an exact or templated vocabulary member.`, `A drill family's core construct declaration (frozen; changes require a version b` (+350 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **37 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **35 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `counter()` connect `Community 10` to `Community 25`, `Community 4`?**
-  _High betweenness centrality (0.361) - this node is a cross-community bridge._
-- **Why does `_fixture_report()` connect `Community 4` to `Community 2`, `Community 10`, `Community 71`?**
-  _High betweenness centrality (0.222) - this node is a cross-community bridge._
-- **Why does `build_peek_windows()` connect `Community 2` to `Community 131`, `Community 4`, `Community 7`, `Community 10`, `Community 11`, `Community 20`, `Community 153`, `Community 154`, `Community 40`, `Community 50`, `Community 56`, `Community 82`, `Community 84`, `Community 106`, `Community 108`, `Community 109`, `Community 111`, `Community 115`, `Community 116`, `Community 117`?**
-  _High betweenness centrality (0.115) - this node is a cross-community bridge._
-- **Are the 36 inferred relationships involving `createSharedState()` (e.g. with `setup()` and `runTimeoutOnly()`) actually correct?**
-  _`createSharedState()` has 36 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `counter()` connect `Community 7` to `Community 10`, `Community 12`?**
+  _High betweenness centrality (0.363) - this node is a cross-community bridge._
+- **Why does `_fixture_report()` connect `Community 12` to `Community 3`, `Community 51`, `Community 7`?**
+  _High betweenness centrality (0.220) - this node is a cross-community bridge._
+- **Why does `build_peek_windows()` connect `Community 3` to `Community 2`, `Community 134`, `Community 7`, `Community 8`, `Community 12`, `Community 17`, `Community 155`, `Community 156`, `Community 35`, `Community 38`, `Community 58`, `Community 87`, `Community 88`, `Community 89`, `Community 90`, `Community 108`, `Community 109`, `Community 110`, `Community 111`, `Community 120`?**
+  _High betweenness centrality (0.114) - this node is a cross-community bridge._
+- **Are the 38 inferred relationships involving `createSharedState()` (e.g. with `setup()` and `runTimeoutOnly()`) actually correct?**
+  _`createSharedState()` has 38 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 56 inferred relationships involving `load_export()` (e.g. with `test_check_construct_presence_08_03_export_is_absent()` and `test_check_construct_presence_09_39_export_is_present()`) actually correct?**
   _`load_export()` has 56 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 31 inferred relationships involving `createDataRecorder()` (e.g. with `capacityForDrill()` and `createAimIntegrator()`) actually correct?**
+  _`createDataRecorder()` has 31 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 44 inferred relationships involving `build_peek_windows()` (e.g. with `build_parity_payload()` and `ValueError`) actually correct?**
   _`build_peek_windows()` has 44 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 30 inferred relationships involving `createDataRecorder()` (e.g. with `capacityForDrill()` and `createAimIntegrator()`) actually correct?**
-  _`createDataRecorder()` has 30 INFERRED edges - model-reasoned connections that need verification._

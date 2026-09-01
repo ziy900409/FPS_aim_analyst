@@ -89,6 +89,16 @@ async function openHistory(page: import('@playwright/test').Page): Promise<void>
   await expect(page.locator('#history-screen')).toBeVisible();
 }
 
+async function revealParticipantInChunkedList(screen: import('@playwright/test').Locator, participantId: string): Promise<void> {
+  const participant = screen.getByRole('button', { name: new RegExp(participantId) });
+  for (let i = 0; i < 30 && (await participant.count()) === 0; i++) {
+    const loadMore = screen.getByRole('button', { name: /顯示更多/ });
+    if ((await loadMore.count()) === 0) break;
+    await loadMore.click();
+  }
+  await expect(participant).toBeVisible();
+}
+
 test.describe('WP-49 T2 — Participant search and exact-drill browser', () => {
   test('a Participant with two similarly-prefixed exact drills shows two ungrouped drill cards', async ({ page }) => {
     await waitForHarness(page);
@@ -150,7 +160,10 @@ test.describe('WP-49 T2 — Participant search and exact-drill browser', () => {
     await expect(screen.getByText('搜尋無結果')).toBeVisible();
 
     await search.fill('');
-    await expect(screen.getByRole('button', { name: new RegExp(participantId) })).toBeVisible();
+    // The restored full list is still chunked to 100 rows. In a shared dev root, Stage10 future
+    // fixtures from other specs can sort ahead of this freshly seeded 2026 run, so reveal more rows
+    // before asserting the participant is present.
+    await revealParticipantInChunkedList(screen, participantId);
   });
 });
 

@@ -43,13 +43,15 @@ const DRILL_ID = 'hold_click_v1';
 // Deliberately far in the future (KI-018 workaround, see file header): `listParticipants` sorts
 // descending by `latestStartedAt`, so this fixture is always the very first row in the unfiltered
 // list regardless of how many other synthetic participants this shared dev root has accumulated —
-// no search-box typing needed to find it. A *fixed* future literal would still tie with every past
-// run of this same spec against this same never-reset shared root (`listParticipants` tie-breaks by
-// `participantId` ascending, silently pushing this run's row down past a fixed Tab-press budget as
-// the shared root accumulates identical-timestamp rows across repeated local runs) — folding in the
-// real current time keeps every invocation's `startedAt` strictly greater than all previous ones.
+// no search-box typing needed to find it. Keep this later than the other Stage10 E2E future fixtures
+// (`stage10-projection-shape` uses 2099-02 and `stage10-lifecycle-scale` uses fixed 2099-06 dates).
+// A *fixed* future literal would still tie with every past run of this same spec against this same
+// never-reset shared root (`listParticipants` tie-breaks by `participantId` ascending, silently
+// pushing this run's row down past a fixed Tab-press budget as the shared root accumulates
+// identical-timestamp rows) — folding in the real current time keeps every invocation's `startedAt`
+// strictly greater than all previous ones.
 function fixtureStartedAt(): string {
-  return new Date(Date.UTC(2099, 0, 1) + Date.now()).toISOString();
+  return new Date(Date.UTC(2100, 0, 1) + Date.now()).toISOString();
 }
 
 async function postRun(request: APIRequestContext, payload: ExportPayload): Promise<{ ok: boolean; data?: unknown; error?: { code: string } }> {
@@ -159,20 +161,17 @@ test.describe('WP-51 T4 — keyboard-only History -> Replay journey (FR-51.13/NF
 
     // ---- 3. drill select ---------------------------------------------------------------------
     const drillButton = history.getByRole('button', { name: new RegExp(DRILL_ID) });
-    await drillButton.focus();
-    await page.keyboard.press('Enter');
+    await drillButton.press('Enter');
 
     // ---- 4. run select -----------------------------------------------------------------------
     const runButton = history.getByRole('button', { name: new RegExp(runId) });
-    await runButton.focus();
-    await page.keyboard.press('Enter');
-    await expect(history.locator('[data-section="result-detail-body"]')).toBeVisible();
+    await runButton.press('Enter');
+    await expect(history.locator('[data-section="result-detail-body"]')).toBeVisible({ timeout: 10_000 });
 
     // ---- 5. Replay (keyboard) ----------------------------------------------------------------
     const replayButton = history.locator('[data-history-action="replay"]');
     await expect(replayButton).toBeEnabled();
-    await replayButton.focus();
-    await page.keyboard.press('Enter');
+    await replayButton.press('Enter');
 
     const replay = page.locator('#replay-screen');
     await expect(replay).toBeVisible();
@@ -206,7 +205,7 @@ test.describe('WP-51 T4 — keyboard-only History -> Replay journey (FR-51.13/NF
     for (let i = 0; i < 150 && (await seek.getAttribute('aria-valuetext')) === valueTextBefore; i++) {
       await page.keyboard.press('ArrowRight');
     }
-    expect(await seek.getAttribute('aria-valuetext')).not.toBe(valueTextBefore);
+    await expect.poll(async () => seek.getAttribute('aria-valuetext')).not.toBe(valueTextBefore);
 
     // Play/pause: a native <button>, so Enter and Space both activate it exactly like a click would.
     const playPause = replay.locator('[data-replay-action="play-pause"]');

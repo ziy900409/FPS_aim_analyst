@@ -41,11 +41,10 @@
 
 ## Definition of Done
 
-- [ ] 所有matrix gates達標並有可比較environment/timing report（見progress.md 2026-08-31條目：
-      History首100 rows／100-run analysis cold-warm／normalize-seek沿用Node-level既有evidence皆已
-      達標且有environment/timing report；**唯「42k-tick cached-reopen P95」一列在本機重複量測介於
-      884-1927ms、對1500ms budget時而通過時而略超標**，判斷較像是本機當下背景負載造成的jitter但未經
-      乾淨環境對照驗證，如實記錄不強行判定通過，留給T5或WP-50在較安靜環境重跑確認）。
+- [x] 所有matrix gates達標並有可比較environment/timing report（T-exit 2026-08-31 重跑：
+      `RUN_STAGE10_SCALE_BENCHMARK=1 npm run test:stage10:scale` exit 0；History首100 rows P95
+      244ms、100-run analysis cold/warm 269/267ms、42k-tick cached-reopen P95 480ms（15 samples，
+      <1500ms）；normalize/seek沿用Node-level既有evidence）。
 - [x] scale UI只讀summary/analysis projection，未批次下載full payload（
       `tests/e2e/stage10-projection-shape.spec.ts`：真實network response-shape inspection，含
       run-detail端點必須含ticks/events的sanity check）。
@@ -69,4 +68,3 @@
 ```text
 test(stage10): verify scale lifecycle and accessibility gates
 ```
-
