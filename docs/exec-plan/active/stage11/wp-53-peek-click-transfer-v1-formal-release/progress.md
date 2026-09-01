@@ -2,9 +2,9 @@
 
 ## Status
 
-- **Current**：🟡 T0 freeze 仍未成立（No-go，真人 pilot evidence 尚未存在）；使用者已明確 override，允許先建 T1~T3 **placeholder 骨架**（見 [DECISIONS.md GD-28](../../../DECISIONS.md#gd-28-🟡-wp-53-no-go-期間-override--允許先建-t1t3-placeholder-骨架凍結值不得引用真人-evidence2026-09-01)）。
-- **Scope state**：根據 WP-52 evidence 新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。骨架階段沿用 pilot v2 2.5° 預設值作 placeholder，protocol version 帶 `-provisional` 後綴，不得視為正式凍結。
-- **Dependency state**：Formal freeze（T0）仍 Blocked until WP-52 真人 pilot evidence 到位；T1~T3 骨架切片本身不受此阻擋（GD-28 override），T4/T5 仍不執行。
+- **Current**：✅ T0 formal freeze 已拍板（2026-09-01，見全域 [DECISIONS.md GD-29](../../../DECISIONS.md)）。T1~T3 的 provisional 骨架已轉為正式凍結值（此前的 [GD-28](../../../DECISIONS.md) override 狀態已關閉）。T4（Session Plan 整合）與 T5（E2E）尚未開工。
+- **Scope state**：根據 WP-52 evidence（人工 checklist + 3 場真人 `peek_click_transfer_pilot_v2_masked` session）新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。凍結值：`protocolVersion=peek-click-transfer-v1.0.0`、`angularSizeDeg=2.5`、`distanceU=8`、`targetCount=20`，timing/visibility 沿用 pilot v1/v2 既有值。
+- **Dependency state**：T0~T3 已完成。T4 需要 formal Session Plan preset/roster 設計與實作（不改 stage6 default）；T5 需要 E2E 驗收，兩者皆待後續切片。
 
 ## Progress
 
@@ -45,14 +45,26 @@
 - **已知缺口，刻意不補**：沒有寫一個真正 `status:'ready'` 的數值投影測試。原因：`peek-ad-corridor-v1` 的視覺遮蔽（on-target 離線推導)是**真實场景幾何**（`cover-wall-l/r` 的 AABB），玩家必須實際往左右 strafe 才能看到任一側目標；手工拼一組 tick/event fixture 若要通過真實 occlusion 判定，需要正確換算 `SIM_TO_WORLD`(=0.01) 與目標座標的座標系關係，容易做錯而不自知。要正確驗證這條路徑,應該像 `peek_click_transfer_pilot_v2.test.ts` 的 `runCadenceTimeoutExport` 一樣,真的跑一次 `SimLoop`。這件事留給 T5（E2E，目前不在本次骨架範圍內）或未來需要時的獨立切片,不在此處為了「補一個綠燈」而硬做一個可能語意錯誤的 fixture。
 - Verification：`npx vitest run src/history/ src/metrics/ src/drill/` 50 files / 439 tests 全綠；`npx tsc --noEmit` 乾淨。
 
+### 2026-09-01 — T0 formal freeze + T1~T3 un-provisioned (GD-29)
+
+- 使用者提供 3 場真人 `peek_click_transfer_pilot_v2_masked` session 匯出並確認 WP-52 T4 manual checklist 已逐項走查（見 [wp-52 T4-manual-pilot-gate.md](../wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」）。使用者明確拍板 n=1 對本次 WP-53 T0 已足夠（OQ-52-4），WP-53 go/no-go 由 No-go 改為 **Go**。凍結內容見全域 [DECISIONS.md GD-29](../../../DECISIONS.md) 與上表 D-53.5。
+- 把 GD-28 的 T1~T3 provisional 骨架轉為正式凍結值：
+  - [peek_click_transfer_v1.ts](../../../../src/drill/peek_click_transfer_v1.ts)：`protocolVersion` 由 `peek-click-transfer-v1.0.0-provisional` 改為 `peek-click-transfer-v1.0.0`；`angularSizeDeg` 從「借用 pilot v2 目前預設值」的 import 改成獨立 frozen literal `2.5`（刻意脫鉤，避免日後 pilot v2 改預設值時正式版被靜默牽動）；檔頭註解換成 GD-29 的凍結理由（1° floor / 5° ceiling risk，2.5° 保留鑑別度）。
+  - [peek_click_transfer_v1.test.ts](../../../../src/drill/peek_click_transfer_v1.test.ts)：移除「provisional 標記必須存在」的測試，換成「carries the GD-29 formal freeze values」的正向驗證。
+  - [peekClickTransferConditions.ts](../../../../src/metrics/peekClickTransferConditions.ts) + `.test.ts`：condition cell 的計算邏輯不變（本來就是從 config 單一來源讀值），只更新 PLACEHOLDER/provisional 用語為 GD-29 引用。
+  - [DrillMetricRegistry.ts](../../../../src/history/DrillMetricRegistry.ts)：registry version 由 `0.1.0-provisional` 升為 `1.0.0`；檔頭與 section 註解同步更新為 GD-29。[DrillMetricRegistry.test.ts](../../../../src/history/DrillMetricRegistry.test.ts) 新增 `registration!.version === '1.0.0'` 斷言。
+- **仍未做**：main.ts 即時組裝正式 run 的 `meta.assessment`、formal Session Plan preset/roster、E2E（T4/T5），超出本次範圍。
+- Verification：`npx tsc --noEmit` 全專案乾淨；`npx vitest run` 190 files / 1724 tests passed（1 skipped，既有、與本次無關）。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
 |---|---|---|---|
-| D-53.1 | `peek_click_transfer_v1` 使用新的 formal drill id | exact history/trend cohort 不能與 pilot ids 混用 | Proposed |
-| D-53.2 | Formal release 需要 `meta.assessment` 與 compatibility key | WP-48/49 只保存與趨勢化 Assessment | Proposed |
-| D-53.3 | formal Session Plan 不改 stage6 default roster | 避免既有四家族 Assessment 順序漂移 | Proposed |
-| D-53.4 | 使用者 2026-09-01 明確 override No-go，允許先建 T1~T3 placeholder 骨架（不含 T4/T5） | 縮短未來真人 evidence 到位後的落地時間；骨架不寫入正式 history/trend，風險收斂在事後換掉 placeholder 數值 | ✅ 已拍板，見全域 [DECISIONS.md GD-28](../../../DECISIONS.md) |
+| D-53.1 | `peek_click_transfer_v1` 使用新的 formal drill id | exact history/trend cohort 不能與 pilot ids 混用 | ✅ Confirmed，T1 已實作 |
+| D-53.2 | Formal release 需要 `meta.assessment` 與 compatibility key | WP-48/49 只保存與趨勢化 Assessment | ✅ Confirmed，T2 condition cell/compatibility 已實作（main.ts 即時組裝仍待 T4） |
+| D-53.3 | formal Session Plan 不改 stage6 default roster | 避免既有四家族 Assessment 順序漂移 | ✅ Confirmed（政策拍板，實作待 T4） |
+| D-53.4 | 使用者 2026-09-01 明確 override No-go，允許先建 T1~T3 placeholder 骨架（不含 T4/T5） | 縮短未來真人 evidence 到位後的落地時間；骨架不寫入正式 history/trend，風險收斂在事後換掉 placeholder 數值 | ✅ 已拍板並完成，見全域 [DECISIONS.md GD-28](../../../DECISIONS.md)（已由 GD-29 轉正） |
+| D-53.5 | T0 formal freeze：n=1 真人 evidence 已足夠，`protocolVersion=peek-click-transfer-v1.0.0`、`angularSizeDeg=2.5`，OQ-53-1~4 全數拍板 | 2.5° 避開 1°(42.9% valid-first-shot,floor risk)與 5°(100%,ceiling risk)；使用者在被告知 smoke-test 限制後仍拍板 n=1 足夠 | ✅ 已拍板，見全域 [DECISIONS.md GD-29](../../../DECISIONS.md) |
 
 ### 2026-09-01 — No-go 期間 override：開始 T1~T3 placeholder 骨架
 
@@ -65,13 +77,21 @@
 
 | ID | 問題 | Owner | Deadline | Impact |
 |---|---|---|---|---|
-| OQ-53-1 | formal protocol version string | 使用者 + 研究者 | T0 | T1/T2 |
-| OQ-53-2 | formal Session Plan policy | 使用者 | T0 | T4 |
-| OQ-53-3 | primary trend metrics | 使用者 + 研究者 | T3 | T3 |
-| OQ-53-4 | minimum participant/evidence threshold | 研究者 | T0 | T0 |
+| OQ-53-1 | formal protocol version string | 使用者 + 研究者 | T0 | ✅ Resolved（D-53.5，2026-09-01：`peek-click-transfer-v1.0.0`） |
+| OQ-53-2 | formal Session Plan policy | 使用者 | T0 | ✅ Resolved（D-53.5，2026-09-01：獨立 formal transfer preset，不改 stage6 default；實作待 T4） |
+| OQ-53-3 | primary trend metrics | 使用者 + 研究者 | T3 | ✅ Resolved（D-53.5，2026-09-01：`validFirstShotRate` + median `onsetToHitMs`） |
+| OQ-53-4 | minimum participant/evidence threshold | 研究者 | T0 | ✅ Resolved（見 [wp-52 progress.md D-52.13](../wp-52-peek-click-transfer-pilot-v2/progress.md)：n=1 對本次 WP-53 T0 已足夠） |
 
 ## Verification log
 
 | Date | Command | Result |
 |---|---|---|
 | 2026-08-28 | Planning-only | No production verification run |
+| 2026-09-01 | `npx tsc --noEmit`（T1 骨架後） | exit 0 |
+| 2026-09-01 | `npx vitest run src/drill/`（T1 骨架後） | 18 files / 154 tests passed |
+| 2026-09-01 | `npx tsc --noEmit`（T2 骨架後） | exit 0 |
+| 2026-09-01 | `npx vitest run src/metrics/`（T2 骨架後） | 25 files / 153 tests passed |
+| 2026-09-01 | `npx tsc --noEmit`（T3 骨架後） | exit 0 |
+| 2026-09-01 | `npx vitest run src/history/ src/metrics/ src/drill/`（T3 骨架後） | 50 files / 439 tests passed |
+| 2026-09-01 | `npx tsc --noEmit`（T0 freeze + T1~T3 un-provisioned） | exit 0（全專案） |
+| 2026-09-01 | `npx vitest run`（T0 freeze + T1~T3 un-provisioned，全專案） | 190 files / 1724 tests passed（1 skipped，既有） |

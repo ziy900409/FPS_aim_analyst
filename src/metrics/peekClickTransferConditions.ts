@@ -1,7 +1,7 @@
 import { peekClickTransferV1, PEEK_CLICK_TRANSFER_V1_ANGULAR_SIZE_DEG } from '../drill/peek_click_transfer_v1.ts';
 
 /**
- * WP-53 / T2 — formal target condition cell (GD-28 placeholder scaffold, see peek_click_transfer_v1.ts).
+ * WP-53 / T2 — formal target condition cell (GD-29 formal freeze, see peek_click_transfer_v1.ts).
  * Every frozen comparison field the WP-53 README's interface contract lists.
  */
 export interface PeekClickTransferFormalConditionCell {
@@ -17,9 +17,6 @@ export interface PeekClickTransferFormalConditionCell {
  * Single-source condition cell (GD-7 style): derived directly from the frozen `peekClickTransferV1`
  * config rather than a second hardcoded literal, so a config change forces a condition-cell (and
  * therefore compatibility-key) change alongside it, instead of silently drifting apart.
- *
- * PLACEHOLDER (GD-28): `peekClickTransferV1`'s angular size/timeout/etc. are provisional, not a real
- * freeze decision — this cell's *value* is provisional too, only its *shape* is final.
  */
 export function buildPeekClickTransferV1ConditionCell(): string {
   const cell = peekClickTransferV1FormalConditionCell();

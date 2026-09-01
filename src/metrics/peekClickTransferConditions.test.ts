@@ -4,8 +4,7 @@ import { buildCompatibilityKey, checkCompatibility } from './compatibilityKey.ts
 import { PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION } from '../drill/peek_click_transfer_v1.ts';
 import { buildPeekClickTransferV1ConditionCell } from './peekClickTransferConditions.ts';
 
-/** WP-53 / T2 — placeholder scaffold (GD-28): the condition cell's shape is final, its frozen
- * *values* are provisional until a real freeze decision replaces `peek_click_transfer_v1.ts`. */
+/** WP-53 / T2 — formal condition cell tests. Frozen values per GD-29 (2026-09-01). */
 const baseMeta: Meta = {
   schemaVersion: 2,
   drillId: 'peek_click_transfer_v1',
@@ -36,7 +35,7 @@ const baseMeta: Meta = {
   },
 };
 
-describe('buildPeekClickTransferV1ConditionCell (WP-53 T2, GD-28 placeholder scaffold)', () => {
+describe('buildPeekClickTransferV1ConditionCell (WP-53 T2, GD-29 formal freeze)', () => {
   it('is a deterministic string covering every frozen comparison field', () => {
     const cell = buildPeekClickTransferV1ConditionCell();
     expect(cell).toBe(buildPeekClickTransferV1ConditionCell());

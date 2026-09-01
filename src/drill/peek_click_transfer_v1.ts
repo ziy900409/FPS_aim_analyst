@@ -1,37 +1,35 @@
 import type { DrillConfig } from './DrillConfig.ts';
 import type { ClearanceOptions } from '../scene/clearance.ts';
 import { angularSizeToHitboxWidthU } from './peek_click_transfer_pilot_v1.ts';
-import {
-  PEEK_CLICK_TRANSFER_PILOT_V2_CLEARANCE_OPTIONS,
-  PEEK_CLICK_TRANSFER_PILOT_V2_DEFAULT_ANGULAR_SIZE_DEG,
-} from './peek_click_transfer_pilot_v2.ts';
+import { PEEK_CLICK_TRANSFER_PILOT_V2_CLEARANCE_OPTIONS } from './peek_click_transfer_pilot_v2.ts';
 
 /**
- * peek_click_transfer_v1 — WP-53 / T1 — PLACEHOLDER SCAFFOLD, NOT A FORMAL FREEZE
+ * peek_click_transfer_v1 — WP-53 / T1 — formal Assessment release
  *
- * GD-28（DECISIONS.md）：WP-53 的 formal freeze gate（T0）尚未通過——WP-52 真人 pilot evidence
- * 仍未收集（見 wp-52 T4-manual-pilot-gate.md「No-go, pending manual execution」）。使用者明確
- * override，允許先建 config/metadata/registry 骨架，但**不得**引用任何真人 evidence 拍板的凍結值。
- * 本檔的角尺寸/protocol version 只是沿用 `peek_click_transfer_pilot_v2` 的 2.5° 預設候選作占位；
- * 真人 pilot evidence 到位、WP-53 T0 真正拍板後，必須把這裡的值換成 freeze decision 的實際結果，
- * 並移除 PROVISIONAL 標記（見 progress.md 2026-09-01 條目的收尾清單）。
+ * GD-29（DECISIONS.md）：formal freeze decision, 2026-09-01. Every numeric value below is frozen by
+ * that decision, not borrowed from `peek_click_transfer_pilot_v2`'s current default — deliberately
+ * a standalone literal so a future change to the pilot's default candidate can never silently move
+ * the formal release out from under an already-collected dataset. `angularSizeDeg=2.5` was chosen
+ * because real evidence (3 sessions, `peek_click_transfer_pilot_v2_masked`) showed 1° at 42.9%
+ * valid-first-shot (floor-effect risk) and 5° at 100% (ceiling-effect risk); 2.5° at 95.2% keeps
+ * headroom in both directions for a single fixed-condition assessment.
  *
- * Shape 沿用 pilot v1/v2 的 wrapper pattern（sceneId + clearanceOptions 隨 drill 一起帶），因為正式
- * 版沿用同一個 `peek-ad-corridor-v1` 場景/occlusion 設定，T4 Session Plan 整合需要這兩個欄位。
+ * Shape follows pilot v1/v2's wrapper pattern (sceneId + clearanceOptions travel with the drill),
+ * because the formal release reuses the same `peek-ad-corridor-v1` scene/occlusion setup — T4
+ * Session Plan integration will need both fields.
  */
 
-/** PLACEHOLDER — 帶 `-provisional` 後綴，刻意不使用 OQ-53-1 預定的正式字串，避免被誤認為已凍結。 */
-export const PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION = 'peek-click-transfer-v1.0.0-provisional';
+export const PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION = 'peek-click-transfer-v1.0.0';
 
-/** PLACEHOLDER：沿用 pilot v2 的 2.5° 預設候選（唯一有手動走查紀錄的候選），非 freeze decision 產出。 */
-export const PEEK_CLICK_TRANSFER_V1_ANGULAR_SIZE_DEG = PEEK_CLICK_TRANSFER_PILOT_V2_DEFAULT_ANGULAR_SIZE_DEG;
+/** Frozen by GD-29 (2026-09-01) — see file header for the evidence behind this specific value. */
+export const PEEK_CLICK_TRANSFER_V1_ANGULAR_SIZE_DEG = 2.5;
 
 /** 沿用 `peek-ad-corridor-v1` 場景校準距離（D-45.10），與 pilot v1/v2 相同，非 freeze 決策項。 */
 export const PEEK_CLICK_TRANSFER_V1_DISTANCE_U = 8;
 
 export const PEEK_CLICK_TRANSFER_V1_TARGET_COUNT = 20;
 
-/** PLACEHOLDER：沿用 pilot v1/v2 既有 timing，未經 freeze decision 拍板。 */
+/** Frozen by GD-29: carried over from pilot v1/v2's existing timing — no evidence suggested changing it. */
 export const PEEK_CLICK_TRANSFER_V1_TIMING = {
   countdownMs: 3000,
   peekTimeoutMs: 3000,
@@ -63,8 +61,8 @@ export interface PeekClickTransferV1Config {
 }
 
 /**
- * PLACEHOLDER formal Assessment config（WP-53 T1）。`mode:'assessment'` + 獨立 `drillId`，不沿用
- * 任何 pilot drill id（FR-53-2）。凍結數值全數為 GD-28 記載的 provisional 占位值。
+ * Formal Assessment config（WP-53 T1）。`mode:'assessment'` + 獨立 `drillId`，不沿用任何 pilot
+ * drill id（FR-53-2）。凍結數值全數為 GD-29 formal freeze decision 的正式結果。
  */
 export const peekClickTransferV1: PeekClickTransferV1Config = {
   id: PEEK_CLICK_TRANSFER_V1_ID,

@@ -116,21 +116,22 @@ describe('DrillMetricRegistry', () => {
 });
 
 /**
- * WP-53 / T3 — placeholder scaffold (GD-28). `peek_click_transfer_v1`'s registration itself is
- * exercised here; a full numeric `ready` projection against `peek-ad-corridor-v1`'s real occlusion
- * geometry is deliberately NOT attempted — building a hand-crafted tick/event fixture that is
- * genuinely unoccluded through the corridor's real cover-wall bounds (and correctly scaled by
+ * WP-53 / T3 — `peek_click_transfer_v1` registration (GD-29 formal freeze). The registration itself
+ * is exercised here; a full numeric `ready` projection against `peek-ad-corridor-v1`'s real
+ * occlusion geometry is deliberately NOT attempted — building a hand-crafted tick/event fixture that
+ * is genuinely unoccluded through the corridor's real cover-wall bounds (and correctly scaled by
  * `SIM_TO_WORLD` for player position vs. source-unit target position) duplicates work the real
  * SimLoop-driven pilot tests already do (`peek_click_transfer_pilot_v2.test.ts`'s
  * `runCadenceTimeoutExport`), and getting it subtly wrong would be worse than not having it. The
  * `not-assessment` guard below only needs `payload.meta.drillId`/`assessment` — it short-circuits
  * before any scene geometry is touched, so it stays a cheap, reliable smoke test either way.
  */
-describe('DrillMetricRegistry — peek_click_transfer_v1 (WP-53 T3, GD-28 placeholder scaffold)', () => {
+describe('DrillMetricRegistry — peek_click_transfer_v1 (WP-53 T3, GD-29 formal freeze)', () => {
   it('registers peek_click_transfer_v1 with well-formed descriptors and exactly two primaries', () => {
     const registry = createDrillMetricRegistry();
     const registration = registry.registrationForExactDrill('peek_click_transfer_v1');
     expect(registration).toBeDefined();
+    expect(registration!.version).toBe('1.0.0');
 
     const ids = registration!.descriptors.map((d) => d.id);
     expect(new Set(ids).size).toBe(ids.length);

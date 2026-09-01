@@ -13,13 +13,10 @@ import {
 } from './peek_click_transfer_v1.ts';
 
 /**
- * WP-53 / T1 — placeholder scaffold tests (GD-28). These assert the config's *shape* and
- * pilot-isolation contract; they do not and cannot assert a real formal freeze, because no such
- * freeze exists yet (WP-52 real-human pilot evidence is still pending). The provisional-marker
- * assertions exist specifically so this test starts failing the moment someone ships a genuine
- * freeze without updating this placeholder file.
+ * WP-53 / T1 — formal Assessment config tests. Frozen by GD-29 (2026-09-01) — see
+ * `peek_click_transfer_v1.ts`'s file header for the evidence behind `angularSizeDeg=2.5`.
  */
-describe('peek_click_transfer_v1 formal config (WP-53 T1, GD-28 placeholder scaffold)', () => {
+describe('peek_click_transfer_v1 formal config (WP-53 T1, GD-29 formal freeze)', () => {
   it('uses a formal-only drill id and assessment mode, distinct from every pilot id', () => {
     expect(peekClickTransferV1.id).toBe(PEEK_CLICK_TRANSFER_V1_ID);
     expect(peekClickTransferV1.id).toBe('peek_click_transfer_v1');
@@ -75,9 +72,10 @@ describe('peek_click_transfer_v1 formal config (WP-53 T1, GD-28 placeholder scaf
     ).not.toThrow();
   });
 
-  it('marks its freeze values as provisional (GD-28) — must fail once a real freeze lands without updating this test', () => {
+  it('carries the GD-29 formal freeze values — protocol version and the 2.5deg candidate', () => {
     expect(peekClickTransferV1.protocolVersion).toBe(PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION);
-    expect(peekClickTransferV1.protocolVersion).toContain('provisional');
-    expect(peekClickTransferV1.protocolVersion).not.toBe('peek-click-transfer-v1.0.0');
+    expect(peekClickTransferV1.protocolVersion).toBe('peek-click-transfer-v1.0.0');
+    expect(peekClickTransferV1.protocolVersion).not.toContain('provisional');
+    expect(PEEK_CLICK_TRANSFER_V1_ANGULAR_SIZE_DEG).toBe(2.5);
   });
 });

@@ -16,11 +16,10 @@ import { peekAdCorridor } from '../scene/scenes/peek-ad-corridor.ts';
  * WP-49 T4 — exact-`drillId` history metric registry (README §2.5). `spider-shot-v2` is registered
  * (D-49.P9, research-design owner sign-off:
  * `docs/algorithm/spider_shot/spider-shot-v2-performance-metrics-design-2026-08-27.html`
- * §registry "第一版歷史趨勢指標"). `peek_click_transfer_v1` is also registered but is a **WP-53 / GD-28
- * placeholder scaffold** — the WP-53 formal freeze decision has not happened yet (real-human pilot
- * evidence is still pending), so its descriptors/primary-metric choice follow OQ-53-3's stated
- * default rather than a research sign-off, and its condition cell reads provisional config values
- * (see `peek_click_transfer_v1.ts`). No prefix/family fallback for either registration: an
+ * §registry "第一版歷史趨勢指標"). `peek_click_transfer_v1` is also registered (WP-53 / GD-29 formal
+ * freeze, 2026-09-01) — its descriptors/primary-metric choice follow OQ-53-3's stated default
+ * (`validFirstShotRate` + median `onsetToHitMs`), and its condition cell reads the frozen config
+ * values from `peek_click_transfer_v1.ts`. No prefix/family fallback for either registration: an
  * unregistered drill id — including near-miss variants like `spider-shot-v2-alt` or any
  * `peek_click_transfer_pilot_*` id — always projects as `unregistered-drill`.
  */
@@ -207,13 +206,13 @@ const SPIDER_SHOT_V2_REGISTRATION: DrillMetricRegistration = {
 };
 
 // ---------------------------------------------------------------------------
-// peek_click_transfer_v1 registration — WP-53 / T3, GD-28 placeholder scaffold (see file header)
+// peek_click_transfer_v1 registration — WP-53 / T3, GD-29 formal freeze (see file header)
 // ---------------------------------------------------------------------------
 
-const PEEK_CLICK_TRANSFER_V1_REGISTRY_VERSION = '0.1.0-provisional';
+const PEEK_CLICK_TRANSFER_V1_REGISTRY_VERSION = '1.0.0';
 
 /** Primary-metric choice follows OQ-53-3's stated default (validFirstShotRate + median
- * onsetToHitMs); not a research sign-off — revisit once WP-53 T0 actually freezes. */
+ * onsetToHitMs), confirmed by GD-29 (2026-09-01). */
 const PEEK_CLICK_TRANSFER_V1_DESCRIPTORS: readonly MetricDescriptor[] = [
   {
     id: 'peek-click-transfer-v1.valid-first-shot-rate',
