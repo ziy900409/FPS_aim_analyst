@@ -23,7 +23,7 @@ import { createHistoryNavigator } from './history/navigation/HistoryNavigator.ts
 import { createHistoryScreen, type HistoryScreenHandle } from './ui/history/HistoryScreen.ts';
 import { createDrillMetricRegistry } from './history/DrillMetricRegistry.ts';
 import { createReplayScreen, type ReplayScreenHandle } from './ui/replay/ReplayScreen.ts';
-import { createReplayController } from './replay/ReplayController.ts';
+import { createReplayController, type ReplayController } from './replay/ReplayController.ts';
 import { createReplayPresentationSession } from './render/replay/ReplayPresentationSession.ts';
 import { createControls, type ControlsHandle } from './ui/Controls.ts';
 import {
@@ -246,6 +246,9 @@ let historyScreenHandle: HistoryScreenHandle | undefined;
 // WP-50 T6 — 同一 KI-013 慣例：Replay 全螢幕層晚於 canvas click handler 建構,先在此宣告安全的
 // `undefined` 佔位。
 let replayScreenHandle: ReplayScreenHandle | undefined;
+// KI-017 — History Run Detail can become interactive while later dev/bootstrap awaits are still
+// pending. Keep this binding out of TDZ so early replay clicks can guard and show user feedback.
+let replayController: ReplayController | undefined;
 
 // WP-1 / T2（FR-1.2）— Pointer Lock：click 取得、Esc/失焦解除、可重取。
 const pointerLock = createPointerLock(canvas);
@@ -696,13 +699,12 @@ historyScreenHandle = createHistoryScreen({
   navigator: historyNavigator,
   controller: historyLibraryController,
   registry: drillMetricRegistry,
-  // WP-50 T6（FR-49.13）— replayController 於檔案尾端建構（需要 renderer/canvas/availableScenes
-  // 皆已就緒）；此處只是 closure 參照,不在此刻讀取——button 只可能在整份模組同步執行完後、由使用者
-  // click 觸發,屆時 replayController 早已初始化完成（檔案其餘段落無 top-level await，見 KI-013 慣例）。
-  onReplay(runId: string): void {
+  onReplay(runId: string): string | void {
+    const controller = replayController;
+    if (controller === undefined) return 'Replay 尚未就緒，請稍後再試。';
     const route = historyNavigator.current;
     const sourceLabel = route?.kind === 'run' ? `${route.drillId} · ${runId}` : runId;
-    replayController.open({ kind: 'historical', runId }, sourceLabel);
+    controller.open({ kind: 'historical', runId }, sourceLabel);
   },
 });
 historyLibraryController.start();
@@ -731,7 +733,7 @@ const resultScreen = createResultScreen({
   },
   onReplay(): void {
     if (lastResultPayload === undefined) return;
-    replayController.open({ kind: 'current', payload: lastResultPayload }, '目前結果');
+    replayController?.open({ kind: 'current', payload: lastResultPayload }, '目前結果');
   },
 });
 
@@ -1488,11 +1490,11 @@ replayScreenHandle = createReplayScreen({
   // `ReplayScreen`'s cancel-load button always calls `onBack()` right after `onCancelLoad()` (its
   // own doc comment) — `close()` already aborts any in-flight `historyClient.loadRun` and tears
   // down the session/viewport, so wiring only `onBack` covers both without a redundant second call.
-  onBack: () => replayController.close(),
-  onRetry: () => replayController.retry(),
+  onBack: () => replayController?.close(),
+  onRetry: () => replayController?.retry(),
 });
 
-const replayController = createReplayController({
+const initializedReplayController = createReplayController({
   presentation,
   historyClient,
   availableScenes: availableScenes.map(({ config }) => config),
@@ -1507,16 +1509,17 @@ const replayController = createReplayController({
   mountViewport: mountReplayViewport,
   unmountViewport: unmountReplayViewport,
 });
+replayController = initializedReplayController;
 
-replayController.subscribe(() => {
-  const state = replayController.state;
+initializedReplayController.subscribe(() => {
+  const state = initializedReplayController.state;
   if (state.kind === 'idle') {
     replayScreenHandle?.hide();
     return;
   }
   replayScreenHandle?.show();
   if (state.kind === 'ready') {
-    const controls = replayController.player;
+    const controls = initializedReplayController.player;
     if (controls === undefined) return; // defensive — 'ready' always implies a live session/player
     replayScreenHandle?.render({ kind: 'ready', sourceLabel: state.sourceLabel, support: state.support, recording: state.recording, controls });
     return;

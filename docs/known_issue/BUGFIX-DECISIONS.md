@@ -18,8 +18,8 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
-| [KI-018](KI-018-history-search-keystroke-focus-steal.md) | History「搜尋 Participant」逐字輸入時，`navigator.replace()` 每次都給 focus-on-navigation guard 一個新的 route 物件參考，被誤判為真正導覽而搶焦點，導致除首字元外的按鍵全部遺失 | BD-018(§2，focus-on-navigation guard 改語意比較，或由 `HistoryNavigator` 分辨 push/replace) | 🔴 診斷完成，修法待落地 |
-| [KI-017](KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) | Run Detail「3D 重播」在 `replayController`（頂層 `const`，檔案尾端才賦值）初始化完成前被點擊會拋 `ReferenceError`，與 KI-013 同一類根因、不同變數——KI-013 §6 OQ-KI13-1 預告的風險具體重現 | BD-017(§2，`replayController` 比照 KI-013 改為提早宣告的 `let \| undefined` + `onReplay` 補 guard) | 🔴 診斷完成，修法待落地 |
+| [KI-018](KI-018-history-search-keystroke-focus-steal.md) | History「搜尋 Participant」逐字輸入時，`navigator.replace()` 每次都給 focus-on-navigation guard 一個新的 route 物件參考，被誤判為真正導覽而搶焦點，導致除首字元外的按鍵全部遺失 | BD-018(§3，focus-on-navigation guard 改語意比較) | ✅ 已修(2026-09-01) |
+| [KI-017](KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) | Run Detail「3D 重播」在 `replayController`（原頂層 `const`，檔案尾端才賦值）初始化完成前被點擊會拋 `ReferenceError`，與 KI-013 同一類根因、不同變數——KI-013 §6 OQ-KI13-1 預告的風險具體重現 | BD-017(§3，`replayController` 比照 KI-013 改為提早宣告的 `let \| undefined` + `onReplay` 補可見訊息 guard) | ✅ 已修(2026-09-01) |
 | [KI-016](KI-016-session-plan-family-order-validator-stale-allowlist.md) | `metadata.ts` 的 `requireSessionPlanFamilyOrder` 仍寫死驗證 `TEST_FAMILY_IDS`，未跟上 WP-45 T5 在 `SessionRunner.ts` 建立的 `KNOWN_SESSION_FAMILY_IDS` 聯集——目前被「preset 切換未接進操作端 UI」意外遮住未觸發，一旦 `families` 含 `'peek-click-transfer'` 就會在匯出時 throw | BD-016(§2，兩份允許清單收斂成 `sessionSchedule.ts` 匯出的單一來源，`SessionRunner.ts`/`metadata.ts` 皆改為 import) | ✅ 已修(2026-09-01) |
 | [KI-015](KI-015-drill-results-retest-discoverability.md) | Drill Results 以全螢幕遮罩呈現，但 Restart／匯出入口位於頁外；使用者不易發現重測，且未被提醒重測會清除本輪結果 | BD-015(§3,Results 內新增 sticky 操作列；UI 只用 callbacks 重用既有 restart/export path，Restart 前確認資料清除) | ✅ 已修(2026-08-26) |
 | [KI-014](KI-014-spider-shot-peripheral-target-sunk-below-floor.md) | KI-012 修復北牆遮擋後,使用者回報「現在地板高度也會遮蓋球體」——`spider-shot-v2` 的 `angularRadiusDegRange` 上限 25° 搭配 azimuth 朝下時,周邊目標世界 y 可低至約 -1.99,`placeholder-room` 地板原在 y=0,目標幾乎全沉入地板 | BD-014(§3,只放大 `placeholder-room` 的地板深度:新增 `floorY:-3` 並讓牆體下緣一併延伸,不動任何 drill config 凍結值) | ✅ 已修(2026-08-26) |
@@ -43,29 +43,31 @@
 
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
 
-### BD-018 🔴 KI-018 — History「搜尋 Participant」逐字輸入焦點被搶走；診斷完成,修法待落地(2026-08-31)
+（目前無 open 項目。）
+
+### BD-018 🟢 KI-018 — History「搜尋 Participant」逐字輸入焦點被搶走；已修復(2026-09-01, WP-49 owner)
 
 | | |
 |---|---|
 | **發現處 / 根因** | WP-51 T4 撰寫 History→Replay keyboard-only 驗收測試,用真實 `page.keyboard.type()` 逐字輸入「搜尋 Participant」欄位,實測欄位最終只留下第一個字元。追碼確認:`ParticipantBrowser.ts` 的 `pushSearch()` 每個字元都呼叫一次 `navigator.replace(...)`;`HistoryNavigator.replace()` 每次都指派一個全新的 route 物件;`HistoryScreen.ts` 的 focus-on-navigation guard 用**參考相等**(`route !== lastRoute`)判斷是否要 `main.focus()`,無法區分「同路由 in-place 精煉」與「真正導覽」,於是每個字元的 `input` 事件後都把焦點從輸入框搶回 `<main>`。完整診斷見 [KI-018](KI-018-history-search-keystroke-focus-steal.md)。 |
 | **為何從未被發現** | 既有全部 Playwright spec(`history-library.spec.ts`／`history-navigation.spec.ts`／WP-51 T2/T3 各 spec)填搜尋欄一律用 `locator.fill()`(一次性設值 + 單一 `input` 事件,不逐字元),從未用真實逐字元 `page.keyboard.type()` 驗證過這個欄位,意外避開了觸發條件——不是被修好,是從未被測到。任何真人用實體鍵盤在此欄位打字都會遇到同樣問題。 |
-| **決策(修法方向,尚未落地)** | focus-on-navigation guard 改用語意比較(`kind` 或身分性欄位是否改變,而非物件參考),或由 `HistoryNavigator` 的 `subscribe` 標記本次變更是 push 還是 replace,只在真正導覽(`push()`)時才搶焦點。兩個候選見 KI-018 §3,由 WP-49 決定採用哪個並落地。 |
-| **理由** | 這是 NFR-51.6(「History→Replay 主要流程只用 keyboard 可完成」)實際發現的落地缺口,不是本次臨時發明的驗收門檻——用鍵盤打字搜尋是任何鍵盤/螢幕閱讀器使用者的正常操作方式,不能只靠 `.fill()` 式測試掩蓋。 |
-| **偏離計畫** | WP-51 T4 只診斷、記錄,不修改 `HistoryScreen.ts`/`ParticipantBrowser.ts`(README §2.6:WP-51 不得修 WP-49 domain UI）；T4 自己的驗收測試改用「不依賴打字搜尋、直接對可見清單 Tab 選取」的路徑繞過此缺口驗證其餘鍵盤流程,並將此列為 NFR-51.6 尚未完全達標的已知缺口。 |
-| **遺留 OQ** | 修法方向已列兩個候選,尚未拍板選哪個——留給 WP-49 承接時決定;`DrillOverview.ts` 的 metric/cohort/run-filter 按鈕是否有同一類、較低感知的焦點搶奪尚未逐一驗證,列入修法落地時一併檢查範圍。 |
-| **狀態** | 🔴 診斷完成,修法待落地(2026-08-31)。 |
+| **決策(已落地)** | 採 KI-018 §3 候選 1(語意比較取代參考比較),未改 `HistoryNavigator` public 介面。`HistoryScreen.ts` 新增 `isSameNavigationTarget(a, b)`:`kind` 不同即視為導覽;同 `kind` 時只比對身分性欄位(`drills`/`drill`/`run` 的 `participantId`/`drillId`/`runId` 鏈,`participants` 無身分性欄位、恆視為同一導覽目標),忽略 `query`/`metricId`/`cohortId`/`runFilter` 等精煉欄位。`main.focus()` 只在 `!isSameNavigationTarget(route, lastRoute)` 時觸發,取代原本的 `route !== lastRoute`。這個修法同時涵蓋 KI-018 §4 提到的 `DrillOverview.ts` metric/cohort/run-filter 按鈕(同樣經 `navigator.replace()`)——單一選路徑,不需分別修補。 |
+| **理由** | 候選 1 影響面最小(不改 `HistoryNavigator` public 介面、不需更新其他 caller/test),且 `HistoryRoute` 的判別聯集本就有清楚的「身分性欄位 vs 精煉欄位」界線,語意比較可直接照 `HistoryRoute.ts` 的型別定義寫,不需臆測。 |
+| **偏離計畫** | 無;依 KI-018 §3 候選 1 落地。 |
+| **遺留 OQ** | 無——`DrillOverview.ts` 的 metric/cohort/run-filter 路徑已隨同一個 `HistoryScreen.render()` 選路徑修復並在單元測試覆蓋(見 DoD)。 |
+| **狀態** | 🟢 已修復(2026-09-01),見 [KI-018](KI-018-history-search-keystroke-focus-steal.md) §5 DoD。 |
 
-### BD-017 🔴 KI-017 — Run Detail「3D 重播」過早點擊丟出 TDZ ReferenceError（`replayController`）；診斷完成,修法待落地(2026-08-31)
+### BD-017 🟢 KI-017 — Run Detail「3D 重播」過早點擊丟出 TDZ ReferenceError（`replayController`）；已修復(2026-09-01, WP-50 owner)
 
 | | |
 |---|---|
 | **發現處 / 根因** | WP-51 T4 撰寫 History→Replay keyboard-only 驗收測試,測試未如既有 dev-mode spec 慣例等待 `window.__fpsTest` 掛上就直接導覽,比一般測試更快走到 Run Detail 並點擊「3D 重播」,`page.on('pageerror', ...)` 捕捉到 `ReferenceError: Cannot access 'replayController' before initialization`(`main.ts:532` `onReplay`)。根因與 [KI-013](KI-013-controls-tdz-referenceerror-on-early-researcher-click.md) 逐字相同的結構性模式(頂層 `const` 依賴、中間隔 top-level await、UI 卻已可互動)——KI-013 §6 OQ-KI13-1 當時已預告「同一類風險可能出現在其他晚宣告的頂層 `const`」,本次即為該預告的具體重現,只是這次是 `replayController` 而非 `controls`。完整診斷見 [KI-017](KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md)。 |
 | **為何從未被發現** | 本 repo 全部既有 dev-mode E2E spec 互動前都先 `await expect.poll(() => window.__fpsTest).toBe(true)`——`__fpsTest` 恰好是 `main.ts` 模組尾端、`replayController` 賦值**之後**才掛上 `window`,這個等待意外保證了 `replayController` 已初始化,是巧合的保護而非刻意設計的 guard；production bundle 沒有 `__fpsTest`,真實使用者在較慢裝置/較快網路情境下手速追上初始化時一樣會撞到。`stage10-preview.spec.ts`(WP-51 T2,preview 無 `__fpsTest`)之所以沒觸發,推測是多次真實 API 往返意外提供了足夠時間,同樣是巧合非設計。 |
-| **決策(修法方向,尚未落地)** | 比照 KI-013/BD-013 對 `controls` 的既有修法模式:`replayController` 改為提早宣告的 `let replayController: ReplayController \| undefined`,`onReplay` 開頭補 `undefined` guard——建議額外讓使用者看到明確「尚未就緒」訊息而非純靜默 return(比 KI-013 更值得做,因為這裡是使用者主動點擊、KI-013 是被動的面板同步)。 |
+| **決策(已落地)** | 比照 KI-013/BD-013 對 `controls` 的既有修法模式:`replayController` 改為提早宣告的 `let replayController: ReplayController \| undefined`,`onReplay` 開頭補 `undefined` guard；guard 失敗時透過 `HistoricalRunDetail` 既有 status 區顯示「Replay 尚未就緒，請稍後再試。」,不採純靜默 return。 |
 | **理由** | 與 KI-013 同一類結構性風險,修法已有現成、已驗證過的既有模式可直接比照套用,不需要重新設計。 |
-| **偏離計畫** | WP-51 T4 只診斷、記錄,不修改 `main.ts`(README §2.6:WP-51 不得修 WP-50 domain composition)；T4 自己的驗收測試改為比照既有 dev-mode spec 慣例,先等待 `window.__fpsTest` 掛上才互動,避開此競態(非遮蓋——真實 bug 已記錄於此,不受測試側做法影響)。 |
-| **遺留 OQ** | **OQ-KI17-1**(沿用 OQ-KI13-1 的精神)：本檔案(`main.ts`,~1300+ 行單一模組作用域)是否還有其他「早期可互動 UI callback 依賴晚宣告頂層 const」的組合尚未系統性掃描——本次與 KI-013 都只處理實際重現到的單一變數,建議修 KI-017 時一併考慮是否值得做一次全檔案掃描式稽核(見 KI-013 §6 原話)。 |
-| **狀態** | 🔴 診斷完成,修法待落地(2026-08-31)。 |
+| **偏離計畫** | 無；WP-51 T4 只診斷、記錄，修復回流後由 WP-50 owner 修改 `main.ts` entry wiring 並新增 WP-50 Playwright regression。 |
+| **遺留 OQ** | **OQ-KI17-1** 保留為後續架構稽核建議：本次只修已重現的 `replayController` TDZ path，未宣稱已系統性掃描 `main.ts` 所有早期可互動 callback。 |
+| **狀態** | 🟢 已修復(2026-09-01)，見 [KI-017](KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) §3/§5。 |
 
 ### BD-016 🟢 KI-016 — `sessionPlanFamilyOrder` metadata 驗證仍鎖死 `TEST_FAMILY_IDS`；已修復(2026-09-01, WP-52 T2)
 

@@ -14,7 +14,7 @@
 | **Release policy** | WP-48、49、50 exit gates 與本 WP exit gate 全綠後才可宣告 M18；上游 domain defect 必須回到 owning WP 修復並重跑交接證據 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | Med/High：跨 process/root lifecycle、dev-only test hooks、preview parity、競態、實機 3D fidelity |
-| **Status** | 🟡 T0～T4 完成；T-exit automated gates 已於 2026-08-31 在 working tree based on HEAD `d142baf` 重跑並通過（typecheck/build/Vitest/Playwright/test:ci/test:stage10/scale/critical repeat）。T5 文件交付完成，但 manual browser/GPU/a11y walkthrough、independent operator runbook walkthrough，以及 KI-017/KI-018 owner 收斂仍未完成；依 T-exit gate 尚不能宣告 M18。詳見 [progress.md](progress.md) 與 [acceptance-stage-j.md](../../../operational/acceptance-stage-j.md)。 |
+| **Status** | 🟡 T0～T4 完成；T-exit automated gates 已於 2026-08-31 在 working tree based on HEAD `d142baf` 重跑並通過（typecheck/build/Vitest/Playwright/test:ci/test:stage10/scale/critical repeat）。T5 文件交付完成；KI-017 已於 2026-09-01 由 WP-50 owner 修復，但 manual browser/GPU/a11y walkthrough、independent operator runbook walkthrough、KI-018 owner 收斂與 Chrome/WebGL2 coverage gap 仍未完成；依 T-exit gate 尚不能宣告 M18。詳見 [progress.md](progress.md) 與 [acceptance-stage-j.md](../../../operational/acceptance-stage-j.md)。 |
 
 ---
 

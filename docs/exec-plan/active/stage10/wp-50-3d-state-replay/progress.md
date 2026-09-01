@@ -342,3 +342,14 @@ Entry gates 重新確認：WP-48 README status ✅ T0～T5＋T-exit 全部完成
 - 42k-tick／50-cycle scale 證據沿用 T2（`replay-perf.test.ts`）、T3（`presentation-lifecycle.test.ts`）、T4（`replay-visual-perf.test.ts`）既有 Node/V8 headless 測量,本次重新隨全量 Vitest 跑過一次確認未回歸,未新增瀏覽器層級 42k-tick 規模測試（README/T-exit-gate 慣例：quantity-scale 證據留在 headless,Playwright 驗證真實佈線/DOM/route,見 D-50-P34）。
 - `graphify update .`：已於文件更新後執行同步（見下方 commit）。
 - 收工前 `git status --short`：只含本次新增/修改的預期檔案（`tests/e2e/replay.spec.ts` 新增、`tests/replay/domain-purity-boundary.test.ts` 修改、本 WP／Stage10 docs 更新），無 payload artifacts、無真實 `data/session-history/` 變動（`.playwright-tmp/history-dev`／`.playwright-tmp/history-preview` 為既有 gitignored temp roots）。
+
+## KI-017 regression fix（2026-09-01）
+
+WP-51 T4 依 README §2.6 回流的 `main.ts` replay entry wiring defect 已由 WP-50 owner 修復。
+
+- 根因：History Run Detail 的 `onReplay(runId)` closure 在 `replayController` 尾端 `const` 初始化前已可由使用者點擊觸發；top-level await 期間讀取 TDZ binding 會拋 `ReferenceError`。
+- 修法：`src/main.ts` 提前宣告 `let replayController: ReplayController | undefined`，尾端 `createReplayController(...)` 完成後賦值；History `onReplay` 存取前 guard，尚未就緒時透過 `HistoricalRunDetail` 既有 status 區顯示「Replay 尚未就緒，請稍後再試。」。
+- Regression：`tests/e2e/replay.spec.ts` 新增 KI-017 真瀏覽器 case，用 public History API seed run，導覽 History→Participant→drill→run 後不等待 `window.__fpsTest` readiness 立即點「3D 重播」，捕捉 `pageerror` 並要求 either Replay ready 或明確尚未就緒訊息。
+- 驗證：`npm.cmd run typecheck` exit 0；`npx.cmd playwright test tests/e2e/replay.spec.ts --project=edge -g "KI-017"` 1 passed；`npx.cmd playwright test tests/e2e/replay.spec.ts tests/e2e/stage10-assessment.spec.ts tests/e2e/stage10-preview.spec.ts --project=edge` 12 passed；`npm.cmd run test:e2e` 73/73 passed。
+
+未修改 Replay domain semantics、sampling、seek、renderer lifecycle；M18 仍不得宣告完成，剩餘 blocker 屬 WP-49 KI-018、manual walkthrough、independent operator 與 Chrome/WebGL2 coverage gap。

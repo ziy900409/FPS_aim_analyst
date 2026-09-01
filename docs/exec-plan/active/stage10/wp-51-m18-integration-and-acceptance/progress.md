@@ -654,6 +654,16 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   T5/T-exit 仍保留 ⬜；`docs/operational/acceptance-stage-j.md` 更新到本次 T-exit automated evidence，
   並保留 remaining manual/owner blockers。
 
+- **2026-09-01**：KI-017 已依 WP-51 README §2.6 回流到 WP-50 owner 並修復。修復內容：`main.ts`
+  的 `replayController` 從尾端 TDZ `const` 改為早期 `let ReplayController | undefined`，History
+  Run Detail early click 在 controller 尚未就緒時顯示「Replay 尚未就緒，請稍後再試。」；WP-50
+  `tests/e2e/replay.spec.ts` 新增不等待 `window.__fpsTest` 的真瀏覽器 regression。受影響 gates 已重跑：
+  `npm.cmd run typecheck` exit 0；`npx.cmd playwright test tests/e2e/replay.spec.ts --project=edge -g "KI-017"`
+  1 passed；`npx.cmd playwright test tests/e2e/replay.spec.ts tests/e2e/stage10-assessment.spec.ts
+  tests/e2e/stage10-preview.spec.ts --project=edge` 12 passed；`npm.cmd run test:e2e` 73/73 passed。WP-51
+  仍不宣告 M18：KI-018、manual browser/GPU/a11y walkthrough、independent operator runbook walkthrough
+  與 Chrome/WebGL2 coverage gap 未完成。
+
 ## Surprises & Discoveries
 
 - **`127.0.0.1` 對這台機器的 Vite dev/preview 是假陰性**：手動起`npm run dev`後

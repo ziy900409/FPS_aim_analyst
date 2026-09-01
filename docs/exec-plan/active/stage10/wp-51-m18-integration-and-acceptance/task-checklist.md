@@ -8,9 +8,9 @@
 | ✅ | **T1** Acceptance harness／roots／evidence | [T1-acceptance-harness.md](T1-acceptance-harness.md) | T0 seams confirmed | High |
 | ✅ | **T2** Cross-WP canonical journeys | [T2-cross-wp-happy-paths.md](T2-cross-wp-happy-paths.md) | T1 + WP-48～50 exits | High |
 | ✅ | **T3** Failure／recovery／safety | [T3-failure-recovery-safety.md](T3-failure-recovery-safety.md) | T1～T2 | High |
-| ✅ | **T4** Scale／lifecycle／a11y — T-exit 重跑解除 42k cached-reopen P95 noisy blocker（480ms < 1500ms）；projection-shape／50-cycle+abort／keyboard journey／wall time皆有自動化證據。KI-017/KI-018仍列為T-exit known limitations，不再阻塞T4自動化DoD | [T4-scale-lifecycle-a11y.md](T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
+| ✅ | **T4** Scale／lifecycle／a11y — T-exit 重跑解除 42k cached-reopen P95 noisy blocker（480ms < 1500ms）；projection-shape／50-cycle+abort／keyboard journey／wall time皆有自動化證據。KI-017 已於 2026-09-01 修復；KI-018 仍列為 T-exit known limitation，不阻塞 T4 自動化 DoD | [T4-scale-lifecycle-a11y.md](T4-scale-lifecycle-a11y.md) | T1～T3 | Med/High |
 | ⬜ | **T5** Operations／manual release — runbook＋dossier traceability完成（2026-08-31）；manual walkthrough／獨立operator重跑待人工執行 | [T5-operations-manual-release.md](T5-operations-manual-release.md) | T2～T4 | Med |
-| ⬜ | **T-exit** M18 gate — automated gates 已重跑並通過（typecheck/build/Vitest/Playwright/test:ci/test:stage10/scale/critical repeat）；仍待 manual browser/GPU/a11y walkthrough、獨立 operator 重跑，以及 KI-017/KI-018 owner 收斂後才可宣告 M18 | [T-exit-gate.md](T-exit-gate.md) | T0～T5 + upstream exits | High |
+| ⬜ | **T-exit** M18 gate — automated gates 已重跑並通過（typecheck/build/Vitest/Playwright/test:ci/test:stage10/scale/critical repeat）；KI-017 已由 WP-50 owner 修復；仍待 manual browser/GPU/a11y walkthrough、獨立 operator 重跑、KI-018 owner 收斂與 Chrome/WebGL2 coverage gap 後才可宣告 M18 | [T-exit-gate.md](T-exit-gate.md) | T0～T5 + upstream exits | High |
 
 ## Package Definition of Done
 

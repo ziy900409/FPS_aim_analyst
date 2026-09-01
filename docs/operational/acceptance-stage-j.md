@@ -2,7 +2,7 @@
 
 > M18（stage10 交付：本機歷史紀錄中心與 3D 重播 prototype）的驗收對照草案，逐項對應 [stage10 README §10 M18 驗收條件](../exec-plan/active/stage10/README.md#10-m18-驗收條件) 與 WP-51 [README §1 FR/NFR](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/README.md#1-需求壓縮requirements)。由 WP-48／WP-49／WP-50 各自 T-exit 證據 + WP-51 T0～T4 新增的跨模組驗收證據覆核。
 >
-> **狀態：T-exit automated gates 已重跑（2026-08-31），M18 尚未宣告。** T4 measurement gate 已在較乾淨環境重跑通過，build/typecheck/Vitest/Playwright/Stage10 runner/critical repeat 皆有 pass evidence；manual browser/GPU/a11y walkthrough、獨立 operator 重跑與 KI-017/KI-018 owner 收斂尚未完成——本文件如實記錄未完成項，不把它們標成 pass。
+> **狀態：T-exit automated gates 已重跑（2026-08-31），M18 尚未宣告。** T4 measurement gate 已在較乾淨環境重跑通過，build/typecheck/Vitest/Playwright/Stage10 runner/critical repeat 皆有 pass evidence；KI-017 已於 2026-09-01 由 WP-50 owner 修復。manual browser/GPU/a11y walkthrough、獨立 operator 重跑、KI-018 owner 收斂與 Chrome/WebGL2 coverage gap 尚未完成——本文件如實記錄未完成項，不把它們標成 pass。
 >
 > Companion：[T5 task spec](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/T5-operations-manual-release.md) · [WP-51 progress.md](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/progress.md) · [history-center-replay.md](history-center-replay.md)
 
@@ -58,7 +58,7 @@
 
 | Requirement | Owner task | 狀態 | 備註 |
 |---|---|---|---|
-| FR-51.1／FR-51.17 | T0 | ✅ | WP-48/49/50 handoff矩陣（progress.md T0 段）；本次 session 未發現需開 upstream regression 的新缺口之外，KI-017/KI-018 已依此規則回流（見 §3） |
+| FR-51.1／FR-51.17 | T0 | ✅ | WP-48/49/50 handoff矩陣（progress.md T0 段）；KI-017/KI-018 已依此規則回流，其中 KI-017 已修復、KI-018 仍待 WP-49（見 §3） |
 | FR-51.2／FR-51.11／FR-51.14 | T1 | ✅ | isolated dev/preview roots、`npm run test:stage10` 單一命令+report |
 | FR-51.3～FR-51.8 | T2 | ✅ | canonical/restart/parity/Practice/support 全數見 §1 条件1-8 |
 | FR-51.9～FR-51.10 | T3 | ✅ | failure/recovery/race，repeat×5 zero-failure（既有 flake 除外，如實記錄） |
@@ -84,12 +84,12 @@
 
 | 項目 | Owner | 狀態 | 說明 |
 |---|---|---|---|
-| [KI-017](../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) — Run Detail「3D 重播」過早點擊 TDZ ReferenceError | WP-50 | 🔴 待修 | 與已修 KI-013 同一類根因；WP-51 測試側已繞開但未修 production code（超出 WP-51 授權） |
+| [KI-017](../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) — Run Detail「3D 重播」過早點擊 TDZ ReferenceError | WP-50 | ✅ 已修 | 2026-09-01：`replayController` 提早宣告並加 early-click 可見訊息 guard；新增 WP-50 Playwright regression |
 | [KI-018](../known_issue/KI-018-history-search-keystroke-focus-steal.md) — History 搜尋欄逐字輸入焦點被搶走 | WP-49 | 🔴 待修 | `navigator.replace()` 每次給 focus-guard 全新物件引發誤判；WP-51 測試側已繞開 |
 | Chrome 未安裝在目前開發機 | T5 前置 | 🔴 阻塞人工 walkthrough | 需另一台機器或先安裝 Chrome 才能執行 §4 的 Chrome 人工 WebGPU walkthrough |
 | Playwright 無 Chrome project／無 WebGL2 fallback project | T4／T5 | 🟡 尚未建立 | OQ-51.2 已凍結方向（見 WP-51 README/progress.md），實際 harness 尚未新增 |
 
-這些項目**不得**作為豁免 M18 核心條件（README §10 條件 1～11）的理由；它們各自阻塞的是：KI-017/KI-018 阻塞其各自涉及的互動路徑在「所有情況下」都正確（非阻塞已驗證的 automated happy-path），Chrome 缺席與缺少 project 阻塞 §4 的人工/自動化涵蓋範圍完整性。
+這些項目**不得**作為豁免 M18 核心條件（README §10 條件 1～11）的理由；剩餘阻塞是：KI-018 阻塞 History 搜尋鍵盤路徑在「所有情況下」都正確（非阻塞已驗證的 automated happy-path），Chrome 缺席與缺少 project 阻塞 §4 的人工/自動化涵蓋範圍完整性。
 
 ---
 
@@ -169,7 +169,7 @@
 
 **尚未判定通過。** README §10 的 11 項條件中，automated/measurement 部分皆有 pass evidence（見 §0～§2），但整體 M18 宣告依 WP-51 README §2.6／stage10 README 的紀律，還需要：
 
-1. [KI-017](../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md)／[KI-018](../known_issue/KI-018-history-search-keystroke-focus-steal.md) 由 WP-50／WP-49 承接修復並重跑受影響的 Stage10 suite。
+1. [KI-018](../known_issue/KI-018-history-search-keystroke-focus-steal.md) 由 WP-49 承接修復並重跑受影響的 Stage10 suite。KI-017 已於 2026-09-01 由 WP-50 owner 修復並補 regression。
 2. §4 的人工 browser／GPU／a11y walkthrough 由實際執行者完成並簽核（依 OQ-51.1 預設決策，這是阻塞項；若使用者/產品 owner 最終決定改為非阻塞，需回頭更新 WP-51 README OQ-51.1 段與本節）。
 3. 依 T5 DoD，需有一位未撰寫本 WP 主要程式碼者依 [history-center-replay.md](history-center-replay.md) 重新走一次啟動→定位 synthetic 紀錄→Replay→處理至少一個 failure state，證明文件本身足夠、不依賴作者記憶。
 4. 依 OQ-51.2 補齊或正式豁免 Chrome 人工 walkthrough 與 WebGL2 fallback 自動化 project 的 coverage gap。

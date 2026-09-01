@@ -14,7 +14,7 @@ import { createResultDetailBody } from '../ResultDetailBody.ts';
 export interface HistoricalRunDetailOptions {
   readonly onBack: () => void;
   readonly onRetry: () => void;
-  readonly onReplay?: (runId: string) => void;
+  readonly onReplay?: (runId: string) => string | void;
 }
 
 export interface HistoricalRunDetailInput {
@@ -95,7 +95,12 @@ export function createHistoricalRunDetail(options: HistoricalRunDetailOptions): 
   });
   replayButton?.addEventListener('click', () => {
     if (options.onReplay === undefined) return;
-    options.onReplay(currentRunId);
+    const message = options.onReplay(currentRunId);
+    if (typeof message !== 'string' || message.trim() === '') return;
+    status.dataset.historyStatus = 'action-error';
+    const paragraph = document.createElement('p');
+    paragraph.textContent = message;
+    status.replaceChildren(paragraph);
   });
 
   function setActionsEnabled(enabled: boolean): void {

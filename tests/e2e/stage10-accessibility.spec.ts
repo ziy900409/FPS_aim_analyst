@@ -28,14 +28,10 @@ import { makePayload, makeTick } from '../replay/fixtures.ts';
  *   control at all — the fixture's `startedAt` is set far in the future so it always sorts to the very
  *   top of the (unfiltered, un-searched) Participant list, and Tab reaches it directly.
  * - KI-017 (`docs/known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md`,
- *   WP-50): clicking/activating "3D 重播" before `main.ts`'s `replayController` (a top-level `const`
- *   assigned only near the end of the module, after an async initialization gap) has finished
- *   initializing throws an uncaught `ReferenceError` and silently no-ops the button — same class of
- *   bug as the already-fixed KI-013 (`controls`), just a different variable. Every existing dev-mode
- *   spec avoids this by coincidence: they all wait for the dev-only `window.__fpsTest` hook to appear,
- *   which happens to be set at the very end of the same module, after `replayController` is safe. This
- *   spec adopts that same wait (`waitForHarnessReady`) for the same reason, matching established
- *   convention elsewhere in this suite — it sidesteps the race in this test without hiding the finding.
+ *   WP-50) was found while this spec was first written: early "3D 重播" activation could read
+ *   `main.ts`'s replay controller before initialization. It is now covered directly by
+ *   `tests/e2e/replay.spec.ts` without waiting for `window.__fpsTest`; this spec still waits for the
+ *   dev harness because its purpose is the keyboard/a11y journey, not bootstrap-race coverage.
  */
 
 const URL = 'http://localhost:5173/';
@@ -63,10 +59,9 @@ async function activeElementDataset(page: Page, key: string): Promise<string | u
   return page.evaluate((k) => (document.activeElement as HTMLElement | null)?.dataset[k], key);
 }
 
-/** Matches every other dev-mode Stage10/WP-49/WP-50 spec's own convention (see file header, KI-017):
- * waiting for the dev-only completion harness to appear also happens to guarantee `main.ts`'s
- * `replayController` has finished initializing, since both are set at the very end of the same
- * module evaluation. */
+/** Matches every other dev-mode Stage10/WP-49/WP-50 spec's own convention: this keyboard/a11y spec
+ * needs the dev-only completion harness ready before it drives the rest of the journey. Bootstrap
+ * replay-race coverage lives in replay.spec.ts's KI-017 regression instead. */
 async function waitForHarnessReady(page: Page): Promise<void> {
   await expect
     .poll(() => page.evaluate(() => Boolean((window as unknown as { __fpsTest?: unknown }).__fpsTest)), { timeout: 15_000 })
@@ -133,7 +128,7 @@ test.describe('WP-51 T4 — keyboard-only History -> Replay journey (FR-51.13/NF
     expect(seed.ok, `seed failed: ${JSON.stringify(seed)}`).toBe(true);
 
     await page.goto(URL, { waitUntil: 'networkidle' });
-    await waitForHarnessReady(page); // KI-017 workaround — see file header.
+    await waitForHarnessReady(page);
 
     // ---- 1. launch -> History --------------------------------------------------------------
     const historyButton = page.getByRole('button', { name: '歷史紀錄', exact: true });

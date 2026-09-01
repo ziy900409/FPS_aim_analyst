@@ -151,7 +151,7 @@ test.describe('WP-51 T4 — real-browser resource lifecycle (FR-51.12/NFR-51.4)'
     expect(seed.ok, `seed failed: ${JSON.stringify(seed)}`).toBe(true);
 
     await page.goto(URL, { waitUntil: 'networkidle' });
-    await waitForHarnessReady(page); // KI-017 workaround (see stage10-accessibility.spec.ts header).
+    await waitForHarnessReady(page);
     const screen = await openRunDetail(page, participantId, DRILL_ID, runId);
 
     const replayButton = screen.locator('[data-history-action="replay"]');

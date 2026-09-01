@@ -1,4 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
+import type { ExportPayload } from '../../src/data/export.ts';
+import { buildRunId, buildRunIdentity } from '../../server/history/historyPaths.ts';
+import { makePayload, makeTick } from '../replay/fixtures.ts';
 
 /**
  * WP-50 T-exit — Replay acceptance scenarios in a real browser (README §5/T-exit-gate.md
@@ -25,6 +28,7 @@ import { test, expect } from '@playwright/test';
  */
 
 const URL = 'http://localhost:5173/';
+const API_BASE = 'http://localhost:5173';
 const FULL_DRILL_ID = 'hold_click_v1';
 const SECOND_DRILL_ID = 'spider-shot-v1';
 
@@ -48,6 +52,28 @@ type Harness = {
   showResultAndSaveToHistory(overrides?: { participantId?: string; assessment?: boolean }): Promise<HistorySaveState>;
   historySaveState(): HistorySaveState;
 };
+
+async function postRun(request: APIRequestContext, payload: ExportPayload): Promise<{ ok: boolean; data?: unknown; error?: { code: string } }> {
+  const res = await request.post(`${API_BASE}/api/history/runs`, { data: payload });
+  return res.json();
+}
+
+function buildEarlyReplayFixture(participantId: string): { payload: ExportPayload; runId: string } {
+  const payload = makePayload({
+    meta: {
+      drillId: FULL_DRILL_ID,
+      session: { participantId },
+      assessment: { protocolVersion: '1.0.0', assessmentFeedbackPolicy: 'minimal-end-of-block' },
+      startedAt: new Date(Date.UTC(2100, 0, 1) + Date.now()).toISOString(),
+      vStrafe: 250,
+      scene: { sceneId: 'peek-corridor', assetPackVersion: 'peek-corridor-v1', clutterTier: 'low', fallback: false },
+    },
+    ticks: [makeTick({ t: 0 }), makeTick({ t: 100 }), makeTick({ t: 200 }), makeTick({ t: 300 })],
+    events: [{ type: 'fire', t: 100, hit: true, firstShot: true, residualSpeed: 0, shotSeq: 0 }],
+  });
+  const runId = buildRunId(buildRunIdentity(payload.meta.schemaVersion, participantId, payload.meta.drillId, payload.meta.startedAt));
+  return { payload, runId };
+}
 
 /** A short, real sim run: aim+fire once, then strafe a little — enough ticks/events (fire/hit,
  * key-driven movement) to exercise camera, target, transport timeline and event markers, without
@@ -120,6 +146,52 @@ async function waitReplayReady(page: import('@playwright/test').Page): Promise<i
 }
 
 test.describe('WP-50 T-exit — Replay acceptance (A-50.1/50.2/50.3)', () => {
+  test('History early 3D replay click before controller readiness does not throw a TDZ ReferenceError (KI-017)', async ({
+    page,
+    request,
+  }) => {
+    const pageErrors: string[] = [];
+    const consoleErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    await page.addInitScript(() => {
+      const nativeRaf = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = (callback: FrameRequestCallback): number =>
+        nativeRaf((time) => {
+          window.setTimeout(() => callback(time), 75);
+        });
+    });
+
+    const participantId = `ki017-early-replay-${crypto.randomUUID()}`;
+    const { payload, runId } = buildEarlyReplayFixture(participantId);
+    const seed = await postRun(request, payload);
+    expect(seed.ok, `seed failed: ${JSON.stringify(seed)}`).toBe(true);
+
+    await page.goto(URL, { waitUntil: 'commit' });
+    const historyScreen = await openHistoricalRunDetail(page, participantId, FULL_DRILL_ID, runId);
+    const replayButton = historyScreen.locator('[data-history-action="replay"]');
+    await expect(replayButton).toBeEnabled();
+    await replayButton.click();
+
+    await expect
+      .poll(
+        async () => {
+          const replayReady = await page.locator('#replay-screen [data-section="replay-ready"]').isVisible();
+          if (replayReady) return 'ready';
+          const statusText = await historyScreen.locator('[data-section="historical-run-status"]').textContent();
+          if (statusText?.includes('Replay 尚未就緒')) return 'not-ready';
+          return 'no-feedback';
+        },
+        { timeout: 5_000 },
+      )
+      .toMatch(/^(ready|not-ready)$/);
+
+    expect(pageErrors.filter((message) => message.includes("Cannot access 'replayController' before initialization"))).toEqual([]);
+    expect(consoleErrors.filter((message) => message.includes("Cannot access 'replayController' before initialization"))).toEqual([]);
+  });
+
   test('a full official Assessment run replays end to end from History (A-50.1)', async ({ page }) => {
     await waitForHarness(page);
     const participantId = `texit-full-${crypto.randomUUID()}`;

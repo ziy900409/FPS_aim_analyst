@@ -4,8 +4,9 @@
 > [KI-013](KI-013-controls-tdz-referenceerror-on-early-researcher-click.md) 同一類根因，這次是不同的
 > 頂層 `const`（`replayController`）。KI-013 §6 OQ-KI13-1 當時已預告「同一類結構性風險可能出現在其他
 > 晚宣告的頂層 `const`」——本次即為該預告的具體重現。
-> 狀態：🔴 診斷完成，修法待落地（發現於 WP-51 T4，非 WP-51 職權範圍——本 WP 只驗收，不修
-> `main.ts` domain composition，見 [WP-51 README §2.6](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/README.md)）。
+> 狀態：✅ 已修復（2026-09-01，WP-50 owner 修復；發現於 WP-51 T4，依
+> [WP-51 README §2.6](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/README.md)
+> 回流到 WP-50）。
 > 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-017。
 > 發現脈絡：WP-51 T4 撰寫 History→Replay keyboard-only 驗收測試（`tests/e2e/stage10-accessibility.spec.ts`）時，
 > 因測試未先等待 dev-only `window.__fpsTest` 掛上（其餘既有 dev-mode E2E spec 皆有此等待，唯獨這支新測試漏了），
@@ -58,40 +59,49 @@ Run Detail 並點擊「3D 重播」（例如較慢的裝置、較快的網路，
 wall-clock 時間讓 `replayController` 早已初始化完成——同樣是巧合，不是刻意設計的保護，換一台更慢的
 機器或更快的 API mock 就可能露餡。
 
-## 3. 修復計畫（尚未落地，比照 KI-013/BD-013 的既有修法模式）
+## 3. 修法（2026-09-01，已落地）
 
-把 `replayController` 從尾端的 `const` 改為提早宣告的
-`let replayController: ReplayController | undefined`（比照 KI-013 對 `controls` 的修法、以及本檔案
-既有的 `researcherMenu`/`historyScreenHandle`/`replayScreenHandle` 慣例），並在 `onReplay(runId)`
-開頭加 `if (replayController === undefined) return;`（或更友善地：呼叫
-`replayScreenHandle?.render({ kind: 'error', message: '...尚未就緒，請稍後再試' })`，讓使用者至少看得到
-明確訊息，而非靜默無反應——這點比 KI-013 的 `controls` guard 更值得做，因為那裡是「面板同步」，
-使用者不會主動觸發；這裡是「使用者主動點擊一個看起來可互動的按鈕」，靜默無反應的使用者體感比
-KI-013 更差）。`replayController = createReplayController(...)` 賦值完成後不需要額外補救呼叫（不像
-KI-013 的 `syncControlsVisibility()` 有既有的無條件補救路徑）——使用者只需要再點一次「3D 重播」即可。
+`src/main.ts` 已比照 KI-013 模式，把 `replayController` 從尾端的 TDZ `const` 改成檔案前段的
+`let replayController: ReplayController | undefined`。尾端 `createReplayController(...)` 完成後再賦值，
+並以 local `initializedReplayController` 訂閱 state，維持初始化完成後的既有 Replay flow。
+
+History Run Detail 的 `onReplay(runId)` 先讀 local `controller` 並 guard：
+
+- `controller === undefined` 時不丟 exception，回傳 `Replay 尚未就緒，請稍後再試。`
+- `HistoricalRunDetail` 只在 `onReplay` 回傳字串時，把訊息顯示在既有
+  `[data-section="historical-run-status"]` 狀態區；正常 replay 開啟仍不回傳字串、不改 UI。
+- 初始化完成後，historical/current Replay 仍呼叫同一 `ReplayController.open(...)` path；未修改
+  Replay domain semantics、sampling、seek 或 renderer lifecycle。
 
 ## 4. 影響面
 
-- **受影響**：`main.ts` 的 `replayController` 變數宣告形式與 `onReplay` 內的存取寫法；`ReplayController`
-  本身、`ReplayScreen`/`ReplayTransport` 元件、任何 replay domain 邏輯皆不受影響。
+- **受影響**：`main.ts` 的 `replayController` 變數宣告形式與 `onReplay` guard；`HistoricalRunDetail`
+  的 typed action port 允許回傳一段使用者可見訊息。`ReplayController` 本身、`ReplayScreen`/
+  `ReplayTransport` 元件、任何 replay domain 邏輯皆不受影響。
 - **不受影響範圍已由 WP-50/WP-51 現有測試證明**：一旦 `replayController` 已初始化完成（本專案目前
   100% 的既有 E2E 覆蓋都是這個情境，因為都間接或直接等待 `__fpsTest`/多次網路往返），Replay 開啟/
   控制/導覽的既有行為逐位不變。
 - **Ownership**：本 bug 位於 `main.ts` 的 replay 進入點接線（`feat(replay): wire current/historical
-  replay entries into main.ts (WP-50 T6)` 一帶引入），依 WP-51 README §2.6 屬「WP-50
-  support/seek/scene/ownership defect」，須回 WP-50 開 regression task 修復，WP-51 本身不得修改
-  `main.ts` domain composition。
+  replay entries into main.ts (WP-50 T6)` 一帶引入），已依 WP-51 README §2.6 回流到 WP-50 修復。
 
 ## 5. Definition of Done（修法落地時驗收）
 
-- [ ] `replayController` 改為提早宣告的 `let replayController: ReplayController | undefined`；`onReplay`
+- [x] `replayController` 改為提早宣告的 `let replayController: ReplayController | undefined`；`onReplay`
       補 `undefined` guard（含使用者可見訊息，而非純靜默 return）。
-- [ ] 新增回歸測試：History→Participant→drill→run 導覽完成後、**不等待** `__fpsTest`／任何 readiness
+- [x] 新增回歸測試：History→Participant→drill→run 導覽完成後、**不等待** `__fpsTest`／任何 readiness
       信號，立即對「3D 重播」送出 `click`（或鍵盤 `Enter`/`Space`），斷言零 `pageerror`，且該次點擊
       要嘛成功開啟 Replay、要嘛顯示明確的「尚未就緒」訊息（不得靜默無反應）。
-- [ ] `npx playwright test tests/e2e/replay.spec.ts tests/e2e/stage10-assessment.spec.ts
+- [x] `npx playwright test tests/e2e/replay.spec.ts tests/e2e/stage10-assessment.spec.ts
       tests/e2e/stage10-preview.spec.ts --project=edge` 零 regression。
-- [ ] `npm run typecheck` exit 0。
+- [x] `npm run typecheck` exit 0。
+
+驗證結果（2026-09-01）：
+
+- 修補前新增 regression 先失敗：同一 early-click path 進入 `no-feedback` 狀態，重現使用者體感。
+- 修補後 `npx.cmd playwright test tests/e2e/replay.spec.ts --project=edge -g "KI-017"`：1 passed。
+- `npm.cmd run typecheck`：exit 0。
+- `npx.cmd playwright test tests/e2e/replay.spec.ts tests/e2e/stage10-assessment.spec.ts tests/e2e/stage10-preview.spec.ts --project=edge`：12 passed。
+- `npm.cmd run test:e2e`：73 passed。
 
 ## 6. Commit（落地時）
 

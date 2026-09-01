@@ -55,10 +55,10 @@
 - [x] History→Replay全流程keyboard可完成，focus/ARIA/warning assertions通過（
       `tests/e2e/stage10-accessibility.spec.ts`：僅用.focus()+page.keyboard.press()走完
       launch→History→Participant→drill→run→Replay controls/events→Back，含兩段真實Tab-order證明與
-      role/aria-label/aria-pressed/aria-valuetext斷言；過程中發現並記錄兩個真實upstream缺陷
+      role/aria-label/aria-pressed/aria-valuetext斷言；過程中發現並記錄兩個真實upstream缺陷，其中 KI-017
+      已於 2026-09-01 由 WP-50 owner 修復，KI-018 仍待 WP-49 owner：
       [KI-017](../../../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md)／
-      [KI-018](../../../known_issue/KI-018-history-search-keystroke-focus-steal.md)，測試側繞開但未
-      掩蓋，修復留給WP-50／WP-49）。
+      [KI-018](../../../known_issue/KI-018-history-search-keystroke-focus-steal.md)）。
 - [x] acceptance command wall time有記錄；任何豁免有owner/deadline而非靜默跳過（
       `tests/stage10/cli.ts`：`npm run test:stage10`本機實測38.5s／41.6s，遠低於600s budget，
       M18EvidenceRecord記錄且明確排除兩個opt-in benchmark）。
