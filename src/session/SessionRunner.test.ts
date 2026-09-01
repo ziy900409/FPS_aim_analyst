@@ -116,10 +116,29 @@ describe('SessionRunner', () => {
     expect(resolveFamilyDrillId('spider-shot')).toBe('spider-shot-v1');
     expect(resolveFamilyDrillId('counterstrafe')).toBe('counterstrafe-reversal-v1');
     expect(resolveFamilyDrillId('peek-click-transfer')).toBe('peek_click_transfer_pilot_v1_2deg');
+    expect(resolveFamilyDrillId('peek-click-transfer-v1')).toBe('peek_click_transfer_v1');
     expect(resolveWarmupDrillId('counterstrafe')).toEqual({
       availability: 'available',
       drillId: 'counterstrafe-free-v1',
     });
+  });
+
+  it('resolves the formal peek-click-transfer-v1 family to a drill distinct from every pilot family (WP-53 T4, FR-53-6)', async () => {
+    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const onStatus = vi.fn();
+    const runner = createSessionRunner({ loadDrillById, onStatus });
+    await runner.start({
+      participantId: 'P001',
+      sessionIndex: 0,
+      families: ['peek-click-transfer-v1'],
+      restSeconds: 60,
+      includeWarmup: true,
+    });
+
+    expect(runner.phase).toEqual({ kind: 'family', family: 'peek-click-transfer-v1', familyIndex: 0 });
+    expect(loadDrillById).toHaveBeenCalledWith('peek_click_transfer_v1');
+    expect(resolveFamilyDrillId('peek-click-transfer-v1')).not.toBe(resolveFamilyDrillId('peek-click-transfer'));
+    expect(resolveWarmupDrillId('peek-click-transfer-v1')).toEqual({ availability: 'unavailable' });
   });
 
   it('reports unavailable warmup for the peek-click-transfer pilot family and loads it directly', async () => {

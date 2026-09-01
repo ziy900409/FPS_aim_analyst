@@ -168,6 +168,7 @@ describe('createSessionPlanSetup', () => {
       'spider-shot',
       'counterstrafe',
       'peek-click-transfer',
+      'peek-click-transfer-v1',
     ]);
     for (const input of familyCheckboxes) {
       input.checked = input.value === 'hold-click' || input.value === 'counterstrafe' || input.value === 'peek-click-transfer';

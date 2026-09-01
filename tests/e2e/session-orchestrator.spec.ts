@@ -226,12 +226,14 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     await expect(planSetup).toBeVisible();
 
     // FR-G9①：家族子集自由勾選——WP-52 T2 把家族清單從 TEST_FAMILY_IDS(4)擴充為
-    // KNOWN_SESSION_FAMILY_IDS(5,含 'peek-click-transfer'),讓操作者能在同一套自由勾選 UI
-    // 選入 transfer pilot 家族,而不需要重新引入 WP-43 FR-H3 已移除的 preset 下拉。
+    // KNOWN_SESSION_FAMILY_IDS(6,含 pilot 'peek-click-transfer' 與 WP-53 T4 formal
+    // 'peek-click-transfer-v1'),讓操作者能在同一套自由勾選 UI 選入 transfer 家族,而不需要
+    // 重新引入 WP-43 FR-H3 已移除的 preset 下拉。
     const familyCheckboxes = planSetup.locator('input[name="sessionFamily"]');
-    await expect(familyCheckboxes).toHaveCount(5);
-    for (let i = 0; i < 5; i++) await expect(familyCheckboxes.nth(i)).toBeChecked();
+    await expect(familyCheckboxes).toHaveCount(6);
+    for (let i = 0; i < 6; i++) await expect(familyCheckboxes.nth(i)).toBeChecked();
     await expect(planSetup.locator('[data-session-family="peek-click-transfer"]')).toHaveCount(1);
+    await expect(planSetup.locator('[data-session-family="peek-click-transfer-v1"]')).toHaveCount(1);
 
     // FR-H2：拖曳後 DOM 與提交順序都以操作者排列為準。
     await planSetup
@@ -279,6 +281,32 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
       if (value !== 'peek-click-transfer') await checkbox.uncheck();
     }
     await expect(planSetup.locator('[data-session-family="peek-click-transfer"] input')).toBeChecked();
+
+    await planSetup.locator('button[type="submit"]').click();
+    await expect(page.locator('#eligibility-gate')).toBeVisible();
+  });
+
+  test('WP-53 T4：操作者只勾選 formal peek-click-transfer-v1 家族亦能走到 eligibility gate', async ({ page }) => {
+    await waitForHarness(page);
+
+    await page.getByRole('button', { name: '選手測試 Session', exact: true }).click();
+    await page.locator('#session-setup input[name="participantId"]').fill('t-exit-transfer-formal');
+    await page.locator('#session-setup button[type="submit"]').click();
+
+    const planSetup = page.locator('#session-plan-setup');
+    await expect(planSetup).toBeVisible();
+
+    // 只保留 formal 'peek-click-transfer-v1',其餘（含 pilot 'peek-click-transfer'）取消勾選——
+    // 證明 formal 家族與 pilot 家族是可獨立選取的兩個 id（FR-53-6），不是同一個勾選項。
+    const familyCheckboxes = planSetup.locator('input[name="sessionFamily"]');
+    const count = await familyCheckboxes.count();
+    for (let i = 0; i < count; i++) {
+      const checkbox = familyCheckboxes.nth(i);
+      const value = await checkbox.getAttribute('value');
+      if (value !== 'peek-click-transfer-v1') await checkbox.uncheck();
+    }
+    await expect(planSetup.locator('[data-session-family="peek-click-transfer-v1"] input')).toBeChecked();
+    await expect(planSetup.locator('[data-session-family="peek-click-transfer"] input')).not.toBeChecked();
 
     await planSetup.locator('button[type="submit"]').click();
     await expect(page.locator('#eligibility-gate')).toBeVisible();

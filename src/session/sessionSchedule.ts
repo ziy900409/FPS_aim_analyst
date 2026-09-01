@@ -11,17 +11,28 @@ export const TRANSFER_PILOT_FAMILY_IDS = ['hold-click', 'counterstrafe', 'peek-c
 
 export type TransferPilotFamilyId = (typeof TRANSFER_PILOT_FAMILY_IDS)[number];
 
-export type SessionFamilyId = TestFamilyId | TransferPilotFamilyId;
+/**
+ * WP-53 T4 (GD-29 formal freeze) — additive roster for the formal `peek_click_transfer_v1`
+ * Assessment. A distinct family id from the pilot's `'peek-click-transfer'` (§TRANSFER_PILOT_FAMILY_IDS)
+ * — the two must never resolve to the same drill (FR-53-6/D-53.1) — and does not alter
+ * `TEST_FAMILY_IDS`'s four-element order.
+ */
+export const TRANSFER_FORMAL_FAMILY_IDS = ['peek-click-transfer-v1'] as const;
+
+export type TransferFormalFamilyId = (typeof TRANSFER_FORMAL_FAMILY_IDS)[number];
+
+export type SessionFamilyId = TestFamilyId | TransferPilotFamilyId | TransferFormalFamilyId;
 
 /**
  * KI-016 — single-source allowlist of every family id a session plan may draw from (the frozen
- * four-family assessment roster plus the additive pilot roster). `SessionRunner.ts` and
- * `src/data/metadata.ts`'s `requireSessionPlanFamilyOrder` both validate against this constant so
- * the two allowlists cannot drift apart again.
+ * four-family assessment roster plus the additive pilot and formal transfer rosters). `SessionRunner.ts`
+ * and `src/data/metadata.ts`'s `requireSessionPlanFamilyOrder` both validate against this constant so
+ * the allowlists cannot drift apart again.
  */
 export const KNOWN_SESSION_FAMILY_IDS: ReadonlySet<SessionFamilyId> = new Set([
   ...TEST_FAMILY_IDS,
   ...TRANSFER_PILOT_FAMILY_IDS,
+  ...TRANSFER_FORMAL_FAMILY_IDS,
 ]);
 
 function participantOffset(participantId: string, rosterLength: number): number {

@@ -2,9 +2,9 @@
 
 ## Status
 
-- **Current**：✅ T0 formal freeze 已拍板（2026-09-01，見全域 [DECISIONS.md GD-29](../../../DECISIONS.md)）。T1~T3 的 provisional 骨架已轉為正式凍結值（此前的 [GD-28](../../../DECISIONS.md) override 狀態已關閉）。T4（Session Plan 整合）與 T5（E2E）尚未開工。
-- **Scope state**：根據 WP-52 evidence（人工 checklist + 3 場真人 `peek_click_transfer_pilot_v2_masked` session）新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。凍結值：`protocolVersion=peek-click-transfer-v1.0.0`、`angularSizeDeg=2.5`、`distanceU=8`、`targetCount=20`，timing/visibility 沿用 pilot v1/v2 既有值。
-- **Dependency state**：T0~T3 已完成。T4 需要 formal Session Plan preset/roster 設計與實作（不改 stage6 default）；T5 需要 E2E 驗收，兩者皆待後續切片。
+- **Current**：✅ T0~T4 完成（2026-09-01）。T0 formal freeze 已拍板（見全域 [DECISIONS.md GD-29](../../../DECISIONS.md)），T1~T3 的 provisional 骨架已轉為正式凍結值，T4 formal Session Plan 整合已落地。T5（E2E acceptance）尚未開工。
+- **Scope state**：根據 WP-52 evidence（人工 checklist + 3 場真人 `peek_click_transfer_pilot_v2_masked` session）新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。凍結值：`protocolVersion=peek-click-transfer-v1.0.0`、`angularSizeDeg=2.5`、`distanceU=8`、`targetCount=20`，timing/visibility 沿用 pilot v1/v2 既有值。formal 現可透過新 Session Plan 家族 `'peek-click-transfer-v1'`（獨立於 pilot 的 `'peek-click-transfer'`）被選取並跑起來，即時 export 也會帶正確的 `meta.assessment.protocolVersion`。
+- **Dependency state**：T0~T4 已完成。T5 需要 E2E 驗收（formal transfer run 完成 → auto-save → history → trend），待後續切片；上一輪已標記的「無 SimLoop 驅動的真人手感 round-runner」缺口仍未解，會限制 T5 能驗到多深（見下方 T4 條目與先前 T3 條目的「已知缺口」）。
 
 ## Progress
 
@@ -56,6 +56,23 @@
 - **仍未做**：main.ts 即時組裝正式 run 的 `meta.assessment`、formal Session Plan preset/roster、E2E（T4/T5），超出本次範圍。
 - Verification：`npx tsc --noEmit` 全專案乾淨；`npx vitest run` 190 files / 1724 tests passed（1 skipped，既有、與本次無關）。
 
+### 2026-09-01 — T4 Formal Session Plan integration
+
+- 新增獨立 formal 家族 id `'peek-click-transfer-v1'`（[sessionSchedule.ts](../../../../src/session/sessionSchedule.ts) 新增 `TRANSFER_FORMAL_FAMILY_IDS`），與 pilot 既有的 `'peek-click-transfer'` 分開，不共用同一個 checkbox（FR-53-6/D-53.1：正式版與 pilot 必須是可各自獨立選取的兩個 id）；`TEST_FAMILY_IDS`（stage6 凍結四家族）與 `TRANSFER_PILOT_FAMILY_IDS` 逐位不動，只新增第三個 additive roster 常數並 union 進 `SessionFamilyId`/`KNOWN_SESSION_FAMILY_IDS`——沿用 WP-52/KI-016 已驗證過的同一個擴充模式。
+- [SessionRunner.ts](../../../../src/session/SessionRunner.ts)：`resolveFamilyDrillId` 新增 `'peek-click-transfer-v1'` case，解析到 `peekClickTransferV1.id`（非 pilot 的 `peekClickTransferPilotV1.id`）。`resolveWarmupDrillId` 未改——新家族落既有 `else` 分支回 `unavailable`，比照 WP-52 D-52.6 對 pilot 家族的既有立場（沒有 evidence 支持新增熱身入口）。
+- [main.ts](../../../../src/main.ts)：
+  - `availableDrills` 新增 `peek_click_transfer_v1` 條目（`sceneId`/`clearanceOptions` 沿用 config 本身的 wrapper 欄位，比照 pilot v1/v2 既有寫法）——這是先前 T1~T3 骨架階段留下的缺口（config 存在但 app 內完全點不到），至此補上。
+  - `PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID` 新增這個 drill id，讓匯出照樣帶 `meta.visibility`。
+  - 修正 `meta.assessment.protocolVersion` 過去對**所有** assessment drill 一律套用全域 `STAGE6_PROTOCOL_VERSION` 的既有缺口：新增 `ASSESSMENT_PROTOCOL_VERSION_BY_DRILL_ID`（drillId → protocolVersion 的單一來源查表，未登記的 id 一律 fallback 回 `STAGE6_PROTOCOL_VERSION`），改成 `.get(activeDrillConfig.drillId) ?? STAGE6_PROTOCOL_VERSION`。Stage6 既有四家族全數落 fallback 分支，逐位不變；只有 `peek_click_transfer_v1` 改讀 `PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION`。**未動**的第二處（`applyHistoryOverrides` dev-only test harness helper，main.ts ~938）——那是任意 drill 通用的 E2E 捷徑，非本次 formal wiring 範圍，若 T5 需要它也感知 drillId 專屬 protocolVersion，屆時再處理。
+  - `SessionPlanSetup.ts` 完全未改：它已經是泛型消費 `[...KNOWN_SESSION_FAMILY_IDS]`，新家族的 checkbox 自動出現。
+- **golden test 更新（非新增，是既有斷言的必要調整）**：
+  - [SessionPlanSetup.test.ts](../../../../src/ui/SessionPlanSetup.test.ts)：家族 checkbox 順序 golden array 由 5 元素改 6 元素。
+  - [tests/e2e/session-orchestrator.spec.ts](../../../../tests/e2e/session-orchestrator.spec.ts)：`toHaveCount(5)` 改 `toHaveCount(6)`，新增對 `[data-session-family="peek-click-transfer-v1"]` 的存在斷言。
+- 新增測試：[SessionRunner.test.ts](../../../../src/session/SessionRunner.test.ts) 一則驗證 formal 家族解析到與 pilot 不同的 drill id（FR-53-6）；[session-orchestrator.spec.ts](../../../../tests/e2e/session-orchestrator.spec.ts) 一則新 Playwright 案例（只勾選 formal 家族，走到 eligibility gate，並斷言 pilot checkbox 未被勾選）。
+- **環境插曲**：本輪跑 Playwright 時，本機已存在一個長壽命的 dev server process（port 5173）撞上 Vite 的 dep-optimize 快取過期（504 "Outdated Optimize Dep"），導致 `window.__fpsTest` 從未掛載、8 個測試全部在 `waitForHarness` timeout——這與本次程式碼改動無關，是既有 dev server 長時間運行 + 新增 import 觸發重新 optimize 失敗的環境問題。用 `Stop-Process` 關掉該行程、讓 Playwright 自己的 `webServer` 重新啟一個乾淨的即解決；記於此供未來遇到同症狀時參考。
+- **仍未做**：真正的真人手感/pointer-lock round-runner（比照 `runCounterStrafeRound`）——formal transfer 目前沒有專屬的 harness round-runner 能跑到真正 `ended`，這是 T5（E2E）動工時要面對的既有缺口（同一件事也擋掉了 T3 的數值投影測試）。
+- Verification：`npx tsc --noEmit` 全專案乾淨；`npx vitest run` 190 files / 1725 tests passed（1 skipped，既有）；`npx playwright test` 78/78 passed；`graphify update .` 完成（3854 nodes / 9095 edges / 236 communities）。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -95,3 +112,7 @@
 | 2026-09-01 | `npx vitest run src/history/ src/metrics/ src/drill/`（T3 骨架後） | 50 files / 439 tests passed |
 | 2026-09-01 | `npx tsc --noEmit`（T0 freeze + T1~T3 un-provisioned） | exit 0（全專案） |
 | 2026-09-01 | `npx vitest run`（T0 freeze + T1~T3 un-provisioned，全專案） | 190 files / 1724 tests passed（1 skipped，既有） |
+| 2026-09-01 | `npx tsc --noEmit`（T4 後） | exit 0（全專案） |
+| 2026-09-01 | `npx vitest run`（T4 後，全專案） | 190 files / 1725 tests passed（1 skipped，既有） |
+| 2026-09-01 | `npx playwright test`（T4 後，全 E2E） | 78/78 passed |
+| 2026-09-01 | `graphify update .`（T4 後） | 3854 nodes / 9095 edges / 236 communities rebuilt |

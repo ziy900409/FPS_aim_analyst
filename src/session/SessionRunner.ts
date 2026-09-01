@@ -3,6 +3,7 @@ import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
 import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
 import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
+import { peekClickTransferV1 } from '../drill/peek_click_transfer_v1.ts';
 import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
 
@@ -71,6 +72,8 @@ export function resolveFamilyDrillId(family: SessionFamilyId): string {
       return counterstrafeReversalV1.drillId;
     case 'peek-click-transfer':
       return peekClickTransferPilotV1.id;
+    case 'peek-click-transfer-v1':
+      return peekClickTransferV1.id;
   }
 }
 

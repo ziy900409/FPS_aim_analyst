@@ -98,6 +98,7 @@ import {
   peekClickTransferPilotV2Randomized,
   peekClickTransferPilotV2Masked,
 } from './drill/peek_click_transfer_pilot_v2.ts';
+import { peekClickTransferV1, PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION } from './drill/peek_click_transfer_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -208,6 +209,16 @@ const availableDrills: AvailableDrill[] = [
     sceneId: peekClickTransferPilotV2Masked.sceneId,
     loadOptions: { clearance: peekClickTransferPilotV2Masked.clearanceOptions },
   },
+  // WP-53 T4 (GD-29 formal freeze): formal Assessment release, distinct drill id from every pilot
+  // cohort — reachable both directly here (researcher mode) and via the `'peek-click-transfer-v1'`
+  // Session Plan family (SessionRunner.ts resolveFamilyDrillId).
+  {
+    id: peekClickTransferV1.id,
+    label: peekClickTransferV1.id,
+    source: peekClickTransferV1.drill,
+    sceneId: peekClickTransferV1.sceneId,
+    loadOptions: { clearance: peekClickTransferV1.clearanceOptions },
+  },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,
     label: variant.id,
@@ -226,6 +237,13 @@ const PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID = new Map<string, { sampleCount
   ]),
   [peekClickTransferPilotV2Randomized.id, peekClickTransferPilotV2Randomized.visibility],
   [peekClickTransferPilotV2Masked.id, peekClickTransferPilotV2Masked.visibility],
+  [peekClickTransferV1.id, peekClickTransferV1.visibility],
+]);
+// WP-53 T4 (GD-29): single-source lookup for the drill-specific `meta.assessment.protocolVersion`.
+// Every stage6 four-family assessment drill keeps the default `STAGE6_PROTOCOL_VERSION` untouched;
+// only an id present here diverges.
+const ASSESSMENT_PROTOCOL_VERSION_BY_DRILL_ID = new Map<string, string>([
+  [peekClickTransferV1.id, PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION],
 ]);
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
@@ -698,7 +716,8 @@ async function buildCurrentExportPayload(
     ...(activeDrillConfig.mode === 'assessment'
       ? {
           assessment: {
-            protocolVersion: STAGE6_PROTOCOL_VERSION,
+            protocolVersion:
+              ASSESSMENT_PROTOCOL_VERSION_BY_DRILL_ID.get(activeDrillConfig.drillId) ?? STAGE6_PROTOCOL_VERSION,
             assessmentFeedbackPolicy,
           },
         }
