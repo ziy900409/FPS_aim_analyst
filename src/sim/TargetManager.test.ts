@@ -866,3 +866,91 @@ describe('TargetManager — WP-44 spider-shot stratified 12-cell peripheral sche
     }
   });
 });
+
+describe('TargetManager — WP-52 T5 balanced-shuffle hitboxCandidates', () => {
+  const CANDIDATES = [
+    { widthU: 0.14, heightU: 0.14, depthU: 1 },
+    { widthU: 0.35, heightU: 0.35, depthU: 1 },
+    { widthU: 0.7, heightU: 0.7, depthU: 1 },
+  ] as const;
+
+  function config(seed: number, count = 21): DrillConfig {
+    return {
+      drillId: 'hitbox-candidates-test',
+      targets: { count, distance: 8, hitboxCandidates: CANDIDATES },
+      sequence: { alternation: 'LR', seed },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: count },
+    };
+  }
+
+  function collectHitboxes(cfg: DrillConfig): Array<{ widthU: number; hitboxVaries?: true }> {
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+    const samples: Array<{ widthU: number; hitboxVaries?: true }> = [];
+    for (let i = 0; i < cfg.targets.count; i++) {
+      tm.tick(state, 100 + i * 100);
+      const target = state.targets[0];
+      samples.push({ widthU: target.hitbox.width, hitboxVaries: target.hitboxVaries });
+      tm.markKilled(state, target.id);
+    }
+    return samples;
+  }
+
+  it('each candidate appears an equal number of times across a full run', () => {
+    const samples = collectHitboxes(config(1));
+    const counts = new Map<number, number>();
+    for (const sample of samples) counts.set(sample.widthU, (counts.get(sample.widthU) ?? 0) + 1);
+
+    expect(samples).toHaveLength(21);
+    expect([...counts.values()]).toEqual([7, 7, 7]);
+    for (const candidate of CANDIDATES) expect(counts.get(candidate.widthU)).toBe(7);
+  });
+
+  it('marks every spawned target hitboxVaries: true (WP-52 T5 event-emission trigger)', () => {
+    const samples = collectHitboxes(config(1));
+    expect(samples.every((sample) => sample.hitboxVaries === true)).toBe(true);
+  });
+
+  it('does not produce every candidate in the same fixed order (sanity: it is shuffled, not round-robin)', () => {
+    const widths = collectHitboxes(config(1)).map((sample) => sample.widthU);
+    const roundRobin = [0, 1, 2].flatMap(() => CANDIDATES.map((c) => c.widthU));
+    expect(widths).not.toEqual(roundRobin);
+  });
+
+  it('same seed reset produces the identical shuffled sequence; a different seed differs', () => {
+    const cfg = config(42);
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+
+    function run(): number[] {
+      const widths: number[] = [];
+      for (let i = 0; i < cfg.targets.count; i++) {
+        tm.tick(state, 100 + i * 100);
+        widths.push(state.targets[0].hitbox.width);
+        tm.markKilled(state, state.targets[0].id);
+      }
+      return widths;
+    }
+
+    const first = run();
+    tm.reset(state);
+    expect(run()).toEqual(first);
+    expect(collectHitboxes(config(43)).map((s) => s.widthU)).not.toEqual(first);
+  });
+
+  it('a drill without hitboxCandidates never sets hitboxVaries (existing drills unaffected)', () => {
+    const state = createSharedState();
+    const tm = createTargetManager({
+      drillId: 'no-candidates',
+      targets: { count: 3, distance: 8, hitbox: { widthU: 0.35, heightU: 0.35, depthU: 1 } },
+      sequence: { alternation: 'LR' },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: 3 },
+    });
+
+    tm.tick(state, 100);
+    expect(state.targets[0].hitboxVaries).toBeUndefined();
+    expect(state.targets[0].hitbox.width).toBe(0.35);
+  });
+});

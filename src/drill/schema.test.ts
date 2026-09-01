@@ -60,6 +60,28 @@ describe('validateDrill — 合法 config（FR-6.1）', () => {
     expect(cfg.targets.hitbox).toBeUndefined();
   });
 
+  it('接受 hitboxCandidates（WP-52 T5，balanced-shuffle 候選集合，count 可整除候選數）', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: {
+        count: 21,
+        distance: 8,
+        hitboxCandidates: [
+          { widthU: 0.14, heightU: 0.14, depthU: 1 },
+          { widthU: 0.35, heightU: 0.35, depthU: 1 },
+          { widthU: 0.7, heightU: 0.7, depthU: 1 },
+        ],
+      },
+      sequence: { alternation: 'LR', seed: 95000 },
+    });
+    expect(cfg.targets.hitboxCandidates).toEqual([
+      { widthU: 0.14, heightU: 0.14, depthU: 1 },
+      { widthU: 0.35, heightU: 0.35, depthU: 1 },
+      { widthU: 0.7, heightU: 0.7, depthU: 1 },
+    ]);
+    expect(cfg.targets.hitbox).toBeUndefined();
+  });
+
   it('省略 weaponId → 保持 undefined（呼叫端使用預設武器）', () => {
     const cfg = validateDrill(minimalValid());
     expect(cfg.weaponId).toBeUndefined();
@@ -196,6 +218,57 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
   it('非整數目標數 → throw（正整數約束）', () => {
     const bad = { ...(minimalValid() as object), targets: { count: 2.5, distance: 4 } };
     expect(() => validateDrill(bad)).toThrow(/targets\.count/);
+  });
+
+  it('hitboxCandidates 與 hitbox 同時提供 → throw（互斥，WP-52 T5）', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: {
+        count: 21,
+        distance: 8,
+        hitbox: { widthU: 0.35, heightU: 0.35, depthU: 1 },
+        hitboxCandidates: [
+          { widthU: 0.14, heightU: 0.14, depthU: 1 },
+          { widthU: 0.35, heightU: 0.35, depthU: 1 },
+          { widthU: 0.7, heightU: 0.7, depthU: 1 },
+        ],
+      },
+      sequence: { alternation: 'LR', seed: 95000 },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.hitbox/);
+  });
+
+  it('hitboxCandidates 長度不能整除 targets.count → throw（balanced shuffle 要求，WP-52 T5）', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: {
+        count: 20,
+        distance: 8,
+        hitboxCandidates: [
+          { widthU: 0.14, heightU: 0.14, depthU: 1 },
+          { widthU: 0.35, heightU: 0.35, depthU: 1 },
+          { widthU: 0.7, heightU: 0.7, depthU: 1 },
+        ],
+      },
+      sequence: { alternation: 'LR', seed: 95000 },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.count/);
+  });
+
+  it('hitboxCandidates 缺 sequence.seed → throw（WP-52 T5）', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: {
+        count: 21,
+        distance: 8,
+        hitboxCandidates: [
+          { widthU: 0.14, heightU: 0.14, depthU: 1 },
+          { widthU: 0.35, heightU: 0.35, depthU: 1 },
+          { widthU: 0.7, heightU: 0.7, depthU: 1 },
+        ],
+      },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.hitboxCandidates/);
   });
 
   it('未知 alternation → throw 指名 sequence.alternation', () => {

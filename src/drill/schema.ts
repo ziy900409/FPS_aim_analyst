@@ -38,8 +38,16 @@ export function validateDrill(json: unknown): DrillConfig {
   const count = requirePositiveInt(targets.count, 'targets.count');
   const distance = requirePositiveNumber(targets.distance, 'targets.distance');
   const hitbox = targets.hitbox === undefined ? undefined : validateHitbox(targets.hitbox);
+  const hitboxCandidates =
+    targets.hitboxCandidates === undefined ? undefined : validateHitboxCandidates(targets.hitboxCandidates);
   const spawnArea = targets.spawnArea === undefined ? undefined : validateSpawnArea(targets.spawnArea);
   const motion = targets.motion === undefined ? undefined : validateMotion(targets.motion);
+  if (hitboxCandidates !== undefined) {
+    if (hitbox !== undefined) throw err('targets.hitbox', '不可與 targets.hitboxCandidates 同時提供');
+    if (count % hitboxCandidates.length !== 0) {
+      throw err('targets.count', '使用 hitboxCandidates 時必須能被候選數整除（balanced shuffle）');
+    }
+  }
 
   // sequence — alternation 列舉、seed 與 seeded spawn delay 選填。
   const sequence = requireObject(root.sequence, 'sequence');
@@ -55,6 +63,9 @@ export function validateDrill(json: unknown): DrillConfig {
   const spiderShot = root.spiderShot === undefined ? undefined : validateSpiderShotSchedule(root.spiderShot);
   if (spawnArea !== undefined && seed === undefined) {
     throw err('targets.spawnArea', '需搭配 sequence.seed');
+  }
+  if (hitboxCandidates !== undefined && seed === undefined) {
+    throw err('targets.hitboxCandidates', '需搭配 sequence.seed');
   }
   if (spawnDelayMsRange !== undefined && seed === undefined) {
     throw err('sequence.spawnDelayMsRange', '需搭配 sequence.seed');
@@ -103,6 +114,7 @@ export function validateDrill(json: unknown): DrillConfig {
       count,
       distance,
       ...(hitbox ? { hitbox } : {}),
+      ...(hitboxCandidates ? { hitboxCandidates } : {}),
       ...(spawnArea ? { spawnArea } : {}),
       ...(motion ? { motion } : {}),
     },
@@ -205,6 +217,24 @@ function validateHitbox(json: unknown): TargetHitboxConfig {
     throw err('targets.hitbox.shape', 'sphere 要求 widthU/heightU/depthU 三軸相等');
   }
   return { widthU, heightU, depthU, ...(shape !== undefined ? { shape } : {}) };
+}
+
+function validateHitboxCandidates(json: unknown): readonly TargetHitboxConfig[] {
+  if (!Array.isArray(json) || json.length < 2) {
+    throw err('targets.hitboxCandidates', '必須為長度 >= 2 的陣列');
+  }
+  return json.map((candidate, index) => {
+    const path = `targets.hitboxCandidates[${index}]`;
+    const record = requireObject(candidate, path);
+    const widthU = requireHitboxDimension(record.widthU, `${path}.widthU`);
+    const heightU = requireHitboxDimension(record.heightU, `${path}.heightU`);
+    const depthU = requireHitboxDimension(record.depthU, `${path}.depthU`);
+    const shape = record.shape === undefined ? undefined : requireHitboxShape(record.shape, `${path}.shape`);
+    if (shape === 'sphere' && (widthU !== heightU || heightU !== depthU)) {
+      throw err(`${path}.shape`, 'sphere 要求 widthU/heightU/depthU 三軸相等');
+    }
+    return { widthU, heightU, depthU, ...(shape !== undefined ? { shape } : {}) };
+  });
 }
 
 function requireHitboxShape(v: unknown, path: string): 'box' | 'sphere' {

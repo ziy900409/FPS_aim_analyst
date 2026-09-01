@@ -180,4 +180,6 @@ export interface TargetState {
   persistent?: boolean; //                timed presentation 目標：命中不撤除，只由 DrillRunner 呈現時長到期推進（WP-18/T3）；省略＝命中即撤（既有政策）
   /** hold-track-v1：true 時開火排程不消費 held fire；target_stop 時與 tStop 同 tick 解鎖。 */
   fireLocked?: boolean;
+  /** WP-52 T5：true 時本目標的 hitbox 來自 `DrillConfig.targets.hitboxCandidates` 逐次抽樣（非全 drill 固定值）；`SimLoop` 據此決定 `visible` event 是否額外帶出這個目標的實際 hitbox（GD-7 單一來源的附加曝光，非第二定義）。 */
+  hitboxVaries?: true;
 }

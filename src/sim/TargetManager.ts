@@ -1,5 +1,11 @@
 import type { SharedState } from '../state/SharedState.ts';
-import { resolveTargetHitbox, type DrillConfig, type SpiderShotStratifiedConfig } from '../drill/DrillConfig.ts';
+import {
+  resolveTargetHitbox,
+  type DrillConfig,
+  type SpiderShotStratifiedConfig,
+  type TargetHitboxConfig,
+  type TargetHitboxSize,
+} from '../drill/DrillConfig.ts';
 import type { Vec3 } from '../state/types.ts';
 import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
 import { SIM_HZ } from '../loop/constants.ts';
@@ -164,10 +170,12 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   const defaultFirstSide: 'L' | 'R' = config ? (config.sequence.alternation[0] as 'L' | 'R') : 'R';
   const spawnArea = config?.targets.spawnArea;
   const spawnDelayMsRange = config?.sequence.spawnDelayMsRange;
+  const hitboxCandidates = config?.targets.hitboxCandidates;
   const spiderShot = config?.spiderShot;
   const cue = config?.cue;
   const usesSeededSpawn =
-    config?.sequence.seed !== undefined && (spawnArea !== undefined || spawnDelayMsRange !== undefined);
+    config?.sequence.seed !== undefined &&
+    (spawnArea !== undefined || spawnDelayMsRange !== undefined || hitboxCandidates !== undefined);
 
   let nextId = 0;
   // 下一個 spawn 側;`markKilled` 每次擊殺翻面以實現左右交替(FR-4.3)。首側由 reset 設。
@@ -184,6 +192,22 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       ? createRan1(spiderShot.seed)
       : undefined;
   let pendingSpawnAtMs: number | null = null;
+  // WP-52 T5: balanced-shuffle hitbox-candidate queue — built once per run (spawnLimit is exactly
+  // divisible by candidate count, schema.ts-enforced) so every candidate appears an equal number of
+  // times; consumed one per spawn, never rebuilt mid-run (unlike the spider-shot zone queue, which
+  // cycles for a potentially unbounded drill).
+  let hitboxQueue: TargetHitboxConfig[] = buildHitboxQueue();
+
+  function buildHitboxQueue(): TargetHitboxConfig[] {
+    if (hitboxCandidates === undefined || spawnRng === undefined) return [];
+    const perCandidate = spawnLimit / hitboxCandidates.length;
+    const queue: TargetHitboxConfig[] = [];
+    for (const candidate of hitboxCandidates) {
+      for (let i = 0; i < perCandidate; i++) queue.push(candidate);
+    }
+    shuffleInPlace(queue, spawnRng);
+    return queue;
+  }
 
   function sampleDelayMs(): number {
     if (spawnRng === undefined || spawnDelayMsRange === undefined) return 0;
@@ -248,9 +272,20 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     return peripheralPos(config.centerDistanceU, azimuthRad, radiusRad, distanceU);
   }
 
+  /** WP-52 T5: pop this spawn's balanced-shuffle hitbox candidate, or the drill's fixed hitbox. */
+  function pickHitbox(): { size: TargetHitboxSize; varies: boolean } {
+    if (hitboxCandidates === undefined) return { size: hitbox, varies: false };
+    const candidate = hitboxQueue.pop()!;
+    return {
+      size: { width: candidate.widthU, height: candidate.heightU, depth: candidate.depthU, shape: candidate.shape ?? 'box' },
+      varies: true,
+    };
+  }
+
   /** 生成一個目標(OQ-4.2:spawn 瞬間即可見)。spawn 屬低頻事件(peek 節奏),非每 tick 熱路徑。 */
   function spawn(state: SharedState): void {
     const pose = spiderShot !== undefined ? sampleSpiderShotPose() : sampleSpawnPose();
+    const spawnedHitbox = pickHitbox();
     state.weapon.ammo = state.weapon.magSize;
     state.targets.push({
       id: `t${nextId++}`,
@@ -259,7 +294,8 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       pos: pose.pos,
       visible: true,
       alive: true,
-      hitbox: { ...hitbox },
+      hitbox: { ...spawnedHitbox.size },
+      ...(spawnedHitbox.varies ? { hitboxVaries: true } : {}),
       // motion 提供即寫入(F5 接縫);`age` 一律 spawn 起算 0——motion drive 以 age 累加驅動 pos
       // （T1)。無 motion 時 age 仍設 0(語意一致、零成本),drive 步驟會依 motion 缺省而跳過。
       age: 0,
@@ -386,6 +422,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       nextSide = seq ? (seq[0] as 'L' | 'R') : defaultFirstSide;
       nextSpiderZone = 'center';
       spiderZoneQueue = [];
+      hitboxQueue = buildHitboxQueue();
     },
   };
 }

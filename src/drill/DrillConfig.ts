@@ -117,6 +117,12 @@ export interface DrillConfig {
     distance: number;
     /** H1 target hitbox size (source units). Omitted = DEFAULT_TARGET_HITBOX, preserving existing drills. */
     hitbox?: TargetHitboxConfig;
+    /**
+     * WP-52 T5：balanced-shuffle seeded 候選集合（每個候選在 `count` 內出現次數相等,需搭配
+     * `sequence.seed`）。與 `hitbox` 互斥（`schema.ts` 驗證）；`count` 必須整除
+     * `hitboxCandidates.length`。省略＝既有單一 `hitbox` 行為逐位不變。
+     */
+    hitboxCandidates?: readonly TargetHitboxConfig[];
     /** WP-21 seeded spawn:以 polar yaw/distance 範圍取樣 pop-in 位置；需搭配 `sequence.seed`。 */
     spawnArea?: SpawnAreaConfig;
     /** F5 接縫（規格附錄 G）:省略＝static（向後相容）。階段 A 不實作移動,WP-6.5 接管。 */

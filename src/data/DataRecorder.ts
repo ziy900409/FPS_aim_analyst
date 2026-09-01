@@ -18,6 +18,16 @@ export type DrillEvent =
       targetX?: number;
       targetY?: number;
       targetZ?: number;
+      /**
+       * WP-52 T5: this presentation's actual hitbox (source units). Only present when the drill's
+       * target hitbox varies across presentations (`DrillConfig.targets.hitboxCandidates`) — omitted
+       * for every other drill, whose fixed hitbox is already fully described by `meta.targets.hitbox`
+       * (GD-7 single source; this is additive per-presentation exposure, not a second definition).
+       */
+      hitboxWidthU?: number;
+      hitboxHeightU?: number;
+      hitboxDepthU?: number;
+      hitboxShape?: 'box' | 'sphere';
     }
   /** Counter-strafe protocol direction prompt; `t` is the start of its foreperiod. */
   | { type: 'cue'; t: number; direction: 'A' | 'D' }
