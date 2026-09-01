@@ -875,6 +875,15 @@ function parseVisibleEvent(record: Record<string, unknown>, path: string, errors
   const targetX = record.targetX === undefined ? undefined : parseFiniteNumber(record.targetX, `${path}.targetX`, errors);
   const targetY = record.targetY === undefined ? undefined : parseFiniteNumber(record.targetY, `${path}.targetY`, errors);
   const targetZ = record.targetZ === undefined ? undefined : parseFiniteNumber(record.targetZ, `${path}.targetZ`, errors);
+  // WP-52 T5: only present when this presentation's hitbox varies from the drill's fixed value.
+  const hitboxWidthU =
+    record.hitboxWidthU === undefined ? undefined : parsePositiveFiniteNumber(record.hitboxWidthU, `${path}.hitboxWidthU`, errors);
+  const hitboxHeightU =
+    record.hitboxHeightU === undefined ? undefined : parsePositiveFiniteNumber(record.hitboxHeightU, `${path}.hitboxHeightU`, errors);
+  const hitboxDepthU =
+    record.hitboxDepthU === undefined ? undefined : parsePositiveFiniteNumber(record.hitboxDepthU, `${path}.hitboxDepthU`, errors);
+  const hitboxShape =
+    record.hitboxShape === undefined ? undefined : parseLiteral(record.hitboxShape, `${path}.hitboxShape`, ['box', 'sphere'] as const, errors);
   if (targetId === undefined || side === undefined || t === undefined || errors.length > before) return undefined;
   return {
     type: 'visible',
@@ -885,6 +894,10 @@ function parseVisibleEvent(record: Record<string, unknown>, path: string, errors
     ...(targetX !== undefined ? { targetX } : {}),
     ...(targetY !== undefined ? { targetY } : {}),
     ...(targetZ !== undefined ? { targetZ } : {}),
+    ...(hitboxWidthU !== undefined ? { hitboxWidthU } : {}),
+    ...(hitboxHeightU !== undefined ? { hitboxHeightU } : {}),
+    ...(hitboxDepthU !== undefined ? { hitboxDepthU } : {}),
+    ...(hitboxShape !== undefined ? { hitboxShape } : {}),
   };
 }
 

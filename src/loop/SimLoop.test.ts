@@ -675,6 +675,41 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     ]);
   });
 
+  it('WP-52 T5: attaches the presentation hitbox to visible events only for hitboxCandidates drills', () => {
+    const config: DrillConfig = {
+      drillId: 'hitbox-candidates-test',
+      targets: {
+        count: 3,
+        distance: 8,
+        hitboxCandidates: [
+          { widthU: 0.14, heightU: 0.14, depthU: 1 },
+          { widthU: 0.35, heightU: 0.35, depthU: 1 },
+          { widthU: 0.7, heightU: 0.7, depthU: 1 },
+        ],
+      },
+      sequence: { alternation: 'LR', seed: 1 },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: 3 },
+    };
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 8 });
+    const tm = createTargetManager(config);
+
+    for (let i = 0; i < 3; i++) {
+      simStep(state, 1 / SIM_HZ, TICK_MS * (i + 1), tm, undefined, undefined, undefined, undefined, recorder);
+      tm.markKilled(state, state.targets[0].id);
+    }
+
+    const visibleEvents = recorder.snapshot().events.filter((event) => event.type === 'visible');
+    expect(visibleEvents).toHaveLength(3);
+    for (const event of visibleEvents) {
+      expect(event).toMatchObject({ hitboxShape: 'box' });
+      expect(typeof (event as { hitboxWidthU?: number }).hitboxWidthU).toBe('number');
+    }
+    const widths = new Set(visibleEvents.map((event) => (event as { hitboxWidthU?: number }).hitboxWidthU));
+    expect(widths).toEqual(new Set([0.14, 0.35, 0.7]));
+  });
+
   it('records visible, counter, and fire events from a synthetic drill', () => {
     const state = createSharedState();
     const recorder = createDataRecorder({ capacity: 8 });

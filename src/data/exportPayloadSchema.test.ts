@@ -43,6 +43,30 @@ describe('parseExportPayload — positive: every DrillEvent variant', () => {
     expectOk(payloadWithEvents([{ type: 'visible', targetId: 't0', side: 'L', t: 0, targetX: 1, targetY: 2, targetZ: 3 }]));
   });
 
+  it('parses a visible event carrying its per-presentation hitbox (WP-52 T5, additive/optional)', () => {
+    const result = parseExportPayload(
+      payloadWithEvents([
+        {
+          type: 'visible',
+          targetId: 't0',
+          side: 'L',
+          t: 0,
+          hitboxWidthU: 0.35,
+          hitboxHeightU: 0.35,
+          hitboxDepthU: 1,
+          hitboxShape: 'box',
+        },
+      ]),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.events[0]).toMatchObject({
+      hitboxWidthU: 0.35,
+      hitboxHeightU: 0.35,
+      hitboxDepthU: 1,
+      hitboxShape: 'box',
+    });
+  });
+
   it('parses cue', () => {
     expectOk(payloadWithEvents([{ type: 'cue', t: 0, direction: 'A' }]));
   });

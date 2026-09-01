@@ -556,6 +556,18 @@ function recordVisibleEvents(state: SharedState, t: number, recorder?: DataRecor
         targetX: target.pos.x,
         targetY: target.pos.y,
         targetZ: target.pos.z,
+        // WP-52 T5: only drills with a per-target-varying hitbox (targets.hitboxCandidates) attach
+        // it here — every other drill's fixed hitbox is already fully described by
+        // meta.targets.hitbox (GD-7), so this stays omitted and the event shape is byte-for-byte
+        // unchanged for them.
+        ...(target.hitboxVaries === true
+          ? {
+              hitboxWidthU: target.hitbox.width,
+              hitboxHeightU: target.hitbox.height,
+              hitboxDepthU: target.hitbox.depth,
+              hitboxShape: target.hitbox.shape,
+            }
+          : {}),
       });
     }
   }
