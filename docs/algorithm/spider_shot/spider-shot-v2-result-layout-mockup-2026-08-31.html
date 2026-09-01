@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Spider Shot v2 Drill Result — Coach-first UI Mockup</title>
+  <style>
+    :root {
+      --page: #090c12;
+      --panel: #111722;
+      --panel-2: #151d2a;
+      --panel-3: #1a2433;
+      --line: #293548;
+      --line-soft: rgba(255, 255, 255, 0.08);
+      --text: #f3f7fb;
+      --muted: #9eabbc;
+      --dim: #6f7d90;
+      --cyan: #6ed6ff;
+      --cyan-2: #209dcc;
+      --green: #67dfaf;
+      --green-bg: rgba(39, 173, 121, 0.13);
+      --amber: #ffc66d;
+      --amber-bg: rgba(232, 157, 42, 0.14);
+      --red: #ff8d85;
+      --red-bg: rgba(222, 79, 70, 0.14);
+      --purple: #bd9cff;
+      --shadow: 0 22px 70px rgba(0, 0, 0, 0.42);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --sans: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% -8%, rgba(32, 157, 204, 0.20), transparent 34rem),
+        radial-gradient(circle at 90% 18%, rgba(106, 75, 180, 0.12), transparent 30rem),
+        var(--page);
+      font-family: var(--sans);
+      line-height: 1.55;
+    }
+    button, select { font: inherit; }
+    button { color: inherit; }
+    a { color: var(--cyan); text-underline-offset: 3px; }
+    code { font-family: var(--mono); }
+    .page-shell { width: min(1280px, calc(100% - 30px)); margin: 0 auto; }
+
+    .prototype-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 28px 0 18px;
+    }
+    .prototype-header h1 { margin: 0; font-size: clamp(1.3rem, 3vw, 2rem); line-height: 1.2; }
+    .prototype-header p { margin: 6px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .prototype-tag {
+      display: inline-flex;
+      margin-bottom: 7px;
+      color: var(--cyan);
+      font: 800 0.72rem/1 var(--mono);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .state-switcher {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(10, 14, 21, 0.8);
+    }
+    .state-button, .metric-toggle {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .state-button[aria-pressed="true"], .metric-toggle[aria-pressed="true"] {
+      border-color: rgba(110, 214, 255, 0.42);
+      background: rgba(44, 151, 194, 0.17);
+      color: var(--text);
+    }
+    .state-button:focus-visible, .metric-toggle:focus-visible, .action:focus-visible, summary:focus-visible {
+      outline: 3px solid rgba(110, 214, 255, 0.55);
+      outline-offset: 2px;
+    }
+
+    .result-window {
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      background: rgba(15, 20, 30, 0.97);
+      box-shadow: var(--shadow);
+    }
+    .result-topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line-soft);
+      background: rgba(255, 255, 255, 0.018);
+    }
+    .result-topbar h2 { margin: 0; font-size: 1.15rem; }
+    .run-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 7px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.025);
+      font-size: 0.71rem;
+      font-weight: 700;
+    }
+    .chip.ok { border-color: rgba(103, 223, 175, 0.28); color: var(--green); background: var(--green-bg); }
+    .chip.warn { border-color: rgba(255, 198, 109, 0.32); color: var(--amber); background: var(--amber-bg); }
+    .run-index { color: var(--dim); font: 700 0.75rem/1.3 var(--mono); }
+    .result-content { padding: 22px 24px 26px; }
+
+    .quality-banner {
+      display: none;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 198, 109, 0.34);
+      border-radius: var(--radius-md);
+      color: #ffe2aa;
+      background: var(--amber-bg);
+    }
+    .quality-banner.visible { display: grid; }
+    .quality-icon { font-size: 1.25rem; line-height: 1; }
+    .quality-banner strong { display: block; margin-bottom: 2px; }
+    .quality-banner p { margin: 0; color: #dfc795; font-size: 0.82rem; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.78fr) minmax(320px, 1.22fr);
+      gap: 14px;
+    }
+    .hero-primary, .coach-headline, .support-card, .viz-card, .coach-card, details {
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.018));
+    }
+    .hero-primary {
+      position: relative;
+      min-height: 192px;
+      padding: 20px;
+      overflow: hidden;
+    }
+    .hero-primary::after {
+      content: "";
+      position: absolute;
+      width: 190px;
+      height: 190px;
+      right: -72px;
+      bottom: -92px;
+      border: 1px solid rgba(110, 214, 255, 0.18);
+      border-radius: 50%;
+      box-shadow: 0 0 0 22px rgba(110, 214, 255, 0.035), 0 0 0 52px rgba(110, 214, 255, 0.018);
+    }
+    .metric-label { color: var(--muted); font-size: 0.76rem; font-weight: 750; letter-spacing: 0.02em; }
+    .hero-value { position: relative; z-index: 1; margin-top: 14px; font-size: clamp(2.6rem, 7vw, 4.7rem); font-weight: 820; line-height: 0.95; letter-spacing: -0.06em; }
+    .hero-unit { margin-left: 8px; color: var(--muted); font-size: 0.9rem; font-weight: 700; letter-spacing: 0; }
+    .delta { display: inline-flex; align-items: center; gap: 5px; margin-top: 14px; font-size: 0.79rem; font-weight: 780; }
+    .delta.good { color: var(--green); }
+    .delta.bad { color: var(--red); }
+    .delta.neutral { color: var(--muted); }
+    .hero-foot { position: relative; z-index: 1; margin-top: 15px; color: var(--dim); font-size: 0.74rem; }
+    .coach-headline { display: grid; align-content: center; padding: 22px 24px; }
+    .coach-headline .kicker { color: var(--cyan); font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .coach-headline h3 { margin: 9px 0 8px; font-size: clamp(1.25rem, 3vw, 2rem); line-height: 1.22; }
+    .coach-headline p { max-width: 670px; margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .headline-evidence { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+
+    .support-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+    .support-card { min-height: 123px; padding: 15px; }
+    .support-value { margin-top: 10px; font-size: 1.65rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+    .support-unit { margin-left: 3px; color: var(--muted); font-size: 0.72rem; font-weight: 650; }
+    .support-card .delta { margin-top: 11px; font-size: 0.72rem; }
+    .support-card small { display: block; margin-top: 7px; color: var(--dim); font-size: 0.68rem; }
+
+    .section-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 28px 0 11px;
+    }
+    .section-heading h3 { margin: 0; font-size: 1rem; }
+    .section-heading p { margin: 4px 0 0; color: var(--muted); font-size: 0.76rem; }
+    .two-column { display: grid; grid-template-columns: 0.83fr 1.17fr; gap: 12px; }
+    .viz-card { padding: 17px; }
+    .viz-card h4 { margin: 0; font-size: 0.83rem; }
+    .viz-subtitle { margin: 4px 0 15px; color: var(--dim); font-size: 0.71rem; }
+
+    .compare-list { display: grid; gap: 17px; }
+    .compare-row { display: grid; grid-template-columns: 120px 1fr 70px; gap: 10px; align-items: center; }
+    .compare-name { color: var(--muted); font-size: 0.74rem; font-weight: 700; }
+    .compare-value { text-align: right; font: 750 0.74rem/1 var(--mono); }
+    .track { position: relative; height: 9px; border-radius: 999px; background: #263143; overflow: visible; }
+    .track-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--cyan-2), var(--cyan)); }
+    .baseline-marker { position: absolute; top: -4px; width: 2px; height: 17px; background: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12); }
+    .baseline-marker.hidden { display: none; }
+    .compare-legend { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 18px; color: var(--dim); font-size: 0.68rem; }
+    .legend-mark { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-mark::before { content: ""; display: inline-block; width: 18px; height: 5px; border-radius: 99px; background: var(--cyan); }
+    .legend-mark.baseline::before { width: 2px; height: 13px; border-radius: 0; background: white; }
+
+    .matrix-controls { display: flex; flex-wrap: wrap; gap: 4px; }
+    .metric-toggle { min-height: 30px; padding: 0 9px; font-size: 0.7rem; }
+    .quadrant-map {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #101722;
+    }
+    .quadrant {
+      position: relative;
+      min-height: 176px;
+      padding: 12px;
+      background: radial-gradient(circle at var(--origin-x) var(--origin-y), rgba(51, 216, 255, 0.09), transparent 52%);
+    }
+    .quadrant.nw, .quadrant.sw { border-right: 1px solid rgba(127, 151, 181, 0.28); }
+    .quadrant.nw, .quadrant.ne { border-bottom: 1px solid rgba(127, 151, 181, 0.28); }
+    .quadrant-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 780;
+    }
+    .quadrant.ne .quadrant-title, .quadrant.se .quadrant-title { flex-direction: row-reverse; }
+    .quadrant-title strong { color: var(--text); font-size: 0.76rem; }
+    .tier-stack { display: grid; gap: 6px; }
+    .matrix-cell {
+      display: grid;
+      grid-template-columns: 30px minmax(54px, 1fr) 40px 36px;
+      align-items: center;
+      min-height: 38px;
+      padding: 6px 8px;
+      border: 1px solid color-mix(in srgb, var(--cell-color) 30%, var(--line));
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--cell-color) 12%, var(--panel-2));
+      text-align: right;
+    }
+    .matrix-cell .tier-label { color: var(--dim); font-size: 0.61rem; font-weight: 760; text-align: left; }
+    .matrix-cell strong { color: var(--cell-color); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+    .matrix-cell .status-label { color: var(--muted); font-size: 0.6rem; }
+    .matrix-cell small { color: var(--dim); font-size: 0.57rem; }
+    .quadrant-origin {
+      position: absolute;
+      z-index: 2;
+      top: 50%;
+      left: 50%;
+      width: 28px;
+      height: 28px;
+      translate: -50% -50%;
+      border: 1px solid rgba(51, 216, 255, 0.72);
+      border-radius: 50%;
+      background: #101722;
+      box-shadow: 0 0 16px rgba(51, 216, 255, 0.2);
+      pointer-events: none;
+    }
+    .quadrant-origin::before, .quadrant-origin::after { content: ""; position: absolute; inset: 50% auto auto 50%; background: var(--cyan); translate: -50% -50%; }
+    .quadrant-origin::before { width: 16px; height: 1px; }
+    .quadrant-origin::after { width: 1px; height: 16px; }
+    .quadrant-origin span { position: absolute; inset: 50% auto auto 50%; width: 4px; height: 4px; translate: -50% -50%; border-radius: 50%; background: var(--cyan); }
+    .matrix-note { margin: 12px 0 0; color: var(--dim); font-size: 0.67rem; }
+
+    .phase-card { padding: 18px; }
+    .phase-bar { display: flex; min-height: 54px; overflow: hidden; border-radius: 10px; background: #232e3e; }
+    .phase-segment { display: grid; place-items: center; min-width: 78px; padding: 7px; border-right: 1px solid rgba(9, 12, 18, 0.5); text-align: center; }
+    .phase-segment:last-child { border-right: 0; }
+    .phase-segment strong { display: block; font-size: 0.72rem; }
+    .phase-segment span { display: block; margin-top: 2px; color: rgba(255, 255, 255, 0.76); font: 700 0.67rem/1 var(--mono); }
+    .phase-reaction { background: #2a607b; }
+    .phase-flick { background: #176f87; }
+    .phase-settle { background: #77582c; }
+    .phase-anchors { display: flex; justify-content: space-between; margin-top: 8px; color: var(--dim); font-size: 0.64rem; }
+
+    .flick-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.5fr); gap: 15px; align-items: center; }
+    .flick-svg { width: 100%; min-height: 230px; display: block; border-radius: 10px; background: #0d131d; }
+    .flick-notes { display: grid; gap: 9px; }
+    .flick-note { display: grid; grid-template-columns: 24px 1fr; gap: 9px; align-items: start; color: var(--muted); font-size: 0.72rem; }
+    .flick-note strong { display: block; color: var(--text); font-size: 0.73rem; }
+    .legend-line { display: block; width: 22px; height: 3px; margin-top: 7px; border-radius: 99px; background: var(--cyan); }
+    .legend-line.ideal { height: 0; border-top: 2px dashed #627187; background: transparent; }
+    .legend-line.correction { height: 0; border-top: 2px dashed var(--amber); background: transparent; }
+    .legend-dot { display: block; width: 12px; height: 12px; margin: 3px 0 0 5px; border-radius: 50%; background: var(--green); }
+    .legend-diamond { display: block; width: 11px; height: 11px; margin: 4px 0 0 5px; transform: rotate(45deg); background: #fff; }
+
+    .coach-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 16px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 18px;
+      border-color: rgba(103, 223, 175, 0.22);
+      background: linear-gradient(135deg, rgba(40, 151, 112, 0.13), rgba(255, 255, 255, 0.018));
+    }
+    .coach-card.locked { border-color: rgba(255, 198, 109, 0.25); background: var(--amber-bg); }
+    .coach-number { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--green); background: rgba(103, 223, 175, 0.12); font-size: 1.15rem; font-weight: 850; }
+    .coach-card.locked .coach-number { color: var(--amber); background: rgba(255, 198, 109, 0.12); }
+    .coach-copy strong { display: block; margin-bottom: 4px; font-size: 0.9rem; }
+    .coach-copy p { margin: 0; color: var(--muted); font-size: 0.78rem; }
+    .coach-action {
+      padding: 8px 11px;
+      border: 1px solid rgba(103, 223, 175, 0.26);
+      border-radius: 7px;
+      color: var(--green);
+      background: rgba(103, 223, 175, 0.08);
+      font-size: 0.72rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .coach-card.locked .coach-action { border-color: rgba(255, 198, 109, 0.25); color: var(--amber); background: rgba(255, 198, 109, 0.08); }
+
+    details { margin-top: 12px; overflow: hidden; }
+    summary { cursor: pointer; padding: 14px 16px; color: var(--muted); font-size: 0.78rem; font-weight: 780; }
+    .details-body { padding: 0 16px 16px; }
+    .advanced-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .advanced-item { padding: 11px; border: 1px solid var(--line-soft); border-radius: 8px; background: rgba(255, 255, 255, 0.02); }
+    .advanced-item span { display: block; color: var(--dim); font-size: 0.65rem; }
+    .advanced-item strong { display: block; margin-top: 5px; font: 750 0.82rem/1.2 var(--mono); }
+    .quality-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 9px; }
+    .quality-item { padding: 9px; border-radius: 7px; background: rgba(255, 255, 255, 0.025); color: var(--muted); font-size: 0.68rem; }
+    .quality-item strong { display: block; margin-top: 2px; color: var(--green); }
+    .is-suspect .quality-item strong { color: var(--amber); }
+
+    .result-actions {
+      position: sticky;
+      bottom: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 13px 24px;
+      border-top: 1px solid var(--line-soft);
+      background: rgba(15, 20, 30, 0.97);
+      backdrop-filter: blur(10px);
+    }
+    .action {
+      min-height: 36px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #151c27;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 760;
+    }
+    .action.primary { border-color: #2989b1; background: #176b91; }
+    .action.history { border-color: rgba(110, 214, 255, 0.28); color: var(--cyan); }
+    .action-spacer { flex: 1 1 120px; }
+
+    .rationale {
+      margin: 54px 0 72px;
+      padding-top: 26px;
+      border-top: 1px solid var(--line);
+    }
+    .rationale h2 { margin: 0; font-size: 1.4rem; }
+    .rationale > p { max-width: 850px; color: var(--muted); }
+    .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+    .principle { padding: 17px; border: 1px solid var(--line-soft); border-radius: var(--radius-md); background: var(--panel); }
+    .principle .number { color: var(--cyan); font: 800 0.7rem/1 var(--mono); }
+    .principle h3 { margin: 8px 0 6px; font-size: 0.9rem; }
+    .principle p { margin: 0; color: var(--muted); font-size: 0.75rem; }
+    .document-links { margin-top: 22px; color: var(--muted); font-size: 0.75rem; }
+
+    @media (max-width: 980px) {
+      .hero, .two-column, .flick-layout { grid-template-columns: 1fr; }
+      .support-grid { grid-template-columns: repeat(2, 1fr); }
+      .principles { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 620px) {
+      .page-shell { width: min(100% - 18px, 1280px); }
+      .result-topbar, .result-content, .result-actions { padding-left: 14px; padding-right: 14px; }
+      .support-grid, .principles, .advanced-grid, .quality-list { grid-template-columns: 1fr; }
+      .quadrant { min-height: 166px; padding: 9px 7px; }
+      .matrix-cell { grid-template-columns: 24px minmax(48px, 1fr) 32px; padding: 6px; }
+      .matrix-cell small { display: none; }
+      .compare-row { grid-template-columns: 92px 1fr 58px; }
+      .coach-card { grid-template-columns: auto 1fr; }
+      .coach-action { grid-column: 1 / -1; text-align: center; }
+      .hero-value { font-size: 3.2rem; }
+    }
+    @media print {
+      body { background: #fff; color: #111; }
+      .prototype-header, .result-actions { display: none; }
+      .page-shell { width: 100%; }
+      .result-window, .hero-primary, .coach-headline, .support-card, .viz-card, .coach-card, details, .principle {
+        border-color: #bbb;
+        background: #fff;
+        box-shadow: none;
+        break-inside: avoid;
+      }
+      .result-window { border-radius: 0; }
+      .result-topbar { border-color: #bbb; }
+      .metric-label, .viz-subtitle, .section-heading p, .coach-copy p, .rationale > p, .principle p { color: #444; }
+      .matrix-cell { border-color: #aaa; background: #f3f3f3; }
+      .quadrant-map, .quadrant-origin { border-color: #999; background: #fff; }
+      .flick-svg { background: #f7f7f7; }
+    }
+  </style>
+</head>
+<body>
+  <header class="prototype-header page-shell">
+    <div>
+      <span class="prototype-tag">Interactive result prototype</span>
+      <h1>Spider Shot v2 · Coach-first Result</h1>
+      <p>用右側控制切換資料狀態；所有數字均為介面示例，不是真人測量結果。</p>
+    </div>
+    <div class="state-switcher" role="group" aria-label="Prototype state">
+      <button class="state-button" type="button" data-state="baseline" aria-pressed="true">已有個人基準</button>
+      <button class="state-button" type="button" data-state="first" aria-pressed="false">首次測試</button>
+      <button class="state-button" type="button" data-state="suspect" aria-pressed="false">資料可疑</button>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <article class="result-window" id="result-window">
+      <header class="result-topbar">
+        <div>
+          <h2>Spider Shot v2 Results</h2>
+          <div class="run-meta">
+            <span class="chip">60 秒</span>
+            <span class="chip">2.0° 目標</span>
+            <span class="chip">10°–25°</span>
+            <span class="chip" id="sample-chip">周邊 n=32</span>
+            <span class="chip ok" id="quality-chip">資料有效</span>
+          </div>
+        </div>
+        <div class="run-index" id="run-index">2026-08-31 · Comparable run 6</div>
+      </header>
+
+      <div class="result-content">
+        <aside class="quality-banner" id="quality-banner" role="status">
+          <span class="quality-icon" aria-hidden="true">⚠</span>
+          <div>
+            <strong>本場不建立趨勢或訓練診斷</strong>
+            <p>偵測到 recorder overflow。以下數值只供檢查，不宣告進步、退步或能力限制；建議重新測試。</p>
+          </div>
+        </aside>
+
+        <section aria-labelledby="result-summary-title">
+          <h3 id="result-summary-title" style="position:absolute;left:-10000px">結果摘要</h3>
+          <div class="hero">
+            <article class="hero-primary">
+              <div class="metric-label">周邊有效命中速度</div>
+              <div class="hero-value"><span id="hero-value">28.0</span><span class="hero-unit">hits/min</span></div>
+              <div class="delta good" id="hero-delta">↑ +2.1 · 高於近 5 場中位數</div>
+              <div class="hero-foot" id="hero-foot">完整 60 秒 · 28 個周邊有效命中</div>
+            </article>
+
+            <article class="coach-headline">
+              <span class="kicker" id="headline-kicker">本場結論</span>
+              <h3 id="headline-title">速度提升，但首發準確率下降</h3>
+              <p id="headline-body">主要損失集中在遠距右側目標；反應與移動速度沒有明顯變慢，問題更接近落點與停止控制。</p>
+              <div class="headline-evidence" id="headline-evidence">
+                <span class="chip warn">Far-right 首發率 58%</span>
+                <span class="chip warn">逸出 +0.12°</span>
+                <span class="chip ok">命中時間 -24 ms</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="support-grid">
+            <article class="support-card">
+              <div class="metric-label">周邊首發命中率</div>
+              <div class="support-value"><span id="accuracy-value">76.4</span><span class="support-unit">%</span></div>
+              <div class="delta bad" id="accuracy-delta">↓ -3.2 pp</div>
+              <small>第一發 hits / 完整周邊 presentations</small>
+            </article>
+            <article class="support-card">
+              <div class="metric-label">周邊命中時間中位數</div>
+              <div class="support-value"><span id="time-value">486</span><span class="support-unit">ms</span></div>
+              <div class="delta good" id="time-delta">↓ -24 ms</div>
+              <small>目標出現 → 首次有效命中</small>
+            </article>
+            <article class="support-card">
+              <div class="metric-label">首發角度誤差中位數</div>
+              <div class="support-value"><span id="error-value">0.58</span><span class="support-unit">deg</span></div>
+              <div class="delta bad" id="error-delta">↑ +0.07°</div>
+              <small>Click 時準心與目標中心角距</small>
+            </article>
+            <article class="support-card">
+              <div class="metric-label">進靶後逸出角度中位數</div>
+              <div class="support-value"><span id="overshoot-value">0.31</span><span class="support-unit">deg</span></div>
+              <div class="delta bad" id="overshoot-delta">↑ +0.04°</div>
+              <small>首次進靶後最大無號逸出</small>
+            </article>
+          </div>
+        </section>
+
+        <section aria-labelledby="profile-title">
+          <div class="section-heading">
+            <div>
+              <h3 id="profile-title">表現輪廓</h3>
+              <p>先比較速度與準確率，再定位方向和距離；白線是個人可比基準。</p>
+            </div>
+          </div>
+
+          <div class="two-column">
+            <article class="viz-card">
+              <h4>本場 vs 個人近 5 場中位數</h4>
+              <p class="viz-subtitle" id="comparison-subtitle">只比較相同 protocol、sensitivity、FOV 與 feedback policy 的 run。</p>
+              <div class="compare-list">
+                <div class="compare-row">
+                  <span class="compare-name">有效命中速度</span>
+                  <div class="track"><div class="track-fill" id="bar-throughput" style="width:70%"></div><i class="baseline-marker" id="mark-throughput" style="left:64.8%"></i></div>
+                  <span class="compare-value" id="bar-throughput-value">28.0</span>
+                </div>
+                <div class="compare-row">
+                  <span class="compare-name">首發命中率</span>
+                  <div class="track"><div class="track-fill" id="bar-accuracy" style="width:76.4%"></div><i class="baseline-marker" id="mark-accuracy" style="left:79.6%"></i></div>
+                  <span class="compare-value" id="bar-accuracy-value">76.4%</span>
+                </div>
+                <div class="compare-row">
+                  <span class="compare-name">命中速度品質</span>
+                  <div class="track"><div class="track-fill" id="bar-time" style="width:75.7%"></div><i class="baseline-marker" id="mark-time" style="left:72.9%"></i></div>
+                  <span class="compare-value" id="bar-time-value">486 ms</span>
+                </div>
+                <div class="compare-row">
+                  <span class="compare-name">停止控制品質</span>
+                  <div class="track"><div class="track-fill" id="bar-stop" style="width:69%"></div><i class="baseline-marker" id="mark-stop" style="left:73%"></i></div>
+                  <span class="compare-value" id="bar-stop-value">0.31°</span>
+                </div>
+              </div>
+              <div class="compare-legend">
+                <span class="legend-mark">本場標準化位置</span>
+                <span class="legend-mark baseline">個人基準</span>
+              </div>
+            </article>
+
+            <article class="viz-card">
+              <div class="section-heading" style="margin:0 0 12px">
+                <div>
+                  <h4>四象限 × 距離分層</h4>
+                  <p class="viz-subtitle" id="matrix-subtitle" style="margin-bottom:0">周邊首發命中率；以中心準星對應實際目標位置。</p>
+                </div>
+                <div class="matrix-controls" role="group" aria-label="Quadrant map metric">
+                  <button type="button" class="metric-toggle" data-metric="accuracy" aria-pressed="true">首發率</button>
+                  <button type="button" class="metric-toggle" data-metric="time" aria-pressed="false">命中時間</button>
+                  <button type="button" class="metric-toggle" data-metric="overshoot" aria-pressed="false">逸出角度</button>
+                </div>
+              </div>
+              <div class="quadrant-map" id="quadrant-map" aria-label="以中心準星為原點的四象限與近中遠距離表現圖"></div>
+              <p class="matrix-note">象限由 target azimuth 相對中心準星的位置決定，不由實際 mouse path 反推；每個象限保留 Near／Mid／Far。低 n 分層只呈現數據，不產生教練結論。</p>
+            </article>
+          </div>
+        </section>
+
+        <section aria-labelledby="phase-title">
+          <div class="section-heading">
+            <div>
+              <h3 id="phase-title">一次 Flick 的時間花在哪裡？</h3>
+              <p>以中位 trial 說明量測階段；反應是 sustained movement onset proxy，不等同神經反應時間。</p>
+            </div>
+          </div>
+          <article class="viz-card phase-card">
+            <div class="phase-bar" role="img" aria-label="中位 flick 包含反應 142 毫秒、主 flick 238 毫秒、停止與 click 81 毫秒">
+              <div class="phase-segment phase-reaction" id="phase-reaction" style="flex:142"><div><strong>切換反應代理</strong><span id="phase-reaction-value">142 ms</span></div></div>
+              <div class="phase-segment phase-flick" id="phase-flick" style="flex:238"><div><strong>主 Flick 執行</strong><span id="phase-flick-value">238 ms</span></div></div>
+              <div class="phase-segment phase-settle" id="phase-settle" style="flex:81"><div><strong>停止／Click</strong><span id="phase-settle-value">81 ms</span></div></div>
+            </div>
+            <div class="phase-anchors"><span>目標出現</span><span>持續移動開始</span><span>首次進靶</span><span>有效命中</span></div>
+          </article>
+        </section>
+
+        <section aria-labelledby="flick-title">
+          <div class="section-heading">
+            <div>
+              <h3 id="flick-title">代表性 Flick：Far · Right</h3>
+              <p>資料圖，不是裝飾示意；目標中心化後呈現本場最接近該 cell 中位數的一次有效 trial。</p>
+            </div>
+            <span class="chip">D=23.8° · n=7</span>
+          </div>
+          <article class="viz-card flick-layout">
+            <svg class="flick-svg" viewBox="0 0 560 250" role="img" aria-labelledby="flick-svg-title flick-svg-desc">
+              <title id="flick-svg-title">Far-right 代表性 flick 軌跡</title>
+              <desc id="flick-svg-desc">從左側起點移往右側目標。灰色虛線是理想路徑，藍色實線是 primary flick，橘色虛線是進靶後修正，白色菱形是 click。</desc>
+              <defs>
+                <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <path d="M0,0 L8,4 L0,8 Z" fill="#6ed6ff"></path>
+                </marker>
+                <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <path d="M0,0 L8,4 L0,8 Z" fill="#ffc66d"></path>
+                </marker>
+              </defs>
+              <g opacity="0.36" stroke="#293548" stroke-width="1">
+                <path d="M30 50H530M30 100H530M30 150H530M30 200H530"></path>
+                <path d="M80 25V225M180 25V225M280 25V225M380 25V225M480 25V225"></path>
+              </g>
+              <line x1="65" y1="158" x2="454" y2="82" stroke="#627187" stroke-width="2" stroke-dasharray="7 7"></line>
+              <circle cx="65" cy="158" r="7" fill="#6ed6ff"></circle>
+              <text x="46" y="184" fill="#9eabbc" font-size="12">起點</text>
+              <circle cx="454" cy="82" r="30" fill="rgba(103,223,175,0.10)" stroke="#67dfaf" stroke-width="2"></circle>
+              <circle cx="454" cy="82" r="3" fill="#67dfaf"></circle>
+              <text x="438" y="39" fill="#9eabbc" font-size="12">2° target</text>
+              <path d="M65 158 C148 149, 215 124, 286 111 S389 83, 437 88" fill="none" stroke="#6ed6ff" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow-blue)"></path>
+              <circle cx="437" cy="88" r="5" fill="#67dfaf" stroke="#0d131d" stroke-width="2"></circle>
+              <text x="386" y="121" fill="#8fdcc0" font-size="11">首次進靶</text>
+              <path d="M437 88 C469 69, 486 77, 465 87 S449 83, 455 81" fill="none" stroke="#ffc66d" stroke-width="3" stroke-dasharray="6 5" stroke-linecap="round" marker-end="url(#arrow-amber)"></path>
+              <rect x="450" y="76" width="10" height="10" transform="rotate(45 455 81)" fill="#ffffff"></rect>
+              <text x="475" y="110" fill="#ffc66d" font-size="11">逸出後修正</text>
+              <text x="461" y="66" fill="#ffffff" font-size="11">Click</text>
+              <text x="124" y="135" fill="#85cbe6" font-size="11">Primary flick</text>
+            </svg>
+
+            <div class="flick-notes" aria-label="Flick chart legend">
+              <div class="flick-note"><span class="legend-line ideal"></span><div><strong>Ideal path</strong>中心到目標的最短角度路徑，只作方向參照。</div></div>
+              <div class="flick-note"><span class="legend-line"></span><div><strong>Primary flick</strong>第一段主要快速移動；實線代表本次實際資料。</div></div>
+              <div class="flick-note"><span class="legend-dot"></span><div><strong>首次進靶</strong>準心第一次進入 2° target hitbox。</div></div>
+              <div class="flick-note"><span class="legend-line correction"></span><div><strong>Micro-correction</strong>進靶逸出後的重新修正；虛線避免只靠顏色辨識。</div></div>
+              <div class="flick-note"><span class="legend-diamond"></span><div><strong>Click</strong>第一個有效命中 shot 的角度位置。</div></div>
+            </div>
+          </article>
+        </section>
+
+        <section aria-labelledby="coach-title">
+          <div class="section-heading">
+            <div>
+              <h3 id="coach-title">下一輪只專注一件事</h3>
+              <p>保留完整分析，但預設只給一個可執行 cue。</p>
+            </div>
+          </div>
+          <article class="coach-card" id="coach-card">
+            <div class="coach-number" id="coach-number">1</div>
+            <div class="coach-copy">
+              <strong id="coach-title-text">遠距右側：先進靶，再停止</strong>
+              <p id="coach-body-text">維持目前 flick 速度；看到準心首次進入目標時停止手部推進，不要立刻用第二次加速補槍。證據：Far-right 首發率 58%、逸出較基準 +0.12°。</p>
+            </div>
+            <div class="coach-action" id="coach-action">建議：低速 5 分鐘</div>
+          </article>
+        </section>
+
+        <details>
+          <summary>進階研究指標與方法限制</summary>
+          <div class="details-body">
+            <div class="advanced-grid">
+              <div class="advanced-item"><span>Velocity scaling</span><strong>β₁ +18.4 · R² 0.43</strong></div>
+              <div class="advanced-item"><span>Primary-flick SPARC</span><strong>p50 -1.36 · n=29</strong></div>
+              <div class="advanced-item"><span>Primary-flick LDJ-V</span><strong>p50 -7.52 · n=29</strong></div>
+            </div>
+            <p style="margin:12px 0 0;color:var(--dim);font-size:0.7rem">研究指標只在相同 sampling、filter、segmentation 與 metric version 內比較；目前不直接轉譯成「手感好／不好」。</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>資料品質與相容 cohort</summary>
+          <div class="details-body">
+            <div class="quality-list">
+              <div class="quality-item">Late input events<strong id="quality-late">0 · Clear</strong></div>
+              <div class="quality-item">Recorder overflow<strong id="quality-recorder">No · Clear</strong></div>
+              <div class="quality-item">Performance floor<strong id="quality-perf">Within · Clear</strong></div>
+            </div>
+            <p style="margin:12px 0 0;color:var(--dim);font-size:0.7rem"><code>spider-v2:radius=10-25deg;width=2deg;grid=4x3;timeout=1750ms;duration=60s;shape=sphere</code></p>
+          </div>
+        </details>
+      </div>
+
+      <footer class="result-actions">
+        <button class="action primary" type="button">再測目前 Drill</button>
+        <button class="action history" type="button">查看此 Drill 歷史</button>
+        <span class="action-spacer"></span>
+        <button class="action" type="button">匯出 JSON</button>
+        <button class="action" type="button">匯出 CSV</button>
+        <button class="action" type="button">返回設定</button>
+      </footer>
+    </article>
+
+    <section class="rationale" aria-labelledby="rationale-title">
+      <span class="prototype-tag">Design rationale</span>
+      <h2 id="rationale-title">為什麼這樣安排</h2>
+      <p>這份 mockup 採用「Coach-first、analyst-expandable」原則。預設畫面優先讓選手理解結果與下一步；方法細節、研究指標與品質欄位仍完整保留，但不與主結果爭奪注意力。</p>
+      <div class="principles">
+        <article class="principle"><span class="number">01</span><h3>Validity before verdict</h3><p>資料可疑時，品質警示移到最上方，同時停用進步／退步與訓練診斷。</p></article>
+        <article class="principle"><span class="number">02</span><h3>One primary outcome</h3><p>只有 hits/min 是主 KPI；其餘指標負責解釋速度—準確率與停止控制。</p></article>
+        <article class="principle"><span class="number">03</span><h3>Personal comparison</h3><p>比較相容的個人近 5 場，而不是使用未經真人 pilot 的全球及格線。</p></article>
+        <article class="principle"><span class="number">04</span><h3>Spatial cue, layered data</h3><p>四象限以中心準星對應目標方向，每個象限仍保留 Near／Mid／Far，兼顧空間直覺與距離比較。</p></article>
+        <article class="principle"><span class="number">05</span><h3>One actionable cue</h3><p>完整數據可展開，但預設只選一個訓練重點，降低 feedback overload。</p></article>
+        <article class="principle"><span class="number">06</span><h3>Text plus visual encoding</h3><p>顏色不單獨承載好壞；矩陣同時使用數值、n 與穩定／注意／弱項文字。</p></article>
+      </div>
+      <p class="document-links">
+        指標契約：<a href="spider-shot-v2-performance-metrics-design-2026-08-27.html">Spider Shot v2 選手表現量化設計</a> ·
+        現行 Result body：<a href="../../../src/ui/ResultDetailBody.ts">ResultDetailBody.ts</a> ·
+        Spider Shot registry：<a href="../../../src/history/DrillMetricRegistry.ts">DrillMetricRegistry.ts</a>
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const states = {
+      baseline: {
+        bodyClass: '', quality: 'ok', sample: '周邊 n=32', runIndex: '2026-08-31 · Comparable run 6',
+        hero: '28.0', heroDelta: ['↑ +2.1 · 高於近 5 場中位數', 'good'], heroFoot: '完整 60 秒 · 28 個周邊有效命中',
+        accuracy: '76.4', accuracyDelta: ['↓ -3.2 pp', 'bad'], time: '486', timeDelta: ['↓ -24 ms', 'good'],
+        error: '0.58', errorDelta: ['↑ +0.07°', 'bad'], overshoot: '0.31', overshootDelta: ['↑ +0.04°', 'bad'],
+        kicker: '本場結論', headline: '速度提升，但首發準確率下降',
+        headlineBody: '主要損失集中在遠距右側目標；反應與移動速度沒有明顯變慢，問題更接近落點與停止控制。',
+        evidence: [['Far-right 首發率 58%', 'warn'], ['逸出 +0.12°', 'warn'], ['命中時間 -24 ms', 'ok']],
+        compareSubtitle: '只比較相同 protocol、sensitivity、FOV 與 feedback policy 的 run。', baselineVisible: true,
+        bars: { throughput: [70, '28.0'], accuracy: [76.4, '76.4%'], time: [75.7, '486 ms'], stop: [69, '0.31°'] },
+        phases: [142, 238, 81],
+        coach: ['1', '右上遠距：先進靶，再停止', '維持目前 flick 速度；看到準心首次進入目標時停止手部推進，不要立刻用第二次加速補槍。證據：右上 Far 首發率 58%、逸出較基準 +0.12°。', '建議：低速 5 分鐘', false],
+        qualityRows: ['0 · Clear', 'No · Clear', 'Within · Clear']
+      },
+      first: {
+        bodyClass: '', quality: 'ok', sample: '周邊 n=27', runIndex: '2026-08-31 · Baseline run 1/3',
+        hero: '24.0', heroDelta: ['建立個人基準中 · 1/3', 'neutral'], heroFoot: '完整 60 秒 · 24 個周邊有效命中',
+        accuracy: '74.1', accuracyDelta: ['尚無可比基準', 'neutral'], time: '532', timeDelta: ['尚無可比基準', 'neutral'],
+        error: '0.62', errorDelta: ['尚無可比基準', 'neutral'], overshoot: '0.29', overshootDelta: ['尚無可比基準', 'neutral'],
+        kicker: '第一次測試', headline: '先建立穩定基準，不急著判定強弱',
+        headlineBody: '本場已可描述速度與準確率，但至少需要 3 場相容 run 才開始顯示個人趨勢。先熟悉任務，不要為追數字改變策略。',
+        evidence: [['Baseline 1/3', 'warn'], ['完整 60 秒', 'ok'], ['資料品質 Clear', 'ok']],
+        compareSubtitle: '尚無個人比較線；完成至少 3 場相容 run 後才顯示基準與方向文字。', baselineVisible: false,
+        bars: { throughput: [60, '24.0'], accuracy: [74.1, '74.1%'], time: [73.4, '532 ms'], stop: [71, '0.29°'] },
+        phases: [160, 252, 95],
+        coach: ['1/3', '本輪目標：保持自然策略', '先完成三場相容測試。不要為提高命中數而連點，也不要為提高首發率刻意拖慢；目前需要的是可重複的自然 baseline。', '下一步：再測一場', false],
+        qualityRows: ['0 · Clear', 'No · Clear', 'Within · Clear']
+      },
+      suspect: {
+        bodyClass: 'is-suspect', quality: 'suspect', sample: '周邊 n=19', runIndex: '2026-08-31 · Excluded run',
+        hero: '21.0', heroDelta: ['不與歷史比較', 'neutral'], heroFoot: '記錄可能不完整 · 僅供檢查',
+        accuracy: '68.4', accuracyDelta: ['趨勢排除', 'neutral'], time: '571', timeDelta: ['趨勢排除', 'neutral'],
+        error: '0.71', errorDelta: ['趨勢排除', 'neutral'], overshoot: '0.38', overshootDelta: ['趨勢排除', 'neutral'],
+        kicker: '資料品質警示', headline: '這場不能支持能力或進步判斷',
+        headlineBody: 'Recorder overflow 可能使事件與 samples 不完整。保留畫面是為了協助排查，不應依這些數值調整訓練策略。',
+        evidence: [['Recorder overflow', 'warn'], ['Trend excluded', 'warn'], ['建議重新測試', 'warn']],
+        compareSubtitle: '本場未通過 quality gate；白色基準線與進退方向均停用。', baselineVisible: false,
+        bars: { throughput: [52.5, '21.0'], accuracy: [68.4, '68.4%'], time: [70, '571 ms'], stop: [62, '0.38°'] },
+        phases: [174, 270, 103],
+        coach: ['!', '診斷已停用', '資料不完整時不產生主要限制或訓練建議。先關閉背景負載並重新測試；若 recorder overflow 重複出現，再進行技術排查。', '建議：重新測試', true],
+        qualityRows: ['7 · Warning', 'Yes · Re-test', 'Exceeded · Warning']
+      }
+    };
+
+    const matrices = {
+      accuracy: {
+        subtitle: '周邊首發命中率；顏色、文字標籤與數值共同表意。', unit: '%', higher: true,
+        values: [[91, 88, 86, 90], [84, 79, 82, 87], [72, 58, 75, 70]],
+        counts: [[3, 3, 3, 3], [3, 3, 2, 3], [2, 3, 2, 2]]
+      },
+      time: {
+        subtitle: '成功 trial 的命中時間中位數；越低通常越快，需與命中率一起閱讀。', unit: ' ms', higher: false,
+        values: [[412, 438, 445, 421], [476, 505, 493, 469], [548, 632, 559, 577]],
+        counts: [[3, 3, 3, 3], [3, 3, 2, 3], [2, 3, 2, 2]]
+      },
+      overshoot: {
+        subtitle: '首次進靶後最大無號逸出中位數；越低代表較能停在目標內。', unit: '°', higher: false,
+        values: [[0.18, 0.21, 0.20, 0.19], [0.27, 0.31, 0.29, 0.25], [0.34, 0.47, 0.35, 0.38]],
+        counts: [[3, 3, 3, 3], [3, 3, 2, 3], [2, 3, 2, 2]]
+      }
+    };
+
+    const byId = (id) => document.getElementById(id);
+    const setDelta = (id, data) => {
+      const node = byId(id);
+      node.textContent = data[0];
+      node.className = `delta ${data[1]}`;
+    };
+    const setChipList = (items) => {
+      const root = byId('headline-evidence');
+      root.replaceChildren(...items.map(([text, kind]) => {
+        const span = document.createElement('span');
+        span.className = `chip ${kind}`;
+        span.textContent = text;
+        return span;
+      }));
+    };
+
+    function renderState(name) {
+      const data = states[name];
+      document.querySelectorAll('.state-button').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.state === name));
+      });
+      const windowNode = byId('result-window');
+      windowNode.className = `result-window ${data.bodyClass}`.trim();
+      byId('sample-chip').textContent = data.sample;
+      byId('run-index').textContent = data.runIndex;
+      const qualityChip = byId('quality-chip');
+      qualityChip.textContent = data.quality === 'ok' ? '資料有效' : '資料可疑';
+      qualityChip.className = `chip ${data.quality === 'ok' ? 'ok' : 'warn'}`;
+      byId('quality-banner').classList.toggle('visible', data.quality !== 'ok');
+
+      byId('hero-value').textContent = data.hero;
+      setDelta('hero-delta', data.heroDelta);
+      byId('hero-foot').textContent = data.heroFoot;
+      byId('accuracy-value').textContent = data.accuracy;
+      setDelta('accuracy-delta', data.accuracyDelta);
+      byId('time-value').textContent = data.time;
+      setDelta('time-delta', data.timeDelta);
+      byId('error-value').textContent = data.error;
+      setDelta('error-delta', data.errorDelta);
+      byId('overshoot-value').textContent = data.overshoot;
+      setDelta('overshoot-delta', data.overshootDelta);
+      byId('headline-kicker').textContent = data.kicker;
+      byId('headline-title').textContent = data.headline;
+      byId('headline-body').textContent = data.headlineBody;
+      setChipList(data.evidence);
+
+      byId('comparison-subtitle').textContent = data.compareSubtitle;
+      ['throughput', 'accuracy', 'time', 'stop'].forEach((key) => {
+        byId(`bar-${key}`).style.width = `${data.bars[key][0]}%`;
+        byId(`bar-${key}-value`).textContent = data.bars[key][1];
+        byId(`mark-${key}`).classList.toggle('hidden', !data.baselineVisible);
+      });
+
+      const phaseIds = ['reaction', 'flick', 'settle'];
+      phaseIds.forEach((key, index) => {
+        byId(`phase-${key}`).style.flex = String(data.phases[index]);
+        byId(`phase-${key}-value`).textContent = `${data.phases[index]} ms`;
+      });
+
+      const [number, title, body, action, locked] = data.coach;
+      byId('coach-number').textContent = number;
+      byId('coach-title-text').textContent = title;
+      byId('coach-body-text').textContent = body;
+      byId('coach-action').textContent = action;
+      byId('coach-card').classList.toggle('locked', locked);
+      byId('quality-late').textContent = data.qualityRows[0];
+      byId('quality-recorder').textContent = data.qualityRows[1];
+      byId('quality-perf').textContent = data.qualityRows[2];
+    }
+
+    function matrixStatus(metric, value) {
+      if (metric === 'accuracy') return value >= 85 ? ['穩定', '#67dfaf'] : value >= 72 ? ['注意', '#ffc66d'] : ['弱項', '#ff8d85'];
+      if (metric === 'time') return value <= 470 ? ['穩定', '#67dfaf'] : value <= 560 ? ['注意', '#ffc66d'] : ['弱項', '#ff8d85'];
+      return value <= 0.25 ? ['穩定', '#67dfaf'] : value <= 0.36 ? ['注意', '#ffc66d'] : ['弱項', '#ff8d85'];
+    }
+
+    function renderMatrix(metric) {
+      document.querySelectorAll('.metric-toggle').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.metric === metric));
+      });
+      const config = matrices[metric];
+      byId('matrix-subtitle').textContent = config.subtitle;
+      const root = byId('quadrant-map');
+      const tiers = ['Near', 'Mid', 'Far'];
+      const quadrants = [
+        { key: 'nw', label: '左上', arrow: '↖', column: 0, order: [2, 1, 0], origin: ['100%', '100%'] },
+        { key: 'ne', label: '右上', arrow: '↗', column: 1, order: [2, 1, 0], origin: ['0%', '100%'] },
+        { key: 'sw', label: '左下', arrow: '↙', column: 2, order: [0, 1, 2], origin: ['100%', '0%'] },
+        { key: 'se', label: '右下', arrow: '↘', column: 3, order: [0, 1, 2], origin: ['0%', '0%'] }
+      ];
+      const nodes = quadrants.map((quadrant) => {
+        const region = document.createElement('section');
+        region.className = `quadrant ${quadrant.key}`;
+        region.style.setProperty('--origin-x', quadrant.origin[0]);
+        region.style.setProperty('--origin-y', quadrant.origin[1]);
+        region.setAttribute('aria-label', `${quadrant.label}象限`);
+        const title = document.createElement('div');
+        title.className = 'quadrant-title';
+        title.innerHTML = `<strong>${quadrant.arrow} ${quadrant.label}</strong><span>目標方位</span>`;
+        const stack = document.createElement('div');
+        stack.className = 'tier-stack';
+        quadrant.order.forEach((row) => {
+          const value = config.values[row][quadrant.column];
+          const [status, color] = matrixStatus(metric, value);
+          const cell = document.createElement('div');
+          cell.className = 'matrix-cell';
+          cell.style.setProperty('--cell-color', color);
+          cell.setAttribute('aria-label', `${quadrant.label} ${tiers[row]}：${value}${config.unit}，${status}，樣本數 ${config.counts[row][quadrant.column]}`);
+          const tier = document.createElement('span');
+          tier.className = 'tier-label';
+          tier.textContent = tiers[row];
+          const strong = document.createElement('strong');
+          strong.textContent = `${value}${config.unit}`;
+          const statusNode = document.createElement('span');
+          statusNode.className = 'status-label';
+          statusNode.textContent = status;
+          const count = document.createElement('small');
+          count.textContent = `n=${config.counts[row][quadrant.column]}`;
+          cell.append(tier, strong, statusNode, count);
+          stack.append(cell);
+        });
+        region.append(title, stack);
+        return region;
+      });
+      const origin = document.createElement('div');
+      origin.className = 'quadrant-origin';
+      origin.setAttribute('aria-hidden', 'true');
+      origin.innerHTML = '<span></span>';
+      root.replaceChildren(...nodes, origin);
+    }
+
+    document.querySelectorAll('.state-button').forEach((button) => {
+      button.addEventListener('click', () => renderState(button.dataset.state));
+    });
+    document.querySelectorAll('.metric-toggle').forEach((button) => {
+      button.addEventListener('click', () => renderMatrix(button.dataset.metric));
+    });
+
+    renderState('baseline');
+    renderMatrix('accuracy');
+  </script>
+</body>
+</html>
