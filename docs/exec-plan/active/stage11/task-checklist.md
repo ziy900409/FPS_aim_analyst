@@ -10,7 +10,7 @@
 
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry gate／v1 audit／parameter freeze candidates | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | WP-45 T-exit | High |
+| ✅ | **T0** Entry gate／v1 audit／parameter freeze candidates | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | WP-45 T-exit | High |
 | ⬜ | **T1** Pilot v2 config and contracts | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | T0 | High |
 | ⬜ | **T2** Pilot session preset UI + metadata unblock | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | T1 + KI-016/GD-26 | High |
 | ⬜ | **T3** Pilot evidence harness and report | [WP-52 README §4](wp-52-peek-click-transfer-pilot-v2/README.md#4-任務拆解-task-breakdown) | T1-T2 | Med |

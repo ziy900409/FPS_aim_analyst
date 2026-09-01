@@ -4,12 +4,12 @@
 
 ## T0 — Entry gate／v1 audit／parameter candidates
 
-- [ ] 記錄 HEAD/status/CodeGraph pending/baseline tests
-- [ ] 覆核 `peek_click_transfer_pilot_v1`、metrics、session、metadata blast radius
-- [ ] 拍板 OQ-52-1 target size policy
-- [ ] 拍板 OQ-52-2 timeout policy
-- [ ] 拍板 OQ-52-3 warmup policy
-- [ ] 明確記錄 v1 不原地修改的 guard
+- [x] 記錄 HEAD/status/CodeGraph pending/baseline tests
+- [x] 覆核 `peek_click_transfer_pilot_v1`、metrics、session、metadata blast radius
+- [x] 拍板 OQ-52-1 target size policy（D-52.4：保留 1.5/2/3 deg 候選）
+- [x] 拍板 OQ-52-2 timeout policy（D-52.5：維持 3000 ms）
+- [x] 拍板 OQ-52-3 warmup policy（D-52.6：不新增，沿用 D-45.16）
+- [x] 明確記錄 v1 不原地修改的 guard
 
 ## T1 — Pilot v2 config and contracts
 

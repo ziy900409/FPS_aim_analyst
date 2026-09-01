@@ -38,3 +38,4 @@
 | 2026-08-28 | `Get-Content .claude/skills/engineering-planning/SKILL.md` | skill loaded |
 | 2026-08-28 | `Get-Content AGENTS.md` / `Get-Content graphify-out/GRAPH_REPORT.md` | project planning rules loaded |
 | 2026-08-28 | `mcp__codegraph__codegraph_explore` for transfer/session/history symbols | current interfaces and blast radius reviewed |
+| 2026-09-01 | WP-52 T0 entry gate（v1 audit／OQ-52-1~3 拍板；detail 見 [wp-52 progress.md](wp-52-peek-click-transfer-pilot-v2/progress.md)） | 8 files / 111 tests baseline 全綠；未改 production code |
