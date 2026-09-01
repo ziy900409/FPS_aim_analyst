@@ -16,7 +16,7 @@
 ## Open Questions
 
 - **OQ-51.1**：人工實機3D/Pointer Lock/Participant與研究員walkthrough是否阻擋M18？建議是。
-- **OQ-51.2**：Chrome與Edge是否都需自動化？建議Edge自動，Chrome+Edge人工，WebGL2 fallback自動。
+- **OQ-51.2**：Chrome與Edge是否都需自動化？2026-09-01 已由 product/tech owner 正式豁免 Chrome manual walkthrough 與 WebGL2 fallback automated project 為 non-blocking post-M18 coverage debt；M18 release gate 維持 system Edge automated + Edge manual WebGPU/GPU/a11y walkthrough。
 - **OQ-51.3**：preview是否接受只走公開History→Result→Replay，completion→autosave由dev自動化+preview人工補足？建議接受。
 
 ## Evidence log
@@ -164,7 +164,7 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   | OQ | 結論 | Owner／日期 | Rationale |
   |---|---|---|---|
   | OQ-51.1 | **是**——真實硬體 3D fidelity／Pointer Lock／walkthrough 阻擋 M18 | 預設定案 2026-08-31，待使用者/產品owner最終確認，deadline T5 前 | Replay 是本階段核心語意，synthetic DOM/state assertion 無法證明實機 WebGPU 視覺正確性 |
-  | OQ-51.2 | CI/system Edge 自動化（已是現狀）；Chrome+Edge 人工 WebGPU walkthrough；WebGL2 fallback 自動化（待建） | 預設定案 2026-08-31，待使用者/QA owner確認 | 平衡自動化涵蓋率與人工實機成本；WebGL2 fallback 自動化可用既有 Playwright headless，不需額外硬體 |
+  | OQ-51.2 | system Edge 自動化 + Edge 人工 WebGPU/GPU/a11y walkthrough；Chrome manual 與 WebGL2 fallback automated project 正式豁免為 post-M18 debt | 2026-09-01 使用者/product-tech owner 決策 | M18 prototype 不因 Chrome 未安裝或缺 WebGL2 project 阻塞；若 scope 升級為正式跨瀏覽器發布，此 waiver 失效 |
   | OQ-51.3 | 接受——preview 只驗公開 History→Result→Replay，完成→autosave 由 dev automation 覆蓋 + preview 人工補足 | 預設定案 2026-08-31（已是 T1 實作現狀），待使用者/架構owner確認 | DEV hook 刻意不進 production bundle（FR-48.10），這是唯一不需開後門的驗證路徑 |
 
   **T1/T2 交接**：T1 target 清單（README §2.1）與已交付檔案一致，無 planned-but-undelivered
@@ -661,8 +661,15 @@ T0開始後，每筆記錄：date、commit、task、command/scenario、environme
   `npm.cmd run typecheck` exit 0；`npx.cmd playwright test tests/e2e/replay.spec.ts --project=edge -g "KI-017"`
   1 passed；`npx.cmd playwright test tests/e2e/replay.spec.ts tests/e2e/stage10-assessment.spec.ts
   tests/e2e/stage10-preview.spec.ts --project=edge` 12 passed；`npm.cmd run test:e2e` 73/73 passed。WP-51
-  仍不宣告 M18：KI-018、manual browser/GPU/a11y walkthrough、independent operator runbook walkthrough
-  與 Chrome/WebGL2 coverage gap 未完成。
+  仍不宣告 M18：KI-018、manual browser/GPU/a11y walkthrough 與 independent operator runbook walkthrough
+  未完成。
+
+- **2026-09-01**：**OQ-51.2 waiver 落地**——依使用者/product-tech owner 決策，Chrome manual walkthrough
+  與 WebGL2 fallback automated project 不阻塞 M18，改列 post-M18 coverage debt。已更新
+  [docs/operational/acceptance-stage-j.md](../../../../operational/acceptance-stage-j.md) §3.1、manual checklist
+  與本 WP README/task-checklist/T-exit 文案；仍明確記錄「此 waiver 不是 pass evidence」，若 M18 scope
+  從 prototype 升級為正式跨瀏覽器發布，Chrome/WebGL2 必須重新納入 release gate。M18 剩餘 blocker：
+  KI-018、manual Edge/GPU/a11y walkthrough、independent operator runbook walkthrough。
 
 ## Surprises & Discoveries
 

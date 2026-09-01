@@ -60,9 +60,12 @@ Harness-only fixes were made in `tests/e2e/stage10-accessibility.spec.ts`, `test
 Remaining blockers before M18 can be declared:
 
 - KI-018（WP-49）owner fix plus affected Stage10 rerun。KI-017（WP-50）已於 2026-09-01 修復並補 regression。
-- Manual browser/GPU/a11y walkthrough by a real operator。
+- Manual Edge/GPU/a11y walkthrough by a real operator。
 - Independent operator runbook walkthrough。
-- Chrome manual walkthrough and WebGL2 fallback coverage gap must be implemented or explicitly waived.
+
+Non-blocking waiver:
+
+- Chrome manual walkthrough and WebGL2 fallback coverage gap are explicitly waived for M18 by product/tech owner on 2026-09-01; keep them as post-M18 coverage debt, not as pass evidence.
 
 ## Exit decision
 

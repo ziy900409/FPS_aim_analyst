@@ -2,7 +2,7 @@
 
 > M18（stage10 交付：本機歷史紀錄中心與 3D 重播 prototype）的驗收對照草案，逐項對應 [stage10 README §10 M18 驗收條件](../exec-plan/active/stage10/README.md#10-m18-驗收條件) 與 WP-51 [README §1 FR/NFR](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/README.md#1-需求壓縮requirements)。由 WP-48／WP-49／WP-50 各自 T-exit 證據 + WP-51 T0～T4 新增的跨模組驗收證據覆核。
 >
-> **狀態：T-exit automated gates 已重跑（2026-08-31），M18 尚未宣告。** T4 measurement gate 已在較乾淨環境重跑通過，build/typecheck/Vitest/Playwright/Stage10 runner/critical repeat 皆有 pass evidence；KI-017 已於 2026-09-01 由 WP-50 owner 修復。manual browser/GPU/a11y walkthrough、獨立 operator 重跑、KI-018 owner 收斂與 Chrome/WebGL2 coverage gap 尚未完成——本文件如實記錄未完成項，不把它們標成 pass。
+> **狀態：T-exit automated gates 已重跑（2026-08-31），M18 尚未宣告。** T4 measurement gate 已在較乾淨環境重跑通過，build/typecheck/Vitest/Playwright/Stage10 runner/critical repeat 皆有 pass evidence；KI-017 已於 2026-09-01 由 WP-50 owner 修復；Chrome/WebGL2 coverage gap 已由 product/tech owner 於 2026-09-01 正式豁免為 non-blocking post-M18 coverage debt（見 §3.1）。manual Edge/GPU/a11y walkthrough、獨立 operator 重跑與 KI-018 owner 收斂仍未完成——本文件如實記錄未完成項，不把它們標成 pass。
 >
 > Companion：[T5 task spec](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/T5-operations-manual-release.md) · [WP-51 progress.md](../exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/progress.md) · [history-center-replay.md](history-center-replay.md)
 
@@ -17,7 +17,7 @@
 | Node | v25.9.0 |
 | GPU | NVIDIA GeForce RTX 4070 Laptop GPU（driver 32.0.15.7703，供 WebGPU 人工驗收）+ Intel UHD Graphics（內顯，供 WebGL2 fallback 對照） |
 | Browser（自動化） | 系統安裝 Edge 151.0.4129.101（Playwright `channel:'msedge'`） |
-| Browser（人工，待執行） | 需另外安裝的 latest Chrome（本機未安裝，見 §4） |
+| Browser（人工，待執行） | 系統 Edge；Chrome 人工 walkthrough 已依 §3.1 豁免為 post-M18 non-blocking coverage debt |
 
 | 命令 | 結果 |
 |---|---|
@@ -86,10 +86,27 @@
 |---|---|---|---|
 | [KI-017](../known_issue/KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) — Run Detail「3D 重播」過早點擊 TDZ ReferenceError | WP-50 | ✅ 已修 | 2026-09-01：`replayController` 提早宣告並加 early-click 可見訊息 guard；新增 WP-50 Playwright regression |
 | [KI-018](../known_issue/KI-018-history-search-keystroke-focus-steal.md) — History 搜尋欄逐字輸入焦點被搶走 | WP-49 | 🔴 待修 | `navigator.replace()` 每次給 focus-guard 全新物件引發誤判；WP-51 測試側已繞開 |
-| Chrome 未安裝在目前開發機 | T5 前置 | 🔴 阻塞人工 walkthrough | 需另一台機器或先安裝 Chrome 才能執行 §4 的 Chrome 人工 WebGPU walkthrough |
-| Playwright 無 Chrome project／無 WebGL2 fallback project | T4／T5 | 🟡 尚未建立 | OQ-51.2 已凍結方向（見 WP-51 README/progress.md），實際 harness 尚未新增 |
+| Chrome 未安裝在目前開發機 | product/tech owner | ⚪ waived（non-blocking） | 2026-09-01 正式豁免：M18 prototype release 以系統 Edge 的 automated + manual WebGPU walkthrough 為 release gate；Chrome 覆蓋改列 post-M18 coverage debt |
+| Playwright 無 Chrome project／無 WebGL2 fallback project | product/tech owner | ⚪ waived（non-blocking） | 2026-09-01 正式豁免：目前 renderer backend 自動化已有 Edge/WebGPU、unit/lifecycle/fallback path 證據；新增 Chrome/WebGL2 project 會擴大硬體/CI 成本，收益不足以阻塞 M18 prototype |
 
-這些項目**不得**作為豁免 M18 核心條件（README §10 條件 1～11）的理由；剩餘阻塞是：KI-018 阻塞 History 搜尋鍵盤路徑在「所有情況下」都正確（非阻塞已驗證的 automated happy-path），Chrome 缺席與缺少 project 阻塞 §4 的人工/自動化涵蓋範圍完整性。
+### 3.1 OQ-51.2 waiver record（2026-09-01）
+
+Product/tech owner decision：**Chrome manual walkthrough 與 WebGL2 fallback automated project 不阻塞 M18**。
+
+理由：
+
+- M18 是本機歷史紀錄中心與 3D Replay prototype 的整合里程碑，不是跨瀏覽器 renderer certification。
+- Automated release gate 已在系統 Edge (`msedge`) 覆蓋 History API、Result、Replay、preview public UI、scale/lifecycle/a11y 與 critical repeat；Edge 是目前實際驗收與開發機可用 browser。
+- WebGPU 真實視覺/Pointer Lock 仍由 Edge manual walkthrough 覆蓋；Chrome 缺席不改變核心資料保存、索引、Replay domain、seek 或 Result parity 的 correctness evidence。
+- WebGL2-only fallback 仍是重要 coverage debt，但需要額外 Playwright project、browser/device/driver matrix 與可能的 CI/硬體配置；此成本與 M18 prototype release risk 不成比例。
+
+約束：
+
+- 不得把此 waiver 解讀為「Chrome/WebGL2 已通過」；只代表它們不阻塞 M18。
+- 文件與 release note 必須保留此項為 post-M18 coverage debt，直到新增對應 automated/manual evidence。
+- 若 M18 scope 從 prototype 改為正式跨瀏覽器發布，此 waiver 失效，Chrome/WebGL2 必須重新納入 release gate。
+
+剩餘阻塞是：KI-018 阻塞 History 搜尋鍵盤路徑在「所有情況下」都正確（非阻塞已驗證的 automated happy-path）、manual Edge/GPU/a11y walkthrough 尚未簽核、independent operator runbook walkthrough 尚未執行。
 
 ---
 
@@ -99,37 +116,37 @@
 
 ### 4.1 前置條件
 
-- [ ] Latest Chrome 已安裝且可用（目前開發機缺，見 §3）
+- [ ] 系統 Edge 可用；Chrome walkthrough 已由 §3.1 正式豁免為 post-M18 coverage debt
 - [ ] 系統 Edge 版本已記錄（本 dossier §0 已記錄：151.0.4129.101）
 - [ ] 乾淨 synthetic Participant（不得使用真實姓名/資料）
 - [ ] WebGPU-capable desktop GPU 可用（本 dossier §0 已記錄：RTX 4070 Laptop）
-- [ ] 內顯或其他 WebGL2-only 裝置可用，供 fallback 對照
+- [ ] WebGL2-only fallback walkthrough 已由 §3.1 正式豁免為 post-M18 coverage debt，不列為本次人工前置條件
 
 ### 4.2 Participant flow
 
-| # | 步驟 | Chrome pass/fail | Edge pass/fail | Notes |
-|---|---|---|---|---|
-| P1 | 完成一次 Assessment，觀察 Result 畫面與 save feedback | ⬜ | ⬜ | |
-| P2 | 進 History 找到自己剛完成的紀錄 | ⬜ | ⬜ | |
-| P3 | 查看 Result／趨勢卡片 | ⬜ | ⬜ | |
-| P4 | 3D Replay：play/seek/rate/event navigation、Back 返回 | ⬜ | ⬜ | |
+| # | 步驟 | Edge pass/fail | Notes |
+|---|---|---|---|
+| P1 | 完成一次 Assessment，觀察 Result 畫面與 save feedback | ⬜ | Chrome waived，見 §3.1 |
+| P2 | 進 History 找到自己剛完成的紀錄 | ⬜ | Chrome waived，見 §3.1 |
+| P3 | 查看 Result／趨勢卡片 | ⬜ | Chrome waived，見 §3.1 |
+| P4 | 3D Replay：play/seek/rate/event navigation、Back 返回 | ⬜ | Chrome waived，見 §3.1 |
 
 ### 4.3 Researcher flow
 
-| # | 步驟 | Chrome pass/fail | Edge pass/fail | Notes |
-|---|---|---|---|---|
-| R1 | 瀏覽多 Participant／exact drill，確認未合併 family | ⬜ | ⬜ | |
-| R2 | 確認時間排序（新到舊） | ⬜ | ⬜ | |
-| R3 | 未註冊 metric／不相容 cohort 的說明文字清楚 | ⬜ | ⬜ | |
-| R4 | `partial`／`unsupported` 記錄可正確辨識，UI 說明清楚 | ⬜ | ⬜ | |
+| # | 步驟 | Edge pass/fail | Notes |
+|---|---|---|---|
+| R1 | 瀏覽多 Participant／exact drill，確認未合併 family | ⬜ | Chrome waived，見 §3.1 |
+| R2 | 確認時間排序（新到舊） | ⬜ | Chrome waived，見 §3.1 |
+| R3 | 未註冊 metric／不相容 cohort 的說明文字清楚 | ⬜ | Chrome waived，見 §3.1 |
+| R4 | `partial`／`unsupported` 記錄可正確辨識，UI 說明清楚 | ⬜ | Chrome waived，見 §3.1 |
 
 ### 4.4 Practice flow
 
-| # | 步驟 | Chrome pass/fail | Edge pass/fail | Notes |
-|---|---|---|---|---|
-| Pr1 | Practice 完成後 Result／下載可用 | ⬜ | ⬜ | |
-| Pr2 | 重啟 server 後 History 完全沒有該 Practice | ⬜ | ⬜ | |
-| Pr3 | 當次 Replay 行為符合 OQ-50.2 已核准決策 | ⬜ | ⬜ | |
+| # | 步驟 | Edge pass/fail | Notes |
+|---|---|---|---|
+| Pr1 | Practice 完成後 Result／下載可用 | ⬜ | Chrome waived，見 §3.1 |
+| Pr2 | 重啟 server 後 History 完全沒有該 Practice | ⬜ | Chrome waived，見 §3.1 |
+| Pr3 | 當次 Replay 行為符合 OQ-50.2 已核准決策 | ⬜ | Chrome waived，見 §3.1 |
 
 ### 4.5 真實視覺與輸入（GPU-critical，僅 WebGPU-capable 裝置）
 
@@ -138,7 +155,7 @@
 | V1 | Camera/target/ADS/recoil/shot-hit cue 與記錄事件視覺一致 | ⬜ | |
 | V2 | 無 live gameplay/input 在 Replay 期間背景執行 | ⬜ | |
 | V3 | Pointer Lock 與滑鼠完成流程無回歸（正常 gameplay，非 Replay） | ⬜ | |
-| V4 | WebGL2-only 裝置：fallback 渲染可接受，console 印 `[render backend] webgl2` | ⬜ | |
+| V4 | WebGL2-only 裝置：fallback 渲染可接受，console 印 `[render backend] webgl2` | ⚪ waived | Post-M18 coverage debt，見 §3.1 |
 
 ### 4.6 Failure/recovery spot check
 
@@ -170,8 +187,9 @@
 **尚未判定通過。** README §10 的 11 項條件中，automated/measurement 部分皆有 pass evidence（見 §0～§2），但整體 M18 宣告依 WP-51 README §2.6／stage10 README 的紀律，還需要：
 
 1. [KI-018](../known_issue/KI-018-history-search-keystroke-focus-steal.md) 由 WP-49 承接修復並重跑受影響的 Stage10 suite。KI-017 已於 2026-09-01 由 WP-50 owner 修復並補 regression。
-2. §4 的人工 browser／GPU／a11y walkthrough 由實際執行者完成並簽核（依 OQ-51.1 預設決策，這是阻塞項；若使用者/產品 owner 最終決定改為非阻塞，需回頭更新 WP-51 README OQ-51.1 段與本節）。
+2. §4 的人工 Edge／GPU／a11y walkthrough 由實際執行者完成並簽核（依 OQ-51.1 預設決策，這是阻塞項；若使用者/產品 owner 最終決定改為非阻塞，需回頭更新 WP-51 README OQ-51.1 段與本節）。
 3. 依 T5 DoD，需有一位未撰寫本 WP 主要程式碼者依 [history-center-replay.md](history-center-replay.md) 重新走一次啟動→定位 synthetic 紀錄→Replay→處理至少一個 failure state，證明文件本身足夠、不依賴作者記憶。
-4. 依 OQ-51.2 補齊或正式豁免 Chrome 人工 walkthrough 與 WebGL2 fallback 自動化 project 的 coverage gap。
 
-以上 4 項均非「重新設計」或「新增產品語意」——皆是既有已核准範圍內的收尾動作，記錄於此以便下一位 operator/owner 接手，不在本次草案中假裝已完成。
+OQ-51.2 的 Chrome/WebGL2 coverage gap 已於 2026-09-01 正式豁免為 non-blocking post-M18 coverage debt（見 §3.1），不再列為 M18 blocker。
+
+以上 3 項均非「重新設計」或「新增產品語意」——皆是既有已核准範圍內的收尾動作，記錄於此以便下一位 operator/owner 接手，不在本次草案中假裝已完成。

@@ -14,7 +14,7 @@
 | **Release policy** | WP-48、49、50 exit gates 與本 WP exit gate 全綠後才可宣告 M18；上游 domain defect 必須回到 owning WP 修復並重跑交接證據 |
 | **Estimate** | 10–16 dev-days（T0～T5 + T-exit） |
 | **Risk** | Med/High：跨 process/root lifecycle、dev-only test hooks、preview parity、競態、實機 3D fidelity |
-| **Status** | 🟡 T0～T4 完成；T-exit automated gates 已於 2026-08-31 在 working tree based on HEAD `d142baf` 重跑並通過（typecheck/build/Vitest/Playwright/test:ci/test:stage10/scale/critical repeat）。T5 文件交付完成；KI-017 已於 2026-09-01 由 WP-50 owner 修復，但 manual browser/GPU/a11y walkthrough、independent operator runbook walkthrough、KI-018 owner 收斂與 Chrome/WebGL2 coverage gap 仍未完成；依 T-exit gate 尚不能宣告 M18。詳見 [progress.md](progress.md) 與 [acceptance-stage-j.md](../../../operational/acceptance-stage-j.md)。 |
+| **Status** | 🟡 T0～T4 完成；T-exit automated gates 已於 2026-08-31 在 working tree based on HEAD `d142baf` 重跑並通過（typecheck/build/Vitest/Playwright/test:ci/test:stage10/scale/critical repeat）。T5 文件交付完成；KI-017 已於 2026-09-01 由 WP-50 owner 修復；Chrome/WebGL2 coverage gap 已於 2026-09-01 由 product/tech owner 正式豁免為 non-blocking post-M18 coverage debt。仍待 manual Edge/GPU/a11y walkthrough、independent operator runbook walkthrough 與 KI-018 owner 收斂；依 T-exit gate 尚不能宣告 M18。詳見 [progress.md](progress.md) 與 [acceptance-stage-j.md](../../../operational/acceptance-stage-j.md)。 |
 
 ---
 
@@ -93,7 +93,7 @@
 | ID | Question | Recommended default | Owner | Deadline | Impact if unresolved |
 |---|---|---|---|---|---|
 | **OQ-51.1** | 真實硬體上的 3D fidelity、Pointer Lock/滑鼠與 Participant/研究員 walkthrough 是否阻擋 M18？ | **是**；Replay是本階段核心，不能只靠synthetic DOM/state assertions宣告完成 | 使用者／產品owner | T0 exit；最晚T5前 | 未決時T5可準備runbook，但T-exit不得宣告M18 |
-| **OQ-51.2** | Chrome與Edge是否都需自動化release gate？ | CI/system Edge自動化；latest Chrome + Edge各做一次人工WebGPU walkthrough，WebGL2 fallback自動化 | 使用者／QA owner | T0 exit；T1前 | 決定Playwright projects、執行時間與硬體需求 |
+| **OQ-51.2（2026-09-01 已豁免）** | Chrome與Edge是否都需自動化release gate？ | **M18 不要求** Chrome manual walkthrough 或 WebGL2 fallback automated project；system Edge 自動化 + Edge manual WebGPU/GPU/a11y walkthrough 為 release gate，Chrome/WebGL2 列 post-M18 coverage debt | 使用者／product/tech owner | 2026-09-01 | M18 prototype 不因 Chrome 未安裝或缺 WebGL2 project 阻塞；若 scope 升級為正式跨瀏覽器發布，此 waiver 失效 |
 | **OQ-51.3** | 是否接受preview只驗公開History→Result→Replay，完整「完成→autosave」由dev automation + preview人工完成？ | 接受；DEV test hook刻意不進production bundle，preview不新增後門 | 使用者／架構owner | T0 exit；T1前 | 若不接受，需另設安全的test-only launch contract並重新impact review |
 
 ---

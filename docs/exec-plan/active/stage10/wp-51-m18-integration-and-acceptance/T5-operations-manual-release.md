@@ -20,7 +20,7 @@
 
 ## Manual walkthrough
 
-- 使用乾淨synthetic Participant，latest Chrome與Edge、WebGPU-capable desktop；另確認WebGL2 fallback（依OQ-51.2調整）。
+- 使用乾淨synthetic Participant 與 system Edge、WebGPU-capable desktop；Chrome walkthrough 與 WebGL2 fallback 已依 OQ-51.2（2026-09-01）豁免為 non-blocking post-M18 coverage debt。
 - Participant flow：完成Assessment、Result/save feedback、History找到自己、Result/trend、3D Replay play/seek/rate/event/Back。
 - Researcher flow：多Participant與exact drill瀏覽、時間排序、unknown metric/cohort說明、partial/unsupported辨識。
 - Practice flow：Result/download可用，重啟後History完全沒有該Practice；當次Replay依OQ-50.2。
@@ -50,4 +50,3 @@
 ```text
 docs(stage10): add history replay operations and M18 dossier
 ```
-

@@ -12,7 +12,7 @@
 | **歷史政策** | 只保存與瀏覽 Assessment；Practice 保留即時結果與手動匯出，但不建立歷史紀錄 |
 | **重播語意** | 依記錄狀態重建玩家當時看到的 3D 過程，不重新執行舊輸入或要求錄影檔 |
 | **里程碑** | 暫定 M18：本機自動保存、歷史瀏覽、Assessment 趨勢、3D 重播與 E2E 驗收全數成立 |
-| **狀態** | 🟡 WP-48 本機歷史儲存、WP-49 History Library/Assessment Trends 與 WP-50 3D Replay 皆已完成 T-exit；KI-017 已由 WP-50 owner 修復（2026-09-01）。WP-51 automated T-exit gates 已通過（2026-08-31），仍待 manual browser/GPU/a11y walkthrough、independent operator runbook walkthrough、KI-018 owner 收斂與 Chrome/WebGL2 coverage gap 後才可宣告 M18 |
+| **狀態** | 🟡 WP-48 本機歷史儲存、WP-49 History Library/Assessment Trends 與 WP-50 3D Replay 皆已完成 T-exit；KI-017 已由 WP-50 owner 修復（2026-09-01）。WP-51 automated T-exit gates 已通過（2026-08-31）；Chrome/WebGL2 coverage gap 已由 product/tech owner 正式豁免為 post-M18 debt。仍待 manual Edge/GPU/a11y walkthrough、independent operator runbook walkthrough 與 KI-018 owner 收斂後才可宣告 M18 |
 
 ---
 
