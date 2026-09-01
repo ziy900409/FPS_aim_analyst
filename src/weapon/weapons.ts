@@ -4,6 +4,7 @@ export type WeaponId =
   | 'ak47'
   | 'm4a4'
   | 'm4a1s'
+  | 'usp_s_laser'
   | 'ak47_br_hip_hitscan'
   | 'ak47_br_ads_hitscan'
   | 'ak47_br_hip_projectile'
@@ -77,6 +78,26 @@ export const m4a1s: WeaponConfig = validateWeapon({
   },
 });
 
+export const uspSLaser: WeaponConfig = validateWeapon({
+  id: 'usp_s_laser',
+  cycletimeSec: 0.17,
+  magSize: 12,
+  recoil: {
+    seed: 223,
+    magnitude: 0,
+    magnitudeVariance: 0,
+    angleVariance: 0,
+  },
+  inaccuracy: {
+    stand: 0,
+    crouch: 0,
+    fire: 0,
+    move: 0,
+    recoveryTimeStand: 0.4,
+    recoveryTimeCrouch: 0.3,
+  },
+});
+
 const AK47_BR_BASE = {
   cycletimeSec: ak47.cycletimeSec,
   magSize: ak47.magSize,
@@ -126,6 +147,7 @@ export const WEAPONS = {
   ak47,
   m4a4,
   m4a1s,
+  usp_s_laser: uspSLaser,
   ak47_br_hip_hitscan: ak47BrHipHitscan,
   ak47_br_ads_hitscan: ak47BrAdsHitscan,
   ak47_br_hip_projectile: ak47BrHipProjectile,

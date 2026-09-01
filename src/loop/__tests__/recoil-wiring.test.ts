@@ -4,7 +4,8 @@ import type { SharedState } from '../../state/SharedState.ts';
 import type { Clock } from '../clock.ts';
 import { SIM_HZ } from '../constants.ts';
 import { createSimLoop, simStep, DEFAULT_RNG_SEED, type RecoilRuntime } from '../SimLoop.ts';
-import { ak47 } from '../../weapon/weapons.ts';
+import type { WeaponConfig } from '../../weapon/WeaponConfig.ts';
+import { ak47, uspSLaser } from '../../weapon/weapons.ts';
 import {
   recoilOnFire,
   recoilTick,
@@ -40,10 +41,14 @@ function baseClock(): Clock {
  * 發的產彈 tick、不含其後衰減**（對齊 M5 golden 於末發後即取樣、無尾端 decay）。
  */
 function holdFire(shots: number, seed = DEFAULT_RNG_SEED): SharedState {
+  return holdFireWeapon(ak47, shots, seed);
+}
+
+function holdFireWeapon(weapon: WeaponConfig, shots: number, seed = DEFAULT_RNG_SEED): SharedState {
   const state = createSharedState();
-  const loop = createSimLoop(state, baseClock(), SIM_HZ, undefined, undefined, undefined, undefined, ak47, seed);
+  const loop = createSimLoop(state, baseClock(), SIM_HZ, undefined, undefined, undefined, undefined, weapon, seed);
   state.input.pushFire(true, 0);
-  const targetAmmo = ak47.magSize - shots;
+  const targetAmmo = weapon.magSize - shots;
   for (let k = 1; k <= 4000; k++) {
     loop.pump(k * TICK_MS);
     if (state.weapon.ammo === targetAmmo) break;
@@ -172,5 +177,16 @@ describe('WP-13 / T1 — recoil simStep 佈線', () => {
     expect(sa.recoilState).toEqual(sb.recoilState);
     expect(sa.recoil.lastSpread).toEqual(sb.recoil.lastSpread);
     expect(sa.weapon.ammo).toBe(sb.weapon.ammo);
+  });
+
+  it('USP-S cadence laser weapon keeps recoil and spread at zero while firing', () => {
+    const state = holdFireWeapon(uspSLaser, 3);
+
+    expect(state.weapon.ammo).toBe(uspSLaser.magSize - 3);
+    expect(state.recoilState.aimPunchPitchDeg).toBe(0);
+    expect(state.recoilState.aimPunchYawDeg).toBe(0);
+    expect(state.recoilState.viewPunchPitchDeg).toBe(0);
+    expect(state.recoilState.viewPunchYawDeg).toBe(0);
+    expect(state.recoil.lastSpread).toEqual({ x: 0, y: 0 });
   });
 });

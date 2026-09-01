@@ -10,6 +10,7 @@ import {
   getWeapon,
   m4a1s,
   m4a4,
+  uspSLaser,
   WEAPONS,
 } from './weapons.ts';
 
@@ -166,6 +167,7 @@ describe('built-in weapons', () => {
     expect(validateWeapon(ak47)).toEqual(ak47);
     expect(validateWeapon(m4a4)).toEqual(m4a4);
     expect(validateWeapon(m4a1s)).toEqual(m4a1s);
+    expect(validateWeapon(uspSLaser)).toEqual(uspSLaser);
     expect(validateWeapon(ak47BrHipHitscan)).toEqual(ak47BrHipHitscan);
     expect(validateWeapon(ak47BrAdsHitscan)).toEqual(ak47BrAdsHitscan);
     expect(validateWeapon(ak47BrHipProjectile, { engagementDistanceU: 114.59 })).toEqual(ak47BrHipProjectile);
@@ -194,6 +196,18 @@ describe('built-in weapons', () => {
     });
   });
 
+  it('declares the USP-S cadence laser weapon as hitscan with no recoil or spread', () => {
+    expect(WEAPONS.usp_s_laser).toMatchObject({
+      id: 'usp_s_laser',
+      cycletimeSec: 0.17,
+      magSize: 12,
+      recoil: { seed: 223, magnitude: 0, magnitudeVariance: 0, angleVariance: 0 },
+      inaccuracy: { stand: 0, crouch: 0, fire: 0, move: 0 },
+    });
+    expect(WEAPONS.usp_s_laser.ads).toBeUndefined();
+    expect(WEAPONS.usp_s_laser.bullet).toBeUndefined();
+  });
+
   it('carries the WP-24 demo ADS optics on ak47 (default drill weapon)', () => {
     expect(WEAPONS.ak47.ads).toEqual({ fovDeg: 40, sensitivityRatio: 1.0 });
   });
@@ -216,9 +230,10 @@ describe('built-in weapons', () => {
 
   it('returns known weapons by id and reports available ids for unknown weapons', () => {
     expect(getWeapon('ak47').recoil.seed).toBe(223);
+    expect(getWeapon('usp_s_laser')).toEqual(uspSLaser);
     expect(getWeapon('ak47_br_ads_projectile').bullet).toEqual(BR_PROJECTILE_BULLET);
     expect(() => getWeapon('awp')).toThrow(
-      /Available weapons: ak47, m4a4, m4a1s, ak47_br_hip_hitscan, ak47_br_ads_hitscan, ak47_br_hip_projectile, ak47_br_ads_projectile/,
+      /Available weapons: ak47, m4a4, m4a1s, usp_s_laser, ak47_br_hip_hitscan, ak47_br_ads_hitscan, ak47_br_hip_projectile, ak47_br_ads_projectile/,
     );
   });
 });

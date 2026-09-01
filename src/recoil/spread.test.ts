@@ -35,6 +35,17 @@ describe('sampleSpread', () => {
     expect(sample.y).toBeCloseTo(ak47Inaccuracy.stand * 0.5, 15);
   });
 
+  it('returns canonical zero without consuming rng when total inaccuracy is zero', () => {
+    const state = createRecoilState();
+    const rng = countingRng([0.25, 0.5]);
+    const laserWeapon: WeaponInaccuracyLike = {
+      inaccuracy: { stand: 0, crouch: 0, move: 0 },
+    };
+
+    expect(sampleSpread(state, laserWeapon, 1, rng)).toEqual({ x: 0, y: 0 });
+    expect(rng.calls).toBe(0);
+  });
+
   it('samples a bounded center-biased radius with a uniform theta', () => {
     const state = createRecoilState();
     const rng = createRan1(223);

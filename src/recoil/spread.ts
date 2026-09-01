@@ -26,6 +26,8 @@ export function sampleSpread(
   validateSpeedRatio(speedRatio);
 
   const inaccuracy = totalInaccuracy(s, w, speedRatio);
+  if (inaccuracy === 0) return { x: 0, y: 0 };
+
   const theta = rng() * TWO_PI;
   const radius = rng() * inaccuracy;
 
