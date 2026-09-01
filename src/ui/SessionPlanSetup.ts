@@ -1,13 +1,14 @@
-import type { TestFamilyId } from '../session/sessionSchedule.ts';
+import type { SessionFamilyId } from '../session/sessionSchedule.ts';
 
 export interface SessionPlanSelection {
-  readonly families: readonly TestFamilyId[];
+  readonly families: readonly SessionFamilyId[];
   readonly restSeconds: number;
   readonly includeWarmup: boolean;
 }
 
 export interface SessionPlanSetupOptions {
-  readonly families: readonly TestFamilyId[];
+  /** WP-52 T2: widened from TestFamilyId so operators can freely include 'peek-click-transfer'. */
+  readonly families: readonly SessionFamilyId[];
   readonly restSecondsBounds?: { readonly min: number; readonly max: number };
   readonly onSubmit: (selection: SessionPlanSelection) => void;
   readonly parent?: HTMLElement;
@@ -54,7 +55,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
   legend.textContent = '測試家族';
   legend.style.cssText = labelCss;
   familyFieldset.appendChild(legend);
-  let draggedFamily: TestFamilyId | undefined;
+  let draggedFamily: SessionFamilyId | undefined;
   const familyRows = options.families.map((family) => {
     const row = document.createElement('label');
     row.style.cssText = rowCss;

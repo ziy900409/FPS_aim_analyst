@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TEST_FAMILY_IDS } from '../session/sessionSchedule.ts';
+import { KNOWN_SESSION_FAMILY_IDS, TEST_FAMILY_IDS } from '../session/sessionSchedule.ts';
 import { createSessionPlanSetup } from './SessionPlanSetup.ts';
 
 interface FakeEvent {
@@ -153,5 +153,29 @@ describe('createSessionPlanSetup', () => {
     document.created.find((element) => element.tag === 'form')!.dispatch('submit');
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ restSeconds: Number(value) }));
+  });
+
+  it('lets an operator freely include the peek-click-transfer pilot family alongside the frozen four (WP-52 T2)', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const onSubmit = vi.fn();
+    createSessionPlanSetup({ families: [...KNOWN_SESSION_FAMILY_IDS], onSubmit });
+
+    const familyCheckboxes = document.created.filter((element) => element.name === 'sessionFamily');
+    expect(familyCheckboxes.map((input) => input.value)).toEqual([
+      'hold-click',
+      'hold-track',
+      'spider-shot',
+      'counterstrafe',
+      'peek-click-transfer',
+    ]);
+    for (const input of familyCheckboxes) {
+      input.checked = input.value === 'hold-click' || input.value === 'counterstrafe' || input.value === 'peek-click-transfer';
+    }
+    document.created.find((element) => element.tag === 'form')!.dispatch('submit');
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ families: ['hold-click', 'counterstrafe', 'peek-click-transfer'] }),
+    );
   });
 });

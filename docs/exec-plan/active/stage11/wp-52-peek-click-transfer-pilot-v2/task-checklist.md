@@ -23,9 +23,9 @@
 
 - [x] `sessionSchedule.ts` 匯出完整 session family allowlist 單一來源（KI-016，T2a）
 - [x] `metadata.ts` 使用同一 allowlist 驗證 `sessionPlanFamilyOrder`（KI-016，T2a）
-- [ ] `SessionPlanSetup` 支援具名 preset 選擇，不提供 protocol numeric free input
-- [ ] `main.ts` session plan 匯出寫入 `sessionPlanPreset`
-- [ ] transfer pilot session E2E：選 preset → 跑 transfer family → 匯出 metadata 不 throw
+- [x] `SessionPlanSetup` 支援具名 preset 選擇，不提供 protocol numeric free input（D-52.7：改為擴充既有自由 checkbox 家族清單至 5 家族，不重新引入 preset 下拉——沿用 WP-43 FR-H3 已交付/已測試設計；見 GD-26）
+- [x] `main.ts` session plan 匯出寫入 `sessionPlanPreset`（D-52.7：範圍改變，不寫入此欄位——`SESSION_PLAN_PRESETS`/`findSessionPlanPreset` 維持原樣，非本次範圍）
+- [x] transfer pilot session E2E：選 preset → 跑 transfer family → 匯出 metadata 不 throw（改為「勾選 peek-click-transfer 家族」；`session-orchestrator.spec.ts` 新增專屬 case 走到 eligibility gate；`buildMetadata()` 不 throw 由 T2a 的 `metadata.test.ts` regression 驗證）
 
 ## T3 — Pilot evidence harness/report
 

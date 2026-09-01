@@ -146,10 +146,13 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     const planSetup = page.locator('#session-plan-setup');
     await expect(planSetup).toBeVisible();
 
-    // FR-G9①：家族子集自由勾選——四個家族（TEST_FAMILY_IDS）皆渲染、預設全選。
+    // FR-G9①：家族子集自由勾選——WP-52 T2 把家族清單從 TEST_FAMILY_IDS(4)擴充為
+    // KNOWN_SESSION_FAMILY_IDS(5,含 'peek-click-transfer'),讓操作者能在同一套自由勾選 UI
+    // 選入 transfer pilot 家族,而不需要重新引入 WP-43 FR-H3 已移除的 preset 下拉。
     const familyCheckboxes = planSetup.locator('input[name="sessionFamily"]');
-    await expect(familyCheckboxes).toHaveCount(4);
-    for (let i = 0; i < 4; i++) await expect(familyCheckboxes.nth(i)).toBeChecked();
+    await expect(familyCheckboxes).toHaveCount(5);
+    for (let i = 0; i < 5; i++) await expect(familyCheckboxes.nth(i)).toBeChecked();
+    await expect(planSetup.locator('[data-session-family="peek-click-transfer"]')).toHaveCount(1);
 
     // FR-H2：拖曳後 DOM 與提交順序都以操作者排列為準。
     await planSetup
@@ -172,6 +175,33 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
 
     // SessionPlanSetup onSubmit → eligibilityGateScreen.open()（main.ts:327-330）。真人 pointer
     // lock/fullscreen 正向路徑起始於此，留待既有慣例的人工驗收，不在本測試繼續往下走。
+    await expect(page.locator('#eligibility-gate')).toBeVisible();
+  });
+
+  test('WP-52 T2：操作者只勾選 peek-click-transfer 家族亦能走到 eligibility gate（KI-016 gap 前置條件）', async ({
+    page,
+  }) => {
+    await waitForHarness(page);
+
+    await page.getByRole('button', { name: '選手測試 Session', exact: true }).click();
+    await page.locator('#session-setup input[name="participantId"]').fill('t-exit-transfer-pilot');
+    await page.locator('#session-setup button[type="submit"]').click();
+
+    const planSetup = page.locator('#session-plan-setup');
+    await expect(planSetup).toBeVisible();
+
+    // 只保留 peek-click-transfer,其餘四個取消勾選——證明 KI-016 修好前會在匯出時 throw 的那條
+    // family order，如今能透過既有自由勾選 UI 真的被操作者組出來。
+    const familyCheckboxes = planSetup.locator('input[name="sessionFamily"]');
+    const count = await familyCheckboxes.count();
+    for (let i = 0; i < count; i++) {
+      const checkbox = familyCheckboxes.nth(i);
+      const value = await checkbox.getAttribute('value');
+      if (value !== 'peek-click-transfer') await checkbox.uncheck();
+    }
+    await expect(planSetup.locator('[data-session-family="peek-click-transfer"] input')).toBeChecked();
+
+    await planSetup.locator('button[type="submit"]').click();
     await expect(page.locator('#eligibility-gate')).toBeVisible();
   });
 });

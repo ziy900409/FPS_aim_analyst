@@ -54,7 +54,7 @@ import {
 import { createSessionPlanSetup, type SessionPlanSelection } from './ui/SessionPlanSetup.ts';
 import { createRestOverlay } from './ui/RestOverlay.ts';
 import { createSessionRunner, type SessionRunnerHandle } from './session/SessionRunner.ts';
-import { TEST_FAMILY_IDS } from './session/sessionSchedule.ts';
+import { KNOWN_SESSION_FAMILY_IDS } from './session/sessionSchedule.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill, type DrillLoadOptions } from './drill/DrillLoader.ts';
@@ -395,7 +395,11 @@ const eligibilityGateScreen = createEligibilityGateScreen({
   },
 });
 const sessionPlanSetup = createSessionPlanSetup({
-  families: TEST_FAMILY_IDS,
+  // WP-52 T2: widened beyond the frozen four-family TEST_FAMILY_IDS so operators can freely
+  // include 'peek-click-transfer' in a Session Plan — same single-source allowlist KI-016 fixed
+  // metadata validation against, no separate preset-selection UI (WP-43 FR-H3 already removed that
+  // in favor of free family checkboxes + free rest-seconds).
+  families: [...KNOWN_SESSION_FAMILY_IDS],
   onSubmit: (selection) => {
     pendingSessionPlanSelection = selection;
     eligibilityGateScreen.open();

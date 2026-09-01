@@ -42,6 +42,15 @@
 - 已同步更新 [KI-016](../../../known_issue/KI-016-session-plan-family-order-validator-stale-allowlist.md) 狀態頭與 DoD、[BUGFIX-DECISIONS.md](../../../known_issue/BUGFIX-DECISIONS.md) BD-016。
 - T2 尚未完成：`SessionPlanSetup` preset 選擇 UI 與 `main.ts` 的 `sessionPlanPreset` 匯出接線（KI-016 診斷中標記的「preset 切換開放給操作端 UI」本體功能）留待 T2b。
 
+### 2026-09-01 — T2b 發現並解決跨 WP 決策矛盾：preset 下拉 vs. WP-43 FR-H3 自由選擇
+
+- 依 WP-52 README/task-checklist 字面著手在 `SessionPlanSetup.ts` 加回具名 preset `<select>`（呼應 GD-26 記載的 FR-G9② 缺口）時，讀 `tests/e2e/session-orchestrator.spec.ts` 才發現 WP-43（stage8，T2/T-exit 完成於 2026-08-26，與 GD-26 記錄同一天）已用 FR-H3 把 preset 下拉**整個移除**，改成自由 checkbox 家族子集 + 自由休息秒數輸入，且該 E2E 明確斷言 `select[name="sessionPlanPreset"]` count 為 0。GD-26 與 WP-43 FR-H3 是同批時間互相矛盾、從未對帳的兩份決策記錄。
+- 已 revert 當下未 commit 的 preset `<select>` 重寫（`SessionPlanSetup.ts`/`.test.ts`/`main.ts`），改用 `AskUserQuestion` 請使用者拍板方向，而非自行選一邊蓋過去。
+- 使用者拍板：**保留 WP-43 自由選擇設計，只擴充家族清單**——`SessionPlanSetup.ts` 的 `families` 型別從 `TestFamilyId` 放寬為 `SessionFamilyId`；`main.ts` 傳入的家族清單改為 `[...KNOWN_SESSION_FAMILY_IDS]`（KI-016 T2a 同一份單一來源允許清單），從 4 個擴充為 5 個（新增 `'peek-click-transfer'`）。不重新引入 preset 下拉，不寫入 `sessionPlanPreset` 匯出欄位（`SESSION_PLAN_PRESETS`/`findSessionPlanPreset` 維持原樣，非本次範圍）。
+- 已將此矛盾與解法記入全域 [DECISIONS.md](../../../DECISIONS.md) GD-26（移至 §3 已解決，2026-09-01）。
+- 落地：`SessionPlanSetup.ts`/`.test.ts` 型別放寬 + 新增「自由勾選含 peek-click-transfer」regression test；`main.ts` 改用 `KNOWN_SESSION_FAMILY_IDS`；`tests/e2e/session-orchestrator.spec.ts` 既有 DOM 接線測試改為斷言 5 個 checkbox，並新增一個「只勾 peek-click-transfer → 走到 eligibility gate」的 WP-52 T2 專屬 E2E case（Playwright edge channel 全綠，4/4）。
+- v1/v2 pilot config 與既有 4 家族流程零回歸：focused unit suite（見 Verification log）與 Playwright `session-orchestrator.spec.ts` 皆全綠。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -52,6 +61,7 @@
 | D-52.4 | OQ-52-1：pilot v2 保留 `[1.5, 2, 3]` deg 三候選，沿用 v1 `PEEK_CLICK_ANGULAR_SIZE_CANDIDATES_DEG` 常數集合，不窄化為單一候選 | T0 尚無真人 pilot evidence 可支持窄化；README 預設本就是「保留候選集合，T0 用 evidence 拍板」，而 evidence 蒐集正是 WP-52 本身的目的，不能倒果為因 | Confirmed，T1 直接沿用同一候選集合 |
 | D-52.5 | OQ-52-2：pilot v2 維持 spawn-anchored `peekTimeoutMs`/`countdownMs` 3000 ms，不改 split timeout | 同上，T0 無明確 evidence 支持變更；v1 現行 3000 ms 已是 WP-45 拍板值，變更門檻應由 pilot 資料而非臆測驅動 | Confirmed，T1 timing 沿用 v1 數值 |
 | D-52.6 | OQ-52-3：pilot v2 不新增獨立 warmup drill，沿用 WP-45 D-45.16（`resolveWarmupDrillId` 對 `'peek-click-transfer'` 落既有 `else` 分支回 `unavailable`） | T3 只交付單一 pilot drill，未建熱身 config；WP-43 UI contract 未定義此家族熱身入口，現在新增屬臆造未定案設計，與 D-45.14/D-45.16 一致的立場 | Confirmed，T2 沿用現行 `resolveWarmupDrillId` 行為，不修改該函式 |
+| D-52.7 | T2 不重新引入 preset `<select>`；`SessionPlanSetup` 改為放寬 `families` 型別至 `SessionFamilyId`，`main.ts` 傳入 `[...KNOWN_SESSION_FAMILY_IDS]`（5 家族），沿用 WP-43 FR-H3 的自由 checkbox 設計 | WP-43（stage8）已用 FR-H3 移除 preset 下拉並有 E2E 鎖定（`session-orchestrator.spec.ts` 斷言 count 0）；WP-52 task-checklist 字面假設的「preset 選擇」與此矛盾，使用者拍板保留已交付/已測試設計而非回退；詳見全域 [DECISIONS.md](../../../DECISIONS.md) GD-26（2026-09-01 已解決） | Confirmed，使用者 2026-09-01 拍板 |
 
 ## Open Questions
 
@@ -73,3 +83,6 @@
 | 2026-09-01 | `graphify update .` | 3826 nodes / 8993 edges / 240 communities rebuilt |
 | 2026-09-01 | `npx vitest run src/session/sessionSchedule.test.ts src/session/SessionRunner.test.ts src/session/SessionRunnerPoll.test.ts src/data/metadata.test.ts src/session/sessionPlanPresets.test.ts` | 5 files / 81 tests passed（T2a KI-016 fix） |
 | 2026-09-01 | `npx tsc --noEmit`（T2a 後） | exit 0（全專案） |
+| 2026-09-01 | `npx vitest run src/ui/SessionPlanSetup.test.ts src/session/sessionSchedule.test.ts src/session/SessionRunner.test.ts src/session/SessionRunnerPoll.test.ts src/data/metadata.test.ts src/session/sessionPlanPresets.test.ts src/drill/peek_click_transfer_pilot_v1.test.ts src/drill/peek_click_transfer_pilot_v2.test.ts src/pilot/pilotConfigs.test.ts` | 9 files / 115 tests passed（T2b 家族清單擴充後） |
+| 2026-09-01 | `npx tsc --noEmit`（T2b 後） | exit 0（全專案） |
+| 2026-09-01 | `npx playwright test tests/e2e/session-orchestrator.spec.ts`（edge channel） | 4/4 passed（含新增 WP-52 T2 transfer-family case） |

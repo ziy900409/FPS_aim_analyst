@@ -140,7 +140,7 @@ Error 情境：
 |------|-----------|--------------|------|------------|---------------------|
 | T0 | Entry gate／v1 audit／參數候選拍板 | WP-45 T-exit | High | Med | CodeGraph impact 記錄；v1 config/tests baseline 綠燈；OQ-52-1~3 有決議；不修改 production code |
 | T1 | 新增 `peek_click_transfer_pilot_v2` config 與 deterministic contract | T0 | High | Med | v2 config builder tests 覆蓋 id、scene、hitbox、timeout、visibility、seed；60/120/240 Hz deterministic test 通過；v1 tests 零修改全綠 |
-| T2 | Pilot session preset UI + metadata unblock | T1 + KI-016/GD-26 | High | High | session family allowlist 單一來源；`SessionPlanSetup` 可選具名 preset；`main.ts` 寫入 `sessionPlanPreset`；transfer pilot session E2E 匯出不 throw |
+| T2 | Pilot session preset UI + metadata unblock | T1 + KI-016/GD-26 | High | High | session family allowlist 單一來源；操作者能把 `'peek-click-transfer'` 排進 Session Plan；transfer pilot session E2E 匯出不 throw（實際落地方式見 [progress.md D-52.7](progress.md) / [DECISIONS.md GD-26](../../../DECISIONS.md)：擴充既有自由 checkbox 家族清單，不重新引入 preset 下拉——WP-43 FR-H3 已移除且有 E2E 鎖定；`sessionPlanPreset` 匯出欄位不在此次範圍） |
 | T3 | Pilot evidence harness/report | T1-T2 | Med | Med | report 產出 completion/timeout/validFirstShot/LR/flag counts；至少一組 committed synthetic fixture；practice history guard tests 通過 |
 | T4 | Manual pilot gate and documentation | T3 | High | Med | manual checklist 記錄 pointer-lock、視覺手感、timeout、左右對稱；`analysis-peek-click-transfer.md` 新增 v2 evidence；WP-53 go/no-go 明確 |
 | T-exit | Pilot v2 acceptance and handoff | T1-T4 | Med | Low | focused tests + relevant Playwright + typecheck 通過；stage11/progress 更新；若改 code 已執行 `graphify update .`；WP-53 T0 所需 evidence links 完整 |

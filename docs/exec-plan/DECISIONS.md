@@ -23,16 +23,6 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
-### GD-26 🟡 GD-24/FR-G9 缺口 — Session Plan preset 切換決議未實際接線(2026-08-26)
-
-| | |
-|---|---|
-| **發現處** | 使用者詢問「Session Plan 固定測試家族能否改成下拉選單置換」,讀碼稽核 [SessionPlanSetup.ts](../../src/ui/SessionPlanSetup.ts)、[sessionPlanPresets.ts](../../src/session/sessionPlanPresets.ts)、[main.ts](../../src/main.ts) 三處時發現:`main.ts:360-361` 建立 `createSessionPlanSetup({ families: TEST_FAMILY_IDS, ... })` 是**寫死餵入四家族常數**,`sessionPlanPresets.ts` 的 `SESSION_PLAN_PRESETS` 註冊表(`pilot-default`/`transfer-pilot-v1`)完全沒有被操作端 UI 消費——只用在 `metadata.ts` 的 `sessionPlanPreset` 欄位驗證(`findSessionPlanPreset`),但該欄位在匯出時也從未被實際填值([main.ts:516-521](../../src/main.ts#L516) 只填 `sessionPlanRestSeconds`/`sessionPlanFamilyOrder`,漏了 `sessionPlanPreset`)。 |
-| **與既有決議的落差** | [GD-24](#gd-24-✅-stage7-採納--選手測試流程前端優化wp-40~42--m17--session-plan-preset-分層決策2026-08-25-採納m17-達成2026-08-25) 的「決議(FR-G9,Session Plan 兩類可調性)」明文:「**②session-plan preset**……**切換既有 preset 對任何操作者開放**」,且驗收清單 G 的 G-5 已標示通過(`docs/operational/acceptance-stage-g.md`)。但實測程式碼 = 操作端從未真的能選第二個 preset(`transfer-pilot-v1`),UI 只有寫死的單一四家族清單。G-5「只能選具名常數不得自由輸入數字」字面上成立(因為根本沒有輸入框),但 FR-G9 承諾的「可切換」能力並未交付。 |
-| **未決** | 這屬於**已決議但未落地**,不是新的 feature 決策,也不是單純的程式 bug(沒有錯誤行為,只是缺功能)——暫不歸入 `known_issue/`(該處已就緊鄰的一個獨立 latent bug 開 [KI-016](../known_issue/KI-016-session-plan-family-order-validator-stale-allowlist.md),但 KI-016 只涵蓋 `metadata.ts` 驗證漏洞,不涵蓋這裡的「UI 沒接 preset 切換」本身)。要不要落地、何時落地、算補完 WP-42 還是開新 WP,留待使用者後續拍板;此條僅記錄落差存在,不預先假設處置方式。 |
-| **影響面** | [SessionPlanSetup.ts](../../src/ui/SessionPlanSetup.ts)(型別目前鎖 `TestFamilyId`,若要接 `transfer-pilot-v1` 需放寬至 `SessionFamilyId`)、[main.ts:360-361](../../src/main.ts#L360)、[main.ts:516-521](../../src/main.ts#L516) 的 `sessionPlanPreset` 匯出欄位補值;落地前必須先解決 [KI-016](../known_issue/KI-016-session-plan-family-order-validator-stale-allowlist.md)(否則含 `'peek-click-transfer'` 的 session 匯出會 throw)。 |
-| **狀態** | 🟡 落差已記錄(2026-08-26),處置方式待使用者拍板;`active/stage7/` 相關文件與驗收清單 G 暫不回改,待決定是否需要更正 G-5/FR-G9 的完成度敘述。 |
-
 ### GD-25 ✅ WP-45 pilot-ready — peek-click transfer 與元件量測邊界、共用遮擋 kernel(2026-08-26)
 
 | | |
@@ -295,6 +285,17 @@
 ---
 
 ## 3. 已解決(CLOSED)
+
+### GD-26 ✅ GD-24/FR-G9 缺口 — Session Plan preset 切換不落地,改為擴充自由勾選家族清單(2026-08-26 記錄;2026-09-01 拍板,WP-52 T2)
+
+| | |
+|---|---|
+| **發現處** | 使用者詢問「Session Plan 固定測試家族能否改成下拉選單置換」,讀碼稽核 [SessionPlanSetup.ts](../../src/ui/SessionPlanSetup.ts)、[sessionPlanPresets.ts](../../src/session/sessionPlanPresets.ts)、[main.ts](../../src/main.ts) 三處時發現:`main.ts:360-361` 建立 `createSessionPlanSetup({ families: TEST_FAMILY_IDS, ... })` 是**寫死餵入四家族常數**,`sessionPlanPresets.ts` 的 `SESSION_PLAN_PRESETS` 註冊表(`pilot-default`/`transfer-pilot-v1`)完全沒有被操作端 UI 消費——只用在 `metadata.ts` 的 `sessionPlanPreset` 欄位驗證(`findSessionPlanPreset`),但該欄位在匯出時也從未被實際填值。 |
+| **與既有決議的落差** | [GD-24](#gd-24-✅-stage7-採納--選手測試流程前端優化wp-40~42--m17--session-plan-preset-分層決策2026-08-25-採納m17-達成2026-08-25) 的「決議(FR-G9,Session Plan 兩類可調性)」明文:「**②session-plan preset**……**切換既有 preset 對任何操作者開放**」。但 WP-52 T2 落地時讀碼發現,WP-43(stage8,T2/T-exit 同樣完成於 2026-08-26)已用 FR-H3 把 preset `<select>` **整個拿掉**,改成自由 checkbox 家族子集 + 自由休息秒數輸入(`tests/e2e/session-orchestrator.spec.ts` 明確斷言 `select[name="sessionPlanPreset"]` count 為 0)。FR-G9②「可切換 preset」與 FR-H3「拿掉 preset UI」是同一批時間(2026-08-25/26)兩份文件互相矛盾但都沒被對方引用、無人對帳。 |
+| **決議(使用者拍板,2026-09-01)** | **不**重新引入 preset 下拉選單(不回頭違反已交付且有 E2E 鎖定的 FR-H3);改為把 `SessionPlanSetup.ts` 的 `families` 型別從 `TestFamilyId` 放寬為 `SessionFamilyId`,`main.ts` 傳入的家族清單從 `TEST_FAMILY_IDS`(4)擴充為 `KNOWN_SESSION_FAMILY_IDS`(5,含 `'peek-click-transfer'`,KI-016 同一份單一來源允許清單)。操作者透過既有自由勾選 UI 就能組出 transfer-pilot session,不需要「preset」這個中介概念。`sessionPlanPreset` 匯出欄位與 `SESSION_PLAN_PRESETS`/`findSessionPlanPreset` 驗證維持原樣(未被此次變更觸碰,目前仍是死碼但非本次範圍)。 |
+| **理由** | FR-G9②原本要防的是「自由輸入數字造成同一 `protocolVersion` 下 session 不可比較」(GD-20 精神)。free checkbox 家族選擇本身早就不受這條規範管——FR-G9①本來就允許自由勾選家族子集,而勾選 `'peek-click-transfer'` 只是解析到固定 `peekClickTransferPilotV1.id`(單一具名 drill,無數字參數),並未打開任何自由數字輸入口子,所以擴充家族清單不會重開 GD-20 想防的洞。重新造一個 preset 下拉反而要求回退已測試、已上線的 FR-H3 UI,風險與收益不成比例。 |
+| **影響面** | [SessionPlanSetup.ts](../../src/ui/SessionPlanSetup.ts)、[SessionPlanSetup.test.ts](../../src/ui/SessionPlanSetup.test.ts)、[main.ts](../../src/main.ts)(`createSessionPlanSetup` 呼叫處)、[tests/e2e/session-orchestrator.spec.ts](../../tests/e2e/session-orchestrator.spec.ts)(家族 checkbox 數由 4 改為 5,新增 transfer-family 專屬案例)。 |
+| **狀態** | ✅ 已解決(2026-09-01,WP-52 T2)。FR-G9②原字面「preset 切換」的承諾正式作廢,由「自由家族勾選涵蓋所有已知家族(含 pilot)」取代;`docs/operational/acceptance-stage-g.md` G-5 敘述保留原文不回改(歷史記錄),但此條解釋了現況以哪個決策為準。 |
 
 ### GD-3 ✅ 輸入消費 tick 邊界語意 — WP-2 `<` vs WP-3 契約 `<=` 矛盾(2026-07-01)
 
