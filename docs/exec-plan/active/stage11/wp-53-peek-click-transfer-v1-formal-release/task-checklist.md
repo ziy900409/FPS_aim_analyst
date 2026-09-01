@@ -3,6 +3,8 @@
 > 狀態符號：`[ ]` pending · `[-]` in progress · `[x]` complete。每個 task 完成後更新 [progress.md](progress.md) 與 stage11 [progress.md](../progress.md)。
 
 > **2026-09-01**：以下全數仍 `[ ]` pending——WP-53 尚未開工（No-go，見 [stage11 README](../README.md) §6）。本輪上游 WP-52 新增了 `peek_click_transfer_pilot_v2_masked` 變體（GD-7 記名例外，見 [progress.md](progress.md) 同日條目），但這不是 WP-53 的 task，此處不勾動任何項目，避免造假進度。
+>
+> **2026-09-01（同日，後續）**：使用者明確 override 上述 No-go，要求先建 T1~T3 的 **placeholder 骨架**（見全域 [DECISIONS.md GD-28](../../../DECISIONS.md)、本 WP [progress.md](progress.md) D-53.4）。T1 的 `peek_click_transfer_v1.ts` config + tests 已完成，但凍結數值全為 provisional 占位值，不是真人 evidence 拍板的結果——故 T0/T1 checkbox **仍不勾選**；只有等真人 pilot evidence 到位、T0 真正拍板後，才會把 placeholder 換成正式值並回填這裡的 box。
 
 ## T0 — Freeze decision gate
 

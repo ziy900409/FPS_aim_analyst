@@ -22,6 +22,14 @@
 - **已知缺口**（同一則記於 WP-52 progress.md，此處提醒 WP-53 T0 若要引用）：masked pilot 的匯出 JSON 與 replay 目前不含 `visualSize`（只回溯真實 hitbox），若 formal freeze 決策需要用匯出資料稽核「遮罩是否確實達到視覺無差異」，需要先補上這段管線。
 - Verification：無（本節純文件記錄，未觸碰 WP-53 scope 的 production code）。
 
+### 2026-09-01 — T1 placeholder 骨架：`peek_click_transfer_v1` config
+
+- **不是 T0 freeze 完成**：task-checklist.md T0/T1 checkbox 維持未勾選；本節只記錄 GD-28 override 下的骨架切片。
+- 新增 [src/drill/peek_click_transfer_v1.ts](../../../../src/drill/peek_click_transfer_v1.ts)：`peekClickTransferV1`（`id`/`drillId` = `peek_click_transfer_v1`、`mode:'assessment'`、`sceneId:'peek-ad-corridor-v1'`），沿用 pilot v1/v2 的 wrapper shape（`sceneId`/`clearanceOptions`/`visibility` 隨 `drill` 一起帶），因為正式版沿用同一個 corridor 場景，T4 Session Plan 整合會需要這兩個欄位。
+- Placeholder 數值：角尺寸沿用 pilot v2 的 2.5° 預設候選、8u distance、20 count、既有 timing/visibility；`protocolVersion` = `peek-click-transfer-v1.0.0-provisional`（刻意帶 `-provisional` 後綴，不用 OQ-53-1 預定的正式字串）；seed 96000（獨立於 pilot v1 的 94000 系列與 pilot v2 的 95000/95100/95200 系列，匯出資料不會與任一 pilot cohort 混淆）。
+- 新增 [src/drill/peek_click_transfer_v1.test.ts](../../../../src/drill/peek_click_transfer_v1.test.ts)：覆蓋 id/mode/scene/cue/count/timeout/visibility/hitbox、seed 不與 pilot v1/v2 衝突、`loadDrill` 對 `peek-ad-corridor-v1` 的 clearance 驗證，以及一個「provisional 標記存在」的測試——這個測試設計成之後若有人直接把正式凍結值套進來卻忘記拿掉 provisional 標記會紅燈。
+- Verification：`npx vitest run src/drill/` 18 files / 154 tests 全綠；`npx tsc --noEmit` 乾淨。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
