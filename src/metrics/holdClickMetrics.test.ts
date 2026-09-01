@@ -180,3 +180,95 @@ function onlyPresentation(result: ReturnType<typeof deriveHoldClickMetrics>) {
 function tickTime(tick: number): number {
   return tick * TICK_MS;
 }
+
+describe('deriveHoldClickMetrics — WP-52 T5: per-presentation hitboxAtTick wiring', () => {
+  // Reuses visibilityDerivation.test.ts's exact geometry: eye at origin, target at x=1/z=-10,
+  // a center-wall occluder giving visibleFraction 0 for a tiny hitbox and 8/9 (>= 0.5 threshold)
+  // for a wide one — verified numerically against visibleFractionForTarget directly.
+  const OCCLUDER: SceneConfig['propBounds'][number] = {
+    id: 'center-wall',
+    min: { x: -0.6, y: 0, z: -5 },
+    max: { x: 0.6, y: 3, z: -4 },
+  };
+  const TARGET_POS = { x: 1, y: 1.6, z: -10 };
+
+  function twoPresentationScene(): SceneConfig {
+    return {
+      sceneId: 'wp52-t5-fixture',
+      assetPackVersion: 'synthetic-v1',
+      clutterTier: 'low',
+      asset: null,
+      propBounds: [OCCLUDER],
+      playerCorridor: { halfWidthU: 1 },
+    };
+  }
+
+  function makeVaryingHitboxPayload(): ExportPayload {
+    const totalTicks = 20;
+    const recorder = createDataRecorder({ capacity: totalTicks + 1 });
+
+    // Presentation A: tiny hitbox (0.1u) — visibleFraction stays 0 the whole window, never onsets.
+    recorder.recordEvent({
+      type: 'visible',
+      targetId: 'target-a',
+      side: 'L',
+      t: tickTime(0),
+      targetX: TARGET_POS.x,
+      targetY: TARGET_POS.y,
+      targetZ: TARGET_POS.z,
+      hitboxWidthU: 0.1,
+      hitboxHeightU: 0.1,
+      hitboxDepthU: 0.1,
+      hitboxShape: 'box',
+    });
+    // Presentation B: wide hitbox (6u) — visibleFraction is 8/9 >= 0.5, onsets at its visible tick.
+    recorder.recordEvent({
+      type: 'visible',
+      targetId: 'target-b',
+      side: 'R',
+      t: tickTime(10),
+      targetX: TARGET_POS.x,
+      targetY: TARGET_POS.y,
+      targetZ: TARGET_POS.z,
+      hitboxWidthU: 6,
+      hitboxHeightU: 6,
+      hitboxDepthU: 6,
+      hitboxShape: 'box',
+    });
+
+    for (let tick = 0; tick <= totalTicks; tick++) {
+      recorder.recordTick({
+        t: tickTime(tick),
+        vx: 0,
+        vz: 0,
+        px: 0,
+        pz: 0,
+        tx: TARGET_POS.x,
+        ty: TARGET_POS.y,
+        tz: TARGET_POS.z,
+        aim: { yaw: 0, pitch: 0 },
+        keys: [],
+      });
+    }
+
+    const varyingMeta: Meta = { ...meta, targets: { hitbox: { widthU: 2, heightU: 2, depthU: 2 } } };
+    const payload = buildExportPayload(varyingMeta, recorder.snapshot());
+    return JSON.parse(serializeJSON(payload)) as ExportPayload;
+  }
+
+  it('uses each presentation\'s own attached hitbox, not a single global one', () => {
+    const result = deriveHoldClickMetrics(makeVaryingHitboxPayload(), twoPresentationScene(), {
+      sampleCount: 9,
+      onsetThreshold: 0.5,
+    });
+
+    expect(result.presentations).toHaveLength(2);
+    const [presentationA, presentationB] = result.presentations;
+    expect(presentationA.targetId).toBe('target-a');
+    expect(presentationA.tMeasurementOnsetMs).toBeUndefined();
+    expect(presentationA.flags).toContain('no_measurement_onset');
+
+    expect(presentationB.targetId).toBe('target-b');
+    expect(presentationB.tMeasurementOnsetMs).toBeCloseTo(tickTime(10), 9);
+  });
+});

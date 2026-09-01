@@ -25,12 +25,21 @@ export interface VisibilityDerivationOptions extends EyeOriginOptions {
   readonly sampleCount?: 1 | 9;
   readonly onsetThreshold: number;
   readonly hitbox?: TargetHitboxSize;
+  /**
+   * WP-52 T5: per-tick hitbox override, for drills whose target hitbox varies across presentations
+   * within one export (`DrillConfig.targets.hitboxCandidates`). When it returns a value for a given
+   * tick, that value is used instead of `hitbox`/the meta snapshot — the single authoritative
+   * source stays whichever hitbox this resolver reads from (GD-7); when omitted entirely, behavior
+   * is identical to before this option existed.
+   */
+  readonly hitboxAtTick?: (tick: Tick) => TargetHitboxSize | undefined;
 }
 
 interface ResolvedVisibilityOptions {
   readonly sampleCount: 1 | 9;
   readonly onsetThreshold: number;
   readonly hitbox: TargetHitboxSize;
+  readonly hitboxAtTick?: (tick: Tick) => TargetHitboxSize | undefined;
   readonly eyeOrigin: ResolvedEyeOrigin;
 }
 
@@ -63,13 +72,8 @@ function visibleFractionForTick(tick: Tick, scene: SceneConfig, options: Resolve
   if (tick.tx === null || tick.ty === null || tick.tz === null) return 0;
 
   const eye = eyeOriginForTick(tick, options.eyeOrigin);
-  return visibleFractionForTarget(
-    eye,
-    { x: tick.tx, y: tick.ty, z: tick.tz },
-    options.hitbox,
-    scene.propBounds,
-    options.sampleCount,
-  );
+  const hitbox = options.hitboxAtTick?.(tick) ?? options.hitbox;
+  return visibleFractionForTarget(eye, { x: tick.tx, y: tick.ty, z: tick.tz }, hitbox, scene.propBounds, options.sampleCount);
 }
 
 function firstCrossingTimes(
@@ -106,6 +110,7 @@ function resolveOptions(payload: ExportPayload, options: VisibilityDerivationOpt
       depth: positiveFinite(hitbox.depth, 'hitbox.depth'),
       shape: hitbox.shape,
     },
+    ...(options.hitboxAtTick !== undefined ? { hitboxAtTick: options.hitboxAtTick } : {}),
     eyeOrigin: resolveEyeOrigin(payload, options),
   };
 }

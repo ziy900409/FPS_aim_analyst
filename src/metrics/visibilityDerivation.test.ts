@@ -83,6 +83,39 @@ describe('deriveVisibilityTimeline', () => {
     expect(result.tFullExposure).toBe(2 * TICK_MS);
   });
 
+  it('hitboxAtTick overrides the default/meta hitbox per tick (WP-52 T5)', () => {
+    const target = { x: 1, y: 1.6, z: -10 };
+    const withoutOverride = deriveVisibilityTimeline(makePayload([target]), sceneWithProps([occluder()]), {
+      sampleCount: 9,
+      onsetThreshold: 0.5,
+    });
+    expect(withoutOverride.samples[0].visibleFraction).toBe(4 / 9);
+
+    const shrunk = deriveVisibilityTimeline(makePayload([target]), sceneWithProps([occluder()]), {
+      sampleCount: 9,
+      onsetThreshold: 0.5,
+      hitboxAtTick: () => ({ width: 0.1, height: 0.1, depth: 0.1, shape: 'box' }),
+    });
+    expect(shrunk.samples[0].visibleFraction).toBe(0);
+
+    const widened = deriveVisibilityTimeline(makePayload([target]), sceneWithProps([occluder()]), {
+      sampleCount: 9,
+      onsetThreshold: 0.5,
+      hitboxAtTick: () => ({ width: 6, height: 6, depth: 6, shape: 'box' }),
+    });
+    expect(widened.samples[0].visibleFraction).toBe(8 / 9);
+  });
+
+  it('falls back to the default hitbox when hitboxAtTick returns undefined for a tick', () => {
+    const target = { x: 1, y: 1.6, z: -10 };
+    const result = deriveVisibilityTimeline(makePayload([target]), sceneWithProps([occluder()]), {
+      sampleCount: 9,
+      onsetThreshold: 0.5,
+      hitboxAtTick: () => undefined,
+    });
+    expect(result.samples[0].visibleFraction).toBe(4 / 9);
+  });
+
   it('keeps edge-grazing sensitivity explicit by sample count', () => {
     const centerOnly = deriveVisibilityTimeline(makePayload([TARGET]), sceneWithProps([edgeGrazingOccluder()]), {
       sampleCount: 1,

@@ -1,5 +1,6 @@
 import type { ExportPayload } from '../data/export.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
+import type { TargetHitboxSize } from '../drill/DrillConfig.ts';
 import { angularEccentricityDeg, eyeOriginForTick, resolveEyeOrigin, type EyeOriginOptions } from './eyeOrigin.ts';
 import { deriveDetectionMetrics, type DetectionDerivationOptions } from './detectionDerivation.ts';
 import { buildPeekWindows } from './peekWindows.ts';
@@ -56,18 +57,24 @@ export function deriveHoldClickMetrics(
   scene: SceneConfig,
   options: HoldClickMetricsOptions,
 ): HoldClickMetrics {
+  const visibleEvents = payload.events
+    .filter((event): event is VisibleEvent => event.type === 'visible')
+    .slice()
+    .sort((a, b) => a.t - b.t);
+  // WP-52 T5: drills whose target hitbox varies across presentations (hitboxCandidates) attach it
+  // to each visible event; only then does onset/exposure derivation need a per-tick lookup instead
+  // of the single meta/options hitbox. Every other drill's visibleEvents carry no hitbox fields, so
+  // hitboxAtTick stays undefined and behavior is unchanged.
+  const hitboxAtTick = buildHitboxAtTick(visibleEvents);
   const visibility = deriveVisibilityTimeline(payload, scene, {
     ...options,
     onsetThreshold: options.onsetThreshold,
+    ...(hitboxAtTick !== undefined ? { hitboxAtTick } : {}),
   });
   const detection = deriveDetectionMetrics(payload, { ...options, ...options.detection });
   const tracking = deriveTrackingMetrics(payload, { ...options, ...options.tracking });
   const peeks = buildPeekWindows(payload);
   const ticks = payload.ticks.slice().sort((a, b) => a.t - b.t);
-  const visibleEvents = payload.events
-    .filter((event): event is VisibleEvent => event.type === 'visible')
-    .slice()
-    .sort((a, b) => a.t - b.t);
   const eyeOrigin = resolveEyeOrigin(payload, options);
 
   const presentations = visibleEvents.map((visible, index) => {
@@ -174,6 +181,31 @@ function preAimForPresentation(
       yawErrorDeg: normalizeRad(preAimTick.aim.yaw - targetYaw) * RAD_TO_DEG,
       pitchErrorDeg: (preAimTick.aim.pitch - targetPitch) * RAD_TO_DEG,
     },
+  };
+}
+
+/**
+ * WP-52 T5: builds a per-tick hitbox resolver from `visibleEvents` when at least one of them
+ * carries a hitbox (i.e. this drill uses `hitboxCandidates`); `undefined` otherwise, so
+ * `deriveVisibilityTimeline` falls back to its existing single-hitbox behavior unchanged.
+ */
+function buildHitboxAtTick(
+  visibleEvents: readonly VisibleEvent[],
+): ((tick: Tick) => TargetHitboxSize | undefined) | undefined {
+  if (!visibleEvents.some((event) => event.hitboxWidthU !== undefined)) return undefined;
+  return (tick: Tick) => {
+    let current: VisibleEvent | undefined;
+    for (const event of visibleEvents) {
+      if (event.t <= tick.t + EPSILON) current = event;
+      else break;
+    }
+    if (current?.hitboxWidthU === undefined) return undefined;
+    return {
+      width: current.hitboxWidthU,
+      height: current.hitboxHeightU!,
+      depth: current.hitboxDepthU!,
+      shape: current.hitboxShape ?? 'box',
+    };
   };
 }
 
