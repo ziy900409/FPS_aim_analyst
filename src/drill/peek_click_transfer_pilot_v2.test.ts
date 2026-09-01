@@ -13,11 +13,13 @@ import { angularSizeToHitboxWidthU, PEEK_CLICK_ANGULAR_SIZE_CANDIDATES_DEG } fro
 import {
   buildPeekClickTransferPilotV2Config,
   buildPeekClickTransferPilotV2RandomizedConfig,
+  buildPeekClickTransferPilotV2MaskedConfig,
   PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG,
   PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U,
   peekClickTransferPilotV2,
   peekClickTransferPilotV2CandidateLabel,
   peekClickTransferPilotV2Randomized,
+  peekClickTransferPilotV2Masked,
 } from './peek_click_transfer_pilot_v2.ts';
 
 describe('peek_click_transfer_pilot_v2 candidates (WP-52 T1/T4, D-52.5/9)', () => {
@@ -140,6 +142,88 @@ describe('peek_click_transfer_pilot_v2 randomized cell (WP-52 T5)', () => {
 
   it('registers the randomized cell as the module default', () => {
     expect(peekClickTransferPilotV2Randomized).toEqual(buildPeekClickTransferPilotV2RandomizedConfig());
+  });
+});
+
+describe('peek_click_transfer_pilot_v2 masked-visual cell (WP-52, GD-7 記名例外)', () => {
+  it('every candidate keeps its true hitbox width but shares one constant visualSize (2.5° reference)', () => {
+    const cfg = buildPeekClickTransferPilotV2MaskedConfig();
+    const expectedWidths = PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.map((deg) =>
+      angularSizeToHitboxWidthU(deg, PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U),
+    );
+    const referenceWidthU = angularSizeToHitboxWidthU(2.5, PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U);
+
+    expect(cfg.id).toBe('peek_click_transfer_pilot_v2_masked');
+    expect(cfg.candidateWidthsU).toEqual(expectedWidths);
+    expect(cfg.visualWidthU).toBeCloseTo(referenceWidthU, 12);
+    // Not every true candidate equals the reference size — the mask only matters when they differ.
+    expect(new Set(expectedWidths).size).toBeGreaterThan(1);
+
+    const candidates = cfg.drill.targets.hitboxCandidates!;
+    expect(candidates.map((c) => c.widthU)).toEqual(expectedWidths);
+    for (const candidate of candidates) {
+      expect(candidate.visualSize).toEqual({ widthU: referenceWidthU, heightU: referenceWidthU, depthU: 1 });
+    }
+    expect(cfg.drill.targets.hitbox).toBeUndefined();
+  });
+
+  it('has a distinct id/seed from every fixed candidate and the randomized cell', () => {
+    const cfg = buildPeekClickTransferPilotV2MaskedConfig();
+    const otherSeeds = [
+      ...PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.map(
+        (deg) => buildPeekClickTransferPilotV2Config(deg).drill.sequence.seed,
+      ),
+      buildPeekClickTransferPilotV2RandomizedConfig().drill.sequence.seed,
+    ];
+    expect(otherSeeds).not.toContain(cfg.drill.sequence.seed);
+    expect(cfg.id).not.toBe(peekClickTransferPilotV2Randomized.id);
+  });
+
+  it('validates through loadDrill (scene clearance passes at the true-candidate sizes, mask is render-only)', () => {
+    const cfg = buildPeekClickTransferPilotV2MaskedConfig();
+    const drill = loadDrill(cfg.drill, peekAdCorridor, { clearance: cfg.clearanceOptions });
+    const state = createSharedState();
+    const targetManager = createTargetManager(drill);
+    const runner = createDrillRunner(state, targetManager);
+    runner.start(drill);
+
+    const trueWidths: number[] = [];
+    const seenIds = new Set<string>();
+    const tickMs = 1000 / SIM_HZ;
+    let nowMs = 0;
+    let guard = 0;
+    while (runner.phase !== 'ended' && guard < 30000) {
+      nowMs += tickMs;
+      runner.tick(state, nowMs);
+      for (const t of state.targets) {
+        if (!seenIds.has(t.id)) {
+          seenIds.add(t.id);
+          // hitbox.width stays the true (varying) hit-test size — masking never touches it.
+          trueWidths.push(t.hitbox.width);
+          expect(t.hitbox.visualSize).toEqual({ width: cfg.visualWidthU, height: cfg.visualWidthU, depth: 1 });
+        }
+      }
+      guard++;
+    }
+
+    expect(trueWidths).toHaveLength(21);
+    const counts = new Map<number, number>();
+    for (const width of trueWidths) counts.set(width, (counts.get(width) ?? 0) + 1);
+    expect([...counts.values()]).toEqual([7, 7, 7]);
+  });
+
+  it('registers the masked cell as the module default', () => {
+    expect(peekClickTransferPilotV2Masked).toEqual(buildPeekClickTransferPilotV2MaskedConfig());
+  });
+
+  it('produces a tick/event-identical 21-trial masked-hitbox export at 60/120/240 Hz pump cadence', () => {
+    const drill = buildPeekClickTransferPilotV2MaskedConfig().drill;
+    const expected = runCadenceTimeoutExport(60, drill);
+    for (const hz of [60, 120, 240]) {
+      const actual = runCadenceTimeoutExport(hz, drill);
+      expect(actual.phase).toBe('ended');
+      expect(actual.snapshot).toEqual(expected.snapshot);
+    }
   });
 });
 

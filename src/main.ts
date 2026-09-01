@@ -96,6 +96,7 @@ import { peekClickTransferPilotV1 } from './drill/peek_click_transfer_pilot_v1.t
 import {
   PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES,
   peekClickTransferPilotV2Randomized,
+  peekClickTransferPilotV2Masked,
 } from './drill/peek_click_transfer_pilot_v2.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
@@ -198,6 +199,15 @@ const availableDrills: AvailableDrill[] = [
     sceneId: peekClickTransferPilotV2Randomized.sceneId,
     loadOptions: { clearance: peekClickTransferPilotV2Randomized.clearanceOptions },
   },
+  // WP-52 masked-visual pilot（使用者請求，2026-09-01）：render 一律套用 2.5° 參考視覺尺寸，
+  // hitbox 仍逐一使用真實 1°/2.5°/5° 候選——用於「受試者看不出目前是哪個難度候選」的手感驗證。
+  {
+    id: peekClickTransferPilotV2Masked.id,
+    label: peekClickTransferPilotV2Masked.id,
+    source: peekClickTransferPilotV2Masked.drill,
+    sceneId: peekClickTransferPilotV2Masked.sceneId,
+    loadOptions: { clearance: peekClickTransferPilotV2Masked.clearanceOptions },
+  },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,
     label: variant.id,
@@ -215,6 +225,7 @@ const PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID = new Map<string, { sampleCount
     candidate.visibility,
   ]),
   [peekClickTransferPilotV2Randomized.id, peekClickTransferPilotV2Randomized.visibility],
+  [peekClickTransferPilotV2Masked.id, peekClickTransferPilotV2Masked.visibility],
 ]);
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;

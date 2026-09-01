@@ -174,6 +174,86 @@ export function buildPeekClickTransferPilotV2RandomizedConfig(): PeekClickTransf
 
 export const peekClickTransferPilotV2Randomized = buildPeekClickTransferPilotV2RandomizedConfig();
 
+/**
+ * WP-52 masked-visual pilot（使用者請求，2026-09-01；GD-7 記名例外，見 DECISIONS.md）：受試者全程
+ * 只看到同一個固定視覺大小（2.5° 參考值），無法用「這顆看起來比較小」的視覺線索猜測目前是哪個難度
+ * 候選；命中判定（`HitDetector`/`SimLoop.targetAabb`）、scene clearance、occlusion 可見度取樣仍逐一
+ * 讀真實 1°/2.5°/5° 候選的 widthU/heightU/depthU，不受影響。2.5° 是三個候選裡通過 clearance 驗證
+ * 的最大候選（5°）以內的尺寸，不引入新的場景穿模風險。
+ */
+const PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_VISUAL_ANGULAR_SIZE_DEG: PeekClickTransferPilotV2AngularSizeDeg =
+  PEEK_CLICK_TRANSFER_PILOT_V2_DEFAULT_ANGULAR_SIZE_DEG;
+
+const PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_VISUAL_WIDTH_U = angularSizeToHitboxWidthU(
+  PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_VISUAL_ANGULAR_SIZE_DEG,
+  PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U,
+);
+
+/** Same balanced-shuffle target count as the randomized cell (7 presentations per candidate). */
+export const PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_TARGET_COUNT = 21;
+
+/** Distinct from every fixed/randomized seed (95010/95025/95050/95100) so cohorts never collide. */
+const PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_SEED = 95200;
+
+export interface PeekClickTransferPilotV2MaskedConfig {
+  readonly id: string;
+  readonly sceneId: 'peek-ad-corridor-v1';
+  readonly drill: DrillConfig;
+  readonly clearanceOptions: ClearanceOptions;
+  readonly visibility: typeof PEEK_CLICK_TRANSFER_PILOT_V2_VISIBILITY;
+  /** Every candidate's true hit-test hitbox width (u); for mapping an exported `hitboxWidthU` back to its angular-size label. */
+  readonly candidateWidthsU: readonly number[];
+  /** The single constant width (u) every candidate is rendered at, regardless of its true hitbox width. */
+  readonly visualWidthU: number;
+}
+
+/**
+ * WP-52 masked-visual pilot: draws the same balanced-shuffle hitbox-candidate sequence as
+ * {@link buildPeekClickTransferPilotV2RandomizedConfig}, but every candidate additionally carries a
+ * constant `visualSize` — the render mesh always shows the 2.5° reference size while the underlying
+ * hitbox keeps varying per candidate (1°/2.5°/5°), masking the size manipulation from the tester.
+ */
+export function buildPeekClickTransferPilotV2MaskedConfig(): PeekClickTransferPilotV2MaskedConfig {
+  const visualSize = {
+    widthU: PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_VISUAL_WIDTH_U,
+    heightU: PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_VISUAL_WIDTH_U,
+    depthU: 1,
+  };
+  const hitboxCandidates = PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.map((deg) => {
+    const widthU = angularSizeToHitboxWidthU(deg, PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U);
+    return { widthU, heightU: widthU, depthU: 1, visualSize };
+  });
+  const drillId = `${PEEK_CLICK_TRANSFER_PILOT_V2_ID}_masked`;
+
+  return {
+    id: drillId,
+    sceneId: 'peek-ad-corridor-v1',
+    clearanceOptions: PEEK_CLICK_TRANSFER_PILOT_V2_CLEARANCE_OPTIONS,
+    visibility: PEEK_CLICK_TRANSFER_PILOT_V2_VISIBILITY,
+    candidateWidthsU: hitboxCandidates.map((candidate) => candidate.widthU),
+    visualWidthU: PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_VISUAL_WIDTH_U,
+    drill: {
+      drillId,
+      mode: 'practice',
+      cue: { kind: 'single' },
+      targets: {
+        count: PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_TARGET_COUNT,
+        distance: PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U,
+        hitboxCandidates,
+      },
+      sequence: {
+        alternation: 'LR',
+        seed: PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_SEED,
+        spawnDelayMsRange: [500, 500],
+      },
+      timing: PEEK_CLICK_TRANSFER_PILOT_V2_TIMING,
+      endCondition: { type: 'targetCount', value: PEEK_CLICK_TRANSFER_PILOT_V2_MASKED_TARGET_COUNT },
+    },
+  };
+}
+
+export const peekClickTransferPilotV2Masked = buildPeekClickTransferPilotV2MaskedConfig();
+
 /** Maps an exported presentation's `hitboxWidthU` back to its angular-size label (e.g. `'2.5°'`). */
 export function peekClickTransferPilotV2CandidateLabel(hitboxWidthU: number): string {
   const match = PEEK_CLICK_TRANSFER_PILOT_V2_ANGULAR_SIZE_CANDIDATES_DEG.find(
