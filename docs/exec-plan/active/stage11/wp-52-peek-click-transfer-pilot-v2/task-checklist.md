@@ -13,11 +13,11 @@
 
 ## T1 — Pilot v2 config and contracts
 
-- [ ] 新增 `peek_click_transfer_pilot_v2` config/builder
-- [ ] 新增具名常數：id、target count、timeout、visibility、hitbox/candidate label
-- [ ] 新增 deterministic tests（60/120/240 Hz）
-- [ ] 新增 scene geometry / hitbox compatibility tests
-- [ ] v1 pilot tests 零修改全綠
+- [x] 新增 `peek_click_transfer_pilot_v2` config/builder
+- [x] 新增具名常數：id、target count、timeout、visibility、hitbox/candidate label
+- [x] 新增 deterministic tests（60/120/240 Hz）
+- [x] 新增 scene geometry / hitbox compatibility tests
+- [x] v1 pilot tests 零修改全綠
 
 ## T2 — Pilot session preset UI + metadata unblock
 

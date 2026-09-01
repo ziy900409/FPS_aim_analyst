@@ -25,6 +25,15 @@
 - OQ-52-1/2/3 拍板（見下方 Decision log D-52.4/5/6）；OQ-52-4 維持 T4 owner 不變。
 - 本次只更新文件（progress/task-checklist/stage11 progress），未修改 production code。
 
+### 2026-09-01 — T1 Pilot v2 config and contracts
+
+- 新增 `src/drill/peek_click_transfer_pilot_v2.ts`（+ `.test.ts`）：獨立模組，具名常數（`PEEK_CLICK_TRANSFER_PILOT_V2_DISTANCE_U`／`_ANGULAR_SIZE_CANDIDATES_DEG`／`_TARGET_COUNT`／`_TIMING`／`_VISIBILITY`／`_CLEARANCE_OPTIONS`／`_SEED_BASE`），數值與 v1 相同（D-52.4/5/6），但 id/seed 範圍（`peek_click_transfer_pilot_v2_*`、seed base 95000）與 v1（94000 系）不重疊，兩個 evidence cohort 可稽核區分（D-52.1）。`angularSizeToHitboxWidthU` 從 v1 檔案 import 重用（純函式、無狀態，不構成對 v1 的修改風險）。
+- `buildPeekClickTransferPilotV2Config(angularSizeDeg)` 回傳含 `candidateLabel`（如 `'2°'`）的 config，供 T2 UI 只消費具名候選（FR-52-3）。
+- `src/pilot/pilotConfigs.ts` 新增 `buildPeekClickTransferPilotV2Configs`，鏡射既有 `buildPeekClickTransferPilotConfigs` 慣例；`pilotConfigs.test.ts` 納入 v2 candidates 進 `allConfigs()` 與獨立 preserves-candidate 斷言。
+- 新測試涵蓋：candidate 集合等同 v1、hitbox 幾何公式、id/seed 唯一且不與 v1 碰撞、practice/scene/cue/timing/visibility contract、strict/pilot clearance（scene geometry compatibility）、researcher-mode 預設、60/120/240 Hz tick/event-identical determinism（NFR-52-1）。
+- v1 guard 持續有效：本次未修改 `peek_click_transfer_pilot_v1.ts`／`.test.ts` 任何一行；只從中 import 既有 export。
+- Verification：見下方 Verification log；`npx tsc --noEmit` 全專案 exit 0；`graphify update .` 已執行（3826 nodes / 8993 edges / 240 communities）。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -51,3 +60,6 @@
 |---|---|---|
 | 2026-08-28 | Planning-only | No production verification run |
 | 2026-09-01 | `npx vitest run src/drill/peek_click_transfer_pilot_v1.test.ts src/metrics/peekClickTransferMetrics.test.ts src/session/sessionSchedule.test.ts src/session/SessionRunner.test.ts src/data/metadata.test.ts src/session/sessionPlanPresets.test.ts src/ui/SessionPlanSetup.test.ts src/pilot/pilotConfigs.test.ts` | 8 files / 111 tests passed（T0 baseline，HEAD `d142baf`） |
+| 2026-09-01 | `npx vitest run src/drill/peek_click_transfer_pilot_v2.test.ts src/drill/peek_click_transfer_pilot_v1.test.ts src/pilot/pilotConfigs.test.ts` | 3 files / 25 tests passed（T1，v1 零修改全綠） |
+| 2026-09-01 | `npx tsc --noEmit` | exit 0（全專案） |
+| 2026-09-01 | `graphify update .` | 3826 nodes / 8993 edges / 240 communities rebuilt |

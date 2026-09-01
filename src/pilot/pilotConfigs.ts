@@ -8,6 +8,10 @@ import {
   buildPeekClickTransferPilotConfig,
   type PeekClickAngularSizeDeg,
 } from '../drill/peek_click_transfer_pilot_v1.ts';
+import {
+  buildPeekClickTransferPilotV2Config,
+  type PeekClickTransferPilotV2AngularSizeDeg,
+} from '../drill/peek_click_transfer_pilot_v2.ts';
 
 /** Pilot-only seed range; it is deliberately outside every assessment protocol's 1–37002 range. */
 export const PILOT_SEED_ROSTER_START = 90000;
@@ -116,6 +120,13 @@ export function buildPeekClickTransferPilotConfigs(
   candidates: readonly PeekClickAngularSizeDeg[],
 ): readonly DrillConfig[] {
   return candidates.map((angularSizeDeg) => buildPeekClickTransferPilotConfig(angularSizeDeg).drill);
+}
+
+/** WP-52 / T1: v2 counterpart of {@link buildPeekClickTransferPilotConfigs}, unwrapping v2 cells. */
+export function buildPeekClickTransferPilotV2Configs(
+  candidates: readonly PeekClickTransferPilotV2AngularSizeDeg[],
+): readonly DrillConfig[] {
+  return candidates.map((angularSizeDeg) => buildPeekClickTransferPilotV2Config(angularSizeDeg).drill);
 }
 
 function practiceDistanceConfig(
