@@ -51,6 +51,12 @@
 - 落地：`SessionPlanSetup.ts`/`.test.ts` 型別放寬 + 新增「自由勾選含 peek-click-transfer」regression test；`main.ts` 改用 `KNOWN_SESSION_FAMILY_IDS`；`tests/e2e/session-orchestrator.spec.ts` 既有 DOM 接線測試改為斷言 5 個 checkbox，並新增一個「只勾 peek-click-transfer → 走到 eligibility gate」的 WP-52 T2 專屬 E2E case（Playwright edge channel 全綠，4/4）。
 - v1/v2 pilot config 與既有 4 家族流程零回歸：focused unit suite（見 Verification log）與 Playwright `session-orchestrator.spec.ts` 皆全綠。
 
+### 2026-09-01 — T3 Pilot evidence harness/report
+
+- 新增 `src/pilot/peekClickTransferPilotEvidence.ts`：純函式 `buildPeekClickTransferPilotEvidenceReport(sessions)` 聚合任意數量 session 的 `PeekClickTransferPresentation[]`，輸出 `presentationCount`／`completionRate`／`timeoutRate`／`validFirstShotRate`／`leftRightBalance`／`flagCounts`；不產生 composite score（C-D3），不含 I/O（C-D2）。輸入型別只要求 `{ presentations }`，可直接吃 `derivePeekClickTransferMetrics()` 的回傳值或手工合成的測試 fixture。
+- `peekClickTransferPilotEvidence.test.ts`：一組 committed synthetic fixture（5 個 presentation）覆蓋 timeout、first-miss→second-hit（`shotsToKill:2`）、pre-onset fire（`fire_before_measurement_onset`）、no-counter、外加一個 clean valid-first-shot hit；並驗證跨多 session 聚合不重複計算/不漏算，以及空樣本不除以零。
+- `HistoryPersistence.test.ts` 新增 pilot v2 專屬 practice guard case：`drillId: 'peek_click_transfer_pilot_v2_2deg'` 且 `meta.assessment` 缺席時，`save()` 直接短路成 `excluded`，`client.saveRun` 未被呼叫——證明既有（drill-id-agnostic）practice guard（`payload.meta.assessment === undefined` 短路，`HistoryPersistence.ts:75-80`）自動涵蓋 pilot v2，不需要新增程式碼（D-52.2 保證 pilot v2 永不設 `meta.assessment`）。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -86,3 +92,5 @@
 | 2026-09-01 | `npx vitest run src/ui/SessionPlanSetup.test.ts src/session/sessionSchedule.test.ts src/session/SessionRunner.test.ts src/session/SessionRunnerPoll.test.ts src/data/metadata.test.ts src/session/sessionPlanPresets.test.ts src/drill/peek_click_transfer_pilot_v1.test.ts src/drill/peek_click_transfer_pilot_v2.test.ts src/pilot/pilotConfigs.test.ts` | 9 files / 115 tests passed（T2b 家族清單擴充後） |
 | 2026-09-01 | `npx tsc --noEmit`（T2b 後） | exit 0（全專案） |
 | 2026-09-01 | `npx playwright test tests/e2e/session-orchestrator.spec.ts`（edge channel） | 4/4 passed（含新增 WP-52 T2 transfer-family case） |
+| 2026-09-01 | `npx vitest run src/pilot/peekClickTransferPilotEvidence.test.ts src/history/HistoryPersistence.test.ts` | 2 files / 17 tests passed（T3） |
+| 2026-09-01 | `npx tsc --noEmit`（T3 後） | exit 0（全專案） |

@@ -1,4 +1,4 @@
-import type { PeekClickTransferMetrics, PeekClickTransferPresentation } from '../metrics/peekClickTransferMetrics.ts';
+import type { PeekClickTransferPresentation } from '../metrics/peekClickTransferMetrics.ts';
 
 /**
  * WP-52 / T3 — aggregates one or more derived `PeekClickTransferMetrics` results (pilot v2 sessions)
@@ -15,9 +15,9 @@ export interface PeekClickTransferPilotEvidenceReport {
 }
 
 export function buildPeekClickTransferPilotEvidenceReport(
-  metrics: readonly PeekClickTransferMetrics[],
+  sessions: readonly { readonly presentations: readonly PeekClickTransferPresentation[] }[],
 ): PeekClickTransferPilotEvidenceReport {
-  const presentations = metrics.flatMap((m) => m.presentations);
+  const presentations = sessions.flatMap((session) => session.presentations);
   const presentationCount = presentations.length;
   const timeoutCount = countByFlag(presentations, 'timeout');
   const validFirstShotCount = presentations.filter((presentation) => presentation.validFirstShot).length;

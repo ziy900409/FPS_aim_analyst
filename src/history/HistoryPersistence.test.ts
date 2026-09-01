@@ -51,6 +51,17 @@ describe('HistoryPersistence — Practice short-circuit', () => {
     expect(persistence.state).toEqual({ kind: 'excluded', reason: 'practice' });
     expect(client.saveRun).not.toHaveBeenCalled();
   });
+
+  it('excludes a peek_click_transfer_pilot_v2 export the same way (WP-52 T3 — pilot v2 is practice-only)', async () => {
+    const client = fakeClient();
+    const persistence = createHistoryPersistence(client);
+    const pilotV2Payload = makeAssessmentPayload({ drillId: 'peek_click_transfer_pilot_v2_2deg', assessment: false });
+
+    const result = await persistence.save(pilotV2Payload);
+
+    expect(result).toEqual({ kind: 'excluded', reason: 'practice' });
+    expect(client.saveRun).not.toHaveBeenCalled();
+  });
 });
 
 describe('HistoryPersistence — Assessment save success', () => {

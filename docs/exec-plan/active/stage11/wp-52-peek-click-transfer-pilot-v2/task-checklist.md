@@ -29,10 +29,10 @@
 
 ## T3 — Pilot evidence harness/report
 
-- [ ] 建立 pilot evidence report generator 或 test fixture
-- [ ] report 輸出 completion rate、timeout rate、valid first shot rate、left/right balance、flag counts
-- [ ] synthetic fixture 覆蓋 timeout、first miss→second hit、pre-onset fire、no-counter
-- [ ] practice-only history guard tests 全綠
+- [x] 建立 pilot evidence report generator 或 test fixture（`src/pilot/peekClickTransferPilotEvidence.ts`）
+- [x] report 輸出 completion rate、timeout rate、valid first shot rate、left/right balance、flag counts
+- [x] synthetic fixture 覆蓋 timeout、first miss→second hit、pre-onset fire、no-counter
+- [x] practice-only history guard tests 全綠（`HistoryPersistence.test.ts` 新增 pilot v2 drillId 專屬 case）
 
 ## T4 — Manual pilot gate and documentation
 
