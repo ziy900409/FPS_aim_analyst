@@ -2,11 +2,50 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1/6（closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`）已完成。
+- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1/6（closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`）、slice 2/6（WP-54 專屬 compatibility key）已完成。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T4 slice 2/6：WP-54 專屬 compatibility key（NFR-54-7）
+
+- **落點**：新檔 `src/pilot/trackingCompatibilityKey.ts`（`buildTrackingCompatibilityKey()`/
+  `checkTrackingCompatibility()`）+ `src/pilot/trackingCompatibilityKey.test.ts`（16 tests）。
+- **確認既有 `compatibilityKey.ts` 不可直接套用**（開工前依 README 交辦讀碼確認,見 CodeGraph
+  探索）：`buildCompatibilityKey()` 對 `meta.assessment === undefined` 直接 `throw`；`main.ts`
+  `buildCurrentExportPayload()` 只在 `activeDrillConfig.mode === 'assessment'` 時才組
+  `meta.assessment`（`main.ts:722`）——而 T2 已把全部 9 個 WP-54 pilot block 定為
+  `mode:'practice'`（見 T2 slice 5/6 decision）,故 WP-54 匯出的 `meta.assessment` **恆為
+  `undefined`**,直接呼叫既有 `buildCompatibilityKey()` 必定 throw。其欄位集合（participantId/
+  taskId/protocolVersion/gameMovementProfile/weaponId/weaponMode/sensitivityFovKey/
+  targetConditionCell/assessmentFeedbackPolicy/qualityGateStatus）也和 NFR-54-7 要求的軸線
+  （drill/protocol/motion/size/speed/FOV/sensitivity/input mode）不是同一組——故新開
+  `TrackingCompatibilityKey` 型別,沿用該檔「pure function + `requireXxx` 逐欄驗證 +
+  `checkXxx` 逐欄比對」的既有慣例風格,但不 import 其型別、不碰其 7 個既有 caller。
+- **8 軸設計**：`drillId`（`meta.drillId`）、`protocolVersion`（常數
+  `TRACKING_PILOT_PROTOCOL_VERSION = 'tracking-pilot-v1'`，D-54.11 已凍結，非逐 export 讀取——
+  T5 manifest 尚未存在,本 WP 目前只有這一個 protocol version）、`motionKind`/`sizeDeg`/
+  `speedDegPerSec`（三者皆從 `meta.spawn.trackingTrajectory` 這個 opaque unknown 解出——
+  `band-limited-2d-v1` 讀 `yawBoundDeg`x`pitchBoundDeg`/`targetRmsSpeedDegPerSec`；
+  `reversal-2d-v1` 讀 `angularBoundsDeg`/`speedRangeDegPerSec` 兩個 range,格式化成
+  `lo..hi` 字串；未知 `kind` fail fast,同 `trackingTrajectory.ts` 紀律）、`fovDeg`/
+  `sensitivity`（直接讀 `meta.fovDeg`/`meta.sensitivity`，fail fast 若缺席——WP-54 是
+  post-KI-005 全新 WP,`main.ts` 一律填 `fovDeg`,缺席視為不可信匯出）、`inputMode`。
+- **`inputMode` 是本 slice 唯一的判斷岔路，記為 Open Question**：NFR-54-7 只列出這個欄位名稱，
+  沒有進一步定義。`Meta` 裡沒有任何欄位字面叫「input mode」，也沒有 `protocolGuard`
+  的匯出對應（`DrillConfig.protocolGuard` 本身不進 `meta`——T2 設計，純 sim 期 guard）。
+  選擇讀 `meta.mouseIntegration?.model`（`'tick-window-integral'`，缺席時退回字串
+  `'aim-diff-legacy'`）——這是 `Meta` 裡唯一真正描述「輸入如何被擷取」的軸線，且與
+  research pipeline 既有的 `omega_source`（`tick-integral` vs `aim-diff-legacy`）警戒是
+  同一個構念）。**未與使用者確認**，實務上 WP-54 所有真實匯出都經過 `main.ts` 固定啟用
+  mouse integration，此欄位在目前資料下恆為常數，不影響 T6-T8 的真人資料 cohort 判定；若
+  未來需要更精確語意（例如真的有「controller vs mouse」或「keyboard-only walkthrough」
+  這種 input mode），屆時再修正,不影響已收集的 compatibility key 資料（新增欄位是
+  additive，不用回溯改字串格式）。
+- `npx tsc --noEmit` exit 0；`npx vitest run src/pilot/trackingCompatibilityKey.test.ts` 16/16
+  passed；`npx vitest run`（全專案）196 files / 1873 tests passed（2 skipped），對照 slice 1/6
+  的 195/1857，新增 1 個檔案、16 個測試，無回歸。
 
 ### 2026-09-02 — T4 slice 1/6：closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`
 
@@ -476,6 +515,12 @@
 ## Open Questions
 
 全部 OQ-54-1~OQ-54-8 已於 T0（2026-09-02）凍結，詳見上方 decision log D-54.2~D-54.8 與 [README §1.4](README.md)。OQ-54-2 標記為 calibration candidate（非 hard freeze），其餘視為凍結值；後續變更一律走新 protocol/metric version + 本表新 decision row。
+
+- **OQ-54-9（T4 slice 2/6，未與使用者確認）**：NFR-54-7 compatibility key 的 `inputMode` 欄位語意
+  未在 README/checklist 進一步定義。目前實作讀 `meta.mouseIntegration?.model`（見上方 Progress 條目
+  的理由）。若之後（T5/T6+）出現真的需要區分的 input 維度（例如 keyboard-only walkthrough vs 一般
+  操作、或不同滑鼠回報率的分層），需要重新檢視這個欄位是否足夠，並以新 decision row 記錄變更（additive，
+  不影響已收集資料）。
 
 ## Verification log
 

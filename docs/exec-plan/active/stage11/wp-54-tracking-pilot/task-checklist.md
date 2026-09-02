@@ -84,7 +84,7 @@
 - [x] 定義 closed `TrackingQualityReason` vocabulary（`src/pilot/trackingRunEligibility.ts`，T4 slice 1/6）。
 - [ ] 在 metrics 聚合前判定 schema/manifest/version、overflow、timestamp、missing target、coverage、protocol compatibility。
 - [ ] 實作 run-level 與 metric-level eligibility；P1 blocked 不刪除仍有效的 P0。
-- [ ] 定義 compatibility fields：drill、protocol、motion、size、speed、FOV、sensitivity、input mode。
+- [x] 定義 compatibility fields：drill、protocol、motion、size、speed、FOV、sensitivity、input mode（`src/pilot/trackingCompatibilityKey.ts`，T4 slice 2/6；`inputMode` 語意見 progress.md OQ-54-9）。
 - [ ] 產生 deterministic `TrackingPilotEvidence` JSON。
 - [ ] 產生 self-contained HTML report，至少包含 quality、RMS/TOT、acquisition、lag/gain、drop/recovery、condition matrix、target/aim trace。
 - [ ] HTML/JSON 數值 parity test 通過；blocked 指標顯示原因，不顯示 0。
