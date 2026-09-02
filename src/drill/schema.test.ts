@@ -635,3 +635,142 @@ describe('validateDrill — 驗證失敗 throw 帶欄位路徑（OQ-6.4）', () 
     expect(() => validateDrill(inf)).toThrow(/targets\.motion\.waypoints\[0\]\.y/);
   });
 });
+
+describe('validateDrill — targets.trackingTrajectory（WP-54 / T2）', () => {
+  function bandLimited() {
+    return {
+      kind: 'band-limited-2d-v1' as const,
+      seed: 7,
+      durationMs: 25000,
+      yawBoundDeg: 2,
+      pitchBoundDeg: 2,
+      targetRmsSpeedDegPerSec: 5,
+      frequencyBandHz: [0.1, 0.7] as const,
+    };
+  }
+
+  function reversal() {
+    return {
+      kind: 'reversal-2d-v1' as const,
+      seed: 7,
+      durationMs: 25000,
+      angularBoundsDeg: [-8, 8] as const,
+      speedRangeDegPerSec: [5, 20] as const,
+      reversalIntervalMs: [800, 1400] as const,
+      accelerationRampMs: 150,
+    };
+  }
+
+  it('接受 band-limited-2d-v1 並逐欄保留', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: bandLimited() },
+    });
+    expect(cfg.targets.trackingTrajectory).toEqual(bandLimited());
+  });
+
+  it('接受 reversal-2d-v1 並逐欄保留', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: reversal() },
+    });
+    expect(cfg.targets.trackingTrajectory).toEqual(reversal());
+  });
+
+  it('未知 kind → throw 指名 targets.trackingTrajectory.kind', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: { ...bandLimited(), kind: 'orbit' } },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.trackingTrajectory\.kind/);
+  });
+
+  it('trackingTrajectory 與 motion 不可同時提供', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: {
+        count: 1,
+        distance: 4,
+        trackingTrajectory: bandLimited(),
+        motion: { type: 'static' },
+      },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.trackingTrajectory/);
+  });
+
+  it('frequencyBandHz 非嚴格遞增 → throw', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: { ...bandLimited(), frequencyBandHz: [0.7, 0.7] } },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.trackingTrajectory\.frequencyBandHz/);
+  });
+
+  it('angularBoundsDeg 非嚴格遞增 → throw', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: { ...reversal(), angularBoundsDeg: [8, -8] } },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.trackingTrajectory\.angularBoundsDeg/);
+  });
+
+  it('reversalIntervalMs 非正 → throw', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: { ...reversal(), reversalIntervalMs: [-100, 500] } },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.trackingTrajectory\.reversalIntervalMs/);
+  });
+
+  it('缺 seed → throw 指名 targets.trackingTrajectory.seed', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: { ...bandLimited(), seed: 'x' } },
+    };
+    expect(() => validateDrill(bad)).toThrow(/targets\.trackingTrajectory\.seed/);
+  });
+
+  it('timing.trackingPrepMs 需搭配 targets.trackingTrajectory', () => {
+    const bad = { ...(minimalValid() as object), timing: { countdownMs: 3000, trackingPrepMs: 1000 } };
+    expect(() => validateDrill(bad)).toThrow(/timing\.trackingPrepMs/);
+  });
+
+  it('搭配 trackingTrajectory 時 trackingPrepMs 通過並保留', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: bandLimited() },
+      timing: { countdownMs: 3000, trackingPrepMs: 1000 },
+    });
+    expect(cfg.timing.trackingPrepMs).toBe(1000);
+  });
+
+  it('trackingPrepMs ≤ 0 → throw', () => {
+    const bad = {
+      ...(minimalValid() as object),
+      targets: { count: 1, distance: 4, trackingTrajectory: bandLimited() },
+      timing: { countdownMs: 3000, trackingPrepMs: 0 },
+    };
+    expect(() => validateDrill(bad)).toThrow(/timing\.trackingPrepMs/);
+  });
+});
+
+describe('validateDrill — protocolGuard（WP-54 / T2）', () => {
+  it('省略 → undefined（既有 drill 行為逐位不變）', () => {
+    const cfg = validateDrill(minimalValid());
+    expect(cfg.protocolGuard).toBeUndefined();
+  });
+
+  it('接受三個選填布林旗標並逐一保留', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      protocolGuard: { noFire: true, noAds: true, noMovement: false },
+    });
+    expect(cfg.protocolGuard).toEqual({ noFire: true, noAds: true, noMovement: false });
+  });
+
+  it('非布林旗標 → throw 指名欄位路徑', () => {
+    expect(() => validateDrill({ ...(minimalValid() as object), protocolGuard: { noFire: 'yes' } })).toThrow(
+      /protocolGuard\.noFire/,
+    );
+  });
+});

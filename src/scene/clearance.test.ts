@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import drillJson from '../../drills/counterstrafe_ad_v1.json';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
 import { loadDrill } from '../drill/DrillLoader.ts';
+import { projectTrackingAngles, type TrackingTrajectoryConfig } from '../sim/trackingTrajectory.ts';
 import type { SceneConfig } from './SceneConfig.ts';
 import {
   CLEARANCE_MARGIN_U,
+  TARGET_CENTER_Y_U,
   TARGET_HITBOX_RADIUS_U,
   deriveTargetEnvelopes,
   targetHitboxRadius,
@@ -106,6 +108,81 @@ describe('deriveTargetEnvelopes', () => {
     });
     expect(() => deriveTargetEnvelopes(bad)).toThrow(/非有限邊界/);
     expect(() => validateClearance(scene([]), bad)).toThrow(/非有限邊界/);
+  });
+
+  // WP-54 / T2：trackingTrajectory 目標是單一持久目標、繞玩家正前方中軸（yaw=0）連續運動
+  // （比照 spiderShot centerDistanceU 慣例），不套用 L/R peek 槽位偏移；envelope 需依角度上界展開。
+  it('trackingTrajectory（band-limited-2d-v1）以 yaw=0 為中心展開，不套用 side offset', () => {
+    const trackingTrajectory: TrackingTrajectoryConfig = {
+      kind: 'band-limited-2d-v1',
+      seed: 7,
+      durationMs: 25000,
+      yawBoundDeg: 10,
+      pitchBoundDeg: 5,
+      targetRmsSpeedDegPerSec: 5,
+      frequencyBandHz: [0.1, 0.7],
+    };
+    const envelopes = deriveTargetEnvelopes(drill({ targets: { count: 1, distance: 4, trackingTrajectory } }));
+    expect(envelopes).toHaveLength(1);
+    const envelope = envelopes[0];
+
+    // 四角落投影（同一份幾何函式，避免手算誤差）：yaw/pitch 各取上下界。
+    const origin = { distanceU: 4, centerY: TARGET_CENTER_Y_U };
+    const corners = { x: [] as number[], y: [] as number[], z: [] as number[] };
+    const point = { x: 0, y: 0, z: 0 };
+    for (const yawDeg of [-10, 10]) {
+      for (const pitchDeg of [-5, 5]) {
+        projectTrackingAngles(yawDeg, pitchDeg, origin, point);
+        corners.x.push(point.x);
+        corners.y.push(point.y);
+        corners.z.push(point.z);
+      }
+    }
+    const half = { x: 0.5, y: 1, z: 0.5 }; // DEFAULT_TARGET_HITBOX
+    const expectedMinX = Math.min(-half.x, ...corners.x.map((v) => v - half.x));
+    const expectedMaxX = Math.max(half.x, ...corners.x.map((v) => v + half.x));
+    const expectedMinY = Math.min(TARGET_CENTER_Y_U - half.y, ...corners.y.map((v) => v - half.y));
+    const expectedMaxY = Math.max(TARGET_CENTER_Y_U + half.y, ...corners.y.map((v) => v + half.y));
+
+    // 未套用 side offset：base box 以 x=0 為中心（不是 counterstrafe 慣例的 ±TARGET_SIDE_OFFSET_U）。
+    expect(expectedMinX).toBeLessThan(0);
+    expect(expectedMaxX).toBeGreaterThan(0);
+    expect(envelope.min.x).toBeCloseTo(expectedMinX, 10);
+    expect(envelope.max.x).toBeCloseTo(expectedMaxX, 10);
+    expect(envelope.min.y).toBeCloseTo(expectedMinY, 10);
+    expect(envelope.max.y).toBeCloseTo(expectedMaxY, 10);
+  });
+
+  it('trackingTrajectory（reversal-2d-v1）angularBoundsDeg 同時套用到 yaw 與 pitch', () => {
+    const trackingTrajectory: TrackingTrajectoryConfig = {
+      kind: 'reversal-2d-v1',
+      seed: 7,
+      durationMs: 25000,
+      angularBoundsDeg: [-8, 8],
+      speedRangeDegPerSec: [5, 20],
+      reversalIntervalMs: [800, 1400],
+      accelerationRampMs: 150,
+    };
+    const envelopes = deriveTargetEnvelopes(drill({ targets: { count: 1, distance: 4, trackingTrajectory } }));
+    const envelope = envelopes[0];
+
+    const origin = { distanceU: 4, centerY: TARGET_CENTER_Y_U };
+    const point = { x: 0, y: 0, z: 0 };
+    const xs: number[] = [];
+    for (const yawDeg of [-8, 8]) {
+      for (const pitchDeg of [-8, 8]) {
+        projectTrackingAngles(yawDeg, pitchDeg, origin, point);
+        xs.push(point.x);
+      }
+    }
+    const half = 0.5; // DEFAULT_TARGET_HITBOX.width / 2
+    const expectedMinX = Math.min(-half, ...xs.map((v) => v - half));
+    const expectedMaxX = Math.max(half, ...xs.map((v) => v + half));
+
+    // 明顯超出未套用角度時的靜態 box（min.x=-0.5, max.x=0.5），且未套用 side offset（不對稱於 0）。
+    expect(expectedMinX).toBeLessThan(-0.5);
+    expect(envelope.min.x).toBeCloseTo(expectedMinX, 10);
+    expect(envelope.max.x).toBeCloseTo(expectedMaxX, 10);
   });
 });
 

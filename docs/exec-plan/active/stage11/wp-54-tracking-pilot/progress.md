@@ -2,11 +2,118 @@
 
 ## Status
 
-- **Current**：✅ T0、T1 完成（2026-09-02）；T2（pilot drill matrix/protocol guards）待開工。
+- **Current**：✅ T0、T1 完成（2026-09-02）；T2（pilot drill matrix/protocol guards）進行中。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T2 slice 1/6：DrillConfig/schema/clearance 契約
+
+- `src/drill/DrillConfig.ts`：新增 `targets.trackingTrajectory?: TrackingTrajectoryConfig`（import 自
+  `src/sim/trackingTrajectory.ts`，不重新宣告型別）、`timing.trackingPrepMs?: number`、頂層
+  `protocolGuard?: { noFire?; noAds?; noMovement? }`——三者皆 additive，省略時既有 `DrillConfig` 逐位不變。
+- `src/drill/schema.ts`：新增 `validateTrackingTrajectory`（`band-limited-2d-v1`/`reversal-2d-v1` 兩支，
+  數值規則對齊 `trackingTrajectory.ts` 自己的 runtime guard，但在 `loadDrill` 驗證閘就帶欄位路徑拒絕）、
+  `validateProtocolGuard`、`requireAscendingRange`/`requireAscendingPositiveRange`（嚴格 `min < max`，
+  區別於既有 `requireRange` 的 `min <= max`——對齊 trajectory kernel 對退化區間的拒絕）。`trackingTrajectory`
+  與 `motion` 互斥（比照既有 `hitbox`/`hitboxCandidates` 互斥風格）；`trackingPrepMs` 需搭配
+  `trackingTrajectory`。
+- `src/scene/clearance.ts`：`envelopeForSide` 新增 `expandForTrackingTrajectory`（import
+  `projectTrackingAngles`/`TrackingProjectionOrigin` 自 `src/sim/trackingTrajectory.ts`——scene 消費 sim
+  的無場景耦合純幾何函式，方向不違反 GD-6）。**設計決策**：trackingTrajectory 目標的 envelope 中心改為
+  `x=0`（不套用既有 L/R peek 槽位 `±TARGET_SIDE_OFFSET_U` 偏移）——trackingTrajectory 目標是單一持久目標、
+  繞玩家正前方中軸連續運動，比照既有 `spiderShot.centerDistanceU` 的 `(0, TARGET_Y, -centerDistanceU)`
+  中軸慣例，不是 L/R 交替 peek。`band-limited-2d-v1` 讀 `yawBoundDeg`/`pitchBoundDeg`；`reversal-2d-v1` 的
+  `angularBoundsDeg` 同時套用到 yaw 與 pitch（對齊 T1 `createReversal2dV1` 兩軸共用同一 range 的慣例）。
+  四角落投影展開 AABB（純建構期上界檢查，不逐 tick 模擬，同 `expandForMotion` 紀律）。
+- 測試：`src/drill/schema.test.ts` +14 tests（trackingTrajectory 合法/互斥/欄位驗證、trackingPrepMs 搭配
+  規則、protocolGuard 欄位驗證）；`src/scene/clearance.test.ts` +2 tests（band-limited/reversal envelope
+  展開，期望值以 `projectTrackingAngles` 現算現比對，避免手算誤差；`toBeLessThan(-0.5)` 佐證確實展開，
+  且未套用 side offset）。
+- `npx tsc --noEmit` exit 0；`npx vitest run src/drill src/scene` 29 files / 247 tests passed，無回歸。
+- 尚未動：`SharedState`/`TargetManager`/`SimLoop`/`DrillRunner`/`DataRecorder`/`exportPayloadSchema.ts`
+  （trajectory 實際 drive、`scored_start`/`target_motion_change`/`protocol_violation` producer 側）留給
+  slice 2-3；本 slice 只交付 config 契約與 clearance round-trip，`trackingTrajectory` 尚無任何 drill 使用。
+
+### 2026-09-02 — T2 CodeGraph discovery + landing-point design（開工前，未寫 code）
+
+讀碼後（`codegraph_explore` 對 `DrillConfig`/`schema.ts`/`clearance.ts`/`TargetManager.ts`/
+`SimLoop.ts`/`SharedState.ts`/`DrillRunner.ts`/`DataRecorder.ts`/`exportPayloadSchema.ts`/
+`ProtocolRunner.ts`）確認以下與 README §2.2 規劃路徑的落點差異，並記錄實際設計（供 T2 各切片依循，
+偏離處後續完成時同步回寫 README）：
+
+- **不走 `src/drill/tracking_core_pr_pilot_v1.ts` 等獨立檔案清單先行**——先做「trajectory 如何接進
+  既有 `DrillConfig`/`TargetManager`/`clearance`/`DrillRunner`/`SimLoop`/`DataRecorder` 資料流」這個
+  地基（T2 slice 1-3），最後才落 block config 檔案本身（slice 4-5）。原因：pilot block 本質仍是一份
+  `DrillConfig`（沿用 F4「換 config 即換 drill」），沒有新引擎介面；地基不穩，config 檔案只是噪音。
+- **`ProtocolRunner`（`src/display/ProtocolRunner.ts`）不是本 WP 要用的機制**——它是「整個 drill+scene+
+  resolution mode 換條件」的協定跑者（WP-52 pilot v2 用），操作粒度是「換一個完整 drill」。WP-54 的
+  practice→1s 置中準備→25s scored 窗界是**單一 drill run 內部**的相位/事件語意，不是跨 drill 條件切
+  換——T5（researcher session manifest/operator flow）才會決定要不要疊一層 `ProtocolRunner`-like 排程
+  跑完整組 block 序列；T2 只交付單一 block 的 config 契約與執行期語意。
+- **`DrillConfig.mode`（`AssessmentMode` = `'assessment' | 'practice'`）已存在**，直接重用做 practice
+  block 的識別（FR-54-5「practice 不寫入 scored aggregation」在 T2 的落地＝practice block 的 config
+  帶 `mode: 'practice'`；實際聚合層的排除規則留給 T4 讀這個欄位，T2 不用新發明一個 practice 旗標）。
+
+**新 additive 契約（設計，尚未實作，2026-09-02）**：
+
+1. `DrillConfig.targets.trackingTrajectory?: TrackingTrajectoryConfig`（import 自
+   `src/sim/trackingTrajectory.ts`，不重新宣告型別）——`targets.motion` 的 sibling、schema.ts 強制互斥
+   （比照現行 `hitbox`/`hitboxCandidates` 互斥風格）。
+2. `DrillConfig.timing.trackingPrepMs?: number`——比照現行 `trackingStopMs` 慣例（正有限數，選填）。
+   `TargetManager` 用它把 trajectory 的 `ageSec` 原點往後推：`nextAge < prepSec` 時目標凍結在
+   `trajectory.sample(0)`（= 玩家「置中準備」瞄準的固定點），跨過 `prepSec` 那個 tick 觸發
+   `scored_start` 事件、之後 `ageSec = age - prepSec` 正常推進。**不**新增「practice 相位」到
+   `DrillRunner.DrillPhase`（`idle|countdown|running|ended` 不變）——prep 純粹是 `TargetManager` 對單一
+   持久目標（`timing.presentationMs`/`trackingStopMs` 已有的「一直存活到 drill 結束」模式）的內部時間
+   原點平移,不是新的生命週期相位。
+3. `DrillConfig.protocolGuard?: { noFire?: boolean; noAds?: boolean; noMovement?: boolean }`
+   （additive top-level 欄位,`cue` 的 sibling)。`DrillRunner`（已持有 `config`/`state`,`tickHoldReversal`
+   同層)新增 `tickProtocolGuard`:只在 scored 窗內（`state.tScoredStart` 該目標已蓋戳且
+   `nowMs >= 蓋戳時間`）對 `heldFire`/`heldAds`/`held.left`/`held.right` 做 edge-trigger 偵測（false→true
+   才記一次，不連續洗版、不阻擋輸入本身,FR-54 no-fire/no-ADS/no-movement 硬約束原文）。
+4. `SharedState` 新增三個 additive 欄位（`interface`/`createSharedState`/`resetState` 三處同步)：
+   - `tScoredStart: Map<string, number>`（比照既有 `tStop`,`TargetManager` 寫、`SimLoop` 讀drain）。
+   - `targetMotionChanges: Array<{targetId; t; yawVelocityBeforeDegPerSec; yawVelocityAfterDegPerSec;
+     pitchVelocityBeforeDegPerSec; pitchVelocityAfterDegPerSec}>`（比照既有 `cues` 的 transient queue
+     模式——`TargetManager` 依 `trajectory.changes`（T1 已預算好的 schedule）游標推進 push,`SimLoop`
+     每 tick drain 進 `recorder`,清空)。**T1 只交了 `target_motion_change` 的 parse 側**（`DrillEvent`
+     union member + `exportPayloadSchema.ts` parser)，producer 側（誰在什麼時候真的 push 這個事件)是
+     T2 待補的一半——這裡補上。
+   - `protocolViolations: Array<{kind: 'fire'|'ads'|'movement'; t: number}>`（同 `cues` transient queue
+     模式，`DrillRunner.tickProtocolGuard` 寫、`SimLoop` drain)。
+5. `TargetManager`：`trackingTrajectory` 存在時,建構期建一次 `createTrackingTrajectory()`（比照
+   `hitboxQueue`「build once per run」慣例,非每 tick)；drive 迴圈新增獨立分支（`isDrivenMotion(t.motion)`
+   分支之前提早 `continue`，legacy motion 路徑逐位不動)：`sample(trajectoryAgeSec, buf)` →
+   `projectTrackingAngles(buf.yawDeg, buf.pitchDeg, {distanceU: config.targets.distance, centerY: TARGET_Y},
+   t.pos)`（origin 重用既有 `targets.distance`/`TARGET_Y`,不新增 config 欄位、不新增常數)。`spawn()`
+   完全不用改（trackingTrajectory 目標的 `motion` 恆 undefined,`age:0` 初始化已存在)。
+6. `src/scene/clearance.ts`：`envelopeForSide` 新增 `expandForTrackingTrajectory(min, max, center,
+   trackingTrajectory, hitbox)`,重用既有 `expandByPoint` helper——把 `trackingTrajectory` 的角度上界
+   （`band-limited-2d-v1` 讀 `yawBoundDeg`/`pitchBoundDeg`；`reversal-2d-v1` 讀 `angularBoundsDeg` 同時
+   套用到 yaw 與 pitch,對齊 T1 `createReversal2dV1` 的 room 計算慣例)四個角落投影
+   （import `projectTrackingAngles`/`TrackingProjectionOrigin` 自 `src/sim/trackingTrajectory.ts`——
+   scene 讀 sim 的純幾何函式,方向不違反 GD-6「場景幾何不得進 sim」,是反過來 scene 消費 sim 的無場景
+   耦合 pure function)展開進 AABB。
+7. `DrillEvent` 新增兩個 additive union member：`scored_start`（形狀比照 `target_stop`：`targetId`/`t`/
+   `targetX`/`targetY`/`targetZ`）、`protocol_violation`（`kind: 'fire'|'ads'|'movement'`/`t`）。
+   `src/data/exportPayloadSchema.ts` 各補一個 parser、`parseDrillEvent` switch 新增兩個 case。CSV
+   （`src/data/export.ts` `serializeEventsCSV`）沿用 T1 對 `target_motion_change` 的既有決定——**不**
+   新增欄（JSON-only,理由同 T1 slice 2/2 記錄：無語意相符的既有欄可重用、CSV header 不變測試已鎖）。
+8. Export metadata（drill id/trajectory version/seed/condition/angular size&speed/duration）落點：
+   `src/data/metadata.ts` 待讀碼確認確切寫法後在對應切片動工，暫記為 `Meta.trackingPilot?` additive
+   sub-block（設計方向,非最終定案——實作時若讀碼發現更貼合既有慣例的落點，以讀碼後為準)。
+
+**執行順序（T2 slice 計畫,每片各自 commit + focused test + `npx tsc --noEmit`)**：
+① DrillConfig/schema/clearance 契約（含 mutual-exclusion + envelope round-trip test）
+② SharedState 新欄位 + TargetManager 接線（trajectory drive + `scored_start` + `target_motion_change`
+   producer）+ SimLoop drain + DrillEvent/schema parser（含 round-trip + legacy regression）
+③ protocolGuard（DrillConfig + DrillRunner.tickProtocolGuard + SharedState.protocolViolations +
+   SimLoop drain + DrillEvent + schema parser）
+④ export metadata 接線（trackingPilot meta block）
+⑤ 實際 pilot block config 檔案（practice、axis calibration、core 2×2、reversal density candidates）
+⑥ 全專案 regression + `graphify update .` + README/task-checklist/progress 收尾同步
 
 ### 2026-09-02 — T1 slice 2/2：angular-to-world projection + `target_motion_change` export event
 

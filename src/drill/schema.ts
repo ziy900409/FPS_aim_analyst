@@ -10,6 +10,7 @@ import {
 } from './DrillConfig.ts';
 import type { AssessmentMode } from './assessmentContract.ts';
 import type { TargetMotion } from '../state/types.ts';
+import type { TrackingTrajectoryConfig } from '../sim/trackingTrajectory.ts';
 
 /**
  * validateDrill — WP-6 / T1（FR-6.1，OQ-6.4）
@@ -43,11 +44,16 @@ export function validateDrill(json: unknown): DrillConfig {
     targets.hitboxCandidates === undefined ? undefined : validateHitboxCandidates(targets.hitboxCandidates);
   const spawnArea = targets.spawnArea === undefined ? undefined : validateSpawnArea(targets.spawnArea);
   const motion = targets.motion === undefined ? undefined : validateMotion(targets.motion);
+  const trackingTrajectory =
+    targets.trackingTrajectory === undefined ? undefined : validateTrackingTrajectory(targets.trackingTrajectory);
   if (hitboxCandidates !== undefined) {
     if (hitbox !== undefined) throw err('targets.hitbox', '不可與 targets.hitboxCandidates 同時提供');
     if (count % hitboxCandidates.length !== 0) {
       throw err('targets.count', '使用 hitboxCandidates 時必須能被候選數整除（balanced shuffle）');
     }
+  }
+  if (trackingTrajectory !== undefined && motion !== undefined) {
+    throw err('targets.trackingTrajectory', '不可與 targets.motion 同時提供');
   }
 
   // sequence — alternation 列舉、seed 與 seeded spawn delay 選填。
@@ -97,6 +103,13 @@ export function validateDrill(json: unknown): DrillConfig {
   if (presentationMs !== undefined && trackingStopMs !== undefined) {
     throw err('timing', 'presentationMs 與 trackingStopMs 不可同時提供');
   }
+  const trackingPrepMs =
+    timing.trackingPrepMs === undefined ? undefined : requirePositiveNumber(timing.trackingPrepMs, 'timing.trackingPrepMs');
+  if (trackingPrepMs !== undefined && trackingTrajectory === undefined) {
+    throw err('timing.trackingPrepMs', '需搭配 targets.trackingTrajectory');
+  }
+
+  const protocolGuard = root.protocolGuard === undefined ? undefined : validateProtocolGuard(root.protocolGuard);
 
   // endCondition — type 列舉、value 正數（雙閘,OQ-6.3）。
   const endCondition = requireObject(root.endCondition, 'endCondition');
@@ -118,6 +131,7 @@ export function validateDrill(json: unknown): DrillConfig {
       ...(hitboxCandidates ? { hitboxCandidates } : {}),
       ...(spawnArea ? { spawnArea } : {}),
       ...(motion ? { motion } : {}),
+      ...(trackingTrajectory ? { trackingTrajectory } : {}),
     },
     sequence: {
       alternation,
@@ -132,8 +146,10 @@ export function validateDrill(json: unknown): DrillConfig {
       ...(timeLimitMs !== undefined ? { timeLimitMs } : {}),
       ...(presentationMs !== undefined ? { presentationMs } : {}),
       ...(trackingStopMs !== undefined ? { trackingStopMs } : {}),
+      ...(trackingPrepMs !== undefined ? { trackingPrepMs } : {}),
     },
     endCondition: { type, value },
+    ...(protocolGuard !== undefined ? { protocolGuard } : {}),
   };
 }
 
@@ -316,6 +332,64 @@ function validateMotion(json: unknown): TargetMotion {
   return motion;
 }
 
+/**
+ * WP-54 / T2：`targets.trackingTrajectory` 形狀驗證——`createTrackingTrajectory()`（`trackingTrajectory.ts`）
+ * 自己也對數值做 runtime guard（fail fast），但那一層是**在 `loadDrill` 之後**才被呼叫（`TargetManager`
+ * 建構期）；本函式讓不合法 JSON 在 `validateDrill`（`loadDrill` 的驗證閘）就帶欄位路徑拒絕，不讓半成品
+ * config 流進更下游。兩層 kind 集合、欄位語意刻意保持一致（見 README §2.4 interface contract）。
+ */
+function validateTrackingTrajectory(json: unknown): TrackingTrajectoryConfig {
+  const t = requireObject(json, 'targets.trackingTrajectory');
+  const kind = t.kind;
+  const seed = requireFiniteNumber(t.seed, 'targets.trackingTrajectory.seed');
+  const durationMs = requirePositiveNumber(t.durationMs, 'targets.trackingTrajectory.durationMs');
+  if (kind === 'band-limited-2d-v1') {
+    return {
+      kind,
+      seed,
+      durationMs,
+      yawBoundDeg: requirePositiveNumber(t.yawBoundDeg, 'targets.trackingTrajectory.yawBoundDeg'),
+      pitchBoundDeg: requirePositiveNumber(t.pitchBoundDeg, 'targets.trackingTrajectory.pitchBoundDeg'),
+      targetRmsSpeedDegPerSec: requirePositiveNumber(
+        t.targetRmsSpeedDegPerSec,
+        'targets.trackingTrajectory.targetRmsSpeedDegPerSec',
+      ),
+      frequencyBandHz: requireAscendingPositiveRange(t.frequencyBandHz, 'targets.trackingTrajectory.frequencyBandHz'),
+    };
+  }
+  if (kind === 'reversal-2d-v1') {
+    return {
+      kind,
+      seed,
+      durationMs,
+      angularBoundsDeg: requireAscendingRange(t.angularBoundsDeg, 'targets.trackingTrajectory.angularBoundsDeg'),
+      speedRangeDegPerSec: requireAscendingPositiveRange(
+        t.speedRangeDegPerSec,
+        'targets.trackingTrajectory.speedRangeDegPerSec',
+      ),
+      reversalIntervalMs: requireAscendingPositiveRange(
+        t.reversalIntervalMs,
+        'targets.trackingTrajectory.reversalIntervalMs',
+      ),
+      accelerationRampMs: requirePositiveNumber(t.accelerationRampMs, 'targets.trackingTrajectory.accelerationRampMs'),
+    };
+  }
+  throw err('targets.trackingTrajectory.kind', "必須為 'band-limited-2d-v1' 或 'reversal-2d-v1'");
+}
+
+/** WP-54 / T2：`protocolGuard` 形狀驗證——三個旗標皆選填布林，至少一個為 true 才有意義但不強制。 */
+function validateProtocolGuard(json: unknown): DrillConfig['protocolGuard'] {
+  const g = requireObject(json, 'protocolGuard');
+  const noFire = g.noFire === undefined ? undefined : requireBoolean(g.noFire, 'protocolGuard.noFire');
+  const noAds = g.noAds === undefined ? undefined : requireBoolean(g.noAds, 'protocolGuard.noAds');
+  const noMovement = g.noMovement === undefined ? undefined : requireBoolean(g.noMovement, 'protocolGuard.noMovement');
+  return {
+    ...(noFire !== undefined ? { noFire } : {}),
+    ...(noAds !== undefined ? { noAds } : {}),
+    ...(noMovement !== undefined ? { noMovement } : {}),
+  };
+}
+
 // ── 原子 guard（回傳 narrowed 值或 throw 帶路徑錯誤）─────────────────────────────
 
 function err(path: string, msg: string): Error {
@@ -372,6 +446,25 @@ function requireNonNegativeRange(v: unknown, path: string): [number, number] {
 function requirePositiveRange(v: unknown, path: string): [number, number] {
   const range = requireRange(v, path);
   if (range[0] <= 0 || range[1] <= 0) throw err(path, '必須 > 0');
+  return range;
+}
+
+/**
+ * WP-54 / T2：嚴格遞增（`min < max`，非 `requireRange` 的 `min <= max`）——對齊
+ * `trackingTrajectory.ts` 對 `frequencyBandHz`/`angularBoundsDeg`/`speedRangeDegPerSec`/
+ * `reversalIntervalMs` 的 runtime guard，退化區間在那一層本就無法建構出有意義的 trajectory。
+ */
+function requireAscendingRange(v: unknown, path: string): readonly [number, number] {
+  if (!Array.isArray(v) || v.length !== 2) throw err(path, '必須為 [min, max] 陣列');
+  const min = requireFiniteNumber(v[0], `${path}[0]`);
+  const max = requireFiniteNumber(v[1], `${path}[1]`);
+  if (min >= max) throw err(path, '必須 min < max');
+  return [min, max];
+}
+
+function requireAscendingPositiveRange(v: unknown, path: string): readonly [number, number] {
+  const range = requireAscendingRange(v, path);
+  if (range[0] <= 0) throw err(`${path}[0]`, '必須 > 0');
   return range;
 }
 

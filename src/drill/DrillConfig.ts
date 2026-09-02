@@ -1,5 +1,6 @@
 import type { TargetMotion } from '../state/types.ts';
 import type { AssessmentMode } from './assessmentContract.ts';
+import type { TrackingTrajectoryConfig } from '../sim/trackingTrajectory.ts';
 
 /** WP-52 masked-visual pilot：render-only 尺寸（widthU/heightU/depthU），無獨立 shape。 */
 export interface TargetVisualSizeConfig {
@@ -150,6 +151,12 @@ export interface DrillConfig {
     spawnArea?: SpawnAreaConfig;
     /** F5 接縫（規格附錄 G）:省略＝static（向後相容）。階段 A 不實作移動,WP-6.5 接管。 */
     motion?: TargetMotion;
+    /**
+     * WP-54 / T2（README §2.2/§2.4）：tracking pilot 專用的 2D band-limited pursuit / random-reversal
+     * trajectory（`src/sim/trackingTrajectory.ts`）。與 `motion` 互斥（`schema.ts` 驗證）——語意完全
+     * 不同的獨立驅動路徑，見 `TargetManager` 的 trajectory drive 分支。Researcher/pilot-only。
+     */
+    trackingTrajectory?: TrackingTrajectoryConfig;
   };
   /** 左右交替序列:`alternation` 首字定首側（對齊 `TargetManager.reset(seq)`）;`seed` 驅動 WP-21 seeded spawn。 */
   sequence: { alternation: 'LR' | 'RL'; seed?: number; spawnDelayMsRange?: [number, number] };
@@ -176,12 +183,25 @@ export interface DrillConfig {
      * 與 `presentationMs` 互斥；省略時既有 presentation/advance 語意不變。
      */
     trackingStopMs?: number;
+    /**
+     * WP-54 / T2：`targets.trackingTrajectory` 專用的「置中準備」時長（ms）——scored 分析窗開始前，
+     * 目標凍結在 `trajectory.sample(0)`（玩家瞄準的固定起點），供玩家完成初始對準；跨過此時長的那個
+     * tick 觸發 `scored_start` 事件，之後 trajectory 的 `ageSec` 才開始正常推進。省略＝不啟用（trajectory
+     * 立即從 age=0 開始推進，無置中準備窗）。與 `trackingTrajectory` 搭配使用，不搭配時無效果。
+     */
+    trackingPrepMs?: number;
   };
   /**
    * 結束條件（雙閘,OQ-6.3）:預設 `targetCount`（目標數達標,如 20 個 peek）;`timeLimit` 為時限後援。
    * `value` 語意隨 `type`:targetCount=目標數、timeLimit=毫秒。
    */
   endCondition: { type: 'targetCount' | 'timeLimit'; value: number };
+  /**
+   * WP-54 / T2：scored 窗內（`SharedState.tScoredStart` 已蓋戳的目標）偵測到對應輸入時記一筆
+   * `protocol_violation` 事件（edge-triggered，false→true 才記一次），**不阻擋輸入本身**。省略＝不
+   * 啟用任何 guard（既有 drill 行為逐位不變）。Researcher/pilot-only。
+   */
+  protocolGuard?: { noFire?: boolean; noAds?: boolean; noMovement?: boolean };
 }
 
 export function resolveTargetHitbox(config?: DrillConfig): TargetHitboxSize {

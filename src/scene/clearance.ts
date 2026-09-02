@@ -7,6 +7,7 @@ import {
 } from '../drill/DrillConfig.ts';
 import type { TargetMotion, Vec3 } from '../state/types.ts';
 import type { PropBound, SceneConfig } from './SceneConfig.ts';
+import { projectTrackingAngles, type TrackingTrajectoryConfig } from '../sim/trackingTrajectory.ts';
 
 export const CLEARANCE_MARGIN_U = 0.5;
 export const TARGET_SIDE_OFFSET_U = 2;
@@ -93,7 +94,13 @@ export function deriveTargetEnvelopes(drill: DrillConfig): TargetEnvelope[] {
     return [envelope];
   }
   return activeSides(drill).map((side) => {
-    const envelope = envelopeForSide(side, drill.targets.distance, drill.targets.motion, hitbox);
+    const envelope = envelopeForSide(
+      side,
+      drill.targets.distance,
+      drill.targets.motion,
+      drill.targets.trackingTrajectory,
+      hitbox,
+    );
     assertFiniteEnvelope(envelope);
     return envelope;
   });
@@ -121,10 +128,13 @@ function envelopeForSide(
   side: 'L' | 'R',
   distance: number,
   motion: TargetMotion | undefined,
+  trackingTrajectory: TrackingTrajectoryConfig | undefined,
   hitbox: TargetHitboxSize,
 ): TargetEnvelope {
   const center = {
-    x: side === 'R' ? TARGET_SIDE_OFFSET_U : -TARGET_SIDE_OFFSET_U,
+    // WP-54 / T2：trackingTrajectory 目標是單一持久目標，繞玩家正前方中軸（yaw=0）連續運動
+    //（比照 spiderShot 的 centerDistanceU 慣例），不套用 L/R peek 槽位偏移。
+    x: trackingTrajectory !== undefined ? 0 : side === 'R' ? TARGET_SIDE_OFFSET_U : -TARGET_SIDE_OFFSET_U,
     y: TARGET_CENTER_Y_U,
     z: -distance,
   };
@@ -138,6 +148,9 @@ function envelopeForSide(
 
   if (motion !== undefined && motion.type !== 'static') {
     expandForMotion(min, max, center, motion, hitbox);
+  }
+  if (trackingTrajectory !== undefined) {
+    expandForTrackingTrajectory(min, max, distance, trackingTrajectory, hitbox);
   }
 
   return { side, min, max };
@@ -243,6 +256,38 @@ function expandSpawnAreaForMotion(
           hitbox,
         );
       }
+    }
+  }
+}
+
+/**
+ * WP-54 / T2：`trackingTrajectory` 的角度上界投影展開——`band-limited-2d-v1` 讀 `yawBoundDeg`/
+ * `pitchBoundDeg`（T1 `boundedSpeedScale` 已保證位置解析上界 ≤ 此值，見 trackingTrajectory.ts）；
+ * `reversal-2d-v1` 的 `angularBoundsDeg` 同時套用到 yaw 與 pitch（對齊 `createReversal2dV1` 的
+ * room 計算慣例——兩軸共用同一個範圍）。四個角落（yaw×pitch 各取上下界）投影世界座標後展開 AABB，
+ * 不做逐 tick 模擬（純建構期上界檢查，與既有 `expandForMotion` 同紀律）。
+ */
+function expandForTrackingTrajectory(
+  min: Vec3,
+  max: Vec3,
+  distanceU: number,
+  trackingTrajectory: TrackingTrajectoryConfig,
+  hitbox: TargetHitboxSize,
+): void {
+  const origin = { distanceU, centerY: TARGET_CENTER_Y_U };
+  const [yawLowDeg, yawHighDeg] =
+    trackingTrajectory.kind === 'band-limited-2d-v1'
+      ? [-trackingTrajectory.yawBoundDeg, trackingTrajectory.yawBoundDeg]
+      : trackingTrajectory.angularBoundsDeg;
+  const [pitchLowDeg, pitchHighDeg] =
+    trackingTrajectory.kind === 'band-limited-2d-v1'
+      ? [-trackingTrajectory.pitchBoundDeg, trackingTrajectory.pitchBoundDeg]
+      : trackingTrajectory.angularBoundsDeg;
+  const point: Vec3 = { x: 0, y: 0, z: 0 };
+  for (const yawDeg of [yawLowDeg, yawHighDeg]) {
+    for (const pitchDeg of [pitchLowDeg, pitchHighDeg]) {
+      projectTrackingAngles(yawDeg, pitchDeg, origin, point);
+      expandByPoint(min, max, point, hitbox);
     }
   }
 }
