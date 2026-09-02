@@ -93,12 +93,25 @@
 
 ## T5 — Researcher manifest/operator flow
 
-- [ ] 定義 `TrackingPilotManifest`、counterbalance cell、session index、alternate seed family。
-- [ ] Researcher-only runner 可執行 practice -> scored block -> rest -> export。
-- [ ] 操作端顯示 current block/rest/quality abort，不顯示即時能力分數。
-- [ ] 記錄 completion、abort、retry reason；retry 不覆蓋原 export。
-- [ ] manifest replay 產生相同 order/seed；非法 manifest fail fast。
-- [ ] keyboard-only/focus/status text walkthrough 完成，品質狀態不只靠顏色表達。
+- [x] 定義 `TrackingPilotManifest`、counterbalance cell、session index、alternate seed family
+      （`src/session/trackingPilotManifest.ts`，`TrackingPilotBlock={drillId,seedFamily}`，
+      counterbalance 重用 WP-41 `buildFamilyOrderForRoster()`，T5 slice 1/5）。
+- [x] Researcher-only runner 可執行 practice -> scored block -> rest -> export
+      （`src/session/TrackingPilotRunner.ts` `createTrackingPilotRunner()`，phase state machine
+      比照 `SessionRunner.ts`，T5 slice 2/5）。
+- [x] 操作端顯示 current block/rest/quality abort，不顯示即時能力分數
+      （`src/ui/TrackingPilotOperatorScreen.ts`，只顯示 closed `TrackingRunEligibility` reason
+      codes/coverage 事實，從不顯示 RMS/TOT/lag/gain 等能力數字，T5 slice 3/5）。
+- [x] 記錄 completion、abort、retry reason；retry 不覆蓋原 export
+      （`TrackingPilotRunner.records[]`/`retryLog[]`，append-only，T5 slice 2/5；screen 端
+      `renderRecords()` 呈現，T5 slice 3/5）。
+- [x] manifest replay 產生相同 order/seed；非法 manifest fail fast
+      （`buildTrackingPilotManifest()` 決定性、`parseTrackingPilotManifest()` fail-fast on 未知
+      drillId/重複 block/seed 家族衝突，T5 slice 1/5，27 tests）。
+- [x] keyboard-only/focus/status text walkthrough 完成，品質狀態不只靠顏色表達
+      （`tests/e2e/tracking-pilot-operator.spec.ts`，真實瀏覽器 Playwright keyboard-only spec，
+      比照既有 `stage10-accessibility.spec.ts` 慣例；過程中抓到並修復一個真的 WCAG 2.5.3 Label in
+      Name a11y bug，T5 slice 4/5）。
 
 ## T6 — Instrumentation pilot
 

@@ -215,7 +215,7 @@ describe('TrackingPilotOperatorScreen', () => {
     confirm.click();
     expect(options.onAbortBlock).not.toHaveBeenCalled();
 
-    const reasonInput = document.created.find((el) => el.getAttribute('aria-label') === 'Reason')!;
+    const reasonInput = document.created.find((el) => el.name === 'reason')!;
     reasonInput.value = 'participant requested a break';
     confirm.click();
     expect(options.onAbortBlock).toHaveBeenCalledWith('participant requested a break');
@@ -225,7 +225,7 @@ describe('TrackingPilotOperatorScreen', () => {
     const { screen, options, document } = makeScreen();
     screen.renderPhase(BLOCKED_OUTCOME_PHASE);
     buttonByTitlePrefix(document, 'Re-run this block').click();
-    const reasonInput = document.created.find((el) => el.getAttribute('aria-label') === 'Reason')!;
+    const reasonInput = document.created.find((el) => el.name === 'reason')!;
     reasonInput.value = 'target visibility looked wrong, technical fault';
     buttonByTitlePrefix(document, 'Confirm this action').click();
     expect(options.onRetryBlock).toHaveBeenCalledWith('target visibility looked wrong, technical fault');
@@ -286,6 +286,20 @@ describe('TrackingPilotOperatorScreen', () => {
     const hasListeners = document.created.filter((el) => el.listeners.size > 0);
     for (const el of hasListeners) {
       expect(interactiveTags.has(el.tag) || el.tag === 'form').toBe(true);
+    }
+  });
+
+  it('never gives a button/input a mismatched aria-label (WCAG 2.5.3 Label in Name)', () => {
+    // Every labelled input in this screen relies on its wrapping <label> (matching
+    // EligibilityGate.ts/SessionPlanSetup.ts's convention) — buttons rely on their own
+    // textContent, with `title` as a supplementary tooltip only. A button/input carrying an
+    // aria-label that differs from its visible text would make its accessible name diverge from
+    // what a sighted keyboard user reads on screen.
+    const { document } = makeScreen();
+    for (const el of document.created) {
+      if (el.tag === 'button' || el.tag === 'input' || el.tag === 'select') {
+        expect(el.getAttribute('aria-label')).toBeUndefined();
+      }
     }
   });
 });

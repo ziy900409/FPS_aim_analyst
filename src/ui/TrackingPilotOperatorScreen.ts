@@ -71,7 +71,6 @@ export function createTrackingPilotOperatorScreen(
   participantInput.type = 'text';
   participantInput.name = 'participantId';
   participantInput.required = true;
-  participantInput.setAttribute('aria-label', 'Participant ID');
   participantInput.style.cssText = inputCss;
   participantLabel.append(participantText, participantInput);
 
@@ -81,7 +80,6 @@ export function createTrackingPilotOperatorScreen(
   sessionIndexText.textContent = 'Session index';
   const sessionIndexSelect = document.createElement('select');
   sessionIndexSelect.name = 'sessionIndex';
-  sessionIndexSelect.setAttribute('aria-label', 'Session index');
   sessionIndexSelect.style.cssText = inputCss;
   for (const value of [0, 1]) {
     const option = document.createElement('option');
@@ -101,7 +99,6 @@ export function createTrackingPilotOperatorScreen(
   restSecondsInput.min = '0';
   restSecondsInput.step = 'any';
   restSecondsInput.value = '60';
-  restSecondsInput.setAttribute('aria-label', 'Rest seconds between blocks');
   restSecondsInput.style.cssText = inputCss;
   restSecondsLabel.append(restSecondsText, restSecondsInput);
 
@@ -186,7 +183,7 @@ export function createTrackingPilotOperatorScreen(
   const reasonLabelText = document.createElement('span');
   const reasonInput = document.createElement('input');
   reasonInput.type = 'text';
-  reasonInput.setAttribute('aria-label', 'Reason');
+  reasonInput.name = 'reason';
   reasonInput.style.cssText = inputCss;
   reasonLabel.append(reasonLabelText, reasonInput);
   const confirmReasonButton = makeButton('Confirm', 'Confirm this action with the given reason');
@@ -339,7 +336,6 @@ function makeButton(label: string, title: string, type: 'button' | 'submit' = 'b
   button.type = type;
   button.textContent = label;
   button.title = title;
-  button.setAttribute('aria-label', title);
   button.style.cssText =
     'height:38px;padding:0 16px;border:1px solid rgba(255,255,255,0.18);border-radius:6px;font:750 13px/1 system-ui,sans-serif;color:#e6e9ec;background:rgba(15,18,21,0.96);cursor:pointer';
   return button;

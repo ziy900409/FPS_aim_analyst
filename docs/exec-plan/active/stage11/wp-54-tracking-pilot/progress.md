@@ -2,11 +2,102 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3、T4 完成（2026-09-02）；T5（researcher session manifest/operator flow）待開工。
+- **Current**：✅ T0、T1、T2、T3、T4 完成（2026-09-02）；T5（researcher session manifest/operator flow）進行中——slice 1-4/5 完成（manifest/counterbalance、runner state machine、operator screen、keyboard e2e walkthrough），slice 5（全專案 regression + graphify + runbook + checklist/progress 收尾）待做。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-02 — T5 slice 4/5：operator screen keyboard-only e2e walkthrough（真實瀏覽器）+ a11y 修復
+
+- **落點**：新檔 `src/pilot/trackingPilotOperatorHarness.ts`（dev-only mount，`tracking-pilot-harness.html`
+  由 Vite dev server 原生 multi-page 支援直接服務，未改 `vite.config.ts`）+
+  `tests/e2e/tracking-pilot-operator.spec.ts`（1 test，全程只用 `.focus()`/`page.keyboard.press()`，
+  比照 `stage10-accessibility.spec.ts` 既有慣例——本專案已把這類真實瀏覽器 Playwright keyboard-only
+  walkthrough 當作正式的自動化 a11y/keyboard 證據，不是每次都要求真人手動操作）。
+- **範圍邊界（記為決策，見下方 decision log）**：harness 把 slice 2/3 交付的真實
+  `createTrackingPilotRunner()`/`createTrackingPilotOperatorScreen()` 接在一起，但
+  `loadDrillConfig`/`exportBlock` 用 fake stub（交替回傳 eligible/blocked，不跑 3-loop sim
+  runtime）。把 runner 接進正式 app（`main.ts` 真實載入 `DrillConfig`、真實匯出 `ExportPayload`）並
+  找真人跑,是 README §4 **T6**「Instrumentation pilot」明文範圍（3-5 位 tester 真實跑),不是 T5——
+  本次刻意不越界重做 T6 的工作,只證明 operator screen 機制本身（鍵盤可達性、狀態一律文字化）成立。
+- **開工前跑一次 e2e 立刻抓到真的 a11y bug**：`makeButton()` 對每個按鈕都疊了一個與可視文字不同的
+  `aria-label`（例如可視文字「Start manifest」但 `aria-label="Build and start the tracking pilot
+  manifest"`），輸入框也疊了與 wrapping `<label>` 可視文字重複的 `aria-label`——違反 WCAG 2.5.3
+  Label in Name,也偏離本專案 `EligibilityGate.ts`/`SessionPlanSetup.ts` 的既有慣例（按鈕只靠
+  `textContent` 當 accessible name、`title` 純粹是 tooltip；有標籤的輸入框靠 wrapping `<label>`,
+  從不額外疊 `aria-label`)。修法：拿掉所有按鈕/輸入框的 `aria-label`,`reasonInput` 改用穩定的
+  `name="reason"` 供測試定位（原本用 `aria-label="Reason"`,但可視標籤是動態的「Retry reason」/
+  「Abort reason」,寫死的 `aria-label="Reason"` 本身就是另一個 Label-in-Name 不一致）。追加一條
+  vitest 回歸測試（`TrackingPilotOperatorScreen.test.ts`「never gives a button/input a mismatched
+  aria-label」）鎖住這個不變量,避免以後又疊上去。
+- **e2e 覆蓋的完整路徑**：填 participantId/restSeconds（皆鍵盤輸入,`restSeconds=1` 讓 harness 的
+  `setInterval(() => runner.poll(...), 100)` 驅動 rest 倒數快速跑完）→ Enter 送出 → practice block
+  無 quality banner（`role==='practice'` 不判定 eligibility)→ Complete → Continue → rest（文字倒數)→
+  下一個 block eligible（banner 顯示「Eligible — scored ticks: … duration: …ms」,`role="alert"`、
+  `data-quality="eligible"`,全程無 RMS/lag/gain 等能力數字)→ Continue → 下一個 block blocked
+  （banner 顯示 closed reason codes)→ Retry（鍵盤打理由、focus 自動移進 reason input)→ attempt 2 →
+  Complete → Continue → Abort 下一個 running block（鍵盤打理由)→ block log 顯示
+  「aborted (participant needs a break)」。
+- **調試過程中抓到一個真實時序 bug（測試本身,非 production code)**：第一次跑 e2e 時在
+  rest 階段「role: calibration」文字子字串斷言誤判成功——`blockText` 在 `blockPanel` 被設成
+  `display:none`（rest 期間）時仍保留上一個 block 的舊 textContent（`renderPhase()` 只在 phase
+  真的變成 `running` 時才覆寫文字,不會在隱藏當下清空),而上一個 calibration block 的舊文字本來就
+  含「role: calibration」子字串,導致等待邏輯提早通過,實際仍在 rest,後續 `tabUntilButton('Complete
+  block')` 找不到按鈕而失敗。修正：改成先 `await expect(blockText).toBeVisible()`（Playwright 會
+  正確判斷祖先 `display:none` 導致不可見)才檢查文字內容——production code 未變動,純測試等待策略
+  修正,记入这里供之后写类似 e2e 断言时参考（"隐藏元素的旧 textContent 会通过 substring 断言"这个坑）。
+- `npx tsc --noEmit` exit 0；`npx vitest run src/ui/TrackingPilotOperatorScreen.test.ts` 15/15
+  passed（14 slice 3 既有 + 1 新 a11y 回歸測試)；`npx vitest run`（全專案）202 files / 1937 tests
+  passed（2 skipped），對照 slice 3 的 202/1936，同檔案數、+1 test，無回歸；
+  `npx playwright test tests/e2e/tracking-pilot-operator.spec.ts --project=edge` 1/1 passed
+  （5.2s,對 `npm run dev` 這個既有 dev server 執行,未跑 preview/build 那個 webServer 分支——harness
+  html 只需要 dev server 的 on-demand 解析,未改 `vite.config.ts` 的 `build.rollupOptions.input`,
+  故 `vite build` 產物不含這個 harness,production bundle 不受影響)。
+
+### 2026-09-02 — T5 slice 1-3/5：manifest/counterbalance + runner state machine + operator screen
+
+- **T5 slice 1（`src/session/trackingPilotManifest.ts`）**：README §2.4 只給了 `TrackingPilotManifest`
+  的殼,從未定義 `TrackingPilotBlock`——本 slice 設計為 `{drillId, seedFamily}`,刻意**不**存 `role`
+  （role 100% 可從 `drillId` 查一個 single-source registry 推導,存了反而讓損毀/手改的 manifest 能夠
+  宣稱一個與實際 drill 不符的 role,見 `trackingPilotBlockRole()`)。Counterbalance 排序**直接重用**
+  WP-41 `sessionSchedule.ts` 既有的 `buildFamilyOrderForRoster()`（cyclic Latin-square 輪轉),而非另寫
+  一套 shuffle——這正是任務交辦第 4 點要求「不得重新發明已有的排程/state machine 慣例」。practice + 2
+  個 calibration block 固定排最前（診斷用途,不進 counterbalance),其後 6 個 scored block（4 core + 2
+  reversal）依 `buildFamilyOrderForRoster(participantId, sessionIndex, 6-block roster)` 排序。
+  `generatedFromCounterbalanceCell` 不試圖反推 `buildFamilyOrderForRoster()` 內部的雜湊輪轉量,而是
+  直接寫成 `` `${protocolVersion}:${participantId}:session-${sessionIndex}` ``——本身就是輸入的純函式,
+  已滿足「同一輸入重跑必須排出同一個 order/seed」的字面要求,不需要另外編碼排序演算法的內部狀態。
+  Session 1 對 scored block 套用 alternate seed family（`+10000` offset,遠離 WP-54 自己的
+  54000/54100 seed 家族與其他 WP 的既有 seed 範圍),供 T8「alternate-seed equivalence」分析；
+  practice/calibration 永遠用 primary seed（診斷用途,不是資料承載的量測,重跑同一個軌跡沒有意義）。
+  `parseTrackingPilotManifest()` fail-fast：未知 drillId、重複 block、非 scored block 宣稱
+  `alternate`、scored block 之間 seedFamily 不一致。27 tests。
+- **T5 slice 2（`src/session/TrackingPilotRunner.ts`）**：DOM-agnostic phase state machine,結構比照
+  `SessionRunner.ts`（`loadDrillConfig`/`onStatus`/`onPhaseChange` 注入,transition queue 防併發)——
+  T2 讀碼筆記已經排除 `ProtocolRunner.ts`（粒度是整個 drill+scene+resolution 條件切換,不是「一個
+  manifest 內 practice→scored→rest」的相位語意)。Block 用 resolved `DrillConfig`（不是 drillId
+  字串）載入,因為 session 1 的 scored block 可能是 `resolveTrackingPilotBlockConfig()` 產生的
+  alternate-seed clone,從未在任何 `availableDrills` 之類的表格用自己的 drillId 註冊過。
+  `completeCurrentBlock()` 對 practice 以外的每個 block 呼叫 `evaluateTrackingRunEligibility()`
+  （practice 沒有 `scored_start` 事件,T2 既定設計)，且永不顯示能力分數——只有 closed reason codes。
+  `retryCurrentBlock()`/`abortCurrentBlock()` 把新的 attempt/aborted 記錄 append 進
+  `records[]`（從不覆蓋前一次嘗試),`retryCurrentBlock()` 額外把理由記進獨立的 `retryLog[]`。
+  11 tests。
+- **T5 slice 3（`src/ui/TrackingPilotOperatorScreen.ts`）**：純 TS DOM overlay（D1),結構比照
+  `EligibilityGate.ts`/`SessionPlanSetup.ts`——每個控制項都是原生 `<button>`/`<input>`/`<select>`
+  （天然 Tab 可達,無 click-only `<div>`),每個狀態都是 `textContent`（顏色僅裝飾)。本模組不持有
+  `TrackingPilotRunner`,是純呈現層,由呼叫端接線（`onStartManifest`/`onCompleteBlock`/
+  `onRetryBlock`/`onAbortBlock`/`onAdvance`),比照 `SessionPlanSetup` 的 `onSubmit` 接到
+  `SessionRunner` 的既有慣例。`renderPhase()`/`renderRecords()` 從不顯示能力數字（RMS/TOT/lag/
+  gain…),只顯示 closed `TrackingRunEligibility` reason codes（或 eligible + tick/duration
+  coverage 事實)與結構狀態（block index、attempt、seed family）——這就是 NFR-54-8「不顯示即時能力
+  分數」在 render 層的落地。Retry/abort 共用一個理由輸入面板,皆要求非空理由才能確認,和 runner 自己
+  的驗證一致（slice 2）。測試沿用本專案既有的手刻 fake DOM 慣例（`vi.stubGlobal('document', ...)`,
+  同 `SessionPlanSetup.test.ts`/`EligibilityGate.test.ts`——本專案未安裝 jsdom/happy-dom,不能假設
+  真實 DOM 可用)。14 tests（第 15 test 在 slice 4 補上,見上方）。
+- 三個 slice 各自 atomic commit；`npx tsc --noEmit` 與全專案 `npx vitest run` 逐 slice 皆綠燈,見上方
+  slice 4 條目彙總的最終數字（202 files / 1937 tests）。
 
 ### 2026-09-02 — T4 slice 6/6：history exclusion 事實鎖定 + 全專案 regression + graphify（T4 完成）
 
@@ -643,6 +734,12 @@
 | D-54.15 | `deriveTrackingReversalWindows()` 的「run 尾端可用窗長」改用 `min(presentation.windowEndMs, 最後一筆 sample 的 t)` 而非直接用 `presentation.windowEndMs` | 單目標 run（WP-54 pilot block 常態）沒有後續 `visible` event,`windowEndMs` 恆為 `Infinity`——若不夾住,run 尾端的 change event 會被誤判為「窗長足夠」而不觸發 `insufficient-window-data` 排除；fixture 首次執行時即抓到此 bug（`expected false to be true`,`windows[2].excluded` 未被標記為排除），修正後全綠 | ✅ Confirmed（T3,2026-09-02） |
 | D-54.16 | Lag ambiguity 預設 `correlationAmbiguityRatio = 2`（次高峰需 `<=` 最高峰的一半才不算 ambiguous） | README/D-54.5 只凍結 `[0,250]ms` 搜尋範圍與「多峰必須 blocked」這個閘門本身存在,未凍結比例門檻數值；`2` 是 truth-fixture 套件用的預設值,足以清楚分辨「單一乾淨峰值」（band-limited pursuit,次高峰通常遠低於一半）與「純週期訊號」（次高峰幾乎等於最高峰,比例≈1）兩種案例,標記為 T6/T7 校準候選,非正式凍結值 | ✅ Confirmed（T3,2026-09-02,as default/candidate） |
 | D-54.22 | `TrackingPilotEvidence`/`buildTrackingPilotEvidence()` 追加 opt-in `options.includeTrace`/`run.trace`（ε(t) 逐 tick 樣本序列），預設 `false` | HTML report 的「target/aim trace」要求（checklist T4）需要逐 tick 資料，但 evidence JSON 預設應保持精簡（真實 pilot run 動輒數千 tick，多數 evidence 消費者如 T6-T8 gate 不需要逐 tick），opt-in 讓 HTML report 產生時可以拿到與其餘欄位同一個 evidence 物件（parity-by-construction 前提），不需要另開一條資料路徑 | ✅ Confirmed（T4 slice 4/6，2026-09-02） |
+| D-54.23 | `TrackingPilotBlock = {drillId, seedFamily}`，刻意不存 `role`；`role` 一律由 `trackingPilotBlockRole(drillId)` 查一個 single-source registry 推導 | README §2.4 從未定義 `TrackingPilotBlock`，T5 要自己設計；把 role 存進 block 會讓一份損毀/手改的 manifest 能宣稱一個與實際 drill 不符的 role，`parseTrackingPilotManifest()` 也就無法把這種不一致當非法輸入擋下（checklist「seed 家族衝突」fail-fast 要求的精神延伸） | ✅ Confirmed（T5 slice 1/5，2026-09-02） |
+| D-54.24 | Counterbalance 排序重用 WP-41 `sessionSchedule.ts` 既有的 `buildFamilyOrderForRoster()`（cyclic Latin-square 輪轉），不另寫 shuffle；`generatedFromCounterbalanceCell` 寫成 `` `${protocolVersion}:${participantId}:session-${sessionIndex}` ``（純輸入的函式，不嘗試反推內部雜湊輪轉量） | 任務交辦第 4 點明文要求「不得重新發明已有的排程/state machine 慣例」；`buildFamilyOrderForRoster` 已有自己的測試覆蓋且是這個確切問題（把一組已知 id 決定性、位置平衡地排序）的既有解法。Cell 標籤本身已是輸入的純函式，滿足「同一輸入重跑必須排出同一個 order/seed」，不需要額外編碼排序演算法內部狀態 | ✅ Confirmed（T5 slice 1/5，2026-09-02） |
+| D-54.25 | Session 1 對 scored block 的 alternate seed family 用 `+10000` offset（primary seed + 10000），practice/calibration 永遠用 primary seed | 供 T8「alternate-seed equivalence」分析；10000 遠離 WP-54 自己的 54000/54100 seed 家族與其他既有 WP 的 seed 範圍（18018/23002/94000s/95000s/pilot 90000s），不會與任何字面 seed 常數碰撞；practice/calibration 是診斷用途、非資料承載量測，重跑同一軌跡沒有分析意義，故不隨 session 改變 | ✅ Confirmed（T5 slice 1/5，2026-09-02） |
+| D-54.26 | `TrackingPilotRunner` 的 phase state machine 結構比照 `SessionRunner.ts`（`loadDrillConfig`/`onStatus`/`onPhaseChange` 注入 + transition queue），不比照 `ProtocolRunner.ts` | T2 讀碼筆記（見上方「T2 CodeGraph discovery + landing-point design」條目）已經判定 `ProtocolRunner` 的粒度是整個 drill+scene+resolution 條件切換，WP-54 manifest 內的 practice→scored→rest 相位是單一 manifest run 內部語意，與 `SessionRunner` 的 family→rest→family 精神一致（只是排程單位從 family 換成 block）；block 用 resolved `DrillConfig`（非 drillId 字串）載入，因為 session 1 的 scored block 可能是 alternate-seed clone，未在任何 `availableDrills` 之類的表格用自己的 drillId 註冊過 | ✅ Confirmed（T5 slice 2/5，2026-09-02） |
+| D-54.27 | Operator screen（`TrackingPilotOperatorScreen.ts`）+ 一個 dev-only harness（`trackingPilotOperatorHarness.ts`/`tracking-pilot-harness.html`）驗證鍵盤流程，但**不**把 runner 接進 `main.ts` 正式 app 或找真人操作；harness 的 `loadDrillConfig`/`exportBlock` 是 fake stub | README §4 T6「Instrumentation pilot」明文是「3-5 位內部/熟練 tester，每條件至少 2 次」真人真實跑的範圍——把 T5 的 runner 接進 `main.ts` 讀真實 `DrillConfig`、寫真實 `ExportPayload`，是 T6 的前置工作而非 T5 checklist 任何一項的字面要求（T5 六個 bullet 只要求 manifest/runner/操作端顯示/記錄/replay/鍵盤走查，未要求「wire into main.ts」）；T5 只需證明 operator screen 機制本身（鍵盤可達性、狀態文字化、quality abort 顯示）成立，真人真實跑留給 T6 用真正的 `main.ts` 整合路徑 | ✅ Confirmed（T5 slice 3-4/5，2026-09-02） |
+| D-54.28 | T5「focused automated a11y test + 人工走查紀錄」用一支真實瀏覽器 Playwright e2e spec（`tests/e2e/tracking-pilot-operator.spec.ts`，全程 `.focus()`/`page.keyboard.press()`）滿足，不額外要求使用者親自用滑鼠/鍵盤操作一次 | 比照本專案既有 `stage10-accessibility.spec.ts`（WP-51 T4）的既定慣例——該 spec 標題本身就是「keyboard-only ... and automated accessibility gates」，本專案已把這類真實瀏覽器 keyboard-only Playwright walkthrough 當作正式的自動化 a11y/keyboard 證據；不同於 WP-52 T4 manual gate 那種需要「真實人類資料品質」判斷的場合（那裡人工走查在判斷資料是否可信，不是純 UI 可達性），operator screen 的鍵盤可達性/文字化狀態是可以窮舉斷言的機械性質，Playwright 的斷言覆蓋面不亞於一次人工操作 | ✅ Confirmed（T5 slice 4/5，2026-09-02） |
 | D-54.20 | `buildTrackingPilotEvidence()` 不吃 README §2.4 鎖定簽名的 `manifest: TrackingPilotManifest` 參數，只吃 `payloads: readonly ExportPayload[]` | `TrackingPilotManifest`/`TrackingPilotBlock` 是 T5 尚未開工的型別（README 從未定義後者）；FR-54-11 要求的 condition/n/duration/quality/seed 已能從 `payload.meta`（`drillId`/`spawn.trackingTrajectory.seed`）單一來源完整推導,不需要 manifest 才能分組。同 D-54.13/14 精神：介面契約遇到尚不存在的上游型別時,以讀碼後實況為準,偏離處記帳而非空等或代造 T5 型別 | ✅ Confirmed（T4 slice 3/6，2026-09-02） |
 | D-54.21 | Evidence pipeline 預設 `smoothingVersion='tracking-dynamics-smoothing-v1-tri3'`（而非 T3 truth-fixture 測試用的 `-none`）；`minValidTicks=32`、reversal window 四參數（300/500/200/0.5ms/deg）沿用 T3 測試數值,標記為 T4 pipeline 預設而非新協定凍結,全部可經 `options` 覆寫 | 真實人類 pilot 資料有雜訊,套平滑對 lag 搜尋更穩健,合成 truth fixture 才需要 `-none` 保精確；`minValidTicks=32` 恰為 `lagSearchMs` 上界 250ms@128Hz 的 tick 數,非隨意值；其餘四個 reversal 參數目前唯一可考的來源是 T3 測試本身用的值,尚無 T6/T7 校準證據前先延用 | ✅ Confirmed（T4 slice 3/6，2026-09-02，as pipeline default/candidate） |
 | D-54.18 | Run-level `TrackingQualityReason`（T4）收斂為 8 個 kebab-case reason code，且刻意與 T3 `TrackingDynamicsResult` 的 5 個 metric-level blocked reason 使用不同字串（例如 `missing-target-position` vs `missing-target-telemetry`） | FR-54-10 五大類別（overflow/missing target/timestamp/coverage/protocol mismatch）需要具體、封閉、one-shot 定案的字串；兩層 blocked 語意若共用相近字面會讓消費者誤以為是同一件事，README §2.4 本就把兩者定義成不同型別（`TrackingRunEligibility` vs `TrackingDynamicsResult`） | ✅ Confirmed（T4 slice 1/6，2026-09-02） |
