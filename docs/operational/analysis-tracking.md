@@ -159,3 +159,170 @@ production `ExportPayload` JSON shape. Its tests synthesize aim trajectories ove
 round-trip them through `DataRecorder` and `buildExportPayload()`, then assert: perfect tracking
 (TOT% = 100, RMS ε ≈ 0, t_acquire ≈ 0), acquisition failure (aim never covers the target), and a
 known acquisition onset recovered within one 128 Hz tick.
+
+---
+
+## P1 — Tracking Pilot Dynamics (WP-54 / T3)
+
+> Metric version `tracking-dynamics-v1` (D-54.10). Reference implementation:
+> `src/metrics/trackingDynamics.ts` (`deriveTrackingDynamics()`, `deriveTrackingReversalWindows()`),
+> tested in `src/metrics/trackingDynamics.test.ts`. This section covers the tracking-pilot-specific
+> P1 layer (FR-54-6~9); the P0 layer above (`deriveTrackingMetrics()`) is unchanged and reused
+> as-is — this module never modifies `trackingDerivation.ts`.
+
+### Scored-window adapter (P0 reuse, no change to the canonical derivation)
+
+WP-54 pilot blocks insert a `timing.trackingPrepMs` centering window between `visible` and
+`scored_start` (T2). Pursuit aggregation must start at `scored_start`, not `visible`, so this
+module builds a shallow `ExportPayload` copy — `adaptPayloadForScoredWindow()` — that replaces each
+`visible` event's `t` (and target position) with the matching `scored_start` event's `t`/position
+for the same `targetId`, then calls the unmodified `deriveTrackingMetrics()`/`deriveTrackingSamples()`
+on that copy. A payload with no `scored_start` events at all (e.g. a legacy tracking export) passes
+through unchanged and P1 falls back to plain `visible`-windowed P0 — permissive, not an error. This
+keeps the blast radius on the 11-caller canonical derivation at zero (D-54.13).
+
+All P1 metrics below operate on the **post-acquisition** window `[t_first_on_target, window_end)` —
+the same tracking window P0 already defines — so acquisition ability never contaminates pursuit
+dynamics (same rationale as P0's own `t_acquire`/TOT/RMS ε separation).
+
+### Target/aim angular kinematics (signed, tick-integral, wraparound-safe)
+
+Aim angular velocity reads `ticks[].dYaw`/`dPitch` (KI-005 tick-window mouse integration) directly,
+never a difference of `ticks[].aim.yaw/pitch` — the same render/sim beat-aliasing avoidance as
+`angularKinematics.ts`'s `omegaDegPerSec()`. Target angular velocity is derived by inverting
+`aimForward()` against the tick's target position — `yaw = atan2(-dx, -dz)`, `pitch = asin(dy)`,
+where `(dx,dy,dz)` is the (target − eye) vector — then tick-differenced with the delta wrapped into
+`[-180°, 180°]` before dividing by `dt` (a band-limited/reversal trajectory can cross the ±180° seam
+depending on config bounds). Both series are indexed by consecutive tick pairs — the first tick in a
+window produces no sample (same contract as `omegaDegPerSec`).
+
+A tick is missing required telemetry (`missing-target-telemetry`, see below) when its target
+position is `null`, or when `dYaw`/`dPitch` are undefined at an index that needs them.
+
+### Offline fixed-coefficient smoothing (`smoothingVersion`, D-54.5)
+
+`TrackingDynamicsOptions.smoothingVersion` selects a **fixed-coefficient FIR kernel** applied to the
+four omega component series before lag search — never to the position/bias values. Recognized
+versions:
+
+| `smoothingVersion` | Kernel | Notes |
+|---|---|---|
+| `tracking-dynamics-smoothing-v1-none` | `[1]` (identity) | Default for truth-fixture verification — keeps recovered lag/gain exactly traceable to the synthetic construction. |
+| `tracking-dynamics-smoothing-v1-tri3` | `[0.25, 0.5, 0.25]` | Symmetric 3-tap triangular FIR; edge taps renormalize against available neighbors. |
+
+An unrecognized `smoothingVersion` fails fast (same discipline as `trackingTrajectory.ts`'s unknown
+`kind` guard) — this is a config/version error, not one of the five closed blocked-result reasons.
+
+### Lag sign contract, velocity gain, velocity residual (FR-54-7, D-54.5/OQ-54-4)
+
+```text
+corr(omega_target(t), omega_aim(t + tau))  maximized over tau in options.lagSearchMs (frozen [0,250]ms)
+tau > 0  =>  aim lags target
+
+velocity_gain =
+  sum(dot(omega_target(t), omega_aim(t + tau_hat))) /
+  sum(dot(omega_target(t), omega_target(t)))
+```
+
+`tau` is quantized to whole sim ticks (`tau_hat = k_hat * (1000/simHz)` for integer `k_hat`) — this
+assumes the fixed-step sim's uniform tick spacing, not a generic irregularly-sampled algorithm. Peak
+selection uses the **mean** dot product per candidate `k` (fair across the slightly different
+overlap length near the search boundary, since the overlap shrinks by `k` ticks); `velocity_gain`
+and `velocity_rmse_deg_per_sec` are then computed from the **sum** dot products at the chosen
+`k_hat`, matching the formula above exactly — sum and mean over an identical index range are
+proportional, so mean-based peak selection and sum-based gain/RMSE are consistent.
+`velocity_rmse_deg_per_sec` is the RMS magnitude of the residual vector
+`omega_aim(t+tau_hat) - gain * omega_target(t)` over the same overlap.
+
+### Lag ambiguity (`lag-peak-ambiguous`)
+
+Local peaks of the mean-correlation-vs-`tau` curve are collected (a point is a local peak when it is
+`>=` both neighbors, boundary points compared only against their one neighbor). If a 2nd-best peak
+exists whose value exceeds `1 / options.correlationAmbiguityRatio` times the best peak's value, the
+result is `blocked, reason: 'lag-peak-ambiguous'` — a periodic/multi-peak signal must never resolve
+to one silently-chosen lag/gain (§3 risk register: "系統品質污染能力指標" / "Lag 多峰仍回傳單值").
+`correlationAmbiguityRatio = 2` (best peak must be at least 2x the second-best) is the value used by
+the truth-fixture suite; it is a default subject to T6/T7 empirical calibration, not a D-54.5 frozen
+number (only the `[0,250]ms` search range and the existence of this gate are frozen).
+
+### Directional bias (signed, unnormalized — §2.5 "P1 directional")
+
+```text
+signed_yaw_bias_deg   = mean over the post-acquisition window of wrap(aim_yaw_deg(t) - target_yaw_deg(t))
+signed_pitch_bias_deg = mean over the post-acquisition window of wrap(aim_pitch_deg(t) - target_pitch_deg(t))
+```
+
+Reported as two independent signed numbers (positive yaw = aim right of target; positive pitch =
+aim above target) — never normalized into one scalar, and never combined with lag/gain into a
+composite score.
+
+### Recovery aggregation (FR-54-8: drop/sec, completed vs. terminal-censored, longest off-target)
+
+Reuses `deriveTrackingTransitions()` unmodified (shared with spider-shot) over the presentation's
+full sample array (same window P0 itself scans for on-target transitions):
+
+- `dropRatePerSec = dropCount / pursuitDurationSec`, where `pursuitDurationSec` is the elapsed time
+  from `t_first_on_target` to the last recorded sample.
+- `completedReacquireCount = reacquireMs.length` (unchanged semantics).
+- `terminalDropCount = dropCount - reacquireMs.length` — `deriveTrackingTransitions()`'s `dropCount`
+  already counts a final unrecovered drop that `reacquireMs` deliberately excludes, so this recovers
+  the terminal count for free, with **no risk of double-counting or leaking a terminal drop's
+  remaining time into a "completed" duration** (§1.3 constraint).
+- `longestOffTargetMs` is computed independently by scanning the same on-target/off-target
+  transitions for the longest contiguous off-target run, including an open (never-reacquired)
+  terminal run extending to the end of the observed window. It is its own field, never merged into
+  `reacquireMs`/`completedReacquireCount`.
+
+### Reversal event windows (FR-54-9 — `deriveTrackingReversalWindows()`, a separate function)
+
+README §2.4's `TrackingDynamicsResult` contract has no reversal-specific fields (by design — it is
+copied verbatim from the frozen interface). Response latency / peak error / overshoot / settling
+time are additive, computed by a second exported function windowed on `target_motion_change` event
+boundaries (T2's precomputed reversal leg schedule). A pursuit (core matrix) block legitimately
+produces **zero** `target_motion_change` events — `deriveTrackingReversalWindows()` then returns
+`{ windows: [] }`, which is normal/empty, **not** a blocked state.
+
+For each `target_motion_change` event at `changeTMs`, using the scored-window ε(t) series:
+
+- `baselineErrorDeg` = ε(t) at (or just before) `changeTMs` — the steady pursuit error level right
+  before the reversal.
+- `peakErrorDeg` = max ε(t) over the usable window after `changeTMs`.
+- `overshootDeg` = `max(peakErrorDeg - baselineErrorDeg, 0)`.
+- `responseLatencyMs` = elapsed time until ε(t) first exceeds `baselineErrorDeg` by a small fixed
+  margin (the moment the reversal starts to visibly disturb tracking).
+- `settlingTimeMs` = elapsed time until ε(t) returns to within `baselineErrorDeg +
+  options.settlingToleranceDeg` **and stays there** for the remainder of the usable window.
+
+The usable window after a change is bounded by whichever is soonest: the next `target_motion_change`
+event, `options.maxWindowMs` past the change, or the actual end of recorded scored-window samples
+(never the possibly-`Infinity` nominal presentation window end — a run with no subsequent `visible`
+event must still be bounded by its last real tick). A change is **excluded, not silently dropped**,
+and counted with a reason:
+
+- `'insufficient-window-data'` — the usable window is shorter than `options.minWindowMs` (not enough
+  room to observe peak/settling before the next reversal or the run ends).
+- `'overlap'` — the change is less than `options.minBaselineMs` after the previous change (not
+  enough steady-state time to get a clean baseline reading before this reversal).
+
+### Blocked-reason precedence (`deriveTrackingDynamics`)
+
+Checked in this order — a data problem earlier in the list always wins over a later one:
+
+1. `protocol-incompatible` — any `protocol_violation` event falls inside `[scored_start.t, window_end)`, checked regardless of acquisition outcome (T3 owns this metric-level guard; T4's run-level eligibility layer is separate and later).
+2. `no-acquisition` — the P0 canonical result for this presentation is `acquisitionFailure = true`. P0's own `acquisitionFailureRate` is never suppressed by this — callers derive it from the same unmodified `deriveTrackingMetrics()` result.
+3. `missing-target-telemetry` — any tick in the post-acquisition window has a null target position or missing `dYaw`/`dPitch` where required.
+4. `insufficient-valid-ticks` — fewer than `options.minValidTicks` ticks in the post-acquisition window (also returned if the window is too short to cover even the smallest requested lag, i.e. shorter than the tick-quantized `lagSearchMs` upper bound).
+5. `lag-peak-ambiguous` — see above.
+
+### NFR tolerances (fixture-verified, not eyeballed)
+
+- **NFR-54-2** (timing precision): a fixed synthetic lag is recovered within one tick period
+  (`abs(estimated_lag_ms - truth_ms) <= 1000/simHz`). The truth fixture uses a ~25s scored window (matching D-54.4's real block duration) because the multi-frequency band-limited pursuit signal needs several full periods of its slowest component to average out finite-window correlation edge effects — a window much shorter than the slowest component's period recovers a lag off by several ticks, which is a property of finite-sample cross-correlation, not a derivation bug.
+- **NFR-54-3** (numeric precision): a perfect-follower fixture (aim ≡ target every tick) recovers `rmsEpsilonDeg <= 1e-6` deg and `totPercent === 100` (P0), plus `lagMs ≈ 0` and `velocityGain ≈ 1` (P1). A known-gain fixture (aim velocity = target velocity × `{0.7, 1.0, 1.3}`, zero lag) recovers `velocityGain` within `0.02` of truth.
+
+### Version/traceability fields (NFR-54-5)
+
+Every P1 result is reproducible from `options.version` (`'tracking-dynamics-v1'`), `options.lagSearchMs`,
+`options.smoothingVersion`, `options.minValidTicks`, `options.correlationAmbiguityRatio`, plus the
+export's own `meta.simHz`, seed, and `trackingTrajectory` config (already carried by T2's export
+metadata pass-through). No P1 field is ever derived from wall-clock time or `Math.random()`.

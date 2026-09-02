@@ -2,11 +2,83 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2 完成（2026-09-02）；T3（canonical P0/P1 metrics/truth fixtures）待開工。
+- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）待開工。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T3：canonical P0/P1 metrics/truth fixtures（T3 完成）
+
+- **落點**：新檔 `src/metrics/trackingDynamics.ts`（`deriveTrackingDynamics()` — README §2.4 interface
+  逐字實作 — 加上額外 additive export `deriveTrackingReversalWindows()`，見下方決策）+
+  `src/metrics/trackingDynamics.test.ts`（19 tests，8 條 truth fixture 全覆蓋）。`docs/operational/
+  analysis-tracking.md` 新增「P1 — Tracking Pilot Dynamics」章節（公式/容差/blocked 語意/版本字串）。
+- **P0 重用（不改 `trackingDerivation.ts`）**：`adaptPayloadForScoredWindow()` 建一份 shallow-copy
+  `ExportPayload`——把每個 `visible` event 的 `t`/target 位置換成同 `targetId` 的 `scored_start`
+  event 的 `t`/位置，再呼叫未修改的 `deriveTrackingMetrics()`/`deriveTrackingSamples()`。11 個既有
+  caller 的 blast radius維持 0；無 `scored_start` 事件的匯出（如既有 legacy tracking 匯出）原樣通過,
+  退回 plain `visible`-windowed P0（寬容,非錯誤）。專用 fixture（`dropRecoveryPayload` +
+  「scored_start windowing」test）證明 prep 窗內的 drop/reacquire 不會漏進 scored 窗分析。
+- **target/aim angular kinematics**：aim 端讀 `ticks[].dYaw`/`dPitch`（KI-005 tick 窗積分),不對
+  `aim.yaw/pitch` 做差分——同 `angularKinematics.ts` `omegaDegPerSec()` 的 render/sim beat-aliasing
+  規避理由。target 端用 `aimForward()` 的代數反函式（`yaw=atan2(-dx,-dz)`、`pitch=asin(dy)`)算出
+  implied yaw/pitch,逐 tick 差分後把角度差 wrap 進 `[-180,180]`（band-limited/reversal trajectory
+  可能跨 ±180° 縫）。兩序列皆從相鄰 tick pair 算出（首個 tick 無樣本,同 `omegaDegPerSec` 慣例）。
+- **lag search / gain / residual**：`corr(omega_target(t), omega_aim(t+tau))` 對 `tau` 在
+  `lagSearchMs`（凍結 `[0,250]ms`,D-54.5）內以整數 tick 步進搜尋；peak 挑選用「每個候選 `k` 的平均
+  dot product」（避免搜尋邊界附近 overlap 樣本數略減造成的偏誤),`gain`/`rmse` 則用選定 `k_hat` 的
+  **加總** dot product（與 README 公式的 `sum(...)/sum(...)` 形狀一致——同一 index range 上 sum 與
+  mean 只差一個常數,對挑 peak 與算 gain 分開處理不影響結果一致性）。
+- **ambiguity gate**：收集 mean-correlation-vs-tau 曲線的所有 local peak,若次高峰值超過
+  `1/correlationAmbiguityRatio` 倍最高峰值,回傳 `lag-peak-ambiguous`（不得靜默回傳單一 lag/gain,
+  README 風險表「Lag 多峰仍回傳單值」）。週期性 fixture（10Hz 純正弦,`[0,250]ms` 內出現 3 個相近
+  峰值)驗證此路徑。
+- **directional bias**：`signedYawBiasDeg`/`signedPitchBiasDeg` = post-acquisition 窗內
+  `wrap(aim_angle_deg(t) - target_angle_deg(t))` 的平均值,兩軸分開回報,不 normalize 成單一分數。
+- **recovery aggregation**：重用 `deriveTrackingTransitions()`（未修改,spider-shot 共用函式）取得
+  `dropCount`/`reacquireMs`；`completedReacquireCount = reacquireMs.length`,
+  `terminalDropCount = dropCount - reacquireMs.length`（`dropCount` 本就含未恢復的終端 drop,
+  `reacquireMs` 本就排除它——相減即得終端計數,零額外掃描、零重複計數風險）。`longestOffTargetMs`
+  另掃 on/off-target transition 找最長連續離線 run（含跑到窗尾仍未恢復的開放式 run），獨立欄位、
+  絕不併入 `reacquireMs`/`completedReacquireCount`。
+- **reversal event windows（FR-54-9,additive function）**：README §2.4 的 `TrackingDynamicsResult`
+  沒有 reversal 專屬欄位（介面逐字凍結,不得加欄）——故 response latency/peak error/overshoot/
+  settling time 落在新 export `deriveTrackingReversalWindows()`,以 `target_motion_change` event 為
+  窗界（見下方決策 D-54.14）。純 pursuit block（零 `target_motion_change`）回傳 `windows: []`,
+  視為正常/空,非 blocked 狀態。窗界排除 `'overlap'`（與前一次變化間隔 `< minBaselineMs`）與
+  `'insufficient-window-data'`（可用窗長 `< minWindowMs`,含 run 尾端沒有足夠真實 tick 的情形——
+  `presentation.windowEndMs` 在單目標 run 下恆為 `Infinity`（無後續 `visible` event）,必須另外以最後
+  一筆真實 sample 的 `t` 夾住,否則「窗尾空間不足」的排除規則會失效,見下方 D-54.15）都計數、不靜默丟棄。
+- **offline fixed-coefficient smoothing（`smoothingVersion`,D-54.5）**：`applySmoothingToSeries()`
+  對 4 條 omega 分量套用版本化 FIR kernel（僅用於 lag search 輸入,不影響 bias 用的原始角度）;未知
+  `smoothingVersion` fail fast（同 `trackingTrajectory.ts` 未知 `kind` 的紀律）。目前註冊
+  `tracking-dynamics-smoothing-v1-none`（identity,truth fixture 預設,保持可精確追溯）與
+  `tracking-dynamics-smoothing-v1-tri3`（對稱三點三角 FIR）。
+- **8 條 truth fixture**：perfect follower（NFR-54-3：`rmsEpsilonDeg<1e-6`、`totPercent=100`、
+  `lagMs≈0`、`gain≈1`）；fixed lag（NFR-54-2：`abs(estimated-truth)<=1000/simHz`——**25 秒**合成窗
+  （非最初嘗試的 400 tick/3.1s——實測以 400 tick 合成窗跑同一 fixture,recovered lag 誤差達 5
+  tick/39ms,遠超 1-tick 容差;改成 25 秒後誤差收斂到剛好 1 tick/7.8ms,壓線通過——才能讓多頻正弦訊號
+  的有限窗 cross-correlation 邊界效應收斂到一個 tick 誤差內,恰好對齊 D-54.4 真實 scored block 長度）；
+  known gain
+  `0.7/1.0/1.3`（`abs(gain-truth)<=0.02`）；never acquire（P1 `blocked:'no-acquisition'`,P0
+  `acquisitionFailureRate` 不被隱藏)；drop/reacquire（`completedReacquireCount>=1`、
+  `terminalDropCount=0`）；terminal drop（`terminalDropCount>=1`、未污染 completed 計數）；
+  overshoot/settling（`deriveTrackingReversalWindows()` 專屬 fixture,scripted rise-then-decay
+  epsilon 曲線)；lag ambiguity（純正弦週期訊號,`blocked:'lag-peak-ambiguous'`）。額外覆蓋
+  `protocol-incompatible`、`insufficient-valid-ticks`、兩種 `missing-target-telemetry`（缺 target
+  position / 缺 dYaw-dPitch）、reversal window 的 `'overlap'`/`'insufficient-window-data'` 排除,以及
+  未知 `smoothingVersion` fail-fast。
+- `npx tsc --noEmit` exit 0；`npx vitest run src/metrics/trackingDynamics.test.ts` 19/19 passed；
+  `npx vitest run`（全專案）194 files / 1844 tests passed（2 skipped),對照 T2 slice 6 的 193/1825
+  baseline,新增 1 個檔案、19 個測試,無回歸。
+- **執行協議偏離記錄**：本 task 未逐一切出 README 建議的 8 個 slice 各自 commit——lag search、gain、
+  residual、ambiguity gate 與 recovery aggregation 在實作與 debug 過程中高度耦合（同一組 fixture
+  同時驗證多個子功能),事後強行拆成獨立 commit 需要重新設計 fixture 邊界,對可稽核性沒有實質幫助,
+  反而增加風險。改採 2 個 commit：(1) 實作 + 全部 truth fixture + 全專案 regression 綠燈,
+  (2) operational doc + checklist/progress 收尾。記錄於此供後續 task 參考。
+- 尚未動：`graphify update .`（留到本 task 收尾一次執行，見下方最終收尾條目）；T4 的 eligibility
+  vocabulary、`TrackingPilotEvidence` JSON/HTML 尚未開工。
 
 ### 2026-09-02 — T2 slice 6/6：graphify update + 文件收尾（T2 完成）
 
@@ -349,6 +421,11 @@
 | D-54.10 | Metric version = `tracking-dynamics-v1`；trajectory version = `band-limited-2d-v1`（pursuit）/ `reversal-2d-v1`（reactive） | 沿用 README §2.4 interface 命名，作為 T1/T3 實作時的版本字串來源 | ✅ Confirmed |
 | D-54.11 | Pilot protocol version = `tracking-pilot-v1` | 沿用 README §2.4 `TrackingPilotManifest.protocolVersion` 命名 | ✅ Confirmed |
 | D-54.12 | `reversal-2d-v1` 採「每個 leg 靜止到靜止」（v(leg start)=v(leg end)=0）的梯形/三角形速度剖面，而非「新 leg 沿用前一 leg 巡航速度做 ramp」 | 後者在 T1 test（bounds sweep）發現會越界（`-8.0148` vs `-8` 下界）——leg 邊界殘留速度仍指向舊方向，ramp 前段先繼續衝向牆才回頭；前者讓邊界安全變成解析可證的建構期保證，不需 runtime clamp，`changes` 語意改為「前一穩態巡航速度 → 本 leg 穩態巡航速度」而非「瞬時速度」（leg 邊界瞬時速度恆為 0） | ✅ Confirmed（T1 slice 1/2，2026-09-02） |
+| D-54.13 | P1 對 `trackingDerivation.ts` 採 shallow-copy adapter（`adaptPayloadForScoredWindow()`）而非修改該檔 | README §2.2 只列 `trackingDerivation.test.ts` 為 MODIFY/ADD,未列實作檔——暗示實作檔應保持不動；11 個既有 caller（`ResultPresentation.ts`/`holdClickMetrics.ts` 等）與兩個 golden fixture test（`epsilon-parity`/`promoted-curve`）的 blast radius 因此維持 0 | ✅ Confirmed（T3,2026-09-02） |
+| D-54.14 | Reversal event windows（response latency/peak error/overshoot/settling time,FR-54-9）落在新 export `deriveTrackingReversalWindows()`,不塞進 `TrackingDynamicsResult` | README §2.4 的 `TrackingDynamicsResult` 介面是逐字凍結契約,任務指示「copy verbatim,不重新設計」——該介面本就沒有 reversal 專屬欄位；FR-54-9/checklist/§2.5「P1 reactive」列仍要求此分析,故另開一個 additive function 滿足需求而不違反凍結契約 | ✅ Confirmed（T3,2026-09-02） |
+| D-54.15 | `deriveTrackingReversalWindows()` 的「run 尾端可用窗長」改用 `min(presentation.windowEndMs, 最後一筆 sample 的 t)` 而非直接用 `presentation.windowEndMs` | 單目標 run（WP-54 pilot block 常態）沒有後續 `visible` event,`windowEndMs` 恆為 `Infinity`——若不夾住,run 尾端的 change event 會被誤判為「窗長足夠」而不觸發 `insufficient-window-data` 排除；fixture 首次執行時即抓到此 bug（`expected false to be true`,`windows[2].excluded` 未被標記為排除），修正後全綠 | ✅ Confirmed（T3,2026-09-02） |
+| D-54.16 | Lag ambiguity 預設 `correlationAmbiguityRatio = 2`（次高峰需 `<=` 最高峰的一半才不算 ambiguous） | README/D-54.5 只凍結 `[0,250]ms` 搜尋範圍與「多峰必須 blocked」這個閘門本身存在,未凍結比例門檻數值；`2` 是 truth-fixture 套件用的預設值,足以清楚分辨「單一乾淨峰值」（band-limited pursuit,次高峰通常遠低於一半）與「純週期訊號」（次高峰幾乎等於最高峰,比例≈1）兩種案例,標記為 T6/T7 校準候選,非正式凍結值 | ✅ Confirmed（T3,2026-09-02,as default/candidate） |
+| D-54.17 | Smoothing kernel 版本化為封閉字串表（`tracking-dynamics-smoothing-v1-none` identity / `tracking-dynamics-smoothing-v1-tri3` 對稱三點三角 FIR),未知字串 fail fast | D-54.5 要求「離線固定係數平滑,`smoothingVersion` 版本化」——用封閉 registry + fail-fast 而非允許任意係數陣列,對齊本專案既有「未知 version/kind 必須 fail fast」紀律（`trackingTrajectory.ts` 前例);truth fixture 預設用 `-none`（保持結果可精確追溯到合成訊號本身,不被平滑掩蓋),另加一個 `-tri3` 案例證明有實際套用平滑且不崩潰 | ✅ Confirmed（T3,2026-09-02） |
 
 ## Open Questions
 
@@ -375,4 +452,7 @@
 | 2026-09-02 | T1 slice 2/2：`npx tsc --noEmit` | exit 0（`DrillEvent` 61 callers 未受 additive union 影響） |
 | 2026-09-02 | T1 slice 2/2：`npx vitest run`（全專案） | 191 files / 1766 tests passed（2 skipped），無回歸 |
 | 2026-09-02 | T1 slice 2/2：`graphify update .` / `codegraph sync .` | graph 重建（3884 nodes/9158 edges/240 communities）；codegraph 索引已最新 |
+| 2026-09-02 | T3：`npx tsc --noEmit` | exit 0 |
+| 2026-09-02 | T3：`npx vitest run src/metrics/trackingDynamics.test.ts` | 19/19 passed（首次執行 5 個失敗：靜態目標令 target omega 恆為 0、退化成 `lag-peak-ambiguous`；400-tick 視窗令 fixed-lag 誤差達 5 tick；`windowEndMs=Infinity` 未被真實資料夾住令 reversal-window 的 run-尾端排除失效——三者修正後全綠，詳見 D-54.15 與上方 fixture 說明） |
+| 2026-09-02 | T3：`npx vitest run`（全專案） | 194 files / 1844 tests passed（2 skipped），對照 T2 slice 6 的 193/1825 baseline，無回歸 |
 

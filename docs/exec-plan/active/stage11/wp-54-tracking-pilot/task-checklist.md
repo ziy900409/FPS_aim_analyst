@@ -9,7 +9,7 @@
 | [x] | **T0** Entry gate/scope freeze/preregistration | 凍結 stage scope、OQ、metric protocol、blast radius 與 baseline evidence | 使用者確認 WP-54 是否納入 stage11 | High |
 | [x] | **T1** Deterministic trajectory kernel/export contract | 新增 2D pseudorandom 與 finite-acceleration reversal generator | T0 | High |
 | [x] | **T2** Pilot drill matrix/protocol guards | 新增 practice、axis calibration、core 2 x 2、reactive blocks 與 no-fire/no-ADS/no-movement guard | T1 | High |
-| [ ] | **T3** Canonical P0/P1 metrics/truth fixtures | 推導 acquisition、RMS/TOT、lag/gain、drop/reacquire、reversal response | T2 | High |
+| [x] | **T3** Canonical P0/P1 metrics/truth fixtures | 推導 acquisition、RMS/TOT、lag/gain、drop/reacquire、reversal response | T2 | High |
 | [ ] | **T4** Eligibility/evidence/report | 建立 quality reason vocabulary、compatibility、deterministic JSON/HTML evidence | T3 | High |
 | [ ] | **T5** Researcher manifest/operator flow | 支援 counterbalance、rest、retry reason、session index 與 keyboard flow | T2/T4 | Med |
 | [ ] | **T6** Instrumentation pilot | 以 synthetic + 3-5 tester runs 驗證 motion/event/export/report traceability | T1-T5 | High |
@@ -63,14 +63,21 @@
 
 ## T3 — Canonical P0/P1 metrics/truth fixtures
 
-- [ ] 重用 canonical `deriveTrackingMetrics()` 組裝 P0 acquisition/RMS/TOT。
-- [ ] 實作 target/aim angular kinematics。
-- [ ] 實作 lag search、positive-lag sign contract、velocity gain、velocity residual、directional bias。
-- [ ] 擴充 recovery aggregation：drop/sec、completed reacquire durations、terminal censor count、longest off-target。
-- [ ] 實作 reversal event windows：response latency、peak error、overshoot、settling time。
-- [ ] fixtures 覆蓋 perfect follower、fixed lag、gain `0.7/1.0/1.3`、never acquire。
-- [ ] fixtures 覆蓋 drop/reacquire、terminal drop、overshoot/settling、lag ambiguity。
-- [ ] 公式、容差、blocked semantics 回寫 `docs/operational/analysis-tracking.md`。
+- [x] 重用 canonical `deriveTrackingMetrics()` 組裝 P0 acquisition/RMS/TOT（`adaptPayloadForScoredWindow()`
+      shallow-copy adapter，`trackingDerivation.ts` 本體未修改）。
+- [x] 實作 target/aim angular kinematics（`computeSignedOmegaSeries()`，signed 2D、tick-integral、
+      wraparound-safe，`src/metrics/trackingDynamics.ts`）。
+- [x] 實作 lag search、positive-lag sign contract、velocity gain、velocity residual、directional bias
+      （`searchLag()` + `computeSignedBias()`；離線固定係數平滑 `smoothingVersion` 見
+      `applySmoothingToSeries()`）。
+- [x] 擴充 recovery aggregation：drop/sec、completed reacquire durations、terminal censor count、
+      longest off-target（重用 `deriveTrackingTransitions()` + `scanLongestOffTarget()`）。
+- [x] 實作 reversal event windows：response latency、peak error、overshoot、settling time
+      （`deriveTrackingReversalWindows()`，additive function — README §2.4 `TrackingDynamicsResult`
+      無此欄位，見 progress.md 決策）。
+- [x] fixtures 覆蓋 perfect follower、fixed lag、gain `0.7/1.0/1.3`、never acquire。
+- [x] fixtures 覆蓋 drop/reacquire、terminal drop、overshoot/settling、lag ambiguity。
+- [x] 公式、容差、blocked semantics 回寫 `docs/operational/analysis-tracking.md`（新增 P1 章節）。
 
 ## T4 — Eligibility/evidence/report
 
