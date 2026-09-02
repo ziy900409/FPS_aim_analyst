@@ -88,7 +88,7 @@
 - [x] 產生 deterministic `TrackingPilotEvidence` JSON（`src/pilot/trackingPilotEvidence.ts`，T4 slice 3/6；`buildTrackingPilotEvidence()` 簽名偏離 README §2.4 見 progress.md D-54.20）。
 - [x] 產生 self-contained HTML report，至少包含 quality、RMS/TOT、acquisition、lag/gain、drop/recovery、condition matrix、target/aim trace（`src/pilot/trackingPilotReport.ts`，T4 slice 4/6）。
 - [x] HTML/JSON 數值 parity test 通過；blocked 指標顯示原因，不顯示 0（`src/pilot/trackingPilotReport.test.ts`，T4 slice 4/6；parity-by-construction 設計見 progress.md）。
-- [ ] benchmark 單一 30 秒 export analysis；若 >2 秒，只記 worker spike。
+- [x] benchmark 單一 30 秒 export analysis；若 >2 秒，只記 worker spike（T4 slice 5/6：~23ms 冷/~8ms 暖，遠低於門檻，未加 concurrency；見 `docs/operational/analysis-tracking.md`「Benchmark」節與 progress.md）。
 
 ## T5 — Researcher manifest/operator flow
 

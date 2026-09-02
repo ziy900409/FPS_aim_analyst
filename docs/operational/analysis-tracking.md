@@ -326,3 +326,114 @@ Every P1 result is reproducible from `options.version` (`'tracking-dynamics-v1'`
 `options.smoothingVersion`, `options.minValidTicks`, `options.correlationAmbiguityRatio`, plus the
 export's own `meta.simHz`, seed, and `trackingTrajectory` config (already carried by T2's export
 metadata pass-through). No P1 field is ever derived from wall-clock time or `Math.random()`.
+
+## Eligibility, Compatibility, and Evidence (WP-54 / T4)
+
+Not a third metric-priority tier (P0/P1 above are) — this section covers the run-level quality gate,
+cohort-compatibility key, and evidence/report pipeline that sit above P0/P1.
+
+`src/pilot/trackingRunEligibility.ts`, `src/pilot/trackingCompatibilityKey.ts`,
+`src/pilot/trackingPilotEvidence.ts`, `src/pilot/trackingPilotReport.ts`.
+
+### Run-level eligibility vs. metric-level blocked — two separate vocabularies
+
+`evaluateTrackingRunEligibility(payload)` (FR-54-10) runs **before** any P0/P1 derivation and is a
+strictly higher, independent layer from the P1 `TrackingDynamicsResult.status === 'blocked'`
+vocabulary documented above. A run can be `eligible` at this layer while its P1 dynamics are still
+metric-blocked (e.g. `lag-peak-ambiguous`, `no-acquisition`) — the two closed enums are **never**
+merged, compared to each other, or share a string, even where the underlying concept overlaps (e.g.
+missing target telemetry is checked at both layers, under deliberately different names:
+`missing-target-position` here vs. `missing-target-telemetry` in P1).
+
+Closed `TrackingQualityReason` vocabulary (8 codes, one-shot — do not add a 9th without a version bump):
+
+| Reason | FR-54-10 category | Trigger |
+|---|---|---|
+| `recorder-overflow` | overflow | `meta.recorderOverflow === true` |
+| `input-buffer-overflow` | overflow | `meta.bufferOverflow === true` |
+| `missing-scored-start` | protocol mismatch | zero `scored_start` events in the export (short-circuits — no scored window exists to check target-position/coverage against) |
+| `missing-target-position` | missing target | any scored-window tick (`t >= min(scored_start.t)`) has `tx`/`ty`/`tz === null` |
+| `non-monotonic-timestamps` | timestamp | `ticks[i].t <= ticks[i-1].t` for any `i`, checked in the export's **own recorded order** (not re-sorted — sorting first would hide exactly the bug this check exists to catch) |
+| `insufficient-scored-coverage` | coverage | scored-window tick coverage `< 99.5%` (NFR-54-4); `expectedTickCount = round(durationMs / (1000/simHz)) + 1` |
+| `unsupported-schema-version` | protocol mismatch | `meta.schemaVersion !== 2` (defense-in-depth; `parseExportPayload` should already have rejected this) |
+| `unrecognized-tracking-trajectory` | protocol mismatch | `meta.spawn.trackingTrajectory` missing, or its `kind` is not `band-limited-2d-v1`/`reversal-2d-v1` |
+
+All checks except `missing-scored-start` run independently and **all** applicable reasons are
+collected — `evaluateTrackingRunEligibility` never short-circuits on the first failure (a run can
+fail overflow *and* coverage at once, and both must be visible to the caller).
+
+### Compatibility key (NFR-54-7)
+
+`buildTrackingCompatibilityKey(meta)` is a WP-54-specific key — **not** a reuse of
+`src/metrics/compatibilityKey.ts`'s `buildCompatibilityKey()`, which hard-requires
+`meta.assessment` and throws otherwise. Every WP-54 pilot block is `mode: 'practice'` (T2 decision),
+and `main.ts` only attaches `meta.assessment` when the active drill's `mode === 'assessment'` — so a
+WP-54 export's `meta.assessment` is always `undefined`, and the existing key would always throw.
+
+Eight axes, all fail-fast on a missing/malformed source field:
+
+| Field | Source |
+|---|---|
+| `drillId` | `meta.drillId` |
+| `protocolVersion` | constant `'tracking-pilot-v1'` (D-54.11) |
+| `motionKind` | `meta.spawn.trackingTrajectory.kind` |
+| `sizeDeg` | `band-limited-2d-v1`: `${yawBoundDeg}x${pitchBoundDeg}`; `reversal-2d-v1`: `${lo}..${hi}` of `angularBoundsDeg` |
+| `speedDegPerSec` | `band-limited-2d-v1`: `targetRmsSpeedDegPerSec`; `reversal-2d-v1`: `${lo}..${hi}` of `speedRangeDegPerSec` |
+| `fovDeg` | `meta.fovDeg` |
+| `sensitivity` | `meta.sensitivity` |
+| `inputMode` | `meta.mouseIntegration?.model ?? 'aim-diff-legacy'` — a judgment call (NFR-54-7 does not define this field further); see progress.md OQ-54-9 |
+
+### Evidence model and the HTML report's parity design
+
+`buildTrackingPilotEvidence(payloads, options?)` groups payloads by `meta.drillId` (the condition
+label, single-sourced from T2's per-candidate drillId convention) and, for each run, attaches
+`quality` (always) plus `p0`/`p1`/`reversal` (only when `quality.status === 'eligible'` — a blocked
+run is never fed into metric derivation at all, per FR-54-10's "blocked but not aggregated"). `p0`,
+`p1`, and `reversal` reuse T3's own result types verbatim (`TrackingPresentationDerivation`,
+`TrackingDynamicsResult`, `TrackingReversalWindowsResult`) — no second field definitions. A P1
+metric-level block (e.g. `no-acquisition`) never removes an already-attached `p0` from the same run;
+the two are computed independently.
+
+The self-contained HTML report (`renderTrackingPilotReportHtml`) uses **parity-by-construction**: the
+canonical `TrackingPilotEvidence` object is `JSON.stringify`'d verbatim (with `<` escaped to `<`
+so no embedded string can prematurely close the `<script>` tag) into a
+`<script type="application/json" id="evidence-data">` block, and the page's own vanilla-JS renderer
+reads every number it displays back out of that same block — nothing is recomputed. A JSON/HTML
+parity test therefore only needs to extract that script's text, `JSON.parse` it, and deep-equal it
+against the evidence object's own JSON form — never scrape rendered DOM text or re-derive a number to
+compare against. This was the approach the WP-54 T4 task brief suggested, and it was adopted as-is
+after confirming it fully covers the "blocked shows a reason, never a 0" requirement for free (T3's
+own result types already omit numeric fields on a blocked/failed branch).
+
+One caveat discovered while writing the parity test: `TrackingPresentationDerivation.windowEndMs` is
+legitimately `Infinity` for WP-54's normal case (a single persistent target, no subsequent `visible`
+event to bound the presentation window). `JSON.stringify` has no representation for `Infinity` and
+silently emits `null`. This is standard JS/JSON behavior, not a bug introduced by the evidence or
+report code — but it means the artifact's true "canonical form" for parity purposes is
+`JSON.parse(JSON.stringify(evidence))`, not the raw in-memory object. A `null` `windowEndMs` in a
+saved evidence `.json` file should be read as "presentation extends to the end of the recording, no
+next-visible boundary" — the same thing `Infinity` meant in memory.
+
+### Evidence pipeline defaults (T4 pipeline defaults, not new protocol freezes)
+
+`buildTrackingPilotEvidence`'s default `TrackingDynamicsOptions`/`TrackingReversalWindowOptions`
+(fully overridable via `options.dynamics`/`options.reversal`):
+
+- `smoothingVersion: 'tracking-dynamics-smoothing-v1-tri3'` (not T3's truth-fixture default of
+  `-none` — real pilot data is noisy and benefits from smoothing before lag search; synthetic truth
+  fixtures use `-none` specifically to keep recovery exact).
+- `minValidTicks: 32` — not arbitrary: it is exactly `lagSearchMs`'s frozen 250ms upper bound
+  (D-54.5) at 128Hz, the shortest window that can resolve the full search range.
+- `lagSearchMs: [0, 250]`, `correlationAmbiguityRatio: 2` — D-54.5/D-54.16 values.
+- Reversal window params (`minWindowMs: 300`, `maxWindowMs: 500`, `minBaselineMs: 200`,
+  `settlingToleranceDeg: 0.5`) carry over T3's own test defaults; no other source has calibrated
+  these yet. T6/T7 calibration may supersede any of the above without touching this module's code —
+  only its default constants.
+
+### Benchmark (T4 checklist)
+
+A single synthetic ~30s export (1s prep + 29s scored window at 128Hz, ~3841 ticks) through the full
+eligibility + P0 + P1 + evidence-build pipeline measured well under the 2-second budget: ~23ms
+cold (JIT warmup included), ~8ms warm, plus <1ms for HTML rendering. No worker/thread spike is
+warranted (README §2.6: "未量先加 concurrency 不可" — do not add concurrency before measuring, and
+this measurement does not justify it).

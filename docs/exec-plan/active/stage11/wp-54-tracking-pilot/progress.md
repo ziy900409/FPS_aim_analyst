@@ -2,11 +2,28 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1/6（closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`）、slice 2/6（WP-54 專屬 compatibility key）、slice 3/6（`TrackingPilotEvidence` JSON model + `buildTrackingPilotEvidence()`）、slice 4/6（self-contained HTML report + JSON/HTML parity test）已完成。
+- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1-4/6 已完成，slice 5/6（benchmark + operational doc 收尾）已完成，只剩 slice 6/6（全專案 regression + graphify + checklist/progress 最終同步）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T4 slice 5/6：benchmark + `docs/operational/analysis-tracking.md` 收尾
+
+- **Benchmark**（checklist「對單一 30 秒 export analysis 量測耗時，若 >2 秒才記 worker spike，不要
+  真的先加 concurrency」）：以一次性 throwaway 測試檔（未 commit，量測後即刪除）合成一份 1 秒 prep +
+  29 秒 scored window（128Hz，3841 ticks，符合 D-54.4/FR-54-5 節奏）的匯出，跑完整
+  eligibility + P0 + P1 + evidence build pipeline：冷啟動（含 JIT warmup）約 23ms、暖機後約 8ms；
+  額外量測 `renderTrackingPilotReportHtml()` <1ms。遠低於 2 秒門檻，不需要 worker/thread spike，
+  依 README §2.6「未量先加 concurrency 不可」的紀律，本 slice 到此為止，不動 concurrency model。
+- **`docs/operational/analysis-tracking.md` 新增「Eligibility, Compatibility, and Evidence
+  (WP-54 / T4)」章節**（非第三個 P-tier,明確標註區別於 P0/P1）：收錄 run-level vs metric-level 兩層
+  blocked 詞彙的區別說明、8 碼 `TrackingQualityReason` 對照表（含每碼觸發條件)、`TrackingCompatibilityKey`
+  8 軸對照表（含 `inputMode` 為判斷岔路的旁註)、evidence model 與 HTML report 的 parity-by-construction
+  設計理由、`windowEndMs:Infinity` → JSON `null` 的意外發現與消費建議、evidence pipeline 預設參數
+  一覽（含各數值的理由來源)、benchmark 結果。
+- `npx tsc --noEmit` exit 0；`npx vitest run src/pilot/` 50/50 passed（純文件變更 + 刪除一次性
+  benchmark 檔案,無 production code 異動)。
 
 ### 2026-09-02 — T4 slice 4/6：self-contained HTML report + JSON/HTML parity test
 
