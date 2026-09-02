@@ -2,11 +2,40 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3、T4 完成（2026-09-02）；T5（researcher session manifest/operator flow）進行中——slice 1-4/5 完成（manifest/counterbalance、runner state machine、operator screen、keyboard e2e walkthrough），slice 5（全專案 regression + graphify + runbook + checklist/progress 收尾）待做。
+- **Current**：✅ T0、T1、T2、T3、T4、T5 完成（2026-09-02）；T6（instrumentation pilot）待開工。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-02 — T5 slice 5/5：全專案 regression + graphify + operator runbook + 收尾同步（T5 完成）
+
+- **全專案 regression**：`npx tsc --noEmit` exit 0；`npx vitest run` 202 files / 1937 tests passed
+  （2 skipped），對照 T4 收尾的 199 files/1884 tests 基準——T5 四個 slice 累計新增 3 個檔案
+  （`trackingPilotManifest.ts`/`TrackingPilotRunner.ts`/`TrackingPilotOperatorScreen.ts`，各自帶
+  測試檔）、53 個 tests（slice 1：27、slice 2：11、slice 3：14、slice 4：+1 a11y 回歸測試加進 slice 3
+  既有檔案，無新檔案），全程無回歸；`tests/e2e/tracking-pilot-operator.spec.ts` 不計入 vitest（`.spec.ts`
+  由 Playwright 收，見 `vite.config.ts` 的 `test.include` 只收 `.test.ts`），`npx playwright test
+  tests/e2e/tracking-pilot-operator.spec.ts --project=edge` 1/1 passed（見 slice 4 條目）。
+- **`graphify update .`**：4021 nodes / 9529 edges / 256 communities 重建（對照 T4 收尾的
+  3981/9450/250）。`codegraph sync .`：已是最新（無 pending）。
+- **`docs/operational/tracking-pilot-runbook.md`（README §2.2 規劃的 NEW 檔，確認仍是 T5 範圍後落
+  筆）**：涵蓋 manifest/counterbalance/alternate-seed 概念、runner phase state machine 圖解、
+  operator screen 各面板對照表、今天可用的 dev-only harness 操作步驟（明確標註 fake
+  loadDrillConfig/exportBlock，非真實 pilot 資料）、T6 之後的正式操作步驟待補、遺留缺口（無
+  skip-rest 按鈕，main.ts 整合留給 T6）——格式比照 `docs/operational/analysis-tracking.md` 的
+  operational spec 慣例，但本檔是操作流程導向而非公式/契約導向。
+- **文件收尾同步**：本 package `README.md` 狀態列翻新（T0-T5 完成，T6 待開工）；本 package
+  `task-checklist.md` 頂層 T5 row 打勾（六個子項已在 slice 1-4 逐一打勾）；本檔（`progress.md`）
+  Status 段落同步；stage11 母層 README/task-checklist/progress **未變動**——WP-54 尚未整包完成
+  （T6-T8/T-exit 仍待開工），依協議只有整個 WP 完成時才翻母層狀態（同 T4 收尾時的判斷，CLAUDE.md
+  §3.5）。
+- **T5 總結**：5 個 slice、每片各自 atomic commit（見下方 slice 1-4 條目）。交付：`TrackingPilotBlock`
+  設計 + counterbalance manifest builder + fail-fast validator（slice 1）；researcher-only runner
+  phase state machine（slice 2）；keyboard-only operator screen，含一次真的 WCAG 2.5.3 a11y bug
+  發現與修復（slice 3-4）；真實瀏覽器 Playwright keyboard-only walkthrough 作為本專案既定的自動化
+  a11y 證據形式（slice 4）；graphify/runbook/checklist 收尾（slice 5）。刻意劃定的範圍邊界：main.ts
+  正式整合與真人試跑留給 T6（README §4 明文範圍，見 D-54.27）。
 
 ### 2026-09-02 — T5 slice 4/5：operator screen keyboard-only e2e walkthrough（真實瀏覽器）+ a11y 修復
 
@@ -780,4 +809,15 @@
 | 2026-09-02 | T3：`npx tsc --noEmit` | exit 0 |
 | 2026-09-02 | T3：`npx vitest run src/metrics/trackingDynamics.test.ts` | 19/19 passed（首次執行 5 個失敗：靜態目標令 target omega 恆為 0、退化成 `lag-peak-ambiguous`；400-tick 視窗令 fixed-lag 誤差達 5 tick；`windowEndMs=Infinity` 未被真實資料夾住令 reversal-window 的 run-尾端排除失效——三者修正後全綠，詳見 D-54.15 與上方 fixture 說明） |
 | 2026-09-02 | T3：`npx vitest run`（全專案） | 194 files / 1844 tests passed（2 skipped），對照 T2 slice 6 的 193/1825 baseline，無回歸 |
+| 2026-09-02 | T5 slice 1/5：`npx vitest run src/session/trackingPilotManifest.test.ts` | 27/27 passed |
+| 2026-09-02 | T5 slice 1/5：`npx tsc --noEmit` / `npx vitest run`（全專案） | exit 0；200 files / 1911 tests passed（2 skipped），無回歸 |
+| 2026-09-02 | T5 slice 2/5：`npx vitest run src/session/TrackingPilotRunner.test.ts` | 11/11 passed |
+| 2026-09-02 | T5 slice 2/5：`npx tsc --noEmit` / `npx vitest run`（全專案） | exit 0；201 files / 1922 tests passed（2 skipped），無回歸 |
+| 2026-09-02 | T5 slice 3/5：`npx vitest run src/ui/TrackingPilotOperatorScreen.test.ts` | 14/14 passed |
+| 2026-09-02 | T5 slice 3/5：`npx tsc --noEmit` / `npx vitest run`（全專案） | exit 0；202 files / 1936 tests passed（2 skipped），無回歸 |
+| 2026-09-02 | T5 slice 4/5：`npx playwright test tests/e2e/tracking-pilot-operator.spec.ts --project=edge` | 首次執行失敗（`blockText` 隱藏期間殘留上一個 block 的舊文字，substring 斷言假陽性通過等待邏輯，見上方 slice 4 條目）；改用 `toBeVisible()` 後 1/1 passed（5.2s） |
+| 2026-09-02 | T5 slice 4/5：`npx vitest run src/ui/TrackingPilotOperatorScreen.test.ts` | 15/15 passed（新增 1 個 a11y 回歸測試） |
+| 2026-09-02 | T5 slice 4/5：`npx tsc --noEmit` / `npx vitest run`（全專案） | exit 0；202 files / 1937 tests passed（2 skipped），無回歸 |
+| 2026-09-02 | T5 slice 5/5：`npx tsc --noEmit` / `npx vitest run`（全專案，收尾確認） | exit 0；202 files / 1937 tests passed（2 skipped），對照 T4 收尾 199/1884 baseline，無回歸 |
+| 2026-09-02 | T5 slice 5/5：`graphify update .` / `codegraph sync .` | graph 重建（4021 nodes/9529 edges/256 communities，對照 T4 收尾 3981/9450/250）；codegraph 索引已最新 |
 

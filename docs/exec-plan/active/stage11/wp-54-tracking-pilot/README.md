@@ -4,7 +4,7 @@
 >
 > Source proposal：[../wp-54-tracking-pilot-execution-plan.md](../wp-54-tracking-pilot-execution-plan.md)。本文件依 `.claude/skills/engineering-planning/SKILL.md`、`references/design_standards.md`、`assets/tech_spec_template.md` 與 WP-51 的 work-package 格式整理。
 >
-> **狀態：✅ 已正式納入 stage11（2026-09-02，T0 entry gate/scope freeze/preregistration 完成）。** stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md) 已同步接受 WP-54；本 WP 進入 M20，T0/T1/T2/T3/T4 完成，T5（researcher session manifest/operator flow）待開工。
+> **狀態：✅ 已正式納入 stage11（2026-09-02，T0 entry gate/scope freeze/preregistration 完成）。** stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md) 已同步接受 WP-54；本 WP 進入 M20，T0/T1/T2/T3/T4/T5 完成，T6（instrumentation pilot）待開工。
 
 | | |
 |---|---|
