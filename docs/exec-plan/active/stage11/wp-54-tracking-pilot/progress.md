@@ -2,11 +2,55 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）待開工。
+- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1/6（closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`）已完成。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T4 slice 1/6：closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`
+
+- **落點**：新檔 `src/pilot/trackingRunEligibility.ts`（README §2.4 `TrackingRunEligibility`/
+  `evaluateTrackingRunEligibility()` 逐字實作）+ `src/pilot/trackingRunEligibility.test.ts`（13
+  tests：eligible fixture 1 條、每個 FR-54-10 類別至少 1 條 fixture、外加「同時觸發兩個 overflow
+  reason 不短路」與「prep 窗內的問題不誤判進 scored 窗」兩條邊界 fixture）。`src/pilot/` 目錄本次起用
+  （WP-52 `peekClickTransferPilotEvidence.ts` 之外第二個檔案），T4 其餘檔案（compatibility key/
+  evidence/report）陸續加入同目錄，而非全部塞進單一 `trackingPilotEvidence.ts`——README §2.2 只列了
+  這一個檔名當落點候選，但 T4 範圍（eligibility 判定 + WP-54 專屬 compatibility key + JSON evidence
+  model + 自足 HTML report）遠比 WP-52 那支 81 行的純聚合函式大，拆檔以維持單一職責、可個別測試。
+- **run-level vs metric-level 雙層閉列舉（不得混用）**：本檔的 `TrackingQualityReason`（run-level，
+  8 碼）與 T3 `trackingDynamics.ts` 的 `TrackingDynamicsResult.status:'blocked'` 5 碼原因是**兩個獨立
+  命名空間**——刻意選了不同字串（例如 run-level 用 `missing-target-position`，metric-level 用
+  `missing-target-telemetry`）避免兩層在字面上疊在一起造成「這是同一件事」的錯覺。README §2.4 已把
+  兩者定義成兩個不同型別（`TrackingRunEligibility` vs `TrackingDynamicsResult`），本檔只是延續。
+- **8 碼收斂設計**（FR-54-10 五大類別 → 8 個具體 reason code，一次定案、封閉列舉）：
+  - overflow → `recorder-overflow`（`meta.recorderOverflow`）、`input-buffer-overflow`
+    （`meta.bufferOverflow`）。
+  - missing target → `missing-target-position`（scored 窗內〔`t >= scoredStartMs`〕任一 tick
+    `tx`/`ty`/`tz` 為 `null`；prep 窗內的 null 不算，見 fixture「does not flag a null target position
+    that only occurs inside the prep window」）。
+  - timestamp → `non-monotonic-timestamps`（依 **匯出原始陣列順序**逐一比較 `ticks[i].t <=
+    ticks[i-1].t`，不對輸入先 `sort()`——`trackingDerivation.ts`/`trackingDynamics.ts` 等下游消費者都會
+    自己 `slice().sort()`，那是它們的權利；但這裡要抓的正是「原始寫入順序本身出了 bug」，先排序會把
+    這個訊號洗掉）。
+  - coverage → `insufficient-scored-coverage`（`validScoredTicks / expectedTickCount < 99.5%`，
+    `expectedTickCount = round(durationMs / (1000/simHz)) + 1`；`durationMs<=0` 时视为
+    `actualTickCount>0 ? 1 : 0`，避免「0 除以 0 通过」的假陽性)。
+  - protocol mismatch → 拆成三個更具體的 reason，而非單一 `protocol-mismatch`：
+    `missing-scored-start`（完全没有 `scored_start` 事件——代表这份匯出根本不是 WP-54 scored pilot
+    run，直接短路回傳，不再检查 target-position/coverage，因为没有 scored 窗可检查）、
+    `unsupported-schema-version`（`meta.schemaVersion !== 2`，defense-in-depth——`parseExportPayload`
+    理论上已挡，但比照 `DrillMetricRegistry.project()` 的 defense-in-depth 惯例再挡一次）、
+    `unrecognized-tracking-trajectory`（`meta.spawn.trackingTrajectory` 缺席或其 `kind` 不在
+    `{band-limited-2d-v1, reversal-2d-v1}`——因为它是 opaque `unknown` pass-through〔T2 设计〕，这里只做
+    浅层 `kind` 白名单检查，不深验其余栏位，深验留给 `trackingTrajectory.ts` 自己的建构期 guard）。
+- **不短路,收集全部 reasons**：除了「完全没有 `scored_start`」这一支（没有 scored 窗，target-position/
+  coverage 两项检查语意上无法进行,直接回传单一 reason)以外,其余检查互相独立、全部执行完才回传——
+  fixture「collects both overflow reasons at once」直接锁住这个契约（README/checklist 明讲
+  `reasons: readonly TrackingQualityReason[]`，不是单一 reason）。
+- `npx tsc --noEmit` exit 0；`npx vitest run src/pilot/trackingRunEligibility.test.ts` 13/13 passed；
+  `npx vitest run`（全专案）195 files / 1857 tests passed（2 skipped），对照 T3 收尾的 194/1844 基准，
+  新增 1 个档案、13 个测试，无回归。
 
 ### 2026-09-02 — T3：canonical P0/P1 metrics/truth fixtures（T3 完成）
 
@@ -425,6 +469,8 @@
 | D-54.14 | Reversal event windows（response latency/peak error/overshoot/settling time,FR-54-9）落在新 export `deriveTrackingReversalWindows()`,不塞進 `TrackingDynamicsResult` | README §2.4 的 `TrackingDynamicsResult` 介面是逐字凍結契約,任務指示「copy verbatim,不重新設計」——該介面本就沒有 reversal 專屬欄位；FR-54-9/checklist/§2.5「P1 reactive」列仍要求此分析,故另開一個 additive function 滿足需求而不違反凍結契約 | ✅ Confirmed（T3,2026-09-02） |
 | D-54.15 | `deriveTrackingReversalWindows()` 的「run 尾端可用窗長」改用 `min(presentation.windowEndMs, 最後一筆 sample 的 t)` 而非直接用 `presentation.windowEndMs` | 單目標 run（WP-54 pilot block 常態）沒有後續 `visible` event,`windowEndMs` 恆為 `Infinity`——若不夾住,run 尾端的 change event 會被誤判為「窗長足夠」而不觸發 `insufficient-window-data` 排除；fixture 首次執行時即抓到此 bug（`expected false to be true`,`windows[2].excluded` 未被標記為排除），修正後全綠 | ✅ Confirmed（T3,2026-09-02） |
 | D-54.16 | Lag ambiguity 預設 `correlationAmbiguityRatio = 2`（次高峰需 `<=` 最高峰的一半才不算 ambiguous） | README/D-54.5 只凍結 `[0,250]ms` 搜尋範圍與「多峰必須 blocked」這個閘門本身存在,未凍結比例門檻數值；`2` 是 truth-fixture 套件用的預設值,足以清楚分辨「單一乾淨峰值」（band-limited pursuit,次高峰通常遠低於一半）與「純週期訊號」（次高峰幾乎等於最高峰,比例≈1）兩種案例,標記為 T6/T7 校準候選,非正式凍結值 | ✅ Confirmed（T3,2026-09-02,as default/candidate） |
+| D-54.18 | Run-level `TrackingQualityReason`（T4）收斂為 8 個 kebab-case reason code，且刻意與 T3 `TrackingDynamicsResult` 的 5 個 metric-level blocked reason 使用不同字串（例如 `missing-target-position` vs `missing-target-telemetry`） | FR-54-10 五大類別（overflow/missing target/timestamp/coverage/protocol mismatch）需要具體、封閉、one-shot 定案的字串；兩層 blocked 語意若共用相近字面會讓消費者誤以為是同一件事，README §2.4 本就把兩者定義成不同型別（`TrackingRunEligibility` vs `TrackingDynamicsResult`） | ✅ Confirmed（T4 slice 1/6，2026-09-02） |
+| D-54.19 | `T4` 新檔落在 `src/pilot/` 目錄下多個檔案（`trackingRunEligibility.ts` 起頭，compatibility key/evidence/report 陸續加入），而非全部塞進 README §2.2 規劃的單一 `trackingPilotEvidence.ts` | README §2.2 只是 T0 時期的落點候選，T4 實際範圍（run-level eligibility + WP-54 專屬 compatibility key + JSON evidence model + 自足 HTML report）遠比 WP-52 `peekClickTransferPilotEvidence.ts`（81 行純聚合）大；拆檔維持單一職責、可個別測試，同目錄慣例（`src/pilot/`）不變 | ✅ Confirmed（T4 slice 1/6，2026-09-02） |
 | D-54.17 | Smoothing kernel 版本化為封閉字串表（`tracking-dynamics-smoothing-v1-none` identity / `tracking-dynamics-smoothing-v1-tri3` 對稱三點三角 FIR),未知字串 fail fast | D-54.5 要求「離線固定係數平滑,`smoothingVersion` 版本化」——用封閉 registry + fail-fast 而非允許任意係數陣列,對齊本專案既有「未知 version/kind 必須 fail fast」紀律（`trackingTrajectory.ts` 前例);truth fixture 預設用 `-none`（保持結果可精確追溯到合成訊號本身,不被平滑掩蓋),另加一個 `-tri3` 案例證明有實際套用平滑且不崩潰 | ✅ Confirmed（T3,2026-09-02） |
 
 ## Open Questions

@@ -81,7 +81,7 @@
 
 ## T4 — Eligibility/evidence/report
 
-- [ ] 定義 closed `TrackingQualityReason` vocabulary。
+- [x] 定義 closed `TrackingQualityReason` vocabulary（`src/pilot/trackingRunEligibility.ts`，T4 slice 1/6）。
 - [ ] 在 metrics 聚合前判定 schema/manifest/version、overflow、timestamp、missing target、coverage、protocol compatibility。
 - [ ] 實作 run-level 與 metric-level eligibility；P1 blocked 不刪除仍有效的 P0。
 - [ ] 定義 compatibility fields：drill、protocol、motion、size、speed、FOV、sensitivity、input mode。
