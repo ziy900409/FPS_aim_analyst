@@ -2,11 +2,26 @@
 
 ## Status
 
-- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0 完成、T1 待開工（2026-09-02）。
-- **Scope state**：WP-52 pilot v2 adjustment 已交付；WP-53 formal `peek_click_transfer_v1` release 已完成 T0~T5 與 T-exit；WP-54 tracking pilot 已正式納入 stage11，T0 entry gate/preregistration 完成。
-- **Dependency state**：WP-52 T-exit、WP-53 formal freeze、stage10 history/trend contract、formal Session Plan integration、focused E2E 與 docs sync 全數完成（M19）。WP-54 T0 依賴的 legacy tracking baseline（103 tests）綠燈、OQ-54-1~8 preregistration 凍結、CodeGraph impact 記錄完成（M20）。
+- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0/T1/T2 完成、T3 待開工（2026-09-02）。
+- **Scope state**：WP-52 pilot v2 adjustment 已交付；WP-53 formal `peek_click_transfer_v1` release 已完成 T0~T5 與 T-exit；WP-54 tracking pilot 已正式納入 stage11，T0/T1/T2 完成。
+- **Dependency state**：WP-52 T-exit、WP-53 formal freeze、stage10 history/trend contract、formal Session Plan integration、focused E2E 與 docs sync 全數完成（M19）。WP-54 T0 依賴的 legacy tracking baseline（103 tests）綠燈、OQ-54-1~8 preregistration 凍結、CodeGraph impact 記錄完成；T1 deterministic trajectory kernel + export contract 交付；T2 pilot drill matrix（practice/calibration/core 2×2/reversal density）+ no-fire/no-ADS/no-movement protocol guard 交付，全程 legacy tracking regression 保持綠燈（M20）。
 
 ## Progress
+
+### 2026-09-02 — WP-54 T1/T2 完成（詳見 [wp-54-tracking-pilot/progress.md](wp-54-tracking-pilot/progress.md)）
+
+- T1：`src/sim/trackingTrajectory.ts` 新增 `band-limited-2d-v1`（seeded band-limited pursuit）與
+  `reversal-2d-v1`（finite-acceleration random reversal）trajectory kernel + `projectTrackingAngles()`
+  角度轉世界座標投影 + additive `target_motion_change` export event（parse 側）。
+- T2：additive `DrillConfig.targets.trackingTrajectory`/`timing.trackingPrepMs`/`protocolGuard` 契約
+  （schema 驗證 + clearance envelope 展開）；`TargetManager` trajectory drive + `scored_start`/
+  `target_motion_change` producer；`DrillRunner.tickProtocolGuard`（no-fire/no-ADS/no-movement
+  edge-triggered、不阻擋輸入）；export metadata opaque pass-through；9 個實際 pilot block config
+  （`src/drill/tracking_core_pr_pilot_v1.ts`、`tracking_reversal_pilot_v1.ts`）。
+- 全程未修改任何既有 legacy drill 行為（`tracking_v1`/`_longrange_v1`/`_br_v1` 等）；每個 slice 完成
+  後全專案 `npx vitest run` 保持綠燈。`graphify update .`/`codegraph sync .` 已於 T2 收尾執行。
+- T3（canonical P0/P1 metrics/truth fixtures）待開工，依賴 T2 交付的 `scored_start`/
+  `target_motion_change`/`protocol_violation` events 與 trajectory config 的 export round-trip。
 
 ### 2026-09-02 — WP-54 T0 entry gate/scope freeze/preregistration
 

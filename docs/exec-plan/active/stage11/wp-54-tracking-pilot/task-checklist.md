@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | [x] | **T0** Entry gate/scope freeze/preregistration | 凍結 stage scope、OQ、metric protocol、blast radius 與 baseline evidence | 使用者確認 WP-54 是否納入 stage11 | High |
 | [x] | **T1** Deterministic trajectory kernel/export contract | 新增 2D pseudorandom 與 finite-acceleration reversal generator | T0 | High |
-| [ ] | **T2** Pilot drill matrix/protocol guards | 新增 practice、axis calibration、core 2 x 2、reactive blocks 與 no-fire/no-ADS/no-movement guard | T1 | High |
+| [x] | **T2** Pilot drill matrix/protocol guards | 新增 practice、axis calibration、core 2 x 2、reactive blocks 與 no-fire/no-ADS/no-movement guard | T1 | High |
 | [ ] | **T3** Canonical P0/P1 metrics/truth fixtures | 推導 acquisition、RMS/TOT、lag/gain、drop/reacquire、reversal response | T2 | High |
 | [ ] | **T4** Eligibility/evidence/report | 建立 quality reason vocabulary、compatibility、deterministic JSON/HTML evidence | T3 | High |
 | [ ] | **T5** Researcher manifest/operator flow | 支援 counterbalance、rest、retry reason、session index 與 keyboard flow | T2/T4 | Med |

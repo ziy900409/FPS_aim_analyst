@@ -4,7 +4,7 @@
 >
 > Source proposal：[../wp-54-tracking-pilot-execution-plan.md](../wp-54-tracking-pilot-execution-plan.md)。本文件依 `.claude/skills/engineering-planning/SKILL.md`、`references/design_standards.md`、`assets/tech_spec_template.md` 與 WP-51 的 work-package 格式整理。
 >
-> **狀態：✅ 已正式納入 stage11（2026-09-02，T0 entry gate/scope freeze/preregistration 完成）。** stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md) 已同步接受 WP-54；本 WP 進入 M20，T1 待開工。
+> **狀態：✅ 已正式納入 stage11（2026-09-02，T0 entry gate/scope freeze/preregistration 完成）。** stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md) 已同步接受 WP-54；本 WP 進入 M20，T0/T1/T2 完成，T3（canonical P0/P1 metrics/truth fixtures）待開工。
 
 | | |
 |---|---|
@@ -129,6 +129,26 @@ src/session/trackingPilotManifest.ts                  NEW researcher manifest/co
 docs/operational/analysis-tracking.md                 MODIFY formula/version/evidence contract
 docs/operational/tracking-pilot-runbook.md            NEW operator/researcher runbook
 ```
+
+**T1/T2 actual additive touch points**（讀碼後實況，補充上表未列出的落點；詳細設計理由見 [progress.md](progress.md) T1/T2 各 slice 條目）：
+
+```text
+src/drill/DrillConfig.ts        MODIFY additive targets.trackingTrajectory / timing.trackingPrepMs / protocolGuard
+src/drill/schema.ts             MODIFY validateTrackingTrajectory / validateProtocolGuard / requireAscendingRange
+src/scene/clearance.ts          MODIFY additive expandForTrackingTrajectory envelope expansion
+src/sim/TargetManager.ts        MODIFY additive trackingTrajectory drive branch (isDrivenMotion 分支之前提早 continue)
+src/state/SharedState.ts        MODIFY additive tScoredStart / targetMotionChanges / protocolViolations queues
+src/loop/SimLoop.ts             MODIFY additive recordScoredStartEvents / recordTargetMotionChangeEvents / recordProtocolViolationEvents
+src/drill/DrillRunner.ts        MODIFY additive tickProtocolGuard（running 相位、tickHoldReversal 之後）
+src/data/DataRecorder.ts        MODIFY additive scored_start / protocol_violation DrillEvent members
+src/data/metadata.ts            MODIFY additive SpawnMeta.trackingTrajectory（opaque）/ trackingPrepMs
+src/main.ts、src/testharness/fpsTestHarness.ts   MODIFY spawn meta 區塊帶出 trackingTrajectory/trackingPrepMs
+```
+
+未落地的原規劃項目（T3+ 待辦，非本次遺漏）：`src/metrics/trackingDynamics.ts`、
+`src/pilot/trackingPilotEvidence.ts`、`src/session/trackingPilotManifest.ts`、
+`docs/operational/analysis-tracking.md`、`docs/operational/tracking-pilot-runbook.md` ——
+分別對應 T3（metrics）、T4（evidence）、T5（manifest/runbook），照原計畫排程，非本 T1/T2 範圍。
 
 ### 2.3 Data Flow
 

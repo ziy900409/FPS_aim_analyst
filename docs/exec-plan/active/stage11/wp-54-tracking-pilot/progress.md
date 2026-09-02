@@ -2,11 +2,44 @@
 
 ## Status
 
-- **Current**：✅ T0、T1 完成（2026-09-02）；T2（pilot drill matrix/protocol guards）進行中。
+- **Current**：✅ T0、T1、T2 完成（2026-09-02）；T3（canonical P0/P1 metrics/truth fixtures）待開工。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T2 slice 6/6：graphify update + 文件收尾（T2 完成）
+
+- `graphify update .`：3909 nodes / 9263 edges / 242 communities 重建（`graphify-out/GRAPH_REPORT.md`/
+  `graph.html`/`graph.json`/`manifest.json` 同步）。
+- `codegraph sync .`：索引已是最新（無 pending）。
+- README §2.2 新增「T1/T2 actual additive touch points」段落，補上讀碼後實際觸碰但原規劃表未列出的
+  10 個檔案（`DrillConfig.ts`/`schema.ts`/`clearance.ts`/`TargetManager.ts`/`SharedState.ts`/
+  `SimLoop.ts`/`DrillRunner.ts`/`DataRecorder.ts`/`metadata.ts`/`main.ts`+`fpsTestHarness.ts`），並
+  註記原規劃裡尚未落地的 T3+ 項目（`trackingDynamics.ts`/`trackingPilotEvidence.ts`/
+  `trackingPilotManifest.ts`/`analysis-tracking.md`/`tracking-pilot-runbook.md`）非本次遺漏、依排程
+  屬 T3-T5。README 狀態列、stage11 母檔（README/task-checklist/progress，見 2026-09-02 條目）與本
+  package 的 `task-checklist.md` 同步翻 T2 ✅。
+- 最終全專案 regression（slice 5 收尾時已跑過，此處為 graphify/codegraph 同步後的確認性重跑）：
+  `npx tsc --noEmit` exit 0；`npx vitest run` 193 files / 1825 tests passed（2 skipped），無回歸。
+- **T2 總結**：6 個 slice、每片各自 atomic commit（見上方 slice 1-5 條目）。交付：additive
+  `DrillConfig.targets.trackingTrajectory`/`timing.trackingPrepMs`/`protocolGuard` 契約 + schema 驗證 +
+  clearance envelope 展開（slice 1）；`TargetManager` trajectory drive + `scored_start`/
+  `target_motion_change` producer（slice 2）；no-fire/no-ADS/no-movement edge-triggered guard（slice 3）；
+  export metadata opaque pass-through（slice 4）；9 個實際 pilot block config（1 practice + 2
+  calibration + 4 core matrix + 2 reversal density，slice 5）。全程未修改任何既有 legacy drill 行為
+  （`tracking_v1`/`_longrange_v1`/`_br_v1` 等 legacy regression 全程保持綠燈，逐 slice 驗證）。
+- **遺留給後續 T 的已知缺口**（非本 T2 範圍，記錄供 T3+ 讀碼時參考）：
+  1. `DrillConfig.timing.trackingStopMs`（hold-track-v1 用）與 `trackingTrajectory` 未加 schema 層互斥
+     guard——語意上不相容（trackingStopMs 會凍結目標並解鎖開火，與連續 tracking pursuit 矛盾），但
+     TargetManager 的 trajectory drive 分支在 legacy motion 分支之前提早 `continue`，即使兩者誤同時
+     設定，trajectory drive 仍會贏、不會 crash。不影響任何已交付 block（皆未設定 trackingStopMs）。
+  2. protocolGuard 的「movement」偵測讀 `state.held.left`/`state.held.right`（按鍵狀態），非
+     `state.player.vx`（實際速度）——按鍵按下但因 friction/accelerate 尚未產生位移的情形仍會被記為
+     violation，符合「偵測輸入意圖」的既定語意（FR-54 原文「no-movement」對應按鍵層級，非速度層級）。
+  3. 尚未有任何地方（main.ts UI/researcher runner）實際載入本 T2 交付的 9 個 pilot block——T2 checklist
+     的 DoD 是「configs 可 load/complete/rebuild」，不要求 UI 註冊；researcher-mode 排程/操作流程是
+     T5（Researcher manifest/operator flow）範圍。
 
 ### 2026-09-02 — T2 slice 5/6：pilot block config 檔案（practice/calibration/core 2×2/reversal density）
 
