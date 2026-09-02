@@ -2,11 +2,23 @@
 
 ## Status
 
-- **Current**：✅ T0 entry gate/scope freeze/preregistration 完成（2026-09-02）；T1（deterministic trajectory kernel）待開工。
+- **Current**：✅ T0 完成（2026-09-02）；🟡 T1 進行中——trajectory kernel（`band-limited-2d-v1`／`reversal-2d-v1`）已交付並綠燈，`target_motion_change` export event 與 angular-to-world projection 待下一 slice。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T1 slice 1/2：deterministic trajectory kernel（`src/sim/trackingTrajectory.ts`）
+
+- 新增 `createTrackingTrajectory(config)`，涵蓋 README §2.4 兩種 kind：
+  - `band-limited-2d-v1`：5 個對數等距頻率分量的 sum-of-sinusoids pursuit，係數在建構時一次解出（速度 RMS 目標 vs. 位置邊界安全兩個縮放係數取 min——邊界安全恆優先）；`sample(ageSec, out)` 之後只是純函式求值，無 `changes`（連續 pursuit，無離散事件）。
+  - `reversal-2d-v1`：**設計歷經一次返工**——原設計讓新 leg 直接沿用上一個 leg 的巡航速度做 ramp（`v(0)=前一 leg 終速`），實測（`toBeGreaterThanOrEqual(lowDeg)` 失敗，`-8.0148` 越界）發現：leg 邊界的殘留速度仍指向舊方向（撞牆方向），ramp 前段會先繼續衝向牆、超過已用完的房間才回頭。改為**每個 leg 靜止到靜止**（ramp-up 0→cruise、cruise、ramp-down cruise→0）的梯形/三角形速度剖面：leg 邊界恆是速度歸零瞬間，房間不足以跑完整趟 ramp 時，用同一個加速度 `magnitude/rampNominalSec`（不升高）反推可達到的較低峰值速度（三角形分支）。此設計讓「位置不越界」變成解析可證的建構期保證，不需要 runtime clamp。見本檔 D-54.12。
+  - `createTrackingTrajectory()` 對未知 `kind` runtime fail fast（README §2.4「Unknown trajectory kind/version ... 必須 fail fast」）。
+- 新增 `src/sim/trackingTrajectory.test.ts`（30 tests）：bounds sweep、finite-acceleration 上界、change-event 連續性/before-after 一致性、60/120/240 Hz pump-cadence 等價（純函式 age 求值，天然滿足決定性）、reset reproducibility、不同 seed 產生不同結果、config fail-fast（非有限 seed、非正 duration、非遞增 range、ramp ≥ min interval 等）。
+- Legacy tracking baseline 重跑：11 檔（`targetMotion`/`TargetManager`/`tracking_v1`/`_longrange_v1`/`_br_v1`/`_scene_v1` 等）103 tests 全綠，`trackingTrajectory.ts` 為全新獨立檔案、未改動任何既有 symbol，snapshot 無 semantic diff。
+- `npx tsc --noEmit` exit 0；`npx vitest run` 全專案 191 files / 1755 tests passed（2 skipped），無既有測試回歸。
+- 尚未完成（下一個 T1 slice）：angular-to-world projection（yaw/pitch → `TargetState.pos`，留到 T2 wiring 進 `TargetManager`/pilot drill config 時一併做）、additive `target_motion_change` export event 與 `exportPayloadSchema.ts` round-trip。
+- production code 有變動，但 `trackingTrajectory.ts`/`.test.ts` 尚未被任何既有模組 import（純新增、未接線），暫緩 `graphify update .` 到 T1 完整收尾（含 export event wiring）一次做，避免中途 partial graph 產生誤導性節點。
 
 ### 2026-09-02 — T0 Entry gate/scope freeze/preregistration
 
@@ -50,6 +62,7 @@
 | D-54.9 | Primary outcome = 每 condition 合併 eligible pursuit ticks 的 `RMS(epsilon)`（deg） | 原始 WP-54 proposal 已預註冊；本次 T0 只是重申並鎖定，不重新評估 | ✅ Confirmed（承襲既有預註冊） |
 | D-54.10 | Metric version = `tracking-dynamics-v1`；trajectory version = `band-limited-2d-v1`（pursuit）/ `reversal-2d-v1`（reactive） | 沿用 README §2.4 interface 命名，作為 T1/T3 實作時的版本字串來源 | ✅ Confirmed |
 | D-54.11 | Pilot protocol version = `tracking-pilot-v1` | 沿用 README §2.4 `TrackingPilotManifest.protocolVersion` 命名 | ✅ Confirmed |
+| D-54.12 | `reversal-2d-v1` 採「每個 leg 靜止到靜止」（v(leg start)=v(leg end)=0）的梯形/三角形速度剖面，而非「新 leg 沿用前一 leg 巡航速度做 ramp」 | 後者在 T1 test（bounds sweep）發現會越界（`-8.0148` vs `-8` 下界）——leg 邊界殘留速度仍指向舊方向，ramp 前段先繼續衝向牆才回頭；前者讓邊界安全變成解析可證的建構期保證，不需 runtime clamp，`changes` 語意改為「前一穩態巡航速度 → 本 leg 穩態巡航速度」而非「瞬時速度」（leg 邊界瞬時速度恆為 0） | ✅ Confirmed（T1 slice 1/2，2026-09-02） |
 
 ## Open Questions
 
@@ -69,4 +82,7 @@
 | 2026-09-02 | `mcp__codegraph__codegraph_explore`（`DrillMetricRegistry`/`HistoryTrend`/`compatibilityKey`/tracking drill ids） | 確認 `tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` 未註冊於 `DrillMetricRegistry`，無既有 formal history/trend 路徑 |
 | 2026-09-02 | `git log -1 --format=%cI -- graphify-out/GRAPH_REPORT.md` vs `git log -1 --format=%cI HEAD` | 兩者時間戳相同（2026-09-02T09:11:49+02:00），graphify 視為新鮮 |
 | 2026-09-02 | `npx vitest run`（11 個既有 tracking 相關檔案，見上方 Progress「Legacy tracking baseline」） | 103/103 tests passed，記錄為 baseline，非 gate |
+| 2026-09-02 | T1 slice 1/2：`npx vitest run src/sim/trackingTrajectory.test.ts` | 30/30 passed（首次執行 4 個 reversal 相關測試失敗，觸發 D-54.12 返工，改版後全綠） |
+| 2026-09-02 | T1 slice 1/2：`npx tsc --noEmit` | exit 0 |
+| 2026-09-02 | T1 slice 1/2：`npx vitest run`（全專案） | 191 files / 1755 tests passed（2 skipped），無回歸 |
 

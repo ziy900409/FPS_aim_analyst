@@ -7,7 +7,7 @@
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
 | [x] | **T0** Entry gate/scope freeze/preregistration | 凍結 stage scope、OQ、metric protocol、blast radius 與 baseline evidence | 使用者確認 WP-54 是否納入 stage11 | High |
-| [ ] | **T1** Deterministic trajectory kernel/export contract | 新增 2D pseudorandom 與 finite-acceleration reversal generator | T0 | High |
+| [-] | **T1** Deterministic trajectory kernel/export contract | 新增 2D pseudorandom 與 finite-acceleration reversal generator | T0 | High |
 | [ ] | **T2** Pilot drill matrix/protocol guards | 新增 practice、axis calibration、core 2 x 2、reactive blocks 與 no-fire/no-ADS/no-movement guard | T1 | High |
 | [ ] | **T3** Canonical P0/P1 metrics/truth fixtures | 推導 acquisition、RMS/TOT、lag/gain、drop/reacquire、reversal response | T2 | High |
 | [ ] | **T4** Eligibility/evidence/report | 建立 quality reason vocabulary、compatibility、deterministic JSON/HTML evidence | T3 | High |
@@ -29,14 +29,15 @@
 
 ## T1 — Deterministic trajectory kernel/export contract
 
-- [ ] 實作 band-limited 2D trajectory config validation。
-- [ ] 實作 finite-acceleration reversal trajectory 與 precomputed change schedule。
-- [ ] 實作 angular-to-world projection，且 position/velocity 僅依 `(config, seed, age)`。
-- [ ] motion 熱路徑使用 caller-owned buffer，不在每 tick 配置新物件。
-- [ ] 新增 additive `target_motion_change` export event 與 schema parse/serialize round-trip。
-- [ ] 建立 continuity、bounds、speed statistics、event crossing、reset reproducibility tests。
-- [ ] 建立 60/120/240 Hz pump determinism tests。
-- [ ] 確認 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1` snapshot 無 semantic diff。
+- [x] 實作 band-limited 2D trajectory config validation（`src/sim/trackingTrajectory.ts` `createTrackingTrajectory` / `band-limited-2d-v1`）。
+- [x] 實作 finite-acceleration reversal trajectory 與 precomputed change schedule（`reversal-2d-v1`，rest-to-rest trapezoid legs，`changes` 陣列）。
+- [x] position/velocity 僅依 `(config, seed, age)`（`sample(ageSec, out)` 純函式；建構時一次性算出係數/schedule）。
+- [ ] 實作 angular-to-world projection（yaw/pitch → `TargetState.pos` world 座標）——留待 T2 wiring 進 `TargetManager`/pilot drill config 時一併做，本 slice 只交付角度/角速度層。
+- [x] motion 熱路徑使用 caller-owned buffer，不在每 tick 配置新物件（`sample()` 只寫入呼叫端 `out`；construction-time 才配置係數/schedule 陣列）。
+- [ ] 新增 additive `target_motion_change` export event 與 schema parse/serialize round-trip——下一個 T1 slice。
+- [x] 建立 continuity、bounds、speed statistics、event crossing、reset reproducibility tests（`src/sim/trackingTrajectory.test.ts`，30 tests）。
+- [x] 建立 60/120/240 Hz pump determinism tests（純函式 age 求值 pump-cadence-equivalence tests）。
+- [x] 確認 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1` snapshot 無 semantic diff（11 檔 103 tests 全綠，見 progress.md）。
 
 ## T2 — Pilot drill matrix/protocol guards
 
