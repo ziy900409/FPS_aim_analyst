@@ -2,9 +2,9 @@
 
 ## Status
 
-- **Current**：✅ T0~T4 完成（2026-09-01）。T0 formal freeze 已拍板（見全域 [DECISIONS.md GD-29](../../../DECISIONS.md)），T1~T3 的 provisional 骨架已轉為正式凍結值，T4 formal Session Plan 整合已落地。T5（E2E acceptance）尚未開工。
-- **Scope state**：根據 WP-52 evidence（人工 checklist + 3 場真人 `peek_click_transfer_pilot_v2_masked` session）新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。凍結值：`protocolVersion=peek-click-transfer-v1.0.0`、`angularSizeDeg=2.5`、`distanceU=8`、`targetCount=20`，timing/visibility 沿用 pilot v1/v2 既有值。formal 現可透過新 Session Plan 家族 `'peek-click-transfer-v1'`（獨立於 pilot 的 `'peek-click-transfer'`）被選取並跑起來，即時 export 也會帶正確的 `meta.assessment.protocolVersion`。
-- **Dependency state**：T0~T4 已完成。T5 需要 E2E 驗收（formal transfer run 完成 → auto-save → history → trend），待後續切片；上一輪已標記的「無 SimLoop 驅動的真人手感 round-runner」缺口仍未解，會限制 T5 能驗到多深（見下方 T4 條目與先前 T3 條目的「已知缺口」）。
+- **Current**：✅ T0~T5 完成（2026-09-01）。T0 formal freeze 已拍板（見全域 [DECISIONS.md GD-29](../../../DECISIONS.md)），T1~T3 的 provisional 骨架已轉為正式凍結值，T4 formal Session Plan 整合已落地，T5 E2E acceptance 已完成。只剩 T-exit（文件同步收尾）。
+- **Scope state**：根據 WP-52 evidence（人工 checklist + 3 場真人 `peek_click_transfer_pilot_v2_masked` session）新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。凍結值：`protocolVersion=peek-click-transfer-v1.0.0`、`angularSizeDeg=2.5`、`distanceU=8`、`targetCount=20`，timing/visibility 沿用 pilot v1/v2 既有值。formal 現可透過新 Session Plan 家族 `'peek-click-transfer-v1'`（獨立於 pilot 的 `'peek-click-transfer'`）被選取並跑起來，即時 export 也會帶正確的 `meta.assessment.protocolVersion`，且已由真實 E2E（真的跑到 `ended`、真的存進 history、真的算出 trend）驗證。
+- **Dependency state**：T0~T5 已完成。先前標記的「無 SimLoop 驅動的真人手感 round-runner」缺口在 T5 實測後證實不成立——既有 `runCounterStrafeRound()` 對 `peek-ad-corridor-v1` 真實遮蔽幾何一樣能跑出真實命中，見下方 T5 條目。剩 T-exit：docs/MAP.md、exec-plan/README.md 同步 + staged file audit。
 
 ## Progress
 
@@ -73,6 +73,17 @@
 - **仍未做**：真正的真人手感/pointer-lock round-runner（比照 `runCounterStrafeRound`）——formal transfer 目前沒有專屬的 harness round-runner 能跑到真正 `ended`，這是 T5（E2E）動工時要面對的既有缺口（同一件事也擋掉了 T3 的數值投影測試）。
 - Verification：`npx tsc --noEmit` 全專案乾淨；`npx vitest run` 190 files / 1725 tests passed（1 skipped，既有）；`npx playwright test` 78/78 passed；`graphify update .` 完成（3854 nodes / 9095 edges / 236 communities）。
 
+### 2026-09-01 — T5 E2E acceptance and regression
+
+- **上一輪標記的「已知缺口」證實不成立**：在寫真正的 E2E 前，先用一次性 probe 腳本手動驗證 `harness.startDrill('peek_click_transfer_v1'); harness.runCounterStrafeRound()` 是否對 `peek-ad-corridor-v1` 真實遮蔽幾何也能跑出真實命中——結果：完整跑到 `ended`,20/20 目標擊殺（26 發中 20 命中）,`visible`/`counter`/`fire` 事件皆為真實產生,非合成捷徑。`runCounterStrafeRound()` 是既有的家族無關泛用 round-runner（原為 counterstrafe-reversal-v1/counterstrafe-free-v1 而寫),因為 `peek_click_transfer_v1` 的 `cue:{kind:'single'}` + L/R 交替機制與 counterstrafe 家族共用同一套 `TargetManager`/`DrillRunner` 底層,所以直接可用,不需要另建專屬 round-runner。probe 腳本用完即刪,未留痕於 repo。
+- 新增 [tests/e2e/peek-click-transfer-v1-formal.spec.ts](../../../../tests/e2e/peek-click-transfer-v1-formal.spec.ts)（獨立新檔,不塞進既有的 `history-library.spec.ts`/`stage10-assessment.spec.ts`,比照這兩份檔案本身「一個 drill/journey 一個檔」的既有慣例）三個測試：
+  1. 完整 formal transfer run（`runCounterStrafeRound()` 跑到真 `ended`）→ `showResultAndSaveToHistory` 真存 → History 裡搜到 exact-id `peek_click_transfer_v1` 卡片。
+  2. 兩場真實 formal run（`saveToHistory`,同樣先跑 `runCounterStrafeRound()` 取得真實資料再存)→ drill trend 顯示 metric selector + `已載入 2／2 筆` + trend chart（primary metric 來自真實命中資料,非合成占位)。
+  3. FR-53-6 隔離,兩部分：①一場「真」practice pilot run(未加 assessment override)→ 直接被既有 practice-only guard 排除(`kind:'excluded', reason:'practice'`),連 API 都沒呼叫;②即使用同一個 harness escape hatch **強制** pilot run 帶 `assessment:true`(比照 `history-library.spec.ts` 拿 spider-shot-v1 當「未註冊 drill」的手法),同一 participant 下 formal 與 pilot 仍是兩張分開的 drill 卡片、pilot trend 仍顯示「尚未註冊歷史指標」——證明即使被刻意逼進 Assessment history,cohort 隔離仍然成立,不只是「pilot 本來就不會被存」這麼淺層的保證。
+- 踩坑記錄（比對按鈕文字時）：History 的 drill 卡片 accessible name 其實是 `"peek_click_transfer_v1 2 runs・最近 ..."`（含 run 數與日期),不是裸的 drill id——用 `^${id}$` 完全匹配的 regex 會找不到按鈕。改回沿用既有測試檔案一貫的做法：不加錨點的 substring regex（`new RegExp(id)`)。因為 `'peek_click_transfer_v1'` 不是任何 `'peek_click_transfer_pilot_*'` id 的子字串,不加錨點一樣不會誤配對到 pilot cohort。
+- **環境事故與修正**：本輪 probe 時手動跑了一個 `npm run dev`(未帶 Playwright 的 `webServer` 設定),殘留在背景。之後所有 `npx playwright test` 呼叫因為 `reuseExistingServer:true`(非 CI)沿用了這個「野生」dev server,而它沒有 `FPS_HISTORY_ROOT=.playwright-tmp/history-dev` 環境變數——導致整輪測試(含既有、非本次新增的測試)把 fixture 資料寫進了**真正的研究資料目錄** `data/session-history/`,違反該目錄自己 README.md 明文的 NFR-48.6(「測試一律使用獨立 temporary root,不得讀寫此目錄」)。診斷過程一度誤判為「pre-existing 平行測試 flake」(`stage10-failure-recovery.spec.ts` 的 sentinel 測試因此假性失敗),用 `Stop-Process` 關掉野生 server、讓 Playwright 自己重新啟一個帶正確 env 的乾淨 server 後,同一份測試全綠,確認是環境問題而非程式碼回歸。**`data/session-history/` 目前殘留本輪與更早測試的污染資料(test-title/uuid 命名的資料夾)**——因為該目錄依規範只能放真人研究資料,不是本檔可以自行清理的範圍,已另外知會使用者處理,不在此 WP 的 commit 範圍內。
+- Verification：`npx tsc --noEmit` 全專案乾淨；`npx vitest run` 190 files / 1725 tests passed（1 skipped，既有）；`npx playwright test`（乾淨 server,`.playwright-tmp/history-dev` 隔離 root）81/81 passed；`graphify update .` 完成（3859 nodes / 9099 edges / 254 communities）。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
@@ -116,3 +127,7 @@
 | 2026-09-01 | `npx vitest run`（T4 後，全專案） | 190 files / 1725 tests passed（1 skipped，既有） |
 | 2026-09-01 | `npx playwright test`（T4 後，全 E2E） | 78/78 passed |
 | 2026-09-01 | `graphify update .`（T4 後） | 3854 nodes / 9095 edges / 236 communities rebuilt |
+| 2026-09-01 | `npx tsc --noEmit`（T5 後） | exit 0（全專案） |
+| 2026-09-01 | `npx vitest run`（T5 後，全專案） | 190 files / 1725 tests passed（1 skipped，既有） |
+| 2026-09-01 | `npx playwright test`（T5 後，乾淨 server + 隔離 history root） | 81/81 passed |
+| 2026-09-01 | `graphify update .`（T5 後） | 3859 nodes / 9099 edges / 254 communities rebuilt |

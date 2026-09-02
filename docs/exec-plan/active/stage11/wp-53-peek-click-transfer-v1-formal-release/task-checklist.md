@@ -9,6 +9,8 @@
 > **2026-09-01（同日，第三輪）**：使用者提供 3 場真人 `peek_click_transfer_pilot_v2_masked` session 匯出，並確認 WP-52 T4 manual checklist 已逐項走查完成（見 [wp-52 T4-manual-pilot-gate.md](../wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」）。使用者在被告知「n=1 是 smoke test，非 population-level pilot sample」的限制後，明確拍板 n=1 對本次 WP-53 T0 已足夠（OQ-52-4）。**WP-53 go/no-go 由 No-go 改為 Go**，T0 formal freeze 拍板（全域 [DECISIONS.md GD-29](../../../DECISIONS.md)），T1~T3 的 provisional 骨架已轉為正式凍結值——以下 T0/T1/T3 全數 checkbox 回填，T2 除「main.ts 即時組裝 meta.assessment」（等 T4 Session Plan 整合才有實際可跑的 formal run）外回填。T4（Session Plan 整合）與 T5（E2E）仍不在本次範圍。
 >
 > **2026-09-01（同日，第四輪）**：完成 T4 — formal `'peek-click-transfer-v1'` Session Plan 家族、`SessionRunner` 解析、`main.ts` scene/clearance/`meta.assessment.protocolVersion` 佈線全數落地，不改 stage6 default 四家族與 pilot 家族。T2 的「formal run 寫入 `meta.assessment`」隨之補齊，回填。T5（E2E）仍不在本次範圍。
+>
+> **2026-09-01（同日，第五輪）**：完成 T5 — E2E 證實 T3 當時標記的「無真人手感 round-runner」缺口其實不成立：既有 `runCounterStrafeRound()` 對 `peek-ad-corridor-v1` 真實遮蔽幾何一樣能跑出真實命中、真正跑到 `ended`。新增 `tests/e2e/peek-click-transfer-v1-formal.spec.ts` 三個測試涵蓋 DoD 全五項。WP-53 僅剩 T-exit。
 
 ## T0 — Freeze decision gate
 
@@ -40,7 +42,7 @@
 - [x] descriptors 定義 primary/non-primary metrics
 - [x] projection 使用 `derivePeekClickTransferMetrics`
 - [x] pilot ids 不進 formal registry/trend
-- [x] history/trend focused tests 通過（registry 層測試全綠；真正 `status:'ready'` 數值投影測試仍是已知缺口，見 progress.md，留給 T5）
+- [x] history/trend focused tests 通過（registry 層 unit test 全綠；真正 `status:'ready'` 數值投影改由 T5 的真人 E2E 覆蓋，而非在此另補一個手工 fixture 的 unit test——見 T5 條目）
 
 ## T4 — Formal Session Plan integration
 
@@ -52,11 +54,11 @@
 
 ## T5 — E2E acceptance and regression
 
-- [ ] Playwright：formal transfer run 完成並 auto-save
-- [ ] Playwright：history exact drill list 出現 `peek_click_transfer_v1`
-- [ ] Playwright：trend registry 顯示 primary metric
-- [ ] Practice pilot v1/v2 不出現在 history
-- [ ] Stage6 Session Plan regression 通過
+- [x] Playwright：formal transfer run 完成並 auto-save（`runCounterStrafeRound()` 真跑到 `ended`，20/20 命中，`showResultAndSaveToHistory` 真存）
+- [x] Playwright：history exact drill list 出現 `peek_click_transfer_v1`
+- [x] Playwright：trend registry 顯示 primary metric（2 場真實 run，metric selector + trend chart）
+- [x] Practice pilot v1/v2 不出現在 history（真 practice run 被 guard 排除；即使強制帶 assessment override 也不會併入 formal cohort，仍是「尚未註冊」的獨立卡片，FR-53-6）
+- [x] Stage6 Session Plan regression 通過（全 Playwright 套件 81/81，含既有 session-orchestrator/history-library/stage10-* 全數重跑）
 
 ## T-exit
 
