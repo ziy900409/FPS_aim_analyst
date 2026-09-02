@@ -98,6 +98,54 @@ describe('parseExportPayload — positive: every DrillEvent variant', () => {
   it('parses hit', () => {
     expectOk(payloadWithEvents([{ type: 'hit', t: 0, timeOfFlightMs: 15, shotSeq: 1, targetId: 't0', part: 'head' }]));
   });
+
+  it('parses target_motion_change (WP-54 T1)', () => {
+    expectOk(
+      payloadWithEvents([
+        {
+          type: 'target_motion_change',
+          targetId: 't0',
+          t: 400,
+          yawVelocityBeforeDegPerSec: 12.5,
+          yawVelocityAfterDegPerSec: -12.5,
+          pitchVelocityBeforeDegPerSec: -6,
+          pitchVelocityAfterDegPerSec: 6,
+        },
+      ]),
+    );
+  });
+});
+
+describe('parseExportPayload — target_motion_change round trip (WP-54 T1)', () => {
+  it('round-trips through canonicalExportJSON with every field preserved', () => {
+    const event = {
+      type: 'target_motion_change' as const,
+      targetId: 't0',
+      t: 400,
+      yawVelocityBeforeDegPerSec: 12.5,
+      yawVelocityAfterDegPerSec: -12.5,
+      pitchVelocityBeforeDegPerSec: -6,
+      pitchVelocityAfterDegPerSec: 6,
+    };
+    const parsed = parseExportPayload(payloadWithEvents([event]));
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    const canonical = JSON.parse(canonicalExportJSON(parsed.payload)) as { events: unknown[] };
+    expect(canonical.events).toEqual([event]);
+
+    const reparsed = parseExportPayload(JSON.parse(canonicalExportJSON(parsed.payload)));
+    if (!reparsed.ok) throw new Error(`expected ok on reparse, got errors: ${JSON.stringify(reparsed.errors)}`);
+    expect(reparsed.payload.events).toEqual(parsed.payload.events);
+  });
+
+  it.each([
+    ['missing targetId', { type: 'target_motion_change', t: 0, yawVelocityBeforeDegPerSec: 0, yawVelocityAfterDegPerSec: 0, pitchVelocityBeforeDegPerSec: 0, pitchVelocityAfterDegPerSec: 0 }],
+    ['missing t', { type: 'target_motion_change', targetId: 't0', yawVelocityBeforeDegPerSec: 0, yawVelocityAfterDegPerSec: 0, pitchVelocityBeforeDegPerSec: 0, pitchVelocityAfterDegPerSec: 0 }],
+    ['non-finite yaw velocity', { type: 'target_motion_change', targetId: 't0', t: 0, yawVelocityBeforeDegPerSec: Number.NaN, yawVelocityAfterDegPerSec: 0, pitchVelocityBeforeDegPerSec: 0, pitchVelocityAfterDegPerSec: 0 }],
+    ['missing pitchVelocityAfterDegPerSec', { type: 'target_motion_change', targetId: 't0', t: 0, yawVelocityBeforeDegPerSec: 0, yawVelocityAfterDegPerSec: 0, pitchVelocityBeforeDegPerSec: 0 }],
+  ])('fails fast on %s', (_label, event) => {
+    const result = parseExportPayload(payloadWithEvents([event]));
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe('parseExportPayload — WP-50 additive replay fields', () => {

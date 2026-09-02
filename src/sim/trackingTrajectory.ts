@@ -1,4 +1,5 @@
 import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
+import type { Vec3 } from '../state/types.ts';
 
 /**
  * trackingTrajectory — WP-54 / T1（README §2.2/§2.4 interface contract）
@@ -410,4 +411,37 @@ function createReversal2dV1(
       out.pitchVelocityDegPerSec = state.pitchVelocityDegPerSec;
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Angular-to-world projection (README §2.2 T1 line item)
+// ---------------------------------------------------------------------------
+
+const DEG_TO_RAD = Math.PI / 180;
+
+/** 目標所在的視線/走廊幾何：與既有 `TargetManager` 的 `centerDistanceU`/`TARGET_Y` 慣例同語意
+ * （yaw=pitch=0 時目標落在 `(0, centerY, -distanceU)`），但刻意獨立宣告——這是 trajectory 幾何的
+ * 純輸入，不依賴 `TargetManager` 內部常數，維持本檔零場景依賴（GD-6）。 */
+export interface TrackingProjectionOrigin {
+  readonly distanceU: number; // 視線深度（u）
+  readonly centerY: number; //  視線高度（u）
+}
+
+/**
+ * 把 `sample()` 產出的 `(yawDeg, pitchDeg)` 投影成世界座標（就地寫入 `out`，GC 紀律）。純函式：
+ * 只依 `(yawDeg, pitchDeg, origin)`，不讀場景/時鐘/RNG。yaw 繞垂直軸（水平面內），pitch 繞水平軸
+ * （抬頭/低頭）；`yaw=pitch=0` 時輸出恰為 `(0, centerY, -distanceU)`，與既有 sightline 慣例一致。
+ */
+export function projectTrackingAngles(
+  yawDeg: number,
+  pitchDeg: number,
+  origin: TrackingProjectionOrigin,
+  out: Vec3,
+): void {
+  const yawRad = yawDeg * DEG_TO_RAD;
+  const pitchRad = pitchDeg * DEG_TO_RAD;
+  const cosPitch = Math.cos(pitchRad);
+  out.x = origin.distanceU * cosPitch * Math.sin(yawRad);
+  out.y = origin.centerY + origin.distanceU * Math.sin(pitchRad);
+  out.z = -origin.distanceU * cosPitch * Math.cos(yawRad);
 }

@@ -66,6 +66,21 @@ export type DrillEvent =
       shotSeq: number;
       targetId?: string;
       part?: 'head' | 'body';
+    }
+  /**
+   * WP-54 / T1（README §2.2/§2.4）：tracking pilot `reversal-2d-v1` 的離散方向變化事件，逐一對應
+   * `createTrackingTrajectory()` 回傳的 `PrecomputedTrackingChange`（研究者/pilot-only，不影響既有
+   * drill 的 export 語意）。`*Before`/`*After` 是這次變化前後的**穩態巡航速度**，不是 `t` 那個瞬間的
+   * 瞬時速度——leg 邊界瞬時速度恆為 0（rest-to-rest ramp 設計，見 `trackingTrajectory.ts`）。
+   */
+  | {
+      type: 'target_motion_change';
+      targetId: string;
+      t: number;
+      yawVelocityBeforeDegPerSec: number;
+      yawVelocityAfterDegPerSec: number;
+      pitchVelocityBeforeDegPerSec: number;
+      pitchVelocityAfterDegPerSec: number;
     };
 
 export interface DataRecorderSnapshot {

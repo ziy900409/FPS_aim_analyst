@@ -861,6 +861,8 @@ function parseDrillEvent(value: unknown, path: string, errors: ExportPayloadPars
       return parseFireEvent(record, path, errors);
     case 'hit':
       return parseHitEvent(record, path, errors);
+    case 'target_motion_change':
+      return parseTargetMotionChangeEvent(record, path, errors);
     default:
       return fail(errors, `${path}.type`, 'invalid_value', `${path}.type is not a supported event discriminant`);
   }
@@ -995,6 +997,48 @@ function parseFireEvent(record: Record<string, unknown>, path: string, errors: E
     ...(targetId !== undefined ? { targetId } : {}),
     ...(offsetDeg !== undefined ? { offsetDeg } : {}),
     ...(part !== undefined ? { part } : {}),
+  };
+}
+
+function parseTargetMotionChangeEvent(
+  record: Record<string, unknown>,
+  path: string,
+  errors: ExportPayloadParseError[],
+): DrillEvent | undefined {
+  const before = errors.length;
+  const targetId = parseNonEmptyString(record.targetId, `${path}.targetId`, errors);
+  const t = parseFiniteNumber(record.t, `${path}.t`, errors);
+  const yawVelocityBeforeDegPerSec = parseFiniteNumber(record.yawVelocityBeforeDegPerSec, `${path}.yawVelocityBeforeDegPerSec`, errors);
+  const yawVelocityAfterDegPerSec = parseFiniteNumber(record.yawVelocityAfterDegPerSec, `${path}.yawVelocityAfterDegPerSec`, errors);
+  const pitchVelocityBeforeDegPerSec = parseFiniteNumber(
+    record.pitchVelocityBeforeDegPerSec,
+    `${path}.pitchVelocityBeforeDegPerSec`,
+    errors,
+  );
+  const pitchVelocityAfterDegPerSec = parseFiniteNumber(
+    record.pitchVelocityAfterDegPerSec,
+    `${path}.pitchVelocityAfterDegPerSec`,
+    errors,
+  );
+  if (
+    targetId === undefined ||
+    t === undefined ||
+    yawVelocityBeforeDegPerSec === undefined ||
+    yawVelocityAfterDegPerSec === undefined ||
+    pitchVelocityBeforeDegPerSec === undefined ||
+    pitchVelocityAfterDegPerSec === undefined ||
+    errors.length > before
+  ) {
+    return undefined;
+  }
+  return {
+    type: 'target_motion_change',
+    targetId,
+    t,
+    yawVelocityBeforeDegPerSec,
+    yawVelocityAfterDegPerSec,
+    pitchVelocityBeforeDegPerSec,
+    pitchVelocityAfterDegPerSec,
   };
 }
 

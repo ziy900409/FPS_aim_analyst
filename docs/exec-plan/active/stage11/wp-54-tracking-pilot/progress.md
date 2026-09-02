@@ -2,11 +2,21 @@
 
 ## Status
 
-- **Current**：✅ T0 完成（2026-09-02）；🟡 T1 進行中——trajectory kernel（`band-limited-2d-v1`／`reversal-2d-v1`）已交付並綠燈，`target_motion_change` export event 與 angular-to-world projection 待下一 slice。
+- **Current**：✅ T0、T1 完成（2026-09-02）；T2（pilot drill matrix/protocol guards）待開工。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T1 slice 2/2：angular-to-world projection + `target_motion_change` export event
+
+- 新增 `projectTrackingAngles(yawDeg, pitchDeg, origin, out)`（`src/sim/trackingTrajectory.ts`）：純幾何函式，`yaw=pitch=0` 時輸出 `(0, centerY, -distanceU)`，與既有 `TargetManager` sightline 慣例一致；不讀場景資料（GD-6）。5 個新測試（boresight、90° yaw/pitch、鏡射對稱、純函式性）。實際「這個 origin 從哪來、寫回哪個 `TargetState`」留給 T2（`TargetManager` wiring），T1 只交付可重用的投影公式本身。
+- 新增 additive `target_motion_change` `DrillEvent` variant（`src/data/DataRecorder.ts`）+ `parseTargetMotionChangeEvent`（`src/data/exportPayloadSchema.ts`，wired into `parseDrillEvent` switch）：`targetId`、`t`、`yaw/pitchVelocityBefore/AfterDegPerSec` 皆為必要有限數；未知欄位/缺欄位 fail fast（沿用既有 `parseFiniteNumber`/`parseNonEmptyString` helper，無新 helper）。
+- `src/data/exportPayloadSchema.test.ts` +19 tests：positive parse、`canonicalExportJSON` round-trip（含二次 parse 驗證逐位相等）、4 個 fail-fast 案例（缺 targetId/t/非有限 yaw velocity/缺 pitchVelocityAfter）。
+- **刻意不改** `src/data/export.ts` 的 `serializeEventsCSV`：該檔既有 2 個 test 明確斷言「header 不變、不新增欄」（WP-29 key event 前例：重用既有 `key`/`down` 欄而非新增 `code` 欄）。`target_motion_change` 的 4 個 yaw/pitch velocity 數值目前沒有語意相符的既有欄可重用（`viewYaw`/`aimPunchYaw` 等欄屬於 fire event 的瞄準語意，硬套會誤導 CSV 消費者）。since 尚無任何 producer 會真的送出此事件（T2 才接線），CSV 這個 gap 現在不影響任何真實資料；記錄為已知、有意的暫緩，留到 T2 接線、確定欄位語意後再決定新增欄或找到合適的既有欄重用，而不是現在猜錯。JSON（`serializeJSON`/`canonicalExportJSON`）路徑對此事件完整、無 gap。
+- `npx tsc --noEmit` exit 0（`DrillEvent` 61 個既有 caller 皆用 `if/else-if` 而非窮舉 `switch`，additive union 變更未破壞任何一個）；`npx vitest run` 全專案 191 files / 1766 tests passed（2 skipped），無回歸。
+- `graphify update .` 已執行（3884 nodes / 9158 edges / 240 communities 重建）；`codegraph sync .` 確認索引已是最新。
+- T1 至此全數完成（README §4 DoD：FR-54-2/3、NFR-54-1/6 tests 全綠；`tracking_v1`/`_longrange_v1`/`_br_v1` snapshot 無 semantic diff；未知 version fail fast）。
 
 ### 2026-09-02 — T1 slice 1/2：deterministic trajectory kernel（`src/sim/trackingTrajectory.ts`）
 
@@ -85,4 +95,8 @@
 | 2026-09-02 | T1 slice 1/2：`npx vitest run src/sim/trackingTrajectory.test.ts` | 30/30 passed（首次執行 4 個 reversal 相關測試失敗，觸發 D-54.12 返工，改版後全綠） |
 | 2026-09-02 | T1 slice 1/2：`npx tsc --noEmit` | exit 0 |
 | 2026-09-02 | T1 slice 1/2：`npx vitest run`（全專案） | 191 files / 1755 tests passed（2 skipped），無回歸 |
+| 2026-09-02 | T1 slice 2/2：`npx vitest run src/data/exportPayloadSchema.test.ts src/sim/trackingTrajectory.test.ts` | 84/84 passed |
+| 2026-09-02 | T1 slice 2/2：`npx tsc --noEmit` | exit 0（`DrillEvent` 61 callers 未受 additive union 影響） |
+| 2026-09-02 | T1 slice 2/2：`npx vitest run`（全專案） | 191 files / 1766 tests passed（2 skipped），無回歸 |
+| 2026-09-02 | T1 slice 2/2：`graphify update .` / `codegraph sync .` | graph 重建（3884 nodes/9158 edges/240 communities）；codegraph 索引已最新 |
 

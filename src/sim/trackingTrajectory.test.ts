@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   createTrackingTrajectory,
+  projectTrackingAngles,
   type TrackingTrajectoryConfig,
   type TrackingTrajectorySample,
 } from './trackingTrajectory.ts';
+import type { Vec3 } from '../state/types.ts';
 
 function makeSample(): TrackingTrajectorySample {
   return { yawDeg: 0, pitchDeg: 0, yawVelocityDegPerSec: 0, pitchVelocityDegPerSec: 0 };
@@ -239,5 +241,48 @@ describe('createTrackingTrajectory — unknown kind', () => {
   it('fails fast on an unrecognized kind (runtime-decoded config safety)', () => {
     const bogus = { kind: 'bogus-v1', seed: 1, durationMs: 1000 } as unknown as TrackingTrajectoryConfig;
     expect(() => createTrackingTrajectory(bogus)).toThrow(/unknown kind/);
+  });
+});
+
+describe('projectTrackingAngles', () => {
+  const origin = { distanceU: 4, centerY: 1.5 };
+
+  function project(yawDeg: number, pitchDeg: number): Vec3 {
+    const out: Vec3 = { x: 0, y: 0, z: 0 };
+    projectTrackingAngles(yawDeg, pitchDeg, origin, out);
+    return out;
+  }
+
+  it('maps (0, 0) onto the boresight point (0, centerY, -distanceU)', () => {
+    const p = project(0, 0);
+    expect(p.x).toBeCloseTo(0, 9);
+    expect(p.y).toBeCloseTo(origin.centerY, 9);
+    expect(p.z).toBeCloseTo(-origin.distanceU, 9);
+  });
+
+  it('maps yaw=90deg onto the +x axis at the same depth-plane height', () => {
+    const p = project(90, 0);
+    expect(p.x).toBeCloseTo(origin.distanceU, 9);
+    expect(p.z).toBeCloseTo(0, 9);
+    expect(p.y).toBeCloseTo(origin.centerY, 9);
+  });
+
+  it('maps pitch=90deg onto straight up from centerY', () => {
+    const p = project(0, 90);
+    expect(p.x).toBeCloseTo(0, 9);
+    expect(p.y).toBeCloseTo(origin.centerY + origin.distanceU, 9);
+    expect(p.z).toBeCloseTo(0, 9);
+  });
+
+  it('is an odd function of yaw around the boresight (mirror symmetry)', () => {
+    const left = project(-30, 10);
+    const right = project(30, 10);
+    expect(right.x).toBeCloseTo(-left.x, 9);
+    expect(right.y).toBeCloseTo(left.y, 9);
+    expect(right.z).toBeCloseTo(left.z, 9);
+  });
+
+  it('is a pure function of its inputs', () => {
+    expect(project(17, -8)).toEqual(project(17, -8));
   });
 });
