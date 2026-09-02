@@ -26,6 +26,16 @@ export interface SpawnMeta {
   spawnDelayMsRange?: unknown;
   /** timed presentation 呈現時長(ms,WP-18 / T3)——追蹤 drill 重現/追蹤窗口右界所需。 */
   presentationMs?: number;
+  /**
+   * WP-54 / T2：opaque `TrackingTrajectoryConfig`（`kind`/`seed`/`durationMs`/角度上界/角速度）——
+   * single source（不重複定義 trajectory version/seed/angular size/speed/duration，這些欄位全部
+   * 已在 `DrillConfig.targets.trackingTrajectory` 本體內，此處只是把同一份物件原樣帶出）。與
+   * `motion`/`spawnArea` 同紀律：opaque pass-through，不在 metadata 層深驗（trajectory 建構期
+   * 已有自己的 runtime guard，見 `trackingTrajectory.ts`）。
+   */
+  trackingTrajectory?: unknown;
+  /** `DrillConfig.timing.trackingPrepMs` 原樣帶出（比照 `presentationMs`）。 */
+  trackingPrepMs?: number;
 }
 
 export interface TargetsMeta {

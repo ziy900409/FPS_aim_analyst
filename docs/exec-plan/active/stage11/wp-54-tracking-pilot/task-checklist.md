@@ -45,7 +45,10 @@
 - [ ] 新增 horizontal/vertical axis calibration blocks。
 - [ ] 新增 core pseudorandom 2 x 2 size/speed candidate blocks。
 - [ ] 新增 medium/high reversal density candidate blocks。
-- [ ] 每個 block export metadata 包含 drill id、trajectory version、seed、condition、angular size/speed、duration。
+- [x] 每個 block export metadata 包含 drill id、trajectory version、seed、condition、angular size/speed、
+      duration（`meta.drillId` 承載 drill id/condition——每個 candidate 給獨立 drillId；`meta.spawn.
+      trackingTrajectory` 原樣帶出 `DrillConfig.targets.trackingTrajectory` 整包物件，version/seed/
+      angular size/speed/duration 全部已在該物件內、single source，不重複定義，T2 slice 4）。
 - [x] 建立 scored start/practice boundary event，且 scored 前 1 秒置中不進分析（`timing.trackingPrepMs`
       + `scored_start` DrillEvent，`TargetManager`/`SimLoop` 接線，T2 slice 2）。
 - [x] 建立 no-fire/no-ADS/no-movement protocol violation 記錄（`DrillConfig.protocolGuard` +

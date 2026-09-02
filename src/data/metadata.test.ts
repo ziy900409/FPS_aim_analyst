@@ -144,6 +144,27 @@ describe('collectMeta', () => {
     });
   });
 
+  it('carries spawn.trackingTrajectory/trackingPrepMs opaquely (WP-54 T2 — single-source trajectory config)', () => {
+    const trackingTrajectory = {
+      kind: 'band-limited-2d-v1',
+      seed: 7,
+      durationMs: 25000,
+      yawBoundDeg: 2,
+      pitchBoundDeg: 0.5,
+      targetRmsSpeedDegPerSec: 5,
+      frequencyBandHz: [0.1, 0.7],
+    };
+    const meta = collectMeta({
+      drillId: 'tracking_core_pr_pilot_v1_2p0deg_5dps',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      spawn: { seed: 7, trackingTrajectory, trackingPrepMs: 1000 },
+    });
+    expect(meta.spawn).toEqual({ seed: 7, trackingTrajectory, trackingPrepMs: 1000 });
+  });
+
   it('preserves a registered visibility candidate as additive metadata', () => {
     const meta = collectMeta({
       drillId: 'peek_click_transfer_pilot_v1_2deg',

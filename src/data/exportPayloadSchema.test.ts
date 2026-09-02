@@ -203,6 +203,34 @@ describe('parseExportPayload — protocol_violation round trip (WP-54 T2)', () =
   });
 });
 
+describe('parseExportPayload — meta.spawn.trackingTrajectory/trackingPrepMs (WP-54 T2)', () => {
+  const trackingTrajectory = {
+    kind: 'reversal-2d-v1',
+    seed: 7,
+    durationMs: 25000,
+    angularBoundsDeg: [-8, 8],
+    speedRangeDegPerSec: [5, 20],
+    reversalIntervalMs: [800, 1400],
+    accelerationRampMs: 150,
+  };
+
+  it('round-trips opaquely through canonicalExportJSON', () => {
+    const payload = minimalPayload({ meta: minimalMeta({ spawn: { seed: 7, trackingTrajectory, trackingPrepMs: 1000 } }) });
+    const parsed = parseExportPayload(payload);
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    expect(parsed.payload.meta.spawn).toEqual({ seed: 7, trackingTrajectory, trackingPrepMs: 1000 });
+
+    const canonical = JSON.parse(canonicalExportJSON(parsed.payload)) as { meta: { spawn: unknown } };
+    expect(canonical.meta.spawn).toEqual({ seed: 7, trackingTrajectory, trackingPrepMs: 1000 });
+  });
+
+  it('trackingPrepMs ≤ 0 fails fast', () => {
+    const payload = minimalPayload({ meta: minimalMeta({ spawn: { seed: 7, trackingPrepMs: 0 } }) });
+    const result = parseExportPayload(payload);
+    expect(result.ok).toBe(false);
+  });
+});
+
 describe('parseExportPayload — WP-50 additive replay fields', () => {
   it('parses a tick with an active replayTargetId', () => {
     expectOk(minimalPayload({ ticks: [validTick({ replayTargetId: 't0' })] }));

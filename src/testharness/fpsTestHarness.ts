@@ -408,6 +408,10 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
         ...(config.sequence.spawnDelayMsRange !== undefined ? { spawnDelayMsRange: config.sequence.spawnDelayMsRange } : {}),
         ...(config.targets.motion !== undefined ? { motion: config.targets.motion } : {}),
         ...(config.timing.presentationMs !== undefined ? { presentationMs: config.timing.presentationMs } : {}),
+        ...(config.targets.trackingTrajectory !== undefined
+          ? { trackingTrajectory: config.targets.trackingTrajectory }
+          : {}),
+        ...(config.timing.trackingPrepMs !== undefined ? { trackingPrepMs: config.timing.trackingPrepMs } : {}),
       },
       ...(sceneConfig !== undefined
         ? {

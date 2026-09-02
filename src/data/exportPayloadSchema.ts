@@ -472,9 +472,12 @@ function parseSpawnMeta(value: unknown, path: string, errors: ExportPayloadParse
   const seed = parseFiniteNumber(record.seed, `${path}.seed`, errors);
   const presentationMs =
     record.presentationMs === undefined ? undefined : parseFiniteNumber(record.presentationMs, `${path}.presentationMs`, errors);
+  // WP-54 / T2：比照 presentationMs 驗證（正有限數）；trackingTrajectory 本體維持 opaque pass-through。
+  const trackingPrepMs =
+    record.trackingPrepMs === undefined ? undefined : parsePositiveFiniteNumber(record.trackingPrepMs, `${path}.trackingPrepMs`, errors);
   if (seed === undefined || errors.length > before) return undefined;
-  // motion / spawnArea / spiderShot / spawnDelayMsRange are opaque `unknown` contracts by design
-  // (metadata.ts SpawnMeta) — passed through verbatim, not deep-validated here.
+  // motion / spawnArea / spiderShot / spawnDelayMsRange / trackingTrajectory are opaque `unknown`
+  // contracts by design (metadata.ts SpawnMeta) — passed through verbatim, not deep-validated here.
   return {
     seed,
     ...(record.motion !== undefined ? { motion: record.motion } : {}),
@@ -482,6 +485,8 @@ function parseSpawnMeta(value: unknown, path: string, errors: ExportPayloadParse
     ...(record.spiderShot !== undefined ? { spiderShot: record.spiderShot } : {}),
     ...(record.spawnDelayMsRange !== undefined ? { spawnDelayMsRange: record.spawnDelayMsRange } : {}),
     ...(presentationMs !== undefined ? { presentationMs } : {}),
+    ...(record.trackingTrajectory !== undefined ? { trackingTrajectory: record.trackingTrajectory } : {}),
+    ...(trackingPrepMs !== undefined ? { trackingPrepMs } : {}),
   };
 }
 

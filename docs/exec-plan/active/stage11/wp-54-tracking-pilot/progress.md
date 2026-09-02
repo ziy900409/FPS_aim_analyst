@@ -8,6 +8,35 @@
 
 ## Progress
 
+### 2026-09-02 — T2 slice 4/6：export metadata（trackingTrajectory/trackingPrepMs opaque pass-through）
+
+- **設計修正（比 T0/T1 規劃更簡）**：讀碼發現 `SpawnMeta.motion`/`spawnArea`/`spiderShot` 早已是
+  opaque `unknown` pass-through 慣例（`parseSpawnMeta` 直接原樣帶出，不深驗——深驗留給各自 config 建構
+  期，如 `trackingTrajectory.ts` 的 runtime guard）。checklist 要求的「drill id、trajectory version、
+  seed、condition、angular size/speed、duration」六項，**五項已經全部在 `DrillConfig.targets.
+  trackingTrajectory` 這個物件裡**（`kind`=version、`seed`、`durationMs`=duration、
+  `yawBoundDeg`/`pitchBoundDeg`（band-limited）或 `angularBoundsDeg`（reversal）=size、
+  `targetRmsSpeedDegPerSec`/`speedRangeDegPerSec`=speed），`drillId`/condition 則是既有頂層
+  `meta.drillId`（每個 calibration candidate 給獨立 drillId，如 `PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES`
+  precedent）。故**不新增 `Meta.trackingPilot?` 平行 meta block**（原 T2 開工前設計筆記的方向）——
+  那樣會把同一份 seed/kind/size/speed/duration 在兩個地方各定義一次，違反 GD-7「單一來源」精神；改為
+  單純把 `trackingTrajectory` 整包物件塞進既有 `SpawnMeta.trackingTrajectory?: unknown`（比照 `motion`
+  同紀律），`trackingPrepMs` 則比照 `presentationMs`（驗證正有限數，非 opaque，因為是純數字無需信任
+  下游 parser）。
+- `src/data/metadata.ts`：`SpawnMeta` 新增 `trackingTrajectory?: unknown`、`trackingPrepMs?: number`。
+- `src/data/exportPayloadSchema.ts`：`parseSpawnMeta` 新增 `trackingTrajectory` opaque passthrough、
+  `trackingPrepMs` 驗證（`parsePositiveFiniteNumber`，既有 helper）。
+- `src/main.ts`、`src/testharness/fpsTestHarness.ts`：`buildCurrentExportPayload`/`fpsTestHarness` 的
+  `spawn: {...}` 區塊各自新增 `trackingTrajectory`/`trackingPrepMs` 條件展開（比照緊鄰的 `motion`/
+  `presentationMs` 寫法）——兩處原本就逐位重複 `motion`/`spawnArea`/`spiderShot`/`spawnDelayMsRange`/
+  `presentationMs` 全部欄位（既有慣例，非本次新增的重複），故同步兩處維持一致慣例。
+- 測試：`src/data/metadata.test.ts` +1 test（`collectMeta` 原樣帶出 `spawn.trackingTrajectory`/
+  `trackingPrepMs`）；`src/data/exportPayloadSchema.test.ts` +2 tests（canonical round-trip、
+  `trackingPrepMs <= 0` fail-fast）。
+- `npx tsc --noEmit` exit 0；`npx vitest run` 全專案 191 files / 1811 tests passed（2 skipped），無回歸。
+- 尚未動：實際 pilot block config 檔案本身（practice/axis calibration/core 2×2/reversal density
+  candidates，slice 5——本 slice 只交付「若有 block config 存在，其 metadata 如何匯出」的管線）。
+
 ### 2026-09-02 — T2 slice 3/6：protocolGuard（no-fire/no-ADS/no-movement）
 
 - `src/drill/DrillRunner.ts`：新增 `tickProtocolGuard(s, nowMs)`（`running` 相位內、`tickHoldReversal`

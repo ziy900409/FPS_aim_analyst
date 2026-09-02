@@ -682,6 +682,12 @@ async function buildCurrentExportPayload(
       ...(activeDrillConfig.timing.presentationMs !== undefined
         ? { presentationMs: activeDrillConfig.timing.presentationMs }
         : {}),
+      ...(activeDrillConfig.targets.trackingTrajectory !== undefined
+        ? { trackingTrajectory: activeDrillConfig.targets.trackingTrajectory }
+        : {}),
+      ...(activeDrillConfig.timing.trackingPrepMs !== undefined
+        ? { trackingPrepMs: activeDrillConfig.timing.trackingPrepMs }
+        : {}),
     },
     scene: {
       sceneId: activeSceneConfig.sceneId,
