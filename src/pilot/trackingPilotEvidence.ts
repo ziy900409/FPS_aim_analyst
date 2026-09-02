@@ -9,7 +9,12 @@ import {
   type TrackingReversalWindowOptions,
   type TrackingReversalWindowsResult,
 } from '../metrics/trackingDynamics.ts';
-import { deriveTrackingMetrics, type TrackingPresentationDerivation } from '../metrics/trackingDerivation.ts';
+import {
+  deriveTrackingMetrics,
+  deriveTrackingSamples,
+  type TrackingPresentationDerivation,
+  type TrackingSample,
+} from '../metrics/trackingDerivation.ts';
 import { evaluateTrackingRunEligibility, type TrackingRunEligibility } from './trackingRunEligibility.ts';
 
 /**
@@ -62,6 +67,15 @@ export interface TrackingPilotEvidenceOptions {
   readonly analysisCommit?: string;
   readonly dynamics?: TrackingDynamicsOptions;
   readonly reversal?: TrackingReversalWindowOptions;
+  /**
+   * When `true`, attaches each eligible run's ε(t)/on-target sample series as `run.trace` — the raw
+   * per-tick series `trackingPilotReport.ts`'s target/aim trace chart reads. Off by default: a real
+   * pilot run's trace is thousands of samples, and most evidence consumers (aggregate audits, T6-T8
+   * gate checks) never need it. Opt in only when building the HTML report so the report's embedded
+   * JSON stays a byte-for-byte copy of the same evidence object passed to it (see
+   * `renderTrackingPilotReportHtml`'s parity-by-construction design).
+   */
+  readonly includeTrace?: boolean;
 }
 
 export interface TrackingPilotRunEvidence {
@@ -78,6 +92,8 @@ export interface TrackingPilotRunEvidence {
    * "P1 blocked 不刪除仍有效的 P0" — the two are derived and attached independently below). */
   readonly p1?: TrackingDynamicsResult;
   readonly reversal?: TrackingReversalWindowsResult;
+  /** Only present when `options.includeTrace` is `true` (see that option's doc). */
+  readonly trace?: readonly TrackingSample[];
 }
 
 export interface TrackingPilotConditionEvidence {
@@ -118,9 +134,10 @@ export function buildTrackingPilotEvidence(
     else byCondition.set(payload.meta.drillId, [payload]);
   }
 
+  const includeTrace = options.includeTrace ?? false;
   const conditions: TrackingPilotConditionEvidence[] = [];
   for (const [condition, group] of byCondition) {
-    conditions.push(buildConditionEvidence(condition, group, dynamicsOptions, reversalOptions));
+    conditions.push(buildConditionEvidence(condition, group, dynamicsOptions, reversalOptions, includeTrace));
   }
 
   return {
@@ -136,8 +153,9 @@ function buildConditionEvidence(
   group: readonly ExportPayload[],
   dynamicsOptions: TrackingDynamicsOptions,
   reversalOptions: TrackingReversalWindowOptions,
+  includeTrace: boolean,
 ): TrackingPilotConditionEvidence {
-  const runs = group.map((payload) => buildRunEvidence(payload, dynamicsOptions, reversalOptions));
+  const runs = group.map((payload) => buildRunEvidence(payload, dynamicsOptions, reversalOptions, includeTrace));
   const eligibleRuns = runs.filter(
     (run): run is TrackingPilotRunEvidence & { quality: { status: 'eligible'; validScoredTicks: number; durationMs: number } } =>
       run.quality.status === 'eligible',
@@ -152,6 +170,7 @@ function buildRunEvidence(
   payload: ExportPayload,
   dynamicsOptions: TrackingDynamicsOptions,
   reversalOptions: TrackingReversalWindowOptions,
+  includeTrace: boolean,
 ): TrackingPilotRunEvidence {
   const runId = `${payload.meta.drillId}@${payload.meta.startedAt}`;
   const seed = readTrajectorySeed(payload.meta.spawn?.trackingTrajectory);
@@ -161,9 +180,13 @@ function buildRunEvidence(
     return { runId, ...(seed !== undefined ? { seed } : {}), quality };
   }
 
-  const p0 = derivePrimaryPresentation(payload);
+  const adapted = adaptPayloadForScoredWindow(payload);
+  const scoredStarts = payload.events.filter((event): event is ScoredStartEvent => event.type === 'scored_start');
+  const targetId = scoredStarts[0]?.targetId;
+  const p0 = pickPresentation(deriveTrackingMetrics(adapted).presentations, targetId);
   const p1 = deriveTrackingDynamics(payload, dynamicsOptions);
   const reversal = deriveTrackingReversalWindows(payload, reversalOptions);
+  const trace = includeTrace ? pickPresentation(deriveTrackingSamples(adapted).presentations, targetId)?.samples : undefined;
 
   return {
     runId,
@@ -172,17 +195,8 @@ function buildRunEvidence(
     ...(p0 !== undefined ? { p0 } : {}),
     p1,
     reversal,
+    ...(trace !== undefined ? { trace } : {}),
   };
-}
-
-/** Same `scored_start`-windowed adapter T3's P1 uses for P0 (D-54.13 single source) — picks the
- * presentation matching the (first) `scored_start` event's `targetId`, same convention as
- * `deriveTrackingDynamics`. */
-function derivePrimaryPresentation(payload: ExportPayload): TrackingPresentationDerivation | undefined {
-  const adapted = adaptPayloadForScoredWindow(payload);
-  const metrics = deriveTrackingMetrics(adapted);
-  const scoredStarts = payload.events.filter((event): event is ScoredStartEvent => event.type === 'scored_start');
-  return pickPresentation(metrics.presentations, scoredStarts[0]?.targetId);
 }
 
 function readTrajectorySeed(value: unknown): number | undefined {

@@ -86,8 +86,8 @@
 - [x] 實作 run-level 與 metric-level eligibility；P1 blocked 不刪除仍有效的 P0（`trackingPilotEvidence.test.ts` 的 never-acquire fixture 鎖住，T4 slice 3/6）。
 - [x] 定義 compatibility fields：drill、protocol、motion、size、speed、FOV、sensitivity、input mode（`src/pilot/trackingCompatibilityKey.ts`，T4 slice 2/6；`inputMode` 語意見 progress.md OQ-54-9）。
 - [x] 產生 deterministic `TrackingPilotEvidence` JSON（`src/pilot/trackingPilotEvidence.ts`，T4 slice 3/6；`buildTrackingPilotEvidence()` 簽名偏離 README §2.4 見 progress.md D-54.20）。
-- [ ] 產生 self-contained HTML report，至少包含 quality、RMS/TOT、acquisition、lag/gain、drop/recovery、condition matrix、target/aim trace。
-- [ ] HTML/JSON 數值 parity test 通過；blocked 指標顯示原因，不顯示 0。
+- [x] 產生 self-contained HTML report，至少包含 quality、RMS/TOT、acquisition、lag/gain、drop/recovery、condition matrix、target/aim trace（`src/pilot/trackingPilotReport.ts`，T4 slice 4/6）。
+- [x] HTML/JSON 數值 parity test 通過；blocked 指標顯示原因，不顯示 0（`src/pilot/trackingPilotReport.test.ts`，T4 slice 4/6；parity-by-construction 設計見 progress.md）。
 - [ ] benchmark 單一 30 秒 export analysis；若 >2 秒，只記 worker spike。
 
 ## T5 — Researcher manifest/operator flow

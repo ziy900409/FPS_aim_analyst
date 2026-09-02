@@ -2,11 +2,48 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1/6（closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`）、slice 2/6（WP-54 專屬 compatibility key）、slice 3/6（`TrackingPilotEvidence` JSON model + `buildTrackingPilotEvidence()`）已完成。
+- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1/6（closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`）、slice 2/6（WP-54 專屬 compatibility key）、slice 3/6（`TrackingPilotEvidence` JSON model + `buildTrackingPilotEvidence()`）、slice 4/6（self-contained HTML report + JSON/HTML parity test）已完成。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T4 slice 4/6：self-contained HTML report + JSON/HTML parity test
+
+- **落點**：新檔 `src/pilot/trackingPilotReport.ts`（`renderTrackingPilotReportHtml()`）+
+  `src/pilot/trackingPilotReport.test.ts`（3 tests：JSON/HTML parity 深比對、無外部 script/link
+  依賴的自足性、embedded JSON 對 `<` 的跳脫防止 script 提早關閉）。`src/pilot/
+  trackingPilotEvidence.ts` 追加 opt-in `options.includeTrace`/`TrackingPilotRunEvidence.trace`
+  欄位（見下方 D-54.22）——slice 3 既有 5 個測試全數不改、行為逐位不變（新欄位預設 `false`）。
+- **採用任務指示建議的「parity-by-construction」設計，未另尋替代方案**：canonical
+  `TrackingPilotEvidence` JSON 原樣（`JSON.stringify` 後跳脫 `<` 為 `<` 防止提早關閉
+  `<script>`）塞進 `<script type="application/json" id="evidence-data">`；頁面其餘渲染邏輯
+  （純 vanilla JS,無 bundler、無外部 CDN script/stylesheet）只讀這個內嵌 JSON,不另外算一次
+  數字。JSON/HTML parity test 因此只需要抓出這個 script 內容、`JSON.parse` 後與原始 evidence
+  物件深比對——不需要 DOM/文字 scraping,parity 由單一資料來源保證。決策理由與最終選擇記入
+  `docs/operational/analysis-tracking.md`（留給 slice 5 一併寫入,呼應任務指示要求)。
+- **意外發現：`windowEndMs: Infinity` 在 JSON 序列化後變成 `null`**——T3 `TrackingPresentationDerivation.
+  windowEndMs`（GD-7 單一來源型別,本 slice 直接重用,不重新定義)在「單一持續目標、無後續 `visible`
+  事件」（WP-54 pilot block 常態）下恆為 `Infinity`；`JSON.stringify` 對 `Infinity`/`NaN` 沒有合法
+  JSON 表示,一律吐 `null`（JS 標準行為,非本檔 bug）。第一次寫 parity 測試時直接拿記憶體中的
+  `evidence` 物件（含 `Infinity`）與 `JSON.parse(html 裡的 script)`（含 `null`）比對必然不相等,
+  修正為：測試改比對 `JSON.parse(JSON.stringify(evidence))`（= 這份 evidence 若被存成 `.json` 檔會
+  變成的樣子）——這才是「parity」真正該比較的基準,因為 HTML 內嵌的本來就是這個 canonical JSON 形式,
+  不是記憶體物件本身。**未修改任何 production 型別或欄位**（`windowEndMs` 維持 T3 原樣,`null` 在
+  評估報告的語意上等同「一直延伸到錄製結束、無明確下一個 presentation 邊界」，與 `Infinity` 語意
+  相符,只是 JSON 沒有更好的表示法）。記入 `docs/operational/analysis-tracking.md` 供未來 JSON
+  artifact 消費者知悉,不視為需要修的 bug。
+- **HTML 涵蓋範圍**：quality（eligible/blocked+reasons)、RMS/TOT/acquisition（p0)、lag/gain/drop/
+  recovery（p1)、condition matrix（每個 condition 的 runCount/eligibleRunCount/totalDurationMs/
+  seeds)、target/aim trace（ε(t) SVG polyline,讀 `run.trace`,只有 `includeTrace:true` 時才有資料,
+  否則顯示「no trace recorded」，不是空白或誤導性的 0 線）。Blocked 欄位一律顯示原因字串（P0
+  acquisition failure、P1 blocked reason、run quality reasons),絕不顯示 `0`。DOM 一律用
+  `createElement`/`textContent` 組裝,不用 `innerHTML`（避免任何字串插值路徑成為 XSS 面,即使目前
+  資料來源是自己產生的 evidence,非使用者輸入)。
+- `npx tsc --noEmit` exit 0；`npx vitest run src/pilot/` 55/55 passed（新增 3 個 report parity
+  測試,slice 3 的 5 個 evidence 測試因新增 `includeTrace` 選項而重跑仍全綠,無回歸）；`npx vitest
+  run`（全專案）198 files / 1881 tests passed（2 skipped），對照 slice 3/6 的 197/1878，新增 1 個
+  檔案、3 個測試，無回歸。
 
 ### 2026-09-02 — T4 slice 3/6：`TrackingPilotEvidence` JSON model + `buildTrackingPilotEvidence()`
 
@@ -556,6 +593,7 @@
 | D-54.14 | Reversal event windows（response latency/peak error/overshoot/settling time,FR-54-9）落在新 export `deriveTrackingReversalWindows()`,不塞進 `TrackingDynamicsResult` | README §2.4 的 `TrackingDynamicsResult` 介面是逐字凍結契約,任務指示「copy verbatim,不重新設計」——該介面本就沒有 reversal 專屬欄位；FR-54-9/checklist/§2.5「P1 reactive」列仍要求此分析,故另開一個 additive function 滿足需求而不違反凍結契約 | ✅ Confirmed（T3,2026-09-02） |
 | D-54.15 | `deriveTrackingReversalWindows()` 的「run 尾端可用窗長」改用 `min(presentation.windowEndMs, 最後一筆 sample 的 t)` 而非直接用 `presentation.windowEndMs` | 單目標 run（WP-54 pilot block 常態）沒有後續 `visible` event,`windowEndMs` 恆為 `Infinity`——若不夾住,run 尾端的 change event 會被誤判為「窗長足夠」而不觸發 `insufficient-window-data` 排除；fixture 首次執行時即抓到此 bug（`expected false to be true`,`windows[2].excluded` 未被標記為排除），修正後全綠 | ✅ Confirmed（T3,2026-09-02） |
 | D-54.16 | Lag ambiguity 預設 `correlationAmbiguityRatio = 2`（次高峰需 `<=` 最高峰的一半才不算 ambiguous） | README/D-54.5 只凍結 `[0,250]ms` 搜尋範圍與「多峰必須 blocked」這個閘門本身存在,未凍結比例門檻數值；`2` 是 truth-fixture 套件用的預設值,足以清楚分辨「單一乾淨峰值」（band-limited pursuit,次高峰通常遠低於一半）與「純週期訊號」（次高峰幾乎等於最高峰,比例≈1）兩種案例,標記為 T6/T7 校準候選,非正式凍結值 | ✅ Confirmed（T3,2026-09-02,as default/candidate） |
+| D-54.22 | `TrackingPilotEvidence`/`buildTrackingPilotEvidence()` 追加 opt-in `options.includeTrace`/`run.trace`（ε(t) 逐 tick 樣本序列），預設 `false` | HTML report 的「target/aim trace」要求（checklist T4）需要逐 tick 資料，但 evidence JSON 預設應保持精簡（真實 pilot run 動輒數千 tick，多數 evidence 消費者如 T6-T8 gate 不需要逐 tick），opt-in 讓 HTML report 產生時可以拿到與其餘欄位同一個 evidence 物件（parity-by-construction 前提），不需要另開一條資料路徑 | ✅ Confirmed（T4 slice 4/6，2026-09-02） |
 | D-54.20 | `buildTrackingPilotEvidence()` 不吃 README §2.4 鎖定簽名的 `manifest: TrackingPilotManifest` 參數，只吃 `payloads: readonly ExportPayload[]` | `TrackingPilotManifest`/`TrackingPilotBlock` 是 T5 尚未開工的型別（README 從未定義後者）；FR-54-11 要求的 condition/n/duration/quality/seed 已能從 `payload.meta`（`drillId`/`spawn.trackingTrajectory.seed`）單一來源完整推導,不需要 manifest 才能分組。同 D-54.13/14 精神：介面契約遇到尚不存在的上游型別時,以讀碼後實況為準,偏離處記帳而非空等或代造 T5 型別 | ✅ Confirmed（T4 slice 3/6，2026-09-02） |
 | D-54.21 | Evidence pipeline 預設 `smoothingVersion='tracking-dynamics-smoothing-v1-tri3'`（而非 T3 truth-fixture 測試用的 `-none`）；`minValidTicks=32`、reversal window 四參數（300/500/200/0.5ms/deg）沿用 T3 測試數值,標記為 T4 pipeline 預設而非新協定凍結,全部可經 `options` 覆寫 | 真實人類 pilot 資料有雜訊,套平滑對 lag 搜尋更穩健,合成 truth fixture 才需要 `-none` 保精確；`minValidTicks=32` 恰為 `lagSearchMs` 上界 250ms@128Hz 的 tick 數,非隨意值；其餘四個 reversal 參數目前唯一可考的來源是 T3 測試本身用的值,尚無 T6/T7 校準證據前先延用 | ✅ Confirmed（T4 slice 3/6，2026-09-02，as pipeline default/candidate） |
 | D-54.18 | Run-level `TrackingQualityReason`（T4）收斂為 8 個 kebab-case reason code，且刻意與 T3 `TrackingDynamicsResult` 的 5 個 metric-level blocked reason 使用不同字串（例如 `missing-target-position` vs `missing-target-telemetry`） | FR-54-10 五大類別（overflow/missing target/timestamp/coverage/protocol mismatch）需要具體、封閉、one-shot 定案的字串；兩層 blocked 語意若共用相近字面會讓消費者誤以為是同一件事，README §2.4 本就把兩者定義成不同型別（`TrackingRunEligibility` vs `TrackingDynamicsResult`） | ✅ Confirmed（T4 slice 1/6，2026-09-02） |
