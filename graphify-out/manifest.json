@@ -1052,8 +1052,8 @@
     "hash": "a4f23862d43cc553a34154017dfc3fd4"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\trackingDynamics.ts": {
-    "mtime": 1788348279.05468,
-    "hash": "12d2d59ae57371cfa2eaacf7983edd07"
+    "mtime": 1788352917.4910984,
+    "hash": "665ad9d17ca03eb147ea69e108ee4421"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\metrics\\trackingTransitions.test.ts": {
     "mtime": 1787149912.05624,
@@ -1098,6 +1098,42 @@
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\protocolFreeze.test.ts": {
     "mtime": 1787645237.5898044,
     "hash": "3c3afeabd96afeb5b6ebb0ab6bb8956f"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingCompatibilityKey.test.ts": {
+    "mtime": 1788352605.8432117,
+    "hash": "02552d9dd16270956f51b5026e2cc555"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingCompatibilityKey.ts": {
+    "mtime": 1788352583.9614744,
+    "hash": "76c2b78ea96e9a658cf2776f3c5599b4"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingPilotEvidence.test.ts": {
+    "mtime": 1788353038.628209,
+    "hash": "737cc5305893b47cfbdf50599611810d"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingPilotEvidence.ts": {
+    "mtime": 1788353677.179606,
+    "hash": "b7582091c2a1720734d9c7e0e3dce7a6"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingPilotHistoryExclusion.test.ts": {
+    "mtime": 1788355124.8809934,
+    "hash": "6c517063fdbf832fa5219931bcaeefbe"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingPilotReport.test.ts": {
+    "mtime": 1788354039.8999374,
+    "hash": "6b030e1439c51f5ad63253587eb6878c"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingPilotReport.ts": {
+    "mtime": 1788353349.3905752,
+    "hash": "5bac6ab6b1a6cb60b0630c893f47a44c"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingRunEligibility.test.ts": {
+    "mtime": 1788352327.2477665,
+    "hash": "9201402c1374a0376b4f009084585c7a"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\pilot\\trackingRunEligibility.ts": {
+    "mtime": 1788352219.2693236,
+    "hash": "ff46b581e2ab78f91ca63195271b75c1"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\recoil\\adapter.test.ts": {
     "mtime": 1783346199.1983023,
@@ -2344,16 +2380,16 @@
     "hash": "af01c758c5ec23f77d6f15e34d116209"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage11\\wp-54-tracking-pilot\\progress.md": {
-    "mtime": 1788350933.9734972,
-    "hash": "8a088484fdc25a933783100cdb51fe66"
+    "mtime": 1788354873.5659163,
+    "hash": "b320625bac3ac7c83f2c014afeb25239"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage11\\wp-54-tracking-pilot\\README.md": {
     "mtime": 1788342032.2963123,
     "hash": "0374750dc70462a46178937abd158e7f"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage11\\wp-54-tracking-pilot\\task-checklist.md": {
-    "mtime": 1788350663.767866,
-    "hash": "4830677dcda439c313114f390131403f"
+    "mtime": 1788354881.4987755,
+    "hash": "2c301297196c6aed353f5e6f8fa7db15"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage11\\wp-55-tracking-on-target-observability-no-health\\progress.md": {
     "mtime": 1788257737.4957812,
@@ -4332,8 +4368,8 @@
     "hash": "692201b35952d43bbbda2c9a0d6c6d12"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\operational\\analysis-tracking.md": {
-    "mtime": 1788350622.163525,
-    "hash": "7b44f47dda6aed5e0d85668f4624b2f5"
+    "mtime": 1788354615.569536,
+    "hash": "c5492bb7d2c69a90871117df0ffbc960"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\operational\\analysis-visibility.md": {
     "mtime": 1787146454.09162,

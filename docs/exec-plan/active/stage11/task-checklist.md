@@ -44,8 +44,8 @@ WP-53 Definition of Done：`peek_click_transfer_v1` 是獨立正式 Assessment d
 | [x] | **T0** Entry gate/scope freeze/preregistration | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | 使用者確認 WP-54 納入 stage11 | High |
 | [x] | **T1** Deterministic trajectory kernel/export contract | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T0 | High |
 | [x] | **T2** Pilot drill matrix/protocol guards | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T1 | High |
-| [ ] | **T3** Canonical P0/P1 metrics/truth fixtures | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T2 | High |
-| [ ] | **T4** Eligibility/evidence/report | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T3 | High |
+| [x] | **T3** Canonical P0/P1 metrics/truth fixtures | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T2 | High |
+| [x] | **T4** Eligibility/evidence/report | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T3 | High |
 | [ ] | **T5** Researcher manifest/operator flow | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T2/T4 | Med |
 | [ ] | **T6** Instrumentation pilot | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T1-T5 | High |
 | [ ] | **T7** Difficulty calibration pilot | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T6 PASS | High |

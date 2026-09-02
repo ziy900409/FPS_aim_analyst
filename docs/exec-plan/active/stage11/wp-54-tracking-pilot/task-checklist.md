@@ -10,7 +10,7 @@
 | [x] | **T1** Deterministic trajectory kernel/export contract | 新增 2D pseudorandom 與 finite-acceleration reversal generator | T0 | High |
 | [x] | **T2** Pilot drill matrix/protocol guards | 新增 practice、axis calibration、core 2 x 2、reactive blocks 與 no-fire/no-ADS/no-movement guard | T1 | High |
 | [x] | **T3** Canonical P0/P1 metrics/truth fixtures | 推導 acquisition、RMS/TOT、lag/gain、drop/reacquire、reversal response | T2 | High |
-| [ ] | **T4** Eligibility/evidence/report | 建立 quality reason vocabulary、compatibility、deterministic JSON/HTML evidence | T3 | High |
+| [x] | **T4** Eligibility/evidence/report | 建立 quality reason vocabulary、compatibility、deterministic JSON/HTML evidence | T3 | High |
 | [ ] | **T5** Researcher manifest/operator flow | 支援 counterbalance、rest、retry reason、session index 與 keyboard flow | T2/T4 | Med |
 | [ ] | **T6** Instrumentation pilot | 以 synthetic + 3-5 tester runs 驗證 motion/event/export/report traceability | T1-T5 | High |
 | [ ] | **T7** Difficulty calibration pilot | 以 12-20 人校準 floor/ceiling、seed、visibility、time-on-task | T6 PASS | High |
@@ -89,6 +89,7 @@
 - [x] 產生 self-contained HTML report，至少包含 quality、RMS/TOT、acquisition、lag/gain、drop/recovery、condition matrix、target/aim trace（`src/pilot/trackingPilotReport.ts`，T4 slice 4/6）。
 - [x] HTML/JSON 數值 parity test 通過；blocked 指標顯示原因，不顯示 0（`src/pilot/trackingPilotReport.test.ts`，T4 slice 4/6；parity-by-construction 設計見 progress.md）。
 - [x] benchmark 單一 30 秒 export analysis；若 >2 秒，只記 worker spike（T4 slice 5/6：~23ms 冷/~8ms 暖，遠低於門檻，未加 concurrency；見 `docs/operational/analysis-tracking.md`「Benchmark」節與 progress.md）。
+- [x] README §4 T4 DoD 額外一項：practice/pilot run 被 history guard 排除（`src/pilot/trackingPilotHistoryExclusion.test.ts`，T4 slice 6/6；鎖住既有事實——`DrillMetricRegistry.REGISTRATIONS` 從未註冊任何 WP-54 tracking pilot drillId，且 `project()` 對全部 9 個 T2 pilot block 皆回傳 `unregistered-drill`——不新蓋一層 guard 機制）。
 
 ## T5 — Researcher manifest/operator flow
 

@@ -2,11 +2,43 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1-4/6 已完成，slice 5/6（benchmark + operational doc 收尾）已完成，只剩 slice 6/6（全專案 regression + graphify + checklist/progress 最終同步）。
+- **Current**：✅ T0、T1、T2、T3、T4 完成（2026-09-02）；T5（researcher session manifest/operator flow）待開工。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
-- **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
+- **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-02 — T4 slice 6/6：history exclusion 事實鎖定 + 全專案 regression + graphify（T4 完成）
+
+- **落點**：新檔 `src/pilot/trackingPilotHistoryExclusion.test.ts`（3 tests）——鎖住 README §4 T4
+  DoD 額外一項「practice/pilot run 被 history guard 排除」。依任務交辦第 4 點的既定結論：不新蓋
+  guard 機制，只斷言既有事實——`createDrillMetricRegistry()` 的 `registrationForExactDrill()` 對
+  全部 9 個 T2 pilot block drillId（1 practice + 2 calibration + 4 core matrix + 2 reversal
+  density,從各自的 config module 匯入 identifier,不手打字串避免與實際 config 漂移)皆回傳
+  `undefined`；`project()` 對每一個都回傳 `{status:'unregistered-drill', drillId}`（比
+  `meta.assessment` 檢查更早的第一道防線,連 assessment-undefined 這條 defense-in-depth 都用不到
+  就已經被擋下)。
+- **全專案 regression**：`npx tsc --noEmit` exit 0；`npx vitest run` 199 files / 1884 tests
+  passed（2 skipped），對照 T3 收尾基準 194 files / 1844 tests——T4 六個 slice 累計新增 5 個檔案
+  （`trackingRunEligibility.ts`/`trackingCompatibilityKey.ts`/`trackingPilotEvidence.ts`/
+  `trackingPilotReport.ts`/`trackingPilotHistoryExclusion.test.ts`,各自帶測試檔)、40 個 tests，
+  全程無回歸；`src/metrics/trackingDynamics.ts` 的兩個新增 `export`（`adaptPayloadForScoredWindow`/
+  `pickPresentation`）未影響任何既有呼叫方。
+- **graphify update .**：3981 nodes / 9450 edges / 250 communities 重建（對照 T3 收尾的
+  3909/9263/242）。`codegraph sync .`：daemon 已自動同步,索引已是最新（無 pending）。
+- **文件收尾同步**：本 package `README.md` 狀態列翻新（T0-T4 完成,T5 待開工）；本 package
+  `task-checklist.md` T4 row 打勾 + 額外補上「history guard 排除」bullet；本檔（`progress.md`）
+  Status 段落同步。stage11 母層 README/task-checklist/progress **未變動**——WP-54 尚未整包完成
+  （T5-T8/T-exit 仍待開工），依協議只有整個 WP 完成時才翻母層狀態，單一 task 完成不觸發（CLAUDE.md
+  §3.5：「WP 完成」才翻 exec-plan/README.md 狀態，本次是 T4 完成，非 WP-54 完成）。
+- **T4 總結**：6 個 slice、每片各自 atomic commit（見上方 slice 1-5 條目）。交付：closed
+  `TrackingQualityReason`（8 碼）+ `evaluateTrackingRunEligibility()`（slice 1）；WP-54 專屬
+  `TrackingCompatibilityKey`（8 軸，slice 2）；deterministic `TrackingPilotEvidence` JSON model +
+  `buildTrackingPilotEvidence()`（slice 3，偏離 README 鎖定簽名，見 D-54.20）；self-contained HTML
+  report + parity-by-construction 設計（slice 4）；benchmark（~8-23ms,遠低於 2 秒門檻,未加
+  concurrency）+ operational doc 收尾（slice 5）；history exclusion 事實鎖定 + 全專案 regression +
+  graphify（slice 6）。過程中兩個記入 Open Questions 但未阻塞的判斷岔路：`inputMode` 語意
+  （OQ-54-9）、evidence pipeline 預設參數（D-54.21，可由 T6/T7 校準覆寫）。
 
 ### 2026-09-02 — T4 slice 5/6：benchmark + `docs/operational/analysis-tracking.md` 收尾
 

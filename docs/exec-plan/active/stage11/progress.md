@@ -2,11 +2,26 @@
 
 ## Status
 
-- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0/T1/T2 完成、T3 待開工（2026-09-02）。
-- **Scope state**：WP-52 pilot v2 adjustment 已交付；WP-53 formal `peek_click_transfer_v1` release 已完成 T0~T5 與 T-exit；WP-54 tracking pilot 已正式納入 stage11，T0/T1/T2 完成。
-- **Dependency state**：WP-52 T-exit、WP-53 formal freeze、stage10 history/trend contract、formal Session Plan integration、focused E2E 與 docs sync 全數完成（M19）。WP-54 T0 依賴的 legacy tracking baseline（103 tests）綠燈、OQ-54-1~8 preregistration 凍結、CodeGraph impact 記錄完成；T1 deterministic trajectory kernel + export contract 交付；T2 pilot drill matrix（practice/calibration/core 2×2/reversal density）+ no-fire/no-ADS/no-movement protocol guard 交付，全程 legacy tracking regression 保持綠燈（M20）。
+- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0-T4 完成、T5 待開工（2026-09-02）。
+- **Scope state**：WP-52 pilot v2 adjustment 已交付；WP-53 formal `peek_click_transfer_v1` release 已完成 T0~T5 與 T-exit；WP-54 tracking pilot 已正式納入 stage11，T0-T4 完成。
+- **Dependency state**：WP-52 T-exit、WP-53 formal freeze、stage10 history/trend contract、formal Session Plan integration、focused E2E 與 docs sync 全數完成（M19）。WP-54 T0 依賴的 legacy tracking baseline（103 tests）綠燈、OQ-54-1~8 preregistration 凍結、CodeGraph impact 記錄完成；T1 deterministic trajectory kernel + export contract 交付；T2 pilot drill matrix（practice/calibration/core 2×2/reversal density）+ no-fire/no-ADS/no-movement protocol guard 交付；T3 canonical P0/P1 metrics（lag/gain/drop/recovery/reversal）+ truth fixtures 交付；T4 eligibility/evidence pipeline（closed quality-reason vocabulary、WP-54 compatibility key、deterministic JSON evidence、self-contained HTML report）交付，全程 legacy tracking regression 保持綠燈（M20）。
 
 ## Progress
+
+### 2026-09-02 — WP-54 T3/T4 完成（詳見 [wp-54-tracking-pilot/progress.md](wp-54-tracking-pilot/progress.md)）
+
+- T3：`src/metrics/trackingDynamics.ts` 新增 `deriveTrackingDynamics()`（lag/velocity gain/residual/
+  directional bias/drop-reacquire recovery）與 `deriveTrackingReversalWindows()`（response latency/
+  peak error/overshoot/settling time），P0 沿用未修改的 `trackingDerivation.ts` 透過 shallow-copy
+  adapter 窗口到 `scored_start`。8 條 truth fixture 覆蓋 NFR-54-2/3 容差、blocked semantics。
+- T4：`src/pilot/trackingRunEligibility.ts`（closed `TrackingQualityReason` 8 碼 + 
+  `evaluateTrackingRunEligibility()`，run-level quality gate）、`trackingCompatibilityKey.ts`
+  （WP-54 專屬 8 軸 compatibility key，不可重用既有 `compatibilityKey.ts`——它強制要求
+  `meta.assessment`，WP-54 全 practice-mode 恆缺席）、`trackingPilotEvidence.ts`（deterministic
+  `TrackingPilotEvidence` JSON model，偏離 README 鎖定的 manifest-based 簽名，因 T5 manifest 型別
+  尚未存在）、`trackingPilotReport.ts`（self-contained HTML report，parity-by-construction 設計）。
+  `trackingPilotHistoryExclusion.test.ts` 鎖住既有事實：WP-54 pilot run 從未進入
+  `DrillMetricRegistry`，無需新蓋 guard。
 
 ### 2026-09-02 — WP-54 T1/T2 完成（詳見 [wp-54-tracking-pilot/progress.md](wp-54-tracking-pilot/progress.md)）
 
