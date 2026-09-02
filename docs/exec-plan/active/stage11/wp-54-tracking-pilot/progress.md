@@ -2,11 +2,59 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1/6（closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`）、slice 2/6（WP-54 專屬 compatibility key）已完成。
+- **Current**：✅ T0、T1、T2、T3 完成（2026-09-02）；T4（eligibility/evidence/report）進行中——slice 1/6（closed `TrackingQualityReason` vocabulary + `evaluateTrackingRunEligibility()`）、slice 2/6（WP-54 專屬 compatibility key）、slice 3/6（`TrackingPilotEvidence` JSON model + `buildTrackingPilotEvidence()`）已完成。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T4 slice 3/6：`TrackingPilotEvidence` JSON model + `buildTrackingPilotEvidence()`
+
+- **落點**：新檔 `src/pilot/trackingPilotEvidence.ts`（`buildTrackingPilotEvidence()` + JSON model）
+  + `src/pilot/trackingPilotEvidence.test.ts`（5 tests：eligible run 全欄位、run-level blocked 不進
+  metric derivation、P1 blocked 不刪除仍有效 P0、condition 分組/seed 去重排序、deterministic 重跑）。
+  `src/metrics/trackingDynamics.ts` 兩處新增 `export`（`adaptPayloadForScoredWindow`/
+  `pickPresentation`，原本是 T3 private helper）——純新增 export keyword，函式本體/既有呼叫方逐位
+  不變，讓 P0 evidence 沿用同一個 scored_start 窗口 adapter（D-54.13 single source），不重新實作
+  一份等價邏輯。
+- **偏離 README §2.4 鎖定的 `buildTrackingPilotEvidence(manifest, payloads)` 簽名**（記為
+  D-54.20，見下方 decision log）：`TrackingPilotManifest`/`TrackingPilotBlock` 是 T5（Researcher
+  session manifest/operator flow）尚未開工的型別，README 只給了 `TrackingPilotManifest` 的殼
+  （`protocolVersion`/`participantId`/`sessionIndex`/`orderedBlocks`/`restSeconds`/
+  `generatedFromCounterbalanceCell`），從未定義 `TrackingPilotBlock`。FR-54-11 要求的每一項
+  （condition/n/duration/quality/seed）其實已經能從單一 `payload.meta` 完整推導——`meta.drillId`
+  本身就是 condition 標籤（T2 slice 4 決策：每個 candidate 都有獨立 drillId），
+  `meta.spawn.trackingTrajectory.seed` 帶出 seed——故本 slice 只吃 `payloads: readonly
+  ExportPayload[]`，不吃 manifest。T5 完成後可以把 `manifest.orderedBlocks` 對應出的 payload
+  陣列原樣餵進同一個函式，預期不需要重新設計簽名；但也刻意不先幫 T5 把 manifest 整合寫好
+  （Rule 0.5 範圍紀律，「不要為假設性的未來需求設計」）。
+- **JSON model 設計**：`conditions[].runs[]` 每筆 run 帶 `runId`（`${drillId}@${startedAt}`，
+  `ExportPayload`/`Meta` 本身沒有獨立 run id 欄位,這是唯一能保證的確定性/可追溯替代）、`seed?`
+  （讀 `trackingTrajectory.seed`,不是 `SpawnMeta.seed`——兩者是不同欄位,測試撰寫時第一次犯過這個
+  混淆,已在 fixture 修正)、`quality`（直接重用 T4 slice 1 的 `TrackingRunEligibility` 型別)、
+  `p0?`/`p1?`/`reversal?`——`p0` 直接重用 T3 `TrackingPresentationDerivation`、`p1` 直接重用 T3
+  `TrackingDynamicsResult`、`reversal` 直接重用 T3 `TrackingReversalWindowsResult`,三者皆不重新定義
+  欄位（GD-7 單一來源)——這三個型別各自已經滿足「blocked 時顯示 reason 字串,不輸出 0」的契約
+  （T3 已經做到,見 D-54.13~17),本 slice 只是原樣掛載,不需要另建一層 wrapper 欄位。
+- **run-level blocked 與 P1 blocked 兩層獨立性,各自一條 fixture 鎖住**：`quality.status==='blocked'`
+  的 run **完全不呼叫** `deriveTrackingDynamics`/`deriveTrackingMetrics`/
+  `deriveTrackingReversalWindows`（FR-54-10「不合格 run 仍輸出原因但不進聚合」——`不進聚合`在此實作
+  即「不計算」,不是「算完再丟棄」),`p0`/`p1`/`reversal` 三欄全部省略（非 `undefined` 顯式賦值,而是
+  物件 spread 條件式省略,JSON 序列化後鍵完全不存在）。反之,`quality.status==='eligible'` 時 `p0`
+  與 `p1` **各自獨立計算**（分開呼叫,互不依賴對方結果),故 `never-acquire` fixture 能同時驗證
+  `p0.acquisitionFailure===true`（且無 `rmsEpsilonDeg` 等數值假裝）與 `p1===
+  {status:'blocked',reason:'no-acquisition'}` 共存於同一個 run——checklist 明講「P1 blocked 不刪除
+  仍有效的 P0」,這條 fixture 直接鎖住。
+- **evidence pipeline 預設參數是本 slice 唯一未凍結的判斷岔路**（記為 D-54.21）：`smoothingVersion`
+  預設改用 `tracking-dynamics-smoothing-v1-tri3`（T3 truth-fixture 測試預設 `-none` 是為了讓合成訊號
+  精確可驗,但真實 pilot 人類資料有雜訊,套用平滑更合理）；`minValidTicks:32` 不是隨意選的——恰好等於
+  `lagSearchMs` 上界 250ms 在 128Hz 下的 tick 數,是能覆蓋整個搜尋範圍的最短窗口；reversal window
+  四個參數（`minWindowMs`/`maxWindowMs`/`minBaselineMs`/`settlingToleranceDeg`）沿用 T3 測試本來就用
+  的數值（300/500/200/0.5),未見文件另外凍結。四者皆透過 `options.dynamics`/`options.reversal`
+  可覆寫,T6/T7 若校準出更好的數值可直接傳入,不需要改本檔常數。
+- `npx tsc --noEmit` exit 0；`npx vitest run src/pilot/trackingPilotEvidence.test.ts
+  src/metrics/trackingDynamics.test.ts` 24/24 passed；`npx vitest run`（全專案）197 files / 1878
+  tests passed（2 skipped），對照 slice 2/6 的 196/1873，新增 1 個檔案、5 個測試，無回歸。
 
 ### 2026-09-02 — T4 slice 2/6：WP-54 專屬 compatibility key（NFR-54-7）
 
@@ -508,6 +556,8 @@
 | D-54.14 | Reversal event windows（response latency/peak error/overshoot/settling time,FR-54-9）落在新 export `deriveTrackingReversalWindows()`,不塞進 `TrackingDynamicsResult` | README §2.4 的 `TrackingDynamicsResult` 介面是逐字凍結契約,任務指示「copy verbatim,不重新設計」——該介面本就沒有 reversal 專屬欄位；FR-54-9/checklist/§2.5「P1 reactive」列仍要求此分析,故另開一個 additive function 滿足需求而不違反凍結契約 | ✅ Confirmed（T3,2026-09-02） |
 | D-54.15 | `deriveTrackingReversalWindows()` 的「run 尾端可用窗長」改用 `min(presentation.windowEndMs, 最後一筆 sample 的 t)` 而非直接用 `presentation.windowEndMs` | 單目標 run（WP-54 pilot block 常態）沒有後續 `visible` event,`windowEndMs` 恆為 `Infinity`——若不夾住,run 尾端的 change event 會被誤判為「窗長足夠」而不觸發 `insufficient-window-data` 排除；fixture 首次執行時即抓到此 bug（`expected false to be true`,`windows[2].excluded` 未被標記為排除），修正後全綠 | ✅ Confirmed（T3,2026-09-02） |
 | D-54.16 | Lag ambiguity 預設 `correlationAmbiguityRatio = 2`（次高峰需 `<=` 最高峰的一半才不算 ambiguous） | README/D-54.5 只凍結 `[0,250]ms` 搜尋範圍與「多峰必須 blocked」這個閘門本身存在,未凍結比例門檻數值；`2` 是 truth-fixture 套件用的預設值,足以清楚分辨「單一乾淨峰值」（band-limited pursuit,次高峰通常遠低於一半）與「純週期訊號」（次高峰幾乎等於最高峰,比例≈1）兩種案例,標記為 T6/T7 校準候選,非正式凍結值 | ✅ Confirmed（T3,2026-09-02,as default/candidate） |
+| D-54.20 | `buildTrackingPilotEvidence()` 不吃 README §2.4 鎖定簽名的 `manifest: TrackingPilotManifest` 參數，只吃 `payloads: readonly ExportPayload[]` | `TrackingPilotManifest`/`TrackingPilotBlock` 是 T5 尚未開工的型別（README 從未定義後者）；FR-54-11 要求的 condition/n/duration/quality/seed 已能從 `payload.meta`（`drillId`/`spawn.trackingTrajectory.seed`）單一來源完整推導,不需要 manifest 才能分組。同 D-54.13/14 精神：介面契約遇到尚不存在的上游型別時,以讀碼後實況為準,偏離處記帳而非空等或代造 T5 型別 | ✅ Confirmed（T4 slice 3/6，2026-09-02） |
+| D-54.21 | Evidence pipeline 預設 `smoothingVersion='tracking-dynamics-smoothing-v1-tri3'`（而非 T3 truth-fixture 測試用的 `-none`）；`minValidTicks=32`、reversal window 四參數（300/500/200/0.5ms/deg）沿用 T3 測試數值,標記為 T4 pipeline 預設而非新協定凍結,全部可經 `options` 覆寫 | 真實人類 pilot 資料有雜訊,套平滑對 lag 搜尋更穩健,合成 truth fixture 才需要 `-none` 保精確；`minValidTicks=32` 恰為 `lagSearchMs` 上界 250ms@128Hz 的 tick 數,非隨意值；其餘四個 reversal 參數目前唯一可考的來源是 T3 測試本身用的值,尚無 T6/T7 校準證據前先延用 | ✅ Confirmed（T4 slice 3/6，2026-09-02，as pipeline default/candidate） |
 | D-54.18 | Run-level `TrackingQualityReason`（T4）收斂為 8 個 kebab-case reason code，且刻意與 T3 `TrackingDynamicsResult` 的 5 個 metric-level blocked reason 使用不同字串（例如 `missing-target-position` vs `missing-target-telemetry`） | FR-54-10 五大類別（overflow/missing target/timestamp/coverage/protocol mismatch）需要具體、封閉、one-shot 定案的字串；兩層 blocked 語意若共用相近字面會讓消費者誤以為是同一件事，README §2.4 本就把兩者定義成不同型別（`TrackingRunEligibility` vs `TrackingDynamicsResult`） | ✅ Confirmed（T4 slice 1/6，2026-09-02） |
 | D-54.19 | `T4` 新檔落在 `src/pilot/` 目錄下多個檔案（`trackingRunEligibility.ts` 起頭，compatibility key/evidence/report 陸續加入），而非全部塞進 README §2.2 規劃的單一 `trackingPilotEvidence.ts` | README §2.2 只是 T0 時期的落點候選，T4 實際範圍（run-level eligibility + WP-54 專屬 compatibility key + JSON evidence model + 自足 HTML report）遠比 WP-52 `peekClickTransferPilotEvidence.ts`（81 行純聚合）大；拆檔維持單一職責、可個別測試，同目錄慣例（`src/pilot/`）不變 | ✅ Confirmed（T4 slice 1/6，2026-09-02） |
 | D-54.17 | Smoothing kernel 版本化為封閉字串表（`tracking-dynamics-smoothing-v1-none` identity / `tracking-dynamics-smoothing-v1-tri3` 對稱三點三角 FIR),未知字串 fail fast | D-54.5 要求「離線固定係數平滑,`smoothingVersion` 版本化」——用封閉 registry + fail-fast 而非允許任意係數陣列,對齊本專案既有「未知 version/kind 必須 fail fast」紀律（`trackingTrajectory.ts` 前例);truth fixture 預設用 `-none`（保持結果可精確追溯到合成訊號本身,不被平滑掩蓋),另加一個 `-tri3` 案例證明有實際套用平滑且不崩潰 | ✅ Confirmed（T3,2026-09-02） |

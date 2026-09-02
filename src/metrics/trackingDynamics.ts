@@ -23,6 +23,10 @@ import { eyeOriginForTick, type ResolvedEyeOrigin } from './eyeOrigin.ts';
  * `deriveTrackingMetrics()`/`deriveTrackingSamples()` on that copy. When a payload has no
  * `scored_start` events at all (e.g. a legacy tracking export), the payload passes through
  * unchanged and this module falls back to plain `visible`-windowed P0 — permissive, not an error.
+ *
+ * `adaptPayloadForScoredWindow`/`pickPresentation` are exported (WP-54 / T4) for reuse by
+ * `src/pilot/trackingPilotEvidence.ts`'s P0 evidence derivation — same single-source adapter, no
+ * second reimplementation.
  */
 
 const EPSILON = 1e-9;
@@ -74,7 +78,7 @@ type MotionChangeEvent = Extract<ExportPayload['events'][number], { type: 'targe
  * `scored_start` instead of `visible`, excluding the `timing.trackingPrepMs` centering window from
  * aggregation (FR-54-6) — without touching the 11-caller canonical derivation.
  */
-function adaptPayloadForScoredWindow(payload: ExportPayload): ExportPayload {
+export function adaptPayloadForScoredWindow(payload: ExportPayload): ExportPayload {
   const scoredStarts = payload.events.filter((event): event is ScoredStartEvent => event.type === 'scored_start');
   if (scoredStarts.length === 0) return payload;
 
@@ -94,7 +98,7 @@ function adaptPayloadForScoredWindow(payload: ExportPayload): ExportPayload {
   return { ...payload, events };
 }
 
-function pickPresentation<T extends { targetId: string }>(
+export function pickPresentation<T extends { targetId: string }>(
   presentations: readonly T[],
   targetId: string | undefined,
 ): T | undefined {
