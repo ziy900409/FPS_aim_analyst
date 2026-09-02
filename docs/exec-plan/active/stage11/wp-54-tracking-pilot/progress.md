@@ -8,6 +8,47 @@
 
 ## Progress
 
+### 2026-09-02 — T2 slice 5/6：pilot block config 檔案（practice/calibration/core 2×2/reversal density）
+
+- **落點**：`src/drill/tracking_core_pr_pilot_v1.ts`（practice + horizontal/vertical axis calibration +
+  core 2×2 size/speed matrix，`band-limited-2d-v1`）與 `src/drill/tracking_reversal_pilot_v1.ts`
+  （medium/high reversal density，`reversal-2d-v1`）——與 README §2.2 規劃路徑一致。慣例對齊
+  `peek_click_transfer_pilot_v2.ts`（builder function + `XXX_CANDIDATES` 陣列 single source，供未來
+  T5 researcher-mode 註冊）與 `tracking_longrange_v1.ts`（module-level 常數 + 內嵌設計註解）。
+- **關鍵設計決策**：每個 config 一律 `mode: 'practice'`（WP-33 `AssessmentMode` 契約），**包含**
+  WP-54 自己語彙裡「已評分」的 calibration/core/reversal blocks——比照既有 WP-52 pilot v2 precedent
+  （`peek_click_transfer_pilot_v2.ts` 的所有候選，含其分析用候選，皆 `mode:'practice'`）。`DrillConfig.
+  mode` 的 Assessment/Practice 契約與 WP-54 自己「practice vs scored」的語彙是兩個不同軸線：後者用
+  `timing.trackingPrepMs` + `protocolGuard` 的有無表達（practice block 兩者皆無；calibration/core/
+  reversal 皆兩者皆有），不疊加進前者，避免 pilot run 意外流入正式 Assessment 機制（違反 stage11 交付
+  定位「不發布正式 Assessment」）。
+- Scored block 契約：`trackingPrepMs=1000`（FR-54-5「1 秒置中準備」）、`protocolGuard={noFire,noAds,
+  noMovement:true}`（§1.3「Scored block 禁止射擊、ADS 與玩家移動」）、trajectory `durationMs=25000`
+  （D-54.4 凍結值）、`endCondition={type:'timeLimit', value:26000}`（prep+scored 合計）、
+  `presentationMs=30000`（安全高於 26000，避免 timed-presentation 提早撤除目標搶在 timeLimit 之前）。
+- Core matrix：`yawBoundDeg=pitchBoundDeg`∈{2.0,0.5} deg × `targetRmsSpeedDegPerSec`∈{5,20} deg/s
+  （OQ-54-2 calibration candidate，非凍結）；`frequencyBandHz=[0.1,0.7]` 固定不變（非操弄變項）。
+  Calibration blocks 用 2.0deg/5dps 這格（較大振幅、較慢速度，隔離單軸可見度判讀，不與快速運動混淆）
+  搭配被壓制軸 `0.1deg`（`trackingTrajectory.ts` 要求正值，不能是 0）。Reversal blocks：
+  `angularBoundsDeg=[-8,8]`、`speedRangeDegPerSec=[5,20]`（沿用 core matrix 速度候選，便於跨 block
+  比較）、`accelerationRampMs=150`；medium `reversalIntervalMs=[800,1400]`、high `=[300,600]`——只有
+  密度變動。
+- `distance=4`（沿用 `tracking_v1`/`tracking_core_pr_pilot_v1` 既有正前方視線慣例，非
+  `tracking_longrange_v1` 被迫改用的 110° 右後方 lane——4u 距離下角度上界投影後的側向/垂直偏移遠小於
+  既有 L/R 槽位 `SIDE_OFFSET=2u`，`field-low` clearance 測試證實全部 block 過關）。
+- 每個 block 各自獨立 seed（`SEED_BASE=54000`/`54100` 兩個家族，WP-54 專屬、不與既有 WP 的
+  18018/23002/94000s/95000s 系列碰撞）與獨立 `drillId`（researcher-mode 註冊鍵，同時承載 checklist
+  要求的「condition」標籤——每個 candidate 一個穩定識別，不新增額外欄位）。
+- 測試：`src/drill/tracking_core_pr_pilot_v1.test.ts`（8 tests：全部 block 過 `field-low` clearance、
+  drillId/seed 各自唯一、practice block 無 prep/guard、calibration 軸向振幅斷言、scored window 契約、
+  2×2 矩陣覆蓋每個候選組合恰一次、端到端 sim round-trip 驗證 `visible`/`scored_start` 事件）；
+  `src/drill/tracking_reversal_pilot_v1.test.ts`（6 tests：clearance、drillId/seed 唯一、high 密度區間
+  嚴格短於 medium 且僅密度變動、scored window 契約、`accelerationRampMs < reversalIntervalMs[0]`、
+  端到端 sim round-trip 驗證 `scored_start`/`target_motion_change` 事件皆抵達 recorder）。
+- `npx tsc --noEmit` exit 0；`npx vitest run` 全專案 193 files / 1825 tests passed（2 skipped），無回歸。
+- T2 checklist 8 個項目全數完成。尚未動：`graphify update .`（production code 有變動，依 T1 precedent
+  等 T2 全部收尾再一次執行）與最終 README/task-checklist/progress 收尾同步（slice 6）。
+
 ### 2026-09-02 — T2 slice 4/6：export metadata（trackingTrajectory/trackingPrepMs opaque pass-through）
 
 - **設計修正（比 T0/T1 規劃更簡）**：讀碼發現 `SpawnMeta.motion`/`spawnArea`/`spiderShot` 早已是

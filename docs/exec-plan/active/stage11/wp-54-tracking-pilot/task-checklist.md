@@ -41,10 +41,14 @@
 
 ## T2 — Pilot drill matrix/protocol guards
 
-- [ ] 新增 practice block，並保證不寫入 scored aggregation。
-- [ ] 新增 horizontal/vertical axis calibration blocks。
-- [ ] 新增 core pseudorandom 2 x 2 size/speed candidate blocks。
-- [ ] 新增 medium/high reversal density candidate blocks。
+- [x] 新增 practice block，並保證不寫入 scored aggregation（`tracking_core_pr_pilot_v1_practice`，
+      `mode:'practice'`、無 `trackingPrepMs`/`protocolGuard`，T2 slice 5）。
+- [x] 新增 horizontal/vertical axis calibration blocks（`tracking_core_pr_pilot_v1_calibration_
+      horizontal`/`_vertical`，T2 slice 5）。
+- [x] 新增 core pseudorandom 2 x 2 size/speed candidate blocks（`TRACKING_CORE_PR_PILOT_V1_CANDIDATES`，
+      2.0/0.5 deg × 5/20 deg/s，T2 slice 5）。
+- [x] 新增 medium/high reversal density candidate blocks（`TRACKING_REVERSAL_PILOT_V1_CANDIDATES`，
+      `src/drill/tracking_reversal_pilot_v1.ts`，T2 slice 5）。
 - [x] 每個 block export metadata 包含 drill id、trajectory version、seed、condition、angular size/speed、
       duration（`meta.drillId` 承載 drill id/condition——每個 candidate 給獨立 drillId；`meta.spawn.
       trackingTrajectory` 原樣帶出 `DrillConfig.targets.trackingTrajectory` 整包物件，version/seed/
