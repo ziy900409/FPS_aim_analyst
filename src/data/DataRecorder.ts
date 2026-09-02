@@ -87,7 +87,13 @@ export type DrillEvent =
    * （形狀比照 `target_stop`）。無 `timing.trackingPrepMs` 時 trajectory 立即從 age=0 推進，此事件
    * 仍在 spawn 當下的第一個 drive tick 觸發（prepSec=0 的退化情形）。
    */
-  | { type: 'scored_start'; targetId: string; t: number; targetX: number; targetY: number; targetZ: number };
+  | { type: 'scored_start'; targetId: string; t: number; targetX: number; targetY: number; targetZ: number }
+  /**
+   * WP-54 / T2：`DrillConfig.protocolGuard` 在 scored 窗內偵測到 no-fire/no-ADS/no-movement 輸入
+   * 時的 edge-triggered 標記（held 期間只記一次，放開後可再記）。**不阻擋輸入本身**——heldFire/
+   * heldAds/held 的寫入路徑完全不受影響，這只是觀察性標記。
+   */
+  | { type: 'protocol_violation'; kind: 'fire' | 'ads' | 'movement'; t: number };
 
 export interface DataRecorderSnapshot {
   ticks: TickRecord[];

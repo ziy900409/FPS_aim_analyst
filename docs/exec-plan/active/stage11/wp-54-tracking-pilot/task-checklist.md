@@ -46,9 +46,13 @@
 - [ ] 新增 core pseudorandom 2 x 2 size/speed candidate blocks。
 - [ ] 新增 medium/high reversal density candidate blocks。
 - [ ] 每個 block export metadata 包含 drill id、trajectory version、seed、condition、angular size/speed、duration。
-- [ ] 建立 scored start/practice boundary event，且 scored 前 1 秒置中不進分析。
-- [ ] 建立 no-fire/no-ADS/no-movement protocol violation 記錄。
-- [ ] 驗證 target visibility、scene clearance、angular size/speed round-trip。
+- [x] 建立 scored start/practice boundary event，且 scored 前 1 秒置中不進分析（`timing.trackingPrepMs`
+      + `scored_start` DrillEvent，`TargetManager`/`SimLoop` 接線，T2 slice 2）。
+- [x] 建立 no-fire/no-ADS/no-movement protocol violation 記錄（`DrillConfig.protocolGuard` +
+      `DrillRunner.tickProtocolGuard` + `protocol_violation` DrillEvent，T2 slice 3；edge-triggered，
+      不阻擋輸入本身）。
+- [x] 驗證 target visibility、scene clearance、angular size/speed round-trip（`clearance.test.ts`
+      envelope 展開、`TargetManager.test.ts`/`SimLoop.test.ts` trajectory drive round-trip，T2 slice 1-2）。
 
 ## T3 — Canonical P0/P1 metrics/truth fixtures
 

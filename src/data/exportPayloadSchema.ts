@@ -865,6 +865,8 @@ function parseDrillEvent(value: unknown, path: string, errors: ExportPayloadPars
       return parseTargetMotionChangeEvent(record, path, errors);
     case 'scored_start':
       return parseScoredStartEvent(record, path, errors);
+    case 'protocol_violation':
+      return parseProtocolViolationEvent(record, path, errors);
     default:
       return fail(errors, `${path}.type`, 'invalid_value', `${path}.type is not a supported event discriminant`);
   }
@@ -1063,6 +1065,15 @@ function parseScoredStartEvent(record: Record<string, unknown>, path: string, er
     return undefined;
   }
   return { type: 'scored_start', targetId, t, targetX, targetY, targetZ };
+}
+
+/** WP-54 / T2：`kind` 為封閉列舉（`parseLiteral`，同 `side`/`hitboxShape` 慣例）。 */
+function parseProtocolViolationEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {
+  const before = errors.length;
+  const kind = parseLiteral(record.kind, `${path}.kind`, ['fire', 'ads', 'movement'] as const, errors);
+  const t = parseFiniteNumber(record.t, `${path}.t`, errors);
+  if (kind === undefined || t === undefined || errors.length > before) return undefined;
+  return { type: 'protocol_violation', kind, t };
 }
 
 function parseHitEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {

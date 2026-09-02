@@ -414,3 +414,122 @@ describe('DrillRunner — SimLoop 整合（sim tick 呼叫 DrillRunner.tick）',
     expect(state.targets).toHaveLength(1);
   });
 });
+
+describe('DrillRunner — protocolGuard（WP-54 / T2）', () => {
+  const TICK_MS = 1000 / SIM_HZ;
+
+  const BAND_LIMITED: DrillConfig['targets']['trackingTrajectory'] = {
+    kind: 'band-limited-2d-v1',
+    seed: 7,
+    durationMs: 25000,
+    yawBoundDeg: 2,
+    pitchBoundDeg: 2,
+    targetRmsSpeedDegPerSec: 5,
+    frequencyBandHz: [0.1, 0.7],
+  };
+
+  function trackingGuardConfig(protocolGuard: DrillConfig['protocolGuard'], trackingPrepMs?: number): DrillConfig {
+    return makeConfig({
+      targets: { count: 1, distance: 4, trackingTrajectory: BAND_LIMITED },
+      timing: { countdownMs: 0, presentationMs: 30000, ...(trackingPrepMs !== undefined ? { trackingPrepMs } : {}) },
+      endCondition: { type: 'timeLimit', value: 30000 },
+      protocolGuard,
+    });
+  }
+
+  // trackingPrepMs = 3·TICK_MS → prepSec = 3·TICK_SEC；crossedPrep 判準為 nextAge >= prepSec，
+  // 故第 3 個 `runner.tick()` 呼叫（含）即跨過（前 2 個仍在 prep 窗內）。
+  const PREP_MS = 3 * TICK_MS;
+
+  it('prep 窗內即使按住開火鍵也不記違規（scored 窗尚未開始）', () => {
+    const config = trackingGuardConfig({ noFire: true }, PREP_MS);
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = true;
+    runner.tick(state, 0); // 第 1 個 tick
+    runner.tick(state, 100); // 第 2 個 tick：仍在 prep 窗內
+    expect(state.protocolViolations).toEqual([]);
+    expect(state.tScoredStart.size).toBe(0);
+  });
+
+  it('跨過 prep 窗、進入 scored 窗那個 tick：帶入的既有 heldFire 立即記一次違規', () => {
+    const config = trackingGuardConfig({ noFire: true }, PREP_MS);
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = true;
+    runner.tick(state, 0);
+    runner.tick(state, 100);
+    runner.tick(state, 200); // 第 3 個 tick：跨過 prep（nextAge === 3·TICK_SEC === prepSec）
+    expect(state.tScoredStart.size).toBe(1);
+    expect(state.protocolViolations).toEqual([{ kind: 'fire', t: 200 }]);
+  });
+
+  it('held 期間只記一次（latch）；放開後可再記一次', () => {
+    const config = trackingGuardConfig({ noFire: true }); // 無 trackingPrepMs → 首 tick 即進 scored 窗
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = true;
+    runner.tick(state, 0);
+    runner.tick(state, 100);
+    runner.tick(state, 200);
+    expect(state.protocolViolations).toEqual([{ kind: 'fire', t: 0 }]); // 恆 held → 只記一次
+
+    state.heldFire = false;
+    runner.tick(state, 300);
+    state.heldFire = true;
+    runner.tick(state, 400);
+    expect(state.protocolViolations).toEqual([
+      { kind: 'fire', t: 0 },
+      { kind: 'fire', t: 400 },
+    ]);
+  });
+
+  it('noAds / noMovement 各自獨立偵測', () => {
+    const config = trackingGuardConfig({ noAds: true, noMovement: true });
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldAds = true;
+    state.held.left = true;
+    runner.tick(state, 0);
+    expect(state.protocolViolations).toEqual(
+      expect.arrayContaining([
+        { kind: 'ads', t: 0 },
+        { kind: 'movement', t: 0 },
+      ]),
+    );
+    expect(state.protocolViolations).toHaveLength(2);
+    expect(state.protocolViolations.some((v) => v.kind === 'fire')).toBe(false); // heldFire 未開、也未啟用 noFire
+  });
+
+  it('省略 protocolGuard：任何輸入皆不記違規（既有 drill 行為逐位不變）', () => {
+    const config = trackingGuardConfig(undefined);
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = true;
+    state.heldAds = true;
+    state.held.left = true;
+    runner.tick(state, 0);
+    runner.tick(state, 100);
+    expect(state.protocolViolations).toEqual([]);
+  });
+
+  it('不阻擋輸入本身：heldFire/heldAds/held 的值不受偵測影響', () => {
+    const config = trackingGuardConfig({ noFire: true, noAds: true, noMovement: true });
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = true;
+    state.heldAds = true;
+    state.held.left = true;
+    runner.tick(state, 0);
+
+    expect(state.heldFire).toBe(true);
+    expect(state.heldAds).toBe(true);
+    expect(state.held.left).toBe(true);
+  });
+});

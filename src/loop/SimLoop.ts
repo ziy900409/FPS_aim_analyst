@@ -642,6 +642,19 @@ function recordTargetMotionChangeEvents(state: SharedState, recorder?: DataRecor
 }
 
 /**
+ * WP-54 / T2：export each pending `protocol_violation`, then drain the transient queue (mirrors
+ * recordTargetMotionChangeEvents's export-then-clear pattern for state.protocolViolations).
+ */
+function recordProtocolViolationEvents(state: SharedState, recorder?: DataRecorder): void {
+  if (recorder !== undefined) {
+    for (const violation of state.protocolViolations) {
+      recorder.recordEvent({ type: 'protocol_violation', kind: violation.kind, t: violation.t });
+    }
+  }
+  state.protocolViolations.length = 0;
+}
+
+/**
  * 推進一個固定 tick（純函式邊界，OQ-2.4：只讀寫傳入 state、不讀 `performance.now()`、不碰 DOM；
  * 預留階段 B Worker 搬遷）。`tickEndMs` = 本 tick 邏輯窗結束時間（量測時鐘域 ms），供輸入分桶。
  *
@@ -710,6 +723,7 @@ export function simStep(
   recordTargetStopEvents(state, tickEndMs, recorder);
   recordScoredStartEvents(state, tickEndMs, recorder);
   recordTargetMotionChangeEvents(state, recorder);
+  recordProtocolViolationEvents(state, recorder);
   advanceProjectiles(state, dtSec, tickStartMs, tickEndMs, targetManager, recorder, weapon);
 
   // recoil 衰減（WP-13 / T1）：64Hz 子節奏 = 偶數 tick（128Hz sim）；dtSec **恆常數 1/64**（GD-5，

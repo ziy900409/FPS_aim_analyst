@@ -8,6 +8,33 @@
 
 ## Progress
 
+### 2026-09-02 — T2 slice 3/6：protocolGuard（no-fire/no-ADS/no-movement）
+
+- `src/drill/DrillRunner.ts`：新增 `tickProtocolGuard(s, nowMs)`（`running` 相位內、`tickHoldReversal`
+  之後呼叫，與其同層）。**設計**：每個 kind（fire/ads/movement）各自一個「已回報」latch，而非比較
+  「上一 tick held 值」——因為跨 prep 窗界帶入的既有 held 狀態，在 scored 窗開始那一刻就該算一次違規，
+  不必等到「false→true」邊緣；latch 在對應輸入放開時歸零，允許下一次按下再記一次。閘門條件是
+  `s.tScoredStart.size === 0`（尚無任何目標跨過 prep）→ 直接跳過，不偵測——prep 窗內既有輸入（例如玩家
+  放開移動鍵準備瞄準）不應誤記。**不阻擋輸入本身**：只推進 `s.protocolViolations`，完全不寫
+  `heldFire`/`heldAds`/`held`。
+- `src/data/DataRecorder.ts`：新增 `protocol_violation` additive `DrillEvent` 變體（`kind: 'fire'|'ads'|
+  'movement'`、`t`）。
+- `src/data/exportPayloadSchema.ts`：新增 `parseProtocolViolationEvent`（`kind` 用既有 `parseLiteral`
+  封閉列舉慣例），`parseDrillEvent` switch 補一個 case。
+- `src/loop/SimLoop.ts`：新增 `recordProtocolViolationEvents`（比照 `recordTargetMotionChangeEvents` 的
+  export-then-clear），`simStep` 內接在其後呼叫。
+- 測試：`src/drill/DrillRunner.test.ts` +6 tests（prep 窗內不偵測、跨過 prep 那個 tick 立即記帶入的
+  既有 held 違規、latch 恆 held 只記一次+放開再按再記一次、noAds/noMovement 各自獨立、省略
+  protocolGuard 時逐位不變、不阻擋輸入本身的直接斷言）；`src/data/exportPayloadSchema.test.ts` +4
+  tests（正向解析 + canonical round-trip + 3 個 fail-fast 案例）。過程中同樣先犯一次 crossedPrep
+  邊界 off-by-one（測試迴圈多跑了一次，把跨過 prep 的那個 tick 誤算進「仍在 prep 窗內」的斷言區間），
+  發現後修正迴圈邊界——非實作問題，見上一個 slice 已建立的同類邊界紀律。
+- `npx tsc --noEmit` exit 0；`npx vitest run` 全專案 191 files / 1808 tests passed（2 skipped），無回歸。
+- T2 checklist 的 8 個項目中，practice/calibration/2×2/reversal block **config 檔案本身**（slice 5）與
+  export metadata 接線（drill id/trajectory version/seed/condition/angular size&speed/duration，slice 4）
+  尚未完成；其餘（trajectory drive round-trip、scored start/practice boundary event、protocol violation
+  guard、target visibility/clearance/角度尺寸 round-trip）已在 slice 1-3 交付，同步翻 task-checklist.md。
+
 ### 2026-09-02 — T2 slice 2/6：SharedState/TargetManager/SimLoop trajectory drive + scored_start/target_motion_change producer
 
 - `src/state/SharedState.ts`：新增 `tScoredStart: Map<string, number>`（比照 `tStop`）、

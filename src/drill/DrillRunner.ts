@@ -60,6 +60,54 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
     reversalCueSent = false;
   }
 
+  // WP-54 / T2：no-fire/no-ADS/no-movement protocol violation guard——每個 kind 各自一個「已回報」
+  // latch（不是單純比較「上一 tick held 值」，因為跨 prep 窗界帶入的既有 held 狀態在窗界開始那一刻
+  // 就該算一次違規，而不是等到下一次「false→true」邊緣才報）：held 期間只報一次，放開後 latch 歸零、
+  // 下一次再按下才會再報一次。偵測**不阻擋輸入本身**（不改 heldFire/heldAds/held 任何寫入路徑）。
+  let reportedFireViolation = false;
+  let reportedAdsViolation = false;
+  let reportedMovementViolation = false;
+
+  function resetProtocolGuardTracking(): void {
+    reportedFireViolation = false;
+    reportedAdsViolation = false;
+    reportedMovementViolation = false;
+  }
+
+  function tickProtocolGuard(s: SharedState, nowMs: number): void {
+    const guard = config?.protocolGuard;
+    if (guard === undefined) return;
+    // scored 窗未開始（trackingTrajectory 目標尚未跨過 trackingPrepMs）：不偵測——與 FR-54-5「scored
+    // start 前 1 秒置中準備」的既有輸入（例如玩家鬆開移動鍵準備瞄準）不應被誤記為違規。
+    if (s.tScoredStart.size === 0) return;
+
+    if (guard.noFire === true) {
+      if (s.heldFire && !reportedFireViolation) {
+        s.protocolViolations.push({ kind: 'fire', t: nowMs });
+        reportedFireViolation = true;
+      } else if (!s.heldFire) {
+        reportedFireViolation = false;
+      }
+    }
+    if (guard.noAds === true) {
+      if (s.heldAds && !reportedAdsViolation) {
+        s.protocolViolations.push({ kind: 'ads', t: nowMs });
+        reportedAdsViolation = true;
+      } else if (!s.heldAds) {
+        reportedAdsViolation = false;
+      }
+    }
+    if (guard.noMovement === true) {
+      const moving = s.held.left || s.held.right;
+      if (moving && !reportedMovementViolation) {
+        s.protocolViolations.push({ kind: 'movement', t: nowMs });
+        reportedMovementViolation = true;
+      } else if (!moving) {
+        reportedMovementViolation = false;
+      }
+    }
+  }
+
   function tickHoldReversal(s: SharedState, nowMs: number): void {
     const cue = config?.cue;
     if (cue?.kind !== 'hold-reversal') return;
@@ -102,6 +150,7 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
     countdownStartMs = null;
     runStartMs = 0;
     resetReversalTracking();
+    resetProtocolGuardTracking();
   }
 
   return {
@@ -164,6 +213,7 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
         // 不建立第二套到期語意：先讓既有 timeout/presentation 閘撤除目標，再追蹤仍存活的
         // 可見目標；撤除同 tick 不會產生過期的 reversal cue。
         tickHoldReversal(s, nowMs);
+        tickProtocolGuard(s, nowMs);
 
         const killed = seenIds.size - s.targets.length;
         const ec = config.endCondition;

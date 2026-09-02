@@ -103,6 +103,10 @@ describe('parseExportPayload — positive: every DrillEvent variant', () => {
     expectOk(payloadWithEvents([{ type: 'scored_start', targetId: 't0', t: 0, targetX: 1, targetY: 2, targetZ: 3 }]));
   });
 
+  it('parses protocol_violation (WP-54 T2)', () => {
+    expectOk(payloadWithEvents([{ type: 'protocol_violation', kind: 'fire', t: 0 }]));
+  });
+
   it('parses target_motion_change (WP-54 T1)', () => {
     expectOk(
       payloadWithEvents([
@@ -170,6 +174,29 @@ describe('parseExportPayload — scored_start round trip (WP-54 T2)', () => {
     ['missing t', { type: 'scored_start', targetId: 't0', targetX: 0, targetY: 0, targetZ: 0 }],
     ['non-finite targetX', { type: 'scored_start', targetId: 't0', t: 0, targetX: Number.NaN, targetY: 0, targetZ: 0 }],
     ['missing targetZ', { type: 'scored_start', targetId: 't0', t: 0, targetX: 0, targetY: 0 }],
+  ])('fails fast on %s', (_label, event) => {
+    const result = parseExportPayload(payloadWithEvents([event]));
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe('parseExportPayload — protocol_violation round trip (WP-54 T2)', () => {
+  it('round-trips through canonicalExportJSON with every field preserved', () => {
+    const event = { type: 'protocol_violation' as const, kind: 'ads' as const, t: 250 };
+    const parsed = parseExportPayload(payloadWithEvents([event]));
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    const canonical = JSON.parse(canonicalExportJSON(parsed.payload)) as { events: unknown[] };
+    expect(canonical.events).toEqual([event]);
+
+    const reparsed = parseExportPayload(JSON.parse(canonicalExportJSON(parsed.payload)));
+    if (!reparsed.ok) throw new Error(`expected ok on reparse, got errors: ${JSON.stringify(reparsed.errors)}`);
+    expect(reparsed.payload.events).toEqual(parsed.payload.events);
+  });
+
+  it.each([
+    ['unknown kind', { type: 'protocol_violation', kind: 'jump', t: 0 }],
+    ['missing kind', { type: 'protocol_violation', t: 0 }],
+    ['missing t', { type: 'protocol_violation', kind: 'fire' }],
   ])('fails fast on %s', (_label, event) => {
     const result = parseExportPayload(payloadWithEvents([event]));
     expect(result.ok).toBe(false);
