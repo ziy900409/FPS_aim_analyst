@@ -2,9 +2,9 @@
 
 ## Status
 
-- **Current**：✅ T0~T5 完成（2026-09-01）。T0 formal freeze 已拍板（見全域 [DECISIONS.md GD-29](../../../DECISIONS.md)），T1~T3 的 provisional 骨架已轉為正式凍結值，T4 formal Session Plan 整合已落地，T5 E2E acceptance 已完成。只剩 T-exit（文件同步收尾）。
+- **Current**：✅ T-exit 完成（2026-09-02）。T0 formal freeze 已拍板（見全域 [DECISIONS.md GD-29](../../../DECISIONS.md)），T1~T3 的 provisional 骨架已轉為正式凍結值，T4 formal Session Plan 整合已落地，T5 E2E acceptance 已完成，T-exit 文件同步與驗證收尾已完成。
 - **Scope state**：根據 WP-52 evidence（人工 checklist + 3 場真人 `peek_click_transfer_pilot_v2_masked` session）新增 formal `peek_click_transfer_v1` Assessment，不修改 pilot v1/v2。凍結值：`protocolVersion=peek-click-transfer-v1.0.0`、`angularSizeDeg=2.5`、`distanceU=8`、`targetCount=20`，timing/visibility 沿用 pilot v1/v2 既有值。formal 現可透過新 Session Plan 家族 `'peek-click-transfer-v1'`（獨立於 pilot 的 `'peek-click-transfer'`）被選取並跑起來，即時 export 也會帶正確的 `meta.assessment.protocolVersion`，且已由真實 E2E（真的跑到 `ended`、真的存進 history、真的算出 trend）驗證。
-- **Dependency state**：T0~T5 已完成。先前標記的「無 SimLoop 驅動的真人手感 round-runner」缺口在 T5 實測後證實不成立——既有 `runCounterStrafeRound()` 對 `peek-ad-corridor-v1` 真實遮蔽幾何一樣能跑出真實命中，見下方 T5 條目。剩 T-exit：docs/MAP.md、exec-plan/README.md 同步 + staged file audit。
+- **Dependency state**：T0~T5 與 T-exit 已完成。先前標記的「無 SimLoop 驅動的真人手感 round-runner」缺口在 T5 實測後證實不成立——既有 `runCounterStrafeRound()` 對 `peek-ad-corridor-v1` 真實遮蔽幾何一樣能跑出真實命中，見下方 T5 條目。
 
 ## Progress
 
@@ -84,15 +84,23 @@
 - **環境事故與修正**：本輪 probe 時手動跑了一個 `npm run dev`(未帶 Playwright 的 `webServer` 設定),殘留在背景。之後所有 `npx playwright test` 呼叫因為 `reuseExistingServer:true`(非 CI)沿用了這個「野生」dev server,而它沒有 `FPS_HISTORY_ROOT=.playwright-tmp/history-dev` 環境變數——導致整輪測試(含既有、非本次新增的測試)把 fixture 資料寫進了**真正的研究資料目錄** `data/session-history/`,違反該目錄自己 README.md 明文的 NFR-48.6(「測試一律使用獨立 temporary root,不得讀寫此目錄」)。診斷過程一度誤判為「pre-existing 平行測試 flake」(`stage10-failure-recovery.spec.ts` 的 sentinel 測試因此假性失敗),用 `Stop-Process` 關掉野生 server、讓 Playwright 自己重新啟一個帶正確 env 的乾淨 server 後,同一份測試全綠,確認是環境問題而非程式碼回歸。**`data/session-history/` 目前殘留本輪與更早測試的污染資料(test-title/uuid 命名的資料夾)**——因為該目錄依規範只能放真人研究資料,不是本檔可以自行清理的範圍,已另外知會使用者處理,不在此 WP 的 commit 範圍內。
 - Verification：`npx tsc --noEmit` 全專案乾淨；`npx vitest run` 190 files / 1725 tests passed（1 skipped，既有）；`npx playwright test`（乾淨 server,`.playwright-tmp/history-dev` 隔離 root）81/81 passed；`graphify update .` 完成（3859 nodes / 9099 edges / 254 communities）。
 
+### 2026-09-02 — T-exit formal release docs and M19 gate
+
+- 同步 operational docs：`CONTEXT.md` 補 `peek_click_transfer_v1` formal Assessment 術語；`docs/operational/analysis-peek-click-transfer.md` 從 pilot-only contract 改為 pilot/formal contract，新增 Formal v1 章節並把 WP-53 freeze 的 protocol/version/condition cell/history-trend/session-family 隔離寫清楚。
+- 同步 exec-plan navigation：`docs/MAP.md` 與 `docs/exec-plan/README.md` 補 stage8~stage11 現況，並標記 stage11/WP-53 T0~T5 + T-exit 已完成、M19 已達成。
+- 本輪未修改 `src/` 或其他 production code，因此 `graphify update .` 為 N/A，未重跑。
+- Verification：`npx.cmd tsc --noEmit` exit 0；`npx.cmd vitest run` 190 files / 1725 tests passed（2 skipped，既有）；`npx.cmd playwright test tests/e2e/peek-click-transfer-v1-formal.spec.ts tests/e2e/session-orchestrator.spec.ts --grep "WP-53 T5|WP-53 T4"` 4/4 passed（需 sandbox 外啟動 Vite webServer；sandbox 內被 esbuild config read 擋住）。
+
 ## Decision log
 
 | ID | 決策 | 理由 | 狀態 |
 |---|---|---|---|
 | D-53.1 | `peek_click_transfer_v1` 使用新的 formal drill id | exact history/trend cohort 不能與 pilot ids 混用 | ✅ Confirmed，T1 已實作 |
-| D-53.2 | Formal release 需要 `meta.assessment` 與 compatibility key | WP-48/49 只保存與趨勢化 Assessment | ✅ Confirmed，T2 condition cell/compatibility 已實作（main.ts 即時組裝仍待 T4） |
-| D-53.3 | formal Session Plan 不改 stage6 default roster | 避免既有四家族 Assessment 順序漂移 | ✅ Confirmed（政策拍板，實作待 T4） |
+| D-53.2 | Formal release 需要 `meta.assessment` 與 compatibility key | WP-48/49 只保存與趨勢化 Assessment | ✅ Confirmed，T2/T4 已實作（condition cell、compatibility、main.ts 即時 `meta.assessment.protocolVersion` 分派） |
+| D-53.3 | formal Session Plan 不改 stage6 default roster | 避免既有四家族 Assessment 順序漂移 | ✅ Confirmed，T4 已實作（獨立 `'peek-click-transfer-v1'` family） |
 | D-53.4 | 使用者 2026-09-01 明確 override No-go，允許先建 T1~T3 placeholder 骨架（不含 T4/T5） | 縮短未來真人 evidence 到位後的落地時間；骨架不寫入正式 history/trend，風險收斂在事後換掉 placeholder 數值 | ✅ 已拍板並完成，見全域 [DECISIONS.md GD-28](../../../DECISIONS.md)（已由 GD-29 轉正） |
 | D-53.5 | T0 formal freeze：n=1 真人 evidence 已足夠，`protocolVersion=peek-click-transfer-v1.0.0`、`angularSizeDeg=2.5`，OQ-53-1~4 全數拍板 | 2.5° 避開 1°(42.9% valid-first-shot,floor risk)與 5°(100%,ceiling risk)；使用者在被告知 smoke-test 限制後仍拍板 n=1 足夠 | ✅ 已拍板，見全域 [DECISIONS.md GD-29](../../../DECISIONS.md) |
+| D-53.6 | T-exit 不執行 `graphify update .` | 本輪只改文件，未修改 production code；專案規則要求 code 修改後才更新 graphify | ✅ Confirmed，2026-09-02 |
 
 ### 2026-09-01 — No-go 期間 override：開始 T1~T3 placeholder 骨架
 
@@ -106,7 +114,7 @@
 | ID | 問題 | Owner | Deadline | Impact |
 |---|---|---|---|---|
 | OQ-53-1 | formal protocol version string | 使用者 + 研究者 | T0 | ✅ Resolved（D-53.5，2026-09-01：`peek-click-transfer-v1.0.0`） |
-| OQ-53-2 | formal Session Plan policy | 使用者 | T0 | ✅ Resolved（D-53.5，2026-09-01：獨立 formal transfer preset，不改 stage6 default；實作待 T4） |
+| OQ-53-2 | formal Session Plan policy | 使用者 | T0 | ✅ Resolved（D-53.5/T4，2026-09-01：獨立 formal transfer preset，不改 stage6 default；已落地為 `'peek-click-transfer-v1'` family） |
 | OQ-53-3 | primary trend metrics | 使用者 + 研究者 | T3 | ✅ Resolved（D-53.5，2026-09-01：`validFirstShotRate` + median `onsetToHitMs`） |
 | OQ-53-4 | minimum participant/evidence threshold | 研究者 | T0 | ✅ Resolved（見 [wp-52 progress.md D-52.13](../wp-52-peek-click-transfer-pilot-v2/progress.md)：n=1 對本次 WP-53 T0 已足夠） |
 
@@ -131,3 +139,6 @@
 | 2026-09-01 | `npx vitest run`（T5 後，全專案） | 190 files / 1725 tests passed（1 skipped，既有） |
 | 2026-09-01 | `npx playwright test`（T5 後，乾淨 server + 隔離 history root） | 81/81 passed |
 | 2026-09-01 | `graphify update .`（T5 後） | 3859 nodes / 9099 edges / 254 communities rebuilt |
+| 2026-09-02 | `npx.cmd tsc --noEmit`（T-exit） | exit 0 |
+| 2026-09-02 | `npx.cmd vitest run`（T-exit，全專案） | 190 files / 1725 tests passed（2 skipped，既有） |
+| 2026-09-02 | `npx.cmd playwright test tests/e2e/peek-click-transfer-v1-formal.spec.ts tests/e2e/session-orchestrator.spec.ts --grep "WP-53 T5|WP-53 T4"`（T-exit focused E2E） | 4/4 passed |

@@ -25,13 +25,13 @@ WP-52 Definition of Done：調整後 transfer pilot 以新 id 與版本化 confi
 
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Freeze decision gate | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | WP-52 T-exit | High |
-| ⬜ | **T1** Formal Assessment drill config | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T0 | High |
-| ⬜ | **T2** Assessment metadata and compatibility | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T1 | High |
-| ⬜ | **T3** Metric registry and history/trend projection | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T2 + WP-49 contract | High |
-| ⬜ | **T4** Formal Session Plan integration | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T2-T3 | High |
-| ⬜ | **T5** E2E acceptance and regression | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T1-T4 | High |
-| ⬜ | **T-exit** Formal release docs and M19 gate | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T1-T5 | Med |
+| ✅ | **T0** Freeze decision gate | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | WP-52 T-exit | High |
+| ✅ | **T1** Formal Assessment drill config | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T0 | High |
+| ✅ | **T2** Assessment metadata and compatibility | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T1 | High |
+| ✅ | **T3** Metric registry and history/trend projection | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T2 + WP-49 contract | High |
+| ✅ | **T4** Formal Session Plan integration | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T2-T3 | High |
+| ✅ | **T5** E2E acceptance and regression | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T1-T4 | High |
+| ✅ | **T-exit** Formal release docs and M19 gate | [WP-53 README §4](wp-53-peek-click-transfer-v1-formal-release/README.md#4-任務拆解-task-breakdown) | T1-T5 | Med |
 
 WP-53 Definition of Done：`peek_click_transfer_v1` 是獨立正式 Assessment drill id；完成 run 後產生 `meta.assessment`、保存至本機 history、可在 exact drill history/trend 中被 registry 投影；pilot v1/v2 仍維持 practice-only 且不進正式 history。
 

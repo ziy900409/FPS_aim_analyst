@@ -8,7 +8,7 @@
 | **里程碑** | Formal `peek_click_transfer_v1` 可進 Assessment Session Plan、history、trend registry |
 | **相依** | WP-52 T-exit；stage10 history/trend contract（WP-48/WP-49）可用 |
 | **估時** | 5-8 dev-days，不含額外 pilot 資料收集 |
-| **狀態** | 🟡 規劃完成，尚未開工 |
+| **狀態** | ✅ T-exit 完成（2026-09-02） |
 
 ---
 

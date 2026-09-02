@@ -33,9 +33,11 @@
 
 ## 3. 執行計畫（`docs/exec-plan/`）
 
-頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M15）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/completed/stage2/README.md](exec-plan/completed/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/completed/stage3/MAP.md](exec-plan/completed/stage3/MAP.md) · [PLAN.md](exec-plan/completed/stage3/PLAN.md) · [README.md](exec-plan/completed/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/completed/stage5/README.md](exec-plan/completed/stage5/README.md)；stage4（階段 D，選手表現分析管線）tech spec 見 [exec-plan/completed/stage4/README.md](exec-plan/completed/stage4/README.md)。
+頂層索引：[exec-plan/README.md](exec-plan/README.md) — 含里程碑門控（M1–M19）、跨階段相依圖、執行規則。stage2 tech spec 見 [exec-plan/completed/stage2/README.md](exec-plan/completed/stage2/README.md)；stage3 導航 / 大框架 / tech spec 見 [exec-plan/completed/stage3/MAP.md](exec-plan/completed/stage3/MAP.md) · [PLAN.md](exec-plan/completed/stage3/PLAN.md) · [README.md](exec-plan/completed/stage3/README.md)；stage5（階段 E，BR 遠距跟槍測試模組）tech spec 見 [exec-plan/completed/stage5/README.md](exec-plan/completed/stage5/README.md)；stage4（階段 D，選手表現分析管線）tech spec 見 [exec-plan/completed/stage4/README.md](exec-plan/completed/stage4/README.md)；active stage8~stage11 見 [exec-plan/active/](exec-plan/active/)。
 
-**進行中（`active/`）**：目前為空——最近一批工作（階段 F/G）皆已交付並移入 `completed/`。
+**進行中／尚未歸檔（`active/`）**：stage8（WP-43 session entry restructure，T-exit 完成但正式採納/歸檔延後）、stage9（WP-44 進行中；WP-45/46/47 T-exit 完成）、stage10（WP-48~50 T-exit 完成；WP-51 automated gates 通過，M18 manual/owner gate 待收斂）、stage11（WP-52/WP-53 T-exit 完成，**M19 達成 2026-09-02**）。另有 legacy `active/stage5/` 目錄殘留；已歸檔權威仍是 `completed/stage5/`。
+
+[`active/stage11/`](exec-plan/active/stage11/README.md)（階段 K，Peek-click transfer pilot adjustment and formal release）已於 2026-09-02 完成 **M19**：WP-52 `peek_click_transfer_pilot_v2` evidence loop T-exit 完成；WP-53 正式 `peek_click_transfer_v1` T0~T5 + T-exit 完成。正式版現為 `mode:'assessment'`，有 `meta.assessment`、compatibility condition cell、exact-id history/trend registry 與獨立 Session Plan 家族 `'peek-click-transfer-v1'`；pilot v1/v2 維持 practice-only / formal cohort 隔離。
 
 [`completed/stage7/`](exec-plan/completed/stage7/README.md)(階段 G,選手測試流程前端優化)已於 2026-08-25 交付,**M17 達成**(WP-40~42 全部 T-exit ✅,[DECISIONS.md](exec-plan/DECISIONS.md) **GD-24**,驗收清單見 [acceptance-stage-g.md](operational/acceptance-stage-g.md)),資料夾已隨 T-exit 由 `active/` 移入 `completed/`。與 stage6(協定/指標本身)正交,不修改任何已凍結協定參數,只處理「一場測試怎麼被操作」(quality-flag 即時呈現 / session orchestrator / seeded 家族 counterbalance)。附一份設計故事板 [ui-storyboard.html](exec-plan/completed/stage7/ui-storyboard.html)。
 
@@ -51,7 +53,11 @@
 docs/exec-plan/
 ├── README.md              ← 頂層索引（WP 狀態表 + milestones）
 ├── DECISIONS.md           ← 全域決策 / 跨文件矛盾帳本（global episodic）
-├── active/                ← 進行中的 WP（目前為空）
+├── active/                ← 進行中／尚未歸檔的 stage8~stage11（stage11 ✅ M19；stage10 M18 gate 待收斂）
+│   ├── stage8/            ← WP-43 session entry restructure（T-exit 完成，採納/歸檔延後）
+│   ├── stage9/            ← WP-44~47 additive drill/UI work（WP-45/46/47 ✅；WP-44 🟡）
+│   ├── stage10/           ← WP-48~51 local history/replay/trends（WP-51 automated gate ✅；M18 manual/owner gate 待）
+│   └── stage11/           ← WP-52~53 peek-click transfer formal release（✅ M19 2026-09-02）
 ├── completed/             ← WP 交付後移入
 │   ├── stage1/            ← 階段 A 已交付（WP-0~9）
 │   │   └── wp-N-*/

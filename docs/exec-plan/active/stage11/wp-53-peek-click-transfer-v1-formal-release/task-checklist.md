@@ -62,9 +62,9 @@
 
 ## T-exit
 
-- [ ] full CI exit 0
-- [ ] transfer-focused E2E exit 0
-- [ ] operational docs synced
-- [ ] `docs/MAP.md` / `docs/exec-plan/README.md` synced
-- [ ] 若修改 code，`graphify update .` 已執行
-- [ ] staged file audit complete
+- [x] full CI exit 0（`npx.cmd tsc --noEmit` exit 0；`npx.cmd vitest run` 190 files / 1725 tests passed, 2 skipped）
+- [x] transfer-focused E2E exit 0（formal T5 三例 + `session-orchestrator.spec.ts` WP-53 T4，一共 4/4 passed）
+- [x] operational docs synced（`CONTEXT.md` + `docs/operational/analysis-peek-click-transfer.md` 補 formal `peek_click_transfer_v1`）
+- [x] `docs/MAP.md` / `docs/exec-plan/README.md` synced
+- [x] 若修改 code，`graphify update .` 已執行（本輪未改 code，N/A；未重跑）
+- [x] staged file audit complete

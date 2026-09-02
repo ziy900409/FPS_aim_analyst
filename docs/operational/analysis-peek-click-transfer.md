@@ -1,6 +1,6 @@
-# Analysis Peek-click Transfer Pilot Contract
+# Analysis Peek-click Transfer Contract
 
-`peek-click-transfer-pilot-v1` is a Practice-only integrated transfer task. It asks whether a player can turn the component abilities measured separately by `hold-click-v1` (exposure/acquisition) and `counterstrafe-reversal-v1` (braking/first shot) into one self-motion peek: move out from cover, expose a static target, counter-strafe, and fire. It is not an Assessment protocol, a leaderboard task, or a replacement for either component measure.
+Peek-click transfer asks whether a player can turn the component abilities measured separately by `hold-click-v1` (exposure/acquisition) and `counterstrafe-reversal-v1` (braking/first shot) into one self-motion peek: move out from cover, expose a static target, counter-strafe, and fire. The pilot ids remain Practice-only evidence-collection tools; `peek_click_transfer_v1` is the formal Assessment release frozen by WP-53.
 
 ## Trial timeline and geometry
 
@@ -44,8 +44,8 @@ A valid first shot requires a first fire event that hits, occurs no earlier than
 
 - Do not compare transfer onset-relative timing directly with hold-click detection latency: the transfer task permits a predictable strict L/R side sequence and self-motion creates exposure.
 - Do not interpret a 20-presentation block as 20 independent participant observations. Presentations are nested trials; the participant is the independent replicate.
-- Do not use these values in stage6 Assessment history, compatibility comparisons, diagnosis recommendations, or a combined score.
-- The 1.5/2.0/3.0 degree target candidates and 3000 ms timeout are pilot settings, not frozen Assessment values. Formal adoption requires a separate pilot-data, power, analysis, and numeric-freeze decision.
+- Pilot v1/v2 values must not enter stage6 Assessment history, compatibility comparisons, diagnosis recommendations, or a combined score.
+- The pilot target-size candidates are exploration settings: v1 uses 1.5/2.0/3.0 degrees; v2 uses 1/2.5/5 degrees after WP-52 T4. They are not formal Assessment cohorts.
 
 ## Verification evidence
 
@@ -67,9 +67,17 @@ Operators add the pilot into a Session Plan through the existing free family-che
 
 It never derives a composite score, never touches file/network I/O, and accepts either `derivePeekClickTransferMetrics()`'s output or a hand-built synthetic fixture (same shape: `{ presentations }`).
 
-### Sampling limitations and what must not be claimed yet
+## Formal v1 (WP-53)
 
-- No committed export in this repository comes from a real human pilot session. Everything currently verified is synthetic (unit tests) or a single-instrumented walkthrough — this is **not** pilot evidence in the WP-52 T4 manual-gate sense.
-- Do not treat any evidence-report output produced before a real manual pilot pass as informative about human completion/timeout/valid-first-shot rates. The report's correctness is proven; its *input* has not yet come from real participants.
-- A handful of participant sessions cannot establish population-level rates with usable precision — WP-52 T4/OQ-52-4 defer the "how many participants is enough" question to the researcher, and WP-53's freeze decision must not be made on n too small to distinguish signal from noise.
+`peek_click_transfer_v1` is the formal Assessment drill id released by WP-53 after the WP-52 manual gate and three real `peek_click_transfer_pilot_v2_masked` session exports were reviewed. The freeze decision is [DECISIONS.md GD-29](../exec-plan/DECISIONS.md): `protocolVersion='peek-click-transfer-v1.0.0'`, `angularSizeDeg=2.5`, `distanceU=8`, `targetCount=20`, and the existing 3000 ms spawn-anchored timeout plus `N=9` / `0.5` visibility onset.
+
+Formal runs write `meta.assessment` and use the `buildPeekClickTransferV1ConditionCell()` compatibility cell. The history/trend registry accepts only the exact drill id `peek_click_transfer_v1` and projects `valid-first-shot-rate` plus median `onset-to-hit-ms` as primary metrics; `first-shot-hit-rate` and `fire-before-gate-rate` remain secondary descriptors. Pilot ids stay unregistered for formal trend projection, even if a test harness forcibly saves one as Assessment data.
+
+Operators can include the formal transfer task in Session Plan through the independent family id `'peek-click-transfer-v1'`. This does not replace the pilot family id `'peek-click-transfer'` and does not modify the stage6 default four-family Assessment roster.
+
+### Sampling limitations and what must not be over-claimed
+
+- The WP-53 formal freeze used n=1 human pilot evidence as an explicit smoke-test threshold, not as population-level evidence. Do not claim stable population rates or training-effect estimates from it.
+- Evidence-report output remains input-dependent: before a manual pilot pass it proves only aggregator correctness; after WP-52 T4 it supports the specific GD-29 freeze decision, not broader efficacy claims.
+- A handful of participant sessions cannot establish population-level rates with usable precision. Future protocol changes or stronger claims require a new evidence threshold and version bump.
 - Left/right balance from the evidence report only detects a *gross* scheduling defect (e.g. a broken alternation); it is not a substitute for the scene-geometry parity test that already covers spatial symmetry at the config level (NFR-52-2).
