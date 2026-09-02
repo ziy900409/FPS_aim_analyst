@@ -10,6 +10,12 @@ import type { Vec3 } from '../state/types.ts';
 import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
 import { SIM_HZ } from '../loop/constants.ts';
 import { isDrivenMotion, motionOffset } from './targetMotion.ts';
+import {
+  createTrackingTrajectory,
+  projectTrackingAngles,
+  type TrackingTrajectory,
+  type TrackingTrajectorySample,
+} from './trackingTrajectory.ts';
 
 /**
  * TargetManager — WP-4 / T2（FR-4.2）；WP-6 / T2（FR-6.2）config 驅動
@@ -70,6 +76,9 @@ const TICK_SEC = 1 / SIM_HZ;
 // 移動目標位移差計算的模組層級重用向量(每 tick 熱路徑零配置,GC 紀律 §4)。
 const offsetPrev: Vec3 = { x: 0, y: 0, z: 0 };
 const offsetCurr: Vec3 = { x: 0, y: 0, z: 0 };
+// WP-54 / T2：trackingTrajectory drive 熱路徑重用（同 GC 紀律）——sample() 只寫 yaw/pitch(角度)，
+// projectTrackingAngles() 再把它投影進世界座標；兩者共用同一個目標位置寫入，故不需要另一份 offset。
+const trajectorySample: TrackingTrajectorySample = { yawDeg: 0, pitchDeg: 0, yawVelocityDegPerSec: 0, pitchVelocityDegPerSec: 0 };
 
 function sideX(side: 'L' | 'R'): number {
   return side === 'R' ? SIDE_OFFSET : -SIDE_OFFSET;
@@ -173,6 +182,17 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   const hitboxCandidates = config?.targets.hitboxCandidates;
   const spiderShot = config?.spiderShot;
   const cue = config?.cue;
+  // WP-54 / T2：trackingTrajectory 建構期建一次（比照 hitboxQueue「build once per run」慣例，非每
+  // tick）——與 motion 互斥（schema.ts 驗證），單一持久目標（config.timing.presentationMs 慣例）獨占
+  // 使用，故單一閉包實例即足夠，不需要 per-target map。origin 重用既有 `distance`/`TARGET_Y`，不新增
+  // config 欄位（README §2.2 T1 交付的 `TrackingProjectionOrigin` 契約）。
+  const trackingTrajectoryConfig = config?.targets.trackingTrajectory;
+  const trackingTrajectory: TrackingTrajectory | undefined =
+    trackingTrajectoryConfig !== undefined ? createTrackingTrajectory(trackingTrajectoryConfig) : undefined;
+  const trackingPrepSec = (config?.timing.trackingPrepMs ?? 0) / 1000;
+  const trajectoryOrigin = { distanceU: distance, centerY: TARGET_Y };
+  // reversal-2d-v1 的 `changes` 已在建構期依 age 排序算好（T1）；游標單調推進，reset() 歸零。
+  let nextTrajectoryChangeIndex = 0;
   const usesSeededSpawn =
     config?.sequence.seed !== undefined &&
     (spawnArea !== undefined || spawnDelayMsRange !== undefined || hitboxCandidates !== undefined);
@@ -366,6 +386,40 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
         const t = state.targets[i];
         // 已觸發 target_stop 的目標保留 motion config 供資料/診斷讀取，但不再進 motion drive。
         if (state.tStop.has(t.id)) continue;
+        // WP-54 / T2：trackingTrajectory drive——與 legacy motion 互斥（schema.ts 驗證），獨立分支、
+        // 提早 continue，legacy motion 路徑逐位不動。`ageSec` 原點依 `trackingPrepSec` 平移：prep 窗
+        // 內（`nextAge < trackingPrepSec`）trajectory 凍結在 age=0（玩家「置中準備」瞄準的固定點），
+        // 跨過 prep 那個 tick 才蓋 `tScoredStart` 戳、開始正常推進，也才開始 drain `changes`（`changes[0]`
+        // 的 tMs=0 代表「從靜止進入首個 leg」，語意上就是 prep 結束那一刻，不該在 prep 窗內提早觸發）。
+        if (trackingTrajectory !== undefined) {
+          const prevAge = t.age ?? 0;
+          const nextAge = prevAge + TICK_SEC;
+          t.age = nextAge;
+          const crossedPrep = nextAge >= trackingPrepSec;
+          const trajectoryAgeSec = crossedPrep ? nextAge - trackingPrepSec : 0;
+          trackingTrajectory.sample(trajectoryAgeSec, trajectorySample);
+          projectTrackingAngles(trajectorySample.yawDeg, trajectorySample.pitchDeg, trajectoryOrigin, t.pos);
+          if (crossedPrep) {
+            if (!state.tScoredStart.has(t.id)) state.tScoredStart.set(t.id, nowMs);
+            const trajectoryAgeMs = trajectoryAgeSec * 1000;
+            while (
+              nextTrajectoryChangeIndex < trackingTrajectory.changes.length &&
+              trackingTrajectory.changes[nextTrajectoryChangeIndex].tMs <= trajectoryAgeMs
+            ) {
+              const change = trackingTrajectory.changes[nextTrajectoryChangeIndex];
+              state.targetMotionChanges.push({
+                targetId: t.id,
+                t: nowMs,
+                yawVelocityBeforeDegPerSec: change.yawVelocityBeforeDegPerSec,
+                yawVelocityAfterDegPerSec: change.yawVelocityAfterDegPerSec,
+                pitchVelocityBeforeDegPerSec: change.pitchVelocityBeforeDegPerSec,
+                pitchVelocityAfterDegPerSec: change.pitchVelocityAfterDegPerSec,
+              });
+              nextTrajectoryChangeIndex++;
+            }
+          }
+          continue;
+        }
         const pendingStop = trackingStopMs !== undefined && t.fireLocked === true;
         if (!isDrivenMotion(t.motion)) {
           if (!pendingStop) continue;
@@ -416,6 +470,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
         // t_visible 隨目標撤除清掉;下次 spawn 為新 id、重新蓋戳(可見→不可見→再可見視為新目標)。
         state.tVisible.delete(id);
         state.tStop.delete(id);
+        state.tScoredStart.delete(id);
       }
     },
 
@@ -423,10 +478,13 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       state.targets.length = 0;
       state.tVisible.clear();
       state.tStop.clear();
+      state.tScoredStart.clear();
       state.cues.length = 0;
+      state.targetMotionChanges.length = 0;
       nextId = 0;
       spawnedCount = 0;
       pendingSpawnAtMs = null;
+      nextTrajectoryChangeIndex = 0;
       spawnRng = usesSeededSpawn
         ? createRan1(config!.sequence.seed!)
         : spiderShot !== undefined

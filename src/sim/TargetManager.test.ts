@@ -7,6 +7,12 @@ import { createDataRecorder } from '../data/DataRecorder.ts';
 import { createSharedState } from '../state/SharedState.ts';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
 import { createTargetManager } from './TargetManager.ts';
+import {
+  createTrackingTrajectory,
+  projectTrackingAngles,
+  type TrackingTrajectoryConfig,
+  type TrackingTrajectorySample,
+} from './trackingTrajectory.ts';
 
 const TICK_MS = 1000 / SIM_HZ; // 7.8125
 
@@ -952,5 +958,171 @@ describe('TargetManager — WP-52 T5 balanced-shuffle hitboxCandidates', () => {
     tm.tick(state, 100);
     expect(state.targets[0].hitboxVaries).toBeUndefined();
     expect(state.targets[0].hitbox.width).toBe(0.35);
+  });
+});
+
+describe('TargetManager — trackingTrajectory drive（WP-54 / T2）', () => {
+  const TICK_SEC = 1 / SIM_HZ;
+  const DISTANCE = 4;
+  const CENTER_Y = 1.5; // TargetManager 私有 TARGET_Y 常數值（clearance.ts TARGET_CENTER_Y_U 同值）
+
+  const BAND_LIMITED: TrackingTrajectoryConfig = {
+    kind: 'band-limited-2d-v1',
+    seed: 7,
+    durationMs: 25000,
+    yawBoundDeg: 2,
+    pitchBoundDeg: 2,
+    targetRmsSpeedDegPerSec: 5,
+    frequencyBandHz: [0.1, 0.7],
+  };
+
+  const REVERSAL: TrackingTrajectoryConfig = {
+    kind: 'reversal-2d-v1',
+    seed: 7,
+    durationMs: 25000,
+    angularBoundsDeg: [-8, 8],
+    speedRangeDegPerSec: [5, 20],
+    reversalIntervalMs: [800, 1400],
+    accelerationRampMs: 150,
+  };
+
+  function trajectoryConfig(
+    trackingTrajectory: TrackingTrajectoryConfig,
+    trackingPrepMs?: number,
+  ): DrillConfig {
+    return {
+      drillId: 'tracking-trajectory-test',
+      targets: { count: 1, distance: DISTANCE, trackingTrajectory },
+      sequence: { alternation: 'RL' },
+      timing: { countdownMs: 0, presentationMs: 30000, ...(trackingPrepMs !== undefined ? { trackingPrepMs } : {}) },
+      endCondition: { type: 'timeLimit', value: 30000 },
+    };
+  }
+
+  /** 直接用 trajectory kernel + 投影公式現算期望位置，避免手算誤差（同一份幾何函式）。 */
+  function expectedPos(trackingTrajectory: TrackingTrajectoryConfig, ageSec: number): { x: number; y: number; z: number } {
+    const trajectory = createTrackingTrajectory(trackingTrajectory);
+    const sample: TrackingTrajectorySample = { yawDeg: 0, pitchDeg: 0, yawVelocityDegPerSec: 0, pitchVelocityDegPerSec: 0 };
+    trajectory.sample(ageSec, sample);
+    const out = { x: 0, y: 0, z: 0 };
+    projectTrackingAngles(sample.yawDeg, sample.pitchDeg, { distanceU: DISTANCE, centerY: CENTER_Y }, out);
+    return out;
+  }
+
+  it('無 trackingPrepMs：pos 逐 tick 等於 trajectory.sample(age) 的投影（round-trip，band-limited）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(trajectoryConfig(BAND_LIMITED));
+
+    for (let i = 1; i <= 5; i++) {
+      tm.tick(state, i * 100);
+      const pos = state.targets[0].pos;
+      const expected = expectedPos(BAND_LIMITED, i * TICK_SEC);
+      expect(pos.x).toBeCloseTo(expected.x, 12);
+      expect(pos.y).toBeCloseTo(expected.y, 12);
+      expect(pos.z).toBeCloseTo(expected.z, 12);
+    }
+  });
+
+  it('無 trackingPrepMs：scored_start 在第一個 drive tick 就蓋戳（prepSec=0 退化情形）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(trajectoryConfig(BAND_LIMITED));
+
+    tm.tick(state, 100);
+    const id = state.targets[0].id;
+    expect(state.tScoredStart.get(id)).toBe(100);
+  });
+
+  it('trackingPrepMs 期間：pos 凍結在 trajectory.sample(0) 投影、tScoredStart 未蓋戳', () => {
+    const state = createSharedState();
+    const prepMs = 20 * TICK_SEC * 1000; // 20 ticks 的置中準備窗
+    const tm = createTargetManager(trajectoryConfig(BAND_LIMITED, prepMs));
+    const frozen = expectedPos(BAND_LIMITED, 0);
+
+    for (let i = 1; i <= 10; i++) {
+      tm.tick(state, i * 100);
+      const pos = state.targets[0].pos;
+      expect(pos.x).toBeCloseTo(frozen.x, 12);
+      expect(pos.y).toBeCloseTo(frozen.y, 12);
+      expect(pos.z).toBeCloseTo(frozen.z, 12);
+    }
+    expect(state.tScoredStart.size).toBe(0);
+  });
+
+  it('跨過 trackingPrepMs 那個 tick：蓋 tScoredStart（恰一次，邊界含跨過那一 tick）、之後 trajectoryAgeSec 從 0 重新推進', () => {
+    const state = createSharedState();
+    const prepTicks = 20; // crossedPrep 判準為 nextAge >= prepSec，故第 20 個 tick（含）即跨過
+    const prepMs = prepTicks * TICK_SEC * 1000;
+    const tm = createTargetManager(trajectoryConfig(BAND_LIMITED, prepMs));
+
+    for (let i = 1; i < prepTicks; i++) {
+      tm.tick(state, i * 100);
+      expect(state.tScoredStart.size).toBe(0); // 仍在 prep 窗內，未蓋戳
+    }
+    tm.tick(state, prepTicks * 100); // 跨過 prep 的那個 tick（nextAge === prepSec）
+    const id = state.targets[0].id;
+    expect(state.tScoredStart.get(id)).toBe(prepTicks * 100);
+
+    tm.tick(state, (prepTicks + 1) * 100); // 跨過後一個 tick：仍只蓋一次
+    expect(state.tScoredStart.size).toBe(1);
+
+    // 跨過後那個 tick：trajectoryAgeSec = 1·TICK_SEC（自跨過那一刻重新從 0 起算，不含 prep 窗內的 tick 數）。
+    const posAfter = state.targets[0].pos;
+    const expected = expectedPos(BAND_LIMITED, TICK_SEC);
+    expect(posAfter.x).toBeCloseTo(expected.x, 12);
+    expect(posAfter.y).toBeCloseTo(expected.y, 12);
+    expect(posAfter.z).toBeCloseTo(expected.z, 12);
+  });
+
+  it('reversal-2d-v1：target_motion_change 事件在跨過 trackingPrepMs 之後才開始 drain（不在 prep 窗內提早觸發）', () => {
+    const state = createSharedState();
+    const prepTicks = 5; // crossedPrep 判準為 nextAge >= prepSec，故第 5 個 tick（含）即跨過
+    const prepMs = prepTicks * TICK_SEC * 1000;
+    const tm = createTargetManager(trajectoryConfig(REVERSAL, prepMs));
+
+    for (let i = 1; i < prepTicks; i++) {
+      tm.tick(state, i * 100);
+      expect(state.targetMotionChanges).toHaveLength(0); // prep 窗內：changes[0].tMs=0 不得提早觸發
+    }
+    tm.tick(state, prepTicks * 100); // 跨過 prep 的那個 tick
+    expect(state.targetMotionChanges).toHaveLength(1);
+    expect(state.targetMotionChanges[0].targetId).toBe(state.targets[0].id);
+    expect(state.targetMotionChanges[0].t).toBe(prepTicks * 100);
+  });
+
+  it('reversal-2d-v1：無 trackingPrepMs 時第一個 tick 立刻 drain changes[0]', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(trajectoryConfig(REVERSAL));
+
+    tm.tick(state, 100);
+    expect(state.targetMotionChanges).toHaveLength(1);
+    expect(state.targetMotionChanges[0].t).toBe(100);
+  });
+
+  it('markKilled 撤除目標後清除 tScoredStart（比照 tVisible/tStop）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(trajectoryConfig(BAND_LIMITED));
+
+    tm.tick(state, 100);
+    const id = state.targets[0].id;
+    expect(state.tScoredStart.has(id)).toBe(true);
+    tm.markKilled(state, id);
+    expect(state.tScoredStart.has(id)).toBe(false);
+  });
+
+  it('reset 後 trajectory 從 age=0 重新決定性推進（同 seed 同序列）', () => {
+    const state = createSharedState();
+    const tm = createTargetManager(trajectoryConfig(BAND_LIMITED));
+
+    tm.tick(state, 100);
+    tm.tick(state, 200);
+    const before = { ...state.targets[0].pos };
+
+    tm.reset(state);
+    tm.tick(state, 500);
+    tm.tick(state, 600);
+    const after = { ...state.targets[0].pos };
+
+    expect(after).toEqual(before); // 決定性：與 nowMs 無關，只依 age（tick 數）
+    expect(state.targetMotionChanges).toEqual([]); // reset 清空 transient queue
   });
 });

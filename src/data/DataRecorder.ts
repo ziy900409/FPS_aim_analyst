@@ -81,7 +81,13 @@ export type DrillEvent =
       yawVelocityAfterDegPerSec: number;
       pitchVelocityBeforeDegPerSec: number;
       pitchVelocityAfterDegPerSec: number;
-    };
+    }
+  /**
+   * WP-54 / T2：`targets.trackingTrajectory` 目標「置中準備」窗界結束、scored 分析窗開始的瞬間
+   * （形狀比照 `target_stop`）。無 `timing.trackingPrepMs` 時 trajectory 立即從 age=0 推進，此事件
+   * 仍在 spawn 當下的第一個 drive tick 觸發（prepSec=0 的退化情形）。
+   */
+  | { type: 'scored_start'; targetId: string; t: number; targetX: number; targetY: number; targetZ: number };
 
 export interface DataRecorderSnapshot {
   ticks: TickRecord[];

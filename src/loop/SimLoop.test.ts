@@ -1068,3 +1068,47 @@ describe('KI-005 / A — RED 基線（修法前）：aim-diff ω 的 ZOH aliasin
     expect(coefficientOfVariation(dYaw)).toBeLessThanOrEqual(1e-9);
   });
 });
+
+describe('SimLoop — trackingTrajectory events reach the recorder（WP-54 / T2）', () => {
+  function trajectoryConfig(): DrillConfig {
+    return {
+      drillId: 'tracking-trajectory-simloop-test',
+      targets: {
+        count: 1,
+        distance: 4,
+        trackingTrajectory: {
+          kind: 'reversal-2d-v1',
+          seed: 7,
+          durationMs: 25000,
+          angularBoundsDeg: [-8, 8],
+          speedRangeDegPerSec: [5, 20],
+          reversalIntervalMs: [800, 1400],
+          accelerationRampMs: 150,
+        },
+      },
+      sequence: { alternation: 'RL' },
+      timing: { countdownMs: 0, presentationMs: 30000, trackingPrepMs: 2 * (1000 / SIM_HZ) },
+      endCondition: { type: 'timeLimit', value: 30000 },
+    };
+  }
+
+  it('recorder 收到 scored_start 與 target_motion_change（simStep 直驅路徑）', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 32, maxDrillSeconds: 1 });
+    const tm = createTargetManager(trajectoryConfig());
+
+    // 5 個 tick：跨過 2-tick 的 trackingPrepMs 置中準備窗，之後至少一個 reversal leg 邊界事件。
+    for (let i = 1; i <= 5; i++) {
+      simStep(state, 1 / SIM_HZ, TICK_MS * i, tm, undefined, undefined, undefined, undefined, recorder);
+    }
+
+    const events = recorder.snapshot().events;
+    const scoredStart = events.filter((e) => e.type === 'scored_start');
+    expect(scoredStart).toHaveLength(1);
+    expect(scoredStart[0]).toMatchObject({ targetId: state.targets[0].id, t: TICK_MS * 2 });
+
+    const changes = events.filter((e) => e.type === 'target_motion_change');
+    expect(changes.length).toBeGreaterThanOrEqual(1);
+    expect(changes[0]).toMatchObject({ targetId: state.targets[0].id, t: TICK_MS * 2 });
+  });
+});

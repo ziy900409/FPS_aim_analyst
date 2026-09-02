@@ -280,8 +280,31 @@ export interface SharedState {
   tVisible: Map<string, number>;
   /** 各目標 target_stop 的 sim-clock 時間戳；目標撤除或 reset 時同步清除。 */
   tStop: Map<string, number>;
+  /**
+   * WP-54 / T2：`targets.trackingTrajectory` 目標「置中準備」結束（scored 分析窗開始）的 sim-clock
+   * 時間戳；比照 `tStop`——目標撤除或 reset 時同步清除。無 `trackingTrajectory` 的目標恆不寫入。
+   */
+  tScoredStart: Map<string, number>;
   /** Pending counter-strafe cue stamps; SimLoop exports and drains these after TargetManager advances. */
   cues: Array<{ t: number; direction: 'A' | 'D' }>;
+  /**
+   * WP-54 / T2：`reversal-2d-v1` trajectory 的待匯出方向變化事件（`TargetManager` 依 `trajectory.changes`
+   * 游標推進寫入，`SimLoop` 每 tick drain 進 `recorder` 後清空）。比照 `cues` 的 transient queue 模式。
+   */
+  targetMotionChanges: Array<{
+    targetId: string;
+    t: number;
+    yawVelocityBeforeDegPerSec: number;
+    yawVelocityAfterDegPerSec: number;
+    pitchVelocityBeforeDegPerSec: number;
+    pitchVelocityAfterDegPerSec: number;
+  }>;
+  /**
+   * WP-54 / T2：scored 窗內偵測到 no-fire/no-ADS/no-movement 違規時的待匯出標記（`DrillRunner` 依
+   * `config.protocolGuard` edge-trigger 寫入，`SimLoop` 每 tick drain 進 `recorder` 後清空）。比照
+   * `cues` 的 transient queue 模式；偵測**不阻擋輸入本身**。
+   */
+  protocolViolations: Array<{ kind: 'fire' | 'ads' | 'movement'; t: number }>;
   /** runtime validity observations;純觀測旗標，不 clamp、不改 sim 演進。 */
   validity: { playerCorridorExceeded: boolean };
   /**
@@ -402,7 +425,10 @@ export function createSharedState(): SharedState {
     targets: [],
     tVisible: new Map(),
     tStop: new Map(),
+    tScoredStart: new Map(),
     cues: [],
+    targetMotionChanges: [],
+    protocolViolations: [],
     validity: { playerCorridorExceeded: false },
     firstShotPeekId: null,
   };
@@ -452,7 +478,10 @@ export function resetState(state: SharedState = sharedState): void {
   state.targets.length = 0;
   state.tVisible.clear();
   state.tStop.clear();
+  state.tScoredStart.clear();
   state.cues.length = 0;
+  state.targetMotionChanges.length = 0;
+  state.protocolViolations.length = 0;
   state.validity.playerCorridorExceeded = false;
   state.firstShotPeekId = null; // 首發旗標記憶歸零（重開 drill → 首發重新從第一 peek 計）
 }

@@ -99,6 +99,10 @@ describe('parseExportPayload — positive: every DrillEvent variant', () => {
     expectOk(payloadWithEvents([{ type: 'hit', t: 0, timeOfFlightMs: 15, shotSeq: 1, targetId: 't0', part: 'head' }]));
   });
 
+  it('parses scored_start (WP-54 T2)', () => {
+    expectOk(payloadWithEvents([{ type: 'scored_start', targetId: 't0', t: 0, targetX: 1, targetY: 2, targetZ: 3 }]));
+  });
+
   it('parses target_motion_change (WP-54 T1)', () => {
     expectOk(
       payloadWithEvents([
@@ -142,6 +146,30 @@ describe('parseExportPayload — target_motion_change round trip (WP-54 T1)', ()
     ['missing t', { type: 'target_motion_change', targetId: 't0', yawVelocityBeforeDegPerSec: 0, yawVelocityAfterDegPerSec: 0, pitchVelocityBeforeDegPerSec: 0, pitchVelocityAfterDegPerSec: 0 }],
     ['non-finite yaw velocity', { type: 'target_motion_change', targetId: 't0', t: 0, yawVelocityBeforeDegPerSec: Number.NaN, yawVelocityAfterDegPerSec: 0, pitchVelocityBeforeDegPerSec: 0, pitchVelocityAfterDegPerSec: 0 }],
     ['missing pitchVelocityAfterDegPerSec', { type: 'target_motion_change', targetId: 't0', t: 0, yawVelocityBeforeDegPerSec: 0, yawVelocityAfterDegPerSec: 0, pitchVelocityBeforeDegPerSec: 0 }],
+  ])('fails fast on %s', (_label, event) => {
+    const result = parseExportPayload(payloadWithEvents([event]));
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe('parseExportPayload — scored_start round trip (WP-54 T2)', () => {
+  it('round-trips through canonicalExportJSON with every field preserved', () => {
+    const event = { type: 'scored_start' as const, targetId: 't0', t: 400, targetX: 0.1, targetY: 1.5, targetZ: -4 };
+    const parsed = parseExportPayload(payloadWithEvents([event]));
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    const canonical = JSON.parse(canonicalExportJSON(parsed.payload)) as { events: unknown[] };
+    expect(canonical.events).toEqual([event]);
+
+    const reparsed = parseExportPayload(JSON.parse(canonicalExportJSON(parsed.payload)));
+    if (!reparsed.ok) throw new Error(`expected ok on reparse, got errors: ${JSON.stringify(reparsed.errors)}`);
+    expect(reparsed.payload.events).toEqual(parsed.payload.events);
+  });
+
+  it.each([
+    ['missing targetId', { type: 'scored_start', t: 0, targetX: 0, targetY: 0, targetZ: 0 }],
+    ['missing t', { type: 'scored_start', targetId: 't0', targetX: 0, targetY: 0, targetZ: 0 }],
+    ['non-finite targetX', { type: 'scored_start', targetId: 't0', t: 0, targetX: Number.NaN, targetY: 0, targetZ: 0 }],
+    ['missing targetZ', { type: 'scored_start', targetId: 't0', t: 0, targetX: 0, targetY: 0 }],
   ])('fails fast on %s', (_label, event) => {
     const result = parseExportPayload(payloadWithEvents([event]));
     expect(result.ok).toBe(false);

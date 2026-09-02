@@ -8,6 +8,45 @@
 
 ## Progress
 
+### 2026-09-02 — T2 slice 2/6：SharedState/TargetManager/SimLoop trajectory drive + scored_start/target_motion_change producer
+
+- `src/state/SharedState.ts`：新增 `tScoredStart: Map<string, number>`（比照 `tStop`）、
+  `targetMotionChanges`/`protocolViolations` transient queue（比照 `cues`）——三者皆 additive，
+  `interface`/`createSharedState`/`resetState` 三處同步；`protocolViolations` 本 slice 只定義欄位，
+  producer（`DrillRunner.tickProtocolGuard`）留給 slice 3。
+- `src/sim/TargetManager.ts`：`trackingTrajectory` 存在時建構期建一次 `createTrackingTrajectory()`
+  （比照 `hitboxQueue`「build once per run」慣例），drive 迴圈新增獨立分支（`isDrivenMotion` 分支之前
+  提早 `continue`，legacy motion 路徑逐位不動）。**關鍵設計**：`crossedPrep = nextAge >= trackingPrepSec`
+  同時閘控 `tScoredStart` 蓋戳與 `changes` 游標 drain——若只用 `trajectoryAgeSec` 是否為 0 來判斷會在
+  prep 窗**每個** tick 誤觸發（因為 clamp 後恆為 0），改用「是否已跨過 prep」這個布林旗標一次性判斷，
+  且用 `state.tScoredStart.has(id)` 而非 `prevAge < prepSec` 的邊界比較來保證恰好蓋一次（prepSec=0 的
+  退化情形下 `prevAge < prepSec` 用邊界比較會漏掉第一個 tick——`has()` 檢查沒有這個陷阱）。origin 重用
+  既有 `distance`/`TARGET_Y`；`spawn()` 完全不用改（trackingTrajectory 目標的 `motion` 恆 undefined，
+  且 drive 迴圈第一個 tick 就會用絕對投影覆寫 spawn 給的暫時 pos，spawn 給的 side-slot x 值從未被外部
+  觀察到）。`markKilled`/`reset` 同步清除 `tScoredStart`/`targetMotionChanges`（比照既有 `tVisible`/
+  `tStop`/`cues` 清除紀律）。
+- `src/data/DataRecorder.ts`：新增 `scored_start` additive `DrillEvent` 變體（形狀比照 `target_stop`）。
+- `src/data/exportPayloadSchema.ts`：新增 `parseScoredStartEvent`，`parseDrillEvent` switch 補一個 case。
+  `target_motion_change` 的 producer 側（T1 只交了 parse 側）在本 slice 由 `TargetManager` 補上。
+- `src/loop/SimLoop.ts`：新增 `recordScoredStartEvents`（比照 `recordTargetStopEvents` 的 exact-tick-match
+  dedup）、`recordTargetMotionChangeEvents`（比照 `recordCueEvents` 的 export-then-clear），`simStep` 內
+  緊接既有 `recordTargetStopEvents` 呼叫之後加這兩個。
+- `src/data/export.ts`（`serializeEventsCSV`）**刻意未修改**：既有 `if/else if` 鏈無 `default`/`else`
+  分支，未匹配的事件型別靜默不產生 CSV 列（非 throw）——`scored_start`/`target_motion_change` 沿用 T1
+  對後者的既有決定（JSON-only，理由同前：無語意相符既有欄可重用、CSV header 不變測試已鎖）。
+- 測試：`src/sim/TargetManager.test.ts` +9 tests（trackingTrajectory drive round-trip 對 `createTrackingTrajectory`
+  + `projectTrackingAngles` 現算現比對、prep 窗凍結、跨過 prep 蓋戳恰一次、reversal `target_motion_change`
+  在 prep 窗內不得提早 drain、`markKilled`/`reset` 清除紀律）；`src/loop/SimLoop.test.ts` +1 test（`simStep`
+  直驅路徑端到端：recorder 收到 `scored_start`/`target_motion_change`）；`src/data/exportPayloadSchema.test.ts`
+  +6 tests（`scored_start` 正向解析 + canonical round-trip + 4 個 fail-fast 案例）。
+  過程中發現並修正 2 個測試自身的邊界 off-by-one（`crossedPrep` 判準為 `nextAge >= prepSec`，含跨過那個
+  tick 本身；原測試迴圈邊界寫錯，不是實作 bug——見 commit 前 debug 紀錄，此處不重複列出試錯過程）。
+- `npx tsc --noEmit` exit 0；`npx vitest run` 全專案 191 files / 1797 tests passed（2 skipped），無回歸。
+- `graphify update .` **延後**到 T2 全部 slice 完成後一次執行（比照 T1 slice 1/2 的「避免中途 partial
+  graph 產生誤導性節點」決策）。
+- 尚未動：`protocolGuard`/`DrillRunner.tickProtocolGuard`/`protocolViolations` producer（slice 3）、
+  export metadata `trackingPilot` meta block（slice 4）、實際 pilot block config 檔案（slice 5）。
+
 ### 2026-09-02 — T2 slice 1/6：DrillConfig/schema/clearance 契約
 
 - `src/drill/DrillConfig.ts`：新增 `targets.trackingTrajectory?: TrackingTrajectoryConfig`（import 自

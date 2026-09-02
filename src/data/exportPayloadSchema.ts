@@ -863,6 +863,8 @@ function parseDrillEvent(value: unknown, path: string, errors: ExportPayloadPars
       return parseHitEvent(record, path, errors);
     case 'target_motion_change':
       return parseTargetMotionChangeEvent(record, path, errors);
+    case 'scored_start':
+      return parseScoredStartEvent(record, path, errors);
     default:
       return fail(errors, `${path}.type`, 'invalid_value', `${path}.type is not a supported event discriminant`);
   }
@@ -1040,6 +1042,27 @@ function parseTargetMotionChangeEvent(
     pitchVelocityBeforeDegPerSec,
     pitchVelocityAfterDegPerSec,
   };
+}
+
+/** WP-54 / T2：形狀比照 `parseTargetStopEvent`（同樣是「目標在這個 tick 的世界座標」快照事件）。 */
+function parseScoredStartEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {
+  const before = errors.length;
+  const targetId = parseNonEmptyString(record.targetId, `${path}.targetId`, errors);
+  const t = parseFiniteNumber(record.t, `${path}.t`, errors);
+  const targetX = parseFiniteNumber(record.targetX, `${path}.targetX`, errors);
+  const targetY = parseFiniteNumber(record.targetY, `${path}.targetY`, errors);
+  const targetZ = parseFiniteNumber(record.targetZ, `${path}.targetZ`, errors);
+  if (
+    targetId === undefined ||
+    t === undefined ||
+    targetX === undefined ||
+    targetY === undefined ||
+    targetZ === undefined ||
+    errors.length > before
+  ) {
+    return undefined;
+  }
+  return { type: 'scored_start', targetId, t, targetX, targetY, targetZ };
 }
 
 function parseHitEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {

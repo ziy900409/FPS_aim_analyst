@@ -600,6 +600,48 @@ function recordTargetStopEvents(state: SharedState, t: number, recorder?: DataRe
 }
 
 /**
+ * WP-54 / T2：export each `scored_start` once, from the same sim tick that TargetManager records in
+ * state.tScoredStart (mirrors recordTargetStopEvents's exact-tick-match dedup).
+ */
+function recordScoredStartEvents(state: SharedState, t: number, recorder?: DataRecorder): void {
+  if (recorder === undefined) return;
+  for (let i = 0; i < state.targets.length; i++) {
+    const target = state.targets[i];
+    if (state.tScoredStart.get(target.id) === t) {
+      recorder.recordEvent({
+        type: 'scored_start',
+        targetId: target.id,
+        t,
+        targetX: target.pos.x,
+        targetY: target.pos.y,
+        targetZ: target.pos.z,
+      });
+    }
+  }
+}
+
+/**
+ * WP-54 / T2：export each pending `target_motion_change`, then drain the transient queue (mirrors
+ * recordCueEvents's export-then-clear pattern for state.cues).
+ */
+function recordTargetMotionChangeEvents(state: SharedState, recorder?: DataRecorder): void {
+  if (recorder !== undefined) {
+    for (const change of state.targetMotionChanges) {
+      recorder.recordEvent({
+        type: 'target_motion_change',
+        targetId: change.targetId,
+        t: change.t,
+        yawVelocityBeforeDegPerSec: change.yawVelocityBeforeDegPerSec,
+        yawVelocityAfterDegPerSec: change.yawVelocityAfterDegPerSec,
+        pitchVelocityBeforeDegPerSec: change.pitchVelocityBeforeDegPerSec,
+        pitchVelocityAfterDegPerSec: change.pitchVelocityAfterDegPerSec,
+      });
+    }
+  }
+  state.targetMotionChanges.length = 0;
+}
+
+/**
  * 推進一個固定 tick（純函式邊界，OQ-2.4：只讀寫傳入 state、不讀 `performance.now()`、不碰 DOM；
  * 預留階段 B Worker 搬遷）。`tickEndMs` = 本 tick 邏輯窗結束時間（量測時鐘域 ms），供輸入分桶。
  *
@@ -666,6 +708,8 @@ export function simStep(
   recordCueEvents(state, recorder);
   recordVisibleEvents(state, tickEndMs, recorder);
   recordTargetStopEvents(state, tickEndMs, recorder);
+  recordScoredStartEvents(state, tickEndMs, recorder);
+  recordTargetMotionChangeEvents(state, recorder);
   advanceProjectiles(state, dtSec, tickStartMs, tickEndMs, targetManager, recorder, weapon);
 
   // recoil 衰減（WP-13 / T1）：64Hz 子節奏 = 偶數 tick（128Hz sim）；dtSec **恆常數 1/64**（GD-5，
