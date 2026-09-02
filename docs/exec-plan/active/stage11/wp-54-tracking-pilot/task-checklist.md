@@ -2,11 +2,11 @@
 
 > Tech spec：[README.md](README.md) · Running log：[progress.md](progress.md)
 >
-> 狀態符號：`[ ]` pending · `[-]` in progress · `[x]` complete。WP-54 目前是候選 WP；正式開工前 T0 必須先讓 stage11 master README/checklist/progress 接受此範圍。
+> 狀態符號：`[ ]` pending · `[-]` in progress · `[x]` complete。WP-54 已於 2026-09-02 正式納入 stage11（T0 完成）。
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
-| [ ] | **T0** Entry gate/scope freeze/preregistration | 凍結 stage scope、OQ、metric protocol、blast radius 與 baseline evidence | 使用者確認 WP-54 是否納入 stage11 | High |
+| [x] | **T0** Entry gate/scope freeze/preregistration | 凍結 stage scope、OQ、metric protocol、blast radius 與 baseline evidence | 使用者確認 WP-54 是否納入 stage11 | High |
 | [ ] | **T1** Deterministic trajectory kernel/export contract | 新增 2D pseudorandom 與 finite-acceleration reversal generator | T0 | High |
 | [ ] | **T2** Pilot drill matrix/protocol guards | 新增 practice、axis calibration、core 2 x 2、reactive blocks 與 no-fire/no-ADS/no-movement guard | T1 | High |
 | [ ] | **T3** Canonical P0/P1 metrics/truth fixtures | 推導 acquisition、RMS/TOT、lag/gain、drop/reacquire、reversal response | T2 | High |
@@ -19,13 +19,13 @@
 
 ## T0 — Entry gate/scope freeze/preregistration
 
-- [ ] 更新 stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md)，明確接受或延後 WP-54。
-- [ ] 記錄 HEAD、worktree status、CodeGraph status/pending、graphify freshness。
-- [ ] 對 `TargetMotion`、`motionOffset()`、`TargetManager`、schema/export events、metrics、Result/history consumers 執行 CodeGraph impact。
-- [ ] 凍結 OQ-54-1～OQ-54-7：steady/reactive scope、condition matrix、block duration、lag contract、repeatability threshold、sample/session、artifact destination。
-- [ ] 凍結 primary outcome、exclusion rules、ceiling/floor decision flags、metric version 與 pilot protocol version。
-- [ ] 重跑或記錄 legacy tracking baseline tests，不把舊數字當 gate。
-- [ ] 保存 preregistration snapshot；後續變更以新 protocol version 與 decision log 表達。
+- [x] 更新 stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md)，明確接受或延後 WP-54。
+- [x] 記錄 HEAD、worktree status、CodeGraph status/pending、graphify freshness。
+- [x] 對 `TargetMotion`、`motionOffset()`、`TargetManager`、schema/export events、metrics、Result/history consumers 執行 CodeGraph impact。
+- [x] 凍結 OQ-54-1～OQ-54-7：steady/reactive scope、condition matrix、block duration、lag contract、repeatability threshold、sample/session、artifact destination。
+- [x] 凍結 primary outcome、exclusion rules、ceiling/floor decision flags、metric version 與 pilot protocol version。
+- [x] 重跑或記錄 legacy tracking baseline tests，不把舊數字當 gate。
+- [x] 保存 preregistration snapshot；後續變更以新 protocol version 與 decision log 表達。
 
 ## T1 — Deterministic trajectory kernel/export contract
 

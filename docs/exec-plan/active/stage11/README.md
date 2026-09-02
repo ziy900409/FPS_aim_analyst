@@ -1,15 +1,17 @@
-# 階段 K（stage11）— Peek-click transfer pilot adjustment and formal release
+# 階段 K（stage11）— Peek-click transfer pilot adjustment and formal release + Tracking pilot capability test
 
-> **狀態：✅ WP-52 與 WP-53 全數 T-exit 完成（2026-09-02），M19 達成。** 本階段把 WP-45 交付的 `peek-click-transfer-pilot-v1` 從 practice/pilot tool 推進到可由 evidence 支撐的正式 `peek_click_transfer_v1` Assessment。WP-52（pilot v2 調整/session wiring/evidence tooling）T0–T-exit 全數完成；WP-53 go/no-go 已由 No-go 改為 **Go**（人工 checklist 走查 + n=1 真人 evidence，見 [wp-52 T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」與全域 [DECISIONS.md GD-29](../../DECISIONS.md)）。formal Session Plan 整合（T4）已落地——新增獨立 `'peek-click-transfer-v1'` 家族，不改 stage6 default 四家族與 pilot 家族。E2E acceptance（T5）已完成——真實 counter-strafe round 跑到 `ended`、真存 history、trend 顯示真實 primary metric，並證實 FR-53-6 的 pilot/formal 隔離即使在強制條件下仍然成立。T-exit 已完成 full CI、focused E2E、operational/index docs sync 與 staged file audit。完整 task 狀態見 [task-checklist.md](task-checklist.md)，進度與決策紀錄見 [progress.md](progress.md)。
+> **狀態：✅ M19（WP-52/WP-53）全數 T-exit 完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0 完成、T1 待開工（2026-09-02）。** 本階段先把 WP-45 交付的 `peek-click-transfer-pilot-v1` 從 practice/pilot tool 推進到可由 evidence 支撐的正式 `peek_click_transfer_v1` Assessment（M19）；WP-52（pilot v2 調整/session wiring/evidence tooling）T0–T-exit 全數完成；WP-53 go/no-go 已由 No-go 改為 **Go**（人工 checklist 走查 + n=1 真人 evidence，見 [wp-52 T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」與全域 [DECISIONS.md GD-29](../../DECISIONS.md)）。formal Session Plan 整合（T4）已落地——新增獨立 `'peek-click-transfer-v1'` 家族，不改 stage6 default 四家族與 pilot 家族。E2E acceptance（T5）已完成——真實 counter-strafe round 跑到 `ended`、真存 history、trend 顯示真實 primary metric，並證實 FR-53-6 的 pilot/formal 隔離即使在強制條件下仍然成立。T-exit 已完成 full CI、focused E2E、operational/index docs sync 與 staged file audit。使用者於 2026-09-02 進一步確認正式接受 **WP-54 — Tracking Pilot Capability Test**（researcher/pilot-only，不發布正式 Assessment）納入 stage11，作為獨立 M20 里程碑；WP-54 T0（entry gate/scope freeze/preregistration）已完成，詳見 [wp-54-tracking-pilot/README.md](wp-54-tracking-pilot/README.md) 與 [progress.md](wp-54-tracking-pilot/progress.md)。完整 task 狀態見 [task-checklist.md](task-checklist.md)，進度與決策紀錄見 [progress.md](progress.md)。
 
 | | |
 |---|---|
-| **目標** | 先建立可調整且可稽核的 transfer pilot v2，再依 pilot evidence 發布正式 `peek_click_transfer_v1` |
-| **資料來源** | `peek-ad-corridor-v1`、`peekClickTransferMetrics`、pilot session exports、人工 pointer-lock 走查 |
-| **正式版政策** | 不原地覆寫 `peek-click-transfer-pilot-v1`；正式版使用新 drill id 與 assessment metadata |
-| **Session Plan 政策** | pilot v2 可進 researcher/pilot session；正式 v1 才可進 Assessment history/trend/compatibility |
-| **里程碑** | M19：transfer pilot v2 evidence 與 `peek_click_transfer_v1` formal release gate 全數成立 |
-| **狀態** | ✅ WP-52/WP-53 T-exit 完成；M19 達成（2026-09-02） |
+| **M19 目標** | 先建立可調整且可稽核的 transfer pilot v2，再依 pilot evidence 發布正式 `peek_click_transfer_v1` |
+| **M19 資料來源** | `peek-ad-corridor-v1`、`peekClickTransferMetrics`、pilot session exports、人工 pointer-lock 走查 |
+| **M19 正式版政策** | 不原地覆寫 `peek-click-transfer-pilot-v1`；正式版使用新 drill id 與 assessment metadata |
+| **M19 Session Plan 政策** | pilot v2 可進 researcher/pilot session；正式 v1 才可進 Assessment history/trend/compatibility |
+| **M19 狀態** | ✅ WP-52/WP-53 T-exit 完成；M19 達成（2026-09-02） |
+| **M20 目標** | 建立可分離 acquisition／steady pursuit／reactive correction 的 tracking pilot，完成工程有效性、難度校準與 test-retest 證據（詳見 [wp-54-tracking-pilot/README.md](wp-54-tracking-pilot/README.md)） |
+| **M20 交付定位** | Researcher/pilot-only；不發布正式 Assessment、常模、composite score 或自動處方 |
+| **M20 狀態** | 🟡 WP-54 T0 完成（2026-09-02）；T1（deterministic trajectory kernel）待開工 |
 
 ---
 
@@ -22,6 +24,7 @@
 | D-S11-3 | 正式發布方式 | 新增 `peek_click_transfer_v1`，`mode:'assessment'`，並有獨立 freeze decision |
 | D-S11-4 | history/trend 政策 | pilot 不進正式 history/trend；正式 v1 才註冊 metric registry 與 compatibility key |
 | D-S11-5 | composite score | stage11 不新增跨構念 composite score；transfer 指標維持分層呈現 |
+| D-S11-6 | WP-54（tracking pilot）是否納入 stage11 | 使用者於 2026-09-02 確認正式納入，作為獨立 M20 里程碑；不與 M19 peek-click-transfer 範圍或 drill id 混合 |
 
 ---
 
@@ -78,6 +81,7 @@ flowchart LR
 - WP-52：新增調整後 pilot v2、pilot session wiring、evidence checklist 與 no-history guard。
 - WP-53：新增正式 `peek_click_transfer_v1`、Assessment metadata、compatibility/history/trend/session integration。
 - 修補讓 transfer family 能進 session metadata 的既有 blocking issue（KI-016）與 preset UI wiring gap（GD-26），但只在對應 task 明確驗收。
+- WP-54（M20）：新增版本化、seeded tracking pilot trajectory/drill matrix、P0/P1 canonical metrics、eligibility/evidence pipeline 與 researcher session manifest；詳細 in/out scope 見 [wp-54-tracking-pilot/README.md §2.1](wp-54-tracking-pilot/README.md#21-system-boundary)。
 
 ### Out of scope
 
@@ -86,6 +90,7 @@ flowchart LR
 - 新增 Kovaak-style score、leaderboard、跨構念 composite score。
 - 改寫 `hold-click-v1`、`counterstrafe-reversal-v1` 或 stage6 frozen protocol version。
 - 基於未完成真人 pilot evidence 宣告正式 Assessment 採納。
+- WP-54：正式 tracking Assessment drill、正式 history/trend registry、跨玩家常模、composite score、tracking-specific SPARC；改寫或縮減 M19 peek-click-transfer 範圍。
 
 ---
 
@@ -104,7 +109,7 @@ WP-53 T0 -> T1 -> T2 -> T3 -> T4 -> T5 -> T-exit
 
 ---
 
-## 6. Stage Exit Gate
+## 6. Stage Exit Gate（M19 — 已達成）
 
 - [x] WP-52 T-exit 完成，包含調整後 pilot v2 automated tests、session wiring、manual evidence table（2026-09-01；manual evidence table 已由真人回填完成，見 [T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」）。
 - [x] WP-53 T0 formal freeze 已拍板（2026-09-01，GD-29）；T1~T3（config/metadata-compatibility/registry）已轉正式凍結值。
@@ -113,3 +118,12 @@ WP-53 T0 -> T1 -> T2 -> T3 -> T4 -> T5 -> T-exit
 - [x] `known_issue/BUGFIX-DECISIONS.md` 與 KI-016 狀態與實作結果一致（已修復，2026-09-01）。
 - [x] `CONTEXT.md` 對 WP-52 pilot v2 與 WP-53 formal v1 狀態同步；`docs/MAP.md`、`docs/exec-plan/README.md` 已於 WP-53 T-exit 同步。
 - [x] WP-52 與 WP-53 範圍內 full CI 與 transfer-focused Playwright E2E 皆通過。
+
+## 7. Stage Exit Gate（M20 — WP-54 tracking pilot，進行中）
+
+> 完整逐項 gate 見 [wp-54-tracking-pilot/README.md §6](wp-54-tracking-pilot/README.md#6-m20-exit-gate)；此處僅追蹤高層狀態，不重複列出。
+
+- [x] WP-54 T0：stage scope 正式接受、OQ-54-1~8 preregistration 凍結、CodeGraph impact、legacy baseline 全綠（2026-09-02）。
+- [ ] WP-54 T1~T5：deterministic trajectory kernel、pilot drill matrix、P0/P1 metrics、eligibility/evidence pipeline、researcher manifest。
+- [ ] WP-54 T6~T8：instrumentation／difficulty calibration／repeatability 三層 pilot gate（Gate A/B/C）。
+- [ ] WP-54 T-exit：M20 evidence audit，go/revise/stop 結論。

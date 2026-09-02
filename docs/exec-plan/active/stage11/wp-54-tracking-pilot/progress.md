@@ -2,11 +2,26 @@
 
 ## Status
 
-- **Current**：🟡 自足 planning package 建立完成；尚未開工。
-- **Scope state**：候選 WP。原始 proposal 明確指出尚未納入 stage11 master checklist；T0 前不得視為 stage11 已接受範圍。
-- **Dependency state**：依賴既有 `tracking_v1` baseline、schema v2、tracking metrics/transitions、stage10 history/result 基礎，以及使用者/研究者對 OQ-54 的 preregistration decision。
+- **Current**：✅ T0 entry gate/scope freeze/preregistration 完成（2026-09-02）；T1（deterministic trajectory kernel）待開工。
+- **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
+- **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）。
 
 ## Progress
+
+### 2026-09-02 — T0 Entry gate/scope freeze/preregistration
+
+- **Stage scope**：使用者確認正式接受 WP-54 進入 stage11；同步更新 stage11 [README](../README.md)、[master checklist](../task-checklist.md)、[progress](../progress.md)（見該三檔 2026-09-02 條目）。
+- **Repo state at T0**：HEAD `dc2a6b3abd9f79a113c73b4bb8326bd0c87e5041`（`test(wp-53): E2E acceptance for formal peek_click_transfer_v1 (T5)`）。Worktree 另有 WP-53 T-exit 遺留的 staged doc-sync 變更（`CONTEXT.md`、`docs/MAP.md`、`docs/exec-plan/README.md`、stage11 README/progress/task-checklist、wp-53 README/progress/task-checklist、`docs/operational/analysis-peek-click-transfer.md`）——與 WP-54 無關，本次未觸碰其內容，僅在同一批 stage11 master 檔案上疊加 WP-54 段落。
+- **CodeGraph status**：索引健康（500 files indexed）。多個檔案（`src/metrics/trackingDerivation.ts`、`trackingTransitions.ts`、`submovement.ts`、`src/data/exportPayloadSchema.ts`、`export.ts`、`src/sim/TargetManager.ts`、`targetMotion.ts`、`src/results/ResultPresentation.ts`、`src/state/types.ts` 等）在查詢時顯示「pending sync（edited ~200ms ago）」，經 `git status --short` 對照確認皆為 0 diff（純 mtime touch，非實質變更）——本次 codegraph 讀取內容視為權威。graphify `GRAPH_REPORT.md` 最後提交時間與 HEAD 相同（2026-09-02T09:11:49+02:00），視為新鮮。
+- **CodeGraph impact**（T1 前必讀，T1 實作時需重新確認 blast radius 未擴大）：
+  - `TargetMotion`（`src/state/types.ts:145`）— 13 callers，含 `src/scene/clearance.ts`、`src/drill/DrillConfig.ts`、`src/drill/schema.ts`、`src/sim/targetMotion.ts` 等，屬 cross-module。WP-54 新 trajectory kind 若要掛在 `TargetMotion` union 上，必須 additive（新 variant），不得改既有 variant 語意；若改走 §2.2 規劃的獨立 `trackingTrajectory.ts` 模組（不進 `TargetMotion` union），則此 blast radius 不適用，留待 T1 讀碼後定案並回寫本文件。
+  - `motionOffset()`（`src/sim/targetMotion.ts:40`）— 3 callers，全在 `src/sim/TargetManager.ts` 內，屬 local-to-sim-module，非 cross-module。
+  - Export schema（`src/data/exportPayloadSchema.ts` 的 `parseExportPayload`/`parseEvents`/`parseDrillEvent`；`src/data/export.ts` 的 `ExportPayload`/`buildExportPayload`/`serializeJSON`）— 新增 `target_motion_change` event 必須是 additive union member，並在 unknown event type 時 fail closed；不得改動既有 tick/event 解析路徑。
+  - `deriveTrackingMetrics()`（`src/metrics/trackingDerivation.ts:117`）— 11 callers，含 `src/results/ResultPresentation.ts`、`src/metrics/holdClickMetrics.ts`、`src/testharness/fpsTestHarness.ts`；`options` 必須維持全 optional，新增行為不得改變既有呼叫方在省略 options 時的輸出。
+  - `deriveTrackingTransitions()`（`src/metrics/trackingTransitions.ts:15`）— 3 callers，全在 `src/metrics/spiderShotMetrics.ts`（spider-shot 構念，與 WP-54 tracking pilot 無關但共用同一函數）——T3 若擴充此函數，必須確認 spider-shot 既有 regression 不受影響。
+  - Result/history consumers：`src/history/DrillMetricRegistry.ts` 的 `REGISTRATIONS` 目前只有 `spiderShotV2` 與 `peekClickTransferV1` 兩筆註冊；`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` **未註冊**於 `DrillMetricRegistry`/`HistoryTrend`。確認本 WP 的 pilot run 沒有既有 formal history/trend 路徑可誤入——與 §1.3 Constraints「pilot 資料不得自動進正式 Assessment history/trend」的既有事實一致，T0 不需要新增 guard 來阻擋一個原本就不存在的路徑。
+- **Legacy tracking baseline（記錄用，非 gate）**：`npx vitest run` 對以下 11 個既有 tracking 相關檔案，103/103 全綠：`src/sim/targetMotion.test.ts`(12)、`src/sim/TargetManager.test.ts`(49)、`src/metrics/trackingDerivation.test.ts`(10)、`src/metrics/trackingTransitions.test.ts`(3)、`src/metrics/holdTrackWindowInvariant.test.ts`(1)、`tests/golden/research/epsilon-parity.test.ts`(1)、`tests/golden/research/promoted-curve.test.ts`(12)、`src/drill/tracking_v1.test.ts`(3)、`src/drill/tracking_longrange_v1.test.ts`(4)、`src/drill/tracking_br_v1.test.ts`(5)、`src/drill/tracking_scene_v1.test.ts`(3)。
+- **Preregistration snapshot**：OQ-54-1~OQ-54-8 全數凍結（見下方 decision log D-54.1~D-54.8 與 README §1.4）；primary outcome、metric version、pilot protocol version 見 D-54.9~D-54.11。後續若需變更任一凍結值，必須以新 protocol/metric version 字串 + 本表新增 decision row 表達，不得原地覆寫本次凍結值。
 
 ### 2026-09-01 — Planning package
 
@@ -24,19 +39,21 @@
 | D-54P.1 | WP-54 先以獨立 folder-style planning package 呈現，不直接改 stage11 master scope | 原始 proposal 已明確警告尚未納入 stage11；正式接受應由 T0 更新 master README/checklist/progress | Proposed |
 | D-54P.2 | 保留 `tracking_v1` 作為 predictable baseline，新增 pilot-only trajectory/drill ids | 避免同一 drill id 表達不同 tracking construct 或污染既有 evidence | Proposed |
 | D-54P.3 | Pilot evidence 先採 researcher HTML/JSON，不進正式 history/trend | Reliability/validity 未過 gate 前，產品化結果會製造錯誤精確感 | Proposed |
+| D-54.1 | 正式接受 WP-54 進入 stage11 | 使用者於 T0 明確確認（見 verification log） | ✅ Confirmed |
+| D-54.2（OQ-54-1） | Steady pursuit + reactive reversal 並列，分開報告，不合併成單一分數 | 使用者確認採用建議預設；符合 §2.5 metrics contract 已規定的分層報告原則 | ✅ Confirmed |
+| D-54.3（OQ-54-2） | Core matrix `2.0/0.5 deg x 5/20 deg/s` 採為 T2 calibration candidate，非正式凍結值 | 與 README 原文一致：T7 依 floor/ceiling 證據決定 retained/revise/remove，T0 沒有真人資料可提前凍結 | ✅ Confirmed（as candidate） |
+| D-54.4（OQ-54-3） | Scored block 長度 = 25 秒 | 建議預設；T7 Gate B 需檢查 time-on-task slope 是否需要調整區塊長度 | ✅ Confirmed |
+| D-54.5（OQ-54-4） | Lag 搜尋範圍 `0–250 ms`；離線固定係數平滑（`smoothingVersion` 版本化）；週期性多峰回傳 `lag-peak-ambiguous`，禁止回傳單一 lag/gain 值 | 對齊 README §2.4 `TrackingDynamicsOptions`/`TrackingDynamicsResult` 既定 blocked reason 詞彙 | ✅ Confirmed |
+| D-54.6（OQ-54-5） | Repeatability 最低門檻：condition-level RMS `epsilon` 的 ICC(A,1) point `>= 0.75`，95% CI 下界 `>= 0.60`，作為 M20/T8 pass-fail 依據 | 使用者確認採用建議預設 | ✅ Confirmed |
+| D-54.7（OQ-54-6） | 真人招募：Gate B 12–20 人；Gate C 20–30 人，session 間隔 24–72 小時 | 建議預設；純招募/calendar 決策，不影響 T0–T5 程式範圍 | ✅ Confirmed |
+| D-54.8（OQ-54-7 / OQ-54-8） | Evidence artifact 先做 researcher-only self-contained HTML + JSON，不進產品 Result UI；不做 tracking-specific SPARC，M20 後才另立提案 | 建議預設；與 stage11 「Researcher/pilot-only；不發布正式 Assessment」的交付定位一致 | ✅ Confirmed |
+| D-54.9 | Primary outcome = 每 condition 合併 eligible pursuit ticks 的 `RMS(epsilon)`（deg） | 原始 WP-54 proposal 已預註冊；本次 T0 只是重申並鎖定，不重新評估 | ✅ Confirmed（承襲既有預註冊） |
+| D-54.10 | Metric version = `tracking-dynamics-v1`；trajectory version = `band-limited-2d-v1`（pursuit）/ `reversal-2d-v1`（reactive） | 沿用 README §2.4 interface 命名，作為 T1/T3 實作時的版本字串來源 | ✅ Confirmed |
+| D-54.11 | Pilot protocol version = `tracking-pilot-v1` | 沿用 README §2.4 `TrackingPilotManifest.protocolVersion` 命名 | ✅ Confirmed |
 
 ## Open Questions
 
-| ID | 問題 | Owner | Deadline | Impact |
-|---|---|---|---|---|
-| OQ-54-1 | 本輪只做 steady pursuit，或 steady + reactive 並列？ | 使用者 + 研究者 | T0 | T1-T8 scope |
-| OQ-54-2 | Core matrix 是否沿用 `2.0 deg / 0.5 deg x 5 deg/s / 20 deg/s`？ | 研究者 | T0 | T2 config |
-| OQ-54-3 | 每個 scored block 採 20、25 或 30 秒？ | 研究者 | T0 | T2/T5/T7 |
-| OQ-54-4 | Lag 搜尋範圍、平滑器與 ambiguity gate 為何？ | 指標 owner | T0 | T3 metric contract |
-| OQ-54-5 | Repeatability 最低證據門檻為何？ | 使用者 + 研究者 | T6 前 | T8/M20 |
-| OQ-54-6 | 真人 pilot 招募數與 session 間隔？ | 研究者 | T6 前 | T7/T8 calendar |
-| OQ-54-7 | Evidence artifact 只做研究 HTML/JSON，或同步進產品 Result 頁？ | 產品 owner | T0 | T4 scope |
-| OQ-54-8 | 是否需要 tracking-specific SPARC？ | 指標 owner | T-exit | 後續診斷 |
+全部 OQ-54-1~OQ-54-8 已於 T0（2026-09-02）凍結，詳見上方 decision log D-54.2~D-54.8 與 [README §1.4](README.md)。OQ-54-2 標記為 calibration candidate（非 hard freeze），其餘視為凍結值；後續變更一律走新 protocol/metric version + 本表新 decision row。
 
 ## Verification log
 
@@ -46,4 +63,10 @@
 | 2026-09-01 | `Get-Content AGENTS.md` / `Get-Content graphify-out/GRAPH_REPORT.md` | project planning rules loaded |
 | 2026-09-01 | Read WP-54 proposal and WP-51 README/checklist/T files | planning format and scope source loaded |
 | 2026-09-01 | Documentation edit only | no production code changed; no tests run |
+| 2026-09-02 | `AskUserQuestion`：WP-54 stage scope、OQ-54-1、OQ-54-5 | 使用者確認：正式接受 WP-54 進入 stage11；OQ-54-1 = Steady+Reactive 並列；OQ-54-5 = 採用建議預設門檻 |
+| 2026-09-02 | `git status --short` / `git rev-parse HEAD` | HEAD `dc2a6b3`；worktree 另有 WP-53 T-exit 遺留 staged doc-sync（與 WP-54 無關，未觸碰其內容） |
+| 2026-09-02 | `mcp__codegraph__codegraph_explore`（`TargetMotion`/`motionOffset`/`TargetManager`/export schema/`deriveTrackingMetrics`/`deriveTrackingTransitions`） | blast radius 記錄於上方 Progress 段落；「pending sync」檔案經 `git status --short` 對照為 0 diff（純 mtime touch） |
+| 2026-09-02 | `mcp__codegraph__codegraph_explore`（`DrillMetricRegistry`/`HistoryTrend`/`compatibilityKey`/tracking drill ids） | 確認 `tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` 未註冊於 `DrillMetricRegistry`，無既有 formal history/trend 路徑 |
+| 2026-09-02 | `git log -1 --format=%cI -- graphify-out/GRAPH_REPORT.md` vs `git log -1 --format=%cI HEAD` | 兩者時間戳相同（2026-09-02T09:11:49+02:00），graphify 視為新鮮 |
+| 2026-09-02 | `npx vitest run`（11 個既有 tracking 相關檔案，見上方 Progress「Legacy tracking baseline」） | 103/103 tests passed，記錄為 baseline，非 gate |
 

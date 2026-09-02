@@ -35,6 +35,25 @@ WP-52 Definition of Done：調整後 transfer pilot 以新 id 與版本化 confi
 
 WP-53 Definition of Done：`peek_click_transfer_v1` 是獨立正式 Assessment drill id；完成 run 後產生 `meta.assessment`、保存至本機 history、可在 exact drill history/trend 中被 registry 投影；pilot v1/v2 仍維持 practice-only 且不進正式 history。
 
+## WP-54 — Tracking Pilot Capability Test（M20）
+
+> 自足 spec：[wp-54-tracking-pilot/README.md](wp-54-tracking-pilot/README.md) · checklist：[wp-54-tracking-pilot/task-checklist.md](wp-54-tracking-pilot/task-checklist.md) · progress：[wp-54-tracking-pilot/progress.md](wp-54-tracking-pilot/progress.md)
+
+| Done | Task | Objective | 相依 | Risk |
+|---|---|---|---|---|
+| [x] | **T0** Entry gate/scope freeze/preregistration | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | 使用者確認 WP-54 納入 stage11 | High |
+| [ ] | **T1** Deterministic trajectory kernel/export contract | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T0 | High |
+| [ ] | **T2** Pilot drill matrix/protocol guards | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T1 | High |
+| [ ] | **T3** Canonical P0/P1 metrics/truth fixtures | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T2 | High |
+| [ ] | **T4** Eligibility/evidence/report | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T3 | High |
+| [ ] | **T5** Researcher manifest/operator flow | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T2/T4 | Med |
+| [ ] | **T6** Instrumentation pilot | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T1-T5 | High |
+| [ ] | **T7** Difficulty calibration pilot | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T6 PASS | High |
+| [ ] | **T8** Repeatability/validity pilot | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T7 PASS + OQ-54-5/6 frozen | High |
+| [ ] | **T-exit** M20 evidence audit/handoff | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T6/T7/T8 PASS | Med |
+
+WP-54 Definition of Done：見 [wp-54-tracking-pilot/task-checklist.md「Package Definition of Done」](wp-54-tracking-pilot/task-checklist.md#package-definition-of-done)。研究性 tracking pilot（researcher/pilot-only）不得寫入正式 Assessment history/trend，不與 M19 `peek-click-transfer` 系列 drill id 或 compatibility cohort 混用。
+
 ## 全階段紀律
 
 1. 修改既有 symbol 前依專案規範執行 CodeGraph impact，記錄 affected files／symbols 與 local 或 cross-module 判斷。

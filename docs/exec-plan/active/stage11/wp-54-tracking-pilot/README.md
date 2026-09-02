@@ -4,7 +4,7 @@
 >
 > Source proposal：[../wp-54-tracking-pilot-execution-plan.md](../wp-54-tracking-pilot-execution-plan.md)。本文件依 `.claude/skills/engineering-planning/SKILL.md`、`references/design_standards.md`、`assets/tech_spec_template.md` 與 WP-51 的 work-package 格式整理。
 >
-> **狀態：候選 WP，自足計畫已建立，但尚未正式納入 stage11 master checklist。** 若決定開工，T0 必須先更新 stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md)，不得只實作本 WP 內的程式項目。
+> **狀態：✅ 已正式納入 stage11（2026-09-02，T0 entry gate/scope freeze/preregistration 完成）。** stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md) 已同步接受 WP-54；本 WP 進入 M20，T1 待開工。
 
 | | |
 |---|---|
@@ -77,18 +77,18 @@
 - Pilot 資料不得自動進正式 Assessment history/trend；正式發布另立後續 WP 與 drill id。
 - 本 WP 不實作 tracking-specific SPARC promotion、正式 Result UI、跨玩家常模或 composite score。
 
-### 1.4 Open Questions
+### 1.4 Open Questions（T0 preregistration — 2026-09-02 全數凍結，見 [progress.md](progress.md) D-54.1~D-54.8）
 
-| ID | Question | Recommended default | Owner | Deadline | Impact if unresolved |
-|---|---|---|---|---|---|
-| OQ-54-1 | 本輪只做 steady pursuit，或 steady + reactive 並列？ | 兩者並列但分開報告 | 使用者 + 研究者 | T0 | T1-T8 scope |
-| OQ-54-2 | Core matrix 是否沿用 `2.0 deg / 0.5 deg x 5 deg/s / 20 deg/s`？ | 作為 calibration candidates，不視為正式凍結值 | 研究者 | T0 | T2 config |
-| OQ-54-3 | 每個 scored block 採 20、25 或 30 秒？ | 25 秒；Gate B 檢查 time-on-task slope | 研究者 | T0 | T2/T5/T7 |
-| OQ-54-4 | Lag 搜尋範圍、平滑器與 ambiguity gate 為何？ | `0-250 ms`、離線固定係數平滑；週期多峰則 blocked | 指標 owner | T0 | T3 metric contract |
-| OQ-54-5 | Repeatability 最低證據門檻為何？ | RMS ICC(A,1) point `>= 0.75` 且 95% CI lower `>= 0.60` | 使用者 + 研究者 | T6 前 | T8/M20 |
-| OQ-54-6 | 真人 pilot 招募數與 session 間隔？ | Gate B 12-20 人；Gate C 20-30 人、相隔 24-72 小時 | 研究者 | T6 前 | T7/T8 calendar |
-| OQ-54-7 | Evidence artifact 只做研究 HTML/JSON，或同步進產品 Result 頁？ | 先離線 self-contained HTML + JSON；產品 Result UI 另立 WP | 產品 owner | T0 | T4 scope |
-| OQ-54-8 | 是否需要 tracking-specific SPARC？ | 本 WP 不做；M20 後另立 `tracking-sparc-v1` 研究 | 指標 owner | T-exit | 後續診斷 |
+| ID | Question | T0 凍結決定 | Owner | Status |
+|---|---|---|---|---|
+| OQ-54-1 | 本輪只做 steady pursuit，或 steady + reactive 並列？ | **Steady + Reactive 並列，分開報告**（使用者確認，非合併分數） | 使用者 + 研究者 | ✅ Resolved |
+| OQ-54-2 | Core matrix 是否沿用 `2.0 deg / 0.5 deg x 5 deg/s / 20 deg/s`？ | 採為 **calibration candidates**（T2 config 初值），非正式凍結值；T7 依 floor/ceiling 證據決定 retained/revise/remove | 研究者 | ✅ Resolved（candidate，非 hard freeze） |
+| OQ-54-3 | 每個 scored block 採 20、25 或 30 秒？ | **25 秒**；T7 Gate B 檢查 time-on-task slope 是否需調整 | 研究者 | ✅ Resolved |
+| OQ-54-4 | Lag 搜尋範圍、平滑器與 ambiguity gate 為何？ | **`0–250 ms`** 搜尋範圍、離線固定係數平滑（`smoothingVersion` 版本化字串）；相關函數呈週期性多峰時回傳 `lag-peak-ambiguous`，不得回傳單值 | 指標 owner | ✅ Resolved |
+| OQ-54-5 | Repeatability 最低證據門檻為何？ | **RMS ICC(A,1) point `>= 0.75` 且 95% CI lower `>= 0.60`**（使用者確認採用建議預設） | 使用者 + 研究者 | ✅ Resolved |
+| OQ-54-6 | 真人 pilot 招募數與 session 間隔？ | Gate B **12–20 人**；Gate C **20–30 人**、相隔 **24–72 小時** | 研究者 | ✅ Resolved |
+| OQ-54-7 | Evidence artifact 只做研究 HTML/JSON，或同步進產品 Result 頁？ | **先離線 self-contained HTML + JSON**；產品 Result UI 另立後續 WP，本 WP 不碰 `src/ui`/`src/results` 的正式 Result 呈現路徑 | 產品 owner | ✅ Resolved |
+| OQ-54-8 | 是否需要 tracking-specific SPARC？ | **本 WP 不做**；M20 PASS 後另立 `tracking-sparc-v1` 研究提案 | 指標 owner | ✅ Resolved（deferred） |
 
 ---
 
