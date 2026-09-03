@@ -18,7 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
-| [KI-024](KI-024-field-low-eye-not-anchored-halves-delivered-angles.md) | `field-low` 的 `proceduralRoom` 未設 `eyeZ` ⇒ eye 在 `z=+4`、前向目標在 `z=−4`,**交戰距離 8 u ≠ config 的 4 u**。WP-54 tracking pilot 9 個 block 的角尺寸/角行程/角速度**一致只交付 0.50×**(宣稱 0.5°/2.0° 實為 0.25°/1.0°,宣稱 5/20 deg/s 實為 2.5/10)。機制上解釋了「0.5° 看不見」(0.25° ≈ 4.2 CSS px)。KI-002/D1 在另一場景的**復發**;刺激側檢查全以 trajectory 原點量角度、指標側以眼睛量 ⇒ 同一構念第三個自由度未對表(C-D4) | 🔴 BD-024 **待研究者決定**(A `eyeZ:0` / B 換算距離改 8 u / C 條件標籤改為實際交付值) | 🔴 診斷完成,待決 |
+| [KI-024](KI-024-field-low-eye-not-anchored-halves-delivered-angles.md) | `field-low` 的 `proceduralRoom` 未設 `eyeZ` ⇒ eye 在 `z=+4`、前向目標在 `z=−4`,**交戰距離 8 u ≠ config 的 4 u**。WP-54 tracking pilot 9 個 block 的角尺寸/角行程/角速度**一致只交付 0.50×**(宣稱 0.5°/2.0° 實為 0.25°/1.0°,宣稱 5/20 deg/s 實為 2.5/10)。機制上解釋了「0.5° 看不見」(0.25° ≈ 4.2 CSS px)。KI-002/D1 在另一場景的**復發**;刺激側檢查全以 trajectory 原點量角度、指標側以眼睛量 ⇒ 同一構念第三個自由度未對表(C-D4) | BD-024 ✅:使用者選定 **Option A**——`field-low` 補 `eyeZ: 0`(與 `br-field`/KI-002 D1 同一修法)。跨 WP 影響面見 [DECISIONS.md GD-31](../exec-plan/DECISIONS.md) | ✅ 已修(2026-09-03) |
 | [KI-023](KI-023-target-speed-set-point-is-per-axis-not-2d.md) | `targetRmsSpeedDegPerSec` 是**每軸** set-point,而螢幕上的目標速度是兩軸向量合成 ⇒ 兩軸 cell 交付 **√2 倍**(實測 7.14/28.3 vs 宣稱 5/20),預註冊的絕對值從未被交付;單軸 calibration 卻交付 1.0 倍 ⇒ 宣稱同速度的 block 實際差 1.41 倍。T1 測試只量 yaw、分析 runner 量 hypot ⇒ 同一構念**兩個定義**(違反 C-D4)。速度比值(4×)完好 | BD-023 ✅:研究者選定 **Option A**(2D 語意,含 reversal 家族);每軸求解目標改 `set-point / √活躍軸數`,單軸 calibration 逐位不變 | ✅ 已修(2026-09-03),**9 個 block 待重跑** |
 | [KI-022](KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) | pilot 分析 runner 的主控台摘要取 `condition.runs[0]`，而 evidence 依 FR-54-10 是 append-only、blocked 的 attempt 依契約不帶 `p0`/`p1` ⇒ 任何「第一次被擋、重跑後合格」的條件都被印成 `p0=- p1=-`。實測 P03 重跑 8 個條件中有 2 個中招；evidence JSON/HTML 一直是對的，說謊的是**人據以下 gate 結論的那一層** | BD-022 ✅：摘要改取第一個 eligible run（無 eligible 時退回 `runs[0]`），選擇邏輯抽成 `scripts/trackingPilotSummary.ts` 的純函式以便測試；不動 `buildTrackingPilotEvidence()` 的 append-only 契約 | ✅ 已修（2026-09-03） |
 | [KI-021](KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) | on-target 離線推導（`trackingDerivation.isOnTarget()`）是 ray/AABB test 且 `hitboxFromMeta()` 丟掉 `shape`，`shape:'sphere'` 目標因此被當成外接立方體——與 `HitDetector` 的球體相交**不同幾何**，違反 GD-7 與 CONTEXT.md §23。**已在正式 Assessment drill 上生效**：`spider-shot-v2`（sphere，2.0° @8u）的 `firstOnTarget` 最多寬鬆 41%（對角 1.41° vs 球面 1.0°），偏差方向相依 | BD-021 ✅：`HitboxSize` 帶 `shape` + `isOnTarget()` 加 ray/sphere 分支（`radius=width/2`，鏡射引擎）+ 放寬 WP-55 閘門並補 sphere 三軸相等檢查 | ✅ 已修（2026-09-03） |
@@ -49,10 +49,10 @@
 
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
 
-（**待決:BD-024**,見下。KI-023 的 Option A 已於 2026-09-03 拍板並落地,見 §3 BD-023。
+（**目前無待決項目**——BD-024 已於 2026-09-03 拍板並落地(見下);KI-023 的 Option A 見 §3 BD-023。
 下列 BD-019~BD-021 皆已標 ✅ 但尚未搬入 §3。）
 
-### BD-024 🔴 KI-024 — `field-low` camera 未錨定 sim origin,交付角度只有一半:待研究者選修法
+### BD-024 ✅ KI-024 — `field-low` camera 錨定 sim origin(`eyeZ: 0`):已修(2026-09-03)
 
 | | |
 |---|---|
@@ -60,7 +60,9 @@
 | 發現 | WP-54 **T7 slice 1**(2026-09-03):凍結準心比值升成工具後,由刺激離線算出的 frozen RMS ε(1.51°)恰為真人實測(0.757°)的兩倍 ⇒ 追出交戰距離是 8 u 而非 config 的 4 u |
 | 事實 | `field-low` 的 `proceduralRoom` 沒設 `eyeZ` ⇒ eye 落在 `z=+4`、前向目標在 `z=−4` ⇒ 交戰距離 8 u。WP-54 全部 9 個 block 的角尺寸/角行程/角速度**一致交付 0.50×**(實測 0.499–0.508):宣稱 0.5°/2.0° 實為 **0.25°/1.0°**,宣稱 5/20 deg/s 實為 **2.5/10.0**。`SceneConfig.ts:18` 早已寫明「前向目標 drill 需 `eyeZ:0`」,`br-field`(KI-002/D1)、`peek-corridor`、`peek-ad-corridor` 都設了,**`field-low` 是唯一漏掉的** |
 | 為何三輪 Gate A 沒抓到 | 刺激側的每一道檢查都以 **trajectory 原點(world origin)** 量角度,而 P1 的 `computeSignedOmegaSeries()`／ε(t) 以**眼睛**為原點 —— 同一構念第三個自由度(原點在哪)未被對表,違反 C-D4。這是 KI-020/KI-023 之後同一根因的**第三次殘留** |
-| 決策 | 🔴 **待研究者決定**:KI-024 §5.1 列 A(`field-low` 補 `eyeZ:0`,修根因、blast radius 最大)/ B(只改 WP-54 的換算距離為 8 u)/ C(幾何不動,條件標籤改成實際交付值,保留 P04/P05 與 reversal 家族的 Gate A 證據)。任一改刺激的選項都產生 **G4 世代** ⇒ P04/P05 作廢 |
+| 決策 | ✅ **使用者選定 Option A**(2026-09-03):`field-low` 補 `eyeZ: 0`。理由:`SceneConfig.eyeZ` 的契約本就要求前向目標 drill 設 `eyeZ: 0`,field-low 是唯一漏掉的場景 ⇒ 修根因而非在 WP-54 內補償;副效益是同樣的「眼睛所見 ±X°」只需一半 world 位移 ⇒ **垂直包絡加倍**,而垂直包絡正是降頻帶(OQ-54-14)的限制條件。代價已入帳:同場景另三個 drill 的交戰距離一併改變(其中 `tracking_longrange_v1`/`detection_popin_v1` 的角度契約是被**修好**),歷史資料不可與新資料合併 ⇒ 重新基準化由 owning WP 決定,見 [GD-31](../exec-plan/DECISIONS.md)。P04/P05 依 G4 世代規則作廢 |
+| 落地 | TDD(先證實紅):新增以**眼睛為原點**的兩個斷言,修法前重現 KI 數字(距離 7.9965、比值 0.5009)。修法 = `field-low.ts` 補 `eyeZ: 0`。分析層加第二道守門 `scripts/trackingDeliveredAngles.ts`(+4 regression tests),runner 每份 run 印 `atEye …% of nominal`、超帶走 stderr;套回 P04 一致回報 50–51%。三處既有期望值屬**語意變更**已同步(`eyePose.test.ts`、`br-camera-anchor-invariants.test.ts`、golden oracle 的 eyeBase 改凍結歷史值 `{0,1.6,4}`)。詳見 [KI-024 §6.1](KI-024-field-low-eye-not-anchored-halves-delivered-angles.md) |
+| 驗證 | `npx vitest run` **212 files / 2035 tests passed**;`npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0 |
 | 另一半 | 「比值太低」(OQ-54-14)與本 KI **獨立**:距離因子在比值的分子分母抵消,現行頻帶 `[0.3,2.1]` 的比值上界為 **1.61**(任何速度),故仍須降頻帶——選項表見 KI-024 §5.2 |
 
 ### BD-021 ✅ KI-021 — on-target 推導忽略 sphere：已修(2026-09-03)

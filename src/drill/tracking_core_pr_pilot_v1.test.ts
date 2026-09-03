@@ -8,7 +8,8 @@ import { simStep } from '../loop/SimLoop.ts';
 import { SIM_HZ } from '../loop/constants.ts';
 import { formatClearanceViolations, validateClearance } from '../scene/clearance.ts';
 import { fieldLow } from '../scene/scenes/field-low.ts';
-import { createTrackingTrajectory } from '../sim/trackingTrajectory.ts';
+import { resolveEyeWorldBase } from '../scene/eyePose.ts';
+import { createTrackingTrajectory, projectTrackingAngles } from '../sim/trackingTrajectory.ts';
 import type { DrillConfig } from './DrillConfig.ts';
 import {
   CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG,
@@ -172,6 +173,112 @@ describe('tracking_core_pr_pilot_v1 — practice/calibration/core matrix configs
       }),
     );
     expect(amplitudes.size).toBe(1);
+  });
+
+  // --- KI-024 regression: the angles must be delivered *at the eye*, not at the trajectory origin ---
+
+  /**
+   * Drives the real sim far enough to read the trajectory's own spawn geometry, then evaluates the
+   * whole scored window as a pure function and measures what the **eye** sees.
+   *
+   * At `scored_start` the trajectory is still at age 0 (yaw = pitch = 0), so the target sits exactly
+   * on the sightline at `(0, centerY, -distanceU)` — that one sample recovers the origin without
+   * this test re-declaring `TargetManager`'s private `TARGET_Y`.
+   */
+  function measureAtEye(drill: DrillConfig): {
+    readonly eyeDistanceU: number;
+    readonly rmsSpeedDegPerSec: number;
+    readonly angularSizeDeg: number;
+  } {
+    const loaded = loadDrill(drill, fieldLow);
+    const state = createSharedState();
+    const tm = createTargetManager(loaded);
+    const runner = createDrillRunner(state, tm);
+    runner.start(loaded);
+
+    const tickMs = 1000 / SIM_HZ;
+    const settleTicks = Math.round((drill.timing.countdownMs + (drill.timing.trackingPrepMs ?? 0)) / tickMs) + 1;
+    let nowMs = 0;
+    for (let i = 0; i < settleTicks; i++) {
+      nowMs += tickMs;
+      simStep(state, 1 / SIM_HZ, nowMs, tm, undefined, undefined, undefined, runner);
+    }
+    const spawn = state.targets[0]?.pos;
+    if (spawn === undefined) throw new Error(`${drill.drillId}: no target spawned`);
+    const origin = { distanceU: -spawn.z, centerY: spawn.y };
+
+    const config = drill.targets.trackingTrajectory;
+    if (config?.kind !== 'band-limited-2d-v1') throw new Error('expected band-limited-2d-v1');
+    const trajectory = createTrackingTrajectory(config);
+    const out = { yawDeg: 0, pitchDeg: 0, yawVelocityDegPerSec: 0, pitchVelocityDegPerSec: 0 };
+    const pos = { x: 0, y: 0, z: 0 };
+    const eye = resolveEyeWorldBase(fieldLow);
+    const tickCount = Math.round((config.durationMs / 1000) * SIM_HZ);
+
+    // Bearing from the eye, in the same convention as `computeSignedOmegaSeries()`'s
+    // `targetAnglesDeg()` — the frame the participant (and every P0/P1 metric) actually works in.
+    const bearings: { yawDeg: number; pitchDeg: number }[] = [];
+    let sumDistance = 0;
+    for (let i = 0; i < tickCount; i++) {
+      trajectory.sample(i / SIM_HZ, out);
+      projectTrackingAngles(out.yawDeg, out.pitchDeg, origin, pos);
+      const dx = pos.x - eye.x;
+      const dy = pos.y - eye.y;
+      const dz = pos.z - eye.z;
+      const len = Math.hypot(dx, dy, dz);
+      sumDistance += len;
+      bearings.push({
+        yawDeg: (Math.atan2(-dx, -dz) * 180) / Math.PI,
+        pitchDeg: (Math.asin(dy / len) * 180) / Math.PI,
+      });
+    }
+    let sumSquares = 0;
+    for (let i = 1; i < bearings.length; i++) {
+      const yawOmega = (bearings[i].yawDeg - bearings[i - 1].yawDeg) * SIM_HZ;
+      const pitchOmega = (bearings[i].pitchDeg - bearings[i - 1].pitchDeg) * SIM_HZ;
+      sumSquares += yawOmega ** 2 + pitchOmega ** 2;
+    }
+    const eyeDistanceU = sumDistance / tickCount;
+    const hitbox = drill.targets.hitbox;
+    if (hitbox === undefined) throw new Error(`${drill.drillId} has no hitbox`);
+    return {
+      eyeDistanceU,
+      rmsSpeedDegPerSec: Math.sqrt(sumSquares / (bearings.length - 1)),
+      angularSizeDeg: 2 * (180 / Math.PI) * Math.atan(hitbox.widthU / 2 / eyeDistanceU),
+    };
+  }
+
+  it('the engagement distance equals targets.distance, so config angles are the angles at the eye (KI-024)', () => {
+    // Root cause: `field-low`'s `proceduralRoom` had no `eyeZ`, so the eye fell at
+    // `roomSize[1]/2 - CAMERA_STANDOFF = 4` while the forward target sits at `z = -4` — an 8 u
+    // engagement for a config claiming 4, halving every delivered angle. `SceneConfig.ts` states
+    // the rule ("前向目標 drill 需 eyeZ:0"); `br-field` (KI-002/D1), `peek-corridor` and
+    // `peek-ad-corridor` all set it, `field-low` was the only forward-target scene that did not.
+    for (const drill of ALL_BLOCKS) {
+      const { eyeDistanceU } = measureAtEye(drill);
+      expect(eyeDistanceU, `${drill.drillId} eye→target distance`).toBeCloseTo(drill.targets.distance, 1);
+    }
+  });
+
+  it('every cell delivers its nominal angular size and RMS speed AT THE EYE (KI-024)', () => {
+    // This is the assertion that was missing for three Gate A rounds: every stimulus-side check
+    // measured the trajectory's own output about the trajectory origin, while ε(t) and
+    // `computeSignedOmegaSeries()` measure from the eye. Same construct, two vertices (C-D4).
+    for (const drill of ALL_BLOCKS) {
+      const measured = measureAtEye(drill);
+      const nominalSpeed = nominalSpeedOf(drill);
+      const ratio = measured.rmsSpeedDegPerSec / nominalSpeed;
+      // The acceptance band stays at KI-023's 0.95–1.05 (gate §11.8: not to be widened before T7).
+      expect(ratio, `${drill.drillId} eye-relative delivered/nominal speed`).toBeGreaterThan(0.95);
+      expect(ratio, `${drill.drillId} eye-relative delivered/nominal speed`).toBeLessThan(1.05);
+      // And the target subtends its claimed angular size from where the participant is looking.
+      // Within 2%, not exactly: the eye sits at y=1.6 while the sightline centre is y=1.5, so the
+      // eye is 0.1 u off the trajectory sphere's centre and the engagement distance breathes by
+      // well under a percent across the window. That residual is geometry, not a set-point error.
+      const sizeRatio = measured.angularSizeDeg / angularSizeOf(drill);
+      expect(sizeRatio, `${drill.drillId} eye-relative delivered/nominal angular size`).toBeGreaterThan(0.98);
+      expect(sizeRatio, `${drill.drillId} eye-relative delivered/nominal angular size`).toBeLessThan(1.02);
+    }
   });
 
   it('fails fast when a config requests a speed its amplitude/band cannot deliver (KI-020)', () => {

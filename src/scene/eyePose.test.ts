@@ -11,8 +11,11 @@ describe('resolveEyeWorldBase — 逐場景逐位斷言（FM-4）', () => {
     expect(resolveEyeWorldBase(placeholderRoom)).toEqual({ x: 0, y: 1.6, z: 4 });
   });
 
-  it('field-low：無 eyeZ → depth/2 − standoff', () => {
-    expect(resolveEyeWorldBase(fieldLow)).toEqual({ x: 0, y: 1.6, z: 4 });
+  it('field-low：顯式 eyeZ:0（KI-024/BD-024）→ 交戰距離 == config distance', () => {
+    // 原為「無 eyeZ → depth/2 − standoff = 4」。field-low 承載前向目標 drill（tracking pilot 9 個
+    // block、tracking_longrange_v1、tracking_scene_v1、detection_popin_v1），eye 落在 z=+4 而目標
+    // 在 z=−distance ⇒ 交戰距離是 config 的兩倍、角尺寸/角速度全部只交付一半（實測 0.499–0.508）。
+    expect(resolveEyeWorldBase(fieldLow)).toEqual({ x: 0, y: 1.6, z: 0 });
   });
 
   it('urban-high：無 eyeZ → depth/2 − standoff', () => {

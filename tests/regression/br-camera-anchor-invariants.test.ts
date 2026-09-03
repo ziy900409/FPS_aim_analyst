@@ -31,9 +31,16 @@ describe('KI-002 / D1 — br-field camera anchored to sim origin', () => {
 
   it('leaves camera z byte-for-byte unchanged for scenes without eyeZ', () => {
     // FR-3 / NFR-2:未設 eyeZ 者維持 depth/2 - standoff = 10/2 - 1 = 4。
+    // `placeholderRoom` 顯式釘 eyeZ:4(KI-012),`urbanHigh` 是真的沒設 ⇒ fallback 仍受測。
     expect(cameraWorldZ(placeholderRoom)).toBe(4);
-    expect(cameraWorldZ(fieldLow)).toBe(4);
     expect(cameraWorldZ(urbanHigh)).toBe(4);
+  });
+
+  it('anchors field-low at sim origin too (KI-024/BD-024 — it carries forward-target drills)', () => {
+    // field-low 原本落在 fallback z=4,而它承載前向目標 drill(WP-54 tracking pilot 9 個 block、
+    // `tracking_longrange_v1`、`tracking_scene_v1`、`detection_popin_v1`)⇒ 交戰距離是 config 的
+    // 兩倍、角尺寸/角速度只交付一半(實測 0.499–0.508)。與 br-field 同一個 D1 失效模式。
+    expect(cameraWorldZ(fieldLow)).toBe(0);
   });
 
   it('yields actual engagement distance == config distance for the forward BR target', () => {

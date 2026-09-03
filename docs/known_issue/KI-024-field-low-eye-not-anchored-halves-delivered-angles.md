@@ -1,7 +1,8 @@
 # KI-024 — `field-low` 的 camera 未錨定 sim origin：交戰距離 8 u ≠ config 的 4 u,WP-54 tracking pilot 的角尺寸與角速度**全部只交付一半**
 
 > 類型:tech spec(診斷 + 修改計畫)。語言:繁中,術語保留英文(D4)。
-> 狀態:🔴 **待研究者決定修法**(2026-09-03 診斷完成)。決策帳本:[BD-024](BUGFIX-DECISIONS.md)(待寫)。
+> 狀態:✅ **已修**(2026-09-03,研究者選定 **Option A**:`field-low` 補 `eyeZ: 0`)。
+> 決策帳本:[BD-024](BUGFIX-DECISIONS.md);跨 WP 影響面見 [DECISIONS.md GD-31](../exec-plan/DECISIONS.md)。
 > 發現於 WP-54 **T7 slice 1** 之後——把凍結準心比值升成工具後,以「刺激本身」離線算出的
 > frozen RMS ε(1.51°)是真人資料實測值(0.757°)的**恰好兩倍**,追下去發現的。
 > 這是 [KI-002](KI-002-br-field-camera-anchor-protocol-load.md) **D1 在另一個場景的復發**:
@@ -152,6 +153,17 @@ KI-023 修掉了「每軸 vs 2D」這個第二定義,但沒發現還有「原點
 > 操作員以新參數跑 1 人 × 幾個 block 的乾跑,用 layer 5 實測比值**——三輪 Gate A 已因刺激問題
 > 作廢三批真人資料,乾跑的成本遠低於作廢第四批(且這次是 12–20 人的量)。
 
+## 5.3 已選定的修法(2026-09-03,使用者)
+
+**§5.1 → Option A**(`field-low` 補 `eyeZ: 0`)。理由與跨 WP 影響面記於
+[DECISIONS.md GD-31](../exec-plan/DECISIONS.md);A 另有一個科學上的副效益——同樣的「眼睛所見
+±X°」只需一半的 world 位移 ⇒ **垂直包絡加倍**,而垂直包絡正是 §5.2 降頻帶時的限制條件。
+
+**§5.2 → 頻帶降為 `[0.15, 1.05]` Hz**(比值 2.32–2.94,bracket 住 reversal 實測的 2.06–3.01),
+**Gate B 的 retained 門檻凍結為 `ratio ≥ 2.0`**(錨在 reversal 家族實測下界 2.06),
+且**招募 12–20 人之前先由操作員乾跑實測比值**。落地見 WP-54 T7 slice 4 與
+[T7-difficulty-calibration-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T7-difficulty-calibration-gate.md)。
+
 ## 6. 驗證計畫(修法選定後)
 
 1. **先證實紅**(BD-001 的 TDD 慣例):新增一個以**眼睛為原點**量交付角速度/角尺寸的斷言,
@@ -163,3 +175,18 @@ KI-023 修掉了「每軸 vs 2D」這個第二定義,但沒發現還有「原點
    `playwright tests/e2e/tracking-pilot-live.spec.ts --project=edge` 1/1。
 5. layer 3b 會把 P04/P05 判為 **mismatch**(世代改變的預期行為,不是壞消息)。
 6. 操作員乾跑量測比值 ⇒ 達到凍結的 Gate B 判準後才招募。
+
+### 6.1 落地結果(2026-09-03,WP-54 T7 slice 3)
+
+| 步驟 | 結果 |
+|---|---|
+| ① 先證實紅 | `tracking_core_pr_pilot_v1.test.ts` 新增兩個**以眼睛為原點**的斷言,修法前失敗且重現 KI 的數字:`eye→target distance` **7.9965**(期望 4)、eye-relative 交付/宣稱 **0.5009**(期望 > 0.95) |
+| ② 修法 | [field-low.ts](../../src/scene/scenes/field-low.ts) 補 `eyeZ: 0`(含註解說明契約與實測數字) |
+| ③ 分析層守門 | `scripts/trackingDeliveredAngles.ts` + `tests/regression/tracking-delivered-angles.test.ts`(4 tests)。runner 每份 run 印 `atEye dist=… rmsSpeed=…% of nominal size=…`,超出 0.95–1.05 走 stderr。決定性 fixture = 「trajectory config 與 hitbox 逐位相同、只有 `scene.eye.z` 不同」的一對 |
+| ④ 套回歷史批次 | 對 P04 的 10 份 payload,新層一致回報 **50–51% of nominal**、`dist=7.99–8.00u`、`size=0.250°/1.000°` ⇒ 這一層若早存在,第一輪就會攔下 |
+| ⑤ 受影響的既有期望值 | 三處**語意變更**(非回歸):`src/scene/eyePose.test.ts` field-low 改斷言 `z=0`;`tests/regression/br-camera-anchor-invariants.test.ts` 的「無 eyeZ」樣本改用 `urban-high`、field-low 另立一條錨定斷言;`tests/golden/research/epsilon-offsetdeg-oracle.test.ts` 的 eyeBase 由「讀活的場景 config」改為**凍結的歷史值** `{0,1.6,4}`(那兩份 golden 錄於 2026-08-05,以今天的 camera 驗當年的資料會得到 2.4°/8.2° 誤差,遠超 0.5° 容差) |
+| ⑥ 全專案驗證 | `npx vitest run` **212 files / 2035 tests passed**(1 skipped file / 2 skipped tests);`npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0 |
+
+**尚未做**:`stimulusCheck()` 本身仍量重建軌跡自己的角度(Option A 之後兩個座標系已重合到
+~0.6% 以內),新的 `atEye` 層是與它並列的第二道、且量的是**錄到的位置**——刻意不合併,兩者
+不一致時正是世代或場景錨定出問題的訊號。

@@ -40,6 +40,10 @@ import {
   formatTrackingFrozenCrosshairRatio,
 } from './trackingFrozenCrosshairRatio.ts';
 import {
+  formatTrackingDeliveredAngles,
+  measureTrackingDeliveredAngles,
+} from './trackingDeliveredAngles.ts';
+import {
   createTrackingTrajectory,
   type TrackingTrajectoryConfig,
   type TrackingTrajectorySample,
@@ -185,6 +189,20 @@ function main(): void {
       ].join(' | '),
     );
     console.log(`    stimulus: ${stimulusCheck(payload)}`);
+    // KI-024: `stimulusCheck()` above measures the reconstruction's own angles, about the
+    // trajectory origin. This measures what the EYE saw, from the recorded positions and the
+    // payload's own `meta.scene.eye` — the frame ε(t) and every P0/P1 metric work in. The two
+    // agreed only after `field-low` was anchored at the sim origin (BD-024); before that the pilot
+    // delivered half of every angle it claimed and this line is what would have shown it.
+    const atEye = measureTrackingDeliveredAngles(payload);
+    console.log(`    ${formatTrackingDeliveredAngles(atEye)}`);
+    if (atEye.status === 'ok' && !Number.isNaN(atEye.speedRatio) && (atEye.speedRatio < 0.95 || atEye.speedRatio > 1.05)) {
+      console.error(
+        `!!  DELIVERED-AT-EYE OUT OF BAND — ${basename(file)} delivered ` +
+          `${(100 * atEye.speedRatio).toFixed(0)}% of its nominal speed at an engagement distance of ` +
+          `${atEye.eyeDistanceU.toFixed(2)}u. The preregistered manipulation was not delivered; see KI-024.`,
+      );
+    }
     // Layer 3b: the reconstruction above is what the CURRENT code makes of this payload's
     // metadata; this asks whether the payload was actually recorded by that code.
     const fidelity = checkTrackingStimulusFidelity(payload);

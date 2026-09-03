@@ -308,6 +308,17 @@
 
 ## 3. 已解決(CLOSED)
 
+### GD-31 ✅ `field-low` camera 錨定 sim origin(`eyeZ: 0`)— 跨 WP:同場景四個前向目標 drill 的交戰距離全部改變(2026-09-03,WP-54 T7)
+
+| | |
+|---|---|
+| **發現處** | WP-54 T7 slice 1 把「凍結準心比值」升成工具後,由**刺激本身**離線算出的 frozen RMS ε（1.51°）恰為真人資料實測（0.757°）的兩倍。追出 `field-low` 的 `proceduralRoom` 沒設 `eyeZ` ⇒ eye 落在 fallback `roomSize[1]/2 − CAMERA_STANDOFF = 4`,而前向目標在 `z = −distance` ⇒ **實際交戰距離是 config `targets.distance` 的兩倍**。診斷見 [KI-024](../known_issue/KI-024-field-low-eye-not-anchored-halves-delivered-angles.md) / BD-024。 |
+| **問題/決策** | **決議(使用者拍板 2026-09-03,選項 A):`field-low` 補 `eyeZ: 0`**,與 `br-field`（[KI-002](../known_issue/KI-002-br-field-camera-anchor-protocol-load.md) D1）、`peek-corridor`、`peek-ad-corridor` 一致。`SceneConfig.eyeZ` 的契約本來就寫明「前向目標(`z = −distance`)的 radial-spawn drill 需 `eyeZ: 0`,使實際交戰距離 == config distance」——**`field-low` 是唯一被前向目標 drill 使用卻漏掉的場景**,這是 KI-002/D1 在本場景的復發,不是新語意。 |
+| **理由** | 選項 B(只改 WP-54 的換算距離為 8 u)只動一個 WP,但會讓「`targets.distance` ≠ 交戰距離」這個坑留在場景層,下一個前向 drill 還會踩;選項 C(幾何不動、條件標籤改成實際交付值)可保留 P04/P05,但同樣留坑,且等於接受一個所有角度都要心算除以二的場景。A 另有一個科學上的副效益:同樣的眼睛所見 ±X° 只需要一半的 world 位移 ⇒ **垂直包絡加倍**,而垂直包絡正是 OQ-54-14 降頻帶時的限制條件。 |
+| **影響面(跨 WP,這是本條目存在的理由)** | `field-low` 另有三個 drill:**`tracking_longrange_v1`**(以目標角高度反推 `DISTANCE_U`、以角速率反推 `speedU/s` ⇒ 它的角尺寸/角速度契約**同樣一直沒被交付**,本修法一併修好)、**`detection_popin_v1`**(`yawDegRange [-25,25]` 的離心率語意同理)、**`tracking_scene_v1`**(繼承 `tracking_v1`,交戰距離減半)。<br>**sim 狀態逐位不變**:改的只有 camera / 射線原點,不是目標演進——`tests/regression/longrange-tracking-determinism.test.ts` 與全部 metrics 測試未改期望值即全綠,故 **FR-54-1(legacy tracking drill 無 semantic regression)的字面條件成立**。<br>**但歷史資料不可與未來資料合併**:這三個 drill 在 2026-09-03 之前錄的匯出,其 `meta.scene.eye.z = 4`;離線推導以 payload 自身的 `meta.scene.eye` 為準(`resolveEyeOrigin`),故舊資料仍能被正確判讀,**但它們的角尺寸/角速度條件與新資料不同** ⇒ 需由 owning WP 決定是否重新基準化。 |
+| **待辦/結論** | 已落地(TDD:先證實紅)。新增的守門:①`tracking_core_pr_pilot_v1.test.ts` 兩個以**眼睛為原點**量交付角尺寸/角速度的斷言(這是三輪 Gate A 一直缺的那個測試);②`scripts/trackingDeliveredAngles.ts` + `tests/regression/tracking-delivered-angles.test.ts`,分析 runner 每份 run 印 `atEye dist=… rmsSpeed=…% of nominal size=…` 並在超出 0.95–1.05 時走 stderr——決定性 fixture 是「trajectory config 與 hitbox 逐位相同、只有 `scene.eye.z` 不同」的一對。③`tests/golden/research/epsilon-offsetdeg-oracle.test.ts` 的 eyeBase 由「讀活的場景 config」改為**凍結的歷史值** `{0,1.6,4}`(那兩份 golden 錄於 2026-08-05,以今天的 camera 驗當年的資料會得到 2.4°/8.2° 誤差)。**三個 owning WP 的重新基準化決定不在 WP-54 範圍**。 |
+| **狀態** | ✅ 已落地(2026-09-03,WP-54 T7 slice 3)。驗證:`npx vitest run` 211 files / 2035 tests 全綠;`npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0。 |
+
 ### GD-30 ✅ WP-54 目標 hitbox 由 cube 改回 sphere — 跨 WP 依賴 KI-021，已在 9-block 重跑前落地(2026-09-03)
 
 | | |

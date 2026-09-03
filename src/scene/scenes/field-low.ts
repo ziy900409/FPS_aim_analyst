@@ -21,6 +21,20 @@ export const fieldLow: SceneConfig = validateScene({
   proceduralRoom: {
     roomSize: [10, 10, 4],
     eyeHeight: 1.6,
+    /**
+     * KI-024 / BD-024:**必須錨定在 sim origin**。`SceneConfig.eyeZ` 的契約寫明「前向目標
+     * (`z = −distance`)的 radial-spawn drill 需 `eyeZ: 0`,使實際交戰距離 == config distance」;
+     * 省略時的 fallback 是 `roomSize[1]/2 − CAMERA_STANDOFF = 4`,而前向目標在 `z = −4`
+     * ⇒ 交戰距離 8 u = config 的兩倍 ⇒ **角尺寸/角行程/角速度全部只交付一半**。
+     *
+     * 實測(WP-54 tracking pilot 9 個 block,P04 匯出):交付/宣稱 0.499–0.508。宣稱 0.5°/2.0°
+     * 的目標實為 0.25°/1.0°(≈4.2 CSS px,故操作員回報「看不見」),宣稱 5/20 deg/s 實為 2.5/10。
+     *
+     * 這是 [KI-002](../../../docs/known_issue/KI-002-br-field-camera-anchor-protocol-load.md) D1
+     * 在本場景的復發:`br-field`、`peek-corridor`、`peek-ad-corridor` 當年都設了 `eyeZ: 0`,
+     * field-low 是唯一被前向 drill 使用卻漏掉的場景。
+     */
+    eyeZ: 0,
     fovDeg: 75,
     colors: {
       // 戶外舞台:floor/wall 在 GLTF 場景不建幾何,僅 background 供天空色。

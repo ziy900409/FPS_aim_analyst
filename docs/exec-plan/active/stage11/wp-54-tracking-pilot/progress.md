@@ -8,6 +8,49 @@
 
 ## Progress
 
+### 2026-09-03 — T7 slice 3：KI-024 落地（Option A：`field-low` 補 `eyeZ: 0`）+ 分析層第二道守門
+
+- **使用者決策（4 項，2026-09-03）**：① KI-024 → **Option A**（`field-low` 補 `eyeZ: 0`）；
+  ② OQ-54-14 頻帶 → **`[0.15, 1.05]` Hz**；③ Gate B retained 門檻 → **凍結準心比值 ≥ 2.0**；
+  ④ **招募 12–20 人前先由操作員乾跑實測比值**。②③④ 落地於 slice 4/5，本 slice 只做 ①。
+- **先證實紅（BD-001 的 TDD 慣例）**：`tracking_core_pr_pilot_v1.test.ts` 新增兩個**以眼睛為原點**
+  的斷言——這正是 §2.1 指出三輪來一直缺的那個測試。修法前失敗並重現 KI 的數字：
+  `eye→target distance` **7.9965**（期望 4）、eye-relative 交付/宣稱 **0.5009**（期望 > 0.95）。
+  測試不重新宣告 `TargetManager` 私有的 `TARGET_Y`：`scored_start` 當下 trajectory 仍在 age 0
+  ⇒ 目標恰落在視線上，一個 sample 就反解出 `{distanceU, centerY}`。
+- **修法**：[field-low.ts](../../../../../src/scene/scenes/field-low.ts) 補 `eyeZ: 0`（附註解寫出契約
+  與實測數字）。`SceneConfig.eyeZ` 的契約本就要求前向目標 drill 設 0，field-low 是唯一漏掉的場景。
+- **分析層第二道守門**：`scripts/trackingDeliveredAngles.ts` +
+  `tests/regression/tracking-delivered-angles.test.ts`（4 tests）。它從**錄到的目標位置**與 payload
+  **自身的** `meta.scene.eye` 量交付角度，故未來任何場景錨定錯誤都由資料抓到、而非由它宣稱的
+  config。runner 每份 run 印 `atEye dist=… rmsSpeed=…% of nominal size=…`，超出 0.95–1.05 走
+  stderr。**決定性 fixture = 「trajectory config 與 hitbox 逐位相同、只有 `scene.eye.z` 不同」的
+  一對**——這就是 P01–P05 實際的 payload 形狀。
+  - **套回歷史批次**：P04 的 10 份 payload 一致回報 **50–51% of nominal**、`dist=7.99–8.00u`、
+    `size=0.250°/1.000°` ⇒ 這一層若早存在，第一輪就會攔下。
+  - 刻意**不與 `stimulusCheck()` 合併**：後者量重建軌跡自己的角度，兩者不一致正是世代或場景錨定
+    出問題的訊號。
+- **三處既有期望值是語意變更、不是回歸**（全專案跑出來的 blast radius 恰為 4 檔）：
+  `src/scene/eyePose.test.ts`（field-low 改斷言 `z=0`）、
+  `tests/regression/br-camera-anchor-invariants.test.ts`（「無 eyeZ」樣本改用 `urban-high`，
+  field-low 另立一條錨定斷言）、`tests/golden/research/epsilon-offsetdeg-oracle.test.ts`
+  （eyeBase 由「讀活的場景 config」改為**凍結的歷史值** `{0,1.6,4}`——那兩份 golden 錄於
+  2026-08-05，以今天的 camera 驗當年的資料會得到 2.4°/8.2° 誤差；oracle 驗的是「引擎當下算的
+  `offsetDeg` == 離線 ε」，camera 是資料的一部分）。
+- **sim 狀態逐位不變**：改的只有 camera / 射線原點。`longrange-tracking-determinism` 與全部 metrics
+  測試未改期望值即全綠 ⇒ **FR-54-1 的字面條件成立**。
+- **跨 WP 影響面寫入 [DECISIONS.md GD-31](../../../DECISIONS.md)**（CLAUDE.md §3 第 7 條）：
+  同場景另三個 drill 的交戰距離一併改變——`tracking_longrange_v1`（以角高度反推距離、以角速率反推
+  速度）與 `detection_popin_v1`（離心率語意）的角度契約其實是被**修好**的；`tracking_scene_v1`
+  交戰距離減半。**歷史資料仍可正確判讀**（離線推導以 payload 自身的 `meta.scene.eye` 為準），
+  **但條件與新資料不同 ⇒ 是否重新基準化由 owning WP 決定，不在 WP-54 範圍。**
+- **P04/P05 依 G4 世代規則作廢**（刺激改變）；layer 3b 會把它們判為 mismatch，屬預期。
+- **驗證**：`npx vitest run` **212 files / 2035 tests passed**（1 skipped file / 2 skipped tests）；
+  `npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0；`playwright tracking-pilot-live
+  --project=edge` 見 verification log。
+- 文件同步：[KI-024](../../../known_issue/KI-024-field-low-eye-not-anchored-halves-delivered-angles.md)
+  §5.3/§6.1 + 狀態翻 ✅、[BUGFIX-DECISIONS.md](../../../known_issue/BUGFIX-DECISIONS.md) BD-024 翻 ✅。
+
 ### 2026-09-03 — T7 slice 2：KI-024 診斷（`field-low` 交付角度只有一半，docs-only）
 
 - **怎麼發現的**：slice 1 的工具讓「凍結準心 RMS ε」可以**只由刺激**離線算出（不需真人）。
@@ -1364,3 +1407,10 @@
 | 2026-09-02 | T5 slice 5/5：`npx tsc --noEmit` / `npx vitest run`（全專案，收尾確認） | exit 0；202 files / 1937 tests passed（2 skipped），對照 T4 收尾 199/1884 baseline，無回歸 |
 | 2026-09-02 | T5 slice 5/5：`graphify update .` / `codegraph sync .` | graph 重建（4021 nodes/9529 edges/256 communities，對照 T4 收尾 3981/9450/250）；codegraph 索引已最新 |
 
+| 2026-09-03 | T7 slice 1：`npx vitest run`（全專案）/ `npx tsc --noEmit -p tsconfig.node.json` | 211 files / 2028 tests passed（1 skipped file / 2 skipped tests；基線 210/2021 + 新 1 檔 7 tests）；exit 0 |
+| 2026-09-03 | T7 slice 1：`npx vite-node scripts/analyze-tracking-pilot.ts -- <P04> <P05> --out .pilot-analysis/t7-baseline` | 21/21 解析；layer 5 覆驗 §12.8：reversal 2.06–3.01、慢速 band-limited + calibration 1.08–1.35、20 deg/s 1.40–1.52 |
+| 2026-09-03 | T7 slice 3：先證實紅（`npx vitest run src/drill/tracking_core_pr_pilot_v1.test.ts`） | 2 failed / 12 passed：`eye→target distance` 7.9965（期望 4）、eye-relative 交付/宣稱 0.5009（期望 > 0.95）⇒ 重現 KI-024 |
+| 2026-09-03 | T7 slice 3：`npx vitest run`（全專案，修法後） | 212 files / 2035 tests passed（1 skipped file / 2 skipped tests）。blast radius 恰為 4 檔，其中 3 檔屬語意變更已同步 |
+| 2026-09-03 | T7 slice 3：`npx tsc --noEmit` / `-p tsconfig.node.json` | 皆 exit 0 |
+| 2026-09-03 | T7 slice 3：`npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` | **1/1 passed**（2.1m）。以錨定後的 field-low 真實跑完 practice + calibration 兩個 25 秒 block；覆蓋率不變（scored ticks 3203 / 25015.625 ms） |
+| 2026-09-03 | T7 slice 3：`npx vite-node scripts/analyze-tracking-pilot.ts -- <P04>` | 新 `atEye` 層對 10/10 份歷史 payload 回報 50–51% of nominal、`dist=7.99–8.00u`、`size=0.250°/1.000°` ⇒ 守門有效 |

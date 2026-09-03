@@ -3,8 +3,6 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ExportPayload } from '../../../src/data/export.ts';
 import { angularEccentricityDeg, resolveEyeOrigin } from '../../../src/metrics/eyeOrigin.ts';
-import { resolveEyeWorldBase } from '../../../src/scene/eyePose.ts';
-import { fieldLow } from '../../../src/scene/scenes/field-low.ts';
 
 /**
  * KI-004 / S1 T4 — 閘 ①(`fire.offsetDeg` oracle)。`offsetDeg` 是引擎開火當下用**真實 camera**
@@ -13,11 +11,20 @@ import { fieldLow } from '../../../src/scene/scenes/field-low.ts';
  * 第一天就會被抓到。
  *
  * 兩份真實 fixture 是 pre-S1 匯出(刻意不補 meta.scene.eye / meta.simToWorld,見 T2 S1-D9),故
- * 這裡以顯式 eyeBase(= `resolveEyeWorldBase(fieldLow)`)呼叫 `resolveEyeOrigin` —— 這同時讓
- * `'explicit'` 分支與「pre-S1 相容路徑」持續受測。
+ * 這裡以顯式 eyeBase 呼叫 `resolveEyeOrigin` —— 這同時讓 `'explicit'` 分支與「pre-S1 相容路徑」
+ * 持續受測。
+ *
+ * **eyeBase 是凍結的歷史值,不再讀 `resolveEyeWorldBase(fieldLow)`(KI-024)**:這兩份 payload
+ * 錄於 2026-08-05,當時 field-low 的 eye 落在 fallback `z=4`;KI-024/BD-024 把該場景改為
+ * `eyeZ: 0` 之後,跟著活的場景 config 走會讓這道 oracle 用**今天的 camera** 去驗**當年的資料**
+ * (實測誤差 2.4°/8.2°,遠超 0.5° 容差)。oracle 驗的是「引擎當下算的 offsetDeg == 離線 ε」,
+ * 其 camera 是資料的一部分,故寫死當年的值。
  */
 
 const TOLERANCE_DEG = 0.5;
+
+/** field-low 的 eye world base,**as recorded**(pre-KI-024 的 fallback `depth/2 − standoff`)。 */
+const EYE_BASE_AS_RECORDED = { x: 0, y: 1.6, z: 4 } as const;
 
 const FIXTURES = [
   'counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json',
@@ -28,7 +35,7 @@ describe('KI-004 / S1 T4 — gate ①: fire.offsetDeg oracle', () => {
   for (const fixture of FIXTURES) {
     it(`|ε(tick_at_fire) − fire.offsetDeg| ≤ ${TOLERANCE_DEG}° for all punch-free fires in ${fixture}`, () => {
       const payload = loadFixture(fixture);
-      const eyeOrigin = resolveEyeOrigin(payload, { eyeBase: resolveEyeWorldBase(fieldLow) });
+      const eyeOrigin = resolveEyeOrigin(payload, { eyeBase: EYE_BASE_AS_RECORDED });
 
       const ticks = payload.ticks.slice().sort((a, b) => a.t - b.t);
       const visibleEvents = payload.events
