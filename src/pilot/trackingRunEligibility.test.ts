@@ -52,6 +52,8 @@ interface BuildOptions {
   mutateTicks?: (ticks: TickRecord[]) => void;
   /** Omit the `scored_start` event entirely. */
   omitScoredStart?: boolean;
+  /** Appends a `protocol_violation` at this tick index (WP-54 T6 slice 7). */
+  violationAtTick?: number;
 }
 
 function buildPayload(options: BuildOptions = {}): ExportPayload {
@@ -89,6 +91,10 @@ function buildPayload(options: BuildOptions = {}): ExportPayload {
       targetY: 1.6,
       targetZ: -4,
     });
+  }
+
+  if (options.violationAtTick !== undefined) {
+    events.push({ type: 'protocol_violation', kind: 'ads', t: options.violationAtTick * TICK_MS });
   }
 
   return {
@@ -191,6 +197,35 @@ describe('evaluateTrackingRunEligibility — coverage', () => {
     const payload = buildPayload({ prepTicks: 5, scoredTicks: 200 });
     const result = evaluateTrackingRunEligibility(payload);
     expect(result.status).toBe('eligible');
+  });
+});
+
+describe('evaluateTrackingRunEligibility — protocol violation (WP-54 T6 slice 7)', () => {
+  it('blocks a scored run that recorded a protocol violation inside the scored window', () => {
+    // Measured on a real block: the participant right-clicked (ADS) during a scored reversal
+    // block. `deriveTrackingDynamics()` refused the run as `protocol-incompatible`, but the
+    // run-level gate said "eligible", so the primary RMS(epsilon) was still aggregated.
+    const result = evaluateTrackingRunEligibility(buildPayload({ violationAtTick: 20 }));
+    expect(result.status).toBe('blocked');
+    if (result.status !== 'blocked') return;
+    expect(result.reasons).toContain('protocol-violation');
+  });
+
+  it('does not flag a violation that only occurs inside the prep window', () => {
+    // The centring prep window is excluded from analysis by construction — same boundary the
+    // missing-target check uses.
+    const result = evaluateTrackingRunEligibility(buildPayload({ prepTicks: 5, violationAtTick: 2 }));
+    expect(result.status).toBe('eligible');
+  });
+
+  it('reports the violation alongside other independent failures rather than short-circuiting', () => {
+    const result = evaluateTrackingRunEligibility(
+      buildPayload({ violationAtTick: 20, metaOverrides: { recorderOverflow: true } }),
+    );
+    expect(result.status).toBe('blocked');
+    if (result.status !== 'blocked') return;
+    expect(result.reasons).toContain('protocol-violation');
+    expect(result.reasons).toContain('recorder-overflow');
   });
 });
 

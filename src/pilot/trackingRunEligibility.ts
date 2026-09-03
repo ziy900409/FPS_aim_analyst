@@ -28,13 +28,15 @@ export type TrackingQualityReason =
   | 'non-monotonic-timestamps'
   | 'insufficient-scored-coverage'
   | 'unsupported-schema-version'
-  | 'unrecognized-tracking-trajectory';
+  | 'unrecognized-tracking-trajectory'
+  | 'protocol-violation';
 
 export type TrackingRunEligibility =
   | { readonly status: 'eligible'; readonly validScoredTicks: number; readonly durationMs: number }
   | { readonly status: 'blocked'; readonly reasons: readonly TrackingQualityReason[] };
 
 type ScoredStartEvent = Extract<ExportPayload['events'][number], { type: 'scored_start' }>;
+type ProtocolViolationEvent = Extract<ExportPayload['events'][number], { type: 'protocol_violation' }>;
 type Tick = ExportPayload['ticks'][number];
 
 /**
@@ -63,6 +65,16 @@ export function evaluateTrackingRunEligibility(payload: ExportPayload): Tracking
   const scoredTicks = payload.ticks.filter((tick) => tick.t + EPSILON >= scoredStartMs);
   if (scoredTicks.some(isMissingTargetPosition)) reasons.push('missing-target-position');
 
+  // FR-54-10 "protocol mismatch" / §1.3 Constraints「Scored block 禁止射擊、ADS 與玩家移動」:
+  // a violation inside the scored window changes FOV/sensitivity or adds player motion mid-block,
+  // so epsilon(t) and the velocity gain are contaminated — the run must not reach aggregation.
+  // `deriveTrackingDynamics()` already refuses such a run (`protocol-incompatible`), but that only
+  // protects P1; without this check the **primary** outcome RMS(epsilon) was still aggregated and
+  // the operator screen reported "Eligible" (measured on a real ADS'd block, WP-54 T6 slice 7).
+  if (payload.events.some((event): event is ProtocolViolationEvent => isScoredWindowViolation(event, scoredStartMs))) {
+    reasons.push('protocol-violation');
+  }
+
   const lastTick = payload.ticks[payload.ticks.length - 1];
   const durationMs = lastTick !== undefined ? lastTick.t - scoredStartMs : 0;
   const coverage = scoredCoverage(scoredTicks.length, durationMs, payload.meta.simHz);
@@ -70,6 +82,13 @@ export function evaluateTrackingRunEligibility(payload: ExportPayload): Tracking
 
   if (reasons.length > 0) return { status: 'blocked', reasons };
   return { status: 'eligible', validScoredTicks: scoredTicks.length, durationMs };
+}
+
+/** Violations recorded before `scored_start` (i.e. during the centring prep window) are not
+ * scored-window contamination — the prep window is excluded from analysis by construction, same
+ * boundary the missing-target check uses. */
+function isScoredWindowViolation(event: ExportPayload['events'][number], scoredStartMs: number): boolean {
+  return event.type === 'protocol_violation' && event.t + EPSILON >= scoredStartMs;
 }
 
 function isMissingTargetPosition(tick: Tick): boolean {
