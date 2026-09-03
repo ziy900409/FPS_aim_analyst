@@ -34,6 +34,12 @@ export interface HitboxSize {
   width: number;
   height: number;
   depth: number;
+  /**
+   * Hitbox geometry, mirroring `TargetState.hitbox.shape` (GD-7). Omitted = `'box'`, which keeps
+   * the ray/AABB path bit-identical. `'sphere'` uses `radius = width / 2`, the same single source
+   * the engine hit detector reads (`HitDetector.ts`) — no second size constant (KI-021).
+   */
+  shape?: 'box' | 'sphere';
 }
 
 export interface TrackingDerivationOptions extends EyeOriginOptions {
@@ -214,9 +220,10 @@ function trackingSamples(
 }
 
 /**
- * on-target = aim ray (t ≥ 0) intersects the H1 hitbox AABB centered at the target. Ray/box slab
- * test, equivalent to `THREE.Ray.intersectBox` used by the engine hit detector (same geometry,
- * no new threshold parameter).
+ * on-target = aim ray (t ≥ 0) intersects the H1 hitbox centered at the target, using the same
+ * geometry as the engine hit detector and no new threshold parameter (GD-7 / CONTEXT §23):
+ * `shape: 'sphere'` → ray/sphere with `radius = width / 2` (mirrors `HitDetector`), otherwise the
+ * ray/box slab test equivalent to `THREE.Ray.intersectBox`.
  */
 function isOnTarget(tick: Tick, target: TargetPoint, options: ResolvedTrackingDerivationOptions): boolean {
   const dir = aimForward(tick.aim.yaw, tick.aim.pitch);
@@ -227,6 +234,18 @@ function isOnTarget(tick: Tick, target: TargetPoint, options: ResolvedTrackingDe
   const hw = options.hitbox.width / 2;
   const hh = options.hitbox.height / 2;
   const hd = options.hitbox.depth / 2;
+
+  if (options.hitbox.shape === 'sphere') {
+    // `aimForward()` returns a unit vector, so the analytic ray/sphere form needs no normalisation.
+    const lx = target.x - ox;
+    const ly = target.y - oy;
+    const lz = target.z - oz;
+    const tca = lx * dir.x + ly * dir.y + lz * dir.z;
+    const d2 = lx * lx + ly * ly + lz * lz - tca * tca;
+    if (d2 > hw * hw) return false;
+    const thc = Math.sqrt(hw * hw - d2);
+    return tca + thc >= Math.max(tca - thc, 0); // t ≥ 0, including an origin inside the sphere
+  }
 
   let tmin = -Infinity;
   let tmax = Infinity;
@@ -275,6 +294,7 @@ function resolveOptions(payload: ExportPayload, options: TrackingDerivationOptio
       width: positiveFinite(hitbox.width, 'hitbox.width'),
       height: positiveFinite(hitbox.height, 'hitbox.height'),
       depth: positiveFinite(hitbox.depth, 'hitbox.depth'),
+      ...(hitbox.shape !== undefined ? { shape: hitbox.shape } : {}),
     },
     eyeOrigin,
   };
@@ -283,7 +303,12 @@ function resolveOptions(payload: ExportPayload, options: TrackingDerivationOptio
 function hitboxFromMeta(payload: ExportPayload): HitboxSize | undefined {
   const hitbox = payload.meta.targets?.hitbox;
   if (hitbox === undefined) return undefined;
-  return { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU };
+  return {
+    width: hitbox.widthU,
+    height: hitbox.heightU,
+    depth: hitbox.depthU,
+    ...(hitbox.shape !== undefined ? { shape: hitbox.shape } : {}),
+  };
 }
 
 function rms(values: readonly number[]): number {

@@ -67,7 +67,7 @@ describe('deriveTrackingMetrics', () => {
 
     expect(payload.meta.drillId).toBe('tracking_longrange_v1');
     expect(payload.meta.targets?.hitbox).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5, shape: 'box' });
-    expect(result.options.hitbox).toEqual({ width: 0.5, height: 1, depth: 0.5 });
+    expect(result.options.hitbox).toEqual({ width: 0.5, height: 1, depth: 0.5, shape: 'box' });
     expect(angularHeightDeg(longrangeHitbox.heightU, longrangeConfig.targets.distance)).toBeCloseTo(0.5, 12);
     expect(presentation.acquisitionFailure).toBe(false);
     expect(Math.abs(presentation.tAcquireMs! - (onsetTick - visibleTick) * TICK_MS)).toBeLessThanOrEqual(TICK_MS);
@@ -175,6 +175,35 @@ describe('deriveTrackingMetrics', () => {
     const hitbox = { widthU: 0.5, heightU: 1, depthU: 0.5 };
     expect(simAndOfflineOnTarget(0.24, hitbox)).toEqual({ simHit: true, offlineOnTarget: true });
     expect(simAndOfflineOnTarget(0.3, hitbox)).toEqual({ simHit: false, offlineOnTarget: false });
+  });
+
+  it('corner fixture separates a sphere hitbox from its bounding cube (KI-021)', () => {
+    const cube: HitboxMeta = { widthU: 0.5, heightU: 0.5, depthU: 0.5 };
+    const sphere: HitboxMeta = { ...cube, shape: 'sphere' };
+    // Corner aim at the target depth plane: 0.22u off centre on both axes, so it sits inside the
+    // cube (|d| < 0.25u per axis) but 0.311u out radially — outside the inscribed sphere (r 0.25u).
+    // This is the tick where the bounding-cube reading is wrong, and the only assertion that proves
+    // `shape` reached the derivation at all.
+    expect(simAndOfflineOnTarget(0.22, cube, { aimYOffsetAtTargetDepth: 0.22 })).toEqual({
+      simHit: true,
+      offlineOnTarget: true,
+    });
+    expect(simAndOfflineOnTarget(0.22, sphere, { aimYOffsetAtTargetDepth: 0.22 })).toEqual({
+      simHit: false,
+      offlineOnTarget: false,
+    });
+    // Same eccentricity on-axis stays inside both shapes — the sphere branch is not blanket-off.
+    expect(simAndOfflineOnTarget(0.22, sphere)).toEqual({ simHit: true, offlineOnTarget: true });
+  });
+
+  it('sphere on-target keeps the ray t >= 0 semantics of the box branch (KI-021)', () => {
+    const sphere: HitboxMeta = { widthU: 2, heightU: 2, depthU: 2, shape: 'sphere' };
+    // Aim origin inside the sphere: both the engine ray/sphere test and the derivation report a
+    // hit, matching how the box branch treats `tmax >= max(tmin, 0)`.
+    expect(simAndOfflineOnTarget(0, sphere, { targetZ: -0.1 })).toEqual({
+      simHit: true,
+      offlineOnTarget: true,
+    });
   });
 
   it('resolves eyeOrigin from meta.scene.eye / meta.simToWorld without any options (G-7 round-trip)', () => {
@@ -448,13 +477,26 @@ function roundTripWithMeta(
   return JSON.parse(serializeJSON(payload)) as ExportPayload;
 }
 
+interface OnTargetFixtureOptions {
+  /** Vertical aim offset at the target depth plane (u); non-zero probes the cube corner region. */
+  aimYOffsetAtTargetDepth?: number;
+  /** Target depth (u); the default keeps the aim origin well outside the hitbox. */
+  targetZ?: number;
+}
+
 function simAndOfflineOnTarget(
   aimXAtTargetDepth: number,
   hitbox: HitboxMeta,
+  fixture: OnTargetFixtureOptions = {},
 ): { simHit: boolean; offlineOnTarget: boolean } {
-  const target = makeHitboxTarget(hitbox);
+  const targetZ = fixture.targetZ ?? TARGET_Z;
+  const target = makeHitboxTarget(hitbox, targetZ);
   const origin = new THREE.Vector3(0, EYE_HEIGHT, 0);
-  const point = { x: aimXAtTargetDepth, y: TARGET_Y, z: TARGET_Z };
+  const point = {
+    x: aimXAtTargetDepth,
+    y: TARGET_Y + (fixture.aimYOffsetAtTargetDepth ?? 0),
+    z: targetZ,
+  };
   const direction = new THREE.Vector3(point.x, point.y - EYE_HEIGHT, point.z).normalize();
   const simHit = raycastWithRay(origin, direction, [target]).hit;
 
@@ -477,14 +519,19 @@ function simAndOfflineOnTarget(
   return { simHit, offlineOnTarget };
 }
 
-function makeHitboxTarget(hitbox: HitboxMeta): TargetState {
+function makeHitboxTarget(hitbox: HitboxMeta, targetZ: number): TargetState {
   return {
     id: 'edge-target',
     side: 'R',
-    pos: { x: 0, y: TARGET_Y, z: TARGET_Z },
+    pos: { x: 0, y: TARGET_Y, z: targetZ },
     visible: true,
     alive: true,
-    hitbox: { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU, shape: 'box' },
+    hitbox: {
+      width: hitbox.widthU,
+      height: hitbox.heightU,
+      depth: hitbox.depthU,
+      shape: hitbox.shape ?? 'box',
+    },
   };
 }
 
