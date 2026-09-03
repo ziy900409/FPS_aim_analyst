@@ -4,11 +4,21 @@
 
 ## Status
 
-- **Current**：🟢 T2 export-derived artifact 完成（2026-09-03）；T3 all tracking drill coverage 待開工。
+- **Current**：🟢 T3 all tracking drill coverage 完成（2026-09-03）；T4 replay observability 待開工。
 - **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
 - **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-03 — T3 all tracking drill coverage complete
+
+- 新增 `src/metrics/trackingContactCoverage.ts`，以 T2 `buildTrackingContactArtifact()` 為唯一 contact 來源，輸出 per-run included/excluded 狀態、pure P0 contact summary、BR companion evidence 與 blocked reason counts。
+- Pure summary 只從 `TrackingContactSample[]` 推導 acquisition、TOT、RMS/median/P95 epsilon；不讀 `fire`、`hit`、damage、kill 或 recorder hit count。
+- `tracking_v1` fixture 驗證 contact samples、acquisition、TOT、RMS epsilon 與 `deriveTrackingMetrics()` parity。
+- `tracking_longrange_v1` fixture 驗證 meta hitbox provenance、source unit 與 0.5 deg angular-height contract。
+- `tracking_br_v1` fixture 驗證 aim-ray contact samples，並把 ADS ticks/events、hitscan fire hit 與 projectile hit event 放在 BR companion 欄位；改變 ballistic fire/hit events 不會改變 pure summary。
+- Protocol-incompatible artifact 在 coverage report 中以 `excluded` run 保留 reason code/exclusion count，不進 aggregate。
+- WP-54 `tracking_core_pr_pilot_v1_*` / `tracking_reversal_pilot_v1_*` 只做 contact-contract compatibility smoke，不發布或混入 WP-54 pilot metric release。
 
 ### 2026-09-03 — T2 export-derived artifact complete
 
@@ -75,6 +85,7 @@
 | D-55.3 | 第一版優先支援 derived artifact；產品 Replay overlay 由 T0/OQ-55-1 決定 | 離線 artifact 可先滿足研究稽核，Replay UI scope 對估時與測試面影響較大 | ✅ Confirmed（T0；offline artifact first） |
 | D-55.4 | BR/projectile tracking 同時可呈現 ballistic hit 與 aim-ray contact，但 pure tracking summary 不讀 hit count | 避免 projectile lead/travel time 被誤解為準心跟隨能力 | ✅ Confirmed（T0） |
 | D-55.5 | T2 artifact 先交付 deterministic JSON builder，不新增 CSV/HTML writer | OQ-55-3 已決定另存 deterministic derived contact JSON；CSV/HTML 不是 T2 必要條件，後續 Replay/report task 可從同一 JSON model 投影 | ✅ Confirmed（T2） |
+| D-55.6 | T3 新增 metrics-layer coverage projection，而不把 BR companion 直接塞進 T2 artifact schema | T2 artifact 已凍結為 deterministic contact JSON；T3 需要的是 all-drill coverage 與 BR/pure 分層 evidence，report UI/HTML integration 留給 T5 | ✅ Confirmed（T3） |
 
 ## Open Questions
 
@@ -111,6 +122,11 @@
 | 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContact.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingDerivation.test.ts` | T2 focused regression: 3 files / 26 tests passed |
 | 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T2 + legacy tracking/BR baseline: 12 files / 66 tests passed |
 | 2026-09-03 | `graphify update .` | Executed after code changes, but generated `graphify-out` was restored/not staged because the local worktree contained unrelated uncommitted files (`scripts/analyze-tracking-pilot.ts`, `src/sim/__probe.test.ts`, `src/sim/trackingTrajectory.ts`) that graphify indexed into the manifest/graph |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactCoverage.test.ts` | T3 narrow coverage: 1 file / 6 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts` | T3 focused contact regression: 4 files / 32 tests passed |
+| 2026-09-03 | `npm.cmd run typecheck` | exit 0 |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T3 + legacy tracking/BR baseline: 13 files / 72 tests passed |
+| 2026-09-03 | `graphify update .` | Executed after code changes, but generated `graphify-out` was restored/not staged because unrelated local worktree changes would be indexed into the graph output |
 
 ## Surprises & Discoveries
 
@@ -120,3 +136,4 @@
 - The named incremental implementation reference says this repo is Python/Poetry ES_analysis, but the actual workspace is TypeScript/Vitest FPS_aim_analyst. Verification therefore follows `package.json` scripts and stage11 task docs, not the stale Poetry commands in that reference.
 - T1 edge miss fixture initially used `x=0.500001` at target depth and still hit because the AABB has depth; the final outside oracle uses `x=0.58`, which clears the front slab for the default H1 box.
 - T2 environment recording via `Get-CimInstance` was denied by local Windows permissions; fallback environment snapshot uses Node/OS/.NET environment APIs and `$env:PROCESSOR_IDENTIFIER`, which is sufficient for the lightweight artifact perf gate.
+- T3 graphify cleanup observed unrelated local changes outside WP-55; graphify output was therefore regenerated for freshness evidence but restored before commit to avoid mixing unrelated indexed state into WP-55.

@@ -30,13 +30,20 @@
 
 ## Definition of Done
 
-- [ ] `tracking_v1` fixture 產出 contact samples、TOT、RMS epsilon、acquisition parity。
-- [ ] `tracking_longrange_v1` fixture 產出 contact samples，且 longrange hitbox/source unit 對表。
-- [ ] `tracking_br_v1` fixture 產出 aim-ray contact samples，且 ADS/projectile/hitscan companion fields 不污染 pure summary。
-- [ ] BR report/test 分開呈現 `aimRayOnTarget` 與 ballistic `hit`；pure tracking summary 不讀 hit count、damage 或 kill。
-- [ ] protocol-incompatible run 不進 aggregate，且 reason code/exclusion count 可追溯。
-- [ ] WP-54 新 tracking drill 若已存在，只有 contract compatibility evidence，沒有混入新 metric release scope。
-- [ ] legacy drill id、frozen parameters、target lifecycle tests 全綠。
+- [x] `tracking_v1` fixture 產出 contact samples、TOT、RMS epsilon、acquisition parity。
+- [x] `tracking_longrange_v1` fixture 產出 contact samples，且 longrange hitbox/source unit 對表。
+- [x] `tracking_br_v1` fixture 產出 aim-ray contact samples，且 ADS/projectile/hitscan companion fields 不污染 pure summary。
+- [x] BR report/test 分開呈現 `aimRayOnTarget` 與 ballistic `hit`；pure tracking summary 不讀 hit count、damage 或 kill。
+- [x] protocol-incompatible run 不進 aggregate，且 reason code/exclusion count 可追溯。
+- [x] WP-54 新 tracking drill 若已存在，只有 contract compatibility evidence，沒有混入新 metric release scope。
+- [x] legacy drill id、frozen parameters、target lifecycle tests 全綠。
+
+## Evidence
+
+- 新增 `src/metrics/trackingContactCoverage.ts`：從 T2 `buildTrackingContactArtifact()` 投影 coverage report，blocked artifact 以 `excluded` run 保留 reason counts，不進 aggregate。
+- 新增 `src/metrics/trackingContactCoverage.test.ts`：覆蓋 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`，並以 WP-54 core/reversal candidate 只驗 contact-contract compatibility。
+- BR companion 分欄：`ads`、`aimRay`、`ballistic` 分開輸出；pure summary 只從 contact samples 計算，測試以 fire/hit event 差異證明不讀 hit count。
+- Verification：`npm.cmd run typecheck` exit 0；T3 focused regression 13 files / 72 tests passed。
 
 ## Commit
 
