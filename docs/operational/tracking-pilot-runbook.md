@@ -4,14 +4,18 @@
 > 操作員。上游概念文件：[analysis-tracking.md](analysis-tracking.md)（P0/P1 公式、eligibility/
 > compatibility/evidence 契約）、[../exec-plan/active/stage11/wp-54-tracking-pilot/README.md](../exec-plan/active/stage11/wp-54-tracking-pilot/README.md)（需求/介面契約）。
 
-## 現況（2026-09-02，T5 完成後）
+## 現況（2026-09-03，T6 工程面完成後）
 
-T5 交付了 manifest、researcher-only runner 與 operator screen 這三個**機制**本身，並用一個
-dev-only harness + 真實瀏覽器 Playwright spec 證明鍵盤流程可用。**尚未**接進 `src/main.ts` 正式 app
-（真實 `DrillConfig` 載入、真實 `ExportPayload` 匯出），也**尚未**找真人操作過。把這個 runner 接進
-正式 app 並找 3-5 位內部/熟練 tester 實際跑,是 [README §4 T6「Instrumentation pilot」](../exec-plan/active/stage11/wp-54-tracking-pilot/README.md)明文範圍——本文件先說明機制本身怎麼用（今天就能在
-dev-only harness 上操作),T6 完成後這份文件會補上「如何在正式 app 內啟動一個真實 pilot session」的
-章節。
+T5 交付了 manifest、researcher-only runner 與 operator screen 三個**機制**；**T6 slice 1-3 已把它們
+接進 `src/main.ts` 正式 app**——真實 `DrillConfig` 走既有 clearance/TargetManager/SimLoop 載入鏈路、
+真實 `ExportPayload` 由既有 `buildCurrentExportPayload()` 組裝並自動下載，入口是研究員模式的
+**Tracking pilot** 按鈕。真瀏覽器 e2e（`tests/e2e/tracking-pilot-live.spec.ts`）已跑完兩個真實 25 秒
+block 並對下載的 JSON 斷言追溯欄位。
+
+**尚未完成的是真人施測**：3-5 位內部/熟練 tester、每條件至少 2 次，是
+[README §4 T6](../exec-plan/active/stage11/wp-54-tracking-pilot/README.md) 的 Gate A 要求，操作步驟
+與資料回收方式見 [T6-instrumentation-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md)
+（該文件是 Gate A 的正式帳本；本文件是操作手冊）。
 
 ## 核心概念
 
@@ -83,10 +87,11 @@ idle --start(manifest)--> running(block 0) --completeCurrentBlock()--> block-out
 `textContent`。**每個控制項都是原生 `<button>`/`<input>`/`<select>`**，Tab 順序即操作順序，無
 click-only 的 `<div>`。
 
-## 如何操作（今天：dev-only harness）
+## 如何操作（dev-only harness：秒級 UI/鍵盤 smoke test）
 
-T5 尚未把 runner 接進正式 app,但已經有一個可以實際互動的 harness,證明 operator screen 機制本身
-可用：
+正式路徑已可用（見下一節）後，這個 harness **仍然保留**（progress.md D-54.33）：它用 fake
+`loadDrillConfig`/`exportBlock`，可在**秒級**走完 9 個 block 的鍵盤/狀態流程，是 a11y 迴歸證據的
+可重跑載體；正式路徑一個 block 就是 25 秒真實 sim，不適合當 a11y 閘。
 
 1. `npm run dev`，瀏覽器開 `http://localhost:5173/tracking-pilot-harness.html`
    （`src/pilot/trackingPilotOperatorHarness.ts` 掛載，`tracking-pilot-harness.html` 由 Vite dev
@@ -100,16 +105,49 @@ T5 尚未把 runner 接進正式 app,但已經有一個可以實際互動的 har
    `page.keyboard.press()`）——比照本專案既有 `stage10-accessibility.spec.ts` 慣例，這類真實瀏覽器
    Playwright walkthrough 是本專案採認的自動化 a11y/keyboard 證據（見 progress.md D-54.28）。
 
-## 如何操作（T6 之後：正式 pilot session）
+## 如何操作（正式 pilot session，T6 起可用）
 
-待 T6 把 `createTrackingPilotRunner()`/`createTrackingPilotOperatorScreen()` 接進 `src/main.ts`
-（真實 `loadDrillConfig` 透過既有 drill 載入路徑、真實 `exportBlock` 讀真實 `ExportPayload`）後，本節
-會補上：如何從 app 內啟動一個真實 tracking pilot session、如何匯出 `TrackingPilotEvidence`
-（`buildTrackingPilotEvidence()`，見 T4 交付）、以及操作員在 quality abort 發生時的建議處置流程。
+> 完整的施測份量、資料回收格式與 Gate A 對帳表在
+> [T6-instrumentation-gate.md §5-§7](../exec-plan/active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md)；
+> 本節是同一條流程的操作摘要。
+
+1. `npm run dev`，瀏覽器（Chrome/Edge 桌面版）開 `http://localhost:5173/`，**等三個啟動按鈕出現**
+   （app 完成 boot；boot 期間按 Tracking pilot 不會出錯，但 manifest 會等 boot 完才真正開始）。
+   確認 console 印出 `[isolation] {crossOriginIsolated: true, …}`——若為 `false` 請停止施測（計時
+   精度不足，資料無效，ADR-4）。
+2. **研究員模式** → **Tracking pilot** → 出現操作面板。
+3. 填 Participant ID（勿填真實姓名——會寫進匯出 `meta.session.participantId`）、選 Session index
+   （`0` = primary seed，`1` = alternate seed family）、填 Rest seconds（建議 20），Tab 到
+   **Start manifest** 按 Enter。
+4. 面板自動讓位，block 開始（3 秒倒數 + 25 秒）。點畫面中央進入 pointer lock 才能瞄準。
+   **scored/calibration block 禁開火、禁 ADS、禁 WASD**（違反會記 `protocol_violation`）；
+   practice 可自由熱身。
+5. block 結束 → **自動下載該 block 的 JSON** → 面板自動回來，顯示 outcome 與品質橫幅
+   （`Eligible — scored ticks: …` / `Blocked — reasons: …`；practice 無橫幅）。
+6. **quality abort 的建議處置**：
+   - `Blocked — reasons: recorder-overflow` / `input-buffer-overflow` / `non-monotonic-timestamps`
+     → **系統/裝置問題**，不是受測者問題。先排除背景負載（關掉其他分頁/錄影軟體），再
+     **Retry block** 並在理由寫下觀察到的狀況。連續兩次同一 reason 就停止本場施測並回報——這是
+     Gate A 該擋下的事，不該用「多跑幾次」蓋過去。
+   - `Blocked — reasons: insufficient-scored-coverage` → 通常是掉幀/卡頓。同上處置。
+   - `Blocked — reasons: missing-target-telemetry` / `protocol-*` → 回報，不要自行重跑掩蓋。
+   - 受測者因素（分心、手滑、誤觸移動鍵）→ **Retry block**，理由寫清楚（retry 為 append-only，
+     原 attempt 的匯出與理由都留檔，不會被覆蓋）。
+7. 走完 9 個 block；一位 tester 的 T6 份量 = session 0 一次 + session 1 一次。
+8. **產生 evidence artifact（分析端，不在 app 內）**：收齊 JSON 後把它們餵
+   `buildTrackingPilotEvidence(payloads, options?)`（`src/pilot/trackingPilotEvidence.ts`）→
+   `renderTrackingPilotReportHtml(evidence)`（`src/pilot/trackingPilotReport.ts`）產出 self-contained
+   HTML。practice block 會被自動排除並計入 `excludedPracticeRunCount`（FR-54-5）。公式、預設參數與
+   blocked 語意見 [analysis-tracking.md](analysis-tracking.md)。
 
 ## 遺留給後續 task 的已知缺口
 
 - **無「跳過休息」按鈕**：`restSeconds` 一旦設定，操作員必須等倒數歸零才會進下一個 block（沒有
   skip-rest 控制）。checklist 只說「rest 略過（若允許）」是條件性要求，T5 判斷不需要——若 T6 真人
   試跑發現需要，屬於 additive 改動，不影響已交付的 phase state machine 契約。
-- **main.ts 整合、真人試跑**：見上方「現況」與 T6 範圍說明。
+- **block 跑動中沒有 Abort 按鈕**：操作面板在 `running` phase 會讓位（全視窗遮罩，否則受測者看不到
+  目標），因此跑動中按不到 `Abort block`。等效處置：讓 block 跑完後按 `Retry block` 並填理由
+  （append-only，資料與理由都留檔；abort 反而不留 payload）。若施測回報真的需要跑動中中止，屬
+  additive 改動（見 progress.md D-54.32）。
+- **`Rest seconds` 不寫進匯出**：pilot 匯出的 `meta` 沒有 rest 欄位，請操作員手動記錄使用值。
+- **真人試跑**：見上方「現況」與 [T6-instrumentation-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md)。

@@ -8,6 +8,34 @@
 
 ## Progress
 
+### 2026-09-03 — T6 slice 4/N：`T6-instrumentation-gate.md`（Gate A 帳本）+ runbook 正式章節 + graphify
+
+- **落點（純文件 + graph，無程式碼變更）**：新檔
+  [T6-instrumentation-gate.md](T6-instrumentation-gate.md)（格式比照 WP-52 的
+  `T4-manual-pilot-gate.md`：「Automated evidence」+「How to reach it in the running app」+ 未勾選
+  的真人項 + go/revise/stop）；`docs/operational/tracking-pilot-runbook.md` 的「現況」改寫、
+  「T6 之後：正式 pilot session」佔位文字改成真正的操作步驟（含 quality abort 的處置建議）、
+  harness 章節標註為保留的秒級 a11y smoke test、「遺留缺口」補上跑動中無 Abort 與 rest 秒數不入
+  匯出兩條；`task-checklist.md` T6 各項改為誠實的 `[-]`（synthetic 已綠、真人待辦）並列出 4 個工程
+  slice。
+- **A-1/A-2 切分**：gate 文件明確把 T6 DoD 拆成「A-1 機制正確性（自動化可證）」與「A-2 真實資料可用
+  性（只有真人能證）」，並寫明 **A-1 全綠不等於 Gate A 通過**——避免後續 task 誤把 358 個綠燈當成
+  Gate A PASS。
+- **既有測試證據彙整（不重造）**：focused run `18 files / 358 tests passed`（2026-09-03，HEAD
+  `aa240e4`），逐檔對應 T6 checklist 的每個驗證項（見 gate 文件 §2 表格）。checklist 兩項
+  「trajectory 連續性/bounds/event 對表/angular round-trip」與「quality flags/export metadata/
+  report traceability」的 synthetic 部分**已被 T1-T4 既有測試完整覆蓋**，T6 未新造 fixture——同
+  D-54.28 的判斷原則（既有證據夠用時不重造一套）。
+- **順手記下的追溯缺口**：`Rest seconds` 不會寫進 pilot 匯出的 `meta`（`sessionPlanRestSeconds`
+  只在 Session Plan 路徑寫入），故 gate 文件 §7 要求操作員手動記錄。列為 open question（見下方），
+  不在 T6 動 schema。
+- **`graphify update .`**：4051 nodes / 9599 edges / 245 communities（對照 T5 收尾 4021/9529/256）。
+  `codegraph sync .`：already up to date。
+- **下一步（交還使用者）**：gate 文件 §5 的操作步驟 + §7 的資料回收格式。真人資料回來後才能做
+  步驟 ④（跑 `evaluateTrackingRunEligibility()`/`buildTrackingPilotEvidence()`/
+  `renderTrackingPilotReportHtml()` 對表、修 defect、填 go/revise/stop）。
+
+
 ### 2026-09-03 — T6 slice 3/N：practice 不入 scored aggregation（FR-54-5 的實質保證）
 
 - **落點**：`src/session/trackingPilotManifest.ts` 新增 non-throwing 的
@@ -879,6 +907,12 @@
   的理由）。若之後（T5/T6+）出現真的需要區分的 input 維度（例如 keyboard-only walkthrough vs 一般
   操作、或不同滑鼠回報率的分層），需要重新檢視這個欄位是否足夠，並以新 decision row 記錄變更（additive，
   不影響已收集資料）。
+
+- **OQ-54-10（T6 slice 4，未與使用者確認）**：pilot 匯出的 `meta` 沒有 rest 秒數欄位——
+  `collectMeta` 的 `sessionPlanRestSeconds` 只在 `sessionPlanRunner.phase.kind === 'family'` 時寫入，
+  tracking pilot 走的是自己的 runner。目前以「操作員手動記錄」補（gate 文件 §7）。若 T7/T8 需要把
+  rest 當可分析變數（例如 time-on-task slope 分析要控制休息長度），再考慮 additive schema 欄位或
+  把 pilot 的 rest 一併寫進 `meta.session`；不在 T6 動 schema。
 
 ## Verification log
 

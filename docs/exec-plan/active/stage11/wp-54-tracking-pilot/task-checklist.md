@@ -12,7 +12,7 @@
 | [x] | **T3** Canonical P0/P1 metrics/truth fixtures | 推導 acquisition、RMS/TOT、lag/gain、drop/reacquire、reversal response | T2 | High |
 | [x] | **T4** Eligibility/evidence/report | 建立 quality reason vocabulary、compatibility、deterministic JSON/HTML evidence | T3 | High |
 | [x] | **T5** Researcher manifest/operator flow | 支援 counterbalance、rest、retry reason、session index 與 keyboard flow | T2/T4 | Med |
-| [ ] | **T6** Instrumentation pilot | 以 synthetic + 3-5 tester runs 驗證 motion/event/export/report traceability | T1-T5 | High |
+| [-] | **T6** Instrumentation pilot | 以 synthetic + 3-5 tester runs 驗證 motion/event/export/report traceability | T1-T5 | High |
 | [ ] | **T7** Difficulty calibration pilot | 以 12-20 人校準 floor/ceiling、seed、visibility、time-on-task | T6 PASS | High |
 | [ ] | **T8** Repeatability/validity pilot | 以兩次 session 驗證 ICC、CV/SEM、Bland-Altman、alternate seed equivalence | T7 PASS + OQ-54-5/6 frozen | High |
 | [ ] | **T-exit** M20 evidence audit/handoff | 審核全需求追溯、evidence、docs、manual gate 與 go/revise/stop | T6 PASS、T7 PASS、T8 formal conclusion | Med |
@@ -115,12 +115,35 @@
 
 ## T6 — Instrumentation pilot
 
-- [ ] 3-5 位內部/熟練 tester，每條件至少 2 次。
-- [ ] 驗證 trajectory 連續性、bounds、event 對表、angular size/speed round-trip。
-- [ ] 驗證 quality flags、export metadata 與 report traceability。
-- [ ] 任何 defect 先最小化、補 regression fixture，再重跑 affected conditions。
-- [ ] 產出 `instrumentation-gate-v1` evidence，含資料版本、分析版本、環境與 go/revise/stop。
-- [ ] Gate A 失敗時停止，不以更多真人樣本掩蓋。
+> 工程面（slice 1-4）完成：正式 app 接線、真瀏覽器 live walkthrough、practice aggregation 修補、
+> gate 文件。**真人施測未做**——操作步驟與 Gate A 對帳見
+> [T6-instrumentation-gate.md](T6-instrumentation-gate.md)。
+
+- [ ] 3-5 位內部/熟練 tester，每條件至少 2 次。（**需真人**；機制已就緒，步驟見 gate 文件 §5）
+- [-] 驗證 trajectory 連續性、bounds、event 對表、angular size/speed round-trip。（synthetic +
+      live e2e 部分 ✅ = T1/T2 既有 35+62+57+46+8+6 tests 與 `tracking-pilot-live.spec.ts`，見 gate
+      文件 §2-§3；真人資料重跑同一套函式待辦）
+- [-] 驗證 quality flags、export metadata 與 report traceability。（synthetic 部分 ✅ = T4 既有
+      13+16+8+3 tests；真實 25s block 實測 `Eligible — scored ticks: 3203`，見 gate 文件 §3；真人
+      資料待辦）
+- [-] 任何 defect 先最小化、補 regression fixture，再重跑 affected conditions。（已修 3 個：
+      main.ts boot-window TDZ、operator overlay restore 清掉 outcome 面板、practice 進入 scored
+      aggregation；各自 commit + regression test。真人施測可能再發現）
+- [-] 產出 `instrumentation-gate-v1` evidence，含資料版本、分析版本、環境與 go/revise/stop。
+      （[T6-instrumentation-gate.md](T6-instrumentation-gate.md) 已建立；真人資料版本與 go/revise/
+      stop 待填）
+- [ ] Gate A 失敗時停止，不以更多真人樣本掩蓋。（決策時適用；規則已寫進 gate 文件 §9）
+
+### T6 工程 slice（已 commit）
+
+- [x] **slice 1**：`createTrackingPilotSession()` wiring seam + `main.ts` 接線
+      （`activateDrill()`/`loadDrillConfigDirect()`、研究員選單第 4 個入口、render-loop poll、
+      drill-ended handoff），12 tests。
+- [x] **slice 2**：`tests/e2e/tracking-pilot-live.spec.ts` 真瀏覽器 live walkthrough（practice +
+      calibration 兩個真實 25s block、下載 JSON 追溯欄位斷言），修 2 個真 bug。
+- [x] **slice 3**：practice block 不入 scored aggregation（`isTrackingPilotPracticeDrillId()` +
+      `excludedPracticeRunCount`），+4 regression tests，回寫 `analysis-tracking.md`。
+- [x] **slice 4**：`T6-instrumentation-gate.md`（Gate A 帳本）+ runbook 正式操作章節 + graphify。
 
 ## T7 — Difficulty calibration pilot
 
