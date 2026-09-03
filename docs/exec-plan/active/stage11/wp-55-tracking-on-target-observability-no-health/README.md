@@ -4,7 +4,7 @@
 >
 > Source proposal：[../wp-55-tracking-on-target-observability-no-health-plan.md](../wp-55-tracking-on-target-observability-no-health-plan.md)。本文件依 `.claude/skills/engineering-planning/SKILL.md`、`references/design_standards.md`、`assets/tech_spec_template.md` 與 WP-51 的 work-package 格式整理。
 >
-> **狀態：已正式納入 stage11，T0-T6 已完成（2026-09-03）；T-exit M21 evidence audit / handoff 待開工。** T6 exit gate and documentation evidence 見 [progress.md](progress.md)。
+> **狀態：已正式納入 stage11，T0-T6 + T-exit 全數完成（2026-09-03）。M21 判定 = conditional pass** —— 全部 automated gate 與 A-55.1~10 有客觀證據，唯一未閉合項為 OI-55-1（無 operator 入口可從真實 export 產出 artifact，故 manual/researcher artifact review 保持 OPEN，owner = 使用者／研究者）。逐項證據見 [§6.2](#62-t-exit-evidence-ledger2026-09-03) 與 [progress.md](progress.md)。
 
 | | |
 |---|---|
@@ -234,6 +234,7 @@ Error 情境：
 1. 第一版若只做離線 artifact 而不做產品 Replay overlay，是有意識的切範圍。觸發後續工作的條件是研究者需要在正式操作 UI 逐 frame 檢視 contact，而不是只審核 exported report。
 2. Legacy export fallback 只支援能由既有資料可靠重建的案例；不可重建的舊資料保留 blocked 結果，不做推測補值。
 3. WP-55 不把 tracking contact 直接晉升為正式 Assessment/history/trend 指標；正式發布應另立 release WP 或由 WP-54/WP-53 後續里程碑承接。
+4. WP-55 只交付 library-level contact derivation/artifact/replay/report 純函式，**未交付 operator 入口**（無 CLI script、無 npm script、無 UI wiring）。這是 T-exit 才顯性化的有意識負債，登記為 OI-55-1（§6.2）。觸發後續工作的條件是研究者需要對真實 export 做人工 artifact 審閱。
 
 ---
 
@@ -282,19 +283,19 @@ Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 
 ## 6. M21 Exit Gate
 
-> T6（2026-09-03）已完成逐項 evidence ledger；這是進入 T-exit 的輸入，不代表 T-exit 已完成。
+> T6（2026-09-03）已完成逐項 evidence ledger（§6.1）；T-exit（2026-09-03）已重跑全部 gate 並判定 **conditional pass**，逐項證據見 §6.2。
 
-- [ ] WP-55 已正式被 stage11 接受，或文件移到明確 future proposal；stage scope 不矛盾。
-- [ ] 血條、HP、damage、擊殺數均未成為 tracking 跟隨判定來源。
-- [ ] 所有現有 tracking drill 都能從 export 重建逐 tick `onTarget` 與 `epsilonDeg`。
-- [ ] Contact artifact 與 `deriveTrackingMetrics()` 的 acquisition/TOT/RMS epsilon 對表成立。
-- [ ] Replay 或離線 replay artifact 能逐 frame 檢視 contact state。
-- [ ] BR/projectile tracking 的 ballistic hit 與 aim-ray contact 分欄呈現，未混入 pure tracking 主結論。
-- [ ] 資料不足、不相容或舊 export 無法可靠重建時，輸出封閉 reason code。
-- [ ] Existing target lifecycle、`presentationMs`、drill id 與 legacy tests 無 semantic regression。
-- [ ] 文件同步說明：tracking 是否跟隨目標以 exact-hitbox on-target/TOT/RMS epsilon 判定，不需要血條。
-- [ ] Focused unit/replay/report tests、full CI 與必要 manual/researcher artifact review 全綠或有明確 blocker owner。
-- [ ] `CONTEXT.md`、`DECISIONS.md`、operational spec、stage progress/checklist 與 `graphify-out`（若有 code change）同步。
+- [x] WP-55 已正式被 stage11 接受，或文件移到明確 future proposal；stage scope 不矛盾。
+- [x] 血條、HP、damage、擊殺數均未成為 tracking 跟隨判定來源。
+- [x] 所有現有 tracking drill 都能從 export 重建逐 tick `onTarget` 與 `epsilonDeg`。
+- [x] Contact artifact 與 `deriveTrackingMetrics()` 的 acquisition/TOT/RMS epsilon 對表成立。
+- [x] Replay 或離線 replay artifact 能逐 frame 檢視 contact state。**限定範圍**：trace artifact 格式與逐 frame 內容由 `renderReplayContactTraceHtml()` 測試證明；從真實 export 檔產出該 HTML 的 operator 入口尚不存在，見 OI-55-1。
+- [x] BR/projectile tracking 的 ballistic hit 與 aim-ray contact 分欄呈現，未混入 pure tracking 主結論。
+- [x] 資料不足、不相容或舊 export 無法可靠重建時，輸出封閉 reason code。
+- [x] Existing target lifecycle、`presentationMs`、drill id 與 legacy tests 無 semantic regression。
+- [x] 文件同步說明：tracking 是否跟隨目標以 exact-hitbox on-target/TOT/RMS epsilon 判定，不需要血條。
+- [x] Focused unit/replay/report tests、full CI 全綠；**manual/researcher artifact review 仍為 OPEN**，blocker owner = 使用者／研究者，blocked on OI-55-1（無 operator 入口可產出 artifact 供人工審閱）。
+- [x] `CONTEXT.md`、`DECISIONS.md`、operational spec、stage progress/checklist 與 `graphify-out`（若有 code change）同步。
 
 ### 6.1 T6 evidence ledger
 
@@ -312,10 +313,63 @@ Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 | Focused tests/full CI/manual review | Evidence ready | automated + inspection | Focused contact/report/replay suite: 5 files / 40 tests passed; legacy tracking/BR suite: 14 files / 81 tests passed; `npm.cmd run typecheck` exit 0; `npm.cmd test` exit 0. Manual/researcher artifact review is not required for T6 and remains T-exit/adjacent review owner if requested. |
 | Docs and graph/source state synced | Evidence ready | inspection | WP-55 and stage11 docs updated for T6. No production code changed in T6, so `graphify update .` intentionally skipped and `graphify-out` is not staged. `CONTEXT.md` / `DECISIONS.md` require no T6 change because no new global decision or code contract changed. |
 
+### 6.2 T-exit evidence ledger（2026-09-03）
+
+**Verdict：conditional pass。** 全部 automated gate、A-55.1~10 acceptance scenario、research/data safety 與 architecture regression 皆有客觀證據；唯一未閉合項是 OI-55-1（無 operator 入口可從真實 export 產出 artifact），因此 manual/researcher artifact review 保持 OPEN 並帶明確 owner。
+
+Measured at HEAD `a1d89e8`，worktree clean。
+
+| Automated gate | Result | Evidence |
+|---|---|---|
+| 1. Focused unit/replay/report tests | ✅ exit 0 | `trackingContactReport` / `trackingContactCoverage` / `trackingContactArtifact` / `trackingContact` / `replayContact` → **5 files / 40 tests passed** |
+| 2. Full `npm test` | ✅ exit 0 | **211 files / 2028 tests passed，1 file / 2 tests skipped**。Skip = `tests/history/historyRepository.perf.test.ts`（`describe.skipIf(!RUN_BENCHMARK)` opt-in 5,000-run benchmark，pre-existing、與 WP-55 無關） |
+| 3. Determinism | ✅ | `trackingContactArtifact.test.ts:150` "serializes byte-equivalent JSON for the same export"；`trackingContactReport.test.ts:157` deterministic report + HTML embedded JSON parity；`replayContact.test.ts:147` seek/playback/rate-change query-order determinism |
+| 4. Performance | ✅ | `trackingContactArtifact.test.ts:218` 30 s / 3840-tick reference export `< 500 ms` gate 通過。實測上界：整個 artifact test file（8 tests）僅 **41 ms**，故單次 generation 遠低於 500 ms gate，headroom 約一個數量級 |
+| 5. Boundary scans | ✅ | 5 個 WP-55 production module 對 `Date.now` / `performance.now` / `Math.random` / `three` / `window` 全數 0 命中（符合 ADR-4、GD-5）。`document.*` 僅出現在 `TRACE_SCRIPT` / `REPORT_SCRIPT` **template string 常數**內（self-contained HTML 的 payload），非 module runtime DOM 依賴。sim/render hot path 無 derived contact allocation：見下方 architecture 欄 |
+| 6. No-health audit | ✅ | `targetHealth\|healthBar\|hitPoints\|maxHealth\|currentHealth\|damage\|armor\|killCount` over `src/` + `server/` production code → **0 命中**。`src/state/`、`src/sim/`、`src/data/`、`src/drill/` 的 `health\|hp` 命中只有 `HitDetector.test.ts` 的 hit-point out-param 區域變數 `hp` |
+
+| Scenario | Result | Evidence |
+|---|---|---|
+| A-55.1 no-health boundary | ✅ | Gate 6 grep audit；WP-55 commit 檔案清單未觸碰 `TargetState`/`DrillConfig` health 契約（`src/sim/TargetManager.test.ts`、`src/drill/*` 變更皆為 hitbox/trajectory，非 health） |
+| A-55.2 `tracking_v1` contact | ✅ | `trackingContactCoverage.test.ts:47` contact samples + acquisition/TOT/RMS parity |
+| A-55.3 `tracking_longrange_v1` contact | ✅ | `trackingContactCoverage.test.ts:64` source-unit hitbox provenance + 角高 parity |
+| A-55.4 `tracking_br_v1` split | ✅ | `trackingContactCoverage.test.ts:96` aim-ray 與 ADS/projectile/hitscan companion 分離；`:120` pure summary 不隨 fire/hit count 改變；`trackingContactReport.test.ts:140` 分欄呈現 |
+| A-55.5 artifact determinism | ✅ | Gate 3 |
+| A-55.6 blocked semantics | ✅ | `trackingContact.test.ts:164`、`:185`（KI-021 sphere well-formed/malformed）；`trackingContactArtifact.test.ts:164` no fake samples/zero metrics；`trackingContactReport.test.ts:112`；`replayContact.test.ts:162` |
+| A-55.7 replay observability | ⚠️ 契約層 ✅／operator 層 OPEN | `replayContact.test.ts` 11 tests 全綠，含 `:180` JSON trace 與 replay frame/contact row parity、`:194` self-contained HTML 逐 frame 文字 label。**但**無入口可從真實 export 產出該 HTML → OI-55-1 |
+| A-55.8 report parity | ✅ | `trackingContactReport.test.ts:97` 對 `deriveTrackingMetrics()` 的 tFirstOnTarget/tAcquire 精確相等，TOT/RMS/median/P95 `toBeCloseTo(...,12)`；`trackingContact.test.ts:206` 同源 parity。T-exit 已逐行檢視測試 body，確認為真實重算比對，非 tautology |
+| A-55.9 lifecycle regression | ✅ | contact + legacy tracking/BR baseline **14 files / 81 tests passed**；full suite 211/2028 passed |
+| A-55.10 stage handoff | ✅ | §7 handoff 已含 WP-54/new drill 接入方式與 OI-55-1 承接條件 |
+
+| Research / data safety | Result | Evidence |
+|---|---|---|
+| Contact status 可追到 fixture/artifact/metadata | ✅ | artifact 必填 `analysisVersion`、`sourceRunId`/`exportBasename`、`drillId`、`schemaVersion`、`simHz`、hitbox/eye-origin provenance；`trackingContactArtifact.test.ts:107`、`:123`、`:139` |
+| Legacy/blocked export 無推測補值 | ✅ | 預設 `strictEyeOrigin: true`；`legacy-default` eye origin 僅在呼叫端顯式 `strictEyeOrigin: false` 時可見；不可解析 run identity → blocked `protocol-incompatible` |
+| Pure summary 不讀 hit/damage/kill | ✅ | `trackingContactCoverage.test.ts:120`；BR companion 標記 `companion-only-not-pure-tracking` |
+| 測試不動真實 history root / participant payload | ✅ | 5 個 WP-55 test file 對 `fs`/`node:fs`/`writeFile`/`mkdtemp`/`historyRoot`/`os.tmpdir` **0 命中** —— 全為 in-memory fixture，無檔案系統副作用 |
+
+| Architecture regression | Result | Evidence |
+|---|---|---|
+| Contact derivation 留在 export 後分析層 | ✅ | import 方向單向：`trackingContact` → `data/export` type + `trackingDerivation`；`artifact` → `contact` + `DrillConfig` 常數 + `loop/constants` 常數 + `eyeOrigin`；`coverage` → `artifact`；`report` → `coverage`/`artifact`/`contact`/`replayContact`(type-only)；`replayContact` → `artifact`/`contact`(type-only)。**無任何 import 自 `src/sim`、`src/state`、`src/render`**，無回寫 sim state |
+| Replay contact sampling 無 DOM/Three/live sim/clock/random | ✅ | Gate 5 |
+| Report 不重新定義 contact | ✅ | `report` 只吃 `TrackingContactCoverageReport` + 可選 replay trace，不吃 raw payload（T5 D-55.6） |
+| Legacy determinism gate 無回歸 | ✅ | A-55.9 |
+| `graphify update .` / CodeGraph 同步 | ✅ | T-exit **未修改 production code**（docs-only），依 §5 規則不執行 `graphify update .`；`graphify-out/GRAPH_REPORT.md` 仍 built from `2cbedbce`（相對 HEAD stale，已記錄）。`codegraph.cmd status` = 545 files / 8,815 nodes / 29,698 edges |
+
+#### OI-55-1 — 無 operator 入口可產出 contact artifact（T-exit 開立）
+
+- **事實**：`deriveTrackingContactSamples()`、`buildTrackingContactArtifact()`、`buildTrackingContactCoverageReport()`、`buildTrackingContactReport()`、`renderTrackingContactReportHtml()`、`sampleReplayContact()`、`buildReplayContactTrace()`、`renderReplayContactTraceHtml()` 全部只被自己的 test file 匯入；`src/`、`scripts/`、`server/`、`tests/` 無其他 importer，`package.json` 亦無對應 script。
+- **後果**：研究者拿到真實 tracking `export.json` 時，無法在不寫新程式的情況下產出 contact artifact、離線 replay HTML trace 或 report HTML。因此 M21 的 manual/researcher artifact review 無法執行。
+- **不是 FR 失敗**：FR-55-3/4 的凍結驗收判準是 artifact 與 `deriveTrackingMetrics()` 對表、replay frame 與 artifact row 對表，兩者皆由測試證明成立。缺的是 operator tooling，屬 §3 conscious technical debt 第 4 項。
+- **建議修法**：比照 WP-54 的 `scripts/analyze-tracking-pilot.ts`，新增一支 thin CLI runner（讀 export JSON → 寫 artifact/coverage/report/replay-trace 檔），並掛上 `npm run` script。估時 0.5d。
+- **Owner**：使用者決定是否在 WP-55 內補 T7，或由承接 WP（正式 Assessment / researcher tooling）處理。
+- **Trigger**：任何一次真實 tracking run 需要人工審閱 contact evidence 時。
+
 ---
 
 ## 7. Handoff to adjacent work
 
-1. 若 WP-54 新增 `tracking_core_pr_pilot_v1` 或 `tracking_reversal_pilot_v1`，直接接入本 WP 的 contact artifact contract。
+1. 若 WP-54 新增 `tracking_core_pr_pilot_v1` 或 `tracking_reversal_pilot_v1`，直接接入本 WP 的 contact artifact contract。接入方式：以 `ExportPayload` 呼叫 `buildTrackingContactCoverageReport([payload])`，drill 只要滿足 tracking telemetry（`tx/ty/tz` 逐 tick、`visible` event、可解析 eye origin）與 well-formed hitbox（`box`，或三軸相等的 `sphere`，見 D-55.7）即可被 included；不合格者以 closed reason code 進 excluded，不需要改 contact 層。既有相容性 smoke 見 `trackingContactCoverage.test.ts:146`。
 2. 若研究者需要 live practice feedback，可另立 render-only contact indicator，但不得進 sim state 或 scored block strategy feedback。
 3. 正式 Assessment、history/trend registry、教練式診斷規則與 composite score 需另立 WP，且必須引用 M21 evidence。
+4. **OI-55-1（operator 入口）**：承接 WP 或 WP-55 T7 應新增 thin CLI runner（比照 `scripts/analyze-tracking-pilot.ts`），把 export JSON 轉成 artifact/coverage/report/replay-trace 檔並掛 `npm run` script。在此之前，M21 的 manual/researcher artifact review 保持 OPEN。

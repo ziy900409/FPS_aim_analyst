@@ -2,11 +2,19 @@
 
 ## Status
 
-- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0-T4 完成、T5 待開工（2026-09-02）；🟢 M21（WP-55 tracking observability/no-health）T0-T6 完成、T-exit 待開工（2026-09-03）。
+- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0-T4 完成、T5 待開工（2026-09-02）；✅ M21（WP-55 tracking observability/no-health）T0-T6 + T-exit 完成，判定 **conditional pass**（2026-09-03；未閉合項 OI-55-1 = 無 operator 入口，manual/researcher artifact review OPEN）。
 - **Scope state**：WP-52 pilot v2 adjustment 已交付；WP-53 formal `peek_click_transfer_v1` release 已完成 T0~T5 與 T-exit；WP-54 tracking pilot 已正式納入 stage11，T0-T4 完成；WP-55 已正式納入 stage11，第一版以 export 後 derived contact artifact 與離線 replay trace 為主，不做 health/damage lifecycle 或產品 Replay overlay。
 - **Dependency state**：WP-52 T-exit、WP-53 formal freeze、stage10 history/trend contract、formal Session Plan integration、focused E2E 與 docs sync 全數完成（M19）。WP-54 T0 依賴的 legacy tracking baseline（103 tests）綠燈、OQ-54-1~8 preregistration 凍結、CodeGraph impact 記錄完成；T1 deterministic trajectory kernel + export contract 交付；T2 pilot drill matrix（practice/calibration/core 2×2/reversal density）+ no-fire/no-ADS/no-movement protocol guard 交付；T3 canonical P0/P1 metrics（lag/gain/drop/recovery/reversal）+ truth fixtures 交付；T4 eligibility/evidence pipeline（closed quality-reason vocabulary、WP-54 compatibility key、deterministic JSON evidence、self-contained HTML report）交付，全程 legacy tracking regression 保持綠燈（M20）。WP-55 T0 凍結現有三個 tracking drill roster、OQ-55-1~4、no-health boundary、CodeGraph blast radius 與 50-test baseline；T1 已凍結 contact geometry contract；T2 已交付 deterministic export-derived contact JSON artifact；T3 已交付 all tracking drill coverage 與 BR/pure summary 分層 projection；T4 已交付 pure replay contact sampling 與 self-contained HTML trace；T5 已交付 report/quality projection；T6 已交付 M21 exit gate ledger、operational/stage docs sync、no-health audit 與 focused/full verification（M21）。
 
 ## Progress
+
+### 2026-09-03 — WP-55 T-exit M21 evidence audit and handoff（conditional pass）
+
+- WP-55 T-exit 完成：M21 exit gate 全部重跑實測（非沿用 T6 數字）。Focused contact/report/replay suite 5 files / 40 tests passed；contact + legacy tracking/BR baseline 14 files / 81 tests passed；`npm.cmd run typecheck` exit 0；full `npm.cmd test` 211 files / 2028 tests passed（1 file / 2 tests skipped = `historyRepository.perf.test.ts` 的 opt-in `RUN_BENCHMARK` benchmark，pre-existing）。
+- Determinism、30 s/3840-tick `< 500 ms` perf gate、boundary scan（無 clock/random/three/DOM runtime 依賴）、import-direction audit（無 import 自 `src/sim`/`src/state`/`src/render`）、data-safety scan（測試全 in-memory、無 fs）與第三次 no-health audit（production `src/`+`server/` 0 命中）全部成立。
+- Parity 逐行覆驗：`trackingContact.test.ts:206` 與 `trackingContactReport.test.ts:97` 都獨立呼叫 `deriveTrackingMetrics()` 再比對（acquisition 精確相等、TOT/RMS/median/P95 12 位小數），確認非 tautology。
+- **M21 判定為 conditional pass，開立 OI-55-1**：WP-55 的五個 module（`trackingContact`、`trackingContactArtifact`、`trackingContactCoverage`、`trackingContactReport`、`replayContact`）**只被自己的 test file 匯入**，`src/`/`scripts/`/`server/`/`tests/` 無其他 importer，`package.json` 無對應 script。研究者拿到真實 tracking `export.json` 無法在不寫新程式的情況下產出 contact artifact／replay HTML trace／report HTML，因此 manual/researcher artifact review 無法執行、保持 OPEN（owner = 使用者／研究者）。此為 operator tooling 缺口而非 FR 失敗（FR-55-3/4 的凍結判準是對表關係，已由測試證明）。建議修法 = 比照 `scripts/analyze-tracking-pilot.ts` 的 thin CLI runner，估 0.5d。
+- T-exit 為 docs-only：未修改 production code、未新增 health/HP/damage/kill contract、未動 sim state／`TargetManager`／`SharedState`／live render hot path；依規則不執行 `graphify update .`，`graphify-out` 仍 built from `2cbedbce`（stale，已記錄）。`CONTEXT.md`／`DECISIONS.md` 無需變更（無新全域決策或跨 WP code contract）。
 
 ### 2026-09-03 — WP-55 T6 exit gate and documentation
 

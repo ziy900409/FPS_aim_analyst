@@ -4,11 +4,28 @@
 
 ## Status
 
-- **Current**：🟢 T6 exit gate and documentation 完成（2026-09-03）；T-exit M21 evidence audit / handoff 待開工。
+- **Current**：✅ T0-T6 + T-exit 全數完成（2026-09-03）。**M21 = conditional pass**：全部 automated gate 與 A-55.1~10 有客觀證據；唯一未閉合項 OI-55-1（無 operator 入口，manual/researcher artifact review OPEN，owner = 使用者／研究者）。
 - **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
 - **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-03 — T-exit M21 evidence audit and handoff complete（conditional pass）
+
+- 重跑全部 automated gate（未沿用 T6 數字，全部本輪實測，HEAD `a1d89e8`、worktree clean）：focused contact/report/replay suite **5 files / 40 tests passed**；contact + legacy tracking/BR baseline **14 files / 81 tests passed**；`npm.cmd run typecheck` exit 0；full `npm.cmd test` **211 files / 2028 tests passed，1 file / 2 tests skipped**，exit 0。
+- Skipped file 已具名並判定為 owner-approved：`tests/history/historyRepository.perf.test.ts` 是 `describe.skipIf(!RUN_BENCHMARK)` 的 opt-in 5,000-run benchmark，pre-existing 且與 WP-55 無關。（T6 記錄為 210 files / 2021 tests；本輪 211 / 2028 是後續 commit 累積的既有測試，非 WP-55 變更。）
+- Determinism/perf gate 逐測試具名：artifact byte-equivalent（`trackingContactArtifact.test.ts:150`）、report + HTML embedded JSON parity（`trackingContactReport.test.ts:157`）、replay seek/playback/rate-change 查詢序無關（`replayContact.test.ts:147`）、30 s / 3840-tick generation `< 500 ms`（`trackingContactArtifact.test.ts:218`）。Perf headroom 實測上界：整個 artifact test file（8 tests）僅 41 ms。
+- Boundary scan：5 個 WP-55 production module 對 `Date.now`／`performance.now`／`Math.random`／`three`／`window` **0 命中**（ADR-4、GD-5 相容）。`document.*` 命中只在 `TRACE_SCRIPT`／`REPORT_SCRIPT` template string 常數內，屬 self-contained HTML 的 payload，逐行檢視確認非 module runtime DOM 依賴。
+- Architecture regression：逐檔檢視 import 方向，確認 `contact → artifact → coverage → report` 單向且 `replayContact` 只 type-only 依賴 metrics；**五個 module 都沒有任何 import 自 `src/sim`、`src/state`、`src/render`**，因此 D-55.2（不寫回 sim state）在結構上成立，而非僅靠約定。
+- Research/data safety：5 個 WP-55 test file 對 `fs`／`node:fs`／`writeFile`／`mkdtemp`／`historyRoot`／`os.tmpdir` **0 命中** —— 全為 in-memory fixture，無檔案系統副作用，真實 history root 與 participant payload 不可能被觸碰。
+- No-health audit（第三次，T-exit 版）：`targetHealth|healthBar|hitPoints|maxHealth|currentHealth|damage|armor|killCount` over `src/` + `server/` production code **0 命中**；`src/state/`、`src/sim/`、`src/data/`、`src/drill/` 的 `health|hp` 命中只有 `HitDetector.test.ts` 的 hit-point out-param 區域變數 `hp`。FR-55-1/5 成立。
+- Parity 未鴨子驗收：逐行檢視 `trackingContact.test.ts:206` 與 `trackingContactReport.test.ts:97` 的測試 body，確認兩者都獨立呼叫 `deriveTrackingMetrics(payload, { strictEyeOrigin: true })` 再比對（acquisition 精確相等、TOT/RMS/median/P95 `toBeCloseTo(..., 12)`），不是自我比對的 tautology。
+- **審計發現 OI-55-1（本輪開立）**：`deriveTrackingContactSamples`、`buildTrackingContactArtifact`、`buildTrackingContactCoverageReport`、`buildTrackingContactReport`、`renderTrackingContactReportHtml`、`sampleReplayContact`、`buildReplayContactTrace`、`renderReplayContactTraceHtml` **全部只被自己的 test file 匯入**；`src/`／`scripts/`／`server/`／`tests/` 無其他 importer，`package.json` 無對應 script。因此研究者拿到真實 tracking `export.json` 時無法在不寫新程式的情況下產出任何 artifact，M21 的 manual/researcher artifact review 無法執行。這不是 FR 失敗（FR-55-3/4 的凍結判準是對表關係，已由測試證明），而是 operator tooling 缺口，登記為 README §3 conscious technical debt 第 4 項 + §7 handoff 第 4 項，建議修法為比照 `scripts/analyze-tracking-pilot.ts` 的 thin CLI runner（估 0.5d）。
+- 因此 M21 以 **conditional pass** 結案，而非全綠：README §6 gate 逐項翻 ✅ 但兩處帶明確限定（replay observability 限定在契約/trace 層；manual/researcher review 明列 OPEN + blocker owner），避免用 escape clause 把缺口藏起來。
+- T-exit 為 docs-only：未修改 production code，未新增 health/HP/damage/kill contract，未動 sim state／replay overlay／`TargetManager`／`SharedState`／live render hot path。依 README §5 不執行 `graphify update .`；`graphify-out/GRAPH_REPORT.md` 仍 built from `2cbedbce`（相對 HEAD `a1d89e8` stale，已具名記錄）。`codegraph.cmd status` = 545 files / 8,815 nodes / 29,698 edges。
+- `CONTEXT.md`／`DECISIONS.md` 本輪無需變更：T-exit 未產生新的全域決策或跨 WP code contract；OI-55-1 是 WP 內負債 + handoff 條件，依 CLAUDE.md §7 寫在 per-WP 文件。
+- WP-54 isolation check：未修改或 stage 任何 `wp-54-tracking-pilot/` 文件、`scripts/analyze-tracking-pilot.ts`、`scripts/trackingStimulusFidelity.ts` 或 `tests/regression/tracking-stimulus-fidelity.test.ts`。
+- **Measurement window 誠實聲明**：上述所有 gate 數字都量測於 worktree clean、HEAD `a1d89e8` 的狀態（focused suite 16:39、full suite 16:41）。量測完成後（16:43-16:46）worktree 出現**與 WP-55 無關的併行 KI-024／BD-024 修復**（`src/scene/scenes/field-low.ts` 補 `eyeZ: 0`，以及 `src/scene/eyePose.test.ts`、`tests/regression/br-camera-anchor-invariants.test.ts`、`tests/golden/research/epsilon-offsetdeg-oracle.test.ts`、`src/drill/tracking_core_pr_pilot_v1.test.ts` 的對應 regression）。這些變更**不由 WP-55 T-exit 產生、未被 stage、未被本輪 full suite 覆蓋**；本次 commit 為 docs-only，不影響也不宣稱驗證該修復。KI-024 的驗證屬其 owning WP／KI 流程。
 
 ### 2026-09-03 — T6 exit gate and documentation complete
 
@@ -113,6 +130,7 @@
 | D-55.5 | T2 artifact 先交付 deterministic JSON builder，不新增 CSV/HTML writer | OQ-55-3 已決定另存 deterministic derived contact JSON；CSV/HTML 不是 T2 必要條件，後續 Replay/report task 可從同一 JSON model 投影 | ✅ Confirmed（T2） |
 | D-55.6 | T3 新增 metrics-layer coverage projection，而不把 BR companion 直接塞進 T2 artifact schema | T2 artifact 已凍結為 deterministic contact JSON；T3 需要的是 all-drill coverage 與 BR/pure 分層 evidence，report UI/HTML integration 留給 T5 | ✅ Confirmed（T3） |
 | D-55.7 | Contact derivation 的 hitbox 閘門接受 `shape:'sphere'`（三軸相等），不再 box-only | 原本的 box-only 閘門是正確的防線——但它防的是 `trackingDerivation.isOnTarget()` 忽略 `shape` 這個更底層的 bug（[KI-021](../../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)／BD-021），而非 sphere 本身不可支援。KI-021 讓推導層拿到與 `HitDetector` 相同的 ray/sphere 幾何後，排除 sphere payload 就變成純粹的資料損失。閘門同時新增「sphere 三軸必須相等」（鏡射 `schema.ts:243`），否則畸形 sphere 會只用 `widthU` 靜默推導。實測：WP-54 candidate drills 改 sphere 後，`trackingContactCoverage.test.ts` 的 `includedRunCount` 仍為 2；若少了本決策則掉到 0 | ✅ Confirmed（2026-09-03，KI-021 slice B） |
+| D-55.8 | M21 以 **conditional pass** 結案：automated gate 全綠，但 manual/researcher artifact review 保持 OPEN，並開立 OI-55-1 記錄「無 operator 入口」 | T-exit 稽核發現五個 module 只被自己的 test 匯入，研究者無法從真實 export 產出 artifact。M21 gate 的 escape clause（「或有明確 blocker owner」）在字面上可讓該項打勾，但那會把一個真實的交付缺口藏進括號裡；把它顯性化成 OI-55-1 + technical debt + handoff item，才能讓承接者看見。同時不誇大成 FR 失敗——FR-55-3/4 的凍結判準是對表關係，已由 12 位小數 parity 測試證明成立 | ✅ Confirmed（T-exit） |
 
 ## Open Questions
 
@@ -172,8 +190,22 @@
 | 2026-09-03 | `npm.cmd run typecheck` | T6 typecheck: exit 0 |
 | 2026-09-03 | `npm.cmd test` | T6 broad regression smoke: 210 files / 2021 tests passed; 1 file / 2 tests skipped. Not used as WP-54 pilot gate evidence |
 | 2026-09-03 | `graphify update .` | skipped for T6 because no production code changed; `graphify-out` not staged |
+| 2026-09-03 | T-exit: `npx.cmd vitest run src/metrics/trackingContactReport.test.ts src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/replay/replayContact.test.ts` | 5 files / 40 tests passed |
+| 2026-09-03 | T-exit: `npm.cmd run typecheck` | exit 0 |
+| 2026-09-03 | T-exit: contact + legacy tracking/BR baseline (14 files) | 14 files / 81 tests passed |
+| 2026-09-03 | T-exit: full `npm.cmd test` | exit 0; 211 files / 2028 tests passed, 1 file / 2 tests skipped (`historyRepository.perf.test.ts`, opt-in `RUN_BENCHMARK` benchmark, pre-existing) |
+| 2026-09-03 | T-exit boundary scan: `Date.now`/`performance.now`/`Math.random`/`three`/`window`/`document` over the 5 WP-55 production modules | 0 hits except `document.*` inside `TRACE_SCRIPT`/`REPORT_SCRIPT` template-string HTML payloads (inspected line by line) |
+| 2026-09-03 | T-exit import-direction audit over the 5 WP-55 modules | no import from `src/sim`, `src/state`, `src/render`; single direction contact -> artifact -> coverage -> report |
+| 2026-09-03 | T-exit importer audit: `grep` for `trackingContact`/`replayContact` importers across `src/`, `scripts/`, `server/`, `tests/` | no importer outside the modules' own test files; no `package.json` script -> OI-55-1 opened |
+| 2026-09-03 | T-exit data-safety scan: `fs`/`node:fs`/`writeFile`/`mkdtemp`/`historyRoot`/`os.tmpdir` over the 5 WP-55 test files | 0 hits; all in-memory fixtures |
+| 2026-09-03 | T-exit no-health audit `rg` over `src/` + `server/` production code | 0 hits for target health/HP/damage/armor/killCount contract; only `HitDetector.test.ts` local `hp` hit-point out-param |
+| 2026-09-03 | T-exit parity body inspection: `trackingContact.test.ts:206`, `trackingContactReport.test.ts:97` | both independently call `deriveTrackingMetrics(payload, { strictEyeOrigin: true })` and compare (exact on acquisition, `toBeCloseTo(..., 12)` on TOT/RMS/median/P95); not a tautology |
+| 2026-09-03 | T-exit: `codegraph.cmd status` / `graphify-out/GRAPH_REPORT.md` header | 545 files / 8,815 nodes / 29,698 edges; graphify report still built from `2cbedbce`, stale vs HEAD `a1d89e8`, recorded (docs-only task, no `graphify update .`) |
+| 2026-09-03 | T-exit: `git status --short` / `git rev-parse HEAD` | clean worktree at entry; HEAD `a1d89e86836e393f2607d4992ab1aec2ebd5f569` |
 
 ## Surprises & Discoveries
+
+- **2026-09-03（T-exit，OI-55-1）**：T-exit 稽核最有價值的發現不在測試，而在 importer graph。T1-T5 每個切片都交付了測試齊全的純函式，`npm test` 全綠、parity 到 12 位小數，但把「誰匯入這些 module」問一次，答案是「只有它們自己的 test」。這是一種容易在逐切片交付中隱形的缺口：每個 task 的 DoD 都以「函式行為正確」定義，沒有任何一個 task 的 DoD 是「研究者能產出一份 artifact」。教訓：交付分析層工具時，DoD 至少要有一項是 end-to-end 可執行入口，否則 WP 可以全綠卻零可用性。
 
 - **2026-09-03（KI-021）**：T3 為了讓 WP-54 candidate drills 進 coverage，曾請 WP-54 側維持 cube hitbox。追查該 box-only 限制的來源後發現，真正的問題不在 WP-55 的閘門，而在 `src/metrics/trackingDerivation.ts`：`isOnTarget()` 是無條件的 ray/AABB slab test，`hitboxFromMeta()` 又把 `shape` 丟掉——`spider-shot-v2`（正式 Assessment drill）的球體目標因此一直被當成外接立方體判定。也就是說 WP-55 的閘門其實是在**正確地**拒絕一個會算錯的推導。修復記於 KI-021／BD-021，WP-55 側的放寬記為 D-55.7。
 - WP-55 source proposal is still a single candidate plan file under stage11, while WP-51 and WP-54 use self-contained WP folders. This planning pass keeps the source proposal intact and adds the folderized artifacts beside it.

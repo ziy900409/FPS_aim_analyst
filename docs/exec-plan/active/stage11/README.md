@@ -1,6 +1,6 @@
 # 階段 K（stage11）— Peek-click transfer formal release + Tracking pilot capability test + Tracking observability
 
-> **狀態：✅ M19（WP-52/WP-53）全數 T-exit 完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0-T6 完成、**T6 Gate A 部分通過 ⇒ T7 可開工**（2026-09-03）；🟢 M21（WP-55 tracking on-target observability）T0-T6 完成、T-exit 待開工（2026-09-03）。** 本階段先把 WP-45 交付的 `peek-click-transfer-pilot-v1` 從 practice/pilot tool 推進到可由 evidence 支撐的正式 `peek_click_transfer_v1` Assessment（M19）；WP-52（pilot v2 調整/session wiring/evidence tooling）T0–T-exit 全數完成；WP-53 go/no-go 已由 No-go 改為 **Go**（人工 checklist 走查 + n=1 真人 evidence，見 [wp-52 T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」與全域 [DECISIONS.md GD-29](../../DECISIONS.md)）。formal Session Plan 整合（T4）已落地——新增獨立 `'peek-click-transfer-v1'` 家族，不改 stage6 default 四家族與 pilot 家族。E2E acceptance（T5）已完成——真實 counter-strafe round 跑到 `ended`、真存 history、trend 顯示真實 primary metric，並證實 FR-53-6 的 pilot/formal 隔離即使在強制條件下仍然成立。T-exit 已完成 full CI、focused E2E、operational/index docs sync 與 staged file audit。使用者於 2026-09-02 進一步確認正式接受 **WP-54 — Tracking Pilot Capability Test**（researcher/pilot-only，不發布正式 Assessment）納入 stage11，作為獨立 M20 里程碑；WP-54 T0-T4 已完成，詳見 [wp-54-tracking-pilot/README.md](wp-54-tracking-pilot/README.md) 與 [progress.md](wp-54-tracking-pilot/progress.md)。使用者於 2026-09-03 要求實作 **WP-55 — Tracking On-target Observability without Health** T0-T6；stage scope、no-health boundary、OQ-55-1~4、CodeGraph blast radius、baseline、contact geometry contract、deterministic export-derived JSON artifact、all tracking drill coverage、離線 replay contact trace、report/quality projection 與 T6 exit gate ledger 已凍結，詳見 [wp-55-tracking-on-target-observability-no-health/README.md](wp-55-tracking-on-target-observability-no-health/README.md) 與 [progress.md](wp-55-tracking-on-target-observability-no-health/progress.md)。完整 task 狀態見 [task-checklist.md](task-checklist.md)，進度與決策紀錄見 [progress.md](progress.md)。
+> **狀態：✅ M19（WP-52/WP-53）全數 T-exit 完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0-T6 完成、**T6 Gate A 部分通過 ⇒ T7 可開工**（2026-09-03）；✅ M21（WP-55 tracking on-target observability）T0-T6 + T-exit 完成，判定 **conditional pass**（2026-09-03；未閉合項 OI-55-1 = 無 operator 入口可從真實 export 產出 artifact，manual/researcher artifact review 保持 OPEN）。** 本階段先把 WP-45 交付的 `peek-click-transfer-pilot-v1` 從 practice/pilot tool 推進到可由 evidence 支撐的正式 `peek_click_transfer_v1` Assessment（M19）；WP-52（pilot v2 調整/session wiring/evidence tooling）T0–T-exit 全數完成；WP-53 go/no-go 已由 No-go 改為 **Go**（人工 checklist 走查 + n=1 真人 evidence，見 [wp-52 T4-manual-pilot-gate.md](wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)「Evidence collected」與全域 [DECISIONS.md GD-29](../../DECISIONS.md)）。formal Session Plan 整合（T4）已落地——新增獨立 `'peek-click-transfer-v1'` 家族，不改 stage6 default 四家族與 pilot 家族。E2E acceptance（T5）已完成——真實 counter-strafe round 跑到 `ended`、真存 history、trend 顯示真實 primary metric，並證實 FR-53-6 的 pilot/formal 隔離即使在強制條件下仍然成立。T-exit 已完成 full CI、focused E2E、operational/index docs sync 與 staged file audit。使用者於 2026-09-02 進一步確認正式接受 **WP-54 — Tracking Pilot Capability Test**（researcher/pilot-only，不發布正式 Assessment）納入 stage11，作為獨立 M20 里程碑；WP-54 T0-T4 已完成，詳見 [wp-54-tracking-pilot/README.md](wp-54-tracking-pilot/README.md) 與 [progress.md](wp-54-tracking-pilot/progress.md)。使用者於 2026-09-03 要求實作 **WP-55 — Tracking On-target Observability without Health** T0-T6；stage scope、no-health boundary、OQ-55-1~4、CodeGraph blast radius、baseline、contact geometry contract、deterministic export-derived JSON artifact、all tracking drill coverage、離線 replay contact trace、report/quality projection 與 T6 exit gate ledger 已凍結，詳見 [wp-55-tracking-on-target-observability-no-health/README.md](wp-55-tracking-on-target-observability-no-health/README.md) 與 [progress.md](wp-55-tracking-on-target-observability-no-health/progress.md)。完整 task 狀態見 [task-checklist.md](task-checklist.md)，進度與決策紀錄見 [progress.md](progress.md)。
 
 | | |
 |---|---|
@@ -14,7 +14,7 @@
 | **M20 狀態** | 🟡 WP-54 T0-T6 完成（T0-T5 於 2026-09-02、T6 於 2026-09-03）；**T6 的 Gate A = 部分通過**（資料鏈路與 reversal 家族 PASS，band-limited 核心矩陣退回 T7 重新參數化，見 [T6-instrumentation-gate.md §12](wp-54-tracking-pilot/T6-instrumentation-gate.md)）⇒ **T7（難度校準，12-20 人）可開工** |
 | **M21 目標** | 讓現有 tracking drill 以同一 exact-hitbox contact artifact 重建每 tick `onTarget` / `epsilonDeg`，支援 export/replay/report 對表且不引入 health/damage lifecycle |
 | **M21 交付定位** | Researcher/pilot evidence；不發布正式 Assessment，不把 hit/damage/kill 當 pure tracking 主指標 |
-| **M21 狀態** | 🟢 WP-55 T0-T6 完成（2026-09-03）；T-exit（M21 evidence audit / handoff）待開工 |
+| **M21 狀態** | ✅ WP-55 T0-T6 + T-exit 完成（2026-09-03）；判定 **conditional pass** —— automated gate 與 A-55.1~10 全綠，唯一未閉合項 OI-55-1（無 operator 入口，manual/researcher artifact review OPEN，owner = 使用者／研究者） |
 
 ---
 
@@ -141,7 +141,7 @@ WP-53 T0 -> T1 -> T2 -> T3 -> T4 -> T5 -> T-exit
 - [ ] WP-54 T7~T8：difficulty calibration／repeatability 兩層 pilot gate（Gate B/C）。
 - [ ] WP-54 T-exit：M20 evidence audit，go/revise/stop 結論。
 
-## 8. Stage Exit Gate（M21 — WP-55 tracking observability，進行中）
+## 8. Stage Exit Gate（M21 — WP-55 tracking observability，conditional pass）
 
 > 完整逐項 gate 見 [wp-55-tracking-on-target-observability-no-health/README.md §6](wp-55-tracking-on-target-observability-no-health/README.md#6-m21-exit-gate)。
 
@@ -152,4 +152,5 @@ WP-53 T0 -> T1 -> T2 -> T3 -> T4 -> T5 -> T-exit
 - [x] WP-55 T4：Replay observability / offline replay trace（2026-09-03）。
 - [x] WP-55 T5：report and quality integration（2026-09-03）。
 - [x] WP-55 T6：exit gate and documentation（2026-09-03）。
-- [ ] WP-55 T-exit：M21 evidence audit and handoff。
+- [x] WP-55 T-exit：M21 evidence audit and handoff（2026-09-03，**conditional pass**）。全部 gate 重跑實測：focused 5 files / 40 tests、contact+legacy baseline 14 files / 81 tests、full `npm test` 211 files / 2028 tests（1 file / 2 tests opt-in skip）、typecheck exit 0、determinism/perf/boundary/import-direction/data-safety/no-health audit 全成立。
+- [ ] **OI-55-1（M21 未閉合項）**：WP-55 五個 module 只被自己的 test 匯入，無 CLI/npm/UI 入口 → 研究者無法從真實 export 產出 contact artifact／replay HTML trace／report HTML，manual/researcher artifact review 保持 OPEN。Owner = 使用者／研究者；建議修法 = thin CLI runner（比照 `scripts/analyze-tracking-pilot.ts`，估 0.5d）。詳見 [wp-55 README §6.2](wp-55-tracking-on-target-observability-no-health/README.md#62-t-exit-evidence-ledger2026-09-03)。

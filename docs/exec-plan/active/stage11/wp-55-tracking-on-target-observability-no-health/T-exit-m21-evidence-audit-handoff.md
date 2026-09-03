@@ -30,26 +30,30 @@
 
 ## Research/data safety
 
-- [ ] contact status 逐 exact drill/profile/version 可追到 fixture、artifact 與 required metadata。
-- [ ] legacy/blocked/incompatible export 沒有推測 target/hitbox/eye origin 資料。
-- [ ] pure tracking summary 不讀 hit、damage、kill；BR companion evidence 明確分欄。
-- [ ] test 只用 fixtures/validated temp roots，真實 history root 與 Participant payload 無 mutation/artifact。
+- [x] contact status 逐 exact drill/profile/version 可追到 fixture、artifact 與 required metadata。
+- [x] legacy/blocked/incompatible export 沒有推測 target/hitbox/eye origin 資料。
+- [x] pure tracking summary 不讀 hit、damage、kill；BR companion evidence 明確分欄。
+- [x] test 只用 fixtures/validated temp roots，真實 history root 與 Participant payload 無 mutation/artifact。（5 個 WP-55 test file 對 fs/history-root API 0 命中，全 in-memory）
 
 ## Architecture regression
 
-- [ ] contact derivation 留在 export 後分析層，不寫回 sim state 或 SharedState。
-- [ ] replay contact sampling 不依 DOM/Three/live sim/wall-clock/random。
-- [ ] report 不重新定義 contact；只讀 artifact/metrics contract。
-- [ ] existing tracking lifecycle、target visibility、presentation boundary 與 legacy determinism gates 無回歸。
-- [ ] production code 若有修改，`graphify update .` 已完成；CodeGraph pending 同步或已直接讀。
+- [x] contact derivation 留在 export 後分析層，不寫回 sim state 或 SharedState。（無任何 import 自 `src/sim`／`src/state`／`src/render`）
+- [x] replay contact sampling 不依 DOM/Three/live sim/wall-clock/random。（`document.*` 僅在 HTML payload template string 內）
+- [x] report 不重新定義 contact；只讀 artifact/metrics contract。
+- [x] existing tracking lifecycle、target visibility、presentation boundary 與 legacy determinism gates 無回歸。（14 files / 81 tests；full suite 211 files / 2028 tests）
+- [x] production code 若有修改，`graphify update .` 已完成；CodeGraph pending 同步或已直接讀。（T-exit 為 docs-only，依 README §5 不執行 graphify update；graphify-out 仍 built from `2cbedbce`，已記錄為 stale）
 
 ## Documentation and graph
 
-- [ ] README OQ/assumptions/interfaces/traceability 更新為實際交付或 blocked decision。
-- [ ] progress 貼 test/perf/manual/researcher artifact review evidence，checklist 全部同步。
-- [ ] stage11 master README/checklist/progress 更新 WP-55 狀態或 future/candidate 結論。
-- [ ] `CONTEXT.md`、`DECISIONS.md`、operational spec 與 graphify-out 按實際 code/docs change 同步。
-- [ ] `git status --short`、`git diff --cached --stat` 與 staged names 只含預期 code/tests/docs，無 payload artifacts。
+- [x] README OQ/assumptions/interfaces/traceability 更新為實際交付或 blocked decision。（§6.2 ledger、OI-55-1、§3 debt 4、§7 handoff 4）
+- [x] progress 貼 test/perf/manual/researcher artifact review evidence，checklist 全部同步。（manual/researcher review 記為 OPEN + owner，不假裝已完成）
+- [x] stage11 master README/checklist/progress 更新 WP-55 狀態或 future/candidate 結論。
+- [x] `CONTEXT.md`、`DECISIONS.md`、operational spec 與 graphify-out 按實際 code/docs change 同步。（T-exit 未新增 code contract 或全域決策，故 `CONTEXT.md`／`DECISIONS.md` 無需變更；operational spec 的 WP-55 章節於 T6 已落地）
+- [x] `git status --short`、`git diff --cached --stat` 與 staged names 只含預期 code/tests/docs，無 payload artifacts。
+
+## T-exit result（2026-09-03）
+
+**M21 = conditional pass。** Automated gates 1-6、A-55.1~10、research/data safety 與 architecture regression 全數有客觀證據（逐項見 [README §6.2](README.md#62-t-exit-evidence-ledger2026-09-03)）。唯一未閉合項：**OI-55-1** —— WP-55 的五個 module 只被自己的 test 匯入，無 CLI/npm/UI 入口，研究者無法從真實 export 產出 artifact，故 manual/researcher artifact review 保持 OPEN（owner = 使用者／研究者）。此為 operator tooling 缺口，非 FR 失敗：FR-55-3/4 的凍結驗收判準（artifact↔`deriveTrackingMetrics()` 對表、replay frame↔artifact row 對表）已由測試證明成立。
 
 ## Exit criteria
 
