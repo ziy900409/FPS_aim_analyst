@@ -8,6 +8,32 @@
 
 ## Progress
 
+### 2026-09-03 — T6 slice 17：刺激保真度升成分析 runner 的固定一層（layer 3b）
+
+- **使用者決策**：gate §12.6 第 3 項採「升成 runner 一層 + regression fixture」。
+- **落地**：新增 `scripts/trackingStimulusFidelity.ts`（純函式,比照 `trackingPilotSummary.ts` 的
+  拆分慣例——script 本身 `main()` on import,邏輯只能在外部模組測試),
+  `analyze-tracking-pilot.ts` 每份 run 多印一行
+  `fidelity=match|mismatch maxPosErr=… ticks=… sightline=…`,mismatch 另走 stderr 醒目警示。
+- **視線幾何由 payload 自身反解**：`meta` 不記錄 `targets.distance`/`TARGET_Y`,若寫死 4/1.5 就是在
+  `scripts/` 複製一份 sim 幾何常數。改以「單一 tick + 重建角度」精確反解
+  `projectTrackingAngles()`（`d = -tz / (cos·cos)`、`c = ty - d·sin(pitch)`),其餘 3199 個 tick 全
+  用來驗殘差。**刻意不做多點擬合**:自由的尺度參數會把小角度下的振幅誤差吸收掉,正好吃掉要抓的缺陷。
+- **測試（4 案，TDD 先紅）**：①現行程式錄的 → `match`（含 prep 窗對齊、反解出 4.000/1.500）;
+  ②**同一份 metadata、位置乘 √2（KI-023 修前的每軸語意）→ `mismatch`**（這是 regression 的重點:
+  metadata 分不出世代,位置分得出來);③無 prep 窗、從 trajectory tick 1 開始（practice）仍 `match`;
+  ④無 trajectory config / 無目標樣本回報原因而非判定。
+- **真人資料反向驗證**：套回已作廢的 P03（G2）批次 → **11 份中 8 份 mismatch**（`maxPosErr`
+  7.2e-2 – 1.6 u），通過的 3 份**恰好是兩個單軸 axis calibration block**,與 KI-023 §6「單軸
+  calibration 逐位不變」完全一致 ⇒ 這一層獨立重現了修法語意。P04/P05 則 21/21 `match`。
+- **Surprise**：撰寫 slice 16 的一次性 audit 時,practice 一度被判 DIFFERS（5.26e-3 u）。追下去是
+  **audit 自己的對齊只往單邊搜 offset**——practice 沒有 prep 窗,錄到的第一個目標 tick 對應 age
+  = 1/128 s,需要把重建往前推一個 tick。加上 `trajectoryTickOffset` 搜尋後降到 2.2e-16 u。**不是資料
+  或刺激問題**;此案已固化為測試案 ③。
+- **驗證**：`npx vitest run` **210 files / 2021 tests passed**(1 skipped file / 2 skipped tests;
+  含使用者並行的 WP-55 slice);`npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0;
+  runner 對 P04/P05 實跑通過（21/21 `fidelity=match`、`sightline=4.000u/y1.500`）。
+
 ### 2026-09-03 — T6 slice 16：Gate A 第三輪帳本（§12，P04 + P05，docs-only）
 
 - **資料**：P04 `session-0` 10 份、P05 `session-1` 11 份(含 3 次 retry),`startedAt`

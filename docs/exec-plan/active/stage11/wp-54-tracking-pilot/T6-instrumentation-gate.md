@@ -458,8 +458,18 @@ TOT 由第二輪的 0.3–34.6% 上移到 **0.2–49.4%**,與速度修正後的�
 > `stimulusCheck()` 是用**現行程式**從 `meta.spawn.trackingTrajectory` 重建刺激再量它自己的 RMS;
 > reversal 家族有 `target_motion_change` 事件可以對表,但 **band-limited 家族沒有任何事件**,因此
 > pipeline 結構上無法分辨「payload 是舊世代程式錄的」。本輪改用 ticks 裡的 `tx/ty/tz`(sim 經
-> `projectTrackingAngles()` 寫入)與重建值逐位相減來補這個洞。**建議把它升成 runner 的一層檢查**
-> (量的是「錄到的曲線 == 重建的曲線」,不是新構念,不違反 C-D4)——見 §12.6 待決事項。
+> `projectTrackingAngles()` 寫入)與重建值逐位相減來補這個洞(量的是「錄到的曲線 == 重建的曲線」,
+> 不是新構念,不違反 C-D4)。
+>
+> **已升成 runner 的固定一層(layer 3b)**:使用者 2026-09-03 決定(§12.6 第 3 項),落地為
+> `scripts/trackingStimulusFidelity.ts` + `tests/regression/tracking-stimulus-fidelity.test.ts`,
+> 每份 run 印出 `fidelity=match|mismatch maxPosErr=… sightline=…`,mismatch 另走 stderr 警示。
+> 視線幾何(`distanceU`/`centerY`)**由 payload 自身反解**而非寫死常數,故換 drill 距離會顯示出來而
+> 不是被假設掉;實測 P04/P05 全部回報 `sightline=4.000u/y1.500`。
+>
+> **真人資料反向驗證**:把這一層套回已作廢的 P03(G2)批次,**11 份中 8 份被判 mismatch**
+> (`maxPosErr` 7.2e-2 – 1.6 u),而通過的 3 份**恰好是兩個單軸 axis calibration block**——正是
+> KI-023 §6 記載「單軸 calibration 逐位不變」的那些。這一層的判定獨立重現了 KI-023 的修法語意。
 
 ### 12.4 本輪未發現 instrumentation defect
 
@@ -497,8 +507,8 @@ TOT 由第二輪的 0.3–34.6% 上移到 **0.2–49.4%**,與速度修正後的�
    取捨,屬研究決策。**
 2. **N3 的處置**：(a) 只加強 runbook 事前提示(additive、不動程式);或 (b) scored block 直接
    抑制 ADS 輸入(改輸入層可及行為 ⇒ 改變受測者能做的事,屬研究決策)。
-3. **§12.3 的「錄到的位置 vs 重建」比對是否升成 runner 的一層**(補 band-limited 家族沒有事件
-   可對表的洞)。若要,建議開一個 T6 slice 落地 + regression fixture。
+3. ~~**§12.3 的「錄到的位置 vs 重建」比對是否升成 runner 的一層**~~ ✅ **已決(2026-09-03):升成
+   固定一層 + regression fixture**,落地見 §12.3 的方框(T6 slice 17)。
 
 ### 12.7 判定
 

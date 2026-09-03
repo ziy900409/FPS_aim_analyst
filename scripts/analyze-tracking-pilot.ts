@@ -10,6 +10,10 @@
  *                                    `meta.spawn.trackingTrajectory` and reconcile the recorded
  *                                    `target_motion_change` events against the precomputed
  *                                    schedule (layer 3: event 對表)
+ *   3b. `checkTrackingStimulusFidelity()` — the recorded target positions vs the same
+ *                                    reconstruction, so a payload recorded by an older stimulus
+ *                                    generation cannot pass as current (gate §12.3, D-54.43;
+ *                                    `band-limited-2d-v1` has no events for the layer-3 check)
  *   4. `buildTrackingPilotEvidence()` + `renderTrackingPilotReportHtml()` (layer 4: report)
  *
  * Usage (participant data lives OUTSIDE the repo — never commit exports):
@@ -27,6 +31,10 @@ import { evaluateTrackingRunEligibility } from '../src/pilot/trackingRunEligibil
 import { buildTrackingPilotEvidence } from '../src/pilot/trackingPilotEvidence.ts';
 import { renderTrackingPilotReportHtml } from '../src/pilot/trackingPilotReport.ts';
 import { selectSummaryRun } from './trackingPilotSummary.ts';
+import {
+  checkTrackingStimulusFidelity,
+  formatTrackingStimulusFidelity,
+} from './trackingStimulusFidelity.ts';
 import {
   createTrackingTrajectory,
   type TrackingTrajectoryConfig,
@@ -173,6 +181,17 @@ function main(): void {
       ].join(' | '),
     );
     console.log(`    stimulus: ${stimulusCheck(payload)}`);
+    // Layer 3b: the reconstruction above is what the CURRENT code makes of this payload's
+    // metadata; this asks whether the payload was actually recorded by that code.
+    const fidelity = checkTrackingStimulusFidelity(payload);
+    console.log(`    ${formatTrackingStimulusFidelity(fidelity)}`);
+    if (fidelity.status === 'mismatch') {
+      console.error(
+        `!!  STIMULUS FIDELITY MISMATCH — ${basename(file)} was not recorded by the current ` +
+          `stimulus code (max position error ${fidelity.maxPositionErrorU.toExponential(2)}u). ` +
+          `Its metrics must not be pooled with payloads that match; see gate §12.3.`,
+      );
+    }
   }
 
   const payloads = runs.map((run) => run.payload);
