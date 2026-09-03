@@ -7,7 +7,7 @@
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
 | [x] | **T0** Scope freeze/no-health audit | [T0-scope-freeze-no-health-audit.md](T0-scope-freeze-no-health-audit.md) | 使用者確認 WP-55 是否納入 stage11 | High |
-| [ ] | **T1** Contact geometry contract | [T1-contact-geometry-contract.md](T1-contact-geometry-contract.md) | T0 | High |
+| [x] | **T1** Contact geometry contract | [T1-contact-geometry-contract.md](T1-contact-geometry-contract.md) | T0 | High |
 | [ ] | **T2** Export-derived artifact | [T2-export-derived-artifact.md](T2-export-derived-artifact.md) | T1 | Med/High |
 | [ ] | **T3** All tracking drill coverage | [T3-all-tracking-drill-coverage.md](T3-all-tracking-drill-coverage.md) | T2 | High |
 | [ ] | **T4** Replay observability | [T4-replay-observability.md](T4-replay-observability.md) | T2/T3 | Med/High |
@@ -19,10 +19,10 @@
 
 - [x] WP-55 stage scope 已接受，或明確保持 future/candidate，不和 WP-52/WP-53/WP-54 stage11 scope 矛盾。
 - [ ] Legacy tracking drills 無 regression。
-- [ ] `onTarget` 與 `epsilonDeg` 可由 export 以 exact hitbox deterministic 重建。
+- [x] `onTarget` 與 `epsilonDeg` 可由 export 以 exact hitbox deterministic 重建。
 - [ ] Contact artifact、Replay/離線 trace、report 三者可對表同一 run/tick/frame。
 - [ ] BR/projectile evidence 與 pure tracking summary 分層，不用 hit/damage/kill 取代 contact。
-- [ ] Missing/unsupported/invalid data 全部輸出 closed reason code，不產生假 0。
+- [x] Missing/unsupported/invalid data 全部輸出 closed reason code，不產生假 0。
 - [ ] 不新增 health bar、HP、damage、kill count 作為 tracking 跟隨判定來源。
 
 ## Commit discipline

@@ -61,7 +61,7 @@ WP-54 Definition of Done：見 [wp-54-tracking-pilot/task-checklist.md「Package
 | Done | Task | Objective | 相依 | Risk |
 |---|---|---|---|---|
 | [x] | **T0** Scope freeze/no-health audit | [T0-scope-freeze-no-health-audit.md](wp-55-tracking-on-target-observability-no-health/T0-scope-freeze-no-health-audit.md) | 使用者確認 WP-55 納入 stage11 | High |
-| [ ] | **T1** Contact geometry contract | [T1-contact-geometry-contract.md](wp-55-tracking-on-target-observability-no-health/T1-contact-geometry-contract.md) | T0 | High |
+| [x] | **T1** Contact geometry contract | [T1-contact-geometry-contract.md](wp-55-tracking-on-target-observability-no-health/T1-contact-geometry-contract.md) | T0 | High |
 | [ ] | **T2** Export-derived artifact | [T2-export-derived-artifact.md](wp-55-tracking-on-target-observability-no-health/T2-export-derived-artifact.md) | T1 | Med/High |
 | [ ] | **T3** All tracking drill coverage | [T3-all-tracking-drill-coverage.md](wp-55-tracking-on-target-observability-no-health/T3-all-tracking-drill-coverage.md) | T2 | High |
 | [ ] | **T4** Replay observability | [T4-replay-observability.md](wp-55-tracking-on-target-observability-no-health/T4-replay-observability.md) | T2/T3 | Med/High |

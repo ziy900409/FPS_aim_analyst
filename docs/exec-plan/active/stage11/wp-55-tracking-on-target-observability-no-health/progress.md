@@ -4,11 +4,20 @@
 
 ## Status
 
-- **Current**：🟢 T0 scope freeze/no-health audit 完成（2026-09-03）；WP-55 已正式納入 stage11 M21。T1 待開工。
+- **Current**：🟢 T1 contact geometry contract 完成（2026-09-03）；T2 export-derived artifact 待開工。
 - **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
 - **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-03 — T1 contact geometry contract complete
+
+- 新增 `src/metrics/trackingContact.ts`，凍結 `TrackingContactSample`、`TrackingContactDerivationResult`、`TrackingContactBlockedReason` 與 `deriveTrackingContactSamples(payload)`。
+- Geometry source：T1 不複製新的近似 hitbox；`deriveTrackingContactSamples()` 先 fail-closed validation，再呼叫既有 `deriveTrackingSamples()`，因此 `onTarget` 使用 `trackingDerivation.ts` 的 exact AABB ray/slab geometry，`epsilonDeg` 使用同一 `angularEccentricityDeg()`/`resolveEyeOrigin()` 鏈。
+- Contact selection：只輸出每個 presentation/scored window 內 `tx/ty/tz` 皆存在的 active target ticks；若同 target 有 `scored_start`，contact sample 從 scored window 開始；null target ticks 被跳過，不跨下一個 `visible` presentation。
+- Fail-closed contract：預設 `strictEyeOrigin: true`；blocked reasons 覆蓋 `schema-version-unsupported`、`missing-visible-event`、`missing-target-telemetry`、`missing-eye-origin`、`invalid-hitbox`、`no-tracking-drill`、`protocol-incompatible`。Known miss 仍輸出觀測 samples，不偽裝 blocked 或 0。
+- Fixture matrix：typed contract、perfect on-target、known miss、inclusive edge hit / outside miss、target invisible skip、presentation boundary、`scored_start` trimming、metadata hitbox priority、default H1 hitbox fallback、invalid hitbox、missing eye origin、metrics parity 全部由 `src/metrics/trackingContact.test.ts` 覆蓋。
+- Metrics parity：contact-derived first on-target / acquisition / TOT / RMS epsilon 與 `deriveTrackingMetrics(payload, { strictEyeOrigin: true })` 對表成立。
 
 ### 2026-09-03 — T0 scope freeze/no-health audit complete
 
@@ -82,6 +91,10 @@
 | 2026-09-03 | CodeGraph explore: target state/manager/hit path/export/schema/replay/report/drill roster | blast radius and actual target paths recorded in T0 progress |
 | 2026-09-03 | No-health audit `rg` scans over `src`, `server`, `tests`, `docs/operational`, stage11 docs | no target health/HP/damage/health bar contract found; History API health route is unrelated |
 | 2026-09-03 | `npx.cmd vitest run src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | 10 files / 50 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContact.test.ts` | 1 file / 9 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts` | 2 files / 19 tests passed |
+| 2026-09-03 | `npm.cmd run typecheck` | exit 0 |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T1 post-change baseline: 10 files / 50 tests passed |
 
 ## Surprises & Discoveries
 
@@ -89,3 +102,4 @@
 - Existing `git status` already contains unrelated modified stage10/operational/graphify files plus WP-54/WP-55 proposal files. This pass intentionally adds only `docs/exec-plan/active/stage11/wp-55-tracking-on-target-observability-no-health/` files and does not touch those pre-existing changes.
 - T0 run found the current worktree already has unrelated `src/main.ts` and `tests/e2e/tracking-pilot-live.spec.ts`; WP-55 T0 docs intentionally avoid touching those files.
 - The named incremental implementation reference says this repo is Python/Poetry ES_analysis, but the actual workspace is TypeScript/Vitest FPS_aim_analyst. Verification therefore follows `package.json` scripts and stage11 task docs, not the stale Poetry commands in that reference.
+- T1 edge miss fixture initially used `x=0.500001` at target depth and still hit because the AABB has depth; the final outside oracle uses `x=0.58`, which clears the front slab for the default H1 box.
