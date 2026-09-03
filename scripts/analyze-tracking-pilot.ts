@@ -36,6 +36,10 @@ import {
   formatTrackingStimulusFidelity,
 } from './trackingStimulusFidelity.ts';
 import {
+  computeTrackingFrozenCrosshairRatio,
+  formatTrackingFrozenCrosshairRatio,
+} from './trackingFrozenCrosshairRatio.ts';
+import {
   createTrackingTrajectory,
   type TrackingTrajectoryConfig,
   type TrackingTrajectorySample,
@@ -192,6 +196,10 @@ function main(): void {
           `Its metrics must not be pooled with payloads that match; see gate §12.3.`,
       );
     }
+    // Layer 5: could this condition have told tracking from not-tracking at all? A faithfully
+    // recorded run of a stimulus that leaves ε no dynamic range still measures nothing (gate
+    // §12.8 / T7). Reported per run because the frozen baseline is the participant's own median.
+    console.log(`    ${formatTrackingFrozenCrosshairRatio(computeTrackingFrozenCrosshairRatio(payload))}`);
   }
 
   const payloads = runs.map((run) => run.payload);

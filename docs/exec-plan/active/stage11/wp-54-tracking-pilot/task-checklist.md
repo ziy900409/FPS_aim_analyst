@@ -209,6 +209,17 @@
 > - **可考慮的工具化**：凍結準心比值目前是一次性探測腳本;若 T7 要拿它當設計目標，建議比照
 >   slice 17 升成 `scripts/` 純函式 + 回歸測試再用。
 
+### T7 工程 slice（已 commit）
+
+- [x] **slice 1**：凍結準心比值升成 `scripts/trackingFrozenCrosshairRatio.ts` 純函式
+      + `tests/regression/tracking-frozen-crosshair-ratio.test.ts`（7 tests）+ 分析 runner
+      **layer 5**（每 run 印 `discriminability ratio=…`）。與 canonical P0 `rmsEpsilonDeg`
+      同一 tick 集與同一個 `angularEccentricityDeg()`（C-D4），結果隨行 `canonicalRmsEpsilonDeg`
+      供每 run 對表。在 P04+P05 覆驗 §12.8：reversal 2.06–3.01 / 慢速 1.08–1.35 /
+      20 deg/s 1.40–1.52。**未凍結任何閾值。**
+
+### T7 gate 項
+
 - [ ] 依 T0 preregistered protocol 招募 12-20 位不同 tracking 程度受測者。
 - [ ] 分析 easy ceiling、hard acquisition floor、0.5 deg pixel/aliasing floor。
 - [ ] 分析 seed equivalence、size x speed effect、block time slope。

@@ -8,6 +8,44 @@
 
 ## Progress
 
+### 2026-09-03 — T7 slice 1：凍結準心比值升成受測試的純函式 + 分析 runner 第 5 層
+
+- **為什麼先做這個**（偏離 T7 交接建議的 slice 順序）：Gate B 的閾值必須在收資料前凍結
+  （README §5），而閾值要寫得可稽核就得先有一個**有測試守著的操作型定義**可以引用——否則凍結的
+  是一句話，不是一個量。T6 §12.8 用的是一次性探測腳本（已刪除），T7 要拿它當設計目標就該比照
+  slice 17（`trackingStimulusFidelity.ts`）升級。**未凍結任何閾值**（那是 slice 2 的研究決策）。
+- **`scripts/trackingFrozenCrosshairRatio.ts`**：`computeTrackingFrozenCrosshairRatio(payload)`
+  把準心凍結在受測者自己的 aim 中位數（yaw 先對第一 tick 解繞），在**與 canonical P0
+  `rmsEpsilonDeg` 完全相同的 tick 集**（`scored_start` 適配後的 presentation、first-on-target
+  到 window end，比照 `deriveTrackingDynamics()`）上重算 ε，回傳 `ratio = frozen / actual`。
+  - **不新增 ε 或 scored 窗的第二定義（C-D4）**：兩個 RMS 都走同一個 `angularEccentricityDeg()`，
+    窗界沿用同一組判定；結果另帶 `canonicalRmsEpsilonDeg`，**每份 run 都印出兩者是否相符**
+    （不只在測試裡斷言），一旦漂移就會出現 `!!P0-MISMATCH`。
+  - 封閉 status：`ok` / `no-scored-window`（未取得目標 ⇒ 沒有可除的 pursuit RMS）/
+    `insufficient-ticks`（沿用 `minValidTicks=32`，不新開旋鈕）/ `missing-target-telemetry`。
+- **`tests/regression/tracking-frozen-crosshair-ratio.test.ts`（7 tests）**：解析已知答案的 fixture
+  ——「完全不動」⇒ 比值恰為 1；「誤差減半」⇒ 2；完美跟槍 ⇒ 比值無上界；**刺激不走行程 ⇒ 比值
+  ≤ 1（§12.8 發現的縮影：再會跟槍也測不出來）**；窗自 first-on-target 起算且重現 canonical
+  `rmsEpsilonDeg`；四個封閉 status 各一案；無 `scored_start` 的 legacy payload 仍可量（寬鬆，
+  且 prep 窗會出現在 `tickCount` 而非被靜默吃掉）。
+- **`scripts/analyze-tracking-pilot.ts`**：新增 **layer 5**，每份 run 印
+  `discriminability ratio=… frozenRmsEps=… actualRmsEps=… frozenSweep=… ticks=…`。
+- **在真人資料上覆驗 §12.8**（P04 s0 ×10 + P05 s1 ×11，21 份，批次以 `meta.session.participantId`
+  判定，repo 外）：reversal **2.06–3.01** vs 慢速 band-limited + calibration **1.08–1.35** vs
+  20 deg/s **1.40–1.52**；凍結準心 RMS ε 0.753–0.772°（慢速）/ 2.984–3.057°（20 deg/s）、
+  frozen sweep 1.26–1.95° / 5.52–6.01° —— **與 §12.8 的結論一致**。
+- **與 §12.8 數字的差異已釐清（不是缺陷）**：§12.8 的區間是**家族層級的交叉配對**（單一代表性
+  frozen 0.75° ÷ 各 run 的 actual、reversal 取 frozen 上界 ÷ actual 下界）；本工具**逐 run 配對**
+  （同一份 run 的 frozen 與 actual），故區間略窄（reversal 上界 3.26 → 3.01、慢速上界 1.25 → 1.35，
+  後者的 1.35 來自 practice，§12.8 的家族區間未含 practice 的 0.557°）。逐 run 配對是較嚴格的定義
+  ——它不會用甲的 frozen 去除乙的 actual —— 故採為 T7 的操作型定義。
+- **blocked run 也會印出這一行**（本輪 3 份 `protocol-violation`）：比值量的是**刺激的設計性質**，
+  不是能力指標，故對診斷有用且不違反 FR-54-10（它沒有進任何聚合）。**Gate B 的判準要納入哪些
+  run 屬預註冊決定**，留 slice 2。
+- **驗證**：`npx vitest run` **211 files / 2028 tests passed**（1 skipped file / 2 skipped tests；
+  基線 210/2021 + 本 slice 的 1 檔 7 tests）；`npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆
+  exit 0。未動 `src/` production code（新增檔皆在 `scripts/` 與 `tests/`）⇒ 不需 `graphify update`。
+
 ### 2026-09-03 — T6 slice 20：Gate A 判定落地 = 部分通過，T7 可開工（docs-only）
 
 - **使用者決策（OQ-54-14）**：**部分通過**——資料鏈路與 reversal 家族 PASS;band-limited 核心矩陣
