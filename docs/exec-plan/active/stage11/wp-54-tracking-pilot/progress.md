@@ -8,6 +8,44 @@
 
 ## Progress
 
+### 2026-09-03 — T7 slice 2：KI-024 診斷（`field-low` 交付角度只有一半，docs-only）
+
+- **怎麼發現的**：slice 1 的工具讓「凍結準心 RMS ε」可以**只由刺激**離線算出（不需真人）。
+  對現行 `2deg_5dps` 算出 **1.51°**，而真人資料實測是 **0.757°** —— 恰好兩倍。追下去發現
+  **eye→target 交戰距離是 8.00 u，而 config 寫 `targets.distance: 4`**。
+- **根因**：`field-low` 的 `proceduralRoom` 沒設 `eyeZ` ⇒ `eyeZ = roomSize[1]/2 − CAMERA_STANDOFF
+  = 4`；前向目標在 `z = −4` ⇒ 距離加倍、角度減半。`SceneConfig.ts:18` 早已寫明「前向目標 drill 需
+  `eyeZ:0`」，`br-field`（KI-002/D1 的修復）、`peek-corridor`、`peek-ad-corridor` 都設了，
+  **`field-low` 是唯一被前向 drill 使用卻漏掉的場景**。
+- **實測（P04 全部 9 個 block，以 `computeSignedOmegaSeries()` 的同一個眼睛原點量）**：交付/宣稱
+  = **0.499–0.508**，一致到小數第三位。⇒ 宣稱 **0.5° / 2.0°** 實為 **0.25° / 1.0°**；宣稱
+  **5 / 20 deg/s** 實為 **2.5 / 10.0**；reversal `[5,20]` 眼睛所見 2D RMS 為 **4.79 / 5.86**。
+- **這在機制上解釋了「0.5° 看不見」**：0.25° 在實測環境（`fovDeg 75` = 垂直 FOV、`cssH 1274`）
+  約 **4.2 CSS px**，而非 slice 19 按 4 u 算出的 8–9 px。slice 19 排除渲染側 radius/diameter
+  混用是對的——它算的是**宣稱值**，不是交付值。
+- **為何三輪 Gate A 都沒抓到**：刺激側每一道檢查（T1 速度斷言、`stimulusCheck()` 的 0.95–1.05
+  驗收帶、layer 3b 曲線一致性）都以 **trajectory 原點（world origin）** 量角度，而 P1 的
+  `computeSignedOmegaSeries()` 與 ε(t) 以**眼睛**為原點。**同一構念的第三個自由度（角度頂點在哪）
+  從未被對表** ⇒ C-D4。KI-020（速度沒交付）、KI-023（每軸 vs 2D）之後的**第三次殘留**，
+  三次共同根因都是「測試站在會通過的那一邊」。
+- **§12.8 的結論仍成立，但歸因要修正**：慢速 cell 測不出跟槍能力是對「實際交付的刺激」的正確描述；
+  但**修掉這個 0.5× 不會提高比值**——距離因子同時縮放速度與行程，在
+  `比值 ≈ 0.3776·k(頻帶)·v / (0.183 + 0.1867·v)` 的分子分母抵消。離線量測證實：現行頻帶
+  `[0.3, 2.1]` 的比值**上界為 1.61**（任何速度）⇒ §12.8 指出的頻帶槓桿仍是唯一槓桿。
+- **交付物**：[KI-024](../../../known_issue/KI-024-field-low-eye-not-anchored-halves-delivered-angles.md)
+  （症狀/根因/影響面/blast radius/選項/驗證計畫）+ [BUGFIX-DECISIONS.md](../../../known_issue/BUGFIX-DECISIONS.md)
+  索引列與 **BD-024（待決）**。**未動任何 production code、未改刺激** —— 修法是研究決策
+  （改變交付給受測者的刺激 ⇒ G4 世代 ⇒ P04/P05 作廢），依 KI-019 F-A2 / KI-020 §4 / KI-023 的
+  同一慣例交研究者選（KI-024 §5.1 的 A/B/C）。
+- **Blast radius（不在本 WP 修）**：`field-low` 另有 `tracking_longrange_v1`、`tracking_scene_v1`、
+  `detection_popin_v1` 使用；是否以 `targets.distance` 宣稱角度語意須由 owning WP 判定
+  （`TargetManager.ts:62` 已記載 spider-shot 的 `centerDistanceU` 曾重蹈此坑，KI-012）。
+  依 CLAUDE.md §3 第 7 條，跨 WP 部分待寫入 DECISIONS.md。
+- **附帶產出（KI-024 §5.2）**：以現行生成器逐 tick 建構 25 s block，量出六個候選頻帶 × 四個
+  眼睛所見速度的凍結準心比值表（人類項由 P04/P05 的 12 個 run 擬合，在 reversal 家族上交叉驗證
+  通過）。`[0.2,1.4]` 可達 2.0–2.2、`[0.15,1.05]` 可達 2.3–2.9（reversal 實測 2.06–3.01 為參照），
+  代價是 25 s 內週期數與垂直包絡。**模型只由 2 人 × 2 個速度點擬合 ⇒ 建議招募前先操作員乾跑實測。**
+
 ### 2026-09-03 — T7 slice 1：凍結準心比值升成受測試的純函式 + 分析 runner 第 5 層
 
 - **為什麼先做這個**（偏離 T7 交接建議的 slice 順序）：Gate B 的閾值必須在收資料前凍結

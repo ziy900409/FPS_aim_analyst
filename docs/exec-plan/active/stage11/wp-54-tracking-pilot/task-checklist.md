@@ -211,6 +211,7 @@
 
 ### T7 工程 slice（已 commit）
 
+- [x] **slice 2**：KI-024 診斷（`field-low` 未設 `eyeZ` ⇒ 交戰距離 8 u ≠ config 4 u ⇒ WP-54 全部 9 個 block 的角尺寸/角速度只交付 0.50×；機制上解釋「0.5° 看不見」= 實為 0.25°）+ BD-024 待決 + KI-024 §5.2 的頻帶候選比值表。**未動 production code、未改刺激**（修法屬研究決策）。
 - [x] **slice 1**：凍結準心比值升成 `scripts/trackingFrozenCrosshairRatio.ts` 純函式
       + `tests/regression/tracking-frozen-crosshair-ratio.test.ts`（7 tests）+ 分析 runner
       **layer 5**（每 run 印 `discriminability ratio=…`）。與 canonical P0 `rmsEpsilonDeg`
