@@ -2,11 +2,18 @@
 
 ## Status
 
-- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0-T4 完成、T5 待開工（2026-09-02）；🟢 M21（WP-55 tracking observability/no-health）T0-T2 完成、T3 待開工（2026-09-03）。
+- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0-T4 完成、T5 待開工（2026-09-02）；🟢 M21（WP-55 tracking observability/no-health）T0-T3 完成、T4 待開工（2026-09-03）。
 - **Scope state**：WP-52 pilot v2 adjustment 已交付；WP-53 formal `peek_click_transfer_v1` release 已完成 T0~T5 與 T-exit；WP-54 tracking pilot 已正式納入 stage11，T0-T4 完成；WP-55 已正式納入 stage11，第一版以 export 後 derived contact artifact 為主，不做 health/damage lifecycle。
-- **Dependency state**：WP-52 T-exit、WP-53 formal freeze、stage10 history/trend contract、formal Session Plan integration、focused E2E 與 docs sync 全數完成（M19）。WP-54 T0 依賴的 legacy tracking baseline（103 tests）綠燈、OQ-54-1~8 preregistration 凍結、CodeGraph impact 記錄完成；T1 deterministic trajectory kernel + export contract 交付；T2 pilot drill matrix（practice/calibration/core 2×2/reversal density）+ no-fire/no-ADS/no-movement protocol guard 交付；T3 canonical P0/P1 metrics（lag/gain/drop/recovery/reversal）+ truth fixtures 交付；T4 eligibility/evidence pipeline（closed quality-reason vocabulary、WP-54 compatibility key、deterministic JSON evidence、self-contained HTML report）交付，全程 legacy tracking regression 保持綠燈（M20）。WP-55 T0 凍結現有三個 tracking drill roster、OQ-55-1~4、no-health boundary、CodeGraph blast radius 與 50-test baseline；T1 已凍結 contact geometry contract；T2 已交付 deterministic export-derived contact JSON artifact（M21）。
+- **Dependency state**：WP-52 T-exit、WP-53 formal freeze、stage10 history/trend contract、formal Session Plan integration、focused E2E 與 docs sync 全數完成（M19）。WP-54 T0 依賴的 legacy tracking baseline（103 tests）綠燈、OQ-54-1~8 preregistration 凍結、CodeGraph impact 記錄完成；T1 deterministic trajectory kernel + export contract 交付；T2 pilot drill matrix（practice/calibration/core 2×2/reversal density）+ no-fire/no-ADS/no-movement protocol guard 交付；T3 canonical P0/P1 metrics（lag/gain/drop/recovery/reversal）+ truth fixtures 交付；T4 eligibility/evidence pipeline（closed quality-reason vocabulary、WP-54 compatibility key、deterministic JSON evidence、self-contained HTML report）交付，全程 legacy tracking regression 保持綠燈（M20）。WP-55 T0 凍結現有三個 tracking drill roster、OQ-55-1~4、no-health boundary、CodeGraph blast radius 與 50-test baseline；T1 已凍結 contact geometry contract；T2 已交付 deterministic export-derived contact JSON artifact；T3 已交付 all tracking drill coverage 與 BR/pure summary 分層 projection（M21）。
 
 ## Progress
+
+### 2026-09-03 — WP-55 T3 all tracking drill coverage
+
+- WP-55 T3 完成：新增 `src/metrics/trackingContactCoverage.ts` 與 `src/metrics/trackingContactCoverage.test.ts`。Coverage report 從 T2 contact artifact 投影 included/excluded runs、pure P0 summary、BR companion evidence 與 blocked reason counts。
+- `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1` 均有 fixture 覆蓋；longrange 驗證 source-unit hitbox/0.5 deg angular-height traceability；BR 將 ADS、aim-ray contact、hitscan/projectile ballistic evidence 分欄，且 pure summary 不讀 fire/hit event count。
+- Protocol-incompatible export 不進 aggregate，仍保留 reason code/exclusion count；WP-54 core/reversal candidate drills 只做 contact-contract compatibility smoke，不擴大成 WP-54 pilot metric release。
+- T3 verification：`npm.cmd run typecheck` exit 0；focused contact regression 32/32 passed；T3 + legacy tracking/BR baseline 13 files / 72 tests passed；`graphify update .` 已執行但 generated `graphify-out` 未 staged，避免混入 unrelated local indexed state。
 
 ### 2026-09-03 — WP-55 T2 export-derived artifact
 
@@ -107,3 +114,4 @@
 | 2026-09-03 | WP-55 T0（detail 見 [wp-55-tracking-on-target-observability-no-health/progress.md](wp-55-tracking-on-target-observability-no-health/progress.md)） | 使用者確認納入 stage11；OQ-55-1~4 凍結；CodeGraph impact/no-health audit 記錄；10 個 tracking/BR baseline files 50/50 tests passed |
 | 2026-09-03 | WP-55 T1（detail 見 [wp-55-tracking-on-target-observability-no-health/progress.md](wp-55-tracking-on-target-observability-no-health/progress.md)） | `src/metrics/trackingContact.test.ts` 9/9 passed；contact + canonical trackingDerivation regression 19/19 passed；legacy tracking/BR baseline 50/50 passed；`npm.cmd run typecheck` exit 0 |
 | 2026-09-03 | WP-55 T2（detail 見 [wp-55-tracking-on-target-observability-no-health/progress.md](wp-55-tracking-on-target-observability-no-health/progress.md)） | `src/metrics/trackingContactArtifact.test.ts` 7/7 passed；contact + artifact + trackingDerivation regression 26/26 passed；T2 + legacy tracking/BR baseline 66/66 passed；`npm.cmd run typecheck` exit 0；30 s / 3840 tick artifact perf gate passed；`graphify update .` executed but graphify-out not staged because unrelated local files were indexed |
+| 2026-09-03 | WP-55 T3（detail 見 [wp-55-tracking-on-target-observability-no-health/progress.md](wp-55-tracking-on-target-observability-no-health/progress.md)） | `src/metrics/trackingContactCoverage.test.ts` 6/6 passed；contact coverage + artifact + contact + derivation regression 32/32 passed；T3 + legacy tracking/BR baseline 13 files / 72 tests passed；`npm.cmd run typecheck` exit 0；`graphify update .` executed but graphify-out not staged because unrelated local indexed state would be included |

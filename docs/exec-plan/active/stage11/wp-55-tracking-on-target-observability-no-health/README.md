@@ -4,7 +4,7 @@
 >
 > Source proposal：[../wp-55-tracking-on-target-observability-no-health-plan.md](../wp-55-tracking-on-target-observability-no-health-plan.md)。本文件依 `.claude/skills/engineering-planning/SKILL.md`、`references/design_standards.md`、`assets/tech_spec_template.md` 與 WP-51 的 work-package 格式整理。
 >
-> **狀態：已正式納入 stage11，M21 entry gate / T0 已完成（2026-09-03）。** T1 之後才能開始實作 contact derivation；T0 evidence 見 [progress.md](progress.md)。
+> **狀態：已正式納入 stage11，T0-T3 已完成（2026-09-03）；T4 replay observability 待開工。** T3 all tracking drill coverage evidence 見 [progress.md](progress.md)。
 
 | | |
 |---|---|
