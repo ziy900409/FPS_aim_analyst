@@ -2,11 +2,34 @@
 
 ## Status
 
-- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A = REVISE**（2026-09-03，見 [T6-instrumentation-gate.md §10](T6-instrumentation-gate.md)）。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`。**唯一待辦 = 9 個 block 重跑**（三家族刺激都變了，P01 資料全部作廢）。
+- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A = REVISE（第二輪）**（2026-09-03，P03 重跑，見 [T6-instrumentation-gate.md §11](T6-instrumentation-gate.md)）。資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；**唯一阻塞 = [KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md) 的速度語意待研究決策**（兩軸 cell 交付 √2 倍，預註冊的 5/20 deg/s 從未被交付）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`。**唯一待辦 = 9 個 block 重跑**（三家族刺激都變了，P01 資料全部作廢）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-03 — T6 slice 14：Gate A 第二輪帳本（§11）+ KI-023 診斷（docs-only）
+
+- **[gate §11](T6-instrumentation-gate.md)**：P03 重跑的四層對帳全部記入——schema 11/11、覆蓋率
+  ≈100%（3201–3203 ticks / 25000–25016 ms）、event 對表 **36/36 與 59/59 `mismatched=0`**（正是
+  KI-019 §5.3 預測的數字在真人資料上兌現）、靜止 1.1%/1.9%（< 5%）、追溯/seed/practice 排除/parity
+  全過。**本輪新證據**：兩個 `protocol_violation` block 被 run-level gate 正確擋下且其 retry 合格
+  ⇒ T6 slice 7 的閘門第一次在真人資料上被觸發；**TOT 離開 100%**（0.3%–34.6%）⇒ hitbox 真的生效。
+- **[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)（診斷，未修）**：
+  `boundedSpeedScale()` 對兩軸各自求解 ⇒ **每軸** RMS 等於 `targetRmsSpeedDegPerSec`，而螢幕上的
+  目標速度是 `hypot(yaw, pitch)` ⇒ 兩軸 cell 交付 **√2 倍**（實測每軸 1.00–1.02、2D 1.414–1.435；
+  7.14/28.3 vs 宣稱 5/20）。單軸 calibration 交付 1.0 倍 ⇒ **宣稱同為 5 deg/s 的 block 實際差
+  1.41 倍**。reversal 的 `speedRangeDegPerSec [5,20]` 同樣是每軸抽樣，其註解寫的「cross-block
+  comparability」因此不成立。**T1 測試只累加 yaw、分析 runner 量 hypot ⇒ 同一構念兩個定義（C-D4）**
+  ——這也是為什麼 KI-020 §6「實測交付 5.05 / 20.21」當時看起來已修好。
+- **未落地任何修法**：三個選項（A 改 2D 語意並重跑 / B 保留每軸語意改名改預註冊值 / C 只改文件）
+  改變刺激或預註冊定義，屬研究決策，比照 KI-019 F-A2 與 KI-020 §4 的處理方式交研究者拍板
+  （[BD-023](../../../known_issue/BUGFIX-DECISIONS.md)，建議 A）。
+- **判讀警告**：0.5°/20dps cell 的 `tAcquireMs 3172`、TOT 0.3% 看似 floor 證據，但該 cell 實際跑在
+  **28.3 deg/s**，**不得據此批資料宣告 T7 的 floor**。
+- **其他觀察（供 T7）**：八個條件中 **5 個**的 `lagMs` 恰為搜尋上界 250.0 ms（撞邊界而非真峰值，
+  `status` 仍回 `'ok'`）；velocity gain 全部 > 1（1.032–1.445）；一場 session 出現 2 次
+  protocol violation ⇒ runbook 的事前提示可能不夠醒目。
 
 ### 2026-09-03 — T6 slice 13：第二輪真人資料（P03）分析 + KI-022 修復
 
