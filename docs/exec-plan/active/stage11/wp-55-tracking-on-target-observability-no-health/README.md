@@ -4,7 +4,7 @@
 >
 > Source proposal：[../wp-55-tracking-on-target-observability-no-health-plan.md](../wp-55-tracking-on-target-observability-no-health-plan.md)。本文件依 `.claude/skills/engineering-planning/SKILL.md`、`references/design_standards.md`、`assets/tech_spec_template.md` 與 WP-51 的 work-package 格式整理。
 >
-> **狀態：候選 WP，自足計畫已建立，但尚未正式納入 stage11 master checklist。** 若決定開工，T0 必須先更新 stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md)，不得只實作本 WP 內的程式項目。
+> **狀態：已正式納入 stage11，M21 entry gate / T0 已完成（2026-09-03）。** T1 之後才能開始實作 contact derivation；T0 evidence 見 [progress.md](progress.md)。
 
 | | |
 |---|---|

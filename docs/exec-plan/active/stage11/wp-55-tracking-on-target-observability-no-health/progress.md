@@ -4,11 +4,42 @@
 
 ## Status
 
-- **Current**：🟡 候選 WP，自足 planning artifacts 已建立；尚未正式納入 stage11 master checklist，尚未開工。
-- **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle。
-- **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；若 WP-54 新 tracking drills 後續落地，接入同一 contact artifact contract。
+- **Current**：🟢 T0 scope freeze/no-health audit 完成（2026-09-03）；WP-55 已正式納入 stage11 M21。T1 待開工。
+- **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
+- **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-03 — T0 scope freeze/no-health audit complete
+
+- 使用者要求「實作 t0」後，WP-55 正式納入 stage11 M21；stage11 [README](../README.md)、[master checklist](../task-checklist.md) 與 [progress](../progress.md) 已同步。
+- Entry snapshot：HEAD `7976fc23f3a71cbcd300d9f500158f7876666a4a`；`git status --short` 在 T0 前已有 unrelated `M src/main.ts` 與 `?? tests/e2e/tracking-pilot-live.spec.ts`，本切片不觸碰。
+- CodeGraph：`codegraph.cmd status` 顯示 528 files / 8,454 nodes / 28,153 edges，`[OK] Index is up to date`；同時提示 index 由 earlier version 建立，後續若需要新版分析可 `codegraph sync`/full rebuild。`codegraph` PowerShell shim 被 execution policy 擋住，改用 `codegraph.cmd`。
+- graphify freshness：`graphify-out/GRAPH_REPORT.md` built from commit `dc1cc480`，相對本輪 HEAD `7976fc23...` stale；T0 只改 docs，未執行 `graphify update .`。
+- Baseline：`npx.cmd vitest run src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` -> 10 files / 50 tests passed.
+
+#### T0 blast radius and actual target paths
+
+| Area | Actual path/symbol | CodeGraph impact | T1-T6 note |
+|---|---|---|---|
+| Target state | `src/state/types.ts` `TargetState` | 32 callers across `src/sim/HitDetector.ts`, `src/render/TargetView.ts`, `src/state/SharedState.ts`, `src/testharness/fpsTestHarness.ts`; tests include muzzle tracer, target/render and first-shot coverage | Cross-module; do not add health/HP/damage lifecycle fields |
+| Target lifecycle | `src/sim/TargetManager.ts` `createTargetManager()` / `markKilled()` / `hasAliveTarget()` | `hasAliveTarget()` local to TargetManager; `createTargetManager()` drives spawn, visibility, motion, trackingTrajectory and `scored_start` | `markKilled()` removes target and clears timestamps; no damage/HP decrement model |
+| Hit path | `src/sim/HitDetector.ts` `raycastWithRay()` and `src/loop/SimLoop.ts` `targetAabb()` / projectile hit branch | `targetAabb()` local to `SimLoop` with no direct covering tests; broader hit path covered by `SimLoop.test.ts`, ballistic/projectile regressions and `HitDetector.test.ts` | T1 geometry parity must compare aim-ray contact with this same hitbox source, not shooting outcome |
+| Recorder/export | `src/data/DataRecorder.ts` `createDataRecorder()` / `recordEvent()` and `src/data/export.ts` `buildExportPayload()` | `createDataRecorder()` 46 callers; `buildExportPayload()` 22 callers via `main.ts` and harnesses | Keep raw ticks/events unchanged; derived contact generated after export |
+| Schema/parser/meta | `src/data/exportPayloadSchema.ts` `parseExportPayload()` / `parseTargetsMeta()` and `src/data/metadata.ts` `Meta` | `parseExportPayload()` 10 callers in history/replay/server; `Meta` 72 callers | Additive parser changes only if T2 needs stricter contact metadata validation |
+| Eye origin | `src/metrics/eyeOrigin.ts` `resolveEyeOrigin()` / `eyeOriginForTick()` | Shared by tracking/detection derivation | T1/T2 should map strict fallback failures to reason-coded blocked result |
+| Canonical tracking metrics | `src/metrics/trackingDerivation.ts` `deriveTrackingMetrics()` / `deriveTrackingSamples()` | `deriveTrackingSamples()` 11 callers in research, spider-shot, tracking dynamics and tests | Reuse for epsilon/TOT parity; avoid rewriting existing P0 semantics |
+| Replay | `src/replay/sampleReplay.ts` `sampleReplay()`, `src/replay/ReplayPlayer.ts`, `src/render/replay/ReplayTargetView.ts`, `src/ui/replay/ReplayScreen.ts` | `sampleReplay()` 7 callers; `ReplayTargetView` 6 callers; replay tests cover sample/player/presentation/visual seek | T4 starts with offline contact frame alignment; product overlay stays optional/future |
+| Report consumers | `src/results/ResultPresentation.ts`, `src/metrics/researchMetrics.ts`, `src/pilot/trackingPilotEvidence.ts`, `src/pilot/trackingPilotReport.ts` | Result presentation builds current/historical view model; WP-54 evidence/report consume `deriveTrackingMetrics()`/dynamics | T5 report must split pure tracking contact from BR ballistic hit/lead evidence |
+| Drill roster | `src/drill/tracking_v1.ts`, `src/drill/tracking_longrange_v1.ts`, `src/drill/tracking_br_v1.ts` | Existing tests cover configs and BR invariants; WP-54 candidate files also exist under `tracking_core_pr_pilot_v1.ts` / `tracking_reversal_pilot_v1.ts` | Required WP-55 matrix frozen to the three existing tracking drills; WP-54 drills are adjacent adopters |
+
+#### T0 no-health/no-damage audit
+
+- `rg -n "\b(health|hp|damage|armor|killCount|kills|targetHealth|healthBar)\b" ...` found no production target-health/damage contract. Matches are stage11 WP-55 planning docs, History API `/api/history/health`, test variable `hp` meaning hit point output in `HitDetector.test.ts`, and unrelated process `kill` comments.
+- `TargetState` has `visible`, `alive`, `hitbox`, optional `hitboxVaries`, motion and timing fields; no HP/damage/health bar.
+- `DrillConfig.targets` has `hitbox`, optional `hitboxCandidates`, motion/trajectory/timing fields; `sequence.peekTimeoutMs` text says timeout advances if not killed, but no HP/damage schema.
+- Hit path records `fire` and `hit` events plus `fireCount`/`hitCount`; WP-55 contact derivation must not consume hit count as pure tracking on-target evidence. BR projectile/hitscan may be companion evidence only.
+- Render/replay target views scale meshes from `TargetState.hitbox` / `meta.targets.hitbox`; no health bar UI was introduced.
 
 ### 2026-09-01 — Planning
 
@@ -21,19 +52,19 @@
 
 | ID | 決策 | 理由 | 狀態 |
 |---|---|---|---|
-| D-55.1 | Tracking 跟隨判定以 exact-hitbox aim-ray `onTarget`、TOT 與 RMS/epsilon 為核心，不新增血條/HP/damage | Tracking 是逐 tick 跟隨構念；health/damage/kill 會把 shooting outcome 混入主指標 | Proposed |
-| D-55.2 | Contact derivation 放在 export 後分析層，不寫回 sim state | 沿用 `DataRecorder -> ExportPayload -> metrics/report` 責任切分，降低 sim/render regression 風險 | Proposed |
-| D-55.3 | 第一版優先支援 derived artifact；產品 Replay overlay 由 T0/OQ-55-1 決定 | 離線 artifact 可先滿足研究稽核，Replay UI scope 對估時與測試面影響較大 | Proposed |
-| D-55.4 | BR/projectile tracking 同時可呈現 ballistic hit 與 aim-ray contact，但 pure tracking summary 不讀 hit count | 避免 projectile lead/travel time 被誤解為準心跟隨能力 | Proposed |
+| D-55.1 | Tracking 跟隨判定以 exact-hitbox aim-ray `onTarget`、TOT 與 RMS/epsilon 為核心，不新增血條/HP/damage | Tracking 是逐 tick 跟隨構念；health/damage/kill 會把 shooting outcome 混入主指標 | ✅ Confirmed（T0） |
+| D-55.2 | Contact derivation 放在 export 後分析層，不寫回 sim state | 沿用 `DataRecorder -> ExportPayload -> metrics/report` 責任切分，降低 sim/render regression 風險 | ✅ Confirmed（T0） |
+| D-55.3 | 第一版優先支援 derived artifact；產品 Replay overlay 由 T0/OQ-55-1 決定 | 離線 artifact 可先滿足研究稽核，Replay UI scope 對估時與測試面影響較大 | ✅ Confirmed（T0；offline artifact first） |
+| D-55.4 | BR/projectile tracking 同時可呈現 ballistic hit 與 aim-ray contact，但 pure tracking summary 不讀 hit count | 避免 projectile lead/travel time 被誤解為準心跟隨能力 | ✅ Confirmed（T0） |
 
 ## Open Questions
 
 | ID | 問題 | Owner | Deadline | Impact |
 |---|---|---|---|---|
-| OQ-55-1 | Replay 可觀測性要做到產品 UI，還是先產出離線 HTML/JSON replay artifact？ | 使用者 | T0 | T4 scope/估時 |
-| OQ-55-2 | 「tracking 項目」是否只包含現有三類，或也包含 WP-54 候選新 drills？ | 使用者 + 研究者 | T0 | T3/T5 fixture matrix |
-| OQ-55-3 | Export 支援是 raw export 足以重建，還是要另存 derived contact JSON/CSV？ | 使用者 | T0 | T2 output format |
-| OQ-55-4 | BR projectile 條件中是否同時顯示 ballistic hit 與 aim-ray on-target？ | 研究者 | T1 | T3 metric semantics |
+| OQ-55-1 | Replay 可觀測性要做到產品 UI，還是先產出離線 HTML/JSON replay artifact？ | 使用者 | T0 | ✅ Resolved（T0）：先做離線 JSON/HTML replay/contact artifact；產品 Replay overlay optional/future |
+| OQ-55-2 | 「tracking 項目」是否只包含現有三類，或也包含 WP-54 候選新 drills？ | 使用者 + 研究者 | T0 | ✅ Resolved（T0）：T1-T5 required matrix 只含 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`；WP-54 drills 以同 contract adjacent 接入 |
+| OQ-55-3 | Export 支援是 raw export 足以重建，還是要另存 derived contact JSON/CSV？ | 使用者 | T0 | ✅ Resolved（T0）：另存 deterministic derived contact JSON；CSV/HTML 可由後續 task 視需要產出 |
+| OQ-55-4 | BR projectile 條件中是否同時顯示 ballistic hit 與 aim-ray on-target？ | 研究者 | T1 | ✅ Resolved（T0）：兩者分欄呈現；pure tracking summary 不讀 ballistic hit/hit count |
 
 ## Verification log
 
@@ -44,8 +75,17 @@
 | 2026-09-01 | `Get-Content docs/exec-plan/active/stage11/wp-55-tracking-on-target-observability-no-health-plan.md` | source proposal loaded |
 | 2026-09-01 | `Get-Content docs/exec-plan/active/stage10/wp-51-m18-integration-and-acceptance/README.md` and `task-checklist.md` | WP-51 output format reviewed |
 | 2026-09-01 | `Get-Content docs/exec-plan/active/stage11/wp-54-tracking-pilot/README.md` and `task-checklist.md` | candidate WP pattern reviewed |
+| 2026-09-03 | `Get-Content .claude/skills/incremental-implementation/SKILL.md` and `references/es-analysis.md` | incremental implementation skill loaded; project reference noted but actual repo is TS/Vitest |
+| 2026-09-03 | `Get-Content README.md` / `T0-scope-freeze-no-health-audit.md` / stage11 master docs / `graphify-out/GRAPH_REPORT.md` | T0 inputs loaded; graphify report built from older commit `dc1cc480` |
+| 2026-09-03 | `git rev-parse HEAD` / `git status --short` | HEAD `7976fc23f3a71cbcd300d9f500158f7876666a4a`; unrelated `M src/main.ts` and `?? tests/e2e/tracking-pilot-live.spec.ts` present |
+| 2026-09-03 | `codegraph.cmd status` | up to date; 528 files / 8,454 nodes / 28,153 edges; earlier-version index warning recorded |
+| 2026-09-03 | CodeGraph explore: target state/manager/hit path/export/schema/replay/report/drill roster | blast radius and actual target paths recorded in T0 progress |
+| 2026-09-03 | No-health audit `rg` scans over `src`, `server`, `tests`, `docs/operational`, stage11 docs | no target health/HP/damage/health bar contract found; History API health route is unrelated |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | 10 files / 50 tests passed |
 
 ## Surprises & Discoveries
 
 - WP-55 source proposal is still a single candidate plan file under stage11, while WP-51 and WP-54 use self-contained WP folders. This planning pass keeps the source proposal intact and adds the folderized artifacts beside it.
 - Existing `git status` already contains unrelated modified stage10/operational/graphify files plus WP-54/WP-55 proposal files. This pass intentionally adds only `docs/exec-plan/active/stage11/wp-55-tracking-on-target-observability-no-health/` files and does not touch those pre-existing changes.
+- T0 run found the current worktree already has unrelated `src/main.ts` and `tests/e2e/tracking-pilot-live.spec.ts`; WP-55 T0 docs intentionally avoid touching those files.
+- The named incremental implementation reference says this repo is Python/Poetry ES_analysis, but the actual workspace is TypeScript/Vitest FPS_aim_analyst. Verification therefore follows `package.json` scripts and stage11 task docs, not the stale Poetry commands in that reference.

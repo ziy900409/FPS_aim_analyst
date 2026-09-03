@@ -2,11 +2,11 @@
 
 > Tech spec：[README.md](README.md) · Running log：[progress.md](progress.md)
 >
-> 狀態符號：`[ ]` pending · `[-]` in progress · `[x]` complete。WP-55 目前是候選 WP；正式開工前 T0 必須先讓 stage11 master README/checklist/progress 接受此範圍。
+> 狀態符號：`[ ]` pending · `[-]` in progress · `[x]` complete。WP-55 已於 2026-09-03 由 T0 正式納入 stage11；T1 之後才開始 production contact derivation。
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
-| [ ] | **T0** Scope freeze/no-health audit | [T0-scope-freeze-no-health-audit.md](T0-scope-freeze-no-health-audit.md) | 使用者確認 WP-55 是否納入 stage11 | High |
+| [x] | **T0** Scope freeze/no-health audit | [T0-scope-freeze-no-health-audit.md](T0-scope-freeze-no-health-audit.md) | 使用者確認 WP-55 是否納入 stage11 | High |
 | [ ] | **T1** Contact geometry contract | [T1-contact-geometry-contract.md](T1-contact-geometry-contract.md) | T0 | High |
 | [ ] | **T2** Export-derived artifact | [T2-export-derived-artifact.md](T2-export-derived-artifact.md) | T1 | Med/High |
 | [ ] | **T3** All tracking drill coverage | [T3-all-tracking-drill-coverage.md](T3-all-tracking-drill-coverage.md) | T2 | High |
@@ -17,7 +17,7 @@
 
 ## Package Definition of Done
 
-- [ ] WP-55 stage scope 已接受，或明確保持 future/candidate，不和 WP-52/WP-53/WP-54 stage11 scope 矛盾。
+- [x] WP-55 stage scope 已接受，或明確保持 future/candidate，不和 WP-52/WP-53/WP-54 stage11 scope 矛盾。
 - [ ] Legacy tracking drills 無 regression。
 - [ ] `onTarget` 與 `epsilonDeg` 可由 export 以 exact hitbox deterministic 重建。
 - [ ] Contact artifact、Replay/離線 trace、report 三者可對表同一 run/tick/frame。

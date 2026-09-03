@@ -54,10 +54,27 @@ WP-53 Definition of Done：`peek_click_transfer_v1` 是獨立正式 Assessment d
 
 WP-54 Definition of Done：見 [wp-54-tracking-pilot/task-checklist.md「Package Definition of Done」](wp-54-tracking-pilot/task-checklist.md#package-definition-of-done)。研究性 tracking pilot（researcher/pilot-only）不得寫入正式 Assessment history/trend，不與 M19 `peek-click-transfer` 系列 drill id 或 compatibility cohort 混用。
 
+## WP-55 — Tracking On-target Observability without Health（M21）
+
+> 自足 spec：[wp-55-tracking-on-target-observability-no-health/README.md](wp-55-tracking-on-target-observability-no-health/README.md) · checklist：[wp-55-tracking-on-target-observability-no-health/task-checklist.md](wp-55-tracking-on-target-observability-no-health/task-checklist.md) · progress：[wp-55-tracking-on-target-observability-no-health/progress.md](wp-55-tracking-on-target-observability-no-health/progress.md)
+
+| Done | Task | Objective | 相依 | Risk |
+|---|---|---|---|---|
+| [x] | **T0** Scope freeze/no-health audit | [T0-scope-freeze-no-health-audit.md](wp-55-tracking-on-target-observability-no-health/T0-scope-freeze-no-health-audit.md) | 使用者確認 WP-55 納入 stage11 | High |
+| [ ] | **T1** Contact geometry contract | [T1-contact-geometry-contract.md](wp-55-tracking-on-target-observability-no-health/T1-contact-geometry-contract.md) | T0 | High |
+| [ ] | **T2** Export-derived artifact | [T2-export-derived-artifact.md](wp-55-tracking-on-target-observability-no-health/T2-export-derived-artifact.md) | T1 | Med/High |
+| [ ] | **T3** All tracking drill coverage | [T3-all-tracking-drill-coverage.md](wp-55-tracking-on-target-observability-no-health/T3-all-tracking-drill-coverage.md) | T2 | High |
+| [ ] | **T4** Replay observability | [T4-replay-observability.md](wp-55-tracking-on-target-observability-no-health/T4-replay-observability.md) | T2/T3 | Med/High |
+| [ ] | **T5** Report and quality integration | [T5-report-and-quality-integration.md](wp-55-tracking-on-target-observability-no-health/T5-report-and-quality-integration.md) | T3/T4 | Med |
+| [ ] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](wp-55-tracking-on-target-observability-no-health/T6-exit-gate-and-documentation.md) | T1-T5 | Med |
+| [ ] | **T-exit** M21 evidence audit/handoff | [T-exit-m21-evidence-audit-handoff.md](wp-55-tracking-on-target-observability-no-health/T-exit-m21-evidence-audit-handoff.md) | T1-T6 | Med |
+
+WP-55 Definition of Done：見 [wp-55-tracking-on-target-observability-no-health/task-checklist.md「Package Definition of Done」](wp-55-tracking-on-target-observability-no-health/task-checklist.md#package-definition-of-done)。Tracking 跟隨判定必須以 exact-hitbox aim-ray `onTarget` / `epsilonDeg` 為核心，不新增 health/HP/damage/kill lifecycle，也不得把 BR ballistic hit 混入 pure tracking summary。
+
 ## 全階段紀律
 
 1. 修改既有 symbol 前依專案規範執行 CodeGraph impact，記錄 affected files／symbols 與 local 或 cross-module 判斷。
-2. 每個 WP 完成時更新各自 [progress.md](wp-52-peek-click-transfer-pilot-v2/progress.md) / [progress.md](wp-53-peek-click-transfer-v1-formal-release/progress.md) 與 stage [progress.md](progress.md)。
+2. 每個 WP 完成時更新各自 [progress.md](wp-52-peek-click-transfer-pilot-v2/progress.md) / [progress.md](wp-53-peek-click-transfer-v1-formal-release/progress.md) / [progress.md](wp-54-tracking-pilot/progress.md) / [progress.md](wp-55-tracking-on-target-observability-no-health/progress.md) 與 stage [progress.md](progress.md)。
 3. production code 修改後執行 `graphify update .`。
 4. 不得把 `peek-click-transfer-pilot-v1`、`peek_click_transfer_pilot_v2` 與 `peek_click_transfer_v1` 的資料混在同一 compatibility/history cohort。
 5. Formal release 不得在 WP-52 evidence 未完成前開工。
