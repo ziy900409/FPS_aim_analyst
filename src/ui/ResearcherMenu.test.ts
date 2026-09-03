@@ -53,13 +53,14 @@ class FakeDocument {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('createResearcherMenu', () => {
-  it('opens, closes, and disposes a three-entry researcher menu', () => {
+  it('opens, closes, and disposes a four-entry researcher menu', () => {
     const document = new FakeDocument();
     vi.stubGlobal('document', document);
     const callbacks = {
       onSelectDrillControls: vi.fn(),
       onSelectResolutionProtocol: vi.fn(),
       onSelectBrProtocol: vi.fn(),
+      onSelectTrackingPilot: vi.fn(),
     };
     const handle = createResearcherMenu(callbacks);
     const root = document.created.find((element) => element.id === 'researcher-menu')!;
@@ -71,6 +72,7 @@ describe('createResearcherMenu', () => {
       '單一 Drill 調整',
       '解析度 protocol',
       'BR protocol',
+      'Tracking pilot',
     ]);
 
     handle.open();
@@ -79,9 +81,11 @@ describe('createResearcherMenu', () => {
     buttons[0].dispatch('click');
     buttons[1].dispatch('click');
     buttons[2].dispatch('click');
+    buttons[3].dispatch('click');
     expect(callbacks.onSelectDrillControls).toHaveBeenCalledOnce();
     expect(callbacks.onSelectResolutionProtocol).toHaveBeenCalledOnce();
     expect(callbacks.onSelectBrProtocol).toHaveBeenCalledOnce();
+    expect(callbacks.onSelectTrackingPilot).toHaveBeenCalledOnce();
 
     handle.close();
     expect(root.style.display).toBe('none');

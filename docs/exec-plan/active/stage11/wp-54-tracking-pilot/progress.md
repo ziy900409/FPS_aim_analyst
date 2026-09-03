@@ -2,11 +2,34 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3、T4、T5 完成（2026-09-02）；T6（instrumentation pilot）待開工。
+- **Current**：✅ T0、T1、T2、T3、T4、T5 完成（2026-09-02）；T6（instrumentation pilot）進行中——slice 1（main.ts 正式接線）已完成（2026-09-03），synthetic evidence 彙整與真人 3-5 tester 試跑待辦。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-03 — T6 slice 1/N：main.ts 正式接線（TrackingPilotRunner/OperatorScreen ↔ 真實 drill 載入/匯出）
+
+- **落點**：新檔 `src/pilot/trackingPilotSession.ts`（`createTrackingPilotSession()`，app-level wiring
+  seam）+ `src/pilot/trackingPilotSession.test.ts`（11 tests）；改 `src/main.ts`（`loadDrillById`
+  抽出共用 `activateDrill()` + 新增 `loadDrillConfigDirect()`、wiring、render-loop poll、drill-ended
+  handoff）、`src/ui/ResearcherMenu.ts`(+`.test.ts`)（第 4 個入口）、
+  `tests/e2e/session-orchestrator.spec.ts`（研究員選單按鈕數 3→4）。
+- **為什麼另開一個 wiring 模組而不是全部寫在 main.ts**：CodeGraph blast radius 對
+  `loadDrillById`/`setAppMode`/`sessionPlanRunner` 一致回報「⚠️ no covering tests found」——main.ts
+  本身無測試覆蓋，而「running phase 讓 operator overlay 讓位」與「drill ended → completeCurrentBlock」
+  兩條規則是真的邏輯，值得被鎖住。main.ts 只留薄 adapter（同其既有 `createAppProtocolRunner()` 慣例）。
+- **本 slice 刻意不動**：manifest/runner/operator screen 契約與 9 個 pilot `DrillConfig` 逐位不變
+  （只驗證 wiring 本身，見任務交辦 A①）。
+- **`meta.session` 承載 participant/manifest 追溯**：`onManifestStart` 讓 main.ts 把
+  `{participantId, sessionLabel: generatedFromCounterbalanceCell}` 寫進既有 `sessionSetupValues`，
+  於是每個 block 匯出的 `meta.session` 都能回溯到受試者與 counterbalance cell——不新增 schema 欄位
+  （見 D-54.31）。
+- **驗證**：`npx vitest run src/pilot/trackingPilotSession.test.ts` 11/11 passed；
+  `npx tsc --noEmit` exit 0；`npx vitest run`（全專案）203 files / 1948 tests passed（1 skipped
+  file / 2 skipped tests），對照 T5 收尾 202/1937 baseline，無回歸；
+  `npx playwright test tests/e2e/session-orchestrator.spec.ts --project=edge` 8/8 passed（真瀏覽器
+  確認 main.ts 仍正常 boot、研究員選單第 4 個入口存在、既有三條 protocol/Session Plan 路徑無回歸）。
 
 ### 2026-09-02 — T5 slice 5/5：全專案 regression + graphify + operator runbook + 收尾同步（T5 完成）
 
@@ -774,6 +797,12 @@
 | D-54.18 | Run-level `TrackingQualityReason`（T4）收斂為 8 個 kebab-case reason code，且刻意與 T3 `TrackingDynamicsResult` 的 5 個 metric-level blocked reason 使用不同字串（例如 `missing-target-position` vs `missing-target-telemetry`） | FR-54-10 五大類別（overflow/missing target/timestamp/coverage/protocol mismatch）需要具體、封閉、one-shot 定案的字串；兩層 blocked 語意若共用相近字面會讓消費者誤以為是同一件事，README §2.4 本就把兩者定義成不同型別（`TrackingRunEligibility` vs `TrackingDynamicsResult`） | ✅ Confirmed（T4 slice 1/6，2026-09-02） |
 | D-54.19 | `T4` 新檔落在 `src/pilot/` 目錄下多個檔案（`trackingRunEligibility.ts` 起頭，compatibility key/evidence/report 陸續加入），而非全部塞進 README §2.2 規劃的單一 `trackingPilotEvidence.ts` | README §2.2 只是 T0 時期的落點候選，T4 實際範圍（run-level eligibility + WP-54 專屬 compatibility key + JSON evidence model + 自足 HTML report）遠比 WP-52 `peekClickTransferPilotEvidence.ts`（81 行純聚合）大；拆檔維持單一職責、可個別測試，同目錄慣例（`src/pilot/`）不變 | ✅ Confirmed（T4 slice 1/6，2026-09-02） |
 | D-54.17 | Smoothing kernel 版本化為封閉字串表（`tracking-dynamics-smoothing-v1-none` identity / `tracking-dynamics-smoothing-v1-tri3` 對稱三點三角 FIR),未知字串 fail fast | D-54.5 要求「離線固定係數平滑,`smoothingVersion` 版本化」——用封閉 registry + fail-fast 而非允許任意係數陣列,對齊本專案既有「未知 version/kind 必須 fail fast」紀律（`trackingTrajectory.ts` 前例);truth fixture 預設用 `-none`（保持結果可精確追溯到合成訊號本身,不被平滑掩蓋),另加一個 `-tri3` 案例證明有實際套用平滑且不崩潰 | ✅ Confirmed（T3,2026-09-02） |
+
+| D-54.29 | main.ts 新增「直接吃已解析 `DrillConfig` 物件」的載入路徑（把 `loadDrillById()` 主體抽成共用 `activateDrill()`，再加一個薄的 `loadDrillConfigDirect()`），**不**把 9 個 pilot block（更不含 session-1 的 alternate-seed 變體）預先展開成 `availableDrills` 條目 | 任務交辦第 5 點的取捨題。展開成 availableDrills 的方案有兩個硬傷：(1) alternate-seed clone 的 `meta.drillId` 與 primary 完全相同,若在下拉選單各給一條就會出現兩個同名 id（或必須捏造一個從未進 export 的假 id）,選單標籤等於在說謊;(2) D-54.26 已明文「block 用 resolved `DrillConfig` 載入,因為 alternate-seed clone 未在任何 `availableDrills` 表格註冊過」——預先展開等於推翻 T5 已凍結的載入契約。抽取 `activateDrill()` 對既有 `loadDrillById()` 行為逐位不變（唯一差異:`controls?.setSelectedDrill()` 改為僅在「有註冊 id」時呼叫,而既有呼叫端一律有 id）,pilot 路徑則沿用同一條 clearance/TargetManager/SimLoop/recorder 重建鏈路,不另開第二條載入語意。場景固定釘在 `field-low`（pilot block 的 clearance envelope 就是對 field-low 驗的,見 `tracking_core_pr_pilot_v1.test.ts`）,理由同每個綁場景的既有 availableDrills 條目 | ✅ Confirmed（T6 slice 1，2026-09-03） |
+| D-54.30 | Operator screen 掛成**研究員選單第 4 個入口**（`ResearcherMenu` 的 `Tracking pilot` 按鈕），不掛成「單一 Drill 調整」下拉選單的一個 drill；且**不**走 `openSessionSetup()` 的 SessionSetup→EligibilityGate 路徑 | tracking pilot 是 manifest 驅動、自帶 participant/session/rest 表單與 9 個 block 排程的 researcher session,語意與同一選單裡的「解析度 protocol」/「BR protocol」同層,而不是一個可單獨挑來玩的 drill——WP-52 T4 之所以用下拉選單,是因為它註冊的就是「普通 drill」,沒有自己的 operator 畫面（precedent 適用範圍不同,不是被推翻）。不走 eligibility gate:該 gate 的 QHD 門檻是為「受試者內解析度操弄」的研究效度存在（GD-10）,WP-54 不操弄解析度（Session Plan 同理已改用 `SESSION_PLAN_MIN_CONDITION`）;沿用「單一 Drill 調整」那條「研究員選單直接開啟」的既有分支,不替 WP-54 發明新的 gate 需求（`crossOriginIsolated`/frame p95 等效度事實仍照既有路徑寫進 `meta`,可事後稽核） | ✅ Confirmed（T6 slice 1，2026-09-03） |
+| D-54.31 | `exportBlock` 直接重用 main.ts 既有的 `buildCurrentExportPayload()`（不另開匯出組裝路徑）；participant/manifest 追溯改用既有 `meta.session = {participantId, sessionLabel}` 欄位承載,`sessionLabel` 放 `generatedFromCounterbalanceCell` | 任務交辦第 6 點明文要求重用既有 export 組裝邏輯。追溯欄位若新增 schema 欄位就會動到 `Meta`/`exportPayloadSchema` 與所有既有 reader（additive 也要付 parse/serialize/round-trip 代價）,而 `meta.session` 的語意本來就是「這份 run 屬於哪個受試者/哪一場 session」,counterbalance cell 字串本身已是 `protocolVersion:participantId:session-N` 的純函式（D-54.24）,放進 `sessionLabel` 即可完整重建 manifest。副作用記帳:`exportBlock()` 會讓同一個 block 在 drill 結束時組裝兩份 payload（既有 Result/history 路徑一份、pilot 匯出一份）——`recorder.snapshot()` 是唯讀且冪等,兩份逐位相同,且組裝落在 run 結束後的非熱路徑（T4 benchmark:單次 ~23ms 冷/~8ms 暖）,不值得為此改動 T5 的 `exportBlock` 契約 | ✅ Confirmed（T6 slice 1，2026-09-03） |
+| D-54.32 | Operator overlay 在 `phase.kind === 'running'` 期間 `close()` 讓位、其餘 phase 自動 `open()`；drill 走到 `ended` 時由 main.ts 呼叫 `handleDrillEnded()` 自動 `completeCurrentBlock()`（不要求操作員在跑動中按 Complete） | `TrackingPilotOperatorScreen` 的 `overlayCss` 是 `inset:0` 全視窗 scrim（不透明度 0.82）,不讓位的話受測者根本看不到目標。極性與 main.ts 既有的 `restOverlay` 完全對稱（`SessionRunner` 的 `onPhaseChange` 在 rest 顯示、play 隱藏;pilot 的 rest 倒數本來就長在 operator screen 裡,所以極性相反）。**已知缺口（additive,不影響已交付契約）**:overlay 讓位期間操作員按不到 `Abort block`;等效處置是讓 block 跑完後在 block-outcome 面板按 `Retry block` 並填理由——retry 是 append-only、原 attempt 的 export 與理由都留在 `records`/`retryLog`,可稽核性不低於 abort（abort 反而不留 payload）。若真人試跑回報需要跑動中中止,再依 runbook「遺留缺口」條目做 additive 補強 | ✅ Confirmed（T6 slice 1，2026-09-03） |
+| D-54.33 | `src/pilot/trackingPilotOperatorHarness.ts` / `tracking-pilot-harness.html` 保留為 dev-only smoke harness，不因正式接線完成而刪除 | 任務交辦第 8 點的判斷題。兩者測的不是同一件事:harness 用 fake `loadDrillConfig`/`exportBlock` 讓 `tests/e2e/tracking-pilot-operator.spec.ts` 能在**秒級**走完 9 個 block 的鍵盤/狀態流程（D-54.28 採認的 a11y 證據形式）,正式路徑一個 block 就是 25 秒真實 sim,不可能拿來當 a11y 迴歸閘。harness 從未被 `src/main.ts` import（不進 production bundle）,維護成本≈0;刪掉會直接讓 T5 的 a11y 證據失去可重跑載體 | ✅ Confirmed（T6 slice 1，2026-09-03） |
 
 ## Open Questions
 

@@ -55,6 +55,7 @@ import { createSessionPlanSetup, type SessionPlanSelection } from './ui/SessionP
 import { createRestOverlay } from './ui/RestOverlay.ts';
 import { createSessionRunner, type SessionRunnerHandle } from './session/SessionRunner.ts';
 import { KNOWN_SESSION_FAMILY_IDS } from './session/sessionSchedule.ts';
+import { createTrackingPilotSession, type TrackingPilotSessionHandle } from './pilot/trackingPilotSession.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill, type DrillLoadOptions } from './drill/DrillLoader.ts';
@@ -433,6 +434,9 @@ let researcherMenu: ResearcherMenuHandle | undefined;
 // 時能安全 no-op，而不是撞 TDZ ReferenceError（controls 賦值點之前有 top-level await，使用者/自動化
 // 測試的點擊可能落在這個視窗內）。
 let controls: ControlsHandle | undefined;
+// WP-54 / T6：同 KI-013 pattern —— 研究員選單的 handler 早於本 session 的建構點掛上，宣告前置
+// 讓建構完成前的點擊安全 no-op，而不是撞 TDZ ReferenceError。
+let trackingPilotSession: TrackingPilotSessionHandle | undefined;
 let markProtocolFullscreenExit: (() => void) | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
   // Session Plan（選手表現測試,WP-42）不操弄/比較解析度條件——四家族一律 native 載入,
@@ -560,6 +564,14 @@ researcherMenu = createResearcherMenu({
   },
   onSelectResolutionProtocol: () => openSessionSetup('resolution-protocol'),
   onSelectBrProtocol: () => openSessionSetup('br-tracking-protocol'),
+  // WP-54 / T6：tracking pilot 自帶 participant/session/rest 表單（operator screen），不走
+  // `openSessionSetup()` 的 SessionSetup→EligibilityGate 路徑——本 WP 不操弄解析度條件，
+  // 沿用「單一 Drill 調整」那條「研究員選單直接開啟」的既有分支語意。
+  onSelectTrackingPilot: () => {
+    researcherMenu?.close();
+    setAppMode('researcher');
+    trackingPilotSession?.open();
+  },
 });
 pointerLock.onChange((locked) => {
   topLeftControls.style.display = locked ? 'none' : 'flex';
@@ -1139,14 +1151,24 @@ function installSceneLoad(
   controls?.setSelectedScene(activeSceneConfig.sceneId);
 }
 
-async function loadDrillById(drillId: string): Promise<void> {
+/**
+ * Shared drill-activation path. Two callers, one behaviour: `loadDrillById()` resolves a
+ * registered `availableDrills` entry, and `loadDrillConfigDirect()` (WP-54 / T6) hands over an
+ * already-resolved `DrillConfig` that no dropdown entry declares — a tracking-pilot block, whose
+ * session-1 variants are alternate-seed clones of a registered config (D-54.26).
+ * `selectedDrillId` is supplied only for registered ids: the researcher dropdown must never be
+ * forced to a value it has no `<option>` for.
+ */
+async function activateDrill(
+  source: unknown,
+  sceneId: string | undefined,
+  loadOptions: DrillLoadOptions | undefined,
+  selectedDrillId: string | undefined,
+): Promise<void> {
   activeWeaponOverride = undefined; // WP-47 / T2：reset-per-drill，避免 BR 專屬武器條件被手動選擇靜默覆蓋。
-  const option = availableDrills.find((candidate) => candidate.id === drillId);
-  if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
-
-  const requiredScene = option.sceneId !== undefined ? findSceneOption(option.sceneId) : undefined;
+  const requiredScene = sceneId !== undefined ? findSceneOption(sceneId) : undefined;
   const targetSceneConfig = requiredScene?.config ?? activeSceneConfig;
-  const nextConfig = loadDrill(option.source, targetSceneConfig, option.loadOptions);
+  const nextConfig = loadDrill(source, targetSceneConfig, loadOptions);
   const needsSceneLoad =
     requiredScene !== undefined &&
     (requiredScene.config.sceneId !== activeSceneConfig.sceneId || activeSceneFallback);
@@ -1155,8 +1177,8 @@ async function loadDrillById(drillId: string): Promise<void> {
 
   drillRunner.restart();
   activeDrillConfig = nextConfig;
-  activeDrillSource = option.source;
-  activeDrillLoadOptions = option.loadOptions ?? {};
+  activeDrillSource = source;
+  activeDrillLoadOptions = loadOptions ?? {};
   activeTargetManager = createTargetManager(nextConfig);
   activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
   resetRunPresentation();
@@ -1165,9 +1187,23 @@ async function loadDrillById(drillId: string): Promise<void> {
   recorder.configureMouseIntegration({ gain: currentMouseGain() }); // KI-005 / A：新 drill 武器的感度 gain（同一批動作）。
   targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：新 drill 的 hitbox shape 生效。
   drillRunner.start(activeDrillConfig);
-  controls?.setSelectedDrill(option.id);
+  if (selectedDrillId !== undefined) controls?.setSelectedDrill(selectedDrillId);
   controls?.setSelectedWeapon(nextConfig.weaponId ?? 'ak47');
   syncControlsVisibility();
+}
+
+async function loadDrillById(drillId: string): Promise<void> {
+  const option = availableDrills.find((candidate) => candidate.id === drillId);
+  if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
+  await activateDrill(option.source, option.sceneId, option.loadOptions, option.id);
+}
+
+/** WP-54 / T6 — loads a resolved tracking-pilot `DrillConfig` object. Pinned to `field-low` for
+ * the same reason every scene-bound `availableDrills` entry pins one: the pilot blocks' clearance
+ * envelope is validated against `field-low` (`tracking_core_pr_pilot_v1.test.ts`), so inheriting
+ * whichever scene the researcher happened to leave loaded could reject a valid pilot block. */
+async function loadDrillConfigDirect(config: DrillConfig): Promise<void> {
+  await activateDrill(config, fieldLow.sceneId, undefined, undefined);
 }
 
 async function loadSceneById(sceneId: string): Promise<void> {
@@ -1307,6 +1343,25 @@ function setProtocolStatus(text: string, showNext: boolean): void {
   protocolStatus.style.display = 'flex';
 }
 
+// WP-54 / T6 slice 1 — tracking pilot 正式接線：T5 交付的 runner/operator screen 首次接上真實
+// 的 drill 載入與匯出路徑（取代 `trackingPilotOperatorHarness.ts` 的 fake stub，D-54.27）。
+// `exportBlock` 直接重用既有的 `buildCurrentExportPayload()`，pilot 匯出與 ProtocolRunner/
+// SessionRunner 匯出共用同一條組裝路徑（不另開第二條匯出語意）。
+trackingPilotSession = createTrackingPilotSession({
+  loadDrillConfig: loadDrillConfigDirect,
+  exportBlock: () => buildCurrentExportPayload(),
+  onBlockExported: (payload) => downloadJSON(payload, { basename: exportBasename(payload) }),
+  onStatus: (text) => setProtocolStatus(text, false),
+  // 讓每個 block 匯出都能回溯到受試者與 manifest cell：重用既有的 `meta.session` 欄位
+  // （participantId + sessionLabel），不新增 schema 欄位。
+  onManifestStart: (manifest) => {
+    sessionSetupValues = {
+      participantId: manifest.participantId,
+      sessionLabel: manifest.generatedFromCounterbalanceCell,
+    };
+  },
+});
+
 const restOverlay = createRestOverlay();
 const sessionPlanRunner: SessionRunnerHandle = createSessionRunner({
   loadDrillById,
@@ -1425,6 +1480,7 @@ protocolNextButton.addEventListener('click', () => void beginNextProtocolConditi
 // （README §2.7/執行規則：不把 replay 判斷散落到多處）。
 function liveFrame(now: number): void {
   sessionPlanRunner.poll(now);
+  trackingPilotSession?.poll(now); // WP-54 / T6：pilot 的 rest 倒數，比照 SessionRunner.poll()。
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
   const { alpha } = simLoop.pump(now);
   const phase = drillRunner.phase;
@@ -1474,7 +1530,11 @@ function liveFrame(now: number): void {
       // （D-48.P6，NFR-48.8）。
       void showResultAndTrackHistory(payload);
       const sessionPhase = sessionPlanRunner.phase;
-      if (sessionPhase.kind === 'warmup') {
+      // WP-54 / T6：pilot block 由 TrackingPilotRunner 擁有這一輪的匯出/品質判定/下一個 block，
+      // 不落入 Session Plan 或 protocol 的完成分支。
+      if (trackingPilotSession?.handleDrillEnded() === true) {
+        // no-op：handleDrillEnded() 已接手（回傳 true 才代表確有 pilot block 正在跑）。
+      } else if (sessionPhase.kind === 'warmup') {
         await sessionPlanRunner.advance();
       } else if (sessionPhase.kind === 'family') {
         downloadJSON(payload, { basename: exportBasename(payload) });

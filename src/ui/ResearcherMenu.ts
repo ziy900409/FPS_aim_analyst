@@ -4,6 +4,8 @@ export interface ResearcherMenuOptions {
   readonly onSelectDrillControls: () => void;
   readonly onSelectResolutionProtocol: () => void;
   readonly onSelectBrProtocol: () => void;
+  /** WP-54 / T6: opens the tracking pilot operator screen (researcher-only manifest run). */
+  readonly onSelectTrackingPilot: () => void;
   readonly parent?: HTMLElement;
 }
 
@@ -44,12 +46,17 @@ export function createResearcherMenu(options: ResearcherMenuOptions): Researcher
   const drillControlsButton = makeButton('單一 Drill 調整', '顯示單一 drill 與場景控制');
   const resolutionProtocolButton = makeButton('解析度 protocol', '執行受試者內解析度 × 偵測 protocol');
   const brProtocolButton = makeButton('BR protocol', '執行 BR 跟槍 ADS × 彈道 × 角尺寸 protocol');
+  // WP-54 / T6：tracking pilot 是 manifest 驅動的 researcher-only session（自帶
+  // participant/session/rest 表單與 operator 畫面），語意與上面兩個 protocol 入口同層,
+  // 不是「單一 Drill 調整」下拉選單裡的一個 drill。
+  const trackingPilotButton = makeButton('Tracking pilot', '執行 WP-54 tracking pilot manifest（researcher-only）');
 
   drillControlsButton.addEventListener('click', options.onSelectDrillControls);
   resolutionProtocolButton.addEventListener('click', options.onSelectResolutionProtocol);
   brProtocolButton.addEventListener('click', options.onSelectBrProtocol);
+  trackingPilotButton.addEventListener('click', options.onSelectTrackingPilot);
 
-  root.append(title, drillControlsButton, resolutionProtocolButton, brProtocolButton);
+  root.append(title, drillControlsButton, resolutionProtocolButton, brProtocolButton, trackingPilotButton);
   parent.appendChild(root);
 
   return {

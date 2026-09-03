@@ -55,7 +55,8 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     await page.getByRole('button', { name: '研究員模式', exact: true }).click();
     const researcherMenu = page.locator('#researcher-menu');
     await expect(researcherMenu).toBeVisible();
-    await expect(researcherMenu.locator('button')).toHaveCount(3);
+    // WP-54 T6 新增第四個研究員入口「Tracking pilot」（tracking pilot manifest operator screen）。
+    await expect(researcherMenu.locator('button')).toHaveCount(4);
     await expect(drillControls).toBeVisible();
 
     await researcherMenu.getByRole('button', { name: '單一 Drill 調整', exact: true }).click();
