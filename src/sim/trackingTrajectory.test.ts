@@ -114,6 +114,52 @@ describe('createTrackingTrajectory — band-limited-2d-v1', () => {
   });
 });
 
+/**
+ * KI-019 fixture. Same parameter shape as the shipped `tracking_reversal_pilot_v1_medium` cell
+ * (whose demanded travel per leg, `speedMax x (intervalMax - ramp)` = 25deg, exceeds the 16deg
+ * window, so legs routinely end pinned against a bound) with the seed picked so the RNG walk
+ * actually enters the degenerate state: pre-fix this config produced **3140 legs, 22.9% of the run
+ * stationary, and a 758 ms stretch frozen at a corner**; post-fix it is 42 legs / 1.3% / 16 ms.
+ *
+ * Deliberately a synthetic fixture rather than the shipped cell: the medium cell's parameters are
+ * still awaiting a protocol decision (KI-019 F-A2), and this invariant must keep holding whatever
+ * they become. ~10% of seeds hit the state at this shape, so it is not a hand-tuned curiosity.
+ */
+const REVERSAL_SATURATING: Extract<TrackingTrajectoryConfig, { kind: 'reversal-2d-v1' }> = {
+  kind: 'reversal-2d-v1',
+  seed: 13,
+  durationMs: 25_000,
+  angularBoundsDeg: [-8, 8],
+  speedRangeDegPerSec: [5, 20],
+  reversalIntervalMs: [800, 1400],
+  accelerationRampMs: 150,
+};
+
+/** Samples at the sim rate and reports how much of the run the target is effectively stationary —
+ * the observable signature of a bound-pinned schedule (KI-019). */
+function stationaryProfile(
+  config: Extract<TrackingTrajectoryConfig, { kind: 'reversal-2d-v1' }>,
+  simHz = 128,
+): { readonly stillFraction: number; readonly maxStillRunMs: number } {
+  const trajectory = createTrackingTrajectory(config);
+  const out = makeSample();
+  const tickCount = Math.round((config.durationMs / 1000) * simHz);
+  let still = 0;
+  let run = 0;
+  let maxRun = 0;
+  for (let i = 0; i < tickCount; i++) {
+    trajectory.sample(i / simHz, out);
+    if (Math.hypot(out.yawVelocityDegPerSec, out.pitchVelocityDegPerSec) < 0.5) {
+      still += 1;
+      run += 1;
+      maxRun = Math.max(maxRun, run);
+    } else {
+      run = 0;
+    }
+  }
+  return { stillFraction: tickCount === 0 ? 0 : still / tickCount, maxStillRunMs: (maxRun * 1000) / simHz };
+}
+
 describe('createTrackingTrajectory — reversal-2d-v1', () => {
   it('never exceeds the configured angular bounds across a dense sweep', () => {
     const trajectory = createTrackingTrajectory(REVERSAL_BASE);
@@ -209,6 +255,42 @@ describe('createTrackingTrajectory — reversal-2d-v1', () => {
       trajectoryA.sample(ageSec, outA);
       trajectoryB.sample(ageSec, outB);
       expect(outB).toEqual(outA);
+    }
+  });
+
+  // --- KI-019 regression: bound saturation must not degenerate the schedule ---
+
+  it('never emits a zero-velocity leg, even when every leg saturates the angular bounds (KI-019)', () => {
+    const trajectory = createTrackingTrajectory(REVERSAL_SATURATING);
+    expect(trajectory.changes.length).toBeGreaterThan(0);
+    for (const change of trajectory.changes) {
+      // A leg whose cruise velocity is zero on both axes is not a reversal — it is the generator
+      // spinning against a bound. Pre-fix this config produced thousands of them.
+      expect(Math.hypot(change.yawVelocityAfterDegPerSec, change.pitchVelocityAfterDegPerSec)).toBeGreaterThan(0);
+    }
+    // Leg count stays proportional to the reversal schedule instead of collapsing into slivers
+    // (pre-fix this fixture generated 3140 legs for a 25 s block; the shipped medium cell, 6644).
+    expect(trajectory.changes.length).toBeLessThan(200);
+  });
+
+  it('keeps a bound-saturating target moving instead of freezing it at a corner (KI-019)', () => {
+    const { stillFraction, maxStillRunMs } = stationaryProfile(REVERSAL_SATURATING);
+    // Rest-to-rest legs are momentarily still at every leg boundary, so a small fraction is by
+    // design; a pinned schedule instead parks the target (pre-fix: 22.9% still, 758 ms frozen).
+    expect(stillFraction).toBeLessThan(0.05);
+    expect(maxStillRunMs).toBeLessThanOrEqual(50);
+  });
+
+  it('still respects the angular bounds under saturation (KI-019 fix must not trade bounds for motion)', () => {
+    const trajectory = createTrackingTrajectory(REVERSAL_SATURATING);
+    const out = makeSample();
+    const [lowDeg, highDeg] = REVERSAL_SATURATING.angularBoundsDeg;
+    for (let ms = 0; ms <= REVERSAL_SATURATING.durationMs; ms += 5) {
+      trajectory.sample(ms / 1000, out);
+      expect(out.yawDeg).toBeGreaterThanOrEqual(lowDeg - 1e-6);
+      expect(out.yawDeg).toBeLessThanOrEqual(highDeg + 1e-6);
+      expect(out.pitchDeg).toBeGreaterThanOrEqual(lowDeg - 1e-6);
+      expect(out.pitchDeg).toBeLessThanOrEqual(highDeg + 1e-6);
     }
   });
 

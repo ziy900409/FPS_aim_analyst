@@ -13,8 +13,49 @@ import {
   trackingReversalPilotV1High,
   trackingReversalPilotV1Medium,
 } from './tracking_reversal_pilot_v1.ts';
+import { createTrackingTrajectory } from '../sim/trackingTrajectory.ts';
 
 describe('tracking_reversal_pilot_v1 — medium/high reversal-density configs (WP-54 / T2)', () => {
+  // KI-019 regression: the shipped cells themselves, not just a synthetic config. The medium cell
+  // shipped a schedule that froze the target at a corner for a third of the block (6644 legs, 32.6%
+  // stationary) and no test noticed, because every existing assertion was about continuity, bounds
+  // and acceleration — all of which a frozen target satisfies.
+  it('both density cells deliver a continuously moving target (KI-019)', () => {
+    for (const drill of TRACKING_REVERSAL_PILOT_V1_CANDIDATES) {
+      const config = drill.targets.trackingTrajectory;
+      if (config === undefined) throw new Error(`${drill.drillId} has no trackingTrajectory`);
+      const trajectory = createTrackingTrajectory(config);
+      const out = { yawDeg: 0, pitchDeg: 0, yawVelocityDegPerSec: 0, pitchVelocityDegPerSec: 0 };
+      const tickCount = Math.round((config.durationMs / 1000) * SIM_HZ);
+      let still = 0;
+      let run = 0;
+      let maxRun = 0;
+      for (let i = 0; i < tickCount; i++) {
+        trajectory.sample(i / SIM_HZ, out);
+        if (Math.hypot(out.yawVelocityDegPerSec, out.pitchVelocityDegPerSec) < 0.5) {
+          still += 1;
+          run += 1;
+          maxRun = Math.max(maxRun, run);
+        } else {
+          run = 0;
+        }
+      }
+      const label = drill.drillId;
+      expect(still / tickCount, `${label} stationary fraction`).toBeLessThan(0.05);
+      expect((maxRun * 1000) / SIM_HZ, `${label} longest stationary run (ms)`).toBeLessThanOrEqual(50);
+      for (const change of trajectory.changes) {
+        expect(
+          Math.hypot(change.yawVelocityAfterDegPerSec, change.pitchVelocityAfterDegPerSec),
+          `${label} zero-velocity leg`,
+        ).toBeGreaterThan(0);
+      }
+      // Exact leg count stays geometry-dependent until KI-019 F-A2 re-parameterizes the medium
+      // cell (its demanded travel per leg still exceeds the angular window); this only pins down
+      // "not thousands of slivers".
+      expect(trajectory.changes.length, `${label} leg count`).toBeLessThan(200);
+    }
+  });
+
   it('both blocks load and pass field-low clearance', () => {
     for (const drill of TRACKING_REVERSAL_PILOT_V1_CANDIDATES) {
       expect(() => loadDrill(drill, fieldLow), drill.drillId).not.toThrow();

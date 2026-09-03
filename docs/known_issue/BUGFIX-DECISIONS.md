@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-019](KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | `reversal-2d-v1` 的 leg 長度由兩軸共用、貼牆那一軸把整個 leg 壓成 0、sign 又無條件翻面 → 「兩軸同側貼牆」成為吸收態，排程以 1ms 為步長寫到結束；實測 `tracking_reversal_pilot_v1_medium` 產生 6644 筆 leg、32.6% 時間目標凍結在角落，真人 pilot 該 block 資料作廢 | BD-019(§3，方向選擇改 room-aware＋零長度 leg 改 fail fast；config 幾何不一致的再參數化 F-A2 留給研究者決定) | 🟡 F-A1 已修(2026-09-03)、F-A2 待決 |
 | [KI-018](KI-018-history-search-keystroke-focus-steal.md) | History「搜尋 Participant」逐字輸入時，`navigator.replace()` 每次都給 focus-on-navigation guard 一個新的 route 物件參考，被誤判為真正導覽而搶焦點，導致除首字元外的按鍵全部遺失 | BD-018(§3，focus-on-navigation guard 改語意比較) | ✅ 已修(2026-09-01) |
 | [KI-017](KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) | Run Detail「3D 重播」在 `replayController`（原頂層 `const`，檔案尾端才賦值）初始化完成前被點擊會拋 `ReferenceError`，與 KI-013 同一類根因、不同變數——KI-013 §6 OQ-KI13-1 預告的風險具體重現 | BD-017(§3，`replayController` 比照 KI-013 改為提早宣告的 `let \| undefined` + `onReplay` 補可見訊息 guard) | ✅ 已修(2026-09-01) |
 | [KI-016](KI-016-session-plan-family-order-validator-stale-allowlist.md) | `metadata.ts` 的 `requireSessionPlanFamilyOrder` 仍寫死驗證 `TEST_FAMILY_IDS`，未跟上 WP-45 T5 在 `SessionRunner.ts` 建立的 `KNOWN_SESSION_FAMILY_IDS` 聯集——目前被「preset 切換未接進操作端 UI」意外遮住未觸發，一旦 `families` 含 `'peek-click-transfer'` 就會在匯出時 throw | BD-016(§2，兩份允許清單收斂成 `sessionSchedule.ts` 匯出的單一來源，`SessionRunner.ts`/`metadata.ts` 皆改為 import) | ✅ 已修(2026-09-01) |
@@ -44,6 +45,20 @@
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
 
 （目前無 open 項目。）
+
+### BD-019 🟡 KI-019 — reversal 排程貼牆退化：room-aware 方向選擇 + 零長度 leg fail fast(2026-09-03)
+
+| | |
+|---|---|
+| **發現處 / 根因** | [KI-019](KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) / WP-54 T6 instrumentation pilot 的第一份真人資料（P01，2026-09-03）。根因(KI-019 §2)：leg 長度取兩軸 `min`（刻意共用 `rampSec`）＋`solveAxisProfile(room→0)` 回傳長度≈0＋sign 每 leg 無條件翻面 → 「yaw/pitch 同側貼牆」時每次迭代恰好有一軸 room=0，位置永不改變，排程以 1ms 步長寫到 `durationMs`（`MAX_REVERSAL_LEGS=100_000` 在 25 秒內擋不下來，故不 fail fast）。 |
+| **決策(修法選項)** | 採 **room-aware 方向選擇**：預定方向放不下「最小可用 leg」（門檻 = `speedMin × rampSec`，由 config 導出而非魔術常數）時改朝空間較大的一側；另把「推進 1ms」安全閥換成 `durationSecThisLeg <= 0` 時 throw。**不採**「改成每軸各自獨立的 leg 長度」——那會拆掉「單一 `rampSec` 同時驅動兩軸」的既有設計（`evaluateLeg` 依賴它），blast radius 遠大於本 bug；**不採**「只把 `MAX_REVERSAL_LEGS` 調小」——那只是把靜默退化換成載入失敗，仍然沒有讓目標動起來。 |
+| **理由** | 修法只在「預定方向沒有可用空間」時改變行為：幾何一致的 config 輸出**逐位不變**——已用真人匯出檔驗證（`high` cell 記錄的 60 筆 `target_motion_change` 與修後重算排程 `mismatched=0`），而壞掉的 medium cell 從 6644 legs/32.6% 靜止降到 46/1.6%。門檻取自 config 而非常數，避免在 sim 層新增未版本化的旋鈕。 |
+| **偏離計畫** | 依 BD-001 已建立的慣例：3 個回歸測試先在工作區證實**修前為紅**（暫時停用修法後重跑）、修後為綠，但測試與修法合併為單一已驗證綠的 commit，不提交紅測試。 |
+| **遺留 OQ / 未做** | **F-A2（KI-019 §5）**：medium cell 的 config 仍幾何不一致（每 leg 需求 25° > window 16°），修後仍有 46 legs vs config 宣稱的約 23 次，「reversal density」自變數依然不等於 config 值。三個再參數化選項（放寬角度視窗／降速度上限／縮短間隔上限）**改動 T0 預註冊 candidate，屬研究決策**，已交研究者；配套的建構期一致性守衛（`speedMax × (intervalMax − ramp) > window` 即 fail fast）刻意與再參數化同批落地，否則現行 config 會在載入時直接 throw。**資料處置**：P01 的 medium block 作廢待重跑。 |
+| **影響面** | `src/sim/trackingTrajectory.ts` `createReversal2dV1()`（唯一 runtime 改動；新增 `roomAwareSign()`、`LEG_TIME_EPSILON_MS`、config 導出的 `minUsableRoomDeg`）；回歸測試 `src/sim/trackingTrajectory.test.ts` +3、`src/drill/tracking_reversal_pilot_v1.test.ts` +1。`reversal-2d-v1` 僅被 WP-54 兩個 pilot cell 使用，legacy drill 不受影響。驗證：`tsc --noEmit` 0、`vitest run` 205 files / 1973 tests 全綠。 |
+| **狀態** | 🟡 F-A1 已修 + 落地（2026-09-03；branch `main`）；F-A2 待研究者決定後另一批落地。 |
+
+---
 
 ### BD-018 🟢 KI-018 — History「搜尋 Participant」逐字輸入焦點被搶走；已修復(2026-09-01, WP-49 owner)
 

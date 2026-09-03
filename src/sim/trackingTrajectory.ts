@@ -218,6 +218,37 @@ function createBandLimited2dV1(
  * 若邊界收斂造成退化 leg 連續出現，寧可 fail fast 也不要無限迴圈。 */
 const MAX_REVERSAL_LEGS = 100_000;
 
+/** 剩餘時間低於此值即視為排程結束（浮點殘差不再開一個新 leg）。 */
+const LEG_TIME_EPSILON_MS = 1e-6;
+
+
+
+/**
+ * 方向選擇（KI-019）：若預定方向剩下的空間連一個「最小可用 leg」都放不下，改朝空間較大的另一側。
+ *
+ * 沒有這一步時，貼牆的那一軸會解出 room≈0 → `solveAxisProfile` 回傳 durationSec≈0 → **共用**的
+ * leg 長度被歸零或壓到 1ms 級（兩軸共用同一個 duration/rampSec，見 `createReversal2dV1` 內註解）；
+ * 而 sign 是每個 leg 無條件翻面，於是「yaw 貼 +8、pitch 貼 +8」時每次迭代恰好有一軸貼牆，退化狀態
+ * 可以永遠交替下去——實測 `tracking_reversal_pilot_v1_medium` 因此產生 6644 筆 1ms 零速度 leg、
+ * 整段 32.6% 的時間目標靜止在角落（KI-019 §1）。
+ *
+ * `minUsableRoomDeg` 由 config 導出（`speedRangeDegPerSec[0] × accelerationRampMs`＝最慢速度跑完
+ * 一次 ramp-up/ramp-down 的位移），不是魔術常數：小於這個位移的「leg」在 rest-to-rest 設計下只是
+ * 貼牆抖動，不是一次 reversal。
+ */
+function roomAwareSign(
+  sign: number,
+  posDeg: number,
+  lowDeg: number,
+  highDeg: number,
+  minUsableRoomDeg: number,
+): number {
+  const intendedRoom = sign >= 0 ? highDeg - posDeg : posDeg - lowDeg;
+  if (intendedRoom >= minUsableRoomDeg) return sign;
+  const oppositeRoom = sign >= 0 ? posDeg - lowDeg : highDeg - posDeg;
+  return oppositeRoom > intendedRoom ? -sign : sign;
+}
+
 interface ReversalLeg {
   readonly startMs: number;
   readonly durationSec: number;
@@ -322,6 +353,9 @@ function createReversal2dV1(
     throw new Error('trackingTrajectory: accelerationRampMs must be smaller than reversalIntervalMs[0]');
   }
   const rampNominalSec = rampMsConfig / 1000;
+  // 見 `roomAwareSign`：一個 leg 至少要放得下「最慢速度的完整 ramp-up + ramp-down」位移，否則它
+  // 只是貼牆抖動。純由 config 導出，不引入新的 config 旋鈕。
+  const minUsableRoomDeg = speedMin * rampNominalSec;
 
   const rng = createRan1(config.seed);
   const legs: ReversalLeg[] = [];
@@ -336,7 +370,7 @@ function createReversal2dV1(
   let yawSign = 1;
   let pitchSign = -1;
 
-  while (tMs < durationMs) {
+  while (durationMs - tMs > LEG_TIME_EPSILON_MS) {
     if (legs.length >= MAX_REVERSAL_LEGS) {
       throw new Error('trackingTrajectory: reversal-2d-v1 exceeded MAX_REVERSAL_LEGS — check config bounds');
     }
@@ -344,6 +378,10 @@ function createReversal2dV1(
     const candidateDurationSec = randomFloat(rng, intervalMin, intervalMax) / 1000;
     const yawMagnitude = randomFloat(rng, speedMin, speedMax);
     const pitchMagnitude = randomFloat(rng, speedMin, speedMax);
+
+    // KI-019：貼牆的軸改朝有空間的一側，否則它會把共用的 leg 長度壓到抖動級並無限交替退化。
+    yawSign = roomAwareSign(yawSign, yawPos, lowDeg, highDeg, minUsableRoomDeg);
+    pitchSign = roomAwareSign(pitchSign, pitchPos, lowDeg, highDeg, minUsableRoomDeg);
 
     const yawRoomDeg = Math.max(yawSign >= 0 ? highDeg - yawPos : yawPos - lowDeg, 0);
     const pitchRoomDeg = Math.max(pitchSign >= 0 ? highDeg - pitchPos : pitchPos - lowDeg, 0);
@@ -394,9 +432,13 @@ function createReversal2dV1(
     yawSign = -yawSign;
     pitchSign = -pitchSign;
 
-    // Degenerate leg safety valve (room rounded to ~0 at a bound): force forward progress by one
-    // millisecond rather than spin forever recomputing a zero-length leg at the same instant.
-    tMs += durationSecThisLeg > 0 ? durationSecThisLeg * 1000 : 1;
+    // KI-019：`roomAwareSign` 保證每個 leg 至少有一側的完整 window 可走，故 duration 恆為正
+    // （唯一的下界是剩餘時間，而 while 條件已排除剩餘時間 ≈ 0）。若仍走到 0，代表 bounds 本身
+    // 退化——fail fast，不再用「推進 1ms」的安全閥產生零速度 leg 洗掉整段刺激。
+    if (durationSecThisLeg <= 0) {
+      throw new Error('trackingTrajectory: reversal-2d-v1 produced a zero-length leg — check angularBoundsDeg');
+    }
+    tMs += durationSecThisLeg * 1000;
   }
 
   return {
