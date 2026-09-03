@@ -110,7 +110,11 @@ if (options.hitbox.shape === 'sphere') {
 ## 6. DoD
 
 - [ ] §4.1–4.3 落地，§5 六項測試修前紅／修後綠。
-- [ ] 確認 `holdClickMetrics`/`researchMetrics` 消費的 drill 是否含 sphere hitbox，逐一記錄結論。
+- [x] 確認 `holdClickMetrics`/`researchMetrics` 消費的 drill 是否含 sphere hitbox（slice B 稽核，2026-09-03）：
+  - **`holdClickMetrics` — 不受影響，且本 KI §3 的前提有誤。** 它**沒有** import `deriveTrackingSamples`（實測：`grep -rn deriveTrackingSamples src/ --include=*.ts` 的非測試命中檔為 `researchMetrics` / `spiderShotMetrics` / `trackingContact` / `trackingDynamics` / `trackingPilotEvidence`，不含 `holdClickMetrics`）；它走的是 `deriveVisibilityTimeline`（`visibilityDerivation`）。
+  - **`researchMetrics` — 不受影響。** `computeCurveMetrics()`（:163）雖然呼叫 `deriveTrackingSamples`，但只讀 `sample.epsilonDeg`（:170）——該量走 `angularEccentricityDeg()`（準心 vs 目標**中心**夹角），與 shape 無關；它不讀 `onTarget`。
+  - **其餘 `onTarget` 消費者（都已涵蓋）**：`spiderShotMetrics`（slice A）、`trackingContact`（slice B）、`trackingDynamics:436-445`（first-on-target / drop-reacquire，隨 slice C 的 WP-54 config 一起改變，屬預期內）、`trackingPilotEvidence`（只透傳 samples trace）。
+- [ ] **新發現（latent，非本 KI 根因，待使用者裁定是否開 KI-022）**：`src/scene/occlusionGeometry.ts` 的 `visibleFractionForTarget()`（:128-143）的 9-sample 對 8 個**外接立方體角點**取樣，同樣**不讀 `shape`**（對 sphere 而言那 8 點在半徑 √3·r 處，全在球外）。目前是 **latent 而非 live**：有 `visibility` 設定的 drill（`hold_click_v1`、`peek_click_transfer_*`）hitbox 全是 box，而唯一的 sphere drill `spider_shot_v2` 沒有 visibility/occlusion 設定；slice C 的 WP-54 pilot 也沒有（`tracking_core_pr_pilot_v1` 無 `visibility`/`sceneId`）。依本檔 §7，這**不是**同一根因的另一個消費者（不同函式、不同構念：occlusion coverage 非 on-target），也沒有在任何現行資料上算錯數字，故本次**不**自行開 KI-022；但一旦有人給 sphere drill 加 visibility 設定，它會静默高估曝光面積。
 - [ ] `spider-shot-v2` 既有 metrics 語意變更記入 WP-36/WP-44 或 stage9 的 progress（**這是正式
       Assessment drill 的指標語意變更，必須有紀錄**；歷史匯出檔的 settle/overshoot 需標註為
       pre-fix 幾何）。

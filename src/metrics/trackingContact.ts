@@ -144,7 +144,13 @@ function hasValidHitbox(payload: ExportPayload, options: TrackingContactDerivati
       positiveFinite(metaHitbox.widthU) &&
       positiveFinite(metaHitbox.heightU) &&
       positiveFinite(metaHitbox.depthU) &&
-      (metaHitbox.shape === undefined || metaHitbox.shape === 'box')
+      // A sphere takes its diameter from `widthU` alone (KI-021), so unequal axes would be
+      // silently dropped — mirror `schema.ts`'s sphere rule instead of deriving from a lie.
+      (metaHitbox.shape === undefined ||
+        metaHitbox.shape === 'box' ||
+        (metaHitbox.shape === 'sphere' &&
+          metaHitbox.widthU === metaHitbox.heightU &&
+          metaHitbox.heightU === metaHitbox.depthU))
     );
   }
   const optionHitbox = options.hitbox;

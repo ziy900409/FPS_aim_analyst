@@ -168,9 +168,11 @@ describe('buildTrackingContactArtifact', () => {
         ['missing-eye-origin'],
       ],
       [
+        // A well-formed sphere is accepted since KI-021; a sphere with unequal axes is not,
+        // because only `widthU` would survive as its diameter.
         'invalid hitbox',
         withMeta(payloadWithTicks([tick(0, TARGET, aimAt(TARGET))]), {
-          targets: { hitbox: { widthU: 1, heightU: 1, depthU: 1, shape: 'sphere' } },
+          targets: { hitbox: { widthU: 1, heightU: 2, depthU: 1, shape: 'sphere' } },
         }),
         ['invalid-hitbox'],
       ],

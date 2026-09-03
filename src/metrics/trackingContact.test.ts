@@ -182,6 +182,27 @@ describe('deriveTrackingContactSamples', () => {
     expect(blockedReasons(payloadWithTicks([tick(0, null, aimAt(TARGET))]))).toEqual(['missing-target-telemetry']);
   });
 
+  it('accepts a well-formed sphere hitbox and still blocks a malformed one (KI-021)', () => {
+    // The derivation now shares the hit detector's ray/sphere geometry, so sphere targets are no
+    // longer excluded wholesale.
+    expect(
+      deriveTrackingContactSamples(
+        withMeta(payloadWithTicks([tick(0, TARGET, aimAt(TARGET))]), {
+          targets: { hitbox: { widthU: 0.5, heightU: 0.5, depthU: 0.5, shape: 'sphere' } },
+        }),
+      ).status,
+    ).toBe('ok');
+    // A sphere reads only `widthU` as its diameter, so unequal axes would be silently discarded.
+    // Mirror `schema.ts`'s sphere rule rather than let that pass quietly.
+    expect(
+      blockedReasons(
+        withMeta(payloadWithTicks([tick(0, TARGET, aimAt(TARGET))]), {
+          targets: { hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5, shape: 'sphere' } },
+        }),
+      ),
+    ).toEqual(['invalid-hitbox']);
+  });
+
   it('matches deriveTrackingMetrics acquisition, TOT, and RMS epsilon on the same source samples', () => {
     const payload = payloadWithTicks([
       tick(0, TARGET, aimAt({ x: 6, y: TARGET.y, z: TARGET.z })),
