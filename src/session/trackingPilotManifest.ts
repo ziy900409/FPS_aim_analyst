@@ -94,6 +94,20 @@ export function trackingPilotBlockRole(drillId: string): TrackingPilotBlockRole 
 }
 
 /**
+ * Non-throwing practice probe for consumers that may be handed arbitrary payloads — unlike
+ * `trackingPilotBlockRole()`, which fails fast on an unknown drillId because a *manifest* must
+ * never carry one. Returns `false` for anything that is not a registered WP-54 practice block.
+ *
+ * Exists because FR-54-5's acceptance clause ("practice 不寫入 scored aggregation") has to be
+ * enforced by role, not by the absence of a `scored_start` event: a practice block has no prep
+ * window, so `TargetManager` stamps `tScoredStart` on its very first motion tick and the export
+ * does carry one `scored_start` (T6 slice 2 measured this — see progress.md D-54.34).
+ */
+export function isTrackingPilotPracticeDrillId(drillId: string): boolean {
+  return KNOWN_BLOCK_ROLES.get(drillId) === 'practice';
+}
+
+/**
  * Builds a deterministic manifest for one participant/session. Practice and both axis-calibration
  * blocks always run first in a fixed order (they are diagnostic, not part of the counterbalanced
  * scored-condition comparison — README §2.5 primary outcome is defined over the scored blocks

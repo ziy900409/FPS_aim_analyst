@@ -237,6 +237,36 @@ describe('buildTrackingPilotEvidence — condition grouping and seed stats', () 
   });
 });
 
+describe('buildTrackingPilotEvidence — practice exclusion (FR-54-5)', () => {
+  it('never aggregates a practice block, and states how many it dropped', () => {
+    // A practice export is otherwise indistinguishable from a scored one to this pipeline: it
+    // carries a `scored_start` event (no prep window ⇒ stamped on the first motion tick, measured
+    // in T6 slice 2) and passes eligibility. Exclusion is therefore by role, not by event
+    // presence — see progress.md D-54.34/D-54.36.
+    const practice = perfectFollowerPayload({ drillId: 'tracking_core_pr_pilot_v1_practice', startedAt: 't0' });
+    const scored = perfectFollowerPayload({ drillId: 'tracking_core_pr_pilot_v1_2p0deg_5dps', startedAt: 't1' });
+
+    const evidence = buildTrackingPilotEvidence([practice, scored]);
+
+    expect(evidence.conditions.map((c) => c.condition)).toEqual(['tracking_core_pr_pilot_v1_2p0deg_5dps']);
+    expect(evidence.excludedPracticeRunCount).toBe(1);
+  });
+
+  it('reports zero exclusions (not an absent field) when no practice run was supplied', () => {
+    const evidence = buildTrackingPilotEvidence([perfectFollowerPayload()]);
+    expect(evidence.excludedPracticeRunCount).toBe(0);
+    expect(evidence.conditions).toHaveLength(1);
+  });
+
+  it('leaves an unregistered drillId aggregated rather than throwing on it', () => {
+    // `isTrackingPilotPracticeDrillId()` is deliberately non-throwing: this aggregator may be
+    // handed payloads from outside WP-54's own block registry.
+    const evidence = buildTrackingPilotEvidence([perfectFollowerPayload({ drillId: 'some_other_drill_v9' })]);
+    expect(evidence.conditions.map((c) => c.condition)).toEqual(['some_other_drill_v9']);
+    expect(evidence.excludedPracticeRunCount).toBe(0);
+  });
+});
+
 describe('buildTrackingPilotEvidence — determinism', () => {
   it('produces a deep-equal artifact across two calls with the same input', () => {
     const eligible = perfectFollowerPayload();

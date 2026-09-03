@@ -394,6 +394,16 @@ run is never fed into metric derivation at all, per FR-54-10's "blocked but not 
 metric-level block (e.g. `no-acquisition`) never removes an already-attached `p0` from the same run;
 the two are computed independently.
 
+**Practice blocks are excluded from aggregation by role** (FR-54-5, added T6 slice 3). A practice
+export is otherwise indistinguishable from a scored one to this pipeline: it has no prep window, so
+`TargetManager` stamps `tScoredStart` on its first motion tick and the export *does* carry one
+`scored_start` event, and it passes `evaluateTrackingRunEligibility()` like any scored block.
+Feeding a whole manifest's nine exports into `buildTrackingPilotEvidence()` is therefore filtered
+through `isTrackingPilotPracticeDrillId()` (single-source role registry in
+`src/session/trackingPilotManifest.ts`), and the artifact reports `excludedPracticeRunCount` so the
+exclusion is stated rather than silent. Consumers must not use "has no `scored_start`" as a
+practice test — see progress.md D-54.34/D-54.36.
+
 The self-contained HTML report (`renderTrackingPilotReportHtml`) uses **parity-by-construction**: the
 canonical `TrackingPilotEvidence` object is `JSON.stringify`'d verbatim (with `<` escaped to `<`
 so no embedded string can prematurely close the `<script>` tag) into a

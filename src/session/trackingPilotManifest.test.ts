@@ -8,6 +8,7 @@ import {
 import { TRACKING_REVERSAL_PILOT_V1_CANDIDATES } from '../drill/tracking_reversal_pilot_v1.ts';
 import {
   buildTrackingPilotManifest,
+  isTrackingPilotPracticeDrillId,
   parseTrackingPilotManifest,
   resolveTrackingPilotBlockConfig,
   trackingPilotBlockRole,
@@ -18,6 +19,22 @@ const SCORED_DRILL_IDS = new Set([
   ...TRACKING_CORE_PR_PILOT_V1_CANDIDATES.map((c) => c.drillId),
   ...TRACKING_REVERSAL_PILOT_V1_CANDIDATES.map((c) => c.drillId),
 ]);
+
+describe('isTrackingPilotPracticeDrillId', () => {
+  it('identifies the practice block and nothing else, without throwing on unknown ids', () => {
+    // FR-54-5's "practice 不寫入 scored aggregation" is enforced by role: a practice export still
+    // carries a `scored_start` event (no prep window), so consumers cannot use that event's
+    // absence as the test — see progress.md D-54.34.
+    expect(isTrackingPilotPracticeDrillId(trackingCorePrPilotV1Practice.drillId)).toBe(true);
+    expect(isTrackingPilotPracticeDrillId(trackingCorePrPilotV1CalibrationHorizontal.drillId)).toBe(false);
+    expect(isTrackingPilotPracticeDrillId(trackingCorePrPilotV1CalibrationVertical.drillId)).toBe(false);
+    for (const drillId of SCORED_DRILL_IDS) expect(isTrackingPilotPracticeDrillId(drillId)).toBe(false);
+    // Unlike trackingPilotBlockRole(), which fails fast because a *manifest* must never carry an
+    // unknown drillId, this probe answers 'not practice' for anything it does not know.
+    expect(isTrackingPilotPracticeDrillId('tracking_v1')).toBe(false);
+    expect(isTrackingPilotPracticeDrillId('')).toBe(false);
+  });
+});
 
 describe('trackingPilotBlockRole', () => {
   it('classifies every known WP-54 pilot drillId', () => {

@@ -16,6 +16,7 @@ import {
   type TrackingSample,
 } from '../metrics/trackingDerivation.ts';
 import { evaluateTrackingRunEligibility, type TrackingRunEligibility } from './trackingRunEligibility.ts';
+import { isTrackingPilotPracticeDrillId } from '../session/trackingPilotManifest.ts';
 
 /**
  * trackingPilotEvidence — WP-54 / T4 (FR-54-11, NFR-54-5, README §2.5 metrics/evidence contract).
@@ -116,6 +117,10 @@ export interface TrackingPilotEvidence {
   readonly protocolVersion: typeof TRACKING_PILOT_EVIDENCE_PROTOCOL_VERSION;
   readonly analysisCommit?: string;
   readonly conditions: readonly TrackingPilotConditionEvidence[];
+  /** How many supplied payloads were practice blocks and therefore never aggregated (FR-54-5).
+   * Always present, `0` when none — silent filtering would be worse than no filtering, so the
+   * artifact states what it dropped. */
+  readonly excludedPracticeRunCount: number;
 }
 
 type ScoredStartEvent = Extract<ExportPayload['events'][number], { type: 'scored_start' }>;
@@ -127,8 +132,19 @@ export function buildTrackingPilotEvidence(
   const dynamicsOptions = options.dynamics ?? DEFAULT_DYNAMICS_OPTIONS;
   const reversalOptions = options.reversal ?? DEFAULT_REVERSAL_OPTIONS;
 
+  // FR-54-5: practice blocks never enter scored aggregation. Enforced here, by role, because a
+  // practice export is otherwise indistinguishable to the rest of this pipeline — it carries a
+  // `scored_start` event and passes `evaluateTrackingRunEligibility()` like any scored block
+  // (D-54.34/D-54.36). Feeding a whole manifest's 9 exports in is the natural thing for a T6/T7
+  // analyst to do; without this, `tracking_core_pr_pilot_v1_practice` would show up as just
+  // another condition with P0/P1 metrics attached.
+  let excludedPracticeRunCount = 0;
   const byCondition = new Map<string, ExportPayload[]>();
   for (const payload of payloads) {
+    if (isTrackingPilotPracticeDrillId(payload.meta.drillId)) {
+      excludedPracticeRunCount += 1;
+      continue;
+    }
     const group = byCondition.get(payload.meta.drillId);
     if (group !== undefined) group.push(payload);
     else byCondition.set(payload.meta.drillId, [payload]);
@@ -145,6 +161,7 @@ export function buildTrackingPilotEvidence(
     protocolVersion: TRACKING_PILOT_EVIDENCE_PROTOCOL_VERSION,
     ...(options.analysisCommit !== undefined ? { analysisCommit: options.analysisCommit } : {}),
     conditions,
+    excludedPracticeRunCount,
   };
 }
 

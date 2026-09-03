@@ -8,6 +8,29 @@
 
 ## Progress
 
+### 2026-09-03 — T6 slice 3/N：practice 不入 scored aggregation（FR-54-5 的實質保證）
+
+- **落點**：`src/session/trackingPilotManifest.ts` 新增 non-throwing 的
+  `isTrackingPilotPracticeDrillId()`（讀同一份 `KNOWN_BLOCK_ROLES` 單一來源，未知 drillId 回
+  `false` 而非 throw——與 `trackingPilotBlockRole()` 的 fail-fast 語意分工見該函式 doc comment）；
+  `src/pilot/trackingPilotEvidence.ts` 在分組前濾掉 practice payload，並新增
+  `excludedPracticeRunCount`（恆存在，無則 0）；`docs/operational/analysis-tracking.md` 的
+  「Evidence model」節補上這條規則。
+- **為什麼需要這個 slice**：slice 2 檢查真實匯出時發現 practice block 也帶一個 `scored_start`
+  （D-54.34），而 `buildTrackingPilotEvidence()` 原本只按 `meta.drillId` 分組、沒有任何 practice
+  防線——T6/T7 分析者把一整份 manifest 的 9 個匯出一起餵進去（最自然的做法，也是我自己下一步 ④ 要做
+  的事）就會讓 `tracking_core_pr_pilot_v1_practice` 變成一個帶 P0/P1 指標的 condition，正是
+  FR-54-5 驗收句禁止的事。這是 T6 checklist「任何 defect 先最小化、補 regression fixture」的落地。
+- **不用靜默過濾**：加 `excludedPracticeRunCount` 而不是默默少一個 condition——artifact 必須說出
+  自己丟了什麼（NFR-54-5 可追溯性精神）。
+- **回歸測試**：`trackingPilotEvidence.test.ts` +3（practice 被排除且計數為 1、無 practice 時為 0、
+  未註冊 drillId 照常聚合不 throw）；`trackingPilotManifest.test.ts` +1（probe 對 practice/
+  calibration/6 個 scored/未知 id/空字串的完整分類）。
+- **驗證**：`npx tsc --noEmit` exit 0；`npx vitest run`（全專案）203 files / 1953 tests passed
+  （1 skipped file / 2 skipped tests）；T4 既有的 evidence/report determinism 與 JSON/HTML parity
+  測試全數未改動且仍綠（新欄位為 additive，報告端逐字嵌入同一個 evidence 物件，parity 不受影響）。
+
+
 ### 2026-09-03 — T6 slice 2/N：真實瀏覽器 live pilot walkthrough（抓到 3 個真 bug）
 
 - **落點**：新檔 `tests/e2e/tracking-pilot-live.spec.ts`（1 test，~1 分鐘：practice + calibration 兩個
@@ -844,6 +867,8 @@
 
 | D-54.34 | practice block 的真實匯出**確實**帶一個 `scored_start` event（`TargetManager` 在 `age >= trackingPrepSec` 就蓋 `tScoredStart`，practice 無 `trackingPrepMs` ⇒ `trackingPrepSec = 0` ⇒ 第一個 motion tick 就蓋）；判定為**不改 producer**，而把「practice 不入 scored aggregation」的保證明確落在 aggregation 端（見 D-54.36，T6 slice 3） | T6 slice 2 的真實匯出檢查發現：T2 drill 檔註解寫「practice…no scored window」,但 producer 對任何 `trackingTrajectory` drill 一律蓋戳。改 producer（只在 `trackingPrepMs !== undefined` 才蓋）會動到 `src/sim` 的決定性熱路徑與既有 T2 測試,而 producer 現行語意其實自洽（`scored_start` = trajectory age 原點,practice 的原點就是第 1 tick,可稽核不說謊）;FR-54-5 的驗收句是「practice **不寫入 scored aggregation**」——這是 aggregation 端的保證,不是「不得存在該事件」。故 producer 保持逐位不變,保證改由 D-54.36 落地。真實觀測值已寫進 `tracking-pilot-live.spec.ts` 斷言（1 個 event）與註解,不再是隱性行為 | ✅ Confirmed（T6 slice 2，2026-09-03） |
 | D-54.35 | main.ts 的 tracking pilot 入口在 app boot 完成前不再靜默 no-op：建構點前移至研究員選單之後 + 新增 `appBooted` boot-barrier promise（pilot `loadDrillConfig` 先 await 它） | T6 slice 2 的真瀏覽器 walkthrough 實測到:boot 視窗內按 Start manifest 會拿到 `Cannot access 'resultShown' before initialization`（module-level `let` 仍在 TDZ）。KI-013 的 `?.` 靜默 no-op 對 `controls` 那種被動同步可以接受,對一個研究員主入口按鈕就是「按了沒反應」或更糟的內部錯誤字串。barrier 只影響 pilot 這條新路徑（既有 `loadDrillById`/protocol/Session Plan 路徑逐字不變）,且不引入輪詢或計時器 | ✅ Confirmed（T6 slice 2，2026-09-03） |
+
+| D-54.36 | 「practice 不寫入 scored aggregation」（FR-54-5）落在 `buildTrackingPilotEvidence()`：以 `isTrackingPilotPracticeDrillId()` 按 role 濾掉 practice payload，並以 `excludedPracticeRunCount` 明示丟了幾份；**不**改 `TargetManager` 的 `scored_start` 產生條件 | 見 D-54.34：producer 端語意自洽且位於 `src/sim` 決定性熱路徑，改它要付既有 T2 測試與逐 tick 決定性的代價,而 FR-54-5 的驗收句本來就是 aggregation 端的保證。選 role-based 而非「無 scored_start」判準,因為後者對 practice 恆為假（practice 有 scored_start）;選 `KNOWN_BLOCK_ROLES` 當唯一來源而非在 evidence 端再列一份 drillId 白名單,沿用 D-54.23「role 一律由 drillId 查單一 registry 推導」的既有紀律。probe 刻意 non-throwing（與 manifest 驗證器的 fail-fast 相反）:evidence 聚合器可能收到 WP-54 registry 以外的 payload,那不是非法輸入,只是「不是 practice」 | ✅ Confirmed（T6 slice 3，2026-09-03） |
 
 ## Open Questions
 
