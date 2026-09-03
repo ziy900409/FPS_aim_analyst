@@ -8,6 +8,44 @@
 
 ## Progress
 
+### 2026-09-03 — T6 slice 2/N：真實瀏覽器 live pilot walkthrough（抓到 3 個真 bug）
+
+- **落點**：新檔 `tests/e2e/tracking-pilot-live.spec.ts`（1 test，~1 分鐘：practice + calibration 兩個
+  真實 25s block）；修 `src/main.ts`（boot barrier）與 `src/pilot/trackingPilotSession.ts`
+  （overlay restore 順序）+ 對應回歸測試。
+- **與 T5 的 `tracking-pilot-operator.spec.ts` 分工**：T5 那支跑 fake-stub harness，秒級證明鍵盤可
+  達性（D-54.28/D-54.33）；本支跑**真實 app**——研究員選單 → operator screen → 真實 pilot
+  `DrillConfig` 走 main.ts 的 clearance/TargetManager/SimLoop → 真實三迴圈跑滿 25s → 真實
+  `buildCurrentExportPayload()` → 真的下載 JSON，並直接對下載的 JSON 斷言 WP-54 追溯欄位。
+  無 pointer lock、不瞄準（sim 由 `simLoop.pump()` 推進、block 以 `endCondition: timeLimit` 結束），
+  測的是 instrumentation 而非人的能力。
+- **抓到的 bug ①（真 bug，e2e 才抓得到）**：研究員在 app boot 視窗內按下「Tracking pilot」→ Start
+  manifest 會炸 `Cannot access 'resultShown' before initialization`——main.ts 後段有 top-level
+  await（dev harness / `measureDisplayHz` / replay controller），在那之前整條 drill 載入鏈路的
+  module-level `let` 還在 TDZ。修法：(a) 把 `createTrackingPilotSession()` 的建構點前移到研究員選單
+  之後（兩者之間沒有 await，按鈕存在時 session 必然已存在，避免 KI-013 的 `?.` 靜默 no-op 出現在一個
+  主入口按鈕上）;(b) 加一個 `appBooted` boot barrier promise，`markAppBooted()` 在模組最後一行
+  （`renderLoop.start()` 之後）resolve,pilot 的 `loadDrillConfig` 先 `await appBooted`——boot 視窗
+  內的操作只是稍晚開始，而不是丟內部錯誤給操作員。
+- **抓到的 bug ②（我自己 slice 1 的 wiring bug）**：block 跑完回到 operator screen 時,
+  `syncScreenVisibility()` 的 `screen.open()` 會**重繪 idle phase**（T5 `open()` 的既有語意:
+  `setStatus('')` + `renderPhase({kind:'idle'})`),把剛剛畫好的 block-outcome 面板整片清掉——操作員
+  看到一片空白、沒有 Retry/Continue 可按,整場 pilot 卡死。slice 1 的單元測試只斷言 root 的
+  `display`,所以漏掉。修法：onPhaseChange 改為「先同步可見性、再 renderPhase」,並只在 overlay
+  確實被關起來時才 `open()`（`overlayHidden` 旗標）,另把最後一則 status 文字在 restore 後補回。
+  補一條回歸測試（斷言 outcome 面板的 `display === 'grid'` 與 status 仍有內容）。
+- **抓到的 bug ③（測試本身，非產品）**：`input[name="participantId"]` 在真實 app 有兩個（operator
+  screen 與既有 `SessionSetup`）——spec 的 locator 一律改為以 `#tracking-pilot-operator` 為 scope。
+- **量到的 instrumentation 事實（Gate A 素材，非契約）**：calibration block 真實跑完
+  `ticks=3714`、`events=2`、eligibility = **`Eligible — scored ticks: 3203, duration:
+  25015.625ms`**——25.0156s × 128Hz ≈ 3202 tick,scored 窗覆蓋率 ≈ 100%（門檻 99.5%）,即
+  headless Edge + WebGPU 下真實 25 秒 block 沒有掉 tick。此數字由 spec `console.log` 印出而**不**
+  斷言（見 spec 內註解：換機器會變,那是機器事實不是契約）。
+- **驗證**：`npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` 1/1 passed
+  （1.0m）;`npx vitest run src/pilot/trackingPilotSession.test.ts` 12/12 passed;
+  `npx tsc --noEmit` exit 0;`npx vitest run`（全專案）203 files / 1949 tests passed。
+
+
 ### 2026-09-03 — T6 slice 1/N：main.ts 正式接線（TrackingPilotRunner/OperatorScreen ↔ 真實 drill 載入/匯出）
 
 - **落點**：新檔 `src/pilot/trackingPilotSession.ts`（`createTrackingPilotSession()`，app-level wiring
@@ -803,6 +841,9 @@
 | D-54.31 | `exportBlock` 直接重用 main.ts 既有的 `buildCurrentExportPayload()`（不另開匯出組裝路徑）；participant/manifest 追溯改用既有 `meta.session = {participantId, sessionLabel}` 欄位承載,`sessionLabel` 放 `generatedFromCounterbalanceCell` | 任務交辦第 6 點明文要求重用既有 export 組裝邏輯。追溯欄位若新增 schema 欄位就會動到 `Meta`/`exportPayloadSchema` 與所有既有 reader（additive 也要付 parse/serialize/round-trip 代價）,而 `meta.session` 的語意本來就是「這份 run 屬於哪個受試者/哪一場 session」,counterbalance cell 字串本身已是 `protocolVersion:participantId:session-N` 的純函式（D-54.24）,放進 `sessionLabel` 即可完整重建 manifest。副作用記帳:`exportBlock()` 會讓同一個 block 在 drill 結束時組裝兩份 payload（既有 Result/history 路徑一份、pilot 匯出一份）——`recorder.snapshot()` 是唯讀且冪等,兩份逐位相同,且組裝落在 run 結束後的非熱路徑（T4 benchmark:單次 ~23ms 冷/~8ms 暖）,不值得為此改動 T5 的 `exportBlock` 契約 | ✅ Confirmed（T6 slice 1，2026-09-03） |
 | D-54.32 | Operator overlay 在 `phase.kind === 'running'` 期間 `close()` 讓位、其餘 phase 自動 `open()`；drill 走到 `ended` 時由 main.ts 呼叫 `handleDrillEnded()` 自動 `completeCurrentBlock()`（不要求操作員在跑動中按 Complete） | `TrackingPilotOperatorScreen` 的 `overlayCss` 是 `inset:0` 全視窗 scrim（不透明度 0.82）,不讓位的話受測者根本看不到目標。極性與 main.ts 既有的 `restOverlay` 完全對稱（`SessionRunner` 的 `onPhaseChange` 在 rest 顯示、play 隱藏;pilot 的 rest 倒數本來就長在 operator screen 裡,所以極性相反）。**已知缺口（additive,不影響已交付契約）**:overlay 讓位期間操作員按不到 `Abort block`;等效處置是讓 block 跑完後在 block-outcome 面板按 `Retry block` 並填理由——retry 是 append-only、原 attempt 的 export 與理由都留在 `records`/`retryLog`,可稽核性不低於 abort（abort 反而不留 payload）。若真人試跑回報需要跑動中中止,再依 runbook「遺留缺口」條目做 additive 補強 | ✅ Confirmed（T6 slice 1，2026-09-03） |
 | D-54.33 | `src/pilot/trackingPilotOperatorHarness.ts` / `tracking-pilot-harness.html` 保留為 dev-only smoke harness，不因正式接線完成而刪除 | 任務交辦第 8 點的判斷題。兩者測的不是同一件事:harness 用 fake `loadDrillConfig`/`exportBlock` 讓 `tests/e2e/tracking-pilot-operator.spec.ts` 能在**秒級**走完 9 個 block 的鍵盤/狀態流程（D-54.28 採認的 a11y 證據形式）,正式路徑一個 block 就是 25 秒真實 sim,不可能拿來當 a11y 迴歸閘。harness 從未被 `src/main.ts` import（不進 production bundle）,維護成本≈0;刪掉會直接讓 T5 的 a11y 證據失去可重跑載體 | ✅ Confirmed（T6 slice 1，2026-09-03） |
+
+| D-54.34 | practice block 的真實匯出**確實**帶一個 `scored_start` event（`TargetManager` 在 `age >= trackingPrepSec` 就蓋 `tScoredStart`，practice 無 `trackingPrepMs` ⇒ `trackingPrepSec = 0` ⇒ 第一個 motion tick 就蓋）；判定為**不改 producer**，而把「practice 不入 scored aggregation」的保證明確落在 aggregation 端（見 D-54.36，T6 slice 3） | T6 slice 2 的真實匯出檢查發現：T2 drill 檔註解寫「practice…no scored window」,但 producer 對任何 `trackingTrajectory` drill 一律蓋戳。改 producer（只在 `trackingPrepMs !== undefined` 才蓋）會動到 `src/sim` 的決定性熱路徑與既有 T2 測試,而 producer 現行語意其實自洽（`scored_start` = trajectory age 原點,practice 的原點就是第 1 tick,可稽核不說謊）;FR-54-5 的驗收句是「practice **不寫入 scored aggregation**」——這是 aggregation 端的保證,不是「不得存在該事件」。故 producer 保持逐位不變,保證改由 D-54.36 落地。真實觀測值已寫進 `tracking-pilot-live.spec.ts` 斷言（1 個 event）與註解,不再是隱性行為 | ✅ Confirmed（T6 slice 2，2026-09-03） |
+| D-54.35 | main.ts 的 tracking pilot 入口在 app boot 完成前不再靜默 no-op：建構點前移至研究員選單之後 + 新增 `appBooted` boot-barrier promise（pilot `loadDrillConfig` 先 await 它） | T6 slice 2 的真瀏覽器 walkthrough 實測到:boot 視窗內按 Start manifest 會拿到 `Cannot access 'resultShown' before initialization`（module-level `let` 仍在 TDZ）。KI-013 的 `?.` 靜默 no-op 對 `controls` 那種被動同步可以接受,對一個研究員主入口按鈕就是「按了沒反應」或更糟的內部錯誤字串。barrier 只影響 pilot 這條新路徑（既有 `loadDrillById`/protocol/Session Plan 路徑逐字不變）,且不引入輪詢或計時器 | ✅ Confirmed（T6 slice 2，2026-09-03） |
 
 ## Open Questions
 

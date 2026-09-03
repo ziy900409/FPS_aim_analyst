@@ -437,6 +437,15 @@ let controls: ControlsHandle | undefined;
 // WP-54 / T6：同 KI-013 pattern —— 研究員選單的 handler 早於本 session 的建構點掛上，宣告前置
 // 讓建構完成前的點擊安全 no-op，而不是撞 TDZ ReferenceError。
 let trackingPilotSession: TrackingPilotSessionHandle | undefined;
+// WP-54 / T6：boot barrier。本檔後段有 top-level await（dev harness、measureDisplayHz、replay
+// controller），在那之前整條 drill 載入鏈路（`resetRunPresentation` 等 `let` 綁定）仍在 TDZ；
+// 研究員在 boot 視窗內按下「Start manifest」會撞 `Cannot access 'resultShown' before
+// initialization`（由 `tracking-pilot-live.spec.ts` 實測抓到）。載入 pilot block 前先等這個
+// promise，boot 視窗內的操作只是稍晚開始，而不是丟一個內部錯誤給操作員。
+let markAppBooted: (() => void) | undefined;
+const appBooted = new Promise<void>((resolve) => {
+  markAppBooted = resolve;
+});
 let markProtocolFullscreenExit: (() => void) | undefined;
 const eligibilityGateScreen = createEligibilityGateScreen({
   // Session Plan（選手表現測試,WP-42）不操弄/比較解析度條件——四家族一律 native 載入,
@@ -571,6 +580,35 @@ researcherMenu = createResearcherMenu({
     researcherMenu?.close();
     setAppMode('researcher');
     trackingPilotSession?.open();
+  },
+});
+
+// WP-54 / T6 slice 1 — tracking pilot 正式接線：T5 交付的 runner/operator screen 首次接上真實
+// 的 drill 載入與匯出路徑（取代 `trackingPilotOperatorHarness.ts` 的 fake stub，D-54.27）。
+// `exportBlock` 直接重用既有的 `buildCurrentExportPayload()`，pilot 匯出與 ProtocolRunner/
+// SessionRunner 匯出共用同一條組裝路徑（不另開第二條匯出語意）。
+//
+// **建構點就緊接在研究員選單之後**（而不是留到本檔後段的 protocol/session 接線區）：本檔後段有
+// top-level await（dev harness、measureDisplayHz），若建構點落在那之後，使用者在該 await 視窗內
+// 按下「Tracking pilot」會撞上 KI-013 的 `?.` 安全 no-op —— 對 controls 那種被動同步無妨，但對
+// 一個主入口按鈕就是「按了沒反應」。這裡到選單建構之間沒有任何 await，視窗因此為零。
+// 注入的四個函式（loadDrillConfigDirect/buildCurrentExportPayload/setProtocolStatus 與 import
+// 的 downloadJSON）都是 hoisted function 或 import，實際呼叫一律發生在互動時（模組早已求值完）。
+trackingPilotSession = createTrackingPilotSession({
+  loadDrillConfig: async (config) => {
+    await appBooted;
+    await loadDrillConfigDirect(config);
+  },
+  exportBlock: () => buildCurrentExportPayload(),
+  onBlockExported: (payload) => downloadJSON(payload, { basename: exportBasename(payload) }),
+  onStatus: (text) => setProtocolStatus(text, false),
+  // 讓每個 block 匯出都能回溯到受試者與 manifest cell：重用既有的 `meta.session` 欄位
+  // （participantId + sessionLabel），不新增 schema 欄位。
+  onManifestStart: (manifest) => {
+    sessionSetupValues = {
+      participantId: manifest.participantId,
+      sessionLabel: manifest.generatedFromCounterbalanceCell,
+    };
   },
 });
 pointerLock.onChange((locked) => {
@@ -1343,25 +1381,6 @@ function setProtocolStatus(text: string, showNext: boolean): void {
   protocolStatus.style.display = 'flex';
 }
 
-// WP-54 / T6 slice 1 — tracking pilot 正式接線：T5 交付的 runner/operator screen 首次接上真實
-// 的 drill 載入與匯出路徑（取代 `trackingPilotOperatorHarness.ts` 的 fake stub，D-54.27）。
-// `exportBlock` 直接重用既有的 `buildCurrentExportPayload()`，pilot 匯出與 ProtocolRunner/
-// SessionRunner 匯出共用同一條組裝路徑（不另開第二條匯出語意）。
-trackingPilotSession = createTrackingPilotSession({
-  loadDrillConfig: loadDrillConfigDirect,
-  exportBlock: () => buildCurrentExportPayload(),
-  onBlockExported: (payload) => downloadJSON(payload, { basename: exportBasename(payload) }),
-  onStatus: (text) => setProtocolStatus(text, false),
-  // 讓每個 block 匯出都能回溯到受試者與 manifest cell：重用既有的 `meta.session` 欄位
-  // （participantId + sessionLabel），不新增 schema 欄位。
-  onManifestStart: (manifest) => {
-    sessionSetupValues = {
-      participantId: manifest.participantId,
-      sessionLabel: manifest.generatedFromCounterbalanceCell,
-    };
-  },
-});
-
 const restOverlay = createRestOverlay();
 const sessionPlanRunner: SessionRunnerHandle = createSessionRunner({
   loadDrillById,
@@ -1657,3 +1676,7 @@ initializedReplayController.subscribe(() => {
 
 const renderLoop = createRenderLoop((now) => presentation.frame(now), { frameLog });
 renderLoop.start();
+
+// 模組求值到此為止：所有 module-level binding 都已初始化，drill 載入鏈路可安全進入（見上方
+// `appBooted` 的說明）。
+markAppBooted?.();

@@ -69,8 +69,11 @@ export interface TrackingPilotSessionHandle {
 
 export function createTrackingPilotSession(deps: TrackingPilotSessionDeps): TrackingPilotSessionHandle {
   let opened = false;
+  let overlayHidden = false;
+  let lastStatus = '';
 
   function setStatus(text: string): void {
+    lastStatus = text;
     screen.setStatus(text);
     deps.onStatus(text);
   }
@@ -84,8 +87,11 @@ export function createTrackingPilotSession(deps: TrackingPilotSessionDeps): Trac
     exportBlock: deps.exportBlock,
     onStatus: setStatus,
     onPhaseChange: (phase) => {
-      screen.renderPhase(phase);
+      // Visibility first, then render: the screen's own `open()` re-renders the idle phase (and
+      // clears the status line), so restoring the overlay after a block must happen *before* the
+      // real phase is drawn — otherwise the outcome panel is wiped the moment it appears.
       syncScreenVisibility(phase);
+      screen.renderPhase(phase);
     },
     onBlockRecord: (record) => {
       screen.renderRecords(runner.records);
@@ -130,15 +136,24 @@ export function createTrackingPilotSession(deps: TrackingPilotSessionDeps): Trac
    */
   function syncScreenVisibility(phase: TrackingPilotRunnerPhase): void {
     if (!opened) return;
-    if (phase.kind === 'running') screen.close();
-    else screen.open();
+    if (phase.kind === 'running') {
+      screen.close();
+      overlayHidden = true;
+      return;
+    }
+    if (!overlayHidden) return; // already visible — do not re-`open()` and reset its rendered state
+    screen.open();
+    overlayHidden = false;
+    screen.setStatus(lastStatus); // `open()` blanks the status line; keep the operator's context
   }
 
   return {
     open(): void {
       opened = true;
       screen.open();
+      overlayHidden = false;
       syncScreenVisibility(runner.phase);
+      screen.renderPhase(runner.phase);
     },
     poll(nowMs): void {
       runner.poll(nowMs);
@@ -152,6 +167,7 @@ export function createTrackingPilotSession(deps: TrackingPilotSessionDeps): Trac
     screen,
     dispose(): void {
       opened = false;
+      overlayHidden = false;
       runner.dispose();
       screen.dispose();
     },

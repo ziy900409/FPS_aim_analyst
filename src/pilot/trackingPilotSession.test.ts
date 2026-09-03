@@ -129,6 +129,14 @@ function byId(document: FakeDocument, id: string): FakeElement {
   return element;
 }
 
+/** The panel element that owns a given child id — the operator screen's panels have no ids of
+ * their own, and `display` on the panel is what actually decides whether the operator can act. */
+function panelOwning(document: FakeDocument, childId: string): FakeElement {
+  const element = document.created.find((el) => el.children.some((child) => child.id === childId));
+  if (element === undefined) throw new Error(`no panel owning #${childId}`);
+  return element;
+}
+
 /** Matches on the button's visible label — which is also its accessible name (T5 slice 4 removed
  * every `aria-label` here to fix a WCAG 2.5.3 Label-in-Name violation). */
 function buttonByLabel(document: FakeDocument, label: string): FakeElement {
@@ -252,6 +260,24 @@ describe('createTrackingPilotSession — drill-ended handoff', () => {
     // Practice is never quality-gated (no scored_start event to evaluate).
     expect(session.runner.records[0].eligibility).toBeUndefined();
     expect(byId(document, 'tracking-pilot-records-list').children).toHaveLength(1);
+  });
+
+  it('leaves the outcome panel actually rendered after the overlay comes back', async () => {
+    // Regression (found by tracking-pilot-live.spec.ts): the screen's `open()` re-renders the idle
+    // phase, so restoring the overlay *after* rendering the outcome wiped the panel — the operator
+    // saw an empty screen with no Retry/Continue buttons and the run could not proceed.
+    const { session, document } = makeSession();
+    session.open();
+    await startManifest(document);
+
+    session.handleDrillEnded();
+    await flush();
+
+    const outcomeText = byId(document, 'tracking-pilot-outcome-text');
+    expect(outcomeText.textContent).toContain('tracking_core_pr_pilot_v1_practice');
+    expect(panelOwning(document, 'tracking-pilot-outcome-text').style.display).toBe('grid');
+    // …and the operator's status context is not blanked by the overlay restore.
+    expect(byId(document, 'tracking-pilot-status').textContent).toContain('Block 1');
   });
 
   it('returns false when no pilot block owns the finished run (app keeps its own branches)', async () => {
