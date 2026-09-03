@@ -8,6 +8,26 @@
 
 ## Progress
 
+### 2026-09-03 — T6 gate 帳本一致性修正（docs-only，無程式碼變更）
+
+`T6-instrumentation-gate.md` 有三處敘述停在 slice 8，與 §10.4／§10.5 的現況矛盾——重跑前交給
+研究者的文件必須自洽，故一併校正（不改任何 go/revise/stop 判斷本身）：
+
+- **狀態抬頭（§0）與 §9 摘要**：原寫「已修 2 個，2 個待研究者決策（KI-019 F-A2、KI-020）」。實際
+  三個缺陷加一個品質閘缺口全部已修（KI-019 F-A1+F-A2、run-level protocol-violation 閘門、KI-020
+  size/speed 再參數化、KI-021 ＋ [GD-30](../../../DECISIONS.md) 的 cube→sphere），四個研究決策已
+  落地並全綠。§9 另補「下一輪只缺資料」。
+- **§10.3 缺陷表第 1 列**：狀態仍是 `🟡 F-A2 …待決`，但 F-A2 已於 slice 9 落地（`angularBoundsDeg
+  [-8,8]→[-13,13]` + 建構期幾何守衛，medium 交付 36 次 / 1.1% 靜止）。改為已修，並把殘差
+  （36 vs 宣稱 23 次）與「是否再放寬到 ±25° 留給 T7」寫進同一格，指向 KI-019 §5.3。
+- **§8 版本表**：原本只有一列 `Analysis / code commit: aa240e4`，但 `aa240e4` 其實是 slice 3 的
+  commit，早於本文件引用的 slice 9-12 證據，讀者會誤以為整份文件的數字都出自該版。拆成三列並各自
+  標明出處與適用範圍：`aa240e4`（§2/§3 自動化 + live-run，含「203 files / 1953 tests 是當時數字」
+  的但書）、`8a69fd8`（§10 的 P01 分析器版本）、`daf1472`（重跑所用的刺激 config／現行基線
+  206 files / 1995 tests）。
+- **驗證**：docs-only，未觸碰任何 `src/`、`tests/`、`scripts/`；新增的兩個相對連結
+  （KI-021、DECISIONS.md）已確認檔案存在。**重跑要求與操作步驟（§5/§7/§10.5）一字未改。**
+
 ### 2026-09-03 — T6 slice 9-11：四個研究決策落地（KI-019 F-A2、KI-020、compatibility key）
 
 - **使用者決策（4/4 已落地）**：①reversal 視窗放寬到 ±13°；②size = 目標角尺寸；③speed 以「提高

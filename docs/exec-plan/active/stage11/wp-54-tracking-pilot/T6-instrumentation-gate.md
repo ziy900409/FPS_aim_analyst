@@ -7,8 +7,11 @@
 >
 > **狀態：🔴 Gate A = REVISE（2026-09-03）；四個研究決策已落地，等 9 個 block 重跑。** 第一份真人資料（P01，9 個 block）已收回並分析：
 > 資料鏈路（schema/覆蓋率/事件對表/追溯/報告）全部成立，但**刺激本身有三個缺陷**，其中兩個使
-> 預註冊的條件矩陣沒有被真正交付。詳見 §10 結論。已修 2 個（[KI-019](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)
-> F-A1、protocol-violation gate），2 個待研究者決策（KI-019 F-A2、[KI-020](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)）。
+> 預註冊的條件矩陣沒有被真正交付。詳見 §10 結論。**三個缺陷與一個品質閘缺口全部已修**
+> （[KI-019](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)
+> F-A1+F-A2、run-level protocol-violation 閘門、[KI-020](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)
+> size/speed 再參數化、[KI-021](../../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)
+> ＋ [GD-30](../../../DECISIONS.md) 的 cube→sphere），§10.4 的四個研究決策也已落地。
 > **不以增加真人樣本數掩蓋**（README §5）：這三個缺陷加人只會得到更多量錯條件的資料。
 
 ---
@@ -189,7 +192,9 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 
 | 項目 | 值 |
 |---|---|
-| Analysis / code commit | `aa240e4`（2026-09-03T09:38:52+02:00） |
+| §2/§3 自動化 + live-run 證據出處 | `aa240e4`（2026-09-03T09:38:52+02:00，T6 slice 3）——該次 focused run 與全專案基線 203 files / 1953 tests 是**當時**的數字 |
+| §10 真人資料分析出處 | `8a69fd8`（2026-09-03T10:56:42+02:00，T6 slice 7）——P01 的 9 份 payload 以此版分析器判讀 |
+| 重跑所用的刺激 config / 現行基線 | `daf1472`（2026-09-03T12:44:53+02:00，slice 12）——§10.4 四個決策 + KI-021/GD-30 的 cube→sphere 全部落地；`vitest` 206 files / 1995 tests passed、`tracking-pilot-live` e2e 1/1、`tsc --noEmit` exit 0 |
 | Protocol version | `tracking-pilot-v1`（`TRACKING_PILOT_PROTOCOL_VERSION`） |
 | Metric version | `tracking-dynamics-v1`（`TRACKING_PILOT_EVIDENCE_METRIC_VERSION`） |
 | Trajectory versions | `band-limited-2d-v1`、`reversal-2d-v1` |
@@ -237,7 +242,7 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 
 | # | 缺陷 | 證據 | 狀態 |
 |---|---|---|---|
-| 1 | **reversal medium cell 排程退化**：目標 32.6% 的時間凍結在 ±8° 角落（最長 344 ms），6644 筆 leg（high 只有 60），`reversalIntervalMs` 完全沒生效 | [KI-019 §1](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | ✅ **F-A1 已修**（room-aware 方向選擇；medium 降到 46 legs / 1.6% 靜止；high 逐位不變）。🟡 F-A2（config 幾何不一致，仍 46 vs 宣稱 ~23 次）待決 |
+| 1 | **reversal medium cell 排程退化**：目標 32.6% 的時間凍結在 ±8° 角落（最長 344 ms），6644 筆 leg（high 只有 60），`reversalIntervalMs` 完全沒生效 | [KI-019 §1](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | ✅ **F-A1 + F-A2 皆已修**。F-A1：room-aware 方向選擇（medium 降到 46 legs / 1.6% 靜止；high 逐位不變）。F-A2（slice 9）：`angularBoundsDeg [-8,8]→[-13,13]` + 建構期幾何守衛，medium 交付 **36 次反轉 / 1.1% 靜止**。殘差：36 次 vs 宣稱約 23 次（邊界截斷是設計本身的必然，[KI-019 §5.3](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)）；medium(36) vs high(59) 密度對比方向正確且單調，是否再放寬到 ±25° 留給 T7 |
 | 2 | **core matrix 的 speed 自變數完全失效**：5 vs 20 deg/s 實測交付 1.21 vs 1.18 deg/s（差 2%）；交付速度只由振幅決定，metadata 宣稱值從未被交付 | [KI-020 §1/§2.1](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | ✅ **已修**（slice 10）：頻帶 `[0.1,0.7]→[0.3,2.1]` Hz + 所有 cell 共用振幅 ±16°，實測交付 5.05 / 20.21 deg/s；並加建構期守衛（請求速度不可交付即 fail fast） |
 | 3 | **目標角尺寸從未被操弄**：「size」被實作成行程振幅，沒有 cell 設 `targets.hitbox`，四個 cell 目標一樣大（約 ±7°）；六個 block TOT 全部 100.0%，`p95 ε` 3.63° 仍算 on-target ⇒ TOT 在現行 config 下不帶資訊；兩個 axis calibration block 無法達成「判斷 0.5° 是否可辨識」的用途 | [KI-020 §2.2](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | ✅ **已修**（slice 10）：每 cell 設 `targets.hitbox`（0.5°→0.03491u、2.0°→0.13964u @4u）；axis calibration 改用至風險的 0.5° 目標；reversal cell 固定 2.0°。**slice 12（KI-021/GD-30）把幾何由 cube 改回 sphere**，直徑不變，on-target 容許角因此等向 |
 
@@ -291,8 +296,10 @@ size/speed/reversal-density 條件的結論。
 
 ## 9. Go / revise / stop
 
-**🔴 REVISE（2026-09-03）。** 判準與證據見 §10。摘要：資料鏈路成立，刺激不符預註冊操弄；已修 2 項
-（KI-019 F-A1、protocol-violation gate），2 項待研究決策（KI-019 F-A2、KI-020）。
+**🔴 REVISE（2026-09-03）。** 判準與證據見 §10。摘要：資料鏈路成立，刺激不符預註冊操弄；**三個缺陷
+與一個品質閘缺口全部已修**（KI-019 F-A1+F-A2、run-level protocol-violation 閘門、KI-020 size/speed
+再參數化、KI-021 ＋ GD-30 的 cube→sphere），§10.4 的四個研究決策已落地並全綠。**下一輪只缺資料**：
+9 個 block 全部重跑（§10.5）後才重判 go/revise/stop。
 
 - **Go** 的條件：§6 真人項全部勾選、每個 scored 條件 ≥ 2 份可用 run、四層 traceability 無未解
   defect ⇒ T6 PASS，可開 T7（難度校準，12-20 人）。
