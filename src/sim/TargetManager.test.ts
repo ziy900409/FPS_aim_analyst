@@ -980,7 +980,8 @@ describe('TargetManager — trackingTrajectory drive（WP-54 / T2）', () => {
     kind: 'reversal-2d-v1',
     seed: 7,
     durationMs: 25000,
-    angularBoundsDeg: [-8, 8],
+    // KI-019 F-A2: ±13° so a leg's demanded travel fits the angular window.
+    angularBoundsDeg: [-13, 13],
     speedRangeDegPerSec: [5, 20],
     reversalIntervalMs: [800, 1400],
     accelerationRampMs: 150,

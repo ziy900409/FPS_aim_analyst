@@ -14,11 +14,17 @@ import type { DrillConfig } from './DrillConfig.ts';
  * Density candidates (`reversalIntervalMs`) are calibration candidates, not frozen values (same
  * OQ-54-2 status as the core matrix's size/speed candidates) — T7 decides retained/revise/remove.
  * `angularBoundsDeg`/`speedRangeDegPerSec` are held fixed across both density cells so only
- * reversal frequency varies between them.
+ * reversal frequency varies between them. The bounds were widened from ±8° to ±13° for KI-019 F-A2:
+ * at ±8° a leg's demanded travel (25°) could not fit the 16° window, so every leg was truncated at
+ * a bound and the delivered reversal density stopped matching `reversalIntervalMs` entirely.
  */
 
 const DISTANCE_U = 4; // matches tracking_core_pr_pilot_v1.ts / tracking_v1's forward sightline convention
-const ANGULAR_BOUNDS_DEG = [-8, 8] as const;
+// KI-019 F-A2（研究者選定：放寬角度視窗，兩個被操弄變數維持 T0 預註冊值）。單一 leg 的最大需求
+// 位移 = speedMax x (intervalMax - ramp) = 20 x (1.4 - 0.15) = 25deg，必須放得進視窗，否則每個 leg
+// 都被邊界截斷、交付密度不等於 `reversalIntervalMs`（見 KI-019 §5）。±13deg 給 26deg 視窗。
+// `createTrackingTrajectory()` 現在會在建構期驗證這個關係並 fail fast。
+const ANGULAR_BOUNDS_DEG = [-13, 13] as const;
 const SPEED_RANGE_DEG_PER_SEC = [5, 20] as const; // reuses the core matrix's speed candidates for cross-block comparability
 const ACCELERATION_RAMP_MS = 150; // well under both density cells' reversalIntervalMs[0] (schema.ts-enforced)
 const PREP_MS = 1000; // FR-54-5, same as tracking_core_pr_pilot_v1.ts

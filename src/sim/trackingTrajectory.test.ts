@@ -32,7 +32,9 @@ const REVERSAL_BASE: Extract<TrackingTrajectoryConfig, { kind: 'reversal-2d-v1' 
   kind: 'reversal-2d-v1',
   seed: 54321,
   durationMs: 30_000,
-  angularBoundsDeg: [-8, 8],
+  // KI-019 F-A2: a leg may demand speedMax x (intervalMax - ramp) = 24.6deg, which must fit the
+  // window (the generator rejects configs where it cannot).
+  angularBoundsDeg: [-13, 13],
   speedRangeDegPerSec: [10, 30],
   reversalIntervalMs: [400, 900],
   accelerationRampMs: 80,
@@ -116,20 +118,20 @@ describe('createTrackingTrajectory — band-limited-2d-v1', () => {
 
 /**
  * KI-019 fixture. Same parameter shape as the shipped `tracking_reversal_pilot_v1_medium` cell
- * (whose demanded travel per leg, `speedMax x (intervalMax - ramp)` = 25deg, exceeds the 16deg
- * window, so legs routinely end pinned against a bound) with the seed picked so the RNG walk
- * actually enters the degenerate state: pre-fix this config produced **3140 legs, 22.9% of the run
- * stationary, and a 758 ms stretch frozen at a corner**; post-fix it is 42 legs / 1.3% / 16 ms.
+ * (and geometrically legal — it passes the F-A2 consistency guard: a leg demands at most
+ * `20 x (1.4 - 0.15)` = 25deg inside a 26deg window), with the seed picked so the RNG walk
+ * actually walks both axes onto the same-side bound: pre-fix this config produced **3382 legs,
+ * 15.0% of the run stationary, and a 2781 ms stretch frozen at a corner**; post-fix it is
+ * 32 legs / 1.0% / 16 ms.
  *
- * Deliberately a synthetic fixture rather than the shipped cell: the medium cell's parameters are
- * still awaiting a protocol decision (KI-019 F-A2), and this invariant must keep holding whatever
- * they become. ~10% of seeds hit the state at this shape, so it is not a hand-tuned curiosity.
+ * A *legal* config on purpose — the trap is a generator bug, not merely a consequence of the
+ * inconsistent bounds KI-019 F-A2 fixed, and ~5% of seeds still hit it at this shape.
  */
 const REVERSAL_SATURATING: Extract<TrackingTrajectoryConfig, { kind: 'reversal-2d-v1' }> = {
   kind: 'reversal-2d-v1',
   seed: 13,
   durationMs: 25_000,
-  angularBoundsDeg: [-8, 8],
+  angularBoundsDeg: [-13, 13],
   speedRangeDegPerSec: [5, 20],
   reversalIntervalMs: [800, 1400],
   accelerationRampMs: 150,
@@ -269,14 +271,14 @@ describe('createTrackingTrajectory — reversal-2d-v1', () => {
       expect(Math.hypot(change.yawVelocityAfterDegPerSec, change.pitchVelocityAfterDegPerSec)).toBeGreaterThan(0);
     }
     // Leg count stays proportional to the reversal schedule instead of collapsing into slivers
-    // (pre-fix this fixture generated 3140 legs for a 25 s block; the shipped medium cell, 6644).
+    // (pre-fix this fixture generated 3382 legs for a 25 s block; the shipped medium cell, 6644).
     expect(trajectory.changes.length).toBeLessThan(200);
   });
 
   it('keeps a bound-saturating target moving instead of freezing it at a corner (KI-019)', () => {
     const { stillFraction, maxStillRunMs } = stationaryProfile(REVERSAL_SATURATING);
     // Rest-to-rest legs are momentarily still at every leg boundary, so a small fraction is by
-    // design; a pinned schedule instead parks the target (pre-fix: 22.9% still, 758 ms frozen).
+    // design; a pinned schedule instead parks the target (pre-fix: 15.0% still, 2781 ms frozen).
     expect(stillFraction).toBeLessThan(0.05);
     expect(maxStillRunMs).toBeLessThanOrEqual(50);
   });

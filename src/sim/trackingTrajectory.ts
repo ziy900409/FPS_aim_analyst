@@ -357,6 +357,22 @@ function createReversal2dV1(
   // 只是貼牆抖動。純由 config 導出，不引入新的 config 旋鈕。
   const minUsableRoomDeg = speedMin * rampNominalSec;
 
+  // KI-019 F-A2：幾何一致性守衛。單一 leg 的最大需求位移是 `speedMax x (intervalMax - ramp)`
+  // （rest-to-rest trapezoid）；放不進角度視窗時，每個 leg 都會被邊界截斷，交付的 reversal 密度
+  // 就不再是 `reversalIntervalMs` 宣稱的值（實測：window 16deg / 需求 25deg 的 medium cell 交付
+  // 46 次反轉而非約 23 次）。與 KI-020 的速度守衛同一個原則：config 宣稱的操弄若不可能被交付，
+  // 必須 fail fast，不得靜默降級。
+  const windowDeg = highDeg - lowDeg;
+  const maxLegTravelDeg = speedMax * (intervalMax / 1000 - rampNominalSec);
+  if (maxLegTravelDeg > windowDeg) {
+    throw new Error(
+      `trackingTrajectory: reversal-2d-v1 config cannot fit its own reversal interval — a leg may ` +
+        `demand ${maxLegTravelDeg.toFixed(2)}deg of travel but angularBoundsDeg spans only ` +
+        `${windowDeg.toFixed(2)}deg (raise the bounds, or lower speedRangeDegPerSec[1] / ` +
+        `reversalIntervalMs[1])`,
+    );
+  }
+
   const rng = createRan1(config.seed);
   const legs: ReversalLeg[] = [];
   const changes: PrecomputedTrackingChange[] = [];

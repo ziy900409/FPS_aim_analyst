@@ -1,7 +1,8 @@
 # KI-019 — `reversal-2d-v1` 在角度邊界飽和時排程退化：目標凍結在角落、產生數千筆 1ms leg
 
 > 類型：correctness bug（**已實際觸發並污染真人 pilot 資料**）。
-> 狀態：🟡 F-A1（無限退化）已修（WP-54 T6 slice 6，2026-09-03）；**F-A2（config 幾何不一致）待研究者決定**，見 §5。
+> 狀態：🟢 已修（F-A1 = WP-54 T6 slice 6；F-A2 = slice 9，研究者選定「放寬角度視窗」，2026-09-03）。
+> 殘差與 T7 選項見 §5.3。
 > 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-019。
 > 發現脈絡：WP-54 T6 instrumentation pilot 的第一份真人資料（P01，9 個 block，2026-09-03）
 > 經 `scripts/analyze-tracking-pilot.ts` 重建刺激時發現。
@@ -118,30 +119,48 @@ function roomAwareSign(sign, posDeg, lowDeg, highDeg, minUsableRoomDeg) {
 - `src/drill/tracking_reversal_pilot_v1.test.ts`：**兩個實際出貨的 cell** 都必須「目標持續移動」
   （靜止 < 5%、最長凍結 ≤ 50 ms、無零速度 leg、leg 數 < 200）。
 
-## 5. F-A2 — 待研究者決定：medium cell 的幾何不一致
+## 5. F-A2 — config 幾何不一致（已依研究者決定落地）
 
-F-A1 只修掉「無限退化」。medium 的 config **仍然幾何不一致**（每 leg 需求 25° > window 16°），
-後果是 leg 仍被邊界截斷：修後 46 legs / 25 秒 ≈ 平均 543 ms 一次反轉，而 config 宣稱
-800–1400 ms（約 23 次）。**被操弄的「reversal density」自變數依然不等於 config 值。**
+F-A1 只修掉「無限退化」。medium 的 config 當時**仍然幾何不一致**（每 leg 需求 25° > window 16°），
+leg 仍被邊界截斷：46 legs / 25 秒 ≈ 平均 543 ms 一次反轉，而 config 宣稱 800–1400 ms（約 23 次）。
 
-三個選項（**改動的是 T0 預註冊的 candidate 參數，屬研究決策，不由實作端自行決定**）：
+### 5.1 決策（2026-09-03，研究者選定）
 
-| 選項 | 具體改動 | 代價 |
-|---|---|---|
-| **(a) 放寬角度視窗**（建議） | `angularBoundsDeg: [-13, 13]`（window 26° ≥ 25°） | `reversalIntervalMs`/`speedRangeDegPerSec` 兩個被操弄變數都維持預註冊值；high cell 也一併變成幾乎不撞牆（更純的反轉刺激）。代價：目標行程變大（±13° 在 103° FOV 內仍舒適），兩個 cell 都需重跑 |
-| (b) 降低 `speedRangeDegPerSec` 上限 | `[5, 12]`（12 × 1.25 = 15° ≤ 16°） | 改掉速度範圍＝改掉另一個自變數，且與 core matrix 的速度候選不再可比 |
-| (c) 縮短 `reversalIntervalMs` 上限 | `[800, 950]`（20 × 0.8 = 16°） | 密度區間被壓到幾乎沒有變異，「medium」與「high」的對比意義消失 |
+**放寬角度視窗**：`angularBoundsDeg: [-8, 8] → [-13, 13]`（window 26° ≥ 需求 25°）。兩個被操弄
+變數（`reversalIntervalMs`、`speedRangeDegPerSec`）維持 T0 預註冊值。另外兩個選項（降速度上限 /
+縮短間隔上限）未採用——它們都會改掉另一個自變數或壓掉密度對比。
 
-配套（無論選哪個）：在 `createReversal2dV1()` 加**建構期一致性檢查**
-（`speedMax × (intervalMax − ramp) > window` 即 fail fast），讓這類 config 不可能再靜默退化。
-**故意不在 F-A1 一起落地**：加了守衛而 config 未改，現行 medium cell 會在載入時直接 throw，
-app 該 block 無法啟動；守衛與再參數化必須同一批落地。
+### 5.2 建構期一致性守衛（同批落地）
 
+`createReversal2dV1()` 現在在建構期驗證
+`speedMax × (intervalMax − ramp) ≤ angularBoundsDeg` 視窗寬度，違反即 throw 並在訊息裡給出實際
+數值與三個可調參數。這讓「config 宣稱的密度不可能被交付」不可能再靜默發生（與 KI-020 §4.3 的
+速度守衛同一原則）。
+
+守衛一併揭露了**四個既有測試 fixture 用的正是同一個不一致形狀**（`REVERSAL_BASE`、
+`SimLoop.test.ts`、`TargetManager.test.ts` 的 reversal fixture）——全部改為 ±13°。這也是為什麼
+既有測試從未抓到這個問題：fixture 與出貨 config 共用同一個錯誤前提。
+
+### 5.3 落地後的殘差（誠實記錄，非「已完全解決」）
+
+| cell | config 宣稱（平均間隔） | **實際交付 leg 數 / 25s** | 靜止比例 | 最大位移 |
+|---|---|---|---|---|
+| medium `[800,1400]ms` | ~23 次 | **36 次（+57%）** | 1.1% | 13.00° |
+| high `[300,600]ms` | ~56 次 | **59 次（+5%）** | 1.9% | 13.00° |
+
+殘差來源是**設計本身的邊界截斷**（而非 bug）：守衛保證「從一側邊界出發的最壞情況 leg 放得進
+window」，但一個從視窗中央出發、朝邊界前進的 leg 只有半個 window（13°）可用，仍會被截斷。要讓
+交付密度逐值等於 `reversalIntervalMs`，需要 `speedMax × (intervalMax − ramp) ≤ 半個 window`
+⇒ 視窗約 ±25°。
+
+**留給 T7 的選項**（不在 T6 決定）：若難度校準需要「交付密度＝設定密度」，把視窗再放寬到約 ±25°；
+目前 medium(36) vs high(59) 的密度對比方向正確且單調，足以支撐 T7 的相對比較。
 ## 6. DoD
 
 - [x] F-A1 修法落地，3 個回歸測試修前紅／修後綠。
 - [x] `high` cell 輸出逐位不變（以真人匯出檔的 60 筆記錄事件對表驗證）。
 - [x] 全專案 `tsc --noEmit` exit 0、`vitest run` 全綠。
-- [ ] F-A2：研究者選定 (a)/(b)/(c) → 落地 config 再參數化 + 建構期一致性守衛 + 更新
-      `docs/operational/analysis-tracking.md`。
-- [ ] P01 的 medium block（以及選定 (a) 後連帶變動的 high block）重跑。
+- [x] F-A2：研究者選定「放寬角度視窗」→ `angularBoundsDeg: [-13, 13]` + 建構期一致性守衛落地
+      （slice 9）；4 個既有 fixture 一併對齊。殘差（medium 交付 36 次 vs 宣稱 23 次）記於 §5.3，
+      並把「是否再放寬到 ±25°」留給 T7。
+- [ ] P01 的 medium **與 high** block 重跑（採 (a) 後 high 的軌跡也變了）。
