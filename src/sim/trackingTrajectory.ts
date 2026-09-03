@@ -185,16 +185,19 @@ function maxDeliverableRmsSpeed(components: readonly SinusoidComponent[], boundD
 
 function requireDeliverableSpeed(
   components: readonly SinusoidComponent[],
-  targetRmsSpeedDegPerSec: number,
+  perAxisTargetRmsSpeedDegPerSec: number,
+  configuredTargetRmsSpeedDegPerSec: number,
   boundDeg: number,
   boundFieldName: string,
 ): void {
   if (boundDeg <= SUPPRESSED_AXIS_BOUND_DEG) return; // deliberately near-static axis
   const maxSpeed = maxDeliverableRmsSpeed(components, boundDeg);
-  if (targetRmsSpeedDegPerSec <= maxSpeed) return;
+  if (perAxisTargetRmsSpeedDegPerSec <= maxSpeed) return;
   throw new Error(
     `trackingTrajectory: band-limited-2d-v1 cannot deliver targetRmsSpeedDegPerSec=` +
-      `${targetRmsSpeedDegPerSec} within ${boundFieldName}=${boundDeg}deg on the ` +
+      `${configuredTargetRmsSpeedDegPerSec} (needs ` +
+      `${perAxisTargetRmsSpeedDegPerSec.toFixed(2)}deg/s on this axis) within ` +
+      `${boundFieldName}=${boundDeg}deg on the ` +
       `[${components[0].omega / (2 * Math.PI)}, ${components[components.length - 1].omega / (2 * Math.PI)}]Hz ` +
       `band — the most this envelope can deliver is ${maxSpeed.toFixed(2)}deg/s (raise ` +
       `${boundFieldName}, raise frequencyBandHz, or lower targetRmsSpeedDegPerSec)`,
@@ -221,11 +224,34 @@ function createBandLimited2dV1(
   // （實測：2° 振幅 + [0.1,0.7]Hz 下，5 與 20 deg/s 都只交付約 0.86 deg/s）。改為建構期 fail fast
   // 並在訊息裡給出「此振幅/頻帶下可交付的最大 RMS 速度」，讓 config 作者當場知道要調哪個參數。
   // 被抑制到近零的軸（axis calibration 的 off-axis）刻意豁免：它的用途就是「幾乎不動」。
-  requireDeliverableSpeed(yawComponents, config.targetRmsSpeedDegPerSec, config.yawBoundDeg, 'yawBoundDeg');
-  requireDeliverableSpeed(pitchComponents, config.targetRmsSpeedDegPerSec, config.pitchBoundDeg, 'pitchBoundDeg');
+  // KI-023：`targetRmsSpeedDegPerSec` 是**交付的 2D RMS 角速度**——螢幕上目標移動的速度,也是
+  // 預註冊條件標籤(5 / 20 deg/s)講的那個量。求解仍逐軸進行,但每軸的目標值要除以 √(活躍軸數),
+  // 否則兩軸各自命中 set-point 後合成速度為 √2 倍(實測:宣稱 5/20、交付 7.14/28.3)。活躍軸以
+  // `SUPPRESSED_AXIS_BOUND_DEG` 判定——與 `requireDeliverableSpeed` 同一條界線,故 axis
+  // calibration(單軸)的每軸目標等於 set-point、行為逐位不變。
+  const activeAxisCount =
+    (config.yawBoundDeg > SUPPRESSED_AXIS_BOUND_DEG ? 1 : 0) +
+    (config.pitchBoundDeg > SUPPRESSED_AXIS_BOUND_DEG ? 1 : 0);
+  const perAxisTargetRmsSpeed =
+    config.targetRmsSpeedDegPerSec / Math.sqrt(Math.max(activeAxisCount, 1));
 
-  const yawScale = boundedSpeedScale(yawComponents, config.targetRmsSpeedDegPerSec, config.yawBoundDeg);
-  const pitchScale = boundedSpeedScale(pitchComponents, config.targetRmsSpeedDegPerSec, config.pitchBoundDeg);
+  requireDeliverableSpeed(
+    yawComponents,
+    perAxisTargetRmsSpeed,
+    config.targetRmsSpeedDegPerSec,
+    config.yawBoundDeg,
+    'yawBoundDeg',
+  );
+  requireDeliverableSpeed(
+    pitchComponents,
+    perAxisTargetRmsSpeed,
+    config.targetRmsSpeedDegPerSec,
+    config.pitchBoundDeg,
+    'pitchBoundDeg',
+  );
+
+  const yawScale = boundedSpeedScale(yawComponents, perAxisTargetRmsSpeed, config.yawBoundDeg);
+  const pitchScale = boundedSpeedScale(pitchComponents, perAxisTargetRmsSpeed, config.pitchBoundDeg);
 
   return {
     changes: [],
@@ -390,9 +416,16 @@ function createReversal2dV1(
     throw new Error('trackingTrajectory: accelerationRampMs must be smaller than reversalIntervalMs[0]');
   }
   const rampNominalSec = rampMsConfig / 1000;
+  // KI-023：`speedRangeDegPerSec` 命名的是螢幕上目標的 **2D** 速度(與 `band-limited-2d-v1` 的
+  // set-point 同一個構念,也是 tracking_reversal_pilot_v1 借用 core matrix 速度候選值時預設的
+  // 「cross-block comparability」)。兩軸各自從該範圍抽樣時,合成速度可達 hypot(max,max)=√2×max。
+  // 改為每軸自 range/√2 抽樣：兩軸皆抽 min ⇒ 2D = speedMin、皆抽 max ⇒ 2D = speedMax,任何組合
+  // 都落在範圍內。抽樣次數不變 ⇒ 同 seed 的 RNG 流結構不變。
+  const perAxisSpeedMin = speedMin / Math.SQRT2;
+  const perAxisSpeedMax = speedMax / Math.SQRT2;
   // 見 `roomAwareSign`：一個 leg 至少要放得下「最慢速度的完整 ramp-up + ramp-down」位移，否則它
   // 只是貼牆抖動。純由 config 導出，不引入新的 config 旋鈕。
-  const minUsableRoomDeg = speedMin * rampNominalSec;
+  const minUsableRoomDeg = perAxisSpeedMin * rampNominalSec;
 
   // KI-019 F-A2：幾何一致性守衛。單一 leg 的最大需求位移是 `speedMax x (intervalMax - ramp)`
   // （rest-to-rest trapezoid）；放不進角度視窗時，每個 leg 都會被邊界截斷，交付的 reversal 密度
@@ -400,7 +433,7 @@ function createReversal2dV1(
   // 46 次反轉而非約 23 次）。與 KI-020 的速度守衛同一個原則：config 宣稱的操弄若不可能被交付，
   // 必須 fail fast，不得靜默降級。
   const windowDeg = highDeg - lowDeg;
-  const maxLegTravelDeg = speedMax * (intervalMax / 1000 - rampNominalSec);
+  const maxLegTravelDeg = perAxisSpeedMax * (intervalMax / 1000 - rampNominalSec);
   if (maxLegTravelDeg > windowDeg) {
     throw new Error(
       `trackingTrajectory: reversal-2d-v1 config cannot fit its own reversal interval — a leg may ` +
@@ -429,8 +462,8 @@ function createReversal2dV1(
     }
 
     const candidateDurationSec = randomFloat(rng, intervalMin, intervalMax) / 1000;
-    const yawMagnitude = randomFloat(rng, speedMin, speedMax);
-    const pitchMagnitude = randomFloat(rng, speedMin, speedMax);
+    const yawMagnitude = randomFloat(rng, perAxisSpeedMin, perAxisSpeedMax);
+    const pitchMagnitude = randomFloat(rng, perAxisSpeedMin, perAxisSpeedMax);
 
     // KI-019：貼牆的軸改朝有空間的一側，否則它會把共用的 leg 長度壓到抖動級並無限交替退化。
     yawSign = roomAwareSign(yawSign, yawPos, lowDeg, highDeg, minUsableRoomDeg);

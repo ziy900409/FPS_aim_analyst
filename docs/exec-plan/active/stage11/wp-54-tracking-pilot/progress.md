@@ -2,11 +2,42 @@
 
 ## Status
 
-- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A = REVISE（第二輪）**（2026-09-03，P03 重跑，見 [T6-instrumentation-gate.md §11](T6-instrumentation-gate.md)）。資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；**唯一阻塞 = [KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md) 的速度語意待研究決策**（兩軸 cell 交付 √2 倍，預註冊的 5/20 deg/s 從未被交付）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`。**唯一待辦 = 9 個 block 重跑**（三家族刺激都變了，P01 資料全部作廢）。
+- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A = REVISE（第二輪）**（2026-09-03，P03 重跑，見 [T6-instrumentation-gate.md §11](T6-instrumentation-gate.md)）。資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`。**唯一待辦 = 9 個 block 重跑**（三家族刺激都變了，P01 資料全部作廢）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-03 — T6 slice 15：KI-023 落地（速度 set-point 改 2D 語意，含 reversal 家族）
+
+- **使用者決策（2/2）**：①KI-023 採 **Option A**（`targetRmsSpeedDegPerSec` = 交付的 2D RMS 角速度）；
+  ②OQ-KI23-1 **reversal 家族一併改**（否則兩家族速度刻度永久不同，且該 drill 註解宣稱的
+  cross-block comparability 不成立）。
+- **落地**：`band-limited-2d-v1` 每軸求解目標改為 `set-point / √(活躍軸數)`，活躍軸以既有的
+  `SUPPRESSED_AXIS_BOUND_DEG` 判定（與速度守衛同一條界線）⇒ **單軸 axis calibration 逐位不變**；
+  `reversal-2d-v1` 每軸自 `speedRangeDegPerSec / √2` 抽樣（抽樣次數不變 ⇒ 同 seed 的 RNG 流結構
+  不變），`minUsableRoomDeg` 與 KI-019 的幾何守衛改用每軸速度；`requireDeliverableSpeed()` 的
+  錯誤訊息同時帶出 config 值與該軸需求值。
+- **測試（C-D4 的實質修復）**：T1 的 `achieves approximately the configured target RMS speed` 與
+  drill 層的 `every cell actually delivers its nominal RMS speed` **都改量 `hypot(yaw, pitch)`**，
+  驗收帶收緊到 0.95–1.05；新增「單軸 cell 不因此被縮放」與「每個 leg 的 2D 巡航速度落在
+  `speedRangeDegPerSec` 內」兩案。修前紅已於工作區證實（2D 比值 **1.4186** > 1.05；reversal leg
+  2D 巡航 **31.75** > `speedMax` 30）。
+- **實測結果**：交付/宣稱 **1.000–1.017**（修前 1.414–1.435）；calibration 1.013/1.017 逐位不變。
+  **兩項副效益**：①20 deg/s cell 行程由 ±13–14° 縮到 **±9–11°**，離地板與垂直 FOV 更遠；
+  ②**KI-019 §5.3 殘差同步改善**——medium 交付反轉 **36 → 29**（宣稱約 23），已回寫 KI-019 §5.3。
+- **文件**：[analysis-tracking.md](../../../operational/analysis-tracking.md) 的「刺激語意」節改寫為
+  **G1/G2/G3 三個世代**的判讀規則（G2 = 每軸語意，含 P01/P02/P03 三批，速度軸須乘 √2、calibration
+  除外）；KI-020 §6.1 的「實測交付 5.05 / 20.21」標註為每軸值。
+- **驗證**：`npx vitest run` **207 files / 2000 tests passed**（1 skipped file / 2 skipped tests）；
+  `npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0；
+  `npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` **1/1 passed**（以新
+  config 真實跑完 practice + calibration 兩個 25 秒 block）。
+- **受測者主觀回報（gate §11.3）**：0.5° 目標「**幾乎看不見／只能靠猜**」。依 §10.5 預先約定
+  **不放大目標**，照實留檔為 T7 的 floor 證據；但本輪該 cell 實際跑在 28.3 deg/s，T7 須在修正後的
+  速度下重新確認。
+- **下一步**：9 個 block **第三輪重跑**（gate §11.7）。speed 是被操弄的自變數，刻度改變即條件改變
+  ⇒ P01/P02/P03 三批全部作廢。
 
 ### 2026-09-03 — T6 slice 14：Gate A 第二輪帳本（§11）+ KI-023 診斷（docs-only）
 

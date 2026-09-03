@@ -341,13 +341,13 @@ P02（`box` 0.0349/0.1396，slice 10/11 的 **cube** build）、P03（`sphere`�
 | 觀察點 | 結果 |
 |---|---|
 | **TOT 是否離開 100%** | ✅ **是**。八個條件 `totPercent` 落在 **0.3% – 34.6%**（0.5°/20dps 0.3%、0.5°/5dps 2.6%、2°/20dps 4.0%、2°/5dps 34.6%、calib-h 12.0%、calib-v 10.6%、reversal high 13.8% / medium 18.9%）⇒ **hitbox 真的生效**，TOT 恢復為帶資訊的指標（修前六個 block 全部 100.0%） |
-| **0.5° 目標是否可辨識** | ⬜ **待受測者主觀回報**。客觀面：0.5°/20dps 的 `tAcquireMs` 為 **3172 ms**（其餘條件 0–1555 ms）、TOT 僅 0.3%、`drops/s` 0.275（少到不是「一直掉」而是「幾乎沒上過」）。**但此判讀被 §11.4 的 KI-023 汙染**——該 cell 實際跑在 **28.3 deg/s** 而非預註冊的 20 ⇒ **不得據此批資料宣告 floor** |
+| **0.5° 目標是否可辨識** | ❗ **受測者回報「幾乎看不見／只能靠猜」**（2026-09-03）。依 §10.5 的預先約定，**不放大目標**——這是 T7 難度校準要的 floor 證據，照實留檔。客觀面：0.5°/20dps 的 `tAcquireMs` 為 **3172 ms**（其餘條件 0–1555 ms）、TOT 僅 0.3%、`drops/s` 0.275（少到不是「一直掉」而是「幾乎沒上過」）。**但客觀數字被 §11.4 的 KI-023 汙染**——該 cell 實際跑在 **28.3 deg/s** 而非預註冊的 20 ⇒ **不得據此批資料把 0.5° 判為 floor**；主觀回報本身仍成立（0.5° 的可見性與速度無關），T7 應在修正後的速度下重新確認 |
 
 ### 11.4 本輪新缺陷
 
 | # | 缺陷 | 狀態 |
 |---|---|---|
-| 1 | **交付速度是每軸量,兩軸 cell 超交付 √2 倍**：四個 core cell 實測 2D RMS **7.14 / 28.3 deg/s** vs 宣稱 5 / 20（141–143%，驗收帶 0.9–1.1）；單軸 calibration 交付 1.0 倍 ⇒ 宣稱同為 5 deg/s 的 block 實際差 1.41 倍。T1 測試量單軸、分析 runner 量 2D ⇒ **同一構念兩個定義**（違反 C-D4）。速度比值（4×）完好 | 🟡 [KI-023](../../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md) 診斷完成，**三個再參數化選項待研究決策**（[BD-023](../../../../known_issue/BUGFIX-DECISIONS.md)） |
+| 1 | **交付速度是每軸量,兩軸 cell 超交付 √2 倍**：四個 core cell 實測 2D RMS **7.14 / 28.3 deg/s** vs 宣稱 5 / 20（141–143%，驗收帶 0.9–1.1）；單軸 calibration 交付 1.0 倍 ⇒ 宣稱同為 5 deg/s 的 block 實際差 1.41 倍。T1 測試量單軸、分析 runner 量 2D ⇒ **同一構念兩個定義**（違反 C-D4）。速度比值（4×）完好 | ✅ **已修**（[KI-023](../../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)；研究者選定 Option A，含 reversal 家族）⇒ 見 §11.6 |
 | 2 | **分析摘要描述被擋的第一次 attempt**：主控台摘要取 `condition.runs[0]`，而 evidence 依 FR-54-10 是 append-only、blocked run 依契約不帶 p0/p1 ⇒ 兩個重跑過的條件被印成 `p0=- p1=-`（8 個條件中 2 個）。evidence JSON/HTML 一直正確 | ✅ **已修**（[KI-022](../../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)，commit `922672f`）；重跑分析後八個條件全部印出 P0/P1 |
 
 ### 11.5 其他觀察（非缺陷，供 T7 決策）
@@ -361,13 +361,59 @@ P02（`box` 0.0349/0.1396，slice 10/11 的 **cube** build）、P03（`sphere`�
 - **一場 session 出現 2 次 protocol violation**：操作步驟（§5 第 4 點）的「禁開火/禁 ADS/禁移動」
   在實測中被違反兩次。runbook 可能需要在 block 開始前更醒目的提示。
 
-### 11.6 判定
+### 11.6 研究決策與落地（2026-09-03）
+
+**研究者選定 [KI-023](../../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)
+Option A：`targetRmsSpeedDegPerSec` 改為交付的 2D RMS 角速度**，並回答 OQ-KI23-1「reversal 家族
+一併改」。落地方式：每軸求解目標改為 `set-point / √(活躍軸數)`（活躍軸以既有的
+`SUPPRESSED_AXIS_BOUND_DEG` 判定）；reversal 每軸自 `speedRangeDegPerSec / √2` 抽樣（抽樣次數不變
+⇒ 同 seed 的 RNG 流結構不變）。
+
+| drill | 交付 2D RMS / 宣稱 | 修前 | 最大行程 | 交付反轉數 |
+|---|---|---|---|---|
+| `practice` / `2deg_5dps` / `0p5deg_5dps`（5 deg/s） | **1.002 / 1.010 / 1.014** | 1.418 / 1.428 / 1.435 | ±2.2–2.4° | — |
+| `2deg_20dps` / `0p5deg_20dps`（20 deg/s） | **1.002 / 1.000** | 1.417 / 1.414 | ±9.2–11.1°（修前 ±13–14°） | — |
+| `calibration_horizontal` / `_vertical` | **1.013 / 1.017** | 1.013 / 1.017（**逐位不變**） | ±3.5–3.7° | — |
+| `reversal_medium` / `_high` | 2D RMS 11.72 / 9.59（範圍 [5,20]） | 14.76 / 13.38 | ±13° | **29 / 58**（修前 36 / 59） |
+
+**兩項副效益**：①20 deg/s cell 的行程縮到 ±9–11°，離地板與垂直 FOV 邊界更遠；
+②**KI-019 §5.3 的殘差同步改善**——medium 交付反轉數 **36 → 29**（config 宣稱約 23），因為每軸速度
+降 1/√2 使 leg 行程縮短、邊界截斷減輕。是否仍需放寬到 ±25° 由 T7 依此新數字再判。
+
+**驗證**：`npx vitest run` **207 files / 2000 tests passed**（1 skipped file / 2 skipped tests）；
+`npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0；
+`npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` 1/1 passed（以新 config
+真實跑完 practice + calibration 兩個 25 秒 block）。修前紅已於工作區證實（2D 比值 1.4186 > 1.05、
+reversal leg 的 2D 巡航 31.75 > `speedMax` 30）。
+
+### 11.7 下一步：第三輪重跑（9 個 block）
+
+**P03 這批（以及 P01/P02）作廢**：speed 是被操弄的自變數，其刻度改變即條件改變；三批資料屬
+[analysis-tracking.md](../../../../operational/analysis-tracking.md)「刺激語意」節定義的 **G2 世代**
+（每軸語意），與現行 **G3** 不可合併。
+
+- **重跑範圍**：9 個 block 全部。core 四個 cell + practice 的軌跡改變、reversal 兩個 cell 的軌跡
+  改變；**axis calibration 兩個 block 逐位不變**，但仍隨 manifest 一起跑（且 §11.3 的 0.5° 主觀
+  回報需要在修正後的速度下再確認一次）。
+- **份量**：3-5 位 tester、每人 session 0 + session 1（操作步驟與回收格式不變，見 §5、§7）。
+- **這次要看的**：`rmsSpeed=交付/宣稱` 每個 cell 應落在 **0.9–1.1**（本輪離線量測已是 1.000–1.017，
+  真人資料上應複現）；reversal `still=` < 5%；TOT 分布（本輪 0.3–34.6%，速度修正後預期整體上移）；
+  以及 **0.5° 目標在 20 deg/s 修正後是否仍「只能靠猜」**。
+- **不需再證**（§10.2 + §11.2 已兩次成立）：資料鏈路、覆蓋率、事件對表、追溯、報告 parity、
+  practice 排除、protocol-violation 閘門與 retry 流程、60 Hz 上 25 秒 block 不掉 tick。
+
+### 11.8 判定
 
 依 §9 既有判準——「出現**可修的** instrumentation defect（修完重跑受影響條件即可）」——本輪
-仍為 **🔴 REVISE**：資料鏈路第二次成立且涵蓋面更廣（retry 流程、sphere 幾何、TOT 恢復資訊量），
-但 KI-023 使預註冊的速度刻度仍未被交付。**下一步不是收更多人,是先拍板 KI-023 的再參數化選項**；
-選 Option A 則四個 core cell + practice（必要時含兩個 reversal cell）需再重跑一輪，選 Option B 則
-本批資料在新標籤下即為有效。
+為 **🔴 REVISE**：資料鏈路第二次成立且涵蓋面更廣（retry 流程、sphere 幾何、TOT 恢復資訊量），
+但 KI-023 使預註冊的速度刻度未被交付。兩個缺陷**都已修完**（KI-022 commit `922672f`、KI-023 見
+§11.6），**Gate A 的下一輪同樣只缺資料**：9 個 block 第三輪重跑（§11.7）。
+
+**這是第二次因「刺激未交付預註冊操弄」而 revise**（第一次 §10.3）。兩次的共同根因不是儀器，而是
+**測試量錯了量**：KI-020 的容忍度（`rms > 0.5`）讓「宣稱 20、交付 1.18」出貨，KI-023 的單軸量法讓
+「宣稱 20、交付 28.3」出貨。現在 T1 與 drill 層的斷言都改量交付的 2D 速度，且驗收帶收緊到
+0.95–1.05；分析 runner 的 `stimulusCheck()` 從一開始就量對，兩次都是它揭露的——**T7 之前不應再放寬
+這條帶寬**。
 
 ## 9. Go / revise / stop
 

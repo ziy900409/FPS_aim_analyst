@@ -391,7 +391,7 @@ Eight axes, all fail-fast on a missing/malformed source field:
 | `sensitivity` | `meta.sensitivity` |
 | `inputMode` | `meta.mouseIntegration?.model ?? 'aim-diff-legacy'` — a judgment call (NFR-54-7 does not define this field further); see progress.md OQ-54-9 |
 
-### 刺激語意：angular size 與 delivered speed（T6 slice 10 / KI-020）
+### 刺激語意：angular size 與 delivered speed（T6 slice 10 / KI-020、slice 15 / KI-023）
 
 WP-54 的 core matrix 有兩個被操弄的因子，兩者在 2026-09-03 之前**都沒有被真正交付**，分析時務必
 以下列語意為準：
@@ -399,13 +399,21 @@ WP-54 的 core matrix 有兩個被操弄的因子，兩者在 2026-09-03 之前*
 | 因子 | 權威來源 | 說明 |
 |---|---|---|
 | **Target angular size** | `meta.targets.hitbox`（sphere，直徑 `2 · distance · tan(size/2)`） | 2.0° → 0.13964u、0.5° → 0.03491u @ 4u。**不是** `trackingTrajectory.yawBoundDeg`——那是行程振幅。sphere 使 on-target 容許角在各方向等向，即「角尺寸」的字面語義；slice 10 曾因 WP-55 的 box-only 閘門改用 cube（對角 √2 倍 anisotropy），KI-021 解除該限制後於 slice 12 改回 sphere（GD-30） |
-| **Delivered RMS speed** | `trackingTrajectory.targetRmsSpeedDegPerSec`，且**保證等於實際交付值** | `createBandLimited2dV1()` 現在會在請求速度不可交付時 fail fast（訊息帶上該 envelope 的最大可交付速度）。被抑制到近零的 off-axis（axis calibration）豁免 |
+| **Delivered RMS speed** | `trackingTrajectory.targetRmsSpeedDegPerSec` = **交付的 2D RMS 角速度**（螢幕上目標的速度），且保證等於實際交付值 | 求解逐軸進行，但每軸目標為 `set-point / √(活躍軸數)`（KI-023）——兩軸 cell 各軸取 `1/√2`，單軸 axis calibration 不變。`createBandLimited2dV1()` 在請求速度不可交付時 fail fast（訊息同時帶出 config 值與該軸的需求值）。實測交付/宣稱：core 四個 cell 1.000–1.014、calibration 1.013/1.017 |
+| **Reversal 速度範圍** | `trackingTrajectory.speedRangeDegPerSec` = 每個 leg 的 **2D** 巡航速度範圍 | 同一構念（KI-023）。每軸自 `range / √2` 抽樣 ⇒ 兩軸皆抽 min/max 時 2D 恰為 `speedMin`/`speedMax`。被剩餘時間或自身可用空間截短的 leg 巡航較慢，故下界是「範圍被用到」而非逐 leg 保證 |
 | Travel amplitude | `trackingTrajectory.yawBoundDeg`/`pitchBoundDeg` | 所有 core cell 共用 ±16°（非操弄變數）；reversal cell 用 `angularBoundsDeg ±13°` |
 | Frequency band | `trackingTrajectory.frequencyBandHz` | core cell 為 `[0.3, 2.1]` Hz（自 `[0.1, 0.7]` 提高，才能在共用振幅下交付 20 deg/s） |
 
-歷史資料判讀：`[0.1, 0.7]` Hz + `yawBoundDeg ≤ 2` 的匯出檔（2026-09-03 之前）其交付速度 ≈
-`0.605 × 振幅`，與 metadata 宣稱值無關；且所有 cell 的目標角尺寸相同（預設 H1，約 ±7°），故其
-`totPercent` 恆為 100%、不帶資訊量。這類資料不可用於 size/speed 條件比較。
+**歷史資料判讀（三個世代，都不可與現行資料合併做速度比較）**：
+
+| 世代 | 辨識方式 | 交付速度的真實值 |
+|---|---|---|
+| **G1**（KI-020 之前） | `frequencyBandHz [0.1,0.7]` + `yawBoundDeg ≤ 2` + `meta.targets.hitbox` 為預設 H1 | ≈ `0.605 × 振幅`，**與 metadata 宣稱值無關**；所有 cell 目標角尺寸相同（約 ±7°）⇒ `totPercent` 恆為 100%、不帶資訊量 |
+| **G2**（KI-020 已修、KI-023 未修；2026-09-03 的 P01/P02/P03 三批全屬此代） | `frequencyBandHz [0.3,2.1]` + `yawBoundDeg 16` + 每 cell 有自己的 `targets.hitbox` | 每軸 RMS = 宣稱值 ⇒ **螢幕上的 2D 速度 = 宣稱值 × √2**（兩軸 cell；實測 7.14 / 28.3 對 5 / 20）。**單軸 axis calibration 例外**，其交付即為宣稱值 ⇒ 同一批資料裡 calibration 與 core 的「5 deg/s」相差 1.41 倍。reversal 的 `speedRangeDegPerSec` 亦為每軸值 |
+| **G3**（KI-023 已修，本節上表所述） | 同 G2，但 `targetRmsSpeedDegPerSec` 已是 2D 語意 | 交付即宣稱值（實測比值 1.000–1.017） |
+
+G2 資料若要納入分析，速度軸須自行乘 `√2`（calibration 除外）；但條件標籤與 compatibility key 記的
+仍是宣稱值，**跨世代合併需明確標註世代**。
 
 **Compatibility key**（NFR-54-7）隨之改名/擴充：`sizeDeg` → `travelAmplitudeDeg`（語意本來就是振幅），
 新增 `targetHitboxWidthU`（真正的尺寸軸；`Meta` 不記錄目標距離，故以 source unit 表達）與

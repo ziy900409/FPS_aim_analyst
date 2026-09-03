@@ -146,15 +146,15 @@ describe('tracking_core_pr_pilot_v1 — practice/calibration/core matrix configs
       const trajectory = createTrackingTrajectory(config);
       const out = { yawDeg: 0, pitchDeg: 0, yawVelocityDegPerSec: 0, pitchVelocityDegPerSec: 0 };
       const tickCount = Math.round((config.durationMs / 1000) * SIM_HZ);
-      // Measure on the axis that is actually driven (calibration suppresses one axis on purpose).
-      const useYaw = config.yawBoundDeg >= config.pitchBoundDeg;
+      // KI-023: measure the *2D* speed — the speed of the target on screen. Measuring only the
+      // driven axis is what let every two-axis cell deliver √2 × its nominal (7.14 for a claimed
+      // 5, 28.3 for a claimed 20) and still pass this very assertion.
       let sumSquares = 0;
       let maxAbsDeg = 0;
       for (let i = 0; i < tickCount; i++) {
         trajectory.sample(i / SIM_HZ, out);
-        const velocity = useYaw ? out.yawVelocityDegPerSec : out.pitchVelocityDegPerSec;
-        sumSquares += velocity * velocity;
-        maxAbsDeg = Math.max(maxAbsDeg, Math.abs(useYaw ? out.yawDeg : out.pitchDeg));
+        sumSquares += out.yawVelocityDegPerSec ** 2 + out.pitchVelocityDegPerSec ** 2;
+        maxAbsDeg = Math.max(maxAbsDeg, Math.abs(out.yawDeg), Math.abs(out.pitchDeg));
       }
       const deliveredRms = Math.sqrt(sumSquares / tickCount);
       expect(deliveredRms / config.targetRmsSpeedDegPerSec, `${drill.drillId} delivered/nominal`).toBeGreaterThan(0.9);

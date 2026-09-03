@@ -18,7 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
-| [KI-023](KI-023-target-speed-set-point-is-per-axis-not-2d.md) | `targetRmsSpeedDegPerSec` 是**每軸** set-point,而螢幕上的目標速度是兩軸向量合成 ⇒ 兩軸 cell 交付 **√2 倍**(實測 7.14/28.3 vs 宣稱 5/20),預註冊的絕對值從未被交付;單軸 calibration 卻交付 1.0 倍 ⇒ 宣稱同速度的 block 實際差 1.41 倍。T1 測試只量 yaw、分析 runner 量 hypot ⇒ 同一構念**兩個定義**(違反 C-D4)。速度比值(4×)完好 | BD-023 🟡:三個選項(A 改 2D 語意並重跑 / B 保留每軸語意改名改預註冊值 / C 只改文件),**待研究決策**;建議 A | 🟡 診斷完成、修法待拍板 |
+| [KI-023](KI-023-target-speed-set-point-is-per-axis-not-2d.md) | `targetRmsSpeedDegPerSec` 是**每軸** set-point,而螢幕上的目標速度是兩軸向量合成 ⇒ 兩軸 cell 交付 **√2 倍**(實測 7.14/28.3 vs 宣稱 5/20),預註冊的絕對值從未被交付;單軸 calibration 卻交付 1.0 倍 ⇒ 宣稱同速度的 block 實際差 1.41 倍。T1 測試只量 yaw、分析 runner 量 hypot ⇒ 同一構念**兩個定義**(違反 C-D4)。速度比值(4×)完好 | BD-023 ✅:研究者選定 **Option A**(2D 語意,含 reversal 家族);每軸求解目標改 `set-point / √活躍軸數`,單軸 calibration 逐位不變 | ✅ 已修(2026-09-03),**9 個 block 待重跑** |
 | [KI-022](KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) | pilot 分析 runner 的主控台摘要取 `condition.runs[0]`，而 evidence 依 FR-54-10 是 append-only、blocked 的 attempt 依契約不帶 `p0`/`p1` ⇒ 任何「第一次被擋、重跑後合格」的條件都被印成 `p0=- p1=-`。實測 P03 重跑 8 個條件中有 2 個中招；evidence JSON/HTML 一直是對的，說謊的是**人據以下 gate 結論的那一層** | BD-022 ✅：摘要改取第一個 eligible run（無 eligible 時退回 `runs[0]`），選擇邏輯抽成 `scripts/trackingPilotSummary.ts` 的純函式以便測試；不動 `buildTrackingPilotEvidence()` 的 append-only 契約 | ✅ 已修（2026-09-03） |
 | [KI-021](KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) | on-target 離線推導（`trackingDerivation.isOnTarget()`）是 ray/AABB test 且 `hitboxFromMeta()` 丟掉 `shape`，`shape:'sphere'` 目標因此被當成外接立方體——與 `HitDetector` 的球體相交**不同幾何**，違反 GD-7 與 CONTEXT.md §23。**已在正式 Assessment drill 上生效**：`spider-shot-v2`（sphere，2.0° @8u）的 `firstOnTarget` 最多寬鬆 41%（對角 1.41° vs 球面 1.0°），偏差方向相依 | BD-021 ✅：`HitboxSize` 帶 `shape` + `isOnTarget()` 加 ray/sphere 分支（`radius=width/2`，鏡射引擎）+ 放寬 WP-55 閘門並補 sphere 三軸相等檢查 | ✅ 已修（2026-09-03） |
 | [KI-020](KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | core 2×2「size × speed」matrix 兩個自變數都沒被交付：`boundedSpeedScale` 靜默取 min 使交付速度只由振幅決定（5 vs 20 deg/s 實測 1.21 vs 1.18），而「size」被接到行程振幅、沒有任何 cell 設 `targets.hitbox`（目標角尺寸四個 cell 相同、約 ±7°，TOT 全部 100%） | BD-020(§3，size 改為真的目標角尺寸 hitbox；speed 改以提高頻帶 + 共用振幅交付；`createBandLimited2dV1()` 加建構期一致性守衛) | ✅ 已修(2026-09-03) |
@@ -48,20 +48,8 @@
 
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
 
-### BD-023 🟡 KI-023 — 目標速度 set-point 是每軸量,兩軸 cell 交付 √2 倍;**再參數化待研究決策**(2026-09-03)
-
-| | |
-|---|---|
-| **發現處 / 根因** | [KI-023](KI-023-target-speed-set-point-is-per-axis-not-2d.md) / WP-54 T6 第二輪真人資料(P03 重跑)的刺激檢查。根因:`boundedSpeedScale()` 對 yaw/pitch **各自**求解,使每軸 RMS 角速度等於 `targetRmsSpeedDegPerSec`;螢幕上的目標速度是 `hypot(yaw, pitch)` ⇒ 兩軸等量時交付 **√2 × set-point**。實測每軸命中 1.00–1.02、2D 為 1.414–1.435。 |
-| **決策(修法選項)** | **待拍板**。A:set-point 改 2D 語意(每軸求解目標改 `target/√活躍軸數`)——預註冊的 5/20 真被交付、calibration 與 core 回到同一刻度,**代價是 4 個 core cell + practice(必要時含 2 個 reversal cell)再重跑一輪**。B:保留每軸語意、欄位更名 `targetPerAxisRmsSpeedDegPerSec`、預註冊值改記 7.07/28.28——**不必重跑**,但屬 preregistration drift 且「calibration 宣稱 5 交付 5、core 宣稱 7.07 交付 7.07」的跨家族刻度差仍在。C:只改文件——第二定義仍在,不符 C-D4,**不建議**。三案共通必做:把 T1 的 RMS 斷言改量與權威定義同一個量。 |
-| **理由(建議 A)** | 研究構念是「目標在螢幕上移動多快」,那就是 2D 合成速度;KI-023 §3 的三個後果(絕對值未交付、calibration 與 core 不同刻度、reversal `[5,20]` 每軸抽樣使「跨 block 可比性」的原始理由不成立)只有 A 能同時解掉。A 另有副效益:交付振幅同步縮 1/√2,20 deg/s cell 的行程由 ±13–14° 降到約 ±9–10°,更遠離 KI-019 的邊界截斷。 |
-| **偏離計畫** | 無偏離協議。**未落地任何修法**——選項改變刺激,屬研究決策(同 KI-019 F-A2 / KI-020 §4 的處理方式),故本輪只交付診斷。 |
-| **遺留 OQ / 未做** | **OQ-KI23-1**:reversal 的 `speedRangeDegPerSec` 是否一併改 2D 語意(改則兩個 reversal cell 也要重跑;不改則兩個家族的速度刻度永久不同)。**OQ-KI23-2**:P01/P02/P03 三批舊資料的判讀規則要寫進 `analysis-tracking.md`——每一批的交付速度都是每軸值,`meta` 宣稱值需乘 √2 才是螢幕速度(單軸 calibration 除外)。**OQ-KI23-3**:KI-020 §6 記的「實測交付 5.05 / 20.21 deg/s」是每軸值,需回標註記。 |
-| **影響面(若採 A)** | `src/sim/trackingTrajectory.ts`(`createBandLimited2dV1()` 的每軸求解目標 + `requireDeliverableSpeed()` 的判定基準)、`src/sim/trackingTrajectory.test.ts`(RMS 斷言改量 2D + 單軸案)、可能含 `src/drill/tracking_reversal_pilot_v1.ts`。**不動** hitbox/on-target/決定性/schema/event 對表——本 bug 只在刺激參數語意層。 |
-| **狀態** | 🟡 診斷完成、修法待研究者拍板(2026-09-03)。分析 runner 的 `stimulusCheck()` 一開始就量 2D,是它把這件事揭露出來的。 |
-
----
-
+（**目前無待決項目**——KI-023 的 Option A 已於 2026-09-03 拍板並落地,見 §3 BD-023。
+下列 BD-019~BD-021 皆已標 ✅ 但尚未搬入 §3。）
 
 ### BD-021 ✅ KI-021 — on-target 推導忽略 sphere：已修(2026-09-03)
 
@@ -162,6 +150,23 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-023 ✅ KI-023 — 目標速度 set-point 改為 2D 語意(Option A,含 reversal 家族)(2026-09-03)
+
+| | |
+|---|---|
+| **發現處 / 根因** | [KI-023](KI-023-target-speed-set-point-is-per-axis-not-2d.md) / WP-54 T6 第二輪真人資料(P03 重跑)的刺激檢查。根因:`boundedSpeedScale()` 對 yaw/pitch **各自**求解,使每軸 RMS 角速度等於 `targetRmsSpeedDegPerSec`;螢幕上的目標速度是 `hypot(yaw, pitch)` ⇒ 兩軸等量時交付 **√2 × set-point**。實測每軸命中 1.00–1.02、2D 為 1.414–1.435。 |
+| **決策(修法選項)** | **研究者選定 A**（2026-09-03）。A:set-point 改 2D 語意(每軸求解目標改 `target/√活躍軸數`)——預註冊的 5/20 真被交付、calibration 與 core 回到同一刻度,**代價是 4 個 core cell + practice(必要時含 2 個 reversal cell)再重跑一輪**。B:保留每軸語意、欄位更名 `targetPerAxisRmsSpeedDegPerSec`、預註冊值改記 7.07/28.28——**不必重跑**,但屬 preregistration drift 且「calibration 宣稱 5 交付 5、core 宣稱 7.07 交付 7.07」的跨家族刻度差仍在。C:只改文件——第二定義仍在,不符 C-D4,**不建議**。三案共通必做:把 T1 的 RMS 斷言改量與權威定義同一個量。 |
+| **理由(建議 A)** | 研究構念是「目標在螢幕上移動多快」,那就是 2D 合成速度;KI-023 §3 的三個後果(絕對值未交付、calibration 與 core 不同刻度、reversal `[5,20]` 每軸抽樣使「跨 block 可比性」的原始理由不成立)只有 A 能同時解掉。A 另有副效益:交付振幅同步縮 1/√2,20 deg/s cell 的行程由 ±13–14° 降到約 ±9–10°,更遠離 KI-019 的邊界截斷。 |
+| **偏離計畫** | 無偏離協議。選項改變刺激,屬研究決策(同 KI-019 F-A2 / KI-020 §4 的處理方式),故先交付診斷、待研究者拍板後才落地。依 BD-001 慣例:測試於工作區證實修前為紅(2D 比值 1.4186 > 1.05、reversal leg 2D 巡航 31.75 > speedMax 30),測試與修法合併為單一已驗證綠的 commit。 |
+| **遺留 OQ / 未做** | **OQ-KI23-1 已決:一併改**(研究者 2026-09-03)——reversal 每軸自 `range/√2` 抽樣,兩家族回到同一速度刻度。**待辦:9 個 block 全部重跑**(P03 那批作廢)。**OQ-KI23-2**:P01/P02/P03 三批舊資料的判讀規則要寫進 `analysis-tracking.md`——每一批的交付速度都是每軸值,`meta` 宣稱值需乘 √2 才是螢幕速度(單軸 calibration 除外)。**OQ-KI23-3**:KI-020 §6 記的「實測交付 5.05 / 20.21 deg/s」是每軸值,需回標註記。 |
+| **影響面(若採 A)** | `src/sim/trackingTrajectory.ts`(`createBandLimited2dV1()` 的每軸求解目標 + `requireDeliverableSpeed()` 的判定基準)、`src/sim/trackingTrajectory.test.ts`(RMS 斷言改量 2D + 單軸案)、可能含 `src/drill/tracking_reversal_pilot_v1.ts`。**不動** hitbox/on-target/決定性/schema/event 對表——本 bug 只在刺激參數語意層。 |
+| **狀態** | ✅ 已修 + 落地(2026-09-03;branch `main`)。實測交付/宣稱 1.000–1.017(修前 1.414–1.435);calibration 逐位不變;**副效益**:20 deg/s cell 行程由 ±13–14° 縮到 ±9–11°,且 KI-019 §5.3 殘差同步改善(medium 交付反轉 36 → 29,宣稱約 23)。驗證:`vitest run` 207 files / 2000 tests passed、`tsc` 兩份 config 皆 exit 0。分析 runner 的 `stimulusCheck()` 一開始就量 2D,是它把這件事揭露出來的。 |
+
+---
+
+---
+
 
 ### BD-022 ✅ KI-022 — 分析 runner 摘要改取 eligible run（2026-09-03）
 

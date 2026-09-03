@@ -54,24 +54,41 @@ describe('createTrackingTrajectory — band-limited-2d-v1', () => {
     }
   });
 
-  it('achieves approximately the configured target RMS speed (long-duration analytic approximation)', () => {
-    const trajectory = createTrackingTrajectory(BAND_LIMITED_BASE);
+  /** Delivered 2D RMS angular speed — the speed of the target on screen, and (KI-023) the single
+   * authoritative meaning of `targetRmsSpeedDegPerSec`. Measuring one axis is what let a config
+   * claiming 20deg/s deliver 28.3 and still pass. */
+  function deliveredRms2d(config: Extract<TrackingTrajectoryConfig, { kind: 'band-limited-2d-v1' }>): number {
+    const trajectory = createTrackingTrajectory(config);
     const out = makeSample();
     const stepSec = 0.01;
-    let sumSquaredYawVel = 0;
+    let sumSquared = 0;
     let count = 0;
-    for (let t = 0; t <= BAND_LIMITED_BASE.durationMs / 1000; t += stepSec) {
+    for (let t = 0; t <= config.durationMs / 1000; t += stepSec) {
       trajectory.sample(t, out);
-      sumSquaredYawVel += out.yawVelocityDegPerSec ** 2;
+      sumSquared += out.yawVelocityDegPerSec ** 2 + out.pitchVelocityDegPerSec ** 2;
       count += 1;
     }
-    const rms = Math.sqrt(sumSquaredYawVel / count);
+    return Math.sqrt(sumSquared / count);
+  }
+
+  it('achieves approximately the configured target RMS speed (long-duration analytic approximation)', () => {
     // KI-020 regression. This assertion previously read `rms > 0.5` with a comment accepting that
     // "bound safety may have scaled speed down" — which is exactly how a config asking for
     // 20deg/s and delivering 1.18deg/s passed its tests and shipped. Now that an undeliverable
     // config fails fast at construction, a constructed trajectory must actually hit its set-point.
-    expect(rms / BAND_LIMITED_BASE.targetRmsSpeedDegPerSec).toBeGreaterThan(0.9);
-    expect(rms).toBeLessThanOrEqual(BAND_LIMITED_BASE.targetRmsSpeedDegPerSec + 1e-6);
+    // KI-023: and it must hit it on the *2D* speed — the previous single-axis measurement passed
+    // while both axes each hit the set-point, delivering √2 × the claim on screen.
+    const rms = deliveredRms2d(BAND_LIMITED_BASE);
+    expect(rms / BAND_LIMITED_BASE.targetRmsSpeedDegPerSec).toBeGreaterThan(0.95);
+    expect(rms / BAND_LIMITED_BASE.targetRmsSpeedDegPerSec).toBeLessThan(1.05);
+  });
+
+  it('delivers the same set-point when one axis is deliberately suppressed (KI-023)', () => {
+    // Axis calibration blocks drive a single axis; their delivered speed was already correct, so
+    // the 2D set-point must leave them where they were rather than scaling them down by √2.
+    const rms = deliveredRms2d({ ...BAND_LIMITED_BASE, pitchBoundDeg: 0.1 });
+    expect(rms / BAND_LIMITED_BASE.targetRmsSpeedDegPerSec).toBeGreaterThan(0.95);
+    expect(rms / BAND_LIMITED_BASE.targetRmsSpeedDegPerSec).toBeLessThan(1.05);
   });
 
   it('fails fast when the requested speed cannot fit the amplitude/band (KI-020)', () => {
@@ -177,6 +194,24 @@ function stationaryProfile(
 }
 
 describe('createTrackingTrajectory — reversal-2d-v1', () => {
+  it('keeps the 2D cruise speed of every leg inside speedRangeDegPerSec (KI-023)', () => {
+    // The range names the speed of the target on screen. Drawing each axis independently from it
+    // made a leg's delivered 2D speed reach hypot(max, max) = √2 × max — and the core matrix was
+    // given this same range "for cross-block comparability", which it therefore never had.
+    const trajectory = createTrackingTrajectory(REVERSAL_BASE);
+    const [speedMin, speedMax] = REVERSAL_BASE.speedRangeDegPerSec;
+    const cruiseSpeeds = trajectory.changes.map((change) =>
+      Math.hypot(change.yawVelocityAfterDegPerSec, change.pitchVelocityAfterDegPerSec),
+    );
+    expect(cruiseSpeeds.length).toBeGreaterThan(10);
+    for (const speed of cruiseSpeeds) {
+      expect(speed).toBeLessThanOrEqual(speedMax + 1e-9);
+    }
+    // A leg shortened by the remaining time or by its own room cruises slower than it drew, so the
+    // floor holds over the range actually used rather than per leg.
+    expect(Math.max(...cruiseSpeeds)).toBeGreaterThan(speedMin);
+  });
+
   it('never exceeds the configured angular bounds across a dense sweep', () => {
     const trajectory = createTrackingTrajectory(REVERSAL_BASE);
     const out = makeSample();

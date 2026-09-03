@@ -1,6 +1,6 @@
 # KI-023 — `targetRmsSpeedDegPerSec` 是「每軸」set-point：兩軸 cell 實際交付 √2 倍,預註冊的 5/20 deg/s 從未被交付
 
-> 狀態：🟡 **診斷完成,再參數化待研究決策**(2026-09-03)。決策帳本：[BD-023](BUGFIX-DECISIONS.md)。
+> 狀態：✅ **已修**(2026-09-03,研究者選定 **Option A**,含 reversal 家族)。決策帳本：[BD-023](BUGFIX-DECISIONS.md)。
 > 發現於 WP-54 T6 第二輪真人資料(P03,9 block 重跑)的分析,見
 > [T6-instrumentation-gate.md §11](../exec-plan/active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md)。
 > 這是 [KI-020](KI-020-core-matrix-size-speed-manipulation-not-delivered.md) 的**殘留**:KI-020 修好了
@@ -72,7 +72,7 @@ RMS(2D) = √(RMS(yaw)² + RMS(pitch)²) = √2 × set-point ≈ 1.414 × set-po
 **不影響**:決定性、event 對表、覆蓋率、schema、hitbox 幾何、on-target 判定。這是**刺激參數語意**
 問題,不是儀器問題——資料鏈路本身(gate §11.2)仍然成立。
 
-## 4. 修法選項（研究決策,未拍板）
+## 4. 修法選項（研究者已選定 **Option A**,含 reversal 家族 → OQ-KI23-1 一併採 2D 語意）
 
 三個選項共通的必做項:**把 T1 那條測試改成量與權威定義同一個量**,否則 C-D4 的第二定義還在。
 
@@ -102,7 +102,7 @@ RMS(2D) = √(RMS(yaw)² + RMS(pitch)²) = √2 × set-point ≈ 1.414 × set-po
 
 - ❌ 第二定義仍在(測試量單軸、分析量 2D),下一個人一樣會踩;不符 C-D4。**不建議**。
 
-**建議 = Option A**,理由:研究構念是「目標在螢幕上移動多快」,那就是 2D 合成速度;且 §3 的
+**✅ 研究者選定 = Option A**,理由:研究構念是「目標在螢幕上移動多快」,那就是 2D 合成速度;且 §3 的
 1/2/3 三個後果只有 A 能同時解掉。代價是五個(或七個)block 再重跑一輪。
 
 ## 5. 測試（修法落地時必補）
@@ -113,11 +113,38 @@ RMS(2D) = √(RMS(yaw)² + RMS(pitch)²) = √2 × set-point ≈ 1.414 × set-po
 - 若採 A 且 reversal 一併改:補「每 leg 抽樣速度即為 2D 合成速度」的斷言。
 - 分析 runner 的 `stimulusCheck()` 已經量 2D,不需改——它是唯一一開始就量對的地方。
 
-## 6. DoD（待落地）
+## 6. 落地結果（2026-09-03）
 
-- [ ] 研究者選定 Option A / B / C。
-- [ ] 落地修法 + 上述測試(修前紅)。
-- [ ] 更新 `docs/operational/analysis-tracking.md` 的「刺激語意」節,寫明**哪一個版本起**交付速度
-      是 2D 合成量,並保留舊資料(P01/P02/P03)的判讀規則。
-- [ ] 更新 KI-020 §6 的「實測交付 5.05 / 20.21」——那是每軸值,需標註。
-- [ ] 重跑受影響 block,並在 gate §11 記錄結果。
+`band-limited-2d-v1`:活躍軸數以 `SUPPRESSED_AXIS_BOUND_DEG` 判定(與速度守衛同一條界線),每軸
+求解目標改為 `set-point / √活躍軸數`。`reversal-2d-v1`:每軸自 `speedRangeDegPerSec / √2` 抽樣
+(抽樣次數不變 ⇒ 同 seed 的 RNG 流結構不變),`minUsableRoomDeg` 與 KI-019 的幾何守衛改用每軸速度。
+
+| drill | 交付 2D RMS / 宣稱 | 修前 | 最大行程(yaw/pitch) | 交付反轉數 |
+|---|---|---|---|---|
+| `practice`(5) | **1.002** | 1.418 | 2.18 / 2.39° | — |
+| `calibration_horizontal`(5) | **1.013** | 1.013（逐位不變) | 3.74 / 0.09° | — |
+| `calibration_vertical`(5) | **1.017** | 1.017（逐位不變) | 0.08 / 3.49° | — |
+| `2deg_5dps` | **1.010** | 1.428 | 2.30 / 2.30° | — |
+| `2deg_20dps` | **1.002** | 1.417 | 9.24 / 10.11° | — |
+| `0p5deg_5dps` | **1.014** | 1.435 | 2.24 / 2.33° | — |
+| `0p5deg_20dps` | **1.000** | 1.414 | 10.30 / 11.06° | — |
+| `reversal_medium` | 2D RMS 11.72（範圍 [5,20]) | 14.76 | 13.00 / 13.00° | **29**（修前 36) |
+| `reversal_high` | 2D RMS 9.59 | 13.38 | 13.00 / 10.11° | **58**（修前 59) |
+
+**副效益兩項**:①20 deg/s cell 的行程由 ±13–14° 縮到 ±9–11°,離地板與垂直 FOV 邊界更遠;
+②**[KI-019](KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) §5.3 的殘差同步改善**
+——medium 交付反轉數 36 → **29**(config 宣稱約 23),因為每軸速度降 1/√2 使 leg 行程縮短、邊界
+截斷減輕。是否仍需放寬到 ±25° 由 T7 依此新數字再判。
+
+## 7. DoD
+
+- [x] 研究者選定 Option A(含 reversal → OQ-KI23-1 一併改)。
+- [x] 落地修法 + 測試(修前紅:2D 比值 1.4186 > 1.05、reversal leg 2D 巡航 31.75 > speedMax 30)。
+- [x] 新增「單軸 cell 不因此被縮放」的鎖定案(axis calibration 逐位不變)。
+- [x] 更新 [analysis-tracking.md](../operational/analysis-tracking.md) 「刺激語意」節:三個世代
+      (G1/G2/G3)的判讀規則,G2(含 P01/P02/P03)速度軸須乘 √2、calibration 除外。
+- [x] 更新 [KI-020](KI-020-core-matrix-size-speed-manipulation-not-delivered.md) §6.1 的
+      「實測交付 5.05 / 20.21」標註為每軸值。
+- [x] 全專案回歸:`npx vitest run` **207 files / 2000 tests passed**(1 skipped file / 2 skipped
+      tests);`npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0。
+- [ ] **重跑受影響 block**(9 個 block 全部,見 gate §11.7),並在 gate 記錄結果。
