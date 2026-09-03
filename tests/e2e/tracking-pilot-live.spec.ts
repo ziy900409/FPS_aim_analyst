@@ -99,6 +99,9 @@ test.describe('WP-54 T6 — live tracking pilot session', () => {
     });
     // The practice cell's target is the 2.0° candidate: a cube edge of 2*4*tan(1°) at 4u.
     expect(practicePayload.meta.targets?.hitbox?.widthU).toBeCloseTo(0.13964, 4);
+    // KI-021 / GD-30: the diameter is unchanged, but the geometry is now a sphere end-to-end —
+    // hit detection, rendering and the offline on-target derivation share it.
+    expect(practicePayload.meta.targets?.hitbox?.shape).toBe('sphere');
     expect(practicePayload.ticks.length).toBeGreaterThan(0);
     expect(practicePayload.meta.recorderOverflow).toBe(false);
     // Practice carries no prep window (T2: no `trackingPrepMs`, no `protocolGuard`)…

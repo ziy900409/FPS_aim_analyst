@@ -60,17 +60,25 @@ fall back to the `visible.targetX/targetY/targetZ` center.
 
 ## on-target (per-tick binary)
 
-`on-target(t)` is true when the aim ray intersects the H1 hitbox axis-aligned box centered at the
-target:
+`on-target(t)` is true when the aim ray intersects the H1 hitbox centered at the target. The
+geometry follows `meta.targets.hitbox.shape` — omitted or `'box'` gives the axis-aligned box,
+`'sphere'` gives a ball of radius `w/2` (the shape requires all three axes equal):
 
 ```text
-box = [tx - w/2, tx + w/2] x [ty - h/2, ty + h/2] x [tz - d/2, tz + d/2]
-on-target(t) = ray(p_eye, f_aim) intersects box at some parameter s >= 0
+box    = [tx - w/2, tx + w/2] x [ty - h/2, ty + h/2] x [tz - d/2, tz + d/2]
+sphere = { p : |p - (tx,ty,tz)| <= w/2 }
+on-target(t) = ray(p_eye, f_aim) intersects that solid at some parameter s >= 0
 ```
 
-This is the **same geometry as the engine hit detection** (`THREE.Ray.intersectBox`), evaluated
-with a ray/box slab test. There is **no new threshold parameter** (CONTEXT §A / GD-7): on-target
-is exactly "would a shot along the aim ray hit the target this tick".
+This is the **same geometry as the engine hit detection** (`THREE.Ray.intersectBox` /
+`intersectSphere`), evaluated with a ray/box slab test or the analytic ray/sphere test. There is
+**no new threshold parameter** (CONTEXT §A / GD-7): on-target is exactly "would a shot along the
+aim ray hit the target this tick".
+
+> Until KI-021 (2026-09-03) the derivation ran the slab test unconditionally and dropped `shape`,
+> so a sphere target was scored against its **bounding cube** — up to sqrt(2)x too permissive on
+> the diagonal. Exports produced before that fix carry the cube reading for any sphere drill
+> (`spider-shot-v2`); see [KI-021](../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md).
 
 ## Tracking Error ε(t)
 
@@ -390,7 +398,7 @@ WP-54 的 core matrix 有兩個被操弄的因子，兩者在 2026-09-03 之前*
 
 | 因子 | 權威來源 | 說明 |
 |---|---|---|
-| **Target angular size** | `meta.targets.hitbox`（cube，邊長 `2 · distance · tan(size/2)`） | 2.0° → 0.13964u、0.5° → 0.03491u @ 4u。**不是** `trackingTrajectory.yawBoundDeg`——那是行程振幅。cube 而非 sphere 是為了留在 WP-55 的 box-only exact-hitbox contact derivation 內（代價：對角方向 on-target 容許角大 √2 倍） |
+| **Target angular size** | `meta.targets.hitbox`（sphere，直徑 `2 · distance · tan(size/2)`） | 2.0° → 0.13964u、0.5° → 0.03491u @ 4u。**不是** `trackingTrajectory.yawBoundDeg`——那是行程振幅。sphere 使 on-target 容許角在各方向等向，即「角尺寸」的字面語義；slice 10 曾因 WP-55 的 box-only 閘門改用 cube（對角 √2 倍 anisotropy），KI-021 解除該限制後於 slice 12 改回 sphere（GD-30） |
 | **Delivered RMS speed** | `trackingTrajectory.targetRmsSpeedDegPerSec`，且**保證等於實際交付值** | `createBandLimited2dV1()` 現在會在請求速度不可交付時 fail fast（訊息帶上該 envelope 的最大可交付速度）。被抑制到近零的 off-axis（axis calibration）豁免 |
 | Travel amplitude | `trackingTrajectory.yawBoundDeg`/`pitchBoundDeg` | 所有 core cell 共用 ±16°（非操弄變數）；reversal cell 用 `angularBoundsDeg ±13°` |
 | Frequency band | `trackingTrajectory.frequencyBandHz` | core cell 為 `[0.3, 2.1]` Hz（自 `[0.1, 0.7]` 提高，才能在共用振幅下交付 20 deg/s） |

@@ -163,6 +163,8 @@
       守衛）+ 7 個新測試 + 4 個 fixture 對齊（D-54.40）。
 - [x] **slice 11**：compatibility key 新增 `displayRefreshHz`/`targetHitboxWidthU`、`sizeDeg` 更名
       （OQ-54-11 / D-54.41）。
+- [x] **slice 12**：KI-021 落地後，兩個 pilot 家族的 hitbox 由 cube 改回 **sphere**（`shape:'sphere'`，
+      直徑不變），並同步描述現況的文件（GD-30／D-54.42）。**這是 9-block 重跑的前置**。
 
 ## T7 — Difficulty calibration pilot
 

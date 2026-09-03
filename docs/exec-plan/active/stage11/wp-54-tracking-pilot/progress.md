@@ -46,7 +46,21 @@
   config 真實跑完 practice + calibration 兩個 25 秒 block**，並斷言新的 hitbox/振幅 metadata）;
   `npx tsc --noEmit` 對所有已追蹤檔案乾淨（唯一錯誤在使用者未追蹤的 WP-55 WIP
   `trackingContactCoverage.{ts,test.ts}`，本批未觸碰）。使用者的 WP-55 T3 測試在 cube 決定後回綠。
-- **下一步（交還使用者）**：**9 個 block 全部重跑**（見 gate 文件 §10.5）。重跑時新增兩個觀察點：
+- **slice 12（KI-021 / GD-30 / D-54.42，2026-09-03）**：兩個 pilot 家族的 hitbox 由 cube 改回
+  **sphere**。前置是 [KI-021](../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)
+  的推導層修復——slice 10 選 cube 並非因為 cube 較好，而是為了繞過 WP-55 的 box-only 閘門，
+  而那個閘門的根因是 `trackingDerivation.isOnTarget()` 無條件跑 ray/AABB 且 `hitboxFromMeta()`
+  丟掉 `shape`（違反 GD-7／CONTEXT §23）。修復後：`trackingPilotAngularSizeToEdgeU` →
+  `trackingPilotAngularSizeToDiameterU`、`cubeHitbox()` → `sphereHitbox()`、兩檔皆
+  `shape:'sphere'`。**直徑等於原 cube 邊長**，故 `widthU`（2.0° @4u = 0.13964u）逐位不變——
+  e2e 的 `toBeCloseTo(0.13964, 4)` 斷言原封不動，只新增 `shape` 斷言。實測若少了 slice B 的閘門
+  放寬，`trackingContactCoverage` 的 `includedRunCount` 會由 2 掉到 0（已實際驗證過該分支）。
+- **slice 12 驗證**：`npx tsc --noEmit`（含 `-p tsconfig.node.json`）exit 0；`npx vitest run`
+  **206 files / 1995 tests passed**（1 skipped file / 2 skipped tests）；
+  `npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` 1/1 passed
+  （以 sphere config 真實跑完 practice + calibration 兩個 25 秒 block）。
+- **下一步（交還使用者）**：**9 個 block 全部重跑**（見 gate 文件 §10.5）。**排序硬約束已滿足**：
+  cube→sphere 已在重跑之前落地，故重跑資料的 on-target 語意自始一致。重跑時新增兩個觀察點：
   0.5° 目標是否真的看得見（約 3.5 px @1080p/103°FOV）、TOT 是否終於離開 100%。
 
 
@@ -994,7 +1008,7 @@
 | D-54.40 | ~~KI-020 的目標角尺寸用 **cube（`shape:'box'`）** 而非 sphere~~ **（2026-09-03 由 D-54.42 取代：改回 sphere，前置為 KI-021）** | sphere 在各方向等向，理論上更貼合「角尺寸」語意；但 WP-55 的 exact-hitbox contact derivation 目前只接受 box（`src/metrics/trackingContact.ts:147`），改成 sphere 會讓 WP-54 這批 drill 直接被其 coverage report 排除——實測使用者並行開發的 WP-55 T3 測試因此轉紅（`includedRunCount` 2→0）。cube 在 yaw/pitch 兩軸（tracking error 的分解軸）上逐值等於候選角尺寸，代價僅是對角方向 on-target 容許角最多大 √2 倍；不值得為此打斷另一個 WP 的進行中工作。要改用 sphere 應與 contact 側的 sphere 支援同批進行（記於 KI-020 §6.2） | ⚠️ Superseded by D-54.42（2026-09-03）——當時的取捨在「不打斷 WP-55 進行中工作」上成立，但追查後發現 box-only 限制的根因是 KI-021（實作違反 GD-7/CONTEXT.md §23），cube 只是繞過該裂縫 |
 | D-54.41 | `TrackingCompatibilityKey` 的 `sizeDeg` 更名為 `travelAmplitudeDeg`，新增 `targetHitboxWidthU` 與 `displayRefreshHz` | KI-020 之後「size」與「amplitude」是兩件不同的事，舊欄位名（讀的是 `yawBoundDeg`）會讓 cohort 分析誤以為自己按尺寸分組。尺寸軸以 source unit 表達而非角度，因為 `Meta` 不記錄目標距離——WP-54 內所有 block 共用 4u 視線故為忠實代理，且 `drillId` 已釘住條件。`displayRefreshHz` 來自使用者對 OQ-54-11 的決定（接受 60Hz 但刷新率必須分開 cohort），四捨五入到整數 Hz 以免量測抖動（59.98 vs 60.02）拆散同一面板的 cohort | ✅ Confirmed（T6 slice 11，2026-09-03） |
 
-| D-54.42 | WP-54 的 pilot 目標 hitbox **改回 `shape:'sphere'`**（取代 D-54.40 的 cube），但前置為 [KI-021](../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) 落地，且**必須在 9-block 重跑之前**完成 | 使用者 2026-09-03 要求。sphere 讓角尺寸各方向等向，才真正符合「angular size」語意（cube 在對角方向的 on-target 容許角大 √2 倍）。**前置條件不可跳過**：`trackingDerivation.isOnTarget()` 目前是 ray/AABB 且 `hitboxFromMeta()` 丟掉 `shape`，所以現在改 config 只會讓 pilot drill 被 WP-55 的 `'invalid-hitbox'` 閘門整份排除，或（若只放寬閘門）被當成 box 靜默算出偏寬鬆的 on-target——後者比現況更糟。**排序硬約束**：on-target 幾何一改，TOT/`tAcquireMs`/drop-reacquire 語意就變；若在重跑後才改，兩批真人資料不可合併、等於再作廢一次。跨 WP 面（含 `spider-shot-v2` 這個正式 Assessment drill 也受 KI-021 影響）記於 [DECISIONS.md GD-30](../../DECISIONS.md) | 🟡 已決策、待落地（2026-09-03） |
+| D-54.42 | WP-54 的 pilot 目標 hitbox **改回 `shape:'sphere'`**（取代 D-54.40 的 cube），但前置為 [KI-021](../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) 落地，且**必須在 9-block 重跑之前**完成 | 使用者 2026-09-03 要求。sphere 讓角尺寸各方向等向，才真正符合「angular size」語意（cube 在對角方向的 on-target 容許角大 √2 倍）。**前置條件不可跳過**：`trackingDerivation.isOnTarget()` 目前是 ray/AABB 且 `hitboxFromMeta()` 丟掉 `shape`，所以現在改 config 只會讓 pilot drill 被 WP-55 的 `'invalid-hitbox'` 閘門整份排除，或（若只放寬閘門）被當成 box 靜默算出偏寬鬆的 on-target——後者比現況更糟。**排序硬約束**：on-target 幾何一改，TOT/`tAcquireMs`/drop-reacquire 語意就變；若在重跑後才改，兩批真人資料不可合併、等於再作廢一次。跨 WP 面（含 `spider-shot-v2` 這個正式 Assessment drill 也受 KI-021 影響）記於 [DECISIONS.md GD-30](../../DECISIONS.md) | ✅ Confirmed（2026-09-03 落地，T6 slice 12）——KI-021 三片依序完成後改 config：`trackingPilotAngularSizeToEdgeU`→`trackingPilotAngularSizeToDiameterU`、`cubeHitbox()`→`sphereHitbox()`、兩檔皆 `shape:'sphere'`（`widthU` 逐位不變，故 e2e 的 0.13964 斷言不動）。**已在 9-block 重跑之前落地**，排序約束滿足 |
 
 ## Open Questions
 

@@ -86,6 +86,7 @@
 | D-55.4 | BR/projectile tracking 同時可呈現 ballistic hit 與 aim-ray contact，但 pure tracking summary 不讀 hit count | 避免 projectile lead/travel time 被誤解為準心跟隨能力 | ✅ Confirmed（T0） |
 | D-55.5 | T2 artifact 先交付 deterministic JSON builder，不新增 CSV/HTML writer | OQ-55-3 已決定另存 deterministic derived contact JSON；CSV/HTML 不是 T2 必要條件，後續 Replay/report task 可從同一 JSON model 投影 | ✅ Confirmed（T2） |
 | D-55.6 | T3 新增 metrics-layer coverage projection，而不把 BR companion 直接塞進 T2 artifact schema | T2 artifact 已凍結為 deterministic contact JSON；T3 需要的是 all-drill coverage 與 BR/pure 分層 evidence，report UI/HTML integration 留給 T5 | ✅ Confirmed（T3） |
+| D-55.7 | Contact derivation 的 hitbox 閘門接受 `shape:'sphere'`（三軸相等），不再 box-only | 原本的 box-only 閘門是正確的防線——但它防的是 `trackingDerivation.isOnTarget()` 忽略 `shape` 這個更底層的 bug（[KI-021](../../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)／BD-021），而非 sphere 本身不可支援。KI-021 讓推導層拿到與 `HitDetector` 相同的 ray/sphere 幾何後，排除 sphere payload 就變成純粹的資料損失。閘門同時新增「sphere 三軸必須相等」（鏡射 `schema.ts:243`），否則畸形 sphere 會只用 `widthU` 靜默推導。實測：WP-54 candidate drills 改 sphere 後，`trackingContactCoverage.test.ts` 的 `includedRunCount` 仍為 2；若少了本決策則掉到 0 | ✅ Confirmed（2026-09-03，KI-021 slice B） |
 
 ## Open Questions
 
@@ -130,6 +131,7 @@
 
 ## Surprises & Discoveries
 
+- **2026-09-03（KI-021）**：T3 為了讓 WP-54 candidate drills 進 coverage，曾請 WP-54 側維持 cube hitbox。追查該 box-only 限制的來源後發現，真正的問題不在 WP-55 的閘門，而在 `src/metrics/trackingDerivation.ts`：`isOnTarget()` 是無條件的 ray/AABB slab test，`hitboxFromMeta()` 又把 `shape` 丟掉——`spider-shot-v2`（正式 Assessment drill）的球體目標因此一直被當成外接立方體判定。也就是說 WP-55 的閘門其實是在**正確地**拒絕一個會算錯的推導。修復記於 KI-021／BD-021，WP-55 側的放寬記為 D-55.7。
 - WP-55 source proposal is still a single candidate plan file under stage11, while WP-51 and WP-54 use self-contained WP folders. This planning pass keeps the source proposal intact and adds the folderized artifacts beside it.
 - Existing `git status` already contains unrelated modified stage10/operational/graphify files plus WP-54/WP-55 proposal files. This pass intentionally adds only `docs/exec-plan/active/stage11/wp-55-tracking-on-target-observability-no-health/` files and does not touch those pre-existing changes.
 - T0 run found the current worktree already has unrelated `src/main.ts` and `tests/e2e/tracking-pilot-live.spec.ts`; WP-55 T0 docs intentionally avoid touching those files.

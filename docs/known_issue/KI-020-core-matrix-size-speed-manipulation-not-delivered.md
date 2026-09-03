@@ -158,6 +158,10 @@ decision log，也沒有回頭對齊 README 的風險表與 FR-54-4 用語。**�
 兩個 axis calibration block 改用**至風險的 0.5°** 目標（那才是它們存在的理由）；reversal 兩個 cell
 用固定的 2.0°（密度是它們唯一的操弄，且避免與 pixel-floor 問題混淆）。
 
+> **✅ 2026-09-03 已解除**：下段的 cube 取捨已由 [KI-021](KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)
+> （on-target 離線推導補上 sphere 幾何）+ [GD-30](../exec-plan/DECISIONS.md) 解除；WP-54 兩個 pilot
+> 家族的 hitbox 已於 T6 slice 12 改回 `shape:'sphere'`，直徑與原 cube 邊長相同。以下保留作為當時的取捨紀錄。
+
 **用 cube（`shape:'box'`）而非 sphere**：sphere 在各方向等向、理論上更貼合「角尺寸」語意，但
 WP-55 的 exact-hitbox contact derivation 目前只接受 box（`src/metrics/trackingContact.ts:147`），
 改成 sphere 會讓這批 drill 直接被它的 coverage report 排除（實測其 WP-55 T3 測試轉紅）。cube 在

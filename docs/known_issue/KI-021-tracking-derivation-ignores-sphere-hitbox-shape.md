@@ -1,8 +1,8 @@
 # KI-021 — on-target 離線推導忽略 `hitbox.shape`：sphere 目標被當成外接立方體，與命中判定不同幾何
 
 > 類型：**correctness bug（已在正式 Assessment drill 上生效，非 latent）**。
-> 狀態：🟡 已診斷、修法已定，**待落地**（WP-55 sphere 支援 + WP-54 hitbox 回 sphere 的前置，見
-> [DECISIONS.md GD-30](../exec-plan/DECISIONS.md)）。
+> 狀態：🟢 **已修**（2026-09-03，三個 atomic commit：slice A 推導層 sphere 幾何、slice B WP-55 閘門、
+> slice C WP-54 config cube→sphere + 文件）。見 [DECISIONS.md GD-30](../exec-plan/DECISIONS.md)。
 > 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-021。
 > 發現脈絡：WP-54 T6 slice 10 為了 KI-020 把 pilot 目標改成真的角尺寸時，發現 WP-55 的 contact
 > derivation 只接受 box（`trackingContact.ts:147`）；追查該限制的來源時發現真正的問題在更底層的
@@ -109,16 +109,12 @@ if (options.hitbox.shape === 'sphere') {
 
 ## 6. DoD
 
-- [ ] §4.1–4.3 落地，§5 六項測試修前紅／修後綠。
+- [x] §4.1–4.3 落地，§5 六項測試修前紅／修後綠（每片都先在工作區證實紅，再與修法合併為單一綠 commit，BD-001 慣例）。
 - [x] 確認 `holdClickMetrics`/`researchMetrics` 消費的 drill 是否含 sphere hitbox（slice B 稽核，2026-09-03）：
   - **`holdClickMetrics` — 不受影響，且本 KI §3 的前提有誤。** 它**沒有** import `deriveTrackingSamples`（實測：`grep -rn deriveTrackingSamples src/ --include=*.ts` 的非測試命中檔為 `researchMetrics` / `spiderShotMetrics` / `trackingContact` / `trackingDynamics` / `trackingPilotEvidence`，不含 `holdClickMetrics`）；它走的是 `deriveVisibilityTimeline`（`visibilityDerivation`）。
   - **`researchMetrics` — 不受影響。** `computeCurveMetrics()`（:163）雖然呼叫 `deriveTrackingSamples`，但只讀 `sample.epsilonDeg`（:170）——該量走 `angularEccentricityDeg()`（準心 vs 目標**中心**夹角），與 shape 無關；它不讀 `onTarget`。
   - **其餘 `onTarget` 消費者（都已涵蓋）**：`spiderShotMetrics`（slice A）、`trackingContact`（slice B）、`trackingDynamics:436-445`（first-on-target / drop-reacquire，隨 slice C 的 WP-54 config 一起改變，屬預期內）、`trackingPilotEvidence`（只透傳 samples trace）。
 - [ ] **新發現（latent，非本 KI 根因，待使用者裁定是否開 KI-022）**：`src/scene/occlusionGeometry.ts` 的 `visibleFractionForTarget()`（:128-143）的 9-sample 對 8 個**外接立方體角點**取樣，同樣**不讀 `shape`**（對 sphere 而言那 8 點在半徑 √3·r 處，全在球外）。目前是 **latent 而非 live**：有 `visibility` 設定的 drill（`hold_click_v1`、`peek_click_transfer_*`）hitbox 全是 box，而唯一的 sphere drill `spider_shot_v2` 沒有 visibility/occlusion 設定；slice C 的 WP-54 pilot 也沒有（`tracking_core_pr_pilot_v1` 無 `visibility`/`sceneId`）。依本檔 §7，這**不是**同一根因的另一個消費者（不同函式、不同構念：occlusion coverage 非 on-target），也沒有在任何現行資料上算錯數字，故本次**不**自行開 KI-022；但一旦有人給 sphere drill 加 visibility 設定，它會静默高估曝光面積。
-- [ ] `spider-shot-v2` 既有 metrics 語意變更記入 WP-36/WP-44 或 stage9 的 progress（**這是正式
-      Assessment drill 的指標語意變更，必須有紀錄**；歷史匯出檔的 settle/overshoot 需標註為
-      pre-fix 幾何）。
-- [ ] WP-54 hitbox 由 cube 改回 sphere（GD-30；**必須在 9 個 block 重跑之前**，否則兩批資料
-      on-target 語意不同、不可合併）。
-- [ ] 回寫 `docs/operational/analysis-tracking.md`（刺激語意表）與 `analysis-spider-shot.md`
-      （若其 on-target 說明需補 shape 條件）。
+- [x] `spider-shot-v2` 既有 metrics 語意變更記入 **wp-46 progress**（D-46.5 + 一則 Progress 條目）——選 WP-46 而非 WP-36/WP-44，因為 sphere hitbox 是 WP-46 引入的（D-46.1 拍板 GD-7 擴充）。已標註 pre-fix 匯出檔的 settle/overshoot/`movementTimeMs` 係 box 幾何、不可與修後資料直接合併；`analysis-spider-shot.md` 同步補上同一則警告。
+- [x] WP-54 hitbox 由 cube 改回 sphere（GD-30）——**已在 9 個 block 重跑之前落地**，排序硬約束滿足。`trackingPilotAngularSizeToEdgeU`→`trackingPilotAngularSizeToDiameterU`、`cubeHitbox()`→`sphereHitbox()`；直徑等於原 cube 邊長，故 `widthU`（0.13964u @2.0°/4u）逐位不變，e2e 斷言不動、只加 `shape` 斷言。
+- [x] 回寫 `docs/operational/analysis-tracking.md`（刺激語意表 **+ §on-target 本體**——該節原本明文只寫 ray/box slab test，是這個 bug 的 prose 對應面）與 `analysis-spider-shot.md`（WP-46 節補上「同幾何當時只落實到命中判定與渲染、推導層漏掉」的更正）。

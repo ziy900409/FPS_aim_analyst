@@ -76,22 +76,22 @@ export type CorePrPilotV1SpeedDegPerSec = (typeof CORE_PR_PILOT_V1_SPEED_CANDIDA
 const CALIBRATION_SIZE_DEG: CorePrPilotV1SizeDeg = CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG[1];
 
 /**
- * Angular target size -> hitbox edge length in source units.
+ * Angular target size -> hitbox diameter in source units.
  *
- * A **cube** (default `shape: 'box'`), not a sphere: a cube of this edge subtends exactly
- * `angularSizeDeg` along yaw and pitch — the two axes tracking error is decomposed on — and keeps
- * these drills inside WP-55's exact-hitbox contact derivation, which currently accepts box
- * hitboxes only (`src/metrics/trackingContact.ts`). The cost is a mild anisotropy: on-target
- * tolerance is up to sqrt(2)x larger on the diagonal than on the axes. A sphere would be uniform;
- * switch to one only together with sphere support on the contact side (see KI-020 §4.1 note).
+ * A **sphere** (`shape: 'sphere'`), so on-target tolerance is `angularSizeDeg` in every direction
+ * — which is what "angular size" means. This was a cube until KI-021 (GD-30): WP-55's contact
+ * derivation accepted box hitboxes only, because `trackingDerivation.isOnTarget()` was a ray/AABB
+ * test that ignored `shape`. That cost a sqrt(2)x anisotropy — on-target tolerance up to 41%
+ * looser on the diagonal than on the axes. KI-021 gave the derivation the engine's ray/sphere
+ * geometry, so the workaround is gone.
  */
-export function trackingPilotAngularSizeToEdgeU(angularSizeDeg: number, distanceU: number): number {
+export function trackingPilotAngularSizeToDiameterU(angularSizeDeg: number, distanceU: number): number {
   return 2 * distanceU * Math.tan((angularSizeDeg / 2) * (Math.PI / 180));
 }
 
-function cubeHitbox(angularSizeDeg: number): TargetHitboxConfig {
-  const edgeU = trackingPilotAngularSizeToEdgeU(angularSizeDeg, DISTANCE_U);
-  return { widthU: edgeU, heightU: edgeU, depthU: edgeU, shape: 'box' };
+function sphereHitbox(angularSizeDeg: number): TargetHitboxConfig {
+  const diameterU = trackingPilotAngularSizeToDiameterU(angularSizeDeg, DISTANCE_U);
+  return { widthU: diameterU, heightU: diameterU, depthU: diameterU, shape: 'sphere' };
 }
 
 function baseTargets(angularSizeDeg: number): {
@@ -99,7 +99,7 @@ function baseTargets(angularSizeDeg: number): {
   distance: number;
   hitbox: TargetHitboxConfig;
 } {
-  return { count: 1, distance: DISTANCE_U, hitbox: cubeHitbox(angularSizeDeg) };
+  return { count: 1, distance: DISTANCE_U, hitbox: sphereHitbox(angularSizeDeg) };
 }
 
 function scoredTiming(): DrillConfig['timing'] {

@@ -239,7 +239,7 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 |---|---|---|---|
 | 1 | **reversal medium cell 排程退化**：目標 32.6% 的時間凍結在 ±8° 角落（最長 344 ms），6644 筆 leg（high 只有 60），`reversalIntervalMs` 完全沒生效 | [KI-019 §1](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | ✅ **F-A1 已修**（room-aware 方向選擇；medium 降到 46 legs / 1.6% 靜止；high 逐位不變）。🟡 F-A2（config 幾何不一致，仍 46 vs 宣稱 ~23 次）待決 |
 | 2 | **core matrix 的 speed 自變數完全失效**：5 vs 20 deg/s 實測交付 1.21 vs 1.18 deg/s（差 2%）；交付速度只由振幅決定，metadata 宣稱值從未被交付 | [KI-020 §1/§2.1](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | ✅ **已修**（slice 10）：頻帶 `[0.1,0.7]→[0.3,2.1]` Hz + 所有 cell 共用振幅 ±16°，實測交付 5.05 / 20.21 deg/s；並加建構期守衛（請求速度不可交付即 fail fast） |
-| 3 | **目標角尺寸從未被操弄**：「size」被實作成行程振幅，沒有 cell 設 `targets.hitbox`，四個 cell 目標一樣大（約 ±7°）；六個 block TOT 全部 100.0%，`p95 ε` 3.63° 仍算 on-target ⇒ TOT 在現行 config 下不帶資訊；兩個 axis calibration block 無法達成「判斷 0.5° 是否可辨識」的用途 | [KI-020 §2.2](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | ✅ **已修**（slice 10）：每 cell 設 cube `targets.hitbox`（0.5°→0.03491u、2.0°→0.13964u @4u）；axis calibration 改用至風險的 0.5° 目標；reversal cell 固定 2.0° |
+| 3 | **目標角尺寸從未被操弄**：「size」被實作成行程振幅，沒有 cell 設 `targets.hitbox`，四個 cell 目標一樣大（約 ±7°）；六個 block TOT 全部 100.0%，`p95 ε` 3.63° 仍算 on-target ⇒ TOT 在現行 config 下不帶資訊；兩個 axis calibration block 無法達成「判斷 0.5° 是否可辨識」的用途 | [KI-020 §2.2](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | ✅ **已修**（slice 10）：每 cell 設 `targets.hitbox`（0.5°→0.03491u、2.0°→0.13964u @4u）；axis calibration 改用至風險的 0.5° 目標；reversal cell 固定 2.0°。**slice 12（KI-021/GD-30）把幾何由 cube 改回 sphere**，直徑不變，on-target 容許角因此等向 |
 
 另外修掉一個**品質閘缺口**（非刺激問題）：受測者在一個 scored reversal block 按了右鍵 ADS，
 `protocol_violation` 有被記錄、P1 有自我封鎖（`protocol-incompatible`），但 run-level eligibility
@@ -253,7 +253,11 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
    預註冊值。落地於 slice 9，含建構期幾何守衛。殘差：medium 交付 36 次反轉 vs 宣稱約 23 次
    （源於設計本身的邊界截斷，KI-019 §5.3）；是否再放寬到 ±25° 留給 T7。
 2. **KI-020 §4.1（size 的語意）** → **改成真的目標角尺寸**（每 cell 設 `targets.hitbox`）。
-   落地於 slice 10。
+   落地於 slice 10（當時為 cube）。**2026-09-03 修正**：slice 10 選 cube 是為了繞過 WP-55 的
+   box-only 閘門，而該限制的根因是 [KI-021](../../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)
+   （on-target 離線推導忽略 `hitbox.shape`，違反 GD-7／CONTEXT §23）。KI-021 修復後，**slice 12**
+   依 [GD-30](../../../DECISIONS.md) 把兩個 pilot 家族的 hitbox 改回 `shape:'sphere'`（直徑與 cube
+   邊長相同，故 `widthU` 不變）。
 3. **KI-020 §4.2（speed 如何交付）** → 最初選「放大振幅」，實測回報後改選 **提高頻帶
    `[0.3, 2.1]` Hz + 共用振幅 ±16°**：原方案在 20 deg/s 需 ±48° 振幅，目標會走到 ±37°、沉到地板下
    並超出垂直 FOV（KI-020 §6.1）。落地於 slice 10，含建構期速度守衛。
@@ -267,7 +271,10 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 §10.4 的四個決策**都已落地並全綠**（`vitest` 206 files / 1991 tests、`playwright
 tracking-pilot-live` 1/1 以新 config 通過）。因此 Gate A 的下一輪只缺資料：
 
-**全部 9 個 block 重跑**——core/calibration/reversal 三家族的刺激都變了（含 high cell：視窗放寬後
+**前置已完成**：KI-021 + GD-30 的 cube→sphere（slice 12）**已於重跑前落地**——on-target 幾何一改，
+TOT／`tAcquireMs`／drop-reacquire 語意就變，若在重跑後才改，兩批真人資料不可合併。
+
+**全部 9 個 block 重跑**——core/calibration/reversal 三家族的刺激都變了（含 hitbox 幾何由 cube 改為 sphere）（含 high cell：視窗放寬後
 它的軌跡也不同），P01 的 2026-09-03 資料全部作廢。3-5 位 tester、每人 session 0 + session 1，
 操作步驟與回收格式不變（§5、§7），再重跑本文件 §10.2 的同一套檢查。
 

@@ -23,17 +23,6 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
-### GD-30 🟡 WP-54 目標 hitbox 由 cube 改回 sphere — 跨 WP 依賴 KI-021，且必須在 9-block 重跑前落地(2026-09-03)
-
-| | |
-|---|---|
-| **發現處** | WP-54 T6 slice 10（KI-020）把 tracking pilot 的目標從「預設 H1（約 ±7°）」改成真的角尺寸時，必須選 box 或 sphere。當時選 **cube**（[D-54.40](active/stage11/wp-54-tracking-pilot/progress.md)）純粹是為了不打斷使用者並行開發的 WP-55——其 exact-hitbox contact derivation 只接受 box（`src/metrics/trackingContact.ts:147`），改 sphere 會讓這批 drill 被其 coverage report 整份排除（實測 WP-55 T3 測試 `includedRunCount` 2→0）。使用者於 2026-09-03 要求確認「改回 sphere」的文件影響面；追查 box-only 限制的來源時發現真正的問題在更底層，即 [KI-021](../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)。 |
-| **問題/決策** | **決議：WP-54 的 pilot 目標 hitbox 改回 `shape:'sphere'`**（角尺寸各方向等向，符合「angular size」的語意），但這**不是**單一 WP 內可完成的改動，成立條件與排序如下：<br>① **前置 = KI-021 落地**（`trackingDerivation.isOnTarget()` 加 ray/sphere 分支、`HitboxSize` 帶 `shape`、放寬 WP-55 閘門並補 sphere 三軸相等檢查）。在此之前改 config 只會讓 pilot drill 被 WP-55 排除、或（若只放寬閘門）被當成 box 靜默算出偏寬鬆的 on-target。<br>② **排序硬約束：必須在 WP-54 T6 的 9-block 重跑之前落地**。on-target 幾何一改，TOT／`tAcquireMs`／drop-reacquire 的語意就變；若在重跑後才改，兩批真人資料不可合併，等於再作廢一次。<br>③ KI-021 同時是 `spider-shot-v2`（**正式 Assessment drill**，sphere 2.0° @8u）的實際 bug 修復，故本決策的效益不只 WP-54。 |
-| **理由** | cube 當初的取捨（D-54.40）在「不打斷他人進行中工作」這一點上是對的，但它的**真正代價不是 √2 對角 anisotropy，而是遮住了一個既有硬約束的違反**：CLAUDE.md §4 的 GD-7 擴充與 [CONTEXT.md §23](../../CONTEXT.md) 都明文要求 on-target 離線推導與命中判定**同幾何、零新門檻**，而引擎端 `HitDetector` 早在 WP-46 就對 sphere 做球體相交。也就是說 sphere 支援不是新功能，是把實作拉回權威定義；cube 只是讓 WP-54 暫時避開那條裂縫。既然使用者要求改回 sphere，正確順序是先補 KI-021、再改 config。 |
-| **影響面** | **權威文件不需改**：CLAUDE.md §4（GD-7 擴充已明文含 sphere）、CONTEXT.md §23（on-target 定義本就是「與命中判定同幾何」，shape-agnostic）——是實作偏離文件，不是文件要跟著改。<br>**現在就記（決策層）**：本條目、[KI-021](../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)、[BUGFIX-DECISIONS.md](../known_issue/BUGFIX-DECISIONS.md) BD-021、WP-54 progress.md 的 D-54.42（並標記 D-54.40 被取代）。<br>**落地時才改（描述現況層，改早了文件就在說謊）**：WP-54 [README.md](active/stage11/wp-54-tracking-pilot/README.md) §3 風險表「cube」字樣、[T6-instrumentation-gate.md](active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md) §10.3 缺陷 3 列／§10.4 決策 2／§10.5 重跑前置、[task-checklist.md](active/stage11/wp-54-tracking-pilot/task-checklist.md) slice 清單、[analysis-tracking.md](../operational/analysis-tracking.md) 刺激語意表、[KI-020 §6.2](../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) 與 BD-020 的「殘留取捨 (b)」、WP-55 的 progress/task-checklist/T3 doc（sphere 支援屬 WP-55 scope），以及 `analysis-spider-shot.md`（若其 on-target 說明需補 shape 條件）。<br>**程式面**：見 KI-021 §4／§6。 |
-| **待辦/結論** | 依序：(1) KI-021 §4.1–4.2（`trackingDerivation` sphere 幾何 + corner fixture 測試，committed 檔，可獨立驗證）→ (2) KI-021 §4.3（WP-55 閘門，**需使用者同意動其未 commit 的 WIP**）→ (3) WP-54 config cube→sphere + 描述現況的文件同步 → (4) 才請使用者重跑 9 個 block。`spider-shot-v2` 的指標語意變更要記進 WP-36/WP-44 或 stage9 progress（KI-021 §6）。 |
-| **狀態** | 🟡 已決策、待落地(2026-09-03)。落地後移入 §3 並補 commit。 |
-
 ### GD-29 ✅ WP-53 T0 formal freeze — n=1 真人 evidence 拍板 Go,GD-28 placeholder 轉正式凍結值(2026-09-01)
 
 | | |
@@ -318,6 +307,17 @@
 ---
 
 ## 3. 已解決(CLOSED)
+
+### GD-30 ✅ WP-54 目標 hitbox 由 cube 改回 sphere — 跨 WP 依賴 KI-021，已在 9-block 重跑前落地(2026-09-03)
+
+| | |
+|---|---|
+| **發現處** | WP-54 T6 slice 10（KI-020）把 tracking pilot 的目標從「預設 H1（約 ±7°）」改成真的角尺寸時，必須選 box 或 sphere。當時選 **cube**（[D-54.40](active/stage11/wp-54-tracking-pilot/progress.md)）純粹是為了不打斷使用者並行開發的 WP-55——其 exact-hitbox contact derivation 只接受 box（`src/metrics/trackingContact.ts:147`），改 sphere 會讓這批 drill 被其 coverage report 整份排除（實測 WP-55 T3 測試 `includedRunCount` 2→0）。使用者於 2026-09-03 要求確認「改回 sphere」的文件影響面；追查 box-only 限制的來源時發現真正的問題在更底層，即 [KI-021](../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)。 |
+| **問題/決策** | **決議：WP-54 的 pilot 目標 hitbox 改回 `shape:'sphere'`**（角尺寸各方向等向，符合「angular size」的語意），但這**不是**單一 WP 內可完成的改動，成立條件與排序如下：<br>① **前置 = KI-021 落地**（`trackingDerivation.isOnTarget()` 加 ray/sphere 分支、`HitboxSize` 帶 `shape`、放寬 WP-55 閘門並補 sphere 三軸相等檢查）。在此之前改 config 只會讓 pilot drill 被 WP-55 排除、或（若只放寬閘門）被當成 box 靜默算出偏寬鬆的 on-target。<br>② **排序硬約束：必須在 WP-54 T6 的 9-block 重跑之前落地**。on-target 幾何一改，TOT／`tAcquireMs`／drop-reacquire 的語意就變；若在重跑後才改，兩批真人資料不可合併，等於再作廢一次。<br>③ KI-021 同時是 `spider-shot-v2`（**正式 Assessment drill**，sphere 2.0° @8u）的實際 bug 修復，故本決策的效益不只 WP-54。 |
+| **理由** | cube 當初的取捨（D-54.40）在「不打斷他人進行中工作」這一點上是對的，但它的**真正代價不是 √2 對角 anisotropy，而是遮住了一個既有硬約束的違反**：CLAUDE.md §4 的 GD-7 擴充與 [CONTEXT.md §23](../../CONTEXT.md) 都明文要求 on-target 離線推導與命中判定**同幾何、零新門檻**，而引擎端 `HitDetector` 早在 WP-46 就對 sphere 做球體相交。也就是說 sphere 支援不是新功能，是把實作拉回權威定義；cube 只是讓 WP-54 暫時避開那條裂縫。既然使用者要求改回 sphere，正確順序是先補 KI-021、再改 config。 |
+| **影響面** | **權威文件不需改**：CLAUDE.md §4（GD-7 擴充已明文含 sphere）、CONTEXT.md §23（on-target 定義本就是「與命中判定同幾何」，shape-agnostic）——是實作偏離文件，不是文件要跟著改。<br>**現在就記（決策層）**：本條目、[KI-021](../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)、[BUGFIX-DECISIONS.md](../known_issue/BUGFIX-DECISIONS.md) BD-021、WP-54 progress.md 的 D-54.42（並標記 D-54.40 被取代）。<br>**落地時才改（描述現況層，改早了文件就在說謊）**：WP-54 [README.md](active/stage11/wp-54-tracking-pilot/README.md) §3 風險表「cube」字樣、[T6-instrumentation-gate.md](active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md) §10.3 缺陷 3 列／§10.4 決策 2／§10.5 重跑前置、[task-checklist.md](active/stage11/wp-54-tracking-pilot/task-checklist.md) slice 清單、[analysis-tracking.md](../operational/analysis-tracking.md) 刺激語意表、[KI-020 §6.2](../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) 與 BD-020 的「殘留取捨 (b)」、WP-55 的 progress/task-checklist/T3 doc（sphere 支援屬 WP-55 scope），以及 `analysis-spider-shot.md`（若其 on-target 說明需補 shape 條件）。<br>**程式面**：見 KI-021 §4／§6。 |
+| **待辦/結論** | 四步中的前三步**已完成**（2026-09-03，三個 atomic commit）：(1) KI-021 §4.1–4.2 `trackingDerivation` sphere 幾何 + corner fixture 測試；(2) KI-021 §4.3 WP-55 閘門放寬 + sphere 三軸相等檢查（該檔已由使用者 commit `2a6a47a`，原「需同意動未 commit WIP」的顧慮消失）；(3) WP-54 config cube→sphere（`sphereHitbox()`／`trackingPilotAngularSizeToDiameterU()`，`widthU` 逐位不變）+ 描述現況文件同步。**(4) 9 個 block 重跑仍待使用者執行**——排序硬約束已滿足（config 改在重跑之前）。`spider-shot-v2` 的指標語意變更記於 **wp-46 progress D-46.5**（WP-46 是引入 sphere hitbox 的 WP，比 WP-36/WP-44 更貼合）。 |
+| **狀態** | ✅ 已落地（2026-09-03）。commit：`c30e6e3` slice A（推導層 sphere 幾何）、`6e1b624` slice B（WP-55 閘門）、slice C（WP-54 config + 文件，見本次 commit）。驗證：`npx tsc --noEmit`（含 `-p tsconfig.node.json`）exit 0；`npx vitest run` 206 files / 1995 tests 全綠；`playwright tracking-pilot-live --project=edge` 1/1。 |
 
 ### GD-27 ✅ 目標 hitbox 單一來源硬約束記名例外 — `visualSize` render-only 尺寸,限 `peek_click_transfer_pilot_v2_masked`(2026-09-01,WP-52)
 

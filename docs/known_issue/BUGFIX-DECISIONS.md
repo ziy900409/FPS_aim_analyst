@@ -18,7 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
-| [KI-021](KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) | on-target 離線推導（`trackingDerivation.isOnTarget()`）是 ray/AABB test 且 `hitboxFromMeta()` 丟掉 `shape`，`shape:'sphere'` 目標因此被當成外接立方體——與 `HitDetector` 的球體相交**不同幾何**，違反 GD-7 與 CONTEXT.md §23。**已在正式 Assessment drill 上生效**：`spider-shot-v2`（sphere，2.0° @8u）的 `firstOnTarget` 最多寬鬆 41%（對角 1.41° vs 球面 1.0°），偏差方向相依 | BD-021（待落地）：`HitboxSize` 帶 `shape` + `isOnTarget()` 加 ray/sphere 分支（`radius=width/2`，鏡射引擎）+ 放寬 WP-55 閘門並補 sphere 三軸相等檢查 | 🟡 已診斷待落地 |
+| [KI-021](KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) | on-target 離線推導（`trackingDerivation.isOnTarget()`）是 ray/AABB test 且 `hitboxFromMeta()` 丟掉 `shape`，`shape:'sphere'` 目標因此被當成外接立方體——與 `HitDetector` 的球體相交**不同幾何**，違反 GD-7 與 CONTEXT.md §23。**已在正式 Assessment drill 上生效**：`spider-shot-v2`（sphere，2.0° @8u）的 `firstOnTarget` 最多寬鬆 41%（對角 1.41° vs 球面 1.0°），偏差方向相依 | BD-021 ✅：`HitboxSize` 帶 `shape` + `isOnTarget()` 加 ray/sphere 分支（`radius=width/2`，鏡射引擎）+ 放寬 WP-55 閘門並補 sphere 三軸相等檢查 | ✅ 已修（2026-09-03） |
 | [KI-020](KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | core 2×2「size × speed」matrix 兩個自變數都沒被交付：`boundedSpeedScale` 靜默取 min 使交付速度只由振幅決定（5 vs 20 deg/s 實測 1.21 vs 1.18），而「size」被接到行程振幅、沒有任何 cell 設 `targets.hitbox`（目標角尺寸四個 cell 相同、約 ±7°，TOT 全部 100%） | BD-020(§3，size 改為真的目標角尺寸 hitbox；speed 改以提高頻帶 + 共用振幅交付；`createBandLimited2dV1()` 加建構期一致性守衛) | ✅ 已修(2026-09-03) |
 | [KI-019](KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | `reversal-2d-v1` 的 leg 長度由兩軸共用、貼牆那一軸把整個 leg 壓成 0、sign 又無條件翻面 → 「兩軸同側貼牆」成為吸收態，排程以 1ms 為步長寫到結束；實測 `tracking_reversal_pilot_v1_medium` 產生 6644 筆 leg、32.6% 時間目標凍結在角落，真人 pilot 該 block 資料作廢 | BD-019(§3，方向選擇改 room-aware＋零長度 leg 改 fail fast；F-A2 依研究者決定放寬角度視窗至 ±13° + 建構期一致性守衛) | ✅ 已修(2026-09-03) |
 | [KI-018](KI-018-history-search-keystroke-focus-steal.md) | History「搜尋 Participant」逐字輸入時，`navigator.replace()` 每次都給 focus-on-navigation guard 一個新的 route 物件參考，被誤判為真正導覽而搶焦點，導致除首字元外的按鍵全部遺失 | BD-018(§3，focus-on-navigation guard 改語意比較) | ✅ 已修(2026-09-01) |
@@ -48,17 +48,17 @@
 
 （目前無 open 項目。）
 
-### BD-021 🟡 KI-021 — on-target 推導忽略 sphere：修法已定，待落地(2026-09-03)
+### BD-021 ✅ KI-021 — on-target 推導忽略 sphere：已修(2026-09-03)
 
 | | |
 |---|---|
 | **發現處 / 根因** | [KI-021](KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) / WP-54 T6 slice 10 為 KI-020 把 pilot 目標改成真的角尺寸時，撞到 WP-55 contact derivation 的 box-only 閘門；追查該閘門來源時發現真正的問題在 `src/metrics/trackingDerivation.ts`：`isOnTarget()` 是 ray/AABB slab test，`hitboxFromMeta()` 又把 `shape` 丟掉（`HitboxSize` 根本沒有這個欄位），於是 sphere 目標被當成外接立方體。 |
 | **決策(修法選項)** | 採 **`HitboxSize` 帶 `shape?` + `isOnTarget()` 加 ray/sphere 分支**（`radius = width/2`，逐字鏡射 `HitDetector.ts:103-106` 的引擎語意），並放寬 `trackingContact.ts:147` 的閘門、同時補上「sphere 三軸必須相等」（鏡射 `schema.ts:243`）。**不採**「只放寬 WP-55 閘門」——那會讓 sphere 被當 box 靜默算出偏寬鬆的 on-target，比現在的「整份排除」更糟（現行閘門其實是正確的防線）。**不採**「把 sphere 目標一律換成 cube」——`spider-shot-v2` 是已凍結的正式 Assessment drill，改它的刺激幾何遠比修推導層昂貴，且 GD-7 要求的是兩邊同幾何、不是統一成 box。 |
 | **理由** | 這不是「尚未支援的新功能」，而是**既有硬約束的違反**：CLAUDE.md §4 的 GD-7 擴充與 CONTEXT.md §23 都明文要求 on-target 必須與命中判定同幾何、零新門檻——**權威文件是對的，是實作偏離了它**，所以修的是實作、不動這兩份文件。`epsilonDeg` 不受影響（走目標中心夾角，與 shape 無關），故 blast radius 限於 `onTarget` 及其衍生（TOT/`tAcquireMs`/drop-reacquire/spider-shot settle-overshoot）；box 路徑逐位不變使既有 fixture 零churn。 |
-| **偏離計畫** | 本條目**先記決策、後落地**（與 BD-020 初版同一模式）：落地涉及使用者當前未 commit 的 WP-55 WIP（`src/metrics/trackingContact*.ts`），且會改動一個正式 Assessment drill（`spider-shot-v2`）的指標語意，需先取得使用者對「動 WIP 檔」與「Assessment 指標語意變更紀錄落在哪個 WP」的同意。 |
-| **遺留 OQ / 未做** | KI-021 §6 DoD 全部未做。**特別注意排序約束**：WP-54 的 hitbox 由 cube 改回 sphere（[GD-30](../exec-plan/DECISIONS.md)）**必須在 9 個 block 重跑之前**落地，否則重跑資料與後續資料的 on-target 語意不同、不可合併。**歷史資料**：pre-fix 的 spider-shot-v2 匯出檔其 settle/overshoot 係以 box 幾何算出，需標註。 |
+| **偏離計畫** | 本條目**先記決策、後落地**（與 BD-020 初版同一模式）。落地時（2026-09-03）WP-55 的 `trackingContact*.ts` 已由使用者 commit（`2a6a47a`），原先「需同意動未 commit WIP」的顧慮消失；Assessment 指標語意變更記於 **wp-46 progress D-46.5**（WP-46 是引入 sphere hitbox 的 WP，比 WP-36/WP-44 更貼合）。TDD 沿用 BD-001 慣例：三片各自先在工作區證實測試修前為紅，測試與修法合併為單一綠 commit。 |
+| **遺留 OQ / 未做** | KI-021 §6 DoD 已全部完成（排序約束滿足：cube→sphere 已在 9-block 重跑**之前**落地）。**待使用者處理**：① 9 個 block 重跑（T6 §10.5）；② **歷史資料**——pre-fix 的 `spider-shot-v2` 匯出檔其 settle/overshoot/`movementTimeMs` 係以 box 幾何算出，若要與修後資料合併需先標註幾何世代，那是 registry 層的獨立問題（KI-021 §7 列為 KI-022 候選，本次未開）；③ **latent 發現**：`occlusionGeometry.visibleFractionForTarget()` 的 9-sample 取外接立方體 8 角、同樣不讀 `shape`——目前無 sphere drill 帶 visibility 設定故未生效，詳見 KI-021 §6。 |
 | **影響面** | 預期改動：`src/metrics/trackingDerivation.ts`（`HitboxSize`、`hitboxFromMeta`、`isOnTarget`）、`src/metrics/trackingContact.ts`（閘門）、`src/drill/tracking_core_pr_pilot_v1.ts`/`tracking_reversal_pilot_v1.ts`（cube→sphere）+ 對應測試；需確認 `holdClickMetrics`/`researchMetrics` 的消費面。 |
-| **狀態** | 🟡 已診斷、修法已定，待落地（2026-09-03）。 |
+| **狀態** | ✅ 已修（2026-09-03，三個 atomic commit：slice A 推導層 sphere 幾何、slice B WP-55 閘門、slice C WP-54 config cube→sphere + 文件）。驗證：`npx tsc --noEmit`（含 `-p tsconfig.node.json`）exit 0；`npx vitest run` 206 files / 1995 tests 全綠；`playwright tracking-pilot-live --project=edge` 1/1。 |
 
 ---
 
@@ -70,7 +70,7 @@
 | **決策(修法選項)** | 研究者選定（2026-09-03）：**size = 目標角尺寸**（每 cell 設 `targets.hitbox`，邊長 = `2 × distance × tan(size/2)`）＋ **speed 以「提高頻帶 `[0.1,0.7]→[0.3,2.1]` Hz + 所有 cell 共用振幅 ±16°」交付**。研究者最初選的是「放大振幅」，實測回報後改選：20 deg/s 在原頻帶需 ±48° 振幅，目標會走到 ±37°、沉到地板下並超出垂直 FOV（KI-020 §6.1）。另加 `createBandLimited2dV1()` 建構期一致性守衛（請求速度不可交付即 throw，並回報此 envelope 可交付的最大值；刻意豁免被抑制到近零的 off-axis）。 |
 | **理由** | 兩個修法都改動 **T0 預註冊的 candidate 參數**（OQ-54-2）與 README 風險表用語，故先只交付診斷+量化證據+選項（BD-020 初版），由研究者定案後才落地——實作端單方面選會讓 T7 的 floor/ceiling 校準建立在未經確認的刺激上。共用振幅的設計讓 speed 成為唯一變動的動態量（乾淨 4× 因子）；守衛與再參數化同批進來，因為守衛先落地會讓現行四個 cell 全部在載入時 throw。**hitbox 用 cube 而非 sphere**：sphere 理論上等向更貼合「角尺寸」，但 WP-55 的 exact-hitbox contact derivation 只接受 box（`trackingContact.ts:147`），改 sphere 會把這批 drill 從它的 coverage 排除（實測其 T3 測試轉紅）；cube 在 yaw/pitch 兩軸逐值正確，代價是對角方向容許角大 √2 倍（KI-020 §6.2）。 |
 | **偏離計畫** | T6 checklist 的「任何 defect 先最小化、補 regression fixture、再重跑 affected conditions」在本項無法照走——最小修復本身就是研究決策。故本次只交付診斷 + 量化證據 + 選項，並在 [T6-instrumentation-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md) §9 以 **revise** 結案，不假裝 Gate A 通過。 |
-| **遺留 OQ / 未做** | **資料處置**：P01 的全部 9 個 block 需重跑（core/calibration/reversal 的刺激都變了）。**殘留取捨**：(a) 頻率內容改變使 pursuit 可預測性下降（研究者知情）；(b) cube 的對角 anisotropy，待 contact 側支援 sphere 後可回頭改；(c) `TrackingCompatibilityKey.travelAmplitudeDeg` 由 `sizeDeg` 更名（語意已變），新增 `targetHitboxWidthU`（Meta 不記錄目標距離，故以 source unit 表達）與 `displayRefreshHz`（OQ-54-11）。 |
+| **遺留 OQ / 未做** | **資料處置**：P01 的全部 9 個 block 需重跑（core/calibration/reversal 的刺激都變了）。**殘留取捨**：(a) 頻率內容改變使 pursuit 可預測性下降（研究者知情）；(b) ~~cube 的對角 anisotropy，待 contact 側支援 sphere 後可回頭改~~ **✅ 2026-09-03 已解除**：BD-021/KI-021 讓 `trackingDerivation` 拿到 sphere 幾何、contact 閘門隨之放寬，WP-54 hitbox 已於 T6 slice 12 改回 sphere（GD-30）；(c) `TrackingCompatibilityKey.travelAmplitudeDeg` 由 `sizeDeg` 更名（語意已變），新增 `targetHitboxWidthU`（Meta 不記錄目標距離，故以 source unit 表達）與 `displayRefreshHz`（OQ-54-11）。 |
 | **影響面** | `src/sim/trackingTrajectory.ts`（一致性守衛 + `maxDeliverableRmsSpeed`）、`src/drill/tracking_core_pr_pilot_v1.ts`（size→hitbox、共用振幅、頻帶、calibration 改用 0.5° 目標）、`src/drill/tracking_reversal_pilot_v1.ts`（固定 2.0° 目標）、`src/pilot/trackingCompatibilityKey.ts`（欄位更名 + 兩個新軸）。測試：core matrix +4、trajectory +1、compatibility +2；另修 4 個沿用舊不一致前提的 fixture。驗證：`vitest run` 206 files / 1991 tests 全綠、`playwright tracking-pilot-live` 1/1。 |
 | **狀態** | ✅ 已修 + 落地（2026-09-03，slice 10-11）。P01 資料待重跑。 |
 

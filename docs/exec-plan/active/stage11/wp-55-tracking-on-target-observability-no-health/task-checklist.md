@@ -10,6 +10,7 @@
 | [x] | **T1** Contact geometry contract | [T1-contact-geometry-contract.md](T1-contact-geometry-contract.md) | T0 | High |
 | [x] | **T2** Export-derived artifact | [T2-export-derived-artifact.md](T2-export-derived-artifact.md) | T1 | Med/High |
 | [x] | **T3** All tracking drill coverage | [T3-all-tracking-drill-coverage.md](T3-all-tracking-drill-coverage.md) | T2 | High |
+| [x] | **T3 後續**（2026-09-03，KI-021 slice B）：contact hitbox 閘門接受三軸相等的 `shape:'sphere'`，WP-54 candidate drills 改用 sphere 後 `includedRunCount` 維持 2（D-55.7） | [KI-021](../../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) | T3 | Med |
 | [ ] | **T4** Replay observability | [T4-replay-observability.md](T4-replay-observability.md) | T2/T3 | Med/High |
 | [ ] | **T5** Report and quality integration | [T5-report-and-quality-integration.md](T5-report-and-quality-integration.md) | T3/T4 | Med |
 | [ ] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](T6-exit-gate-and-documentation.md) | T1-T5 | Med |

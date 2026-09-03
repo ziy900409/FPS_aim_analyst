@@ -109,10 +109,11 @@ describe('tracking_core_pr_pilot_v1 — practice/calibration/core matrix configs
     for (const drill of [trackingCorePrPilotV1Practice, ...TRACKING_CORE_PR_PILOT_V1_CANDIDATES]) {
       const hitbox = drill.targets.hitbox;
       if (hitbox === undefined) throw new Error(`${drill.drillId} has no hitbox`);
-      // A cube subtends exactly the candidate size along yaw and pitch, and stays inside WP-55's
-      // box-only exact-hitbox contact derivation; hit detection and rendering read the same
-      // `TargetState.hitbox` source either way (WP-46 / GD-7).
-      expect(hitbox.shape, drill.drillId).toBe('box');
+      // A sphere of this diameter subtends the candidate size in every direction, so on-target
+      // tolerance is isotropic (KI-021 / GD-30 replaced the interim cube and its sqrt(2)x diagonal
+      // anisotropy). Hit detection, rendering and the offline on-target derivation all read the
+      // same `TargetState.hitbox` source (WP-46 / GD-7).
+      expect(hitbox.shape, drill.drillId).toBe('sphere');
       expect(hitbox.widthU, drill.drillId).toBe(hitbox.heightU);
       expect(hitbox.widthU, drill.drillId).toBe(hitbox.depthU);
       expect(CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG as readonly number[], drill.drillId).toContain(

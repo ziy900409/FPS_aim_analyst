@@ -1,7 +1,7 @@
 import type { DrillConfig, TargetHitboxConfig } from './DrillConfig.ts';
 import {
   CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG,
-  trackingPilotAngularSizeToEdgeU,
+  trackingPilotAngularSizeToDiameterU,
 } from './tracking_core_pr_pilot_v1.ts';
 
 /**
@@ -51,9 +51,10 @@ const SEED_BASE = 54100;
  */
 const TARGET_ANGULAR_SIZE_DEG = CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG[0];
 
-function cubeHitbox(): TargetHitboxConfig {
-  const edgeU = trackingPilotAngularSizeToEdgeU(TARGET_ANGULAR_SIZE_DEG, DISTANCE_U);
-  return { widthU: edgeU, heightU: edgeU, depthU: edgeU, shape: 'box' };
+/** Sphere, matching the core matrix (KI-021 / GD-30); see `trackingPilotAngularSizeToDiameterU`. */
+function sphereHitbox(): TargetHitboxConfig {
+  const diameterU = trackingPilotAngularSizeToDiameterU(TARGET_ANGULAR_SIZE_DEG, DISTANCE_U);
+  return { widthU: diameterU, heightU: diameterU, depthU: diameterU, shape: 'sphere' };
 }
 
 function buildReversalCell(drillIdSuffix: string, seed: number, reversalIntervalMs: readonly [number, number]): DrillConfig {
@@ -63,7 +64,7 @@ function buildReversalCell(drillIdSuffix: string, seed: number, reversalInterval
     targets: {
       count: 1,
       distance: DISTANCE_U,
-      hitbox: cubeHitbox(),
+      hitbox: sphereHitbox(),
       trackingTrajectory: {
         kind: 'reversal-2d-v1',
         seed,

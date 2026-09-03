@@ -310,7 +310,7 @@ export function buildTrackingPilotEvidence(
 | Acquisition failure 被吃掉 | High | 弱者 run 被刪除或混入 pursuit mean | P0 gate 獨立報告；aggregation contract tests |
 | 系統品質污染能力指標 | High | display stall/input overflow/missing telemetry 污染 lag/smoothness | Eligibility before metrics；blocked 不聚合 |
 | Pilot 被保存為正式 Assessment | Med/High | history/trend compatibility 被研究資料污染 | practice/pilot metadata guard；formal release 另立 WP |
-| 0.5 deg target 接近 pixel floor | Med | 量到視覺可辨識度而非 tracking | T7 visibility check；必要時淘汰該 cell。**T6 slice 10 起「0.5 deg」才真的是目標角尺寸**（`targets.hitbox` cube，邊長 `2·distance·tan(size/2)`）；兩個 axis calibration block 也改用此至風險尺寸——在此之前所有 cell 共用預設 H1 目標（約 ±7°），此風險項無法被檢驗（KI-020） |
+| 0.5 deg target 接近 pixel floor | Med | 量到視覺可辨識度而非 tracking | T7 visibility check；必要時淘汰該 cell。**T6 slice 10 起「0.5 deg」才真的是目標角尺寸**（`targets.hitbox`，`2·distance·tan(size/2)`；slice 10 為 cube，slice 12 依 KI-021/GD-30 改回 **sphere**，因此該尺寸在各方向等向）；兩個 axis calibration block 也改用此至風險尺寸——在此之前所有 cell 共用預設 H1 目標（約 ±7°），此風險項無法被檢驗（KI-020） |
 | Fixed order 導致疲勞/練習 confound | Med | 難度與時間順序共變 | counterbalance、固定 rest、time-on-task slope |
 | 大 export analysis 阻塞 UI | Low/Med | Result/evidence report 明顯延遲 | T4 benchmark；超過 2 秒才另立 worker spike |
 
