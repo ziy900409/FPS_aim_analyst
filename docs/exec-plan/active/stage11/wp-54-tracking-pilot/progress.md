@@ -8,6 +8,29 @@
 
 ## Progress
 
+### 2026-09-03 — T6 slice 13：第二輪真人資料（P03）分析 + KI-022 修復
+
+- **收到三批匯出,先做批次識別再分析**:使用者交回的路徑與其 block log 對不上。逐份讀 `meta` 後
+  確認 `Downloads` 裡是**三位不同 participant**:P01(08:15–08:25,`hitbox box w=1`=KI-020 修復前,
+  已作廢)、P02(09:54–10:01,`box` 0.0349/0.1396 = slice 10/11 的 **cube** build)、
+  P03(11:29–11:35,`sphere` = 現行 build)。**檔名與 `meta.drillId` 32/32 全部吻合**⇒ 無匯出命名
+  bug;使用者貼的是 P02 的路徑,而其 block log(retry 落在 #3 calibration_vertical 與 #6
+  2deg_5dps)逐筆對應的是 **P03**。以 P03 為 gate 第二輪的分析對象。
+- **分析**:`npx vite-node scripts/analyze-tracking-pilot.ts -- <P03 dir>`(11 份;資料放 repo 外的
+  暫存資料夾,輸出 `.pilot-analysis/P03/`,兩者皆不進 git)。四層結果見
+  [T6-instrumentation-gate.md §11](T6-instrumentation-gate.md)。
+- **[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)
+  (本 slice 修掉)**:分析 runner 的主控台摘要取 `condition.runs[0]`,而 evidence 依 FR-54-10 是
+  append-only、blocked attempt 依契約不帶 `p0`/`p1` ⇒ 兩個「第一次被擋、重跑後合格」的條件被印成
+  `p0=- p1=-`(8 個條件中 2 個)。**evidence JSON/HTML 一直是對的**(實測 `2deg_5dps` 的
+  `rmsEpsilonDeg 0.874`、`totPercent 34.6` 都在裡面),說謊的是人據以下 gate 結論的那一層——
+  與 KI-020 同一類:工具在該說話的地方沉默,而沉默被讀成沒問題。修法取第一個 eligible run,
+  邏輯抽成 `scripts/trackingPilotSummary.ts` 純函式(runner 本體 import 即跑 `main()`,測不動),
+  決策見 [BD-022](../../../known_issue/BUGFIX-DECISIONS.md)。
+- **驗證**:regression 測試於工作區證實修前為紅(取回 blocked 那份的 runId),修後綠;
+  `npx vitest run` **207 files / 1998 tests passed**(1 skipped file / 2 skipped tests);
+  `npx tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0;以 P03 資料重跑,八個條件全部印出 P0/P1。
+
 ### 2026-09-03 — T6 gate 帳本一致性修正（docs-only，無程式碼變更）
 
 `T6-instrumentation-gate.md` 有三處敘述停在 slice 8，與 §10.4／§10.5 的現況矛盾——重跑前交給

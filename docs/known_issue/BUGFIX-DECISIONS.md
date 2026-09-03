@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-022](KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) | pilot 分析 runner 的主控台摘要取 `condition.runs[0]`，而 evidence 依 FR-54-10 是 append-only、blocked 的 attempt 依契約不帶 `p0`/`p1` ⇒ 任何「第一次被擋、重跑後合格」的條件都被印成 `p0=- p1=-`。實測 P03 重跑 8 個條件中有 2 個中招；evidence JSON/HTML 一直是對的，說謊的是**人據以下 gate 結論的那一層** | BD-022 ✅：摘要改取第一個 eligible run（無 eligible 時退回 `runs[0]`），選擇邏輯抽成 `scripts/trackingPilotSummary.ts` 的純函式以便測試；不動 `buildTrackingPilotEvidence()` 的 append-only 契約 | ✅ 已修（2026-09-03） |
 | [KI-021](KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) | on-target 離線推導（`trackingDerivation.isOnTarget()`）是 ray/AABB test 且 `hitboxFromMeta()` 丟掉 `shape`，`shape:'sphere'` 目標因此被當成外接立方體——與 `HitDetector` 的球體相交**不同幾何**，違反 GD-7 與 CONTEXT.md §23。**已在正式 Assessment drill 上生效**：`spider-shot-v2`（sphere，2.0° @8u）的 `firstOnTarget` 最多寬鬆 41%（對角 1.41° vs 球面 1.0°），偏差方向相依 | BD-021 ✅：`HitboxSize` 帶 `shape` + `isOnTarget()` 加 ray/sphere 分支（`radius=width/2`，鏡射引擎）+ 放寬 WP-55 閘門並補 sphere 三軸相等檢查 | ✅ 已修（2026-09-03） |
 | [KI-020](KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | core 2×2「size × speed」matrix 兩個自變數都沒被交付：`boundedSpeedScale` 靜默取 min 使交付速度只由振幅決定（5 vs 20 deg/s 實測 1.21 vs 1.18），而「size」被接到行程振幅、沒有任何 cell 設 `targets.hitbox`（目標角尺寸四個 cell 相同、約 ±7°，TOT 全部 100%） | BD-020(§3，size 改為真的目標角尺寸 hitbox；speed 改以提高頻帶 + 共用振幅交付；`createBandLimited2dV1()` 加建構期一致性守衛) | ✅ 已修(2026-09-03) |
 | [KI-019](KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | `reversal-2d-v1` 的 leg 長度由兩軸共用、貼牆那一軸把整個 leg 壓成 0、sign 又無條件翻面 → 「兩軸同側貼牆」成為吸收態，排程以 1ms 為步長寫到結束；實測 `tracking_reversal_pilot_v1_medium` 產生 6644 筆 leg、32.6% 時間目標凍結在角落，真人 pilot 該 block 資料作廢 | BD-019(§3，方向選擇改 room-aware＋零長度 leg 改 fail fast；F-A2 依研究者決定放寬角度視窗至 ±13° + 建構期一致性守衛) | ✅ 已修(2026-09-03) |
@@ -147,6 +148,21 @@
 ---
 
 ## 3. 已決策 / 已修(CLOSED)
+
+### BD-022 ✅ KI-022 — 分析 runner 摘要改取 eligible run（2026-09-03）
+
+| | |
+|---|---|
+| **發現處 / 根因** | [KI-022](KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) / WP-54 T6 第二輪真人資料（P03 重跑）分析當下。根因：`scripts/analyze-tracking-pilot.ts` 摘要取 `condition.runs[0]`，但 `buildTrackingPilotEvidence()` 依 FR-54-10 是 append-only（retry 不覆蓋原 attempt）且 blocked run 依契約不帶 `p0`/`p1` ⇒ 「block → Retry → Continue」這個**正常操作流程**產生的條件全部被印成沒有指標。 |
+| **決策(修法選項)** | 採 **Option A（改消費端挑選）**：摘要改取第一個 `quality.status === 'eligible'` 的 run，無 eligible 時退回 `runs[0]`（保留可追溯 run id，「每次 attempt 都被擋」本身是發現而非空行）。選擇邏輯抽成 `scripts/trackingPilotSummary.ts` 純函式。**不採 Option B**（讓 `buildTrackingPilotEvidence()` 只回傳 eligible run）——append-only 的 runs 陣列是 FR-54-10 的可稽核性要求，錯的是消費端；**不採 Option C**（摘要印出全部 run）——把 8 行變 11 行卻沒解決「該看哪一份」。 |
+| **理由** | 錯誤只存在於人看的那一層,evidence JSON/HTML 與 parity 檢查一直正確 ⇒ 修法應該最小、只動消費端,不得為了主控台好看而改動證據契約。抽成獨立模組是因為 runner 本體 import 即執行 `main()`、且吃整個資料夾的 participant 匯出,單元測試兩者都給不了。 |
+| **偏離計畫** | 無偏離協議。依 BD-001 慣例:測試於工作區證實修前為紅(得到 blocked attempt 的 runId),測試與修法合併為單一已驗證綠的 commit。 |
+| **遺留 OQ / 未做** | **OQ-KI22-1**:一個條件有**多份** eligible run 時,摘要仍只描述第一份(n≥2 是 T6 checklist 的目標狀態)。現況以 `n=` / `eligible=` 兩個計數揭露其存在,完整彙總留給 evidence JSON;是否要在摘要做跨 run 聚合,等 T7 決定聚合語意後再說。 |
+| **影響面** | 新增 [scripts/trackingPilotSummary.ts](../../scripts/trackingPilotSummary.ts)、[tests/regression/tracking-pilot-summary-run-selection.test.ts](../../tests/regression/tracking-pilot-summary-run-selection.test.ts)；改 [scripts/analyze-tracking-pilot.ts](../../scripts/analyze-tracking-pilot.ts) 一行 + import。**不動任何 `src/`**（sim/metrics/evidence 皆未觸碰）。驗證：`vitest run` 207 files / 1998 tests passed、`tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0、以 P03 真實資料重跑分析後八個條件全部印出 P0/P1。 |
+| **狀態** | ✅ 已修 + 落地（2026-09-03；branch `main`）。 |
+
+---
+
 
 ### BD-015 ✅ KI-015 — Drill Results 的重測／匯出操作不可發現(2026-08-26)
 

@@ -26,6 +26,7 @@ import type { ExportPayload } from '../src/data/export.ts';
 import { evaluateTrackingRunEligibility } from '../src/pilot/trackingRunEligibility.ts';
 import { buildTrackingPilotEvidence } from '../src/pilot/trackingPilotEvidence.ts';
 import { renderTrackingPilotReportHtml } from '../src/pilot/trackingPilotReport.ts';
+import { selectSummaryRun } from './trackingPilotSummary.ts';
 import {
   createTrackingTrajectory,
   type TrackingTrajectoryConfig,
@@ -178,7 +179,9 @@ function main(): void {
   const evidence = buildTrackingPilotEvidence(payloads, { includeTrace: true });
   console.log(`\n=== Evidence (${evidence.conditions.length} conditions, practice excluded: ${evidence.excludedPracticeRunCount}) ===`);
   for (const condition of evidence.conditions) {
-    const run = condition.runs[0];
+    // KI-022: never `runs[0]` — a retried condition keeps its blocked first attempt, which by
+    // contract carries no p0/p1.
+    const run = selectSummaryRun(condition.runs);
     const p0 =
       run?.p0 === undefined
         ? 'p0=-'
