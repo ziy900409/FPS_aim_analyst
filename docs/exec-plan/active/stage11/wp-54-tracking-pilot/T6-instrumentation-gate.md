@@ -205,7 +205,7 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 | Block duration | 25 s scored（D-54.4）＋ 1 s prep（scored/calibration） |
 | Smoothing / dynamics 預設 | `tracking-dynamics-smoothing-v1-tri3`、`lagSearchMs 0-250`、`minValidTicks 32`（D-54.21，pipeline 預設而非協定凍結） |
 | §3 量測環境 | Edge（`msedge` channel）、WebGPU backend、`crossOriginIsolated: true`、`timerResolutionUs ≈ 5`、1280×720、Windows 11、Node v25.9.0 |
-| 真人資料版本 | ⬜ 待填（tester 人數、日期、每人 session 數、檔案清單） |
+| 真人資料版本 | 第一輪 P01 session-0 ×9（§10）／第二輪 P03 session-0 ×11（§11）／**第三輪 P04 session-0 ×10 + P05 session-1 ×11**（§12，2026-09-03，G3 刺激）。payload 全程存放於 repo 外,`.pilot-analysis/` 僅存分析產物 |
 
 ## 10. Gate A 第一輪結論（2026-09-03，P01）：**REVISE**
 
@@ -416,6 +416,102 @@ reversal leg 的 2D 巡航 31.75 > `speedMax` 30）。
 0.95–1.05；分析 runner 的 `stimulusCheck()` 從一開始就量對，兩次都是它揭露的——**T7 之前不應再放寬
 這條帶寬**。
 
+## 12. Gate A 第三輪（2026-09-03，P04 + P05,KI-023 後的 G3 刺激)
+
+### 12.1 收到的資料
+
+| 批次 | session | payload 數 | `startedAt` 範圍 (UTC) | scored seed 家族 |
+|---|---|---|---|---|
+| P04 | `tracking-pilot-v1:P04:session-0` | 10（9 block + 1 retry） | 12:17:32Z – 12:23:39Z | 54010–54013 / 54100–54101 |
+| P05 | `tracking-pilot-v1:P05:session-1` | 11（9 block + 2 retry） | 12:24:48Z – 12:32:43Z | **64010–64013 / 64100–64101**（alternate family） |
+
+**世代歸屬(G3)有直接證據,不只靠時間**:KI-023 的修法落在 `690998c`（12:14:03Z），兩批的
+`startedAt` 都晚於它;更強的是 §12.3 的**逐位比對** —— 21/21 payload 的**錄到的目標位置**與現行程式
+重建的刺激完全一致。P05 的 practice/calibration 三個 block 沿用 `54000/54001/54002` 屬設計（§5 步驟
+8：alternate seed family 只套用於 6 個 scored block），非缺陷。
+
+### 12.2 四層對帳:全部成立 ✅
+
+- **schema(層 1)**：21/21 `parseExportPayload()` 通過,無 REJECTED。
+- **eligibility(層 2)**：scored/calibration 每份 3202–3203 valid ticks / 25008–25016 ms(覆蓋率
+  ≈100%)。**3 份 blocked,全部 `protocol-violation`**,每個都被 retry 且 retry 合格;append-only
+  保留原 attempt。合併聚合後 **8 個 scored 條件全部 `eligible=2`** ⇒「每條件 ≥ 2 份可用 run」達標。
+- **event 對表(層 3)**：reversal `rec/sched` = **58/58、29/29**(P04)與 **55/55、42/42**(P05),
+  四份 `mismatched=0`。
+- **evidence / report(層 4)**：`buildTrackingPilotEvidence()` 8 條件、practice 自動排除
+  (`excludedPracticeRunCount` 每批 1、合併 2);`renderTrackingPilotReportHtml()` 三次
+  **JSON/HTML parity ok**;condition/n/seed/quality 可追到 run id。
+- **KI-022 修復在真人資料上生效**:3 個被 retry 的條件在主控台都印出指標(不再 `p0=- p1=-`)。
+
+### 12.3 KI-023 的修正被交付了 ✅(本輪的核心問題)
+
+| 量法 | 結果 |
+|---|---|
+| 分析 runner 的 `stimulusCheck()`（重建刺激的解析速度） | 每個 band-limited cell **99–102% of nominal** |
+| **錄到的目標位置反推**(獨立於重建) | 交付/宣稱 **0.989–1.017**;逐位誤差 ≤ **8.9e-16 u** |
+
+§11.7 要求的 0.9–1.1 帶寬**每個 cell 都達標**,且兩種量法一致。行程也如 §11.6 預測收到
+`maxAbs ±9.2–11.1°`(修前 ±13–14°)。reversal `still=` **1.3% / 2.9% / 1.9% / 2.6%**,全部 < 5%。
+TOT 由第二輪的 0.3–34.6% 上移到 **0.2–49.4%**,與速度修正後的預期一致。
+
+> **這個「錄到的位置 vs 重建」比對不是現行 pipeline 的一部分。** `analyze-tracking-pilot.ts` 的
+> `stimulusCheck()` 是用**現行程式**從 `meta.spawn.trackingTrajectory` 重建刺激再量它自己的 RMS;
+> reversal 家族有 `target_motion_change` 事件可以對表,但 **band-limited 家族沒有任何事件**,因此
+> pipeline 結構上無法分辨「payload 是舊世代程式錄的」。本輪改用 ticks 裡的 `tx/ty/tz`(sim 經
+> `projectTrackingAngles()` 寫入)與重建值逐位相減來補這個洞。**建議把它升成 runner 的一層檢查**
+> (量的是「錄到的曲線 == 重建的曲線」,不是新構念,不違反 C-D4)——見 §12.6 待決事項。
+
+### 12.4 本輪未發現 instrumentation defect
+
+**這是三輪來第一次沒有缺陷需要修**。以下四項是觀察/殘留,依既有決策歸 T7,不在本輪修:
+
+- **N1 — reversal 交付反轉數強烈依賴 seed**:medium **29**(seed 54100)vs **42**(seed 64100),
+  config 宣稱約 23(+26% / +83%)。P05 的密集排程使 **8/42(19%)個 window 落入
+  `insufficient-window-data`**(P04 只有 1/29)。機制是 KI-019 §5.3 的邊界截斷;`rec/sched` 相符且
+  排除都帶封閉 reason code ⇒ **儀器忠實,但同一條件跨 seed 家族的刺激可比性受影響**,是 T7 放寬
+  邊界到 ±25° 的新證據。
+- **N2 — P1 lag railing 惡化**:`lagMs` 恰為搜尋上界 250.0 ms 的條件由第二輪 5/8 增為
+  **每批 6/8**,`status` 仍回 `'ok'`。歸 T7(D-54.21:該參數是 pipeline 預設,非協定凍結值)。
+- **N3 — 5/5 的 protocol violation 都是 `kind: "ads"`**(第二輪 2 次 + 本輪 3 次,全部右鍵)。
+  runbook 的事前提示不足。兩個處置方向見 §12.6。
+- **N4 — velocity gain 仍普遍 > 1**:16 個條件中 15 個落在 1.00–1.43(僅 P04 的 0p5deg_20dps
+  0.965)。真人普遍過衝,與 synthetic fixture 分布不同(第二輪已記錄)。
+
+### 12.5 §6 真人項的覆蓋落差(尚未達標的部分)
+
+| §6 真人項 | 狀態 |
+|---|---|
+| 每個 scored 條件 ≥ 2 份可用 run | ✅ 8/8 條件 `eligible=2` |
+| 四層 traceability 無未解 defect | ✅ §12.2 |
+| 每個 defect 已修 + regression fixture + 重跑 | ✅ 無 defect(N/A) |
+| 無真實 participant payload 進 git | ✅ payload 全程在 repo 外;`.pilot-analysis/` 已 gitignore |
+| **3–5 位 tester** | ❌ **只有 2 位**(P04、P05) |
+| **每位 tester 各完成 session 0 + session 1** | ❌ P04 只有 session-0、P05 只有 session-1 |
+| **0.5° 條件在修正後的速度下的主觀可辨識性** | ⬜ 待操作員回報(§11.3 在 28.3 deg/s 下的回報是「只能靠猜」,不可沿用) |
+| §7 每人一行紀錄(rest 秒數、retry 理由) | ⬜ 待補(瀏覽器/顯示器已可從 meta 取得：Edge 151、3840×2160、60 Hz、`crossOriginIsolated: true`) |
+
+### 12.6 待研究者決定(不由 agent 拍板)
+
+1. **§6 的 tester 份量**：(a) 補 1–3 位 tester、每位跑 session 0 + 1,照 §6 原文結案;或
+   (b) 以 2 位 × 各一 session(8 條件皆 2 份可用 run)結案並在帳本記錄理由。**這是預註冊份量的
+   取捨,屬研究決策。**
+2. **N3 的處置**：(a) 只加強 runbook 事前提示(additive、不動程式);或 (b) scored block 直接
+   抑制 ADS 輸入(改輸入層可及行為 ⇒ 改變受測者能做的事,屬研究決策)。
+3. **§12.3 的「錄到的位置 vs 重建」比對是否升成 runner 的一層**(補 band-limited 家族沒有事件
+   可對表的洞)。若要,建議開一個 T6 slice 落地 + regression fixture。
+
+### 12.7 判定
+
+**無 instrumentation defect ⇒ 不是 REVISE;也還不能宣告 GO** —— §6 的 tester 份量與 0.5° 主觀項
+(§12.5)未達標,而那是預註冊份量與刺激可辨識性的判斷,依 §12.6 第 1 項交研究者決定後才落判。
+**儀器面在本輪通過了資料能檢驗的每一項**(§12.2、§12.3)。
+
+**分析出處**:`a786e4b`(分析器自 `922672f` 起未變);刺激基線 `f191642`(KI-023 落地於 `690998c`)。
+**環境**(取自 payload meta):Edge 151.0.0.0、WebGPU、`crossOriginIsolated: true`、`displayHz` 60、
+native 模式 3828×1911 buffer / 3840×2160 螢幕、`fovDeg` 75、`sensitivity` 1(`cs2-0.022deg`)、
+scene `field-low`。每份匯出仍帶 `suspect: true` / `validity.perfFloor: true`(60 Hz 面板撞
+`PERF_FLOOR_MS`,eligibility 刻意不看,OQ-54-11 已決)。
+
 ## 9. Go / revise / stop
 
 **🔴 REVISE（2026-09-03）。** 判準與證據見 §10。摘要：資料鏈路成立，刺激不符預註冊操弄；**三個缺陷
@@ -424,6 +520,14 @@ reversal leg 的 2D 巡航 31.75 > `speedMax` 30）。
 9 個 block 全部重跑（§10.5）後才重判 go/revise/stop。
 
 **🔴 REVISE（第二輪，2026-09-03，P03）。** 見 §11。資料鏈路第二次成立（覆蓋率、event 對表 36/36 與 59/59、追溯、parity、practice 排除，且新涵蓋 retry 流程與 sphere 幾何）；TOT 已離開 100%（0.3–34.6%）⇒ hitbox 生效。新缺陷兩個：[KI-022](../../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) ✅ 已修；[KI-023](../../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md) ✅ 已修（交付速度是每軸量、兩軸 cell 超交付 √2 倍；研究者選定 **Option A** 改 2D 語意並含 reversal 家族，commit `690998c`，落地數字見 §11.6）。**下一輪只缺資料**：9 個 block 第三輪重跑（§11.7）。
+
+**🟡 第三輪（2026-09-03，P04 session-0 + P05 session-1，G3 刺激）：無 defect,判定待研究者決定。**
+見 §12。四層對帳全部成立(schema 21/21、覆蓋率 ≈100%、event 對表 58/58・29/29・55/55・42/42
+`mismatched=0`、parity ok、8 個 scored 條件皆 `eligible=2`);**KI-023 的修正確實被交付**——交付/宣稱
+每 cell 落在 0.9–1.1(重建量法 99–102%,錄到的位置反推 0.989–1.017,且 21/21 payload 與現行程式重建
+的刺激**逐位一致**,誤差 ≤ 8.9e-16 u)。**三輪來第一次沒有缺陷需要修**。尚未 GO 的原因不是儀器,而是
+§6 的份量:只有 2 位 tester、且各只跑一個 session,加上 0.5° 主觀可辨識性尚未在修正後的速度下回報
+(§12.5)。處置選項見 §12.6(屬研究決策)。
 
 - **Go** 的條件：§6 真人項全部勾選、每個 scored 條件 ≥ 2 份可用 run、四層 traceability 無未解
   defect ⇒ T6 PASS，可開 T7（難度校準，12-20 人）。

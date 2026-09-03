@@ -2,11 +2,36 @@
 
 ## Status
 
-- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A = REVISE（第二輪）**（2026-09-03，P03 重跑，見 [T6-instrumentation-gate.md §11](T6-instrumentation-gate.md)）。資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`；slice 12-15 為第二輪重跑基線、gate §11 帳本與 KI-022/KI-023 修復。第三輪重跑所用的基線 = `f191642`（gate §8）。
+- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A 第三輪 = 無 defect,判定待研究者決定**（2026-09-03，P04 session-0 + P05 session-1，G3 刺激，見 [T6-instrumentation-gate.md §12](T6-instrumentation-gate.md)）。四層對帳全部成立、8 個 scored 條件皆 `eligible=2`、KI-023 的速度修正確實被交付（交付/宣稱 0.989–1.017，且 21/21 payload 與現行程式重建的刺激逐位一致）；**三輪來第一次沒有缺陷需要修**。尚未 GO 的原因是 §6 份量（只有 2 位 tester、各一個 session）與 0.5° 主觀項未回報 ⇒ [OQ-54-12](#open-questions) / gate §12.6。第二輪（P03）記錄見 §11、第一輪（P01）見 §10。以下為第二輪當時的敘述——資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`；slice 12-15 為第二輪重跑基線、gate §11 帳本與 KI-022/KI-023 修復。第三輪重跑所用的基線 = `f191642`（gate §8）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-03 — T6 slice 16：Gate A 第三輪帳本（§12，P04 + P05，docs-only）
+
+- **資料**：P04 `session-0` 10 份、P05 `session-1` 11 份(含 3 次 retry),`startedAt`
+  12:17:32Z–12:32:43Z,皆晚於 KI-023 的 `690998c`（12:14:03Z）。批次一律以 `meta.session.participantId`
+  判定(沿用第二輪教訓,不信路徑/檔名配對);檔名 ↔ `meta.drillId` 21/21 吻合。
+- **四層對帳全部成立**：schema 21/21、scored 覆蓋率 3202–3203 ticks / 25008–25016 ms、reversal event
+  對表 **58/58・29/29・55/55・42/42 `mismatched=0`**、practice 自動排除、JSON/HTML parity ok ×3、
+  合併後 **8 個 scored 條件皆 `eligible=2`**。KI-022 的修復在真人資料上生效(3 個 retry 過的條件都印出
+  指標)。
+- **KI-023 的修正確實被交付**：交付/宣稱每 cell 落在 §11.7 要求的 0.9–1.1——重建量法 99–102%,
+  **錄到的目標位置反推 0.989–1.017**。行程收到 ±9.2–11.1°(修前 ±13–14°),reversal `still=`
+  1.3–2.9% 全 < 5%,TOT 由 0.3–34.6% 上移到 0.2–49.4%。
+- **新增的世代歸屬證據(D-54.43)**：`analyze-tracking-pilot.ts` 的 `stimulusCheck()` 是用**現行程式**
+  重建刺激,band-limited 家族又沒有 `target_motion_change` 可對表 ⇒ pipeline 結構上無法分辨「payload 是
+  舊世代程式錄的」。本輪改以 ticks 的 `tx/ty/tz`(sim 經 `projectTrackingAngles()` 寫入)與重建值逐位
+  相減:**21/21 payload 逐位一致(誤差 ≤ 8.9e-16 u)** ⇒ G3 歸屬有直接證據,不只靠 commit 時間。
+  是否升成 runner 的一層檢查待研究者決定(gate §12.6)。
+- **本輪無 instrumentation defect(三輪來第一次)**。四項觀察歸 T7:N1 reversal 交付反轉數強烈依賴
+  seed(medium 29 vs 42,宣稱約 23;P05 密集排程使 8/42 window 落入 `insufficient-window-data`)、
+  N2 lag railing 由 5/8 惡化為每批 6/8、N3 **5/5 的 protocol violation 都是 `kind: "ads"`**、
+  N4 velocity gain 16 條件中 15 個 > 1。
+- **尚未 GO**：原因不是儀器,而是 §6 份量——只有 2 位 tester、且各只跑一個 session;0.5° 主觀可辨識性
+  尚未在修正後的速度下回報;§7 的 rest 秒數/retry 理由待補。處置選項見 gate §12.6,屬研究決策。
+- **未動任何 production code**;`.pilot-analysis/` 只存分析產物,真實 payload 全程在 repo 外。
 
 ### 2026-09-03 — T6 slice 15：KI-023 落地（速度 set-point 改 2D 語意，含 reversal 家族）
 
@@ -1107,7 +1132,17 @@
 
 | D-54.42 | WP-54 的 pilot 目標 hitbox **改回 `shape:'sphere'`**（取代 D-54.40 的 cube），但前置為 [KI-021](../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) 落地，且**必須在 9-block 重跑之前**完成 | 使用者 2026-09-03 要求。sphere 讓角尺寸各方向等向，才真正符合「angular size」語意（cube 在對角方向的 on-target 容許角大 √2 倍）。**前置條件不可跳過**：`trackingDerivation.isOnTarget()` 目前是 ray/AABB 且 `hitboxFromMeta()` 丟掉 `shape`，所以現在改 config 只會讓 pilot drill 被 WP-55 的 `'invalid-hitbox'` 閘門整份排除，或（若只放寬閘門）被當成 box 靜默算出偏寬鬆的 on-target——後者比現況更糟。**排序硬約束**：on-target 幾何一改，TOT/`tAcquireMs`/drop-reacquire 語意就變；若在重跑後才改，兩批真人資料不可合併、等於再作廢一次。跨 WP 面（含 `spider-shot-v2` 這個正式 Assessment drill 也受 KI-021 影響）記於 [DECISIONS.md GD-30](../../DECISIONS.md) | ✅ Confirmed（2026-09-03 落地，T6 slice 12）——KI-021 三片依序完成後改 config：`trackingPilotAngularSizeToEdgeU`→`trackingPilotAngularSizeToDiameterU`、`cubeHitbox()`→`sphereHitbox()`、兩檔皆 `shape:'sphere'`（`widthU` 逐位不變，故 e2e 的 0.13964 斷言不動）。**已在 9-block 重跑之前落地**，排序約束滿足 |
 
+| D-54.43 | Gate A 第三輪的**世代歸屬(G2 vs G3)以「錄到的目標位置 vs 現行程式重建」逐位比對認定**，不以 commit 時間或 `meta` 的 set-point 數值認定 | `targetRmsSpeedDegPerSec` 在 G2/G3 是同一個數字(5/20)，`meta` 因此分不出世代;而 `analyze-tracking-pilot.ts` 的 `stimulusCheck()` 是用**現行**`createTrackingTrajectory()` 重建刺激再量它自己的 RMS ⇒ 對 band-limited 家族(無 `target_motion_change` 事件可對表)結構上無法分辨 payload 是不是舊世代程式錄的。ticks 的 `tx/ty/tz` 是 sim 經 `projectTrackingAngles()` 實際寫入的位置，與同一函式重建的位置相減即可判定。實測 21/21 payload 逐位一致(≤ 8.9e-16 u)。量的是「錄到的曲線 == 重建的曲線」，不是新構念，不牴觸 C-D4 | ✅ Confirmed（T6 slice 16，2026-09-03）——本輪為一次性 audit;是否升成 runner 的一層檢查見 gate §12.6 第 3 項(待研究者決定) |
+
 ## Open Questions
+
+- **OQ-54-12（T6 slice 16 提出，待使用者決定）**：Gate A §6 要求「3–5 位 tester 各完成 session 0 +
+  session 1」，但第三輪實收 **2 位 × 各一個 session**(P04 s0、P05 s1)。8 個 scored 條件雖然都有
+  `eligible=2`，份量本身仍未達 §6 原文。選項：(a) 補 1–3 位 tester、每位跑兩個 session;(b) 以現有
+  2 位結案並記錄理由。**屬預註冊份量的研究決策，不由 agent 拍板**(gate §12.6 第 1 項)。
+- **OQ-54-13（T6 slice 16 提出，待使用者決定）**：5/5 的 protocol violation 都是 `kind: "ads"`(右鍵)。
+  選項：(a) 只加強 runbook 事前提示(additive);(b) scored block 直接抑制 ADS 輸入(改變受測者可及行為
+  ⇒ 研究決策)。見 gate §12.6 第 2 項。
 
 全部 OQ-54-1~OQ-54-8 已於 T0（2026-09-02）凍結，詳見上方 decision log D-54.2~D-54.8 與 [README §1.4](README.md)。OQ-54-2 標記為 calibration candidate（非 hard freeze），其餘視為凍結值；後續變更一律走新 protocol/metric version + 本表新 decision row。
 
