@@ -13,7 +13,7 @@
 | [x] | **T3 後續**（2026-09-03，KI-021 slice B）：contact hitbox 閘門接受三軸相等的 `shape:'sphere'`，WP-54 candidate drills 改用 sphere 後 `includedRunCount` 維持 2（D-55.7） | [KI-021](../../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) | T3 | Med |
 | [x] | **T4** Replay observability | [T4-replay-observability.md](T4-replay-observability.md) | T2/T3 | Med/High |
 | [x] | **T5** Report and quality integration | [T5-report-and-quality-integration.md](T5-report-and-quality-integration.md) | T3/T4 | Med |
-| [ ] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](T6-exit-gate-and-documentation.md) | T1-T5 | Med |
+| [x] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](T6-exit-gate-and-documentation.md) | T1-T5 | Med |
 | [ ] | **T-exit** M21 evidence audit/handoff | [T-exit-m21-evidence-audit-handoff.md](T-exit-m21-evidence-audit-handoff.md) | T1-T6 | Med |
 
 ## Package Definition of Done

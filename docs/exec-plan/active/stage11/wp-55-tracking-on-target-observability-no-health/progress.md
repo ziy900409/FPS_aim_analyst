@@ -4,11 +4,20 @@
 
 ## Status
 
-- **Current**：🟢 T5 report and quality integration 完成（2026-09-03）；T6 exit gate and documentation 待開工。
+- **Current**：🟢 T6 exit gate and documentation 完成（2026-09-03）；T-exit M21 evidence audit / handoff 待開工。
 - **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
 - **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-03 — T6 exit gate and documentation complete
+
+- README §6 M21 Exit Gate 已新增 T6 evidence ledger：每個 gate row 都標成 automated / measurement / inspection / manual evidence，或指出 T-exit/adjacent owner；此 ledger 是 T-exit 的輸入，不宣告 T-exit 已完成。
+- `docs/operational/analysis-tracking.md` 已確認並補強 WP-55 contract：跟隨目標以 exact-hitbox aim-ray `onTarget`、TOT、RMS/median/P95 epsilon 判定；artifact schema / coverage / replay trace / report projection 只消費 contact artifact；blocked result 用 closed vocabulary，不以 0 或空圖表偽裝成功；HP/damage/hit/kill 不是 pure tracking 跟隨來源；BR/projectile 只作 companion evidence。
+- No-health/no-damage audit 重跑：`rg` over `src`, `tests`, `docs/operational`, and WP-55 docs found no target health/HP/damage/health-bar contract. Matches were WP-55 boundary docs, History API `/api/history/health`, `HitDetector.test.ts` hit-point variable `hp`, and existing fire/hit/kill lifecycle.
+- Verification completed: focused contact/report/replay suite 5 files / 40 tests passed; contact + legacy tracking/BR baseline 14 files / 81 tests passed; `npm.cmd run typecheck` exit 0; full `npm.cmd test` 210 files / 2021 tests passed with 1 file / 2 tests skipped. Full suite is recorded as broad regression smoke, not as WP-54 pilot gate evidence.
+- T6 was docs/audit/test-gate only: no production code changed, no sim state/replay overlay/TargetManager/SharedState/live render hot path changes, and no health/HP/damage/kill tracking contract added. `graphify update .` skipped because production code did not change; `graphify-out` was not staged.
+- WP-54 isolation check: did not modify or stage `docs/exec-plan/active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md`, `scripts/analyze-tracking-pilot.ts`, `scripts/trackingStimulusFidelity.ts`, or `tests/regression/tracking-stimulus-fidelity.test.ts`.
 
 ### 2026-09-03 — T5 report and quality integration complete
 
@@ -157,6 +166,12 @@
 | 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactReport.test.ts src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T5 + legacy tracking/BR baseline: 14 files / 81 tests passed |
 | 2026-09-03 | `npm.cmd run typecheck` | T5 final typecheck: exit 0 |
 | 2026-09-03 | `graphify update .` | Executed after production code changes, but generated `graphify-out` was restored/not staged because manifest/graph output included unrelated WP-54 active document state (`wp-54-tracking-pilot/progress.md`, `T6-instrumentation-gate.md`) |
+| 2026-09-03 | T6 no-health/no-damage audit with `rg` over `src`, `tests`, `docs/operational`, and WP-55 docs | no target health/HP/damage/health-bar tracking contract found; matches were WP-55 boundary docs, History API `/api/history/health`, `HitDetector.test.ts` hit-point variable `hp`, and existing fire/hit/kill lifecycle |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactReport.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContact.test.ts src/replay/replayContact.test.ts` | T6 focused contact/report/replay suite: 5 files / 40 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactReport.test.ts src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T6 contact + legacy tracking/BR baseline: 14 files / 81 tests passed |
+| 2026-09-03 | `npm.cmd run typecheck` | T6 typecheck: exit 0 |
+| 2026-09-03 | `npm.cmd test` | T6 broad regression smoke: 210 files / 2021 tests passed; 1 file / 2 tests skipped. Not used as WP-54 pilot gate evidence |
+| 2026-09-03 | `graphify update .` | skipped for T6 because no production code changed; `graphify-out` not staged |
 
 ## Surprises & Discoveries
 

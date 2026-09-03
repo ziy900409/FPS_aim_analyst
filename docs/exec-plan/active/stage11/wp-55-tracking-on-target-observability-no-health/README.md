@@ -4,7 +4,7 @@
 >
 > Source proposal：[../wp-55-tracking-on-target-observability-no-health-plan.md](../wp-55-tracking-on-target-observability-no-health-plan.md)。本文件依 `.claude/skills/engineering-planning/SKILL.md`、`references/design_standards.md`、`assets/tech_spec_template.md` 與 WP-51 的 work-package 格式整理。
 >
-> **狀態：已正式納入 stage11，T0-T5 已完成（2026-09-03）；T6 exit gate and documentation 待開工。** T5 report and quality integration evidence 見 [progress.md](progress.md)。
+> **狀態：已正式納入 stage11，T0-T6 已完成（2026-09-03）；T-exit M21 evidence audit / handoff 待開工。** T6 exit gate and documentation evidence 見 [progress.md](progress.md)。
 
 | | |
 |---|---|
@@ -282,6 +282,8 @@ Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 
 ## 6. M21 Exit Gate
 
+> T6（2026-09-03）已完成逐項 evidence ledger；這是進入 T-exit 的輸入，不代表 T-exit 已完成。
+
 - [ ] WP-55 已正式被 stage11 接受，或文件移到明確 future proposal；stage scope 不矛盾。
 - [ ] 血條、HP、damage、擊殺數均未成為 tracking 跟隨判定來源。
 - [ ] 所有現有 tracking drill 都能從 export 重建逐 tick `onTarget` 與 `epsilonDeg`。
@@ -293,6 +295,22 @@ Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 - [ ] 文件同步說明：tracking 是否跟隨目標以 exact-hitbox on-target/TOT/RMS epsilon 判定，不需要血條。
 - [ ] Focused unit/replay/report tests、full CI 與必要 manual/researcher artifact review 全綠或有明確 blocker owner。
 - [ ] `CONTEXT.md`、`DECISIONS.md`、operational spec、stage progress/checklist 與 `graphify-out`（若有 code change）同步。
+
+### 6.1 T6 evidence ledger
+
+| Gate item | T6 status | Evidence type | Evidence / owner |
+|---|---|---|---|
+| Stage scope accepted / not contradictory | Evidence ready | inspection | Stage11 README/progress/checklist show M21 accepted and T0-T6 complete; T-exit remains unchecked. |
+| No health/HP/damage/kill tracking source | Evidence ready | inspection + automated grep | `rg` audit over `src`, `tests`, `docs/operational`, and WP-55 docs found no target health/HP/damage/health-bar contract; matches are WP-55 boundary docs, History API `/health`, `HitDetector.test.ts` hit-point variable `hp`, and existing fire/hit/kill lifecycle. |
+| Existing tracking drills reconstruct `onTarget` / `epsilonDeg` | Evidence ready | automated | Contact and legacy tracking/BR focused suite: 14 files / 81 tests passed. |
+| Contact artifact parity with `deriveTrackingMetrics()` | Evidence ready | automated | `trackingContact.test.ts`, `trackingContactArtifact.test.ts`, `trackingContactCoverage.test.ts`, and `trackingContactReport.test.ts` passed; T1-T5 progress records acquisition/TOT/RMS parity fixtures. |
+| Replay/offline artifact frame contact state | Evidence ready | automated | `src/replay/replayContact.test.ts` passed in focused suite; T4 delivered offline replay trace, product Replay overlay intentionally remains future scope. |
+| BR ballistic hit vs aim-ray contact split | Evidence ready | automated + inspection | `trackingContactCoverage.test.ts` / `trackingContactReport.test.ts` passed; operational spec says BR/projectile evidence is companion-only and not mixed into pure summary. |
+| Data insufficient/incompatible => closed reason code | Evidence ready | automated + inspection | Closed vocabulary covered by contact/artifact/report tests and documented in `docs/operational/analysis-tracking.md`; no fake 0 or empty chart semantics. |
+| Existing target lifecycle and legacy semantics | Evidence ready | automated | Legacy tracking/BR focused suite passed; full `npm.cmd test` passed 210 files / 2021 tests with existing 1 file / 2 tests skipped. |
+| Documentation says exact-hitbox contact, no health bar | Evidence ready | inspection | `docs/operational/analysis-tracking.md` WP-55 section documents exact-hitbox aim-ray `onTarget`, TOT, RMS/median/P95 epsilon, contact artifact consumers, blocked semantics, and no-health boundary. |
+| Focused tests/full CI/manual review | Evidence ready | automated + inspection | Focused contact/report/replay suite: 5 files / 40 tests passed; legacy tracking/BR suite: 14 files / 81 tests passed; `npm.cmd run typecheck` exit 0; `npm.cmd test` exit 0. Manual/researcher artifact review is not required for T6 and remains T-exit/adjacent review owner if requested. |
+| Docs and graph/source state synced | Evidence ready | inspection | WP-55 and stage11 docs updated for T6. No production code changed in T6, so `graphify update .` intentionally skipped and `graphify-out` is not staged. `CONTEXT.md` / `DECISIONS.md` require no T6 change because no new global decision or code contract changed. |
 
 ---
 

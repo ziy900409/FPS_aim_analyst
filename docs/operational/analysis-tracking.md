@@ -179,9 +179,11 @@ ExportPayload -> tracking-contact-artifact-v1 -> coverage -> replay trace/report
 
 `tracking-contact-artifact-v1` is produced by `buildTrackingContactArtifact()` from the raw export
 and the canonical contact derivation. It records `analysisVersion = tracking-contact-v1`, source
-identity, drill id, schema/simHz, hitbox/eye-origin provenance, and per-tick contact rows. The
-artifact is the source of truth for downstream coverage, replay trace, and report projections; those
-consumers must not redefine contact or use shooting outcome as a substitute.
+identity, drill id, schema/simHz, hitbox/eye-origin provenance, and per-tick contact rows (`t`,
+`targetId`, target center, aim yaw/pitch, `onTarget`, `epsilonDeg`, presentation index, and tracking
+window). The artifact is the source of truth for downstream coverage, replay trace, and report
+projections; those consumers must consume the contact artifact and must not redefine contact or use
+shooting outcome as a substitute.
 
 The primary answer to "was the player following the target?" is exact-hitbox aim-ray `onTarget`,
 TOT%, and RMS/median/P95 ε. A blood bar is not required and must not be introduced for this

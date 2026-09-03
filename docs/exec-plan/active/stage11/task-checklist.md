@@ -66,7 +66,7 @@ WP-54 Definition of Done：見 [wp-54-tracking-pilot/task-checklist.md「Package
 | [x] | **T3** All tracking drill coverage | [T3-all-tracking-drill-coverage.md](wp-55-tracking-on-target-observability-no-health/T3-all-tracking-drill-coverage.md) | T2 | High |
 | [x] | **T4** Replay observability | [T4-replay-observability.md](wp-55-tracking-on-target-observability-no-health/T4-replay-observability.md) | T2/T3 | Med/High |
 | [x] | **T5** Report and quality integration | [T5-report-and-quality-integration.md](wp-55-tracking-on-target-observability-no-health/T5-report-and-quality-integration.md) | T3/T4 | Med |
-| [ ] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](wp-55-tracking-on-target-observability-no-health/T6-exit-gate-and-documentation.md) | T1-T5 | Med |
+| [x] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](wp-55-tracking-on-target-observability-no-health/T6-exit-gate-and-documentation.md) | T1-T5 | Med |
 | [ ] | **T-exit** M21 evidence audit/handoff | [T-exit-m21-evidence-audit-handoff.md](wp-55-tracking-on-target-observability-no-health/T-exit-m21-evidence-audit-handoff.md) | T1-T6 | Med |
 
 WP-55 Definition of Done：見 [wp-55-tracking-on-target-observability-no-health/task-checklist.md「Package Definition of Done」](wp-55-tracking-on-target-observability-no-health/task-checklist.md#package-definition-of-done)。Tracking 跟隨判定必須以 exact-hitbox aim-ray `onTarget` / `epsilonDeg` 為核心，不新增 health/HP/damage/kill lifecycle，也不得把 BR ballistic hit 混入 pure tracking summary。
