@@ -2,11 +2,58 @@
 
 ## Status
 
-- **Current**：✅ T0、T1、T2、T3、T4、T5 完成（2026-09-02）；T6（instrumentation pilot）進行中——slice 1（main.ts 正式接線）已完成（2026-09-03），synthetic evidence 彙整與真人 3-5 tester 試跑待辦。
+- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A = REVISE**（2026-09-03，見 [T6-instrumentation-gate.md §10](T6-instrumentation-gate.md)）。工程面 slice 1-8 完成（main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、KI-019 F-A1、protocol-violation 閘門、KI-020 診斷）；第一份真人資料（P01 × 1 場）證明資料鏈路成立，但刺激有 3 個缺陷、其中 2 個需研究者決策（KI-019 F-A2、KI-020）才能重跑 Gate A。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-03 — T6 slice 5-8：真人資料回收 + 分析 + 三個刺激缺陷（Gate A = REVISE）
+
+- **收到的資料**：使用者（P01）完成一整場 9 block manifest（session 0，2026-09-03T08:15–08:25Z，
+  9 份 JSON，repo 外）。無 retry/abort。環境：`crossOriginIsolated: true`、simHz 128、
+  **displayHz 60.0**、`frames.p95 ≈ 16.8ms`。
+- **slice 5 — 分析 runner**（`scripts/analyze-tracking-pilot.ts`，`npx vite-node` 執行）：跑
+  **既有實作**（不重寫）四層——`parseExportPayload()` → `evaluateTrackingRunEligibility()` →
+  由匯出檔自己的 `meta.spawn.trackingTrajectory` 重建 `createTrackingTrajectory()` 並與記錄的
+  `target_motion_change` 對表（另算交付 RMS 速度、靜止比例）→ `buildTrackingPilotEvidence()` +
+  `renderTrackingPilotReportHtml()` + 對寫出的檔案做 parity 檢查。**第三層是抓到 KI-019 的工具**：
+  它把「metadata 宣稱的刺激」和「那份 metadata 描述的刺激」對撞，這是既有測試沒有做過的事。
+- **資料鏈路：全部成立**（見 gate 文件 §10.2）——9 份全通過 schema v2；每個 scored block
+  3202–3203 valid scored ticks / 25008–25016ms ⇒ 覆蓋率 ≈100%（門檻 99.5%）；overflow/late 全 0；
+  timestamp 全單調;event 對表 `mismatched=0`;`meta.session` 追溯完整、9 個 seed 互不重複;
+  practice 被排除（`excludedPracticeRunCount: 1`，slice 3 的修補在真實資料上生效）;HTML/JSON
+  parity 逐位相同;P0 管線（TOT/tAcquire/acqFail/RMS ε/p95 ε）無缺口。
+- **slice 6 — [KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) F-A1 已修**：
+  `tracking_reversal_pilot_v1_medium` 的目標有 **32.6% 的時間凍結在 ±8° 角落**（最長 344ms），
+  排程 6644 筆 leg（high 只有 60）。根因：leg 長度取兩軸 min + 貼牆軸解出長度≈0 + sign 無條件翻面
+  ⇒「兩軸同側貼牆」是吸收態。修法 room-aware 方向選擇（門檻由 config 導出）＋零長度 leg fail fast；
+  medium 降到 46 legs / 1.6% 靜止，**high 逐位不變**（用該檔記錄的 60 筆事件對表驗證）。3 個回歸
+  測試（修前紅/修後綠）鎖住「目標必須真的在動」——既有斷言（連續性/bounds/加速度）全都被靜止目標
+  滿足，這是測試盲點而非測試被繞過。
+- **slice 7 — protocol-violation 閘門**：受測者在一個 scored block 按了右鍵 ADS。guard 有記錄、
+  P1 有自我封鎖（`protocol-incompatible`），但 run-level eligibility 的封閉 vocabulary 沒有
+  protocol 這一項 ⇒ 操作端當時看到 **Eligible**，而 **primary RMS(ε) 照樣被聚合**。加入
+  `'protocol-violation'`（scored_start 之後才算，prep 窗內不算），重跑分析後該 block 正確顯示
+  `BLOCKED protocol-violation` 且不再產出 p0/p1。
+- **slice 8 — [KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) 診斷（未修，待研究決策）**：
+  core 2×2 matrix 的**兩個自變數都沒有被交付**。(a) 5 vs 20 deg/s 實測交付 1.21 vs 1.18 deg/s
+  ——`boundedSpeedScale` 靜默取 min，現行振幅/頻帶下 `boundScale` 恆較小，交付速度 ≈ 0.605 × 振幅、
+  與宣稱值無關;(b)「size」被接到行程振幅、沒有任何 cell 設 `targets.hitbox` ⇒ 四個 cell 的目標
+  角尺寸相同（預設 H1，約 ±7°），六個 block **TOT 全部 100.0%**、`p95 ε` 3.63° 仍算 on-target
+  ⇒ TOT 不帶資訊，兩個 axis calibration block 也無法達成「判斷 0.5° 是否可辨識」的用途。
+- **Gate A 結論 = REVISE**（gate 文件 §9/§10）：資料鏈路成立，但刺激不符預註冊操弄。**沒有用
+  「再多找幾個 tester」掩蓋**（README §5）——這三個缺陷加人只會得到更多量錯條件的資料。
+  份量（1 人 × 1 場 vs checklist 的 3-5 人 × 每條件 2 次）也未達標，但那不是判 revise 的原因。
+- **交還使用者的決策**（阻塞 T6 收尾，見 gate 文件 §10.4）：KI-019 §5 的 reversal 再參數化、
+  KI-020 §4.1 的 size 語意、KI-020 §4.2 的 speed 實現方式、以及 60Hz 顯示器是否可接受
+  （9 份資料全帶 `suspect: true`／`validity.perfFloor: true`，因 `PERF_FLOOR_MS = 8.33` 對上
+  60Hz 面板的 16.8ms；eligibility 不看 suspect，故 run 仍 eligible）。
+- **驗證**：`npx vitest run`（全專案）**206 files / 1982 tests passed**（1 skipped file / 2 skipped
+  tests；其中 2 個檔案/約 6 個測試來自使用者並行的 WP-55 commits）;`npx tsc --noEmit` 對所有
+  **已追蹤**檔案乾淨——目前唯一的 tsc 錯誤在 `src/metrics/trackingContactCoverage.{ts,test.ts}`
+  （使用者未追蹤的 WP-55 WIP，本批未觸碰）。
+
 
 ### 2026-09-03 — T6 slice 4/N：`T6-instrumentation-gate.md`（Gate A 帳本）+ runbook 正式章節 + graphify
 
@@ -898,6 +945,10 @@
 
 | D-54.36 | 「practice 不寫入 scored aggregation」（FR-54-5）落在 `buildTrackingPilotEvidence()`：以 `isTrackingPilotPracticeDrillId()` 按 role 濾掉 practice payload，並以 `excludedPracticeRunCount` 明示丟了幾份；**不**改 `TargetManager` 的 `scored_start` 產生條件 | 見 D-54.34：producer 端語意自洽且位於 `src/sim` 決定性熱路徑，改它要付既有 T2 測試與逐 tick 決定性的代價,而 FR-54-5 的驗收句本來就是 aggregation 端的保證。選 role-based 而非「無 scored_start」判準,因為後者對 practice 恆為假（practice 有 scored_start）;選 `KNOWN_BLOCK_ROLES` 當唯一來源而非在 evidence 端再列一份 drillId 白名單,沿用 D-54.23「role 一律由 drillId 查單一 registry 推導」的既有紀律。probe 刻意 non-throwing（與 manifest 驗證器的 fail-fast 相反）:evidence 聚合器可能收到 WP-54 registry 以外的 payload,那不是非法輸入,只是「不是 practice」 | ✅ Confirmed（T6 slice 3，2026-09-03） |
 
+| D-54.37 | T6 的真人資料分析一律走 committed 的 `scripts/analyze-tracking-pilot.ts`（`npx vite-node`），不寫一次性腳本、也不把分析寫成測試 | T6/T7/T8 的 gate 結論必須能從同一批輸入重新產生（T8 checklist 明文要求「analysis script 版本化且可重跑」，T6 提前採用）。用既有實作跑而非重寫一套，符合 C-D4「既有構念不得有第二定義」;不放進 vitest 是因為它依賴 repo 外的 participant 資料，放進去會讓 CI 需要不存在的檔案。腳本本身輸出到 `.pilot-analysis/`（已 gitignore），participant payload 與衍生 artifact 都不進 git | ✅ Confirmed（T6 slice 5，2026-09-03） |
+| D-54.38 | KI-020（core matrix 未交付 size/speed 操弄）**不由實作端自行修**，只交付診斷 + 量化證據 + 選項，並以 Gate A = revise 結案 | 兩個修法都要改動 T0 預註冊的 candidate 參數（OQ-54-2）與 README 風險表用語，屬研究決策;實作端單方面選一個，會讓 T7 的 floor/ceiling 校準建立在未經研究者確認的刺激上。配套的建構期一致性守衛（`speedScale > boundScale` 即 fail fast）刻意不先落地——現行四個 cell 會因此在載入時全部 throw，守衛必須與再參數化同批進來（同 KI-019 §5 的理由） | ✅ Confirmed（T6 slice 8，2026-09-03） |
+| D-54.39 | Gate A 判 **revise** 而非 stop；並明確記錄「份量不足（1 人 × 1 場）不是判 revise 的原因」 | 三個缺陷都是可修的 instrumentation/config 問題（其中 2 個已修），不是「量測效度無法在 WP-54 範圍內補救」的 stop 條件（gate 文件 §9 的判準）。分開記錄原因是為了防止後續 task 誤讀成「再多收幾個人就能過」——README §5 明文禁止用增加樣本數掩蓋 Gate A 失敗，而這裡真正的阻塞是刺激不符預註冊操弄 | ✅ Confirmed（T6 slice 8，2026-09-03） |
+
 ## Open Questions
 
 全部 OQ-54-1~OQ-54-8 已於 T0（2026-09-02）凍結，詳見上方 decision log D-54.2~D-54.8 與 [README §1.4](README.md)。OQ-54-2 標記為 calibration candidate（非 hard freeze），其餘視為凍結值；後續變更一律走新 protocol/metric version + 本表新 decision row。
@@ -913,6 +964,13 @@
   tracking pilot 走的是自己的 runner。目前以「操作員手動記錄」補（gate 文件 §7）。若 T7/T8 需要把
   rest 當可分析變數（例如 time-on-task slope 分析要控制休息長度），再考慮 additive schema 欄位或
   把 pilot 的 rest 一併寫進 `meta.session`；不在 T6 動 schema。
+
+- **OQ-54-11（T6 slice 8，需研究者決定）**：本次 9 份真人資料全部帶 `meta.suspect: true` /
+  `validity.perfFloor: true`——不是掉 tick（覆蓋率 ≈100%），而是 `PERF_FLOOR_MS = 8.33`（120Hz 級，
+  GD-10 為解析度/偵測研究設定）對上 60Hz 面板的 `frames.p95 ≈ 16.8ms`。`evaluateTrackingRunEligibility()`
+  目前不看 `suspect`，所以 run 仍判 eligible。待決：(a) tracking pilot 接受 60Hz（並考慮把顯示刷新率
+  加進 NFR-54-7 compatibility key——目前沒有這個維度，等於不同刷新率的資料會混進同一 cohort）／
+  (b) 要求 ≥120Hz 重跑。
 
 ## Verification log
 

@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-020](KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | core 2×2「size × speed」matrix 兩個自變數都沒被交付：`boundedSpeedScale` 靜默取 min 使交付速度只由振幅決定（5 vs 20 deg/s 實測 1.21 vs 1.18），而「size」被接到行程振幅、沒有任何 cell 設 `targets.hitbox`（目標角尺寸四個 cell 相同、約 ±7°，TOT 全部 100%） | BD-020（待決）：再參數化屬研究決策（size 是否改為目標角尺寸、speed 如何實現），配套的建構期一致性守衛與再參數化同批落地 | 🔴 未修，待研究者決定 |
 | [KI-019](KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | `reversal-2d-v1` 的 leg 長度由兩軸共用、貼牆那一軸把整個 leg 壓成 0、sign 又無條件翻面 → 「兩軸同側貼牆」成為吸收態，排程以 1ms 為步長寫到結束；實測 `tracking_reversal_pilot_v1_medium` 產生 6644 筆 leg、32.6% 時間目標凍結在角落，真人 pilot 該 block 資料作廢 | BD-019(§3，方向選擇改 room-aware＋零長度 leg 改 fail fast；config 幾何不一致的再參數化 F-A2 留給研究者決定) | 🟡 F-A1 已修(2026-09-03)、F-A2 待決 |
 | [KI-018](KI-018-history-search-keystroke-focus-steal.md) | History「搜尋 Participant」逐字輸入時，`navigator.replace()` 每次都給 focus-on-navigation guard 一個新的 route 物件參考，被誤判為真正導覽而搶焦點，導致除首字元外的按鍵全部遺失 | BD-018(§3，focus-on-navigation guard 改語意比較) | ✅ 已修(2026-09-01) |
 | [KI-017](KI-017-history-replay-tdz-referenceerror-on-early-replay-click.md) | Run Detail「3D 重播」在 `replayController`（原頂層 `const`，檔案尾端才賦值）初始化完成前被點擊會拋 `ReferenceError`，與 KI-013 同一類根因、不同變數——KI-013 §6 OQ-KI13-1 預告的風險具體重現 | BD-017(§3，`replayController` 比照 KI-013 改為提早宣告的 `let \| undefined` + `onReplay` 補可見訊息 guard) | ✅ 已修(2026-09-01) |
@@ -45,6 +46,20 @@
 > 狀態:🔴 診斷中 · 🟡 已定解法待落地 · ✅ 已修(移至 §3 並標日期/commit)。
 
 （目前無 open 項目。）
+
+### BD-020 🔴 KI-020 — core matrix 未交付預註冊操弄：診斷完成、再參數化待研究決策(2026-09-03)
+
+| | |
+|---|---|
+| **發現處 / 根因** | [KI-020](KI-020-core-matrix-size-speed-manipulation-not-delivered.md) / 與 KI-019 同一批（WP-54 T6 第一份真人資料，P01，2026-09-03）。根因兩支：(a) `boundedSpeedScale` 在 `speedScale > boundScale` 時靜默取 min，且現行振幅/頻帶下 `boundScale` 恆較小 ⇒ 交付速度 ≈ 0.605 × 振幅，與 `targetRmsSpeedDegPerSec` 無關；(b) size candidate 被接到 `yawBoundDeg`/`pitchBoundDeg`（行程振幅），且沒有任何 cell 設 `targets.hitbox` ⇒ 目標角尺寸四個 cell 完全相同（預設 H1，約 ±7°/±14°），TOT 六個 block 全部 100.0%。 |
+| **決策(修法選項)** | **本次不改**。理由見下；三組選項與各自後果列在 KI-020 §4，已交研究者：size 是否改為真的目標角尺寸（對齊 README 風險表/FR-54-4）、speed 如何真的被交付（放大振幅／放寬頻帶／降低候選值）。 |
+| **理由** | 兩者都要改動 **T0 預註冊的 candidate 參數**（OQ-54-2）與 README 的風險表用語，屬研究決策而非實作抉擇；實作端單方面改會讓 T7 的 floor/ceiling 校準建立在未經研究者確認的刺激上。配套的建構期一致性守衛（`speedScale > boundScale` 即 fail fast）刻意**不先落地**：現行四個 cell 會因此全部在載入時 throw，守衛必須與再參數化同批進來（同 KI-019 §5 的理由）。 |
+| **偏離計畫** | T6 checklist 的「任何 defect 先最小化、補 regression fixture、再重跑 affected conditions」在本項無法照走——最小修復本身就是研究決策。故本次只交付診斷 + 量化證據 + 選項，並在 [T6-instrumentation-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T6-instrumentation-gate.md) §9 以 **revise** 結案，不假裝 Gate A 通過。 |
+| **遺留 OQ / 未做** | KI-020 §5 DoD 全部未做（含回歸測試「交付速度 ≈ 宣稱值」與「目標角尺寸符合 size candidate」）。**資料處置**：P01 的四個 core cell 與兩個 calibration block 不可用於條件比較（P0 量測本身有效，但量的不是預註冊條件）。 |
+| **影響面** | 診斷期間未改動任何 runtime code（僅新增 KI doc 與帳本條目）。量化證據由 `scripts/analyze-tracking-pilot.ts` 重跑即可再現。 |
+| **狀態** | 🔴 未修（2026-09-03 診斷完成）；等研究者選定 KI-020 §4 選項後另一批落地。 |
+
+---
 
 ### BD-019 🟡 KI-019 — reversal 排程貼牆退化：room-aware 方向選擇 + 零長度 leg fail fast(2026-09-03)
 

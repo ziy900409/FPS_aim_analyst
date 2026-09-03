@@ -5,10 +5,11 @@
 > Format mirrors [WP-52's T4 manual pilot gate](../wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)
 > —— 同一個「automated evidence 證明機制；真人才能證明資料可用」的切分。
 >
-> **狀態：🟡 Gate A 未決（awaiting real tester runs）。** 工程面（機制、接線、synthetic/determinism
-> 證據）已完成並全綠；本文件 §5 是交給研究者的操作步驟，§6 的真人項目與 §8 的 go/revise/stop 必須等
-> 真實 pilot 資料回來才能填。**不得**以 synthetic fixture 或自動化測試冒充真人 pilot 證據
-> （README §5 執行規則）。
+> **狀態：🔴 Gate A = REVISE（2026-09-03）。** 第一份真人資料（P01，9 個 block）已收回並分析：
+> 資料鏈路（schema/覆蓋率/事件對表/追溯/報告）全部成立，但**刺激本身有三個缺陷**，其中兩個使
+> 預註冊的條件矩陣沒有被真正交付。詳見 §10 結論。已修 2 個（[KI-019](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)
+> F-A1、protocol-violation gate），2 個待研究者決策（KI-019 F-A2、[KI-020](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)）。
+> **不以增加真人樣本數掩蓋**（README §5）：這三個缺陷加人只會得到更多量錯條件的資料。
 
 ---
 
@@ -199,9 +200,82 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 | §3 量測環境 | Edge（`msedge` channel）、WebGPU backend、`crossOriginIsolated: true`、`timerResolutionUs ≈ 5`、1280×720、Windows 11、Node v25.9.0 |
 | 真人資料版本 | ⬜ 待填（tester 人數、日期、每人 session 數、檔案清單） |
 
+## 10. Gate A 結論（2026-09-03）：**REVISE**
+
+### 10.1 收到的資料
+
+| | |
+|---|---|
+| 受測者 / session | **P01，1 人 × 1 場**（session index 0），9 個 block 全部完成，無 retry/abort |
+| 檔案 | 9 份 JSON，2026-09-03T08:15–08:25Z（repo 外；未進 git） |
+| 環境 | `crossOriginIsolated: true`、`simHz` 128、**`displayHz` 60.0**、`frames.summary.p95 ≈ 16.8 ms` |
+| 分析 | `npx vite-node scripts/analyze-tracking-pilot.ts -- <dir>`（T6 slice 5 交付；HEAD `8a69fd8`） |
+
+**份量未達 checklist 要求**（3-5 位 tester、每條件至少 2 次）。但這不是本次判 revise 的原因——
+即使收滿 5 人，下面 §10.3 的兩個缺陷仍會讓資料量錯條件。
+
+### 10.2 資料鏈路：成立 ✅
+
+真人資料上實測通過，這些是 T6 要證明的 instrumentation 事實：
+
+- **schema**：9 份全部通過 `parseExportPayload()`（schema v2），0 拒收。
+- **覆蓋率**：每個 scored block 3202–3203 valid scored ticks / 25008–25016 ms ⇒ **≈100%**
+  （NFR-54-4 門檻 99.5%）；`recorderOverflow`/`bufferOverflow`/`lateEventCount` 全 0；
+  timestamp 全部單調。**60 Hz 顯示器上跑 25 秒 block 沒有掉 tick。**
+- **event 對表**：兩個 reversal block 的 `target_motion_change` 記錄數與由 config 重建的排程
+  **逐筆相符**（`rec/sched=60/60`、`6644/6644`，`mismatched=0`）——記錄器忠實，連錯誤的刺激也
+  忠實記錄下來（正是這一點讓 KI-019 被抓到）。
+- **追溯**：每份 `meta.session = {participantId:'P01', sessionLabel:'tracking-pilot-v1:P01:session-0'}`、
+  `meta.spawn.trackingTrajectory` 完整、9 個 seed 互不重複（54000/54001/54002/54010–54013/54100/54101）。
+- **practice 排除**：`excludedPracticeRunCount: 1`，practice 未進入任何 condition 聚合（FR-54-5）。
+- **report**：`buildTrackingPilotEvidence()` → `renderTrackingPilotReportHtml()` 產出的 HTML 內嵌
+  JSON 與 evidence 物件**逐位相同**（parity 檢查在寫出的檔案上執行，非記憶體物件）。
+- **P0 管線**：`totPercent`、`tAcquireMs`、`acquisitionFailure`、`rmsEpsilonDeg`、`p95EpsilonDeg`
+  全部產出，無 `undefined` 缺口。
+
+### 10.3 刺激本身：三個缺陷 ❌
+
+| # | 缺陷 | 證據 | 狀態 |
+|---|---|---|---|
+| 1 | **reversal medium cell 排程退化**：目標 32.6% 的時間凍結在 ±8° 角落（最長 344 ms），6644 筆 leg（high 只有 60），`reversalIntervalMs` 完全沒生效 | [KI-019 §1](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | ✅ **F-A1 已修**（room-aware 方向選擇；medium 降到 46 legs / 1.6% 靜止；high 逐位不變）。🟡 F-A2（config 幾何不一致，仍 46 vs 宣稱 ~23 次）待決 |
+| 2 | **core matrix 的 speed 自變數完全失效**：5 vs 20 deg/s 實測交付 1.21 vs 1.18 deg/s（差 2%）；交付速度只由振幅決定，metadata 宣稱值從未被交付 | [KI-020 §1/§2.1](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | 🔴 待研究者決策 |
+| 3 | **目標角尺寸從未被操弄**：「size」被實作成行程振幅，沒有 cell 設 `targets.hitbox`，四個 cell 目標一樣大（約 ±7°）；六個 block TOT 全部 100.0%，`p95 ε` 3.63° 仍算 on-target ⇒ TOT 在現行 config 下不帶資訊；兩個 axis calibration block 無法達成「判斷 0.5° 是否可辨識」的用途 | [KI-020 §2.2](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | 🔴 待研究者決策 |
+
+另外修掉一個**品質閘缺口**（非刺激問題）：受測者在一個 scored reversal block 按了右鍵 ADS，
+`protocol_violation` 有被記錄、P1 有自我封鎖（`protocol-incompatible`），但 run-level eligibility
+沒有 protocol 這個 reason code ⇒ 操作端當時看到的是 **Eligible**，而 **primary RMS(ε) 照樣被聚合**。
+已加 `'protocol-violation'` 到封閉 vocabulary（T6 slice 7）；重跑分析後該 block 正確顯示
+`BLOCKED protocol-violation` 且不再產出 p0/p1。
+
+### 10.4 需要研究者決定的事（阻塞 T6 收尾）
+
+1. **KI-019 §5（reversal medium 再參數化）**：放寬角度視窗 `[-13,13]`（建議，兩個被操弄變數維持
+   預註冊值）／降低速度上限／縮短間隔上限。
+2. **KI-020 §4.1（size 的語意）**：改成真的目標角尺寸（對齊 README 風險表與 FR-54-4，需每 cell
+   設 `targets.hitbox`）／維持「size = 行程振幅」並回改 README 用語 + 刪除 0.5° pixel-floor 風險項
+   與兩個 axis calibration block 的用途說明。
+3. **KI-020 §4.2（speed 如何交付）**：放大行程振幅（5 deg/s → 約 8.3°、20 deg/s → 約 33°）／
+   同時放寬頻帶／把 speed 候選降到現行可交付值。
+4. **60 Hz 顯示器是否可接受**：本次 9 份資料全部帶 `meta.suspect: true` /
+   `validity.perfFloor: true`——不是掉 tick，而是 `PERF_FLOOR_MS = 8.33`（120 Hz 級）對上 60 Hz
+   面板的 `frames.p95 ≈ 16.8 ms`。eligibility 目前不看 `suspect`，所以 run 仍判 eligible。需要決定：
+   (a) tracking pilot 接受 60 Hz（並考慮把顯示刷新率加進 NFR-54-7 compatibility key，目前沒有這個
+   維度）／(b) 要求 ≥120 Hz 重跑。
+
+### 10.5 下一步
+
+Gate A 重跑的前提是 §10.4 的 1–3 決策落地（config 再參數化 + 建構期一致性守衛 + 回歸測試）。
+落地後：**全部 9 個 block 重跑**（含 high——若採 KI-019 §5(a) 放寬視窗，high 的軌跡也會變），
+3-5 位 tester、每人 session 0 + session 1，再重跑本文件 §10.2 的同一套檢查。
+
+**本次已確立的事**（重跑後不需再證）：資料鏈路、覆蓋率、事件對表、追溯、報告 parity、practice
+排除、protocol-violation 閘門，以及 60 Hz 機器上 25 秒 block 不掉 tick。**未確立**：任何關於
+size/speed/reversal-density 條件的結論。
+
 ## 9. Go / revise / stop
 
-**🟡 未決（pending real tester runs）。**
+**🔴 REVISE（2026-09-03）。** 判準與證據見 §10。摘要：資料鏈路成立，刺激不符預註冊操弄；已修 2 項
+（KI-019 F-A1、protocol-violation gate），2 項待研究決策（KI-019 F-A2、KI-020）。
 
 - **Go** 的條件：§6 真人項全部勾選、每個 scored 條件 ≥ 2 份可用 run、四層 traceability 無未解
   defect ⇒ T6 PASS，可開 T7（難度校準，12-20 人）。

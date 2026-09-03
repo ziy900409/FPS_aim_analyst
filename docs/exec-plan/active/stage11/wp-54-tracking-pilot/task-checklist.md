@@ -115,24 +115,33 @@
 
 ## T6 — Instrumentation pilot
 
-> 工程面（slice 1-4）完成：正式 app 接線、真瀏覽器 live walkthrough、practice aggregation 修補、
-> gate 文件。**真人施測未做**——操作步驟與 Gate A 對帳見
-> [T6-instrumentation-gate.md](T6-instrumentation-gate.md)。
+> **Gate A = REVISE（2026-09-03）**。第一份真人資料（P01 × 1 場、9 個 block）證明資料鏈路成立
+> （schema/覆蓋率/事件對表/追溯/報告 parity 全過），但刺激有 3 個缺陷：2 個已修
+> （[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) F-A1、
+> protocol-violation 閘門），2 個待研究者決策（KI-019 F-A2、
+> [KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)）。
+> 決策落地 + 9 個 block 重跑後才能重判 Gate A。完整對帳見
+> [T6-instrumentation-gate.md §10](T6-instrumentation-gate.md)。
 
-- [ ] 3-5 位內部/熟練 tester，每條件至少 2 次。（**需真人**；機制已就緒，步驟見 gate 文件 §5）
-- [-] 驗證 trajectory 連續性、bounds、event 對表、angular size/speed round-trip。（synthetic +
-      live e2e 部分 ✅ = T1/T2 既有 35+62+57+46+8+6 tests 與 `tracking-pilot-live.spec.ts`，見 gate
-      文件 §2-§3；真人資料重跑同一套函式待辦）
-- [-] 驗證 quality flags、export metadata 與 report traceability。（synthetic 部分 ✅ = T4 既有
-      13+16+8+3 tests；真實 25s block 實測 `Eligible — scored ticks: 3203`，見 gate 文件 §3；真人
-      資料待辦）
-- [-] 任何 defect 先最小化、補 regression fixture，再重跑 affected conditions。（已修 3 個：
-      main.ts boot-window TDZ、operator overlay restore 清掉 outcome 面板、practice 進入 scored
-      aggregation；各自 commit + regression test。真人施測可能再發現）
-- [-] 產出 `instrumentation-gate-v1` evidence，含資料版本、分析版本、環境與 go/revise/stop。
-      （[T6-instrumentation-gate.md](T6-instrumentation-gate.md) 已建立；真人資料版本與 go/revise/
-      stop 待填）
-- [ ] Gate A 失敗時停止，不以更多真人樣本掩蓋。（決策時適用；規則已寫進 gate 文件 §9）
+- [-] 3-5 位內部/熟練 tester，每條件至少 2 次。（P01 × 1 場已收；**份量未達標，但阻塞點是刺激缺陷
+      而非人數**——決策落地前再收人只會得到更多量錯條件的資料，見 README §5）
+- [-] 驗證 trajectory 連續性、bounds、event 對表、angular size/speed round-trip。（連續性/bounds/
+      決定性/event 對表 ✅（真人資料 `mismatched=0`）；**angular size/speed round-trip ❌** ——
+      metadata 可 round-trip 但宣稱值從未被交付（KI-020：5 vs 20 deg/s 實測 1.21 vs 1.18；size 是
+      行程振幅、目標角尺寸未被操弄），待研究決策後重跑）
+- [x] 驗證 quality flags、export metadata 與 report traceability。（真人資料實測全過：9/9 通過
+      schema v2、覆蓋率 ≈100%、`meta.session` 追溯完整、9 seed 互不重複、practice 被排除、
+      HTML/JSON parity 逐位相同；並抓到 protocol-violation 閘門缺口並修補，見 gate 文件 §10.2）
+- [-] 任何 defect 先最小化、補 regression fixture，再重跑 affected conditions。（已修 5 個，各自
+      commit + regression test：main.ts boot-window TDZ、operator overlay restore 清掉 outcome
+      面板、practice 進入 scored aggregation、KI-019 F-A1 reversal 排程退化、run-level
+      protocol-violation 閘門。**待重跑**：全部 9 個 block（KI-019 F-A2 / KI-020 決策落地後））
+- [x] 產出 `instrumentation-gate-v1` evidence，含資料版本、分析版本、環境與 go/revise/stop。
+      （[T6-instrumentation-gate.md](T6-instrumentation-gate.md) §10：資料版本 P01/2026-09-03、
+      分析版本 HEAD + `scripts/analyze-tracking-pilot.ts`、環境 60Hz/WebGPU/COI true、
+      結論 **REVISE**）
+- [x] Gate A 失敗時停止，不以更多真人樣本掩蓋。（2026-09-03 實際執行：判 revise 並停在刺激決策上，
+      未要求補人；D-54.39 記錄「份量不足不是判 revise 的原因」以防後續誤讀）
 
 ### T6 工程 slice（已 commit）
 
@@ -144,6 +153,11 @@
 - [x] **slice 3**：practice block 不入 scored aggregation（`isTrackingPilotPracticeDrillId()` +
       `excludedPracticeRunCount`），+4 regression tests，回寫 `analysis-tracking.md`。
 - [x] **slice 4**：`T6-instrumentation-gate.md`（Gate A 帳本）+ runbook 正式操作章節 + graphify。
+- [x] **slice 5**：`scripts/analyze-tracking-pilot.ts` 可重跑分析 runner（跑既有實作四層 + parity
+      檢查），D-54.37。
+- [x] **slice 6**：KI-019 F-A1 修復（reversal 排程貼牆退化）+ 3 個回歸測試 + BD-019。
+- [x] **slice 7**：run-level `protocol-violation` 閘門（FR-54-10）+ 3 個回歸測試。
+- [x] **slice 8**：KI-020 診斷 + BD-020 + Gate A = REVISE 結論 + 文件同步（D-54.38/39）。
 
 ## T7 — Difficulty calibration pilot
 
