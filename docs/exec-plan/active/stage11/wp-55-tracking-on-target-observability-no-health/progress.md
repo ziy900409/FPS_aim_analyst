@@ -4,11 +4,19 @@
 
 ## Status
 
-- **Current**：🟢 T3 all tracking drill coverage 完成（2026-09-03）；T4 replay observability 待開工。
+- **Current**：🟢 T4 replay observability 完成（2026-09-03）；T5 report and quality integration 待開工。
 - **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
 - **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-03 — T4 replay observability complete
+
+- 新增 `src/replay/replayContact.ts`，提供 pure `sampleReplayContact(samples, replayTimeMs)`；sampling 採 deterministic latest-at-or-before contact row，並保留 `replayTimeMs` 與 contact sample `t` 對表。
+- `ReplayContactFrame` 對表 `targetId`、target center、aim yaw/pitch、`onTarget`、`epsilonDeg`、`presentationIndex` 與 `trackingWindow`；before first、empty samples、跨 target/presentation gap 與 blocked artifact 都輸出 reason-coded unavailable，而不是 fake off-target。
+- 新增 `buildReplayContactTrace()` / `renderReplayContactTraceHtml()`，交付 OQ-55-1 決議的離線 JSON/HTML replay contact trace；HTML 是 self-contained inline CSS/JS + embedded JSON，contact state 有 `on-target` / `off-target` / `unavailable: <reason>` 文字 label，不只靠顏色。
+- `src/replay/replayContact.test.ts` 覆蓋 exact time、between tick、before first、after last、empty/missing sample、presentation boundary、seek/playback/rate-change determinism、blocked artifact 與 HTML embedded JSON trace。
+- 本切片未做產品 Replay overlay，未修改 `TargetManager`、`SharedState`、live render hot path、sim state、WP-54 production code、drill config、trajectory kernel、pilot metrics 或 researcher manifest/operator flow。
 
 ### 2026-09-03 — T3 all tracking drill coverage complete
 
@@ -128,6 +136,11 @@
 | 2026-09-03 | `npm.cmd run typecheck` | exit 0 |
 | 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T3 + legacy tracking/BR baseline: 13 files / 72 tests passed |
 | 2026-09-03 | `graphify update .` | Executed after code changes, but generated `graphify-out` was restored/not staged because unrelated local worktree changes would be indexed into the graph output |
+| 2026-09-03 | `npx.cmd vitest run src/replay/replayContact.test.ts` | T4 focused replay/contact: 1 file / 11 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/replay/replayContact.test.ts tests/replay/sampleReplay.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingContactArtifact.test.ts` | Replay/contact focused suite: 4 files / 43 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T4 + legacy tracking/BR baseline: 13 files / 75 tests passed |
+| 2026-09-03 | `npm.cmd run typecheck` | exit 0 |
+| 2026-09-03 | `graphify update .` | Executed after production code changes; generated `graphify-out` retained because current worktree had no WP-54 dirty production/test files and manifest additions are WP-55 T4 replay/contact files |
 
 ## Surprises & Discoveries
 

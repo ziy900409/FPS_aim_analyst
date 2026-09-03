@@ -35,13 +35,20 @@
 
 ## Definition of Done
 
-- [ ] `sampleReplayContact(samples, replayTimeMs)` 或等價 helper 已實作並有 deterministic tests。
-- [ ] replay frame alignment 對表 `t`、target id、target center、aim、`onTarget`、`epsilonDeg`。
-- [ ] seek/playback/rate change 下 contact frame 不漂移、不 stale commit。
-- [ ] 產品 Replay overlay 或 self-contained HTML replay trace 依 OQ-55-1 決策交付。
-- [ ] replay fixture 覆蓋 presentation boundary、missing sample、blocked artifact。
-- [ ] contact state 不只靠顏色表達；文字/label 可稽核。
-- [ ] progress.md 記錄 replay/HTML evidence、fixture roots 與任何 product UI debt。
+- [x] `sampleReplayContact(samples, replayTimeMs)` 或等價 helper 已實作並有 deterministic tests。
+- [x] replay frame alignment 對表 `t`、target id、target center、aim、`onTarget`、`epsilonDeg`。
+- [x] seek/playback/rate change 下 contact frame 不漂移、不 stale commit。
+- [x] 產品 Replay overlay 或 self-contained HTML replay trace 依 OQ-55-1 決策交付。
+- [x] replay fixture 覆蓋 presentation boundary、missing sample、blocked artifact。
+- [x] contact state 不只靠顏色表達；文字/label 可稽核。
+- [x] progress.md 記錄 replay/HTML evidence、fixture roots 與任何 product UI debt。
+
+## Evidence
+
+- `src/replay/replayContact.ts` 新增 pure `sampleReplayContact()`，以 latest-at-or-before row 對表 contact sample，但不跨 target id / presentation boundary。
+- `buildReplayContactTrace()` / `renderReplayContactTraceHtml()` 交付離線 JSON/HTML replay contact trace；HTML self-contained，contact state 以 `on-target` / `off-target` / `unavailable: <reason>` 文字呈現，不只靠顏色。
+- `src/replay/replayContact.test.ts` 覆蓋 exact time、between tick、before first、after last、empty/missing sample、presentation boundary、seek/playback/rate-change determinism、blocked artifact 與 HTML embedded JSON。
+- 依 OQ-55-1，本切片不做產品 Replay overlay；product UI overlay 保留到 T5/T6 之後的 optional/future work。
 
 ## Commit
 
