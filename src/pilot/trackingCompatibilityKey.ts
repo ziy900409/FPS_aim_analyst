@@ -10,7 +10,8 @@ import type { Meta } from '../data/metadata.ts';
  * `meta.assessment` when `activeDrillConfig.mode === 'assessment'` — so `meta.assessment` is always
  * `undefined` for a WP-54 export. Its field set is also a different axis set (participant/task/
  * weapon-mode/feedback-policy identity for formal Assessment cohorts) than NFR-54-7's tracking-pilot
- * axes (drill, protocol, motion, size, speed, FOV, sensitivity, input mode). This module follows the
+ * axes (drill, protocol, motion, travel amplitude, speed, target size, FOV, sensitivity, input
+ * mode, display refresh). This module follows the
  * same style — a pure `buildXxx`/`checkXxx` pair with `requireXxx` field validators — without
  * reusing its type or touching that file (its existing 7 callers must stay unaffected).
  */
@@ -21,11 +22,30 @@ export interface TrackingCompatibilityKey {
   readonly drillId: string;
   readonly protocolVersion: string;
   readonly motionKind: string;
-  readonly sizeDeg: string;
+  /**
+   * The trajectory's **travel amplitude** (KI-020 renamed this from `sizeDeg`): after the
+   * re-parameterization the trajectory bounds describe how far the target travels, not how big it
+   * is. Target size lives in `targetHitboxWidthU` below.
+   */
+  readonly travelAmplitudeDeg: string;
   readonly speedDegPerSec: string;
+  /**
+   * Target angular size, carried as the hitbox edge in source units (KI-020 §4.1 made size a real
+   * hitbox). `Meta` does not record the target distance, so this stays in source units rather than
+   * degrees — within WP-54 every block shares the same 4u sightline, so it is a faithful size axis,
+   * and `drillId` pins the exact condition regardless.
+   */
+  readonly targetHitboxWidthU: number;
   readonly fovDeg: number;
   readonly sensitivity: number;
   readonly inputMode: string;
+  /**
+   * Display refresh rate, rounded to whole Hz (OQ-54-11, researcher's decision 2026-09-03: 60 Hz
+   * pilot data is acceptable, but refresh rate must separate cohorts). Rounded so a 59.98 vs 60.02
+   * measurement never splits a cohort. Tracking measurement itself runs on the 128 Hz sim clock, but
+   * what the participant *sees* — and therefore their achievable tracking error — depends on it.
+   */
+  readonly displayRefreshHz: number;
 }
 
 /**
@@ -38,15 +58,22 @@ export function buildTrackingCompatibilityKey(meta: Meta): TrackingCompatibility
   const trajectory = requireTrackingTrajectorySummary(meta.spawn?.trackingTrajectory);
   const fovDeg = requirePositiveFiniteNumber(meta.fovDeg, 'meta.fovDeg');
   const sensitivity = requirePositiveFiniteNumber(meta.sensitivity, 'meta.sensitivity');
+  const targetHitboxWidthU = requirePositiveFiniteNumber(
+    meta.targets?.hitbox?.widthU,
+    'meta.targets.hitbox.widthU',
+  );
+  const displayRefreshHz = Math.round(requirePositiveFiniteNumber(meta.displayHz, 'meta.displayHz'));
 
   return {
     drillId,
     protocolVersion: TRACKING_PILOT_PROTOCOL_VERSION,
     motionKind: trajectory.kind,
-    sizeDeg: trajectory.sizeDeg,
+    travelAmplitudeDeg: trajectory.travelAmplitudeDeg,
     speedDegPerSec: trajectory.speedDegPerSec,
+    targetHitboxWidthU,
     fovDeg,
     sensitivity,
+    displayRefreshHz,
     // "Input mode" is read as the mouse-input derivation model (KI-005 tick-window integration vs.
     // a legacy/missing export that would force the aim-difference fallback) — the only axis in
     // `Meta` that genuinely describes *how input was captured*, distinct from sensitivity/FOV. This
@@ -62,17 +89,19 @@ export function checkTrackingCompatibility(a: TrackingCompatibilityKey, b: Track
     a.drillId === b.drillId &&
     a.protocolVersion === b.protocolVersion &&
     a.motionKind === b.motionKind &&
-    a.sizeDeg === b.sizeDeg &&
+    a.travelAmplitudeDeg === b.travelAmplitudeDeg &&
     a.speedDegPerSec === b.speedDegPerSec &&
+    a.targetHitboxWidthU === b.targetHitboxWidthU &&
     a.fovDeg === b.fovDeg &&
     a.sensitivity === b.sensitivity &&
-    a.inputMode === b.inputMode
+    a.inputMode === b.inputMode &&
+    a.displayRefreshHz === b.displayRefreshHz
   );
 }
 
 interface TrajectorySummary {
   readonly kind: string;
-  readonly sizeDeg: string;
+  readonly travelAmplitudeDeg: string;
   readonly speedDegPerSec: string;
 }
 
@@ -92,7 +121,7 @@ function requireTrackingTrajectorySummary(value: unknown): TrajectorySummary {
     );
     return {
       kind,
-      sizeDeg: `${yawBoundDeg}x${pitchBoundDeg}`,
+      travelAmplitudeDeg: `${yawBoundDeg}x${pitchBoundDeg}`,
       speedDegPerSec: `${targetRmsSpeedDegPerSec}`,
     };
   }
@@ -105,7 +134,7 @@ function requireTrackingTrajectorySummary(value: unknown): TrajectorySummary {
     );
     return {
       kind,
-      sizeDeg: `${loDeg}..${hiDeg}`,
+      travelAmplitudeDeg: `${loDeg}..${hiDeg}`,
       speedDegPerSec: `${loSpeed}..${hiSpeed}`,
     };
   }

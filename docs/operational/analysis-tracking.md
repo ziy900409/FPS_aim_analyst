@@ -383,6 +383,26 @@ Eight axes, all fail-fast on a missing/malformed source field:
 | `sensitivity` | `meta.sensitivity` |
 | `inputMode` | `meta.mouseIntegration?.model ?? 'aim-diff-legacy'` — a judgment call (NFR-54-7 does not define this field further); see progress.md OQ-54-9 |
 
+### 刺激語意：angular size 與 delivered speed（T6 slice 10 / KI-020）
+
+WP-54 的 core matrix 有兩個被操弄的因子，兩者在 2026-09-03 之前**都沒有被真正交付**，分析時務必
+以下列語意為準：
+
+| 因子 | 權威來源 | 說明 |
+|---|---|---|
+| **Target angular size** | `meta.targets.hitbox`（cube，邊長 `2 · distance · tan(size/2)`） | 2.0° → 0.13964u、0.5° → 0.03491u @ 4u。**不是** `trackingTrajectory.yawBoundDeg`——那是行程振幅。cube 而非 sphere 是為了留在 WP-55 的 box-only exact-hitbox contact derivation 內（代價：對角方向 on-target 容許角大 √2 倍） |
+| **Delivered RMS speed** | `trackingTrajectory.targetRmsSpeedDegPerSec`，且**保證等於實際交付值** | `createBandLimited2dV1()` 現在會在請求速度不可交付時 fail fast（訊息帶上該 envelope 的最大可交付速度）。被抑制到近零的 off-axis（axis calibration）豁免 |
+| Travel amplitude | `trackingTrajectory.yawBoundDeg`/`pitchBoundDeg` | 所有 core cell 共用 ±16°（非操弄變數）；reversal cell 用 `angularBoundsDeg ±13°` |
+| Frequency band | `trackingTrajectory.frequencyBandHz` | core cell 為 `[0.3, 2.1]` Hz（自 `[0.1, 0.7]` 提高，才能在共用振幅下交付 20 deg/s） |
+
+歷史資料判讀：`[0.1, 0.7]` Hz + `yawBoundDeg ≤ 2` 的匯出檔（2026-09-03 之前）其交付速度 ≈
+`0.605 × 振幅`，與 metadata 宣稱值無關；且所有 cell 的目標角尺寸相同（預設 H1，約 ±7°），故其
+`totPercent` 恆為 100%、不帶資訊量。這類資料不可用於 size/speed 條件比較。
+
+**Compatibility key**（NFR-54-7）隨之改名/擴充：`sizeDeg` → `travelAmplitudeDeg`（語意本來就是振幅），
+新增 `targetHitboxWidthU`（真正的尺寸軸；`Meta` 不記錄目標距離，故以 source unit 表達）與
+`displayRefreshHz`（OQ-54-11：60Hz 資料可用，但刷新率必須分開 cohort，四捨五入到整數 Hz）。
+
 ### Evidence model and the HTML report's parity design
 
 `buildTrackingPilotEvidence(payloads, options?)` groups payloads by `meta.drillId` (the condition

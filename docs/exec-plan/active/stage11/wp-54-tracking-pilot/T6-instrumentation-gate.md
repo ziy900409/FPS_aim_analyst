@@ -5,7 +5,7 @@
 > Format mirrors [WP-52's T4 manual pilot gate](../wp-52-peek-click-transfer-pilot-v2/T4-manual-pilot-gate.md)
 > —— 同一個「automated evidence 證明機制；真人才能證明資料可用」的切分。
 >
-> **狀態：🔴 Gate A = REVISE（2026-09-03）。** 第一份真人資料（P01，9 個 block）已收回並分析：
+> **狀態：🔴 Gate A = REVISE（2026-09-03）；四個研究決策已落地，等 9 個 block 重跑。** 第一份真人資料（P01，9 個 block）已收回並分析：
 > 資料鏈路（schema/覆蓋率/事件對表/追溯/報告）全部成立，但**刺激本身有三個缺陷**，其中兩個使
 > 預註冊的條件矩陣沒有被真正交付。詳見 §10 結論。已修 2 個（[KI-019](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)
 > F-A1、protocol-violation gate），2 個待研究者決策（KI-019 F-A2、[KI-020](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)）。
@@ -238,8 +238,8 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 | # | 缺陷 | 證據 | 狀態 |
 |---|---|---|---|
 | 1 | **reversal medium cell 排程退化**：目標 32.6% 的時間凍結在 ±8° 角落（最長 344 ms），6644 筆 leg（high 只有 60），`reversalIntervalMs` 完全沒生效 | [KI-019 §1](../../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) | ✅ **F-A1 已修**（room-aware 方向選擇；medium 降到 46 legs / 1.6% 靜止；high 逐位不變）。🟡 F-A2（config 幾何不一致，仍 46 vs 宣稱 ~23 次）待決 |
-| 2 | **core matrix 的 speed 自變數完全失效**：5 vs 20 deg/s 實測交付 1.21 vs 1.18 deg/s（差 2%）；交付速度只由振幅決定，metadata 宣稱值從未被交付 | [KI-020 §1/§2.1](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | 🔴 待研究者決策 |
-| 3 | **目標角尺寸從未被操弄**：「size」被實作成行程振幅，沒有 cell 設 `targets.hitbox`，四個 cell 目標一樣大（約 ±7°）；六個 block TOT 全部 100.0%，`p95 ε` 3.63° 仍算 on-target ⇒ TOT 在現行 config 下不帶資訊；兩個 axis calibration block 無法達成「判斷 0.5° 是否可辨識」的用途 | [KI-020 §2.2](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | 🔴 待研究者決策 |
+| 2 | **core matrix 的 speed 自變數完全失效**：5 vs 20 deg/s 實測交付 1.21 vs 1.18 deg/s（差 2%）；交付速度只由振幅決定，metadata 宣稱值從未被交付 | [KI-020 §1/§2.1](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | ✅ **已修**（slice 10）：頻帶 `[0.1,0.7]→[0.3,2.1]` Hz + 所有 cell 共用振幅 ±16°，實測交付 5.05 / 20.21 deg/s；並加建構期守衛（請求速度不可交付即 fail fast） |
+| 3 | **目標角尺寸從未被操弄**：「size」被實作成行程振幅，沒有 cell 設 `targets.hitbox`，四個 cell 目標一樣大（約 ±7°）；六個 block TOT 全部 100.0%，`p95 ε` 3.63° 仍算 on-target ⇒ TOT 在現行 config 下不帶資訊；兩個 axis calibration block 無法達成「判斷 0.5° 是否可辨識」的用途 | [KI-020 §2.2](../../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) | ✅ **已修**（slice 10）：每 cell 設 cube `targets.hitbox`（0.5°→0.03491u、2.0°→0.13964u @4u）；axis calibration 改用至風險的 0.5° 目標；reversal cell 固定 2.0° |
 
 另外修掉一個**品質閘缺口**（非刺激問題）：受測者在一個 scored reversal block 按了右鍵 ADS，
 `protocol_violation` 有被記錄、P1 有自我封鎖（`protocol-incompatible`），但 run-level eligibility
@@ -247,26 +247,36 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 已加 `'protocol-violation'` 到封閉 vocabulary（T6 slice 7）；重跑分析後該 block 正確顯示
 `BLOCKED protocol-violation` 且不再產出 p0/p1。
 
-### 10.4 需要研究者決定的事（阻塞 T6 收尾）
+### 10.4 研究者決策（2026-09-03，全部已落地）
 
-1. **KI-019 §5（reversal medium 再參數化）**：放寬角度視窗 `[-13,13]`（建議，兩個被操弄變數維持
-   預註冊值）／降低速度上限／縮短間隔上限。
-2. **KI-020 §4.1（size 的語意）**：改成真的目標角尺寸（對齊 README 風險表與 FR-54-4，需每 cell
-   設 `targets.hitbox`）／維持「size = 行程振幅」並回改 README 用語 + 刪除 0.5° pixel-floor 風險項
-   與兩個 axis calibration block 的用途說明。
-3. **KI-020 §4.2（speed 如何交付）**：放大行程振幅（5 deg/s → 約 8.3°、20 deg/s → 約 33°）／
-   同時放寬頻帶／把 speed 候選降到現行可交付值。
-4. **60 Hz 顯示器是否可接受**：本次 9 份資料全部帶 `meta.suspect: true` /
-   `validity.perfFloor: true`——不是掉 tick，而是 `PERF_FLOOR_MS = 8.33`（120 Hz 級）對上 60 Hz
-   面板的 `frames.p95 ≈ 16.8 ms`。eligibility 目前不看 `suspect`，所以 run 仍判 eligible。需要決定：
-   (a) tracking pilot 接受 60 Hz（並考慮把顯示刷新率加進 NFR-54-7 compatibility key，目前沒有這個
-   維度）／(b) 要求 ≥120 Hz 重跑。
+1. **KI-019 §5（reversal medium 再參數化）** → **放寬角度視窗至 `[-13, 13]`**，兩個被操弄變數維持
+   預註冊值。落地於 slice 9，含建構期幾何守衛。殘差：medium 交付 36 次反轉 vs 宣稱約 23 次
+   （源於設計本身的邊界截斷，KI-019 §5.3）；是否再放寬到 ±25° 留給 T7。
+2. **KI-020 §4.1（size 的語意）** → **改成真的目標角尺寸**（每 cell 設 `targets.hitbox`）。
+   落地於 slice 10。
+3. **KI-020 §4.2（speed 如何交付）** → 最初選「放大振幅」，實測回報後改選 **提高頻帶
+   `[0.3, 2.1]` Hz + 共用振幅 ±16°**：原方案在 20 deg/s 需 ±48° 振幅，目標會走到 ±37°、沉到地板下
+   並超出垂直 FOV（KI-020 §6.1）。落地於 slice 10，含建構期速度守衛。
+4. **60 Hz 顯示器** → **接受，並把刷新率加進 compatibility key**。落地於 slice 11：
+   `TrackingCompatibilityKey.displayRefreshHz`（四捨五入到整數 Hz，避免 59.98/60.02 拆散 cohort）。
+   `evaluateTrackingRunEligibility()` 仍不看 `suspect`——60 Hz 面板的 `perfFloor: true` 是既有
+   `PERF_FLOOR_MS = 8.33`（為解析度研究設定）的必然結果，不是 tracking 量測失效。
 
-### 10.5 下一步
+### 10.5 下一步（工程面已就緒，等重跑資料）
 
-Gate A 重跑的前提是 §10.4 的 1–3 決策落地（config 再參數化 + 建構期一致性守衛 + 回歸測試）。
-落地後：**全部 9 個 block 重跑**（含 high——若採 KI-019 §5(a) 放寬視窗，high 的軌跡也會變），
-3-5 位 tester、每人 session 0 + session 1，再重跑本文件 §10.2 的同一套檢查。
+§10.4 的四個決策**都已落地並全綠**（`vitest` 206 files / 1991 tests、`playwright
+tracking-pilot-live` 1/1 以新 config 通過）。因此 Gate A 的下一輪只缺資料：
+
+**全部 9 個 block 重跑**——core/calibration/reversal 三家族的刺激都變了（含 high cell：視窗放寬後
+它的軌跡也不同），P01 的 2026-09-03 資料全部作廢。3-5 位 tester、每人 session 0 + session 1，
+操作步驟與回收格式不變（§5、§7），再重跑本文件 §10.2 的同一套檢查。
+
+重跑時**新增兩個要看的東西**（前一輪不可能看到）：
+
+- **0.5° 目標是否真的看得見**：兩個 axis calibration block 現在才真的用 0.5° 目標（約 3.5 個
+  pixel 寬 @1080p/103° FOV）。若看不見或只能靠猜，那是 T7 要的 floor 證據——照實回報，不要放大目標。
+- **TOT 是否離開 100%**：目標變小後 `totPercent` 才會有變異；若仍恆為 100%，代表 on-target 判定
+  仍過寬，要回頭查 hitbox 是否真的生效。
 
 **本次已確立的事**（重跑後不需再證）：資料鏈路、覆蓋率、事件對表、追溯、報告 parity、practice
 排除、protocol-violation 閘門，以及 60 Hz 機器上 25 秒 block 不掉 tick。**未確立**：任何關於

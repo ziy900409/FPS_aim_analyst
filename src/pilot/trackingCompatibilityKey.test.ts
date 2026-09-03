@@ -31,6 +31,9 @@ const baseMeta: Meta = {
   recorderOverflow: false,
   suspect: false,
   mouseIntegration: { model: 'tick-window-integral', radPerCount: 0.0001, hipStep: 1, adsStep: 1 },
+  // KI-020: target angular size now lives in the hitbox, and OQ-54-11 added display refresh as a
+  // cohort axis.
+  targets: { hitbox: { widthU: 0.13964, heightU: 0.13964, depthU: 0.13964, shape: 'box' } },
   spawn: {
     seed: 54000,
     trackingTrajectory: {
@@ -46,17 +49,19 @@ const baseMeta: Meta = {
 };
 
 describe('buildTrackingCompatibilityKey — band-limited-2d-v1', () => {
-  it('builds a key with sizeDeg/speedDegPerSec derived from the trajectory config', () => {
+  it('builds a key with travel amplitude/speed from the trajectory and size from the hitbox', () => {
     const key = buildTrackingCompatibilityKey(baseMeta);
     expect(key).toEqual<TrackingCompatibilityKey>({
       drillId: 'tracking_core_pr_pilot_v1_2p0deg_5dps',
       protocolVersion: TRACKING_PILOT_PROTOCOL_VERSION,
       motionKind: 'band-limited-2d-v1',
-      sizeDeg: '2x2',
+      travelAmplitudeDeg: '2x2',
       speedDegPerSec: '5',
+      targetHitboxWidthU: 0.13964,
       fovDeg: 103,
       sensitivity: 1.2,
       inputMode: 'tick-window-integral',
+      displayRefreshHz: 144,
     });
   });
 
@@ -86,7 +91,7 @@ describe('buildTrackingCompatibilityKey — reversal-2d-v1', () => {
     };
     const key = buildTrackingCompatibilityKey(meta);
     expect(key.motionKind).toBe('reversal-2d-v1');
-    expect(key.sizeDeg).toBe('-8..8');
+    expect(key.travelAmplitudeDeg).toBe('-8..8');
     expect(key.speedDegPerSec).toBe('5..20');
   });
 });
@@ -127,6 +132,24 @@ describe('buildTrackingCompatibilityKey — fail fast', () => {
   });
 });
 
+  it('separates cohorts by display refresh rate, rounded to whole Hz (OQ-54-11)', () => {
+    // The researcher accepted 60 Hz pilot data but required refresh to split cohorts: the sim
+    // clock is 128 Hz either way, yet what the participant *sees* bounds their achievable error.
+    const at60 = buildTrackingCompatibilityKey({ ...baseMeta, displayHz: 59.94 });
+    const at144 = buildTrackingCompatibilityKey({ ...baseMeta, displayHz: 143.9 });
+    expect(at60.displayRefreshHz).toBe(60);
+    expect(at144.displayRefreshHz).toBe(144);
+    expect(checkTrackingCompatibility(at60, at144)).toBe(false);
+    // A measurement wobble within the same panel must not split the cohort.
+    expect(checkTrackingCompatibility(at60, buildTrackingCompatibilityKey({ ...baseMeta, displayHz: 60.02 }))).toBe(true);
+  });
+
+  it('requires the target hitbox (size is no longer derivable from the trajectory) (KI-020)', () => {
+    const meta = { ...baseMeta };
+    delete (meta as { targets?: unknown }).targets;
+    expect(() => buildTrackingCompatibilityKey(meta)).toThrow(/meta\.targets\.hitbox\.widthU/);
+  });
+
 describe('checkTrackingCompatibility', () => {
   const key = buildTrackingCompatibilityKey(baseMeta);
 
@@ -138,11 +161,13 @@ describe('checkTrackingCompatibility', () => {
     ['drillId', 'other-drill'],
     ['protocolVersion', 'tracking-pilot-v2'],
     ['motionKind', 'reversal-2d-v1'],
-    ['sizeDeg', '0.5x0.5'],
+    ['travelAmplitudeDeg', '0.5x0.5'],
     ['speedDegPerSec', '20'],
+    ['targetHitboxWidthU', 0.0349],
     ['fovDeg', 90],
     ['sensitivity', 0.8],
     ['inputMode', 'aim-diff-legacy'],
+    ['displayRefreshHz', 60],
   ];
 
   for (const [field, value] of fieldOverrides) {

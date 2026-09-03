@@ -1,9 +1,9 @@
 # KI-020 — core 2×2「size × speed」matrix 實際上沒有操弄 size，也沒有操弄 speed
 
 > 類型：research-validity bug（刺激不符預註冊操弄；匯出 metadata 宣稱的值從未被交付）。
-> 狀態：🔴 **未修，待研究者決定**（改動 T0 預註冊 candidate 參數，屬研究決策）。診斷完成
-> （WP-54 T6 slice 8，2026-09-03）。
-> 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-020（待決狀態）。
+> 狀態：🟢 已修（WP-54 T6 slice 10，2026-09-03，依研究者對 §4.1/§4.2 的選擇落地）。
+> 落地結果與殘留取捨見 §6。
+> 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-020。
 > 發現脈絡：與 [KI-019](KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) 同一批——
 > WP-54 T6 第一份真人資料（P01，9 個 block，2026-09-03）經
 > `scripts/analyze-tracking-pilot.ts` 重建刺激時發現。
@@ -100,7 +100,7 @@ decision log，也沒有回頭對齊 README 的風險表與 FR-54-4 用語。**�
   屆時 `acquisitionFailureRate`、`tAcquireMs`（目前全為 0）也才有變異。
 - 不影響 legacy drill：`band-limited-2d-v1` 只被 WP-54 使用。
 
-## 4. 修法選項（**待研究者決定**）
+## 4. 修法選項（研究者已於 2026-09-03 定案；粗體 = 採用，見 §6）
 
 ### 4.1 F-C：「size」要不要改成目標角尺寸？
 
@@ -113,11 +113,11 @@ decision log，也沒有回頭對齊 README 的風險表與 FR-54-4 用語。**�
 
 | 選項 | 具體改動 | 後果 |
 |---|---|---|
-| **(1) 放大行程振幅到可實現速度**（若採 §4.1(1)，振幅已與 size 解耦，這是自然選擇） | 5 deg/s → 振幅 ≈ 8.3°；20 deg/s → ≈ 33°（band 不變） | 20 deg/s 的目標會橫跨約 66° 行程，在 103° FOV 內但幅度很大；需確認受測者是否需要大幅轉頭（那會混入 flick 成分而非純 pursuit） |
-| (2) 同時放寬頻帶與振幅 | 例：振幅 6°＋band `[0.2, 1.2]` Hz ≈ 6.9 deg/s | 頻帶是「pursuit 可預測性」的隱含操弄變數，改它等於改刺激性質，需要重新論證 |
+| (1) 放大行程振幅到可實現速度（**最初選定，實測後撤回**——見 §6.1） | 5 deg/s → 振幅 ≈ 8.3°；20 deg/s → ≈ 33°（band 不變） | 20 deg/s 的目標會橫跨約 66° 行程，在 103° FOV 內但幅度很大；需確認受測者是否需要大幅轉頭（那會混入 flick 成分而非純 pursuit） |
+| **(2) 同時放寬頻帶與振幅（採用：頻帶 [0.3,2.1] Hz + 共用振幅 ±16°）** | 例：振幅 6°＋band `[0.2, 1.2]` Hz ≈ 6.9 deg/s | 頻帶是「pursuit 可預測性」的隱含操弄變數，改它等於改刺激性質，需要重新論證 |
 | (3) 降低 speed candidate 到可實現範圍 | 例改為 `1.2 / 0.3 deg/s`（現行實際交付值） | 誠實但可能太慢，難以在 25 秒內產生足夠難度變異；等於承認 OQ-54-2 的速度候選不可用 |
 
-### 4.3 無論選哪個都要做的配套（實作端，不需研究決策）
+### 4.3 無論選哪個都要做的配套（實作端，不需研究決策；已隨 slice 10 落地）
 
 在 `createBandLimited2dV1()` 加**建構期一致性檢查**：`speedScale > boundScale` 時 fail fast
 （訊息帶上「此振幅/頻帶下可交付的最大 RMS 速度」），讓「config 宣稱值 ≠ 交付值」不可能再靜默發生。
@@ -126,11 +126,48 @@ decision log，也沒有回頭對齊 README 的風險表與 FR-54-4 用語。**�
 
 ## 5. DoD
 
-- [ ] 研究者決定 §4.1 與 §4.2 的選項；決議寫入 WP-54 progress.md（新 decision row）與
-      `docs/exec-plan/DECISIONS.md`（若跨 WP）。
-- [ ] core/calibration config 再參數化，並在 `createBandLimited2dV1()` 加建構期一致性守衛。
-- [ ] 回歸測試：每個 cell 的**交付** RMS 速度與宣稱值誤差在容許範圍內；若採 §4.1(1)，另加
-      「每個 cell 的目標角尺寸符合其 size candidate」。
-- [ ] 更新 `docs/operational/analysis-tracking.md`（角尺寸/速度語意）與 README（風險表、FR-54-4
-      用語、OQ-54-2 狀態）。
-- [ ] P01 的 core/calibration block 重跑。
+- [x] 研究者決定（2026-09-03）：§4.1 採 **(1) size = 目標角尺寸**；§4.2 採 **提高頻帶 + 共用振幅**
+      （見 §6.1 的實測依據——原本選的「放大振幅」在 20 deg/s 需 ±48°，目標會沉到地板下）。
+- [x] core/calibration/reversal config 再參數化 + `createBandLimited2dV1()` 建構期一致性守衛
+      （slice 10）。
+- [x] 回歸測試：每個 cell 交付/宣稱速度比在 0.9–1.1、目標角尺寸符合 size candidate、
+      振幅為共用常數、守衛對不可交付 config fail fast（suppressed axis 豁免）。
+- [x] 更新 `docs/operational/analysis-tracking.md` 與 README（風險表、FR-54-4 用語、OQ-54-2 狀態）。
+- [ ] P01 的全部 9 個 block 重跑（core/calibration/reversal 的刺激都變了）。
+
+## 6. 落地結果（slice 10）
+
+### 6.1 為什麼不是「放大振幅」
+
+研究者最初選的是「放大行程振幅到可實現速度」。實測後回報並改選：
+
+| 目標速度 | 所需振幅 | 目標實際走到 | 是否可用 |
+|---|---|---|---|
+| 5 deg/s | ±12° | 9.2° | ✅ y ∈ [0.65, 2.35] |
+| **20 deg/s** | **±48°** | **±37°** | ❌ y ∈ [-1.49, 4.49]——沉到地板下，且超出約 ±35° 的垂直 FOV |
+
+改採**提高頻帶 + 共用振幅**：`frequencyBandHz [0.1,0.7] → [0.3,2.1]`、所有 cell 共用
+`yawBoundDeg=pitchBoundDeg=16`。實測交付 **5.05 / 20.21 deg/s**（比值 1.01 / 1.01），目標實際
+走到約 13°（y ≈ [0.6, 2.6]，在地板之上、FOV 之內）。**振幅固定 ⇒ speed 是乾淨的 4× 因子。**
+代價：刺激的頻率內容改變（最快分量約每秒振盪 2 次），pursuit 的可預測性下降——這是研究者知情下
+的取捨。
+
+### 6.2 size = 目標角尺寸的實作
+
+每個 cell 設 `targets.hitbox`，邊長 = `2 × 4u × tan(size/2)`：2.0° → 0.13964u、0.5° → 0.03491u。
+兩個 axis calibration block 改用**至風險的 0.5°** 目標（那才是它們存在的理由）；reversal 兩個 cell
+用固定的 2.0°（密度是它們唯一的操弄，且避免與 pixel-floor 問題混淆）。
+
+**用 cube（`shape:'box'`）而非 sphere**：sphere 在各方向等向、理論上更貼合「角尺寸」語意，但
+WP-55 的 exact-hitbox contact derivation 目前只接受 box（`src/metrics/trackingContact.ts:147`），
+改成 sphere 會讓這批 drill 直接被它的 coverage report 排除（實測其 WP-55 T3 測試轉紅）。cube 在
+yaw/pitch 兩軸（tracking error 的分解軸）上逐值等於候選角尺寸，代價是對角方向的 on-target 容許
+角最多大 √2 倍。要改用 sphere 應與 contact 側的 sphere 支援同批進行。
+
+### 6.3 既有測試為何沒抓到（測試層根因）
+
+T1 的 `achieves approximately the configured target RMS speed` 測試斷言是
+`expect(rms).toBeGreaterThan(0.5)`，註解明寫「bound safety may have scaled speed down ... not an
+exact match」——**這個容忍度正是讓「宣稱 20、交付 1.18」通過測試並出貨的原因**。現已改為斷言
+交付/宣稱 > 0.9。守衛同時揭露另外 3 個 fixture（`DrillRunner`/`TargetManager`/`BAND_LIMITED_BASE`）
+用的都是同一個不可交付的組合。

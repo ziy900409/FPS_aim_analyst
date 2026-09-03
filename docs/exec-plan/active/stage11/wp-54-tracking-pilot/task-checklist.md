@@ -116,12 +116,12 @@
 ## T6 — Instrumentation pilot
 
 > **Gate A = REVISE（2026-09-03）**。第一份真人資料（P01 × 1 場、9 個 block）證明資料鏈路成立
-> （schema/覆蓋率/事件對表/追溯/報告 parity 全過），但刺激有 3 個缺陷：2 個已修
-> （[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md) F-A1、
-> protocol-violation 閘門），2 個待研究者決策（KI-019 F-A2、
-> [KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)）。
-> 決策落地 + 9 個 block 重跑後才能重判 Gate A。完整對帳見
-> [T6-instrumentation-gate.md §10](T6-instrumentation-gate.md)。
+> （schema/覆蓋率/事件對表/追溯/報告 parity 全過），但刺激有 3 個缺陷——**全部已修**
+> （[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)
+> F-A1+F-A2、run-level protocol-violation 閘門、
+> [KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)
+> size/speed 再參數化），四個研究決策也已落地。**唯一待辦 = 9 個 block 全部重跑**（三家族刺激都
+> 變了，P01 資料作廢）。完整對帳見 [T6-instrumentation-gate.md §10](T6-instrumentation-gate.md)。
 
 - [-] 3-5 位內部/熟練 tester，每條件至少 2 次。（P01 × 1 場已收；**份量未達標，但阻塞點是刺激缺陷
       而非人數**——決策落地前再收人只會得到更多量錯條件的資料，見 README §5）
@@ -158,6 +158,11 @@
 - [x] **slice 6**：KI-019 F-A1 修復（reversal 排程貼牆退化）+ 3 個回歸測試 + BD-019。
 - [x] **slice 7**：run-level `protocol-violation` 閘門（FR-54-10）+ 3 個回歸測試。
 - [x] **slice 8**：KI-020 診斷 + BD-020 + Gate A = REVISE 結論 + 文件同步（D-54.38/39）。
+- [x] **slice 9**：KI-019 F-A2 落地（reversal 視窗 ±13° + 建構期幾何守衛）+ 4 個 fixture 對齊。
+- [x] **slice 10**：KI-020 落地（size→cube hitbox、頻帶 [0.3,2.1]Hz + 共用振幅 ±16°、建構期速度
+      守衛）+ 7 個新測試 + 4 個 fixture 對齊（D-54.40）。
+- [x] **slice 11**：compatibility key 新增 `displayRefreshHz`/`targetHitboxWidthU`、`sizeDeg` 更名
+      （OQ-54-11 / D-54.41）。
 
 ## T7 — Difficulty calibration pilot
 

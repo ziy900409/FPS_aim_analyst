@@ -2,11 +2,53 @@
 
 ## Status
 
-- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A = REVISE**（2026-09-03，見 [T6-instrumentation-gate.md §10](T6-instrumentation-gate.md)）。工程面 slice 1-8 完成（main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、KI-019 F-A1、protocol-violation 閘門、KI-020 診斷）；第一份真人資料（P01 × 1 場）證明資料鏈路成立，但刺激有 3 個缺陷、其中 2 個需研究者決策（KI-019 F-A2、KI-020）才能重跑 Gate A。
+- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A = REVISE**（2026-09-03，見 [T6-instrumentation-gate.md §10](T6-instrumentation-gate.md)）。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`。**唯一待辦 = 9 個 block 重跑**（三家族刺激都變了，P01 資料全部作廢）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-03 — T6 slice 9-11：四個研究決策落地（KI-019 F-A2、KI-020、compatibility key）
+
+- **使用者決策（4/4 已落地）**：①reversal 視窗放寬到 ±13°；②size = 目標角尺寸；③speed 以「提高
+  頻帶 + 共用振幅」交付；④接受 60Hz 並把刷新率加進 compatibility key。
+- **slice 9（KI-019 F-A2）**：`angularBoundsDeg [-8,8]→[-13,13]`（window 26° ≥ 每 leg 需求 25°），
+  兩個被操弄變數維持預註冊值；`createReversal2dV1()` 加建構期幾何守衛
+  （`speedMax × (intervalMax − ramp) > window` 即 fail fast，訊息帶實際數值與三個可調參數）。
+  守衛立刻揭露**四個既有 fixture 用的正是同一個不一致形狀**——這正是既有測試從未抓到的原因。
+  KI-019 的合成回歸 fixture 改為**合法但仍飽和**的 config（seed 13：修前 3382 legs / 15.0% 靜止 /
+  **2781ms 凍結**；修後 32 legs / 1.0% / 16ms），證明那是 generator bug 而非 config artifact
+  （約 5% 的 seed 在合法參數下仍會中招）。殘差誠實記錄：medium 交付 36 次 vs 宣稱約 23 次
+  （設計本身的邊界截斷，KI-019 §5.3），是否再放寬到 ±25° 留給 T7。
+- **slice 10（KI-020）**：
+  - **size → 真的目標角尺寸**：每 cell 設 `targets.hitbox`（cube，邊長 `2·4u·tan(size/2)`：
+    2.0°→0.13964u、0.5°→0.03491u）。兩個 axis calibration block 改用**至風險的 0.5°** 目標
+    （那才是它們存在的理由）；reversal 兩 cell 固定 2.0°（密度是唯一操弄）。
+  - **speed 真的被交付**：`frequencyBandHz [0.1,0.7]→[0.3,2.1]` + 所有 cell 共用 `±16°` 振幅
+    ⇒ 實測交付 5.05 / 20.21 deg/s（比值 1.01/1.01），振幅固定 ⇒ speed 是乾淨的 4× 因子。
+    **使用者最初選「放大振幅」，我實測後回報並請其改選**：20 deg/s 在原頻帶需 ±48° 振幅，目標會
+    走到 ±37°、y ∈ [-1.49, 4.49]（沉到地板下、超出約 ±35° 垂直 FOV）。
+  - `createBandLimited2dV1()` 加建構期速度守衛（不可交付即 fail fast，回報該 envelope 最大可交付
+    速度；被抑制到近零的 off-axis 豁免）。
+  - **cube 而非 sphere（記為 D-54.40）**：sphere 等向更貼合語意，但 WP-55 的 exact-hitbox contact
+    derivation 只接受 box（`trackingContact.ts:147`），改 sphere 會把這批 drill 從其 coverage
+    排除——實測使用者並行開發的 WP-55 T3 測試因此轉紅。cube 在 yaw/pitch 兩軸逐值正確，代價是
+    對角容許角大 √2 倍。
+  - **測試層根因記錄**：T1 的 `achieves approximately the configured target RMS speed` 斷言原是
+    `rms > 0.5`（nominal 10），註解明寫「bound safety may have scaled speed down … not an exact
+    match」——**這個容忍度正是讓「宣稱 20、交付 1.18」出貨的原因**；現改為斷言交付/宣稱 > 0.9。
+- **slice 11（OQ-54-11）**：`TrackingCompatibilityKey` 新增 `displayRefreshHz`（四捨五入到整數 Hz，
+  避免 59.98/60.02 拆散 cohort）與 `targetHitboxWidthU`（真正的尺寸軸）；`sizeDeg` 更名為
+  `travelAmplitudeDeg`（語意本來就是振幅，KI-020 之後更不可混用）。`Meta` 不記錄目標距離，故尺寸軸
+  以 source unit 表達；WP-54 內所有 block 共用 4u 視線，且 `drillId` 本身已釘住條件。
+- **驗證**：`npx vitest run` **206 files / 1991 tests passed**（1 skipped file / 2 skipped tests）;
+  `npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` 1/1 passed（**以新
+  config 真實跑完 practice + calibration 兩個 25 秒 block**，並斷言新的 hitbox/振幅 metadata）;
+  `npx tsc --noEmit` 對所有已追蹤檔案乾淨（唯一錯誤在使用者未追蹤的 WP-55 WIP
+  `trackingContactCoverage.{ts,test.ts}`，本批未觸碰）。使用者的 WP-55 T3 測試在 cube 決定後回綠。
+- **下一步（交還使用者）**：**9 個 block 全部重跑**（見 gate 文件 §10.5）。重跑時新增兩個觀察點：
+  0.5° 目標是否真的看得見（約 3.5 px @1080p/103°FOV）、TOT 是否終於離開 100%。
+
 
 ### 2026-09-03 — T6 slice 5-8：真人資料回收 + 分析 + 三個刺激缺陷（Gate A = REVISE）
 
@@ -949,6 +991,9 @@
 | D-54.38 | KI-020（core matrix 未交付 size/speed 操弄）**不由實作端自行修**，只交付診斷 + 量化證據 + 選項，並以 Gate A = revise 結案 | 兩個修法都要改動 T0 預註冊的 candidate 參數（OQ-54-2）與 README 風險表用語，屬研究決策;實作端單方面選一個，會讓 T7 的 floor/ceiling 校準建立在未經研究者確認的刺激上。配套的建構期一致性守衛（`speedScale > boundScale` 即 fail fast）刻意不先落地——現行四個 cell 會因此在載入時全部 throw，守衛必須與再參數化同批進來（同 KI-019 §5 的理由） | ✅ Confirmed（T6 slice 8，2026-09-03） |
 | D-54.39 | Gate A 判 **revise** 而非 stop；並明確記錄「份量不足（1 人 × 1 場）不是判 revise 的原因」 | 三個缺陷都是可修的 instrumentation/config 問題（其中 2 個已修），不是「量測效度無法在 WP-54 範圍內補救」的 stop 條件（gate 文件 §9 的判準）。分開記錄原因是為了防止後續 task 誤讀成「再多收幾個人就能過」——README §5 明文禁止用增加樣本數掩蓋 Gate A 失敗，而這裡真正的阻塞是刺激不符預註冊操弄 | ✅ Confirmed（T6 slice 8，2026-09-03） |
 
+| D-54.40 | KI-020 的目標角尺寸用 **cube（`shape:'box'`）** 而非 sphere | sphere 在各方向等向，理論上更貼合「角尺寸」語意；但 WP-55 的 exact-hitbox contact derivation 目前只接受 box（`src/metrics/trackingContact.ts:147`），改成 sphere 會讓 WP-54 這批 drill 直接被其 coverage report 排除——實測使用者並行開發的 WP-55 T3 測試因此轉紅（`includedRunCount` 2→0）。cube 在 yaw/pitch 兩軸（tracking error 的分解軸）上逐值等於候選角尺寸，代價僅是對角方向 on-target 容許角最多大 √2 倍；不值得為此打斷另一個 WP 的進行中工作。要改用 sphere 應與 contact 側的 sphere 支援同批進行（記於 KI-020 §6.2） | ✅ Confirmed（T6 slice 10，2026-09-03） |
+| D-54.41 | `TrackingCompatibilityKey` 的 `sizeDeg` 更名為 `travelAmplitudeDeg`，新增 `targetHitboxWidthU` 與 `displayRefreshHz` | KI-020 之後「size」與「amplitude」是兩件不同的事，舊欄位名（讀的是 `yawBoundDeg`）會讓 cohort 分析誤以為自己按尺寸分組。尺寸軸以 source unit 表達而非角度，因為 `Meta` 不記錄目標距離——WP-54 內所有 block 共用 4u 視線故為忠實代理，且 `drillId` 已釘住條件。`displayRefreshHz` 來自使用者對 OQ-54-11 的決定（接受 60Hz 但刷新率必須分開 cohort），四捨五入到整數 Hz 以免量測抖動（59.98 vs 60.02）拆散同一面板的 cohort | ✅ Confirmed（T6 slice 11，2026-09-03） |
+
 ## Open Questions
 
 全部 OQ-54-1~OQ-54-8 已於 T0（2026-09-02）凍結，詳見上方 decision log D-54.2~D-54.8 與 [README §1.4](README.md)。OQ-54-2 標記為 calibration candidate（非 hard freeze），其餘視為凍結值；後續變更一律走新 protocol/metric version + 本表新 decision row。
@@ -965,7 +1010,7 @@
   rest 當可分析變數（例如 time-on-task slope 分析要控制休息長度），再考慮 additive schema 欄位或
   把 pilot 的 rest 一併寫進 `meta.session`；不在 T6 動 schema。
 
-- **OQ-54-11（T6 slice 8，需研究者決定）**：本次 9 份真人資料全部帶 `meta.suspect: true` /
+- **OQ-54-11（T6 slice 8 提出，slice 11 已決）✅**：使用者決定「接受 60Hz，並把刷新率加進 compatibility key」（見 D-54.41）。以下為原始問題敘述——：本次 9 份真人資料全部帶 `meta.suspect: true` /
   `validity.perfFloor: true`——不是掉 tick（覆蓋率 ≈100%），而是 `PERF_FLOOR_MS = 8.33`（120Hz 級，
   GD-10 為解析度/偵測研究設定）對上 60Hz 面板的 `frames.p95 ≈ 16.8ms`。`evaluateTrackingRunEligibility()`
   目前不看 `suspect`，所以 run 仍判 eligible。待決：(a) tracking pilot 接受 60Hz（並考慮把顯示刷新率

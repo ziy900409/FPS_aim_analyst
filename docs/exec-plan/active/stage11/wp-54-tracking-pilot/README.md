@@ -43,7 +43,7 @@
 | FR-54-1 | 系統**必須**保留 `tracking_v1`、`tracking_longrange_v1` 與 `tracking_br_v1` 的既有 drill id 與行為 | 既有 deterministic/metrics tests 不改 expected values 且全綠 | T0/T1/T2 |
 | FR-54-2 | 系統**必須**以版本化、seeded、固定 sim clock 產生 2D band-limited pseudorandom trajectory | 同 config/seed 在 60/120/240 Hz pump 下逐 tick target position deep-equal | T1 |
 | FR-54-3 | 系統**必須**產生有限加速度的 random reversal trajectory，且每個 change event 可由 export 還原 | event time、前後 angular velocity 與逐 tick position 可對表 | T1 |
-| FR-54-4 | 系統**必須**提供版本化 size x speed core condition matrix，且 scored block 內條件固定 | export 可辨識 motion version、seed、angular size、speed cell 與 duration | T2 |
+| FR-54-4 | 系統**必須**提供版本化 size x speed core condition matrix，且 scored block 內條件固定 | export 可辨識 motion version、seed、angular size、speed cell 與 duration。**「angular size」＝目標角尺寸（`targets.hitbox`），不是行程振幅；宣稱的 speed 必須是實際交付的 speed**（T6 slice 10 / [KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md) 修正了兩者皆未被交付的缺陷，並加上建構期守衛） | T2 |
 | FR-54-5 | 系統**必須**提供不入分析的 practice，並讓 scored start 前 target/crosshair 完成初始對準 | practice 不寫入 scored aggregation；scored start event 可稽核 | T2/T5 |
 | FR-54-6 | 系統**必須**沿用 canonical hit geometry 推導 acquisition failure、`tAcquire`、TOT、RMS/median/P95 `epsilon` | perfect follower、never acquire、known onset fixtures 回復已知答案 | T3 |
 | FR-54-7 | 系統**必須**推導有明確正負號契約的 tracking lag、velocity gain 與 velocity residual | fixed-lag/gain fixtures 誤差在預註冊容差內 | T3 |
@@ -82,7 +82,7 @@
 | ID | Question | T0 凍結決定 | Owner | Status |
 |---|---|---|---|---|
 | OQ-54-1 | 本輪只做 steady pursuit，或 steady + reactive 並列？ | **Steady + Reactive 並列，分開報告**（使用者確認，非合併分數） | 使用者 + 研究者 | ✅ Resolved |
-| OQ-54-2 | Core matrix 是否沿用 `2.0 deg / 0.5 deg x 5 deg/s / 20 deg/s`？ | 採為 **calibration candidates**（T2 config 初值），非正式凍結值；T7 依 floor/ceiling 證據決定 retained/revise/remove | 研究者 | ✅ Resolved（candidate，非 hard freeze） |
+| OQ-54-2 | Core matrix 是否沿用 `2.0 deg / 0.5 deg x 5 deg/s / 20 deg/s`？ | 採為 **calibration candidates**（T2 config 初值），非正式凍結值；T7 依 floor/ceiling 證據決定 retained/revise/remove。**T6（2026-09-03）：四個候選值全部保留，但實現方式再參數化**——size 改為真的目標角尺寸、speed 改以「頻帶 [0.3,2.1] Hz + 共用振幅 ±16°」交付（KI-020 §6；先前兩個因子都沒有被真正操弄）。reversal 視窗一併放寬到 ±13°（KI-019 §5） | 研究者 | ✅ Resolved（candidate，非 hard freeze；實現方式見 KI-020/KI-019） |
 | OQ-54-3 | 每個 scored block 採 20、25 或 30 秒？ | **25 秒**；T7 Gate B 檢查 time-on-task slope 是否需調整 | 研究者 | ✅ Resolved |
 | OQ-54-4 | Lag 搜尋範圍、平滑器與 ambiguity gate 為何？ | **`0–250 ms`** 搜尋範圍、離線固定係數平滑（`smoothingVersion` 版本化字串）；相關函數呈週期性多峰時回傳 `lag-peak-ambiguous`，不得回傳單值 | 指標 owner | ✅ Resolved |
 | OQ-54-5 | Repeatability 最低證據門檻為何？ | **RMS ICC(A,1) point `>= 0.75` 且 95% CI lower `>= 0.60`**（使用者確認採用建議預設） | 使用者 + 研究者 | ✅ Resolved |
@@ -310,7 +310,7 @@ export function buildTrackingPilotEvidence(
 | Acquisition failure 被吃掉 | High | 弱者 run 被刪除或混入 pursuit mean | P0 gate 獨立報告；aggregation contract tests |
 | 系統品質污染能力指標 | High | display stall/input overflow/missing telemetry 污染 lag/smoothness | Eligibility before metrics；blocked 不聚合 |
 | Pilot 被保存為正式 Assessment | Med/High | history/trend compatibility 被研究資料污染 | practice/pilot metadata guard；formal release 另立 WP |
-| 0.5 deg target 接近 pixel floor | Med | 量到視覺可辨識度而非 tracking | T7 visibility check；必要時淘汰該 cell |
+| 0.5 deg target 接近 pixel floor | Med | 量到視覺可辨識度而非 tracking | T7 visibility check；必要時淘汰該 cell。**T6 slice 10 起「0.5 deg」才真的是目標角尺寸**（`targets.hitbox` cube，邊長 `2·distance·tan(size/2)`）；兩個 axis calibration block 也改用此至風險尺寸——在此之前所有 cell 共用預設 H1 目標（約 ±7°），此風險項無法被檢驗（KI-020） |
 | Fixed order 導致疲勞/練習 confound | Med | 難度與時間順序共變 | counterbalance、固定 rest、time-on-task slope |
 | 大 export analysis 阻塞 UI | Low/Med | Result/evidence report 明顯延遲 | T4 benchmark；超過 2 秒才另立 worker spike |
 
