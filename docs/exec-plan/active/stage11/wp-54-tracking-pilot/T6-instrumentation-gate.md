@@ -114,6 +114,9 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
    - **點一下畫面中央進入 pointer lock** 後才能用滑鼠瞄準（跟槍）。
    - **scored block 禁止開火、禁止右鍵 ADS、禁止 WASD 移動**（違反會被記成
      `protocol_violation`，該 block 資料可能作廢）。practice 例外，可自由熱身。
+   - ⚠️ **開跑前務必口頭提醒「不要按右鍵」**：三場 session 累計 5 次 `protocol_violation`,
+     **5/5 全部是 `kind: "ads"`**,沒有一次是開火或 WASD。依 OQ-54-13 的決定程式端刻意不阻止右鍵
+     (維持「記錄違規而非阻止」),這道防線只有操作員的事前提醒(runbook 同步記載)。
 5. block 結束時：瀏覽器**自動下載該 block 的 JSON**，操作面板自動回來並顯示
    - `Block N outcome — role: … — drillId: … — attempt N`
    - scored/calibration block 另有品質橫幅：`Eligible — scored ticks: …, duration: …ms` 或
@@ -502,11 +505,16 @@ TOT 由第二輪的 0.3–34.6% 上移到 **0.2–49.4%**,與速度修正後的�
 
 ### 12.6 待研究者決定(不由 agent 拍板)
 
-1. **§6 的 tester 份量**：(a) 補 1–3 位 tester、每位跑 session 0 + 1,照 §6 原文結案;或
-   (b) 以 2 位 × 各一 session(8 條件皆 2 份可用 run)結案並在帳本記錄理由。**這是預註冊份量的
-   取捨,屬研究決策。**
-2. **N3 的處置**：(a) 只加強 runbook 事前提示(additive、不動程式);或 (b) scored block 直接
-   抑制 ADS 輸入(改輸入層可及行為 ⇒ 改變受測者能做的事,屬研究決策)。
+1. ~~**§6 的 tester 份量**~~ ✅ **已決(2026-09-03,使用者):以 2 位 × 各一 session 結案**
+   (選項 b)。理由:Gate A 問的是「儀器量得對不對」而非樣本量(README §5),而儀器面可檢驗的每一項
+   都已通過,且 8 個 scored 條件皆有 2 份可用 run。**代價要記在帳上**:21 份 payload 全部來自
+   **同一台 60 Hz / 3840×2160 / Edge 151 機器**,`displayRefreshHz` 這個 compatibility key
+   (D-54.41)因此**至今沒有第二種刷新率驗證過**;跨面板/跨機器的覆蓋留給 T7(12–20 人)。
+   對應 [OQ-54-12](progress.md#open-questions)。
+2. ~~**N3 的處置**~~ ✅ **已決(2026-09-03,使用者):只加強 runbook 事前提示**(選項 a,additive、
+   不動程式)。維持「記錄違規而非阻止」的既有設計,故這道防線只有操作員的事前提醒——已寫入
+   [tracking-pilot-runbook.md](../../../../operational/tracking-pilot-runbook.md) 與本文件 §5。
+   對應 [OQ-54-13](progress.md#open-questions)。
 3. ~~**§12.3 的「錄到的位置 vs 重建」比對是否升成 runner 的一層**~~ ✅ **已決(2026-09-03):升成
    固定一層 + regression fixture**,落地見 §12.3 的方框(T6 slice 17)。
 

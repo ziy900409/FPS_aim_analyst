@@ -122,6 +122,12 @@ click-only 的 `<div>`。
 4. 面板自動讓位，block 開始（3 秒倒數 + 25 秒）。點畫面中央進入 pointer lock 才能瞄準。
    **scored/calibration block 禁開火、禁 ADS、禁 WASD**（違反會記 `protocol_violation`）；
    practice 可自由熱身。
+
+   > ⚠️ **開跑前務必口頭提醒受測者:「不要按右鍵」。** 三場真人 session 累計 **5 次
+   > `protocol_violation`,5/5 全部是 `kind: "ads"`(右鍵 ADS)**——沒有一次是開火或 WASD。
+   > 這是目前唯一實際發生過的違規型態,且每次都得整個 block 重跑(25 秒 + 休息)。
+   > 依 OQ-54-13 的決定,程式端**刻意不阻止**右鍵(維持「記錄違規而非阻止」的設計),
+   > 所以這道防線只有操作員的事前提醒。習慣性右鍵瞄準的玩家尤其要提醒。
 5. block 結束 → **自動下載該 block 的 JSON** → 面板自動回來，顯示 outcome 與品質橫幅
    （`Eligible — scored ticks: …` / `Blocked — reasons: …`；practice 無橫幅）。
 6. **quality abort 的建議處置**：

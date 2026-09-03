@@ -8,6 +8,18 @@
 
 ## Progress
 
+### 2026-09-03 — T6 slice 18：兩個研究決策落地（OQ-54-12 / OQ-54-13，docs-only）
+
+- **OQ-54-13（ADS 違規）**：使用者選「只加強 runbook 事前提示」。
+  [tracking-pilot-runbook.md](../../../operational/tracking-pilot-runbook.md) 步驟 4 與 gate §5
+  同步加上醒目警示,並寫出實測依據:**三場 session 累計 5 次 `protocol_violation`,5/5 都是
+  `kind: "ads"`**,沒有一次是開火或 WASD。程式端刻意不阻止右鍵(維持「記錄違規而非阻止」),
+  故這道防線只剩操作員的事前提醒——警示文字直接這樣寫,免得未來有人以為程式會擋。
+- **OQ-54-12（tester 份量）**：使用者選「以 2 位 × 各一 session 結案」。**遺留代價入帳**:21 份
+  payload 全來自同一台 60 Hz / 3840×2160 / Edge 151 機器,`displayRefreshHz`（D-54.41）至今沒有
+  第二種刷新率驗證過;跨面板/跨機器覆蓋留給 T7。
+- **未動 production code**。
+
 ### 2026-09-03 — T6 slice 17：刺激保真度升成分析 runner 的固定一層（layer 3b）
 
 - **使用者決策**：gate §12.6 第 3 項採「升成 runner 一層 + regression fixture」。
@@ -1162,13 +1174,16 @@
 
 ## Open Questions
 
-- **OQ-54-12（T6 slice 16 提出，待使用者決定）**：Gate A §6 要求「3–5 位 tester 各完成 session 0 +
-  session 1」，但第三輪實收 **2 位 × 各一個 session**(P04 s0、P05 s1)。8 個 scored 條件雖然都有
-  `eligible=2`，份量本身仍未達 §6 原文。選項：(a) 補 1–3 位 tester、每位跑兩個 session;(b) 以現有
-  2 位結案並記錄理由。**屬預註冊份量的研究決策，不由 agent 拍板**(gate §12.6 第 1 項)。
-- **OQ-54-13（T6 slice 16 提出，待使用者決定）**：5/5 的 protocol violation 都是 `kind: "ads"`(右鍵)。
-  選項：(a) 只加強 runbook 事前提示(additive);(b) scored block 直接抑制 ADS 輸入(改變受測者可及行為
-  ⇒ 研究決策)。見 gate §12.6 第 2 項。
+- **OQ-54-12（T6 slice 16 提出，slice 18 已決）✅**：使用者決定 **以 2 位 tester × 各一個 session
+  結案**（不補到 §6 原文的 3–5 位）。理由:Gate A 問儀器而非樣本量(README §5),儀器面可檢驗的每一項
+  都已通過,且 8 個 scored 條件皆 `eligible=2`。**遺留代價已入帳**:21 份 payload 全來自同一台
+  60 Hz / 3840×2160 / Edge 151 機器 ⇒ `displayRefreshHz`（D-54.41）至今無第二種刷新率驗證,
+  跨面板覆蓋留給 T7。以下為原始問題敘述——Gate A §6 要求「3–5 位 tester 各完成 session 0 +
+  session 1」，但第三輪實收 2 位 × 各一個 session(P04 s0、P05 s1)。
+- **OQ-54-13（T6 slice 16 提出，slice 18 已決）✅**：使用者決定 **只加強 runbook 事前提示**
+  (additive、不動程式),維持「記錄違規而非阻止」的既有設計 ⇒ 防線只有操作員的事前提醒,已寫入
+  runbook 與 gate §5。以下為原始問題敘述——5/5 的 protocol violation 都是 `kind: "ads"`(右鍵),
+  另一個選項是在 scored block 直接抑制 ADS 輸入(改變受測者可及行為,屬研究決策)。
 
 全部 OQ-54-1~OQ-54-8 已於 T0（2026-09-02）凍結，詳見上方 decision log D-54.2~D-54.8 與 [README §1.4](README.md)。OQ-54-2 標記為 calibration candidate（非 hard freeze），其餘視為凍結值；後續變更一律走新 protocol/metric version + 本表新 decision row。
 
