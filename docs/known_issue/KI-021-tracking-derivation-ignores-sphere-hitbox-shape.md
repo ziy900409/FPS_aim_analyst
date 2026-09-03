@@ -1,0 +1,120 @@
+# KI-021 — on-target 離線推導忽略 `hitbox.shape`：sphere 目標被當成外接立方體，與命中判定不同幾何
+
+> 類型：**correctness bug（已在正式 Assessment drill 上生效，非 latent）**。
+> 狀態：🟡 已診斷、修法已定，**待落地**（WP-55 sphere 支援 + WP-54 hitbox 回 sphere 的前置，見
+> [DECISIONS.md GD-30](../exec-plan/DECISIONS.md)）。
+> 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) BD-021。
+> 發現脈絡：WP-54 T6 slice 10 為了 KI-020 把 pilot 目標改成真的角尺寸時，發現 WP-55 的 contact
+> derivation 只接受 box（`trackingContact.ts:147`）；追查該限制的來源時發現真正的問題在更底層的
+> `trackingDerivation.isOnTarget()`。
+
+## 1. 症狀
+
+`src/metrics/trackingDerivation.ts` 的 `isOnTarget()` 是 **ray/AABB slab test**，
+且 `hitboxFromMeta()` 只讀 `widthU/heightU/depthU`、**把 `shape` 丟掉**：
+
+```ts
+// trackingDerivation.ts:283-287
+function hitboxFromMeta(payload: ExportPayload): HitboxSize | undefined {
+  const hitbox = payload.meta.targets?.hitbox;
+  if (hitbox === undefined) return undefined;
+  return { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU }; // ← shape 沒帶
+}
+```
+
+`HitboxSize`（同檔 :33-37）也沒有 `shape` 欄位。因此 `shape:'sphere'` 的目標在離線推導裡被當成
+**外接立方體**：正面輪廓是邊長 = 直徑的正方形，而真正的球是它的**內切圓**。
+
+**這與命中判定不同幾何**——引擎端 `HitDetector.ts:103-106` 對 sphere 用
+`sphere.radius = t.hitbox.width / 2` 做球體相交（WP-46 T2）。
+
+## 2. 為何這是硬約束的違反（不只是「還沒支援」）
+
+- **CLAUDE.md §4 / GD-7 擴充**明文：「`shape:'sphere'` 時命中判定與渲染改用球體相交，但仍須同一個
+  `TargetState.hitbox` 單一來源」，且「命中判定（`HitDetector`）與 **on-target 離線推導**
+  （`trackingDerivation`）必須使用**同一幾何來源**，不得新增另一套閾值或尺寸常數」。
+- **CONTEXT.md §23**（`ε(t)`／on-target 的正規定義）：「**on-target（逐 tick 二元）= 準心射線 ∩
+  H1 hitbox（與命中判定同幾何，零新門檻參數）**」。
+
+也就是：權威文件從來就要求 on-target 跟著命中判定的幾何走；目前的實作對 sphere **沒有**照做。
+**不需要改 CLAUDE.md 或 CONTEXT.md** ——它們是對的，是實作偏離了它們。
+
+## 3. 影響面（已生效，非假設）
+
+| 消費者 | 是否受影響 | 說明 |
+|---|---|---|
+| **`spider-shot-v2`（`mode:'assessment'`，正式 drill）** | ❌ **已受影響** | `spider_shot_v2.ts:9-14` 的 hitbox 是 **sphere**（直徑在 8u 距離下對應 **2.0°**）；`spiderShotMetrics.ts:44` 呼叫 `deriveTrackingSamples()`、`:65` 用 `samples.find(s => s.onTarget)?.t` 取 `firstOnTarget` 餵 settle/overshoot 指標。於是 `t_first_on_target` 可能在準心離中心 **1.41°**（正方形對角）時就蓋戳，而真正的球體邊界是 **1.0°** ⇒ **最多寬鬆 41%**，且偏差**方向相依**（軸向正確、對角最寬鬆） |
+| `spider-shot-v1` | ✅ 不受影響 | hitbox 未宣告 `shape` ⇒ box，行為本來就正確 |
+| WP-54 tracking pilot | ✅ 目前不受影響 | slice 10 刻意用 **cube**（[D-54.40](../exec-plan/active/stage11/wp-54-tracking-pilot/progress.md)）繞過此 bug——正是本 KI 要解除的權宜之計 |
+| WP-55 contact derivation | ⚠️ 被此 bug 擋住 | `trackingContact.ts:141-152` `hasValidHitbox()` 對 `shape:'sphere'` 回 `'invalid-hitbox'`、整份 payload 排除。這個閘門是**正確的防線**（寧可排除也不要用錯幾何靜默算），但它讓 sphere 目標的 drill 全部進不了 coverage |
+| `holdClickMetrics` / `researchMetrics` | ⚠️ 需逐一確認 | 同樣 import `deriveTrackingSamples`；落地時應檢查其消費的 drill 是否有 sphere hitbox |
+
+## 4. 修法（三步，box 路徑逐位不變）
+
+### 4.1 `shape` 流進 derivation（`trackingDerivation.ts`）
+
+```ts
+export interface HitboxSize {
+  width: number; height: number; depth: number;
+  shape?: 'box' | 'sphere';   // 省略 = 'box'（既有行為逐位不變）
+}
+// hitboxFromMeta(): 補帶 shape
+return { width: hitbox.widthU, height: hitbox.heightU, depth: hitbox.depthU, shape: hitbox.shape };
+```
+
+### 4.2 `isOnTarget()` 加 ray/sphere 分支，鏡射引擎語意（`radius = width/2`）
+
+`aimForward()` 回單位向量（`sin/cos` 組合），故可用簡化式；結尾的 `t ≥ 0` 語意與現有 box 分支的
+`tmax >= Math.max(tmin, 0)` 對齊（含「原點在球內」）：
+
+```ts
+if (options.hitbox.shape === 'sphere') {
+  const r = options.hitbox.width / 2;
+  const lx = target.x - ox, ly = target.y - oy, lz = target.z - oz;
+  const tca = lx * dir.x + ly * dir.y + lz * dir.z;
+  const d2 = lx * lx + ly * ly + lz * lz - tca * tca;
+  if (d2 > r * r) return false;
+  const thc = Math.sqrt(r * r - d2);
+  return tca + thc >= Math.max(tca - thc, 0);
+}
+```
+
+> `epsilonDeg` **不需要改**：它走 `angularEccentricityDeg()`（準心射線 vs 目標**中心**的夾角），
+> 與 hitbox 形狀無關。只有 `onTarget` 及其衍生（TOT、`tAcquireMs`、drop/reacquire、
+> spider-shot settle/overshoot）會變。
+
+### 4.3 放寬 WP-55 的閘門（`trackingContact.ts:147`）
+
+接受 `'sphere'`，但**同時要求三軸相等**（鏡射 `schema.ts:243` 的 sphere 規則），否則畸形 sphere 會
+靜默只用 `width`：
+
+```ts
+(metaHitbox.shape === undefined || metaHitbox.shape === 'box' ||
+ (metaHitbox.shape === 'sphere' &&
+  metaHitbox.widthU === metaHitbox.heightU && metaHitbox.heightU === metaHitbox.depthU))
+```
+
+## 5. 測試（修前紅 / 修後綠）
+
+1. **corner fixture（關鍵）**：一條射線穿過立方體角落區、落在內切球外 ⇒ box 判 on-target、
+   sphere 判 off-target。這是唯一能證明 `shape` 真的生效的斷言，同時量化那 √2 anisotropy。
+2. **與 `HitDetector` 同幾何（GD-7）**：同一個 `meta.targets.hitbox` 同時驅動兩者；
+   同一組 (origin, dir, target, hitbox) 下 `isOnTarget()` 與 `raycastWithRay()` 的 sphere 判定一致。
+3. **box 逐位不變**：`shape` 省略/`'box'` 時所有既有 T3/spider-shot 斷言不動（改動 additive）。
+4. **畸形 sphere**（三軸不等）仍被 `'invalid-hitbox'` 擋下。
+5. **WP-55 coverage**：`keeps WP-54 candidate drills as contact-contract compatibility evidence
+   only` 由 `includedRunCount: 0` 回到 `2`。
+6. **spider-shot-v2 迴歸**：`firstOnTarget` 在 sphere 幾何下不早於 box 幾何（單向不等式），並用
+   合成 fixture 鎖住至少一個「box 會誤判 on-target、sphere 不會」的 tick。
+
+## 6. DoD
+
+- [ ] §4.1–4.3 落地，§5 六項測試修前紅／修後綠。
+- [ ] 確認 `holdClickMetrics`/`researchMetrics` 消費的 drill 是否含 sphere hitbox，逐一記錄結論。
+- [ ] `spider-shot-v2` 既有 metrics 語意變更記入 WP-36/WP-44 或 stage9 的 progress（**這是正式
+      Assessment drill 的指標語意變更，必須有紀錄**；歷史匯出檔的 settle/overshoot 需標註為
+      pre-fix 幾何）。
+- [ ] WP-54 hitbox 由 cube 改回 sphere（GD-30；**必須在 9 個 block 重跑之前**，否則兩批資料
+      on-target 語意不同、不可合併）。
+- [ ] 回寫 `docs/operational/analysis-tracking.md`（刺激語意表）與 `analysis-spider-shot.md`
+      （若其 on-target 說明需補 shape 條件）。
