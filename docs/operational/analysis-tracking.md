@@ -433,19 +433,54 @@ WP-54 的 core matrix 有兩個被操弄的因子，兩者在 2026-09-03 之前*
 | **Target angular size** | `meta.targets.hitbox`（sphere，直徑 `2 · distance · tan(size/2)`） | 2.0° → 0.13964u、0.5° → 0.03491u @ 4u。**不是** `trackingTrajectory.yawBoundDeg`——那是行程振幅。sphere 使 on-target 容許角在各方向等向，即「角尺寸」的字面語義；slice 10 曾因 WP-55 的 box-only 閘門改用 cube（對角 √2 倍 anisotropy），KI-021 解除該限制後於 slice 12 改回 sphere（GD-30） |
 | **Delivered RMS speed** | `trackingTrajectory.targetRmsSpeedDegPerSec` = **交付的 2D RMS 角速度**（螢幕上目標的速度），且保證等於實際交付值 | 求解逐軸進行，但每軸目標為 `set-point / √(活躍軸數)`（KI-023）——兩軸 cell 各軸取 `1/√2`，單軸 axis calibration 不變。`createBandLimited2dV1()` 在請求速度不可交付時 fail fast（訊息同時帶出 config 值與該軸的需求值）。實測交付/宣稱：core 四個 cell 1.000–1.014、calibration 1.013/1.017 |
 | **Reversal 速度範圍** | `trackingTrajectory.speedRangeDegPerSec` = 每個 leg 的 **2D** 巡航速度範圍 | 同一構念（KI-023）。每軸自 `range / √2` 抽樣 ⇒ 兩軸皆抽 min/max 時 2D 恰為 `speedMin`/`speedMax`。被剩餘時間或自身可用空間截短的 leg 巡航較慢，故下界是「範圍被用到」而非逐 leg 保證 |
+| **交戰距離（角度的頂點）** | `meta.scene.eye` → 錄到的 `tx/ty/tz`，即 `resolveEyeOrigin()` 的原點 | **所有角度量（尺寸/行程/速度）都以眼睛為頂點**，這是 ε(t) 與 `computeSignedOmegaSeries()` 一直採用的框架。刺激側的 `trackingTrajectory` 角度以 **world origin** 為頂點，兩者僅在 camera 錨定於 sim origin 時重合——`field-low` 在 2026-09-03 之前不是（[KI-024](../known_issue/KI-024-field-low-eye-not-anchored-halves-delivered-angles.md)），交戰距離 8 u 而非 config 的 4 u ⇒ **每個角度量都只交付一半**。分析 runner 的 `atEye` 層（`scripts/trackingDeliveredAngles.ts`）逐 run 印出實測交戰距離與交付/宣稱比 |
 | Travel amplitude | `trackingTrajectory.yawBoundDeg`/`pitchBoundDeg` | 所有 core cell 共用 ±16°（非操弄變數）；reversal cell 用 `angularBoundsDeg ±13°` |
-| Frequency band | `trackingTrajectory.frequencyBandHz` | core cell 為 `[0.3, 2.1]` Hz（自 `[0.1, 0.7]` 提高，才能在共用振幅下交付 20 deg/s） |
+| Frequency band | `trackingTrajectory.frequencyBandHz` | core cell 為 **`[0.15, 1.05]` Hz**（T7/OQ-54-14 自 `[0.3, 2.1]` 降低）。頻帶決定「每單位速度走多遠」，因而決定**凍結準心比值**——`[0.3, 2.1]` 的比值上界僅 1.61，任何速度都達不到 Gate B 的 2.0（見下方「凍結準心比值」） |
 
-**歷史資料判讀（三個世代，都不可與現行資料合併做速度比較）**：
+**歷史資料判讀（四個世代，都不可與現行資料合併做速度比較）**：
 
 | 世代 | 辨識方式 | 交付速度的真實值 |
 |---|---|---|
 | **G1**（KI-020 之前） | `frequencyBandHz [0.1,0.7]` + `yawBoundDeg ≤ 2` + `meta.targets.hitbox` 為預設 H1 | ≈ `0.605 × 振幅`，**與 metadata 宣稱值無關**；所有 cell 目標角尺寸相同（約 ±7°）⇒ `totPercent` 恆為 100%、不帶資訊量 |
 | **G2**（KI-020 已修、KI-023 未修；2026-09-03 的 P01/P02/P03 三批全屬此代） | `frequencyBandHz [0.3,2.1]` + `yawBoundDeg 16` + 每 cell 有自己的 `targets.hitbox` | 每軸 RMS = 宣稱值 ⇒ **螢幕上的 2D 速度 = 宣稱值 × √2**（兩軸 cell；實測 7.14 / 28.3 對 5 / 20）。**單軸 axis calibration 例外**，其交付即為宣稱值 ⇒ 同一批資料裡 calibration 與 core 的「5 deg/s」相差 1.41 倍。reversal 的 `speedRangeDegPerSec` 亦為每軸值 |
-| **G3**（KI-023 已修，本節上表所述） | 同 G2，但 `targetRmsSpeedDegPerSec` 已是 2D 語意 | 交付即宣稱值（實測比值 1.000–1.017） |
+| **G3**（KI-023 已修、KI-024 未修；2026-09-03 的 P04/P05 兩批屬此代） | `frequencyBandHz [0.3,2.1]` + `yawBoundDeg 16` + `meta.scene.eye.z === 4` | `targetRmsSpeedDegPerSec` 已是 2D 語意，故**以 world origin 為頂點**交付即宣稱值（1.000–1.017）；但眼睛在 z=+4、目標在 z=−4 ⇒ **受測者實際看到的每個角度量都是宣稱值的 0.50×**（實測 0.499–0.508）。宣稱 0.5°/2.0° 實為 **0.25°/1.0°**，宣稱 5/20 deg/s 實為 **2.5/10.0** |
+| **G4**（KI-024 已修，本節上表所述） | `meta.scene.eye.z === 0` + `frequencyBandHz [0.15,1.05]` + speed 候選值 `5/14` | **宣稱值即眼睛所見的交付值**（實測 5.01–5.13 / 13.94–14.01 deg/s，角尺寸 0.500°/1.999°）。core matrix 的快速候選值由 T7 revise 為 14 deg/s（20 在此頻帶下會讓目標沉到地面下） |
 
-G2 資料若要納入分析，速度軸須自行乘 `√2`（calibration 除外）；但條件標籤與 compatibility key 記的
-仍是宣稱值，**跨世代合併需明確標註世代**。
+G2 資料若要納入分析，速度軸須自行乘 `√2`（calibration 除外）；**G3 資料的每個角度量須乘 2**；
+但條件標籤與 compatibility key 記的仍是宣稱值，**跨世代合併需明確標註世代**。
+最可靠的世代辨識是 `meta.scene.eye.z`（G4 = 0）加上分析 runner 的 `atEye` 行——它直接量錄到的資料，
+不依賴 metadata 宣稱什麼。**layer 3b（刺激保真度）會把 G1–G3 判為 mismatch**，這正是它的用途。
+
+### 凍結準心比值（frozen-crosshair ratio，T7 / OQ-54-14）
+
+**這個條件能不能分辨「會跟槍」與「完全不動」?** 把準心凍結在受測者自己的 aim 中位數上、以同一個
+`angularEccentricityDeg()` 在同一個 scored 窗（first-on-target 到窗尾，與 canonical `rmsEpsilonDeg`
+逐 tick 相同的集合）重算 ε，則
+
+```
+ratio = RMS ε(凍結準心) / RMS ε(實際)
+```
+
+是該條件**可分辨性的上界**。比值趨近 1 表示刺激沒有給 ε 留下可分辨的空間——無論儀器多忠實，這個
+條件都測不出跟槍能力，依 **C-D3** 不得進教練報告。
+
+實作：`scripts/trackingFrozenCrosshairRatio.ts`（純函式 + 回歸測試），分析 runner 的 **layer 5**
+逐 run 印出；結果隨行 `canonicalRmsEpsilonDeg` 供每 run 對表，兩者漂移即印 `!!P0-MISMATCH`。
+**不新增 ε 或 scored 窗的第二定義（C-D4）。**
+
+Gate A 第三輪實測（G3 刺激）：reversal **2.06–3.01**（唯一已證實有效的家族）、20 deg/s cell
+1.40–1.52、5 deg/s 三個 cell 與兩個 axis calibration **1.08–1.35（測不出跟槍能力）**。
+
+幾何：比值只由**頻帶**與**交付速度**決定（行程 ≈ speed / 2πf，故距離因子在分子分母抵消）：
+
+```
+ratio ≈ 0.3776 · k(band) · v / (0.183 + 0.1867 · v),   k = Σ(1/ω_i) / √(N/2)
+```
+
+v → ∞ 的上界為 `2.023 · k`。`[0.3, 2.1]` 的上界是 **1.61**，故 Gate B 的 2.0 門檻在該頻帶下
+**不可能達到**——這是核心矩陣被退回 T7 重新參數化的量化理由。G4 的預測值：core matrix
+**2.64–2.97**、reversal 2.19–2.51。（人類項 `0.183 + 0.1867·v` 由 P04/P05 的 12 個 run 擬合，
+是外插；故招募前先以操作員乾跑實測。）
 
 **Compatibility key**（NFR-54-7）隨之改名/擴充：`sizeDeg` → `travelAmplitudeDeg`（語意本來就是振幅），
 新增 `targetHitboxWidthU`（真正的尺寸軸；`Meta` 不記錄目標距離，故以 source unit 表達）與

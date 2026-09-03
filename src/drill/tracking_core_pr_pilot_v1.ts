@@ -40,20 +40,46 @@ import type { DrillConfig, TargetHitboxConfig } from './DrillConfig.ts';
 
 const DISTANCE_U = 4; // matches tracking_v1's forward sightline convention (field-low clear zone)
 /**
- * KI-020 §4.2 (researcher's decision: raise the band, share one amplitude). The original
- * `[0.1, 0.7]` Hz band could only deliver ~0.86 deg/s per axis inside a ±2° envelope, so 5 and 20
- * deg/s collapsed to the same delivered speed. At `[0.3, 2.1]` Hz both candidates are delivered at
- * one shared amplitude (measured: 5.05 and 20.21 deg/s).
+ * The band sets how far the target travels per unit speed, and therefore whether the condition can
+ * discriminate tracking from not-tracking at all.
  *
- * The rejected alternative was "enlarge the amplitude": 20 deg/s would need ±48°, which puts the
- * target at ±37° — below the floor (y ≈ -1.5) and outside the ~±35° vertical FOV.
+ * **OQ-54-14 (researcher's decision, 2026-09-03): `[0.3, 2.1]` → `[0.15, 1.05]` Hz.** Gate A round
+ * 3 measured the *frozen-crosshair ratio* — freeze the crosshair at the participant's own median
+ * aim, recompute ε(t), and divide by their achieved RMS ε; it is the upper bound on how much a
+ * condition can tell a tracker from someone who does not move. The band-limited cells scored
+ * 1.08–1.35 (the reversal family, 2.06–3.01, was the only one that measured tracking at all).
+ *
+ * Travel is pinned by speed and band together (amplitude ≈ speed / 2πf), so this ratio is a pure
+ * function of the band and the delivered speed:
+ *
+ *     ratio ≈ 0.3776 · k(band) · v / (0.183 + 0.1867 · v),   k = Σ(1/ω_i) / √(N/2)
+ *
+ * whose v → ∞ asymptote is `2.023 · k`. At `[0.3, 2.1]` that ceiling is **1.61 — no speed could
+ * ever reach 2.0**, which is why raising the speed candidates could not have rescued the matrix.
+ * `[0.15, 1.05]` gives k = 1.589 (ceiling 3.21), predicting 2.32–2.94 across 2.5–10 deg/s, i.e.
+ * bracketing the reversal family's demonstrated range. Measured band/ratio table: KI-024 §5.2.
+ *
+ * The cost is task character: 25 s holds ~3.8 cycles of the lowest component instead of ~7.5.
+ * Lower bands (`[0.12, 0.84]`, `[0.1, 0.7]`) score higher still but fall to 3.0/2.5 cycles and
+ * push the target below the floor at the fast candidate.
+ *
+ * Superseded rationale (KI-020 §4.2): `[0.3, 2.1]` was chosen because the original `[0.1, 0.7]`
+ * could only deliver ~0.86 deg/s per axis inside the then ±2° envelope. Raising the amplitude was
+ * rejected at the time because 20 deg/s appeared to need ±48°. Both figures were computed before
+ * KI-024 — the eye sat 4 u behind the world origin, so the envelope was being spent at twice the
+ * rate needed for a given angle at the eye. With `field-low` anchored (BD-024) the same eye-relative
+ * travel costs half the world displacement, which is what makes this band affordable.
  */
-const FREQUENCY_BAND_HZ = [0.3, 2.1] as const;
+const FREQUENCY_BAND_HZ = [0.15, 1.05] as const;
 /**
  * Travel amplitude — **shared by every cell**, so `targetRmsSpeedDegPerSec` is the only dynamic
- * difference between them. ±16° is the intersection of vertical headroom and deliverable speed:
- * the target actually reaches ~13° (y ≈ [0.6, 2.6], above the floor and inside the FOV) while
- * still permitting 20 deg/s. This is **not** a manipulated variable — size is now the hitbox.
+ * difference between them. This is **not** a manipulated variable; size is the hitbox.
+ *
+ * ±16° is the smallest bound that still lets the fast candidate be delivered: at this band the
+ * 14 deg/s cell needs ±15.73° of analytic headroom (`createTrackingTrajectory` fails fast below
+ * that, KI-020's guard). The bound is an analytic upper bound, not the excursion — the target
+ * actually reaches ~15°, keeping it above the floor (world y ≈ 0.44–2.56) and inside the vertical
+ * FOV (asserted in `tracking_core_pr_pilot_v1.test.ts`).
  */
 const TRAVEL_AMPLITUDE_DEG = 16;
 const PREP_MS = 1000; // FR-54-5 "scored 開始前 1 秒置中準備"
@@ -69,7 +95,25 @@ const SCORED_PROTOCOL_GUARD: NonNullable<DrillConfig['protocolGuard']> = { noFir
 const SEED_BASE = 54000;
 
 export const CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG = [2.0, 0.5] as const;
-export const CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC = [5, 20] as const;
+/**
+ * **T7 revise (researcher's decision, 2026-09-03): fast candidate `20` → `14` deg/s.**
+ *
+ * OQ-54-2 registered these as *candidates*, not frozen values, and T7's job is to emit
+ * retained/revise/remove — this is a revise, forced by geometry rather than by preference.
+ *
+ * At the `[0.15, 1.05]` Hz band the travel needed to deliver a speed grows as `speed / 2πf`, and
+ * a 20 deg/s cell demands ±22.5° of analytic headroom. Measured across the actual cell seeds that
+ * puts `0p5deg_20dps` (seed 54013) at world **y = −0.01 — the target passes below the ground** —
+ * and `2deg_20dps` at a 20.2° excursion, tripping the vertical-headroom guard. 14 deg/s needs
+ * ±15.73°, reaches ~15.4°, and keeps world y ≈ 0.44–2.56.
+ *
+ * The alternative was the shallower `[0.2, 1.4]` band, which fits 20 deg/s but predicts
+ * frozen-crosshair ratios of only 1.99–2.04 on the slow cells — within 2% of the frozen Gate B
+ * threshold of 2.0, with a human-error model extrapolated from two participants. 5/14 at this band
+ * predicts 2.70/3.00, i.e. real margin. The speed contrast falls from 4x to 2.8x and remains a
+ * strong manipulation.
+ */
+export const CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC = [5, 14] as const;
 export type CorePrPilotV1SizeDeg = (typeof CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG)[number];
 export type CorePrPilotV1SpeedDegPerSec = (typeof CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC)[number];
 /** Axis calibration probes the *at-risk* size — the smallest candidate (README §3 pixel-floor risk). */

@@ -8,6 +8,45 @@
 
 ## Progress
 
+### 2026-09-03 — T7 slice 4：核心矩陣再參數化（頻帶 `[0.15,1.05]` + 快速候選值 20 → 14 deg/s）
+
+- **使用者決策（OQ-54-14 落地）**：頻帶 `[0.3, 2.1]` → **`[0.15, 1.05]` Hz**；並在量測揭露衝突後
+  追加決定 **core matrix 快速候選值 `20` → `14` deg/s**（revise，非 remove）。
+- **為什麼一定要降頻帶**：比值只由頻帶與交付速度決定（行程 ≈ speed / 2πf，距離因子在分子分母抵消）
+  ⇒ `ratio ≈ 0.3776·k(band)·v / (0.183 + 0.1867·v)`，v→∞ 的上界是 `2.023·k`。
+  **`[0.3,2.1]` 的上界只有 1.61 ⇒ 凍結的 2.0 門檻在該頻帶下不可能達到**，改速度救不了。
+- **量測揭露的衝突（我先前的選項表低估了行程）**：選項表只用單一 seed（54010）估算。以**實際的
+  七個 cell seed** 重量後，`[0.15,1.05]` 的 20 deg/s cell 放不進 field-low 的垂直包絡——
+  `0p5deg_20dps`（seed 54013）走到 world **y = −0.01（沉到地面下）**，`2deg_20dps` 行程 20.2°
+  撞到既有的 `< 20°` 守衛。已據實回報並重新徵詢。
+  - 備選 `[0.2,1.4]`（20 deg/s 放得進）預測比值僅 **1.99–2.04**，距凍結門檻不到 2%，而人類項模型
+    只由 2 人擬合、是外插 ⇒ 使用者選擇保留 `[0.15,1.05]` 並 revise 快速候選值。
+- **落地**（`src/drill/tracking_core_pr_pilot_v1.ts`）：`FREQUENCY_BAND_HZ = [0.15, 1.05]`、
+  `CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC = [5, 14]`、`TRAVEL_AMPLITUDE_DEG = 16`
+  （14 deg/s 需 ±15.73° 解析餘裕，KI-020 的建構期守衛在不足時 fail fast）。drillId 隨候選值陣列
+  自動變為 `..._14dps`——manifest 的 drillId 允許清單由同一個陣列導出，故無硬編字串要改。
+- **實測交付（G4，眼睛所見）**：
+
+  | cell | v_eye | maxAbs(traj) | world y | 角尺寸 | 凍結準心 RMS | 預測比值 |
+  |---|---|---|---|---|---|---|
+  | practice / 2deg_5dps / 0p5deg_5dps | 5.01–5.13 | 4.6–4.8° | 1.17–1.83 | 0.500 / 1.999° | 2.95–3.14 | **2.64–2.75** |
+  | calibration h / v | 5.12 | 7.0–7.5° | 1.01–1.92 | 0.500° | 3.13–3.14 | **2.75–2.76** |
+  | 2deg_14dps / 0p5deg_14dps | 13.94–14.01 | 14.1–15.5° | 0.43–2.48 | 0.500 / 1.999° | 8.24–8.30 | **2.96–2.97** |
+  | reversal medium / high | 11.73 / 9.57 | 13.0° | 0.80–2.40 | 2.00° | 4.31–5.97 | **2.19–2.51** |
+
+  **每個 cell 都在凍結的 ≥ 2.0 門檻之上且有餘裕**；角尺寸終於**逐位等於宣稱值**（0.500 / 1.999），
+  這是 KI-024 修好之後才成立的。
+- **reversal 家族的 `speedRangeDegPerSec` 刻意維持 `[5, 20]`**（未跟著 core 改）：它是第三輪**唯一**
+  通過效度檢查的家族，且用不同的生成器、不受頻帶約束——不因核心矩陣的包絡限制去動它。
+  **代價已寫進該檔註解**：兩個家族的**宣稱速度不再精確可比**，跨家族比較須改用交付的 `atEye` 值。
+- **`docs/operational/analysis-tracking.md` 同步**：新增 **G4 世代**（辨識方式 `meta.scene.eye.z === 0`
+  + 新頻帶 + 5/14 候選值）並把 G3 的定義補上「眼睛所見只有 0.50×」；刺激語意表新增「交戰距離＝
+  角度的頂點」一列；新增「凍結準心比值」整節（定義、實作、C-D4 說明、幾何公式與上界、G4 預測值）。
+  **G3 資料的每個角度量須乘 2** 才可與 G4 比較——已明文寫入。
+- **P04/P05 正式作廢**（G3 ≠ G4）；layer 3b 會把它們判為 mismatch，屬預期。
+- **驗證**：`npx vitest run` **212 files / 2035 tests passed**；`npx tsc --noEmit` 與
+  `-p tsconfig.node.json` 皆 exit 0；`playwright tracking-pilot-live --project=edge` 見 verification log。
+
 ### 2026-09-03 — T7 slice 3：KI-024 落地（Option A：`field-low` 補 `eyeZ: 0`）+ 分析層第二道守門
 
 - **使用者決策（4 項，2026-09-03）**：① KI-024 → **Option A**（`field-low` 補 `eyeZ: 0`）；
@@ -1324,7 +1363,14 @@
 
 ## Open Questions
 
-- **OQ-54-14（T6 slice 19 提出，slice 20 已決）✅**：使用者選 **部分通過**——Gate A 就「資料鏈路」與
+- **OQ-54-15（T7 slice 4 提出，同 slice 已決）✅**：`[0.15,1.05]` Hz 與預註冊的 20 deg/s 快速候選值
+  **在 field-low 的垂直包絡下不相容**（`0p5deg_20dps` 走到 world y = −0.01，沉到地面下）。
+  使用者決定 **保留頻帶、把快速候選值 revise 為 14 deg/s**（而非改用 `[0.2,1.4]` 保住 20 deg/s）。
+  理由：`[0.2,1.4]` 在慢速 cell 的預測比值只有 1.99–2.04，距凍結的 2.0 門檻不到 2%，而人類項模型
+  只由 2 位受測者擬合、屬外插 ⇒ 餘裕比「保住 20 這個數字」重要。OQ-54-2 本就把 speed 記為
+  **candidate 而非凍結值**，且 T7 的職責正是輸出 retained/**revise**/remove。速度對比由 4× 降為
+  2.8×，仍是強操弄。**reversal 家族的 `[5,20]` 不跟著改**（見 slice 4 條目）。
+- **OQ-54-14（T6 slice 19 提出，slice 20 已決；T7 slice 3/4 完成落地）✅**：使用者選 **部分通過**——Gate A 就「資料鏈路」與
   **reversal 家族**判 PASS(⇒ T7 可開工),**band-limited 核心矩陣以「未通過效度」記入帳本並退回 T7
   重新參數化**,量化目標 = **凍結準心比值**(實測錨點:reversal 2.08–3.26 有效、5 deg/s 家族
   1.05–1.25 無效;閾值本身留 T7 凍結)。理由:四層對帳全綠且無 instrumentation defect,不必燒一輪
@@ -1414,3 +1460,7 @@
 | 2026-09-03 | T7 slice 3：`npx tsc --noEmit` / `-p tsconfig.node.json` | 皆 exit 0 |
 | 2026-09-03 | T7 slice 3：`npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` | **1/1 passed**（2.1m）。以錨定後的 field-low 真實跑完 practice + calibration 兩個 25 秒 block；覆蓋率不變（scored ticks 3203 / 25015.625 ms） |
 | 2026-09-03 | T7 slice 3：`npx vite-node scripts/analyze-tracking-pilot.ts -- <P04>` | 新 `atEye` 層對 10/10 份歷史 payload 回報 50–51% of nominal、`dist=7.99–8.00u`、`size=0.250°/1.000°` ⇒ 守門有效 |
+| 2026-09-03 | T7 slice 4：`npx vitest run`（全專案，再參數化後） | 212 files / 2035 tests passed（1 skipped file / 2 skipped tests），無回歸 |
+| 2026-09-03 | T7 slice 4：`npx tsc --noEmit` / `-p tsconfig.node.json` | 皆 exit 0 |
+| 2026-09-03 | T7 slice 4：`npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` | **1/1 passed**（2.0m），以 G4 刺激真實跑完 practice + calibration 兩個 25 秒 block；覆蓋率不變（3203 ticks / 25015.625 ms） |
+| 2026-09-03 | T7 slice 4：離線量測七個 cell（實際 seed，眼睛所見） | 交付速度 5.01–5.13 / 13.94–14.01 deg/s；角尺寸逐位 0.500 / 1.999°；world y 最低 0.43（離地安全）；預測凍結準心比值 **2.19–2.97,全部 ≥ 2.0** |

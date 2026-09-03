@@ -211,6 +211,13 @@
 
 ### T7 工程 slice（已 commit）
 
+- [x] **slice 4**：核心矩陣再參數化——頻帶 `[0.3,2.1]` → **`[0.15,1.05]` Hz**（OQ-54-14）＋
+      core 快速候選值 **20 → 14 deg/s**（OQ-54-15 revise：`[0.15,1.05]` 下的 20 deg/s 會讓
+      `0p5deg_20dps` 沉到地面下 y=−0.01）＋ `TRAVEL_AMPLITUDE_DEG` 23→16。實測交付（G4，眼睛所見）
+      速度 5.01–5.13 / 13.94–14.01、角尺寸 **逐位 0.500 / 1.999°**、**預測凍結準心比值
+      2.19–2.97,每個 cell 都在凍結的 ≥ 2.0 門檻之上**。reversal `[5,20]` 刻意不動（唯一通過效度的
+      家族）,代價=跨家族宣稱速度不再精確可比,已入註解。`analysis-tracking.md` 新增 **G4 世代**
+      與「凍結準心比值」整節。
 - [x] **slice 3**：KI-024 落地（**Option A**：`field-low` 補 `eyeZ: 0`，= KI-002/D1 同一修法）。
       TDD 先證實紅（距離 7.9965、比值 0.5009）；新增分析層第二道守門
       `scripts/trackingDeliveredAngles.ts`（+4 tests，runner 印 `atEye …% of nominal`）；

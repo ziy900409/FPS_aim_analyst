@@ -29,7 +29,18 @@ const DISTANCE_U = 4; // matches tracking_core_pr_pilot_v1.ts / tracking_v1's fo
 // 都被邊界截斷、交付密度不等於 `reversalIntervalMs`（見 KI-019 §5）。±13deg 給 26deg 視窗。
 // `createTrackingTrajectory()` 現在會在建構期驗證這個關係並 fail fast。
 const ANGULAR_BOUNDS_DEG = [-13, 13] as const;
-const SPEED_RANGE_DEG_PER_SEC = [5, 20] as const; // reuses the core matrix's speed candidates for cross-block comparability
+/**
+ * Originally chosen to match the core matrix's speed candidates for cross-block comparability.
+ * **That alignment no longer holds and is deliberately not restored (T7, 2026-09-03):** the core
+ * matrix's fast candidate was revised `20` → `14` deg/s because `[0.15, 1.05]` Hz could not deliver
+ * 20 inside field-low's vertical envelope (see `CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC`).
+ * The reversal family has a different generator, is not bound by that band, and is the **only**
+ * family that cleared Gate A's validity check (frozen-crosshair ratio 2.06–3.01), so its range is
+ * held at `[5, 20]` rather than re-tuned on the back of a core-matrix constraint. Consequence to
+ * keep in mind when reading results: nominal speeds are **no longer exactly comparable across the
+ * two families**; compare within a family, or use the delivered `atEye` figures.
+ */
+const SPEED_RANGE_DEG_PER_SEC = [5, 20] as const;
 const ACCELERATION_RAMP_MS = 150; // well under both density cells' reversalIntervalMs[0] (schema.ts-enforced)
 const PREP_MS = 1000; // FR-54-5, same as tracking_core_pr_pilot_v1.ts
 const SCORED_DURATION_MS = 25000; // D-54.4 frozen block length
