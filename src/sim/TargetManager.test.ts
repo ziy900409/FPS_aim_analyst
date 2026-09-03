@@ -970,8 +970,10 @@ describe('TargetManager — trackingTrajectory drive（WP-54 / T2）', () => {
     kind: 'band-limited-2d-v1',
     seed: 7,
     durationMs: 25000,
-    yawBoundDeg: 2,
-    pitchBoundDeg: 2,
+    // KI-020: amplitude must be able to deliver the requested RMS speed (±2° could only deliver
+    // 0.84deg/s on this band, and the generator now rejects that mismatch).
+    yawBoundDeg: 16,
+    pitchBoundDeg: 16,
     targetRmsSpeedDegPerSec: 5,
     frequencyBandHz: [0.1, 0.7],
   };

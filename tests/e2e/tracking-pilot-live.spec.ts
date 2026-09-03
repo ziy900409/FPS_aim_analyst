@@ -46,6 +46,7 @@ async function readDownloadedPayload(download: Download): Promise<{
     drillId: string;
     session?: { participantId: string; sessionLabel?: string };
     spawn?: { trackingTrajectory?: Record<string, unknown>; trackingPrepMs?: number };
+    targets?: { hitbox?: { widthU: number; heightU: number; depthU: number; shape?: string } };
     recorderOverflow: boolean;
   };
   ticks: unknown[];
@@ -87,13 +88,17 @@ test.describe('WP-54 T6 — live tracking pilot session', () => {
       participantId: 'e2e-pilot',
       sessionLabel: 'tracking-pilot-v1:e2e-pilot:session-0',
     });
+    // KI-020: travel amplitude is now a shared constant (±16°) and `size` lives in the hitbox, so
+    // the trajectory carries the amplitude/speed while the target's angular size is asserted below.
     expect(practicePayload.meta.spawn?.trackingTrajectory).toMatchObject({
       kind: 'band-limited-2d-v1',
       seed: 54000,
-      yawBoundDeg: 2,
-      pitchBoundDeg: 2,
+      yawBoundDeg: 16,
+      pitchBoundDeg: 16,
       targetRmsSpeedDegPerSec: 5,
     });
+    // The practice cell's target is the 2.0° candidate: a cube edge of 2*4*tan(1°) at 4u.
+    expect(practicePayload.meta.targets?.hitbox?.widthU).toBeCloseTo(0.13964, 4);
     expect(practicePayload.ticks.length).toBeGreaterThan(0);
     expect(practicePayload.meta.recorderOverflow).toBe(false);
     // Practice carries no prep window (T2: no `trackingPrepMs`, no `protocolGuard`)…

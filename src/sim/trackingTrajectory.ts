@@ -172,6 +172,35 @@ function boundedSpeedScale(
   return Math.min(speedScale, boundScale);
 }
 
+/**
+ * 一個軸「被抑制」的門檻（deg）。axis calibration block 刻意把 off-axis 振幅壓到 0.1° 讓目標幾乎
+ * 只沿單一軸移動，那個軸本來就不該交付請求速度——守衛對它豁免（見 `requireDeliverableSpeed`）。
+ */
+const SUPPRESSED_AXIS_BOUND_DEG = 0.5;
+
+/** 此振幅/頻帶下可交付的最大 RMS 角速度（deg/s）。 */
+function maxDeliverableRmsSpeed(components: readonly SinusoidComponent[], boundDeg: number): number {
+  return (boundDeg / rawPositionAmplitudeBound(components)) * rawVelocityRms(components);
+}
+
+function requireDeliverableSpeed(
+  components: readonly SinusoidComponent[],
+  targetRmsSpeedDegPerSec: number,
+  boundDeg: number,
+  boundFieldName: string,
+): void {
+  if (boundDeg <= SUPPRESSED_AXIS_BOUND_DEG) return; // deliberately near-static axis
+  const maxSpeed = maxDeliverableRmsSpeed(components, boundDeg);
+  if (targetRmsSpeedDegPerSec <= maxSpeed) return;
+  throw new Error(
+    `trackingTrajectory: band-limited-2d-v1 cannot deliver targetRmsSpeedDegPerSec=` +
+      `${targetRmsSpeedDegPerSec} within ${boundFieldName}=${boundDeg}deg on the ` +
+      `[${components[0].omega / (2 * Math.PI)}, ${components[components.length - 1].omega / (2 * Math.PI)}]Hz ` +
+      `band — the most this envelope can deliver is ${maxSpeed.toFixed(2)}deg/s (raise ` +
+      `${boundFieldName}, raise frequencyBandHz, or lower targetRmsSpeedDegPerSec)`,
+  );
+}
+
 function createBandLimited2dV1(
   config: Extract<TrackingTrajectoryConfig, { kind: 'band-limited-2d-v1' }>,
 ): TrackingTrajectory {
@@ -186,6 +215,14 @@ function createBandLimited2dV1(
   const rng = createRan1(config.seed);
   const yawComponents = buildSinusoidComponents(rng, lowHz, highHz);
   const pitchComponents = buildSinusoidComponents(rng, lowHz, highHz);
+
+  // KI-020 §4.3：交付一致性守衛。`boundedSpeedScale` 在請求速度放不進振幅時會靜默取 bound scale
+  // ——邊界安全優先本身沒錯，但**靜默**降級讓 config/匯出 metadata 宣稱一個從未被交付的速度
+  // （實測：2° 振幅 + [0.1,0.7]Hz 下，5 與 20 deg/s 都只交付約 0.86 deg/s）。改為建構期 fail fast
+  // 並在訊息裡給出「此振幅/頻帶下可交付的最大 RMS 速度」，讓 config 作者當場知道要調哪個參數。
+  // 被抑制到近零的軸（axis calibration 的 off-axis）刻意豁免：它的用途就是「幾乎不動」。
+  requireDeliverableSpeed(yawComponents, config.targetRmsSpeedDegPerSec, config.yawBoundDeg, 'yawBoundDeg');
+  requireDeliverableSpeed(pitchComponents, config.targetRmsSpeedDegPerSec, config.pitchBoundDeg, 'pitchBoundDeg');
 
   const yawScale = boundedSpeedScale(yawComponents, config.targetRmsSpeedDegPerSec, config.yawBoundDeg);
   const pitchScale = boundedSpeedScale(pitchComponents, config.targetRmsSpeedDegPerSec, config.pitchBoundDeg);

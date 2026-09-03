@@ -1,4 +1,8 @@
-import type { DrillConfig } from './DrillConfig.ts';
+import type { DrillConfig, TargetHitboxConfig } from './DrillConfig.ts';
+import {
+  CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG,
+  trackingPilotAngularSizeToEdgeU,
+} from './tracking_core_pr_pilot_v1.ts';
 
 /**
  * WP-54 / T2 — tracking pilot: medium/high reversal-density candidate blocks (README §2.2/§2.4,
@@ -37,6 +41,21 @@ const PROTOCOL_GUARD: NonNullable<DrillConfig['protocolGuard']> = { noFire: true
 /** WP-54-only seed base, offset from tracking_core_pr_pilot_v1.ts's 54000-series so the two families' seeds never collide. */
 const SEED_BASE = 54100;
 
+/**
+ * Target angular size, held constant across both density cells so reversal frequency stays the
+ * only manipulation here (KI-020 §4.1 made angular size a real hitbox rather than a mislabelled
+ * travel amplitude). Uses the core matrix's **larger/easier** candidate: these blocks probe
+ * reactive correction, and pairing them with the at-risk 0.5° target would confound density with
+ * the pixel-floor question the axis-calibration blocks exist to answer. Without a hitbox these
+ * cells inherited the default H1 target (~±7°), which pinned their TOT at 100.0%.
+ */
+const TARGET_ANGULAR_SIZE_DEG = CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG[0];
+
+function cubeHitbox(): TargetHitboxConfig {
+  const edgeU = trackingPilotAngularSizeToEdgeU(TARGET_ANGULAR_SIZE_DEG, DISTANCE_U);
+  return { widthU: edgeU, heightU: edgeU, depthU: edgeU, shape: 'box' };
+}
+
 function buildReversalCell(drillIdSuffix: string, seed: number, reversalIntervalMs: readonly [number, number]): DrillConfig {
   return {
     drillId: `tracking_reversal_pilot_v1_${drillIdSuffix}`,
@@ -44,6 +63,7 @@ function buildReversalCell(drillIdSuffix: string, seed: number, reversalInterval
     targets: {
       count: 1,
       distance: DISTANCE_U,
+      hitbox: cubeHitbox(),
       trackingTrajectory: {
         kind: 'reversal-2d-v1',
         seed,

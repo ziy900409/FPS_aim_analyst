@@ -8,6 +8,8 @@ import { simStep } from '../loop/SimLoop.ts';
 import { SIM_HZ } from '../loop/constants.ts';
 import { formatClearanceViolations, validateClearance } from '../scene/clearance.ts';
 import { fieldLow } from '../scene/scenes/field-low.ts';
+import { createTrackingTrajectory } from '../sim/trackingTrajectory.ts';
+import type { DrillConfig } from './DrillConfig.ts';
 import {
   CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG,
   CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC,
@@ -23,6 +25,20 @@ const ALL_BLOCKS = [
   trackingCorePrPilotV1CalibrationVertical,
   ...TRACKING_CORE_PR_PILOT_V1_CANDIDATES,
 ];
+
+/** Inverse of the config's angular-size -> hitbox-diameter mapping, so the test derives the
+ * delivered angular size from the shipped hitbox rather than trusting a config field. */
+function angularSizeOf(drill: DrillConfig): number {
+  const hitbox = drill.targets.hitbox;
+  if (hitbox === undefined) throw new Error(`${drill.drillId} has no hitbox`);
+  return 2 * (180 / Math.PI) * Math.atan(hitbox.widthU / 2 / drill.targets.distance);
+}
+
+function nominalSpeedOf(drill: DrillConfig): number {
+  const config = drill.targets.trackingTrajectory;
+  if (config?.kind !== 'band-limited-2d-v1') throw new Error('expected band-limited-2d-v1');
+  return config.targetRmsSpeedDegPerSec;
+}
 
 describe('tracking_core_pr_pilot_v1 — practice/calibration/core matrix configs (WP-54 / T2)', () => {
   it('every block loads and passes field-low clearance', () => {
@@ -75,18 +91,94 @@ describe('tracking_core_pr_pilot_v1 — practice/calibration/core matrix configs
     expect(TRACKING_CORE_PR_PILOT_V1_CANDIDATES).toHaveLength(
       CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG.length * CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC.length,
     );
+    // KI-020: `size` is the target's angular size (a hitbox), NOT the trajectory's travel
+    // amplitude — the pair identity therefore comes from the hitbox, not from `yawBoundDeg`.
     const pairs = new Set(
-      TRACKING_CORE_PR_PILOT_V1_CANDIDATES.map((d) => {
-        const t = d.targets.trackingTrajectory;
-        if (t?.kind !== 'band-limited-2d-v1') throw new Error('expected band-limited-2d-v1');
-        return `${t.yawBoundDeg}/${t.targetRmsSpeedDegPerSec}`;
-      }),
+      TRACKING_CORE_PR_PILOT_V1_CANDIDATES.map((d) => `${angularSizeOf(d).toFixed(3)}/${nominalSpeedOf(d)}`),
     );
     for (const size of CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG) {
       for (const speed of CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC) {
-        expect(pairs.has(`${size}/${speed}`)).toBe(true);
+        expect(pairs.has(`${size.toFixed(3)}/${speed}`)).toBe(true);
       }
     }
+  });
+
+  // --- KI-020 regression: the matrix must deliver the manipulation it claims ---
+
+  it('every cell renders its size candidate as a real angular target size (KI-020)', () => {
+    for (const drill of [trackingCorePrPilotV1Practice, ...TRACKING_CORE_PR_PILOT_V1_CANDIDATES]) {
+      const hitbox = drill.targets.hitbox;
+      if (hitbox === undefined) throw new Error(`${drill.drillId} has no hitbox`);
+      // A cube subtends exactly the candidate size along yaw and pitch, and stays inside WP-55's
+      // box-only exact-hitbox contact derivation; hit detection and rendering read the same
+      // `TargetState.hitbox` source either way (WP-46 / GD-7).
+      expect(hitbox.shape, drill.drillId).toBe('box');
+      expect(hitbox.widthU, drill.drillId).toBe(hitbox.heightU);
+      expect(hitbox.widthU, drill.drillId).toBe(hitbox.depthU);
+      expect(CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG as readonly number[], drill.drillId).toContain(
+        Number(angularSizeOf(drill).toFixed(3)),
+      );
+    }
+    // Both size candidates are actually present and distinguishable (pre-KI-020 every cell shared
+    // the default H1 target, so the "size" factor did not exist at all).
+    const sizes = new Set(TRACKING_CORE_PR_PILOT_V1_CANDIDATES.map((d) => Number(angularSizeOf(d).toFixed(3))));
+    expect([...sizes].sort((a, b) => a - b)).toEqual([...CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG].sort((a, b) => a - b));
+  });
+
+  it('axis calibration blocks use the at-risk 0.5deg target (that is what they exist to probe)', () => {
+    for (const drill of [trackingCorePrPilotV1CalibrationHorizontal, trackingCorePrPilotV1CalibrationVertical]) {
+      expect(angularSizeOf(drill), drill.drillId).toBeCloseTo(0.5, 3);
+    }
+  });
+
+  it('every cell actually delivers its nominal RMS speed, and amplitude is held constant (KI-020)', () => {
+    // The defect this locks down: `boundedSpeedScale` clamps to the amplitude bound, so a config
+    // could claim 20deg/s while delivering 1.18deg/s — and the claim went into export metadata.
+    for (const drill of [
+      trackingCorePrPilotV1Practice,
+      trackingCorePrPilotV1CalibrationHorizontal,
+      trackingCorePrPilotV1CalibrationVertical,
+      ...TRACKING_CORE_PR_PILOT_V1_CANDIDATES,
+    ]) {
+      const config = drill.targets.trackingTrajectory;
+      if (config?.kind !== 'band-limited-2d-v1') throw new Error('expected band-limited-2d-v1');
+      const trajectory = createTrackingTrajectory(config);
+      const out = { yawDeg: 0, pitchDeg: 0, yawVelocityDegPerSec: 0, pitchVelocityDegPerSec: 0 };
+      const tickCount = Math.round((config.durationMs / 1000) * SIM_HZ);
+      // Measure on the axis that is actually driven (calibration suppresses one axis on purpose).
+      const useYaw = config.yawBoundDeg >= config.pitchBoundDeg;
+      let sumSquares = 0;
+      let maxAbsDeg = 0;
+      for (let i = 0; i < tickCount; i++) {
+        trajectory.sample(i / SIM_HZ, out);
+        const velocity = useYaw ? out.yawVelocityDegPerSec : out.pitchVelocityDegPerSec;
+        sumSquares += velocity * velocity;
+        maxAbsDeg = Math.max(maxAbsDeg, Math.abs(useYaw ? out.yawDeg : out.pitchDeg));
+      }
+      const deliveredRms = Math.sqrt(sumSquares / tickCount);
+      expect(deliveredRms / config.targetRmsSpeedDegPerSec, `${drill.drillId} delivered/nominal`).toBeGreaterThan(0.9);
+      expect(deliveredRms / config.targetRmsSpeedDegPerSec, `${drill.drillId} delivered/nominal`).toBeLessThan(1.1);
+      // Vertical headroom: the target must stay above the floor and inside the vertical FOV.
+      expect(maxAbsDeg, `${drill.drillId} max excursion`).toBeLessThan(20);
+    }
+
+    // Amplitude is shared, so speed is the only dynamic difference across the matrix.
+    const amplitudes = new Set(
+      TRACKING_CORE_PR_PILOT_V1_CANDIDATES.map((d) => {
+        const t = d.targets.trackingTrajectory;
+        if (t?.kind !== 'band-limited-2d-v1') throw new Error('expected band-limited-2d-v1');
+        return `${t.yawBoundDeg}/${t.pitchBoundDeg}`;
+      }),
+    );
+    expect(amplitudes.size).toBe(1);
+  });
+
+  it('fails fast when a config requests a speed its amplitude/band cannot deliver (KI-020)', () => {
+    const base = TRACKING_CORE_PR_PILOT_V1_CANDIDATES[0].targets.trackingTrajectory;
+    if (base?.kind !== 'band-limited-2d-v1') throw new Error('expected band-limited-2d-v1');
+    expect(() => createTrackingTrajectory({ ...base, yawBoundDeg: 2, pitchBoundDeg: 2 })).toThrow(
+      /cannot deliver targetRmsSpeedDegPerSec/,
+    );
   });
 
   it('every trackingTrajectory seed is distinct (no two blocks share an RNG stream)', () => {

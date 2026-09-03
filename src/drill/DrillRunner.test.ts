@@ -422,8 +422,10 @@ describe('DrillRunner — protocolGuard（WP-54 / T2）', () => {
     kind: 'band-limited-2d-v1',
     seed: 7,
     durationMs: 25000,
-    yawBoundDeg: 2,
-    pitchBoundDeg: 2,
+    // KI-020: the amplitude must be able to deliver the requested RMS speed (the generator now
+    // rejects configs where it cannot) — ±2° could only deliver 0.84deg/s on this band.
+    yawBoundDeg: 16,
+    pitchBoundDeg: 16,
     targetRmsSpeedDegPerSec: 5,
     frequencyBandHz: [0.1, 0.7],
   };

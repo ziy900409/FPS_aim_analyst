@@ -18,14 +18,17 @@ function sampleAt(config: TrackingTrajectoryConfig, ageSec: number): TrackingTra
   return out;
 }
 
+/** KI-020: the requested speed must be deliverable inside the amplitude/band (the generator now
+ * rejects configs where it is not). At the previous `[0.1, 0.6]`Hz band, ±8° could only deliver
+ * 3.21deg/s — yet this fixture asked for 10, which is precisely the mismatch that shipped. */
 const BAND_LIMITED_BASE: Extract<TrackingTrajectoryConfig, { kind: 'band-limited-2d-v1' }> = {
   kind: 'band-limited-2d-v1',
   seed: 12345,
   durationMs: 60_000,
   yawBoundDeg: 8,
   pitchBoundDeg: 6,
-  targetRmsSpeedDegPerSec: 10,
-  frequencyBandHz: [0.1, 0.6],
+  targetRmsSpeedDegPerSec: 7,
+  frequencyBandHz: [0.3, 2.1],
 };
 
 const REVERSAL_BASE: Extract<TrackingTrajectoryConfig, { kind: 'reversal-2d-v1' }> = {
@@ -63,12 +66,23 @@ describe('createTrackingTrajectory — band-limited-2d-v1', () => {
       count += 1;
     }
     const rms = Math.sqrt(sumSquaredYawVel / count);
-    // Bound safety may have scaled speed down for this config's bound/band combination, so this
-    // only asserts the achieved RMS is within a reasonable band of what a bound-unconstrained fit
-    // would target, not an exact match (README §2.5 "primary" is an achieved-statistic, not a
-    // guaranteed set-point).
-    expect(rms).toBeGreaterThan(0.5);
+    // KI-020 regression. This assertion previously read `rms > 0.5` with a comment accepting that
+    // "bound safety may have scaled speed down" — which is exactly how a config asking for
+    // 20deg/s and delivering 1.18deg/s passed its tests and shipped. Now that an undeliverable
+    // config fails fast at construction, a constructed trajectory must actually hit its set-point.
+    expect(rms / BAND_LIMITED_BASE.targetRmsSpeedDegPerSec).toBeGreaterThan(0.9);
     expect(rms).toBeLessThanOrEqual(BAND_LIMITED_BASE.targetRmsSpeedDegPerSec + 1e-6);
+  });
+
+  it('fails fast when the requested speed cannot fit the amplitude/band (KI-020)', () => {
+    // The generator must refuse rather than silently clamp: the clamped value would then be
+    // reported in export metadata as though it had been delivered.
+    expect(() => createTrackingTrajectory({ ...BAND_LIMITED_BASE, yawBoundDeg: 1 })).toThrow(
+      /cannot deliver targetRmsSpeedDegPerSec/,
+    );
+    // A deliberately suppressed axis (axis-calibration's off-axis) stays exempt — its whole job is
+    // to be near-static.
+    expect(() => createTrackingTrajectory({ ...BAND_LIMITED_BASE, pitchBoundDeg: 0.1 })).not.toThrow();
   });
 
   it('is a pure function of age — independent of sampling cadence (60/120/240 Hz pump equivalence)', () => {
