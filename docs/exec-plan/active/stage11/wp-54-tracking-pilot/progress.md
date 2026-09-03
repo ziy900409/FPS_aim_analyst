@@ -2,11 +2,31 @@
 
 ## Status
 
-- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A 第三輪 = 無 defect,判定待研究者決定**（2026-09-03，P04 session-0 + P05 session-1，G3 刺激，見 [T6-instrumentation-gate.md §12](T6-instrumentation-gate.md)）。四層對帳全部成立、8 個 scored 條件皆 `eligible=2`、KI-023 的速度修正確實被交付（交付/宣稱 0.989–1.017，且 21/21 payload 與現行程式重建的刺激逐位一致）；**三輪來第一次沒有缺陷需要修**。尚未 GO 的原因是 §6 份量（只有 2 位 tester、各一個 session）與 0.5° 主觀項未回報 ⇒ [OQ-54-12](#open-questions) / gate §12.6。第二輪（P03）記錄見 §11、第一輪（P01）見 §10。以下為第二輪當時的敘述——資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`；slice 12-15 為第二輪重跑基線、gate §11 帳本與 KI-022/KI-023 修復。第三輪重跑所用的基線 = `f191642`（gate §8）。
+- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A 第三輪 = 無 instrumentation defect,但判定被 [OQ-54-14](#open-questions) 阻塞**（2026-09-03，P04 session-0 + P05 session-1，G3 刺激，見 [T6-instrumentation-gate.md §12](T6-instrumentation-gate.md)）。**關鍵發現(§12.8)**：band-limited 核心矩陣的 5 deg/s 家族與兩個 axis calibration block,ε 的動態範圍只有 0.75°、真人離「完全不動」只有 10–25% ⇒ **測不出跟槍能力**;reversal 家族則正常(比值 2.1–3.3)。根因是刺激幾何(行程 ≈ speed / 2πf,預註冊頻帶下 5 deg/s 必然行程過小),屬預註冊參數 ⇒ 研究決策。四層對帳全部成立、8 個 scored 條件皆 `eligible=2`、KI-023 的速度修正確實被交付（交付/宣稱 0.989–1.017，且 21/21 payload 與現行程式重建的刺激逐位一致）；**三輪來第一次沒有缺陷需要修**。尚未 GO 的原因是 §6 份量（只有 2 位 tester、各一個 session）與 0.5° 主觀項未回報 ⇒ [OQ-54-12](#open-questions) / gate §12.6。第二輪（P03）記錄見 §11、第一輪（P01）見 §10。以下為第二輪當時的敘述——資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`；slice 12-15 為第二輪重跑基線、gate §11 帳本與 KI-022/KI-023 修復。第三輪重跑所用的基線 = `f191642`（gate §8）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-03 — T6 slice 19：0.5° 主觀回報的客觀對照（gate §12.8，docs-only）
+
+- **操作員回報**：修正後的 5 / 20 deg/s 下 0.5° 目標仍「幾乎看不見/只能猜」,**連兩個單軸
+  calibration block 也看不見**。這句話直接碰到 §9 的 stop 例句,所以先做客觀對照再落判。
+- **先排除渲染側尺寸 bug**：`TargetView` 用單位 geometry(box 1×1×1 / **sphere 半徑 0.5 ⇒ 直徑 1**)
+  再以 `mesh.scale` 套 `hitbox` 尺寸,與 raycast 同一來源;pilot config 沒有 `visualSize` 覆寫
+  ⇒ **沒有 radius/diameter 混用**,0.5° cell 的目標確實是 0.5°(4 u 距離、75° FOV、1274 CSS px 高
+  ⇒ 約 8–9 CSS px)。所以「看不見」不是渲染尺寸 bug。
+- **客觀對照(決定性)**：把準心凍結在受測者自己的 aim 中位數(對看不見目標的人是最好的「不動」
+  策略)重算 ε ⇒ **5 deg/s 家族與兩個 calibration 的「完全不動」RMS ε 只有 0.75°,真人 0.61–0.72°,
+  比值 1.05–1.25**;20 deg/s 為 1.38–1.49;**reversal 2.08–3.26**。⇒ band-limited 核心矩陣的慢速
+  條件**測不出跟槍能力**,reversal 家族才測得到。
+- **根因是刺激幾何而非儀器**：行程 ≈ speed / 2πf,預註冊頻帶 [0.3, 2.1] Hz 下 5 deg/s 必然只走
+  ±0.4–2.7°。要「慢又走得遠」必須降頻帶下限 ⇒ 預註冊參數 ⇒ 研究決策（**OQ-54-14**，阻塞判定）。
+- **帳本更正**：本輪初稿曾用 calibration 的 TOT 6.6–10.5% 與 `tAcquireMs ≤ 328 ms` 推論「受測者顯然
+  看得見並跟得上」——**該推論錯誤**,它把「不動」基線按 ±3.7° 掃幅估成 2.6° RMS,但 5 deg/s cell
+  實際掃幅只有 ±2.2°、凍結準心 RMS 僅 0.75°。已在 gate §12.8 標注更正。
+- **順帶釐清 TOT 的可解讀性**：`2deg_5dps` 與 `0p5deg_5dps` 的 RMS ε 幾乎相同(0.62–0.72°),
+  TOT 卻 43–49% vs 2.5–4.5% ⇒ 這些 cell 的 TOT 幾乎全由 hitbox 尺寸決定,不宜當能力指標(C-D3)。
 
 ### 2026-09-03 — T6 slice 18：兩個研究決策落地（OQ-54-12 / OQ-54-13，docs-only）
 
@@ -1174,6 +1194,16 @@
 
 ## Open Questions
 
+- **OQ-54-14（T6 slice 19 提出，待使用者決定）🔴 阻塞 Gate A 判定**：操作員回報 0.5° 目標在修正後的
+  速度下仍「幾乎看不見/只能猜」,**連兩個單軸 calibration block 也看不見**。客觀對照(gate §12.8)
+  證實這不只是主觀感受:把準心凍結在受測者自己的 aim 中位數上重算 ε,**5 deg/s 家族與兩個
+  calibration block 的「完全不動」RMS ε 只有 0.75°,真人是 0.61–0.72°(比值 1.05–1.25)**
+  ⇒ 這些條件**測不出跟槍能力**。根因是刺激幾何:`band-limited-2d-v1` 的行程 ≈ speed / 2πf,在預註冊
+  的 `frequencyBandHz [0.3, 2.1]` 下 5 deg/s 必然只能走 ±0.4–2.7°;**要「慢又走得遠」必須降低頻帶
+  下限**——速度與頻帶都是預註冊參數 ⇒ 研究決策。reversal 家族不受影響(比值 2.1–3.3)。
+  選項:(a) 降低頻帶下限重新參數化 + 第四輪重跑;(b) 以 stop 結案並記錄效度發現;(c) 保留條件但
+  在報告層標注「5 deg/s cell 不作為能力指標」(C-D3 紅線的邊緣)。**不得放大目標(§10.5)、
+  不得偷偷淘汰條件(§6)。**
 - **OQ-54-12（T6 slice 16 提出，slice 18 已決）✅**：使用者決定 **以 2 位 tester × 各一個 session
   結案**（不補到 §6 原文的 3–5 位）。理由:Gate A 問儀器而非樣本量(README §5),儀器面可檢驗的每一項
   都已通過,且 8 個 scored 條件皆 `eligible=2`。**遺留代價已入帳**:21 份 payload 全來自同一台
