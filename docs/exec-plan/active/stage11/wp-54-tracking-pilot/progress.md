@@ -8,6 +8,36 @@
 
 ## Progress
 
+### 2026-09-03 — T7 slice 5：Gate B 判準全部凍結（`T7-difficulty-calibration-gate.md`，docs-only）
+
+- **README §5 的硬約束**：「Gate B/C 的 protocol threshold 必須在收資料前凍結」。本 slice 就是那份
+  凍結，寫於**任何 T7 真人資料之前**。後續變更一律以新 protocol version + decision row 表達。
+- **使用者拍板的 4 個新判準（2026-09-03）**：
+  - **B-2 ceiling/floor** = **TOT + 受測者間散度雙條件**。ceiling：median TOT < 80% **且**
+    受測者間 CV ≥ 15%；floor：acquisition failure < 20% 的 run **且** median TOT > 5%。
+    雙條件才能同時抵擋「大家都滿分」與「大家分數不同但差異全是雜訊」——後者正是 §12.8 的失效模式。
+  - **B-3b seed equivalence** = **全員跑 family A，其中 6–8 人加跑 family B**，以那 6–8 人的成對
+    within-subject 差判定（避開 between-subject 個體差異污染）。判準 `|median 成對差| ≤ 10%`
+    且 TOST 等效界 ±15%。主分析用 family A ⇒ 每 cell 12–20 份，輕鬆過 ≥ 10 份門檻。
+  - **B-3c time-on-task slope** = 前 5 s vs 後 5 s 的 RMS ε，`|Δ| ≤ 20%`。超出只記「25 s 需調整」
+    並提建議值，**不自動改**（D-54.4 是凍結值）。
+  - **remove 規則**：只未過比值 ≥ 2.0 的 cell ⇒ **從能力指標集 remove，但保留為 diagnostic block**
+    （不進教練報告、不進聚合，C-D3；仍施測並留資料）。**兩個 axis calibration 預期永遠落在此類**
+    ——它們本來就是可辨識度診斷而非能力 cell。
+- **已凍結的完整清單**見 gate §2：§2.1 是上游已凍結、本 gate 沿用的 9 項（12–20 人、25 s、
+  primary = RMS ε、交付速度 0.95–1.05 不得放寬、每 cell ≥ 10 份 …）；§2.2 是本 gate 新凍結的
+  8 條判準（B-1 比值 ≥ 2.0、B-2a/b、B-3a/b/c、B-4）；**§2.3 是逐 cell 的 retained/revise/remove
+  決策規則**（含「份量不足 ⇒ 不判定，不得以 < 10 份宣告 retained」）；§2.4 是 go/revise/stop。
+- **招募前乾跑寫成凍結的前置**（gate §3）：操作員自己跑 4 個 block、四項檢查全過才招募；
+  乾跑資料**不計入 Gate B 證據**。附 G4 的離線預測值表供對照。
+- **0.5° 可辨識度必須重新回報**（gate §6）：T6 的「看不見」是在**實為 0.25°** 的刺激下取得的
+  （KI-024），**該回報不適用於 G4**。這一項在 T6 是 `[-]`，在 T7 重新開始。
+- **runbook 新增「現在該做什麼」開頭節**：乾跑優先、seed 家族分配、刷新率覆蓋、
+  以及「條件標籤已改為 `..._14dps`、2026-09-03 之前的資料一律不可合併」的警示。
+- **README §1.4 OQ-54-2 更新**：size 兩個候選值 retained；speed revise 為 5/14 且頻帶改
+  `[0.15,1.05]`；並註明 KI-024 之前所有角度只交付一半。
+- **未動 production code。**
+
 ### 2026-09-03 — T7 slice 4：核心矩陣再參數化（頻帶 `[0.15,1.05]` + 快速候選值 20 → 14 deg/s）
 
 - **使用者決策（OQ-54-14 落地）**：頻帶 `[0.3, 2.1]` → **`[0.15, 1.05]` Hz**；並在量測揭露衝突後

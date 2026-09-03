@@ -4,6 +4,25 @@
 > 操作員。上游概念文件：[analysis-tracking.md](analysis-tracking.md)（P0/P1 公式、eligibility/
 > compatibility/evidence 契約）、[../exec-plan/active/stage11/wp-54-tracking-pilot/README.md](../exec-plan/active/stage11/wp-54-tracking-pilot/README.md)（需求/介面契約）。
 
+## 現在該做什麼（2026-09-03，T7 開工後）
+
+> Gate A 已結案（部分通過）。**現在的階段是 T7 難度校準（Gate B）**，判準已凍結於
+> [T7-difficulty-calibration-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T7-difficulty-calibration-gate.md) §2。
+
+1. **先做乾跑，不要先招募**（gate §3，使用者 2026-09-03 決定）：操作員自己跑 `practice` +
+   `2deg_5dps` + `0p5deg_14dps` + `reversal_medium`（約 5 分鐘），跑分析後確認四項：`atEye` 的
+   `dist ≈ 4.00u` 且 `rmsSpeed` 95–105%、`fidelity=match`、**`discriminability ratio ≥ 2.0`**、
+   覆蓋率 ≥ 99.5%。**任一項不成立就不要招募**——三輪 Gate A 已因刺激問題作廢三批真人資料。
+2. **招募 12–20 人**（gate §4）：**全員 `Session index = 0`**；其中 **6–8 人另跑一次
+   `Session index = 1`**（seed 家族等效性需要成對資料）。
+3. **刻意涵蓋不同顯示器**：T6 的 21 份 payload 全來自同一台 60 Hz / 3840×2160 / Edge 151 機器，
+   刷新率至今沒有第二種驗證過。請至少涵蓋 **2 種刷新率**並記在紀錄裡。
+4. **條件標籤已改**（G4 刺激）：core matrix 的快速 cell 現在是 **`..._14dps`**（不是 `20dps`），
+   頻帶降為 `[0.15, 1.05]` Hz。**2026-09-03 之前錄的所有資料都不可與現在的合併**——在那之前
+   `field-low` 的 camera 沒有錨定在 sim origin，受測者實際看到的每個角度量都只有宣稱值的一半
+   （[KI-024](../known_issue/KI-024-field-low-eye-not-anchored-halves-delivered-angles.md)）。
+   舊資料裡「0.5°」的目標其實是 0.25°，「20 deg/s」其實是 10。
+
 ## 現況（2026-09-03，T6 工程面完成後）
 
 T5 交付了 manifest、researcher-only runner 與 operator screen 三個**機制**；**T6 slice 1-3 已把它們

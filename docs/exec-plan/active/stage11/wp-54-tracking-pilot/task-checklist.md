@@ -211,6 +211,11 @@
 
 ### T7 工程 slice（已 commit）
 
+- [x] **slice 5**：[T7-difficulty-calibration-gate.md](T7-difficulty-calibration-gate.md)
+      —— **Gate B 全部判準在收資料前凍結**（README §5）。§2.2 的 8 條判準（B-1 凍結準心比值 ≥ 2.0、
+      B-2a ceiling、B-2b floor、B-3a size×speed 方向、B-3b seed 等效、B-3c TOT slope、B-4 ≥ 10 份）
+      + §2.3 逐 cell retained/revise/remove 規則 + §2.4 go/revise/stop + **§3 招募前乾跑（凍結為
+      前置）**。runbook 新增「現在該做什麼」節；README §1.4 OQ-54-2 更新。未動 production code。
 - [x] **slice 4**：核心矩陣再參數化——頻帶 `[0.3,2.1]` → **`[0.15,1.05]` Hz**（OQ-54-14）＋
       core 快速候選值 **20 → 14 deg/s**（OQ-54-15 revise：`[0.15,1.05]` 下的 20 deg/s 會讓
       `0p5deg_20dps` 沉到地面下 y=−0.01）＋ `TRAVEL_AMPLITUDE_DEG` 23→16。實測交付（G4，眼睛所見）
@@ -233,8 +238,13 @@
 
 ### T7 gate 項
 
-- [ ] 依 T0 preregistered protocol 招募 12-20 位不同 tracking 程度受測者。
-- [ ] 分析 easy ceiling、hard acquisition floor、0.5 deg pixel/aliasing floor。
+- [x] **判準在收資料前凍結**（[T7 gate](T7-difficulty-calibration-gate.md) §2，2026-09-03，README §5）。
+- [ ] **招募前乾跑**（gate §3）：操作員 4 個 block，`atEye` 95–105% / `fidelity=match` /
+      **比值 ≥ 2.0** / 覆蓋率 ≥ 99.5% 四項全過才招募。
+- [ ] 依 T0 preregistered protocol 招募 12-20 位不同 tracking 程度受測者（全員 family A，
+      6–8 人加跑 family B；**涵蓋 ≥ 2 種顯示器刷新率**——T6 的覆蓋缺口）。
+- [ ] 分析 easy ceiling、hard acquisition floor、0.5 deg pixel/aliasing floor
+      （**0.5° 可辨識度須在 G4 下重新回報**——T6 的「看不見」是實為 0.25° 的刺激，KI-024）。
 - [ ] 分析 seed equivalence、size x speed effect、block time slope。
 - [ ] 每個 retained cell 至少 10 份 eligible runs。
 - [ ] 依 preregistered rules 輸出 retained/revise/remove decision，不覆寫 v1 protocol。
