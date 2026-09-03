@@ -566,8 +566,17 @@ block,ε 的動態範圍只有 0.75°,真人成績離「完全不動」只有 10
   但速度與頻帶都是**預註冊參數** ⇒ 屬研究決策,不由 agent 拍板。
 - **reversal 家族不受影響**(比值 2.1–3.3),是第三輪唯一確定有效的家族。
 
-⇒ **判定待研究者決定**,選項見 [OQ-54-14](progress.md#open-questions)。**依 §10.5 與 §6 的預先
-約定,不放大目標、也不在此偷偷淘汰條件。**
+⇒ **判定(使用者 2026-09-03,[OQ-54-14](progress.md#open-questions)):🟡 部分通過。**
+
+| 範圍 | 判定 |
+|---|---|
+| **資料鏈路(儀器)** | ✅ **PASS** —— §12.2 四層對帳全綠、§12.3 刺激逐位符合宣稱、無 instrumentation defect |
+| **reversal 家族** | ✅ **PASS** —— 凍結準心比值 2.08–3.26,測得到跟槍 |
+| **band-limited 核心矩陣** | 🔴 **未通過效度,退回 T7 重新參數化** —— 量化目標 = 凍結準心比值(錨點見 §12.8);幾何約束與交接項寫入 [task-checklist.md T7 段](task-checklist.md) |
+
+**⇒ T7 可開工**(難度校準,12–20 人)。理由:不必燒一輪盲猜的重跑;reversal 已取得的有效證據不該被
+整體 stop 連帶否定;C-D3 亦要求測不準的指標不得進教練報告。**依 §10.5 與 §6 的預先約定,不放大
+目標、也不在此偷偷淘汰條件**——0.5° 的不可辨識照實作為 T7 的 floor 輸入。
 
 **分析出處**:`a786e4b`(分析器自 `922672f` 起未變);刺激基線 `f191642`(KI-023 落地於 `690998c`)。
 **環境**(取自 payload meta):Edge 151.0.0.0、WebGPU、`crossOriginIsolated: true`、`displayHz` 60、
@@ -584,7 +593,8 @@ scene `field-low`。每份匯出仍帶 `suspect: true` / `validity.perfFloor: tr
 
 **🔴 REVISE（第二輪，2026-09-03，P03）。** 見 §11。資料鏈路第二次成立（覆蓋率、event 對表 36/36 與 59/59、追溯、parity、practice 排除，且新涵蓋 retry 流程與 sphere 幾何）；TOT 已離開 100%（0.3–34.6%）⇒ hitbox 生效。新缺陷兩個：[KI-022](../../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) ✅ 已修；[KI-023](../../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md) ✅ 已修（交付速度是每軸量、兩軸 cell 超交付 √2 倍；研究者選定 **Option A** 改 2D 語意並含 reversal 家族，commit `690998c`，落地數字見 §11.6）。**下一輪只缺資料**：9 個 block 第三輪重跑（§11.7）。
 
-**🟡 第三輪（2026-09-03，P04 session-0 + P05 session-1，G3 刺激）：無 defect,判定待研究者決定。**
+**🟡 第三輪（2026-09-03，P04 session-0 + P05 session-1，G3 刺激）：部分通過 —— 資料鏈路與 reversal
+家族 PASS(⇒ T7 可開工),band-limited 核心矩陣退回 T7 重新參數化。**
 見 §12。四層對帳全部成立(schema 21/21、覆蓋率 ≈100%、event 對表 58/58・29/29・55/55・42/42
 `mismatched=0`、parity ok、8 個 scored 條件皆 `eligible=2`);**KI-023 的修正確實被交付**——交付/宣稱
 每 cell 落在 0.9–1.1(重建量法 99–102%,錄到的位置反推 0.989–1.017,且 21/21 payload 與現行程式重建

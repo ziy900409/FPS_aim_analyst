@@ -12,7 +12,7 @@
 | [x] | **T3** Canonical P0/P1 metrics/truth fixtures | 推導 acquisition、RMS/TOT、lag/gain、drop/reacquire、reversal response | T2 | High |
 | [x] | **T4** Eligibility/evidence/report | 建立 quality reason vocabulary、compatibility、deterministic JSON/HTML evidence | T3 | High |
 | [x] | **T5** Researcher manifest/operator flow | 支援 counterbalance、rest、retry reason、session index 與 keyboard flow | T2/T4 | Med |
-| [-] | **T6** Instrumentation pilot | 以 synthetic + 3-5 tester runs 驗證 motion/event/export/report traceability | T1-T5 | High |
+| [x] | **T6** Instrumentation pilot | 以 synthetic + 3-5 tester runs 驗證 motion/event/export/report traceability | T1-T5 | High |
 | [ ] | **T7** Difficulty calibration pilot | 以 12-20 人校準 floor/ceiling、seed、visibility、time-on-task | T6 PASS | High |
 | [ ] | **T8** Repeatability/validity pilot | 以兩次 session 驗證 ICC、CV/SEM、Bland-Altman、alternate seed equivalence | T7 PASS + OQ-54-5/6 frozen | High |
 | [ ] | **T-exit** M20 evidence audit/handoff | 審核全需求追溯、evidence、docs、manual gate 與 go/revise/stop | T6 PASS、T7 PASS、T8 formal conclusion | Med |
@@ -115,31 +115,42 @@
 
 ## T6 — Instrumentation pilot
 
-> **Gate A = REVISE（2026-09-03）**。第一份真人資料（P01 × 1 場、9 個 block）證明資料鏈路成立
-> （schema/覆蓋率/事件對表/追溯/報告 parity 全過），但刺激有 3 個缺陷——**全部已修**
-> （[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)
-> F-A1+F-A2、run-level protocol-violation 閘門、
-> [KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)
-> size/speed 再參數化），四個研究決策也已落地。**唯一待辦 = 9 個 block 全部重跑**（三家族刺激都
-> 變了，P01 資料作廢）。完整對帳見 [T6-instrumentation-gate.md §10](T6-instrumentation-gate.md)。
+> **Gate A = 部分通過（2026-09-03，第三輪 P04+P05，使用者決定）**。
+> **通過的部分**：資料鏈路（四層對帳全綠、8 個 scored 條件皆 `eligible=2`、刺激逐位符合宣稱）
+> 與 **reversal 家族**（凍結準心比值 2.1–3.3 ⇒ 測得到跟槍）⇒ **T7 可開工**。
+> **退回 T7 的部分**：**band-limited 核心矩陣**——慢速（5 deg/s）三個 cell 與兩個 axis calibration
+> block 的 ε 動態範圍只有 0.75°、真人離「完全不動」僅 10–25%（比值 1.05–1.25）⇒ **測不出跟槍
+> 能力**，須以「凍結準心比值」為量化目標重新參數化（[OQ-54-14](progress.md#open-questions)）。
+> 三輪歷程：§10（第一輪 P01，REVISE）→ §11（第二輪 P03，REVISE）→ **§12（第三輪，本判定）**，
+> 見 [T6-instrumentation-gate.md](T6-instrumentation-gate.md)。第三輪**無 instrumentation defect**
+> （三輪來第一次）。
 
-- [-] 3-5 位內部/熟練 tester，每條件至少 2 次。（P01 × 1 場已收；**份量未達標，但阻塞點是刺激缺陷
-      而非人數**——決策落地前再收人只會得到更多量錯條件的資料，見 README §5）
-- [-] 驗證 trajectory 連續性、bounds、event 對表、angular size/speed round-trip。（連續性/bounds/
-      決定性/event 對表 ✅（真人資料 `mismatched=0`）；**angular size/speed round-trip ❌** ——
-      metadata 可 round-trip 但宣稱值從未被交付（KI-020：5 vs 20 deg/s 實測 1.21 vs 1.18；size 是
-      行程振幅、目標角尺寸未被操弄），待研究決策後重跑）
-- [x] 驗證 quality flags、export metadata 與 report traceability。（真人資料實測全過：9/9 通過
-      schema v2、覆蓋率 ≈100%、`meta.session` 追溯完整、9 seed 互不重複、practice 被排除、
-      HTML/JSON parity 逐位相同；並抓到 protocol-violation 閘門缺口並修補，見 gate 文件 §10.2）
-- [-] 任何 defect 先最小化、補 regression fixture，再重跑 affected conditions。（已修 5 個，各自
-      commit + regression test：main.ts boot-window TDZ、operator overlay restore 清掉 outcome
-      面板、practice 進入 scored aggregation、KI-019 F-A1 reversal 排程退化、run-level
-      protocol-violation 閘門。**待重跑**：全部 9 個 block（KI-019 F-A2 / KI-020 決策落地後））
+- [x] 3-5 位內部/熟練 tester，每條件至少 2 次。（**每條件 ≥ 2 份可用 run ✅**：第三輪 P04 s0 +
+      P05 s1 合併後 8 個 scored 條件皆 `eligible=2`。**tester 人數 2 位 < §6 的 3–5 位**，使用者
+      決定以此結案並記錄理由（[OQ-54-12](progress.md#open-questions)）;遺留代價 = 21 份 payload
+      全來自同一台 60 Hz / 3840×2160 / Edge 151 機器，`displayRefreshHz` 至今無第二種刷新率驗證，
+      跨面板覆蓋留 T7）
+- [x] 驗證 trajectory 連續性、bounds、event 對表、angular size/speed round-trip。（**第三輪全過**：
+      event 對表 58/58・29/29・55/55・42/42 `mismatched=0`；**speed 終於被交付**——交付/宣稱
+      0.989–1.017（KI-023 落地後，重建量法與錄到的位置反推兩種算法一致）；size 以 sphere hitbox
+      交付且 `widthU` round-trip。新增 layer 3b **刺激保真度**：21/21 payload 與現行程式重建的刺激
+      逐位一致（≤ 8.9e-16 u），套回作廢的 P03（G2）批次則 11 份中 8 份被判 mismatch）
+- [x] 驗證 quality flags、export metadata 與 report traceability。（第一輪已全過；**第三輪再次
+      成立**：21/21 schema v2、覆蓋率 3202–3203 ticks / 25008–25016 ms、`meta.session` 追溯完整、
+      practice 排除、HTML/JSON parity ok ×3；3 個 `protocol-violation` 被閘門正確擋下且 retry 合格）
+- [x] 任何 defect 先最小化、補 regression fixture，再重跑 affected conditions。（累計已修 7 個，
+      各自 commit + regression test：main.ts boot-window TDZ、operator overlay restore、practice
+      進入 scored aggregation、KI-019 F-A1、run-level protocol-violation 閘門、
+      [KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、
+      [KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)。
+      **第三輪無新 defect**——三輪來第一次）
+- [-] 0.5° 條件在真實顯示器上可辨識。（**❌ 不可辨識,連兩個單軸 calibration 也看不見**（操作員
+      2026-09-03 回報，修正後的 5 / 20 deg/s 下）。依 §10.5/§6 **不放大目標、不偷偷淘汰條件**，
+      照實留檔;客觀對照見 gate §12.8 ⇒ 這是核心矩陣退回 T7 的直接證據）
 - [x] 產出 `instrumentation-gate-v1` evidence，含資料版本、分析版本、環境與 go/revise/stop。
-      （[T6-instrumentation-gate.md](T6-instrumentation-gate.md) §10：資料版本 P01/2026-09-03、
-      分析版本 HEAD + `scripts/analyze-tracking-pilot.ts`、環境 60Hz/WebGPU/COI true、
-      結論 **REVISE**）
+      （[T6-instrumentation-gate.md](T6-instrumentation-gate.md) §12：資料版本 P04 s0 ×10 +
+      P05 s1 ×11 / 2026-09-03、分析版本 `a786e4b`（+ layer 3b 於 `139b559`）、刺激基線 `f191642`、
+      環境 60Hz/WebGPU/COI true/Edge 151、結論 **部分通過**）
 - [x] Gate A 失敗時停止，不以更多真人樣本掩蓋。（2026-09-03 實際執行：判 revise 並停在刺激決策上，
       未要求補人；D-54.39 記錄「份量不足不是判 revise 的原因」以防後續誤讀）
 
@@ -165,8 +176,38 @@
       （OQ-54-11 / D-54.41）。
 - [x] **slice 12**：KI-021 落地後，兩個 pilot 家族的 hitbox 由 cube 改回 **sphere**（`shape:'sphere'`，
       直徑不變），並同步描述現況的文件（GD-30／D-54.42）。**這是 9-block 重跑的前置**。
+- [x] **slice 13**：第二輪（P03）批次識別與分析——批次一律以 `meta.session.participantId` 判定，
+      不信路徑/檔名配對（Downloads 內同時存在 P01/P02/P03 三批）。
+- [x] **slice 14**：Gate A 第二輪帳本（§11）+ KI-023 診斷（交付速度是每軸量）。
+- [x] **slice 15**：KI-023 落地（速度 set-point 改 2D 語意，含 reversal 家族，Option A）。
+- [x] **slice 16**：Gate A 第三輪帳本（§12，P04 + P05，G3 刺激）——四層對帳全綠、無 defect。
+- [x] **slice 17**：分析 runner 新增 **layer 3b 刺激保真度**（錄到的位置 vs 現行程式重建），
+      `scripts/trackingStimulusFidelity.ts` + 4 個回歸測試（含「metadata 相同、位置乘 √2 → mismatch」
+      這個 KI-023 類缺陷的守門案）;視線幾何由 payload 自身反解，不寫死 sim 常數（D-54.43）。
+- [x] **slice 18**：OQ-54-12（以 2 位 tester 結案）/ OQ-54-13（ADS 違規只加強 runbook 提示）落地。
+- [x] **slice 19**：0.5° 主觀回報的客觀對照（§12.8）——凍結準心比值揭露慢速 cell 測不出跟槍能力;
+      先排除渲染側 radius/diameter 混用。**這是 Gate A 部分通過判定的依據**（OQ-54-14）。
 
 ## T7 — Difficulty calibration pilot
+
+> **T6 交接進來的必辦項（Gate A 部分通過，2026-09-03）**——見
+> [T6-instrumentation-gate.md §12.8](T6-instrumentation-gate.md) 與
+> [OQ-54-14](progress.md#open-questions)：
+>
+> - **band-limited 核心矩陣須重新參數化**，量化目標 = **凍結準心比值**（把準心凍結在受測者自己的
+>   aim 中位數，重算 ε(t) 的 RMS ÷ 實際 RMS ε）。這是「這個條件能不能分辨會跟槍與不跟槍」的上界。
+>   **實測錨點**：reversal 家族 **2.08–3.26**（有效）;20 deg/s cell 1.38–1.49;5 deg/s 三個 cell 與
+>   兩個 axis calibration **1.05–1.25（無效）**。**閾值本身尚未凍結**，屬 T7 的預註冊決定。
+> - **幾何約束**：`band-limited-2d-v1` 的行程 ≈ speed / 2πf ⇒ 在預註冊頻帶 [0.3, 2.1] Hz 下
+>   5 deg/s 必然只能走 ±0.4–2.7°。**「慢又走得遠」必須降低頻帶下限**（代價：25 s block 內週期數
+>   變少，任務性質往「緩慢漂移」偏移）。速度與頻帶皆為預註冊參數，變更須走研究決策。
+> - **0.5° floor 證據**：操作員回報 0.5° 目標在 5 / 20 deg/s 下皆「幾乎看不見/只能猜」，**連單軸
+>   calibration 也看不見**。依 §10.5 未放大目標，照實作為 T7 的 floor 輸入。
+> - **跨面板覆蓋**：T6 的 21 份 payload 全來自同一台 60 Hz / 3840×2160 / Edge 151 機器，
+>   `displayRefreshHz`（D-54.41）至今無第二種刷新率驗證 ⇒ T7 招募時應涵蓋不同刷新率/解析度。
+> - **T7 前不應放寬的帶寬**：交付速度 0.95–1.05（KI-023）、`stimulusCheck()` 的量法。
+> - **可考慮的工具化**：凍結準心比值目前是一次性探測腳本;若 T7 要拿它當設計目標，建議比照
+>   slice 17 升成 `scripts/` 純函式 + 回歸測試再用。
 
 - [ ] 依 T0 preregistered protocol 招募 12-20 位不同 tracking 程度受測者。
 - [ ] 分析 easy ceiling、hard acquisition floor、0.5 deg pixel/aliasing floor。

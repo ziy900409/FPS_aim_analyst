@@ -2,11 +2,22 @@
 
 ## Status
 
-- **Current**：✅ T0～T5 完成（2026-09-02）；T6 **Gate A 第三輪 = 無 instrumentation defect,但判定被 [OQ-54-14](#open-questions) 阻塞**（2026-09-03，P04 session-0 + P05 session-1，G3 刺激，見 [T6-instrumentation-gate.md §12](T6-instrumentation-gate.md)）。**關鍵發現(§12.8)**：band-limited 核心矩陣的 5 deg/s 家族與兩個 axis calibration block,ε 的動態範圍只有 0.75°、真人離「完全不動」只有 10–25% ⇒ **測不出跟槍能力**;reversal 家族則正常(比值 2.1–3.3)。根因是刺激幾何(行程 ≈ speed / 2πf,預註冊頻帶下 5 deg/s 必然行程過小),屬預註冊參數 ⇒ 研究決策。四層對帳全部成立、8 個 scored 條件皆 `eligible=2`、KI-023 的速度修正確實被交付（交付/宣稱 0.989–1.017，且 21/21 payload 與現行程式重建的刺激逐位一致）；**三輪來第一次沒有缺陷需要修**。尚未 GO 的原因是 §6 份量（只有 2 位 tester、各一個 session）與 0.5° 主觀項未回報 ⇒ [OQ-54-12](#open-questions) / gate §12.6。第二輪（P03）記錄見 §11、第一輪（P01）見 §10。以下為第二輪當時的敘述——資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`；slice 12-15 為第二輪重跑基線、gate §11 帳本與 KI-022/KI-023 修復。第三輪重跑所用的基線 = `f191642`（gate §8）。
+- **Current**：✅ T0～T5 完成（2026-09-02）；**T6 完成 = Gate A 部分通過（2026-09-03，第三輪 P04 s0 + P05 s1，G3 刺激，見 [T6-instrumentation-gate.md §12](T6-instrumentation-gate.md)）⇒ T7 可開工**。判定三段:**資料鏈路 ✅ PASS**(四層對帳全綠、刺激逐位符合宣稱、三輪來第一次無 instrumentation defect)、**reversal 家族 ✅ PASS**(凍結準心比值 2.08–3.26)、**band-limited 核心矩陣 🔴 未通過效度,退回 T7 重新參數化**——5 deg/s 三個 cell 與兩個 axis calibration 的 ε 動態範圍只有 0.75°、真人離「完全不動」僅 10–25%(比值 1.05–1.25)⇒ 測不出跟槍能力(§12.8)。根因是刺激幾何(行程 ≈ speed / 2πf,預註冊頻帶 [0.3,2.1] Hz 下 5 deg/s 必然行程過小)。交接項見 [task-checklist.md T7 段](task-checklist.md)。四層對帳全部成立、8 個 scored 條件皆 `eligible=2`、KI-023 的速度修正確實被交付（交付/宣稱 0.989–1.017，且 21/21 payload 與現行程式重建的刺激逐位一致）；**三輪來第一次沒有缺陷需要修**。尚未 GO 的原因是 §6 份量（只有 2 位 tester、各一個 session）與 0.5° 主觀項未回報 ⇒ [OQ-54-12](#open-questions) / gate §12.6。第二輪（P03）記錄見 §11、第一輪（P01）見 §10。以下為第二輪當時的敘述——資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`；slice 12-15 為第二輪重跑基線、gate §11 帳本與 KI-022/KI-023 修復。第三輪重跑所用的基線 = `f191642`（gate §8）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-03 — T6 slice 20：Gate A 判定落地 = 部分通過，T7 可開工（docs-only）
+
+- **使用者決策（OQ-54-14）**：**部分通過**——資料鏈路與 reversal 家族 PASS;band-limited 核心矩陣
+  以「未通過效度」入帳並退回 T7 重新參數化。
+- **gate §12.7 / §9**：寫入三段式判定表（儀器 ✅ / reversal ✅ / 核心矩陣 🔴 退回 T7）。
+- **[task-checklist.md](task-checklist.md)**：T6 摘要列翻 `[x]`、T6 段的真人項逐項結算（0.5° 那項
+  留 `[-]` 並註明「不可辨識、依 §10.5 不放大目標、照實作為 T7 floor 輸入」）、補上 slice 13–19、
+  **T7 段新增「T6 交接進來的必辦項」**:凍結準心比值(含實測錨點與「閾值待 T7 凍結」)、
+  行程 ≈ speed/2πf 的幾何約束、0.5° floor 證據、跨面板覆蓋缺口、T7 前不得放寬的帶寬。
+- **未動 production code**。
 
 ### 2026-09-03 — T6 slice 19：0.5° 主觀回報的客觀對照（gate §12.8，docs-only）
 
@@ -1194,7 +1205,12 @@
 
 ## Open Questions
 
-- **OQ-54-14（T6 slice 19 提出，待使用者決定）🔴 阻塞 Gate A 判定**：操作員回報 0.5° 目標在修正後的
+- **OQ-54-14（T6 slice 19 提出，slice 20 已決）✅**：使用者選 **部分通過**——Gate A 就「資料鏈路」與
+  **reversal 家族**判 PASS(⇒ T7 可開工),**band-limited 核心矩陣以「未通過效度」記入帳本並退回 T7
+  重新參數化**,量化目標 = **凍結準心比值**(實測錨點:reversal 2.08–3.26 有效、5 deg/s 家族
+  1.05–1.25 無效;閾值本身留 T7 凍結)。理由:四層對帳全綠且無 instrumentation defect,不必燒一輪
+  盲猜的重跑;reversal 已取得的有效證據不該被整體 stop 連帶否定;C-D3 也要求測不準的指標不得進
+  教練報告。**未放大目標、未淘汰條件**(§10.5/§6)。以下為原始問題敘述——操作員回報 0.5° 目標在修正後的
   速度下仍「幾乎看不見/只能猜」,**連兩個單軸 calibration block 也看不見**。客觀對照(gate §12.8)
   證實這不只是主觀感受:把準心凍結在受測者自己的 aim 中位數上重算 ε,**5 deg/s 家族與兩個
   calibration block 的「完全不動」RMS ε 只有 0.75°,真人是 0.61–0.72°(比值 1.05–1.25)**

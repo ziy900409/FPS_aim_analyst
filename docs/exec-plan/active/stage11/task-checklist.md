@@ -46,8 +46,8 @@ WP-53 Definition of Done：`peek_click_transfer_v1` 是獨立正式 Assessment d
 | [x] | **T2** Pilot drill matrix/protocol guards | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T1 | High |
 | [x] | **T3** Canonical P0/P1 metrics/truth fixtures | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T2 | High |
 | [x] | **T4** Eligibility/evidence/report | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T3 | High |
-| [ ] | **T5** Researcher manifest/operator flow | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T2/T4 | Med |
-| [ ] | **T6** Instrumentation pilot | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T1-T5 | High |
+| [x] | **T5** Researcher manifest/operator flow | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T2/T4 | Med |
+| [x] | **T6** Instrumentation pilot（Gate A = 部分通過：資料鏈路 + reversal PASS，核心矩陣退回 T7） | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T1-T5 | High |
 | [ ] | **T7** Difficulty calibration pilot | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T6 PASS | High |
 | [ ] | **T8** Repeatability/validity pilot | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T7 PASS + OQ-54-5/6 frozen | High |
 | [ ] | **T-exit** M20 evidence audit/handoff | [WP-54 README §4](wp-54-tracking-pilot/README.md#4-任務拆解-task-breakdown) | T6/T7/T8 PASS | Med |
