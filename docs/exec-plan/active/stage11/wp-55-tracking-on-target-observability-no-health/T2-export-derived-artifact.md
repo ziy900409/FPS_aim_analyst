@@ -30,13 +30,13 @@
 
 ## Definition of Done
 
-- [ ] contact artifact schema 已凍結，包含 analysis/version/source/drill/schema/simHz/hitbox/sample identity。
-- [ ] deterministic JSON artifact 可由 export 產生；CSV/HTML 若在 scope 內也有欄位與 round-trip tests。
-- [ ] blocked reasons 覆蓋 unsupported schema、missing visible event、missing target telemetry、missing eye origin、invalid hitbox、no tracking drill、protocol incompatible。
-- [ ] 資料不足時輸出 blocked result，不輸出空 samples 或 0 metrics 假裝成功。
-- [ ] 同一 export 重跑 artifact byte-equivalent 或 stable deep-equal。
-- [ ] 30 秒 tracking reference export artifact generation < 500 ms，且 environment/fixture/iteration 記錄在 progress.md。
-- [ ] generation 已證明位於 export 後分析層，不進 sim/render hot path。
+- [x] contact artifact schema 已凍結，包含 analysis/version/source/drill/schema/simHz/hitbox/sample identity。
+- [x] deterministic JSON artifact 可由 export 產生；CSV/HTML 依 OQ-55-3 不列入 T2 scope，後續 Replay/report 可由同一 JSON model 投影。
+- [x] blocked reasons 覆蓋 unsupported schema、missing visible event、missing target telemetry、missing eye origin、invalid hitbox、no tracking drill、protocol incompatible。
+- [x] 資料不足時輸出 blocked result，不輸出空 samples 或 0 metrics 假裝成功。
+- [x] 同一 export 重跑 artifact byte-equivalent 或 stable deep-equal。
+- [x] 30 秒 tracking reference export artifact generation < 500 ms，且 environment/fixture/iteration 記錄在 progress.md。
+- [x] generation 已證明位於 export 後分析層，不進 sim/render hot path。
 
 ## Commit
 

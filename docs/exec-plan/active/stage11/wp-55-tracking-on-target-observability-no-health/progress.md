@@ -4,11 +4,20 @@
 
 ## Status
 
-- **Current**：🟢 T1 contact geometry contract 完成（2026-09-03）；T2 export-derived artifact 待開工。
+- **Current**：🟢 T2 export-derived artifact 完成（2026-09-03）；T3 all tracking drill coverage 待開工。
 - **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
 - **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-03 — T2 export-derived artifact complete
+
+- 新增 `src/metrics/trackingContactArtifact.ts`，定義 `tracking-contact-artifact-v1` JSON artifact schema，固定輸出 `analysisVersion`、`generatedFrom: 'export-derived'`、`sourceRunId`/`exportBasename`、`drillId`、`schemaVersion`、`simHz`、geometry provenance、`sampleCount` 與 per-tick contact samples。
+- Artifact generation 只呼叫 T1 的 `deriveTrackingContactSamples(payload)`，不修改 `DataRecorder`、raw export schema、sim loop、render loop 或 replay state；contact 仍是 export 後同步分析層。
+- Geometry provenance：hitbox source 明列 `meta.targets.hitbox` / `options.hitbox` / `default-h1`；eye origin source 明列 `explicit` / `meta` / `legacy-default`。Default path 仍 fail-closed 要求 metadata eye origin；legacy-default 只在呼叫端明確 `strictEyeOrigin: false` 時可見。
+- Traceability：未提供 `sourceRunId` 時以 `${drillId}@${startedAt}` 決定性產生；若 `startedAt` 不可解析且呼叫端也未提供 explicit source，artifact blocked `protocol-incompatible`，不偽造 run identity。
+- Blocked semantics：artifact 沿用 T1 七碼 closed vocabulary；blocked output 不含 `samples`，`sampleCount: 0` 只表示未產 sample artifact，不輸出 0 TOT、空圖表或 fake off-target timeline。
+- Determinism/perf evidence：同一 export 重跑 `serializeTrackingContactArtifact()` byte-equivalent；30 秒 synthetic tracking reference export（128 Hz、3840 ticks、perfect follower、1 iteration measured inside Vitest）通過 < 500 ms gate。Environment snapshot：Node v25.9.0、Windows 10.0.26100.0、AMD64、28 logical cores、CPU identifier `Intel64 Family 6 Model 183 Stepping 1, GenuineIntel`。
 
 ### 2026-09-03 — T1 contact geometry contract complete
 
@@ -65,6 +74,7 @@
 | D-55.2 | Contact derivation 放在 export 後分析層，不寫回 sim state | 沿用 `DataRecorder -> ExportPayload -> metrics/report` 責任切分，降低 sim/render regression 風險 | ✅ Confirmed（T0） |
 | D-55.3 | 第一版優先支援 derived artifact；產品 Replay overlay 由 T0/OQ-55-1 決定 | 離線 artifact 可先滿足研究稽核，Replay UI scope 對估時與測試面影響較大 | ✅ Confirmed（T0；offline artifact first） |
 | D-55.4 | BR/projectile tracking 同時可呈現 ballistic hit 與 aim-ray contact，但 pure tracking summary 不讀 hit count | 避免 projectile lead/travel time 被誤解為準心跟隨能力 | ✅ Confirmed（T0） |
+| D-55.5 | T2 artifact 先交付 deterministic JSON builder，不新增 CSV/HTML writer | OQ-55-3 已決定另存 deterministic derived contact JSON；CSV/HTML 不是 T2 必要條件，後續 Replay/report task 可從同一 JSON model 投影 | ✅ Confirmed（T2） |
 
 ## Open Questions
 
@@ -95,6 +105,12 @@
 | 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts` | 2 files / 19 tests passed |
 | 2026-09-03 | `npm.cmd run typecheck` | exit 0 |
 | 2026-09-03 | `npx.cmd vitest run src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T1 post-change baseline: 10 files / 50 tests passed |
+| 2026-09-03 | `mcp__codegraph__codegraph_explore` for `trackingContact`, export schema, metadata, pilot evidence and tracking derivation symbols | T2 blast radius reviewed: additive artifact consumer of `deriveTrackingContactSamples()`; no `DataRecorder`/raw export/schema/sim/render changes required |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactArtifact.test.ts` | 1 file / 7 tests passed; includes sourceRunId/export basename traceability, closed reason vocabulary, no fake samples/metrics, byte-equivalent JSON, and 30 s / 3840 tick perf gate |
+| 2026-09-03 | `npm.cmd run typecheck` | exit 0 |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContact.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingDerivation.test.ts` | T2 focused regression: 3 files / 26 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T2 + legacy tracking/BR baseline: 12 files / 66 tests passed |
+| 2026-09-03 | `graphify update .` | Executed after code changes, but generated `graphify-out` was restored/not staged because the local worktree contained unrelated uncommitted files (`scripts/analyze-tracking-pilot.ts`, `src/sim/__probe.test.ts`, `src/sim/trackingTrajectory.ts`) that graphify indexed into the manifest/graph |
 
 ## Surprises & Discoveries
 
@@ -103,3 +119,4 @@
 - T0 run found the current worktree already has unrelated `src/main.ts` and `tests/e2e/tracking-pilot-live.spec.ts`; WP-55 T0 docs intentionally avoid touching those files.
 - The named incremental implementation reference says this repo is Python/Poetry ES_analysis, but the actual workspace is TypeScript/Vitest FPS_aim_analyst. Verification therefore follows `package.json` scripts and stage11 task docs, not the stale Poetry commands in that reference.
 - T1 edge miss fixture initially used `x=0.500001` at target depth and still hit because the AABB has depth; the final outside oracle uses `x=0.58`, which clears the front slab for the default H1 box.
+- T2 environment recording via `Get-CimInstance` was denied by local Windows permissions; fallback environment snapshot uses Node/OS/.NET environment APIs and `$env:PROCESSOR_IDENTIFIER`, which is sufficient for the lightweight artifact perf gate.
