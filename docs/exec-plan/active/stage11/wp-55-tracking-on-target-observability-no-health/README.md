@@ -250,6 +250,8 @@ Error 情境：
 | **T6** | Exit gate and documentation | T1-T5 | Med | 0.5-1d | operational spec 更新；stage11 progress/checklist 更新；focused tests 與 `npm test` 綠；確認未新增 HP/damage/health bar schema/state/render contract |
 | **T-exit** | M21 evidence audit and handoff | T1-T6 | Med | 0.5d | §6 exit gate 全部成立，或以 blocked/revise 結案；handoff 明確指出 WP-54/new tracking drills 如何接入 contact contract |
 
+Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
+
 ### 4.1 Requirements traceability
 
 | Requirement | Tasks | Verification |
