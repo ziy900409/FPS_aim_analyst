@@ -195,7 +195,8 @@ scored 窗覆蓋率：`25015.625ms × 128Hz ≈ 3202` tick vs 實測 `3203` vali
 | §2/§3 自動化 + live-run 證據出處 | `aa240e4`（2026-09-03T09:38:52+02:00，T6 slice 3）——該次 focused run 與全專案基線 203 files / 1953 tests 是**當時**的數字 |
 | §10 真人資料分析出處 | `8a69fd8`（2026-09-03T10:56:42+02:00，T6 slice 7）——P01 的 9 份 payload 以此版分析器判讀 |
 | §11 第二輪分析出處 | `922672f`（2026-09-03，KI-022 修復後）——P03 的 11 份 payload 以此版分析器判讀 |
-| 重跑所用的刺激 config / 現行基線 | `daf1472`（2026-09-03T12:44:53+02:00，slice 12）——§10.4 四個決策 + KI-021/GD-30 的 cube→sphere 全部落地；`vitest` 206 files / 1995 tests passed、`tracking-pilot-live` e2e 1/1、`tsc --noEmit` exit 0 |
+| 第二輪（P03）所用的刺激 config | `daf1472`（2026-09-03T12:44:53+02:00，slice 12）——§10.4 四個決策 + KI-021/GD-30 的 cube→sphere 全部落地；`vitest` 206 files / 1995 tests passed、`tracking-pilot-live` e2e 1/1、`tsc --noEmit` exit 0。**速度為每軸語意（G2 世代）** |
+| 第三輪重跑所用的刺激 config / 現行基線 | `f191642`（2026-09-03，KI-023 Option A 落地於 `690998c` 後）——速度改 **2D 語意（G3 世代）**，交付/宣稱 1.000–1.017（§11.6）；`vitest` 207 files / 2000 tests passed（1 skipped file / 2 skipped tests）、`tsc --noEmit` 與 `-p tsconfig.node.json` 皆 exit 0、`tracking-pilot-live` e2e 1/1 |
 | Protocol version | `tracking-pilot-v1`（`TRACKING_PILOT_PROTOCOL_VERSION`） |
 | Metric version | `tracking-dynamics-v1`（`TRACKING_PILOT_EVIDENCE_METRIC_VERSION`） |
 | Trajectory versions | `band-limited-2d-v1`、`reversal-2d-v1` |
@@ -422,7 +423,7 @@ reversal leg 的 2D 巡航 31.75 > `speedMax` 30）。
 再參數化、KI-021 ＋ GD-30 的 cube→sphere），§10.4 的四個研究決策已落地並全綠。**下一輪只缺資料**：
 9 個 block 全部重跑（§10.5）後才重判 go/revise/stop。
 
-**🔴 REVISE（第二輪，2026-09-03，P03）。** 見 §11。資料鏈路第二次成立（覆蓋率、event 對表 36/36 與 59/59、追溯、parity、practice 排除，且新涵蓋 retry 流程與 sphere 幾何）；TOT 已離開 100%（0.3–34.6%）⇒ hitbox 生效。新缺陷兩個：[KI-022](../../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) ✅ 已修；[KI-023](../../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md) 🟡 交付速度是每軸量、兩軸 cell 超交付 √2 倍，**再參數化待研究決策**。
+**🔴 REVISE（第二輪，2026-09-03，P03）。** 見 §11。資料鏈路第二次成立（覆蓋率、event 對表 36/36 與 59/59、追溯、parity、practice 排除，且新涵蓋 retry 流程與 sphere 幾何）；TOT 已離開 100%（0.3–34.6%）⇒ hitbox 生效。新缺陷兩個：[KI-022](../../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) ✅ 已修；[KI-023](../../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md) ✅ 已修（交付速度是每軸量、兩軸 cell 超交付 √2 倍；研究者選定 **Option A** 改 2D 語意並含 reversal 家族，commit `690998c`，落地數字見 §11.6）。**下一輪只缺資料**：9 個 block 第三輪重跑（§11.7）。
 
 - **Go** 的條件：§6 真人項全部勾選、每個 scored 條件 ≥ 2 份可用 run、四層 traceability 無未解
   defect ⇒ T6 PASS，可開 T7（難度校準，12-20 人）。
