@@ -4,11 +4,20 @@
 
 ## Status
 
-- **Current**：🟢 T4 replay observability 完成（2026-09-03）；T5 report and quality integration 待開工。
+- **Current**：🟢 T5 report and quality integration 完成（2026-09-03）；T6 exit gate and documentation 待開工。
 - **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
 - **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-03 — T5 report and quality integration complete
+
+- 新增 `src/metrics/trackingContactReport.ts`，提供 `buildTrackingContactReport()`、`serializeTrackingContactReport()` 與 `renderTrackingContactReportHtml()`；report artifact schema 為 `tracking-contact-report-v1`，輸入只接受 T3 `TrackingContactCoverageReport` 與可選 T4 replay trace，不重新吃 raw payload 定義 contact。
+- Report 顯示 acquisition（failure rate 與 per-presentation `tAcquireMs`）、pursuit TOT、RMS/median/P95 epsilon、contact timeline 與 replay trace frame count；每個 metric cell 都帶 `value`、`unit`、`n`、`durationMs`、condition、drill id、`analysisVersion`、source id/source run/export basename。
+- Blocked/protocol-incompatible runs 以 `tracking-contact-blocked-reason-v1` closed vocabulary 顯示，沒有 `summary`/`timeline`，不輸出 fake 0 或空 contact chart；aggregate condition count 只列 included run source ids，另保留 excluded source/reason counts。
+- BR companion projection 標記為 `companion-only-not-pure-tracking`，將 aim-ray on-target rate 與 ballistic hitscan/projectile hit count 分欄；pure tracking summary 仍只來自 contact coverage，不讀 `fire`/`hit`/damage/kill。
+- 補 `src/metrics/trackingContactReport.test.ts`，覆蓋 report artifact、HTML embedded JSON parity、`deriveTrackingMetrics()` summary parity、blocked reason display、aggregate exclusion traceability 與 BR split columns。
+- T5 同步修正 T2 artifact provenance：`TrackingContactArtifactHitbox.shape` 可為 `'box' | 'sphere'`；well-formed sphere 會保留在 artifact/report，malformed sphere 仍 blocked `invalid-hitbox`。此修正只在 WP-55 artifact/report 層，不修改 WP-54 drill config、trajectory kernel、pilot metrics、researcher manifest/operator flow。
 
 ### 2026-09-03 — T4 replay observability complete
 
@@ -141,6 +150,13 @@
 | 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T4 + legacy tracking/BR baseline: 13 files / 75 tests passed |
 | 2026-09-03 | `npm.cmd run typecheck` | exit 0 |
 | 2026-09-03 | `graphify update .` | Executed after production code changes; generated `graphify-out` retained because current worktree had no WP-54 dirty production/test files and manifest additions are WP-55 T4 replay/contact files |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactReport.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContactCoverage.test.ts` | T5 initial focused report/artifact/coverage suite: 3 files / 19 tests passed |
+| 2026-09-03 | `npm.cmd run typecheck` | T5 typecheck pre-doc update: exit 0 |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactReport.test.ts` | T5 focused report tests: 1 file / 5 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactReport.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContact.test.ts src/replay/replayContact.test.ts` | Contact report/artifact/coverage/replay focused suite: 5 files / 40 tests passed |
+| 2026-09-03 | `npx.cmd vitest run src/metrics/trackingContactReport.test.ts src/metrics/trackingContactCoverage.test.ts src/metrics/trackingContactArtifact.test.ts src/metrics/trackingContact.test.ts src/metrics/trackingDerivation.test.ts src/metrics/trackingTransitions.test.ts src/drill/tracking_v1.test.ts src/drill/tracking_longrange_v1.test.ts src/drill/tracking_br_v1.test.ts tests/regression/longrange-tracking-determinism.test.ts tests/regression/br-tracking-invariants.test.ts tests/regression/br-camera-anchor-invariants.test.ts tests/regression/projectile-determinism.test.ts tests/regression/moving-target-determinism.test.ts` | T5 + legacy tracking/BR baseline: 14 files / 81 tests passed |
+| 2026-09-03 | `npm.cmd run typecheck` | T5 final typecheck: exit 0 |
+| 2026-09-03 | `graphify update .` | Executed after production code changes, but generated `graphify-out` was restored/not staged because manifest/graph output included unrelated WP-54 active document state (`wp-54-tracking-pilot/progress.md`, `T6-instrumentation-gate.md`) |
 
 ## Surprises & Discoveries
 

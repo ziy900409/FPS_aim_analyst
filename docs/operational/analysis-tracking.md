@@ -168,6 +168,36 @@ round-trip them through `DataRecorder` and `buildExportPayload()`, then assert: 
 (TOT% = 100, RMS ε ≈ 0, t_acquire ≈ 0), acquisition failure (aim never covers the target), and a
 known acquisition onset recovered within one 128 Hz tick.
 
+## WP-55 Contact Artifact, Coverage, Replay, and Report
+
+WP-55 makes the P0 tracking observability contract explicit without adding a health model. The
+researcher-facing chain is:
+
+```text
+ExportPayload -> tracking-contact-artifact-v1 -> coverage -> replay trace/report
+```
+
+`tracking-contact-artifact-v1` is produced by `buildTrackingContactArtifact()` from the raw export
+and the canonical contact derivation. It records `analysisVersion = tracking-contact-v1`, source
+identity, drill id, schema/simHz, hitbox/eye-origin provenance, and per-tick contact rows. The
+artifact is the source of truth for downstream coverage, replay trace, and report projections; those
+consumers must not redefine contact or use shooting outcome as a substitute.
+
+The primary answer to "was the player following the target?" is exact-hitbox aim-ray `onTarget`,
+TOT%, and RMS/median/P95 ε. A blood bar is not required and must not be introduced for this
+construct: HP, damage, hit count, and kill count are shooting/lifecycle outcomes, not per-tick
+tracking contact evidence.
+
+Blocked or incompatible runs stay reason-coded. A report must show the closed WP-55 reason
+vocabulary (`schema-version-unsupported`, `missing-visible-event`, `missing-target-telemetry`,
+`missing-eye-origin`, `invalid-hitbox`, `no-tracking-drill`, `protocol-incompatible`) instead of
+displaying a fake `0` TOT/RMS value or an empty contact timeline. Legacy/incompatible/protocol
+mismatch runs are excluded from aggregates, with excluded source ids and reason counts retained.
+
+For `tracking_br_v1`, BR/projectile evidence is companion-only. Reports may show ballistic
+hitscan/projectile hit counts beside aim-ray on-target evidence, but those columns must not be mixed
+into the pure tracking summary or used to overwrite exact-hitbox contact.
+
 ---
 
 ## P1 — Tracking Pilot Dynamics (WP-54 / T3)

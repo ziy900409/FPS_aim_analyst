@@ -65,7 +65,7 @@ WP-54 Definition of Done：見 [wp-54-tracking-pilot/task-checklist.md「Package
 | [x] | **T2** Export-derived artifact | [T2-export-derived-artifact.md](wp-55-tracking-on-target-observability-no-health/T2-export-derived-artifact.md) | T1 | Med/High |
 | [x] | **T3** All tracking drill coverage | [T3-all-tracking-drill-coverage.md](wp-55-tracking-on-target-observability-no-health/T3-all-tracking-drill-coverage.md) | T2 | High |
 | [x] | **T4** Replay observability | [T4-replay-observability.md](wp-55-tracking-on-target-observability-no-health/T4-replay-observability.md) | T2/T3 | Med/High |
-| [ ] | **T5** Report and quality integration | [T5-report-and-quality-integration.md](wp-55-tracking-on-target-observability-no-health/T5-report-and-quality-integration.md) | T3/T4 | Med |
+| [x] | **T5** Report and quality integration | [T5-report-and-quality-integration.md](wp-55-tracking-on-target-observability-no-health/T5-report-and-quality-integration.md) | T3/T4 | Med |
 | [ ] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](wp-55-tracking-on-target-observability-no-health/T6-exit-gate-and-documentation.md) | T1-T5 | Med |
 | [ ] | **T-exit** M21 evidence audit/handoff | [T-exit-m21-evidence-audit-handoff.md](wp-55-tracking-on-target-observability-no-health/T-exit-m21-evidence-audit-handoff.md) | T1-T6 | Med |
 

@@ -120,6 +120,22 @@ describe('buildTrackingContactArtifact', () => {
     });
   });
 
+  it('preserves well-formed sphere hitbox provenance in the export-derived artifact', () => {
+    const payload = withMeta(payloadWithTicks([tick(0, TARGET, aimAt(TARGET))]), {
+      targets: { hitbox: { widthU: 0.5, heightU: 0.5, depthU: 0.5, shape: 'sphere' } },
+    });
+
+    const artifact = onlyOk(buildTrackingContactArtifact(payload));
+
+    expect(artifact.geometry.hitbox).toEqual({
+      source: 'meta.targets.hitbox',
+      widthU: 0.5,
+      heightU: 0.5,
+      depthU: 0.5,
+      shape: 'sphere',
+    });
+  });
+
   it('accepts an export basename as traceability when no run id can be derived', () => {
     const payload = withMeta(payloadWithTicks([tick(0, TARGET, aimAt(TARGET))]), { startedAt: 'not-a-date' });
 

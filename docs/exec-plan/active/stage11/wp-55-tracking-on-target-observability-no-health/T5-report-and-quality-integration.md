@@ -27,13 +27,13 @@
 
 ## Definition of Done
 
-- [ ] report 顯示 acquisition、pursuit、TOT、RMS/median/P95 epsilon、contact timeline。
-- [ ] 每個數值帶 n、duration、condition、drill id、analysisVersion 與 source run。
-- [ ] blocked reasons 以 closed vocabulary 顯示，不顯示 0 或空圖表取代 blocked。
-- [ ] BR/projectile tracking report 顯示 ballistic hit 與 aim-ray on-target 差異，未混入 pure tracking 主結論。
-- [ ] report/export artifact 與 `deriveTrackingMetrics()` summary parity tests 全綠。
-- [ ] legacy/incompatible/protocol-mismatch runs 不進 aggregate，且 exclusion count 可追溯。
-- [ ] operational doc 已說明 exact-hitbox on-target/TOT/RMS epsilon 是跟隨目標主判定，不需要血條。
+- [x] report 顯示 acquisition、pursuit、TOT、RMS/median/P95 epsilon、contact timeline。
+- [x] 每個數值帶 n、duration、condition、drill id、analysisVersion 與 source run。
+- [x] blocked reasons 以 closed vocabulary 顯示，不顯示 0 或空圖表取代 blocked。
+- [x] BR/projectile tracking report 顯示 ballistic hit 與 aim-ray on-target 差異，未混入 pure tracking 主結論。
+- [x] report/export artifact 與 `deriveTrackingMetrics()` summary parity tests 全綠。
+- [x] legacy/incompatible/protocol-mismatch runs 不進 aggregate，且 exclusion count 可追溯。
+- [x] operational doc 已說明 exact-hitbox on-target/TOT/RMS epsilon 是跟隨目標主判定，不需要血條。
 
 ## Commit
 

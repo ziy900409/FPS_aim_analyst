@@ -26,7 +26,7 @@ export interface TrackingContactArtifactHitbox {
   readonly widthU: number;
   readonly heightU: number;
   readonly depthU: number;
-  readonly shape: 'box';
+  readonly shape: 'box' | 'sphere';
 }
 
 export interface TrackingContactArtifactEyeOrigin {
@@ -193,11 +193,13 @@ function resolveArtifactHitbox(
 ): TrackingContactArtifactHitbox | null {
   const metaHitbox = payload.meta.targets?.hitbox;
   if (metaHitbox !== undefined) {
+    const shape = metaHitbox.shape ?? 'box';
     if (
       !positiveFinite(metaHitbox.widthU) ||
       !positiveFinite(metaHitbox.heightU) ||
       !positiveFinite(metaHitbox.depthU) ||
-      (metaHitbox.shape !== undefined && metaHitbox.shape !== 'box')
+      (shape !== 'box' &&
+        (shape !== 'sphere' || metaHitbox.widthU !== metaHitbox.heightU || metaHitbox.heightU !== metaHitbox.depthU))
     ) {
       return null;
     }
@@ -206,7 +208,7 @@ function resolveArtifactHitbox(
       widthU: metaHitbox.widthU,
       heightU: metaHitbox.heightU,
       depthU: metaHitbox.depthU,
-      shape: 'box',
+      shape,
     };
   }
 
