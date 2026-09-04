@@ -8,6 +8,19 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 14：`meta.protocolGuard` 快照（讓判準適用範圍可從 payload 自證）
+
+- **為什麼協定本身要進 metadata**：D-54.50 的覆蓋率規則**只對宣告了 `requireFire` 的 run 成立**。
+  離線端若無法從 payload 得知這件事，就只剩兩種壞選擇——① 對所有 run 一律套用（每個不開火的
+  drill 都會被算出 0% 覆蓋率而誤判不合格）；② 從資料反推協定（**用結果定義判準**，正是預註冊
+  要防的事）。把協定與資料放進同一份 payload，判準才是可稽核的。
+- `Meta.protocolGuard?: ProtocolGuardMeta`（四個 optional boolean）+ `collectMeta` 驗證 +
+  `parseExportPayload` 解析 + `main.ts` / `fpsTestHarness.ts` 兩個生產端原樣帶出（比照 `spawn`）。
+- **只驗形狀，不驗語意**：`noFire`/`requireFire` 的互斥由 `drill/schema.ts` 在載入 drill 時擋掉，
+  metadata 層是快照不是第二個 gate。同一條規則寫兩份實作，兩份就有機會分歧（C-D4 的同一條精神）。
+- **未宣告 ≠ 宣告為 false**：兩端都不補預設值。補了就等於讓 payload 陳述協定沒說過的事。
+- 驗證：`npx vitest run` **218 files / 2114 tests passed**（+6）、`tsc --noEmit` exit 0。
+
 ### 2026-09-04 — T7 slice 13：逐 tick `fire` 旗標（additive optional，讓「全程按住」可稽核）
 
 - **為什麼需要這一欄**：D-54.50 把合格判準訂為 held-fire **覆蓋率**（連續量），而不是 edge-trigger

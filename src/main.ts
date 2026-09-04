@@ -730,6 +730,9 @@ async function buildCurrentExportPayload(
     targets: {
       hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),
     },
+    // WP-54 / T7：protocolGuard 快照原樣帶出（比照 spawn 的 opaque pass-through）。離線 eligibility
+    // 必須能從 payload 本身得知這個 run 是否宣告了 requireFire，才不會用結果去定義判準。
+    ...(activeDrillConfig.protocolGuard !== undefined ? { protocolGuard: activeDrillConfig.protocolGuard } : {}),
     spawn: {
       seed: activeDrillConfig.spiderShot?.seed ?? activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
       ...(activeDrillConfig.targets.spawnArea !== undefined ? { spawnArea: activeDrillConfig.targets.spawnArea } : {}),

@@ -751,6 +751,50 @@ describe('collectMeta', () => {
     );
   });
 
+  it('snapshots protocolGuard, keeping an undeclared flag distinct from one declared false', () => {
+    // WP-54 / T7：離線 eligibility 用這份快照判斷 D-54.50 的覆蓋率規則是否適用於本 run。
+    // 補上預設值會讓「沒宣告」讀成「宣告為 false」，把協定寫成了它其實沒說過的東西。
+    const meta = collectMeta({
+      drillId: 'tracking_core_pr_pilot_v1_3deg_5dps',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-09-04T10:00:00.000Z',
+      protocolGuard: { requireFire: true, noMovement: true, noAds: false },
+    });
+
+    expect(meta.protocolGuard).toEqual({ requireFire: true, noMovement: true, noAds: false });
+    expect(meta.protocolGuard).not.toHaveProperty('noFire');
+  });
+
+  it('omits protocolGuard entirely when the drill declares none', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 120,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-09-04T10:00:00.000Z',
+    });
+
+    expect(meta.protocolGuard).toBeUndefined();
+  });
+
+  it('rejects a non-boolean protocolGuard flag', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'tracking_core_pr_pilot_v1_3deg_5dps',
+        backend: 'webgpu',
+        displayHz: 120,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-09-04T10:00:00.000Z',
+        protocolGuard: { requireFire: 'yes' as unknown as boolean },
+      }),
+    ).toThrow('protocolGuard.requireFire');
+  });
+
   it('rejects a malformed gate report on display metadata', () => {
     expect(() =>
       collectMeta({

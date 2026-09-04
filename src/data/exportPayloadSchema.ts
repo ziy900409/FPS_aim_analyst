@@ -282,6 +282,8 @@ function parseMeta(raw: Record<string, unknown>, errors: ExportPayloadParseError
   const session = raw.session === undefined ? undefined : parseSessionMeta(raw.session, 'meta.session', errors);
   const protocol = raw.protocol === undefined ? undefined : parseProtocolMeta(raw.protocol, 'meta.protocol', errors);
   const assessment = raw.assessment === undefined ? undefined : parseAssessmentMeta(raw.assessment, 'meta.assessment', errors);
+  const protocolGuard =
+    raw.protocolGuard === undefined ? undefined : parseProtocolGuardMeta(raw.protocolGuard, 'meta.protocolGuard', errors);
   const visibility = raw.visibility === undefined ? undefined : parseVisibilityMeta(raw.visibility, 'meta.visibility', errors);
   const mouseIntegration =
     raw.mouseIntegration === undefined ? undefined : parseMouseIntegrationMeta(raw.mouseIntegration, 'meta.mouseIntegration', errors);
@@ -351,6 +353,7 @@ function parseMeta(raw: Record<string, unknown>, errors: ExportPayloadParseError
     ...(session !== undefined ? { session } : {}),
     ...(protocol !== undefined ? { protocol } : {}),
     ...(assessment !== undefined ? { assessment } : {}),
+    ...(protocolGuard !== undefined ? { protocolGuard } : {}),
     ...(visibility !== undefined ? { visibility } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
     ...(replay !== undefined ? { replay } : {}),
@@ -701,6 +704,28 @@ function parseAssessmentMeta(value: unknown, path: string, errors: ExportPayload
   );
   if (protocolVersion === undefined || assessmentFeedbackPolicy === undefined || errors.length > before) return undefined;
   return { protocolVersion: protocolVersion.trim(), assessmentFeedbackPolicy };
+}
+
+/**
+ * WP-54 / T7：`DrillConfig.protocolGuard` 快照。每個 flag 皆 optional boolean；缺席的 flag 不補
+ * 預設值，因為「未宣告」與「宣告為 false」在稽核上是不同的陳述。
+ */
+function parseProtocolGuardMeta(
+  value: unknown,
+  path: string,
+  errors: ExportPayloadParseError[],
+): Meta['protocolGuard'] | undefined {
+  const record = parseRecord(value, path, errors);
+  if (record === undefined) return undefined;
+  const before = errors.length;
+  const out: Record<string, boolean> = {};
+  for (const flag of ['noFire', 'noAds', 'noMovement', 'requireFire'] as const) {
+    if (record[flag] === undefined) continue;
+    const parsed = parseBoolean(record[flag], `${path}.${flag}`, errors);
+    if (parsed !== undefined) out[flag] = parsed;
+  }
+  if (errors.length > before) return undefined;
+  return out;
 }
 
 function parseVisibilityMeta(value: unknown, path: string, errors: ExportPayloadParseError[]): VisibilityMeta | undefined {

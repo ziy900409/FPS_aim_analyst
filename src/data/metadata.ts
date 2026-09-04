@@ -89,6 +89,23 @@ export interface AssessmentMeta {
   assessmentFeedbackPolicy: 'minimal-end-of-block' | 'unrestricted';
 }
 
+/**
+ * `DrillConfig.protocolGuard` 的匯出快照（WP-54 / T7，`tracking-pilot-v2`）。缺席 = 該 run 沒有
+ * protocol guard。
+ *
+ * **為什麼必須進 metadata**：D-54.50 的合格判準是「scored 窗內 held-fire 覆蓋率 >= 95%」，而這條
+ * 規則**只對宣告了 `requireFire` 的 run 成立**。若離線端無法從 payload 本身得知這個 run 是否要求
+ * 按住，就只剩兩種壞選擇：對所有 run 一律套用（每個不開火的 drill 都會被算出 0% 覆蓋率而誤判
+ * 不合格），或從資料反推協定（用結果定義判準，正是預註冊要防的事）。把協定與資料放在同一份
+ * payload 裡，判準才是可稽核的。
+ */
+export interface ProtocolGuardMeta {
+  noFire?: boolean;
+  noAds?: boolean;
+  noMovement?: boolean;
+  requireFire?: boolean;
+}
+
 /** Registered visibility-sampling candidate used to derive an occlusion-aware measurement onset. */
 export interface VisibilityMeta {
   sampleCount: 1 | 9;
@@ -167,6 +184,8 @@ export interface Meta {
   session?: SessionMeta;
   protocol?: ProtocolMeta;
   assessment?: AssessmentMeta;
+  /** WP-54 / T7 additive：`DrillConfig.protocolGuard` 快照。缺席 = 該 run 沒有 protocol guard。 */
+  protocolGuard?: ProtocolGuardMeta;
   /** Additive pilot visibility contract; absent when the drill has no registered visibility onset. */
   visibility?: VisibilityMeta;
   /**
@@ -227,6 +246,7 @@ export interface CollectMetaArgs {
   session?: SessionMeta;
   protocol?: ProtocolMeta;
   assessment?: AssessmentMeta;
+  protocolGuard?: ProtocolGuardMeta;
   visibility?: VisibilityMeta;
   mouseIntegration?: MouseIntegrationMeta;
 }
@@ -284,6 +304,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const protocol = args.protocol === undefined ? undefined : requireProtocolMeta(args.protocol);
   const assessment = args.assessment === undefined ? undefined : requireAssessmentMeta(args.assessment);
   const visibility = args.visibility === undefined ? undefined : requireVisibilityMeta(args.visibility);
+  const protocolGuard = args.protocolGuard === undefined ? undefined : requireProtocolGuardMeta(args.protocolGuard);
   const mouseIntegration =
     args.mouseIntegration === undefined ? undefined : requireMouseIntegrationMeta(args.mouseIntegration);
   const weapon = args.weapon === undefined ? undefined : requireWeaponMeta(args.weapon);
@@ -328,6 +349,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(session !== undefined ? { session } : {}),
     ...(protocol !== undefined ? { protocol } : {}),
     ...(assessment !== undefined ? { assessment } : {}),
+    ...(protocolGuard !== undefined ? { protocolGuard } : {}),
     ...(visibility !== undefined ? { visibility } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
     // WP-50 / T1: `TickArena.recordState` always captures `replayTargetId` (D-50-P6～P8) — this
@@ -565,6 +587,24 @@ function requireAssessmentMeta(value: unknown): AssessmentMeta {
     protocolVersion: requireTrimmedNonEmptyString(assessment.protocolVersion, 'assessment.protocolVersion'),
     assessmentFeedbackPolicy,
   };
+}
+
+/**
+ * WP-54 / T7：只驗形狀（每個欄位若存在必須是 boolean），**不驗語意**。`noFire`/`requireFire` 的
+ * 互斥性由 `drill/schema.ts` 在 drill 載入時擋掉——metadata 層是快照，不是第二個 gate；把同一條
+ * 規則寫兩次，兩份實作就會有機會分歧（C-D4 的同一條精神）。
+ */
+function requireProtocolGuardMeta(value: unknown): ProtocolGuardMeta {
+  const guard = requireRecord(value, 'protocolGuard');
+  const flags: Array<keyof ProtocolGuardMeta> = ['noFire', 'noAds', 'noMovement', 'requireFire'];
+  const out: ProtocolGuardMeta = {};
+  for (const flag of flags) {
+    const raw = guard[flag];
+    if (raw === undefined) continue;
+    if (typeof raw !== 'boolean') throw new Error(`protocolGuard.${flag} must be a boolean`);
+    out[flag] = raw;
+  }
+  return out;
 }
 
 export async function measureDisplayHz(options: MeasureDisplayHzOptions = {}): Promise<number> {

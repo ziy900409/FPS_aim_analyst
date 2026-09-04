@@ -401,6 +401,7 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       targets: {
         hitbox: targetHitboxToConfig(resolveTargetHitbox(config)),
       },
+      ...(config.protocolGuard !== undefined ? { protocolGuard: config.protocolGuard } : {}),
       spawn: {
         seed: config.spiderShot?.seed ?? config.sequence.seed ?? DEFAULT_RNG_SEED,
         ...(config.targets.spawnArea !== undefined ? { spawnArea: config.targets.spawnArea } : {}),

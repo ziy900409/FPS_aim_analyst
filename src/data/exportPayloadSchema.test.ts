@@ -259,6 +259,28 @@ describe('parseExportPayload — WP-50 additive replay fields', () => {
   });
 });
 
+describe('parseExportPayload — WP-54 T7 additive meta.protocolGuard (tracking-pilot-v2)', () => {
+  it('round-trips a declared guard', () => {
+    const result = parseExportPayload(
+      minimalPayload({ meta: minimalMeta({ protocolGuard: { requireFire: true, noMovement: true } }) }),
+    );
+    if (!result.ok) throw new Error('expected payload to parse');
+    expect(result.payload.meta.protocolGuard).toEqual({ requireFire: true, noMovement: true });
+  });
+
+  it('parses a payload that omits meta.protocolGuard (drill declares no guard)', () => {
+    const result = parseExportPayload(minimalPayload({}));
+    if (!result.ok) throw new Error('expected payload to parse');
+    expect(result.payload.meta.protocolGuard).toBeUndefined();
+  });
+
+  it('rejects a non-boolean guard flag with a field path', () => {
+    const result = parseExportPayload(minimalPayload({ meta: minimalMeta({ protocolGuard: { requireFire: 'yes' } }) }));
+    if (result.ok) throw new Error('expected payload to be rejected');
+    expect(result.errors.map((error) => error.path)).toContain('meta.protocolGuard.requireFire');
+  });
+});
+
 describe('parseExportPayload — WP-54 T7 additive tick.fire (tracking-pilot-v2)', () => {
   it('parses a tick recorded while holding fire', () => {
     const result = parseExportPayload(minimalPayload({ ticks: [validTick({ fire: true })] }));
