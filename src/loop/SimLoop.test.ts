@@ -185,6 +185,8 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
         aim: { yaw: 3, pitch: -2 },
         keys: ['D'],
         ads: false,
+        // WP-54 / T7：simStep 的 tick row 取自 SharedState，故恆帶 held-fire 旗標。
+        fire: false,
       },
     ]);
   });
@@ -979,6 +981,7 @@ describe('SimLoop applyInput — KI-005 / A tick 窗 mouse 積分（T4，FR-A-1/
         aim: { yaw: 0, pitch: 0 },
         keys: [],
         ads: false,
+        fire: false, // WP-54 / T7 additive；本測試的斷言標的是 dYaw/dPitch 的缺席，與此欄無關。
       });
       expect(JSON.stringify(tick)).not.toContain('dYaw');
     });

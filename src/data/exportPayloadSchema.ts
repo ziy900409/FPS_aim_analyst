@@ -769,6 +769,9 @@ function parseTickRecord(value: unknown, path: string, errors: ExportPayloadPars
   const aim = parseAim(record.aim, `${path}.aim`, errors);
   const keys = parseKeyArray(record.keys, `${path}.keys`, errors);
   const ads = parseBoolean(record.ads, `${path}.ads`, errors);
+  // WP-54 / T7 additive optional：pre-`tracking-pilot-v2` 的匯出沒有這一欄，必須照樣通過。
+  // 缺席與 `false` 是不同狀態（未記錄 vs 記錄到沒按住），故 **不** 補預設值。
+  const fire = record.fire === undefined ? undefined : parseBoolean(record.fire, `${path}.fire`, errors);
   const dYaw = record.dYaw === undefined ? undefined : parseFiniteNumber(record.dYaw, `${path}.dYaw`, errors);
   const dPitch = record.dPitch === undefined ? undefined : parseFiniteNumber(record.dPitch, `${path}.dPitch`, errors);
   const replayTargetId =
@@ -803,6 +806,7 @@ function parseTickRecord(value: unknown, path: string, errors: ExportPayloadPars
     aim,
     keys,
     ads,
+    ...(fire !== undefined ? { fire } : {}),
     ...(dYaw !== undefined ? { dYaw } : {}),
     ...(dPitch !== undefined ? { dPitch } : {}),
     ...(replayTargetId !== undefined ? { replayTargetId } : {}),

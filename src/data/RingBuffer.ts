@@ -21,6 +21,16 @@ export interface TickRecord {
   aim: { yaw: number; pitch: number };
   keys: KeyName[];
   ads: boolean;
+  /**
+   * WP-54 / T7（`tracking-pilot-v2`，D-54.49/D-54.50）：本 tick 是否按住左鍵（取 `state.heldFire`）。
+   * 缺席 = 未提供 held-fire 來源的匯出（既有手工 fixture 與 pre-v2 payload），**不是** `false`。
+   *
+   * 為什麼是逐 tick flag 而不是只靠事件：與 `ads` 同一條理由（CONTEXT.md §187 / GD-16）——`aim`
+   * 資料無法反推按住狀態,而 `tracking-pilot-v2` 把「全程按住」寫進了協定,D-54.50 的合格判準又是
+   * **覆蓋率**（連續量）。只有 edge 事件時,漏掉一個 edge 就會讓整段區間的歸屬無法判定;逐 tick
+   * 旗標讓覆蓋率成為可直接計數的量,並在稽核時與 `fire` 事件互為佐證。
+   */
+  fire?: boolean;
   /** 本 tick 窗內積分的 yaw 角位移（rad）。缺席 = 未啟用 mouse 積分的匯出（KI-005 / A，FR-A-4）。 */
   dYaw?: number;
   /** 本 tick 窗內積分的 pitch 角位移（rad，已含 ±MAX_PITCH 夾角效果）。 */
@@ -46,12 +56,19 @@ export interface TickRecordInput {
   aim: { readonly yaw: number; readonly pitch: number };
   keys: readonly string[];
   ads?: boolean;
+  /** WP-54 / T7 additive：省略 ⇒ snapshot 不輸出 `fire` 欄（既有 fixture 逐位不變）。 */
+  fire?: boolean;
 }
 
 export interface TickSourceState {
   player: { vx: number; vz: number; x: number; z: number };
   aim: { yaw: number; pitch: number };
   heldAds: boolean;
+  /**
+   * WP-54 / T7 additive optional：`SharedState` 一律有此欄,故真實 run 恆輸出 `fire`;
+   * optional 只為讓既有手工測試 fixture（不帶 held-fire 概念者）維持有效,同 `targets[].id?` 的先例。
+   */
+  heldFire?: boolean;
   held: { left: boolean; right: boolean };
   /** `id?` — WP-50 additive: optional so pre-existing hand-built test fixtures stay valid. */
   targets: Array<{ id?: string; pos: { x: number; y: number; z: number }; visible: boolean; alive: boolean }>;
@@ -122,6 +139,10 @@ export class TickArena {
   private readonly pitch: Float64Array;
   private readonly keyMask: Uint8Array;
   private readonly ads: Uint8Array;
+  // WP-54 / T7：`fire` 存值、`hasFire` 逐 row 記錄該 tick 是否**有**這個欄位（比照
+  // `hasMouseIntegration`）——缺席與 `false` 必須可分辨,否則「沒記錄」會被讀成「沒按住」。
+  private readonly fire: Uint8Array;
+  private readonly hasFire: Uint8Array;
   // KI-005 / A（FR-A-4）：tick 窗積分 mouse delta，preallocated（固定佈局紀律，C-7）。
   // `hasMouseIntegration` 逐 row 記錄該 tick 是否帶積分（決定 snapshot() 是否輸出 dYaw/dPitch key）。
   private readonly dYaw: Float64Array;
@@ -148,6 +169,8 @@ export class TickArena {
     this.pitch = new Float64Array(capacity);
     this.keyMask = new Uint8Array(capacity);
     this.ads = new Uint8Array(capacity);
+    this.fire = new Uint8Array(capacity);
+    this.hasFire = new Uint8Array(capacity);
     this.dYaw = new Float64Array(capacity);
     this.dPitch = new Float64Array(capacity);
     this.hasMouseIntegration = new Uint8Array(capacity);
@@ -176,6 +199,7 @@ export class TickArena {
       record.aim.pitch,
       keyMaskFromKeys(record.keys),
       record.ads === true,
+      record.fire,
       null,
       dYaw,
       dPitch,
@@ -210,6 +234,7 @@ export class TickArena {
       state.aim.pitch,
       keyMaskFromState(state),
       state.heldAds,
+      state.heldFire,
       replayTargetId,
       dYaw,
       dPitch,
@@ -229,6 +254,7 @@ export class TickArena {
     pitch: number,
     keyMask: number,
     ads: boolean,
+    fire: boolean | undefined,
     replayTargetId: string | null,
     dYaw?: number,
     dPitch?: number,
@@ -256,6 +282,8 @@ export class TickArena {
     this.pitch[i] = pitch;
     this.keyMask[i] = keyMask;
     this.ads[i] = ads ? 1 : 0;
+    this.fire[i] = fire === true ? 1 : 0;
+    this.hasFire[i] = fire === undefined ? 0 : 1;
     this.replayTargetId[i] = replayTargetId;
     if (dYaw !== undefined && dPitch !== undefined) {
       this.dYaw[i] = dYaw;
@@ -283,6 +311,9 @@ export class TickArena {
         aim: { yaw: this.yaw[i], pitch: this.pitch[i] },
         keys: keysFromMask(this.keyMask[i]),
         ads: this.ads[i] === 1,
+        // Presence-gated like dYaw/dPitch below: a source without held-fire state emits no `fire`
+        // key at all, so "not recorded" never reads as "not holding" (D-54.50 counts coverage).
+        ...(this.hasFire[i] === 1 ? { fire: this.fire[i] === 1 } : {}),
         // Omitted when null (no active target) — byte-identical to pre-WP-50 exports for the
         // (very common) no-target tick, matching dYaw/dPitch's presence-gated spread convention.
         ...(this.replayTargetId[i] !== null ? { replayTargetId: this.replayTargetId[i] } : {}),

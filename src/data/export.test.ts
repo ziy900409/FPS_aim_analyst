@@ -349,3 +349,51 @@ describe('data export — KI-005 / A additive dYaw/dPitch（FM-7 / NFR-A-2）', 
     expect(lines[0]).toBe('t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys,ads');
   });
 });
+
+describe('data export — WP-54 / T7 additive 逐 tick fire flag（tracking-pilot-v2，D-54.50）', () => {
+  function tickWith(t: number, fire?: boolean): DataRecorderSnapshot['ticks'][number] {
+    return {
+      t,
+      vx: 0,
+      vz: 0,
+      px: 0,
+      pz: 0,
+      tx: null,
+      ty: null,
+      tz: null,
+      aim: { yaw: 0, pitch: 0 },
+      keys: [],
+      ads: false,
+      ...(fire !== undefined ? { fire } : {}),
+    };
+  }
+
+  const fireSnapshot: DataRecorderSnapshot = {
+    ticks: [tickWith(0, true), tickWith(7.8125, false)],
+    events: [],
+    recorderOverflow: false,
+  };
+
+  it('CSV 把 fire 追加在最末欄（不插在 ads 旁，避免既有欄位位移）', () => {
+    const files = serializeCSV(buildExportPayload(meta, fireSnapshot));
+    const lines = files[0].content.trimEnd().split('\n');
+
+    expect(lines[0]).toBe('t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys,ads,fire');
+    expect(lines[1]).toBe('0,0,0,0,0,,,,0,0,,false,true');
+    expect(lines[2]).toBe('7.8125,0,0,0,0,,,,0,0,,false,false');
+  });
+
+  it('JSON 逐位保留 fire', () => {
+    const parsed = JSON.parse(serializeJSON(buildExportPayload(meta, fireSnapshot))) as ExportPayload;
+
+    expect(parsed.ticks[0]).toMatchObject({ fire: true });
+    expect(parsed.ticks[1]).toMatchObject({ fire: false });
+  });
+
+  it('既有（無 fire）snapshot 的 CSV 表頭與資料列逐位不變', () => {
+    const files = serializeCSV(buildExportPayload(meta, snapshot));
+    const lines = files[0].content.trimEnd().split('\n');
+
+    expect(lines[0]).toBe('t,vx,vz,px,pz,tx,ty,tz,yaw,pitch,keys,ads');
+  });
+});

@@ -65,8 +65,27 @@ describe('DataRecorder tick arena', () => {
       aim: { yaw: 7, pitch: -4 },
       keys: ['D'],
       ads: true,
+      // WP-54 / T7：`SharedState` 一律帶 `heldFire`，故 state-sourced tick 恆輸出 `fire`。
+      fire: false,
     });
     expect(snapshot.ticks[99_999].vx).toBe(99_999);
+  });
+
+  it('mirrors heldFire onto every state-sourced tick, and omits `fire` when the source has none', () => {
+    // D-54.50 counts held-fire coverage per tick, so "not recorded" and "recorded as released"
+    // must stay distinguishable — a hand-built TickRecordInput without `fire` emits no key at all.
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 3 });
+    state.heldFire = true;
+    recorder.recordTickFromState(0, state);
+    state.heldFire = false;
+    recorder.recordTickFromState(1, state);
+    recorder.recordTick({ t: 2, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+
+    const ticks = recorder.snapshot().ticks;
+    expect(ticks[0].fire).toBe(true);
+    expect(ticks[1].fire).toBe(false);
+    expect('fire' in ticks[2]).toBe(false);
   });
 
   it('records player and active target position fields from shared state', () => {

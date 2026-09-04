@@ -259,6 +259,30 @@ describe('parseExportPayload — WP-50 additive replay fields', () => {
   });
 });
 
+describe('parseExportPayload — WP-54 T7 additive tick.fire (tracking-pilot-v2)', () => {
+  it('parses a tick recorded while holding fire', () => {
+    const result = parseExportPayload(minimalPayload({ ticks: [validTick({ fire: true })] }));
+    if (!result.ok) throw new Error('expected payload to parse');
+    expect(result.payload.ticks[0].fire).toBe(true);
+  });
+
+  it('keeps an explicit false distinct from an omitted flag', () => {
+    // D-54.50 counts held-fire coverage, so "recorded, released" must not collapse into
+    // "never recorded" — a parser default of false would silently fabricate coverage data.
+    const recorded = parseExportPayload(minimalPayload({ ticks: [validTick({ fire: false })] }));
+    const omitted = parseExportPayload(minimalPayload({ ticks: [validTick()] }));
+    if (!recorded.ok || !omitted.ok) throw new Error('expected both payloads to parse');
+    expect(recorded.payload.ticks[0].fire).toBe(false);
+    expect(omitted.payload.ticks[0].fire).toBeUndefined();
+  });
+
+  it('rejects a non-boolean fire flag with a field path', () => {
+    const result = parseExportPayload(minimalPayload({ ticks: [validTick({ fire: 1 })] }));
+    if (result.ok) throw new Error('expected payload to be rejected');
+    expect(result.errors.map((error) => error.path)).toContain('ticks[0].fire');
+  });
+});
+
 describe('parseExportPayload — negative matrix', () => {
   const cases: Array<{ name: string; value: unknown }> = [
     { name: 'root is not an object (array)', value: [] },

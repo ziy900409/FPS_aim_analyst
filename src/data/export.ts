@@ -67,8 +67,12 @@ function serializeTicksCSV(ticks: TickRecord[]): string {
   // KI-005 / A（FM-7）：依 payload 是否含 dYaw 決定表頭——缺席時與既有格式逐位相同（NFR-A-2）；
   // 啟用時所有 tick 皆有此欄（非 some），故只需檢查首列。
   const hasMouseIntegration = ticks.length > 0 && ticks[0].dYaw !== undefined;
+  // WP-54 / T7：同一條 presence-gate 慣例。**附加在最末欄**而非插在 `ads` 旁邊——語意上 fire 是
+  // ads 的姊妹欄，但插入會讓既有匯出的欄位位置整排位移，而新欄的讀者只有 v2 之後的分析端。
+  const hasFire = ticks.length > 0 && ticks[0].fire !== undefined;
   const header = ['t', 'vx', 'vz', 'px', 'pz', 'tx', 'ty', 'tz', 'yaw', 'pitch', 'keys', 'ads'];
   if (hasMouseIntegration) header.push('dYaw', 'dPitch');
+  if (hasFire) header.push('fire');
   const rows = [header];
   for (const tick of ticks) {
     const row = [
@@ -88,6 +92,7 @@ function serializeTicksCSV(ticks: TickRecord[]): string {
     if (hasMouseIntegration) {
       row.push(formatNumber(tick.dYaw ?? 0), formatNumber(tick.dPitch ?? 0));
     }
+    if (hasFire) row.push(formatBoolean(tick.fire === true));
     rows.push(row);
   }
   return rowsToCSV(rows);

@@ -8,6 +8,25 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 13：逐 tick `fire` 旗標（additive optional，讓「全程按住」可稽核）
+
+- **為什麼需要這一欄**：D-54.50 把合格判準訂為 held-fire **覆蓋率**（連續量），而不是 edge-trigger
+  的全有全無 ⇒ 分析端必須能逐 tick 數出按住與否。這與 `ads` 是**同一條理由**（CONTEXT.md §187 /
+  GD-16）：`aim` 資料無法反推按住狀態，只有 edge 事件時漏掉一個 edge 就會讓整段區間無法判定。
+  現況查證：tick row 有 `ads: boolean`，但 `fire` event 是「射出一發」而非 down/up，**沒有**對應物。
+- **缺席 ≠ `false`**：arena 用 `fire` + `hasFire` 兩個 `Uint8Array`（比照 `hasMouseIntegration`），
+  parser 也**不補預設值**。若把「沒記錄」讀成「沒按住」，pre-v2 的舊 payload 會被算出 0% 覆蓋率、
+  被新規則整批誤判為不合格——這是會靜默捏造資料的那種錯，故以型別與測試同時釘住。
+- 觸及層：`RingBuffer.ts`（`TickRecord.fire?` / `TickRecordInput.fire?` / `TickSourceState.heldFire?`
+  + arena 欄位 + `recordFields` 參數）、`export.ts`（CSV presence-gated，**附加在最末欄**而非插在
+  `ads` 旁——語意上是姊妹欄，但插入會讓既有匯出整排位移）、`exportPayloadSchema.ts`（optional boolean）。
+- **`TickSourceState.heldFire?` 為 optional 的唯一理由**是讓既有手工 fixture 維持有效（同
+  `targets[].id?` 先例）；`SharedState` 一律有此欄 ⇒ **真實 run 恆輸出 `fire`**。
+- 連帶更新三個既有測試的期望值（`DataRecorder` 一、`SimLoop` 二）——它們斷言 state-sourced tick
+  的完整物件，新欄出現是**預期中的契約變更**，非回歸。其中 mouse 積分那一則的斷言標的是
+  dYaw/dPitch 的缺席，與本欄無關，只補上欄位不動其意圖。
+- 驗證：`npx vitest run` **218 files / 2108 tests passed**（+7）、`tsc --noEmit` ×2 exit 0。
+
 ### 2026-09-04 — T7 slice 12：`tracking-pilot-v2` 專用武器（零後座力／零散佈／無 ads／深彈匣）
 
 - **本 slice 起,WP-54 進入 `tracking-pilot-v2`**：scored 窗從「禁止開火」改為「**全程按住左鍵**」,
