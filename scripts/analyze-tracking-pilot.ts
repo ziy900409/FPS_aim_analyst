@@ -53,6 +53,8 @@ import {
   computeTrackingTimeOnTaskSlope,
   formatTrackingTimeOnTaskSlope,
 } from './trackingTimeOnTaskSlope.ts';
+import { aggregateTrackingGateB, formatTrackingGateBReport } from './trackingGateBAggregates.ts';
+import { extractTrackingGateBRuns } from './trackingGateBExtract.ts';
 import {
   createTrackingTrajectory,
   type TrackingTrajectoryConfig,
@@ -275,6 +277,18 @@ function main(): void {
         `seeds=[${condition.seeds.join(',')}] | ${p0} | ${p1}${reversal}`,
     );
   }
+
+  // Gate B: the cell-level criteria (§2.2/§2.3), family A only per §2.5 A-1. Printed even when
+  // the batch is far short of the 12–20 participants — B-4 then reports `insufficient-data` per
+  // cell, which is exactly what a mid-recruitment batch should say.
+  const gateB = extractTrackingGateBRuns(payloads);
+  if (gateB.unknownDrillIds.length > 0) {
+    console.error(
+      `!!  UNKNOWN DRILL IDS — ${[...new Set(gateB.unknownDrillIds)].join(', ')} are not WP-54 pilot ` +
+        `blocks and were left out of Gate B. Check the input directory.`,
+    );
+  }
+  console.log(`\n${formatTrackingGateBReport(aggregateTrackingGateB(gateB.runs))}`);
 
   mkdirSync(outDir, { recursive: true });
   const evidenceJson = join(outDir, 'tracking-pilot-evidence.json');

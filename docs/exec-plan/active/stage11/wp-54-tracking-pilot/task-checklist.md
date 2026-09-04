@@ -211,6 +211,13 @@
 
 ### T7 工程 slice（已 commit）
 
+- [x] **slice 9**：**Gate B 的 cell 層聚合與 §2.3 判定**——`scripts/trackingGateBAggregates.ts`
+      （純函式，15 tests：§2.2 門檻升成具名常數、逐 cell B-1/B-2a/B-2b/B-3c/B-4 + 跨 cell B-3a
+      方向、照 §2.3 規則順序輸出 retained/revise/remove/insufficient-data 與逐條理由）
+      + `scripts/trackingGateBExtract.ts`（6 tests，payload → run record 的膠水，全走既有實作）。
+      runner 每次印 Gate B 段。防混世代二式：registry 外的 drillId 印 `UNKNOWN DRILL IDS` 並排除；
+      同一 cell 內尺寸/速度不一致者不上 2×2 軸。**B-3b 未實作**（§2.3 規則 5 不影響 cell 判定，
+      但 §2.4 的 go 需要它 ⇒ family B 回收前必須完成）。**待覆核**：B-2a 的 SD 採樣本 SD（n−1）。
 - [x] **slice 8**：**聚合的操作型定義在收資料前凍結**（[T7 gate](T7-difficulty-calibration-gate.md)
       §2.5，docs-only，比照 slice 5）。§2.2 的門檻一律未動,只補三處沒寫死卻會改變 gate 數字的
       定義：**A-1** 只用 family A 判 B-1/B-2a/B-2b/B-3a/B-4（family B 只供 B-3b）、**A-2** 逐人取

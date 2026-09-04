@@ -8,6 +8,38 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 9：Gate B 的 cell 層聚合與 §2.3 判定（B-3b 之外全部落地）
+
+- **`scripts/trackingGateBAggregates.ts`**（純函式，**15 tests**）：§2.2 的門檻全部升成具名常數,
+  逐 cell 算 B-1 median ratio、B-2a median TOT + 受測者間 CV、B-2b acquisition failure 率、
+  B-3c mean Δ、B-4 份量，B-3a 跨 cell 判 size×speed 方向,再照 **§2.3 的規則順序**輸出
+  `retained` / `revise` / `remove` / `insufficient-data` 與逐條理由。
+- **`scripts/trackingGateBExtract.ts`**（**6 tests**）：payload → run record 的膠水,全部走既有實作
+  （`buildTrackingPilotEvidence()` 取 eligibility/P0、layer 5 取比值、layer 6 取 Δ）,不重算任何構念。
+  **刻意兩檔分開**——判準因此能用字面 record 測，不必為每條統計合成 25 s 匯出。
+- **runner 每次都印 Gate B 那一段**,即使批次遠不足 12–20 人（此時逐 cell 回 `insufficient-data`,
+  正是招募途中該看到的東西）。
+- **落實的 §2.3 細節**（測試逐條釘住）：規則 1「9 份漂亮的 run 也不得宣告 retained」;規則 2 的
+  `remove` **只在其餘皆過時**成立——B-1 與 B-2 同時失敗走規則 3 判 `revise`（測試直接釘這個岔路）;
+  規則 5 的 B-3c **記錄但不決定** cell。
+- **兩個防混世代的設計**：① 不在現行 registry 的 drillId（G4 的 `0p5deg_*`）印 `UNKNOWN DRILL IDS`
+  到 stderr 並排除;② 同一 cell 內各 run 的交付尺寸/速度不一致時,該 cell **不上 2×2 的任一軸**
+  （`2deg_*` 跨世代重用的直接對策）。
+- **B-3a 的軸取自 payload 自己的 metadata**（`meta.targets.hitbox` 反解角尺寸、
+  `trackingTrajectory.targetRmsSpeedDegPerSec` 取速度）,不解析 drillId 字串 ⇒ 世代無關。
+  測試的期望值一律由 `CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG` 等來源常數導出,不寫死候選值
+  （slice 6 的教訓）。
+- **一個未問使用者就採的統計慣例（請覆核）**：B-2a 的「SD」採**樣本 SD（n−1）**——受測者是樣本
+  而非母體,這是 SD 的常規讀法;§2.2 沒有寫死。少於 2 位受測者時回 NaN 而非 0（散度未定義,
+  不是零）。
+- **以 G4 錄音實跑**（非 gate 證據）：`2deg_14dps` TOT **19.0%**、`2deg_5dps` **62.3%**——與 gate
+  §3.2 重算表的 2.0° 欄逐值相符;`0p5deg_*` 如預期被判 unknown 並排除;全部 cell 因 n=1 回
+  `insufficient-data`;B-3a 回 `not-a-2x2`。
+- **未實作 B-3b**（seed 家族成對差 + TOST）：依 §2.3 規則 5 它不改變單一 cell 的 retained/remove,
+  故與 cell 層分開落地;但 §2.4 的 go 判定需要它 ⇒ **必須在 family B 資料回收前完成**（gate §6）。
+- **驗證**：`npx vitest run` **215 files / 2062 tests passed**；`npx tsc --noEmit` 與
+  `-p tsconfig.node.json` 皆 exit 0。
+
 ### 2026-09-04 — T7 slice 8：聚合的操作型定義在收資料前凍結（gate §2.5，docs-only）
 
 - **為什麼需要這一片**：§2.2 凍了六條判準的**門檻**,但實作 cell 層聚合時發現三處**沒有寫死、

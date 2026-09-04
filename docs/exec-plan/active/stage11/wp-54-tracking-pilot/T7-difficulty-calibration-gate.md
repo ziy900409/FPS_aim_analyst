@@ -222,6 +222,12 @@ npx vite-node scripts/analyze-tracking-pilot.ts -- <資料夾...> --out .pilot-a
 | **5** | **凍結準心比值**（B-1 的判準本體） | `computeTrackingFrozenCrosshairRatio()` |
 | **6** | **time-on-task slope 的逐 run 輸入**（B-3c：同一 scored 窗前 5 s vs 後 5 s 的 RMS ε 與 Δ） | `computeTrackingTimeOnTaskSlope()` |
 | — | evidence JSON + self-contained HTML + parity | `buildTrackingPilotEvidence()` / `renderTrackingPilotReportHtml()` |
+| **Gate B** | **逐 cell 判準與 §2.3 判定**（B-1 / B-2a / B-2b / B-3a / B-3c / B-4 + retained·revise·remove·insufficient-data） | `extractTrackingGateBRuns()` → `aggregateTrackingGateB()` |
+
+Gate B 那一段每次都印,**即使批次遠不足 12–20 人**——這時每個 cell 會照 §2.3 規則 1 回
+`insufficient-data`,正是招募途中該看到的東西,而不是一個看起來可用的數字。
+不在現行 registry 內的 drillId（例如 G4 的 `0p5deg_*`）會以 `UNKNOWN DRILL IDS` 印到 stderr 並
+**排除在 Gate B 之外**,這是跨世代混批的最後一道攔阻。
 
 **stderr 警示**（不要忽略）：`STIMULUS FIDELITY MISMATCH`（世代錯亂）、`DELIVERED-AT-EYE OUT OF BAND`
 （刺激未交付宣稱值）、`!!P0-MISMATCH`（layer 5 的分母、或 layer 6 的整窗 RMS 與 canonical
@@ -247,10 +253,15 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 - [x] 全部判準已在收資料前凍結（本文件 §2）,聚合的操作型定義亦於收資料前凍結（**§2.5**,
       **2026-09-04 / slice 8**）。
 
+- [x] **cell 層聚合函式**（B-1 / B-2a / B-2b / B-3a / B-3c / B-4 與 §2.3 的逐 cell 判定）——
+      `trackingGateBAggregates.ts`（純函式，15 tests）+ `trackingGateBExtract.ts`（6 tests），
+      分析 runner 每次印出（**2026-09-04 / slice 9**）。
+
 **工程前置（招募前仍未完成 ⬜）**
 
-- [ ] **cell 層聚合函式**（B-1 / B-2a / B-2b / B-3a / B-3b / B-4 與 §2.3 的逐 cell 判定）尚無實作;
-      依 §5 必須是純函式 + 回歸測試。B-3c 的 cell 層平均一併落在這裡。
+- [ ] **B-3b（seed 家族成對差 + TOST）尚無實作**。依 §2.3 規則 5 它不改變單一 cell 的
+      retained/remove，故與 cell 層聚合分開落地;但 §2.4 的 go 判定需要它 ⇒ **必須在 6–8 人的
+      family B 資料回收之前完成**。
 
 **乾跑（§3,招募前）**
 
