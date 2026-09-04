@@ -8,6 +8,25 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 15：`protocolGuard.requireFire` + `fire-released` violation kind
+
+- **`requireFire` 是四個 flag 裡唯一的肯定式**：其餘三個記「做了不該做的事」，它記「沒做該做的
+  事」——scored 窗內**放開**左鍵時記一筆 `fire-released`。偵測條件是 `noFire` 那條的**鏡像**，
+  latch 語意完全相同（放開期間只報一次，重新按住後才會再報下一次），一樣**不阻擋輸入**。
+- **與 `noFire` 互斥，在 `schema.ts` 載入期 fail fast**：同時要求「禁止開火」與「必須全程開火」
+  是設定錯誤，不該讓它變成每一 tick 記一筆自相矛盾的違規。
+- **prep 窗仍不偵測**（沿用既有 `s.tScoredStart.size === 0` 早退）：受測者在置中準備期間本來就
+  還沒按下左鍵，把那段記成違規等於要求他在 prep 就開火。跨過 prep 那一刻若仍未按住則立即記一次，
+  與其他三個 kind 的窗界處理一致。
+- **⚠️ `fire-released` 的下游語意與其他三個 kind 不同**，已寫進 `DrillConfig` 的欄位註解：其餘三種
+  一旦出現在 scored 窗內即讓整個 run 不合格；`fire-released` 只是「何時放開」的定位標記，合格與否
+  由 D-54.50 的**覆蓋率閾值**判定（slice 16 落地）。**這條分歧若沒實作，D-54.50 會被自己的實作
+  推翻**——既有 eligibility 是「任何 protocol_violation 就擋掉 run」。
+- 觸及層：`DrillConfig.ts`（flag + 語意註解）、`schema.ts`（驗證 + 互斥）、`SharedState.ts` /
+  `DataRecorder.ts` / `exportPayloadSchema.ts`（kind 詞彙三處同步）、`DrillRunner.ts`（偵測 + latch）。
+- 兩個 latch 變數分開而不共用：觸發條件相反，共用會在 guard 設定改變時留下錯誤殘留狀態。
+- 驗證：`npx vitest run` **218 files / 2122 tests passed**（+8）、`tsc --noEmit` ×2 exit 0。
+
 ### 2026-09-04 — T7 slice 14：`meta.protocolGuard` 快照（讓判準適用範圍可從 payload 自證）
 
 - **為什麼協定本身要進 metadata**：D-54.50 的覆蓋率規則**只對宣告了 `requireFire` 的 run 成立**。

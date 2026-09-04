@@ -93,7 +93,7 @@ export type DrillEvent =
    * 時的 edge-triggered 標記（held 期間只記一次，放開後可再記）。**不阻擋輸入本身**——heldFire/
    * heldAds/held 的寫入路徑完全不受影響，這只是觀察性標記。
    */
-  | { type: 'protocol_violation'; kind: 'fire' | 'ads' | 'movement'; t: number };
+  | { type: 'protocol_violation'; kind: 'fire' | 'ads' | 'movement' | 'fire-released'; t: number };
 
 export interface DataRecorderSnapshot {
   ticks: TickRecord[];

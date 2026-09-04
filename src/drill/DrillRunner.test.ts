@@ -534,4 +534,67 @@ describe('DrillRunner — protocolGuard（WP-54 / T2）', () => {
     expect(state.heldAds).toBe(true);
     expect(state.held.left).toBe(true);
   });
+
+  // WP-54 / T7（tracking-pilot-v2，D-54.49/D-54.50）：requireFire 是唯一的肯定式 guard。
+  it('requireFire：scored 窗內放開左鍵記一筆 fire-released', () => {
+    const config = trackingGuardConfig({ requireFire: true });
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = true;
+    runner.tick(state, 0);
+    expect(state.protocolViolations).toEqual([]);
+
+    state.heldFire = false;
+    runner.tick(state, 100);
+    expect(state.protocolViolations).toEqual([{ kind: 'fire-released', t: 100 }]);
+  });
+
+  it('requireFire：放開期間只記一次（latch），重新按住後再放開才記下一次', () => {
+    const config = trackingGuardConfig({ requireFire: true });
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = false;
+    runner.tick(state, 0);
+    runner.tick(state, 100);
+    runner.tick(state, 200);
+    expect(state.protocolViolations).toEqual([{ kind: 'fire-released', t: 0 }]); // 恆放開 → 只記一次
+
+    state.heldFire = true;
+    runner.tick(state, 300);
+    state.heldFire = false;
+    runner.tick(state, 400);
+    expect(state.protocolViolations).toEqual([
+      { kind: 'fire-released', t: 0 },
+      { kind: 'fire-released', t: 400 },
+    ]);
+  });
+
+  it('requireFire：prep 窗內尚未按住不記違規（scored 窗開始前不偵測）', () => {
+    // 受測者在置中準備期間本來就還沒按下左鍵；把那段記成違規等於要求他在 prep 就開火。
+    const config = trackingGuardConfig({ requireFire: true }, PREP_MS);
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = false;
+    runner.tick(state, 0);
+    runner.tick(state, 100);
+    expect(state.tScoredStart.size).toBe(0);
+    expect(state.protocolViolations).toEqual([]);
+
+    runner.tick(state, 200); // 跨過 prep → 這一刻仍未按住 ⇒ 立即記一次
+    expect(state.tScoredStart.size).toBe(1);
+    expect(state.protocolViolations).toEqual([{ kind: 'fire-released', t: 200 }]);
+  });
+
+  it('requireFire：全程按住則零違規', () => {
+    const config = trackingGuardConfig({ requireFire: true, noMovement: true });
+    const { state, runner } = setup(config);
+    runner.start(config);
+
+    state.heldFire = true;
+    for (let t = 0; t <= 500; t += 100) runner.tick(state, t);
+    expect(state.protocolViolations).toEqual([]);
+  });
 });

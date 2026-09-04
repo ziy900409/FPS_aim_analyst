@@ -304,7 +304,7 @@ export interface SharedState {
    * `config.protocolGuard` edge-trigger 寫入，`SimLoop` 每 tick drain 進 `recorder` 後清空）。比照
    * `cues` 的 transient queue 模式；偵測**不阻擋輸入本身**。
    */
-  protocolViolations: Array<{ kind: 'fire' | 'ads' | 'movement'; t: number }>;
+  protocolViolations: Array<{ kind: 'fire' | 'ads' | 'movement' | 'fire-released'; t: number }>;
   /** runtime validity observations;純觀測旗標，不 clamp、不改 sim 演進。 */
   validity: { playerCorridorExceeded: boolean };
   /**

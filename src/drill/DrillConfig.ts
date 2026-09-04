@@ -220,8 +220,18 @@ export interface DrillConfig {
    * WP-54 / T2：scored 窗內（`SharedState.tScoredStart` 已蓋戳的目標）偵測到對應輸入時記一筆
    * `protocol_violation` 事件（edge-triggered，false→true 才記一次），**不阻擋輸入本身**。省略＝不
    * 啟用任何 guard（既有 drill 行為逐位不變）。Researcher/pilot-only。
+   *
+   * **`requireFire`（WP-54 / T7，`tracking-pilot-v2`，D-54.49/D-54.50）是唯一的肯定式 flag**：
+   * 其餘三個記「做了不該做的事」，它記「沒做該做的事」——scored 窗內**放開**左鍵時記一筆
+   * `fire-released`。與 `noFire` **互斥**（同時要求禁止與必須開火無法同時滿足），由 `schema.ts`
+   * 在載入 drill 時擋掉。
+   *
+   * ⚠️ `fire-released` 的**下游語意與其他三個 kind 不同**：其餘三種一旦出現在 scored 窗內即讓整個
+   * run 不合格，而 `fire-released` 只是定位「何時放開」的標記——合格與否由 D-54.50 的**覆蓋率
+   * 閾值**判定（見 `trackingRunEligibility.ts`）。理由是失效模式不對稱：`noFire` 下走火一發會注入
+   * recoil punch、單發即污染 block；零後座力武器下短暫放開只是少了幾發音效與 tracer。
    */
-  protocolGuard?: { noFire?: boolean; noAds?: boolean; noMovement?: boolean };
+  protocolGuard?: { noFire?: boolean; noAds?: boolean; noMovement?: boolean; requireFire?: boolean };
 }
 
 export function resolveTargetHitbox(config?: DrillConfig): TargetHitboxSize {

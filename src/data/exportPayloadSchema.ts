@@ -1104,7 +1104,7 @@ function parseScoredStartEvent(record: Record<string, unknown>, path: string, er
 /** WP-54 / T2：`kind` 為封閉列舉（`parseLiteral`，同 `side`/`hitboxShape` 慣例）。 */
 function parseProtocolViolationEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {
   const before = errors.length;
-  const kind = parseLiteral(record.kind, `${path}.kind`, ['fire', 'ads', 'movement'] as const, errors);
+  const kind = parseLiteral(record.kind, `${path}.kind`, ['fire', 'ads', 'movement', 'fire-released'] as const, errors);
   const t = parseFiniteNumber(record.t, `${path}.t`, errors);
   if (kind === undefined || t === undefined || errors.length > before) return undefined;
   return { type: 'protocol_violation', kind, t };

@@ -773,4 +773,34 @@ describe('validateDrill — protocolGuard（WP-54 / T2）', () => {
       /protocolGuard\.noFire/,
     );
   });
+
+  // WP-54 / T7（tracking-pilot-v2）
+  it('接受 requireFire 並保留', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      protocolGuard: { requireFire: true, noMovement: true },
+    });
+    expect(cfg.protocolGuard).toEqual({ requireFire: true, noMovement: true });
+  });
+
+  it('非布林 requireFire → throw 指名欄位路徑', () => {
+    expect(() => validateDrill({ ...(minimalValid() as object), protocolGuard: { requireFire: 1 } })).toThrow(
+      /protocolGuard\.requireFire/,
+    );
+  });
+
+  it('noFire 與 requireFire 同時為 true → 載入期 throw（互斥，不留給每 tick 記矛盾違規）', () => {
+    expect(() =>
+      validateDrill({ ...(minimalValid() as object), protocolGuard: { noFire: true, requireFire: true } }),
+    ).toThrow(/protocolGuard/);
+  });
+
+  it('只有其中一個為 true 時不受互斥規則影響', () => {
+    expect(() =>
+      validateDrill({ ...(minimalValid() as object), protocolGuard: { noFire: true, requireFire: false } }),
+    ).not.toThrow();
+    expect(() =>
+      validateDrill({ ...(minimalValid() as object), protocolGuard: { noFire: false, requireFire: true } }),
+    ).not.toThrow();
+  });
 });

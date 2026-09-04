@@ -67,11 +67,16 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
   let reportedFireViolation = false;
   let reportedAdsViolation = false;
   let reportedMovementViolation = false;
+  // WP-54 / T7：`requireFire` 的鏡像 latch。與 `reportedFireViolation` 分開兩個變數而不共用一個
+  // ——兩者的觸發條件相反，共用會在 guard 設定改變時留下錯誤的殘留狀態；且 schema 已保證
+  // `noFire`/`requireFire` 互斥，同時只會有一個在跑，多一個 boolean 沒有代價。
+  let reportedFireReleasedViolation = false;
 
   function resetProtocolGuardTracking(): void {
     reportedFireViolation = false;
     reportedAdsViolation = false;
     reportedMovementViolation = false;
+    reportedFireReleasedViolation = false;
   }
 
   function tickProtocolGuard(s: SharedState, nowMs: number): void {
@@ -87,6 +92,17 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
         reportedFireViolation = true;
       } else if (!s.heldFire) {
         reportedFireViolation = false;
+      }
+    }
+    // WP-54 / T7（`tracking-pilot-v2`）：唯一的肯定式 guard——記「沒做該做的事」。條件是
+    // `noFire` 那條的鏡像，latch 語意相同（放開期間只報一次，重新按住後才會再報下一次）。
+    // 窗界那一刻若已經放開就立刻報一次，與其他三個 kind 同樣不等下一次邊緣（見上方 latch 註解）。
+    if (guard.requireFire === true) {
+      if (!s.heldFire && !reportedFireReleasedViolation) {
+        s.protocolViolations.push({ kind: 'fire-released', t: nowMs });
+        reportedFireReleasedViolation = true;
+      } else if (s.heldFire) {
+        reportedFireReleasedViolation = false;
       }
     }
     if (guard.noAds === true) {

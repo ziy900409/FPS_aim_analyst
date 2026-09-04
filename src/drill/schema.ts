@@ -512,10 +512,17 @@ function validateProtocolGuard(json: unknown): DrillConfig['protocolGuard'] {
   const noFire = g.noFire === undefined ? undefined : requireBoolean(g.noFire, 'protocolGuard.noFire');
   const noAds = g.noAds === undefined ? undefined : requireBoolean(g.noAds, 'protocolGuard.noAds');
   const noMovement = g.noMovement === undefined ? undefined : requireBoolean(g.noMovement, 'protocolGuard.noMovement');
+  const requireFire = g.requireFire === undefined ? undefined : requireBoolean(g.requireFire, 'protocolGuard.requireFire');
+  // WP-54 / T7：唯一的跨欄位規則。「禁止開火」與「必須全程開火」無法同時滿足，任何同時宣告兩者
+  // 的 drill 都是設定錯誤 —— 在載入期 fail fast，而不是讓每一 tick 都記一筆矛盾的違規。
+  if (noFire === true && requireFire === true) {
+    throw err('protocolGuard', "的 noFire 與 requireFire 互斥，不得同時為 true");
+  }
   return {
     ...(noFire !== undefined ? { noFire } : {}),
     ...(noAds !== undefined ? { noAds } : {}),
     ...(noMovement !== undefined ? { noMovement } : {}),
+    ...(requireFire !== undefined ? { requireFire } : {}),
   };
 }
 
