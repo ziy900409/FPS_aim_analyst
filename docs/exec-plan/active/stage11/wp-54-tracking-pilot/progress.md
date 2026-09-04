@@ -8,6 +8,26 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 17：把兩族 pilot drill 接上 v2 武器與 v2 guard（**刺激正式換代為 G6**）
+
+- **兩族一起換，不得只換一族**：`{ noFire, noAds, noMovement }` → **`{ requireFire, noMovement }`**，
+  且 9 個 block 全部掛 `weaponId: 'tracking_pilot_hold'`。同一份 session 內若有兩種協定，那就不是
+  一個協定。
+- **`noAds` 移除的理由是它已經沒有標的**：v2 武器沒有 `ads` 區塊 ⇒ 右鍵對 FOV／感度完全無效。
+  讓一個不再有任何效果的輸入繼續作廢 block 沒有道理（歷來 6/6 violation 全是右鍵）。
+  `heldAds` 與 `ads` event 仍照記。
+- **practice block 也掛同一把武器**（但仍無 `protocolGuard`，它沒有 scored 窗）：練習的若是另一把
+  武器，受測者練到的就是另一個任務。
+- **兩條新的契約測試，數值全部由來源導出**（slice 6 的教訓）：① 9 個 block 的 `weaponId` 全等於
+  `trackingPilotHold.id`，且該武器 `ads === undefined` / `recoil.magnitude === 0`；
+  ② `magSize × cycletimeSec × 1000 > endCondition.value` 逐 block 成立——**彈匣打空會讓
+  `SimLoop` 強制 `heldFire = false`，被記成受測者放開，直接污染 D-54.50 的覆蓋率**。
+- UI 零改動：武器下拉由 `Object.keys(WEAPONS)` 生成，新武器自動出現。
+- e2e `tracking-pilot-live.spec.ts` 不需改：它斷言的是 `/^(Eligible|Blocked) — /` 這個**形狀**，
+  刻意不釘閒置 run 的判定結果（那是機器事實不是契約）。v2 下閒置 run 會變成 Blocked
+  （`insufficient-fire-hold-coverage`，覆蓋率 0%），仍符合該 regex。
+- 驗證：`npx vitest run` **218 files / 2135 tests passed**（+3）、`tsc --noEmit` ×2 exit 0。
+
 ### 2026-09-04 — T7 slice 16：held-fire 覆蓋率 ≥ 95% 的 eligibility 規則（D-54.50 落地）
 
 - **`MIN_FIRE_HOLD_COVERAGE = 0.95`**（exported，凍結於收資料前）：宣告 `requireFire` 的 run，

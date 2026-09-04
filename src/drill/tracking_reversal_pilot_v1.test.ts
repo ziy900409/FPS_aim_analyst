@@ -14,6 +14,7 @@ import {
   trackingReversalPilotV1Medium,
 } from './tracking_reversal_pilot_v1.ts';
 import { createTrackingTrajectory } from '../sim/trackingTrajectory.ts';
+import { trackingPilotHold } from '../weapon/weapons.ts';
 
 describe('tracking_reversal_pilot_v1 — medium/high reversal-density configs (WP-54 / T2)', () => {
   // KI-019 regression: the shipped cells themselves, not just a synthetic config. The medium cell
@@ -87,10 +88,23 @@ describe('tracking_reversal_pilot_v1 — medium/high reversal-density configs (W
     for (const drill of TRACKING_REVERSAL_PILOT_V1_CANDIDATES) {
       expect(drill.mode, drill.drillId).toBe('practice');
       expect(drill.timing.trackingPrepMs, drill.drillId).toBe(1000);
-      expect(drill.protocolGuard, drill.drillId).toEqual({ noFire: true, noAds: true, noMovement: true });
+      // tracking-pilot-v2 (D-54.49/D-54.50) — must match the core family exactly; a session that
+      // mixed protocols across families would not be one protocol.
+      expect(drill.protocolGuard, drill.drillId).toEqual({ requireFire: true, noMovement: true });
       expect(drill.targets.trackingTrajectory?.durationMs, drill.drillId).toBe(25000);
       expect(drill.endCondition, drill.drillId).toEqual({ type: 'timeLimit', value: 26000 });
     }
+  });
+
+  // WP-54 / T7 — tracking-pilot-v2 weapon contract (D-54.49/D-54.51); mirrors the core family's.
+  it('both density cells ship the v2 hold-fire weapon with a magazine that outlasts the block', () => {
+    const sustainableMs = trackingPilotHold.magSize * trackingPilotHold.cycletimeSec * 1000;
+    for (const drill of TRACKING_REVERSAL_PILOT_V1_CANDIDATES) {
+      expect(drill.weaponId, drill.drillId).toBe(trackingPilotHold.id);
+      expect(sustainableMs, drill.drillId).toBeGreaterThan(drill.endCondition.value);
+    }
+    expect(trackingPilotHold.ads).toBeUndefined();
+    expect(trackingPilotHold.recoil.magnitude).toBe(0);
   });
 
   it('accelerationRampMs stays below both density cells’ shortest reversalIntervalMs (schema.ts-enforced)', () => {

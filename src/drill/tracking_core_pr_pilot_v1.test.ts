@@ -10,6 +10,7 @@ import { formatClearanceViolations, validateClearance } from '../scene/clearance
 import { fieldLow } from '../scene/scenes/field-low.ts';
 import { resolveEyeWorldBase } from '../scene/eyePose.ts';
 import { createTrackingTrajectory, projectTrackingAngles } from '../sim/trackingTrajectory.ts';
+import { trackingPilotHold } from '../weapon/weapons.ts';
 import type { DrillConfig } from './DrillConfig.ts';
 import {
   CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG,
@@ -82,9 +83,41 @@ describe('tracking_core_pr_pilot_v1 — practice/calibration/core matrix configs
     ];
     for (const drill of scoredBlocks) {
       expect(drill.timing.trackingPrepMs, drill.drillId).toBe(1000);
-      expect(drill.protocolGuard, drill.drillId).toEqual({ noFire: true, noAds: true, noMovement: true });
+      // tracking-pilot-v2 (D-54.49/D-54.50): noFire → requireFire, and noAds dropped because the
+      // v2 weapon has no `ads` block, so right-click has no effect left to void a block over.
+      expect(drill.protocolGuard, drill.drillId).toEqual({ requireFire: true, noMovement: true });
       expect(drill.targets.trackingTrajectory?.durationMs, drill.drillId).toBe(25000);
       expect(drill.endCondition, drill.drillId).toEqual({ type: 'timeLimit', value: 26000 }); // prep(1000) + scored(25000)
+    }
+  });
+
+  // WP-54 / T7 — tracking-pilot-v2 weapon contract (D-54.49/D-54.51).
+  it('every block ships the v2 hold-fire weapon, practice included', () => {
+    // Practice is included deliberately: if participants rehearse with a different weapon they
+    // rehearse a different task. Before v2 these configs carried no weaponId at all and silently
+    // inherited main.ts's ak47 default — which has ADS optics and recoil.
+    for (const drill of ALL_BLOCKS) {
+      expect(drill.weaponId, drill.drillId).toBe(trackingPilotHold.id);
+    }
+    // The two properties the protocol depends on, asserted where the protocol is defined rather
+    // than only in the weapon's own test: right-click must be inert, and holding fire must not
+    // inject punch that would turn epsilon(t) into "tracking + recoil control" (C-D4).
+    expect(trackingPilotHold.ads).toBeUndefined();
+    expect(trackingPilotHold.recoil.magnitude).toBe(0);
+  });
+
+  it('the magazine outlasts the full scored block, so held-fire is never cleared by an empty mag', () => {
+    // Derived from each drill's own endCondition rather than a literal round count: SimLoop forces
+    // `heldFire = false` when ammo runs out, which would be recorded as the participant releasing
+    // and would corrupt D-54.50's coverage measure.
+    const sustainableMs = trackingPilotHold.magSize * trackingPilotHold.cycletimeSec * 1000;
+    for (const drill of [
+      trackingCorePrPilotV1CalibrationHorizontal,
+      trackingCorePrPilotV1CalibrationVertical,
+      ...TRACKING_CORE_PR_PILOT_V1_CANDIDATES,
+    ]) {
+      expect(drill.endCondition.type, drill.drillId).toBe('timeLimit');
+      expect(sustainableMs, drill.drillId).toBeGreaterThan(drill.endCondition.value);
     }
   });
 

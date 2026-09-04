@@ -47,7 +47,11 @@ const SCORED_DURATION_MS = 25000; // D-54.4 frozen block length
 const RUNNING_DURATION_MS = PREP_MS + SCORED_DURATION_MS;
 const PRESENTATION_MS = RUNNING_DURATION_MS + 4000;
 const COUNTDOWN_MS = 3000;
-const PROTOCOL_GUARD: NonNullable<DrillConfig['protocolGuard']> = { noFire: true, noAds: true, noMovement: true };
+/** `tracking-pilot-v2`：與 `tracking_core_pr_pilot_v1.ts` 的 `SCORED_PROTOCOL_GUARD` 同一份決定
+ * （D-54.49/D-54.50），理由見該檔註解。兩族必須同時換代，否則同一份 session 內會有兩種協定。 */
+const PROTOCOL_GUARD: NonNullable<DrillConfig['protocolGuard']> = { requireFire: true, noMovement: true };
+/** 同上：`tracking-pilot-v2` 的零後座力／無 ads 專用武器。 */
+const WEAPON_ID = 'tracking_pilot_hold';
 
 /** WP-54-only seed base, offset from tracking_core_pr_pilot_v1.ts's 54000-series so the two families' seeds never collide. */
 const SEED_BASE = 54100;
@@ -76,6 +80,7 @@ function buildReversalCell(drillIdSuffix: string, seed: number, reversalInterval
   return {
     drillId: `tracking_reversal_pilot_v1_${drillIdSuffix}`,
     mode: 'practice',
+    weaponId: WEAPON_ID,
     targets: {
       count: 1,
       distance: DISTANCE_U,

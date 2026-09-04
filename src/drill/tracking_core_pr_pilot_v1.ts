@@ -89,7 +89,29 @@ const PRESENTATION_MS = RUNNING_DURATION_MS + 4000; // comfortably above RUNNING
 const COUNTDOWN_MS = 3000; // existing tracking_v1/_longrange_v1/_br_v1 convention
 const SUPPRESSED_AXIS_DEG = 0.1; // near-zero but positive (requirePositiveNumber); negligible travel on the suppressed axis
 const CALIBRATION_SPEED_DEG_PER_SEC = 5; // the slower candidate — isolates axis visibility from a fast-motion confound
-const SCORED_PROTOCOL_GUARD: NonNullable<DrillConfig['protocolGuard']> = { noFire: true, noAds: true, noMovement: true };
+/**
+ * **`tracking-pilot-v2`（研究者決定 2026-09-04，D-54.49/D-54.50）：`noFire` → `requireFire`，
+ * 並移除 `noAds`。**
+ *
+ * - `requireFire`：scored 窗改為**要求全程按住左鍵**，動機是生態效度——真實 CS2 的追蹤是邊噴邊跟。
+ *   合格與否由 held-fire 覆蓋率 `>= 95%` 判定（D-54.50），不是單次放開即作廢；門檻與理由見
+ *   `trackingRunEligibility.MIN_FIRE_HOLD_COVERAGE`。
+ * - **移除 `noAds`**：`WEAPON_ID` 這把武器沒有 `ads` 區塊 ⇒ `CameraController` 讓右鍵對 FOV／感度
+ *   完全無效。既然右鍵已無任何效果，再讓它作廢 block 就沒有理由了（歷來 6/6 的 violation 全是
+ *   右鍵）。`heldAds` 旗標與 `ads` event 仍照記，稽核不損失。
+ * - `noMovement` 不變。
+ */
+const SCORED_PROTOCOL_GUARD: NonNullable<DrillConfig['protocolGuard']> = { requireFire: true, noMovement: true };
+
+/**
+ * `tracking-pilot-v2` 的專用武器（零後座力／零散佈／無 ads／magSize 512，見
+ * `src/weapon/weapons.ts`）。**每個 block 都要掛**——包含 practice：練習的若是另一把武器，
+ * 受測者練到的就是另一個任務。
+ *
+ * v2 之前這些 config **沒有 `weaponId`**，因此吃 `main.ts` 的預設 `ak47`——那把有
+ * `ads: { fovDeg: 40 }` 與 recoil magnitude 30，所以右鍵真的會改視角、開火真的會有後座力。
+ */
+const WEAPON_ID = 'tracking_pilot_hold';
 
 /** WP-54-only seed base — distinct from every other WP's series (18018/23002/94000s/95000s). */
 const SEED_BASE = 54000;
@@ -198,6 +220,7 @@ function scoredTiming(): DrillConfig['timing'] {
 export const trackingCorePrPilotV1Practice: DrillConfig = {
   drillId: 'tracking_core_pr_pilot_v1_practice',
   mode: 'practice',
+  weaponId: WEAPON_ID,
   targets: {
     ...baseTargets(CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG[0]),
     trackingTrajectory: {
@@ -225,6 +248,7 @@ export const trackingCorePrPilotV1Practice: DrillConfig = {
 export const trackingCorePrPilotV1CalibrationHorizontal: DrillConfig = {
   drillId: 'tracking_core_pr_pilot_v1_calibration_horizontal',
   mode: 'practice',
+  weaponId: WEAPON_ID,
   targets: {
     ...baseTargets(CALIBRATION_SIZE_DEG),
     trackingTrajectory: {
@@ -247,6 +271,7 @@ export const trackingCorePrPilotV1CalibrationHorizontal: DrillConfig = {
 export const trackingCorePrPilotV1CalibrationVertical: DrillConfig = {
   drillId: 'tracking_core_pr_pilot_v1_calibration_vertical',
   mode: 'practice',
+  weaponId: WEAPON_ID,
   targets: {
     ...baseTargets(CALIBRATION_SIZE_DEG),
     trackingTrajectory: {
@@ -283,6 +308,7 @@ export function buildTrackingCorePrPilotV1Cell(
   return {
     drillId,
     mode: 'practice',
+    weaponId: WEAPON_ID,
     targets: {
       // `sizeDeg` is the **target's angular size** (KI-020 §4.1), not its travel amplitude.
       ...baseTargets(sizeDeg),
