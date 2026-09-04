@@ -4,7 +4,10 @@
 > running log：[progress.md](progress.md) · 操作手冊：[../../../../operational/tracking-pilot-runbook.md](../../../../operational/tracking-pilot-runbook.md)
 > · 上游 gate：[T6-instrumentation-gate.md](T6-instrumentation-gate.md)（Gate A = 部分通過）
 >
-> **狀態：🟡 判準已凍結；G5 乾跑已完成（§3.3——七項過、`3deg_5dps` TOT 80.7% 出界後由研究者決定續行 §3.4）；工程前置全部完成；等 12–20 人資料。** 依 [README §5](README.md)「Gate B/C 的 protocol threshold 必須在
+> **狀態：🟡 判準已凍結；工程前置全部完成（含 `tracking-pilot-v2`）；⚠️ 招募前尚缺一次 G6 乾跑。**
+> 2026-09-04 研究者決定改為「scored 窗全程按住左鍵」（**D-54.49**，動機：生態效度）⇒ 新世代 **G6**，
+> **§3.3 的 G5 乾跑與 §3.4 的續行決定一併作廢**，須在 G6 上重跑（見 §3 開頭的作廢框與 §3.5）。
+> 依 [README §5](README.md)「Gate B/C 的 protocol threshold 必須在
 > 收資料前凍結」——本文件 §2 是那份凍結,寫於任何 T7 真人資料之前(2026-09-03)。
 > 後續變更一律以**新 protocol version + decision row** 表達,不得原地改語意。
 
@@ -39,8 +42,10 @@ Gate A 問的是「儀器量得對不對」；**Gate B 問的是「這些條件�
 | Primary outcome | **RMS ε(t)**（deg）,per condition | T0 preregistration |
 | Sim rate / schema | 128 Hz fixed step / export schema v2 | ADR / T1 |
 | Metric version | `tracking-dynamics-v1` | T3 |
-| Protocol version | `tracking-pilot-v1` | T5 |
-| Eligibility | `evaluateTrackingRunEligibility()` 的封閉 reason vocabulary;**blocked run 不進聚合** | FR-54-10 / T4 |
+| Protocol version | ~~`tracking-pilot-v1`~~ → **`tracking-pilot-v2`（2026-09-04 起）** | T5 / **D-54.49** |
+| Eligibility | `evaluateTrackingRunEligibility()` 的封閉 reason vocabulary;**blocked run 不進聚合**。v2 新增兩個 reason:`insufficient-fire-hold-coverage`（held-fire 覆蓋率 < 95%,**D-54.50**）與 `missing-fire-flag`(協定未被記錄,儀器問題) | FR-54-10 / T4 / **D-54.50** |
+| Scored 窗協定 | ~~禁止開火 / 禁止 ADS / 禁止移動~~ → **要求全程按住左鍵 + 禁止移動**（右鍵無效但仍記錄） | **D-54.49**（2026-09-04） |
+| held-fire 覆蓋率 | **≥ 95%**（scored 窗逐 tick;25 s 容許累計約 1.25 s）。實作 = `MIN_FIRE_HOLD_COVERAGE` | **D-54.50**（2026-09-04,**收資料前**） |
 | 交付速度驗收帶 | **0.95–1.05**（不得放寬,[T6 §11.8](T6-instrumentation-gate.md)） | KI-023 |
 | 每個 retained cell | **≥ 10 份 eligible run** | README §4 T7 |
 
@@ -106,6 +111,22 @@ version + 新 decision row** 表達,並標註哪批資料以哪一版判定。
 ---
 
 ## 3. 招募前的乾跑（凍結為 Gate B 的前置,使用者決定 2026-09-03）
+
+> ## 🔴 §3.1–§3.4 全部作廢（2026-09-04，`tracking-pilot-v2` / **D-54.49**）
+>
+> 研究者決定把 scored 窗從「禁止開火」改為「**全程按住左鍵**」（動機：生態效度），右鍵改為無效
+> 但仍記錄。**刺激的角度量逐位未動**（尺寸 3.0/2.0°、速度 5/14 deg/s、頻帶、行程全部相同），
+> 但**受測者要做的事變了**，故為新世代 **G6**。
+>
+> **§3.3 的 G5 乾跑結果不再有效**，因為它量的是單任務追蹤；G6 是「追蹤 + 全程按住左鍵」的雙任務，
+> 負荷會壓低所有指標，**量級未知**。§3.4 的「照原樣招募」決定連同它所依據的數字一併失效。
+>
+> **⚠️ 這是唯一一次 layer 3b 攔不住的世代分界**——它比對刺激軌跡，而軌跡確實逐位相同。
+> G5 與 G6 的區分只能靠 `meta.weaponId === 'tracking_pilot_hold'` 與 `meta.protocolGuard`。
+>
+> **招募前必須在 G6 上重跑一次乾跑**，重跑第 3 點的逐項檢查（含新增的第 6 項，見 §3.5）。
+> §2.2 的判準門檻**一字未動**——換代不是放寬判準的機會。**`3deg_5dps` 的 ceiling 風險仍然存在
+> 且尚未在 G6 上量過**，D-54.48 記錄的「帶著風險招募」是對 G5 數字做的決定，重跑後須重新判斷。
 
 > **理由**：B-1 的離線預測依賴一個由 **2 位受測者、2 個速度點**擬合的人類誤差模型
 > （`RMS ε ≈ 0.183 + 0.1867 · v_eye`）,它在 reversal 家族上交叉驗證通過但仍是外插。
@@ -230,6 +251,23 @@ calibration 隨小候選值 → 2.0°、reversal 與 practice 隨大候選值 �
 **未因此放寬任何判準**：§2.2 的門檻一字未動,`3deg_5dps` 仍以 median TOT < 80% **且**
 受測者間 CV ≥ 15% 判定。分析時**優先看這個 cell**;真正的風險不是 TOT 本身,而是
 **逼近天花板會壓縮受測者間差異** ⇒ CV 子句比 TOT 子句更難救,且在 n=1 完全測不到。
+
+### 3.5 G6 重跑的追加檢查（`tracking-pilot-v2`，2026-09-04）
+
+§3 第 3 點的五項全部沿用，**再加第 6 項**：
+
+- **`quality` 不得出現 `missing-fire-flag`**。出現代表逐 tick `fire` 旗標沒有進到 payload，
+  亦即協定根本沒被記錄——這是儀器故障，不是受測者表現，**必須先修好再跑**。
+- **操作員自己的 held-fire 覆蓋率應該遠高於 95%**（理想 100%）。若操作員刻意全程按住卻仍被判
+  `insufficient-fire-hold-coverage`，那是輸入鏈或彈匣的問題，同樣是先修再跑。
+- **順帶會第一次看到 shots-on-target**：v2 武器零散佈 ⇒ 彈著點 = 準心，逐發命中與否與離線 TOT
+  走同一套 sphere 幾何。兩者若不一致，代表引擎 `HitDetector` 與離線 `trackingDerivation` 對不上，
+  是一條免費的 fidelity 交叉驗證。**這不是新指標**（C-D3：未過構念驗證的指標不進教練報告），
+  只是儀器對帳。
+
+**重跑前先確認 §3.3 的三個 G5 正面結果會不會被雙任務吃掉**（都要重新量，不可沿用）：
+比值 2.06–3.80、B-3a 方向四項、B-3c 的 ±20%。其中 **B-3a 是 G5 才第一次驗到成立的**，
+若在 G6 消失，那是「按住左鍵壓縮了受測者間差異」的訊號，屬研究決策 ⇒ 問使用者。
 
 ---
 

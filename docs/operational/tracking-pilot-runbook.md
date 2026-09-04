@@ -4,17 +4,27 @@
 > 操作員。上游概念文件：[analysis-tracking.md](analysis-tracking.md)（P0/P1 公式、eligibility/
 > compatibility/evidence 契約）、[../exec-plan/active/stage11/wp-54-tracking-pilot/README.md](../exec-plan/active/stage11/wp-54-tracking-pilot/README.md)（需求/介面契約）。
 
-## 現在該做什麼（2026-09-03，T7 開工後）
+## 現在該做什麼（2026-09-04，`tracking-pilot-v2` 之後）
 
 > Gate A 已結案（部分通過）。**現在的階段是 T7 難度校準（Gate B）**，判準已凍結於
 > [T7-difficulty-calibration-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T7-difficulty-calibration-gate.md) §2。
 
-1. ~~先做乾跑~~ **✅ G5 乾跑已於 2026-09-04 完成**（操作員 P06，9 block + 1 retry，
-   gate §3.3）：`atEye` 3.99–4.01 u / 100–103% / 1.999–3.006°、10/10 fidelity match、
-   比值 **2.06–3.80**、B-3a 方向四項全成立、B-3c 全在 ±20% 內。
-   **唯 `3deg_5dps` 的 TOT = 80.7%，超 5–80% 窗上緣 0.7 點** ⇒ 研究者決定**照原樣招募、
-   風險入帳**（gate §3.4 / D-54.48），未放寬任何判準。
-   ⇒ **現在可以招募了。** 若日後又動到刺激（= 新世代），乾跑要重跑一次。
+> ### 🔴 協定已於 2026-09-04 換代為 `tracking-pilot-v2`（D-54.49）——**還不能招募**
+>
+> **受測者現在要在 scored 窗全程按住左鍵**（動機：生態效度，真實 CS2 的追蹤是邊噴邊跟）；
+> 右鍵改為**無效但仍記錄**（v2 武器沒有 ADS 光學，所以右鍵不再會毀掉 block）。
+>
+> 刺激的角度量**逐位未動**，但受測者要做的事變了 ⇒ 新世代 **G6**，
+> **§3.3 的 G5 乾跑結果與 §3.4 的「照原樣招募」決定一併作廢**。
+> ⚠️ **layer 3b 攔不住這一組**（軌跡真的逐位相同），世代只能靠
+> `meta.weaponId === 'tracking_pilot_hold'` 與 `meta.protocolGuard` 辨識。
+
+1. ~~G5 乾跑~~ **🔴 作廢，須在 G6 重跑一次**（約 10 分鐘，gate §3 + §3.5）。
+   ~~2026-09-04 的 G5 乾跑（P06）：比值 2.06–3.80、B-3a 四項全成立、B-3c 全在 ±20% 內，
+   唯 `3deg_5dps` TOT = 80.7% 出界 0.7 點~~——這些數字量的是**單任務**追蹤，
+   G6 是「追蹤 + 全程按住左鍵」的雙任務，負荷會壓低所有指標且量級未知，全部須重量。
+   重跑時**額外看三件事**（gate §3.5）：不得出現 `missing-fire-flag`、操作員自己的
+   held-fire 覆蓋率應接近 100%、shots-on-target 與離線 TOT 是否對得上。
 2. **招募 12–20 人**（gate §4）：**全員 `Session index = 0`**；其中 **6–8 人另跑一次
    `Session index = 1`**（seed 家族等效性需要成對資料）。
 3. **刻意涵蓋不同顯示器**：T6 的 21 份 payload 全來自同一台 60 Hz / 3840×2160 / Edge 151 機器，
@@ -149,16 +159,31 @@ click-only 的 `<div>`。
    （`0` = primary seed，`1` = alternate seed family）、填 Rest seconds（建議 20），Tab 到
    **Start manifest** 按 Enter。
 4. 面板自動讓位，block 開始（3 秒倒數 + 25 秒）。點畫面中央進入 pointer lock 才能瞄準。
-   **scored/calibration block 禁開火、禁 ADS、禁 WASD**（違反會記 `protocol_violation`）；
-   practice 可自由熱身。
+   **`tracking-pilot-v2` 起：scored/calibration block 要求「全程按住左鍵」+ 禁 WASD**；
+   practice 可自由熱身（但也用同一把武器，讓受測者練到的是同一個任務）。
 
-   > ⚠️ **開跑前務必口頭提醒受測者:「不要按右鍵」。** 三場真人 session 累計 **5 次
-   > `protocol_violation`,5/5 全部是 `kind: "ads"`(右鍵 ADS)**——沒有一次是開火或 WASD。
-   > 這是目前唯一實際發生過的違規型態,且每次都得整個 block 重跑(25 秒 + 休息)。
-   > 依 OQ-54-13 的決定,程式端**刻意不阻止**右鍵(維持「記錄違規而非阻止」的設計),
-   > 所以這道防線只有操作員的事前提醒。習慣性右鍵瞄準的玩家尤其要提醒。
+   > ### 口頭指導語（v2，2026-09-04 起）
+   >
+   > **「這個 block 從倒數結束到結束為止，左鍵一直按著不要放。滑鼠移動照常跟著目標走。
+   > 不要按 WASD。右鍵按了沒有作用，但也不用特地去按。」**
+   >
+   > - **按住左鍵是新的協定要求**（D-54.49，動機是生態效度）。武器是零後座力、零散佈、
+   >   彈匣 512 發的 `tracking_pilot_hold`，**不會有後座力要壓、也不會打完**。
+   > - **偶爾手滑放開不會整個作廢**：判準是 scored 窗內 held-fire 覆蓋率 **≥ 95%**
+   >   （25 秒容許累計約 1.25 秒，D-54.50）。但**倒數結束前就先按住**最保險——
+   >   scored 窗一開始就沒按住會立刻開始累積。
+   > - **右鍵不再需要特別提醒**（歷來 6/6 的 violation 全是右鍵）：v2 武器沒有 ADS 光學，
+   >   右鍵對視角與感度**完全無效**，不再會毀掉 block。`heldAds` 與 `ads` event 仍照記，
+   >   稽核不損失。
+   > - 程式端依 OQ-54-13 仍**刻意不阻止**任何輸入，維持「記錄而非阻止」的設計。
 5. block 結束 → **自動下載該 block 的 JSON** → 面板自動回來，顯示 outcome 與品質橫幅
    （`Eligible — scored ticks: …` / `Blocked — reasons: …`；practice 無橫幅）。
+
+   > **v2 新增兩個 blocked reason**：
+   > - `insufficient-fire-hold-coverage` → 受測者放開左鍵超過 5%。**Retry block**，
+   >   重跑前再提醒一次指導語。
+   > - `missing-fire-flag` → **儀器問題不是受測者問題**：逐 tick `fire` 旗標沒進到 payload。
+   >   停止施測並回報，不要 retry（重跑不會修好它）。
 6. **quality abort 的建議處置**：
    - `Blocked — reasons: recorder-overflow` / `input-buffer-overflow` / `non-monotonic-timestamps`
      → **系統/裝置問題**，不是受測者問題。先排除背景負載（關掉其他分頁/錄影軟體），再

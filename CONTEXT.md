@@ -300,3 +300,21 @@
 | **家族拖曳排序**([SessionPlanSetup.ts](src/ui/SessionPlanSetup.ts)) | HTML5 native drag-and-drop(`draggable`/`dragstart`/`dragover`/`drop`,不新增外部套件,D-43.3)。每列 `data-session-family="<TestFamilyId>"`,DOM 順序即 `SessionPlanSelection.families` 的提交順序;`SessionRunner.start()` 直接信任該順序(驗證非空、皆為合法 `TestFamilyId`、無重複),不再由 §M `buildFamilyOrder` 覆寫(README §2③)。 |
 | **休息秒數 UI 防呆邊界(0–3600 秒)**([SessionPlanSetup.ts](src/ui/SessionPlanSetup.ts)) | `<input type="number" min="0" max="3600">`,預設 60 秒,允許小數;送出時再驗證非空、finite 且含端點範圍內。**表單防呆,非凍結研究常數**——與 Runner/metadata 的「僅要求 finite/non-negative」是不同層級的邊界(D-43.7,比照 §L DPI 邊界的性質)。 |
 | **`sessionPlanRestSeconds` / `sessionPlanFamilyOrder`(匯出 metadata additive 欄位)**([metadata.ts](src/data/metadata.ts)) | 比照 §L `dpi`/§N `sessionPlanPreset` 的 additive 型式:`Meta`/`CollectMetaArgs` 選填頂層欄位,分別記錄本次 session **實際使用**的休息秒數與**實際執行**的家族順序,純稽核記錄用途,不驗證封閉清單(它們是「操作者這次選了什麼」而非凍結協定參數),不流入任何 `src/sim`/`src/metrics` 計算或判定(README §2④)。 |
+
+## P. Tracking pilot `tracking-pilot-v2` 術語（WP-54 / T7，stage11；`docs/operational/analysis-tracking.md`）
+
+> 2026-09-04 研究者把 tracking pilot 的 scored 窗從「禁止開火」改為「**全程按住左鍵**」，右鍵改為
+> **無效但仍記錄**（動機：生態效度，真實 CS2 的追蹤是邊噴邊跟）。刺激的角度量逐位未動，但受測者要
+> 做的事變了 ⇒ 新 protocol version + 新刺激世代 **G6**（D-54.49~D-54.51，見
+> [wp-54 progress.md](docs/exec-plan/active/stage11/wp-54-tracking-pilot/progress.md) Decision log）。
+
+| 術語 | 定義 |
+|---|---|
+| **`tracking-pilot-v2`** | tracking pilot 的協定版本（前身 `tracking-pilot-v1`）。三個改變：scored 窗**要求全程按住左鍵**、右鍵**無效但仍記錄**、`protocolGuard` 由 `{noFire,noAds,noMovement}` 改為 `{requireFire,noMovement}`。**舊世代資料不可與 G6 合併**——這是唯一一次 layer 3b（刺激保真度）攔不住的世代分界，因為軌跡確實逐位相同，只能靠 `meta.weaponId` / `meta.protocolGuard` 辨識。 |
+| **`tracking_pilot_hold`（武器）**（[weapons.ts](src/weapon/weapons.ts)） | `tracking-pilot-v2` 的專用武器。**零後座力**（壓槍補償會進 `aimSink`，有後座力就會讓 ε(t) 變成「追蹤 + 壓槍」的混合構念 ⇒ 牴觸 C-D4）、**零散佈**（彈著點 = 準心 ⇒ shots-on-target 與離線 TOT 共用同一套 sphere 幾何）、**省略 `ads`**（⇒ `CameraController` 的 `effectiveActive` 讓右鍵完全無效，這就是「停用右鍵」的全部實作）、**`magSize` 512**（26 s block × 0.1 s cycle = 260 發；打空會讓 `SimLoop` 強制 `heldFire = false` 而被記成受測者放開）。`cycletimeSec` 取 AK 的 0.1 s——步槍連射節奏就是生態效度的本體。 |
+| **`protocolGuard.requireFire`**（[DrillConfig.ts](src/drill/DrillConfig.ts)） | 四個 guard flag 裡**唯一的肯定式**：其餘三個記「做了不該做的事」，它記「沒做該做的事」。與 `noFire` **互斥**（由 [schema.ts](src/drill/schema.ts) 在載入期擋掉）。偵測仍是 edge-triggered latch、仍**不阻擋輸入**、prep 窗仍不偵測。 |
+| **`fire-released`（violation kind）** | `requireFire` 下 scored 窗內放開左鍵時記的 `protocol_violation`。**下游語意與其他三個 kind 不同**：`fire`/`ads`/`movement` 出現一次即讓整個 run 不合格；`fire-released` 只是「何時放開」的定位標記，合格與否由 held-fire 覆蓋率判定。此差異在 `trackingRunEligibility` 與 `trackingDynamics` 各有一處排除，**少做任一處，D-54.50 就會被實作推翻**。 |
+| **逐 tick `fire` 旗標**（[RingBuffer.ts](src/data/RingBuffer.ts)） | tick row 的 additive optional boolean，取 `state.heldFire`。與 `ads` 同一條理由（§G / GD-16）：`aim` 資料無法反推按住狀態，而覆蓋率是連續量，只有 edge 事件時漏一個 edge 就整段區間無法判定。**缺席 ≠ `false`**——arena 以 `fire` + `hasFire` 兩個 typed array 保留這個區別，parser 不補預設值。 |
+| **held-fire 覆蓋率（`MIN_FIRE_HOLD_COVERAGE = 0.95`）**（[trackingRunEligibility.ts](src/pilot/trackingRunEligibility.ts)） | scored 窗內 `ticks[].fire === true` 的 tick 佔比，**只對 `meta.protocolGuard.requireFire` 的 run 計算**。`< 0.95` ⇒ reason `insufficient-fire-hold-coverage`（25 s 容許累計約 1.25 s）。**不是**全有全無，因為失效模式不對稱：`noFire` 下走火一發注入 30 單位 punch、單發即污染 block；零後座力下短暫放開完全不擾動瞄準任務。**收資料後不得調整**（D-54.50，預註冊）。 |
+| **`missing-fire-flag`（eligibility reason）** | 宣告了 `requireFire` 但 scored tick 沒有 `fire` 欄 ⇒ 協定根本沒被記錄。**刻意與 `insufficient-fire-hold-coverage` 分開**：缺欄若當成 0% 覆蓋率，會以「受測者沒按住」的理由否決一個其實是「儀器沒記錄」的 run——**報錯原因本身說錯話**正是 C-D3 要防的失效。操作端見到它應停止施測並回報，retry 修不好。 |
+| **`meta.protocolGuard`（匯出快照）**（[metadata.ts](src/data/metadata.ts)） | `DrillConfig.protocolGuard` 原樣帶出（比照 `spawn` 的 opaque pass-through），四個 optional boolean。**存在的理由是讓判準的適用範圍可從 payload 自證**：否則離線端只能對所有 run 一律套覆蓋率（每個不開火的 drill 都會被算出 0%），或從資料反推協定（用結果定義判準）。只驗形狀不驗語意——互斥規則只在 `schema.ts` 一處，不做第二份實作。 |

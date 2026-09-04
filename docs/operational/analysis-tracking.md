@@ -437,7 +437,7 @@ WP-54 的 core matrix 有兩個被操弄的因子，兩者在 2026-09-03 之前*
 | Travel amplitude | `trackingTrajectory.yawBoundDeg`/`pitchBoundDeg` | 所有 core cell 共用 ±16°（非操弄變數）；reversal cell 用 `angularBoundsDeg ±13°` |
 | Frequency band | `trackingTrajectory.frequencyBandHz` | core cell 為 **`[0.15, 1.05]` Hz**（T7/OQ-54-14 自 `[0.3, 2.1]` 降低）。頻帶決定「每單位速度走多遠」，因而決定**凍結準心比值**——`[0.3, 2.1]` 的比值上界僅 1.61，任何速度都達不到 Gate B 的 2.0（見下方「凍結準心比值」） |
 
-**歷史資料判讀（五個世代，都不可與現行資料合併做速度／尺寸比較）**：
+**歷史資料判讀（六個世代，都不可與現行資料合併做速度／尺寸比較）**：
 
 | 世代 | 辨識方式 | 交付速度的真實值 |
 |---|---|---|
@@ -446,6 +446,7 @@ WP-54 的 core matrix 有兩個被操弄的因子，兩者在 2026-09-03 之前*
 | **G3**（KI-023 已修、KI-024 未修；2026-09-03 的 P04/P05 兩批屬此代） | `frequencyBandHz [0.3,2.1]` + `yawBoundDeg 16` + `meta.scene.eye.z === 4` | `targetRmsSpeedDegPerSec` 已是 2D 語意，故**以 world origin 為頂點**交付即宣稱值（1.000–1.017）；但眼睛在 z=+4、目標在 z=−4 ⇒ **受測者實際看到的每個角度量都是宣稱值的 0.50×**（實測 0.499–0.508）。宣稱 0.5°/2.0° 實為 **0.25°/1.0°**，宣稱 5/20 deg/s 實為 **2.5/10.0** |
 | **G4**（KI-024 已修） | `meta.scene.eye.z === 0` + `frequencyBandHz [0.15,1.05]` + speed 候選值 `5/14` | **宣稱值即眼睛所見的交付值**（實測 5.01–5.13 / 13.94–14.01 deg/s，角尺寸 0.500°/1.999°）。core matrix 的快速候選值由 T7 revise 為 14 deg/s（20 在此頻帶下會讓目標沉到地面下） |
 | **G5**（T7 尺寸 revise，本節上表所述） | 同 G4，但 **size 候選值 `3.0 / 2.0` deg**（drillId `3deg_*` / `2deg_*`；calibration 2.0°、reversal 3.0°、practice 3.0°）。**2026-09-04 乾跑實測交付**（P06，眼睛所見）：交戰距離 3.99–4.01 u、速度 5.01–5.13 / 13.94–14.03 deg/s（100–103%）、角尺寸 **1.999 / 2.994–3.006°** | 角尺寸與速度皆為眼睛所見的交付值。**2026-09-04 的乾跑（G4）顯示 0.5° 兩個核心 cell 的 TOT 只有 1.5% / 3.9%，低於凍結的 5% hard floor**，故小尺寸層由 0.5° 提高到 2.0°、大尺寸層由 2.0° 提高到 3.0°（見下方「0.5° pixel floor 結案」） |
+| **G6**（T7 `tracking-pilot-v2`，2026-09-04 起；**現行世代**） | `meta.weaponId === 'tracking_pilot_hold'`（最可靠）+ `meta.protocolGuard` 為 `{ requireFire, noMovement }` + `ticks[].fire` 存在 | **刺激的角度量與 G5 完全相同**（尺寸 3.0/2.0°、速度 5/14 deg/s、頻帶 `[0.15,1.05]`、行程 ±16°，皆逐位未動）。換代的是**受測者要做的事**：scored 窗從「禁止開火」改為「**全程按住左鍵**」，右鍵改為無效但仍記錄 |
 
 G2 資料若要納入分析，速度軸須自行乘 `√2`（calibration 除外）；**G3 資料的每個角度量須乘 2**；
 但條件標籤與 compatibility key 記的仍是宣稱值，**跨世代合併需明確標註世代**。
@@ -454,6 +455,36 @@ G2 資料若要納入分析，速度軸須自行乘 `√2`（calibration 除外�
 既有 payload 都已作廢（G1–G3）或非 gate 證據（G4 乾跑），故無實際受害者；layer 3b 會攔下跨世代混用。
 最可靠的世代辨識是 `meta.scene.eye.z`（G4 = 0）加上分析 runner 的 `atEye` 行——它直接量錄到的資料，
 不依賴 metadata 宣稱什麼。**layer 3b（刺激保真度）會把 G1–G3 判為 mismatch**，這正是它的用途。
+
+**⚠️ G5 與 G6 不可合併，即使刺激幾何逐位相同。** 前五代的分界都是「同一個任務、刺激交付錯了」，
+G5→G6 是**唯一一次刺激交付完全正確、但任務本身換了**：受測者現在要一邊全程按住左鍵一邊追蹤。
+雙任務負荷會壓低所有 P0/P1 指標，其量級未知——這正是要在 G6 上重跑乾跑的理由。
+**layer 3b 不會攔下這一組**（它比對的是刺激軌跡，而軌跡確實逐位相同），所以這道分界只能靠
+`meta.weaponId` / `meta.protocolGuard` 辨識。分析批次一律以此二者判代，不要只看 `atEye` 數字。
+
+### held-fire 覆蓋率（`tracking-pilot-v2`，D-54.50）
+
+**定義**：scored 窗內（`scored_start` 起算到錄製結束）`ticks[].fire === true` 的 tick 數，除以同一
+區間的 tick 總數。**只對 `meta.protocolGuard.requireFire === true` 的 run 計算**。
+
+**判準**：`>= 0.95` 才合格（25 s 窗容許累計約 1.25 s 放開）；低於門檻 ⇒ 運行層 eligibility 給出
+`insufficient-fire-hold-coverage`。實作與凍結值 = `src/pilot/trackingRunEligibility.ts` 的
+`MIN_FIRE_HOLD_COVERAGE`（收資料前凍結，**收資料後不得調整**）。
+
+**三件容易搞錯的事**：
+
+1. **`fire-released` 事件不等於不合格。** 它只標記「何時放開」，方便定位；合格與否**只**由上面
+   這個覆蓋率決定。其餘三個 violation kind（`fire`/`ads`/`movement`）維持原本的全有全無語意——
+   在 scored 窗內出現一次就作廢整個 run。
+2. **缺 `fire` 欄 ≠ 覆蓋率 0%。** 宣告了 `requireFire` 但 tick 沒有這一欄時，reason 是
+   `missing-fire-flag` 而不是 `insufficient-fire-hold-coverage`：前者說「沒量到」，後者說
+   「受測者沒做」，把後者拿來報前者就是讓指標說錯話（C-D3）。
+3. **prep 窗不計入。** 受測者在置中準備期間本來就還沒按下左鍵，與其他所有 scored 窗判準同一條界線。
+
+**為什麼不是全有全無**：失效模式不對稱。`noFire` 下走火一發會注入 recoil punch、單發即污染整個
+block；G6 的武器（`tracking_pilot_hold`）零後座力，短暫放開只是少了幾發音效與 tracer，**完全不
+擾動瞄準任務的力學**。26 秒連續按住 × 9 blocks × 12–20 人，全有全無會把一次手滑、或 scored start
+那一瞬間的晚按，直接變成資料損失。
 
 ### 凍結準心比值（frozen-crosshair ratio，T7 / OQ-54-14）
 

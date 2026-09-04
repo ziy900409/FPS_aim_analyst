@@ -211,7 +211,25 @@
 
 ### T7 工程 slice（已 commit）
 
-- [x] **slice 11**：**G5 乾跑完成 + 研究者決定照原樣招募**（docs-only）。gate 新增 **§3.3**
+- [x] **slice 12–18**：**`tracking-pilot-v2`——scored 窗改為「全程按住左鍵」，右鍵改為無效但仍記錄**
+      （研究者決定，動機是生態效度；**D-54.49 / D-54.50 / D-54.51**，全部凍結於收資料前）。
+      刺激的角度量逐位未動，但受測者要做的事變了 ⇒ **新世代 G6，G5 乾跑作廢須重跑**。
+      - **12** `WEAPONS.tracking_pilot_hold`：零後座力（否則 ε 變成「追蹤+壓槍」⇒ 牴觸 C-D4）、
+        零散佈（彈著點=準心 ⇒ shots-on-target 與離線 TOT 同一套 sphere 幾何）、無 `ads`
+        （右鍵完全無效，這就是「停用右鍵」的全部實作）、`magSize` 512（打空會讓 `SimLoop`
+        強制 `heldFire=false`，被記成受測者放開）。
+      - **13** 逐 tick `fire` 旗標（additive optional，缺席 ≠ `false`）——覆蓋率是連續量，
+        只有 edge 事件時漏一個 edge 就整段區間無法判定（同 `ads` 的 GD-16 理由）。
+      - **14** `meta.protocolGuard` 快照——讓「這條判準適用於本 run 嗎」可從 payload 自證。
+      - **15** `protocolGuard.requireFire` + `fire-released` kind（與 `noFire` 互斥，載入期擋）。
+      - **16** held-fire 覆蓋率 **≥ 95%** 的 eligibility 規則 + 把 `fire-released` 排除在既有
+        全有全無規則之外（**兩處，少做任一處 D-54.50 就會被實作推翻**）+ `missing-fire-flag`
+        與覆蓋率不足分開（報錯原因說錯話 = C-D3）。
+      - **17** 兩族 9 個 block 接上 v2 武器與 v2 guard（practice 也換武器）。
+      - **18** 文件：`analysis-tracking.md` 世代 G6 + 覆蓋率定義、gate §2/§3/§3.5、runbook
+        口頭指導語、`CONTEXT.md` §P。
+      ⇒ **下一步不是招募，是在 G6 上重跑一次乾跑**（gate §3 作廢框 + §3.5）。
+- [x] ~~**slice 11**~~ 🔴 **結論作廢（換代 G6）**：**G5 乾跑完成 + 研究者決定照原樣招募**（docs-only）。gate 新增 **§3.3**
       （逐項實測）與 **§3.4**（刻意偏離 §3 第 4 點的理由），§6 的 G5 乾跑項打勾，D-54.48。
       ⇒ **Gate B 的前置全部完成，下一步是招募 12–20 人。**
 - [x] **slice 10**：**B-3b seed 家族等效性**——`scripts/trackingGateBSeedEquivalence.ts`
@@ -275,16 +293,22 @@
 - [x] **判準在收資料前凍結**（[T7 gate](T7-difficulty-calibration-gate.md) §2，2026-09-03，README §5）。
 - [x] **招募前乾跑（G4）**：2026-09-04 完成，四項全過（比值 2.05–3.48）。**同時抓到 0.5° 的
       hard-floor 問題 ⇒ 尺寸 revise 為 G5**（gate §3.1/§3.2）。
-- [x] **G5 乾跑**（2026-09-04，P06 ×9 block + 1 retry，gate §3.3）：比值 **2.06–3.80**、
+- [ ] 🔴 **G6 乾跑（`tracking-pilot-v2`）——招募前必做，尚未執行**（gate §3 作廢框 + §3.5）。
+      追加三項檢查：不得出現 `missing-fire-flag`（儀器問題）、操作員自己的 held-fire 覆蓋率
+      應接近 100%、shots-on-target 與離線 TOT 是否對得上（免費的 fidelity 交叉驗證）。
+      §2.2 門檻一字未動——換代不是放寬判準的機會。
+- [x] ~~**G5 乾跑**~~ 🔴 **作廢（量的是單任務追蹤，G6 是雙任務）**（2026-09-04，P06 ×9 block + 1 retry，gate §3.3）：比值 **2.06–3.80**、
       `atEye` 3.99–4.01 u / 100–103% / 1.999–3.006°、10/10 fidelity match、**B-3a 方向四項全成立**
       （首次在真正交付的刺激上驗到）、B-3c 全在 ±20% 內。**唯 `3deg_5dps` TOT = 80.7% 超上緣 0.7 點**
       ⇒ 使用者決定照原樣招募、風險入帳（gate §3.4 / **D-54.48**），未放寬任何判準。
 - [ ] 依 T0 preregistered protocol 招募 12-20 位不同 tracking 程度受測者（全員 family A，
       6–8 人加跑 family B；**涵蓋 ≥ 2 種顯示器刷新率**——T6 的覆蓋缺口）。
+      ⚠️ **G6 乾跑通過前不得開始招募。**
 - [x] **0.5 deg pixel/aliasing floor 已結案**（2026-09-04 乾跑）：單軸可跟（TOT 19.7/15.7%）、
       雙軸不可跟（3.9/1.5%）⇒ 不再安排 0.5° block。
-- [ ] 分析 easy ceiling、hard acquisition floor（**優先看 `3deg_5dps`**——乾跑重算 86.2%，
-      高於凍結的 80% ceiling）。
+- [ ] 分析 easy ceiling、hard acquisition floor（**優先看 `3deg_5dps`**——G5 乾跑實測 80.7%，
+      超凍結的 80% ceiling 0.7 點。**該數字屬 G5，G6 下尚未量過**：雙任務負荷可能把它拉離
+      天花板，也可能壓縮受測者間差異而讓 B-2a 的 CV ≥ 15% 子句更難救）。
 - [ ] 分析 seed equivalence、size x speed effect、block time slope。
 - [ ] 每個 retained cell 至少 10 份 eligible runs。
 - [ ] 依 preregistered rules 輸出 retained/revise/remove decision，不覆寫 v1 protocol。

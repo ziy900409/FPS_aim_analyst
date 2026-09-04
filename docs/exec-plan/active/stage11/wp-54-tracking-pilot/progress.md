@@ -2,11 +2,40 @@
 
 ## Status
 
+- **🔴 最新（2026-09-04，`tracking-pilot-v2` / D-54.49）**：研究者把 tracking pilot 的 scored 窗從
+  「禁止開火」改為「**全程按住左鍵**」，右鍵改為**無效但仍記錄**，動機是**生態效度**（真實 CS2 的
+  追蹤是邊噴邊跟）。刺激的角度量**逐位未動**，但受測者要做的事變了 ⇒ **新世代 G6**。
+  **T7 slice 12–18 工程面全部完成並全綠**；**G5 乾跑（slice 11）與 §3.4 的「照原樣招募」決定一併
+  作廢**。⇒ **下一步不是招募，是在 G6 上重跑一次乾跑**（gate §3 作廢框 + §3.5，約 10 分鐘）。
+  ⚠️ 這是唯一一次 **layer 3b 攔不住**的世代分界（軌跡逐位相同），G5/G6 只能靠 `meta.weaponId`
+  與 `meta.protocolGuard` 辨識。§2.2 門檻一字未動。
 - **Current**：✅ T0～T5 完成（2026-09-02）；**T6 完成 = Gate A 部分通過（2026-09-03，第三輪 P04 s0 + P05 s1，G3 刺激，見 [T6-instrumentation-gate.md §12](T6-instrumentation-gate.md)）⇒ T7 可開工**。判定三段:**資料鏈路 ✅ PASS**(四層對帳全綠、刺激逐位符合宣稱、三輪來第一次無 instrumentation defect)、**reversal 家族 ✅ PASS**(凍結準心比值 2.08–3.26)、**band-limited 核心矩陣 🔴 未通過效度,退回 T7 重新參數化**——5 deg/s 三個 cell 與兩個 axis calibration 的 ε 動態範圍只有 0.75°、真人離「完全不動」僅 10–25%(比值 1.05–1.25)⇒ 測不出跟槍能力(§12.8)。根因是刺激幾何(行程 ≈ speed / 2πf,預註冊頻帶 [0.3,2.1] Hz 下 5 deg/s 必然行程過小)。交接項見 [task-checklist.md T7 段](task-checklist.md)。四層對帳全部成立、8 個 scored 條件皆 `eligible=2`、KI-023 的速度修正確實被交付（交付/宣稱 0.989–1.017，且 21/21 payload 與現行程式重建的刺激逐位一致）；**三輪來第一次沒有缺陷需要修**。尚未 GO 的原因是 §6 份量（只有 2 位 tester、各一個 session）與 0.5° 主觀項未回報 ⇒ [OQ-54-12](#open-questions) / gate §12.6。第二輪（P03）記錄見 §11、第一輪（P01）見 §10。以下為第二輪當時的敘述——資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`；slice 12-15 為第二輪重跑基線、gate §11 帳本與 KI-022/KI-023 修復。第三輪重跑所用的基線 = `f191642`（gate §8）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-04 — T7 slice 18：文件與術語收尾（docs-only，`tracking-pilot-v2` 對外定案）
+
+- **`analysis-tracking.md`**：世代表新增 **G6**（辨識方式 = `meta.weaponId === 'tracking_pilot_hold'`
+  + `meta.protocolGuard` + `ticks[].fire` 存在）+ 新節「held-fire 覆蓋率」（定義／判準／三件容易
+  搞錯的事／為什麼不是全有全無）。
+  **⚠️ 特別寫明 G5 與 G6 不可合併、且 layer 3b 攔不住這一組**——前五代的分界都是「同一個任務、
+  刺激交付錯了」，G5→G6 是唯一一次「刺激交付完全正確、任務本身換了」，而 layer 3b 比對的是刺激
+  軌跡。這是這次換代最容易出事的地方。
+- **gate 文件**：§2.1 記入 v2 協定與覆蓋率判準（含兩個新 reason）；**§3 開頭加作廢框**
+  （§3.1–§3.4 全部作廢 + 為何要重跑）；新增 **§3.5** G6 重跑的追加檢查；狀態行改為
+  「招募前尚缺一次 G6 乾跑」。
+- **runbook**：「現在該做什麼」改為「先重跑 G6 乾跑」；**口頭指導語整段重寫**——按住左鍵是新要求、
+  偶爾手滑不會整個作廢（≥ 95%）、倒數結束前就先按住最保險、右鍵不再需要特別提醒；
+  並補上兩個新 blocked reason 的處置（`insufficient-fire-hold-coverage` → retry；
+  `missing-fire-flag` → **停止施測回報，retry 修不好**）。
+- **`CONTEXT.md` 新增 §P**：`tracking-pilot-v2` / `tracking_pilot_hold` / `requireFire` /
+  `fire-released` / 逐 tick `fire` / `MIN_FIRE_HOLD_COVERAGE` / `missing-fire-flag` /
+  `meta.protocolGuard` 八個正規術語。
+- **task-checklist**：slice 12–18 打勾；G5 乾跑項標作廢並新增未完成的 **G6 乾跑項**；
+  招募項加上「G6 乾跑通過前不得開始招募」。
+- 未動 production code。
 
 ### 2026-09-04 — T7 slice 17：把兩族 pilot drill 接上 v2 武器與 v2 guard（**刺激正式換代為 G6**）
 
