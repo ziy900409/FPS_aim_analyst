@@ -16,6 +16,9 @@
    `atEye` 的 `dist ≈ 4.00u`、`rmsSpeed` 95–105%、`fidelity=match`、
    **`discriminability ratio ≥ 2.0`**、覆蓋率 ≥ 99.5%，並**特別確認 TOT 落在 5–80% 之間**
    （這是上一輪真正抓到的問題）。**任一項不成立就不要招募。**
+   > 分析輸出最後多了一段 **Gate B**（逐 cell 判準 + B-3b）。乾跑只有 1 份/cell，所以每個 cell
+   > 都會印 `INSUFFICIENT-DATA`、B-3a 印 `not-a-2x2`、B-3b 印「沒有人跑過兩個 seed 家族」——
+   > **這是預期的**，不是乾跑失敗。乾跑要看的仍是上面那四項。
 2. **招募 12–20 人**（gate §4）：**全員 `Session index = 0`**；其中 **6–8 人另跑一次
    `Session index = 1`**（seed 家族等效性需要成對資料）。
 3. **刻意涵蓋不同顯示器**：T6 的 21 份 payload 全來自同一台 60 Hz / 3840×2160 / Edge 151 機器，
