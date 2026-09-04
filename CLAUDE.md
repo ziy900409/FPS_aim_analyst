@@ -24,6 +24,8 @@
 | 規劃補充決策 D1–D5 的理由 | [docs/PLAN.md §1](docs/PLAN.md) 🧊 **已凍結**(停在階段 A,其餘段落不得作為現況依據) |
 | 全域決策 / 跨文件矛盾帳本(feature/WP) | [docs/exec-plan/DECISIONS.md](docs/exec-plan/DECISIONS.md) |
 | 已知 bug / 修 bug 決策帳本 | [docs/known_issue/](docs/known_issue/) → 診斷計畫 `KI-NNN-*.md` · 決策 [BUGFIX-DECISIONS.md](docs/known_issue/BUGFIX-DECISIONS.md) |
+| **從參考影片/照片做新場景** | skill [`.claude/skills/scene-from-reference/`](.claude/skills/scene-from-reference/SKILL.md) → 分析報告落 `docs/scene-specs/`,WP 落 `docs/exec-plan/active/` |
+| 需求 → tech spec / 任務拆解 | skill [`.claude/skills/engineering-planning/`](.claude/skills/engineering-planning/SKILL.md) |
 
 **命名任何東西前**(變數/函式/類別/檔案/欄位),先對齊 [CONTEXT.md](CONTEXT.md) 的正規術語。
 

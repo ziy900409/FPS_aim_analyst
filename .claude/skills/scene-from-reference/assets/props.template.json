@@ -1,0 +1,11 @@
+{
+  "_comment": "<scene-id> authoritative prop list (WP-NN / Tn). Single source: scripts/gen-<scene-id>-gltf.mjs 讀本檔生成 public/assets/scenes/<scene-id>/<scene-id>.gltf,src/scene/scenes/<scene-id>.ts 映射為 SceneConfig.propBounds。座標為 canonical unit (u),displayScale: 1。純裝飾幾何不放這裡——放進 gen script 的 visuals 陣列,才不會參與淨空判定。",
+  "props": [
+    {
+      "id": "cover-wall",
+      "kind": "wall",
+      "min": { "x": -2.5, "y": 0, "z": -4.4 },
+      "max": { "x": -2.3, "y": 3, "z": -3.6 }
+    }
+  ]
+}
