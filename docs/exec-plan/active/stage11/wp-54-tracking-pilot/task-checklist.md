@@ -211,6 +211,11 @@
 
 ### T7 工程 slice（已 commit）
 
+- [x] **slice 8**：**聚合的操作型定義在收資料前凍結**（[T7 gate](T7-difficulty-calibration-gate.md)
+      §2.5，docs-only，比照 slice 5）。§2.2 的門檻一律未動,只補三處沒寫死卻會改變 gate 數字的
+      定義：**A-1** 只用 family A 判 B-1/B-2a/B-2b/B-3a/B-4（family B 只供 B-3b）、**A-2** 逐人取
+      RMS ε 中位數、**A-3** TOST = 成對雙單尾 t + α=0.05（≡ 90% CI ⊂ ±15%,已入帳 n=6–8 檢力侷限）。
+      D-54.45/46/47。§6 新增「工程前置（招募前仍未完成）」= cell 層聚合函式。未動 production code。
 - [x] **slice 7**：**B-3c 的 per-run 實作**——`scripts/trackingTimeOnTaskSlope.ts` 純函式
       + `tests/regression/tracking-time-on-task-slope.test.ts`（6 tests）+ 分析 runner **layer 6**
       （每 run 印 `timeSlope delta=…% first5s=… last5s=…`）。窗與 layer 5 逐 tick 相同、

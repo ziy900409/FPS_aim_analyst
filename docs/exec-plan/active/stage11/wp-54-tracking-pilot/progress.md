@@ -8,6 +8,24 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 8：聚合的操作型定義在收資料前凍結（gate §2.5，docs-only）
+
+- **為什麼需要這一片**：§2.2 凍了六條判準的**門檻**,但實作 cell 層聚合時發現三處**沒有寫死、
+  卻會改變 gate 數字**的操作型定義。依「預註冊定義 = 研究決策」不得由實作端自行拍板,故先問、
+  先凍、再實作——比照 slice 5 的 docs-only 凍結慣例（README §5）。**§2.2 的門檻一律未動。**
+- **使用者 2026-09-04 拍板三條**（全文見 gate §2.5，決策理由見 D-54.45/46/47）：
+  - **A-1**：B-1/B-2a/B-2b/B-3a/B-4 **只用 family A 判定**;family B 只供 B-3b 成對比較。
+    §2.3 規則 5 說「不等效不得合併」,而等效性正是 B-3b 要判的 ⇒ 先合併就是預設結論。
+  - **A-2**：同一受測者在同一 cell 多份 eligible run 時,受測者間 CV 取那些 run 的 **RMS ε 中位數**。
+  - **A-3**：B-3b 的 TOST = **成對雙單尾 t,α = 0.05**（≡ 成對差 90% CI 落在 ±15% 內）。
+    **已入帳侷限**：n=6–8 檢力偏低 ⇒ 多半得到「無法宣告等效」而非「不等效」,§6 須據實寫明,
+    不得把未達顯著倒推為等效。
+- **gate §6 新增一節「工程前置（招募前仍未完成）」**：cell 層聚合函式尚無實作,依 §5 必須是
+  純函式 + 回歸測試。B-3c 的 cell 層平均一併落在那裡。
+- **順帶釐清（不需改 schema）**：分批所需的 participant 與 seed family 都能由 `meta.session`
+  還原——`sessionLabel` 形如 `tracking-pilot-v1:<PID>:session-<n>`,已寫進 gate §5。
+- **未動 production code。**
+
 ### 2026-09-04 — T7 slice 7：B-3c 的 per-run 實作（time-on-task slope，分析 runner layer 6）
 
 - **招募前的工程缺口之一**：gate §2.2 凍結了六條 cell 層判準，但 layer 5 只給逐 run 的比值（B-1）。
@@ -1462,6 +1480,10 @@
 | D-54.43 | Gate A 第三輪的**世代歸屬(G2 vs G3)以「錄到的目標位置 vs 現行程式重建」逐位比對認定**，不以 commit 時間或 `meta` 的 set-point 數值認定 | `targetRmsSpeedDegPerSec` 在 G2/G3 是同一個數字(5/20)，`meta` 因此分不出世代;而 `analyze-tracking-pilot.ts` 的 `stimulusCheck()` 是用**現行**`createTrackingTrajectory()` 重建刺激再量它自己的 RMS ⇒ 對 band-limited 家族(無 `target_motion_change` 事件可對表)結構上無法分辨 payload 是不是舊世代程式錄的。ticks 的 `tx/ty/tz` 是 sim 經 `projectTrackingAngles()` 實際寫入的位置，與同一函式重建的位置相減即可判定。實測 21/21 payload 逐位一致(≤ 8.9e-16 u)。量的是「錄到的曲線 == 重建的曲線」，不是新構念，不牴觸 C-D4 | ✅ Confirmed（T6 slice 16，2026-09-03）——本輪為一次性 audit;是否升成 runner 的一層檢查見 gate §12.6 第 3 項(待研究者決定) |
 
 | D-54.44 | B-3c 的兩個半窗由**錄到的 tick** 切（前半 `[首 tick, +5 s)`、後半 `(末 tick − 5 s, 末 tick]`），不由 `windowEndMs` 切；窗跨度 < 2 × 5 s 一律回 `window-too-short` 而非給一個數字 | pilot block 只有一個 presentation，故 `trackingDerivation` 的契約讓 `windowEndMs` 恆為 `Infinity`——用它切「後 5 s」根本無定義。改由最後一個**有資料的 tick** 往回量，同時也是判準的誠實讀法：受測者實際被量到的最後 5 s，而非名目排程的最後 5 s。窗太短時兩半會重疊，Δ 有一部分是拿同一段資料跟自己比，寧可回一個封閉 reason 也不要給一個看起來像數字的東西（沿用 layer 5 的 `status` 慣例）。128 Hz 下 5000 ms 恰為 640 個 tick，兩個切點都正好落在 tick 上且都被排除 ⇒ 兩半對稱各 640 tick，中間那段屬於兩者皆非（Δ 比的是頭尾，不是「前半 vs 後半」） | ✅ Confirmed（T7 slice 7，2026-09-04） |
+
+| D-54.45（gate §2.5 A-1） | Gate B 的 **B-1 / B-2a / B-2b / B-3a / B-4 只用 family A（`Session index = 0`）的 eligible run 判定**；family B 的 run 只供 B-3b 的成對比較,不進其他判準的分母 | §2.3 規則 5 明文「seed 家族不等效 ⇒ 不得跨家族合併」,而等效性正是 B-3b 要判的——先合併就等於預設了結論,判準會變成自我證成。另外兩個副作用都往好的方向：B-4 的 ≥ 10 由 12–20 位 family A 受測者自己撐起（可行,不需靠加跑者灌數量）,且加跑 family B 的那 6–8 人不會在核心 cell 佔雙倍權重而讓 median 偏向他們。備選「全部 eligible run 一起併」照 §2.2 字面較寬鬆,但一旦 B-3b 事後判不等效,B-1/B-2 的數字要全部重算 | ✅ Confirmed（使用者拍板 2026-09-04，T7 slice 8，**收資料前**） |
+| D-54.46（gate §2.5 A-2） | 同一受測者在同一 cell 有多份 eligible run 時,B-2a 的**受測者間 CV** 取該受測者那些 run 的 **RMS ε 中位數**（單一 run 時退化為該值） | 與 B-1/B-2a/B-2b 的 cell 層一致都用 median ⇒ 整條判準只有一種集中趨勢定義,不在同一列判準裡混用 mean 與 median（C-D4 的精神）。備選「取最早一份」丟資料,而且在 retry 的情形下留下的正好是被 retry 掉的那份 | ✅ Confirmed（使用者拍板 2026-09-04，T7 slice 8，**收資料前**） |
+| D-54.47（gate §2.5 A-3） | B-3b 的 TOST = **成對差的雙單尾 t 檢定,α = 0.05**（等效界 ±15% 不變）,等價於成對差的 **90% CI** 落在 ±15% 內 | §2.2 凍了等效界但沒凍 α,而 α 是預註冊參數的一部分,不能由實作端默默選。0.05 是最常規的選擇;α=0.10 會把型一錯誤率提到 10%,而 B-3b 一旦誤判等效就會允許跨家族合併,代價不對稱。**已入帳的侷限**：n = 6–8 檢力偏低 ⇒ 多半只會得到「無法宣告等效」而非「不等效」,gate §6 必須據實寫成那樣,不得把未達顯著倒推為等效 | ✅ Confirmed（使用者拍板 2026-09-04，T7 slice 8，**收資料前**） |
 
 ## Open Questions
 

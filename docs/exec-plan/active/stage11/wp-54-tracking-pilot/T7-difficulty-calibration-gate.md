@@ -88,6 +88,21 @@ Gate A 問的是「儀器量得對不對」；**Gate B 問的是「這些條件�
 - **Stop** ⇒ **core matrix 與 reversal 兩個家族的所有 cell 都無法同時通過 B-1 與 B-2**
   ⇒ 本 WP 以 stop 結案,不發布 Assessment（README §6）。
 
+### 2.5 聚合的操作型定義（2026-09-04 凍結,補 §2.2 未寫死之處）
+
+> **§2.2 的門檻一律未動**（B-1 的 2.0、B-2 的 5%/80%/15%、B-3b 的 10%/±15%、B-3c 的 20%、B-4 的 10）。
+> 本節只補齊 §2.2 沒有寫死、但**會改變 gate 數字**的三處操作型定義。使用者於 2026-09-04 拍板,
+> 仍寫於**任何 T7 真人資料之前**(README §5)。實作見 §5。
+
+| # | §2.2 未寫死之處 | 凍結的定義 | 理由 |
+|---|---|---|---|
+| **A-1** | B-1 / B-2a / B-2b / B-3a / B-4 的 cell 層分母要不要含 family B 的 run | **只用 family A（`Session index = 0`）的 eligible run 判主判準**;family B 的 run **只**供 B-3b 的成對比較,不進其他任何判準的分母 | §2.3 規則 5 明文「seed 家族不等效 ⇒ 不得跨家族合併」,而等效性正是 B-3b 要判的 ⇒ **先合併等於預設了結論**。副作用有二,都是好的:B-4 的 ≥ 10 由 12–20 位 family A 受測者自己撐起（可行）;加跑 family B 的那 6–8 人不會在核心 cell 佔雙倍權重 |
+| **A-2** | 同一受測者在同一 cell 有多份 eligible run 時（retry 之後）,B-2a 的**受測者間 CV** 取那個人的哪一個值 | **取該受測者在該 cell 全部 eligible run 的 RMS ε 中位數**;只有一份時退化為該值 | 與 B-1 / B-2a / B-2b 的 cell 層一致都用 median ⇒ 整條判準只有**一種**集中趨勢定義（C-D4 的精神）。取「最早一份」會丟資料且在 retry 情形下留下的正是被 retry 掉的那份 |
+| **A-3** | B-3b 的 TOST 用哪個檢定形式與 α（§2.2 凍了等效界 ±15%,沒凍 α） | **成對差的雙單尾 t 檢定,α = 0.05**;等價於「成對差的 **90% CI** 落在 ±15% 內」,報表以 CI 呈現 | 最常規的選擇。**已知侷限**:n = 6–8 檢力偏低 ⇒ 容易得到「**無法宣告等效**」而非「不等效」。§6 必須據實寫明是哪一種,**不得**把「未達顯著」倒推成等效 |
+
+**這三條與 §2.2 同樣受 README §5 約束**：收資料後不得調整;若證據顯示不合適,以**新 protocol
+version + 新 decision row** 表達,並標註哪批資料以哪一版判定。
+
 ---
 
 ## 3. 招募前的乾跑（凍結為 Gate B 的前置,使用者決定 2026-09-03）
@@ -212,8 +227,11 @@ npx vite-node scripts/analyze-tracking-pilot.ts -- <資料夾...> --out .pilot-a
 （刺激未交付宣稱值）、`!!P0-MISMATCH`（layer 5 的分母、或 layer 6 的整窗 RMS 與 canonical
 `rmsEpsilonDeg` 漂移）。
 
-B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope 由 evidence JSON 逐 cell 聚合得出;
-**若需新增聚合函式,必須是純函式 + 回歸測試**（比照 slice 1/3 的慣例）,不得用一次性腳本產生 gate 數字。
+B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope 由 evidence JSON 逐 cell 聚合得出,
+**聚合的操作型定義見 §2.5**（family A 判主判準、逐人取中位數、TOST 成對雙單尾 α=0.05）。
+**新增的聚合函式必須是純函式 + 回歸測試**（比照 slice 1/3/7 的慣例）,不得用一次性腳本產生 gate 數字。
+分批識別所需的 participant 與 seed family 都可由 `meta.session` 還原（`sessionLabel` 形如
+`tracking-pilot-v1:<PID>:session-<n>`）⇒ **不需要改 export schema**。
 
 ---
 
@@ -224,7 +242,15 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 - [x] 刺激再參數化落地並離線驗證（G4：頻帶 `[0.15,1.05]`、speed 候選值 `5/14`、振幅 ±16°）。
 - [x] 交付角度以**眼睛**為原點被量測且在 0.95–1.05 帶內（KI-024 / BD-024,`field-low` 補 `eyeZ: 0`）。
 - [x] B-1 的判準有受測試的單一實作（`trackingFrozenCrosshairRatio.ts` + 回歸測試,layer 5）。
-- [x] 全部判準已在收資料前凍結（本文件 §2）。
+- [x] B-3c 的 per-run 輸入有受測試的單一實作（`trackingTimeOnTaskSlope.ts` + 回歸測試,layer 6,
+      **2026-09-04 / slice 7**）。
+- [x] 全部判準已在收資料前凍結（本文件 §2）,聚合的操作型定義亦於收資料前凍結（**§2.5**,
+      **2026-09-04 / slice 8**）。
+
+**工程前置（招募前仍未完成 ⬜）**
+
+- [ ] **cell 層聚合函式**（B-1 / B-2a / B-2b / B-3a / B-3b / B-4 與 §2.3 的逐 cell 判定）尚無實作;
+      依 §5 必須是純函式 + 回歸測試。B-3c 的 cell 層平均一併落在這裡。
 
 **乾跑（§3,招募前）**
 
@@ -243,7 +269,8 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 - [ ] **B-1**：逐 cell median ratio（表列實測值）。
 - [ ] **B-2a / B-2b**：逐 cell median TOT、受測者間 CV、acquisition failure 比例。
 - [ ] **B-3a**：size 與 speed 的效果方向。
-- [ ] **B-3b**：seed 家族成對差 + TOST。
+- [ ] **B-3b**：seed 家族成對差 + TOST（§2.5 A-3：α=0.05 / 90% CI）。**若 n=6–8 只得到「無法宣告
+      等效」,必須據實寫成那樣**——不得把未達顯著倒推為等效。
 - [ ] **B-3c**：time-on-task slope。
 - [x] **0.5° pixel floor：已於 2026-09-04 結案**（T7 DoD 項目）。真正的 0.5°（約 8.5 CSS px）
       在**單軸** calibration 下 TOT **19.7% / 15.7%** ⇒ 看得見也跟得上;在**雙軸**核心 cell 只有
