@@ -10,6 +10,7 @@ import {
   getWeapon,
   m4a1s,
   m4a4,
+  trackingPilotHold,
   uspSLaser,
   WEAPONS,
 } from './weapons.ts';
@@ -208,6 +209,27 @@ describe('built-in weapons', () => {
     expect(WEAPONS.usp_s_laser.bullet).toBeUndefined();
   });
 
+  it('declares the tracking-pilot-v2 hold-fire weapon with no recoil, no spread and no ADS optics', () => {
+    // Every field here is load-bearing for a construct constraint — see the config's header
+    // comment. Asserted against the *reasons* rather than as a value snapshot: recoil must be
+    // absent so epsilon(t) stays pure tracking (C-D4), spread must be absent so shots-on-target
+    // and offline TOT share one geometry, and `ads` must be absent so right-click is inert.
+    expect(trackingPilotHold).toMatchObject({
+      id: 'tracking_pilot_hold',
+      recoil: { magnitude: 0, magnitudeVariance: 0, angleVariance: 0 },
+      inaccuracy: { stand: 0, crouch: 0, fire: 0, move: 0 },
+    });
+    expect(trackingPilotHold.ads).toBeUndefined();
+    expect(trackingPilotHold.bullet).toBeUndefined();
+    expect(trackingPilotHold.recoveryTransition).toBeUndefined();
+  });
+
+  it('gives the hold-fire weapon the rifle cadence it inherits from ak47', () => {
+    // Derived from the source constant, not a literal: the ecological-validity motivation for
+    // v2 is "spray while tracking", so the cadence must track ak47's rather than drift from it.
+    expect(trackingPilotHold.cycletimeSec).toBe(ak47.cycletimeSec);
+  });
+
   it('carries the WP-24 demo ADS optics on ak47 (default drill weapon)', () => {
     expect(WEAPONS.ak47.ads).toEqual({ fovDeg: 40, sensitivityRatio: 1.0 });
   });
@@ -232,8 +254,9 @@ describe('built-in weapons', () => {
     expect(getWeapon('ak47').recoil.seed).toBe(223);
     expect(getWeapon('usp_s_laser')).toEqual(uspSLaser);
     expect(getWeapon('ak47_br_ads_projectile').bullet).toEqual(BR_PROJECTILE_BULLET);
-    expect(() => getWeapon('awp')).toThrow(
-      /Available weapons: ak47, m4a4, m4a1s, usp_s_laser, ak47_br_hip_hitscan, ak47_br_ads_hitscan, ak47_br_hip_projectile, ak47_br_ads_projectile/,
-    );
+    // Derived from WEAPONS rather than pinned as a literal list: the assertion under test is
+    // "the message enumerates every registered id in registration order", which stays true as
+    // weapons are added. A literal here only ever fails for the uninteresting reason.
+    expect(() => getWeapon('awp')).toThrow(`Available weapons: ${Object.keys(WEAPONS).join(', ')}`);
   });
 });
