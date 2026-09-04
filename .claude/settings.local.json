@@ -6,7 +6,11 @@
       "mcp__codegraph__codegraph_explore",
       "Bash(uv run *)",
       "Read(//c/Users/Hsin.YH.Yang/BenQ/03_external/gitgit/FPS_aim_analyst-WP-29/**)",
-      "Bash(graphify update *)"
+      "Bash(graphify update *)",
+      "Bash(npx vitest *)",
+      "Bash(python -)",
+      "Bash(npx playwright *)",
+      "Bash(break)"
     ]
   },
   "enabledMcpjsonServers": [

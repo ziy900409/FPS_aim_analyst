@@ -4,12 +4,12 @@
 
 ## T0 — Entry Gate
 
-- [ ] 讀當時 `AGENTS.md`、Graph Report、CodeGraph status與相關 Stage 12／active plans。
-- [ ] 記錄 `DrillConfig`、schema、TargetManager、DrillRunner、SimLoop、SceneManager、main registry 的最新 impact。
-- [ ] 凍結 FOV、yaw/pitch bounds、target angular size、separation、distance與 quota/time policy。
-- [ ] multi-target bounded sampling、single-hit replacement與 GLTF scene方案 PoC有可重現 evidence。
-- [ ] OQ-56.2～5 有 owner-confirmed 結論或明確 blocked owner/deadline。
-- [ ] production code diff=0，PoC artifacts清除。
+- [x] 讀當時 `AGENTS.md`、Graph Report、CodeGraph status與相關 Stage 12／active plans。
+- [x] 記錄 `DrillConfig`、schema、TargetManager、DrillRunner、SimLoop、SceneManager、main registry 的最新 impact。
+- [ ] 凍結 FOV、yaw/pitch bounds、target angular size、separation、distance與 quota/time policy。**Blocked：**工程Candidate A/B與推薦值已完成，但workspace缺`Media1.mp4`且OQ-56.2／3尚待owner確認；T1 start前不得略過。
+- [x] multi-target bounded sampling、single-hit replacement與 GLTF scene方案 PoC有可重現 evidence。
+- [x] OQ-56.2～5 有 owner-confirmed 結論或明確 blocked owner/deadline。
+- [x] production code diff=0，PoC artifacts清除。
 
 ## T1 — Contract and Fixtures
 
@@ -69,4 +69,3 @@
 ## Commit discipline
 
 每個 task 單獨 commit；建議 subject 見各 task file。完成 task 後同步本清單與 [progress.md](progress.md)。
-

@@ -14,7 +14,7 @@
 | **Delivery policy** | v1 為 practice／researcher-only；不加入正式 participant protocol、不宣稱 full replay、不改研究指標定義 |
 | **Estimate** | 8.5–15.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：`DrillConfig` 與 `SceneConfig` 為跨模組核心契約；`TargetManager`／`DrillRunner` 註解與部分測試建立在單 active target 假設上 |
-| **Status** | Planning complete；尚未進入 T0 實作 |
+| **Status** | T0 evidence complete（2026-09-04）；gate blocked by missing `Media1.mp4` + OQ-56.2／3 owner freeze，T1～T6未開始 |
 
 ---
 
@@ -353,6 +353,8 @@ export interface SimLoopOptions {
 
 Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 
+T0 已完成engine/sampling/scene證據收集並清除throwaway artifacts；工程推薦Candidate A為75° FOV、yaw ±22°、pitch ±12°、3°球、7° separation、12–14u、60 kills。這組值尚未取得owner／影片構圖確認，故依entry-gate規則維持blocked，不授權T1 production implementation；完整量測與baseline failure見[T0-entry-gate.md](T0-entry-gate.md)及[progress.md](progress.md)。
+
 ### 4.1 Requirements traceability
 
 | Requirement | Tasks | Verification |
@@ -393,4 +395,3 @@ WP-56 完成後，後續 WP 可依賴：
 - `TargetView`、`HitDetector`、`Crosshair`能以 tests證明現有契約足夠時，只補 regression，不為本 scene fork class。
 - 測試 payload／screenshots不得寫真實 `data/session-history/` 或 Participant roots；新 drill保持 practice-only。
 - production code修改後執行 `graphify update .`；T-exit檢查 `git status --short`、`git diff --cached --stat`與 staged names只含本 WP 預期檔案。
-

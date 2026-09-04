@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Micro Flick Test 的測試原理、表現指標、計算公式、圖解與教練判讀方式。">
+  <title>Micro Flick Test｜表現指標、原理與圖說</title>
+  <style>
+    :root {
+      --ink: #17243a;
+      --muted: #607089;
+      --paper: #f5f7fb;
+      --surface: #ffffff;
+      --surface-2: #edf2f8;
+      --line: #d8e0eb;
+      --blue: #2166d1;
+      --blue-soft: #e8f1ff;
+      --green: #11825d;
+      --green-soft: #e7f7f0;
+      --amber: #b86b00;
+      --amber-soft: #fff3d7;
+      --red: #c43d4f;
+      --red-soft: #ffebee;
+      --purple: #7451c8;
+      --purple-soft: #f1ebff;
+      --shadow: 0 12px 32px rgba(25, 47, 79, .08);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 2%, rgba(33,102,209,.10), transparent 26rem),
+        radial-gradient(circle at 92% 15%, rgba(17,130,93,.08), transparent 24rem),
+        var(--paper);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.72;
+    }
+    a { color: var(--blue); text-underline-offset: 3px; }
+    a:hover { text-decoration-thickness: 2px; }
+    code, .formula { font-family: var(--mono); }
+    .skip-link {
+      position: absolute; left: 1rem; top: -5rem; z-index: 20;
+      padding: .65rem 1rem; background: var(--ink); color: white; border-radius: 8px;
+    }
+    .skip-link:focus { top: 1rem; }
+    .wrap { width: min(1180px, calc(100% - 2rem)); margin-inline: auto; }
+
+    header {
+      padding: 4.8rem 0 2.5rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(232,241,255,.70));
+    }
+    .eyebrow {
+      display: inline-flex; gap: .45rem; align-items: center;
+      padding: .35rem .7rem; border: 1px solid #bcd1f3; border-radius: 999px;
+      color: #164d9e; background: rgba(255,255,255,.8); font-size: .82rem; font-weight: 800;
+      letter-spacing: .04em;
+    }
+    h1 { margin: .8rem 0 .7rem; max-width: 900px; font-size: clamp(2.1rem, 5vw, 4.7rem); line-height: 1.05; letter-spacing: -.045em; }
+    header p { max-width: 760px; margin: 0; color: var(--muted); font-size: 1.1rem; }
+    .hero-grid { display: grid; grid-template-columns: 1.35fr .65fr; gap: 1.2rem; align-items: end; }
+    .hero-note {
+      padding: 1rem 1.1rem; border: 1px solid #c5d9f8; border-radius: 14px;
+      background: rgba(255,255,255,.76); box-shadow: var(--shadow);
+    }
+    .hero-note strong { display: block; margin-bottom: .25rem; color: var(--blue); }
+    .hero-note p { font-size: .92rem; }
+
+    nav {
+      position: sticky; top: 0; z-index: 10;
+      border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 90%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    nav .wrap { display: flex; gap: .35rem; overflow-x: auto; padding-block: .55rem; scrollbar-width: thin; }
+    nav a { flex: 0 0 auto; padding: .38rem .68rem; color: var(--muted); font-size: .88rem; font-weight: 700; text-decoration: none; border-radius: 999px; }
+    nav a:hover, nav a:focus-visible { color: var(--blue); background: var(--blue-soft); outline: none; }
+
+    main { padding: 2.2rem 0 4rem; }
+    section { scroll-margin-top: 4.5rem; margin: 0 0 3.5rem; }
+    .section-head { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; align-items: start; margin-bottom: 1.3rem; }
+    .section-no { color: var(--blue); font-family: var(--mono); font-weight: 800; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; padding-top: .35rem; }
+    h2 { margin: 0 0 .35rem; font-size: clamp(1.55rem, 3vw, 2.35rem); line-height: 1.2; letter-spacing: -.025em; }
+    h3 { margin: 0 0 .5rem; font-size: 1.08rem; line-height: 1.35; }
+    .section-head p { margin: 0; max-width: 820px; color: var(--muted); }
+
+    .card, figure {
+      margin: 0; border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--surface); box-shadow: var(--shadow);
+    }
+    .card { padding: 1.25rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem; }
+    .stack { display: grid; gap: 1rem; }
+    .callout { border-left: 5px solid var(--blue); background: var(--blue-soft); }
+    .callout.warning { border-left-color: var(--amber); background: var(--amber-soft); }
+    .callout.danger { border-left-color: var(--red); background: var(--red-soft); }
+    .callout p:last-child { margin-bottom: 0; }
+
+    .mode-card { position: relative; overflow: hidden; }
+    .mode-card::after { content: ""; position: absolute; width: 9rem; height: 9rem; border-radius: 50%; right: -4rem; top: -4rem; background: var(--blue-soft); }
+    .mode-card.free::after { background: var(--purple-soft); }
+    .pill { display: inline-block; padding: .2rem .55rem; border-radius: 999px; background: var(--blue-soft); color: #164d9e; font-size: .74rem; font-weight: 850; letter-spacing: .04em; }
+    .pill.purple { background: var(--purple-soft); color: #5636a7; }
+    .pill.green { background: var(--green-soft); color: #0d6c4c; }
+    .pill.amber { background: var(--amber-soft); color: #875000; }
+    .mode-card ul { padding-left: 1.2rem; margin-bottom: 0; }
+
+    figure { padding: 1rem; overflow: hidden; }
+    figure svg { width: 100%; height: auto; display: block; }
+    figcaption { margin-top: .75rem; padding: .75rem .3rem .15rem; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); }
+    .legend { display: flex; flex-wrap: wrap; gap: .7rem 1.2rem; margin-top: .5rem; color: var(--muted); font-size: .84rem; }
+    .legend i { display: inline-block; width: .78rem; height: .78rem; margin-right: .35rem; border-radius: 50%; vertical-align: -.08rem; }
+
+    .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+    .metric {
+      position: relative; padding: 1.2rem; border: 1px solid var(--line); border-radius: 16px;
+      background: var(--surface); box-shadow: 0 7px 18px rgba(25,47,79,.05);
+    }
+    .metric::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: 16px 0 0 16px; background: var(--blue); }
+    .metric.control::before { background: var(--green); }
+    .metric.timing::before { background: var(--amber); }
+    .metric.stability::before { background: var(--purple); }
+    .metric.research::before { background: var(--muted); }
+    .metric-head { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+    .metric-id { color: var(--muted); font: 700 .73rem/1.3 var(--mono); overflow-wrap: anywhere; }
+    .direction { white-space: nowrap; font-size: .75rem; font-weight: 800; color: var(--green); }
+    .direction.context { color: var(--amber); }
+    .formula {
+      margin: .75rem 0; padding: .7rem .8rem; border-radius: 10px;
+      background: var(--surface-2); color: #17345d; font-size: .88rem; overflow-x: auto;
+    }
+    .metric dl { display: grid; grid-template-columns: 5rem 1fr; gap: .35rem .7rem; margin: 0; font-size: .9rem; }
+    .metric dt { color: var(--muted); font-weight: 800; }
+    .metric dd { margin: 0; }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: .85rem .9rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { background: var(--surface-2); color: #31465f; font-size: .82rem; letter-spacing: .025em; }
+    td { font-size: .9rem; }
+    tr:last-child td { border-bottom: 0; }
+
+    .protocol { counter-reset: protocol; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: .8rem; }
+    .protocol > div { min-height: 9rem; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .protocol > div::before { counter-increment: protocol; content: "0" counter(protocol); display: block; color: var(--blue); font: 850 .75rem/1 var(--mono); margin-bottom: .65rem; }
+    .protocol p { margin: 0; color: var(--muted); font-size: .88rem; }
+
+    .kpi-strip { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: .65rem; }
+    .kpi { padding: .9rem .75rem; border-radius: 12px; background: #14243c; color: white; min-height: 7rem; }
+    .kpi small { display: block; color: #aec1dc; font-weight: 700; }
+    .kpi strong { display: block; margin-top: .35rem; font-size: 1rem; line-height: 1.3; }
+    .kpi span { display: block; margin-top: .45rem; color: #dce8f7; font-size: .76rem; }
+
+    .matrix { display: grid; grid-template-columns: 7rem repeat(2,1fr); grid-template-rows: auto repeat(2,1fr); gap: .55rem; }
+    .matrix > div { padding: .9rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+    .matrix .axis { display: grid; place-items: center; background: transparent; border: 0; color: var(--muted); font-size: .78rem; font-weight: 800; text-align: center; }
+    .matrix .good { background: var(--green-soft); border-color: #b9e2d3; }
+    .matrix .warn { background: var(--amber-soft); border-color: #efd59b; }
+    .matrix .bad { background: var(--red-soft); border-color: #efbec4; }
+    .matrix strong { display: block; margin-bottom: .25rem; }
+    .matrix p { margin: 0; color: var(--muted); font-size: .84rem; }
+
+    .rules { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .65rem 1rem; padding: 0; list-style: none; }
+    .rules li { position: relative; padding: .8rem .8rem .8rem 2.3rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .rules li::before { content: "!"; position: absolute; left: .8rem; top: .82rem; display: grid; place-items: center; width: 1rem; height: 1rem; border-radius: 50%; background: var(--amber); color: white; font: 850 .7rem/1 var(--sans); }
+
+    footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--muted); font-size: .88rem; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 1rem; }
+    .refs { padding-left: 1.4rem; }
+    .refs li { margin-bottom: .65rem; }
+
+    @media (max-width: 900px) {
+      .hero-grid, .grid-2, .grid-3, .metric-grid { grid-template-columns: 1fr; }
+      .protocol { grid-template-columns: repeat(2,1fr); }
+      .kpi-strip { grid-template-columns: repeat(3,1fr); }
+      .section-head { grid-template-columns: 1fr; gap: .2rem; }
+    }
+    @media (max-width: 560px) {
+      .wrap { width: min(100% - 1rem, 1180px); }
+      header { padding-top: 3rem; }
+      .protocol, .rules { grid-template-columns: 1fr; }
+      .kpi-strip { grid-template-columns: repeat(2,1fr); }
+      .matrix { grid-template-columns: 4.5rem repeat(2,1fr); }
+      .matrix > div { padding: .65rem; }
+      .metric dl { grid-template-columns: 1fr; gap: .05rem; }
+      .metric dd { margin-bottom: .45rem; }
+      footer .wrap { display: block; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #e6edf7; --muted: #aab8ca; --paper: #0e1725; --surface: #152135;
+        --surface-2: #1c2b42; --line: #304158; --blue: #75aaff; --blue-soft: #18355d;
+        --green: #5bd1a5; --green-soft: #15392f; --amber: #ffc567; --amber-soft: #413116;
+        --red: #ff8794; --red-soft: #47252b; --purple: #b99cff; --purple-soft: #302550;
+        --shadow: 0 12px 32px rgba(0,0,0,.18);
+      }
+      header { background: linear-gradient(135deg, rgba(21,33,53,.95), rgba(24,53,93,.68)); }
+      .eyebrow, .hero-note { background: rgba(21,33,53,.8); color: #bdd5ff; }
+      .formula { color: #dbe8fb; }
+      .kpi { background: #080f1b; }
+      svg text { fill: #dce6f4; }
+    }
+    @media print {
+      :root { --paper:#fff; --surface:#fff; --ink:#111827; --muted:#475569; --line:#cbd5e1; }
+      body { background: #fff; font-size: 10.5pt; }
+      nav { display: none; }
+      header { padding: 1.2rem 0; background: #fff; }
+      main { padding-top: 1rem; }
+      section { break-inside: avoid; margin-bottom: 1.5rem; }
+      .card, figure, .metric, .table-wrap { box-shadow: none; }
+      a { color: inherit; }
+      .metric-grid { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+  <header>
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">PERFORMANCE MEASUREMENT · DESIGN PROPOSAL</span>
+        <h1>Micro Flick Test<br>表現指標、原理與圖說</h1>
+        <p>把一次短距離 flick 拆成目標提示、動作啟動、主加速、煞停、微修正、進入目標與開火，讓「快」與「準」可以被分開量測，也能被教練轉成具體訓練處方。</p>
+      </div>
+      <aside class="hero-note" aria-label="文件狀態">
+        <strong>狀態：量測設計提案</strong>
+        <p>本頁定義建議指標、事件與判讀邏輯，不表示功能已實作。槍枝模型不在場景需求內；測試採 hitscan、零散布與零後座。</p>
+      </aside>
+    </div>
+  </header>
+
+  <nav aria-label="章節導覽">
+    <div class="wrap">
+      <a href="#scope">測什麼</a>
+      <a href="#protocol">測試設計</a>
+      <a href="#geometry">事件與幾何</a>
+      <a href="#core">核心指標</a>
+      <a href="#control">控制指標</a>
+      <a href="#timing">時機與動態</a>
+      <a href="#consistency">一致性</a>
+      <a href="#coach">教練判讀</a>
+      <a href="#validity">有效性</a>
+      <a href="#references">參考資料</a>
+    </div>
+  </nav>
+
+  <main id="main" class="wrap">
+    <section id="scope">
+      <div class="section-head">
+        <span class="section-no">01 · SCOPE</span>
+        <div><h2>Micro Flick 真正測的是什麼</h2><p>短角距目標轉移不是單一能力；它是目標選擇、快速主動作、煞停與開火時機的串聯。</p></div>
+      </div>
+      <div class="grid-2">
+        <article class="card mode-card">
+          <span class="pill">正式比較推薦</span>
+          <h3>提示目標模式</h3>
+          <p>三個目標可同時顯示，但每個 trial 只有指定目標有效。方向、角距與目標寬度可平衡，較能把「動作表現」從選擇策略中分離。</p>
+          <ul><li>適合個人基線、A/B 設定比較、隊內標準化</li><li>可合理計算方向差、Fitts throughput 與動作啟動</li></ul>
+        </article>
+        <article class="card mode-card free">
+          <span class="pill purple">實戰化補充</span>
+          <h3>自由選擇模式</h3>
+          <p>三顆目標都有效，玩家自行選下一顆。更接近影片中的連續玩法，但時間同時包含視覺搜尋、目標選擇與手部執行。</p>
+          <ul><li>適合觀察掃視規則、路線策略與壓力下節奏</li><li>命中時間不可直接命名為「純反應時間」</li></ul>
+        </article>
+      </div>
+      <div class="card callout warning" style="margin-top:1rem">
+        <h3>測試邊界</h3>
+        <p>本測試不直接測 tracking、recoil control、movement shooting、戰術決策或純視覺反應。若場景允許自由選擇，必須把成績標成 <code>choice-inclusive</code>。</p>
+      </div>
+    </section>
+
+    <section id="protocol">
+      <div class="section-head">
+        <span class="section-no">02 · PROTOCOL</span>
+        <div><h2>先控制條件，再談玩家差異</h2><p>輸入映射、目標幾何與試驗序列只要改變，指標的含義就會一起改變。</p></div>
+      </div>
+      <div class="protocol">
+        <div><h3>固定輸入</h3><p>鎖定解析度、FOV、DPI、靈敏度、raw input、frame/tick rate；玩家固定位置，只允許 yaw／pitch。</p></div>
+        <div><h3>純化射擊</h3><p>hitscan、零散布、零後座、無換彈與彈藥限制；fire cadence 不得成為瓶頸。</p></div>
+        <div><h3>平衡試驗</h3><p>凍結 seed，平衡左右、上下、斜向與小／中角距；玩家使用同一組 trial。</p></div>
+        <div><h3>分組施測</h3><p>暖身 2×30 秒；正式 5×30 秒；組間休息 45–60 秒。建立基線時另一天複測。</p></div>
+      </div>
+      <div class="card callout" style="margin-top:1rem">
+        <strong>設計原則：</strong> 秒數與閾值是首輪 pilot 的起點。正式測試前，應把測試版本、閾值、排除規則與 seed 一起凍結。
+      </div>
+    </section>
+
+    <section id="geometry">
+      <div class="section-head">
+        <span class="section-no">03 · EVENTS</span>
+        <div><h2>一個 trial 的事件與角度幾何</h2><p>原始資料使用視線單位向量與單調時間戳，避免像素座標受到解析度與投影影響。</p></div>
+      </div>
+      <div class="grid-2">
+        <figure>
+          <svg viewBox="0 0 720 420" role="img" aria-labelledby="geo-title geo-desc">
+            <title id="geo-title">Micro Flick 角度幾何圖</title>
+            <desc id="geo-desc">準星由左下起點沿彎曲實際路徑前往右側圓形目標。圖中標示最短角距 D、目標有效角寬 W、實際路徑 L、開火位置與開火角誤差 e。</desc>
+            <defs>
+              <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2166d1"/></marker>
+              <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#11825d"/></marker>
+              <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c43d4f"/></marker>
+              <filter id="soft-shadow"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-opacity=".14"/></filter>
+            </defs>
+            <rect x="1" y="1" width="718" height="418" rx="16" fill="#f8fafc" stroke="#d8e0eb"/>
+            <g stroke="#e6ebf2" stroke-width="1">
+              <path d="M70 70H650M70 140H650M70 210H650M70 280H650M70 350H650"/>
+              <path d="M140 40V380M240 40V380M340 40V380M440 40V380M540 40V380M640 40V380"/>
+            </g>
+            <circle cx="560" cy="180" r="72" fill="#ffebee" stroke="#c43d4f" stroke-width="4" filter="url(#soft-shadow)"/>
+            <circle cx="560" cy="180" r="5" fill="#c43d4f"/>
+            <line x1="560" y1="108" x2="560" y2="252" stroke="#c43d4f" stroke-width="2"/>
+            <path d="M560 111 l-7 12 h14z M560 249 l-7 -12 h14z" fill="#c43d4f"/>
+            <text x="580" y="184" font-size="18" font-weight="800" fill="#943040">目標中心</text>
+            <text x="578" y="134" font-size="18" font-weight="800" fill="#943040">W</text>
+            <circle cx="130" cy="292" r="12" fill="#2166d1"/>
+            <path d="M117 292h26M130 279v26" stroke="#fff" stroke-width="2"/>
+            <text x="92" y="328" font-size="18" font-weight="800" fill="#164d9e">起點 S</text>
+            <line x1="145" y1="286" x2="548" y2="184" stroke="#2166d1" stroke-width="3" stroke-dasharray="9 8" marker-end="url(#arrow-blue)"/>
+            <text x="319" y="214" font-size="20" font-weight="900" fill="#164d9e">最短角距 D</text>
+            <path d="M143 298 C230 350, 278 175, 370 228 S475 104, 535 157" fill="none" stroke="#11825d" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow-green)"/>
+            <text x="286" y="320" font-size="20" font-weight="900" fill="#0d6c4c">實際路徑 L</text>
+            <circle cx="535" cy="157" r="8" fill="#b86b00" stroke="#fff" stroke-width="3"/>
+            <line x1="535" y1="157" x2="560" y2="180" stroke="#c43d4f" stroke-width="3" marker-end="url(#arrow-red)"/>
+            <text x="474" y="126" font-size="17" font-weight="800" fill="#875000">開火點 P</text>
+            <text x="514" y="209" font-size="18" font-weight="900" fill="#943040">e</text>
+          </svg>
+          <figcaption><strong>圖 1｜角度幾何。</strong> 路徑效率為 <code>D/L</code>；開火角誤差 <code>e</code> 是開火時準星與目標中心的角距。圖為概念投影，實際計算使用球面角距。</figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 720 420" role="img" aria-labelledby="time-title time-desc">
+            <title id="time-title">Micro Flick 速度與事件時間圖</title>
+            <desc id="time-desc">角速度隨時間先上升至主峰，再煞停、出現較小修正峰，最後進入目標並開火。圖中標示目標提示、動作開始、主動作結束、首次進入目標與開火時間。</desc>
+            <rect x="1" y="1" width="718" height="418" rx="16" fill="#f8fafc" stroke="#d8e0eb"/>
+            <line x1="78" y1="345" x2="670" y2="345" stroke="#607089" stroke-width="2"/>
+            <line x1="78" y1="345" x2="78" y2="50" stroke="#607089" stroke-width="2"/>
+            <text x="628" y="382" font-size="16" fill="#607089">時間</text>
+            <text x="22" y="52" font-size="16" fill="#607089">角速度 ω</text>
+            <rect x="465" y="60" width="105" height="285" fill="#e7f7f0" opacity=".8"/>
+            <path d="M82 342 C112 341, 118 338, 138 324 C174 295, 205 112, 272 89 C326 71, 340 265, 389 296 C418 314, 428 240, 465 238 C500 237, 516 314, 548 323 C574 331, 608 337, 654 340" fill="none" stroke="#2166d1" stroke-width="7" stroke-linecap="round"/>
+            <line x1="118" y1="55" x2="118" y2="345" stroke="#7451c8" stroke-width="2" stroke-dasharray="6 6"/>
+            <line x1="138" y1="55" x2="138" y2="345" stroke="#2166d1" stroke-width="2" stroke-dasharray="6 6"/>
+            <line x1="389" y1="55" x2="389" y2="345" stroke="#11825d" stroke-width="2" stroke-dasharray="6 6"/>
+            <line x1="465" y1="55" x2="465" y2="345" stroke="#b86b00" stroke-width="2" stroke-dasharray="6 6"/>
+            <line x1="570" y1="55" x2="570" y2="345" stroke="#c43d4f" stroke-width="2" stroke-dasharray="6 6"/>
+            <circle cx="272" cy="89" r="7" fill="#2166d1"/>
+            <text x="232" y="67" font-size="17" font-weight="850" fill="#164d9e">peak ω</text>
+            <text x="405" y="224" font-size="16" font-weight="800" fill="#0d6c4c">次動作</text>
+            <path d="M389 365V378H570V365" fill="none" stroke="#b86b00" stroke-width="3"/>
+            <text x="420" y="405" font-size="16" font-weight="850" fill="#875000">settling time</text>
+            <g font-size="14" font-weight="750">
+              <text x="86" y="40" fill="#5636a7">t_anchor</text><text x="123" y="327" fill="#164d9e">t_move</text>
+              <text x="346" y="40" fill="#0d6c4c">t_primary_end</text><text x="435" y="327" fill="#875000">t_enter</text>
+              <text x="549" y="40" fill="#943040">t_fire</text>
+            </g>
+          </svg>
+          <figcaption><strong>圖 2｜速度—時間剖面。</strong> 主峰代表快速 flick；後續小峰可視為次要修正。<code>click latency = t_fire − t_enter</code>，而穩定時間描述主動作完成後到開火的等待。</figcaption>
+        </figure>
+      </div>
+      <div class="table-wrap" style="margin-top:1rem">
+        <table>
+          <thead><tr><th>事件／量</th><th>可重現定義</th><th>注意事項</th></tr></thead>
+          <tbody>
+            <tr><td><code>t_anchor</code></td><td>首 trial 為目標提示；後續為前一次有效命中</td><td>自由模式另加 <code>choice-inclusive</code> 標記</td></tr>
+            <tr><td><code>t_move</code></td><td>角速度超過啟動閾值並連續成立 N ticks 的第一 tick</td><td>閾值與 N 必須納入演算法版本</td></tr>
+            <tr><td><code>t_enter</code></td><td>準星第一次進入有效目標角半徑</td><td>需固定邊界是否含等號</td></tr>
+            <tr><td><code>t_fire</code></td><td>trial 第一發有效開火</td><td>後續補槍另存，不覆蓋第一發</td></tr>
+            <tr><td><code>D, W, L</code></td><td>最短角距、移動軸有效角寬、累積球面路徑長</td><td>使用角度而非螢幕像素</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="core">
+      <div class="section-head">
+        <span class="section-no">04 · CORE KPIs</span>
+        <div><h2>核心面板：六組訊號就夠</h2><p>先看產出、成本與典型／尾端速度，再用精度和控制指標解釋原因。</p></div>
+      </div>
+      <div class="kpi-strip" aria-label="六組核心指標">
+        <div class="kpi"><small>OUTPUT</small><strong>有效命中率</strong><span>hit / valid second</span></div>
+        <div class="kpi"><small>COST</small><strong>射擊準確率</strong><span>hit / fire</span></div>
+        <div class="kpi"><small>SPEED</small><strong>H2H P50 / P90</strong><span>典型與慢尾端</span></div>
+        <div class="kpi"><small>PRECISION</small><strong>開火角誤差</strong><span>degree</span></div>
+        <div class="kpi"><small>PATH</small><strong>路徑效率</strong><span>D / L</span></div>
+        <div class="kpi"><small>BRAKING</small><strong>過衝／免修正</strong><span>rate</span></div>
+      </div>
+      <div class="metric-grid" style="margin-top:1rem">
+        <article class="metric">
+          <div class="metric-head"><div><h3>有效命中率</h3><div class="metric-id">micro-flick.effective-hit-rate-hz</div></div><span class="direction">↑ 較佳</span></div>
+          <div class="formula">N_hit / T_valid_seconds</div>
+          <dl><dt>原理</dt><dd>直接量化單位有效時間的產出。</dd><dt>搭配</dt><dd>必須和準確率一起看，避免用亂射換分。</dd><dt>排除</dt><dd>暫停、失焦、遙測缺口與生成失敗。</dd></dl>
+        </article>
+        <article class="metric">
+          <div class="metric-head"><div><h3>射擊準確率</h3><div class="metric-id">micro-flick.shot-accuracy</div></div><span class="direction">↑ 較佳</span></div>
+          <div class="formula">N_hit / N_fire × 100%</div>
+          <dl><dt>原理</dt><dd>描述完成產出的開火成本。</dd><dt>解讀</dt><dd>極高但速度慢可能是過度保守；低且很快可能是提前開火。</dd><dt>保留</dt><dd>所有有效 miss，不做成功者偏差。</dd></dl>
+        </article>
+        <article class="metric">
+          <div class="metric-head"><div><h3>命中間隔 P50／P90</h3><div class="metric-id">micro-flick.hit-to-hit-p50-ms · p90-ms</div></div><span class="direction">↓ 較佳</span></div>
+          <div class="formula">Δt_i = t_hit[i] − t_hit[i−1]</div>
+          <dl><dt>P50</dt><dd>玩家的典型連續完成速度。</dd><dt>P90</dt><dd>慢 trial、失誤恢復與偶發卡頓。</dd><dt>注意</dt><dd>首個 trial 另報 first-target time。</dd></dl>
+        </article>
+        <article class="metric">
+          <div class="metric-head"><div><h3>開火角誤差</h3><div class="metric-id">micro-flick.shot-error-p50-deg</div></div><span class="direction">↓ 較佳</span></div>
+          <div class="formula">acos(clamp(u_fire · v_target, −1, 1))</div>
+          <dl><dt>原理</dt><dd>以角度量化離中心多遠，可跨解析度比較。</dd><dt>分解</dt><dd>另報水平／垂直帶符號誤差以找方向性偏差。</dd><dt>樣本</dt><dd>命中與未命中都保留。</dd></dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="control">
+      <div class="section-head">
+        <span class="section-no">05 · CONTROL</span>
+        <div><h2>路徑、過衝與修正揭露煞停品質</h2><p>同樣一次命中，直達中心和越過後拉回，是兩種完全不同的動作品質。</p></div>
+      </div>
+      <div class="grid-2">
+        <figure>
+          <svg viewBox="0 0 720 390" role="img" aria-labelledby="over-title over-desc">
+            <title id="over-title">準星過衝與回拉修正圖</title>
+            <desc id="over-desc">準星由左側移向目標，穿過目標中心與遠端邊界後，再反向回到目標內開火。標示過衝量與反向修正。</desc>
+            <defs><marker id="arrow-o" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c43d4f"/></marker></defs>
+            <rect x="1" y="1" width="718" height="388" rx="16" fill="#f8fafc" stroke="#d8e0eb"/>
+            <rect x="286" y="55" width="180" height="275" rx="90" fill="#ffebee" stroke="#c43d4f" stroke-width="4"/>
+            <line x1="376" y1="55" x2="376" y2="330" stroke="#c43d4f" stroke-dasharray="7 7" stroke-width="2"/>
+            <text x="340" y="45" font-size="17" font-weight="800" fill="#943040">目標中心軸</text>
+            <path d="M80 236 C170 230, 250 207, 374 192 S551 170, 596 155" fill="none" stroke="#2166d1" stroke-width="8" stroke-linecap="round"/>
+            <path d="M596 155 C560 184, 509 203, 432 218" fill="none" stroke="#c43d4f" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow-o)"/>
+            <circle cx="80" cy="236" r="9" fill="#2166d1"/>
+            <circle cx="596" cy="155" r="10" fill="#b86b00" stroke="#fff" stroke-width="3"/>
+            <circle cx="432" cy="218" r="10" fill="#11825d" stroke="#fff" stroke-width="3"/>
+            <line x1="376" y1="285" x2="596" y2="285" stroke="#b86b00" stroke-width="3"/>
+            <path d="M376 276v18M596 276v18" stroke="#b86b00" stroke-width="3"/>
+            <text x="434" y="318" font-size="18" font-weight="900" fill="#875000">過衝量</text>
+            <text x="516" y="128" font-size="17" font-weight="800" fill="#875000">最遠點</text>
+            <text x="444" y="248" font-size="17" font-weight="800" fill="#0d6c4c">回拉後開火</text>
+            <text x="100" y="220" font-size="17" font-weight="800" fill="#164d9e">主動作</text>
+          </svg>
+          <figcaption><strong>圖 3｜過衝。</strong> 沿起點到目標中心的移動軸投影；越過中心後反向回拉即形成過衝。過衝量與是否 miss、開火時機要共同判讀。</figcaption>
+        </figure>
+        <div class="stack">
+          <article class="metric control">
+            <div class="metric-head"><div><h3>路徑效率</h3><div class="metric-id">micro-flick.path-efficiency</div></div><span class="direction">↑ 接近 1</span></div>
+            <div class="formula">D / L,  L = Σ acos(u_k · u_k+1)</div>
+            <dl><dt>原理</dt><dd>比較最短角距與實際走過的角路徑。</dd><dt>低值</dt><dd>弧線、抖動、回拉或多次修正。</dd><dt>防呆</dt><dd><code>D</code> 過小或 <code>L&lt;D</code> 超容差時標記不可判定。</dd></dl>
+          </article>
+          <article class="metric control">
+            <div class="metric-head"><div><h3>過衝率／過衝量</h3><div class="metric-id">micro-flick.overshoot-rate</div></div><span class="direction">↓ 較佳</span></div>
+            <div class="formula">N_overshoot / N_evaluable</div>
+            <dl><dt>原理</dt><dd>衡量主動作是否超過目標後才回拉。</dd><dt>診斷</dt><dd>高值常見於煞停不足、靈敏度不合或用力過度。</dd></dl>
+          </article>
+          <article class="metric control">
+            <div class="metric-head"><div><h3>免修正率</h3><div class="metric-id">micro-flick.correction-free-rate</div></div><span class="direction">↑ 較佳</span></div>
+            <div class="formula">N_hit_without_secondary / N_hit</div>
+            <dl><dt>原理</dt><dd>快速瞄準可拆成主動作與後續次動作；一次完成通常更穩定。</dd><dt>版本</dt><dd>平滑、峰值與分割規則需保存 <code>segmentation_version</code>。</dd></dl>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="timing">
+      <div class="section-head">
+        <span class="section-no">06 · TIMING</span>
+        <div><h2>速度不是越高越好；關鍵是何時煞停與開火</h2><p>峰值速度描述能力與策略，穩定時間和 click latency 才能指出玩家是在等、在修，還是在搶。</p></div>
+      </div>
+      <div class="metric-grid">
+        <article class="metric timing">
+          <div class="metric-head"><div><h3>峰值角速度</h3><div class="metric-id">micro-flick.peak-omega-p50-dps</div></div><span class="direction context">情境判讀</span></div>
+          <div class="formula">max ω(t), t ∈ [t_move, t_fire]</div>
+          <dl><dt>好訊號</dt><dd>高峰值＋低過衝＋高準確率。</dd><dt>警訊</dt><dd>高峰值＋多修正＋長穩定時間。</dd><dt>用途</dt><dd>找出速度能力是否超過當前控制能力。</dd></dl>
+        </article>
+        <article class="metric timing">
+          <div class="metric-head"><div><h3>穩定時間</h3><div class="metric-id">micro-flick.settling-p50-ms</div></div><span class="direction">↓ 通常較佳</span></div>
+          <div class="formula">t_fire − t_primary_end</div>
+          <dl><dt>長且準</dt><dd>已到位但確認過久，可能過度保守。</dd><dt>短且 miss</dt><dd>煞停未完成就提前開火。</dd><dt>定義</dt><dd>主峰後進入停止速度帶並持續 N ticks。</dd></dl>
+        </article>
+        <article class="metric timing">
+          <div class="metric-head"><div><h3>進入目標後開火延遲</h3><div class="metric-id">micro-flick.click-latency-p50-ms</div></div><span class="direction context">非單向</span></div>
+          <div class="formula">t_fire − t_enter</div>
+          <dl><dt>偏長</dt><dd>可能確認過久，或在目標內仍持續修正。</dd><dt>近零</dt><dd>邊界同步開火；需看邊緣 miss。</dd><dt>負值</dt><dd>優先檢查事件對時、延遲補償與定義。</dd></dl>
+        </article>
+        <article class="metric research">
+          <div class="metric-head"><div><h3>Fitts throughput</h3><div class="metric-id">micro-flick.fitts-throughput-bps</div></div><span class="direction">↑ 較佳</span></div>
+          <div class="formula">ID = log2(D/W + 1); TP = ID / MT</div>
+          <dl><dt>原理</dt><dd>用角距與目標寬度正規化速度—準確度難度。</dd><dt>限定</dt><dd>僅適用提示目標與受控 <code>D/W</code>；先檢查模型適配。</dd><dt>定位</dt><dd>研究／跨條件指標，不作唯一 KPI。</dd></dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="consistency">
+      <div class="section-head">
+        <span class="section-no">07 · STABILITY</span>
+        <div><h2>平均值之外，還要看尾端、弱側與疲勞</h2><p>職業表現的價值常在「不容易掉下去」；P90 與區塊趨勢比一次最佳成績更接近比賽風險。</p></div>
+      </div>
+      <div class="grid-2">
+        <div class="stack">
+          <article class="metric stability">
+            <div class="metric-head"><div><h3>區塊內 CV 與尾端差</h3><div class="metric-id">micro-flick.within-block-cv</div></div><span class="direction">↓ 較佳</span></div>
+            <div class="formula">CV = SD(H2H)/mean(H2H); tail = P90−P50</div>
+            <dl><dt>原理</dt><dd>CV 看相對節奏變異；tail gap 看偶發慢 trial。</dd><dt>補充</dt><dd>另報最長 miss streak，揭露連續崩盤。</dd></dl>
+          </article>
+          <article class="metric stability">
+            <div class="metric-head"><div><h3>疲勞斜率</h3><div class="metric-id">micro-flick.fatigue-slope</div></div><span class="direction">→ 0 較佳</span></div>
+            <div class="formula">metric_i = a + b × trial_index_i + ε_i</div>
+            <dl><dt>警訊</dt><dd>H2H／誤差正斜率，或命中率負斜率。</dd><dt>統計</dt><dd>用穩健迴歸並回報信賴區間；小樣本不下結論。</dd></dl>
+          </article>
+          <article class="metric stability">
+            <div class="metric-head"><div><h3>方向不對稱</h3><div class="metric-id">micro-flick.direction-asymmetry</div></div><span class="direction context">越小越對稱</span></div>
+            <div class="formula">median(right | matched D/W) − median(left | matched D/W)</div>
+            <dl><dt>分層</dt><dd>左／右、上／下、斜向，並配對相近難度。</dd><dt>診斷</dt><dd>握姿、手腕範圍、滑鼠墊邊界與坐姿。</dd></dl>
+          </article>
+        </div>
+        <figure>
+          <svg viewBox="0 0 720 520" role="img" aria-labelledby="fatigue-title fatigue-desc">
+            <title id="fatigue-title">區塊內疲勞趨勢圖</title>
+            <desc id="fatigue-desc">五個時間窗中，命中間隔逐漸升高、準確率逐漸下降。兩條虛線顯示趨勢，代表區塊後段速度和精度同步惡化。</desc>
+            <rect x="1" y="1" width="718" height="518" rx="16" fill="#f8fafc" stroke="#d8e0eb"/>
+            <text x="65" y="52" font-size="19" font-weight="900" fill="#17243a">區塊內趨勢（示意）</text>
+            <line x1="80" y1="420" x2="660" y2="420" stroke="#607089" stroke-width="2"/>
+            <line x1="80" y1="420" x2="80" y2="92" stroke="#607089" stroke-width="2"/>
+            <g stroke="#e2e8f0"><path d="M80 338H660M80 256H660M80 174H660M80 92H660"/></g>
+            <g font-size="14" fill="#607089"><text x="76" y="452">1</text><text x="214" y="452">2</text><text x="352" y="452">3</text><text x="490" y="452">4</text><text x="628" y="452">5</text><text x="294" y="486">區塊時間窗</text></g>
+            <polyline points="90,334 225,315 360,278 495,222 630,178" fill="none" stroke="#c43d4f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#c43d4f"><circle cx="90" cy="334" r="7"/><circle cx="225" cy="315" r="7"/><circle cx="360" cy="278" r="7"/><circle cx="495" cy="222" r="7"/><circle cx="630" cy="178" r="7"/></g>
+            <polyline points="90,140 225,158 360,192 495,250 630,300" fill="none" stroke="#2166d1" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#2166d1"><circle cx="90" cy="140" r="7"/><circle cx="225" cy="158" r="7"/><circle cx="360" cy="192" r="7"/><circle cx="495" cy="250" r="7"/><circle cx="630" cy="300" r="7"/></g>
+            <line x1="90" y1="342" x2="630" y2="168" stroke="#c43d4f" stroke-width="2" stroke-dasharray="7 7"/>
+            <line x1="90" y1="132" x2="630" y2="309" stroke="#2166d1" stroke-width="2" stroke-dasharray="7 7"/>
+            <rect x="420" y="42" width="230" height="72" rx="10" fill="#fff" stroke="#d8e0eb"/>
+            <circle cx="445" cy="66" r="6" fill="#c43d4f"/><text x="460" y="72" font-size="15" font-weight="800" fill="#943040">H2H 上升（變慢）</text>
+            <circle cx="445" cy="93" r="6" fill="#2166d1"/><text x="460" y="99" font-size="15" font-weight="800" fill="#164d9e">準確率下降</text>
+          </svg>
+          <figcaption><strong>圖 4｜疲勞／張力趨勢。</strong> 當命中間隔增加且準確率同步下降，優先複核疲勞、握力累積與注意力，而不是只要求更快。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="coach">
+      <div class="section-head">
+        <span class="section-no">08 · COACHING</span>
+        <div><h2>教練判讀：先守住準確率，再定位速度瓶頸</h2><p>單一指標不直接等於能力；使用指標組合建立可被下一輪測試否證的假設。</p></div>
+      </div>
+      <div class="matrix" aria-label="速度與準確率教練判讀矩陣">
+        <div class="axis"></div><div class="axis">速度快</div><div class="axis">速度慢</div>
+        <div class="axis">準確率高</div>
+        <div class="good"><strong>快速且受控</strong><p>看 P90、弱側與疲勞，避免只追峰值。</p></div>
+        <div class="warn"><strong>過度保守</strong><p>檢查啟動時間、click latency 與是否已到位仍等待。</p></div>
+        <div class="axis">準確率低</div>
+        <div class="bad"><strong>速度超過控制</strong><p>檢查過衝、主動作峰值、邊緣 miss 與回拉。</p></div>
+        <div class="bad"><strong>基礎控制未穩</strong><p>先降低難度，確認輸入設定與視覺辨識，再談加速。</p></div>
+      </div>
+      <div class="table-wrap" style="margin-top:1rem">
+        <table>
+          <thead><tr><th>觀察組合</th><th>優先假設</th><th>下一步複核／訓練</th></tr></thead>
+          <tbody>
+            <tr><td>峰值高＋過衝高＋settling 長</td><td>加速超過煞停能力</td><td>檢查靈敏度與握力；固定角距練「快起、早煞」</td></tr>
+            <tr><td>路徑直接＋誤差低，但 H2H 慢</td><td>啟動、選擇或確認偏慢</td><td>比較提示／自由模式；拆看 <code>t_move−t_anchor</code></td></tr>
+            <tr><td>很早進目標＋click latency 長</td><td>開火過度保守</td><td>逐步提前點擊，同時守住準確率下限</td></tr>
+            <tr><td>click latency 近零＋邊緣 miss 多</td><td>預判式提前開火</td><td>延後少量時機；看帶符號誤差是否集中同側</td></tr>
+            <tr><td>右向顯著優於左向</td><td>人體工學或活動範圍不對稱</td><td>控制 D/W 後複核；錄影檢查握姿、坐姿與墊面</td></tr>
+            <tr><td>P50 穩、P90／miss streak 惡化</td><td>偶發失穩或失誤恢復慢</td><td>練錯誤後重置，觀察過衝 trial 的下一次表現</td></tr>
+            <tr><td>區塊後段速度、精度同步下降</td><td>疲勞、張力或注意力下降</td><td>縮短組長、增加休息，建立放鬆提示</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="validity">
+      <div class="section-head">
+        <span class="section-no">09 · VALIDITY</span>
+        <div><h2>資料契約與有效性護欄</h2><p>保留原始 tick、事件與版本，才能讓每個衍生指標被重算、被質疑，也被修正。</p></div>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <h3>原始 tick 至少保存</h3>
+          <p><code>session_id</code>、<code>block_id</code>、<code>trial_id</code>、單調時間戳、yaw、pitch、目標 ID／方向／角半徑、有效狀態、fire、hit、pause／focus，以及測試與輸入設定版本。</p>
+          <h3>逐 trial 衍生表至少保存</h3>
+          <p><code>t_anchor</code>、<code>t_move</code>、<code>t_enter</code>、<code>t_fire</code>、<code>t_hit</code>、D、W、L、命中結果、排除 reason code、演算法與 segmentation 版本。</p>
+        </article>
+        <article class="card">
+          <h3>驗證順序</h3>
+          <ol>
+            <li>合成直線與彎折軌跡驗證 D、L 與 D/L。</li>
+            <li>已知偏差與跨 yaw ±180° 案例驗證角誤差。</li>
+            <li>人工標記對照動作開始、進入、過衝與分割。</li>
+            <li>重播相同 seed／輸入，確認逐 trial 可重現。</li>
+            <li>比較不同 tick rate 的敏感度。</li>
+            <li>同日、跨日複測後定義個人最小有意義變化。</li>
+          </ol>
+        </article>
+      </div>
+      <ul class="rules">
+        <li>自由選擇模式不可把總時間稱為純反應時間。</li>
+        <li>不同 FOV、DPI、靈敏度、tick rate 或目標角寬不可直接混比。</li>
+        <li>miss trial 不整筆刪除；只對需要命中事件的量標記缺失。</li>
+        <li>暫停、失焦、遙測缺口與生成失敗使用獨立 reason code。</li>
+        <li>正式測試前註冊並鎖定主要指標、閾值與排除規則。</li>
+        <li>SPARC／LDJ 對處理與分段敏感，先留在研究層，不放核心面板。</li>
+      </ul>
+      <div class="card callout danger">
+        <h3>最重要的防誤讀</h3>
+        <p>不要把任何單一數字叫作「aim skill」。Micro Flick 是一個受控切片；教練結論應由至少一個結果指標與一個機制指標共同支持，並以重測確認。</p>
+      </div>
+    </section>
+
+    <section id="references">
+      <div class="section-head">
+        <span class="section-no">10 · SOURCES</span>
+        <div><h2>研究依據與專案延伸</h2><p>研究提供量測原理；實際閾值仍需用本專案的 tick、裝置與玩家資料驗證。</p></div>
+      </div>
+      <div class="card">
+        <ol class="refs">
+          <li>Fitts, P. M. (1954). <em>The information capacity of the human motor system in controlling the amplitude of movement.</em> <a href="https://doi.org/10.1037/h0055392">DOI: 10.1037/h0055392</a> — 速度與準確度權衡、距離／寬度正規化的基礎。</li>
+          <li>Meyer, D. E., et al. (1988). <em>Optimality in human motor performance: ideal control of rapid aimed movements.</em> <a href="https://doi.org/10.1037/0033-295X.95.3.340">DOI: 10.1037/0033-295X.95.3.340</a> — 主動作與選擇性次要修正的模型。</li>
+          <li>Hogan, N., &amp; Sternad, D. (2009). <em>Sensitivity of smoothness measures to movement duration, amplitude, and arrests.</em> <a href="https://pubmed.ncbi.nlm.nih.gov/19892658/">PubMed</a> — 平滑度量測對動作條件的敏感性。</li>
+          <li>Balasubramanian, S., et al. (2015). <em>On the analysis of movement smoothness.</em> <a href="https://doi.org/10.1186/s12984-015-0090-9">DOI: 10.1186/s12984-015-0090-9</a> — 平滑度定義、選擇與解讀注意事項。</li>
+        </ol>
+        <p><strong>專案內部延伸：</strong> <a href="../metrix_design/primary-submovement-ratio-guide-2026-05-20.md">Primary Submovement Ratio</a> · <a href="../metrix_design/velocity-scaling-consistency-guide-2026-05-21.md">Velocity Scaling Consistency</a> · <a href="../metrix_design/per-segment-ldj-v-guide-2026-05-21.md">LDJ-V</a> · <a href="../metrix_design/per-segment-sparc-tracking-guide-2026-05-21.md">SPARC Tracking</a></p>
+        <p><strong>可維護原始稿：</strong> <a href="README.md">README.md（含 Mermaid 流程圖與完整公式）</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>Micro Flick Test · Measurement Design Proposal</span>
+      <span>文件版本 1.0 · 2026-09-04</span>
+    </div>
+  </footer>
+</body>
+</html>
