@@ -75,6 +75,8 @@ interface ContinuousBuildOptions {
   aimYawDeg(tSec: number, tick: number): number;
   aimPitchDeg(tSec: number, tick: number): number;
   protocolViolationAtTick?: number;
+  /** WP-54 / T7: defaults to `fire`; `fire-released` is deliberately non-blocking here. */
+  protocolViolationKind?: Extract<ExportPayload['events'][number], { type: 'protocol_violation' }>['kind'];
   motionChanges?: Array<{
     atTick: number;
     yawBefore: number;
@@ -121,7 +123,7 @@ function buildContinuousPayload(options: ContinuousBuildOptions): ExportPayload 
       });
     }
     if (options.protocolViolationAtTick === tick) {
-      events.push({ type: 'protocol_violation', kind: 'fire', t });
+      events.push({ type: 'protocol_violation', kind: options.protocolViolationKind ?? 'fire', t });
     }
     for (const change of options.motionChanges ?? []) {
       if (change.atTick === tick) {
@@ -420,6 +422,23 @@ describe('deriveTrackingDynamics — protocol-incompatible', () => {
     });
     const result = deriveTrackingDynamics(payload, DYNAMICS_OPTIONS);
     expect(result).toEqual({ status: 'blocked', reason: 'protocol-incompatible' });
+  });
+
+  it('does not block on fire-released (WP-54 T7: adequacy is a run-level threshold, D-54.50)', () => {
+    // Under tracking-pilot-v2's zero-recoil weapon a brief release does not perturb the aiming
+    // task, so held-fire adequacy is judged once by the run-level gate rather than duplicated
+    // here — one criterion, one implementation (C-D4).
+    const payload = buildContinuousPayload({
+      totalTicks: 400,
+      targetYawDeg: coreYawDeg,
+      targetPitchDeg: corePitchDeg,
+      aimYawDeg: coreYawDeg,
+      aimPitchDeg: corePitchDeg,
+      protocolViolationAtTick: 100,
+      protocolViolationKind: 'fire-released',
+    });
+    const result = deriveTrackingDynamics(payload, DYNAMICS_OPTIONS);
+    expect(result.status).not.toBe('blocked');
   });
 });
 

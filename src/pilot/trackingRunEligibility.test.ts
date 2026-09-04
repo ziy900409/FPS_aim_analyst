@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ExportPayload } from '../data/export.ts';
 import type { TickRecord } from '../data/RingBuffer.ts';
 import type { Meta } from '../data/metadata.ts';
-import { evaluateTrackingRunEligibility } from './trackingRunEligibility.ts';
+import { evaluateTrackingRunEligibility, MIN_FIRE_HOLD_COVERAGE } from './trackingRunEligibility.ts';
 
 const SIM_HZ = 128;
 const TICK_MS = 1000 / SIM_HZ;
@@ -54,6 +54,8 @@ interface BuildOptions {
   omitScoredStart?: boolean;
   /** Appends a `protocol_violation` at this tick index (WP-54 T6 slice 7). */
   violationAtTick?: number;
+  /** Kind for `violationAtTick` (WP-54 T7); defaults to the historically observed `ads`. */
+  violationKind?: Extract<ExportPayload['events'][number], { type: 'protocol_violation' }>['kind'];
 }
 
 function buildPayload(options: BuildOptions = {}): ExportPayload {
@@ -94,7 +96,11 @@ function buildPayload(options: BuildOptions = {}): ExportPayload {
   }
 
   if (options.violationAtTick !== undefined) {
-    events.push({ type: 'protocol_violation', kind: 'ads', t: options.violationAtTick * TICK_MS });
+    events.push({
+      type: 'protocol_violation',
+      kind: options.violationKind ?? 'ads',
+      t: options.violationAtTick * TICK_MS,
+    });
   }
 
   return {
@@ -226,6 +232,135 @@ describe('evaluateTrackingRunEligibility — protocol violation (WP-54 T6 slice 
     if (result.status !== 'blocked') return;
     expect(result.reasons).toContain('protocol-violation');
     expect(result.reasons).toContain('recorder-overflow');
+  });
+});
+
+describe('evaluateTrackingRunEligibility — held-fire coverage (WP-54 T7, tracking-pilot-v2)', () => {
+  const REQUIRE_FIRE: Partial<Meta> = { protocolGuard: { requireFire: true, noMovement: true } };
+
+  /** Sets `fire` on every tick; prep ticks are always held, and the first `heldScored` scored
+   * ticks are held. Scored ticks are those at index >= prepTicks (t >= scoredStartMs). */
+  function fireFlags(prepTicks: number, heldScored: number): (ticks: TickRecord[]) => void {
+    return (ticks) => {
+      ticks.forEach((tick, i) => {
+        const scoredIndex = i - prepTicks;
+        tick.fire = scoredIndex < 0 || scoredIndex < heldScored;
+      });
+    };
+  }
+
+  it('pins the frozen threshold at 0.95 (D-54.50, preregistered before data collection)', () => {
+    // README §2.2: thresholds must not move once collection starts. This assertion exists so an
+    // edit to the constant fails loudly rather than silently re-defining the criterion.
+    expect(MIN_FIRE_HOLD_COVERAGE).toBe(0.95);
+  });
+
+  it('is eligible when the participant held fire for the whole scored window', () => {
+    const result = evaluateTrackingRunEligibility(
+      buildPayload({ prepTicks: 5, scoredTicks: 40, metaOverrides: REQUIRE_FIRE, mutateTicks: fireFlags(5, 41) }),
+    );
+    expect(result.status).toBe('eligible');
+  });
+
+  it('is eligible exactly at the threshold (the rule rejects below it, not at it)', () => {
+    // 20 scored ticks x 0.95 = 19 exactly, so this case pins the boundary's inclusive side.
+    const scoredCount = 20;
+    const held = scoredCount * MIN_FIRE_HOLD_COVERAGE;
+    expect(Number.isInteger(held)).toBe(true);
+    const result = evaluateTrackingRunEligibility(
+      buildPayload({
+        prepTicks: 5,
+        scoredTicks: scoredCount - 1,
+        metaOverrides: REQUIRE_FIRE,
+        mutateTicks: fireFlags(5, held),
+      }),
+    );
+    expect(result.status).toBe('eligible');
+  });
+
+  it('blocks one tick below the threshold', () => {
+    const scoredCount = 41; // prepTicks 5 + scoredTicks 40 → indices 5..45 inclusive
+    const lowestEligible = Math.ceil(scoredCount * MIN_FIRE_HOLD_COVERAGE);
+    const result = evaluateTrackingRunEligibility(
+      buildPayload({
+        prepTicks: 5,
+        scoredTicks: 40,
+        metaOverrides: REQUIRE_FIRE,
+        mutateTicks: fireFlags(5, lowestEligible - 1),
+      }),
+    );
+    expect(result.status).toBe('blocked');
+    if (result.status !== 'blocked') return;
+    expect(result.reasons).toContain('insufficient-fire-hold-coverage');
+  });
+
+  it('ignores releases inside the prep window', () => {
+    // Same boundary every other check uses: the participant has not pressed yet during centring.
+    const result = evaluateTrackingRunEligibility(
+      buildPayload({
+        prepTicks: 5,
+        scoredTicks: 40,
+        metaOverrides: REQUIRE_FIRE,
+        mutateTicks: (ticks) => {
+          ticks.forEach((tick, i) => {
+            tick.fire = i >= 5;
+          });
+        },
+      }),
+    );
+    expect(result.status).toBe('eligible');
+  });
+
+  it('does not apply the rule to a run whose drill never declared requireFire', () => {
+    // Every non-firing drill would otherwise compute 0% coverage and be rejected wholesale.
+    const result = evaluateTrackingRunEligibility(
+      buildPayload({ prepTicks: 5, scoredTicks: 40, mutateTicks: fireFlags(5, 0) }),
+    );
+    expect(result.status).toBe('eligible');
+  });
+
+  it('reports missing-fire-flag rather than zero coverage when the instrument recorded nothing', () => {
+    // A pre-v2 recorder emits no `fire` key. Counting that as 0% would reject the run for
+    // "the participant did not hold fire" when the truth is "it was never measured" (C-D3).
+    const result = evaluateTrackingRunEligibility(buildPayload({ metaOverrides: REQUIRE_FIRE }));
+    expect(result.status).toBe('blocked');
+    if (result.status !== 'blocked') return;
+    expect(result.reasons).toContain('missing-fire-flag');
+    expect(result.reasons).not.toContain('insufficient-fire-hold-coverage');
+  });
+
+  it('does not let a single fire-released event void the run through the all-or-nothing rule', () => {
+    // D-54.50 would be overridden by its own implementation if `fire-released` still routed
+    // through `protocol-violation`; adequacy is decided by the coverage threshold alone.
+    const result = evaluateTrackingRunEligibility(
+      buildPayload({
+        prepTicks: 5,
+        scoredTicks: 40,
+        metaOverrides: REQUIRE_FIRE,
+        mutateTicks: fireFlags(5, 41),
+        violationAtTick: 20,
+        violationKind: 'fire-released',
+      }),
+    );
+    expect(result.status).toBe('eligible');
+  });
+
+  it('still voids the run on the other violation kinds inside the scored window', () => {
+    for (const kind of ['fire', 'ads', 'movement'] as const) {
+      const result = evaluateTrackingRunEligibility(
+        buildPayload({
+          prepTicks: 5,
+          scoredTicks: 40,
+          metaOverrides: REQUIRE_FIRE,
+          mutateTicks: fireFlags(5, 41),
+          violationAtTick: 20,
+          violationKind: kind,
+        }),
+      );
+      expect(result.status, `kind=${kind}`).toBe('blocked');
+      if (result.status !== 'blocked') continue;
+      expect(result.reasons, `kind=${kind}`).toContain('protocol-violation');
+    }
   });
 });
 

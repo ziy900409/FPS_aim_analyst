@@ -133,9 +133,19 @@ export function deriveTrackingDynamics(
 
   // FR-54-8/README §2.4 protocol-incompatible: any protocol_violation inside the scored window
   // (from scored_start to window end) invalidates this metric, regardless of acquisition outcome.
+  //
+  // WP-54 / T7 exception: `fire-released` is excluded, for the same reason as in
+  // `trackingRunEligibility.isScoredWindowViolation()` — under `tracking-pilot-v2`'s zero-recoil
+  // weapon a brief release does not perturb the aiming task, so held-fire adequacy is a threshold
+  // question (D-54.50), not an all-or-nothing one. That threshold lives in the **run-level** gate
+  // only: it is evaluated once per export before any P0/P1 aggregation, so duplicating it here
+  // would give one criterion two implementations to drift between (C-D4).
   const hasViolation = payload.events.some(
     (event): event is ProtocolViolationEvent =>
-      event.type === 'protocol_violation' && event.t + EPSILON >= scoredStartMs && event.t < windowEndMs - EPSILON,
+      event.type === 'protocol_violation' &&
+      event.kind !== 'fire-released' &&
+      event.t + EPSILON >= scoredStartMs &&
+      event.t < windowEndMs - EPSILON,
   );
   if (hasViolation) return { status: 'blocked', reason: 'protocol-incompatible' };
 

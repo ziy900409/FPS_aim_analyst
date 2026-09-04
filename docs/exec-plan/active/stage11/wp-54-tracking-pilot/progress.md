@@ -8,6 +8,25 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 16：held-fire 覆蓋率 ≥ 95% 的 eligibility 規則（D-54.50 落地）
+
+- **`MIN_FIRE_HOLD_COVERAGE = 0.95`**（exported，凍結於收資料前）：宣告 `requireFire` 的 run，
+  scored 窗內 held-fire 逐 tick 覆蓋率 < 95% ⇒ 新 reason `insufficient-fire-hold-coverage`。
+  25 s 容許累計約 1.25 s。判準為 `< MIN` 才擋 ⇒ **恰好等於門檻仍合格**，測試釘住這個邊界的閉合側。
+- **同一 slice 必須把 `fire-released` 從既有的全有全無規則移出**（`isScoredWindowViolation` 與
+  `trackingDynamics` 的 `protocol-incompatible` 各一處）。**沒做這件事，D-54.50 會被自己的實作
+  推翻**——既有規則是「scored 窗內出現任何 `protocol_violation` 就擋掉 run」，單次放開仍會作廢。
+  其他三個 kind 的全有全無語意**逐位不變**，有測試逐 kind 覆蓋。
+- **覆蓋率門檻只放在 run-level gate，不在 metric-level 重做一次**：後者每 export 前就已被前者攔下，
+  重複實作等於讓同一條判準有兩份會分歧的定義（C-D4）。
+- **新 reason `missing-fire-flag` 與覆蓋率不足分開**：宣告了 `requireFire` 但 scored ticks 沒有
+  `fire` 欄時，若當成 0% 覆蓋率，會以「受測者沒按住」的理由否決一個其實是「儀器沒記錄」的 run。
+  **報錯原因本身說錯話**正是 C-D3 要防的那類失效，故給它自己的 reason 並跳過覆蓋率計算。
+- **規則只對宣告了 `requireFire` 的 run 生效**（讀 slice 14 的 `meta.protocolGuard`）：無條件套用
+  會讓每個不開火的 drill 都被算出 0% 而整批誤判。
+- 分析 runner 端零改動——`eligibility.reasons` 是直接 join 印出，封閉詞彙沒有第二處枚舉。
+- 驗證：`npx vitest run` **218 files / 2132 tests passed**（+10）、`tsc --noEmit` ×2 exit 0。
+
 ### 2026-09-04 — T7 slice 15：`protocolGuard.requireFire` + `fire-released` violation kind
 
 - **`requireFire` 是四個 flag 裡唯一的肯定式**：其餘三個記「做了不該做的事」，它記「沒做該做的
