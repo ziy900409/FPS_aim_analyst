@@ -14,7 +14,13 @@
  *                                    reconstruction, so a payload recorded by an older stimulus
  *                                    generation cannot pass as current (gate §12.3, D-54.43;
  *                                    `band-limited-2d-v1` has no events for the layer-3 check)
- *   4. `buildTrackingPilotEvidence()` + `renderTrackingPilotReportHtml()` (layer 4: report)
+ *   4. `measureTrackingDeliveredAngles()` — engagement distance, delivered/nominal speed and
+ *                                    angular size measured AT THE EYE from the recorded positions
+ *                                    (layer 4: KI-024's standing guard)
+ *   5. `computeTrackingFrozenCrosshairRatio()` — B-1's discriminability ratio (layer 5, T7 §2.2)
+ *   6. `computeTrackingTimeOnTaskSlope()` — B-3c's per-run first-5 s vs last-5 s RMS ε (layer 6,
+ *                                    T7 §2.2); the gate criterion is the cell-level mean of Δ
+ *   —. `buildTrackingPilotEvidence()` + `renderTrackingPilotReportHtml()` (evidence JSON + report)
  *
  * Usage (participant data lives OUTSIDE the repo — never commit exports):
  *
@@ -43,6 +49,10 @@ import {
   formatTrackingDeliveredAngles,
   measureTrackingDeliveredAngles,
 } from './trackingDeliveredAngles.ts';
+import {
+  computeTrackingTimeOnTaskSlope,
+  formatTrackingTimeOnTaskSlope,
+} from './trackingTimeOnTaskSlope.ts';
 import {
   createTrackingTrajectory,
   type TrackingTrajectoryConfig,
@@ -218,6 +228,10 @@ function main(): void {
     // recorded run of a stimulus that leaves ε no dynamic range still measures nothing (gate
     // §12.8 / T7). Reported per run because the frozen baseline is the participant's own median.
     console.log(`    ${formatTrackingFrozenCrosshairRatio(computeTrackingFrozenCrosshairRatio(payload))}`);
+    // Layer 6: B-3c's per-run input (gate §2.2) — RMS ε over the first 5 s vs the last 5 s of the
+    // same scored window. The gate criterion is the cell-level mean of this Δ; printing it per run
+    // is what lets an operator see a single drifting run before it is averaged away.
+    console.log(`    ${formatTrackingTimeOnTaskSlope(computeTrackingTimeOnTaskSlope(payload))}`);
   }
 
   const payloads = runs.map((run) => run.payload);

@@ -211,6 +211,14 @@
 
 ### T7 工程 slice（已 commit）
 
+- [x] **slice 7**：**B-3c 的 per-run 實作**——`scripts/trackingTimeOnTaskSlope.ts` 純函式
+      + `tests/regression/tracking-time-on-task-slope.test.ts`（6 tests）+ 分析 runner **layer 6**
+      （每 run 印 `timeSlope delta=…% first5s=… last5s=…`）。窗與 layer 5 逐 tick 相同、
+      兩個 RMS 同出 `angularEccentricityDeg()`（C-D4），隨行 `windowRmsEpsilonDeg` 對表
+      canonical。兩半由**錄到的 tick** 切（`windowEndMs` 對單 presentation 恆為 `Infinity`）、
+      跨度 < 10 s 回 `window-too-short`（D-54.44）。以 G4 錄音覆驗：layer 5 逐值重現 gate §3.1 的
+      2.05–3.48；Δ 為 −21.0…+38.7%，9 份中 7 份在 ±20% 內（**非 B-3c 判定**——判的是 cell 層平均，
+      且乾跑不計入 Gate B 證據）。
 - [x] **slice 6**：乾跑通過（四項全過，比值 **2.05–3.48**）+ **尺寸 revise G4→G5**：size 候選值
       `[2.0, 0.5]` → **`[3.0, 2.0]`**（0.5° 兩個核心 cell 的 TOT 1.5/3.9% 低於凍結的 5% floor）。
       calibration → 2.0°、reversal/practice → 3.0°，**2×2 factorial 保持完整**。**0.5° pixel floor

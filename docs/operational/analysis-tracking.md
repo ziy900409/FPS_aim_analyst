@@ -490,6 +490,33 @@ v → ∞ 的上界為 `2.023 · k`。`[0.3, 2.1]` 的上界是 **1.61**，故 G
 新增 `targetHitboxWidthU`（真正的尺寸軸；`Meta` 不記錄目標距離，故以 source unit 表達）與
 `displayRefreshHz`（OQ-54-11：60Hz 資料可用，但刷新率必須分開 cohort，四捨五入到整數 Hz）。
 
+### Time-on-task slope（B-3c 的逐 run 輸入，T7）
+
+**25 s 的 block 裡表現會不會漂?** 在**同一個 scored 窗**（`scored_start` 適配後、first-on-target
+到窗尾——與 canonical `rmsEpsilonDeg` 逐 tick 相同的集合）內取**前 5 s** 與**後 5 s** 的 RMS ε：
+
+```
+Δ = (RMS ε(後 5 s) − RMS ε(前 5 s)) / RMS ε(前 5 s)
+```
+
+實作：`scripts/trackingTimeOnTaskSlope.ts`（純函式 + 回歸測試），分析 runner 的 **layer 6** 逐 run
+印出。**Gate B 的 B-3c 判的是 cell 層的平均 Δ（|Δ| ≤ 20%），不是單一 run**——逐 run 印出來是為了讓
+操作員在平均掉之前看見單一漂移的 run。
+
+三個實作細節（不新增 ε 或 scored 窗的第二定義，C-D4）：
+
+- **兩半由「錄到的 tick」切，不由 `windowEndMs` 切**。pilot block 只有一個 presentation，故
+  `windowEndMs` 是 `Infinity`（`trackingDerivation` 的契約）；「後 5 s」因此自**最後一個有資料的
+  tick** 往回量，這也是判準的誠實讀法——受測者實際被量到的最後 5 s。
+- **窗跨度 < 2 × 5 s ⇒ 回 `window-too-short`,不給數字**。否則兩半重疊，Δ 有一部分是拿同一段資料
+  跟自己比。（取得目標很慢的 run 會落在這裡。）
+- **128 Hz 下兩半各恰好 640 tick**：5000 ms = 640 × 7.8125 ms，兩個切點都正好落在 tick 上且都被
+  排除，故前半 `[首 tick, +5 s)`、後半 `(末 tick − 5 s, 末 tick]` 對稱。中間那段屬於兩者皆非——
+  Δ 比的是頭尾，不是「前半 vs 後半」。
+
+隨行 `windowRmsEpsilonDeg`（整窗重算）與 `canonicalRmsEpsilonDeg` 供逐 run 對表，漂移即印
+`!!P0-MISMATCH`——與 layer 5 同一道防線。
+
 ### 0.5° pixel floor：以 2026-09-04 乾跑結案（T7 DoD 項目）
 
 README §3 的風險「0.5 deg 目標接近 pixel floor」與 T7 DoD 的「分析 0.5 deg pixel/aliasing floor」，

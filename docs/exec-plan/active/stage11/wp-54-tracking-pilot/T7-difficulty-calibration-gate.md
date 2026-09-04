@@ -205,10 +205,12 @@ npx vite-node scripts/analyze-tracking-pilot.ts -- <資料夾...> --out .pilot-a
 | 3b | **刺激保真度**（錄到的位置 vs 現行程式重建）⇒ 世代錯亂偵測 | `checkTrackingStimulusFidelity()` |
 | **4** | **交付角度 @ 眼睛**（交戰距離、交付/宣稱速度、角尺寸）⇒ KI-024 的常設守門 | `measureTrackingDeliveredAngles()` |
 | **5** | **凍結準心比值**（B-1 的判準本體） | `computeTrackingFrozenCrosshairRatio()` |
+| **6** | **time-on-task slope 的逐 run 輸入**（B-3c：同一 scored 窗前 5 s vs 後 5 s 的 RMS ε 與 Δ） | `computeTrackingTimeOnTaskSlope()` |
 | — | evidence JSON + self-contained HTML + parity | `buildTrackingPilotEvidence()` / `renderTrackingPilotReportHtml()` |
 
 **stderr 警示**（不要忽略）：`STIMULUS FIDELITY MISMATCH`（世代錯亂）、`DELIVERED-AT-EYE OUT OF BAND`
-（刺激未交付宣稱值）、`!!P0-MISMATCH`（layer 5 的分母與 canonical `rmsEpsilonDeg` 漂移）。
+（刺激未交付宣稱值）、`!!P0-MISMATCH`（layer 5 的分母、或 layer 6 的整窗 RMS 與 canonical
+`rmsEpsilonDeg` 漂移）。
 
 B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope 由 evidence JSON 逐 cell 聚合得出;
 **若需新增聚合函式,必須是純函式 + 回歸測試**（比照 slice 1/3 的慣例）,不得用一次性腳本產生 gate 數字。

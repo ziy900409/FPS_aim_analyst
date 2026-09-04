@@ -8,6 +8,31 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 7：B-3c 的 per-run 實作（time-on-task slope，分析 runner layer 6）
+
+- **招募前的工程缺口之一**：gate §2.2 凍結了六條 cell 層判準，但 layer 5 只給逐 run 的比值（B-1）。
+  B-3c 需要「同一 scored 窗前 5 s vs 後 5 s 的 RMS ε」——這是唯一需要**逐 tick 重算**的判準，
+  其餘（B-2a/B-2b/B-3a/B-4）都是既有 evidence 已有的純量。故先落這一片。
+- **`scripts/trackingTimeOnTaskSlope.ts`**（純函式）+ `tests/regression/tracking-time-on-task-slope.test.ts`
+  （**6 tests**），比照 slice 1/3 的慣例;runner 接成 **layer 6** 逐 run 印出。
+  gate §5 明文要求聚合數字不得由一次性腳本產生。
+- **C-D4 紀律**：窗是 canonical 的那一個（`scored_start` 適配後 first-on-target → 窗尾，與
+  `deriveTrackingDynamics()` / layer 5 逐 tick 相同），兩個 RMS 都出自 `angularEccentricityDeg()`。
+  隨行 `windowRmsEpsilonDeg`（整窗重算）對表 `canonicalRmsEpsilonDeg`，漂移即印 `!!P0-MISMATCH`。
+- **三個實作判斷**（記於 D-54.44）：兩半由**錄到的 tick** 切而非 `windowEndMs`（pilot block 只有一個
+  presentation ⇒ `windowEndMs` 恆為 `Infinity`）；窗跨度 < 2 × 5 s 回 `window-too-short` 不給數字；
+  128 Hz 下兩半各恰好 640 tick（5000 ms = 640 × 7.8125 ms，兩切點都落在 tick 上且都排除）。
+- **以 G4 乾跑的 9 份錄音實跑驗證**（非 gate 證據，只驗實作）：layer 5 逐 block 重現 gate §3.1 記錄的
+  **2.05 / 2.77 / 2.81 / 2.98 / 3.01 / 3.35 / 3.36 / 3.42 / 3.48**——與文件逐值相符,證明 layer 6
+  切的是同一個窗。layer 6 的 Δ 為 **−21.0 / −12.7 / −9.4 / −8.3 / −4.9 / +3.1 / +6.2 / +7.2 / +38.7 %**,
+  9 份中 7 份落在 ±20% 內。**這不是 B-3c 的判定**（B-3c 判的是 cell 層平均、且乾跑不計入 Gate B 證據）,
+  但值得在真人資料進來時優先看——兩個出界的 run 提示 25 s 可能偏長。
+- **驗證**：新檔 6/6 綠；`npx vitest run` 213 files / 2041 tests passed；`npx tsc --noEmit` 與
+  `-p tsconfig.node.json` 皆 exit 0。
+- **下一步**：①**G5 乾跑仍未做**（gate §6 唯一未打勾的工程前置，需操作員本人跑，招募的硬前置）；
+  ② 使用者 2026-09-04 已拍板三項聚合的操作型定義（family A 判主判準、逐人取中位數、TOST 成對
+  雙單尾 α=0.05），**待下一片以 gate §2.5 凍結**後再實作 cell 層聚合。
+
 ### 2026-09-04 — T7 slice 6：乾跑通過 + 尺寸 revise（G4 → G5，size 候選值 `[3.0, 2.0]`）
 
 - **乾跑結果（P05 ×9 block，G4 刺激）：✅ 四項全過** ⇒ gate §3 的招募前置成立。
@@ -1435,6 +1460,8 @@
 | D-54.42 | WP-54 的 pilot 目標 hitbox **改回 `shape:'sphere'`**（取代 D-54.40 的 cube），但前置為 [KI-021](../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md) 落地，且**必須在 9-block 重跑之前**完成 | 使用者 2026-09-03 要求。sphere 讓角尺寸各方向等向，才真正符合「angular size」語意（cube 在對角方向的 on-target 容許角大 √2 倍）。**前置條件不可跳過**：`trackingDerivation.isOnTarget()` 目前是 ray/AABB 且 `hitboxFromMeta()` 丟掉 `shape`，所以現在改 config 只會讓 pilot drill 被 WP-55 的 `'invalid-hitbox'` 閘門整份排除，或（若只放寬閘門）被當成 box 靜默算出偏寬鬆的 on-target——後者比現況更糟。**排序硬約束**：on-target 幾何一改，TOT/`tAcquireMs`/drop-reacquire 語意就變；若在重跑後才改，兩批真人資料不可合併、等於再作廢一次。跨 WP 面（含 `spider-shot-v2` 這個正式 Assessment drill 也受 KI-021 影響）記於 [DECISIONS.md GD-30](../../DECISIONS.md) | ✅ Confirmed（2026-09-03 落地，T6 slice 12）——KI-021 三片依序完成後改 config：`trackingPilotAngularSizeToEdgeU`→`trackingPilotAngularSizeToDiameterU`、`cubeHitbox()`→`sphereHitbox()`、兩檔皆 `shape:'sphere'`（`widthU` 逐位不變，故 e2e 的 0.13964 斷言不動）。**已在 9-block 重跑之前落地**，排序約束滿足 |
 
 | D-54.43 | Gate A 第三輪的**世代歸屬(G2 vs G3)以「錄到的目標位置 vs 現行程式重建」逐位比對認定**，不以 commit 時間或 `meta` 的 set-point 數值認定 | `targetRmsSpeedDegPerSec` 在 G2/G3 是同一個數字(5/20)，`meta` 因此分不出世代;而 `analyze-tracking-pilot.ts` 的 `stimulusCheck()` 是用**現行**`createTrackingTrajectory()` 重建刺激再量它自己的 RMS ⇒ 對 band-limited 家族(無 `target_motion_change` 事件可對表)結構上無法分辨 payload 是不是舊世代程式錄的。ticks 的 `tx/ty/tz` 是 sim 經 `projectTrackingAngles()` 實際寫入的位置，與同一函式重建的位置相減即可判定。實測 21/21 payload 逐位一致(≤ 8.9e-16 u)。量的是「錄到的曲線 == 重建的曲線」，不是新構念，不牴觸 C-D4 | ✅ Confirmed（T6 slice 16，2026-09-03）——本輪為一次性 audit;是否升成 runner 的一層檢查見 gate §12.6 第 3 項(待研究者決定) |
+
+| D-54.44 | B-3c 的兩個半窗由**錄到的 tick** 切（前半 `[首 tick, +5 s)`、後半 `(末 tick − 5 s, 末 tick]`），不由 `windowEndMs` 切；窗跨度 < 2 × 5 s 一律回 `window-too-short` 而非給一個數字 | pilot block 只有一個 presentation，故 `trackingDerivation` 的契約讓 `windowEndMs` 恆為 `Infinity`——用它切「後 5 s」根本無定義。改由最後一個**有資料的 tick** 往回量，同時也是判準的誠實讀法：受測者實際被量到的最後 5 s，而非名目排程的最後 5 s。窗太短時兩半會重疊，Δ 有一部分是拿同一段資料跟自己比，寧可回一個封閉 reason 也不要給一個看起來像數字的東西（沿用 layer 5 的 `status` 慣例）。128 Hz 下 5000 ms 恰為 640 個 tick，兩個切點都正好落在 tick 上且都被排除 ⇒ 兩半對稱各 640 tick，中間那段屬於兩者皆非（Δ 比的是頭尾，不是「前半 vs 後半」） | ✅ Confirmed（T7 slice 7，2026-09-04） |
 
 ## Open Questions
 
