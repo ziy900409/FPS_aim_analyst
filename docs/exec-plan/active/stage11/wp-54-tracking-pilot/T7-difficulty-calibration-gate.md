@@ -4,7 +4,7 @@
 > running log：[progress.md](progress.md) · 操作手冊：[../../../../operational/tracking-pilot-runbook.md](../../../../operational/tracking-pilot-runbook.md)
 > · 上游 gate：[T6-instrumentation-gate.md](T6-instrumentation-gate.md)（Gate A = 部分通過）
 >
-> **狀態：🟡 判準已凍結；乾跑已完成並通過（§3.1）；刺激經一次尺寸 revise（G5），等 12–20 人資料。** 依 [README §5](README.md)「Gate B/C 的 protocol threshold 必須在
+> **狀態：🟡 判準已凍結；G5 乾跑已完成（§3.3——七項過、`3deg_5dps` TOT 80.7% 出界後由研究者決定續行 §3.4）；工程前置全部完成；等 12–20 人資料。** 依 [README §5](README.md)「Gate B/C 的 protocol threshold 必須在
 > 收資料前凍結」——本文件 §2 是那份凍結,寫於任何 T7 真人資料之前(2026-09-03)。
 > 後續變更一律以**新 protocol version + decision row** 表達,不得原地改語意。
 
@@ -178,6 +178,61 @@ calibration 隨小候選值 → 2.0°、reversal 與 practice 隨大候選值 �
 
 ---
 
+### 3.3 G5 乾跑結果（2026-09-04,操作員 P06,9 block + 1 retry）：**七項過、TOT 一項出界**
+
+> 這是 §3 要求的「新世代必須重跑一次」。指令：
+> `npx vite-node scripts/analyze-tracking-pilot.ts -- ~/Downloads/tracking_*2026-09-04T12_*.json --out .pilot-analysis/t7-dryrun-g5`
+> stderr **零警示**;10/10 payload `recorderOverflow`/`bufferOverflow` 皆 false、`crossOriginIsolated`
+> 皆 true、`lateEventCount` 皆 0。
+
+| 檢查 | 凍結門檻 | 實測（G5） | 判定 |
+|---|---|---|---|
+| `atEye` 交戰距離 | ≈ 4.00 u | **3.99–4.01 u** | ✅ |
+| `atEye` 交付/宣稱速度 | 0.95–1.05 | **1.00–1.03**（100–103%） | ✅ |
+| `atEye` 角尺寸 | 2.000 / 3.000° | **1.999 / 2.994–3.006°** | ✅ |
+| layer 3b 保真度 | `match` | **10/10 match**（maxPosErr ≤ 8.9e-16 u） | ✅ |
+| **layer 5 凍結準心比值** | **≥ 2.0** | **2.06–3.80**（每個 block） | ✅ |
+| **TOT** | **5–80%** | **11.1–80.7%** | ⚠️ **`3deg_5dps` = 80.7%,超上緣 0.7 點** |
+| 覆蓋率 / overflow / 違規 | ≥99.5% / false / 0 | 3201–3203 ticks、25000–25016 ms、全 false | ✅ |
+| `still=`（reversal） | < 5% | medium **1.3%** / high **2.9%** | ✅ |
+
+**逐 block 實測**（比值 / TOT / B-3c Δ）：`practice` 3.02 / — / −9.4%、`calibration_h` 3.17 / 74.0% /
++1.2%、`calibration_v` 2.80 / 66.5% / −1.1%、**`3deg_5dps` 2.62 / 80.7% / +13.6%**、
+`3deg_14dps` **3.80** / 41.3% / −11.4%、`2deg_5dps` 2.99 / 57.7% / −16.3%、
+`2deg_14dps` 3.35 / 11.1% / +0.2%、`reversal_medium` 2.75 / 54.4% / +14.0%、
+`reversal_high` **2.06** / 41.2% / −13.5%。
+
+**三個 G4 沒有的正面結果**（都不是 Gate B 判定——n=1、且乾跑不計入證據）：
+
+1. **B-3a 方向四項全部成立**,這是**第一次在真正交付的刺激上**驗證到操弄有效：
+   `size@5dps` 57.7% < 80.7%、`size@14dps` 11.1% < 41.3%、
+   `speed@2deg` RMSε 2.476 > 1.044、`speed@3deg` 2.169 > 1.158。
+2. **B-3c 全部落在 ±20% 內**（−16.3% … +14.0%）,優於 G4 的 −21.0 / +38.7 兩個出界值
+   ⇒ 25 s 的 block 長度目前看不出需要調整。
+3. `reversal_high` 的比值 **2.06** 與 G4 的 2.05 幾乎逐值重現——最緊的那個 cell 穩定在門檻之上。
+
+**operator 紀錄**：`calibration_vertical` 第一份因 `protocol_violation` 判 BLOCKED,重跑後 eligible
+（evidence `n=2 eligible=1`,舊 attempt 依 D-54.32 append-only 留檔）。違規 `kind` 又是 **`ads`**——
+歷來 **6/6 全部是右鍵**,再次印證 OQ-54-13 那道防線只有操作員的事前提醒。
+
+### 3.4 研究者決定：**照原樣招募,`3deg_5dps` 的 ceiling 風險入帳**（2026-09-04）
+
+§3 第 4 點寫的是「任一項不成立 ⇒ 不招募」。TOT 那一項對 `3deg_5dps` 不成立,故續行**是一次
+刻意的、有理由的偏離**,不是默默通過篩選（決策見 [progress.md](progress.md) **D-54.48**）。理由：
+
+- 乾跑是 **n=1,而且是跑過 G3/G4/G5、最熟練的那一位**;B-2a 實際判的是 **12–20 人的中位數**,
+  真實受測者（招募條件本就是「不同 tracking 程度」）的中位數很可能明顯低於 80.7%。
+- G4 用錄音重算預測 86.2%,**實際交付只有 80.7%**——比預測好一截,且只超出上緣 0.7 點。
+- §2.4 的 go 只需 **≥1 個 core cell 與 ≥1 個 reversal cell 判 `retained`**;其餘三個 core cell
+  落在 11.1–57.7%、兩個 reversal 落在 41.2–54.4%,**都在舒適區 ⇒ 這批 12–20 人不會白收**,
+  即使 `3deg_5dps` 最後判 revise。
+
+**未因此放寬任何判準**：§2.2 的門檻一字未動,`3deg_5dps` 仍以 median TOT < 80% **且**
+受測者間 CV ≥ 15% 判定。分析時**優先看這個 cell**;真正的風險不是 TOT 本身,而是
+**逼近天花板會壓縮受測者間差異** ⇒ CV 子句比 TOT 子句更難救,且在 n=1 完全測不到。
+
+---
+
 ## 4. 施測與資料回收
 
 **操作步驟與回收格式沿用 [T6 §5 / §7](T6-instrumentation-gate.md)**（researcher 模式 → Tracking pilot
@@ -269,8 +324,10 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 - [x] 操作員乾跑完成,四項檢查全過（**2026-09-04**,P05 ×9 block;比值 **2.05–3.48**;
       `atEye` 3.99–4.01 u / 100–103% / 0.500–2.004°;見 §3.1）。
 - [x] 乾跑觸發的尺寸 revise 已落地（**G5**：size 候選值 `[3.0, 2.0]`,§3.2）。
-- [ ] **G5 刺激的乾跑**：尺寸改變 ⇒ 新世代。招募前應再跑一次 §3 的四項檢查確認比值仍 ≥ 2.0
-      （尺寸不影響 ε,故比值預期不變,但 TOT 會變——這一輪要確認的是 TOT 落在 5–80% 窗內）。
+- [x] **G5 刺激的乾跑**（**2026-09-04**,P06 ×9 block + 1 retry,見 §3.1 之後的 **§3.3**）：
+      比值 **2.06–3.80**、`atEye` 3.99–4.01 u / 100–103% / 1.999–3.006°、10/10 fidelity match、
+      B-3a 方向四項全成立、B-3c 全在 ±20% 內。**唯 `3deg_5dps` 的 TOT = 80.7%,超 5–80% 窗上緣
+      0.7 點** ⇒ 研究者決定照原樣招募並把風險入帳（**§3.4 / D-54.48**）。
 
 **真人項（12–20 人,未完成 ⬜）**
 

@@ -9,16 +9,12 @@
 > Gate A 已結案（部分通過）。**現在的階段是 T7 難度校準（Gate B）**，判準已凍結於
 > [T7-difficulty-calibration-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T7-difficulty-calibration-gate.md) §2。
 
-1. **先做乾跑，不要先招募**（gate §3）。**2026-09-04 已跑過一次（G4）並四項全過**（比值
-   2.05–3.48），但那次同時抓到 0.5° 目標的 TOT 只有 1.5–3.9%（低於凍結的 5% floor），
-   因此目標尺寸改了（見第 4 點）⇒ **這是新世代 G5，招募前請再乾跑一次**。
-   跑 `practice` + `3deg_5dps` + `2deg_14dps` + `reversal_medium`（約 5 分鐘），跑分析後確認：
-   `atEye` 的 `dist ≈ 4.00u`、`rmsSpeed` 95–105%、`fidelity=match`、
-   **`discriminability ratio ≥ 2.0`**、覆蓋率 ≥ 99.5%，並**特別確認 TOT 落在 5–80% 之間**
-   （這是上一輪真正抓到的問題）。**任一項不成立就不要招募。**
-   > 分析輸出最後多了一段 **Gate B**（逐 cell 判準 + B-3b）。乾跑只有 1 份/cell，所以每個 cell
-   > 都會印 `INSUFFICIENT-DATA`、B-3a 印 `not-a-2x2`、B-3b 印「沒有人跑過兩個 seed 家族」——
-   > **這是預期的**，不是乾跑失敗。乾跑要看的仍是上面那四項。
+1. ~~先做乾跑~~ **✅ G5 乾跑已於 2026-09-04 完成**（操作員 P06，9 block + 1 retry，
+   gate §3.3）：`atEye` 3.99–4.01 u / 100–103% / 1.999–3.006°、10/10 fidelity match、
+   比值 **2.06–3.80**、B-3a 方向四項全成立、B-3c 全在 ±20% 內。
+   **唯 `3deg_5dps` 的 TOT = 80.7%，超 5–80% 窗上緣 0.7 點** ⇒ 研究者決定**照原樣招募、
+   風險入帳**（gate §3.4 / D-54.48），未放寬任何判準。
+   ⇒ **現在可以招募了。** 若日後又動到刺激（= 新世代），乾跑要重跑一次。
 2. **招募 12–20 人**（gate §4）：**全員 `Session index = 0`**；其中 **6–8 人另跑一次
    `Session index = 1`**（seed 家族等效性需要成對資料）。
 3. **刻意涵蓋不同顯示器**：T6 的 21 份 payload 全來自同一台 60 Hz / 3840×2160 / Edge 151 機器，
