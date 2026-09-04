@@ -4,7 +4,7 @@
 > running log：[progress.md](progress.md) · 操作手冊：[../../../../operational/tracking-pilot-runbook.md](../../../../operational/tracking-pilot-runbook.md)
 > · 上游 gate：[T6-instrumentation-gate.md](T6-instrumentation-gate.md)（Gate A = 部分通過）
 >
-> **狀態：🟡 判準已凍結，等資料。** 依 [README §5](README.md)「Gate B/C 的 protocol threshold 必須在
+> **狀態：🟡 判準已凍結；乾跑已完成並通過（§3.1）；刺激經一次尺寸 revise（G5），等 12–20 人資料。** 依 [README §5](README.md)「Gate B/C 的 protocol threshold 必須在
 > 收資料前凍結」——本文件 §2 是那份凍結,寫於任何 T7 真人資料之前(2026-09-03)。
 > 後續變更一律以**新 protocol version + decision row** 表達,不得原地改語意。
 
@@ -48,13 +48,18 @@ Gate A 問的是「儀器量得對不對」；**Gate B 問的是「這些條件�
 
 > 每一列都是**研究決策**,由使用者於 2026-09-03 拍板;agent 不得自行調整。
 > 逐 cell 判定,除非該列另有說明。
+>
+> **2026-09-04 的唯一修訂（B-3a 的標籤,語意不變）**：size revise（§3.2）把兩個尺寸層由
+> `0.5° / 2.0°` 改為 `2.0° / 3.0°`,故 B-3a 原文引用的具體數值改寫為「小/大尺寸層」。
+> **判準的內容沒有改變**——它問的一直是「同速度下較小的目標 TOT 是否較低」。門檻本身
+> （B-1 的 2.0、B-2 的 5%/80%/15%、B-3b 的 10%/±15%、B-3c 的 20%、B-4 的 10）**一律未動**。
 
 | # | 判準 | 凍結的操作型定義 | 通過條件 |
 |---|---|---|---|
 | **B-1** | **凍結準心比值**（discriminability） | 把準心凍結在該 run 受測者自己的 aim 中位數,以同一個 `angularEccentricityDeg()`、在與 canonical `rmsEpsilonDeg` **逐 tick 相同**的 scored 窗重算 ε,取 `RMS ε(凍結) / RMS ε(實際)`。實作 = `scripts/trackingFrozenCrosshairRatio.ts`（analysis runner **layer 5**）。**cell 層取該 cell 全部 eligible run 的 per-run 比值中位數** | **median ratio ≥ 2.0** |
 | **B-2a** | **Easy ceiling** | 該 cell 全部 eligible run 的 `totPercent` 中位數;以及 RMS ε 的**受測者間** CV（SD/mean,每位受測者取其該 cell 的 RMS ε） | **median TOT < 80%** **且** **受測者間 CV ≥ 15%**。任一違反 ⇒ ceiling |
 | **B-2b** | **Hard floor** | `acquisitionFailure` 為 true 的 eligible run 比例;以及 `totPercent` 中位數 | **acquisition failure < 20% 的 run** **且** **median TOT > 5%**。任一違反 ⇒ floor |
-| **B-3a** | **size × speed 效果方向** | 對 4 個 core cell 的 median 值檢查方向（非顯著性檢定） | **同時成立**：①同速度下 **0.5° 的 median TOT < 2.0° 的**（尺寸確實影響 on-target）；②同尺寸下 **14 deg/s 的 median RMS ε > 5 deg/s 的**（速度確實影響追隨誤差）。方向反轉 ⇒ 操弄無效,revise |
+| **B-3a** | **size × speed 效果方向** | 對 4 個 core cell 的 median 值檢查方向（非顯著性檢定） | **同時成立**：①同速度下 **小尺寸層的 median TOT < 大尺寸層的**（尺寸確實影響 on-target）；②同尺寸下 **14 deg/s 的 median RMS ε > 5 deg/s 的**（速度確實影響追隨誤差）。方向反轉 ⇒ 操弄無效,revise。*尺寸層目前為 2.0°（小）/ 3.0°（大）;2026-09-04 前為 0.5° / 2.0°* |
 | **B-3b** | **Seed equivalence** | 全員跑 seed family A;其中 **6–8 人加跑 family B**。以那 6–8 人的**成對 within-subject** 差（同 cell、同人、A vs B 的 RMS ε）判定 | **\|median 成對差\| ≤ 10%**（相對於該 cell family A 的 median RMS ε）**且** TOST 等效界 **±15%** 內 |
 | **B-3c** | **Time-on-task slope** | 同一 scored 窗內**前 5 s** 與**後 5 s** 的 RMS ε,`Δ = (後 − 前) / 前`;跨該 cell 全部 eligible run 取平均 | **\|Δ\| ≤ 20%**。超出 ⇒ 於本文件記「25 s 需調整」並提出建議長度,**不自動改值**（D-54.4 是凍結值,改動須走新 protocol version） |
 | **B-4** | **份量** | 該 cell 的 `eligibleRunCount` | **≥ 10** |
@@ -92,15 +97,60 @@ Gate A 問的是「儀器量得對不對」；**Gate B 問的是「這些條件�
 > **三輪 Gate A 已因刺激問題作廢三批真人資料;若先招募 12–20 人才發現比值不達標,作廢的是
 > 12–20 人的量。** 乾跑成本約 5 分鐘。
 
-1. **操作員自己**（非受測者）以 G4 刺激跑：`practice` + `2deg_5dps` + `0p5deg_14dps` + `reversal_medium`。
+1. **操作員自己**（非受測者）跑：`practice` + 一個慢速 core cell + 一個快速 core cell +
+   一個 reversal cell。**G5 的對應 block 是** `3deg_5dps` + `2deg_14dps` + `reversal_medium`
+   （2026-09-04 的 G4 乾跑跑的是當時的 `2deg_5dps` + `0p5deg_14dps` + `reversal_medium`）。
 2. 跑分析：`npx vite-node scripts/analyze-tracking-pilot.ts -- <資料夾> --out .pilot-analysis/t7-dryrun`
 3. **逐項檢查（全部須成立才招募）**：
-   - `atEye` 行：`dist ≈ 4.00u`、`rmsSpeed` **95–105% of nominal**、`size` = 0.500 / 1.999°
-   - `fidelity=match`（layer 3b;**P04/P05 會被判 mismatch,那是預期**——G3 ≠ G4）
+   - `atEye` 行：`dist ≈ 4.00u`、`rmsSpeed` **95–105% of nominal**、`size` = 該 cell 的宣稱尺寸
+     （G5：2.000 / 3.000°）
+   - `fidelity=match`（layer 3b;**舊世代批次會被判 mismatch,那是預期**）
+   - **TOT 落在凍結的 5–80% 窗內**（B-2 的難度落點;這是 2026-09-04 乾跑真正抓到的問題）
    - **`discriminability ratio ≥ 2.0`**（layer 5）—— 這是乾跑存在的理由
    - `still=` < 5%（reversal）、覆蓋率 ≥ 99.5%、`recorderOverflow` false
 4. **任一項不成立 ⇒ 不招募**,回到參數化決策（研究決策,問使用者）。
 5. 乾跑資料**不計入 Gate B 證據**（操作員非受測者、非預註冊樣本）,只作為儀器/參數確認。
+
+### 3.1 乾跑結果（2026-09-04,操作員 P05,9 個 block,G4 刺激）：✅ **四項全過**
+
+| 檢查 | 凍結門檻 | 實測 | 判定 |
+|---|---|---|---|
+| `atEye` 交戰距離 | ≈ 4.00 u | **3.99–4.01 u** | ✅ |
+| `atEye` 交付/宣稱速度 | 0.95–1.05 | **1.00–1.03**（100–103%） | ✅ |
+| `atEye` 角尺寸 | 0.500 / 2.000° | **0.500 / 1.996–2.004°** | ✅ |
+| layer 3b 保真度 | `match` | **9/9 match**（maxPosErr ≤ 8.9e-16 u） | ✅ |
+| **layer 5 凍結準心比值** | **≥ 2.0** | **2.05–3.48**（每個 block） | ✅ |
+| 覆蓋率 / overflow / 違規 | ≥ 99.5% / 0 / 0 | 3202–3203 ticks、25008–25016 ms、0、0 | ✅ |
+| JSON/HTML parity | 逐位相同 | ok | ✅ |
+
+⇒ **G4 刺激的儀器與可分辨性都成立,可以招募。** 逐 block 比值：practice 3.42、calib_h 3.48、
+calib_v 3.01、`2deg_5dps` 2.98、`2deg_14dps` 3.35、`0p5deg_5dps` 2.77、`0p5deg_14dps` 3.36、
+reversal medium 2.81、high 2.05。**實測值高於 §3 的離線預測**（2.19–2.97）,唯 reversal high
+（2.05）貼近門檻。
+
+### 3.2 乾跑觸發的尺寸 revise（G4 → G5,研究者決定 2026-09-04）
+
+乾跑同時暴露了一個**難度**問題（不是儀器問題）：**兩個 0.5° 核心 cell 的 TOT 只有 3.9% / 1.5%,
+低於本文件 §2.2 凍結的 B-2b hard floor（> 5%）**。以同一批錄音、跑同一套 pipeline、只換 hitbox
+重算 TOT：
+
+| block | 0.5° | 0.75° | 1.5° | **2.0°** | 2.5° | **3.0°** |
+|---|---|---|---|---|---|---|
+| `0p5deg_14dps` | **1.5** | 2.6 | 10.2 | **16.4** | 23.5 | 29.4 |
+| `0p5deg_5dps` | **3.9** | 8.2 | 35.6 | **53.7** | 72.7 | 85.8 |
+| `2deg_14dps` | 2.0 | 3.7 | 11.5 | 19.0 | 27.1 | **35.4** |
+| `2deg_5dps` | 9.6 | 16.8 | 46.8 | 62.3 | 75.4 | **86.2** |
+| `calibration_h` / `_v` | 19.7 / 15.7 | 29.8 / 26.9 | 55.0 / 51.6 | **71.1 / 65.3** | — | — |
+| `reversal_medium` / `_high` | 1.7 / 1.2 | 4.6 / 2.2 | 18.7 / 10.7 | 28.2 / 19.1 | 36.7 / 28.1 | **48.5 / 39.2** |
+
+**研究者決定**：size 候選值 `[2.0, 0.5]` → **`[3.0, 2.0]`**（小尺寸層 0.5→2.0、大尺寸層 2.0→3.0）;
+calibration 隨小候選值 → 2.0°、reversal 與 practice 隨大候選值 → 3.0°。**2×2 factorial 保持完整**
+（兩個尺寸層 × 兩個速度）。新 drillId：`3deg_5dps` / `3deg_14dps` / `2deg_5dps` / `2deg_14dps`。
+
+> **已入帳的風險**：`3deg_5dps` 在這一份乾跑上重算為 **86.2%,高於凍結的 80% ceiling**。研究者在
+> 看過這個數字後仍選定 3.0°。B-2a 判的是**跨受測者中位數**加上受測者間 CV 下限,不是單一（且較
+> 熟練的）操作員,故這是**風險而非判定**——但它是 Gate B 最可能被判 `revise` 的 cell,分析時要優先看。
+> `practice` 的 95.9% 不受此限（practice 不是 scored cell、不進聚合）。
 
 **離線預測值（G4,供乾跑對照;`scripts/trackingFrozenCrosshairRatio.ts` 的同一定義）**：
 
@@ -176,7 +226,11 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 
 **乾跑（§3,招募前）**
 
-- [ ] 操作員乾跑完成,四項檢查全過（日期 / 實測比值 / `atEye` 數字）。
+- [x] 操作員乾跑完成,四項檢查全過（**2026-09-04**,P05 ×9 block;比值 **2.05–3.48**;
+      `atEye` 3.99–4.01 u / 100–103% / 0.500–2.004°;見 §3.1）。
+- [x] 乾跑觸發的尺寸 revise 已落地（**G5**：size 候選值 `[3.0, 2.0]`,§3.2）。
+- [ ] **G5 刺激的乾跑**：尺寸改變 ⇒ 新世代。招募前應再跑一次 §3 的四項檢查確認比值仍 ≥ 2.0
+      （尺寸不影響 ε,故比值預期不變,但 TOT 會變——這一輪要確認的是 TOT 落在 5–80% 窗內）。
 
 **真人項（12–20 人,未完成 ⬜）**
 
@@ -189,8 +243,11 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 - [ ] **B-3a**：size 與 speed 的效果方向。
 - [ ] **B-3b**：seed 家族成對差 + TOST。
 - [ ] **B-3c**：time-on-task slope。
-- [ ] **0.5° 可辨識度**：在 G4（真的 0.5°,約 8.5 CSS px）下重新回報主觀可見性——
-      T6 的「看不見」是在**實為 0.25°** 的刺激下取得的（KI-024）,該回報**不適用於 G4**,須重新取得。
+- [x] **0.5° pixel floor：已於 2026-09-04 結案**（T7 DoD 項目）。真正的 0.5°（約 8.5 CSS px）
+      在**單軸** calibration 下 TOT **19.7% / 15.7%** ⇒ 看得見也跟得上;在**雙軸**核心 cell 只有
+      **3.9% / 1.5%** ⇒ 跟不了。結論是「0.5° 在雙軸追蹤下不可用」,不是「0.5° 看不見」。
+      T6 §12.5 的「連單軸也看不見」是**實為 0.25°** 時的回報（KI-024）,已作廢。
+      ⇒ 小尺寸層提高到 2.0°,**不再安排 0.5° block**。
 - [ ] 逐 cell 輸出 retained / revise / remove（依 §2.3,不覆寫 v1 protocol）。
 - [ ] 沒有真實 participant payload 被 commit 進 repo。
 
@@ -200,8 +257,8 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 
 | 項目 | 值 |
 |---|---|
-| 刺激世代 | **G4**（`meta.scene.eye.z === 0` + `frequencyBandHz [0.15,1.05]` + speed 候選值 `5/14`）——辨識方式見 [analysis-tracking.md](../../../../operational/analysis-tracking.md)「刺激語意」 |
-| 刺激基線 commit | `320b718`（T7 slice 4）;`field-low` 錨定於 `6899b00`（T7 slice 3） |
+| 刺激世代 | **G5**（G4 + size 候選值 `3.0 / 2.0`,drillId `3deg_*` / `2deg_*`）;乾跑資料為 **G4**——辨識方式見 [analysis-tracking.md](../../../../operational/analysis-tracking.md)「刺激語意」 |
+| 刺激基線 commit | **G5 = T7 slice 6**（size revise）;G4 = `320b718`（slice 4）;`field-low` 錨定於 `6899b00`（slice 3） |
 | 分析器 | layer 5 於 `9741ba9`（slice 1）、layer 4 於 `6899b00`（slice 3） |
 | Protocol / metric version | `tracking-pilot-v1` / `tracking-dynamics-v1` |
 | Trajectory versions | `band-limited-2d-v1`、`reversal-2d-v1` |

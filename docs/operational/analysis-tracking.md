@@ -437,17 +437,21 @@ WP-54 的 core matrix 有兩個被操弄的因子，兩者在 2026-09-03 之前*
 | Travel amplitude | `trackingTrajectory.yawBoundDeg`/`pitchBoundDeg` | 所有 core cell 共用 ±16°（非操弄變數）；reversal cell 用 `angularBoundsDeg ±13°` |
 | Frequency band | `trackingTrajectory.frequencyBandHz` | core cell 為 **`[0.15, 1.05]` Hz**（T7/OQ-54-14 自 `[0.3, 2.1]` 降低）。頻帶決定「每單位速度走多遠」，因而決定**凍結準心比值**——`[0.3, 2.1]` 的比值上界僅 1.61，任何速度都達不到 Gate B 的 2.0（見下方「凍結準心比值」） |
 
-**歷史資料判讀（四個世代，都不可與現行資料合併做速度比較）**：
+**歷史資料判讀（五個世代，都不可與現行資料合併做速度／尺寸比較）**：
 
 | 世代 | 辨識方式 | 交付速度的真實值 |
 |---|---|---|
 | **G1**（KI-020 之前） | `frequencyBandHz [0.1,0.7]` + `yawBoundDeg ≤ 2` + `meta.targets.hitbox` 為預設 H1 | ≈ `0.605 × 振幅`，**與 metadata 宣稱值無關**；所有 cell 目標角尺寸相同（約 ±7°）⇒ `totPercent` 恆為 100%、不帶資訊量 |
 | **G2**（KI-020 已修、KI-023 未修；2026-09-03 的 P01/P02/P03 三批全屬此代） | `frequencyBandHz [0.3,2.1]` + `yawBoundDeg 16` + 每 cell 有自己的 `targets.hitbox` | 每軸 RMS = 宣稱值 ⇒ **螢幕上的 2D 速度 = 宣稱值 × √2**（兩軸 cell；實測 7.14 / 28.3 對 5 / 20）。**單軸 axis calibration 例外**，其交付即為宣稱值 ⇒ 同一批資料裡 calibration 與 core 的「5 deg/s」相差 1.41 倍。reversal 的 `speedRangeDegPerSec` 亦為每軸值 |
 | **G3**（KI-023 已修、KI-024 未修；2026-09-03 的 P04/P05 兩批屬此代） | `frequencyBandHz [0.3,2.1]` + `yawBoundDeg 16` + `meta.scene.eye.z === 4` | `targetRmsSpeedDegPerSec` 已是 2D 語意，故**以 world origin 為頂點**交付即宣稱值（1.000–1.017）；但眼睛在 z=+4、目標在 z=−4 ⇒ **受測者實際看到的每個角度量都是宣稱值的 0.50×**（實測 0.499–0.508）。宣稱 0.5°/2.0° 實為 **0.25°/1.0°**，宣稱 5/20 deg/s 實為 **2.5/10.0** |
-| **G4**（KI-024 已修，本節上表所述） | `meta.scene.eye.z === 0` + `frequencyBandHz [0.15,1.05]` + speed 候選值 `5/14` | **宣稱值即眼睛所見的交付值**（實測 5.01–5.13 / 13.94–14.01 deg/s，角尺寸 0.500°/1.999°）。core matrix 的快速候選值由 T7 revise 為 14 deg/s（20 在此頻帶下會讓目標沉到地面下） |
+| **G4**（KI-024 已修） | `meta.scene.eye.z === 0` + `frequencyBandHz [0.15,1.05]` + speed 候選值 `5/14` | **宣稱值即眼睛所見的交付值**（實測 5.01–5.13 / 13.94–14.01 deg/s，角尺寸 0.500°/1.999°）。core matrix 的快速候選值由 T7 revise 為 14 deg/s（20 在此頻帶下會讓目標沉到地面下） |
+| **G5**（T7 尺寸 revise，本節上表所述） | 同 G4，但 **size 候選值 `3.0 / 2.0` deg**（drillId `3deg_*` / `2deg_*`；calibration 2.0°、reversal 3.0°、practice 3.0°） | 角尺寸與速度皆為眼睛所見的交付值。**2026-09-04 的乾跑（G4）顯示 0.5° 兩個核心 cell 的 TOT 只有 1.5% / 3.9%，低於凍結的 5% hard floor**，故小尺寸層由 0.5° 提高到 2.0°、大尺寸層由 2.0° 提高到 3.0°（見下方「0.5° pixel floor 結案」） |
 
 G2 資料若要納入分析，速度軸須自行乘 `√2`（calibration 除外）；**G3 資料的每個角度量須乘 2**；
 但條件標籤與 compatibility key 記的仍是宣稱值，**跨世代合併需明確標註世代**。
+**drillId 有跨世代重用**：`..._2deg_5dps` / `..._2deg_14dps` 在 G1–G4 是**大**尺寸層、在 G5 是**小**
+尺寸層——角尺寸同為 2.0°，但 seed 不同（seed 由候選值索引導出）故軌跡實現不同。凡帶這兩個 ID 的
+既有 payload 都已作廢（G1–G3）或非 gate 證據（G4 乾跑），故無實際受害者；layer 3b 會攔下跨世代混用。
 最可靠的世代辨識是 `meta.scene.eye.z`（G4 = 0）加上分析 runner 的 `atEye` 行——它直接量錄到的資料，
 不依賴 metadata 宣稱什麼。**layer 3b（刺激保真度）會把 G1–G3 判為 mismatch**，這正是它的用途。
 
@@ -485,6 +489,20 @@ v → ∞ 的上界為 `2.023 · k`。`[0.3, 2.1]` 的上界是 **1.61**，故 G
 **Compatibility key**（NFR-54-7）隨之改名/擴充：`sizeDeg` → `travelAmplitudeDeg`（語意本來就是振幅），
 新增 `targetHitboxWidthU`（真正的尺寸軸；`Meta` 不記錄目標距離，故以 source unit 表達）與
 `displayRefreshHz`（OQ-54-11：60Hz 資料可用，但刷新率必須分開 cohort，四捨五入到整數 Hz）。
+
+### 0.5° pixel floor：以 2026-09-04 乾跑結案（T7 DoD 項目）
+
+README §3 的風險「0.5 deg 目標接近 pixel floor」與 T7 DoD 的「分析 0.5 deg pixel/aliasing floor」，
+以 2026-09-04 的操作員乾跑（G4，**KI-024 修好後第一次真的交付 0.5°**，約 8.5 CSS px）結案：
+
+| 條件 | TOT | 判讀 |
+|---|---|---|
+| `calibration_horizontal` / `_vertical`（**單軸**，5 deg/s） | **19.7% / 15.7%** | **看得見、也跟得上**——0.5° 本身沒有到不可辨識的 pixel floor |
+| `0p5deg_5dps` / `0p5deg_14dps`（**雙軸**核心 cell） | **3.9% / 1.5%** | **跟不了**——低於凍結的 B-2b hard floor（5%） |
+
+⇒ 結論不是「0.5° 看不見」，而是「**0.5° 在雙軸追蹤下不可用**」。T6 §12.5 那句「連單軸 calibration
+也看不見」是在**實為 0.25°** 的刺激下取得的（KI-024），**不適用於真正的 0.5°**，已作廢。
+研究者據此把小尺寸層提高到 2.0°（G5），並以本批資料結束 0.5° 這個題目——不再安排 0.5° block。
 
 ### Evidence model and the HTML report's parity design
 

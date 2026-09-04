@@ -55,10 +55,14 @@ const SEED_BASE = 54100;
 /**
  * Target angular size, held constant across both density cells so reversal frequency stays the
  * only manipulation here (KI-020 §4.1 made angular size a real hitbox rather than a mislabelled
- * travel amplitude). Uses the core matrix's **larger/easier** candidate: these blocks probe
- * reactive correction, and pairing them with the at-risk 0.5° target would confound density with
- * the pixel-floor question the axis-calibration blocks exist to answer. Without a hitbox these
- * cells inherited the default H1 target (~±7°), which pinned their TOT at 100.0%.
+ * travel amplitude). Uses the core matrix's **larger** candidate so target size never confounds
+ * the density comparison. Without a hitbox these cells inherited the default H1 target (~±7°),
+ * which pinned their TOT at 100.0%.
+ *
+ * That candidate is **3.0° from 2026-09-04** (T7 revise, was 2.0°). On the operator dry-run these
+ * two cells sat at TOT 28.2% / 19.1% at 2.0°; re-derived from the same recordings, 3.0° puts them
+ * at 48.5% / 39.2% — still well inside the frozen 5–80% window, so the enlargement does not put
+ * the reversal family at risk of a ceiling verdict.
  */
 const TARGET_ANGULAR_SIZE_DEG = CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG[0];
 

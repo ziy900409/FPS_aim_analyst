@@ -9,19 +9,28 @@
 > Gate A 已結案（部分通過）。**現在的階段是 T7 難度校準（Gate B）**，判準已凍結於
 > [T7-difficulty-calibration-gate.md](../exec-plan/active/stage11/wp-54-tracking-pilot/T7-difficulty-calibration-gate.md) §2。
 
-1. **先做乾跑，不要先招募**（gate §3，使用者 2026-09-03 決定）：操作員自己跑 `practice` +
-   `2deg_5dps` + `0p5deg_14dps` + `reversal_medium`（約 5 分鐘），跑分析後確認四項：`atEye` 的
-   `dist ≈ 4.00u` 且 `rmsSpeed` 95–105%、`fidelity=match`、**`discriminability ratio ≥ 2.0`**、
-   覆蓋率 ≥ 99.5%。**任一項不成立就不要招募**——三輪 Gate A 已因刺激問題作廢三批真人資料。
+1. **先做乾跑，不要先招募**（gate §3）。**2026-09-04 已跑過一次（G4）並四項全過**（比值
+   2.05–3.48），但那次同時抓到 0.5° 目標的 TOT 只有 1.5–3.9%（低於凍結的 5% floor），
+   因此目標尺寸改了（見第 4 點）⇒ **這是新世代 G5，招募前請再乾跑一次**。
+   跑 `practice` + `3deg_5dps` + `2deg_14dps` + `reversal_medium`（約 5 分鐘），跑分析後確認：
+   `atEye` 的 `dist ≈ 4.00u`、`rmsSpeed` 95–105%、`fidelity=match`、
+   **`discriminability ratio ≥ 2.0`**、覆蓋率 ≥ 99.5%，並**特別確認 TOT 落在 5–80% 之間**
+   （這是上一輪真正抓到的問題）。**任一項不成立就不要招募。**
 2. **招募 12–20 人**（gate §4）：**全員 `Session index = 0`**；其中 **6–8 人另跑一次
    `Session index = 1`**（seed 家族等效性需要成對資料）。
 3. **刻意涵蓋不同顯示器**：T6 的 21 份 payload 全來自同一台 60 Hz / 3840×2160 / Edge 151 機器，
    刷新率至今沒有第二種驗證過。請至少涵蓋 **2 種刷新率**並記在紀錄裡。
-4. **條件標籤已改**（G4 刺激）：core matrix 的快速 cell 現在是 **`..._14dps`**（不是 `20dps`），
-   頻帶降為 `[0.15, 1.05]` Hz。**2026-09-03 之前錄的所有資料都不可與現在的合併**——在那之前
-   `field-low` 的 camera 沒有錨定在 sim origin，受測者實際看到的每個角度量都只有宣稱值的一半
-   （[KI-024](../known_issue/KI-024-field-low-eye-not-anchored-halves-delivered-angles.md)）。
-   舊資料裡「0.5°」的目標其實是 0.25°，「20 deg/s」其實是 10。
+4. **條件標籤已兩度改變**：
+   - 快速 cell 是 **`..._14dps`**（不是 `20dps`），頻帶 `[0.15, 1.05]` Hz（2026-09-03）。
+   - **目標尺寸 2026-09-04 再改**：兩個尺寸層由 `2.0° / 0.5°` 改為 **`3.0° / 2.0°`**
+     ⇒ 九個 block 現在是 `practice`(3.0°)、`calibration_h/_v`(2.0°)、
+     **`3deg_5dps` / `3deg_14dps` / `2deg_5dps` / `2deg_14dps`**、`reversal_medium/_high`(3.0°)。
+     **不再有 0.5° block**——該題已用 2026-09-04 的資料結案（單軸可跟、雙軸不可跟）。
+   - **2026-09-04 之前錄的資料一律不可與現在的合併。** 2026-09-03 之前更是連角度都只交付一半
+     （`field-low` camera 未錨定，[KI-024](../known_issue/KI-024-field-low-eye-not-anchored-halves-delivered-angles.md)）：
+     舊資料裡「0.5°」其實是 0.25°、「20 deg/s」其實是 10。
+   - ⚠️ **`2deg_5dps` / `2deg_14dps` 這兩個 ID 被重用過**：舊世代它們是**大**尺寸層，現在是
+     **小**尺寸層。看到這兩個檔名時務必先確認世代（`meta.scene.eye.z` 與 `meta.targets.hitbox`）。
 
 ## 現況（2026-09-03，T6 工程面完成後）
 
@@ -45,8 +54,10 @@ block 並對下載的 JSON 斷言追溯欄位。
 
 1. **Practice**（`tracking_core_pr_pilot_v1_practice`）——永遠第一個，不進 scored 聚合，無 quality
    gate。
-2. **Axis calibration**（horizontal、vertical，固定順序緊接在 practice 後）——診斷用途，判斷 0.5°
-   目標是否可辨識，同樣有 scored window 但不是本次分析的比較條件。
+2. **Axis calibration**（horizontal、vertical，固定順序緊接在 practice 後）——診斷用途，同樣有
+   scored window 但不是本次分析的比較條件。原本用來判斷 0.5° 目標是否可辨識；**該題已於
+   2026-09-04 結案**（單軸可跟 TOT 19.7/15.7%、雙軸不可跟 3.9/1.5%），故這兩個 block 現在只剩
+   「一次只動一個軸」的隔離用途，尺寸隨較小的候選值（目前 2.0°）。
 3. **6 個 scored block**（4 個 core size×speed 候選 + 2 個 reversal density 候選）——依
    `participantId`/`sessionIndex` 做 counterbalance 排序（重用 WP-41 既有的
    `buildFamilyOrderForRoster()` cyclic Latin-square 輪轉，見 progress.md D-54.24），避免固定順序

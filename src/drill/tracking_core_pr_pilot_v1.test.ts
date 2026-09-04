@@ -127,9 +127,14 @@ describe('tracking_core_pr_pilot_v1 — practice/calibration/core matrix configs
     expect([...sizes].sort((a, b) => a - b)).toEqual([...CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG].sort((a, b) => a - b));
   });
 
-  it('axis calibration blocks use the at-risk 0.5deg target (that is what they exist to probe)', () => {
+  it('axis calibration blocks use the smaller size candidate', () => {
+    // Was 0.5° and existed to probe README §3's pixel-floor risk. The 2026-09-04 dry-run answered
+    // that question — a true 0.5° target is trackable single-axis (TOT 15.7–19.7%) but not on the
+    // two-axis core cells (1.5–3.9%) — and the researcher closed it on those data, so these blocks
+    // now only isolate one axis at a time and follow the smaller candidate wherever it goes.
+    const smaller = Math.min(...CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG);
     for (const drill of [trackingCorePrPilotV1CalibrationHorizontal, trackingCorePrPilotV1CalibrationVertical]) {
-      expect(angularSizeOf(drill), drill.drillId).toBeCloseTo(0.5, 3);
+      expect(angularSizeOf(drill), drill.drillId).toBeCloseTo(smaller, 3);
     }
   });
 

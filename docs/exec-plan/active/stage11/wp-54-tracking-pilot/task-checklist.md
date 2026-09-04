@@ -211,6 +211,11 @@
 
 ### T7 工程 slice（已 commit）
 
+- [x] **slice 6**：乾跑通過（四項全過，比值 **2.05–3.48**）+ **尺寸 revise G4→G5**：size 候選值
+      `[2.0, 0.5]` → **`[3.0, 2.0]`**（0.5° 兩個核心 cell 的 TOT 1.5/3.9% 低於凍結的 5% floor）。
+      calibration → 2.0°、reversal/practice → 3.0°，**2×2 factorial 保持完整**。**0.5° pixel floor
+      以本批資料結案**（單軸 19.7/15.7% 可跟、雙軸 3.9/1.5% 不可跟）。已入帳風險：`3deg_5dps`
+      重算 86.2%，高於 80% ceiling。`analysis-tracking.md` 新增 G5。
 - [x] **slice 5**：[T7-difficulty-calibration-gate.md](T7-difficulty-calibration-gate.md)
       —— **Gate B 全部判準在收資料前凍結**（README §5）。§2.2 的 8 條判準（B-1 凍結準心比值 ≥ 2.0、
       B-2a ceiling、B-2b floor、B-3a size×speed 方向、B-3b seed 等效、B-3c TOT slope、B-4 ≥ 10 份）
@@ -239,12 +244,16 @@
 ### T7 gate 項
 
 - [x] **判準在收資料前凍結**（[T7 gate](T7-difficulty-calibration-gate.md) §2，2026-09-03，README §5）。
-- [ ] **招募前乾跑**（gate §3）：操作員 4 個 block，`atEye` 95–105% / `fidelity=match` /
-      **比值 ≥ 2.0** / 覆蓋率 ≥ 99.5% 四項全過才招募。
+- [x] **招募前乾跑（G4）**：2026-09-04 完成，四項全過（比值 2.05–3.48）。**同時抓到 0.5° 的
+      hard-floor 問題 ⇒ 尺寸 revise 為 G5**（gate §3.1/§3.2）。
+- [ ] **G5 乾跑**：尺寸改變 = 新世代，招募前再跑一次 §3 四項檢查，**重點確認 TOT 落在 5–80% 窗內**
+      （比值不受尺寸影響，預期不變）。
 - [ ] 依 T0 preregistered protocol 招募 12-20 位不同 tracking 程度受測者（全員 family A，
       6–8 人加跑 family B；**涵蓋 ≥ 2 種顯示器刷新率**——T6 的覆蓋缺口）。
-- [ ] 分析 easy ceiling、hard acquisition floor、0.5 deg pixel/aliasing floor
-      （**0.5° 可辨識度須在 G4 下重新回報**——T6 的「看不見」是實為 0.25° 的刺激，KI-024）。
+- [x] **0.5 deg pixel/aliasing floor 已結案**（2026-09-04 乾跑）：單軸可跟（TOT 19.7/15.7%）、
+      雙軸不可跟（3.9/1.5%）⇒ 不再安排 0.5° block。
+- [ ] 分析 easy ceiling、hard acquisition floor（**優先看 `3deg_5dps`**——乾跑重算 86.2%，
+      高於凍結的 80% ceiling）。
 - [ ] 分析 seed equivalence、size x speed effect、block time slope。
 - [ ] 每個 retained cell 至少 10 份 eligible runs。
 - [ ] 依 preregistered rules 輸出 retained/revise/remove decision，不覆寫 v1 protocol。

@@ -164,9 +164,12 @@ describe('buildTrackingContactCoverageReport — WP-55 T3 drill matrix', () => {
     const report = buildTrackingContactCoverageReport([core, reversal]);
 
     expect(report).toMatchObject({ runCount: 2, includedRunCount: 2, excludedRunCount: 0 });
+    // Derived from the same constants the fixtures come from, not literals: WP-54's size candidates
+    // are calibration candidates that T7 revises (2026-09-04: 2.0/0.5 -> 3.0/2.0 deg renamed the
+    // core cells), and this test is about the coverage report's contract, not those labels.
     expect(report.runs.map((run) => run.drillId)).toEqual([
-      'tracking_core_pr_pilot_v1_2deg_5dps',
-      'tracking_reversal_pilot_v1_medium',
+      TRACKING_CORE_PR_PILOT_V1_CANDIDATES[0].drillId,
+      TRACKING_REVERSAL_PILOT_V1_CANDIDATES[0].drillId,
     ]);
     expect(report.runs.every((run) => run.status === 'included' && run.contactArtifact.status === 'ok')).toBe(true);
     expect(report.runs.every((run) => run.status === 'included' && run.brCompanion === undefined)).toBe(true);

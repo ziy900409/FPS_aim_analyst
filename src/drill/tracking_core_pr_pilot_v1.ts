@@ -94,7 +94,40 @@ const SCORED_PROTOCOL_GUARD: NonNullable<DrillConfig['protocolGuard']> = { noFir
 /** WP-54-only seed base — distinct from every other WP's series (18018/23002/94000s/95000s). */
 const SEED_BASE = 54000;
 
-export const CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG = [2.0, 0.5] as const;
+/**
+ * **T7 revise (researcher's decision, 2026-09-04): `[2.0, 0.5]` → `[3.0, 2.0]` deg.**
+ *
+ * OQ-54-2 registered these as *candidates*; T7 emits retained/revise/remove, and the 2026-09-04
+ * operator dry-run produced the evidence for a revise at both ends. TOT re-derived from that run's
+ * own recordings with the shipped pipeline, only the hitbox swapped:
+ *
+ * | cell | at 0.5° | at 2.0° | at 3.0° |
+ * |---|---|---|---|
+ * | `0p5deg_14dps` | **1.5%** | 16.4% | 29.4% |
+ * | `0p5deg_5dps`  | **3.9%** | 53.7% | 85.8% |
+ * | `2deg_14dps`   | 2.0%     | 19.0% | 35.4% |
+ * | `2deg_5dps`    | 9.6%     | 62.3% | 86.2% |
+ *
+ * The two 0.5° cells sat at **1.5% / 3.9% TOT — under the frozen B-2b hard floor of 5%**
+ * (`T7-difficulty-calibration-gate.md` §2.2), so 0.5° could not stay as the small level. The
+ * researcher chose to lift the small level to 2.0° and the large level to 3.0°, which keeps a true
+ * 2x2 (two size levels x two speeds) and puts three of the four cells inside the frozen 5–80%
+ * window: 3.0°/14dps 35.4%, 2.0°/5dps 53.7%, 2.0°/14dps 16.4%.
+ *
+ * **Known risk, accepted by the researcher after being shown the number:** `3deg_5dps` measured
+ * **86.2%** on this single operator run, above the frozen 80% ceiling. B-2a is judged on the
+ * *median across participants* plus a between-participant CV floor, not on one practised operator,
+ * so this is a risk rather than a determination — but it is the cell most likely to be judged
+ * `revise` at Gate B.
+ *
+ * **drillId reuse:** the IDs `..._2deg_5dps` / `..._2deg_14dps` existed in earlier generations as
+ * the *large* level and now denote the *small* level. Angular size is the same 2.0° in both, but
+ * the seed differs (seeds are index-derived), so the trajectory realisation differs. Every payload
+ * that ever carried those IDs is already void (G1–G3) or explicitly non-evidence (the G4 dry-run),
+ * so nothing live is affected; layer 3b (`checkTrackingStimulusFidelity`) catches any attempt to
+ * pool across generations, and `analysis-tracking.md` identifies G5 by these size candidates.
+ */
+export const CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG = [3.0, 2.0] as const;
 /**
  * **T7 revise (researcher's decision, 2026-09-03): fast candidate `20` → `14` deg/s.**
  *
@@ -116,7 +149,13 @@ export const CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG = [2.0, 0.5] as const;
 export const CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC = [5, 14] as const;
 export type CorePrPilotV1SizeDeg = (typeof CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG)[number];
 export type CorePrPilotV1SpeedDegPerSec = (typeof CORE_PR_PILOT_V1_SPEED_CANDIDATES_DEG_PER_SEC)[number];
-/** Axis calibration probes the *at-risk* size — the smallest candidate (README §3 pixel-floor risk). */
+/**
+ * Axis calibration uses the smaller candidate. Until 2026-09-04 that was 0.5° and the block existed
+ * to answer README §3's pixel-floor question; the dry-run answered it (a true 0.5° target — ~8.5
+ * CSS px once KI-024 was fixed — is resolvable and trackable **single-axis**, TOT 15.7–19.7%, but
+ * not on the two-axis core cells, TOT 1.5–3.9%), and the researcher closed that question on those
+ * data. These blocks now serve their remaining purpose only: isolating one axis at a time.
+ */
 const CALIBRATION_SIZE_DEG: CorePrPilotV1SizeDeg = CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG[1];
 
 /**

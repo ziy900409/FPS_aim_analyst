@@ -8,6 +8,51 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 6：乾跑通過 + 尺寸 revise（G4 → G5，size 候選值 `[3.0, 2.0]`）
+
+- **乾跑結果（P05 ×9 block，G4 刺激）：✅ 四項全過** ⇒ gate §3 的招募前置成立。
+  `atEye` 3.99–4.01 u / **100–103% of nominal** / 角尺寸 0.500–2.004°；layer 3b **9/9 match**；
+  **layer 5 凍結準心比值 2.05–3.48，每個 block 都 ≥ 2.0**（實測高於離線預測的 2.19–2.97，
+  唯 reversal high 2.05 貼近門檻）；覆蓋率 3202–3203 ticks / 25008–25016 ms、0 violations、
+  0 overflow、JSON/HTML parity ok。**再參數化（頻帶 + KI-024）確實有效。**
+- **但乾跑同時抓到一個難度問題**（正是乾跑存在的理由）：**兩個 0.5° 核心 cell 的 TOT 只有
+  3.9% / 1.5%，低於凍結的 B-2b hard floor（> 5%）**。使用者亦主觀回報多個 block 目標太小。
+- **以同一批錄音、同一套 pipeline、只換 hitbox 重算 TOT**（不是估值），供決策：
+  0.5° 兩個核心 cell 1.5/3.9%；2.0° → 16.4/53.7%；3.0° → 29.4/85.8%；
+  `2deg_5dps` 在 3.0° 為 **86.2%**；calibration 在 2.0° 為 71.1/65.3%；reversal 在 3.0° 為 48.5/39.2%。
+- **使用者決定（2026-09-04）**：size 候選值 `[2.0, 0.5]` → **`[3.0, 2.0]`**——原本小的（0.5°）
+  改用 **2.0°**，原本大的（2.0°）改成 **3.0°**。calibration 隨小候選值 → 2.0°、reversal 與
+  practice 隨大候選值 → 3.0°。**2×2 factorial 保持完整**（兩尺寸層 × 兩速度）。
+  - 落地方式：只改 `CORE_PR_PILOT_V1_SIZE_CANDIDATES_DEG`——practice/calibration/reversal 全部
+    以索引取用該陣列，故一處改動即正確傳播（實測驗證：practice 3.000°、calibration 2.000°、
+    reversal 3.000°、四個 core cell 3/3/2/2°）。
+  - 新 drillId：`3deg_5dps` / `3deg_14dps` / `2deg_5dps` / `2deg_14dps`。
+- **已入帳的風險（使用者看過數字後仍選 3.0°）**：`3deg_5dps` 在這份乾跑上重算為 **86.2%，高於
+  凍結的 80% ceiling**。B-2a 判的是跨受測者中位數 + 受測者間 CV，不是單一（且較熟練的）操作員，
+  故屬**風險而非判定**——但它是 Gate B 最可能被判 `revise` 的 cell。
+- **drillId 跨世代重用已入帳**：`..._2deg_5dps` / `..._2deg_14dps` 在 G1–G4 是**大**尺寸層、
+  G5 是**小**尺寸層；角尺寸同為 2.0° 但 seed 不同（seed 由候選值索引導出）⇒ 軌跡實現不同。
+  凡帶這兩個 ID 的既有 payload 都已作廢（G1–G3）或非 gate 證據（G4 乾跑），無實際受害者；
+  layer 3b 會攔下跨世代混用。
+- **0.5° pixel floor 正式結案**（T7 DoD 項目，使用者決定以本批資料結案）：真正的 0.5°
+  （KI-024 修好後約 8.5 CSS px）在**單軸** calibration 下 TOT **19.7% / 15.7%** ⇒ 看得見也跟得上；
+  在**雙軸**核心 cell 只有 **3.9% / 1.5%** ⇒ 跟不了。**結論是「0.5° 在雙軸追蹤下不可用」，
+  不是「0.5° 看不見」**。T6 §12.5 的「連單軸也看不見」是**實為 0.25°** 時的回報（KI-024），已作廢。
+  ⇒ 不再安排 0.5° block。
+- **兩個被我的改動打到的既有斷言，改成從來源常數導出而非寫死字面值**（同一類脆弱性）：
+  `src/metrics/trackingContactCoverage.test.ts`（WP-55）原本硬寫
+  `'tracking_core_pr_pilot_v1_2deg_5dps'`，但 fixture 本來就由 `TRACKING_CORE_PR_PILOT_V1_CANDIDATES[0]`
+  建立 ⇒ 改為 `.drillId`；`tests/e2e/tracking-pilot-live.spec.ts` 原本硬寫 `widthU ≈ 0.13964`
+  ⇒ 改為與 `trackingCorePrPilotV1Practice.targets.hitbox.widthU` round-trip 比對。
+  兩者測的東西不變，但不再隨 OQ-54-2 候選值改動而假性失敗。
+- **B-3a 的判準文字同步**（**語意不變、門檻未動**）：原文引用 `0.5°/2.0°` 具體值，改寫為
+  「小/大尺寸層」並註明目前值。gate §2.2 已加修訂註記。
+- **文件同步**：`analysis-tracking.md` 新增 **G5 世代** + drillId 跨世代重用警示 +
+  「0.5° pixel floor 結案」整節；gate §3.1/§3.2 記錄乾跑結果與 revise（含 ceiling 風險方框）、
+  §6 對帳表翻項、§7 版本表改 G5；runbook 更新 block 尺寸與 drillId。
+- **驗證**：`npx vitest run` **212 files / 2035 tests passed**；`npx tsc --noEmit` 與
+  `-p tsconfig.node.json` 皆 exit 0；`playwright tracking-pilot-live --project=edge` **1/1**。
+
 ### 2026-09-03 — T7 slice 5：Gate B 判準全部凍結（`T7-difficulty-calibration-gate.md`，docs-only）
 
 - **README §5 的硬約束**：「Gate B/C 的 protocol threshold 必須在收資料前凍結」。本 slice 就是那份
@@ -1494,3 +1539,9 @@
 | 2026-09-03 | T7 slice 4：`npx tsc --noEmit` / `-p tsconfig.node.json` | 皆 exit 0 |
 | 2026-09-03 | T7 slice 4：`npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` | **1/1 passed**（2.0m），以 G4 刺激真實跑完 practice + calibration 兩個 25 秒 block；覆蓋率不變（3203 ticks / 25015.625 ms） |
 | 2026-09-03 | T7 slice 4：離線量測七個 cell（實際 seed，眼睛所見） | 交付速度 5.01–5.13 / 13.94–14.01 deg/s；角尺寸逐位 0.500 / 1.999°；world y 最低 0.43（離地安全）；預測凍結準心比值 **2.19–2.97,全部 ≥ 2.0** |
+| 2026-09-04 | T7 slice 6：`npx vite-node scripts/analyze-tracking-pilot.ts -- <dryrun> --out .pilot-analysis/t7-dryrun` | 9/9 解析；`atEye` 3.99–4.01u / 100–103% / 0.500–2.004°；`fidelity` 9/9 match；**比值 2.05–3.48（全部 ≥ 2.0）**；覆蓋率 3202–3203 ticks；parity ok ⇒ gate §3 四項全過 |
+| 2026-09-04 | T7 slice 6：以同一批錄音重算各候選尺寸的 TOT（只換 hitbox，跑 shipped pipeline） | 0.5° 兩個核心 cell **1.5% / 3.9%（低於凍結的 5% floor）**；2.0° → 16.4/53.7%；3.0° → 29.4/85.8%；`2deg_5dps`@3.0° **86.2%（高於 80% ceiling，已入帳為風險）** |
+| 2026-09-04 | T7 slice 6：`npx vitest run`（全專案，尺寸 revise 後） | 212 files / 2035 tests passed（1 skipped file / 2 skipped tests）。過程中 2 個硬寫字面值的斷言失敗（WP-55 coverage test、live e2e），已改為由來源常數導出 |
+| 2026-09-04 | T7 slice 6：`npx tsc --noEmit` / `-p tsconfig.node.json` | 皆 exit 0 |
+| 2026-09-04 | T7 slice 6：`npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge` | **1/1 passed**（3.1m），G5 刺激；覆蓋率不變（3203 ticks / 25015.625 ms） |
+| 2026-09-04 | T7 slice 6：離線驗證 G5 各 block 尺寸 | practice 3.000°、calibration_h/_v 2.000°、`3deg_5dps`/`3deg_14dps` 3.000°、`2deg_5dps`/`2deg_14dps` 2.000°、reversal medium/high 3.000° ⇒ 一處改動正確傳播 |
