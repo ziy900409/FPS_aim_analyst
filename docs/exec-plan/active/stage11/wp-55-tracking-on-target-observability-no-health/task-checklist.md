@@ -15,6 +15,7 @@
 | [x] | **T5** Report and quality integration | [T5-report-and-quality-integration.md](T5-report-and-quality-integration.md) | T3/T4 | Med |
 | [x] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](T6-exit-gate-and-documentation.md) | T1-T5 | Med |
 | [x] | **T-exit** M21 evidence audit/handoff（2026-09-03，**conditional pass** —— OI-55-1 無 operator 入口，manual/researcher artifact review OPEN） | [T-exit-m21-evidence-audit-handoff.md](T-exit-m21-evidence-audit-handoff.md) | T1-T6 | Med |
+| [x] | **T7** Operator entry point（2026-09-04，關閉 OI-55-1 ⇒ M21 收成 **pass**） | [T7-operator-entry-point.md](T7-operator-entry-point.md) | T-exit | Low/Med |
 
 ## Package Definition of Done
 
@@ -28,7 +29,7 @@
 
 ## T-exit outstanding item
 
-- [ ] **OI-55-1** — 無 operator 入口可從真實 export 產出 contact artifact／replay HTML trace／report HTML（五個 module 只被自己的 test 匯入，無 CLI/npm/UI wiring）。因此 M21 的 manual/researcher artifact review 保持 OPEN。Owner = 使用者／研究者；建議修法 = 比照 `scripts/analyze-tracking-pilot.ts` 的 thin CLI runner（估 0.5d）。詳見 [README §6.2](README.md#oi-55-1--無-operator-入口可產出-contact-artifactt-exit-開立)。
+- [x] **OI-55-1** — ~~無 operator 入口可從真實 export 產出 contact artifact／replay HTML trace／report HTML~~ ⇒ **已於 T7（2026-09-04）關閉**:新增 `scripts/analyze-tracking-contact.ts` + `npm run analyze:contact`,輸出落 gitignored `.contact-analysis/`,end-to-end 實跑與解析式覆驗證據見 [README §6.3](README.md#63-t7-oi-55-1-關閉證據2026-09-04)。M21 由 conditional pass 收成 **pass**。
 
 ## Commit discipline
 

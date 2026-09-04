@@ -4,11 +4,25 @@
 
 ## Status
 
-- **Current**：✅ T0-T6 + T-exit 全數完成（2026-09-03）。**M21 = conditional pass**：全部 automated gate 與 A-55.1~10 有客觀證據；唯一未閉合項 OI-55-1（無 operator 入口，manual/researcher artifact review OPEN，owner = 使用者／研究者）。
+- **Current**：✅ **WP-55 完成。T0-T6 + T-exit + T7 全數交付;M21 = pass（2026-09-04）。** T-exit 曾以 conditional pass 結案並開立 OI-55-1;T7 補上 `npm run analyze:contact` operator 入口後 OI-55-1 關閉,M21 收成 pass。
 - **Scope state**：從 existing raw tracking telemetry 推導 on-target observability；不新增 health/damage lifecycle；第一版以 export 後 derived contact artifact 為主，不做產品 Replay overlay。
 - **Dependency state**：依賴現有 `tracking_v1`、`tracking_longrange_v1`、`tracking_br_v1`、schema v2、`deriveTrackingMetrics()` 與 Replay contract；WP-54 新 tracking pilot drills 已存在，但 T0 凍結為 adjacent/future 接入同一 contact artifact contract，不擴大 T1-T5 必達矩陣。
 
 ## Progress
+
+### 2026-09-04 — T7 operator entry point complete（OI-55-1 關閉 ⇒ M21 = pass）
+
+- 新增 `scripts/trackingContactRunner.ts`（純函式:loaded runs → 要寫出的檔案內容 + manifest + summary,無 fs、無 process）與 `scripts/analyze-tracking-contact.ts`（CLI:收檔/parse/mkdir/write/exit code）。責任切分照 repo 既有慣例（`trackingGateBExtract.ts` 純邏輯 / `analyze-tracking-pilot.ts` I/O 邊界），讓輸出契約可在無檔案系統的情況下被測。
+- `npm run analyze:contact -- <export.json | export-dir> [--out <dir>] [--no-strict-eye-origin]`;預設輸出 `.contact-analysis/`,已加 `.gitignore` 條目並註明理由（contact artifact 由 participant export 衍生,紅線同 WP-54 的 `.pilot-analysis/`）。
+- 輸出五類檔案:per-run `contact-artifact.json`（含 blocked run）、per-included-run `replay-trace.html`、聚合 `tracking-contact-report.json` / `.html`、以及 `manifest.json`（輸出檔 ↔ 來源 export 檔 ↔ `sourceId` 對照,交付 NFR-55-5 的 operator 側可追溯性）。
+- **runner 不重新定義任何 contact 構念（C-D4）**:所有數值皆取自 `buildTrackingContactCoverageReport()` / `buildTrackingContactReport()` / `buildReplayContactTrace()`;測試 `reports the same coverage as calling the shipped coverage function directly` 直接把 runner 的 coverage 與 shipped 函式對表。未改任何凍結 schema 版本字串。
+- **End-to-end 實跑 + 解析式覆驗**:3 份 synthetic export（正常 / 缺 `visible` event / schema 破損）⇒ `runs: 2 (included 1, excluded 1)`、`missing-visible-event=1`、`rejected files: 1`（具名）。included run 輸出 `tAcquireMs = 250`、`totPercent = 100`（pursuit n=224）、`rmsEpsilonDeg = 0.249591`。這兩個數字**用解析值反推覆驗過**:注入 acquisition 在第 32 tick ⇒ 32 × (1000/128) = 250 ms 精確相符;注入 aim 誤差為 0.35° 正弦 ⇒ RMS = 0.35/√2 = 0.247° 與輸出相符。⇒ runner 真的接上既有推導,不是自行產數。
+- Blocked run 仍產 artifact（`status:'blocked'`、closed reason code、`sampleCount: 0`、無 `samples`）,不產 replay trace,不偽裝 0 TOT（FR-55-7）。schema-rejected 檔照 `analyze-tracking-pilot.ts` 先例收進 `rejected[]` 並具名,不中止整批,但讓 CLI 以 exit 1 結束（rejected 是 operator 側問題;blocked 是合法結果,不影響 exit code）。
+- 預設輸出目錄經 `git check-ignore -v` 確認被 `.gitignore:38` 擋住;跑完 runner 後 `git status --short` 不出現任何 artifact。
+- **驗證**:runner 7 tests 綠;WP-55 focused suite 6 files / 47 tests passed（T-exit 時 5 / 40）;`npm.cmd run typecheck` exit 0;full `npm.cmd test` 217 files / 2078 tests passed、1 file / 2 tests skipped、exit 0。
+- 未動 sim/render/`TargetManager`/`SharedState`/live render hot path;未新增 health/HP/damage/kill contract;未做產品 Replay overlay（仍為 future）。
+- **`graphify update .` 已執行但輸出未 stage**（第三次踩到同一個坑,見 T3/T5）:重建後 `graphify-out/manifest.json` 會把**未追蹤**的 `docs/algorithm/micro-flick/index.html` 與 `README.md`（併行 WP-56 工作,非本切片產出）寫進 manifest。若 stage,committed graph 會宣稱存在兩個 repo 裡不存在的檔。依 T3/T5 先例 `git restore graphify-out/`,代價是 graph 暫時未收錄 T7 的兩支 script;待 WP-56 把 micro-flick 文件 commit 後,任何一次乾淨 worktree 的 `graphify update .` 即會補上。
+- **Measurement window**:上述測試數字量測於 2026-09-04 14:58（full suite 14:58:37 起約 20 s）。併行的 WP-56 T0 檔案 `tests/wp56-t0-poc.test.ts` 建立於 15:02:35,在我的 run 之後,且在 run 輸出中 0 命中 ⇒ 217 files / 2078 tests 不含該檔。本切片未 stage 任何 WP-56 或 micro-flick 檔案。
 
 ### 2026-09-03 — T-exit M21 evidence audit and handoff complete（conditional pass）
 
@@ -131,6 +145,7 @@
 | D-55.6 | T3 新增 metrics-layer coverage projection，而不把 BR companion 直接塞進 T2 artifact schema | T2 artifact 已凍結為 deterministic contact JSON；T3 需要的是 all-drill coverage 與 BR/pure 分層 evidence，report UI/HTML integration 留給 T5 | ✅ Confirmed（T3） |
 | D-55.7 | Contact derivation 的 hitbox 閘門接受 `shape:'sphere'`（三軸相等），不再 box-only | 原本的 box-only 閘門是正確的防線——但它防的是 `trackingDerivation.isOnTarget()` 忽略 `shape` 這個更底層的 bug（[KI-021](../../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)／BD-021），而非 sphere 本身不可支援。KI-021 讓推導層拿到與 `HitDetector` 相同的 ray/sphere 幾何後，排除 sphere payload 就變成純粹的資料損失。閘門同時新增「sphere 三軸必須相等」（鏡射 `schema.ts:243`），否則畸形 sphere 會只用 `widthU` 靜默推導。實測：WP-54 candidate drills 改 sphere 後，`trackingContactCoverage.test.ts` 的 `includedRunCount` 仍為 2；若少了本決策則掉到 0 | ✅ Confirmed（2026-09-03，KI-021 slice B） |
 | D-55.8 | M21 以 **conditional pass** 結案：automated gate 全綠，但 manual/researcher artifact review 保持 OPEN，並開立 OI-55-1 記錄「無 operator 入口」 | T-exit 稽核發現五個 module 只被自己的 test 匯入，研究者無法從真實 export 產出 artifact。M21 gate 的 escape clause（「或有明確 blocker owner」）在字面上可讓該項打勾，但那會把一個真實的交付缺口藏進括號裡；把它顯性化成 OI-55-1 + technical debt + handoff item，才能讓承接者看見。同時不誇大成 FR 失敗——FR-55-3/4 的凍結判準是對表關係，已由 12 位小數 parity 測試證明成立 | ✅ Confirmed（T-exit） |
+| D-55.9 | T7 runner **只呼一次 `buildTrackingContactCoverageReport()`**,per-run artifact 直接取 `run.contactArtifact`;檔名 provenance 由 runner 自產的 `manifest.json` 承載,而非塞進 artifact | coverage 對整批只吃一份 options,無法逐檔帶 `exportBasename`。若為每檔再呼一次 `buildTrackingContactArtifact()` 並帶 basename,同一個檔可能出現兩種判定(standalone ok 但 coverage 判 `protocol-incompatible`),operator 會看到自相矛盾的結果。改用 manifest 承載檔名對照,既不動 T2 凍結契約,也保證一檔一判定 | ✅ Confirmed（T7） |
 
 ## Open Questions
 
@@ -202,6 +217,14 @@
 | 2026-09-03 | T-exit parity body inspection: `trackingContact.test.ts:206`, `trackingContactReport.test.ts:97` | both independently call `deriveTrackingMetrics(payload, { strictEyeOrigin: true })` and compare (exact on acquisition, `toBeCloseTo(..., 12)` on TOT/RMS/median/P95); not a tautology |
 | 2026-09-03 | T-exit: `codegraph.cmd status` / `graphify-out/GRAPH_REPORT.md` header | 545 files / 8,815 nodes / 29,698 edges; graphify report still built from `2cbedbce`, stale vs HEAD `a1d89e8`, recorded (docs-only task, no `graphify update .`) |
 | 2026-09-03 | T-exit: `git status --short` / `git rev-parse HEAD` | clean worktree at entry; HEAD `a1d89e86836e393f2607d4992ab1aec2ebd5f569` |
+| 2026-09-04 | T7: `npx.cmd vitest run tests/regression/tracking-contact-runner.test.ts` | 1 file / 7 tests passed |
+| 2026-09-04 | T7: WP-55 focused suite + runner (6 files) | 6 files / 47 tests passed |
+| 2026-09-04 | T7: `npm.cmd run typecheck` | exit 0 |
+| 2026-09-04 | T7: full `npm.cmd test` | exit 0; 217 files / 2078 tests passed, 1 file / 2 tests skipped (`historyRepository.perf.test.ts` opt-in benchmark) |
+| 2026-09-04 | T7 end-to-end: `npm.cmd run analyze:contact -- <3 synthetic exports> --out <scratch>` | runs 2 (included 1, excluded 1), missing-visible-event=1, rejected 1 named; wrote 6 files; exit 1 due to the rejected file (by design) |
+| 2026-09-04 | T7 analytic cross-check of runner output | `tAcquireMs=250` == 32 ticks x (1000/128); `rmsEpsilonDeg=0.249591` == analytic 0.35/sqrt(2)=0.247 for the injected sine aim error |
+| 2026-09-04 | T7: `git check-ignore -v .contact-analysis/manifest.json` + `git status --short` after a default-dir run | ignored by `.gitignore:38`; no artifact appears in git status |
+| 2026-09-04 | T7: `graphify update .` then `git diff graphify-out/` | rebuilt 4276 nodes / 10246 edges / 272 communities and picked up the T7 scripts (45 hits), but also added untracked `docs/algorithm/micro-flick/{index.html,README.md}` to the manifest -> restored per T3/T5 precedent, not staged |
 
 ## Surprises & Discoveries
 

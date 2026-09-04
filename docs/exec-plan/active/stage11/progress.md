@@ -2,11 +2,20 @@
 
 ## Status
 
-- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）；🟡 M20（WP-54 tracking pilot）T0-T4 完成、T5 待開工（2026-09-02）；✅ M21（WP-55 tracking observability/no-health）T0-T6 + T-exit 完成，判定 **conditional pass**（2026-09-03；未閉合項 OI-55-1 = 無 operator 入口，manual/researcher artifact review OPEN）。
+- **Current**：✅ M19（WP-52/WP-53）完成（2026-09-02）;🟡 M20（WP-54 tracking pilot）T0-T6 完成（T6 = Gate A 部分通過）⇒ T7 進行中,Gate B 判準與 G5 刺激已凍結、G5 乾跑四項全過、研究者已決 D-54.48「照原樣招募」,**下一步 = 招募 12–20 人**（2026-09-04）;✅ M21（WP-55 tracking observability/no-health）T0-T6 + T-exit + T7 全數完成,判定 **pass**（T-exit 2026-09-03 的 conditional pass 已由 T7 於 2026-09-04 關閉 OI-55-1 而收成 pass）。
 - **Scope state**：WP-52 pilot v2 adjustment 已交付；WP-53 formal `peek_click_transfer_v1` release 已完成 T0~T5 與 T-exit；WP-54 tracking pilot 已正式納入 stage11，T0-T4 完成；WP-55 已正式納入 stage11，第一版以 export 後 derived contact artifact 與離線 replay trace 為主，不做 health/damage lifecycle 或產品 Replay overlay。
 - **Dependency state**：WP-52 T-exit、WP-53 formal freeze、stage10 history/trend contract、formal Session Plan integration、focused E2E 與 docs sync 全數完成（M19）。WP-54 T0 依賴的 legacy tracking baseline（103 tests）綠燈、OQ-54-1~8 preregistration 凍結、CodeGraph impact 記錄完成；T1 deterministic trajectory kernel + export contract 交付；T2 pilot drill matrix（practice/calibration/core 2×2/reversal density）+ no-fire/no-ADS/no-movement protocol guard 交付；T3 canonical P0/P1 metrics（lag/gain/drop/recovery/reversal）+ truth fixtures 交付；T4 eligibility/evidence pipeline（closed quality-reason vocabulary、WP-54 compatibility key、deterministic JSON evidence、self-contained HTML report）交付，全程 legacy tracking regression 保持綠燈（M20）。WP-55 T0 凍結現有三個 tracking drill roster、OQ-55-1~4、no-health boundary、CodeGraph blast radius 與 50-test baseline；T1 已凍結 contact geometry contract；T2 已交付 deterministic export-derived contact JSON artifact；T3 已交付 all tracking drill coverage 與 BR/pure summary 分層 projection；T4 已交付 pure replay contact sampling 與 self-contained HTML trace；T5 已交付 report/quality projection；T6 已交付 M21 exit gate ledger、operational/stage docs sync、no-health audit 與 focused/full verification（M21）。
 
 ## Progress
+
+### 2026-09-04 — WP-55 T7 operator entry point（OI-55-1 關閉 ⇒ M21 = pass）
+
+- WP-55 T7 完成:新增 `scripts/trackingContactRunner.ts`（純輸出契約,無 fs）、`scripts/analyze-tracking-contact.ts`（CLI I/O 邊界）、`tests/regression/tracking-contact-runner.test.ts`（7 tests）,並掛上 `npm run analyze:contact`。研究者現在可以直接把 tracking export 轉成 per-run contact artifact、per-run replay trace HTML、聚合 report JSON/HTML 與 `manifest.json`,不需要寫任何程式。
+- **OI-55-1 關閉,M21 從 conditional pass 收成 pass。** T-exit（2026-09-03）發現 WP-55 五個 module 只被自己的 test 匯入 ⇒ 交付零可用性;T7 補的正是那個入口。
+- 輸出預設落 gitignored `.contact-analysis/`,`.gitignore` 已加條目並註明理由（contact artifact 由 participant export 衍生,紅線同 WP-54 的 `.pilot-analysis/`）;`git check-ignore` 與跑完 runner 後的 `git status --short` 均已驗證。
+- runner 不重新定義任何 contact 構念（C-D4）,所有數值取自既有 shipped 純函式,且有一條測試直接把 runner 的 coverage 與 `buildTrackingContactCoverageReport()` 對表。未改任何凍結 schema 版本字串,未動 sim/render/`TargetManager`/`SharedState`,未新增 health/HP/damage/kill contract。
+- **驗證**:runner 7 tests;WP-55 focused suite 6 files / 47 tests;`npm.cmd run typecheck` exit 0;full `npm.cmd test` 217 files / 2078 tests passed、1 file / 2 tests skipped、exit 0。End-to-end 實跑 3 份 synthetic export（正常/缺 visible/schema 破損）⇒ included 1、excluded 1（closed reason code）、rejected 1（具名,不中止整批）;輸出的 `tAcquireMs=250` 與 `rmsEpsilonDeg=0.2496` 經解析式反推覆驗與注入值相符。
+- 同時修正本檔 Status 行對 M20 的過期敘述（原寫「T0-T4 完成、T5 待開工」,實際 T0-T6 完成、T7 進行中且下一步是招募）。
 
 ### 2026-09-03 — WP-55 T-exit M21 evidence audit and handoff（conditional pass）
 

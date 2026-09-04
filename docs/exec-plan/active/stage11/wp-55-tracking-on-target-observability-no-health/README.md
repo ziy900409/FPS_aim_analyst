@@ -4,7 +4,7 @@
 >
 > Source proposal：[../wp-55-tracking-on-target-observability-no-health-plan.md](../wp-55-tracking-on-target-observability-no-health-plan.md)。本文件依 `.claude/skills/engineering-planning/SKILL.md`、`references/design_standards.md`、`assets/tech_spec_template.md` 與 WP-51 的 work-package 格式整理。
 >
-> **狀態：已正式納入 stage11，T0-T6 + T-exit 全數完成（2026-09-03）。M21 判定 = conditional pass** —— 全部 automated gate 與 A-55.1~10 有客觀證據，唯一未閉合項為 OI-55-1（無 operator 入口可從真實 export 產出 artifact，故 manual/researcher artifact review 保持 OPEN，owner = 使用者／研究者）。逐項證據見 [§6.2](#62-t-exit-evidence-ledger2026-09-03) 與 [progress.md](progress.md)。
+> **狀態：✅ 完成。T0-T6 + T-exit + T7 全數交付；M21 = pass（2026-09-04）。** T-exit（2026-09-03）曾以 conditional pass 結案並開立 OI-55-1（無 operator 入口）；**T7（2026-09-04）已補上 CLI runner,OI-55-1 關閉**,M21 由 conditional pass 收成 pass。逐項證據見 [§6.2](#62-t-exit-evidence-ledger2026-09-03)、[§6.3](#63-t7-oi-55-1-關閉證據2026-09-04) 與 [progress.md](progress.md)。
 
 | | |
 |---|---|
@@ -112,6 +112,9 @@ src/render/replay/*                                    OPTIONAL Replay overlay i
 src/pilot/trackingContactEvidence.ts                   NEW JSON/HTML evidence model if offline artifact path chosen
 docs/operational/analysis-tracking.md                  MODIFY no-health/contact formula/version contract
 docs/operational/tracking-on-target-observability.md   NEW operator/researcher artifact contract
+scripts/trackingContactRunner.ts                       NEW (T7) pure runner output contract
+scripts/analyze-tracking-contact.ts                    NEW (T7) CLI entry point — the OI-55-1 fix
+tests/regression/tracking-contact-runner.test.ts       NEW (T7) runner output regression
 ```
 
 ### 2.3 Data Flow
@@ -234,7 +237,7 @@ Error 情境：
 1. 第一版若只做離線 artifact 而不做產品 Replay overlay，是有意識的切範圍。觸發後續工作的條件是研究者需要在正式操作 UI 逐 frame 檢視 contact，而不是只審核 exported report。
 2. Legacy export fallback 只支援能由既有資料可靠重建的案例；不可重建的舊資料保留 blocked 結果，不做推測補值。
 3. WP-55 不把 tracking contact 直接晉升為正式 Assessment/history/trend 指標；正式發布應另立 release WP 或由 WP-54/WP-53 後續里程碑承接。
-4. WP-55 只交付 library-level contact derivation/artifact/replay/report 純函式，**未交付 operator 入口**（無 CLI script、無 npm script、無 UI wiring）。這是 T-exit 才顯性化的有意識負債，登記為 OI-55-1（§6.2）。觸發後續工作的條件是研究者需要對真實 export 做人工 artifact 審閱。
+4. ~~WP-55 只交付 library-level 純函式,未交付 operator 入口~~ ⇒ **已於 T7（2026-09-04）償付**:`npm run analyze:contact` 落地,OI-55-1 關閉(§6.3)。此負債的生命週期完整記錄保留於此,作為「每個 task 的 DoD 都只驗函式行為 ⇒ WP 可全綠卻零可用性」的案例。
 
 ---
 
@@ -250,6 +253,7 @@ Error 情境：
 | **T5** | Report and quality integration | T3/T4 | Med | 1-1.5d | report 顯示 acquisition、pursuit、TOT、RMS epsilon、contact timeline、blocked reasons；每個數值帶 n/duration/condition；protocol-incompatible run 不進 aggregate |
 | **T6** | Exit gate and documentation | T1-T5 | Med | 0.5-1d | operational spec 更新；stage11 progress/checklist 更新；focused tests 與 `npm test` 綠；確認未新增 HP/damage/health bar schema/state/render contract |
 | **T-exit** | M21 evidence audit and handoff | T1-T6 | Med | 0.5d | §6 exit gate 全部成立，或以 blocked/revise 結案；handoff 明確指出 WP-54/new tracking drills 如何接入 contact contract |
+| **T7** | Operator entry point（關閉 OI-55-1） | T-exit | Low/Med | 0.5d | `npm run analyze:contact` 可從真實 export 產出 contact artifact / replay trace HTML / report JSON+HTML / manifest；輸出落 gitignored 目錄；runner 不重新定義任何 contact 構念 |
 
 Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 
@@ -265,6 +269,7 @@ Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 | NFR-55-1/4 | T2/T4/T6 | deterministic artifact rerun, pump gate, generation benchmark |
 | NFR-55-2/3 | T1/T2 | geometry oracle, metadata/fallback compatibility fixtures |
 | NFR-55-5 | T2/T5/T-exit | artifact identity/version/source fields and report traceability |
+| FR-55-3/4（operator 可用性） | T7 | CLI runner 產出全套 artifact；`manifest.json` 讓每個輸出檔可追回來源 export |
 
 ---
 
@@ -289,12 +294,12 @@ Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 - [x] 血條、HP、damage、擊殺數均未成為 tracking 跟隨判定來源。
 - [x] 所有現有 tracking drill 都能從 export 重建逐 tick `onTarget` 與 `epsilonDeg`。
 - [x] Contact artifact 與 `deriveTrackingMetrics()` 的 acquisition/TOT/RMS epsilon 對表成立。
-- [x] Replay 或離線 replay artifact 能逐 frame 檢視 contact state。**限定範圍**：trace artifact 格式與逐 frame 內容由 `renderReplayContactTraceHtml()` 測試證明；從真實 export 檔產出該 HTML 的 operator 入口尚不存在，見 OI-55-1。
+- [x] Replay 或離線 replay artifact 能逐 frame 檢視 contact state。（T-exit 時僅契約層成立;T7 補上 `npm run analyze:contact` 後,operator 可從真實 export 直接產出逐 frame HTML trace ⇒ 全項成立）
 - [x] BR/projectile tracking 的 ballistic hit 與 aim-ray contact 分欄呈現，未混入 pure tracking 主結論。
 - [x] 資料不足、不相容或舊 export 無法可靠重建時，輸出封閉 reason code。
 - [x] Existing target lifecycle、`presentationMs`、drill id 與 legacy tests 無 semantic regression。
 - [x] 文件同步說明：tracking 是否跟隨目標以 exact-hitbox on-target/TOT/RMS epsilon 判定，不需要血條。
-- [x] Focused unit/replay/report tests、full CI 全綠；**manual/researcher artifact review 仍為 OPEN**，blocker owner = 使用者／研究者，blocked on OI-55-1（無 operator 入口可產出 artifact 供人工審閱）。
+- [x] Focused unit/replay/report tests、full CI 全綠;**manual/researcher artifact review 的阻塞已於 T7 解除** —— runner 已可產出 artifact/report/replay trace 供人工審閱（OI-55-1 關閉）。實際由研究者審閱真實 run 屬 operator 排程,不再是工程阻塞。
 - [x] `CONTEXT.md`、`DECISIONS.md`、operational spec、stage progress/checklist 與 `graphify-out`（若有 code change）同步。
 
 ### 6.1 T6 evidence ledger
@@ -365,6 +370,41 @@ Measured at HEAD `a1d89e8`，worktree clean。
 - **Owner**：使用者決定是否在 WP-55 內補 T7，或由承接 WP（正式 Assessment / researcher tooling）處理。
 - **Trigger**：任何一次真實 tracking run 需要人工審閱 contact evidence 時。
 
+### 6.3 T7 OI-55-1 關閉證據（2026-09-04）
+
+**OI-55-1 已關閉。** 新增 `npm run analyze:contact`,研究者可直接把 export 轉成全套 artifact,無需寫程式。
+
+交付物:
+
+```text
+scripts/trackingContactRunner.ts                  純函式:loaded runs -> 檔案內容 + manifest + summary（無 fs）
+scripts/analyze-tracking-contact.ts               CLI:收檔/parse/mkdir/write/exit code
+tests/regression/tracking-contact-runner.test.ts  7 tests
+.gitignore                                        + .contact-analysis/（participant-derived 紅線）
+package.json                                      + analyze:contact
+```
+
+| 輸出檔 | 來源純函式 | 範圍 |
+|---|---|---|
+| `<NNN>-<sourceId>.contact-artifact.json` | coverage run 的 `contactArtifact`（含 blocked） | per run |
+| `<NNN>-<sourceId>.replay-trace.html` | `renderReplayContactTraceHtml()` | per included run |
+| `tracking-contact-report.json` / `.html` | `serializeTrackingContactReport()` / `renderTrackingContactReportHtml()` | 聚合 |
+| `manifest.json` | runner 自產 | 聚合;輸出檔 ↔ 來源 export 檔 ↔ `sourceId` 對照 |
+
+**End-to-end 實跑證據**(3 份 synthetic export:1 份正常、1 份缺 `visible` event、1 份 schema 破損):
+
+- `runs: 2 (included 1, excluded 1)`;`exclusion reasons: missing-visible-event=1`;`rejected files: 1`(具名 `broken.json` 與 schema 錯誤字串)。
+- included run 產出 `tAcquireMs = 250`、`totPercent = 100`(pursuit window n=224)、`rmsEpsilonDeg = 0.249591`、`medianEpsilonDeg = 0.261820`、`p95EpsilonDeg = 0.347114`、timeline n=256、replay trace frame count=256。
+- **這些數字經解析式覆驗**:fixture 注入的 acquisition 在第 32 tick ⇒ 32 × (1000/128) = **250 ms**,與輸出精確相符;注入的 aim 誤差為 0.35° 正弦 ⇒ 解析 RMS = 0.35/√2 = **0.247°**,與輸出 0.2496° 相符。證明 runner 確實接上既有推導,而非自行產數。
+- blocked run 仍產出 artifact(`status: 'blocked'`、`reasons: ['missing-visible-event']`、`sampleCount: 0`、無 `samples`),不產 replay trace,不偽裝 0 TOT。
+- 預設輸出目錄 `.contact-analysis/` 經 `git check-ignore -v` 確認被 `.gitignore:38` 擋住;跑完 runner 後 `git status --short` 不出現任何 artifact。
+
+**驗證**:runner 層 7 tests 綠;WP-55 focused suite **6 files / 47 tests passed**(T-exit 時為 5 / 40);`npm run typecheck` exit 0;full `npm test` **217 files / 2078 tests passed**,1 file / 2 tests skipped(仍為 `historyRepository.perf.test.ts` 的 opt-in benchmark),exit 0。
+
+**架構紀律**:runner 不重新定義任何 contact 構念(C-D4)—— 所有數值皆取自 `buildTrackingContactCoverageReport()` / `buildTrackingContactReport()` / `buildReplayContactTrace()`;測試 `reports the same coverage as calling the shipped coverage function directly` 直接把 runner 的 coverage 與 shipped 函式對表。未改任何凍結 schema 版本字串,未動 sim/render/`TargetManager`/`SharedState`,未新增 health/HP/damage/kill contract。
+
+**一個設計取捨(入帳)**:`buildTrackingContactCoverageReport(payloads, options)` 對整批只吃一份 options,無法逐檔帶 `exportBasename`。若 runner 另為每檔再呼一次 `buildTrackingContactArtifact()` 並帶 basename,同一檔可能出現兩種判定(standalone ok 但 coverage 判 `protocol-incompatible`)。故 runner **只呼 coverage 一次**,per-run artifact 直接取 `run.contactArtifact`,檔名 provenance 由 `manifest.json` 承載。這樣不動凍結契約也不會有兩套判定(D-55.9)。
+
 ---
 
 ## 7. Handoff to adjacent work
@@ -372,4 +412,4 @@ Measured at HEAD `a1d89e8`，worktree clean。
 1. 若 WP-54 新增 `tracking_core_pr_pilot_v1` 或 `tracking_reversal_pilot_v1`，直接接入本 WP 的 contact artifact contract。接入方式：以 `ExportPayload` 呼叫 `buildTrackingContactCoverageReport([payload])`，drill 只要滿足 tracking telemetry（`tx/ty/tz` 逐 tick、`visible` event、可解析 eye origin）與 well-formed hitbox（`box`，或三軸相等的 `sphere`，見 D-55.7）即可被 included；不合格者以 closed reason code 進 excluded，不需要改 contact 層。既有相容性 smoke 見 `trackingContactCoverage.test.ts:146`。
 2. 若研究者需要 live practice feedback，可另立 render-only contact indicator，但不得進 sim state 或 scored block strategy feedback。
 3. 正式 Assessment、history/trend registry、教練式診斷規則與 composite score 需另立 WP，且必須引用 M21 evidence。
-4. **OI-55-1（operator 入口）**：承接 WP 或 WP-55 T7 應新增 thin CLI runner（比照 `scripts/analyze-tracking-pilot.ts`），把 export JSON 轉成 artifact/coverage/report/replay-trace 檔並掛 `npm run` script。在此之前，M21 的 manual/researcher artifact review 保持 OPEN。
+4. ~~OI-55-1（operator 入口）~~ ⇒ **已關閉（T7,2026-09-04）**:`npm run analyze:contact -- <export.json | export-dir> [--out <dir>] [--no-strict-eye-origin]`。承接 WP 若要加新 tracking drill,只要 drill 滿足 handoff 第 1 項的 telemetry 條件,就能直接被這支 runner 涵蓋,不需改 runner。

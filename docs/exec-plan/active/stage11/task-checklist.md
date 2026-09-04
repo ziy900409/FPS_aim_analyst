@@ -68,8 +68,9 @@ WP-54 Definition of Done：見 [wp-54-tracking-pilot/task-checklist.md「Package
 | [x] | **T5** Report and quality integration | [T5-report-and-quality-integration.md](wp-55-tracking-on-target-observability-no-health/T5-report-and-quality-integration.md) | T3/T4 | Med |
 | [x] | **T6** Exit gate and documentation | [T6-exit-gate-and-documentation.md](wp-55-tracking-on-target-observability-no-health/T6-exit-gate-and-documentation.md) | T1-T5 | Med |
 | [x] | **T-exit** M21 evidence audit/handoff（**conditional pass**；OI-55-1 未閉合） | [T-exit-m21-evidence-audit-handoff.md](wp-55-tracking-on-target-observability-no-health/T-exit-m21-evidence-audit-handoff.md) | T1-T6 | Med |
+| [x] | **T7** Operator entry point（關閉 OI-55-1 ⇒ M21 **pass**） | [T7-operator-entry-point.md](wp-55-tracking-on-target-observability-no-health/T7-operator-entry-point.md) | T-exit | Low/Med |
 
-M21 判定 = **conditional pass**（2026-09-03）：automated gate 與 A-55.1~10 全數有客觀證據；唯一未閉合項 **OI-55-1** —— WP-55 五個 module 只被自己的 test 匯入，無 CLI/npm/UI 入口，研究者無法從真實 export 產出 artifact，故 manual/researcher artifact review 保持 OPEN（owner = 使用者／研究者）。詳見 [wp-55 README §6.2](wp-55-tracking-on-target-observability-no-health/README.md#62-t-exit-evidence-ledger2026-09-03)。
+M21 判定 = ✅ **pass**（T-exit 2026-09-03 + T7 2026-09-04）。T-exit 時 automated gate 與 A-55.1~10 全綠但開立 **OI-55-1**（五個 module 只被自己的 test 匯入,無 operator 入口）,故先收成 conditional pass;**T7 補上 `npm run analyze:contact` 後 OI-55-1 關閉**,M21 收成 pass。詳見 [wp-55 README §6.2](wp-55-tracking-on-target-observability-no-health/README.md#62-t-exit-evidence-ledger2026-09-03) 與 [§6.3](wp-55-tracking-on-target-observability-no-health/README.md#63-t7-oi-55-1-關閉證據2026-09-04)。
 
 WP-55 Definition of Done：見 [wp-55-tracking-on-target-observability-no-health/task-checklist.md「Package Definition of Done」](wp-55-tracking-on-target-observability-no-health/task-checklist.md#package-definition-of-done)。Tracking 跟隨判定必須以 exact-hitbox aim-ray `onTarget` / `epsilonDeg` 為核心，不新增 health/HP/damage/kill lifecycle，也不得把 BR ballistic hit 混入 pure tracking summary。
 

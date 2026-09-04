@@ -31,3 +31,8 @@ data/session-history/*
 # WP-54 T6 — tracking pilot analysis output (participant exports and any artifact derived from
 # them stay out of git; see docs/.../wp-54-tracking-pilot/T6-instrumentation-gate.md §7).
 .pilot-analysis/
+
+# WP-55 T7 — tracking contact analysis output (contact artifacts are derived from participant
+# exports, so they stay out of git for the same reason as .pilot-analysis/; see
+# docs/.../wp-55-tracking-on-target-observability-no-health/T7-operator-entry-point.md).
+.contact-analysis/
