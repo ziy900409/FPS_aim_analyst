@@ -82,6 +82,7 @@ import { urbanHigh } from './scene/scenes/urban-high.ts';
 import { brField } from './scene/scenes/br-field.ts';
 import { peekCorridor } from './scene/scenes/peek-corridor.ts';
 import { peekAdCorridor } from './scene/scenes/peek-ad-corridor.ts';
+import { microFlickRoom } from './scene/scenes/micro-flick-room.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
@@ -100,6 +101,7 @@ import {
   peekClickTransferPilotV2Masked,
 } from './drill/peek_click_transfer_pilot_v2.ts';
 import { peekClickTransferV1, PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION } from './drill/peek_click_transfer_v1.ts';
+import { microFlickThreeTargetTestV1 } from './drill/micro_flick_three_target_test_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -134,6 +136,7 @@ const availableScenes: AvailableScene[] = [
   { id: brField.sceneId, label: 'br-field', config: brField },
   { id: peekCorridor.sceneId, label: 'peek-corridor', config: peekCorridor },
   { id: peekAdCorridor.sceneId, label: 'peek-ad-corridor-v1', config: peekAdCorridor },
+  { id: microFlickRoom.sceneId, label: microFlickRoom.sceneId, config: microFlickRoom },
 ];
 let activeSceneConfig: SceneConfig = fieldLow;
 let activeSceneFallback = false;
@@ -219,6 +222,12 @@ const availableDrills: AvailableDrill[] = [
     source: peekClickTransferV1.drill,
     sceneId: peekClickTransferV1.sceneId,
     loadOptions: { clearance: peekClickTransferV1.clearanceOptions },
+  },
+  {
+    id: microFlickThreeTargetTestV1.id,
+    label: microFlickThreeTargetTestV1.id,
+    source: microFlickThreeTargetTestV1.drill,
+    sceneId: microFlickThreeTargetTestV1.sceneId,
   },
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,

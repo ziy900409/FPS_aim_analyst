@@ -6,18 +6,18 @@
 
 - [x] 讀當時 `AGENTS.md`、Graph Report、CodeGraph status與相關 Stage 12／active plans。
 - [x] 記錄 `DrillConfig`、schema、TargetManager、DrillRunner、SimLoop、SceneManager、main registry 的最新 impact。
-- [ ] 凍結 FOV、yaw/pitch bounds、target angular size、separation、distance與 quota/time policy。**Blocked：**工程Candidate A/B與推薦值已完成，但workspace缺`Media1.mp4`且OQ-56.2／3尚待owner確認；T1 start前不得略過。
+- [x] 凍結 FOV、yaw/pitch bounds、target angular size、separation、distance與 quota/time policy（2026-09-04 使用者以明確T1實作指令採Candidate A + 60 kills）。
 - [x] multi-target bounded sampling、single-hit replacement與 GLTF scene方案 PoC有可重現 evidence。
 - [x] OQ-56.2～5 有 owner-confirmed 結論或明確 blocked owner/deadline。
 - [x] production code diff=0，PoC artifacts清除。
 
 ## T1 — Contract and Fixtures
 
-- [ ] optional population、pitch/separation與translation policy types完成。
-- [ ] strict schema合法／非法組合與field-path errors完成。
-- [ ] 所有 legacy drill fixtures parse／trace相容。
-- [ ] `micro_flick_three_target_test_v1` practice config與scene binding完成。
-- [ ] Assessment/history/full replay未被註冊的負向測試成立。
+- [x] optional population、pitch/separation與translation policy types完成。
+- [x] strict schema合法／非法組合與field-path errors完成。
+- [x] 所有 legacy drill fixtures parse／trace相容。
+- [x] `micro_flick_three_target_test_v1` practice config與scene binding完成。
+- [x] Assessment/history/full replay未被註冊的負向測試成立。
 
 ## T2 — Three-target Lifecycle
 

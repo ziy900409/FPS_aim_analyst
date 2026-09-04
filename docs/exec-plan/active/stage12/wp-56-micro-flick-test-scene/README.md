@@ -14,7 +14,7 @@
 | **Delivery policy** | v1 為 practice／researcher-only；不加入正式 participant protocol、不宣稱 full replay、不改研究指標定義 |
 | **Estimate** | 8.5–15.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：`DrillConfig` 與 `SceneConfig` 為跨模組核心契約；`TargetManager`／`DrillRunner` 註解與部分測試建立在單 active target 假設上 |
-| **Status** | T0 evidence complete（2026-09-04）；gate blocked by missing `Media1.mp4` + OQ-56.2／3 owner freeze，T1～T6未開始 |
+| **Status** | T0／T1 complete（2026-09-04）；使用者以明確 T1 實作指令採用 Candidate A 與 60-kill quota，T2～T6未開始 |
 
 ---
 
@@ -105,8 +105,8 @@
 | ID | Question | Recommended default | Owner | Deadline | Impact if unresolved |
 |---|---|---|---|---|---|
 | **OQ-56.1** | 場景／玩法理解與同時三靶、固定位置、無槍模是否正確？ | ✅ 已確認（2026-09-04，使用者訊息） | 使用者 | 已收斂 | 全 WP scope |
-| **OQ-56.2** | 首版 FOV、yaw/pitch bounds、球體角直徑與最小 separation 採何值？ | T0 以 1920×1080 影片構圖量測候選，manual review 後凍結；不從單張畫面猜絕對 world units | 使用者 + Gameplay owner | T0 exit、T1 前 | T1 config、T2 spawn、T3 visual baseline |
-| **OQ-56.3** | 練習以 target quota 或固定時間結束？ | target quota；建議 60 kills，便於 deterministic acceptance | Gameplay owner | T0 exit、T1 前 | count/budget、T2 exhaustion、T4 HUD |
+| **OQ-56.2** | 首版 FOV、yaw/pitch bounds、球體角直徑與最小 separation 採何值？ | ✅ 75° FOV、yaw ±22°、pitch ±12°、3°球、7° separation、12–14u（2026-09-04 使用者明確要求實作 T1，採 Candidate A） | 使用者 + Gameplay owner | 已收斂 | T1 config、T2 spawn、T3 visual baseline |
+| **OQ-56.3** | 練習以 target quota 或固定時間結束？ | ✅ target quota，60 kills（2026-09-04 使用者明確要求實作 T1） | Gameplay owner | 已收斂 | count/budget、T2 exhaustion、T4 HUD |
 | **OQ-56.4** | 未來是否要升為正式 Assessment／full replay？ | v1 否；保持 practice-only，另開 WP 擴充多 target replay/capture 與研究指標 | Product/Research owner | T-exit 前確認 handoff 即可 | FR-56.14、資料 schema、history/replay |
 | **OQ-56.5** | 是否需要完全複製影片左上角 SPM/TTK/KPS 面板？ | 否；本 WP 沿用現有 HUD，只重現場景與核心互動 | 使用者 | T4 開工前 | T4 UI scope、視覺 baseline |
 
@@ -353,7 +353,7 @@ export interface SimLoopOptions {
 
 Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。
 
-T0 已完成engine/sampling/scene證據收集並清除throwaway artifacts；工程推薦Candidate A為75° FOV、yaw ±22°、pitch ±12°、3°球、7° separation、12–14u、60 kills。這組值尚未取得owner／影片構圖確認，故依entry-gate規則維持blocked，不授權T1 production implementation；完整量測與baseline failure見[T0-entry-gate.md](T0-entry-gate.md)及[progress.md](progress.md)。
+T0 已完成engine/sampling/scene證據收集並清除throwaway artifacts；工程推薦Candidate A為75° FOV、yaw ±22°、pitch ±12°、3°球、7° separation、12–14u、60 kills。使用者於2026-09-04明確要求實作T1，視為採用Candidate A與60-kill quota並解除OQ-56.2／3；完整量測與baseline failure見[T0-entry-gate.md](T0-entry-gate.md)及[progress.md](progress.md)。
 
 ### 4.1 Requirements traceability
 

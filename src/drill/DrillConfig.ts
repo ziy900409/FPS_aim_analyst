@@ -45,11 +45,27 @@ export interface TargetHitboxSize {
 export const DEFAULT_TARGET_HITBOX: TargetHitboxSize = { width: 1, height: 2, depth: 1, shape: 'box' } as const;
 export const MAX_TARGET_HITBOX_U = 10;
 
+export interface TargetPopulationConfig {
+  /** Number of targets kept visible and alive concurrently. `targets.count` remains the total spawn budget. */
+  readonly activeCount: number;
+  /** Replacement consumes RNG only from the following simulation tick. */
+  readonly replacement: 'next-tick';
+}
+
 export interface SpawnAreaConfig {
   /** 水平偏心角範圍（deg）；0 = 玩家正前方 -Z，正值往 +X（右側）。 */
   yawDegRange: [number, number];
   /** 與玩家原點的前方距離範圍（u, source unit）。 */
   distanceURange: [number, number];
+  /** Vertical angle relative to the center sightline. Omitted preserves the legacy fixed target height. */
+  readonly pitchDegRange?: [number, number];
+  /** Minimum center-to-center angle between concurrently active targets. */
+  readonly minAngularSeparationDeg?: number;
+}
+
+export interface PlayerControlConfig {
+  /** Omitted at the DrillConfig level means `enabled`, preserving every legacy drill. */
+  readonly translation: 'enabled' | 'locked';
 }
 
 /** Center/peripheral schedule for spider-shot; independent from legacy L/R sequencing. */
@@ -134,6 +150,8 @@ export interface DrillConfig {
   weaponId?: string;
   /** Optional counter-strafe cue protocol; omitted preserves legacy drill timing exactly. */
   cue?: CueScheduleConfig;
+  /** Optional player translation policy. Omitted means `enabled`. Mouse aim is unaffected. */
+  playerControl?: PlayerControlConfig;
   targets: {
     /** 目標總數（正整數;與 endCondition.targetCount 搭配,見 §endCondition）。 */
     count: number;
@@ -147,6 +165,8 @@ export interface DrillConfig {
      * `hitboxCandidates.length`。省略＝既有單一 `hitbox` 行為逐位不變。
      */
     hitboxCandidates?: readonly TargetHitboxConfig[];
+    /** Optional concurrent target population. Omitted preserves the legacy single-active-target lifecycle. */
+    population?: TargetPopulationConfig;
     /** WP-21 seeded spawn:以 polar yaw/distance 範圍取樣 pop-in 位置；需搭配 `sequence.seed`。 */
     spawnArea?: SpawnAreaConfig;
     /** F5 接縫（規格附錄 G）:省略＝static（向後相容）。階段 A 不實作移動,WP-6.5 接管。 */

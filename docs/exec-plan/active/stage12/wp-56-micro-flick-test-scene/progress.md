@@ -6,10 +6,10 @@
 
 | Task | Status | Started | Completed | Evidence |
 |---|---|---|---|---|
-| T0 Entry Gate | Evidence complete；gate blocked | 2026-09-04 | — | Engine/GLTF/sampling PoC全綠；待OQ-56.2／3 owner freeze |
-| T1 Contract and Fixtures | Blocked by OQ-56.2／3 | — | — | 不得把engineering recommendation當產品決策 |
-| T2 Three-target Lifecycle | Blocked by T1 | — | — | — |
-| T3 Corridor Scene and Presentation | Blocked by T0/T1 | — | — | — |
+| T0 Entry Gate | Complete | 2026-09-04 | 2026-09-04 | Engine/GLTF/sampling PoC全綠；OQ-56.2／3由使用者明確T1指令解除 |
+| T1 Contract and Fixtures | Complete | 2026-09-04 | 2026-09-04 | targeted 93 tests、full Vitest 2099 tests、typecheck/build exit 0 |
+| T2 Three-target Lifecycle | Not started | — | — | T1 complete；可開工 |
+| T3 Corridor Scene and Presentation | Not started | — | — | T0/T1 complete；可開工 |
 | T4 Fixed Player, Hit and HUD | Blocked by T1–T3 | — | — | — |
 | T5 Automated Integration and Performance | Blocked by T2–T4 | — | — | — |
 | T6 Visual Acceptance | Blocked by T3–T5 | — | — | — |
@@ -28,14 +28,16 @@
 | D-56.P7 | 2026-09-04 | Translation lock最小seam為`createSimLoop` additive option選擇locked `MovementController`；mouse aim／Pointer Lock路徑不關閉 | Engineering | 真實`simStep`注入PoC保持x/z固定且yaw/pitch不變 |
 | D-56.P8 | 2026-09-04 | GLTF方案沿用`SceneAssetLoader`→`SceneManager`→fallback/dispose；asset只含環境，target由既有`TargetView` pool呈現 | Engineering | 21-mesh inventory、draw-call上界24、pool=3 after 1,000 replacements |
 | D-56.P9 | 2026-09-04 | 數值工程推薦Candidate A（75° FOV、yaw ±22°、pitch ±12°、3°球、7° separation、12–14u、60 kills），但未取得影片與owner確認前不凍結、不解鎖T1 | Engineering recommendation only | projection/sampling PoC；explicit OQ-56.2／3 blocker |
+| D-56.P10 | 2026-09-04 | 使用者明確要求實作T1，採用Candidate A與60-kill target quota，並以seed=56001凍結exact practice fixture | 使用者 + Engineering | Alternatives Considered：Candidate B與30秒time-limit；未選，因Candidate A畫面密度較保守且60-kill tail可直接做deterministic acceptance |
+| D-56.P11 | 2026-09-04 | T1先註冊asset-null的`micro-flick-room` scene contract，固定scene id、75° FOV、eye pose與room envelope；T3再以同ID升級為approved GLTF | Engineering | Alternatives Considered：只存sceneId字串但不註冊（researcher選取會失敗）、T1提前製作GLTF（越過T3）；選擇可載入的最小contract fixture |
 
 ## Open Questions（狀態）
 
 | ID | Status | Owner | Deadline | Notes |
 |---|---|---|---|---|
 | OQ-56.1 | Resolved | 使用者 | 2026-09-04 | 核心場景／玩法／no-gun scope已確認 |
-| OQ-56.2 | **Blocked** | 使用者 + Gameplay owner | **T1 start前** | workspace無`Media1.mp4`；請確認Candidate A或提供影片／替代數值 |
-| OQ-56.3 | **Blocked** | Gameplay owner | **T1 start前** | 請確認60-kill quota；未確認不進T1 |
+| OQ-56.2 | Resolved | 使用者 + Gameplay owner | 2026-09-04 | 使用者明確要求實作T1，採Candidate A；T6仍需manual visual sign-off |
+| OQ-56.3 | Resolved | Gameplay owner | 2026-09-04 | 採60-kill target quota |
 | OQ-56.4 | Open/non-blocking for v1 | Product/Research owner | T-exit | 是否另開 Assessment/full-replay WP |
 | OQ-56.5 | Open | 使用者 | T4 start | 是否需要影片式進階HUD；default否 |
 
@@ -71,7 +73,15 @@
 
 ## T1 Evidence Log
 
-尚未開始。
+- `DrillConfig`新增optional `TargetPopulationConfig`、`SpawnAreaConfig.pitchDegRange/minAngularSeparationDeg`與`PlayerControlConfig`；省略時不注入defaults，legacy canonical JSON parse output逐位不變。
+- `validateDrill`新增`activeCount` 1..16且`<=targets.count`、`replacement='next-tick'`、seed、pitch ±89°安全界、separation (0,180]°、obvious-impossible angular field與population/cue/spider/tracking/presentation/spawn-delay互斥驗證；所有錯誤帶field path。
+- exact fixture：`drillId=micro_flick_three_target_test_v1`、`sceneId=micro-flick-room`、practice、translation locked、population=3、yaw ±22°、pitch ±12°、distance 12–14u、7° separation、3° sphere（0.680834u @ 13u）、60 kills、seed=56001。
+- researcher registry已綁定exact drill/scene；T1 scene contract為asset-null procedural envelope（75° FOV、eyeZ=0、16×36×12 room），T3維持同sceneId升級GLTF與presentation。
+- 最新CodeGraph blast radius：`DrillConfig`117 callers（cross-module，27+ production files／11+ test files）；`SpawnAreaConfig`6 callers（config/schema/clearance）；`validateDrill`3 callers（local implementation、cross-contract）；`availableDrills`2、`AvailableScene`3（main registry local）；`classifyReplaySupport`4且`createHistoryPersistence`3（只加negative tests，production未改）。
+- Targeted：`npx.cmd vitest run src/drill/micro_flick_three_target_test_v1.test.ts src/drill/schema.test.ts src/scene/SceneConfig.test.ts` → 3 files／93 tests passed。
+- `npm.cmd run typecheck` → exit 0。`npm.cmd test -- --reporter=default` → 218 files passed + 1 skipped／2099 tests passed + 2 skipped。`npm.cmd run build` → exit 0、166 modules、bundle 1,190.42 kB（gzip 338.95 kB），只有既存>500 kB warning。
+- Sandbox內全量Vitest／Vite build首次因esbuild無權讀取workspace父目錄而無法載入`vite.config.ts`；以相同命令在已核准sandbox外重跑均exit 0。T1未跑Playwright：browser lifecycle／visual acceptance由T5/T6負責，且T0已記錄既存4項baseline failures。
+- `graphify update .` → 554/554 code files re-extracted，4274 nodes／10250 edges／254 communities。
 
 ## T2 Evidence Log
 

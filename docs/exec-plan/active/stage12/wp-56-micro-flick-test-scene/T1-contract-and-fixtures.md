@@ -22,15 +22,14 @@
 
 ## Definition of Done
 
-- [ ] README §2.3 contracts有實際type/schema tests，錯誤訊息帶正確field path。
-- [ ] 所有既有drill fixtures parse/canonical/determinism regressions全綠。
-- [ ] exact micro-flick config可載入，scene binding唯一且practice-only。
-- [ ] invalid combination與impossible field fail fast，不到TargetManager才throw。
-- [ ] replay/history/Assessment negative tests成立，progress記最新blast radius與測試數。
+- [x] README §2.3 contracts有實際type/schema tests，錯誤訊息帶正確field path。
+- [x] 所有既有drill fixtures parse/canonical/determinism regressions全綠。
+- [x] exact micro-flick config可載入，scene binding唯一且practice-only。
+- [x] invalid combination與impossible field fail fast，不到TargetManager才throw。
+- [x] replay/history/Assessment negative tests成立，progress記最新blast radius與測試數。
 
 ## Commit
 
 ```text
 feat(stage12): add micro-flick drill contracts
 ```
-

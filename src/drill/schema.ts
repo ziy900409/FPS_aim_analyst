@@ -2,15 +2,20 @@ import {
   MAX_TARGET_HITBOX_U,
   type DrillConfig,
   type CueScheduleConfig,
+  type PlayerControlConfig,
   type SpawnAreaConfig,
   type SpiderShotCenterPeripheralConfig,
   type SpiderShotScheduleConfig,
   type TargetHitboxConfig,
+  type TargetPopulationConfig,
   type TargetVisualSizeConfig,
 } from './DrillConfig.ts';
 import type { AssessmentMode } from './assessmentContract.ts';
 import type { TargetMotion } from '../state/types.ts';
 import type { TrackingTrajectoryConfig } from '../sim/trackingTrajectory.ts';
+
+const MAX_ACTIVE_TARGET_COUNT = 16;
+const MAX_ABS_SPAWN_PITCH_DEG = 89;
 
 /**
  * validateDrill — WP-6 / T1（FR-6.1，OQ-6.4）
@@ -34,6 +39,8 @@ export function validateDrill(json: unknown): DrillConfig {
   const weaponId =
     root.weaponId === undefined ? undefined : requireNonEmptyString(root.weaponId, 'weaponId');
   const cue = root.cue === undefined ? undefined : validateCueSchedule(root.cue);
+  const playerControl =
+    root.playerControl === undefined ? undefined : validatePlayerControl(root.playerControl);
 
   // targets — count 正整數、distance 正有限數、hitbox / spawnArea / motion 選填。
   const targets = requireObject(root.targets, 'targets');
@@ -42,6 +49,8 @@ export function validateDrill(json: unknown): DrillConfig {
   const hitbox = targets.hitbox === undefined ? undefined : validateHitbox(targets.hitbox);
   const hitboxCandidates =
     targets.hitboxCandidates === undefined ? undefined : validateHitboxCandidates(targets.hitboxCandidates);
+  const population =
+    targets.population === undefined ? undefined : validateTargetPopulation(targets.population, count);
   const spawnArea = targets.spawnArea === undefined ? undefined : validateSpawnArea(targets.spawnArea);
   const motion = targets.motion === undefined ? undefined : validateMotion(targets.motion);
   const trackingTrajectory =
@@ -54,6 +63,12 @@ export function validateDrill(json: unknown): DrillConfig {
   }
   if (trackingTrajectory !== undefined && motion !== undefined) {
     throw err('targets.trackingTrajectory', '不可與 targets.motion 同時提供');
+  }
+  if (spawnArea?.minAngularSeparationDeg !== undefined && population === undefined) {
+    throw err('targets.spawnArea.minAngularSeparationDeg', '需搭配 targets.population');
+  }
+  if (population !== undefined && spawnArea?.minAngularSeparationDeg !== undefined) {
+    validatePopulationSeparation(population, spawnArea);
   }
 
   // sequence — alternation 列舉、seed 與 seeded spawn delay 選填。
@@ -71,16 +86,31 @@ export function validateDrill(json: unknown): DrillConfig {
   if (spawnArea !== undefined && seed === undefined) {
     throw err('targets.spawnArea', '需搭配 sequence.seed');
   }
+  if (population !== undefined && seed === undefined) {
+    throw err('sequence.seed', 'targets.population 存在時必填');
+  }
   if (hitboxCandidates !== undefined && seed === undefined) {
     throw err('targets.hitboxCandidates', '需搭配 sequence.seed');
   }
   if (spawnDelayMsRange !== undefined && seed === undefined) {
     throw err('sequence.spawnDelayMsRange', '需搭配 sequence.seed');
   }
+  if (population !== undefined && spiderShot !== undefined) {
+    throw err('targets.population', '不可與 spiderShot 同時提供');
+  }
   if (spiderShot !== undefined) {
     if (spawnArea !== undefined) throw err('targets.spawnArea', '不可與 spiderShot 同時提供');
     if (spawnDelayMsRange !== undefined) throw err('sequence.spawnDelayMsRange', '不可與 spiderShot 同時提供');
     if (seed !== undefined) throw err('sequence.seed', '不可與 spiderShot 同時提供');
+  }
+  if (population !== undefined) {
+    if (cue !== undefined) throw err('targets.population', '不可與 cue 同時提供');
+    if (trackingTrajectory !== undefined) {
+      throw err('targets.population', '不可與 targets.trackingTrajectory 同時提供');
+    }
+    if (spawnDelayMsRange !== undefined) {
+      throw err('sequence.spawnDelayMsRange', '不可與 targets.population 同時提供');
+    }
   }
   if (mode === 'assessment' && seed === undefined && spiderShot === undefined) {
     throw err('sequence.seed', "mode='assessment' 時必填");
@@ -108,6 +138,14 @@ export function validateDrill(json: unknown): DrillConfig {
   if (trackingPrepMs !== undefined && trackingTrajectory === undefined) {
     throw err('timing.trackingPrepMs', '需搭配 targets.trackingTrajectory');
   }
+  if (population !== undefined) {
+    if (spawnDelayMs !== undefined && spawnDelayMs !== 0) {
+      throw err('timing.spawnDelayMs', "targets.population replacement='next-tick' 時必須省略或為 0");
+    }
+    if (presentationMs !== undefined) {
+      throw err('timing.presentationMs', '不可與 targets.population 同時提供');
+    }
+  }
 
   const protocolGuard = root.protocolGuard === undefined ? undefined : validateProtocolGuard(root.protocolGuard);
 
@@ -124,11 +162,13 @@ export function validateDrill(json: unknown): DrillConfig {
     ...(mode !== undefined ? { mode } : {}),
     ...(weaponId !== undefined ? { weaponId } : {}),
     ...(cue !== undefined ? { cue } : {}),
+    ...(playerControl !== undefined ? { playerControl } : {}),
     targets: {
       count,
       distance,
       ...(hitbox ? { hitbox } : {}),
       ...(hitboxCandidates ? { hitboxCandidates } : {}),
+      ...(population ? { population } : {}),
       ...(spawnArea ? { spawnArea } : {}),
       ...(motion ? { motion } : {}),
       ...(trackingTrajectory ? { trackingTrajectory } : {}),
@@ -151,6 +191,29 @@ export function validateDrill(json: unknown): DrillConfig {
     endCondition: { type, value },
     ...(protocolGuard !== undefined ? { protocolGuard } : {}),
   };
+}
+
+function validatePlayerControl(json: unknown): PlayerControlConfig {
+  const playerControl = requireObject(json, 'playerControl');
+  if (playerControl.translation !== 'enabled' && playerControl.translation !== 'locked') {
+    throw err('playerControl.translation', "必須為 'enabled' 或 'locked'");
+  }
+  return { translation: playerControl.translation };
+}
+
+function validateTargetPopulation(json: unknown, targetCount: number): TargetPopulationConfig {
+  const population = requireObject(json, 'targets.population');
+  const activeCount = requirePositiveInt(population.activeCount, 'targets.population.activeCount');
+  if (activeCount > MAX_ACTIVE_TARGET_COUNT) {
+    throw err('targets.population.activeCount', `必須 ≤ ${MAX_ACTIVE_TARGET_COUNT}`);
+  }
+  if (activeCount > targetCount) {
+    throw err('targets.population.activeCount', '必須 ≤ targets.count');
+  }
+  if (population.replacement !== 'next-tick') {
+    throw err('targets.population.replacement', "必須為 'next-tick'");
+  }
+  return { activeCount, replacement: 'next-tick' };
 }
 
 function validateCueSchedule(json: unknown): CueScheduleConfig {
@@ -287,10 +350,76 @@ function requireHitboxShape(v: unknown, path: string): 'box' | 'sphere' {
 
 function validateSpawnArea(json: unknown): SpawnAreaConfig {
   const spawnArea = requireObject(json, 'targets.spawnArea');
+  const pitchDegRange =
+    spawnArea.pitchDegRange === undefined
+      ? undefined
+      : requireSpawnPitchRange(spawnArea.pitchDegRange, 'targets.spawnArea.pitchDegRange');
+  const minAngularSeparationDeg =
+    spawnArea.minAngularSeparationDeg === undefined
+      ? undefined
+      : requireAngularSeparation(spawnArea.minAngularSeparationDeg, 'targets.spawnArea.minAngularSeparationDeg');
   return {
     yawDegRange: requireRange(spawnArea.yawDegRange, 'targets.spawnArea.yawDegRange'),
     distanceURange: requirePositiveRange(spawnArea.distanceURange, 'targets.spawnArea.distanceURange'),
+    ...(pitchDegRange !== undefined ? { pitchDegRange } : {}),
+    ...(minAngularSeparationDeg !== undefined ? { minAngularSeparationDeg } : {}),
   };
+}
+
+function requireSpawnPitchRange(v: unknown, path: string): [number, number] {
+  const range = requireRange(v, path);
+  if (range[0] < -MAX_ABS_SPAWN_PITCH_DEG) {
+    throw err(`${path}[0]`, `必須 ≥ -${MAX_ABS_SPAWN_PITCH_DEG}`);
+  }
+  if (range[1] > MAX_ABS_SPAWN_PITCH_DEG) {
+    throw err(`${path}[1]`, `必須 ≤ ${MAX_ABS_SPAWN_PITCH_DEG}`);
+  }
+  return range;
+}
+
+function requireAngularSeparation(v: unknown, path: string): number {
+  const separation = requirePositiveNumber(v, path);
+  if (separation > 180) throw err(path, '必須 ≤ 180');
+  return separation;
+}
+
+function validatePopulationSeparation(
+  population: TargetPopulationConfig,
+  spawnArea: SpawnAreaConfig,
+): void {
+  if (population.activeCount <= 1 || spawnArea.minAngularSeparationDeg === undefined) return;
+  const pitchRange = spawnArea.pitchDegRange ?? [0, 0];
+  const fieldDiameterDeg = angularFieldDiameterDeg(spawnArea.yawDegRange, pitchRange);
+  if (spawnArea.minAngularSeparationDeg > fieldDiameterDeg + Number.EPSILON) {
+    throw err(
+      'targets.spawnArea.minAngularSeparationDeg',
+      `超過 spawn angular field 可容納的最大中心角 ${fieldDiameterDeg.toFixed(6)}°`,
+    );
+  }
+}
+
+function angularFieldDiameterDeg(
+  yawRange: readonly [number, number],
+  pitchRange: readonly [number, number],
+): number {
+  if (Math.abs(yawRange[1] - yawRange[0]) >= 180) return 180;
+  let maxAngleRad = 0;
+  for (const yawA of yawRange) {
+    for (const pitchA of pitchRange) {
+      for (const yawB of yawRange) {
+        for (const pitchB of pitchRange) {
+          const yawDelta = ((yawA - yawB) * Math.PI) / 180;
+          const pitchARad = (pitchA * Math.PI) / 180;
+          const pitchBRad = (pitchB * Math.PI) / 180;
+          const dot =
+            Math.sin(pitchARad) * Math.sin(pitchBRad) +
+            Math.cos(pitchARad) * Math.cos(pitchBRad) * Math.cos(yawDelta);
+          maxAngleRad = Math.max(maxAngleRad, Math.acos(Math.max(-1, Math.min(1, dot))));
+        }
+      }
+    }
+  }
+  return (maxAngleRad * 180) / Math.PI;
 }
 
 /** motion 形狀驗證（F5 接縫,附錄 G）:type 列舉必填;數值欄位若提供須正/有限。 */
