@@ -211,6 +211,12 @@
 
 ### T7 工程 slice（已 commit）
 
+- [x] **slice 10**：**B-3b seed 家族等效性**——`scripts/trackingGateBSeedEquivalence.ts`
+      （純函式，9 tests）+ runner 印出。§2.5 A-3 的 CI 形式（成對差 90% CI ⊂ ±15%，等價於
+      α=0.05 雙單尾 t；t 臨界值查表，df 由協定固定在 5–7 且查表可覆核）。§2.2 兩條子句都要過。
+      **結論三分** `equivalent` / `not-shown-equivalent` / `different`——n=6–8 檢力偏低，
+      「無法宣告等效」不得折成「不等效」（gate §6 的誠實要求）。
+      ⇒ **Gate B 工程前置全部完成**，只剩 G5 乾跑與真人資料。
 - [x] **slice 9**：**Gate B 的 cell 層聚合與 §2.3 判定**——`scripts/trackingGateBAggregates.ts`
       （純函式，15 tests：§2.2 門檻升成具名常數、逐 cell B-1/B-2a/B-2b/B-3c/B-4 + 跨 cell B-3a
       方向、照 §2.3 規則順序輸出 retained/revise/remove/insufficient-data 與逐條理由）

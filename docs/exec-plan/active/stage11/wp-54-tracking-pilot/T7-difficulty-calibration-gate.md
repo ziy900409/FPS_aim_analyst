@@ -223,6 +223,7 @@ npx vite-node scripts/analyze-tracking-pilot.ts -- <資料夾...> --out .pilot-a
 | **6** | **time-on-task slope 的逐 run 輸入**（B-3c：同一 scored 窗前 5 s vs 後 5 s 的 RMS ε 與 Δ） | `computeTrackingTimeOnTaskSlope()` |
 | — | evidence JSON + self-contained HTML + parity | `buildTrackingPilotEvidence()` / `renderTrackingPilotReportHtml()` |
 | **Gate B** | **逐 cell 判準與 §2.3 判定**（B-1 / B-2a / B-2b / B-3a / B-3c / B-4 + retained·revise·remove·insufficient-data） | `extractTrackingGateBRuns()` → `aggregateTrackingGateB()` |
+| **B-3b** | **seed 家族等效性**（成對 TOST，protocol-level，唯一讀 family B 的判準） | `evaluateTrackingSeedEquivalence()` |
 
 Gate B 那一段每次都印,**即使批次遠不足 12–20 人**——這時每個 cell 會照 §2.3 規則 1 回
 `insufficient-data`,正是招募途中該看到的東西,而不是一個看起來可用的數字。
@@ -257,11 +258,11 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
       `trackingGateBAggregates.ts`（純函式，15 tests）+ `trackingGateBExtract.ts`（6 tests），
       分析 runner 每次印出（**2026-09-04 / slice 9**）。
 
-**工程前置（招募前仍未完成 ⬜）**
+- [x] **B-3b（seed 家族成對差 + TOST，§2.5 A-3）**——`trackingGateBSeedEquivalence.ts`
+      （純函式，9 tests），分析 runner 每次印出（**2026-09-04 / slice 10**）。結論為**三分**：
+      `equivalent` / `not-shown-equivalent` / `different`，**不得**把中間那個折成任一端。
 
-- [ ] **B-3b（seed 家族成對差 + TOST）尚無實作**。依 §2.3 規則 5 它不改變單一 cell 的
-      retained/remove，故與 cell 層聚合分開落地;但 §2.4 的 go 判定需要它 ⇒ **必須在 6–8 人的
-      family B 資料回收之前完成**。
+⇒ **Gate B 的工程前置已全部完成**；剩下的只有 G5 乾跑（§3）與真人資料（§4）。
 
 **乾跑（§3,招募前）**
 

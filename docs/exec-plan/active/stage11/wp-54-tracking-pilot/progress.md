@@ -8,6 +8,25 @@
 
 ## Progress
 
+### 2026-09-04 — T7 slice 10：B-3b seed 家族等效性（成對 TOST）⇒ Gate B 工程前置全部完成
+
+- **`scripts/trackingGateBSeedEquivalence.ts`**（純函式，**9 tests**）+ runner 印出。這是**唯一讀
+  family B 的判準**（§2.5 A-1），也是 §2.4 的 go 判定所需的最後一塊。
+- **依 §2.5 A-3 實作為 CI 形式**：成對差的 90% CI 是否落在 ±15% 內——與「α=0.05 的雙單尾 t」
+  數學等價，但那正是 gate 報表要呈現的形式，且只需一個臨界值而非整個 t 分布函式。
+  臨界值用**查表**（df 1–40 + 常態極限）而非數值反解 incomplete beta：df 由協定固定在 5–7，
+  而查表可對任何統計教科書覆核，反解不行。
+- **§2.2 的兩條子句都要過才 pass**：|median 成對差| ≤ 10%（相對 family A median RMS ε）**且**
+  TOST 等效。測試直接釘住「TOST 過但 median 子句不過」這個岔路。
+- **結論刻意做成三分**——`equivalent` / `not-shown-equivalent` / `different`：
+  n=6–8 檢力偏低，**「無法宣告等效」是常態,不是「不等效」的證據**（§2.5 A-3 / gate §6 的誠實
+  要求）。`not-shown-equivalent` 會自動附上一句說明,禁止把它折成任一端。CI 整段越界才判
+  `different`。`pooledAcrossFamiliesPermitted` 只有在每個被判的 cell 都 `equivalent` 時為 true。
+- **A-2 同樣適用**：同一人在同一 family 內多份 run 取中位數,一個跑很多次的人不會蓋過其他人。
+- **gate §6**：工程前置全部打勾 ⇒ **剩下的只有 G5 乾跑（§3）與真人資料（§4）**。
+- **驗證**：`npx vitest run` **216 files / 2071 tests passed**；`npx tsc --noEmit` 與
+  `-p tsconfig.node.json` 皆 exit 0。
+
 ### 2026-09-04 — T7 slice 9：Gate B 的 cell 層聚合與 §2.3 判定（B-3b 之外全部落地）
 
 - **`scripts/trackingGateBAggregates.ts`**（純函式，**15 tests**）：§2.2 的門檻全部升成具名常數,

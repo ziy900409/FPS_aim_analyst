@@ -56,6 +56,10 @@ import {
 import { aggregateTrackingGateB, formatTrackingGateBReport } from './trackingGateBAggregates.ts';
 import { extractTrackingGateBRuns } from './trackingGateBExtract.ts';
 import {
+  evaluateTrackingSeedEquivalence,
+  formatTrackingSeedEquivalence,
+} from './trackingGateBSeedEquivalence.ts';
+import {
   createTrackingTrajectory,
   type TrackingTrajectoryConfig,
   type TrackingTrajectorySample,
@@ -289,6 +293,10 @@ function main(): void {
     );
   }
   console.log(`\n${formatTrackingGateBReport(aggregateTrackingGateB(gateB.runs))}`);
+  // B-3b is the one criterion that reads seed family B (§2.5 A-1), and it is protocol-level: it
+  // never changes a cell's retained/remove verdict, only whether the families may be pooled
+  // (§2.3 rule 5). Hence its own section rather than a column in the table above.
+  console.log(formatTrackingSeedEquivalence(evaluateTrackingSeedEquivalence(gateB.runs)));
 
   mkdirSync(outDir, { recursive: true });
   const evidenceJson = join(outDir, 'tracking-pilot-evidence.json');
