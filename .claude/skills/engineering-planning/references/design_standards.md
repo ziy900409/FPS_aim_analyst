@@ -59,15 +59,19 @@ graph LR
 - 回傳值說明
 - Error 情境
 
-**Go 介面範例**:
-```go
-// MouseEventSource 提供滑鼠原始事件的串流介面
-type MouseEventSource interface {
-    // Start 開始監聽，回傳 event channel 和 error channel
-    // ctx 用於取消監聽
-    Start(ctx context.Context) (<-chan MouseEvent, <-chan error)
-    Close() error
-}
+**TypeScript 介面範例(本 repo 風格:純函式 + 驗證即建構)**:
+```ts
+/**
+ * 淨空驗證:目標包絡 vs 場景 propBounds。
+ * @param envelopes drill 推導出的目標活動包絡(canonical unit u)
+ * @param props     場景權威 prop AABB(唯讀,render/validation 層獨有 — GD-6)
+ * @returns 違規清單;空陣列 = 通過。呼叫端負責拒載並顯示 prop id。
+ */
+export function validateClearance(
+  envelopes: readonly TargetEnvelope[],
+  props: readonly PropBound[],
+  options?: ClearanceOptions,
+): ClearanceViolation[];
 ```
 
 ### Failure Modes
@@ -76,12 +80,14 @@ type MouseEventSource interface {
 - **影響範圍**: 失敗時影響哪些功能
 - **處理策略**: retry / fallback / 用戶通知 / graceful degradation
 
-### Concurrency Model
-若設計涉及以下情境，**必須**說明：
-- 多個 goroutine 共享資料
-- channel 的 buffer 大小選擇
-- mutex 使用時機
-- context 取消傳播
+### 決定性契約與三迴圈邊界（本 repo 的併發模型）
+
+若設計觸及 sim 迴圈、`SharedState`、輸入鏈或命中判定，**必須**說明：
+- **決定性**：同一輸入序列在不同 render FPS 下，tick index 對應的狀態是否逐位一致?用哪條斷言釘死?
+- **三迴圈邊界 (ADR-2)**：input / sim / render 只透過 `SharedState` 溝通;新資料走哪個方向、由誰寫、由誰唯讀。
+- **固定佈局**：新增緩衝是真 ring(消費後繞圈)還是 preallocated arena(drill 內不繞圈)?欄位固定嗎?
+- **時鐘域**：所有時間戳來自 `performance.now()`;sim 內不得讀時鐘(以 tick 累加的 `age` 驅動)。
+- **seeded RNG**：任何隨機性的 seed 來源與是否寫入匯出 metadata(GD-5/GD-8)。
 
 ---
 
@@ -115,9 +121,14 @@ DoD **必須**是可客觀驗證的，禁止使用主觀描述：
 
 | 禁止 | 改為 |
 |---|---|
-| 「功能完成」 | 「所有 unit test 通過，覆蓋率 > 80%」 |
-| 「程式碼寫好」 | 「PR review 通過，CI 綠燈」 |
-| 「介面實作完成」 | 「介面符合 Interface Contracts 的簽名定義，且有對應的 mock 可供測試」 |
+| 「功能完成」 | 「`npm run test:ci` exit 0(N vitest + M e2e)」 |
+| 「程式碼寫好」 | 「新增對抗性 fixture(恰相交/恰不相交)兩例皆綠」 |
+| 「介面實作完成」 | 「介面符合 Interface Contracts 簽名,且 `validate*` 對非法輸入拋出指名欄位的錯誤」 |
+| 「場景做好了」 | 「實機渲染 + 既有 drill 全程無掉 tick,draw call / 三角形數記入 `progress.md`」 |
+| 「不影響決定性」 | 「同輸入序列跨場景/跨 FPS 的 sim 狀態逐位一致斷言通過(測試檔名 + 案例名)」 |
+
+**DoD 必須是可執行或可觀察的證據**：指令 + 期望輸出、斷言檔名 + 案例名、或實機證據(截圖/數值記入 `progress.md`)。
+主觀語句(「實作完成」「運作正常」「看起來沒問題」)一律不合格。
 
 ### Dependencies 標記規則
 - 若 Task B 依賴 Task A，標記 `Task A`（用 Task 編號）
@@ -136,6 +147,8 @@ DoD **必須**是可客觀驗證的，禁止使用主觀描述：
 [ ] Definition of Done 可被客觀驗證（非「完成實作」）
 [ ] Data flow 有圖示或流程說明（非空白）
 [ ] System boundary 明確列出 in scope / out of scope
-[ ] Concurrency model 若涉及 goroutine / mutex 則必填
+[ ] 決定性契約與三迴圈邊界:若觸及 sim / SharedState / 輸入鏈 / 命中判定則必填
+[ ] 硬約束衝擊表(`CLAUDE.md §4`)逐條填寫,無留白、無裸「N/A」
+[ ] 每個 Task 自帶一行 conventional-commit 訊息(一 task = 一原子 commit)
 [ ] Technical debt 若有妥協則標記後續處理計畫
 ```
