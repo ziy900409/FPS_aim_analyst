@@ -1,4 +1,22 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__codegraph__codegraph_search",
+      "mcp__codegraph__codegraph_context",
+      "mcp__codegraph__codegraph_callers",
+      "mcp__codegraph__codegraph_callees",
+      "mcp__codegraph__codegraph_impact",
+      "mcp__codegraph__codegraph_node",
+      "mcp__codegraph__codegraph_status",
+      "Bash(npx vitest *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"tsc\\(app\\)=$?\")",
+      "Bash(python -)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(echo \"tsc\\(node\\)=$?\")"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -10,17 +28,6 @@
           }
         ]
       }
-    ]
-  },
-  "permissions": {
-    "allow": [
-      "mcp__codegraph__codegraph_search",
-      "mcp__codegraph__codegraph_context",
-      "mcp__codegraph__codegraph_callers",
-      "mcp__codegraph__codegraph_callees",
-      "mcp__codegraph__codegraph_impact",
-      "mcp__codegraph__codegraph_node",
-      "mcp__codegraph__codegraph_status"
     ]
   }
 }
