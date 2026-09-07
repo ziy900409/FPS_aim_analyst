@@ -85,6 +85,7 @@ import { peekCorridor } from './scene/scenes/peek-corridor.ts';
 import { peekAdCorridor } from './scene/scenes/peek-ad-corridor.ts';
 import { microFlickRoom } from './scene/scenes/micro-flick-room.ts';
 import { spiderShotRoom } from './scene/scenes/spider-shot-room.ts';
+import { wideFlickArena } from './scene/scenes/wide-flick-arena.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
@@ -142,6 +143,8 @@ const availableScenes: AvailableScene[] = [
   { id: peekAdCorridor.sceneId, label: 'peek-ad-corridor-v1', config: peekAdCorridor },
   { id: microFlickRoom.sceneId, label: microFlickRoom.sceneId, config: microFlickRoom },
   { id: spiderShotRoom.sceneId, label: spiderShotRoom.sceneId, config: spiderShotRoom },
+  // WP-57 / T3：寬場 arena。drill 的 roster 註冊需 arm-time resolve（FOV/aspect），屬 T6。
+  { id: wideFlickArena.sceneId, label: wideFlickArena.sceneId, config: wideFlickArena },
 ];
 let activeSceneConfig: SceneConfig = fieldLow;
 let activeSceneFallback = false;
