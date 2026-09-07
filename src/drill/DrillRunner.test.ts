@@ -6,6 +6,7 @@ import { createSharedState, type SharedState } from '../state/SharedState.ts';
 import { createTargetManager, type TargetManager } from '../sim/TargetManager.ts';
 import type { DrillConfig } from './DrillConfig.ts';
 import { createDrillRunner } from './DrillRunner.ts';
+import { microFlickThreeTargetTestV1 } from './micro_flick_three_target_test_v1.ts';
 import { spiderShotV1 } from './spider_shot_v1.ts';
 
 /** 最小合法 config；各測試以 spread 覆寫需要的欄位。 */
@@ -315,6 +316,82 @@ describe('DrillRunner — 生命週期（FR-6.4）', () => {
     runner.tick(state, 100);
     expect(runner.phase).toBe('idle');
     expect(state.targets).toHaveLength(0);
+  });
+});
+
+describe('DrillRunner — WP-56 T2 three-target population compatibility', () => {
+  function populationConfig(overrides: Partial<DrillConfig> = {}): DrillConfig {
+    const base = microFlickThreeTargetTestV1.drill;
+    return {
+      ...base,
+      targets: { ...base.targets, count: 6 },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: 6 },
+      ...overrides,
+    };
+  }
+
+  it('counts exact removals across replenishment and ends only after the six-target budget is drained', () => {
+    const config = populationConfig();
+    const { state, tm, runner } = setup(config);
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(state.targets.map((target) => target.id)).toEqual(['t0', 't1', 't2']);
+
+    const initial = state.targets.map((target) => ({ id: target.id, pos: { ...target.pos } }));
+    tm.markKilled(state, 't1');
+    expect(runner.phase).toBe('running');
+    runner.tick(state, 1000 / SIM_HZ);
+    expect(state.targets.map((target) => target.id)).toEqual(['t0', 't2', 't3']);
+    expect(state.targets.slice(0, 2).map((target) => ({ id: target.id, pos: target.pos }))).toEqual([
+      initial[0],
+      initial[2],
+    ]);
+
+    for (let killed = 1; killed < 6; killed++) {
+      tm.markKilled(state, state.targets[0].id);
+      runner.tick(state, (killed + 1) * (1000 / SIM_HZ));
+    }
+    expect(runner.phase).toBe('ended');
+    expect(state.targets).toHaveLength(0);
+  });
+
+  it('restart clears population IDs and rebuilds the same seeded opening trace', () => {
+    const config = populationConfig();
+    const { state, tm, runner } = setup(config);
+    runner.start(config);
+    runner.tick(state, 0);
+    const opening = state.targets.map((target) => ({ id: target.id, pos: { ...target.pos } }));
+    tm.markKilled(state, 't0');
+    runner.tick(state, 1000 / SIM_HZ);
+
+    runner.restart();
+    expect(runner.phase).toBe('idle');
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(state.targets.map((target) => ({ id: target.id, pos: target.pos }))).toEqual(opening);
+  });
+
+  it('peek timeout removes at most one of three active targets per tick and still reaches targetCount', () => {
+    const config = populationConfig({
+      targets: { ...populationConfig().targets, count: 3 },
+      timing: { countdownMs: 0, peekTimeoutMs: 100 },
+      endCondition: { type: 'targetCount', value: 3 },
+    });
+    const { state, runner } = setup(config);
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(state.targets.map((target) => target.id)).toEqual(['t0', 't1', 't2']);
+
+    runner.tick(state, 100);
+    expect(state.targets.map((target) => target.id)).toEqual(['t1', 't2']);
+    expect(runner.phase).toBe('running');
+    runner.tick(state, 101);
+    expect(state.targets.map((target) => target.id)).toEqual(['t2']);
+    expect(runner.phase).toBe('running');
+    runner.tick(state, 102);
+    expect(state.targets).toHaveLength(0);
+    expect(runner.phase).toBe('ended');
   });
 });
 

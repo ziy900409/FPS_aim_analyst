@@ -8,12 +8,12 @@
 |---|---|---|---|---|
 | T0 Entry Gate | Complete | 2026-09-04 | 2026-09-04 | Engine/GLTF/sampling PoC全綠；OQ-56.2／3由使用者明確T1指令解除 |
 | T1 Contract and Fixtures | Complete | 2026-09-04 | 2026-09-04 | targeted 93 tests、full Vitest 2099 tests、typecheck/build exit 0 |
-| T2 Three-target Lifecycle | Not started | — | — | T1 complete；可開工 |
+| T2 Three-target Lifecycle | Complete | 2026-09-07 | 2026-09-07 | initial/replacement/tail/restart/fallback、10k invariants、四FPS parity與full Vitest全綠 |
 | T3 Corridor Scene and Presentation | Not started | — | — | T0/T1 complete；可開工 |
-| T4 Fixed Player, Hit and HUD | Blocked by T1–T3 | — | — | — |
-| T5 Automated Integration and Performance | Blocked by T2–T4 | — | — | — |
+| T4 Fixed Player, Hit and HUD | Blocked by T3 | — | — | T1/T2 complete |
+| T5 Automated Integration and Performance | Blocked by T3–T4 | — | — | T2 complete |
 | T6 Visual Acceptance | Blocked by T3–T5 | — | — | — |
-| T-exit | Blocked by T1–T6 | — | — | — |
+| T-exit | Blocked by T3–T6 | — | — | T0–T2 complete |
 
 ## Decision Log
 
@@ -30,6 +30,7 @@
 | D-56.P9 | 2026-09-04 | 數值工程推薦Candidate A（75° FOV、yaw ±22°、pitch ±12°、3°球、7° separation、12–14u、60 kills），但未取得影片與owner確認前不凍結、不解鎖T1 | Engineering recommendation only | projection/sampling PoC；explicit OQ-56.2／3 blocker |
 | D-56.P10 | 2026-09-04 | 使用者明確要求實作T1，採用Candidate A與60-kill target quota，並以seed=56001凍結exact practice fixture | 使用者 + Engineering | Alternatives Considered：Candidate B與30秒time-limit；未選，因Candidate A畫面密度較保守且60-kill tail可直接做deterministic acceptance |
 | D-56.P11 | 2026-09-04 | T1先註冊asset-null的`micro-flick-room` scene contract，固定scene id、75° FOV、eye pose與room envelope；T3再以同ID升級為approved GLTF | Engineering | Alternatives Considered：只存sceneId字串但不註冊（researcher選取會失敗）、T1提前製作GLTF（越過T3）；選擇可載入的最小contract fixture |
+| D-56.P12 | 2026-09-07 | Population spawn保留既有horizontal `distanceURange`語意，以`TARGET_Y + tan(pitch) * distance`投影垂直角；每個spawn最多32次seeded rejection，失敗後掃固定9×7 cell centres並取最大最小角距，仍不可行則明確throw；DrillRunner production不改 | Engineering | Alternatives Considered：把distance改為完整球面半徑（會改既有spawn distance語意）、只在32次後throw（放棄T0凍結fallback）、新增runner killed counter（tests證明`seenIds - targets.length`已可泛化，無需增加狀態） |
 
 ## Open Questions（狀態）
 
@@ -85,7 +86,20 @@
 
 ## T2 Evidence Log
 
-尚未開始。
+- 開工前CodeGraph blast radius：`createTargetManager` 39 callers／`TargetManager` 28 consumers，屬cross-module High；graphify將`createTargetManager()`列為50-edge god node，目標狀態流維持`TargetManager → SharedState.targets → TargetView`。
+- `TargetManager.tick()`新增optional population分支：每個sim tick以bounded `for`補到`activeCount`且不超過`targets.count`；legacy無population仍走原`hasAliveTarget()`單靶路徑，既有seeded yaw→distance抽樣順序不變。
+- population候選以seeded yaw→pitch→distance抽樣；pitch相對既有`TARGET_Y` sightline投影。pair separation以中心相對unit directions計算；固定32次rejection後走9×7（63-cell）deterministic farthest fallback，不可容納時以固定訊息失敗，無unbounded loop／`Math.random()`／render clock。
+- exact-ID lifecycle：initial tick產生`t0/t1/t2`且各一筆visible event；撤`t1`後`t0/t2` ID/position逐位不變，下一個7.8125 ms tick補`t3`；unknown與double kill均no-op且不消耗budget。
+- budget tail測得`3 → 3 → 3 → 2 → 1 → 0`；真實`DrillRunner`在6-target budget完成後進`ended`，restart清空IDs並重建相同seed opening trace；peek timeout每tick至多撤一個且最終正確達targetCount。runner既有`seenIds.size - state.targets.length`已成立，production source未修改。
+- property/regression：10,000 replacements全數finite、yaw±22°、pitch±12°、horizontal distance 12–14u、unique active IDs且pair separation≥7°；同seed SHA-256 trace一致、不同seed不同；30/60/144/240 render FPS的96-tick replacement trace逐位一致且包含多個replacement IDs。
+- Targeted：`npx.cmd vitest run ...`（TargetManager population/legacy、DrillRunner、schema、micro-flick fixture、moving-target determinism）→ 6 files／196 tests passed；10k property case 3.478 s（含每次全invariant assertions，非T5 production P95 benchmark）。
+- `npm.cmd run typecheck` → exit 0。sandbox內full Vitest／Vite build因esbuild無權讀workspace父目錄而啟動失敗；依既有T1環境處理在sandbox外重跑：full Vitest 219 files passed + 1 skipped／2147 tests passed + 2 skipped；build 166 modules、1,193.96 kB（gzip 340.06 kB），僅既存>500 kB warning。
+- `graphify update .` → 555/555 code files re-extracted，4298 nodes／10315 edges／273 communities。
+
+## Surprises & Discoveries（T2）
+
+- `DrillRunner`註解雖寫單active，但其實際count公式對「補位時固定3、budget尾段逐步下降」自然成立；新增三靶target-count／restart／timeout tests後無須更動runner production code，縮小了原先預估的cross-module修改面。
+- 10k invariant測試的時間主要來自每次Vitest assertions（targeted 3.478 s；full-suite並行時6.409 s），因此只作correctness/stress evidence；NFR-56.4的warmed P95仍保留給T5專用benchmark，不把此數字誤報為hot-path latency。
 
 ## T3 Evidence Log
 

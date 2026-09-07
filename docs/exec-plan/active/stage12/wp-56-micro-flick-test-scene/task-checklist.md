@@ -21,11 +21,11 @@
 
 ## T2 — Three-target Lifecycle
 
-- [ ] 初始 tick補滿三個 unique visible/alive targets。
-- [ ] 命中只替換 exact ID，兩個 survivors ID/position不變。
-- [ ] replacement ≤1 sim tick；spawn budget尾段與end condition正確。
-- [ ] restart同seed sequence hash一致；不同seed有反空洞差異。
-- [ ] 10k spawn bounds/separation與30/60/144/240 FPS parity全綠。
+- [x] 初始 tick補滿三個 unique visible/alive targets。
+- [x] 命中只替換 exact ID，兩個 survivors ID/position不變。
+- [x] replacement ≤1 sim tick；spawn budget尾段與end condition正確。
+- [x] restart同seed sequence hash一致；不同seed有反空洞差異。
+- [x] 10k spawn bounds/separation與30/60/144/240 FPS parity全綠。
 
 ## T3 — Corridor Scene and Presentation
 

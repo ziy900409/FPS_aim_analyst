@@ -25,15 +25,14 @@
 
 ## Definition of Done
 
-- [ ] FR-56.6～10 unit/property/integration tests全綠。
-- [ ] NFR-56.1～3與四render-FPS trace parity達標。
-- [ ] TargetManager tick熱路徑無unbounded loop／`Math.random()`／render-clock依賴。
-- [ ] DrillRunner target-count、restart與timeout語意對3 active有客觀evidence。
-- [ ] legacy full test suite無spawn/movement/metric回歸，perf初測寫入progress。
+- [x] (2026-09-07 07:12Z) FR-56.6～10 unit/property/integration tests全綠。
+- [x] (2026-09-07 07:12Z) NFR-56.1～3與四render-FPS trace parity達標。
+- [x] (2026-09-07 07:12Z) TargetManager tick熱路徑無unbounded loop／`Math.random()`／render-clock依賴。
+- [x] (2026-09-07 07:12Z) DrillRunner target-count、restart與timeout語意對3 active有客觀evidence。
+- [x] (2026-09-07 07:12Z) legacy full test suite無spawn/movement/metric回歸，perf初測寫入progress。
 
 ## Commit
 
 ```text
 feat(stage12): support deterministic three-target population
 ```
-

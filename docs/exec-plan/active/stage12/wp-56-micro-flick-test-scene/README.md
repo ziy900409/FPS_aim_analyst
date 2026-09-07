@@ -14,7 +14,7 @@
 | **Delivery policy** | v1 為 practice／researcher-only；不加入正式 participant protocol、不宣稱 full replay、不改研究指標定義 |
 | **Estimate** | 8.5–15.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：`DrillConfig` 與 `SceneConfig` 為跨模組核心契約；`TargetManager`／`DrillRunner` 註解與部分測試建立在單 active target 假設上 |
-| **Status** | T0／T1 complete（2026-09-04）；使用者以明確 T1 實作指令採用 Candidate A 與 60-kill quota，T2～T6未開始 |
+| **Status** | T0／T1 complete（2026-09-04）；T2 complete（2026-09-07）；T3～T6未開始 |
 
 ---
 
@@ -226,7 +226,7 @@ export interface TargetManager {
 既有 interface 不擴張；行為由 config 決定：
 
 1. legacy（無 `population`）維持現有單 active 路徑。
-2. population mode 在 `tick()` 內執行 bounded `while (active < activeCount && spawned < count)`；每次 spawn 只消費固定順序的 seeded RNG。
+2. population mode 在 `tick()` 內以 bounded `for` 補足 `min(activeCount - active, count - spawned)`；每次 spawn 只消費固定順序的 seeded RNG。
 3. 每個 candidate 必須在 yaw/pitch/distance bounds，且與本幀已接受 active targets 達到 separation。
 4. rejection sampling 使用 T0 凍結的固定 attempt 上限；超限走 deterministic grid/farthest fallback 或回 typed configuration error，不得無限迴圈、不得讀 `Math.random()`。
 5. `markKilled` 只處理當下存在且 alive 的 exact ID；unknown/stale ID 為 no-op。

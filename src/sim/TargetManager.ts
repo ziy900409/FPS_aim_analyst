@@ -68,6 +68,14 @@ const TARGET_Y = 1.5;
 /** 左右 peek 槽位相對中軸的水平偏移(u)。 */
 const SIDE_OFFSET = 2;
 const DEG_TO_RAD = Math.PI / 180;
+const RAD_TO_DEG = 180 / Math.PI;
+/** WP-56 T0 frozen bound: population rejection sampling is always finite. */
+export const TARGET_POPULATION_SPAWN_ATTEMPT_LIMIT = 32;
+const TARGET_POPULATION_FALLBACK_YAW_CELLS = 9;
+const TARGET_POPULATION_FALLBACK_PITCH_CELLS = 7;
+const TARGET_POPULATION_FALLBACK_CELL_COUNT =
+  TARGET_POPULATION_FALLBACK_YAW_CELLS * TARGET_POPULATION_FALLBACK_PITCH_CELLS;
+const ANGULAR_SEPARATION_EPSILON_DEG = 1e-10;
 /**
  * 每 tick age 累加步長(邏輯秒)= sim tick 週期 `1/SIM_HZ`,**常數**(不代入變動 dt;決定性根源,
  * WP-18 / T1,CLAUDE.md §4)。與 recoil 64Hz 子節奏用固定 `1/64` 同紀律——sim 子速率一律常數。
@@ -82,6 +90,55 @@ const trajectorySample: TrackingTrajectorySample = { yawDeg: 0, pitchDeg: 0, yaw
 
 function sideX(side: 'L' | 'R'): number {
   return side === 'R' ? SIDE_OFFSET : -SIDE_OFFSET;
+}
+
+interface SpawnPose {
+  readonly side: 'L' | 'R';
+  readonly zone?: 'center' | 'peripheral';
+  readonly pos: Vec3;
+}
+
+/** Project yaw/pitch around the legacy target-centre sightline without changing horizontal distance semantics. */
+function angularSpawnPose(yawDeg: number, pitchDeg: number, distanceU: number, nextSide: 'L' | 'R'): SpawnPose {
+  const yawRad = yawDeg * DEG_TO_RAD;
+  const pitchRad = pitchDeg * DEG_TO_RAD;
+  return {
+    side: yawDeg < 0 ? 'L' : yawDeg > 0 ? 'R' : nextSide,
+    pos: {
+      x: Math.sin(yawRad) * distanceU,
+      y: TARGET_Y + Math.tan(pitchRad) * distanceU,
+      z: -Math.cos(yawRad) * distanceU,
+    },
+  };
+}
+
+function centerRelativeDirection(pos: Vec3): Vec3 {
+  const x = pos.x;
+  const y = pos.y - TARGET_Y;
+  const z = pos.z;
+  const inverseLength = 1 / Math.hypot(x, y, z);
+  return { x: x * inverseLength, y: y * inverseLength, z: z * inverseLength };
+}
+
+function angularSeparationDeg(left: Vec3, right: Vec3): number {
+  const a = centerRelativeDirection(left);
+  const b = centerRelativeDirection(right);
+  const dot = Math.max(-1, Math.min(1, a.x * b.x + a.y * b.y + a.z * b.z));
+  return Math.acos(dot) * RAD_TO_DEG;
+}
+
+function minimumActiveSeparationDeg(state: SharedState, candidate: Vec3): number {
+  let minimum = Infinity;
+  for (let i = 0; i < state.targets.length; i++) {
+    const target = state.targets[i];
+    if (!target.visible || !target.alive) continue;
+    minimum = Math.min(minimum, angularSeparationDeg(candidate, target.pos));
+  }
+  return minimum;
+}
+
+function satisfiesActiveSeparation(state: SharedState, candidate: Vec3, minimumDeg: number): boolean {
+  return minimumActiveSeparationDeg(state, candidate) + ANGULAR_SEPARATION_EPSILON_DEG >= minimumDeg;
 }
 
 /**
@@ -178,6 +235,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   // 首側:config.sequence.alternation 首字(對齊 reset 語意);無 config 時預設 'R'(WP-4)。
   const defaultFirstSide: 'L' | 'R' = config ? (config.sequence.alternation[0] as 'L' | 'R') : 'R';
   const spawnArea = config?.targets.spawnArea;
+  const population = config?.targets.population;
   const spawnDelayMsRange = config?.sequence.spawnDelayMsRange;
   const hitboxCandidates = config?.targets.hitboxCandidates;
   const spiderShot = config?.spiderShot;
@@ -234,21 +292,69 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     return randomFloat(spawnRng, spawnDelayMsRange[0], spawnDelayMsRange[1]);
   }
 
-  function sampleSpawnPose(): { side: 'L' | 'R'; zone?: 'center' | 'peripheral'; pos: { x: number; y: number; z: number } } {
+  function sampleSeededAngularPose(): SpawnPose {
+    const yawDeg = randomFloat(spawnRng!, spawnArea!.yawDegRange[0], spawnArea!.yawDegRange[1]);
+    const pitchDeg =
+      spawnArea!.pitchDegRange === undefined
+        ? 0
+        : randomFloat(spawnRng!, spawnArea!.pitchDegRange[0], spawnArea!.pitchDegRange[1]);
+    const distanceU = randomFloat(spawnRng!, spawnArea!.distanceURange[0], spawnArea!.distanceURange[1]);
+    return angularSpawnPose(yawDeg, pitchDeg, distanceU, nextSide);
+  }
+
+  function farthestFallbackPose(state: SharedState, minimumDeg: number): SpawnPose {
+    const pitchRange = spawnArea!.pitchDegRange ?? [0, 0];
+    const distanceU = (spawnArea!.distanceURange[0] + spawnArea!.distanceURange[1]) / 2;
+    let farthest: SpawnPose | undefined;
+    let farthestMinimumDeg = -Infinity;
+
+    // Fixed 9 x 7 cell centres (63 total), ordered yaw-major then pitch. Equal scores keep the first cell.
+    for (let yawCell = 0; yawCell < TARGET_POPULATION_FALLBACK_YAW_CELLS; yawCell++) {
+      const yawDeg =
+        spawnArea!.yawDegRange[0] +
+        ((yawCell + 0.5) / TARGET_POPULATION_FALLBACK_YAW_CELLS) *
+          (spawnArea!.yawDegRange[1] - spawnArea!.yawDegRange[0]);
+      for (let pitchCell = 0; pitchCell < TARGET_POPULATION_FALLBACK_PITCH_CELLS; pitchCell++) {
+        const pitchDeg =
+          pitchRange[0] +
+          ((pitchCell + 0.5) / TARGET_POPULATION_FALLBACK_PITCH_CELLS) * (pitchRange[1] - pitchRange[0]);
+        const candidate = angularSpawnPose(yawDeg, pitchDeg, distanceU, nextSide);
+        const candidateMinimumDeg = minimumActiveSeparationDeg(state, candidate.pos);
+        if (candidateMinimumDeg > farthestMinimumDeg) {
+          farthest = candidate;
+          farthestMinimumDeg = candidateMinimumDeg;
+        }
+      }
+    }
+
+    if (farthest !== undefined && farthestMinimumDeg + ANGULAR_SEPARATION_EPSILON_DEG >= minimumDeg) return farthest;
+    throw new Error(
+      `Unable to place ${population!.activeCount} active targets with ${minimumDeg}° minimum angular separation after ${TARGET_POPULATION_SPAWN_ATTEMPT_LIMIT} seeded attempts and ${TARGET_POPULATION_FALLBACK_CELL_COUNT} fallback cells`,
+    );
+  }
+
+  function samplePopulationSpawnPose(state: SharedState): SpawnPose {
+    if (spawnRng === undefined || spawnArea === undefined) {
+      throw new Error('Target population spawning requires targets.spawnArea and sequence.seed');
+    }
+    const minimumDeg = spawnArea.minAngularSeparationDeg;
+    if (minimumDeg === undefined) return sampleSeededAngularPose();
+
+    for (let attempt = 0; attempt < TARGET_POPULATION_SPAWN_ATTEMPT_LIMIT; attempt++) {
+      const candidate = sampleSeededAngularPose();
+      if (satisfiesActiveSeparation(state, candidate.pos, minimumDeg)) return candidate;
+    }
+    return farthestFallbackPose(state, minimumDeg);
+  }
+
+  function sampleSpawnPose(state: SharedState): SpawnPose {
+    if (population !== undefined) return samplePopulationSpawnPose(state);
     if (spawnRng === undefined || spawnArea === undefined) {
       return { side: nextSide, pos: { x: sideX(nextSide), y: TARGET_Y, z: -distance } };
     }
     const yawDeg = randomFloat(spawnRng, spawnArea.yawDegRange[0], spawnArea.yawDegRange[1]);
     const distanceU = randomFloat(spawnRng, spawnArea.distanceURange[0], spawnArea.distanceURange[1]);
-    const yawRad = yawDeg * DEG_TO_RAD;
-    return {
-      side: yawDeg < 0 ? 'L' : yawDeg > 0 ? 'R' : nextSide,
-      pos: {
-        x: Math.sin(yawRad) * distanceU,
-        y: TARGET_Y,
-        z: -Math.cos(yawRad) * distanceU,
-      },
-    };
+    return angularSpawnPose(yawDeg, 0, distanceU, nextSide);
   }
 
   function sampleSpiderShotPose(): {
@@ -318,7 +424,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
 
   /** 生成一個目標(OQ-4.2:spawn 瞬間即可見)。spawn 屬低頻事件(peek 節奏),非每 tick 熱路徑。 */
   function spawn(state: SharedState): void {
-    const pose = spiderShot !== undefined ? sampleSpiderShotPose() : sampleSpawnPose();
+    const pose = spiderShot !== undefined ? sampleSpiderShotPose() : sampleSpawnPose(state);
     const spawnedHitbox = pickHitbox();
     state.weapon.ammo = state.weapon.magSize;
     state.targets.push({
@@ -363,11 +469,24 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     return false;
   }
 
+  function activeTargetCount(state: SharedState): number {
+    let active = 0;
+    for (let i = 0; i < state.targets.length; i++) {
+      if (state.targets[i].visible && state.targets[i].alive) active++;
+    }
+    return active;
+  }
+
   return {
     tick(state: SharedState, nowMs: number): void {
-      // ① spawn:無存活目標且未達 spawn 上限時補一個(單 active 目標;side 由 nextSide 交替)。
-      //    達 spawnLimit(config.targets.count)後不再補生——drill 目標序列耗盡(結束判定屬 T4)。
-      if (!hasAliveTarget(state) && spawnedCount < spawnLimit) {
+      // ① spawn:legacy drills keep one active target. Population mode fills only at the start of a sim
+      //    tick, so a kill never consumes RNG or spawns synchronously and replacement latency is one tick.
+      if (population !== undefined) {
+        const availableBudget = spawnLimit - spawnedCount;
+        const missingTargets = population.activeCount - activeTargetCount(state);
+        const spawnCount = Math.min(availableBudget, missingTargets);
+        for (let i = 0; i < spawnCount; i++) spawn(state);
+      } else if (!hasAliveTarget(state) && spawnedCount < spawnLimit) {
         if (usesSeededSpawn || cue?.kind === 'single') spawnWhenDue(state, nowMs);
         else spawn(state);
       }
@@ -453,7 +572,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     markKilled(state: SharedState, id: string): void {
       let removed = false;
       for (let i = 0; i < state.targets.length; i++) {
-        if (state.targets[i].id === id) {
+        if (state.targets[i].id === id && state.targets[i].alive) {
           state.targets.splice(i, 1);
           removed = true;
           break;
