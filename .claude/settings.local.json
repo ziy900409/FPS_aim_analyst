@@ -10,7 +10,8 @@
       "Bash(npx vitest *)",
       "Bash(python -)",
       "Bash(npx playwright *)",
-      "Bash(break)"
+      "Bash(break)",
+      "Bash(npx.cmd playwright *)"
     ]
   },
   "enabledMcpjsonServers": [
