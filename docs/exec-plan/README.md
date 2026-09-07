@@ -146,7 +146,7 @@
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|---|
 | **WP-56** | [`active/stage12/wp-56-micro-flick-test-scene/`](active/stage12/wp-56-micro-flick-test-scene/README.md) | `micro_flick_three_target_test_v1`：灰白狹長走廊 + 玩家位置鎖定 + 恆三顆球形目標命中補位 + seeded yaw/pitch spawn area | —（exit gate 即交付） | 無（獨立） | 8.5–15.5 | ✅ **T-exit 交付 2026-09-07**（T0~T6 + T-exit 全綠；T6 遺留的兩個 E2E rerun 失敗經診斷為測試前提缺陷並修正） |
-| **WP-57** | [`active/stage12/wp-57-spider-shot-wide-flick/`](active/stage12/wp-57-spider-shot-wide-flick/README.md) | `spider-shot-wide-v1`：eye-frame 球面 yaw/pitch spawn + arm-time FOV/aspect 解析 + 寬場 arena + 抬滑鼠疑慮標註 | —（exit gate 即交付） | 無硬相依（參照 WP-56 的 `playerControl.translation` seam） | 9.5–16 | 🟡 **T0／T1／T2／T3 ✅（2026-09-07）**；T4 卡 OQ-57.7（匯出角度 frame 語意）待 owner 拍板，T5／T6 隨後 |
+| **WP-57** | [`active/stage12/wp-57-spider-shot-wide-flick/`](active/stage12/wp-57-spider-shot-wide-flick/README.md) | `spider-shot-wide-v1`：eye-frame 球面 yaw/pitch spawn + arm-time FOV/aspect 解析 + 寬場 arena + 抬滑鼠疑慮標註 | —（exit gate 即交付） | 無硬相依（參照 WP-56 的 `playerControl.translation` seam） | 9.5–16 | 🟡 **T0／T1／T2／T3 ✅（2026-09-07）**；**T4 可開工** —— OQ-57.7 已由 KI-026／BD-026／[GD-32](DECISIONS.md) 拍板為選項 (b) 並落地（匯出角度統一 eye-frame）；T3 步驟 8 的實機截圖延到 T6 |
 | **WP-58** | [`active/stage12/wp-58-session-program-scheduler/`](active/stage12/wp-58-session-program-scheduler/README.md) | Session Program 排程器：`(drillId, reps)` 有序清單 + drill／家族兩級休息 + `compileSessionProgram()` 預覽 + 稽核 metadata；`sessionPlanMode='custom'` 不與 frozen protocol cohort 混合 | —（exit gate 即交付） | 無（獨立） | 7.5–12.5 | ⬜ 規劃完成（2026-09-07），T0 未開始 |
 
 ---

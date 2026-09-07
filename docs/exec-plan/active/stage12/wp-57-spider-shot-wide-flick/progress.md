@@ -10,7 +10,7 @@
 | T1 Geometry Contract and Resolver | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T1 evidence；targeted 226 tests、full Vitest 2266 tests、typecheck／build exit 0 |
 | T2 TargetManager Branch | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T2 evidence；golden 先錄後改、四 FPS parity、aspect 不變性、10,000 spawn 覆蓋／平衡、120,000 spawn NDC 失敗數 0；full Vitest 2,314 tests、typecheck／build exit 0 |
 | T3 Wide Arena Scene | ✅ Done（步驟 8 實機截圖延到 T6） | 2026-09-07 | 2026-09-07 | 見 §T3 evidence；612 個落點淨空、§2.5 全表逐列、預設房間四檔全穿側牆、`loadDrill` 閘正負向；full Vitest 2,353 tests、兩個 typecheck／build exit 0 |
-| T4 Export and Conditions | Blocked by **OQ-57.7** | — | — | T2 ✅ 已解除相依；OQ-57.7（匯出角度 frame 語意）仍需 owner 拍板才可開工 |
+| T4 Export and Conditions | Ready | — | — | T2 ✅；**OQ-57.7 已於 2026-09-07 由 KI-026／BD-026／GD-32 拍板為選項 (b) 並落地**（`deriveSpiderShotTransitions()` 已是 eye-frame，commit `567eaf6`）⇒ T4 不再阻塞，見 §T3 補充 9 |
 | T5 Repositioning Flag | Blocked by T4 | — | — | — |
 | T6 Wiring and E2E | Blocked by T4 | — | — | T2／T3 ✅ 已解除相依；**額外承接 T3 步驟 8 的 FOV 60／75／120 實機截圖與 OQ-57.3 初步觀察** |
 | T-exit | Blocked by T1–T6 | — | — | — |
@@ -308,7 +308,7 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 | OQ-57.4 `peekTimeoutMs` / `timeLimitMs` | 待實機（T0 未寫成常數） | 使用者，T6 |
 | OQ-57.5 repositioning 門檻 | 待資料（T0 未寫成常數） | 使用者 + 工程，T5 |
 | OQ-57.6 晉升時 `compatibilityKey` 補 aspect | 已有結論（必須補），不阻塞本 WP。**T0 補上量化依據：同 FOV 75 下 4:3 與 21:9 的 `yawMax` 相差 15.3°** | 晉升 WP 的 T0 |
-| **OQ-57.7**（T0 新增）匯出 `angularDistanceDeg`／`angularSizeDeg` 的 frame 語意 | 🟡 **待拍板 —— 阻塞 T4**（不阻塞 T1／T2／T3）。三個選項與建議預設 (a) 見 README §1.6；偏差數字見 §T0 audit ⑥／⑧ | **使用者，T4 前** |
+| **OQ-57.7**（T0 新增）匯出 `angularDistanceDeg`／`angularSizeDeg` 的 frame 語意 | ✅ **已收斂 2026-09-07：採選項 (b)**（非 T0 建議的 (a)）—— 由 KI-026／BD-026 一併落地，`deriveSpiderShotTransitions()` 改用 payload eye + per-tick player position；權威記載見 [DECISIONS.md GD-32](../../../DECISIONS.md) ④。**T4 因此不再阻塞** | — |
 
 ### T2 補充（2026-09-07）
 
@@ -322,4 +322,8 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 
 7. **arena 最緊的面是地板，不是側牆。** README §2.5 的表以側向落點驅動半寬需求，容易讓人以為側牆是瓶頸；612 個落點掃完的全域最小淨空是 **`0.5547 u`（地板，pitch −6.5° 下緣）**，而側牆最緊只有 FOV 120 的 `1.3281 u`。即：半寬 9 有 1.33 u 餘裕，真正貼著 `CLEARANCE_MARGIN_U` 的是**已凍結的 pitch 窗**（只高出 `0.0547 u`）。⇒ 日後若有人想放寬 pitch 窗（OQ-57.2 的 `±7.5°` 選項），受限的是地板而不是 arena 尺寸，加寬房間毫無幫助。
 
-8. **`targetHitboxRadius()` 對球形 hitbox 回的是角點半徑。** `clearance.ts:42` 算的是 `√((w/2)² + (h/2)² + (d/2)²)`，對本 drill 的球（直徑 `0.279281`）回 `0.2419` 而非 `0.1396`。既有淨空慣例對 box 是正確的，但沿用到球上會誇大 73% 並讓 §2.5 全表對不上。⇒ D-57.T3-2 以 shape 分流，半徑仍只從 `resolveTargetHitbox()` 推導。
+8. **`targetHitboxRadius()` 對球形 hitbox 回的是角點半徑。** `clearance.ts:42` 算的是 `√((w/2)² + (h/2)² + (d/2)²)`，對本 drill 的球（直徑 `0.279281`）回 `0.2419` 而非 `0.1396`。既有淨空慣例對 box 是正確的，但沿用到球上會誇大 73% 並讓 §2.5 全表對不上。⇒ D-57.T3-2 以 shape 分流，半徑仍只從 `resolveTargetHitbox()` 推導。**後續追查發現這不只是本 WP 的取捨**：同一個 helper 被 `validateClearance()` 無條件套在所有 sphere drill 上，是 [KI-021](../../../../known_issue/KI-021-tracking-derivation-ignores-sphere-hitbox-shape.md)（shape 被丟掉）同一病理的第三處、也是唯一未修的一處。已另立 [KI-029](../../../../known_issue/KI-029-prop-clearance-inflates-sphere-hitbox-to-box-corner-radius.md) —— 今日唯一可達組合是 WP-54 tracking pilot × `field-low`（16 props），閘比宣稱幾何嚴 9–13%，方向保守故無觀測失敗。
+
+9. **OQ-57.7 早在 T3 開工前就已拍板，但 WP-57 的四份文件都還寫著「待使用者拍板、阻塞 T4」。** 交叉讀 [DECISIONS.md GD-32](../../../DECISIONS.md) ④ 才發現：`deriveSpiderShotTransitions()` 已於 **commit `567eaf6`（KI-026／BD-026）**改用 `resolveEyeOrigin()` + per-tick eye，匯出 `D_deg`／`W_deg` 已是 eye-frame，**即 OQ-57.7 的選項 (b)**（不是 T0 建議的 (a)）。原因：KI-026 的修復落在 WP-57 之外的 session，沒人回改 WP-57 的狀態列。我在 T3 收尾時**還把這個過期狀態複製進了 `stage12/README.md` 與 WP-57 README**，等於讓錯誤多長一份。已全部對帳。<br>⇒ **教訓（已寫進 GD-32 待辦）：帳本會領先 WP 文件。判斷 task 是否被阻塞，要以 DECISIONS.md／BUGFIX-DECISIONS.md 為權威，而不是 WP 自己的 Progress 表。** 這次的代價本來會是「T4 開工前先停下來等一個早就做完的決定」。<br>⚠️ **T4 的連帶要求**：round-trip 測試必須**以 eye-frame 為期望值**，不得沿用 README §2.5.1／§T0 audit ⑥⑧ 記載的 origin-frame 偏差數字（`27.937°`／`43.6%`／`2.408°`／`4.0%`）——那些是拍板前的量測，現在只有歷史意義。
+
+10. **`validateClearance()` 綠燈不代表「裝得進房間」，而這個缺口在 WP-57 之前不痛。** 牆／地板從未被任何自動檢查覆蓋（`clearance.ts` 全檔零 `wall`／`floor`／`roomSize` 引用），因為既有 spawn 幾何都遠離房間邊界；wide drill 是第一個把目標推到側牆 `1.33 u` 內的。KI-012 的失敗模式正是三個綠燈同時成立：**淨空綠 + 畫面全遮 + 命中判定正常**。已把「`loadDrill()` 現有四道 scene-geometry 閘的分工」與「新增 kind 時何時必須自帶第五道」記入 [DECISIONS.md GD-33](../../../DECISIONS.md)，含天花板刻意不檢查、檢查順序有語意、半徑須 shape-aware 三個給後人的坑。
