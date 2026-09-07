@@ -15,6 +15,29 @@
 
 ## Progress
 
+### 2026-09-07 — T7 slice 20：shots-on-target 對帳（gate §3.5 的免費 fidelity 交叉驗證）
+
+- **為什麼是免費的**:v2 武器零散佈（D-54.51）⇒ 彈著點 = 準心,於是引擎的即時逐發判定
+  （`HitDetector` → `fire.hit`）與離線重播（`trackingDerivation`）是**同一套 sphere 幾何的兩次
+  獨立讀數**。兩者若不一致,代表其中一邊對 hitbox 的理解是錯的,gate 裡每一個 TOT 都要重新懷疑。
+- **`scripts/trackingShotsOnTarget.ts`**（layer 7,純函式 + `formatTrackingShotsOnTarget`）,
+  runner 每 run 印一行。**不是新指標(C-D3)**——不進教練報告、不進聚合、不是 Gate B 判準,
+  與 layer 3b 同一家族的儀器對帳。
+- **踩到並修掉的 C-D4 陷阱**:`deriveTrackingSamples()` 回的是 **presentation 窗**
+  `[t_visible, windowEnd)`,而 canonical `totPercent` 量的是 **tracking 窗**（從首個 on-target 起）。
+  直接拿 `samples[0]` 當窗左緣,在**晚取得目標**的 run 上會算出與 P0 不同的 TOT ⇒ 就是第二個定義。
+  改成用 `derivePresentation()` 同一條規則（首個 `onTarget` sample）切窗,並把 `canonicalTotPercent`
+  並列印出、不一致就印 `!!P0-MISMATCH`（沿用 layer 6 對 ε 的慣例）。**這個 bug 只在 late-acquisition
+  的 run 上看得見,現有 9 份乾跑全部 `tAcquire=0ms` 完全遮住它** ⇒ 專門補了一條 late-acquisition 測試。
+- **不設固定門檻**:離線是 3200 tick @128 Hz,引擎是 ~250 發 @10 Hz ⇒ 命中率是同一個指標的取樣,
+  50% 附近 SE ≈ 3 個百分點。訂死一個閾值只會誤報一般取樣噪聲、或反過來蓋掉真的幾何不一致,
+  故只報差值,判讀留給操作員。
+- **G6 乾跑實測**:8 個 scored block 的 `offlineTot` 與 canonical `tot=` **逐位相同**（無 P0-MISMATCH）,
+  引擎命中率與離線 TOT 差 **+0.1 … −2.4 個百分點**(`practice` +0.6) ⇒ `HitDetector` 與
+  `trackingDerivation` 對得上,gate §3.5 第 3 項成立。
+- 8 條新測試（`tests/regression/tracking-shots-on-target.test.ts`）。
+- 驗證:`npx vitest run` **222 files / 2174 tests passed**、`tsc --noEmit` ×2 exit 0。
+
 ### 2026-09-07 — T7 slice 19：held-fire 覆蓋率印進逐 run 行(印出既有數字,不新增判準)
 
 - **問題**：`MIN_FIRE_HOLD_COVERAGE` 的比較結果留下來了,**比較的那個數字沒有**。

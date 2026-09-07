@@ -53,6 +53,7 @@ import {
   computeTrackingTimeOnTaskSlope,
   formatTrackingTimeOnTaskSlope,
 } from './trackingTimeOnTaskSlope.ts';
+import { computeTrackingShotsOnTarget, formatTrackingShotsOnTarget } from './trackingShotsOnTarget.ts';
 import { aggregateTrackingGateB, formatTrackingGateBReport } from './trackingGateBAggregates.ts';
 import { extractTrackingGateBRuns } from './trackingGateBExtract.ts';
 import {
@@ -246,6 +247,10 @@ function main(): void {
     // same scored window. The gate criterion is the cell-level mean of this Δ; printing it per run
     // is what lets an operator see a single drifting run before it is averaged away.
     console.log(`    ${formatTrackingTimeOnTaskSlope(computeTrackingTimeOnTaskSlope(payload))}`);
+    // Gate §3.5: the engine's live per-shot verdict against the offline on-target derivation.
+    // `tracking-pilot-v2`'s weapon has zero spread, so the two read the same sphere geometry from
+    // opposite ends of the pipeline — a free reconciliation, not a new metric (C-D3).
+    console.log(`    ${formatTrackingShotsOnTarget(computeTrackingShotsOnTarget(payload))}`);
   }
 
   const payloads = runs.map((run) => run.payload);
