@@ -1,6 +1,6 @@
 # 執行計畫索引 — FPS 反向急停瞄準訓練器（階段 A~K）
 
-> **本檔為大框架的現行權威**：WP 狀態、里程碑門控、跨階段相依圖、執行規則一律以本檔為準。全部工作包（階段 A：WP-0 ~ WP-9；階段 B：WP-10 ~ WP-18；階段 C：WP-19 ~ WP-22；階段 E：WP-23 ~ WP-26；單 WP：WP-27；階段 D：WP-28 ~ WP-32；階段 F：WP-33 ~ WP-39；階段 G：WP-40 ~ WP-42；active stage8：WP-43；active stage9：WP-44 ~ WP-47；active stage10：WP-48 ~ WP-51；active stage11：WP-52 ~ WP-53）在此展開成**每 WP 一個自足子資料夾**的可執行實作計畫。
+> **本檔為大框架的現行權威**：WP 狀態、里程碑門控、跨階段相依圖、執行規則一律以本檔為準。全部工作包（階段 A：WP-0 ~ WP-9；階段 B：WP-10 ~ WP-18；階段 C：WP-19 ~ WP-22；階段 E：WP-23 ~ WP-26；單 WP：WP-27；階段 D：WP-28 ~ WP-32；階段 F：WP-33 ~ WP-39；階段 G：WP-40 ~ WP-42；active stage8：WP-43；active stage9：WP-44 ~ WP-47；active stage10：WP-48 ~ WP-51；active stage11：WP-52 ~ WP-55；active stage12：WP-56 ~ WP-58）在此展開成**每 WP 一個自足子資料夾**的可執行實作計畫。
 > 階段 A（WP-0 ~ WP-9）源自 [`../PLAN.md`](../PLAN.md)，該檔 🧊 **已凍結**（停寫 2026-06、內容停在階段 A）；除 §1 決策 D1–D5 外不得引用，**階段 B 之後的工作包從不在該檔內**。
 > 規格書：[`../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md`](../規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) v1.0 · 專有名詞：[`../../CONTEXT.md`](../../CONTEXT.md)
 > 格式參照 `performance_analysis` repo 的 `issue-26` exec-plan（每 task 一個自足檔案，單 task 執行時 context 用量 < 40%）。
@@ -11,7 +11,7 @@
 | **交付範圍** | 階段 A：F1–F4 + 1 個完整 counter-strafe drill（簡化「立即停止」急停） |
 | **技術棧** | Three.js `WebGPURenderer`（`three/webgpu`）+ TypeScript + Vite；UI = 純 TS + DOM overlay；測試 = Vitest + Playwright |
 | **估時** | 25–39 dev-days（≈5–8 週，含 WebGPU 設定與學習爬升） |
-| **狀態** | ✅ **階段 A 交付**（WP-0 ~ WP-9 全部完成，**M4 達成 2026-07-03**；已移入 `completed/stage1/`）· ✅ **階段 B 交付**（WP-10~17 於 `completed/stage2/`，**M8 達成 2026-07-07**；**WP-18 F5 ✅ 交付 2026-07-09**，於 `completed/stage2/`）· ✅ **階段 C 交付**（WP-19~22 於 `completed/stage3/`；**WP-19 ✅ M9 2026-07-08 + WP-20 ✅ + WP-21 ✅ 2026-07-09 + WP-22 ✅ M10 2026-07-10**；兩感知實驗端到端成立且 pilot-ready、`test:ci` exit 0 + 清單 C 全 10 項（C-5 真 fullscreen 實機證據）；研究決議 GD-6~10 已全數拍板；已移入 `completed/stage3/`）· 🟡 **階段 E 已歸檔 `completed/stage5/`**（2026-07-15;**WP-23 ✅ M11 + WP-24 ✅ + WP-25 ✅ M12 + WP-26 T-exit 自動閘 ✅（`test:ci` exit 0）/ M13 待研究者實機手動回填（#32）正式宣告交付**；BR 遠距跟槍測試模組；編號分配見 [DECISIONS.md](DECISIONS.md) GD-15） · ✅ **階段 D 交付**（2026-08-04 採納 → **2026-08-17 交付**，[`completed/stage4/`](completed/stage4/README.md)：選手表現分析管線 research 層，**WP-28~32 全數完成，M14 ✅ + M15 ✅**；GD-19/GD-20/**GD-21**；**WP-28 ✅**(M14 六項全數恢復/重新宣告)、**WP-29 ✅**(`timeline-v1`/`sync-v1`)、**WP-30 ✅**(`phase-v1`/`curve-v1`)、**WP-31 ✅**(SPARC/xcorr/Fitts 三份判定收斂,`coach-report-v2`)、**WP-32 ✅**(golden parity 晉升進 `src/metrics/` + 結果頁擴充 + 驗收清單 D 八項全通過,[acceptance-stage-d.md](../operational/acceptance-stage-d.md));C-D5 雙實作對表紀律入 [CLAUDE.md](../../CLAUDE.md) §4;已移入 `completed/stage4/`）· ✅ **階段 F 交付**（2026-08-19 採納 → **2026-08-25 交付**，[`completed/stage6/`](completed/stage6/README.md)：個人瞄準能力測試框架 v1,**WP-33~39 全數完成,M16 ✅**;GD-22/**GD-23**;驗收清單 F 全 12 項通過([acceptance-stage-f.md](../operational/acceptance-stage-f.md));`protocolVersion=1.0.0` 為無真人 pilot 資料下的暫定凍結;已移入 `completed/stage6/`）· ✅ **階段 G 交付**（2026-08-25 採納 → **2026-08-25 交付**,[`completed/stage7/`](completed/stage7/README.md):選手測試流程前端優化,**WP-40~42 全數完成,M17 ✅**;**GD-24**;驗收清單 G 全 5 項通過([acceptance-stage-g.md](../operational/acceptance-stage-g.md));已移入 `completed/stage7/`）· 🟡 **階段 J active**（[`active/stage10/`](active/stage10/README.md)：WP-48~50 T-exit ✅，WP-51 automated gates ✅，M18 manual/owner gate 待）· ✅ **階段 K active/stage11 完成**（[`active/stage11/`](active/stage11/README.md)：WP-52/WP-53 T-exit ✅，**M19 達成 2026-09-02**；正式 `peek_click_transfer_v1` 已可進 Assessment Session Plan/history/trend） |
+| **狀態** | ✅ **階段 A 交付**（WP-0 ~ WP-9 全部完成，**M4 達成 2026-07-03**；已移入 `completed/stage1/`）· ✅ **階段 B 交付**（WP-10~17 於 `completed/stage2/`，**M8 達成 2026-07-07**；**WP-18 F5 ✅ 交付 2026-07-09**，於 `completed/stage2/`）· ✅ **階段 C 交付**（WP-19~22 於 `completed/stage3/`；**WP-19 ✅ M9 2026-07-08 + WP-20 ✅ + WP-21 ✅ 2026-07-09 + WP-22 ✅ M10 2026-07-10**；兩感知實驗端到端成立且 pilot-ready、`test:ci` exit 0 + 清單 C 全 10 項（C-5 真 fullscreen 實機證據）；研究決議 GD-6~10 已全數拍板；已移入 `completed/stage3/`）· 🟡 **階段 E 已歸檔 `completed/stage5/`**（2026-07-15;**WP-23 ✅ M11 + WP-24 ✅ + WP-25 ✅ M12 + WP-26 T-exit 自動閘 ✅（`test:ci` exit 0）/ M13 待研究者實機手動回填（#32）正式宣告交付**；BR 遠距跟槍測試模組；編號分配見 [DECISIONS.md](DECISIONS.md) GD-15） · ✅ **階段 D 交付**（2026-08-04 採納 → **2026-08-17 交付**，[`completed/stage4/`](completed/stage4/README.md)：選手表現分析管線 research 層，**WP-28~32 全數完成，M14 ✅ + M15 ✅**；GD-19/GD-20/**GD-21**；**WP-28 ✅**(M14 六項全數恢復/重新宣告)、**WP-29 ✅**(`timeline-v1`/`sync-v1`)、**WP-30 ✅**(`phase-v1`/`curve-v1`)、**WP-31 ✅**(SPARC/xcorr/Fitts 三份判定收斂,`coach-report-v2`)、**WP-32 ✅**(golden parity 晉升進 `src/metrics/` + 結果頁擴充 + 驗收清單 D 八項全通過,[acceptance-stage-d.md](../operational/acceptance-stage-d.md));C-D5 雙實作對表紀律入 [CLAUDE.md](../../CLAUDE.md) §4;已移入 `completed/stage4/`）· ✅ **階段 F 交付**（2026-08-19 採納 → **2026-08-25 交付**，[`completed/stage6/`](completed/stage6/README.md)：個人瞄準能力測試框架 v1,**WP-33~39 全數完成,M16 ✅**;GD-22/**GD-23**;驗收清單 F 全 12 項通過([acceptance-stage-f.md](../operational/acceptance-stage-f.md));`protocolVersion=1.0.0` 為無真人 pilot 資料下的暫定凍結;已移入 `completed/stage6/`）· ✅ **階段 G 交付**（2026-08-25 採納 → **2026-08-25 交付**,[`completed/stage7/`](completed/stage7/README.md):選手測試流程前端優化,**WP-40~42 全數完成,M17 ✅**;**GD-24**;驗收清單 G 全 5 項通過([acceptance-stage-g.md](../operational/acceptance-stage-g.md));已移入 `completed/stage7/`）· 🟡 **階段 J active**（[`active/stage10/`](active/stage10/README.md)：WP-48~50 T-exit ✅，WP-51 automated gates ✅，M18 manual/owner gate 待）· ✅ **階段 K active/stage11 完成**（[`active/stage11/`](active/stage11/README.md)：WP-52/WP-53 T-exit ✅，**M19 達成 2026-09-02**；正式 `peek_click_transfer_v1` 已可進 Assessment Session Plan/history/trend）· 🟡 **階段 L active/stage12**（[`active/stage12/`](active/stage12/README.md)：**WP-56** micro flick 三靶走廊 ✅ **T-exit 交付 2026-09-07**、**WP-57** spider shot wide flick T0／T1／T2 ✅（2026-09-07）、**WP-58** session program 排程器規劃完成待 T0；三者互不相依可並行，皆無獨立里程碑、T-exit gate 即交付判定；里程碑待指派，下一個可用為 **M22**；編號分配 [DECISIONS.md](DECISIONS.md) GD-32／GD-33） |
 
 ---
 
@@ -137,6 +137,18 @@
 | **WP-52** | [`active/stage11/wp-52-peek-click-transfer-pilot-v2/`](active/stage11/wp-52-peek-click-transfer-pilot-v2/README.md) | `peek_click_transfer_pilot_v2`：調整後候選參數、session wiring、evidence report、manual pilot gate | — | WP-45 T-exit | 3–5 | ✅ T-exit（2026-09-01） |
 | **WP-53** | [`active/stage11/wp-53-peek-click-transfer-v1-formal-release/`](active/stage11/wp-53-peek-click-transfer-v1-formal-release/README.md) | 正式 `peek_click_transfer_v1` Assessment：config、metadata/compatibility、history/trend registry、Session Plan、E2E/docs | **M19 ✅** | WP-52 T-exit + stage10 history/trend | 5–8 | ✅ T-exit（2026-09-02） |
 
+> ⚠️ **本表落後於 stage11 實況**：stage11 另有 **WP-54**（tracking pilot，M20 🟡）與 **WP-55**（tracking on-target observability without health，M21 ✅），兩者的表列與 M20/M21 門控列尚未補進本檔（§3 里程碑表同樣缺 M20/M21）。權威狀態暫以 [`active/stage11/README.md`](active/stage11/README.md) 為準。
+
+**階段 L（`active/stage12/`，🟡 active；WP-56 ~ WP-58；researcher-only 測試場景／大幅度拉槍評測／session 排程層）**
+
+> Micro-flick 場景 + Spider Shot 大幅度拉槍 + Session Program 排程器。tech spec：[`active/stage12/README.md`](active/stage12/README.md)。**三個 WP 互不相依、可並行。** WP-56／WP-57 各交付一個 researcher-only 的測試場景與 drill（不新增正式 Assessment、不進 participant 歷史／compatibility cohort、不改任何已凍結協定參數，故與 stage6 四家族及 stage11 formal release 正交）；WP-58 交付純排程層，讓研究者把任意 drill 編成有序 program，且既有「標準 Assessment」一鍵路徑逐位不變。本階段**尚未指派里程碑**，三個 WP 各以 T-exit gate 為交付判定；下一個可用里程碑為 **M22**（M20／M21 已由 stage11 的 WP-54／WP-55 取用）。編號分配見 [DECISIONS.md](DECISIONS.md) GD-32（WP-57）／GD-33（WP-58）——兩者同日在平行 session 規劃、一度都暫用 WP-57／GD-32，依 GD-15「先採納先得」由 spider shot 保留 WP-57／GD-32。
+
+| WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
+|---|---|---|---|---|---|---|
+| **WP-56** | [`active/stage12/wp-56-micro-flick-test-scene/`](active/stage12/wp-56-micro-flick-test-scene/README.md) | `micro_flick_three_target_test_v1`：灰白狹長走廊 + 玩家位置鎖定 + 恆三顆球形目標命中補位 + seeded yaw/pitch spawn area | —（exit gate 即交付） | 無（獨立） | 8.5–15.5 | ✅ **T-exit 交付 2026-09-07**（T0~T6 + T-exit 全綠；T6 遺留的兩個 E2E rerun 失敗經診斷為測試前提缺陷並修正） |
+| **WP-57** | [`active/stage12/wp-57-spider-shot-wide-flick/`](active/stage12/wp-57-spider-shot-wide-flick/README.md) | `spider-shot-wide-v1`：eye-frame 球面 yaw/pitch spawn + arm-time FOV/aspect 解析 + 寬場 arena + 抬滑鼠疑慮標註 | —（exit gate 即交付） | 無硬相依（參照 WP-56 的 `playerControl.translation` seam） | 9.5–16 | 🟡 **T0／T1／T2 ✅（2026-09-07）**；T3 可開工，T4 卡 OQ-57.7（匯出角度 frame 語意）待 owner 拍板 |
+| **WP-58** | [`active/stage12/wp-58-session-program-scheduler/`](active/stage12/wp-58-session-program-scheduler/README.md) | Session Program 排程器：`(drillId, reps)` 有序清單 + drill／家族兩級休息 + `compileSessionProgram()` 預覽 + 稽核 metadata；`sessionPlanMode='custom'` 不與 frozen protocol cohort 混合 | —（exit gate 即交付） | 無（獨立） | 7.5–12.5 | ⬜ 規劃完成（2026-09-07），T0 未開始 |
+
 ---
 
 ## 3. 里程碑門控（gates）
@@ -249,6 +261,25 @@ WP-52（pilot v2 + evidence）──→ WP-53（formal freeze/config/metadata/re
 ```
 
 - 階段 K 已於 2026-09-02 完成 M19。WP-53 T0~T5 全數完成並通過 T-exit；正式 `peek_click_transfer_v1` 使用 exact drill id 與 `meta.assessment`，pilot v1/v2 仍維持 practice-only 且不與 formal history/trend cohort 混合。詳見 [`active/stage11/README.md`](active/stage11/README.md)。
+
+```
+階段 L（active/stage12/；上游門檻 = 無，三個 WP 可並行）
+
+WP-56（micro flick 走廊）✅ 交付 2026-09-07
+T0 ✅ → T1 ✅ → T2 ✅ → T3 ✅ → T4 ✅ → T5 ✅ → T6 ✅ → T-exit ✅
+
+WP-57（spider shot wide flick）
+T0 → T1 ─┬→ T2 → T4 ─┬→ T5 ─┐
+         └→ T3 ───────┴→ T6 ─┴→ T-exit
+
+WP-58（session program 排程器）
+T0 → T1 → T2 → T3 → T4 → T5 → T6 → T-exit
+```
+
+- 階段 L 三個 WP **互不相依、可並行**，無檔案熱區重疊：WP-56 動 `targets.population`／`spawnArea`／GLTF 走廊，WP-57 動 `spiderShot` union／eye-frame 幾何／procedural arena，WP-58 只動 `SessionRunner`／Session Plan 排程層。WP-57 對 WP-56 的 `playerControl.translation` seam 只讀不改。
+- **WP-58 對前兩者的唯一接縫**：其 drill→family 對照表（T1）會把 stage12 新 drill 登記為可排程，但依 WP-58 FR-58.3，家族歸屬**不授予** Assessment 資格 ⇒ WP-56／WP-57 的 practice-only 定位不受影響。若 WP-56／WP-57 的 drill id 在 WP-58 T1 之後才定案，T1 的對照表需回頭同步。
+- WP-57 內部：**T1 未綠不進 T2/T3**（先把幾何與 resolver 釘死在純函式層）；T1 之後 **T2 與 T3 可並行**（T3 只需要 resolver，不需要 sim 分支）；T4 需要 T2 產出的真實匯出。
+- 三個 WP 皆**無獨立里程碑**，T-exit gate 即交付判定；晉升為正式 Assessment 一律屬後續獨立 WP（需 pilot 校準 + `protocolVersion` 影響評估）。
 
 ---
 
