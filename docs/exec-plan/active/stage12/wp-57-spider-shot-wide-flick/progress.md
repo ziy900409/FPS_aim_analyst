@@ -8,11 +8,11 @@
 |---|---|---|---|---|
 | T0 Entry Gate | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T0 audit（2026-09-07）；production diff = 0 |
 | T1 Geometry Contract and Resolver | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T1 evidence；targeted 226 tests、full Vitest 2266 tests、typecheck／build exit 0 |
-| T2 TargetManager Branch | Ready | — | — | T1 ✅；contract／resolver／投影已凍結，只剩 spawn 分支接線 |
+| T2 TargetManager Branch | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T2 evidence；golden 先錄後改、四 FPS parity、aspect 不變性、10,000 spawn 覆蓋／平衡、120,000 spawn NDC 失敗數 0；full Vitest 2,314 tests、typecheck／build exit 0 |
 | T3 Wide Arena Scene | Ready | — | — | T1 ✅；arena 規格已由 T0 更正為 `[18, 20, 4]` + `eyeZ: 0`（§2.5.1），sceneId `wide-flick-arena` 已由 T1 綁定 |
-| T4 Export and Conditions | Blocked by T2 **+ OQ-57.7** | — | — | OQ-57.7（匯出角度 frame 語意）需 owner 拍板才可開工 |
+| T4 Export and Conditions | Blocked by **OQ-57.7** | — | — | T2 ✅ 已解除相依；OQ-57.7（匯出角度 frame 語意）仍需 owner 拍板才可開工 |
 | T5 Repositioning Flag | Blocked by T4 | — | — | — |
-| T6 Wiring and E2E | Blocked by T2–T4 | — | — | — |
+| T6 Wiring and E2E | Blocked by T3–T4 | — | — | T2 ✅ 已解除相依 |
 | T-exit | Blocked by T1–T6 | — | — | — |
 
 ## T0 audit（2026-09-07）
@@ -160,6 +160,32 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 
 **未觸碰**：worktree 既有的 `docs/exec-plan/README.md`、wp-56 progress／checklist、`graphify-out/*`、`tests/e2e/micro-flick-live.spec.ts`、未追蹤的 `src/sim/micro-flick-performance.test.ts` 全程未 stage。`graphify update .` 因 `graphify-out/*` 已帶平行工作的未提交變更而延後，避免混入本 commit。
 
+## T2 evidence（2026-09-07）
+
+**開工前 blast radius（CodeGraph `impact`）**：`createTargetManager` **47 callers**（production `src/main.ts`、`src/testharness/fpsTestHarness.ts`，其餘為 20+ 個測試／fixture 檔，含 `movingTargetDeterminismFixture`、`longrangeTrackingDeterminismFixture`、`wp22-determinism`、`br-tracking-invariants`）；`spiderWideEyePos` 在 `TargetManager.ts` 有 7 個引用點，測試面已被 `spiderEyeFrame.test.ts`／`spiderShotWide.test.ts`／`spider-wide-geometry.test.ts` 覆蓋；`buildSpiderWideCells`／`sampleSpiderWidePeripheralPose`／`shuffleInPlace` 皆為 `TargetManager.ts` 內部（各 1～3 個呼叫端）。呼叫鏈 `createTargetManager → spawn → sampleSpiderShotPose → sampleSpiderWidePeripheralPose → buildSpiderWideCells`，無 render／scene／時鐘節點進入。
+
+**step 2（先錄 golden 再改碼）**：`scripts/recordSpiderSpawnGolden.ts` 走生產路徑（`createTargetManager` + `tick()` + `markKilled()`）錄下 `spider-shot-v1`／`v2` 各 200 個 spawn 的 `zone`／`side`／`x`／`y`／`z`，連同 `reset()` 重跑一輪，凍結成 `tests/golden/spider-shot/*.json`。**該 commit（`3548ccc`）在新分支 commit（`56e7d99`）之前，且 `src/` diff = 0**，故 golden 記錄的是改動前的真實行為而非事後蓋章。`spider-shot-spawn-golden.test.ts` 8 tests 全綠 ⇒ **NFR-57.2 byte-identical 成立**。
+
+**step 3–6（spawn 分支）**：`SpiderWideCell`（`side` × 等寬 pitch band）+ `buildSpiderWideCells()`（`2 × grid.pitchBands` = 4 cells，side-major 固定建表序，平衡由洗牌提供）+ `sampleSpiderWidePeripheralPose()`（耗盡才重建並以**同一個 `spawnRng`** 洗牌，沿用 WP-44 慣例，不新建 RNG）。`sampleSpiderShotPose()` 的新 kind 分支**先於** v1/v2 的 origin-frame 圓錐路徑返回；中心目標改為 `yaw = pitch = 0` 的球面解 `(0, PLAYER_EYE_HEIGHT_U, −distanceU)`，此 y 變更只發生在新 kind，`TARGET_Y` 與其既有使用者未動。`reset()` 一併清空 `spiderWideQueue`。新分支不讀寫 `nextSide`、不與 v1/v2 共用佇列狀態、不 import render／scene／時鐘／`Math.random`。
+
+**NFR-57.1（四 FPS parity）**：`tests/regression/spiderWideDeterminismFixture.ts` 以出貨 resolved config（FOV 75 / 16:9）驅動生產同源管線 `createSimLoop({ translation: 'locked' }) + TargetManager + DrillRunner + HitDetector + DataRecorder`。canonical（每幀一 tick）為 **3,059 ticks / 17 spawns / 8 hits**；60 Hz（1,434 幀）、144 Hz（3,442 幀）、240 Hz（5,736 幀）、抖動 144 Hz ±50%（3,457 幀，模擬 rAF 節流）四條幀序列的**逐 tick `replayTargetId` + `tx/ty/tz` 與 spawn 序列逐位一致**，wall-clock 時間戳不入斷言。
+
+**NFR-57.5（GD-10 aspect 不變性）**：同一 harness 在 run 中段（第 40% 幀）改 camera `aspect`／`fov`（16:9→21:9、16:9→4:3 且 FOV 75→120、16:9→1:2 且 FOV 75→60）後，逐 tick trace 與未 resize 對照組**逐位一致**；並以截斷 run 證明 resize 點之後對照組確實還有新 spawn（不變性不是測到空區間）。
+
+**FR-57.6（覆蓋與平衡，10,000 個周邊 spawn）**：4 個 `side × pitchBand` cell 各 **2,500 次**（max − min = **0**，遠優於「差 ≤ 1 個佇列週期」的門檻）；2,500 個完整週期每個都恰好蓋滿 4 cell 一次且左右各 2 次；整體 L/R = **5,000 / 5,000**；每個 spawn 的 `side` 與落點 yaw 符號一致（FR-57.7）。
+
+**FR-57.4（on-screen，走真實 spawn）**：`fovDeg ∈ {60,75,90,120}` × `aspect ∈ {16/9, 21/9, 4/3}` 共 12 組、每組 10,000 個周邊 spawn（**合計 120,000**），halfHFOV 由 resolved config 自身的 `resolvedFrom` 反推，兩條 NDC 不等式（含目標角半徑外緣、容差 1e-9）**failures = 0**。這與 T1 的 `spider-wide-geometry.test.ts` 互補：T1 掃純函式取樣空間，T2 掃 `TargetManager` 真正吐出的落點。
+
+**NFR-57.7（零額外配置）**：於每個 `tick()` 前後計數 `Array.prototype.push`。中心 spawn 恆 **1 次**（僅 `state.targets.push(target)`）；周邊 spawn 為 **1 或 1 + 4** 次，且 `1 + 4` 恰好落在每個佇列週期的第一個周邊 spawn（實測重建發生於周邊序號 1、5、9、13、17，共 5 次 = 週期數）⇒ 沒有 per-spawn 暫存陣列／物件堆疊，佇列只在耗盡時重建。既有的 RNG 預算測試（每個周邊 spawn 恰 2 抽 + 每週期 `cells − 1` 抽洗牌）為同一結論的獨立佐證。
+
+**FR-57.7 parity**：`spider-shot-wide-v1` 與 `spider-shot-v2` 並列跑同一組 `DrillRunner` 斷言 —— zone 由中心起算逐次交替、`centerExemptFromTimeout=true` 時中心目標逾時仍存活、周邊目標仍在 `peekTimeoutMs` 到期時撤除，三項行為完全一致。
+
+**測試數**：`src/sim/TargetManager.test.ts` +9 case（該檔 65 tests 全綠）、`tests/regression/spider-shot-spawn-golden.test.ts` 8、`tests/regression/spider-wide-spawn-determinism.test.ts` 9、`tests/regression/spider-wide-schedule-invariants.test.ts` 23。
+
+**零回歸**：`npm run typecheck` exit 0；全量 `npm test` **230 files passed + 1 skipped／2,314 tests passed + 2 skipped**（T1 收尾為 227／2,266，差額為本 task 新增測試與 worktree 內平行工作的 WP-56 測試）；既有決定性 regression（`determinism`、`moving-target-determinism`、`spray-determinism`、`projectile-determinism`、`longrange-tracking-determinism`）**零修改**通過；`npx vite build` exit 0（169 modules、1,196.96 kB／gzip 340.96 kB，僅既存 >500 kB 警告）。
+
+**未觸碰**：worktree 內平行工作的 `docs/exec-plan/README.md`、`docs/exec-plan/DECISIONS.md`、`package.json`、`scripts/capture-wp56-visuals.mjs`、wp-56 captures、`docs/known_issue/KI-026-*.md` 全程未 stage。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -187,6 +213,10 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 | D-57.T1-2 | 2026-09-07 | **`TargetManager.sampleSpiderShotPose()` 加一個 `center-peripheral-yawpitch` 的 fail-fast guard**（3 行，對 v1/v2 不可達），偏離 T1 DoD 的「`TargetManager` 尚未被修改（`git diff` 可證）」。理由：union 新增分支後，`spiderShot.centerDistanceU`／`spiderShot.peripheral` 這兩個**未收斂的 union 屬性存取**在 strict TS 下必然編譯失敗，不改就無法 typecheck。guard 明確拒收新 kind 而非讓它掉進 azimuth/radius 幾何，spawn 行為零變動（v1/v2 測試期望值未改）。<br>**Alternatives considered**：(a) 新分支改用 `centerDistanceU` 欄位名讓 union 保持共同屬性 —— 可救 `centerDistanceU`，但 `peripheral` 形狀不相容仍會炸，且會偏離 README §2.3 凍結的 `distanceU`，**駁回**；(b) 新分支宣告 `centerDistanceU?: undefined` —— strict 下對 `number | undefined` 取負仍是型別錯誤，**駁回**；(c) 把 union 分支延到 T2 才加 —— 那 T1 就沒有契約可凍結，違反 task 目的，**駁回** | Engineering | `npx tsc --noEmit` exit 0；`TargetManager.test.ts` 57 tests 全綠 |
 | D-57.T1-3 | 2026-09-07 | **resolver 回傳 `{ yawMagDegRange, pitchDegRange, pitchLimitDeg }`**：`pitchDegRange` 取模組凍結的 `±SPIDER_WIDE_PITCH_MAG_DEG`，`pitchLimitDeg` 是地板淨空推導的硬上界並作為餘裕證據；凍結值超過上界時擲 `SpiderWideResolveError('pitchDegRange', …)`。理由：D-57.P14 凍結的是 `±6.5°`（餘裕 0.395°，刻意不貼邊），而 FR-57.14 又要求「pitch 窗使目標埋入地板」必須是 typed error —— 兩者只有在「窗是凍結常數、上界是驗證條件」的結構下才同時成立。<br>**Alternatives considered**：(a) 直接回 `±pitchLimitDeg` —— 會得到 `±6.8947°`，推翻 D-57.P14 的凍結值與「非硬貼邊界」的理由，**駁回**；(b) 把 `pitchMagDeg` 加進 resolver input —— 偏離 README §2.4 簽章，且會讓凍結值可被任一呼叫端改寫，失去凍結意義，**駁回** | Engineering | `spiderShotWide.test.ts` pitch 段；`pitchLimitDeg = 6.894696` |
 | D-57.T1-4 | 2026-09-07 | **6 個既有 union 消費點改為指名 v1/v2 的具體分支型別**（production `pilotConfigs.ts` 的 guard 收斂到 `kind === 'center-peripheral'`；`spider_shot_v1/v2.test.ts`、`protocolFreeze.test.ts`、`TargetManager.test.ts` 以型別標註／斷言收斂）。行為與期望值零變動，只讓「這段程式碼只對 v1/v2 有意義」變成型別可稽核的事實。<br>**Alternatives considered**：把新分支設計成與 v1/v2 結構相容以避免改動 —— 需要塞入 `azimuthDegRange`／`distanceURange` 等對本 drill 無意義的欄位，會讓契約說謊，**駁回** | Engineering | 全量 Vitest 2266 tests 綠 |
+| D-57.T2-1 | 2026-09-07 | **v1/v2 golden 以生產路徑錄製並先行 commit**（`3548ccc` 早於分支 commit `56e7d99`，該 commit `src/` diff = 0），而非在改完後才錄。<br>**Alternatives considered**：(a) 改完再錄 —— 只會把改壞後的行為蓋章成「預期」，NFR-57.2 失去證明力，**駁回**；(b) 手寫期望座標表 —— 需要在測試裡重寫一份取樣器，任何 RNG 消費順序的偏移都測不出來，**駁回** | Engineering | `spider-shot-spawn-golden.test.ts` 8 tests；commit 順序可證 |
+| D-57.T2-2 | 2026-09-07 | **中心 zone 的 `side` 沿用 v1/v2 的 `'R'` 佔位**，真實左右只由周邊 spawn 承載。理由：中心目標在正前方，左右無定義；讓它承載假的方向會汙染 FR-57.7 的離線分流。<br>**Alternatives considered**：(a) 中心沿用上一個周邊的 `side` —— 會讓「side = 刺激方向」這個語意在中心 trial 上說謊，**駁回**；(b) 把 `side` 改成 optional —— 動到 `TargetState` 的既有欄位契約與 115+ consumers，超出本 task 範圍，**駁回** | Engineering | `TargetManager.test.ts` 交替／side 測試 |
+| D-57.T2-3 | 2026-09-07 | **NFR-57.1／57.5 的 harness 以「零散佈武器射中心目標」驅動 spawn 循環**（`usp_s_laser`，recoil／inaccuracy 全 0；固定 aim yaw = pitch = 0），形成「中心命中 → 周邊 spawn → 周邊逾時撤除 → 中心 spawn」。理由：本 drill 的 `centerExemptFromTimeout: true` 讓無輸入的 headless run 永遠停在第一顆中心目標，parity 斷言會退化成單一樣本。<br>**Alternatives considered**：(a) 在 harness 內關掉 `centerExemptFromTimeout` —— 測到的就不是出貨 config，**駁回**；(b) 合成滑鼠軌跡去瞄周邊目標 —— aim 更新只能發生在幀邊界，等於把 harness 自己的幀切法帶進刺激，正好汙染 FPS parity 的歸因，**駁回**；(c) 用 `ak47` —— 後座力／散佈會讓命中與否隨武器 RNG 變動，循環可能斷開，且彈道決定性另有 `spray-determinism` 專責，**駁回** | Engineering | `spiderWideDeterminismFixture.ts`；3,059 ticks／17 spawns／8 hits |
+| D-57.T2-4 | 2026-09-07 | **NFR-57.7 以直接覆寫 `Array.prototype.push` 計數落地**（try/finally 還原，同步迴圈內），斷言「中心 spawn 恆 1 次、周邊 spawn 1 或 1 + cells、且 `1 + cells` 只出現在每週期第一個周邊 spawn」。<br>**Alternatives considered**：(a) `vi.spyOn(Array.prototype, 'push')` —— spy 自己會把呼叫 push 進 `mock.calls` 而無限遞迴，**技術上不可行**；(b) `process.memoryUsage()` 差分 —— GC 噪音使門檻不可重現，**駁回**；(c) 只靠既有 RNG 預算測試 —— 能證明佇列重建節奏，但證明不了「沒有 per-spawn 暫存陣列」，**故兩者並存** | Engineering | `spider-wide-schedule-invariants.test.ts` NFR-57.7 段 |
 
 ## Surprises
 
@@ -250,3 +280,9 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 | OQ-57.5 repositioning 門檻 | 待資料（T0 未寫成常數） | 使用者 + 工程，T5 |
 | OQ-57.6 晉升時 `compatibilityKey` 補 aspect | 已有結論（必須補），不阻塞本 WP。**T0 補上量化依據：同 FOV 75 下 4:3 與 21:9 的 `yawMax` 相差 15.3°** | 晉升 WP 的 T0 |
 | **OQ-57.7**（T0 新增）匯出 `angularDistanceDeg`／`angularSizeDeg` 的 frame 語意 | 🟡 **待拍板 —— 阻塞 T4**（不阻塞 T1／T2／T3）。三個選項與建議預設 (a) 見 README §1.6；偏差數字見 §T0 audit ⑥／⑧ | **使用者，T4 前** |
+
+### T2 補充（2026-09-07）
+
+4. **`centerExemptFromTimeout: true` 會讓無輸入的 headless run 停滯。** 中心目標不逾時、又沒有命中來源，`DrillRunner` 就永遠停在第一顆目標上 —— 決定性 harness 因此**必須**開火才有 spawn 序列可比。這不是缺陷（它正是「回中心後可從容重新架槍」的設計意圖），但它決定了 NFR-57.1／57.5 harness 的形狀（D-57.T2-3）。
+
+5. **`DrillRunner` 一行未改即可承載第三支排程。** `centerExemptFromTimeout` 的判斷寫在 `config.spiderShot?.centerExemptFromTimeout`（kind 無關），`zone` 蓋章與交替則全在 `TargetManager` 側，故 FR-57.7 的 parity 是既有結構的自然結果，而非本 task 新增的相容層 —— 與規劃期預估的 runner 修改面相比縮小為零。
