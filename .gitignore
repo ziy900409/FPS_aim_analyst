@@ -28,6 +28,12 @@ data/session-history/*
 # WP-48 T3 — Playwright's dev/preview history roots (NFR-48.6, never the real history root).
 .playwright-tmp/
 
+# WP-56 T6 — capture runner's temp history root (scripts/capture-wp56-visuals.mjs spawns the dev
+# server with FPS_HISTORY_ROOT pointed here). Same class as .playwright-tmp/: never the real
+# history root, never committed. See docs/known_issue/KI-028-*.md §7 for the orphaned-server bug
+# that keeps writing into it.
+.wp56-capture-tmp/
+
 # WP-54 T6 — tracking pilot analysis output (participant exports and any artifact derived from
 # them stay out of git; see docs/.../wp-54-tracking-pilot/T6-instrumentation-gate.md §7).
 .pilot-analysis/
