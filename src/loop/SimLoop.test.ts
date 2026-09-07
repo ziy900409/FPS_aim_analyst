@@ -118,6 +118,44 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.validity.playerCorridorExceeded).toBe(true);
   });
 
+  it('locked translation consumes a 10-second A/D timeline while preserving position and zero velocity', () => {
+    const state = createSharedState();
+    state.player.x = 4;
+    state.player.z = -9;
+    state.prev.x = 4;
+    state.prev.z = -9;
+    state.curr.x = 4;
+    state.curr.z = -9;
+    state.player.vx = 80;
+    state.player.vz = -40;
+    const loop = createSimLoop(state, fixedClock(0), SIM_HZ, undefined, undefined, undefined, undefined, ak47, {
+      translation: 'locked',
+    });
+
+    for (let tick = 0; tick < 10 * SIM_HZ; tick++) {
+      const t = tick * TICK_MS;
+      if (tick % 64 === 0) state.input.pushKey(tick % 128 === 0 ? 2 : 1, true, t);
+      if (tick % 64 === 32) state.input.pushKey(tick % 128 === 0 ? 2 : 1, false, t);
+      loop.pump((tick + 1) * TICK_MS);
+    }
+
+    expect(state.input.size()).toBe(0);
+    expect(state.player).toMatchObject({ x: 4, z: -9, vx: 0, vz: 0, stopped: true });
+    expect(state.prev).toEqual({ x: 4, z: -9 });
+    expect(state.curr).toEqual({ x: 4, z: -9 });
+  });
+
+  it('omitting translation preserves legacy movement', () => {
+    const state = createSharedState();
+    state.held.right = true;
+    const loop = createSimLoop(state, fixedClock(0), SIM_HZ);
+
+    loop.pump(TICK_MS);
+
+    expect(state.player.x).toBeGreaterThan(0);
+    expect(state.player.vx).toBeGreaterThan(0);
+  });
+
   it('simStep 由 held 經 friction/accelerate 推進 vx/x（只用 dtSec）+ 維護 prev/curr', () => {
     const state = createSharedState();
     state.held.right = true; // 按住 D（無新事件）→ MovementController.step 每 tick 加速

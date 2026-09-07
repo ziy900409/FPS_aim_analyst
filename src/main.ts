@@ -958,6 +958,7 @@ function buildSimLoop(): SimLoop {
     activeWeaponConfig(),
     activeDrillConfig.spiderShot?.seed ?? activeDrillConfig.sequence.seed,
     {
+      translation: activeDrillConfig.playerControl?.translation ?? 'enabled',
       afterTick(state): void {
         if (isOutsideCorridor(state.player.x, activeSceneConfig.playerCorridor.halfWidthU, SIM_TO_WORLD)) {
           state.validity.playerCorridorExceeded = true;

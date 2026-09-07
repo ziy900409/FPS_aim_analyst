@@ -770,6 +770,11 @@ export interface HitscanOcclusionContext {
 }
 
 export interface SimLoopOptions {
+  /**
+   * Player translation policy. `locked` still consumes keyboard input but pins the player at the
+   * drill start position and clears residual velocity; omitted preserves legacy movement exactly.
+   */
+  translation?: 'enabled' | 'locked';
   /** 每個 sim tick 完成後的純觀測 hook；不得 clamp 或改寫演進來源。 */
   afterTick?: (state: SharedState, tickEndMs: number, tickIndex: number) => void;
   /** 省略時 hitscan fire path 不套用 scene occlusion gate（WP-45 / T1）。 */
@@ -807,8 +812,18 @@ export function createSimLoop(
   // 綁定一次的輸入 handle：閉包 over state，避免每 tick 配置 applyInput arrow（GC 紀律 §4）。
   const handleInput = (ev: InputEvent): void => applyInput(state, ev, recorder);
 
-  // 綁定一次的 MovementController（WP-14 T1）：profile 預設 CS2_PROFILE。
-  const movement = createMovementController();
+  // 綁定一次的 MovementController（WP-14 T1）：profile 預設 CS2_PROFILE。固定位置 drill
+  // 仍消費 A/D input，但不能把上一個 drill 的殘餘 velocity 或新的 held key 積分成位移。
+  const movement: MovementController =
+    loopOptions?.translation === 'locked'
+      ? {
+          step(lockedState): void {
+            lockedState.player.vx = 0;
+            lockedState.player.vz = 0;
+            lockedState.player.stopped = true;
+          },
+        }
+      : createMovementController();
 
   // recoil 執行期依賴（WP-13 / T1）：樣式表由武器 recoil 參數一次生成（決定性）；spread rng 由 seed
   // 建 seeded stream（`drill.sequence.seed ?? DEFAULT_RNG_SEED`，OQ-13.1）。restart 走重建 loop 重置
