@@ -28,13 +28,13 @@
 
 ## Definition of Done
 
-- [ ] resolved 參數（含 `resolvedFrom` 五欄）round-trip 逐位還原。
-- [ ] hitbox 單一來源與 `W_deg` 對帳綠（GD-7）。
-- [ ] `side` 正負向測試齊全（右／左／`x === 0` 三種），且只對 center-to-peripheral 輸出。
-- [ ] 既有 v1/v2 fixture 的七個欄位輸出逐位不變。
-- [ ] `cm/360` 離線推導對已知輸入比對手算值相符；`meta.dpi` 缺席時回 `undefined`。
-- [ ] `analysis-spider-shot.md` 與 `CONTEXT.md` 已更新並自我對帳（術語與實作一致）。
-- [ ] 全量 metrics／export／history regression exit 0。
+- [x] resolved 參數（含 `resolvedFrom` 五欄）round-trip 逐位還原。
+- [x] hitbox 單一來源與 `W_deg` 對帳綠（GD-7）——eye-frame 修正後 `W_deg` 即設計值 2.0°。
+- [x] `side` 正負向測試齊全（右／左／`x === 0` 三種），且只對 center-to-peripheral 輸出。
+- [x] 既有 v1/v2 fixture 的七個欄位輸出逐位不變。
+- [x] `cm/360` 離線推導對已知輸入比對手算值相符；`meta.dpi` 缺席時回 `undefined`（欄位級）。
+- [x] `analysis-spider-shot.md` 與 `CONTEXT.md` 已更新並自我對帳（術語與實作一致）。
+- [x] 全量 metrics／export／history regression exit 0（全量 Vitest 2,373 tests、兩個 typecheck、build 皆 exit 0）。
 
 ## Commit
 

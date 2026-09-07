@@ -15,7 +15,7 @@ Spider Shot 是與既有排程機制**互斥**且**幾何不同**的獨立分支
 | 幾何模型 | 一維水平 yaw(`SpawnAreaConfig.yawDegRange`/`distanceURange`),固定 `TARGET_Y`,無狀態獨立抽樣 | 繞「中心目標視線」的二維球面極角(`azimuthDegRange` 方位角 + `angularRadiusDegRange` 徑向角距),`y` 分量隨方位角變化,見下方公式 |
 | RNG 權威 | `sequence.seed`(配合 `spawnArea`/`spawnDelayMsRange`) | `spiderShot.seed`,唯一 RNG source |
 | 互斥規則 | — | `schema.ts` 的 `validateSpiderShotSchedule` 在 `spiderShot` 存在時拒絕 `targets.spawnArea`、`sequence.spawnDelayMsRange`、`sequence.seed` 同時出現,避免雙重排程/seed 權威([schema.ts:59-62](../../src/drill/schema.ts)) |
-| `side`/`zone` 欄位 | `DrillEvent{type:'visible'}.side: 'L' \| 'R'` 承載真實左右語意 | `side` 恆為 `'R'`(佔位,不承載象限語意);新增 `zone?: 'center' \| 'peripheral'` 才是 Spider Shot 的真實排程狀態 |
+| `side`/`zone` 欄位 | `DrillEvent{type:'visible'}.side: 'L' \| 'R'` 承載真實左右語意 | `center-peripheral(-stratified/-eye-stratified)` 三支的 `side` 恆為 `'R'`(佔位,不承載象限語意);新增 `zone?: 'center' \| 'peripheral'` 才是 Spider Shot 的真實排程狀態。**例外**:`center-peripheral-yawpitch`(WP-57)的周邊 spawn 帶真實左右,見下方 wide 變體一節 |
 
 省略 `spiderShot` 時,`TargetManager`/`schema.ts` 逐位等同現行 L/R 交替行為——既有 `TargetManager.test.ts`/`schema.test.ts`/`DrillLoader.test.ts`/WP-21 seeded spawn 測試零修改全綠(機械判準,已於 T1 驗證)。
 
@@ -69,7 +69,7 @@ WP-41 T0 已關閉「以外部 seed 再次排程家族內條件區塊」的分�
 { type: 'visible', targetId, side: 'R', zone: 'center' | 'peripheral', t, targetX, targetY, targetZ }
 ```
 
-`zone` 是 additive 欄位([DataRecorder.ts](../../src/data/DataRecorder.ts))，省略時（既有 drill）行為零回溯相容成本；`side` 在 Spider Shot 分支恆為 `'R'`，僅維持既有型別相容位置。排程 config 本身以不透明形式回顯到 `Meta.spawn.spiderShot?: unknown`（[metadata.ts](../../src/data/metadata.ts)，比照既有 `spawnArea` 慣例，WP-33 不解析）。
+`zone` 是 additive 欄位([DataRecorder.ts](../../src/data/DataRecorder.ts))，省略時（既有 drill）行為零回溯相容成本；`side` 在 `center-peripheral`／`-stratified`／`-eye-stratified` 三支恆為 `'R'`，僅維持既有型別相容位置（`center-peripheral-yawpitch` 是唯一例外，見 wide 變體一節）。排程 config 本身以不透明形式回顯到 `Meta.spawn.spiderShot?: unknown`（[metadata.ts](../../src/data/metadata.ts)，比照既有 `spawnArea` 慣例，WP-33 不解析）。
 
 離線 `deriveSpiderShotTransitions(payload)`([spiderShotConditions.ts](../../src/metrics/spiderShotConditions.ts))依時間排序相鄰的 `visible` 事件，以 `zone` 重建 transition：
 
@@ -153,6 +153,121 @@ WP-46 對齊 Aim Lab Spidershot 手感,在 WP-44 交付的 stratified schedule �
 
 **③ hitbox 直徑公式(視角直徑 2.0° @ 距離 8u)**——`spider_shot_v2.ts` 的 `SPIDER_SHOT_HITBOX_V2` 由具名常數推導:`SPIDER_SHOT_V2_HITBOX_DIAMETER_U = 2 × 8 × tan(2.0°/2 × π/180)`,即距離 8u 處視角直徑 2.0° 對應的球體直徑,三軸共用同一數值。2.0° 是 Aim Lab Ultimate/Standard 1.8°–2.2° 候選範圍的中點,**未經真人 pilot 校準**(比照 v1 當年 `angularRadiusDegRange` 的候選值聲明方式,測試手感後可調整)。同時整場結束條件改為單一 `endCondition: { type: 'timeLimit', value: 60000 }`(60 秒),移除冗餘的 `timing.timeLimitMs`;`targets.count: 300` 只是 spawn 安全上限,不是實際結束條件(60 秒內任何合理擊殺速率都到不了)。
 
+## `spider-shot-wide-v1` — eye-frame 大幅度拉槍（WP-57，practice-only）
+
+`spider-shot-wide-v1` 是與 v1／v2／v3 **同輩不同構念**的第四支排程（`kind: 'center-peripheral-yawpitch'`），
+不是後繼版本：v1/v2 的參數與凍結狀態、v3 的 Assessment 地位都不因它改變。它把刺激的眼睛所見角位移
+從 v2 的 ~10–25° 推到 **~40–70°**（依當次 FOV／aspect），周邊落點貼近水平 FOV 極限。
+v1 交付範圍為 **researcher-only／practice**：不寫入 participant 歷史、不產生 compatibility cell、
+不進 `DrillMetricRegistry`。
+
+### 幾何：eye-frame 球面（yaw/pitch 參數化）
+
+落點由 [`spiderWideEyePos()`](../../src/sim/spiderEyeFrame.ts) 產生，眼睛在 sim 原點正上方
+`PLAYER_EYE_HEIGHT_U = 1.6`：
+
+```text
+eye = (0, 1.6, 0)
+pos = eye + d × ( sin(yaw)·cos(pitch),  sin(pitch),  −cos(yaw)·cos(pitch) )
+```
+
+- `abs(pos − eye)` 對所有落點**恆等於 `d`** ⇒ 目標角徑恆定（設計值 2.0° @ `d = 8 u`，hitbox 直徑
+  `2·8·tan(1°) = 0.279281 u`，sphere）。這是它與 `angularSpawnPose()` 的**圓柱**參數化
+  （`y = TARGET_Y + tan(pitch)·d`，3D 距離隨 pitch 漂）刻意不同的地方。
+- `yaw`／`pitch` 就是玩家的螢幕水平／垂直視角；中心目標是 `yaw = pitch = 0`，故「相對中心目標 ±p 度」
+  與 `pitch ∈ [−p, p]` 完全等價，不需要偏移換算。
+- 與 v1/v2 的 `peripheralPos()` 差異：後者的錐軸起點是**世界原點**而非眼睛（GD-32 已入帳）。
+  wide 分支不沿用該幾何，也不回頭改 v1/v2。
+- 綁定場景固定為 `wide-flick-arena`（`roomSize [18, 20, 4]`、`eyeZ: 0`、`eyeHeight 1.6`）。
+  `eyeZ: 0` 是契約要求而非偏好：它讓匯出角度與刺激幾何同源，且避開 KI-012 的後牆遮擋。
+
+### `resolvedFrom`：arm 時解析一次的 provenance
+
+`peripheral.yawMagDegRange` **不是常數**：它由 [`resolveSpiderWideYawPitch()`](../../src/drill/spiderShotWide.ts)
+在 drill **arm 時**依當下的垂直 FOV 與 camera aspect 解析一次，寫進 resolved `DrillConfig`。
+越過那一點之後 `TargetManager` 對 FOV／aspect／camera／`SceneConfig` 一無所知 —— run 中 resize
+或切解析度**不重解析**，spawn 序列逐位不變（GD-10）。
+
+```text
+halfHFOV = atan( tan(fovDegVertical / 2) × aspect )
+r        = atan( (hitboxDiameterU / 2) / distanceU )
+yawMax   = atan( (1 − screenMargin) × tan(halfHFOV) ) − r
+yawMagDegRange = [ kLo × yawMax, yawMax ]
+```
+
+解析用到的五個量原樣落進 `spiderShot.resolvedFrom`：
+
+| 欄位 | 意義 |
+|---|---|
+| `fovDegVertical` | 解析當時的垂直 FOV（= `meta.fovDeg`，來源 `SettingsPanel.fov`） |
+| `aspect` | 解析當時的 `camera.aspect = w / h` |
+| `screenMargin` | NDC 邊界安全餘裕（比例，非角度；裁切發生在 NDC 空間） |
+| `kLo` | yaw 貼邊係數，窗下界 = `kLo × yawMax` |
+| `targetAngularDiameterDeg` | 目標角徑設計值（2.0°），與 hitbox 直徑互為反推 |
+
+**為什麼是刻意的冗餘**：`aspect` 在 WP-57 之前**完全不在任何匯出欄位裡**。沒有它，離線分析無法
+重建 yaw 窗——同一個 FOV 75 下，4:3 解析出的 `yawMax` 是 43.485°、21:9 是 58.809°，相差 15.3°。
+（同理：若未來把本 drill 晉升為 Assessment，`compatibilityKey` **必須**補 `aspect`，否則兩個實際
+刺激不同的 run 會被誤判可合併。）
+
+整塊 `spiderShot` 由 `main.ts` 原樣複製進 `meta.spawn.spiderShot`（opaque `unknown`），
+`parseExportPayload()` 亦原樣 pass-through ⇒ resolved 參數只要在 resolved config 裡就自動落匯出，
+不需要擴充 schema 型別。
+
+### `side`：兩個不同的欄位，不要混用
+
+| | `DrillEvent{type:'visible'}.side` | `SpiderShotTransition.side`（WP-57 T4 新增） |
+|---|---|---|
+| 產生者 | `TargetManager` spawn 時蓋章（sim 側） | `deriveSpiderShotTransitions()`（離線推導） |
+| v1／v2／v3 | 恆為 `'R'` —— **純型別佔位**，不承載任何象限語意 | 由抵達點的 eye-frame `x` 符號讀出（見下方警告） |
+| wide（`-yawpitch`） | 周邊 spawn 帶**真實左右**（分層佇列的 cell side）；中心目標仍為 `'R'` 佔位（正前方無左右可言） | 與 sim 側的 spawn side **逐筆相同**（由 regression 釘死） |
+
+`SpiderShotTransition.side` 的規則：
+
+- 只對 `direction === 'center-to-peripheral'` 輸出（回中心沒有左右可言）。
+- `x > 0 → 'R'`、`x < 0 → 'L'`、**`x === 0` 省略欄位**（不猜一邊：猜了就無法在資料上分辨
+  「這個落點沒有左右語意」與「這個落點在右邊」）。
+- 它**不是**第二套幾何（C-D4）：讀的就是 `angularDistanceDeg`／`angularSizeDeg` 已經在用的同一個
+  eye-frame 座標，只是取符號。之所以需要它，是因為 `quadrant` 對 wide drill 恆回 `'horizontal'`
+  （T0 實測 80/80，距最近的 45° 分箱邊界仍有 24.37° 餘裕）—— 標籤正確但無辨別力，左右資訊只能由
+  `side` 承載。
+
+> ⚠️ **v1/v2 的 `side` 只是型別佔位，且近垂直呈現的符號可能是浮點殘值。** sim 側寫入的 `'R'` 不帶
+> 語意（見上表）；離線推導出的 `side` 雖然讀的是真座標，但當 v1/v2 的候選點落在「正上／正下」時，
+> `x` 可能是 `sin(180°) = 1.22e-16` 這種殘值而非 `0`，於是輸出一個幾何上無意義的 `'R'`。
+> 這是刻意不加閾值的後果（加閾值等於為 `side` 發明第二套幾何容差）。**判讀 v1/v2 資料時，
+> 請先以 `quadrant` 篩掉 `vertical` 呈現再看 `side`**；wide drill 不受此影響（yaw 幅度恆 ≥ 40°）。
+
+### 不變的東西（本變體沒有動的契約）
+
+- `D_deg`／`W_deg` 的公式、`quadrant` 的 45° 分箱門檻、`targetConditionCell` 的格式
+  `spider:d=<6 位小數>;w=<6 位小數>` **全部不變**。
+- `targetConditionCell` **不含 pitch、不含 side**：pitch 是干擾項（分層只為平衡），side 是條件變因
+  但由獨立欄位承載，塞進 cell 會改動既有相容鍵語意。
+- `spiderShotMetrics.ts` 的五類構念零修改 —— 它們本來就走 `resolveEyeOrigin()`／
+  `angularEccentricityDeg()`（已是 eye-frame），與本 drill 的新幾何同源。
+- eye-frame 修正（KI-026／BD-026／GD-32 ④）之後，wide drill 的匯出 `W_deg` 就是設計值本身
+  （2.0°，`worldDistanceU` 恆為 8 u），不再有 origin-frame 漂移。
+
+### `counts/360` 與 `cm/360`（離線推導，不新增輸入欄位）
+
+大幅度拉槍會壓到低感度選手的滑鼠墊行程：單邊 yaw 約 50° 時，中心↔周邊來回接近 100° 峰對峰。
+若不把每個 run 的實體行程算出來，感度會以「被迫抬滑鼠重新定位」的形式偷渡成混淆因子。
+
+[`deriveMouseThrow(payload)`](../../src/metrics/mouseThrow.ts) 由既有欄位推導，**不新增任何輸入**：
+
+```text
+countsPer360 = 2π ÷ hipStep          // hipStep 來自 resolveMouseGain()，C-D4：不重寫 gain 公式
+cmPer360     = countsPer360 ÷ dpi × 2.54
+adsCountsPer360 = 2π ÷ adsStep       // adsStep = hipStep × sensitivityRatio × (ads.fovDeg / meta.fovDeg)
+```
+
+- `meta.dpi` 是 self-reported（瀏覽器讀不到外部硬體設定）。**缺席時 `cmPer360` 回 `undefined`
+  而非猜一個 DPI**；`countsPer360` 不需要 DPI，仍然成立。
+- `meta.fovDeg` 缺席時 ADS 感度鏈不可稽核（見 `metadata.ts` 的 `fovDeg` 註解），
+  `adsCountsPer360`／`adsCmPer360` 一併回 `undefined`。
+- 這是**資料品質標註**的輸入，不是構念：它與抬滑鼠疑慮旗標（T5）一樣，不得進教練報告（C-D3）。
+
 ## Verified test evidence
 
 - 排程機制（單目標存在、seed 決定性、四象限+兩斜向世界座標）：[TargetManager.test.ts:578-](../../src/sim/TargetManager.test.ts)「WP-36 spider-shot center/peripheral schedule」。
@@ -165,3 +280,8 @@ WP-46 對齊 Aim Lab Spidershot 手感,在 WP-44 交付的 stratified schedule �
 - sphere ray-intersection(球心命中、外接方塊角落內但球外 miss、球體邊緣內側 hit、box 分支對照組):[HitDetector.test.ts](../../src/sim/HitDetector.test.ts)。
 - `TargetView.setShape()`(sphere geometry 型別、既有 pool mesh identity 不變但 geometry 換新、同形狀重複呼叫不重複 dispose):[TargetView.test.ts](../../src/render/TargetView.test.ts)。
 - `centerExemptFromTimeout`(center 不逾時、peripheral 仍逾時、v1 省略旗標時 center 仍逾時、兩種 spiderShot schema 形狀欄位保真):[DrillRunner.test.ts](../../src/drill/DrillRunner.test.ts)、[schema.test.ts](../../src/drill/schema.test.ts)。
+- `spider-shot-wide-v1` eye-frame 幾何／resolver／arena 淨空：[spiderEyeFrame.test.ts](../../src/sim/spiderEyeFrame.test.ts)、[spiderShotWide.test.ts](../../src/drill/spiderShotWide.test.ts)、[spider-wide-geometry.test.ts](../../tests/regression/spider-wide-geometry.test.ts)、[spider-wide-arena-geometry.test.ts](../../tests/regression/spider-wide-arena-geometry.test.ts)。
+- `spider-shot-wide-v1` 分層佇列／四 FPS 決定性／aspect 不變性：[spider-wide-spawn-determinism.test.ts](../../tests/regression/spider-wide-spawn-determinism.test.ts)、[spider-wide-schedule-invariants.test.ts](../../tests/regression/spider-wide-schedule-invariants.test.ts)。
+- 匯出 round-trip（`resolvedFrom` 五欄逐位還原、由匯出欄位重算 yaw 窗、hitbox 單一來源與 `W_deg` 對回 2.0°、離線 `side` 與 sim 端 spawn side 逐筆相同、condition cell 不含 pitch/side）：[spider-wide-export-roundtrip.test.ts](../../tests/regression/spider-wide-export-roundtrip.test.ts)。
+- `side` 的正負向（右／左／`x === 0` 省略、只對 center-to-peripheral 輸出、對移動中的眼睛取符號、v1/v2 fixture 七欄位逐位不變）：[spiderShotConditions.test.ts](../../src/metrics/spiderShotConditions.test.ts)。
+- `counts/360`／`cm/360` 離線推導（手算閉式對帳、DPI 缺席回 `undefined`、ADS gain 分支）：[mouseThrow.test.ts](../../src/metrics/mouseThrow.test.ts)。

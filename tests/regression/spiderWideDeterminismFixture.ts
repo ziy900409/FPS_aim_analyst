@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { createDataRecorder } from '../../src/data/DataRecorder.ts';
+import { createDataRecorder, type DataRecorderSnapshot } from '../../src/data/DataRecorder.ts';
 import { loadDrill } from '../../src/drill/DrillLoader.ts';
 import { createDrillRunner } from '../../src/drill/DrillRunner.ts';
 import { resolveSpiderShotWideV1 } from '../../src/drill/spider_shot_wide_v1.ts';
@@ -65,6 +65,11 @@ export interface WideRun {
   readonly spawnIds: readonly string[];
   /** 各 spawn 的首見位置，依 spawn 順序。 */
   readonly spawnPositions: readonly { readonly x: number; readonly y: number; readonly z: number }[];
+  /**
+   * WP-57 / T4：原始 recorder snapshot（additive）。匯出 round-trip 需要真實的 `visible`／`fire`
+   * 事件與逐 tick 紀錄，而不是本 fixture 為 parity 斷言壓縮過的 `samples`。決定性測試不讀此欄位。
+   */
+  readonly snapshot: DataRecorderSnapshot;
 }
 
 export const wideFrameSequences: Record<string, number[]> = {
@@ -159,6 +164,7 @@ export function runWide(absTimes: readonly number[], options: WideRunOptions = {
     samples,
     spawnIds,
     spawnPositions,
+    snapshot,
   };
 }
 

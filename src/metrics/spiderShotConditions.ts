@@ -17,6 +17,21 @@ export interface SpiderShotTransition {
   readonly direction: SpiderTransitionDirection;
   /** The arrival target's presentation label; center arrivals have no quadrant. */
   readonly quadrant?: SpiderQuadrant;
+  /**
+   * WP-57 / T4（FR-57.11）：抵達目標在 **eye frame** 的左右分區，由抵達點相對該 visible tick
+   * 眼睛位置的 `x` 符號讀出（`x > 0 → 'R'`、`x < 0 → 'L'`）。
+   *
+   * - 只對 `center-to-peripheral` 輸出（回中心沒有左右可言）。
+   * - `x === 0`（正上／正下）時**省略**而非猜測 —— 那個落點沒有左右語意。
+   * - 這不是第二套幾何（C-D4）：它讀的就是 `angularDistanceDeg` / `angularSizeDeg` 已經用的
+   *   同一個 eye-frame 座標，只是取符號。`quadrant` 對本 drill 恆為 `'horizontal'`（無辨別力），
+   *   左右資訊因此只能由本欄位承載。
+   * - ⚠️ **近垂直呈現的符號可能只是浮點殘值**：`spider-shot-v1/v2` 的「正上／正下」候選點若由
+   *   `sin(180°) = 1.22e-16` 之類的殘值產生，`x` 會是 `±1e-16` 而非 `0`，本欄位就會輸出一個
+   *   幾何上無意義的 `'L'`／`'R'`。判讀時請先以 `quadrant` 篩掉 `vertical` 呈現
+   *   （見 `docs/operational/analysis-spider-shot.md`）。
+   */
+  readonly side?: 'L' | 'R';
   /** D_deg: angular displacement from the preceding target direction. */
   readonly angularDistanceDeg: number;
   /** W_deg: angular width of the arrival target. */
@@ -66,12 +81,14 @@ export function deriveSpiderShotTransitions(
     const angularSize = (2 * Math.atan((hitbox.width / 2) / worldDistanceU) * 180) / Math.PI;
     const quadrant =
       direction === 'center-to-peripheral' ? quadrantForPeripheral(previousRelative, currentRelative) : undefined;
+    const side = direction === 'center-to-peripheral' ? sideForPeripheral(currentRelative) : undefined;
 
     transitions.push({
       index: index - 1,
       targetId: current.targetId,
       direction,
       ...(quadrant !== undefined ? { quadrant } : {}),
+      ...(side !== undefined ? { side } : {}),
       angularDistanceDeg: angularDistance,
       angularSizeDeg: angularSize,
       hitbox,
@@ -164,6 +181,16 @@ function quadrantForPeripheral(center: TargetPoint, peripheral: TargetPoint): Sp
     return 'horizontal';
   }
   return 'oblique';
+}
+
+/**
+ * FR-57.11：eye-frame `x` 的符號即左右。`0` 回 `undefined`（省略欄位）而非任選一邊 ——
+ * 猜一個值會讓「這個落點沒有左右語意」與「這個落點在右邊」在資料上不可分。
+ */
+function sideForPeripheral(peripheral: TargetPoint): 'L' | 'R' | undefined {
+  if (peripheral.x > 0) return 'R';
+  if (peripheral.x < 0) return 'L';
+  return undefined;
 }
 
 function normalize(point: TargetPoint): TargetPoint {

@@ -132,6 +132,139 @@ describe('deriveSpiderShotTransitions', () => {
   });
 });
 
+/**
+ * WP-57 / T4（FR-57.11）—— additive `side`。
+ *
+ * `side` 只讀既有 eye-frame 座標的 `x` 符號，不新增第二套幾何（C-D4）。這一組測試同時守住兩件事：
+ * 新欄位的正負向行為，以及**既有七個欄位對 v1/v2 fixture 的輸出逐位不變**（`angularDistanceDeg`／
+ * `angularSizeDeg`／`quadrant`／`targetConditionCell`／`worldDistanceU`／`hitbox`／`seed`）。
+ */
+describe('deriveSpiderShotTransitions — WP-57 T4 side label', () => {
+  const EYE_Y = 1.6;
+
+  it('labels right / left arrivals from the eye-frame x sign and omits side at x === 0', () => {
+    const right = sideOfArrival({ x: 3, y: EYE_Y, z: -8 });
+    const left = sideOfArrival({ x: -3, y: EYE_Y, z: -8 });
+    const straightUp = sideOfArrival({ x: 0, y: EYE_Y + 3, z: -8 });
+
+    expect(right).toBe('R');
+    expect(left).toBe('L');
+    // x === 0 的落點沒有左右語意 ⇒ 省略欄位而非猜一邊（否則資料上分不出「無左右」與「在右邊」）。
+    expect(straightUp).toBeUndefined();
+  });
+
+  it('emits side only for center-to-peripheral arrivals', () => {
+    const transitions = deriveSpiderShotTransitions(makeSidePayload({ x: 3, y: EYE_Y, z: -8 }));
+    const outbound = transitions.filter((transition) => transition.direction === 'center-to-peripheral');
+    const returns = transitions.filter((transition) => transition.direction === 'peripheral-to-center');
+
+    expect(outbound).toHaveLength(1);
+    expect(outbound[0].side).toBe('R');
+    expect(returns).toHaveLength(1);
+    expect('side' in returns[0]).toBe(false);
+  });
+
+  it('reads the sign against the moving eye, not the world origin', () => {
+    // 玩家向 +x 位移 400 sim units = 4 world units（simToWorld = 0.01）後，世界座標 x = 3 的目標
+    // 落在眼睛**左側**。若 side 誤用世界原點就會回 'R'。
+    const payload: ExportPayload = {
+      meta: { ...meta, simToWorld: 0.01 },
+      ticks: [tick(0, 0, 0), tick(10, 400, 0), tick(20, 400, 0)],
+      events: [
+        visible('center', 'center', { x: 0, y: EYE_Y, z: -8 }, 0),
+        visible('peripheral', 'peripheral', { x: 3, y: EYE_Y, z: -8 }, 10),
+        visible('center-2', 'center', { x: 4, y: EYE_Y, z: -8 }, 20),
+      ],
+    };
+    const [outbound] = deriveSpiderShotTransitions(payload, { strictEyeOrigin: true });
+
+    expect(outbound.direction).toBe('center-to-peripheral');
+    expect(outbound.side).toBe('L');
+  });
+
+  it('keeps the seven existing fields byte-identical on the v1/v2 fixture and adds a non-contradictory side', () => {
+    const transitions = deriveSpiderShotTransitions(makePayload());
+    const outbound = transitions.filter((transition) => transition.direction === 'center-to-peripheral');
+    const expectedCell = `spider:d=30.000000;w=${(((2 * Math.atan(0.5 / 10)) * 180) / Math.PI).toFixed(6)}`;
+
+    // 既有七欄位：逐位釘死（azimuth 0/90/180/270/45/225 六個周邊落點）。
+    expect(outbound.map((transition) => transition.quadrant)).toEqual([
+      'vertical',
+      'horizontal',
+      'vertical',
+      'horizontal',
+      'oblique',
+      'oblique',
+    ]);
+    for (const transition of transitions) {
+      expect(transition.angularDistanceDeg).toBeCloseTo(30, 12);
+      expect(transition.angularSizeDeg).toBeCloseTo(((2 * Math.atan(0.5 / 10)) * 180) / Math.PI, 12);
+      expect(transition.targetConditionCell).toBe(expectedCell);
+      expect(transition.worldDistanceU).toBeCloseTo(10, 12);
+      expect(transition.seed).toBe(36036);
+      expect(transition.hitbox).toEqual({ width: 1, height: 2, depth: 1 });
+    }
+
+    // 新欄位對同一組 payload 的輸出。azimuth 90/45 在右、270/225 在左 —— 與方位角一致。
+    const sides = outbound.map((transition) => transition.side);
+    expect(sides[1]).toBe('R'); // azimuth 90（正右）
+    expect(sides[3]).toBe('L'); // azimuth 270（正左）
+    expect(sides[4]).toBe('R'); // azimuth 45（右上）
+    expect(sides[5]).toBe('L'); // azimuth 225（左下）
+
+    // 兩個 `vertical` 呈現：azimuth 0 的 `sin(0)` 恰為 0 ⇒ 省略；azimuth 180 的 `sin(π) = 1.22e-16`
+    // 是**浮點殘值**，符號規則因此輸出一個幾何上無意義的 'R'。這是刻意不加閾值的後果（加閾值等於
+    // 為 side 發明第二套幾何容差），故以測試與 analysis 文件明記：判讀時先用 quadrant 篩掉 vertical。
+    expect(sides[0]).toBeUndefined();
+    expect(sides[2]).toBe('R');
+    expect(outbound[2].quadrant).toBe('vertical');
+
+    // 不矛盾性：有 side 的每一筆，其符號都與該筆抵達點的 eye-frame x 同號。
+    const arrivals = [
+      pointAtAzimuth(0),
+      pointAtAzimuth(90),
+      pointAtAzimuth(180),
+      pointAtAzimuth(270),
+      pointAtAzimuth(45),
+      pointAtAzimuth(225),
+    ];
+    outbound.forEach((transition, index) => {
+      if (transition.side === undefined) {
+        expect(arrivals[index].x).toBe(0);
+        return;
+      }
+      expect(transition.side).toBe(arrivals[index].x > 0 ? 'R' : 'L');
+    });
+  });
+
+  function sideOfArrival(point: { x: number; y: number; z: number }): 'L' | 'R' | undefined {
+    const [outbound] = deriveSpiderShotTransitions(makeSidePayload(point), { strictEyeOrigin: true });
+    return outbound.side;
+  }
+
+  function makeSidePayload(point: { x: number; y: number; z: number }): ExportPayload {
+    return {
+      meta: {
+        ...meta,
+        simToWorld: 1,
+        scene: {
+          sceneId: 'wide-flick-arena',
+          assetPackVersion: 'wide-flick-arena-v1',
+          clutterTier: 'low',
+          fallback: false,
+          eye: { x: 0, y: EYE_Y, z: 0 },
+        },
+      },
+      ticks: [tick(0, 0, 0), tick(10, 0, 0), tick(20, 0, 0)],
+      events: [
+        visible('center', 'center', { x: 0, y: EYE_Y, z: -8 }, 0),
+        visible('peripheral', 'peripheral', point, 10),
+        visible('center-2', 'center', { x: 0, y: EYE_Y, z: -8 }, 20),
+      ],
+    };
+  }
+});
+
 function tick(t: number, px: number, pz: number): ExportPayload['ticks'][number] {
   return {
     t,

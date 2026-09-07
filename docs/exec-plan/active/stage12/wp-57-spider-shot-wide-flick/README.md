@@ -15,7 +15,7 @@
 | **Delivery policy** | v1 = practice／researcher-only。時序參數（`peekTimeoutMs`／`timeLimitMs`）與 yaw 貼邊係數為未校準候選值，晉升 Assessment 是後續獨立 WP 的職責 |
 | **Estimate** | 9.5–16 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：新增 spawn 幾何進 `TargetManager`（sim 核心）；aspect 進入 spawn 解析與 GD-10「解析度不改 sim」存在直接張力；`DrillConfig` 為約 115 consumers 的跨模組契約 |
-| **Status** | 🟡 T0／T1／T2／T3 ✅（2026-09-07，見 [progress.md](progress.md) 各 §evidence）。**T4 已解除阻塞** —— OQ-57.7 於 2026-09-07 由 KI-026／BD-026／[GD-32](../../../DECISIONS.md) 拍板為**選項 (b)** 並落地（匯出角度已統一 eye-frame）；T5 相依 T4；T6 相依 T4 並額外承接 T3 步驟 8 的實機截圖（D-57.T3-3） |
+| **Status** | 🟡 T0／T1／T2／T3／T4 ✅（2026-09-07，見 [progress.md](progress.md) 各 §evidence）。OQ-57.7 已於 2026-09-07 由 KI-026／BD-026／[GD-32](../../../DECISIONS.md) 拍板為**選項 (b)** 並落地（匯出角度已統一 eye-frame），T4 的 round-trip 期望值即以此為準。**T5／T6 已解除相依**；T6 另額外承接 T3 步驟 8 的實機截圖（D-57.T3-3） |
 
 ---
 
@@ -23,7 +23,7 @@
 
 1. `SpiderShotScheduleConfig` 目前是兩支 discriminated union（`center-peripheral`、`center-peripheral-stratified`），定義於 `src/drill/DrillConfig.ts`（`SpiderShotCenterPeripheralConfig` line 81、`SpiderShotStratifiedConfig` line 113、union 本體 line 123）；`spiderShot` 為 `DrillConfig` top-level optional 欄位（line 184），`DrillConfig` 本體 line 144。
 2. 周邊位置由 `peripheralPos()`（`src/sim/TargetManager.ts:150`）產生：以 `(0, TARGET_Y, -centerDistanceU)` 為中心視線建立正交框，再取 azimuth + 離軸 radius。**該視線向量的起點是世界原點，不是眼睛**（`TARGET_Y = 1.5`，`TargetManager.ts:67`；眼睛 `y = 1.6`，`src/metrics/eyeOrigin.ts:69` 與 `PLAYER_EYE_HEIGHT_U = 1.6`，`src/scene/clearance.ts`）。錐軸因此相對真實視線仰起 `atan(1.5/8) ≈ 10.6°`；一個「radius 45°、azimuth 90°」的點在玩家眼中落在 pitch ≈ −4.0°，不是 0°。
-3. 上述偏移在 v1/v2 **兩端一致**：`deriveSpiderShotTransitions()`（`src/metrics/spiderShotConditions.ts`）同樣以 `normalize(targetPoint)`（世界原點）計算 `D_deg`。指標內部自洽、既有結論不因此失效，但幾何語意與玩家所見不同源。本 WP 不回頭改 v1/v2（參數已凍結），差異入帳為 GD-32。
+3. ⚠️ **本項已於 2026-09-07 被 KI-026／BD-026 推翻，見 §2.7 的過期標記**（`deriveSpiderShotTransitions()` 現為 eye-frame）。以下為 T0 當時的讀碼事實：上述偏移在 v1/v2 **兩端一致**：`deriveSpiderShotTransitions()`（`src/metrics/spiderShotConditions.ts`）同樣以 `normalize(targetPoint)`（世界原點）計算 `D_deg`。指標內部自洽、既有結論不因此失效，但幾何語意與玩家所見不同源。本 WP 不回頭改 v1/v2（參數已凍結），差異入帳為 GD-32。
 4. 另一套 yaw/pitch 取樣器 `angularSpawnPose()`（`src/sim/TargetManager.ts:102`）是**圓柱**不是球面：`y = TARGET_Y + tan(pitch)·d`，水平半徑恆為 `d`，故 3D 距離 `= d / cos(pitch)`。pitch 15° → 距離 +3.5%、目標角徑 −3.4%。對 `micro_flick` 的 ±12° 影響小，但本 WP 要把 `W_deg` 當條件變因，不能沿用。
 5. FOV 是玩家可調 UI 滑桿（`src/ui/SettingsPanel.ts:26-29`：垂直 FOV `60–120`，預設 `75`，step 1），經 `src/main.ts:698` 寫入 `meta.fovDeg`。camera aspect 由 main 於 resize 時餵給 `SceneManager.resize()`（`src/render/SceneManager.ts:57`），**不在任何匯出欄位內**。
 6. `src/data/DataRecorder.ts:124` 記載：Lock 鎖定中整組設定隱藏（KI-003）⇒ **drill 進行中 sensitivity/FOV 不可能變動**，單一快照即足夠。這是「arm 時解析一次即可」的既有事實依據。
@@ -140,7 +140,7 @@
 | **OQ-57.4** | `peekTimeoutMs = 2500` 與 `timeLimitMs = 90000` 是否造成天花板／地板效應？ | 先出實機版，觀察 timeout 率與每 cell 樣本數後回填（比照 stage9 對 v2 的 OQ-S9-1 處理） | 使用者（實機） | T6 前 | 未校準則 `movementTimeMs` 分布可能被右截，指標分布形狀失真 |
 | **OQ-57.5** | 抬滑鼠疑慮旗標的門檻（movement 窗內角速度停滯的 ms 與角速度閾值）？ | T5 以真實 run 的 `dYaw` 序列掃參數並輸出敏感度表，不預設凍結 | 使用者 + 工程 | T5 exit | 門檻過鬆會標掉正常停頓，過緊則漏掉真實抬滑鼠 |
 | **OQ-57.6** | 若未來晉升 Assessment，`compatibilityKey` 是否必須補 `aspect`？（目前只有 `sensitivity` + `fovDeg`，`buildSensitivityFovKey()` 於 `src/metrics/compatibilityKey.ts:86-90`） | **必須補**：同 FOV 但不同視窗形狀會解析出不同 yaw 窗，合併會是錯的。T0 量化：同 FOV 75 下 4:3 的 `yawMax` = 43.485°、21:9 = 58.809°，**相差 15.3°**。v1 practice-only 故本 WP 不動 key | 使用者 | 晉升 WP 的 T0（不阻塞本 WP） | 若晉升時漏掉，兩個實際刺激不同的 run 會被誤判可合併 |
-| **OQ-57.7**（T0 新增） | 匯出的 `angularDistanceDeg`／`angularSizeDeg` 是 origin-frame，對本 drill 系統性偏差（`eyeZ: 0` 下 `D_deg` 低估 0.8–1.6°、`W_deg` 低估約 1.9% 且隨 pitch 在 `[1.9198, 2.0053]` 漂移）。要 **(a)** 照 FR-57.11 原樣不動、只在 `analysis-spider-shot.md` 記載換算方式（真值可由 `meta.scene.eye` + 目標座標經既有 `resolveEyeOrigin()`／`angularEccentricityDeg()` 完全還原）；**(b)** 視為 `spiderShotConditions.ts` 的 bug 並開 KI 修成 eye-frame（會改動 v1/v2 已凍結的匯出值，需重錄 baseline）；還是 **(c)** 為 wide drill 加 drill-scoped 的 eye-frame 欄位（**有 C-D4 第二定義之虞**）？ | **(a)**：偏差在 `eyeZ: 0` 下已收斂到 ≤ 2.4°／4.0%，且**可完全離線還原**、不損失資訊；v1 practice-only 不進教練報告也不進 registry，故偏差不會傳播到任何結論。(b) 是正確的長期解但屬獨立 KI，不該由本 WP 夾帶；(c) 直接牴觸 C-D4 | **使用者** | **T4 前**（不阻塞 T1／T2／T3） | 若不拍板，T4 會在不知道匯出欄位語意的情況下寫 round-trip 測試，把偏差當成正確值釘死 |
+| **OQ-57.7**（T0 新增） | 匯出的 `angularDistanceDeg`／`angularSizeDeg` 是 origin-frame，對本 drill 系統性偏差（`eyeZ: 0` 下 `D_deg` 低估 0.8–1.6°、`W_deg` 低估約 1.9% 且隨 pitch 在 `[1.9198, 2.0053]` 漂移）。要 **(a)** 照 FR-57.11 原樣不動、只在 `analysis-spider-shot.md` 記載換算方式（真值可由 `meta.scene.eye` + 目標座標經既有 `resolveEyeOrigin()`／`angularEccentricityDeg()` 完全還原）；**(b)** 視為 `spiderShotConditions.ts` 的 bug 並開 KI 修成 eye-frame（會改動 v1/v2 已凍結的匯出值，需重錄 baseline）；還是 **(c)** 為 wide drill 加 drill-scoped 的 eye-frame 欄位（**有 C-D4 第二定義之虞**）？ | ✅ **已收斂（2026-09-07）：採選項 (b)**，而非 T0 建議的 (a)。KI-026／BD-026（commit `567eaf6`）已把 `deriveSpiderShotTransitions()` 改為 payload eye + 逐 tick 玩家位置，匯出 `D_deg`／`W_deg` 現為 **eye-frame**；權威記載見 [GD-32](../../../DECISIONS.md) ④。T4 實測本 drill 的 `W_deg` 恆為設計值 `2.000000000000`（不再有 origin-frame 漂移）。⚠️ 本文件 §2.5.1／§2.7 與 progress §T0 audit 的 origin-frame 偏差數字（`27.937°`／`43.6%`／`2.408°`／`4.0%`／`[1.9198, 2.0053]`）為**拍板前**的量測，只有歷史意義，**不得**作為任何期望值 | ~~使用者~~ 已收斂 | ~~T4 前~~ 已收斂 | — |
 
 ---
 
@@ -383,7 +383,9 @@ pitch 分層的用途是**平衡**（避免連續多次落同一半區），不�
 
 `deriveSpiderShotMetrics()` 只消費 visible 事件 anchors 與既有 canonical derivations，對「spawn 是怎麼排的」不敏感 ⇒ **本 WP 不修改該檔**。T0 已逐函式覆核（9 個函式，見 [progress.md](progress.md) §T0 audit）：全檔對 azimuth／radius／origin-frame 錐軸零引用，唯一 spawn 相關耦合是 line 42 的 `event.zone === 'peripheral'`，且角度一律走 `resolveEyeOrigin()`／`angularEccentricityDeg()`（`eyeOrigin.ts`）**已是 eye-frame** ⇒ 五類構念本來就與本 drill 的新幾何同源，這是「零修改」成立的真正理由（比原規劃寫的「對 spawn 方式不敏感」更強）。
 
-**但 `spiderShotConditions.ts` 不同源**：它的 `D_deg`／`W_deg` 走世界原點（§0 item 3），故本 drill 的**刺激**是 ~40–70° eye-frame，而**匯出的 `angularDistanceDeg`** 在 `eyeZ: 0` 下會低估 0.8–1.6°、`angularSizeDeg` 低估約 1.9%。詳見 §2.5.1 與 **OQ-57.7**。
+~~**但 `spiderShotConditions.ts` 不同源**：它的 `D_deg`／`W_deg` 走世界原點（§0 item 3），故本 drill 的**刺激**是 ~40–70° eye-frame，而**匯出的 `angularDistanceDeg`** 在 `eyeZ: 0` 下會低估 0.8–1.6°、`angularSizeDeg` 低估約 1.9%。~~
+
+> ⚠️ **已過期（2026-09-07，OQ-57.7 拍板為選項 (b)）**：`deriveSpiderShotTransitions()` 已由 KI-026／BD-026（commit `567eaf6`）改用 `resolveEyeOrigin()` + 逐 tick 玩家位置 ⇒ **匯出的 `D_deg`／`W_deg` 現在也是 eye-frame，與 spawn 同源，沒有偏差**。T4 實測：本 drill 的 `worldDistanceU` 恆為 `8.000000000000`、`angularSizeDeg` 恆為 `2.000000000000`（設計值本身）、`D_deg` 落在 `47.87–51.56°`。§2.5.1 與 §0 item 3 的 origin-frame 數字自此只有歷史意義，**不得**作為期望值。權威記載見 [GD-32](../../../DECISIONS.md) ④、[progress.md](progress.md) §T4 evidence。
 
 `side` 為唯一 additive 欄位變更。T0 已用實測驗證原規劃的退化預測：`quadrantForPeripheral()` 在本 drill 的參數域（4 FOV × yaw 窗上下界 × 5 個 pitch × 左右 = 80 個樣本）**100% 回 `'horizontal'`**，azimuth 落在 `[69.37°, 290.63°]`，距最近的 `45°` 分箱邊界有 **24.37° 餘裕** ⇒ 該標籤是正確的、只是無辨別力，且**不會**因 pitch 抖動意外跳到 `'oblique'`。故左右分區改由新 `side` 欄位承載是必要且充分的。
 
@@ -514,7 +516,7 @@ export function deriveRepositioningSuspicion(
 | **T1** | Config union 分支、strict schema 驗證、resolver 與 eye-frame 投影純函式 | T0 | High | 1.5–2.5d | 新 `kind` 型別／驗證／typed error 全綠；resolver 對 §2.4 表格四列輸出逐位相符；NFR-57.3／57.4／57.6 成立；v1/v2 schema 與 parse 結果不變；**尚未接 `TargetManager`** |
 | **T2** | `TargetManager` 第三分支 + side×pitchBand 分層佇列 + 決定性 | T1 | High | 2–3d | NFR-57.1 四 FPS parity、NFR-57.2 v1/v2 golden byte-identical、NFR-57.5 aspect 不變性、NFR-57.7 零額外配置；cell 覆蓋與 L/R 平衡以 ≥ 10,000 spawn 統計證明 |
 | **T3** | 寬場 arena scene config + 幾何斷言（含預設房間負向證據） | T1 | Med/High | 1.5–2.5d | §2.5 全表逐列為測試；預設 `[10,10,3]` 房間穿牆有負向測試；`eyeHeight === PLAYER_EYE_HEIGHT_U` 釘死；`validateClearance` 綠；實機截圖含 FOV 60/75/120 三檔 |
-| **T4** | 匯出 metadata round-trip + `spiderShotConditions.side` | T2 + **OQ-57.7 拍板** | Med | 1–1.5d | resolved 參數（含 `resolvedFrom`）round-trip 逐位；`D_deg`／`W_deg`／`quadrant`／`targetConditionCell` 對既有 v1/v2 fixture 輸出不變；`side` 由 eye-frame x 符號推導的正負向測試齊全；**依 OQ-57.7 的拍板結果記載匯出角度的 frame 語意**（不得在未拍板的情況下把 origin-frame 偏差當期望值釘進測試） |
+| **T4** | 匯出 metadata round-trip + `spiderShotConditions.side` | T2 + OQ-57.7 ✅ | Med | 1–1.5d | ✅ **2026-09-07 完成**：`resolvedFrom` 五欄（含匯出裡原本不存在的 `aspect`）round-trip 逐位、可由匯出欄位重算 yaw 窗；eye-frame `W_deg` 恆 `2.000000000000`、`worldDistanceU` 恆 `8.000000000000`、`D_deg` 47.87–51.56°；離線 `side` 與實錄 spawn side 逐筆相同（L,R,L,R,…）；v1/v2 fixture 七欄位逐位不變；`counts/360`／`cm/360` 對手算閉式相符、DPI 缺席回 `undefined`。**production 只改 `spiderShotConditions.ts` 一個 additive 欄位 + 新檔 `mouseThrow.ts`** |
 | **T5** | 抬滑鼠疑慮標註純函式 + 門檻敏感度表 | T4 | Med | 1–2d | 函式對合成訊號（真停滯／刻意停頓／無停滯）分類正確；對真實 run 輸出門檻敏感度表；C-D3 過閘證據（不進教練報告、不進 registry 的 boundary 測試）；OQ-57.5 收斂或標 blocked |
 | **T6** | 研究者控制列接線（arm-time resolve）+ E2E on-screen | T2 + T3 + T4 | High | 1.5–2.5d | 可從控制列載入並跑完；E2E 斷言每個 visible 目標的投影在畫面內；resize 後 spawn 序列不變的實機證據；practice-only（零 history mutation、零 compatibility cell）E2E；OQ-57.3／57.4 回填或標 blocked |
 | **T-exit** | WP-57 驗收與晉升 WP handoff | T1～T6 | Med | 0.5–1d | §1.1／§1.2 逐條 traceability 有客觀證據；硬約束表逐條有測試或明確不適用理由；docs／CONTEXT／DECISIONS／graph 對帳完成 |

@@ -10,9 +10,9 @@
 | T1 Geometry Contract and Resolver | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T1 evidence；targeted 226 tests、full Vitest 2266 tests、typecheck／build exit 0 |
 | T2 TargetManager Branch | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T2 evidence；golden 先錄後改、四 FPS parity、aspect 不變性、10,000 spawn 覆蓋／平衡、120,000 spawn NDC 失敗數 0；full Vitest 2,314 tests、typecheck／build exit 0 |
 | T3 Wide Arena Scene | ✅ Done（步驟 8 實機截圖延到 T6） | 2026-09-07 | 2026-09-07 | 見 §T3 evidence；612 個落點淨空、§2.5 全表逐列、預設房間四檔全穿側牆、`loadDrill` 閘正負向；full Vitest 2,353 tests、兩個 typecheck／build exit 0 |
-| T4 Export and Conditions | Ready | — | — | T2 ✅；**OQ-57.7 已於 2026-09-07 由 KI-026／BD-026／GD-32 拍板為選項 (b) 並落地**（`deriveSpiderShotTransitions()` 已是 eye-frame，commit `567eaf6`）⇒ T4 不再阻塞，見 §T3 補充 9 |
-| T5 Repositioning Flag | Blocked by T4 | — | — | — |
-| T6 Wiring and E2E | Blocked by T4 | — | — | T2／T3 ✅ 已解除相依；**額外承接 T3 步驟 8 的 FOV 60／75／120 實機截圖與 OQ-57.3 初步觀察** |
+| T4 Export and Conditions | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T4 evidence；resolvedFrom 五欄 round-trip 逐位、eye-frame `W_deg` 恆 2.000000000000、離線 `side` 與實錄 spawn side 逐筆相同、v1/v2 七欄位不變；full Vitest 2,373 tests、兩個 typecheck／build exit 0 |
+| T5 Repositioning Flag | Ready | — | — | T4 ✅（`deriveMouseThrow()` 已可用作標註率的 `cm/360` 方向性檢查 x 軸） |
+| T6 Wiring and E2E | Ready | — | — | T2／T3 ✅ 已解除相依；**額外承接 T3 步驟 8 的 FOV 60／75／120 實機截圖與 OQ-57.3 初步觀察** |
 | T-exit | Blocked by T1–T6 | — | — | — |
 
 ## T0 audit（2026-09-07）
@@ -212,6 +212,39 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 
 **未觸碰**：worktree 內的 `.claude/settings.local.json`、`docs/exec-plan/README.md`（其 stage12 區塊為平行 session 擁有的未提交規劃產物，WP-56 T-exit 已揭露同一情況）、untracked `.wp56-capture-tmp/` 全程未 stage。
 
+## T4 evidence（2026-09-07）
+
+**開工前提**：OQ-57.7 已於 2026-09-07 由 KI-026／BD-026／[GD-32](../../../DECISIONS.md) ④ 拍板為**選項 (b)** 並落地（commit `567eaf6`）。故本 task 的所有期望值一律以 **eye-frame** 為準；README §2.5.1／§T0 audit ⑥⑧ 記載的 origin-frame 偏差數字（`27.937°`／`43.6%`／`2.408°`／`4.0%`／`W_deg ∈ [1.9198, 2.0053]`）是**拍板前**的量測，只有歷史意義，未被寫進任何測試。
+
+**步驟 1（證明而非新增管線）**：`main.ts:741` 的 `...(activeDrillConfig.spiderShot !== undefined ? { spiderShot: activeDrillConfig.spiderShot } : {})` 把整塊 resolved 排程複製進 `meta.spawn.spiderShot`（`metadata.ts:25` 宣告為 opaque `unknown`），`parseExportPayload()` 的 `parseSpawnMeta()`（`exportPayloadSchema.ts:485-493`）同樣原樣 pass-through、不深驗。⇒ **schema 型別零修改**：resolved 參數只要在 resolved config 裡就自動落匯出。本 task 因此沒有動 `metadata.ts`／`exportPayloadSchema.ts`／`main.ts`。
+
+**步驟 2–3（round-trip，`tests/regression/spider-wide-export-roundtrip.test.ts`，10 tests）**：payload 取自 **真實 run**（`spiderWideDeterminismFixture` 的 `SimLoop`＋`TargetManager`＋`DrillRunner`＋`HitDetector`＋`DataRecorder`），meta 組裝逐行對齊 `main.ts` 的 `spawn`／`targets`／`scene` 三段，再走 `serializeJSON → JSON.parse → parseExportPayload`。實測：
+
+| 量 | 值 |
+|---|---|
+| transitions／outbound | 16／8 |
+| `yawMagDegRange`（FOV 75、16:9） | `[47.503588, 51.634335]`，round-trip 後 `Object.is` 逐位相同 |
+| `pitchDegRange` | `[−6.5, 6.5]`，逐位相同 |
+| `resolvedFrom` 五欄 | `fovDegVertical=75`、`aspect=1.7777777777777777`、`screenMargin=0.04`、`kLo=0.92`、`targetAngularDiameterDeg=2`，全部 `Object.is` 相同 |
+| 由匯出欄位重算 yaw 窗 | 以 `resolvedFrom` 五欄套 README §2.4 閉式，與匯出的窗上下界相符至 1e-12 |
+| 每個實錄 spawn 的重建 | `spiderWideEyeAngles()` 反解後 `distanceU` 恆 8、`abs(yaw)` 落在窗內、`pitch` 落在窗內 |
+| `worldDistanceU` | **恆為 `8.000000000000`**（translation locked ⇒ 眼睛恆在 `(0, 1.6, 0)`） |
+| `angularSizeDeg`（`W_deg`） | **恆為 `2.000000000000`** —— eye-frame 修正後即設計值本身 |
+| `angularDistanceDeg`（`D_deg`） | `47.872937` ～ `51.558670`，落在 WP DoD 的 45–55° 帶內 |
+| condition cell 樣本 | `spider:d=49.507811;w=2.000000`（格式未變、不含 pitch／side） |
+
+`meta.targets.hitbox` 與 `targetHitboxToConfig(resolveTargetHitbox(config))` 逐位相同、`shape: 'sphere'`、三軸等值（GD-7 單一來源），且 `transition.hitbox.width === meta.targets.hitbox.widthU`。
+
+**步驟 4–5（`side`）**：`SpiderShotTransition` 新增 additive optional `side?: 'L' | 'R'`，由抵達點的 **eye-frame `x`** 符號讀出（`x > 0 → 'R'`、`x < 0 → 'L'`、`x === 0` 省略欄位），只對 `center-to-peripheral` 輸出，eye 沿用既有 `resolveEyeOrigin()` + `eyeOriginForTick()`（不新增第二套 eye 來源）。實測：真實 run 的 8 個周邊到達，離線推導 `L,R,L,R,L,R,L,R` 與 `DataRecorder` 記錄的 spawn `side` **逐筆相同**（sim 端的分層佇列 cell side 與離線符號讀取不分歧）。既有 v1/v2 fixture 的七個欄位（`angularDistanceDeg`／`angularSizeDeg`／`quadrant`／`targetConditionCell`／`worldDistanceU`／`hitbox`／`seed`）輸出逐位不變，並新增「對移動中的眼睛取符號」的負向測試（玩家 +4 u 位移後，世界 `x = 3` 的目標正確判為 `'L'`）。
+
+**步驟 6（`counts/360`／`cm/360`）**：新增 `src/metrics/mouseThrow.ts` 的 `deriveMouseThrow(payload)`。gain 一律取自 `resolveMouseGain()`（KI-005 唯一定義，C-D4：不重寫公式），本模組只做單位換算。實測 sensitivity 2 / dpi 800 → `countsPer360 = 8181.818181818182`、`cmPer360 = 25.977272727272727`，與手算閉式 `360 ÷ (2 × 0.022)` 及 `÷800 × 2.54` 相符至 1e-9；ADS 分支（`fovDeg 75`、`ads {60, 0.8}` ⇒ gain 0.64）→ `adsCountsPer360 = 12784.090909090908`。`meta.dpi` 缺席時 `cmPer360`／`adsCmPer360` 回 `undefined`（`countsPer360` 不需 DPI，仍成立）；`meta.fovDeg` 缺席時 ADS 兩欄回 `undefined`，且 hip 一欄與有 FOV 的匯出**逐位相同**（證明佔位 FOV 對結果無影響）。
+
+**步驟 7–8（文件）**：`docs/operational/analysis-spider-shot.md` 新增 wide 變體段（eye-frame 幾何、`resolvedFrom` 五欄與「為什麼是刻意冗餘」、`side` 兩個來源的對照表與浮點殘值警告、不變契約清單、`cm/360` 推導）；同時把兩處無條件的「`side` 恆為 `'R'`」改為指名 `center-peripheral(-stratified/-eye-stratified)` 三支，避免與 wide 的真實左右矛盾。`CONTEXT.md` 新增五個術語列（`center-peripheral-yawpitch`／eye-frame 球面／`resolvedFrom`／`side` 的兩個來源／`counts-cm per 360`），並同步修正既有 `zone` 列的同一處無條件敘述。
+
+**步驟 9（Verification）**：targeted `src/metrics src/data tests/regression tests/golden` → **71 files／636 tests passed**；`npx tsc --noEmit` 與 `npx tsc --noEmit -p tsconfig.node.json` 皆 **exit 0**；全量 `npm test` → **236 files passed + 1 skipped／2,373 tests passed + 2 skipped**（T3 收尾為 234／2,353，差額 20 = 本 task 新增）；`npm run build` **exit 0**、1,205.13 kB（gzip 343.29 kB），僅既存 >500 kB 警告。`graphify update .` → 590/590 code files、4450 nodes／10843 edges／273 communities。Playwright 未於 T4 執行（無 UI 行為變更；全量屬 T-exit 的 NFR-57.8）。
+
+**production 修改面**：只有 `src/metrics/spiderShotConditions.ts`（additive optional 欄位 + 一個 8 行的符號讀取函式）與新檔 `src/metrics/mouseThrow.ts`。`spiderShotMetrics.ts`／`TargetManager.ts`／`schema.ts`／`DrillConfig.ts`／`metadata.ts`／`exportPayloadSchema.ts`／`main.ts` **零修改**。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -246,6 +279,9 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 | D-57.T3-1 | 2026-09-07 | **穿牆／埋地板做成 `loadDrill()` 的 fail-fast 閘**（`requireSpiderWideArenaGeometry()`，比照 `requireSpiderShotDeliveryGeometry()`），而不只是測試裡的斷言。理由：T0 discovery item 11 的缺口是**runtime 沒有保護**，只補測試的話，任何日後改 `roomSize`／換場景綁定的人仍會靜默走進 KI-012（牆全遮但命中仍過）。<br>**Alternatives considered**：(a) 只寫幾何測試 —— 零 runtime 保護，**駁回**；(b) 把牆／地板加進 `validateClearance()` —— 那會改到 84 callers／22 模組共用的既有淨空語意，且既有場景（如 `placeholder-room` 的 v1/v2 目標）未必全數通過，屬跨 WP 變更，**駁回**；(c) 擴充 `SceneConfig` 型別帶「可用落點包絡」—— 直接違反 T3 invariant「不擴充核心型別」，**駁回** | Engineering | `spider-wide-arena-geometry.test.ts` 閘段 6 tests |
 | D-57.T3-2 | 2026-09-07 | **目標外緣半徑對 `shape: 'sphere'` 取 `width/2`，不沿用 `targetHitboxRadius()` 的角點半徑**（`spiderWideTargetRadiusU()`）。半徑仍**只**從 `resolveTargetHitbox()` 推導，維持 GD-7 單一來源。<br>**Alternatives considered**：(a) 直接用 `targetHitboxRadius()` —— 對球會回 `√3·r = 0.2419`（誇大 73%），README §2.5 全表數字（`1.8604`／`1.3281`／`0.5547`…）會全部對不上，且會把「保守估計」偷偷變成「不同的幾何」，**駁回**；(b) 為 wide drill 另立半徑常數 —— C-D4 第二定義，**駁回** | Engineering | `spider-wide-arena-geometry.test.ts` 半徑同源段 |
 | D-57.T3-3 | 2026-09-07 | **drill 的 roster 註冊（`availableDrills`）與步驟 8 實機截圖留給 T6**；T3 只註冊 scene 並以測試釘死 `spiderShotWideV1Binding.sceneId === wideFlickArena.sceneId`。<br>**Alternatives considered**：(a) T3 就把 drill 塞進 roster —— `spiderShotWideV1Template` 缺 `spiderShot`，唯一做法是在模組載入期解析一次，等於把 aspect 凍在錯誤時點並繞過 NFR-57.5 的整個論證，**駁回**；(b) 把 T6 的 arm-time 接線整段拉進 T3 以便截圖 —— 一個切片混兩個 task，且 T6 的 resize 不變性／on-screen E2E 仍未寫，**由使用者於 2026-09-07 明確選擇不採** | 使用者 + Engineering | 本節「明確未交付」段 |
+| D-57.T4-1 | 2026-09-07 | **`side` 以嚴格符號讀取，不加任何容差**：`x > 0 → 'R'`、`x < 0 → 'L'`、`x === 0` **省略欄位**。<br>**Alternatives considered**：(a) 加一個 epsilon 門檻（如 `abs(x) < 1e-9` 視為無左右）—— 等於為 `side` 發明第二套幾何容差（C-D4），且門檻值沒有任何構念依據，**駁回**；(b) `x === 0` 時沿用上一個 side 或固定回 `'R'` —— 猜了就無法在資料上分辨「沒有左右語意」與「在右邊」，**駁回**；(c) 把 `side` 塞進 `targetConditionCell` —— 會改動 `DrillMetricRegistry.ts:281` 保護的既有相容鍵格式，直接違反 FR-57.11，**駁回**。代價已知並記名：v1/v2 的近垂直呈現可能因浮點殘值輸出無意義的 side（見 Surprises 11），以文件 + 測試揭露而非以閾值遮蔽 | Engineering | `spiderShotConditions.test.ts` side 段 4 tests |
+| D-57.T4-2 | 2026-09-07 | **round-trip 測試的 payload 取自真實 run**（`spiderWideDeterminismFixture` additive 暴露 `DataRecorderSnapshot`），meta 組裝**逐行對齊 `main.ts`** 的 `spawn`／`targets`／`scene` 三段。<br>**Alternatives considered**：(a) 手寫合成 payload —— 只證明「我寫的物件能被 parse 回來」，證明不了生產路徑真的把這些欄位寫出去，**駁回**；(b) 把 `main.ts` 的 meta 組裝抽成可測純函式 —— 那是正確的長期重構，但會動到 `main.ts` 這個 T6 才該碰的接線點，且本 task 的 DoD 是「證明既有管線」而非改它，**駁回（留給 T6／後續 WP）**；(c) 走 `fpsTestHarness` —— 它是 dev-only 觀測縫，不含匯出組裝，**不適用** | Engineering | `spider-wide-export-roundtrip.test.ts` 10 tests |
+| D-57.T4-3 | 2026-09-07 | **`deriveMouseThrow()` 落在 `src/metrics/mouseThrow.ts` 並 import `resolveMouseGain()`**；`cmPer360` 採**欄位級** `undefined`（DPI 缺席時只有 cm 兩欄消失，`countsPer360` 仍回值）。<br>**Alternatives considered**：(a) 在 metrics 內重算 `sensitivity × 0.022°` —— gain 公式的第二定義，正是 C-D4／KI-005 明令禁止的形狀，**駁回**；(b) DPI 缺席時整個函式回 `undefined` —— `counts/360` 不需要 DPI，整組放棄會讓 T5 在沒有 DPI 的 run 上完全拿不到感度軸，**駁回**；(c) 新增一個 `meta.cmPer360` 匯出欄位 —— 違反「不新增輸入欄位」且會與 `sensitivity`／`dpi` 形成第二個真相來源，**駁回**。**已知代價**：`src/metrics/` 首次出現對 `three` 的傳遞依賴（`mouseGain.ts` 用 `THREE.MathUtils`）。實測 bundle 大小與 T3 相同（1,205.13 kB）—— 本模組目前只走離線路徑、無 production import；若日後要讓 `research/` 側消費，應改為把 `RAD_PER_COUNT` 抽成無 three 依賴的常數模組，而不是在 metrics 重寫公式 | Engineering | `mouseThrow.test.ts` 6 tests；build 大小對照 |
 
 ## Surprises
 
@@ -327,3 +363,11 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 9. **OQ-57.7 早在 T3 開工前就已拍板，但 WP-57 的四份文件都還寫著「待使用者拍板、阻塞 T4」。** 交叉讀 [DECISIONS.md GD-32](../../../DECISIONS.md) ④ 才發現：`deriveSpiderShotTransitions()` 已於 **commit `567eaf6`（KI-026／BD-026）**改用 `resolveEyeOrigin()` + per-tick eye，匯出 `D_deg`／`W_deg` 已是 eye-frame，**即 OQ-57.7 的選項 (b)**（不是 T0 建議的 (a)）。原因：KI-026 的修復落在 WP-57 之外的 session，沒人回改 WP-57 的狀態列。我在 T3 收尾時**還把這個過期狀態複製進了 `stage12/README.md` 與 WP-57 README**，等於讓錯誤多長一份。已全部對帳。<br>⇒ **教訓（已寫進 GD-32 待辦）：帳本會領先 WP 文件。判斷 task 是否被阻塞，要以 DECISIONS.md／BUGFIX-DECISIONS.md 為權威，而不是 WP 自己的 Progress 表。** 這次的代價本來會是「T4 開工前先停下來等一個早就做完的決定」。<br>⚠️ **T4 的連帶要求**：round-trip 測試必須**以 eye-frame 為期望值**，不得沿用 README §2.5.1／§T0 audit ⑥⑧ 記載的 origin-frame 偏差數字（`27.937°`／`43.6%`／`2.408°`／`4.0%`）——那些是拍板前的量測，現在只有歷史意義。
 
 10. **`validateClearance()` 綠燈不代表「裝得進房間」，而這個缺口在 WP-57 之前不痛。** 牆／地板從未被任何自動檢查覆蓋（`clearance.ts` 全檔零 `wall`／`floor`／`roomSize` 引用），因為既有 spawn 幾何都遠離房間邊界；wide drill 是第一個把目標推到側牆 `1.33 u` 內的。KI-012 的失敗模式正是三個綠燈同時成立：**淨空綠 + 畫面全遮 + 命中判定正常**。已把「`loadDrill()` 現有四道 scene-geometry 閘的分工」與「新增 kind 時何時必須自帶第五道」記入 [DECISIONS.md GD-33](../../../DECISIONS.md)，含天花板刻意不檢查、檢查順序有語意、半徑須 shape-aware 三個給後人的坑。
+
+### T4 補充（2026-09-07）
+
+11. **嚴格符號規則會在 v1/v2 的「正上／正下」落點上輸出一個幾何上無意義的 side。** 既有 fixture 的 `pointAtAzimuth(180)` 算出的 `x` 是 `10 × 0.5 × sin(π) = 6.12e-16` —— 不是 `0`，於是 `side` 回 `'R'`。同一個 fixture 的 `azimuth 0` 因 `sin(0)` 恰為 `0` 而正確省略。兩者的差別純粹是 `Math.sin` 的浮點殘值，與幾何無關。**處置**：不加閾值（D-57.T4-1），改以測試把這個行為釘死、並在 `analysis-spider-shot.md` 與 `CONTEXT.md` 明寫「判讀 v1/v2 時先用 `quadrant` 篩掉 `vertical` 再看 `side`」。wide drill 不受影響（yaw 幅度恆 ≥ 40°）。
+
+12. **eye-frame 修正之後，wide drill 的匯出 `W_deg` 是**精確**的設計值，不是「誤差變小」。** 實測 16 個 transition 的 `angularSizeDeg` 全部為 `2.000000000000`、`worldDistanceU` 全部為 `8.000000000000`。原因是三件事同時成立：`spiderWideEyePos()` 讓 `abs(pos − eye)` 恆等於 `distanceU`、`translation: 'locked'` 讓眼睛恆在 `(0, 1.6, 0)`、以及 KI-026 之後 derivation 也從同一個 eye 算起。⇒ README §2.5.1 那張「`W_deg ∈ [1.9198, 2.0053]`、誤差 4.0%」的表**已完全過期**，它描述的是 origin-frame derivation 的世界。任何後續讀者若拿它當期望值就會把一個已修好的 bug 重新釘回去。
+
+13. **`meta.spawn.spiderShot` 的 opaque 設計讓「新增排程參數」的匯出成本為零，但也讓型別保護為零。** round-trip 全程沒有動 `metadata.ts`／`exportPayloadSchema.ts`，`resolvedFrom` 五個欄位自動落地 —— 這是好事。代價是 parser 對它**完全不驗**：若哪天 resolver 少寫一個欄位，匯出仍會 parse 成功，只有離線分析在幾個月後才會發現重建不出 yaw 窗。本 task 的 round-trip 測試就是唯一擋這件事的閘，**它不能被當成「只是測試」刪掉**。
