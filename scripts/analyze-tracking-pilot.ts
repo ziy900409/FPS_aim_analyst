@@ -33,7 +33,7 @@ import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'n
 import { basename, extname, join, resolve } from 'node:path';
 import { parseExportPayload } from '../src/data/exportPayloadSchema.ts';
 import type { ExportPayload } from '../src/data/export.ts';
-import { evaluateTrackingRunEligibility } from '../src/pilot/trackingRunEligibility.ts';
+import { computeTrackingFireHoldCoverage, evaluateTrackingRunEligibility } from '../src/pilot/trackingRunEligibility.ts';
 import { buildTrackingPilotEvidence } from '../src/pilot/trackingPilotEvidence.ts';
 import { renderTrackingPilotReportHtml } from '../src/pilot/trackingPilotReport.ts';
 import { selectSummaryRun } from './trackingPilotSummary.ts';
@@ -189,6 +189,13 @@ function main(): void {
       eligibility.status === 'eligible'
         ? `eligible ticks=${eligibility.validScoredTicks} duration=${eligibility.durationMs.toFixed(0)}ms`
         : `BLOCKED ${eligibility.reasons.join(',')}`;
+    // D-54.50's coverage as a number rather than a pass/fail. The gate compares it against
+    // `MIN_FIRE_HOLD_COVERAGE` and discards it, which makes a run held at 96% look exactly like
+    // one held at 100% — and the near miss is the one worth seeing while there is still time to
+    // re-brief the participant (gate §3.5). Printed, never judged.
+    const fireHold = computeTrackingFireHoldCoverage(payload);
+    const fireHoldNote =
+      fireHold.status === 'ok' ? `${(100 * fireHold.coverage).toFixed(2)}%` : fireHold.status;
     console.log(
       [
         basename(file),
@@ -201,6 +208,7 @@ function main(): void {
         `perfFloor=${payload.meta.validity?.perfFloor ?? '-'}`,
         `displayHz=${payload.meta.displayHz.toFixed(1)}`,
         `violations=${violations}`,
+        `fireHold=${fireHoldNote}`,
         quality,
       ].join(' | '),
     );

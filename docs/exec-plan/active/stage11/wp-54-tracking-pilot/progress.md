@@ -15,6 +15,25 @@
 
 ## Progress
 
+### 2026-09-07 — T7 slice 19：held-fire 覆蓋率印進逐 run 行(印出既有數字,不新增判準)
+
+- **問題**：`MIN_FIRE_HOLD_COVERAGE` 的比較結果留下來了,**比較的那個數字沒有**。
+  `fireHoldCoverage()` 是私有函式,只被拿去跟門檻比出 pass/fail ⇒ **96% 通過與 100% 通過在
+  runner 輸出上長得一模一樣**。gate §3.5 要求確認「操作員自己的覆蓋率遠高於 95%」,而那正是
+  乾跑最想抓的「快要出事」訊號。
+- **`computeTrackingFireHoldCoverage()`**(`src/pilot/trackingRunEligibility.ts`,export):
+  回四態 `ok` / `not-required` / `missing-fire-flag` / `no-scored-window`。
+  **不新增判準**——函式內完全不引用 `MIN_FIRE_HOLD_COVERAGE`,eligibility 判定逐位未動。
+- **C-D4 的著力點**:把 scored 窗的取法抽成私有 `selectScoredWindow()`,讓「報出來的覆蓋率」與
+  「判定用的覆蓋率」**數同一批 tick**。若各自 filter 一次,就會在最不該分歧的地方(報表與它自己
+  的判決)出現第二個窗定義。
+- **`missing-fire-flag` 刻意不報成 0%**:印「0.00%」等於告訴操作員受測者放開了,而事實是儀器
+  沒記到——C-D3 的失效形態。這一條有專門的測試。
+- 6 條新測試,門檻相關值一律由 `MIN_FIRE_HOLD_COVERAGE` 導出(slice 6 的教訓)。
+- **G6 乾跑實測**:8 個 scored block 全部 **`fireHold=100.00%`**,`practice` 為 `not-required`
+  (它沒有 `protocolGuard`)⇒ gate §3.5 第 2 項成立,輸入鏈與彈匣都沒問題。
+- 驗證:`npx vitest run` **221 files / 2166 tests passed**、`tsc --noEmit` ×2 exit 0。
+
 ### 2026-09-04 — T7 slice 18：文件與術語收尾（docs-only，`tracking-pilot-v2` 對外定案）
 
 - **`analysis-tracking.md`**：世代表新增 **G6**（辨識方式 = `meta.weaponId === 'tracking_pilot_hold'`

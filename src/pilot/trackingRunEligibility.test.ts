@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { ExportPayload } from '../data/export.ts';
 import type { TickRecord } from '../data/RingBuffer.ts';
 import type { Meta } from '../data/metadata.ts';
-import { evaluateTrackingRunEligibility, MIN_FIRE_HOLD_COVERAGE } from './trackingRunEligibility.ts';
+import {
+  computeTrackingFireHoldCoverage,
+  evaluateTrackingRunEligibility,
+  MIN_FIRE_HOLD_COVERAGE,
+} from './trackingRunEligibility.ts';
 
 const SIM_HZ = 128;
 const TICK_MS = 1000 / SIM_HZ;
@@ -395,5 +399,100 @@ describe('evaluateTrackingRunEligibility — protocol mismatch', () => {
     expect(result.status).toBe('blocked');
     if (result.status !== 'blocked') return;
     expect(result.reasons).toContain('unrecognized-tracking-trajectory');
+  });
+});
+
+describe('computeTrackingFireHoldCoverage — the reported number behind the verdict (gate §3.5)', () => {
+  const REQUIRE_FIRE: Partial<Meta> = { protocolGuard: { requireFire: true, noMovement: true } };
+  /** prepTicks 5 + scoredTicks 40 → tick indices 5..45 inclusive are scored. */
+  const SCORED_COUNT = 41;
+
+  function fireFlags(prepTicks: number, heldScored: number): (ticks: TickRecord[]) => void {
+    return (ticks) => {
+      ticks.forEach((tick, i) => {
+        const scoredIndex = i - prepTicks;
+        tick.fire = scoredIndex < 0 || scoredIndex < heldScored;
+      });
+    };
+  }
+
+  function coverageOf(heldScored: number) {
+    return computeTrackingFireHoldCoverage(
+      buildPayload({
+        prepTicks: 5,
+        scoredTicks: SCORED_COUNT - 1,
+        metaOverrides: REQUIRE_FIRE,
+        mutateTicks: fireFlags(5, heldScored),
+      }),
+    );
+  }
+
+  it('reports 100% over the same scored window the gate counted', () => {
+    const result = coverageOf(SCORED_COUNT);
+    expect(result.status).toBe('ok');
+    if (result.status !== 'ok') return;
+    expect(result.coverage).toBe(1);
+    expect(result.scoredTickCount).toBe(SCORED_COUNT);
+  });
+
+  it('separates a near miss from a clean hold — the whole point of reporting it', () => {
+    // The gate returns `eligible` for both, so without this number an operator cannot tell a run
+    // that spent its entire allowance from one that never released at all.
+    const lowestEligible = Math.ceil(SCORED_COUNT * MIN_FIRE_HOLD_COVERAGE);
+    const nearMiss = coverageOf(lowestEligible);
+    const clean = coverageOf(SCORED_COUNT);
+    expect(evaluateTrackingRunEligibility(
+      buildPayload({
+        prepTicks: 5,
+        scoredTicks: SCORED_COUNT - 1,
+        metaOverrides: REQUIRE_FIRE,
+        mutateTicks: fireFlags(5, lowestEligible),
+      }),
+    ).status).toBe('eligible');
+    expect(nearMiss.status).toBe('ok');
+    if (nearMiss.status !== 'ok' || clean.status !== 'ok') return;
+    expect(nearMiss.coverage).toBeCloseTo(lowestEligible / SCORED_COUNT, 12);
+    expect(nearMiss.coverage).toBeLessThan(clean.coverage);
+    expect(nearMiss.coverage).toBeGreaterThanOrEqual(MIN_FIRE_HOLD_COVERAGE);
+  });
+
+  it('adds no criterion — a sub-threshold run still reports its number, it does not judge it', () => {
+    // The verdict stays the eligibility gate's job (C-D4: one definition, one judge). This
+    // function only has to be able to describe the run the gate rejected.
+    const held = Math.ceil(SCORED_COUNT * MIN_FIRE_HOLD_COVERAGE) - 1;
+    const result = coverageOf(held);
+    expect(result.status).toBe('ok');
+    if (result.status !== 'ok') return;
+    expect(result.coverage).toBeCloseTo(held / SCORED_COUNT, 12);
+    expect(result.coverage).toBeLessThan(MIN_FIRE_HOLD_COVERAGE);
+  });
+
+  it('reports not-required when the drill never declared requireFire', () => {
+    const result = computeTrackingFireHoldCoverage(
+      buildPayload({ prepTicks: 5, scoredTicks: 40, mutateTicks: fireFlags(5, 0) }),
+    );
+    expect(result.status).toBe('not-required');
+  });
+
+  it('reports missing-fire-flag rather than 0%, matching the reason the gate raises', () => {
+    // Printing "0.00%" here would tell the operator the participant let go when the truth is that
+    // the instrument never recorded the flag — the C-D3 failure mode this status exists to avoid.
+    const result = computeTrackingFireHoldCoverage(
+      buildPayload({ prepTicks: 5, scoredTicks: 40, metaOverrides: REQUIRE_FIRE }),
+    );
+    expect(result.status).toBe('missing-fire-flag');
+  });
+
+  it('reports no-scored-window when the run has no scored_start to measure over', () => {
+    const result = computeTrackingFireHoldCoverage(
+      buildPayload({
+        prepTicks: 5,
+        scoredTicks: 40,
+        metaOverrides: REQUIRE_FIRE,
+        omitScoredStart: true,
+        mutateTicks: fireFlags(5, 41),
+      }),
+    );
+    expect(result.status).toBe('no-scored-window');
   });
 });

@@ -82,14 +82,13 @@ export function evaluateTrackingRunEligibility(payload: ExportPayload): Tracking
   }
   if (hasNonMonotonicTimestamps(payload.ticks)) reasons.push('non-monotonic-timestamps');
 
-  const scoredStarts = payload.events.filter((event): event is ScoredStartEvent => event.type === 'scored_start');
-  if (scoredStarts.length === 0) {
+  const scoredWindow = selectScoredWindow(payload);
+  if (scoredWindow === undefined) {
     reasons.push('missing-scored-start');
     return { status: 'blocked', reasons };
   }
 
-  const scoredStartMs = Math.min(...scoredStarts.map((event) => event.t));
-  const scoredTicks = payload.ticks.filter((tick) => tick.t + EPSILON >= scoredStartMs);
+  const { scoredStartMs, scoredTicks } = scoredWindow;
   if (scoredTicks.some(isMissingTargetPosition)) reasons.push('missing-target-position');
 
   // FR-54-10 "protocol mismatch" / §1.3 Constraints「Scored block 禁止射擊、ADS 與玩家移動」:
@@ -134,6 +133,51 @@ export function evaluateTrackingRunEligibility(payload: ExportPayload): Tracking
  * criterion would be silently overridden by its own implementation. */
 function isScoredWindowViolation(event: ExportPayload['events'][number], scoredStartMs: number): boolean {
   return event.type === 'protocol_violation' && event.kind !== 'fire-released' && event.t + EPSILON >= scoredStartMs;
+}
+
+/**
+ * The scored window every check shares: the ticks at or after the earliest `scored_start`.
+ *
+ * Extracted so `computeTrackingFireHoldCoverage()` reports coverage over the **same** ticks the
+ * eligibility gate judges. A second window definition here would be a C-D4 violation in the one
+ * place it matters most — a reported number that disagrees with its own verdict.
+ */
+function selectScoredWindow(
+  payload: ExportPayload,
+): { readonly scoredStartMs: number; readonly scoredTicks: readonly Tick[] } | undefined {
+  const scoredStarts = payload.events.filter((event): event is ScoredStartEvent => event.type === 'scored_start');
+  if (scoredStarts.length === 0) return undefined;
+  const scoredStartMs = Math.min(...scoredStarts.map((event) => event.t));
+  return { scoredStartMs, scoredTicks: payload.ticks.filter((tick) => tick.t + EPSILON >= scoredStartMs) };
+}
+
+/**
+ * The held-fire coverage D-54.50 judges, **reported rather than judged**.
+ *
+ * `evaluateTrackingRunEligibility()` compares this same ratio against `MIN_FIRE_HOLD_COVERAGE` and
+ * then keeps only the verdict, so a run held at 96% and one held at 100% are indistinguishable in
+ * its output — yet 96% is precisely the run an operator needs to see *before* the next participant
+ * turns it into a blocked run (gate §3.5, "the operator's own coverage should be far above 95%").
+ *
+ * This adds **no criterion**: nothing here compares against `MIN_FIRE_HOLD_COVERAGE`, and the
+ * eligibility verdict is unchanged. The four statuses distinguish the cases the gate deliberately
+ * keeps apart — in particular `missing-fire-flag` (the instrument recorded nothing) must never be
+ * reported as 0% coverage, which would blame the participant for an instrument fault (C-D3).
+ */
+export type TrackingFireHoldCoverage =
+  | { readonly status: 'ok'; readonly coverage: number; readonly scoredTickCount: number }
+  /** The drill declared no `requireFire` guard, so held fire was never part of its protocol. */
+  | { readonly status: 'not-required' }
+  | { readonly status: 'missing-fire-flag' }
+  | { readonly status: 'no-scored-window' };
+
+export function computeTrackingFireHoldCoverage(payload: ExportPayload): TrackingFireHoldCoverage {
+  if (payload.meta.protocolGuard?.requireFire !== true) return { status: 'not-required' };
+  const scoredWindow = selectScoredWindow(payload);
+  if (scoredWindow === undefined || scoredWindow.scoredTicks.length === 0) return { status: 'no-scored-window' };
+  const { scoredTicks } = scoredWindow;
+  if (scoredTicks.some((tick) => tick.fire === undefined)) return { status: 'missing-fire-flag' };
+  return { status: 'ok', coverage: fireHoldCoverage(scoredTicks), scoredTickCount: scoredTicks.length };
 }
 
 /** Share of scored ticks recorded with the fire button held. Callers must first establish that
