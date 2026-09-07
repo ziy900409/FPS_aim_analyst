@@ -15,9 +15,13 @@ import { computeTrackingTimeOnTaskSlope } from './trackingTimeOnTaskSlope.ts';
 import type { TrackingGateBCellFamily, TrackingGateBRun } from './trackingGateBAggregates.ts';
 
 /** `meta.session.sessionLabel` is written by `main.ts` as the manifest's counterbalance cell,
- * `tracking-pilot-v1:<participantId>:session-<index>` — the only place the seed family survives
+ * `<protocolVersion>:<participantId>:session-<index>` — the only place the seed family survives
  * into an export. Anything that does not end in `session-1` is treated as family A, because a
- * missing/foreign label means the run was not an alternate-seed session. */
+ * missing/foreign label means the run was not an alternate-seed session.
+ *
+ * KI-025: matched on the **suffix**, deliberately not on the protocol version, so bumping
+ * `TRACKING_PILOT_PROTOCOL_VERSION` cannot reclassify payloads already collected under the old
+ * prefix (the G6 dry run carries `tracking-pilot-v1` labels). */
 const ALTERNATE_SESSION_SUFFIX = 'session-1';
 
 const CORE_DRILL_IDS: ReadonlySet<string> = new Set(

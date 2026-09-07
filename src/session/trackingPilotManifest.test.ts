@@ -6,6 +6,7 @@ import {
   TRACKING_CORE_PR_PILOT_V1_CANDIDATES,
 } from '../drill/tracking_core_pr_pilot_v1.ts';
 import { TRACKING_REVERSAL_PILOT_V1_CANDIDATES } from '../drill/tracking_reversal_pilot_v1.ts';
+import { TRACKING_PILOT_PROTOCOL_VERSION } from '../pilot/trackingCompatibilityKey.ts';
 import {
   buildTrackingPilotManifest,
   isTrackingPilotPracticeDrillId,
@@ -93,7 +94,9 @@ describe('buildTrackingPilotManifest', () => {
 
   it('produces a counterbalance cell label that is itself a pure function of the inputs', () => {
     const manifest = buildTrackingPilotManifest('participant-7', 1, 90);
-    expect(manifest.generatedFromCounterbalanceCell).toBe('tracking-pilot-v1:participant-7:session-1');
+    expect(manifest.generatedFromCounterbalanceCell).toBe(
+      `${TRACKING_PILOT_PROTOCOL_VERSION}:participant-7:session-1`,
+    );
   });
 
   it.each([
@@ -185,8 +188,9 @@ describe('parseTrackingPilotManifest', () => {
 
   it('rejects the wrong protocolVersion', () => {
     const manifest = validManifestJson();
-    expect(() => parseTrackingPilotManifest({ ...manifest, protocolVersion: 'tracking-pilot-v2' })).toThrow(
-      "protocolVersion must be 'tracking-pilot-v1'",
+    // The superseded protocol: a v1 manifest must not be accepted under v2 (KI-025).
+    expect(() => parseTrackingPilotManifest({ ...manifest, protocolVersion: 'tracking-pilot-v1' })).toThrow(
+      `protocolVersion must be '${TRACKING_PILOT_PROTOCOL_VERSION}'`,
     );
   });
 

@@ -159,7 +159,8 @@ describe('checkTrackingCompatibility', () => {
 
   const fieldOverrides: Array<[keyof TrackingCompatibilityKey, unknown]> = [
     ['drillId', 'other-drill'],
-    ['protocolVersion', 'tracking-pilot-v2'],
+    // The superseded protocol: a v1 run and a v2 run must never share a cohort (KI-025).
+    ['protocolVersion', 'tracking-pilot-v1'],
     ['motionKind', 'reversal-2d-v1'],
     ['travelAmplitudeDeg', '0.5x0.5'],
     ['speedDegPerSec', '20'],

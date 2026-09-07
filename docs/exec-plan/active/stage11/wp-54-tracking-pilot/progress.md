@@ -15,6 +15,32 @@
 
 ## Progress
 
+### 2026-09-07 — T7 slice 21：protocol version 升 `tracking-pilot-v2`（KI-025 / BD-025）
+
+- **缺陷**：D-54.49 宣告了 v2、文件全部改了(gate §2.1、世代表、runbook、CONTEXT §P),**程式沒有**
+  ——slice 18 明載「未動 production code」。9 份 G6 乾跑 payload 全部帶
+  `cell=tracking-pilot-v1:P07:session-0`,evidence 戳記亦為 v1。
+- **根因**:同一個版本字串**有三份來源**(`TRACKING_PILOT_PROTOCOL_VERSION` + 另一個手寫的
+  `TRACKING_PILOT_EVIDENCE_PROTOCOL_VERSION` + `TrackingPilotManifest.protocolVersion` 的字面值型別)。
+  三份一起停在 v1 ⇒ **彼此一致、沒有任何測試會紅**,不一致的對象是文件。這是 C-D4 在版本字串上的形態。
+- **為什麼招募前一定要修**:`protocolVersion` 是 compatibility key 8 軸之一(NFR-54-7),存在目的就是
+  「不同協定的 run 不進同一 cohort」。停在 v1 ⇒ **G5 與 G6 的 run 產生逐位相同的 key、被判可合併**,
+  而這正是 gate §3 作廢框與 `analysis-tracking.md` 都特別警告「**layer 3b 攔不住**」的那一組世代分界
+  (刺激軌跡逐位相同)——那道機器可讀的防線本該由這一欄承擔。
+- **不是研究決策**:升版是**執行 D-54.49**;反而「維持 v1」才需要新決策(它與 D-54.49 矛盾)。
+- **修法**:常數升 v2 + **消掉另外兩份來源**(evidence 改為引用、manifest 改 `typeof`)⇒ 此後不可能
+  只改到一份。`trackingGateBExtract` 的 seed family 判定本來就是 `session-<n>` **後綴**比對(與版本無關),
+  **補一條回歸測試釘住**——若日後有人改成比對前綴,所有既有 family B 的 run 會被靜默重分類成 family A。
+- **測試端分工**:evidence 戳記保留**字面值 pin**(預註冊戳記,誤改必須紅);其餘(manifest cell 標籤、
+  runner fixture、e2e sessionLabel)改由常數導出——它們斷言的是形狀不是版本。compatibility key 與
+  manifest 的「版本不符」案例改用**被取代的 v1** 當輸入(語意更準,且不與現值碰撞)。
+- **遺留 OQ-KI25-1**(入帳未修):evidence 的 `protocolVersion` 是常數而非逐 payload 由 `meta` 推導 ⇒
+  重新分析舊世代資料會蓋上現行版本。既有性質(v1 時期對 G1–G4 一樣不準),現行「舊世代一律作廢」
+  紀律下不影響判定。G6 乾跑 9 份仍帶 v1 標籤,世代身分由 `weaponId`/`protocolGuard` 承載,**不重收**。
+- 驗證:`npx vitest run` **222 files / 2175 tests passed**、`tsc --noEmit` ×2 exit 0、
+  `npx playwright test tracking-pilot-live --project=edge` **1 passed**——真實 app 匯出的 `sessionLabel`
+  確認已是 `tracking-pilot-v2:e2e-pilot:session-0`。
+
 ### 2026-09-07 — T7 slice 20：shots-on-target 對帳（gate §3.5 的免費 fidelity 交叉驗證）
 
 - **為什麼是免費的**:v2 武器零散佈（D-54.51）⇒ 彈著點 = 準心,於是引擎的即時逐發判定

@@ -37,7 +37,9 @@ export interface TrackingPilotBlock {
 }
 
 export interface TrackingPilotManifest {
-  readonly protocolVersion: 'tracking-pilot-v1';
+  /** KI-025: typed off the constant rather than re-spelling the literal, which is how this field
+   * came to disagree with the protocol D-54.49 froze. */
+  readonly protocolVersion: typeof TRACKING_PILOT_PROTOCOL_VERSION;
   readonly participantId: string;
   readonly sessionIndex: 0 | 1;
   readonly orderedBlocks: readonly TrackingPilotBlock[];

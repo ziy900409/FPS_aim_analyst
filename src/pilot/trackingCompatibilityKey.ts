@@ -16,7 +16,21 @@ import type { Meta } from '../data/metadata.ts';
  * reusing its type or touching that file (its existing 7 callers must stay unaffected).
  */
 
-export const TRACKING_PILOT_PROTOCOL_VERSION = 'tracking-pilot-v1';
+/**
+ * The pilot protocol version — **the single source for the string**, and one axis of the
+ * compatibility key, so two runs collected under different protocols never land in one cohort.
+ *
+ * `tracking-pilot-v2` since D-54.49 (2026-09-04): the scored window requires held fire. KI-025:
+ * this constant stayed at `v1` for three slices after that decision, which left every v2 export
+ * stamped with the superseded protocol and gave G5 and G6 runs the same compatibility key — the
+ * one machine-readable field that separates them, in the one generation boundary layer 3b cannot
+ * detect (the stimulus trajectory is bit-identical across it).
+ *
+ * Bumping this is a research-visible act, not a rename: it changes the cohort key and the
+ * `sessionLabel` of every subsequent export. Per README §5 it may only move together with a new
+ * protocol decision row.
+ */
+export const TRACKING_PILOT_PROTOCOL_VERSION = 'tracking-pilot-v2';
 
 export interface TrackingCompatibilityKey {
   readonly drillId: string;

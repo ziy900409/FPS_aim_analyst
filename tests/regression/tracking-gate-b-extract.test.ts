@@ -60,6 +60,33 @@ describe('extractTrackingGateBRuns', () => {
     expect(runs.every((run) => run.participantId === 'P01')).toBe(true);
   });
 
+  it('reads the seed family regardless of the protocol version in the label (KI-025)', () => {
+    // KI-025 bumped TRACKING_PILOT_PROTOCOL_VERSION to v2, which changes the `sessionLabel` prefix
+    // of every subsequent export. Payloads already collected — the G6 dry run among them — carry
+    // the v1 prefix, so seed-family detection must key off the `session-<n>` suffix and never the
+    // version. Matching the prefix instead would silently reclassify every existing family B run.
+    for (const protocolVersion of ['tracking-pilot-v1', 'tracking-pilot-v2']) {
+      const { runs } = extractTrackingGateBRuns(
+        ([0, 1] as const).map((sessionIndex) =>
+          makePayload({
+            meta: {
+              drillId: coreFirst.drillId,
+              startedAt: `2026-09-05T00:0${sessionIndex}:00.000Z`,
+              session: {
+                participantId: 'P01',
+                sessionLabel: `${protocolVersion}:P01:session-${sessionIndex}`,
+              },
+              ...(coreFirst.targets?.hitbox !== undefined ? { targets: { hitbox: coreFirst.targets.hitbox } } : {}),
+            },
+            ticks: [],
+          }),
+        ),
+      );
+
+      expect(runs.map((run) => run.seedFamily)).toEqual(['A', 'B']);
+    }
+  });
+
   it('treats a payload with no pilot session label as family A rather than guessing', () => {
     // A run exported outside the pilot operator screen has no counterbalance label. Calling it
     // family B would quietly drop it from every criterion (§2.5 A-1); family A keeps it visible.

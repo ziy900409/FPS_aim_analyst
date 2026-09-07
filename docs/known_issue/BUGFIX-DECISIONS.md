@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-025](KI-025-tracking-pilot-protocol-version-stuck-at-v1.md) | protocol version 字串停在 `'tracking-pilot-v1'`,而 **D-54.49 已宣告 v2**(gate §2.1 / 世代表 / runbook / CONTEXT 全部更新了,程式沒有)。同一個常數有**三份來源**(一個 `export const` + 兩份手寫字面值)⇒ 三份一起停在 v1、彼此一致、沒有測試會紅。後果:compatibility key 的 `protocolVersion` 軸讓 **G5 與 G6 的 run 產生逐位相同的 key**、被判可合併——而這正是**唯一一次 layer 3b 攔不住的世代分界**(刺激軌跡逐位相同),那道機器可讀的防線本應由此欄承擔;evidence 戳記亦把 v2 協定收的資料標成 v1 | BD-025 ✅:升為 `'tracking-pilot-v2'`(**執行 D-54.49,非新決策**),並把另外兩份來源改為引用/`typeof` 該常數以修掉根因;seed family 偵測維持與版本無關並補回歸測試釘住 | ✅ 已修(2026-09-07) |
 | [KI-024](KI-024-field-low-eye-not-anchored-halves-delivered-angles.md) | `field-low` 的 `proceduralRoom` 未設 `eyeZ` ⇒ eye 在 `z=+4`、前向目標在 `z=−4`,**交戰距離 8 u ≠ config 的 4 u**。WP-54 tracking pilot 9 個 block 的角尺寸/角行程/角速度**一致只交付 0.50×**(宣稱 0.5°/2.0° 實為 0.25°/1.0°,宣稱 5/20 deg/s 實為 2.5/10)。機制上解釋了「0.5° 看不見」(0.25° ≈ 4.2 CSS px)。KI-002/D1 在另一場景的**復發**;刺激側檢查全以 trajectory 原點量角度、指標側以眼睛量 ⇒ 同一構念第三個自由度未對表(C-D4) | BD-024 ✅:使用者選定 **Option A**——`field-low` 補 `eyeZ: 0`(與 `br-field`/KI-002 D1 同一修法)。跨 WP 影響面見 [DECISIONS.md GD-31](../exec-plan/DECISIONS.md) | ✅ 已修(2026-09-03) |
 | [KI-023](KI-023-target-speed-set-point-is-per-axis-not-2d.md) | `targetRmsSpeedDegPerSec` 是**每軸** set-point,而螢幕上的目標速度是兩軸向量合成 ⇒ 兩軸 cell 交付 **√2 倍**(實測 7.14/28.3 vs 宣稱 5/20),預註冊的絕對值從未被交付;單軸 calibration 卻交付 1.0 倍 ⇒ 宣稱同速度的 block 實際差 1.41 倍。T1 測試只量 yaw、分析 runner 量 hypot ⇒ 同一構念**兩個定義**(違反 C-D4)。速度比值(4×)完好 | BD-023 ✅:研究者選定 **Option A**(2D 語意,含 reversal 家族);每軸求解目標改 `set-point / √活躍軸數`,單軸 calibration 逐位不變 | ✅ 已修(2026-09-03),**9 個 block 待重跑** |
 | [KI-022](KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md) | pilot 分析 runner 的主控台摘要取 `condition.runs[0]`，而 evidence 依 FR-54-10 是 append-only、blocked 的 attempt 依契約不帶 `p0`/`p1` ⇒ 任何「第一次被擋、重跑後合格」的條件都被印成 `p0=- p1=-`。實測 P03 重跑 8 個條件中有 2 個中招；evidence JSON/HTML 一直是對的，說謊的是**人據以下 gate 結論的那一層** | BD-022 ✅：摘要改取第一個 eligible run（無 eligible 時退回 `runs[0]`），選擇邏輯抽成 `scripts/trackingPilotSummary.ts` 的純函式以便測試；不動 `buildTrackingPilotEvidence()` 的 append-only 契約 | ✅ 已修（2026-09-03） |
@@ -51,6 +52,20 @@
 
 （**目前無待決項目**——BD-024 已於 2026-09-03 拍板並落地(見下);KI-023 的 Option A 見 §3 BD-023。
 下列 BD-019~BD-021 皆已標 ✅ 但尚未搬入 §3。）
+
+### BD-025 ✅ KI-025 — protocol version 升為 `tracking-pilot-v2` + 消掉三份來源:已修(2026-09-07)
+
+| | |
+|---|---|
+| **發現處 / 根因** | [KI-025](KI-025-tracking-pilot-protocol-version-stuck-at-v1.md) / WP-54 **T7 G6 乾跑分析**(2026-09-07)——逐 run 行印的 `cell=tracking-pilot-v1:P07:session-0` 與 gate §2.1 已改寫的「Protocol version = `tracking-pilot-v2`」對不上。根因(KI-025 §2):**同一個版本字串有三份來源**——`TRACKING_PILOT_PROTOCOL_VERSION`、另一個手寫的 `TRACKING_PILOT_EVIDENCE_PROTOCOL_VERSION`、以及 `TrackingPilotManifest.protocolVersion` 的字面值型別。D-54.49 沒有任何單一位置可改,三份一起停在 v1 ⇒ 彼此一致、無測試會紅,**不一致的對象是文件**。 |
+| **決策(修法選項)** | 採 **F-1~F-4 全部**:常數升 v2;evidence 常數改為**引用**該常數、manifest 型別改為 `typeof` 該常數(根因);seed family 偵測維持以 `session-<n>` **後綴**判定並補回歸測試釘住;測試端只有 evidence 戳記保留字面值 pin(預註冊戳記誤改必須紅),其餘由常數導出。**不採**「只改常數不動另外兩份」——那會留著同一個坑,下一次升版再踩。 |
+| **理由** | 升版是**執行 D-54.49**(研究者 2026-09-04 已拍板「新 protocol version = `tracking-pilot-v2`」),不是新研究決策;**維持 v1 才需要新決策**,因為那與 D-54.49 矛盾。招募前修的理由是影響面:`protocolVersion` 是 compatibility key 8 軸之一(NFR-54-7),存在的目的就是「不同協定的 run 不進同一 cohort」;停在 v1 使 **G5/G6 拿到同一把 key**,而這是 `analysis-tracking.md` 與 gate §3 都特別警告過「**layer 3b 攔不住**」的那一組世代分界。不修就等於讓 12–20 人 × 9 block 的 payload 全部蓋上已被取代的協定版本。 |
+| **偏離計畫** | 無。依 CLAUDE.md §3.9 走 KI + BD;修復與 KI/BD 文件同一個原子 commit。 |
+| **遺留 OQ / 未做** | **OQ-KI25-1**:evidence 的 `protocolVersion` 是**常數**而非由 `meta` 逐 payload 推導 ⇒ 重新分析舊世代資料時會蓋上現行版本。**既有性質**(v1 時期對 G1–G4 一樣不準),非本次引入;在「舊世代一律作廢」的現行紀律下不影響判定,**未修、入帳**。G6 乾跑那 9 份 payload 仍帶 v1 標籤(修法前收的),世代身分由 `weaponId`/`protocolGuard` 承載且不計入 Gate B 證據,**不重收**。 |
+| **影響面** | `src/pilot/trackingCompatibilityKey.ts`(常數 + 註解)、`src/pilot/trackingPilotEvidence.ts`(改為引用)、`src/session/trackingPilotManifest.ts`(型別)、`scripts/trackingGateBExtract.ts`(註解修正)、5 支測試(含 `tests/e2e/tracking-pilot-live.spec.ts` 的 sessionLabel 斷言改由常數導出)。**行為改變**:此後匯出的 `meta.session.sessionLabel` 與 compatibility key 帶 `tracking-pilot-v2`。驗證:`vitest run` **222 files / 2175 passed**、`tsc --noEmit` ×2 exit 0、`playwright tracking-pilot-live --project=edge` **1 passed**(真實 export 的 sessionLabel 已是 v2)。 |
+| **狀態** | ✅ 已修 + 落地(2026-09-07,WP-54 T7 slice 21)。 |
+
+---
 
 ### BD-024 ✅ KI-024 — `field-low` camera 錨定 sim origin(`eyeZ: 0`):已修(2026-09-03)
 

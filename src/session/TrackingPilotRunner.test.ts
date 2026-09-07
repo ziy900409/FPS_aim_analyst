@@ -7,6 +7,7 @@ import {
 } from '../drill/tracking_core_pr_pilot_v1.ts';
 import type { TrackingPilotManifest } from './trackingPilotManifest.ts';
 import { createTrackingPilotRunner, type TrackingPilotRunnerOptions } from './TrackingPilotRunner.ts';
+import { TRACKING_PILOT_PROTOCOL_VERSION } from '../pilot/trackingCompatibilityKey.ts';
 
 async function settleTransitions(): Promise<void> {
   for (let index = 0; index < 4; index += 1) await Promise.resolve();
@@ -19,7 +20,7 @@ const BLOCKED: TrackingRunEligibility = { status: 'blocked', reasons: ['insuffic
 /** practice + 2 scored blocks — small enough to exercise every transition without 9-block noise. */
 function smallManifest(): TrackingPilotManifest {
   return {
-    protocolVersion: 'tracking-pilot-v1',
+    protocolVersion: TRACKING_PILOT_PROTOCOL_VERSION,
     participantId: 'P001',
     sessionIndex: 0,
     orderedBlocks: [

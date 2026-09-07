@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test, expect, type Download, type Page } from '@playwright/test';
 import { trackingCorePrPilotV1Practice } from '../../src/drill/tracking_core_pr_pilot_v1.ts';
+import { TRACKING_PILOT_PROTOCOL_VERSION } from '../../src/pilot/trackingCompatibilityKey.ts';
 
 /**
  * WP-54 / T6 slice 2 — the live tracking pilot path in a real browser.
@@ -87,7 +88,7 @@ test.describe('WP-54 T6 — live tracking pilot session', () => {
     // manifest's counterbalance cell, which is a pure function of (participantId, sessionIndex).
     expect(practicePayload.meta.session).toEqual({
       participantId: 'e2e-pilot',
-      sessionLabel: 'tracking-pilot-v1:e2e-pilot:session-0',
+      sessionLabel: `${TRACKING_PILOT_PROTOCOL_VERSION}:e2e-pilot:session-0`,
     });
     // KI-020: travel amplitude is now a shared constant (±16°) and `size` lives in the hitbox, so
     // the trajectory carries the amplitude/speed while the target's angular size is asserted below.

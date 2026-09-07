@@ -15,6 +15,7 @@ import {
   type TrackingPresentationDerivation,
   type TrackingSample,
 } from '../metrics/trackingDerivation.ts';
+import { TRACKING_PILOT_PROTOCOL_VERSION } from './trackingCompatibilityKey.ts';
 import { evaluateTrackingRunEligibility, type TrackingRunEligibility } from './trackingRunEligibility.ts';
 import { isTrackingPilotPracticeDrillId } from '../session/trackingPilotManifest.ts';
 
@@ -36,7 +37,10 @@ import { isTrackingPilotPracticeDrillId } from '../session/trackingPilotManifest
  */
 
 export const TRACKING_PILOT_EVIDENCE_METRIC_VERSION = 'tracking-dynamics-v1';
-export const TRACKING_PILOT_EVIDENCE_PROTOCOL_VERSION = 'tracking-pilot-v1';
+/** KI-025: was a second hand-written copy of the protocol string, and drifted from
+ * `TRACKING_PILOT_PROTOCOL_VERSION` the moment D-54.49 bumped the protocol. Derived now, so the
+ * evidence stamp cannot disagree with the compatibility key about which protocol produced a run. */
+export const TRACKING_PILOT_EVIDENCE_PROTOCOL_VERSION = TRACKING_PILOT_PROTOCOL_VERSION;
 
 /**
  * D-54.5/D-54.16 froze `lagSearchMs`/the ambiguity-gate *existence* but left the ambiguity ratio and

@@ -163,7 +163,9 @@ describe('buildTrackingPilotEvidence — eligible run', () => {
     const evidence = buildTrackingPilotEvidence([payload], { analysisCommit: 'abc1234' });
 
     expect(evidence.metricVersion).toBe('tracking-dynamics-v1');
-    expect(evidence.protocolVersion).toBe('tracking-pilot-v1');
+    // Literal on purpose: this is a preregistration stamp, so an accidental edit must fail here
+    // rather than quietly re-label a cohort. v2 since D-54.49 / KI-025.
+    expect(evidence.protocolVersion).toBe('tracking-pilot-v2');
     expect(evidence.analysisCommit).toBe('abc1234');
     expect(evidence.conditions).toHaveLength(1);
 
