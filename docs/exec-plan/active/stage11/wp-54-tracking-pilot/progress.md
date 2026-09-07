@@ -2,18 +2,55 @@
 
 ## Status
 
-- **🔴 最新（2026-09-04，`tracking-pilot-v2` / D-54.49）**：研究者把 tracking pilot 的 scored 窗從
+- **🟢 最新（2026-09-07，T7 slice 19–22）：G6 乾跑完成 ⇒ 招募閘門已開（D-54.52）。**
+  六項檢查**五項過**（比值 2.10–3.94、`atEye` 全在帶內、9/9 fidelity match、9/9 eligible、
+  `missing-fire-flag` 0、held-fire 8/8 = 100.00%、shots-on-target 差 +0.1…−2.4 點），
+  **唯 `3deg_5dps` 的 TOT = 88.5%，超 5–80% 上緣 8.5 點**（G5 為 80.7%）⇒ 研究者決定照原樣招募、
+  風險以 G6 數字重新入帳（gate §3.6/§3.7 / **D-54.52**，**不是沿用已作廢的 D-54.48**）。
+  **與作廢框的預期相反：雙任務並未壓低表現**——8 個 scored block 有 7 個 TOT 上升（平均 +4.4 點），
+  最可能是同一操作員跨三代的學習效果。因此 **ceiling 惡化、floor 風險退場**
+  （`2deg_14dps` 11.1%→18.5%）。§3.5 要求重量的三件事（B-3a 四項、B-3c ±20%、比值）**全部保住**。
+  工程面 slice 19（held-fire 覆蓋率印出）、20（shots-on-target 對帳 layer 7）、
+  21（**KI-025/BD-025**：protocol version 終於升上 `tracking-pilot-v2`）已 commit。
+  ⇒ **下一步 = 招募 12–20 人**（gate §4：全員 `Session index = 0`、6–8 人加跑 `= 1`、
+  **刻意涵蓋 ≥ 2 種顯示器刷新率**），並**優先盯 `3deg_5dps`**（應預期 revise）。
+- **（2026-09-04，`tracking-pilot-v2` / D-54.49）**：研究者把 tracking pilot 的 scored 窗從
   「禁止開火」改為「**全程按住左鍵**」，右鍵改為**無效但仍記錄**，動機是**生態效度**（真實 CS2 的
   追蹤是邊噴邊跟）。刺激的角度量**逐位未動**，但受測者要做的事變了 ⇒ **新世代 G6**。
   **T7 slice 12–18 工程面全部完成並全綠**；**G5 乾跑（slice 11）與 §3.4 的「照原樣招募」決定一併
-  作廢**。⇒ **下一步不是招募，是在 G6 上重跑一次乾跑**（gate §3 作廢框 + §3.5，約 10 分鐘）。
-  ⚠️ 這是唯一一次 **layer 3b 攔不住**的世代分界（軌跡逐位相同），G5/G6 只能靠 `meta.weaponId`
-  與 `meta.protocolGuard` 辨識。§2.2 門檻一字未動。
+  作廢**。⚠️ 這是唯一一次 **layer 3b 攔不住**的世代分界（軌跡逐位相同），G5/G6 只能靠 `meta.weaponId`
+  與 `meta.protocolGuard` 辨識（**KI-025** 修好後,`protocolVersion` 亦可區分新收的資料）。
+  §2.2 門檻一字未動。
 - **Current**：✅ T0～T5 完成（2026-09-02）；**T6 完成 = Gate A 部分通過（2026-09-03，第三輪 P04 s0 + P05 s1，G3 刺激，見 [T6-instrumentation-gate.md §12](T6-instrumentation-gate.md)）⇒ T7 可開工**。判定三段:**資料鏈路 ✅ PASS**(四層對帳全綠、刺激逐位符合宣稱、三輪來第一次無 instrumentation defect)、**reversal 家族 ✅ PASS**(凍結準心比值 2.08–3.26)、**band-limited 核心矩陣 🔴 未通過效度,退回 T7 重新參數化**——5 deg/s 三個 cell 與兩個 axis calibration 的 ε 動態範圍只有 0.75°、真人離「完全不動」僅 10–25%(比值 1.05–1.25)⇒ 測不出跟槍能力(§12.8)。根因是刺激幾何(行程 ≈ speed / 2πf,預註冊頻帶 [0.3,2.1] Hz 下 5 deg/s 必然行程過小)。交接項見 [task-checklist.md T7 段](task-checklist.md)。四層對帳全部成立、8 個 scored 條件皆 `eligible=2`、KI-023 的速度修正確實被交付（交付/宣稱 0.989–1.017，且 21/21 payload 與現行程式重建的刺激逐位一致）；**三輪來第一次沒有缺陷需要修**。尚未 GO 的原因是 §6 份量（只有 2 位 tester、各一個 session）與 0.5° 主觀項未回報 ⇒ [OQ-54-12](#open-questions) / gate §12.6。第二輪（P03）記錄見 §11、第一輪（P01）見 §10。以下為第二輪當時的敘述——資料鏈路第二次成立（且涵蓋 retry 流程與 sphere 幾何）、TOT 已離開 100%；本輪兩個缺陷（[KI-022](../../../known_issue/KI-022-pilot-analysis-summary-reads-blocked-first-attempt.md)、[KI-023](../../../known_issue/KI-023-target-speed-set-point-is-per-axis-not-2d.md)）**皆已修**，研究者選定 KI-023 Option A（速度改 2D 語意，含 reversal 家族）。**唯一待辦 = 9 個 block 第三輪重跑**（速度刻度改變 ⇒ P01/P02/P03 三批全部作廢）。第一輪（P01）記錄見 §10。工程面 slice 1-11 全部完成並全綠：main.ts 接線、live e2e、practice 排除、gate 帳本、分析 runner、[KI-019](../../../known_issue/KI-019-reversal-2d-v1-bound-pinned-schedule-degeneration.md)（F-A1+F-A2）、run-level protocol-violation 閘門、[KI-020](../../../known_issue/KI-020-core-matrix-size-speed-manipulation-not-delivered.md)（size→hitbox、speed 交付、建構期守衛）、compatibility key 新增 `displayRefreshHz`；slice 12-15 為第二輪重跑基線、gate §11 帳本與 KI-022/KI-023 修復。第三輪重跑所用的基線 = `f191642`（gate §8）。
 - **Scope state**：已正式納入 stage11（見 [../README.md](../README.md)、[../task-checklist.md](../task-checklist.md)、[../progress.md](../progress.md)）。M20 為本 WP 里程碑。
 - **Dependency state**：`tracking_v1`/`tracking_longrange_v1`/`tracking_br_v1` baseline 綠燈（見下方 verification log）；OQ-54-1~OQ-54-8 全數凍結（見 §1.4 與下方 decision log）；OQ-54-9（`inputMode` 語意）為 T4 slice 2/6 新增、未與使用者確認的判斷岔路，不阻塞後續 task。
 
 ## Progress
+
+### 2026-09-07 — T7 slice 22：G6 乾跑判定入帳（docs-only，**D-54.52**，招募閘門開啟）
+
+- **gate 新增 §3.6**（G6 逐項實測）與 **§3.7**（刻意偏離 §3 第 4 點的理由）;§6 的乾跑段新增已打勾的
+  G6 項並把 G5 項標作廢;§7 版本表改 G6 / `tracking-pilot-v2`（附註版本字串是 KI-025 才真正升上去的）;
+  §9 判定改為「乾跑已完成,等 12–20 人資料」;狀態行改為「可開始招募」。
+- **判定:六項五項過,TOT 一項出界。** 比值 **2.10–3.94**、`atEye` 3.99–4.01 u / 100–103% /
+  1.999–3.006°、9/9 fidelity match、9/9 eligible、`missing-fire-flag` 0、held-fire **8/8 = 100.00%**、
+  shots-on-target 差 +0.1…−2.4 點。**唯 `3deg_5dps` TOT = 88.5%,超上緣 8.5 點。**
+- **最重要的發現與作廢框的預期相反**:§3 作廢框當時寫「雙任務負荷會壓低所有指標,量級未知」,
+  實測 **8 個 scored block 有 7 個 TOT 上升,平均 +4.4 點**。最可能是同一操作員跨 G4/G5/G6 的
+  學習效果蓋過按住左鍵的負荷（P07 = P05/P06 同一人,seed 家族亦相同 ⇒ 刺激逐位重複）。
+  兩端意義相反,兩端都看了:**ceiling 惡化**（`3deg_5dps` 0.7 點 → 8.5 點超標）、
+  **floor 風險退場**（`2deg_14dps` 11.1% → 18.5%,遠離 5% hard floor）。
+- **§3.5 要求重量的三件事全部保住**:B-3a 方向四項仍成立（尺寸層間距 22.3/24.1 點,與 G5 的
+  23.0/30.2 同級）⇒ **「按住左鍵壓縮受測者間差異」的訊號沒有出現,§3.5 預告的那條研究決策不需啟動**;
+  B-3c 全在 ±20% 內;比值全過且一致上升,最緊的 `reversal_high` 三代穩定（2.05 → 2.06 → 2.10）。
+- **D-54.52**（使用者 2026-09-07 拍板）:照原樣招募、風險以 G6 數字重新入帳。**明確不是沿用 D-54.48**
+  ——那一列已隨換代作廢,且它三條理由中的第②條（「實際交付比預測好一截」）在 G6 上**失效**
+  （交付 88.5% 比 G4 錄音重算的 86.2% 還差）。未放寬任何判準。
+- **招募時的預期要調整**:母體中位數需低於 P07 **逾 8.5 點**才救得回 TOT 子句（G5 時只需 0.7 點）,
+  且 B-2a 的 CV ≥ 15% 子句在逼近天花板時更難救 ⇒ 對 `3deg_5dps` 應預期 **revise**,不是「可能 revise」。
+- 乾跑資料**不計入 Gate B 證據**（gate §3 第 5 點,操作員非受測者）;9 份 payload 未進 git
+  （`.pilot-analysis/` 已 gitignore,已覆驗）。
+- 未動 production code。
 
 ### 2026-09-07 — T7 slice 21：protocol version 升 `tracking-pilot-v2`（KI-025 / BD-025）
 
@@ -1782,6 +1819,7 @@
 | D-54.49 | **tracking pilot 的 scored 窗從「禁止開火」改為「全程按住左鍵」,右鍵改為無效但仍記錄** ⇒ 新 protocol version **`tracking-pilot-v2`** + 新刺激世代 **G6**;**G5 乾跑（slice 11）連同其 gate §3.3 結論一併作廢**,§3 四項篩選須在 G6 上重跑 | 研究者動機經確認是**生態效度**（真實 CS2 的追蹤是邊噴邊跟）,**不是**為了消滅右鍵違規——後者只需換一把無 `ads` 的武器（純 A 案）,構念不變、G5 仍有效。既然要改的是刺激本身,就必須換世代:舊世代資料不可與新世代合併（§2.3 規則 5 的同類理由）。**時機是刻意選在此刻**:現在改的代價是重跑一次約 10 分鐘的乾跑,招募到一半才改,作廢的是 12–20 人。被否決的選項 C（按住左鍵但保留真實後座力）會讓 ε(t) 變成「追蹤 + 壓槍」的混合量,牴觸 **C-D4** 且使 T3 以來所有 tracking 指標的構念定義失效,影響遠大於本輪 pilot | ✅ Confirmed（使用者拍板 2026-09-04，T7 slice 12，**收資料前**） |
 | D-54.50 | **受測者在 scored 窗內放開左鍵的判準 = 逐 tick held-fire 覆蓋率 `>= 95%`**（25 s 容許累計 1.25 s）,**不採**「任何一 tick 放開即作廢」 | 兩種失效模式**性質不對稱**,所以不該對稱套用 `noFire` 的全有全無規則:在 `noFire` 下走火一發會注入 30 單位 punch,單發即污染整個 block;而在**零後座力**武器下短暫放開只是少了幾發音效與 tracer,**完全不擾動瞄準任務的力學**。26 秒連續按住 × 9 blocks × 12–20 人,全有全無會把單次手滑、或 scored start 那一瞬間的晚按直接變成資料損失——那正是本次改動想避免的成本形態。改判連續量的閾值也比 edge-trigger 更誠實地描述「刺激實際交付了多少」。**代價已入帳**:95% 是新的預註冊參數,依 §2.2 紀律**收資料後不得調整**,要改只能再升 protocol version。被否決的「只記錄不作廢」會讓某個只按住 40% 的人與全程按住的人**進同一個 B-1/B-2a 分母**,那不是同一個刺激 | ✅ Confirmed（使用者拍板 2026-09-04，T7 slice 12，**收資料前**） |
 | D-54.51 | **pilot 專用武器剖面 = AK 節奏（`cycletimeSec` 0.1 s）+ 零後座力 + 零散佈 + 無 `ads` + `magSize` 512** | `cycletimeSec` 取 AK 是生態效度的本體（步槍連射節奏）,並讓 shots-on-target 有 260 發/block 的取樣率。**零散佈**使彈著點 = 準心,於是 shots-on-target 與離線 TOT 共用同一套 sphere 幾何,兩者一致性成為引擎（`HitDetector`）對離線（`trackingDerivation`）的 fidelity 交叉驗證;被否決的「AK 真實散佈」視覺上更像在噴,但會把 shots-on-target 稀釋成隨機散佈過的 TOT、交叉驗證失效,還要在 pilot 內多注入一條 seeded RNG 串流（GD-5 的管理成本,零收益）。`magSize` 512 是**效度**而非體感:`SimLoop.scheduleFire` 空倉時會強制 `heldFire = false`,彈匣打完等於把受測者的按住意圖旗標清掉並記成放開,直接污染 D-54.50 的覆蓋率;26 000 ms ÷ 100 ms = 260 發,512 為 2× 裕度 | ✅ Confirmed（使用者拍板 2026-09-04，T7 slice 12，**收資料前**） |
+| D-54.52 | **G6 乾跑的 TOT 檢查對 `3deg_5dps` 不成立（88.5% > 80% 上緣,超 8.5 點）,研究者仍決定照原樣招募**,不再換世代 | gate §3 第 4 點寫「任一項不成立 ⇒ 不招募」,故續行是一次**刻意的、有理由的偏離**,以本列存證。**本列不是沿用 D-54.48（它已隨換代作廢）,而是在 G6 數字上重新決定**;與 D-54.48 相比,三條理由中**第②條已失效**：①仍成立——乾跑 n=1 且是本專案最熟練的那一位,B-2a 實際判 12–20 人中位數,招募條件本就是「不同 tracking 程度」;②**失效**——D-54.48 說「G4 錄音重算預測 86.2%,實際交付只有 80.7%,比預測好一截且只超 0.7 點」,而 G6 實際交付 **88.5%,比那個預測還差**;③仍成立——§2.4 的 go 只需 ≥1 core + ≥1 reversal 判 retained,其餘三個 core cell 落在 18.5–66.2%、兩個 reversal 落在 46.0–60.4% ⇒ 即使 `3deg_5dps` 最後判 revise,這批 12–20 人也不會白收。**新增的正面證據**:§3.5 擔心「雙任務壓縮受測者間差異」沒有發生——B-3a 方向四項仍全部成立且尺寸層間距（22.3/24.1 點）與 G5 同級,B-3c 全在 ±20% 內,比值 2.10–3.94 較 G5 一致上升;`2deg_14dps` 11.1%→18.5% 使 B-2b floor 風險退場。**代價已入帳**:母體中位數需低於 P07 逾 8.5 點才救得回 TOT 子句（G5 時只需 0.7 點）,且 CV ≥ 15% 子句在逼近天花板時更難救 ⇒ 對這個 cell 應預期 revise 而非「可能 revise」。**未放寬任何判準**——§2.2 門檻一字未動。被否決的兩個備選與 D-54.48 當時相同,且都要換代 + 重跑乾跑：大尺寸層 3.0→2.5°（兩層只差 0.5°,G4 錄音重算顯示間距會由 ~22 點縮到 ~8–13 點,可能讓剛連兩代驗到的 B-3a 尺寸效果變得測不出來）、慢速 5→7 deg/s（還得先驗 7 deg/s 放得進 field-low 垂直包絡,同 OQ-54-15 的衝突類型,且 5 dps 也是兩個 calibration block 的速度,牽動範圍更大） | ✅ Confirmed（使用者拍板 2026-09-07，T7 slice 22，**收資料前**） |
 
 ## Open Questions
 

@@ -4,9 +4,12 @@
 > running log：[progress.md](progress.md) · 操作手冊：[../../../../operational/tracking-pilot-runbook.md](../../../../operational/tracking-pilot-runbook.md)
 > · 上游 gate：[T6-instrumentation-gate.md](T6-instrumentation-gate.md)（Gate A = 部分通過）
 >
-> **狀態：🟡 判準已凍結；工程前置全部完成（含 `tracking-pilot-v2`）；⚠️ 招募前尚缺一次 G6 乾跑。**
+> **狀態：🟡 判準已凍結；工程前置全部完成（含 `tracking-pilot-v2`）；G6 乾跑已完成 ⇒ 可開始招募。**
 > 2026-09-04 研究者決定改為「scored 窗全程按住左鍵」（**D-54.49**，動機：生態效度）⇒ 新世代 **G6**，
 > **§3.3 的 G5 乾跑與 §3.4 的續行決定一併作廢**，須在 G6 上重跑（見 §3 開頭的作廢框與 §3.5）。
+> **2026-09-07 G6 乾跑完成（P07 ×9 block，見 §3.6）：六項檢查五項過，唯 `3deg_5dps` 的 TOT = 88.5%
+> 超出 5–80% 窗上緣 8.5 點**（G5 為 80.7%／超 0.7 點 ⇒ **ceiling 惡化**）。研究者決定照原樣招募並把
+> 風險重新入帳（**§3.7 / D-54.52**）。B-3a 方向四項、B-3c 的 ±20%、比值 ≥ 2.0 **全部保住**。
 > 依 [README §5](README.md)「Gate B/C 的 protocol threshold 必須在
 > 收資料前凍結」——本文件 §2 是那份凍結,寫於任何 T7 真人資料之前(2026-09-03)。
 > 後續變更一律以**新 protocol version + decision row** 表達,不得原地改語意。
@@ -125,6 +128,7 @@ version + 新 decision row** 表達,並標註哪批資料以哪一版判定。
 > G5 與 G6 的區分只能靠 `meta.weaponId === 'tracking_pilot_hold'` 與 `meta.protocolGuard`。
 >
 > **招募前必須在 G6 上重跑一次乾跑**，重跑第 3 點的逐項檢查（含新增的第 6 項，見 §3.5）。
+> ⇒ **已於 2026-09-07 完成，結果見 §3.6，續行決定見 §3.7。**
 > §2.2 的判準門檻**一字未動**——換代不是放寬判準的機會。**`3deg_5dps` 的 ceiling 風險仍然存在
 > 且尚未在 G6 上量過**，D-54.48 記錄的「帶著風險招募」是對 G5 數字做的決定，重跑後須重新判斷。
 
@@ -269,6 +273,106 @@ calibration 隨小候選值 → 2.0°、reversal 與 practice 隨大候選值 �
 比值 2.06–3.80、B-3a 方向四項、B-3c 的 ±20%。其中 **B-3a 是 G5 才第一次驗到成立的**，
 若在 G6 消失，那是「按住左鍵壓縮了受測者間差異」的訊號，屬研究決策 ⇒ 問使用者。
 
+### 3.6 G6 乾跑結果（2026-09-07,操作員 P07,9 block,`tracking-pilot-v2`）：**五項過、TOT 一項出界**
+
+> 這是 §3 作廢框要求的「換代後必須重跑一次」。指令：
+> `npx vite-node scripts/analyze-tracking-pilot.ts -- ~/Downloads/tracking_*2026-09-07T07_*.json --out .pilot-analysis/t7-dryrun-g6`
+> stderr **零警示**;9/9 payload `recorderOverflow`/`bufferOverflow` 皆 false、`crossOriginIsolated`
+> 皆 true、`lateEventCount` 皆 0、`violations` 皆 0、9/9 `eligible`。
+> 世代確認:9/9 `meta.weaponId === 'tracking_pilot_hold'`、8 個 scored block 皆帶
+> `protocolGuard {noMovement, requireFire}`(`practice` 無 scored 窗故無 guard)⇒ 確為 G6,
+> 無 G5 混批(`~/Downloads` 內無其他 tracking payload)。
+
+| # | 檢查 | 凍結門檻 | 實測（G6） | 判定 |
+|---|---|---|---|---|
+| 1 | `atEye` 交戰距離 | ≈ 4.00 u | **3.99–4.01 u** | ✅ |
+| 1 | `atEye` 交付/宣稱速度 | 0.95–1.05 | **1.00–1.03**（100–103%） | ✅ |
+| 1 | `atEye` 角尺寸 | 2.000 / 3.000° | **1.999 / 2.994–3.006°** | ✅ |
+| 2 | layer 3b 保真度 | `match` | **9/9 match**（maxPosErr ≤ 8.88e-16 u） | ✅ |
+| 3 | **TOT** | **5–80%** | **18.5–88.5%** | 🔴 **`3deg_5dps` = 88.5%,超上緣 8.5 點** |
+| 4 | **layer 5 凍結準心比值** | **≥ 2.0** | **2.10–3.94**（每個 block） | ✅ |
+| 5 | 覆蓋率 / overflow / `still` | ≥99.5% / false / <5% | 3202–3203 ticks、25008–25016 ms、全 false;`still` medium **1.3%** / high **2.9%** | ✅ |
+| 6 | **`quality` 不得有 `missing-fire-flag`** | 0 | **0**（9/9 eligible) | ✅ |
+| §3.5 | **操作員 held-fire 覆蓋率**（應遠高於 95%） | — | **8/8 scored block = `100.00%`**;`practice` = `not-required` | ✅ |
+| §3.5 | **shots-on-target 對帳** | 引擎 ≈ 離線 | 8/8 `offlineTot` 與 canonical `tot` **逐位相同**(無 `!!P0-MISMATCH`);引擎命中率差 **+0.1 … −2.4 點** | ✅ |
+
+**逐 block 實測**（比值 / TOT / B-3c Δ / shots delta;`fireHold` 全部 100.00%）：
+`practice` 3.09 / — / −9.2% / +0.6pt、`calibration_h` 3.20 / 70.2% / −11.1% / +0.3pt、
+`calibration_v` 3.25 / 69.7% / −1.3% / +0.3pt、**`3deg_5dps` 3.15 / 88.5% / +11.9% / +1.5pt**、
+`3deg_14dps` 3.89 / 42.6% / −9.8% / +1.4pt、`2deg_5dps` 3.33 / 66.2% / −12.4% / −2.4pt、
+`2deg_14dps` **3.94** / 18.5% / −2.8% / +1.1pt、`reversal_medium` 3.31 / 60.4% / +15.2% / +0.1pt、
+`reversal_high` **2.10** / 46.0% / −8.8% / +0.4pt。
+
+#### §3.5 要求重新量的三件事:**全部保住**
+
+1. **B-3a 方向四項仍然全部成立** —— 雙任務**沒有**吃掉操弄:
+   `size@5dps` 66.2% < 88.5%、`size@14dps` 18.5% < 42.6%、
+   `speed@2deg` RMSε 2.120 > 0.937、`speed@3deg` 2.169→**2.119 > 0.962**。
+   尺寸層的間距(**22.3 / 24.1 點**)與 G5(23.0 / 30.2)同級 ⇒ 沒有「按住左鍵壓縮受測者間差異」的訊號,
+   §3.5 擔心的那條研究決策**不需要啟動**。
+2. **B-3c 全部落在 ±20% 內**(−12.4 … +15.2%,G5 為 −16.3 … +14.0)⇒ 25 s 的 block 長度仍看不出需要調整。
+3. **比值全數過門檻且較 G5 一致上升**(2.10–3.94 vs 2.06–3.80)。最緊的 `reversal_high` 三代穩定：
+   G4 **2.05** → G5 **2.06** → G6 **2.10**。
+
+#### 關鍵發現:**雙任務並未壓低表現,反而普遍上升**
+
+§3 作廢框當時的預期是「G6 是雙任務,負荷會壓低所有指標,**量級未知**」。實測相反——
+8 個 scored block **有 7 個 TOT 上升**,平均 **+4.4 點**：
+
+| block | G5 TOT | G6 TOT | Δ |
+|---|---|---|---|
+| `calibration_h` | 74.0% | 70.2% | **−3.8** |
+| `calibration_v` | 66.5% | 69.7% | +3.2 |
+| **`3deg_5dps`** | **80.7%** | **88.5%** | **+7.8** |
+| `3deg_14dps` | 41.3% | 42.6% | +1.3 |
+| `2deg_5dps` | 57.7% | 66.2% | +8.5 |
+| `2deg_14dps` | 11.1% | 18.5% | +7.4 |
+| `reversal_medium` | 54.4% | 60.4% | +6.0 |
+| `reversal_high` | 41.2% | 46.0% | +4.8 |
+
+最可能的解釋是**同一位操作員跨 G4/G5/G6 的學習效果蓋過了按住左鍵的負荷**(P07 與 P05/P06 為同一操作員,
+且 seed 家族相同 ⇒ 刺激逐位重複)。這對兩端的意義相反,兩端都必須看:
+
+- **ceiling 惡化**:`3deg_5dps` 從超上緣 0.7 點變成**超 8.5 點**。**D-54.48 的第②條理由已失效**——
+  它說「G4 錄音重算預測 86.2%,實際交付只有 80.7%,比預測好一截」;G6 實際交付 **88.5%,比那個預測還差**。
+- **floor 風險退場**:`2deg_14dps` 11.1% → **18.5%**,離 B-2b 的 5% hard floor 很遠。
+  §3.5 列的「雙任務可能把它壓到 5% 以下」**沒有發生**。
+
+#### `missing-fire-flag` 與覆蓋率(v2 新增的第 6 項)
+
+零出現,且 8 個 scored block 的 held-fire 覆蓋率**逐一為 100.00%** ⇒ 逐 tick `fire` 旗標確實進到 payload、
+輸入鏈與彈匣(`magSize` 512,D-54.51)都沒問題。**覆蓋率的百分比在本輪之前是看不見的**
+(只被拿去跟 `MIN_FIRE_HOLD_COVERAGE` 比出 pass/fail),T7 **slice 19** 把它印進逐 run 行才使本列可填。
+`practice` 回 `not-required`(它沒有 `protocolGuard`),比 G5 時代「無此欄位」誠實。
+
+#### shots-on-target:引擎與離線對得上（第一次量到）
+
+D-54.51 的零散佈設計讓彈著點 = 準心,故引擎逐發 `hit` 與離線 TOT 走同一套 sphere 幾何。實測
+8/8 block 的 `offlineTot` 與 canonical `totPercent` **逐位相同**,引擎命中率與其差 **+0.1 … −2.4 個百分點**
+(~250 發/block,50% 附近 SE ≈ 3 點 ⇒ 落在取樣噪聲內)⇒ **`HitDetector` 與 `trackingDerivation`
+對得上**。這不是新指標(**C-D3**),只是儀器對帳;實作見 T7 **slice 20**。
+
+### 3.7 研究者決定：**照原樣招募,`3deg_5dps` 的 ceiling 風險以 G6 數字重新入帳**（2026-09-07）
+
+§3 第 4 點寫的是「任一項不成立 ⇒ 不招募」。TOT 那一項對 `3deg_5dps` 不成立(88.5%),故續行**是一次
+刻意的、有理由的偏離**,不是默默通過篩選(決策見 [progress.md](progress.md) **D-54.52**;
+**D-54.48 已隨換代作廢,本列不是沿用它,而是在 G6 數字上重新決定**)。
+
+**與 D-54.48 相比,理由剩下兩條、失去一條**:
+
+- ✅ 仍成立:乾跑是 **n=1,且是本專案最熟練的那一位**(跑過 G3/G4/G5/G6);B-2a 實際判的是
+  **12–20 人的中位數**,招募條件本就是「不同 tracking 程度」。
+- ✅ 仍成立:§2.4 的 go 只需 **≥1 core cell 與 ≥1 reversal cell 判 `retained`**;其餘三個 core cell
+  落在 18.5–66.2%、兩個 reversal 落在 46.0–60.4%,**都在舒適區 ⇒ 這批 12–20 人不會白收**,
+  即使 `3deg_5dps` 最後判 revise。
+- 🔴 **已失效**:D-54.48 的第②條(「實際交付比預測好一截、只超 0.7 點」)。G6 交付 88.5%,
+  **比 G4 錄音重算的 86.2% 還差**,且超上緣 8.5 點。這是本輪與上輪最實質的差別。
+
+**未因此放寬任何判準**:§2.2 的門檻一字未動,`3deg_5dps` 仍以 median TOT < 80% **且** 受測者間
+CV ≥ 15% 判定。分析時**優先看這個 cell**;真正的風險不是 TOT 本身,而是**逼近天花板會壓縮受測者間
+差異** ⇒ CV 子句比 TOT 子句更難救,且在 n=1 完全測不到。**母體中位數需低於 P07 逾 8.5 點才能救回
+TOT 子句**(G5 時只需低於 0.7 點)⇒ 本輪要有「這個 cell 大概會判 revise」的預期,而非「可能」。
+
 ---
 
 ## 4. 施測與資料回收
@@ -366,6 +470,13 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
       比值 **2.06–3.80**、`atEye` 3.99–4.01 u / 100–103% / 1.999–3.006°、10/10 fidelity match、
       B-3a 方向四項全成立、B-3c 全在 ±20% 內。**唯 `3deg_5dps` 的 TOT = 80.7%,超 5–80% 窗上緣
       0.7 點** ⇒ 研究者決定照原樣招募並把風險入帳（**§3.4 / D-54.48**）。
+      ⚠️ **本列連同 §3.3/§3.4 已於 2026-09-04 隨 `tracking-pilot-v2` 換代作廢**，僅供對照。
+- [x] **G6 刺激的乾跑（`tracking-pilot-v2`）**（**2026-09-07**，P07 ×9 block，見 **§3.6**）：
+      比值 **2.10–3.94**、`atEye` 3.99–4.01 u / 100–103% / 1.999–3.006°、9/9 fidelity match、
+      9/9 eligible、`missing-fire-flag` 0 次、held-fire 覆蓋率 **8/8 = 100.00%**、
+      shots-on-target 與離線 TOT 差 **+0.1…−2.4 點**（`offlineTot` 與 canonical `tot` 逐位相同）、
+      B-3a 方向四項全成立、B-3c 全在 ±20% 內。**唯 `3deg_5dps` 的 TOT = 88.5%，超上緣 8.5 點**
+      ⇒ 研究者決定照原樣招募、風險以 G6 數字重新入帳（**§3.7 / D-54.52**）。
 
 **真人項（12–20 人,未完成 ⬜）**
 
@@ -393,10 +504,10 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 
 | 項目 | 值 |
 |---|---|
-| 刺激世代 | **G5**（G4 + size 候選值 `3.0 / 2.0`,drillId `3deg_*` / `2deg_*`）;乾跑資料為 **G4**——辨識方式見 [analysis-tracking.md](../../../../operational/analysis-tracking.md)「刺激語意」 |
+| 刺激世代 | **G6**（G5 的刺激幾何逐位未動 + scored 窗改為 `requireFire`／v2 武器,D-54.49）;乾跑資料為 **G6**(2026-09-07,§3.6)——辨識方式見 [analysis-tracking.md](../../../../operational/analysis-tracking.md)「刺激語意」:`meta.weaponId === 'tracking_pilot_hold'` + `meta.protocolGuard` + `ticks[].fire` |
 | 刺激基線 commit | **G5 = T7 slice 6**（size revise）;G4 = `320b718`（slice 4）;`field-low` 錨定於 `6899b00`（slice 3） |
 | 分析器 | layer 5 於 `9741ba9`（slice 1）、layer 4 於 `6899b00`（slice 3） |
-| Protocol / metric version | `tracking-pilot-v1` / `tracking-dynamics-v1` |
+| Protocol / metric version | **`tracking-pilot-v2`** / `tracking-dynamics-v1`(版本字串於 2026-09-07 才由 **KI-025 / BD-025** 真正升上去;此前程式停在 v1 ⇒ §3.6 那 9 份 payload 的 `sessionLabel` 仍帶 v1 前綴,世代身分由 `weaponId`/`protocolGuard` 承載) |
 | Trajectory versions | `band-limited-2d-v1`、`reversal-2d-v1` |
 | Export schema | v2 |
 | Block 長度 | 25 s scored + 1 s prep |
@@ -429,7 +540,8 @@ B-2a 的受測者間 CV、B-3a 的方向、B-3b 的成對差與 B-3c 的 slope �
 
 ## 9. 判定
 
-**🟡 未判定 —— 判準已凍結（§2）,等乾跑（§3）與 12–20 人資料（§4）。**
+**🟡 未判定 —— 判準已凍結（§2）,乾跑已完成（§3.6,五項過／TOT 一項出界 ⇒ §3.7 決定照原樣招募）,
+等 12–20 人資料（§4）。**
 
 依 README §5：本文件 §2 的任何數值在收資料後**不得**調整;若證據顯示判準本身不合適,以
 **新 protocol version + 新 decision row** 表達,並明確標註哪一批資料是以哪一版判準判定的。
