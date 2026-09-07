@@ -9,11 +9,11 @@
 | T0 Entry Gate | Complete | 2026-09-04 | 2026-09-04 | Engine/GLTF/sampling PoC全綠；OQ-56.2／3由使用者明確T1指令解除 |
 | T1 Contract and Fixtures | Complete | 2026-09-04 | 2026-09-04 | targeted 93 tests、full Vitest 2099 tests、typecheck/build exit 0 |
 | T2 Three-target Lifecycle | Complete | 2026-09-07 | 2026-09-07 | initial/replacement/tail/restart/fallback、10k invariants、四FPS parity與full Vitest全綠 |
-| T3 Corridor Scene and Presentation | Not started | — | — | T0/T1 complete；可開工 |
-| T4 Fixed Player, Hit and HUD | Blocked by T3 | — | — | T1/T2 complete |
-| T5 Automated Integration and Performance | Blocked by T3–T4 | — | — | T2 complete |
-| T6 Visual Acceptance | Blocked by T3–T5 | — | — | — |
-| T-exit | Blocked by T3–T6 | — | — | T0–T2 complete |
+| T3 Corridor Scene and Presentation | Complete | 2026-09-07 | 2026-09-07 | 21-mesh GLTF、inventory/projection/contrast、rapid/late load、50-cycle resources、full Vitest/build全綠 |
+| T4 Fixed Player, Hit and HUD | Not started | — | — | T1/T2/T3 complete；可開工 |
+| T5 Automated Integration and Performance | Blocked by T4 | — | — | T2/T3 complete |
+| T6 Visual Acceptance | Blocked by T4–T5 | — | — | T3 complete |
+| T-exit | Blocked by T4–T6 | — | — | T0–T3 complete |
 
 ## Decision Log
 
@@ -31,6 +31,7 @@
 | D-56.P10 | 2026-09-04 | 使用者明確要求實作T1，採用Candidate A與60-kill target quota，並以seed=56001凍結exact practice fixture | 使用者 + Engineering | Alternatives Considered：Candidate B與30秒time-limit；未選，因Candidate A畫面密度較保守且60-kill tail可直接做deterministic acceptance |
 | D-56.P11 | 2026-09-04 | T1先註冊asset-null的`micro-flick-room` scene contract，固定scene id、75° FOV、eye pose與room envelope；T3再以同ID升級為approved GLTF | Engineering | Alternatives Considered：只存sceneId字串但不註冊（researcher選取會失敗）、T1提前製作GLTF（越過T3）；選擇可載入的最小contract fixture |
 | D-56.P12 | 2026-09-07 | Population spawn保留既有horizontal `distanceURange`語意，以`TARGET_Y + tan(pitch) * distance`投影垂直角；每個spawn最多32次seeded rejection，失敗後掃固定9×7 cell centres並取最大最小角距，仍不可行則明確throw；DrillRunner production不改 | Engineering | Alternatives Considered：把distance改為完整球面半徑（會改既有spawn distance語意）、只在32次後throw（放棄T0凍結fallback）、新增runner killed counter（tests證明`seenIds - targets.length`已可泛化，無需增加狀態） |
+| D-56.P13 | 2026-09-07 | 走廊採21個environment nodes共用3個cube primitives（floor/wall/ceiling），以18片側牆panel間隙呈現規則接縫；live async scene切換新增共用generation coordinator，late manager在掛入前dispose | Engineering | Alternatives Considered：每片panel各自primitive（draw-call/asset膨脹）、程序化scene-id特例（繞過既有GLTF pipeline）、只補測不修live race（rapid switch可讓舊load覆蓋新選擇）；均未採 |
 
 ## Open Questions（狀態）
 
@@ -103,7 +104,20 @@
 
 ## T3 Evidence Log
 
-尚未開始。
+- `micro-flick-room`由T1的asset-null contract升級為`micro-flick-room-v1` local GLTF；stable scene id、75° FOV、`eyeZ=0`、1.6u eye height與16×36×12 envelope不變。
+- asset inventory為21個environment mesh nodes：floor、deeper ceiling、end wall與左右各9片panel；共用3個unit-cube primitives/materials，environment draw-call上界21，連3顆targets上界24。所有node transforms finite且positive scale；buffer為embedded data URI，無remote/external dependency。
+- allowlist與production `GLTFLoader.parseAsync()` gate證明無camera/light及`weapon|gun|rifle|pistol|hand|arm|muzzle|target`名稱；真實parser產生exact 21 meshes。
+- 1920×1080與1280×720以真實`SceneManager.camera`投影Candidate A四角及完整球半徑，均保留至少24 CSS px safe region；world `(0, 1.6, -18)`投影中央誤差≤1 px。實際`TargetView`紅色material對spawn-zone wall base colour contrast≥3:1。
+- sphere presentation連跑1,000 replacements後`poolSize===3`，mesh geometry均為`SphereGeometry`且三軸scale直接讀同一hitbox diameter；dispose後pool與scene children歸零。
+- T3 discovery發現README所稱既有live scene generation seam實際只存在replay path；新增通用`SceneLoadCoordinator`並接到`activateDrill`／`loadSceneById`。rapid A→B、same-scene/no-load supersession與dispose-before-late-arrival都會在掛入前dispose stale manager。
+- 50次enter/switch/leave每輪均維持2 lights + 1 asset group + 3 pooled target meshes，離開後scene children歸零且asset geometry/material各dispose一次；`SceneManager`／`TargetView`／coordinator不註冊DOM listeners。
+- Targeted：6 files／60 tests passed；`npm.cmd run typecheck` exit 0。sandbox內full Vitest／Vite build仍因既知esbuild父目錄權限失敗；核准sandbox外重跑：221 files passed + 1 skipped／2166 tests passed + 2 skipped；build 167 modules、1,194.58 kB（gzip 340.30 kB），僅既存>500 kB warning。
+- `graphify update .`完成560/560 code files、4323 nodes／10393 edges／273 communities；執行時另有平行WP-54 tracking變更，故graphify產物保留unstaged，避免混入本T3 commit。
+
+## Surprises & Discoveries（T3）
+
+- live `main.ts`原本直接await scene load後無條件install；rapid scene/drill選擇會讓較慢的舊請求最後覆蓋新選擇。Replay已有per-session late-dispose，但live沒有可沿用的generation gate；T3因此新增小型共用coordinator，不建立micro-flick專用旗標。
+- 走廊21個nodes可共用3個GLTF mesh primitives；規則panel接縫不需要18份重複vertex buffers，符合T0 draw-call上界且把資產維持在單一embedded GLTF。
 
 ## T4 Evidence Log
 

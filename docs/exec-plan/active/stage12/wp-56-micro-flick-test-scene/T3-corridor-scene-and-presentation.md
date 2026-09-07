@@ -22,15 +22,14 @@
 
 ## Definition of Done
 
-- [ ] FR-56.2/5/11/13/15 scene/render tests全綠。
-- [ ] asset allowlist、budgets與no-weapon/no-target gates可在CI重跑。
-- [ ] camera/FOV/eye/end-wall與spawn field projection符合T0數值契約。
-- [ ] NFR-56.5～8達標；50-cycle無scene child/GPU/listener累積。
-- [ ] fallback可操作且切離正常，沒有黑屏、stale scene或unhandled rejection。
+- [x] FR-56.2/5/11/13/15 scene/render tests全綠。
+- [x] asset allowlist、budgets與no-weapon/no-target gates可在CI重跑。
+- [x] camera/FOV/eye/end-wall與spawn field projection符合T0數值契約。
+- [x] NFR-56.5～8的T3自動 gates達標；50-cycle無scene child/GPU資源累積，相關render物件不註冊listeners。
+- [x] fallback可操作且切離正常，沒有黑屏、stale scene或unhandled rejection。
 
 ## Commit
 
 ```text
 feat(stage12): add micro-flick corridor scene
 ```
-

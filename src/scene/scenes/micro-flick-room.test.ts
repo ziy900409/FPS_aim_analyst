@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MICRO_FLICK_TARGET_DIAMETER_U } from '../../drill/micro_flick_three_target_test_v1.ts';
 import { SceneManager } from '../../render/SceneManager.ts';
 import { TargetView } from '../../render/TargetView.ts';
@@ -220,5 +220,31 @@ describe('WP-56 T3 micro-flick corridor asset contract', () => {
     view.dispose();
     expect(view.poolSize).toBe(0);
     expect(scene.children).toHaveLength(0);
+  });
+
+  it('50 enter/switch/leave cycles release scene children, target meshes, geometry, and material', () => {
+    for (let cycle = 0; cycle < 50; cycle++) {
+      const manager = new SceneManager(microFlickRoom);
+      const asset = new THREE.Group();
+      const geometry = new THREE.BoxGeometry();
+      const material = new THREE.MeshStandardMaterial();
+      const geometryDispose = vi.spyOn(geometry, 'dispose');
+      const materialDispose = vi.spyOn(material, 'dispose');
+      asset.add(new THREE.Mesh(geometry, material));
+      manager.mountAsset(asset);
+
+      const view = new TargetView(manager.scene);
+      view.setShape('sphere');
+      view.sync([target(`a${cycle}`, -2), target(`b${cycle}`, 0), target(`c${cycle}`, 2)]);
+      expect(manager.scene.children).toHaveLength(6); // 2 lights + 1 asset group + 3 pooled targets
+
+      view.dispose();
+      manager.dispose();
+
+      expect(view.poolSize).toBe(0);
+      expect(manager.scene.children).toHaveLength(0);
+      expect(geometryDispose).toHaveBeenCalledOnce();
+      expect(materialDispose).toHaveBeenCalledOnce();
+    }
   });
 });

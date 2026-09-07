@@ -1,6 +1,7 @@
 import { assertIsolation } from './env/isolation.ts';
 import { createRenderer } from './render/createRenderer.ts';
 import { createSceneManagerWithStatus } from './render/SceneManager.ts';
+import { createSceneLoadCoordinator } from './render/SceneLoadCoordinator.ts';
 import { TargetView } from './render/TargetView.ts';
 import { ImpactView } from './render/ImpactView.ts';
 import { TracerView } from './render/TracerView.ts';
@@ -266,6 +267,7 @@ let recorderStartedAt = new Date().toISOString();
 const initialSceneLoad = await createSceneManagerWithStatus(activeSceneConfig);
 let sceneManager = initialSceneLoad.manager;
 activeSceneFallback = initialSceneLoad.fallback;
+const liveSceneLoads = createSceneLoadCoordinator();
 
 // WP-4 / T1（FR-4.1）— 目標渲染:唯讀 sharedState.targets 顯示/隱藏 mesh（狀態由 sim 改，見 T2/T3）。
 let targetView = new TargetView(sceneManager.scene);
@@ -1215,6 +1217,9 @@ async function activateDrill(
   loadOptions: DrillLoadOptions | undefined,
   selectedDrillId: string | undefined,
 ): Promise<void> {
+  // Every activation owns a generation, including same-scene/no-load activations: a preceding GLTF
+  // request resolving late must never overwrite the drill/scene transaction selected most recently.
+  const sceneRequest = liveSceneLoads.begin();
   activeWeaponOverride = undefined; // WP-47 / T2：reset-per-drill，避免 BR 專屬武器條件被手動選擇靜默覆蓋。
   const requiredScene = sceneId !== undefined ? findSceneOption(sceneId) : undefined;
   const targetSceneConfig = requiredScene?.config ?? activeSceneConfig;
@@ -1222,7 +1227,8 @@ async function activateDrill(
   const needsSceneLoad =
     requiredScene !== undefined &&
     (requiredScene.config.sceneId !== activeSceneConfig.sceneId || activeSceneFallback);
-  const nextScene = needsSceneLoad ? await createSceneManagerWithStatus(requiredScene.config) : undefined;
+  const nextScene = needsSceneLoad ? await sceneRequest.load(requiredScene.config) : undefined;
+  if (!sceneRequest.isCurrent() || nextScene === null) return;
   if (nextScene !== undefined && requiredScene !== undefined) installSceneLoad(requiredScene, nextScene);
 
   drillRunner.restart();
@@ -1257,12 +1263,14 @@ async function loadDrillConfigDirect(config: DrillConfig): Promise<void> {
 }
 
 async function loadSceneById(sceneId: string): Promise<void> {
+  const sceneRequest = liveSceneLoads.begin();
   const option = findSceneOption(sceneId);
   if (option.config.sceneId === activeSceneConfig.sceneId && !activeSceneFallback) return;
 
   activeWeaponOverride = undefined; // WP-47 / T2：reset-per-drill，換 scene 亦重建 activeDrillConfig，武器 override 語意應與換 drill 一致。
   const nextDrillConfig = loadDrill(activeDrillSource, option.config, activeDrillLoadOptions);
-  const nextScene = await createSceneManagerWithStatus(option.config);
+  const nextScene = await sceneRequest.load(option.config);
+  if (nextScene === null) return;
 
   installSceneLoad(option, nextScene);
 

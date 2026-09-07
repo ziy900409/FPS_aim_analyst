@@ -29,11 +29,11 @@
 
 ## T3 — Corridor Scene and Presentation
 
-- [ ] GLTF environment allowlist與no-weapon/no-target inventory gate通過。
-- [ ] camera、FOV、eye pose、panel geometry、lighting與end-wall depth符合凍結契約。
-- [ ] sphere visual/hitbox同源；TargetView pool最大為3。
-- [ ] scene load、fallback、rapid switch、dispose與50-cycle resource test全綠。
-- [ ] 1080p/720p projection safe-region與contrast自動量測達標。
+- [x] GLTF environment allowlist與no-weapon/no-target inventory gate通過。
+- [x] camera、FOV、eye pose、panel geometry、lighting與end-wall depth符合凍結契約。
+- [x] sphere visual/hitbox同源；TargetView pool最大為3。
+- [x] scene load、fallback、rapid switch、dispose與50-cycle resource test全綠。
+- [x] 1080p/720p projection safe-region與contrast自動量測達標。
 
 ## T4 — Fixed Player, Hit and HUD
 
