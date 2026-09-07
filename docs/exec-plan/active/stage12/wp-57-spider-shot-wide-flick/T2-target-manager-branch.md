@@ -35,14 +35,14 @@
 
 ## Definition of Done
 
-- [ ] v1/v2 spawn 序列 golden byte-identical，且 golden 是在改碼**之前**錄的（commit 順序可證）。
-- [ ] NFR-57.1 四 FPS parity 綠。
-- [ ] **NFR-57.5 aspect 不變性綠**（run 內 resize 不改 spawn 序列）。
-- [ ] NFR-57.7 零額外配置有客觀斷言。
-- [ ] cell 覆蓋與 L/R 平衡以 ≥ 10,000 spawn 統計證明。
-- [ ] 交替／`zone`／`centerExemptFromTimeout` 對 v2 parity 綠。
-- [ ] 全量 Vitest exit 0；既有決定性 regression 零修改通過。
-- [ ] [progress.md](progress.md) 記 CodeGraph blast radius、測試數與四條 NFR 的實際數字。
+- [x] v1/v2 spawn 序列 golden byte-identical，且 golden 是在改碼**之前**錄的（commit 順序可證）。
+- [x] NFR-57.1 四 FPS parity 綠。
+- [x] **NFR-57.5 aspect 不變性綠**（run 內 resize 不改 spawn 序列）。
+- [x] NFR-57.7 零額外配置有客觀斷言。
+- [x] cell 覆蓋與 L/R 平衡以 ≥ 10,000 spawn 統計證明。
+- [x] 交替／`zone`／`centerExemptFromTimeout` 對 v2 parity 綠。
+- [x] 全量 Vitest exit 0；既有決定性 regression 零修改通過。
+- [x] [progress.md](progress.md) 記 CodeGraph blast radius、測試數與四條 NFR 的實際數字。
 
 ## Commit
 
