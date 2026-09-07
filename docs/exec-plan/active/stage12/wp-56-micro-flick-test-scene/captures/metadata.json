@@ -1,0 +1,61 @@
+{
+  "capturedAt": "2026-09-07T12:16:52.056Z",
+  "environment": {
+    "browser": "Microsoft Edge 151.0.4129.101",
+    "headless": true,
+    "deviceScaleFactor": 1,
+    "renderer": "application Three.js WebGPU path; browser WebGPU availability is recorded per capture"
+  },
+  "drill": {
+    "id": "micro_flick_three_target_test_v1",
+    "seed": 56001,
+    "sceneId": "micro-flick-room",
+    "assetPackVersion": "micro-flick-room-v1"
+  },
+  "captures": {
+    "initial1080p": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "dpr": 1,
+      "webgpuApiAvailable": true,
+      "pointerLock": true,
+      "targets": [
+        "t0",
+        "t1",
+        "t2"
+      ]
+    },
+    "replacement1080p": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "dpr": 1,
+      "webgpuApiAvailable": true,
+      "pointerLock": true,
+      "targets": [
+        "t1",
+        "t2",
+        "t3"
+      ]
+    },
+    "initial720p": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "dpr": 1,
+      "webgpuApiAvailable": true,
+      "pointerLock": true,
+      "targets": [
+        "t0",
+        "t1",
+        "t2"
+      ]
+    },
+    "fallback1080p": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "dpr": 1,
+      "webgpuApiAvailable": true,
+      "pointerLock": true,
+      "targets": [
+        "t0",
+        "t1",
+        "t2"
+      ]
+    }
+  }
+}

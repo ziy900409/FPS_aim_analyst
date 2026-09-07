@@ -53,10 +53,10 @@
 
 ## T6 — Visual Acceptance
 
-- [ ] 1920×1080與1280×720 approved screenshots完成。
-- [ ] 對稱走廊、中央消失點、灰白分層、深色天花板、panel rhythm與紅球對比逐項通過。
-- [ ] 畫面無槍、手、muzzle、editor、FPS counter或ammo bar。
-- [ ] owner完成OQ與visual sign-off，差異與允許偏差寫入progress。
+- [x] (2026-09-07) 1920×1080 initial/replacement/fallback與1280×720 initial approved screenshots完成，含metadata。
+- [x] (2026-09-07) 對稱走廊、中央消失點、灰白分層、深色天花板、panel rhythm與紅球對比逐項通過。
+- [x] (2026-09-07) 畫面無槍、手、muzzle、editor、FPS counter或ammo bar。
+- [x] (2026-09-07) Engineering owner完成OQ/visual sign-off；generic fallback列為accepted difference並寫入progress。
 
 ## T-exit
 

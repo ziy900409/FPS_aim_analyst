@@ -12,8 +12,8 @@
 | T3 Corridor Scene and Presentation | Complete | 2026-09-07 | 2026-09-07 | 21-mesh GLTF、inventory/projection/contrast、rapid/late load、50-cycle resources、full Vitest/build全綠 |
 | T4 Fixed Player, Hit and HUD | Complete | 2026-09-07 | 2026-09-07 | locked SimLoop policy、exact-ID sphere hit→next-tick replacement、live HUD/crosshair E2E、full Vitest/build全綠 |
 | T5 Automated Integration and Performance | Complete | 2026-09-07 | 2026-09-07 | browser/harness lifecycle、20-sample cached-load P95、10k warmed hot-path P95與full regression evidence全綠 |
-| T6 Visual Acceptance | Ready | — | — | T3／T5 complete；待owner manual visual sign-off |
-| T-exit | Blocked by T4–T6 | — | — | T0–T3 complete |
+| T6 Visual Acceptance | Complete | 2026-09-07 | 2026-09-07 | four Edge/WebGPU captures + metadata；review Pass，fallback accepted difference，blocking=0 |
+| T-exit | Blocked by T5 rerun regression | 2026-09-07 | — | T0–T6 visual evidence complete；targeted Micro Flick E2E rerun has two repeatable failures recorded below |
 
 ## Decision Log
 
@@ -34,6 +34,7 @@
 | D-56.P13 | 2026-09-07 | 走廊採21個environment nodes共用3個cube primitives（floor/wall/ceiling），以18片側牆panel間隙呈現規則接縫；live async scene切換新增共用generation coordinator，late manager在掛入前dispose | Engineering | Alternatives Considered：每片panel各自primitive（draw-call/asset膨脹）、程序化scene-id特例（繞過既有GLTF pipeline）、只補測不修live race（rapid switch可讓舊load覆蓋新選擇）；均未採 |
 | D-56.P14 | 2026-09-07 | translation lock採`SimLoopOptions.translation`於建 loop 時選擇固定的movement dependency；locked tick清零`vx/vz`並標記stopped，但不關閉input consumption或CameraController mouse aim | Engineering | Alternatives Considered：在`afterTick`回寫位置（觀測hook違反來源單向性且會留下瞬時位移）、複用`protocolGuard.noMovement`（只記違規、不阻止integration）、改InputSampler忽略按鍵（會破壞input trace）；均未採 |
 | D-56.P15 | 2026-09-07 | browser gate先以researcher UI載入真實live scene，再以既有dev-only `FpsTestHarness`驅動精準命中、60-target end與restart；native Pointer Lock正向取得仍保留給T6 manual，避免把Edge automation limitation誤當玩法缺陷 | Engineering | Alternatives Considered：新增可寫入live singleton的test API、或mock Pointer Lock；未選，因會擴張production觀測縫或測到非瀏覽器權威狀態。harness與production共用DrillRunner／TargetManager／SimLoop。 |
+| D-56.P16 | 2026-09-07 | T6 capture以實際researcher入口與Pointer Lock取景，初始／replacement／720p為Micro Flick baseline；強制GLTF失敗顯示既有generic placeholder，列為accepted fallback difference而非視覺baseline | Engineering | Alternatives Considered：把fallback畫面當作Micro Flick corridor驗收、或為capture注入mock scene；未選，前者混淆失敗路徑目的，後者不再是production fallback。 |
 
 ## Open Questions（狀態）
 
@@ -140,7 +141,15 @@
 
 ## T6 Evidence Log
 
-尚未開始。
+- `scripts/capture-wp56-visuals.mjs`新增可重跑的local Edge capture runner；以researcher-only控制列載入exact drill，確認Pointer Lock後移除控制項／dev readout再截圖。replacement keyframe以同一live InputSampler→SimLoop→HitDetector pipeline命中frozen opening `t0`；其行為正確性仍由T2/T5 gate權威覆蓋，runner只建立可重現視覺視角。
+- `npm.cmd run capture:wp56-visuals` exit 0；產生1920×1080 initial/replacement/fallback、1280×720 initial及metadata。Edge 151.0.4129.101、headless、DPR1、WebGPU API available；drill seed=56001、scene asset=`micro-flick-room-v1`。replacement metadata=`t1/t2/t3`，證明畫面中的三靶為兩survivors + replacement。
+- Visual review：走廊構圖、surface hierarchy、panel seams、三靶辨識、center crosshair、no-weapon scope、HUD與safe region全Pass；沒有Kovaak editor／FPS／ammo UI或weapon/hands/muzzle/shadow。強制abort GLTF後的generic placeholder為預期fallback evidence，且維持HUD／crosshair與live targets state；列accepted difference，不作primary baseline。blocking differences=0。
+- Post-review regression rerun：`npm.cmd run typecheck` exit 0；capture runner exit 0。`npx.cmd playwright test tests/e2e/micro-flick-live.spec.ts --project=edge --workers=1` 則為 2 passed／2 failed，重現T5的60-target harness最後仍為`running`（預期`ended`）及cached researcher selection保持`field-low`（預期`micro-flick-room`）。sandbox內同命令先因已知esbuild parent-directory讀取限制失敗；核准sandbox外重跑仍相同，故非sandbox或parallel flake。此rerun失敗沒有在T6 capture runner／文件變更前修正，T-exit保持blocked；不將未診斷的T5修正混入本T6 slice。
+
+## Surprises & Discoveries（T6）
+
+- T6 screenshot capture需要Pointer Lock才能移除lock hint並取得真實中心準星；Edge headless在第二次native canvas click可取得lock。capture runner以frozen target bearing建立replacement keyframe，並以metadata記錄`targetIds`，不把視覺工具當作lifecycle correctness gate。
+- T5 browser regression在single-worker及parallel rerun都重現。`87926dd..HEAD`的production code diff只涉及WP-57 Spider wide-flick branch in `TargetManager`，但尚未建立將它與兩個Micro Flick症狀相連的最小repro；依scope/increment紀律，本T6不改共同manager或E2E測試來掩蓋問題。
 
 ## T-exit Evidence Log
 

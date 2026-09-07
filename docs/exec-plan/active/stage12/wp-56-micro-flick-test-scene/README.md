@@ -14,7 +14,7 @@
 | **Delivery policy** | v1 為 practice／researcher-only；不加入正式 participant protocol、不宣稱 full replay、不改研究指標定義 |
 | **Estimate** | 8.5–15.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：`DrillConfig` 與 `SceneConfig` 為跨模組核心契約；`TargetManager`／`DrillRunner` 註解與部分測試建立在單 active target 假設上 |
-| **Status** | T0／T1 complete（2026-09-04）；T2～T4 complete（2026-09-07）；T5～T6未開始 |
+| **Status** | T0／T1 complete（2026-09-04）；T2～T6 complete（2026-09-07）；T-exit blocked by repeatable T5 E2E rerun regression（see progress.md） |
 
 ---
 
