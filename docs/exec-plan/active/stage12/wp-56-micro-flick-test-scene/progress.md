@@ -11,8 +11,8 @@
 | T2 Three-target Lifecycle | Complete | 2026-09-07 | 2026-09-07 | initial/replacement/tail/restart/fallback、10k invariants、四FPS parity與full Vitest全綠 |
 | T3 Corridor Scene and Presentation | Complete | 2026-09-07 | 2026-09-07 | 21-mesh GLTF、inventory/projection/contrast、rapid/late load、50-cycle resources、full Vitest/build全綠 |
 | T4 Fixed Player, Hit and HUD | Complete | 2026-09-07 | 2026-09-07 | locked SimLoop policy、exact-ID sphere hit→next-tick replacement、live HUD/crosshair E2E、full Vitest/build全綠 |
-| T5 Automated Integration and Performance | Not started | — | — | T4 complete；可開工 |
-| T6 Visual Acceptance | Blocked by T4–T5 | — | — | T3 complete |
+| T5 Automated Integration and Performance | Complete | 2026-09-07 | 2026-09-07 | browser/harness lifecycle、20-sample cached-load P95、10k warmed hot-path P95與full regression evidence全綠 |
+| T6 Visual Acceptance | Ready | — | — | T3／T5 complete；待owner manual visual sign-off |
 | T-exit | Blocked by T4–T6 | — | — | T0–T3 complete |
 
 ## Decision Log
@@ -33,6 +33,7 @@
 | D-56.P12 | 2026-09-07 | Population spawn保留既有horizontal `distanceURange`語意，以`TARGET_Y + tan(pitch) * distance`投影垂直角；每個spawn最多32次seeded rejection，失敗後掃固定9×7 cell centres並取最大最小角距，仍不可行則明確throw；DrillRunner production不改 | Engineering | Alternatives Considered：把distance改為完整球面半徑（會改既有spawn distance語意）、只在32次後throw（放棄T0凍結fallback）、新增runner killed counter（tests證明`seenIds - targets.length`已可泛化，無需增加狀態） |
 | D-56.P13 | 2026-09-07 | 走廊採21個environment nodes共用3個cube primitives（floor/wall/ceiling），以18片側牆panel間隙呈現規則接縫；live async scene切換新增共用generation coordinator，late manager在掛入前dispose | Engineering | Alternatives Considered：每片panel各自primitive（draw-call/asset膨脹）、程序化scene-id特例（繞過既有GLTF pipeline）、只補測不修live race（rapid switch可讓舊load覆蓋新選擇）；均未採 |
 | D-56.P14 | 2026-09-07 | translation lock採`SimLoopOptions.translation`於建 loop 時選擇固定的movement dependency；locked tick清零`vx/vz`並標記stopped，但不關閉input consumption或CameraController mouse aim | Engineering | Alternatives Considered：在`afterTick`回寫位置（觀測hook違反來源單向性且會留下瞬時位移）、複用`protocolGuard.noMovement`（只記違規、不阻止integration）、改InputSampler忽略按鍵（會破壞input trace）；均未採 |
+| D-56.P15 | 2026-09-07 | browser gate先以researcher UI載入真實live scene，再以既有dev-only `FpsTestHarness`驅動精準命中、60-target end與restart；native Pointer Lock正向取得仍保留給T6 manual，避免把Edge automation limitation誤當玩法缺陷 | Engineering | Alternatives Considered：新增可寫入live singleton的test API、或mock Pointer Lock；未選，因會擴張production觀測縫或測到非瀏覽器權威狀態。harness與production共用DrillRunner／TargetManager／SimLoop。 |
 
 ## Open Questions（狀態）
 
@@ -131,7 +132,11 @@
 
 ## T5 Evidence Log
 
-尚未開始。
+- 新增`src/sim/micro-flick-performance.test.ts`：相同three-target population hot path先warm 100次、量10,000次`TargetManager.tick + TargetView.sync`（不含assertion/serialization）。Node/V8 full-suite run P95=`0.0115 ms`、max=`2.1154 ms`，低於NFR-56.4的`1 ms`；pool與scene mesh count均維持3。focused run P95=`0.0050 ms`、max=`0.6746 ms`。
+- `tests/e2e/micro-flick-live.spec.ts`新增browser/harness acceptance：researcher UI載入exact drill/scene和三靶；harness fire記錄`visible t0..t3`及`fire(hit=true,targetId=t0)`；60個tap完成target budget、phase=`ended`，restart opening sequence相同。這補足live UI與同源domain lifecycle之間的gate；T2既有property tests仍驗survivor position、stale ID/miss、budget tail和30/60/144/240 FPS trace。
+- cached first-visible-frame gate在Edge desktop、dev build、1280×720、無額外background load下作20個`field-low → micro-flick-room` cached transaction samples；每次待scene id與3 visible targets完成，P95符合`<1,500 ms` gate。測試先等待field drill transaction實際落為1靶，避免DOM select value已變但async activation尚未完成的race。
+- scene failure／rapid switch／late dispose的production manager lifecycle由`SceneLoadCoordinator.test.ts`和`micro-flick-room.test.ts`的50-cycle dispose spies覆蓋；stale／unknown target ID與miss不補位由`TargetManager.population.test.ts`與T4 integration覆蓋；no-weapon、practice-no-history、non-full-replay負向契約維持T1/T3/T4 gates。
+- Verification：`npm.cmd test -- --reporter=default` → 223 files passed + 1 skipped／2179 tests passed + 2 skipped；`npm.cmd run typecheck`完成無diagnostic；`npx.cmd vite build` → exit 0、167 modules、1,194.71 kB（gzip 340.34 kB），僅既存>500 kB warning；focused及full `npm.cmd run test:e2e` Edge runs完成且無failure artifacts。Sandbox內Vitest/Vite的esbuild父目錄讀取限制維持以核准sandbox外命令執行。
 
 ## T6 Evidence Log
 

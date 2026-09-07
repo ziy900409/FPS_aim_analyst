@@ -45,11 +45,11 @@
 
 ## T5 — Automated Integration and Performance
 
-- [ ] Playwright happy path：載入→三靶→命中補位→完成→restart。
-- [ ] failure path：asset fail、rapid scene switch、stale target ID、miss與dispose。
-- [ ] P95 target tick/render、cached first frame與1k replacement resource gate達標。
-- [ ] typecheck、Vitest、build、Playwright與legacy determinism regressions全綠。
-- [ ] commands、環境、samples與結果寫入progress。
+- [x] (2026-09-07) Playwright happy path：載入→三靶→命中補位→完成→restart。
+- [x] (2026-09-07) failure path：asset fail、rapid scene switch、stale target ID、miss與dispose。
+- [x] (2026-09-07) P95 target tick/render、cached first frame與1k replacement resource gate達標。
+- [x] (2026-09-07) typecheck、Vitest、build、Playwright與legacy determinism regressions全綠。
+- [x] (2026-09-07) commands、環境、samples與結果寫入progress。
 
 ## T6 — Visual Acceptance
 
