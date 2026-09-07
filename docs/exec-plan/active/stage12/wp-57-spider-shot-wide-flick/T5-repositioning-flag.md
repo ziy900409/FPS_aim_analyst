@@ -31,13 +31,13 @@
 
 ## Definition of Done
 
-- [ ] 四類合成訊號分類全部正確。
-- [ ] 角速度來源沿用既有正規路徑，無第二套 ω 實作（以 import 圖證明）。
-- [ ] 門檻敏感度表已寫入 [progress.md](progress.md)（真實 run 或明確註明的 fixture 替代）。
-- [ ] `cm/360` 與標註率的方向性檢查已記錄（含方向不符時的處置）。
-- [ ] C-D3 boundary 測試綠：本模組不被教練報告／診斷規則／registry 引用。
-- [ ] OQ-57.5 有收斂結論或明確 blocked owner／deadline。
-- [ ] 全量 metrics regression exit 0。
+- [x] 四類合成訊號分類全部正確。（`spider-wide-repositioning.test.ts`，15 tests）
+- [x] 角速度來源沿用既有正規路徑，無第二套 ω 實作（以 import 圖證明）。（只 import `angularKinematics`／`detectionDerivation`／`trackingDerivation`／`spiderShotMetrics` 型別）
+- [x] 門檻敏感度表已寫入 [progress.md](progress.md)（真實 run 或明確註明的 fixture 替代）。**明確註明為合成 cohort**：唯一的生產管線 wide run 缺 `ticks.dYaw`，`omegaDegPerSec()` 直接拒絕（實測入帳）
+- [x] `cm/360` 與標註率的方向性檢查已記錄（含方向不符時的處置）。方向與預期一致（0.0000 → 1.0000 單調不減）；證明力界定見 Surprises 15
+- [x] C-D3 boundary 測試綠：本模組不被教練報告／診斷規則／registry 引用。production importer = `[]`，bundle 與 T4 逐位相同
+- [x] OQ-57.5 有收斂結論或明確 blocked owner／deadline。**Blocked**：owner = 使用者 + 工程，deadline = T6 首批實機 run 之後、T-exit 之前
+- [x] 全量 metrics regression exit 0。全量 Vitest 238 files／2,396 tests passed；typecheck／build exit 0
 
 ## Commit
 
