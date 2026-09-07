@@ -17,6 +17,8 @@ import { generateRecoilTable } from '../recoil/recoilTable.ts';
 import { createRan1 } from '../recoil/rng.ts';
 import { CameraController } from '../view/CameraController.ts';
 import { resolveMouseGain } from '../input/mouseGain.ts';
+import { createDrillRunner } from '../drill/DrillRunner.ts';
+import { microFlickThreeTargetTestV1 } from '../drill/micro_flick_three_target_test_v1.ts';
 
 /** 固定基準的注入式 clock（OQ-2.3）。 */
 function fixedClock(t: number): Clock {
@@ -154,6 +156,47 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
 
     expect(state.player.x).toBeGreaterThan(0);
     expect(state.player.vx).toBeGreaterThan(0);
+  });
+
+  it('micro-flick hits only the nearest sphere, records its exact ID, and replenishes on the next tick', () => {
+    const state = createSharedState();
+    const recorder = createDataRecorder({ capacity: 32 });
+    const config: DrillConfig = {
+      ...microFlickThreeTargetTestV1.drill,
+      targets: { ...microFlickThreeTargetTestV1.drill.targets, count: 6 },
+      timing: { ...microFlickThreeTargetTestV1.drill.timing, countdownMs: 0 },
+    };
+    const manager = createTargetManager(config);
+    const runner = createDrillRunner(state, manager);
+    const camera = cameraLookingDownZ();
+    runner.start(config);
+
+    // First running tick fills the configured three-target population and emits their visible events.
+    simStep(state, 1 / SIM_HZ, TICK_MS, manager, camera, undefined, undefined, runner, recorder);
+    expect(state.targets.map((target) => target.id)).toEqual(['t0', 't1', 't2']);
+    const [, middle, far] = state.targets;
+    state.targets[0].pos = { x: 0, y: 1.5, z: -1 };
+    middle.pos = { x: 0, y: 1.5, z: -3 };
+    far.pos = { x: 0, y: 1.5, z: -5 };
+
+    state.heldFire = true;
+    state.weapon.nextFireT = TICK_MS;
+    simStep(state, 1 / SIM_HZ, 2 * TICK_MS, manager, camera, undefined, undefined, runner, recorder);
+
+    expect(state.targets.map((target) => target.id)).toEqual(['t1', 't2']);
+    const fire = recorder.snapshot().events.find((event) => event.type === 'fire');
+    expect(fire).toMatchObject({ type: 'fire', t: TICK_MS, hit: true, targetId: 't0' });
+    expect(recorder.hitCount).toBe(1);
+    expect(recorder.fireCount).toBe(1);
+
+    state.heldFire = false;
+    state.weapon.nextFireT = Infinity;
+    simStep(state, 1 / SIM_HZ, 3 * TICK_MS, manager, camera, undefined, undefined, runner, recorder);
+
+    expect(state.targets.map((target) => target.id)).toEqual(['t1', 't2', 't3']);
+    const visible = recorder.snapshot().events.filter((event) => event.type === 'visible');
+    expect(visible.map((event) => event.targetId)).toEqual(['t0', 't1', 't2', 't3']);
+    expect(visible.at(-1)).toMatchObject({ type: 'visible', t: 3 * TICK_MS, targetId: 't3' });
   });
 
   it('simStep 由 held 經 friction/accelerate 推進 vx/x（只用 dtSec）+ 維護 prev/curr', () => {
