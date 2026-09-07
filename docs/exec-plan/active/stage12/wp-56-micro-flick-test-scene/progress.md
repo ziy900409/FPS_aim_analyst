@@ -35,6 +35,7 @@
 | D-56.P14 | 2026-09-07 | translation lock採`SimLoopOptions.translation`於建 loop 時選擇固定的movement dependency；locked tick清零`vx/vz`並標記stopped，但不關閉input consumption或CameraController mouse aim | Engineering | Alternatives Considered：在`afterTick`回寫位置（觀測hook違反來源單向性且會留下瞬時位移）、複用`protocolGuard.noMovement`（只記違規、不阻止integration）、改InputSampler忽略按鍵（會破壞input trace）；均未採 |
 | D-56.P15 | 2026-09-07 | browser gate先以researcher UI載入真實live scene，再以既有dev-only `FpsTestHarness`驅動精準命中、60-target end與restart；native Pointer Lock正向取得仍保留給T6 manual，避免把Edge automation limitation誤當玩法缺陷 | Engineering | Alternatives Considered：新增可寫入live singleton的test API、或mock Pointer Lock；未選，因會擴張production觀測縫或測到非瀏覽器權威狀態。harness與production共用DrillRunner／TargetManager／SimLoop。 |
 | D-56.P16 | 2026-09-07 | T6 capture以實際researcher入口與Pointer Lock取景，初始／replacement／720p為Micro Flick baseline；強制GLTF失敗顯示既有generic placeholder，列為accepted fallback difference而非視覺baseline | Engineering | Alternatives Considered：把fallback畫面當作Micro Flick corridor驗收、或為capture注入mock scene；未選，前者混淆失敗路徑目的，後者不再是production fallback。 |
+| D-56.P17 | 2026-09-07 | T5的兩個Micro Flick browser gate為**測試前提缺陷**，修在`tests/e2e/micro-flick-live.spec.ts`，production code不動：60-target gate的tap cadence由120 ms改為500 ms；cached-load gate的reset leg由`#scene-select`+`counterstrafe_ad_v1`改為`detection_popin_v1`，量測終點由「3靶可見」改為app寫回的scene dropdown | Engineering | Alternatives Considered：①在harness內把recoil歸零或改用大彈匣武器——會讓gate測到非production的武器語意；②`markKilled`後同步補位以掩蓋脫靶——違反D-56.P3的next-tick契約且掩蓋FR-56.9；③在`#scene-select`加change listener讓原測試成立——那是WP-56範圍外的UI行為變更，且`loadSceneById`會用micro-flick重驗`field-low`而依設計throw（clearance）；④改用loop-until-ended驅動預算——放棄固定序列的決定性。均未採。 |
 
 ## Open Questions（狀態）
 
@@ -153,4 +154,35 @@
 
 ## T-exit Evidence Log
 
-尚未開始。
+### T-exit 診斷：T5兩個browser gate的repeatable失敗（2026-09-07）
+
+T6留下的blocker在T-exit開工時以`--workers=1`穩定重現（2 passed／2 failed）。T6曾懷疑`87926dd..HEAD`的WP-57 spider branch，**該懷疑不成立**：commit `56e7d99`與其後的未提交改動全部gated在`spiderShot.kind === 'center-peripheral-yawpitch'`／`'center-peripheral-eye-stratified'`，micro-flick沒有`spiderShot`，執行不到那些分支。兩個失敗是**各自獨立的測試前提缺陷**，production code無缺陷。
+
+**失敗①「60-target budget停在`running`」— root cause = tap cadence低於recoil衰減窗。** Node harness探針量到`fires=60 hits=59 visibles=60`——恰好一發脫靶，故kill=59 < `endCondition.targetCount=60`。脫靶那發的匯出事件為`recoilIndex=10.16`、`aimPunch=(-3.72°,-2.66°)`、`spread=(0.70°,0.33°)`。原因：`aimAtActiveTarget()`只補償**開火前一tick取樣**的punch，且完全無法補償每發隨機spread，而Micro Flick球在13 u僅約**1.44°角半徑**；120 ms的tap間隔短於ak47（cycletime 100 ms）的punch衰減，recoil跨tap累積。cadence掃描證據：
+
+| tap interval | phase | hits/fires | max recoilIndex | max spread |
+|---|---|---|---|---|
+| 120 ms | running | 59/60 | 19.07 | 0.774° |
+| 200 ms | ended | 60/60 | 2.01 | 0.563° |
+| 300 ms | ended | 60/60 | 0.73 | 0.447° |
+| **500 ms（採用）** | ended | 60/60 | **0.20** | **0.378°** |
+| 800 ms | ended | 60/60 | 0.04 | 0.356° |
+
+採500 ms＝cycletime的5倍，spread僅為目標角半徑的26%。60 × 500 ms = 30 s = 3,840 ticks，遠低於recorder arena的38,400 tick容量（`capacityForDrill`，300 s @128 Hz），無overflow。脫靶不消耗預算本身就是FR-56.9的正確行為，故不得以production改動掩蓋。
+
+**失敗②「`#scene-select`停在`field-low`」— root cause = 測試假設了兩個不存在的app行為。** 瀏覽器內trace（暫時instrumentation，已移除）顯示：
+- `#scene-select`**沒有`change` listener**（[Controls.ts](../../../../../src/ui/Controls.ts) 只有Load scene按鈕接`onLoadScene`），故`selectOption('field-low')`只改DOM值、不驅動任何載入，反而讓dropdown與`activeSceneConfig`**去同步**。
+- `counterstrafe_ad_v1`在`availableDrills`**未宣告`sceneId`**（trace: `requiredScene: undefined`），故選它也不換場景。
+
+因此iteration 0之後app再也離不開`micro-flick-room`：選micro-flick drill時`needsSceneLoad=false` → `installSceneLoad`不執行 → `setSelectedScene`不執行 → dropdown永遠保持Playwright強設的`field-low`，20 s timeout。**推論：T5記錄的「20-sample cached-load P95」evidence無效**——iteration 0之後沒有任何一個sample量到真實transaction，`.toBe(3)`也是被殘留的micro-flick靶立即滿足。此為T5證據的honesty更正，已一併入帳。
+
+修法：reset leg改用`detection_popin_v1`（`availableDrills`中真正pin `field-low`的drill），量測終點改為`installSceneLoad`寫回的scene dropdown值。另注意`loadSceneById('field-low')`在micro-flick為active drill時**依設計throw**（Node探針：clearance驗證失敗，tree-b1/tree-b2/rock-b1…遮擋±22°spawn範圍），故「選scene回field-low」本就不是合法的reset路徑。3靶斷言移到迴圈後執行一次，因為drill自帶的3 s countdown屬protocol、不屬scene load latency（NFR-56.6量的是first visible scene frame）。
+
+**修後結果**：`npx.cmd playwright test tests/e2e/micro-flick-live.spec.ts --project=edge --workers=1` → **4 passed**（6.5 s／5.9 s／2.0 s／6.9 s）。cached researcher selection在20個真實transaction下 **p50=17.0 ms、p95=62.0 ms、max=72.1 ms**，遠低於NFR-56.6的1,500 ms gate（先前的數字不可用）。`npm.cmd run typecheck` exit 0。
+
+## Surprises & Discoveries（T-exit）
+
+- T6把blocker歸因於WP-57的`TargetManager` spider branch，實際上兩個失敗與WP-57完全無關（新分支對micro-flick不可達）。教訓：「同一檔案在同期被改」不等於因果，仍須走到最小repro。
+- `#scene-select`與`#drill-select`的互動語意不對稱——drill選了就載入，scene必須按Load按鈕。這個不對稱先前沒有任何測試或文件記錄，而它讓一個看似合理的E2E reset步驟變成靜默no-op並污染了一整個NFR量測。
+- 一個「已通過」的perf gate可能因為前提失效而量到零個真實transaction卻仍回報綠燈：修正後的p95（62 ms）與gate（1,500 ms）差距過大，本身就是「這個數字沒在量它宣稱的東西」的訊號。後續WP的perf gate應同時斷言transaction真的發生（本次以app寫回的dropdown值作為觀測終點）。
+- T-exit期間worktree持續有平行WP-57/spider-shot-v3工作進出（`DrillConfig`／`schema`／`TargetManager`／`main.ts`／新drill與scene），且一度使`tsc --noEmit`為紅（`npm run build`含typecheck，故Playwright的preview webServer起不來）。本task只stage自己的檔案，未觸碰該工作。
