@@ -3,6 +3,7 @@ import {
   resolveTargetHitbox,
   type DrillConfig,
   type SpiderShotStratifiedConfig,
+  type SpiderShotYawPitchConfig,
   type TargetHitboxConfig,
   type TargetHitboxSize,
 } from '../drill/DrillConfig.ts';
@@ -10,6 +11,7 @@ import type { Vec3 } from '../state/types.ts';
 import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
 import { SIM_HZ } from '../loop/constants.ts';
 import { isDrivenMotion, motionOffset } from './targetMotion.ts';
+import { spiderWideEyePos } from './spiderEyeFrame.ts';
 import {
   createTrackingTrajectory,
   projectTrackingAngles,
@@ -76,6 +78,8 @@ const TARGET_POPULATION_FALLBACK_PITCH_CELLS = 7;
 const TARGET_POPULATION_FALLBACK_CELL_COUNT =
   TARGET_POPULATION_FALLBACK_YAW_CELLS * TARGET_POPULATION_FALLBACK_PITCH_CELLS;
 const ANGULAR_SEPARATION_EPSILON_DEG = 1e-10;
+/** Fixed cell-build order for the WP-57 wide-flick queue (the shuffle, not this, provides balance). */
+const SPIDER_WIDE_SIDES = ['L', 'R'] as const;
 /**
  * 每 tick age 累加步長(邏輯秒)= sim tick 週期 `1/SIM_HZ`,**常數**(不代入變動 dt;決定性根源,
  * WP-18 / T1,CLAUDE.md §4)。與 recoil 64Hz 子節奏用固定 `1/64` 同紀律——sim 子速率一律常數。
@@ -201,6 +205,36 @@ function buildSpiderZoneCells(config: SpiderShotStratifiedConfig): SpiderZoneCel
   return cells;
 }
 
+/**
+ * One cell of the WP-57 wide-flick schedule: a side (L/R) crossed with an equal-width pitch band.
+ * Stratification is a **balancing** device only — `side` is the condition variable, `pitch` is a
+ * deliberate nuisance factor (D-57.P5), so neither the band index nor the sampled pitch reaches
+ * `targetConditionCell`. Independent from the v1/v2 `SpiderZoneCell` (azimuth x radius) queue: the
+ * two schedules never share queue state.
+ */
+interface SpiderWideCell {
+  readonly side: 'L' | 'R';
+  readonly pitchDegRange: readonly [number, number];
+}
+
+/** Builds the `2 (side) x grid.pitchBands` cells covering one wide-flick schedule's pitch window. */
+function buildSpiderWideCells(config: SpiderShotYawPitchConfig): SpiderWideCell[] {
+  const [pitchMinDeg, pitchMaxDeg] = config.peripheral.pitchDegRange;
+  const bands = config.grid.pitchBands;
+  const bandStepDeg = (pitchMaxDeg - pitchMinDeg) / bands;
+  const cells: SpiderWideCell[] = [];
+  // Side-major then band, so the fixed pre-shuffle order is reproducible from the config alone.
+  for (const side of SPIDER_WIDE_SIDES) {
+    for (let band = 0; band < bands; band++) {
+      cells.push({
+        side,
+        pitchDegRange: [pitchMinDeg + band * bandStepDeg, pitchMinDeg + (band + 1) * bandStepDeg],
+      });
+    }
+  }
+  return cells;
+}
+
 /** Seeded Fisher–Yates in place (GD-5: no `Math.random`; consumes the same spawn RNG as sampling). */
 function shuffleInPlace<T>(items: T[], rng: Rng): void {
   for (let i = items.length - 1; i > 0; i--) {
@@ -262,6 +296,9 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   let nextSpiderZone: 'center' | 'peripheral' = 'center';
   // WP-44 stratified schedule only: shuffled zone-cell queue, rebuilt+reshuffled whenever exhausted.
   let spiderZoneQueue: SpiderZoneCell[] = [];
+  // WP-57 wide-flick schedule only: shuffled side x pitch-band queue, same rebuild-on-exhaustion
+  // convention as the WP-44 queue above. Kept separate so neither schedule can perturb the other.
+  let spiderWideQueue: SpiderWideCell[] = [];
   // 已 spawn 目標數(對照 spawnLimit;reset 歸零)——config 驅動的「換 config 即換數量」判準。
   let spawnedCount = 0;
   let spawnRng: Rng | undefined = usesSeededSpawn
@@ -363,11 +400,16 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     pos: { x: number; y: number; z: number };
   } {
     if (spiderShot === undefined) throw new Error('spiderShot schedule is required');
-    // WP-57 / T1：contract-only slice。`center-peripheral-yawpitch` 的 eye-frame spawn 分支由 T2
-    // 交付；在那之前明確 fail fast，而不是讓新 kind 掉進下面兩支的 azimuth/radius 幾何。此 guard
-    // 對 v1/v2 不可達，兩者的 spawn 序列逐位不變（NFR-57.2）。
+    // WP-57 / T2：eye-frame 球面分支。完全先於下方兩支返回，故 v1/v2 的 origin-frame 圓錐路徑
+    // 逐字不變（NFR-57.2 golden）。中心目標 = `yaw = pitch = 0` 的球面解，即 `(0, 眼高, -distanceU)`
+    // —— 這個 y 的改變**只**發生在本 kind，`TARGET_Y` 常數與其既有使用者不動。
     if (spiderShot.kind === 'center-peripheral-yawpitch') {
-      throw new Error('spiderShot kind center-peripheral-yawpitch 的 spawn 分支尚未實作（WP-57/T2）');
+      if (nextSpiderZone === 'center') {
+        // `side` 在中心 zone 無意義（目標就在正前方），沿用 v1/v2 的 'R' 佔位；真實左右只由周邊
+        // spawn 承載（FR-57.7）。
+        return { side: 'R', zone: 'center', pos: spiderWideEyePos(0, 0, spiderShot.distanceU) };
+      }
+      return sampleSpiderWidePeripheralPose(spiderShot);
     }
     if (nextSpiderZone === 'center') {
       return {
@@ -402,6 +444,35 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     const radiusRad = Math.acos(cosSample);
     const distanceU = randomFloat(spawnRng!, config.peripheral.distanceURange[0], config.peripheral.distanceURange[1]);
     return peripheralPos(config.centerDistanceU, azimuthRad, radiusRad, distanceU);
+  }
+
+  /**
+   * WP-57 / T2: pop one shuffled `side x pitchBand` cell (rebuilding+reshuffling on exhaustion, the
+   * same convention as the WP-44 queue) and sample inside it.
+   *
+   * RNG budget per peripheral spawn is exactly two draws (yaw magnitude, then pitch) plus the
+   * `cells - 1` Fisher–Yates draws once per completed queue cycle. The cell supplies the yaw sign,
+   * so `nextSide` is never read or written by this branch (it stays the legacy peek sequencer).
+   */
+  function sampleSpiderWidePeripheralPose(
+    config: SpiderShotYawPitchConfig,
+  ): SpawnPose & { zone: 'peripheral' } {
+    if (spiderWideQueue.length === 0) {
+      spiderWideQueue = buildSpiderWideCells(config);
+      shuffleInPlace(spiderWideQueue, spawnRng!);
+    }
+    const cell = spiderWideQueue.pop()!;
+    const yawMagDeg = randomFloat(
+      spawnRng!,
+      config.peripheral.yawMagDegRange[0],
+      config.peripheral.yawMagDegRange[1],
+    );
+    const pitchDeg = randomFloat(spawnRng!, cell.pitchDegRange[0], cell.pitchDegRange[1]);
+    return {
+      side: cell.side,
+      zone: 'peripheral',
+      pos: spiderWideEyePos(cell.side === 'L' ? -yawMagDeg : yawMagDeg, pitchDeg, config.distanceU),
+    };
   }
 
   /** WP-52 T5: pop this spawn's balanced-shuffle hitbox candidate, or the drill's fixed hitbox. */
@@ -619,6 +690,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       nextSide = seq ? (seq[0] as 'L' | 'R') : defaultFirstSide;
       nextSpiderZone = 'center';
       spiderZoneQueue = [];
+      spiderWideQueue = [];
       hitboxQueue = buildHitboxQueue();
     },
   };

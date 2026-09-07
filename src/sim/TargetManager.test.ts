@@ -5,8 +5,16 @@ import { createSimLoop } from '../loop/SimLoop.ts';
 import { simStep } from '../loop/SimLoop.ts';
 import { createDataRecorder } from '../data/DataRecorder.ts';
 import { createSharedState } from '../state/SharedState.ts';
-import type { DrillConfig, SpiderPeripheralConfig } from '../drill/DrillConfig.ts';
+import type { DrillConfig, SpiderPeripheralConfig, SpiderShotYawPitchConfig } from '../drill/DrillConfig.ts';
+import {
+  SPIDER_SHOT_WIDE_PITCH_BANDS,
+  SPIDER_SHOT_WIDE_SEED,
+  resolveSpiderShotWideV1,
+} from '../drill/spider_shot_wide_v1.ts';
+import { createRan1, randomFloat } from '../recoil/rng.ts';
 import { createTargetManager } from './TargetManager.ts';
+import { PLAYER_EYE_HEIGHT_U } from './playerEye.ts';
+import { ndcForEyeAngles, spiderWideEyeAngles, spiderWideEyePos } from './spiderEyeFrame.ts';
 import {
   createTrackingTrajectory,
   projectTrackingAngles,
@@ -1127,5 +1135,214 @@ describe('TargetManager — trackingTrajectory drive（WP-54 / T2）', () => {
 
     expect(after).toEqual(before); // 決定性：與 nowMs 無關，只依 age（tick 數）
     expect(state.targetMotionChanges).toEqual([]); // reset 清空 transient queue
+  });
+});
+
+describe('TargetManager — WP-57 wide-flick center/peripheral yaw-pitch schedule', () => {
+  const PITCH_BANDS = SPIDER_SHOT_WIDE_PITCH_BANDS;
+  const CELL_COUNT = 2 * PITCH_BANDS;
+  const NDC_LIMIT_TOLERANCE = 1e-9; // D-57.T0-2：yawMax 使外緣 ndc_x 代數上恰等於 1 − screenMargin。
+
+  /** 出貨用的 resolved config（FOV 75 / 16:9），只把 spawn 上限放寬到測試需要的長度。 */
+  function wideConfig(spawnCount: number, seed = SPIDER_SHOT_WIDE_SEED): DrillConfig {
+    const resolved = resolveSpiderShotWideV1(75, 16 / 9);
+    return {
+      ...resolved,
+      targets: { ...resolved.targets, count: spawnCount },
+      spiderShot: { ...(resolved.spiderShot as SpiderShotYawPitchConfig), seed },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: spawnCount },
+    };
+  }
+
+  interface WideSpawn {
+    readonly zone: 'center' | 'peripheral';
+    readonly side: 'L' | 'R';
+    readonly pos: { x: number; y: number; z: number };
+  }
+
+  function collectSpawns(cfg: DrillConfig, tm = createTargetManager(cfg), state = createSharedState()): WideSpawn[] {
+    const spawns: WideSpawn[] = [];
+    for (let i = 0; i < cfg.targets.count; i++) {
+      tm.tick(state, 100 + i * 100);
+      const target = state.targets[0];
+      spawns.push({ zone: target.zone!, side: target.side, pos: { ...target.pos } });
+      tm.markKilled(state, target.id);
+    }
+    return spawns;
+  }
+
+  const peripheralOnly = (spawns: readonly WideSpawn[]): WideSpawn[] => spawns.filter((s) => s.zone === 'peripheral');
+
+  it('alternates center → peripheral → center and puts the center target on the eye sightline', () => {
+    const cfg = wideConfig(3);
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+    const { distanceU } = cfg.spiderShot as SpiderShotYawPitchConfig;
+
+    tm.tick(state, 100);
+    expect(state.targets).toHaveLength(1);
+    // yaw = pitch = 0 的球面解；y 是眼高（1.6），**不是** v1/v2 的 TARGET_Y（1.5）。
+    expect(state.targets[0]).toMatchObject({
+      zone: 'center',
+      side: 'R',
+      pos: { x: 0, y: PLAYER_EYE_HEIGHT_U, z: -distanceU },
+    });
+    tm.markKilled(state, state.targets[0].id);
+
+    tm.tick(state, 200);
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0].zone).toBe('peripheral');
+    tm.markKilled(state, state.targets[0].id);
+
+    tm.tick(state, 300);
+    expect(state.targets[0]).toMatchObject({ zone: 'center', pos: { x: 0, y: PLAYER_EYE_HEIGHT_U, z: -distanceU } });
+  });
+
+  it('keeps every peripheral spawn on the frozen eye-frame sphere, inside the resolved yaw/pitch window', () => {
+    const cfg = wideConfig(CELL_COUNT * 8);
+    const schedule = cfg.spiderShot as SpiderShotYawPitchConfig;
+    const { yawMagDegRange, pitchDegRange } = schedule.peripheral;
+    const { fovDegVertical, aspect, screenMargin, targetAngularDiameterDeg } = schedule.resolvedFrom;
+    const ndcLimit = 1 - screenMargin;
+
+    for (const spawn of peripheralOnly(collectSpawns(cfg))) {
+      const angles = spiderWideEyeAngles(spawn.pos);
+      // NFR-57.3：角徑恆定的前提 —— 到眼睛的距離不隨 yaw/pitch 漂。
+      expect(Math.abs(angles.distanceU - schedule.distanceU) / schedule.distanceU).toBeLessThanOrEqual(1e-12);
+      expect(Math.abs(angles.yawDeg)).toBeGreaterThanOrEqual(yawMagDegRange[0]);
+      expect(Math.abs(angles.yawDeg)).toBeLessThanOrEqual(yawMagDegRange[1]);
+      // FR-57.7：side 承載真實左右（yaw 符號），不再是 v1/v2 的 'R' 佔位。
+      expect(spawn.side).toBe(angles.yawDeg < 0 ? 'L' : 'R');
+      expect(angles.pitchDeg).toBeGreaterThanOrEqual(pitchDegRange[0]);
+      expect(angles.pitchDeg).toBeLessThanOrEqual(pitchDegRange[1]);
+      // FR-57.4：連目標外緣（角半徑）都必須完整在畫面內。
+      const radiusDeg = targetAngularDiameterDeg / 2;
+      const outer = ndcForEyeAngles(
+        Math.abs(angles.yawDeg) + radiusDeg,
+        Math.abs(angles.pitchDeg) + radiusDeg,
+        fovDegVertical,
+        aspect,
+      );
+      expect(Math.abs(outer.x)).toBeLessThanOrEqual(ndcLimit + NDC_LIMIT_TOLERANCE);
+      expect(Math.abs(outer.y)).toBeLessThanOrEqual(ndcLimit + NDC_LIMIT_TOLERANCE);
+    }
+  });
+
+  it('covers each side × pitch-band cell exactly once per queue cycle, with balanced L/R', () => {
+    const cycles = 6;
+    const cfg = wideConfig(CELL_COUNT * cycles * 2);
+    const schedule = cfg.spiderShot as SpiderShotYawPitchConfig;
+    const [pitchMinDeg, pitchMaxDeg] = schedule.peripheral.pitchDegRange;
+    const bandStepDeg = (pitchMaxDeg - pitchMinDeg) / PITCH_BANDS;
+
+    const keys = peripheralOnly(collectSpawns(cfg)).map((spawn) => {
+      const angles = spiderWideEyeAngles(spawn.pos);
+      const band = Math.min(PITCH_BANDS - 1, Math.floor((angles.pitchDeg - pitchMinDeg) / bandStepDeg));
+      return `${spawn.side}:${band}`;
+    });
+
+    expect(keys).toHaveLength(CELL_COUNT * cycles);
+    for (let cycle = 0; cycle < cycles; cycle++) {
+      const round = keys.slice(cycle * CELL_COUNT, (cycle + 1) * CELL_COUNT);
+      // 每個週期恰好蓋滿全部 cell 一次 ⇒ 佇列只在耗盡時重建，且無 cell 被跳過或重複。
+      expect(new Set(round).size).toBe(CELL_COUNT);
+      expect(round.filter((k) => k.startsWith('L'))).toHaveLength(PITCH_BANDS);
+      expect(round.filter((k) => k.startsWith('R'))).toHaveLength(PITCH_BANDS);
+    }
+  });
+
+  it('splits the pitch window into equal-width bands with no gap or overlap', () => {
+    const resolved = resolveSpiderShotWideV1(75, 16 / 9);
+    const schedule = resolved.spiderShot as SpiderShotYawPitchConfig;
+    const bands = 3;
+    const spawnCount = 2 * 2 * bands * 4;
+    const cfg: DrillConfig = {
+      ...resolved,
+      targets: { ...resolved.targets, count: spawnCount },
+      spiderShot: { ...schedule, grid: { pitchBands: bands } },
+      timing: { countdownMs: 0 },
+      endCondition: { type: 'targetCount', value: spawnCount },
+    };
+    const [pitchMinDeg, pitchMaxDeg] = schedule.peripheral.pitchDegRange;
+    const bandStepDeg = (pitchMaxDeg - pitchMinDeg) / bands;
+
+    const counts = new Map<string, number>();
+    for (const spawn of peripheralOnly(collectSpawns(cfg))) {
+      const { pitchDeg } = spiderWideEyeAngles(spawn.pos);
+      const band = Math.min(bands - 1, Math.floor((pitchDeg - pitchMinDeg) / bandStepDeg));
+      counts.set(`${spawn.side}:${band}`, (counts.get(`${spawn.side}:${band}`) ?? 0) + 1);
+    }
+
+    // 4 個完整佇列週期 ⇒ 2 × bands 個 cell 各出現 4 次，無 cell 落空、無區間重疊。
+    expect(counts.size).toBe(2 * bands);
+    for (const count of counts.values()) expect(count).toBe(4);
+  });
+
+  it('takes side from the shuffled queue, not from the legacy nextSide alternator', () => {
+    const cfg = wideConfig(CELL_COUNT * 8);
+    const sides = peripheralOnly(collectSpawns(cfg)).map((spawn) => spawn.side);
+    // 一個 L↔R toggle 永遠不會產生連續同側；洗牌佇列會（每週期各 PITCH_BANDS 次）。
+    const repeats = sides.filter((side, i) => i > 0 && side === sides[i - 1]);
+    expect(repeats.length).toBeGreaterThan(0);
+  });
+
+  it('spends exactly two RNG draws per peripheral spawn plus one shuffle per queue cycle (NFR-57.7)', () => {
+    const spawnCount = CELL_COUNT * 6;
+    const cfg = wideConfig(spawnCount);
+    const schedule = cfg.spiderShot as SpiderShotYawPitchConfig;
+    // 獨立重放預期的**抽樣預算**：耗盡時才重建並洗牌（CELL_COUNT − 1 抽），每個周邊 spawn 恰 2 抽。
+    // 若實作改成每次 spawn 重建佇列（或多抽／少抽一次），抽樣序列立刻錯位、位置全數不符。
+    const rng = createRan1(schedule.seed);
+    const [pitchMinDeg, pitchMaxDeg] = schedule.peripheral.pitchDegRange;
+    const bandStepDeg = (pitchMaxDeg - pitchMinDeg) / PITCH_BANDS;
+    let queue: Array<{ side: 'L' | 'R'; lo: number; hi: number }> = [];
+    const expected: Array<{ side: 'L' | 'R'; pos: { x: number; y: number; z: number } }> = [];
+
+    for (let i = 0; i < spawnCount / 2; i++) {
+      if (queue.length === 0) {
+        for (const side of ['L', 'R'] as const) {
+          for (let band = 0; band < PITCH_BANDS; band++) {
+            queue.push({ side, lo: pitchMinDeg + band * bandStepDeg, hi: pitchMinDeg + (band + 1) * bandStepDeg });
+          }
+        }
+        for (let j = queue.length - 1; j > 0; j--) {
+          const k = Math.floor(randomFloat(rng, 0, j + 1));
+          const tmp = queue[j];
+          queue[j] = queue[k];
+          queue[k] = tmp;
+        }
+      }
+      const cell = queue.pop()!;
+      const yawMagDeg = randomFloat(rng, schedule.peripheral.yawMagDegRange[0], schedule.peripheral.yawMagDegRange[1]);
+      const pitchDeg = randomFloat(rng, cell.lo, cell.hi);
+      expected.push({
+        side: cell.side,
+        pos: spiderWideEyePos(cell.side === 'L' ? -yawMagDeg : yawMagDeg, pitchDeg, schedule.distanceU),
+      });
+    }
+
+    const actual = peripheralOnly(collectSpawns(cfg)).map((spawn) => ({ side: spawn.side, pos: spawn.pos }));
+    expect(actual).toEqual(expected);
+  });
+
+  it('replays the same wide sequence after reset, while a different seed changes it', () => {
+    const cfg = wideConfig(CELL_COUNT * 4);
+    const state = createSharedState();
+    const tm = createTargetManager(cfg);
+
+    const first = collectSpawns(cfg, tm, state);
+    tm.reset(state);
+    expect(collectSpawns(cfg, tm, state)).toEqual(first);
+    expect(collectSpawns(wideConfig(CELL_COUNT * 4, SPIDER_SHOT_WIDE_SEED + 1))).not.toEqual(first);
+  });
+
+  it('never spawns on the v1/v2 origin-frame cone (TARGET_Y is untouched by this kind)', () => {
+    const cfg = wideConfig(CELL_COUNT * 4);
+    const { distanceU } = cfg.spiderShot as SpiderShotYawPitchConfig;
+    for (const spawn of collectSpawns(cfg)) {
+      // 每一顆（含中心）都在以眼睛為心的球面上；origin-frame 圓錐做不到這件事。
+      expect(Math.hypot(spawn.pos.x, spawn.pos.y - PLAYER_EYE_HEIGHT_U, spawn.pos.z)).toBeCloseTo(distanceU, 12);
+    }
   });
 });
