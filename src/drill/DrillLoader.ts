@@ -3,6 +3,7 @@ import { validateDrill } from './schema.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
 import { formatClearanceViolations, validateClearance, type ClearanceOptions } from '../scene/clearance.ts';
 import { requireSpiderShotDeliveryGeometry } from '../scene/spiderShotDelivery.ts';
+import { requireSpiderWideArenaGeometry } from '../scene/spiderWideArena.ts';
 
 export interface DrillLoadOptions {
   readonly clearance?: ClearanceOptions;
@@ -35,6 +36,9 @@ export function loadDrill(source: unknown, scene?: SceneConfig, options: DrillLo
   const drill = validateDrill(json);
   if (scene !== undefined) {
     requireSpiderShotDeliveryGeometry(scene, drill);
+    // WP-57 / T3：牆與地板不在 validateClearance 的掃描範圍（只掃 propBounds），故 wide-flick
+    // 的穿牆／埋地板需要自己的閘 —— 否則裝不下只會表現成 KI-012（牆全遮但命中仍過）。
+    requireSpiderWideArenaGeometry(scene, drill);
     const violations = validateClearance(scene, drill, options.clearance);
     if (violations.length > 0) {
       throw new Error(`DrillConfig 載入失敗: clearance 驗證失敗 — ${formatClearanceViolations(violations)}`);
