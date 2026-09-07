@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { loadDrill } from './DrillLoader.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
 import { CLEARANCE_MARGIN_U, TARGET_HITBOX_RADIUS_U } from '../scene/clearance.ts';
+import { spiderShotRoom } from '../scene/scenes/spider-shot-room.ts';
+import { spiderShotV3 } from './spider_shot_v3.ts';
 
 /** 最小合法 config（欄位形狀對齊 DrillConfig / validateDrill）。 */
 const VALID = {
@@ -62,6 +64,75 @@ describe('loadDrill — 載入邊界（FR-6.2，OQ-6.4）', () => {
 
   it('scene clearance 違規時拒載，錯誤訊息指名 prop id', () => {
     expect(() => loadDrill(VALID, sceneWithBlockingProp())).toThrow(/clearance 驗證失敗.*blocking-crate/);
+  });
+
+  it('rejects an eye-frame Spider Shot drill when its bound scene eye is not the canonical anchor', () => {
+    expect(loadDrill(spiderShotV3, spiderShotRoom).drillId).toBe('spider-shot-v3');
+    const displacedEyeScene: SceneConfig = {
+      ...spiderShotRoom,
+      proceduralRoom: { ...spiderShotRoom.proceduralRoom!, eyeZ: 4 },
+    };
+
+    expect(() => loadDrill(spiderShotV3, displacedEyeScene)).toThrow(/delivery geometry.*eye anchor/i);
+  });
+
+  it('requires an eye-frame Spider Shot assessment to lock and audit player translation', () => {
+    expect(() =>
+      loadDrill({ ...spiderShotV3, playerControl: { translation: 'enabled' } }, spiderShotRoom),
+    ).toThrow(/delivery geometry.*translation.*locked/i);
+    expect(() =>
+      loadDrill({ ...spiderShotV3, protocolGuard: undefined }, spiderShotRoom),
+    ).toThrow(/delivery geometry.*noMovement/i);
+  });
+
+  it('rejects drift between the declared eye-frame distance, target size, and hitbox', () => {
+    expect(() =>
+      loadDrill(
+        {
+          ...spiderShotV3,
+          spiderShot: { ...spiderShotV3.spiderShot!, centerDistanceU: 12 },
+        },
+        spiderShotRoom,
+      ),
+    ).toThrow(/delivery geometry.*center distance/i);
+
+    expect(() =>
+      loadDrill(
+        {
+          ...spiderShotV3,
+          spiderShot: {
+            ...spiderShotV3.spiderShot!,
+            peripheral: {
+              ...spiderShotV3.spiderShot!.peripheral,
+              distanceURange: [8, 9],
+            },
+          },
+        },
+        spiderShotRoom,
+      ),
+    ).toThrow(/delivery geometry.*peripheral distance/i);
+
+    expect(() =>
+      loadDrill(
+        {
+          ...spiderShotV3,
+          targets: {
+            ...spiderShotV3.targets,
+            hitbox: { ...spiderShotV3.targets.hitbox!, widthU: 0.5, heightU: 0.5, depthU: 0.5 },
+          },
+        },
+        spiderShotRoom,
+      ),
+    ).toThrow(/delivery geometry.*angular diameter/i);
+  });
+
+  it('rejects a dedicated Spider Shot room that cannot contain the configured spawn envelope', () => {
+    const shallowRoom: SceneConfig = {
+      ...spiderShotRoom,
+      proceduralRoom: { ...spiderShotRoom.proceduralRoom!, roomSize: [16, 8, 10] },
+    };
+
+    expect(() => loadDrill(spiderShotV3, shallowRoom)).toThrow(/delivery geometry.*room envelope/i);
   });
 
   // PR #10 review（Codex P2）:非 Vec3 waypoint 過去可通過 validateDrill,使 clearance envelope

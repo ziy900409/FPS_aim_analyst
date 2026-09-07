@@ -18,6 +18,7 @@
 
 | KI | 症狀 | 修復決策 | 狀態 |
 |---|---|---|---|
+| [KI-026](KI-026-spider-shot-eye-not-anchored-in-placeholder-room.md) | v1/v2 綁定 `eyeZ:4` 的 `placeholder-room`，交戰距離 12 u 而非 8 u；v2 實際只交付約 1.33°，舊 conditions 卻以 world origin 匯出近 2°，且 compatibility cell 無法辨識幾何世代 | BD-026 ✅:新增 eye-frame `spider-shot-v3` + 專用 room，Session 正式入口轉 v3；保留 v1/v2 legacy；conditions 改為 eye-frame；v3 以獨立 protocol 與 payload-derived condition cell 隔離 cohort；載入期驗證完整交付幾何 | ✅ 已修(2026-09-07) |
 | [KI-025](KI-025-tracking-pilot-protocol-version-stuck-at-v1.md) | protocol version 字串停在 `'tracking-pilot-v1'`,而 **D-54.49 已宣告 v2**(gate §2.1 / 世代表 / runbook / CONTEXT 全部更新了,程式沒有)。同一個常數有**三份來源**(一個 `export const` + 兩份手寫字面值)⇒ 三份一起停在 v1、彼此一致、沒有測試會紅。後果:compatibility key 的 `protocolVersion` 軸讓 **G5 與 G6 的 run 產生逐位相同的 key**、被判可合併——而這正是**唯一一次 layer 3b 攔不住的世代分界**(刺激軌跡逐位相同),那道機器可讀的防線本應由此欄承擔;evidence 戳記亦把 v2 協定收的資料標成 v1 | BD-025 ✅:升為 `'tracking-pilot-v2'`(**執行 D-54.49,非新決策**),並把另外兩份來源改為引用/`typeof` 該常數以修掉根因;seed family 偵測維持與版本無關並補回歸測試釘住 | ✅ 已修(2026-09-07) |
 | [KI-024](KI-024-field-low-eye-not-anchored-halves-delivered-angles.md) | `field-low` 的 `proceduralRoom` 未設 `eyeZ` ⇒ eye 在 `z=+4`、前向目標在 `z=−4`,**交戰距離 8 u ≠ config 的 4 u**。WP-54 tracking pilot 9 個 block 的角尺寸/角行程/角速度**一致只交付 0.50×**(宣稱 0.5°/2.0° 實為 0.25°/1.0°,宣稱 5/20 deg/s 實為 2.5/10)。機制上解釋了「0.5° 看不見」(0.25° ≈ 4.2 CSS px)。KI-002/D1 在另一場景的**復發**;刺激側檢查全以 trajectory 原點量角度、指標側以眼睛量 ⇒ 同一構念第三個自由度未對表(C-D4) | BD-024 ✅:使用者選定 **Option A**——`field-low` 補 `eyeZ: 0`(與 `br-field`/KI-002 D1 同一修法)。跨 WP 影響面見 [DECISIONS.md GD-31](../exec-plan/DECISIONS.md) | ✅ 已修(2026-09-03) |
 | [KI-023](KI-023-target-speed-set-point-is-per-axis-not-2d.md) | `targetRmsSpeedDegPerSec` 是**每軸** set-point,而螢幕上的目標速度是兩軸向量合成 ⇒ 兩軸 cell 交付 **√2 倍**(實測 7.14/28.3 vs 宣稱 5/20),預註冊的絕對值從未被交付;單軸 calibration 卻交付 1.0 倍 ⇒ 宣稱同速度的 block 實際差 1.41 倍。T1 測試只量 yaw、分析 runner 量 hypot ⇒ 同一構念**兩個定義**(違反 C-D4)。速度比值(4×)完好 | BD-023 ✅:研究者選定 **Option A**(2D 語意,含 reversal 家族);每軸求解目標改 `set-point / √活躍軸數`,單軸 calibration 逐位不變 | ✅ 已修(2026-09-03),**9 個 block 待重跑** |
@@ -52,6 +53,19 @@
 
 （**目前無待決項目**——BD-024 已於 2026-09-03 拍板並落地(見下);KI-023 的 Option A 見 §3 BD-023。
 下列 BD-019~BD-021 皆已標 ✅ 但尚未搬入 §3。）
+
+### BD-026 ✅ KI-026 — `spider-shot-v3` eye-frame 新世代 + legacy 隔離:已修(2026-09-07)
+
+| | |
+|---|---|
+| **決策** | 使用者採納架構建議：不修改共享 `placeholder-room`，也不覆寫已收資料所屬的 v1/v2 幾何；新增正式 Assessment `spider-shot-v3` 與專用 `spider-shot-room`，Session Plan 的 `spider-shot` 家族轉向 v3。v1/v2 保留為 legacy，避免改寫既有 baseline 與其他共享場景 drill。 |
+| **交付契約** | v3 使用 `center-peripheral-eye-stratified`：所有座標從 canonical eye `(0,1.6,0)` 生成，center/peripheral 恆為 8 u，sphere 角徑恆為 2.0°，玩家 translation locked 且 export guard 為 noMovement。載入期檢查 eye anchor、距離、角徑/hitbox 與 room envelope，任一漂移 fail fast。 |
+| **資料世代** | v3 使用 `spider-shot-v3@1.0.0`；registry 新增 exact registration，condition cell 從每份 payload 的 scene eye、spawn schedule 與 hitbox snapshot 重建，而非讀 live config。舊 v1/v2 不被重新標成 v3，compatibility key 自動隔離。 |
+| **分析修正** | `deriveSpiderShotTransitions()` 改以 export eye + visible tick 的 player position 計算 `D_deg`/`W_deg`，移除 world-origin 第二定義；舊資料仍可由自身 metadata 誠實重建。 |
+| **相容性** | v1/v2 spawn 實作與 frozen golden 逐位不變；`spider-shot-wide-v1` 仍是獨立 Practice。 |
+| **驗證** | TDD 覆蓋交付幾何、載入守衛、eye-frame conditions、protocol、registry/cohort 與 Session mapping；Vitest **233 files / 2326 passed / 2 skipped**，production build 成功，舊 v1/v2 spawn golden 逐位不變。 |
+
+---
 
 ### BD-025 ✅ KI-025 — protocol version 升為 `tracking-pilot-v2` + 消掉三份來源:已修(2026-09-07)
 

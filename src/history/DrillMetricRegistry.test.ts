@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ExportPayload } from '../data/export.ts';
 import type { Meta } from '../data/metadata.ts';
+import { spiderShotV3 } from '../drill/spider_shot_v3.ts';
 import { createDrillMetricRegistry } from './DrillMetricRegistry.ts';
 
 const CENTER = { x: 0, y: 0, z: -10 };
@@ -112,6 +113,47 @@ describe('DrillMetricRegistry', () => {
     };
     const result = registry.project(malformed);
     expect(result).toEqual({ status: 'invalid-metric', reasonCode: 'projection-failed' });
+  });
+
+  it('registers spider-shot-v3 and derives its compatibility geometry from each payload snapshot', () => {
+    const registry = createDrillMetricRegistry();
+    const registration = registry.registrationForExactDrill(spiderShotV3.drillId);
+    expect(registration?.version).toBe('1.0.0');
+
+    const anchored = registry.project(makeV3Payload(0));
+    const displaced = registry.project(makeV3Payload(4));
+    expect(anchored.status).toBe('ready');
+    expect(displaced.status).toBe('ready');
+    if (anchored.status !== 'ready' || displaced.status !== 'ready') return;
+
+    expect(anchored.compatibilityKey.protocolVersion).toBe('spider-shot-v3@1.0.0');
+    expect(anchored.compatibilityKey.targetConditionCell).toContain('frame=eye-v1');
+    expect(anchored.compatibilityKey.targetConditionCell).toContain('eye=0.000000,1.600000,0.000000');
+    expect(displaced.compatibilityKey.targetConditionCell).toContain('eye=0.000000,1.600000,4.000000');
+    expect(displaced.compatibilityKey.targetConditionCell).not.toBe(anchored.compatibilityKey.targetConditionCell);
+  });
+
+  it('rejects a spider-shot-v3 payload whose declared angular size disagrees with its hitbox', () => {
+    const registry = createDrillMetricRegistry();
+    const payload = makeV3Payload(0);
+    const malformed: ExportPayload = {
+      ...payload,
+      meta: {
+        ...payload.meta,
+        spawn: {
+          ...payload.meta.spawn!,
+          spiderShot: {
+            ...(payload.meta.spawn!.spiderShot as Record<string, unknown>),
+            targetAngularDiameterDeg: 3,
+          },
+        },
+      },
+    };
+
+    expect(registry.project(malformed)).toEqual({
+      status: 'invalid-metric',
+      reasonCode: 'projection-failed',
+    });
   });
 });
 
@@ -276,6 +318,30 @@ function makePayload(overrides: { drillId?: string; assessment?: boolean; suspec
       { type: 'fire', t: 490, hit: true, firstShot: false, residualSpeed: 0, targetId: 'peripheral-2' },
       visible('center-2', 'center', CENTER, 500),
     ],
+  };
+}
+
+function makeV3Payload(eyeZ: number): ExportPayload {
+  const base = makePayload({ drillId: spiderShotV3.drillId });
+  return {
+    ...base,
+    meta: {
+      ...base.meta,
+      assessment: {
+        protocolVersion: 'spider-shot-v3@1.0.0',
+        assessmentFeedbackPolicy: 'minimal-end-of-block',
+      },
+      scene: {
+        sceneId: 'spider-shot-room',
+        assetPackVersion: 'spider-shot-room-v1',
+        clutterTier: 'low',
+        fallback: false,
+        eye: { x: 0, y: 1.6, z: eyeZ },
+      },
+      targets: { hitbox: spiderShotV3.targets.hitbox },
+      spawn: { seed: spiderShotV3.spiderShot!.seed, spiderShot: spiderShotV3.spiderShot },
+      protocolGuard: { noMovement: true },
+    },
   };
 }
 

@@ -22,6 +22,18 @@ const RAD_TO_DEG = 180 / Math.PI;
 /** 玩家眼睛在 sim 原點正上方；本 WP 所有 yaw/pitch 都相對這一點定義。 */
 export const SPIDER_WIDE_EYE_ORIGIN: Vec3 = { x: 0, y: PLAYER_EYE_HEIGHT_U, z: 0 };
 
+/** Canonical eye-frame azimuth/radius projection used by the corrected Spider Shot protocol. */
+export function spiderEyePolarPos(azimuthDeg: number, radiusDeg: number, distanceU: number): Vec3 {
+  const azimuthRad = azimuthDeg * DEG_TO_RAD;
+  const radiusRad = radiusDeg * DEG_TO_RAD;
+  const radialSin = Math.sin(radiusRad);
+  return {
+    x: SPIDER_WIDE_EYE_ORIGIN.x + distanceU * radialSin * Math.sin(azimuthRad),
+    y: SPIDER_WIDE_EYE_ORIGIN.y + distanceU * radialSin * Math.cos(azimuthRad),
+    z: SPIDER_WIDE_EYE_ORIGIN.z - distanceU * Math.cos(radiusRad),
+  };
+}
+
 /**
  * FR-57.2：`pos = eye + d·(sin(yaw)·cos(pitch), sin(pitch), −cos(yaw)·cos(pitch))`。
  *

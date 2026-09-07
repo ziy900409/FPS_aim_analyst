@@ -1,6 +1,9 @@
 # Analysis Spider Shot Contract
 
-`spider-shot-v1` 是 Assessment 的中心—周邊目標切換協定（FR-F8/FR-F9,WP-36)。場上同時只保留一個可命中目標；目標命中後依 `spiderShot` 排程在中心與周邊間交替。排程由 `spiderShot.seed` 決定，並完整回顯到 `meta.spawn.spiderShot`；既有 `sequence.alternation` 在此分支只保留型別相容位置，不承載 Spider Shot 語意。
+`spider-shot-v3` 是目前 Session Plan 的正式 Assessment 中心—周邊目標切換協定；v1/v2
+保留作 legacy replay／歷史資料判讀，不再代表現行交付幾何。場上同時只保留一個可命中目標；
+目標命中後依 `spiderShot` 排程在中心與周邊間交替。排程由 `spiderShot.seed` 決定，並完整回顯到
+`meta.spawn.spiderShot`；既有 `sequence.alternation` 在此分支只保留型別相容位置，不承載 Spider Shot 語意。
 
 ## Relationship to legacy L/R alternation and `SpawnAreaConfig`（避免誤用）
 
@@ -77,7 +80,7 @@ WP-41 T0 已關閉「以外部 seed 再次排程家族內條件區塊」的分�
 
 ## Condition geometry
 
-`D_deg` 是前一目標與抵達目標、均由玩家原點指向目標中心的兩個方向向量之無號球面夾角。其實作共用 `angularDistanceDeg()`；`angularEccentricityDeg()` 亦使用同一函式，因此沒有第二套夾角公式。
+`D_deg` 是前一目標與抵達目標、均由各自 visible tick 的**玩家眼睛**指向目標中心的兩個方向向量之無號球面夾角。eye base 來自 `meta.scene.eye`，玩家位移由 tick 的 `px/pz × meta.simToWorld` 還原。其實作共用 `resolveEyeOrigin()`／`eyeOriginForTick()`／`angularDistanceDeg()`；`angularEccentricityDeg()` 亦使用同一組 primitive，因此沒有第二套原點或夾角公式。
 
 `W_deg` 是抵達目標的角寬：
 
@@ -85,7 +88,18 @@ WP-41 T0 已關閉「以外部 seed 再次排程家族內條件區塊」的分�
 W_deg = 2 × atan((hitbox.width / 2) / worldDistanceU) × 180 / π
 ```
 
-`hitbox` 僅來自 `meta.targets.hitbox`（GD-7 單一來源），`worldDistanceU` 為玩家原點到抵達目標中心的距離。輸出同時保留三維 hitbox、距離與 `meta.spawn.seed`，使條件可獨立審核。
+`hitbox` 僅來自 `meta.targets.hitbox`（GD-7 單一來源），`worldDistanceU` 為玩家眼睛到抵達目標中心的距離。輸出同時保留三維 hitbox、距離與 `meta.spawn.seed`，使條件可獨立審核。
+
+## `spider-shot-v3` — canonical eye-frame Assessment（KI-026 / BD-026）
+
+v3 使用獨立 `spider-shot-room`，scene eye 固定 `(0,1.6,0)`；`center-peripheral-eye-stratified`
+排程從該 eye 生成中心與周邊球面座標，距離恆為 8 u、角半徑分層為 10–25°、sphere 角徑恆為
+2.0°。玩家 translation locked，並要求 `protocolGuard.noMovement=true`。
+
+`loadDrill()` 在 arm 前驗證 eye anchor、center/peripheral distance、sphere hitbox 對應的宣稱角徑，
+以及整個周邊 spawn envelope 是否落在 room 內；不符合即 fail fast。v3 export 使用
+`spider-shot-v3@1.0.0`，history condition cell 從 payload snapshot 建立，scene eye 或幾何有任何差異
+都會形成不同 compatibility cohort。v1/v2 的 spawn path 與 frozen golden 不變。
 
 周邊點相對中心視線的方位角依 45° 分箱：上／下為 `vertical`、左／右為 `horizontal`、45°、135°、225°、315° 邊界及其斜向區域為 `oblique`。這是呈現層標籤，不進 `targetConditionCell`，因此後續 pilot 調整分箱不會改變相容鍵語意（OQ-S6-18，暫定 45°，不阻塞開工）。
 

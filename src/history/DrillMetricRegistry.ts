@@ -9,6 +9,7 @@ import {
   SPIDER_SHOT_HITBOX_V2,
   spiderShotV2,
 } from '../drill/spider_shot_v2.ts';
+import { spiderShotV3 } from '../drill/spider_shot_v3.ts';
 import { peekClickTransferV1, PEEK_CLICK_TRANSFER_V1_VISIBILITY } from '../drill/peek_click_transfer_v1.ts';
 import { peekAdCorridor } from '../scene/scenes/peek-ad-corridor.ts';
 
@@ -205,6 +206,27 @@ const SPIDER_SHOT_V2_REGISTRATION: DrillMetricRegistration = {
   project: projectSpiderShotV2,
 };
 
+const SPIDER_SHOT_V3_REGISTRY_VERSION = '1.0.0';
+
+const SPIDER_SHOT_V3_DESCRIPTORS: readonly MetricDescriptor[] = SPIDER_SHOT_V2_DESCRIPTORS.map(
+  (descriptor) => ({ ...descriptor, id: descriptor.id.replace('spider-v2.', 'spider-v3.') }),
+);
+
+function projectSpiderShotV3(payload: ExportPayload): readonly MetricObservation[] {
+  return projectSpiderShotV2(payload).map((observation) => ({
+    ...observation,
+    metricId: observation.metricId.replace('spider-v2.', 'spider-v3.'),
+  }));
+}
+
+const SPIDER_SHOT_V3_REGISTRATION: DrillMetricRegistration = {
+  drillId: spiderShotV3.drillId,
+  label: 'Spider Shot v3',
+  version: SPIDER_SHOT_V3_REGISTRY_VERSION,
+  descriptors: SPIDER_SHOT_V3_DESCRIPTORS,
+  project: projectSpiderShotV3,
+};
+
 // ---------------------------------------------------------------------------
 // peek_click_transfer_v1 registration — WP-53 / T3, GD-29 formal freeze (see file header)
 // ---------------------------------------------------------------------------
@@ -275,12 +297,61 @@ const PEEK_CLICK_TRANSFER_V1_REGISTRATION: DrillMetricRegistration = {
   project: projectPeekClickTransferV1,
 };
 
-const REGISTRATIONS: readonly DrillMetricRegistration[] = [SPIDER_SHOT_V2_REGISTRATION, PEEK_CLICK_TRANSFER_V1_REGISTRATION];
+const REGISTRATIONS: readonly DrillMetricRegistration[] = [
+  SPIDER_SHOT_V2_REGISTRATION,
+  SPIDER_SHOT_V3_REGISTRATION,
+  PEEK_CLICK_TRANSFER_V1_REGISTRATION,
+];
 
-function targetConditionCellForRegistration(drillId: string): string {
-  if (drillId === spiderShotV2.drillId) return SPIDER_SHOT_V2_CONDITION_CELL;
-  if (drillId === peekClickTransferV1.drill.drillId) return buildPeekClickTransferV1ConditionCell();
-  throw new Error(`no target condition cell configured for drill ${drillId}`);
+function targetConditionCellForRegistration(payload: ExportPayload): string {
+  if (payload.meta.drillId === spiderShotV2.drillId) return SPIDER_SHOT_V2_CONDITION_CELL;
+  if (payload.meta.drillId === spiderShotV3.drillId) return buildSpiderShotV3ConditionCell(payload);
+  if (payload.meta.drillId === peekClickTransferV1.drill.drillId) return buildPeekClickTransferV1ConditionCell();
+  throw new Error(`no target condition cell configured for drill ${payload.meta.drillId}`);
+}
+
+/**
+ * V3 geometry identity is reconstructed from the immutable export snapshot. Historical payloads
+ * therefore cannot be silently relabelled by a later live config change.
+ */
+function buildSpiderShotV3ConditionCell(payload: ExportPayload): string {
+  const schedule = requireRecord(payload.meta.spawn?.spiderShot, 'meta.spawn.spiderShot');
+  if (schedule.kind !== 'center-peripheral-eye-stratified') {
+    throw new Error('spider-shot-v3 requires an eye-frame stratified schedule');
+  }
+  const peripheral = requireRecord(schedule.peripheral, 'meta.spawn.spiderShot.peripheral');
+  const grid = requireRecord(schedule.grid, 'meta.spawn.spiderShot.grid');
+  const radius = requireFinitePair(peripheral.angularRadiusDegRange, 'angularRadiusDegRange');
+  const distance = requireFinitePair(peripheral.distanceURange, 'distanceURange');
+  const centerDistanceU = requireFiniteNumber(schedule.centerDistanceU, 'centerDistanceU');
+  const targetAngularDiameterDeg = requireFiniteNumber(
+    schedule.targetAngularDiameterDeg,
+    'targetAngularDiameterDeg',
+  );
+  const azimuthQuadrants = requirePositiveInteger(grid.azimuthQuadrants, 'azimuthQuadrants');
+  const radiusTiers = requirePositiveInteger(grid.radiusTiers, 'radiusTiers');
+  const hitbox = payload.meta.targets?.hitbox;
+  const eye = payload.meta.scene?.eye;
+  if (hitbox === undefined || eye === undefined) throw new Error('spider-shot-v3 requires exported hitbox and scene eye');
+  if (payload.meta.protocolGuard?.noMovement !== true) {
+    throw new Error('spider-shot-v3 requires exported noMovement protocol guard');
+  }
+  const widthDeg = (2 * Math.atan(hitbox.widthU / 2 / centerDistanceU) * 180) / Math.PI;
+  if (Math.abs(widthDeg - targetAngularDiameterDeg) > 1e-9) {
+    throw new Error('spider-shot-v3 declared angular diameter does not match exported hitbox');
+  }
+  return [
+    'spider-v3:frame=eye-v1',
+    `scene=${payload.meta.scene!.sceneId}`,
+    `eye=${formatGeometryNumber(eye.x)},${formatGeometryNumber(eye.y)},${formatGeometryNumber(eye.z)}`,
+    `distance=${formatGeometryNumber(centerDistanceU)}u`,
+    `peripheral-distance=${formatGeometryNumber(distance[0])}-${formatGeometryNumber(distance[1])}u`,
+    `radius=${formatGeometryNumber(radius[0])}-${formatGeometryNumber(radius[1])}deg`,
+    `width=${formatGeometryNumber(targetAngularDiameterDeg)}deg`,
+    `grid=${azimuthQuadrants}x${radiusTiers}`,
+    `shape=${hitbox.shape ?? 'box'}`,
+    'translation=locked',
+  ].join(';');
 }
 
 // ---------------------------------------------------------------------------
@@ -309,7 +380,7 @@ export function createDrillMetricRegistry(): DrillMetricRegistry {
       const compatibilityKey = buildCompatibilityKey(
         payload.meta,
         registration.drillId,
-        targetConditionCellForRegistration(registration.drillId),
+        targetConditionCellForRegistration(payload),
         qualityGateStatus,
       );
       const observations = registration.project(payload);
@@ -372,4 +443,28 @@ function median(values: readonly number[]): number | undefined {
 function roundTo(value: number, decimals: number): number {
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
+}
+
+function requireRecord(value: unknown, name: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error(`${name} must be an object`);
+  return value as Record<string, unknown>;
+}
+
+function requireFiniteNumber(value: unknown, name: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${name} must be finite`);
+  return value;
+}
+
+function requirePositiveInteger(value: unknown, name: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) throw new Error(`${name} must be positive`);
+  return value;
+}
+
+function requireFinitePair(value: unknown, name: string): readonly [number, number] {
+  if (!Array.isArray(value) || value.length !== 2) throw new Error(`${name} must be a pair`);
+  return [requireFiniteNumber(value[0], `${name}[0]`), requireFiniteNumber(value[1], `${name}[1]`)];
+}
+
+function formatGeometryNumber(value: number): string {
+  return value.toFixed(6);
 }

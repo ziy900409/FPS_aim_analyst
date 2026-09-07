@@ -130,7 +130,7 @@ describe('WP-57 T1 — practice-only 負向閘（FR-57.13）', () => {
       SPIDER_SHOT_WIDE_DRILL_ID,
       `${SPIDER_SHOT_WIDE_DRILL_ID}-alt`,
       'spider-shot-wide',
-      'spider-shot-v3',
+      'spider-shot-v3-wide',
     ]) {
       expect(registry.registrationForExactDrill(id)).toBeUndefined();
     }

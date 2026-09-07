@@ -113,7 +113,7 @@ describe('SessionRunner', () => {
   it('uses closed drill mappings for every family', () => {
     expect(resolveFamilyDrillId('hold-click')).toBe('hold_click_v1');
     expect(resolveFamilyDrillId('hold-track')).toBe('hold_track_v1');
-    expect(resolveFamilyDrillId('spider-shot')).toBe('spider-shot-v1');
+    expect(resolveFamilyDrillId('spider-shot')).toBe('spider-shot-v3');
     expect(resolveFamilyDrillId('counterstrafe')).toBe('counterstrafe-reversal-v1');
     expect(resolveFamilyDrillId('peek-click-transfer')).toBe('peek_click_transfer_pilot_v1_2deg');
     expect(resolveFamilyDrillId('peek-click-transfer-v1')).toBe('peek_click_transfer_v1');

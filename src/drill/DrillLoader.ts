@@ -2,6 +2,7 @@ import type { DrillConfig } from './DrillConfig.ts';
 import { validateDrill } from './schema.ts';
 import type { SceneConfig } from '../scene/SceneConfig.ts';
 import { formatClearanceViolations, validateClearance, type ClearanceOptions } from '../scene/clearance.ts';
+import { requireSpiderShotDeliveryGeometry } from '../scene/spiderShotDelivery.ts';
 
 export interface DrillLoadOptions {
   readonly clearance?: ClearanceOptions;
@@ -33,6 +34,7 @@ export function loadDrill(source: unknown, scene?: SceneConfig, options: DrillLo
   }
   const drill = validateDrill(json);
   if (scene !== undefined) {
+    requireSpiderShotDeliveryGeometry(scene, drill);
     const violations = validateClearance(scene, drill, options.clearance);
     if (violations.length > 0) {
       throw new Error(`DrillConfig 載入失敗: clearance 驗證失敗 — ${formatClearanceViolations(violations)}`);

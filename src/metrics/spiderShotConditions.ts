@@ -1,5 +1,12 @@
 import type { ExportPayload } from '../data/export.ts';
-import { angularDistanceDeg, type TargetPoint } from './eyeOrigin.ts';
+import {
+  angularDistanceDeg,
+  eyeOriginForTick,
+  resolveEyeOrigin,
+  type EyeOriginOptions,
+  type ResolvedEyeOrigin,
+  type TargetPoint,
+} from './eyeOrigin.ts';
 
 export type SpiderQuadrant = 'horizontal' | 'vertical' | 'oblique';
 export type SpiderTransitionDirection = 'center-to-peripheral' | 'peripheral-to-center';
@@ -26,7 +33,10 @@ type VisibleEvent = Extract<ExportPayload['events'][number], { type: 'visible' }
  * Reconstructs Spider Shot transition conditions from visible-event anchors and
  * the exported GD-7 hitbox. No geometric state is duplicated in the simulator.
  */
-export function deriveSpiderShotTransitions(payload: ExportPayload): readonly SpiderShotTransition[] {
+export function deriveSpiderShotTransitions(
+  payload: ExportPayload,
+  options: EyeOriginOptions = {},
+): readonly SpiderShotTransition[] {
   const visible = payload.events
     .filter((event): event is VisibleEvent => event.type === 'visible')
     .slice()
@@ -35,6 +45,8 @@ export function deriveSpiderShotTransitions(payload: ExportPayload): readonly Sp
 
   const hitbox = requireHitbox(payload);
   const seed = requireSeed(payload);
+  const eyeOrigin = resolveEyeOrigin(payload, options);
+  const ticks = payload.ticks.slice().sort((a, b) => a.t - b.t);
   const transitions: SpiderShotTransition[] = [];
 
   for (let index = 1; index < visible.length; index++) {
@@ -43,12 +55,17 @@ export function deriveSpiderShotTransitions(payload: ExportPayload): readonly Sp
     const previousPoint = requireTargetPoint(previous);
     const currentPoint = requireTargetPoint(current);
     const direction = requireDirection(previous, current);
-    const worldDistanceU = Math.hypot(currentPoint.x, currentPoint.y, currentPoint.z);
-    if (worldDistanceU === 0) throw new Error(`Spider Shot visible event ${current.targetId} is at the player origin`);
+    const previousEye = eyeAtVisible(previous, ticks, eyeOrigin, options.strictEyeOrigin === true);
+    const currentEye = eyeAtVisible(current, ticks, eyeOrigin, options.strictEyeOrigin === true);
+    const previousRelative = relativeToEye(previousPoint, previousEye);
+    const currentRelative = relativeToEye(currentPoint, currentEye);
+    const worldDistanceU = Math.hypot(currentRelative.x, currentRelative.y, currentRelative.z);
+    if (worldDistanceU === 0) throw new Error(`Spider Shot visible event ${current.targetId} is at the player eye`);
 
-    const angularDistance = angularDistanceDeg(normalize(previousPoint), normalize(currentPoint));
+    const angularDistance = angularDistanceDeg(normalize(previousRelative), normalize(currentRelative));
     const angularSize = (2 * Math.atan((hitbox.width / 2) / worldDistanceU) * 180) / Math.PI;
-    const quadrant = direction === 'center-to-peripheral' ? quadrantForPeripheral(previousPoint, currentPoint) : undefined;
+    const quadrant =
+      direction === 'center-to-peripheral' ? quadrantForPeripheral(previousRelative, currentRelative) : undefined;
 
     transitions.push({
       index: index - 1,
@@ -65,6 +82,24 @@ export function deriveSpiderShotTransitions(payload: ExportPayload): readonly Sp
   }
 
   return transitions;
+}
+
+function eyeAtVisible(
+  event: VisibleEvent,
+  ticks: readonly ExportPayload['ticks'][number][],
+  resolved: ResolvedEyeOrigin,
+  strict: boolean,
+): TargetPoint {
+  const tick = ticks.find((candidate) => candidate.t + 1e-9 >= event.t);
+  if (tick !== undefined) return eyeOriginForTick(tick, resolved);
+  if (strict) {
+    throw new Error(`Spider Shot visible event ${event.targetId} requires a tick at or after t=${event.t}`);
+  }
+  return resolved.base;
+}
+
+function relativeToEye(point: TargetPoint, eye: TargetPoint): TargetPoint {
+  return { x: point.x - eye.x, y: point.y - eye.y, z: point.z - eye.z };
 }
 
 function requireDirection(previous: VisibleEvent, current: VisibleEvent): SpiderTransitionDirection {

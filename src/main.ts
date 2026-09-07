@@ -84,6 +84,7 @@ import { brField } from './scene/scenes/br-field.ts';
 import { peekCorridor } from './scene/scenes/peek-corridor.ts';
 import { peekAdCorridor } from './scene/scenes/peek-ad-corridor.ts';
 import { microFlickRoom } from './scene/scenes/micro-flick-room.ts';
+import { spiderShotRoom } from './scene/scenes/spider-shot-room.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
@@ -93,6 +94,8 @@ import { holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
 import { spiderShotV1 } from './drill/spider_shot_v1.ts';
 import { spiderShotV2 } from './drill/spider_shot_v2.ts';
+import { spiderShotV3, spiderShotV3Binding } from './drill/spider_shot_v3.ts';
+import { assessmentProtocolVersionForDrill } from './drill/assessmentProtocolVersion.ts';
 import { counterstrafeReversalV1 } from './drill/counterstrafe_reversal_v1.ts';
 import { counterstrafeFreeV1 } from './drill/counterstrafe_free_v1.ts';
 import { peekClickTransferPilotV1 } from './drill/peek_click_transfer_pilot_v1.ts';
@@ -101,7 +104,7 @@ import {
   peekClickTransferPilotV2Randomized,
   peekClickTransferPilotV2Masked,
 } from './drill/peek_click_transfer_pilot_v2.ts';
-import { peekClickTransferV1, PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION } from './drill/peek_click_transfer_v1.ts';
+import { peekClickTransferV1 } from './drill/peek_click_transfer_v1.ts';
 import { microFlickThreeTargetTestV1 } from './drill/micro_flick_three_target_test_v1.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
@@ -138,6 +141,7 @@ const availableScenes: AvailableScene[] = [
   { id: peekCorridor.sceneId, label: 'peek-corridor', config: peekCorridor },
   { id: peekAdCorridor.sceneId, label: 'peek-ad-corridor-v1', config: peekAdCorridor },
   { id: microFlickRoom.sceneId, label: microFlickRoom.sceneId, config: microFlickRoom },
+  { id: spiderShotRoom.sceneId, label: spiderShotRoom.sceneId, config: spiderShotRoom },
 ];
 let activeSceneConfig: SceneConfig = fieldLow;
 let activeSceneFallback = false;
@@ -179,6 +183,12 @@ const availableDrills: AvailableDrill[] = [
   { id: spiderShotV1.drillId, label: spiderShotV1.drillId, source: spiderShotV1, sceneId: 'placeholder-room' },
   // WP-44: stratified peripheral schedule variant; same KI-011 zero-propBounds scene as v1.
   { id: spiderShotV2.drillId, label: spiderShotV2.drillId, source: spiderShotV2, sceneId: 'placeholder-room' },
+  {
+    id: spiderShotV3Binding.id,
+    label: spiderShotV3Binding.id,
+    source: spiderShotV3,
+    sceneId: spiderShotV3Binding.sceneId,
+  },
   { id: counterstrafeReversalV1.drillId, label: counterstrafeReversalV1.drillId, source: counterstrafeReversalV1 },
   { id: counterstrafeFreeV1.drillId, label: counterstrafeFreeV1.drillId, source: counterstrafeFreeV1 },
   {
@@ -249,12 +259,6 @@ const PEEK_CLICK_TRANSFER_VISIBILITY_BY_DRILL_ID = new Map<string, { sampleCount
   [peekClickTransferPilotV2Randomized.id, peekClickTransferPilotV2Randomized.visibility],
   [peekClickTransferPilotV2Masked.id, peekClickTransferPilotV2Masked.visibility],
   [peekClickTransferV1.id, peekClickTransferV1.visibility],
-]);
-// WP-53 T4 (GD-29): single-source lookup for the drill-specific `meta.assessment.protocolVersion`.
-// Every stage6 four-family assessment drill keeps the default `STAGE6_PROTOCOL_VERSION` untouched;
-// only an id present here diverges.
-const ASSESSMENT_PROTOCOL_VERSION_BY_DRILL_ID = new Map<string, string>([
-  [peekClickTransferV1.id, PEEK_CLICK_TRANSFER_V1_PROTOCOL_VERSION],
 ]);
 let activeDrillConfig: DrillConfig = initialDrillConfig;
 let activeDrillSource: unknown = defaultDrillSource;
@@ -786,8 +790,7 @@ async function buildCurrentExportPayload(
     ...(activeDrillConfig.mode === 'assessment'
       ? {
           assessment: {
-            protocolVersion:
-              ASSESSMENT_PROTOCOL_VERSION_BY_DRILL_ID.get(activeDrillConfig.drillId) ?? STAGE6_PROTOCOL_VERSION,
+            protocolVersion: assessmentProtocolVersionForDrill(activeDrillConfig.drillId),
             assessmentFeedbackPolicy,
           },
         }

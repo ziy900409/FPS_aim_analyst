@@ -246,14 +246,16 @@ function validateSpiderShotSchedule(json: unknown): SpiderShotScheduleConfig {
       ...(centerExemptFromTimeout !== undefined ? { centerExemptFromTimeout } : {}),
     };
   }
-  if (spiderShot.kind === 'center-peripheral-stratified') {
+  if (
+    spiderShot.kind === 'center-peripheral-stratified' ||
+    spiderShot.kind === 'center-peripheral-eye-stratified'
+  ) {
     const grid = requireObject(spiderShot.grid, 'spiderShot.grid');
     const centerExemptFromTimeout =
       spiderShot.centerExemptFromTimeout === undefined
         ? undefined
         : requireBoolean(spiderShot.centerExemptFromTimeout, 'spiderShot.centerExemptFromTimeout');
-    return {
-      kind: 'center-peripheral-stratified',
+    const common = {
       seed: requireFiniteNumber(spiderShot.seed, 'spiderShot.seed'),
       centerDistanceU: requirePositiveNumber(spiderShot.centerDistanceU, 'spiderShot.centerDistanceU'),
       peripheral: validateSpiderPeripheral(requireObject(spiderShot.peripheral, 'spiderShot.peripheral'), 'spiderShot.peripheral', {
@@ -265,13 +267,24 @@ function validateSpiderShotSchedule(json: unknown): SpiderShotScheduleConfig {
       },
       ...(centerExemptFromTimeout !== undefined ? { centerExemptFromTimeout } : {}),
     };
+    if (spiderShot.kind === 'center-peripheral-eye-stratified') {
+      return {
+        kind: spiderShot.kind,
+        ...common,
+        targetAngularDiameterDeg: requirePositiveNumber(
+          spiderShot.targetAngularDiameterDeg,
+          'spiderShot.targetAngularDiameterDeg',
+        ),
+      };
+    }
+    return { kind: spiderShot.kind, ...common };
   }
   if (spiderShot.kind === 'center-peripheral-yawpitch') {
     return validateSpiderShotYawPitch(spiderShot);
   }
   throw err(
     'spiderShot.kind',
-    "必須為 'center-peripheral'、'center-peripheral-stratified' 或 'center-peripheral-yawpitch'",
+    "必須為 'center-peripheral'、'center-peripheral-stratified'、'center-peripheral-eye-stratified' 或 'center-peripheral-yawpitch'",
   );
 }
 

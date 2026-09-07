@@ -2,6 +2,7 @@ import type { SharedState } from '../state/SharedState.ts';
 import {
   resolveTargetHitbox,
   type DrillConfig,
+  type SpiderShotEyeStratifiedConfig,
   type SpiderShotStratifiedConfig,
   type SpiderShotYawPitchConfig,
   type TargetHitboxConfig,
@@ -11,7 +12,7 @@ import type { Vec3 } from '../state/types.ts';
 import { createRan1, randomFloat, type Rng } from '../recoil/rng.ts';
 import { SIM_HZ } from '../loop/constants.ts';
 import { isDrivenMotion, motionOffset } from './targetMotion.ts';
-import { spiderWideEyePos } from './spiderEyeFrame.ts';
+import { spiderEyePolarPos, spiderWideEyePos } from './spiderEyeFrame.ts';
 import {
   createTrackingTrajectory,
   projectTrackingAngles,
@@ -183,7 +184,7 @@ interface SpiderZoneCell {
 }
 
 /** Builds the `azimuthQuadrants × radiusTiers` cells covering one stratified schedule's declared ranges. */
-function buildSpiderZoneCells(config: SpiderShotStratifiedConfig): SpiderZoneCell[] {
+function buildSpiderZoneCells(config: SpiderShotStratifiedConfig | SpiderShotEyeStratifiedConfig): SpiderZoneCell[] {
   const { peripheral, grid } = config;
   const [azMin, azMax] = peripheral.azimuthDegRange;
   const azimuthStep = (azMax - azMin) / grid.azimuthQuadrants;
@@ -411,6 +412,16 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       }
       return sampleSpiderWidePeripheralPose(spiderShot);
     }
+    if (spiderShot.kind === 'center-peripheral-eye-stratified') {
+      if (nextSpiderZone === 'center') {
+        return {
+          side: 'R',
+          zone: 'center',
+          pos: spiderEyePolarPos(0, 0, spiderShot.centerDistanceU),
+        };
+      }
+      return { side: 'R', zone: 'peripheral', pos: sampleStratifiedPeripheralPos(spiderShot) };
+    }
     if (nextSpiderZone === 'center') {
       return {
         side: 'R',
@@ -433,17 +444,22 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   }
 
   /** WP-44: pop one shuffled zone cell (rebuilding+reshuffling on exhaustion) and sample within it. */
-  function sampleStratifiedPeripheralPos(config: SpiderShotStratifiedConfig): Vec3 {
+  function sampleStratifiedPeripheralPos(
+    config: SpiderShotStratifiedConfig | SpiderShotEyeStratifiedConfig,
+  ): Vec3 {
     if (spiderZoneQueue.length === 0) {
       spiderZoneQueue = buildSpiderZoneCells(config);
       shuffleInPlace(spiderZoneQueue, spawnRng!);
     }
     const cell = spiderZoneQueue.pop()!;
-    const azimuthRad = randomFloat(spawnRng!, cell.azimuthDegRange[0], cell.azimuthDegRange[1]) * DEG_TO_RAD;
+    const azimuthDeg = randomFloat(spawnRng!, cell.azimuthDegRange[0], cell.azimuthDegRange[1]);
+    const azimuthRad = azimuthDeg * DEG_TO_RAD;
     const cosSample = randomFloat(spawnRng!, cell.cosRadiusRange[0], cell.cosRadiusRange[1]);
     const radiusRad = Math.acos(cosSample);
     const distanceU = randomFloat(spawnRng!, config.peripheral.distanceURange[0], config.peripheral.distanceURange[1]);
-    return peripheralPos(config.centerDistanceU, azimuthRad, radiusRad, distanceU);
+    return config.kind === 'center-peripheral-eye-stratified'
+      ? spiderEyePolarPos(azimuthDeg, radiusRad * RAD_TO_DEG, distanceU)
+      : peripheralPos(config.centerDistanceU, azimuthRad, radiusRad, distanceU);
   }
 
   /**

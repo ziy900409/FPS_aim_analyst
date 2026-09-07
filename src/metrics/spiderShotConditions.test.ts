@@ -31,6 +31,14 @@ const meta: Meta = {
   bufferOverflow: false,
   recorderOverflow: false,
   suspect: false,
+  simToWorld: 1,
+  scene: {
+    sceneId: 'synthetic-eye-origin',
+    assetPackVersion: 'synthetic-v1',
+    clutterTier: 'low',
+    fallback: false,
+    eye: { x: 0, y: 0, z: 0 },
+  },
   targets: { hitbox: { widthU: 1, heightU: 2, depthU: 1 } },
   spawn: { seed: 36036, spiderShot: { kind: 'center-peripheral' } },
   assessment: {
@@ -82,7 +90,68 @@ describe('deriveSpiderShotTransitions', () => {
     expect(changed.angularSizeDeg).toBeGreaterThan(standard.angularSizeDeg);
     expect(changed.targetConditionCell).not.toBe(standard.targetConditionCell);
   });
+
+  it('derives delivered D_deg and W_deg from the exported eye position at each visible tick', () => {
+    const center = { x: 0, y: 1.5, z: -8 };
+    const peripheral = { x: 2, y: 1.5, z: -8 };
+    const payload: ExportPayload = {
+      meta: {
+        ...meta,
+        simToWorld: 1,
+        scene: {
+          sceneId: 'placeholder-room',
+          assetPackVersion: 'placeholder-room-v1',
+          clutterTier: 'low',
+          fallback: false,
+          eye: { x: 0, y: 1.6, z: 4 },
+        },
+      },
+      ticks: [tick(0, 0, 0), tick(10, 1, 0)],
+      events: [
+        visible('center', 'center', center, 0),
+        visible('peripheral', 'peripheral', peripheral, 10),
+      ],
+    };
+
+    const [transition] = deriveSpiderShotTransitions(payload, { strictEyeOrigin: true });
+    const centerDirection = normalize({ x: 0, y: -0.1, z: -12 });
+    const peripheralDirection = normalize({ x: 1, y: -0.1, z: -12 });
+    const expectedDistanceU = Math.hypot(1, -0.1, -12);
+    const expectedAngularDistanceDeg =
+      (Math.acos(
+        centerDirection.x * peripheralDirection.x +
+          centerDirection.y * peripheralDirection.y +
+          centerDirection.z * peripheralDirection.z,
+      ) *
+        180) /
+      Math.PI;
+
+    expect(transition.worldDistanceU).toBeCloseTo(expectedDistanceU, 12);
+    expect(transition.angularDistanceDeg).toBeCloseTo(expectedAngularDistanceDeg, 12);
+    expect(transition.angularSizeDeg).toBeCloseTo((2 * Math.atan(0.5 / expectedDistanceU) * 180) / Math.PI, 12);
+  });
 });
+
+function tick(t: number, px: number, pz: number): ExportPayload['ticks'][number] {
+  return {
+    t,
+    vx: 0,
+    vz: 0,
+    px,
+    pz,
+    tx: null,
+    ty: null,
+    tz: null,
+    aim: { yaw: 0, pitch: 0 },
+    keys: [],
+    ads: false,
+  };
+}
+
+function normalize(point: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
+  const length = Math.hypot(point.x, point.y, point.z);
+  return { x: point.x / length, y: point.y / length, z: point.z / length };
+}
 
 function makePayload(): ExportPayload {
   const peripheral = [

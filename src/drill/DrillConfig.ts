@@ -121,6 +121,21 @@ export interface SpiderShotStratifiedConfig {
 }
 
 /**
+ * Eye-frame counterpart of {@link SpiderShotStratifiedConfig}. The schedule and RNG contract are
+ * identical, but every configured distance/radius is measured from the canonical player eye
+ * instead of the world origin. A distinct discriminant preserves the frozen v1/v2 spawn stream.
+ */
+export interface SpiderShotEyeStratifiedConfig {
+  kind: 'center-peripheral-eye-stratified';
+  seed: number;
+  centerDistanceU: number;
+  targetAngularDiameterDeg: number;
+  peripheral: SpiderPeripheralConfig;
+  grid: SpiderShotStratifiedGridConfig;
+  centerExemptFromTimeout?: boolean;
+}
+
+/**
  * WP-57 / T1（README §2.3）：第三支 spiderShot 排程 —— 大幅度拉槍（wide flick），以 **eye-frame
  * yaw/pitch** 參數化，而非 v1/v2 的「繞中心視線的 azimuth + 離軸 radius 圓錐」。
  *
@@ -164,6 +179,7 @@ export interface SpiderShotYawPitchConfig {
 export type SpiderShotScheduleConfig =
   | SpiderShotCenterPeripheralConfig
   | SpiderShotStratifiedConfig
+  | SpiderShotEyeStratifiedConfig
   | SpiderShotYawPitchConfig;
 
 /** Counter-strafe cue schedule. `hold-reversal` is activated by WP-37/T2. */

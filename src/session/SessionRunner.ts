@@ -4,7 +4,7 @@ import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
 import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
 import { peekClickTransferV1 } from '../drill/peek_click_transfer_v1.ts';
-import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
+import { spiderShotV3 } from '../drill/spider_shot_v3.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
 
 export interface SessionPlan {
@@ -67,7 +67,7 @@ export function resolveFamilyDrillId(family: SessionFamilyId): string {
     case 'hold-track':
       return holdTrackV1.id;
     case 'spider-shot':
-      return spiderShotV1.drillId;
+      return spiderShotV3.drillId;
     case 'counterstrafe':
       return counterstrafeReversalV1.drillId;
     case 'peek-click-transfer':
