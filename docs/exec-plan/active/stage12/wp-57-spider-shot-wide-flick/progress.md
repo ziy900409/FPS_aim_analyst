@@ -9,10 +9,10 @@
 | T0 Entry Gate | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T0 audit（2026-09-07）；production diff = 0 |
 | T1 Geometry Contract and Resolver | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T1 evidence；targeted 226 tests、full Vitest 2266 tests、typecheck／build exit 0 |
 | T2 TargetManager Branch | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T2 evidence；golden 先錄後改、四 FPS parity、aspect 不變性、10,000 spawn 覆蓋／平衡、120,000 spawn NDC 失敗數 0；full Vitest 2,314 tests、typecheck／build exit 0 |
-| T3 Wide Arena Scene | Ready | — | — | T1 ✅；arena 規格已由 T0 更正為 `[18, 20, 4]` + `eyeZ: 0`（§2.5.1），sceneId `wide-flick-arena` 已由 T1 綁定 |
+| T3 Wide Arena Scene | ✅ Done（步驟 8 實機截圖延到 T6） | 2026-09-07 | 2026-09-07 | 見 §T3 evidence；612 個落點淨空、§2.5 全表逐列、預設房間四檔全穿側牆、`loadDrill` 閘正負向；full Vitest 2,353 tests、兩個 typecheck／build exit 0 |
 | T4 Export and Conditions | Blocked by **OQ-57.7** | — | — | T2 ✅ 已解除相依；OQ-57.7（匯出角度 frame 語意）仍需 owner 拍板才可開工 |
 | T5 Repositioning Flag | Blocked by T4 | — | — | — |
-| T6 Wiring and E2E | Blocked by T3–T4 | — | — | T2 ✅ 已解除相依 |
+| T6 Wiring and E2E | Blocked by T4 | — | — | T2／T3 ✅ 已解除相依；**額外承接 T3 步驟 8 的 FOV 60／75／120 實機截圖與 OQ-57.3 初步觀察** |
 | T-exit | Blocked by T1–T6 | — | — | — |
 
 ## T0 audit（2026-09-07）
@@ -186,6 +186,32 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 
 **未觸碰**：worktree 內平行工作的 `docs/exec-plan/README.md`、`docs/exec-plan/DECISIONS.md`、`package.json`、`scripts/capture-wp56-visuals.mjs`、wp-56 captures、`docs/known_issue/KI-026-*.md` 全程未 stage。
 
+## T3 evidence（2026-09-07）
+
+**開工 HEAD**：`f3eb9de`（WP-56 T-exit 收尾後）。本 task 未跑 CodeGraph（T0 §2 已記錄 scene registry **無獨立檔案**：`availableScenes` 就在 `src/main.ts:136`，各場景一個 `src/scene/scenes/*.ts`，第二消費面是 `fpsTestHarness.ts:190` 的 `findSceneConfig()`）；本次以直接 Read 覆核該三處，並確認 `SceneConfig` 核心型別零修改（T3 invariant），故新增一筆 config + 一個 scene id 的 blast radius 仍為 local-to-registry。
+
+**arena config（`src/scene/scenes/wide-flick-arena.ts`）**：`sceneId = 'wide-flick-arena'`（T1 `spiderShotWideV1Binding` 已宣告的同一 id）、`assetPackVersion = 'wide-flick-arena-v1'`、`clutterTier: 'low'`、`asset: null`、`propBounds: []`、`playerCorridor.halfWidthU = 0.000001`（沿用 `spider-shot-room`／`micro-flick-room` 的 locked-translation 慣例）。`proceduralRoom` 為 README §2.5.2 的更正值：`roomSize [18, 20, 4]`、`eyeZ: 0`**明確指定**、`floorY` 省略（KI-014 ⇒ 地板逐位維持 `y = 0`，resolver 的 pitch 上界以此為前提）、`eyeHeight: 1.6`、`fovDeg: 75`、顏色／燈光與既有 procedural 場景逐位相同。既有六個場景零修改；arena 未被任何既有 drill 引用。
+
+**registry**：`availableScenes` 新增一列（`src/main.ts`）。**drill 的 roster 註冊未做**——`spiderShotWideV1Template` 缺 `spiderShot`，要靠 `resolveSpiderShotWideV1(fov, aspect)` 在 arm 時補齊，那條 `activeDrillConfig` 接線是 T6 的交付；T3 若先塞一個「以模組載入期 FOV 解析」的 roster 項，會把 aspect 凍在錯誤的時點。scene↔drill 綁定因此以 `spiderShotWideV1Binding.sceneId === wideFlickArena.sceneId` 的測試釘死。
+
+**穿牆／埋地板的自動閘（T0 discovery item 11）**：新增 `src/scene/spiderWideArena.ts` —— `spiderWideArenaExtremes()`（落點包絡極值，取解析解：`x = d·sin(yaw)·cos(pitch)` 且 `cos(pitch) ≤ 1` ⇒ 側向極值必在 `pitch = 0`；`y` 只由 pitch 決定；`z` 最遠在中心目標、最近在 yaw 與 `abs(pitch)` 同時取上界）、`spiderWideArenaClearance()`（四牆 + 地板 + 觀測用的牆上緣）、`spiderWideTargetRadiusU()`、`requireSpiderWideArenaGeometry()`。後者由 `loadDrill()` 在 `validateClearance()` **之前**呼叫，與 `requireSpiderShotDeliveryGeometry()` 同一慣例與同一錯誤前綴；只認 `kind === 'center-peripheral-yawpitch'`，既有 kind 逐字不變（以 v1 幾何 × 預設房間、v1 幾何 × arena 兩個正向 case 釘死）。閘同時擋下 `eyeHeight ≠ PLAYER_EYE_HEIGHT_U`（GD-6 脫鉤）、eye anchor ≠ `(0, 1.6, 0)`（含「刪掉 `eyeZ` 吃 fallback = 9」與 `eyeZ: 4` 兩個負向面）與缺 `proceduralRoom` 的場景。
+
+**落點淨空（DoD 第三項）**：`tests/regression/spider-wide-arena-geometry.test.ts` 對 `fovDeg ∈ {60,75,90,120}` × `aspect ∈ {16/9, 21/9, 4/3}` 的 12 組，每組列舉 yaw 窗的兩端點 + 3 個內點（0.25／0.5／0.75）× 左右兩側 × pitch 窗的兩端點 + 3 個內點，再加中心目標 = **每組 51 個落點、合計 612 個**，逐點斷言 hitbox AABB 對四牆與地板的淨空 ≥ `CLEARANCE_MARGIN_U`。全域最緊的面是**地板**（`0.5547 u`），不是側牆。
+
+**README §2.5 逐列**：中心目標 `(0, 1.6, −8)`、後牆間距 `1.8604`；16:9 × FOV 120 上界 `(±7.5322, y, −2.6955)`、側牆餘裕 `1.4678`／外緣淨空 `1.3281`；16:9 × FOV 60 下界 `(±5.1520, y, −6.1202)`、側牆淨空 `3.7083`；pitch `+6.5°` → `y = 2.5056`、上緣 `2.6453`（< 牆上緣 4，牆上緣淨空 `1.3547`；房間無天花板幾何）；pitch `−6.5°` → `y = 0.6944`、下緣 `0.5547`（> 0.5）。§2.4 的側向 `abs(x)` 四列（`5.515`／`6.273`／`6.831`／`7.532`）亦逐列相符。半寬需求以**跨 aspect 最壞值**（21:9 × FOV 120）覆驗，不只表列的 16:9。
+
+**FR-57.9 負向證據**：純函式側 —— 預設 `[10, 10, 3]` 的 16:9 四個 FOV 檔位，pitch 0 落點區間逐列相符（`[5.1520, 5.5146]`／`[5.8986, 6.2725]`／`[6.4674, 6.8308]`／`[7.2318, 7.5322]`），且**含 pitch 極值內縮後的全域最小側向落點**仍 > 側牆 5.0，`sideWallU < 0`。閘側 —— 補上 `eyeZ: 0` 的預設尺寸房間在四個 FOV 檔位全數被 `loadDrill()` 擋下（訊息帶各面淨空）。牆高不是障礙（`wallTopU > 0`），後牆才是第二個問題（`backWallU < 0`，即 KI-012）⇒ 負向結論只能建立在**側牆**上，此結論已成為測試而非註解。
+
+**`validateClearance()`**：arena × 四個 FOV 的已解析 drill 全數零違規（零 props ⇒ 無可違規者），並確認 `CLEARANCE_MARGIN_U === 0.5` 未被改動。
+
+**GD-6 方向性**：新增掃描斷言 `src/sim/**` 內沒有任何檔案 import `spiderWideArena` 或任何 `*/scene/*` 模組（scene 幾何只能被 render／scene validation 層讀取）。
+
+**Verification**：`tests/regression/spider-wide-arena-geometry.test.ts` 19 tests + `src/scene/scenes/wide-flick-arena.test.ts` 9 tests 全綠；targeted `src/drill src/scene tests/regression` **63 files／600 tests passed**；`npx tsc --noEmit` 與 `npx tsc --noEmit -p tsconfig.node.json` 皆 exit 0；全量 `npx vitest run` **234 files passed + 1 skipped／2,353 tests passed + 2 skipped**（T2 收尾為 230／2,314）；`npx vite build` exit 0（1,205.13 kB／gzip 343.29 kB，僅既存 >500 kB 警告）。Playwright 未於 T3 執行（無 UI 行為變更；全量屬 T-exit 的 NFR-57.8）。
+
+**明確未交付（DoD 最後一項）**：步驟 8 的 FOV 60／75／120 三張**實機截圖**與 OQ-57.3 的初步觀察**未做**，改由 T6 交付。理由：截圖要「顯示中心目標與左右最大 yaw 落點」，就必須讓 drill 能從研究者控制列載入，而那需要 arm-time resolve 接線（T6 的交付）。使用者於 2026-09-07 明確選擇「延到 T6」。T6 本來就同時擁有 OQ-57.3／57.4 的回填責任，故此延後不新增遺留風險，但**T3 的視覺空曠風險（README §3.1）在 T6 之前沒有任何實機證據**。
+
+**未觸碰**：worktree 內的 `.claude/settings.local.json`、`docs/exec-plan/README.md`（其 stage12 區塊為平行 session 擁有的未提交規劃產物，WP-56 T-exit 已揭露同一情況）、untracked `.wp56-capture-tmp/` 全程未 stage。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -217,6 +243,9 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 | D-57.T2-2 | 2026-09-07 | **中心 zone 的 `side` 沿用 v1/v2 的 `'R'` 佔位**，真實左右只由周邊 spawn 承載。理由：中心目標在正前方，左右無定義；讓它承載假的方向會汙染 FR-57.7 的離線分流。<br>**Alternatives considered**：(a) 中心沿用上一個周邊的 `side` —— 會讓「side = 刺激方向」這個語意在中心 trial 上說謊，**駁回**；(b) 把 `side` 改成 optional —— 動到 `TargetState` 的既有欄位契約與 115+ consumers，超出本 task 範圍，**駁回** | Engineering | `TargetManager.test.ts` 交替／side 測試 |
 | D-57.T2-3 | 2026-09-07 | **NFR-57.1／57.5 的 harness 以「零散佈武器射中心目標」驅動 spawn 循環**（`usp_s_laser`，recoil／inaccuracy 全 0；固定 aim yaw = pitch = 0），形成「中心命中 → 周邊 spawn → 周邊逾時撤除 → 中心 spawn」。理由：本 drill 的 `centerExemptFromTimeout: true` 讓無輸入的 headless run 永遠停在第一顆中心目標，parity 斷言會退化成單一樣本。<br>**Alternatives considered**：(a) 在 harness 內關掉 `centerExemptFromTimeout` —— 測到的就不是出貨 config，**駁回**；(b) 合成滑鼠軌跡去瞄周邊目標 —— aim 更新只能發生在幀邊界，等於把 harness 自己的幀切法帶進刺激，正好汙染 FPS parity 的歸因，**駁回**；(c) 用 `ak47` —— 後座力／散佈會讓命中與否隨武器 RNG 變動，循環可能斷開，且彈道決定性另有 `spray-determinism` 專責，**駁回** | Engineering | `spiderWideDeterminismFixture.ts`；3,059 ticks／17 spawns／8 hits |
 | D-57.T2-4 | 2026-09-07 | **NFR-57.7 以直接覆寫 `Array.prototype.push` 計數落地**（try/finally 還原，同步迴圈內），斷言「中心 spawn 恆 1 次、周邊 spawn 1 或 1 + cells、且 `1 + cells` 只出現在每週期第一個周邊 spawn」。<br>**Alternatives considered**：(a) `vi.spyOn(Array.prototype, 'push')` —— spy 自己會把呼叫 push 進 `mock.calls` 而無限遞迴，**技術上不可行**；(b) `process.memoryUsage()` 差分 —— GC 噪音使門檻不可重現，**駁回**；(c) 只靠既有 RNG 預算測試 —— 能證明佇列重建節奏，但證明不了「沒有 per-spawn 暫存陣列」，**故兩者並存** | Engineering | `spider-wide-schedule-invariants.test.ts` NFR-57.7 段 |
+| D-57.T3-1 | 2026-09-07 | **穿牆／埋地板做成 `loadDrill()` 的 fail-fast 閘**（`requireSpiderWideArenaGeometry()`，比照 `requireSpiderShotDeliveryGeometry()`），而不只是測試裡的斷言。理由：T0 discovery item 11 的缺口是**runtime 沒有保護**，只補測試的話，任何日後改 `roomSize`／換場景綁定的人仍會靜默走進 KI-012（牆全遮但命中仍過）。<br>**Alternatives considered**：(a) 只寫幾何測試 —— 零 runtime 保護，**駁回**；(b) 把牆／地板加進 `validateClearance()` —— 那會改到 84 callers／22 模組共用的既有淨空語意，且既有場景（如 `placeholder-room` 的 v1/v2 目標）未必全數通過，屬跨 WP 變更，**駁回**；(c) 擴充 `SceneConfig` 型別帶「可用落點包絡」—— 直接違反 T3 invariant「不擴充核心型別」，**駁回** | Engineering | `spider-wide-arena-geometry.test.ts` 閘段 6 tests |
+| D-57.T3-2 | 2026-09-07 | **目標外緣半徑對 `shape: 'sphere'` 取 `width/2`，不沿用 `targetHitboxRadius()` 的角點半徑**（`spiderWideTargetRadiusU()`）。半徑仍**只**從 `resolveTargetHitbox()` 推導，維持 GD-7 單一來源。<br>**Alternatives considered**：(a) 直接用 `targetHitboxRadius()` —— 對球會回 `√3·r = 0.2419`（誇大 73%），README §2.5 全表數字（`1.8604`／`1.3281`／`0.5547`…）會全部對不上，且會把「保守估計」偷偷變成「不同的幾何」，**駁回**；(b) 為 wide drill 另立半徑常數 —— C-D4 第二定義，**駁回** | Engineering | `spider-wide-arena-geometry.test.ts` 半徑同源段 |
+| D-57.T3-3 | 2026-09-07 | **drill 的 roster 註冊（`availableDrills`）與步驟 8 實機截圖留給 T6**；T3 只註冊 scene 並以測試釘死 `spiderShotWideV1Binding.sceneId === wideFlickArena.sceneId`。<br>**Alternatives considered**：(a) T3 就把 drill 塞進 roster —— `spiderShotWideV1Template` 缺 `spiderShot`，唯一做法是在模組載入期解析一次，等於把 aspect 凍在錯誤時點並繞過 NFR-57.5 的整個論證，**駁回**；(b) 把 T6 的 arm-time 接線整段拉進 T3 以便截圖 —— 一個切片混兩個 task，且 T6 的 resize 不變性／on-screen E2E 仍未寫，**由使用者於 2026-09-07 明確選擇不採** | 使用者 + Engineering | 本節「明確未交付」段 |
 
 ## Surprises
 
@@ -286,3 +315,11 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 4. **`centerExemptFromTimeout: true` 會讓無輸入的 headless run 停滯。** 中心目標不逾時、又沒有命中來源，`DrillRunner` 就永遠停在第一顆目標上 —— 決定性 harness 因此**必須**開火才有 spawn 序列可比。這不是缺陷（它正是「回中心後可從容重新架槍」的設計意圖），但它決定了 NFR-57.1／57.5 harness 的形狀（D-57.T2-3）。
 
 5. **`DrillRunner` 一行未改即可承載第三支排程。** `centerExemptFromTimeout` 的判斷寫在 `config.spiderShot?.centerExemptFromTimeout`（kind 無關），`zone` 蓋章與交替則全在 `TargetManager` 側，故 FR-57.7 的 parity 是既有結構的自然結果，而非本 task 新增的相容層 —— 與規劃期預估的 runner 修改面相比縮小為零。
+
+### T3 補充（2026-09-07）
+
+6. **預設 `[10, 10, 3]` 房間其實一次倒在兩個獨立原因上。** 它沒有 `eyeZ`，於是吃 fallback `depth/2 − CAMERA_STANDOFF = 4` ⇒ `loadDrill()` **先**倒在 eye anchor（camera 不在 sim eye 原點），根本走不到側牆判定。要讓 FR-57.9 的負向證據真的是在說「房間**尺寸**裝不下」，測試必須先補上 `eyeZ: 0` 再驗；未補的原始預設房間則另立一條斷言（倒在 eye anchor）。這是「負向測試要證明的是哪一個原因」的典型陷阱 —— 只看到 throw 就打勾，會把兩個缺陷混成一個。
+
+7. **arena 最緊的面是地板，不是側牆。** README §2.5 的表以側向落點驅動半寬需求，容易讓人以為側牆是瓶頸；612 個落點掃完的全域最小淨空是 **`0.5547 u`（地板，pitch −6.5° 下緣）**，而側牆最緊只有 FOV 120 的 `1.3281 u`。即：半寬 9 有 1.33 u 餘裕，真正貼著 `CLEARANCE_MARGIN_U` 的是**已凍結的 pitch 窗**（只高出 `0.0547 u`）。⇒ 日後若有人想放寬 pitch 窗（OQ-57.2 的 `±7.5°` 選項），受限的是地板而不是 arena 尺寸，加寬房間毫無幫助。
+
+8. **`targetHitboxRadius()` 對球形 hitbox 回的是角點半徑。** `clearance.ts:42` 算的是 `√((w/2)² + (h/2)² + (d/2)²)`，對本 drill 的球（直徑 `0.279281`）回 `0.2419` 而非 `0.1396`。既有淨空慣例對 box 是正確的，但沿用到球上會誇大 73% 並讓 §2.5 全表對不上。⇒ D-57.T3-2 以 shape 分流，半徑仍只從 `resolveTargetHitbox()` 推導。

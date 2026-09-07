@@ -27,13 +27,13 @@
 
 ## Definition of Done
 
-- [ ] arena scene config 已註冊並與 drill template 綁定；既有 scene 零修改。
-- [ ] README §2.5 全表逐列有對應斷言且綠。
-- [ ] 12 組（FOV × aspect）落點對四牆與地板的淨空 ≥ `CLEARANCE_MARGIN_U`。
-- [ ] 預設 `[10, 10, 3]` 房間的穿牆負向測試綠（四個 FOV 檔位全數 > 5 u）。
-- [ ] `arena.eyeHeight === PLAYER_EYE_HEIGHT_U` 已釘死。
-- [ ] `validateClearance()` 零 violation；既有 scene regression 綠。
-- [ ] FOV 60／75／120 三張實機截圖已附 [progress.md](progress.md)，並記錄 OQ-57.3 的初步觀察。
+- [x] arena scene config 已註冊並與 drill template 綁定；既有 scene 零修改。（`availableScenes` 新增一列；drill 的 roster 註冊需 arm-time resolve ⇒ T6，綁定以 `spiderShotWideV1Binding.sceneId === wideFlickArena.sceneId` 釘死）
+- [x] README §2.5 全表逐列有對應斷言且綠。
+- [x] 12 組（FOV × aspect）落點對四牆與地板的淨空 ≥ `CLEARANCE_MARGIN_U`。（每組 51 個落點、合計 612；全域最緊為地板 `0.5547 u`）
+- [x] 預設 `[10, 10, 3]` 房間的穿牆負向測試綠（四個 FOV 檔位全數 > 5 u）。
+- [x] `arena.eyeHeight === PLAYER_EYE_HEIGHT_U` 已釘死（config 測試 + `loadDrill` 閘的負向面）。
+- [x] `validateClearance()` 零 violation；既有 scene regression 綠。
+- [ ] ~~FOV 60／75／120 三張實機截圖已附 [progress.md](progress.md)，並記錄 OQ-57.3 的初步觀察。~~ → **延到 T6**（截圖需 drill 可從研究者控制列載入 = arm-time resolve 接線；使用者 2026-09-07 拍板，見 D-57.T3-3）
 
 ## Commit
 

@@ -15,7 +15,7 @@
 | **Delivery policy** | v1 = practice／researcher-only。時序參數（`peekTimeoutMs`／`timeLimitMs`）與 yaw 貼邊係數為未校準候選值，晉升 Assessment 是後續獨立 WP 的職責 |
 | **Estimate** | 9.5–16 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：新增 spawn 幾何進 `TargetManager`（sim 核心）；aspect 進入 spawn 解析與 GD-10「解析度不改 sim」存在直接張力；`DrillConfig` 為約 115 consumers 的跨模組契約 |
-| **Status** | 🟡 T0 ✅ 通過（2026-09-07，見 [progress.md](progress.md) §T0 audit）；T1／T2／T3 可開工。**T4 阻塞於 OQ-57.7**（匯出角度 frame 語意待使用者拍板） |
+| **Status** | 🟡 T0／T1／T2／T3 ✅（2026-09-07，見 [progress.md](progress.md) 各 §evidence）。**T4 阻塞於 OQ-57.7**（匯出角度 frame 語意待使用者拍板）；T5 相依 T4；T6 相依 T4 並額外承接 T3 步驟 8 的實機截圖（D-57.T3-3） |
 
 ---
 

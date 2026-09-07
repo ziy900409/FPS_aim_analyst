@@ -17,6 +17,7 @@
    - **practice-only**：斷言零 history mutation、無 compatibility cell、`DrillMetricRegistry` 無此 exact ID（FR-57.13）；
    - **交替與 timeout**：斷言 `zone` 嚴格中心↔周邊交替，且中心目標不受 `peekTimeoutMs` 撤除（`centerExemptFromTimeout`）。
 6. 實機回填：
+   - **T3 延後項（D-57.T3-3）**：FOV 60／75／120 三檔各一張實機截圖，顯示中心目標與左右最大 yaw 落點，並記錄目標對背景牆的可辨識度（README §3.1「視覺空曠」風險證據）。T3 沒有任何實機視覺證據，這是 arena 第一次被人眼看到。
    - **OQ-57.3**：以 FOV 60／75／120 三檔實玩，記錄「貼邊感」是否合適、目標是否曾感覺被切；
    - **OQ-57.4**：記錄 timeout 率、周邊到達總次數、每 cell 樣本數，判斷 `peekTimeoutMs = 2500` 是否造成右截、`timeLimitMs = 90000` 是否足夠。
 7. 若 OQ-57.3／57.4 需要調整常數，**在本 task 內調整並重跑 T1～T3 的相關測試**（常數變更會改 arena 需求與 golden 之外的斷言）；調整後的值與理由寫進 [progress.md](progress.md) Decision Log。
@@ -37,6 +38,7 @@
 - [ ] E2E translation locked 綠（位置固定、視角可動）。
 - [ ] E2E practice-only 綠（零 history／零 compatibility／不在 registry）。
 - [ ] E2E 交替與 `centerExemptFromTimeout` 綠。
+- [ ] T3 延後的 FOV 60／75／120 三張實機截圖已附 [progress.md](progress.md)，含視覺空曠／可辨識度觀察（D-57.T3-3）。
 - [ ] OQ-57.3／57.4 有實機證據回填（三個 FOV 檔位的觀察 + timeout 率 + 每 cell 樣本數）；若調整常數，相關測試已重跑且綠。
 - [ ] 全量 Vitest／Playwright／`npm run build` exit 0。
 
