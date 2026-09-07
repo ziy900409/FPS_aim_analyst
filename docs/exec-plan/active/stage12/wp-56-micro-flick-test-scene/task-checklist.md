@@ -37,11 +37,11 @@
 
 ## T4 — Fixed Player, Hit and HUD
 
-- [ ] locked policy下W/A/S/D不改player/camera base，mouse yaw/pitch仍有效。
-- [ ] multi-target nearest raycast、exact target-id hit與miss/no-replacement tests全綠。
-- [ ] visible/fire/hit event target IDs與sim timestamps一致。
-- [ ] Crosshair中心各軸誤差≤1 CSS px；HUD scope符合README。
-- [ ] micro-flick replay不是full；Practice不寫history。
+- [x] locked policy下W/A/S/D不改player/camera base，mouse yaw/pitch仍有效。
+- [x] multi-target nearest raycast、exact target-id hit與miss/no-replacement tests全綠。
+- [x] visible/fire/hit event target IDs與sim timestamps一致。
+- [x] Crosshair中心各軸誤差≤1 CSS px；HUD scope符合README。
+- [x] micro-flick replay不是full；Practice不寫history。
 
 ## T5 — Automated Integration and Performance
 

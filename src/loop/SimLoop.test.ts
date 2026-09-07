@@ -120,7 +120,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.validity.playerCorridorExceeded).toBe(true);
   });
 
-  it('locked translation consumes a 10-second A/D timeline while preserving position and zero velocity', () => {
+  it('locked translation consumes a 10-second W/A/S/D timeline while preserving position, velocity, and mouse aim', () => {
     const state = createSharedState();
     state.player.x = 4;
     state.player.z = -9;
@@ -130,13 +130,25 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     state.curr.z = -9;
     state.player.vx = 80;
     state.player.vz = -40;
+    const camera = cameraLookingDownZ();
+    const cameraController = new CameraController(camera, state.aim);
+    cameraController.applyDelta(12, -8);
+    const aimAtStart = { ...state.aim };
     const loop = createSimLoop(state, fixedClock(0), SIM_HZ, undefined, undefined, undefined, undefined, ak47, {
       translation: 'locked',
     });
 
     for (let tick = 0; tick < 10 * SIM_HZ; tick++) {
       const t = tick * TICK_MS;
+      if (tick === 0) {
+        pushEvent(state, { type: 'key', code: 'KeyW', down: true, t });
+        pushEvent(state, { type: 'key', code: 'KeyS', down: true, t });
+      }
       if (tick % 64 === 0) state.input.pushKey(tick % 128 === 0 ? 2 : 1, true, t);
+      if (tick === 64) {
+        pushEvent(state, { type: 'key', code: 'KeyW', down: false, t });
+        pushEvent(state, { type: 'key', code: 'KeyS', down: false, t });
+      }
       if (tick % 64 === 32) state.input.pushKey(tick % 128 === 0 ? 2 : 1, false, t);
       loop.pump((tick + 1) * TICK_MS);
     }
@@ -145,6 +157,7 @@ describe('SimLoop accumulator（固定 128 Hz）', () => {
     expect(state.player).toMatchObject({ x: 4, z: -9, vx: 0, vz: 0, stopped: true });
     expect(state.prev).toEqual({ x: 4, z: -9 });
     expect(state.curr).toEqual({ x: 4, z: -9 });
+    expect(state.aim).toEqual(aimAtStart);
   });
 
   it('omitting translation preserves legacy movement', () => {

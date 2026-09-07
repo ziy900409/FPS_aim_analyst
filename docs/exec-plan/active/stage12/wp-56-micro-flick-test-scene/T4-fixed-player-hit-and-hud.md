@@ -23,15 +23,14 @@
 
 ## Definition of Done
 
-- [ ] FR-56.3/4/8/9/11/12/14 integration與E2E assertions全綠。
-- [ ] locked場景至少10秒合成W/A/S/D輸入後player/camera base position逐位為起點，mouse yaw/pitch確有變化。
-- [ ] exact target-id hit/miss/event/replacement時序在128 Hz測試有客觀trace。
-- [ ] Crosshair在1080p/720p各軸中心誤差≤1 CSS px。
-- [ ] 離開場景後legacy movement、replay、history與HUD regressions全綠。
+- [x] FR-56.3/4/8/9/11/12/14 integration與E2E assertions全綠。
+- [x] locked場景至少10秒合成W/A/S/D輸入後player/camera base position逐位為起點，mouse yaw/pitch確有變化。
+- [x] exact target-id hit/miss/event/replacement時序在128 Hz測試有客觀trace。
+- [x] Crosshair在1080p/720p各軸中心誤差≤1 CSS px。
+- [x] 離開場景後legacy movement、replay、history與HUD regressions全綠。
 
 ## Commit
 
 ```text
 feat(stage12): integrate fixed-position micro-flick gameplay
 ```
-

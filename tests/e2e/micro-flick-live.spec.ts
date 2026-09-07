@@ -65,6 +65,13 @@ test('WP-56 T4: researcher micro-flick keeps a fixed player while its live HUD a
   });
   expect(crosshairCenter).toEqual({ x: 640, y: 360 });
 
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const fullHdCrosshairCenter = await page.locator('#crosshair').evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+  expect(fullHdCrosshairCenter).toEqual({ x: 960, y: 540 });
+
   const hud = page.locator('#metrics-hud');
   await expect(hud).toContainText('Score');
   await expect(hud).toContainText('Time');

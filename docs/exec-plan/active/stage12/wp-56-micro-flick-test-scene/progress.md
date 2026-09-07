@@ -10,8 +10,8 @@
 | T1 Contract and Fixtures | Complete | 2026-09-04 | 2026-09-04 | targeted 93 tests、full Vitest 2099 tests、typecheck/build exit 0 |
 | T2 Three-target Lifecycle | Complete | 2026-09-07 | 2026-09-07 | initial/replacement/tail/restart/fallback、10k invariants、四FPS parity與full Vitest全綠 |
 | T3 Corridor Scene and Presentation | Complete | 2026-09-07 | 2026-09-07 | 21-mesh GLTF、inventory/projection/contrast、rapid/late load、50-cycle resources、full Vitest/build全綠 |
-| T4 Fixed Player, Hit and HUD | Not started | — | — | T1/T2/T3 complete；可開工 |
-| T5 Automated Integration and Performance | Blocked by T4 | — | — | T2/T3 complete |
+| T4 Fixed Player, Hit and HUD | Complete | 2026-09-07 | 2026-09-07 | locked SimLoop policy、exact-ID sphere hit→next-tick replacement、live HUD/crosshair E2E、full Vitest/build全綠 |
+| T5 Automated Integration and Performance | Not started | — | — | T4 complete；可開工 |
 | T6 Visual Acceptance | Blocked by T4–T5 | — | — | T3 complete |
 | T-exit | Blocked by T4–T6 | — | — | T0–T3 complete |
 
@@ -32,6 +32,7 @@
 | D-56.P11 | 2026-09-04 | T1先註冊asset-null的`micro-flick-room` scene contract，固定scene id、75° FOV、eye pose與room envelope；T3再以同ID升級為approved GLTF | Engineering | Alternatives Considered：只存sceneId字串但不註冊（researcher選取會失敗）、T1提前製作GLTF（越過T3）；選擇可載入的最小contract fixture |
 | D-56.P12 | 2026-09-07 | Population spawn保留既有horizontal `distanceURange`語意，以`TARGET_Y + tan(pitch) * distance`投影垂直角；每個spawn最多32次seeded rejection，失敗後掃固定9×7 cell centres並取最大最小角距，仍不可行則明確throw；DrillRunner production不改 | Engineering | Alternatives Considered：把distance改為完整球面半徑（會改既有spawn distance語意）、只在32次後throw（放棄T0凍結fallback）、新增runner killed counter（tests證明`seenIds - targets.length`已可泛化，無需增加狀態） |
 | D-56.P13 | 2026-09-07 | 走廊採21個environment nodes共用3個cube primitives（floor/wall/ceiling），以18片側牆panel間隙呈現規則接縫；live async scene切換新增共用generation coordinator，late manager在掛入前dispose | Engineering | Alternatives Considered：每片panel各自primitive（draw-call/asset膨脹）、程序化scene-id特例（繞過既有GLTF pipeline）、只補測不修live race（rapid switch可讓舊load覆蓋新選擇）；均未採 |
+| D-56.P14 | 2026-09-07 | translation lock採`SimLoopOptions.translation`於建 loop 時選擇固定的movement dependency；locked tick清零`vx/vz`並標記stopped，但不關閉input consumption或CameraController mouse aim | Engineering | Alternatives Considered：在`afterTick`回寫位置（觀測hook違反來源單向性且會留下瞬時位移）、複用`protocolGuard.noMovement`（只記違規、不阻止integration）、改InputSampler忽略按鍵（會破壞input trace）；均未採 |
 
 ## Open Questions（狀態）
 
@@ -41,7 +42,7 @@
 | OQ-56.2 | Resolved | 使用者 + Gameplay owner | 2026-09-04 | 使用者明確要求實作T1，採Candidate A；T6仍需manual visual sign-off |
 | OQ-56.3 | Resolved | Gameplay owner | 2026-09-04 | 採60-kill target quota |
 | OQ-56.4 | Open/non-blocking for v1 | Product/Research owner | T-exit | 是否另開 Assessment/full-replay WP |
-| OQ-56.5 | Open | 使用者 | T4 start | 是否需要影片式進階HUD；default否 |
+| OQ-56.5 | Resolved | Engineering default | 2026-09-07 | 沿用既有score/time/hit-rate/velocity HUD；不加入影片式FPS、ammo或editor UI |
 
 ## Planning Evidence（2026-09-04）
 
@@ -121,7 +122,12 @@
 
 ## T4 Evidence Log
 
-尚未開始。
+- `SimLoopOptions`新增optional `translation`，省略或`enabled`逐位保留既有`MovementController`；live `buildSimLoop()`單次從`activeDrillConfig.playerControl`傳入。`locked`仍消費W/A/S/D input，並於每個128 Hz tick清零`vx/vz`、設`stopped=true`，使player、prev/curr render snapshot固定；CameraController／mouse aim路徑未關閉。
+- SimLoop regression以10秒（1,280 ticks）W/A/S/D synthetic timeline、非零初始position/velocity與mouse delta驗證position、velocity、prev/curr不變且yaw/pitch保留；legacy drill省略policy仍會正常移動。
+- 真實micro-flick config integration：first tick生成`t0/t1/t2`三個sphere，中心射線只命中最近`t0`，fire event寫`hit=true,targetId=t0`且recorder counts為1；survivors `t1/t2`在本tick不變、下一tick才補`visible(t3)`。
+- live Edge browser test經researcher入口載入exact drill/scene，確認三個live targets、KeyD後固定player、HUD仍呈現score/time/hit-rate/STOP，以及1280×720／1920×1080 crosshair中心分別為(640,360)／(960,540)。原生Pointer Lock正向取得屬既有manual-only瀏覽器限制；CameraController unit coverage與此live test共同守住mouse-aim不被lock關閉。
+- practice-only／history exclusion／non-full replay為fixture negative tests：沒有participant/assessment registry、沒有exact或near-miss full replay profile，且HistoryPersistence在呼叫client前short-circuit。
+- Verification：targeted 5 files／137 tests passed；`npx.cmd playwright test tests/e2e/micro-flick-live.spec.ts --project=edge` exit 0；`npm.cmd run typecheck` exit 0；full Vitest 222 files passed + 1 skipped／2178 tests passed + 2 skipped；`npm.cmd run build` exit 0（僅既存bundle warning）；`graphify update .`完成561/561 code files、4328 nodes／10404 edges／261 communities。
 
 ## T5 Evidence Log
 
