@@ -804,3 +804,132 @@ describe('validateDrill — protocolGuard（WP-54 / T2）', () => {
     ).not.toThrow();
   });
 });
+
+describe('validateDrill — center-peripheral-yawpitch spiderShot（WP-57 / T1，FR-57.1／57.14）', () => {
+  function yawPitchSchedule(): Record<string, unknown> {
+    return {
+      kind: 'center-peripheral-yawpitch',
+      seed: 57001,
+      distanceU: 8,
+      peripheral: {
+        yawMagDegRange: [47.503588, 51.634335],
+        pitchDegRange: [-6.5, 6.5],
+      },
+      grid: { pitchBands: 2 },
+      centerExemptFromTimeout: true,
+      resolvedFrom: {
+        fovDegVertical: 75,
+        aspect: 16 / 9,
+        screenMargin: 0.04,
+        kLo: 0.92,
+        targetAngularDiameterDeg: 2,
+      },
+    };
+  }
+
+  function withSchedule(patch: Record<string, unknown> = {}): unknown {
+    return { ...(minimalValid() as object), spiderShot: { ...yawPitchSchedule(), ...patch } };
+  }
+
+  it('合法 config 通過並逐欄位保留（含 provenance）', () => {
+    const cfg = validateDrill(withSchedule());
+    expect(cfg.spiderShot).toEqual(yawPitchSchedule());
+  });
+
+  it('centerExemptFromTimeout 省略時不注入預設值', () => {
+    const withoutFlag = yawPitchSchedule();
+    delete withoutFlag.centerExemptFromTimeout;
+    const cfg = validateDrill({ ...(minimalValid() as object), spiderShot: withoutFlag });
+    expect(cfg.spiderShot).not.toHaveProperty('centerExemptFromTimeout');
+  });
+
+  it('sequence.seed / spawnArea / spawnDelayMsRange 的既有互斥規則同樣適用（單一 seed 權威）', () => {
+    expect(() =>
+      validateDrill({ ...(withSchedule() as object), sequence: { alternation: 'LR', seed: 1 } }),
+    ).toThrow(/sequence\.seed/);
+    expect(() =>
+      validateDrill({
+        ...(withSchedule() as object),
+        targets: { count: 20, distance: 4, spawnArea: { yawDegRange: [-10, 10], distanceURange: [3, 5] } },
+        sequence: { alternation: 'LR', seed: 1 },
+      }),
+    ).toThrow(/spawnArea|sequence\.seed/);
+  });
+
+  it('未知 kind 的錯誤訊息列出三支合法值（不再說謊）', () => {
+    let message = '';
+    try {
+      validateDrill(withSchedule({ kind: 'center-peripheral-orbit' }));
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).toMatch(/spiderShot\.kind/);
+    expect(message).toContain('center-peripheral-yawpitch');
+    expect(message).toContain('center-peripheral-stratified');
+  });
+
+  const invalidCases: readonly (readonly [string, Record<string, unknown>, RegExp])[] = [
+    ['seed 非有限', { seed: Number.NaN }, /spiderShot\.seed/],
+    ['distanceU 非正', { distanceU: 0 }, /spiderShot\.distanceU/],
+    [
+      'yawMagDegRange 退化',
+      { peripheral: { yawMagDegRange: [45, 45], pitchDegRange: [-6.5, 6.5] } },
+      /spiderShot\.peripheral\.yawMagDegRange/,
+    ],
+    [
+      'yawMagDegRange 反轉',
+      { peripheral: { yawMagDegRange: [51, 47], pitchDegRange: [-6.5, 6.5] } },
+      /spiderShot\.peripheral\.yawMagDegRange/,
+    ],
+    [
+      'yawMagDegRange 下界 ≤ 0',
+      { peripheral: { yawMagDegRange: [0, 51], pitchDegRange: [-6.5, 6.5] } },
+      /spiderShot\.peripheral\.yawMagDegRange/,
+    ],
+    [
+      'yawMagDegRange 上界 ≥ 90（透視奇異）',
+      { peripheral: { yawMagDegRange: [47, 90], pitchDegRange: [-6.5, 6.5] } },
+      /spiderShot\.peripheral\.yawMagDegRange/,
+    ],
+    [
+      'pitchDegRange 非對稱',
+      { peripheral: { yawMagDegRange: [47, 51], pitchDegRange: [-6.5, 7.5] } },
+      /spiderShot\.peripheral\.pitchDegRange/,
+    ],
+    [
+      'pitchDegRange 退化為零寬',
+      { peripheral: { yawMagDegRange: [47, 51], pitchDegRange: [0, 0] } },
+      /spiderShot\.peripheral\.pitchDegRange/,
+    ],
+    ['grid.pitchBands 非正整數', { grid: { pitchBands: 0 } }, /spiderShot\.grid\.pitchBands/],
+    ['grid.pitchBands 非整數', { grid: { pitchBands: 1.5 } }, /spiderShot\.grid\.pitchBands/],
+    ['resolvedFrom 缺席', { resolvedFrom: undefined }, /spiderShot\.resolvedFrom/],
+  ];
+
+  for (const [label, patch, pattern] of invalidCases) {
+    it(`${label} → 帶欄位路徑的 typed error`, () => {
+      expect(() => validateDrill(withSchedule(patch))).toThrow(pattern);
+    });
+  }
+
+  const invalidProvenance: readonly (readonly [string, Record<string, unknown>, RegExp])[] = [
+    ['fovDegVertical 非有限', { fovDegVertical: Number.NaN }, /resolvedFrom\.fovDegVertical/],
+    ['aspect ≤ 0', { aspect: 0 }, /resolvedFrom\.aspect/],
+    ['screenMargin ≥ 1', { screenMargin: 1 }, /resolvedFrom\.screenMargin/],
+    ['screenMargin < 0', { screenMargin: -0.1 }, /resolvedFrom\.screenMargin/],
+    ['kLo = 0', { kLo: 0 }, /resolvedFrom\.kLo/],
+    ['kLo > 1', { kLo: 1.5 }, /resolvedFrom\.kLo/],
+    ['targetAngularDiameterDeg 缺席', { targetAngularDiameterDeg: undefined }, /resolvedFrom\.targetAngularDiameterDeg/],
+  ];
+
+  for (const [label, patch, pattern] of invalidProvenance) {
+    it(`resolvedFrom：${label} → 帶欄位路徑的 typed error`, () => {
+      const schedule = yawPitchSchedule();
+      expect(() =>
+        validateDrill(
+          withSchedule({ resolvedFrom: { ...(schedule.resolvedFrom as object), ...patch } }),
+        ),
+      ).toThrow(pattern);
+    });
+  }
+});

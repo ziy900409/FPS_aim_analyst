@@ -6,6 +6,7 @@ import {
   type SpawnAreaConfig,
   type SpiderShotCenterPeripheralConfig,
   type SpiderShotScheduleConfig,
+  type SpiderShotYawPitchConfig,
   type TargetHitboxConfig,
   type TargetPopulationConfig,
   type TargetVisualSizeConfig,
@@ -265,7 +266,65 @@ function validateSpiderShotSchedule(json: unknown): SpiderShotScheduleConfig {
       ...(centerExemptFromTimeout !== undefined ? { centerExemptFromTimeout } : {}),
     };
   }
-  throw err('spiderShot.kind', "必須為 'center-peripheral' 或 'center-peripheral-stratified'");
+  if (spiderShot.kind === 'center-peripheral-yawpitch') {
+    return validateSpiderShotYawPitch(spiderShot);
+  }
+  throw err(
+    'spiderShot.kind',
+    "必須為 'center-peripheral'、'center-peripheral-stratified' 或 'center-peripheral-yawpitch'",
+  );
+}
+
+/**
+ * WP-57 / T1（FR-57.1／57.14）：wide-flick 排程的逐欄位 strict 驗證。刻意不共用
+ * `validateSpiderPeripheral()` —— 本分支的 `peripheral` 是 yaw/pitch 窗，與 v1/v2 的
+ * azimuth/radius/distance 三元組沒有共同欄位，硬共用只會讓錯誤路徑說謊。
+ *
+ * `resolvedFrom` 為必填：`resolveSpiderWideYawPitch()` 的輸出若沒有 provenance，離線分析就無法
+ * 重建刺激幾何（FR-57.10），故在 schema 層就擋掉，而不是等到匯出才發現缺欄位。
+ */
+function validateSpiderShotYawPitch(spiderShot: Record<string, unknown>): SpiderShotYawPitchConfig {
+  const peripheral = requireObject(spiderShot.peripheral, 'spiderShot.peripheral');
+  const yawMagDegRange = requireAscendingPositiveRange(
+    peripheral.yawMagDegRange,
+    'spiderShot.peripheral.yawMagDegRange',
+  );
+  if (yawMagDegRange[1] >= 90) {
+    // yaw 是單側幅度（非 azimuth）；90° 是直線透視的奇異點，tan(yaw) 發散。
+    throw err('spiderShot.peripheral.yawMagDegRange', '必須 < 90');
+  }
+  const pitchDegRange = requireSymmetricDegreeWindow(
+    peripheral.pitchDegRange,
+    'spiderShot.peripheral.pitchDegRange',
+  );
+  const grid = requireObject(spiderShot.grid, 'spiderShot.grid');
+  const resolvedFrom = requireObject(spiderShot.resolvedFrom, 'spiderShot.resolvedFrom');
+  const screenMargin = requireNonNegativeNumber(resolvedFrom.screenMargin, 'spiderShot.resolvedFrom.screenMargin');
+  if (screenMargin >= 1) throw err('spiderShot.resolvedFrom.screenMargin', '必須 < 1');
+  const kLo = requirePositiveNumber(resolvedFrom.kLo, 'spiderShot.resolvedFrom.kLo');
+  if (kLo > 1) throw err('spiderShot.resolvedFrom.kLo', '必須 ≤ 1');
+  const centerExemptFromTimeout =
+    spiderShot.centerExemptFromTimeout === undefined
+      ? undefined
+      : requireBoolean(spiderShot.centerExemptFromTimeout, 'spiderShot.centerExemptFromTimeout');
+  return {
+    kind: 'center-peripheral-yawpitch',
+    seed: requireFiniteNumber(spiderShot.seed, 'spiderShot.seed'),
+    distanceU: requirePositiveNumber(spiderShot.distanceU, 'spiderShot.distanceU'),
+    peripheral: { yawMagDegRange, pitchDegRange },
+    grid: { pitchBands: requirePositiveInt(grid.pitchBands, 'spiderShot.grid.pitchBands') },
+    ...(centerExemptFromTimeout !== undefined ? { centerExemptFromTimeout } : {}),
+    resolvedFrom: {
+      fovDegVertical: requirePositiveNumber(resolvedFrom.fovDegVertical, 'spiderShot.resolvedFrom.fovDegVertical'),
+      aspect: requirePositiveNumber(resolvedFrom.aspect, 'spiderShot.resolvedFrom.aspect'),
+      screenMargin,
+      kLo,
+      targetAngularDiameterDeg: requirePositiveNumber(
+        resolvedFrom.targetAngularDiameterDeg,
+        'spiderShot.resolvedFrom.targetAngularDiameterDeg',
+      ),
+    },
+  };
 }
 
 function validateSpiderPeripheral(
@@ -601,6 +660,17 @@ function requireAscendingRange(v: unknown, path: string): readonly [number, numb
 function requireAscendingPositiveRange(v: unknown, path: string): readonly [number, number] {
   const range = requireAscendingRange(v, path);
   if (range[0] <= 0) throw err(`${path}[0]`, '必須 > 0');
+  return range;
+}
+
+/**
+ * WP-57 / T1：對稱干擾窗（`[-p, p]`，`p > 0`）。對稱性是契約而非慣例——`pitch` 相對中心目標
+ * 定義，非對稱窗會讓「相對中心 ±p 度」的語意失效，也會讓分層佇列的 pitchBands 分箱不等寬。
+ */
+function requireSymmetricDegreeWindow(v: unknown, path: string): readonly [number, number] {
+  const range = requireAscendingRange(v, path);
+  if (range[1] <= 0) throw err(path, '必須 max > 0');
+  if (range[0] !== -range[1]) throw err(path, '必須對稱（min === -max）');
   return range;
 }
 

@@ -363,6 +363,12 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     pos: { x: number; y: number; z: number };
   } {
     if (spiderShot === undefined) throw new Error('spiderShot schedule is required');
+    // WP-57 / T1：contract-only slice。`center-peripheral-yawpitch` 的 eye-frame spawn 分支由 T2
+    // 交付；在那之前明確 fail fast，而不是讓新 kind 掉進下面兩支的 azimuth/radius 幾何。此 guard
+    // 對 v1/v2 不可達，兩者的 spawn 序列逐位不變（NFR-57.2）。
+    if (spiderShot.kind === 'center-peripheral-yawpitch') {
+      throw new Error('spiderShot kind center-peripheral-yawpitch 的 spawn 分支尚未實作（WP-57/T2）');
+    }
     if (nextSpiderZone === 'center') {
       return {
         side: 'R',

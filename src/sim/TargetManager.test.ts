@@ -5,7 +5,7 @@ import { createSimLoop } from '../loop/SimLoop.ts';
 import { simStep } from '../loop/SimLoop.ts';
 import { createDataRecorder } from '../data/DataRecorder.ts';
 import { createSharedState } from '../state/SharedState.ts';
-import type { DrillConfig } from '../drill/DrillConfig.ts';
+import type { DrillConfig, SpiderPeripheralConfig } from '../drill/DrillConfig.ts';
 import { createTargetManager } from './TargetManager.ts';
 import {
   createTrackingTrajectory,
@@ -630,7 +630,7 @@ describe('TargetManager — WP-21 seeded spawn（FR-C10）', () => {
 describe('TargetManager — WP-36 spider-shot center/peripheral schedule', () => {
   function spiderConfig(
     seed: number,
-    peripheral: NonNullable<DrillConfig['spiderShot']>['peripheral'] = {
+    peripheral: SpiderPeripheralConfig = {
       angularRadiusDegRange: [10, 30],
       azimuthDegRange: [0, 360],
       distanceURange: [3.5, 4.5],

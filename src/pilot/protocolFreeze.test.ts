@@ -3,6 +3,7 @@ import { COUNTERSTRAFE_REVERSAL_HOLD_DURATION_MS_V1, counterstrafeReversalV1 } f
 import { HOLD_CLICK_DISTANCE_LEVELS_V1, holdClickV1 } from '../drill/hold_click_v1.ts';
 import { HOLD_TRACK_DISTANCE_LEVELS_V1, holdTrackV1 } from '../drill/hold_track_v1.ts';
 import { STAGE6_BASELINE_MIN_N, STAGE6_BASELINE_WINDOW_SIZE, STAGE6_PROTOCOL_VERSION } from '../drill/protocolVersion.ts';
+import type { SpiderShotCenterPeripheralConfig } from '../drill/DrillConfig.ts';
 import { SPIDER_SHOT_ANGULAR_RADIUS_DEG_V1, SPIDER_SHOT_HITBOX_V1, spiderShotV1 } from '../drill/spider_shot_v1.ts';
 import { DIAGNOSIS_THRESHOLDS_V1, PILOT_CANDIDATE_DIAGNOSIS_THRESHOLDS } from '../metrics/diagnosisRules.ts';
 
@@ -21,7 +22,9 @@ describe('stage6 formal freeze', () => {
     expect(holdClickV1.drill.targets.distance).toBe(HOLD_CLICK_DISTANCE_LEVELS_V1.mid);
     expect(holdTrackV1.drill.targets.distance).toBe(HOLD_TRACK_DISTANCE_LEVELS_V1.mid);
     expect(spiderShotV1.targets.hitbox).toEqual(SPIDER_SHOT_HITBOX_V1);
-    expect(spiderShotV1.spiderShot?.peripheral.angularRadiusDegRange).toEqual([
+    expect(
+      (spiderShotV1.spiderShot as SpiderShotCenterPeripheralConfig).peripheral.angularRadiusDegRange,
+    ).toEqual([
       SPIDER_SHOT_ANGULAR_RADIUS_DEG_V1,
       SPIDER_SHOT_ANGULAR_RADIUS_DEG_V1,
     ]);

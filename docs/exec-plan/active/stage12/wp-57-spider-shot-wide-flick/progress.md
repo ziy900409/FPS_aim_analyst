@@ -7,9 +7,9 @@
 | Task | Status | Started | Completed | Evidence |
 |---|---|---|---|---|
 | T0 Entry Gate | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T0 audit（2026-09-07）；production diff = 0 |
-| T1 Geometry Contract and Resolver | Ready | — | — | T0 已放行；§2.4 常數已依實測更正 |
-| T2 TargetManager Branch | Blocked by T1 | — | — | — |
-| T3 Wide Arena Scene | Blocked by T1 | — | — | arena 規格已由 T0 更正為 `[18, 20, 4]` + `eyeZ: 0`（§2.5.1） |
+| T1 Geometry Contract and Resolver | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T1 evidence；targeted 226 tests、full Vitest 2266 tests、typecheck／build exit 0 |
+| T2 TargetManager Branch | Ready | — | — | T1 ✅；contract／resolver／投影已凍結，只剩 spawn 分支接線 |
+| T3 Wide Arena Scene | Ready | — | — | T1 ✅；arena 規格已由 T0 更正為 `[18, 20, 4]` + `eyeZ: 0`（§2.5.1），sceneId `wide-flick-arena` 已由 T1 綁定 |
 | T4 Export and Conditions | Blocked by T2 **+ OQ-57.7** | — | — | OQ-57.7（匯出角度 frame 語意）需 owner 拍板才可開工 |
 | T5 Repositioning Flag | Blocked by T4 | — | — | — |
 | T6 Wiring and E2E | Blocked by T2–T4 | — | — | — |
@@ -135,6 +135,31 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 
 **PoC artifacts**：四支 throwaway script 位於已驗證 temp root（session scratchpad），T0 結束時刪除；數字全數落在本節，可由上述公式重算。
 
+## T1 evidence（2026-09-07）
+
+**交付面**：`DrillConfig.ts` 新增 `SpiderShotYawPitchConfig` 並併入 union（既有兩支型別逐字不動）；`schema.ts` 新增 `validateSpiderShotYawPitch()` 第三分支、`requireSymmetricDegreeWindow()` 與**更新後的 kind 錯誤訊息**（T0 §0 item 9 指出的硬編兩值問題已解）；新增 `src/sim/spiderEyeFrame.ts`（球面投影／反函式／NDC）、`src/sim/playerEye.ts`（眼高常數新家，見 D-57.T1-1）、`src/drill/spiderShotWide.ts`（resolver + 凍結常數 + `SpiderWideResolveError`）、`src/drill/spider_shot_wide_v1.ts`（template + `resolveSpiderShotWideV1()` + `wide-flick-arena` 綁定）。**`TargetManager` 的 spawn 幾何未動**，只加一個對 v1/v2 不可達的 typed guard（D-57.T1-2）。
+
+**resolver 實測輸出**（16:9、`distanceU = 8`、角徑 2.0°、`screenMargin = 0.04`、`kLo = 0.92`；與 README §2.4／T0 PoC A 逐位相符）：
+
+| `fovDeg` | `yawMax` | `yawMagDegRange` | 側向 abs(x) @ pitch 0 |
+|---|---|---|---|
+| 60 | 43.577058 | [40.090893, 43.577058] | 5.514636 |
+| 75 | 51.634335 | [47.503588, 51.634335] | 6.272524 |
+| 90 | 58.632363 | [53.941774, 58.632363] | 6.830760 |
+| 120 | 70.309776 | [64.684994, 70.309776] | 7.532224 |
+
+跨 aspect（FOV 75）：4:3 = `43.484877`、16:9 = `51.634335`、21:9 = `58.809282`，單調遞增，4:3↔21:9 相差 `15.324°`（OQ-57.6 依據）。pitch 端：`pitchLimitDeg = 6.894696`，凍結窗 `±6.5°` 餘裕 `0.394696°`；`floorClearanceU` 0／0.25 取到 `10.518030`／`8.701977`，與 T0 PoC C 一致（規劃期的 11.31／7.97 兩列確認為錯）。
+
+**OQ-57.1／57.2 落地值**：`drillId = 'spider-shot-wide-v1'`、`sceneId = 'wide-flick-arena'`、`seed = 57001`（與 v1 `36036`／v2 `260826` 互不相同）、`grid.pitchBands = 2`、`peekTimeoutMs = 2500`、`endCondition = timeLimit 90000`、hitbox sphere `0.279281 u`、`pitchDegRange = [−6.5, 6.5]`。
+
+**測試**（新增 87 個 case）：`src/sim/spiderEyeFrame.test.ts` 11、`src/drill/spiderShotWide.test.ts` 33（含 22 條 typed-error 正負向矩陣）、`src/drill/spider_shot_wide_v1.test.ts` 13、`tests/regression/spider-wide-geometry.test.ts` 8（NFR-57.3／57.4／57.6 + FR-57.9 負向證據）、`src/drill/schema.test.ts` 新增 22 個 yawpitch case（該檔 92 tests 全綠）。NFR-57.3：10,000 個 seeded 樣本最壞相對誤差 ≤ 1e-12。NFR-57.4：4 FOV × 3 aspect × 10,000 = **120,000 樣本，failures = 0**；最壞 `abs(ndc_x)` 貼齊 `0.96`（tight-by-construction，容差 1e-9），最壞 `abs(ndc_y) = 0.3728`（21:9 × FOV 60）。NFR-57.6：`spiderEyeFrame.ts`／`spiderShotWide.ts` 對 DOM／three／`node:*`／`fs`／`Date.now`／`performance.now`／`Math.random`／`SceneConfig`／`SceneManager`／`SettingsPanel` 全數零命中。
+
+**零回歸**：`npx vitest run` 全量 **227 files passed + 1 skipped／2266 tests passed + 2 skipped**（T0 baseline 為 223／2179，差額為本 task 新增測試與 worktree 內既存的 WP-56 T5 未提交測試）；`npx tsc --noEmit` 與 `npx tsc --noEmit -p tsconfig.node.json` exit 0；`npx vite build` exit 0（168 modules、1,196.34 kB／gzip 340.77 kB，僅既存 >500 kB 警告）。`spider-shot-v1`／`v2` 的 fixture 與 `TargetManager` spawn 測試全綠且未改期望值。Playwright 未於 T1 執行（無 UI 接線；全量屬 T-exit 的 NFR-57.8）。
+
+**型別面 blast radius（實測，補正 §0.1）**：union 新增分支後有 **6 個未收斂的 union 屬性存取點**需要顯式 narrowing —— production `TargetManager.ts`（`sampleSpiderShotPose()` 內 `centerDistanceU`／`peripheral`）與 `pilot/pilotConfigs.ts`，測試 `spider_shot_v1.test.ts`（2 處）、`spider_shot_v2.test.ts`（2 處）、`pilot/protocolFreeze.test.ts`、`sim/TargetManager.test.ts`。全部改為指名 v1/v2 的具體分支型別，行為與期望值不變。
+
+**未觸碰**：worktree 既有的 `docs/exec-plan/README.md`、wp-56 progress／checklist、`graphify-out/*`、`tests/e2e/micro-flick-live.spec.ts`、未追蹤的 `src/sim/micro-flick-performance.test.ts` 全程未 stage。`graphify update .` 因 `graphify-out/*` 已帶平行工作的未提交變更而延後，避免混入本 commit。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -158,6 +183,10 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 | D-57.T0-2 | 2026-09-07 | **FR-57.4 的 NDC 判定採 `≤` 並帶 `1e-9` 浮點容差**。理由：`yawMax` 的定義式使外緣 `ndc_x` 代數上恰等於 `1 − screenMargin`（實測最壞值 `0.96000`），是 tight-by-construction 而非有餘裕的邊界。<br>**Alternatives considered**：(a) 嚴格 `<` —— 在數學上恆假、測試必紅，**駁回**；(b) 零容差 `≤` —— 依 IEEE-754 尾差隨機紅燈，**駁回**；(c) 把 `kLo` 上界改成 `0.99·yawMax` 以人工製造餘裕 —— 改變刺激定義來遷就測試，**駁回** | Engineering（T0 PoC B） | progress §T0 audit ④；README §2.4 |
 | D-57.T0-3 | 2026-09-07 | **v1/v2 的 origin-frame 與 `angularSpawnPose()` 的圓柱語意皆不修**，三套幾何並存並以 **GD-32** 記名適用範圍。<br>**Alternatives considered**：(a) 統一改成 eye-frame 球面 —— 會作廢 v1/v2 已凍結的 baseline 與 `micro_flick` 的 golden，收益只是幾何整齊，**駁回**；(b) 只修 `spiderShotConditions.ts` 使 derivation 走 eye-frame —— 這是正確的長期解，但會改動 v1/v2 已凍結的匯出值、需重錄 baseline，屬獨立 KI 而非本 WP 夾帶項，**移交 OQ-57.7 選項 (b)** | Engineering | GD-32；README §3.2 |
 | D-57.P16 | 2026-09-07 | **編號衝突已解**：WP-57（spider shot）與 session program 排程器同日在兩個平行 session 規劃，一度都暫用 WP-57／GD-32；依 GD-15「先採納先得」（資料夾先建立）由本 WP 保留 **WP-57／GD-32**，排程器順延重編為 **WP-58／GD-33** | 平行 session 對帳 | [`../README.md`](../README.md) §3 編號分配表 |
+| D-57.T1-1 | 2026-09-07 | **`PLAYER_EYE_HEIGHT_U` 的定義搬到 `src/sim/playerEye.ts`，`src/scene/clearance.ts` 原地 re-export 同一 binding**。README §2.10 稱它是「sim 側常數」，但它實際住在 `src/scene/clearance.ts`，而 `src/scene/architecture.test.ts` 硬禁「`src/sim`／`src/state` import `src/scene`」（GD-6 的自動閘）—— 照規劃寫會直接紅燈。搬家後眼高**仍只有一個定義**，所有既有 import 路徑與數值逐位不變。<br>**Alternatives considered**：(a) 把 `spiderEyeFrame.ts` 移到 `src/drill/` 繞過閘 —— 偏離 README §2.1 的路徑，且 T2 的 sim 分支遲早需要同一常數，只是把問題往後推，**駁回**；(b) 在 `src/sim` 另立眼高常數 —— 直接違反 T1 invariant「不得新增第二個眼高常數」，**駁回**；(c) 讓 `spiderWideEyePos()` 收 `eyeHeightU` 參數、常數由呼叫端提供 —— 呼叫端 `TargetManager` 一樣在 `src/sim`，閘照樣擋，**駁回** | Engineering | `architecture.test.ts` 紅燈輸出；搬家後全量 Vitest 綠 |
+| D-57.T1-2 | 2026-09-07 | **`TargetManager.sampleSpiderShotPose()` 加一個 `center-peripheral-yawpitch` 的 fail-fast guard**（3 行，對 v1/v2 不可達），偏離 T1 DoD 的「`TargetManager` 尚未被修改（`git diff` 可證）」。理由：union 新增分支後，`spiderShot.centerDistanceU`／`spiderShot.peripheral` 這兩個**未收斂的 union 屬性存取**在 strict TS 下必然編譯失敗，不改就無法 typecheck。guard 明確拒收新 kind 而非讓它掉進 azimuth/radius 幾何，spawn 行為零變動（v1/v2 測試期望值未改）。<br>**Alternatives considered**：(a) 新分支改用 `centerDistanceU` 欄位名讓 union 保持共同屬性 —— 可救 `centerDistanceU`，但 `peripheral` 形狀不相容仍會炸，且會偏離 README §2.3 凍結的 `distanceU`，**駁回**；(b) 新分支宣告 `centerDistanceU?: undefined` —— strict 下對 `number | undefined` 取負仍是型別錯誤，**駁回**；(c) 把 union 分支延到 T2 才加 —— 那 T1 就沒有契約可凍結，違反 task 目的，**駁回** | Engineering | `npx tsc --noEmit` exit 0；`TargetManager.test.ts` 57 tests 全綠 |
+| D-57.T1-3 | 2026-09-07 | **resolver 回傳 `{ yawMagDegRange, pitchDegRange, pitchLimitDeg }`**：`pitchDegRange` 取模組凍結的 `±SPIDER_WIDE_PITCH_MAG_DEG`，`pitchLimitDeg` 是地板淨空推導的硬上界並作為餘裕證據；凍結值超過上界時擲 `SpiderWideResolveError('pitchDegRange', …)`。理由：D-57.P14 凍結的是 `±6.5°`（餘裕 0.395°，刻意不貼邊），而 FR-57.14 又要求「pitch 窗使目標埋入地板」必須是 typed error —— 兩者只有在「窗是凍結常數、上界是驗證條件」的結構下才同時成立。<br>**Alternatives considered**：(a) 直接回 `±pitchLimitDeg` —— 會得到 `±6.8947°`，推翻 D-57.P14 的凍結值與「非硬貼邊界」的理由，**駁回**；(b) 把 `pitchMagDeg` 加進 resolver input —— 偏離 README §2.4 簽章，且會讓凍結值可被任一呼叫端改寫，失去凍結意義，**駁回** | Engineering | `spiderShotWide.test.ts` pitch 段；`pitchLimitDeg = 6.894696` |
+| D-57.T1-4 | 2026-09-07 | **6 個既有 union 消費點改為指名 v1/v2 的具體分支型別**（production `pilotConfigs.ts` 的 guard 收斂到 `kind === 'center-peripheral'`；`spider_shot_v1/v2.test.ts`、`protocolFreeze.test.ts`、`TargetManager.test.ts` 以型別標註／斷言收斂）。行為與期望值零變動，只讓「這段程式碼只對 v1/v2 有意義」變成型別可稽核的事實。<br>**Alternatives considered**：把新分支設計成與 v1/v2 結構相容以避免改動 —— 需要塞入 `azimuthDegRange`／`distanceURange` 等對本 drill 無意義的欄位，會讓契約說謊，**駁回** | Engineering | 全量 Vitest 2266 tests 綠 |
 
 ## Surprises
 
@@ -201,6 +230,14 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 17. **`spiderShotMetrics.ts` 零修改的理由比規劃寫的更強。** 規劃說它「對 spawn 方式不敏感」；逐函式覆核發現它一律走 `resolveEyeOrigin()`／`angularEccentricityDeg()`，**本來就是 eye-frame** ⇒ 與本 drill 的新幾何同源。**Evidence**：`spiderShotMetrics.ts:48`／`:93` 及全檔 9 個函式對 azimuth／radius／origin-frame 零引用（§T0 audit ⑦）。這也把偏差範圍精確地收斂到 conditions 一條路徑。
 
 18. **PoC C 的三個 `pitchMax` 只有凍結那一個對得上。** `floorClearanceU = 0.5` → `6.8947°` 與規劃的 `6.89°` 相符；但 `0` 一列規劃寫 `11.31°`（實為 `10.5180°`，規劃把「球心貼地的純幾何極限」填進了「已扣球半徑」欄），`0.25` 一列寫 `7.97°`（實為 `8.7020°`，無法重現）。**且那個純幾何極限本身也用錯函式**：本 WP 的球面參數化下應為 `asin(1.6/8) = 11.5370°`，`atan(1.6/8) = 11.3099°` 屬 `angularSpawnPose()` 的圓柱參數化 —— 即上面第 2 條明確不沿用的那一套。已凍結的 `±6.5°` 不受影響（餘裕 0.3947°）。
+
+> 以下為 **T1 執行期（2026-09-07）** 新增。
+
+19. **README §2.10 把 `PLAYER_EYE_HEIGHT_U` 稱為「sim 側常數」，但它住在 `src/scene/clearance.ts`，而 repo 有一道硬閘直接禁止 `src/sim` import `src/scene`。** 照規劃逐字實作會讓 `src/scene/architecture.test.ts` 紅燈——那道閘正是 GD-6「場景幾何永不進 sim runtime」的自動化形式。規劃看見了「眼高必須來自 sim 側」這個**意圖**，卻沒查證常數的實際歸屬。**Evidence**：`architecture.test.ts:15` 失敗、violations = `['../sim/spiderEyeFrame.ts', '../sim/spiderEyeFrame.test.ts']`。→ D-57.T1-1（搬家 + re-export，眼高仍單一定義）。
+
+20. **union 新增分支的實際型別 blast radius 是 §0.1 CodeGraph 計數的兩倍。** §0.1 記 `SpiderShotScheduleConfig` 只有 3 callers；實測要動的是 **6 個未收斂的 union 屬性存取點**（`TargetManager.ts`、`pilotConfigs.ts`、4 個測試檔）。原因：這些位置不是 import 該型別名稱，而是透過 `config.spiderShot!.centerDistanceU` 這種**間接成員存取**碰到 union —— 符號層級的 caller 計數看不到它們。⇒ 對 discriminated union 做加法時，caller 計數是下界而非上界；`tsc --noEmit` 才是權威清單。**Evidence**：D-57.T1-2／T1-4 列出的 6 個位置。
+
+21. **跨 aspect 最壞 `abs(ndc_y)` 實算為 `0.3728`，README §2.4 記的是 `0.371`。** 同一組合（21:9 × FOV 60）、同一式子（外緣取 `yaw + r`、`pitch + r`），差 0.0018。結論完全不變（限值 0.96，餘裕仍極大），但測試以實算值釘死並在註解記下這個落差，避免後人以為公式改過。**Evidence**：`tests/regression/spider-wide-geometry.test.ts` 垂直最壞值段。
 
 ## Open Questions（追蹤用，權威定義見 README §1.6）
 

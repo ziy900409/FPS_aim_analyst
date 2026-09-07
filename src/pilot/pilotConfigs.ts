@@ -80,7 +80,11 @@ export function buildHoldTrackPilotConfigs(distances: readonly PilotDistanceLeve
 
 export function buildSpiderShotPilotConfigs(cells: readonly PilotSpiderShotCell[]): readonly DrillConfig[] {
   const schedule = spiderShotV1.spiderShot;
-  if (schedule === undefined) throw new Error('spiderShotV1 must define a spiderShot schedule');
+  // WP-57/T1：union 增列 `center-peripheral-yawpitch`（無 azimuth/radius 欄位）後，這裡改為顯式
+  // 收斂到 v1 的凍結 kind——pilot cell 掃的就是 `angularRadiusDegRange`，換 kind 即無意義。
+  if (schedule === undefined || schedule.kind !== 'center-peripheral') {
+    throw new Error('spiderShotV1 must define a center-peripheral spiderShot schedule');
+  }
 
   return cells.map((cell, index) => ({
     ...spiderShotV1,

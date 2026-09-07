@@ -120,7 +120,51 @@ export interface SpiderShotStratifiedConfig {
   centerExemptFromTimeout?: boolean;
 }
 
-export type SpiderShotScheduleConfig = SpiderShotCenterPeripheralConfig | SpiderShotStratifiedConfig;
+/**
+ * WP-57 / T1（README §2.3）：第三支 spiderShot 排程 —— 大幅度拉槍（wide flick），以 **eye-frame
+ * yaw/pitch** 參數化，而非 v1/v2 的「繞中心視線的 azimuth + 離軸 radius 圓錐」。
+ *
+ * 幾何（FR-57.2）：`pos = eye + d·(sin(yaw)·cos(pitch), sin(pitch), −cos(yaw)·cos(pitch))`，
+ * `eye = (0, PLAYER_EYE_HEIGHT_U, 0)` ⇒ `yaw`/`pitch` 就是玩家螢幕上的水平/垂直視角，中心目標為
+ * `yaw = 0, pitch = 0`。距離對中心與周邊共用（`distanceU`），使目標角徑恆定。
+ *
+ * `yawMagDegRange` 是 **arm 時解析出來的常數**（`resolveSpiderWideYawPitch()`，見
+ * `spiderShotWide.ts`）：FOV/aspect 只在那一刻被讀一次。sim runtime 消費本結構時對 FOV、aspect、
+ * camera、`SceneConfig` 與時鐘一無所知（FR-57.3 / GD-6 / GD-10）。
+ */
+export interface SpiderShotYawPitchConfig {
+  readonly kind: 'center-peripheral-yawpitch';
+  readonly seed: number;
+  /** 中心與周邊共用同一距離，使目標角徑恆定。 */
+  readonly distanceU: number;
+  readonly peripheral: {
+    /** yaw 幅度（絕對值）區間；左右由分層佇列決定，不編碼在此。 */
+    readonly yawMagDegRange: readonly [number, number];
+    /** 對稱 pitch 干擾窗，相對中心目標（= eye 水平）。 */
+    readonly pitchDegRange: readonly [number, number];
+  };
+  /** side 恆為 2，故只宣告 pitchBands。 */
+  readonly grid: { readonly pitchBands: number };
+  /** true 時中心目標不受 timing.peekTimeoutMs 撤除；省略/false 維持既有行為。 */
+  readonly centerExemptFromTimeout?: boolean;
+  /**
+   * Resolver provenance（FR-57.10）——解析當時的顯示狀態。刻意冗餘：讓匯出自帶「這個 yaw 窗是
+   * 怎麼算出來的」，離線分析不需要反推，也讓 aspect（目前不在任何匯出欄位內）變成可稽核。
+   * 必填而非 optional —— 沒有 provenance 的 resolved config 應該無法通過驗證。
+   */
+  readonly resolvedFrom: {
+    readonly fovDegVertical: number;
+    readonly aspect: number;
+    readonly screenMargin: number;
+    readonly kLo: number;
+    readonly targetAngularDiameterDeg: number;
+  };
+}
+
+export type SpiderShotScheduleConfig =
+  | SpiderShotCenterPeripheralConfig
+  | SpiderShotStratifiedConfig
+  | SpiderShotYawPitchConfig;
 
 /** Counter-strafe cue schedule. `hold-reversal` is activated by WP-37/T2. */
 export type CueScheduleConfig =

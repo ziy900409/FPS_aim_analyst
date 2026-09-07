@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveTargetHitbox, type DrillConfig } from './DrillConfig.ts';
+import { resolveTargetHitbox, type DrillConfig, type SpiderShotStratifiedConfig } from './DrillConfig.ts';
 import { loadDrill } from './DrillLoader.ts';
 import { spiderShotV2 } from './spider_shot_v2.ts';
 import { spiderShotV1 } from './spider_shot_v1.ts';
@@ -49,7 +49,7 @@ describe('spider-shot-v2 drill config', () => {
 
   it('centerDistanceU/peripheral.distanceURange 落在 placeholder-room 半深內（KI-012：z=-distance 越過北牆會被遮擋，見 TargetManager.ts DEFAULT_DISTANCE 註解）', () => {
     const config = loadDrill(spiderShotV2);
-    const spiderShot = config.spiderShot!;
+    const spiderShot = config.spiderShot as SpiderShotStratifiedConfig;
     // placeholder-room roomSize depth=20 → 北牆 z=-10（KI-012 修復前為 depth=10 → z=-5）。
     expect(spiderShot.centerDistanceU).toBeLessThan(10);
     expect(spiderShot.peripheral.distanceURange[1]).toBeLessThan(10);
@@ -57,7 +57,7 @@ describe('spider-shot-v2 drill config', () => {
 
   it('worst-case peripheral y（angularRadiusDegRange 上限、azimuth 朝下）落在 placeholder-room 地板之上（KI-014：floorY=-3，見 SceneManager.ts #buildRoom）', () => {
     const config = loadDrill(spiderShotV2);
-    const spiderShot = config.spiderShot!;
+    const spiderShot = config.spiderShot as SpiderShotStratifiedConfig;
     const maxRadiusDeg = spiderShot.peripheral.angularRadiusDegRange[1];
     // 用 kind:'center-peripheral'（非 stratified）直接鎖死 azimuth/radius，繞過 grid 洗牌佇列，
     // 純粹測試 TargetManager.peripheralPos() 公式在 v2 實際極值下的世界座標——排程機制無關。

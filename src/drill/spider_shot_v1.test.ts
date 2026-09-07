@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveTargetHitbox, type DrillConfig } from './DrillConfig.ts';
+import { resolveTargetHitbox, type DrillConfig, type SpiderShotCenterPeripheralConfig } from './DrillConfig.ts';
 import { loadDrill } from './DrillLoader.ts';
 import { spiderShotV1 } from './spider_shot_v1.ts';
 import { createTargetManager } from '../sim/TargetManager.ts';
@@ -26,7 +26,7 @@ describe('spider-shot-v1 drill config', () => {
 
   it('centerDistanceU/peripheral.distanceURange 落在 placeholder-room 半深內（KI-012：z=-distance 越過北牆會被遮擋，見 TargetManager.ts DEFAULT_DISTANCE 註解）', () => {
     const config = loadDrill(spiderShotV1);
-    const spiderShot = config.spiderShot!;
+    const spiderShot = config.spiderShot as SpiderShotCenterPeripheralConfig;
     // placeholder-room roomSize depth=20 → 北牆 z=-10（KI-012 修復前為 depth=10 → z=-5）。
     expect(spiderShot.centerDistanceU).toBeLessThan(10);
     expect(spiderShot.peripheral.distanceURange[1]).toBeLessThan(10);
@@ -34,7 +34,7 @@ describe('spider-shot-v1 drill config', () => {
 
   it('worst-case peripheral y（angularRadiusDegRange 上限、azimuth 朝下）落在 placeholder-room 地板之上（KI-014：floorY=-3，見 SceneManager.ts #buildRoom）', () => {
     const config = loadDrill(spiderShotV1);
-    const spiderShot = config.spiderShot!;
+    const spiderShot = config.spiderShot as SpiderShotCenterPeripheralConfig;
     const maxRadiusDeg = spiderShot.peripheral.angularRadiusDegRange[1];
     const worstCase: DrillConfig = {
       ...config,

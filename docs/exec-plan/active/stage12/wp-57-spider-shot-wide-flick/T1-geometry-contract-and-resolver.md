@@ -17,7 +17,7 @@
 3. 新增 `src/sim/spiderEyeFrame.ts`：
    - `spiderWideEyePos(yawDeg, pitchDeg, distanceU): Vec3` —— README §2.2 的球面公式，`eye = (0, PLAYER_EYE_HEIGHT_U, 0)`；
    - `ndcForEyeAngles(yawDeg, pitchDeg, fovDegVertical, aspect): { x: number; y: number }` —— README §2.4 的兩條 NDC 關係；
-   - 兩者皆純函式，`PLAYER_EYE_HEIGHT_U` 由 `src/scene/clearance.ts` 既有 export 取得，**不 import `SceneConfig`**。
+   - 兩者皆純函式，**不 import `SceneConfig`**。⚠️ 落地更正：`PLAYER_EYE_HEIGHT_U` 的**定義**已搬到 `src/sim/playerEye.ts`（`clearance.ts` 原地 re-export），因為 `architecture.test.ts` 硬禁 `src/sim` import `src/scene`；眼高仍只有一個定義，見 [progress.md](progress.md) D-57.T1-1。
 4. 新增 `src/drill/spiderShotWide.ts`：`resolveSpiderWideYawPitch()`（README §2.4 簽章）+ 候選常數（依 T0 收斂的 OQ-57.1／57.2 值）。輸入非法時擲 typed error（FR-57.14），不回退預設值。
 5. 新增 `src/drill/spider_shot_wide_v1.ts`：未解析的 drill template（`mode: 'practice'`、`playerControl: { translation: 'locked' }`、`targets.hitbox` sphere、`sequence: { alternation: 'LR' }` 相容欄位、`timing`、`endCondition`、`sceneId` 綁定），以及一支 `resolveSpiderShotWideV1(fovDegVertical, aspect): DrillConfig` 把 template + resolver 組成 resolved config。
 6. 測試：
@@ -40,12 +40,12 @@
 
 ## Definition of Done
 
-- [ ] 新 union 分支與 strict 驗證全綠；typed error 正負向矩陣齊全（FR-57.1／57.14）。
-- [ ] resolver 輸出與 README §2.4／T0 PoC A 逐位相符（FR-57.3）。
-- [ ] NFR-57.3（角徑恆定 ≤ 1e-12）與 NFR-57.4（12 組 × 10,000 樣本、失敗數 0）成立。
-- [ ] NFR-57.6 boundary scan 綠。
-- [ ] v1/v2 的 schema／parse／既有 fixture 結果不變，`TargetManager` 尚未被修改（`git diff` 可證）。
-- [ ] [progress.md](progress.md) 記 blast radius、測試數、resolver 實際輸出表與 OQ-57.1／57.2 落地值。
+- [x] 新 union 分支與 strict 驗證全綠；typed error 正負向矩陣齊全（FR-57.1／57.14）。
+- [x] resolver 輸出與 README §2.4／T0 PoC A 逐位相符（FR-57.3）。
+- [x] NFR-57.3（角徑恆定 ≤ 1e-12）與 NFR-57.4（12 組 × 10,000 樣本、失敗數 0）成立。
+- [x] NFR-57.6 boundary scan 綠。
+- [x] v1/v2 的 schema／parse／既有 fixture 結果不變。⚠️ `TargetManager` 有一處偏離：為讓新 union 分支通過 strict typecheck，新增一個對 v1/v2 不可達的 fail-fast guard（spawn 幾何零變動），見 [progress.md](progress.md) D-57.T1-2。
+- [x] [progress.md](progress.md) 記 blast radius、測試數、resolver 實際輸出表與 OQ-57.1／57.2 落地值。
 
 ## Commit
 

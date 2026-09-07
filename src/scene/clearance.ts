@@ -8,12 +8,13 @@ import {
 import type { TargetMotion, Vec3 } from '../state/types.ts';
 import type { PropBound, SceneConfig } from './SceneConfig.ts';
 import { projectTrackingAngles, type TrackingTrajectoryConfig } from '../sim/trackingTrajectory.ts';
+import { PLAYER_EYE_HEIGHT_U } from '../sim/playerEye.ts';
 
 export const CLEARANCE_MARGIN_U = 0.5;
 export const TARGET_SIDE_OFFSET_U = 2;
 export const TARGET_CENTER_Y_U = 1.5;
 export const TARGET_HITBOX_U = DEFAULT_TARGET_HITBOX;
-export const PLAYER_EYE_HEIGHT_U = 1.6;
+export { PLAYER_EYE_HEIGHT_U };
 
 export const TARGET_HITBOX_RADIUS_U = targetHitboxRadius(TARGET_HITBOX_U);
 

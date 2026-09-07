@@ -5,9 +5,9 @@
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
 | ✅ | **T0** Entry gate／幾何 PoC／GD-32 | [T0-entry-gate.md](T0-entry-gate.md) | 無 | High |
-| ⬜ | **T1** Config 契約／eye-frame 投影／resolver | [T1-geometry-contract-and-resolver.md](T1-geometry-contract-and-resolver.md) | T0 ✅ | High |
-| ⬜ | **T2** TargetManager 分支／分層佇列／決定性 | [T2-target-manager-branch.md](T2-target-manager-branch.md) | T1 | High |
-| ⬜ | **T3** 寬場 arena 與幾何斷言 | [T3-wide-arena-scene.md](T3-wide-arena-scene.md) | T1 | Med/High |
+| ✅ | **T1** Config 契約／eye-frame 投影／resolver | [T1-geometry-contract-and-resolver.md](T1-geometry-contract-and-resolver.md) | T0 ✅ | High |
+| ⬜ | **T2** TargetManager 分支／分層佇列／決定性 | [T2-target-manager-branch.md](T2-target-manager-branch.md) | T1 ✅ | High |
+| ⬜ | **T3** 寬場 arena 與幾何斷言 | [T3-wide-arena-scene.md](T3-wide-arena-scene.md) | T1 ✅ | Med/High |
 | ⬜ | **T4** 匯出 provenance 與 `side` 欄位 | [T4-export-and-conditions.md](T4-export-and-conditions.md) | T2 + **OQ-57.7 拍板** | Med |
 | ⬜ | **T5** 抬滑鼠疑慮標註與敏感度表 | [T5-repositioning-flag.md](T5-repositioning-flag.md) | T4 | Med |
 | ⬜ | **T6** Arm-time 接線與實機 E2E | [T6-wiring-and-e2e.md](T6-wiring-and-e2e.md) | T2 + T3 + T4 | High |
