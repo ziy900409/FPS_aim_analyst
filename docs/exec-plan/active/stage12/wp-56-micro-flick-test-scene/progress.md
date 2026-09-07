@@ -13,7 +13,7 @@
 | T4 Fixed Player, Hit and HUD | Complete | 2026-09-07 | 2026-09-07 | locked SimLoop policy、exact-ID sphere hit→next-tick replacement、live HUD/crosshair E2E、full Vitest/build全綠 |
 | T5 Automated Integration and Performance | Complete | 2026-09-07 | 2026-09-07 | browser/harness lifecycle、20-sample cached-load P95、10k warmed hot-path P95與full regression evidence全綠 |
 | T6 Visual Acceptance | Complete | 2026-09-07 | 2026-09-07 | four Edge/WebGPU captures + metadata；review Pass，fallback accepted difference，blocking=0 |
-| T-exit | Blocked by T5 rerun regression | 2026-09-07 | — | T0–T6 visual evidence complete；targeted Micro Flick E2E rerun has two repeatable failures recorded below |
+| T-exit | Complete | 2026-09-07 | 2026-09-07 | 兩個T5 rerun失敗診斷為測試前提缺陷並修正；FR/NFR traceability、A-56.1～12、boundary scans、full Vitest／build／Playwright gates全數入帳 |
 
 ## Decision Log
 
@@ -44,7 +44,7 @@
 | OQ-56.1 | Resolved | 使用者 | 2026-09-04 | 核心場景／玩法／no-gun scope已確認 |
 | OQ-56.2 | Resolved | 使用者 + Gameplay owner | 2026-09-04 | 使用者明確要求實作T1，採Candidate A；T6仍需manual visual sign-off |
 | OQ-56.3 | Resolved | Gameplay owner | 2026-09-04 | 採60-kill target quota |
-| OQ-56.4 | Open/non-blocking for v1 | Product/Research owner | T-exit | 是否另開 Assessment/full-replay WP |
+| OQ-56.4 | Closed for v1；仍待owner決定是否另開WP | Product/Research owner | 2026-09-07（v1部分） | v1確定practice-only並以自動負向測試守住（no participant/assessment registry、no full replay profile、no history write）。「是否升為Assessment／full replay」不在WP-56交付內，且**不得**只把`mode`改為`assessment`——所需的multi-target tick snapshot／replay sampling／exact profile／指標效度／history相容見README §5 handoff contract |
 | OQ-56.5 | Resolved | Engineering default | 2026-09-07 | 沿用既有score/time/hit-rate/velocity HUD；不加入影片式FPS、ammo或editor UI |
 
 ## Planning Evidence（2026-09-04）
@@ -179,6 +179,52 @@ T6留下的blocker在T-exit開工時以`--workers=1`穩定重現（2 passed／2 
 修法：reset leg改用`detection_popin_v1`（`availableDrills`中真正pin `field-low`的drill），量測終點改為`installSceneLoad`寫回的scene dropdown值。另注意`loadSceneById('field-low')`在micro-flick為active drill時**依設計throw**（Node探針：clearance驗證失敗，tree-b1/tree-b2/rock-b1…遮擋±22°spawn範圍），故「選scene回field-low」本就不是合法的reset路徑。3靶斷言移到迴圈後執行一次，因為drill自帶的3 s countdown屬protocol、不屬scene load latency（NFR-56.6量的是first visible scene frame）。
 
 **修後結果**：`npx.cmd playwright test tests/e2e/micro-flick-live.spec.ts --project=edge --workers=1` → **4 passed**（6.5 s／5.9 s／2.0 s／6.9 s）。cached researcher selection在20個真實transaction下 **p50=17.0 ms、p95=62.0 ms、max=72.1 ms**，遠低於NFR-56.6的1,500 ms gate（先前的數字不可用）。`npm.cmd run typecheck` exit 0。
+
+### T-exit automated gates（2026-09-07，HEAD=`9e42c7e`）
+
+| Gate | 命令 | 結果 |
+|---|---|---|
+| typecheck | `npm.cmd run typecheck` | **exit 0**（browser + node tsconfig 皆無 diagnostic） |
+| 全Vitest | `npm.cmd test -- --reporter=default` | **232 files passed + 1 skipped／2325 tests passed + 2 skipped** |
+| build | `npm.cmd run build` | **exit 0**、1,203.22 kB（gzip 342.71 kB），僅既存 >500 kB chunk warning |
+| Micro Flick E2E | `npx.cmd playwright test tests/e2e/micro-flick-live.spec.ts --project=edge --workers=1` | **4 passed**（6.5／5.9／2.0／6.9 s） |
+| 全Playwright | `npm.cmd run test:e2e` | **86 passed／1 failed** — 見下方既存失敗 |
+| boundary scans | grep（engine／spawn／asset） | 全通過：`src/sim`／`src/loop`／`DrillRunner`／`src/render`／`src/state` 無 micro-flick drill/scene id 特例；`src/sim`／`src/recoil`／`src/loop` 的 `Math.random` 與時鐘字樣**只出現在禁止用法的註解**、無實際呼叫；GLTF 節點僅 floor／ceiling／end-wall／side-panel-*／unit-cube-*／mat-* |
+
+**全Playwright 的 1 個失敗不屬 WP-56，且已精確定位**：`tests/e2e/overlay-layering.spec.ts:74`「session launch controls do not overlap the settings panel」的第二個斷言 `overlapsSettingsPanel(7)` 回 `null`。helper 在 `launchButtons.length !== expectedCount` 就 short-circuit，因此**根本沒跑到重疊判定**——真正原因是 `ResearcherMenu` 現有 **4** 個子選單項（單一 drill 控制、解析度×偵測 protocol、BR 跟槍 protocol、**WP-54 tracking pilot manifest**），展開後共 8 個可見按鈕，而測試仍硬編 7。該第 4 項由 WP-54 加入，這也正是 T0（2026-09-04、production diff=0）就記錄到此項失敗的原因。T0 另記的 3 項 preview root-lock（HTTP 423）失敗本次未重現，但**不得視為已修**——見下方 server 環境揭露，本次兩個 server 並未競爭同一個 history root lease，因此那 3 項是被環境繞過、不是被修好。
+
+WP-56 未新增任何 researcher menu 按鈕（只在既有 dropdown 增加一個 drill 與一個 scene），故本 WP 不擁有此失敗，依 scope 紀律不在 T-exit 切片內修。**建議另開 KI**：把 7 改為 8 之前必須先確認「4 個子選單項下 flex layout 是否仍把 Settings panel 推開」——helper 的 null short-circuit 讓這個問題目前仍未被回答，盲改常數可能掩蓋真實的重疊回歸。
+
+**上層索引同步的例外（明確揭露）**：[`active/stage12/README.md`](../README.md) 的 WP-56 狀態已更新並隨本 slice commit。但 [`docs/exec-plan/README.md`](../../../README.md) 的 WP-56 狀態列、階段 L 表與相依圖雖已在 worktree 更新為 ✅，**未 stage**——該檔整個「階段 L」區塊本身仍是未提交的規劃產物（stage12 三個 WP 共用，其中 WP-57／WP-58 的表列由平行 session 擁有），我的 WP-56 文字與那些新增內容落在同一個 diff hunk 內、無法分離staging。留給該檔的擁有者一併提交。
+
+**Server 環境揭露（影響 Playwright 證據的解讀）**：執行時 5173 已有一個 T6 capture runner 遺留的 dev server（`scripts/capture-wp56-visuals.mjs` 以 `npm run dev -- --host 127.0.0.1` + `FPS_HISTORY_ROOT=.wp56-capture-tmp/history` spawn），Playwright 的 `reuseExistingServer: !CI` 直接重用它，**而不是**用 `playwright.config.ts` 宣告的 `.playwright-tmp/history-dev`。`.wp56-capture-tmp/history/` 內出現本次 run 的 fixture 目錄即為證據。兩者皆為 temp root、皆未寫入真實 `data/session-history/`，故 data safety 不受影響；但因兩個 server 不再競爭同一個 lease，T0 記錄的 3 項 root-lock 失敗被繞過而非修復。另外 4173 的 preview server 由本 task 手動以 `vite preview` 起（`npm run build` 當時因平行 WP-57 的 in-flight 型別錯誤而紅，使 config 的 preview webServer 無法啟動；該錯誤在平行工作收尾後自行消失，最終 `npm run build` exit 0），收尾已停止。`.wp56-capture-tmp/` 為 T6 runner 的 untracked temp 目錄，未提交；因仍有 live server 佔用且不屬本 task 所有，未刪除。
+
+Worktree 狀態揭露：本次 gate 執行時 worktree 同時帶有平行 WP-57／spider-shot-v3 的進行中變更（`DrillConfig`／`schema`／`DrillLoader`／`TargetManager`／`spiderEyeFrame`／`main.ts`／`SessionRunner`／`spiderShotConditions` 與多個新檔）。上述 Vitest／build／Playwright 數字因此涵蓋那份工作；本 task 只 stage 自己的檔案，未觸碰、未改寫該工作。
+
+### T-exit acceptance：A-56.1～12
+
+| ID | Scenario | Evidence | 判定 |
+|---|---|---|---|
+| A-56.1 | researcher load | E2E test 1／2 的`loadMicroFlick()`：`#drill-select`選exact drill → `#scene-select`成為`micro-flick-room` → 3個alive&&visible | ✅ |
+| A-56.2 | hit replacement | T2 `TargetManager.population.test.ts`（撤`t1`後`t0/t2`逐位不變、7.8125 ms補`t3`）＋T4 real-config integration（中心射線只命中最近`t0`）＋E2E test 2（`visible t0..t3`、`fire hit targetId=t0`） | ✅ |
+| A-56.3 | miss/stale | T2：unknown ID與double kill皆no-op且不消耗budget；T4 miss不補位 | ✅ |
+| A-56.4 | fixed player | T4 SimLoop regression（1,280 ticks W/A/S/D + 非零初始速度 → position/velocity/prev-curr不變、yaw/pitch保留）＋E2E test 1（KeyD後player逐位相同、`stopped=true`） | ✅ |
+| A-56.5 | exhaustion/restart | T2 budget tail `3→3→3→2→1→0` + runner進`ended` + same-seed restart opening一致；**E2E test 3（本次修正後真正成立）**：60發tap → `phase='ended'`、60 hits、restart opening序列相同 | ✅ |
+| A-56.6 | determinism | T2 regression：30/60/144/240 render FPS的96-tick replacement trace逐位一致 | ✅ |
+| A-56.7 | spawn stress | T2 property test：10,000 replacements全數finite／yaw±22°／pitch±12°／12–14u／unique active IDs／pair separation≥7° | ✅ |
+| A-56.8 | lifecycle | T3：1,000 replacements後`TargetView.poolSize===3`；50次enter/switch/leave維持2 lights + 1 asset group + 3 pooled meshes，離開後歸零 | ✅ |
+| A-56.9 | viewport/contrast | T3：1920×1080／1280×720投影四角+球半徑保留≥24 CSS px safe region、中央誤差≤1 px、紅球對牆面contrast≥3:1；E2E test 1斷言crosshair中心exact (640,360)／(960,540) | ✅ |
+| A-56.10 | no weapon | T3 allowlist + 真實`GLTFLoader.parseAsync()`（21 environment meshes、禁用名稱命中0）；T-exit boundary scan重驗GLTF僅含floor/ceiling/end-wall/side-panel-*/unit-cube-*/mat-*節點（唯一`target`字串為glTF規格的bufferView `"target": 34962`，非節點名）；T6人工截圖無槍/手/muzzle | ✅ |
+| A-56.11 | failure recovery | T3 `SceneLoadCoordinator.test.ts`：rapid A→B、same-scene supersession、late-arrival在掛入前dispose；T6強制abort GLTF後顯示既有generic placeholder且HUD／crosshair／live targets仍在（accepted fallback difference） | ✅（見下方殘留量測缺口） |
+| A-56.12 | data honesty | T1／T4 negative fixtures：無participant/assessment registry、無exact或near-miss full replay profile、`HistoryPersistence`在呼叫client前short-circuit；`visible/fire/hit`事件保留exact targetId且無duplicate visible | ✅ |
+
+### FR／NFR traceability 對帳
+
+FR-56.1～15全數有自動或已核准人工證據：FR-56.1／14→T1 registry + practice-only negative tests；FR-56.2／15→T3 asset/scene load/fallback + T6視覺；FR-56.3／4→T4 + E2E test 1；FR-56.5～10→T1 schema + T2 population property/lifecycle + T4 hit integration；FR-56.11／12→T3 allowlist + T6；FR-56.13→T3 50-cycle resource counters。
+
+NFR：56.1（≤7.8125 ms）／56.2（四FPS parity）／56.3（10k invariants）→T2；56.4（`TargetManager.tick + TargetView.sync` 10,000 warmed P95 **0.0115 ms** < 1 ms）→T5 `src/sim/micro-flick-performance.test.ts`；56.5（1k replacements後pool=3）→T3；56.6（cached選擇→首個可見走廊frame **p95 62.0 ms** < 1,500 ms，20個真實transaction）→本次T-exit重新量測；56.7／56.8→T3 + E2E；56.9→下方gates。
+
+**殘留量測缺口（明確不掩蓋）**：NFR-56.6 的第二子句「load failure 仍可於 **100 ms** 內操作離開／切換」只有結構性證據（`SceneLoadCoordinator` dispose/supersession tests + T6 強制 abort 後 UI 仍可操作的截圖），**沒有瀏覽器內的時間量測**。此項不在 T-exit exit criteria 的四個 blocking 條件內，故不阻擋交付，但若後續要把 Micro Flick 升為正式 Assessment，應補一個 forced-failure 的 time-to-interactive 量測。
 
 ## Surprises & Discoveries（T-exit）
 

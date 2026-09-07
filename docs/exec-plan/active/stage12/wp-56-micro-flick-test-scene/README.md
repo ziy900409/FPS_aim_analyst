@@ -14,7 +14,7 @@
 | **Delivery policy** | v1 為 practice／researcher-only；不加入正式 participant protocol、不宣稱 full replay、不改研究指標定義 |
 | **Estimate** | 8.5–15.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：`DrillConfig` 與 `SceneConfig` 為跨模組核心契約；`TargetManager`／`DrillRunner` 註解與部分測試建立在單 active target 假設上 |
-| **Status** | T0／T1 complete（2026-09-04）；T2～T6 complete（2026-09-07）；T-exit blocked by repeatable T5 E2E rerun regression（see progress.md） |
+| **Status** | ✅ **Delivered（2026-09-07）**：T0／T1（2026-09-04）、T2～T6 與 T-exit（2026-09-07）全部完成。T6 記錄的兩個 T5 E2E rerun 失敗經 T-exit 診斷確認為**測試前提缺陷**（非 production 缺陷、與 WP-57 無關），已修正並全綠——診斷、cadence 掃描與 NFR-56.6 重新量測見 [progress.md](progress.md) |
 
 ---
 

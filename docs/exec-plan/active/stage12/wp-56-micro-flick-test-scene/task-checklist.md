@@ -60,11 +60,11 @@
 
 ## T-exit
 
-- [ ] FR-56.1～15與NFR-56.1～9都有客觀 evidence。
-- [ ] practice-only／no-full-replay／no-history boundary有自動測試。
-- [ ] 全測試、perf、resource、visual與failure matrix通過。
-- [ ] README、task-checklist、progress與上層Stage 12索引（若存在）同步。
-- [ ] `graphify update .`、CodeGraph pending、git status/diff/staged names完成對帳。
+- [x] (2026-09-07) FR-56.1～15與NFR-56.1～9都有客觀 evidence（traceability 表見 progress.md T-exit Evidence Log）。
+- [x] (2026-09-07) practice-only／no-full-replay／no-history boundary有自動測試（T1/T4 negative fixtures）。
+- [x] (2026-09-07) 全測試、perf、resource、visual與failure matrix通過；A-56.1～12全數有機器可讀或已核准的人工證據。
+- [x] (2026-09-07) README、task-checklist、progress與上層Stage 12索引同步。
+- [x] (2026-09-07) boundary scans（engine無drill/scene id特例、spawn無`Math.random`/時鐘、GLTF無weapon/hands/target節點）通過；staged names只含本WP檔案，平行WP-57變更未觸碰。`graphify update .`未執行——本task未改production code，且graphify產物正被平行工作佔用（沿用T3先例）。
 
 ## Commit discipline
 

@@ -1,6 +1,6 @@
 # 階段 L（stage12）— Micro-flick 場景 + Spider Shot 大幅度拉槍 + Session Program 排程器
 
-> **狀態：🟡 active。** WP-56（micro-flick 三靶測試場景）T0～T4 完成、T5～T6 未開始；WP-57（Spider Shot 大幅度拉槍）與 WP-58（Session Program 排程器）皆已完成規劃、未開工。
+> **狀態：🟡 active。** WP-56（micro-flick 三靶測試場景）**✅ T-exit 交付 2026-09-07**；WP-57（Spider Shot 大幅度拉槍）與 WP-58（Session Program 排程器）皆已完成規劃、未開工。
 >
 > 三個 WP 互不相依。WP-56／WP-57 各交付一個 researcher-only 的測試場景與 drill；WP-58 交付排程層，讓研究者能把任意 drill（含前兩者的產物）編成有序的測試 program。
 
@@ -8,7 +8,7 @@
 |---|---|
 | **WP-56 目標** | 依參考影片交付灰白狹長走廊 micro-flick 場景：玩家位置固定、場上恆維持最多三顆球形目標、命中後最遲下一個 sim tick 補位 |
 | **WP-56 交付定位** | practice／researcher-only；不進正式 participant protocol、不改研究指標定義、不做槍枝/手臂 view model |
-| **WP-56 狀態** | 🟡 T0／T1（2026-09-04）+ T2～T4（2026-09-07）完成；T5～T6 未開始 |
+| **WP-56 狀態** | ✅ **T-exit 交付 2026-09-07**：T0／T1（2026-09-04）+ T2～T6／T-exit（2026-09-07）。T6 遺留的兩個 T5 E2E rerun 失敗經 T-exit 診斷為測試前提缺陷（非 production 缺陷、與 WP-57 無關），已修正並全綠 |
 | **WP-57 目標** | Spider Shot 大幅度拉槍：寬場 arena + 中心↔貼近水平 FOV 極限的周邊目標交替，周邊 yaw 於 arm 時由 FOV／aspect 解析並凍結 |
 | **WP-57 交付定位** | practice／researcher-only；不改 `spider-shot-v1`／`v2` 參數、不晉升 Assessment、不進 history／compatibility cohort |
 | **WP-57 狀態** | ⬜ 規劃完成（2026-09-07），T0 未開始 |
@@ -23,7 +23,7 @@
 
 | WP | 子資料夾 | 目標 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|
-| **WP-56** | [`wp-56-micro-flick-test-scene/`](wp-56-micro-flick-test-scene/README.md) | Micro flick 三靶測試場景（走廊 + 固定玩家 + 三靶 lifecycle + 命中補位） | — | 8.5–15.5 | 🟡 T0～T4 ✅／T5～T6 ⬜ |
+| **WP-56** | [`wp-56-micro-flick-test-scene/`](wp-56-micro-flick-test-scene/README.md) | Micro flick 三靶測試場景（走廊 + 固定玩家 + 三靶 lifecycle + 命中補位） | — | 8.5–15.5 | ✅ T0～T6 + T-exit（2026-09-07） |
 | **WP-57** | [`wp-57-spider-shot-wide-flick/`](wp-57-spider-shot-wide-flick/README.md) | Spider Shot 大幅度拉槍（eye-frame 幾何 + 寬場 arena + arm-time FOV 解析） | 參照 WP-56 的 `playerControl.translation` seam | 9.5–16 | ⬜ 規劃完成 |
 | **WP-58** | [`wp-58-session-program-scheduler/`](wp-58-session-program-scheduler/README.md) | Session Program 排程器（drill 清單 + reps + 兩級休息 + 編譯預覽 + 稽核 metadata） | 無 | 7.5–12.5 | ⬜ 規劃完成 |
 
