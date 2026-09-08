@@ -1,8 +1,8 @@
-# 階段 L（stage12）— Micro-flick 場景 + Spider Shot 大幅度拉槍 + Session Program 排程器
+# 階段 L（stage12）— Micro-flick、Spider Shot、Session Program 與 v8 替補間距
 
-> **狀態：🟡 active。** WP-56（micro-flick 三靶測試場景）**✅ T-exit 交付 2026-09-07**；WP-57（Spider Shot 大幅度拉槍）**✅ T-exit 交付 2026-09-08**；WP-58（Session Program 排程器）已完成規劃、未開工。
+> **狀態：🟡 active。** WP-56（micro-flick 三靶測試場景）**✅ T-exit 交付 2026-09-07**；WP-57（Spider Shot 大幅度拉槍）**✅ T-exit 交付 2026-09-08**；WP-58（Session Program 排程器）與 WP-59（Micro Flick v8 替補間距）已完成規劃、未開工。
 >
-> 三個 WP 互不相依。WP-56／WP-57 各交付一個 researcher-only 的測試場景與 drill；WP-58 交付排程層，讓研究者能把任意 drill（含前兩者的產物）編成有序的測試 program。
+> WP-56／WP-57 各交付一個 researcher-only 的測試場景與 drill；WP-58 交付排程層；WP-59 依賴 WP-56 的 population seam，修正固定狹窄生成區下的 v8 替補位置品質。
 
 | | |
 |---|---|
@@ -15,7 +15,10 @@
 | **WP-58 目標** | Session Plan 從「四家族固定排程」升級為「可自由編排的 drill program」：選 drill、設 reps、設 drill／家族兩級休息秒數 |
 | **WP-58 交付定位** | 純排程層；不新增 drill、不改任何 `DrillConfig`、不改 sim／命中／指標語意。frozen「標準 Assessment」路徑逐位不變 |
 | **WP-58 狀態** | ⬜ 規劃完成（2026-09-07），未開工 |
-| **里程碑** | 尚未指派。下一個可用編號為 **M22**（M20／M21 已由 stage11 的 WP-54／WP-55 取用）。三個 WP 目前各以 T-exit gate 為交付判定 |
+| **WP-59 目標** | 在不擴大 v8 yaw／pitch／distance 生成區的前提下，降低擊殺後替補目標貼近原位置而可原地再射的機率 |
+| **WP-59 交付定位** | practice-only v8 參數與通用 optional spawn policy；其他 drills 的 config/RNG/trace 不變 |
+| **WP-59 狀態** | ⬜ 規劃完成（2026-09-08），未開工 |
+| **里程碑** | 尚未指派。下一個可用編號為 **M22**（M20／M21 已由 stage11 的 WP-54／WP-55 取用）。四個 WP 目前各以 T-exit gate 為交付判定 |
 
 ---
 
@@ -26,26 +29,29 @@
 | **WP-56** | [`wp-56-micro-flick-test-scene/`](wp-56-micro-flick-test-scene/README.md) | Micro flick 三靶測試場景（走廊 + 固定玩家 + 三靶 lifecycle + 命中補位） | — | 8.5–15.5 | ✅ T0～T6 + T-exit（2026-09-07） |
 | **WP-57** | [`wp-57-spider-shot-wide-flick/`](wp-57-spider-shot-wide-flick/README.md) | Spider Shot 大幅度拉槍（eye-frame 幾何 + 寬場 arena + arm-time FOV 解析） | 參照 WP-56 的 `playerControl.translation` seam | 9.5–16 | ✅ **T-exit 交付 2026-09-08** |
 | **WP-58** | [`wp-58-session-program-scheduler/`](wp-58-session-program-scheduler/README.md) | Session Program 排程器（drill 清單 + reps + 兩級休息 + 編譯預覽 + 稽核 metadata） | 無 | 7.5–12.5 | ⬜ 規劃完成 |
+| **WP-59** | [`wp-59-micro-flick-v8-replacement-spacing/`](wp-59-micro-flick-v8-replacement-spacing/README.md) | v8 時序替補間距（固定生成區 + bounded candidate ranking + deterministic fallback） | WP-56 | 3.5–6 | ⬜ 規劃完成 |
 
 ## 2. 相依關係
 
 ```
-WP-56（micro-flick 場景／drill）──┬── WP-57 參照其 translation seam 先例（非硬相依）
-                                   │
-WP-57（spider shot wide flick）────┤
-                                   │
-WP-58（session program 排程器）────┘   三者可並行
+WP-56（micro-flick 場景／drill）──┬──► WP-59（v8 替補間距）
+                                  │
+                                  └──── WP-57 參照 translation seam 先例（非硬相依）
+
+WP-58（session program 排程器）──────── 無硬相依，可與 WP-57／WP-59 並行
 ```
 
 WP-58 的 drill→family 對照表會把 stage12 產出的新 drill 登記為可排程；但依 WP-58 FR-58.3，家族歸屬**不授予** Assessment 資格，WP-56／WP-57 的 practice-only 定位不受影響。若 WP-56／WP-57 在 WP-58 T1 之後才確定 drill id，T1 的對照表需回頭同步。
 
+WP-59 只依賴 WP-56 已交付的 `TargetManager` population／replacement seam；它不依賴 WP-57 或 WP-58，也不擴大 v8 場景或生成範圍。
+
 ## 3. 編號分配（GD-15「先採納先得」）
 
-| 資源 | WP-56 | WP-57 | WP-58 | 下一個可用 |
-|---|---|---|---|---|
-| WP 編號 | 56 | 57 | 58 | 59 |
-| 全域決策 | — | GD-32 | GD-33 | GD-34 |
-| 里程碑 | 未指派 | 未指派 | 未指派 | M22 |
+| 資源 | WP-56 | WP-57 | WP-58 | WP-59 | 下一個可用 |
+|---|---|---|---|---|---|
+| WP 編號 | 56 | 57 | 58 | 59 | 60 |
+| 全域決策 | — | GD-32 | GD-33 | GD-34（T0 proposed） | GD-35 |
+| 里程碑 | 未指派 | 未指派 | 未指派 | 未指派 | M22 |
 
 > WP-57 與 WP-58 於 2026-09-07 同日在兩個平行 session 中規劃，一度都暫用 WP-57／GD-32。WP-57（spider shot）資料夾先建立，依 GD-15「先採納先得」保留 WP-57／GD-32；session program 排程器順延重編為 **WP-58／GD-33**。
 

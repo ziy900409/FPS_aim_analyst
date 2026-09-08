@@ -11,7 +11,9 @@
       "Bash(python -)",
       "Bash(npx playwright *)",
       "Bash(break)",
-      "Bash(npx.cmd playwright *)"
+      "Bash(npx.cmd playwright *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m ' *)"
     ]
   },
   "enabledMcpjsonServers": [

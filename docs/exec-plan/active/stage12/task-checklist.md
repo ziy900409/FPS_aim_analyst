@@ -49,10 +49,23 @@
 | ⬜ | T6 E2E 整合／回歸對帳 |
 | ⬜ | T-exit |
 
+## WP-59 — Micro Flick v8 Replacement Spacing
+
+明細：[wp-59-micro-flick-v8-replacement-spacing/README.md](wp-59-micro-flick-v8-replacement-spacing/README.md#-task-breakdown)
+
+| Done | Task |
+|---|---|
+| ⬜ | T0 Reproduction and parameter freeze |
+| ⬜ | T1 Additive contract |
+| ⬜ | T2 Temporal sampler |
+| ⬜ | T3 V8 integration |
+| ⬜ | T4 Full-system evidence |
+| ⬜ | T-exit |
+
 ## 階段層 Definition of Done
 
-- [ ] 三個 WP 的 T-exit gate 皆通過並有客觀證據。
-- [ ] `docs/exec-plan/README.md` §2 已加入 stage12 段落與三個 WP 的狀態列。
+- [ ] 四個 WP 的 T-exit gate 皆通過並有客觀證據。
+- [ ] `docs/exec-plan/README.md` §2 已加入 stage12 段落與四個 WP 的狀態列。
 - [ ] stage12 的里程碑歸屬已由 owner 決定（指派 M22 或明示不設里程碑）。
-- [ ] WP-57 的 GD-32 與 WP-58 的 GD-33 皆已入 [DECISIONS.md](../../DECISIONS.md)，且編號無衝突。
+- [ ] WP-57 的 GD-32、WP-58 的 GD-33 與 WP-59 的 GD-34 皆已入 [DECISIONS.md](../../DECISIONS.md)，且編號無衝突。
 - [ ] 若 stage12 新增的 drill 要進 WP-58 的排程清單，drill id 已與 WP-58 T1 的對照表對帳。
