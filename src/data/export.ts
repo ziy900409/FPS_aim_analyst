@@ -1,12 +1,16 @@
 import type { DrillEvent, DataRecorderSnapshot } from './DataRecorder.ts';
 import type { Meta } from './metadata.ts';
+import type { MouseSampleBlock } from './mouseSampleArena.ts';
 import type { TickRecord } from './RingBuffer.ts';
 
 export interface ExportPayload {
   meta: Meta;
   ticks: TickRecord[];
   events: DrillEvent[];
+  mouseSamples?: MouseSampleBlock;
 }
+
+export type { MouseSampleBlock } from './mouseSampleArena.ts';
 
 export interface CsvFile {
   filename: string;
@@ -29,9 +33,11 @@ export function buildExportPayload(meta: Meta, snapshot: DataRecorderSnapshot): 
       ...(meta.validity !== undefined
         ? { validity: { ...meta.validity, recorderOverflow } }
         : {}),
+      ...(snapshot.mouseSampling !== undefined ? { mouseSampling: snapshot.mouseSampling } : {}),
     },
     ticks: snapshot.ticks,
     events: snapshot.events,
+    ...(snapshot.mouseSamples !== undefined ? { mouseSamples: snapshot.mouseSamples } : {}),
   };
 }
 
@@ -376,6 +382,17 @@ function assertFinitePayload(payload: ExportPayload): void {
     formatNumber(summary.p95);
     formatNumber(summary.p99);
     formatNumber(summary.overBudgetWindows);
+  }
+  if (payload.mouseSamples !== undefined) {
+    formatNumber(payload.mouseSamples.t0Ms);
+    for (const dtUs of payload.mouseSamples.dtUs) formatNumber(dtUs);
+    for (const dx of payload.mouseSamples.dx) formatNumber(dx);
+    for (const dy of payload.mouseSamples.dy) formatNumber(dy);
+  }
+  if (payload.meta.mouseSampling !== undefined) {
+    formatNumber(payload.meta.mouseSampling.recorded);
+    formatNumber(payload.meta.mouseSampling.capacity);
+    formatNumber(payload.meta.mouseSampling.observedRateHz);
   }
 }
 

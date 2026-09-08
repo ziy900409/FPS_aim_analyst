@@ -35,14 +35,14 @@
 
 ## Definition of Done
 
-- [ ] `MouseSampleArena` 單元測試：容量邊界（滿前一筆／恰滿／滿後一筆）、`overflow` 轉態、`reset()` 清空、`snapshot()` 三陣列等長。
-- [ ] 關閉錄製時，既有 export round-trip fixture 的序列化輸出與 `git show HEAD:` 版本**逐位相同**（測試以字串比對釘死，非「看起來一樣」）。
-- [ ] strict parser 的六格 fixture 矩陣全綠；四種非法形狀各自擲出**指名該欄位**的 typed error（斷言錯誤訊息含欄位名，非只斷言 throw）。
-- [ ] `meta.mouseSampling.overflow = true` 時 `meta.suspect` 不變的斷言通過。
-- [ ] 既有全量 Vitest 綠、既有 golden／determinism／export 測試**期望值零修改**（`git diff` 可證）。
-- [ ] `npm run typecheck`（兩個 tsconfig）exit 0；`npx vite build` exit 0。
-- [ ] 60 s 規模樣本的 `JSON.stringify` 耗時記入 `progress.md`（含測法）。
-- [ ] `CONTEXT.md` 新增三個術語；全 repo 無 `LOD` 縮寫命名。
+- [x] (2026-09-08 14:31Z) `MouseSampleArena` 單元測試：容量邊界（滿前一筆／恰滿／滿後一筆）、`overflow` 轉態、`reset()` 清空、`snapshot()` 三陣列等長。
+- [x] (2026-09-08 14:31Z) 關閉錄製時，既有 export round-trip fixture 的序列化輸出與 `git show HEAD:` 版本**逐位相同**（測試以字串比對釘死，非「看起來一樣」）。
+- [x] (2026-09-08 14:31Z) strict parser 的六格 fixture 矩陣全綠；四種非法形狀各自擲出**指名該欄位**的 typed error（斷言錯誤訊息含欄位名，非只斷言 throw）。
+- [x] (2026-09-08 14:31Z) `meta.mouseSampling.overflow = true` 時 `meta.suspect` 不變的斷言通過。
+- [x] (2026-09-08 14:31Z) 既有全量 Vitest 綠、既有 golden／determinism／export 測試**期望值零修改**（`git diff` 可證）。
+- [x] (2026-09-08 14:31Z) `npm run typecheck`（兩個 tsconfig）exit 0；`npx vite build` exit 0。
+- [x] (2026-09-08 14:31Z) 60 s 規模樣本的 `JSON.stringify` 耗時記入 `progress.md`（含測法）。
+- [x] (2026-09-08 14:31Z) `CONTEXT.md` 新增三個術語；全 repo 無 `LOD` 縮寫命名。
 
 ## Commit
 

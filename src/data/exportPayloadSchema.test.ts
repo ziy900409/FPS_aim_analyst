@@ -87,6 +87,10 @@ describe('parseExportPayload — positive: every DrillEvent variant', () => {
     expectOk(payloadWithEvents([{ type: 'key', code: 'A', down: true, t: 0 }]));
   });
 
+  it('parses pointer_lock', () => {
+    expectOk(payloadWithEvents([{ type: 'pointer_lock', locked: false, t: 125.5 }]));
+  });
+
   it('parses fire', () => {
     expectOk(
       payloadWithEvents([
@@ -302,6 +306,145 @@ describe('parseExportPayload — WP-54 T7 additive tick.fire (tracking-pilot-v2)
     const result = parseExportPayload(minimalPayload({ ticks: [validTick({ fire: 1 })] }));
     if (result.ok) throw new Error('expected payload to be rejected');
     expect(result.errors.map((error) => error.path)).toContain('ticks[0].fire');
+  });
+});
+
+describe('parseExportPayload — WP-60 T1 raw mouse samples', () => {
+  it('accepts legacy payloads that omit mouseSamples and meta.mouseSampling', () => {
+    const result = parseExportPayload(minimalPayload({}));
+    if (!result.ok) throw new Error('expected legacy payload to parse');
+    expect(result.payload.mouseSamples).toBeUndefined();
+    expect(result.payload.meta.mouseSampling).toBeUndefined();
+  });
+
+  it('round-trips a valid columnar mouseSamples block with provenance', () => {
+    const payload = minimalPayload({
+      meta: minimalMeta({
+        mouseSampling: {
+          recorded: 3,
+          capacity: 72_000,
+          overflow: false,
+          timeSource: 'event.timeStamp',
+          deltaUnit: 'counts',
+          observedRateHz: 1000,
+        },
+      }),
+      events: [{ type: 'pointer_lock', locked: true, t: 99 }],
+    }) as Record<string, unknown>;
+    payload.mouseSamples = { t0Ms: 100, dtUs: [0, 1000, 1000], dx: [2, -1, 0], dy: [0, 3, -2] };
+
+    const result = parseExportPayload(payload);
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.mouseSampling?.timeSource).toBe('event.timeStamp');
+    expect(result.payload.mouseSamples).toEqual({ t0Ms: 100, dtUs: [0, 1000, 1000], dx: [2, -1, 0], dy: [0, 3, -2] });
+
+    const reparsed = parseExportPayload(JSON.parse(canonicalExportJSON(result.payload)));
+    if (!reparsed.ok) throw new Error(`expected ok on reparse, got errors: ${JSON.stringify(reparsed.errors)}`);
+    expect(reparsed.payload).toEqual(result.payload);
+  });
+
+  it.each([
+    ['non-finite t0Ms', { t0Ms: Number.NaN, dtUs: [0], dx: [1], dy: [1] }, 'mouseSamples.t0Ms'],
+    ['mismatched dx length', { t0Ms: 1, dtUs: [0, 1000], dx: [1], dy: [1, 2] }, 'mouseSamples.dx'],
+    ['negative dtUs', { t0Ms: 1, dtUs: [0, -1], dx: [1, 2], dy: [1, 2] }, 'mouseSamples.dtUs[1]'],
+    ['non-integer dtUs', { t0Ms: 1, dtUs: [0, 1.5], dx: [1, 2], dy: [1, 2] }, 'mouseSamples.dtUs[1]'],
+  ])('rejects %s with a named field path', (_label, mouseSamples, expectedPath) => {
+    const payload = minimalPayload({}) as Record<string, unknown>;
+    payload.mouseSamples = mouseSamples;
+    const result = parseExportPayload(payload);
+    if (result.ok) throw new Error('expected payload to be rejected');
+    expect(result.errors.map((error) => error.path)).toContain(expectedPath);
+  });
+
+  it('accepts raw mouse overflow without changing meta.suspect', () => {
+    const payload = minimalPayload({
+      meta: minimalMeta({
+        suspect: false,
+        mouseSampling: {
+          recorded: 1,
+          capacity: 1,
+          overflow: true,
+          timeSource: 'event.timeStamp',
+          deltaUnit: 'counts',
+          observedRateHz: 0,
+        },
+      }),
+    }) as Record<string, unknown>;
+    payload.mouseSamples = { t0Ms: 10, dtUs: [0], dx: [4], dy: [5] };
+
+    const result = parseExportPayload(payload);
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.suspect).toBe(false);
+    expect(result.payload.meta.mouseSampling?.overflow).toBe(true);
+  });
+
+  it('rejects meta.mouseSampling.recorded > capacity with a named path', () => {
+    const result = parseExportPayload(
+      minimalPayload({
+        meta: minimalMeta({
+          mouseSampling: {
+            recorded: 2,
+            capacity: 1,
+            overflow: true,
+            timeSource: 'event.timeStamp',
+            deltaUnit: 'counts',
+            observedRateHz: 1000,
+          },
+        }),
+      }),
+    );
+
+    if (result.ok) throw new Error('expected payload to be rejected');
+    expect(result.errors.map((error) => error.path)).toContain('meta.mouseSampling.recorded');
+  });
+
+  it('rejects provenance/sample count mismatches with a named path', () => {
+    const payload = minimalPayload({
+      meta: minimalMeta({
+        mouseSampling: {
+          recorded: 2,
+          capacity: 10,
+          overflow: false,
+          timeSource: 'event.timeStamp',
+          deltaUnit: 'counts',
+          observedRateHz: 1000,
+        },
+      }),
+    }) as Record<string, unknown>;
+    payload.mouseSamples = { t0Ms: 10, dtUs: [0], dx: [1], dy: [1] };
+
+    const result = parseExportPayload(payload);
+    if (result.ok) throw new Error('expected payload to be rejected');
+    expect(result.errors.map((error) => error.path)).toContain('meta.mouseSampling.recorded');
+  });
+
+  it('rejects mouseSamples without matching provenance', () => {
+    const payload = minimalPayload({}) as Record<string, unknown>;
+    payload.mouseSamples = { t0Ms: 10, dtUs: [0], dx: [1], dy: [1] };
+
+    const result = parseExportPayload(payload);
+    if (result.ok) throw new Error('expected payload to be rejected');
+    expect(result.errors.map((error) => error.path)).toContain('meta.mouseSampling');
+  });
+
+  it('rejects raw sampling provenance without a matching mouseSamples block', () => {
+    const result = parseExportPayload(
+      minimalPayload({
+        meta: minimalMeta({
+          mouseSampling: {
+            recorded: 0,
+            capacity: 10,
+            overflow: false,
+            timeSource: 'event.timeStamp',
+            deltaUnit: 'counts',
+            observedRateHz: 0,
+          },
+        }),
+      }),
+    );
+
+    if (result.ok) throw new Error('expected payload to be rejected');
+    expect(result.errors.map((error) => error.path)).toContain('mouseSamples');
   });
 });
 

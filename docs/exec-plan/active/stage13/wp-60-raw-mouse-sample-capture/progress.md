@@ -7,7 +7,7 @@
 | Task | Status | Started | Completed | Evidence |
 |---|---|---|---|---|
 | T0 Entry Gate | 🟡 Blocked（自動稽核完成；等待實機 Pointer Lock / 抬滑鼠 PoC） | 2026-09-08 | — | 見 §T0 automated audit（2026-09-08 13:39Z）。Baseline typecheck、Vitest、build 已跑；README §0 discovery 已覆驗；CodeGraph impact 已回填 README §0.2。R1/R2 需要真實瀏覽器 + 使用者滑鼠操作，本 session 無法替代，故 T0 不得標 done、T1～T4 不得開工。 |
-| T1 Capture Contract | ⬜ Not started | — | — | — |
+| T1 Capture Contract | ✅ Completed（依使用者明確指示 override T0 gate；contract-only，不接線） | 2026-09-08 | 2026-09-08 14:31Z | `npm.cmd test -- src/data/mouseSampleArena.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts src/data/exportPayloadSchema.test.ts src/data/metadata.test.ts` exit 0（182 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（244 files passed, 1 skipped；2561 passed, 2 skipped）；`npm.cmd run build` exit 0（既有 chunk-size warning）；60k `mouseSamples` JSON.stringify：567,316 bytes / p50 1.714 ms / p95 2.377 ms / max 2.546 ms；`rg -n "\bLOD\b" src tests scripts CONTEXT.md` exit 1（0 命中）。 |
 | T2 Recorder Wiring | ⬜ Not started | — | — | — |
 | T3 Time-Gap Primitive | ⬜ Not started | — | — | — |
 | T4 Operator Visibility | ⬜ Not started | — | — | — |
@@ -27,6 +27,10 @@
 | D-60.P7 | 2026-09-08 | **OQ-60.1 收斂：從 `performance_analysis` 移植無授權問題** —— 使用者為兩個 repo 的作者，同一組織，無第三方權利介入。⇒ R5 關閉、T3 不再被阻塞、GD-11 那一列在本 WP 不構成限制。<br>**連帶解鎖**：PA 的 `lod_v3_default_config.json`（十四個參數）與其 parity fixture 可**直接引用為起點**，不必從零重推 —— 這是原本要放棄的東西。T0 step 7 因此由「拍板」改為「取用並記名」。<br>⚠️ **但工程上仍不直接搬 Go 程式碼，理由改為技術性而非法律性**：`lodclean/service.go` 綁死三個對本專案不成立的前提 —— ① px/s 與 counts 空間（本專案是角度空間）、② 1 ms nominal dt（本專案 tick 為 7.8125 ms、事件率待 T0 實測）、③ 刻意複製 pandas 的 `fillna`／floored-modulo 語意以維持 Python↔Go parity（本專案不參與那個 parity）。硬搬會把三個錯誤前提一起帶進來。<br>**稽核要求仍在**：引用任何 PA 的參數或 fixture 必須記名來源與版本 —— 授權無虞不等於出處可以不寫。| 使用者 | 使用者回覆（2026-09-08）；[README.md](README.md) §1.5 OQ-60.1／§2b GD-11 列／§3.1 R5 |
 
 | D-60.T0-1 | 2026-09-08 | **T0 自動稽核不能替代 R1/R2 實機 gate。** 本 session 能完成 baseline、source re-audit、CodeGraph impact、PA 參數取用與 synthetic serialization PoC；但 `getCoalescedEvents()` 在 Pointer Lock 下是否回 sub-frame 樣本、以及抬起／停頓空洞是否可分離，必須由真實 Chromium/Edge + 實體滑鼠 + 使用者操作量測。沒有這兩組數字時，T0 狀態只能是 Blocked，不能進 T1。<br>**Alternatives considered**：(a) 用 Playwright synthetic mousemove 代替 —— 不會產生真實硬體 coalesced events，駁回；(b) 用 WP-57 真人 export 代替 —— 那些 export 不含 raw samples，且不進 repo，駁回；(c) 先做 T1 schema 再回頭補 gate —— 違反 T0 entry gate，駁回。 | Engineering | §T0 automated audit；[T0-entry-gate.md](T0-entry-gate.md) steps 3/4 |
+
+| D-60.T1-1 | 2026-09-08 | **T1 依使用者明確指示 override T0 gate，只交付擷取契約，不代表 R1/R2 實機 gate 已通過。**<br>理由：本 turn 的使用者指令明確要求建立獨立 worktree、讀 T1 contract、實作 T1；T1 的範圍可維持 contract-only，不接 `SimLoop`，因此不會產生偽裝已可收真人 raw sample 的 runtime 路徑。<br>**Alternatives considered**：(a) 因 T0 blocked 而停止 —— 最符合原 execution rule，但與本 turn 明確指令衝突，駁回；(b) 順手接 T2 runtime path —— 會讓未過 empirical gate 的功能進熱路徑，駁回；(c) 只加型別不加 parser/test —— 無法滿足 FR-60.4，駁回。 | Engineering | 使用者指令（2026-09-08）；本檔 T1 evidence |
+| D-60.T1-2 | 2026-09-08 | **T1 凍結 columnar + integer µs delta 格式，並要求 `mouseSamples` 與 `meta.mouseSampling` 成對出現。**<br>理由：60k 樣本序列化實測 567,316 bytes，低於 NFR-60.4 的 1.0 MB；`dtUs` 整數微秒保留 NFR-60.5 的時間精度。成對出現讓資料與 provenance 互相驗證：legacy 兩者都缺席合法；宣稱有其中之一但缺另一者是 typed parser error。<br>**Alternatives considered**：(a) array-of-objects —— T0 synthetic 約 2.16 MB，超出體積預算，駁回；(b) 絕對 `tMs[]` —— 體積較大且不需逐筆絕對時間，駁回；(c) 允許只有 block 或只有 meta —— 會讓離線端無法判定 provenance 或資料位置，駁回。 | Engineering | `src/data/mouseSampleArena.ts`; `src/data/exportPayloadSchema.test.ts`; serialization evidence |
+| D-60.T1-3 | 2026-09-08 | **T1 將 Pointer Lock 中斷落地為 additive `pointer_lock` DrillEvent，並將 raw sample 容量預設為 1000 Hz × drill seconds × 1.2 headroom。**<br>理由：Pointer Lock 是離散狀態 edge，比逐 tick boolean 更小且符合既有 `key` event opt-in 紀律；1.2 headroom 在滿足 1000 Hz 預設容量的同時保留事件率抖動空間，高輪詢率仍以 `meta.mouseSampling.overflow` 具名退化，不 OR 進 `meta.suspect`。<br>**Alternatives considered**：(a) tick boolean lock 欄位 —— 會為每個 run 多 128 Hz 連續欄位，駁回；(b) 容量開到 8000 Hz —— RAM/JSON 體積 8 倍，未有實測需求，駁回；(c) raw overflow 併入 `suspect` —— tick 資料仍有效，會錯殺既有指標用途，駁回。 | Engineering | `src/data/DataRecorder.ts`; `src/data/metadata.ts`; `src/data/export.test.ts` |
 
 ## T0 automated audit（2026-09-08 13:39Z）
 
@@ -113,6 +117,34 @@ T0 is **blocked, not failed**. Automated evidence is clean and production code d
 2. Three `spider-shot-wide-v1` operating modes with ≥10 attempts each: deliberate sensor lift, hand-still pause, one-shot uninterrupted movement.
 3. Frame-time open/closed comparison only after R1 demonstrates raw sampling is present enough to justify T1/T2.
 
+## T1 implementation audit（2026-09-08 14:31Z）
+
+### Scope
+
+- Added `MouseSampleArena` with preallocated `Float64Array` storage for `dx` / `dy` / `tMs`; snapshot exports `{ t0Ms, dtUs, dx, dy }` where `dtUs[0] = 0` and later entries are integer microsecond deltas.
+- Added `DataRecorder.recordMouseSamples` opt-in flag, `recordMouseSample(dx, dy, tMs)`, optional snapshot fields `mouseSamples` / `mouseSampling`, and additive `pointer_lock` event type.
+- Added `ExportPayload.mouseSamples?: MouseSampleBlock` and `Meta.mouseSampling?: MouseSamplingMeta`; `buildExportPayload()` adds both only when the snapshot provides them.
+- Extended `parseExportPayload()` so legacy absence is legal, while malformed `mouseSamples`, `meta.mouseSampling.recorded > capacity`, block/meta count mismatch, and one-sided block/meta presence return named typed errors.
+- Added CONTEXT.md terms: raw mouse sample, time gap, sample segment.
+
+### Verification
+
+| Item | Command / evidence | Result |
+|---|---|---|
+| Targeted T1 tests | `npm.cmd test -- src/data/mouseSampleArena.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts src/data/exportPayloadSchema.test.ts src/data/metadata.test.ts` | exit 0；5 files；182 passed |
+| Typecheck ×2 | `npm.cmd run typecheck` | exit 0 |
+| Full Vitest | `npm.cmd test` | exit 0；244 files passed, 1 skipped；2561 passed, 2 skipped |
+| Build | `npm.cmd run build` | exit 0；Vite 6.4.3；193 modules；`dist/assets/index-C9c4bVj9.js` 1,219.73 kB gzip 346.86 kB；保留既有 chunk-size warning |
+| 60 s columnar serialization | Node synthetic 60,000-sample `mouseSamples` block, 20 `JSON.stringify()` iterations | 567,316 bytes；p50 1.714 ms；p95 2.377 ms；max 2.546 ms |
+| LOD naming scan | `rg -n "\bLOD\b" src tests scripts CONTEXT.md` | exit 1；0 命中 |
+| Graph update | `graphify update .` | exit 0；4590 nodes / 11243 edges / 278 communities |
+
+### Contract Notes
+
+- `recordMouseSamples` defaults to `false`; disabled snapshots are byte-shape identical to pre-WP-60 snapshots.
+- Raw sampling overflow is represented only by `meta.mouseSampling.overflow`; it does not change `meta.suspect` or `recorderOverflow`.
+- T1 did not modify `SimLoop`; no runtime raw capture path is enabled until T2.
+
 ## Surprises
 
 1. **要偵測抬滑鼠所需的原始資料，這個專案其實一直都在收 —— 只是在進匯出前一步被丟掉。** [`InputSampler.ts:137-139`](../../../../../src/input/InputSampler.ts#L137-L139) 早在 WP-3（ADR-5，「1000 Hz 滑鼠下不遺失中間軌跡」）就用 `getCoalescedEvents()` 逐筆保留了 sub-frame 樣本與各自的 `event.timeStamp`；到了 [`SimLoop.ts:96-99`](../../../../../src/loop/SimLoop.ts#L96-L99) 才被 `accumulateMouse` 聚合成逐 tick 的 `dYaw`／`dPitch`。<br>⇒ 本 WP 的性質因此不是「新增一種量測」，而是**停止丟棄一份已經付過成本的資料**。這也解釋了為什麼 WP-57 的抬滑鼠標註只能做到「角速度停滯」—— 不是判準沒設計好，是它拿到的資料裡已經沒有那個資訊了。
@@ -126,10 +158,10 @@ T0 is **blocked, not failed**. Automated evidence is clean and production code d
 | ID | 狀態 | 待誰 | Deadline |
 |---|---|---|---|
 | OQ-60.1 移植 PA 方法學的授權狀態 | ✅ **已收斂 2026-09-08**：無授權問題（同一作者、同一組織）。R5 關閉、T3 解除阻塞、PA 參數與 fixture 可直接引用（D-60.P7）| — | — |
-| OQ-60.2 序列化格式（columnar µs vs array-of-objects）| 🟡 synthetic PoC 支持 columnar µs（60k samples: 593,031 bytes vs 2,158,328 bytes；max quantization error 0.369 µs），但缺 R1 實測事件率，故未正式收斂 | Engineering | T1 開工前 |
-| OQ-60.3 Pointer Lock 中斷如何入匯出 | 🟡 有建議值（additive `pointer_lock` DrillEvent）| Engineering + 使用者 | T1 凍結前 |
+| OQ-60.2 序列化格式（columnar µs vs array-of-objects）| ✅ **T1 contract 凍結**：columnar + integer µs delta；60k `mouseSamples` block 567,316 bytes / p95 2.377 ms。R1 實測事件率仍屬 T0/T2 runtime gate，不改 T1 schema。 | Engineering | — |
+| OQ-60.3 Pointer Lock 中斷如何入匯出 | ✅ **T1 contract 凍結**：additive `pointer_lock` DrillEvent（`{ type, locked, t }`），parser 已支援；T2/T3 負責接線與消歧。 | Engineering | — |
 | OQ-60.4 新判準與 `deriveRepositioningSuspicion()` 的關係 | 🔴 開放 | 使用者 + 研究 | WP-61 T0（不阻塞 WP-60）|
-| OQ-60.5 高輪詢率（4000／8000 Hz）是否支援 | 🟡 有建議值（不支援但偵測並具名）；缺 R1 實測事件率，容量常數未正式凍結 | 使用者 | T1 |
+| OQ-60.5 高輪詢率（4000／8000 Hz）是否支援 | ✅ **T1 contract 凍結**：預設容量 1000 Hz × drill seconds × 1.2 headroom；高輪詢率不預先支援，超出以 `meta.mouseSampling.overflow` 具名退化。R1 實測若顯示本專案常態 >1000 Hz，需另開決策升版。 | Engineering | — |
 | OQ-60.6 是否同步進 `research/` Python 側 | 🟡 有建議值（本 WP 內不做）| Engineering | WP-61 |
 
 ## 規劃期未解的前提風險

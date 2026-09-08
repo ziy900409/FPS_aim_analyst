@@ -1041,6 +1041,86 @@ describe('collectMeta', () => {
     });
   });
 
+  it('accepts raw mouse sampling provenance without changing suspect (WP-60 / T1)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      mouseSampling: {
+        recorded: 60_000,
+        capacity: 72_000,
+        overflow: false,
+        timeSource: 'event.timeStamp',
+        deltaUnit: 'counts',
+        observedRateHz: 1000,
+      },
+    });
+
+    expect(meta.suspect).toBe(false);
+    expect(meta.mouseSampling).toEqual({
+      recorded: 60_000,
+      capacity: 72_000,
+      overflow: false,
+      timeSource: 'event.timeStamp',
+      deltaUnit: 'counts',
+      observedRateHz: 1000,
+    });
+  });
+
+  it('rejects malformed raw mouse sampling provenance fields', () => {
+    const valid: CollectMetaArgs = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    };
+
+    expect(() =>
+      collectMeta({
+        ...valid,
+        mouseSampling: {
+          recorded: 2,
+          capacity: 1,
+          overflow: true,
+          timeSource: 'event.timeStamp',
+          deltaUnit: 'counts',
+          observedRateHz: 1000,
+        },
+      }),
+    ).toThrow('mouseSampling.recorded');
+    expect(() =>
+      collectMeta({
+        ...valid,
+        mouseSampling: {
+          recorded: 1,
+          capacity: 1,
+          overflow: true,
+          timeSource: 'performance.now' as 'event.timeStamp',
+          deltaUnit: 'counts',
+          observedRateHz: 1000,
+        },
+      }),
+    ).toThrow('mouseSampling.timeSource');
+    expect(() =>
+      collectMeta({
+        ...valid,
+        mouseSampling: {
+          recorded: 1,
+          capacity: 1,
+          overflow: true,
+          timeSource: 'event.timeStamp',
+          deltaUnit: 'pixels' as 'counts',
+          observedRateHz: 1000,
+        },
+      }),
+    ).toThrow('mouseSampling.deltaUnit');
+  });
+
   it('rejects a meta.mouseIntegration.model other than tick-window-integral', () => {
     expect(() =>
       collectMeta({
