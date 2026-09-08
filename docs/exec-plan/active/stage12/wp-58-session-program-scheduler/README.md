@@ -15,7 +15,7 @@
 | **Estimate** | 7.5–12.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | Med/High：`SessionRunner` 是 Session Plan 唯一 runtime；`KNOWN_SESSION_FAMILY_IDS` 是 KI-016 修過的 metadata allowlist 單一來源；新增家族 id 會擦撞 practice-only drill 的既有隔離意圖 |
 | **Milestone** | 無獨立里程碑，**T-exit gate 即交付判定**（比照 WP-27）。stage12 整體里程碑待 owner 定義（[OQ-58.5](#15-open-questions)） |
-| **Status** | ⬜ 規劃完成，未開工 |
+| **Status** | 🟡 **T0 ✅（2026-09-08）**，T1～T-exit 未開工。T0 產出：36 個 exact drillId 的歸屬表已凍結（§2.3）、CodeGraph impact 已對帳（§0.1）、OQ-58.1／58.2／58.4 已收斂（§1.5）、[GD-35](../../../DECISIONS.md) 已入帳。證據見 [progress.md](progress.md) §T0 |
 
 ---
 
@@ -49,7 +49,14 @@
 | `RestOverlay.ts` | `main.ts`、`RestOverlay.test.ts` | local |
 | `main.ts` 完成分支鏈 + metadata 注入 | live run 全鏈路 | **cross-module High** |
 
-> T0 必須以當時的 CodeGraph impact 重新量測並記錄實際 consumer 數；上表為規劃時的讀碼結果，不是量測值。
+> ~~T0 必須以當時的 CodeGraph impact 重新量測並記錄實際 consumer 數；上表為規劃時的讀碼結果，不是量測值。~~
+>
+> ✅ **已於 T0（2026-09-08）量測完成**，逐符號 consumer 數與分級見 [progress.md](progress.md) §T0 §1。上表大致相符，**兩處需補正**：
+>
+> 1. **`SessionRunnerPhase` 未被任何檔案具名 import** —— `main.ts` 只做 structural 的 `phase.kind` 比對（`:756`／`:1477`／`:1639`～`:1649`）。⇒ T3 改 phase union **不會**在 `main.ts` 產生型別錯誤，只會靜默失配。**T3 必須先讓 `main.ts` 顯式 import 該型別**，才拿得回編譯期保護。
+> 2. **`resolveFamilyDrillId` 在 `main.ts:283` 出現**，但僅為註解引用，**無 production call site** ⇒ 遷入 `drillFamily.ts` 安全。
+>
+> `KNOWN_SESSION_FAMILY_IDS` 實測 **8 個 consumer 檔**（上表少列 `main.ts` 與 `spider_shot_wide_v1.test.ts`），cross-module High 分級不變。
 
 ---
 
@@ -60,8 +67,8 @@
 | ID | Requirement |
 |---|---|
 | **FR-58.1** | 系統**必須**提供一份 drill → family 的**單一來源**對照表，涵蓋所有可排程 drill；並與既有 family → 代表 drill 的映射放在同一模組，兩個方向的一致性由測試斷言，不得散落成第二份清單。 |
-| **FR-58.2** | 系統**必須**把三個新家族 id（`tracking` / `detection` / `micro-flick`）以**純加法**方式加入 `KNOWN_SESSION_FAMILY_IDS`；`TEST_FAMILY_IDS` 的四元素內容與順序、`buildFamilyOrder()` 的輪轉結果逐位不變。 |
-| **FR-58.3** | 家族歸屬**不得**單獨授予任何 drill Assessment 資格。practice-only drill 可被排入自訂 program，但仍不得進入 `DrillMetricRegistry`、history 保存或 frozen protocol cohort。 |
+| **FR-58.2** | 系統**必須**把 ~~三~~ **四**個新家族 id（`tracking` / `detection` / `micro-flick` / **`spider-shot-wide`**）以**純加法**方式加入 `KNOWN_SESSION_FAMILY_IDS`；`TEST_FAMILY_IDS` 的四元素內容與順序、`buildFamilyOrder()` 的輪轉結果逐位不變。<br>**T0 更正**：`spider-shot-wide` 為 T0 新增（使用者 2026-09-08 決議）——`spider-shot-wide-v1` 是 spider-shot 的 *sibling construct*（~40–70° vs ~10–25°，WP-57），併入 `spider-shot` 會讓兩個不同構念之間只拿到 drill 休息而非家族休息，與 FR-58.5 的邊界語意衝突。 |
+| **FR-58.3** | 家族歸屬**不得**單獨授予任何 drill Assessment 資格。practice-only drill 可被排入自訂 program，但仍不得進入 `DrillMetricRegistry`、history 保存或 frozen protocol cohort。<br>**T0 發現**：此解耦在**現況已成立**——資格由兩道與家族正交的閘決定（`DrillConfig.mode === 'assessment'` → `meta.assessment`；`DrillMetricRegistry` 的 3 筆 exact-id 登記，無 family fallback）。⇒ T1 的工作是把既有事實**釘死成回歸測試**，而非建立新行為。 |
 | **FR-58.4** | 系統**必須**提供純函式 `compileSessionProgram(plan)`，把 `{ items: (drillId, reps)[], drillRestSeconds, familyRestSeconds }` 編譯成有序 `ProgramStep[]`；函式不得接觸 DOM、Three、時鐘、檔案系統或亂數。 |
 | **FR-58.5** | 編譯器**必須**依下列規則插入休息：相鄰兩個 `run` 之間，同一 item → `boundary='rep'`；不同 item 但同 family → `'drill'`；不同 family → `'family'`。`seconds` 取 `boundary === 'family' ? familyRestSeconds : drillRestSeconds`。 |
 | **FR-58.6** | 編譯結果的第一個與最後一個 step **必須**是 `run`；程式開頭與結尾不得有休息。秒數為 0 的休息在編譯期即省略，不產生會閃現一幀的 overlay step。 |
@@ -103,7 +110,8 @@
 ### 1.4 Assumptions
 
 - 使用者情境「A ×3 / 30s，60s，B ×3 / 30s，60s，C ×3 / 30s」成立的前提是 **A、B、C 各屬不同家族**；同家族相鄰 drill 依 FR-58.5 拿到 drill 休息（30s），這是模型定義而非缺陷，由 FR-58.13 的預覽表使其可見。
-- 每一輪 rep 等同一次完整的 drill restart，沿用既有 `loadDrillById` → `activateDrill` 語意；本 WP 不改變 restart 的 seed 行為（seed 是否逐輪變化見 [OQ-58.1](#15-open-questions)）。
+- 每一輪 rep 等同一次完整的 drill restart，沿用既有 `loadDrillById` → `activateDrill` 語意；本 WP 不改變 restart 的 seed 行為。**OQ-58.1 已於 T0 收斂為「逐輪相同」**（使用者 2026-09-08）⇒ T3 **不動** drill 載入路徑。
+- ⚠️ **reps 的語意限制（T0 實證，已接受）**：同一 drill 的每一輪拿到**同一個 config seed**，spawn 序列逐位相同（`detection_popin_v1` 三輪的目標座標完全一致）。reps 因此是「**重複同一組刺激**」而非「同一難度的多次獨立取樣」，輪與輪之間存在**練習效應**。分析端**不得**把同一 item 的多個 rep 當成 i.i.d. 重複取樣；此限制須由 T5 寫入 metadata 契約與 `docs/operational/` 分析文件（C-D3 延伸）。
 - 休息倒數在 tab 隱藏時的行為沿用現況（`poll()` 由 rAF 驅動，背景分頁會停擺）；本 WP 不新增背景計時補償。
 - 自訂 program 的參與者仍走既有 eligibility gate 與 `SESSION_PLAN_MIN_CONDITION`，不新增顯示條件。
 - 表單的 drill 清單來源為 `availableDrills`；未在對照表中登記家族的 drill 不出現在清單，而不是給一個 fallback 家族。
@@ -112,10 +120,10 @@
 
 | ID | Question | Recommended default | Owner | Deadline | Impact if unresolved |
 |---|---|---|---|---|---|
-| **OQ-58.1** | 同一 drill 連跑 N 輪時，seeded spawn 序列應逐輪相同還是逐輪變化？相同 → 三輪練習到同一組位置（練習效應污染）；變化 → 需定義 seed 推導規則並寫入 metadata（GD-5/GD-8 要求 seed 可稽核）。 | **逐輪變化**：`seed_rep = f(baseSeed, itemIndex, repIndex)` 的決定性純函式，每輪 seed 寫入該輪 metadata | 使用者 | T0 exit、T3 前 | 決定 T3 是否要動 drill 載入路徑；未定則 reps 的研究意義不明 |
-| **OQ-58.2** | 同一 drill 三輪的匯出檔名如何保證唯一？`exportBasename(payload)` 目前的組成需確認是否已含時間戳。 | 若不含，於 basename 追加 `_r{repIndex+1}`，不改 payload 內容 | 使用者 | T0 exit、T5 前 | 檔名碰撞會靜默覆蓋研究資料 |
+| **OQ-58.1** | 同一 drill 連跑 N 輪時，seeded spawn 序列應逐輪相同還是逐輪變化？ | ~~逐輪變化~~ ✅ **已收斂（使用者，2026-09-08）：逐輪相同，維持現況**——**未**採規劃建議。T0 實證三輪 seed 與 spawn 座標逐位相同（progress §T0 §5） | 使用者 | ~~T0 exit~~ 已收斂 | — ⇒ T3 **不動** drill 載入路徑；代價為練習效應，見 §1.4 |
+| **OQ-58.2** | 同一 drill 三輪的匯出檔名如何保證唯一？ | ✅ **已收斂（使用者，2026-09-08）：不加 rep 序號**。T0 讀碼證實 basename **已含**每次 `activateDrill()` 重設的毫秒級 `startedAt`，實測三輪唯一（progress §T0 §4） | 使用者 | ~~T0 exit~~ 已收斂 | — ⇒ T5 只補唯一性回歸測試，**不改** basename 格式（既有匯出檔名逐位不變） |
 | **OQ-58.3** | 休息 overlay 是否要顯示邊界種類與「下一個 drill 是什麼」？ | **要**：顯示剩餘秒數 + 邊界標籤 + 下一個 drill id，長 program 下操作員需要方位感 | 使用者 | T4 前 | 決定 `RestOverlay.show()` 的簽章擴充範圍 |
-| **OQ-58.4** | 自訂 program 的 run 是否完全排除於 history 之外，還是可保存但標記為 custom cohort？ | **可保存但隔離**：`sessionPlanMode='custom'` 進 history、但不入 frozen trend cohort（比照 pilot v1/v2 的 practice-only 隔離） | 使用者 | T0 exit、T5 前 | 決定 T5 的 history/trend 判定與 E2E 矩陣 |
+| **OQ-58.4** | 自訂 program 的 run 是否完全排除於 history 之外，還是可保存但標記為 custom cohort？ | ✅ **已收斂（使用者，2026-09-08）：沿用既有兩道閘 + 標記 `sessionPlanMode`**——**不**在 `HistoryPersistence` 新增第三道攔截（T0 證實兩道閘已與家族正交，progress §T0 §6） | 使用者 | ~~T0 exit~~ 已收斂 | — ⇒ 隔離落在 T5 的 **trend cohort 判定層**；`HistoryPersistence` 零修改 |
 | **OQ-58.5** | stage12 是否需要一個獨立里程碑（下一個可用編號為 **M22**；M20／M21 已由 stage11 的 WP-54／WP-55 取用），涵蓋 WP-56 + WP-58？ | 待 stage12 範圍收斂後再定；本 WP 先以 T-exit 為交付判定 | 使用者 | stage12 收斂前 | 不影響本 WP 執行，影響 stage 層文件對帳 |
 
 ---
@@ -189,19 +197,27 @@ export function resolveFamilyDrillId(family: SessionFamilyId): string;
 export const SCHEDULABLE_DRILL_IDS: readonly string[];
 ```
 
-歸屬表（T0 凍結，入帳 GD-33）：
+歸屬表（**T0 已凍結，2026-09-08**；入帳 [GD-35](../../../DECISIONS.md)。下表為 `availableDrills` 的**實測** exact id，共 **36 個、零重複**；規劃期的舊表有六處 id 錯誤，逐項對照見 [progress.md](progress.md) §T0 §3）：
 
-| 家族 | drill id |
-|---|---|
-| `hold-click` | `hold_click_v1` |
-| `hold-track` | `hold_track_v1` |
-| `spider-shot` | `spider_shot_v1`, `spider_shot_v2` |
-| `counterstrafe` | `counterstrafe_reversal_v1`, `counterstrafe_cued_v1`, `counterstrafe_free_v1`, `counterstrafe_ad_v1` |
-| `peek-click-transfer` | `peek_click_transfer_pilot_v1`, `peek_click_transfer_pilot_v2`（含各角度候選） |
-| `peek-click-transfer-v1` | `peek_click_transfer_v1` |
-| **`tracking`**（新） | `tracking_v1`, `tracking_scene_v1`, `tracking_longrange_v1`, `tracking_br_v1` |
-| **`detection`**（新） | `detection_popin_v1` |
-| **`micro-flick`**（新） | `micro_flick_three_target_test_v1` |
+| 家族 | exact drill id（全部來自 `availableDrills`） | 數 |
+|---|---|---|
+| `hold-click` | `hold_click_v1` | 1 |
+| `hold-track` | `hold_track_v1` | 1 |
+| `spider-shot` | `spider-shot-v1`, `spider-shot-v2`, `spider-shot-v3` | 3 |
+| **`spider-shot-wide`**（新） | `spider-shot-wide-v1` | 1 |
+| `counterstrafe` | `counterstrafe-reversal-v1`, `counterstrafe-free-v1`, `counterstrafe_ad_v1` | 3 |
+| `peek-click-transfer` | `peek_click_transfer_pilot_v1_2deg`, `peek_click_transfer_pilot_v2_1deg`, `peek_click_transfer_pilot_v2_2_5deg`, `peek_click_transfer_pilot_v2_5deg`, `peek_click_transfer_pilot_v2_randomized`, `peek_click_transfer_pilot_v2_masked` | 6 |
+| `peek-click-transfer-v1` | `peek_click_transfer_v1` | 1 |
+| **`tracking`**（新） | `tracking_v1`, `tracking_scene_v1`, `tracking_longrange_v1`, `tracking_br_v1`, `tracking_br_v1__ads_off__hitscan__0p5deg`, `tracking_br_v1__ads_on__hitscan__0p5deg`, `tracking_br_v1__ads_off__projectile__0p5deg`, `tracking_br_v1__ads_off__hitscan__2deg`, `tracking_br_v1__ads_on__hitscan__2deg`, `tracking_br_v1__ads_off__projectile__2deg`, `tracking_br_v1__ads_on__projectile__2deg` | 11 |
+| **`detection`**（新） | `detection_popin_v1` | 1 |
+| **`micro-flick`**（新） | `micro_flick_three_target_test_v1` … `_v8` | 8 |
+| — | **合計** | **36** |
+
+**代表 drill（`resolveFamilyDrillId()`，行為不變）**：`spider-shot` → **`spider-shot-v3`**（**不是** v1/v2；規劃表誤植）、`counterstrafe` → `counterstrafe-reversal-v1`、`peek-click-transfer` → `peek_click_transfer_pilot_v1_2deg`。四個新家族的代表 drill 由 T1 決定並納入不變量 1。
+
+**Off-roster（不可排程）**：`counterstrafe-cued-v1`（模組存在但未註冊於 `availableDrills`）、`tracking_core_pr_pilot_v1`／`tracking_reversal_pilot_v1`（走 `loadDrillConfigDirect()`，由 `TrackingPilotRunner` 擁有）。
+
+> ⚠️ **T1 硬性設計約束（D-58-T0-2）**：drill id 在本 repo **連字號與底線混用**（`spider-shot-v3` vs `micro_flick_three_target_test_v1`）。`FAMILY_BY_DRILL_ID` **必須**引用 drill 模組匯出的 `drillId`／`id` 常數建表，**禁止手打字面值**——規劃表的六處錯誤即由手打字面值造成。
 
 不變量（測試斷言）：
 
@@ -352,7 +368,7 @@ sessionPlanRepIndex?: number;
 | UI = 純 TS + DOM（D1） | 適用 | 表單與預覽皆為原生 DOM |
 | 鎖 Chrome/Edge | 無 | 不新增瀏覽器相依 |
 | sim/recoil 禁 `Math.random()`（GD-5） | 無 | 編譯器無亂數 |
-| spawn 隨機化一律 seeded（GD-5/GD-8） | **需決策** | reps 的逐輪 seed 規則見 OQ-58.1；任一方案的 seed 都必須寫入該輪 metadata |
+| spawn 隨機化一律 seeded（GD-5/GD-8） | ~~需決策~~ ✅ **已決** | OQ-58.1 收斂為「逐輪相同」⇒ **不新增 seed 推導、不動載入路徑**，既有 `sequence.seed` 寫入 metadata 的機制原樣沿用。代價（練習效應）見 §1.4，並須由 T5 寫入分析契約 |
 | recoil 1/64s 步長 | 無 | 不碰 recoil |
 | FPSci 授權紅線（GD-11） | 無 | 無外部程式碼引入 |
 | 場景幾何不進 sim（GD-6） | 無 | 不碰場景 |
@@ -397,8 +413,8 @@ sessionPlanRepIndex?: number;
 | **R-58.2** | 新家族 id 讓 practice-only drill 取得 Assessment 資格 | 高（研究效度） | 中 | FR-58.3 解耦 + §2.3 不變量 4 的逐一負向斷言 | micro-flick 練習資料混入正式 cohort |
 | **R-58.3** | 家族 allowlist 長出第二份（KI-016 重演） | 中 | 中 | `drillFamily.ts` 為唯一來源，metadata 與 runner 共用；T-exit 全 repo 掃描 family id 字面值 | 兩份清單漂移，某 drill 在 UI 可選但 metadata 拒絕 |
 | **R-58.4** | `poll()` 熱路徑配置造成 GC 抖動 | 中 | 低 | NFR-58.3 零配置 + T3 配置計數測試 | 休息期間 frame time 尖峰，污染 frame log |
-| **R-58.5** | reps 的 seed 語意未定就實作 | 中 | 中 | OQ-58.1 列為 T0 exit blocker | 三輪練到同一組位置，reps 的研究意義歸零 |
-| **R-58.6** | 匯出檔名碰撞覆蓋前一輪資料 | 高（資料遺失） | 中 | OQ-58.2 於 T0 稽核 `exportBasename` 實際組成 | 三輪只留下一份檔案且無警告 |
+| **R-58.5** | ~~reps 的 seed 語意未定就實作~~ **已由 T0 關閉為「已知並接受的限制」** | 中 | — | OQ-58.1 已收斂為「逐輪相同」（使用者決議）。風險**不再是「未定」**，而是**已接受的設計限制**：三輪確實練到同一組位置 ⇒ 緩解改為**文件化**（§1.4 + T5 的 metadata／分析契約），而非技術防護 | 分析端誤把同一 item 的多個 rep 當 i.i.d. 取樣 ⇒ 由 T5 的契約文字擋 |
+| **R-58.6** | ~~匯出檔名碰撞覆蓋前一輪資料~~ **T0 實證為低風險** | 高（資料遺失） | ~~中~~ **極低** | T0 已稽核 `exportBasename` 組成：含每次 `activateDrill()` 重設的毫秒級 `startedAt`，碰撞條件為同一毫秒啟動兩次（跨一整場 drill + 休息不可能）。T5 補一條唯一性回歸測試釘死 | 三輪只留下一份檔案且無警告 |
 | **R-58.7** | metadata 擴充破壞既有 parse / `research/` ingest | 高 | 低 | 全部 optional additive + golden fixture 逐位不變回歸（NFR-58.6） | 既有分析管線在新欄位上炸掉 |
 | **R-58.8** | 相鄰同家族 drill 只拿 30s，操作員未察覺 | 中（協定偏差） | 高 | FR-58.13 預覽表顯式標註每個休息的邊界種類 | 實際執行的休息時長與研究設計不符，事後才從 metadata 發現 |
 | **R-58.9** | 表單複雜度上升破壞既有 E2E | 低 | 高 | 更新 `session-orchestrator.spec.ts` 而非新開平行 spec | 舊 selector 失效，E2E 紅但非真實缺陷 |
@@ -409,6 +425,8 @@ sessionPlanRepIndex?: number;
 - **program 不持久化**：每次都要重新編排；範本庫與跨 session 重用留給後續 WP。
 - **休息無法暫停/跳過**：沿用現行自動倒數；操作員中斷只能整場中止。
 - **背景分頁計時**：rAF 停擺時休息倒數會停住，沿用現況不補償。
+- **reps 重播同一組刺激（T0 新增）**：OQ-58.1 決議「逐輪相同」⇒ 同一 item 的各輪 spawn 序列逐位相同，存在練習效應。若日後需要「同難度多次獨立取樣」，須另開 WP 定義 `seed_rep = f(baseSeed, itemIndex, repIndex)` 並改動 drill 載入路徑。
+- **表單需列 36 個 drill（T0 新增）**：roster 實測 36 項（`tracking` 11、`micro-flick` 8、`peek-click-transfer` 6）。T4 的選單**必須按家族分組**顯示才可用；本 WP 不做搜尋／過濾／我的最愛。
 
 ### 3.3 Performance bottlenecks
 
@@ -424,7 +442,7 @@ sessionPlanRepIndex?: number;
 
 | Task | Objective | Dependencies | Risk | Complexity | Definition of Done |
 |---|---|---|---|---|---|
-| **T0** | Entry gate：blast radius 量測、drill→family 表凍結、OQ-58.1／2／4 收斂、GD-33 入帳 | WP-56 不受影響之確認 | Med | 0.5–1d | production diff=0；CodeGraph impact 數字入 progress；`exportBasename` 實際組成有證據；OQ 有 owner 結論或 blocked owner/deadline；GD-33 已寫入 DECISIONS.md |
+| **T0** | Entry gate：blast radius 量測、drill→family 表凍結、OQ-58.1／2／4 收斂、~~GD-33~~ **GD-35** 入帳 | WP-56 不受影響之確認 | Med | 0.5–1d | ✅ **2026-09-08 完成**：production diff = 0、PoC 產物已刪；baseline typecheck exit 0 + Vitest 2,442 passed／2 skipped 且無既存失敗；CodeGraph impact 已入 progress 並對帳 §0.1（2 處補正）；36 個 exact drillId 歸屬表凍結（§2.3，更正規劃表六處 id 錯誤，新增第 4 個家族 `spider-shot-wide`）；`exportBasename` 三輪樣本有證據；三次連續 restart snapshot 逐位相同；OQ-58.1／58.2／58.4 皆有 owner 結論；GD-35 已寫入 DECISIONS.md |
 | **T1** | `drillFamily.ts` 雙向單一來源 + 三個新家族 id + 解耦不變量 | T0 | Med | 0.5–1d | §2.3 四條不變量測試全綠；`resolveFamilyDrillId` 遷移後 `SessionRunner` 行為逐位不變；既有 `micro_flick` 負向測試零修改仍綠 |
 | **T2** | `sessionProgram.ts` 純函式編譯器 + golden 表 | T1 | Med | 1–1.5d | 五條規則各有表格測試；使用者 17 步情境逐元素斷言通過；非法輸入具名錯誤矩陣全綠；模組掃描證明無 DOM/Three/時鐘/亂數 |
 | **T3** | `SessionRunner` 游標化 + `main.ts` runtime 接線 + reps seed 落地 | T2 | **High** | 1.5–2.5d | frozen 路徑行為等價測試全綠；`poll()` 零配置量測；載入失敗復原路徑測試保留；三次連續 restart sim 起始狀態逐位一致；OQ-58.1 決議落地 |

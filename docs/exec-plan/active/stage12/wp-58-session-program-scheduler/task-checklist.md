@@ -4,7 +4,7 @@
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry gate／排程層現況稽核／決策凍結 | [T0-entry-gate.md](T0-entry-gate.md) | WP-56 不受影響之確認 | Med |
+| ✅ | **T0** Entry gate／排程層現況稽核／決策凍結 | [T0-entry-gate.md](T0-entry-gate.md) | WP-56 不受影響之確認 | Med |
 | ⬜ | **T1** Drill ↔ Family 雙向單一來源 | [T1-drill-family-registry.md](T1-drill-family-registry.md) | T0 | Med |
 | ⬜ | **T2** Session Program 純函式編譯器 | [T2-program-compiler.md](T2-program-compiler.md) | T1 | Med |
 | ⬜ | **T3** SessionRunner 游標化／runtime 接線 | [T3-runner-cursor-and-wiring.md](T3-runner-cursor-and-wiring.md) | T2 | **High** |
@@ -20,7 +20,7 @@
 - [ ] `compileSessionProgram()` 為決定性純函式，五條編譯規則與非法輸入矩陣全綠，模組邊界掃描通過。
 - [ ] 全 repo 只有一份 family allowlist、一個 Session Plan runtime、一條 rest overlay 路徑（KI-016 不重演）。
 - [ ] practice-only drill 可排入 program 但不取得 Assessment 資格；`custom` session 不進 frozen trend cohort。
-- [ ] 同一 drill 的每一輪產生唯一檔名的匯出，並可定位 `itemIndex`／`repIndex`；每輪 seed 可稽核。
+- [ ] 同一 drill 的每一輪產生唯一檔名的匯出，並可定位 `itemIndex`／`repIndex`；每輪 seed 可稽核。<br>**T0 更正（OQ-58.1 收斂為「逐輪相同」）**：唯一檔名由既有 `startedAt` 保證（不加 rep 序號）；「每輪 seed 可稽核」= 沿用既有 `sequence.seed` 的 metadata 機制，**不新增逐輪 seed 推導**。另須寫入「reps 重播同一組刺激、不得視為 i.i.d. 取樣」的分析限制。
 - [ ] 既有決定性／hit／recoil／ADS／result／history／replay 回歸**零修改**全綠；build／typecheck／Vitest／Playwright exit 0。
 
 ## Commit discipline
