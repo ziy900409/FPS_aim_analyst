@@ -10,8 +10,7 @@
 
 - [README.md](README.md) §2.3（`SampleGap`／`SampleSegmentation`／`segmentByTimeGap` 簽名）、§2.6 F2/F4、§3.1 R6/R7。
 - T0 的實機事件率分布與抬起／停頓空洞分布（決定 `gapThresholdMs` 的可行範圍）。
-- T0 的 **OQ-60.1 授權結論** —— 未拍板則本 task **blocked**。
-- `performance_analysis` ADR-002 Stage 1 的語意（**只讀方法學，不複製程式碼**）。
+- `performance_analysis` ADR-002 Stage 1 的語意與 `lod_v3_default_config.json` 的 `TIME_GAP_THRESHOLD_MS`／`GAP_CONFIRM_MS`（授權無虞，D-60.P7 —— 可直接引用為起點，但須記名來源，且 30 ms 是建立在 1 ms nominal dt 上的，本專案要以 T0 實測事件率重推）。
 - `src/metrics/spiderShotRepositioning.ts`（同類離線純函式的形狀、C-D3 boundary scan 手法、「呼叫端必填門檻、不凍結預設值」的紀律）。
 - WP-57 Surprises 6（負向測試要證明的是**哪一個**原因 —— 本 task 的 F2 正是同型陷阱）。
 
@@ -34,7 +33,7 @@
 - 純函式：不讀時鐘、不讀隨機、無 I/O。
 - **不新增第二套「抬滑鼠」構念**（R6／OQ-60.4）。型別與函式名一律用中性的時序語彙（`gap`／`segment`），不得出現 `lift`／`reposition`／`suspicion`。
 - 不修改 `deriveRepositioningSuspicion()` 或任何既有 metrics。
-- 不複製 `performance_analysis` 的任何原始碼；方法學來源記入 `progress.md`。
+- 不直接搬 PA 的 Go 程式碼（**技術性理由，非法律性**，D-60.P7）：那份實作綁死 px/s 空間、1 ms nominal dt 與 pandas 語意相容性，硬搬過來會把三個錯誤的前提一起帶進來。以 TS 重寫並在 `progress.md` 記名來源與差異。
 - `lockGapIndices` 所指的間隙**不得**同時出現在 `gaps` 裡。
 
 ## Definition of Done

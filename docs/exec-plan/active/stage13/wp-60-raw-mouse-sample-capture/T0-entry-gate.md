@@ -19,7 +19,7 @@
 4. **R2 抬起／停頓的空洞分布**：使用者實機在 `spider-shot-wide-v1` 上做三組各 ≥ 10 次 —— ①刻意抬起滑鼠、②手不離開滑鼠但停住、③一次到位不停。量測每組的事件空洞長度分布。**這是 WP-61 判準的分離軸依據**，也是本 WP 唯一無法用合成資料取代的證據。
 5. **NFR-60.4／60.5 體積與精度 PoC**：以 step 3 的實測事件率推算 60 s run 的樣本數，對 columnar 與 array-of-objects 兩種格式各產生一份真實大小的樣本並量測 `JSON.stringify` 後的 bytes 與耗時。量化 µs 取整對 `dt` 的誤差。→ 收斂 **OQ-60.2**。
 6. **F6 熱路徑 PoC**：throwaway 版本的逐筆錄製掛在消費點，量測「開／關」兩組的 frame-time p50/p95/p99 與掉 tick 數。
-7. **OQ-60.1 授權拍板**：確認可否參考 `performance_analysis` 的 LOD 方法學。`performance_analysis` 無 LICENSE 檔、`go.mod`／`package.json` 無 license 欄位（§0 ⑭）⇒ 這是使用者的決定，不是工程判斷。結論寫入 `progress.md` 並在必要時入帳 DECISIONS.md。
+7. ~~OQ-60.1 授權拍板~~ ✅ **已於 2026-09-08 收斂**（D-60.P7：同一作者、同一組織，無授權問題）。本步改為**取用**：把 PA 的 `lod_v3_default_config.json` 十四個參數與其語意抄錄進 `progress.md` 作為 WP-61 的推導起點，並記下哪些是 px/s 空間、需要重推。
 8. 收斂 **OQ-60.2／60.3／60.5**；OQ-60.4／60.6 可維持開放（不阻塞本 WP，但須標 owner／deadline）。
 9. 清除只位於已驗證 temp root（session scratchpad）的 PoC artifacts，把**指令與量測數字**寫入 [progress.md](progress.md)。
 
@@ -43,7 +43,7 @@
 - **production code diff = 0**。所有 PoC 走 throwaway script／temp 檔，T0 結束時刪除。
 - 不修改任何既有測試的期望值。
 - PoC 產生的真人資料**不進 repo**（沿用 D-57.T5-8 的同一紀律）；只把統計量寫進 `progress.md`。
-- 不複製 `performance_analysis` 的任何原始碼進本 repo（OQ-60.1 拍板前尤其如此）。
+- 引用 `performance_analysis` 的參數／fixture 時**記名來源與版本**（D-60.P7 的稽核要求）——授權雖無問題，但「這個數字從哪來」仍必須可追。
 
 ## Definition of Done
 
@@ -54,7 +54,7 @@
 - [ ] OQ-60.2 收斂：兩種序列化格式的實測 bytes 與耗時並列，格式選定並寫入 Decision Log。
 - [ ] OQ-60.3 收斂：Pointer Lock 中斷的入匯出方式選定。
 - [ ] OQ-60.5 收斂：容量常數與溢位行為選定。
-- [ ] **OQ-60.1 由使用者拍板**並記錄；未拍板則 T3 標 blocked。
+- [ ] PA 的十四個 LOD 參數與語意抄錄進 `progress.md`，並標明哪些在 px/s 空間需要重推（供 WP-61）。
 - [ ] F6 熱路徑 PoC 的「開／關」兩組 frame-time 數字並列，差值符合上表門檻。
 - [ ] PoC artifacts 已刪除（`git status --short` 無殘留）；所有數字可由 `progress.md` 記載的指令重算。
 

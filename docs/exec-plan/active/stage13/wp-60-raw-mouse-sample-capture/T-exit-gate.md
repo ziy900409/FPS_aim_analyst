@@ -44,7 +44,7 @@
 |---|---|---|
 | 1 | 實機事件率分布（直方圖 + p50/p95/p99）| T0 step 3 |
 | 2 | 抬起／停頓／一次到位三組的空洞長度分布 | T0 step 4 |
-| 3 | OQ-60.1 授權結論（可否參考 PA 方法學）| T0 step 7 |
+| 3 | PA 的十四個 LOD 參數與語意抄本 + 「哪些需在角度空間重推」的標註（授權已無虞，D-60.P7）| T0 step 7 |
 | 4 | OQ-60.4 構念歸屬結論（新判準與 `deriveRepositioningSuspicion()` 的關係）| 使用者拍板 |
 
 **WP-61 另需但本 WP 不提供**：高刷（≥ 144 Hz）真人標註 cohort，規格見 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md)。

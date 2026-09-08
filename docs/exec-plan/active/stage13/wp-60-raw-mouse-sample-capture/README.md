@@ -80,7 +80,7 @@
 
 | ID | Question | Recommended default | Owner | Deadline | Impact if unresolved |
 |---|---|---|---|---|---|
-| **OQ-60.1** | 從 `performance_analysis` 移植 LOD 方法學的**授權狀態**為何？該 repo 無 LICENSE 檔、無 license 欄位（discovery ⑭）| **移植方法學與參數語意、不複製任何 Go／Python 原始碼**，並在 `progress.md` 記名來源與比對方式。理由：這與 GD-11 對 FPSci 的處置同構（可參考方法學、禁複製程式碼），是本 repo 已有的紀律；即使兩者同屬 BenQ，「未宣告授權」不等於「可自由複製」| 使用者 | **T0 exit（阻塞 T3）** | T3/WP-61 的實作合法性未定；事後才發現要重寫成本極高 |
+| **OQ-60.1** | 從 `performance_analysis` 移植 LOD 方法學的**授權狀態**為何？該 repo 無 LICENSE 檔、無 license 欄位（discovery ⑭）| ✅ **已收斂 2026-09-08：無授權問題**（D-60.P7）—— 兩個 repo 同一作者、同一組織，無第三方權利介入。**不再阻塞 T3**，且 PA 的 `lod_v3_default_config.json` 與其 parity fixture 可直接引用為起點。<br>⚠️ 但**工程上仍不直接搬 Go 程式碼**（理由改為技術性而非法律性，見 D-60.P7）| ~~使用者~~ 已收斂 | ~~T0 exit~~ 已收斂 | — |
 | **OQ-60.2** | 原始取樣的序列化格式：**columnar + µs 整數 delta**，還是 array-of-objects？ | **columnar + µs 整數**（`{ t0Us, dtUs: number[], dx: number[], dy: number[] }`）。理由：60,000 筆下 array-of-objects 約 1.8 MB、columnar 約 0.66 MB，直接決定 NFR-60.4 成敗；µs 整數同時滿足 NFR-60.5 並與 PA 的 `ts_us` 同單位 | Engineering | **T1 開工前** | T1 的型別與 parser 全部要重寫 |
 | **OQ-60.3** | Pointer Lock 中斷如何入匯出（FR-60.6）？ | **additive optional `pointer_lock` DrillEvent**（`{ type, locked, t }`），比照 WP-29 T3 的 `key` 事件（選配、預設關閉、不改既有 union 語意）。理由：它是離散狀態變化而非逐 tick 量，做成事件比做成 tick 欄位省 7,680 個布林 | Engineering + 使用者 | **T1 凍結前** | FR-60.6 無法滿足 ⇒ lock 中斷會被 LOD 誤判為抬滑鼠，重蹈「兩種原因混成一個」的覆轍（WP-57 Surprises 6）|
 | **OQ-60.4** | 未來的抬滑鼠判準與既有 `deriveRepositioningSuspicion()` 的關係 —— **取代**還是**並存**？ | **並存但語意分離**：`deriveRepositioningSuspicion()` 維持「角速度停滯」語意不動（WP-57 已交付、已校準）；新判準是**不同構念**（感測器離地），用不同名稱與不同型別。理由：C-D4 禁的是「同一構念兩套定義」，不是「兩個不同構念」；但若兩者都叫「抬滑鼠」就會踩線 ⇒ 命名必須在 `CONTEXT.md` 分開定義 | 使用者 + 研究 | **WP-61 T0（不阻塞 WP-60）** | 兩個模組都宣稱偵測抬滑鼠 ⇒ C-D4 違規，且教練報告端無從選擇 |
@@ -276,7 +276,7 @@ export function segmentByTimeGap(
 | seeded RNG：sim/recoil 禁 `Math.random()`，seed 入 metadata（GD-5）| **不觸及** | 本 WP 不引入任何隨機性；錄製與切段皆為決定性純運算。T3 的純度掃描含 `Math.random` 零命中 |
 | **GD-6**：場景幾何永不進 sim runtime／解析度與場景切換不改 sim | **不觸及** | 原始滑鼠取樣是輸入域資料，與場景幾何無關；不讀 `propBounds`／GLTF／`SceneConfig`，也不改 `SIM_HZ`、目標演進或命中判定 |
 | **GD-9**：場景資產僅 CC0 或 CC-BY，且 `ATTRIBUTIONS.md` 可稽核 | **不觸及** | 本 WP 不新增任何場景資產 |
-| **GD-11**：FPSci（CC BY-NC-SA）程式碼／config 禁止進 repo | **不觸及 FPSci，但同構問題成立** | 本 WP 不碰 FPSci。**但移植來源 `performance_analysis` 無 LICENSE 檔、無 license 欄位**（§0 ⑭）⇒ 「未宣告授權」不等於「可自由複製」。開 **OQ-60.1** 交使用者拍板，建議處置與 GD-11 同構：**參考方法學與參數語意，禁複製任何原始碼**。設為 T3 的阻塞條件 |
+| **GD-11**：FPSci（CC BY-NC-SA）程式碼／config 禁止進 repo | **不觸及** | 本 WP 不碰 FPSci。移植來源 `performance_analysis` 雖無 LICENSE 檔（§0 ⑭），但 **OQ-60.1 已於 2026-09-08 收斂為「同一作者、同一組織，無授權問題」**（D-60.P7）⇒ GD-11 的第三方 share-alike 傳染風險在此**不存在**，本列不構成任何限制。PA 的參數 config 與 parity fixture 可直接引用 |
 | hitbox 單一來源（`TargetState.hitbox`），命中與離線推導共用（GD-7）| **不觸及** | 本 WP 不碰命中幾何、不讀 hitbox；T3 的 C-D4 掃描含 `hitbox` 零命中 |
 | C-D1／C-D5：`research/` ↔ `src/` 單向隔離、晉升指標雙實作對表 | **觸及（刻意不觸發 C-D5）** | **C-D1**：本 WP 只動 `src/`、`scripts/`、`docs/`，不 import 任何 Python 產物，`research/` 不讀 TS 模組 ⇒ 單向隔離不變。**C-D5**：雙實作對表紀律只綁**晉升指標**；原始取樣目前無任何晉升指標消費它，故本 WP **刻意不建立** Python 側實作（OQ-60.6）—— 過早雙實作會讓每次改判準都要兩端同步 + 升版。<br>**C-D4 是本 WP 真正的風險**：若新判準與既有 `deriveRepositioningSuspicion()` 都宣稱偵測「抬滑鼠」即為同一構念兩套定義。緩解：T3 只交付**中性命名**的時序原語（`gap`／`segment`，禁 `lift`／`reposition`／`suspicion`），並以掃描釘死模組原始碼對三個既有判準符號零命中；構念歸屬由 OQ-60.4 於 WP-61 拍板 |
 
@@ -292,7 +292,7 @@ export function segmentByTimeGap(
 | **R2** | 抬起滑鼠時感測器並非完全靜默（部分滑鼠有 lift-off 後的殘留回報）| **High** | PA 的物理前提，但未在本專案硬體上驗過 | T0 step 4：使用者實機做「刻意抬起 5 次」，量測空洞長度分布 |
 | **R3** | sim 熱路徑加一行造成掉 tick | Med | 每筆事件多一次 typed-array 寫入；1000 Hz 下每 tick 約 8 筆 | NFR-60.2 + F6 的 frame log 對照 |
 | **R4** | `ExportPayload` 新增頂層欄位破壞既有 consumer | Med | 型別被全 repo 消費 | optional 欄位 + T1 跑全量既有 fixture round-trip，期望值零修改 |
-| **R5** | 授權未拍板即開始移植 | Med | discovery ⑭：PA 無 LICENSE | OQ-60.1 設為 T0 exit 的阻塞條件 |
+| ~~**R5**~~ | ~~授權未拍板即開始移植~~ | ✅ **已關閉 2026-09-08** | OQ-60.1／D-60.P7：同一作者、同一組織，無第三方權利介入 | — |
 | **R6** | 新舊兩套「抬滑鼠」構念並存造成 C-D4 違規 | Med | WP-57 已有 `deriveRepositioningSuspicion()` | OQ-60.4 + T3 只交付**中性命名**的時間間隙原語（不叫抬滑鼠）|
 | **R7** | 命名 `LOD` 與 `THREE.LOD`（Level of Detail）衝突 | Low | Three.js 標準類別；本專案 `import * as THREE from 'three/webgpu'` | **不採用 `LOD` 縮寫**；一律拼寫 `liftOff`／`sensorLift`，於 `CONTEXT.md` 定義 |
 
@@ -355,7 +355,7 @@ WP-60 T-exit 必須交出下列四項，否則 WP-61 無法開工：
 
 1. **實機事件率分布**（T0）—— 決定 `gapThresholdMs` 的可行範圍。PA 用 30 ms 是建立在 1 ms nominal dt 上的，本專案必須自己推。
 2. **抬起／停頓的空洞長度分布**（T0 R2）—— WP-61 判準的分離軸候選。
-3. **OQ-60.1 的授權結論**（T0）—— 決定 WP-61 能否參考 PA 的參數表。
+3. **PA 的十四個 LOD 參數與語意抄本**（T0 step 7）—— 含「哪些在 px/s 空間、需要以角度空間重推」的標註。授權已無虞（D-60.P7），故這是**取用**而非評估。
 4. **OQ-60.4 的構念歸屬結論** —— 決定新判準叫什麼、與 `deriveRepositioningSuspicion()` 的關係。
 
 **WP-61 另需但 WP-60 不提供**：高刷（≥ 144 Hz）真人標註 cohort。錄製規格見 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md)。

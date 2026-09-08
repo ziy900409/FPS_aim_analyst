@@ -24,19 +24,21 @@
 | D-60.P5 | 2026-09-08 | **溢位旗標獨立，不 OR 進 `meta.suspect`**（FR-60.9）。<br>理由：`recorderOverflow` 會設 `suspect` 是因為 tick 資料本身缺了；原始取樣溢位時 tick 資料**仍然完整有效**，只有新增的那一維退化。把它併進 `suspect` 會讓一份完全可用於既有指標的 run 被整份判為不合格 | Engineering | [README.md](README.md) §2.5 |
 | D-60.P6 | 2026-09-08 | **arena 滿了丟棄末端，不繞圈**。<br>理由：繞圈會讓匯出的第一筆不是 drill 的第一筆，而 `t0Ms + Σ dtUs` 的重建假設是連續的 ⇒ 繞圈會讓時間軸靜默說謊。丟棄末端 + 明示旗標，語意單純，且與 `TickArena` 的 `recorderOverflow` 同一慣例 | Engineering | [README.md](README.md) §2.5 |
 
+| D-60.P7 | 2026-09-08 | **OQ-60.1 收斂：從 `performance_analysis` 移植無授權問題** —— 使用者為兩個 repo 的作者，同一組織，無第三方權利介入。⇒ R5 關閉、T3 不再被阻塞、GD-11 那一列在本 WP 不構成限制。<br>**連帶解鎖**：PA 的 `lod_v3_default_config.json`（十四個參數）與其 parity fixture 可**直接引用為起點**，不必從零重推 —— 這是原本要放棄的東西。T0 step 7 因此由「拍板」改為「取用並記名」。<br>⚠️ **但工程上仍不直接搬 Go 程式碼，理由改為技術性而非法律性**：`lodclean/service.go` 綁死三個對本專案不成立的前提 —— ① px/s 與 counts 空間（本專案是角度空間）、② 1 ms nominal dt（本專案 tick 為 7.8125 ms、事件率待 T0 實測）、③ 刻意複製 pandas 的 `fillna`／floored-modulo 語意以維持 Python↔Go parity（本專案不參與那個 parity）。硬搬會把三個錯誤前提一起帶進來。<br>**稽核要求仍在**：引用任何 PA 的參數或 fixture 必須記名來源與版本 —— 授權無虞不等於出處可以不寫。| 使用者 | 使用者回覆（2026-09-08）；[README.md](README.md) §1.5 OQ-60.1／§2b GD-11 列／§3.1 R5 |
+
 ## Surprises
 
 1. **要偵測抬滑鼠所需的原始資料，這個專案其實一直都在收 —— 只是在進匯出前一步被丟掉。** [`InputSampler.ts:137-139`](../../../../../src/input/InputSampler.ts#L137-L139) 早在 WP-3（ADR-5，「1000 Hz 滑鼠下不遺失中間軌跡」）就用 `getCoalescedEvents()` 逐筆保留了 sub-frame 樣本與各自的 `event.timeStamp`；到了 [`SimLoop.ts:96-99`](../../../../../src/loop/SimLoop.ts#L96-L99) 才被 `accumulateMouse` 聚合成逐 tick 的 `dYaw`／`dPitch`。<br>⇒ 本 WP 的性質因此不是「新增一種量測」，而是**停止丟棄一份已經付過成本的資料**。這也解釋了為什麼 WP-57 的抬滑鼠標註只能做到「角速度停滯」—— 不是判準沒設計好，是它拿到的資料裡已經沒有那個資訊了。
 
 2. **`performance_analysis` 的 LOD v1 偽陽，與 FPS 這邊實測到的偽陽是同一個。** PA 的 ADR-002 記載 v1 有兩個系統性偽陽：**「目標捕獲時的急停」**與**「目標中心附近的生理性顫抖」**。WP-57 §T5-real 實測合成期建議的 `100/15` 會把 44% 的「全程不抬滑鼠」對照 run 標成抬滑鼠，成因正是「寬鬆的 ω 門檻抓到的是拉槍中途的正常減速」。<br>⇒ 兩個專案在不同的訊號空間（px/s vs deg/s）、不同的實作語言、相隔半年，撞上同一個失效模式。PA 的解法（時間間隙當閘 + 非對稱門檻）因此不只是「一個可以參考的做法」，而是**對同一個已知病理的已驗證處置**。
 
-3. **`performance_analysis` 沒有 LICENSE 檔。** `go.mod` 與 `package.json` 也沒有 license 欄位。兩個 repo 同屬 BenQ、同一個作者，直覺上不會有問題 —— 但 GD-11 的存在正是因為「授權」不能靠直覺（那條是為了 FPSci 的 CC BY-NC-SA 而立）。「未宣告授權」在法律上不等於「公有領域」。<br>⇒ 開 OQ-60.1 交使用者拍板，並設為 T3 的阻塞條件。建議的處置與 GD-11 同構：**移植方法學與參數語意，不複製任何原始碼**。
+3. **`performance_analysis` 沒有 LICENSE 檔 —— 但這次不是問題。** `go.mod` 與 `package.json` 也沒有 license 欄位。規劃期我把它開成 OQ-60.1 並設為 T3 的阻塞條件，理由是 GD-11 的存在正說明授權不能靠直覺。**使用者當日即回覆：兩個 repo 都是他寫的，無授權問題**（D-60.P7）。<br>⇒ 這條的價值不在結論（結論是「沒事」），而在**它讓一個原本要放棄的東西回來了**：PA 的十四個參數與 parity fixture 可以直接當起點。我在提問時已經先把「不複製原始碼」寫進建議處置，若使用者沒有主動澄清作者身分，這個計畫就會在一個不存在的限制下多繞一圈。<br>⇒ **教訓**：把外部依賴的授權開成 OQ 是對的，但**建議處置不該預設最保守的那一個** —— 保守選項若被照單全收，成本是沉默的（沒有人會發現本來可以不用重推參數）。應該把「若無授權問題則可以多做什麼」一併寫進 OQ，讓拍板者看得到兩邊的代價。
 
 ## Open Questions（追蹤用，權威定義見 [README.md](README.md) §1.5）
 
 | ID | 狀態 | 待誰 | Deadline |
 |---|---|---|---|
-| OQ-60.1 移植 PA 方法學的授權狀態 | 🔴 開放 | **使用者** | T0 exit（**阻塞 T3**）|
+| OQ-60.1 移植 PA 方法學的授權狀態 | ✅ **已收斂 2026-09-08**：無授權問題（同一作者、同一組織）。R5 關閉、T3 解除阻塞、PA 參數與 fixture 可直接引用（D-60.P7）| — | — |
 | OQ-60.2 序列化格式（columnar µs vs array-of-objects）| 🟡 有建議值（columnar µs），待 T0 實測體積佐證 | Engineering | T1 開工前 |
 | OQ-60.3 Pointer Lock 中斷如何入匯出 | 🟡 有建議值（additive `pointer_lock` DrillEvent）| Engineering + 使用者 | T1 凍結前 |
 | OQ-60.4 新判準與 `deriveRepositioningSuspicion()` 的關係 | 🔴 開放 | 使用者 + 研究 | WP-61 T0（不阻塞 WP-60）|

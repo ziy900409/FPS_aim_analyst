@@ -7,7 +7,7 @@
 | ⬜ | **T0** Entry gate／取樣充分性稽核／實機 PoC | [T0-entry-gate.md](T0-entry-gate.md) | 無（WP-57 已交付，只讀不改）| **High** |
 | ⬜ | **T1** 擷取契約：arena／型別／strict parser | [T1-capture-contract.md](T1-capture-contract.md) | T0 ✅ + OQ-60.2／60.3／60.5 收斂 | Med |
 | ⬜ | **T2** SimLoop 接線與決定性證明 | [T2-recorder-wiring.md](T2-recorder-wiring.md) | T1 | **High** |
-| ⬜ | **T3** 時間間隙切段原語與 Pointer Lock 消歧 | [T3-time-gap-primitive.md](T3-time-gap-primitive.md) | T1 + **OQ-60.1 授權拍板** | Med |
+| ⬜ | **T3** 時間間隙切段原語與 Pointer Lock 消歧 | [T3-time-gap-primitive.md](T3-time-gap-primitive.md) | T1（OQ-60.1 已於 2026-09-08 收斂，不再阻塞）| Med |
 | ⬜ | **T4** 操作者可見度：取樣健康度報告 | [T4-operator-visibility.md](T4-operator-visibility.md) | T2 + T3 | Low |
 | ⬜ | **T-exit** 驗收與 WP-61 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T4 | Med |
 
