@@ -15,12 +15,16 @@ const REPLACEMENTS_PER_RUN = microFlickThreeTargetTestV8.drill.targets.count -
   microFlickThreeTargetTestV8.drill.targets.population.activeCount;
 const KILL_ORDER_RUNS = 2_000;
 
-interface BaselineObservation {
+interface V8StressObservation {
   readonly completedRuns: number;
   readonly placementFailures: number;
   readonly replacementOpportunities: number;
   readonly unchangedAimHits: number;
   readonly completedRunsWithUnchangedAimHit: number;
+  readonly temporalPreferenceFallbacks: number;
+  readonly invalidPopulationSnapshots: number;
+  readonly minimumKilledSeparationDeg: number;
+  readonly minimumActiveSeparationDeg: number;
 }
 
 function copyPos(target: TargetState): Vec3 {
@@ -55,6 +59,42 @@ function targetSnapshot(state: ReturnType<typeof createSharedState>): string {
   return JSON.stringify(state.targets.map((target) => ({ id: target.id, side: target.side, pos: target.pos })));
 }
 
+function inspectV8Population(state: ReturnType<typeof createSharedState>): {
+  readonly valid: boolean;
+  readonly minimumActiveSeparationDeg: number;
+} {
+  if (state.targets.length !== 3 || new Set(state.targets.map((target) => target.id)).size !== 3) {
+    return { valid: false, minimumActiveSeparationDeg: -Infinity };
+  }
+  let valid = true;
+  let minimumActiveSeparationDeg = Infinity;
+  for (const target of state.targets) {
+    const yawDeg = (Math.atan2(target.pos.x, -target.pos.z) * 180) / Math.PI;
+    const horizontalDistance = Math.hypot(target.pos.x, target.pos.z);
+    const pitchDeg = (Math.atan2(target.pos.y - 1.5, horizontalDistance) * 180) / Math.PI;
+    valid &&=
+      target.visible &&
+      target.alive &&
+      Object.values(target.pos).every(Number.isFinite) &&
+      yawDeg >= -6.5 - 1e-10 &&
+      yawDeg <= 6.5 + 1e-10 &&
+      pitchDeg >= -5 - 1e-10 &&
+      pitchDeg <= 6 + 1e-10 &&
+      horizontalDistance >= 24 - 1e-10 &&
+      horizontalDistance <= 26 + 1e-10;
+  }
+  for (let left = 0; left < state.targets.length; left++) {
+    for (let right = left + 1; right < state.targets.length; right++) {
+      minimumActiveSeparationDeg = Math.min(
+        minimumActiveSeparationDeg,
+        centerRelativeAngularSeparationDeg(state.targets[left].pos, state.targets[right].pos),
+      );
+    }
+  }
+  valid &&= minimumActiveSeparationDeg >= 5 - 1e-10;
+  return { valid, minimumActiveSeparationDeg };
+}
+
 function rayAimedAtKilledCenterHitsReplacement(killedPos: Vec3, replacement: TargetState): boolean {
   const dx = killedPos.x - EYE.x;
   const dy = killedPos.y - EYE.y;
@@ -73,12 +113,16 @@ function rayAimedAtKilledCenterHitsReplacement(killedPos: Vec3, replacement: Tar
   return closestDistanceSquared <= radius * radius;
 }
 
-function observeCurrentV8(): BaselineObservation {
+function observeCurrentV8(): V8StressObservation {
   let completedRuns = 0;
   let placementFailures = 0;
   let replacementOpportunities = 0;
   let unchangedAimHits = 0;
   let completedRunsWithUnchangedAimHit = 0;
+  let temporalPreferenceFallbacks = 0;
+  let invalidPopulationSnapshots = 0;
+  let minimumKilledSeparationDeg = Infinity;
+  let minimumActiveSeparationDeg = Infinity;
 
   for (let killOrderSeed = 0; killOrderSeed < KILL_ORDER_RUNS; killOrderSeed++) {
     const state = createSharedState();
@@ -88,6 +132,12 @@ function observeCurrentV8(): BaselineObservation {
 
     try {
       manager.tick(state, 0);
+      const initialPopulation = inspectV8Population(state);
+      if (!initialPopulation.valid) invalidPopulationSnapshots++;
+      minimumActiveSeparationDeg = Math.min(
+        minimumActiveSeparationDeg,
+        initialPopulation.minimumActiveSeparationDeg,
+      );
       for (let replacementIndex = 0; replacementIndex < REPLACEMENTS_PER_RUN; replacementIndex++) {
         const killedIndex = Math.floor(killOrderRng() * state.targets.length);
         const killed = state.targets[killedIndex];
@@ -100,6 +150,12 @@ function observeCurrentV8(): BaselineObservation {
         const replacement = state.targets.find((target) => !survivorIds.has(target.id));
         if (replacement === undefined) throw new Error('Replacement target was not created');
         replacementOpportunities++;
+        const killedSeparationDeg = centerRelativeAngularSeparationDeg(killedPos, replacement.pos);
+        minimumKilledSeparationDeg = Math.min(minimumKilledSeparationDeg, killedSeparationDeg);
+        if (killedSeparationDeg + 1e-10 < 2.6) temporalPreferenceFallbacks++;
+        const population = inspectV8Population(state);
+        if (!population.valid) invalidPopulationSnapshots++;
+        minimumActiveSeparationDeg = Math.min(minimumActiveSeparationDeg, population.minimumActiveSeparationDeg);
         if (rayAimedAtKilledCenterHitsReplacement(killedPos, replacement)) {
           unchangedAimHits++;
           runHits++;
@@ -119,23 +175,29 @@ function observeCurrentV8(): BaselineObservation {
     replacementOpportunities,
     unchangedAimHits,
     completedRunsWithUnchangedAimHit,
+    temporalPreferenceFallbacks,
+    invalidPopulationSnapshots,
+    minimumKilledSeparationDeg,
+    minimumActiveSeparationDeg,
   };
 }
 
-describe('TargetManager — WP-59 T0 v8 near-replacement baseline', () => {
-  it('reproduces the bounded deterministic exploit before the replacement policy is enabled', () => {
+describe('TargetManager — WP-59 T3 v8 replacement-spacing acceptance', () => {
+  it('completes the frozen kill-order corpus without placement failures or unchanged-aim hits', () => {
     const observation = observeCurrentV8();
     const unchangedAimHitRate = observation.unchangedAimHits / observation.replacementOpportunities;
 
     expect(REPLACEMENTS_PER_RUN).toBe(57);
-    expect(observation).toEqual({
-      completedRuns: 1_923,
-      placementFailures: 77,
-      replacementOpportunities: 112_114,
-      unchangedAimHits: 19_429,
-      completedRunsWithUnchangedAimHit: 1_923,
-    });
-    expect(unchangedAimHitRate).toBeCloseTo(0.1733, 4);
+    expect(observation.completedRuns).toBe(2_000);
+    expect(observation.placementFailures).toBe(0);
+    expect(observation.replacementOpportunities).toBe(114_000);
+    expect(observation.unchangedAimHits).toBe(0);
+    expect(observation.completedRunsWithUnchangedAimHit).toBe(0);
+    expect(observation.temporalPreferenceFallbacks).toBe(0);
+    expect(observation.invalidPopulationSnapshots).toBe(0);
+    expect(observation.minimumKilledSeparationDeg).toBeGreaterThanOrEqual(2.6 - 1e-10);
+    expect(observation.minimumActiveSeparationDeg).toBeGreaterThanOrEqual(5 - 1e-10);
+    expect(unchangedAimHitRate).toBe(0);
   });
 });
 

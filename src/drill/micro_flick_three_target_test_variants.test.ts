@@ -27,6 +27,8 @@ import { microFlickRoomV5 } from '../scene/scenes/micro-flick-room-v5.ts';
 import { microFlickRoomV6 } from '../scene/scenes/micro-flick-room-v6.ts';
 import { microFlickRoomV7 } from '../scene/scenes/micro-flick-room-v7.ts';
 import { microFlickThreeTargetTestV7, MICRO_FLICK_V7_TARGET_DIAMETER_U } from './micro_flick_three_target_test_v7.ts';
+import { microFlickRoomV8 } from '../scene/scenes/micro-flick-room-v8.ts';
+import { microFlickThreeTargetTestV8, MICRO_FLICK_V8_TARGET_DIAMETER_U } from './micro_flick_three_target_test_v8.ts';
 
 const variants = [
   { label: 'v2', fixture: microFlickThreeTargetTestV2, scene: microFlickRoomV2, distance: 17, range: [16, 18], diameter: MICRO_FLICK_V2_TARGET_DIAMETER_U, room: [16, 44, 12], endZ: -22.06, yaw: [-22, 22], pitch: [-12, 12], expectedApparentDiameterDeg: 3 },
@@ -42,6 +44,31 @@ describe('micro-flick deep-corridor variants', () => {
     expect(microFlickRoomV7.proceduralRoom?.roomSize).toEqual([8.772, 60, 8.16]);
     expect(parsed.targets.hitbox).toEqual({ widthU: MICRO_FLICK_V7_TARGET_DIAMETER_U, heightU: MICRO_FLICK_V7_TARGET_DIAMETER_U, depthU: MICRO_FLICK_V7_TARGET_DIAMETER_U, shape: 'sphere' });
     expect(parsed.targets.spawnArea).toMatchObject({ yawDegRange: [-6.5, 6.5], pitchDegRange: [-5, 6], distanceURange: [24, 26] });
+  });
+
+  it('pins the v8 replacement policy without changing its room or spawn envelope', () => {
+    const parsed = loadDrill(microFlickThreeTargetTestV8.drill, microFlickRoomV8);
+
+    expect(microFlickThreeTargetTestV8.sceneId).toBe('micro-flick-room-v8');
+    expect(microFlickRoomV8.proceduralRoom).toEqual(microFlickRoomV7.proceduralRoom);
+    expect(parsed.mode).toBe('practice');
+    expect(parsed.targets.count).toBe(60);
+    expect(parsed.targets.distance).toBe(25);
+    expect(parsed.targets.population).toEqual({ activeCount: 3, replacement: 'next-tick' });
+    expect(parsed.targets.hitbox).toEqual({
+      widthU: MICRO_FLICK_V8_TARGET_DIAMETER_U,
+      heightU: MICRO_FLICK_V8_TARGET_DIAMETER_U,
+      depthU: MICRO_FLICK_V8_TARGET_DIAMETER_U,
+      shape: 'sphere',
+    });
+    expect(parsed.targets.spawnArea).toEqual({
+      yawDegRange: [-6.5, 6.5],
+      distanceURange: [24, 26],
+      pitchDegRange: [-5, 6],
+      minAngularSeparationDeg: 5,
+      preferredReplacementSeparationDeg: 2.6,
+    });
+    expect(parsed.sequence.seed).toBe(56008);
   });
 
   it.each(variants)('$label binds its practice drill, deep corridor, and target envelope', ({ fixture, scene, distance, range, diameter, room, endZ, expectedApparentDiameterDeg }) => {

@@ -4,7 +4,7 @@ _Stage 12 execution plan for removing near-replacement exploits from the fixed M
 
 ---
 
-> **Status:** Implementation in progress; T0 baseline and T1 additive contract are delivered. This WP depends on the delivered WP-56 three-target population path and keeps Micro Flick v8 researcher-only and practice-only.
+> **Status:** Implementation in progress; T0–T3 are delivered and full-system verification remains. This WP depends on the delivered WP-56 three-target population path and keeps Micro Flick v8 researcher-only and practice-only.
 
 | Item | Plan |
 | --- | --- |
@@ -255,10 +255,10 @@ The primary seam is `TargetManager.population.test.ts` or a colocated replacemen
 
 ### Progress
 
-- [ ] **T0 — Reproduction and parameter freeze:** baseline harness committed in `8a74e9b`; the post-policy 114,000-replacement acceptance run remains part of T3.
+- [x] (2026-09-08 12:08Z) **T0 — Reproduction and parameter freeze:** baseline harness committed in `8a74e9b`; the frozen 5°/2.6°/8-candidate policy subsequently completed all 114,000 replacements in T3.
 - [x] (2026-09-08 09:32Z) **T1 — Additive contract:** added the optional replacement-separation field, exact-path validation, omission parity, and opaque metadata provenance tests.
 - [x] (2026-09-08 12:03Z) **T2 — Temporal sampler:** captures exact killed coordinates, ranks up to eight preferred random candidates, scores the deterministic grid on exhaustion, preserves active-spacing failure semantics, and clears temporal state on reset.
-- [ ] **T3 — V8 integration**
+- [x] (2026-09-08 12:08Z) **T3 — V8 integration:** retuned only v8 active/replacement spacing and passed the 2,000-run stress corpus with zero overlap, soft fallback, placement error, or population invariant failure.
 - [ ] **T4 — Full-system evidence**
 - [ ] **T-exit — Audit and handoff**
 
@@ -267,6 +267,7 @@ The primary seam is `TargetManager.population.test.ts` or a colocated replacemen
 - **2026-09-08 — Freeze the committed T0 corpus as kill-order seeds 0–1999.** The harness uses the real v8 manager and an exact eye-origin ray/sphere intersection. **Alternatives considered:** depend on the uncommitted planning harness or preserve only rounded planning metrics; rejected because neither would give future runs a reproducible executable oracle.
 - **2026-09-08 — Keep metadata pass-through opaque.** `collectMeta()` already preserves the exact `spawnArea` object, so the contract change requires a provenance test but no payload schema change. **Alternatives considered:** add a parallel metadata field or increment `schemaVersion`; rejected because both would duplicate an existing single source.
 - **2026-09-08 — Rank random and grid candidates with one stable lexicographic score.** The implementation retains the first candidate unless killed separation improves, or an exact killed-separation tie improves active separation; iteration order therefore supplies the final deterministic tie-break without storing an order field. **Alternatives considered:** sort candidate arrays or add a separate grid-only selector; rejected because stable single-pass selection is smaller, bounded, and avoids unnecessary allocation.
+- **2026-09-08 — Update the practice-only v8 fixture in place.** The implementation follows the open gate's recommended default that no frozen v8 cohort exists; the changed active spacing and added preference remain explicit in exported spawn metadata. **Alternatives considered:** create v9 pre-emptively; rejected absent evidence of a frozen cohort and because it would diverge from the approved delivery policy.
 
 ### Surprises & Discoveries
 
