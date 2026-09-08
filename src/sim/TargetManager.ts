@@ -74,6 +74,7 @@ const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
 /** WP-56 T0 frozen bound: population rejection sampling is always finite. */
 export const TARGET_POPULATION_SPAWN_ATTEMPT_LIMIT = 32;
+export const TARGET_REPLACEMENT_PREFERRED_CANDIDATE_LIMIT = 8;
 const TARGET_POPULATION_FALLBACK_YAW_CELLS = 9;
 const TARGET_POPULATION_FALLBACK_PITCH_CELLS = 7;
 const TARGET_POPULATION_FALLBACK_CELL_COUNT =
@@ -101,6 +102,12 @@ interface SpawnPose {
   readonly side: 'L' | 'R';
   readonly zone?: 'center' | 'peripheral';
   readonly pos: Vec3;
+}
+
+interface RankedReplacementCandidate {
+  readonly pose: SpawnPose;
+  readonly killedSeparationDeg: number;
+  readonly activeSeparationDeg: number;
 }
 
 /** Project yaw/pitch around the legacy target-centre sightline without changing horizontal distance semantics. */
@@ -302,6 +309,8 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
   let spiderWideQueue: SpiderWideCell[] = [];
   // 已 spawn 目標數(對照 spawnLimit;reset 歸零)——config 驅動的「換 config 即換數量」判準。
   let spawnedCount = 0;
+  const lastKilledPos: Vec3 = { x: 0, y: 0, z: 0 };
+  let hasLastKilledPos = false;
   let spawnRng: Rng | undefined = usesSeededSpawn
     ? createRan1(config.sequence.seed!)
     : spiderShot !== undefined
@@ -385,8 +394,62 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
     return farthestFallbackPose(state, minimumDeg);
   }
 
+  function sampleReplacementSpawnPose(state: SharedState, preferredDeg: number): SpawnPose {
+    const minimumDeg = spawnArea!.minAngularSeparationDeg ?? 0;
+    let best: RankedReplacementCandidate | undefined;
+    let preferredCount = 0;
+
+    function consider(candidate: SpawnPose): void {
+      const activeSeparationDeg = minimumActiveSeparationDeg(state, candidate.pos);
+      if (activeSeparationDeg + ANGULAR_SEPARATION_EPSILON_DEG < minimumDeg) return;
+      const ranked = {
+        pose: candidate,
+        killedSeparationDeg: angularSeparationDeg(candidate.pos, lastKilledPos),
+        activeSeparationDeg,
+      };
+      if (
+        best === undefined ||
+        ranked.killedSeparationDeg > best.killedSeparationDeg ||
+        (ranked.killedSeparationDeg === best.killedSeparationDeg &&
+          ranked.activeSeparationDeg > best.activeSeparationDeg)
+      ) {
+        best = ranked;
+      }
+      if (ranked.killedSeparationDeg + ANGULAR_SEPARATION_EPSILON_DEG >= preferredDeg) preferredCount++;
+    }
+
+    for (let attempt = 0; attempt < TARGET_POPULATION_SPAWN_ATTEMPT_LIMIT; attempt++) {
+      consider(sampleSeededAngularPose());
+      if (preferredCount >= TARGET_REPLACEMENT_PREFERRED_CANDIDATE_LIMIT) return best!.pose;
+    }
+
+    const pitchRange = spawnArea!.pitchDegRange ?? [0, 0];
+    const distanceU = (spawnArea!.distanceURange[0] + spawnArea!.distanceURange[1]) / 2;
+    for (let yawCell = 0; yawCell < TARGET_POPULATION_FALLBACK_YAW_CELLS; yawCell++) {
+      const yawDeg =
+        spawnArea!.yawDegRange[0] +
+        ((yawCell + 0.5) / TARGET_POPULATION_FALLBACK_YAW_CELLS) *
+          (spawnArea!.yawDegRange[1] - spawnArea!.yawDegRange[0]);
+      for (let pitchCell = 0; pitchCell < TARGET_POPULATION_FALLBACK_PITCH_CELLS; pitchCell++) {
+        const pitchDeg =
+          pitchRange[0] +
+          ((pitchCell + 0.5) / TARGET_POPULATION_FALLBACK_PITCH_CELLS) * (pitchRange[1] - pitchRange[0]);
+        consider(angularSpawnPose(yawDeg, pitchDeg, distanceU, nextSide));
+      }
+    }
+
+    if (best !== undefined) return best.pose;
+    throw new Error(
+      `Unable to place ${population!.activeCount} active targets with ${minimumDeg}° minimum angular separation after ${TARGET_POPULATION_SPAWN_ATTEMPT_LIMIT} seeded attempts and ${TARGET_POPULATION_FALLBACK_CELL_COUNT} fallback cells`,
+    );
+  }
+
   function sampleSpawnPose(state: SharedState): SpawnPose {
-    if (population !== undefined) return samplePopulationSpawnPose(state);
+    if (population !== undefined) {
+      const preferredDeg = spawnArea?.preferredReplacementSeparationDeg;
+      if (preferredDeg !== undefined && hasLastKilledPos) return sampleReplacementSpawnPose(state, preferredDeg);
+      return samplePopulationSpawnPose(state);
+    }
     if (spawnRng === undefined || spawnArea === undefined) {
       return { side: nextSide, pos: { x: sideX(nextSide), y: TARGET_Y, z: -distance } };
     }
@@ -666,6 +729,10 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       let removed = false;
       for (let i = 0; i < state.targets.length; i++) {
         if (state.targets[i].id === id && state.targets[i].alive) {
+          lastKilledPos.x = state.targets[i].pos.x;
+          lastKilledPos.y = state.targets[i].pos.y;
+          lastKilledPos.z = state.targets[i].pos.z;
+          hasLastKilledPos = true;
           state.targets.splice(i, 1);
           removed = true;
           break;
@@ -696,6 +763,7 @@ export function createTargetManager(config?: DrillConfig): TargetManager {
       nextId = 0;
       spawnedCount = 0;
       pendingSpawnAtMs = null;
+      hasLastKilledPos = false;
       nextTrajectoryChangeIndex = 0;
       spawnRng = usesSeededSpawn
         ? createRan1(config!.sequence.seed!)
