@@ -12,6 +12,7 @@
 | ✅ | **T5** 抬滑鼠疑慮標註與敏感度表 | [T5-repositioning-flag.md](T5-repositioning-flag.md) | T4 ✅ | Med |
 | ✅ | **T6** Arm-time 接線與實機 E2E（**含 T3 延後的 FOV 60／75／120 實機截圖**） | [T6-wiring-and-e2e.md](T6-wiring-and-e2e.md) | T2 ✅ + T3 ✅ + T4 ✅ | High |
 | ✅ | **T-exit** 驗收與晉升 WP handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T6 ✅ | Med |
+| ✅ | **T7**（T-exit 後追加）OQ-57.8 處置 (a)：離軸投影足跡共變量 | 無獨立 task file（見 [progress.md](progress.md) §T7） | T-exit ✅ + OQ-57.8 使用者拍板採 (a) | Low/Med |
 
 T1 完成後 **T2 與 T3 可並行**（T3 只需要 resolver，不需要 sim 分支）。T4 需要 T2 產出的真實匯出。**T5 於 2026-09-08 排在 T6 之後執行**（T5 只依 T4，與 T6 無相依），故 T-exit 自此不再被阻塞。**OQ-57.7 已於 2026-09-07 拍板為選項 (b) 並落地**（KI-026／BD-026／GD-32：`deriveSpiderShotTransitions()` 已改用 payload eye，匯出角度為 eye-frame），故 T4 不再阻塞；但 T4 必須**以 eye-frame 為期望值**寫 round-trip 測試，不得沿用 T0／README §2.5.1 記載的 origin-frame 偏差數字（那些是拍板前的量測）。
 

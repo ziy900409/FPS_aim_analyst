@@ -13,6 +13,7 @@
 | T4 Export and Conditions | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T4 evidence；resolvedFrom 五欄 round-trip 逐位、eye-frame `W_deg` 恆 2.000000000000、離線 `side` 與實錄 spawn side 逐筆相同、v1/v2 七欄位不變；full Vitest 2,373 tests、兩個 typecheck／build exit 0 |
 | T5 Repositioning Flag | ✅ Done（門檻已於同日以真人資料重新校準） | 2026-09-08 | 2026-09-08 | 見 §T5 evidence（函式與 boundary scan）+ **§T5-real（真人校準，取代原本兩張合成表）**。交付門檻由合成期的 `100/15` 改為 **`150/2`**；「分離軸是 ω」的合成結論**已被推翻**（分離軸是 duration @ 緊 ω 門檻）。真人 TP 78%／FP 3%／baseline 0%。OQ-57.5 由「完全開放」降為「已校準於單一硬體，跨硬體待驗」 |
 | T6 Wiring and E2E | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T6 evidence；researcher 控制列 arm-time resolve、4 個 Edge E2E 全綠（on-screen 61 spawn 失敗 0、resize 41 spawn 逐位一致、translation locked + mouse aim、practice-only）、FOV 60／75／120 各 3 張實機截圖 + OQ-57.3／57.4 回填（`timeLimitMs` 改 60000） |
+| T7（T-exit 後追加） | ✅ Done | 2026-09-08 | 2026-09-08 | OQ-57.8 處置 (a) 落地：`src/metrics/projectedFootprint.ts` + 13 tests。見 §T7 evidence。OQ-57.8 由「已入帳、未處置」轉為**已處置（(a) 已交付）**；README 那組數字連帶更正一處 aspect 混用 |
 | T-exit | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T-exit evidence；A-57.1～12 全綠（含四個 blocking 條件）、FR-57.1～14／NFR-57.1～57.7 逐條有證據、boundary scans 綠、research safety 與 architecture regression 逐項覆核。⚠️ **NFR-57.8 的 Playwright／`test:ci` 兩個子句未滿足**（唯一原因為既存 KI-027），另新立 KI-030（全量 Playwright 不可重現） |
 
 ## T0 audit（2026-09-07）
@@ -616,6 +617,70 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 - Server：執行前確認 5173／4173 無監聽程序（5174 有一個不屬本 task 的 node 程序，Playwright 不使用該埠），兩個 server 皆由 Playwright 自起並各帶 `playwright.config.ts` 宣告的 temp root ⇒ 本次**不受 KI-028 影響**。
 - **上層索引的共編處置**：收尾時平行 session 正在同一份 [`active/stage12/README.md`](../README.md) 與 `active/stage12/task-checklist.md` 內新增 **WP-59**（未提交），其中 stage README 的狀態句與我的 WP-57 更新**落在同一行**。WP-56 T-exit 遇到同型情況的處置是整份留給檔案擁有者；本次改用更精確的做法：以 `git hash-object` + `git update-index --cacheinfo` 把「HEAD 版本 + 只有我那三行 WP-57 改動」的 blob 送進 index，worktree 檔案原封不動。⇒ 本 commit 的 stage README diff **恰為 3 行**，平行工作的 WP-59 內容完全留在他們自己的未提交 diff 裡。`active/stage12/task-checklist.md` 我一行未改，完全未 stage。
 
+## T7 evidence（2026-09-08，T-exit 後追加）
+
+**交付物**：`src/metrics/projectedFootprint.ts` —— OQ-57.8 推薦處置 **(a)**：不動刺激，把離軸球投影的形狀與面積變成**可量測的共變量**。三個匯出符號：
+
+| 符號 | 形狀 |
+|---|---|
+| `projectedSphereFootprint({ offAxisDeg, angularRadiusDeg, fovDegVertical })` | 純幾何閉式解 |
+| `deriveProjectedFootprint(payload, eyeOriginOptions?)` | 逐 `center-to-peripheral` 切換一筆 |
+| `footprintSpread(presentations)` | 極值與比值（**窗內**變異，OQ-57.8 的論點本身） |
+
+**零新增匯出欄位**（OQ-57.8 的前提）：θ 取自 `deriveSpiderShotTransitions()` 的 `angularDistanceDeg`、α 取自同一筆的 `angularSizeDeg / 2`、FOV 取自 `meta.spawn.spiderShot.resolvedFrom.fovDegVertical`。本模組**不自己碰** eye origin、目標座標、`ticks` 或 hitbox 尺寸(C-D4，由 boundary scan 以 regex 釘死)。
+
+### 閉式解（非小角近似）
+
+眼睛在原點、視軸 `+z`、像平面 `z = f`。半角 α 的切線錐（軸與視軸夾 θ）與像平面的交線為
+
+```
+k·(x − x₀)² + cos²α·y² = f²·cos²α·sin²α / k        k = cos²α − sin²θ
+```
+
+⇒ 半長軸 `a = f·cosα·sinα / k`（**徑向**）、半短軸 `b = f·sinα / √k`（**切向**）、形心 `x₀ = f·sinθ·cosθ / k`。取 `f = 1/tan(halfVFOV)` 使螢幕半高為 1。
+
+- 軸比 `a/b = cosα/√k`，θ = 0 時恰為 1，小 α 下 → `1/cos θ` ✅
+- 面積倍率 `(cos²α/k)^{3/2}`，小 α 下 → `1/cos³θ` ✅
+- θ = 0 時 `a = b = f·tanα`（在軸正圓）✅
+
+**aspect 不是輸入。** OQ-57.8 原文把 `resolvedFrom.aspect` 列為所需的量，實際推導下來它只影響 **NDC 座標**的水平縮放，不影響橢圓在**物理螢幕**上的形狀 —— 正確設定的渲染器把像平面等向地映到方形像素上。本模組因此報告等向像平面上的量（= 眼睛真正看到的形狀）。aspect 仍然重要，但它的作用點是**解析 yaw 窗**（見下表），不是投影公式。
+
+### OQ-57.8 的數字全部重現（實錄 aspect 2.0031，`kLo = 0.92`、`screenMargin = 0.04`、W = 2°、pitch ±6.5°）
+
+yaw 窗由出貨 resolver `resolveSpiderWideYawPitch()` 解出，**不是測試裡另寫一份**：
+
+| FOV | yaw 窗 | θ 範圍 | 軸比 | 足跡 vs 中心 | 窗內變異 | 形心外移 |
+|---|---|---|---|---|---|---|
+| 60 | [43.231, 46.990] | [43.23, 47.33] | 1.373–1.476 | 3.21× | 1.243× | 1.64–1.89% |
+| **75（出貨）** | **[50.484, 54.874]** | [50.48, 55.13] | **1.572–1.750** | **5.36×** | **1.379×** | 2.12–2.51% |
+| 90 | [56.602, 61.524] | [56.60, 61.72] | 1.817–2.112 | 9.42× | 1.570× | 2.65–3.25% |
+| **120** | [66.505, 72.288] | [66.51, 72.41] | **2.510–3.313** | **36.37×** | **2.299×** | 4.02–5.50% |
+
+⇒ README §1.6 / Surprises 21 記載的八個數字（`1.57–1.75`／`5.4×`／`1.38×`／`2.51–3.31`／`36.4×`／`2.30×`／yaw 窗 `50.48–54.87`）**逐項相符**。
+
+**⚠️ 更正一處**：同一句裡的「形心外移為長軸的 **1.7–4.9%**」與上列其他數字**不同源** —— 那組是用 **16:9** 算的（16:9 × FOV 120 外角 = 4.91%），而軸比／足跡是用實錄 aspect 2.0031 算的。實錄 aspect 下真正的上界是 **5.50%**。結論不變（仍遠小於長軸，「瞄視覺中心」的直覺不會被明顯誤導），數字已更正並釘成測試（四個 FOV 檔位的外角一律 < 6%）。詳見 Surprises 23。
+
+### 為什麼 FOV 會改變軸比 —— 而投影公式裡沒有 FOV
+
+上表的軸比隨 FOV 從 1.37 漲到 3.31，但 `axisRatio = cosα/√(cos²α − sin²θ)` **只含 θ 與 α**。兩者不矛盾：FOV 的作用點是 **yaw 窗**（`yawMax` 由 `tan(yawMax + r) = (1 − screenMargin)·tan(halfHFOV)` 定義），窗變寬 ⇒ θ 變大 ⇒ 軸比才變大。已寫成測試（同一個 θ 下 FOV 60 與 FOV 120 的軸比與面積倍率逐位相同至 1e-12，只有絕對尺寸不同）。
+
+### C-D3 / C-D4 boundary
+
+- **C-D3**：`src/` 內零 importer（遞迴掃描，沿用 T5 的同一形狀）。`footprintSpread()` 刻意只回極值與比值、**不回平均或標準差** —— 那會讓它看起來像個可比較的分數。
+- **C-D4**：對模組原始碼（剝註解後）掃 `resolveEyeOrigin`／`angularEccentricityDeg`／`hitbox`／`targetX|Y|Z`／`.ticks` 五個 pattern，全數零命中 ⇒ 它確實沒有第二套幾何，只吃 canonical derivation 的輸出。
+
+### 明確不在本 task 範圍
+
+- **不改刺激**：`kLo`／`screenMargin`／FOV 上限一律不動（OQ-57.8 的 (b)／(c) 已被駁回）。
+- **不做混淆因子的量化分析**：把足跡當共變量放進 `switchReaction` 的模型是**晉升 WP** 的事;本 task 只讓那個量存在且可稽核。
+- **θ 是設計上的離軸角，不是瞬時偏心度**：`center-to-peripheral` 的定義即「視線在中心目標上」，故 `D_deg` 就是切換發生那一刻的 θ。橢圓只存在於拉槍**之前**的偵測階段。
+
+### Verification
+
+`src/metrics/projectedFootprint.test.ts` **13 tests 全綠**（§A 閉式解自洽 4、§B OQ-57.8 數字 4、§C payload 接線與 boundary 5）。`npm run typecheck` exit 0（兩個 tsconfig）;全量 `npx vitest run` **241 files passed + 1 skipped／2,440 tests passed + 2 skipped**（本 task 貢獻 1 file / 13 tests，隔離跑實測；其餘差額為平行 WP-59 session 於本 task 執行期間落地的兩個 commit `367b4c8`／`2b38e47`）;`npx vite build` exit 0（僅既存 >500 kB 警告）。
+
+**未觸碰**：worktree 內平行 WP-59 的 `docs/exec-plan/active/stage12/README.md`、`task-checklist.md`、`graphify-out/*`、`src/drill/micro_flick_three_target_test_v8.ts`、`src/drill/micro_flick_three_target_test_variants.test.ts`、`src/sim/TargetManager.replacement-spacing.test.ts` 全程未 stage。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -663,6 +728,7 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 | D-57.T5-4 | 2026-09-08 | **敏感度表建在注入 ground truth 的合成 cohort 上，並在文件與測試檔頭明寫「非真人 run」**；OQ-57.5 因此**維持開放**而非宣告收斂。<br>**Alternatives considered**：(a) 用 `spiderWideDeterminismFixture` 的「真實 run」 —— 它把 aim 固定在 `yaw = pitch = 0`（D-57.T2-3），一次周邊 movement onset 都不會產生，表全空，**技術上不可行**；(b) 用 `research/fixtures/exports/` 的五個真人 counterstrafe 匯出 —— 沒有 `zone: 'peripheral'`，本函式的母體為空，**不適用**；(c) 用 T6 的 harness run 產生資料並當作經驗分布 —— 解析式瞄準的停滯率恆為 0，會產出一張「門檻怎麼調都是 0」的表並被誤讀為「抬滑鼠不存在」，**駁回（與 T6 拒絕合成 timeout 率同一理由）**；(d) 凍結一組門檻進 production 常數 —— T5 invariant 明文「不凍結單一門檻」，**駁回** | Engineering | §T5 的兩張表；`spiderShotRepositioning.test.ts` 檔頭 |
 | D-57.T5-5 | 2026-09-08 | **C-D3 過閘寫成「`src/` 內零 importer」的遞迴掃描，而非列舉 `diagnosisRules.ts`／教練報告路徑／`DrillMetricRegistry.ts` 三個檔**。<br>**Alternatives considered**：黑名單三檔 —— 明天新增一條 diagnosis rule 或一個 report builder 就繞過了，而「不進教練報告」的宣稱恰恰是要防那件事，**駁回**。代價：本模組將來若真的要被某個離線 script 消費，這條會紅 —— 那正是應該停下來重讀 C-D3 的時刻，不是誤報 | Engineering | `is imported by nothing in src/ other than its own test` |
 | D-57.T5-6 | 2026-09-08 | **boundary scan 在比對前先剝掉註解**（`codeOnly()`）。理由：模組註解正當地「提到」`ticks.dYaw/dPitch`（解釋 ω 從哪來）與 `repositioningCount`（解釋刻意不提供什麼），未剝註解時這兩條 scan 直接紅燈。沿用 `domain-purity-boundary.test.ts` 已記載的同一教訓：拿 prose 當違規，只會逼人把說明刪掉 | Engineering | 首次執行的兩個紅燈輸出；剝除後 19 tests 全綠 |
+| D-57.T7-1 | 2026-09-08 | **OQ-57.8 採推薦處置 (a) 並落地**：新增 `src/metrics/projectedFootprint.ts`（離線純函式），把離軸投影的軸比／螢幕足跡／形心外移變成可量測共變量;**刺激零修改、匯出零新增欄位**。θ 與 α 一律取自 `deriveSpiderShotTransitions()` 既有的 `angularDistanceDeg`／`angularSizeDeg`，FOV 取自 `resolvedFrom.fovDegVertical`。<br>兩個實作決定：① **採閉式解而非 `1/cosθ`／`1/cos³θ` 小角近似** —— 近似在 W = 2° 下誤差雖 < 1%，但寫成近似就無法在 FOV 120（軸比 3.31）上宣稱正確,且閉式解的成本只是多兩行;近似值改由測試以小 α 極限驗證，變成「已知它趨近什麼」而非「假設它等於什麼」。② **`resolvedFrom.fovDegVertical` 缺席時擲錯，刻意不退回 `meta.fovDeg`** —— 用錯 FOV 算出的足跡是**靜默錯誤**（數字看起來完全正常），而兩個 FOV 來源就是 C-D4 意義上的第二定義。<br>**Alternatives considered**：(b) 提高 `kLo` 壓縮窗內變異 —— 會一併壓縮 `D_deg` 變異（即條件變因本身），且推翻 D-57.T6-1 剛收斂的 OQ-57.3，**駁回**；(c) 限制 FOV 上限 —— 直接違反 D-57.P2「每位選手同樣貼邊」，**駁回**;(d) 只在文件寫下公式不寫程式 —— 那正是 OQ-57.8 現狀（已入帳、未處置），且 README 那組數字裡的 aspect 混用（見 Surprises 23）正是「只有散文沒有可執行斷言」才會活下來的錯誤，**駁回**;(e) 一併把足跡放進 `switchReaction` 的模型做混淆因子量化 —— 那需要真人資料與統計設計，屬晉升 WP，**移交** | 使用者 + Engineering | §T7 evidence；`projectedFootprint.test.ts` 13 tests |
 | D-57.T5-8 | 2026-09-08 | **四份真人 `spider-shot-wide-v1` 匯出不收進 `research/fixtures/exports/`（各 3.4–3.8 MB，共約 14 MB）。連帶後果明確入帳：§T5-real 與 KI-031 的所有數字在本 repo 內「不可重現」**，只留 sha256（它只能證明「若日後有人拿到同一批檔案，那是同一批」）。晉升 WP 要動 OQ-57.5 或 KI-031 的任何數字時必須**重錄**，規格見 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md)。<br>**Alternatives considered**：(a) 全部四份收進去 —— 我的建議項，可讓 TP 78%／FP 3%／0-of-113 全部可重現，且既有五份真人 counterstrafe（0.8–1.2 MB）已是 C-D1 允許的 committed fixture 例外，**使用者未採**；(b) 只收 baseline + all-lift 兩份（約 7 MB）—— 保住 0% vs 78% 的核心對照，但 no-lift 的 3% FP 與 pause 的 17% 誤標不可重現，**未採**;(c) 存到 repo 外並記路徑清單 —— 別台機器仍不可重現，**未採**。<br>**代價已知並記名**：本 WP 交付後任何人讀到 §T5-real 的數字，都無法在 repo 內覆驗它們;這不是疏漏而是刻意的取捨，故三處（§T5-real、本列、KI-031 §7）都寫成明文而非只留一個 sha256 表 | 使用者 | §T5-real 開頭的警示段；[KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) §7 |
 | D-57.T6-4 | 2026-09-08 | **`fpsTestHarness` 的 `availableDrills` 同步接受 `resolveSource`，並在每次 `startDrill()` 時呼叫**（不是在 bootstrap 的 `.map()` 裡就解析掉）。理由：harness 的 `startDrill()` 語意上就是一次 arm；若在 bootstrap 解析，resize 不變性 E2E 就變成比較兩個「早就解析完」的 run，什麼都證不到，而那正是 NFR-57.5 唯一的實機閘。<br>**Alternatives considered**：(a) 在 `main.ts` 的 map 裡呼叫 `resolveSource()` —— 上述理由，**駁回**；(b) 不讓 harness 支援本 drill、E2E 全走 live 單例 —— live 需要真人 Pointer Lock 開火才能推進 spawn 序列（`centerExemptFromTimeout` 讓無輸入的 run 停在第一顆中心目標，見 T2 補充 ④），無法做逐位 trace 比較，**駁回** | Engineering | `fpsTestHarness.ts` 三行 diff；resize E2E 的 41 spawn 逐位一致 |
 
@@ -745,7 +811,7 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 | OQ-57.4 `peekTimeoutMs` / `timeLimitMs` | 🟡 **部分收斂 2026-09-08**（D-57.T6-2）：`timeLimitMs` 改 **60000**、`peekTimeoutMs` 維持 2500；每 cell 樣本數已有實機掃描表。**timeout 率未收斂**——harness 自動瞄準使其恆為 0（by construction），需真人 run | timeout 率：使用者實機／晉升 WP |
 | OQ-57.5 repositioning 門檻 | 🟡 **已校準於單一硬體，跨硬體待驗（2026-09-08 稍晚，D-57.T5-7）**：交付門檻 **`stallMinMs = 150`／`stallOmegaDegPerSec = 2`**（TP 78%／FP 3%／baseline 0%），仍**未凍結、未寫成 production 常數**。⚠️ 合成期的 `100 / 15` 與「分離軸是 ω」**兩個結論都已被真人資料推翻**（見 §T5-real）。仍開放：① 緊 ω 門檻條件於錄製機器的取樣特性；② [KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) 修好後全部數字須重跑;③ `cm/360` 方向性未答（感度與指示共線）——錄製規格已交付於 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md)，分析工具 `npm run analyze:spider-wide` 對共線 cohort 會拒答；④ n=1。<br>⚠️ **四份真人匯出不進 repo（D-57.T5-8）⇒ 上述數字在本 repo 內不可重現**，只留 sha256 | 使用者（實機）+ 工程，晉升 WP 前 |
 | OQ-57.6 晉升時 `compatibilityKey` 補 aspect | 已有結論（必須補），不阻塞本 WP。**T0 補上量化依據：同 FOV 75 下 4:3 與 21:9 的 `yawMax` 相差 15.3°** | 晉升 WP 的 T0 |
-| **OQ-57.8**（T-exit 後新增）離軸球投影為橢圓 | 🟡 **已入帳、未處置**（2026-09-08）：軸比 ≈ `1/cos θ`，實錄 FOV 75／aspect 2.0031 下為 **1.57–1.75**，螢幕足跡是中心目標的 5.4×、窗內隨 yaw 變動 1.38×（FOV 120：2.51–3.31／36.4×／2.30×）。**與 `D_deg` 共變 ⇒ 是 `switchReaction` 的混淆因子**。推薦處置 (a)：不動刺激，另交付離線純函式把它變成可量測共變量（重建所需的量匯出裡已全有，不需新欄位）。詳見 README §1.6 與下方 Surprises 21 | 使用者 + 研究，晉升 WP 前 |
+| **OQ-57.8**（T-exit 後新增）離軸球投影為橢圓 | ✅ **已處置 2026-09-08：採推薦的 (a) 並落地**（D-57.T7-1）—— `src/metrics/projectedFootprint.ts` + 13 tests，刺激零修改、匯出零新增欄位;README 的八個數字逐項重現並更正一處 aspect 混用（形心外移上界 4.9% → **5.50%**，見 Surprises 23）。**仍移交晉升 WP** 的是把足跡當共變量放進 `switchReaction` 模型的量化分析（需真人資料 + 統計設計）。原始記載：軸比 ≈ `1/cos θ`，實錄 FOV 75／aspect 2.0031 下為 **1.57–1.75**，螢幕足跡是中心目標的 5.4×、窗內隨 yaw 變動 1.38×（FOV 120：2.51–3.31／36.4×／2.30×）。**與 `D_deg` 共變 ⇒ 是 `switchReaction` 的混淆因子**。推薦處置 (a)：不動刺激，另交付離線純函式把它變成可量測共變量（重建所需的量匯出裡已全有，不需新欄位）。詳見 README §1.6 與下方 Surprises 21 | 使用者 + 研究，晉升 WP 前 |
 | **OQ-57.7**（T0 新增）匯出 `angularDistanceDeg`／`angularSizeDeg` 的 frame 語意 | ✅ **已收斂 2026-09-07：採選項 (b)**（非 T0 建議的 (a)）—— 由 KI-026／BD-026 一併落地，`deriveSpiderShotTransitions()` 改用 payload eye + per-tick player position；權威記載見 [DECISIONS.md GD-32](../../../DECISIONS.md) ④。**T4 因此不再阻塞** | — |
 
 ### T2 補充（2026-09-07）
@@ -795,3 +861,5 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 ### 交付後補充（2026-09-08 稍晚）
 
 22. **交付後的更正只回填了「敘述段」，追蹤表被漏掉 —— 而追蹤表才是別人會讀的那一份。** T5 真人校準（commit `e49cc54`）把 §T5-real、Decision Log D-57.T5-7 與 README §1.6 的 OQ-57.5 全部更新成 `150 / 2`，唯獨 progress.md 自己的 **Open Questions 追蹤表**還留著合成期的 `100 / 15` 與「無真人資料」。同一份檔案裡因此並存兩個互相矛盾的門檻，而摘要表比敘述段更容易被當成現況引用。<br>⇒ 這是 Surprises 9「帳本會領先 WP 文件」的**同一個病理往內縮一層**：那次是 DECISIONS.md 領先 WP 文件，這次是同一份 WP 文件的敘述段領先它自己的摘要表。**教訓：更新一個 OQ 的結論時，摘要／追蹤表與敘述段必須在同一個切片裡一起改**，否則下一個讀者拿到的是舊值。已於 D-57.T5-8 的切片一併對帳。
+
+23. **同一句話裡混了兩個 aspect，而它活下來的唯一原因是那句話沒有對應的斷言。** Surprises 21 / README §1.6 的 OQ-57.8 條目寫著「軸比 1.57–1.75、足跡 5.4×、窗內 1.38×……形心外移僅為長軸的 **1.7–4.9%**」。T7 把整組數字重算成測試時，前面七個逐項相符，只有形心那組對不上：實錄 aspect 2.0031 下 FOV 120 外角是 **5.50%**，不是 4.9%。追下去才發現 **4.91% 恰好是 16:9 的值** —— 我當初算形心時用了 16:9，算軸比與足跡時用了實錄的 2.0031,兩組數字並排寫進同一句，看起來完全自洽。<br>⇒ 結論不受影響（5.5% 仍遠小於長軸，「瞄視覺中心」的直覺不會被明顯誤導），但**教訓與數字本身無關**：這個錯誤在散文裡存活了一整天，而它在被寫成 `expect()` 的第一分鐘就死了。**凡是會被後人當成期望值引用的數字，都應該有一條斷言釘著它**——這正是 Surprises 12（README §2.5.1 那張過期的 `W_deg` 表）與 Surprises 13（opaque `spiderShot` 的型別保護為零、只有 round-trip 測試擋著）的同一個結構性論點的第三次出現。<br>⇒ 附帶收穫：`resolvedFrom.aspect` 原本被 OQ-57.8 列為推導所需的量，實作後發現它**不影響橢圓在物理螢幕上的形狀**（只影響 NDC 的水平縮放），真正的作用點是解析 yaw 窗。「FOV 讓軸比從 1.37 漲到 3.31，但投影公式裡沒有 FOV」也是同一件事的另一面。
