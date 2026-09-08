@@ -97,6 +97,12 @@ function applyInput(
     // KI-005 / A（FR-A-1）：tick 窗內依事件自身 timeStamp 積分角位移。**只寫 recorder，不寫 state**
     // —— sim 演進、命中、彈道一律不受影響（NFR-A-1）；未啟用時完全不進此分支（GC 紀律 §4）。
     if (recorder?.mouseIntegration !== undefined) recorder.accumulateMouse(ev.dx, ev.dy, state.heldAds);
+    // WP-60 / T2（FR-60.1/60.7）：**同一批已排序事件**的第二個唯寫旁路 —— 逐筆保留 raw counts 與事件
+    // 自身 timeStamp，不做跨事件聚合。刻意排在 `accumulateMouse` **之後**且不消費其回傳值：不讀
+    // `state`、不寫 `state`、不改上一行的參數或呼叫順序 ⇒ 開／關兩組 sim 狀態逐位一致（NFR-60.1）。
+    // 兩個資料流同源於此消費點（GD-3 半開窗升冪無遺漏）⇒ FR-60.7 的對齊是結構性成立，不靠斷言維持。
+    // 預設關閉（`recordMouseSamples === false`）時完全不進呼叫、不配置 arena（GC 紀律 §4，FR-60.2）。
+    if (recorder?.recordMouseSamples === true) recorder.recordMouseSample(ev.dx, ev.dy, ev.t);
   }
 }
 

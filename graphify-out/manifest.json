@@ -512,8 +512,8 @@
     "hash": "ef6590f94626e205fed3cffa0cb39e9a"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\main.ts": {
-    "mtime": 1788875253.373035,
-    "hash": "e55fde864ca1ecc7ac3a8b764a26bd7d"
+    "mtime": 1788900895.7739747,
+    "hash": "600db353214888fe0a38bef2b8800200"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\vite-env.d.ts": {
     "mtime": 1788875253.6582346,
@@ -580,8 +580,8 @@
     "hash": "321716e93e82645f6112632108210ad9"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\data\\mouseSampleArena.ts": {
-    "mtime": 1788875498.235153,
-    "hash": "30fac298cdfb499e452ec31508f6f3a8"
+    "mtime": 1788900763.213673,
+    "hash": "6b97c9b02fd84f661cab45d688cd8711"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\data\\RingBuffer.ts": {
     "mtime": 1788875253.2580192,
@@ -992,8 +992,8 @@
     "hash": "3f7f32e674f20a222b8361f427446ae7"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\loop\\SimLoop.ts": {
-    "mtime": 1788875253.3617394,
-    "hash": "10f67e20212def7e6659559be0c776fe"
+    "mtime": 1788900763.3364384,
+    "hash": "1724eae34f3611cabd8901d8d240fe2f"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\loop\\__tests__\\ballistic-compose.test.ts": {
     "mtime": 1788875253.3627567,
@@ -2123,6 +2123,10 @@
     "mtime": 1788875253.6883614,
     "hash": "f892f8ff92f4f5f688c8b3a4103f2d1d"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\e2e\\raw-mouse-sampling.spec.ts": {
+    "mtime": 1788900937.8057973,
+    "hash": "b40bc68781e3d0f1b127a699c865b44d"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\e2e\\replay.spec.ts": {
     "mtime": 1788875253.690362,
     "hash": "3330908cb0aef015af309b9ab843af0b"
@@ -2324,8 +2328,8 @@
     "hash": "9f7518ae63886532ef7cc9ec50b75e86"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\regression\\spiderWideDeterminismFixture.ts": {
-    "mtime": 1788875253.7728858,
-    "hash": "db1454ec86faebc67906e0c6c8e7d39b"
+    "mtime": 1788897107.9495332,
+    "hash": "4f217bbbe29e78c6868695cf346b4aae"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\regression\\spray-determinism.test.ts": {
     "mtime": 1788875253.773894,
@@ -2378,6 +2382,10 @@
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\regression\\tracking-time-on-task-slope.test.ts": {
     "mtime": 1788875253.7914038,
     "hash": "553b83d37a8e28baef1f96b800ce2529"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\regression\\wp60-raw-mouse-capture.test.ts": {
+    "mtime": 1788900142.0364468,
+    "hash": "f795283ee6c5e65a3b5f631393ec3b6d"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\replay\\domain-purity-boundary.test.ts": {
     "mtime": 1788875253.7934163,
@@ -3056,8 +3064,8 @@
     "hash": "a030b91a4cd87e5700349ebae4670303"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\progress.md": {
-    "mtime": 1788875252.2397175,
-    "hash": "f2d704b3f9b860cfed1483c12582280d"
+    "mtime": 1788901882.613544,
+    "hash": "19263b8985047fe1e560be903eafa9b3"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\README.md": {
     "mtime": 1788875252.235098,
@@ -3072,12 +3080,12 @@
     "hash": "981706c38b0e31c788004f84553db051"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\T1-capture-contract.md": {
-    "mtime": 1788875252.2369308,
-    "hash": "90655b167e4f6b205521578efc9120d5"
+    "mtime": 1788877994.2616549,
+    "hash": "7f063065f48c9ca82fccfbcf480ce796"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\T2-recorder-wiring.md": {
-    "mtime": 1788875252.2382069,
-    "hash": "5aafcb9a5b5ff778c9f191044fff4f30"
+    "mtime": 1788901744.7750888,
+    "hash": "ac0588d9e96873de979296a44b9b6899"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\T3-time-gap-primitive.md": {
     "mtime": 1788875252.2382069,
@@ -3088,8 +3096,8 @@
     "hash": "e9d4e9ec08003c736c4b7d7326da8d32"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\task-checklist.md": {
-    "mtime": 1788875252.241276,
-    "hash": "853e3c1bedd488b7a84c6d47e16aa8fb"
+    "mtime": 1788901752.0610855,
+    "hash": "4b32f16ed385b0879131942248f8fedc"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage5\\wp-25-ballistics-tracer\\ENHANCEMENT-tracer-pertick-replay.md": {
     "mtime": 1788875252.2422843,

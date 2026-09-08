@@ -707,10 +707,23 @@ function currentMouseGain() {
 // KI-005-A / OQ-A-2 / TD-5（2026-08-07 A2-T1 前置決策再拍板：開）：啟用 additive `key` 事件記錄，
 // 供離線推導原移動鍵的 sub-tick 釋放時刻（KI-006 構念分析需要，補 tick-derived release 的 ±1 tick
 // 量化）。關閉時匯出逐位不變（NFR-A-2 同一紀律），開啟只新增資料，不改既有欄位語意。
+// WP-60 / T2（FR-60.2）— raw mouse sample 擷取的 app 佈線層開關，**預設關閉**。
+// 為何不像 `recordKeyEvents` 那樣全域開：WP-60 T0 的 entry gate 是**經驗性**的且尚未通過
+// （R1 —— `getCoalescedEvents()` 在 Pointer Lock 下是否真的回傳次幀樣本，repo 內只有註解宣稱、
+// 無實機證據）。在那個數字量到之前，把逐筆擷取設成所有受測者的常態熱路徑，等於用一個未驗證的
+// 前提去換 8.6 MB 常駐 arena 與數 MB 匯出增幅。`?rawMouse=1` 因此同時是兩件事：opt-in 開關，
+// 以及 T0 PoC 缺的那個入口 —— 真瀏覽器 + 真 COI + 真滑鼠跑一輪，即可從匯出讀
+// `meta.mouseSampling.observedRateHz` 與 `mouseSamples.dtUs` 的分布來結掉 R1/R2。
+const rawMouseSampleCapture = new URLSearchParams(window.location.search).get('rawMouse') === '1';
 const recorder = createDataRecorder({
   simHz: SIM_HZ,
+  // WP-60 / T2：raw sample arena 的容量來源（1000 Hz × 本值 × headroom）。與匯出的
+  // `meta.maxDrillSeconds` 綁同一個常數，避免兩處各寫一個上限；tick arena 的容量本來就用此預設值，
+  // 顯式傳入不改變 `capacityForDrill()` 的結果。
+  maxDrillSeconds: DEFAULT_MAX_DRILL_SECONDS,
   mouseIntegration: { gain: currentMouseGain() },
   recordKeyEvents: true,
+  recordMouseSamples: rawMouseSampleCapture,
 });
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(
@@ -1006,6 +1019,20 @@ const drillRunner: DrillRunner = {
 };
 drillRunner.start(activeDrillConfig);
 
+// WP-60 / T2（FR-60.6，OQ-60.3）— Pointer Lock 轉態入匯出。
+// 為什麼必須記：未取鎖的 pointermove **整筆丟棄**（KI-005 / A，FR-A-8），所以 lock 中斷會在原始
+// 取樣裡留下一個與「感測器離地」**同形**的事件空洞。不記轉態，離線端就只看得到一個空洞、無從分辨
+// 成因 —— 那正是 WP-57 Surprises 6「兩個原因混成一個」的覆轍。
+// 與 raw 擷取共用同一個開關：關閉時一個 `pointer_lock` 事件都不記 ⇒ 既有匯出逐位不變（FR-60.2）。
+// 只在 drill 實際錄製中（countdown/running）記錄，比照 KI-007 對 `fullscreenchange` 的同一判準；
+// 時間戳走 `performance.now()`（與 `event.timeStamp` 同時鐘域，ADR-4），sim 內不新增任何時鐘讀取。
+if (recorder.recordMouseSamples) {
+  pointerLock.onChange((locked) => {
+    if (drillRunner.phase !== 'countdown' && drillRunner.phase !== 'running') return;
+    recorder.recordEvent({ type: 'pointer_lock', locked, t: performance.now() });
+  });
+}
+
 // WP-13 / T2 — spread/recoil RNG seed 佈線（OQ-13.1）：seed 取自 `drill.sequence.seed`（省略即
 // createSimLoop 內後援 DEFAULT_RNG_SEED）。restart / 換 drill 走**重建 loop** 重置 rng stream 與
 // tickIndex（決定性:同 seed 同輸入序列位元一致）。seed 值交 WP-16 記入匯出 meta（研究可重現）。
@@ -1039,7 +1066,14 @@ let simLoop = buildSimLoop();
 if (import.meta.env.DEV) {
   // KI-005 / A（FR-A-7）：一併唯讀暴露 recorder，供 e2e 驗證 app 佈線層（非僅 API 層 opt-in）真的
   // 對正式單例啟用了 mouse 積分——不透過此縫，`recordKeyEvents` 至今未啟用即無法被 e2e 觀測到。
-  (window as unknown as { __aimDebug?: unknown }).__aimDebug = { state: sharedState, pointerLock, recorder };
+  // WP-60 / T2：additive 唯讀 `drillPhase()`——`pointer_lock` 事件只在 countdown/running 記錄，
+  // e2e 若不能讀到相位，就只能靠「載入後應該還在 countdown」的時間假設，那是 flake 的來源。
+  (window as unknown as { __aimDebug?: unknown }).__aimDebug = {
+    state: sharedState,
+    pointerLock,
+    recorder,
+    drillPhase: (): DrillRunner['phase'] => drillRunner.phase,
+  };
 }
 
 // WP-10 / T4 — dev-only recoil pattern viewer. Dynamic import keeps the canvas tool out of production.

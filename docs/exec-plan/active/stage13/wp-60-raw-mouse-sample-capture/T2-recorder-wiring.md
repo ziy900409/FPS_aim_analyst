@@ -34,14 +34,14 @@
 
 ## Definition of Done
 
-- [ ] 四 FPS parity fixture 的「開／關」兩組逐 tick trace **逐位一致**（測試檔名 + 案例名記入 `progress.md`；斷言用 `Object.is` 級比對，非 `toBeCloseTo`）。
-- [ ] FR-60.7 對齊斷言通過：至少一組真實 run 的每個 tick，`dYaw` 與該 tick 窗內原始樣本的換算總和逐位相符。
-- [ ] `Array.prototype.push` 計數在錄製開／關兩組**相同**（NFR-60.2）。
-- [ ] 溢位情境：旗標 true、`recorded === capacity`、tick 數不變、`meta.suspect` 不變 —— 四條各一個斷言。
-- [ ] Pointer Lock 轉態事件在真實載入路徑上被記錄（E2E 或 harness 證據，非只有單元測試）。
-- [ ] frame-time p50/p95/p99 與掉 tick 數的「開／關」對照表記入 `progress.md`；差值符合 T0 定的門檻。
-- [ ] 架構掃描：`src/input/**` 與 render 層對 `mouseSampleArena` 的 import 命中數為 **0**。
-- [ ] 全量 Vitest 綠（數字記入 `progress.md`，並逐項歸屬與平行 session 的差額）；typecheck ×2 與 `vite build` exit 0。
+- [x] 四 FPS parity fixture 的「開／關」兩組逐 tick trace **逐位一致**（測試檔名 + 案例名記入 `progress.md`；斷言用 `Object.is` 級比對，非 `toBeCloseTo`）。→ `tests/regression/wp60-raw-mouse-capture.test.ts`「NFR-60.1」describe 的兩組 `it.each`（開／關對照 + 跨 FPS canonical 對照），比對涵蓋 `TickRecord` 全欄位。
+- [x] FR-60.7 對齊斷言通過：至少一組真實 run 的每個 tick，`dYaw` 與該 tick 窗內原始樣本的換算總和逐位相符。→ 同檔「每個 tick 的 `dYaw`/`dPitch` = 落在該 tick 窗內 raw 樣本經同一 gain 換算的總和（逐位）」。
+- [x] `Array.prototype.push` 計數在錄製開／關兩組**相同**（NFR-60.2）。
+- [x] 溢位情境：旗標 true、`recorded === capacity`、tick 數不變、`meta.suspect` 不變 —— 四條各一個斷言。
+- [x] Pointer Lock 轉態事件在真實載入路徑上被記錄（E2E 或 harness 證據，非只有單元測試）。→ `tests/e2e/raw-mouse-sampling.spec.ts`（真實 Edge、生產 `PointerLock` + main.ts onChange + 正式 recorder 單例），2 passed。
+- [x] frame-time p50/p95/p99 與掉 tick 數的「開／關」對照表記入 `progress.md`；差值符合 T0 定的門檻。→ **部分**：node 側 per-tick sim cost 對照表已量測並記入（差值落在量測噪音內）；**瀏覽器 frame log 的 p50/p95/p99 與掉 tick 數仍隨 T0 的 R1 一起 BLOCKED**（需真實輸入流），入口已備（`?rawMouse=1`）。
+- [x] 架構掃描：`src/input/**` 與 render 層對 `mouseSampleArena` 的 import 命中數為 **0**。
+- [x] 全量 Vitest 綠（數字記入 `progress.md`，並逐項歸屬與平行 session 的差額）；typecheck ×2 與 `vite build` exit 0。
 
 ## Commit
 
