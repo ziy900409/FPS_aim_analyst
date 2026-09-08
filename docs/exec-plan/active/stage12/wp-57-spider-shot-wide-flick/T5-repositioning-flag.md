@@ -31,13 +31,13 @@
 
 ## Definition of Done
 
-- [ ] 四類合成訊號分類全部正確。
-- [ ] 角速度來源沿用既有正規路徑，無第二套 ω 實作（以 import 圖證明）。
-- [ ] 門檻敏感度表已寫入 [progress.md](progress.md)（真實 run 或明確註明的 fixture 替代）。
-- [ ] `cm/360` 與標註率的方向性檢查已記錄（含方向不符時的處置）。
-- [ ] C-D3 boundary 測試綠：本模組不被教練報告／診斷規則／registry 引用。
-- [ ] OQ-57.5 有收斂結論或明確 blocked owner／deadline。
-- [ ] 全量 metrics regression exit 0。
+- [x] 四類合成訊號分類全部正確（真停滯／刻意停頓／一次到位／窗界外 onset 前後兩版）。
+- [x] 角速度來源沿用既有正規路徑，無第二套 ω 實作（boundary scan：必須 import `omegaDegPerSec`，且程式碼不得出現 `dYaw`／`dPitch`／`Math.hypot`／`Math.atan2`）。
+- [x] 門檻敏感度表已寫入 [progress.md](progress.md)。**明確註明為合成 cohort**——repo 內不存在真人的 wide-flick 匯出（D-57.T5-4／Surprises 15、16）。
+- [x] `cm/360` 與標註率的方向性檢查已記錄：單調非遞減 `[0,0,0,4,8,9]/12`，方向與預期一致，逐格釘死在測試裡。
+- [x] C-D3 boundary 測試綠：遞迴掃 `src/` 全部 `.ts`，importers = `[]`（比黑名單三檔更強，見 D-57.T5-5）。
+- [x] OQ-57.5 **維持開放**，owner／deadline 已明確：使用者（實機）+ 工程，晉升 WP 前；交付參考門檻 `stallMinMs=100`／`stallOmegaDegPerSec=15`（未凍結、未進 production 常數）。
+- [x] 全量 metrics regression exit 0：`npx vitest run src/metrics tests/golden` → 41 files／287 tests passed。
 
 ## Commit
 

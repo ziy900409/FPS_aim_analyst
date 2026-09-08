@@ -11,7 +11,7 @@
 | T2 TargetManager Branch | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T2 evidence；golden 先錄後改、四 FPS parity、aspect 不變性、10,000 spawn 覆蓋／平衡、120,000 spawn NDC 失敗數 0；full Vitest 2,314 tests、typecheck／build exit 0 |
 | T3 Wide Arena Scene | ✅ Done（步驟 8 實機截圖延到 T6） | 2026-09-07 | 2026-09-07 | 見 §T3 evidence；612 個落點淨空、§2.5 全表逐列、預設房間四檔全穿側牆、`loadDrill` 閘正負向；full Vitest 2,353 tests、兩個 typecheck／build exit 0 |
 | T4 Export and Conditions | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T4 evidence；resolvedFrom 五欄 round-trip 逐位、eye-frame `W_deg` 恆 2.000000000000、離線 `side` 與實錄 spawn side 逐筆相同、v1/v2 七欄位不變；full Vitest 2,373 tests、兩個 typecheck／build exit 0 |
-| T5 Repositioning Flag | Ready | — | — | T4 ✅（`deriveMouseThrow()` 已可用作標註率的 `cm/360` 方向性檢查 x 軸） |
+| T5 Repositioning Flag | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T5 evidence；四類合成訊號分類正確、C-D4／C-D3 boundary scan 綠、門檻敏感度表與 `cm/360` 方向性檢查逐格釘死；19 tests、全量 metrics regression 41 files／287 tests、兩個 typecheck exit 0。**OQ-57.5 維持開放**（無真人 run，見下方誠實揭露） |
 | T6 Wiring and E2E | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T6 evidence；researcher 控制列 arm-time resolve、4 個 Edge E2E 全綠（on-screen 61 spawn 失敗 0、resize 41 spawn 逐位一致、translation locked + mouse aim、practice-only）、FOV 60／75／120 各 3 張實機截圖 + OQ-57.3／57.4 回填（`timeLimitMs` 改 60000） |
 | T-exit | Blocked by T5 | — | — | T1～T4／T6 ✅；只剩 T5 |
 
@@ -324,6 +324,94 @@ registry 的 exact-id／near-miss／replay-profile 負向面沿用 T1 的 `spide
 
 **Server 環境揭露**：開工時 5173 上有一個**不屬本 task**的 dev server，且它租用的是**真實** `data/session-history/`；已先停掉，讓 Playwright 自己起帶 `.playwright-tmp/history-dev`／`-preview` 的兩個 server（事後確認兩個 temp root 都建立、真實根目錄本次無任何新 run 資料）。WP-56 T-exit 記錄的 3 項 preview root-lock（HTTP 423）失敗本次**未重現**，而且這次兩個 server 確實各持自己的 lease（不是被環境繞過）。細節與真實根目錄的既存 fixture 殘留見 Surprises 28／29。
 
+## T5 evidence（2026-09-08）
+
+> 排在 T6 之後執行（T5 依 T4，與 T6 無相依；使用者於 2026-09-08 選擇「先補 T5 再跑 T-exit」）。
+
+### 交付物
+
+- **`src/metrics/spiderShotRepositioning.ts`** —— `deriveRepositioningSuspicion(payload, options)`，對每個 `zone: 'peripheral'` 抵達輸出一筆 `RepositioningSuspicion`。偵測窗 = **canonical movement onset**（`deriveDetectionMetrics().presentations[].tDetectMs`）到 **canonical 首次 on-target**（`deriveTrackingSamples().presentations[].samples.find(onTarget).t`）—— 正是 `deriveSpiderShotMetrics()` 用來定義 `movementTimeMs` 的同一對邊界，故本旗標標的是那段區間**內部**發生的事，不是另開一個窗（C-D4）。角速度一律走 `omegaDegPerSec()`。
+- **`src/metrics/spiderShotRepositioning.test.ts`** —— 19 tests。合成訊號的時間邊界由 builder 產生時回報（`BuiltTrial`），期望值綁在真正被記錄的 tick 上，不手寫魔術常數。
+- production 只新增這一個檔；`spiderShotMetrics.ts`、`spiderShotConditions.ts`、`diagnosisRules.ts`、`DrillMetricRegistry.ts` 皆**零修改**。
+
+### 四類合成訊號（T5 步驟 3）
+
+| 訊號 | 注入 | 判定 | 對應測試 |
+|---|---|---|---|
+| 真停滯（窗內長時間 ω ≈ 0 後再度加速） | 200 ms 停滯 | `suspected = true`，`stallDurationMs = 190` | flags a true mid-flick stall |
+| 刻意停頓（短於門檻） | 60 ms 停滯 | `suspected = false` | does not flag a deliberate pause |
+| 無停滯的一次到位拉槍 | 0 ms | `suspected = false` | single ballistic flick |
+| 窗界外：movement onset **之前** | 500 ms 靜止（反應時間） | `suspected = false` | stall before movement onset |
+| 窗界外：首次 on-target **之後** | 600 ms 靜止（停在目標上） | `suspected = false` | stall after first on-target |
+
+另補三條窗界語意：同一次拉槍兩段停滯時回報**較長**的那一段（長段在前／在後各一組，且兩者的 `stallStartMs` 不同 —— 否則斷言可能只是碰巧都對）；acquisition failure（窗右界不存在）與 detection timeout（窗左界不存在）一律回 `suspected: false` 且**不帶欄位**，語意是「無從判定」而非「已判定沒有抬滑鼠」；`stallMinMs`／`stallOmegaDegPerSec` 非法值擲 typed error。
+
+**量到的長度比注入的短恰一個 tick 間隔**（190 vs 200、50 vs 60）：ω 樣本 `i` 描述的是區間 `(t[i−1], t[i]]`，本模組取「首、末兩個合格樣本的時間差」。刻意選保守側 —— 寧可漏報，不虛報一段不存在的停滯。已寫進型別註解。
+
+### C-D4 / C-D3 boundary scan（T5 步驟 2、6）
+
+| 閘 | 做法 | 結果 |
+|---|---|---|
+| 無第二套 ω | 掃模組原始碼，要求 `import { omegaDegPerSec } from './angularKinematics.ts'` 且**不得**出現 `dYaw`／`dPitch`／`Math.hypot`／`Math.atan2`／`180 / Math.PI` | 綠 |
+| 無第二套窗界 | 要求 import `deriveDetectionMetrics`／`deriveTrackingSamples` | 綠 |
+| 純函式 | 無 `three`／`node:`／`Date.now`／`performance.now`／`Math.random`／`document.`／`window.` | 綠 |
+| **不進教練報告／診斷規則／registry** | 遞迴掃 `src/` 全部 `.ts`，斷言**除自身與自身測試外沒有任何檔案提及 `spiderShotRepositioning`** | 綠（importers = `[]`） |
+| 不長得像指標 | 無 `repositioningCount`／`repositioningRate`／`suspicionRate`／`Score` | 綠 |
+
+C-D3 的閘刻意寫成「零 importer」而不是「不被那三個檔引用」：新增一條 diagnosis rule 或一個 report builder 也會被同一條抓到，黑名單則不會。
+
+### 門檻敏感度表（T5 步驟 4）—— ⚠️ 合成 cohort，非真人 run
+
+**資料來源的誠實揭露**：WP-57 目前**沒有**真人的大幅度拉槍匯出。T6 的實機 E2E 與 `spiderWideDeterminismFixture` 都以解析式自動瞄準（後者甚至把 aim 固定在 `yaw = pitch = 0`，連一次周邊 movement onset 都不會產生），其停滯率恆為 0 by construction —— 與 T6 對 OQ-57.4 timeout 率的同一項揭露同源。`research/fixtures/exports/` 的五個真人匯出是 `counterstrafe_ad_v1`，沒有 `zone: 'peripheral'` 的拉槍 transition。**故下表是對「偵測器」的行為刻畫，不是對玩家的觀察**；它的 ground truth 是注入的。
+
+cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被迫抬滑鼠）+ 3 個固定的刻意停頓。注入值：抬滑鼠 = 180 ms 停滯、殘餘 2 °/s（手離開滑鼠）；刻意停頓 = 60 ms、殘餘 30 °/s（手仍在滑鼠上、有微顫）；一次到位 = 無停滯。
+
+**`stallMinMs × stallOmegaDegPerSec` 網格**（cm/360 = 60 的 cohort：4 抬滑鼠 / 3 刻意停頓 / 5 一次到位；格內為 `TP/FP`，TP 上限 4、FP 上限 3）：
+
+| `stallMinMs` \ `stallOmegaDegPerSec` | 5 | 15 | 25 | 45 |
+|---|---|---|---|---|
+| 40 | 4/0 | 4/0 | 4/0 | **4/3** |
+| 60 | 4/0 | 4/0 | 4/0 | 4/0 |
+| 80 | 4/0 | 4/0 | 4/0 | 4/0 |
+| 100 | 4/0 | 4/0 | 4/0 | 4/0 |
+| 150 | 4/0 | 4/0 | 4/0 | 4/0 |
+| 200 | 0/0 | 0/0 | 0/0 | 0/0 |
+
+「一次到位」的 trial 在整張表的每一格都沒有被標到（測試逐格斷言）—— 若被標到，就代表偵測器在標移動本身。
+
+### `cm/360` 方向性檢查（T5 步驟 5）
+
+模型（**明確標示為假設，非觀測**）：一次中心↔周邊來回的峰對峰角位移為 `2 × 50°`，換算實體行程 `(100/360) × cm360` cm；可用墊面行程假設 12 cm，超出的比例即被迫抬滑鼠的比例。`cm/360` 本身由 T4 的 `deriveMouseThrow()` 從 `meta.sensitivity` + `meta.dpi` 推導（測試反解 `meta.sensitivity` 後再用該函式覆驗，故 x 軸不是測試裡另寫的換算式）。
+
+| `cm/360` | 單次來回行程 | 被迫抬滑鼠 trial | 標註率（門檻 `stallMinMs = 100`、`stallOmegaDegPerSec = 15`） |
+|---|---|---|---|
+| 20 | 5.6 cm | 0 | **0/12** |
+| 30 | 8.3 cm | 0 | 0/12 |
+| 45 | 12.5 cm | 0 | 0/12 |
+| 60 | 16.7 cm | 4 | 4/12 |
+| 80 | 22.2 cm | 8 | 8/12 |
+| 100 | 27.8 cm | 9 | **9/12** |
+
+**方向與預期一致**（單調非遞減、且兩端有差）⇒ 偵測器沒有把方向搞反。這條在測試裡逐格釘死（`[0,0,0,4,8,9]`）。**不能反過來讀成「低感度玩家真的比較常抬滑鼠」** —— 那需要真人資料。
+
+### OQ-57.5：維持開放（附交付的參考門檻）
+
+參考門檻 **`stallMinMs = 100`、`stallOmegaDegPerSec = 15`**，**未凍結**、未寫成任何 production 常數（呼叫端必填）。理由與剩餘缺口：
+
+- 本表的 duration 軸與 ω 軸都來自**注入值**；真人手抖的實際 `omega` 分布未知，而它正是 FP 的唯一決定因素。
+- 收斂需要：一次真人的 `spider-shot-wide-v1` run（含刻意停頓的自陳標記或錄影對照），對其 `dYaw` 序列重跑本表。
+- Owner：使用者（實機）+ 工程；Deadline：晉升 WP 之前。v1 為 practice-only 且本旗標不進任何報告，故不阻擋 WP-57 交付。
+
+### Verification
+
+| Gate | 命令 | 結果 |
+|---|---|---|
+| 新測試 | `npx vitest run src/metrics/spiderShotRepositioning.test.ts` | **19 tests passed** |
+| 全量 metrics regression | `npx vitest run src/metrics tests/golden` | **41 files／287 tests passed** |
+| typecheck | `npx tsc --noEmit` + `npx tsc --noEmit -p tsconfig.node.json` | **exit 0**（兩個皆無 diagnostic） |
+
+全量 Vitest／build／Playwright 屬 NFR-57.8，留給 T-exit 一次跑完並入帳（避免同一組 gate 在兩個切片裡各報一次不同的數字）。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -364,6 +452,12 @@ registry 的 exact-id／near-miss／replay-profile 負向面沿用 T1 的 `spide
 | D-57.T6-1 | 2026-09-08 | **OQ-57.3 收斂：`kLo = 0.92` 與 `screenMargin = 0.04` 維持不動。** 三個 FOV 檔位的實機截圖證明「完整可見、不被切」成立，故契約層的 FR-57.4 已滿足。同時揭露一個規劃期未記載的性質並入帳為已知限制：`kLo` 套在**度**上而 `ndc_x = tan(yaw)/tan(halfHFOV)` 是凸函數，故窗下界的 NDC 位置隨 FOV 從邊界的 85.4%（FOV 60）漂到 71.5%（FOV 120）。<br>**Alternatives considered**：(a) 把 `kLo` 改成 NDC 定義（窗下界 = `atan(kLo·(1−screenMargin)·tan(halfHFOV)) − r`）—— 這才是「每位選手同樣貼邊」（D-57.P2）的精確落地，但會改 T1 已凍結的 resolver 公式、README §1.5／§2.4 全部數字與 T1／T2／T3 的相關斷言，**使用者選擇不採**；(b) 只把 `kLo` 調高到 0.97 —— 收窄窗但不修正跨 FOV 漂移本身，**未採** | 使用者 | 本節 §T6 的 NDC 區間表；`captures/` 九張截圖 |
 | D-57.T6-2 | 2026-09-08 | **OQ-57.4 部分收斂：`timeLimitMs` 由 `90000` 改為 `60000`**；`peekTimeoutMs = 2500` 維持。<br>⚠️ **這推翻了規劃期的理由**：README §1.5 原本明文「60 s 僅約 37 次周邊到達 ≈ 9/cell，對信度過薄（C-D3）；90 s 約 56 次 ≈ 14/cell」。T6 實機掃描顯示 90 s 的「≈14/cell」只在 ≤800 ms 的 per-trial 節奏成立（1,000 ms → 11、1,200 ms → 9），即 90 s 本來就買不到規劃期宣稱的樣本量；60 s 在同樣節奏下落在 5–12/cell。使用者在看過兩組實測數字後仍選 60 s，依據是 v1 為 practice-only 且**明確不宣稱信度**（C-D3：無指標進教練報告或 `DrillMetricRegistry`），樣本量明確移交晉升 WP。<br>**Alternatives considered**：(a) 維持 90 s 並保持 OQ 開啟 —— 我的建議項，未採；(b) 加長到 120 s（1,000 ms 節奏可達 14/cell）；(c) 加長到 150 s（1,200 ms 可達）—— 兩者皆會把單次 run 拉長並引入疲勞／注意力衰減的新效度風險，**未採**。<br>**timeout 率不在本次收斂範圍**：harness 為解析式自動瞄準，其 timeout 率恆為 0（by construction），合成一個數字會是造假；可客觀量到的截斷邊界（周邊在 `peekTimeoutMs` 準時撤除）已寫成 E2E 斷言 | 使用者 | 本節 §T6 的節奏掃描表（改值前後各一組） |
 | D-57.T6-3 | 2026-09-08 | **arm-time resolve 以 roster 項的 `resolveSource?: () => unknown` 落地，呼叫點在 `loadDrillById()` 內、`activateDrill()` 之前**（不是 T6 步驟 2 原寫的「兩個 `activeDrillConfig` 賦值點各一次」）。理由：T0 之後 `main.ts` 已把那兩個賦值點重構成共用的 `activateDrill()`，一個呼叫點即涵蓋換 drill 與 protocol 驅動的載入；放在 activation 之前則使 resolver 的 typed error 在任何狀態被觸碰前擲出（不留半換的 scene generation／weapon override），並沿既有 `runControl` 失敗路徑呈現。`loadSceneById()` 刻意**不**重解析——它以 `activeDrillSource` 重驗場景，而 wide 的 source 就是已解析的 config 物件。<br>**Alternatives considered**：(a) 照原文在 `activateDrill()` 與 `loadSceneById()` 內各呼叫一次 —— 換場景會重讀 aspect，直接與 NFR-57.5 的語意衝突，**駁回**；(b) roster 項的 `source` 直接放一個在模組載入期解析好的 config —— 正是 D-57.T3-3 駁回的做法（aspect 凍在錯誤時點），**駁回**；(c) 讓 `source` 一律改成 thunk 以避免 optional 欄位 —— 會動到 20+ 個既有 roster 項與 harness 契約，收益只是型別整齊，**駁回** | Engineering | `main.ts` diff；4 個 E2E 全綠 |
+| D-57.T5-1 | 2026-09-08 | **`stallDurationMs` 定義為「該連續區段首、末兩個合格 ω 樣本的時間差」**，因此比真實停滯**少算最多一個 tick 間隔**（注入 200 ms → 回報 190 ms）。<br>**Alternatives considered**：(a) 從 `t[i−1]` 起算以還原真實長度 —— 該時刻可能落在窗外（onset 之前），會讓「窗內停滯」的定義從自己身上漏出去，**駁回**；(b) 用 `tick 數 × 名目 tick 間隔` —— 對變動幀距的匯出會說謊，且等於在本模組內重建一套時基，**駁回**；(c) 不定義長度、只回布林 —— 敏感度表就沒有可掃的軸，且無法人工覆核一個標註，**駁回**。選保守側的理由：這是品質標註，漏報只是少剔一個 trial，虛報則會把正常 trial 從分析裡刪掉 | Engineering | 型別註解 + `flags a true mid-flick stall` 逐位斷言 |
+| D-57.T5-2 | 2026-09-08 | **`stallStartMs`／`stallDurationMs` 只在 `suspected === true` 時出現**；未達門檻的次長停滯不回報。<br>**Alternatives considered**：(a) 一律回報最長停滯（含未達門檻者）—— 對敏感度掃描沒有增益（掃描本來就會重跑每個門檻），卻讓這兩欄很容易被當成「停滯程度」的連續量餵進統計，那正是把品質標註偷渡成構念（C-D3），**駁回**；(b) 回報全部區段的陣列 —— 同上且更誘人，**駁回** | Engineering | `RepositioningSuspicion` 型別註解；C-D3 boundary test |
+| D-57.T5-3 | 2026-09-08 | **`RepositioningSuspicionOptions` 在 README §2.8 宣告的 `{ stallMinMs, stallOmegaDegPerSec }` 之外，additive 接受 optional `detection`／`tracking`**（原樣轉給兩個 canonical derivations）。理由：`deriveSpiderShotMetrics()` 已是同一形狀（`SpiderShotMetricsOptions`），不跟進就會出現「同一段 payload、兩個模組用不同的 detection 參數算出不同的窗」。省略時行為與 README 簽章完全一致 | Engineering | `SpiderShotMetricsOptions` 先例；合成訊號測試以 `DETECTION` 常數共用 |
+| D-57.T5-4 | 2026-09-08 | **敏感度表建在注入 ground truth 的合成 cohort 上，並在文件與測試檔頭明寫「非真人 run」**；OQ-57.5 因此**維持開放**而非宣告收斂。<br>**Alternatives considered**：(a) 用 `spiderWideDeterminismFixture` 的「真實 run」 —— 它把 aim 固定在 `yaw = pitch = 0`（D-57.T2-3），一次周邊 movement onset 都不會產生，表全空，**技術上不可行**；(b) 用 `research/fixtures/exports/` 的五個真人 counterstrafe 匯出 —— 沒有 `zone: 'peripheral'`，本函式的母體為空，**不適用**；(c) 用 T6 的 harness run 產生資料並當作經驗分布 —— 解析式瞄準的停滯率恆為 0，會產出一張「門檻怎麼調都是 0」的表並被誤讀為「抬滑鼠不存在」，**駁回（與 T6 拒絕合成 timeout 率同一理由）**；(d) 凍結一組門檻進 production 常數 —— T5 invariant 明文「不凍結單一門檻」，**駁回** | Engineering | §T5 的兩張表；`spiderShotRepositioning.test.ts` 檔頭 |
+| D-57.T5-5 | 2026-09-08 | **C-D3 過閘寫成「`src/` 內零 importer」的遞迴掃描，而非列舉 `diagnosisRules.ts`／教練報告路徑／`DrillMetricRegistry.ts` 三個檔**。<br>**Alternatives considered**：黑名單三檔 —— 明天新增一條 diagnosis rule 或一個 report builder 就繞過了，而「不進教練報告」的宣稱恰恰是要防那件事，**駁回**。代價：本模組將來若真的要被某個離線 script 消費，這條會紅 —— 那正是應該停下來重讀 C-D3 的時刻，不是誤報 | Engineering | `is imported by nothing in src/ other than its own test` |
+| D-57.T5-6 | 2026-09-08 | **boundary scan 在比對前先剝掉註解**（`codeOnly()`）。理由：模組註解正當地「提到」`ticks.dYaw/dPitch`（解釋 ω 從哪來）與 `repositioningCount`（解釋刻意不提供什麼），未剝註解時這兩條 scan 直接紅燈。沿用 `domain-purity-boundary.test.ts` 已記載的同一教訓：拿 prose 當違規，只會逼人把說明刪掉 | Engineering | 首次執行的兩個紅燈輸出；剝除後 19 tests 全綠 |
 | D-57.T6-4 | 2026-09-08 | **`fpsTestHarness` 的 `availableDrills` 同步接受 `resolveSource`，並在每次 `startDrill()` 時呼叫**（不是在 bootstrap 的 `.map()` 裡就解析掉）。理由：harness 的 `startDrill()` 語意上就是一次 arm；若在 bootstrap 解析，resize 不變性 E2E 就變成比較兩個「早就解析完」的 run，什麼都證不到，而那正是 NFR-57.5 唯一的實機閘。<br>**Alternatives considered**：(a) 在 `main.ts` 的 map 裡呼叫 `resolveSource()` —— 上述理由，**駁回**；(b) 不讓 harness 支援本 drill、E2E 全走 live 單例 —— live 需要真人 Pointer Lock 開火才能推進 spawn 序列（`centerExemptFromTimeout` 讓無輸入的 run 停在第一顆中心目標，見 T2 補充 ④），無法做逐位 trace 比較，**駁回** | Engineering | `fpsTestHarness.ts` 三行 diff；resize E2E 的 41 spawn 逐位一致 |
 
 ## Surprises
@@ -443,7 +537,7 @@ registry 的 exact-id／near-miss／replay-profile 負向面沿用 T1 的 `spide
 | OQ-57.2 pitch 窗 | ✅ 已收斂 2026-09-07：`±6.5°`，`floorClearanceU = 0.5`（D-57.P14）；**T0 已覆驗 `pitchMax = 6.8947°`、餘裕 0.3947°** | — |
 | OQ-57.3 `kLo` / `screenMargin` 貼邊感 | ✅ **已收斂 2026-09-08：兩值維持不動**（D-57.T6-1）。三檔 FOV 實機截圖證明完整可見、不被切；NDC 貼邊程度隨 FOV 漂移（85.4% → 71.5%）入帳為已知限制（Surprises 26） | — |
 | OQ-57.4 `peekTimeoutMs` / `timeLimitMs` | 🟡 **部分收斂 2026-09-08**（D-57.T6-2）：`timeLimitMs` 改 **60000**、`peekTimeoutMs` 維持 2500；每 cell 樣本數已有實機掃描表。**timeout 率未收斂**——harness 自動瞄準使其恆為 0（by construction），需真人 run | timeout 率：使用者實機／晉升 WP |
-| OQ-57.5 repositioning 門檻 | 待資料（T0 未寫成常數） | 使用者 + 工程，T5 |
+| OQ-57.5 repositioning 門檻 | 🟡 **仍開放（T5 已交付表與參考值，但無真人資料）**：參考門檻 `stallMinMs = 100`／`stallOmegaDegPerSec = 15`，**未凍結、未寫成 production 常數**。§T5 的網格與 `cm/360` 方向性表全部建在**注入 ground truth 的合成 cohort** 上（repo 內不存在真人的 wide-flick 匯出，見 D-57.T5-4）。收斂條件：一次真人 run 的 `dYaw` 序列重跑該表 | 使用者（實機）+ 工程，晉升 WP 前 |
 | OQ-57.6 晉升時 `compatibilityKey` 補 aspect | 已有結論（必須補），不阻塞本 WP。**T0 補上量化依據：同 FOV 75 下 4:3 與 21:9 的 `yawMax` 相差 15.3°** | 晉升 WP 的 T0 |
 | **OQ-57.7**（T0 新增）匯出 `angularDistanceDeg`／`angularSizeDeg` 的 frame 語意 | ✅ **已收斂 2026-09-07：採選項 (b)**（非 T0 建議的 (a)）—— 由 KI-026／BD-026 一併落地，`deriveSpiderShotTransitions()` 改用 payload eye + per-tick player position；權威記載見 [DECISIONS.md GD-32](../../../DECISIONS.md) ④。**T4 因此不再阻塞** | — |
 
@@ -472,3 +566,11 @@ registry 的 exact-id／near-miss／replay-profile 負向面沿用 T1 的 `spide
 12. **eye-frame 修正之後，wide drill 的匯出 `W_deg` 是**精確**的設計值，不是「誤差變小」。** 實測 16 個 transition 的 `angularSizeDeg` 全部為 `2.000000000000`、`worldDistanceU` 全部為 `8.000000000000`。原因是三件事同時成立：`spiderWideEyePos()` 讓 `abs(pos − eye)` 恆等於 `distanceU`、`translation: 'locked'` 讓眼睛恆在 `(0, 1.6, 0)`、以及 KI-026 之後 derivation 也從同一個 eye 算起。⇒ README §2.5.1 那張「`W_deg ∈ [1.9198, 2.0053]`、誤差 4.0%」的表**已完全過期**，它描述的是 origin-frame derivation 的世界。任何後續讀者若拿它當期望值就會把一個已修好的 bug 重新釘回去。
 
 13. **`meta.spawn.spiderShot` 的 opaque 設計讓「新增排程參數」的匯出成本為零，但也讓型別保護為零。** round-trip 全程沒有動 `metadata.ts`／`exportPayloadSchema.ts`，`resolvedFrom` 五個欄位自動落地 —— 這是好事。代價是 parser 對它**完全不驗**：若哪天 resolver 少寫一個欄位，匯出仍會 parse 成功，只有離線分析在幾個月後才會發現重建不出 yaw 窗。本 task 的 round-trip 測試就是唯一擋這件事的閘，**它不能被當成「只是測試」刪掉**。
+
+### T5 補充（2026-09-08）
+
+14. **分離「被迫抬滑鼠」與「刻意停頓」的是 ω 軸，不是 duration 軸。** 規劃期把門檻寫成「停滯的 ms 與角速度閾值」（OQ-57.5），語感上像是兩個並列的旋鈕；但在模型下它們的角色完全不對稱。手離開滑鼠時殘餘角速度趨近 0，手仍在滑鼠上的停頓則有微顫（本 cohort 取 2 °/s vs 30 °/s）。ω 門檻只要落在兩者之間，刻意停頓**根本形不成停滯區段**，於是任何 `stallMinMs` 都標不到它 —— 這正是敏感度表整個 5/15/25 三欄 FP 全為 0、只有 45 那欄在 `stallMinMs = 40` 時炸出 3 個 FP 的原因。⇒ 真人資料到手時，**該優先估計的是停頓期間的 ω 分布**，而不是先去掃 duration。
+
+15. **repo 裡沒有任何可用於 T5 的真實 run，而其中最像的那一個特別具誤導性。** `spiderWideDeterminismFixture` 走完整生產管線（`SimLoop` + `TargetManager` + `DrillRunner` + `HitDetector` + `DataRecorder`），T4 的 round-trip 正是靠它才成立；但它把 aim 固定在 `yaw = pitch = 0`（D-57.T2-3，為了不把 harness 幀切法帶進刺激），因此**一次周邊 movement onset 都不會產生**，`deriveRepositioningSuspicion()` 在它上面回傳的是一整排 `suspected: false`（窗左界不存在）。「這是真實 run」與「這份資料能回答我的問題」是兩件事 —— 差點就把一張全零的表當成 T5 的證據。
+
+16. **`research/fixtures/exports/` 的五個真人匯出對本 WP 不可用。** 它們是 `counterstrafe_ad_v1`，`visible` 事件沒有 `zone: 'peripheral'`，本函式的母體為空。⇒ 若晉升 WP 要收斂 OQ-57.5，必須**新錄**一次真人的 `spider-shot-wide-v1`；沒有既有資料可以借。
