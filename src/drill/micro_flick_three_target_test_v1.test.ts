@@ -59,6 +59,24 @@ describe('WP-56 T1 additive contract', () => {
     });
   });
 
+  it('accepts replacement separation without injecting it when omitted', () => {
+    const legacyShape = validateDrill(populationFixture()).targets.spawnArea;
+    const fixture = populationFixture();
+    fixture.targets = {
+      ...(fixture.targets as object),
+      spawnArea: {
+        ...((fixture.targets as { spawnArea: Record<string, unknown> }).spawnArea),
+        preferredReplacementSeparationDeg: 2.6,
+      },
+    };
+
+    expect(validateDrill(fixture).targets.spawnArea).toEqual({
+      ...legacyShape,
+      preferredReplacementSeparationDeg: 2.6,
+    });
+    expect(legacyShape).not.toHaveProperty('preferredReplacementSeparationDeg');
+  });
+
   it('accepts the schema boundaries while retaining optional fields when omitted', () => {
     const lower = populationFixture();
     lower.targets = {
@@ -135,6 +153,38 @@ describe('WP-56 T1 additive contract', () => {
     const { population: _population, ...targets } = noPopulation.targets as Record<string, unknown>;
     noPopulation.targets = targets;
     expect(() => validateDrill(noPopulation)).toThrow(/targets\.spawnArea\.minAngularSeparationDeg/);
+  });
+
+  it.each([
+    ['zero', 0],
+    ['negative', -1],
+    ['above 180 degrees', 180.000001],
+    ['non-finite', Number.POSITIVE_INFINITY],
+    ['wrong type', '2.6'],
+  ])('rejects %s preferred replacement separation with the exact field path', (_label, value) => {
+    const fixture = populationFixture();
+    fixture.targets = {
+      ...(fixture.targets as object),
+      spawnArea: {
+        ...((fixture.targets as { spawnArea: Record<string, unknown> }).spawnArea),
+        preferredReplacementSeparationDeg: value,
+      },
+    };
+    expect(() => validateDrill(fixture)).toThrow(/targets\.spawnArea\.preferredReplacementSeparationDeg/);
+  });
+
+  it('requires population when preferred replacement separation is configured', () => {
+    const fixture = populationFixture();
+    const { population: _population, ...targets } = fixture.targets as Record<string, unknown>;
+    fixture.targets = {
+      ...targets,
+      spawnArea: {
+        ...(targets.spawnArea as Record<string, unknown>),
+        minAngularSeparationDeg: undefined,
+        preferredReplacementSeparationDeg: 2.6,
+      },
+    };
+    expect(() => validateDrill(fixture)).toThrow(/targets\.spawnArea\.preferredReplacementSeparationDeg/);
   });
 
   it('fails fast when a fixed angular field cannot contain two separated centers', () => {

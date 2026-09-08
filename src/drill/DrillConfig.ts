@@ -61,6 +61,8 @@ export interface SpawnAreaConfig {
   readonly pitchDegRange?: [number, number];
   /** Minimum center-to-center angle between concurrently active targets. */
   readonly minAngularSeparationDeg?: number;
+  /** Preferred centre-angle from the immediately previous killed target. */
+  readonly preferredReplacementSeparationDeg?: number;
 }
 
 export interface PlayerControlConfig {

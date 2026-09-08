@@ -144,6 +144,29 @@ describe('collectMeta', () => {
     });
   });
 
+  it('retains replacement spacing in the opaque spawn-area snapshot without a schema bump', () => {
+    const spawnArea = {
+      yawDegRange: [-6.5, 6.5],
+      pitchDegRange: [-5, 6],
+      distanceURange: [24, 26],
+      minAngularSeparationDeg: 5,
+      preferredReplacementSeparationDeg: 2.6,
+    };
+    const meta = collectMeta({
+      drillId: 'micro_flick_three_target_test_v8',
+      backend: 'webgpu',
+      displayHz: 144,
+      browser: 'TestBrowser/1.0',
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-09-08T10:00:00.000Z',
+      spawn: { seed: 56008, spawnArea },
+    });
+
+    expect(meta.schemaVersion).toBe(2);
+    expect(meta.spawn?.spawnArea).toBe(spawnArea);
+  });
+
   it('carries spawn.trackingTrajectory/trackingPrepMs opaquely (WP-54 T2 — single-source trajectory config)', () => {
     const trackingTrajectory = {
       kind: 'band-limited-2d-v1',

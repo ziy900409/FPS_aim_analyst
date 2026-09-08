@@ -68,6 +68,9 @@ export function validateDrill(json: unknown): DrillConfig {
   if (spawnArea?.minAngularSeparationDeg !== undefined && population === undefined) {
     throw err('targets.spawnArea.minAngularSeparationDeg', '需搭配 targets.population');
   }
+  if (spawnArea?.preferredReplacementSeparationDeg !== undefined && population === undefined) {
+    throw err('targets.spawnArea.preferredReplacementSeparationDeg', '需搭配 targets.population');
+  }
   if (population !== undefined && spawnArea?.minAngularSeparationDeg !== undefined) {
     validatePopulationSeparation(population, spawnArea);
   }
@@ -430,11 +433,19 @@ function validateSpawnArea(json: unknown): SpawnAreaConfig {
     spawnArea.minAngularSeparationDeg === undefined
       ? undefined
       : requireAngularSeparation(spawnArea.minAngularSeparationDeg, 'targets.spawnArea.minAngularSeparationDeg');
+  const preferredReplacementSeparationDeg =
+    spawnArea.preferredReplacementSeparationDeg === undefined
+      ? undefined
+      : requireAngularSeparation(
+          spawnArea.preferredReplacementSeparationDeg,
+          'targets.spawnArea.preferredReplacementSeparationDeg',
+        );
   return {
     yawDegRange: requireRange(spawnArea.yawDegRange, 'targets.spawnArea.yawDegRange'),
     distanceURange: requirePositiveRange(spawnArea.distanceURange, 'targets.spawnArea.distanceURange'),
     ...(pitchDegRange !== undefined ? { pitchDegRange } : {}),
     ...(minAngularSeparationDeg !== undefined ? { minAngularSeparationDeg } : {}),
+    ...(preferredReplacementSeparationDeg !== undefined ? { preferredReplacementSeparationDeg } : {}),
   };
 }
 
