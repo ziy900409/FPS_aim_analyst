@@ -455,6 +455,25 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 
 依 T-exit gate 的 exit criteria，**四個 blocking 條件（A-57.7／A-57.8／A-57.2／A-57.4）皆有 test／measurement 且綠**，故不阻擋交付；但本項作為**已揭露的殘留**入帳，不記為通過。WP-56 T-exit 對同一個失敗採同樣處置。
 
+### ⚠️ T-exit 事後更正（2026-09-08，同日稍晚）：指標棧從未在真人資料上驗證過
+
+使用者於 T-exit 交付**後**提供四份真人 `spider-shot-wide-v1` 匯出（見 §T5-real）。跑下去才發現：**README §2.7 宣稱的「五類構念零修改重用、正好覆蓋大幅拉槍的主要失效模式」，在真人 run 上有兩類完全拿不到數字。**
+
+| `deriveSpiderShotMetrics()` 欄位（baseline run，34 個周邊到達） | 有值 |
+|---|---|
+| `switchReaction.tDetectMs` / `.reactionMs` | **0 / 34** |
+| `movementExecution.movementTimeMs` | **0 / 34** |
+| `movementExecution.peakOmegaDegPerSec` | 34 / 34 |
+| `stopControl.overshootDeg` | 8 / 34 |
+| `firstShot.hit` / `.fireAngleErrorDeg` | 34 / 34 |
+| `rhythm` | ✅（median 828 ms） |
+
+成因是 **[KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md)**（`detectionDerivation.ts` 的 `sustainedTicks: 4` 在 aim 更新率低於 sim 率的機器上必然 timeout），**不屬 WP-57 的程式碼**，且任何 drill 在同一台機器上都會中。
+
+但**這是本 T-exit 自己的方法缺口**，必須記名：上方的 traceability 逐條對帳了 spawn 幾何、決定性、on-screen、匯出 provenance —— 全部是**刺激側**與**契約側**的證據。T4 的 `deriveSpiderShotTransitions()` 對帳也只驗條件欄位（`D_deg`／`W_deg`／`side`），沒有碰 `deriveSpiderShotMetrics()`。**「指標棧在這個 drill 的真人資料上真的產得出值嗎」從頭到尾沒有任何一個 task 問過**，而 T2/T4/T6 的 harness 全是解析式自動瞄準（其 aim 由測試逐 tick 寫入，不經瀏覽器 pointer 事件，故不會出現 KI-031 的交替取樣）。
+
+⇒ **A-57.1（端到端 run）的判定維持 ✅**（它斷言的是「可載入、可跑完、可匯出、`zone` 交替、`D_deg` 落帶」，這些仍全部成立），但 README §2.7 的「零修改重用」宣稱**降級為「契約上成立、真人資料上待 KI-031 修復後複驗」**。晉升 WP 必須把「指標棧在真人 run 上的產出率」列為 entry gate 的一項，不能再只驗刺激幾何。
+
 ### Acceptance A-57.1～12
 
 | ID | Scenario | Evidence | 判定 |
@@ -674,3 +693,7 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 15. **repo 裡沒有任何可用於 T5 的真實 run，而其中最像的那一個特別具誤導性。** `spiderWideDeterminismFixture` 走完整生產管線（`SimLoop` + `TargetManager` + `DrillRunner` + `HitDetector` + `DataRecorder`），T4 的 round-trip 正是靠它才成立；但它把 aim 固定在 `yaw = pitch = 0`（D-57.T2-3，為了不把 harness 幀切法帶進刺激），因此**一次周邊 movement onset 都不會產生**，`deriveRepositioningSuspicion()` 在它上面回傳的是一整排 `suspected: false`（窗左界不存在）。「這是真實 run」與「這份資料能回答我的問題」是兩件事 —— 差點就把一張全零的表當成 T5 的證據。
 
 16. **`research/fixtures/exports/` 的五個真人匯出對本 WP 不可用。** 它們是 `counterstrafe_ad_v1`，`visible` 事件沒有 `zone: 'peripheral'`，本函式的母體為空。⇒ 若晉升 WP 要收斂 OQ-57.5，必須**新錄**一次真人的 `spider-shot-wide-v1`；沒有既有資料可以借。
+
+17. **「五類構念零修改重用」是契約層的判斷，不是資料層的判斷 —— 我把它當成後者了。** T0 逐函式覆核 `spiderShotMetrics.ts`（9 個函式對 azimuth／radius／origin-frame 零引用、角度一律走 `resolveEyeOrigin()`），結論「零修改」**完全正確**；但那證明的是「這個模組不會因為新 spawn 幾何而算錯」，**不是**「它在這個 drill 的真人資料上算得出東西」。兩者中間隔著 canonical derivations 的資料充足性前提，而那個前提在 60 Hz 機器上不成立（[KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md)）。⇒ **靜態覆核與端到端 run 都不能取代「把指標棧跑在真人匯出上、數產出率」這一個動作**，而 T0～T-exit 沒有任何一個 task 做過它。
+
+18. **所有 harness 都繞過了會出問題的那條路。** T2／T4／T6 的自動瞄準是由測試**逐 tick 直接寫 `state.aim`** 或以解析式對準，不經瀏覽器 pointer 事件 ⇒ 每個 sim tick 都有新 aim，KI-031 的交替取樣**在 harness 上不可能出現**。這正是「harness 綠燈 ≠ 真人資料可用」的一個乾淨例子，與 T6 對 timeout 率的自我限制（解析式瞄準的 timeout 率恆為 0 by construction）是同一個病理的兩面。
