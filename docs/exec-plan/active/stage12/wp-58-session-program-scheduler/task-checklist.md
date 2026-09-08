@@ -9,7 +9,7 @@
 | ✅ | **T2** Session Program 純函式編譯器 | [T2-program-compiler.md](T2-program-compiler.md) | T1 | Med |
 | ✅ | **T3** SessionRunner 游標化／runtime 接線 | [T3-runner-cursor-and-wiring.md](T3-runner-cursor-and-wiring.md) | T2 | **High** |
 | ✅ | **T4** Session Plan 表單改版／程式預覽 | [T4-setup-ui-and-preview.md](T4-setup-ui-and-preview.md) | T2（可與 T3 並行） | Med |
-| ⬜ | **T5** Metadata 稽核欄位／逐輪匯出／cohort 隔離 | [T5-metadata-and-export.md](T5-metadata-and-export.md) | T3 | Med/High |
+| ✅ | **T5** Metadata 稽核欄位／逐輪匯出／cohort 隔離 | [T5-metadata-and-export.md](T5-metadata-and-export.md) | T3 | Med/High |
 | ⬜ | **T6** E2E 整合／回歸對帳 | [T6-e2e-and-regression.md](T6-e2e-and-regression.md) | T3 + T4 + T5 | Med |
 | ⬜ | **T-exit** WP-58 驗收 | [T-exit-gate.md](T-exit-gate.md) | T1～T6 | Med |
 

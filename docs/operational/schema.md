@@ -88,8 +88,38 @@ Tick rows are recorded inside the sim tick. Event rows use their source timestam
 | `session` | object | reserved optional | No | stage3/WP-20 | `participantId` / `sessionLabel` cross-session join keys. |
 | `visibility` | object | registered onset candidate | No | occlusion-aware pilot drill | `{ sampleCount: 1 \| 9, onsetThreshold: 0..1 }`; records the geometry-sampling contract used for a visibility-derived measurement onset. |
 | `validity` | object | runtime validity observation breakdown | No | `sharedState.validity` / frame log / recorder snapshot | Additive; absence means pre-S1 export. **Not the same set as `suspect`** — see [`meta.validity`](#metavalidity) below. |
+| `sessionPlan*` | mixed | Session Plan audit trail | No | `SessionPlanSetup` selection + compiled program | Additive; absence means the run was not produced by a Session Plan. See [`meta.sessionPlan*`](#metasessionplan) below. |
 
 `buildExportPayload()` also ORs `meta.recorderOverflow` with `snapshot.recorderOverflow`, then preserves any existing `meta.suspect` flag.
+
+#### `meta.sessionPlan*`
+
+Written when a Session Plan owns the run. Two tracks produce runs, and they record different things.
+
+| Field | Type | Written by | Notes |
+|---|---|---|---|
+| `sessionPlanPreset` | string | stage7 named-preset flow | Names a configured preset. |
+| `sessionPlanRestSeconds` | number | both tracks | Rest at a **family** seam, in seconds. Meaning unchanged since stage8. |
+| `sessionPlanFamilyOrder` | string[] | both tracks | The family sequence actually executed. On the custom track it is derived from the compiled program with consecutive repeats collapsed. |
+| `sessionPlanMode` | `'frozen' \| 'custom'` | custom track only | See the absence rule below. |
+| `sessionPlanItems` | `{ drillId, reps }[]` | custom track only | The ordered list the executed program was compiled from. |
+| `sessionPlanDrillRestSeconds` | number | custom track only | Rest at a **rep** or **drill** seam, in seconds. |
+| `sessionPlanItemIndex` / `sessionPlanRepIndex` | number | custom track only | 0-based coordinates of this export inside `sessionPlanItems`. Three reps of one drill produce three exports differing only here. |
+
+**Absence of `sessionPlanMode` means "not a custom program."** The frozen one-click Assessment track's
+export is bit-identical to its pre-WP-58 form, so it does not stamp `'frozen'`; neither does any payload
+written before WP-58. Every consumer rule is therefore positive (`=== 'custom'`), never `!== 'frozen'`.
+
+**Cohort rule:** a run with `sessionPlanMode === 'custom'` is archived normally but is excluded from the
+frozen protocol's trend cohort (`DrillMetricRegistry.project()` returns `excluded-cohort`). A custom
+program picks its own drill order, repeats, and rest lengths, so its runs are not exchangeable with the
+counterbalanced protocol's.
+
+> ⚠️ **Reps are repeated exposures, not independent samples.** One `drillId` resolves to one seeded
+> config, so every rep of an item replays a bit-identical spawn sequence. The reps of one item therefore
+> carry a practice effect between them and **must not be pooled as i.i.d. observations**. If independent
+> sampling at one difficulty is needed, that requires a per-rep seed derivation, which this schema does
+> not yet express.
 
 #### `meta.weapon`
 

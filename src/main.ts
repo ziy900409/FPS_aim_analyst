@@ -60,8 +60,8 @@ import {
   type SessionRunnerHandle,
   type SessionRunnerPhase,
 } from './session/SessionRunner.ts';
-import { compileSessionProgram } from './session/sessionProgram.ts';
-import { KNOWN_SESSION_FAMILY_IDS } from './session/sessionSchedule.ts';
+import { compileSessionProgram, deriveProgramFamilyOrder } from './session/sessionProgram.ts';
+import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './session/sessionSchedule.ts';
 import { createTrackingPilotSession, type TrackingPilotSessionHandle } from './pilot/trackingPilotSession.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
@@ -75,7 +75,13 @@ import { realClock } from './loop/clock.ts';
 import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
-import { collectMeta, measureDisplayHz, measureDisplayRefresh, type AssessmentMeta } from './data/metadata.ts';
+import {
+  collectMeta,
+  measureDisplayHz,
+  measureDisplayRefresh,
+  type AssessmentMeta,
+  type CollectMetaArgs,
+} from './data/metadata.ts';
 import { RAD_PER_COUNT, resolveMouseGain } from './input/mouseGain.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { STAGE6_PROTOCOL_VERSION } from './drill/protocolVersion.ts';
@@ -506,6 +512,9 @@ let pendingSessionSetupValues: SessionSetupValues | undefined;
 let sessionSetupValues: SessionSetupValues | undefined;
 let pendingSessionPlanSelection: SessionPlanSelection | undefined;
 let activeSessionPlanSelection: SessionPlanSelection | undefined;
+// WP-58 T5 (§2.7) — the family sequence the running custom program actually visits, collapsed once
+// at start from the compiled steps so every rep's export restates the same order (FR-58.14).
+let activeCustomProgramFamilyOrder: readonly SessionFamilyId[] | undefined;
 type PendingSessionMode = 'session' | 'resolution-protocol' | 'br-tracking-protocol' | 'session-plan';
 let pendingSessionMode: PendingSessionMode = 'session';
 let appMode: AppMode = 'launch';
@@ -759,17 +768,18 @@ async function buildCurrentExportPayload(
     simHz: SIM_HZ,
     sensitivity: settingsPanel.sensitivity,
     ...(sessionSetupValues?.dpi !== undefined ? { dpi: sessionSetupValues.dpi } : {}),
-    // WP-58 T4 — narrowed to the frozen arm because `restSeconds`/`families` only exist there; the
-    // custom track's own audit fields (sessionPlanMode / items / drill rest / item+rep index) are
-    // additive metadata and land in T5, so nothing here claims a family order it does not have.
-    ...(sessionPlanRunner.phase.kind === 'run' &&
-    activeSessionPlanSelection !== undefined &&
-    activeSessionPlanSelection.mode === 'frozen'
-      ? {
-          sessionPlanRestSeconds: activeSessionPlanSelection.restSeconds,
-          sessionPlanFamilyOrder: activeSessionPlanSelection.families,
-        }
-      : {}),
+    // WP-58 T5 (FR-58.14/58.15) — each track states what it actually ran, and only that.
+    //
+    // The frozen arm keeps writing exactly the two stage8 fields it always wrote: its export stays
+    // bit-identical to its pre-WP-58 form (FR-58.10 / Delivery policy), so it does *not* gain a
+    // `sessionPlanMode: 'frozen'` stamp. Absence of the mode therefore means "not a custom program",
+    // which is also true of every payload written before WP-58 — and it is why the cohort rule
+    // downstream is written as `=== 'custom'` rather than `!== 'frozen'`.
+    //
+    // The custom arm restates the whole program plus this export's coordinates in it, so three reps
+    // of one drill are three payloads that differ by `sessionPlanRepIndex`. `sessionPlanRestSeconds`
+    // keeps its existing meaning (the family seam); the drill/rep seam gets its own field (§2.7).
+    ...sessionPlanAuditFields(sessionPlanRunner.phase),
     fovDeg: settingsPanel.fov,
     crossOriginIsolated: isolation.crossOriginIsolated,
     startedAt: recorderStartedAt,
@@ -1496,6 +1506,31 @@ const sessionPlanRunner: SessionRunnerHandle = createSessionRunner({
   },
 });
 
+/**
+ * WP-58 T5 — the export's session-plan audit block for whichever track is running, or `{}` when no
+ * Session Plan owns this run (a standalone drill, a protocol condition, a pilot block).
+ */
+function sessionPlanAuditFields(phase: SessionRunnerPhase): Partial<CollectMetaArgs> {
+  if (phase.kind !== 'run' || activeSessionPlanSelection === undefined) return {};
+  if (activeSessionPlanSelection.mode === 'frozen') {
+    return {
+      sessionPlanRestSeconds: activeSessionPlanSelection.restSeconds,
+      sessionPlanFamilyOrder: activeSessionPlanSelection.families,
+    };
+  }
+  return {
+    sessionPlanMode: 'custom',
+    sessionPlanItems: activeSessionPlanSelection.items,
+    sessionPlanDrillRestSeconds: activeSessionPlanSelection.drillRestSeconds,
+    sessionPlanRestSeconds: activeSessionPlanSelection.familyRestSeconds,
+    ...(activeCustomProgramFamilyOrder === undefined
+      ? {}
+      : { sessionPlanFamilyOrder: activeCustomProgramFamilyOrder }),
+    sessionPlanItemIndex: phase.step.itemIndex,
+    sessionPlanRepIndex: phase.step.repIndex,
+  };
+}
+
 async function startSessionPlan(): Promise<void> {
   const selection = pendingSessionPlanSelection;
   const setup = sessionSetupValues;
@@ -1505,22 +1540,27 @@ async function startSessionPlan(): Promise<void> {
     return;
   }
   activeSessionPlanSelection = selection;
+  activeCustomProgramFamilyOrder = undefined;
   try {
     if (selection.mode === 'custom') {
       // WP-58 T4 — the custom track reaches the runtime through the same compiler and the same
       // runner (FR-58.10); the only difference from frozen is who produced the item list. The form
       // has already compiled and shown this exact program, so a throw here means the operator's
       // plan changed shape between preview and submit, not that the UI let an invalid one through.
+      const program = compileSessionProgram({
+        items: selection.items,
+        drillRestSeconds: selection.drillRestSeconds,
+        familyRestSeconds: selection.familyRestSeconds,
+      });
+      // WP-58 T5 — collapsed once here, from the same compiled steps the runner will walk, so the
+      // audit field cannot drift from the program that actually ran (§2.7).
+      activeCustomProgramFamilyOrder = deriveProgramFamilyOrder(program);
       await sessionPlanRunner.start({
         participantId: setup.participantId,
         sessionIndex: 0,
         mode: 'custom',
         items: selection.items,
-        program: compileSessionProgram({
-          items: selection.items,
-          drillRestSeconds: selection.drillRestSeconds,
-          familyRestSeconds: selection.familyRestSeconds,
-        }),
+        program,
       });
       return;
     }
@@ -1541,6 +1581,7 @@ async function startSessionPlan(): Promise<void> {
     await sessionPlanRunner.start(frozen.plan);
   } catch (error) {
     activeSessionPlanSelection = undefined;
+    activeCustomProgramFamilyOrder = undefined;
     setProtocolStatus(`Session Plan 啟動失敗：${error instanceof Error ? error.message : String(error)}`, false);
   }
 }

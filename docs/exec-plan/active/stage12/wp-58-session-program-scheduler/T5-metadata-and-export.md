@@ -25,12 +25,12 @@
 
 ## Definition of Done
 
-- [ ] 既有 golden／canonical fixture 的 parse／serialize 結果逐位不變。
-- [ ] 新欄位 strict validation 正負向矩陣全綠。
-- [ ] 三輪同一 drill 的匯出檔名唯一，且每份可定位到 `itemIndex`／`repIndex`（有測試）。
-- [ ] `custom` session 不進 frozen trend cohort 有測試；frozen session 行為不變有測試。
-- [ ] `research/` ingest 相容性有證據（或已入帳的偏差）。
-- [ ] progress 記錄 schema diff、測試數與相容性證據。
+- [x] 既有 golden／canonical fixture 的 parse／serialize 結果逐位不變（8/8 canonical digest 對 T5 前 HEAD `84483a6` 相同）。
+- [x] 新欄位 strict validation 正負向矩陣全綠（`metadata.test.ts` +39、`exportPayloadSchema.test.ts` +19）。
+- [x] 三輪同一 drill 的匯出檔名唯一，且每份可定位到 `itemIndex`／`repIndex`（`sessionProgramExport.test.ts`；`exportBasename` 零修改）。
+- [x] `custom` session 不進 frozen trend cohort 有測試；frozen session 行為不變有測試（匯出逐位不變 + projection 仍 `ready`）。
+- [x] `research/` ingest 相容性有證據：真實 `load_export()` 讀含新欄位的 payload，ticks／events `equals=True`、既有 meta 逐鍵不變 ⇒ Python 側零修改。
+- [x] progress 記錄 schema diff、測試數與相容性證據（progress.md §T5）。
 
 ## Commit
 

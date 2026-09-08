@@ -46,6 +46,12 @@ export function buildHistoryTrend(args: {
   };
 
   const ready = projections.filter((item) => {
+    // WP-58 T5 (FR-58.16) — a deliberate cohort exclusion is counted under its own reason, so the
+    // operator is told the run was set aside by design instead of being told it failed to compute.
+    if (item.projection.status === 'excluded-cohort') {
+      bump(item.projection.reason);
+      return false;
+    }
     if (item.projection.status !== 'ready') {
       bump('not-ready');
       return false;

@@ -92,6 +92,26 @@ describe('buildHistoryTrend', () => {
     expect(result.excludedCounts['quality-gate']).toBe(1);
   });
 
+  it('counts a custom-program run under its own exclusion reason, not as a failure (WP-58 T5)', () => {
+    // FR-58.16: the custom run is set aside by design, so it must not be reported under
+    // `not-ready` ("無法計算") alongside runs whose projection actually failed (GD-20 / C-D3).
+    const ok = makeReadyProjection('r1', '2026-08-10T00:00:00.000Z', [obs(100)]);
+    const custom: HistoryRunProjection = {
+      run: makeRun('r2', '2026-08-11T00:00:00.000Z'),
+      projection: { status: 'excluded-cohort', reason: 'custom-session-program' },
+    };
+    const broken: HistoryRunProjection = {
+      run: makeRun('r3', '2026-08-12T00:00:00.000Z'),
+      projection: { status: 'invalid-metric', reasonCode: 'projection-failed' },
+    };
+    const result = buildHistoryTrend({ projections: [ok, custom, broken], registration: REGISTRATION });
+    expect(result.status).toBe('ready');
+    if (result.status !== 'ready') return;
+    expect(result.points.map((point) => point.runId)).toEqual(['r1']);
+    expect(result.excludedCounts['custom-session-program']).toBe(1);
+    expect(result.excludedCounts['not-ready']).toBe(1);
+  });
+
   it('defaults to the primary descriptor, oldest-to-newest points, and per-point deltas', () => {
     const a = makeReadyProjection('r1', '2026-08-10T00:00:00.000Z', [obs(100)]);
     const b = makeReadyProjection('r2', '2026-08-12T00:00:00.000Z', [obs(130)]);

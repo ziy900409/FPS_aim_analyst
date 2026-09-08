@@ -86,6 +86,8 @@ const EXCLUSION_REASON_LABELS: Readonly<Record<string, string>> = {
   'quality-gate': '未通過 quality gate',
   'other-cohort': '屬於其他 compatibility cohort',
   'missing-metric': '缺少此指標的有效資料',
+  // WP-58 T5 (FR-58.16) — excluded by design, not by failure.
+  'custom-session-program': '以自訂 program 執行（不與凍結協定 cohort 混合）',
 };
 
 const TREND_EMPTY_REASON_LABELS: Readonly<Record<string, string>> = {

@@ -38,6 +38,115 @@ describe('parseExportPayload — existing research fixtures (8/8)', () => {
   }
 });
 
+// WP-58 T5 (NFR-58.6) — the metadata additions must be invisible to every payload written before
+// them. These digests were taken at the commit *before* T5 (`84483a6`) over
+// `canonicalExportJSON(parseExportPayload(fixture).payload)`; if any of the five new optional
+// fields ever acquires a default, gets emitted unconditionally, or perturbs an existing field, the
+// bytes move and this table goes red. Hashed inline rather than with `node:crypto` so this file
+// keeps the `node:*`-free property its header claims.
+const CANONICAL_DIGEST_BEFORE_T5: ReadonlyMap<string, string> = new Map([
+  ['counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json', '15c614402021931b'],
+  ['counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json', '390d7578707f6ff9'],
+  ['counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json', 'a9555430873bfa89'],
+  ['counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json', 'edb34bfc5b664f17'],
+  ['counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json', 'd294238f1dc54df2'],
+  ['synthetic_counterstrafe.json', 'c159f12f895ae5f3'],
+  ['synthetic_counterstrafe_t1_long.json', '2790a5da578ab390'],
+  ['synthetic_timeline.json', '6b48b2f23a70b6bf'],
+]);
+
+/** FNV-1a 64-bit over the canonical JSON — a change detector, not a security primitive. */
+function canonicalDigest(text: string): string {
+  let hash = 0xcbf29ce484222325n;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= BigInt(text.charCodeAt(index));
+    hash = (hash * 0x100000001b3n) & 0xffffffffffffffffn;
+  }
+  return hash.toString(16).padStart(16, '0');
+}
+
+describe('canonicalExportJSON — existing fixtures are byte-identical after the WP-58 T5 schema additions', () => {
+  for (const { name, raw } of FIXTURES) {
+    it(`serializes ${name} unchanged`, () => {
+      const result = parseExportPayload(raw);
+      if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+      expect(canonicalDigest(canonicalExportJSON(result.payload))).toBe(CANONICAL_DIGEST_BEFORE_T5.get(name));
+      for (const key of [
+        'sessionPlanMode',
+        'sessionPlanItems',
+        'sessionPlanDrillRestSeconds',
+        'sessionPlanItemIndex',
+        'sessionPlanRepIndex',
+      ]) {
+        expect(key in result.payload.meta).toBe(false);
+      }
+    });
+  }
+});
+
+describe('parseExportPayload — WP-58 T5 session program audit fields', () => {
+  function metaWith(overrides: Record<string, unknown>): unknown {
+    return minimalPayload({ meta: minimalMeta(overrides) });
+  }
+
+  it('parses a complete custom program', () => {
+    const result = parseExportPayload(
+      metaWith({
+        sessionPlanMode: 'custom',
+        sessionPlanItems: [
+          { drillId: 'hold_click_v1', reps: 3 },
+          { drillId: 'spider-shot-v2', reps: 2 },
+        ],
+        sessionPlanDrillRestSeconds: 30,
+        sessionPlanRestSeconds: 60,
+        sessionPlanItemIndex: 1,
+        sessionPlanRepIndex: 0,
+      }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.sessionPlanMode).toBe('custom');
+    expect(result.payload.meta.sessionPlanItems).toEqual([
+      { drillId: 'hold_click_v1', reps: 3 },
+      { drillId: 'spider-shot-v2', reps: 2 },
+    ]);
+    expect(result.payload.meta.sessionPlanDrillRestSeconds).toBe(30);
+    expect(result.payload.meta.sessionPlanItemIndex).toBe(1);
+    expect(result.payload.meta.sessionPlanRepIndex).toBe(0);
+  });
+
+  it('keeps reading a stored run whose drill has since left the schedulable roster', () => {
+    // Deliberate asymmetry with `collectMeta` (strict at write time): the reader must never make a
+    // historical payload unreadable because the roster moved on — same rule `sessionPlanFamilyOrder`
+    // has followed since stage8.
+    const result = parseExportPayload(
+      metaWith({ sessionPlanMode: 'custom', sessionPlanItems: [{ drillId: 'a_drill_that_no_longer_exists', reps: 1 }] }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.sessionPlanItems).toEqual([{ drillId: 'a_drill_that_no_longer_exists', reps: 1 }]);
+  });
+
+  it.each([
+    ['an unknown mode literal', { sessionPlanMode: 'manual' }, 'meta.sessionPlanMode'],
+    ['a non-array item list', { sessionPlanItems: 'hold_click_v1' }, 'meta.sessionPlanItems'],
+    ['a non-object item', { sessionPlanItems: ['hold_click_v1'] }, 'meta.sessionPlanItems[0]'],
+    ['an empty drill id', { sessionPlanItems: [{ drillId: '', reps: 1 }] }, 'meta.sessionPlanItems[0].drillId'],
+    ['reps = 0', { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 0 }] }, 'meta.sessionPlanItems[0].reps'],
+    [
+      'fractional reps',
+      { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 2.5 }] },
+      'meta.sessionPlanItems[0].reps',
+    ],
+    ['a negative drill rest', { sessionPlanDrillRestSeconds: -1 }, 'meta.sessionPlanDrillRestSeconds'],
+    ['a fractional item index', { sessionPlanItemIndex: 0.5 }, 'meta.sessionPlanItemIndex'],
+    ['a negative rep index', { sessionPlanRepIndex: -1 }, 'meta.sessionPlanRepIndex'],
+  ])('rejects %s', (_label, overrides, path) => {
+    const result = parseExportPayload(metaWith(overrides as Record<string, unknown>));
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((error) => error.path === path)).toBe(true);
+  });
+});
+
 describe('parseExportPayload — positive: every DrillEvent variant', () => {
   it('parses visible', () => {
     expectOk(payloadWithEvents([{ type: 'visible', targetId: 't0', side: 'L', t: 0, targetX: 1, targetY: 2, targetZ: 3 }]));

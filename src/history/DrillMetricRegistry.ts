@@ -70,6 +70,14 @@ export type HistoryProjectionResult =
       readonly observations: readonly MetricObservation[];
     }
   | { readonly status: 'unregistered-drill'; readonly drillId: string }
+  /**
+   * WP-58 T5 (FR-58.16) — the run is well-formed and its metrics would compute, but it was produced
+   * by a track whose runs are not comparable with the frozen protocol's. Deliberately its own
+   * status rather than an `invalid-metric` reason code: nothing failed here, and telling an operator
+   * a metric was invalid when it was excluded by design is exactly the kind of statement GD-20 /
+   * C-D3 forbids.
+   */
+  | { readonly status: 'excluded-cohort'; readonly reason: 'custom-session-program' }
   | { readonly status: 'invalid-metric'; readonly reasonCode: string };
 
 // ---------------------------------------------------------------------------
@@ -373,6 +381,17 @@ export function createDrillMetricRegistry(): DrillMetricRegistry {
     // stale/malicious API response must not be trusted to have enforced that.
     if (payload.meta.assessment === undefined) {
       return { status: 'invalid-metric', reasonCode: 'not-assessment' };
+    }
+
+    // WP-58 T5 (FR-58.16 / OQ-58.4) — an operator-authored program chooses its own drill order,
+    // repeats, and rest lengths, so its runs are not exchangeable with the counterbalanced frozen
+    // protocol's; pooling them would silently redefine what a trend point compares. The rule is
+    // read off the metadata and is deliberately positive (`=== 'custom'`), never inferred from the
+    // drill id: the frozen track and every pre-WP-58 payload leave `sessionPlanMode` absent, and
+    // absence must keep meaning "eligible". Storage is unaffected — the run is still archived
+    // (OQ-58.4: no third gate in `HistoryPersistence`); only the trend cohort excludes it.
+    if (payload.meta.sessionPlanMode === 'custom') {
+      return { status: 'excluded-cohort', reason: 'custom-session-program' };
     }
 
     try {

@@ -14,6 +14,8 @@
 
 - **2026-09-08**：**T4 完成**。`SessionPlanSetup` 新增「自訂 program」軌：drill 清單（依家族分組的 36 項選單）、每項 reps、兩級休息秒數，並在提交前顯示由 `compileSessionProgram()` 產出的逐步驟預覽表；`RestOverlay` 改帶邊界標籤與下一個 drill（OQ-58.3）。frozen 軌的 DOM、訊息與提交負載逐位不變（`mode:'frozen'` 為新增欄位）。新增 **25 個測試**；全量 Vitest **2,595 passed／2 skipped**（= T3 的 2,570 + 25，既有測試零失敗）；typecheck／build exit 0；`session-orchestrator.spec.ts` **8 條零修改**於真實 Edge 全綠。詳見 §T4。
 
+- **2026-09-08**：**T5 完成**。匯出 metadata 新增 5 個 additive optional 欄位記錄實際執行的 program（`sessionPlanMode`／`sessionPlanItems`／`sessionPlanDrillRestSeconds`／`sessionPlanItemIndex`／`sessionPlanRepIndex`），寫入端對 `FAMILY_BY_DRILL_ID` 嚴驗、讀取端只驗形狀；`sessionPlanMode==='custom'` 的 run 由 `DrillMetricRegistry.project()` 以新的 `excluded-cohort` status 排除於 frozen trend cohort （history 保存不受影響，OQ-58.4）。frozen 軌匯出**逐位不變**（不寫 `sessionPlanMode`，D-58-T5-1）。8 個既有 fixture 的 canonical JSON digest 逐位相同；`research/` ingest 零修改相容。新增 **66 個測試**；全量 Vitest **2,661 passed／2 skipped**；typecheck／build exit 0；`session-orchestrator.spec.ts` **8 條零修改**全綠。詳見 §T5。
+
 ## Decision Log
 
 - **D-58-P1 / 次數語意**：「設定 drill 次數」= **reps（重複跑 N 輪）**，不是修改 drill 內的 `endCondition.value`。排程層永不寫 drill 參數，`protocolVersion 1.0.0` 與跨 session 可比性不受影響。
@@ -34,9 +36,9 @@
 ## Open Questions（狀態）
 
 - **OQ-58.1**：同一 drill 連跑 N 輪的 seed 應逐輪相同或變化。✅ **已收斂（使用者，2026-09-08）：逐輪相同，維持現況**（**未**採規劃時建議的「逐輪變化」）。**T3 已落地**：drill 載入路徑零改動，並補上三次連續 rep 的逐位一致回歸測試（§T3 §6）。代價是 reps = 重複同一組刺激、存在練習效應，分析端不得視為 i.i.d. 取樣。證據與限制見 §T0 §5。
-- **OQ-58.2**：三輪匯出的檔名唯一性。✅ **已收斂（使用者，2026-09-08）：不加 rep 序號**。`exportBasename` 已含每次 `activateDrill()` 重設的毫秒級 `startedAt`，實測三輪唯一；T5 只補唯一性回歸測試，不改格式。證據見 §T0 §4。
+- **OQ-58.2**：三輪匯出的檔名唯一性。✅ **已收斂（使用者，2026-09-08）：不加 rep 序號**。`exportBasename` 已含每次 `activateDrill()` 重設的毫秒級 `startedAt`，實測三輪唯一；T5 只補唯一性回歸測試，不改格式。證據見 §T0 §4。 **T5 已落地**：`exportBasename` 零修改，回歸測試釘死「5 個 run step → 5 個唯一檔名」並反向明寫同毫秒撞名的已知邊界（§T5 §4b）。
 - **OQ-58.3**：休息 overlay 是否顯示邊界種類與下一個 drill。✅ **T4 依規劃建議的預設值落地（要，2026-09-08）**：`show(remainingMs, detail?)` 新增 optional `{ boundary, nextDrillId }`，兩個值皆直接取自編譯後的 `RestStep`，因此 overlay 與預覽表**不可能不一致**（共用 `programBoundaryLabel.ts` 單一詞彙表）。省略 detail 時逐位回到 WP-58 之前的兩行倒數。
-- **OQ-58.4**：`custom` session 是否可進 history。✅ **已收斂（使用者，2026-09-08）：沿用既有兩道閘（`DrillConfig.mode` + exact-id registry），額外標記 `sessionPlanMode`**，**不**在 `HistoryPersistence` 新增第三道攔截；隔離落在 T5 的 trend cohort 判定層。證據見 §T0 §6。
+- **OQ-58.4**：`custom` session 是否可進 history。✅ **已收斂（使用者，2026-09-08）：沿用既有兩道閘（`DrillConfig.mode` + exact-id registry），額外標記 `sessionPlanMode`**，**不**在 `HistoryPersistence` 新增第三道攔截；隔離落在 T5 的 trend cohort 判定層。證據見 §T0 §6。**T5 已落地**：`DrillMetricRegistry.project()` 對 `sessionPlanMode === 'custom'` 回 `excluded-cohort`；`HistoryPersistence` 零修改，並補一條「custom 的 assessment run 仍照常保存」正向測試。
 - **OQ-58.5**：stage12 是否需要獨立里程碑（下一個可用編號 **M22**；M20／M21 已由 stage11 WP-54／WP-55 取用）。⬜ 待 stage12 範圍收斂（**非 T0 exit blocker**）。
 
 ---
@@ -452,3 +454,74 @@ PoC 重建 `activateDrill()` 每 rep 重建的整條物件圖（`loadDrill` → 
 - **`RestStep.nextDrillId` 必填在 T2 是型別上的小事，到 T4 才兌現成 UI 上的大事**。overlay 與預覽表都不需要「沒有下一個 drill」的 fallback 文案，因為編譯規則 4（program 不以 rest 結尾）在型別層就消掉了那個分支。T2 的 Surprises 已預告，這裡確認：兩個消費端各省下一條死路徑。
 - **frozen 軌完全沒被這次改版碰到，證據強度超出預期**。原以為加模式切換會逼著改 e2e selector（R-58.9 給的機率是「高」），實際上把 custom 區塊做成獨立的 `[data-plan-section="custom"]` 容器、沿用同一個 `button[type=submit]` 之後，三條 Session Plan e2e **一個字都沒動**就全綠。R-58.9 的緩解（「更新既有 spec 而非新開平行 spec」）最後連更新都不需要。
 - **編譯器的 typed error 讓表單的錯誤處理縮成三行**。`error.field` 分類、`error.itemIndex` 定位、`error.message` 直接當文案——T4 完全不需要自己寫一套 reps／drillId 的驗證訊息。D-58-T2-2（不把索引編進 `field`）在這裡拿到回報：如果當初把 `items[2].drillId` 塞進 `field`，這裡就得解析字串才知道要標哪一列。
+
+---
+
+## T5 — Metadata 稽核欄位、逐輪匯出與 cohort 隔離（2026-09-08）✅
+
+### 1. 交付物
+
+| 檔案 | 動作 | 內容 |
+|---|---|---|
+| `src/data/metadata.ts` | 加法 | `SessionPlanItemMeta` + 5 個 optional 欄位（`sessionPlanMode`／`Items`／`DrillRestSeconds`／`ItemIndex`／`RepIndex`）；`requireSessionPlanMode()`／`requireSessionPlanItems()`（查 `FAMILY_BY_DRILL_ID`，不新增第二份清單）／`requireSessionProgramCoherence()` 跨欄位驗證 |
+| `src/data/exportPayloadSchema.ts` | 加法 | 同 5 欄的 reader 側解析 + `parseSessionPlanItems()` |
+| `src/session/sessionProgram.ts` | 加法 | `deriveProgramFamilyOrder(program)` —— 由 `RunStep.family` 去連續重複 |
+| `src/history/DrillMetricRegistry.ts` | 加法 | `HistoryProjectionResult` 新增 `excluded-cohort` variant；`project()` 加一條 `sessionPlanMode === 'custom'` 顯式規則 |
+| `src/history/HistoryTrend.ts` | 加法 | `excluded-cohort` 以自己的 reason 計數，不併入 `not-ready` |
+| `src/ui/history/DrillOverview.ts` | 加法 | `custom-session-program` 的排除理由文案 |
+| `src/main.ts` | 接線 | `sessionPlanAuditFields(phase)` 取代 inline 三元；custom 軌寫入完整 program + 本次 rep 座標；`activeCustomProgramFamilyOrder` 於 `start()` 一次導出 |
+| `src/session/sessionProgramExport.test.ts` | **新增** | `deriveProgramFamilyOrder` 4 條 + 逐 rep 匯出身分 3 條（**7 tests**） |
+| `src/data/metadata.test.ts` | 加測 | 正負向矩陣（mode 字面值 5、items 9+1、秒數 3、跨欄位 4+2、索引 3、邊界 2、frozen 逐位不變 1、加法性 1）（**+39 tests**） |
+| `src/data/exportPayloadSchema.test.ts` | 加測 | 8 個既有 fixture 的 canonical JSON digest 對表 + 新欄位正負向 11 條（**+19 tests**） |
+| `src/history/DrillMetricRegistry.test.ts` | 加測 | cohort 隔離 4 條 |
+| `src/history/HistoryTrend.test.ts` | 加測 | 排除理由分流 1 條 |
+| `src/history/HistoryPersistence.test.ts` | 加測 | custom 仍照常保存 1 條（OQ-58.4 零修改的正向證據） |
+| `src/ui/history/DrillOverview.test.ts` | 加測 | 排除文案 1 條 |
+| `docs/operational/schema.md` | 文件 | 新增 `meta.sessionPlan*` 小節（含 stage8 三個既有欄位——原本從未入 schema 文件）、缺席規則、cohort 規則、reps 非 i.i.d. 警語 |
+| `docs/operational/analysis-assessment-contract.md` | 文件 | §2 補「第六軸：排程來源」——custom 不入 frozen cohort、reps 非獨立取樣（D-58-T0-3 落地） |
+
+### 2. Schema diff（全部 optional，缺席對舊 payload 合法）
+
+| 欄位 | 型別 | 誰寫 | 語意 |
+|---|---|---|---|
+| `sessionPlanMode` | `'frozen' \| 'custom'` | **只有 custom 軌** | 缺席 = 「非 custom」 |
+| `sessionPlanItems` | `{ drillId, reps }[]` | custom | 實際執行的 program 來源清單 |
+| `sessionPlanDrillRestSeconds` | number | custom | rep／drill 接縫秒數 |
+| `sessionPlanItemIndex` / `sessionPlanRepIndex` | number | custom | 本次匯出在 program 中的 0-based 座標 |
+| `sessionPlanRestSeconds`（既有） | number | 兩軌 | **語意不變** = family 接縫秒數 |
+| `sessionPlanFamilyOrder`（既有） | string[] | 兩軌 | custom 由 `deriveProgramFamilyOrder()` 推導（去連續重複） |
+
+### 3. 驗證
+
+| 閘 | 結果 |
+|---|---|
+| `npx vitest run`（全量） | **246 passed / 1 skipped（247 files）、2,661 passed / 2 skipped** —— 相對 T4 的 2,595 淨增 66，既有測試零失敗 |
+| `npm run typecheck` | exit 0（browser + node） |
+| `npm run build` | exit 0 |
+| `npx playwright test session-orchestrator.spec.ts` | **8 passed**（真實 Edge），spec **零修改** |
+| 既有 golden fixture 逐位不變（NFR-58.6） | 8/8 canonical JSON digest 與 T5 前（HEAD `84483a6`）逐位相同；另斷言 5 個新 key 皆不出現在解析結果 |
+| `research/` ingest 相容（C-D1） | 真實 `load_export()` 讀含 5 個新欄位的 payload：`ticks`／`events` 與原始 payload `equals=True`、既有 meta 逐鍵不變、新欄位原樣帶出 ⇒ **Python 側零修改** |
+
+**Fixture 逐位不變的量法**：先在改動前以 sha256 記錄 8 個 fixture 的 `canonicalExportJSON(parseExportPayload(x).payload)`，改完後以同一組 sha256 覆驗通過；committed 的測試改用檔內自寫的 FNV-1a 摘要，因為 `exportPayloadSchema.test.ts` 檔頭明示自己不引 `node:*`（不為了一個雜湊破壞該檔既有性質）。
+
+### 4. 兩處值得記錄的取捨
+
+**(a) frozen 不寫 `sessionPlanMode`（D-58-T5-1）**。FR-58.14 字面要求「新增 `sessionPlanMode`」，但 FR-58.10 與 WP 的 Delivery policy 要求 frozen 軌**匯出內容逐位不變**。兩者在 frozen 軌上直接衝突，取後者：frozen 的 payload 一個 byte 都沒動，`sessionPlanMode` 只出現在 custom 軌。可行的前提是 FR-58.16 的判定本來就寫成 `=== 'custom'`（README §2.7 原文），因此「缺席」在 frozen 軌與所有 WP-58 前的 payload 上是同一個、且正確的意思：可比較。代價是「這是 frozen」只能由 `sessionPlanFamilyOrder`＋`sessionPlanRestSeconds` 間接指認——已寫入 schema 文件。
+
+**(b) 三輪匯出檔名不加 rep 序號（OQ-58.2 落地，`exportBasename` 零修改）**。T0 已證 `startedAt` 逐 rep 重設到毫秒；T5 只補回歸測試釘死「5 個 run step → 5 個唯一檔名」，**外加一條反向測試**明寫唯一性的來源與邊界：兩個 run 若真的同毫秒啟動就會撞名。把已知邊界寫成斷言，比讓它留在文件裡更難被誤改。
+
+### T5 Decision Log
+
+- **D-58-T5-1 / frozen 匯出逐位不變優先於「每個 run 都標 mode」**：見上 §4(a)。判定規則一律正向（`=== 'custom'`），缺席即可比較。
+- **D-58-T5-2 / `excluded-cohort` 是自己的 status，不是 `invalid-metric` 的一個 reasonCode**：`invalid-metric` 在 UI 上的文案是「無法計算（projection 失敗或不支援）」。custom run 的指標**算得出來**，只是不可比；沿用 `invalid-metric` 會讓教練報告對操作員說一句假話，正是 GD-20／C-D3 要擋的。新 variant 的擴散面實測極小：`project()` 一處產生、`HistoryTrend` 一處分流、`DrillOverview` 一條文案，`HistoryAnalysisService` 純透傳。
+- **D-58-T5-3 / 隔離落在 `DrillMetricRegistry.project()` 而非 `buildHistoryTrend()`**：trend 只看得到 `HistoryRunProjection`，其 `run` 是 `HistoryRunSummary`（無 `sessionPlanMode`）。要在 trend 層判定就得把欄位推進 repository index DTO——跨 browser/Node 邊界的 schema 改動，為一個布林值不值得。`project()` 本來就拿著整份 payload，且 `not-assessment` 那道防線已經在同一處。
+- **D-58-T5-4 / 寫入端嚴、讀取端寬**：`collectMeta()` 對 `sessionPlanItems[].drillId` 查 `FAMILY_BY_DRILL_ID`；`parseExportPayload()` 只驗形狀。理由與既有 `sessionPlanFamilyOrder`（`requireSessionPlanFamilyOrder` vs `parseStringArray`）完全一致：roster 日後改名或移除 drill 時，**已存下的 run 不可以因此變成讀不了的檔案**。兩側各有一條測試明寫這個不對稱。
+- **D-58-T5-5 / 索引在 `collectMeta` 就做界內檢查**：`sessionPlanItemIndex` 必須落在 `sessionPlanItems` 內、`sessionPlanRepIndex` 必須小於該 item 的 `reps`，且兩者必須成對出現。`main.ts` 的接線若哪天錯位（例如拿 cursor 當 itemIndex），會在匯出當下就爆，而不是產出一份「自稱是第 4 輪」但 program 只有 3 輪的檔案。
+- **D-58-T5-6 / 家族順序由編譯後的 `RunStep.family` 導出，不重查 drill id**：`deriveProgramFamilyOrder(program)` 與預覽表、rest overlay、runner 走的是同一份 program，因此匯出寫的家族順序不可能與操作員看到的邊界不一致。於 `startSessionPlan()` 收斂一次存起來，逐 rep 匯出直接讀。
+
+### T5 Surprises
+
+- **stage8 的三個 `sessionPlan*` 欄位從來沒進過 `docs/operational/schema.md`**。原本只打算補新欄位，翻文件才發現 `sessionPlanPreset`／`sessionPlanRestSeconds`／`sessionPlanFamilyOrder` 三個既有欄位在 schema 文件裡完全不存在——匯出格式的權威文件缺了一整個欄位家族。T5 順手補齊整組（不只新的五個），否則新欄位會被寫進一份對它的鄰居沉默的文件裡。
+- **`invalid-metric` 差一點就成為預設解**。重用既有 variant 是零型別改動的路，但把 UI 文案讀出來（「無法計算（projection 失敗或不支援）」）就看得出它會對操作員說錯話。C-D3 的「寧可少一個指標，不能有一個會說錯話的指標」在這裡不是關於指標本身,而是關於**指標為什麼不在那裡**的說明。
+- **FR-58.14 與 FR-58.10 在 frozen 軌上是直接衝突的**，規劃時兩條各自看都合理（「記錄 mode」vs「匯出逐位不變」),放在一起才發現不能同時成立。這類衝突只有在寫到那一行時才會現形——記為 D-58-T5-1 而不是靜默選一邊。
+

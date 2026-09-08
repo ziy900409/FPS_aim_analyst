@@ -199,3 +199,20 @@ export function summarizeProgram(program: readonly ProgramStep[]): ProgramSummar
   }
   return { runCount, totalRestSeconds };
 }
+
+/**
+ * WP-58 T5 (FR-58.14 / README §2.7) — the family sequence a compiled program actually visits, with
+ * consecutive repeats collapsed, for the export's `sessionPlanFamilyOrder` audit field.
+ *
+ * Derived from the compiled `RunStep.family` values rather than re-resolving drill ids, so the
+ * exported order can never disagree with the boundaries the operator saw in the preview and the
+ * rests the runner actually served — one program, one answer.
+ */
+export function deriveProgramFamilyOrder(program: readonly ProgramStep[]): readonly SessionFamilyId[] {
+  const order: SessionFamilyId[] = [];
+  for (const step of program) {
+    if (step.kind !== 'run') continue;
+    if (order[order.length - 1] !== step.family) order.push(step.family);
+  }
+  return order;
+}

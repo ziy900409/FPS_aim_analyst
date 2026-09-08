@@ -7,6 +7,7 @@ import type {
   ReplayMeta,
   SceneMeta,
   SessionMeta,
+  SessionPlanItemMeta,
   SpawnMeta,
   TargetsMeta,
   VisibilityMeta,
@@ -270,6 +271,26 @@ function parseMeta(raw: Record<string, unknown>, errors: ExportPayloadParseError
     raw.sessionPlanFamilyOrder === undefined
       ? undefined
       : parseStringArray(raw.sessionPlanFamilyOrder, 'meta.sessionPlanFamilyOrder', errors);
+  const sessionPlanMode =
+    raw.sessionPlanMode === undefined
+      ? undefined
+      : parseLiteral(raw.sessionPlanMode, 'meta.sessionPlanMode', ['frozen', 'custom'] as const, errors);
+  const sessionPlanItems =
+    raw.sessionPlanItems === undefined
+      ? undefined
+      : parseSessionPlanItems(raw.sessionPlanItems, 'meta.sessionPlanItems', errors);
+  const sessionPlanDrillRestSeconds =
+    raw.sessionPlanDrillRestSeconds === undefined
+      ? undefined
+      : parseNonNegativeFiniteNumber(raw.sessionPlanDrillRestSeconds, 'meta.sessionPlanDrillRestSeconds', errors);
+  const sessionPlanItemIndex =
+    raw.sessionPlanItemIndex === undefined
+      ? undefined
+      : parseNonNegativeInteger(raw.sessionPlanItemIndex, 'meta.sessionPlanItemIndex', errors);
+  const sessionPlanRepIndex =
+    raw.sessionPlanRepIndex === undefined
+      ? undefined
+      : parseNonNegativeInteger(raw.sessionPlanRepIndex, 'meta.sessionPlanRepIndex', errors);
   const fovDeg = raw.fovDeg === undefined ? undefined : parsePositiveFiniteNumber(raw.fovDeg, 'meta.fovDeg', errors);
   const simToWorld = raw.simToWorld === undefined ? undefined : parsePositiveFiniteNumber(raw.simToWorld, 'meta.simToWorld', errors);
   const validity = raw.validity === undefined ? undefined : parseValidity(raw.validity, 'meta.validity', errors);
@@ -330,6 +351,11 @@ function parseMeta(raw: Record<string, unknown>, errors: ExportPayloadParseError
     ...(sessionPlanPreset !== undefined ? { sessionPlanPreset } : {}),
     ...(sessionPlanRestSeconds !== undefined ? { sessionPlanRestSeconds } : {}),
     ...(sessionPlanFamilyOrder !== undefined ? { sessionPlanFamilyOrder } : {}),
+    ...(sessionPlanMode !== undefined ? { sessionPlanMode } : {}),
+    ...(sessionPlanItems !== undefined ? { sessionPlanItems } : {}),
+    ...(sessionPlanDrillRestSeconds !== undefined ? { sessionPlanDrillRestSeconds } : {}),
+    ...(sessionPlanItemIndex !== undefined ? { sessionPlanItemIndex } : {}),
+    ...(sessionPlanRepIndex !== undefined ? { sessionPlanRepIndex } : {}),
     sensitivityModel,
     movementModel,
     ...(fovDeg !== undefined ? { fovDeg } : {}),
@@ -378,6 +404,36 @@ function parseStringArray(value: unknown, path: string, errors: ExportPayloadPar
     const str = parseString(item, `${path}[${i}]`, errors);
     if (str === undefined) failed = true;
     else result.push(str);
+  });
+  return failed ? undefined : result;
+}
+
+/**
+ * WP-58 T5 — shape-only, deliberately *not* checked against `FAMILY_BY_DRILL_ID`. This mirrors how
+ * `sessionPlanFamilyOrder` is already handled here (`parseStringArray`, no allowlist): `collectMeta`
+ * is strict at write time, while the reader must keep parsing a historical payload whose drill was
+ * later renamed or dropped from the roster. A stored run must not become unreadable because the
+ * roster moved on.
+ */
+function parseSessionPlanItems(
+  value: unknown,
+  path: string,
+  errors: ExportPayloadParseError[],
+): SessionPlanItemMeta[] | undefined {
+  const arr = parseArray(value, path, errors);
+  if (arr === undefined) return undefined;
+  const result: SessionPlanItemMeta[] = [];
+  let failed = false;
+  arr.forEach((entry, index) => {
+    const item = parseRecord(entry, `${path}[${index}]`, errors);
+    if (item === undefined) {
+      failed = true;
+      return;
+    }
+    const drillId = parseNonEmptyString(item.drillId, `${path}[${index}].drillId`, errors);
+    const reps = parsePositiveInteger(item.reps, `${path}[${index}].reps`, errors);
+    if (drillId === undefined || reps === undefined) failed = true;
+    else result.push({ drillId, reps });
   });
   return failed ? undefined : result;
 }

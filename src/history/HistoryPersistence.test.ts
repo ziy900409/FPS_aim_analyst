@@ -39,6 +39,35 @@ function runSummary(overrides: Partial<HistoryRunSummary> = {}): HistoryRunSumma
   };
 }
 
+describe('HistoryPersistence — custom session programs are stored, not intercepted (WP-58 T5)', () => {
+  it('saves an Assessment run that a custom program produced', async () => {
+    // OQ-58.4 decided against a third gate here: the two existing ones (`DrillConfig.mode` and the
+    // exact-id registry) already know nothing about session families, and the custom/frozen split is
+    // handled where it belongs — the trend cohort (`DrillMetricRegistry.project`). Archiving is not
+    // the same question as comparability, and conflating them would lose the run entirely.
+    const base = makeAssessmentPayload();
+    const payload = {
+      ...base,
+      meta: {
+        ...base.meta,
+        sessionPlanMode: 'custom' as const,
+        sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 3 }],
+        sessionPlanItemIndex: 0,
+        sessionPlanRepIndex: 2,
+      },
+    };
+    const saveRun = vi.fn(
+      async (): Promise<SaveHistoryRunResult> => ({ disposition: 'created', run: runSummary() }),
+    );
+    const persistence = createHistoryPersistence(fakeClient({ saveRun }));
+
+    const result = await persistence.save(payload);
+
+    expect(saveRun).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe('saved');
+  });
+});
+
 describe('HistoryPersistence — Practice short-circuit', () => {
   it('goes directly to excluded without calling the client', async () => {
     const client = fakeClient();

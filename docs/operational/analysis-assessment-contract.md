@@ -97,6 +97,16 @@ T3 adds [`CompatibilityKey`](../../src/metrics/compatibilityKey.ts) as the only 
 
 `DrillConfig.mode` omission is defined as Practice semantics so existing drill configs remain byte-for-byte compatible and do not become formal Assessment data by accident.
 
+**第六軸(WP-58 T5,FR-58.16)——排程來源**:上面五軸描述的是單一 run 的性質;`meta.sessionPlanMode === 'custom'`
+再加一道正交條件——該 run 由操作員自訂的 program 產生,drill 順序、重複次數與休息長度都由操作員決定,因此
+**不與凍結協定的 trend cohort 混合**(`DrillMetricRegistry.project()` 回 `excluded-cohort`)。此為 metadata
+驅動的顯式規則,不從 drill id 推測;**缺席即「非 custom」**(凍結軌與 WP-58 之前的所有 payload 皆缺席),故
+判定一律寫成 `=== 'custom'`。該 run 仍照常存入 history——**可保存**與**可比較**是兩個問題。
+
+同一 item 的多個 rep **不是**同難度的獨立取樣:同一 `drillId` 對應同一組 seeded config,逐輪 spawn 序列
+逐位相同(OQ-58.1,2026-09-08 定案),輪與輪之間存在練習效應。分析端不得把它們當 i.i.d. 重複量測
+(GD-20 / C-D3)。欄位定義見 [schema.md `meta.sessionPlan*`](schema.md#metasessionplan)。
+
 ---
 
 ## 3. Acceptance Checklist F Prerequisites

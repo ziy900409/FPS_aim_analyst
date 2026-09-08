@@ -297,6 +297,193 @@ describe('collectMeta', () => {
     expect(withTransferFamily.sessionPlanFamilyOrder).toEqual(['hold-click', 'counterstrafe', 'peek-click-transfer']);
   });
 
+  // -------------------------------------------------------------------------
+  // WP-58 T5 — executed session program audit fields (FR-58.14~58.16)
+  // -------------------------------------------------------------------------
+
+  describe('session program audit fields', () => {
+    const base: CollectMetaArgs = {
+      drillId: 'hold_click_v1',
+      backend: 'webgl2',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+    };
+
+    const customArgs: CollectMetaArgs = {
+      ...base,
+      sessionPlanMode: 'custom',
+      sessionPlanItems: [
+        { drillId: 'hold_click_v1', reps: 3 },
+        { drillId: 'spider-shot-v2', reps: 2 },
+      ],
+      sessionPlanDrillRestSeconds: 30,
+      sessionPlanRestSeconds: 60,
+      sessionPlanFamilyOrder: ['hold-click', 'spider-shot'],
+      sessionPlanItemIndex: 1,
+      sessionPlanRepIndex: 1,
+    };
+
+    it('records a complete custom program', () => {
+      const meta = collectMeta(customArgs);
+      expect(meta.sessionPlanMode).toBe('custom');
+      expect(meta.sessionPlanItems).toEqual([
+        { drillId: 'hold_click_v1', reps: 3 },
+        { drillId: 'spider-shot-v2', reps: 2 },
+      ]);
+      expect(meta.sessionPlanDrillRestSeconds).toBe(30);
+      // The existing field keeps its existing meaning: the family seam (README §2.7).
+      expect(meta.sessionPlanRestSeconds).toBe(60);
+      expect(meta.sessionPlanFamilyOrder).toEqual(['hold-click', 'spider-shot']);
+      expect(meta.sessionPlanItemIndex).toBe(1);
+      expect(meta.sessionPlanRepIndex).toBe(1);
+    });
+
+    it('omits every new field when the caller records none of them (additive; legal for old payloads)', () => {
+      const meta = collectMeta(base);
+      for (const key of [
+        'sessionPlanMode',
+        'sessionPlanItems',
+        'sessionPlanDrillRestSeconds',
+        'sessionPlanItemIndex',
+        'sessionPlanRepIndex',
+      ]) {
+        expect(key in meta).toBe(false);
+      }
+    });
+
+    it('leaves the frozen track bit-identical to its pre-WP-58 export (FR-58.10 / Delivery policy)', () => {
+      // The frozen one-click Assessment path writes only the two stage8 fields it always wrote; it
+      // does not gain `sessionPlanMode: 'frozen'`. Absence therefore means "not a custom program",
+      // which is exactly what every payload written before WP-58 also means.
+      const frozen = collectMeta({
+        ...base,
+        sessionPlanRestSeconds: 60,
+        sessionPlanFamilyOrder: ['hold-click', 'counterstrafe'],
+      });
+      expect(Object.keys(frozen).filter((key) => key.startsWith('sessionPlan')).sort()).toEqual([
+        'sessionPlanFamilyOrder',
+        'sessionPlanRestSeconds',
+      ]);
+    });
+
+    it('accepts the frozen literal when a caller does record it', () => {
+      expect(collectMeta({ ...base, sessionPlanMode: 'frozen' }).sessionPlanMode).toBe('frozen');
+    });
+
+    it.each([['manual'], [''], [1], [null], [true]])('rejects an invalid sessionPlanMode: %s', (sessionPlanMode) => {
+      expect(() => collectMeta({ ...base, sessionPlanMode: sessionPlanMode as unknown as 'custom' })).toThrow(
+        "sessionPlanMode must be 'frozen' or 'custom'",
+      );
+    });
+
+    it.each([
+      [
+        'a drill id outside the schedulable roster',
+        [{ drillId: 'counterstrafe-cued-v1', reps: 1 }],
+        'sessionPlanItems[0].drillId must be a schedulable drill',
+      ],
+      [
+        'a near-miss drill id',
+        [{ drillId: 'spider_shot_v2', reps: 1 }],
+        'sessionPlanItems[0].drillId must be a schedulable drill',
+      ],
+      [
+        'a family id used as a drill id',
+        [{ drillId: 'spider-shot', reps: 1 }],
+        'sessionPlanItems[0].drillId must be a schedulable drill',
+      ],
+      ['reps = 0', [{ drillId: 'hold_click_v1', reps: 0 }], 'sessionPlanItems[0].reps must be a positive integer'],
+      ['negative reps', [{ drillId: 'hold_click_v1', reps: -2 }], 'sessionPlanItems[0].reps must be a positive integer'],
+      [
+        'fractional reps',
+        [{ drillId: 'hold_click_v1', reps: 1.5 }],
+        'sessionPlanItems[0].reps must be a positive integer',
+      ],
+      ['a missing drill id', [{ reps: 1 }], 'sessionPlanItems[0].drillId must be a non-empty string'],
+      ['a non-object item', ['hold_click_v1'], 'sessionPlanItems[0] must be an object'],
+      ['an empty list', [], 'sessionPlanItems must not be empty'],
+    ])('rejects session plan items with %s', (_label, sessionPlanItems, message) => {
+      expect(() =>
+        collectMeta({
+          ...base,
+          sessionPlanMode: 'custom',
+          sessionPlanItems: sessionPlanItems as unknown as CollectMetaArgs['sessionPlanItems'],
+        }),
+      ).toThrow(message as string);
+    });
+
+    it('rejects a non-array item list', () => {
+      expect(() =>
+        collectMeta({
+          ...base,
+          sessionPlanMode: 'custom',
+          sessionPlanItems: 'hold_click_v1' as unknown as CollectMetaArgs['sessionPlanItems'],
+        }),
+      ).toThrow('sessionPlanItems must be an array');
+    });
+
+    it.each([-1, Number.NaN, Number.POSITIVE_INFINITY])(
+      'rejects an invalid drill rest duration: %s',
+      (sessionPlanDrillRestSeconds) => {
+        expect(() => collectMeta({ ...customArgs, sessionPlanDrillRestSeconds })).toThrow(
+          'sessionPlanDrillRestSeconds must be a non-negative finite number',
+        );
+      },
+    );
+
+    it('rejects a custom mode that does not say what ran', () => {
+      expect(() => collectMeta({ ...base, sessionPlanMode: 'custom' })).toThrow(
+        'sessionPlanItems is required when sessionPlanMode is custom',
+      );
+    });
+
+    it('rejects items recorded without the custom mode marker', () => {
+      expect(() => collectMeta({ ...base, sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1 }] })).toThrow(
+        'sessionPlanItems requires sessionPlanMode to be custom',
+      );
+    });
+
+    it.each([
+      ['an item index past the end', { sessionPlanItemIndex: 2 }, 'sessionPlanItemIndex must index sessionPlanItems'],
+      [
+        'a rep index past that item reps',
+        { sessionPlanRepIndex: 2 },
+        "sessionPlanRepIndex must be below that item's reps",
+      ],
+      [
+        'a lone item index',
+        { sessionPlanRepIndex: undefined },
+        'sessionPlanItemIndex and sessionPlanRepIndex must be recorded together',
+      ],
+      [
+        'a lone rep index',
+        { sessionPlanItemIndex: undefined },
+        'sessionPlanItemIndex and sessionPlanRepIndex must be recorded together',
+      ],
+    ])('rejects %s', (_label, override, message) => {
+      expect(() => collectMeta({ ...customArgs, ...(override as Partial<CollectMetaArgs>) })).toThrow(message as string);
+    });
+
+    it.each([-1, 1.5, Number.NaN])('rejects a non-integer item index: %s', (sessionPlanItemIndex) => {
+      expect(() => collectMeta({ ...customArgs, sessionPlanItemIndex })).toThrow(
+        'sessionPlanItemIndex must be a non-negative integer',
+      );
+    });
+
+    it('rejects rep coordinates with no program to locate them in', () => {
+      expect(() => collectMeta({ ...base, sessionPlanItemIndex: 0, sessionPlanRepIndex: 0 })).toThrow(
+        'sessionPlanItemIndex requires sessionPlanItems',
+      );
+    });
+
+    it('accepts the last legal rep coordinate of the first item (boundary)', () => {
+      const meta = collectMeta({ ...customArgs, sessionPlanItemIndex: 0, sessionPlanRepIndex: 2 });
+      expect(meta.sessionPlanItemIndex).toBe(0);
+      expect(meta.sessionPlanRepIndex).toBe(2);
+    });
+  });
+
   it('preserves an opaque spiderShot replay schedule in spawn metadata', () => {
     const spiderShot = {
       kind: 'center-peripheral',

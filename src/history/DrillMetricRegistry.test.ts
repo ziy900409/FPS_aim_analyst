@@ -248,6 +248,58 @@ function minimalPeekClickTransferPayload(overrides: { drillId: string; assessmen
   return { meta, ticks: [], events: [] };
 }
 
+/**
+ * WP-58 T5 (FR-58.16 / OQ-58.4) — custom-program runs are archived like any other run, but they do
+ * not join the frozen protocol's trend cohort. The rule is read off the metadata and is positive
+ * (`sessionPlanMode === 'custom'`), so the frozen track and every payload written before WP-58 —
+ * both of which leave the field absent — stay eligible.
+ */
+describe('DrillMetricRegistry — custom session program isolation (WP-58 T5)', () => {
+  function withMeta(overrides: Partial<Meta>): ExportPayload {
+    const base = makePayload({});
+    return { ...base, meta: { ...base.meta, ...overrides } };
+  }
+
+  it('excludes a run produced by a custom program', () => {
+    const registry = createDrillMetricRegistry();
+    const result = registry.project(
+      withMeta({
+        sessionPlanMode: 'custom',
+        sessionPlanItems: [{ drillId: 'spider-shot-v2', reps: 3 }],
+        sessionPlanItemIndex: 0,
+        sessionPlanRepIndex: 1,
+      }),
+    );
+    expect(result).toEqual({ status: 'excluded-cohort', reason: 'custom-session-program' });
+  });
+
+  it('keeps projecting the same drill when no custom program produced it', () => {
+    // The exclusion must be about the session mode, never about the drill: the identical payload
+    // without the marker still projects normally.
+    const registry = createDrillMetricRegistry();
+    expect(registry.project(makePayload({})).status).toBe('ready');
+  });
+
+  it('keeps a frozen Session Plan run eligible (absent mode means "not custom")', () => {
+    const registry = createDrillMetricRegistry();
+    const frozen = registry.project(
+      withMeta({ sessionPlanRestSeconds: 60, sessionPlanFamilyOrder: ['hold-click', 'spider-shot'] }),
+    );
+    expect(frozen.status).toBe('ready');
+  });
+
+  it('reports the exclusion as its own status, not as a failed metric', () => {
+    // GD-20 / C-D3: an operator must not be told a metric was invalid when the run was set aside by
+    // design. `invalid-metric` stays reserved for runs that genuinely could not be projected.
+    const registry = createDrillMetricRegistry();
+    const result = registry.project(
+      withMeta({ sessionPlanMode: 'custom', sessionPlanItems: [{ drillId: 'spider-shot-v2', reps: 1 }] }),
+    );
+    expect(result.status).not.toBe('invalid-metric');
+    expect(result.status).not.toBe('ready');
+  });
+});
+
 function makePayload(overrides: { drillId?: string; assessment?: boolean; suspect?: boolean }): ExportPayload {
   const { drillId = 'spider-shot-v2', assessment = true, suspect = false } = overrides;
 

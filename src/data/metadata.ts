@@ -8,6 +8,7 @@ import type { TargetHitboxConfig } from '../drill/DrillConfig.ts';
 import { SIM_TO_WORLD } from '../loop/constants.ts';
 import { findSessionPlanPreset } from '../session/sessionPlanPresets.ts';
 import { KNOWN_SESSION_FAMILY_IDS } from '../session/sessionSchedule.ts';
+import { FAMILY_BY_DRILL_ID } from '../session/drillFamily.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
@@ -123,6 +124,16 @@ export interface ReplayMeta {
   replaySchemaVersion: 1;
 }
 
+/**
+ * WP-58 T5 (FR-58.14) — one entry of the operator-authored program this run belongs to. `reps` is
+ * how many times the drill was scheduled to run back to back; it never describes the drill's own
+ * trial count (D-58-P1 — the scheduling layer is never a second source for drill parameters).
+ */
+export interface SessionPlanItemMeta {
+  readonly drillId: string;
+  readonly reps: number;
+}
+
 export interface Meta {
   schemaVersion: 2;
   drillId: string;
@@ -142,6 +153,34 @@ export interface Meta {
   sessionPlanRestSeconds?: number;
   /** Operator-selected execution order used by a stage8 manual Session Plan. */
   sessionPlanFamilyOrder?: readonly string[];
+  /**
+   * WP-58 T5 (FR-58.14) — which track produced this session's program. Present only on the custom
+   * track: the frozen Assessment path's export is bit-identical to its pre-WP-58 form (FR-58.10 /
+   * Delivery policy), so *absence* means "not a custom program", which is also what every payload
+   * written before WP-58 means. Every consumer rule is therefore written as `=== 'custom'`, never
+   * as `!== 'frozen'`.
+   */
+  sessionPlanMode?: 'frozen' | 'custom';
+  /** The ordered `(drillId, reps)` list the executed program was compiled from. */
+  sessionPlanItems?: readonly SessionPlanItemMeta[];
+  /**
+   * Rest between reps of one item and between two items of the same family. The family seam keeps
+   * using the existing `sessionPlanRestSeconds`, whose meaning is unchanged.
+   */
+  sessionPlanDrillRestSeconds?: number;
+  /**
+   * Where in `sessionPlanItems` this particular export sits (FR-58.15). Repeating one drill three
+   * times produces three exports that differ only here, so a rep is locatable without parsing the
+   * filename.
+   *
+   * ⚠️ Reps replay the *same* stimulus: one drill id resolves to one seeded config, so every rep of
+   * an item gets a bit-identical spawn sequence (OQ-58.1, decided 2026-09-08). The reps of one item
+   * are repeated exposures with a practice effect between them — never i.i.d. samples of one
+   * difficulty. Analysis must not pool them as independent observations (D-58-T0-3 / C-D3).
+   */
+  sessionPlanItemIndex?: number;
+  /** 0-based rep number within `sessionPlanItems[sessionPlanItemIndex]`. See the warning above. */
+  sessionPlanRepIndex?: number;
   sensitivityModel: 'cs2-0.022deg';
   movementModel: 'cs2-source';
   /**
@@ -221,6 +260,11 @@ export interface CollectMetaArgs {
   sessionPlanPreset?: string;
   sessionPlanRestSeconds?: number;
   sessionPlanFamilyOrder?: readonly string[];
+  sessionPlanMode?: 'frozen' | 'custom';
+  sessionPlanItems?: readonly SessionPlanItemMeta[];
+  sessionPlanDrillRestSeconds?: number;
+  sessionPlanItemIndex?: number;
+  sessionPlanRepIndex?: number;
   fovDeg?: number;
   crossOriginIsolated: boolean;
   startedAt?: string | Date;
@@ -283,6 +327,22 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     args.sessionPlanFamilyOrder === undefined
       ? undefined
       : requireSessionPlanFamilyOrder(args.sessionPlanFamilyOrder);
+  const sessionPlanMode = args.sessionPlanMode === undefined ? undefined : requireSessionPlanMode(args.sessionPlanMode);
+  const sessionPlanItems =
+    args.sessionPlanItems === undefined ? undefined : requireSessionPlanItems(args.sessionPlanItems);
+  const sessionPlanDrillRestSeconds =
+    args.sessionPlanDrillRestSeconds === undefined
+      ? undefined
+      : requireNonNegativeFiniteNumber(args.sessionPlanDrillRestSeconds, 'sessionPlanDrillRestSeconds');
+  const sessionPlanItemIndex =
+    args.sessionPlanItemIndex === undefined
+      ? undefined
+      : requireNonNegativeInteger(args.sessionPlanItemIndex, 'sessionPlanItemIndex');
+  const sessionPlanRepIndex =
+    args.sessionPlanRepIndex === undefined
+      ? undefined
+      : requireNonNegativeInteger(args.sessionPlanRepIndex, 'sessionPlanRepIndex');
+  requireSessionProgramCoherence(sessionPlanMode, sessionPlanItems, sessionPlanItemIndex, sessionPlanRepIndex);
   const fovDeg = args.fovDeg === undefined ? undefined : requirePositiveFiniteNumber(args.fovDeg, 'fovDeg');
   const crossOriginIsolated = requireBoolean(args.crossOriginIsolated, 'crossOriginIsolated');
   const startedAt = normalizeStartedAt(args.startedAt);
@@ -326,6 +386,11 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(sessionPlanPreset !== undefined ? { sessionPlanPreset } : {}),
     ...(sessionPlanRestSeconds !== undefined ? { sessionPlanRestSeconds } : {}),
     ...(sessionPlanFamilyOrder !== undefined ? { sessionPlanFamilyOrder } : {}),
+    ...(sessionPlanMode !== undefined ? { sessionPlanMode } : {}),
+    ...(sessionPlanItems !== undefined ? { sessionPlanItems } : {}),
+    ...(sessionPlanDrillRestSeconds !== undefined ? { sessionPlanDrillRestSeconds } : {}),
+    ...(sessionPlanItemIndex !== undefined ? { sessionPlanItemIndex } : {}),
+    ...(sessionPlanRepIndex !== undefined ? { sessionPlanRepIndex } : {}),
     sensitivityModel: 'cs2-0.022deg',
     movementModel: DEFAULT_MOVEMENT_MODEL,
     ...(fovDeg !== undefined ? { fovDeg } : {}),
@@ -383,6 +448,62 @@ function requireSessionPlanFamilyOrder(value: unknown): readonly string[] {
     }
     return family;
   });
+}
+
+function requireSessionPlanMode(value: unknown): 'frozen' | 'custom' {
+  if (value !== 'frozen' && value !== 'custom') throw new Error("sessionPlanMode must be 'frozen' or 'custom'");
+  return value;
+}
+
+/**
+ * WP-58 T5 — validated against `FAMILY_BY_DRILL_ID`, the same single source the program compiler
+ * and the plan form already use (FR-58.1 / KI-016: no second allowlist). A drill that cannot be
+ * scheduled cannot be claimed to have been scheduled.
+ */
+function requireSessionPlanItems(value: unknown): readonly SessionPlanItemMeta[] {
+  if (!Array.isArray(value)) throw new Error('sessionPlanItems must be an array');
+  if (value.length === 0) throw new Error('sessionPlanItems must not be empty');
+  return value.map((entry, index) => {
+    const item = requireRecord(entry, `sessionPlanItems[${index}]`);
+    const drillId = requireTrimmedNonEmptyString(item.drillId, `sessionPlanItems[${index}].drillId`);
+    if (!FAMILY_BY_DRILL_ID.has(drillId)) {
+      throw new Error(`sessionPlanItems[${index}].drillId must be a schedulable drill`);
+    }
+    return { drillId, reps: requirePositiveInteger(item.reps, `sessionPlanItems[${index}].reps`) };
+  });
+}
+
+/**
+ * The audit trail is all-or-nothing: a payload must not claim a custom program without saying what
+ * it was, nor point at a rep of a program it did not record (FR-58.14/58.15). Bounds are checked
+ * here rather than trusted from the caller so a wiring bug in `main.ts` fails at export time
+ * instead of producing an export that silently mislocates its own rep.
+ */
+function requireSessionProgramCoherence(
+  mode: 'frozen' | 'custom' | undefined,
+  items: readonly SessionPlanItemMeta[] | undefined,
+  itemIndex: number | undefined,
+  repIndex: number | undefined,
+): void {
+  if (mode === 'custom' && items === undefined) {
+    throw new Error('sessionPlanItems is required when sessionPlanMode is custom');
+  }
+  if (items !== undefined && mode !== 'custom') {
+    throw new Error('sessionPlanItems requires sessionPlanMode to be custom');
+  }
+  if (itemIndex === undefined && repIndex === undefined) return;
+  if (itemIndex === undefined || repIndex === undefined) {
+    throw new Error('sessionPlanItemIndex and sessionPlanRepIndex must be recorded together');
+  }
+  if (items === undefined) {
+    throw new Error('sessionPlanItemIndex requires sessionPlanItems');
+  }
+  if (itemIndex >= items.length) {
+    throw new Error('sessionPlanItemIndex must index sessionPlanItems');
+  }
+  if (repIndex >= items[itemIndex].reps) {
+    throw new Error(`sessionPlanRepIndex must be below that item's reps`);
+  }
 }
 
 function requireMouseIntegrationMeta(value: unknown): MouseIntegrationMeta {

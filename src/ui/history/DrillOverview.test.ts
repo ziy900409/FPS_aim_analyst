@@ -403,6 +403,26 @@ describe('createDrillOverview — trend section: chart + metric/cohort selectors
     expect(primaryButton.attributes.get('aria-pressed')).toBe('true');
   });
 
+  it('names a custom-program exclusion as a deliberate one, not as a failed projection (WP-58 T5)', () => {
+    // FR-58.16 / GD-20: the operator sees why the run is missing from the trend. Telling them the
+    // metric could not be computed would be a wrong statement about a run that computes fine.
+    const { overview } = setup(REGISTRATION);
+    const excluded: HistoryRunProjection = {
+      run: { ...runA, runId: 'r-custom', startedAt: '2026-08-03T00:00:00Z' },
+      projection: { status: 'excluded-cohort', reason: 'custom-session-program' },
+    };
+    overview.render({
+      runs: { status: 'ready', value: [] },
+      observations: readyObservations([makeProjection('r1', '2026-08-01T00:00:00Z', 5), excluded]),
+      participantId: 'p-1',
+      drillId: 'd-1',
+      runFilter: 'all',
+    });
+    const element = overview.element as unknown as FakeElement;
+    expect(text(element)).toContain('以自訂 program 執行（不與凍結協定 cohort 混合）：1 筆');
+    expect(text(element)).not.toContain('無法計算');
+  });
+
   it('clicking a metric button navigates via navigator.replace with metricId set, cohortId/runFilter preserved', () => {
     const { overview, navigator } = setup(REGISTRATION);
     const projections = [makeProjection('r1', '2026-08-01T00:00:00Z', 5), makeProjection('r2', '2026-08-02T00:00:00Z', 8)];
