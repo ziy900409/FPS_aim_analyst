@@ -40,11 +40,11 @@
 
 | Done | Task |
 |---|---|
-| ⬜ | T0 Entry gate／排程層現況稽核／決策凍結（GD-33） |
-| ⬜ | T1 Drill ↔ Family 雙向單一來源 |
-| ⬜ | T2 Session Program 純函式編譯器 |
-| ⬜ | T3 SessionRunner 游標化／runtime 接線 |
-| ⬜ | T4 Session Plan 表單改版／程式預覽 |
+| ✅ | T0 Entry gate／排程層現況稽核／決策凍結（**GD-35**，非 GD-33） |
+| ✅ | T1 Drill ↔ Family 雙向單一來源 |
+| ✅ | T2 Session Program 純函式編譯器 |
+| ✅ | T3 SessionRunner 游標化／runtime 接線 |
+| ✅ | T4 Session Plan 表單改版／程式預覽 |
 | ⬜ | T5 Metadata 稽核欄位／逐輪匯出／cohort 隔離 |
 | ⬜ | T6 E2E 整合／回歸對帳 |
 | ⬜ | T-exit |

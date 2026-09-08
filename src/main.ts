@@ -60,6 +60,7 @@ import {
   type SessionRunnerHandle,
   type SessionRunnerPhase,
 } from './session/SessionRunner.ts';
+import { compileSessionProgram } from './session/sessionProgram.ts';
 import { KNOWN_SESSION_FAMILY_IDS } from './session/sessionSchedule.ts';
 import { createTrackingPilotSession, type TrackingPilotSessionHandle } from './pilot/trackingPilotSession.ts';
 import { sharedState } from './state/SharedState.ts';
@@ -758,7 +759,12 @@ async function buildCurrentExportPayload(
     simHz: SIM_HZ,
     sensitivity: settingsPanel.sensitivity,
     ...(sessionSetupValues?.dpi !== undefined ? { dpi: sessionSetupValues.dpi } : {}),
-    ...(sessionPlanRunner.phase.kind === 'run' && activeSessionPlanSelection !== undefined
+    // WP-58 T4 — narrowed to the frozen arm because `restSeconds`/`families` only exist there; the
+    // custom track's own audit fields (sessionPlanMode / items / drill rest / item+rep index) are
+    // additive metadata and land in T5, so nothing here claims a family order it does not have.
+    ...(sessionPlanRunner.phase.kind === 'run' &&
+    activeSessionPlanSelection !== undefined &&
+    activeSessionPlanSelection.mode === 'frozen'
       ? {
           sessionPlanRestSeconds: activeSessionPlanSelection.restSeconds,
           sessionPlanFamilyOrder: activeSessionPlanSelection.families,
@@ -1479,8 +1485,14 @@ const sessionPlanRunner: SessionRunnerHandle = createSessionRunner({
   loadDrillById,
   onStatus: (text) => setProtocolStatus(text, false),
   onPhaseChange: (nextPhase) => {
-    if (nextPhase.kind === 'rest') restOverlay.show(nextPhase.remainingMs);
-    else restOverlay.hide();
+    // WP-58 T4 (OQ-58.3): both values come off the compiled RestStep, so the overlay says exactly
+    // what the pre-flight preview table promised for this seam.
+    if (nextPhase.kind === 'rest') {
+      restOverlay.show(nextPhase.remainingMs, {
+        boundary: nextPhase.step.boundary,
+        nextDrillId: nextPhase.step.nextDrillId,
+      });
+    } else restOverlay.hide();
   },
 });
 
@@ -1494,7 +1506,25 @@ async function startSessionPlan(): Promise<void> {
   }
   activeSessionPlanSelection = selection;
   try {
-    // WP-58 T3 — the frozen track now compiles to the same `ProgramStep[]` the custom track will use
+    if (selection.mode === 'custom') {
+      // WP-58 T4 — the custom track reaches the runtime through the same compiler and the same
+      // runner (FR-58.10); the only difference from frozen is who produced the item list. The form
+      // has already compiled and shown this exact program, so a throw here means the operator's
+      // plan changed shape between preview and submit, not that the UI let an invalid one through.
+      await sessionPlanRunner.start({
+        participantId: setup.participantId,
+        sessionIndex: 0,
+        mode: 'custom',
+        items: selection.items,
+        program: compileSessionProgram({
+          items: selection.items,
+          drillRestSeconds: selection.drillRestSeconds,
+          familyRestSeconds: selection.familyRestSeconds,
+        }),
+      });
+      return;
+    }
+    // WP-58 T3 — the frozen track now compiles to the same `ProgramStep[]` the custom track uses
     // (FR-58.10); the runner is a cursor over it and no longer decides which drill a family means.
     const frozen = buildFrozenSessionPlan({
       participantId: setup.participantId,

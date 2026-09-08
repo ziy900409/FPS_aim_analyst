@@ -12,6 +12,8 @@
 - **2026-09-08**：**T2 完成**。新增 `src/session/sessionProgram.ts`（`compileSessionProgram()` 純函式編譯器 + `summarizeProgram()` + typed `SessionProgramCompileError`）與 47 個測試。全量 Vitest **2,538 passed／2 skipped**（= T1 的 2,491 + 47，既有測試零失敗）；typecheck / build exit 0；400 run steps 編譯 P95 **0.0398 ms**（限額 1 ms）。production 接線為零——T2 只交付可獨立測試的純函式。詳見 §T2。
 - **2026-09-08**：**T3 完成**。`SessionRunner` 由家族狀態機改為 `ProgramStep[]` 上的游標；新增 `buildFrozenSessionPlan()` 讓 frozen 路徑走同一個編譯器與同一個 runtime；模組級 `restDurationMs` 移除，兩級休息各自由 step 攜帶；`main.ts` 完成分支鏈四路收斂為三路。全量 Vitest **2,570 passed／2 skipped**（= T2 的 2,538 + 32，既有測試零失敗）；typecheck／build exit 0；Session Plan e2e 於真實 Edge 通過。詳見 §T3。
 
+- **2026-09-08**：**T4 完成**。`SessionPlanSetup` 新增「自訂 program」軌：drill 清單（依家族分組的 36 項選單）、每項 reps、兩級休息秒數，並在提交前顯示由 `compileSessionProgram()` 產出的逐步驟預覽表；`RestOverlay` 改帶邊界標籤與下一個 drill（OQ-58.3）。frozen 軌的 DOM、訊息與提交負載逐位不變（`mode:'frozen'` 為新增欄位）。新增 **25 個測試**；全量 Vitest **2,595 passed／2 skipped**（= T3 的 2,570 + 25，既有測試零失敗）；typecheck／build exit 0；`session-orchestrator.spec.ts` **8 條零修改**於真實 Edge 全綠。詳見 §T4。
+
 ## Decision Log
 
 - **D-58-P1 / 次數語意**：「設定 drill 次數」= **reps（重複跑 N 輪）**，不是修改 drill 內的 `endCondition.value`。排程層永不寫 drill 參數，`protocolVersion 1.0.0` 與跨 session 可比性不受影響。
@@ -33,7 +35,7 @@
 
 - **OQ-58.1**：同一 drill 連跑 N 輪的 seed 應逐輪相同或變化。✅ **已收斂（使用者，2026-09-08）：逐輪相同，維持現況**（**未**採規劃時建議的「逐輪變化」）。**T3 已落地**：drill 載入路徑零改動，並補上三次連續 rep 的逐位一致回歸測試（§T3 §6）。代價是 reps = 重複同一組刺激、存在練習效應，分析端不得視為 i.i.d. 取樣。證據與限制見 §T0 §5。
 - **OQ-58.2**：三輪匯出的檔名唯一性。✅ **已收斂（使用者，2026-09-08）：不加 rep 序號**。`exportBasename` 已含每次 `activateDrill()` 重設的毫秒級 `startedAt`，實測三輪唯一；T5 只補唯一性回歸測試，不改格式。證據見 §T0 §4。
-- **OQ-58.3**：休息 overlay 是否顯示邊界種類與下一個 drill。建議**要**。⬜ 待 T4 前確認（**非 T0 exit blocker**，T0 未收斂此項）。
+- **OQ-58.3**：休息 overlay 是否顯示邊界種類與下一個 drill。✅ **T4 依規劃建議的預設值落地（要，2026-09-08）**：`show(remainingMs, detail?)` 新增 optional `{ boundary, nextDrillId }`，兩個值皆直接取自編譯後的 `RestStep`，因此 overlay 與預覽表**不可能不一致**（共用 `programBoundaryLabel.ts` 單一詞彙表）。省略 detail 時逐位回到 WP-58 之前的兩行倒數。
 - **OQ-58.4**：`custom` session 是否可進 history。✅ **已收斂（使用者，2026-09-08）：沿用既有兩道閘（`DrillConfig.mode` + exact-id registry），額外標記 `sessionPlanMode`**，**不**在 `HistoryPersistence` 新增第三道攔截；隔離落在 T5 的 trend cohort 判定層。證據見 §T0 §6。
 - **OQ-58.5**：stage12 是否需要獨立里程碑（下一個可用編號 **M22**；M20／M21 已由 stage11 WP-54／WP-55 取用）。⬜ 待 stage12 範圍收斂（**非 T0 exit blocker**）。
 
@@ -391,3 +393,62 @@ PoC 重建 `activateDrill()` 每 rep 重建的整條物件圖（`loadDrill` → 
 - **T0 §1 記錄的「`SessionRunnerPhase` 未被具名 import ⇒ 改 union 會靜默失配」在實作時沒有發生**。把 5-kind union 改成 4-kind 後，`main.ts` 的三處 `phase.kind === 'family' | 'warmup'` 立刻報 **TS2367**（"comparison appears to be unintentional … have no overlap"），因為 TypeScript 對字面值聯集的比較本來就會檢查交集。靜默失配的真正風險在**反方向**：未來若**新增**一個 kind，既有比對仍然合法而只是漏接。D-58-T0-4 的顯式標註因此仍然值得做，但它防的是「加 kind」而不是「減 kind」。
 - **收斂後的分支鏈比預期更短**。README §0.1 預期「四路變三路」，實際上 warmup 與 family 兩路合併後，`downloadJSON` 與 `advance()` 也一併去重，只剩一個 `if (step.warmup !== true)` 的守衛——熱身與正式測試的差別在生命週期上收斂成「要不要匯出」這**單一**問題，而不再是兩條各自呼叫 `advance()` 的路徑。
 - **舊 `poll()` 每幀配置一個 phase 物件這件事，是這次才被量到的**。NFR-58.3 原本讀起來像在防「別在 `poll()` 裡重編 program」，但真正在配置的是 `{ ...phase, remainingMs }`——一場 60 秒休息約 3,600 個短命物件。修法（單一重用物件 + 只在數值變動時回呼）順帶讓 `RestOverlay.show()` 的呼叫次數從「每幀」降為「毫秒數真的改變時」。
+
+---
+
+## T4 — Session Plan 表單改版與程式預覽（2026-09-08）✅
+
+### 1. 交付物
+
+| 檔案 | 動作 | 內容 |
+|---|---|---|
+| `src/ui/SessionPlanSetup.ts` | **改版** | 模式切換（frozen／custom）、drill 選單（依家族分組的 36 項 `optgroup`）、有序清單（reps／▲▼／移除／拖曳）、兩級休息秒數、由編譯器驅動的預覽表 |
+| `src/ui/programBoundaryLabel.ts` | **新增** | `PROGRAM_BOUNDARY_LABEL` + `describeBoundary()` —— 邊界詞彙的單一來源，預覽表與 rest overlay 共用 |
+| `src/ui/RestOverlay.ts` | 加法 | `show(remainingMs, detail?)`；`RestOverlayDetail = { boundary, nextDrillId }`（OQ-58.3） |
+| `src/main.ts` | 接線 | `startSessionPlan()` 依 `selection.mode` 分兩路；overlay 帶 `phase.step` 的邊界與下一個 drill；metadata 注入條件收斂到 frozen 分支 |
+| `src/ui/SessionPlanSetup.test.ts` | 改寫 + 加測 | frozen 6 條（既有 5 條逐項保留）+ custom 編輯 5 條 + 預覽 3 條 + 編譯失敗 12 條（`it.each`）+ 鍵盤／ARIA 3 條 + benchmark 1 條 = **33 tests** |
+| `src/ui/RestOverlay.test.ts` | 加測 | 三種邊界的標籤 + 省略 detail 的逐位回歸（**+1 test**） |
+
+### 2. UI 契約
+
+- **`SessionPlanSelection` 改為 discriminated union**：`{ mode:'frozen', families, restSeconds, includeWarmup }` ∪ `{ mode:'custom', items, drillRestSeconds, familyRestSeconds }`。frozen 臂的三個欄位語意與型別逐位不變，只是多了一個 `mode` 標籤；custom 臂**沒有** `includeWarmup`（FR-58.17：熱身就是清單第一項）。
+- **預覽表只渲染 `compileSessionProgram()` 的輸出**。UI 層不判斷任何邊界、不計算任何秒數；golden 測試逐 step 拿 UI 的 `data-program-step`／`data-step-boundary`／`data-step-next-drill-id` 與編譯器輸出對表，所以「UI 偷算一套」會直接紅燈而不是靜默分岔。
+- **選單來源 = `SCHEDULABLE_DRILL_IDS`，分組來源 = `FAMILY_BY_DRILL_ID`**，兩者都是 T1 的單一來源。測試斷言選單的 36 個 option 逐位等於 `SCHEDULABLE_DRILL_IDS`，且 off-roster 的 `counterstrafe-cued-v1` 加不進清單。
+- **失敗即禁用提交**：`compileSessionProgram()` 丟出的 `SessionProgramCompileError` 直接當作錯誤文案（例：`items[0].reps 必須為 >= 1 的整數`），`error.itemIndex` 用來在該列打上 `data-invalid`，`submit.disabled = true`。修好輸入後兩者同時解除。
+- **秒數欄位有兩層驗證**：先過表單的 `[min,max]` 邊界（沿用 frozen 既有的 0–3600 與同一句錯誤文案），再交給編譯器。編譯器只認「有限非負」，上限屬 UI 政策。
+- **預覽表頭**：`預覽（17 步 · 執行 9 輪 · 休息合計 5 分 00 秒）`，步數與休息合計取自 `summarizeProgram()`；**不估 drill 本身耗時**（因人而異，假裝知道比不說更糟）。
+
+### 3. 驗證
+
+| 閘 | 結果 |
+|---|---|
+| `npx vitest run src/ui/SessionPlanSetup.test.ts` | **33 passed** |
+| `npx vitest run src/ui/RestOverlay.test.ts` | **3 passed** |
+| `npx vitest run`（全量） | **245 passed / 1 skipped（246 files）、2,595 passed / 2 skipped** —— 相對 T3 的 2,570 淨增 25，既有測試零失敗 |
+| `npm run typecheck` | exit 0（browser + node） |
+| `npm run build` | exit 0 |
+| `npx playwright test session-orchestrator.spec.ts` | **8 passed**（真實 Edge），spec **零修改** |
+| 預覽重繪 benchmark（NFR-58.4） | 20 items × 20 reps = 400 runs → **799 steps**；warm 20、samples 100 → **p95 = 1.0756 ms**、max 6.4080 ms，限額 50 ms |
+
+**benchmark 的誠實範圍**：本 repo 無 jsdom，UI 測試一律跑在手寫的 fake DOM 上（既有慣例）。因此 1.08 ms 量到的是「編譯 + 建 799 個節點 + `replaceChildren`」這段**我們自己的工作**，**不含**真實瀏覽器的 layout／paint。限額 50 ms 有 46× 餘裕，且預覽框是固定高度的 `overflow:auto` 容器（真實 layout 只做可視範圍），因此不加 debounce；真實瀏覽器的端到端量測留給 T6。
+
+### 4. frozen 逐位不變的證據
+
+- `session-orchestrator.spec.ts` 三條 Session Plan 端到端（10 個家族 checkbox、拖曳排序、`sessionPlanRestSeconds` 的 value／min／max、只勾一個家族的兩條）**零修改**在真實 Edge 全綠 —— frozen 的 DOM 結構、`name` 屬性與唯一的 `button[type=submit]` 都沒動。
+- 既有 5 條 frozen component test 逐條保留（含「至少選擇一個測試家族」「休息秒數必須介於 0 到 3600 秒」兩句錯誤文案、0／3600 閉區間、10 個家族的順序），唯一改動是預期值多了 `mode: 'frozen'`。
+- 新增一條 frozen↔custom 切換測試釘死：custom 空清單會禁用提交，**切回 frozen 必須解除禁用**——否則操作員會被自訂軌的錯誤鎖死在凍結軌上。
+
+### T4 Decision Log
+
+- **D-58-T4-1 / 邊界詞彙獨立成 `programBoundaryLabel.ts`**：預覽表與 rest overlay 在同一場 session 對同一位操作員說同一組詞。若各寫一份，預覽就會對「等一下會看到什麼」說謊，而這正是 FR-58.13 存在的理由（R-58.8）。詞彙是 UI 文案，因此**不**放進 `sessionProgram.ts`（純編譯器不碰呈現，NFR-58.1）。
+- **D-58-T4-2 / `SessionPlanSelection` 用 discriminated union 而非 optional 欄位堆疊**：兩軌的欄位集合互斥（frozen 有 `families`／`includeWarmup`，custom 有 `items`／兩個秒數）。做成一個都是 optional 的大物件，會讓 `main.ts` 必須在執行期猜「這是哪一軌」；union 讓 `selection.mode === 'custom'` 這一個判斷同時完成分軌與型別窄化，`activeSessionPlanSelection.restSeconds` 在 custom 下**編譯期就不存在**。
+- **D-58-T4-3 / reps 輸入只重繪預覽、不重繪該列**：`renderItems()` 會重建整列 DOM，若綁在 reps 的 `input` 上，真實瀏覽器每敲一鍵就會摧毀正在輸入的欄位（焦點與游標位置一起丟失）。清單只在加入／移動／移除時重繪；reps 直接寫回 item 物件後只重跑預覽。
+- **D-58-T4-4 / T4 順帶把 custom 軌接進 `main.ts`**：step 6 改了 `onSubmit` 的形狀，`main.ts` 本來就必須跟著改才編得過。既然 T3 的 runner 已能跑任意 `ProgramStep[]`，只讓表單能編、不讓它能跑，會留下一個「按了開始卻什麼都沒發生」的半成品。因此 `startSessionPlan()` 一併分兩路：custom 走同一個 `compileSessionProgram()` → 同一個 runner。**未落地的部分明確界定為 T5**：custom 的匯出稽核欄位（`sessionPlanMode`／`sessionPlanItems`／`sessionPlanDrillRestSeconds`／`itemIndex`／`repIndex`）尚未寫入 metadata，因此本 task 把注入條件收斂到 `mode === 'frozen'` —— **寧可缺欄位，不可寫一個 custom session 根本沒有的 `sessionPlanFamilyOrder`**。
+- **D-58-T4-5 / 秒數上限留在 UI、不上推編譯器**：`compileSessionProgram()` 只驗「有限非負」（FR-58.7 原文）。0–3600 是操作介面的合理範圍政策，frozen 軌沿用同一組 bounds 與同一句錯誤文案；把它塞進純函式會讓編譯器開始持有 UI 政策。
+- **D-58-T4-6 / 用 ▲▼ 按鈕承擔鍵盤排序，拖曳只是加值**：原生 HTML 沒有可鍵盤操作的拖放。NFR-58.7 要求「不使用拖曳也能改變順序」，因此排序的**主要**機制是兩個具 `aria-label` 的真按鈕，drag/drop 監聽器額外掛上給滑鼠使用者。邊界（第一列的 ▲、最後一列的 ▼）為 no-op 而非環繞——有測試釘死，否則長按 ▲ 會把清單整個旋轉。
+
+### T4 Surprises
+
+- **`RestStep.nextDrillId` 必填在 T2 是型別上的小事，到 T4 才兌現成 UI 上的大事**。overlay 與預覽表都不需要「沒有下一個 drill」的 fallback 文案，因為編譯規則 4（program 不以 rest 結尾）在型別層就消掉了那個分支。T2 的 Surprises 已預告，這裡確認：兩個消費端各省下一條死路徑。
+- **frozen 軌完全沒被這次改版碰到，證據強度超出預期**。原以為加模式切換會逼著改 e2e selector（R-58.9 給的機率是「高」），實際上把 custom 區塊做成獨立的 `[data-plan-section="custom"]` 容器、沿用同一個 `button[type=submit]` 之後，三條 Session Plan e2e **一個字都沒動**就全綠。R-58.9 的緩解（「更新既有 spec 而非新開平行 spec」）最後連更新都不需要。
+- **編譯器的 typed error 讓表單的錯誤處理縮成三行**。`error.field` 分類、`error.itemIndex` 定位、`error.message` 直接當文案——T4 完全不需要自己寫一套 reps／drillId 的驗證訊息。D-58-T2-2（不把索引編進 `field`）在這裡拿到回報：如果當初把 `items[2].drillId` 塞進 `field`，這裡就得解析字串才知道要標哪一列。

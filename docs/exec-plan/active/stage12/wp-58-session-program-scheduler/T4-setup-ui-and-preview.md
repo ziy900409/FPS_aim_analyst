@@ -26,13 +26,13 @@
 
 ## Definition of Done
 
-- [ ] 加入／排序／移除／reps／兩秒數皆有 component test 且全綠。
-- [ ] 預覽表逐步驟正確，含 `boundary` 標籤與 `nextDrillId`；17 步 golden 情境在 UI 層有一致呈現的測試。
-- [ ] 編譯錯誤時提交被禁用，錯誤訊息具名且可讀。
-- [ ] `RestOverlay` 擴充後既有測試更新並全綠。
-- [ ] 鍵盤可完成全流程；ARIA 標籤與錯誤訊息測試通過。
-- [ ] 400 run steps 預覽重繪 P95 < 50 ms 有量測數據。
-- [ ] progress 記錄 UI 契約、測試數與量測。
+- [x] (2026-09-08) 加入／排序（▲▼ 與拖曳）／移除／reps／兩秒數皆有 component test 且全綠（`SessionPlanSetup.test.ts` 33 tests）。
+- [x] (2026-09-08) 預覽表逐步驟正確，含 `boundary` 標籤與 `nextDrillId`；17 步 golden 逐 step 與 `compileSessionProgram()` 輸出對表。
+- [x] (2026-09-08) 編譯錯誤時 `submit.disabled = true`，錯誤訊息直接沿用 `SessionProgramCompileError.message`，並以 `itemIndex` 在該列打 `data-invalid`。
+- [x] (2026-09-08) `RestOverlay` 擴充為 `show(remainingMs, detail?)`；既有兩條測試零修改仍綠，另加一條三種邊界 + 省略 detail 的回歸。
+- [x] (2026-09-08) 鍵盤可完成 add → reorder → reps → submit 全流程（無任何拖曳）；ARIA 標籤、`role="alert"`、`aria-live="polite"` 皆有測試。
+- [x] (2026-09-08) 799 steps（400 runs）預覽重繪 **p95 = 1.0756 ms**（限額 50 ms，fake DOM 量測範圍見 progress §T4 §3）。
+- [x] (2026-09-08) progress §T4 記錄 UI 契約、測試數、量測與 frozen 逐位不變證據。
 
 ## Commit
 

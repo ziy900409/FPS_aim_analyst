@@ -1,6 +1,21 @@
+import type { ProgramBoundary } from '../session/sessionProgram.ts';
+import { describeBoundary } from './programBoundaryLabel.ts';
+
+/**
+ * WP-58 T4 (OQ-58.3) — what this rest is *for*. A custom program can be long and can interleave
+ * families, so a bare "3:00 left" leaves the operator with no sense of position; the boundary kind
+ * plus the drill on the other side of the rest restores it. Both values come straight off the
+ * compiled `RestStep`, so the overlay and the pre-flight preview table cannot disagree.
+ */
+export interface RestOverlayDetail {
+  readonly boundary: ProgramBoundary;
+  readonly nextDrillId: string;
+}
+
 /** Presentation-only rest countdown. Scheduling stays with SessionRunner. */
 export interface RestOverlayHandle {
-  show(remainingMs: number): void;
+  /** `detail` is optional so a caller with no compiled step still gets the plain countdown. */
+  show(remainingMs: number, detail?: RestOverlayDetail): void;
   hide(): void;
   dispose(): void;
 }
@@ -44,8 +59,10 @@ export function createRestOverlay(parent: HTMLElement = document.body): RestOver
   parent.appendChild(root);
 
   return {
-    show(remainingMs): void {
-      label.textContent = `休息中\n${formatRemaining(remainingMs)}`;
+    show(remainingMs, detail): void {
+      const context =
+        detail === undefined ? '' : `\n${describeBoundary(detail.boundary)} → ${detail.nextDrillId}`;
+      label.textContent = `休息中\n${formatRemaining(remainingMs)}${context}`;
       root.setAttribute('aria-hidden', 'false');
       root.style.display = 'grid';
     },
