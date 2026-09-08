@@ -268,6 +268,34 @@ adsCountsPer360 = 2π ÷ adsStep       // adsStep = hipStep × sensitivityRatio 
   `adsCountsPer360`／`adsCmPer360` 一併回 `undefined`。
 - 這是**資料品質標註**的輸入，不是構念：它與抬滑鼠疑慮旗標（T5）一樣，不得進教練報告（C-D3）。
 
+### 抬滑鼠疑慮旗標（`deriveRepositioningSuspicion()`，WP-57 T5）
+
+**這是資料品質標註，不是構念（C-D3）。** 被迫抬滑鼠重新定位是**完全不同的運動行為**（中斷 + 重置），
+會在 `movementTimeMs`／`overshootDeg` 產生大離群值，且系統性與感度相關；標註它的目的是讓分析者能
+**剔除或分層**這些 trial，不是拿它當一個表現指標。
+
+[`deriveRepositioningSuspicion(payload, options)`](../../src/metrics/spiderShotRepositioning.ts)
+對每個 `zone: 'peripheral'` 抵達回一筆 `{ targetId, suspected, stallStartMs?, stallDurationMs? }`。
+
+- **偵測窗**：canonical movement onset（`deriveDetectionMetrics().tDetectMs`）→ canonical 首次
+  on-target（`deriveTrackingSamples()` 的第一個 `onTarget` 樣本）。這**正是 `movementTimeMs` 的同一對
+  邊界**，所以旗標標的是那段區間內部發生的事，不是另開一個窗（C-D4）。
+- **判準**：窗內存在連續 ≥ `stallMinMs` 且 `abs(omega) < stallOmegaDegPerSec` 的區段。`omega` 一律走
+  `omegaDegPerSec()`（KI-005 A1 後的事件時間戳積分），本模組不自算角速度。
+- **窗界任一端缺席**（detection timeout／acquisition failure）→ `suspected: false` 且不帶欄位。
+  那是「**無從判定**」，不是「已判定沒有抬滑鼠」；要區分請對照 canonical derivations 的
+  `status`／`acquisitionFailure`。
+- `stallDurationMs` 取首、末兩個合格 ω 樣本的時間差，故比真實停滯**短最多一個 tick 間隔**（保守側）。
+  兩個時間欄位**只在 `suspected` 時出現** —— 未達門檻的次長停滯不回報，避免它們被當成連續量使用。
+
+> ⚠️ **門檻未凍結（OQ-57.5）。** 呼叫端必須自己傳；WP-57 交付的參考值是
+> `stallMinMs = 100`／`stallOmegaDegPerSec = 15`，但敏感度表建在**合成 cohort** 上（repo 內沒有真人的
+> wide-flick 匯出），見 WP-57 progress §T5。一個實測到、但規劃期未預期的性質：分離「被迫抬滑鼠」與
+> 「刻意停頓」的是 **ω 軸**（手離開滑鼠 ⇒ 殘餘角速度趨近 0；手仍在滑鼠上 ⇒ 有微顫），不是 duration 軸。
+
+> ⚠️ **它與刻意停頓在觀測上不可完全分離。** 這是近似，不是判定 —— 所以型別叫 `Suspicion`，而且本模組
+> **不被 `src/` 內任何檔案 import**（由 boundary 測試釘死零 importer，`vite build` 產物亦不含它）。
+
 ## Verified test evidence
 
 - 排程機制（單目標存在、seed 決定性、四象限+兩斜向世界座標）：[TargetManager.test.ts:578-](../../src/sim/TargetManager.test.ts)「WP-36 spider-shot center/peripheral schedule」。
@@ -285,3 +313,4 @@ adsCountsPer360 = 2π ÷ adsStep       // adsStep = hipStep × sensitivityRatio 
 - 匯出 round-trip（`resolvedFrom` 五欄逐位還原、由匯出欄位重算 yaw 窗、hitbox 單一來源與 `W_deg` 對回 2.0°、離線 `side` 與 sim 端 spawn side 逐筆相同、condition cell 不含 pitch/side）：[spider-wide-export-roundtrip.test.ts](../../tests/regression/spider-wide-export-roundtrip.test.ts)。
 - `side` 的正負向（右／左／`x === 0` 省略、只對 center-to-peripheral 輸出、對移動中的眼睛取符號、v1/v2 fixture 七欄位逐位不變）：[spiderShotConditions.test.ts](../../src/metrics/spiderShotConditions.test.ts)。
 - `counts/360`／`cm/360` 離線推導（手算閉式對帳、DPI 缺席回 `undefined`、ADS gain 分支）：[mouseThrow.test.ts](../../src/metrics/mouseThrow.test.ts)。
+- 抬滑鼠疑慮旗標（五類合成訊號分類、兩段停滯取較長、窗界缺席回 `false`、typed error、C-D4「無第二套 ω／窗界」與 C-D3「`src/` 內零 importer」boundary scan、門檻敏感度網格與 `cm/360` 方向性）：[spiderShotRepositioning.test.ts](../../src/metrics/spiderShotRepositioning.test.ts)。

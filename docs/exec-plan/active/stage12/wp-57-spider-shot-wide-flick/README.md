@@ -15,7 +15,7 @@
 | **Delivery policy** | v1 = practice／researcher-only。時序參數（`peekTimeoutMs`／`timeLimitMs`）與 yaw 貼邊係數為未校準候選值，晉升 Assessment 是後續獨立 WP 的職責 |
 | **Estimate** | 9.5–16 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：新增 spawn 幾何進 `TargetManager`（sim 核心）；aspect 進入 spawn 解析與 GD-10「解析度不改 sim」存在直接張力；`DrillConfig` 為約 115 consumers 的跨模組契約 |
-| **Status** | 🟡 T0／T1／T2／T3／T4 ✅（2026-09-07）、**T6 ✅（2026-09-08）**，見 [progress.md](progress.md) 各 §evidence。OQ-57.7 已於 2026-09-07 由 KI-026／BD-026／[GD-32](../../../DECISIONS.md) 拍板為**選項 (b)** 並落地（匯出角度已統一 eye-frame）。T6 已交付 arm-time 接線、4 個 Edge E2E、FOV 60／75／120 實機截圖（D-57.T3-3 結案），並收斂 OQ-57.3（維持候選值）與部分收斂 OQ-57.4（`timeLimitMs` → `60000`；timeout 率仍待真人 run）。**T5 ✅（2026-09-08）**——抬滑鼠疑慮標註純函式 + 門檻敏感度表已交付，C-D3／C-D4 boundary scan 綠；OQ-57.5 **維持開放**（repo 內無真人 wide-flick 匯出，表為合成 cohort）。**剩 T-exit** |
+| **Status** | 🟡 T0／T1／T2／T3／T4 ✅（2026-09-07）、**T6 ✅（2026-09-08）**，見 [progress.md](progress.md) 各 §evidence。OQ-57.7 已於 2026-09-07 由 KI-026／BD-026／[GD-32](../../../DECISIONS.md) 拍板為**選項 (b)** 並落地（匯出角度已統一 eye-frame）。T6 已交付 arm-time 接線、4 個 Edge E2E、FOV 60／75／120 實機截圖（D-57.T3-3 結案），並收斂 OQ-57.3（維持候選值）與部分收斂 OQ-57.4（`timeLimitMs` → `60000`；timeout 率仍待真人 run）。**T5 ✅ + T-exit ✅（2026-09-08）⇒ WP-57 交付**。T-exit：A-57.1～12 全綠（含四個 blocking 條件 A-57.7／57.8／57.2／57.4）、boundary scans 綠、build／兩個 typecheck／全量 Vitest（238 files／2,399 tests）exit 0。⚠️ **兩項已揭露的殘留**：① NFR-57.8 的全量 Playwright／`test:ci` 未 exit 0，唯一成因為既存的 KI-027（非本 WP），另新立 [KI-030](../../../../known_issue/KI-030-history-e2e-flaky-under-parallel-workers.md)（全量 Playwright 多 worker 下不可重現，以 `--workers=1` 的 90 passed／1 failed 為門檻讀數）；② OQ-57.5（抬滑鼠門檻）**維持開放** —— repo 內無真人 wide-flick 匯出，敏感度表建在合成 cohort 上。詳見 [progress.md](progress.md) §T-exit evidence |
 
 ---
 
@@ -556,8 +556,14 @@ WP-57 完成後，晉升 WP 可依賴：
 - arm-time resolver 與 `resolvedFrom` provenance（含 aspect，目前唯一可稽核來源）；
 - eye-frame 球面投影純函式與 on-screen 保證；
 - 寬場 arena 與其幾何斷言；
-- 實機回填的 `kLo`／`screenMargin`／`peekTimeoutMs`／`timeLimitMs` 校準證據；
-- 抬滑鼠疑慮標註與其門檻敏感度表。
+- 實機回填的校準證據 —— ⚠️ 分清凍結與候選：**已凍結** = `drillId`、`pitchDegRange ±6.5°`、`timeLimitMs 60000`；**仍為候選** = `kLo 0.92`／`screenMargin 0.04`（D-57.T6-1，附 NDC 貼邊程度隨 FOV 從 85.4% 漂到 71.5% 的已知限制）與 `peekTimeoutMs 2500`（timeout 率需真人 run）；
+- 抬滑鼠疑慮標註與其門檻敏感度表 —— ⚠️ 門檻**未凍結**（OQ-57.5），且表建在合成 cohort 上。
+
+晉升 WP 必須先處理的三件事（本 WP 明確未解）：
+
+1. **樣本量**：60 s 實測落在約 5–12/cell，不足以支撐信度檢定（C-D3）。
+2. **`compatibilityKey` 補 `aspect`**（OQ-57.6）：同 FOV 75 下 4:3 與 21:9 的 `yawMax` 相差 15.3°，不補會把兩個實際刺激不同的 run 誤判為可合併。
+3. **真人 run**：`peekTimeoutMs` 的 timeout 率與 repositioning 門檻都只能由真人資料收斂；harness 的自動瞄準對兩者都恆為 0 by construction。另 NFR-57.6 的 `analysis-spider-shot.md` 已載明離線消費方式。
 
 晉升 WP **必須**自行解決（本 WP 明確不做）：`compatibilityKey` 補 `aspect`（OQ-57.6）、每 cell 樣本量是否足以做信度檢定、`DrillMetricRegistry` exact-ID 註冊、Session Plan 家族、`protocolVersion` 影響評估。
 

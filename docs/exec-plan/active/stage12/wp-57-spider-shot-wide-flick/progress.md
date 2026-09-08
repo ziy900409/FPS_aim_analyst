@@ -13,7 +13,7 @@
 | T4 Export and Conditions | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T4 evidence；resolvedFrom 五欄 round-trip 逐位、eye-frame `W_deg` 恆 2.000000000000、離線 `side` 與實錄 spawn side 逐筆相同、v1/v2 七欄位不變；full Vitest 2,373 tests、兩個 typecheck／build exit 0 |
 | T5 Repositioning Flag | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T5 evidence；四類合成訊號分類正確、C-D4／C-D3 boundary scan 綠、門檻敏感度表與 `cm/360` 方向性檢查逐格釘死；19 tests、全量 metrics regression 41 files／287 tests、兩個 typecheck exit 0。**OQ-57.5 維持開放**（無真人 run，見下方誠實揭露） |
 | T6 Wiring and E2E | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T6 evidence；researcher 控制列 arm-time resolve、4 個 Edge E2E 全綠（on-screen 61 spawn 失敗 0、resize 41 spawn 逐位一致、translation locked + mouse aim、practice-only）、FOV 60／75／120 各 3 張實機截圖 + OQ-57.3／57.4 回填（`timeLimitMs` 改 60000） |
-| T-exit | Blocked by T5 | — | — | T1～T4／T6 ✅；只剩 T5 |
+| T-exit | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T-exit evidence；A-57.1～12 全綠（含四個 blocking 條件）、FR-57.1～14／NFR-57.1～57.7 逐條有證據、boundary scans 綠、research safety 與 architecture regression 逐項覆核。⚠️ **NFR-57.8 的 Playwright／`test:ci` 兩個子句未滿足**（唯一原因為既存 KI-027），另新立 KI-030（全量 Playwright 不可重現） |
 
 ## T0 audit（2026-09-07）
 
@@ -411,6 +411,106 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 | typecheck | `npx tsc --noEmit` + `npx tsc --noEmit -p tsconfig.node.json` | **exit 0**（兩個皆無 diagnostic） |
 
 全量 Vitest／build／Playwright 屬 NFR-57.8，留給 T-exit 一次跑完並入帳（避免同一組 gate 在兩個切片裡各報一次不同的數字）。
+
+## T-exit evidence（2026-09-08，HEAD=`f3bc045`）
+
+### Automated gates
+
+| # | Gate | 命令 | 結果 |
+|---|---|---|---|
+| 1 | typecheck（browser + node） | `npm run typecheck` | **exit 0** |
+| 2 | 全量 Vitest | `npm test -- --reporter=default` | **238 files passed + 1 skipped／2,399 tests passed + 2 skipped** |
+| 3 | 全量 Playwright | 見下方三次執行表 | **90 passed／1 failed**（`--workers=1`，可重現讀數） |
+| 4 | build | `npm run build` | **exit 0**、191 modules、1,214.62 kB（gzip 345.15 kB），僅既存 >500 kB 警告 |
+| 4 | `test:ci` | `npm run test:ci` | ⚠️ **exit 1** —— typecheck + Vitest 全綠，唯一原因是 Playwright 的 KI-027（90 passed／1 failed）。**NFR-57.8 因此未完全滿足**，見下方「未達成的 gate」 |
+| 5 | boundary scans | grep（見下表） | 全通過 |
+| 6 | 幾何／決定性 benchmark | T1～T4／T6 已入帳 | 見下方 NFR 對帳 |
+
+**Vitest 差額逐項歸屬**（T6 收尾為 237 files／2,377 tests）：`+1 file／+19 tests` = 本 WP 的 `src/metrics/spiderShotRepositioning.test.ts`；`+3 tests` = 平行工作 commit `fe2a01d` 把 `micro_flick_three_target_test_variants.test.ts` 由 4 條擴為 7 條（單獨跑覆驗）。**兩者相加恰為 +22，無未歸屬差額。**
+
+### Boundary scans（gate #5）
+
+| 目標 | 判定 | 證據 |
+|---|---|---|
+| `spiderEyeFrame.ts`／`spiderShotWide.ts`／`spiderShotRepositioning.ts` 無 DOM／three／`node:*`／`fs`／`Date.now`／`performance.now`／`Math.random` | ✅ | grep 三檔：唯一命中是**註解**裡「不 import DOM／three／`node:*`／`fs`」這句宣告本身（同 `domain-purity-boundary.test.ts` 記載的 prose 假陽性類型）；程式碼零命中。另有兩個 committed 版本的同一掃描：`spider-wide-geometry.test.ts`（前兩檔）與 `spiderShotRepositioning.test.ts`（第三檔，先 `codeOnly()` 剝註解） |
+| `TargetManager.ts` 未 import render／scene／`SettingsPanel` | ✅ | 全部 7 條 import：`state/SharedState`、`drill/DrillConfig`、`state/types`、`recoil/rng`、`loop/constants`、`sim/targetMotion`、`sim/spiderEyeFrame`、`sim/trackingTrajectory`。零 `src/render`／`src/scene`／`src/ui` |
+| `spiderShotRepositioning.ts` 未被 `diagnosisRules.ts`／教練報告路徑／`DrillMetricRegistry` 引用 | ✅ | `grep -rn spiderShotRepositioning src/` 除自身與自身測試外**零命中**（`research/`、`scripts/` 亦零）。**產物層佐證**：`grep -c stallOmegaDegPerSec dist/assets/*.js` = **0** —— 該模組根本不在 bundle 裡。committed 版本為 `spiderShotRepositioning.test.ts` 的遞迴 `src/` 掃描（importers = `[]`） |
+
+### 全量 Playwright：三次執行不一致 → 已另立 KI-030
+
+| # | 命令 | 結果 | 耗時 |
+|---|---|---|---|
+| A | `npm run test:e2e`（預設 worker，本 session 首次，含 preview 的 build） | 87 passed／**4 failed** | 4.4 min |
+| B | `npx playwright test --workers=1` | **90 passed／1 failed** | 5.1 min |
+| C | `npm run test:e2e`（預設 worker，第二次） | **90 passed／1 failed** | 2.6 min |
+
+- B／C 的那 1 個失敗是既存的 **[KI-027](../../../../known_issue/KI-027-overlay-layering-researcher-submenu-guard-dead.md)**（`overlay-layering.spec.ts:74`，helper 硬編 7 顆 launch button 而 `ResearcherMenu` 自 WP-54 起有 4 項子選單＝8 顆）。WP-57 只在既有下拉選單各加一個 drill／scene，未新增 researcher menu 按鈕 ⇒ 不屬本 WP，依 scope 紀律不在本切片修。失敗簽名與 WP-56 T-exit、WP-57 T6 記錄的完全相同。
+- A 多出的 3 個是 `history-library.spec.ts:196`／`:288` 與 `history-persistence.spec.ts:44`。**三者單獨重跑全綠**（history-persistence 3 passed、history-library 11 passed），且真實 `data/session-history/` 前後皆 41 個目錄、無新增。已排除 production 缺陷、資料安全問題、KI-028（本次事前確認 5173／4173 無人佔用，兩個 server 皆由 Playwright 自起）與本次程式碼變更（T5 的新模組零 importer、不在 bundle、未動任何 e2e spec）。
+- ⚠️ **根因未定**：失敗當下的 `test-results/**/error-context.md` 已被後續隔離重跑覆寫，無法分辨「跨 worker 共用 history temp root 互相干擾」與「首次執行的冷啟動時序」。已另立 **[KI-030](../../../../known_issue/KI-030-history-e2e-flaky-under-parallel-workers.md)** 並在 KI doc 寫明「下次重現時先保存 `test-results/`」。
+- ⇒ 本 T-exit 以 **`--workers=1` 的 90 passed／1 failed** 作為可重現的門檻讀數，並明確記錄 `npm run test:e2e` 目前不是可重現的閘。
+
+### 未達成的 gate（明確不掩蓋）
+
+**NFR-57.8 的「全量 Playwright exit 0」與「`test:ci` exit 0」兩個子句未滿足**（`test:ci` 實測 exit 1）。唯一原因是 **KI-027**，一個 2026-09-04（WP-56 T0、production diff = 0 時）就已記錄、與 WP-57 無關的既存失敗。其餘四個子句（build、browser typecheck、node typecheck、全量 Vitest）全數 exit 0。
+
+依 T-exit gate 的 exit criteria，**四個 blocking 條件（A-57.7／A-57.8／A-57.2／A-57.4）皆有 test／measurement 且綠**，故不阻擋交付；但本項作為**已揭露的殘留**入帳，不記為通過。WP-56 T-exit 對同一個失敗採同樣處置。
+
+### Acceptance A-57.1～12
+
+| ID | Scenario | Evidence | 判定 |
+|---|---|---|---|
+| A-57.1 | 端到端 run | T6 E2E：researcher 控制列載入 → 跑到 `ended` → 匯出；`zone` 嚴格交替；T4 實錄 `D_deg` **47.87–51.56°** 落在 45–55° 帶 | ✅ |
+| A-57.2 | on-screen（**blocking**） | T1／T2 純函式：`fovDeg ∈ {60,75,90,120}` × `aspect ∈ {16/9,21/9,4/3}` 共 12 組 × 10,000 = **120,000 seeded spawn，NDC 失敗數 0**；T6 實機：61 個 spawn 失敗數 0 | ✅ |
+| A-57.3 | 角徑恆定 | T1／T2：10,000／120,000 樣本 `abs(abs(pos−eye)−d)/d ≤ 1e-12`；T4 實錄 `worldDistanceU` 恆 `8.000000000000` | ✅ |
+| A-57.4 | pitch 窗地板淨空（**blocking**） | T1 resolver `pitchLimitDeg = 6.894696`（凍結值 ±6.5° 留 0.395° 餘裕）；T3 掃 612 個落點，全域最小淨空 **`0.5547 u`（地板）** ≥ `CLEARANCE_MARGIN_U = 0.5`；`loadDrill()` 有 fail-fast 閘（D-57.T3-1） | ✅ |
+| A-57.5 | 分層平衡 | T2：≥ 10,000 spawn 的 L/R 每完整佇列週期相等、cell 覆蓋差 ≤ 1 週期 | ✅ |
+| A-57.6 | 決定性 | T2：60／144／240 Hz 穩定 + 144 Hz ±50% rAF 抖動四種幀序列，tick-index 對應位置逐位一致 | ✅ |
+| A-57.7 | **GD-10 不變性（blocking）** | T2 Node 側：run 中改 camera aspect／FOV 後 spawn 序列與對照組逐位一致；T6 實機：16:9 → 5:4 mid-run resize 後 **41 個 spawn 逐位一致**，且 resize 後**重新 arm** 的 `yawMax` 由 `51.6343` 降到 `41.6386` ⇒ 不是「resolver 根本沒讀 aspect」的假陽性 | ✅ |
+| A-57.8 | v1/v2 零回歸（**blocking**） | T2 golden **先錄後改**（`3548ccc` 早於分支 commit `56e7d99`，該 commit `src/` diff = 0）：v1/v2 前 200 個 spawn byte-identical。**T-exit 覆驗**：`git diff <WP-57 base> HEAD -- src/metrics/spiderShotMetrics.ts` = **空**（零修改）；`spiderShotConditions.ts` 自 KI-026 後只有 **27 行純 additive**（`side?` 欄位 + `sideForPeripheral()` + 一個 spread），既有欄位一行未動；`DrillMetricRegistry.ts` 自 KI-026 後 WP-57 **零 diff** | ✅ |
+| A-57.9 | arena 幾何 | T3：README §2.5 全表逐列為測試；預設 `[10,10,3]` 房間四個 FOV 檔全部穿側牆的負向測試（且已區分「倒在 eye anchor」與「倒在房間尺寸」兩個原因，見 Surprises 6） | ✅ |
+| A-57.10 | provenance | T4：`resolvedFrom` 五欄（含匯出裡原本不存在的 `aspect`）round-trip 逐位；由匯出欄位重算 yaw 窗與實作相符至 12 位；每個實錄 spawn 皆可由還原參數重建 | ✅ |
+| A-57.11 | practice-only | T1 純函式負向（exact-id／near-miss／replay-profile／persistence short-circuit）；T6 實機 `historyPersistence.save()` 回 `excluded/practice`，真實 payload 產不出 compatibility key | ✅ |
+| A-57.12 | 品質標註 | T5：五類合成訊號分類正確；C-D3 閘為「`src/` 內零 importer」+ bundle 不含該模組；敏感度表與 `cm/360` 方向性表已交付並逐格釘死。⚠️ **兩張表建在合成 cohort 上**（repo 內無真人 wide-flick 匯出），OQ-57.5 維持開放 | ✅（附誠實限制） |
+
+### FR／NFR traceability 對帳
+
+**FR-57.1～14 全數有客觀證據**：FR-57.1→T1 union + `schema.ts` strict 正負向；FR-57.2／57.3→T1 resolver 與 eye-frame 球面純函式 + T6 arm-time 接線；FR-57.4→A-57.2；FR-57.5→T1 `pitchLimitDeg` 推導 + T4「`targetConditionCell` 不含 pitch／side」；FR-57.6→T2 分層佇列 seeded 決定性（`sequence.seed` 未被讀取）；FR-57.7→T2 `zone`／交替／`centerExemptFromTimeout` parity + T4 `side` 逐筆同源 + CONTEXT／operational 記名；FR-57.8→T6 實機 locked translation + mouse aim 仍可動；FR-57.9→A-57.9；FR-57.10→A-57.10；FR-57.11→A-57.8 的 27 行 additive diff；FR-57.12→A-57.12；FR-57.13→A-57.11；FR-57.14→T1 typed error 正負向矩陣（非有限／非正 FOV／aspect、區間退化／反轉、pitch 埋地板）。
+
+**NFR**：57.1（四 FPS parity）／57.2（v1/v2 golden byte-identical）／57.5（aspect 不變性）／57.7（零額外配置，以覆寫 `Array.prototype.push` 計數落地）→T2；57.3（10,000+ 樣本角徑 ≤ 1e-12）／57.4（120,000 樣本 NDC 失敗 0）→T1／T2；57.6（純函式 boundary scan）→上表；**57.8→未完全滿足，見「未達成的 gate」**。
+
+### Research/data safety
+
+- ✅ 效度聲稱限定為「researcher-only／practice 的大幅度拉槍刺激成立」。**不宣稱**信度、常模或跨選手可比較性 —— 每 cell 樣本數已實測落在約 5–12（D-57.T6-2），明確不足以支撐信度檢定（C-D3），且無任何指標進 `DrillMetricRegistry` 或教練報告。
+- ✅ `pitch` 為干擾項：不在 `targetConditionCell`（T4 逐 transition 斷言 cell 格式且不含 `pitch`／`side`），呈現層亦未把它當條件變因。
+- ✅ repositioning 旗標的限制（與刻意停頓不可分離）已寫在模組註解、`analysis-spider-shot.md`、`CONTEXT.md` 與 progress §T5；且 §T5 明寫敏感度表是合成 cohort。
+- ✅ 時序參數校準狀態如實標註：`timeLimitMs` **已回填 60000**（D-57.T6-2，且明記它推翻了規劃期理由）；`peekTimeoutMs = 2500` 仍為候選（timeout 率待真人 run）；`kLo = 0.92`／`screenMargin = 0.04` 維持候選值並附 NDC 隨 FOV 漂移的已知限制（D-57.T6-1）。
+- ✅ 每 cell 樣本數的實際數字已記錄（§T6 的節奏掃描表，改值前後各一組），並明說不足以支撐信度檢定。
+- ✅ 測試只用 fixtures／temp root：本次全部三次 Playwright 前後，真實 `data/session-history/` 目錄數皆為 **41**，無 mutation。
+
+### Architecture regression
+
+- ✅ **spiderShot 分支狀態隔離**：wide 分支只用 `spiderWideQueue`，**從不讀寫** legacy `nextSide` 或 `spiderZoneQueue`（`TargetManager.ts` 的 `sampleSpiderWidePeripheralPose()`，並有 `spider-wide-schedule-invariants.test.ts` 的 RNG 預算／push 計數釘死）。<br>⚠️ **對 gate 原文的更正**：gate 寫「**三支** spiderShot 分支」，但 KI-026 之後實際有**四支** kind。`center-peripheral-stratified` 與 `center-peripheral-eye-stratified` **刻意共用** `spiderZoneQueue`（BD-026 的設計：v3 是 v2 幾何的 eye-frame 重錨），那不是 WP-57 引入的耦合。WP-57 擁有的隔離宣稱是「wide ∦ 其餘三支」，該宣稱成立。
+- ✅ **resolver 唯一呼叫點在 arm 時**：`resolveSpiderShotWideV1` 的 production 呼叫點只有 `main.ts:243` 的 `resolveSource` thunk，而該 thunk 只被 `drillSourceFor()`（`main.ts:161`）調用，其唯一呼叫者是 `main.ts:1322`（`loadDrillById()` 內、`activateDrill()` 之前）。render callback 內零 resolver 呼叫、零 FOV／aspect 讀取進 sim。
+- ✅ **`PLAYER_EYE_HEIGHT_U` 為眼高唯一 sim 側來源**（定義在 `src/sim/playerEye.ts`，`src/scene/clearance.ts` re-export 同一 binding，D-57.T1-1）；arena `eyeHeight` 與其相等已由 `wide-flick-arena.test.ts:40` 與 runtime 閘 `spiderWideArena.ts:138` 雙重釘死。
+- ✅ **`spiderShotMetrics.ts` 零修改**（git diff 為空）；**`spiderShotConditions.ts` 只有 additive `side`**（27 行，既有欄位零變動）。
+- ✅ 既有決定性／命中／recoil／export／history regression 零修改通過（全量 Vitest 2,399 tests）。
+- ✅ **無第二套夾角／角徑／ω 實作（C-D4）**：`D_deg`／`W_deg` 仍只在 `spiderShotConditions.ts`；角徑只從 `resolveTargetHitbox()` 推導（`spiderWideTargetRadiusU()` 為 shape 分流而非第二個常數，D-57.T3-2）；ω 只在 `angularKinematics.ts`（T5 boundary scan 釘死）。
+
+### Documentation and graph
+
+- ✅ README 的 Status／§1.5／§1.6／§4 已更新為實際交付值（哪些已凍結：`drillId`、`pitchDegRange`、`timeLimitMs`；哪些仍為候選：`kLo`、`screenMargin`、`peekTimeoutMs`、repositioning 門檻）。
+- ✅ [task-checklist.md](task-checklist.md) 全 ✅；本檔貼齊 test／benchmark／實機截圖／敏感度表／OQ 收斂證據。
+- ✅ [`analysis-spider-shot.md`](../../../../operational/analysis-spider-shot.md) 與 [`CONTEXT.md`](../../../../../CONTEXT.md) 與實作一致（eye-frame、`side` 兩來源、`resolvedFrom`，本次補上 repositioning 旗標一節與詞條）。
+- ✅ [`DECISIONS.md`](../../../DECISIONS.md) GD-32 已反映最終落地：「影響面 (A)」標記為**已被 ④ 取代**並附 T4 實測值，狀態列補上 WP-57 交付與三套幾何在 `TargetManager` 內的隔離事實。
+- ✅ [`docs/exec-plan/README.md`](../../../README.md) §2 的 stage12 WP-57 列與 [`active/stage12/README.md`](../README.md) 已同步為交付。
+- ⚠️ **`graphify update .` 刻意未執行**（沿用 T3／T6 的同一處置）：`graphify-out/*`（`GRAPH_REPORT.md`／`graph.html`／`graph.json`／`manifest.json`，manifest 一檔就有 130 行）目前帶著**平行工作**的未提交變更，現在重跑會把我的索引寫進他們的 diff 裡而更難分離。**CodeGraph 則已確認同步**：`codegraph sync .` → `Already up to date`（新模組已入索引）。
+- ✅ `git status --short`／`git diff --cached --stat` 只含預期 code／tests／docs，無 payload artifacts。
+
+### Worktree 與環境揭露
+
+- 本次 gate 執行期間 worktree 有**不屬本 WP** 的平行工作：commit `fe2a01d`（micro flick corridor variants，已由對方提交）與未追蹤的 `.codex-tmp-micro-flick-spawn-audit.ts`、以及 `graphify-out/*` 的未提交變更。上述 Vitest／build／Playwright 數字因此涵蓋那份工作（差額已在上方逐項歸屬）；本 task 只 stage 自己的檔案。
+- Server：執行前確認 5173／4173 無監聽程序（5174 有一個不屬本 task 的 node 程序，Playwright 不使用該埠），兩個 server 皆由 Playwright 自起並各帶 `playwright.config.ts` 宣告的 temp root ⇒ 本次**不受 KI-028 影響**。
+- **上層索引的共編處置**：收尾時平行 session 正在同一份 [`active/stage12/README.md`](../README.md) 與 `active/stage12/task-checklist.md` 內新增 **WP-59**（未提交），其中 stage README 的狀態句與我的 WP-57 更新**落在同一行**。WP-56 T-exit 遇到同型情況的處置是整份留給檔案擁有者；本次改用更精確的做法：以 `git hash-object` + `git update-index --cacheinfo` 把「HEAD 版本 + 只有我那三行 WP-57 改動」的 blob 送進 index，worktree 檔案原封不動。⇒ 本 commit 的 stage README diff **恰為 3 行**，平行工作的 WP-59 內容完全留在他們自己的未提交 diff 裡。`active/stage12/task-checklist.md` 我一行未改，完全未 stage。
 
 ## Decision Log
 
