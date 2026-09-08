@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
 import { microFlickThreeTargetTestV8 } from '../drill/micro_flick_three_target_test_v8.ts';
+import type { Clock } from '../loop/clock.ts';
+import { SIM_HZ } from '../loop/constants.ts';
+import { createSimLoop } from '../loop/SimLoop.ts';
 import { createRan1 } from '../recoil/rng.ts';
 import { createSharedState } from '../state/SharedState.ts';
 import type { TargetState, Vec3 } from '../state/types.ts';
@@ -57,6 +60,37 @@ function centerRelativeAngularSeparationDeg(left: Vec3, right: Vec3): number {
 
 function targetSnapshot(state: ReturnType<typeof createSharedState>): string {
   return JSON.stringify(state.targets.map((target) => ({ id: target.id, side: target.side, pos: target.pos })));
+}
+
+function fixedClock(nowMs: number): Clock {
+  return { now: () => nowMs };
+}
+
+function v8TraceAtRenderFps(renderFps: number): string[] {
+  const base = replacementConfig();
+  const config: DrillConfig = {
+    ...base,
+    targets: { ...base.targets, count: 40 },
+    endCondition: { type: 'targetCount', value: 40 },
+  };
+  const state = createSharedState();
+  const manager = createTargetManager(config);
+  const trace: string[] = [];
+  const loop = createSimLoop(state, fixedClock(0), SIM_HZ, manager, undefined, undefined, undefined, undefined, {
+    afterTick(current, _tickEndMs, tickIndex): void {
+      if (tickIndex % 3 === 0 && current.targets.length > 0) {
+        manager.markKilled(current, current.targets[tickIndex % current.targets.length].id);
+      }
+      if (trace.length < 96) trace.push(targetSnapshot(current));
+    },
+  });
+
+  let frameNowMs = 0;
+  while (trace.length < 96) {
+    frameNowMs += 1000 / renderFps;
+    loop.pump(frameNowMs);
+  }
+  return trace;
 }
 
 function inspectV8Population(state: ReturnType<typeof createSharedState>): {
@@ -198,6 +232,17 @@ describe('TargetManager — WP-59 T3 v8 replacement-spacing acceptance', () => {
     expect(observation.minimumKilledSeparationDeg).toBeGreaterThanOrEqual(2.6 - 1e-10);
     expect(observation.minimumActiveSeparationDeg).toBeGreaterThanOrEqual(5 - 1e-10);
     expect(unchangedAimHitRate).toBe(0);
+  });
+
+  it('produces an identical non-vacuous v8 trace at 30, 60, 144, and 240 render FPS', () => {
+    const baseline = v8TraceAtRenderFps(30);
+    const ids = new Set(
+      baseline.flatMap((entry) =>
+        (JSON.parse(entry) as Array<{ id: string }>).map((target) => target.id),
+      ),
+    );
+    expect(ids.size).toBeGreaterThan(3);
+    for (const renderFps of [60, 144, 240]) expect(v8TraceAtRenderFps(renderFps)).toEqual(baseline);
   });
 });
 

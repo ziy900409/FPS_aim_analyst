@@ -2,6 +2,7 @@ import { performance } from 'node:perf_hooks';
 import * as THREE from 'three/webgpu';
 import { describe, expect, it } from 'vitest';
 import { microFlickThreeTargetTestV1 } from '../drill/micro_flick_three_target_test_v1.ts';
+import { microFlickThreeTargetTestV8 } from '../drill/micro_flick_three_target_test_v8.ts';
 import { TargetView } from '../render/TargetView.ts';
 import { createSharedState } from '../state/SharedState.ts';
 import { createTargetManager } from './TargetManager.ts';
@@ -16,13 +17,16 @@ function percentile95(samples: readonly number[]): number {
 }
 
 describe('WP-56 T5 — warmed Micro Flick target/render performance gate', () => {
-  it('keeps TargetManager.tick + TargetView.sync P95 below 1 ms across 10,000 replacements', () => {
+  it.each([
+    ['legacy v1 first-valid sampling', microFlickThreeTargetTestV1.drill],
+    ['WP-59 v8 ranked replacement sampling', microFlickThreeTargetTestV8.drill],
+  ])('keeps TargetManager.tick + TargetView.sync P95 below 1 ms across 10,000 replacements: %s', (_label, drill) => {
     const state = createSharedState();
     // The practice fixture intentionally ends after 60 kills.  This benchmark measures the same
     // three-target hot path after warming, so it needs a finite budget large enough for all samples.
     const manager = createTargetManager({
-      ...microFlickThreeTargetTestV1.drill,
-      targets: { ...microFlickThreeTargetTestV1.drill.targets, count: WARM_ITERATIONS + SAMPLES + 3 },
+      ...drill,
+      targets: { ...drill.targets, count: WARM_ITERATIONS + SAMPLES + 3 },
       endCondition: { type: 'targetCount', value: WARM_ITERATIONS + SAMPLES + 3 },
     });
     const scene = new THREE.Scene();

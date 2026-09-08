@@ -18,7 +18,16 @@ type HarnessInputEvent = { type: 'fire'; down: boolean; t: number };
 type FpsTestHarness = {
   startDrill(id: string): void;
   feedInput(seq: HarnessInputEvent[]): void;
-  forceExportJSON(): { events: Array<{ type: string; targetId?: string; hit?: boolean }> };
+  forceExportJSON(): {
+    events: Array<{
+      type: string;
+      targetId?: string;
+      hit?: boolean;
+      targetX?: number;
+      targetY?: number;
+      targetZ?: number;
+    }>;
+  };
   phase(): string;
 };
 
@@ -123,6 +132,47 @@ test('WP-56 T5: researcher selection reaches the live three-target scene and the
   });
   expect(events.filter((event) => event.type === 'visible').map((event) => event.targetId)).toEqual(['t0', 't1', 't2', 't3']);
   expect(events.filter((event) => event.type === 'fire' && event.hit).map((event) => event.targetId)).toEqual(['t0']);
+});
+
+test('WP-59 T4: the browser harness replaces a killed v8 target away from its previous bearing', async ({ page }) => {
+  await gotoAppReady(page);
+  await waitForHarness(page);
+  const events = await page.evaluate(() => {
+    const harness = (window as unknown as { __fpsTest: FpsTestHarness }).__fpsTest;
+    harness.startDrill('micro_flick_three_target_test_v8');
+    harness.feedInput([
+      { type: 'fire', down: true, t: 0 },
+      { type: 'fire', down: false, t: 8 },
+    ]);
+    return harness.forceExportJSON().events;
+  });
+  const visible = events.filter((event) => event.type === 'visible');
+  const killedId = events.find((event) => event.type === 'fire' && event.hit)?.targetId;
+  const killed = visible.find((event) => event.targetId === killedId);
+  const replacement = visible.find((event) => event.targetId === 't3');
+
+  expect(visible.map((event) => event.targetId)).toEqual(['t0', 't1', 't2', 't3']);
+  expect(killed).toBeDefined();
+  expect(replacement).toBeDefined();
+  const direction = (event: (typeof visible)[number]): [number, number, number] => {
+    const x = event.targetX!;
+    const y = event.targetY! - 1.5;
+    const z = event.targetZ!;
+    const length = Math.hypot(x, y, z);
+    return [x / length, y / length, z / length];
+  };
+  const killedDirection = direction(killed!);
+  const replacementDirection = direction(replacement!);
+  const dot = Math.max(
+    -1,
+    Math.min(
+      1,
+      killedDirection[0] * replacementDirection[0] +
+        killedDirection[1] * replacementDirection[1] +
+        killedDirection[2] * replacementDirection[2],
+    ),
+  );
+  expect((Math.acos(dot) * 180) / Math.PI).toBeGreaterThanOrEqual(2.6 - 1e-10);
 });
 
 // One tap every 500 ms. The cadence is load-bearing, not cosmetic: the harness's synthetic aim
