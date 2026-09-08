@@ -121,4 +121,13 @@ t=11303.3  yaw= 2.86°  ecc=49.73   dEcc/dt =   0   ← aim 未變
 | 每次都抬滑鼠 | `…T09_31_25.160Z` | `2adaae7655820e23` | 23 |
 | 刻意短停頓 | `…T09_32_47.152Z` | `96be9683eae81230` | 24 |
 
-**尚未 commit 進 repo**（各約 3.4–3.8 MB）。若要讓本條目與 WP-57 §T5-real 的數字可重現，應收進 `research/fixtures/exports/`（既有五份真人 counterstrafe 匯出的同一位置，各約 0.8–1.2 MB，屬 C-D1 允許的 committed fixture 例外）。
+⚠️ **這四份檔案不會進 repo**（使用者決定，2026-09-08，[D-57.T5-8](../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/progress.md)）。
+
+⇒ **本條目的證據（113/113、0/113、上表的 `sustainedTicks` 掃描、逐 tick 交替樣本）在本 repo 內「不可重現」。** 上表的 sha256 只能證明「若日後有人拿到同一批檔案，那是同一批」，不能讓任何人重跑出這些數字。
+
+**對修復計畫的直接影響**：§5 步驟 4 要求補一份 60 Hz 取樣的回歸 fixture —— 那份 fixture **不能**從這四份檔案裡挑一份了。修這條 KI 的人必須：
+
+1. 依 [`spider-wide-recording-spec.md`](../operational/spider-wide-recording-spec.md) **重錄**一批含 60 Hz（或其他 aim 更新率低於 sim 率）的 run；**或**
+2. 合成一份逐 tick 交替（aim 每兩個 sim tick 才更新）的 payload —— 機制已在 §2 記載得夠精確，合成得出來；代價是它證明的是「判準對交替取樣的行為」，不是「真人資料上真的會這樣」。
+
+兩條路都可行，但**都不能引用本條目的數字當基準**——那些數字沒有可稽核的來源檔。
