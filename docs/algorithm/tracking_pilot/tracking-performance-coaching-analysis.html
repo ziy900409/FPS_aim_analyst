@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tracking 表現分析 — 教練手冊</title>
+<style>
+:root{
+  --bg:#fbfaf8; --panel:#ffffff; --ink:#1c1a17; --ink-2:#4a463f; --ink-3:#7a746a;
+  --line:#e3ded4; --line-2:#cfc8ba;
+  --accent:#8a5a2b; --accent-soft:#f5ede1;
+  --ok:#2f6b45; --ok-soft:#e8f2eb;
+  --warn:#8a6a12; --warn-soft:#f7f0dc;
+  --stop:#8f3a2f; --stop-soft:#f7e8e5;
+  --code-bg:#f3f0ea;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16150f; --panel:#1e1c16; --ink:#ece7dc; --ink-2:#bdb6a7; --ink-3:#8d867a;
+    --line:#312e25; --line-2:#443f33;
+    --accent:#d9a463; --accent-soft:#2a2318;
+    --ok:#7fc39a; --ok-soft:#1b2820;
+    --warn:#d9bb6a; --warn-soft:#2a2418;
+    --stop:#e09385; --stop-soft:#2c1d1a;
+    --code-bg:#141309;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16150f; --panel:#1e1c16; --ink:#ece7dc; --ink-2:#bdb6a7; --ink-3:#8d867a;
+  --line:#312e25; --line-2:#443f33;
+  --accent:#d9a463; --accent-soft:#2a2318;
+  --ok:#7fc39a; --ok-soft:#1b2820;
+  --warn:#d9bb6a; --warn-soft:#2a2418;
+  --stop:#e09385; --stop-soft:#2c1d1a;
+  --code-bg:#141309;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:56px 24px 120px}
+header.doc{border-bottom:2px solid var(--ink);padding-bottom:28px;margin-bottom:8px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 14px}
+h1{font-size:clamp(28px,4.4vw,42px);line-height:1.15;letter-spacing:-.02em;margin:0 0 14px;font-weight:640}
+.lede{font-size:18px;line-height:1.7;color:var(--ink-2);margin:0;max-width:62ch}
+.meta{margin-top:22px;font:12px/1.6 var(--mono);color:var(--ink-3)}
+.meta a{color:var(--accent)}
+h2{font-size:24px;line-height:1.3;letter-spacing:-.01em;margin:64px 0 6px;font-weight:640;
+  padding-top:10px;border-top:1px solid var(--line)}
+h2 .num{font:600 12px/1 var(--mono);color:var(--accent);display:block;margin-bottom:10px;letter-spacing:.1em}
+h3{font-size:17px;margin:38px 0 10px;font-weight:640;letter-spacing:-.005em}
+h4{font-size:14px;margin:24px 0 6px;font-weight:640;color:var(--ink-2);
+  font-family:var(--mono);letter-spacing:.02em}
+p{margin:0 0 16px;max-width:74ch}
+ul,ol{margin:0 0 16px;padding-left:24px;max-width:74ch}
+li{margin:0 0 7px}
+code{font:13px/1.5 var(--mono);background:var(--code-bg);padding:.13em .38em;border-radius:4px;
+  border:1px solid var(--line);white-space:nowrap}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:16px 18px;
+  overflow-x:auto;margin:0 0 20px}
+pre code{background:none;border:none;padding:0;white-space:pre;font-size:12.5px;line-height:1.65}
+.scroll{overflow-x:auto;margin:0 0 24px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--accent-soft);font-weight:640;font-size:12px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td code,th code{font-size:12px}
+.note{border-left:3px solid var(--accent);background:var(--panel);padding:16px 20px;
+  border-radius:0 8px 8px 0;margin:0 0 24px}
+.note.stop{border-left-color:var(--stop);background:var(--stop-soft)}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note.ok{border-left-color:var(--ok);background:var(--ok-soft)}
+.note p:last-child{margin-bottom:0}
+.note .tag{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  display:block;margin-bottom:9px;color:var(--accent)}
+.note.stop .tag{color:var(--stop)} .note.warn .tag{color:var(--warn)} .note.ok .tag{color:var(--ok)}
+.pill{display:inline-block;font:600 10.5px/1 var(--mono);letter-spacing:.06em;padding:4px 8px;
+  border-radius:999px;border:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap}
+.pill.p0{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.pill.p1{background:var(--panel)}
+.pill.stop{background:var(--stop-soft);border-color:var(--stop);color:var(--stop)}
+.pill.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+figure{margin:0 0 28px}
+figure svg{display:block;width:100%;height:auto;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px}
+figcaption{font-size:13px;color:var(--ink-3);margin-top:10px;line-height:1.6}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:0 0 26px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.card h4{margin:0 0 8px;font-family:var(--sans);font-size:15px;color:var(--ink);letter-spacing:0}
+.card p{font-size:14px;color:var(--ink-2);margin:0}
+.card .k{font:600 10.5px/1 var(--mono);color:var(--accent);letter-spacing:.1em;display:block;
+  margin-bottom:10px}
+.tocbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 22px;
+  margin:34px 0 0}
+.tocbox ol{margin:0;padding-left:20px;columns:2;column-gap:32px}
+.tocbox li{font-size:14px;break-inside:avoid}
+.tocbox a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line-2)}
+.tocbox a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+@media (max-width:640px){.tocbox ol{columns:1}}
+footer.doc{margin-top:80px;padding-top:24px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--ink-3)}
+footer.doc a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <p class="eyebrow">docs / algorithm / tracking_pilot</p>
+  <h1>Tracking 表現分析 — 教練手冊</h1>
+  <p class="lede">從一位電競表現教練的視角,說明現行 tracking 任務(<code>tracking_v1</code> 家族 +
+  WP-54 <code>tracking-pilot-v2</code>)該怎麼讀選手的表現、每個判斷背後用本專案的哪一份資料算出來,
+  以及哪些話現在還<strong>不能</strong>對選手說。</p>
+  <p class="meta">
+    權威定義出處:<a href="../../operational/analysis-tracking.md">docs/operational/analysis-tracking.md</a> ·
+    <a href="../../operational/tracking-pilot-runbook.md">tracking-pilot-runbook.md</a> ·
+    實作:<code>src/metrics/tracking*.ts</code>、<code>src/pilot/tracking*.ts</code><br>
+    本文<strong>不定義任何新構念</strong>(C-D4)。所有公式與門檻皆引用既有實作;若本文與程式碼不一致,以程式碼為準。
+  </p>
+  <nav class="tocbox">
+    <ol>
+      <li><a href="#s1">tracking 不是一個能力</a></li>
+      <li><a href="#s2">分析前的三道門</a></li>
+      <li><a href="#s3">P0:任務層表現</a></li>
+      <li><a href="#s4">P1:控制層機制</a></li>
+      <li><a href="#s5">換向事件:反應性修正</a></li>
+      <li><a href="#s6">教練診斷矩陣</a></li>
+      <li><a href="#s7">原始資料 → 指標對照</a></li>
+      <li><a href="#s8">實際怎麼跑</a></li>
+      <li><a href="#s9">現在還不能說的話</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ============================================================ -->
+<h2 id="s1"><span class="num">§ 1</span>tracking 不是一個能力,是四個</h2>
+
+<p>教練最常犯的錯是把「跟槍不好」當成單一診斷。在本專案的資料結構裡,一次 tracking presentation
+被明確切成四段互不污染的構念,每段有自己的指標、自己的失敗模式、自己的處方。<strong>混在一起看,
+處方一定開錯。</strong></p>
+
+<figure>
+<svg viewBox="0 0 900 210" role="img" aria-labelledby="ttl-phase">
+  <title id="ttl-phase">一次 presentation 的四個構念分段</title>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11.5" fill="currentColor">
+    <line x1="60" y1="120" x2="850" y2="120" stroke="currentColor" stroke-width="1.5"
+          opacity=".45" marker-end="url(#ar)"/>
+    <line x1="60" y1="108" x2="60" y2="132" stroke="currentColor" stroke-width="2"/>
+    <line x1="250" y1="108" x2="250" y2="132" stroke="currentColor" stroke-width="2"/>
+    <line x1="520" y1="112" x2="520" y2="128" stroke="currentColor" stroke-width="1.5" opacity=".6"/>
+    <line x1="640" y1="112" x2="640" y2="128" stroke="currentColor" stroke-width="1.5" opacity=".6"/>
+    <text x="60" y="152" text-anchor="middle" opacity=".8">scored_start</text>
+    <text x="250" y="152" text-anchor="middle" opacity=".8">first_on_target</text>
+    <text x="520" y="152" text-anchor="middle" opacity=".8">motion_change</text>
+    <text x="640" y="152" text-anchor="middle" opacity=".8">drop</text>
+    <text x="850" y="152" text-anchor="end" opacity=".8">窗尾</text>
+
+    <rect x="60" y="60" width="190" height="34" rx="5" fill="currentColor" opacity=".12"/>
+    <text x="155" y="82" text-anchor="middle" font-size="12.5" font-weight="600">① 取得 acquisition</text>
+    <text x="155" y="40" text-anchor="middle" font-size="10.5" opacity=".7">t_acquire</text>
+
+    <rect x="250" y="60" width="270" height="34" rx="5" fill="currentColor" opacity=".22"/>
+    <text x="385" y="82" text-anchor="middle" font-size="12.5" font-weight="600">② 穩態跟隨 steady pursuit</text>
+    <text x="385" y="40" text-anchor="middle" font-size="10.5" opacity=".7">TOT% · RMS ε · lag · gain</text>
+
+    <rect x="520" y="60" width="120" height="34" rx="5" fill="currentColor" opacity=".12"/>
+    <text x="580" y="82" text-anchor="middle" font-size="12" font-weight="600">③ 反應修正</text>
+    <text x="580" y="40" text-anchor="middle" font-size="10.5" opacity=".7">latency · overshoot</text>
+
+    <rect x="640" y="60" width="210" height="34" rx="5" fill="currentColor" opacity=".22"/>
+    <text x="745" y="82" text-anchor="middle" font-size="12.5" font-weight="600">④ 失聯復原 recovery</text>
+    <text x="745" y="40" text-anchor="middle" font-size="10.5" opacity=".7">drop/s · reacquire · longestOff</text>
+
+    <text x="60" y="185" font-size="10.5" opacity=".62">
+      scored_start 之前的 trackingPrepMs（1000 ms 置中）不進任何聚合 — FR-54-6
+    </text>
+  </g>
+</svg>
+<figcaption>四段的窗界由 export 裡的 event 決定,不是分析時自己抓的:<code>scored_start</code> 開窗、
+首次 <code>onTarget</code> 分開取得與跟隨、<code>target_motion_change</code> 切出反應窗、
+on-target 轉態切出復原段。</figcaption>
+</figure>
+
+<div class="grid">
+  <div class="card"><span class="k">① ACQUISITION</span>
+    <h4>抓得到嗎</h4>
+    <p>目標出現到第一次瞄準線真的穿過 hitbox 的時間。這一段是 <strong>flick 能力</strong>,
+    刻意與跟隨分離,免得「找目標慢」被誤讀成「跟不住」。</p></div>
+  <div class="card"><span class="k">② STEADY PURSUIT</span>
+    <h4>跟得住嗎</h4>
+    <p>取得之後把準心留在目標上的能力。這才是 tracking 的本體,而且只在
+    <code>[first_on_target, 窗尾)</code> 內計算。</p></div>
+  <div class="card"><span class="k">③ REACTIVE CORRECTION</span>
+    <h4>目標變向時反應多快</h4>
+    <p>只有 reversal 家族才有這一段。量的是「刺激突變後的暫態」,與穩態誤差是不同的肌肉。</p></div>
+  <div class="card"><span class="k">④ RECOVERY</span>
+    <h4>掉了救不救得回</h4>
+    <p>掉出目標的頻率、救回來的次數、以及最長一次失聯。<strong>「掉很多但都救回來」和
+    「掉一次就再也沒回來」是兩種完全不同的選手。</strong></p></div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s2"><span class="num">§ 2</span>分析前的三道門:資料有效 → 刺激保真 → 條件可分辨</h2>
+
+<p>這一節放在指標之前,因為它救過這個專案好幾次。<strong>在這三道門之前算出來的任何漂亮數字都是垃圾,
+而且是會騙人的垃圾</strong>——它們看起來完全正常。</p>
+
+<h3>門 1:run-level eligibility(資料本身可不可信)</h3>
+<p><code>evaluateTrackingRunEligibility(payload)</code> 在任何指標推導<em>之前</em>跑,回傳一個封閉的
+8 碼 <code>TrackingQualityReason</code> 詞彙表。它<strong>不會</strong>在第一個失敗就短路——一個 run
+可以同時 overflow 又 coverage 不足,兩者都必須被看見。</p>
+
+<div class="scroll">
+<table>
+<thead><tr><th>Reason code</th><th>觸發條件</th><th>教練該怎麼處置</th></tr></thead>
+<tbody>
+<tr><td><code>recorder-overflow</code></td><td><code>meta.recorderOverflow === true</code></td><td>整個 run 作廢,重跑。不要「就用前半段」</td></tr>
+<tr><td><code>input-buffer-overflow</code></td><td><code>meta.bufferOverflow === true</code></td><td>同上;通常是機器負載,先關背景程式</td></tr>
+<tr><td><code>missing-scored-start</code></td><td>沒有任何 <code>scored_start</code> event</td><td>協定沒跑對,沒有計分窗可言</td></tr>
+<tr><td><code>missing-target-position</code></td><td>計分窗內有 tick 的 <code>tx/ty/tz === null</code></td><td>刺激軌跡有洞,作廢</td></tr>
+<tr><td><code>non-monotonic-timestamps</code></td><td>時間戳非嚴格遞增(依<strong>原始錄製順序</strong>檢查,不重排)</td><td>時鐘域出事,作廢並回報</td></tr>
+<tr><td><code>insufficient-scored-coverage</code></td><td>計分窗 tick 覆蓋率 &lt; 99.5%(NFR-54-4)</td><td>掉 frame/掉 tick;25 s 窗容許不到 16 tick 的缺口</td></tr>
+<tr><td><code>unsupported-schema-version</code></td><td><code>meta.schemaVersion !== 2</code></td><td>舊格式,不可與現行資料混</td></tr>
+<tr><td><code>unrecognized-tracking-trajectory</code></td><td><code>meta.spawn.trackingTrajectory.kind</code> 不是 <code>band-limited-2d-v1</code>/<code>reversal-2d-v1</code></td><td>不是本協定的刺激</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>另有 <code>tracking-pilot-v2</code> 專屬的 <strong>held-fire 覆蓋率</strong>:計分窗內
+<code>ticks[].fire === true</code> 的比例,只對 <code>meta.protocolGuard.requireFire === true</code>
+的 run 計算,<strong>門檻 ≥ 0.95</strong>(25 s 容許約 1.25 s 放開)。選手沒按住左鍵就等於沒在做這個任務。</p>
+
+<h3>門 2:刺激保真度(選手實際看到的,是不是你以為的)</h3>
+
+<div class="note stop">
+  <span class="tag">這是本專案最貴的一課</span>
+  <p>KI-024 之前,<code>field-low</code> 場景的眼睛沒有錨定在 sim origin,交戰距離是 8 u 而不是
+  config 的 4 u ⇒ <strong>每一個角度量(目標角尺寸、行程振幅、角速度)都只交付了一半</strong>。
+  metadata 仍然誠實地寫著「0.5°、5 deg/s」,eligibility 全綠,指標全部算得出來——
+  只是選手看到的是 0.25° 與 2.5 deg/s。<strong>沒有任何指標層的檢查能抓到這件事,只有去量錄下來的位置才能。</strong></p>
+</div>
+
+<p>因此分析 runner 有一層 <code>measureTrackingDeliveredAngles()</code>(layer 4),
+從<strong>錄到的 <code>tx/ty/tz</code> 與 <code>meta.scene.eye</code></strong>反推選手眼中的實際交戰距離、
+交付速度與角尺寸,逐 run 印出「交付/宣稱」比。現行 G6 世代的健康值是 100–103%。</p>
+
+<p>刺激已經換過六個世代,<strong>跨世代的資料不可合併比較</strong>,而且 <code>drillId</code> 有跨世代重用
+(<code>..._2deg_5dps</code> 在 G1–G4 是大尺寸層、在 G5 是小尺寸層)。最可靠的世代辨識:</p>
+
+<div class="scroll">
+<table>
+<thead><tr><th>世代</th><th>辨識</th><th>能不能拿來當教練依據</th></tr></thead>
+<tbody>
+<tr><td><strong>G1</strong></td><td><code>frequencyBandHz [0.1,0.7]</code> + <code>yawBoundDeg ≤ 2</code></td><td><span class="pill stop">不能</span></td></tr>
+<tr><td><strong>G2</strong></td><td><code>[0.3,2.1]</code> + 每 cell 有自己的 hitbox</td><td><span class="pill stop">不能</span> 速度須 ×√2(calibration 除外)</td></tr>
+<tr><td><strong>G3</strong></td><td><code>meta.scene.eye.z === 4</code></td><td><span class="pill stop">不能</span> 所有角度量 ×2</td></tr>
+<tr><td><strong>G4</strong></td><td><code>eye.z === 0</code> + <code>[0.15,1.05]</code> + speed <code>5/14</code></td><td><span class="pill warn">刺激正確</span> 但尺寸層已被 revise</td></tr>
+<tr><td><strong>G5</strong></td><td>同 G4,size 候選 <code>3.0 / 2.0</code> deg</td><td><span class="pill warn">刺激正確</span> 任務為「禁止開火」</td></tr>
+<tr><td><strong>G6</strong>(現行)</td><td><code>meta.weaponId === 'tracking_pilot_hold'</code> + <code>protocolGuard</code> 為 <code>{requireFire, noMovement}</code></td><td><span class="pill ok">現行唯一可用</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note warn">
+  <span class="tag">G5 → G6 是特別的一條界線</span>
+  <p>前五代的分界都是「同一個任務、刺激交付錯了」。G5→G6 是<strong>唯一一次刺激幾何逐位完全相同、
+  但任務本身換了</strong>:選手現在要全程按住左鍵一邊追蹤。雙任務負荷會壓低所有 P0/P1 指標,
+  <strong>量級未知</strong>。刺激保真度那一層攔不下這一組(軌跡確實一模一樣),只能靠
+  <code>weaponId</code>/<code>protocolGuard</code> 判代。</p>
+</div>
+
+<h3>門 3:條件可分辨性(這個 cell 到底測不測得出東西)</h3>
+
+<p>這是我認為對教練最重要、也最反直覺的一道門。把準心<strong>凍結</strong>在選手自己 aim 的中位數上,
+用同一個 ε 定義、同一個計分窗重算一次:</p>
+
+<pre><code>ratio = RMS ε(凍結準心) / RMS ε(實際)</code></pre>
+
+<p>這個比值是<strong>該條件可分辨性的上界</strong>。比值趨近 1,表示「完全不動」和「認真跟槍」算出來的
+誤差差不多——無論儀器多忠實,這個條件就是測不出跟槍能力。實作:
+<code>scripts/trackingFrozenCrosshairRatio.ts</code>(runner layer 5)。</p>
+
+<p>Gate A 第三輪的實測非常說明問題:reversal 家族 <strong>2.06–3.01</strong>(唯一已證實有效),
+20 deg/s cell 1.40–1.52,而 <strong>5 deg/s 的三個 cell 與兩個 axis calibration 只有 1.08–1.35
+——那些 cell 測不出跟槍能力</strong>。依 <strong>C-D3</strong>(未通過構念驗證的指標不得進教練報告),
+這些 cell 的數字不准拿去跟選手講。</p>
+
+<div class="note">
+  <span class="tag">同一個道理的另一面</span>
+  <p><strong><code>totPercent</code> = 100% 不是好消息,是壞消息。</strong>G1 世代所有 cell 的 TOT 恆為
+  100%,因為目標角尺寸全都約 ±7°——指標飽和,零資訊量。反過來,2026-09-04 乾跑顯示 0.5° 雙軸 cell 的
+  TOT 只有 1.5%/3.9%,低於 5% 的 hard floor(地板效應,同樣零資訊量)。<strong>有用的區間在中間。</strong></p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s3"><span class="num">§ 3</span>P0:任務層表現(選手做到了什麼)</h2>
+
+<p>P0 是「結果」層,全部從 raw tick 離線推導,引擎<strong>不做任何額外計算、不引入任何新閾值</strong>
+(GD-7)。實作:<code>src/metrics/trackingDerivation.ts</code>。</p>
+
+<h4>on-target(t) — 一切的基礎</h4>
+<pre><code>box    = [tx±w/2] × [ty±h/2] × [tz±d/2]
+sphere = { p : |p − (tx,ty,tz)| ≤ w/2 }        // 三軸必須相等
+on-target(t) = ray(p_eye, f_aim) 與該實體在 s ≥ 0 相交</code></pre>
+<p><strong>這與引擎命中判定是同一個幾何</strong>(<code>THREE.Ray.intersectBox</code>/<code>intersectSphere</code>,
+單一來源 <code>meta.targets.hitbox</code>)。沒有「on-target 容許角」這種可調參數:on-target 的字面意思就是
+「這個 tick 沿瞄準線開一槍會不會中」。</p>
+
+<h4>ε(t) — 連續誤差</h4>
+<pre><code>ε(t) = acos( clamp( dot( norm(f_aim), norm(p_target − p_eye) ), −1, 1 ) )   // 度</code></pre>
+<p>眼睛是所有角度量的頂點:<code>p_eye = eyeBase + (px, 0, pz) × simToWorld</code>。</p>
+
+<div class="scroll">
+<table>
+<thead><tr><th>指標</th><th>定義</th><th>教練讀法</th></tr></thead>
+<tbody>
+<tr><td><code>tAcquireMs</code> <span class="pill p0">P0</span></td>
+    <td><code>t_first_on_target − t_visible</code></td>
+    <td>flick/定位速度。<strong>與跟隨完全分開</strong>,不要合成一個分數</td></tr>
+<tr><td><code>acquisitionFailure</code> / <code>acquisitionFailureRate</code></td>
+    <td>整個 presentation 從未 on-target</td>
+    <td><strong>是有效的觀測結果,不是缺資料</strong>。該 presentation 排除在 TOT/ε 聚合外,但計入失敗率</td></tr>
+<tr><td><code>totPercent</code> <span class="pill p0">P0</span></td>
+    <td>計分窗內 on-target tick 佔比</td>
+    <td>最直觀的「跟得住」。注意飽和(→100%)與地板(&lt;5%)兩端都無意義</td></tr>
+<tr><td><code>rmsEpsilonDeg</code> <span class="pill p0">預註冊主要統計量</span></td>
+    <td><code>sqrt(mean(ε²))</code>,僅計分窗內</td>
+    <td>之所以選 RMS 而非 mean:<strong>對「丟失目標的那一瞬間」二次敏感</strong>——正是教練關心的失誤</td></tr>
+<tr><td><code>medianEpsilonDeg</code></td><td>ε 中位數</td><td>典型狀態下的精度,不受少數大失誤影響</td></tr>
+<tr><td><code>p95EpsilonDeg</code></td><td>ε 第 95 百分位</td><td>最壞情況。<strong>median 低但 P95 高 = 平時很穩、偶爾大崩</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+  <span class="tag">為什麼 median 與 P95 值得一起看</span>
+  <p><code>rmsEpsilonDeg</code> 是單一數字,而 <code>median</code>/<code>P95</code> 的落差直接告訴你
+  「這位選手的問題是基礎精度,還是穩定性」。基礎精度差 → median 高;穩定性差 → median 低而 P95 高。
+  兩者的訓練處方完全不同。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s4"><span class="num">§ 4</span>P1:控制層機制(選手<em>為什麼</em>做到/做不到)</h2>
+
+<p>P0 告訴你結果,P1 告訴你機制。這是教練真正能開處方的層。實作:
+<code>src/metrics/trackingDynamics.ts</code> 的 <code>deriveTrackingDynamics()</code>。</p>
+
+<h3>lag 與 gain:把「跟不住」拆成兩個獨立故障</h3>
+
+<pre><code>corr( ω_target(t), ω_aim(t+τ) )  在 τ ∈ [0, 250] ms 上取最大   // τ 量化到整 sim tick
+τ̂ &gt; 0  ⇒  aim 落後 target
+
+velocity_gain = Σ dot( ω_target(t), ω_aim(t+τ̂) ) / Σ dot( ω_target(t), ω_target(t) )
+velocity_rmse = ω_aim(t+τ̂) − gain · ω_target(t) 的殘差 RMS 大小</code></pre>
+
+<p>關鍵在於 <code>ω_aim</code> 讀的是 <code>tick.dYaw</code>/<code>dPitch</code>(tick 窗內積分的滑鼠位移),
+<strong>不是</strong>對 <code>aim.yaw</code> 做差分——避開 render/sim 節拍的 aliasing(KI-005)。</p>
+
+<div class="grid">
+  <div class="card"><span class="k">LAG_MS</span><h4>時間軸的故障</h4>
+    <p>你比目標慢多少。高 lag = 反應性跟隨(等目標動了才跟),缺前饋/預測。</p></div>
+  <div class="card"><span class="k">VELOCITY_GAIN</span><h4>幅度軸的故障</h4>
+    <p><code>&lt;1</code> = 跟得不夠遠(手速不足或不敢動);<code>&gt;1</code> = 動過頭。</p></div>
+  <div class="card"><span class="k">VELOCITY_RMSE</span><h4>平滑度的故障</h4>
+    <p>lag 與 gain 都對之後<em>剩下的</em>誤差。高 = 抖動、微調不平滑,通常是硬體/握姿。</p></div>
+</div>
+
+<div class="note warn">
+  <span class="tag">lag-peak-ambiguous — 一個很重要的拒答</span>
+  <p>如果相關性 vs τ 曲線的第二高峰超過最高峰的 1/2,結果直接 <code>blocked</code>。
+  <strong>週期性訊號不可以靜默地收斂到某一個 lag 值</strong>。這是刻意設計的:寧可沒有數字,
+  也不能給教練一個「看起來合理但是錯的」lag。</p>
+</div>
+
+<h3>signed bias:系統性偏移</h3>
+<pre><code>signed_yaw_bias_deg   = mean( wrap( aim_yaw(t) − target_yaw(t) ) )    // 計分窗內
+signed_pitch_bias_deg = mean( wrap( aim_pitch(t) − target_pitch(t) ) )</code></pre>
+<p>正 yaw = 準心偏在目標右邊;正 pitch = 偏上。<strong>兩個獨立的帶符號數字,絕不正規化成一個純量,
+也絕不與 lag/gain 合成 composite score。</strong>這對教練是好事——「你習慣壓右邊」是可執行的回饋,
+「你的 tracking 分數 72」不是。</p>
+
+<h3>recovery:掉出目標之後</h3>
+<div class="scroll">
+<table>
+<thead><tr><th>欄位</th><th>意義</th><th>教練讀法</th></tr></thead>
+<tbody>
+<tr><td><code>dropRatePerSec</code></td><td><code>dropCount / pursuitDurationSec</code></td><td>脫離頻率。單看它不足以判難易</td></tr>
+<tr><td><code>completedReacquireCount</code></td><td>掉了又救回來的次數</td><td>高 = 修正機制健康</td></tr>
+<tr><td><code>terminalDropCount</code></td><td><code>dropCount − reacquireMs.length</code>,最後那次沒救回來</td><td><strong>≥1 就是警訊</strong>:難度可能超出</td></tr>
+<tr><td><code>longestOffTargetMs</code></td><td>最長一段連續 off-target(含未復原的尾段)</td><td>獨立欄位,<strong>絕不併入 reacquire</strong>。這是「失聯多久」</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>time-on-task Δ:這 25 秒裡表現有沒有漂</h3>
+<pre><code>Δ = ( RMS ε(最後 5 s) − RMS ε(最前 5 s) ) / RMS ε(最前 5 s)</code></pre>
+<p>同一個計分窗內取頭尾各 5 s(128 Hz 下各恰好 640 tick)。窗跨度 &lt; 10 s 直接回
+<code>window-too-short</code> 不給數字——否則兩半重疊,Δ 有一部分是拿同一段資料跟自己比。
+判準是 <strong>cell 層平均 |Δ| ≤ 20%</strong>,逐 run 印出只是為了讓操作員在平均掉之前看見異常的那一個 run。</p>
+
+<div class="note">
+  <span class="tag">教練用途</span>
+  <p>Δ 是<strong>耐力/專注</strong>指標,不是能力指標。Δ 明顯為正 = block 太長或選手續航不足(縮短 block、加休息);
+  Δ 明顯為負 = 前段還在暖身(加 practice block)。把衰退讀成「能力差」是誤診。</p>
+</div>
+
+<h3>Blocked 優先序</h3>
+<p><code>deriveTrackingDynamics</code> 依此順序判定,前面的資料問題永遠壓過後面的:
+<code>protocol-incompatible</code>(計分窗內有 <code>protocol_violation</code>)→
+<code>no-acquisition</code> → <code>missing-target-telemetry</code> →
+<code>insufficient-valid-ticks</code> → <code>lag-peak-ambiguous</code>。</p>
+<p>注意這與 §2 的 run-level eligibility 是<strong>兩套刻意不合併的封閉詞彙表</strong>:
+同一個概念在兩層用不同名字(<code>missing-target-position</code> vs <code>missing-target-telemetry</code>)。
+一個 run 可以在 eligibility 層合格、卻在 P1 層 metric-blocked。</p>
+
+<!-- ============================================================ -->
+<h2 id="s5"><span class="num">§ 5</span>換向事件:唯一已證實有效的條件</h2>
+
+<p><code>deriveTrackingReversalWindows()</code> 是<strong>另一個獨立函式</strong>,窗界落在
+<code>target_motion_change</code> event 上。核心矩陣(pursuit)本來就會產生<strong>零</strong>個
+change event ⇒ 回傳 <code>{ windows: [] }</code>,這是正常空集合,<strong>不是 blocked</strong>。</p>
+
+<figure>
+<svg viewBox="0 0 900 250" role="img" aria-labelledby="ttl-rev">
+  <title id="ttl-rev">換向後的 ε(t) 暫態與四個指標</title>
+  <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="currentColor">
+    <line x1="80" y1="205" x2="860" y2="205" stroke="currentColor" stroke-width="1.2" opacity=".5"/>
+    <line x1="80" y1="30" x2="80" y2="205" stroke="currentColor" stroke-width="1.2" opacity=".5"/>
+    <text x="70" y="40" text-anchor="end" opacity=".75">ε</text>
+    <text x="860" y="228" text-anchor="end" opacity=".75">t</text>
+    <line x1="80" y1="175" x2="860" y2="175" stroke="currentColor" stroke-width="1"
+          stroke-dasharray="4 4" opacity=".55"/>
+    <text x="88" y="169" opacity=".8">baselineErrorDeg</text>
+    <line x1="80" y1="160" x2="860" y2="160" stroke="currentColor" stroke-width="1"
+          stroke-dasharray="2 5" opacity=".38"/>
+    <text x="700" y="154" opacity=".62">baseline + settlingTolerance</text>
+    <line x1="220" y1="30" x2="220" y2="205" stroke="currentColor" stroke-width="1.6" opacity=".8"/>
+    <text x="220" y="24" text-anchor="middle" font-size="11.5" font-weight="600">target_motion_change</text>
+    <path d="M80,176 L200,174 L220,175 L262,170 L300,120 L340,62 L372,58 L410,96 L450,148
+             L482,182 L510,166 L545,152 L580,163 L620,158 L660,161 L700,159 L760,160 L860,160"
+          fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <line x1="220" y1="192" x2="278" y2="192" stroke="currentColor" stroke-width="1.4" opacity=".8"/>
+    <text x="284" y="196" opacity=".9">responseLatencyMs</text>
+    <circle cx="372" cy="58" r="4" fill="currentColor"/>
+    <text x="382" y="52" font-weight="600">peakErrorDeg</text>
+    <line x1="356" y1="58" x2="356" y2="175" stroke="currentColor" stroke-width="1.2"
+          stroke-dasharray="3 3" opacity=".8"/>
+    <text x="300" y="112" text-anchor="end" font-weight="600">overshootDeg</text>
+    <line x1="220" y1="222" x2="620" y2="222" stroke="currentColor" stroke-width="1.4" opacity=".8"/>
+    <text x="626" y="226" opacity=".9">settlingTimeMs（且此後不再超出容忍帶）</text>
+  </g>
+</svg>
+<figcaption>四個指標全部從<strong>同一條計分窗 ε(t)</strong> 讀出,不新增第二套 ε 定義(C-D4)。
+可用窗被三者中最早的一個截斷:下一個 change event、<code>maxWindowMs</code>、或最後一個真實 tick
+(<em>不是</em>可能為 <code>Infinity</code> 的名目窗尾)。</figcaption>
+</figure>
+
+<div class="scroll">
+<table>
+<thead><tr><th>指標</th><th>讀法</th><th>對應能力</th></tr></thead>
+<tbody>
+<tr><td><code>responseLatencyMs</code></td><td>ε 首次超出 baseline 一個小固定邊際的時刻</td><td>換向<strong>偵測</strong>速度(視覺→運動)</td></tr>
+<tr><td><code>peakErrorDeg</code></td><td>可用窗內 ε 的最大值</td><td>最壞暫態偏離</td></tr>
+<tr><td><code>overshootDeg</code></td><td><code>max(peak − baseline, 0)</code></td><td>暫態<strong>幅度</strong>,已扣掉穩態水準</td></tr>
+<tr><td><code>settlingTimeMs</code></td><td>ε 回到容忍帶內<strong>且維持到窗尾</strong></td><td>修正的<strong>收斂</strong>能力</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>被排除的 change 有具名理由,不會靜默消失:<code>'insufficient-window-data'</code>(可用窗短於
+<code>minWindowMs</code>)、<code>'overlap'</code>(距上一次 change 不足 <code>minBaselineMs</code>,
+拿不到乾淨 baseline)。</p>
+
+<div class="note ok">
+  <span class="tag">為什麼教練現在該優先用 reversal</span>
+  <p>Gate A 實測的凍結準心比值:reversal <strong>2.06–3.01</strong>,而 5 deg/s 的核心 cell 只有 1.08–1.35。
+  <strong>reversal 是目前唯一已證實「測得出跟槍能力」的家族。</strong>如果你今天只能收一種資料,收 reversal。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s6"><span class="num">§ 6</span>教練診斷矩陣:指標樣態 → 診斷 → 處方</h2>
+
+<p>單一指標幾乎不能開處方,<strong>組合才能</strong>。下表是我實際會用的讀法。左欄的每個欄位都是上面
+定義過的既有欄位,沒有新構念。</p>
+
+<div class="scroll">
+<table>
+<thead><tr><th>指標樣態</th><th>診斷</th><th>處方</th></tr></thead>
+<tbody>
+<tr>
+  <td><code>tAcquireMs</code> 長<br><code>totPercent</code> 高、<code>rmsEpsilonDeg</code> 低</td>
+  <td>抓得慢、但抓到就很穩。<strong>這是 flick 問題,不是 tracking 問題</strong></td>
+  <td>去練 micro-flick / spider-shot 家族;tracking 條件不必動</td>
+</tr>
+<tr>
+  <td><code>tAcquireMs</code> 短<br><code>totPercent</code> 低、<code>rmsEpsilonDeg</code> 高</td>
+  <td>抓得到但跟不住 —— 真正的 pursuit 缺口</td>
+  <td>從慢速大目標的穩態 cell 開始,先把 <code>velocityGain</code> 拉到 1 附近再加難度</td>
+</tr>
+<tr>
+  <td><code>lagMs</code> 高<br><code>velocityGain &lt; 0.9</code></td>
+  <td><strong>反應性跟隨</strong>:等目標動了才跟,而且跟不足。缺前饋(預測)</td>
+  <td>reversal 家族(換向可預測)建立前饋;搭配「目標下一步往哪」的口頭預測練習</td>
+</tr>
+<tr>
+  <td><code>lagMs</code> 低<br><code>velocityGain &gt; 1.1</code><br><code>overshootDeg</code> 大</td>
+  <td><strong>過度前饋</strong>:反應夠快、手速夠,但煞不住</td>
+  <td>先看 <code>settlingTimeMs</code>:也長 ⇒ 收斂問題,練低速穩態;短 ⇒ 考慮降低靈敏度</td>
+</tr>
+<tr>
+  <td><code>velocityGain ≈ 1</code>、<code>lagMs</code> 正常<br><code>velocityRmseDegPerSec</code> 高</td>
+  <td>增益與時序都對,<strong>剩下的是噪音</strong> —— 微調不平滑</td>
+  <td>硬體/人因先查:握姿、鼠墊摩擦、DPI 與拋光率、手臂支點。這通常不是「練得不夠」</td>
+</tr>
+<tr>
+  <td><code>signedYawBiasDeg</code> 顯著非 0</td>
+  <td>系統性水平偏移:靈敏度不對稱、手腕角度、或單向預判偏好</td>
+  <td>拿 axis calibration 的 horizontal/vertical block 對照;確認是否只在單一方向出現</td>
+</tr>
+<tr>
+  <td><code>signedPitchBiasDeg</code> 明顯為負(壓低)</td>
+  <td>常見的後座力習慣殘留</td>
+  <td>本條件無後座力 ⇒ 若偏移在此仍存在,就是純習慣,可直接矯正</td>
+</tr>
+<tr>
+  <td><code>dropRatePerSec</code> 高<br><code>completedReacquireCount</code> 高<br><code>longestOffTargetMs</code> 短、<code>terminalDropCount = 0</code></td>
+  <td><strong>邊界能力</strong>:難度正好壓在極限上,但修正機制健康</td>
+  <td>這是最佳訓練負荷區。維持,或降一級鞏固後再上來</td>
+</tr>
+<tr>
+  <td><code>dropRatePerSec</code> 高<br><code>terminalDropCount ≥ 1</code><br><code>longestOffTargetMs</code> 長</td>
+  <td>掉了救不回來 —— 難度已超出可訓練區</td>
+  <td>降一級(尺寸放大或速度放慢),先把 <code>terminalDropCount</code> 打到 0</td>
+</tr>
+<tr>
+  <td><code>medianEpsilonDeg</code> 低<br><code>p95EpsilonDeg</code> 高</td>
+  <td>平時很穩、偶爾大崩 —— 穩定性問題,不是精度問題</td>
+  <td>去 replay contact trace 看那幾個尖峰發生在什麼時刻(換向?視野邊緣?),對症下藥</td>
+</tr>
+<tr>
+  <td><code>responseLatencyMs</code> 長<br><code>peakErrorDeg</code> 大</td>
+  <td>換向偵測慢(視覺處理 → 運動起始)</td>
+  <td>提高 reversal 密度的 cell;縮短可預期性</td>
+</tr>
+<tr>
+  <td><code>settlingTimeMs</code> 長<br><code>overshootDeg</code> 小</td>
+  <td>不會過衝,但慢慢才爬回來 —— 修正增益太保守</td>
+  <td>練「果斷修正」而非「小心修正」;可用略大目標降低犯錯代價</td>
+</tr>
+<tr>
+  <td>time-on-task <code>Δ &gt; +20%</code></td>
+  <td>25 s 內衰退 —— <strong>耐力/專注,不是能力</strong></td>
+  <td>縮短 block、增加休息。<strong>不要把這個讀成跟槍差</strong></td>
+</tr>
+<tr>
+  <td>time-on-task <code>Δ &lt; −20%</code></td>
+  <td>前段仍在暖身</td>
+  <td>加 practice block,或延長暖身流程</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="note stop">
+  <span class="tag">BR 條件的特別警告</span>
+  <p><code>tracking_br_v1</code> 系列有 ADS 與彈道(projectile)。它的 export 會同時給你
+  <code>aimRayOnTargetRate</code>(瞄準線在目標上的比例)與 ballistic <code>hit</code>(子彈是否命中)——
+  <strong>兩者刻意分欄,pure tracking summary 絕不讀 hit count / damage / kill</strong>。
+  用命中數當跟槍指標會把彈道飛行時間、提前量、武器參數全部混進「跟槍能力」裡。
+  想評跟槍,看 <code>aimRayOnTargetRate</code>;想評彈道提前量,那是另一個構念。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s7"><span class="num">§ 7</span>原始資料 → 指標對照表</h2>
+
+<p>本專案的引擎<strong>只錄 raw v2 ticks/events</strong>,所有指標離線推導(GD-7:raw-over-derived)。
+以下是每個教練判斷實際吃的欄位。</p>
+
+<h3>逐 tick(<code>ticks[]</code>,128 Hz)</h3>
+<div class="scroll">
+<table>
+<thead><tr><th>欄位</th><th>內容</th><th>餵給誰</th></tr></thead>
+<tbody>
+<tr><td><code>t</code></td><td>ms,<code>performance.now()</code> 時鐘域</td><td>所有時間量;非嚴格遞增 ⇒ run 作廢</td></tr>
+<tr><td><code>aim.yaw</code> / <code>aim.pitch</code></td><td>rad,絕對朝向</td><td>ε(t)、on-target、signed bias</td></tr>
+<tr><td><code>dYaw</code> / <code>dPitch</code></td><td>rad,<strong>tick 窗內積分</strong>的滑鼠位移</td><td><code>ω_aim</code> ⇒ lag / gain / rmse。<strong>不用 aim 差分</strong>(KI-005 aliasing)</td></tr>
+<tr><td><code>tx</code> / <code>ty</code> / <code>tz</code></td><td>目標中心世界座標,<code>null</code> = 無 active target</td><td>ε(t)、<code>ω_target</code>、刺激保真度 layer 4</td></tr>
+<tr><td><code>px</code> / <code>pz</code></td><td>玩家位置</td><td><code>p_eye = eyeBase + (px,0,pz) × simToWorld</code></td></tr>
+<tr><td><code>fire</code></td><td>本 tick 是否按住左鍵(<code>tracking-pilot-v2</code>)</td><td>held-fire 覆蓋率(≥0.95)。<strong>缺席 ≠ false</strong></td></tr>
+<tr><td><code>ads</code></td><td>本 tick 是否 ADS</td><td>BR 條件分層;不影響 pure tracking</td></tr>
+<tr><td><code>replayTargetId</code></td><td>本 tick 的 active target id</td><td>contact sample 的 target 歸屬、replay 對表</td></tr>
+<tr><td><code>vx</code> / <code>vz</code> / <code>keys</code></td><td>速度與按鍵</td><td><code>noMovement</code> protocol guard 稽核</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>事件(<code>events[]</code>)</h3>
+<div class="scroll">
+<table>
+<thead><tr><th>Event</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>visible</code></td><td>presentation 開始(帶 <code>targetId</code> 與 <code>targetX/Y/Z</code>)。<strong>零個 ⇒ contact 推導直接 blocked</strong></td></tr>
+<tr><td><code>scored_start</code></td><td>計分窗起點,把 <code>trackingPrepMs</code> 的置中段排除在聚合外(FR-54-6)</td></tr>
+<tr><td><code>target_motion_change</code></td><td>reversal leg 邊界 ⇒ §5 的四個換向指標;也用於 layer 3 的排程對表</td></tr>
+<tr><td><code>protocol_violation</code></td><td>no-fire / no-ADS / no-movement 違規(edge-triggered,<strong>不阻擋輸入</strong>)⇒ <code>protocol-incompatible</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>metadata(<code>meta</code>)</h3>
+<div class="scroll">
+<table>
+<thead><tr><th>欄位</th><th>為什麼教練需要它</th></tr></thead>
+<tbody>
+<tr><td><code>schemaVersion</code>(必須 = 2)、<code>simHz</code>(128)</td><td>格式與時基;lag 的 τ 量化步長 = <code>1000/simHz</code></td></tr>
+<tr><td><code>scene.eye</code> + <code>simToWorld</code></td><td><strong>所有角度量的頂點</strong>。缺 ⇒ <code>missing-eye-origin</code>;<code>eye.z</code> 是世代辨識關鍵</td></tr>
+<tr><td><code>targets.hitbox</code></td><td>on-target 的<strong>單一幾何來源</strong>,與引擎命中判定同一份。sphere 需三軸相等</td></tr>
+<tr><td><code>spawn.trackingTrajectory</code></td><td><code>kind</code>/<code>seed</code>/頻帶/行程/交付速度 —— 條件標籤與刺激重建的來源</td></tr>
+<tr><td><code>weaponId</code> / <code>protocolGuard</code></td><td><strong>G6 世代辨識的唯一可靠依據</strong>(§2 門 2)</td></tr>
+<tr><td><code>fovDeg</code> / <code>sensitivity</code> / <code>mouseIntegration.model</code></td><td>compatibility key 的軸;跨設定不可直接比較</td></tr>
+<tr><td><code>recorderOverflow</code> / <code>bufferOverflow</code></td><td>eligibility 門 1</td></tr>
+<tr><td><code>session.participantId</code> / <code>sessionLabel</code></td><td>選手與 counterbalance cell 的回溯</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+  <span class="tag">一個容易忽略的事實</span>
+  <p>H1 hitbox 的尺寸<strong>不是</strong>逐 tick 錄的,而是在 <code>meta.targets.hitbox</code> 快照一次。
+  舊 export 沒有這個 block,會退回預設 H1(<code>1×2×1</code> source unit)。這也是為什麼跨世代資料
+  不能混:同一個 <code>drillId</code> 在不同世代的實際目標角尺寸可以差兩倍。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s8"><span class="num">§ 8</span>實際怎麼跑:從一個 block 到一份報告</h2>
+
+<p>兩條命令,兩種用途。<strong>受試者資料一律不進 repo</strong>,兩個輸出目錄都是 gitignored。</p>
+
+<h4>A. 完整 pilot 分析(六層追溯 + evidence JSON + HTML 報告)</h4>
+<pre><code>npx vite-node scripts/analyze-tracking-pilot.ts -- &lt;匯出目錄&gt; [--out .pilot-analysis]</code></pre>
+<p>逐層跑<strong>已出貨的 TS 實作</strong>(絕不重寫一份):</p>
+<ol>
+  <li><code>parseExportPayload()</code> — schema v2 驗證</li>
+  <li><code>evaluateTrackingRunEligibility()</code> — §2 門 1,操作員當場看到的那個閘門</li>
+  <li>刺激重建 + <code>target_motion_change</code> 排程對表</li>
+  <li><strong>3b.</strong> <code>checkTrackingStimulusFidelity()</code> — 錄到的位置 vs 重建軌跡,擋下舊世代 payload 冒充現行</li>
+  <li><code>measureTrackingDeliveredAngles()</code> — <strong>在眼睛量</strong>交戰距離/交付速度/角尺寸(KI-024 常駐哨兵)</li>
+  <li><code>computeTrackingFrozenCrosshairRatio()</code> — §2 門 3 的可分辨性比值</li>
+  <li><code>computeTrackingTimeOnTaskSlope()</code> — 頭尾 5 s 的 Δ</li>
+</ol>
+<p>layer 5 與 layer 6 都會隨行印出 <code>canonicalRmsEpsilonDeg</code> 供逐 run 對表;
+一漂移就印 <code>!!P0-MISMATCH</code>。</p>
+
+<h4>B. WP-55 contact 觀測(逐 tick on-target 重建 + replay trace)</h4>
+<pre><code>npm run analyze:contact -- &lt;匯出目錄&gt; [--out .contact-analysis] [--no-strict-eye-origin]</code></pre>
+<div class="scroll">
+<table>
+<thead><tr><th>產出</th><th>教練用途</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;NNN&gt;-&lt;sourceId&gt;.contact-artifact.json</code></td><td>逐 tick <code>onTarget</code>/<code>epsilonDeg</code>/<code>trackingWindow</code>,可完全 deterministic 重建</td></tr>
+<tr><td><code>&lt;NNN&gt;-&lt;sourceId&gt;.replay-trace.html</code></td><td><strong>看那幾個 P95 尖峰到底發生在什麼時刻</strong>。contact 狀態有文字標籤(<code>on-target</code>/<code>off-target</code>/<code>unavailable: &lt;reason&gt;</code>),不只靠顏色</td></tr>
+<tr><td><code>tracking-contact-report.json</code> / <code>.html</code></td><td>聚合:presentation 層與 run 層的 <code>tAcquireMs</code>/<code>totPercent</code>/<code>rmsEpsilonDeg</code>/<code>median</code>/<code>p95</code></td></tr>
+<tr><td><code>manifest.json</code></td><td>每個輸出檔 ↔ 來源 export 檔的對照(provenance)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>被擋下的 run <strong>仍然產出 artifact</strong>(<code>status:'blocked'</code> + 具名 reason +
+<code>sampleCount:0</code>),<strong>不會偽裝成 0% TOT</strong>。這是設計:假 0 比沒有數字危險得多。</p>
+
+<div class="note warn">
+  <span class="tag">目前的實務狀態</span>
+  <p>WP-55 的全部驗證證據都來自 <strong>synthetic export / fixture</strong>,包含 T7 那次 end-to-end。
+  <strong>還沒有任何一份真實瀏覽器 run 走過這條管路。</strong>第一次收資料時,請先確認 contact artifact
+  是 <code>status:'ok'</code> 而不是 blocked,再開始讀指標。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="s9"><span class="num">§ 9</span>現在還不能對選手說的話</h2>
+
+<p>這一節與前面同等重要。一個會說錯話的指標比沒有指標更糟。</p>
+
+<div class="grid">
+  <div class="card"><span class="k">C-D3 紅線</span><h4>沒有百分位、沒有常模</h4>
+    <p>WP-54 的 T7(難度校準,12–20 人)與 T8(重測信度:ICC / CV·SEM / Bland-Altman)<strong>都還沒開工</strong>。
+    現在說「你在 tracking 上是前 20%」是無依據的。只能說「你這次比上次的 RMS ε 低」。</p></div>
+  <div class="card"><span class="k">D-S11-5</span><h4>沒有 composite score</h4>
+    <p>不做跨構念綜合分數。lag、gain、bias、TOT 必須分層呈現。把它們壓成一個「跟槍分」會讓
+    處方無法回推。</p></div>
+  <div class="card"><span class="k">Gate A 部分通過</span><h4>核心矩陣參數未校準</h4>
+    <p>band-limited 核心 2×2 矩陣被退回 T7 重新參數化(凍結準心比值在原頻帶下上界只有 1.61,
+    達不到 2.0 門檻)。<strong>reversal 家族是目前唯一已證實有效的。</strong></p></div>
+  <div class="card"><span class="k">C-D4</span><h4>不得有第二套定義</h4>
+    <p>ε(t) / on-target / 計分窗 的權威在 <code>docs/operational/analysis-*.md</code> +
+    <code>src/metrics/</code>。任何分析腳本自己再算一套 ε,即為 bug。</p></div>
+</div>
+
+<h4>不要做的四件事</h4>
+<ul>
+  <li><strong>不要合併跨世代資料</strong>而不標註世代。G3 的角度量要 ×2,G2 的速度要 ×√2(calibration 除外),
+  而 <code>drillId</code> 跨世代重用過。</li>
+  <li><strong>不要讀凍結準心比值 &lt; 2.0 的 cell</strong>。那個 cell 的漂亮數字不代表選手能力。</li>
+  <li><strong>不要用 <code>hit</code>/damage/kill 當跟槍指標</strong>。BR 條件的 ballistic 命中與
+  <code>aimRayOnTargetRate</code> 是分欄的兩個構念。</li>
+  <li><strong>不要把 blocked 當 0</strong>。<code>no-acquisition</code>、<code>lag-peak-ambiguous</code>、
+  <code>insufficient-scored-coverage</code> 是三種完全不同的處置,每一種都不是「表現差」。</li>
+</ul>
+
+<div class="note ok">
+  <span class="tag">現在可以誠實說的話</span>
+  <p>在 G6 世代、eligibility 全綠、凍結準心比值 ≥ 2 的 reversal cell 上,對<strong>同一位選手的
+  session 內或 session 間變化</strong>做敘述性比較,並用 §6 的組合樣態指出<em>機制</em>層的缺口
+  (「你的問題是 gain 不足而不是反應慢」)。這是目前資料真正支撐得起的教練結論。</p>
+</div>
+
+<footer class="doc">
+  <p><strong>來源與權威</strong>:所有定義引用
+  <a href="../../operational/analysis-tracking.md">docs/operational/analysis-tracking.md</a>(WP-18 T4 / WP-54 T3·T4·T6·T7 / WP-55)、
+  <a href="../../operational/tracking-pilot-runbook.md">tracking-pilot-runbook.md</a>、
+  <a href="../../exec-plan/active/stage11/wp-54-tracking-pilot/README.md">WP-54</a> 與
+  <a href="../../exec-plan/active/stage11/wp-55-tracking-on-target-observability-no-health/README.md">WP-55</a> tech spec。
+  實作:<code>src/metrics/trackingDerivation.ts</code>、<code>trackingDynamics.ts</code>、
+  <code>trackingContact*.ts</code>、<code>src/pilot/tracking*.ts</code>、
+  <code>scripts/analyze-tracking-pilot.ts</code>、<code>scripts/analyze-tracking-contact.ts</code>。</p>
+  <p>本文為<strong>教練視角的解讀指南</strong>,不是規格。與程式碼或 operational spec 衝突時,以後者為準。</p>
+</footer>
+
+</div>
+</body>
+</html>
