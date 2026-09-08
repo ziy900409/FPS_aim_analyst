@@ -37,6 +37,17 @@
 | `exportPayloadSchema.ts` | additive strict parse；缺席合法 | Med — 比照 WP-50 `meta.replay` 的 strict/absent 先例 |
 | `src/metrics/`（新模組）| 純新增 | Low |
 
+### 0.2 T0 CodeGraph impact re-audit（2026-09-08 13:39Z）
+
+T0 重新以 CodeGraph 查 `ExportPayload`、`DataRecorder`／`createDataRecorder`、`createSimLoop`；以下是實測 blast radius。結論：T1/T2 若開工，這不是局部改動，必須跑全量 typecheck／Vitest／build 與相關 determinism harness。
+
+| 符號 | 實測影響 |
+|---|---|
+| `ExportPayload` (`src/data/export.ts:5`) | 367 callers；production 觸及 `src/metrics/detectionDerivation.ts`、`src/metrics/MetricsDashboard.ts`、`src/metrics/researchMetrics.ts`、`src/metrics/stopTransitionDerivation.ts` 等；測試覆蓋含 `tests/e2e/br-tracking.spec.ts`、golden parity、57+ tests |
+| `createDataRecorder` (`src/data/DataRecorder.ts:150`) | 49 callers；production 觸及 `src/testharness/fpsTestHarness.ts`、`src/main.ts`；測試覆蓋含 determinism、lead/detection derivation 等 20+ tests |
+| `DataRecorder` (`src/data/DataRecorder.ts:109`) | 19 callers；production 觸及 `src/loop/SimLoop.ts`、`src/testharness/fpsTestHarness.ts`、`src/data/DataRecorder.ts` |
+| `createSimLoop` (`src/loop/SimLoop.ts:788`) | 37 callers；production 觸及 `src/testharness/fpsTestHarness.ts`、`src/main.ts`；測試覆蓋含 `wp22-determinism`、moving target determinism、projectile determinism、BR tracking invariants 等 13+ tests |
+
 ---
 
 ## 1. 需求壓縮（Requirements）

@@ -4,7 +4,7 @@
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry gate／取樣充分性稽核／實機 PoC | [T0-entry-gate.md](T0-entry-gate.md) | 無（WP-57 已交付，只讀不改）| **High** |
+| 🟡 | **T0** Entry gate／取樣充分性稽核／實機 PoC | [T0-entry-gate.md](T0-entry-gate.md) | 無（WP-57 已交付，只讀不改）| **High**；自動稽核完成，等待真實瀏覽器 + 使用者滑鼠操作的 R1/R2 PoC |
 | ⬜ | **T1** 擷取契約：arena／型別／strict parser | [T1-capture-contract.md](T1-capture-contract.md) | T0 ✅ + OQ-60.2／60.3／60.5 收斂 | Med |
 | ⬜ | **T2** SimLoop 接線與決定性證明 | [T2-recorder-wiring.md](T2-recorder-wiring.md) | T1 | **High** |
 | ⬜ | **T3** 時間間隙切段原語與 Pointer Lock 消歧 | [T3-time-gap-primitive.md](T3-time-gap-primitive.md) | T1（OQ-60.1 已於 2026-09-08 收斂，不再阻塞）| Med |

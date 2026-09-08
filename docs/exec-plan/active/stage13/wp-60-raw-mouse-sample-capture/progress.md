@@ -6,7 +6,7 @@
 
 | Task | Status | Started | Completed | Evidence |
 |---|---|---|---|---|
-| T0 Entry Gate | ⬜ Not started | — | — | — |
+| T0 Entry Gate | 🟡 Blocked（自動稽核完成；等待實機 Pointer Lock / 抬滑鼠 PoC） | 2026-09-08 | — | 見 §T0 automated audit（2026-09-08 13:39Z）。Baseline typecheck、Vitest、build 已跑；README §0 discovery 已覆驗；CodeGraph impact 已回填 README §0.2。R1/R2 需要真實瀏覽器 + 使用者滑鼠操作，本 session 無法替代，故 T0 不得標 done、T1～T4 不得開工。 |
 | T1 Capture Contract | ⬜ Not started | — | — | — |
 | T2 Recorder Wiring | ⬜ Not started | — | — | — |
 | T3 Time-Gap Primitive | ⬜ Not started | — | — | — |
@@ -26,6 +26,93 @@
 
 | D-60.P7 | 2026-09-08 | **OQ-60.1 收斂：從 `performance_analysis` 移植無授權問題** —— 使用者為兩個 repo 的作者，同一組織，無第三方權利介入。⇒ R5 關閉、T3 不再被阻塞、GD-11 那一列在本 WP 不構成限制。<br>**連帶解鎖**：PA 的 `lod_v3_default_config.json`（十四個參數）與其 parity fixture 可**直接引用為起點**，不必從零重推 —— 這是原本要放棄的東西。T0 step 7 因此由「拍板」改為「取用並記名」。<br>⚠️ **但工程上仍不直接搬 Go 程式碼，理由改為技術性而非法律性**：`lodclean/service.go` 綁死三個對本專案不成立的前提 —— ① px/s 與 counts 空間（本專案是角度空間）、② 1 ms nominal dt（本專案 tick 為 7.8125 ms、事件率待 T0 實測）、③ 刻意複製 pandas 的 `fillna`／floored-modulo 語意以維持 Python↔Go parity（本專案不參與那個 parity）。硬搬會把三個錯誤前提一起帶進來。<br>**稽核要求仍在**：引用任何 PA 的參數或 fixture 必須記名來源與版本 —— 授權無虞不等於出處可以不寫。| 使用者 | 使用者回覆（2026-09-08）；[README.md](README.md) §1.5 OQ-60.1／§2b GD-11 列／§3.1 R5 |
 
+| D-60.T0-1 | 2026-09-08 | **T0 自動稽核不能替代 R1/R2 實機 gate。** 本 session 能完成 baseline、source re-audit、CodeGraph impact、PA 參數取用與 synthetic serialization PoC；但 `getCoalescedEvents()` 在 Pointer Lock 下是否回 sub-frame 樣本、以及抬起／停頓空洞是否可分離，必須由真實 Chromium/Edge + 實體滑鼠 + 使用者操作量測。沒有這兩組數字時，T0 狀態只能是 Blocked，不能進 T1。<br>**Alternatives considered**：(a) 用 Playwright synthetic mousemove 代替 —— 不會產生真實硬體 coalesced events，駁回；(b) 用 WP-57 真人 export 代替 —— 那些 export 不含 raw samples，且不進 repo，駁回；(c) 先做 T1 schema 再回頭補 gate —— 違反 T0 entry gate，駁回。 | Engineering | §T0 automated audit；[T0-entry-gate.md](T0-entry-gate.md) steps 3/4 |
+
+## T0 automated audit（2026-09-08 13:39Z）
+
+### Baseline
+
+| 項目 | 指令 | 結果 |
+|---|---|---|
+| HEAD | `git rev-parse HEAD` | `715ffcb4d6cbb0168fb260860b796f7a493688f4` |
+| Worktree | `git status --short` | 無 tracked/untracked diff；但 sandbox 下有三個既存讀取警告：`~/.config/git/ignore` permission denied ×2、`.pytest_cache/` permission denied |
+| Typecheck ×2 | `npm.cmd run typecheck` | exit 0 |
+| 全量 Vitest | `npm.cmd test` | exit 0；244 files，2538 passed，2 skipped |
+| Build | `npm.cmd run build` | sandbox 內 Vite config 載入因 `../../../..` access denied 失敗；同一指令 escalated 重跑 exit 0。Vite 6.4.3，192 modules，`dist/assets/index-D5suW8qy.js` 1,217.00 kB gzip 346.17 kB；保留既有 chunk-size warning |
+
+### Discovery revalidation
+
+README §0 的十四項 discovery 已逐項覆讀：
+
+| # | T0 覆驗 |
+|---|---|
+| 1-4 | 對齊目前 source：`InputSampler` 逐筆 `getCoalescedEvents?.() ?? [e]` 入 ring；`SimLoop.applyInput` 於 mouse 分支只呼叫 `recorder.accumulateMouse()`；`DataRecorder` 聚合進 tick `dYaw`/`dPitch` 並在 tick 消費後歸零。 |
+| 5 | 對齊：`DrillEvent` union 目前不含 raw mouse sample 或 pointer-lock 狀態事件。 |
+| 6-8 | 對齊：`TickArena` 是 preallocated arena；`replayTargetId` plain fixed array 先例存在；`recordKeyEvents?: boolean` 預設 `false`。 |
+| 9-11 | 對齊：`PointerLock` 嘗試 `unadjustedMovement: true`；lock 狀態只保留於 handle/onChange；`consume()` 以半開窗 `< untilT`、沿 head 升冪排空。 |
+| 12-14 | 對齊：PA config 讀到 14 個 LOD v3 參數；ADR-002 記錄 ground truth dataset missing / F1 unmeasured；PA repo 仍無 LICENSE 檔、`go.mod`/`package.json` 無 license 欄位，但 D-60.P7 已解除授權阻塞。 |
+
+### CodeGraph impact
+
+已回填 [README.md](README.md) §0.2：
+
+| 符號 | 實測影響 |
+|---|---|
+| `ExportPayload` | 367 callers |
+| `createDataRecorder` | 49 callers |
+| `DataRecorder` | 19 callers |
+| `createSimLoop` | 37 callers |
+
+### Required audit artifact
+
+| 量 | 方法 | 門檻 | 實測 |
+|---|---|---|---|
+| 觀測事件率（Hz）| 真實瀏覽器 + Pointer Lock + 實體滑鼠 | **≥ 500 Hz**（否則停止）| **BLOCKED**：本 session 無法產生真實硬體 pointer events |
+| `dt` p50 / p95 / p99（µs）| 同上 | p50 ≈ 1000 µs（1000 Hz 滑鼠）| **BLOCKED** |
+| 每 rAF 幀的 coalesced 筆數 | 同上 | > 1（否則 R1 成立）| **BLOCKED** |
+| 抬起的空洞長度 p10/p50/p90（ms）| 使用者實機，`spider-shot-wide-v1`，≥10 次 | 與停頓可分離 | **BLOCKED** |
+| 停頓的空洞長度 p10/p50/p90（ms）| 使用者實機，≥10 次 | 與抬起可分離 | **BLOCKED** |
+| 一次到位的最長空洞（ms）| 使用者實機，≥10 次 | 應遠小於抬起 | **BLOCKED** |
+| 60 s columnar 序列化（bytes / ms）| synthetic 60,000 samples；非 gate 替代品 | **≤ 1.0 MB**（NFR-60.4）| 593,031 bytes / 1.311 ms |
+| 60 s array-of-objects（bytes / ms）| synthetic 60,000 samples；非 gate 替代品 | 對照組 | 2,158,328 bytes / 6.167 ms |
+| µs 取整誤差（µs）| synthetic jittered dtUs round-trip | **≤ 10**（NFR-60.5）| max 0.369 µs |
+| frame p95 開 vs 關（ms）| throwaway consumption-path PoC | 差值 ≤ 0.5 ms 且無新增掉 tick | **BLOCKED**：需真實 input stream 或 T1/T2 throwaway wiring；未在 T0 gate 缺 R1 時執行 |
+
+Synthetic serialization command:
+
+```powershell
+node -e "const {performance}=require('node:perf_hooks');const n=60000;const t0Ms=1000.123456;const dtRaw=Array.from({length:n},(_,i)=>i===0?0:1000+((i%7)-3)*0.123);const dtUs=dtRaw.map(x=>Math.round(x));const dx=Array.from({length:n},(_,i)=>(i%11)-5);const dy=Array.from({length:n},(_,i)=>(i%7)-3);const col={t0Ms,dtUs,dx,dy};let t=performance.now();const colJson=JSON.stringify(col);const colMs=performance.now()-t;const rows=Array.from({length:n},(_,i)=>({tMs:t0Ms+dtUs.slice(0,i+1).reduce((a,b)=>a+b,0)/1000,dx:dx[i],dy:dy[i]}));t=performance.now();const rowJson=JSON.stringify(rows);const rowMs=performance.now()-t;const maxErr=Math.max(...dtRaw.map((v,i)=>Math.abs(dtUs[i]-v)));console.log(JSON.stringify({n,columnarBytes:Buffer.byteLength(colJson),columnarMs:+colMs.toFixed(3),arrayObjectBytes:Buffer.byteLength(rowJson),arrayObjectMs:+rowMs.toFixed(3),maxQuantizationErrorUs:+maxErr.toFixed(3)},null,2));"
+```
+
+### PA LOD v3 parameter source copy
+
+Source: `..\performance_analysis\contracts\modules\input\lod_v3_default_config.json` at T0 audit time, cross-checked against `..\performance_analysis\docs\architecture\adr\002_lod_v3_design.md` and `..\performance_analysis\backend\modules\input\infrastructure\lodclean\service.go`.
+
+| Parameter | Value | WP-61 note |
+|---|---:|---|
+| `TIME_GAP_THRESHOLD_MS` | 30.0 | Time-gap Stage 1 candidate; usable as prior, must be checked against FPS real event-rate/gap distributions. |
+| `GAP_CONFIRM_MS` | 12.0 | Time-domain context window; usable as prior. |
+| `CLICK_IMMUNITY_MS` | 50.0 | Time-domain click immunity; usable as prior if FPS fire events align in same clock domain. |
+| `HEAD_SCAN_MS` | 20.0 | Time-domain head trim window; usable as prior. |
+| `TAIL_SCAN_MS` | 20.0 | Time-domain tail trim window; usable as prior. |
+| `ACCEL_UP_THRESHOLD_PX_S2` | 350000.0 | **px/s² space**; must be re-derived for FPS angular/count space. |
+| `ACCEL_DOWN_RATIO` | 3.0 | Dimensionless asymmetry ratio; usable as prior, but threshold it multiplies is not directly portable. |
+| `START_SPEED_GATE_PX_S` | 300.0 | **px/s space**; must be re-derived. |
+| `HOVER_WINDOW_MS` | 15.0 | Time-domain hover window; usable as prior. |
+| `HOVER_VELOCITY_THRESHOLD_PX_S` | 1200.0 | **px/s space**; must be re-derived. |
+| `HOVER_VARIANCE_THRESHOLD` | 0.35 | Dimensionless angular variance; usable as prior, but should be validated on FPS traces. |
+| `DEADZONE_COUNTS` | 5.0 | Counts space; potentially portable if FPS exports raw counts unchanged, still hardware/DPI sensitive. |
+| `MIN_STROKE_POINTS` | 5 | Sample-count threshold; must be checked against actual FPS event rate. |
+| `SAMPLE_INTERVAL_US_FALLBACK` | 1000.0 | Assumes 1000 Hz nominal; cannot be frozen before R1 event-rate measurement. |
+
+### Gate result
+
+T0 is **blocked, not failed**. Automated evidence is clean and production code diff remains 0, but the WP-60 entry condition is intentionally empirical. Next required action is a user-operated browser PoC that records:
+
+1. Pointer Lock `getCoalescedEvents()` sample rate / dt distribution / per-rAF coalesced count distribution.
+2. Three `spider-shot-wide-v1` operating modes with ≥10 attempts each: deliberate sensor lift, hand-still pause, one-shot uninterrupted movement.
+3. Frame-time open/closed comparison only after R1 demonstrates raw sampling is present enough to justify T1/T2.
+
 ## Surprises
 
 1. **要偵測抬滑鼠所需的原始資料，這個專案其實一直都在收 —— 只是在進匯出前一步被丟掉。** [`InputSampler.ts:137-139`](../../../../../src/input/InputSampler.ts#L137-L139) 早在 WP-3（ADR-5，「1000 Hz 滑鼠下不遺失中間軌跡」）就用 `getCoalescedEvents()` 逐筆保留了 sub-frame 樣本與各自的 `event.timeStamp`；到了 [`SimLoop.ts:96-99`](../../../../../src/loop/SimLoop.ts#L96-L99) 才被 `accumulateMouse` 聚合成逐 tick 的 `dYaw`／`dPitch`。<br>⇒ 本 WP 的性質因此不是「新增一種量測」，而是**停止丟棄一份已經付過成本的資料**。這也解釋了為什麼 WP-57 的抬滑鼠標註只能做到「角速度停滯」—— 不是判準沒設計好，是它拿到的資料裡已經沒有那個資訊了。
@@ -39,10 +126,10 @@
 | ID | 狀態 | 待誰 | Deadline |
 |---|---|---|---|
 | OQ-60.1 移植 PA 方法學的授權狀態 | ✅ **已收斂 2026-09-08**：無授權問題（同一作者、同一組織）。R5 關閉、T3 解除阻塞、PA 參數與 fixture 可直接引用（D-60.P7）| — | — |
-| OQ-60.2 序列化格式（columnar µs vs array-of-objects）| 🟡 有建議值（columnar µs），待 T0 實測體積佐證 | Engineering | T1 開工前 |
+| OQ-60.2 序列化格式（columnar µs vs array-of-objects）| 🟡 synthetic PoC 支持 columnar µs（60k samples: 593,031 bytes vs 2,158,328 bytes；max quantization error 0.369 µs），但缺 R1 實測事件率，故未正式收斂 | Engineering | T1 開工前 |
 | OQ-60.3 Pointer Lock 中斷如何入匯出 | 🟡 有建議值（additive `pointer_lock` DrillEvent）| Engineering + 使用者 | T1 凍結前 |
 | OQ-60.4 新判準與 `deriveRepositioningSuspicion()` 的關係 | 🔴 開放 | 使用者 + 研究 | WP-61 T0（不阻塞 WP-60）|
-| OQ-60.5 高輪詢率（4000／8000 Hz）是否支援 | 🟡 有建議值（不支援但偵測並具名）| 使用者 | T1 |
+| OQ-60.5 高輪詢率（4000／8000 Hz）是否支援 | 🟡 有建議值（不支援但偵測並具名）；缺 R1 實測事件率，容量常數未正式凍結 | 使用者 | T1 |
 | OQ-60.6 是否同步進 `research/` Python 側 | 🟡 有建議值（本 WP 內不做）| Engineering | WP-61 |
 
 ## 規劃期未解的前提風險
