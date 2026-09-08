@@ -46,3 +46,8 @@ data/session-history/*
 # exports, so they stay out of git for the same reason as .pilot-analysis/; see
 # docs/.../wp-55-tracking-on-target-observability-no-health/T7-operator-entry-point.md).
 .contact-analysis/
+
+# WP-57 — spider-shot-wide repositioning analysis output (npm run analyze:spider-wide). Same rule
+# again: derived from participant exports. Note the wide-flick exports themselves are also NOT in
+# this repo by decision D-57.T5-8; see docs/operational/spider-wide-recording-spec.md.
+.spider-wide-analysis/
