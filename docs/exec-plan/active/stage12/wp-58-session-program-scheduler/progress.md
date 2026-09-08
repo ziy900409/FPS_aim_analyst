@@ -10,6 +10,7 @@
 - **2026-09-08**：**T0 完成**。baseline 全綠（typecheck exit 0；Vitest 2,442 passed／2 skipped）、CodeGraph impact 已對帳 README §0.1（發現 2 處需更正）、36 個 exact drillId 的歸屬表已凍結、OQ-58.1／58.2／58.4 已由使用者收斂、GD-35 已入帳、production diff = 0。詳見 §T0。
 - **2026-09-08**：**T1 完成**。新增 `src/session/drillFamily.ts`（drill ↔ family 雙向單一來源，36 個 drill／10 個家族）、`sessionSchedule.ts` 純加法納入 4 個新家族 id、`SessionRunner.ts` 移除全部 7 個 drill import。四條不變量 + 解耦負向矩陣共 **49 個新測試**全綠；全量 Vitest **2,491 passed／2 skipped**（= baseline 2,442 + 49，既有測試零失敗）；typecheck / build exit 0；更新後的 Session Plan e2e 於真實 Edge 通過。詳見 §T1。
 - **2026-09-08**：**T2 完成**。新增 `src/session/sessionProgram.ts`（`compileSessionProgram()` 純函式編譯器 + `summarizeProgram()` + typed `SessionProgramCompileError`）與 47 個測試。全量 Vitest **2,538 passed／2 skipped**（= T1 的 2,491 + 47，既有測試零失敗）；typecheck / build exit 0；400 run steps 編譯 P95 **0.0398 ms**（限額 1 ms）。production 接線為零——T2 只交付可獨立測試的純函式。詳見 §T2。
+- **2026-09-08**：**T3 完成**。`SessionRunner` 由家族狀態機改為 `ProgramStep[]` 上的游標；新增 `buildFrozenSessionPlan()` 讓 frozen 路徑走同一個編譯器與同一個 runtime；模組級 `restDurationMs` 移除，兩級休息各自由 step 攜帶；`main.ts` 完成分支鏈四路收斂為三路。全量 Vitest **2,570 passed／2 skipped**（= T2 的 2,538 + 32，既有測試零失敗）；typecheck／build exit 0；Session Plan e2e 於真實 Edge 通過。詳見 §T3。
 
 ## Decision Log
 
@@ -30,7 +31,7 @@
 
 ## Open Questions（狀態）
 
-- **OQ-58.1**：同一 drill 連跑 N 輪的 seed 應逐輪相同或變化。✅ **已收斂（使用者，2026-09-08）：逐輪相同，維持現況**（**未**採規劃時建議的「逐輪變化」）。T3 不動 drill 載入路徑；代價是 reps = 重複同一組刺激、存在練習效應，分析端不得視為 i.i.d. 取樣。證據與限制見 §T0 §5。
+- **OQ-58.1**：同一 drill 連跑 N 輪的 seed 應逐輪相同或變化。✅ **已收斂（使用者，2026-09-08）：逐輪相同，維持現況**（**未**採規劃時建議的「逐輪變化」）。**T3 已落地**：drill 載入路徑零改動，並補上三次連續 rep 的逐位一致回歸測試（§T3 §6）。代價是 reps = 重複同一組刺激、存在練習效應，分析端不得視為 i.i.d. 取樣。證據與限制見 §T0 §5。
 - **OQ-58.2**：三輪匯出的檔名唯一性。✅ **已收斂（使用者，2026-09-08）：不加 rep 序號**。`exportBasename` 已含每次 `activateDrill()` 重設的毫秒級 `startedAt`，實測三輪唯一；T5 只補唯一性回歸測試，不改格式。證據見 §T0 §4。
 - **OQ-58.3**：休息 overlay 是否顯示邊界種類與下一個 drill。建議**要**。⬜ 待 T4 前確認（**非 T0 exit blocker**，T0 未收斂此項）。
 - **OQ-58.4**：`custom` session 是否可進 history。✅ **已收斂（使用者，2026-09-08）：沿用既有兩道閘（`DrillConfig.mode` + exact-id registry），額外標記 `sessionPlanMode`**，**不**在 `HistoryPersistence` 新增第三道攔截；隔離落在 T5 的 trend cohort 判定層。證據見 §T0 §6。
@@ -288,3 +289,105 @@ PoC 重建 `activateDrill()` 每 rep 重建的整條物件圖（`loadDrill` → 
 
 - **`RestStep.nextDrillId` 之所以能是必填，是規則 4 的免費副產品**。規劃時把它寫成 rest 的一個欄位，並未說明「program 不以 rest 結尾」正好保證每個 rest 都有下一步。這讓 OQ-58.3（overlay 要不要顯示下一個 drill）在型別層面已經沒有「沒有下一個」的分支要處理——T4 不需要 fallback 文案。
 - **「同 drillId 的兩個 item」是規劃文件沒點名的第四種相鄰情況**。FR-58.5 只列了「同 item／不同 item 同 family／不同 family」三種；兩個 item 用同一個 drill 落在第二種（`'drill'`），秒數與 `'rep'` 相同，所以行為無歧義——但標籤不同，且那個標籤會進預覽表與 metadata。已補一條測試釘死，避免日後有人為了「看起來合理」把它改判成 `'rep'`。
+
+---
+
+## T3 — SessionRunner 游標化與 runtime 接線（2026-09-08）✅
+
+### 1. 交付物
+
+| 檔案 | 動作 | 內容 |
+|---|---|---|
+| `src/session/SessionRunner.ts` | **重寫** | phase union 收斂為 `idle/run/rest/done`；`SessionPlan` 改攜 `mode`／`items`／`program`；新增 `buildFrozenSessionPlan()`；模組級 `restDurationMs` 移除 |
+| `src/session/sessionProgram.ts` | 加法 | `SessionProgramItem.warmup?` → `RunStep.warmup?`（純透傳，不影響邊界／秒數） |
+| `src/session/SessionRunner.test.ts` | 改寫 | 8 個既有 frozen 情境逐一改寫為新 phase union 的等價斷言（**13 tests**） |
+| `src/session/SessionRunnerPoll.test.ts` | 改寫 + 加測 | 自動推進、載入失敗復原、兩級倒數時基、零配置 identity、dispose（**5 tests**） |
+| `src/session/SessionRunnerProgram.test.ts` | **新增** | frozen program 形狀（1～4 家族）、warmup 前置、0 秒休息、custom reps + 兩級休息實測時長、run 編號、`start()` 拒絕矩陣、ADR-2 邊界掃描（**23 tests**） |
+| `src/session/sessionRepRestart.test.ts` | **新增** | 三次連續 rep 的 sim 起始狀態／`DataRecorder` snapshot／spawn 序列逐位一致（**4 tests**） |
+| `src/session/sessionProgram.test.ts` | 加測 | warmup 標記透傳 + 不改邊界（**+2 tests**，47 → 49） |
+| `src/main.ts` | 接線 | 顯式 import `SessionRunnerPhase`；`startSessionPlan()` 改走 `buildFrozenSessionPlan()`；完成分支鏈四路 → 三路；metadata 注入 gate `'family'` → `'run'` |
+
+### 2. CodeGraph impact（對帳 T0 §1）
+
+改動符號與實測 consumer 完全落在 T0 量測的清單內，無新增跨模組 consumer：
+
+| Symbol | 動作 | consumers | 結果 |
+|---|---|---|---|
+| `SessionRunnerPhase` | union 由 5 kind 改 4 kind | `main.ts`（原僅 structural）、`SessionRunner.ts` | ⚠️→✅ **T0 的擔憂已消除**：改 union 後 `main.ts` 的三處 `.kind` 比對**直接編譯期爆掉**（TS2367「no overlap」），並非靜默失配。另依 D-58-T0-4 於 `main.ts:1639` 加上顯式 `: SessionRunnerPhase` 標註，讓未來新增 kind 時 `step` 欄位存取也受保護 |
+| `SessionPlan` | 欄位換血（families/restSeconds/includeWarmup → mode/items/program） | `SessionRunner.ts`、`SessionRunner.test.ts`、`main.ts` | 3 檔全部編譯期紅燈後逐一修正 |
+| `createSessionRunner` | 行為改寫、簽章不變 | `main.ts`（3 call sites）+ 2 測試檔 | 介面不變 |
+| `resolveFamilyDrillId`／`resolveWarmupDrillId` | 呼叫端由 runner 移到 `buildFrozenSessionPlan()` | 同上 | re-export 不變，`main.ts:283` 註解仍成立 |
+| `KNOWN_SESSION_FAMILY_IDS` | 僅 `requireFamilyOrder()` 換位置 | 8 檔 | 零改動 |
+
+### 3. 行為等價證明（frozen 路徑）
+
+**編譯期形狀**：N 個家族（無熱身）→ **N 個 `run` + (N−1) 個 `family` rest**，每個 rest 秒數 = `restSeconds`，run 的 drill 序列 = `families.map(resolveFamilyDrillId)`。1／2／3／4 家族四個 case 逐一斷言。
+
+**關鍵映射（D-58-T3-1）**：frozen 編譯用 `drillRestSeconds: 0` + `familyRestSeconds: restSeconds`。理由不是巧合而是可證的：
+- `requireFamilyOrder()` 禁重複 ⇒ 家族兩兩相異 ⇒ 家族之間的每個接縫都是 `'family'` 邊界，吃 `restSeconds`（與舊 `restDurationMs` 同值）。
+- frozen program 唯一可能的非 family 接縫是「熱身 → 第一個家族」，而熱身 drill（`counterstrafe-free-v1`）與它熱身的家族同屬 `counterstrafe` ⇒ `'drill'` 邊界 ⇒ 吃 0 秒 ⇒ 依規則 5 於編譯期省略 ⇒ **與舊狀態機「warmup 直接 advance 進正式測試、中間無休息」逐位相同**。
+
+**逐項對照**（皆有測試）：
+
+| 舊行為 | 新行為 | 狀態 |
+|---|---|---|
+| `phase.kind==='family'`、`familyIndex` 遞增 | `phase.kind==='run'`、`cursor` 遞增，`step.itemIndex` 帶家族序 | 等價 |
+| `rest` 帶 `nextFamily` + `remainingMs` | `rest` 帶 `step`（含 `boundary`／`nextDrillId`）+ `cursor` + `remainingMs` | 資訊嚴格增加 |
+| warmup 為獨立 phase | warmup 為 program 第 0 個 `run`，帶 `warmup: true` | 等價（見下方匯出） |
+| status `熱身: X` / `正式測試 n/N: X` / `休息後開始: X` / 完成 / 切換失敗 | 五條字串逐字保留；`n/N` 仍**排除熱身** | 逐字等價 |
+| `本家族無熱身，直接開始正式測試。` | 改由 `buildFrozenSessionPlan().warmupAvailability` 回報，`main.ts` 於 `runner.start()` 前顯示 | 同文字、同順序 |
+| 家族順序驗證錯誤訊息 3 條 + `restSeconds` 錯誤 1 條 | 同 4 條訊息，改由 `buildFrozenSessionPlan()` 於編譯期丟出；`main.ts` 既有 try/catch 已涵蓋 | 同訊息，時機提前 |
+
+### 4. 刻意的行為差異（兩處，皆已判定不影響 frozen 資料）
+
+1. **`restSeconds === 0` 不再產生 rest step**（FR-58.6 明文要求）。舊行為會進 `rest` phase、overlay 閃現一幀、且必須等一次 `poll()` 才推進；新行為直接 run→run。屬規格要求的改善，非回歸。
+2. **熱身 run 的 payload 現在會帶 `sessionPlanRestSeconds`／`sessionPlanFamilyOrder`**（metadata gate 由 `'family'` 改 `'run'`，T3 步驟 7 明文指定）。**不可觀測**：熱身 payload 從不 `downloadJSON`（見下），且 `counterstrafe-free-v1` 為 practice mode ⇒ `HistoryPersistence` 直接 `excluded/practice`。
+
+**熱身不匯出這件事被明確保留**：`RunStep.warmup` 標記讓 `main.ts` 的單一 run 分支寫成 `if (step.warmup !== true) downloadJSON(...)`。若無此標記，四路收斂為三路會讓熱身開始產生匯出檔——那是研究者看得見的差異（每場多一份 `counterstrafe-free-v1` JSON）。
+
+### 5. `poll()` 零配置（NFR-58.3）
+
+舊實作每幀 `setPhase({ ...phase, remainingMs })` ⇒ **每幀配置一個新 phase 物件**（休息期間 60 秒 × 60fps ≈ 3,600 個）。新實作把 rest phase 做成單一重用物件、就地寫 `remainingMs`，且只在數值真的改變時才回呼。
+
+**證據（identity 而非 heap 量測）**：3,000 次 `poll()` 後 `runner.phase` 仍 `toBe` 首次取得的同一個物件，且 `onPhaseChange` 收到的 rest phase 去重後 `size === 1`。採 identity 斷言而非 `process.memoryUsage()`：後者在 vitest 下受 GC 時機影響而不決定性，identity 則直接證明「沒有第二個物件被造出來」——這正是本 repo 其他熱路徑（`HitDetector`／`ImpactRing`／`mouseGain`）既有的「模組層級重用」證明方式。
+
+`poll()` 其餘部分為 `O(1)`：只讀 `rest.step.seconds` 與兩個數字，無陣列掃描。倒數時基仍只用傳入的 `nowMs`（render 迴圈的 `performance.now()` 域，ADR-4）；模組掃描確認 `SessionRunner.ts` 無 `Date.now`／`three`／`SharedState`／`SimLoop`／`InputSampler`／`DataRecorder`／`document.`／`window.`／`Math.random`（ADR-2 + NFR-58.5）。
+
+### 6. 三次連續 rep 的 sim 起始狀態（OQ-58.1 落地）
+
+`sessionRepRestart.test.ts` 重建 `activateDrill()` 的整條物件圖（`loadDrill` → `createSharedState` → `createTargetManager` → `createDrillRunner` → `createDataRecorder` → `createSimLoop`）三次，跑固定 tick 序列：
+
+| 量測 | `detection_popin_v1`（2,000 ticks） | `spider-shot-v2`（400 ticks） |
+|---|---|---|
+| 起始 `{x,z,vx,vz}` | `{0,0,0,0}` ×3 | 同左 |
+| `DataRecorder` snapshot 三輪 `toEqual` | ✅ | ✅ |
+| seed 三輪相同 | ✅ | ✅ |
+| 逐目標 spawn 座標序列三輪 `toEqual` | ✅ | ✅ |
+
+⇒ **無殘留 velocity／recoil／arena 狀態**，且 **OQ-58.1「逐輪相同」已是既有行為**：T3 因此對 drill 載入路徑零改動，沒有新增任何 seed 推導。代價（練習效應、reps 非 i.i.d.）由 T5 寫入 metadata 與分析契約（D-58-T0-3）。
+
+### 7. 驗證
+
+| 閘 | 結果 |
+|---|---|
+| `npm run typecheck` | exit 0（browser + node） |
+| `npx vitest run`（全量） | **245 passed / 1 skipped（246 files）、2,570 passed / 2 skipped** —— 相對 T2 的 2,538 淨增 32，既有測試零失敗 |
+| `npm run build` | exit 0 |
+| `npx playwright test session-orchestrator.spec.ts -g "Session Plan 真實 DOM 接線"` | 1 passed（真實 Edge） |
+| 既有決定性回歸（NFR-58.2） | `tests/regression/*`、`src/loop/__tests__/*` **零修改**全綠 |
+| `main.ts` 完成分支鏈 | pilot / run / protocol **三路**（原四路） |
+
+### T3 Decision Log
+
+- **D-58-T3-1 / frozen 以 `drillRestSeconds: 0` 編譯**：讓 frozen 走同一個編譯器而不需要在編譯器裡開 frozen 特例。0 秒休息會被規則 5 於編譯期省略，恰好複製「熱身→正式測試之間無休息」的舊行為；家族兩兩相異則保證其餘接縫全是 family 邊界。等價性因此是**可證的**，不是靠測試碰巧覆蓋到。
+- **D-58-T3-2 / `buildFrozenSessionPlan()` 放在 `SessionRunner.ts` 而非 `sessionProgram.ts`**：編譯器必須維持「不知道有 frozen 這回事」的純度（它只認識 items 與兩個秒數）。frozen 的 counterbalance 語意（禁重複、代表 drill、熱身解析）屬 session plan 層，與 `SessionPlan` 型別同住最短。`sessionProgram.ts` 因此完全未被 frozen 需求污染。
+- **D-58-T3-3 / 新增 `RunStep.warmup?`（T2 契約的加法擴充）**：README §2.5 要求四路收斂為三路，但「熱身不匯出」是 frozen 的可觀測行為。若不標記，三路收斂會讓每場 session 多下載一份熱身 JSON。標記為 optional 且只在 `true` 時出現 ⇒ T2 既有 47 個逐元素 `toEqual` 斷言**零修改**仍綠。編譯器對它完全被動（不影響邊界／秒數），另補 2 個測試釘死這點。
+- **D-58-T3-4 / 錯誤驗證上移到編譯期**：家族順序與 `restSeconds` 的四條錯誤訊息逐字保留，但改由 `buildFrozenSessionPlan()` 丟出。語意不是放寬而是收緊——非法 plan 現在連「被表達成 program」都做不到，更不可能到達 runtime（§2.8 failure-mode 表的第一列）。既有測試從 `rejects.toThrow` 改為 `expect(() => …).toThrow`，斷言強度不變。
+- **D-58-T3-5 / rest phase 就地寫入**：為滿足 NFR-58.3 的零配置，rest phase 是唯一一個生命週期內可變的物件（型別上以 `MutableRestPhase` 內部介面表達，對外仍是 `readonly`）。代價寫在原始碼註解：overlay 擁有者必須每次回呼即讀 `remainingMs`，不得保留 phase 參考。
+- **D-58-T3-6 / `enterStep()` 一律先載入再發 phase**：舊碼在 warmup 路徑是「先發 phase 再載入」、family 路徑是「先載入再發 phase」。統一為後者——載入失敗時 phase 不會停在一個其實沒載起來的 run，且與 rest overlay 的隱藏時機（載入完成才切走）一致。
+
+### T3 Surprises
+
+- **T0 §1 記錄的「`SessionRunnerPhase` 未被具名 import ⇒ 改 union 會靜默失配」在實作時沒有發生**。把 5-kind union 改成 4-kind 後，`main.ts` 的三處 `phase.kind === 'family' | 'warmup'` 立刻報 **TS2367**（"comparison appears to be unintentional … have no overlap"），因為 TypeScript 對字面值聯集的比較本來就會檢查交集。靜默失配的真正風險在**反方向**：未來若**新增**一個 kind，既有比對仍然合法而只是漏接。D-58-T0-4 的顯式標註因此仍然值得做，但它防的是「加 kind」而不是「減 kind」。
+- **收斂後的分支鏈比預期更短**。README §0.1 預期「四路變三路」，實際上 warmup 與 family 兩路合併後，`downloadJSON` 與 `advance()` 也一併去重，只剩一個 `if (step.warmup !== true)` 的守衛——熱身與正式測試的差別在生命週期上收斂成「要不要匯出」這**單一**問題，而不再是兩條各自呼叫 `advance()` 的路徑。
+- **舊 `poll()` 每幀配置一個 phase 物件這件事，是這次才被量到的**。NFR-58.3 原本讀起來像在防「別在 `poll()` 裡重編 program」，但真正在配置的是 `{ ...phase, remainingMs }`——一場 60 秒休息約 3,600 個短命物件。修法（單一重用物件 + 只在數值變動時回呼）順帶讓 `RestOverlay.show()` 的呼叫次數從「每幀」降為「毫秒數真的改變時」。

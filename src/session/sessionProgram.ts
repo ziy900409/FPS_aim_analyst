@@ -19,6 +19,15 @@ export interface SessionProgramItem {
   readonly drillId: string;
   /** Whole number of runs of this drill, >= 1. Reps repeat the drill; they never touch its config. */
   readonly reps: number;
+  /**
+   * WP-58 T3 — marks this item as a warmup rather than a measured block. Only the frozen track sets
+   * it (`buildFrozenSessionPlan`); a custom program has no warmup concept at all, because there the
+   * warmup simply *is* the first item (FR-58.17). The compiler carries the flag through untouched —
+   * boundaries and rest durations are decided by item index and family, never by this. What it
+   * changes is downstream: a warmup run is not exported and is excluded from the "n / N" run
+   * counter, which is exactly how the pre-WP-58 `warmup` phase behaved.
+   */
+  readonly warmup?: boolean;
 }
 
 export interface SessionProgramPlan {
@@ -47,6 +56,8 @@ export interface RunStep {
   readonly repIndex: number;
   /** The item's `reps`, carried so the UI can render "2 / 3" without re-reading the plan. */
   readonly repCount: number;
+  /** Present (and `true`) only for a warmup item's runs; absent otherwise. See `SessionProgramItem`. */
+  readonly warmup?: boolean;
 }
 
 export interface RestStep {
@@ -144,14 +155,19 @@ export function compileSessionProgram(plan: SessionProgramPlan): readonly Progra
     drillId: item.drillId,
     family: requireFamily(item.drillId, itemIndex),
     reps: requireReps(item.reps, itemIndex),
+    warmup: item.warmup === true,
   }));
 
   const steps: ProgramStep[] = [];
   let previous: RunStep | undefined;
   for (let itemIndex = 0; itemIndex < validated.length; itemIndex++) {
-    const { drillId, family, reps } = validated[itemIndex];
+    const { drillId, family, reps, warmup } = validated[itemIndex];
     for (let repIndex = 0; repIndex < reps; repIndex++) {
-      const run: RunStep = { kind: 'run', drillId, family, itemIndex, repIndex, repCount: reps };
+      // The key is omitted rather than set to `false` on a normal run: a warmup is the exception, and
+      // step objects are compared element-wise in tests and rendered in the preview table.
+      const run: RunStep = warmup
+        ? { kind: 'run', drillId, family, itemIndex, repIndex, repCount: reps, warmup: true }
+        : { kind: 'run', drillId, family, itemIndex, repIndex, repCount: reps };
       if (previous !== undefined) {
         const boundary = resolveBoundary(previous, run);
         const seconds = boundary === 'family' ? familyRestSeconds : drillRestSeconds;

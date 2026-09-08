@@ -380,6 +380,40 @@ describe('WP-58 T2 — 400 run steps compile under 1 ms P95 (NFR-58.4)', () => {
   });
 });
 
+describe('WP-58 T3 — the warmup marker rides through untouched', () => {
+  it('carries `warmup` onto every run of a warmup item and onto no other run', () => {
+    const program = compileSessionProgram({
+      items: [
+        { drillId: C_SIBLING, reps: 1, warmup: true },
+        { drillId: C, reps: 1 },
+      ],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+
+    expect(program[0]).toMatchObject({ kind: 'run', drillId: C_SIBLING, warmup: true });
+    // Absent, not `false`: a warmup is the exception, and step objects are compared element-wise.
+    expect(program.at(-1)).not.toHaveProperty('warmup');
+  });
+
+  it('does not let the marker change a boundary or a rest duration', () => {
+    const items = [
+      { drillId: C_SIBLING, reps: 1 },
+      { drillId: C, reps: 1 },
+    ];
+    const plain = compileSessionProgram({ items, drillRestSeconds: 30, familyRestSeconds: 60 });
+    const marked = compileSessionProgram({
+      items: [{ ...items[0], warmup: true }, items[1]],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+
+    expect(marked.map((step) => (step.kind === 'rest' ? step : step.kind))).toEqual(
+      plain.map((step) => (step.kind === 'rest' ? step : step.kind)),
+    );
+  });
+});
+
 describe('WP-58 T2 — module purity boundary scan (NFR-58.1 / NFR-58.5)', () => {
   const FORBIDDEN: readonly RegExp[] = [
     /from ['"]three/,

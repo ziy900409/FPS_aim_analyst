@@ -54,7 +54,12 @@ import {
 } from './ui/SessionSetup.ts';
 import { createSessionPlanSetup, type SessionPlanSelection } from './ui/SessionPlanSetup.ts';
 import { createRestOverlay } from './ui/RestOverlay.ts';
-import { createSessionRunner, type SessionRunnerHandle } from './session/SessionRunner.ts';
+import {
+  buildFrozenSessionPlan,
+  createSessionRunner,
+  type SessionRunnerHandle,
+  type SessionRunnerPhase,
+} from './session/SessionRunner.ts';
 import { KNOWN_SESSION_FAMILY_IDS } from './session/sessionSchedule.ts';
 import { createTrackingPilotSession, type TrackingPilotSessionHandle } from './pilot/trackingPilotSession.ts';
 import { sharedState } from './state/SharedState.ts';
@@ -753,7 +758,7 @@ async function buildCurrentExportPayload(
     simHz: SIM_HZ,
     sensitivity: settingsPanel.sensitivity,
     ...(sessionSetupValues?.dpi !== undefined ? { dpi: sessionSetupValues.dpi } : {}),
-    ...(sessionPlanRunner.phase.kind === 'family' && activeSessionPlanSelection !== undefined
+    ...(sessionPlanRunner.phase.kind === 'run' && activeSessionPlanSelection !== undefined
       ? {
           sessionPlanRestSeconds: activeSessionPlanSelection.restSeconds,
           sessionPlanFamilyOrder: activeSessionPlanSelection.families,
@@ -1489,13 +1494,21 @@ async function startSessionPlan(): Promise<void> {
   }
   activeSessionPlanSelection = selection;
   try {
-    await sessionPlanRunner.start({
+    // WP-58 T3 — the frozen track now compiles to the same `ProgramStep[]` the custom track will use
+    // (FR-58.10); the runner is a cursor over it and no longer decides which drill a family means.
+    const frozen = buildFrozenSessionPlan({
       participantId: setup.participantId,
       sessionIndex: 0,
       families: selection.families,
       restSeconds: selection.restSeconds,
       includeWarmup: selection.includeWarmup,
     });
+    // The "this family has no warmup drill" notice belongs to the compile step now that warmup
+    // resolution happens there; the runner stays DOM-free and only reports what it is running.
+    if (selection.includeWarmup && frozen.warmupAvailability === 'unavailable') {
+      setProtocolStatus('本家族無熱身，直接開始正式測試。', false);
+    }
+    await sessionPlanRunner.start(frozen.plan);
   } catch (error) {
     activeSessionPlanSelection = undefined;
     setProtocolStatus(`Session Plan 啟動失敗：${error instanceof Error ? error.message : String(error)}`, false);
@@ -1636,15 +1649,17 @@ function liveFrame(now: number): void {
       // fire-and-forget，不阻擋下面 sessionPlanRunner.advance()／completeActiveProtocolCondition()
       // （D-48.P6，NFR-48.8）。
       void showResultAndTrackHistory(payload);
-      const sessionPhase = sessionPlanRunner.phase;
+      // WP-58 / T3：顯式標註型別，讓 phase union 的任何改動在此處編譯期爆掉而非靜默失配
+      // （D-58-T0-4：這條鏈以前只做 structural 的 `.kind` 比對）。
+      const sessionPhase: SessionRunnerPhase = sessionPlanRunner.phase;
       // WP-54 / T6：pilot block 由 TrackingPilotRunner 擁有這一輪的匯出/品質判定/下一個 block，
       // 不落入 Session Plan 或 protocol 的完成分支。
       if (trackingPilotSession?.handleDrillEnded() === true) {
         // no-op：handleDrillEnded() 已接手（回傳 true 才代表確有 pilot block 正在跑）。
-      } else if (sessionPhase.kind === 'warmup') {
-        await sessionPlanRunner.advance();
-      } else if (sessionPhase.kind === 'family') {
-        downloadJSON(payload, { basename: exportBasename(payload) });
+      } else if (sessionPhase.kind === 'run') {
+        // WP-58 / T3：warmup 併入 run step，四路 if-else 收斂為三路。熱身照舊**不匯出**——
+        // 它是暖身而非量測 block（frozen 路徑逐位不變）；custom program 無 warmup（FR-58.17）。
+        if (sessionPhase.step.warmup !== true) downloadJSON(payload, { basename: exportBasename(payload) });
         await sessionPlanRunner.advance();
         if (sessionPlanRunner.phase.kind === 'done') experimentSession.exit();
       } else {
