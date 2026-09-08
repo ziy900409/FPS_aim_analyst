@@ -27,13 +27,13 @@
 
 ## Definition of Done
 
-- [ ] 五條編譯規則各有表格測試，全綠。
-- [ ] 使用者情境 17 步 golden 逐元素斷言通過（含 `boundary` 與 `seconds`）。
-- [ ] 同家族相鄰、0 秒省略、單步 program、A-B-A 交錯四組案例全綠。
-- [ ] 非法輸入的具名錯誤矩陣全綠，且無「靜默補預設值」路徑。
-- [ ] 400 run steps P95 < 1 ms 有可重現量測數據。
-- [ ] 模組邊界掃描通過（NFR-58.1）。
-- [ ] progress 記錄測試數、benchmark 與實際契約。
+- [x] 五條編譯規則各有表格測試，全綠。
+- [x] 使用者情境 17 步 golden 逐元素斷言通過（含 `boundary` 與 `seconds`）。
+- [x] 同家族相鄰、0 秒省略、單步 program、A-B-A 交錯四組案例全綠。
+- [x] 非法輸入的具名錯誤矩陣全綠，且無「靜默補預設值」路徑。
+- [x] 400 run steps P95 < 1 ms 有可重現量測數據。
+- [x] 模組邊界掃描通過（NFR-58.1）。
+- [x] progress 記錄測試數、benchmark 與實際契約。
 
 ## Commit
 

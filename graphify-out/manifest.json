@@ -1707,6 +1707,14 @@
     "mtime": 1787735463.2631989,
     "hash": "075d4f60db32e7e33c53e3781d3f8f3e"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\session\\sessionProgram.test.ts": {
+    "mtime": 1788873916.807338,
+    "hash": "8a981671dea8cabcf76c2edd8122b64e"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\session\\sessionProgram.ts": {
+    "mtime": 1788873817.0365193,
+    "hash": "600ddbf32a780fd0ab7e04c9caf3fcdc"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\session\\SessionRunner.test.ts": {
     "mtime": 1788784700.942767,
     "hash": "8c10968f7db2d8f9641fe889bd274b6c"
@@ -2988,12 +2996,12 @@
     "hash": "d977b2817f25c858f3a92f536f194198"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage12\\wp-58-session-program-scheduler\\progress.md": {
-    "mtime": 1788873123.7698946,
-    "hash": "72e9f2dbdae965574aa47596d7df6ff7"
+    "mtime": 1788874094.6919808,
+    "hash": "95492262b6c30831ffc8e1a635d0183f"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage12\\wp-58-session-program-scheduler\\README.md": {
-    "mtime": 1788871993.137344,
-    "hash": "db7d3648cb694b758b4df0007709e495"
+    "mtime": 1788874117.9345272,
+    "hash": "8ca6f7798d4b7cd9a0484026940e39f5"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage12\\wp-58-session-program-scheduler\\T-exit-gate.md": {
     "mtime": 1788772028.556908,
@@ -3008,8 +3016,8 @@
     "hash": "3bc5b45de63dfe244bec70f2df1f6e02"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage12\\wp-58-session-program-scheduler\\T2-program-compiler.md": {
-    "mtime": 1788772028.5681052,
-    "hash": "a313ced3dee5b2727613ee842d446605"
+    "mtime": 1788874048.7462678,
+    "hash": "2671ab0946ac529e55862c800a84f9ba"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage12\\wp-58-session-program-scheduler\\T3-runner-cursor-and-wiring.md": {
     "mtime": 1788772028.5726964,
@@ -3028,8 +3036,8 @@
     "hash": "3fa8a7d36e197eab688120fa3aecb1b7"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage12\\wp-58-session-program-scheduler\\task-checklist.md": {
-    "mtime": 1788873073.7823198,
-    "hash": "b771b01eb07e9f73b6c483ac34f0754b"
+    "mtime": 1788874042.0560298,
+    "hash": "b9c6e928c12e84cdc65611a26ade1819"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage12\\wp-59-micro-flick-v8-replacement-spacing\\README.md": {
     "mtime": 1788869325.9347456,

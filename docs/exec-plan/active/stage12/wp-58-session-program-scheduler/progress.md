@@ -9,6 +9,7 @@
 - **2026-09-07**：工作拆為 T0～T6 + T-exit。WP 編號一度暫用 WP-57／GD-32，但同日另一個平行 session 的 [WP-57 — Spider Shot Wide Flick](../wp-57-spider-shot-wide-flick/README.md) 先建立資料夾並認領同一組編號；依 GD-15「先採納先得」本計畫順延重編為 **WP-58**，全域決策待以 ~~GD-33~~ **GD-35** 入帳（`GD-33`／`GD-34` 已於 2026-09-07 分別由 WP-57 T3 與 KI-026 取用，見 §T0 §9）。WP-56（進行中的 micro-flick 場景 WP）不受影響。
 - **2026-09-08**：**T0 完成**。baseline 全綠（typecheck exit 0；Vitest 2,442 passed／2 skipped）、CodeGraph impact 已對帳 README §0.1（發現 2 處需更正）、36 個 exact drillId 的歸屬表已凍結、OQ-58.1／58.2／58.4 已由使用者收斂、GD-35 已入帳、production diff = 0。詳見 §T0。
 - **2026-09-08**：**T1 完成**。新增 `src/session/drillFamily.ts`（drill ↔ family 雙向單一來源，36 個 drill／10 個家族）、`sessionSchedule.ts` 純加法納入 4 個新家族 id、`SessionRunner.ts` 移除全部 7 個 drill import。四條不變量 + 解耦負向矩陣共 **49 個新測試**全綠；全量 Vitest **2,491 passed／2 skipped**（= baseline 2,442 + 49，既有測試零失敗）；typecheck / build exit 0；更新後的 Session Plan e2e 於真實 Edge 通過。詳見 §T1。
+- **2026-09-08**：**T2 完成**。新增 `src/session/sessionProgram.ts`（`compileSessionProgram()` 純函式編譯器 + `summarizeProgram()` + typed `SessionProgramCompileError`）與 47 個測試。全量 Vitest **2,538 passed／2 skipped**（= T1 的 2,491 + 47，既有測試零失敗）；typecheck / build exit 0；400 run steps 編譯 P95 **0.0398 ms**（限額 1 ms）。production 接線為零——T2 只交付可獨立測試的純函式。詳見 §T2。
 
 ## Decision Log
 
@@ -241,3 +242,49 @@ PoC 重建 `activateDrill()` 每 rep 重建的整條物件圖（`loadDrill` → 
 
 - **`resolveFamilyDrillId` 的 switch 是 T1 的隱形安全網**。函式對 `SessionFamilyId` 做 exhaustive switch 且無 `default`，所以 `sessionSchedule.ts` 一加入 4 個家族 id，TypeScript 立刻在「並非所有程式路徑都有回傳值」上報錯——四個新家族的代表 drill 不可能被忘記。這與 T0 §1 記錄的 `SessionRunnerPhase` 情況正好相反（該型別未被具名 import，改 union 只會靜默失配），同一個 repo 裡兩種相反的編譯期保護強度，值得 T3 留意。
 - **T0 凍結表的價值在 T1 立刻兌現**：建表過程零 id 錯誤，`FAMILY_BY_DRILL_ID.size` 第一次執行就是 36。若照規劃期的舊表手打，會有六處查不到任何 drill 的鍵。
+
+---
+
+## T2 — Session Program 純函式編譯器（2026-09-08）✅
+
+### 1. 交付物
+
+| 檔案 | 動作 | 內容 |
+|---|---|---|
+| `src/session/sessionProgram.ts` | **新增** | `SessionProgramItem`／`SessionProgramPlan`／`ProgramBoundary`／`RunStep`／`RestStep`／`ProgramStep`、`compileSessionProgram()`、`summarizeProgram()`、`SessionProgramCompileError` |
+| `src/session/sessionProgram.test.ts` | **新增** | 五條規則表格測試 + 17 步 golden + 四組情境 + 12 列非法輸入矩陣 + 決定性 + benchmark + 純度掃描，**47 tests** |
+
+無其他檔案改動：T2 是純交付，**零接線**（`compileSessionProgram()` 目前沒有 production call site，T3／T4 才接）。
+
+### 2. 實測契約
+
+- **型別**：`ProgramStep` 拆為具名的 `RunStep`／`RestStep` 兩個 exported interface（README §2.5 的 phase union 直接引用這兩個名字，T3 免再拆一次）。
+- **`RestStep.nextDrillId` 恆存在**：因為 program 永不以 rest 結尾（規則 4），這個欄位不需要 optional —— T4 的 overlay 標籤（OQ-58.3）因此拿得到無條件的「下一個 drill」。
+- **錯誤契約**：`SessionProgramCompileError` 帶 `field: 'items' | 'drillId' | 'reps' | 'drillRestSeconds' | 'familyRestSeconds'` 與 optional `itemIndex`，比照既有 `SpiderWideResolveError` 的 typed-error 慣例（呼叫端分類不需解析訊息字串）。T4 的表單可據此直接標記出錯的那一列。
+- **驗證先於建構**：全部輸入在產出第一個 step 之前驗完，因此「丟錯 ⇒ 呼叫端不可能拿到半編譯的 program」是結構保證，而非測試碰巧覆蓋到的性質。
+- **golden 逐元素通過**：`[(hold_click_v1,3),(spider-shot-v2,3),(counterstrafe-reversal-v1,3)]` + 30／60 → **17 步**（9 run、6×30s `rep`、2×60s `family`），`summarizeProgram()` = `{ runCount: 9, totalRestSeconds: 300 }`。
+- **同 drillId 的兩個 item** 判為 `'drill'` 邊界而非 `'rep'`：reps 是 **item** 的屬性，操作員列兩次就是兩個 block。秒數雖相同，但預覽表與 metadata 報的標籤不同。
+- **fixture 家族自我驗證**：測試開頭先斷言 A／B／C 確實分屬三個家族、sibling 確實同家族——若日後有 WP 搬動 drill 的家族歸屬，這裡會先紅，而不是讓 golden 靜默改測別的邊界。
+
+### 3. 驗證
+
+| 閘 | 結果 |
+|---|---|
+| `npx vitest run src/session/sessionProgram.test.ts` | **47 passed** |
+| `npx vitest run`（全量） | **243 passed / 1 skipped（244 files）、2,538 passed / 2 skipped** —— 相對 T1 淨增 47，既有測試零失敗 |
+| `npm run typecheck` | exit 0（browser + node） |
+| `npm run build` | exit 0 |
+| benchmark（NFR-58.4） | 20 items × 20 reps = **400 run steps**；warm 50、samples 500 → **p95 = 0.0398 ms**、max 0.8764 ms，限額 1 ms |
+| 模組純度掃描（NFR-58.1／58.5） | `sessionProgram.ts` 無 `three`／`node:`／`Date.now`／`performance.now`／`Math.random`／`requestAnimationFrame`／`document.`／`window.` |
+
+### T2 Decision Log
+
+- **D-58-T2-1 / `RunStep`／`RestStep` 具名匯出**：README §2.4 把 `ProgramStep` 寫成 inline union，但 §2.5 的 phase union 又以 `RunStep`／`RestStep` 之名引用其兩支。直接匯出具名 interface 讓兩節對齊，T3 不必自行 `Extract<ProgramStep, {kind:'run'}>`。契約內容逐欄與 §2.4 相同。
+- **D-58-T2-2 / 錯誤型別採 `field` + `itemIndex` 而非把索引編進 `field`**：把 `items[2].drillId` 塞進 `field` 會讓「分類」退化成字串解析，正是 `SpiderWideResolveError` 的註解要避免的事。分成兩個欄位後，T4 既能分類（`field`）也能定位（`itemIndex`）。
+- **D-58-T2-3 / benchmark 用 500 samples 而非 micro-flick perf test 的 10,000**：單次編譯已是 ~0.04 ms，10,000 次會讓這支測試比整個 session 測試檔還久而不增加任何鑑別力。warm 50 + samples 500 足以穩定取到 p95，且整支檔案仍在 ~20 ms 完成。
+- **D-58-T2-4 / 不驗證「同一 drill 不得重複出現」**：FR-58.8 明文允許 A-B-A 與同 drill 重複，`requireFamilyOrder()` 的禁重複只約束 frozen 路徑。編譯器對重複完全沉默是刻意的。
+
+### T2 Surprises
+
+- **`RestStep.nextDrillId` 之所以能是必填，是規則 4 的免費副產品**。規劃時把它寫成 rest 的一個欄位，並未說明「program 不以 rest 結尾」正好保證每個 rest 都有下一步。這讓 OQ-58.3（overlay 要不要顯示下一個 drill）在型別層面已經沒有「沒有下一個」的分支要處理——T4 不需要 fallback 文案。
+- **「同 drillId 的兩個 item」是規劃文件沒點名的第四種相鄰情況**。FR-58.5 只列了「同 item／不同 item 同 family／不同 family」三種；兩個 item 用同一個 drill 落在第二種（`'drill'`），秒數與 `'rep'` 相同，所以行為無歧義——但標籤不同，且那個標籤會進預覽表與 metadata。已補一條測試釘死，避免日後有人為了「看起來合理」把它改判成 `'rep'`。

@@ -15,7 +15,7 @@
 | **Estimate** | 7.5–12.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | Med/High：`SessionRunner` 是 Session Plan 唯一 runtime；`KNOWN_SESSION_FAMILY_IDS` 是 KI-016 修過的 metadata allowlist 單一來源；新增家族 id 會擦撞 practice-only drill 的既有隔離意圖 |
 | **Milestone** | 無獨立里程碑，**T-exit gate 即交付判定**（比照 WP-27）。stage12 整體里程碑待 owner 定義（[OQ-58.5](#15-open-questions)） |
-| **Status** | 🟡 **T0 ✅（2026-09-08）**，T1～T-exit 未開工。T0 產出：36 個 exact drillId 的歸屬表已凍結（§2.3）、CodeGraph impact 已對帳（§0.1）、OQ-58.1／58.2／58.4 已收斂（§1.5）、[GD-35](../../../DECISIONS.md) 已入帳。證據見 [progress.md](progress.md) §T0 |
+| **Status** | 🟡 **T0 ✅／T1 ✅／T2 ✅（2026-09-08）**，T3～T-exit 未開工。T0：36 個 exact drillId 的歸屬表已凍結（§2.3）、CodeGraph impact 已對帳（§0.1）、OQ-58.1／58.2／58.4 已收斂（§1.5）、[GD-35](../../../DECISIONS.md) 已入帳。T1：`drillFamily.ts` 雙向單一來源上線，4 個新家族純加法納入 allowlist。T2：`sessionProgram.ts` 編譯器交付（尚未接線）。全量 Vitest 2,538 passed／2 skipped。證據見 [progress.md](progress.md) |
 
 ---
 
@@ -444,7 +444,7 @@ sessionPlanRepIndex?: number;
 |---|---|---|---|---|---|
 | **T0** | Entry gate：blast radius 量測、drill→family 表凍結、OQ-58.1／2／4 收斂、~~GD-33~~ **GD-35** 入帳 | WP-56 不受影響之確認 | Med | 0.5–1d | ✅ **2026-09-08 完成**：production diff = 0、PoC 產物已刪；baseline typecheck exit 0 + Vitest 2,442 passed／2 skipped 且無既存失敗；CodeGraph impact 已入 progress 並對帳 §0.1（2 處補正）；36 個 exact drillId 歸屬表凍結（§2.3，更正規劃表六處 id 錯誤，新增第 4 個家族 `spider-shot-wide`）；`exportBasename` 三輪樣本有證據；三次連續 restart snapshot 逐位相同；OQ-58.1／58.2／58.4 皆有 owner 結論；GD-35 已寫入 DECISIONS.md |
 | **T1** | `drillFamily.ts` 雙向單一來源 + 三個新家族 id + 解耦不變量 | T0 | Med | 0.5–1d | §2.3 四條不變量測試全綠；`resolveFamilyDrillId` 遷移後 `SessionRunner` 行為逐位不變；既有 `micro_flick` 負向測試零修改仍綠 |
-| **T2** | `sessionProgram.ts` 純函式編譯器 + golden 表 | T1 | Med | 1–1.5d | 五條規則各有表格測試；使用者 17 步情境逐元素斷言通過；非法輸入具名錯誤矩陣全綠；模組掃描證明無 DOM/Three/時鐘/亂數 |
+| **T2** | `sessionProgram.ts` 純函式編譯器 + golden 表 | T1 | Med | 1–1.5d | ✅ **2026-09-08 完成**：47 個新測試全綠（五條規則表格測試、17 步 golden 逐元素、12 列非法輸入矩陣、決定性、同家族相鄰／0 秒省略／單步／A-B-A 四組情境）；400 run steps 編譯 p95 **0.0398 ms**（限額 1 ms）；模組純度掃描通過；全量 Vitest 2,538 passed／2 skipped、typecheck／build exit 0 |
 | **T3** | `SessionRunner` 游標化 + `main.ts` runtime 接線 + reps seed 落地 | T2 | **High** | 1.5–2.5d | frozen 路徑行為等價測試全綠；`poll()` 零配置量測；載入失敗復原路徑測試保留；三次連續 restart sim 起始狀態逐位一致；OQ-58.1 決議落地 |
 | **T4** | `SessionPlanSetup` 改版 + 預覽表 + `RestOverlay` 擴充 | T2（可與 T3 並行） | Med | 1.5–2.5d | 加入/排序/移除/reps/兩秒數皆有 component test；預覽表逐步驟正確含邊界標籤；編譯錯誤時禁用提交；鍵盤與 ARIA 通過（NFR-58.7） |
 | **T5** | metadata additive 欄位 + 每輪匯出 + history/trend 隔離 | T3 | Med/High | 1–1.5d | 舊 fixture parse/serialize 逐位不變；新欄位 strict validation 正負向矩陣全綠；三輪匯出檔名唯一且可定位 rep；custom 不入 frozen cohort 有測試 |
