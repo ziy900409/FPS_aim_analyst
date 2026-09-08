@@ -34,6 +34,10 @@ data/session-history/*
 # that keeps writing into it.
 .wp56-capture-tmp/
 
+# WP-57 T6 — same for scripts/capture-wp57-visuals.mjs. That runner awaits its taskkill and then
+# confirms the port went quiet before exiting, precisely so it does not reproduce KI-028.
+.wp57-capture-tmp/
+
 # WP-54 T6 — tracking pilot analysis output (participant exports and any artifact derived from
 # them stay out of git; see docs/.../wp-54-tracking-pilot/T6-instrumentation-gate.md §7).
 .pilot-analysis/

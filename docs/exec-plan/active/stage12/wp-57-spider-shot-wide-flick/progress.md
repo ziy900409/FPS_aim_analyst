@@ -12,8 +12,8 @@
 | T3 Wide Arena Scene | ✅ Done（步驟 8 實機截圖延到 T6） | 2026-09-07 | 2026-09-07 | 見 §T3 evidence；612 個落點淨空、§2.5 全表逐列、預設房間四檔全穿側牆、`loadDrill` 閘正負向；full Vitest 2,353 tests、兩個 typecheck／build exit 0 |
 | T4 Export and Conditions | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T4 evidence；resolvedFrom 五欄 round-trip 逐位、eye-frame `W_deg` 恆 2.000000000000、離線 `side` 與實錄 spawn side 逐筆相同、v1/v2 七欄位不變；full Vitest 2,373 tests、兩個 typecheck／build exit 0 |
 | T5 Repositioning Flag | Ready | — | — | T4 ✅（`deriveMouseThrow()` 已可用作標註率的 `cm/360` 方向性檢查 x 軸） |
-| T6 Wiring and E2E | Ready | — | — | T2／T3 ✅ 已解除相依；**額外承接 T3 步驟 8 的 FOV 60／75／120 實機截圖與 OQ-57.3 初步觀察** |
-| T-exit | Blocked by T1–T6 | — | — | — |
+| T6 Wiring and E2E | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T6 evidence；researcher 控制列 arm-time resolve、4 個 Edge E2E 全綠（on-screen 61 spawn 失敗 0、resize 41 spawn 逐位一致、translation locked + mouse aim、practice-only）、FOV 60／75／120 各 3 張實機截圖 + OQ-57.3／57.4 回填（`timeLimitMs` 改 60000） |
+| T-exit | Blocked by T5 | — | — | T1～T4／T6 ✅；只剩 T5 |
 
 ## T0 audit（2026-09-07）
 
@@ -245,6 +245,85 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 
 **production 修改面**：只有 `src/metrics/spiderShotConditions.ts`（additive optional 欄位 + 一個 8 行的符號讀取函式）與新檔 `src/metrics/mouseThrow.ts`。`spiderShotMetrics.ts`／`TargetManager.ts`／`schema.ts`／`DrillConfig.ts`／`metadata.ts`／`exportPayloadSchema.ts`／`main.ts` **零修改**。
 
+## T6 evidence（2026-09-08）
+
+**開工 HEAD**：`f17d151`（T4 收尾），worktree clean。本 task 未跑 CodeGraph：接線面是 T0 §0 item 13 已逐行記錄的三處（roster、`activeDrillConfig` 賦值點、`createTargetManager` 消費點），且該檔在 T0 之後已由平行工作重構（`activateDrill()` 收斂了原本的兩個賦值點），故以直接 Read 覆核當時的實況；`SceneConfig`／`DrillConfig` 核心型別零修改。
+
+### 接線（步驟 1–4）
+
+`main.ts` 的 roster 項型別新增 optional **`resolveSource?: () => unknown`**，並新增單一收斂點 `drillSourceFor(option)`。wide 是唯一使用它的項：`resolveSource: () => resolveSpiderShotWideV1(settingsPanel.fov, sceneManager.camera.aspect)`。
+
+- **呼叫時點**：`loadDrillById()` 內、`activateDrill()` **之前**。這比 T6 步驟 2 原本寫的「在兩個 `activeDrillConfig` 賦值點各呼叫一次」更小也更安全：T0 之後 `main.ts` 已把兩個賦值點重構成共用的 `activateDrill()`，故一個呼叫點即涵蓋換 drill 與 protocol 驅動的載入；而放在 `activateDrill()` 之前使 resolver 的 typed error（FR-57.14）在**任何** activation 狀態被觸碰之前就擲出（不會留下半換的 scene generation／weapon override）。錯誤沿既有 `runControl` 失敗路徑呈現（`console.error` + `window.alert`），不 crash、不靜默回退到別的 drill。
+- **`loadSceneById()` 不重解析**：它以 `activeDrillSource` 重驗場景，而 wide 的 `activeDrillSource` 就是**已解析的 config 物件**（`loadDrill` 同時吃字串與物件），故換場景不會重讀 aspect。這正是 NFR-57.5 想要的語意；且 wide 綁 `wide-flick-arena`，任何其他場景都會被 T3 的 `requireSpiderWideArenaGeometry()` 擋下。
+- **resolver 不在 render callback 內**：`resolveSource` 只被 `drillSourceFor()` 呼叫，呼叫端只有 `loadDrillById()` 與 harness 的 `startDrill()`。
+- 其他 roster 項的 `source`／`sceneId` 逐字未動（`source` 由 required 改為 optional，值全部不變）。
+- `fpsTestHarness` 的 `HarnessDeps.availableDrills` 同步接受 `resolveSource`，且**在每次 `startDrill()` 時呼叫**（不是 bootstrap 時）。這是刻意的：harness 的 `startDrill()` 就是一次 arm，否則 resize 不變性 E2E 會比較兩個「在 bootstrap 就解析完」的 run，什麼都證不到。
+
+### E2E（步驟 5）—— `tests/e2e/spider-shot-wide.spec.ts`，4 tests，Edge 全綠
+
+| Test | 內容 | 實測 |
+|---|---|---|
+| arm-time provenance | researcher `#drill-select` → `#scene-select` 變 `wide-flick-arena`；live 中心目標逐位為 `(0, 1.6, −8)`（`y = 1.6` 同時排除走錯 spawn 分支——legacy 錐路徑用 `TARGET_Y = 1.5`）；匯出 `resolvedFrom` 五欄 = `{75, 1280/720, 0.04, 0.92, 2}`；改 FOV 滑桿至 60 後**重新 arm** → `fovDegVertical` 變 60 且 yaw 窗嚴格收窄 | `@1280×720`：FOV 75 → `[47.5036, 51.6343]`；FOV 60 → `[40.0909, 43.5771]`（與 T1 表逐列相符） |
+| on-screen（FR-57.4 實機） | 60 個 500 ms tap 的真實 run；每個 `visible` 事件的座標經 `spiderWideEyeAngles()` 還原後套 `ndcForEyeAngles()`（外緣推一個角半徑、容差 1e-9） | 61 spawns（30 周邊）、**失敗數 0**；最壞 `abs(ndc_x) = 0.95554`、`abs(ndc_y) = 0.25917`（界 0.96）；`distanceU` 逐個 = 8；L/R = 15/15；zone 由中心起嚴格交替 |
+| `centerExemptFromTimeout` | 不開火閒置 `3 × peekTimeoutMs` → 只有 1 個 `visible`（中心）且 phase 仍 `running`；改為先殺中心再閒置 → `center, peripheral, center` 且第三個的 `t` 與第二個相距 `[2500, 2500 + 2 tick)` | 中心不逾時、周邊在 2,500 ms 準時撤除 |
+| resize 不變性（NFR-57.5 實機） | run A 在 16:9 arm、跑 20 tap → resize 到 **5:4**（1280×1024，真的換 aspect）→ 再跑 20 tap；run B 為同樣兩批但不 resize 的對照組 | 41 個 spawn 的 `targetId`／`zone`／`side`／`pos`／`t` **逐位一致**；`resolvedFrom` 兩者相同 |
+| resize 真的到了 camera | resize 後**重新 arm** 一次 | `resolvedFrom.aspect` = `1280/1024`、`yawMax` 由 `51.6343` 降到 `41.6386` ⇒ 不變性不是「resize 沒生效」的假陽性 |
+| translation locked（FR-57.8） | live run 依序按放 W/A/S/D | `player` 除 `vx/vz = 0`、`stopped = true` 外逐位不變 |
+| mouse aim 仍活著 | 同一個 live run 取得原生 Pointer Lock 後 dispatch `movementX/Y` | `aim.yaw`／`aim.pitch` 皆改變、`player.x/z` 不變 |
+| practice-only（FR-57.13） | `saveToHistory()` 走 live 的同一個 `historyPersistence` | 回 `{ kind: 'excluded', reason: 'practice' }`；匯出無 `meta.assessment`／`meta.session`；以真實 payload 呼叫 `buildCompatibilityKey()` 會擲錯 ⇒ 產不出 compatibility cell |
+
+registry 的 exact-id／near-miss／replay-profile 負向面沿用 T1 的 `spider_shot_wide_v1.test.ts`（純函式、已綠），**未在 E2E 重複**：`DrillMetricRegistry` 無法 import 進 e2e spec（其 scene-config 鏈會拉到一個 Playwright loader 拒收的 JSON module），詳見 Surprises 24。
+
+### 實機截圖與 OQ 回填（步驟 6–7）
+
+`scripts/capture-wp57-visuals.mjs`（`npm run capture:wp57-visuals`）為可重跑 runner：走真實 researcher 入口 + 原生 Pointer Lock，每個 FOV 檔位輸出 3 張 1920×1080 —— 中心目標，以及左／右各一個近邊界周邊目標（**在瞄向它之前**截圖，即準星還停在中心的那一瞬間，才是玩家偵測時真正看到的構圖）。產物在 [captures/](captures/) 與 `captures/metadata.json`。
+
+| FOV | yaw 窗（度） | 截圖中的實際落點 | 周邊目標中心 `abs(ndc_x)` 區間 |
+|---|---|---|---|
+| 60 | `[40.091, 43.577]` | L `yaw −41.71°`、R `yaw +40.82°`（pitch ∓3.46°） | `[0.820, 0.927]` |
+| 75 | `[47.504, 51.634]` | L `−49.42°`、R `+48.37°` | `[0.800, 0.926]` |
+| 120 | `[64.685, 70.310]` | L `−67.29°`、R `+65.87°` | `[0.687, 0.908]` |
+
+**視覺 review（D-57.T3-3，arena 第一次被人眼看到）**：
+
+- **完整可見、不被切**：三個 FOV 檔位、左右兩側共 6 張周邊截圖，目標整顆都在畫面內且離螢幕邊還有可見餘裕（FOV 75 右側落在 `x ≈ 1758 px`／1920，球右緣距邊 ≈ 135 px）。**FR-57.4 的實機驗收 Pass。**
+- **視覺空曠（README §3.1 風險，確認成立）**：arena 是純色暗灰盒、無天花板幾何、零 props，只有地板／側牆／後牆的明度階與交線可作參照。這使偏心度沒有任何場景線索可估——對「周邊偵測」構念是乾淨的（無雜訊），但畫面確實比 WP-56 走廊空得多。
+- **可辨識度**：紅球對牆面對比清楚可見；但在 1080p、2.0° 角徑下，中心目標只有約 29 px 直徑，讀起來是「暗牆上的一個小紅點」。
+- **大 FOV 的形變（新發現，非既有風險）**：直線透視在大離軸角把球拉扁——FOV 120 的周邊目標呈約 **2.4:1 的橢圓**（見 `peripheral-L-fov120.png`）。角**徑**由 `spiderWideEyePos()` 保證恆定（`distanceU` 逐個 = 8），但**表觀形狀**不恆定。這是正確的投影行為、不是缺陷，但會影響大 FOV 下的主觀難度，已記入 Surprises 25。
+- 無槍／手／muzzle、無 Kovaak 式 editor／FPS／ammo UI；HUD 與準星維持既有呈現。
+
+**OQ-57.3（`kLo` / `screenMargin`）→ 維持候選值不動**（使用者，D-57.T6-1）。同時量到一個規劃期未記載的性質：`kLo = 0.92` 是套在**度**上，而 `ndc_x = tan(yaw)/tan(halfHFOV)` 是凸函數，所以 NDC 上的貼邊程度會隨 FOV 漂移——窗下界在 FOV 60 是邊界（0.96）的 **85.4%**、FOV 75 的 **83.3%**、FOV 120 只有 **71.5%**。即 D-57.P2 想要的「每位選手同樣貼邊」在 NDC 意義下只是近似成立。入帳為已知限制（Surprises 26），不改公式。
+
+**OQ-57.4（時序）→ `timeLimitMs` 由 `90000` 改為 `60000`**（使用者，D-57.T6-2）；`peekTimeoutMs = 2500` 維持。每 cell 樣本數以出貨 config 實機掃描（3 個 FOV × 5 種 per-trial 節奏，各跑完整一輪到 `phase = 'ended'`）：
+
+| per-trial 節奏 | 周邊到達 | 最小/cell | vs 規劃期的 14/cell 標準 |
+|---|---|---|---|
+| 600 ms | 50 | 12 | 未達 |
+| 800 ms | 38 | 9 | 未達 |
+| 1,000 ms | 30 | 7 | 未達 |
+| 1,200 ms | 25 | 6 | 未達 |
+| 1,500 ms | 20 | 5 | 未達 |
+
+三個 FOV 檔位的掃描結果**完全相同**（節奏決定次數，FOV 不影響時序）——這本身是一致性檢查。改值前以 90 s 量過同一組：`75/57/45/38/30` 次到達、`18/14/11/9/7` per cell ⇒ **README §1.5 宣稱的「90 s ≈ 56 次 ≈ 14/cell」只在 ≤800 ms 的節奏成立**，那是規劃期的一個樂觀估計。使用者在看過兩組數字後仍選 60 s，理由是 v1 為 practice-only 且**明確不宣稱信度**（C-D3：無指標進教練報告或 `DrillMetricRegistry`）；樣本量問題明確移交晉升 WP（README §5 handoff 已列）。
+
+**timeout 率仍未收斂，且刻意不合成**：harness 以解析式 `aimAtActiveTarget()` 瞄準，其 timeout 率恆為 0（by construction），把它當作人類 timeout 率會是造假。可客觀量到的是**截斷邊界本身**（周邊目標在 `peekTimeoutMs` 準時撤除），已寫成 E2E 斷言。OQ-57.4 因此標為部分收斂。
+
+### Verification（步驟 8）
+
+| Gate | 命令 | 結果 |
+|---|---|---|
+| typecheck | `npm run typecheck` | **exit 0**（browser + node tsconfig） |
+| targeted | `npx vitest run src/drill tests/regression src/scene` | **65 files／614 tests passed** |
+| 全 Vitest | `npm test -- --reporter=default` | **237 files passed + 1 skipped／2,377 tests passed + 2 skipped**（T4 收尾為 236／2,373）。**差額不屬本 task**：本 task 沒有新增 Vitest 檔（新測試是 Playwright spec），只改了 `spider_shot_wide_v1.test.ts` 一條既有斷言的期望值（90000 → 60000）。`+1 file／+4 tests` 已逐項確認來自 worktree 內平行工作的未追蹤檔 `src/drill/micro_flick_three_target_test_variants.test.ts`（單獨跑 = 1 file／4 tests）|
+| build | `npm run build` | **exit 0**、1,210.90 kB（gzip 344.70 kB），僅既存 >500 kB 警告 |
+| WP-57 E2E | `npx playwright test tests/e2e/spider-shot-wide.spec.ts --project=edge --workers=1` | **4 passed**（6.0／2.7／2.6／6.1 s） |
+| capture runner | `npm run capture:wp57-visuals` | **exit 0**、9 張截圖 + metadata；teardown 後 5173／5174 皆 free |
+| 全 Playwright | `npm run test:e2e` | **90 passed／1 failed** —— 該失敗為既存的 **[KI-027](../../../../known_issue/KI-027-overlay-layering-researcher-submenu-guard-dead.md)**（`overlay-layering.spec.ts:74` 的 `overlapsSettingsPanel(7)` 回 `null`，helper 硬編 7 顆 launch button 而 `ResearcherMenu` 自 WP-54 起有 4 項子選單＝8 顆）。WP-57 只在既有 **下拉選單**各加一個 drill／scene，未新增任何 researcher menu 按鈕，故按鈕數未變、失敗簽名與 WP-56 T-exit 記錄的完全相同（該次為 86 passed／1 failed，本次 +4 即本 task 的新 spec）。依 scope 紀律不在本切片內修 |
+
+**Worktree 狀態揭露**：執行期間 worktree 出現**不屬本 task**的平行未追蹤工作（`src/drill/micro_flick_three_target_test_v2/v3/v4.ts`、`micro_flick_three_target_test_variants.test.ts`、`src/scene/scenes/micro-flick-room-v2/v3/v4.ts`、`public/assets/scenes/micro-flick-room-v2/v3/v4/`）以及已被該工作改動的 `graphify-out/*`。上述 Vitest 數字因此涵蓋那份工作；本 task 只 stage 自己的檔案，未觸碰、未改寫該工作。**`graphify update .` 刻意延後**（比照 T1／T3 的處理）：`graphify-out/*` 已帶平行工作的未提交變更，現在重跑會把我的索引寫進他們的 diff 裡，反而更難分離。
+
+**Server 環境揭露**：開工時 5173 上有一個**不屬本 task**的 dev server，且它租用的是**真實** `data/session-history/`；已先停掉，讓 Playwright 自己起帶 `.playwright-tmp/history-dev`／`-preview` 的兩個 server（事後確認兩個 temp root 都建立、真實根目錄本次無任何新 run 資料）。WP-56 T-exit 記錄的 3 項 preview root-lock（HTTP 423）失敗本次**未重現**，而且這次兩個 server 確實各持自己的 lease（不是被環境繞過）。細節與真實根目錄的既存 fixture 殘留見 Surprises 28／29。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -282,6 +361,10 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 | D-57.T4-1 | 2026-09-07 | **`side` 以嚴格符號讀取，不加任何容差**：`x > 0 → 'R'`、`x < 0 → 'L'`、`x === 0` **省略欄位**。<br>**Alternatives considered**：(a) 加一個 epsilon 門檻（如 `abs(x) < 1e-9` 視為無左右）—— 等於為 `side` 發明第二套幾何容差（C-D4），且門檻值沒有任何構念依據，**駁回**；(b) `x === 0` 時沿用上一個 side 或固定回 `'R'` —— 猜了就無法在資料上分辨「沒有左右語意」與「在右邊」，**駁回**；(c) 把 `side` 塞進 `targetConditionCell` —— 會改動 `DrillMetricRegistry.ts:281` 保護的既有相容鍵格式，直接違反 FR-57.11，**駁回**。代價已知並記名：v1/v2 的近垂直呈現可能因浮點殘值輸出無意義的 side（見 Surprises 11），以文件 + 測試揭露而非以閾值遮蔽 | Engineering | `spiderShotConditions.test.ts` side 段 4 tests |
 | D-57.T4-2 | 2026-09-07 | **round-trip 測試的 payload 取自真實 run**（`spiderWideDeterminismFixture` additive 暴露 `DataRecorderSnapshot`），meta 組裝**逐行對齊 `main.ts`** 的 `spawn`／`targets`／`scene` 三段。<br>**Alternatives considered**：(a) 手寫合成 payload —— 只證明「我寫的物件能被 parse 回來」，證明不了生產路徑真的把這些欄位寫出去，**駁回**；(b) 把 `main.ts` 的 meta 組裝抽成可測純函式 —— 那是正確的長期重構，但會動到 `main.ts` 這個 T6 才該碰的接線點，且本 task 的 DoD 是「證明既有管線」而非改它，**駁回（留給 T6／後續 WP）**；(c) 走 `fpsTestHarness` —— 它是 dev-only 觀測縫，不含匯出組裝，**不適用** | Engineering | `spider-wide-export-roundtrip.test.ts` 10 tests |
 | D-57.T4-3 | 2026-09-07 | **`deriveMouseThrow()` 落在 `src/metrics/mouseThrow.ts` 並 import `resolveMouseGain()`**；`cmPer360` 採**欄位級** `undefined`（DPI 缺席時只有 cm 兩欄消失，`countsPer360` 仍回值）。<br>**Alternatives considered**：(a) 在 metrics 內重算 `sensitivity × 0.022°` —— gain 公式的第二定義，正是 C-D4／KI-005 明令禁止的形狀，**駁回**；(b) DPI 缺席時整個函式回 `undefined` —— `counts/360` 不需要 DPI，整組放棄會讓 T5 在沒有 DPI 的 run 上完全拿不到感度軸，**駁回**；(c) 新增一個 `meta.cmPer360` 匯出欄位 —— 違反「不新增輸入欄位」且會與 `sensitivity`／`dpi` 形成第二個真相來源，**駁回**。**已知代價**：`src/metrics/` 首次出現對 `three` 的傳遞依賴（`mouseGain.ts` 用 `THREE.MathUtils`）。實測 bundle 大小與 T3 相同（1,205.13 kB）—— 本模組目前只走離線路徑、無 production import；若日後要讓 `research/` 側消費，應改為把 `RAD_PER_COUNT` 抽成無 three 依賴的常數模組，而不是在 metrics 重寫公式 | Engineering | `mouseThrow.test.ts` 6 tests；build 大小對照 |
+| D-57.T6-1 | 2026-09-08 | **OQ-57.3 收斂：`kLo = 0.92` 與 `screenMargin = 0.04` 維持不動。** 三個 FOV 檔位的實機截圖證明「完整可見、不被切」成立，故契約層的 FR-57.4 已滿足。同時揭露一個規劃期未記載的性質並入帳為已知限制：`kLo` 套在**度**上而 `ndc_x = tan(yaw)/tan(halfHFOV)` 是凸函數，故窗下界的 NDC 位置隨 FOV 從邊界的 85.4%（FOV 60）漂到 71.5%（FOV 120）。<br>**Alternatives considered**：(a) 把 `kLo` 改成 NDC 定義（窗下界 = `atan(kLo·(1−screenMargin)·tan(halfHFOV)) − r`）—— 這才是「每位選手同樣貼邊」（D-57.P2）的精確落地，但會改 T1 已凍結的 resolver 公式、README §1.5／§2.4 全部數字與 T1／T2／T3 的相關斷言，**使用者選擇不採**；(b) 只把 `kLo` 調高到 0.97 —— 收窄窗但不修正跨 FOV 漂移本身，**未採** | 使用者 | 本節 §T6 的 NDC 區間表；`captures/` 九張截圖 |
+| D-57.T6-2 | 2026-09-08 | **OQ-57.4 部分收斂：`timeLimitMs` 由 `90000` 改為 `60000`**；`peekTimeoutMs = 2500` 維持。<br>⚠️ **這推翻了規劃期的理由**：README §1.5 原本明文「60 s 僅約 37 次周邊到達 ≈ 9/cell，對信度過薄（C-D3）；90 s 約 56 次 ≈ 14/cell」。T6 實機掃描顯示 90 s 的「≈14/cell」只在 ≤800 ms 的 per-trial 節奏成立（1,000 ms → 11、1,200 ms → 9），即 90 s 本來就買不到規劃期宣稱的樣本量；60 s 在同樣節奏下落在 5–12/cell。使用者在看過兩組實測數字後仍選 60 s，依據是 v1 為 practice-only 且**明確不宣稱信度**（C-D3：無指標進教練報告或 `DrillMetricRegistry`），樣本量明確移交晉升 WP。<br>**Alternatives considered**：(a) 維持 90 s 並保持 OQ 開啟 —— 我的建議項，未採；(b) 加長到 120 s（1,000 ms 節奏可達 14/cell）；(c) 加長到 150 s（1,200 ms 可達）—— 兩者皆會把單次 run 拉長並引入疲勞／注意力衰減的新效度風險，**未採**。<br>**timeout 率不在本次收斂範圍**：harness 為解析式自動瞄準，其 timeout 率恆為 0（by construction），合成一個數字會是造假；可客觀量到的截斷邊界（周邊在 `peekTimeoutMs` 準時撤除）已寫成 E2E 斷言 | 使用者 | 本節 §T6 的節奏掃描表（改值前後各一組） |
+| D-57.T6-3 | 2026-09-08 | **arm-time resolve 以 roster 項的 `resolveSource?: () => unknown` 落地，呼叫點在 `loadDrillById()` 內、`activateDrill()` 之前**（不是 T6 步驟 2 原寫的「兩個 `activeDrillConfig` 賦值點各一次」）。理由：T0 之後 `main.ts` 已把那兩個賦值點重構成共用的 `activateDrill()`，一個呼叫點即涵蓋換 drill 與 protocol 驅動的載入；放在 activation 之前則使 resolver 的 typed error 在任何狀態被觸碰前擲出（不留半換的 scene generation／weapon override），並沿既有 `runControl` 失敗路徑呈現。`loadSceneById()` 刻意**不**重解析——它以 `activeDrillSource` 重驗場景，而 wide 的 source 就是已解析的 config 物件。<br>**Alternatives considered**：(a) 照原文在 `activateDrill()` 與 `loadSceneById()` 內各呼叫一次 —— 換場景會重讀 aspect，直接與 NFR-57.5 的語意衝突，**駁回**；(b) roster 項的 `source` 直接放一個在模組載入期解析好的 config —— 正是 D-57.T3-3 駁回的做法（aspect 凍在錯誤時點），**駁回**；(c) 讓 `source` 一律改成 thunk 以避免 optional 欄位 —— 會動到 20+ 個既有 roster 項與 harness 契約，收益只是型別整齊，**駁回** | Engineering | `main.ts` diff；4 個 E2E 全綠 |
+| D-57.T6-4 | 2026-09-08 | **`fpsTestHarness` 的 `availableDrills` 同步接受 `resolveSource`，並在每次 `startDrill()` 時呼叫**（不是在 bootstrap 的 `.map()` 裡就解析掉）。理由：harness 的 `startDrill()` 語意上就是一次 arm；若在 bootstrap 解析，resize 不變性 E2E 就變成比較兩個「早就解析完」的 run，什麼都證不到，而那正是 NFR-57.5 唯一的實機閘。<br>**Alternatives considered**：(a) 在 `main.ts` 的 map 裡呼叫 `resolveSource()` —— 上述理由，**駁回**；(b) 不讓 harness 支援本 drill、E2E 全走 live 單例 —— live 需要真人 Pointer Lock 開火才能推進 spawn 序列（`centerExemptFromTimeout` 讓無輸入的 run 停在第一顆中心目標，見 T2 補充 ④），無法做逐位 trace 比較，**駁回** | Engineering | `fpsTestHarness.ts` 三行 diff；resize E2E 的 41 spawn 逐位一致 |
 
 ## Surprises
 
@@ -334,14 +417,32 @@ Worktree 另有與本 WP **無關**的既存改動（`docs/exec-plan/README.md`�
 
 21. **跨 aspect 最壞 `abs(ndc_y)` 實算為 `0.3728`，README §2.4 記的是 `0.371`。** 同一組合（21:9 × FOV 60）、同一式子（外緣取 `yaw + r`、`pitch + r`），差 0.0018。結論完全不變（限值 0.96，餘裕仍極大），但測試以實算值釘死並在註解記下這個落差，避免後人以為公式改過。**Evidence**：`tests/regression/spider-wide-geometry.test.ts` 垂直最壞值段。
 
+> 以下為 **T6 執行期（2026-09-08）** 新增。
+
+22. **resolver 的輸出在 browser 與 Node 之間差 1 ULP，所以逐位斷言不能跨引擎宣稱。** E2E 一開始用 `toEqual` 比對匯出的 yaw 窗與測試 process 重算的值，紅在 `47.50358800572262`（Edge V8）vs `…263`（Node V8）—— `Math.tan`／`Math.atan` 的精度是 implementation-defined。T2／T4 的所有逐位斷言都在單一 process 內，**仍然成立**；但跨 browser↔Node 邊界時可宣稱的上限是 **1e-12**（與 T4 由匯出欄位重算 yaw 窗所用的容差同級）。已在 spec 內以具名 helper + 註解釘死，避免後人以為是公式改過。
+
+23. **`feedInput()` 的時間戳是相對「當下的合成時鐘」，不是相對 run 起點。** resize 不變性測試第一版把 run A 餵成「20 tap → resize → 20 tap」而對照組 run B 餵成一批 40 tap，結果**位置全部逐位一致、時間戳整體差 476.5625 ms**：`feedInput` 每次以 `base = clockMs` 重新起算，故分兩批餵會壓縮 tap 網格。修法是讓對照組也分同樣兩批，使兩個 run 的唯一差異就是 resize —— 這樣連 sim 時間戳都能入斷言（sim 時間由合成時鐘推導，不是 wall-clock，故不違反 CLAUDE.md §4）。教訓：拿「分批餵入」的 harness 做對照實驗時，批次切法本身是一個必須對齊的變因。
+
+24. **`DrillMetricRegistry` 無法 import 進 Playwright spec。** 它的 scene-config 依賴鏈會拉到 `peek-ad-corridor.props.json`，而 Playwright 的 loader 要求 JSON module 帶 import attribute，直接 `Error: No tests found`。故 E2E 的「零 compatibility cell」改以 `buildCompatibilityKey()`（只有 type import，鏈很輕）對**真實 browser payload** 呼叫並斷言擲錯；exact-id／near-miss／replay-profile 的 registry 負向面留在 T1 的純函式測試。⇒ e2e spec 可以 import `src/`，但**能 import 的深度取決於依賴鏈裡有沒有 JSON module**，不是取決於模組層級。
+
+25. **大 FOV 下球的「表觀形狀」不恆定，只有角徑恆定。** `spiderWideEyePos()` 保證 `abs(pos − eye) ≡ distanceU`（NFR-57.3，實測逐個 = 8），所以角**徑**恆為 2.0°；但直線透視在大離軸角會橫向拉伸，FOV 120 的周邊目標在截圖上是約 **2.4:1 的橢圓**（`peripheral-L-fov120.png`）。這是正確的投影行為、不是缺陷，規劃期也沒說錯什麼——只是「角徑恆定」很容易被讀成「看起來一樣大一樣圓」，而後者不成立。若晉升 WP 要把 FOV 當條件變因合併，表觀形變是一個未入帳的混淆項。
+
+26. **`kLo` 的「貼邊 8%」是度上的 8%，不是畫面上的 8%。** `ndc_x = tan(yaw)/tan(halfHFOV)` 是凸函數，故 `0.92·yawMax` 在 NDC 上遠低於 `0.92·(1−screenMargin)`：周邊目標中心的 `abs(ndc_x)` 實際落在 FOV 60 `[0.820, 0.927]`、FOV 75 `[0.800, 0.926]`、FOV 120 `[0.687, 0.908]`（界 0.96）。⇒ D-57.P2 想要的「每位選手同樣貼邊」在 NDC 意義下只是近似成立，且近似度隨 FOV 變差（85.4% → 71.5%）。規劃期把 `kLo` 定義在度上是為了與 `yawMax` 同單位，沒有記到這個後果。已由 D-57.T6-1 入帳為已知限制。
+
+27. **規劃期的「90 s ≈ 14/cell」本來就不成立，跟後來改 60 s 無關。** 實機掃描（走出貨 config、真實 `TargetManager`／`DrillRunner`）：90 s 下 600/800/1000/1200/1500 ms 的 per-trial 節奏分別給 18/14/11/9/7 per cell —— 只有 ≤800 ms 那一格達標。README §1.5 的「約 56 次 ≈ 14/cell」等於默認了一個「每個 trial 800 ms」的隱含假設，而那對 40–70° 的大幅拉槍偏樂觀。⇒ 用「時限 ÷ 估計 trial 時間」推樣本量時，那個估計值必須跟結論寫在一起，否則後人會把它當實測。
+
+28. **capture runner 差點原地重製 KI-028。** 第一版沿用 WP-56 的 `spawn('taskkill', …)` fire-and-forget teardown，結果本 task 的第一次 capture 跑完後留下一個 5174 上的 Vite（`--host 127.0.0.1 --port 5174 --strictPort`），存活了十幾分鐘。KI-028 的傷害正是這個：孤兒 Vite 會被 Playwright 的 `reuseExistingServer` 直接接手、連 history root 一起換掉。修法：`await` taskkill 的 exit，再 poll 該 port 直到不再回應，仍在則印明確警告並設 `process.exitCode = 1`。**已驗證修後跑完 5173／5174 皆 free。**
+
+29. **本次執行時 5173 上有一個別人留下的 dev server，而它租用的是真實 `data/session-history/`。** 開工檢查發現 5173 已被佔用（`cmd /c vite`，非 capture runner），其 lease 落在真實 history root ⇒ 若直接跑全量 Playwright，`reuseExistingServer` 會重用它，`history-persistence` 等測試就會把 fixture 寫進真實根目錄。已先停掉該 server，讓 Playwright 自己起帶 `.playwright-tmp/history-dev`／`-preview` 的兩個 server（事後確認兩個 temp root 都建立、真實根目錄本次**無任何新 run 資料**）。附帶發現：真實根目錄裡已有 **2026-09-02 的 e2e fixture 殘留**（`e2e-t5-*`／`stage10-*`／`t5-*` 等約 40 個目錄），屬本 session 之前的既存污染，不在 T6 範圍，但值得清理。另有一個 pid 已消失的 `.history-root.lease` 於本次執行期間出現在真實根目錄，直接以兩種啟動路徑（`npx vite` 與 `npm run dev -- …`，皆帶 `FPS_HISTORY_ROOT`）復驗**都只租 temp root**，故無法歸因給 capture runner；已刪除該 stale lease。
+
 ## Open Questions（追蹤用，權威定義見 README §1.6）
 
 | ID | 狀態 | 待誰 |
 |---|---|---|
 | OQ-57.1 `drillId` 命名 | ✅ 已收斂 2026-09-07：`spider-shot-wide-v1`（D-57.P13）；**T0 已覆驗與 17 個既有 `drillId` 無衝突、含 near-miss 負向面** | — |
 | OQ-57.2 pitch 窗 | ✅ 已收斂 2026-09-07：`±6.5°`，`floorClearanceU = 0.5`（D-57.P14）；**T0 已覆驗 `pitchMax = 6.8947°`、餘裕 0.3947°** | — |
-| OQ-57.3 `kLo` / `screenMargin` 貼邊感 | 待實機（T0 未寫成常數） | 使用者，T6 |
-| OQ-57.4 `peekTimeoutMs` / `timeLimitMs` | 待實機（T0 未寫成常數） | 使用者，T6 |
+| OQ-57.3 `kLo` / `screenMargin` 貼邊感 | ✅ **已收斂 2026-09-08：兩值維持不動**（D-57.T6-1）。三檔 FOV 實機截圖證明完整可見、不被切；NDC 貼邊程度隨 FOV 漂移（85.4% → 71.5%）入帳為已知限制（Surprises 26） | — |
+| OQ-57.4 `peekTimeoutMs` / `timeLimitMs` | 🟡 **部分收斂 2026-09-08**（D-57.T6-2）：`timeLimitMs` 改 **60000**、`peekTimeoutMs` 維持 2500；每 cell 樣本數已有實機掃描表。**timeout 率未收斂**——harness 自動瞄準使其恆為 0（by construction），需真人 run | timeout 率：使用者實機／晉升 WP |
 | OQ-57.5 repositioning 門檻 | 待資料（T0 未寫成常數） | 使用者 + 工程，T5 |
 | OQ-57.6 晉升時 `compatibilityKey` 補 aspect | 已有結論（必須補），不阻塞本 WP。**T0 補上量化依據：同 FOV 75 下 4:3 與 21:9 的 `yawMax` 相差 15.3°** | 晉升 WP 的 T0 |
 | **OQ-57.7**（T0 新增）匯出 `angularDistanceDeg`／`angularSizeDeg` 的 frame 語意 | ✅ **已收斂 2026-09-07：採選項 (b)**（非 T0 建議的 (a)）—— 由 KI-026／BD-026 一併落地，`deriveSpiderShotTransitions()` 改用 payload eye + per-tick player position；權威記載見 [DECISIONS.md GD-32](../../../DECISIONS.md) ④。**T4 因此不再阻塞** | — |

@@ -130,8 +130,18 @@ export interface FpsTestHarness {
 }
 
 export interface HarnessDeps {
-  /** 可載入的 drill（id → 未解析 JSON 來源，交 loadDrill 驗證）。 */
-  availableDrills: ReadonlyArray<{ id: string; source: unknown; scene?: SceneConfig; loadOptions?: DrillLoadOptions }>;
+  /**
+   * 可載入的 drill（id → 未解析 JSON 來源，交 loadDrill 驗證）。`resolveSource` 為 WP-57 / T6 的
+   * arm-time 變體：其 config 由當下顯示狀態（FOV × aspect）解析而來，故不能是模組載入期常數。
+   * 每次 `startDrill()` 視為一次 arm，呼叫一次；每個項目二者取一。
+   */
+  availableDrills: ReadonlyArray<{
+    id: string;
+    source?: unknown;
+    resolveSource?: () => unknown;
+    scene?: SceneConfig;
+    loadOptions?: DrillLoadOptions;
+  }>;
   /** 可載入的場景 config（protocol condition 的 sceneId 解析用）。 */
   availableScenes?: ReadonlyArray<SceneConfig>;
   /** 真實 render backend（createRenderer seam），寫入匯出 metadata。 */
@@ -327,7 +337,8 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       if (entry === undefined) throw new Error(`Unknown drill: ${id}`);
       const resolvedScene = sceneOverride ?? entry.scene;
       sceneConfig = resolvedScene;
-      config = loadDrill(entry.source, resolvedScene, entry.loadOptions);
+      const source = entry.resolveSource !== undefined ? entry.resolveSource() : entry.source;
+      config = loadDrill(source, resolvedScene, entry.loadOptions);
 
       // 全新管線（乾淨起步、與 live 單例隔離）。
       clockMs = 0;

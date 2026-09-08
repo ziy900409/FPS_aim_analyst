@@ -32,15 +32,15 @@
 
 ## Definition of Done
 
-- [ ] 可從研究者控制列載入並跑完整段 run。
-- [ ] E2E on-screen 斷言綠（每個 visible 目標的投影都在畫面內）。
-- [ ] E2E resize 不變性綠（實機版 NFR-57.5）。
-- [ ] E2E translation locked 綠（位置固定、視角可動）。
-- [ ] E2E practice-only 綠（零 history／零 compatibility／不在 registry）。
-- [ ] E2E 交替與 `centerExemptFromTimeout` 綠。
-- [ ] T3 延後的 FOV 60／75／120 三張實機截圖已附 [progress.md](progress.md)，含視覺空曠／可辨識度觀察（D-57.T3-3）。
-- [ ] OQ-57.3／57.4 有實機證據回填（三個 FOV 檔位的觀察 + timeout 率 + 每 cell 樣本數）；若調整常數，相關測試已重跑且綠。
-- [ ] 全量 Vitest／Playwright／`npm run build` exit 0。
+- [x] 可從研究者控制列載入並跑完整段 run。
+- [x] E2E on-screen 斷言綠（每個 visible 目標的投影都在畫面內）—— 61 spawn、失敗數 0、最壞 `abs(ndc_x) = 0.95554`。
+- [x] E2E resize 不變性綠（實機版 NFR-57.5）—— 16:9 → 5:4 mid-run，41 spawn 逐位一致；resize 後重新 arm 的 `yawMax` 有變（非假陽性）。
+- [x] E2E translation locked 綠（位置固定、視角可動）—— W/A/S/D 後 `player` 逐位不變；取得 Pointer Lock 後 `movementX/Y` 改變 `aim.yaw/pitch`。
+- [x] E2E practice-only 綠（零 history／零 compatibility／**registry 負向面沿用 T1 純函式測試**，理由見 progress Surprises 24）。
+- [x] E2E 交替與 `centerExemptFromTimeout` 綠 —— zone 由中心起嚴格交替；中心閒置 3×timeout 仍存活、周邊在 2,500 ms 準時撤除。
+- [x] T3 延後的 FOV 60／75／120 實機截圖已附 [progress.md](progress.md)（每檔 3 張＝中心＋左右近邊界周邊，共 9 張於 [captures/](captures/)），含視覺空曠／可辨識度觀察（D-57.T3-3）。
+- [x] OQ-57.3／57.4 有實機證據回填（三檔 FOV 觀察 + 每 cell 樣本數掃描表 + 截斷邊界）；常數調整（`timeLimitMs` 90000 → 60000）後相關測試已重跑且綠。**timeout 率明確未收斂**（harness 自動瞄準 ⇒ 恆為 0 by construction，不合成假數字），OQ-57.4 標為部分收斂。
+- [x] 全量 Vitest／`npm run build` exit 0；全量 Playwright 90 passed／1 failed = 既存 KI-027（非本 WP 擁有，簽名與 WP-56 T-exit 記錄相同）。
 
 ## Commit
 

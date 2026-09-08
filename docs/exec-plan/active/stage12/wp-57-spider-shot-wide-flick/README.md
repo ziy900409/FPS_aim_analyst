@@ -15,7 +15,7 @@
 | **Delivery policy** | v1 = practice／researcher-only。時序參數（`peekTimeoutMs`／`timeLimitMs`）與 yaw 貼邊係數為未校準候選值，晉升 Assessment 是後續獨立 WP 的職責 |
 | **Estimate** | 9.5–16 dev-days（T0～T6 + T-exit） |
 | **Risk** | High：新增 spawn 幾何進 `TargetManager`（sim 核心）；aspect 進入 spawn 解析與 GD-10「解析度不改 sim」存在直接張力；`DrillConfig` 為約 115 consumers 的跨模組契約 |
-| **Status** | 🟡 T0／T1／T2／T3／T4 ✅（2026-09-07，見 [progress.md](progress.md) 各 §evidence）。OQ-57.7 已於 2026-09-07 由 KI-026／BD-026／[GD-32](../../../DECISIONS.md) 拍板為**選項 (b)** 並落地（匯出角度已統一 eye-frame），T4 的 round-trip 期望值即以此為準。**T5／T6 已解除相依**；T6 另額外承接 T3 步驟 8 的實機截圖（D-57.T3-3） |
+| **Status** | 🟡 T0／T1／T2／T3／T4 ✅（2026-09-07）、**T6 ✅（2026-09-08）**，見 [progress.md](progress.md) 各 §evidence。OQ-57.7 已於 2026-09-07 由 KI-026／BD-026／[GD-32](../../../DECISIONS.md) 拍板為**選項 (b)** 並落地（匯出角度已統一 eye-frame）。T6 已交付 arm-time 接線、4 個 Edge E2E、FOV 60／75／120 實機截圖（D-57.T3-3 結案），並收斂 OQ-57.3（維持候選值）與部分收斂 OQ-57.4（`timeLimitMs` → `60000`；timeout 率仍待真人 run）。**剩 T5（抬滑鼠標註）與 T-exit** |
 
 ---
 
@@ -125,7 +125,7 @@
 | `pitchDegRange` | **`[−6.5, 6.5]` ✅ 已凍結** | 地板淨空反推（見 §2.4），`floorClearanceU = 0.5` |
 | `grid` | `{ pitchBands: 2 }`（side 恆為 2）→ 4 cells | side 與粗垂直方向平衡；yaw 窗僅約 4° 寬，切 tier 無辨別力 |
 | `peekTimeoutMs` | `2500` | Fitts 難度指數由 v2 的 4.09 bit 升到 5.64 bit（≈ +155 ms），窗太窄會右截 RT 分布 |
-| `endCondition` | `timeLimit 90000` | 60 s 僅約 37 次周邊到達 ÷ 4 cells ≈ 9/cell，對信度過薄（C-D3）；90 s 約 56 次 ≈ 14/cell |
+| `endCondition` | **`timeLimit 60000` ✅ 已凍結**（T6／D-57.T6-2；取代規劃期的 `90000`） | 規劃期以每 cell 樣本數選 90 s。T6 實機掃描顯示「≈14/cell」只在 ≤800 ms 的 per-trial 節奏成立（1,000 ms → 11、1,200 ms → 9），故 90 s 也買不到信度；使用者據此改選 60 s（practice-only、**不宣稱信度**，樣本量留給晉升 WP）。實測見 [progress.md](progress.md) §T6 |
 | `countdownMs` | `3000` | 沿用家族慣例 |
 | arena `roomSize` | **`[18, 20, 4]`**（T0 更正，原 `[18, 10, 4]`） | 半寬：最壞側向 7.5322 u + 目標半徑 0.1396 + 0.5 餘裕 → ≥ 8.1719；depth：`eyeZ: 0` 使中心目標落 `z = −8`，需 ≥ 17.28 避開 KI-012 後牆遮擋（見 §2.5.1） |
 | arena `eyeZ` | **`0`**（T0 新增，原未指定） | `SceneConfig.ts:18` 對前向目標 drill 的既有契約 + GD-31；`eyeZ: 4` 會讓匯出 `W_deg` 誤差達 43.6%（見 §2.5.1） |
@@ -136,8 +136,8 @@
 |---|---|---|---|---|---|
 | **OQ-57.1** | `drillId` 用 `spider-shot-wide-v1` 還是 `spider-shot-v3`？ | ✅ **已確認（2026-09-07，D-57.P13）**：`spider-shot-wide-v1`。它是 v1/v2 的**同輩不同構念**（純水平大幅）而非後繼版本，v1/v2 仍有效；`v3` 會誤示替代關係 | 使用者 | ~~T0 exit、T1 前~~ 已收斂 | 決定 exact-ID 註冊、fixture 命名與未來 registry key |
 | **OQ-57.2** | pitch 窗取 `±6.5°`（地板留 0.5 u，沿用 `CLEARANCE_MARGIN_U` 慣例）、`±7.5°`（留 0.25 u），還是做平台／虛空 arena 解鎖完整 `±15°`？ | ✅ **已確認（2026-09-07，D-57.P14）**：`±6.5°`，`floorClearanceU = 0.5`。pitch 是干擾項，13° 總擴散配合 L/R 與 yaw 抖動已足以防背位置；平台場景型別的成本買不到構念價值 | 使用者 | ~~T0 exit、T1 前~~ 已收斂 | 決定 pitch 常數、arena 需求與是否新增場景型別 |
-| **OQ-57.3** | `kLo = 0.92` 與 `screenMargin = 0.04` 是否合手？（「幾乎極限」的主觀邊界） | 先以候選值出實機版，由使用者實玩後回填 | 使用者（實機） | T6 前 | 只影響常數，不影響契約；未校準則 yaw 窗寬度無實機依據 |
-| **OQ-57.4** | `peekTimeoutMs = 2500` 與 `timeLimitMs = 90000` 是否造成天花板／地板效應？ | 先出實機版，觀察 timeout 率與每 cell 樣本數後回填（比照 stage9 對 v2 的 OQ-S9-1 處理） | 使用者（實機） | T6 前 | 未校準則 `movementTimeMs` 分布可能被右截，指標分布形狀失真 |
+| **OQ-57.3** | `kLo = 0.92` 與 `screenMargin = 0.04` 是否合手？（「幾乎極限」的主觀邊界） | ✅ **已收斂（2026-09-08，D-57.T6-1）：兩個候選值維持不動**。T6 三檔實機截圖證明「完整可見、不被切」成立（FR-57.4 實機版）。同時量到一個規劃期未記載的性質：`kLo` 套在**度**上，故 NDC 上的貼邊程度隨 FOV 漂移——周邊目標中心 `abs(ndc_x)` 在 FOV 60 為 `[0.820, 0.927]`、FOV 75 `[0.800, 0.926]`、FOV 120 `[0.687, 0.908]`（邊界 0.96）。此漂移入帳為已知限制，不改公式 | 使用者（實機） | ~~T6 前~~ 已收斂 | — |
+| **OQ-57.4** | `peekTimeoutMs = 2500` 與 `timeLimitMs` 是否造成天花板／地板效應？ | 🟡 **部分收斂（2026-09-08，D-57.T6-2）**：`timeLimitMs` 由使用者拍板 **60000**（取代 `90000`）；`peekTimeoutMs = 2500` 維持。每 cell 樣本數已有實機掃描表（見 [progress.md](progress.md) §T6）。**timeout 率仍未收斂**——harness 為解析式自動瞄準，其 timeout 率恆為 0（by construction），不得當作人類 timeout 率；該半題需真人 run，留給使用者／晉升 WP | 使用者（實機） | timeout 率：晉升 WP 前 | `movementTimeMs` 是否被 2,500 ms 右截仍無實機依據；v1 practice-only 故不阻擋交付 |
 | **OQ-57.5** | 抬滑鼠疑慮旗標的門檻（movement 窗內角速度停滯的 ms 與角速度閾值）？ | T5 以真實 run 的 `dYaw` 序列掃參數並輸出敏感度表，不預設凍結 | 使用者 + 工程 | T5 exit | 門檻過鬆會標掉正常停頓，過緊則漏掉真實抬滑鼠 |
 | **OQ-57.6** | 若未來晉升 Assessment，`compatibilityKey` 是否必須補 `aspect`？（目前只有 `sensitivity` + `fovDeg`，`buildSensitivityFovKey()` 於 `src/metrics/compatibilityKey.ts:86-90`） | **必須補**：同 FOV 但不同視窗形狀會解析出不同 yaw 窗，合併會是錯的。T0 量化：同 FOV 75 下 4:3 的 `yawMax` = 43.485°、21:9 = 58.809°，**相差 15.3°**。v1 practice-only 故本 WP 不動 key | 使用者 | 晉升 WP 的 T0（不阻塞本 WP） | 若晉升時漏掉，兩個實際刺激不同的 run 會被誤判可合併 |
 | **OQ-57.7**（T0 新增） | 匯出的 `angularDistanceDeg`／`angularSizeDeg` 是 origin-frame，對本 drill 系統性偏差（`eyeZ: 0` 下 `D_deg` 低估 0.8–1.6°、`W_deg` 低估約 1.9% 且隨 pitch 在 `[1.9198, 2.0053]` 漂移）。要 **(a)** 照 FR-57.11 原樣不動、只在 `analysis-spider-shot.md` 記載換算方式（真值可由 `meta.scene.eye` + 目標座標經既有 `resolveEyeOrigin()`／`angularEccentricityDeg()` 完全還原）；**(b)** 視為 `spiderShotConditions.ts` 的 bug 並開 KI 修成 eye-frame（會改動 v1/v2 已凍結的匯出值，需重錄 baseline）；還是 **(c)** 為 wide drill 加 drill-scoped 的 eye-frame 欄位（**有 C-D4 第二定義之虞**）？ | ✅ **已收斂（2026-09-07）：採選項 (b)**，而非 T0 建議的 (a)。KI-026／BD-026（commit `567eaf6`）已把 `deriveSpiderShotTransitions()` 改為 payload eye + 逐 tick 玩家位置，匯出 `D_deg`／`W_deg` 現為 **eye-frame**；權威記載見 [GD-32](../../../DECISIONS.md) ④。T4 實測本 drill 的 `W_deg` 恆為設計值 `2.000000000000`（不再有 origin-frame 漂移）。⚠️ 本文件 §2.5.1／§2.7 與 progress §T0 audit 的 origin-frame 偏差數字（`27.937°`／`43.6%`／`2.408°`／`4.0%`／`[1.9198, 2.0053]`）為**拍板前**的量測，只有歷史意義，**不得**作為任何期望值 | ~~使用者~~ 已收斂 | ~~T4 前~~ 已收斂 | — |
@@ -488,7 +488,7 @@ export function deriveRepositioningSuspicion(
 | 抬滑鼠旗標被當成構念使用 | Med/High | 它與刻意停頓不可分離 | 型別與命名皆為 `Suspicion`；C-D3 過閘；不進 registry／教練報告；T5 交付敏感度表而非單一門檻 |
 | 時序候選值造成天花板效應 | Med | `peekTimeoutMs` 右截 RT 分布會使 `movementTimeMs` 失真 | OQ-57.4 實機校準；T6 輸出 timeout 率證據 |
 | 寬場 arena 的視覺空曠影響偵測難度 | Med | 18 u 寬純色房間缺乏參照物，周邊偵測可能偏易或偏難 | T3 交付實機截圖與對比度證據；OQ-57.3 一併回填 |
-| 每 cell 樣本數不足做信度檢定 | Med | 90 s ≈ 14/cell 仍偏薄 | 標記為 practice-only；晉升 WP 必須先解決樣本量，本 WP 不宣稱信度 |
+| 每 cell 樣本數不足做信度檢定 | Med（**T6 實測後升為已確認**） | 規劃期估 90 s ≈ 14/cell；T6 實測該數字只在 ≤800 ms 的 per-trial 節奏成立，且凍結值已改為 **60 s**（D-57.T6-2）⇒ 實際落在約 9–12/cell | 標記為 practice-only、**不宣稱信度**（C-D3：無指標進教練報告／registry）；晉升 WP 必須先解決樣本量（README §5 handoff 已列） |
 | `side` 語意在家族內不一致 | Med | v1/v2 的 `side` 恆為 `'R'`（僅型別佔位），本 drill 承載真實左右 | FR-57.7 要求同步 `CONTEXT.md`；離線側以 `drillId` 分流，不跨 drill 假設 `side` 語意 |
 
 ### 3.2 Conscious technical debt
@@ -518,7 +518,7 @@ export function deriveRepositioningSuspicion(
 | **T3** | 寬場 arena scene config + 幾何斷言（含預設房間負向證據） | T1 | Med/High | 1.5–2.5d | §2.5 全表逐列為測試；預設 `[10,10,3]` 房間穿牆有負向測試；`eyeHeight === PLAYER_EYE_HEIGHT_U` 釘死；`validateClearance` 綠；實機截圖含 FOV 60/75/120 三檔 |
 | **T4** | 匯出 metadata round-trip + `spiderShotConditions.side` | T2 + OQ-57.7 ✅ | Med | 1–1.5d | ✅ **2026-09-07 完成**：`resolvedFrom` 五欄（含匯出裡原本不存在的 `aspect`）round-trip 逐位、可由匯出欄位重算 yaw 窗；eye-frame `W_deg` 恆 `2.000000000000`、`worldDistanceU` 恆 `8.000000000000`、`D_deg` 47.87–51.56°；離線 `side` 與實錄 spawn side 逐筆相同（L,R,L,R,…）；v1/v2 fixture 七欄位逐位不變；`counts/360`／`cm/360` 對手算閉式相符、DPI 缺席回 `undefined`。**production 只改 `spiderShotConditions.ts` 一個 additive 欄位 + 新檔 `mouseThrow.ts`** |
 | **T5** | 抬滑鼠疑慮標註純函式 + 門檻敏感度表 | T4 | Med | 1–2d | 函式對合成訊號（真停滯／刻意停頓／無停滯）分類正確；對真實 run 輸出門檻敏感度表；C-D3 過閘證據（不進教練報告、不進 registry 的 boundary 測試）；OQ-57.5 收斂或標 blocked |
-| **T6** | 研究者控制列接線（arm-time resolve）+ E2E on-screen | T2 + T3 + T4 | High | 1.5–2.5d | 可從控制列載入並跑完；E2E 斷言每個 visible 目標的投影在畫面內；resize 後 spawn 序列不變的實機證據；practice-only（零 history mutation、零 compatibility cell）E2E；OQ-57.3／57.4 回填或標 blocked |
+| **T6** | 研究者控制列接線（arm-time resolve）+ E2E on-screen | T2 + T3 + T4 | High | 1.5–2.5d | ✅ **2026-09-08 完成**：roster 的 `resolveSource` 於 arm 時解析一次（`loadDrillById()` 內、activation 之前，故 typed error 不留半換狀態）；4 個 Edge E2E —— on-screen 61 spawn 失敗 0、mid-run 16:9→5:4 resize 後 41 spawn 逐位一致（且 resize 後重新 arm 的 `yawMax` 有變）、translation locked + Pointer Lock mouse aim、practice-only（`excluded/practice` + 產不出 compatibility key）；FOV 60／75／120 各 3 張實機截圖（D-57.T3-3 結案）；OQ-57.3 收斂（維持候選值）、OQ-57.4 部分收斂（`timeLimitMs` → `60000`，timeout 率待真人 run） |
 | **T-exit** | WP-57 驗收與晉升 WP handoff | T1～T6 | Med | 0.5–1d | §1.1／§1.2 逐條 traceability 有客觀證據；硬約束表逐條有測試或明確不適用理由；docs／CONTEXT／DECISIONS／graph 對帳完成 |
 
 Task 詳細步驟與 local DoD 見同資料夾 `T*.md`。

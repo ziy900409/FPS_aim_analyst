@@ -32,8 +32,15 @@ export const SPIDER_SHOT_WIDE_SEED = 57001;
 export const SPIDER_SHOT_WIDE_PITCH_BANDS = 2;
 /** 未校準候選值（OQ-57.4）：Fitts 難度由 v2 的 4.09 bit 升到 5.64 bit（≈ +155 ms）。 */
 export const SPIDER_SHOT_WIDE_PEEK_TIMEOUT_MS = 2500;
-/** 未校準候選值（OQ-57.4）：90 s ≈ 56 次周邊到達 ÷ 4 cells ≈ 14/cell。 */
-export const SPIDER_SHOT_WIDE_TIME_LIMIT_MS = 90000;
+/**
+ * OQ-57.4（2026-09-08 由使用者拍板為 **60 s**，見 D-57.T6-2）。
+ *
+ * 規劃期選 90 s 的理由是每 cell 樣本數（≈14）；T6 實機掃描顯示那個數字只在 ≤800 ms 的 per-trial
+ * 節奏成立（1,000 ms → 11/cell、1,200 ms → 9/cell），而 60 s 在同樣節奏下降到約 9–12/cell。
+ * 使用者仍選 60 s：v1 是 practice-only、**明確不宣稱信度**（C-D3），故樣本量不是交付條件；
+ * 晉升 Assessment 的 WP 必須自行重新解決樣本量（README §5 handoff）。
+ */
+export const SPIDER_SHOT_WIDE_TIME_LIMIT_MS = 60000;
 
 /** Sphere subtending 2.0° at the fixed 8u wide-flick distance（GD-7：命中與 `W_deg` 同源）。 */
 export const SPIDER_SHOT_WIDE_HITBOX: TargetHitboxConfig = {

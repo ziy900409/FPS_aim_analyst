@@ -1,0 +1,483 @@
+{
+  "capturedAt": "2026-09-08T07:47:03.860Z",
+  "environment": {
+    "browser": "Microsoft Edge 151.0.4129.101",
+    "headless": true,
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "deviceScaleFactor": 1
+  },
+  "drill": {
+    "id": "spider-shot-wide-v1",
+    "sceneId": "wide-flick-arena",
+    "seed": 57001,
+    "mode": "practice"
+  },
+  "note": "syntheticTimeouts is 0 by construction (the harness auto-aims). The human timeout rate for OQ-57.4 requires a real play session and is not synthesised here.",
+  "levels": [
+    {
+      "fovDeg": 60,
+      "resolvedFrom": {
+        "fovDegVertical": 60,
+        "aspect": 1.7777777777777777,
+        "screenMargin": 0.04,
+        "kLo": 0.92,
+        "targetAngularDiameterDeg": 2
+      },
+      "peripheral": {
+        "yawMagDegRange": [
+          40.09089344631173,
+          43.5770580938171
+        ],
+        "pitchDegRange": [
+          -6.5,
+          6.5
+        ]
+      },
+      "frames": {
+        "center": {
+          "targetId": "t0",
+          "zone": "center",
+          "side": "R",
+          "pos": {
+            "x": 0,
+            "y": 1.6,
+            "z": -8
+          },
+          "yawDeg": 0,
+          "pitchDeg": 0,
+          "distanceU": 8
+        },
+        "peripheralL": {
+          "targetId": "t1",
+          "zone": "peripheral",
+          "side": "L",
+          "pos": {
+            "x": -5.312832905137504,
+            "y": 1.1167868226270732,
+            "z": -5.961569554010198
+          },
+          "yawDeg": -41.7068,
+          "pitchDeg": -3.4629,
+          "distanceU": 8
+        },
+        "peripheralR": {
+          "targetId": "t3",
+          "zone": "peripheral",
+          "side": "R",
+          "pos": {
+            "x": 5.220632788468395,
+            "y": 2.075962984167575,
+            "z": -6.04304993572542
+          },
+          "yawDeg": 40.824,
+          "pitchDeg": 3.4108,
+          "distanceU": 8
+        }
+      },
+      "sweep": [
+        {
+          "paceMs": 600,
+          "phase": "ended",
+          "spawns": 101,
+          "peripheralArrivals": 50,
+          "cells": {
+            "Llower": 13,
+            "Rupper": 12,
+            "Lupper": 12,
+            "Rlower": 13
+          },
+          "minPerCell": 12,
+          "meetsPerCellTarget": false,
+          "shots": 120,
+          "hits": 101,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 800,
+          "phase": "ended",
+          "spawns": 76,
+          "peripheralArrivals": 38,
+          "cells": {
+            "Llower": 9,
+            "Rupper": 10,
+            "Lupper": 10,
+            "Rlower": 9
+          },
+          "minPerCell": 9,
+          "meetsPerCellTarget": false,
+          "shots": 90,
+          "hits": 76,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1000,
+          "phase": "ended",
+          "spawns": 61,
+          "peripheralArrivals": 30,
+          "cells": {
+            "Llower": 7,
+            "Rupper": 7,
+            "Lupper": 8,
+            "Rlower": 8
+          },
+          "minPerCell": 7,
+          "meetsPerCellTarget": false,
+          "shots": 72,
+          "hits": 61,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1200,
+          "phase": "ended",
+          "spawns": 51,
+          "peripheralArrivals": 25,
+          "cells": {
+            "Llower": 7,
+            "Rupper": 6,
+            "Lupper": 6,
+            "Rlower": 6
+          },
+          "minPerCell": 6,
+          "meetsPerCellTarget": false,
+          "shots": 60,
+          "hits": 51,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1500,
+          "phase": "ended",
+          "spawns": 41,
+          "peripheralArrivals": 20,
+          "cells": {
+            "Llower": 5,
+            "Rupper": 5,
+            "Lupper": 5,
+            "Rlower": 5
+          },
+          "minPerCell": 5,
+          "meetsPerCellTarget": false,
+          "shots": 48,
+          "hits": 41,
+          "syntheticTimeouts": -1
+        }
+      ],
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+        "dpr": 1,
+        "webgpuApiAvailable": true,
+        "pointerLock": true
+      }
+    },
+    {
+      "fovDeg": 75,
+      "resolvedFrom": {
+        "fovDegVertical": 75,
+        "aspect": 1.7777777777777777,
+        "screenMargin": 0.04,
+        "kLo": 0.92,
+        "targetAngularDiameterDeg": 2
+      },
+      "peripheral": {
+        "yawMagDegRange": [
+          47.50358800572263,
+          51.63433478882894
+        ],
+        "pitchDegRange": [
+          -6.5,
+          6.5
+        ]
+      },
+      "frames": {
+        "center": {
+          "targetId": "t0",
+          "zone": "center",
+          "side": "R",
+          "pos": {
+            "x": 0,
+            "y": 1.6,
+            "z": -8
+          },
+          "yawDeg": 0,
+          "pitchDeg": 0,
+          "distanceU": 8
+        },
+        "peripheralL": {
+          "targetId": "t1",
+          "zone": "peripheral",
+          "side": "L",
+          "pos": {
+            "x": -6.064736175985464,
+            "y": 1.1167868226270732,
+            "z": -5.194755060722918
+          },
+          "yawDeg": -49.4183,
+          "pitchDeg": -3.4629,
+          "distanceU": 8
+        },
+        "peripheralR": {
+          "targetId": "t3",
+          "zone": "peripheral",
+          "side": "R",
+          "pos": {
+            "x": 5.969214126618835,
+            "y": 2.075962984167575,
+            "z": -5.304897920627354
+          },
+          "yawDeg": 48.3722,
+          "pitchDeg": 3.4108,
+          "distanceU": 8
+        }
+      },
+      "sweep": [
+        {
+          "paceMs": 600,
+          "phase": "ended",
+          "spawns": 101,
+          "peripheralArrivals": 50,
+          "cells": {
+            "Llower": 13,
+            "Rupper": 12,
+            "Lupper": 12,
+            "Rlower": 13
+          },
+          "minPerCell": 12,
+          "meetsPerCellTarget": false,
+          "shots": 120,
+          "hits": 101,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 800,
+          "phase": "ended",
+          "spawns": 76,
+          "peripheralArrivals": 38,
+          "cells": {
+            "Llower": 9,
+            "Rupper": 10,
+            "Lupper": 10,
+            "Rlower": 9
+          },
+          "minPerCell": 9,
+          "meetsPerCellTarget": false,
+          "shots": 90,
+          "hits": 76,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1000,
+          "phase": "ended",
+          "spawns": 61,
+          "peripheralArrivals": 30,
+          "cells": {
+            "Llower": 7,
+            "Rupper": 7,
+            "Lupper": 8,
+            "Rlower": 8
+          },
+          "minPerCell": 7,
+          "meetsPerCellTarget": false,
+          "shots": 72,
+          "hits": 61,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1200,
+          "phase": "ended",
+          "spawns": 51,
+          "peripheralArrivals": 25,
+          "cells": {
+            "Llower": 7,
+            "Rupper": 6,
+            "Lupper": 6,
+            "Rlower": 6
+          },
+          "minPerCell": 6,
+          "meetsPerCellTarget": false,
+          "shots": 60,
+          "hits": 51,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1500,
+          "phase": "ended",
+          "spawns": 41,
+          "peripheralArrivals": 20,
+          "cells": {
+            "Llower": 5,
+            "Rupper": 5,
+            "Lupper": 5,
+            "Rlower": 5
+          },
+          "minPerCell": 5,
+          "meetsPerCellTarget": false,
+          "shots": 48,
+          "hits": 41,
+          "syntheticTimeouts": -1
+        }
+      ],
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+        "dpr": 1,
+        "webgpuApiAvailable": true,
+        "pointerLock": true
+      }
+    },
+    {
+      "fovDeg": 120,
+      "resolvedFrom": {
+        "fovDegVertical": 120,
+        "aspect": 1.7777777777777777,
+        "screenMargin": 0.04,
+        "kLo": 0.92,
+        "targetAngularDiameterDeg": 2
+      },
+      "peripheral": {
+        "yawMagDegRange": [
+          64.68499352957473,
+          70.3097755756247
+        ],
+        "pitchDegRange": [
+          -6.5,
+          6.5
+        ]
+      },
+      "frames": {
+        "center": {
+          "targetId": "t0",
+          "zone": "center",
+          "side": "R",
+          "pos": {
+            "x": 0,
+            "y": 1.6,
+            "z": -8
+          },
+          "yawDeg": 0,
+          "pitchDeg": 0,
+          "distanceU": 8
+        },
+        "peripheralL": {
+          "targetId": "t1",
+          "zone": "peripheral",
+          "side": "L",
+          "pos": {
+            "x": -7.36640885222797,
+            "y": 1.1167868226270732,
+            "z": -3.0826166883072843
+          },
+          "yawDeg": -67.2922,
+          "pitchDeg": -3.4629,
+          "distanceU": 8
+        },
+        "peripheralR": {
+          "targetId": "t3",
+          "zone": "peripheral",
+          "side": "R",
+          "pos": {
+            "x": 7.28790187874038,
+            "y": 2.075962984167575,
+            "z": -3.264957188625103
+          },
+          "yawDeg": 65.8678,
+          "pitchDeg": 3.4108,
+          "distanceU": 8
+        }
+      },
+      "sweep": [
+        {
+          "paceMs": 600,
+          "phase": "ended",
+          "spawns": 101,
+          "peripheralArrivals": 50,
+          "cells": {
+            "Llower": 13,
+            "Rupper": 12,
+            "Lupper": 12,
+            "Rlower": 13
+          },
+          "minPerCell": 12,
+          "meetsPerCellTarget": false,
+          "shots": 120,
+          "hits": 101,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 800,
+          "phase": "ended",
+          "spawns": 76,
+          "peripheralArrivals": 38,
+          "cells": {
+            "Llower": 9,
+            "Rupper": 10,
+            "Lupper": 10,
+            "Rlower": 9
+          },
+          "minPerCell": 9,
+          "meetsPerCellTarget": false,
+          "shots": 90,
+          "hits": 76,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1000,
+          "phase": "ended",
+          "spawns": 61,
+          "peripheralArrivals": 30,
+          "cells": {
+            "Llower": 7,
+            "Rupper": 7,
+            "Lupper": 8,
+            "Rlower": 8
+          },
+          "minPerCell": 7,
+          "meetsPerCellTarget": false,
+          "shots": 72,
+          "hits": 61,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1200,
+          "phase": "ended",
+          "spawns": 51,
+          "peripheralArrivals": 25,
+          "cells": {
+            "Llower": 7,
+            "Rupper": 6,
+            "Lupper": 6,
+            "Rlower": 6
+          },
+          "minPerCell": 6,
+          "meetsPerCellTarget": false,
+          "shots": 60,
+          "hits": 51,
+          "syntheticTimeouts": -1
+        },
+        {
+          "paceMs": 1500,
+          "phase": "ended",
+          "spawns": 41,
+          "peripheralArrivals": 20,
+          "cells": {
+            "Llower": 5,
+            "Rupper": 5,
+            "Lupper": 5,
+            "Rlower": 5
+          },
+          "minPerCell": 5,
+          "meetsPerCellTarget": false,
+          "shots": 48,
+          "hits": 41,
+          "syntheticTimeouts": -1
+        }
+      ],
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+        "dpr": 1,
+        "webgpuApiAvailable": true,
+        "pointerLock": true
+      }
+    }
+  ]
+}

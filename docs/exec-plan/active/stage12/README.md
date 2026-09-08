@@ -1,6 +1,6 @@
 # 階段 L（stage12）— Micro-flick 場景 + Spider Shot 大幅度拉槍 + Session Program 排程器
 
-> **狀態：🟡 active。** WP-56（micro-flick 三靶測試場景）**✅ T-exit 交付 2026-09-07**；WP-57（Spider Shot 大幅度拉槍）T0～T4 ✅、T5／T6 可開工；WP-58（Session Program 排程器）已完成規劃、未開工。
+> **狀態：🟡 active。** WP-56（micro-flick 三靶測試場景）**✅ T-exit 交付 2026-09-07**；WP-57（Spider Shot 大幅度拉槍）T0～T4 ✅ + **T6 ✅（2026-09-08）**、只剩 T5；WP-58（Session Program 排程器）已完成規劃、未開工。
 >
 > 三個 WP 互不相依。WP-56／WP-57 各交付一個 researcher-only 的測試場景與 drill；WP-58 交付排程層，讓研究者能把任意 drill（含前兩者的產物）編成有序的測試 program。
 
@@ -11,7 +11,7 @@
 | **WP-56 狀態** | ✅ **T-exit 交付 2026-09-07**：T0／T1（2026-09-04）+ T2～T6／T-exit（2026-09-07）。T6 遺留的兩個 T5 E2E rerun 失敗經 T-exit 診斷為測試前提缺陷（非 production 缺陷、與 WP-57 無關），已修正並全綠 |
 | **WP-57 目標** | Spider Shot 大幅度拉槍：寬場 arena + 中心↔貼近水平 FOV 極限的周邊目標交替，周邊 yaw 於 arm 時由 FOV／aspect 解析並凍結 |
 | **WP-57 交付定位** | practice／researcher-only；不改 `spider-shot-v1`／`v2` 參數、不晉升 Assessment、不進 history／compatibility cohort |
-| **WP-57 狀態** | 🟡 進行中（2026-09-07）：T0／T1／T2／T3／T4 ✅，**T5／T6 可開工**。OQ-57.7 已由 KI-026／BD-026／[GD-32](../../DECISIONS.md) 拍板為選項 (b) 並落地，T4 的匯出 round-trip 即以 eye-frame 為期望值（實測 `W_deg` 恆為設計值 2.0°）；T3 步驟 8 的實機截圖延到 T6（D-57.T3-3） |
+| **WP-57 狀態** | 🟡 進行中（2026-09-08）：T0／T1／T2／T3／T4 ✅ + **T6 ✅**，**只剩 T5（抬滑鼠標註）與 T-exit**。OQ-57.7 已由 KI-026／BD-026／[GD-32](../../DECISIONS.md) 拍板為選項 (b) 並落地，T4 的匯出 round-trip 即以 eye-frame 為期望值（實測 `W_deg` 恆為設計值 2.0°）。T6 已交付 arm-time 接線 + 4 個 Edge E2E + FOV 60／75／120 實機截圖（D-57.T3-3 結案），並收斂 OQ-57.3（維持 `kLo`／`screenMargin`）與部分收斂 OQ-57.4（`timeLimitMs` 90000 → **60000**；timeout 率仍待真人 run） |
 | **WP-58 目標** | Session Plan 從「四家族固定排程」升級為「可自由編排的 drill program」：選 drill、設 reps、設 drill／家族兩級休息秒數 |
 | **WP-58 交付定位** | 純排程層；不新增 drill、不改任何 `DrillConfig`、不改 sim／命中／指標語意。frozen「標準 Assessment」路徑逐位不變 |
 | **WP-58 狀態** | ⬜ 規劃完成（2026-09-07），未開工 |
@@ -24,7 +24,7 @@
 | WP | 子資料夾 | 目標 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---|
 | **WP-56** | [`wp-56-micro-flick-test-scene/`](wp-56-micro-flick-test-scene/README.md) | Micro flick 三靶測試場景（走廊 + 固定玩家 + 三靶 lifecycle + 命中補位） | — | 8.5–15.5 | ✅ T0～T6 + T-exit（2026-09-07） |
-| **WP-57** | [`wp-57-spider-shot-wide-flick/`](wp-57-spider-shot-wide-flick/README.md) | Spider Shot 大幅度拉槍（eye-frame 幾何 + 寬場 arena + arm-time FOV 解析） | 參照 WP-56 的 `playerControl.translation` seam | 9.5–16 | 🟡 T0～T4 ✅ |
+| **WP-57** | [`wp-57-spider-shot-wide-flick/`](wp-57-spider-shot-wide-flick/README.md) | Spider Shot 大幅度拉槍（eye-frame 幾何 + 寬場 arena + arm-time FOV 解析） | 參照 WP-56 的 `playerControl.translation` seam | 9.5–16 | 🟡 T0～T4 ✅ + T6 ✅ |
 | **WP-58** | [`wp-58-session-program-scheduler/`](wp-58-session-program-scheduler/README.md) | Session Program 排程器（drill 清單 + reps + 兩級休息 + 編譯預覽 + 稽核 metadata） | 無 | 7.5–12.5 | ⬜ 規劃完成 |
 
 ## 2. 相依關係

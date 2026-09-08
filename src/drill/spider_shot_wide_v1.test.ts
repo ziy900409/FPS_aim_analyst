@@ -42,12 +42,13 @@ describe('WP-57 T1 — spider-shot-wide-v1 template', () => {
     });
   });
 
-  it('是 practice、位移鎖定、90 秒時限的 template（FR-57.8／57.13）', () => {
+  it('是 practice、位移鎖定、60 秒時限的 template（FR-57.8／57.13）', () => {
     expect(spiderShotWideV1Template.mode).toBe('practice');
     expect(spiderShotWideV1Template.playerControl).toEqual({ translation: 'locked' });
     expect(spiderShotWideV1Template.sequence).toEqual({ alternation: 'LR' });
     expect(spiderShotWideV1Template.timing).toEqual({ countdownMs: 3000, peekTimeoutMs: 2500 });
-    expect(spiderShotWideV1Template.endCondition).toEqual({ type: 'timeLimit', value: 90000 });
+    // OQ-57.4 收斂值（D-57.T6-2）：60 s，取代規劃期的 90 s 候選值。
+    expect(spiderShotWideV1Template.endCondition).toEqual({ type: 'timeLimit', value: 60000 });
     expect(spiderShotWideV1Template.targets.count).toBeGreaterThanOrEqual(300);
   });
 

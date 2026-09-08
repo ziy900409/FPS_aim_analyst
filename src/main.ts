@@ -84,6 +84,10 @@ import { brField } from './scene/scenes/br-field.ts';
 import { peekCorridor } from './scene/scenes/peek-corridor.ts';
 import { peekAdCorridor } from './scene/scenes/peek-ad-corridor.ts';
 import { microFlickRoom } from './scene/scenes/micro-flick-room.ts';
+import { microFlickRoomV2 } from './scene/scenes/micro-flick-room-v2.ts';
+import { microFlickRoomV3 } from './scene/scenes/micro-flick-room-v3.ts';
+import { microFlickRoomV4 } from './scene/scenes/micro-flick-room-v4.ts';
+import { microFlickRoomV5 } from './scene/scenes/micro-flick-room-v5.ts';
 import { spiderShotRoom } from './scene/scenes/spider-shot-room.ts';
 import { wideFlickArena } from './scene/scenes/wide-flick-arena.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
@@ -96,6 +100,7 @@ import { holdTrackV1 } from './drill/hold_track_v1.ts';
 import { spiderShotV1 } from './drill/spider_shot_v1.ts';
 import { spiderShotV2 } from './drill/spider_shot_v2.ts';
 import { spiderShotV3, spiderShotV3Binding } from './drill/spider_shot_v3.ts';
+import { resolveSpiderShotWideV1, spiderShotWideV1Binding } from './drill/spider_shot_wide_v1.ts';
 import { assessmentProtocolVersionForDrill } from './drill/assessmentProtocolVersion.ts';
 import { counterstrafeReversalV1 } from './drill/counterstrafe_reversal_v1.ts';
 import { counterstrafeFreeV1 } from './drill/counterstrafe_free_v1.ts';
@@ -107,6 +112,10 @@ import {
 } from './drill/peek_click_transfer_pilot_v2.ts';
 import { peekClickTransferV1 } from './drill/peek_click_transfer_v1.ts';
 import { microFlickThreeTargetTestV1 } from './drill/micro_flick_three_target_test_v1.ts';
+import { microFlickThreeTargetTestV2 } from './drill/micro_flick_three_target_test_v2.ts';
+import { microFlickThreeTargetTestV3 } from './drill/micro_flick_three_target_test_v3.ts';
+import { microFlickThreeTargetTestV4 } from './drill/micro_flick_three_target_test_v4.ts';
+import { microFlickThreeTargetTestV5 } from './drill/micro_flick_three_target_test_v5.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -123,9 +132,28 @@ const { renderer, backend } = await createRenderer(canvas);
 interface AvailableDrill {
   id: string;
   label: string;
-  source: unknown;
+  /** Module-load-time config source. Exactly one of `source` / `resolveSource` per entry. */
+  source?: unknown;
+  /**
+   * WP-57 / T6 (FR-57.3) — arm-time source factory. `spider-shot-wide-v1`'s peripheral yaw window
+   * is a function of the display state (vertical FOV x camera aspect), so unlike every other roster
+   * entry its config cannot be a module-load constant: resolving at import time would freeze the
+   * aspect at the wrong moment and quietly bypass the whole NFR-57.5 argument (D-57.T3-3).
+   * Called exactly once per arm — never per tick, never from the render callback.
+   */
+  resolveSource?: () => unknown;
   sceneId?: string;
   loadOptions?: DrillLoadOptions;
+}
+
+/**
+ * The one place the two source flavours converge. Arm-time resolution runs here rather than inside
+ * `activateDrill` so a typed resolver failure (FR-57.14) throws before any activation state is
+ * touched, and surfaces through the researcher controls' existing failure path (`runControl`
+ * alert + console.error) instead of crashing or silently falling back to another drill.
+ */
+function drillSourceFor(option: AvailableDrill): unknown {
+  return option.resolveSource !== undefined ? option.resolveSource() : option.source;
 }
 
 interface AvailableScene {
@@ -142,6 +170,10 @@ const availableScenes: AvailableScene[] = [
   { id: peekCorridor.sceneId, label: 'peek-corridor', config: peekCorridor },
   { id: peekAdCorridor.sceneId, label: 'peek-ad-corridor-v1', config: peekAdCorridor },
   { id: microFlickRoom.sceneId, label: microFlickRoom.sceneId, config: microFlickRoom },
+  { id: microFlickRoomV2.sceneId, label: microFlickRoomV2.sceneId, config: microFlickRoomV2 },
+  { id: microFlickRoomV3.sceneId, label: microFlickRoomV3.sceneId, config: microFlickRoomV3 },
+  { id: microFlickRoomV4.sceneId, label: microFlickRoomV4.sceneId, config: microFlickRoomV4 },
+  { id: microFlickRoomV5.sceneId, label: microFlickRoomV5.sceneId, config: microFlickRoomV5 },
   { id: spiderShotRoom.sceneId, label: spiderShotRoom.sceneId, config: spiderShotRoom },
   // WP-57 / T3：寬場 arena。drill 的 roster 註冊需 arm-time resolve（FOV/aspect），屬 T6。
   { id: wideFlickArena.sceneId, label: wideFlickArena.sceneId, config: wideFlickArena },
@@ -191,6 +223,16 @@ const availableDrills: AvailableDrill[] = [
     label: spiderShotV3Binding.id,
     source: spiderShotV3,
     sceneId: spiderShotV3Binding.sceneId,
+  },
+  // WP-57 / T6: the wide-flick sibling construct (~40-70 deg eye-frame displacement). The only
+  // roster entry whose config is produced at arm time — `resolveSpiderShotWideV1` reads the vertical
+  // FOV slider and the live camera aspect exactly once and freezes them into the resolved config
+  // (plus `resolvedFrom` provenance), after which the sim knows nothing about either (GD-6/GD-10).
+  {
+    id: spiderShotWideV1Binding.id,
+    label: spiderShotWideV1Binding.id,
+    resolveSource: () => resolveSpiderShotWideV1(settingsPanel.fov, sceneManager.camera.aspect),
+    sceneId: spiderShotWideV1Binding.sceneId,
   },
   { id: counterstrafeReversalV1.drillId, label: counterstrafeReversalV1.drillId, source: counterstrafeReversalV1 },
   { id: counterstrafeFreeV1.drillId, label: counterstrafeFreeV1.drillId, source: counterstrafeFreeV1 },
@@ -243,6 +285,12 @@ const availableDrills: AvailableDrill[] = [
     source: microFlickThreeTargetTestV1.drill,
     sceneId: microFlickThreeTargetTestV1.sceneId,
   },
+  ...[microFlickThreeTargetTestV2, microFlickThreeTargetTestV3, microFlickThreeTargetTestV4, microFlickThreeTargetTestV5].map((variant) => ({
+    id: variant.id,
+    label: variant.id,
+    source: variant.drill,
+    sceneId: variant.sceneId,
+  })),
   ...trackingBrVariants.map((variant) => ({
     id: variant.id,
     label: variant.id,
@@ -1000,9 +1048,13 @@ if (import.meta.env.DEV) {
   const { createFpsTestHarness } = await import('./testharness/fpsTestHarness.ts');
   const displayHz = await measureDisplayHz({ samples: 10 });
   const fpsTestHarness = createFpsTestHarness({
-    availableDrills: availableDrills.map(({ id, source, sceneId, loadOptions }) => ({
+    availableDrills: availableDrills.map(({ id, source, resolveSource, sceneId, loadOptions }) => ({
       id,
       source,
+      // WP-57 / T6: passed through as a thunk, not invoked here — the harness must treat its own
+      // `startDrill()` as the arm (reading the display state then), or the E2E resize-invariance
+      // gate would compare two runs armed at bootstrap and prove nothing.
+      ...(resolveSource !== undefined ? { resolveSource } : {}),
       ...(sceneId !== undefined ? { scene: findSceneOption(sceneId).config } : {}),
       ...(loadOptions !== undefined ? { loadOptions } : {}),
     })),
@@ -1258,7 +1310,7 @@ async function activateDrill(
 async function loadDrillById(drillId: string): Promise<void> {
   const option = availableDrills.find((candidate) => candidate.id === drillId);
   if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
-  await activateDrill(option.source, option.sceneId, option.loadOptions, option.id);
+  await activateDrill(drillSourceFor(option), option.sceneId, option.loadOptions, option.id);
 }
 
 /** WP-54 / T6 — loads a resolved tracking-pilot `DrillConfig` object. Pinned to `field-low` for
