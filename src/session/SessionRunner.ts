@@ -1,11 +1,10 @@
-import { counterstrafeFreeV1 } from '../drill/counterstrafe_free_v1.ts';
-import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
-import { holdClickV1 } from '../drill/hold_click_v1.ts';
-import { holdTrackV1 } from '../drill/hold_track_v1.ts';
-import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
-import { peekClickTransferV1 } from '../drill/peek_click_transfer_v1.ts';
-import { spiderShotV3 } from '../drill/spider_shot_v3.ts';
+import { resolveFamilyDrillId, resolveWarmupDrillId, type WarmupAvailability } from './drillFamily.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
+
+// WP-58 T1 — the drill<->family mapping now lives in `drillFamily.ts` (FR-58.1), so this module no
+// longer imports drill modules at all. Re-exported here because these two names are part of the
+// runner's established public surface (`SessionRunner.test.ts`, and `main.ts`'s wiring comments).
+export { resolveFamilyDrillId, resolveWarmupDrillId, type WarmupAvailability };
 
 export interface SessionPlan {
   readonly participantId: string;
@@ -14,8 +13,6 @@ export interface SessionPlan {
   readonly restSeconds: number;
   readonly includeWarmup: boolean;
 }
-
-export type WarmupAvailability = 'available' | 'unavailable';
 
 export type SessionRunnerPhase =
   | { readonly kind: 'idle' }
@@ -50,31 +47,6 @@ function requireFamilyOrder(value: readonly SessionFamilyId[]): readonly Session
     seen.add(family);
   }
   return [...value];
-}
-
-export function resolveWarmupDrillId(
-  family: SessionFamilyId,
-): { availability: WarmupAvailability; drillId?: string } {
-  return family === 'counterstrafe'
-    ? { availability: 'available', drillId: counterstrafeFreeV1.drillId }
-    : { availability: 'unavailable' };
-}
-
-export function resolveFamilyDrillId(family: SessionFamilyId): string {
-  switch (family) {
-    case 'hold-click':
-      return holdClickV1.id;
-    case 'hold-track':
-      return holdTrackV1.id;
-    case 'spider-shot':
-      return spiderShotV3.drillId;
-    case 'counterstrafe':
-      return counterstrafeReversalV1.drillId;
-    case 'peek-click-transfer':
-      return peekClickTransferPilotV1.id;
-    case 'peek-click-transfer-v1':
-      return peekClickTransferV1.id;
-  }
 }
 
 export function createSessionRunner(options: SessionRunnerOptions): SessionRunnerHandle {

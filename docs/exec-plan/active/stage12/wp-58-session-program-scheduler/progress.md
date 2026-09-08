@@ -8,6 +8,7 @@
 - **2026-09-07**：確認四個需求缺口——`resolveFamilyDrillId()` 把 family 硬編碼 1:1 對到單一 drill、`requireFamilyOrder()` 明文禁止重複、`restDurationMs` 為單一模組級變數、無任何 rep 概念。決定採「先編譯成 `ProgramStep[]`、Runner 退化成游標」的架構。
 - **2026-09-07**：工作拆為 T0～T6 + T-exit。WP 編號一度暫用 WP-57／GD-32，但同日另一個平行 session 的 [WP-57 — Spider Shot Wide Flick](../wp-57-spider-shot-wide-flick/README.md) 先建立資料夾並認領同一組編號；依 GD-15「先採納先得」本計畫順延重編為 **WP-58**，全域決策待以 ~~GD-33~~ **GD-35** 入帳（`GD-33`／`GD-34` 已於 2026-09-07 分別由 WP-57 T3 與 KI-026 取用，見 §T0 §9）。WP-56（進行中的 micro-flick 場景 WP）不受影響。
 - **2026-09-08**：**T0 完成**。baseline 全綠（typecheck exit 0；Vitest 2,442 passed／2 skipped）、CodeGraph impact 已對帳 README §0.1（發現 2 處需更正）、36 個 exact drillId 的歸屬表已凍結、OQ-58.1／58.2／58.4 已由使用者收斂、GD-35 已入帳、production diff = 0。詳見 §T0。
+- **2026-09-08**：**T1 完成**。新增 `src/session/drillFamily.ts`（drill ↔ family 雙向單一來源，36 個 drill／10 個家族）、`sessionSchedule.ts` 純加法納入 4 個新家族 id、`SessionRunner.ts` 移除全部 7 個 drill import。四條不變量 + 解耦負向矩陣共 **49 個新測試**全綠；全量 Vitest **2,491 passed／2 skipped**（= baseline 2,442 + 49，既有測試零失敗）；typecheck / build exit 0；更新後的 Session Plan e2e 於真實 Edge 通過。詳見 §T1。
 
 ## Decision Log
 
@@ -195,3 +196,48 @@ PoC 重建 `activateDrill()` 每 rep 重建的整條物件圖（`loadDrill` → 
 - **Assessment 解耦不是要新建，而是已經成立**。規劃時 FR-58.3 被寫成「必須建立解耦」，實測發現兩道閘（`DrillConfig.mode` 與 exact-id registry）本來就與家族正交。T1 的工作因此從「建立解耦」降級為「把既有解耦釘死成回歸測試」——範圍縮小，但測試的必要性不變（防止未來有人加 family fallback）。
 - **規劃期的 drill id 表六處錯誤**，全部源自「憑記憶寫 id」而非「讀 roster」。這正是 T0 entry gate 存在的理由：若直接開 T1，`FAMILY_BY_DRILL_ID` 會建出一張查不到任何 drill 的表，且 §2.3 不變量 2（`∀ id ∈ FAMILY_BY_DRILL_ID.keys() : id ∈ availableDrills`）會在 T1 才紅燈。
 - **roster 比規劃想像大得多**：36 個 drill，其中 `micro-flick` 8 個、`tracking_br` 8 個、`peek-click-transfer` pilot 6 個。T4 的下拉選單直接列 36 項會很難用——已記入 §Conscious debt（本 WP 不做分組／搜尋，但表單需按家族分組顯示）。
+
+---
+
+## T1 — Drill ↔ Family 雙向單一來源（2026-09-08）✅
+
+### 1. 交付物
+
+| 檔案 | 動作 | 內容 |
+|---|---|---|
+| `src/session/drillFamily.ts` | **新增** | `FAMILY_BY_DRILL_ID`（36 → 10 家族）、`SCHEDULABLE_DRILL_IDS`（依家族分組排序）、遷入的 `resolveFamilyDrillId()` 與 `resolveWarmupDrillId()` |
+| `src/session/drillFamily.test.ts` | **新增** | README §2.3 四條不變量 + FR-58.2 加法性 + FR-58.3 解耦負向矩陣，**49 tests** |
+| `src/session/sessionSchedule.ts` | 加法 | `SCHEDULABLE_FAMILY_IDS`（4 個）+ `SchedulableFamilyId` 併入 `SessionFamilyId` 與 `KNOWN_SESSION_FAMILY_IDS` |
+| `src/session/SessionRunner.ts` | 減法 | 刪除 7 個 drill import 與兩支 resolver 主體；改 re-export `drillFamily.ts`，公開介面逐位不變 |
+| `src/ui/SessionPlanSetup.test.ts` | 對帳 | 預期家族清單 6 → 10（consequence，非行為改動） |
+| `tests/e2e/session-orchestrator.spec.ts` | 對帳 | 家族 checkbox 數 6 → 10 |
+
+### 2. 實測契約
+
+- `FAMILY_BY_DRILL_ID.size === 36`，零重複（建表函式對重複 drill id 直接 throw）。
+- 家族分佈：`tracking` 11、`micro-flick` 8、`peek-click-transfer` 6、`spider-shot` 3、`counterstrafe` 3、`hold-click`／`hold-track`／`spider-shot-wide`／`peek-click-transfer-v1`／`detection` 各 1 —— 與 T0 §2 凍結表逐項相符。
+- `KNOWN_SESSION_FAMILY_IDS` 6 → **10**；`TEST_FAMILY_IDS`／`TRANSFER_PILOT_FAMILY_IDS`／`TRANSFER_FORMAL_FAMILY_IDS` 內容與順序逐位不變，`buildFamilyOrder()` 四個 sessionIndex 的輪轉集合仍恰為 `TEST_FAMILY_IDS`。
+- 新家族代表 drill（T1 決定，納入不變量 1）：`tracking` → `tracking_v1`、`detection` → `detection_popin_v1`、`micro-flick` → `micro_flick_three_target_test_v1`、`spider-shot-wide` → `spider-shot-wide-v1`。六個既有家族的回傳值逐位不變（含 `spider-shot` → `spider-shot-v3`）。
+- Off-roster 三個 drill（`counterstrafe-cued-v1`／`tracking_core_pr_pilot_v1`／`tracking_reversal_pilot_v1`）查表為 `undefined`，無 fallback 家族。
+- 解耦（FR-58.3）：25 個 practice-only drill 逐一斷言「在表內」且「registry 無登記」；`SCHEDULABLE_DRILL_IDS` 中僅 `spider-shot-v2`／`spider-shot-v3`／`peek_click_transfer_v1` 三筆有 registration。10 個家族 id 本身既非 drill id 亦無 registration。
+
+### 3. 驗證
+
+| 閘 | 結果 |
+|---|---|
+| `npm run typecheck` | exit 0（browser + node） |
+| `npx vitest run` | **242 passed / 1 skipped（243 files）、2,491 passed / 2 skipped** —— 相對 T0 baseline 淨增 49，既有測試零失敗 |
+| `npm run build` | exit 0 |
+| `npx playwright test session-orchestrator.spec.ts -g "Session Plan 真實 DOM 接線"` | 1 passed（真實 Edge，10 個家族 checkbox） |
+| 家族 id 字面值全 repo grep | 無第二份清單；唯二命中為 `spider_shot_wide_v1.test.ts` 對 registry 的 near-miss **drill id** 字串 |
+
+### T1 Decision Log
+
+- **D-58-T1-1 / `resolveWarmupDrillId` 一併遷出**：T1 步驟只點名 `resolveFamilyDrillId`，但 DoD 要求「`SessionRunner.ts` 不再 import 任何 drill 模組」，而 `resolveWarmupDrillId` 持有第 7 個 drill import（`counterstrafeFreeV1`）。兩支一起遷入 `drillFamily.ts`，`SessionRunner.ts` 以 `export { ... } from` re-export 保留公開介面 ⇒ `SessionRunner.test.ts` **零修改**仍綠。
+- **D-58-T1-2 / 不變量 2 的可測形式**：`availableDrills` 位於 `main.ts`（top-level await + WebGPU + DOM），單元測試無法 import。改以 `node:fs` 讀取 `main.ts` 原始碼、擷取 `availableDrills` 陣列字面值並計數（18 個明列項 + 3 個 spread：`PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES` 3、行內陣列 7、`trackingBrVariants` 8 = 36），與 `FAMILY_BY_DRILL_ID.size` 對齊。解析器遇到**無法辨識的 spread 來源即 fail**，而非靜默少算 —— 這正是要擋的漂移（有人加 drill 卻忘了建表）。id 值本身無需比對：兩側都讀同一批 drill 模組常數，唯一可能的分歧就是數量。
+- **D-58-T1-3 / 家族清單擴張是既有政策的延伸，非新決策**：`main.ts:554` 早在 WP-52 T2 就把 Session Plan 表單的家族來源設為 `[...KNOWN_SESSION_FAMILY_IDS]`（刻意避免第二份清單）。新增 4 個家族因此讓表單自動從 6 個 checkbox 變 10 個。兩處計數斷言（`SessionPlanSetup.test.ts`、e2e）隨之更新——這是 consequence 對帳，不是行為改動；`SessionPlanSetup.ts` production code 零修改。
+
+### T1 Surprises
+
+- **`resolveFamilyDrillId` 的 switch 是 T1 的隱形安全網**。函式對 `SessionFamilyId` 做 exhaustive switch 且無 `default`，所以 `sessionSchedule.ts` 一加入 4 個家族 id，TypeScript 立刻在「並非所有程式路徑都有回傳值」上報錯——四個新家族的代表 drill 不可能被忘記。這與 T0 §1 記錄的 `SessionRunnerPhase` 情況正好相反（該型別未被具名 import，改 union 只會靜默失配），同一個 repo 裡兩種相反的編譯期保護強度，值得 T3 留意。
+- **T0 凍結表的價值在 T1 立刻兌現**：建表過程零 id 錯誤，`FAMILY_BY_DRILL_ID.size` 第一次執行就是 36。若照規劃期的舊表手打，會有六處查不到任何 drill 的鍵。

@@ -169,6 +169,13 @@ describe('createSessionPlanSetup', () => {
       'counterstrafe',
       'peek-click-transfer',
       'peek-click-transfer-v1',
+      // WP-58 T1: the four schedulable construct families are additive members of the same
+      // KI-016 allowlist, so they appear here for free. Offering them does not make them
+      // assessments — that stays gated by DrillConfig.mode + the exact-id metric registry.
+      'tracking',
+      'detection',
+      'micro-flick',
+      'spider-shot-wide',
     ]);
     for (const input of familyCheckboxes) {
       input.checked = input.value === 'hold-click' || input.value === 'counterstrafe' || input.value === 'peek-click-transfer';

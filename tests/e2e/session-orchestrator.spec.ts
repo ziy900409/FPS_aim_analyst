@@ -230,9 +230,11 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     // KNOWN_SESSION_FAMILY_IDS(6,含 pilot 'peek-click-transfer' 與 WP-53 T4 formal
     // 'peek-click-transfer-v1'),讓操作者能在同一套自由勾選 UI 選入 transfer 家族,而不需要
     // 重新引入 WP-43 FR-H3 已移除的 preset 下拉。
+    // WP-58 T1 further widened it to 10 by adding the four schedulable construct families
+    // ('tracking' / 'detection' / 'micro-flick' / 'spider-shot-wide') to the same allowlist.
     const familyCheckboxes = planSetup.locator('input[name="sessionFamily"]');
-    await expect(familyCheckboxes).toHaveCount(6);
-    for (let i = 0; i < 6; i++) await expect(familyCheckboxes.nth(i)).toBeChecked();
+    await expect(familyCheckboxes).toHaveCount(10);
+    for (let i = 0; i < 10; i++) await expect(familyCheckboxes.nth(i)).toBeChecked();
     await expect(planSetup.locator('[data-session-family="peek-click-transfer"]')).toHaveCount(1);
     await expect(planSetup.locator('[data-session-family="peek-click-transfer-v1"]')).toHaveCount(1);
 

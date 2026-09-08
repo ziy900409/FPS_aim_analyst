@@ -29,12 +29,12 @@
 
 ## Definition of Done
 
-- [ ] §2.3 四條不變量測試全綠，含 practice-only 解耦逐一負向斷言。
-- [ ] `micro_flick_three_target_test_v1.test.ts:228` 既有負向測試**零修改**仍綠。
-- [ ] `buildFamilyOrder()` 既有測試零修改全綠；新家族未進入 `TEST_FAMILY_IDS`。
-- [ ] `SessionRunner.ts` 不再 import 任何 drill 模組，且其既有測試零修改全綠。
-- [ ] 全 repo grep 家族 id 字面值，確認無第二份清單。
-- [ ] progress 記錄 blast radius、測試數與實際契約。
+- [x] §2.3 四條不變量測試全綠，含 practice-only 解耦逐一負向斷言。（`src/session/drillFamily.test.ts`，49 tests）
+- [x] `micro_flick_three_target_test_v1.test.ts:228` 既有負向測試**零修改**仍綠。
+- [x] `buildFamilyOrder()` 既有測試零修改全綠；新家族未進入 `TEST_FAMILY_IDS`。
+- [x] `SessionRunner.ts` 不再 import 任何 drill 模組，且其既有測試零修改全綠（`resolveFamilyDrillId`／`resolveWarmupDrillId`／`WarmupAvailability` 以 re-export 保留公開介面）。
+- [x] 全 repo grep 家族 id 字面值，確認無第二份清單（唯二命中為 `spider_shot_wide_v1.test.ts` 的 near-miss **drill id** 字串，非家族清單）。
+- [x] progress 記錄 blast radius、測試數與實際契約。
 
 ## Commit
 

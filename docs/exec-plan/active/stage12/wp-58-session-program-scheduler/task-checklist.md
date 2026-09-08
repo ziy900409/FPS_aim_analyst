@@ -5,7 +5,7 @@
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
 | ✅ | **T0** Entry gate／排程層現況稽核／決策凍結 | [T0-entry-gate.md](T0-entry-gate.md) | WP-56 不受影響之確認 | Med |
-| ⬜ | **T1** Drill ↔ Family 雙向單一來源 | [T1-drill-family-registry.md](T1-drill-family-registry.md) | T0 | Med |
+| ✅ | **T1** Drill ↔ Family 雙向單一來源 | [T1-drill-family-registry.md](T1-drill-family-registry.md) | T0 | Med |
 | ⬜ | **T2** Session Program 純函式編譯器 | [T2-program-compiler.md](T2-program-compiler.md) | T1 | Med |
 | ⬜ | **T3** SessionRunner 游標化／runtime 接線 | [T3-runner-cursor-and-wiring.md](T3-runner-cursor-and-wiring.md) | T2 | **High** |
 | ⬜ | **T4** Session Plan 表單改版／程式預覽 | [T4-setup-ui-and-preview.md](T4-setup-ui-and-preview.md) | T2（可與 T3 並行） | Med |
