@@ -14,10 +14,15 @@ import { deriveRepositioningSuspicion } from './spiderShotRepositioning.ts';
  * 合成訊號的**時間邊界一律由 builder 在產生時回報**（`BuiltTrial`），不手寫魔術常數：期望值因此
  * 綁在真正被記錄下來的 tick 上，而不是綁在我對 builder 的記憶上。
  *
- * ⚠️ **本檔的所有 run 都是合成的**。WP-57 目前沒有真人的大幅度拉槍匯出（T6 的實機 E2E 用解析式
- * 自動瞄準，其停滯率恆為 0 by construction，見 progress §T6 對 OQ-57.4 的同一項揭露）。§E 的敏感度
- * 表因此是**對偵測器**的行為刻畫，不是對玩家的觀察；它的 ground truth 是注入的，方向性檢查驗的是
- * 「偵測器有沒有把方向搞反」而非「低感度玩家真的比較常抬滑鼠」。OQ-57.5 據此維持開放。
+ * ⚠️ **本檔的所有 run 都是合成的**，其 ground truth 是注入的。§E 因此只是**對偵測器機制**的刻畫：
+ * 它能驗「偵測器有沒有把方向搞反」，**不能用來選門檻**。
+ *
+ * ⚠️ **2026-09-08：§E 的兩個結論已被真人資料推翻**（四份真人 run，見 WP-57 progress §T5-real）：
+ * ① 交付門檻改為 `stallMinMs = 150`／`stallOmegaDegPerSec = 2`；本檔的 `SYNTHETIC_SEPARATION_OPTIONS`
+ *    （`100 / 15`）在真人資料上會標掉 44% 的「全程不抬滑鼠」run，**不是交付值**。
+ * ② 「分離兩者的是 ω 軸」錯了 —— 真人資料上四個 run 的最小 `|omega|` 全部是 0.0（取樣造成，見 KI-031），
+ *    真正的分離軸是 **duration @ 緊 ω 門檻**。
+ * 下方測試保留為**偵測器機制**的單元測試（窗界、最長區段、typed error、C-D3/C-D4 boundary），那部分未被推翻。
  */
 
 const TICK_MS = 10;
@@ -292,8 +297,11 @@ const PAUSE_DRIFT_DEG_PER_SEC = 30;
 const COHORT_LIFT_CANDIDATES = 9;
 const COHORT_DELIBERATE_PAUSES = 3;
 const COHORT_SIZE = COHORT_LIFT_CANDIDATES + COHORT_DELIBERATE_PAUSES;
-/** 交付的參考門檻（**未凍結**，見 OQ-57.5）。 */
-const REFERENCE_OPTIONS = { stallMinMs: 100, stallOmegaDegPerSec: 15 } as const;
+/**
+ * 這個**合成 cohort** 的分離點 —— **不是交付門檻**。交付值由真人資料校準為 `150 / 2`
+ * （WP-57 progress §T5-real）；此處保留 `100 / 15` 只是為了讓下方兩個測試描述合成 cohort 自身的行為。
+ */
+const SYNTHETIC_SEPARATION_OPTIONS = { stallMinMs: 100, stallOmegaDegPerSec: 15 } as const;
 
 describe('WP-57 T5 — OQ-57.5：門檻敏感度與 cm/360 方向性', () => {
   it('reproduces the requested cm/360 through the canonical mouseThrow derivation', () => {
@@ -304,7 +312,7 @@ describe('WP-57 T5 — OQ-57.5：門檻敏感度與 cm/360 方向性', () => {
   });
 
   it('annotation rate rises with cm/360 rather than falling or staying flat', () => {
-    const rates = [20, 30, 45, 60, 80, 100].map((cmPer360) => annotationRate(cmPer360, REFERENCE_OPTIONS));
+    const rates = [20, 30, 45, 60, 80, 100].map((cmPer360) => annotationRate(cmPer360, SYNTHETIC_SEPARATION_OPTIONS));
 
     // 方向性檢查（T5 step 5）：若這條反向或全平,就是偵測器有問題的訊號,不是資料的性質。
     for (let i = 1; i < rates.length; i++) expect(rates[i]).toBeGreaterThanOrEqual(rates[i - 1]);
@@ -313,11 +321,13 @@ describe('WP-57 T5 — OQ-57.5：門檻敏感度與 cm/360 方向性', () => {
     expect(rates[rates.length - 1]).toBeGreaterThan(rates[0]);
   });
 
-  it('separates forced lifts from deliberate pauses on the omega axis, not the duration axis', () => {
+  it('separates lifts from pauses on the omega axis IN THIS SYNTHETIC COHORT (overturned by real data)', () => {
     const cohort = buildCohort(100); // 全部 9 個候選都被迫抬滑鼠
 
     // ω 門檻低於刻意停頓的微顫 ⇒ 刻意停頓根本形不成停滯區段,任何 `stallMinMs` 都標不到它。
-    const tight = deriveRepositioningSuspicion(cohort.payload, { ...REFERENCE_OPTIONS, detection: DETECTION });
+    // ⚠️ 這是**注入的**微顫（30 °/s）造成的。真人資料上量不到這個微顫（KI-031 的交替取樣讓最小 ω
+    // 恆為 0），所以這條性質**只成立於本 cohort**,不可外推 —— 見檔頭 ⚠️ 與 progress §T5-real。
+    const tight = deriveRepositioningSuspicion(cohort.payload, { ...SYNTHETIC_SEPARATION_OPTIONS, detection: DETECTION });
     expect(cohort.liftIds.every((id) => flagged(tight, id))).toBe(true);
     expect(cohort.pauseIds.some((id) => flagged(tight, id))).toBe(false);
 

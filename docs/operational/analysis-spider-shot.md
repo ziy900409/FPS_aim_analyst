@@ -288,10 +288,19 @@ adsCountsPer360 = 2π ÷ adsStep       // adsStep = hipStep × sensitivityRatio 
 - `stallDurationMs` 取首、末兩個合格 ω 樣本的時間差，故比真實停滯**短最多一個 tick 間隔**（保守側）。
   兩個時間欄位**只在 `suspected` 時出現** —— 未達門檻的次長停滯不回報，避免它們被當成連續量使用。
 
-> ⚠️ **門檻未凍結（OQ-57.5）。** 呼叫端必須自己傳；WP-57 交付的參考值是
-> `stallMinMs = 100`／`stallOmegaDegPerSec = 15`，但敏感度表建在**合成 cohort** 上（repo 內沒有真人的
-> wide-flick 匯出），見 WP-57 progress §T5。一個實測到、但規劃期未預期的性質：分離「被迫抬滑鼠」與
-> 「刻意停頓」的是 **ω 軸**（手離開滑鼠 ⇒ 殘餘角速度趨近 0；手仍在滑鼠上 ⇒ 有微顫），不是 duration 軸。
+> ⚠️ **門檻未凍結（OQ-57.5），呼叫端必須自己傳。** 2026-09-08 以四份真人 run（含「全程不抬滑鼠」／
+> 「每次都抬滑鼠」／「刻意短停頓」三個 ground-truth 條件）校準後交付
+> **`stallMinMs = 150`／`stallOmegaDegPerSec = 2`** —— 靈敏度 78%、偽陽 3%、baseline 0%、
+> 刻意停頓 17%。要高靈敏度可用 `120 / 2`（91%，但刻意停頓誤標升到 29%）。詳表見 WP-57 progress §T5-real。
+>
+> ⚠️ **兩個先前的說法已被真人資料推翻，不要沿用**：① 早期合成期交付的 `100 / 15` 會標掉 44% 的
+> 「全程不抬滑鼠」run 與 32% 的 baseline（寬鬆 ω 抓到的是拉槍中途的正常減速）；② 「分離兩者的是 **ω 軸**」
+> 也錯了 —— 真人資料上四個 run 的最小 `|ω|` **全部是 0.0**，分離軸其實是 **duration @ 緊 ω 門檻**。
+>
+> ⚠️ **兩個前提條件**：`ω = 2 deg/s` 這個緊門檻條件於錄製機器的取樣特性，換硬體須複驗；且在真人資料上
+> `deriveDetectionMetrics()` 必須以 `sustainedTicks: 1` 呼叫才有偵測窗
+> （[KI-031](../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md)，
+> 預設 `4` 在 aim 更新率低於 sim 率的機器上 detected = 0/113），該 KI 修好後本節數字須重跑。
 
 > ⚠️ **它與刻意停頓在觀測上不可完全分離。** 這是近似，不是判定 —— 所以型別叫 `Suspicion`，而且本模組
 > **不被 `src/` 內任何檔案 import**（由 boundary 測試釘死零 importer，`vite build` 產物亦不含它）。

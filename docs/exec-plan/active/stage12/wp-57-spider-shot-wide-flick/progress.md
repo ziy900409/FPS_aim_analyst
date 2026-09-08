@@ -11,7 +11,7 @@
 | T2 TargetManager Branch | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T2 evidence；golden 先錄後改、四 FPS parity、aspect 不變性、10,000 spawn 覆蓋／平衡、120,000 spawn NDC 失敗數 0；full Vitest 2,314 tests、typecheck／build exit 0 |
 | T3 Wide Arena Scene | ✅ Done（步驟 8 實機截圖延到 T6） | 2026-09-07 | 2026-09-07 | 見 §T3 evidence；612 個落點淨空、§2.5 全表逐列、預設房間四檔全穿側牆、`loadDrill` 閘正負向；full Vitest 2,353 tests、兩個 typecheck／build exit 0 |
 | T4 Export and Conditions | ✅ Done | 2026-09-07 | 2026-09-07 | 見 §T4 evidence；resolvedFrom 五欄 round-trip 逐位、eye-frame `W_deg` 恆 2.000000000000、離線 `side` 與實錄 spawn side 逐筆相同、v1/v2 七欄位不變；full Vitest 2,373 tests、兩個 typecheck／build exit 0 |
-| T5 Repositioning Flag | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T5 evidence；四類合成訊號分類正確、C-D4／C-D3 boundary scan 綠、門檻敏感度表與 `cm/360` 方向性檢查逐格釘死；19 tests、全量 metrics regression 41 files／287 tests、兩個 typecheck exit 0。**OQ-57.5 維持開放**（無真人 run，見下方誠實揭露） |
+| T5 Repositioning Flag | ✅ Done（門檻已於同日以真人資料重新校準） | 2026-09-08 | 2026-09-08 | 見 §T5 evidence（函式與 boundary scan）+ **§T5-real（真人校準，取代原本兩張合成表）**。交付門檻由合成期的 `100/15` 改為 **`150/2`**；「分離軸是 ω」的合成結論**已被推翻**（分離軸是 duration @ 緊 ω 門檻）。真人 TP 78%／FP 3%／baseline 0%。OQ-57.5 由「完全開放」降為「已校準於單一硬體，跨硬體待驗」 |
 | T6 Wiring and E2E | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T6 evidence；researcher 控制列 arm-time resolve、4 個 Edge E2E 全綠（on-screen 61 spawn 失敗 0、resize 41 spawn 逐位一致、translation locked + mouse aim、practice-only）、FOV 60／75／120 各 3 張實機截圖 + OQ-57.3／57.4 回填（`timeLimitMs` 改 60000） |
 | T-exit | ✅ Done | 2026-09-08 | 2026-09-08 | 見 §T-exit evidence；A-57.1～12 全綠（含四個 blocking 條件）、FR-57.1～14／NFR-57.1～57.7 逐條有證據、boundary scans 綠、research safety 與 architecture regression 逐項覆核。⚠️ **NFR-57.8 的 Playwright／`test:ci` 兩個子句未滿足**（唯一原因為既存 KI-027），另新立 KI-030（全量 Playwright 不可重現） |
 
@@ -394,7 +394,11 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 
 **方向與預期一致**（單調非遞減、且兩端有差）⇒ 偵測器沒有把方向搞反。這條在測試裡逐格釘死（`[0,0,0,4,8,9]`）。**不能反過來讀成「低感度玩家真的比較常抬滑鼠」** —— 那需要真人資料。
 
-### OQ-57.5：維持開放（附交付的參考門檻）
+### ~~OQ-57.5：維持開放（附交付的參考門檻）~~ → 已被 §T5-real 取代
+
+> ⚠️ **本節與上面兩張合成表已於 2026-09-08 稍晚被真人資料推翻，見下方 [§T5-real](#t5-real2026-09-08真人資料校準取代上方兩張合成表)。**
+> 當時交付的參考門檻 `stallMinMs = 100`／`stallOmegaDegPerSec = 15` **在真人資料上不能用**（會標掉 44% 的「全程不抬滑鼠」run）；
+> 「分離兩者的是 ω 軸」這個結論**方向錯誤**。以下保留原文只為顯示推翻的落差，**不得作為期望值**。
 
 參考門檻 **`stallMinMs = 100`、`stallOmegaDegPerSec = 15`**，**未凍結**、未寫成任何 production 常數（呼叫端必填）。理由與剩餘缺口：
 
@@ -411,6 +415,85 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 | typecheck | `npx tsc --noEmit` + `npx tsc --noEmit -p tsconfig.node.json` | **exit 0**（兩個皆無 diagnostic） |
 
 全量 Vitest／build／Playwright 屬 NFR-57.8，留給 T-exit 一次跑完並入帳（避免同一組 gate 在兩個切片裡各報一次不同的數字）。
+
+## T5-real（2026-09-08）：真人資料校準，取代上方兩張合成表
+
+使用者於 T-exit 交付**後**提供四份真人 `spider-shot-wide-v1` 匯出（同一台機器、同一 FOV 75／aspect 2.0031／同一 yaw 窗 50.48–54.87°、60 Hz 顯示）。**指示為 ground truth**：
+
+| run | 指示 | `meta.sensitivity` | cm/360 | 周邊 presentation | sha256（前 16） |
+|---|---|---|---|---|---|
+| 1 baseline | 照平常打 | 1.0 | 52.0 | 34 | `a14280ab48bbf835` |
+| 2 no-lift | 全程不抬滑鼠 | 1.5 | 34.6 | 32 | `d40aea96a2304130` |
+| 3 all-lift | 每次都抬滑鼠 | 0.5 | 103.9 | 23 | `2adaae7655820e23` |
+| 4 pause | 刻意短停頓（約 0.1 s，手不離開滑鼠） | 1.5 | 34.6 | 24 | `96be9683eae81230` |
+
+檔案**尚未 commit**（各 3.4–3.8 MB）。`meta.dpi` **缺席** ⇒ 上表 cm/360 用的是使用者口頭提供的 **800**，不是 payload 內的值；目前無法從匯出稽核，下次錄製請填 SessionSetup 的 `Mouse DPI`。`suspect: true`（四份皆是）係 60 Hz 顯示撞上 `PERF_FLOOR_MS = 8.33`（120 Hz 資格門檻），frame p50/p95/p99 全為 16.67 ms、零抖動、無掉幀 ⇒ 不是效能問題，但**這批資料過不了實驗資格閘**。
+
+### 前提：偵測窗左界在 canonical 預設下不存在（KI-031）
+
+`deriveDetectionMetrics()` 以預設參數在這四份 run 上 detected = **0/113** ⇒ 本旗標全數落在「無從判定」。根因是 `sustainedTicks: 4` 的連續性要求碰上 aim 每兩個 sim tick 才更新一次，已另立 **[KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md)**。
+
+**下面所有數字均以 `detection: { sustainedTicks: 1 }` 取得**（canonical derivation 的既有參數，不是第二套定義），可用窗因此為 34／31／23／22。這是繞道不是修復；KI-031 修好後必須以修正後的判準複驗本節全部數字。
+
+### 推翻①：ω 軸不是分離軸 —— 它被取樣抹平了
+
+窗內最小 `|ω|`（deg/s）：
+
+| run | min | p50 | max |
+|---|---|---|---|
+| 1 baseline | 0.0 | 0.0 | 180.4 |
+| 2 no-lift | 0.0 | 0.0 | 11.6 |
+| 3 all-lift | 0.0 | 0.0 | **0.0** |
+| 4 pause | 0.0 | 0.0 | 47.9 |
+
+**四個 run 全部觸及 `ω = 0.0`**。合成研究假設的「刻意停頓有 ~30 °/s 微顫」在真實資料上量不到 —— KI-031 的交替取樣讓每隔一個 tick 就是真零，最小 ω 這個統計量因此無鑑別力。
+
+**但 duration 統計量存活了**，而且是 T5 那個「保守側」定義救的：`stallDurationMs` 取首末兩個合格樣本的**時間差**，孤立的單一零 tick 長度是 **0 ms**，交替污染不了它。窗內最長停滯（ms，p50 / p90）：
+
+| run | `ω<2` | `ω<5` | `ω<20` |
+|---|---|---|---|
+| 1 baseline | **8** / 31 | 35 / 92 | 90 / 201 |
+| 2 no-lift | **16** / 55 | 39 / 86 | 125 / 289 |
+| 3 all-lift | **180** / 225 | 180 / 225 | 195 / 234 |
+| 4 pause | 63 / 474 | 129 / 495 | 211 / 642 |
+
+### 推翻②：交付的參考門檻改為 `stallMinMs = 150`、`stallOmegaDegPerSec = 2`
+
+| `stallMinMs` | `ω<` | 靈敏度（all-lift） | 偽陽（no-lift） | 偽陽（baseline） | 刻意停頓（pause） |
+|---|---|---|---|---|---|
+| 100 | 2 | 21/23 **91%** | 1/32 3% | 1/34 3% | 9/24 38% |
+| 120 | 2 | 21/23 **91%** | 1/32 3% | 1/34 3% | 7/24 29% |
+| **150** | **2** | 18/23 **78%** | 1/32 **3%** | 0/34 **0%** | 4/24 17% |
+| 180 | 2 | 11/23 48% | 1/32 3% | 0/34 0% | 4/24 17% |
+| 200 | 2 | 4/23 17% | 1/32 3% | 0/34 0% | 4/24 17% |
+| 150 | 5 | 18/23 78% | 1/32 3% | 1/34 3% | 8/24 33% |
+| 150 | 10 | 18/23 78% | 3/32 9% | 3/34 9% | 11/24 46% |
+| **100** | **15**（合成期的建議） | 21/23 91% | **14/32 44%** | **11/34 32%** | 19/24 79% |
+
+合成期交付的 `100 / 15` 會標掉 **44%** 的「全程不抬滑鼠」run 與 **32%** 的 baseline —— 寬鬆的 ω 門檻抓到的是拉槍中途的正常減速，不是抬滑鼠。**改交付 `150 / 2`**（要高靈敏度可用 `120 / 2`，代價是刻意停頓的誤標率由 17% 升到 29%）。
+
+**獨立佐證（非同一條推導）**：`movementTimeMs` p50 —— baseline 430 ms、no-lift 430 ms、**all-lift 805 ms**、pause 688 ms。抬滑鼠讓移動時間接近翻倍，與 78% 的標註率互相印證。
+
+**17% 的「刻意停頓誤標」不全是誤標**：run 4 的實際停頓在 `ω<2` 下 p50 = 63 ms、**p90 = 474 ms**，比抬滑鼠的 180–225 ms 還長。指示是「約 0.1 秒」，實作出來變異極大。⇒ 文件裡那句「與刻意停頓不可分離」自此有了數字，而且長尾重疊是**真實行為**，不是偵測器缺陷。
+
+### 這批資料**回答不了** `cm/360` 方向性
+
+感度隨指示一起變動（1.0／1.5／0.5／1.5），條件與 cm/360 **完全共線**，順序甚至不單調：
+
+| run | cm/360 | 標註率 @ `150/2` |
+|---|---|---|
+| 2 no-lift | 34.6 | 3% |
+| 4 pause | 34.6 | 17% |
+| 1 baseline | **52.0** | **0%** |
+| 3 all-lift | 103.9 | 78% |
+
+合成表宣稱的單調遞增在此**既未被證實也未被否證**。要跑方向性檢查，需要**同一個指示（照平常打）× 2–3 個感度**（例如 sens 1.5／1.0／0.5 ≈ 35／52／104 cm/360）。
+
+### OQ-57.5 狀態：由「完全開放」降為「已校準於單一硬體，跨硬體待驗」
+
+- **已收斂**：分離軸是 **duration @ 緊 ω 門檻**，不是 ω；交付門檻 `150 / 2`；TP/FP 有真人 ground truth。
+- **仍開放**：① `ω = 2 deg/s` 這個緊門檻**條件於這台 60 Hz 機器的取樣特性**，在 aim 更新率不同的機器上必須複驗；② KI-031 修好後判準會變，本節全部數字須重跑；③ `cm/360` 方向性未答；④ n=1 受測者。
+- 門檻仍**未寫成任何 production 常數**（呼叫端必填），也仍不進教練報告／registry（C-D3 不變）。
 
 ## T-exit evidence（2026-09-08，HEAD=`f3bc045`）
 
@@ -568,6 +651,7 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 | D-57.T4-1 | 2026-09-07 | **`side` 以嚴格符號讀取，不加任何容差**：`x > 0 → 'R'`、`x < 0 → 'L'`、`x === 0` **省略欄位**。<br>**Alternatives considered**：(a) 加一個 epsilon 門檻（如 `abs(x) < 1e-9` 視為無左右）—— 等於為 `side` 發明第二套幾何容差（C-D4），且門檻值沒有任何構念依據，**駁回**；(b) `x === 0` 時沿用上一個 side 或固定回 `'R'` —— 猜了就無法在資料上分辨「沒有左右語意」與「在右邊」，**駁回**；(c) 把 `side` 塞進 `targetConditionCell` —— 會改動 `DrillMetricRegistry.ts:281` 保護的既有相容鍵格式，直接違反 FR-57.11，**駁回**。代價已知並記名：v1/v2 的近垂直呈現可能因浮點殘值輸出無意義的 side（見 Surprises 11），以文件 + 測試揭露而非以閾值遮蔽 | Engineering | `spiderShotConditions.test.ts` side 段 4 tests |
 | D-57.T4-2 | 2026-09-07 | **round-trip 測試的 payload 取自真實 run**（`spiderWideDeterminismFixture` additive 暴露 `DataRecorderSnapshot`），meta 組裝**逐行對齊 `main.ts`** 的 `spawn`／`targets`／`scene` 三段。<br>**Alternatives considered**：(a) 手寫合成 payload —— 只證明「我寫的物件能被 parse 回來」，證明不了生產路徑真的把這些欄位寫出去，**駁回**；(b) 把 `main.ts` 的 meta 組裝抽成可測純函式 —— 那是正確的長期重構，但會動到 `main.ts` 這個 T6 才該碰的接線點，且本 task 的 DoD 是「證明既有管線」而非改它，**駁回（留給 T6／後續 WP）**；(c) 走 `fpsTestHarness` —— 它是 dev-only 觀測縫，不含匯出組裝，**不適用** | Engineering | `spider-wide-export-roundtrip.test.ts` 10 tests |
 | D-57.T4-3 | 2026-09-07 | **`deriveMouseThrow()` 落在 `src/metrics/mouseThrow.ts` 並 import `resolveMouseGain()`**；`cmPer360` 採**欄位級** `undefined`（DPI 缺席時只有 cm 兩欄消失，`countsPer360` 仍回值）。<br>**Alternatives considered**：(a) 在 metrics 內重算 `sensitivity × 0.022°` —— gain 公式的第二定義，正是 C-D4／KI-005 明令禁止的形狀，**駁回**；(b) DPI 缺席時整個函式回 `undefined` —— `counts/360` 不需要 DPI，整組放棄會讓 T5 在沒有 DPI 的 run 上完全拿不到感度軸，**駁回**；(c) 新增一個 `meta.cmPer360` 匯出欄位 —— 違反「不新增輸入欄位」且會與 `sensitivity`／`dpi` 形成第二個真相來源，**駁回**。**已知代價**：`src/metrics/` 首次出現對 `three` 的傳遞依賴（`mouseGain.ts` 用 `THREE.MathUtils`）。實測 bundle 大小與 T3 相同（1,205.13 kB）—— 本模組目前只走離線路徑、無 production import；若日後要讓 `research/` 側消費，應改為把 `RAD_PER_COUNT` 抽成無 three 依賴的常數模組，而不是在 metrics 重寫公式 | Engineering | `mouseThrow.test.ts` 6 tests；build 大小對照 |
+| D-57.T5-7 | 2026-09-08 | **交付門檻由合成期的 `100 / 15` 改為真人校準的 `150 / 2`；並把「分離軸是 ω」的合成結論明確標記為已推翻。**真人 ground truth（四份 run，指示即標籤）下 `150/2` 得 TP 78%／偽陽 3%／baseline 0%／刻意停頓 17%；`100/15` 則標掉 **44%** 的「全程不抬滑鼠」對照 run。<br>**Alternatives considered**：(a) 保留 `100/15` 並只在文件加註 —— 那是把一個已知會誤標近半數對照 run 的數字留在原位當建議，**駁回**；(b) 改用 `120/2`（TP 91%）—— 刻意停頓誤標由 17% 升到 29%，而本旗標的用途是**剔除**受污染的 trial，偽陽的代價高於漏報，**未採**（列為高靈敏度備選）；(c) 把校準值寫成 production 預設常數 —— T5 invariant 明文「不凍結單一門檻」，且該值條件於錄製硬體，**駁回**；(d) 改掉合成 cohort 的 drift 參數讓它「符合真人」—— 真人資料顯示最小 ω 恆為 0（取樣造成），沒有一個 drift 值能代表它;硬調參數只會讓合成表看起來有預測力而實際沒有，**駁回** —— 改為把合成測試明確降級為**偵測器機制**的單元測試 | Engineering + 使用者（實機資料） | progress §T5-real 的三張表；`spiderShotRepositioning.test.ts` 檔頭 ⚠️ |
 | D-57.T6-1 | 2026-09-08 | **OQ-57.3 收斂：`kLo = 0.92` 與 `screenMargin = 0.04` 維持不動。** 三個 FOV 檔位的實機截圖證明「完整可見、不被切」成立，故契約層的 FR-57.4 已滿足。同時揭露一個規劃期未記載的性質並入帳為已知限制：`kLo` 套在**度**上而 `ndc_x = tan(yaw)/tan(halfHFOV)` 是凸函數，故窗下界的 NDC 位置隨 FOV 從邊界的 85.4%（FOV 60）漂到 71.5%（FOV 120）。<br>**Alternatives considered**：(a) 把 `kLo` 改成 NDC 定義（窗下界 = `atan(kLo·(1−screenMargin)·tan(halfHFOV)) − r`）—— 這才是「每位選手同樣貼邊」（D-57.P2）的精確落地，但會改 T1 已凍結的 resolver 公式、README §1.5／§2.4 全部數字與 T1／T2／T3 的相關斷言，**使用者選擇不採**；(b) 只把 `kLo` 調高到 0.97 —— 收窄窗但不修正跨 FOV 漂移本身，**未採** | 使用者 | 本節 §T6 的 NDC 區間表；`captures/` 九張截圖 |
 | D-57.T6-2 | 2026-09-08 | **OQ-57.4 部分收斂：`timeLimitMs` 由 `90000` 改為 `60000`**；`peekTimeoutMs = 2500` 維持。<br>⚠️ **這推翻了規劃期的理由**：README §1.5 原本明文「60 s 僅約 37 次周邊到達 ≈ 9/cell，對信度過薄（C-D3）；90 s 約 56 次 ≈ 14/cell」。T6 實機掃描顯示 90 s 的「≈14/cell」只在 ≤800 ms 的 per-trial 節奏成立（1,000 ms → 11、1,200 ms → 9），即 90 s 本來就買不到規劃期宣稱的樣本量；60 s 在同樣節奏下落在 5–12/cell。使用者在看過兩組實測數字後仍選 60 s，依據是 v1 為 practice-only 且**明確不宣稱信度**（C-D3：無指標進教練報告或 `DrillMetricRegistry`），樣本量明確移交晉升 WP。<br>**Alternatives considered**：(a) 維持 90 s 並保持 OQ 開啟 —— 我的建議項，未採；(b) 加長到 120 s（1,000 ms 節奏可達 14/cell）；(c) 加長到 150 s（1,200 ms 可達）—— 兩者皆會把單次 run 拉長並引入疲勞／注意力衰減的新效度風險，**未採**。<br>**timeout 率不在本次收斂範圍**：harness 為解析式自動瞄準，其 timeout 率恆為 0（by construction），合成一個數字會是造假；可客觀量到的截斷邊界（周邊在 `peekTimeoutMs` 準時撤除）已寫成 E2E 斷言 | 使用者 | 本節 §T6 的節奏掃描表（改值前後各一組） |
 | D-57.T6-3 | 2026-09-08 | **arm-time resolve 以 roster 項的 `resolveSource?: () => unknown` 落地，呼叫點在 `loadDrillById()` 內、`activateDrill()` 之前**（不是 T6 步驟 2 原寫的「兩個 `activeDrillConfig` 賦值點各一次」）。理由：T0 之後 `main.ts` 已把那兩個賦值點重構成共用的 `activateDrill()`，一個呼叫點即涵蓋換 drill 與 protocol 驅動的載入；放在 activation 之前則使 resolver 的 typed error 在任何狀態被觸碰前擲出（不留半換的 scene generation／weapon override），並沿既有 `runControl` 失敗路徑呈現。`loadSceneById()` 刻意**不**重解析——它以 `activeDrillSource` 重驗場景，而 wide 的 source 就是已解析的 config 物件。<br>**Alternatives considered**：(a) 照原文在 `activateDrill()` 與 `loadSceneById()` 內各呼叫一次 —— 換場景會重讀 aspect，直接與 NFR-57.5 的語意衝突，**駁回**；(b) roster 項的 `source` 直接放一個在模組載入期解析好的 config —— 正是 D-57.T3-3 駁回的做法（aspect 凍在錯誤時點），**駁回**；(c) 讓 `source` 一律改成 thunk 以避免 optional 欄位 —— 會動到 20+ 個既有 roster 項與 harness 契約，收益只是型別整齊，**駁回** | Engineering | `main.ts` diff；4 個 E2E 全綠 |
@@ -697,3 +781,7 @@ cohort：12 個周邊 trial —— 9 個「候選」（依模型決定是否被�
 17. **「五類構念零修改重用」是契約層的判斷，不是資料層的判斷 —— 我把它當成後者了。** T0 逐函式覆核 `spiderShotMetrics.ts`（9 個函式對 azimuth／radius／origin-frame 零引用、角度一律走 `resolveEyeOrigin()`），結論「零修改」**完全正確**；但那證明的是「這個模組不會因為新 spawn 幾何而算錯」，**不是**「它在這個 drill 的真人資料上算得出東西」。兩者中間隔著 canonical derivations 的資料充足性前提，而那個前提在 60 Hz 機器上不成立（[KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md)）。⇒ **靜態覆核與端到端 run 都不能取代「把指標棧跑在真人匯出上、數產出率」這一個動作**，而 T0～T-exit 沒有任何一個 task 做過它。
 
 18. **所有 harness 都繞過了會出問題的那條路。** T2／T4／T6 的自動瞄準是由測試**逐 tick 直接寫 `state.aim`** 或以解析式對準，不經瀏覽器 pointer 事件 ⇒ 每個 sim tick 都有新 aim，KI-031 的交替取樣**在 harness 上不可能出現**。這正是「harness 綠燈 ≠ 真人資料可用」的一個乾淨例子，與 T6 對 timeout 率的自我限制（解析式瞄準的 timeout 率恆為 0 by construction）是同一個病理的兩面。
+
+19. **合成 cohort 的 ω 假設被真人資料整個推翻，而救了這個模組的是一個當初為別的理由做的保守決定。** 我在合成研究裡把「手離開滑鼠 ⇒ ω≈0 / 手在滑鼠上 ⇒ ω≈30」寫成 cohort 的分離軸，並據此交付 `100/15`。真人資料上四個 run 的最小 ω **全部是 0.0** —— KI-031 的交替取樣讓每隔一個 tick 就是真零，這個統計量無鑑別力。真正分得開的是**停滯長度**，而它之所以沒被同一個交替污染，純粹是因為 D-57.T5-1 把 `stallDurationMs` 定義成「首末兩個合格樣本的時間差」（孤立的單一零 tick ⇒ 長度 0 ms）。**那個決定當初的理由是「寧可漏報不要虛報」，跟取樣率無關 —— 它是碰巧擋住了這件事，不是設計時想到的。**
+
+20. **一個合成的敏感度表可以在方向正確的情況下，把門檻選在完全錯誤的位置。** 合成表的 `100/15` 在 cohort 上 TP=4/4、FP=0/3 看起來完美；同一組參數在真人資料上把 **44%** 的「全程不抬滑鼠」run 標成抬滑鼠。合成 cohort 的「一次到位」trial 是分段線性的等速拉槍，中途沒有真人那種減速；於是寬鬆的 ω 門檻在合成資料上抓不到東西、在真人資料上抓到一大堆。⇒ **合成敏感度表可以驗「偵測器有沒有把方向搞反」，但不能用來選門檻。**

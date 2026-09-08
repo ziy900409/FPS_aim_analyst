@@ -33,10 +33,10 @@
 
 - [x] 四類合成訊號分類全部正確（真停滯／刻意停頓／一次到位／窗界外 onset 前後兩版）。
 - [x] 角速度來源沿用既有正規路徑，無第二套 ω 實作（boundary scan：必須 import `omegaDegPerSec`，且程式碼不得出現 `dYaw`／`dPitch`／`Math.hypot`／`Math.atan2`）。
-- [x] 門檻敏感度表已寫入 [progress.md](progress.md)。**明確註明為合成 cohort**——repo 內不存在真人的 wide-flick 匯出（D-57.T5-4／Surprises 15、16）。
-- [x] `cm/360` 與標註率的方向性檢查已記錄：單調非遞減 `[0,0,0,4,8,9]/12`，方向與預期一致，逐格釘死在測試裡。
+- [x] 門檻敏感度表已寫入 [progress.md](progress.md)。合成表見 §T5，**2026-09-08 稍晚已由四份真人 run 取代**（§T5-real）：交付門檻 `stallMinMs = 150`／`stallOmegaDegPerSec = 2`，TP 78%／FP 3%／baseline 0%／刻意停頓 17%。
+- [x] `cm/360` 與標註率的方向性檢查已記錄（合成 cohort 單調非遞減 `[0,0,0,4,8,9]/12`，逐格釘死在測試裡）。⚠️ **真人資料回答不了這一項**：四份 run 的感度隨指示一起變動，條件與 cm/360 完全共線且順序不單調（§T5-real）。需同一指示 × 2–3 個感度的 run。
 - [x] C-D3 boundary 測試綠：遞迴掃 `src/` 全部 `.ts`，importers = `[]`（比黑名單三檔更強，見 D-57.T5-5）。
-- [x] OQ-57.5 **維持開放**，owner／deadline 已明確：使用者（實機）+ 工程，晉升 WP 前；交付參考門檻 `stallMinMs=100`／`stallOmegaDegPerSec=15`（未凍結、未進 production 常數）。
+- [x] OQ-57.5 由「完全開放」降為「**已校準於單一硬體，跨硬體待驗**」（§T5-real）。交付門檻 `150 / 2`（未凍結、未進 production 常數）。仍開放：緊 ω 門檻的硬體條件性、KI-031 修好後須重跑、`cm/360` 方向性未答、n=1 受測者。
 - [x] 全量 metrics regression exit 0：`npx vitest run src/metrics tests/golden` → 41 files／287 tests passed。
 
 ## Commit

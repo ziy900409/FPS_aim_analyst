@@ -48,9 +48,16 @@ export interface RepositioningSuspicion {
 }
 
 export interface RepositioningSuspicionOptions {
-  /** 觸發所需的最短停滯長度（ms，非負有限）。門檻未凍結，見 OQ-57.5 的敏感度表。 */
+  /**
+   * 觸發所需的最短停滯長度（ms，非負有限）。**門檻未凍結**（OQ-57.5），刻意不給預設值。
+   * 2026-09-08 以四份真人 run 校準後的交付值為 `150`（見 WP-57 progress §T5-real）。
+   */
   readonly stallMinMs: number;
-  /** 判定「停滯」的角速度上界（deg/s，正有限）。 */
+  /**
+   * 判定「停滯」的角速度上界（deg/s，正有限）。真人校準值為 `2` —— 比合成期建議的 `15` 緊得多，
+   * 因為寬鬆門檻抓到的是拉槍中途的正常減速（`15` 會標掉 44% 的「全程不抬滑鼠」對照 run）。
+   * ⚠️ 該值條件於錄製機器的取樣特性，換硬體須複驗。
+   */
   readonly stallOmegaDegPerSec: number;
   /** 傳給 canonical detection derivation；省略即該模組自身的預設值。 */
   readonly detection?: DetectionDerivationOptions;
