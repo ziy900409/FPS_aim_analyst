@@ -28,7 +28,7 @@ WP-57 交付的抬滑鼠疑慮標註（`deriveRepositioningSuspicion()`）**只�
 | WP | 資料夾 | 一句話 | Exit gate | 相依 | 估時（d） | 狀態 |
 |---|---|---|---|---|---|---|
 | **WP-60** | [`wp-60-raw-mouse-sample-capture/`](wp-60-raw-mouse-sample-capture/README.md) | 原始滑鼠取樣匯出 schema + 擷取路徑 + 時間間隙原語；證明資料足以支撐 LOD 移植 | T-exit | 無（WP-57 已交付，只讀不改）| 5.5–9.5 | ✅ **T-exit 與 TF1～TF3 全數交付 2026-09-09**（零具名缺口）—— A-60.1～16 **15 ✅／1 ✅ 帶上界告警（OQ-60.7 匯出體積）**，無 🟡／❌；T0～T4 全 ✅。F6 實機 A/B Δp95 **−0.005 ms** 且未新增 over-budget windows；真人 B 組 `activeRateHz=708 Hz` 並完成 18／30／50 ms sweep；typecheck ×2、全量 Vitest（2614 passed）、`vite build` exit 0；全量 Playwright `--workers=1` **101 passed／0 failed（13.8m）**，WP-60 raw-mouse 2／2 passed，測試 history roots 存在且真實 history 前後未變。決策 [GD-36](../../DECISIONS.md) |
-| **WP-61** | [範圍草案](wp-61-lift-off-validation/README.md) | 先驗證空洞前後運動學可分性，再決定 Stage 2/3 移植與校準 | 可分性與 reliability gate | WP-60 T-exit ✅ + 高刷真人標註 cohort | 待資料稽核 | 🟡 R2 已收斂 2026-09-09；尚未開工 |
+| **WP-61** | [`wp-61-lift-off-validation/`](wp-61-lift-off-validation/README.md) | 先驗證空洞前後運動學可分性，再決定 Stage 2/3 移植與校準 | T-exit（三種合法結案：通過／不可靠分離／證據不足） | WP-60 T-exit ✅ + 高刷（≥ 120 Hz）真人標註 cohort | 9–15（T4 條件式；負面結論路徑 6.5–11） | 🟡 **執行計畫已制定 2026-09-09**（T0～T4 + T-exit，T4 條件式）；**尚未開工**。<br>✅ **四個使用者決策已收斂 2026-09-09**（D-61.U1～U4）：構念**並存**、新構念定名「**感測器離地／sensor lift**」（OQ-60.4 就此結案）／標註採**自報鍵 + block 冗餘**／cohort 錄於 **240 Hz**（同時滿足 120 Hz 資格閘地板與 144 Hz 的 KI-031 緩解點）／n=1 宣稱上限 `research_only`。<br>⚠️ 剩餘阻塞：① **cohort 尚未錄製**（硬體已就緒，需 T1 儀器先落地）；② T0 的評估契約 pre-registration。計畫相對草案新增 **T1 標註通道儀器** —— repo 內沒有產生獨立標註的機制（D-61.P2）。決策帳本預留 **GD-37**（佔位符，入帳當下需重查最大值） |
 
 **為什麼切成兩個 WP**：WP-60 只負責「把資料取回來並證明它夠用」，不宣稱任何偵測準確度。LOD 判準的參數必須以**真人標註資料**重新推導（PA 的參數在 px/s 空間、且其 ADR 自承 F1 從未對標註資料量測過），而那批資料目前不存在 —— 見 §4。把兩者綁在同一個 WP 會讓一個純工程可驗收的切片，卡在一個等資料的研究問題上。
 
@@ -60,7 +60,13 @@ WP-60（原始滑鼠取樣 schema）  ← 本 stage
 WP-61（LOD 判準移植 + 校準）  ←────────────┘
 ```
 
-- **[KI-031](../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) 與本 stage 正交但相關**：KI-031 是 detection 判準在低 aim 更新率下失效；本 stage 是輸入取樣粒度不足。兩者都在 ≥ 144 Hz 機器上緩解，但**修法不同、不得混為一談**。WP-60 不修 KI-031。
+> **2026-09-09 補註（WP-61 規劃期，D-61.U3）**：上圖的「≥ 144 Hz」與 [`spider-wide-recording-spec.md`](../../../operational/spider-wide-recording-spec.md) §2.1 的「≥ 120 Hz」**不是矛盾，是兩個不同的門檻，兩者都成立**：
+> - **≥ 120 Hz** ＝ 資格閘地板，依 `PERF_FLOOR_MS = 8.33`（[`src/display/constants.ts:13`](../../../../src/display/constants.ts#L13)）—— 管 `meta.suspect` 是否被 frame floor 判紅。
+> - **≥ 144 Hz** ＝ [KI-031](../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) 的完全緩解點（aim 更新率 ≥ 128 Hz）—— §2 的失效邊界：零樣本比例 ≈ `1 − f/128`，`f ≈ 120 Hz` 仍約 **6% 零樣本 ⇒ 偶發漏檢**，60 Hz 為懸崖（113/113 全滅）。管 `deriveDetectionMetrics()` 會不會靜默失效。
+>
+> ⇒ 兩個數字都**不得**被統一或改寫。WP-61 的 cohort **一律錄在 240 Hz**（同時清掉兩者），逐份可用性條件寫成 `meta.displayHz === 240`，禁止與 60 Hz 混批。
+
+- **[KI-031](../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) 與本 stage 正交但相關**：KI-031 是 detection 判準在低 aim 更新率下失效；本 stage 是輸入取樣粒度不足。兩者都在 ≥ 144 Hz 機器上緩解（KI-031 的依據見 §4 上方補註：aim ≥ 128 Hz；**120 Hz 只是「多數情況可用」，仍約 6% 零樣本**），但**修法不同、不得混為一談**。WP-60 不修 KI-031。
 - **真人資料缺口**：WP-57 §T5-real 的四份匯出依 D-57.T5-8 **不進 repo**，且錄製於 60 Hz 機器。WP-60 的 T0 充分性稽核因此**不能**用它們，必須以合成訊號 + 實機 PoC 進行。
 
 ---
