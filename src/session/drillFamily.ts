@@ -135,7 +135,14 @@ export function resolveFamilyDrillId(family: SessionFamilyId): string {
     case 'spider-shot-wide':
       return spiderShotWideV1Binding.id;
     case 'tracking':
-      return trackingV1.drillId;
+      // WP-58 T-exit (OQ-58.6): the scene-pinned variant, not `tracking_v1`. An unpinned drill
+      // inherits whichever scene is loaded, and `tracking_v1`'s 1 u motion range does not clear the
+      // boot scene `field-low` (its rocks and trees) — so making it this family's representative
+      // handed the operator a frozen session that aborted on its very first step. `tracking_scene_v1`
+      // is the same construct in the same family, differing only by pinning `field-low` and
+      // narrowing the range to 0.25 u to clear it. Every other family's representative is
+      // scene-pinned in `main.ts`'s roster; `drillFamily.test.ts` pins that as an invariant.
+      return trackingSceneV1.id;
     case 'detection':
       return detectionPopinV1.drillId;
     case 'micro-flick':

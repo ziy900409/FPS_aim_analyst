@@ -430,4 +430,34 @@ describe('WP-58 T2 — module purity boundary scan (NFR-58.1 / NFR-58.5)', () =>
     const source = readFileSync(new URL('./sessionProgram.ts', import.meta.url), 'utf8');
     expect(source).not.toMatch(pattern);
   });
+
+  // WP-58 T-exit: the gate doc asks for the same scan on `drillFamily.ts`, and T2 only had
+  // `sessionProgram.ts` to scan. A scan that lives in the acceptance transcript rather than in the
+  // suite stops being a gate the moment the transcript scrolls away, so it runs here instead.
+  it.each(FORBIDDEN)('drillFamily.ts contains no %s', (pattern) => {
+    const source = readFileSync(new URL('./drillFamily.ts', import.meta.url), 'utf8');
+    expect(source).not.toMatch(pattern);
+  });
+});
+
+describe('WP-58 T-exit — SessionRunner stays outside the three loops (ADR-2 / §2.11)', () => {
+  // The runner is an application-orchestration layer: its only reach into the sim is *which drill to
+  // load*, through the `loadDrillById` seam its caller injects. Touching shared state directly would
+  // put a fourth writer on the sim/render/input contract without any of the discipline that comes
+  // with it.
+  const FORBIDDEN_REACH: readonly RegExp[] = [
+    /SharedState/,
+    /SimLoop/,
+    /InputSampler/,
+    /DataRecorder/,
+    /from ['"]three/,
+    /document\./,
+    /window\./,
+    /Date\.now\s*\(/,
+  ];
+
+  it.each(FORBIDDEN_REACH)('SessionRunner.ts contains no %s', (pattern) => {
+    const source = readFileSync(new URL('./SessionRunner.ts', import.meta.url), 'utf8');
+    expect(source).not.toMatch(pattern);
+  });
 });

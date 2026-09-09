@@ -1,8 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import defaultDrillSource from '../../drills/counterstrafe_ad_v1.json';
 import { createDrillMetricRegistry } from '../history/DrillMetricRegistry.ts';
+import { counterstrafeFreeV1 } from '../drill/counterstrafe_free_v1.ts';
+import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
 import { PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES } from '../drill/peek_click_transfer_pilot_v2.ts';
 import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
+import { trackingV1 } from '../drill/tracking_v1.ts';
 import { FAMILY_BY_DRILL_ID, SCHEDULABLE_DRILL_IDS, resolveFamilyDrillId } from './drillFamily.ts';
 import {
   KNOWN_SESSION_FAMILY_IDS,
@@ -35,7 +39,10 @@ describe('WP-58 T1 — invariant 1: family -> drill -> family round trip', () =>
   });
 
   it('gives each new family a representative drill of its own', () => {
-    expect(resolveFamilyDrillId('tracking')).toBe('tracking_v1');
+    // WP-58 T-exit (OQ-58.6): the scene-pinned variant. `tracking_v1` pins no scene, so on the
+    // frozen path it inherited the boot scene `field-low` and failed clearance before the first
+    // countdown — see the roster invariant below.
+    expect(resolveFamilyDrillId('tracking')).toBe('tracking_scene_v1');
     expect(resolveFamilyDrillId('detection')).toBe('detection_popin_v1');
     expect(resolveFamilyDrillId('micro-flick')).toBe('micro_flick_three_target_test_v1');
     expect(resolveFamilyDrillId('spider-shot-wide')).toBe('spider-shot-wide-v1');
@@ -114,6 +121,70 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
       detection: 1,
       'micro-flick': 8,
     });
+  });
+});
+
+describe('WP-58 T-exit — invariant 5: every family representative pins a scene (OQ-58.6)', () => {
+  /**
+   * A roster entry without a `sceneId` inherits whichever scene happens to be loaded. That is
+   * survivable for a drill a researcher picks by hand, but a *family representative* is what the
+   * frozen Session Plan loads unattended, starting from the boot scene `field-low`.
+   *
+   * T1 made `tracking` a session family whose representative was the unpinned `tracking_v1`, whose
+   * 1 u motion range does not clear `field-low`'s rocks and trees — so every frozen session that
+   * included the family aborted before its first countdown. T6's live e2e found it; T-exit repointed
+   * the family at `tracking_scene_v1` (same construct, same family, pinned to `field-low` with a
+   * 0.25 u range). This invariant is what stops the class from coming back.
+   *
+   * `counterstrafe` is the single documented exception: its three drills predate scene pinning, are
+   * `field-low` natives, and have shipped on the frozen path since before WP-58.
+   */
+  const SCENELESS_ROSTER_EXPRESSIONS: ReadonlyMap<string, string> = new Map([
+    // Read from the same module constants `main.ts` uses — never hand-typed ids (D-58-T0-2).
+    ['initialDrillConfig.drillId', defaultDrillSource.drillId],
+    ['trackingV1.drillId', trackingV1.drillId],
+    ['counterstrafeReversalV1.drillId', counterstrafeReversalV1.drillId],
+    ['counterstrafeFreeV1.drillId', counterstrafeFreeV1.drillId],
+  ]);
+
+  function scenelessRosterDrillIds(): Set<string> {
+    const source = readFileSync(new URL('../main.ts', import.meta.url), 'utf8');
+    const start = source.indexOf('const availableDrills: AvailableDrill[] = [');
+    expect(start, 'availableDrills literal not found in main.ts').toBeGreaterThan(-1);
+    const block = source.slice(start, source.indexOf('\n];', start));
+
+    const ids = new Set<string>();
+    for (const entry of block.split(/\n {2}(?=\{|\.\.\.)/).slice(1)) {
+      if (entry.includes('sceneId')) continue;
+      const expression = /\bid:\s*([^,\n]+)/.exec(entry)?.[1]?.trim();
+      const id = expression === undefined ? undefined : SCENELESS_ROSTER_EXPRESSIONS.get(expression);
+      // A scene-less entry this map cannot resolve means the roster grew an unpinned drill nobody
+      // reviewed against this invariant — fail loudly rather than skip it and pass.
+      expect(id, `unrecognized scene-less roster entry: ${expression ?? entry.slice(0, 80)}`).toBeDefined();
+      if (id !== undefined) ids.add(id);
+    }
+    return ids;
+  }
+
+  it('leaves only the field-low-native counterstrafe drills unpinned', () => {
+    expect(scenelessRosterDrillIds()).toEqual(
+      new Set([defaultDrillSource.drillId, counterstrafeReversalV1.drillId, counterstrafeFreeV1.drillId, trackingV1.drillId]),
+    );
+  });
+
+  it.each([...KNOWN_SESSION_FAMILY_IDS].filter((family) => family !== 'counterstrafe'))(
+    "%s's representative drill pins its own scene",
+    (family) => {
+      expect(scenelessRosterDrillIds()).not.toContain(resolveFamilyDrillId(family));
+    },
+  );
+
+  it('still lets an unpinned drill be scheduled by hand, just not represent a family', () => {
+    // FR-58.3's shape, one layer up: reachability and representation are separate questions.
+    // `tracking_v1` stays schedulable in a custom program (where the operator chooses what precedes
+    // it); what it may not be is the drill a frozen session loads sight-unseen.
+    expect(FAMILY_BY_DRILL_ID.get(trackingV1.drillId)).toBe('tracking');
+    expect(SCHEDULABLE_DRILL_IDS).toContain(trackingV1.drillId);
   });
 });
 

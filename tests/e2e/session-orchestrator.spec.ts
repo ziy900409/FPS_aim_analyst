@@ -761,7 +761,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
   test('WP-58 T6：frozen 標準 Assessment 軌在真瀏覽器跑完 —— 家族順序、單一休息秒數、無熱身提示', async ({
     page,
   }) => {
-    test.setTimeout(8 * 60_000);
+    test.setTimeout(11 * 60_000);
     await waitForHarness(page);
 
     const { samples, downloads, statuses } = await runLiveSessionPlan(
@@ -769,17 +769,32 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
       't6-live-frozen',
       // `detection` has no warmup drill (only `counterstrafe` does), so this also exercises the
       // "no warmup for this family" branch without paying for two 120s counterstrafe runs.
-      { mode: 'frozen', families: ['detection', 'spider-shot-wide'], restSeconds: 2, includeWarmup: true },
-      7 * 60_000,
+      //
+      // WP-58 T-exit (OQ-58.6): `tracking` is here as the third family for a specific reason. T1
+      // made it a frozen family whose representative was the scene-less `tracking_v1`, so ticking it
+      // aborted the session on its very first load — the frozen form offered a family that could
+      // never run. T-exit repointed the family at `tracking_scene_v1`; this is the live proof that
+      // an operator ticking `tracking` now gets a session that actually completes, which the unit
+      // invariant ("the representative pins a scene") cannot show on its own — only a real load
+      // proves the drill clears the scene it is pinned to.
+      {
+        mode: 'frozen',
+        families: ['detection', 'spider-shot-wide', 'tracking'],
+        restSeconds: 2,
+        includeWarmup: true,
+      },
+      10 * 60_000,
     );
 
     // `includeWarmup` was asked for, but `detection` has no warmup drill, so the operator is told
     // so and the program starts on the first measured run. The notice is transient (the run
     // ordinals overwrite it), hence the sampled history rather than a post-hoc read.
     expect(statuses.some((status) => status.includes('本家族無熱身'))).toBe(true);
-    // Warmup runs are not numbered: two families means "1/2" then "2/2", exactly as before WP-58.
-    expect(statuses.some((status) => status.includes('正式測試 1/2'))).toBe(true);
-    expect(statuses.some((status) => status.includes('正式測試 2/2'))).toBe(true);
+    // Warmup runs are not numbered: three families means "1/3" through "3/3", and the ordinal
+    // scheme itself is exactly as before WP-58.
+    expect(statuses.some((status) => status.includes('正式測試 1/3'))).toBe(true);
+    expect(statuses.some((status) => status.includes('正式測試 2/3'))).toBe(true);
+    expect(statuses.some((status) => status.includes('正式測試 3/3'))).toBe(true);
     await expect(page.locator('#protocol-status')).toContainText('Session Plan 完成');
 
     // FR-58.10 — the frozen program is each selected family's representative drill, in the
@@ -787,17 +802,20 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     const walked = samples.filter(
       (sample) => sample.state.phase === 'run' || sample.state.phase === 'rest',
     );
-    expect(walked.map((sample) => sample.state.phase)).toEqual(['run', 'rest', 'run']);
+    expect(walked.map((sample) => sample.state.phase)).toEqual(['run', 'rest', 'run', 'rest', 'run']);
     expect(
       walked.filter((sample) => sample.state.phase === 'run').map((sample) => sample.state.drillId),
-    ).toEqual(['detection_popin_v1', 'spider-shot-wide-v1']);
+    ).toEqual(['detection_popin_v1', 'spider-shot-wide-v1', 'tracking_scene_v1']);
     const rests = measuredRests(samples);
-    expect(rests.map((rest) => rest.boundary)).toEqual(['family']);
-    expect(rests[0].ms).toBeGreaterThanOrEqual(1_900);
-    expect(rests[0].ms).toBeLessThan(12_000);
+    // Every boundary here crosses families, so all of them take the single frozen `restSeconds`.
+    expect(rests.map((rest) => rest.boundary)).toEqual(['family', 'family']);
+    for (const rest of rests) {
+      expect(rest.ms).toBeGreaterThanOrEqual(1_900);
+      expect(rest.ms).toBeLessThan(12_000);
+    }
 
-    expect(downloads).toHaveLength(2);
-    expect(new Set(downloads).size).toBe(2);
+    expect(downloads).toHaveLength(3);
+    expect(new Set(downloads).size).toBe(3);
     expect(samples.at(-1)!.state.experimentActive).toBe(false);
     await expect(page.locator('#rest-overlay')).toBeHidden();
   });
@@ -837,9 +855,9 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     await expect(status).toContainText('clearance');
     await expect(page.locator('#rest-overlay')).toBeHidden();
 
-    // An aborted session is *not* formally exited — `experimentSession.exit()` only runs on the
-    // completion branch. Pinned here so the asymmetry is visible rather than folklore; see
-    // progress.md (T6 open questions).
-    expect(samples.at(-1)!.state.experimentActive).toBe(true);
+    // WP-58 T-exit (OQ-58.7): an aborted session is now closed on the same rule as a completed one
+    // — reaching `done` calls `experimentSession.exit()`. T6 pinned the old asymmetry here
+    // (`true`); the assertion flipping is the regression evidence that the fix landed.
+    expect(samples.at(-1)!.state.experimentActive).toBe(false);
   });
 });

@@ -45,9 +45,9 @@
 | ✅ | T2 Session Program 純函式編譯器 |
 | ✅ | T3 SessionRunner 游標化／runtime 接線 |
 | ✅ | T4 Session Plan 表單改版／程式預覽 |
-| ⬜ | T5 Metadata 稽核欄位／逐輪匯出／cohort 隔離 |
-| ⬜ | T6 E2E 整合／回歸對帳 |
-| ⬜ | T-exit |
+| ✅ | T5 Metadata 稽核欄位／逐輪匯出／cohort 隔離 |
+| ✅ | T6 E2E 整合／回歸對帳 |
+| ✅ | T-exit（2026-09-09 交付；OQ-58.6／58.7 兩個 blocker 已落地） |
 
 ## WP-59 — Micro Flick v8 Replacement Spacing
 
@@ -67,5 +67,5 @@
 - [ ] 四個 WP 的 T-exit gate 皆通過並有客觀證據。
 - [ ] `docs/exec-plan/README.md` §2 已加入 stage12 段落與四個 WP 的狀態列。
 - [ ] stage12 的里程碑歸屬已由 owner 決定（指派 M22 或明示不設里程碑）。
-- [ ] WP-57 的 GD-32、WP-58 的 GD-33 與 WP-59 的 GD-34 皆已入 [DECISIONS.md](../../DECISIONS.md)，且編號無衝突。
-- [ ] 若 stage12 新增的 drill 要進 WP-58 的排程清單，drill id 已與 WP-58 T1 的對照表對帳。
+- [ ] WP-57 的 **GD-32**、WP-58 的 **GD-35** 與 WP-59 的全域決策皆已入 [DECISIONS.md](../../DECISIONS.md)，且編號無衝突。<br>**已更正（2026-09-09，WP-58 T-exit）**：本行原寫 WP-58=GD-33／WP-59=GD-34，兩個號碼皆已被別的工作取用（`GD-33` → WP-57 T3、`GD-34` → KI-026），WP-58 T0 實際入帳為 **GD-35**（已完成）；WP-59 的號碼待其 T0 於**寫入當下**重查最大值後決定。
+- [x] 若 stage12 新增的 drill 要進 WP-58 的排程清單，drill id 已與 WP-58 T1 的對照表對帳。**已完成**：WP-56 的 `micro_flick_three_target_test_v1`～`_v8` → 家族 `micro-flick`、WP-57 的 `spider-shot-wide-v1` → 家族 `spider-shot-wide`，皆自 drill 模組匯出的常數建表（非手打字面值），並由 `drillFamily.test.ts` 的不變量 2 對 `main.ts` roster 逐一對帳。

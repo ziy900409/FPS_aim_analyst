@@ -1552,6 +1552,14 @@ const sessionPlanRunner: SessionRunnerHandle = createSessionRunner({
         nextDrillId: nextPhase.step.nextDrillId,
       });
     } else restOverlay.hide();
+    // WP-58 T-exit (OQ-58.7): one rule for how a Session Plan ends the experiment session —
+    // reaching `done` closes it, whether the cursor ran off the end or `poll()`'s unattended
+    // auto-advance aborted on a failed load. Before this, only the completion branch called
+    // `exit()`, so an aborted session left `active === true` and every later standalone export
+    // kept inheriting that session's `gate`/`suspect`. `exit()` is idempotent and keeps
+    // `gate`/`suspect` readable, so the run being exported right now is unaffected — it was
+    // collected before `advance()` was awaited.
+    if (nextPhase.kind === 'done') experimentSession.exit();
   },
 });
 
@@ -1585,6 +1593,9 @@ async function startSessionPlan(): Promise<void> {
   const setup = sessionSetupValues;
   pendingSessionPlanSelection = undefined;
   if (selection === undefined || setup === undefined) {
+    // Same case as the catch below: `onEnter` has already called `experimentSession.enter()`, so
+    // bailing out without `exit()` would strand an active session that never ran a single step.
+    experimentSession.exit();
     setProtocolStatus('Session Plan 啟動失敗：缺少受試者或計畫選擇。', false);
     return;
   }
@@ -1631,6 +1642,9 @@ async function startSessionPlan(): Promise<void> {
   } catch (error) {
     activeSessionPlanSelection = undefined;
     activeCustomProgramFamilyOrder = undefined;
+    // WP-58 T-exit (OQ-58.7): a start that never reached step 0 never publishes a `done` phase, so
+    // the `onPhaseChange` rule above cannot see it — close the session here for the same reason.
+    experimentSession.exit();
     setProtocolStatus(`Session Plan 啟動失敗：${error instanceof Error ? error.message : String(error)}`, false);
   }
 }
@@ -1781,7 +1795,6 @@ function liveFrame(now: number): void {
         // 它是暖身而非量測 block（frozen 路徑逐位不變）；custom program 無 warmup（FR-58.17）。
         if (sessionPhase.step.warmup !== true) downloadJSON(payload, { basename: exportBasename(payload) });
         await sessionPlanRunner.advance();
-        if (sessionPlanRunner.phase.kind === 'done') experimentSession.exit();
       } else {
         await completeActiveProtocolCondition();
       }

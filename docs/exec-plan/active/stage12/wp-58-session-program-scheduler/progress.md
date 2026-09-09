@@ -18,6 +18,8 @@
 
 - **2026-09-09**：**T6 完成**。`session-orchestrator.spec.ts` **擴充既有 spec**（未新開平行 spec）：4 條自訂 program 表單 DOM 案例 + 3 條真實瀏覽器 live run（custom 3 家族 × 2 reps 的 11 步、逐段休息時長、6 份唯一匯出、收工狀態；frozen 兩家族；program 中途載入失敗中止）。live run 需要一條**只跳過資格閘「拒入」、不偽造「通過」**的 dev-only seam——資格閘在自動化下不可能通過（實測 perf p95 16.83 ms vs 120 Hz 地板 8.33 ms）。全量 Vitest **2,661 passed／2 skipped**（與 T5 相同，T6 未加 Vitest 測試）；全量 Playwright **99 passed**、exit 0；build／typecheck exit 0；`graphify update .` 已同步。首跑的 4 個紅燈皆**與 WP-58 無關**（3 條為累積 1,327 個 participant 目錄的暫存 root 腐化、1 條為 WP-54 T6 起就過期的守衛數），逐一歸因見 §T6 §7。另發現 **OQ-58.6**（frozen 軌 `tracking` 家族開場即中止）與 **OQ-58.7**，交 T-exit。詳見 §T6
 
+- **2026-09-09**：**T-exit 完成 —— WP-58 交付**。T6 交上來的兩個 OQ 由 owner 拍板並在本 task 落地：**OQ-58.6** 採「`tracking` 代表 drill 改 `tracking_scene_v1`」（規劃時的另一候選「補 `sceneId`」經查根本修不好——擋住 `tracking_v1` 的是 motion range 不是缺宣告），**OQ-58.7** 採「修」並收斂成一條規則（Session Plan 進入 `done` 即 `exit()`，涵蓋正常收工與中止）。另把 gate 5 三份邊界掃描中尚未自動化的兩份寫進 suite。新增 **27 個測試**；全量 Vitest **2,688 passed／2 skipped**、`npm run test:ci` exit 0（含全量 Playwright **99 passed**）；A-58.1～9 皆有具名測試證據。詳見 §T-exit。
+
 ## Decision Log
 
 - **D-58-P1 / 次數語意**：「設定 drill 次數」= **reps（重複跑 N 輪）**，不是修改 drill 內的 `endCondition.value`。排程層永不寫 drill 參數，`protocolVersion 1.0.0` 與跨 session 可比性不受影響。
@@ -41,8 +43,8 @@
 - **OQ-58.2**：三輪匯出的檔名唯一性。✅ **已收斂（使用者，2026-09-08）：不加 rep 序號**。`exportBasename` 已含每次 `activateDrill()` 重設的毫秒級 `startedAt`，實測三輪唯一；T5 只補唯一性回歸測試，不改格式。證據見 §T0 §4。 **T5 已落地**：`exportBasename` 零修改，回歸測試釘死「5 個 run step → 5 個唯一檔名」並反向明寫同毫秒撞名的已知邊界（§T5 §4b）。
 - **OQ-58.3**：休息 overlay 是否顯示邊界種類與下一個 drill。✅ **T4 依規劃建議的預設值落地（要，2026-09-08）**：`show(remainingMs, detail?)` 新增 optional `{ boundary, nextDrillId }`，兩個值皆直接取自編譯後的 `RestStep`，因此 overlay 與預覽表**不可能不一致**（共用 `programBoundaryLabel.ts` 單一詞彙表）。省略 detail 時逐位回到 WP-58 之前的兩行倒數。
 - **OQ-58.4**：`custom` session 是否可進 history。✅ **已收斂（使用者，2026-09-08）：沿用既有兩道閘（`DrillConfig.mode` + exact-id registry），額外標記 `sessionPlanMode`**，**不**在 `HistoryPersistence` 新增第三道攔截；隔離落在 T5 的 trend cohort 判定層。證據見 §T0 §6。**T5 已落地**：`DrillMetricRegistry.project()` 對 `sessionPlanMode === 'custom'` 回 `excluded-cohort`；`HistoryPersistence` 零修改，並補一條「custom 的 assessment run 仍照常保存」正向測試。
-- **OQ-58.6**：frozen 軌 `tracking` 家族的代表 drill `tracking_v1` 未綁 `sceneId`，於開機場景 `field-low` 載入即 clearance throw ⇒ 勾選該家族的 frozen session **開場即中止**。⬜ **待 owner 決策（T6 新增，建議列為 T-exit blocker）**。T6 已用真實 e2e 釘死此故障，未逕行修改 production 語意。證據與兩個候選修法見 §T6。
-- **OQ-58.7**：中止的 session 不呼叫 `experimentSession.exit()`（`active` 停在 `true`）。⬜ 待決（T6 新增）；現況已由失效案例斷言釘死。
+- **OQ-58.6**：frozen 軌 `tracking` 家族的代表 drill `tracking_v1` 未綁 `sceneId`，於開機場景 `field-low` 載入即 clearance throw ⇒ 勾選該家族的 frozen session **開場即中止**。✅ **已收斂（使用者，2026-09-09）：採選項 ①**，`resolveFamilyDrillId('tracking')` 改為 `tracking_scene_v1`；選項 ②（補 `sceneId`）經查不成立，見 §T-exit §0。**T-exit 已落地**：一行修正 + 不變量 5（代表 drill 必須自綁場景，`counterstrafe` 為明帳例外）+ frozen live e2e 實跑 `tracking` 家族。
+- **OQ-58.7**：中止的 session 不呼叫 `experimentSession.exit()`（`active` 停在 `true`）。✅ **已收斂（使用者，2026-09-09）：修**。**T-exit 已落地**，收斂成一條規則（`main.ts` 的 `onPhaseChange` 判 `done` 即 `exit()`）而非規劃建議的兩個 catch 各補一次——後者會讓 `SessionRunner` 認識 app 層單例，違反 §2.11。T6 失效案例的 `experimentActive` 斷言由 `true` 翻為 `false`。
 - **OQ-58.5**：stage12 是否需要獨立里程碑（下一個可用編號 **M22**；M20／M21 已由 stage11 WP-54／WP-55 取用）。⬜ 待 stage12 範圍收斂（**非 T0 exit blocker**）。
 
 ---
@@ -621,3 +623,108 @@ live run 用哪些 drill 不是偏好，是被兩件事夾出來的：
 |---|---|---|---|
 | **OQ-58.6** | frozen 軌的 `tracking` 家族代表 drill `tracking_v1` 未綁場景，於 `field-low` 載入即 throw ⇒ 勾選該家族的 frozen session 開場即中止。要修嗎？怎麼修？ | T6 已用真實 e2e 釘死此故障（失效案例即以它注入）。**未修改任何 production 語意** | 兩個候選：① `resolveFamilyDrillId('tracking')` 改回 `tracking_scene_v1`（已綁 `field-low`，同家族、同 `endCondition`）；② 在 `availableDrills` 為 `tracking_v1` 補 `sceneId`。二者皆改變既有行為，屬 owner 決策。**建議列為 T-exit blocker** |
 | **OQ-58.7** | 中止的 session 是否應呼叫 `experimentSession.exit()`？ | 目前不會；`active` 停在 `true`，已由失效案例斷言釘死 | 若視為缺陷，修法是在 `poll()` 的 catch 與 `startSessionPlan()` 的 catch 一併 `exit()`；影響面僅 `meta.display.gate`／`suspect` 的後續歸屬 |
+
+---
+
+## T-exit — WP-58 驗收（2026-09-09）✅
+
+### 0. 兩個交付前 blocker 的處置
+
+T6 把 OQ-58.6／58.7 交給 T-exit，其中 58.6 明文建議列為 blocker。兩者皆由 owner 於 2026-09-09 拍板並在本 task 落地——**T-exit 因此不是純 docs task，含 3 個檔案的 production／test 修改**。
+
+| OQ | 決議 | 落地 |
+|---|---|---|
+| **OQ-58.6** | 選項 ①：`resolveFamilyDrillId('tracking')` 改為 `tracking_scene_v1` | `drillFamily.ts` 一行 + 不變量 5 + frozen live e2e 實跑 `tracking` 家族 |
+| **OQ-58.7** | 視為缺陷，修 | `main.ts` 收斂為一條規則：Session Plan 進入 `done` 即 `exit()` |
+
+**為什麼選項 ② 不可行（OQ-58.6）**：規劃時把「為 `tracking_v1` 補 `sceneId`」當成對等候選，實際上它不成立。`tracking_v1` 過不了 `field-low` 的原因**不是**沒宣告場景，而是 1 u 的 motion range 撞上 rock/tree——`tracking_scene_v1` 之所以能跑，正是因為它把 range 收到 0.25 u。所以選項 ② 真正的內容是「改 `DrillConfig` 的量測包絡」，那既違反本 WP 的明文紅線，也會讓 `tracking_v1` 的既有資料不可比。兩個候選只有一個是真的。
+
+**為什麼 OQ-58.7 收斂成一條規則而不是兩個 catch**：規劃建議是「在 `poll()` 與 `startSessionPlan()` 的 catch 一併 `exit()`」。但 `poll()` 的 catch 在 `SessionRunner` 裡，而 `experimentSession` 是 app 層單例——在那裡呼叫會讓排程層直接認識 app 狀態，違反 §2.11。改在 `main.ts` 的 `onPhaseChange` 判 `done`：正常收工與中止**都**會發佈 `done`，一個掛點涵蓋兩條路徑，完成分支原本那一行（`advance()` 後判 `done` 再 `exit()`）因此成為冗餘並刪除。`startSessionPlan()` 仍需自己補——該路徑連 step 0 都沒進去，從不發佈任何 phase。
+
+**實作時發現第三條路（本 task 自查）**：`experimentSession.enter()` 是在 `onEnter`（`main.ts:562`）呼叫的，**早於** `startSessionPlan()`。因此 `startSessionPlan()` 開頭「缺少受試者或計畫選擇」的 early return 也會留下一個 `active === true` 卻一步都沒跑的 session——與 catch 完全同型的失效。規劃與 OQ 都只點名了 catch；三條路徑（early return／catch／`done`）補齊後才真的沒有漏網的入口。
+
+`exit()` 只把 `active` 設 false 並保留 `gate`／`suspect`，且本次匯出的 payload 在 `advance()` 之前就已收集完畢 ⇒ **正在匯出的這一輪逐位不受影響**，frozen 匯出等價性不變。
+
+### 1. 交付物
+
+| 檔案 | 動作 |
+|---|---|
+| `src/session/drillFamily.ts` | `tracking` 代表 drill → `tracking_scene_v1`（OQ-58.6） |
+| `src/main.ts` | `onPhaseChange` 判 `done` → `experimentSession.exit()`；完成分支冗餘那行刪除；`startSessionPlan()` 的 **early return 與 catch** 各補 `exit()`（OQ-58.7，三條路徑） |
+| `src/session/drillFamily.test.ts` | 代表 drill 斷言更新 + **不變量 5**（每個家族代表 drill 必須自綁場景，`counterstrafe` 為唯一明帳例外）共 11 個新測試 |
+| `src/session/sessionProgram.test.ts` | 邊界掃描補 `drillFamily.ts`，新增 `SessionRunner.ts` 三迴圈 reach 掃描，共 16 個新測試 |
+| `tests/e2e/session-orchestrator.spec.ts` | frozen live run 加入 `tracking` 家族（OQ-58.6 的實機證據）；中止案例的 `experimentActive` 由 `true` 翻 `false`（OQ-58.7 的回歸證據） |
+
+### 2. 為什麼把邊界掃描寫成測試（D-58-TX-1）
+
+T-exit gate 的第 5 條要求對 `sessionProgram.ts`／`drillFamily.ts`／`SessionRunner.ts` 做邊界掃描。T2 只把 `sessionProgram.ts` 那一份寫成測試，其餘兩份原本只能在驗收當下手 grep。
+
+手 grep 的問題在本次驗收中直接現形：對 `drillFamily.ts` 掃 `three` 會命中 8 個 `micro_flick_three_target_test_*` import——**全是假陽性**。一份會噴假陽性、且驗收紀錄捲走就消失的掃描不是閘門，只是儀式。三份掃描因此都搬進 suite（`from ['"]three` 這種精準 pattern 也順帶消掉假陽性）。
+
+### 3. 不變量 5 的負向驗證
+
+新測試若只是「跟著程式碼改」而不會在退步時變紅，等於沒寫。實測把 `resolveFamilyDrillId('tracking')` 改回 `tracking_v1`：
+
+```
+× invariant 5 > tracking's representative drill pins its own scene
+× invariant 1 > gives each new family a representative drill of its own
+  Tests  2 failed | 58 passed (60)
+```
+
+⇒ 這道閘確實會擋。
+
+### 4. Automated gates
+
+| 閘 | 結果 |
+|---|---|
+| `npm run typecheck` | exit 0（browser + node 兩個 tsconfig） |
+| `npm run build` | exit 0 |
+| 全量 Vitest | **246 passed / 1 skipped（247 files）、2,688 passed / 2 skipped** —— T6 的 2,661 + 27（11 不變量 5 + 16 邊界掃描），既有測試零失敗 |
+| `npm run test:ci` | exit 0（typecheck × 2 + Vitest + 全量 Playwright），**Playwright 99 passed（8.0 分，真實 Edge）** |
+| 邊界掃描（gate 5） | 三份皆為 suite 內測試，見 §2 |
+| family allowlist 單一來源（gate 6） | 見 §6 |
+| 效能（gate 7） | `compileSessionProgram(400 runs)` p95 **0.1167 ms**（限額 1 ms）、預覽重繪（799 步）p95 **2.3444 ms**（限額 50 ms）、`poll()` 每幀零配置（identity 斷言）——三者皆為 suite 內斷言，非一次性量測 |
+
+### 5. Acceptance scenarios A-58.1～9
+
+| ID | 客觀證據 |
+|---|---|
+| A-58.1 | `sessionProgram.test.ts`「golden: the user scenario compiles to 17 steps」——17 步逐元素、9 run／6×30s rep／2×60s family |
+| A-58.2 | 同檔同家族相鄰情境（30s `drill` 邊界）+ `SessionPlanSetup.test.ts` 預覽表邊界標籤 + e2e 表單案例「同家族相鄰邊界」 |
+| A-58.3 | `SessionRunner.test.ts`／`SessionRunnerProgram.test.ts` 的 frozen 等價斷言 + T5 的 8 個 fixture canonical digest 逐位不變 + frozen live e2e（家族順序／單一休息秒數／無熱身提示／逐份匯出） |
+| A-58.4 | `sessionProgramExport.test.ts`「gives every rep of the program its own filename」／「locates each export at its own step」+ custom live e2e 的 6 份唯一匯出 |
+| A-58.5 | `sessionRepRestart.test.ts`「draws the same seed and therefore the same spawn sequence every rep (OQ-58.1)」+「starts every rep from a bit-identical, residue-free sim state」 |
+| A-58.6 | `drillFamily.test.ts` 不變量 4 的逐 drill 負向矩陣（family 有登記 ⇏ `DrillMetricRegistry` 有值）+ T5 的 `excluded-cohort` 正反向測試 |
+| A-58.7 | `sessionProgram.test.ts` 12 列非法輸入矩陣 + `SessionPlanSetup.test.ts` 禁用提交 + e2e「非法 reps 禁用提交」 |
+| A-58.8 | `SessionRunnerPoll.test.ts` 失敗復原 + e2e 中止案例（真實 clearance 故障；相位 `idle→run→rest→done`、overlay 隱藏、狀態列可見、`experimentActive=false`） |
+| A-58.9 | `SessionPlanSetup.test.ts`「keyboard and ARIA (NFR-58.7)」——選單／reps／兩個秒數欄位／清單皆有 aria-label，錯誤訊息可讀 |
+
+### 6. Architecture regression
+
+- **一份 family allowlist**：production（非測試）中出現家族 id 字面值的檔案共 5 個。`main.ts`／`SessionPlanSetup.ts` **僅註解**；`drillFamily.ts` 的 key 與 `sessionPlanPresets.ts` 的 `perFamilyTrialShape` key 皆為 `SessionFamilyId` 型別（打錯即編譯錯），其唯一定義在 `sessionSchedule.ts`。⇒ 無第二份 allowlist，KI-016 未重演。
+- **一個 Session Plan runtime**：`createSessionRunner()` production call site 僅 `main.ts:1543`。
+- **一條 rest overlay 路徑**：`restOverlay.show()` production call site 僅 `main.ts:1550`。
+- **一個編譯器**：`compileSessionProgram()` 的三個 production caller（frozen 經 `buildFrozenSessionPlan`、custom 經 `main.ts`、預覽經 `SessionPlanSetup`）走同一個函式。
+- **完成分支鏈三路**：pilot／Session Plan `run`／protocol；`mode === 'custom' | 'frozen'` 的分支只有 2 處，各自落在兩軌真正不同的地方（稽核欄位、program 產生），無散落的 `if (customPlan)`。
+- **三迴圈邊界**：`SessionRunner.ts` 無 `SharedState`／`SimLoop`／`InputSampler`／`DataRecorder`／Three／DOM／`Date.now`，由 suite 內掃描斷言。
+- 既有決定性／hit／recoil／ADS／result／history／replay 回歸**零修改**全綠。
+
+### 7. Research/data safety
+
+- `sessionPlanMode === 'custom'` 由 `DrillMetricRegistry.project()` 的 `excluded-cohort` 顯式排除於 frozen trend cohort，判定為 metadata 驅動、不猜 drill id（GD-20／C-D3）。
+- 本 WP 全程未修改任何 `DrillConfig`、drill 參數、指標定義或 `research/` 演算法（C-D1～C-D5）。T-exit 的 OQ-58.6 修法**刻意選了不碰 `DrillConfig` 的那一個**（§0）。
+- 每輪 seed 沿用既有 `sequence.seed` metadata 機制並有回歸測試；「reps 重播同一組刺激、不得視為 i.i.d. 取樣」的限制已寫入 README §1.4 與 T5 的 metadata 契約。
+- 測試只用 fixtures 與 `.playwright-tmp/` 暫存 root；真實 history root 與 Participant 資料無 mutation。
+
+### T-exit Decision Log
+
+- **D-58-TX-1 / 邊界掃描寫進 suite，不留在驗收紀錄**：見 §2。驗收當下的手 grep 對 `drillFamily.ts` 直接噴 8 個假陽性，證明它既不可靠也不可重複。
+- **D-58-TX-2 / OQ-58.7 收斂成一條 `done` 規則**：規劃建議的「兩個 catch 各補一次」會讓 `SessionRunner` 認識 `experimentSession`（違反 §2.11），且把「session 何時結束」拆成兩份會漂移。改判 `done` phase：一個掛點涵蓋正常收工與中止，並讓完成分支少一行。
+- **D-58-TX-3 / OQ-58.6 的實機證據放進既有 frozen live run，不新開測試**：把 `tracking` 加成第三個家族，比新寫一條 2 分鐘的 live test 便宜，且維持「frozen 軌只有一個對照組」（D-58-T6-4）。單元不變量只能證明「代表 drill 有綁場景」，證不了「它清得過自己綁的那個場景」——後者只有真的載入一次才算數。
+
+### T-exit Surprises
+
+- **規劃時列的兩個候選修法，只有一個是真的**。README 與 T6 都把「為 `tracking_v1` 補 `sceneId`」寫成對等選項，實際上補了也不會過——擋住它的是 motion range 而非缺少宣告（§0）。教訓：候選修法要驗過再寫進 OQ，否則 owner 是在一個假的二選一上做決定。
+- **`tracking_v1` 的原始碼註解說「Clearance against the real `field-low` corridor is verified in WP-22 T1」，但它現在過不了 `field-low`**。註解與實況已經分岔（`tracking_scene_v1` 收窄 range 就是為了補這件事），本 task 未改該註解——那屬 drill 模組的文件債，不在排程層的修改面內，記在此供後續清理。
+- **`experimentSession.enter()` 比 `startSessionPlan()` 早一層，所以「中止未 exit」其實有三條路而不是兩條**。OQ-58.7 只點名了 `poll()` 與 `startSessionPlan()` 的 catch；實作時才看到 `startSessionPlan()` 開頭的 early return（缺受試者／缺計畫）同樣會留下一個一步都沒跑的 active session。教訓：這類「狀態機的每個離開點都要做同一件事」的修法，要從**進入點**回推有幾條離開路徑，不能只修 OQ 點名的那幾條。
+- **T-exit 交付了 27 個新測試**。原本預期是純驗收，但兩個 blocker 各自需要回歸釘死，加上 gate 5 的三份掃描有兩份還沒被自動化——「驗收」在這個 repo 的實際含義比較接近「把先前只在人腦裡成立的東西補成閘門」。

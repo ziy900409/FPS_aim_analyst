@@ -30,28 +30,28 @@
 
 ## Research/data safety
 
-- [ ] `custom` session 不進 frozen protocol 的 trend cohort，判定為 metadata 驅動的顯式規則（GD-20／C-D3）。
-- [ ] 排程層未修改任何 drill 參數、指標定義或 `research/` 演算法（C-D1～C-D5）。
-- [ ] 每一輪 rep 的 seed 可稽核並寫入 metadata（GD-5／GD-8）。
-- [ ] 測試只用 fixtures／validated temp roots，真實 history root 與 Participant 資料無 mutation。
+- [x] `custom` session 不進 frozen protocol 的 trend cohort，判定為 metadata 驅動的顯式規則（GD-20／C-D3）。
+- [x] 排程層未修改任何 drill 參數、指標定義或 `research/` 演算法（C-D1～C-D5）。
+- [x] 每一輪 rep 的 seed 可稽核並寫入 metadata（GD-5／GD-8）。
+- [x] 測試只用 fixtures／validated temp roots，真實 history root 與 Participant 資料無 mutation。
 
 ## Architecture regression
 
-- [ ] `sessionProgram.ts`／`drillFamily.ts` 為純模組；邊界掃描通過。
-- [ ] `SessionRunner` 不觸碰三迴圈任何共享狀態（ADR-2）。
-- [ ] `main.ts` 完成分支鏈為三路，無 `if (customPlan)` 散落。
-- [ ] 全 repo 只有一份 family allowlist、一個 Session Plan runtime、一條 rest overlay 路徑。
-- [ ] 既有決定性／hit／recoil／ADS／result／history／replay 回歸零修改全綠。
+- [x] `sessionProgram.ts`／`drillFamily.ts` 為純模組；邊界掃描通過。
+- [x] `SessionRunner` 不觸碰三迴圈任何共享狀態（ADR-2）。
+- [x] `main.ts` 完成分支鏈為三路，無 `if (customPlan)` 散落。
+- [x] 全 repo 只有一份 family allowlist、一個 Session Plan runtime、一條 rest overlay 路徑。
+- [x] 既有決定性／hit／recoil／ADS／result／history／replay 回歸零修改全綠。
 
 ## Documentation and graph
 
-- [ ] README 的 OQ／assumptions／interfaces／歸屬表更新為實際交付。
-- [ ] GD-33 已在 [DECISIONS.md](../../../DECISIONS.md) 且內容與交付一致。
-- [ ] progress 貼上 test／perf／a11y／acceptance evidence，[task-checklist.md](task-checklist.md) 全 ✅。
-- [ ] 上層 stage12 README／checklist／progress 更新 WP-58 狀態。
-- [ ] `docs/exec-plan/README.md` §2 加入 WP-58 列與 stage12 段落。
-- [ ] `graphify update .` 完成；CodeGraph pending 同步或已直接讀。
-- [ ] `git status --short` 與 staged names 只含預期 code/tests/docs。
+- [x] README 的 OQ／assumptions／interfaces／歸屬表更新為實際交付。
+- [x] ~~GD-33~~ **GD-35** 已在 [DECISIONS.md](../../../DECISIONS.md) 且內容與交付一致（本行原寫 GD-33 —— 該號在 WP-58 T0 執行時已被 WP-57 T3 取用，實際入帳為 GD-35）。另補記影響面 (F)：加一個家族 id 會把其代表 drill 推上 frozen 軌的無人值守載入路徑。
+- [x] progress 貼上 test／perf／a11y／acceptance evidence，[task-checklist.md](task-checklist.md) 全 ✅。
+- [x] 上層 stage12 README／checklist／progress 更新 WP-58 狀態。
+- [x] `docs/exec-plan/README.md` §2 加入 WP-58 列與 stage12 段落。⬜ **殘留（非本 WP）**：該檔多處仍寫「active/stage12：WP-56 ~ WP-58」，未涵蓋後加入的 WP-59；屬 WP-59 owner。
+- [x] `graphify update .` 完成；CodeGraph pending 同步或已直接讀。
+- [x] `git status --short` 與 staged names 只含預期 code/tests/docs。
 
 ## Exit criteria
 
@@ -62,3 +62,19 @@ Automated gates、A-58.1～9、research safety 與 architecture regression 全�
 ```text
 docs(stage12): close WP-58 session program scheduler
 ```
+
+---
+
+## 驗收結果（2026-09-09）✅
+
+**全數通過。** 逐項證據見 [progress.md](progress.md) §T-exit：§4 automated gates、§5 acceptance A-58.1～9、§6 architecture regression、§7 research/data safety。
+
+⚠️ **本 T-exit 不是純驗收**：T6 交上來的兩個 open question 由 owner 拍板後在此落地，含 3 個檔案的 production／test 修改與 27 個新測試。
+
+| 項目 | 結果 |
+|---|---|
+| **OQ-58.6**（blocker） | 採選項 ①：`tracking` 代表 drill → `tracking_scene_v1`；新增不變量 5（代表 drill 必須自綁場景）；frozen live e2e 實跑該家族。規劃時的選項 ②（補 `sceneId`）經查不成立——擋住 `tracking_v1` 的是 motion range 而非缺宣告 |
+| **OQ-58.7** | 修，並收斂為單一 `done` 掛點（涵蓋正常收工與中止），而非規劃建議的兩個 catch 各補一次 |
+| **gate 5 邊界掃描** | 三份全部寫進 suite（T2 只自動化了 `sessionProgram.ts` 一份）。手 grep 對 `drillFamily.ts` 會噴 8 個假陽性 —— 見 progress §T-exit §2 |
+| **build／typecheck／Vitest／Playwright** | `npm run test:ci` exit 0；Vitest **2,688 passed／2 skipped**、Playwright **99 passed** |
+| **OQ-58.5** | ⬜ 維持開放（stage12 是否設 M22）——屬 stage 層，非本 WP 交付判定的一部分 |
