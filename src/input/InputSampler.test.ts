@@ -86,15 +86,16 @@ describe('InputSampler — 鍵盤採集（keydown/keyup + event.timeStamp）', (
     ]);
   });
 
-  it('採集 A/D/W/S；忽略無關按鍵（不污染緩衝）', () => {
+  it('採集 A/D/W/S 與 WP-61 KeyL；忽略無關按鍵（不污染緩衝）', () => {
     target.dispatch('keydown', keyEvent('KeyA', 1));
     target.dispatch('keydown', keyEvent('KeyW', 2));
     target.dispatch('keydown', keyEvent('KeyS', 3));
-    target.dispatch('keydown', keyEvent('Space', 4)); // 無關
-    target.dispatch('keydown', keyEvent('KeyQ', 5)); // 無關
+    target.dispatch('keydown', keyEvent('KeyL', 4));
+    target.dispatch('keydown', keyEvent('Space', 5)); // 無關
+    target.dispatch('keydown', keyEvent('KeyQ', 6)); // 無關
 
     const drained = drainToArray(state);
-    expect(drained.map((e) => e.type === 'key' && e.code)).toEqual(['KeyA', 'KeyW', 'KeyS']);
+    expect(drained.map((e) => e.type === 'key' && e.code)).toEqual(['KeyA', 'KeyW', 'KeyS', 'KeyL']);
   });
 
   it('event.repeat 的 keydown 不重複入緩衝（只記真實狀態轉換）', () => {

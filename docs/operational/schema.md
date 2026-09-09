@@ -38,9 +38,9 @@ All numeric data fields must be finite. `collectMeta()` validates metadata numer
 | Recoil punch (`aimPunchPitch`, `aimPunchYaw`) | degrees, Source/CS2 aimPunch, sampled pre-kick for the shot |
 | Spread (`spreadX`, `spreadY`) | unitless tangent-plane offsets, sampled pre-kick for the shot |
 | Position (`px`, `pz`, `tx`, `ty`, `tz`) | source units |
-| Keyboard state | canonical key names: `A`, `D`, `W`, `S` |
+| Keyboard state | canonical movement key names: `A`, `D`, `W`, `S` |
 
-Tick rows are recorded inside the sim tick. Event rows use their source timestamp: visible events use sim tick time; counter/fire/key events use the input event `timeStamp`, which shares the `performance.now()` basis.
+Tick rows are recorded inside the sim tick. Event rows use their source timestamp: visible events use sim tick time; counter/fire/key/annotation events use the input event `timeStamp`, which shares the `performance.now()` basis.
 
 ## JSON Schema
 
@@ -325,6 +325,22 @@ value; the frozen `compute-v1` / `timeline-v1` / `sync-v1` constructs do not con
 | `down` | boolean | `true` / `false` | Yes | input event | `true` means key pressed; `false` means released (the release edge anchors offline `t_release_event`). |
 | `t` | number | ms | Yes | input event timestamp | `performance.now()` basis, same clock as `counter`/`fire`. |
 
+#### `annotation`
+
+Additive WP-61 / T1 event (opt-in engine emission via `DataRecorder.recordAnnotationEvents`; default off).
+It records the operator's independent self-report annotation key (`KeyL`) as an event-level interval marker for
+sensor-lift validation. It does not bump `schemaVersion` (stays `2`); absence in older or opt-out exports means
+the feature was not enabled, not an error. The event is structurally inert to sim state: it is not written to
+`ticks[].keys`, movement, aim, target, hit, recoil, or metric state.
+
+| Field | Type | Unit / Values | Required | Source | Notes |
+|---|---|---|---:|---|---|
+| `type` | string | `annotation` | Yes | input consume hook | Operator annotation transition. |
+| `kind` | string | `sensor_lift` | Yes | fixed WP-61 T1 value | Semantic annotation class; strict parser rejects other values. |
+| `code` | string | `KeyL` | Yes | input event `KeyboardEvent.code` | Raw DOM code, intentionally separate from `ticks[].keys` movement vocabulary. |
+| `down` | boolean | `true` / `false` | Yes | input event | `true` starts the self-report interval; `false` ends it. |
+| `t` | number | ms | Yes | input event timestamp | `performance.now()` basis, same clock as `mouseSamples` / `key` / `fire`. |
+
 #### `fire`
 
 | Field | Type | Unit / Values | Required | Source | Notes |
@@ -396,36 +412,37 @@ type,t,targetId,side,key,down,hit,firstShot,residualSpeed,shotSeq,timeOfFlightMs
 
 Rows are sparse because event variants have different fields.
 
-The additive `key` event reuses the existing `key` and `down` columns (no new column is added): `key` carries
-the canonical `code` (`A`/`D`), `down` carries the boolean. Consumers disambiguate `key`-column meaning by the
-row's `type`.
+The additive `key` and `annotation` events reuse the existing `key` and `down` columns (no new column is added):
+`key` carries the event code (`A`/`D` for `type:key`, `KeyL` for `type:annotation`), `down` carries the boolean.
+Consumers disambiguate `key`-column meaning by the row's `type`. `annotation.kind` is JSON-only because WP-61
+T1 has one fixed kind (`sensor_lift`) and preserving the CSV header keeps non-annotation exports byte-stable.
 
-| Column | `visible` | `counter` | `ads` | `key` | `fire` | `hit` |
-|---|---|---|---|---|---|---|
-| `type` | `visible` | `counter` | `ads` | `key` | `fire` | `hit` |
-| `t` | event time | event time | event time | event time | event time | `t_hit` |
-| `targetId` | target id | empty | empty | empty | active/hit target id, or empty | hit target id, or empty |
-| `side` | `L` / `R` | empty | empty | empty | empty | empty |
-| `key` | empty | counter key | empty | key `code` (`A`/`D`) | empty | empty |
-| `down` | empty | empty | `true` / `false` | `true` / `false` | empty | empty |
-| `hit` | empty | empty | empty | empty | `true` / `false` | empty |
-| `firstShot` | empty | empty | empty | empty | `true` / `false` | empty |
-| `residualSpeed` | empty | empty | empty | empty | source u/s | empty |
-| `shotSeq` | empty | empty | empty | empty | projectile shot seq, or empty | projectile shot seq |
-| `timeOfFlightMs` | empty | empty | empty | empty | empty | projectile time of flight |
-| `viewYaw` | empty | empty | empty | empty | radians | empty |
-| `viewPitch` | empty | empty | empty | empty | radians | empty |
-| `aimPunchPitch` | empty | empty | empty | empty | degrees | empty |
-| `aimPunchYaw` | empty | empty | empty | empty | degrees | empty |
-| `spreadX` | empty | empty | empty | empty | tangent offset | empty |
-| `spreadY` | empty | empty | empty | empty | tangent offset | empty |
-| `recoilIndex` | empty | empty | empty | empty | shot index used by this shot | empty |
-| `ammo` | empty | empty | empty | empty | pre-shot ammo | empty |
-| `offsetDeg` | empty | empty | empty | empty | camera-forward to target-center angle in degrees, or empty | empty |
-| `part` | empty | empty | empty | empty | `head`, `body`, or empty | `head`, `body`, or empty |
-| `targetX` | source u target center x | empty | empty | empty | empty | empty |
-| `targetY` | source u target center y | empty | empty | empty | empty | empty |
-| `targetZ` | source u target center z | empty | empty | empty | empty | empty |
+| Column | `visible` | `counter` | `ads` | `key` | `annotation` | `fire` | `hit` |
+|---|---|---|---|---|---|---|---|
+| `type` | `visible` | `counter` | `ads` | `key` | `annotation` | `fire` | `hit` |
+| `t` | event time | event time | event time | event time | event time | event time | `t_hit` |
+| `targetId` | target id | empty | empty | empty | empty | active/hit target id, or empty | hit target id, or empty |
+| `side` | `L` / `R` | empty | empty | empty | empty | empty | empty |
+| `key` | empty | counter key | empty | key `code` (`A`/`D`) | annotation `code` (`KeyL`) | empty | empty |
+| `down` | empty | empty | `true` / `false` | `true` / `false` | `true` / `false` | empty | empty |
+| `hit` | empty | empty | empty | empty | empty | `true` / `false` | empty |
+| `firstShot` | empty | empty | empty | empty | empty | `true` / `false` | empty |
+| `residualSpeed` | empty | empty | empty | empty | empty | source u/s | empty |
+| `shotSeq` | empty | empty | empty | empty | empty | projectile shot seq, or empty | projectile shot seq |
+| `timeOfFlightMs` | empty | empty | empty | empty | empty | empty | projectile time of flight |
+| `viewYaw` | empty | empty | empty | empty | empty | radians | empty |
+| `viewPitch` | empty | empty | empty | empty | empty | radians | empty |
+| `aimPunchPitch` | empty | empty | empty | empty | empty | degrees | empty |
+| `aimPunchYaw` | empty | empty | empty | empty | empty | degrees | empty |
+| `spreadX` | empty | empty | empty | empty | empty | tangent offset | empty |
+| `spreadY` | empty | empty | empty | empty | empty | tangent offset | empty |
+| `recoilIndex` | empty | empty | empty | empty | empty | shot index used by this shot | empty |
+| `ammo` | empty | empty | empty | empty | empty | pre-shot ammo | empty |
+| `offsetDeg` | empty | empty | empty | empty | empty | camera-forward to target-center angle in degrees, or empty | empty |
+| `part` | empty | empty | empty | empty | empty | `head`, `body`, or empty | `head`, `body`, or empty |
+| `targetX` | source u target center x | empty | empty | empty | empty | empty | empty |
+| `targetY` | source u target center y | empty | empty | empty | empty | empty | empty |
+| `targetZ` | source u target center z | empty | empty | empty | empty | empty | empty |
 
 ### `<basename>-frames.csv`
 

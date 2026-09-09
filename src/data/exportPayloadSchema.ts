@@ -1054,6 +1054,8 @@ function parseDrillEvent(value: unknown, path: string, errors: ExportPayloadPars
       return parseTargetStopEvent(record, path, errors);
     case 'key':
       return parseKeyEvent(record, path, errors);
+    case 'annotation':
+      return parseAnnotationEvent(record, path, errors);
     case 'pointer_lock':
       return parsePointerLockEvent(record, path, errors);
     case 'fire':
@@ -1165,6 +1167,16 @@ function parseKeyEvent(record: Record<string, unknown>, path: string, errors: Ex
   const t = parseFiniteNumber(record.t, `${path}.t`, errors);
   if (code === undefined || down === undefined || t === undefined || errors.length > before) return undefined;
   return { type: 'key', code, down, t };
+}
+
+function parseAnnotationEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {
+  const before = errors.length;
+  const kind = parseLiteral(record.kind, `${path}.kind`, ['sensor_lift'] as const, errors);
+  const code = parseNonEmptyString(record.code, `${path}.code`, errors);
+  const down = parseBoolean(record.down, `${path}.down`, errors);
+  const t = parseFiniteNumber(record.t, `${path}.t`, errors);
+  if (kind === undefined || code === undefined || down === undefined || t === undefined || errors.length > before) return undefined;
+  return { type: 'annotation', kind, code, down, t };
 }
 
 function parseFireEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {

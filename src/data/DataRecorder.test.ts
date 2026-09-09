@@ -178,6 +178,12 @@ describe('DataRecorder tick arena', () => {
     expect(createDataRecorder({ capacity: 1, recordKeyEvents: true }).recordKeyEvents).toBe(true);
   });
 
+  it('recordAnnotationEvents defaults to false and is opt-in (WP-61 / T1)', () => {
+    expect(createDataRecorder({ capacity: 1 }).recordAnnotationEvents).toBe(false);
+    expect(createDataRecorder({ capacity: 1, recordAnnotationEvents: false }).recordAnnotationEvents).toBe(false);
+    expect(createDataRecorder({ capacity: 1, recordAnnotationEvents: true }).recordAnnotationEvents).toBe(true);
+  });
+
   it('recordMouseSamples defaults to false and omits raw sample fields from snapshots (WP-60 / T1)', () => {
     const recorder = createDataRecorder({ capacity: 1 });
 
@@ -234,6 +240,20 @@ describe('DataRecorder tick arena', () => {
     expect(recorder.snapshot().events).toEqual([
       { type: 'key', code: 'A', down: true, t: 5 },
       { type: 'key', code: 'A', down: false, t: 20 },
+    ]);
+  });
+
+  it('stores additive annotation events verbatim without touching fire/hit counts (WP-61 / T1)', () => {
+    const recorder = createDataRecorder({ capacity: 1, recordAnnotationEvents: true });
+
+    recorder.recordEvent({ type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true, t: 5 });
+    recorder.recordEvent({ type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: false, t: 20 });
+
+    expect(recorder.fireCount).toBe(0);
+    expect(recorder.hitCount).toBe(0);
+    expect(recorder.snapshot().events).toEqual([
+      { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true, t: 5 },
+      { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: false, t: 20 },
     ]);
   });
 

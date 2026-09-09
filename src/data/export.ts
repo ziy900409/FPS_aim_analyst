@@ -218,6 +218,33 @@ function serializeEventsCSV(events: DrillEvent[]): string {
         '',
         '',
       ]);
+    } else if (event.type === 'annotation') {
+      rows.push([
+        event.type,
+        formatNumber(event.t),
+        '',
+        '',
+        event.code,
+        formatBoolean(event.down),
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+      ]);
     } else if (event.type === 'target_stop') {
       rows.push([
         event.type,

@@ -40,10 +40,11 @@ export const EV_ADS = 3; // ADS 開鏡（WP-24 / T1）：packed 佈局比照 fir
 
 /**
  * key 事件 `code` 編碼（`KeyboardEvent.code` 封閉集 → 小整數 enum；packed 槽位存整數不存字串）。
- * A/D = 橫移；W/S 預留（階段 A 未用移動）。`CODE_KEY` 為反向表（解碼進 view 用）；兩者須同序。
+ * A/D = 橫移；W/S 預留（階段 A 未用移動）；KeyL = operator annotation（WP-61 / T1）。
+ * `CODE_KEY` 為反向表（解碼進 view 用）；兩者須同序。
  */
-export const KEY_CODE: Readonly<Record<string, number>> = { KeyA: 0, KeyD: 1, KeyW: 2, KeyS: 3 };
-export const CODE_KEY: readonly string[] = ['KeyA', 'KeyD', 'KeyW', 'KeyS'];
+export const KEY_CODE: Readonly<Record<string, number>> = { KeyA: 0, KeyD: 1, KeyW: 2, KeyS: 3, KeyL: 4 };
+export const CODE_KEY: readonly string[] = ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyL'];
 
 /**
  * 固定欄位輸入 ring buffer（真環狀、靜態容量、槽位重用、熱路徑不配置物件；CLAUDE.md §4 / OQ-3.2）。

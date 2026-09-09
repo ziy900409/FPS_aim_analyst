@@ -734,6 +734,7 @@ function currentMouseGain() {
 // 以及 T0 PoC 缺的那個入口 —— 真瀏覽器 + 真 COI + 真滑鼠跑一輪，即可從匯出讀
 // `meta.mouseSampling.observedRateHz` 與 `mouseSamples.dtUs` 的分布來結掉 R1/R2。
 const rawMouseSampleCapture = new URLSearchParams(window.location.search).get('rawMouse') === '1';
+const operatorAnnotationCapture = new URLSearchParams(window.location.search).get('annotation') === '1';
 const recorder = createDataRecorder({
   simHz: SIM_HZ,
   // WP-60 / T2：raw sample arena 的容量來源（1000 Hz × 本值 × headroom）。與匯出的
@@ -742,6 +743,7 @@ const recorder = createDataRecorder({
   maxDrillSeconds: DEFAULT_MAX_DRILL_SECONDS,
   mouseIntegration: { gain: currentMouseGain() },
   recordKeyEvents: true,
+  recordAnnotationEvents: operatorAnnotationCapture,
   recordMouseSamples: rawMouseSampleCapture,
 });
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));

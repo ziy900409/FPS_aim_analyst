@@ -316,6 +316,49 @@ describe('data export — WP-29 / T3 additive key 事件', () => {
   });
 });
 
+describe('data export — WP-61 / T1 additive annotation 事件', () => {
+  const annotationSnapshot: DataRecorderSnapshot = {
+    ticks: [],
+    events: [
+      { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true, t: 12 },
+      { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: false, t: 40 },
+    ],
+    recorderOverflow: false,
+  };
+
+  it('round-trips annotation events verbatim in JSON (kind/code/down/t)', () => {
+    const parsed = JSON.parse(serializeJSON(buildExportPayload(meta, annotationSnapshot))) as ExportPayload;
+
+    expect(parsed.events).toEqual([
+      { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true, t: 12 },
+      { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: false, t: 40 },
+    ]);
+  });
+
+  it('writes annotation events into the existing key/down CSV columns without changing the header', () => {
+    const files = serializeCSV(buildExportPayload(meta, annotationSnapshot));
+    const eventsCsv = files.find((file) => file.filename.endsWith('-events.csv'))!.content;
+    const lines = eventsCsv.trimEnd().split('\n');
+
+    expect(lines[0]).toBe(
+      'type,t,targetId,side,key,down,hit,firstShot,residualSpeed,shotSeq,timeOfFlightMs,viewYaw,viewPitch,aimPunchPitch,aimPunchYaw,spreadX,spreadY,recoilIndex,ammo,offsetDeg,part,targetX,targetY,targetZ',
+    );
+
+    const down = lines[1].split(',');
+    expect(down).toHaveLength(24);
+    expect(down[0]).toBe('annotation');
+    expect(down[1]).toBe('12');
+    expect(down[4]).toBe('KeyL');
+    expect(down[5]).toBe('true');
+    expect(down.slice(6).every((cell) => cell === '')).toBe(true);
+
+    const up = lines[2].split(',');
+    expect(up[0]).toBe('annotation');
+    expect(up[4]).toBe('KeyL');
+    expect(up[5]).toBe('false');
+  });
+});
+
 describe('data export — KI-005 / A additive dYaw/dPitch（FM-7 / NFR-A-2）', () => {
   const mouseSnapshot: DataRecorderSnapshot = {
     ticks: [

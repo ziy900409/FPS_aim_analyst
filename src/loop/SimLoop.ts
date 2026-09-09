@@ -59,8 +59,9 @@ const defaultMovement = createMovementController();
 /**
  * 輸入套用（handle）：鍵事件更新 A/D **held 狀態**（`MovementController.step` 每 tick 讀 held 積分
  * velocity + stopped gate）。fire down/up 只維護 `heldFire` 與首發排程時間；實際產彈由
- * `scheduleFire` 依 weapon cycletime 在 tick 內累加產生。ads down/up 只翻 `heldAds`（WP-24 / T1，
- * render/data 層消費，不進 sim）。mouse 事件（KI-005 / A，FR-A-1）只在 `recorder.mouseIntegration`
+ * `scheduleFire` 依 weapon cycletime 在 tick 內累加產生。KeyL 只在 WP-61 opt-in 時記 annotation，
+ * 不寫 `state`。ads down/up 只翻 `heldAds`（WP-24 / T1，render/data 層消費，不進 sim）。
+ * mouse 事件（KI-005 / A，FR-A-1）只在 `recorder.mouseIntegration`
  * 啟用時依 `state.heldAds` 積分進 recorder 累加器——**只寫 recorder，不寫 `state`**（NFR-A-1）。
  *
  * 依時序、無遺漏的排序消費與排空責任已抽到 [`consume`](../input/consume.ts)（T4）；本函式只負責
@@ -82,6 +83,10 @@ function applyInput(
       if (recorder?.recordKeyEvents) recorder.recordEvent({ type: 'key', code: 'A', down: ev.down, t: ev.t });
       if (ev.down && !state.held.left && state.player.vx > 0) recorder?.recordEvent({ type: 'counter', key: 'A', t: ev.t });
       state.held.left = ev.down;
+    } else if (ev.code === 'KeyL') {
+      if (recorder?.recordAnnotationEvents) {
+        recorder.recordEvent({ type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: ev.down, t: ev.t });
+      }
     }
   } else if (ev.type === 'fire') {
     const wasHeld = state.heldFire;

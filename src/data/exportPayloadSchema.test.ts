@@ -196,6 +196,10 @@ describe('parseExportPayload — positive: every DrillEvent variant', () => {
     expectOk(payloadWithEvents([{ type: 'key', code: 'A', down: true, t: 0 }]));
   });
 
+  it('parses annotation (WP-61 / T1)', () => {
+    expectOk(payloadWithEvents([{ type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true, t: 125.5 }]));
+  });
+
   it('parses pointer_lock', () => {
     expectOk(payloadWithEvents([{ type: 'pointer_lock', locked: false, t: 125.5 }]));
   });
@@ -266,6 +270,34 @@ describe('parseExportPayload — target_motion_change round trip (WP-54 T1)', ()
   ])('fails fast on %s', (_label, event) => {
     const result = parseExportPayload(payloadWithEvents([event]));
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('parseExportPayload — annotation event strict matrix (WP-61 / T1)', () => {
+  it('round-trips annotation events through canonicalExportJSON with every field preserved', () => {
+    const event = { type: 'annotation' as const, kind: 'sensor_lift' as const, code: 'KeyL', down: false, t: 42.5 };
+    const parsed = parseExportPayload(payloadWithEvents([event]));
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    const canonical = JSON.parse(canonicalExportJSON(parsed.payload)) as { events: unknown[] };
+    expect(canonical.events).toEqual([event]);
+
+    const reparsed = parseExportPayload(JSON.parse(canonicalExportJSON(parsed.payload)));
+    if (!reparsed.ok) throw new Error(`expected ok on reparse, got errors: ${JSON.stringify(reparsed.errors)}`);
+    expect(reparsed.payload.events).toEqual(parsed.payload.events);
+  });
+
+  it.each([
+    ['missing kind', { type: 'annotation', code: 'KeyL', down: true, t: 0 }, 'events[0].kind'],
+    ['unsupported kind', { type: 'annotation', kind: 'pause', code: 'KeyL', down: true, t: 0 }, 'events[0].kind'],
+    ['missing code', { type: 'annotation', kind: 'sensor_lift', down: true, t: 0 }, 'events[0].code'],
+    ['code is not a string', { type: 'annotation', kind: 'sensor_lift', code: 4, down: true, t: 0 }, 'events[0].code'],
+    ['down is not boolean', { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: 'true', t: 0 }, 'events[0].down'],
+    ['t is non-finite', { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true, t: Number.NaN }, 'events[0].t'],
+    ['t is missing', { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true }, 'events[0].t'],
+  ])('rejects %s with a named field path', (_label, event, expectedPath) => {
+    const result = parseExportPayload(payloadWithEvents([event]));
+    if (result.ok) throw new Error('expected payload to be rejected');
+    expect(result.errors.map((error) => error.path)).toContain(expectedPath);
   });
 });
 

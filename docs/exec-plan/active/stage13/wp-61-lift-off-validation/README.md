@@ -14,7 +14,7 @@
 | **Pre-registration** | 事件匹配容差、資料分割、指標與門檻**必須在看特徵分布之前凍結**（GD-20 先例） |
 | **Estimate** | 9–15 dev-days（T4 為條件式；若判定為負向結論則 6.5–11） |
 | **Risk** | High：cohort 尚未錄製、標註本身有噪、最可能的結果是分不開（硬體風險已於 2026-09-09 消除，R1 降為 Med） |
-| **Status** | ✅ **T0 entry gate 已完成 2026-09-09**：構念歸屬、可執行命名、評估契約 pre-registration、WP-60 handoff 覆驗與硬體 go/no-go 已凍結。T1 可開；cohort 仍待 T1 儀器落地後由使用者錄製。 |
+| **Status** | ✅ **T1 標註通道儀器已完成 2026-09-09**：`KeyL` → opt-in `annotation` event 已落地，預設關閉且 sim tick 全欄位決定性對照綠。T2 可在使用者錄製 240 Hz cohort 後開始；cohort 仍不存在。 |
 
 ---
 
@@ -30,7 +30,7 @@
 | 4 | Pointer Lock 中斷可從 `pointer_lock` 事件推導為區間：`deriveUnlockedIntervals(events, lastSampleMs)` | [`src/metrics/mouseSampleGaps.ts:193`](../../../../../src/metrics/mouseSampleGaps.ts#L193) |
 | 5 | 該模組**刻意零構念語彙**（`gap`／`segment`／`unlocked`，禁 `lift`／`reposition`／`suspicion`），由 boundary scan 釘死 —— 構念歸屬留給本 WP | 同上檔頭註解；GD-36 |
 | 6 | 既有構念 `deriveRepositioningSuspicion(payload, options)` 為**角速度停滯**語意，真人校準值 `stallMinMs=150`／`stallOmegaDegPerSec=2`，且 `src/` 內**零 importer**（品質標註，非構念，C-D3） | [`src/metrics/spiderShotRepositioning.ts:86`](../../../../../src/metrics/spiderShotRepositioning.ts#L86)；[CONTEXT.md](../../../../../CONTEXT.md) |
-| 7 | 輸入採集鍵為**封閉集** `KEY_CODE = { KeyA:0, KeyD:1, KeyW:2, KeyS:3 }`；非集合內的鍵**整筆不入 ring** | [`src/state/types.ts:45`](../../../../../src/state/types.ts#L45)、[`InputSampler.ts:60-61`](../../../../../src/input/InputSampler.ts#L60-L61) |
+| 7 | 輸入採集鍵為**封閉集** `KEY_CODE = { KeyA:0, KeyD:1, KeyW:2, KeyS:3, KeyL:4 }`；`KeyL` 只供 WP-61 標註事件使用，非集合內的鍵**整筆不入 ring** | [`src/state/types.ts:45`](../../../../../src/state/types.ts#L45)、[`InputSampler.ts:60-61`](../../../../../src/input/InputSampler.ts#L60-L61) |
 | 8 | `applyInput` 的 key 分支**只對 `KeyD`／`KeyA` 有作用**；`KeyW`／`KeyS` 已進 ring 但無任何 sim 分支消費 ⇒ **「被採集但 sim 不消費的鍵」是既有結構** | [`SimLoop.ts:73-84`](../../../../../src/loop/SimLoop.ts#L73-L84) |
 | 9 | `TickRecord.keys` 為固定 4 bit（A/D/W/S）遮罩，由 `state.held` 推導 ⇒ 第五個 code **結構上不可能進 tick 記錄** | [`RingBuffer.ts:97-120`](../../../../../src/data/RingBuffer.ts#L97) |
 | 10 | **既有先例**：`recordKeyEvents?: boolean`（預設 `false`）的 additive 選配事件錄製，`applyInput`／`simStep` 簽章不變 | [`DataRecorder.ts:126-129/157-158`](../../../../../src/data/DataRecorder.ts#L126) |
@@ -372,8 +372,8 @@ export interface GapBoundaryKinematics {
 | Task | Objective | Dependencies | Risk | Est.（d） | DoD | Commit |
 |---|---|---|---|---|---|---|
 | **T0** | Entry gate：構念歸屬拍板、評估契約 pre-registration、WP-60 handoff 覆驗、硬體 go／no-go | WP-60 T-exit ✅ | **High** | 1–1.5 | [T0-entry-gate.md](T0-entry-gate.md) | `docs(stage13): complete WP-61 lift-off validation entry gate` |
-| **T1** | 標註通道儀器：additive `annotation` 事件 + 錄製協定 | T0 ✅ | **High** | 1.5–2.5 | [T1-annotation-channel.md](T1-annotation-channel.md) | `feat(data): add opt-in operator annotation events` |
-| **T2** | Cohort 取得、標註完整性稽核、切段 golden、候選事件表 | T1 + 實際 cohort | **High** | 1.5–2.5 | [T2-cohort-and-label-audit.md](T2-cohort-and-label-audit.md) | `feat(research): ingest and audit the annotated lift-off cohort` |
+| **T1** | 標註通道儀器：additive `annotation` 事件 + 錄製協定 | T0 ✅ | **High** | 1.5–2.5 | ✅ 完成 2026-09-09；[T1-annotation-channel.md](T1-annotation-channel.md) | `feat(data): add opt-in operator annotation events` |
+| **T2** | Cohort 取得、標註完整性稽核、切段 golden、候選事件表 | T1 ✅ + 實際 cohort | **High** | 1.5–2.5 | [T2-cohort-and-label-audit.md](T2-cohort-and-label-audit.md) | `feat(research): ingest and audit the annotated lift-off cohort` |
 | **T3** | 可分性消融：gap-only → +邊界運動學 → +Stage 2 → +Stage 3 | T2 ✅（含資料充分性閘） | **High** | 2–3.5 | [T3-separability-ablation.md](T3-separability-ablation.md) | `feat(research): ablate lift-off separability on annotated gaps` |
 | **T4** | **條件式**：判準凍結 + held-out 驗證 + TS 實作 + C-D5 parity | T3 達 §2.4 門檻 | **High** | 2.5–4 | [T4-conditional-criterion.md](T4-conditional-criterion.md) | `feat(metrics): add versioned sensor-lift criterion` |
 | **T-exit** | 結論、去向、帳本同步 | T3（或 T4） | Med | 0.5–1 | [T-exit-gate.md](T-exit-gate.md) | `docs(stage13): close WP-61 lift-off validation` |

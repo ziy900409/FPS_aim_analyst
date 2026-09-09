@@ -4,13 +4,13 @@
 
 ## 最新狀態
 
-**✅ T0 entry gate 已完成（2026-09-09）。** T1 可開；T2 仍需要 T1 的標註儀器與使用者錄製 cohort。
+**✅ T1 標註通道儀器已完成（2026-09-09）。** T2 可在使用者錄製 240 Hz cohort 後開始；目前剩餘 blocker 是 cohort 尚未存在。
 
 **2026-09-09：四個使用者決策已收斂**（D-61.U1～U4）⇒ **T1 的兩個阻塞項（OQ-61.1／61.2）已解除，T2 的硬體阻塞（OQ-61.5）已解除**。
 
 開工前置：
 - ① WP-60 T-exit 的四項 handoff —— ①②③ ✅；**④ OQ-60.4 構念歸屬 ✅ 已由 D-61.U1 補上**（WP-60 T-exit 的最後一個未勾項可據此翻 ✅）。
-- ② 高刷真人標註 cohort —— **仍不存在**。硬體已就緒（240 Hz），但錄製需要 T1 的儀器先落地，且錄製本身屬使用者。
+- ② 高刷真人標註 cohort —— **仍不存在**。硬體已就緒（240 Hz），且 T1 的錄製儀器已落地；錄製本身屬使用者。
 - ③ T0 已凍結評估契約；剩餘阻塞移到 **T2 的 cohort 錄製與資料品質 gate**。
 
 ## Progress
@@ -18,6 +18,7 @@
 - **2026-09-09**：依 `engineering-planning` skill 完成 repository-grounded 規劃。盤點 `KEY_CODE` 封閉集、`applyInput` 的 key 分支、`TickRecord.keys` 四 bit 遮罩、`mouseSampleGaps.ts` 的中性原語、`deriveRepositioningSuspicion()` 的既有構念語意、`research/` 的 C-D1／C-D2 邊界與 WP-60 的 R1／R2／TF1／TF2 實機基線；**尚未修改任何 production code**。
 - **2026-09-09**：把工作拆為 T0～T4 + T-exit（T4 條件式）。相對 2026-09-09 的範圍草案（本 WP `README.md` 的前一版，四切片 T0／T1／T2／T-exit；`git log -- README.md` 可回溯）新增一個 **T1「標註通道儀器」** —— 草案把「保存獨立的抬起／落下標註」寫成 T0 的資料要求，但 repo 內**沒有任何機制**能產生那種標註（`KEY_CODE` 是四鍵封閉集、`DrillEvent` 無標註型別）。見 D-61.P2。
 - **2026-09-09**：T0 entry gate 完成。Baseline：HEAD `10ee3561ec81fd78b0fe59d125363ba1fc853c35`；`git status --short` 未列出變更，但 sandbox 讀 global ignore 與 `.pytest_cache/` 有 permission warning；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（249 files passed / 1 skipped；2764 passed / 2 skipped）；`npm.cmd run build` sandbox 內因 esbuild 無權讀 `../../../..` exit 1，非 sandbox 重跑 exit 0（Vite 195 modules，chunk-size warning）；preview COI focused read：`{"status":200,"coop":"same-origin","coep":"require-corp","crossOriginIsolated":true}`。5173 已被既有 server 占用，未停止他人 server，故未跑 dev-server COI 讀數。
+- **2026-09-09**：T1 標註通道儀器完成。`KEY_CODE/CODE_KEY` additive 加入 `KeyL`；`DataRecorder` 新增 `recordAnnotationEvents?: boolean`（預設 false）與 additive `annotation` event；`applyInput` 對 `KeyL` 只在 opt-in recorder 上寫 event，不寫 sim state；app 以 `?annotation=1` 開啟，預設關閉；schema parser/CSV/JSON round-trip、InputRing/InputSampler、focused E2E 與決定性 regression 全補測。
 
 ## T0 entry gate（2026-09-09）
 
@@ -115,6 +116,35 @@ T1/T4 可執行命名：
 | 評估契約凍結 | README §2.4 零留白 | ✅ 已填值並同步本節。 |
 | Baseline 三閘 | typecheck ×2 / Vitest / build | ✅ typecheck exit 0；Vitest exit 0；build 非 sandbox exit 0。sandbox 失敗具名為 esbuild access denied。 |
 
+## T1 annotation channel（2026-09-09）
+
+### Implementation Summary
+
+| Area | Result |
+|---|---|
+| Input ring | `KEY_CODE` / `CODE_KEY` additive 加入 `KeyL`，既有 A/D/W/S enum 值與 `keyMaskFromKeys()` 四 bit movement mask 不變。 |
+| Recorder | `recordAnnotationEvents?: boolean` 預設 false；opt-in 時 `recordEvent()` 保存 `{ type:'annotation', kind:'sensor_lift', code:'KeyL', down, t }`。 |
+| Sim loop | `applyInput` 的 `KeyL` 分支只讀 recorder flag 並記錄 event；不改 movement、aim、target、fire、ADS 或 tick state。 |
+| App wiring | query flag 為 `?annotation=1`；正式 WP-61 錄製與 raw mouse 同開：`?rawMouse=1&annotation=1`。 |
+| Export schema | JSON 顯式保存 `kind:'sensor_lift'`；CSV 維持 24 欄 header，不新增欄位，annotation row 重用 `key`/`down` 欄。 |
+| UI | 無視覺回饋，避免誘導操作者分心或改變標註延遲。 |
+
+### Verification
+
+| Gate | Command | Result |
+|---|---|---|
+| Targeted Vitest | `npx.cmd vitest run src/state/InputRing.test.ts src/input/InputSampler.test.ts src/data/DataRecorder.test.ts src/data/exportPayloadSchema.test.ts src/data/export.test.ts tests/regression/wp61-annotation-channel.test.ts tests/regression/determinism.test.ts` | exit 0；7 files passed；211 tests passed。 |
+| Mutation verification | temporary opt-in-only `state.player.x += 1e-12` inside the `KeyL` branch, then `npx.cmd vitest run tests/regression/wp61-annotation-channel.test.ts` | expected red：exit 1；4 failed / 3 passed；四個 FPS parity cases all reported `tick[19]: 1e-12 !== 0` 等 15 個 tick mismatches。以 copy backup 還原後同檔 exit 0；7 tests passed。 |
+| Typecheck ×2 | `npm.cmd run typecheck` | exit 0。 |
+| Focused E2E | `npx.cmd playwright test tests/e2e/annotation-channel.spec.ts --project=edge` | sandbox 因 esbuild 無權讀 `../../../..` exit 1；non-sandbox rerun exit 0；2 passed（59.9 s）。 |
+| Push-count regression | `tests/regression/wp61-annotation-channel.test.ts` / `adds Array.prototype.push calls equal to the number of actual annotation events` | off path `0` calls；on path `2` calls；delta `2` = actual `KeyL` down/up annotation events。 |
+| Naming scan | `rg -n "reposition\|suspicion" <T1 code/test files>`；`rg -n "sensorLift\|SensorLift\|sensor_lift\|annotation" src\metrics\spiderShotRepositioning.ts` | both exit 1 with zero hits；新標註切片不使用既有構念語彙，舊 repositioning 模組不提新構念。 |
+| Full Vitest | `npm.cmd test` | exit 0；250 passed / 1 skipped files；2785 passed / 2 skipped tests；17.73 s。 |
+| Build | `npm.cmd run build` | sandbox 因 esbuild access denied exit 1；non-sandbox rerun exit 0；Vite 6.4.3，195 modules transformed，既有 chunk-size warning。 |
+| Graphify | `graphify update .` | exit 0；AST extraction 631/631；rebuilt 4675 nodes / 11506 edges / 285 communities。 |
+
+`uv run pytest` 與全量 Playwright 未在 T1 跑：本切片沒有修改 `research/` Python，且 T1 DoD 要求的是 annotation-channel focused E2E。package-level 五閘會在 WP-61 T-exit 逐項補齊或具名說明。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -128,6 +158,7 @@ T1/T4 可執行命名：
 | **D-61.P7** | 2026-09-09 | **負面結論（「不可靠分離」／「證據不足」）為一級交付物，其驗收嚴格度與「通過」相同。**<br>理由：D-60.R2-1 已在空洞長度軸上得到負面結論，且 §1.4 的物理論證顯示 lift 與 pause 在本硬體上都產生「零樣本」區間 ⇒ 分不開是**最可能的單一結果**。若只為「通過」寫 DoD，這個 WP 在最可能的路徑上會沒有交付定義。C-D3／GD-20 的立場一致：寧可少一個指標，不能有一個會說錯話的指標。 | 規劃 | README §3.1 R3／§5；`DECISIONS.md` GD-20 |
 | **D-61.T0-1** | 2026-09-09 | **評估契約 `sensor-lift-validation-v1` 於 T0 凍結**：θ sweep = 18/30/50 ms；匹配容差 = 300 ms；promotion gate = held-out precision ≥0.90、recall ≥0.80、F1 ≥0.85、pause FPR ≤0.10、oneshot FPR ≤0.05、calibration→held-out F1 drop ≤0.10；資料不足、標註通道不可用、足量但未達標三條負面結案路徑均為合法交付。<br>**Alternatives considered**：(a) 先看 cohort feature distribution 再調門檻 —— 違反 GD-20，駁回；(b) 只凍結 30 ms 單一 θ —— 會把 PA prior 誤升為本硬體校準值，駁回；(c) 用較寬容差（500 ms）吸收自報延遲 —— 會把相鄰 trial/gap 誤配風險放大，且開始接近秒級 gap overlap，駁回。 | Engineering | README §2.4；本檔 §Pre-registration |
 | **D-61.T0-2** | 2026-09-09 | **OQ-61.3／61.4 收斂為工程決策**：標註鍵 code = `KeyL`；新構念識別名 = `sensorLift`，型別/模組前綴 = `SensorLift`，條件式 TS 晉升模組 = `src/metrics/sensorLiftCriterion.ts`；T2/T3 實作落 Python `research/src/lift/`，Stage 1 切段只讀 TS 產出的 committed golden JSON，不在 Python 重寫。<br>**Alternatives considered**：(a) 用兩個鍵分別標 lift/pause —— 增加誤按與仲裁規則，駁回；(b) 用 `KeyW`/`KeyS` 兼作標註 —— 語意重載且會污染未來 WASD drill，駁回；(c) T2 就做 TS+Python 雙實作 —— 尚無晉升指標，過早觸發 C-D5，駁回。 | Engineering | README §0.2／§2.4；D-61.P4/P5 |
+| **D-61.T1-1** | 2026-09-09 | **T1 的標註事件為 opt-in `annotation` event，入口 flag = `?annotation=1`，JSON 保存 `kind:'sensor_lift'`，CSV 維持既有 events header 並重用 `key`/`down` 欄。**<br>理由：`KeyL` 已在 input ring 中取得同時鐘域時間戳；JSON 需要顯式構念名以支撐 strict parser 與後續稽核；CSV 若新增欄位會讓所有非標註匯出的 header 改變，違反 additive 預設關閉的精神。<br>**Alternatives considered**：(a) 新增 CSV `kind/code` 欄 —— header 對未使用標註的 export 也變動，駁回；(b) 把 `KeyL` 記成既有 `key` event —— 語意重載，會讓 release-time consumer 誤讀，駁回；(c) 全域預設開啟 —— 違反 FR-61.2，駁回。 | Engineering | T1 tests；`docs/operational/schema.md`；`docs/operational/spider-wide-recording-spec.md` |
 | **D-61.U1** | 2026-09-09 | **OQ-61.1（＝ WP-60 交不出來的第四項 handoff）收斂：兩個構念並存但語意分離。**<br>既有 `deriveRepositioningSuspicion()` 維持「角速度停滯（repositioning suspicion）」語意**一行不改**；新構念為「**感測器離地（sensor lift）**」，用不同名稱、不同型別、不同模組。兩者於 `CONTEXT.md` 分開定義並**互相指名**（差異：訊號來源＝ 128 Hz tick 聚合 ω vs 事件級取樣空洞；時間粒度＝ 7.8125 ms vs ~1 ms；可回答的問題不同）。<br>⇒ C-D4 的守線方式確立：禁的是「同一構念兩套定義」，本案是「兩個不同構念」，故雙向命名掃描（新模組零 `reposition`／`suspicion`；舊模組零 `sensorLift`）即為充分證據。<br>**Alternatives considered**：(b) 新的取代舊的 —— 用一個未驗證的取代一個已校準的，順序反了，駁回；(c) 本輪不建構念名只出研究結論 —— 使用者未選，但仍是 T3 判定為非 `promote` 時的實際落點（T4 不執行）。 | 使用者 | 使用者回覆（2026-09-09）；README §1.5 OQ-61.1 |
 | **D-61.U2** | 2026-09-09 | **OQ-61.2 收斂：自報鍵為主 + block 設計為冗餘。**<br>受測者本人按標註鍵；block 設計（「本 run 每個 trial 都抬」）提供 trial 級冗餘標籤，用來稽核漏按。不引入第二人標註、不引入外部硬體。<br>⚠️ **隨此決定生效的宣稱界線（必須進 §Pre-registration）**：反應時間 ≈ 200 ms 與 WP-57 量到的 lift 事件 180–225 ms **同量級** ⇒ 自報鍵可支撐**事件級匹配**（「哪一個空洞是抬滑鼠」），**不可**支撐**起點精度**宣稱（「抬滑鼠從第幾毫秒開始」）。T3／T-exit 不得作後者的宣稱；匹配容差的設計以此為前提。<br>**Alternatives considered**：(b) 第二人標註 —— 一樣是反應時間，不會更準，卻多一個人與一台裝置，駁回；(c) 兩者都收 —— 錄製負擔加倍，且不一致時要另訂仲裁規則，駁回；(d) 客觀量測（高速攝影／外部感測器）—— 跨時鐘域對齊，成本遠大於本 WP 規模，列為 F3 判定「自報通道不可用」時的升級路徑。 | 使用者 | 使用者回覆（2026-09-09）；README §1.5 OQ-61.2／§3.2 |
 | **D-61.U3** | 2026-09-09 | **OQ-61.5 收斂：cohort 一律錄在 240 Hz 顯示器；`meta.displayHz === 240` 為逐份可用性條件。**<br>硬體：使用者有 60 Hz 與 **240 Hz** 兩台，選 240 Hz。<br>⚠️ **規劃期把「≥ 120」與「≥ 144」誤判為文件矛盾，實際上不是** —— 兩者回答不同問題，**兩個都對**：<br>　• **≥ 120 Hz** ＝ 資格閘地板，依 `PERF_FLOOR_MS = 8.33`（[`src/display/constants.ts:13`](../../../../../src/display/constants.ts#L13)）與 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md) §2.1；管的是 `meta.suspect` 是否被 frame floor 判紅。<br>　• **≥ 144 Hz** ＝ KI-031 完全緩解點，依 [KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) §2「失效邊界」：零樣本比例 ≈ `1 − f/128`，`f ≥ 128 Hz`（144 Hz 顯示）幾乎無零樣本；**`f ≈ 120 Hz` 仍約 6% 零樣本 ⇒ 偶發漏檢**；60 Hz 為懸崖。管的是 `deriveDetectionMetrics()` 會不會靜默失效。<br>⇒ `../README.md` §4 與 `docs/exec-plan/README.md` §2 的「≥ 144 Hz」**有依據，不得改寫為 120**。正確處置是**兩個門檻並列並各自標明依據**，而非統一成一個數字。**240 Hz 同時滿足兩者**，故本決定不受影響。<br>**連帶**：F1（硬體不存在）**關閉**；R1 由 High 降為 **Med**（殘餘風險只剩錄製時間與品質）。原「60 Hz 降級路徑」不再需要。<br>**新增硬性條件**：**禁止混合顯示更新率** —— `meta.displayHz` 不等於 240 即作廢該 run（T2 逐份覆核）。顯示更新率同時改變 aim 更新率與 `suspect`，是顯性 confound；既有 WP-57／WP-60 的 60 Hz 真人資料**不得**併入本 cohort。 | 使用者 | 使用者回覆（2026-09-09）；`src/display/constants.ts:13`；`src/data/metadata.ts:154`；KI-031 §2 |
@@ -144,6 +175,10 @@ T1/T4 可執行命名：
 2. **本機 gate 有兩種「紅」：真紅與 sandbox/port 紅，T0 必須分開記。**（2026-09-09，T0）
    `npm run build` 與 `npm run preview` 在 sandbox 內都因 esbuild 無權讀 `../../../..` 與 `vite.config.ts` exit 1；同一命令在非 sandbox 權限下 build exit 0，preview 也能回 COOP/COEP 並使 `crossOriginIsolated === true`。同時 5173 已被既有 server 占用，若直接跑 Playwright 全 config 會 reuse 一棵不一定是本 checkout 的 dev server。
    ⇒ T0 的紀錄不能只寫「build 紅」或「COI 未測」：前者是 sandbox 權限問題，後者是 port discipline 問題。本次只用 4173 preview 做 focused COI 讀數，未停止他人 server，也未宣稱 dev server 讀數。
+
+3. **T1 的 determinism 測試必須故意弄壞一次才知道有偵測力。**（2026-09-09，T1）
+   `KeyL` branch 的正確實作看起來很小，最危險的是未來有人順手寫進 `state` 而測試沒有抓到。因此 T1 依 README §5 的突變驗證紀律，用 copy backup 暫時插入 `state.player.x += 1e-12`。focused regression 立即紅，且回報多個 `TickRecord` mismatch；還原後同檔綠。
+   ⇒ 這證明四 FPS parity 不是只檢查窄 trace，而是真的覆蓋 sim state 寫入對 tick export 的影響。
 
 ## Open Questions（狀態）
 

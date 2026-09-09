@@ -69,6 +69,24 @@ SessionSetup 的 `Mouse DPI` 欄位省略時,`meta.dpi` 缺席,`deriveMouseThrow
 
 ⚠️ **匯出體積**:原始取樣約 9.5 bytes/sample。60 s / 1000 Hz 約 +0.57 MB(現行匯出 3.4–3.8 MB)。
 
+### 2.5 感測器離地標註通道(WP-61,**選配**)
+
+WP-61 cohort 需要一條**獨立於取樣空洞**的事件級標註通道。這條通道預設關閉；要錄 WP-61 請同時開原始滑鼠取樣與標註:
+
+```text
+http://localhost:5173/?rawMouse=1&annotation=1
+```
+
+操作規則:
+
+- 標註鍵是 `KeyL`。按下 `L` 記一筆 `{ type:'annotation', kind:'sensor_lift', code:'KeyL', down:true }`；放開 `L` 記 `down:false`。時間戳與 `mouseSamples` 同屬 `performance.now()` 時鐘域。
+- 受測者自己按標註鍵；block 指示（`lift` / `pause` / `oneshot`）只是冗餘稽核，不取代逐次 KeyL 標註。
+- 標註時不要看畫面確認，也不要期待任何視覺回饋；T1 刻意不做 UI 提示，以免改變操作節奏。
+- 全程不要中斷 Pointer Lock。按 `L` 不會離開 Pointer Lock；按 Esc、alt-tab、點出視窗才會製造不可用的 unlocked interval。
+- WP-61 正式 cohort 一律使用 240 Hz 顯示器、1000 Hz polling 滑鼠、DPI 必填，且每份 run 的 `meta.displayHz` 必須等於 240。
+
+此通道只為 WP-61 的資料品質與可分性驗證服務；未通過 WP-61 gate 前一律 `research_only`，不得進教練報告或玩家指標。
+
 ---
 
 ## 3. 錄製矩陣
@@ -114,6 +132,37 @@ SessionSetup 的 `Mouse DPI` 欄位省略時,`meta.dpi` 缺席,`deriveMouseThrow
 ```
 
 指示字串**逐字相同**才會分到同一組(腳本不做模糊比對——「照平常打」與「照平常打 」是兩組)。
+
+WP-61 標註 cohort 另需記錄每份 run 的 `instructionClass`，封閉值為 `lift`、`pause`、`oneshot`。建議一份 run 只用一種 instruction class；不要在同一份正式 run 中混合 lift 與 pause。
+
+```json
+{
+  "spider-shot-wide-v1-2026-09-15T02_00_00.000Z.json": {
+    "instruction": "每個 trial 都抬滑鼠並用 KeyL 標註抬起到落下",
+    "instructionClass": "lift",
+    "displayHz": 240,
+    "dpi": 800,
+    "mouse": "example 1000Hz mouse",
+    "order": 1
+  },
+  "spider-shot-wide-v1-2026-09-15T02_10_00.000Z.json": {
+    "instruction": "每個 trial 都停住但不抬滑鼠，並用 KeyL 標註停住到恢復",
+    "instructionClass": "pause",
+    "displayHz": 240,
+    "dpi": 800,
+    "mouse": "example 1000Hz mouse",
+    "order": 2
+  },
+  "spider-shot-wide-v1-2026-09-15T02_20_00.000Z.json": {
+    "instruction": "一次到位，遇到實際抬滑鼠才用 KeyL 標註",
+    "instructionClass": "oneshot",
+    "displayHz": 240,
+    "dpi": 800,
+    "mouse": "example 1000Hz mouse",
+    "order": 3
+  }
+}
+```
 
 ### 3.4 一併記下(payload 內沒有的)
 

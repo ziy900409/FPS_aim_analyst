@@ -46,6 +46,11 @@ export type DrillEvent =
   // 鍵名（`A`/`D`/`W`/`S`，對齊 `ticks[].keys`，不引入第二套鍵名慣例）。**opt-in**：僅 `recordKeyEvents` 啟用時
   // 由 `SimLoop.applyInput` 寫入（預設關閉 → 既有匯出/測試/golden 逐位不變，additive 相容）。
   | { type: 'key'; code: string; down: boolean; t: number }
+  /**
+   * WP-61 / T1：operator self-report annotation, opt-in only. `code` is the physical
+   * `KeyboardEvent.code` (`KeyL` for v1); `kind` names the frozen construct being annotated.
+   */
+  | { type: 'annotation'; kind: 'sensor_lift'; code: string; down: boolean; t: number }
   /** WP-60 / T1：Pointer Lock 狀態變化事件。缺席 = pre-WP-60 或未啟用 raw mouse sampling。 */
   | { type: 'pointer_lock'; locked: boolean; t: number }
   | {
@@ -127,6 +132,8 @@ export interface DataRecorder {
    * 故 `applyInput`/`simStep` 簽章不變；停用時 `applyInput` 完全不配置 key 事件物件（GC 紀律 §4）。
    */
   readonly recordKeyEvents: boolean;
+  /** WP-61 / T1：是否記錄 additive operator annotation events（預設 `false`）。 */
+  readonly recordAnnotationEvents: boolean;
   /** WP-60 / T1：是否記錄 raw mouse sample contract（預設 `false`；T2 才接 SimLoop）。 */
   readonly recordMouseSamples: boolean;
   /** KI-005 / A（FR-A-1）：未啟用時為 `undefined`；`applyInput` 以此判定是否進入 mouse 分支。 */
@@ -156,6 +163,8 @@ export interface DataRecorderOptions {
   capacity?: number;
   /** WP-29 / T3：啟用 additive `key` 事件記錄（預設 `false`；見 `DataRecorder.recordKeyEvents`）。 */
   recordKeyEvents?: boolean;
+  /** WP-61 / T1：啟用 additive `annotation` 事件記錄（預設 `false`）。 */
+  recordAnnotationEvents?: boolean;
   /** WP-60 / T1：啟用 additive raw mouse sample 記錄（預設 `false`；T2 才接線）。 */
   recordMouseSamples?: boolean;
   /** 測試/特殊研究用覆寫；一般 production 使用 `maxDrillSeconds` 推導容量。 */
@@ -168,6 +177,7 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
   const maxDrillSeconds = options.maxDrillSeconds;
   const capacity = options.capacity ?? capacityForDrill(options.simHz ?? 128, maxDrillSeconds, options.extraTicks);
   const recordKeyEvents = options.recordKeyEvents ?? false;
+  const recordAnnotationEvents = options.recordAnnotationEvents ?? false;
   const recordMouseSamples = options.recordMouseSamples ?? false;
   const ticks = new TickArena(capacity);
   const mouseSamples = recordMouseSamples
@@ -194,6 +204,7 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
   return {
     capacity,
     recordKeyEvents,
+    recordAnnotationEvents,
     recordMouseSamples,
     get mouseIntegration(): MouseIntegrationConfig | undefined {
       return mouseIntegration;

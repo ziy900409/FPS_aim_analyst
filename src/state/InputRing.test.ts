@@ -74,6 +74,17 @@ describe('InputRing — 固定欄位真 ring（繞圈 / 保序 / 溢位 / 重用
     expect(drained.map((e) => e.type === 'key' && e.code)).toEqual(['KeyA', 'KeyD']);
   });
 
+  it('WP-61 / T1：KeyL annotation key round-trips through the existing key slot', () => {
+    const ring = createInputRing();
+    ring.pushKey(KEY_CODE.KeyL, true, 10);
+    ring.pushKey(KEY_CODE.KeyL, false, 20);
+
+    expect(drainAll(ring)).toEqual([
+      { type: 'key', code: 'KeyL', down: true, t: 10 },
+      { type: 'key', code: 'KeyL', down: false, t: 20 },
+    ]);
+  });
+
   it('packed 槽位就地解碼保真（key / mouse / fire 三型）', () => {
     const ring = createInputRing();
     ring.pushKey(KEY_CODE.KeyA, false, 1);
