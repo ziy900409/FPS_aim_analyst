@@ -9,7 +9,7 @@
 | T0 Entry Gate | 🟡 Blocked（**R1 已通過**；R2 三組空洞分布與 F6 瀏覽器 frame log 仍待實機） | 2026-09-08 | — | 見 §T0 automated audit（2026-09-08 13:39Z）＋ **§T0 R1 實機量測（2026-09-09）**。<br>**已綠**：baseline 三項；README §0 discovery 覆驗；CodeGraph impact；序列化體積／µs 精度；PA 十四參數；**R1 gate（事件率 1005 Hz 瞬時、dt p50 995 µs、零遺漏）**。<br>**仍 BLOCKED**：R2 的抬起／停頓／一次到位三組空洞分布（需使用者實機 `spider-shot-wide-v1` 各 ≥ 10 次）、F6 瀏覽器 frame log 開／關對照。故 T0 維持 blocked。 |
 | T1 Capture Contract | ✅ Completed（依使用者明確指示 override T0 gate；contract-only，不接線） | 2026-09-08 | 2026-09-08 14:31Z | `npm.cmd test -- src/data/mouseSampleArena.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts src/data/exportPayloadSchema.test.ts src/data/metadata.test.ts` exit 0（182 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（244 files passed, 1 skipped；2561 passed, 2 skipped）；`npm.cmd run build` exit 0（既有 chunk-size warning）；60k `mouseSamples` JSON.stringify：567,316 bytes / p50 1.714 ms / p95 2.377 ms / max 2.546 ms；`rg -n "\bLOD\b" src tests scripts CONTEXT.md` exit 1（0 命中）。 |
 | T2 Recorder Wiring | ✅ Completed（依使用者明確指示 override T0 gate；app 佈線層 opt-in 預設關閉） | 2026-09-08 | 2026-09-08 | 見 §T2 implementation audit。`npm.cmd test -- tests/regression/wp60-raw-mouse-capture.test.ts` exit 0（20 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（245 files passed, 1 skipped；2581 passed, 2 skipped）；`npm.cmd run build` exit 0（`$LASTEXITCODE=0`，193 modules，保留既有 chunk-size warning）；`npx.cmd playwright test tests/e2e/raw-mouse-sampling.spec.ts` **2 passed（真實 Edge）**。 |
-| T3 Time-Gap Primitive | ⬜ Not started | — | — | — |
+| T3 Time-Gap Primitive | 🟡 Mostly done（原語與全部 scan 已交付；**DoD 的真人取樣分布一項未完成**）| 2026-09-09 | — | 見 §T3 implementation audit。`npm.cmd test -- src/metrics/mouseSampleGaps.test.ts` exit 0（25 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（246 files passed, 1 skipped；2606 passed, 2 skipped）；`npm.cmd run build` exit 0（193 modules，保留既有 chunk-size warning）；三組突變各被抓到。**未完成**：真人取樣的區段／間隙分布 —— T0 R2 只回填統計摘要，逐筆 `dtUs`／`dx`／`dy` 從未入 repo，本 session 取不到。 |
 | T4 Operator Visibility | ⬜ Not started | — | — | — |
 | T-exit | ⬜ Not started | — | — | — |
 
@@ -35,6 +35,12 @@
 | D-60.T2-1 | 2026-09-08 | **T2 接線落地，但 app 佈線層的 opt-in 預設關閉，並以 `?rawMouse=1` 顯式開啟。**<br>理由：`recordKeyEvents` 與 `mouseIntegration` 在 main.ts 都是「全域開」，本 task 刻意**不**照抄那個先例 —— 那兩者的前提都已驗證過，而 WP-60 的前提（R1：`getCoalescedEvents()` 在 Pointer Lock 下真的回傳次幀樣本）**至今只有註解宣稱、無實機證據**。全域開等於用一個未驗證的前提換 8.6 MB 常駐 arena 與數 MB 匯出增幅，並讓所有受測者的熱路徑多一條未量測的寫入。<br>**連帶價值**：這個 flag 同時是 T0 缺的那個入口 —— T0 的 R1/R2 需要「真瀏覽器 + 真 COI + 真滑鼠」，在此之前 repo 裡根本沒有任何方法把 raw sample 匯出出來。現在跑一輪 `?rawMouse=1` 即可從 `meta.mouseSampling.observedRateHz` 與 `mouseSamples.dtUs` 的分布結掉 R1/R2。<br>**Alternatives considered**：(a) 比照 `recordKeyEvents` 全域開 —— 讓未過經驗性 gate 的功能成為常態熱路徑，且 T0 若判 no-go 就要回頭拆，駁回；(b) 完全不接 main.ts、只接 API 層 —— T2 DoD 的「Pointer Lock 轉態在真實載入路徑上被記錄」變成不可能滿足，且重演 `recordKeyEvents` 那個「API 有、佈線沒有」的舊傷，駁回;(c) 用 `import.meta.env.DEV` 閘 —— T0 PoC 需要 production build 的 COI 條件，dev-only 會擋掉自己要的量測，駁回。 | Engineering | 使用者指令（2026-09-08）；`src/main.ts`；`tests/e2e/raw-mouse-sampling.spec.ts` |
 | D-60.T0-2 | 2026-09-09 | **R1 判為通過；T0 指標③「每 rAF 幀的 coalesced 筆數 > 1」的門檻敘述判為定義錯誤、須更正。**<br>理由：實機量到 `pointermove` 以 **997 events/s** 派發（clean run 10,762 事件 ÷ 10.79 s），遠高於階段 A 顯示更新率上限 240 Hz ⇒ Chromium **逐筆硬體取樣派發**，而非「幀內合併 + `getCoalescedEvents()` 補回」。因此 coalesced p50 = 1、mean = 1.020 代表**該機制沒被用到**，不代表「次幀樣本被丟掉」。指標③要問的是後者，而後者已由 ①② 直接證否（dt p50 = 995 µs、10,475 個間隔、`lockedRaw === recorded === 10,476` 零遺漏）。<br>**門檻改為**：「事件派發率 ≫ 顯示更新率 **或** coalesced p50 > 1，二者其一即可」。<br>**連帶更正**：`InputSampler.ts:125-127` 與 ADR-5／附錄 B 對機制的敘述**對結果正確、對機制不準**。但 coalesced `max: 5` 證明幀變慢時 coalescing 確實會啟動 ⇒ **`getCoalescedEvents()` 呼叫仍必要，程式碼不改**，只改註解／ADR 的機制描述。<br>**Alternatives considered**：(a) 照字面判 R1 失敗、停止本 WP —— 會因為一個寫錯的中介指標否決一個實際成立的前提，駁回；(b) 默默把③重新解釋成過關、不改文件 —— 下一個人會再撞一次同一個錯誤前提，且違反「矛盾必須入帳」，駁回；(c) 改 `InputSampler` 不再呼叫 `getCoalescedEvents()` —— `max: 5` 顯示卡頓時會丟樣本，駁回。 | Engineering | 使用者實機量測（2026-09-09）；本檔 §T0 R1 實機量測；[T0-entry-gate.md](T0-entry-gate.md) §R1 註 |
 | D-60.T2-2 | 2026-09-08 | **決定性 trace 涵蓋 `TickRecord` 全欄位，而非只有 DoD 點名的 `replayTargetId`/`tx,ty,tz`/`dYaw,dPitch`。**<br>理由：先按 DoD 字面實作窄 trace，再手動突變 `SimLoop`（在錄製旁路裡加 `state.player.x += 1e-12`）驗證斷言的偵測力 —— **20 個測試全綠通過**。「唯寫旁路」的失效模式包含寫到 player 位置／速度／aim 上，而窄 trace 結構上抓不到那一類。改為攤平全欄位後同一突變被 4 個案例抓到。<br>**Alternatives considered**：(a) 維持窄 trace + 額外加 player 欄位斷言 —— 下一個新欄位又會漏，駁回；(b) 用 `toEqual(snapshot.ticks)` 深比較 —— `toEqual` 不區分 +0/−0，違反 DoD 明文要求的 `Object.is` 級比對，駁回。 | Engineering | `tests/regression/wp60-raw-mouse-capture.test.ts`；本檔 Surprises 4 |
+
+| D-60.T3-1 | 2026-09-09 | **`lockGapIndices` 的值是「間隙前一筆樣本的 block index」，不是「`gaps` 陣列的 index」。**<br>理由：README §2.3 把它寫成「間隙 index」，但同一份文件與 T3 步驟 3 又要求被歸因的間隙**排除在 `gaps` 之外**（不是標記後留著）。兩者不能同時成立於「`gaps` 的 index」這個讀法 —— 那會指向一個不含它們的陣列。改以樣本 index 表示後，兩個要求都成立，且呼叫端可直接在 block 上定位那個空洞。<br>**Alternatives considered**：(a) 讓 lock 間隙留在 `gaps` 並用 index 指它 —— 違反 T3 明文的「留著就會有人忘記過濾」，駁回；(b) 另開 `lockGaps: SampleGap[]` 欄位 —— 偏離 README §2.3 的簽名，而 DoD 明文要求簽名完全一致，駁回。 | Engineering | `src/metrics/mouseSampleGaps.ts`；`mouseSampleGaps.test.ts` F2 案例 |
+| D-60.T3-2 | 2026-09-09 | **lock 中斷同樣切段，只改變間隙的「歸因」而不改變切段。**<br>理由：Pointer Lock 中斷是樣本流的**真實**不連續 —— 中斷期間的移動依 FR-A-8 本來就整筆丟棄，兩側樣本並不相鄰。若不切段，呼叫端會拿到一個橫跨中斷的「連續區段」，那才是靜默說謊。<br>**Alternatives considered**：(a) lock 間隙不切段、兩側併成一段 —— 會讓區段內含一個不存在的直線內插，駁回。 | Engineering | `SampleSegmentation.segments` 註解 |
+| D-60.T3-3 | 2026-09-09 | **間隙判定在整數 µs 空間比較，並加 `GAP_EPSILON_US = 1e-6`（1 ps）容差；端點相接不算 lock 重疊。**<br>理由：`dtUs` 是整數，唯一浮點來源是 `gapThresholdMs * 1000`。實測 10–60 ms 間所有一位小數門檻，只有 **32.3** 的乘積（32,299.999999999996）落在整數**下方** —— 少了容差，恰在門檻上的 32,300 µs 會因 5.8e-12 µs 的表示誤差被判成間隙。重疊採嚴格（重疊長度 > 0）則是 F2 的要求：恰在間隙起點收掉的中斷不得解釋掉它後面那個真實間隙。<br>**Alternatives considered**：(a) 把門檻 `Math.round()` 成整數 µs —— 會把 30.0005 ms 這類門檻悄悄改掉，駁回；(b) 不加容差 —— 32.3 的案例會判錯，駁回。 | Engineering | `mouseSampleGaps.ts` §GAP_EPSILON_US；同名測試兩例 |
+| D-60.T3-4 | 2026-09-09 | **R7 的 scan 對象是「命名」，故模組**連註解都不拼出**那個三字母縮寫**，改以實際檔名 `lod_v3_default_config.json`（小寫）指認來源。<br>理由：初版把方法學來源寫成縮寫寫進 doc comment，`LOD` 掃描立刻紅。可以改成剝註解後再掃（比照 C-D4 那支），但那會**放寬**一條既有紅線去遷就一段可以換句話說的散文。換句話說零成本、出處零損失，掃描維持在最嚴的原文層級。<br>**Alternatives considered**：(a) 掃描改用 `codeOnly()` —— 為了註解方便而弱化 R7，駁回；(b) 不記來源 —— D-60.P7 明文要求記名，駁回。 | Engineering | `mouseSampleGaps.ts` 頭註解；`mouseSampleGaps.test.ts` R7 scan |
+| D-60.T3-5 | 2026-09-09 | **新增 `deriveUnlockedIntervals()`（README §2.3 未列）把 `pointer_lock` edge 轉成區間。**<br>理由：T3 步驟 3 要求「依 `pointer_lock` 事件推導 `lockIntervals`」，但 README 只給了吃 `lockIntervals` 的簽名。把 edge→interval 這段留給每個呼叫端自己寫，等於為同一個語意開放多套實作（未關閉的中斷該不該收尾、重複 edge 怎麼處理）—— 那正是 C-D4 要避免的形狀。附加函式不改 `segmentByTimeGap()` 的簽名，DoD 的一致性要求不受影響。<br>**Alternatives considered**：(a) 讓呼叫端自推 —— 語意分散，T4 與 WP-61 會各寫一套，駁回。 | Engineering | `mouseSampleGaps.ts`；CONTEXT.md「未取鎖區間」 |
 
 ## T0 automated audit（2026-09-08 13:39Z）
 
@@ -267,6 +273,58 @@ T-exit 需決定是否要為長 drill 加容量政策（OQ 候選）。
 
 R2 的三組空洞分布（④⑤⑥）與瀏覽器 frame log 的開／關對照（F6）。**T0 維持 blocked。**
 
+## T3 implementation audit（2026-09-09）
+
+### Scope
+
+新增兩個檔（生產側只有一個模組，零既有檔案修改）：
+
+| 檔案 | 內容 |
+|---|---|
+| [`src/metrics/mouseSampleGaps.ts`](../../../../../src/metrics/mouseSampleGaps.ts) | `segmentByTimeGap()`（README §2.3 簽名）+ `deriveUnlockedIntervals()`（D-60.T3-5）+ `TimeInterval`／`SampleGap`／`SampleSegment`／`SampleSegmentation` |
+| [`src/metrics/mouseSampleGaps.test.ts`](../../../../../src/metrics/mouseSampleGaps.test.ts) | 25 cases：切段語意 8、Pointer Lock 消歧 5、型別邊界與 typed error 6、C-D4／純度 3、C-D3／R7 2 |
+| `CONTEXT.md` | 新增「未取鎖區間（unlocked interval）」一列（T1 已定義 raw mouse sample／時間間隙／取樣區段，本 task 逐字對齊，未改動）|
+
+**既有檔案零修改** —— 本模組不被 `src/` 任何生產路徑 import（C-D3），故不進 `SimLoop`、教練報告或 registry。
+
+### Verification
+
+| Item | Command / evidence | Result |
+|---|---|---|
+| Targeted T3 tests | `npm.cmd test -- src/metrics/mouseSampleGaps.test.ts` | exit 0；**25 passed** |
+| Typecheck ×2 | `npm.cmd run typecheck` | exit 0 |
+| Full Vitest | `npm.cmd test` | exit 0；**246 files passed, 1 skipped；2606 passed, 2 skipped** |
+| Build | `npm.cmd run build` | exit 0；Vite 6.4.3；193 modules；保留既有 chunk-size warning |
+| C-D3 importer scan | 測試內走訪 `src/**/*.ts` 找 `mouseSampleGaps` 字串 | importer 數 **0**（僅模組自身與其測試）|
+| C-D4 symbol scan | 剝註解後掃 `omegaDegPerSec`／`deriveDetectionMetrics`／`deriveRepositioningSuspicion` | **0** 命中 |
+| 構念語彙 scan | 剝註解後掃 `lift`／`reposition`／`suspicion`／`stall`（不分大小寫）| **0** 命中 |
+| NFR-60.6 純度 scan | 剝註解後掃 `three`／`node:`／`readFileSync`／`Date.now`／`performance.now`／`Math.random`／`document.`／`window.` | 八個 pattern **全數 0** 命中 |
+| R7 命名 scan | 走訪 `src`／`tests`／`scripts` 全部 `.ts` 掃 `LOD`（原文，不剝註解）| **0** 命中（僅掃描器自身，已具名排除）；`grep -nE "LOD" CONTEXT.md` exit 1 |
+
+**全量差額歸屬**：T2 baseline 245 files / 2581 passed → T3 為 246 files / 2606 passed。差額 = **+1 檔、+25 cases**（皆為本 task 新增檔），其餘檔案 case 數未動 ⇒ 與平行 session 無交集。
+
+### 斷言偵測力（三組突變，逐一實測）
+
+沿用 Surprises 4 的教訓：宣稱「邊界正確／不重疊」的斷言，寫完必須用故意的突變驗證它抓得到。
+
+| 突變 | 預期抓到的性質 | 實測 |
+|---|---|---|
+| 比較改成 `<= 0`（拿掉 `GAP_EPSILON_US`）| 32.3 ms 門檻下恰在門檻上的 32,300 µs 被誤判為間隙 | **1 case failed**（boundary 案例）|
+| lock 重疊改成非嚴格（`<=`，端點相接算重疊）| 緊鄰真實間隙被中斷一起吃掉 | **1 case failed**（F2 案例）|
+| lock 間隙**同時**留在 `gaps` | 違反 `lockGapIndices` 與 `gaps` 不重疊的 invariant | **3 cases failed** |
+
+⚠️ 第一次嘗試的突變（`<=` 改 `<`）**全綠存活**，但那是一個 no-op 突變（差異只在恰好等於 1e-6 時），不是斷言的漏洞。它反而暴露了真正的漏洞：原本的「恰在門檻上」案例用 30 與 18.2，兩者的 `×1000` 乘積都落在整數上或其上方，**證明不了容差有沒有生效**。窮舉 10–60 ms 全部一位小數門檻後找到唯一有偵測力的 32.3，補為獨立案例（D-60.T3-3）。
+
+### 未完成：真人取樣的區段／間隙分布（T3 DoD 第 9 項）
+
+T3 步驟 8／DoD 要求「以 T0 錄到的真人取樣跑一次，把區段數／間隙長度分布寫進 progress.md」。**本 session 無法執行**：
+
+- T0 R2 只由使用者貼回**統計摘要**（samples／spanSec／gap 分位／`allGapsMs` 已排序），逐筆 `dtUs`／`dx`／`dy` 與 `pointer_lock` 時序**從未進入 repo**（依 D-57.T5-8，真人逐筆軌跡不入 repo）；
+- 已排序的 `allGapsMs` 無法還原時間順序，`segmentByTimeGap()` 吃的是**有序的 `dtUs` 串**，摘要不能代入；
+- 全 worktree 掃描確認無任何含 `mouseSamples` 的匯出檔（唯一命中是 `graphify-out/` 的 AST cache，即本模組原始碼本身）。
+
+⇒ 這一項需要**使用者以 `?rawMouse=1` 跑一輪並提供匯出**（或在本機執行時貼回以本模組計算的區段摘要）。門檻取值同樣待它決定：T0 R1 的雜訊底線約 18 ms、PA 的 `TIME_GAP_THRESHOLD_MS = 30` 可當 prior，但 **T0 R2 的實機摘要已判定空洞長度不足以可靠分離 lift/pause**，故此處**刻意不凍結任何預設值**（`gapThresholdMs` 呼叫端必填）。這與 T0/F6 是同一個經驗性缺口，不是本原語的正確性缺口。
+
 ## Surprises
 
 1. **要偵測抬滑鼠所需的原始資料，這個專案其實一直都在收 —— 只是在進匯出前一步被丟掉。** [`InputSampler.ts:137-139`](../../../../../src/input/InputSampler.ts#L137-L139) 早在 WP-3（ADR-5，「1000 Hz 滑鼠下不遺失中間軌跡」）就用 `getCoalescedEvents()` 逐筆保留了 sub-frame 樣本與各自的 `event.timeStamp`；到了 [`SimLoop.ts:96-99`](../../../../../src/loop/SimLoop.ts#L96-L99) 才被 `accumulateMouse` 聚合成逐 tick 的 `dYaw`／`dPitch`。<br>⇒ 本 WP 的性質因此不是「新增一種量測」，而是**停止丟棄一份已經付過成本的資料**。這也解釋了為什麼 WP-57 的抬滑鼠標註只能做到「角速度停滯」—— 不是判準沒設計好，是它拿到的資料裡已經沒有那個資訊了。
@@ -279,6 +337,10 @@ R2 的三組空洞分布（④⑤⑥）與瀏覽器 frame log 的開／關對照
 
 5. **T2 是「接線」task，但真正的設計決定不在接線，而在要不要在 main.ts 打開它。** 一行 `recordMouseSample()` 沒有選擇餘地；有選擇餘地的是 app 佈線層 —— `recordKeyEvents` 與 `mouseIntegration` 的先例都是「全域開」，而 main.ts 的註解本身就記著「API 層 opt-in 存在但佈線層從未啟用」曾是前車之鑑，所以先例的壓力是往「開」的方向。<br>但這次相反：WP-60 的前提（R1）**尚未量測**，全域開等於用未驗證的前提換 8.6 MB 常駐 arena 與數 MB 匯出增幅。收斂成 `?rawMouse=1`（D-60.T2-1）之後才發現一個沒預期到的副作用 —— **它同時是 T0 缺的那個入口**：T0 的 R1/R2 要「真瀏覽器 + 真 COI + 真滑鼠」，而在 T2 之前 repo 裡根本沒有任何路徑能把 raw sample 匯出出來。<br>⇒ 一個原本被當成「因為 gate 沒過所以保守」的決定，實際上是**解開那個 gate 的工具**。⇒ **教訓**：被 gate 阻塞時，值得先問「這個 task 的產出能不能變成解 gate 的儀器」，而不是只問「這個 task 能不能在 gate 沒過的情況下安全落地」。
 
+6. **README 的兩個要求，照字面各自合理，合起來自相矛盾。** §2.3 把 `lockGapIndices` 寫成「與 Pointer Lock 中斷重疊的**間隙 index**」，而 T3 步驟 3 要求那些間隙「**排除在 `gaps` 之外**（不是標記後留著 —— 留著就會有人忘記過濾）」。若 index 指的是 `gaps` 的 index，它就指向一個不含它們的陣列 —— 一個恆為空指標的欄位。<br>⇒ 解法不難（改指樣本 index，D-60.T3-1），值得記的是**發現的時機**：這個矛盾在寫型別註解、要解釋「index 指向哪裡」的那一刻才浮現。照著簽名把程式碼寫出來、測試也能全綠 —— 因為兩邊都是我寫的，我會很自然地讓測試去對齊我當下的那個讀法。<br>⇒ **教訓**：規格裡「兩個欄位的關係」比「一個欄位的型別」更容易藏矛盾，而**逼自己寫出每個欄位的語意註解**是最便宜的偵測器 —— 註解寫不下去的地方，就是規格沒收斂的地方。
+
+7. **一個「全綠存活」的突變，暴露的不是斷言弱，而是我挑錯了邊界值。** 為了驗收「恰在門檻上不算間隙」的容差策略，我先把比較從 `<=` 改成 `<`，預期至少一個案例會紅 —— 結果 25 個全綠。第一反應是「斷言沒偵測力」，但實際上那是個 **no-op 突變**（兩者只在差值恰為 1e-6 時不同）。真正的問題在別處：我的邊界案例用 30 與 18.2 兩個門檻，而 `30 * 1000` 精確、`18.2 * 1000` 落在整數**上方** —— 兩者在有沒有容差之下**行為完全相同**，所以那兩個案例從頭到尾就沒有測到容差。窮舉 10–60 ms 全部一位小數門檻後，只有 **32.3**（`× 1000 = 32299.999999999996`）落在整數下方，是唯一能分辨的值。<br>⇒ **教訓**：突變測試的失敗有兩種讀法 —— 「斷言抓不到」與「突變根本沒改變行為」。把兩者混為一談會讓人去補一堆補不到點上的斷言。而浮點邊界的案例值**不能憑直覺挑**：看起來最像邊界的那個數（門檻本身、實測值 18.2），很可能恰好是那條路徑上最不敏感的輸入。
+
 ## Open Questions（追蹤用，權威定義見 [README.md](README.md) §1.5）
 
 | ID | 狀態 | 待誰 | Deadline |
@@ -286,7 +348,7 @@ R2 的三組空洞分布（④⑤⑥）與瀏覽器 frame log 的開／關對照
 | OQ-60.1 移植 PA 方法學的授權狀態 | ✅ **已收斂 2026-09-08**：無授權問題（同一作者、同一組織）。R5 關閉、T3 解除阻塞、PA 參數與 fixture 可直接引用（D-60.P7）| — | — |
 | OQ-60.2 序列化格式（columnar µs vs array-of-objects）| ✅ **T1 contract 凍結**：columnar + integer µs delta；60k `mouseSamples` block 567,316 bytes / p95 2.377 ms。R1 實測事件率仍屬 T0/T2 runtime gate，不改 T1 schema。 | Engineering | — |
 | OQ-60.3 Pointer Lock 中斷如何入匯出 | ✅ **T1 contract 凍結**：additive `pointer_lock` DrillEvent（`{ type, locked, t }`），parser 已支援；T2/T3 負責接線與消歧。 | Engineering | — |
-| OQ-60.4 新判準與 `deriveRepositioningSuspicion()` 的關係 | 🔴 開放 | 使用者 + 研究 | WP-61 T0（不阻塞 WP-60）|
+| OQ-60.4 新判準與 `deriveRepositioningSuspicion()` 的關係 | 🔴 開放（T3 已以**中性時序語彙**交付原語並掃描釘死，故未預先佔用構念名；歸屬仍待拍板）| 使用者 + 研究 | WP-61 T0（不阻塞 WP-60）|
 | OQ-60.5 高輪詢率（4000／8000 Hz）是否支援 | ✅ **T1 contract 凍結**：預設容量 1000 Hz × drill seconds × 1.2 headroom；高輪詢率不預先支援，超出以 `meta.mouseSampling.overflow` 具名退化。R1 實測若顯示本專案常態 >1000 Hz，需另開決策升版。 | Engineering | — |
 | OQ-60.6 是否同步進 `research/` Python 側 | 🟡 有建議值（本 WP 內不做）| Engineering | WP-61 |
 

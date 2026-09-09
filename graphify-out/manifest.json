@@ -1115,6 +1115,14 @@
     "mtime": 1788875253.375653,
     "hash": "c6236846d02733fa545aa60c4cc8ed88"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\metrics\\mouseSampleGaps.test.ts": {
+    "mtime": 1788943551.7111142,
+    "hash": "a679dc316e4bc64d926dfa05d48630bf"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\metrics\\mouseSampleGaps.ts": {
+    "mtime": 1788943404.010274,
+    "hash": "5c44381739e0ecd805f5d9fc85f946f2"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\src\\metrics\\mouseThrow.test.ts": {
     "mtime": 1788875253.4048085,
     "hash": "043a55c03d85b40207f353625edf4bc3"
@@ -2504,8 +2512,8 @@
     "hash": "fedfd4839802c3b8d8593268b85d790c"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\CONTEXT.md": {
-    "mtime": 1788875834.0490694,
-    "hash": "a8870be42213e0a18f71a40306b8ab13"
+    "mtime": 1788943757.1127717,
+    "hash": "089544c8bc7a55703d8fc835b860bdbd"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\index.html": {
     "mtime": 1788875252.8538475,
@@ -3060,24 +3068,24 @@
     "hash": "353adaacb52d86a378b3008e1e5a0767"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\README.md": {
-    "mtime": 1788875252.233487,
-    "hash": "a030b91a4cd87e5700349ebae4670303"
+    "mtime": 1788942744.5157464,
+    "hash": "377053bc2c593486267356eb582f7c66"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\progress.md": {
-    "mtime": 1788901882.613544,
-    "hash": "19263b8985047fe1e560be903eafa9b3"
+    "mtime": 1788944008.5888777,
+    "hash": "713ff69b16c0478ad7baca98a0b9ac23"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\README.md": {
     "mtime": 1788875252.235098,
     "hash": "1cfc6c42f3766c56817d2527935eed79"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\T-exit-gate.md": {
-    "mtime": 1788875252.235767,
-    "hash": "75468ab31af79e9a7a2659ec0aaf403b"
+    "mtime": 1788942717.9109888,
+    "hash": "6d4bebb7d5c71c57ff44eb322f6dd984"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\T0-entry-gate.md": {
-    "mtime": 1788875252.2369308,
-    "hash": "981706c38b0e31c788004f84553db051"
+    "mtime": 1788942715.135424,
+    "hash": "20714b1df16a4ceb5eeef337d5a2499c"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\T1-capture-contract.md": {
     "mtime": 1788877994.2616549,
@@ -3096,8 +3104,12 @@
     "hash": "e9d4e9ec08003c736c4b7d7326da8d32"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\task-checklist.md": {
-    "mtime": 1788901752.0610855,
-    "hash": "4b32f16ed385b0879131942248f8fedc"
+    "mtime": 1788943799.0691266,
+    "hash": "5abd770448eec8ea9606a03e989c501e"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-61-lift-off-validation\\README.md": {
+    "mtime": 1788942625.3832026,
+    "hash": "91bb091d42ed3f8f625e6668eae67f02"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage5\\wp-25-ballistics-tracer\\ENHANCEMENT-tracer-pertick-replay.md": {
     "mtime": 1788875252.2422843,
