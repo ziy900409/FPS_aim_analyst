@@ -4,15 +4,17 @@
 
 ## 最新狀態（2026-09-09 T-exit）
 
-**T-exit 已收尾**（見 §T-exit gate）：A-60.1～16 逐條有指令與輸出，15 ✅／1 ✅ 帶上界告警，無 🟡／❌；
-typecheck ×2、全量 Vitest（2614 passed）、`vite build` 三個閘 exit 0。
+**T-exit 與三項 follow-up 已收尾**（見 §T-exit gate）：A-60.1～16 逐條有指令與輸出，
+15 ✅／1 ✅ 帶上界告警，無 🟡／❌；typecheck ×2、全量 Vitest（2614 passed）、`vite build` exit 0，
+全量 Playwright 單 worker **101 passed／0 failed**。
 
 **TF1／TF2 已於 2026-09-09 補齊**：A/B 可比性五項全過；F6 的 Δp95 = **−0.005 ms** 且
 `overBudgetWindows` 未新增，A-60.16 判 **✅**；B 組 `activeRateHz = 708 Hz`，18／30／50 ms sweep
 與限制已記錄，T3 DoD 第 9 項判 **✅**。⇒ **T0 與 T3 已轉 ✅**。
 
-**剩餘一項具名缺口**：全量 Playwright 讀數（TF3；原 T-exit 時 port 5173 被他人 dev server 占用，且它服務的是
-不含 WP-60 的程式碼，跑了會沉默地測錯的樹）。收尾計畫見 **[T-exit-followup.md](T-exit-followup.md)**。
+**TF3 已於 2026-09-09 補齊**：5173／4173 原本即淨空，未停止任何 server、未碰 5174；
+`npx.cmd playwright test --workers=1` **101 passed（13.8m）**，零失敗可歸屬，WP-60 raw-mouse 2／2 passed；
+測試 history roots 存在且真實 `data/session-history/` 前後快照未變。⇒ **三項具名缺口全部關閉**。
 
 **合併**：本 WP 已於 2026-09-09 併入 `main`（merge commit `9015610`）。合併後的整棵樹重跑三閘全綠：
 typecheck exit 0、`npm test` **249 files / 2764 passed（1 file / 2 tests skipped）**、`vite build` exit 0（195 modules）。
@@ -60,7 +62,7 @@ R2 分離問題已有探索性答案；逐次標註與泛化驗證交給 [WP-61 
 | T2 Recorder Wiring | ✅ Completed（依使用者明確指示 override T0 gate；app 佈線層 opt-in 預設關閉） | 2026-09-08 | 2026-09-08 | 見 §T2 implementation audit。`npm.cmd test -- tests/regression/wp60-raw-mouse-capture.test.ts` exit 0（20 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（245 files passed, 1 skipped；2581 passed, 2 skipped）；`npm.cmd run build` exit 0（`$LASTEXITCODE=0`，193 modules，保留既有 chunk-size warning）；`npx.cmd playwright test tests/e2e/raw-mouse-sampling.spec.ts` **2 passed（真實 Edge）**。 |
 | T3 Time-Gap Primitive | ✅ Completed（含真人取樣分布）| 2026-09-09 | 2026-09-09 | 見 §T3 implementation audit 與 §TF2。既有原語／scan／突變證據不變；B 組 31,621 samples、`activeRateHz = 708 Hz`，18／30／50 ms sweep 已實跑並記錄描述性分布，DoD 第 9 項補齊。 |
 | T4 Operator Visibility | ✅ Completed | 2026-09-09 | 2026-09-09 | 見 §T4 implementation audit。`npm.cmd test -- tests/regression/spider-wide-repositioning-runner.test.ts` exit 0（**19 passed** = 既有 12 + 新增 7）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（**246 files passed, 1 skipped；2613 passed, 2 skipped**）；`npm.cmd run build` `$LASTEXITCODE = 0`（bundle hash `index-CcqBc2hD.js` 與 T2 相同 ⇒ `scripts/` 不進 app bundle）；四組突變各被抓到；legacy fixture 與含 `mouseSamples` 的樣本各實跑一次（輸出見下）。 |
-| T-exit | ✅ Completed（**帶一項具名缺口**：全量 Playwright 讀數）| 2026-09-09 | 2026-09-09 | 見 §T-exit gate 與 TF1／TF2 follow-up。A-60.1～16：**15 ✅ + 1 ✅ 帶上界告警（A-60.10 → OQ-60.7）**，無 🟡／❌；F6 與 T3 真人分布均已補齊。原三閘證據不變。全量 Playwright（TF3）仍未執行，原阻塞與污染風險見下。 |
+| T-exit | ✅ Completed（TF1～TF3 follow-up 全部關閉）| 2026-09-09 | 2026-09-09 | 見 §T-exit gate 與 TF1／TF2／TF3 follow-up。A-60.1～16：**15 ✅ + 1 ✅ 帶上界告警（A-60.10 → OQ-60.7）**，無 🟡／❌；F6、T3 真人分布與全量 Playwright 均已補齊。`--workers=1` 全量 Playwright **101 passed／0 failed**，WP-60 raw-mouse 2／2 passed；三項具名缺口全數關閉。 |
 
 ## Decision Log
 
@@ -532,14 +534,37 @@ throwaway script 位於系統暫存目錄（不進 repo），直接 import `src/
 | Typecheck ×2 | `npm.cmd run typecheck` | **exit 0**（`tsc --noEmit` + `-p tsconfig.node.json`）|
 | 全量 Vitest | `npm.cmd test` | **exit 0**；**246 files passed, 1 skipped（247）；2614 passed, 2 skipped（2616）** |
 | Build | `npm.cmd run build` | **exit 0**；Vite 6.4.3；193 modules；`dist/assets/index-CcqBc2hD.js` 1,220.06 kB gzip 346.97 kB —— **hash 與 T2／T4 完全相同**（本 gate 只動 `scripts/`／`docs/`／`tests/`，不進 app bundle）；保留既有 chunk-size warning |
-| 全量 Playwright | `npx.cmd playwright test --workers=1` | ❌ **未執行** —— 見下方「Playwright 閘為何沒跑」。**不宣稱通過，也不宣稱失敗。** |
+| 全量 Playwright | `npx.cmd playwright test --workers=1` | ✅ **exit 0；101 passed／0 failed／0 skipped（13.8m）**。逐項歸屬與 history root 證據見 §TF3。 |
 
 **全量差額歸屬**：T4 baseline 246 files / 2613 passed → 本 gate 246 files / **2614** passed。差額 = **+1 case**，即 D-60.X1 在
 `spider-wide-repositioning-runner.test.ts` 新增的停頓對照案例（該檔 19 → 20）；檔數未增、其餘檔案 case 數未動
 ⇒ 與平行 session（stage12）**無交集**。本 gate 開場先跑一次未修改狀態的全量，得 2613，與 T4 紀錄逐位相符
 ⇒ 這個 baseline 本身也不含他人變更。
 
-### Playwright 閘為何沒跑（不是「跳過」，是**跑了會說謊**）
+### TF3 follow-up：全量 Playwright 讀數與歸屬（2026-09-09）
+
+**執行前 gate**：5173／4173 兩次檢查皆無 listener，因此沒有 server 可停，也不需終止任何 process；
+5174 未被查殺或停止。`data/session-history/.history-root.lease` 記載 PID 68140，但該 PID 已無活 process，
+故是 stale lease。測試前真實 history 快照為 **54 files／14,183,166 bytes／latest write 11:29:49 UTC**。
+
+執行 `npx.cmd playwright test --workers=1`，結果 **exit 0；101 passed／0 failed／0 skipped（13.8m）**。
+失敗集合為空，故沒有任何 case 可歸為「疑似 flake」，也不觸發 KI-030 的 `test-results/` 完整備份紀律。
+
+| 歸屬面 | 實際結果 | 判定 |
+|---|---:|---|
+| 既存 KI-027／`overlay-layering.spec.ts` | **4 passed／0 failed** | 原先預期紅未重現；本輪無 KI-027 失敗 |
+| KI-030（多 worker flake）| **0 failed**；合法門檻命令固定 `--workers=1` | 本輪無 KI-030 失敗，不以 flake 掩蓋任何紅燈 |
+| WP-58 | `session-orchestrator.spec.ts` **15 passed**；overlay 4 passed | WP-58 相關真瀏覽器流程全綠，無失敗歸屬 |
+| WP-60 | `raw-mouse-sampling.spec.ts` **2 passed** | **無 WP-60 回歸** |
+| 其餘 E2E | 全部 passed | 無其他失敗 |
+
+**history root 證據**：跑後 `.playwright-tmp/history-dev` 與 `.playwright-tmp/history-preview` 均存在，
+分別有 **117／172 個直接子目錄**（低於「數百」清理門檻），且本輪 latest write 為 12:14:32／12:14:31 UTC。
+真實 `data/session-history/` 跑後仍為 **54 files／14,183,166 bytes／latest write 11:29:49 UTC**，三項與跑前逐位相同；
+真實 lease 內容也未變。⇒ Playwright 使用測試 roots，**沒有把 fixture 寫進真實 history root**。
+跑後 5173／4173 皆無 listener；`test-results/` 只有成功執行的 `.last-run.json`，沒有失敗 artifact。
+
+### 原 T-exit 時 Playwright 閘為何沒跑（不是「跳過」，是**當時跑了會說謊**）
 
 `playwright.config.ts` 的 dev webServer 是 `reuseExistingServer: !process.env.CI` + `url: http://localhost:5173/`，
 而 27 支 spec 全部把 `http://localhost:5173/` **硬編**在檔內。本機當下的實測：
@@ -558,17 +583,15 @@ throwaway script 位於系統暫存目錄（不進 repo），直接 import `src/
 `reuseExistingServer` 會變 false，但 5173 已被占用，Vite 會自動換 port，而 Playwright 的 readiness 檢查仍打
 5173，於是**照樣**連到別人的 server。
 
-**處置（不由本 gate 代做）**：兩支 dev server 屬於他人的 session（5174 是使用者的 R1/R2 量測入口，今日仍可能在用），
-**本 gate 不終止它們**。待 5173／5174 釋放後跑：
+**當時的處置**：兩支 dev server 屬於他人的 session（5174 是使用者的 R1/R2 量測入口），
+**原 gate 不終止它們**，待埠釋放後才跑：
 
 ```powershell
 npx.cmd playwright test --workers=1      # KI-030：多 worker 不可重現，門檻讀數一律 --workers=1
 ```
 
-⚠️ 屆時**預期仍 exit 1**，唯一既存成因為 [KI-027](../../../../known_issue/)（`overlay-layering.spec.ts` 硬編 launch button 數），
-與本 WP 無關；若出現任何**其他**失敗，第一件事是複製整個 `test-results/`（KI-030 紀律）。
-T2 已在真實 Edge 上跑過 `tests/e2e/raw-mouse-sampling.spec.ts` **2 passed (48.5s)**，但那是 T2 當時的環境，
-本 gate **不把它當成現在的讀數**。
+當時預期可能因既存 [KI-027](../../../../known_issue/) exit 1；TF3 實跑結果則是 overlay 4／4 passed、
+全量 exit 0。T2 舊讀數不再代替本輪：TF3 已重新取得 `raw-mouse-sampling.spec.ts` **2／2 passed**。
 
 ### A-60.1～16 逐條
 
@@ -645,13 +668,10 @@ T2 已在真實 Edge 上跑過 `tests/e2e/raw-mouse-sampling.spec.ts` **2 passed
 **WP-61 另需但本 WP 不提供**：高刷（≥ 144 Hz）真人標註 cohort，規格見
 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md)。
 
-### 本 WP 明確**未**達成的一件事（不得被「T-exit ✅」蓋掉）
+### T-exit follow-up 最終判定
 
-1. **全量 Playwright 讀數（TF3）** —— 原 T-exit 時 port 5173 被他人的 dev server 占用（見上），本次 TF1／TF2 不處理。
-
-F6 與 T3 真人分布已由 TF1／TF2 補齊，故 **T0 = ✅、T3 = ✅**。T-exit 判定更新為
-**✅ 帶一項具名缺口**：擷取契約、決定性、對齊、消歧、操作者可見度與真人 frame-time／gap 分布均有實際讀數；
-僅全量 Playwright 歸屬尚待 TF3。
+F6、T3 真人分布與全量 Playwright 已由 TF1／TF2／TF3 全數補齊，故 **T0 = ✅、T3 = ✅**，
+T-exit 判定更新為 **✅、零具名缺口**。OQ-60.4 與高刷真人標註 cohort 仍屬 WP-61，不是 WP-60 缺口。
 
 ## Surprises
 

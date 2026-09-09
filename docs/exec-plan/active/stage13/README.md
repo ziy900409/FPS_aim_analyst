@@ -27,7 +27,7 @@ WP-57 交付的抬滑鼠疑慮標註（`deriveRepositioningSuspicion()`）**只�
 
 | WP | 資料夾 | 一句話 | Exit gate | 相依 | 估時（d） | 狀態 |
 |---|---|---|---|---|---|---|
-| **WP-60** | [`wp-60-raw-mouse-sample-capture/`](wp-60-raw-mouse-sample-capture/README.md) | 原始滑鼠取樣匯出 schema + 擷取路徑 + 時間間隙原語；證明資料足以支撐 LOD 移植 | T-exit | 無（WP-57 已交付，只讀不改）| 5.5–9.5 | ✅ **T-exit 交付 2026-09-09**（帶三項具名缺口）—— A-60.1～16 **14 ✅／1 ✅ 帶上界告警（OQ-60.7 匯出體積）／1 🟡（F6）**，無 ❌；typecheck ×2、全量 Vitest（2614 passed）、`vite build` 三閘 exit 0。T1／T2／T4 ✅，**T0／T3 維持 🟡**（缺口皆為需真人／真瀏覽器的經驗性讀數）。<br>⚠️ **全量 Playwright 未取讀數** —— port 5173 被主 checkout 的 dev server 占用且服務不含 WP-60 的程式碼，跑了會沉默地測錯的樹；預期屆時仍因既存 [KI-027](../../../known_issue/) exit 1。決策 [GD-36](../../DECISIONS.md) |
+| **WP-60** | [`wp-60-raw-mouse-sample-capture/`](wp-60-raw-mouse-sample-capture/README.md) | 原始滑鼠取樣匯出 schema + 擷取路徑 + 時間間隙原語；證明資料足以支撐 LOD 移植 | T-exit | 無（WP-57 已交付，只讀不改）| 5.5–9.5 | ✅ **T-exit 與 TF1～TF3 全數交付 2026-09-09**（零具名缺口）—— A-60.1～16 **15 ✅／1 ✅ 帶上界告警（OQ-60.7 匯出體積）**，無 🟡／❌；T0～T4 全 ✅。F6 實機 A/B Δp95 **−0.005 ms** 且未新增 over-budget windows；真人 B 組 `activeRateHz=708 Hz` 並完成 18／30／50 ms sweep；typecheck ×2、全量 Vitest（2614 passed）、`vite build` exit 0；全量 Playwright `--workers=1` **101 passed／0 failed（13.8m）**，WP-60 raw-mouse 2／2 passed，測試 history roots 存在且真實 history 前後未變。決策 [GD-36](../../DECISIONS.md) |
 | **WP-61** | [範圍草案](wp-61-lift-off-validation/README.md) | 先驗證空洞前後運動學可分性，再決定 Stage 2/3 移植與校準 | 可分性與 reliability gate | WP-60 T-exit ✅ + 高刷真人標註 cohort | 待資料稽核 | 🟡 R2 已收斂 2026-09-09；尚未開工 |
 
 **為什麼切成兩個 WP**：WP-60 只負責「把資料取回來並證明它夠用」，不宣稱任何偵測準確度。LOD 判準的參數必須以**真人標註資料**重新推導（PA 的參數在 px/s 空間、且其 ADR 自承 F1 從未對標註資料量測過），而那批資料目前不存在 —— 見 §4。把兩者綁在同一個 WP 會讓一個純工程可驗收的切片，卡在一個等資料的研究問題上。
