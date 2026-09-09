@@ -6,7 +6,7 @@
 
 | Task | Status | Started | Completed | Evidence |
 |---|---|---|---|---|
-| T0 Entry Gate | 🟡 Blocked（自動稽核完成；等待實機 Pointer Lock / 抬滑鼠 PoC） | 2026-09-08 | — | 見 §T0 automated audit（2026-09-08 13:39Z）。Baseline typecheck、Vitest、build 已跑；README §0 discovery 已覆驗；CodeGraph impact 已回填 README §0.2。R1/R2 需要真實瀏覽器 + 使用者滑鼠操作，本 session 無法替代，故 T0 不得標 done、T1～T4 不得開工。 |
+| T0 Entry Gate | 🟡 Blocked（**R1 已通過**；R2 三組空洞分布與 F6 瀏覽器 frame log 仍待實機） | 2026-09-08 | — | 見 §T0 automated audit（2026-09-08 13:39Z）＋ **§T0 R1 實機量測（2026-09-09）**。<br>**已綠**：baseline 三項；README §0 discovery 覆驗；CodeGraph impact；序列化體積／µs 精度；PA 十四參數；**R1 gate（事件率 1005 Hz 瞬時、dt p50 995 µs、零遺漏）**。<br>**仍 BLOCKED**：R2 的抬起／停頓／一次到位三組空洞分布（需使用者實機 `spider-shot-wide-v1` 各 ≥ 10 次）、F6 瀏覽器 frame log 開／關對照。故 T0 維持 blocked。 |
 | T1 Capture Contract | ✅ Completed（依使用者明確指示 override T0 gate；contract-only，不接線） | 2026-09-08 | 2026-09-08 14:31Z | `npm.cmd test -- src/data/mouseSampleArena.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts src/data/exportPayloadSchema.test.ts src/data/metadata.test.ts` exit 0（182 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（244 files passed, 1 skipped；2561 passed, 2 skipped）；`npm.cmd run build` exit 0（既有 chunk-size warning）；60k `mouseSamples` JSON.stringify：567,316 bytes / p50 1.714 ms / p95 2.377 ms / max 2.546 ms；`rg -n "\bLOD\b" src tests scripts CONTEXT.md` exit 1（0 命中）。 |
 | T2 Recorder Wiring | ✅ Completed（依使用者明確指示 override T0 gate；app 佈線層 opt-in 預設關閉） | 2026-09-08 | 2026-09-08 | 見 §T2 implementation audit。`npm.cmd test -- tests/regression/wp60-raw-mouse-capture.test.ts` exit 0（20 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（245 files passed, 1 skipped；2581 passed, 2 skipped）；`npm.cmd run build` exit 0（`$LASTEXITCODE=0`，193 modules，保留既有 chunk-size warning）；`npx.cmd playwright test tests/e2e/raw-mouse-sampling.spec.ts` **2 passed（真實 Edge）**。 |
 | T3 Time-Gap Primitive | ⬜ Not started | — | — | — |
@@ -33,6 +33,7 @@
 | D-60.T1-3 | 2026-09-08 | **T1 將 Pointer Lock 中斷落地為 additive `pointer_lock` DrillEvent，並將 raw sample 容量預設為 1000 Hz × drill seconds × 1.2 headroom。**<br>理由：Pointer Lock 是離散狀態 edge，比逐 tick boolean 更小且符合既有 `key` event opt-in 紀律；1.2 headroom 在滿足 1000 Hz 預設容量的同時保留事件率抖動空間，高輪詢率仍以 `meta.mouseSampling.overflow` 具名退化，不 OR 進 `meta.suspect`。<br>**Alternatives considered**：(a) tick boolean lock 欄位 —— 會為每個 run 多 128 Hz 連續欄位，駁回；(b) 容量開到 8000 Hz —— RAM/JSON 體積 8 倍，未有實測需求，駁回；(c) raw overflow 併入 `suspect` —— tick 資料仍有效，會錯殺既有指標用途，駁回。 | Engineering | `src/data/DataRecorder.ts`; `src/data/metadata.ts`; `src/data/export.test.ts` |
 
 | D-60.T2-1 | 2026-09-08 | **T2 接線落地，但 app 佈線層的 opt-in 預設關閉，並以 `?rawMouse=1` 顯式開啟。**<br>理由：`recordKeyEvents` 與 `mouseIntegration` 在 main.ts 都是「全域開」，本 task 刻意**不**照抄那個先例 —— 那兩者的前提都已驗證過，而 WP-60 的前提（R1：`getCoalescedEvents()` 在 Pointer Lock 下真的回傳次幀樣本）**至今只有註解宣稱、無實機證據**。全域開等於用一個未驗證的前提換 8.6 MB 常駐 arena 與數 MB 匯出增幅，並讓所有受測者的熱路徑多一條未量測的寫入。<br>**連帶價值**：這個 flag 同時是 T0 缺的那個入口 —— T0 的 R1/R2 需要「真瀏覽器 + 真 COI + 真滑鼠」，在此之前 repo 裡根本沒有任何方法把 raw sample 匯出出來。現在跑一輪 `?rawMouse=1` 即可從 `meta.mouseSampling.observedRateHz` 與 `mouseSamples.dtUs` 的分布結掉 R1/R2。<br>**Alternatives considered**：(a) 比照 `recordKeyEvents` 全域開 —— 讓未過經驗性 gate 的功能成為常態熱路徑，且 T0 若判 no-go 就要回頭拆，駁回；(b) 完全不接 main.ts、只接 API 層 —— T2 DoD 的「Pointer Lock 轉態在真實載入路徑上被記錄」變成不可能滿足，且重演 `recordKeyEvents` 那個「API 有、佈線沒有」的舊傷，駁回;(c) 用 `import.meta.env.DEV` 閘 —— T0 PoC 需要 production build 的 COI 條件，dev-only 會擋掉自己要的量測，駁回。 | Engineering | 使用者指令（2026-09-08）；`src/main.ts`；`tests/e2e/raw-mouse-sampling.spec.ts` |
+| D-60.T0-2 | 2026-09-09 | **R1 判為通過；T0 指標③「每 rAF 幀的 coalesced 筆數 > 1」的門檻敘述判為定義錯誤、須更正。**<br>理由：實機量到 `pointermove` 以 **997 events/s** 派發（clean run 10,762 事件 ÷ 10.79 s），遠高於階段 A 顯示更新率上限 240 Hz ⇒ Chromium **逐筆硬體取樣派發**，而非「幀內合併 + `getCoalescedEvents()` 補回」。因此 coalesced p50 = 1、mean = 1.020 代表**該機制沒被用到**，不代表「次幀樣本被丟掉」。指標③要問的是後者，而後者已由 ①② 直接證否（dt p50 = 995 µs、10,475 個間隔、`lockedRaw === recorded === 10,476` 零遺漏）。<br>**門檻改為**：「事件派發率 ≫ 顯示更新率 **或** coalesced p50 > 1，二者其一即可」。<br>**連帶更正**：`InputSampler.ts:125-127` 與 ADR-5／附錄 B 對機制的敘述**對結果正確、對機制不準**。但 coalesced `max: 5` 證明幀變慢時 coalescing 確實會啟動 ⇒ **`getCoalescedEvents()` 呼叫仍必要，程式碼不改**，只改註解／ADR 的機制描述。<br>**Alternatives considered**：(a) 照字面判 R1 失敗、停止本 WP —— 會因為一個寫錯的中介指標否決一個實際成立的前提，駁回；(b) 默默把③重新解釋成過關、不改文件 —— 下一個人會再撞一次同一個錯誤前提，且違反「矛盾必須入帳」，駁回；(c) 改 `InputSampler` 不再呼叫 `getCoalescedEvents()` —— `max: 5` 顯示卡頓時會丟樣本，駁回。 | Engineering | 使用者實機量測（2026-09-09）；本檔 §T0 R1 實機量測；[T0-entry-gate.md](T0-entry-gate.md) §R1 註 |
 | D-60.T2-2 | 2026-09-08 | **決定性 trace 涵蓋 `TickRecord` 全欄位，而非只有 DoD 點名的 `replayTargetId`/`tx,ty,tz`/`dYaw,dPitch`。**<br>理由：先按 DoD 字面實作窄 trace，再手動突變 `SimLoop`（在錄製旁路裡加 `state.player.x += 1e-12`）驗證斷言的偵測力 —— **20 個測試全綠通過**。「唯寫旁路」的失效模式包含寫到 player 位置／速度／aim 上，而窄 trace 結構上抓不到那一類。改為攤平全欄位後同一突變被 4 個案例抓到。<br>**Alternatives considered**：(a) 維持窄 trace + 額外加 player 欄位斷言 —— 下一個新欄位又會漏，駁回；(b) 用 `toEqual(snapshot.ticks)` 深比較 —— `toEqual` 不區分 +0/−0，違反 DoD 明文要求的 `Object.is` 級比對，駁回。 | Engineering | `tests/regression/wp60-raw-mouse-capture.test.ts`；本檔 Surprises 4 |
 
 ## T0 automated audit（2026-09-08 13:39Z）
@@ -202,6 +203,70 @@ throwaway harness：直呼 `simStep()`（無 targetManager／camera／drillRunne
 
 ⚠️ **仍 BLOCKED 的部分**：**瀏覽器 frame log 的 p50/p95/p99 與真實掉 tick 數**需要真實輸入流，與 T0 的 R1 同一個經驗性 gate。本 task 不宣稱量到它；`?rawMouse=1` 已是它的入口。
 
+## T0 R1 實機量測（2026-09-09，使用者操作）
+
+環境：worktree `codex/wp-60-raw-mouse-t1` @ `a7b17a5`，`npm run dev -- --port 5174`，Edge，
+`http://localhost:5174/?rawMouse=1`；`crossOriginIsolated === true`、`rawInputEnabled === true`
+（`unadjustedMovement` 生效 ⇒ `dx/dy` 為關掉 OS 加速的原始 counts）；1000 Hz 滑鼠。
+量測管道 = `__aimDebug.recorder.snapshot()` + console `pointermove` 探針（throwaway，不進 repo）。
+
+### Run B（clean，權威）—— 連續移動 10.79 s
+
+| 量 | 值 | 說明 |
+|---|---:|---|
+| `pointermove` 事件數 | 10,762 | ÷ 10.79 s ≈ **997 events/s** ⇒ 逐筆派發，非 rAF 對齊 |
+| 瀏覽器交付原始樣本（`raw`）| 10,978 | mean coalesced = 10,978/10,762 = **1.020** |
+| 取鎖期間原始樣本（`lockedRaw`）| 10,476 | |
+| **arena `recorded`** | **10,476** | **與 `lockedRaw` 完全相等 ⇒ 零遺漏** |
+| `raw − lockedRaw` | 502 | 未取鎖樣本被正確丟棄 ⇒ FR-A-8 閘門有效 |
+| `bufferOverflow` / `ring` 殘留 | 0 / 0 | **512 槽輸入 ring 在 1000 Hz 下不會滿** |
+| `lateEventCount` | 0 | |
+| `zeroDelta`（`dx===0 && dy===0`）| **0** | 見下方「未測到 ≠ 否證」|
+| `dtUs` n / span | 10,475 / 10.79 s | |
+| `dtUs` p50 / p95 / p99 / max | **995** / 1660 / 2235 / 151,305 µs | |
+| 空洞（> 5 ms）| **11 個**，合計 ≈ 249 ms | 與 span 加總自洽 ⇒ 無不可解釋的洞 |
+| 空洞明細（ms）| 6.8, **151.3**, 9.0, 18.2, 8.3, 6.0, 7.0, 10.0, 8.1, 15.2, 9.3 | 151.3 在 `atSec 0.22` = 取鎖後尚未開始動的起始靜止段 |
+
+### Gate 結論
+
+**R1 通過。** 次幀解析度存在且被完整保留至匯出。判定不依賴 console 探針 —— `dtUs` 的百分位來自
+arena 本身。指標③的字面門檻不成立但**其目的已滿足**，門檻敘述須更正（見
+[T0-entry-gate.md](T0-entry-gate.md) §R1 註）。
+
+### Run A（先跑，供對照；探針計數不可用）
+
+recorded 13,754／span 17.14 s／`observedRateHz` 802.28／`dtUs` p50 1000・p95 1550・p99 3890・
+max 291,300 µs／coalesced max **5**。
+⚠️ Run A 的探針事件數（17,996 → 21,816）**不可作為證據**：當時 window 上同時掛著兩支
+`pointermove` listener（第一支未加鎖判斷），取鎖期間重複計數。因此曾出現「瀏覽器交付 ~18,356 筆
+但 arena 只有 13,754 筆」的 25% 假缺口 —— Run B 以單一探針重測後證實**缺口不存在**。
+coalesced 的 p50/p95/max 不受重複計數影響（每個值被複製一次，分布形狀與極值不變），故可引用。
+
+### 副產品：`gapThresholdMs` 的雜訊底線（WP-61 handoff 第 1 項）
+
+剔除取鎖起始靜止段（151.3 ms）後，**連續移動期間的空洞上限為 18.2 ms**，其餘落在 6–15 ms
+（甩鏡之間、換向瞬間的手部微停頓）。⇒ 本硬體上以時間間隙切段的**雜訊底線 ≈ 18 ms**，PA 的
+`TIME_GAP_THRESHOLD_MS = 30` 約有 1.7× headroom，可直接當 prior。
+⚠️ 樣本僅一輪 10.8 s / n = 11 個空洞 ⇒ **prior，非校準值**；正式分布仍待 R2。
+
+### 容量與體積的實機推算
+
+| 量 | 值 | 門檻 |
+|---|---|---|
+| arena capacity | 360,000（= 1000 Hz × 300 s × 1.2）| — |
+| 以 1005 Hz 可撐 | **358 s** > `maxDrillSeconds` 300 s | ✅ NFR-60.3 |
+| `overflow` | false | ✅ |
+| 60 s run 匯出體積 | 9.46 bytes/sample × 60,300 ≈ **571 KB** | ✅ ≤ 1.0 MB（NFR-60.4）|
+| 滿 300 s run | ≈ **2.85 MB** | ⚠️ 對現行 3.4–3.8 MB 匯出為 +75%，超出 NFR-60.4 敘述的「增幅 ≤ 30%」框 |
+
+⇒ **NFR-60.4 的 60 s 規格通過，但其「≤ 30% 增幅」的框只在短 drill 成立。** 實際 drill 長度遠短於
+300 s（`spider-shot-wide-v1` 約 60–120 s ⇒ 0.57–1.1 MB），故非 blocker；但這個上界必須寫明，
+T-exit 需決定是否要為長 drill 加容量政策（OQ 候選）。
+
+### 仍 BLOCKED
+
+R2 的三組空洞分布（④⑤⑥）與瀏覽器 frame log 的開／關對照（F6）。**T0 維持 blocked。**
+
 ## Surprises
 
 1. **要偵測抬滑鼠所需的原始資料，這個專案其實一直都在收 —— 只是在進匯出前一步被丟掉。** [`InputSampler.ts:137-139`](../../../../../src/input/InputSampler.ts#L137-L139) 早在 WP-3（ADR-5，「1000 Hz 滑鼠下不遺失中間軌跡」）就用 `getCoalescedEvents()` 逐筆保留了 sub-frame 樣本與各自的 `event.timeStamp`；到了 [`SimLoop.ts:96-99`](../../../../../src/loop/SimLoop.ts#L96-L99) 才被 `accumulateMouse` 聚合成逐 tick 的 `dYaw`／`dPitch`。<br>⇒ 本 WP 的性質因此不是「新增一種量測」，而是**停止丟棄一份已經付過成本的資料**。這也解釋了為什麼 WP-57 的抬滑鼠標註只能做到「角速度停滯」—— 不是判準沒設計好，是它拿到的資料裡已經沒有那個資訊了。
@@ -226,6 +291,10 @@ throwaway harness：直呼 `simStep()`（無 targetManager／camera／drillRunne
 | OQ-60.6 是否同步進 `research/` Python 側 | 🟡 有建議值（本 WP 內不做）| Engineering | WP-61 |
 
 ## 規劃期未解的前提風險
+
+> ✅ **2026-09-09 更新：R1 已於實機通過**（§T0 R1 實機量測 / D-60.T0-2）。以下原文保留為規劃期紀錄，
+> 其結論已被實測取代 —— 但**它的教訓反而被實測加強了**：註解宣稱的不只是「有沒有次幀樣本」（這點對），
+> 還包括「靠什麼機制拿到」（這點錯，見 D-60.T0-2）。一個寫在註解裡的宣稱，即使結論正確，機制也可能是錯的。
 
 ⚠️ **R1 尚未驗證，且它是本 WP 的存亡條件。** 整份計畫建立在「`getCoalescedEvents()` 在 Pointer Lock 下真的回傳次幀樣本」這個假設上。repo 內的註解如此宣稱（`InputSampler.ts:125-127`，ADR-5／附錄 B），但**沒有任何實機證據**。T0 step 3 是唯一的驗證點，且設為 go/no-go 閘：**觀測事件率 < 500 Hz 即停止本 WP**。
 
