@@ -102,14 +102,20 @@ export interface SpiderWideRunSummary {
   readonly suspectedRate: number | undefined;
 
   // ── WP-60 T4：原始取樣健康度（FR-60.8）──────────────────────────────────────
-  // 六欄一律**同進同出**：`payload.mouseSamples` 缺席時全部 `undefined`，不是 0。缺席與零必須分得開
+  // 七欄一律**同進同出**：`payload.mouseSamples` 缺席時全部 `undefined`，不是 0。缺席與零必須分得開
   // ——「這份 run 沒錄原始取樣」與「錄了但一個間隙都沒有」是完全不同的兩件事（比照 `RingBuffer` 的
   // `hasFire` 慣例）。缺席**不是 blocker**：它只是少了一維資料，不是資料有問題（T4 invariant）。
 
   /** 實際錄到的樣本數（= `mouseSamples.dtUs.length`）。 */
   readonly sampleCount: number | undefined;
-  /** `meta.mouseSampling.observedRateHz` —— 實測平均事件率。 */
+  /** `meta.mouseSampling.observedRateHz` —— 實測平均事件率（**含空洞**，故受停頓長度影響）。 */
   readonly observedRateHz: number | undefined;
+  /**
+   * 連續取樣期間的事件率（Hz）—— 排除所有 > `REPORTED_GAP_THRESHOLD_MS` 的空洞後重算。
+   * 事件率 blocker 走這一欄而**不是** `observedRateHz`（D-60.X1）：F1 問的是「瀏覽器有沒有退化到
+   * rAF 率」，而平均率會被受測者的停頓拉低一個量級。無可用間隔時為 `undefined`（不是 0）。
+   */
+  readonly activeRateHz: number | undefined;
   /** `meta.mouseSampling.overflow` —— 樣本數超過容量、末端被丟棄（FR-60.9，**不**進 `meta.suspect`）。 */
   readonly sampleOverflow: boolean | undefined;
   /** 由 `pointer_lock` 事件推導出的未取鎖區間數 —— 那些區間的空洞不是感測器離地（FR-60.6）。 */
@@ -184,10 +190,10 @@ function summarizeRun(input: SpiderWideRunInput): SpiderWideRunSummary {
 
   const sampling = readSamplingHealth(payload);
   if (sampling !== undefined) {
-    if (sampling.observedRateHz !== undefined && sampling.observedRateHz < MIN_OBSERVED_RATE_HZ) {
+    if (sampling.activeRateHz !== undefined && sampling.activeRateHz < MIN_OBSERVED_RATE_HZ) {
       blockers.push(
-        `原始取樣事件率不足（${sampling.observedRateHz.toFixed(0)} Hz < ${MIN_OBSERVED_RATE_HZ} Hz）⇒ ` +
-          '時間間隙判定不可用（README §2.6 F1）',
+        `原始取樣事件率不足（連續期間 ${sampling.activeRateHz.toFixed(0)} Hz < ${MIN_OBSERVED_RATE_HZ} Hz，` +
+          `已排除 > ${REPORTED_GAP_THRESHOLD_MS.toFixed(1)} ms 的空洞）⇒ 時間間隙判定不可用（README §2.6 F1）`,
       );
     }
     if (sampling.sampleOverflow === true) {
@@ -228,6 +234,7 @@ function summarizeRun(input: SpiderWideRunInput): SpiderWideRunSummary {
     suspectedRate: evaluableCount === 0 ? undefined : suspectedCount / evaluableCount,
     sampleCount: sampling?.sampleCount,
     observedRateHz: sampling?.observedRateHz,
+    activeRateHz: sampling?.activeRateHz,
     sampleOverflow: sampling?.sampleOverflow,
     lockBreakCount: sampling?.lockBreakCount,
     gapCountAtThreshold: sampling?.gapCountAtThreshold,
@@ -239,6 +246,7 @@ function summarizeRun(input: SpiderWideRunInput): SpiderWideRunSummary {
 interface SamplingHealth {
   readonly sampleCount: number;
   readonly observedRateHz: number | undefined;
+  readonly activeRateHz: number | undefined;
   readonly sampleOverflow: boolean | undefined;
   readonly lockBreakCount: number;
   readonly gapCountAtThreshold: number;
@@ -271,9 +279,27 @@ function readSamplingHealth(payload: ExportPayload): SamplingHealth | undefined 
     if (gap.durationMs > longestGapMs) longestGapMs = gap.durationMs;
   }
 
+  // WP-60 T-exit（D-60.X1）—— **連續期間**事件率：只計入落在 segment 內的樣本間隔，排除所有空洞。
+  // 為什麼不能用 `meta.mouseSampling.observedRateHz` 當閘：那是整段 span 的**平均**率（含刻意的停頓、
+  // 抬滑鼠、以及 drill 內任何不動的時間）。兩者在真人資料上差一個量級 —— T0 R2 三組實機摘要的平均率
+  // 為 417／494／412 Hz，全部低於 500 Hz 下限，而**同一支滑鼠**在 R1 的連續移動期間量到 1005 Hz。
+  // 以平均率當閘會把那三組全部誤判為「事件率不足、時間間隙判定不可用」，而 F1 要問的是「瀏覽器有沒有
+  // 退化到 rAF 率」，不是「受測者有沒有停手」。⇒ 閘走 `activeRateHz`，`observedRateHz` 維持 provenance。
+  let intervalCount = 0;
+  let activeUs = 0;
+  for (const segment of segmentation.segments) {
+    for (let i = segment.startIndex + 1; i <= segment.endIndex; i++) {
+      intervalCount++;
+      activeUs += block.dtUs[i];
+    }
+  }
+  // 一個間隔都沒有（樣本數 < 2，或每段都只有單筆）⇒ 無從量測，回 `undefined` 而非 0：0 會誤觸 blocker。
+  const activeRateHz = intervalCount > 0 && activeUs > 0 ? (intervalCount * 1_000_000) / activeUs : undefined;
+
   return {
     sampleCount: block.dtUs.length,
     observedRateHz: sampling?.observedRateHz,
+    activeRateHz,
     sampleOverflow: sampling?.overflow,
     lockBreakCount: unlockedIntervals.length,
     gapCountAtThreshold: segmentation.gaps.length,
@@ -369,7 +395,8 @@ export function formatSpiderWideRepositioningSummary(
   );
   lines.push(
     `原始取樣（WP-60）：間隙門檻 ${REPORTED_GAP_THRESHOLD_MS.toFixed(1)} ms（PA prior，**非校準值**）；` +
-      `事件率下限 ${MIN_OBSERVED_RATE_HZ} Hz。空洞長度**不足以**區分抬滑鼠與停頓（T0 R2），下表只描述有幾個、多長。`,
+      `事件率下限 ${MIN_OBSERVED_RATE_HZ} Hz（量在**連續期間**，排除空洞）。` +
+        '空洞長度**不足以**區分抬滑鼠與停頓（T0 R2），下表只描述有幾個、多長。',
   );
   lines.push('');
 
@@ -406,18 +433,22 @@ export function formatSpiderWideRepositioningSummary(
     );
   } else {
     lines.push(
-      `| run | samples | 事件率 (Hz) | 溢位 | lock 中斷 | 間隙 > ${REPORTED_GAP_THRESHOLD_MS.toFixed(1)} ms | 最長間隙 (ms) |`,
+      `| run | samples | 平均事件率 (Hz) | 連續期間 (Hz) | 溢位 | lock 中斷 ` +
+        `| 間隙 > ${REPORTED_GAP_THRESHOLD_MS.toFixed(1)} ms | 最長間隙 (ms) |`,
     );
-    lines.push('|---|---|---|---|---|---|---|');
+    lines.push('|---|---|---|---|---|---|---|---|');
     for (const summary of summaries) {
       lines.push(
         `| ${summary.sourcePath} | ${summary.sampleCount ?? '—'} | ${fmt(summary.observedRateHz, 0)} ` +
-          `| ${bool(summary.sampleOverflow)} | ${summary.lockBreakCount ?? '—'} ` +
+          `| ${fmt(summary.activeRateHz, 0)} | ${bool(summary.sampleOverflow)} | ${summary.lockBreakCount ?? '—'} ` +
           `| ${summary.gapCountAtThreshold ?? '—'} | ${fmt(summary.longestGapMs, 1)} |`,
       );
     }
     lines.push('');
-    lines.push('`—` = 該 run 沒有 `mouseSamples` 區塊（合法，非 blocker）；`0` = 有錄到但該項為零。');
+    lines.push(
+      '`—` = 該 run 沒有 `mouseSamples` 區塊（合法，非 blocker）；`0` = 有錄到但該項為零。' +
+        '**平均事件率含空洞**（受停頓長度影響），事件率 blocker 一律看「連續期間」那一欄（D-60.X1）。',
+    );
   }
   lines.push('');
 

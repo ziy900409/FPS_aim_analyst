@@ -190,11 +190,34 @@ const SAMPLING_META = {
   observedRateHz: 1005,
 } as const;
 
-/** 六個取樣欄位單獨拉出來比 —— 一個 `toEqual` 就涵蓋「有 block」與「沒 block」兩種輸入。 */
+/**
+ * WP-60 T-exit —— 1000 Hz 的連續取樣中間夾一段 5 s 的停頓（受測者手不動或抬起）。
+ * 平均事件率被那段停頓拉到 ~40 Hz，但**連續期間**仍是 1000 Hz。D-60.X1 的判別對照組。
+ */
+const PAUSED_BLOCK: MouseSampleBlock = {
+  t0Ms: 100,
+  dtUs: [0, ...Array.from({ length: 99 }, () => 1000), 5_000_000, ...Array.from({ length: 100 }, () => 1000)],
+  dx: Array.from({ length: 201 }, (_, i) => (i % 3) - 1),
+  dy: Array.from({ length: 201 }, () => 0),
+};
+
+/**
+ * 真正退化的取樣：144 Hz（dt ≈ 6.944 ms），**一個空洞都沒有**。這才是 F1 要抓的形狀
+ * —— 瀏覽器退回 rAF 率交付事件。連續期間事件率 = 144 Hz < 500 Hz ⇒ blocker 必須出現。
+ */
+const RAF_RATE_BLOCK: MouseSampleBlock = {
+  t0Ms: 100,
+  dtUs: [0, ...Array.from({ length: 200 }, () => 6944)],
+  dx: Array.from({ length: 201 }, () => 1),
+  dy: Array.from({ length: 201 }, () => 0),
+};
+
+/** 七個取樣欄位單獨拉出來比 —— 一個 `toEqual` 就涵蓋「有 block」與「沒 block」兩種輸入。 */
 function samplingFields(row: SpiderWideRunSummary) {
   return {
     sampleCount: row.sampleCount,
     observedRateHz: row.observedRateHz,
+    activeRateHz: row.activeRateHz,
     sampleOverflow: row.sampleOverflow,
     lockBreakCount: row.lockBreakCount,
     gapCountAtThreshold: row.gapCountAtThreshold,
@@ -219,15 +242,18 @@ describe('WP-60 T4 —— 原始取樣健康度（FR-60.8）', () => {
     expect(samplingFields(withBlock)).toEqual({
       sampleCount: 4,
       observedRateHz: 1005,
+      // 兩個 segment 各一個 1 ms 間隔 ⇒ 連續期間 1000 Hz。那個 50 ms 空洞不計入（D-60.X1）。
+      activeRateHz: 1000,
       sampleOverflow: false,
       lockBreakCount: 0,
       gapCountAtThreshold: 1,
       longestGapMs: 50,
     });
-    // 缺席即六欄全 `undefined` —— **不是 0**。「沒錄原始取樣」與「錄了但一個間隙都沒有」是兩件事。
+    // 缺席即七欄全 `undefined` —— **不是 0**。「沒錄原始取樣」與「錄了但一個間隙都沒有」是兩件事。
     expect(samplingFields(withoutBlock)).toEqual({
       sampleCount: undefined,
       observedRateHz: undefined,
+      activeRateHz: undefined,
       sampleOverflow: undefined,
       lockBreakCount: undefined,
       gapCountAtThreshold: undefined,
@@ -235,21 +261,38 @@ describe('WP-60 T4 —— 原始取樣健康度（FR-60.8）', () => {
     });
   });
 
-  it('blocks an event rate below the floor, and stays silent at the measured 1005 Hz', () => {
+  it('blocks a stream that degraded to rAF rate, and stays silent at 1000 Hz', () => {
     const [slow, fast] = summarizeSpiderWideRuns([
-      {
-        sourcePath: 'slow.json',
-        instruction: '照平常打',
-        payload: widePayload({
-          mouseSamples: GAP_BLOCK,
-          meta: { mouseSampling: { ...SAMPLING_META, observedRateHz: MIN_OBSERVED_RATE_HZ - 1 } },
-        }),
-      },
+      { sourcePath: 'raf-rate.json', instruction: '照平常打', payload: widePayload({ mouseSamples: RAF_RATE_BLOCK }) },
       { sourcePath: 'fast.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK }) },
     ]);
 
+    expect(slow.activeRateHz).toBeCloseTo(144, 0);
     expect(slow.blockers.some((blocker) => blocker.includes('事件率不足'))).toBe(true);
     expect(fast.blockers.some((blocker) => blocker.includes('事件率不足'))).toBe(false);
+  });
+
+  it('does not block a 1000 Hz capture just because the participant paused (D-60.X1)', () => {
+    // T0 R2 的三組實機摘要平均率為 417／494／412 Hz —— 全部低於 500 Hz 下限，而同一支滑鼠在 R1 的
+    // 連續移動期間量到 1005 Hz。以平均率當閘會把三組真人 run 全部誤判為「事件率不足」。
+    const [paused] = summarizeSpiderWideRuns([
+      {
+        sourcePath: 'paused.json',
+        instruction: '照平常打',
+        payload: widePayload({
+          mouseSamples: PAUSED_BLOCK,
+          // provenance 欄位照實回報整段平均率（含停頓）—— 它是匯出的事實，不是閘的輸入。
+          meta: { mouseSampling: { ...SAMPLING_META, recorded: PAUSED_BLOCK.dtUs.length, observedRateHz: 40 } },
+        }),
+      },
+    ]);
+
+    expect(paused.observedRateHz).toBe(40);
+    expect(paused.activeRateHz).toBeCloseTo(1000, 6);
+    expect(paused.blockers.some((blocker) => blocker.includes('事件率不足'))).toBe(false);
+    // 那段 5 s 停頓仍然是一個被看見的空洞 —— 修掉誤判不等於把它藏起來。
+    expect(paused.gapCountAtThreshold).toBe(1);
+    expect(paused.longestGapMs).toBe(5000);
   });
 
   it('blocks an overflowed capture without touching meta.suspect (FR-60.9)', () => {
@@ -335,7 +378,7 @@ describe('WP-60 T4 —— 原始取樣健康度（FR-60.8）', () => {
     const withoutBlock = formatSpiderWideRepositioningSummary(COLLINEAR_COHORT, assessDirectionality(COLLINEAR_COHORT));
 
     expect(withBlock).toContain('### 原始取樣健康度（WP-60）');
-    expect(withBlock).toContain('| raw.json | 4 | 1005 | 否 | 0 | 1 | 50.0 |');
+    expect(withBlock).toContain('| raw.json | 4 | 1005 | 1000 | 否 | 0 | 1 | 50.0 |');
     expect(withoutBlock).toContain('本批**沒有任何** run 帶 `mouseSamples` 區塊');
     // 三段結構不變 —— 取樣健康度是「逐 run」段裡的第二張表，不是第四段。
     expect(withBlock.match(/^## /gm)).toHaveLength(3);
@@ -362,6 +405,7 @@ function summary(overrides: Partial<SpiderWideRunSummary>): SpiderWideRunSummary
     // 預設為「這份 run 沒錄原始取樣」—— 方向性測試的 cohort 全部沿用這個形狀，與 WP-60 之前逐位相同。
     sampleCount: undefined,
     observedRateHz: undefined,
+    activeRateHz: undefined,
     sampleOverflow: undefined,
     lockBreakCount: undefined,
     gapCountAtThreshold: undefined,

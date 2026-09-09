@@ -61,7 +61,7 @@ SessionSetup 的 `Mouse DPI` 欄位省略時,`meta.dpi` 缺席,`deriveMouseThrow
 | 前提 | 怎麼做 | 不滿足的後果 |
 |---|---|---|
 | **開啟取樣** | 以 `?rawMouse=1` 載入(`http://localhost:5173/?rawMouse=1`)。這是 D-60.T2-1 的 opt-in,不加就沒有 `mouseSamples` 區塊 | 沒有這一維資料(合法,非 blocker)|
-| **事件率 ≥ 500 Hz** | 用 1000 Hz 輪詢率的滑鼠;T0 R1 在本專案硬體上實測 1005 Hz | `dt` 解析度不足以支撐任何時間間隙判定 ⇒ blocker(F1)|
+| **事件率 ≥ 500 Hz**(量在**連續移動期間**,排除空洞)| 用 1000 Hz 輪詢率的滑鼠;T0 R1 在本專案硬體上實測 1005 Hz。停頓不會讓這一項變紅(D-60.X1)| `dt` 解析度不足以支撐任何時間間隙判定 ⇒ blocker(F1)|
 | **cross-origin isolation 生效** | 走 `npm run dev` / `npm run preview`(COOP/COEP 已設);別用 `file://` 或自架的簡易 static server | `event.timeStamp` 鈍化到 100 µs 級,`dt` 被捨入雜訊污染 ⇒ blocker(F4)|
 | **全程不要中斷 Pointer Lock** | 不要按 Esc、不要 alt-tab、不要點出視窗 | 中斷期間的移動依 FR-A-8 **整筆丟棄**,留下一個與抬滑鼠**同形**的空洞。腳本會用 `pointer_lock` 事件把它排除,但那段軌跡不可復原 ⇒ blocker(FR-60.6)|
 
@@ -143,7 +143,7 @@ npm run analyze:spider-wide -- <匯出資料夾> --manifest <labels.json>
 輸出寫到 `.spider-wide-analysis/`(markdown + JSON),並印在終端機。報告分三段:
 
 1. **資料品質** —— 逐份點名 blocker(缺 DPI、`suspect: true`、drill 不對、母體為空、撞上 KI-031 懸崖,以及 §2.4 開了原始取樣時的四種取樣失效:事件率不足、溢位、`crossOriginIsolated: false`、Pointer Lock 中斷)。**先看這段**;有 blocker 的數字不能直接用。
-2. **逐 run** —— cm/360、周邊呈現數、canonical 預設與繞道下各自的 detected 數、timeout 率(順帶回答 [OQ-57.4](../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/README.md) 剩下的那半題:harness 的 timeout 率恆為 0,只有真人 run 量得到)、標註數與標註率。<br>後面接一張**原始取樣健康度**子表(WP-60):`sampleCount`、`observedRateHz`、`sampleOverflow`、`lockBreakCount`、`gapCountAtThreshold`、`longestGapMs`。**六欄同進同出** —— 沒開 §2.4 的取樣時全部印 `—`(缺席),不是 `0`(有錄到但為零)。全批都沒有時整張表換成一行說明。
+2. **逐 run** —— cm/360、周邊呈現數、canonical 預設與繞道下各自的 detected 數、timeout 率(順帶回答 [OQ-57.4](../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/README.md) 剩下的那半題:harness 的 timeout 率恆為 0,只有真人 run 量得到)、標註數與標註率。<br>後面接一張**原始取樣健康度**子表(WP-60):`sampleCount`、`observedRateHz`、`activeRateHz`、`sampleOverflow`、`lockBreakCount`、`gapCountAtThreshold`、`longestGapMs`。**七欄同進同出** —— 沒開 §2.4 的取樣時全部印 `—`(缺席),不是 `0`(有錄到但為零)。全批都沒有時整張表換成一行說明。<br>⚠️ **兩個事件率不是同一件事**:`observedRateHz` 是整段 span 的**平均**(含停頓與抬滑鼠的空洞),`activeRateHz` 排除所有 > 30 ms 的空洞後重算。**500 Hz 的閘走 `activeRateHz`**(D-60.X1)—— 用平均率會把停頓多的真人 run 誤判為「事件率不足」(T0 R2 三組的平均率為 417／494／412 Hz,而同一支滑鼠連續移動期間是 1005 Hz)。
 3. **方向性** —— cohort 共線時**明確拒答**並說出缺什麼,而不是照樣印一張有斜率的表。可答時給出按 cm/360 遞增排序的點與單調性判斷。
 
 腳本用的門檻是 `150 / 2`(D-57.T5-7),detection 走 `sustainedTicks: 1` 的 KI-031 繞道,兩者都印在報告開頭。**KI-031 修好後,這兩件事都要改回來並重跑。**
