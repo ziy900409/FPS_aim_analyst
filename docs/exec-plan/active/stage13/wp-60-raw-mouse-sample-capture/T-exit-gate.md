@@ -43,7 +43,7 @@
 | # | 交付物 | 來源 |
 |---|---|---|
 | 1 | 實機事件率分布（直方圖 + p50/p95/p99）| T0 step 3 |
-| 2 | 抬起／停頓／一次到位三組的空洞長度分布 | T0 step 4 |
+| 2 | 抬起／停頓／一次到位三組的空洞長度分布 | T0 step 4；2026-09-09 摘要與限制見 [progress.md](progress.md)「T0 R2 實機結果與 WP-61 收斂」，後續見 [WP-61](../wp-61-lift-off-validation/README.md) |
 | 3 | PA 的十四個 LOD 參數與語意抄本 + 「哪些需在角度空間重推」的標註（授權已無虞，D-60.P7）| T0 step 7 |
 | 4 | OQ-60.4 構念歸屬結論（新判準與 `deriveRepositioningSuspicion()` 的關係）| 使用者拍板 |
 

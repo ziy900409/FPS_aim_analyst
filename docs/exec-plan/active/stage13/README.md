@@ -17,7 +17,7 @@ WP-57 交付的抬滑鼠疑慮標註（`deriveRepositioningSuspicion()`）**只�
 
 真人資料實測的後果：刻意停頓的停滯長度 p90 = **474 ms**，比抬滑鼠的 180–225 ms **還長** ⇒ 兩者的長尾完全重疊（WP-57 §T5-real）。這不是門檻沒調好，是**訊號裡沒有那個資訊**。
 
-`performance_analysis` 專案的 LOD（Lift-Off Detection）管線用的是完全不同的訊號：**1000 Hz 滑鼠的硬體斷流**（`dt > 30 ms` 的真實時間間隙）。那是對「感測器離地」的直接觀測，不是從運動推論。而它的 ADR-002 記載，v1 單遍點對點偵測的兩個系統性偽陽正是 **「目標捕獲時的急停」** 與 **「目標中心附近的生理性顫抖」** —— 與 FPS 這邊實測到的偽陽是同一個。
+`performance_analysis` 專案的 LOD（Lift-Off Detection）管線使用 **1000 Hz 滑鼠取樣的時間間隙**（`dt > 30 ms`）作為候選訊號。2026-09-09 R2 實測顯示自然停頓也有秒級空洞，因此時間間隙不能視為感測器離地的直接證據。其 ADR-002 記載，v1 的兩個系統性偽陽為「目標捕獲時的急停」與「目標中心附近的生理性顫抖」；WP-61 需以獨立標註資料驗證 Stage 2/3 是否能改善區分。
 
 **本 stage 的目標：把那個訊號取回來。** 原料已經在收（[`InputSampler.ts:137-139`](../../../../src/input/InputSampler.ts#L137-L139) 的 `getCoalescedEvents()` 逐筆帶 `event.timeStamp`），但在 [`SimLoop.ts:96-99`](../../../../src/loop/SimLoop.ts#L96-L99) 被聚合成逐 tick 值之後就丟掉了。
 
@@ -28,7 +28,7 @@ WP-57 交付的抬滑鼠疑慮標註（`deriveRepositioningSuspicion()`）**只�
 | WP | 資料夾 | 一句話 | Exit gate | 相依 | 估時（d） | 狀態 |
 |---|---|---|---|---|---|---|
 | **WP-60** | [`wp-60-raw-mouse-sample-capture/`](wp-60-raw-mouse-sample-capture/README.md) | 原始滑鼠取樣匯出 schema + 擷取路徑 + 時間間隙原語；證明資料足以支撐 LOD 移植 | T-exit | 無（WP-57 已交付，只讀不改）| 5.5–9.5 | ⬜ 規劃完成 2026-09-08，T0 未開始 |
-| **WP-61**（未規劃）| — | LOD 判準完整移植（Stage 2 Kinematic Spike／Stage 3 Hover Jitter）+ 以真人標註 cohort 校準 | — | WP-60 T-exit ✅ + 高刷真人 cohort | — | ⬜ 待 WP-60 T0 的充分性稽核結論才規劃 |
+| **WP-61** | [範圍草案](wp-61-lift-off-validation/README.md) | 先驗證空洞前後運動學可分性，再決定 Stage 2/3 移植與校準 | 可分性與 reliability gate | WP-60 T-exit ✅ + 高刷真人標註 cohort | 待資料稽核 | 🟡 R2 已收斂 2026-09-09；尚未開工 |
 
 **為什麼切成兩個 WP**：WP-60 只負責「把資料取回來並證明它夠用」，不宣稱任何偵測準確度。LOD 判準的參數必須以**真人標註資料**重新推導（PA 的參數在 px/s 空間、且其 ADR 自承 F1 從未對標註資料量測過），而那批資料目前不存在 —— 見 §4。把兩者綁在同一個 WP 會讓一個純工程可驗收的切片，卡在一個等資料的研究問題上。
 

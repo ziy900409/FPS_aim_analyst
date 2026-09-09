@@ -4,7 +4,7 @@
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
-| 🟡 | **T0** Entry gate／取樣充分性稽核／實機 PoC | [T0-entry-gate.md](T0-entry-gate.md) | 無（WP-57 已交付，只讀不改）| **High**；自動稽核完成，等待真實瀏覽器 + 使用者滑鼠操作的 R1/R2 PoC |
+| 🟡 | **T0** Entry gate／取樣充分性稽核／實機 PoC | [T0-entry-gate.md](T0-entry-gate.md) | 無（WP-57 已交付，只讀不改）| **High**；R1 已通過，R2 摘要已回填：空洞長度不足以可靠分離 lift/pause；F6 瀏覽器 frame log 待量測 |
 | ✅ | **T1** 擷取契約：arena／型別／strict parser | [T1-capture-contract.md](T1-capture-contract.md) | 依使用者明確指示 override T0 gate；OQ-60.2／60.3／60.5 已於 T1 contract 凍結 | Med |
 | ✅ | **T2** SimLoop 接線與決定性證明 | [T2-recorder-wiring.md](T2-recorder-wiring.md) | T1；依使用者明確指示續行（T0 經驗性 gate 仍 blocked，故 app 佈線層 opt-in **預設關閉**，見 D-60.T2-1）| **High** |
 | 🟡 | **T3** 時間間隙切段原語與 Pointer Lock 消歧 | [T3-time-gap-primitive.md](T3-time-gap-primitive.md) | T1（OQ-60.1 已於 2026-09-08 收斂，不再阻塞）| Med；**DoD 的真人取樣分布一項未完成** —— 該 run 從未入 repo，本 session 取不到（見 progress §T3）|
