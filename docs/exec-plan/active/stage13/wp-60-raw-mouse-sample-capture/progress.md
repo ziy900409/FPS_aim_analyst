@@ -4,14 +4,15 @@
 
 ## 最新狀態（2026-09-09 T-exit）
 
-**T-exit 已收尾**（見 §T-exit gate）：A-60.1～16 逐條有指令與輸出，14 ✅／1 ✅ 帶上界告警／1 🟡，無 ❌；
+**T-exit 已收尾**（見 §T-exit gate）：A-60.1～16 逐條有指令與輸出，15 ✅／1 ✅ 帶上界告警，無 🟡／❌；
 typecheck ×2、全量 Vitest（2614 passed）、`vite build` 三個閘 exit 0。
 
-**三項具名缺口**（都是需要真人／真瀏覽器的經驗性讀數，不是實作缺口）：① F6 的瀏覽器 frame log 開／關對照；
-② T3 DoD 第 9 項的真人取樣區段／間隙分布；③ 全量 Playwright 讀數（port 5173 被他人 dev server 占用，
-且它服務的是不含 WP-60 的程式碼 —— 跑了會沉默地測錯的樹）。⇒ **T0 與 T3 維持 🟡**。
-⇒ 三項的收尾計畫（含錄製協定與可直接交給 agent 的 prompt）見 **[T-exit-followup.md](T-exit-followup.md)**；
-**①② 共用同一次錄製**，且 F6 要的量已全在既有匯出的 `meta.frames.summary` 裡，不需要新儀器。
+**TF1 已於 2026-09-09 補齊**：A/B 可比性五項全過；F6 的 Δp95 = **−0.005 ms** 且
+`overBudgetWindows` 未新增，A-60.16 判 **✅**。⇒ **T0 已轉 ✅**。
+
+**剩餘兩項具名缺口**：T3 DoD 第 9 項的真人取樣區段／間隙分布（TF2），以及全量 Playwright 讀數（TF3；
+原 T-exit 時 port 5173 被他人 dev server 占用且服務的是不含 WP-60 的程式碼）。收尾計畫見
+**[T-exit-followup.md](T-exit-followup.md)**。
 
 **合併**：本 WP 已於 2026-09-09 併入 `main`（merge commit `9015610`）。合併後的整棵樹重跑三閘全綠：
 typecheck exit 0、`npm test` **249 files / 2764 passed（1 file / 2 tests skipped）**、`vite build` exit 0（195 modules）。
@@ -54,12 +55,12 @@ R2 分離問題已有探索性答案；逐次標註與泛化驗證交給 [WP-61 
 
 | Task | Status | Started | Completed | Evidence |
 |---|---|---|---|---|
-| T0 Entry Gate | 🟡 Blocked（**R1 已通過**；R2 三組空洞分布與 F6 瀏覽器 frame log 仍待實機） | 2026-09-08 | — | 見 §T0 automated audit（2026-09-08 13:39Z）＋ **§T0 R1 實機量測（2026-09-09）**。<br>**已綠**：baseline 三項；README §0 discovery 覆驗；CodeGraph impact；序列化體積／µs 精度；PA 十四參數；**R1 gate（事件率 1005 Hz 瞬時、dt p50 995 µs、零遺漏）**。<br>**仍 BLOCKED**：R2 的抬起／停頓／一次到位三組空洞分布（需使用者實機 `spider-shot-wide-v1` 各 ≥ 10 次）、F6 瀏覽器 frame log 開／關對照。故 T0 維持 blocked。 |
+| T0 Entry Gate | ✅ Completed（R1 通過；R2 得負面結論；F6 通過） | 2026-09-08 | 2026-09-09 | 見 §T0 automated audit、§T0 R1 實機量測、D-60.R2-1 與 §TF1。R1：事件率 1005 Hz 瞬時、dt p50 995 µs、零遺漏；R2：空洞長度不足以可靠分離 lift/pause；F6：可比 A/B 下 Δp95 **−0.005 ms** 且未新增 over-budget windows。 |
 | T1 Capture Contract | ✅ Completed（依使用者明確指示 override T0 gate；contract-only，不接線） | 2026-09-08 | 2026-09-08 14:31Z | `npm.cmd test -- src/data/mouseSampleArena.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts src/data/exportPayloadSchema.test.ts src/data/metadata.test.ts` exit 0（182 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（244 files passed, 1 skipped；2561 passed, 2 skipped）；`npm.cmd run build` exit 0（既有 chunk-size warning）；60k `mouseSamples` JSON.stringify：567,316 bytes / p50 1.714 ms / p95 2.377 ms / max 2.546 ms；`rg -n "\bLOD\b" src tests scripts CONTEXT.md` exit 1（0 命中）。 |
 | T2 Recorder Wiring | ✅ Completed（依使用者明確指示 override T0 gate；app 佈線層 opt-in 預設關閉） | 2026-09-08 | 2026-09-08 | 見 §T2 implementation audit。`npm.cmd test -- tests/regression/wp60-raw-mouse-capture.test.ts` exit 0（20 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（245 files passed, 1 skipped；2581 passed, 2 skipped）；`npm.cmd run build` exit 0（`$LASTEXITCODE=0`，193 modules，保留既有 chunk-size warning）；`npx.cmd playwright test tests/e2e/raw-mouse-sampling.spec.ts` **2 passed（真實 Edge）**。 |
 | T3 Time-Gap Primitive | 🟡 Mostly done（原語與全部 scan 已交付；**DoD 的真人取樣分布一項未完成**）| 2026-09-09 | — | 見 §T3 implementation audit。`npm.cmd test -- src/metrics/mouseSampleGaps.test.ts` exit 0（25 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（246 files passed, 1 skipped；2606 passed, 2 skipped）；`npm.cmd run build` exit 0（193 modules，保留既有 chunk-size warning）；三組突變各被抓到。**未完成**：真人取樣的區段／間隙分布 —— T0 R2 只回填統計摘要，逐筆 `dtUs`／`dx`／`dy` 從未入 repo，本 session 取不到。 |
 | T4 Operator Visibility | ✅ Completed | 2026-09-09 | 2026-09-09 | 見 §T4 implementation audit。`npm.cmd test -- tests/regression/spider-wide-repositioning-runner.test.ts` exit 0（**19 passed** = 既有 12 + 新增 7）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（**246 files passed, 1 skipped；2613 passed, 2 skipped**）；`npm.cmd run build` `$LASTEXITCODE = 0`（bundle hash `index-CcqBc2hD.js` 與 T2 相同 ⇒ `scripts/` 不進 app bundle）；四組突變各被抓到；legacy fixture 與含 `mouseSamples` 的樣本各實跑一次（輸出見下）。 |
-| T-exit | ✅ Completed（**帶三項具名缺口**：F6 瀏覽器 frame log／T3 真人分布／全量 Playwright 讀數）| 2026-09-09 | 2026-09-09 | 見 §T-exit gate。A-60.1～16：**14 ✅ + 1 ✅ 帶上界告警（A-60.10 → OQ-60.7）+ 1 🟡（A-60.16 瀏覽器側 = F6）**，無 ❌。`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（**246 files passed, 1 skipped；2614 passed, 2 skipped**）；`npm.cmd run build` exit 0（bundle hash `index-CcqBc2hD.js` 與 T2／T4 相同）；`analyze:spider-wide` legacy 實跑 exit 0（取樣 blocker 0 條）。全量 Playwright **未執行** —— port 5173 被主 checkout 的 dev server 占用且服務不含 WP-60 的程式碼（`rawMouse` 命中 0）＋掛真實 history root（78 runs），跑了會沉默地測錯的樹並污染真實資料。<br>本 gate 落地一個修復：**D-60.X1**（`66a1890`）—— T4 的事件率 blocker 會把 R2 三組真人 run 全部誤判。 |
+| T-exit | ✅ Completed（**帶兩項具名缺口**：T3 真人分布／全量 Playwright 讀數）| 2026-09-09 | 2026-09-09 | 見 §T-exit gate 與 TF1 follow-up。A-60.1～16：**15 ✅ + 1 ✅ 帶上界告警（A-60.10 → OQ-60.7）**，無 🟡／❌；F6 已補齊。T3 真人分布（TF2）與全量 Playwright（TF3）仍待執行。 |
 
 ## Decision Log
 
@@ -465,6 +466,38 @@ npm.cmd run analyze:spider-wide -- research/fixtures/exports/counterstrafe_ad_v1
 > **未達成的一律列名歸因**，不以「實作完成」代替。基準 commit `f06fe1f`（T4 之後）；本 gate 期間落地
 > 一個修復 commit `66a1890`（D-60.X1，見 Decision Log）。
 
+### TF1 follow-up 實機摘要（2026-09-09）
+
+兩份真人匯出均留在 repo 外；以下只記統計摘要。A 為 rawMouse 關、B 為 rawMouse 開。
+
+#### A/B 可比性 gate 與 F6
+
+| 可比性項目 | A | B | 覆核 |
+|---|---:|---:|---|
+| `meta.drillId` | `spider-shot-wide-v1` | `spider-shot-wide-v1` | ✅ 相同 |
+| `meta.frames.summary.count` | 3780 | 3779 | ✅ 差 **0.026%**（< 20%）|
+| displayHz／解析度模式 | 60 Hz；native；3840×2160 buffer／2560×1440 CSS；DPR 1.5 | 同 A | ✅ 相同 |
+| `meta.crossOriginIsolated` | true | true | ✅ 兩組皆 true |
+| B `meta.mouseSampling.recorded > 0` | 不適用（rawMouse 關） | **31,621** | ✅ 錄製確實開啟 |
+
+讀取命令：PowerShell `ConvertFrom-Json` 後逐欄讀 `meta.frames.summary`／`meta.suspect`／
+`meta.lateEventCount`／`meta.bufferOverflow`／`meta.display`，以及 B 的 `meta.mouseSampling`。
+
+| 量 | A（關）| B（開）| Δ（B−A）|
+|---|---:|---:|---:|
+| frame p50 (ms) | 16.670 | 16.670 | **0.000** |
+| frame p95 (ms) | 16.790 | 16.785 | **−0.005** |
+| frame p99 (ms) | 16.855 | 16.840 | **−0.015** |
+| `overBudgetWindows`（7.8125 ms）| 3780 | 3779 | **−1（未新增）** |
+| frame summary overflow | false | false | — |
+| `meta.suspect` | true | true | — |
+| `lateEventCount` | 0 | 0 | 0 |
+| `bufferOverflow` | false | false | — |
+
+**A-60.16 = ✅。** Δp95 = −0.005 ms ≤ 0.5 ms，且 over-budget windows 未新增；歸因為
+raw capture **未造成可量測的 frame-time regression**。兩組共同的 `suspect=true` 與幾乎逐 frame
+超過 7.8125 ms，來自相同的 60 Hz frame pacing（p50 約 16.67 ms），不是 rawMouse 開啟後才出現的退化。
+
 ### 收尾閘（實際數字）
 
 | 閘 | 指令 | 結果 |
@@ -529,10 +562,9 @@ T2 已在真實 Edge 上跑過 `tests/e2e/raw-mouse-sampling.spec.ts` **2 passed
 | **A-60.13** C-D3 零 importer + C-D4 零既有判準符號命中 | ✅ | 同檔：`src/**` 內 `mouseSampleGaps` 的 importer 數 **0**；剝註解後掃 `omegaDegPerSec`／`deriveDetectionMetrics`／`deriveRepositioningSuspicion` **0 命中**；構念語彙 `lift`／`reposition`／`suspicion`／`stall` **0 命中**。<br>唯一消費者 `scripts/spiderWideRepositioningRunner.ts` 刻意落在 `scripts/`（不進 `DrillMetricRegistry`、不進教練報告），報告只出**描述性**量。 |
 | **A-60.14** 全 repo 無 `LOD` 縮寫命名 | ✅ | `\bLOD\b` 掃 `src`／`tests`／`scripts`／`CONTEXT.md`／`stage13` 全部檔案 ⇒ **唯一命中是掃描器自己的測試標題**（`mouseSampleGaps.test.ts:321`，已具名排除）。 |
 | **A-60.15** 缺 `mouseSamples` 的舊匯出不被判 blocked | ✅（實跑）| `npm.cmd run analyze:spider-wide -- research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json --out <scratch>` exit 0 ⇒ 4 條 blocker **全部是本 WP 之前就有的**（drill／指示／DPI／母體），取樣 blocker **0 條**；取樣段落印「這**不是 blocker**」。 |
-| **A-60.16** frame-time p95 開／關差值符合門檻、無新增掉 tick | 🟡 **部分** | **node 側 ✅**：T2 的 throwaway harness（3,840 ticks／30,000 樣本、四次重複）Δp95 = **−0.0044 ～ +0.0007 ms**，**符號在重複之間翻轉** ⇒ run 間噪音 > 任何系統性差異；per-tick 成本 < tick 預算（7.8125 ms）的 0.1%。<br>**瀏覽器側 ❌ 未量測**：真實 frame log 的 p50/p95/p99 與真實掉 tick 數需要真實輸入流（F6，與 T0 同一個經驗性缺口）。`?rawMouse=1` 是它的入口；**本 gate 不宣稱量到**。 |
+| **A-60.16** frame-time p95 開／關差值符合門檻、無新增掉 tick | ✅（實機 A/B） | **瀏覽器側**：可比性五項全過；A→B 的 Δp50／p95／p99 = **0.000／−0.005／−0.015 ms**，`overBudgetWindows` **3780→3779**（未新增），故 Δp95 ≤ 0.5 ms 且 F6 通過。兩組皆 `suspect=true`，歸因為共同的 60 Hz frame pacing（p50 約 16.67 ms）高於 7.8125 ms floor，非 raw capture 新增退化。**node 側**既有結果仍為 Δp95 −0.0044～+0.0007 ms。詳見 §TF1。 |
 
-**逐條結論**：16 條中 **14 條 ✅**、**1 條 ✅ 帶上界告警**（A-60.10 → OQ-60.7）、**1 條 🟡 部分**（A-60.16 瀏覽器側 = F6）。
-沒有任何一條是 ❌。
+**逐條結論**：16 條中 **15 條 ✅**、**1 條 ✅ 帶上界告警**（A-60.10 → OQ-60.7），沒有 🟡／❌。
 
 ### FR / NFR traceability 對帳（README §4.1 逐列）
 
@@ -555,8 +587,7 @@ T2 已在真實 Edge 上跑過 `tests/e2e/raw-mouse-sampling.spec.ts` **2 passed
 | NFR-60.6 純度 | T3 | ✅ A-60.12 |
 | NFR-60.7 零回歸 | 全 | ✅ 三個閘 exit 0 + 期望值零修改；**Playwright 未取讀數**（見上）|
 
-⇒ traceability 表**無遺漏列**；唯一未被任何 task 完整覆蓋的是 **F6 的瀏覽器側讀數**，它不對應任何 FR/NFR 條文，
-而是 README §2.6 的失效模式門檻。
+⇒ traceability 表**無遺漏列**；F6 的瀏覽器側讀數已由 TF1 補齊並通過。
 
 ### §2b 硬約束逐條覆核（T-exit 重新過閘）
 
@@ -587,16 +618,12 @@ T2 已在真實 Edge 上跑過 `tests/e2e/raw-mouse-sampling.spec.ts` **2 passed
 **WP-61 另需但本 WP 不提供**：高刷（≥ 144 Hz）真人標註 cohort，規格見
 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md)。
 
-### 本 WP 明確**未**達成的三件事（不得被「T-exit ✅」蓋掉）
+### 本 WP 明確**未**達成的兩件事（不得被「T-exit ✅」蓋掉）
 
-1. **F6 瀏覽器 frame log 開／關對照**（A-60.16 的另一半）—— 需真實輸入流；入口 `?rawMouse=1` 已具備。
-2. **T3 DoD 第 9 項：真人取樣的區段／間隙分布** —— T0 R2 只回填**已排序的**統計摘要，`segmentByTimeGap()` 吃的是**有序** `dtUs` 串，摘要不能代入；全 worktree 無任何含 `mouseSamples` 的匯出檔。需使用者以 `?rawMouse=1` 跑一輪並提供匯出（或在本機貼回以本模組計算的區段摘要）。
-3. **全量 Playwright 讀數** —— port 5173 被他人的 dev server 占用（見上）。
+1. **T3 DoD 第 9 項：真人取樣的區段／間隙分布（TF2）** —— 尚待以有序真人 `dtUs` 串實跑。
+2. **全量 Playwright 讀數（TF3）** —— 原 T-exit 時 port 5173 被他人的 dev server 占用（見上）。
 
-⇒ 故 **T0 維持 🟡**（R1 ✅／R2 已收斂為負面結論／F6 未量測），**T3 維持 🟡**（原語與掃描全綠，真人分布未取）。
-T-exit 判定為 **✅ 帶三項具名缺口**：本 WP 交付的是「**可用且已知其極限**的原始取樣管線」——
-擷取契約、決定性、對齊、消歧、操作者可見度全部有指令與輸出；缺的三項**都是需要真人／真瀏覽器的經驗性讀數**，
-不是實作缺口。
+F6 已由 TF1 補齊，故 **T0 = ✅**；T3 暫維持 🟡。T-exit 判定更新為 **✅ 帶兩項具名缺口**。
 
 ## Surprises
 
