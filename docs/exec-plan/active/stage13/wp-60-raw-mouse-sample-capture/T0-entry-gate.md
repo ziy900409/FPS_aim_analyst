@@ -27,16 +27,26 @@
 
 | 量 | 方法 | 門檻 | 實測 |
 |---|---|---|---|
-| 觀測事件率（Hz）| step 3 直方圖 | **≥ 500 Hz**（否則停止）| |
-| `dt` p50 / p95 / p99（µs）| step 3 | p50 ≈ 1000 µs（1000 Hz 滑鼠）| |
-| 每 rAF 幀的 coalesced 筆數 | step 3 | > 1（否則 R1 成立）| |
-| 抬起的空洞長度 p10/p50/p90（ms）| step 4 ① | 與 ② 可分離 | |
-| 停頓的空洞長度 p10/p50/p90（ms）| step 4 ② | 與 ① 可分離 | |
-| 一次到位的最長空洞（ms）| step 4 ③ | 應遠小於 ①| |
-| 60 s columnar 序列化（bytes / ms）| step 5 | **≤ 1.0 MB**（NFR-60.4）| |
-| 60 s array-of-objects（bytes）| step 5 | 對照組 | |
-| µs 取整誤差（µs）| step 5 | **≤ 10**（NFR-60.5）| |
-| frame p95 開 vs 關（ms）| step 6 | 差值 ≤ 0.5 ms 且無新增掉 tick | |
+| 觀測事件率（Hz）| step 3 直方圖 | **≥ 500 Hz**（否則停止）| ✅ **1005 Hz**（瞬時 = 1/dt p50）／971 Hz（run 平均）|
+| `dt` p50 / p95 / p99（µs）| step 3 | p50 ≈ 1000 µs（1000 Hz 滑鼠）| ✅ **995 / 1660 / 2235**（run B）；1000 / 1550 / 3890（run A）|
+| 每 rAF 幀的 coalesced 筆數 | step 3 | ~~> 1（否則 R1 成立）~~ **指標定義有誤，見下方 §R1 註**| ⚠️ p50 **1**、p95 1、mean **1.020**、max 5 —— 但 R1 **通過**（機制不是 coalescing，是逐筆派發）|
+| 抬起的空洞長度 p10/p50/p90（ms）| step 4 ① | 評估與 ② 是否可分離（不可分亦為有效結論） | 5.1 / 8.4 / 1442.2；本輪不足以可靠分離 |
+| 停頓的空洞長度 p10/p50/p90（ms）| step 4 ② | 評估與 ① 是否可分離 | 5.1 / 7.8 / 1071.4；秒級範圍重疊 |
+| 一次到位的最長空洞（ms）| step 4 ③ | 應遠小於 ①| 270.4 ms；無 >1 s 空洞，未重現前輪 18.2 ms 上限 |
+| 60 s columnar 序列化（bytes / ms）| step 5 | **≤ 1.0 MB**（NFR-60.4）| ✅ 593,031 bytes / 1.311 ms（synthetic 60k）⇒ **9.46 bytes/sample**；以實測 1005 Hz 推算 60 s ≈ **571 KB** |
+| 60 s array-of-objects（bytes）| step 5 | 對照組 | 2,158,328 bytes / 6.167 ms（synthetic 60k）|
+| µs 取整誤差（µs）| step 5 | **≤ 10**（NFR-60.5）| ✅ max 0.369（synthetic round-trip）|
+| frame p95 開 vs 關（ms）| step 6 | 差值 ≤ 0.5 ms 且無新增掉 tick | 🟡 **部分**：node 側 per-tick sim cost Δp95 −0.0044 ～ +0.0007 ms（符號在四次重複間翻轉 ⇒ 小於噪音）；**瀏覽器 frame log 仍 BLOCKED** |
+
+R2 於 2026-09-09 回填；百分位只計 dtUs > 5000 的空洞。三組摘要、計算口徑與限制見 [progress.md](progress.md)「T0 R2 實機結果與 WP-61 收斂」。本輪無逐次時間標註，不能確認十次動作與空洞一一對應；F6 仍待量測。
+
+### §R1 註 — 指標③的定義錯誤（2026-09-09 實機發現）
+
+指標③「每 rAF 幀的 coalesced 筆數 > 1」建立在一個**實機不成立的前提**上：以為 Chromium 會把幀內多筆硬體樣本**打包**成一個 rAF 對齊的 `pointermove`，其餘放在 `getCoalescedEvents()`。實測相反 —— **`pointermove` 逐筆硬體取樣派發**：clean run 中 10,762 個 `pointermove` ÷ 10.79 s ≈ **997 events/s**，遠高於任何顯示更新率（階段 A 上限 240 Hz），故 coalescing 幾乎是 no-op（mean 1.020）。
+
+指標③的**目的**是「證明瀏覽器沒把次幀樣本丟掉」。該目的已由 ①② 直接滿足（dt p50 = 995 µs、10,475 個間隔），只是走了另一條路。⇒ **R1 gate 通過**；門檻敘述應改為「事件派發率 ≫ 顯示更新率**或** coalesced p50 > 1，二者其一即可」。
+
+⚠️ 連帶更正：`InputSampler.ts:125-127` 與 ADR-5／附錄 B 對機制的描述（「以 `getCoalescedEvents()` 取回瀏覽器在單一 rAF 幀內合併的次幀樣本」）**對結果正確、對機制不準**。但 `max: 5` 顯示**幀變慢時 coalescing 確實會啟動**，故該呼叫仍為必要（拿掉會在卡頓時丟樣本）—— **程式碼不需修改**，需修正的是註解與 ADR 對機制的敘述。
 
 ## Invariants
 

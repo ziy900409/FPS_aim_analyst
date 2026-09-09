@@ -11,6 +11,7 @@ import { PLAYER_EYE_HEIGHT_U } from '../../src/sim/playerEye.ts';
 import { createTargetManager } from '../../src/sim/TargetManager.ts';
 import { createSharedState, type SharedState } from '../../src/state/SharedState.ts';
 import { pushEvent } from '../../src/state/inputRingTestUtil.ts';
+import { resolveMouseGain } from '../../src/input/mouseGain.ts';
 import { uspSLaser } from '../../src/weapon/weapons.ts';
 
 /**
@@ -53,6 +54,12 @@ export interface WideTickSample {
   readonly tx: number | null;
   readonly ty: number | null;
   readonly tz: number | null;
+  /**
+   * WP-60 / T2：該 tick 窗的 mouse 積分結果（`mouseCapture` 省略 ⇒ 恆 `null`，故既有 WP-57 斷言
+   * 兩側同形、逐位不變）。raw sample 錄製屬唯寫旁路，開／關這兩欄必須逐位一致（NFR-60.1）。
+   */
+  readonly dYaw: number | null;
+  readonly dPitch: number | null;
 }
 
 export interface WideRun {
@@ -90,19 +97,55 @@ export function wideDrillConfig(): DrillConfig {
   return loadDrill(resolveSpiderShotWideV1(FIXTURE_FOV_DEG, FIXTURE_ASPECT));
 }
 
+/** WP-60 / T2：合成 sub-frame 滑鼠樣本（絕對 ms，須嚴格升冪；`dx`/`dy` 為 raw counts）。 */
+export interface WideMouseSample {
+  readonly dx: number;
+  readonly dy: number;
+  readonly t: number;
+}
+
+/**
+ * WP-60 / T2 的滑鼠擷取佈線。給定 `samples` 即啟用 tick 窗積分（`FIXTURE_MOUSE_GAIN`）並把樣本
+ * 漸進推入輸入 ring；`recordMouseSamples` 則額外開啟 raw 擷取旁路，兩者的差集正是 NFR-60.1 要證
+ * 明「不改任何既有行為」的那一項。省略整個欄位 ⇒ run 逐位沿用 WP-57 的既有行為。
+ */
+export interface WideMouseCaptureOptions {
+  readonly samples: readonly WideMouseSample[];
+  /** 省略／`false` = 決定性對照組（只跑既有聚合流）。 */
+  readonly recordMouseSamples?: boolean;
+  /** 溢位情境用的容量覆寫；省略走 `mouseSampleCapacityForDrill()` 的預設推導。 */
+  readonly mouseSampleCapacity?: number;
+}
+
 export interface WideRunOptions {
   /**
    * NFR-57.5：在**第 n 個幀邊界之後**改變 camera 的 aspect／FOV（模擬 run 內 resize 或解析度模式
    * 切換）。spawn 幾何若真的只在 arm 時解析一次，這裡怎麼改都不能動到 spawn 序列。
    */
   readonly resizeAfterFrame?: { readonly frameIndex: number; readonly aspect: number; readonly fovDeg: number };
+  /** WP-60 / T2：見 [`WideMouseCaptureOptions`](#)。 */
+  readonly mouseCapture?: WideMouseCaptureOptions;
 }
+
+/**
+ * WP-60 / T2：本 fixture 的感度 gain 單一來源（`sensitivity: 1` × 出貨 hip FOV）。走生產的
+ * `resolveMouseGain()`，故測試不可能與 app 的換算發散（KI-005 / A 的單一定義紀律）。
+ */
+export const FIXTURE_MOUSE_GAIN = resolveMouseGain({ sensitivity: 1, hipFovDeg: FIXTURE_FOV_DEG });
 
 export function runWide(absTimes: readonly number[], options: WideRunOptions = {}): WideRun {
   const config = wideDrillConfig();
   const state = createSharedState();
   const clock: Clock = { now: () => CLOCK_BASE };
-  const recorder = createDataRecorder({ simHz: SIM_HZ });
+  const mouseCapture = options.mouseCapture;
+  const recorder = createDataRecorder({
+    simHz: SIM_HZ,
+    ...(mouseCapture !== undefined ? { mouseIntegration: { gain: FIXTURE_MOUSE_GAIN } } : {}),
+    ...(mouseCapture?.recordMouseSamples === true ? { recordMouseSamples: true } : {}),
+    ...(mouseCapture?.mouseSampleCapacity !== undefined
+      ? { mouseSampleCapacity: mouseCapture.mouseSampleCapacity }
+      : {}),
+  });
   const targetManager = createTargetManager(config);
   const drillRunner = createDrillRunner(state, targetManager);
   const camera = createCamera();
@@ -128,8 +171,26 @@ export function runWide(absTimes: readonly number[], options: WideRunOptions = {
     pushEvent(state, { type: 'fire', down: false, t: downMs + 20 });
   }
 
+  // WP-60 / T2：合成樣本**漸進**入 ring（輸入 ring 只有 512 槽，一次全推會溢位並靜默丟資料）。
+  // 每幀 pump 前推入 `t <= 該幀時間` 的樣本 —— sim 邏輯時鐘恆 ≤ 幀時間，故本 tick 需要的樣本必然
+  // 已在 ring 內；事件落哪個 tick 只由 `t` 與固定 tick 邊界決定（GD-3），與推入時機無關。
+  let mouseCursor = 0;
+  function pushDueMouseSamples(untilMs: number): void {
+    if (mouseCapture === undefined) return;
+    const samples = mouseCapture.samples;
+    while (mouseCursor < samples.length && samples[mouseCursor].t <= untilMs) {
+      const sample = samples[mouseCursor];
+      // 拒收即代表 ring 已滿 —— 靜默丟樣本會讓 parity 斷言比較兩份都殘缺的資料，故立即爆掉。
+      if (!pushEvent(state, { type: 'mouse', dx: sample.dx, dy: sample.dy, t: sample.t })) {
+        throw new Error(`input ring full while feeding mouse sample #${mouseCursor} (t=${sample.t})`);
+      }
+      mouseCursor++;
+    }
+  }
+
   let ticks = 0;
   for (let i = 0; i < absTimes.length; i++) {
+    pushDueMouseSamples(absTimes[i]);
     ticks += sim.pump(absTimes[i]).ticks;
     const resize = options.resizeAfterFrame;
     if (resize !== undefined && i === resize.frameIndex) {
@@ -146,6 +207,8 @@ export function runWide(absTimes: readonly number[], options: WideRunOptions = {
     tx: tick.tx ?? null,
     ty: tick.ty ?? null,
     tz: tick.tz ?? null,
+    dYaw: tick.dYaw ?? null,
+    dPitch: tick.dPitch ?? null,
   }));
 
   const spawnIds: string[] = [];

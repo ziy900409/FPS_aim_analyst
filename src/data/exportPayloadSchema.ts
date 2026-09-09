@@ -3,6 +3,7 @@ import type {
   AssessmentMeta,
   Meta,
   MouseIntegrationMeta,
+  MouseSamplingMeta,
   ProtocolMeta,
   ReplayMeta,
   SceneMeta,
@@ -15,6 +16,7 @@ import type {
 } from './metadata.ts';
 import type { KeyName, TickRecord } from './RingBuffer.ts';
 import type { DrillEvent } from './DataRecorder.ts';
+import type { MouseSampleBlock } from './mouseSampleArena.ts';
 import type { TargetHitboxConfig } from '../drill/DrillConfig.ts';
 import type { DisplaySelfReport, DisplayState } from '../display/resolutionMode.ts';
 import type { GateReport } from '../display/eligibilityGate.ts';
@@ -51,11 +53,53 @@ export function parseExportPayload(value: unknown): ExportPayloadParseResult {
   const meta = parseMeta(metaRaw, errors);
   const ticks = parseTicks(ticksRaw, errors);
   const events = parseEvents(eventsRaw, errors);
+  const mouseSamples =
+    root.mouseSamples === undefined ? undefined : parseMouseSampleBlock(root.mouseSamples, 'mouseSamples', errors);
   if (meta === undefined || ticks === undefined || events === undefined) {
     return { ok: false, errors };
   }
+  if (root.mouseSamples !== undefined && mouseSamples === undefined) return { ok: false, errors };
+  if (meta.mouseSampling !== undefined && mouseSamples === undefined) {
+    return {
+      ok: false,
+      errors: [
+        ...errors,
+        {
+          path: 'mouseSamples',
+          code: 'invalid_value',
+          message: 'mouseSamples must be present when meta.mouseSampling is present',
+        },
+      ],
+    };
+  }
+  if (mouseSamples !== undefined && meta.mouseSampling === undefined) {
+    return {
+      ok: false,
+      errors: [
+        ...errors,
+        {
+          path: 'meta.mouseSampling',
+          code: 'invalid_value',
+          message: 'meta.mouseSampling must be present when mouseSamples is present',
+        },
+      ],
+    };
+  }
+  if (meta.mouseSampling !== undefined && mouseSamples !== undefined && meta.mouseSampling.recorded !== mouseSamples.dtUs.length) {
+    return {
+      ok: false,
+      errors: [
+        ...errors,
+        {
+          path: 'meta.mouseSampling.recorded',
+          code: 'invalid_value',
+          message: 'meta.mouseSampling.recorded must match mouseSamples.dtUs length',
+        },
+      ],
+    };
+  }
 
-  return { ok: true, payload: { meta, ticks, events } };
+  return { ok: true, payload: { meta, ticks, events, ...(mouseSamples !== undefined ? { mouseSamples } : {}) } };
 }
 
 /**
@@ -229,6 +273,36 @@ function parseNumberArray(
   return failed ? undefined : result;
 }
 
+function parseMouseSampleBlock(
+  value: unknown,
+  path: string,
+  errors: ExportPayloadParseError[],
+): MouseSampleBlock | undefined {
+  const record = parseRecord(value, path, errors);
+  if (record === undefined) return undefined;
+  const before = errors.length;
+  const t0Ms = parseFiniteNumber(record.t0Ms, `${path}.t0Ms`, errors);
+  const dtUsRaw = parseArray(record.dtUs, `${path}.dtUs`, errors);
+  const dxRaw = parseArray(record.dx, `${path}.dx`, errors);
+  const dyRaw = parseArray(record.dy, `${path}.dy`, errors);
+  const dtUs =
+    dtUsRaw === undefined
+      ? undefined
+      : parseNumberArray(dtUsRaw, `${path}.dtUs`, errors, parseNonNegativeInteger);
+  const dx = dxRaw === undefined ? undefined : parseNumberArray(dxRaw, `${path}.dx`, errors, parseFiniteNumber);
+  const dy = dyRaw === undefined ? undefined : parseNumberArray(dyRaw, `${path}.dy`, errors, parseFiniteNumber);
+  if (dtUs !== undefined && dx !== undefined && dx.length !== dtUs.length) {
+    fail(errors, `${path}.dx`, 'invalid_value', `${path}.dx length must match ${path}.dtUs length`);
+  }
+  if (dtUs !== undefined && dy !== undefined && dy.length !== dtUs.length) {
+    fail(errors, `${path}.dy`, 'invalid_value', `${path}.dy length must match ${path}.dtUs length`);
+  }
+  if (t0Ms === undefined || dtUs === undefined || dx === undefined || dy === undefined || errors.length > before) {
+    return undefined;
+  }
+  return { t0Ms, dtUs, dx, dy };
+}
+
 // ---------------------------------------------------------------------------
 // Meta and its nested contracts
 // ---------------------------------------------------------------------------
@@ -309,6 +383,7 @@ function parseMeta(raw: Record<string, unknown>, errors: ExportPayloadParseError
   const mouseIntegration =
     raw.mouseIntegration === undefined ? undefined : parseMouseIntegrationMeta(raw.mouseIntegration, 'meta.mouseIntegration', errors);
   const replay = raw.replay === undefined ? undefined : parseReplayMeta(raw.replay, 'meta.replay', errors);
+  const mouseSampling = raw.mouseSampling === undefined ? undefined : parseMouseSamplingMeta(raw.mouseSampling, 'meta.mouseSampling', errors);
 
   if (
     drillId === undefined ||
@@ -383,7 +458,39 @@ function parseMeta(raw: Record<string, unknown>, errors: ExportPayloadParseError
     ...(visibility !== undefined ? { visibility } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
     ...(replay !== undefined ? { replay } : {}),
+    ...(mouseSampling !== undefined ? { mouseSampling } : {}),
   };
+}
+
+function parseMouseSamplingMeta(
+  value: unknown,
+  path: string,
+  errors: ExportPayloadParseError[],
+): MouseSamplingMeta | undefined {
+  const record = parseRecord(value, path, errors);
+  if (record === undefined) return undefined;
+  const before = errors.length;
+  const recorded = parseNonNegativeInteger(record.recorded, `${path}.recorded`, errors);
+  const capacity = parsePositiveInteger(record.capacity, `${path}.capacity`, errors);
+  const overflow = parseBoolean(record.overflow, `${path}.overflow`, errors);
+  const timeSource = parseLiteral(record.timeSource, `${path}.timeSource`, ['event.timeStamp'] as const, errors);
+  const deltaUnit = parseLiteral(record.deltaUnit, `${path}.deltaUnit`, ['counts'] as const, errors);
+  const observedRateHz = parseNonNegativeFiniteNumber(record.observedRateHz, `${path}.observedRateHz`, errors);
+  if (recorded !== undefined && capacity !== undefined && recorded > capacity) {
+    fail(errors, `${path}.recorded`, 'invalid_value', `${path}.recorded must be less than or equal to ${path}.capacity`);
+  }
+  if (
+    recorded === undefined ||
+    capacity === undefined ||
+    overflow === undefined ||
+    timeSource === undefined ||
+    deltaUnit === undefined ||
+    observedRateHz === undefined ||
+    errors.length > before
+  ) {
+    return undefined;
+  }
+  return { recorded, capacity, overflow, timeSource, deltaUnit, observedRateHz };
 }
 
 function parseReplayMeta(value: unknown, path: string, errors: ExportPayloadParseError[]): ReplayMeta | undefined {
@@ -947,6 +1054,8 @@ function parseDrillEvent(value: unknown, path: string, errors: ExportPayloadPars
       return parseTargetStopEvent(record, path, errors);
     case 'key':
       return parseKeyEvent(record, path, errors);
+    case 'pointer_lock':
+      return parsePointerLockEvent(record, path, errors);
     case 'fire':
       return parseFireEvent(record, path, errors);
     case 'hit':
@@ -960,6 +1069,14 @@ function parseDrillEvent(value: unknown, path: string, errors: ExportPayloadPars
     default:
       return fail(errors, `${path}.type`, 'invalid_value', `${path}.type is not a supported event discriminant`);
   }
+}
+
+function parsePointerLockEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {
+  const before = errors.length;
+  const locked = parseBoolean(record.locked, `${path}.locked`, errors);
+  const t = parseFiniteNumber(record.t, `${path}.t`, errors);
+  if (locked === undefined || t === undefined || errors.length > before) return undefined;
+  return { type: 'pointer_lock', locked, t };
 }
 
 function parseVisibleEvent(record: Record<string, unknown>, path: string, errors: ExportPayloadParseError[]): DrillEvent | undefined {

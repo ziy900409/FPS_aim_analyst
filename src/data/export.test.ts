@@ -104,6 +104,34 @@ describe('data export', () => {
     expect(payload.meta.suspect).toBe(false);
   });
 
+  it('adds raw mouse sample blocks and provenance without marking tick data suspect (WP-60 / T1)', () => {
+    const payload = buildExportPayload(meta, {
+      ticks: [],
+      events: [],
+      recorderOverflow: false,
+      mouseSamples: { t0Ms: 100, dtUs: [0, 1000], dx: [2, -1], dy: [0, 3] },
+      mouseSampling: {
+        recorded: 2,
+        capacity: 2,
+        overflow: true,
+        timeSource: 'event.timeStamp',
+        deltaUnit: 'counts',
+        observedRateHz: 1000,
+      },
+    });
+
+    expect(payload.meta.suspect).toBe(false);
+    expect(payload.meta.mouseSampling).toEqual({
+      recorded: 2,
+      capacity: 2,
+      overflow: true,
+      timeSource: 'event.timeStamp',
+      deltaUnit: 'counts',
+      observedRateHz: 1000,
+    });
+    expect(payload.mouseSamples).toEqual({ t0Ms: 100, dtUs: [0, 1000], dx: [2, -1], dy: [0, 3] });
+  });
+
   it('serializes JSON as meta, ticks, and events', () => {
     const json = serializeJSON(buildExportPayload(meta, snapshot));
     const parsed = JSON.parse(json) as ExportPayload;

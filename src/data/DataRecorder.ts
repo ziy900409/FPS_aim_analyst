@@ -5,6 +5,12 @@ import {
   type TickRecordInput,
   type TickSourceState,
 } from './RingBuffer.ts';
+import {
+  MouseSampleArena,
+  mouseSampleCapacityForDrill,
+  type MouseSampleBlock,
+} from './mouseSampleArena.ts';
+import type { MouseSamplingMeta } from './metadata.ts';
 import { createAimIntegrator, type MouseGain } from '../input/mouseGain.ts';
 
 export type DrillEvent =
@@ -40,6 +46,8 @@ export type DrillEvent =
   // 鍵名（`A`/`D`/`W`/`S`，對齊 `ticks[].keys`，不引入第二套鍵名慣例）。**opt-in**：僅 `recordKeyEvents` 啟用時
   // 由 `SimLoop.applyInput` 寫入（預設關閉 → 既有匯出/測試/golden 逐位不變，additive 相容）。
   | { type: 'key'; code: string; down: boolean; t: number }
+  /** WP-60 / T1：Pointer Lock 狀態變化事件。缺席 = pre-WP-60 或未啟用 raw mouse sampling。 */
+  | { type: 'pointer_lock'; locked: boolean; t: number }
   | {
       type: 'fire';
       t: number;
@@ -99,6 +107,8 @@ export interface DataRecorderSnapshot {
   ticks: TickRecord[];
   events: DrillEvent[];
   recorderOverflow: boolean;
+  mouseSamples?: MouseSampleBlock;
+  mouseSampling?: MouseSamplingMeta;
 }
 
 /** KI-005 / A（FR-A-1）：tick 窗積分 mouse delta 所需的感度 gain（來源 = `resolveMouseGain`）。 */
@@ -117,6 +127,8 @@ export interface DataRecorder {
    * 故 `applyInput`/`simStep` 簽章不變；停用時 `applyInput` 完全不配置 key 事件物件（GC 紀律 §4）。
    */
   readonly recordKeyEvents: boolean;
+  /** WP-60 / T1：是否記錄 raw mouse sample contract（預設 `false`；T2 才接 SimLoop）。 */
+  readonly recordMouseSamples: boolean;
   /** KI-005 / A（FR-A-1）：未啟用時為 `undefined`；`applyInput` 以此判定是否進入 mouse 分支。 */
   readonly mouseIntegration?: MouseIntegrationConfig;
   /**
@@ -129,6 +141,7 @@ export interface DataRecorder {
    * `state.heldAds`（ads 事件與 mouse 事件在同一 consume 迴圈內依 timeStamp 排序）。
    */
   accumulateMouse(dx: number, dy: number, ads: boolean): void;
+  recordMouseSample(dx: number, dy: number, tMs: number): boolean;
   recordTick(record: TickRecordInput): void;
   recordTickFromState(t: number, state: TickSourceState): void;
   recordEvent(event: DrillEvent): void;
@@ -143,14 +156,23 @@ export interface DataRecorderOptions {
   capacity?: number;
   /** WP-29 / T3：啟用 additive `key` 事件記錄（預設 `false`；見 `DataRecorder.recordKeyEvents`）。 */
   recordKeyEvents?: boolean;
+  /** WP-60 / T1：啟用 additive raw mouse sample 記錄（預設 `false`；T2 才接線）。 */
+  recordMouseSamples?: boolean;
+  /** 測試/特殊研究用覆寫；一般 production 使用 `maxDrillSeconds` 推導容量。 */
+  mouseSampleCapacity?: number;
   /** KI-005 / A（FR-A-1）：啟用 tick 窗 mouse 積分；省略 = 關閉 ⇒ 匯出逐位不變（NFR-A-2）。 */
   mouseIntegration?: MouseIntegrationConfig;
 }
 
 export function createDataRecorder(options: DataRecorderOptions = {}): DataRecorder {
-  const capacity = options.capacity ?? capacityForDrill(options.simHz ?? 128, options.maxDrillSeconds, options.extraTicks);
+  const maxDrillSeconds = options.maxDrillSeconds;
+  const capacity = options.capacity ?? capacityForDrill(options.simHz ?? 128, maxDrillSeconds, options.extraTicks);
   const recordKeyEvents = options.recordKeyEvents ?? false;
+  const recordMouseSamples = options.recordMouseSamples ?? false;
   const ticks = new TickArena(capacity);
+  const mouseSamples = recordMouseSamples
+    ? new MouseSampleArena(options.mouseSampleCapacity ?? mouseSampleCapacityForDrill(maxDrillSeconds ?? 300))
+    : undefined;
   const events: DrillEvent[] = [];
   let fireCount = 0;
   let hitCount = 0;
@@ -172,6 +194,7 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
   return {
     capacity,
     recordKeyEvents,
+    recordMouseSamples,
     get mouseIntegration(): MouseIntegrationConfig | undefined {
       return mouseIntegration;
     },
@@ -197,6 +220,9 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
       dYawAccum += delta.dYaw;
       dPitchAccum += delta.dPitch;
     },
+    recordMouseSample(dx: number, dy: number, tMs: number): boolean {
+      return mouseSamples?.record(dx, dy, tMs) ?? false;
+    },
     recordTick(record: TickRecordInput): void {
       const m = consumeMouseAccum();
       ticks.recordTick(record, m?.dYaw, m?.dPitch);
@@ -216,10 +242,24 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
     },
     snapshot(): DataRecorderSnapshot {
       const tickSnapshot = ticks.snapshot();
+      const mouseSampleSnapshot = mouseSamples?.snapshot();
       return {
         ticks: tickSnapshot.ticks,
         events: events.slice(),
         recorderOverflow: tickSnapshot.recorderOverflow,
+        ...(mouseSampleSnapshot !== undefined
+          ? {
+              mouseSamples: mouseSampleSnapshot.samples,
+              mouseSampling: {
+                recorded: mouseSampleSnapshot.recorded,
+                capacity: mouseSampleSnapshot.capacity,
+                overflow: mouseSampleSnapshot.overflow,
+                timeSource: 'event.timeStamp',
+                deltaUnit: 'counts',
+                observedRateHz: mouseSampleSnapshot.observedRateHz,
+              },
+            }
+          : {}),
       };
     },
     reset(): void {
@@ -228,6 +268,7 @@ export function createDataRecorder(options: DataRecorderOptions = {}): DataRecor
       fireCount = 0;
       hitCount = 0;
       aimIntegrator.reset();
+      mouseSamples?.reset();
       dYawAccum = 0;
       dPitchAccum = 0;
     },

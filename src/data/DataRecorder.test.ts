@@ -178,6 +178,51 @@ describe('DataRecorder tick arena', () => {
     expect(createDataRecorder({ capacity: 1, recordKeyEvents: true }).recordKeyEvents).toBe(true);
   });
 
+  it('recordMouseSamples defaults to false and omits raw sample fields from snapshots (WP-60 / T1)', () => {
+    const recorder = createDataRecorder({ capacity: 1 });
+
+    expect(recorder.recordMouseSamples).toBe(false);
+    expect(recorder.recordMouseSample(1, 2, 3)).toBe(false);
+    expect(recorder.snapshot()).toEqual({ ticks: [], events: [], recorderOverflow: false });
+  });
+
+  it('recordMouseSamples opt-in captures a columnar raw sample block with provenance', () => {
+    const recorder = createDataRecorder({ capacity: 1, recordMouseSamples: true, mouseSampleCapacity: 3 });
+
+    expect(recorder.recordMouseSamples).toBe(true);
+    expect(recorder.recordMouseSample(2, -1, 100)).toBe(true);
+    expect(recorder.recordMouseSample(0, 3, 101)).toBe(true);
+    expect(recorder.recordMouseSample(-4, 5, 102.5)).toBe(true);
+
+    expect(recorder.snapshot()).toEqual({
+      ticks: [],
+      events: [],
+      recorderOverflow: false,
+      mouseSamples: { t0Ms: 100, dtUs: [0, 1000, 1500], dx: [2, 0, -4], dy: [-1, 3, 5] },
+      mouseSampling: {
+        recorded: 3,
+        capacity: 3,
+        overflow: false,
+        timeSource: 'event.timeStamp',
+        deltaUnit: 'counts',
+        observedRateHz: 800,
+      },
+    });
+  });
+
+  it('raw sample overflow is independent from tick recorder overflow', () => {
+    const recorder = createDataRecorder({ capacity: 2, recordMouseSamples: true, mouseSampleCapacity: 1 });
+
+    recorder.recordMouseSample(1, 1, 10);
+    expect(recorder.recordMouseSample(2, 2, 11)).toBe(false);
+
+    const snapshot = recorder.snapshot();
+    expect(snapshot.recorderOverflow).toBe(false);
+    expect(snapshot.mouseSampling?.overflow).toBe(true);
+    expect(snapshot.mouseSampling?.recorded).toBe(1);
+    expect(snapshot.mouseSamples).toEqual({ t0Ms: 10, dtUs: [0], dx: [1], dy: [1] });
+  });
+
   it('stores additive key events verbatim without touching fire/hit counts (WP-29 / T3)', () => {
     const recorder = createDataRecorder({ capacity: 1, recordKeyEvents: true });
 
@@ -189,6 +234,20 @@ describe('DataRecorder tick arena', () => {
     expect(recorder.snapshot().events).toEqual([
       { type: 'key', code: 'A', down: true, t: 5 },
       { type: 'key', code: 'A', down: false, t: 20 },
+    ]);
+  });
+
+  it('stores additive pointer_lock events verbatim without touching fire/hit counts (WP-60 / T1)', () => {
+    const recorder = createDataRecorder({ capacity: 1, recordMouseSamples: true });
+
+    recorder.recordEvent({ type: 'pointer_lock', locked: true, t: 5 });
+    recorder.recordEvent({ type: 'pointer_lock', locked: false, t: 20 });
+
+    expect(recorder.fireCount).toBe(0);
+    expect(recorder.hitCount).toBe(0);
+    expect(recorder.snapshot().events).toEqual([
+      { type: 'pointer_lock', locked: true, t: 5 },
+      { type: 'pointer_lock', locked: false, t: 20 },
     ]);
   });
 });

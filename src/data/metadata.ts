@@ -134,6 +134,16 @@ export interface SessionPlanItemMeta {
   readonly reps: number;
 }
 
+export interface MouseSamplingMeta {
+  readonly recorded: number;
+  readonly capacity: number;
+  /** Raw mouse sampling overflow is independent from `Meta.suspect`; tick data remains valid. */
+  readonly overflow: boolean;
+  readonly timeSource: 'event.timeStamp';
+  readonly deltaUnit: 'counts';
+  readonly observedRateHz: number;
+}
+
 export interface Meta {
   schemaVersion: 2;
   drillId: string;
@@ -234,6 +244,8 @@ export interface Meta {
   mouseIntegration?: MouseIntegrationMeta;
   /** WP-50 / T1: present iff the recorder captured `ticks[].replayTargetId` (see `ReplayMeta`). */
   replay?: ReplayMeta;
+  /** WP-60 / T1: provenance for optional top-level `mouseSamples`. Absence = pre-WP-60 or disabled. */
+  mouseSampling?: MouseSamplingMeta;
 }
 
 export interface MouseIntegrationMeta {
@@ -293,6 +305,7 @@ export interface CollectMetaArgs {
   protocolGuard?: ProtocolGuardMeta;
   visibility?: VisibilityMeta;
   mouseIntegration?: MouseIntegrationMeta;
+  mouseSampling?: MouseSamplingMeta;
 }
 
 export interface MeasureDisplayHzOptions {
@@ -367,6 +380,7 @@ export function collectMeta(args: CollectMetaArgs): Meta {
   const protocolGuard = args.protocolGuard === undefined ? undefined : requireProtocolGuardMeta(args.protocolGuard);
   const mouseIntegration =
     args.mouseIntegration === undefined ? undefined : requireMouseIntegrationMeta(args.mouseIntegration);
+  const mouseSampling = args.mouseSampling === undefined ? undefined : requireMouseSamplingMeta(args.mouseSampling);
   const weapon = args.weapon === undefined ? undefined : requireWeaponMeta(args.weapon);
   const targets = args.targets === undefined ? undefined : requireTargetsMeta(args.targets);
   const frameFloorSuspect = frames !== undefined && frames.summary.p95 > PERF_FLOOR_MS;
@@ -417,9 +431,27 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     ...(protocolGuard !== undefined ? { protocolGuard } : {}),
     ...(visibility !== undefined ? { visibility } : {}),
     ...(mouseIntegration !== undefined ? { mouseIntegration } : {}),
+    ...(mouseSampling !== undefined ? { mouseSampling } : {}),
     // WP-50 / T1: `TickArena.recordState` always captures `replayTargetId` (D-50-P6～P8) — this
     // recorder version never omits it, so the marker is unconditional (not opt-in like mouseIntegration).
     replay: { replaySchemaVersion: 1 },
+  };
+}
+
+function requireMouseSamplingMeta(value: unknown): MouseSamplingMeta {
+  const mouseSampling = requireRecord(value, 'mouseSampling');
+  const recorded = requireNonNegativeInteger(mouseSampling.recorded, 'mouseSampling.recorded');
+  const capacity = requirePositiveInteger(mouseSampling.capacity, 'mouseSampling.capacity');
+  if (recorded > capacity) throw new Error('mouseSampling.recorded must be less than or equal to mouseSampling.capacity');
+  if (mouseSampling.timeSource !== 'event.timeStamp') throw new Error('mouseSampling.timeSource must be event.timeStamp');
+  if (mouseSampling.deltaUnit !== 'counts') throw new Error('mouseSampling.deltaUnit must be counts');
+  return {
+    recorded,
+    capacity,
+    overflow: requireBoolean(mouseSampling.overflow, 'mouseSampling.overflow'),
+    timeSource: 'event.timeStamp',
+    deltaUnit: 'counts',
+    observedRateHz: requireNonNegativeFiniteNumber(mouseSampling.observedRateHz, 'mouseSampling.observedRateHz'),
   };
 }
 
