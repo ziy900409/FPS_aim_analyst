@@ -448,8 +448,8 @@
     "hash": "36499d940b0ed1454b5eda2f51e4de17"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\scripts\\spiderWideRepositioningRunner.ts": {
-    "mtime": 1788946052.7524478,
-    "hash": "26f900339c0dcf59123cb3f49f6fd512"
+    "mtime": 1788947559.1698859,
+    "hash": "531b74907c842ce26fcd4102cb8a8b48"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\scripts\\trackingContactRunner.ts": {
     "mtime": 1788875253.2313852,
@@ -2320,8 +2320,8 @@
     "hash": "9d4f0a01040c1aeb2cacc29e4e7ba7ad"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\regression\\spider-wide-repositioning-runner.test.ts": {
-    "mtime": 1788945346.3275156,
-    "hash": "03166eaa5b78f8833f8b1d566b1feda3"
+    "mtime": 1788947608.1634655,
+    "hash": "9b9da0d2655b9b242102bddfea17fd64"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\tests\\regression\\spider-wide-schedule-invariants.test.ts": {
     "mtime": 1788875253.7700098,
@@ -2616,12 +2616,12 @@
     "hash": "9cbde5ef80038699df6d2702ace9c8af"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\DECISIONS.md": {
-    "mtime": 1788875252.1038256,
-    "hash": "dccef9c1c7e106a8e9c8657c6f5bc67c"
+    "mtime": 1788948666.4963672,
+    "hash": "5ca7357b175b23e8759f5865d7de8683"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\README.md": {
-    "mtime": 1788875252.105054,
-    "hash": "490d1ce4d54d83fb6332547bd36a8a7f"
+    "mtime": 1788948694.0523775,
+    "hash": "6e6fdd561e6012a3ebda3019c549f7de"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage10\\progress.md": {
     "mtime": 1788875252.107066,
@@ -3068,20 +3068,20 @@
     "hash": "353adaacb52d86a378b3008e1e5a0767"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\README.md": {
-    "mtime": 1788942744.5157464,
-    "hash": "377053bc2c593486267356eb582f7c66"
+    "mtime": 1788948591.1265135,
+    "hash": "501dfffcbb5aa553e0240a6b59f8a0db"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\progress.md": {
-    "mtime": 1788946529.3082702,
-    "hash": "353059514d7b519779fc782987ae1681"
+    "mtime": 1788948535.276545,
+    "hash": "eff3c4a434ab95454c6af1fd108dafae"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\README.md": {
     "mtime": 1788875252.235098,
     "hash": "1cfc6c42f3766c56817d2527935eed79"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\T-exit-gate.md": {
-    "mtime": 1788942717.9109888,
-    "hash": "6d4bebb7d5c71c57ff44eb322f6dd984"
+    "mtime": 1788952056.141765,
+    "hash": "82dc4c00de984337d192c5a4758a1a1a"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\T0-entry-gate.md": {
     "mtime": 1788942715.135424,
@@ -3104,8 +3104,8 @@
     "hash": "e9d4e9ec08003c736c4b7d7326da8d32"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\task-checklist.md": {
-    "mtime": 1788946541.164424,
-    "hash": "66ebf3da427fa83fedf881c6cf48f827"
+    "mtime": 1788948565.2251523,
+    "hash": "c19cb5501c915b264848f23b58df9387"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\exec-plan\\active\\stage13\\wp-61-lift-off-validation\\README.md": {
     "mtime": 1788942625.3832026,
@@ -5156,8 +5156,8 @@
     "hash": "919a9dd10f9329d3d534091a2f57c476"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\operational\\spider-wide-recording-spec.md": {
-    "mtime": 1788946195.7555323,
-    "hash": "89a27d4724d73795840f31f881599e3f"
+    "mtime": 1788947776.5990584,
+    "hash": "1fb75979df7b412de398bf1af04c1b12"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\.worktrees\\wp-60-raw-mouse-t1\\docs\\operational\\timing-validity.md": {
     "mtime": 1788875252.7943926,
