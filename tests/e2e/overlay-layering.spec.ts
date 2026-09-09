@@ -98,9 +98,12 @@ test('session launch controls do not overlap the settings panel', async ({ page 
   // WP-43 T1：兩個主入口 + WP-49 T1「歷史紀錄」入口 + 保留的 legacy「實驗 session」。
   await expect.poll(() => overlapsSettingsPanel(4), { timeout: 15_000 }).toEqual([]);
 
-  // 展開研究員三項子選單後，top-left flex layout 仍須把 Settings panel 往下推開。
+  // 展開研究員子選單後，top-left flex layout 仍須把 Settings panel 往下推開。
+  // 子選單 append 進 `#session-launch-controls`，所以展開後的按鈕數 = 4 個啟動入口 + 研究員項目。
+  // WP-54 T6（2026-09-03）新增第四個研究員入口「Tracking pilot」後這個守衛數字就過期了：它固定
+  // 回 null、poll 只能逾時，因此本檔自 2026-09-03 起一直是紅的（WP-58 T6 對帳時發現）。
   await page.getByRole('button', { name: '研究員模式', exact: true }).click();
-  await expect.poll(() => overlapsSettingsPanel(7), { timeout: 15_000 }).toEqual([]);
+  await expect.poll(() => overlapsSettingsPanel(8), { timeout: 15_000 }).toEqual([]);
 });
 
 test('KI-013：切換研究員模式 / 單一 Drill 調整不拋 TDZ ReferenceError', async ({ page }) => {

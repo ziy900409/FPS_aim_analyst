@@ -16,6 +16,8 @@
 
 - **2026-09-08**：**T5 完成**。匯出 metadata 新增 5 個 additive optional 欄位記錄實際執行的 program（`sessionPlanMode`／`sessionPlanItems`／`sessionPlanDrillRestSeconds`／`sessionPlanItemIndex`／`sessionPlanRepIndex`），寫入端對 `FAMILY_BY_DRILL_ID` 嚴驗、讀取端只驗形狀；`sessionPlanMode==='custom'` 的 run 由 `DrillMetricRegistry.project()` 以新的 `excluded-cohort` status 排除於 frozen trend cohort （history 保存不受影響，OQ-58.4）。frozen 軌匯出**逐位不變**（不寫 `sessionPlanMode`，D-58-T5-1）。8 個既有 fixture 的 canonical JSON digest 逐位相同；`research/` ingest 零修改相容。新增 **66 個測試**；全量 Vitest **2,661 passed／2 skipped**；typecheck／build exit 0；`session-orchestrator.spec.ts` **8 條零修改**全綠。詳見 §T5。
 
+- **2026-09-09**：**T6 完成**。`session-orchestrator.spec.ts` **擴充既有 spec**（未新開平行 spec）：4 條自訂 program 表單 DOM 案例 + 3 條真實瀏覽器 live run（custom 3 家族 × 2 reps 的 11 步、逐段休息時長、6 份唯一匯出、收工狀態；frozen 兩家族；program 中途載入失敗中止）。live run 需要一條**只跳過資格閘「拒入」、不偽造「通過」**的 dev-only seam——資格閘在自動化下不可能通過（實測 perf p95 16.83 ms vs 120 Hz 地板 8.33 ms）。全量 Vitest **2,661 passed／2 skipped**（與 T5 相同，T6 未加 Vitest 測試）；全量 Playwright **99 passed**、exit 0；build／typecheck exit 0；`graphify update .` 已同步。首跑的 4 個紅燈皆**與 WP-58 無關**（3 條為累積 1,327 個 participant 目錄的暫存 root 腐化、1 條為 WP-54 T6 起就過期的守衛數），逐一歸因見 §T6 §7。另發現 **OQ-58.6**（frozen 軌 `tracking` 家族開場即中止）與 **OQ-58.7**，交 T-exit。詳見 §T6
+
 ## Decision Log
 
 - **D-58-P1 / 次數語意**：「設定 drill 次數」= **reps（重複跑 N 輪）**，不是修改 drill 內的 `endCondition.value`。排程層永不寫 drill 參數，`protocolVersion 1.0.0` 與跨 session 可比性不受影響。
@@ -39,6 +41,8 @@
 - **OQ-58.2**：三輪匯出的檔名唯一性。✅ **已收斂（使用者，2026-09-08）：不加 rep 序號**。`exportBasename` 已含每次 `activateDrill()` 重設的毫秒級 `startedAt`，實測三輪唯一；T5 只補唯一性回歸測試，不改格式。證據見 §T0 §4。 **T5 已落地**：`exportBasename` 零修改，回歸測試釘死「5 個 run step → 5 個唯一檔名」並反向明寫同毫秒撞名的已知邊界（§T5 §4b）。
 - **OQ-58.3**：休息 overlay 是否顯示邊界種類與下一個 drill。✅ **T4 依規劃建議的預設值落地（要，2026-09-08）**：`show(remainingMs, detail?)` 新增 optional `{ boundary, nextDrillId }`，兩個值皆直接取自編譯後的 `RestStep`，因此 overlay 與預覽表**不可能不一致**（共用 `programBoundaryLabel.ts` 單一詞彙表）。省略 detail 時逐位回到 WP-58 之前的兩行倒數。
 - **OQ-58.4**：`custom` session 是否可進 history。✅ **已收斂（使用者，2026-09-08）：沿用既有兩道閘（`DrillConfig.mode` + exact-id registry），額外標記 `sessionPlanMode`**，**不**在 `HistoryPersistence` 新增第三道攔截；隔離落在 T5 的 trend cohort 判定層。證據見 §T0 §6。**T5 已落地**：`DrillMetricRegistry.project()` 對 `sessionPlanMode === 'custom'` 回 `excluded-cohort`；`HistoryPersistence` 零修改，並補一條「custom 的 assessment run 仍照常保存」正向測試。
+- **OQ-58.6**：frozen 軌 `tracking` 家族的代表 drill `tracking_v1` 未綁 `sceneId`，於開機場景 `field-low` 載入即 clearance throw ⇒ 勾選該家族的 frozen session **開場即中止**。⬜ **待 owner 決策（T6 新增，建議列為 T-exit blocker）**。T6 已用真實 e2e 釘死此故障，未逕行修改 production 語意。證據與兩個候選修法見 §T6。
+- **OQ-58.7**：中止的 session 不呼叫 `experimentSession.exit()`（`active` 停在 `true`）。⬜ 待決（T6 新增）；現況已由失效案例斷言釘死。
 - **OQ-58.5**：stage12 是否需要獨立里程碑（下一個可用編號 **M22**；M20／M21 已由 stage11 WP-54／WP-55 取用）。⬜ 待 stage12 範圍收斂（**非 T0 exit blocker**）。
 
 ---
@@ -525,3 +529,95 @@ PoC 重建 `activateDrill()` 每 rep 重建的整條物件圖（`loadDrill` → 
 - **`invalid-metric` 差一點就成為預設解**。重用既有 variant 是零型別改動的路，但把 UI 文案讀出來（「無法計算（projection 失敗或不支援）」）就看得出它會對操作員說錯話。C-D3 的「寧可少一個指標，不能有一個會說錯話的指標」在這裡不是關於指標本身,而是關於**指標為什麼不在那裡**的說明。
 - **FR-58.14 與 FR-58.10 在 frozen 軌上是直接衝突的**，規劃時兩條各自看都合理（「記錄 mode」vs「匯出逐位不變」),放在一起才發現不能同時成立。這類衝突只有在寫到那一行時才會現形——記為 D-58-T5-1 而不是靜默選一邊。
 
+---
+
+## T6 — 端到端整合與回歸對帳（2026-09-09）✅
+
+### 1. 交付物
+
+| 檔案 | 動作 | 內容 |
+|---|---|---|
+| `tests/e2e/session-orchestrator.spec.ts` | **擴充既有 spec**（未新開平行 Session Plan spec） | 4 條表單 DOM 案例（模式切換／分組選單／**11 步預覽逐屬性對表**／同家族相鄰邊界／非法 reps 禁用提交／▲▼ 排序與移除）+ 3 條真實瀏覽器 live run（custom 3 家族 × 2 reps、frozen 兩家族、program 中途載入失敗中止） |
+| `tests/e2e/overlay-layering.spec.ts` | 修正過期守衛數 | 見 §7（**與 WP-58 無關的既存紅燈**，為讓「全量 Playwright exit 0」有意義而修） |
+| `src/main.ts` | dev-only 加法 | `__fpsTest.startSessionPlanWithoutGate()`（**不強制執行**資格閘的 live Session Plan 進入點）+ `__fpsTest.sessionPlanState()`（游標唯讀視窗）。兩者都在既有 `import.meta.env.DEV` 區塊內，production build 剝除 |
+
+### 2. 為什麼需要一條 dev-only seam（D-58-T6-1）
+
+WP-58 之前，Session Plan 的**整條 runtime 從未被任何 E2E 覆蓋**——既有 spec 一律停在 `#eligibility-gate` 可見為止。原因在 T6 首次被**量出來**而不是猜出來：以真實 Edge 走完表單、按下「進入 fullscreen 並開始」後，資格閘自己吐出的報告是
+
+```
+native:     FAIL — 原生 1280×720（screen 1280×720 × dpr 1) vs 需求 1920×1080
+fullscreen: PASS — document.fullscreenElement 存在
+perf:       FAIL — warmup p95 16.83ms vs 地板 8.33ms
+```
+
+`fullscreen` 在 headless 竟是 PASS（`requestFullscreen()` 可用），但 `PERF_FLOOR_MS = 8.33` 是 **120 Hz 等效門檻**，headless rAF ≈ 16.8 ms ⇒ **任何自動化環境都過不了**（改 headed 也不行，60 Hz 面板同樣 ≈ 16.7 ms）。`screen` 尚可用 Playwright 的 `screen` context option 造假，效能地板不行。
+
+⇒ 取捨：加一條**只跳過「拒入」、不偽造「通過」**的 seam。它仍然**真的跑** `runEligibilityGate()`，並把**真實的（失敗的）** `GateReport` 交給 `experimentSession.enter()`，因此 `meta.display.gate` 記的是實況而非捏造的合格。之後每一步（編譯器 → runner → `loadDrillById` → 匯出 → overlay → `exit()`）都是 production 路徑，沒有替身。先例為 WP-48 T5／WP-49 T5 的 `saveToHistory`／`showResultAndSaveToHistory`——同樣 dev-only、同樣驅動 live 單例。
+
+### 3. drill 選擇的兩道實測限制（D-58-T6-2）
+
+live run 用哪些 drill 不是偏好，是被兩件事夾出來的：
+
+1. **必須是 scene-pinned drill**。未綁 `sceneId` 的 drill 繼承「當下載入的場景」，而開機場景是 `field-low`。實測 `tracking_v1` 在 `field-low` 直接 `clearance 驗證失敗 — rock-r1 / tree-r1 / rock-l1 / tree-l1`。這條限制反過來成了失效案例的**真實故障注入**（§5）。
+2. **必須無人工瞄準即可自行結束**。roster 中最短的自我終止 drill 為 `tracking_scene_v1`（10 × `presentationMs` 2000 ≈ 23 s）、`detection_popin_v1`（20 × spawnDelay + `peekTimeoutMs` ≈ 65 s）、`spider-shot-wide-v1`（`timeLimit` 60 s）。三者剛好分屬 `tracking`／`detection`／`spider-shot-wide` 三個不同家族，滿足 T6 的「3 個不同家族 × 2 reps」。
+
+⇒ custom live run 的 wall clock 下限就是 2 × (23 + 65 + 60) ≈ 5 分鐘（實測整條 spec 檔 **custom 6.0 分／frozen 3.4 分／abort 1.6 分**）。**沒有任何 drill 為了測試被縮短**——那會是改 `DrillConfig`，本 WP 明文禁止。
+
+### 4. 量測方式（D-58-T6-3）
+
+- **相位**：頁面內 rAF sampler，`sessionPlanState()` 的 JSON 一變就記一筆 `performance.now()`（ADR-4：不用 `Date.now()`）。`sessionPlanState()` 刻意**不回傳 `remainingMs`**，所以一段休息只產生一筆樣本，相位序列可直接逐元素對表。
+- **休息時長**：相鄰兩筆樣本的時間差。斷言**不對稱**——下界嚴格（休息不得被少給，`expected − 100 ms`），上界寬鬆（`run` phase 要等 `loadDrillById()`（含場景 GLTF）解析完才發佈，載入時間落在同一段轉換裡）。
+- **狀態列**：改用 `MutationObserver`，**不是** rAF 取樣。理由見 §6 第二點。
+
+### 5. 三條 live run 各自證了什麼
+
+| 案例 | 證據 |
+|---|---|
+| custom 3 家族 × 2 reps（`drillRest=1`、`familyRest=2`） | 游標走完 11 步且順序逐元素相符；6 個 `run` 的 `(drillId, itemIndex, repIndex)` 逐項相符；5 段休息的 `boundary` 序列為 `rep/family/rep/family/rep` 且各自服完自己 step 的秒數；**6 份匯出、檔名互異**（OQ-58.2 的實機版）；收工後 `phase='done'`、`experimentSession.active=false`、`#rest-overlay` 隱藏 |
+| frozen 兩家族（`restSeconds=2`、`includeWarmup=true`） | 狀態列依序出現「本家族無熱身」→「正式測試 1/2」→「正式測試 2/2」→「Session Plan 完成」；program = `run / rest(family) / run`，drill 為兩家族各自的代表 drill 且順序即操作員順序；2 份唯一匯出；收工後 overlay 隱藏 |
+| program 中途載入失敗 | 相位序列 `idle → run → rest → done`（**沒有第二個 run**）；1 份匯出；狀態列同時含「本次 session 已中止」與 `clearance`；`#rest-overlay` 隱藏 |
+
+### 6. 驗證
+
+| 閘 | 結果 |
+|---|---|
+| `npm run typecheck` | exit 0（browser + node） |
+| `npm run build` | exit 0 |
+| `npx vitest run`（全量） | **246 passed / 1 skipped（247 files）、2,661 passed / 2 skipped** —— 與 T5 完全相同（T6 未新增任何 Vitest 測試），既有測試零失敗 |
+| `npx playwright test`（全量） | **99 passed（7.4 分，真實 Edge）**、exit 0。首跑為 95 passed／4 failed，四個紅燈逐一歸因見 §7——**皆與 WP-58 無關** |
+| 既有決定性回歸（NFR-58.2） | `tests/regression/*`、`src/loop/__tests__/*` **零修改**全綠（本 task 的 `git diff --stat` 只碰 `src/main.ts` 與 `tests/e2e/session-orchestrator.spec.ts`） |
+| `graphify update .` | exit 0 —— AST 623/623 檔，重建 4,623 nodes／11,347 edges／297 communities |
+
+### 7. 全量 Playwright 首跑的 4 個紅燈——逐一歸因（皆與 WP-58 無關）
+
+首次全量跑出 `95 passed / 4 failed`。四個紅燈**沒有一個**出自 WP-58 的改動（本 task 的 production diff 只在 `import.meta.env.DEV` 區塊內加了兩個 `__fpsTest` 方法），逐一查明：
+
+| 紅燈 | 根因 | 處置 |
+|---|---|---|
+| `history-library.spec.ts` × 3（`historyPersistence.save()` 回 `failed`） | 共用的 e2e 暫存 history root `.playwright-tmp/history-dev` 累積了 **1,327 個 participant 目錄**（最舊 2026-08-28）。把該目錄移開後同一組 spec **14 passed**（原本孤立重跑是 6 failed） | **環境腐化**，非程式缺陷。已把舊 root 改名保留（`history-dev.bak-*`）而非刪除；值得後續加一條清理或 per-run root 的機制 |
+| `overlay-layering.spec.ts:74`（`overlapsSettingsPanel(7)` 恆回 `null` → poll 逾時） | 研究員子選單 append 進 `#session-launch-controls`，故展開後按鈕數 = 4 個啟動入口 + 研究員項目。**WP-54 T6（`d2596de`, 2026-09-03）新增第四個研究員入口「Tracking pilot」**後應為 8，守衛仍寫 7；該 spec 最後一次修改（`84a0380`）早於那次新增 ⇒ **本檔自 2026-09-03 起持續紅燈**，比 WP-58 T6 早六天 | 守衛數 7 → 8，並在原地註明過期原因。**斷言本體（`toEqual([])`，即「不得重疊」）一字未改**——改的是「什麼時候才允許判定」的前置條件，不是判定標準（T6 invariant：不得為了讓 E2E 過而放寬既有斷言）。修正後該檔 4 passed，證明重疊確實不存在 |
+
+⚠️ 這兩件事都**超出 WP-58 範圍**。history root 的腐化只做了「移開」不做機制修改；`overlay-layering` 的守衛數則是一行修正，因為不修的話「全量 Playwright exit 0」這道 DoD 閘門就只能永遠掛在別人的舊帳上、失去把關意義。兩者皆在此明帳。
+
+### T6 Decision Log
+
+- **D-58-T6-1 / 加 dev-only seam，而不是放寬資格閘**：資格閘在自動化下**不可能通過**（§2 有實測報告）。可選項只有三個：把 `PERF_FLOOR_MS` 調鬆（改研究效度前提，絕對不行）、永遠不測 Session Plan runtime（T6 的存在理由就沒了）、或加一條只跳過拒入的 seam。選第三個，並刻意讓它**仍然跑真實的閘、記真實的報告**——「跳過拒入」與「偽造通過」差一個 byte 的實作、差一整個效度等級。
+- **D-58-T6-2 / live run 不新增也不縮短任何 drill**：wall clock 5 分鐘是 roster 的物理下限，不是測試寫得慢。用 `test.setTimeout()` 誠實標出來，比為了 CI 時間去改 `DrillConfig`（本 WP 紅線）或改用假 drill（就不再是 end-to-end）都好。
+- **D-58-T6-3 / 在頁面內取樣，不隔著 wire 輪詢**：輪詢間隔本身就是誤差來源，而本 task 要斷言的正是 1 s／2 s 兩級休息的差異。rAF sampler + `performance.now()` 把誤差壓到約一幀；狀態列改用 `MutationObserver`（§6 第二點）。
+- **D-58-T6-4 / 擴充既有 spec 而非新開檔**：R-58.9 的緩解原文即如此。兩軌共用同一個 `#session-plan-setup`、同一個 `button[type=submit]`、同一條 eligibility 路徑；拆成兩個檔案會讓「frozen 是否被改壞」失去對照組。
+- **D-58-T6-5 / 失效案例用真實故障，不用 stub**：`tracking_v1` 在 `field-low` 的 clearance 失敗是**操作員真的會遇到**的情境（任何 field-low drill 之後排 `tracking_v1`），而且它打中的正是 `poll()` 的無人值守 auto-advance rejection 路徑——會把 rest overlay 永久留在畫面上的那一條。比注入一個假的 `loadDrillById` 失敗強，因為它同時證明了「這個故障確實存在於產品裡」。
+
+### T6 Surprises
+
+- **`tracking_v1` 在開機場景下根本載不起來，而 T1 讓它變成 frozen 軌可選項**。`resolveFamilyDrillId('tracking')` 回 `tracking_v1`，該 drill **未綁 `sceneId`** ⇒ 繼承 `field-low` ⇒ clearance 撞 rock/tree 而 throw。WP-58 之前 `tracking` 不是 session family，這個組合不存在；T1 把四個新家族純加法納入 `KNOWN_SESSION_FAMILY_IDS` 之後，操作員在 frozen 表單勾 `tracking` 就會得到一場**開場即中止**的 session。這是 T6 才發現的 WP-58 引入缺陷，記為 **OQ-58.6**（見下），**未於 T6 逕行修改**——修法屬 roster／代表 drill 語意，應由 owner 決定而非測試順手改掉。
+- **有些狀態列訊息活不到一幀**。「本家族無熱身，直接開始正式測試。」是同步設定的，緊接著 `await sessionPlanRunner.start()`；當第一個 drill 的場景**已經載好**（`detection_popin_v1` 對 `field-low`）時，整段 `startSessionPlan()` 在同一個 task 內跑完，rAF 一次都插不進去。第一版用 rAF 取樣狀態列因此漏抓、紅燈；改成 `MutationObserver` 才看得到每一次寫入。這也解釋了為什麼 §4 把相位與狀態列用**兩種**觀測法。
+- **全量 Playwright 才照得出「共用暫存 root 會腐化」**。單檔跑 `session-orchestrator.spec.ts` 一路全綠，跑全量才發現 `history-library` 的三條紅燈其實來自 1,327 個累積的 participant 目錄——一個跟本 WP 完全無關、但只有全量閘門會撞到的環境問題。這也是 T6「全量對帳」而非「只跑自己那一檔」的價值。
+- **中止的 session 不會被正式結束**。`experimentSession.exit()` 只在完成分支呼叫；`poll()` 的失敗復原只 `setPhase({kind:'done'})` + 狀態列。因此中止後 `experimentSession.active` 仍為 `true`（下一次匯出仍帶 `gate`／`suspect`）。已在失效案例中以斷言**釘死現況**（而不是默默容忍），並記為 **OQ-58.7**。
+
+### T6 Open Questions（交 T-exit）
+
+| ID | Question | 現況 | 建議 |
+|---|---|---|---|
+| **OQ-58.6** | frozen 軌的 `tracking` 家族代表 drill `tracking_v1` 未綁場景，於 `field-low` 載入即 throw ⇒ 勾選該家族的 frozen session 開場即中止。要修嗎？怎麼修？ | T6 已用真實 e2e 釘死此故障（失效案例即以它注入）。**未修改任何 production 語意** | 兩個候選：① `resolveFamilyDrillId('tracking')` 改回 `tracking_scene_v1`（已綁 `field-low`，同家族、同 `endCondition`）；② 在 `availableDrills` 為 `tracking_v1` 補 `sceneId`。二者皆改變既有行為，屬 owner 決策。**建議列為 T-exit blocker** |
+| **OQ-58.7** | 中止的 session 是否應呼叫 `experimentSession.exit()`？ | 目前不會；`active` 停在 `true`，已由失效案例斷言釘死 | 若視為缺陷，修法是在 `poll()` 的 catch 與 `startSessionPlan()` 的 catch 一併 `exit()`；影響面僅 `meta.display.gate`／`suspect` 的後續歸屬 |
