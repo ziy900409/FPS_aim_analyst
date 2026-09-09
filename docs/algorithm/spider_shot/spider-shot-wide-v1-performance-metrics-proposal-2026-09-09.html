@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Spider Shot Wide v1 表現指標與結果視覺化提案</title>
+  <style>
+    :root {
+      --page: #eef1ef;
+      --paper: #ffffff;
+      --ink: #17211e;
+      --muted: #5f6d68;
+      --line: #cfd7d3;
+      --line-dark: #9aa8a2;
+      --teal: #087e8b;
+      --teal-soft: #dceff1;
+      --coral: #d75a47;
+      --coral-soft: #fae7e3;
+      --amber: #ad7417;
+      --amber-soft: #fff0cb;
+      --green: #257552;
+      --green-soft: #e1f1e9;
+      --violet: #7258a6;
+      --violet-soft: #ece7f5;
+      --dark: #151b1a;
+      --radius: 6px;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--page);
+      font-family: var(--sans);
+      line-height: 1.62;
+      letter-spacing: 0;
+    }
+    button { font: inherit; letter-spacing: 0; }
+    a { color: var(--teal); text-underline-offset: 3px; }
+    code { font-family: var(--mono); font-size: 0.9em; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+
+    .masthead {
+      position: relative;
+      min-height: 330px;
+      overflow: hidden;
+      color: #fff;
+      background: #171d1c;
+    }
+    .masthead img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 78% 51%;
+      opacity: 0.62;
+    }
+    .masthead::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(14, 19, 18, 0.98) 0%, rgba(14, 19, 18, 0.89) 42%, rgba(14, 19, 18, 0.18) 78%);
+    }
+    .masthead-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      align-content: center;
+      min-height: 330px;
+      max-width: 720px;
+      padding: 34px 0;
+    }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #8fdce2;
+      font: 750 0.76rem/1.2 var(--mono);
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; max-width: 680px; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.08; letter-spacing: 0; }
+    .lede { max-width: 640px; margin: 16px 0 0; color: #d9e1de; font-size: 1rem; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 19px; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.28);
+      color: #edf5f2;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+    .status.warn { border-color: #d8ab54; color: #ffdda0; }
+
+    .layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 30px; padding: 30px 0 60px; }
+    .toc { position: sticky; top: 18px; align-self: start; }
+    .toc-title { margin: 0 0 8px; color: var(--muted); font: 700 0.72rem/1.2 var(--mono); text-transform: uppercase; }
+    .toc a {
+      display: block;
+      padding: 7px 9px;
+      border-left: 2px solid var(--line);
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+    }
+    .toc a:hover, .toc a:focus-visible { border-left-color: var(--teal); color: var(--ink); background: #fff; }
+    main { min-width: 0; }
+    section { margin-bottom: 44px; scroll-margin-top: 20px; }
+    .section-no { display: block; margin-bottom: 4px; color: var(--coral); font: 750 0.76rem/1.2 var(--mono); }
+    h2 { margin: 0 0 14px; font-size: clamp(1.42rem, 3vw, 2rem); line-height: 1.2; letter-spacing: 0; }
+    h3 { margin: 0 0 8px; font-size: 1rem; line-height: 1.35; letter-spacing: 0; }
+    h4 { margin: 0 0 5px; font-size: 0.86rem; letter-spacing: 0; }
+    p { margin: 0 0 12px; }
+    .section-intro { max-width: 820px; color: var(--muted); }
+
+    .decision {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      border: 1px solid var(--line-dark);
+      border-left: 5px solid var(--coral);
+      border-radius: var(--radius);
+      background: var(--paper);
+    }
+    .decision > div { padding: 22px; }
+    .decision > div + div { border-left: 1px solid var(--line); background: #f7f9f8; }
+    .decision strong { display: block; margin-bottom: 6px; font-size: 1.08rem; }
+    .decision p { color: var(--muted); font-size: 0.88rem; }
+    .decision .yes { color: var(--coral); font-size: 1.48rem; }
+
+    .task-facts { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .fact { padding: 16px; }
+    .fact + .fact { border-left: 1px solid var(--line); }
+    .fact span { display: block; color: var(--muted); font-size: 0.72rem; }
+    .fact strong { display: block; margin-top: 4px; font-size: 1rem; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--line);
+    }
+    .flow-step { position: relative; min-height: 126px; padding: 14px 12px; background: var(--paper); }
+    .flow-step .time { color: var(--teal); font: 700 0.72rem/1.2 var(--mono); }
+    .flow-step strong { display: block; margin: 8px 0 5px; font-size: 0.84rem; }
+    .flow-step small { display: block; color: var(--muted); font-size: 0.7rem; line-height: 1.45; }
+    .flow-step.current { background: var(--teal-soft); }
+    .flow-step.proposed { background: var(--violet-soft); }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0 0; color: var(--muted); font-size: 0.72rem; }
+    .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 2px; background: var(--teal-soft); border: 1px solid var(--teal); }
+    .legend span:last-child::before { background: var(--violet-soft); border-color: var(--violet); }
+
+    .tier-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .tier { border: 1px solid var(--line); border-top: 4px solid var(--teal); border-radius: var(--radius); background: var(--paper); padding: 18px; }
+    .tier:nth-child(2) { border-top-color: var(--coral); }
+    .tier:nth-child(3) { border-top-color: var(--violet); }
+    .tier:nth-child(4) { border-top-color: var(--amber); }
+    .tier-label { color: var(--muted); font: 700 0.7rem/1.2 var(--mono); text-transform: uppercase; }
+    .tier ul, .rule-list, .human-list { margin: 10px 0 0; padding-left: 19px; }
+    .tier li, .rule-list li, .human-list li { margin: 6px 0; font-size: 0.84rem; }
+    .metric-line { display: grid; grid-template-columns: minmax(170px, 0.9fr) 1.45fr 0.72fr; gap: 14px; padding: 15px 0; border-top: 1px solid var(--line); align-items: start; }
+    .metric-line:first-of-type { border-top: 0; }
+    .metric-name strong { display: block; font-size: 0.9rem; }
+    .metric-name code { color: var(--teal); }
+    .metric-definition { color: var(--muted); font-size: 0.82rem; }
+    .metric-output { color: var(--ink); font: 700 0.74rem/1.5 var(--mono); }
+    .tag {
+      display: inline-flex;
+      margin-top: 5px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.66rem;
+      font-weight: 750;
+      background: var(--green-soft);
+      color: var(--green);
+    }
+    .tag.new { background: var(--violet-soft); color: var(--violet); }
+    .tag.quality { background: var(--amber-soft); color: var(--amber); }
+
+    .formula {
+      padding: 13px 15px;
+      border-left: 3px solid var(--teal);
+      background: #f6f8f7;
+      color: #31413c;
+      font: 0.78rem/1.7 var(--mono);
+      overflow-x: auto;
+    }
+    .callout { padding: 15px 17px; border: 1px solid #d8b66f; border-radius: var(--radius); background: var(--amber-soft); color: #5d4519; font-size: 0.83rem; }
+    .callout strong { color: #49340f; }
+
+    .dashboard { overflow: hidden; border: 1px solid #343d3a; border-radius: var(--radius); background: #111716; color: #eff5f2; }
+    .dash-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #343d3a; }
+    .dash-head h3 { margin: 0; }
+    .dash-head small { display: block; margin-top: 3px; color: #9ba8a3; }
+    .tabs { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid #3c4743; border-radius: 5px; }
+    .tab {
+      min-height: 34px;
+      padding: 5px 10px;
+      border: 0;
+      border-radius: 3px;
+      color: #9ba8a3;
+      background: transparent;
+      cursor: pointer;
+    }
+    .tab[aria-selected="true"] { color: #fff; background: #087e8b; }
+    .tab:focus-visible { outline: 2px solid #93e4e7; outline-offset: 2px; }
+    .dash-body { padding: 18px; }
+    .dash-panel[hidden] { display: none; }
+    .mock-note { margin: 0 0 13px; color: #e9c679; font-size: 0.74rem; }
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .kpi { min-height: 112px; padding: 13px; border: 1px solid #38423f; border-radius: 5px; background: #18201e; }
+    .kpi span { color: #9ba8a3; font-size: 0.72rem; }
+    .kpi strong { display: block; margin-top: 9px; font-size: 1.65rem; line-height: 1; }
+    .kpi small { display: block; margin-top: 10px; color: #a9b5b1; }
+    .kpi .good { color: #70d5a8; }
+    .chart-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 10px; margin-top: 10px; }
+    .chart { min-width: 0; padding: 13px; border: 1px solid #38423f; border-radius: 5px; background: #18201e; }
+    .chart h4 { color: #f4f8f6; }
+    .chart p { margin: 2px 0 9px; color: #93a09b; font-size: 0.7rem; }
+    canvas { display: block; width: 100%; height: 230px; border-radius: 3px; background: #131a18; }
+    .wide-canvas { height: 270px; }
+    .data-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 10px; }
+    .datum { padding: 10px; border: 1px solid #38423f; border-radius: 4px; color: #adb9b5; font-size: 0.7rem; }
+    .datum strong { display: block; margin-top: 3px; color: #fff; font-size: 0.92rem; }
+
+    .viz-list { display: grid; gap: 1px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--line); }
+    .viz-row { display: grid; grid-template-columns: 40px 1fr 1.15fr; gap: 14px; padding: 15px; background: var(--paper); }
+    .viz-number { color: var(--coral); font: 750 0.84rem/1.4 var(--mono); }
+    .viz-row p { margin: 0; color: var(--muted); font-size: 0.8rem; }
+
+    .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .rule-box { padding: 17px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .rule-box.keep { border-top: 4px solid var(--green); }
+    .rule-box.exclude { border-top: 4px solid var(--coral); }
+    .rule-box p { color: var(--muted); font-size: 0.82rem; }
+
+    .human-stages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .human-stage { position: relative; padding: 17px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .human-stage .stage { color: var(--teal); font: 750 0.7rem/1.2 var(--mono); }
+    .human-stage strong { display: block; margin: 8px 0 5px; }
+    .human-stage p { color: var(--muted); font-size: 0.8rem; }
+    .human-stage .n { display: block; margin-top: 12px; color: var(--coral); font: 750 0.76rem/1.4 var(--mono); }
+
+    .matrix { width: 100%; border-collapse: collapse; border: 1px solid var(--line); background: var(--paper); font-size: 0.78rem; }
+    .matrix th, .matrix td { padding: 10px 11px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .matrix th { background: #f0f3f1; font-size: 0.72rem; }
+    .matrix .yes { color: var(--green); font-weight: 750; }
+    .matrix .no { color: var(--coral); font-weight: 750; }
+    .matrix .partial { color: var(--amber); font-weight: 750; }
+
+    .sources { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .sources ul { margin: 0; padding-left: 20px; }
+    .sources li { margin: 7px 0; font-size: 0.8rem; }
+    footer { padding: 22px 0 38px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.75rem; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; display: grid; grid-template-columns: repeat(2, 1fr); }
+      .toc-title { grid-column: 1 / -1; }
+      .decision, .chart-grid { grid-template-columns: 1fr; }
+      .decision > div + div { border-left: 0; border-top: 1px solid var(--line); }
+      .flow { grid-template-columns: repeat(3, 1fr); }
+      .human-stages { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .shell { width: min(100% - 20px, 1180px); }
+      .masthead, .masthead-inner { min-height: 390px; }
+      .masthead img { object-position: 73% center; }
+      .masthead::after { background: rgba(14, 19, 18, 0.82); }
+      .task-facts, .tier-grid, .kpis, .rules { grid-template-columns: 1fr; }
+      .fact + .fact { border-left: 0; border-top: 1px solid var(--line); }
+      .flow { grid-template-columns: 1fr 1fr; }
+      .metric-line { grid-template-columns: 1fr; gap: 5px; }
+      .viz-row { grid-template-columns: 32px 1fr; }
+      .viz-row p { grid-column: 2; }
+      .data-strip { grid-template-columns: 1fr 1fr; }
+      .dash-head { align-items: stretch; }
+      .tabs { width: 100%; overflow-x: auto; }
+      .tab { flex: 1 0 auto; }
+      .matrix-wrap { overflow-x: auto; }
+    }
+    @media print {
+      body { background: #fff; }
+      .toc, .tabs { display: none; }
+      .layout { display: block; }
+      .masthead { min-height: 250px; }
+      .masthead-inner { min-height: 250px; }
+      section, .dashboard, .tier, .human-stage { break-inside: avoid; }
+      .dash-panel[hidden] { display: block; margin-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <img src="../../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/captures/peripheral-R-fov75.png" alt="Spider Shot Wide v1 在 FOV 75 下的右側周邊目標實機畫面">
+    <div class="shell masthead-inner">
+      <p class="eyebrow">Measurement proposal · 2026-09-09</p>
+      <h1>Spider Shot Wide v1<br>表現指標與結果視覺化</h1>
+      <p class="lede">把一次約 40–70° 的大幅度拉槍拆成可觀測的反應、運動、急停、點擊與修正，同時把左右差、感度行程、投影足跡與抬鼠污染留在正確的分析層。</p>
+      <div class="status-row">
+        <span class="status">researcher-only / practice</span>
+        <span class="status">60 s · 2.0° sphere · fixed 8 u</span>
+        <span class="status warn">真人資料：必要</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell layout">
+    <nav class="toc" aria-label="文件目錄">
+      <p class="toc-title">提案結構</p>
+      <a href="#decision">00 核心結論</a>
+      <a href="#construct">01 構念邊界</a>
+      <a href="#anchors">02 時間錨點</a>
+      <a href="#metrics">03 指標體系</a>
+      <a href="#aggregation">04 聚合規則</a>
+      <a href="#visualization">05 結果圖示</a>
+      <a href="#human">06 真人驗證</a>
+      <a href="#implementation">07 實作對照</a>
+      <a href="#sources">08 專案依據</a>
+    </nav>
+
+    <main>
+      <section id="decision">
+        <span class="section-no">00 / DECISION</span>
+        <h2>先回答最重要的問題</h2>
+        <div class="decision">
+          <div>
+            <strong>不建議現在做單一總分或玩家等級。</strong>
+            <p>Wide flick 同時受到角距、左右側、FOV / aspect、cm/360、滑鼠墊行程與抬鼠行為影響。未有足夠真人資料前，把它們壓成一個分數會讓權重看似精確、實際不可解釋。</p>
+            <p>第一版應交付三個主結果：<b>周邊有效命中速度</b>、<b>周邊首發命中率</b>、<b>乾淨 trial 的命中時間</b>；其餘指標負責診斷。</p>
+          </div>
+          <div>
+            <strong class="yes">需要真人測試資料：是</strong>
+            <p>引擎與公式正確性可用合成資料驗證；但 timeout 是否形成天花板、抬鼠標註效度、指標重測信度、左右差的正常範圍，以及任何常模或分數權重，都只能靠真人 repeated-measures 資料決定。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="construct">
+        <span class="section-no">01 / CONSTRUCT</span>
+        <h2>先定義「我們到底在測什麼」</h2>
+        <p class="section-intro">`spider-shot-wide-v1` 不是一般 click speed，也不是 v3 的更難版本。它是中心與近水平視野邊緣之間的反覆大幅度視角轉移，核心構念是<b>大幅度 ballistic flick 後的制動與首發控制</b>。</p>
+        <div class="task-facts" aria-label="任務固定條件">
+          <div class="fact"><span>幾何</span><strong>eye-frame 球面</strong></div>
+          <div class="fact"><span>刺激</span><strong>約 40–70° yaw</strong></div>
+          <div class="fact"><span>目標</span><strong>2.0° sphere @ 8 u</strong></div>
+          <div class="fact"><span>結構</span><strong>中心 ↔ 周邊交替</strong></div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="tier-grid">
+          <article class="tier">
+            <span class="tier-label">Target construct</span>
+            <h3>應該被評分</h3>
+            <ul>
+              <li>看見周邊目標後啟動視角移動的速度</li>
+              <li>依角距放大 peak velocity 的能力</li>
+              <li>在 2° 目標內完成制動與穩定的能力</li>
+              <li>不犧牲首發命中的完成速度</li>
+              <li>左右方向是否有可重現的不對稱</li>
+            </ul>
+          </article>
+          <article class="tier">
+            <span class="tier-label">Non-target influences</span>
+            <h3>應控制或標註，不可當分數</h3>
+            <ul>
+              <li>`cm/360` 與可用滑鼠墊行程</li>
+              <li>疑似抬鼠重新定位、Pointer Lock 中斷</li>
+              <li>離軸球的投影橢圓面積與軸比</li>
+              <li>FOV、aspect、顯示 Hz、mouse polling</li>
+              <li>trial 順序造成的熟練與疲勞</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="anchors">
+        <span class="section-no">02 / EVENT ANCHORS</span>
+        <h2>一步一步切開一次 wide flick</h2>
+        <p class="section-intro">每個 center→peripheral trial 必須沿用同一組 canonical 錨點。先有事件，再談指標；沒有有效錨點的 trial 應標記狀態，不得以 0 補值。</p>
+        <div class="flow" aria-label="一次拉槍的事件時間軸">
+          <div class="flow-step current"><span class="time">t_visible</span><strong>目標出現</strong><small>周邊刺激起點；來自 visible event。</small></div>
+          <div class="flow-step current"><span class="time">t_onset</span><strong>持續移動起點</strong><small>canonical detection 的 tDetectMs。</small></div>
+          <div class="flow-step proposed"><span class="time">t_peak</span><strong>峰值角速度</strong><small>建議補上 peak ω 的發生時間。</small></div>
+          <div class="flow-step current"><span class="time">t_on_target</span><strong>首次進靶</strong><small>tracking samples 首個 onTarget。</small></div>
+          <div class="flow-step current"><span class="time">t_shot1</span><strong>第一次開火</strong><small>首發命中與 fire angle error。</small></div>
+          <div class="flow-step proposed"><span class="time">t_hit / timeout</span><strong>完成或右截</strong><small>命中保留時間；timeout 視為 censored。</small></div>
+        </div>
+        <div class="legend"><span>專案目前已有 canonical derivation</span><span>建議在研究分析層新增</span></div>
+      </section>
+
+      <section id="metrics">
+        <span class="section-no">03 / METRICS</span>
+        <h2>四層指標體系</h2>
+        <p class="section-intro">結果、機制、條件與品質要分層。這可避免把「為什麼變慢」的證據誤當成「能力高低」，也保留日後做模型校正的空間。</p>
+
+        <article class="tier" style="margin-bottom:12px">
+          <span class="tier-label">Layer A · Primary outcomes</span>
+          <h3>第一眼只看三個結果，不做總分</h3>
+          <div class="metric-line">
+            <div class="metric-name"><strong>周邊有效命中速度</strong><code>peripheral_hits_per_min</code><br><span class="tag new">建議 wide projection</span></div>
+            <div class="metric-definition">有效周邊命中數 ÷ 有效 active duration。它回答「整體產出」，但必須和首發率並列，否則亂射也能變快。</div>
+            <div class="metric-output">hits/min<br>越高越好</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>周邊首發命中率</strong><code>first_shot_hit_rate</code><br><span class="tag">既有資料可算</span></div>
+            <div class="metric-definition">首發命中的周邊 presentation ÷ 全部周邊 presentation。timeout、沒開火都留在分母，避免只看已完成 trial。</div>
+            <div class="metric-output">%<br>越高越好</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>乾淨 trial 命中時間</strong><code>peripheral_hit_time</code><br><span class="tag new">建議新增</span></div>
+            <div class="metric-definition"><code>t_hit − t_visible</code>，同時報 median 與 p90。主分析排除硬體失效與標註污染；timeout 不刪除，另以 survival / timeout rate 表達。</div>
+            <div class="metric-output">ms<br>越低越好</div>
+          </div>
+        </article>
+
+        <article class="tier" style="margin-bottom:12px">
+          <span class="tier-label">Layer B · Mechanism diagnostics</span>
+          <h3>用來回答「慢在哪一段、失手是哪一種」</h3>
+          <div class="metric-line">
+            <div class="metric-name"><strong>啟動反應</strong><code>reaction_ms</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition"><code>t_onset − t_visible</code>。需留意 KI-031；若 canonical detector 在低 aim update rate 下失效，整批不可混用繞道值。</div>
+            <div class="metric-output">median / p90<br>ms</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>運動執行</strong><code>movement_time_ms</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition"><code>t_on_target − t_onset</code>。這是大幅度 transport + braking 的總和，不等於反應時間。</div>
+            <div class="metric-output">median / p90<br>ms</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>速度放大</strong><code>peak_omega</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition">trial 窗內最大絕對角速度。不要單看越高越好；應畫成 <code>D_deg → peak ω</code> 的 scaling curve，再對照 overshoot。</div>
+            <div class="metric-output">deg/s<br>條件化解讀</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>路徑效率</strong><code>path_efficiency</code><br><span class="tag new">建議新增</span></div>
+            <div class="metric-definition"><code>D_deg ÷ Σ angular_path_deg</code>。接近 1 表示路徑直接；但抬鼠 trial 不應納入能力解讀。</div>
+            <div class="metric-output">0–1<br>越高越直接</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>停止控制</strong><code>overshoot / drop / micro-adjust</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition">首次進靶後最大逸出角、掉靶次數與重新進靶次數。用於區分「速度不夠」與「速度夠但煞不住」。</div>
+            <div class="metric-output">deg / count<br>越低越穩</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>首發品質</strong><code>fire_angle_error</code><br><span class="tag">canonical</span></div>
+            <div class="metric-definition">首發時準心射線到目標中心的角誤差。和 hit flag 並列，可看出 miss 是擦邊還是完全失控。</div>
+            <div class="metric-output">median / p90<br>deg</div>
+          </div>
+        </article>
+
+        <article class="tier" style="margin-bottom:12px">
+          <span class="tier-label">Layer C · Wide-specific contrasts</span>
+          <h3>只有 wide 版本才值得優先看的差異</h3>
+          <div class="metric-line">
+            <div class="metric-name"><strong>左右調整後差</strong><code>side_delta</code><br><span class="tag new">建議新增</span></div>
+            <div class="metric-definition">比較 L/R 的 hit time、first-shot rate、overshoot；模型需控制 D、pitch、footprint、trial index。單場每側樣本太少時只畫點，不下判語。</div>
+            <div class="metric-output">Δms / Δpp<br>95% CI</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>角距劑量反應</strong><code>distance_slope</code><br><span class="tag new">建議新增</span></div>
+            <div class="metric-definition">每增加 10°，movement time、peak ω 與 overshoot 如何改變。比把所有 40–70° trial 混成一個平均值更有解釋力。</div>
+            <div class="metric-output">ms/10°<br>deg/s/10°</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>場內漂移</strong><code>block_drift</code><br><span class="tag new">建議新增</span></div>
+            <div class="metric-definition">將 run 依順序分成 3–4 blocks，比較 hit time 與 first-shot rate 的斜率，辨認熟練、疲勞或滑鼠空間逐步耗盡。</div>
+            <div class="metric-output">slope / block<br>描述性</div>
+          </div>
+        </article>
+
+        <article class="tier">
+          <span class="tier-label">Layer D · Covariates and quality labels</span>
+          <h3>必須呈現，但明確禁止進入玩家分數</h3>
+          <div class="metric-line">
+            <div class="metric-name"><strong>實體滑鼠行程</strong><code>cm_per_360</code><br><span class="tag quality">共變量</span></div>
+            <div class="metric-definition">由既有 sensitivity + self-reported DPI 推導。單次理論行程約為 <code>D/360 × cm/360</code>；缺 DPI 時不得猜值。</div>
+            <div class="metric-output">cm/360<br>控制變因</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>投影足跡</strong><code>area_ratio / axis_ratio</code><br><span class="tag quality">研究共變量</span></div>
+            <div class="metric-definition">離軸球在平面螢幕上是橢圓，大小又和 D 共變。它主要可能污染 detection，不應被說成玩家能力。</div>
+            <div class="metric-output">ratio<br>模型校正</div>
+          </div>
+          <div class="metric-line">
+            <div class="metric-name"><strong>疑似抬鼠</strong><code>repositioning_suspected</code><br><span class="tag quality">品質標註</span></div>
+            <div class="metric-definition">目前候選門檻為 ≥150 ms 且 |ω|&lt;2 deg/s。它和刻意停頓不可完全分離，因此只能用於排除 / 分層，不能叫作「抬鼠次數」。</div>
+            <div class="metric-output">flag<br>不可評分</div>
+          </div>
+        </article>
+
+        <div style="height:12px"></div>
+        <div class="formula" aria-label="核心公式">
+          outcome profile = { hits/min, first-shot hit %, median hit time, p90 hit time }<br>
+          ID = log2(1 + D_deg / W_deg) &nbsp;·&nbsp; 僅作難度描述，未驗證前不直接當正式 throughput 分母<br>
+          adjusted side effect = side + D_deg + pitch + footprint + trial_index + (1 | player/session)<br>
+          theoretical one-way mouse travel = D_deg / 360 × cm_per_360
+        </div>
+      </section>
+
+      <section id="aggregation">
+        <span class="section-no">04 / AGGREGATION</span>
+        <h2>聚合與排除規則</h2>
+        <div class="rules">
+          <article class="rule-box keep">
+            <h3>保留在分母或另行報告</h3>
+            <ul class="rule-list">
+              <li>timeout：視為右截資料，另報 timeout rate</li>
+              <li>沒開火：保留在 first-shot rate 分母</li>
+              <li>無法 acquisition：保留 failure rate，不以 0 ms 補值</li>
+              <li>所有周邊 presentation：形成 intention-to-test 母體</li>
+              <li>center return：不混入 peripheral flick，但可診斷節奏與回中成本</li>
+            </ul>
+          </article>
+          <article class="rule-box exclude">
+            <h3>從 clean performance 分析排除</h3>
+            <ul class="rule-list">
+              <li>Pointer Lock 中斷或跨視窗失焦</li>
+              <li>資料溢位、非法時鐘、必要 metadata 缺失</li>
+              <li>疑似 repositioning trial：主分析排除，敏感度分析納回</li>
+              <li>不同 FOV / aspect / protocol 條件不可直接合併</li>
+              <li>KI-031 canonical 與 <code>sustainedTicks:1</code> 繞道資料不可混成同一 cohort</li>
+            </ul>
+          </article>
+        </div>
+        <div style="height:12px"></div>
+        <div class="callout"><strong>報告順序：</strong>先印資料品質與有效 n，再印 median + p90 + bootstrap 95% CI，最後才顯示左右差與模型斜率。單場每 cell 約 5–12 筆，不足時只能描述，不應產生「左側弱項」之類確定性標籤。</div>
+      </section>
+
+      <section id="visualization">
+        <span class="section-no">05 / VISUALIZATION</span>
+        <h2>結果應如何圖示化</h2>
+        <p class="section-intro">下面是可切換的結果頁雛形。數字全部是示意資料，不是玩家基準；設計重點是先看結果輪廓，再依序鑽進 trial、左右差與資料品質。</p>
+
+        <div class="dashboard" aria-label="Spider Shot Wide v1 結果視覺化雛形">
+          <div class="dash-head">
+            <div><h3>Spider Shot Wide v1 · Research Result</h3><small>FOV 75 · aspect 2.00 · 52.0 cm/360 · 31 peripheral trials</small></div>
+            <div class="tabs" role="tablist" aria-label="結果檢視">
+              <button class="tab" role="tab" aria-selected="true" aria-controls="panel-overview" id="tab-overview" data-panel="overview">總覽</button>
+              <button class="tab" role="tab" aria-selected="false" aria-controls="panel-trial" id="tab-trial" data-panel="trial">單次 Flick</button>
+              <button class="tab" role="tab" aria-selected="false" aria-controls="panel-side" id="tab-side" data-panel="side">左右差</button>
+              <button class="tab" role="tab" aria-selected="false" aria-controls="panel-quality" id="tab-quality" data-panel="quality">資料品質</button>
+            </div>
+          </div>
+          <div class="dash-body">
+            <p class="mock-note">示意資料 · 僅展示資訊層級與圖形選擇，不代表常模或及格線</p>
+
+            <div class="dash-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+              <div class="kpis">
+                <div class="kpi"><span>周邊有效命中速度</span><strong>29.4</strong><small>hits/min · 不單獨評好壞</small></div>
+                <div class="kpi"><span>周邊首發命中率</span><strong class="good">83.9%</strong><small>26 / 31 presentations</small></div>
+                <div class="kpi"><span>乾淨 trial 命中時間</span><strong>812 ms</strong><small>median · p90 1,094 ms</small></div>
+              </div>
+              <div class="chart-grid">
+                <div class="chart"><h4>角距 → 運動時間</h4><p>點色代表 L/R；空心點代表疑似 repositioning，不納入實線模型。</p><canvas id="scatterChart" width="700" height="270" aria-label="角距與運動時間散佈圖"></canvas></div>
+                <div class="chart"><h4>一次 Flick 的時間花在哪裡</h4><p>中位數 phase decomposition，避免只看到總時間。</p><canvas id="phaseChart" width="440" height="270" aria-label="反應、移動、點擊與修正時間堆疊圖"></canvas></div>
+              </div>
+            </div>
+
+            <div class="dash-panel" id="panel-trial" role="tabpanel" aria-labelledby="tab-trial" hidden>
+              <div class="chart"><h4>代表性 trial · Peripheral R · D=52.8°</h4><p>同一時間軸疊 angular error 與 |ω|，垂直線標出 onset、peak、on-target、shot 與 hit。</p><canvas class="wide-canvas" id="trialChart" width="980" height="300" aria-label="單次拉槍角誤差與角速度時間軸"></canvas></div>
+              <div class="data-strip">
+                <div class="datum">reaction<strong>186 ms</strong></div>
+                <div class="datum">movement<strong>438 ms</strong></div>
+                <div class="datum">peak ω<strong>704 deg/s</strong></div>
+                <div class="datum">overshoot<strong>0.38°</strong></div>
+              </div>
+            </div>
+
+            <div class="dash-panel" id="panel-side" role="tabpanel" aria-labelledby="tab-side" hidden>
+              <div class="chart-grid">
+                <div class="chart"><h4>左右鏡像比較</h4><p>用 pooled median 當中心，直接看 Δms 與不確定區間。</p><canvas id="sideChart" width="700" height="270" aria-label="左右側命中時間比較圖"></canvas></div>
+                <div class="chart"><h4>場內漂移</h4><p>依順序分四段，檢查疲勞 / 適應是否與 side 排程交織。</p><canvas id="driftChart" width="440" height="270" aria-label="場內四分段表現漂移圖"></canvas></div>
+              </div>
+            </div>
+
+            <div class="dash-panel" id="panel-quality" role="tabpanel" aria-labelledby="tab-quality" hidden>
+              <div class="kpis">
+                <div class="kpi"><span>可分析周邊 trial</span><strong class="good">28 / 31</strong><small>3 筆進敏感度分析</small></div>
+                <div class="kpi"><span>疑似 repositioning</span><strong>2</strong><small>品質標註，不是玩家分數</small></div>
+                <div class="kpi"><span>timeout</span><strong>1</strong><small>保留為右截資料</small></div>
+              </div>
+              <div class="data-strip">
+                <div class="datum">display<strong>240 Hz</strong></div>
+                <div class="datum">active mouse rate<strong>1002 Hz</strong></div>
+                <div class="datum">lock breaks<strong>0</strong></div>
+                <div class="datum">sample overflow<strong>false</strong></div>
+              </div>
+              <div style="height:10px"></div>
+              <div class="callout"><strong>示意判定：</strong>run 可進研究分析；repositioning 兩筆從 clean estimate 排除，但在 sensitivity analysis 納回。實際產品不得在 wide v1 上顯示歷史進步或玩家等級，因為它仍是 practice-only。</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:16px"></div>
+        <div class="viz-list">
+          <div class="viz-row"><span class="viz-number">01</span><h3>D–MT 散佈圖</h3><p>回答角距增加時速度如何退化；顏色分 L/R、空心分品質旗標，模型加入 footprint 與 trial index。</p></div>
+          <div class="viz-row"><span class="viz-number">02</span><h3>Phase decomposition</h3><p>把總命中時間拆成 reaction、movement、click commit、correction，讓訓練建議對準真正瓶頸。</p></div>
+          <div class="viz-row"><span class="viz-number">03</span><h3>Angular error + |ω| 時序圖</h3><p>個案層最重要的圖；同時看加速、峰值、煞車、進靶、首發與 overshoot，不用猜失誤發生在哪。</p></div>
+          <div class="viz-row"><span class="viz-number">04</span><h3>左右鏡像估計圖</h3><p>顯示 L/R 調整後差與 95% CI。CI 跨 0 就只報「證據不足」，不硬貼弱側標籤。</p></div>
+          <div class="viz-row"><span class="viz-number">05</span><h3>Run-order drift</h3><p>四分段畫 hit time 與 first-shot rate，揭露熟練、疲勞與滑鼠空間耗盡。</p></div>
+          <div class="viz-row"><span class="viz-number">06</span><h3>Quality strip</h3><p>把 timeout、無 detection、疑似抬鼠、lock break、sample overflow 畫在結果前面，先決定能不能解讀。</p></div>
+        </div>
+      </section>
+
+      <section id="human">
+        <span class="section-no">06 / HUMAN VALIDATION</span>
+        <h2>真人資料要做什麼、做到哪裡</h2>
+        <p class="section-intro">專案已有四份真人 run 將疑似 repositioning 候選門檻調到 150 ms / 2 deg/s，但它們來自 n=1、單一硬體，且指示與感度共線。這足以推翻舊門檻，不足以建立族群效度或常模。</p>
+        <div class="human-stages">
+          <article class="human-stage">
+            <span class="stage">STAGE A · PIPELINE</span>
+            <strong>量測可用性</strong>
+            <p>確認每種硬體條件都能穩定取得 onset、on-target、shot、hit 與 side；同時量 timeout 與資料缺失原因。</p>
+            <span class="n">建議 5–8 人 × 2 runs</span>
+          </article>
+          <article class="human-stage">
+            <span class="stage">STAGE B · VALIDITY</span>
+            <strong>構念、門檻與重測</strong>
+            <p>within-subject 操弄感度與 lift / pause / one-shot 指示；跨 2–3 日重測。正式樣本量應由 Stage A 變異做 power simulation。</p>
+            <span class="n">起始規劃 24–30 人 × 3 sessions</span>
+          </article>
+          <article class="human-stage">
+            <span class="stage">STAGE C · NORMS</span>
+            <strong>常模與分數</strong>
+            <p>依 FPS 段位、慣用手、cm/360 與設備分層，才可估 percentile、最小可偵測改變與任何 composite weight。</p>
+            <span class="n">至少 100+，且需跨技能層</span>
+          </article>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead><tr><th>問題</th><th>合成 / 引擎資料是否足夠</th><th>是否需要真人</th><th>建議判準</th></tr></thead>
+            <tbody>
+              <tr><td>D/W、side、事件時間是否正確</td><td class="yes">足夠</td><td class="no">不需要</td><td>deterministic、golden、round-trip 與幾何測試</td></tr>
+              <tr><td>2500 ms timeout 是否造成天花板 / 右截</td><td class="no">不足</td><td class="yes">需要</td><td>各技能層 timeout rate + survival curve</td></tr>
+              <tr><td>疑似抬鼠門檻是否可跨人 / 跨硬體</td><td class="no">不足</td><td class="yes">需要</td><td>event-level 標註；lift / pause 對照；靈敏度與偽陽</td></tr>
+              <tr><td>左右差是否為穩定個人特徵</td><td class="no">不足</td><td class="yes">需要</td><td>跨 session ICC / repeatability，CI 控制 D 與 order</td></tr>
+              <tr><td>指標能否預測實戰大角度轉移</td><td class="no">不足</td><td class="yes">需要</td><td>與獨立 in-game transfer task 的 convergent / predictive validity</td></tr>
+              <tr><td>總分權重與玩家等級</td><td class="no">不足</td><td class="yes">需要大量資料</td><td>預註冊權重、外部效標、holdout validation；否則不發布</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top:18px">最低可執行真人設計</h3>
+        <ul class="human-list">
+          <li>固定 FOV 75、aspect、滑鼠、滑鼠墊與 DPI；顯示器至少 120 Hz，lift cohort 使用既定 240 Hz / 1000 Hz 規格。</li>
+          <li>每人跨 3 天，每天 2 個正式 run；感度順序用 counterbalancing，換感度後先給 20–30 秒適應。</li>
+          <li>每個條件至少累積 30 個周邊 presentation；單一 60 秒 run 不足就保留 run 邊界再追加，不直接拼接時序。</li>
+          <li>lift validity 採 `lift / pause / oneshot` 三種 instruction class 與 KeyL event-level annotation；抽樣用高速錄影人工稽核，估 annotation 誤差。</li>
+          <li>主結果先估 test-retest reliability、SEM / MDC，再決定是否能顯示「進步」。左右差與 distance slope 使用 mixed-effects model。</li>
+        </ul>
+      </section>
+
+      <section id="implementation">
+        <span class="section-no">07 / IMPLEMENTATION MAP</span>
+        <h2>與目前專案能力的對照</h2>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead><tr><th>能力</th><th>現況</th><th>下一步</th></tr></thead>
+            <tbody>
+              <tr><td>reaction、movement time、peak ω、overshoot、drop、micro-adjust、first-shot error</td><td class="yes">已有 canonical derivation</td><td>直接用 <code>deriveSpiderShotMetrics()</code>，研究入口開 strict eye origin</td></tr>
+              <tr><td>D_deg、W_deg、side、condition cell</td><td class="yes">已有</td><td>用 <code>deriveSpiderShotTransitions()</code>；wide 的 side 有實際語意</td></tr>
+              <tr><td>投影面積 / 軸比</td><td class="yes">已有研究共變量</td><td>用 <code>deriveProjectedFootprint()</code>，不得進教練評分</td></tr>
+              <tr><td>counts/360、cm/360</td><td class="yes">已有</td><td>用 <code>deriveMouseThrow()</code>；DPI 缺席就回報不可算</td></tr>
+              <tr><td>疑似 repositioning</td><td class="partial">已有候選標註</td><td>使用 150/2 僅限同硬體研究；跨硬體重校準</td></tr>
+              <tr><td>peripheral hit time、path efficiency、time-to-peak、side-adjusted model</td><td class="no">尚未成為共同輸出</td><td>新增 researcher-only analysis artifact，不先接 <code>DrillMetricRegistry</code></td></tr>
+              <tr><td>歷史趨勢、compatibility key、玩家分數</td><td class="no">刻意沒有</td><td>先完成真人信度與 aspect compatibility，再另開 Assessment promotion WP</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sources">
+        <span class="section-no">08 / PROJECT SOURCES</span>
+        <h2>本提案依據</h2>
+        <div class="sources">
+          <ul>
+            <li><a href="../../operational/analysis-spider-shot.md">Spider Shot 離線分析契約</a>：五類 canonical 構念、wide side、mouse throw、projected footprint 與 repositioning 語意。</li>
+            <li><a href="../../operational/spider-wide-recording-spec.md">Spider Shot Wide 真人錄製規格</a>：FOV / aspect / DPI / Hz / polling、感度 cohort 與 manifest。</li>
+            <li><a href="../../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/README.md">WP-57 README</a>：practice-only 邊界、未解的樣本量、timeout 與 Assessment 晉升條件。</li>
+            <li><a href="../../../src/metrics/spiderShotMetrics.ts">spiderShotMetrics.ts</a>、<a href="../../../src/metrics/spiderShotConditions.ts">spiderShotConditions.ts</a>、<a href="../../../src/metrics/mouseThrow.ts">mouseThrow.ts</a>、<a href="../../../src/metrics/projectedFootprint.ts">projectedFootprint.ts</a>、<a href="../../../src/metrics/spiderShotRepositioning.ts">spiderShotRepositioning.ts</a>。</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="shell">Spider Shot Wide v1 measurement proposal · 所有 dashboard 數值均為示意，不可作常模引用。</div>
+  </footer>
+
+  <script>
+    const COLORS = {
+      grid: '#34413d', text: '#94a39d', teal: '#45bfca', coral: '#ef7866',
+      amber: '#efbd62', green: '#70d5a8', violet: '#ae98db', white: '#eef5f2'
+    };
+
+    function setupCanvas(id) {
+      const canvas = document.getElementById(id);
+      if (!canvas) return null;
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(280, Math.round(rect.width));
+      const height = Math.max(180, Math.round(rect.height));
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.font = '11px "Cascadia Code", Consolas, monospace';
+      return { canvas, ctx, width, height };
+    }
+
+    function axes(ctx, width, height, xLabel, yLabel, xTicks, yTicks) {
+      const p = { l: 48, r: 16, t: 16, b: 38 };
+      ctx.strokeStyle = COLORS.grid;
+      ctx.fillStyle = COLORS.text;
+      ctx.lineWidth = 1;
+      yTicks.forEach((tick, i) => {
+        const y = p.t + (height - p.t - p.b) * i / (yTicks.length - 1);
+        ctx.beginPath(); ctx.moveTo(p.l, y); ctx.lineTo(width - p.r, y); ctx.stroke();
+        ctx.fillText(tick, 4, y + 4);
+      });
+      xTicks.forEach((tick, i) => {
+        const x = p.l + (width - p.l - p.r) * i / (xTicks.length - 1);
+        ctx.fillText(tick, x - 10, height - 16);
+      });
+      ctx.fillText(xLabel, width - p.r - ctx.measureText(xLabel).width, height - 2);
+      ctx.save(); ctx.translate(11, p.t); ctx.rotate(-Math.PI / 2); ctx.fillText(yLabel, -55, 0); ctx.restore();
+      return p;
+    }
+
+    function drawScatter() {
+      const s = setupCanvas('scatterChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = axes(ctx, width, height, 'D_deg', 'movement ms', ['42°', '48°', '54°', '60°'], ['700', '550', '400', '250']);
+      const data = [
+        [43,430,'L',0],[44,385,'R',0],[46,448,'L',0],[47,410,'R',0],[48,470,'L',0],[49,432,'R',0],
+        [51,490,'L',0],[52,455,'R',0],[53,532,'L',1],[54,474,'R',0],[55,515,'L',0],[56,492,'R',0],
+        [58,575,'L',0],[59,530,'R',0],[60,625,'L',1],[61,560,'R',0]
+      ];
+      const x = v => p.l + (v - 42) / 20 * (width - p.l - p.r);
+      const y = v => p.t + (700 - v) / 450 * (height - p.t - p.b);
+      ctx.strokeStyle = COLORS.white; ctx.lineWidth = 1.6; ctx.beginPath();
+      ctx.moveTo(x(42), y(385)); ctx.lineTo(x(62), y(590)); ctx.stroke();
+      data.forEach(([dx, mt, side, flagged]) => {
+        ctx.beginPath(); ctx.arc(x(dx), y(mt), 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = side === 'L' ? COLORS.coral : COLORS.teal;
+        if (flagged) { ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 2; ctx.stroke(); }
+        else ctx.fill();
+      });
+      ctx.fillStyle = COLORS.coral; ctx.fillText('L', width - 54, 16);
+      ctx.fillStyle = COLORS.teal; ctx.fillText('R', width - 30, 16);
+    }
+
+    function drawPhase() {
+      const s = setupCanvas('phaseChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const parts = [
+        ['Reaction', 184, COLORS.teal], ['Movement', 436, COLORS.coral],
+        ['Commit', 82, COLORS.violet], ['Correction', 110, COLORS.amber]
+      ];
+      const total = parts.reduce((sum, part) => sum + part[1], 0);
+      const left = 24, right = 18, y = 65, h = 46, usable = width - left - right;
+      let cursor = left;
+      parts.forEach(([label, value, color]) => {
+        const w = usable * value / total;
+        ctx.fillStyle = color; ctx.fillRect(cursor, y, Math.max(2, w - 2), h);
+        cursor += w;
+      });
+      ctx.fillStyle = COLORS.white; ctx.font = '700 19px system-ui'; ctx.fillText(total + ' ms', left, 39);
+      ctx.font = '11px "Cascadia Code", Consolas, monospace';
+      parts.forEach(([label, value, color], i) => {
+        const ly = 142 + i * 24;
+        ctx.fillStyle = color; ctx.fillRect(left, ly - 9, 10, 10);
+        ctx.fillStyle = COLORS.white; ctx.fillText(label, left + 17, ly);
+        ctx.fillStyle = COLORS.text; ctx.fillText(value + ' ms', width - 72, ly);
+      });
+    }
+
+    function drawTrial() {
+      const s = setupCanvas('trialChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = axes(ctx, width, height, 'time', 'normalized', ['0', '200', '400', '600', '800 ms'], ['1.0', '0.67', '0.33', '0']);
+      const x = v => p.l + v / 800 * (width - p.l - p.r);
+      const y = v => p.t + (1 - v) * (height - p.t - p.b);
+      const error = [[0,1],[120,.98],[186,.96],[270,.68],[360,.38],[470,.13],[610,.02],[650,.07],[700,.01],[770,0]];
+      const omega = [[0,0],[120,.02],[186,.10],[270,.62],[340,.98],[430,.68],[520,.30],[610,.05],[700,.03],[770,0]];
+      [[error,COLORS.coral],[omega,COLORS.teal]].forEach(([series,color]) => {
+        ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.beginPath();
+        series.forEach(([vx,vy], i) => i ? ctx.lineTo(x(vx),y(vy)) : ctx.moveTo(x(vx),y(vy))); ctx.stroke();
+      });
+      const events = [[186,'onset'],[340,'peak'],[610,'on-target'],[674,'shot'],[770,'hit']];
+      events.forEach(([vx,label], i) => {
+        ctx.strokeStyle = i === 2 ? COLORS.green : '#66736e'; ctx.setLineDash([4,4]);
+        ctx.beginPath(); ctx.moveTo(x(vx), p.t); ctx.lineTo(x(vx), height-p.b); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = COLORS.text; ctx.fillText(label, Math.min(width-70,x(vx)+4), p.t+12+i%2*14);
+      });
+      ctx.fillStyle = COLORS.coral; ctx.fillText('angular error', width-185, 17);
+      ctx.fillStyle = COLORS.teal; ctx.fillText('|omega|', width-76, 17);
+    }
+
+    function drawSide() {
+      const s = setupCanvas('sideChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const centre = width * .5, scale = (width - 130) / 160;
+      ctx.strokeStyle = COLORS.grid; ctx.beginPath(); ctx.moveTo(centre, 22); ctx.lineTo(centre, height-32); ctx.stroke();
+      ctx.fillStyle = COLORS.text; ctx.fillText('L faster', 18, height-9); ctx.fillText('R faster', width-65, height-9); ctx.fillText('0', centre-4, height-9);
+      const rows = [['Hit time', -34, -72, 5], ['Movement', -18, -55, 19], ['Commit', 9, -14, 32], ['Overshoot', -6, -28, 17]];
+      rows.forEach(([label,val,lo,hi],i) => {
+        const y = 46+i*47; ctx.fillStyle = COLORS.white; ctx.fillText(label, 12, y+4);
+        ctx.strokeStyle = COLORS.text; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(centre+lo*scale,y); ctx.lineTo(centre+hi*scale,y); ctx.stroke();
+        ctx.fillStyle = val < 0 ? COLORS.coral : COLORS.teal; ctx.beginPath(); ctx.arc(centre+val*scale,y,5,0,Math.PI*2); ctx.fill();
+      });
+    }
+
+    function drawDrift() {
+      const s = setupCanvas('driftChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = axes(ctx, width, height, 'run quartile', 'hit time', ['Q1','Q2','Q3','Q4'], ['1000','850','700','550']);
+      const vals = [860,790,765,835];
+      const x = i => p.l + i/3*(width-p.l-p.r);
+      const y = v => p.t+(1000-v)/450*(height-p.t-p.b);
+      ctx.strokeStyle = COLORS.amber; ctx.fillStyle = COLORS.amber; ctx.lineWidth = 2.5; ctx.beginPath();
+      vals.forEach((v,i) => { i ? ctx.lineTo(x(i),y(v)) : ctx.moveTo(x(i),y(v)); }); ctx.stroke();
+      vals.forEach((v,i) => { ctx.beginPath(); ctx.arc(x(i),y(v),5,0,Math.PI*2); ctx.fill(); });
+      ctx.fillStyle = COLORS.text; ctx.fillText('適應', x(1)-14, y(vals[1])-13); ctx.fillText('回升', x(3)-28, y(vals[3])-13);
+    }
+
+    function drawAll() { drawScatter(); drawPhase(); drawTrial(); drawSide(); drawDrift(); }
+
+    document.querySelectorAll('.tab').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(tab => tab.setAttribute('aria-selected', String(tab === button)));
+        document.querySelectorAll('.dash-panel').forEach(panel => { panel.hidden = panel.id !== 'panel-' + button.dataset.panel; });
+        requestAnimationFrame(drawAll);
+      });
+    });
+    window.addEventListener('resize', drawAll);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll); else drawAll();
+  </script>
+</body>
+</html>
