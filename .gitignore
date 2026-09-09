@@ -51,3 +51,9 @@ data/session-history/*
 # again: derived from participant exports. Note the wide-flick exports themselves are also NOT in
 # this repo by decision D-57.T5-8; see docs/operational/spider-wide-recording-spec.md.
 .spider-wide-analysis/
+
+# WP-61 T2 — sensor-lift cohort audit output (npm run analyze:lift-cohort). Same rule as
+# .spider-wide-analysis/: derived from participant exports, so it stays out of git. The annotated
+# cohort exports themselves also never enter the repo (D-57.T5-8); see
+# docs/operational/spider-wide-recording-spec.md §2.5.
+.lift-cohort-analysis/

@@ -19,6 +19,7 @@
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, extname, join, resolve } from 'node:path';
 import { parseExportPayload } from '../src/data/exportPayloadSchema.ts';
+import { readLiftManifest } from './liftManifest.ts';
 import {
   assessDirectionality,
   formatSpiderWideRepositioningSummary,
@@ -43,20 +44,14 @@ function collectFiles(inputs: readonly string[]): string[] {
   return files;
 }
 
-/** `{ "<檔名或路徑尾碼>": "<指示>" }`。比對用 basename，讓 manifest 不綁絕對路徑。 */
+/**
+ * `{ "<檔名>": "<指示>" }` 或 `{ "<檔名>": { "instruction": ..., ... } }`。兩種形態都由
+ * `readLiftManifest()` 這**一份**解析器處理（`spider-wide-recording-spec.md` §3.3 兩種都寫在裡面；
+ * 舊版只收字串，遇到規格自己教的物件型條目會拒收）。本 runner 只取 `instruction` 一欄。
+ */
 function loadManifest(path: string): Map<string, string> {
-  const raw: unknown = JSON.parse(readFileSync(resolve(path), 'utf8'));
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    throw new Error(`manifest must be a JSON object of { "<filename>": "<instruction>" }: ${path}`);
-  }
-  const labels = new Map<string, string>();
-  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof value !== 'string' || value.trim() === '') {
-      throw new Error(`manifest entry '${key}' must be a non-empty string instruction`);
-    }
-    labels.set(basename(key), value);
-  }
-  return labels;
+  const entries = readLiftManifest(readFileSync(resolve(path), 'utf8'), path);
+  return new Map([...entries].map(([name, entry]) => [name, entry.instruction]));
 }
 
 interface Rejection {

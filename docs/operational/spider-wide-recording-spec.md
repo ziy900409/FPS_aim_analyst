@@ -133,13 +133,24 @@ http://localhost:5173/?rawMouse=1&annotation=1
 
 指示字串**逐字相同**才會分到同一組(腳本不做模糊比對——「照平常打」與「照平常打 」是兩組)。
 
-WP-61 標註 cohort 另需記錄每份 run 的 `instructionClass`，封閉值為 `lift`、`pause`、`oneshot`。建議一份 run 只用一種 instruction class；不要在同一份正式 run 中混合 lift 與 pause。
+WP-61 標註 cohort 的條目用**物件型**（`analyze:spider-wide` 與 `analyze:lift-cohort` 兩支都吃這一份）。必填三欄：
+
+| 欄位 | 為什麼必填 |
+|---|---|
+| `instruction` | 方向性分組的 ground truth（逐字比對） |
+| `instructionClass` | 封閉值 `lift`／`pause`／`oneshot`。**缺席即整份 run 作廢** —— 沒有它就不知道那些 `KeyL` 標註代表什麼 |
+| `sessionId` | 校準集／held-out 依 session 隔離（FR-61.7）。**缺席即整份 run 作廢**；同一個 session 不得跨兩側 |
+
+選填：`runId`（golden 檔名用的匿名識別名，缺席時取檔名）、`recordedAt`（ISO 8601，分割排序的第一順位鍵）、`order`。
+
+建議一份 run 只用一種 instruction class；不要在同一份正式 run 中混合 lift 與 pause。
 
 ```json
 {
   "spider-shot-wide-v1-2026-09-15T02_00_00.000Z.json": {
     "instruction": "每個 trial 都抬滑鼠並用 KeyL 標註抬起到落下",
     "instructionClass": "lift",
+    "sessionId": "s1",
     "displayHz": 240,
     "dpi": 800,
     "mouse": "example 1000Hz mouse",
@@ -148,6 +159,7 @@ WP-61 標註 cohort 另需記錄每份 run 的 `instructionClass`，封閉值為
   "spider-shot-wide-v1-2026-09-15T02_10_00.000Z.json": {
     "instruction": "每個 trial 都停住但不抬滑鼠，並用 KeyL 標註停住到恢復",
     "instructionClass": "pause",
+    "sessionId": "s1",
     "displayHz": 240,
     "dpi": 800,
     "mouse": "example 1000Hz mouse",
@@ -156,6 +168,7 @@ WP-61 標註 cohort 另需記錄每份 run 的 `instructionClass`，封閉值為
   "spider-shot-wide-v1-2026-09-15T02_20_00.000Z.json": {
     "instruction": "一次到位，遇到實際抬滑鼠才用 KeyL 標註",
     "instructionClass": "oneshot",
+    "sessionId": "s2",
     "displayHz": 240,
     "dpi": 800,
     "mouse": "example 1000Hz mouse",
@@ -194,6 +207,20 @@ npm run analyze:spider-wide -- <匯出資料夾> --manifest <labels.json>
 1. **資料品質** —— 逐份點名 blocker(缺 DPI、`suspect: true`、drill 不對、母體為空、撞上 KI-031 懸崖,以及 §2.4 開了原始取樣時的四種取樣失效:事件率不足、溢位、`crossOriginIsolated: false`、Pointer Lock 中斷)。**先看這段**;有 blocker 的數字不能直接用。
 2. **逐 run** —— cm/360、周邊呈現數、canonical 預設與繞道下各自的 detected 數、timeout 率(順帶回答 [OQ-57.4](../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/README.md) 剩下的那半題:harness 的 timeout 率恆為 0,只有真人 run 量得到)、標註數與標註率。<br>後面接一張**原始取樣健康度**子表(WP-60):`sampleCount`、`observedRateHz`、`activeRateHz`、`sampleOverflow`、`lockBreakCount`、`gapCountAtThreshold`、`longestGapMs`。**七欄同進同出** —— 沒開 §2.4 的取樣時全部印 `—`(缺席),不是 `0`(有錄到但為零)。全批都沒有時整張表換成一行說明。<br>⚠️ **兩個事件率不是同一件事**:`observedRateHz` 是整段 span 的**平均**(含停頓與抬滑鼠的空洞),`activeRateHz` 排除所有 > 30 ms 的空洞後重算。**500 Hz 的閘走 `activeRateHz`**(D-60.X1)—— 用平均率會把停頓多的真人 run 誤判為「事件率不足」(T0 R2 三組的平均率為 417／494／412 Hz,而同一支滑鼠連續移動期間是 1005 Hz)。
 3. **方向性** —— cohort 共線時**明確拒答**並說出缺什麼,而不是照樣印一張有斜率的表。可答時給出按 cm/360 遞增排序的點與單調性判斷。
+
+### 5.1 WP-61 標註 cohort(額外兩步)
+
+錄了 §2.5 的標註通道之後,另外跑這兩支:
+
+```bash
+npm run analyze:lift-cohort -- <匯出資料夾> --manifest <manifest.json>
+npm run record:lift-golden  -- <匯出資料夾> --manifest <manifest.json>
+```
+
+- **`analyze:lift-cohort`** 是 WP-61 的**作廢與充分性判定**(輸出 `.lift-cohort-analysis/`,gitignored)。報告開頭就給一個三選一的去向:`sufficient`(可進 T3)、`blocked-by-data`(差多少逐條寫出)、`annotation-channel-unusable`(lift 與 pause 的自報延遲有系統性差異 ⇒ 標籤本身不可用,**直接跳 T-exit**)。<br>⚠️ 後兩者**不會**讓命令退非零 —— 它們是正當的具名結果(FR-61.8),退非零會誘使人為了讓命令變綠而去湊一批「剛好夠」的資料。
+- **`record:lift-golden`** 產出 Stage 1 切段的 committed golden 到 `research/fixtures/golden/lift-segments-*.json`。切段只有 TS 一個定義(D-61.P4),Python 側只讀這些 golden。golden 內含時間通道(`t0Ms`/`dtUs`)以支撐逐位重現斷言,**不含** `dx`/`dy`,也不含任何參與者識別欄位。
+
+`analyze:spider-wide` 的原始取樣健康度子表另加了三欄 **標註區間 / 成對違規 / trials**,讓錄完當場就看得出標註有沒有錄壞。⚠️ 那三欄**不產生 blocker** —— 標註品質不影響 `cm/360` 方向性;WP-61 的作廢判定一律看 `analyze:lift-cohort`。
 
 腳本用的門檻是 `150 / 2`(D-57.T5-7),detection 走 `sustainedTicks: 1` 的 KI-031 繞道,兩者都印在報告開頭。**KI-031 修好後,這兩件事都要改回來並重跑。**
 

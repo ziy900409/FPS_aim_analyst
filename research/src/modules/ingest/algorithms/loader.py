@@ -95,7 +95,21 @@ _EVENT_REQUIRED: dict[str, tuple[str, ...]] = {
     # ``code`` (canonical A/D/W/S); it is mapped into the existing ``key`` column below so EVENT_COLUMNS and
     # the sparse CSV surface stay unchanged. Absence in older/opt-out exports is normal, not an error.
     "key": ("code", "down"),
+    # WP-60 / T1 (additive): Pointer Lock state edge. Accepted and validated so a raw-mouse export
+    # loads at all -- but ``locked`` is deliberately NOT surfaced as a column. Attributing a sampling
+    # gap to a lock break is TS ``deriveUnlockedIntervals()``'s single definition (C-D4); the Python
+    # side reads that attribution off the committed Stage 1 golden, never by recomputing it here.
+    "pointer_lock": ("locked",),
+    # WP-61 / T1 (additive, opt-in): operator self-report annotation. The JSON carries ``kind``
+    # (closed literal ``sensor_lift``) plus ``code``/``down``; ``code`` is mapped into the shared
+    # ``key`` column below, exactly as the WP-29 ``key`` event does, so EVENT_COLUMNS and the sparse
+    # CSV surface stay additive-stable. Absence in non-annotated exports is normal, not an error.
+    "annotation": ("kind", "code", "down"),
 }
+
+# WP-61 / T1: the only annotation construct the engine emits. A second value would be a second
+# construct and must not arrive silently -- it would land in the candidate event table unlabelled.
+ANNOTATION_KINDS = ("sensor_lift",)
 
 _EVENT_NUMBERS = (
     "t",
@@ -258,9 +272,17 @@ def _validate_event(value: Any, index: int) -> dict[str, Any]:
     elif event_type == "key":
         _non_empty_string(event["code"], f"{base}.code")
         _type(event["down"], bool, f"{base}.down")
+    elif event_type == "pointer_lock":
+        _type(event["locked"], bool, f"{base}.locked")
+    elif event_type == "annotation":
+        _type(event["kind"], str, f"{base}.kind")
+        if event["kind"] not in ANNOTATION_KINDS:
+            raise SchemaError(f"{base}.kind", f"must be one of {ANNOTATION_KINDS}")
+        _non_empty_string(event["code"], f"{base}.code")
+        _type(event["down"], bool, f"{base}.down")
 
     row = {column: event.get(column) for column in EVENT_COLUMNS}
-    if event_type == "key":
+    if event_type in ("key", "annotation"):
         # Canonical key name lives under the shared ``key`` column (same values as counter.key); consumers
         # disambiguate by ``type``. Keeps EVENT_COLUMNS and the CSV column surface additive-stable.
         row["key"] = event["code"]

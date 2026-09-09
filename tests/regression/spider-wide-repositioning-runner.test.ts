@@ -385,6 +385,45 @@ describe('WP-60 T4 —— 原始取樣健康度（FR-60.8）', () => {
   });
 });
 
+describe('WP-61 T2 —— 標註完整性的可見度（step 8）', () => {
+  it('reports annotation intervals, pair violations and trials for a healthy and a deficient run', () => {
+    const healthy: readonly DrillEvent[] = [
+      { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true, t: 310 },
+      { type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: false, t: 480 },
+    ];
+    // 殘缺：一個沒有 up 的 down ⇒ 零個成對區間 + 一次違規。
+    const deficient: readonly DrillEvent[] = [{ type: 'annotation', kind: 'sensor_lift', code: 'KeyL', down: true, t: 310 }];
+
+    const [ok, broken] = summarizeSpiderWideRuns([
+      { sourcePath: 'ok.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK, extraEvents: healthy }) },
+      {
+        sourcePath: 'broken.json',
+        instruction: '照平常打',
+        payload: widePayload({ mouseSamples: GAP_BLOCK, extraEvents: deficient }),
+      },
+    ]);
+
+    expect([ok.annotationIntervalCount, ok.annotationPairViolations, ok.annotationExpectedTrials]).toEqual([1, 0, 1]);
+    expect([broken.annotationIntervalCount, broken.annotationPairViolations, broken.annotationExpectedTrials]).toEqual([0, 1, 1]);
+    // ⚠️ 標註品質**不是**本 runner 的 blocker —— 它不影響 `cm/360` 方向性。作廢判定在 analyze:lift-cohort。
+    expect(broken.blockers.some((blocker) => blocker.includes('標註'))).toBe(false);
+  });
+
+  it('reports zero — not a dash — for a run recorded without the annotation channel', () => {
+    // 取樣七欄缺席時是 `—`（沒錄原始取樣）；標註三欄則是確定的 0（沒有標註就是沒有標註）。
+    const [row] = summarizeSpiderWideRuns([
+      { sourcePath: 'no-annotation.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK }) },
+    ]);
+    const report = formatSpiderWideRepositioningSummary([row], assessDirectionality([row]));
+
+    expect(row.annotationIntervalCount).toBe(0);
+    expect(report).toContain('| no-annotation.json | 4 | 1005 | 1000 | 否 | 0 | 1 | 50.0 | 0 | 0 | 1 |');
+    expect(report).toContain('analyze:lift-cohort');
+    // 三段結構仍然不變 —— 新欄位長在既有子表裡，不是第四段。
+    expect(report.match(/^## /gm)).toHaveLength(3);
+  });
+});
+
 function summary(overrides: Partial<SpiderWideRunSummary>): SpiderWideRunSummary {
   return {
     sourcePath: 'run.json',
@@ -410,6 +449,11 @@ function summary(overrides: Partial<SpiderWideRunSummary>): SpiderWideRunSummary
     lockBreakCount: undefined,
     gapCountAtThreshold: undefined,
     longestGapMs: undefined,
+    // WP-61 T2：標註三欄**永遠有值** —— 沒開標註通道就是 0，而不是 `undefined`。與上面的取樣七欄
+    // 相反：那七欄的缺席代表「沒錄原始取樣」，而「沒有標註」本身就是一個確定的讀數。
+    annotationIntervalCount: 0,
+    annotationPairViolations: 0,
+    annotationExpectedTrials: 30,
     blockers: [],
     ...overrides,
   };

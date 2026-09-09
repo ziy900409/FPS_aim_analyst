@@ -41,6 +41,27 @@ drift is checked by committed parity/golden JSON in the engine gate.
 Fixtures live in `fixtures/exports/`; cross-language files live in `fixtures/parity/` and
 `fixtures/golden/`.
 
+### WP-61 sensor-lift package (`src/lift/`)
+
+`src/lift/algorithms/` reads the committed Stage 1 segmentation goldens
+(`fixtures/golden/lift-segments-*.json`) and builds the candidate event table. It does **not**
+recompute segmentation: `segmentByTimeGap()` on the TypeScript side is the single definition
+(D-61.P4 / C-D4), and the goldens are produced by `npm run record:lift-golden`.
+
+```powershell
+uv run python src/lift/notebooks/t2/build_candidate_table.py          # -> out/lift-candidates.csv
+uv run python src/lift/notebooks/t2/generate_synthetic_lift_fixture.py  # regenerate the fixture
+```
+
+Matching is pre-registered and frozen at WP-61 T0 (`MATCH_TOLERANCE_MS = 300`,
+`THETA_SWEEP_MS = (18, 30, 50)`); those values may only be version-bumped, never edited in place.
+Labels come from `annotation` events only -- a gap is never labelled because of its length or its
+neighbours (FR-61.3).
+
+`fixtures/exports/synthetic_sensor_lift.json` is a **synthetic** annotated export: it exercises the
+pipeline and is not evidence about sensor lift. The real 240 Hz annotated cohort is not recorded
+yet, and per-sample human trajectories never enter the repo (D-57.T5-8).
+
 ### Committed real exports
 
 | File | Character | `construct-v1` judgement | Caveat |

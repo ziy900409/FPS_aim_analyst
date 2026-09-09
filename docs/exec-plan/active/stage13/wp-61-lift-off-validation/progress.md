@@ -4,7 +4,21 @@
 
 ## 最新狀態
 
-**✅ T1 標註通道儀器已完成（2026-09-09）。** T2 可在使用者錄製 240 Hz cohort 後開始；目前剩餘 blocker 是 cohort 尚未存在。
+**⛔ T2 判定 `blocked-by-data`（2026-09-09）—— 唯一缺的是資料，不是程式。**
+
+T2 的儀器**全部落地並跑過**（逐份可用性覆核、標註完整性稽核、F3 檢定、Stage 1 golden 與逐位重現斷言、Python 候選事件表、兩支 operator 入口）。缺的是 step 1：`?rawMouse=1&annotation=1` 的 240 Hz 真人 run **一份都還沒有**（錄製屬使用者操作）。
+
+⇒ **不得開 T3**（序列閘 ②）。cohort 錄好之後直接跑：
+
+```bash
+npm run analyze:lift-cohort -- <匯出資料夾> --manifest <manifest.json>   # 判定：sufficient / blocked-by-data / annotation-channel-unusable
+npm run record:lift-golden  -- <匯出資料夾> --manifest <manifest.json>   # Stage 1 golden
+uv run python src/lift/notebooks/t2/build_candidate_table.py             # 候選事件表（research/）
+```
+
+manifest 需要 `instructionClass` 與 `sessionId`（`spider-wide-recording-spec.md` §3.3）；缺任一即該 run 作廢。
+
+**✅ T1 標註通道儀器已完成（2026-09-09）。**
 
 **2026-09-09：四個使用者決策已收斂**（D-61.U1～U4）⇒ **T1 的兩個阻塞項（OQ-61.1／61.2）已解除，T2 的硬體阻塞（OQ-61.5）已解除**。
 
@@ -145,6 +159,124 @@ T1/T4 可執行命名：
 
 `uv run pytest` 與全量 Playwright 未在 T1 跑：本切片沒有修改 `research/` Python，且 T1 DoD 要求的是 annotation-channel focused E2E。package-level 五閘會在 WP-61 T-exit 逐項補齊或具名說明。
 
+## T2 cohort ingest and audit（2026-09-09）
+
+### 判定：`blocked-by-data`（cohort 尚未錄製）
+
+T2 的核心產出是一個 go／no-go 判定。**本輪判 `blocked-by-data`，理由是 cohort 不存在** —— step 1（錄製）屬使用者操作，`?rawMouse=1&annotation=1` 的 240 Hz 真人 run 一份都還沒有。
+
+依 T0 凍結的 NFR-61.7 逐項對照（以現有可跑的合成 fixture 為輸入，數字為實測）：
+
+| 項目 | 實測 | 下限 | 差多少 |
+|---|---|---|---|
+| 獨立 session（真人） | **0** | 2 | 差 2 |
+| lift 標註區間（真人） | **0** | 30 | 差 30 |
+| pause 標註區間（真人） | **0** | 30 | 差 30 |
+| held-out lift／pause | **0／0** | 各 10 | 各差 10 |
+| θ=18／30／50 ms 候選空洞（真人） | **0／0／0** | > 0 | 三個 θ 都缺 |
+
+⇒ **不得開 T3**（task-checklist 序列閘 ②）。F3 檢定（標註通道可用性）在真人 lift／pause 兩組都有樣本之前**判 `indeterminate`，不是通過** —— 見 D-61.T2-4。
+
+### 本輪實際交付：T2 的全部儀器 + 端到端驗證
+
+錄製之外的每一個 step 都已落地並跑過。cohort 一到就能直接跑，不需要再寫程式。
+
+| step | 交付物 | 狀態 |
+|---|---|---|
+| 1 錄製 | —— | ⛔ 使用者操作，未執行 |
+| 2 逐份可用性覆核 | `auditLiftRuns()` 六項硬閘 + 具名作廢 | ✅ |
+| 3 標註完整性稽核 | `extractAnnotationIntervals()` + trial 差額／成對性／unlocked 三閘 | ✅ |
+| 4 F3 檢定 | `assessAnnotationChannel()` 逐 θ 的 p10／p50／p90 與二元判定 | ✅ |
+| 5 Stage 1 golden | `record:lift-golden` + `lift-segments-synthetic-lift.json` + 逐位重現斷言 | ✅ |
+| 6 候選事件表 | `research/src/lift/` + `build_candidate_table.py` | ✅ |
+| 7 資料充分性判定 | `assessCohortSufficiency()` 三選一去向 | ✅ |
+| 8 operator 報告 | `analyze:lift-cohort` 新入口 + `analyze:spider-wide` 三欄可見度 | ✅ |
+| 9 全量閘 | 見下 §Verification | ✅ |
+
+### Implementation Summary
+
+| Area | Result |
+|---|---|
+| Python ingest | `load_export` additive 接受 `pointer_lock` 與 `annotation`。**這是修一個既有的硬傷** —— 在此之前任何帶 `pointer_lock` 的 WP-60 匯出、或帶 `annotation` 的 WP-61 匯出，都會被 `unsupported event type` 整份拒收。`annotation.code` 沿用 WP-29 的手法映進既有 `key` 欄，`EVENT_COLUMNS` 與 CSV 欄面**逐位不變**；`pointer_lock.locked` 驗而不出欄（歸因是 TS `deriveUnlockedIntervals()` 的單一定義）。 |
+| 取樣健康度 | `readSamplingHealth()` 由 WP-57 runner 抬進 `scripts/mouseSamplingHealth.ts`，行為逐位不變（既有 20 個 case 全綠）。抬出來是為了讓 WP-61 稽核與 WP-57 報告共用**同一個** `activeRateHz` —— 兩邊各算一次就會有兩個「事件率夠不夠」的答案。 |
+| 稽核契約 | `scripts/liftCohortAudit.ts`：T0 凍結值全部 `const` 具名並由測試釘死；`auditLiftRuns` / `assessAnnotationChannel` / `assessCohortSufficiency` / `splitBySession` / `buildLiftCohortReport`。純函式，零 I/O。 |
+| Stage 1 golden | `scripts/liftSegmentationGolden.ts`（純）+ `record-lift-segmentation-golden.ts`（I/O）。golden 內嵌時間通道 `t0Ms`/`dtUs`，**不含** `dx`/`dy`、不含任何參與者欄位；寫出前先自我覆驗。 |
+| manifest | `scripts/liftManifest.ts` 一份解析器同時吃字串型（WP-57）與物件型（WP-61）條目。 |
+| Python 分析 | `research/src/lift/algorithms/{golden,candidates}.py`（純）+ `notebooks/t2/{generate_synthetic_lift_fixture,build_candidate_table}.py`（I/O）。 |
+| 合成 fixture | `research/fixtures/exports/synthetic_sensor_lift.json`（8 trial／8 標註／8 空洞，240 Hz、1000 Hz 取樣）+ 由它產出的 golden。**它不是證據** —— 空洞由腳本擺放，任何在它上面訓練出來的判準只會復原這個檔。 |
+| operator 入口 | 新 `npm run analyze:lift-cohort`（判定 + 三張表，輸出 `.lift-cohort-analysis/`，gitignored）；既有 `analyze:spider-wide` 的取樣健康度子表加三欄可見度欄位。 |
+
+### 兩份對照 fixture 的實跑輸出（T2 DoD）
+
+一份健康、一份標註殘缺（丟掉三對標註 + 一個沒有 up 的 down），兩支 operator 入口各跑一次。
+
+`npm run analyze:lift-cohort`（節錄，完整輸出見終端機；三份 run = healthy lift／healthy pause／deficient lift）：
+
+```text
+⛔ **`blocked-by-data`** —— 資料量未達 T0 凍結下限。差多少逐條列於下。
+- lift 標註區間 8 < 30（差 22）
+- pause 標註區間 8 < 30（差 22）
+- held-out lift 區間 0 < 10（差 10）
+- held-out pause 區間 8 < 10（差 2）
+
+## 逐份可用性（1／3 份作廢）
+- **lift-annotation-deficient.json**
+  - 標註成對性違規 1 次（T0 凍結上限 0）⇒ 作廢
+  - 標註數 4 與 expected trials 8 差 -4，超過凍結上限 ±1 ⇒ 作廢
+
+| run | class | 標註事件 | 標註區間 | expected trials | 差額 | 上限 | 成對違規 | 落在 unlocked |
+|---|---|---|---|---|---|---|---|---|
+| lift-healthy.json | lift | 16 | 8 | 8 | 0 | ±1 | 0 | 0 |
+| pause-healthy.json | pause | 16 | 8 | 8 | 0 | ±1 | 0 | 0 |
+| lift-annotation-deficient.json | lift | 9 | 4 | 8 | -4 | ±1 | 1 | 0 |
+```
+
+`npm run analyze:spider-wide`（新三欄）：
+
+```text
+| run | samples | 平均事件率 (Hz) | 連續期間 (Hz) | 溢位 | lock 中斷 | 間隙 > 30.0 ms | 最長間隙 (ms) | 標註區間 | 成對違規 | trials |
+|---|---|---|---|---|---|---|---|---|---|---|
+| lift-healthy.json | 2708 | 1000 | 1000 | 否 | 0 | 8 | 290.0 | 8 | 0 | 8 |
+| lift-annotation-deficient.json | 2708 | 1000 | 1000 | 否 | 0 | 8 | 290.0 | 4 | 1 | 8 |
+```
+
+`uv run python src/lift/notebooks/t2/build_candidate_table.py`：
+
+```text
+goldens: 1 (synthetic-lift)
+  theta=18 ms: 8 candidates, labels {'lift': 8}, match rate 100.00%
+  theta=30 ms: 8 candidates, labels {'lift': 8}, match rate 100.00%
+  theta=50 ms: 8 candidates, labels {'lift': 8}, match rate 100.00%
+```
+
+### Verification
+
+| Gate | Command | Result |
+|---|---|---|
+| Targeted Vitest | `npx.cmd vitest run tests/regression/wp61-lift-cohort-audit.test.ts` | exit 0；30 tests passed。 |
+| Golden 重現 | `npx.cmd vitest run tests/regression/wp61-lift-segmentation-golden.test.ts` | exit 0；5 tests passed。 |
+| WP-57 runner 零回歸 | `npx.cmd vitest run tests/regression/spider-wide-repositioning-runner.test.ts` | 抬出 `readSamplingHealth()` 後 20 passed（逐位不變）；加上兩個 WP-61 可見度 case 後 22 passed。 |
+| 全量 Vitest | `npm.cmd test` | exit 0；**252 passed / 1 skipped files；2822 passed / 2 skipped tests**（T1 基線為 250／2785 ⇒ +2 files／+37 tests，全部來自本切片）。 |
+| Typecheck ×2 | `npm.cmd run typecheck` | exit 0。⚠️ **它不覆蓋 `scripts/` 與 `tests/`**（見 Surprises 4）；本切片另跑一次明確的 `tsc --noEmit --strict` 掃過所有新檔與被改的 `scripts/`／`tests/` 檔，exit 0。 |
+| Build | `npm.cmd run build` | exit 0；Vite 2.36 s，既有 chunk-size warning。 |
+| Python | `uv run pytest`（`research/`） | exit 0（見下方逐目錄數字）。 |
+| 突變驗證 ① F3 | 把 `verdict: 'indeterminate'` 改成 `'usable'` | expected red：1 failed / 29 passed（`reports indeterminate — never usable`）。還原後 30 passed。 |
+| 突變驗證 ② oneshot 豁免 | 拿掉 `instructionClass !== 'oneshot'` 條件 | expected red：1 failed / 29 passed。還原後綠。 |
+| 突變驗證 ③ session 隔離 | 讓 `splitBySession` 允許同一 session 跨兩側 | expected red：2 failed / 28 passed。還原後綠。 |
+| 突變驗證 ④ golden 重現 | 在測試內把一個 gap 的 `durationMs` +1 | `verifyLiftSegmentationGolden()` 回 `['theta=18.gaps: 8 recorded vs 8 recomputed']`（常駐 case，非暫時突變）。 |
+| 突變驗證 ⑤ C-D1／C-D2 掃描 | 在 `candidates.py` 插入 `print()` + `from src.metrics import x` | expected red：2 failed（TS import 掃描 + print 掃描各一）。還原後 19 passed。 |
+
+全量 Playwright 未在本切片跑：T2 沒有動任何 runtime 程式碼（`src/` 只有 Python ingest 與 `scripts/`／`research/`／fixtures 變動），package-level 五閘於 T-exit 補齊。
+
+### 三個必須寫下來的判斷（不是門檻變更）
+
+見 Decision Log 的 **D-61.T2-1～T2-7**。下列四項都是**凍結契約沒有涵蓋到的適用範圍問題**，不是把凍結值改掉（T2-5／T2-6／T2-7 為實作落點決策）：
+
+1. `oneshot` 不套 trial 差額閘（否則整個 oneshot 負例對照組會被作廢）。
+2. golden 內嵌時間通道以支撐逐位重現（`dx`/`dy` 仍不進 repo）。
+3. `oneshot` run 中**有標註**的空洞標成 `lift` 而非負例（否則標籤會由空洞的脈絡而非操作者的標註決定，違反 FR-61.3）。
+4. F3 檢定任一 θ 判 unusable 即整批 unusable；某一組無樣本時判 `indeterminate` 而非通過。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -163,6 +295,13 @@ T1/T4 可執行命名：
 | **D-61.U2** | 2026-09-09 | **OQ-61.2 收斂：自報鍵為主 + block 設計為冗餘。**<br>受測者本人按標註鍵；block 設計（「本 run 每個 trial 都抬」）提供 trial 級冗餘標籤，用來稽核漏按。不引入第二人標註、不引入外部硬體。<br>⚠️ **隨此決定生效的宣稱界線（必須進 §Pre-registration）**：反應時間 ≈ 200 ms 與 WP-57 量到的 lift 事件 180–225 ms **同量級** ⇒ 自報鍵可支撐**事件級匹配**（「哪一個空洞是抬滑鼠」），**不可**支撐**起點精度**宣稱（「抬滑鼠從第幾毫秒開始」）。T3／T-exit 不得作後者的宣稱；匹配容差的設計以此為前提。<br>**Alternatives considered**：(b) 第二人標註 —— 一樣是反應時間，不會更準，卻多一個人與一台裝置，駁回；(c) 兩者都收 —— 錄製負擔加倍，且不一致時要另訂仲裁規則，駁回；(d) 客觀量測（高速攝影／外部感測器）—— 跨時鐘域對齊，成本遠大於本 WP 規模，列為 F3 判定「自報通道不可用」時的升級路徑。 | 使用者 | 使用者回覆（2026-09-09）；README §1.5 OQ-61.2／§3.2 |
 | **D-61.U3** | 2026-09-09 | **OQ-61.5 收斂：cohort 一律錄在 240 Hz 顯示器；`meta.displayHz === 240` 為逐份可用性條件。**<br>硬體：使用者有 60 Hz 與 **240 Hz** 兩台，選 240 Hz。<br>⚠️ **規劃期把「≥ 120」與「≥ 144」誤判為文件矛盾，實際上不是** —— 兩者回答不同問題，**兩個都對**：<br>　• **≥ 120 Hz** ＝ 資格閘地板，依 `PERF_FLOOR_MS = 8.33`（[`src/display/constants.ts:13`](../../../../../src/display/constants.ts#L13)）與 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md) §2.1；管的是 `meta.suspect` 是否被 frame floor 判紅。<br>　• **≥ 144 Hz** ＝ KI-031 完全緩解點，依 [KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) §2「失效邊界」：零樣本比例 ≈ `1 − f/128`，`f ≥ 128 Hz`（144 Hz 顯示）幾乎無零樣本；**`f ≈ 120 Hz` 仍約 6% 零樣本 ⇒ 偶發漏檢**；60 Hz 為懸崖。管的是 `deriveDetectionMetrics()` 會不會靜默失效。<br>⇒ `../README.md` §4 與 `docs/exec-plan/README.md` §2 的「≥ 144 Hz」**有依據，不得改寫為 120**。正確處置是**兩個門檻並列並各自標明依據**，而非統一成一個數字。**240 Hz 同時滿足兩者**，故本決定不受影響。<br>**連帶**：F1（硬體不存在）**關閉**；R1 由 High 降為 **Med**（殘餘風險只剩錄製時間與品質）。原「60 Hz 降級路徑」不再需要。<br>**新增硬性條件**：**禁止混合顯示更新率** —— `meta.displayHz` 不等於 240 即作廢該 run（T2 逐份覆核）。顯示更新率同時改變 aim 更新率與 `suspect`，是顯性 confound；既有 WP-57／WP-60 的 60 Hz 真人資料**不得**併入本 cohort。 | 使用者 | 使用者回覆（2026-09-09）；`src/display/constants.ts:13`；`src/data/metadata.ts:154`；KI-031 §2 |
 | **D-61.U4** | 2026-09-09 | **OQ-61.6 收斂：n = 1 的宣稱上限為「本操作者 × 本硬體 × 本 drill 條件下成立」，一律 `research_only`，不得進教練報告（C-D3／GD-20）。**<br>⇒ **T4 的「`src/` 內零 importer」不是暫時措施，而是本 WP 的終局狀態** —— 即使 T3 判 `promote`、T4 交付判準，也不會有任何教練報告端的消費者。這與 `deriveRepositioningSuspicion()` 的既有處置一致（同樣零 importer、同樣品質標註定位）。T-exit 的 A-61.20 據此驗收。<br>跨人泛化需另立 WP 與另一批 cohort。 | 使用者 | 使用者回覆（2026-09-09）；README §1.5 OQ-61.6；`DECISIONS.md` GD-20 |
+| **D-61.T2-1** | 2026-09-09 | **`oneshot` run 不套用 trial 差額閘。**<br>凍結契約寫「interval 數與 expected trials 差額 ≤ `max(1, floor(0.05*expectedTrials))`」，但 **expected trials 這個概念只在「每個 trial 都標」的 block 設計下成立**。`spider-wide-recording-spec.md` §3.3 的 oneshot 指示是「一次到位，遇到**實際**抬滑鼠才用 KeyL 標註」⇒ 標註數本來就遠少於 trial 數。照字面套用會把**整個 oneshot 負例對照組**作廢，而那組正是 T3 用來算 oneshot FPR 的母體 —— 也就是說，照字面執行會摧毀凍結契約自己要求的一個指標。<br>這是**適用範圍**的判斷，不是門檻變更：`lift`／`pause` 的差額閘一字未改，`oneshot` 的成對性閘與 unlocked 閘照樣生效。<br>**Alternatives considered**：(a) 照字面套用 —— 見上，自相矛盾，駁回；(b) 為 oneshot 另訂一個較寬的差額上限 —— 那才是改門檻（憑空生一個新數字），駁回；(c) 錄製時要求 oneshot 也逐 trial 標註 —— 那就不是 oneshot 了，它會變成第二個 lift 組，駁回。 | Engineering | [`liftCohortAudit.ts`](../../../../../scripts/liftCohortAudit.ts) `auditRun()`；`wp61-lift-cohort-audit.test.ts` / `exempts oneshot from the trial-delta gate but still enforces pairing`；突變驗證 ② |
+| **D-61.T2-2** | 2026-09-09 | **Stage 1 golden 內嵌時間通道（`t0Ms` + `dtUs`），不含 `dx`／`dy`。**<br>T2 step 5 寫「只含 index／時間／長度等衍生量，不含逐筆 `dx`／`dy`」。逐位重現斷言需要 `segmentByTimeGap()` 的**實際輸入**，而它只讀 `dtUs`（`dx`／`dy` 僅被檢查長度）。⇒ 內嵌 `dtUs` 換到一個真正有偵測力的斷言；`dx`／`dy`（＝ D-57.T5-8 保護的真人移動軌跡）仍然不進 repo，並由 `wp61-lift-segmentation-golden.test.ts` 的字串掃描釘死。<br>**代價已知**：2708 樣本的合成 golden 為 39 KB ⇒ 120 s 的真人 run 約 1.5 MB。真人 golden 沿用 `research/README.md` 既有的 ≤ 30 s 匿名化 fixture 政策。<br>**Alternatives considered**：(a) 不內嵌輸入、golden 只存衍生量 —— 那就無法重現，golden 會在原語變動時**靜默過期**，而 T3 會拿著一份與現行原語不一致的切段做消融，駁回；(b) 存 `dtUs` 的雜湊 —— 只能偵測「輸入變了」，不能重現切段本身，駁回。 | Engineering | [`liftSegmentationGolden.ts`](../../../../../scripts/liftSegmentationGolden.ts)；`wp61-lift-segmentation-golden.test.ts`（5 cases，含 tamper 偵測） |
+| **D-61.T2-3** | 2026-09-09 | **`oneshot` run 中「有標註」的候選空洞標成 `lift`，只有未匹配的才是 oneshot 負例。**<br>凍結契約寫「`oneshot` 所有 candidate gap = oneshot 負例」。照字面執行會把一個**操作者親自標註為抬滑鼠**的空洞標成負例 —— 那等於讓空洞的脈絡（它出現在哪一種 run）而不是標註來決定標籤，直接違反 FR-61.3。⇒ 匹配到的標 `lift`，未匹配的留在 `negative_group='oneshot'`，凍結的 oneshot FPR 仍在同一個母體上計算。<br>**Alternatives considered**：(a) 照字面把全部標負 —— 違反 FR-61.3，且會人為壓低 recall，駁回；(b) 要求 oneshot run 不得有任何標註 —— 與 §3.3 的指示相反（它明說「遇到實際抬滑鼠才標註」），駁回。 | Engineering | [`candidates.py`](../../../../../research/src/lift/algorithms/candidates.py) `_label_for()`；`test_a_oneshot_run_keeps_unmatched_gaps_as_the_oneshot_negative_group` |
+| **D-61.T2-4** | 2026-09-09 | **F3 檢定：某一組無樣本時判 `indeterminate`（非通過）；任一 θ 判 unusable 即整批 unusable。**<br>T0 凍結了 F3 的**門檻**（中位數差 150 ms／p90 差 300 ms）但沒有凍結兩件事：① 用哪個 θ 做檢定，② 一組為空時怎麼判。<br>① 逐 θ 各跑一次，任一 θ unusable 即整批 unusable —— 缺乏凍結值時**拒絕比通過保守**：拒絕不可能製造出可分性假象，通過可以。<br>② 一組為空時「兩組無系統性差異」在邏輯上**未被檢定**；判 usable 會讓一個從未做過的檢定看起來通過了。這是本 WP 最容易發生的錯誤形態（`blocked-by-data` 是最可能的路徑，而資料不足時正好就是某一組為空）。<br>**Alternatives considered**：(a) 只用 30 ms 做 F3 —— 會把 PA prior 誤升為本輪的校準值（T0 已為此拒絕過單一 θ），駁回；(b) 一組為空時判 usable 並加註腳 —— 註腳會在引用時脫落，駁回。 | Engineering | [`liftCohortAudit.ts`](../../../../../scripts/liftCohortAudit.ts) `assessAnnotationChannel()` / `buildLiftCohortReport()`；突變驗證 ① |
+| **D-61.T2-5** | 2026-09-09 | **T2 的 operator 報告拆成兩處：`analyze:spider-wide` 只加**可見度**三欄，作廢判定放進新的 `analyze:lift-cohort`。**<br>T2 step 8 指名擴充 `spiderWideRepositioningRunner.ts`。但該 runner 回答的是 WP-57 的 `cm/360` 方向性、且硬綁 `spider-shot-wide-v1`；把 WP-61 的作廢閘塞進去，會讓「這份 run 不能用」在兩個不同的意義之間滑動（不能算方向性 vs 不能進 lift cohort）。⇒ 既有報告加三欄（標註區間／成對違規／trials）滿足「錄完當場就看得出標註有沒有錄壞」這個**實際目的**，且**明文不產生 blocker**；判定留在 WP-61 自己的入口。<br>**Alternatives considered**：(a) 全部塞進 WP-57 runner —— 見上，語意滑動，且會讓 WP-57 的 blocker 清單長出與它無關的條目，駁回；(b) 完全不動 WP-57 runner —— 操作者得跑第二支命令才知道標註錄壞了，違反 step 8 的目的，駁回。 | Engineering | [`spiderWideRepositioningRunner.ts`](../../../../../scripts/spiderWideRepositioningRunner.ts)；`spider-wide-repositioning-runner.test.ts` 的兩個 WP-61 可見度 case |
+| **D-61.T2-6** | 2026-09-09 | **`research/src/lift/` 用 `algorithms/` + `notebooks/` 兩層，而非直接平鋪在 `lift/` 下。**<br>D-61.T0-2 凍結的是**路徑前綴** `research/src/lift/`；C-D2 要求純函式與 I/O 分層。兩者相容 ⇒ `lift/algorithms/`（純：無 print／無寫檔／無 matplotlib）+ `lift/notebooks/t2/`（I/O：產 fixture、寫 CSV）。與 `modules/*/` 的既有慣例一致，只是少一層 `modules/`（凍結值沒有它）。<br>C-D1／C-D2 由 `lift/algorithms/tests/test_purity.py` 的 AST 掃描釘死，並以突變驗證過偵測力。 | Engineering | `research/src/lift/`；`test_purity.py`（4 cases）；突變驗證 ⑤ |
+| **D-61.T2-7** | 2026-09-09 | **Python `load_export` additive 接受 `pointer_lock` 與 `annotation`；`pointer_lock.locked` 驗而不出欄。**<br>在此之前，任何帶 `pointer_lock` 的 WP-60 匯出或帶 `annotation` 的 WP-61 匯出，都會被 `unsupported event type` **整份拒收** —— T2／T3 的 Python 側在物理上讀不到自己要稽核的標籤。<br>`annotation.code` 沿用 WP-29 `key` 事件的手法映進既有 `key` 欄（`EVENT_COLUMNS` 與 CSV 欄面逐位不變）；`kind` 以封閉集驗證但不出欄（今天只有一個值，多一欄只會讓每個既有 consumer 的 DataFrame 形狀改變）。`locked` 刻意不出欄：把空洞歸因給 lock 中斷是 TS `deriveUnlockedIntervals()` 的**單一定義**（C-D4），Python 側從 golden 讀那個歸因，不得自己長一套。<br>**Alternatives considered**：(a) 在 `lift/` 另寫一支專用 export reader —— 兩套 export 解析器，且既有 loader 的硬傷仍在，駁回；(b) 新增 `kind`／`locked` 欄 —— 改變所有既有 consumer 的欄面，違反 additive 紀律，駁回。 | Engineering | [`loader.py`](../../../../../research/src/modules/ingest/algorithms/loader.py)；`test_loader_annotation_events.py`（7 cases） |
 
 ## Surprises
 
@@ -179,6 +318,19 @@ T1/T4 可執行命名：
 3. **T1 的 determinism 測試必須故意弄壞一次才知道有偵測力。**（2026-09-09，T1）
    `KeyL` branch 的正確實作看起來很小，最危險的是未來有人順手寫進 `state` 而測試沒有抓到。因此 T1 依 README §5 的突變驗證紀律，用 copy backup 暫時插入 `state.player.x += 1e-12`。focused regression 立即紅，且回報多個 `TickRecord` mismatch；還原後同檔綠。
    ⇒ 這證明四 FPS parity 不是只檢查窄 trace，而是真的覆蓋 sim state 寫入對 tick export 的影響。
+
+4. **`npm run typecheck` 不覆蓋 `scripts/` 與 `tests/` —— 我先在一個空集合上跑了六次綠燈。**（2026-09-09，T2）
+   本切片的程式碼幾乎全在 `scripts/`（稽核契約、golden、manifest、兩支 CLI）。每寫完一段就跑 `npx.cmd tsc --noEmit -p tsconfig.node.json`，六次 exit 0。直到要驗收才去讀 tsconfig：`tsconfig.json` 的 `include` 是 `["src"]`，`tsconfig.node.json` 的是 `["server"]` ⇒ **`scripts/` 與 `tests/` 兩個目錄從來沒有被任何一支 typecheck 掃過**。
+   改用明確的 `tsc --noEmit --strict <檔案清單>` 重跑，立刻抓到兩個真錯：既有 `spider-wide-repositioning-runner.test.ts` 的 `summary()` fixture 缺我新加的三個必填欄位，以及一個既有的未使用 import。也就是說：那六次綠燈**一次都沒有檢查過我寫的東西**。
+   ⇒ 這是 WP-60 Surprises 9 與 T0 Surprises 2 的同一族：綠燈的**範圍**沒有被驗證。「命令 exit 0」與「我的程式碼被檢查了」之間差一個 `include` 陣列，而那個差別在終端機上完全看不出來。
+   ⇒ **教訓**：第一次在一個新目錄裡寫程式時，先確認驗證命令真的看得到它 —— 最便宜的作法是**故意寫一個型別錯誤**，確認它會紅。本輪是靠讀 tsconfig 才發現，那已經是第六次綠燈之後。
+   ⇒ **未修**：把 `scripts/`／`tests/` 納入 typecheck 是 repo 級的變更（會一次翻出既有檔案的錯，如上述那個未使用 import），超出 T2 範圍。已具名留在此處待另立任務。
+
+5. **我寫的 C-D1 掃描器被 repo 既有的 C-D1 掃描器擋下來了。**（2026-09-09，T2）
+   `research/src/lift/algorithms/tests/test_purity.py` 要檢查 lift 套件裡沒有任何 TypeScript 引用，於是把 `".ts'"`／`'.ts"'` 寫成字面字串當比對針。全量 `uv run pytest` 一跑，紅的不是我的測試，是既有的 `modules/kinematics/algorithms/tests/test_purity.py::test_research_python_has_no_typescript_dependencies` —— 它會 AST 掃過 **`research/src` 底下每一個 `.py`** 的每一個字串常數，禁止出現 `.ts` 子字串。我的比對針本身就是違規內容。
+   有趣的是解法就寫在那支既有測試裡：它自己用 `"." + "ts"` 組出副檔名，正是為了不觸發自己。我沒讀它就先寫了自己的版本。
+   ⇒ 兩個教訓。① **加一個同類的守門員之前，先讀既有的那個** —— 不只是為了不重複，而是既有的那個可能已經把「怎麼在不違規的前提下描述違規」解決掉了。② 這次的紅燈是**好事**：它證明既有掃描的覆蓋範圍真的是「每一個 `.py`」，包含 T2 新開的 `lift/` 子樹 —— C-D1 不需要我為新套件另外接線。
+   ⇒ 我的 `test_purity.py` 仍然保留（它多驗 C-D2 的 print／寫檔與 `algorithms/` 的 import 純度，且對 `src/metrics`／`src/data` 這種**不帶副檔名**的路徑字串也有偵測力，那是既有掃描抓不到的）。
 
 ## Open Questions（狀態）
 

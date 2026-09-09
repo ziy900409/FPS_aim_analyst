@@ -23,8 +23,9 @@
  */
 import type { ExportPayload } from '../src/data/export.ts';
 import { deriveDetectionMetrics } from '../src/metrics/detectionDerivation.ts';
-import { deriveUnlockedIntervals, segmentByTimeGap } from '../src/metrics/mouseSampleGaps.ts';
 import { deriveMouseThrow } from '../src/metrics/mouseThrow.ts';
+import { extractAnnotationIntervals } from './liftCohortAudit.ts';
+import { deriveSamplingHealth } from './mouseSamplingHealth.ts';
 import { deriveRepositioningSuspicion } from '../src/metrics/spiderShotRepositioning.ts';
 
 /** 本 runner 只認這一支 drill —— 其他 drill 沒有 `zone: 'peripheral'`，母體為空（Surprises 16）。 */
@@ -125,6 +126,19 @@ export interface SpiderWideRunSummary {
   /** 上述間隙中最長的一個（ms）；一個都沒有時為 0（有錄到但沒間隙 ≠ 沒錄到）。 */
   readonly longestGapMs: number | undefined;
 
+  // ── WP-61 T2：標註完整性（FR-61.11）─────────────────────────────────────────
+  // 三欄**永遠有值**（不像取樣七欄會整組缺席）：沒開標註通道的 run 就是 `0 / 0 / 0`，而那正是
+  // 「這份 run 不是 WP-61 cohort 的一員」的正確讀數。⚠️ 這三欄**不產生 blocker** —— 標註品質不影響
+  // 本 runner 要回答的 `cm/360` 方向性；WP-61 的作廢判定在 `analyze:lift-cohort`（本檔只給可見度，
+  // 讓操作者錄完當場就看得出標註有沒有錄壞，不必等到跑 cohort 稽核）。
+
+  /** 成對的 `KeyL` down→up 標註區間數。 */
+  readonly annotationIntervalCount: number;
+  /** 成對性違規數（重複 down／無主 up／未關閉的 down）。 */
+  readonly annotationPairViolations: number;
+  /** peripheral `visible` 數 —— WP-61 的 expected trials。與上面的區間數對照即可看出漏按。 */
+  readonly annotationExpectedTrials: number;
+
   /** 讓這份 run 不可用或不可稽核的原因；空陣列 = 全綠。 */
   readonly blockers: readonly string[];
 }
@@ -188,7 +202,8 @@ function summarizeRun(input: SpiderWideRunInput): SpiderWideRunSummary {
   const evaluableCount = detectedAtWorkaround;
   const suspectedCount = suspicions.filter((suspicion) => suspicion.suspected).length;
 
-  const sampling = readSamplingHealth(payload);
+  const annotation = extractAnnotationIntervals(payload.events);
+  const sampling = deriveSamplingHealth(payload, REPORTED_GAP_THRESHOLD_MS);
   if (sampling !== undefined) {
     if (sampling.activeRateHz !== undefined && sampling.activeRateHz < MIN_OBSERVED_RATE_HZ) {
       blockers.push(
@@ -239,71 +254,10 @@ function summarizeRun(input: SpiderWideRunInput): SpiderWideRunSummary {
     lockBreakCount: sampling?.lockBreakCount,
     gapCountAtThreshold: sampling?.gapCountAtThreshold,
     longestGapMs: sampling?.longestGapMs,
+    annotationIntervalCount: annotation.intervals.length,
+    annotationPairViolations: annotation.pairViolations,
+    annotationExpectedTrials: peripheralCount,
     blockers,
-  };
-}
-
-interface SamplingHealth {
-  readonly sampleCount: number;
-  readonly observedRateHz: number | undefined;
-  readonly activeRateHz: number | undefined;
-  readonly sampleOverflow: boolean | undefined;
-  readonly lockBreakCount: number;
-  readonly gapCountAtThreshold: number;
-  readonly longestGapMs: number;
-}
-
-/**
- * 讀出 WP-60 的取樣健康度；`mouseSamples` 缺席即回 `undefined`（六欄一起缺席，見 `SpiderWideRunSummary`）。
- *
- * `lockBreakCount` 也綁在 block 的存在上 —— `pointer_lock` 事件單獨存在時沒有任何樣本流可歸因，
- * 報一個「中斷 N 次」只會讓讀者以為某份取樣被污染了，而那份取樣根本不存在。
- *
- * 間隙一律走 `segmentByTimeGap()`（C-D4 單一定義），中斷區間一律走 `deriveUnlockedIntervals()`。
- * 本函式只做計數與取最大值，不自己判斷任何一個空洞是什麼。
- */
-function readSamplingHealth(payload: ExportPayload): SamplingHealth | undefined {
-  const block = payload.mouseSamples;
-  if (block === undefined) return undefined;
-
-  const sampling = payload.meta.mouseSampling;
-  // 樣本流末筆時間 —— 未關閉的 lock 中斷以它收尾。整數 µs 空間累加後才換算 ms，比照 `segmentByTimeGap()`。
-  let elapsedUs = 0;
-  for (let i = 1; i < block.dtUs.length; i++) elapsedUs += block.dtUs[i];
-  const lastSampleMs = block.t0Ms + elapsedUs / 1000;
-
-  const unlockedIntervals = deriveUnlockedIntervals(payload.events, lastSampleMs);
-  const segmentation = segmentByTimeGap(block, REPORTED_GAP_THRESHOLD_MS, unlockedIntervals);
-  let longestGapMs = 0;
-  for (const gap of segmentation.gaps) {
-    if (gap.durationMs > longestGapMs) longestGapMs = gap.durationMs;
-  }
-
-  // WP-60 T-exit（D-60.X1）—— **連續期間**事件率：只計入落在 segment 內的樣本間隔，排除所有空洞。
-  // 為什麼不能用 `meta.mouseSampling.observedRateHz` 當閘：那是整段 span 的**平均**率（含刻意的停頓、
-  // 抬滑鼠、以及 drill 內任何不動的時間）。兩者在真人資料上差一個量級 —— T0 R2 三組實機摘要的平均率
-  // 為 417／494／412 Hz，全部低於 500 Hz 下限，而**同一支滑鼠**在 R1 的連續移動期間量到 1005 Hz。
-  // 以平均率當閘會把那三組全部誤判為「事件率不足、時間間隙判定不可用」，而 F1 要問的是「瀏覽器有沒有
-  // 退化到 rAF 率」，不是「受測者有沒有停手」。⇒ 閘走 `activeRateHz`，`observedRateHz` 維持 provenance。
-  let intervalCount = 0;
-  let activeUs = 0;
-  for (const segment of segmentation.segments) {
-    for (let i = segment.startIndex + 1; i <= segment.endIndex; i++) {
-      intervalCount++;
-      activeUs += block.dtUs[i];
-    }
-  }
-  // 一個間隔都沒有（樣本數 < 2，或每段都只有單筆）⇒ 無從量測，回 `undefined` 而非 0：0 會誤觸 blocker。
-  const activeRateHz = intervalCount > 0 && activeUs > 0 ? (intervalCount * 1_000_000) / activeUs : undefined;
-
-  return {
-    sampleCount: block.dtUs.length,
-    observedRateHz: sampling?.observedRateHz,
-    activeRateHz,
-    sampleOverflow: sampling?.overflow,
-    lockBreakCount: unlockedIntervals.length,
-    gapCountAtThreshold: segmentation.gaps.length,
-    longestGapMs,
   };
 }
 
@@ -434,20 +388,27 @@ export function formatSpiderWideRepositioningSummary(
   } else {
     lines.push(
       `| run | samples | 平均事件率 (Hz) | 連續期間 (Hz) | 溢位 | lock 中斷 ` +
-        `| 間隙 > ${REPORTED_GAP_THRESHOLD_MS.toFixed(1)} ms | 最長間隙 (ms) |`,
+        `| 間隙 > ${REPORTED_GAP_THRESHOLD_MS.toFixed(1)} ms | 最長間隙 (ms) | 標註區間 | 成對違規 | trials |`,
     );
-    lines.push('|---|---|---|---|---|---|---|---|');
+    lines.push('|---|---|---|---|---|---|---|---|---|---|---|');
     for (const summary of summaries) {
       lines.push(
         `| ${summary.sourcePath} | ${summary.sampleCount ?? '—'} | ${fmt(summary.observedRateHz, 0)} ` +
           `| ${fmt(summary.activeRateHz, 0)} | ${bool(summary.sampleOverflow)} | ${summary.lockBreakCount ?? '—'} ` +
-          `| ${summary.gapCountAtThreshold ?? '—'} | ${fmt(summary.longestGapMs, 1)} |`,
+          `| ${summary.gapCountAtThreshold ?? '—'} | ${fmt(summary.longestGapMs, 1)} ` +
+          `| ${summary.annotationIntervalCount} | ${summary.annotationPairViolations} | ${summary.annotationExpectedTrials} |`,
       );
     }
     lines.push('');
     lines.push(
       '`—` = 該 run 沒有 `mouseSamples` 區塊（合法，非 blocker）；`0` = 有錄到但該項為零。' +
         '**平均事件率含空洞**（受停頓長度影響），事件率 blocker 一律看「連續期間」那一欄（D-60.X1）。',
+    );
+    lines.push('');
+    lines.push(
+      '末三欄為 WP-61 標註通道（`?annotation=1`）：**標註區間** = 成對的 `KeyL` down→up 數、' +
+        '**成對違規** = 漏按或重複按、**trials** = peripheral 呈現數。三欄只給可見度，**不產生 blocker** ' +
+        '—— 它們不影響本報告要回答的 `cm/360` 方向性。WP-61 的逐份作廢判定在 `npm run analyze:lift-cohort`。',
     );
   }
   lines.push('');

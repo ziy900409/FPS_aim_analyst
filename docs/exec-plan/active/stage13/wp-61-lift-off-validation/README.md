@@ -14,7 +14,7 @@
 | **Pre-registration** | 事件匹配容差、資料分割、指標與門檻**必須在看特徵分布之前凍結**（GD-20 先例） |
 | **Estimate** | 9–15 dev-days（T4 為條件式；若判定為負向結論則 6.5–11） |
 | **Risk** | High：cohort 尚未錄製、標註本身有噪、最可能的結果是分不開（硬體風險已於 2026-09-09 消除，R1 降為 Med） |
-| **Status** | ✅ **T1 標註通道儀器已完成 2026-09-09**：`KeyL` → opt-in `annotation` event 已落地，預設關閉且 sim tick 全欄位決定性對照綠。T2 可在使用者錄製 240 Hz cohort 後開始；cohort 仍不存在。 |
+| **Status** | 🟡 **T2 判定 `blocked-by-data` 2026-09-09** —— 缺的是資料，不是程式。T2 的**全部儀器已落地並驗證**（逐份可用性六閘、標註完整性三閘、F3 檢定、Stage 1 golden + 逐位重現斷言、Python 候選事件表、`analyze:lift-cohort` 與 `analyze:spider-wide` 兩支 operator 入口）；缺 step 1：240 Hz 真人標註 run **一份都還沒有**（真人 session 0／2、lift 標註 0／30、pause 標註 0／30）⇒ **不得開 T3**。<br>✅ T1 標註通道儀器已完成 2026-09-09。 |
 
 ---
 
