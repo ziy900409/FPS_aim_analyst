@@ -61,6 +61,11 @@ class LiftGolden:
     instruction_class: str
     display_hz: float
     sample_count: int
+    #: The embedded time channel. It is what makes the golden byte-reproducible on the TS side, and
+    #: on this side it is how a candidate export is proved to be the run the golden was cut from
+    #: (``features.assert_block_matches_golden``). It deliberately carries no ``dx`` / ``dy``.
+    t0_ms: float
+    dt_us: tuple[int, ...]
     unlocked_intervals: tuple[Interval, ...]
     annotation_intervals: tuple[Interval, ...]
     segmentations: tuple[Segmentation, ...]
@@ -115,12 +120,19 @@ def parse_lift_golden(payload: Any, source_path: Path | None = None) -> LiftGold
             Segmentation(theta_ms=_number(_required(record, "thetaMs", theta_path), theta_path), gaps=tuple(gaps))
         )
 
+    block = _mapping(_required(root, "input", "input"), "input")
+    t0_ms = _number(_required(block, "t0Ms", "input.t0Ms"), "input.t0Ms")
+    dt_us_raw = _list(_required(block, "dtUs", "input.dtUs"), "input.dtUs")
+    dt_us = tuple(int(_number(value, f"input.dtUs[{index}]")) for index, value in enumerate(dt_us_raw))
+
     return LiftGolden(
         run_id=str(_required(root, "runId", "runId")),
         session_id=str(_required(root, "sessionId", "sessionId")),
         instruction_class=str(instruction_class),
         display_hz=_number(_required(root, "displayHz", "displayHz"), "displayHz"),
         sample_count=int(_number(_required(root, "sampleCount", "sampleCount"), "sampleCount")),
+        t0_ms=t0_ms,
+        dt_us=dt_us,
         unlocked_intervals=_intervals(root.get("unlockedIntervals", []), "unlockedIntervals"),
         annotation_intervals=_intervals(root.get("annotationIntervals", []), "annotationIntervals"),
         segmentations=tuple(segmentations),

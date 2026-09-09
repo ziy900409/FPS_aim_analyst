@@ -14,7 +14,7 @@
 | **Pre-registration** | 事件匹配容差、資料分割、指標與門檻**必須在看特徵分布之前凍結**（GD-20 先例） |
 | **Estimate** | 9–15 dev-days（T4 為條件式；若判定為負向結論則 6.5–11） |
 | **Risk** | High：cohort 尚未錄製、標註本身有噪、最可能的結果是分不開（硬體風險已於 2026-09-09 消除，R1 降為 Med） |
-| **Status** | 🟡 **T2 判定 `blocked-by-data` 2026-09-09** —— 缺的是資料，不是程式。T2 的**全部儀器已落地並驗證**（逐份可用性六閘、標註完整性三閘、F3 檢定、Stage 1 golden + 逐位重現斷言、Python 候選事件表、`analyze:lift-cohort` 與 `analyze:spider-wide` 兩支 operator 入口）；缺 step 1：240 Hz 真人標註 run **一份都還沒有**（真人 session 0／2、lift 標註 0／30、pause 標註 0／30）⇒ **不得開 T3**。<br>✅ T1 標註通道儀器已完成 2026-09-09。 |
+| **Status** | 🟡 **T2／T3 皆判 `blocked-by-data` 2026-09-09** —— 缺的是資料，不是程式。T2 的全部儀器 + **T3 的全部消融儀器**（四層 gap-only／邊界運動學／Stage 2 類比／Stage 3 類比、θ×window sweep、session 隔離分割、凍結決策規則、seeded 逐位可重現報表、`run_ablation.py` 入口）皆已落地並以合成對照 fixture 端到端驗證；缺 step 1：240 Hz 真人標註 run **一份都還沒有**（真人 session 0／2、lift 標註 0／30、pause 標註 0／30）⇒ **T4 不執行**。<br>⚠️ `blocked-by-data` **不是**「分不開」——本 WP 至今對可分性未作任何宣稱。<br>T3 的兩個具名發現：PA 三個 `*_PX_S*` 參數名為誤稱（實作即在 counts 空間，D-61.T3-1）；PA Stage 2 在 1 ms 取樣下**算術上不可觸發**（D-61.T3-2）。<br>✅ T1 標註通道儀器已完成 2026-09-09。 |
 
 ---
 
@@ -374,7 +374,7 @@ export interface GapBoundaryKinematics {
 | **T0** | Entry gate：構念歸屬拍板、評估契約 pre-registration、WP-60 handoff 覆驗、硬體 go／no-go | WP-60 T-exit ✅ | **High** | 1–1.5 | [T0-entry-gate.md](T0-entry-gate.md) | `docs(stage13): complete WP-61 lift-off validation entry gate` |
 | **T1** | 標註通道儀器：additive `annotation` 事件 + 錄製協定 | T0 ✅ | **High** | 1.5–2.5 | ✅ 完成 2026-09-09；[T1-annotation-channel.md](T1-annotation-channel.md) | `feat(data): add opt-in operator annotation events` |
 | **T2** | Cohort 取得、標註完整性稽核、切段 golden、候選事件表 | T1 ✅ + 實際 cohort | **High** | 1.5–2.5 | [T2-cohort-and-label-audit.md](T2-cohort-and-label-audit.md) | `feat(research): ingest and audit the annotated lift-off cohort` |
-| **T3** | 可分性消融：gap-only → +邊界運動學 → +Stage 2 → +Stage 3 | T2 ✅（含資料充分性閘） | **High** | 2–3.5 | [T3-separability-ablation.md](T3-separability-ablation.md) | `feat(research): ablate lift-off separability on annotated gaps` |
+| **T3** | 可分性消融：gap-only → +邊界運動學 → +Stage 2 → +Stage 3 | T2 🟡 + 實際 cohort | **High** | 2–3.5 | 🟡 儀器完成 2026-09-09，判定 `blocked-by-data`；[T3-separability-ablation.md](T3-separability-ablation.md) | `feat(research): ablate lift-off separability on annotated gaps` |
 | **T4** | **條件式**：判準凍結 + held-out 驗證 + TS 實作 + C-D5 parity | T3 達 §2.4 門檻 | **High** | 2.5–4 | [T4-conditional-criterion.md](T4-conditional-criterion.md) | `feat(metrics): add versioned sensor-lift criterion` |
 | **T-exit** | 結論、去向、帳本同步 | T3（或 T4） | Med | 0.5–1 | [T-exit-gate.md](T-exit-gate.md) | `docs(stage13): close WP-61 lift-off validation` |
 

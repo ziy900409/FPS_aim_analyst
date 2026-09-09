@@ -4,16 +4,19 @@
 
 ## 最新狀態
 
-**⛔ T2 判定 `blocked-by-data`（2026-09-09）—— 唯一缺的是資料，不是程式。**
+**⛔ T2 與 T3 皆判 `blocked-by-data`（2026-09-09）—— 唯一缺的是資料，不是程式。**
 
-T2 的儀器**全部落地並跑過**（逐份可用性覆核、標註完整性稽核、F3 檢定、Stage 1 golden 與逐位重現斷言、Python 候選事件表、兩支 operator 入口）。缺的是 step 1：`?rawMouse=1&annotation=1` 的 240 Hz 真人 run **一份都還沒有**（錄製屬使用者操作）。
+T2 與 T3 的儀器**全部落地並跑過**（逐份可用性覆核、標註完整性稽核、F3 檢定、Stage 1 golden 與逐位重現斷言、候選事件表、四層消融、session 隔離分割、凍結決策規則、seeded 可重現報表、兩支 operator 入口 + 一支 T3 入口）。缺的仍是 step 1：`?rawMouse=1&annotation=1` 的 240 Hz 真人 run **一份都還沒有**（錄製屬使用者操作）。
 
-⇒ **不得開 T3**（序列閘 ②）。cohort 錄好之後直接跑：
+⚠️ **T3 判 `blocked-by-data` 不等於「分不開」** —— 本 WP 至今對可分性**未作任何宣稱**，也不得作。`not-reliably-separable` 要等資料與標註兩個閘都過才有資格產出。
+
+⇒ **T4 不執行**（序列閘 ④）。cohort 錄好之後直接跑，不需要再寫程式：
 
 ```bash
 npm run analyze:lift-cohort -- <匯出資料夾> --manifest <manifest.json>   # 判定：sufficient / blocked-by-data / annotation-channel-unusable
 npm run record:lift-golden  -- <匯出資料夾> --manifest <manifest.json>   # Stage 1 golden
 uv run python src/lift/notebooks/t2/build_candidate_table.py             # 候選事件表（research/）
+uv run python src/lift/notebooks/t3/run_ablation.py --pair <golden>=<export> [--pair ...]   # 四層消融 + 判定
 ```
 
 manifest 需要 `instructionClass` 與 `sessionId`（`spider-wide-recording-spec.md` §3.3）；缺任一即該 run 作廢。
@@ -32,6 +35,7 @@ manifest 需要 `instructionClass` 與 `sessionId`（`spider-wide-recording-spec
 - **2026-09-09**：依 `engineering-planning` skill 完成 repository-grounded 規劃。盤點 `KEY_CODE` 封閉集、`applyInput` 的 key 分支、`TickRecord.keys` 四 bit 遮罩、`mouseSampleGaps.ts` 的中性原語、`deriveRepositioningSuspicion()` 的既有構念語意、`research/` 的 C-D1／C-D2 邊界與 WP-60 的 R1／R2／TF1／TF2 實機基線；**尚未修改任何 production code**。
 - **2026-09-09**：把工作拆為 T0～T4 + T-exit（T4 條件式）。相對 2026-09-09 的範圍草案（本 WP `README.md` 的前一版，四切片 T0／T1／T2／T-exit；`git log -- README.md` 可回溯）新增一個 **T1「標註通道儀器」** —— 草案把「保存獨立的抬起／落下標註」寫成 T0 的資料要求，但 repo 內**沒有任何機制**能產生那種標註（`KEY_CODE` 是四鍵封閉集、`DrillEvent` 無標註型別）。見 D-61.P2。
 - **2026-09-09**：T0 entry gate 完成。Baseline：HEAD `10ee3561ec81fd78b0fe59d125363ba1fc853c35`；`git status --short` 未列出變更，但 sandbox 讀 global ignore 與 `.pytest_cache/` 有 permission warning；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（249 files passed / 1 skipped；2764 passed / 2 skipped）；`npm.cmd run build` sandbox 內因 esbuild 無權讀 `../../../..` exit 1，非 sandbox 重跑 exit 0（Vite 195 modules，chunk-size warning）；preview COI focused read：`{"status":200,"coop":"same-origin","coep":"require-corp","crossOriginIsolated":true}`。5173 已被既有 server 占用，未停止他人 server，故未跑 dev-server COI 讀數。
+- **2026-09-09**：T3 可分性消融儀器完成，判定 `blocked-by-data`（cohort 仍不存在）。凍結檢核以逐段逐位 diff + sha256 證明 §Pre-registration 與 README §2.4 自 T0 未變。新增 `research/src/lift/algorithms/{features,pa_parameters,ablation}.py` 與 `notebooks/t3/run_ablation.py`；`golden.py` additive 補時間通道。兩個具名發現：PA 三個 `*_PX_S*` 參數名為誤稱（實作即在 counts 空間）、PA Stage 2 在 1 ms 取樣下算術上不可觸發。lift 套件 80 passed；typecheck／Vitest／build 與 T2 基線逐位相同。
 - **2026-09-09**：T1 標註通道儀器完成。`KEY_CODE/CODE_KEY` additive 加入 `KeyL`；`DataRecorder` 新增 `recordAnnotationEvents?: boolean`（預設 false）與 additive `annotation` event；`applyInput` 對 `KeyL` 只在 opt-in recorder 上寫 event，不寫 sim state；app 以 `?annotation=1` 開啟，預設關閉；schema parser/CSV/JSON round-trip、InputRing/InputSampler、focused E2E 與決定性 regression 全補測。
 
 ## T0 entry gate（2026-09-09）
@@ -277,6 +281,144 @@ goldens: 1 (synthetic-lift)
 3. `oneshot` run 中**有標註**的空洞標成 `lift` 而非負例（否則標籤會由空洞的脈絡而非操作者的標註決定，違反 FR-61.3）。
 4. F3 檢定任一 θ 判 unusable 即整批 unusable；某一組無樣本時判 `indeterminate` 而非通過。
 
+## T3 separability ablation（2026-09-09）
+
+### 判定：`blocked-by-data`（依 T0 凍結的決策規則字面條件）
+
+T3 的核心產出是一個二元判定。**本輪判 `blocked-by-data`** —— 與 T2 同一個原因、同一份缺口：240 Hz 真人標註 cohort 仍不存在。（`~/Downloads` 內 2026-09-09 的六份 240 Hz 匯出經逐份檢查，`meta.mouseSampling` 皆為 `null`、`annotation` 事件 0 ⇒ 屬 WP-57／spider-shot 系列，**不是**本 WP 的 cohort。）
+
+⚠️ **這不是「分不開」。** T3 task file 列的三種判定裡，`not-separable` 需要資料與標註兩個閘都過才有資格產出；本輪連第一個閘都沒過 ⇒ **本 WP 至今沒有、也不得對可分性作出任何宣稱**。T3 task file 的 `insufficient-evidence` 與 T0 凍結規則的 `blocked-by-data` 是同一個去向，措辭以凍結規則為準（D-61.T3-5）。
+
+| T0 凍結規則（原文條件） | 實際值 | 判定 |
+|---|---|---|
+| independent sessions >= 2 | 1（合成 fixture） | ❌ |
+| lift annotation intervals >= 30 | 8 | ❌ |
+| pause annotation intervals >= 30 | 0 | ❌ |
+| held-out lift intervals >= 10 | 0 | ❌ |
+| held-out pause intervals >= 10 | 0 | ❌ |
+
+⇒ **T4 不執行**（task-checklist 序列閘 ④）。cohort 錄好之後，T3 不需要再寫任何程式，直接跑：
+
+```bash
+uv run python src/lift/notebooks/t3/run_ablation.py --pair <golden.json>=<export.json> [--pair ...]
+```
+
+### Step 1 凍結檢核（T3 DoD 第一項）
+
+`git log -p` 單獨用不夠 —— 它只證明「有沒有 commit 動過這個檔」，不證明**那一段**的內容未變（T1／T2 兩次都動過這兩個檔）。改以逐位比對兩個版本的該段落：
+
+```bash
+git show 6361c78:docs/.../progress.md | awk '/^### Pre-registration/{f=1} f{print} /^### Construct Naming/{if(f)exit}' > /tmp/prereg_t0.md
+awk '/^### Pre-registration/{f=1} f{print} /^### Construct Naming/{if(f)exit}' docs/.../progress.md > /tmp/prereg_head.md
+diff /tmp/prereg_t0.md /tmp/prereg_head.md   # 同法對 README §2.4（邊界為 §2.5）
+```
+
+| 段落 | T0 commit | HEAD | diff | sha256（HEAD） |
+|---|---|---|---|---|
+| progress.md §Pre-registration（19 行） | `6361c78` | `3a4c146` | **無差異** | `16b419640d1031be385d748c5fd7d8fd5a0017a76648dba1851e49353cd3da6f` |
+| README.md §2.4 評估契約（21 行） | `6361c78` | `3a4c146` | **無差異** | `bc22fcb7986afad44da904521d8060520bfbb69be44c879f8b79467ecc1ea109` |
+
+自 T0 起動過這兩個檔的 commit 為 `3175efd`（T1）與 `1097e70`（T2）；兩者的 diff **只新增 Decision Log／Surprises 條目**，未觸及任一凍結值。⇒ 凍結成立。
+
+### 本輪實際交付：T3 的全部消融儀器 + 端到端驗證
+
+比照 T2，也就是 D-60.T2-1 的同一模式：被 gate 阻塞時，先問「這個 task 的產出能不能變成解 gate 的儀器」。錄製之外的每一步都已落地並跑過。
+
+| step | 交付物 | 狀態 |
+|---|---|---|
+| 1 凍結檢核 | 逐位比對 + 雜湊（見上） | ✅ |
+| 2 Layer 1 gap-only baseline | `fit_gap_only()`：θ 為下限、門檻取觀測值全集，F1 最大者 | ✅ |
+| 3 Layer 2 邊界運動學 | `features.py` 的十欄 `GapBoundaryKinematics` + `fit_boundary()`（單軸／單向／單門檻） | ✅ |
+| 4 Layer 3 Stage 2 類比 | `spike_analogue()`（landing + takeoff 兩支都移植）+ 五欄換算表 | ✅ |
+| 5 Layer 4 Stage 3 類比 | `hover_analogue()`（含 deadzone skip 與方向變異數） | ✅ |
+| 6 消融紀律 | 逐層為前一層的**合取**；後層不得重擬前層門檻（測試釘死） | ✅ |
+| 7 分割執行 | `split_sessions()` session 隔離、50/50、只在校準集擬合、held-out 只評一次 | ✅ |
+| 8 可重現性 | seeded bootstrap（seed 61／2000 resamples）；報表不含 wall clock ⇒ 同 seed 逐位相同 | ✅ |
+| 9 繪圖分層 | I/O 全在 `notebooks/t3/`；`algorithms/` 純函式（AST 掃描 + 突變驗證）。**不出圖**（D-61.T3-4） | ✅ |
+| 10 二元判定 | `decide()` 逐字套用 T0 規則，附「規則原文 → 實際值 → 判定」三欄 | ✅ |
+
+### Implementation Summary
+
+| Area | Result |
+|---|---|
+| 邊界運動學 | `research/src/lift/algorithms/features.py`：`SampleBlock`（時間通道以整數 µs 累加，與 `segmentByTimeGap()` 同法）、`boundary_windows()`、`derive_gap_boundary_kinematics()`。`window_ms` 與 `tiny_counts` **無預設值**（比照 `gapThresholdMs`）。窗內樣本 < 2 時速度／加速度回 `None` 而非 0。 |
+| golden／export 配對 | `assert_block_matches_golden()` 逐位比對 golden 內嵌的 `t0Ms`／`dtUs` 與 export 的 block。golden 有時間通道沒有 `dx`／`dy`，export 兩者都有 ⇒ 沒有這個檢查，讀錯配對只會安靜地產出看起來合理的數字。`golden.py` additive 補上 `t0_ms`／`dt_us`。 |
+| 參數換算表 | `pa_parameters.py`：十項移植參數各帶「來源檔 + 版本 + 原空間 + 換算後值 + 換算依據」五欄；四項具名**不**移植並附後果。`counts_value()` 是下游唯一入口。 |
+| 消融 | `ablation.py`：`score_candidates()`（**直接消費 T2 的 `build_candidate_table()`，不重新標籤**）、四層 `fit_layers()`／`evaluate_layers()`、`ConfusionMatrix`、`split_sessions()`、`assess_sufficiency()`、`promotion_checks()`、`decide()`、`bootstrap_f1_interval()`。 |
+| operator 入口 | `research/src/lift/notebooks/t3/run_ablation.py` → `out/`（gitignored）下的 `lift-ablation-results.csv`（72 列 = 3 window × 3 θ × 4 layer × 2 split）、`lift-ablation-report.md`、`lift-ablation-timing.txt`。 |
+| 空分母紀律 | precision／recall／F1／各組 FPR 在分母為 0 時一律回 `None`（報表印 `n/a`），且 `_threshold_check()` 把 `None` 判 **FAIL**。0.0 會讓一個從未量過的比率滿足凍結上限。 |
+
+### 兩個必須寫進結論的發現
+
+#### ① PA 的三個 `*_PX_S*` 參數命名是錯的 —— 它們本來就在 counts 空間
+
+WP-60 的參數抄本把 `ACCEL_UP_THRESHOLD_PX_S2`／`START_SPEED_GATE_PX_S`／`HOVER_VELOCITY_THRESHOLD_PX_S` 標為「px/s 空間；須為 FPS 重推」。**讀實作而不是讀參數檔之後，這個標註不成立**：
+
+```go
+// backend/modules/input/infrastructure/lodclean/service.go @ 8e0d069
+speeds[k] = math.Hypot(float64(p.DX), float64(p.DY)) / dtS   // p = domain.RawMousePoint
+```
+
+`RawMousePoint.DX/DY` 來自 `GetRawInputBuffer`（WM_INPUT）⇒ **原始 HID counts**；該模組內沒有任何 DPI 正規化。PA 的 ADR-002 自己從另一頭承認同一件事：「Deadzone threshold is counts-based — users with non-standard DPI may need manual config tuning」。
+
+⇒ 換算是**改標籤而非改比例**：數值不變，單位由 px 更正為 counts。這個結論比看起來弱，兩個前提逐條記在 `pa_parameters.py` 的模組 docstring：① counts/s 正比於 CPI，而 **PA 的錄製 CPI 全庫未記載**；② 本專案「一個 sample = 一次裝置回報」只在觀測率貼合輪詢率時成立（T2 的凍結可用性閘已在管這件事，不符即作廢該 run）。
+
+#### ② PA 的 Stage 2 在 1000 Hz 取樣下**在算術上永遠不會觸發**
+
+landing 支需要 `accel > 350000` 且 `speed(k) <= 300`。`accel = Δspeed / dt` ⇒ 觸發需要 `Δspeed > 350000 × dt`；而速度非負且 `speed(k) <= 300` ⇒ `Δspeed <= 300`。
+
+| 取樣間隔 | landing 需要的 Δspeed | takeoff 需要的 Δspeed（絕對值） | gate 允許的最大 Δspeed | 可觸發 |
+|---:|---:|---:|---:|---|
+| 1.000 ms（本 cohort 規格） | 350.0 | 1050.0 | 300.0 | **兩支都否** |
+| 0.500 ms | 175.0 | 525.0 | 300.0 | landing 可 |
+| 0.250 ms | 87.5 | 262.5 | 300.0 | 兩支皆可 |
+
+⇒ **在本 cohort 的硬體上 Layer 3 的增益結構性地為 0**，而這與「邊界看起來很像」是**兩個不同的結論**，不得互相冒充。判定由 `stage_2_reachability()` 直接從參數算出（不需要資料）、逐份寫進報表，並由 `test_the_stage_2_rule_cannot_fire_at_this_cohort_s_sample_spacing` 釘死。實跑一致：合成 fixture 上 layer 3 把全部 8 個候選打成 FN（recall 0.0000）。
+
+> **Stage 3 的物理前提尚未被檢定。** §1.4 預測 pause 期間的微顫可能低於感測器閾值 ⇒ `tinyFraction` 兩組皆 0；要檢定它需要真人 pause run 才有兩組可比。合成 fixture 的 `dx` 是腳本產生的斜坡，其 `tinyFraction` 不構成證據。此項留待 cohort 到位，**現在不得宣稱它成立或不成立**。
+
+### 合成對照 fixture 的實跑輸出（T3 DoD）
+
+`uv run python src/lift/notebooks/t3/run_ablation.py --pair fixtures/golden/lift-segments-synthetic-lift.json=fixtures/exports/synthetic_sensor_lift.json`：
+
+```text
+verdict: blocked-by-data -- Frozen data-sufficiency floors not met: independent sessions >= 2 (actual 1);
+  lift annotation intervals >= 30 (actual 8); pause annotation intervals >= 30 (actual 0);
+  held-out lift intervals >= 10 (actual 0); held-out pause intervals >= 10 (actual 0).
+sessions: 1 (calibration ('synthetic-s1',), held-out ())
+lift intervals 8, pause intervals 0
+rows: 72; report sha256 dc3d71c23ce4a21f2279aeae887b2412bbd22e8772a50c8bfd0a10ff07ddd612
+seed 61; full evaluation 0.02 s
+```
+
+消融表節錄（θ=30 ms、window=10 ms、calibration；held-out 為空集合故全 `n/a`）：
+
+| layer | TP | FP | FN | TN | precision | recall | F1 | F1 gain |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| gap-only | 8 | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 | n/a |
+| boundary | 8 | 0 | 0 | 0 | 1.0000 | 1.0000 | 1.0000 | 0.0000 |
+| spike-analogue | 0 | 0 | 8 | 0 | n/a | 0.0000 | n/a | n/a |
+| hover-analogue | 0 | 0 | 8 | 0 | n/a | 0.0000 | n/a | n/a |
+
+⚠️ **這張表不是證據，一格都不是。** 合成 fixture 只有 lift 一類、空洞由腳本擺放、`dx` 是 `(index % 3) - 1` 的斜坡 ⇒ 沒有負例、沒有真人運動學。它證明的只有兩件事：管線會跑，以及 layer 3 的歸零與上面的算術預測一致。
+
+### Verification
+
+| Gate | Command | Result |
+|---|---|---|
+| lift 套件 Python | `uv run pytest src/lift -q` | exit 0；**80 passed**（T2 基線 19 ⇒ +61，全部來自本切片）。 |
+| 全量 Python | `uv run pytest`（`research/`） | **522 passed / 5 failed**。5 紅**全部不是本切片造成** —— 以 `git stash` 移除全部 `lift/` 變更後同樣紅（見 Surprises 6）。lift 相關 0 紅。 |
+| 可重現性（NFR-61.5） | 同 seed 連跑兩次，`sha256sum out/lift-ablation-report.md` | 兩次皆 `dc3d71c23ce4a21f2279aeae887b2412bbd22e8772a50c8bfd0a10ff07ddd612` ⇒ 逐位相同。CSV `02933b4af2923d48cba2b34815482dc97143a71f89a2ff2aa31304bd558acc03`。 |
+| 全量評估耗時 | `out/lift-ablation-timing.txt` | **0.02 s**（1 run、72 列）。含程序啟動的 wall-clock 為 0.74 s。 |
+| 突變驗證 ① F5 字面掃描 | 在 `candidates.py` 插入 `_UNCONVERTED = 350000.0` | expected red：1 failed／11 passed。還原後綠。 |
+| 突變驗證 ② F5 名稱掃描 | 在 `candidates.py` 插入註解形式的來源參數名 | expected red：1 failed／11 passed。還原後綠。 |
+| 突變驗證 ③ C-D2 | 在 `ablation.py` 插入 `print()` | expected red：`test_algorithms_do_not_print_or_write_files` 1 failed／3 passed。還原後 4 passed。 |
+| Typecheck ×2 | `npm.cmd run typecheck` | exit 0。 |
+| 全量 Vitest | `npm.cmd test` | exit 0；**252 passed／1 skipped files；2822 passed／2 skipped tests** ⇒ **與 T2 基線逐位相同**（本 task 未動 `src/`，符合 DoD 預期）。 |
+| Build | `npm.cmd run build` | exit 0；Vite 2.00 s，既有 chunk-size warning。 |
+
+全量 Playwright 未在本切片跑：T3 未動任何 runtime 程式碼（變動全在 `research/`），package-level 五閘於 T-exit 補齊。
+
 ## Decision Log
 
 | ID | Date | Decision | Owner | Evidence |
@@ -302,6 +444,13 @@ goldens: 1 (synthetic-lift)
 | **D-61.T2-5** | 2026-09-09 | **T2 的 operator 報告拆成兩處：`analyze:spider-wide` 只加**可見度**三欄，作廢判定放進新的 `analyze:lift-cohort`。**<br>T2 step 8 指名擴充 `spiderWideRepositioningRunner.ts`。但該 runner 回答的是 WP-57 的 `cm/360` 方向性、且硬綁 `spider-shot-wide-v1`；把 WP-61 的作廢閘塞進去，會讓「這份 run 不能用」在兩個不同的意義之間滑動（不能算方向性 vs 不能進 lift cohort）。⇒ 既有報告加三欄（標註區間／成對違規／trials）滿足「錄完當場就看得出標註有沒有錄壞」這個**實際目的**，且**明文不產生 blocker**；判定留在 WP-61 自己的入口。<br>**Alternatives considered**：(a) 全部塞進 WP-57 runner —— 見上，語意滑動，且會讓 WP-57 的 blocker 清單長出與它無關的條目，駁回；(b) 完全不動 WP-57 runner —— 操作者得跑第二支命令才知道標註錄壞了，違反 step 8 的目的，駁回。 | Engineering | [`spiderWideRepositioningRunner.ts`](../../../../../scripts/spiderWideRepositioningRunner.ts)；`spider-wide-repositioning-runner.test.ts` 的兩個 WP-61 可見度 case |
 | **D-61.T2-6** | 2026-09-09 | **`research/src/lift/` 用 `algorithms/` + `notebooks/` 兩層，而非直接平鋪在 `lift/` 下。**<br>D-61.T0-2 凍結的是**路徑前綴** `research/src/lift/`；C-D2 要求純函式與 I/O 分層。兩者相容 ⇒ `lift/algorithms/`（純：無 print／無寫檔／無 matplotlib）+ `lift/notebooks/t2/`（I/O：產 fixture、寫 CSV）。與 `modules/*/` 的既有慣例一致，只是少一層 `modules/`（凍結值沒有它）。<br>C-D1／C-D2 由 `lift/algorithms/tests/test_purity.py` 的 AST 掃描釘死，並以突變驗證過偵測力。 | Engineering | `research/src/lift/`；`test_purity.py`（4 cases）；突變驗證 ⑤ |
 | **D-61.T2-7** | 2026-09-09 | **Python `load_export` additive 接受 `pointer_lock` 與 `annotation`；`pointer_lock.locked` 驗而不出欄。**<br>在此之前，任何帶 `pointer_lock` 的 WP-60 匯出或帶 `annotation` 的 WP-61 匯出，都會被 `unsupported event type` **整份拒收** —— T2／T3 的 Python 側在物理上讀不到自己要稽核的標籤。<br>`annotation.code` 沿用 WP-29 `key` 事件的手法映進既有 `key` 欄（`EVENT_COLUMNS` 與 CSV 欄面逐位不變）；`kind` 以封閉集驗證但不出欄（今天只有一個值，多一欄只會讓每個既有 consumer 的 DataFrame 形狀改變）。`locked` 刻意不出欄：把空洞歸因給 lock 中斷是 TS `deriveUnlockedIntervals()` 的**單一定義**（C-D4），Python 側從 golden 讀那個歸因，不得自己長一套。<br>**Alternatives considered**：(a) 在 `lift/` 另寫一支專用 export reader —— 兩套 export 解析器，且既有 loader 的硬傷仍在，駁回；(b) 新增 `kind`／`locked` 欄 —— 改變所有既有 consumer 的欄面，違反 additive 紀律，駁回。 | Engineering | [`loader.py`](../../../../../research/src/modules/ingest/algorithms/loader.py)；`test_loader_annotation_events.py`（7 cases） |
+| **D-61.T3-1** | 2026-09-09 | **PA 的三個 `*_PX_S*` 參數以「改標籤不改比例」移植，依據是實作而非參數名。**<br>WP-60 的抄本依**參數名**判定三者在 px/s 空間、須重推。讀 `lodclean/service.go` 後發現名稱是誤稱：`speeds[k] = hypot(p.DX, p.DY)/dtS`，其中 `p` 是 `RawMousePoint`，來自 `GetRawInputBuffer`（WM_INPUT）⇒ 原始 HID counts，該模組全程無 DPI 正規化；PA 的 ADR-002 亦自承 deadzone 是 counts-based 且對 DPI 敏感。⇒ 數值不變、單位由 px 更正為 counts。<br>**這個結論的兩個前提逐條入帳，不得隱含**：① counts/s 正比於 CPI，而 **PA 的錄製 CPI 全庫未記載** ⇒ 移植是 CPI-conditioned；② 「一個 sample = 一次裝置回報」只在觀測率貼合輪詢率時成立，由 T2 既有的可用性閘（active rate ≥ 500 Hz、`overflow === false`）承接，不符即作廢該 run。<br>**Alternatives considered**：(a) 照參數名當 px 空間、以 DPI 換算成 counts —— 會憑空引入一個 800/PA-CPI 的比例因子去修正一個不存在的單位差，正是 F5 描述的「靜默錯一個數量級」，只是方向相反，駁回；(b) 因為 PA 的 CPI 未知就整組不移植 —— 那 Layer 3／4 不存在，FR-61.6 的四層消融交不出來，駁回；(c) 移植但不記 CPI 前提 —— 換一台滑鼠就會安靜地失準，駁回。 | Engineering | [`pa_parameters.py`](../../../../../research/src/lift/algorithms/pa_parameters.py) 模組 docstring 與十筆 `ReferenceParameter.basis`；`test_pa_parameters.py`（14 cases）；`performance_analysis` `service.go` @ `8e0d069`、`lod_v3_default_config.json` @ `ff24223`、ADR-002 @ `e9c5c40` |
+| **D-61.T3-2** | 2026-09-09 | **Stage 2 的兩支（landing／takeoff）都移植，且其「在 1 ms 取樣下不可觸發」以純參數推導 `stage_2_reachability()` 具名報出，而不是等實跑出 0 才發現。**<br>landing 需 `accel > 350000` 且 `speed(k) ≤ 300`；`accel = Δspeed/dt` ⇒ 需 `Δspeed > 350000×dt = 350`（dt = 1 ms），而 gate 把 `Δspeed` 上限壓在 300（速度非負）⇒ 兩個條件互斥。takeoff 更嚴（×3）。0.5 ms 時 landing 打開、0.25 ms 時兩支都打開 ⇒ **是取樣間隔關門，不是參數移錯**。<br>為什麼一定要分開報：Layer 3 增益 0 有兩種完全不同的成因 ——「規則不可能觸發」與「邊界真的很像」。前者是關於**參數與硬體**的結論，後者才是關於**可分性**的結論。若只看實跑數字，兩者長得一模一樣，而 T-exit 會把前者寫成後者。<br>**Alternatives considered**：(a) 只移植 landing 支 —— takeoff 是同一條 stage 2 規則的一半，少移植會讓「類比」名不副實，且會弱化上述算術結論，駁回；(b) 調整門檻讓它在 1 ms 下可觸發 —— 那是把 PA 的 prior 換成本輪自訂值，且是在看過資料前就動門檻，違反 GD-20／D-61.P6，駁回；(c) 只在報表寫一句「layer 3 無增益」—— 不可歸因，正是 R3 要防的事，駁回。 | Engineering | [`ablation.py`](../../../../../research/src/lift/algorithms/ablation.py) `spike_analogue()`／`stage_2_reachability()`；`test_ablation.py` / `test_the_stage_2_rule_cannot_fire_at_this_cohort_s_sample_spacing`；報表 §Stage 2 reachability |
+| **D-61.T3-3** | 2026-09-09 | **四層各自的「可擬合量」明訂：Layer 1 擬一個門檻、Layer 2 擬「單軸 + 單向 + 單門檻」、Layer 3／4 一個參數都不擬（只套 PA prior）。後層一律為前層的合取，不得回頭重擬。**<br>T0 凍結了指標與門檻，但**沒有凍結每層的模型形狀**；不訂死它，R4（特徵 8+ 維、事件數數十）就由實作的胃口決定。單軸單門檻是「還算誠實的擬合」的上限；Layer 3／4 不擬合，正好使 FR-61.6 的問題（「加上 PA 的規則有沒有幫助」）成為一個乾淨的對照，而不是又一次調參。<br>合取形式的兩個後果都是想要的：recall 只能降 ⇒ 每層的增益就是它自己買到的 precision；且「第 N 層放行了第 N-1 層擋掉的候選」在結構上不可能發生 ⇒ 逐層歸因成立（T3 step 6）。<br>**Alternatives considered**：(a) 每層自由重擬全部參數 —— 增益不可歸因，且等於在 30 事件上擬 8 維，駁回；(b) Layer 2 用多軸線性／樹模型 —— 在 n≈30、維度 8 的條件下必然過擬合，且 T4 要移植成 TS 純函式判準會極為笨重，駁回；(c) Layer 3／4 也在校準集上重擬 PA 門檻 —— 那就不是「Stage 2／3 類比」而是「用 PA 的變數名重新校準一套新規則」，FR-61.6 問的問題會消失，駁回。 | Engineering | [`ablation.py`](../../../../../research/src/lift/algorithms/ablation.py) `fit_layers()`／`LayerRule.predict()`；`test_ablation.py` 的 `test_each_layer_is_a_conjunction_so_recall_can_only_fall`／`test_a_later_layer_never_re_fits_an_earlier_layer_s_threshold` |
+| **D-61.T3-4** | 2026-09-09 | **T3 step 9 的「分布圖／ROC-PR 曲線」本輪不產出，只落實它的分層規則。**<br>step 9 的規範內容是**放哪裡**（圖進 `notebooks/`、`algorithms/` 保持純）——這一條已由 `notebooks/t3/run_ablation.py` 與 AST 掃描落實。至於圖本身：repo 沒有任何繪圖相依（`pyproject.toml` 只有 numpy／pandas／scipy；matplotlib 在全 repo 只出現在**禁止 import 的掃描名單**裡），而本輪唯一可畫的資料是一份 8 筆、單類別、`dx` 為腳本斜坡的合成 fixture。⇒ 為了畫一張「什麼都沒有的分布」而新增一個相依，成本與誤導都是實的。<br>**Alternatives considered**：(a) 加 matplotlib 相依並畫合成 fixture 的分布 —— 那張圖會被當成 lift/pause 分布圖引用，而它沒有 pause，駁回；(b) 用 ASCII 直方圖代替 —— 同樣是畫一份非證據的資料，且沒有既有慣例，駁回。<br>**觸發重做的條件**：真人 cohort 到位時，圖與相依一起加，落點就在 `notebooks/t3/`。 | Engineering | `research/pyproject.toml`；`test_purity.py` / `test_importing_the_algorithms_pulls_in_no_plotting_and_touches_no_cwd` |
+| **D-61.T3-5** | 2026-09-09 | **判定措辭以 T0 凍結規則為準：資料不足 = `blocked-by-data`，不用 T3 task file 的 `insufficient-evidence`。**<br>T3 task file 的 step 10 寫三選一為 `promote`／`not-separable`／`insufficient-evidence`；T0 §2.4 的決策規則寫四個去向 `promote`／`not-reliably-separable`／`blocked-by-data`／`annotation-channel-unusable`。兩份文件指的是同一組去向，只是 task file 少了 `annotation-channel-unusable` 且用詞不同。凍結的是 §2.4 ⇒ 以它為準，並在此註明對應關係，避免日後被讀成兩套判定。<br>**同時明訂順序**：標註通道不可用 → 資料不足 → 逐層門檻，前兩者**在看任何一層之前**決定。理由：在標籤髒或資料不足的母體上算出來的指標不是關於可分性的證據，把它寫成 `not-reliably-separable` 是一個資料支撐不了的宣稱（F2／R3）。<br>**Alternatives considered**：(a) 用 task file 的措辭 —— 會讓帳本上出現第二套判定名，正是 C-D4 型的問題，駁回；(b) 資料不足時仍報逐層數字並判 `not-reliably-separable` —— 見上，駁回（數字仍照報，但**不參與判定**）。 | Engineering | [`ablation.py`](../../../../../research/src/lift/algorithms/ablation.py) `VERDICTS`／`decide()`；`test_ablation.py` / `test_the_verdict_is_blocked_by_data_when_a_floor_is_missed_even_if_a_layer_looks_perfect`、`test_an_unusable_annotation_channel_short_circuits_before_any_layer_is_looked_at` |
+| **D-61.T3-6** | 2026-09-09 | **邊界窗的兩端不對稱：before 為閉區間 `[start−w, start]`（含 `beforeIndex`），after 為左開區間 `(end, end+w]`（**排除** `afterIndex`）。**<br>`afterIndex` 那一筆樣本的 `dtUs` **就是空洞本身**，它的 `dx`／`dy` 是整段空洞累積的位移。把它當成「空洞之後的樣本」會把空洞自己的位移折進離開輪廓，並讓每一個 `speed_after` 因除以空洞長度而結構性地趨近 0 —— 於是 `accel_exit` 實際上在量空洞長度，而那正是 WP-60 已經判定分不開的那個軸（D-60.R2-1）。<br>代價已知：`density_after` 因此少算那一筆。以**名目窗長**（而非觀測跨距）作分母，讓「樣本稀疏」與「窗比較短」在數字上分得開。<br>**Alternatives considered**：(a) 兩端都閉、把 `afterIndex` 算進去 —— 見上，會讓 layer 2 悄悄退化成 layer 1，駁回；(b) 把 `afterIndex` 算進 `n_after`／`tiny_fraction` 但排除在速度之外 —— 同一個窗有兩種成員資格，難以稽核也難以在 T4 對表，駁回。 | Engineering | [`features.py`](../../../../../research/src/lift/algorithms/features.py) `boundary_windows()`；`test_features.py` / `test_the_after_window_excludes_the_sample_that_spans_the_gap` |
+| **D-61.T3-7** | 2026-09-09 | **T3 不重新標籤：`score_candidates()` 直接消費 T2 的 `build_candidate_table()`，只把特徵掛上去。**<br>T2 已經測過凍結的匹配規則（含 D-61.T2-1／T2-3 兩個適用範圍判斷）。T3 若自己再跑一次配對，就是同一個構念的第二套定義（C-D4），也是一個讓標籤悄悄沾上特徵的地方（FR-61.3）。<br>連帶：`golden.py` additive 補 `t0_ms`／`dt_us`，`features.assert_block_matches_golden()` 逐位比對 golden 的時間通道與 export 的 block —— golden 有時間沒有 `dx`／`dy`，export 兩者都有，配錯了不會報錯，只會產出看起來合理的數字。<br>**Alternatives considered**：(a) T3 自行配對以避免相依 T2 的私有函式 —— 兩套配對，駁回；(b) 只靠 `runId` 字串配對 golden 與 export —— 檔名可改、runId 可重複，且錯配無聲，駁回。 | Engineering | [`ablation.py`](../../../../../research/src/lift/algorithms/ablation.py) `score_candidates()`；[`features.py`](../../../../../research/src/lift/algorithms/features.py) `assert_block_matches_golden()`；`test_ablation.py` / `test_scoring_reuses_the_frozen_candidate_table_rather_than_relabelling` |
 
 ## Surprises
 
@@ -332,6 +481,24 @@ goldens: 1 (synthetic-lift)
    ⇒ 兩個教訓。① **加一個同類的守門員之前，先讀既有的那個** —— 不只是為了不重複，而是既有的那個可能已經把「怎麼在不違規的前提下描述違規」解決掉了。② 這次的紅燈是**好事**：它證明既有掃描的覆蓋範圍真的是「每一個 `.py`」，包含 T2 新開的 `lift/` 子樹 —— C-D1 不需要我為新套件另外接線。
    ⇒ 我的 `test_purity.py` 仍然保留（它多驗 C-D2 的 print／寫檔與 `algorithms/` 的 import 純度，且對 `src/metrics`／`src/data` 這種**不帶副檔名**的路徑字串也有偵測力，那是既有掃描抓不到的）。
 
+6. **PA 的 Stage 2 規則在 1 ms 取樣下不可能觸發 —— 而我差一點把它當成「邊界分不開」的證據。**（2026-09-09，T3）
+   Layer 3 在合成 fixture 上把全部 8 個候選打成 FN、recall 0.0000。第一反應是「這一層沒有幫助」，那是關於**可分性**的結論。回頭算它為什麼不觸發才發現，那是關於**算術**的結論：landing 支要求 `accel > 350000` 且 `speed(k) ≤ 300`，而 `accel = Δspeed/dt`，dt = 1 ms 時前者要求 `Δspeed > 350`，後者（速度非負）把 `Δspeed` 上限壓在 300 —— 兩個條件在任何資料上都互斥。取樣間隔減半（0.5 ms）landing 就打開，減到 0.25 ms 兩支都打開。
+   ⇒ 兩種成因在報表上長得**一模一樣**（同一個 0），而寫進 T-exit 的意思天差地遠：一個是「PA 的門檻與本硬體的取樣率不相容」，一個是「抬滑鼠與停頓的邊界真的很像」。後者是本 WP 唯一要回答的問題，前者根本不是關於它的證據。
+   ⇒ 處置：把它做成 `stage_2_reachability()`，**從參數推導、不看資料**，每份報表都印。這樣「這一層為什麼是 0」不需要任何人再回頭算一次。
+   ⇒ 與 Surprises 4 同型：那次是綠燈的**範圍**沒被驗證，這次是紅燈的**成因**沒被驗證。exit code 與混淆矩陣都只給結果，不給原因。
+
+7. **參數的名字說了謊，而 WP-60 的抄本（包括我自己讀它時）照著名字信了。**（2026-09-09，T3）
+   `ACCEL_UP_THRESHOLD_PX_S2`／`START_SPEED_GATE_PX_S`／`HOVER_VELOCITY_THRESHOLD_PX_S` 三個名字裡有 `PX`，WP-60 的參數抄本因此把它們標成「px/s 空間；須為 FPS 重推」，而 F5／R7 整條風險線都建立在這個判讀上。實際讀 `lodclean/service.go` 才發現：`speeds[k] = hypot(p.DX, p.DY)/dtS`，`p` 是 `RawMousePoint`，欄位直接來自 `GetRawInputBuffer`（WM_INPUT）—— **原始 HID counts，全模組沒有一處 DPI 正規化**。PA 的 ADR-002 從另一頭承認了同一件事（deadzone 是 counts-based、對 DPI 敏感），只是沒有人把兩邊放在一起讀。
+   ⇒ 若照名字「重推」，我會憑空乘上一個 `800 / PA的CPI` 的比例因子去修正一個**不存在**的單位差 —— 那正是 F5 描述的「靜默錯一個數量級」，只是方向相反。防 F5 的動作本身會製造 F5。
+   ⇒ **教訓**：跨 repo 移植常數時，權威是**使用該常數的那一行程式碼**，不是常數的名字，也不是別人抄本裡的空間標註。這次連帶也修正了 WP-60 抄本引用的路徑（`contracts/modules/input/…` 已不存在，追蹤中的副本在 `research/src/modules/input/algorithms/config/`）。
+   ⇒ 與 Surprises 1 同型：那次是把兩個各有依據的數字當成矛盾，這次是把一個沒有依據的標註當成事實。兩次都是**沒有回到來源**。
+
+8. **`uv run pytest` 全量有 5 個紅燈，全部與本切片無關 —— 但 T2 的紀錄說它當時 exit 0。**（2026-09-09，T3）
+   全量 `uv run pytest`：522 passed / **5 failed**。其中 1 個是我的（F5 名稱掃描擋下 `ablation.py` 用 `counts_value("…")` 查表，已修為允許這條唯一的合法查表路徑）。另外 4 個在 `modules/kinematics`（`test_committed_sg_coefficients_match_generator`、`test_committed_omega_fixtures_match_generator`）、`modules/metrics`（`test_the_committed_verdict_for_one_session_reproduces_bit_for_bit_from_the_seed`）、`modules/segments`（`test_committed_real_segment_fixtures_match_generator`），全部是 committed golden 與現場重算在**浮點末位**上的差異（例：`-0.08391608391608422` vs `-0.08391608391608417`）。
+   以 `git stash push -u -- research/src/lift/` 把本切片的全部變更移開後重跑，同樣紅 ⇒ **先於本切片存在**。`modules/*` 也沒有任何一處 import `lift`。
+   ⇒ 這是 C-D5（晉升指標雙實作對表）的 golden 漂移，落在 WP-32／GD-21 的範圍，不是 T3 能就地修的：重新產生 golden 等於改一組晉升指標的權威值，那需要它自己的具名決策。
+   ⇒ **未修，已具名**。T-exit 的「`uv run pytest` exit 0」不能靠本切片達成 —— 要嘛先處理這 4 個漂移，要嘛在 T-exit 明文寫「4 紅先於 WP-61 存在、歸屬 WP-32」。**不得**含糊寫成「Python 全綠」。
+
 ## Open Questions（狀態）
 
 | ID | 狀態 | Owner | Deadline |
@@ -342,7 +509,7 @@ goldens: 1 (synthetic-lift)
 | **OQ-61.4** 實作落點與 C-D5 觸發時機 | ✅ **T0 收斂** —— T2/T3 Python `research/src/lift/`；T4 條件式 TS `src/metrics/sensorLiftCriterion.ts`；Stage 1 只讀 TS golden，不重寫切段（D-61.T0-2） | Engineering | ~~T0 exit~~ |
 | **OQ-61.5** 硬體與門檻 | ✅ **已收斂 2026-09-09** —— cohort 錄在 **240 Hz**，逐份條件 `meta.displayHz === 240`，禁止混合更新率（D-61.U3）。⚠️ 120／144 **不是矛盾**：120 = 資格閘地板、144 = KI-031 完全緩解點，兩者並存；**T0 只補依據、不改數字** | ~~使用者~~ | ~~T0 exit~~ |
 | **OQ-61.6** n = 1 時的宣稱上限 | ✅ **已收斂 2026-09-09** —— 本操作者 × 本硬體 × 本 drill，一律 `research_only`；T4 零 importer 為終局狀態（D-61.U4） | ~~使用者 + 研究~~ | ~~T0 exit~~ |
-| **OQ-61.7** `gapThresholdMs` 最終值 | 🔴 開放。**T0 刻意不凍結**，以 18／30／50 ms sweep 進 T3 | Engineering | T4 |
+| **OQ-61.7** `gapThresholdMs` 最終值 | 🔴 開放。**T0 刻意不凍結**；T3 的消融已把三個 θ 全部接上（每個 θ × 3 window × 4 layer × 2 split 各出一組數字），但因 `blocked-by-data` 尚無資料可選值 | Engineering | T4 |
 | **OQ-60.7**（承自 WP-60）長 drill 匯出體積政策 | 🔴 開放，**不阻塞本 WP**（協定限制單 run ≤ 120 s） | 使用者 + Engineering | 首次出現 > 200 s 的 `?rawMouse=1` run |
 
 ## 上游 handoff 覆核（WP-60 → WP-61）
@@ -351,6 +518,6 @@ goldens: 1 (synthetic-lift)
 |---|---|---|---|
 | 1 | 實機事件率分布 | ✅ p50 995 µs／≈1005 Hz；連續移動空洞上限 **18.2 ms**（n = 11，prior 非校準值） | θ sweep 的下界依據 |
 | 2 | 抬起／停頓／一次到位的空洞長度分布 | ✅ **且結論為負面**（D-60.R2-1：範圍重疊） | T3 Layer 1 baseline 的預期值；四項具名限制是本 WP 設計要擋掉的東西 |
-| 3 | PA 十四參數與語意抄本 | ✅ 含三個 px/s 空間參數的「需重推」標註 | T3 Layer 3／4 的換算起點（FR-61.10 記名） |
+| 3 | PA 十四參數與語意抄本 | ✅ 已交付，但其中一項標註**經 T3 覆核為錯**：三個 `*_PX_S*` 參數的「px/s 空間、需重推」是依參數**名**判定的，實作顯示它們本來就在 counts 空間（D-61.T3-1／Surprises 7）。抄本引用的 config 路徑亦已失效，追蹤中的副本在 `research/src/modules/input/algorithms/config/` | T3 Layer 3／4 的換算起點（FR-61.10 記名），以 `pa_parameters.py` 的五欄表為權威 |
 | 4 | OQ-60.4 構念歸屬結論 | ✅ **已於 2026-09-09 由使用者拍板**（D-61.U1：並存；新構念 = 感測器離地／sensor lift） | T1 的事件命名依據；T0 step 4 落成型別名與 `CONTEXT.md` 草稿。⚠️ WP-60 T-exit DoD 的「WP-61 handoff 四項齊備」未勾項可據此翻 ✅ |
 | — | 高刷真人標註 cohort | 🟡 **硬體已就緒（240 Hz，D-61.U3）；資料仍不存在** | T1 交付儀器後由使用者錄製（T2）。`meta.displayHz ≠ 240` 即作廢，禁止與 60 Hz 混批 |
