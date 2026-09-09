@@ -8,7 +8,7 @@
 | ✅ | **T1** 擷取契約：arena／型別／strict parser | [T1-capture-contract.md](T1-capture-contract.md) | 依使用者明確指示 override T0 gate；OQ-60.2／60.3／60.5 已於 T1 contract 凍結 | Med |
 | ✅ | **T2** SimLoop 接線與決定性證明 | [T2-recorder-wiring.md](T2-recorder-wiring.md) | T1；依使用者明確指示續行（T0 經驗性 gate 仍 blocked，故 app 佈線層 opt-in **預設關閉**，見 D-60.T2-1）| **High** |
 | 🟡 | **T3** 時間間隙切段原語與 Pointer Lock 消歧 | [T3-time-gap-primitive.md](T3-time-gap-primitive.md) | T1（OQ-60.1 已於 2026-09-08 收斂，不再阻塞）| Med；**DoD 的真人取樣分布一項未完成** —— 該 run 從未入 repo，本 session 取不到（見 progress §T3）|
-| ⬜ | **T4** 操作者可見度：取樣健康度報告 | [T4-operator-visibility.md](T4-operator-visibility.md) | T2 + T3 | Low |
+| ✅ | **T4** 操作者可見度：取樣健康度報告 | [T4-operator-visibility.md](T4-operator-visibility.md) | T2 + T3 | Low；六欄 additive、四個 blocker 全閘在 `mouseSamples` 存在上（缺席仍合法），legacy 與含取樣的樣本各實跑一次（見 progress §T4）|
 | ⬜ | **T-exit** 驗收與 WP-61 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T4 | Med |
 
 **排程**：T0 是 **go/no-go 閘**（R1：若實機事件率 < 500 Hz，本 WP 前提崩塌，停止並回報 —— 那也是一個合格的 T0 結論）。T1 綠燈後 **T2 與 T3 可並行**（T3 只吃匯出型別，以合成 block 測試，不需要擷取路徑真的在跑）。

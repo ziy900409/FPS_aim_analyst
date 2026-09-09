@@ -9,13 +9,21 @@
  * **本模組因此刻意會拒答**：`assessDirectionality()` 在 cohort 共線時回 `answerable: false` 並說出
  * 缺什麼，而不是照樣印一張看起來有斜率的表。那張表正是 §T5-real 推翻掉的東西。
  *
+ * **WP-60 T4 追加**：逐份報告**原始滑鼠取樣的健康度**（FR-60.8）。理由同上 —— WP-57 §T5-real 的教訓
+ * 是「一份看起來正常的匯出，其指標可能整組靜默歸零」（KI-031，detected 0/113 而 CI 全綠）。原始取樣
+ * 多了三種同型的靜默失效：**事件率不足**、**溢位**、**時間戳精度不足**，加上一種會被誤讀成抬滑鼠的
+ * **Pointer Lock 中斷**。四者一律變成逐份點名的 blocker，印在數字之前。
+ * ⚠️ 缺 `mouseSamples` 區塊**不是** blocker —— 那只是少了一維資料，不是資料有問題。
+ *
  * **沒有第二套定義（C-D4）**：`cm/360` 一律走 `deriveMouseThrow()`、標註一律走
- * `deriveRepositioningSuspicion()`、偵測率一律走 `deriveDetectionMetrics()`。本模組只做分組、
- * 計數與可答性判斷。純函式：不讀時鐘、不讀隨機、無 I/O（I/O 全在
+ * `deriveRepositioningSuspicion()`、偵測率一律走 `deriveDetectionMetrics()`、時間間隙一律走
+ * `segmentByTimeGap()`／`deriveUnlockedIntervals()`。本模組只做分組、計數與可答性判斷。
+ * 純函式：不讀時鐘、不讀隨機、無 I/O（I/O 全在
  * `analyze-spider-wide-repositioning.ts`，比照 `trackingContactRunner.ts` 的分工）。
  */
 import type { ExportPayload } from '../src/data/export.ts';
 import { deriveDetectionMetrics } from '../src/metrics/detectionDerivation.ts';
+import { deriveUnlockedIntervals, segmentByTimeGap } from '../src/metrics/mouseSampleGaps.ts';
 import { deriveMouseThrow } from '../src/metrics/mouseThrow.ts';
 import { deriveRepositioningSuspicion } from '../src/metrics/spiderShotRepositioning.ts';
 
@@ -39,6 +47,26 @@ export const KI031_WORKAROUND_SUSTAINED_TICKS = 1;
 
 /** 方向性檢查所需的最少感度檔數（同一指示內的相異 `cm/360`）。兩點才有斜率，三點才看得出單調。 */
 export const MIN_SENSITIVITY_LEVELS = 2;
+
+/**
+ * WP-60 T4 —— 原始取樣的事件率下限（Hz）。低於此值，樣本間 `dt` 的解析度不足以支撐任何時間間隙
+ * 判定（README §2.6 F1：這是本 WP 的 go/no-go 門檻，T0 R1 在 1000 Hz 滑鼠上實測 1005 Hz 通過）。
+ */
+export const MIN_OBSERVED_RATE_HZ = 500;
+
+/**
+ * WP-60 T4 —— 報告用的時間間隙門檻（ms）。
+ *
+ * **不是校準值，也不是 production 常數。** `segmentByTimeGap()` 刻意不給預設值（呼叫端必填），因為
+ * 門檻條件於錄製硬體的事件率；把它放在這裡，是為了讓每次分析都用同一個數字、並讓「換了門檻」在
+ * diff 裡看得見（比照上面 `CALIBRATED_STALL_*` 的處置）。
+ *
+ * 取值依據：`performance_analysis` 的 `lod_v3_default_config.json`（`TIME_GAP_THRESHOLD_MS = 30`，
+ * 授權無虞見 D-60.P7）當 prior；T0 R1 在本專案硬體上量到連續移動期間的空洞上限約 18 ms，30 ms 約有
+ * 1.7× headroom。⚠️ T0 R2 已判定**空洞長度不足以可靠分離抬滑鼠與停頓**，故本欄只回報「有幾個空洞、
+ * 最長多久」這種**描述性**的量，不宣稱任何一個空洞是什麼。
+ */
+export const REPORTED_GAP_THRESHOLD_MS = 30;
 
 export interface SpiderWideRunInput {
   readonly sourcePath: string;
@@ -72,6 +100,25 @@ export interface SpiderWideRunSummary {
   readonly suspectedCount: number;
   /** `suspectedCount / evaluableCount`；`evaluableCount === 0` 時 `undefined`（無從判定 ≠ 0%）。 */
   readonly suspectedRate: number | undefined;
+
+  // ── WP-60 T4：原始取樣健康度（FR-60.8）──────────────────────────────────────
+  // 六欄一律**同進同出**：`payload.mouseSamples` 缺席時全部 `undefined`，不是 0。缺席與零必須分得開
+  // ——「這份 run 沒錄原始取樣」與「錄了但一個間隙都沒有」是完全不同的兩件事（比照 `RingBuffer` 的
+  // `hasFire` 慣例）。缺席**不是 blocker**：它只是少了一維資料，不是資料有問題（T4 invariant）。
+
+  /** 實際錄到的樣本數（= `mouseSamples.dtUs.length`）。 */
+  readonly sampleCount: number | undefined;
+  /** `meta.mouseSampling.observedRateHz` —— 實測平均事件率。 */
+  readonly observedRateHz: number | undefined;
+  /** `meta.mouseSampling.overflow` —— 樣本數超過容量、末端被丟棄（FR-60.9，**不**進 `meta.suspect`）。 */
+  readonly sampleOverflow: boolean | undefined;
+  /** 由 `pointer_lock` 事件推導出的未取鎖區間數 —— 那些區間的空洞不是感測器離地（FR-60.6）。 */
+  readonly lockBreakCount: number | undefined;
+  /** `REPORTED_GAP_THRESHOLD_MS` 下、**未被 Pointer Lock 中斷解釋**的時間間隙數。 */
+  readonly gapCountAtThreshold: number | undefined;
+  /** 上述間隙中最長的一個（ms）；一個都沒有時為 0（有錄到但沒間隙 ≠ 沒錄到）。 */
+  readonly longestGapMs: number | undefined;
+
   /** 讓這份 run 不可用或不可稽核的原因；空陣列 = 全綠。 */
   readonly blockers: readonly string[];
 }
@@ -135,6 +182,34 @@ function summarizeRun(input: SpiderWideRunInput): SpiderWideRunSummary {
   const evaluableCount = detectedAtWorkaround;
   const suspectedCount = suspicions.filter((suspicion) => suspicion.suspected).length;
 
+  const sampling = readSamplingHealth(payload);
+  if (sampling !== undefined) {
+    if (sampling.observedRateHz !== undefined && sampling.observedRateHz < MIN_OBSERVED_RATE_HZ) {
+      blockers.push(
+        `原始取樣事件率不足（${sampling.observedRateHz.toFixed(0)} Hz < ${MIN_OBSERVED_RATE_HZ} Hz）⇒ ` +
+          '時間間隙判定不可用（README §2.6 F1）',
+      );
+    }
+    if (sampling.sampleOverflow === true) {
+      blockers.push(
+        `原始取樣溢位（recorded ${sampling.sampleCount} 已達容量上限）⇒ 末端資料缺失，` +
+          '不要把樣本流的結尾當成 drill 的結尾（FR-60.9；tick 資料本身仍有效）',
+      );
+    }
+    if (!meta.crossOriginIsolated) {
+      blockers.push(
+        '`meta.crossOriginIsolated: false` ⇒ `event.timeStamp` 精度不足（F4），' +
+          '樣本間 `dt` 被捨入雜訊污染，時間間隙判定不可信',
+      );
+    }
+    if (sampling.lockBreakCount > 0) {
+      blockers.push(
+        `Pointer Lock 中斷 ${sampling.lockBreakCount} 次 ⇒ 該區間的空洞**不是**抬滑鼠（FR-60.6）；` +
+          '已排除在間隙計數之外，但中斷期間的移動依 FR-A-8 整筆丟棄，那段軌跡不可復原',
+      );
+    }
+  }
+
   return {
     sourcePath,
     instruction,
@@ -151,7 +226,58 @@ function summarizeRun(input: SpiderWideRunInput): SpiderWideRunSummary {
     evaluableCount,
     suspectedCount,
     suspectedRate: evaluableCount === 0 ? undefined : suspectedCount / evaluableCount,
+    sampleCount: sampling?.sampleCount,
+    observedRateHz: sampling?.observedRateHz,
+    sampleOverflow: sampling?.sampleOverflow,
+    lockBreakCount: sampling?.lockBreakCount,
+    gapCountAtThreshold: sampling?.gapCountAtThreshold,
+    longestGapMs: sampling?.longestGapMs,
     blockers,
+  };
+}
+
+interface SamplingHealth {
+  readonly sampleCount: number;
+  readonly observedRateHz: number | undefined;
+  readonly sampleOverflow: boolean | undefined;
+  readonly lockBreakCount: number;
+  readonly gapCountAtThreshold: number;
+  readonly longestGapMs: number;
+}
+
+/**
+ * 讀出 WP-60 的取樣健康度；`mouseSamples` 缺席即回 `undefined`（六欄一起缺席，見 `SpiderWideRunSummary`）。
+ *
+ * `lockBreakCount` 也綁在 block 的存在上 —— `pointer_lock` 事件單獨存在時沒有任何樣本流可歸因，
+ * 報一個「中斷 N 次」只會讓讀者以為某份取樣被污染了，而那份取樣根本不存在。
+ *
+ * 間隙一律走 `segmentByTimeGap()`（C-D4 單一定義），中斷區間一律走 `deriveUnlockedIntervals()`。
+ * 本函式只做計數與取最大值，不自己判斷任何一個空洞是什麼。
+ */
+function readSamplingHealth(payload: ExportPayload): SamplingHealth | undefined {
+  const block = payload.mouseSamples;
+  if (block === undefined) return undefined;
+
+  const sampling = payload.meta.mouseSampling;
+  // 樣本流末筆時間 —— 未關閉的 lock 中斷以它收尾。整數 µs 空間累加後才換算 ms，比照 `segmentByTimeGap()`。
+  let elapsedUs = 0;
+  for (let i = 1; i < block.dtUs.length; i++) elapsedUs += block.dtUs[i];
+  const lastSampleMs = block.t0Ms + elapsedUs / 1000;
+
+  const unlockedIntervals = deriveUnlockedIntervals(payload.events, lastSampleMs);
+  const segmentation = segmentByTimeGap(block, REPORTED_GAP_THRESHOLD_MS, unlockedIntervals);
+  let longestGapMs = 0;
+  for (const gap of segmentation.gaps) {
+    if (gap.durationMs > longestGapMs) longestGapMs = gap.durationMs;
+  }
+
+  return {
+    sampleCount: block.dtUs.length,
+    observedRateHz: sampling?.observedRateHz,
+    sampleOverflow: sampling?.overflow,
+    lockBreakCount: unlockedIntervals.length,
+    gapCountAtThreshold: segmentation.gaps.length,
+    longestGapMs,
   };
 }
 
@@ -241,6 +367,10 @@ export function formatSpiderWideRepositioningSummary(
     `門檻 stallMinMs=${CALIBRATED_STALL_MIN_MS} / stallOmegaDegPerSec=${CALIBRATED_STALL_OMEGA_DEG_PER_SEC}` +
       `（D-57.T5-7 真人校準值，未凍結）；detection sustainedTicks=${KI031_WORKAROUND_SUSTAINED_TICKS}（KI-031 繞道）。`,
   );
+  lines.push(
+    `原始取樣（WP-60）：間隙門檻 ${REPORTED_GAP_THRESHOLD_MS.toFixed(1)} ms（PA prior，**非校準值**）；` +
+      `事件率下限 ${MIN_OBSERVED_RATE_HZ} Hz。空洞長度**不足以**區分抬滑鼠與停頓（T0 R2），下表只描述有幾個、多長。`,
+  );
   lines.push('');
 
   const blocked = summaries.filter((summary) => summary.blockers.length > 0);
@@ -263,6 +393,31 @@ export function formatSpiderWideRepositioningSummary(
         `| ${summary.detectedAtWorkaround} | ${pct(summary.timeoutRate)} | ${summary.suspectedCount}/${summary.evaluableCount} ` +
         `| ${pct(summary.suspectedRate)} |`,
     );
+  }
+  lines.push('');
+
+  // 取樣健康度是**同一段**的第二張表，不是第四段 —— 報告維持「資料品質／逐 run／方向性」三段結構。
+  lines.push('### 原始取樣健康度（WP-60）');
+  lines.push('');
+  if (summaries.every((summary) => summary.sampleCount === undefined)) {
+    lines.push(
+      '本批**沒有任何** run 帶 `mouseSamples` 區塊（錄製時未以 `?rawMouse=1` 開啟原始取樣）。' +
+        '這**不是 blocker** —— 只是少了這一維資料，上面的數字不受影響。',
+    );
+  } else {
+    lines.push(
+      `| run | samples | 事件率 (Hz) | 溢位 | lock 中斷 | 間隙 > ${REPORTED_GAP_THRESHOLD_MS.toFixed(1)} ms | 最長間隙 (ms) |`,
+    );
+    lines.push('|---|---|---|---|---|---|---|');
+    for (const summary of summaries) {
+      lines.push(
+        `| ${summary.sourcePath} | ${summary.sampleCount ?? '—'} | ${fmt(summary.observedRateHz, 0)} ` +
+          `| ${bool(summary.sampleOverflow)} | ${summary.lockBreakCount ?? '—'} ` +
+          `| ${summary.gapCountAtThreshold ?? '—'} | ${fmt(summary.longestGapMs, 1)} |`,
+      );
+    }
+    lines.push('');
+    lines.push('`—` = 該 run 沒有 `mouseSamples` 區塊（合法，非 blocker）；`0` = 有錄到但該項為零。');
   }
   lines.push('');
 
@@ -297,4 +452,9 @@ function fmt(value: number | undefined, digits: number): string {
 
 function pct(value: number | undefined): string {
   return value === undefined ? '—' : `${(value * 100).toFixed(0)}%`;
+}
+
+/** `undefined`（沒錄）與 `false`（錄了、沒溢位）必須在報告上分得開，故不用 `?? false`。 */
+function bool(value: boolean | undefined): string {
+  return value === undefined ? '—' : value ? '是' : '否';
 }

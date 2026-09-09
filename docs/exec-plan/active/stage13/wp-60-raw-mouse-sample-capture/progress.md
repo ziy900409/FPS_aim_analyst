@@ -40,7 +40,7 @@ R2 分離問題已有探索性答案；逐次標註與泛化驗證交給 [WP-61 
 | T1 Capture Contract | ✅ Completed（依使用者明確指示 override T0 gate；contract-only，不接線） | 2026-09-08 | 2026-09-08 14:31Z | `npm.cmd test -- src/data/mouseSampleArena.test.ts src/data/DataRecorder.test.ts src/data/export.test.ts src/data/exportPayloadSchema.test.ts src/data/metadata.test.ts` exit 0（182 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（244 files passed, 1 skipped；2561 passed, 2 skipped）；`npm.cmd run build` exit 0（既有 chunk-size warning）；60k `mouseSamples` JSON.stringify：567,316 bytes / p50 1.714 ms / p95 2.377 ms / max 2.546 ms；`rg -n "\bLOD\b" src tests scripts CONTEXT.md` exit 1（0 命中）。 |
 | T2 Recorder Wiring | ✅ Completed（依使用者明確指示 override T0 gate；app 佈線層 opt-in 預設關閉） | 2026-09-08 | 2026-09-08 | 見 §T2 implementation audit。`npm.cmd test -- tests/regression/wp60-raw-mouse-capture.test.ts` exit 0（20 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（245 files passed, 1 skipped；2581 passed, 2 skipped）；`npm.cmd run build` exit 0（`$LASTEXITCODE=0`，193 modules，保留既有 chunk-size warning）；`npx.cmd playwright test tests/e2e/raw-mouse-sampling.spec.ts` **2 passed（真實 Edge）**。 |
 | T3 Time-Gap Primitive | 🟡 Mostly done（原語與全部 scan 已交付；**DoD 的真人取樣分布一項未完成**）| 2026-09-09 | — | 見 §T3 implementation audit。`npm.cmd test -- src/metrics/mouseSampleGaps.test.ts` exit 0（25 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（246 files passed, 1 skipped；2606 passed, 2 skipped）；`npm.cmd run build` exit 0（193 modules，保留既有 chunk-size warning）；三組突變各被抓到。**未完成**：真人取樣的區段／間隙分布 —— T0 R2 只回填統計摘要，逐筆 `dtUs`／`dx`／`dy` 從未入 repo，本 session 取不到。 |
-| T4 Operator Visibility | ⬜ Not started | — | — | — |
+| T4 Operator Visibility | ✅ Completed | 2026-09-09 | 2026-09-09 | 見 §T4 implementation audit。`npm.cmd test -- tests/regression/spider-wide-repositioning-runner.test.ts` exit 0（**19 passed** = 既有 12 + 新增 7）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（**246 files passed, 1 skipped；2613 passed, 2 skipped**）；`npm.cmd run build` `$LASTEXITCODE = 0`（bundle hash `index-CcqBc2hD.js` 與 T2 相同 ⇒ `scripts/` 不進 app bundle）；四組突變各被抓到；legacy fixture 與含 `mouseSamples` 的樣本各實跑一次（輸出見下）。 |
 | T-exit | ⬜ Not started | — | — | — |
 
 ## Decision Log
@@ -70,6 +70,10 @@ R2 分離問題已有探索性答案；逐次標註與泛化驗證交給 [WP-61 
 | D-60.T3-2 | 2026-09-09 | **lock 中斷同樣切段，只改變間隙的「歸因」而不改變切段。**<br>理由：Pointer Lock 中斷是樣本流的**真實**不連續 —— 中斷期間的移動依 FR-A-8 本來就整筆丟棄，兩側樣本並不相鄰。若不切段，呼叫端會拿到一個橫跨中斷的「連續區段」，那才是靜默說謊。<br>**Alternatives considered**：(a) lock 間隙不切段、兩側併成一段 —— 會讓區段內含一個不存在的直線內插，駁回。 | Engineering | `SampleSegmentation.segments` 註解 |
 | D-60.T3-3 | 2026-09-09 | **間隙判定在整數 µs 空間比較，並加 `GAP_EPSILON_US = 1e-6`（1 ps）容差；端點相接不算 lock 重疊。**<br>理由：`dtUs` 是整數，唯一浮點來源是 `gapThresholdMs * 1000`。實測 10–60 ms 間所有一位小數門檻，只有 **32.3** 的乘積（32,299.999999999996）落在整數**下方** —— 少了容差，恰在門檻上的 32,300 µs 會因 5.8e-12 µs 的表示誤差被判成間隙。重疊採嚴格（重疊長度 > 0）則是 F2 的要求：恰在間隙起點收掉的中斷不得解釋掉它後面那個真實間隙。<br>**Alternatives considered**：(a) 把門檻 `Math.round()` 成整數 µs —— 會把 30.0005 ms 這類門檻悄悄改掉，駁回；(b) 不加容差 —— 32.3 的案例會判錯，駁回。 | Engineering | `mouseSampleGaps.ts` §GAP_EPSILON_US；同名測試兩例 |
 | D-60.T3-4 | 2026-09-09 | **R7 的 scan 對象是「命名」，故模組**連註解都不拼出**那個三字母縮寫**，改以實際檔名 `lod_v3_default_config.json`（小寫）指認來源。<br>理由：初版把方法學來源寫成縮寫寫進 doc comment，`LOD` 掃描立刻紅。可以改成剝註解後再掃（比照 C-D4 那支），但那會**放寬**一條既有紅線去遷就一段可以換句話說的散文。換句話說零成本、出處零損失，掃描維持在最嚴的原文層級。<br>**Alternatives considered**：(a) 掃描改用 `codeOnly()` —— 為了註解方便而弱化 R7，駁回；(b) 不記來源 —— D-60.P7 明文要求記名，駁回。 | Engineering | `mouseSampleGaps.ts` 頭註解；`mouseSampleGaps.test.ts` R7 scan |
+| D-60.T4-1 | 2026-09-09 | **四個取樣 blocker 一律閘在 `payload.mouseSamples` 的存在上，`crossOriginIsolated: false` 也不例外。**<br>理由：T4 invariant 明文「缺 `mouseSamples` 是**合法**狀態，不是 blocker」。四個 blocker 講的都是「這份**原始取樣**不可信」——沒有原始取樣時，它們沒有主詞。COI 那條最容易寫錯：它讀的是既有的 `meta.crossOriginIsolated`，看起來像個通用的資料品質問題，但既有的通用管道是 `meta.suspect`（`PERF_FLOOR_MS` 判紅），而 T4 invariant 又明文不得改既有 blocker 的觸發條件。⇒ 不閘就會讓每一份 60 Hz 機器錄的 legacy run 平白多一條 blocker。<br>**Alternatives considered**：(a) COI 不閘、當通用 blocker —— 改變了既有 run 的判定，違反 invariant，駁回；(b) 四個都不閘、缺 block 時當 0 處理 —— 「沒錄」與「錄了但為零」混成一件事，違反 DoD 第 1 項，駁回。 | Engineering | `spiderWideRepositioningRunner.ts` `readSamplingHealth()`；同名測試 legacy 案例；突變 M2 |
+| D-60.T4-2 | 2026-09-09 | **`REPORTED_GAP_THRESHOLD_MS = 30` 放在 runner，不放進 `mouseSampleGaps.ts`。**<br>理由：T3 刻意讓 `segmentByTimeGap()` 的門檻**呼叫端必填**（條件於錄製硬體），那條紀律不能因為 T4 需要一個數字就被鬆掉。放在 runner 是既有 `CALIBRATED_STALL_*` 的同一處置：每次分析用同一個數字、換門檻在 diff 裡看得見，而模組本身仍不預設。值取 PA 的 `TIME_GAP_THRESHOLD_MS = 30`（D-60.P7 授權無虞）當 prior，T0 R1 的雜訊底線 18 ms 給它 1.7× headroom。<br>⚠️ **它不是校準值**：T0 R2 已判定空洞長度分不開抬滑鼠與停頓，故報告只出 `gapCountAtThreshold` / `longestGapMs` 這種**描述性**的量，措辭明文不宣稱任何一個空洞是什麼（C-D3／C-D4 的守線）。<br>**Alternatives considered**：(a) 給 `segmentByTimeGap()` 一個預設值 —— 撤銷 D-60.T3 的紀律，且會在別的硬體上說謊，駁回；(b) 不報間隙、只報 samples/rate/overflow —— FR-60.8 明文要求「時間間隙分布」，駁回。 | Engineering | `spiderWideRepositioningRunner.ts` §REPORTED_GAP_THRESHOLD_MS |
+| D-60.T4-3 | 2026-09-09 | **取樣健康度是「逐 run」段裡的第二張表（`###`），不是第四段。**<br>理由：T4 步驟 3 明文「不新增第四段」，但把六個新欄位塞進本來已 11 欄的主表會讓它在終端機上不可讀。子表既保住三段結構（測試以 `/^## /gm` 計數釘死為 3），又讓六欄全部可見。全批都沒有 `mouseSamples` 時整張表換成一行說明 —— 一張全是 `—` 的表只會讓人以為壞了。<br>**Alternatives considered**：(a) 四欄併進主表、overflow/lockBreak 只走 blocker —— 那兩欄的「否／0」狀態就看不到了，駁回。 | Engineering | `formatSpiderWideRepositioningSummary()`；同名測試三段結構案例 |
+| D-60.T4-4 | 2026-09-09 | **`longestGapMs` 只涵蓋 `gaps`（未被 lock 解釋的），且無間隙時為 `0` 而非 `undefined`。**<br>理由：`undefined` 這個值在本 summary 已經被指派了唯一語意 ——「這份 run 沒有 `mouseSamples`」。若「有錄到但沒有間隙」也回 `undefined`，那個語意就有兩個來源，讀者無從分辨。lock 歸因的間隙不計入，是因為那不是硬體空洞而是量測中斷（FR-60.6）；它已由 `lockBreakCount` 具名。<br>**Alternatives considered**：(a) 無間隙回 `undefined` —— 與「沒錄」撞號，駁回；(b) `longestGapMs` 涵蓋全部空洞（含 lock）—— 一次 alt-tab 就會讓最長間隙變成幾秒，把報告最醒目的數字變成量測假影，駁回（突變 M4 已證這條斷言抓得到）。 | Engineering | `readSamplingHealth()`；同名測試 lock 案例 |
 | D-60.T3-5 | 2026-09-09 | **新增 `deriveUnlockedIntervals()`（README §2.3 未列）把 `pointer_lock` edge 轉成區間。**<br>理由：T3 步驟 3 要求「依 `pointer_lock` 事件推導 `lockIntervals`」，但 README 只給了吃 `lockIntervals` 的簽名。把 edge→interval 這段留給每個呼叫端自己寫，等於為同一個語意開放多套實作（未關閉的中斷該不該收尾、重複 edge 怎麼處理）—— 那正是 C-D4 要避免的形狀。附加函式不改 `segmentByTimeGap()` 的簽名，DoD 的一致性要求不受影響。<br>**Alternatives considered**：(a) 讓呼叫端自推 —— 語意分散，T4 與 WP-61 會各寫一套，駁回。 | Engineering | `mouseSampleGaps.ts`；CONTEXT.md「未取鎖區間」 |
 
 ## T0 automated audit（2026-09-08 13:39Z）
@@ -355,6 +359,87 @@ T3 步驟 8／DoD 要求「以 T0 錄到的真人取樣跑一次，把區段數�
 
 ⇒ 這一項需要**使用者以 `?rawMouse=1` 跑一輪並提供匯出**（或在本機執行時貼回以本模組計算的區段摘要）。門檻取值同樣待它決定：T0 R1 的雜訊底線約 18 ms、PA 的 `TIME_GAP_THRESHOLD_MS = 30` 可當 prior，但 **T0 R2 的實機摘要已判定空洞長度不足以可靠分離 lift/pause**，故此處**刻意不凍結任何預設值**（`gapThresholdMs` 呼叫端必填）。這與 T0/F6 是同一個經驗性缺口，不是本原語的正確性缺口。
 
+## T4 implementation audit（2026-09-09）
+
+### Scope
+
+生產側只有一個檔，且既有邏輯**一行未動**（新增皆為 additive）：
+
+| 檔案 | 改動 |
+|---|---|
+| [`scripts/spiderWideRepositioningRunner.ts`](../../../../../scripts/spiderWideRepositioningRunner.ts) | ① `SpiderWideRunSummary` additive 六欄（`sampleCount`／`observedRateHz`／`sampleOverflow`／`lockBreakCount`／`gapCountAtThreshold`／`longestGapMs`）；② 新 private `readSamplingHealth()`；③ 四個取樣 blocker（全閘在 block 存在上，D-60.T4-1）；④ 報告開頭多一行門檻 provenance、「逐 run」段多一張 `###` 子表（D-60.T4-3）；⑤ 兩個常數 `MIN_OBSERVED_RATE_HZ = 500`、`REPORTED_GAP_THRESHOLD_MS = 30`（D-60.T4-2）。 |
+| [`tests/regression/spider-wide-repositioning-runner.test.ts`](../../../../../tests/regression/spider-wide-repositioning-runner.test.ts) | +7 cases；helper `widePayload()` 加 `mouseSamples`／`extraEvents` 兩個選配參數、`summary()` 補六個 `undefined` 預設 |
+| [`docs/operational/spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md) | §2.4 新節「原始滑鼠取樣的錄製前提（選配）」；§5 的報告三段說明納入子表與六個**逐字相符**的欄位名 |
+| — | `analyze-spider-wide-repositioning.ts` **一行未動** —— 六欄與 blocker 都在 runner 的回傳值裡，I/O 殼不需要知道它們（既有分工成立即為證據）。`mouseSampleGaps.ts` 亦一行未動。 |
+
+C-D3 仍成立：`mouseSampleGaps` 的 importer 掃描只掃 `src/**`，而本消費者在 `scripts/`。它不進 `DrillMetricRegistry`、不進教練報告 —— 報告出的是**描述性**的空洞計數，不是指標。
+
+### Verification
+
+| Item | Command / evidence | Result |
+|---|---|---|
+| Targeted T4 tests | `npm.cmd test -- tests/regression/spider-wide-repositioning-runner.test.ts` | exit 0；**19 passed**（既有 12 + 新增 7）|
+| 既有 12 案例期望值零修改 | `git diff -U0` 的**移除行**共 6 行 | 全部落在檔頭註解、`widePayload()` 的 doc／簽名、`makePayload(` 呼叫的兩行；**沒有一行在既有 `it()` 內** |
+| Typecheck ×2 | `npm.cmd run typecheck` | exit 0 |
+| Full Vitest | `npm.cmd test` | exit 0；**246 files passed, 1 skipped；2613 passed, 2 skipped** |
+| Build | `npm.cmd run build` | `$LASTEXITCODE = 0`；`dist/assets/index-CcqBc2hD.js` 1,220.06 kB gzip 346.97 kB —— **hash 與 T2 完全相同**，`scripts/` 不進 app bundle |
+
+**全量差額歸屬**：T3 baseline 246 files / 2606 passed → T4 為 246 files / **2613** passed。差額 = **+7 cases**（皆為本 task 新增於既有檔），檔數未增、其餘檔案 case 數未動 ⇒ 與平行 session 無交集。
+
+### 斷言偵測力（四組突變，逐一實測）
+
+| 突變 | 預期抓到的性質 | 實測 |
+|---|---|---|
+| M1：`segmentByTimeGap()` 改吃 `[]`（不傳 lock 區間）| lock 中斷造成的空洞會被算成候選間隙 | **1 case failed** |
+| M2：COI blocker 移出 `sampling !== undefined` 閘 | legacy（無 `mouseSamples`）run 平白多一條 blocker | **1 case failed** |
+| M3：`sampleCount ?? 0`、`sampleOverflow ?? false` | 「沒錄」被壓成「錄了但為零」 | **1 case failed** |
+| M4：`longestGapMs` 涵蓋 lock 歸因的空洞 | 一次 alt-tab 就讓最長間隙變成量測假影 | **1 case failed** |
+
+四組突變後皆已還原並複跑 19 passed。
+
+### 實跑證據
+
+**① legacy 匯出（無 `mouseSamples`）—— 不因缺該區塊新增任何 blocker**
+
+```text
+npm.cmd run analyze:spider-wide -- research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json --out <scratch>/legacy
+
+## 資料品質：1／1 份有 blocker
+- **counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json**
+  - drillId 為 'counterstrafe_ad_v1'，非 'spider-shot-wide-v1' ⇒ 無 peripheral 母體
+  - 缺指示標籤 ⇒ 無 ground truth，不參與方向性分組
+  - `meta.dpi` 缺席 ⇒ `cm/360` 不可稽核（錄製時未填 SessionSetup 的 Mouse DPI）
+  - 零個 `zone: peripheral` 抵達 ⇒ 母體為空
+
+### 原始取樣健康度（WP-60）
+本批**沒有任何** run 帶 `mouseSamples` 區塊（錄製時未以 `?rawMouse=1` 開啟原始取樣）。這**不是 blocker** ——
+只是少了這一維資料，上面的數字不受影響。
+```
+
+四條 blocker **全部是本 task 之前就有的**（drill／指示／DPI／母體），取樣 blocker 零條。
+
+**② 含 `mouseSamples` 的樣本 —— 三段結構完整、六欄有值**
+
+輸入為 scratchpad 內以同一份 fixture 注入 `mouseSamples` + `meta.mouseSampling` 產生的兩份合成匯出（**不進 repo**，比照 D-57.T5-8）：`raw-clean`（2,000 筆 @ ~1 ms，三個真實空洞 45／120／900 ms，COI true，無中斷）與 `raw-degraded`（800 筆、312 Hz、`overflow: true`、COI false、一次涵蓋 900 ms 空洞的 Pointer Lock 中斷）。
+
+```text
+## 資料品質（raw-degraded 的取樣四條，raw-clean 零條）
+  - 原始取樣事件率不足（312 Hz < 500 Hz）⇒ 時間間隙判定不可用（README §2.6 F1）
+  - 原始取樣溢位（recorded 800 已達容量上限）⇒ 末端資料缺失，不要把樣本流的結尾當成 drill 的結尾（FR-60.9；tick 資料本身仍有效）
+  - `meta.crossOriginIsolated: false` ⇒ `event.timeStamp` 精度不足（F4），樣本間 `dt` 被捨入雜訊污染，時間間隙判定不可信
+  - Pointer Lock 中斷 1 次 ⇒ 該區間的空洞**不是**抬滑鼠（FR-60.6）；已排除在間隙計數之外，但中斷期間的移動依 FR-A-8 整筆丟棄，那段軌跡不可復原
+
+### 原始取樣健康度（WP-60）
+| run | samples | 事件率 (Hz) | 溢位 | lock 中斷 | 間隙 > 30.0 ms | 最長間隙 (ms) |
+|---|---|---|---|---|---|---|
+| raw-clean.json | 2000 | 1005 | 否 | 0 | 3 | 900.0 |
+| raw-degraded.json | 800 | 312 | 是 | 1 | 1 | 60.0 |
+```
+
+`raw-degraded` 的兩個空洞（60 / 900 ms）中，900 ms 那個被 Pointer Lock 中斷吸收 ⇒ `gapCountAtThreshold` 由 2 降為 1、`longestGapMs` 由 900 降為 60。**F2 的消歧在真實腳本路徑上成立**，不只在單元測試裡。
+
+⚠️ 這兩份是**合成**輸入，證明的是報告管線正確，**不是**真人取樣的分布。真人分布仍是 T3 DoD 第 9 項的缺口（同一個經驗性缺口）。
+
 ## Surprises
 
 1. **要偵測抬滑鼠所需的原始資料，這個專案其實一直都在收 —— 只是在進匯出前一步被丟掉。** [`InputSampler.ts:137-139`](../../../../../src/input/InputSampler.ts#L137-L139) 早在 WP-3（ADR-5，「1000 Hz 滑鼠下不遺失中間軌跡」）就用 `getCoalescedEvents()` 逐筆保留了 sub-frame 樣本與各自的 `event.timeStamp`；到了 [`SimLoop.ts:96-99`](../../../../../src/loop/SimLoop.ts#L96-L99) 才被 `accumulateMouse` 聚合成逐 tick 的 `dYaw`／`dPitch`。<br>⇒ 本 WP 的性質因此不是「新增一種量測」，而是**停止丟棄一份已經付過成本的資料**。這也解釋了為什麼 WP-57 的抬滑鼠標註只能做到「角速度停滯」—— 不是判準沒設計好，是它拿到的資料裡已經沒有那個資訊了。
@@ -371,6 +456,8 @@ T3 步驟 8／DoD 要求「以 T0 錄到的真人取樣跑一次，把區段數�
 
 7. **一個「全綠存活」的突變，暴露的不是斷言弱，而是我挑錯了邊界值。** 為了驗收「恰在門檻上不算間隙」的容差策略，我先把比較從 `<=` 改成 `<`，預期至少一個案例會紅 —— 結果 25 個全綠。第一反應是「斷言沒偵測力」，但實際上那是個 **no-op 突變**（兩者只在差值恰為 1e-6 時不同）。真正的問題在別處：我的邊界案例用 30 與 18.2 兩個門檻，而 `30 * 1000` 精確、`18.2 * 1000` 落在整數**上方** —— 兩者在有沒有容差之下**行為完全相同**，所以那兩個案例從頭到尾就沒有測到容差。窮舉 10–60 ms 全部一位小數門檻後，只有 **32.3**（`× 1000 = 32299.999999999996`）落在整數下方，是唯一能分辨的值。<br>⇒ **教訓**：突變測試的失敗有兩種讀法 —— 「斷言抓不到」與「突變根本沒改變行為」。把兩者混為一談會讓人去補一堆補不到點上的斷言。而浮點邊界的案例值**不能憑直覺挑**：看起來最像邊界的那個數（門檻本身、實測值 18.2），很可能恰好是那條路徑上最不敏感的輸入。
 
+
+8. **突變測試的「還原」步驟本身會說謊 —— 我用 `git checkout --` 還原突變，結果把整個未提交的切片一起還原了。** T4 的第一輪突變驗證跑了三組：M1 抓到 1 個 case，然後 `git checkout -- scripts/...` 還原；接著 M2、M3 各報「6 個 case failed」，看起來偵測力很強。**但那六個失敗不是斷言抓到突變，而是整個 T4 實作已經不在檔案裡了** —— `git checkout --` 從 index 還原，而 index 就是 HEAD，我未提交的 164 行一起沒了。後兩組突變的 perl 替換甚至沒有命中任何一行（那些行不存在），實際跑的是「T4 完全沒實作」這個對照組。<br>⇒ 這與 Surprises 7 是**同一個病**的另一面：那次是「突變沒改變行為，卻被讀成斷言沒偵測力」，這次是「突變根本沒被套用，卻被讀成斷言偵測力很強」。**紅燈與綠燈一樣需要歸因**。<br>⇒ **教訓**：突變測試的 setup／teardown 要用**不依賴 VCS 狀態**的手段（`cp` 一份備份再 `cp` 回來）。在一個「當前 task 未 commit」是明文紀律的 repo 裡（`CLAUDE.md §3.1`），任何 `git checkout --`／`git restore` 的還原動作都等於「丟棄本 task 的全部工作」。重跑後四組突變各 1 個 case failed，才是真正的偵測力。
 
 ## Open Questions（追蹤用，權威定義見 [README.md](README.md) §1.5）
 

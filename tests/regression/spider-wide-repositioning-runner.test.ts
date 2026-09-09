@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { DrillEvent } from '../../src/data/DataRecorder.ts';
+import type { ExportPayload, MouseSampleBlock } from '../../src/data/export.ts';
 import type { TickRecord } from '../../src/data/RingBuffer.ts';
 import { makePayload, makeTick } from '../replay/fixtures.ts';
 import {
   assessDirectionality,
   formatSpiderWideRepositioningSummary,
+  MIN_OBSERVED_RATE_HZ,
   MIN_SENSITIVITY_LEVELS,
+  REPORTED_GAP_THRESHOLD_MS,
   SPIDER_WIDE_DRILL_ID,
   summarizeSpiderWideRuns,
   type SpiderWideRunSummary,
@@ -15,9 +18,10 @@ import {
  * WP-57 —— `analyze:spider-wide` 的純函式契約。
  *
  * 本檔**不**重測 `deriveMouseThrow()`／`deriveRepositioningSuspicion()`／`deriveDetectionMetrics()`
- * （各有自己的測試，C-D4 單一定義）。這裡測的是 runner 自己的三件事：
+ * ／`segmentByTimeGap()`（各有自己的測試，C-D4 單一定義）。這裡測的是 runner 自己的四件事：
  * ① 資料品質 blocker 有沒有點名，② opaque `resolvedFrom.aspect` 讀不讀得到，
- * ③ **cohort 共線時方向性有沒有拒答** —— ③ 是本 runner 存在的理由（§T5-real 的教訓）。
+ * ③ **cohort 共線時方向性有沒有拒答** —— ③ 是本 runner 存在的理由（§T5-real 的教訓），
+ * ④ **WP-60 T4**：原始取樣的四種靜默失效有沒有變成 blocker，而缺該區塊**沒有**變成 blocker。
  */
 
 /** §T5-real 那四份真人 run 的形狀：每個指示各一個感度 ⇒ 條件與 cm/360 完全共線。 */
@@ -166,6 +170,178 @@ describe('formatSpiderWideRepositioningSummary', () => {
   });
 });
 
+/**
+ * WP-60 T4 —— 一段最小的原始取樣：4 筆樣本，中間夾一個 50 ms 的空洞。
+ * 絕對時間為 100 / 101 / 151 / 152 ms，故那個空洞是 `[101, 151]`。
+ */
+const GAP_BLOCK: MouseSampleBlock = {
+  t0Ms: 100,
+  dtUs: [0, 1000, 50_000, 1000],
+  dx: [1, 2, 3, 4],
+  dy: [0, 0, 0, 0],
+};
+
+const SAMPLING_META = {
+  recorded: GAP_BLOCK.dtUs.length,
+  capacity: 360_000,
+  overflow: false,
+  timeSource: 'event.timeStamp',
+  deltaUnit: 'counts',
+  observedRateHz: 1005,
+} as const;
+
+/** 六個取樣欄位單獨拉出來比 —— 一個 `toEqual` 就涵蓋「有 block」與「沒 block」兩種輸入。 */
+function samplingFields(row: SpiderWideRunSummary) {
+  return {
+    sampleCount: row.sampleCount,
+    observedRateHz: row.observedRateHz,
+    sampleOverflow: row.sampleOverflow,
+    lockBreakCount: row.lockBreakCount,
+    gapCountAtThreshold: row.gapCountAtThreshold,
+    longestGapMs: row.longestGapMs,
+  };
+}
+
+const SAMPLING_BLOCKER_MARKERS = ['事件率不足', '原始取樣溢位', 'crossOriginIsolated', 'Pointer Lock 中斷'] as const;
+
+function samplingBlockers(row: SpiderWideRunSummary): readonly string[] {
+  return row.blockers.filter((blocker) => SAMPLING_BLOCKER_MARKERS.some((marker) => blocker.includes(marker)));
+}
+
+describe('WP-60 T4 —— 原始取樣健康度（FR-60.8）', () => {
+  it('fills all six sampling fields when the block is present and leaves them undefined when it is absent', () => {
+    const [withBlock, withoutBlock] = summarizeSpiderWideRuns([
+      { sourcePath: 'raw.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK }) },
+      { sourcePath: 'legacy.json', instruction: '照平常打', payload: widePayload({}) },
+    ]);
+
+    expect(REPORTED_GAP_THRESHOLD_MS).toBe(30);
+    expect(samplingFields(withBlock)).toEqual({
+      sampleCount: 4,
+      observedRateHz: 1005,
+      sampleOverflow: false,
+      lockBreakCount: 0,
+      gapCountAtThreshold: 1,
+      longestGapMs: 50,
+    });
+    // 缺席即六欄全 `undefined` —— **不是 0**。「沒錄原始取樣」與「錄了但一個間隙都沒有」是兩件事。
+    expect(samplingFields(withoutBlock)).toEqual({
+      sampleCount: undefined,
+      observedRateHz: undefined,
+      sampleOverflow: undefined,
+      lockBreakCount: undefined,
+      gapCountAtThreshold: undefined,
+      longestGapMs: undefined,
+    });
+  });
+
+  it('blocks an event rate below the floor, and stays silent at the measured 1005 Hz', () => {
+    const [slow, fast] = summarizeSpiderWideRuns([
+      {
+        sourcePath: 'slow.json',
+        instruction: '照平常打',
+        payload: widePayload({
+          mouseSamples: GAP_BLOCK,
+          meta: { mouseSampling: { ...SAMPLING_META, observedRateHz: MIN_OBSERVED_RATE_HZ - 1 } },
+        }),
+      },
+      { sourcePath: 'fast.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK }) },
+    ]);
+
+    expect(slow.blockers.some((blocker) => blocker.includes('事件率不足'))).toBe(true);
+    expect(fast.blockers.some((blocker) => blocker.includes('事件率不足'))).toBe(false);
+  });
+
+  it('blocks an overflowed capture without touching meta.suspect (FR-60.9)', () => {
+    const [overflowed, ok] = summarizeSpiderWideRuns([
+      {
+        sourcePath: 'overflow.json',
+        instruction: '照平常打',
+        payload: widePayload({
+          mouseSamples: GAP_BLOCK,
+          meta: { mouseSampling: { ...SAMPLING_META, capacity: 4, overflow: true } },
+        }),
+      },
+      { sourcePath: 'ok.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK }) },
+    ]);
+
+    expect(overflowed.blockers.some((blocker) => blocker.includes('原始取樣溢位'))).toBe(true);
+    expect(ok.blockers.some((blocker) => blocker.includes('原始取樣溢位'))).toBe(false);
+    // 溢位是**獨立**旗標：既有的 `suspect` blocker 不得因此出現（D-60.P5）。
+    expect(overflowed.blockers.some((blocker) => blocker.includes('suspect'))).toBe(false);
+  });
+
+  it('blocks a run recorded without cross-origin isolation (F4)', () => {
+    const [dull, sharp] = summarizeSpiderWideRuns([
+      {
+        sourcePath: 'no-coi.json',
+        instruction: '照平常打',
+        payload: widePayload({ mouseSamples: GAP_BLOCK, meta: { crossOriginIsolated: false } }),
+      },
+      { sourcePath: 'coi.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK }) },
+    ]);
+
+    expect(dull.blockers.some((blocker) => blocker.includes('crossOriginIsolated'))).toBe(true);
+    expect(sharp.blockers.some((blocker) => blocker.includes('crossOriginIsolated'))).toBe(false);
+  });
+
+  it('blocks a Pointer Lock break and drops the gap it explains from the count (FR-60.6)', () => {
+    // 未取鎖區間 `[100.5, 151.5]` 覆蓋那個 50 ms 空洞 ⇒ 它被歸因給中斷，不留在 `gaps`。
+    const [broken, intact] = summarizeSpiderWideRuns([
+      {
+        sourcePath: 'lock-break.json',
+        instruction: '照平常打',
+        payload: widePayload({
+          mouseSamples: GAP_BLOCK,
+          extraEvents: [
+            { type: 'pointer_lock', locked: false, t: 100.5 },
+            { type: 'pointer_lock', locked: true, t: 151.5 },
+          ],
+        }),
+      },
+      { sourcePath: 'locked.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK }) },
+    ]);
+
+    expect(broken.blockers.some((blocker) => blocker.includes('Pointer Lock 中斷'))).toBe(true);
+    expect(intact.blockers.some((blocker) => blocker.includes('Pointer Lock 中斷'))).toBe(false);
+    expect(broken.lockBreakCount).toBe(1);
+    // 被中斷解釋掉的空洞**不再**是候選；`longestGapMs` 隨之回到 0（有錄到、沒有未解釋的間隙）。
+    expect(broken.gapCountAtThreshold).toBe(0);
+    expect(broken.longestGapMs).toBe(0);
+  });
+
+  it('adds no sampling blocker to a legacy export, even one that would trip every one of them', () => {
+    // 這份 run 沒有 COI、沒有原始取樣，還帶著 Pointer Lock 中斷事件 —— 四個 blocker 一個都不該出現：
+    // 缺 `mouseSamples` 是**合法**狀態，不是資料有問題（T4 invariant）。
+    const [row] = summarizeSpiderWideRuns([
+      {
+        sourcePath: 'legacy.json',
+        instruction: '照平常打',
+        payload: widePayload({
+          meta: { crossOriginIsolated: false },
+          extraEvents: [{ type: 'pointer_lock', locked: false, t: 100 }],
+        }),
+      },
+    ]);
+
+    expect(samplingBlockers(row)).toEqual([]);
+  });
+
+  it('prints the sampling table only when some run carries a block, and says so when none does', () => {
+    const rows = summarizeSpiderWideRuns([
+      { sourcePath: 'raw.json', instruction: '照平常打', payload: widePayload({ mouseSamples: GAP_BLOCK }) },
+    ]);
+    const withBlock = formatSpiderWideRepositioningSummary(rows, assessDirectionality(rows));
+    const withoutBlock = formatSpiderWideRepositioningSummary(COLLINEAR_COHORT, assessDirectionality(COLLINEAR_COHORT));
+
+    expect(withBlock).toContain('### 原始取樣健康度（WP-60）');
+    expect(withBlock).toContain('| raw.json | 4 | 1005 | 否 | 0 | 1 | 50.0 |');
+    expect(withoutBlock).toContain('本批**沒有任何** run 帶 `mouseSamples` 區塊');
+    // 三段結構不變 —— 取樣健康度是「逐 run」段裡的第二張表，不是第四段。
+    expect(withBlock.match(/^## /gm)).toHaveLength(3);
+  });
+});
+
 function summary(overrides: Partial<SpiderWideRunSummary>): SpiderWideRunSummary {
   return {
     sourcePath: 'run.json',
@@ -183,17 +359,32 @@ function summary(overrides: Partial<SpiderWideRunSummary>): SpiderWideRunSummary
     evaluableCount: 30,
     suspectedCount: 0,
     suspectedRate: 0,
+    // 預設為「這份 run 沒錄原始取樣」—— 方向性測試的 cohort 全部沿用這個形狀，與 WP-60 之前逐位相同。
+    sampleCount: undefined,
+    observedRateHz: undefined,
+    sampleOverflow: undefined,
+    lockBreakCount: undefined,
+    gapCountAtThreshold: undefined,
+    longestGapMs: undefined,
     blockers: [],
     ...overrides,
   };
 }
 
-/** 最小的 wide-flick 形狀 payload：一顆周邊目標 + 靜止 aim。數值精度不是本檔的標的。 */
+/**
+ * 最小的 wide-flick 形狀 payload：一顆周邊目標 + 靜止 aim。數值精度不是本檔的標的。
+ *
+ * `mouseSamples` 省略時**整個頂層欄位不存在**（不是空 block）—— 那正是 pre-WP-60 匯出的形狀，
+ * 也是既有 12 個案例走的路徑。給了 block 就自動補上成對的 `meta.mouseSampling`（parser 要求成對，
+ * D-60.T1-2），呼叫端可用 `meta.mouseSampling` 覆寫它。
+ */
 function widePayload(args: {
   readonly meta?: Record<string, unknown>;
   readonly peripheral?: boolean;
   readonly spiderShot?: unknown;
-}) {
+  readonly mouseSamples?: MouseSampleBlock;
+  readonly extraEvents?: readonly DrillEvent[];
+}): ExportPayload {
   const ticks: TickRecord[] = [];
   for (let i = 0; i < 60; i++) {
     ticks.push(makeTick({ t: i * 10, dYaw: 0, dPitch: 0, tx: 6.2, ty: 1.5, tz: -5 }));
@@ -203,7 +394,7 @@ function widePayload(args: {
       ? [{ type: 'visible', targetId: 'c1', side: 'R', zone: 'center', t: 100, targetX: 0, targetY: 1.5, targetZ: -8 }]
       : [{ type: 'visible', targetId: 'p1', side: 'R', zone: 'peripheral', t: 300, targetX: 6.2, targetY: 1.5, targetZ: -5 }];
 
-  return makePayload({
+  const payload = makePayload({
     meta: {
       drillId: SPIDER_WIDE_DRILL_ID,
       sensitivity: 1,
@@ -217,9 +408,12 @@ function widePayload(args: {
             ? args.spiderShot
             : { resolvedFrom: { fovDegVertical: 75, aspect: 2.0031, screenMargin: 0.04, kLo: 0.92, targetAngularDiameterDeg: 2 } },
       },
+      ...(args.mouseSamples !== undefined ? { mouseSampling: SAMPLING_META } : {}),
       ...args.meta,
     } as never,
     ticks,
-    events,
+    events: [...events, ...(args.extraEvents ?? [])],
   });
+
+  return args.mouseSamples === undefined ? payload : { ...payload, mouseSamples: args.mouseSamples };
 }
