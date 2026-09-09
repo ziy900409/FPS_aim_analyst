@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Spider Shot v3 量測參數與意涵</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f0f5ff;
+      --text: #182033;
+      --muted: #5e687d;
+      --line: #d9e0ec;
+      --blue: #1d5fd1;
+      --blue-soft: #e8f0ff;
+      --green: #087f5b;
+      --green-soft: #e6f7f0;
+      --amber: #a15c00;
+      --amber-soft: #fff3da;
+      --red: #b42318;
+      --red-soft: #ffebe9;
+      --purple: #6f42c1;
+      --purple-soft: #f1eaff;
+      --shadow: 0 12px 34px rgba(24, 32, 51, 0.08);
+      --radius: 16px;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101521;
+        --surface: #171e2d;
+        --surface-soft: #1c2942;
+        --text: #edf2ff;
+        --muted: #aeb9ce;
+        --line: #344057;
+        --blue: #79a8ff;
+        --blue-soft: #1a315a;
+        --green: #72d6b0;
+        --green-soft: #173a32;
+        --amber: #ffc66d;
+        --amber-soft: #45331c;
+        --red: #ff938a;
+        --red-soft: #4a2526;
+        --purple: #c5a4ff;
+        --purple-soft: #33264a;
+        --shadow: none;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--blue) 11%, transparent), transparent 34rem),
+        var(--bg);
+      font-family: var(--sans);
+      line-height: 1.7;
+    }
+    a { color: var(--blue); text-underline-offset: 3px; }
+    code {
+      padding: 0.12rem 0.35rem;
+      border-radius: 5px;
+      background: var(--surface-soft);
+      font-family: var(--mono);
+      font-size: 0.9em;
+    }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 62px 0 34px; }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--blue);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; max-width: 900px; font-size: clamp(2rem, 5vw, 4.2rem); line-height: 1.08; }
+    .lede { max-width: 850px; margin: 20px 0 0; color: var(--muted); font-size: 1.12rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .pill.frozen { border-color: color-mix(in srgb, var(--green) 40%, var(--line)); background: var(--green-soft); color: var(--green); }
+    .pill.blocked { border-color: color-mix(in srgb, var(--red) 40%, var(--line)); background: var(--red-soft); color: var(--red); }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    nav .shell { display: flex; gap: 22px; overflow-x: auto; padding-top: 11px; padding-bottom: 11px; }
+    nav a { flex: 0 0 auto; color: var(--muted); font-size: 0.86rem; font-weight: 750; text-decoration: none; }
+    nav a:hover { color: var(--blue); }
+    main { padding: 34px 0 72px; }
+    section { scroll-margin-top: 68px; margin-top: 54px; }
+    h2 { margin: 0 0 10px; font-size: clamp(1.45rem, 2.5vw, 2.15rem); line-height: 1.25; }
+    h3 { margin: 28px 0 10px; font-size: 1.12rem; }
+    p { margin: 10px 0; }
+    .section-intro { max-width: 880px; color: var(--muted); }
+    .callout {
+      margin: 20px 0;
+      padding: 18px 20px;
+      border: 1px solid color-mix(in srgb, var(--blue) 30%, var(--line));
+      border-left: 5px solid var(--blue);
+      border-radius: 12px;
+      background: var(--blue-soft);
+    }
+    .callout.warning { border-color: color-mix(in srgb, var(--amber) 35%, var(--line)); border-left-color: var(--amber); background: var(--amber-soft); }
+    .callout.danger { border-color: color-mix(in srgb, var(--red) 35%, var(--line)); border-left-color: var(--red); background: var(--red-soft); }
+    .callout strong { display: block; margin-bottom: 3px; }
+    .formula {
+      margin: 14px 0;
+      padding: 14px 16px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-soft);
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .table-wrap { margin: 20px 0; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: var(--surface-soft); color: var(--muted); font-size: 0.76rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { font-weight: 700; }
+    .num { text-align: right; font-family: var(--mono); }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; white-space: nowrap; }
+    .tag.primary { background: var(--green-soft); color: var(--green); }
+    .tag.secondary { background: var(--blue-soft); color: var(--blue); }
+    .tag.research { background: var(--purple-soft); color: var(--purple); }
+    .tag.blocked { background: var(--red-soft); color: var(--red); }
+    .construct { margin-top: 24px; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .construct > h3 { margin-top: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .construct .zone { color: var(--muted); font-family: var(--mono); font-size: 0.78rem; font-weight: 700; }
+    .kv { display: grid; grid-template-columns: 128px 1fr; gap: 8px 14px; margin-top: 14px; font-size: 0.9rem; }
+    .kv dt { color: var(--muted); font-weight: 750; }
+    .kv dd { margin: 0; }
+    .kv dd.means { color: var(--text); }
+    details { margin: 14px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    summary { cursor: pointer; padding: 14px 16px; font-weight: 800; }
+    details > div { padding: 0 16px 16px; color: var(--muted); }
+    ul, ol { padding-left: 1.3rem; }
+    li + li { margin-top: 6px; }
+    .source-list { padding-left: 1.2rem; color: var(--muted); font-size: 0.9rem; }
+    footer { padding: 26px 0 52px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.84rem; }
+
+    @media (max-width: 820px) {
+      .kv { grid-template-columns: 1fr; gap: 1px; }
+      .kv dd { margin-bottom: 8px; }
+    }
+
+    @media print {
+      :root { color-scheme: light; }
+      body { background: #fff; color: #111; }
+      nav { display: none; }
+      header { padding-top: 24px; }
+      .construct, .table-wrap, details { box-shadow: none; break-inside: avoid; }
+      a { color: #111; text-decoration: none; }
+      section { margin-top: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <p class="eyebrow">Measurement parameters &amp; meaning</p>
+    <h1>Spider Shot v3<br>量測參數與意涵</h1>
+    <p class="lede">
+      本文件列出 <code>spider-shot-v3</code> 這支 Assessment 協定<strong>預計計算的每一個參數</strong>、它的精確運算定義、
+      它回答什麼問題,以及它不能回答什麼。所有定義均以現行程式碼為權威並附出處;凡與程式碼不符者以程式碼為準,
+      並視為本文件的 bug。
+    </p>
+    <div class="meta">
+      <span class="pill frozen">協定已凍結 spider-shot-v3@1.0.0</span>
+      <span class="pill">版本 0.1（參數清冊）</span>
+      <span class="pill">2026-09-09</span>
+      <span class="pill">stage14 / WP-62（候選）</span>
+      <span class="pill blocked">KI-031 阻塞兩類構念</span>
+    </div>
+  </header>
+
+  <nav aria-label="文件導覽">
+    <div class="shell">
+      <a href="#protocol">協定固定參數</a>
+      <a href="#anchors">錨點與符號</a>
+      <a href="#conditions">條件參數</a>
+      <a href="#constructs">五類構念</a>
+      <a href="#registry">歷史趨勢指標</a>
+      <a href="#difficulty">難度座標</a>
+      <a href="#sufficiency">資料充足性</a>
+      <a href="#exclusion">排除規則</a>
+      <a href="#limits">不能說的話</a>
+      <a href="#sources">出處</a>
+    </div>
+  </nav>
+
+  <main class="shell">
+    <section id="protocol">
+      <h2>1. 協定固定參數</h2>
+      <p class="section-intro">
+        這些值不是量測結果,而是量測的<strong>前提</strong>。它們全部進匯出 metadata,並構成 compatibility cohort 的身分;
+        任何一項改變都會讓資料不可與既有 run 合併比較。
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>參數</th><th>值</th><th>意涵 / 為什麼是這個值</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>drillId</code></td><td class="num">spider-shot-v3</td><td>exact-id 註冊;近似變體（如 <code>-alt</code>）一律投影為 <code>unregistered-drill</code>,沒有 prefix fallback</td></tr>
+            <tr><td><code>mode</code></td><td class="num">assessment</td><td>難度區塊內固定、seed 與排程保留、live feedback 僅限區塊結束、可進歷史趨勢、失敗不重抽正式排程</td></tr>
+            <tr><td><code>sceneId</code></td><td class="num">spider-shot-room</td><td>專用房間。scene eye 固定 <code>(0, 1.6, 0)</code>,是所有角度量測的原點（KI-026 / BD-026 修正 v1/v2 的眼睛未錨定問題）</td></tr>
+            <tr><td>排程 <code>kind</code></td><td class="num">center-peripheral-eye-stratified</td><td>中心↔周邊交替,周邊落點在 <strong>eye frame</strong> 的球面上生成,而非世界座標近似</td></tr>
+            <tr><td>目標距離</td><td class="num">8 u（中心與周邊皆同）</td><td><code>distanceURange = [8, 8]</code>。距離固定 ⇒ 角寬 W 恆定 ⇒ 難度只由角位移 D 變動,是乾淨的單變因設計</td></tr>
+            <tr><td>目標角徑</td><td class="num">2.0°</td><td>Aim Lab Ultimate/Standard 1.8°–2.2° 候選範圍的中點。<strong>未經真人 pilot 校準</strong></td></tr>
+            <tr><td>hitbox</td><td class="num">sphere, 直徑 ≈ 0.279281 u</td><td>由 <code>2 × 8 × tan(1.0°)</code> 推導,三軸共用同一數值。命中判定、渲染、離線 on-target 推導讀同一個來源（GD-7）</td></tr>
+            <tr><td>周邊角半徑</td><td class="num">10°–25°</td><td>刺激的眼睛所見角位移範圍。<strong>未經真人 pilot 校準</strong></td></tr>
+            <tr><td>分層格</td><td class="num">4 azimuth × 3 radius = 12</td><td>radius tier 依<strong>等立體角</strong>（<code>cos θ</code> 線性內插）切分,格內亦為等面積抽樣;洗牌佇列耗盡即重建。這是 spawn 平衡手段,<strong>不是</strong>條件變因</td></tr>
+            <tr><td><code>seed</code></td><td class="num">260827</td><td>唯一 RNG 來源（GD-5 禁 <code>Math.random</code>）。同一 <code>drillId</code> 的每一輪 spawn 序列<strong>逐位相同</strong></td></tr>
+            <tr><td><code>peekTimeoutMs</code></td><td class="num">1750</td><td>周邊目標逾時撤除。<strong>中心目標豁免</strong>（<code>centerExemptFromTimeout: true</code>）—— 回中心不該因為玩家慢而被扣一次呈現</td></tr>
+            <tr><td><code>countdownMs</code></td><td class="num">3000</td><td>開場倒數,不計入 scored 窗</td></tr>
+            <tr><td><code>endCondition</code></td><td class="num">timeLimit 60000</td><td>60 秒是唯一結束條件。<code>targets.count = 300</code> 只是 spawn 安全上限,不是結束條件</td></tr>
+            <tr><td>玩家位移</td><td class="num">locked + <code>noMovement</code> guard</td><td>yaw/pitch 相對固定 eye 定義,玩家一旦橫移角度語意即失效。<code>protocolGuard.noMovement</code> 必須為 <code>true</code>,否則 condition cell 建構直接擲錯</td></tr>
+            <tr><td>sim 步長</td><td class="num">1/128 s = 7.8125 ms</td><td>所有逐 tick 量的時間解析度下限,也是所有時間量的量化粒度</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <strong>arm 前的 fail-fast 驗證</strong>
+        <code>loadDrill()</code> 在 arm 前驗證 eye anchor、center/peripheral 距離、sphere hitbox 對應的宣稱角徑,
+        以及整個周邊 spawn envelope 是否落在房間內。不符即拒絕載入 —— 幾何不合法的 run 不可能被錄下來。
+      </div>
+    </section>
+
+    <section id="anchors">
+      <h2>2. 錨點與符號</h2>
+      <p class="section-intro">
+        每一個構念都是這些錨點之間的差,或這些逐 tick 訊號在某個窗內的統計量。錨點的語意跨任務家族一致,
+        不得在任何一支 drill 內被重新解釋。
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>符號</th><th>來源</th><th>定義與意涵</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>t_visible</code></td>
+              <td><code>visible</code> 事件</td>
+              <td>目標出現的 sim 時刻。每顆目標一筆,並帶 <code>zone: 'center' | 'peripheral'</code> 與該顆的 <code>targetX/Y/Z</code>。<strong>這是刺激 onset,所有反應量的零點。</strong></td>
+            </tr>
+            <tr>
+              <td><code>t_detect</code></td>
+              <td><code>deriveDetectionMetrics()</code></td>
+              <td>玩家開始朝目標移動的推定時刻（見 §4.1 的完整判準）。<strong>不是</strong>眼睛看到目標的時刻 —— 它是視覺—動作的<em>代理值</em>,下界含動作起始時間。</td>
+            </tr>
+            <tr>
+              <td><code>t_first_on_target</code></td>
+              <td><code>deriveTrackingSamples()</code></td>
+              <td>準星射線首次與該顆 hitbox 相交的 tick。<strong>這是「到位」的定義</strong>,與引擎命中判定同幾何。</td>
+            </tr>
+            <tr>
+              <td><code>t_first_shot</code> / <code>t_hit</code></td>
+              <td><code>buildPeekWindows()</code></td>
+              <td>該次呈現窗內第一發 fire 的時刻／命中時刻。窗界為 <code>[t_visible(i), t_visible(i+1))</code> —— v3 場上恆只有一顆目標,此序列假設成立。</td>
+            </tr>
+            <tr>
+              <td><code>ε(t)</code></td>
+              <td><code>angularEccentricityDeg()</code></td>
+              <td>準星方向與「eye→目標中心」方向的夾角（deg）。<strong>無號</strong> —— 只有大小,沒有方向。這一點是 §4.3 已知限制的根源。</td>
+            </tr>
+            <tr>
+              <td><code>ω(t)</code></td>
+              <td><code>omegaDegPerSec()</code></td>
+              <td>逐 tick 準星角速度（deg/s）。⚠️ 受 render／sim 節拍不匹配影響（KI-005 同族）。</td>
+            </tr>
+            <tr>
+              <td><code>on-target</code></td>
+              <td><code>trackingDerivation.isOnTarget()</code></td>
+              <td>aim 射線（t ≥ 0）與該顆 hitbox 相交。<code>shape: 'sphere'</code> ⇒ ray/sphere 相交,半徑 = <code>width / 2</code>,與 <code>HitDetector</code> 完全同一套幾何。<strong>不引入任何新閾值參數。</strong></td>
+            </tr>
+            <tr>
+              <td>eye origin</td>
+              <td><code>resolveEyeOrigin()</code></td>
+              <td>所有角度量的原點。v3 由 scene eye <code>(0, 1.6, 0)</code> 提供,並在每個 <code>visible</code> 的對應 tick 上求值。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="conditions">
+      <h2>3. 條件參數（自變數）</h2>
+      <p class="section-intro">
+        這些不是表現,而是「這一次切換有多難、往哪個方向」。分析時 predictor 必須用這些<strong>目標條件</strong>值,
+        而不是玩家實際的軌跡位移 —— 否則 undershoot／overshoot 會污染自變數。
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>參數</th><th>運算</th><th>意涵</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>D_deg</code><br><span class="tag secondary">角位移</span></td>
+              <td><code>angularDistanceDeg(normalize(prevRel), normalize(currRel))</code>,兩者皆相對各自 <code>visible</code> tick 的 eye 位置</td>
+              <td>從<strong>前一顆目標方向</strong>到抵達目標方向的角位移。center→peripheral 時即該顆的角半徑（10°–25°）。這是 Fitts 的 <em>D</em>。</td>
+            </tr>
+            <tr>
+              <td><code>W_deg</code><br><span class="tag secondary">角寬</span></td>
+              <td><code>2 · atan((hitbox.width / 2) / worldDistanceU) · 180/π</code></td>
+              <td>抵達目標的角寬。v3 距離恆 8 u ⇒ <strong>W 恆為 2.0°</strong>。這是 Fitts 的 <em>W</em>。</td>
+            </tr>
+            <tr>
+              <td><code>direction</code></td>
+              <td>由相鄰 <code>zone</code> 讀出</td>
+              <td><code>center-to-peripheral</code>（拉出去）或 <code>peripheral-to-center</code>（回中心）。zone 不交替即擲錯。</td>
+            </tr>
+            <tr>
+              <td><code>quadrant</code><br><span class="tag research">呈現層標籤</span></td>
+              <td>方位角 45° 分箱:上／下 → <code>vertical</code>、左／右 → <code>horizontal</code>、斜向 → <code>oblique</code></td>
+              <td>只對 center→peripheral 輸出。<strong>不進 condition cell</strong>,所以後續調整分箱不會改變相容鍵語意。與 spawn 用的 4 象限分箱（0/90/180/270 起算）是<strong>兩套刻意不對齊</strong>的分類。</td>
+            </tr>
+            <tr>
+              <td><code>side</code></td>
+              <td>抵達點相對 eye 的 <code>x</code> 符號（<code>x &gt; 0 → 'R'</code>）</td>
+              <td>eye-frame 左右分區,只對 center→peripheral 輸出;<code>x === 0</code> 時<strong>省略而非猜測</strong>。<br>⚠️ 近垂直呈現的符號可能只是浮點殘值（<code>sin(180°) = 1.22e-16</code>）⇒ 判讀前先用 <code>quadrant</code> 篩掉 <code>vertical</code>。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>兩種 condition cell,不要混用</h3>
+      <p>
+        <strong>逐 transition</strong>（<code>deriveSpiderShotTransitions()</code> 的凍結構念,固定六位小數）:
+      </p>
+      <div class="formula">spider:d=15.000000;w=2.000000</div>
+      <p>
+        <strong>整場身分</strong>（history compatibility cohort,從<strong>不可變的匯出 snapshot</strong> 重建,
+        所以舊資料不會被後來的 config 改動悄悄改標籤）:
+      </p>
+      <div class="formula">spider-v3:frame=eye-v1;scene=spider-shot-room;eye=0,1.6,0;distance=8u;peripheral-distance=8-8u;radius=10-25deg;width=2deg;grid=4x3;shape=sphere;translation=locked</div>
+      <p>
+        建構時會強制檢查<strong>宣稱角徑與匯出 hitbox 一致</strong>（誤差 &gt; 1e-9 即擲錯）—— 這道檢查讓「說是 2°、其實錄成別的」
+        這種資料不可能靜默進入趨勢。
+      </p>
+    </section>
+
+    <section id="constructs">
+      <h2>4. 五類構念（因變數）</h2>
+      <p class="section-intro">
+        五類構念全部在同一組 transition 錨點上組裝,並且全部複用既有 canonical derivation —— 不存在第二套幾何。
+        <strong>切換反應／移動執行／停止控制／首發只對 <code>zone: 'peripheral'</code> 的抵達目標輸出</strong>;
+        回中心只作為節奏的錨點。
+      </p>
+
+      <article class="construct">
+        <h3>4.1 切換反應 <span class="zone">switchReaction · peripheral only</span> <span class="tag blocked">KI-031 阻塞</span></h3>
+        <dl class="kv">
+          <dt><code>tDetectMs</code></dt>
+          <dd>
+            baseline：<code>t_visible</code> 前 <strong>500 ms</strong> 窗內、對「即將出現的目標位置」算 <code>ε(t)</code>,取
+            <code>dε/dt</code> 的絕對值,其標準差 × <strong>3</strong> = 門檻。<br>
+            刺激後：第一個「<strong>連續 ≥ 4 個 tick</strong> 且 <code>dε/dt &lt; −門檻</code>」的 run 之<strong>起點</strong>。
+          </dd>
+          <dt><code>reactionMs</code></dt>
+          <dd><code>tDetectMs − t_visible</code></dd>
+          <dt>意涵</dt>
+          <dd class="means">
+            「刺激出現後多久開始把準星往目標帶」。這是<strong>視覺—動作代理值</strong>,不是純神經反應時間:它的下界含動作起始,
+            且判準本身要求「持續朝目標接近」,所以一個看到但先猶豫再動的 trial 會被記成較慢。
+          </dd>
+          <dt>附帶旗標</dt>
+          <dd><code>anticipation</code>（reaction &lt; 100 ms,疑似預判）· <code>baselineInsufficient</code>（baseline 樣本不足或覆蓋不到 500 ms）· <code>status: 'detected' | 'timeout'</code></dd>
+        </dl>
+        <div class="callout danger">
+          <strong>這一類目前在真人資料上拿不到值</strong>
+          KI-031（🔴 未修）:60 Hz 顯示下 <code>aim</code> 約每兩個 sim tick 才更新一次 ⇒ <code>dε/dt</code> 的負值與 0 嚴格交替,
+          湊不出 4 連 ⇒ 四份真人匯出的 113 個周邊呈現,<code>detected</code> 為 <strong>0 / 113</strong>。
+          而 <code>status: 'timeout'</code> 是一個合法值（語意為「受測者從未偵測到目標」）,所以這個失效<strong>完全靜默</strong>。
+          詳見 §7。
+        </div>
+      </article>
+
+      <article class="construct">
+        <h3>4.2 移動執行 <span class="zone">movementExecution · peripheral only</span></h3>
+        <dl class="kv">
+          <dt><code>movementTimeMs</code></dt>
+          <dd><code>t_first_on_target − t_detect</code> <span class="tag blocked">依賴 t_detect ⇒ 同受 KI-031 阻塞</span></dd>
+          <dt><code>peakOmegaDegPerSec</code></dt>
+          <dd>該呈現窗 <code>tickRange</code> 內 <code>|ω(t)|</code> 的最大值</dd>
+          <dt>意涵</dt>
+          <dd class="means">
+            <code>movementTimeMs</code> 是<strong>flick 的執行時間</strong>,刻意與反應代理值分離 —— 「反應慢」與「揮得慢」是兩種不同的訓練處方。<br>
+            <code>peakOmegaDegPerSec</code> 回答 <strong>velocity scaling</strong>:選手的峰值角速度是否隨 <code>D_deg</code> 系統性調節。
+            峰值速度對距離不敏感,通常意味著用固定的「一種揮法」打所有幅度。
+          </dd>
+          <dt>限制</dt>
+          <dd><code>ω(t)</code> 受 render／sim 節拍不匹配污染（KI-005 同族）。<code>peakOmegaDegPerSec</code> 是五類裡唯一在真人資料上 34/34 有值的執行量。</dd>
+        </dl>
+      </article>
+
+      <article class="construct">
+        <h3>4.3 停止控制 <span class="zone">stopControl · peripheral only</span></h3>
+        <dl class="kv">
+          <dt><code>overshootDeg</code></dt>
+          <dd>首次進靶<strong>之後</strong>所有 <code>onTarget === false</code> 樣本的 <code>ε</code> <strong>最大值</strong></dd>
+          <dt><code>dropCount</code></dt>
+          <dd>首次進靶後 on→off 的次數</dd>
+          <dt><code>microAdjustCount</code></dt>
+          <dd>drop→reacquire 的段數（<code>reacquireMs.length</code>）。<strong>末端未回復的 drop 刻意排除</strong> —— 那一段沒有回復時間可量</dd>
+          <dt>意涵</dt>
+          <dd class="means">
+            「到位之後穩不穩」。<code>overshootDeg</code> 量<strong>逸出幅度</strong>;<code>dropCount</code> 量掉靶頻率;
+            <code>microAdjustCount</code> 量對細修的依賴程度。三者一起讀才有意義:低逸出 + 高細修次數 = 保守但黏不住;
+            高逸出 + 低細修 = 一次過頭但敢一次修回來。
+          </dd>
+          <dt>已知限制</dt>
+          <dd>
+            canonical <code>TrackingSample</code> 沒有<strong>有號</strong>誤差,所以 <code>overshootDeg</code> 只能量「進靶後逸出多少角度」,
+            <strong>不能區分 overshoot（衝過頭）與 undershoot（沒到位）的方向</strong>。這是刻意的取捨 —— 為了不建立第二套有號幾何（C-D4）。
+            相關 OQ-S6-16 / D-36.5。
+          </dd>
+        </dl>
+      </article>
+
+      <article class="construct">
+        <h3>4.4 首發 <span class="zone">firstShot · peripheral only</span></h3>
+        <dl class="kv">
+          <dt><code>hit</code></dt>
+          <dd>該呈現窗的 outcome 是否為 <code>'hit'</code></dd>
+          <dt><code>fireAngleErrorDeg</code></dt>
+          <dd><code>t_first_shot</code> <strong>當時或之後第一個 tick</strong> 對抵達目標的 <code>ε</code></dd>
+          <dt>意涵</dt>
+          <dd class="means">
+            <code>hit</code> 是最貼近「打得中不中」的二元成果,且不被掃射稀釋（每次呈現只認第一發）。<br>
+            <code>fireAngleErrorDeg</code> 是<strong>連續量版本</strong>:它把「差一點」與「差很多」分開。命中率相同但角誤差分布較窄 = 更穩定的開火時機。
+            角誤差小於 W/2 = 1.0° 即應命中,所以這個量也能診斷「開火時已到位卻沒中」的異常。
+          </dd>
+          <dt>限制</dt>
+          <dd>取「之後第一個 tick」引入 <strong>±1 tick（7.8125 ms）</strong>的量化,以及該 tick 內準星已繼續移動的偏誤。</dd>
+        </dl>
+      </article>
+
+      <article class="construct">
+        <h3>4.5 節奏 <span class="zone">rhythm · 全部呈現（含回中心）</span></h3>
+        <dl class="kv">
+          <dt><code>transitionIntervalMs</code></dt>
+          <dd>全部<strong>相鄰</strong> <code>visible.t</code> 的間隔序列</dd>
+          <dt><code>medianMs</code> / <code>p95Ms</code></dt>
+          <dd>上述序列的 50 / 95 百分位（線性內插,空序列回 0）</dd>
+          <dt>意涵</dt>
+          <dd class="means">
+            整場的推進節奏。<strong>刻意包含回中心的錨點</strong>,因為回中心也要花時間,它是任務節奏的一部分。<br>
+            <code>medianMs</code> 是典型節奏,<code>p95Ms</code> 是<strong>卡頓的尾巴</strong> —— 兩者的差距比任一單值更能說明穩定性。
+          </dd>
+          <dt>注意</dt>
+          <dd>它是唯一不依賴任何推導層的構念（只讀事件時刻）,所以也是唯一在任何取樣率下都可靠的量。<code>p95Ms</code> 會吃到逾時撤除的呈現。</dd>
+        </dl>
+      </article>
+    </section>
+
+    <section id="registry">
+      <h2>5. 歷史趨勢指標（五個）</h2>
+      <p class="section-intro">
+        以上構念是<strong>逐 trial</strong> 的。進歷史趨勢的是整場聚合後的五個 metric,descriptor 目前由 v2 機械 rename 而來
+        （<code>spider-v2.</code> → <code>spider-v3.</code>）,尚未針對 v3 的 eye-frame 幾何重新選過（列為 OQ-62.2）。
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Metric ID</th><th>標籤</th><th>單位／方向</th><th>運算</th><th>角色</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>spider-v3.peripheral-hits-per-minute</code></td>
+              <td>周邊有效命中速度</td>
+              <td>hits/min · 越高越好</td>
+              <td><code>60000 × 周邊命中窗數 / validDurationMs</code>,其中 <code>validDurationMs</code> = 最後 tick − 第一 tick（<strong>實測時長,不是名目 60 s</strong>）</td>
+              <td><span class="tag primary">主指標</span></td>
+            </tr>
+            <tr>
+              <td><code>spider-v3.peripheral-first-shot-hit-rate</code></td>
+              <td>周邊首發命中率</td>
+              <td>% · 越高越好</td>
+              <td><code>100 × 首發即命中的周邊窗數 / 周邊窗數</code></td>
+              <td><span class="tag secondary">必讀配對</span></td>
+            </tr>
+            <tr>
+              <td><code>spider-v3.median-peripheral-hit-time-ms</code></td>
+              <td>周邊命中時間中位數</td>
+              <td>ms · 越低越好</td>
+              <td><code>median(t_hit − t_visible)</code>,僅計命中的周邊窗</td>
+              <td><span class="tag secondary">解釋</span></td>
+            </tr>
+            <tr>
+              <td><code>spider-v3.median-fire-angle-error-deg</code></td>
+              <td>首發角度誤差中位數</td>
+              <td>deg · 越低越好</td>
+              <td><code>median(fireAngleErrorDeg)</code>,僅計有限值</td>
+              <td><span class="tag secondary">解釋</span></td>
+            </tr>
+            <tr>
+              <td><code>spider-v3.median-overshoot-deg</code></td>
+              <td>進靶後逸出角度中位數</td>
+              <td>deg · 越低越好</td>
+              <td><code>median(overshootDeg)</code>,僅計有限值</td>
+              <td><span class="tag secondary">解釋</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warning">
+        <strong>速度與準確率不可拆開排名</strong>
+        主指標 <code>peripheral-hits-per-minute</code> 在固定 60 秒協定下同時受搜尋、切換、命中、回中心與逾時影響,
+        最接近整體任務產出 —— 但它<strong>必須與首發命中率一起閱讀</strong>,否則會把「連點補救」誤認為高品質表現。
+        v3 沒有、也不打算有單一綜合分數。
+      </div>
+    </section>
+
+    <section id="difficulty">
+      <h2>6. 難度座標</h2>
+      <p class="section-intro">
+        v3 的角寬固定、角位移連續變化,所以它是一個乾淨的單變因難度設計:同一位選手在同一場內就跨越了整段難度範圍。
+      </p>
+      <div class="formula">ID = log₂(1 + D / W)　；　W = 2.0°（固定）、D = 10°–25°　⇒　ID ≈ 2.58 – 3.75 bits</div>
+      <p>
+        用途:檢驗 <code>movementTimeMs</code>（或命中時間）與 <code>ID</code> 是否呈線性 —— 若成立,斜率的倒數即 throughput,
+        可作為跨條件正規化的<strong>研究指標</strong>。
+      </p>
+      <div class="callout warning">
+        <strong>先檢查關係再用 throughput</strong>
+        v3 的目標是<strong>提示式</strong>（一次只一顆、位置由排程給定）,沒有選擇時間混入,原則上適用 Fitts 正規化。
+        但 <code>MT ~ ID</code> 的線性必須先在資料上驗證過才能報 throughput;它是研究指標,不是 KPI。
+      </div>
+    </section>
+
+    <section id="sufficiency">
+      <h2>7. 資料充足性:採集前的硬前提</h2>
+
+      <div class="callout danger">
+        <strong>顯示刷新率 &lt; 144 Hz 的 run,五類構念裡有兩類會靜默歸零</strong>
+        <code>firstSustainedDecrease()</code> 要求 <code>sustainedTicks: 4</code> 個<strong>連續</strong>合格樣本,
+        這隱含一個從未被寫下的前提:<strong>每個 sim tick 的 <code>aim</code> 都會更新</strong>。
+      </div>
+
+      <p>KI-031 §2 掃描出的失效邊界（<code>aim</code> 更新率 <code>f</code> 對 sim 128 Hz,零樣本比例 ≈ <code>1 − f/128</code>）:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th><code>aim</code> 更新率</th><th>對應顯示</th><th>零樣本比例</th><th>後果</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="num">≥ 128 Hz</td><td>144 Hz +</td><td class="num">≈ 0%</td><td>幾乎無零樣本 ⇒ 從未在既有 fixture 上現形</td></tr>
+            <tr><td class="num">≈ 120 Hz</td><td>120 Hz</td><td class="num">≈ 6%</td><td>偶發漏檢</td></tr>
+            <tr><td class="num">≈ 64 Hz</td><td>60 Hz</td><td class="num">≈ 50%（規則交替）</td><td><strong>100% 失敗</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        這是<strong>懸崖,不是漸進退化</strong>。而且降低門檻無效:把 <code>preStimulusMs</code> 降到 100、
+        <code>thresholdSdMultiplier</code> 降到 0.5（門檻 p50 由 214 → 2.2 deg/s）並用 <code>sustainedTicks: 2</code>,
+        仍是 0/34。<strong>唯一有效的變數是連續性要求。</strong>
+      </p>
+
+      <h3>採集檢查表</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>前提</th><th>怎麼驗</th><th>缺席的後果</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>顯示 ≥ 144 Hz</td><td><code>meta.displayHz</code>（<strong>實測,非自述</strong>）</td><td><code>switchReaction</code> 與 <code>movementTimeMs</code> 靜默歸零</td></tr>
+            <tr><td>cross-origin isolation</td><td><code>crossOriginIsolated === true</code></td><td>計時精度不足,全部量測失效（ADR-4）</td></tr>
+            <tr><td><code>meta.suspect === false</code></td><td>quality gate</td><td><code>suspect-run</code> ⇒ 不進趨勢</td></tr>
+            <tr><td>非 custom session program</td><td><code>meta.sessionPlanMode !== 'custom'</code></td><td><code>excluded-cohort</code> —— 仍可保存,但不與凍結協定合併比較</td></tr>
+            <tr><td>2026-09-03 之後的匯出</td><td>KI-021 修復日</td><td>更早的匯出其 settle／overshoot／<code>movementTimeMs</code> 係以 <strong>box 幾何</strong>算出（對角方向最多寬鬆 √2 倍）,<strong>不可與修後資料合併</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <details>
+        <summary>KI-031 的臨時繞道及其代價</summary>
+        <div>
+          以 <code>sustainedTicks: 1</code> 呼叫（既有參數,不是第二套定義）並明確標註。WP-57 T5 的真人門檻校準即以此取得
+          （四份合計 111/113 detected）。代價是失去「持續」這一層雜訊抑制 ⇒ <code>tDetectMs</code> 會偏早,且對單一雜訊樣本敏感。
+          <strong>這是繞道,不是修好。</strong>正式修法是 C-D5 雙實作變更（TS <code>detectionDerivation.ts</code> ↔ Python
+          <code>detect.py</code> + 凍結 parity fixture）,必須兩端同步 + 重跑 golden + 版本字串升版。
+        </div>
+      </details>
+
+      <details>
+        <summary>次要偏誤來源:baseline 窗吃進上一次拉槍</summary>
+        <div>
+          <code>preStimulusMs: 500</code> 的 baseline 窗會吃進上一次拉槍的尾段（wide-v1 的 <code>rhythm</code> median 僅 828 ms;
+          v3 的節奏更快 ⇒ 更嚴重）⇒ <code>baselineSdDegPerSec</code> 被前一次動作抬高（實測 p50 = 71 deg/s、門檻 p50 = 214 deg/s、最大 804）。
+          <code>baselineInsufficient</code> 全為 <code>false</code>,<strong>既有品質旗標抓不到這件事</strong>。
+          連續性修好之後,這一項會決定 <code>tDetectMs</code> 的偏誤大小,須一併評估。
+        </div>
+      </details>
+    </section>
+
+    <section id="exclusion">
+      <h2>8. 排除與聚合規則</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>規則</th><th>內容</th><th>理由</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>逐 run 資格</td><td>quality gate 非 <code>ok</code> 的 run 不進趨勢線;目前 <code>minN = 1</code>（<code>visible</code> 事件數）</td><td>低品質 run 不得產生處方。⚠️ <code>minN = 1</code> 實際上幾乎不篩任何東西 —— 這道閘目前很弱,不應被當作樣本量保證</td></tr>
+            <tr><td>cohort 完全比對</td><td>10 欄 <code>CompatibilityKey</code> 逐欄相等才可比;quality status <strong>不</strong>屬 cohort 身分</td><td>一份 suspect run 不該被當成另一個「條件」</td></tr>
+            <tr><td>只算周邊</td><td>四類逐 trial 構念只對 <code>zone: 'peripheral'</code> 輸出</td><td>回中心的目標位置固定且已知,不構成搜尋／切換負荷</td></tr>
+            <tr><td>miss 不整筆刪除</td><td>成果指標保留 miss;只有需要命中錨點的衍生量標記缺失</td><td>刪掉 miss 會系統性高估表現</td></tr>
+            <tr><td>逾時呈現</td><td>周邊逾時（1750 ms）會結束該窗;中心豁免</td><td><code>p95Ms</code> 與命中時間中位數會受此上界截斷,判讀時須併看逾時率</td></tr>
+            <tr><td>rep 不是 i.i.d.</td><td>同一 <code>drillId</code> 的多個 rep 對應<strong>同一組 seeded config,逐輪 spawn 序列逐位相同</strong>,輪與輪之間存在練習效應</td><td>分析端不得把它們當獨立重複量測</td></tr>
+            <tr><td>聚合須報 n</td><td>所有 aggregate 回報有效樣本數</td><td>沒有 n 的中位數無法判斷可信度</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="limits">
+      <h2>9. 不能說的話</h2>
+      <p class="section-intro">
+        以下每一條都是「寧可少一個指標,不能有一個會說錯話的指標」的直接後果（C-D3 / GD-20）。
+      </p>
+      <ul>
+        <li><strong>沒有絕對門檻。</strong>2.0° 角徑與 10°–25° 角半徑都是<strong>未經真人 pilot 校準</strong>的候選協定值。因此不定義「優秀／普通／不足」,初期只做同一選手、同一相容 cohort 的縱向比較。</li>
+        <li><strong>不能說 overshoot 的方向。</strong><code>overshootDeg</code> 是無號逸出幅度,衝過頭與沒到位在資料上不可分。</li>
+        <li><strong><code>tDetectMs</code> 不是反應時間。</strong>它是視覺—動作代理值,而且目前在 &lt; 144 Hz 的 run 上根本拿不到值。</li>
+        <li><strong>不能用單一綜合分數排名。</strong>速度與準確率必須並列閱讀。</li>
+        <li><strong>不能宣稱信度。</strong>test-retest／split-half／外部效標相關都需要真人 cohort,目前不存在。在那之前,這五個 metric 只能作為縱向自我比較,<strong>不得進教練報告作為處方依據</strong>。</li>
+        <li><strong>不能跨 KI-021 修復日合併。</strong>2026-09-03 之前的匯出其 settle／overshoot／<code>movementTimeMs</code> 是 box 幾何算出的。</li>
+        <li><strong>Python 側不得各算一套。</strong>ε／on-target／t_detect 的權威為本文件所列的 TS 實作 + <code>docs/operational/analysis-*.md</code>;Python <code>research/</code> 側任何差異視為 bug,或屬須入帳的語意分歧（C-D4 / C-D5）。</li>
+      </ul>
+    </section>
+
+    <section id="sources">
+      <h2>10. 出處</h2>
+      <p class="section-intro">本文件所有定義的權威來源。凡本文件與這些檔案不符,以檔案為準。</p>
+      <h3>程式碼（權威）</h3>
+      <ul class="source-list">
+        <li><code>src/drill/spider_shot_v3.ts</code> — 協定固定參數與 hitbox 推導</li>
+        <li><code>src/metrics/spiderShotMetrics.ts</code> — 五類構念的組裝</li>
+        <li><code>src/metrics/spiderShotConditions.ts</code> — <code>D_deg</code> / <code>W_deg</code> / quadrant / side / 逐 transition cell</li>
+        <li><code>src/metrics/detectionDerivation.ts</code> — <code>t_detect</code> 判準（<code>firstSustainedDecrease</code>）</li>
+        <li><code>src/metrics/trackingDerivation.ts</code> — <code>ε(t)</code> / on-target / <code>t_first_on_target</code></li>
+        <li><code>src/metrics/trackingTransitions.ts</code> — <code>dropCount</code> / <code>reacquireMs</code></li>
+        <li><code>src/metrics/peekWindows.ts</code> — 呈現窗界與 outcome</li>
+        <li><code>src/metrics/angularKinematics.ts</code> · <code>src/metrics/eyeOrigin.ts</code> — <code>ω(t)</code> 與角度原點</li>
+        <li><code>src/history/DrillMetricRegistry.ts</code> — 五個趨勢指標、v3 condition cell、quality gate</li>
+      </ul>
+      <h3>文件</h3>
+      <ul class="source-list">
+        <li><code>docs/operational/analysis-spider-shot.md</code> — Spider Shot 契約（五類構念的敘述權威）</li>
+        <li><code>docs/operational/analysis-assessment-contract.md</code> — Assessment／Practice 五軸 + 第六軸（排程來源）</li>
+        <li><code>docs/known_issue/KI-031-*.md</code> — 🔴 detection 連續性判準的取樣率懸崖</li>
+        <li><code>docs/known_issue/KI-021-*.md</code> — 🟢 sphere 幾何在離線推導層的補齊（2026-09-03）</li>
+        <li><code>docs/known_issue/KI-026-*.md</code> — eye anchor 修正,v3 存在的理由</li>
+        <li><code>docs/exec-plan/active/stage14/README.md</code> — 本文件所屬的三層契約暫時方案</li>
+        <li><code>docs/algorithm/spider_shot/spider-shot-v2-performance-metrics-design-2026-08-27.html</code> — v2 的研究設計草案（三層量化模型、研究指標路線）</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <p>
+      Spider Shot v3 量測參數與意涵 · 版本 0.1（參數清冊）· 2026-09-09 ·
+      stage14 / WP-62（候選,未批准）· 協定 <code>spider-shot-v3@1.0.0</code>
+    </p>
+    <p>
+      本文件是<strong>參數清冊</strong>,不是研究設計提案,也不是驗收文件。它不宣稱任何指標已通過構念驗證。
+    </p>
+  </footer>
+</body>
+</html>
