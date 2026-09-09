@@ -10,6 +10,13 @@ typecheck ×2、全量 Vitest（2614 passed）、`vite build` 三個閘 exit 0�
 **三項具名缺口**（都是需要真人／真瀏覽器的經驗性讀數，不是實作缺口）：① F6 的瀏覽器 frame log 開／關對照；
 ② T3 DoD 第 9 項的真人取樣區段／間隙分布；③ 全量 Playwright 讀數（port 5173 被他人 dev server 占用，
 且它服務的是不含 WP-60 的程式碼 —— 跑了會沉默地測錯的樹）。⇒ **T0 與 T3 維持 🟡**。
+⇒ 三項的收尾計畫（含錄製協定與可直接交給 agent 的 prompt）見 **[T-exit-followup.md](T-exit-followup.md)**；
+**①② 共用同一次錄製**，且 F6 要的量已全在既有匯出的 `meta.frames.summary` 裡，不需要新儀器。
+
+**合併**：本 WP 已於 2026-09-09 併入 `main`（merge commit `9015610`）。合併後的整棵樹重跑三閘全綠：
+typecheck exit 0、`npm test` **249 files / 2764 passed（1 file / 2 tests skipped）**、`vite build` exit 0（195 modules）。
+唯一實質衝突是 `src/data/metadata.ts` —— WP-58 的 `SessionPlanItemMeta` 與本 WP 的 `MouseSamplingMeta` 在同一位置各加一個
+interface，兩者互不觸及對方欄位，**兩邊都保留**；`graphify-out/` 取 main 側後重新產生。
 
 本 gate 另落地一個修復 **D-60.X1**：T4 的事件率 blocker 讀整段平均率，會把 R2 三組真人 run（417／494／412 Hz）
 全部誤判為「事件率不足」，改為讀排除空洞後的連續期間事件率。

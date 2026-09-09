@@ -1,6 +1,7 @@
 # WP-60 — Task Checklist
 
 > Tech spec：[README.md](README.md) · Running log：[progress.md](progress.md) · Stage 索引：[../README.md](../README.md)
+> **T-exit 後續**：三項具名缺口的收尾計畫見 [T-exit-followup.md](T-exit-followup.md)（TF1 F6／TF2 真人分布／TF3 Playwright）。
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
