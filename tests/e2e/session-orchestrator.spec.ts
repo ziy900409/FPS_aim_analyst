@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * WP-42 / T-exit — session orchestrator 端到端補證。
@@ -23,6 +23,13 @@ import { test, expect } from '@playwright/test';
  *    在真實渲染出的 DOM 上直接斷言 FR-G9②（session-plan preset 只能選、UI 不得渲染任何
  *    `<input type="number">`）。真人原生滑鼠/pointer lock 走完整場 assessment 仍如既有慣例
  *    （full-drill.spec.ts 標頭）留給另外的人工驗收，不在自動化 CI 範圍。
+ *
+ * 3. WP-58 T6 — 自訂 session program 軌（同一個 Session Plan 表單的第二條路徑）。刻意**擴充本檔而
+ *    非新開平行 spec**（T6 步驟 1 / R-58.9 的緩解）：兩軌共用同一個 `#session-plan-setup`、同一個
+ *    `button[type=submit]` 與同一條 eligibility 路徑，拆成兩個檔案只會讓「frozen 是否被改壞」失去
+ *    對照。真瀏覽器在此新增的證據是**渲染出來的預覽表**——編譯器輸出逐 step 落到 DOM 屬性
+ *    （`data-program-step` / `data-step-boundary` / `data-step-next-drill-id`），因此「UI 偷算一套
+ *    休息模型」在真實 DOM 上會直接紅燈；以及非法輸入時提交確實被禁用（FR-58.7/58.13）。
  */
 
 const URL = 'http://localhost:5173/';
@@ -313,5 +320,209 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
 
     await planSetup.locator('button[type="submit"]').click();
     await expect(page.locator('#eligibility-gate')).toBeVisible();
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // WP-58 T6 — the custom session program track, covered in the same spec as the frozen one
+  // (T6 step 1: update the existing Session Plan spec, never open a parallel one).
+  // ---------------------------------------------------------------------------------------------
+
+  /** The three families the program tests interleave, and the one drill each contributes. */
+  const PROGRAM_DRILLS = ['tracking_v1', 'detection_popin_v1', 'spider-shot-wide-v1'] as const;
+
+  async function openPlanSetup(page: Page, participantId: string) {
+    await waitForHarness(page);
+    await page.getByRole('button', { name: '選手測試 Session', exact: true }).click();
+    await page.locator('#session-setup input[name="participantId"]').fill(participantId);
+    await page.locator('#session-setup button[type="submit"]').click();
+    const planSetup = page.locator('#session-plan-setup');
+    await expect(planSetup).toBeVisible();
+    return planSetup;
+  }
+
+  /** Switches to the custom track and appends `drillIds` to the program list, in order. */
+  async function buildProgram(
+    planSetup: ReturnType<Page['locator']>,
+    drillIds: readonly string[],
+    reps: readonly number[],
+    drillRestSeconds: string,
+    familyRestSeconds: string,
+  ): Promise<void> {
+    await planSetup.locator('input[name="sessionPlanMode"][value="custom"]').check();
+    await expect(planSetup.locator('[data-plan-section="custom"]')).toBeVisible();
+    for (const drillId of drillIds) {
+      await planSetup.locator('select[name="sessionPlanDrill"]').selectOption(drillId);
+      await planSetup.getByRole('button', { name: '加入', exact: true }).click();
+    }
+    for (let i = 0; i < reps.length; i++) {
+      await planSetup
+        .locator(`[data-program-item="${i}"] input[name="sessionPlanReps"]`)
+        .fill(String(reps[i]));
+    }
+    await planSetup.locator('input[name="sessionPlanDrillRestSeconds"]').fill(drillRestSeconds);
+    await planSetup.locator('input[name="sessionPlanFamilyRestSeconds"]').fill(familyRestSeconds);
+  }
+
+  /** The preview rows as read off the DOM — never recomputed here (the compiler owns the model). */
+  async function readPreview(planSetup: ReturnType<Page['locator']>) {
+    return planSetup.locator('[data-program-preview-steps] li').evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        kind: node.getAttribute('data-program-step'),
+        boundary: node.getAttribute('data-step-boundary'),
+        drillId: node.getAttribute('data-step-drill-id'),
+        nextDrillId: node.getAttribute('data-step-next-drill-id'),
+        text: node.textContent,
+      })),
+    );
+  }
+
+  test('WP-58 T6：自訂 program 表單在真實 DOM 編出 3 家族 × 2 reps，預覽 11 步且邊界秒數正確', async ({
+    page,
+  }) => {
+    const planSetup = await openPlanSetup(page, 't6-custom-preview');
+
+    // Switching tracks hides the frozen block; the frozen DOM itself is untouched (FR-58.10).
+    await expect(planSetup.locator('[data-plan-section="frozen"]')).toBeVisible();
+    await planSetup.locator('input[name="sessionPlanMode"][value="custom"]').check();
+    await expect(planSetup.locator('[data-plan-section="frozen"]')).toBeHidden();
+
+    // The menu is the roster, grouped by family (FR-58.1). Exact equality with
+    // `SCHEDULABLE_DRILL_IDS` / `FAMILY_BY_DRILL_ID` is already asserted in
+    // `src/ui/SessionPlanSetup.test.ts`; importing `drillFamily.ts` here is impossible anyway (it
+    // pulls `drills/*.json`, which Playwright's Node loader rejects without an import attribute).
+    // What only the real browser adds is that the *rendered* menu has the same shape and that a
+    // drill picked from it is the one that lands in the list.
+    const picker = planSetup.locator('select[name="sessionPlanDrill"]');
+    await expect(picker.locator('option')).toHaveCount(36);
+    await expect(picker.locator('optgroup')).toHaveCount(10);
+    const options = await picker
+      .locator('option')
+      .evaluateAll((nodes) => nodes.map((node) => (node as HTMLOptionElement).value));
+    expect(new Set(options).size).toBe(options.length);
+    for (const drillId of PROGRAM_DRILLS) expect(options).toContain(drillId);
+
+    await buildProgram(planSetup, PROGRAM_DRILLS, [2, 2, 2], '1', '2');
+
+    // FR-58.13 — 11 steps: 6 runs, three 1s `rep` seams inside an item, two 2s `family` seams
+    // between items. The operator sees this table *before* the eligibility gate.
+    const steps = await readPreview(planSetup);
+    expect(steps.map((step) => step.kind)).toEqual([
+      'run',
+      'rest',
+      'run',
+      'rest',
+      'run',
+      'rest',
+      'run',
+      'rest',
+      'run',
+      'rest',
+      'run',
+    ]);
+    expect(steps.filter((step) => step.kind === 'run').map((step) => step.drillId)).toEqual([
+      PROGRAM_DRILLS[0],
+      PROGRAM_DRILLS[0],
+      PROGRAM_DRILLS[1],
+      PROGRAM_DRILLS[1],
+      PROGRAM_DRILLS[2],
+      PROGRAM_DRILLS[2],
+    ]);
+    expect(steps.filter((step) => step.kind === 'rest').map((step) => step.boundary)).toEqual([
+      'rep',
+      'family',
+      'rep',
+      'family',
+      'rep',
+    ]);
+    expect(steps.filter((step) => step.kind === 'rest').map((step) => step.nextDrillId)).toEqual([
+      PROGRAM_DRILLS[0],
+      PROGRAM_DRILLS[1],
+      PROGRAM_DRILLS[1],
+      PROGRAM_DRILLS[2],
+      PROGRAM_DRILLS[2],
+    ]);
+    expect(steps[0].text).toBe(`1. ▶ ${PROGRAM_DRILLS[0]} (1/2)`);
+    expect(steps[1].text).toBe(`2. ⏸ 1s · rep（同一 drill 下一輪） → ${PROGRAM_DRILLS[0]}`);
+    expect(steps[3].text).toBe(`4. ⏸ 2s · family（換家族） → ${PROGRAM_DRILLS[1]}`);
+
+    // 3 x 1s + 2 x 2s = 7s of rest; `summarizeProgram()` owns the number, the header owns the copy.
+    await expect(planSetup.locator('[data-program-preview-summary]')).toHaveText(
+      '預覽（11 步 · 執行 6 輪 · 休息合計 7 秒）',
+    );
+
+    await planSetup.locator('button[type="submit"]').click();
+    await expect(page.locator('#eligibility-gate')).toBeVisible();
+  });
+
+  test('WP-58 T6：相鄰同家族 drill 只拿到 drill 休息，預覽在提交前就把它說出來（R-58.8）', async ({
+    page,
+  }) => {
+    const planSetup = await openPlanSetup(page, 't6-same-family');
+
+    // Both drills are in the `tracking` family, so FR-58.5 gives that seam `drill`, not `family` —
+    // the counter-intuitive result the preview table exists to surface before the session starts.
+    await buildProgram(planSetup, ['tracking_v1', 'tracking_scene_v1'], [1, 1], '30', '60');
+
+    const steps = await readPreview(planSetup);
+    expect(steps.map((step) => step.kind)).toEqual(['run', 'rest', 'run']);
+    expect(steps[1].boundary).toBe('drill');
+    expect(steps[1].text).toBe(
+      '2. ⏸ 30s · drill（同家族換 drill） → tracking_scene_v1',
+    );
+  });
+
+  test('WP-58 T6：非法 reps 標出該列並禁用提交，修好即解除；切回 frozen 不被自訂軌鎖死', async ({
+    page,
+  }) => {
+    const planSetup = await openPlanSetup(page, 't6-invalid');
+    await buildProgram(planSetup, ['tracking_v1', 'detection_popin_v1'], [1, 1], '30', '60');
+
+    const submit = planSetup.locator('button[type="submit"]');
+    await expect(submit).toBeEnabled();
+
+    // FR-58.7 — the compiler's typed error is the copy, and its `itemIndex` marks the row.
+    await planSetup.locator('[data-program-item="1"] input[name="sessionPlanReps"]').fill('0');
+    await expect(submit).toBeDisabled();
+    await expect(planSetup.locator('[data-program-item="1"]')).toHaveAttribute('data-invalid', 'true');
+    await expect(planSetup.locator('[data-program-item="0"]')).not.toHaveAttribute('data-invalid', 'true');
+    await expect(planSetup.locator('[role="alert"]')).toHaveText(
+      'Session program 編譯失敗: items[1].reps 必須為 >= 1 的整數',
+    );
+
+    // Switching back to frozen must lift the custom track's block, or an operator who experimented
+    // with a program would be locked out of the standard assessment.
+    await planSetup.locator('input[name="sessionPlanMode"][value="frozen"]').check();
+    await expect(submit).toBeEnabled();
+
+    await planSetup.locator('input[name="sessionPlanMode"][value="custom"]').check();
+    await expect(submit).toBeDisabled();
+    await planSetup.locator('[data-program-item="1"] input[name="sessionPlanReps"]').fill('3');
+    await expect(submit).toBeEnabled();
+    await expect(planSetup.locator('[data-program-item="1"]')).not.toHaveAttribute('data-invalid', 'true');
+  });
+
+  test('WP-58 T6：▲▼ 排序與移除改變的是編譯出來的順序（NFR-58.7）', async ({
+    page,
+  }) => {
+    const planSetup = await openPlanSetup(page, 't6-reorder');
+    await buildProgram(planSetup, PROGRAM_DRILLS, [1, 1, 1], '30', '60');
+
+    await planSetup
+      .getByRole('button', { name: `${PROGRAM_DRILLS[2]} 上移`, exact: true })
+      .click();
+    expect(
+      await planSetup
+        .locator('[data-program-item]')
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-drill-id'))),
+    ).toEqual([PROGRAM_DRILLS[0], PROGRAM_DRILLS[2], PROGRAM_DRILLS[1]]);
+
+    await planSetup
+      .getByRole('button', { name: `移除 ${PROGRAM_DRILLS[0]}`, exact: true })
+      .click();
+    const steps = await readPreview(planSetup);
+    expect(steps.filter((step) => step.kind === 'run').map((step) => step.drillId)).toEqual([
+      PROGRAM_DRILLS[2],
+      PROGRAM_DRILLS[1],
+    ]);
   });
 });
