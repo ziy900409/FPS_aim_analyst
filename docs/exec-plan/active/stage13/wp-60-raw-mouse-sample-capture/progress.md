@@ -51,7 +51,7 @@ lift 九個 >1 s 空洞為 1257.4、1416.4、1442.2、1490.1、1524.1、1644.8�
 
 限制：每組只有一輪，十次動作依操作協定、無逐次時間標註，不能把九個長空洞當作九次成功偵測。allGapsMs 已排序，無法定位起始空洞，本輪不剔除任何一筆。未取得完整 dtUs/dx/dy 與 Pointer Lock 時序，不能重算全部摘要、判斷 270.4 ms 成因或分析前後運動學。整段 tinyPct 不能代表停頓期間微顫；含停頓的 samples/spanSec 不能替代 R1 活動取樣率。
 
-R2 分離問題已有探索性答案；逐次標註與泛化驗證交給 [WP-61 範圍草案](../wp-61-lift-off-validation/README.md)。F6 與其他 gate 仍依原清單驗收，OQ-60.4 構念歸屬尚待拍板。
+R2 分離問題已有探索性答案；逐次標註與泛化驗證交給 [WP-61](../wp-61-lift-off-validation/README.md)。F6 與其他 gate 仍依原清單驗收；OQ-60.4 構念歸屬已由 WP-61 T0 的 D-61.U1 / GD-37 補齊（既有 `deriveRepositioningSuspicion()` 與新構念「感測器離地 / sensor lift」並存但語意分離）。
 
 ## Progress
 
@@ -663,7 +663,7 @@ npx.cmd playwright test --workers=1      # KI-030：多 worker 不可重現，�
 | 1 | 實機事件率分布 | ✅ **R1 Run B**（連續移動 10.79 s，n = 10,475 個間隔）：`dtUs` p50 **995**／p95 **1660**／p99 **2235**／max 151,305 µs；瞬時事件率 **≈ 1005 Hz**、探針派發率 997 events/s。<br>**副產品（WP-61 的門檻可行範圍）**：剔除取鎖起始靜止段後，**連續移動期間的空洞上限 = 18.2 ms**，其餘 6–15 ms ⇒ 本硬體上時間間隙切段的**雜訊底線 ≈ 18 ms**，PA 的 30 ms 有約 1.7× headroom。⚠️ 一輪 / n = 11 個空洞 ⇒ **prior，非校準值**。<br>⚠️ 直方圖本身未入 repo（只有分位與空洞明細，見 §T0 R1）。 |
 | 2 | 抬起／停頓／一次到位的空洞長度分布 | ✅ **且結論是負面的**（R2，各 10 次）：lift 與 pause 的 >1 s 空洞**範圍重疊**（lift 1257–1850 ms、pause 1066–1363 ms），oneshot 無 >1 s 空洞但 max 270.4 ms。⇒ **D-60.R2-1：空洞長度不足以可靠分離 lift/pause**，不得據此凍結 30 ms／1 s 或任何分類門檻。<br>⚠️ 限制逐條見 §T0 R2；逐筆軌跡不入 repo，本 session 無法重算。 |
 | 3 | PA 十四參數與語意抄本 + 「哪些需在角度空間重推」標註 | ✅ 見 §T0 automated audit 的表（十四列逐一標註 time-domain / **px/s 空間需重推** / dimensionless / counts / sample-count）。來源檔與 ADR 已記名（D-60.P7 要求）。 |
-| 4 | OQ-60.4 構念歸屬結論 | 🔴 **未交付 —— 待使用者拍板**。T3 已以**中性時序語彙**交付原語（`gap`／`segment`／`unlocked`，掃描釘死零構念語彙命中），故**沒有預先佔用構念名**；但「新判準與 `deriveRepositioningSuspicion()` 是取代還是並存」仍是研究決定。<br>⇒ **WP-61 T0 的第一件事**，不阻塞 WP-60 收尾（README §1.5 明列 deadline = WP-61 T0）。 |
+| 4 | OQ-60.4 構念歸屬結論 | ✅ **已由 WP-61 T0 補齊**（D-61.U1 / GD-37）：既有 `deriveRepositioningSuspicion()` 維持「角速度停滯 / repositioning suspicion」品質標註；新構念為「感測器離地 / sensor lift」，兩者並存但語意分離。T3 的中性 `gap`／`segment`／`unlocked` 原語仍不宣稱空洞成因。 |
 
 **WP-61 另需但本 WP 不提供**：高刷（≥ 144 Hz）真人標註 cohort，規格見
 [`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md)。
@@ -671,7 +671,7 @@ npx.cmd playwright test --workers=1      # KI-030：多 worker 不可重現，�
 ### T-exit follow-up 最終判定
 
 F6、T3 真人分布與全量 Playwright 已由 TF1／TF2／TF3 全數補齊，故 **T0 = ✅、T3 = ✅**，
-T-exit 判定更新為 **✅、零具名缺口**。OQ-60.4 與高刷真人標註 cohort 仍屬 WP-61，不是 WP-60 缺口。
+T-exit 判定更新為 **✅、零具名缺口**。OQ-60.4 已由 WP-61 T0 關閉；高刷真人標註 cohort 仍屬 WP-61，不是 WP-60 缺口。
 
 ## Surprises
 
@@ -701,7 +701,7 @@ T-exit 判定更新為 **✅、零具名缺口**。OQ-60.4 與高刷真人標註
 | OQ-60.1 移植 PA 方法學的授權狀態 | ✅ **已收斂 2026-09-08**：無授權問題（同一作者、同一組織）。R5 關閉、T3 解除阻塞、PA 參數與 fixture 可直接引用（D-60.P7）| — | — |
 | OQ-60.2 序列化格式（columnar µs vs array-of-objects）| ✅ **T1 contract 凍結**：columnar + integer µs delta；60k `mouseSamples` block 567,316 bytes / p95 2.377 ms。R1 實測事件率仍屬 T0/T2 runtime gate，不改 T1 schema。 | Engineering | — |
 | OQ-60.3 Pointer Lock 中斷如何入匯出 | ✅ **T1 contract 凍結**：additive `pointer_lock` DrillEvent（`{ type, locked, t }`），parser 已支援；T2/T3 負責接線與消歧。 | Engineering | — |
-| OQ-60.4 新判準與 `deriveRepositioningSuspicion()` 的關係 | 🔴 開放（T3 已以**中性時序語彙**交付原語並掃描釘死，故未預先佔用構念名；歸屬仍待拍板）| 使用者 + 研究 | WP-61 T0（不阻塞 WP-60）|
+| OQ-60.4 新判準與 `deriveRepositioningSuspicion()` 的關係 | ✅ **已由 WP-61 T0 關閉**：兩者並存但語意分離；新構念 = 感測器離地 / sensor lift（D-61.U1 / GD-37） | ~~使用者 + 研究~~ | ~~WP-61 T0~~ |
 | OQ-60.5 高輪詢率（4000／8000 Hz）是否支援 | ✅ **T1 contract 凍結**：預設容量 1000 Hz × drill seconds × 1.2 headroom；高輪詢率不預先支援，超出以 `meta.mouseSampling.overflow` 具名退化。R1 實測若顯示本專案常態 >1000 Hz，需另開決策升版。 | Engineering | — |
 | OQ-60.6 是否同步進 `research/` Python 側 | 🟡 有建議值（本 WP 內不做）| Engineering | WP-61 |
 | **OQ-60.7**（T-exit 新開）長 drill 的匯出體積政策 | 🔴 **開放**：NFR-60.4 的 60 s 門檻（≤ 1.0 MB）**通過**（實測 571 KB），但條文附帶的「增幅 ≤ 30%」框在**滿 300 s** 的 run 上不成立 —— 原始取樣 ≈ 2.85 MB，對現行 3.4–3.8 MB 匯出為 **+75%**。<br>**不阻塞**：`spider-shot-wide-v1` 實際 60–120 s ⇒ 0.57–1.1 MB。<br>**候選處置**：(a) 只修條文，把「≤ 30%」改成「60 s ≤ 1.0 MB，長 drill 另計」；(b) 為長 drill 加降取樣或分段匯出政策；(c) 讓 `mouseSampleCapacity` 由 drill 長度而非 `maxDrillSeconds` 推導。**在有人真的錄一份 > 200 s 的 raw run 之前不值得選。** | 使用者 + Engineering | 首次出現 > 200 s 的 `?rawMouse=1` run |

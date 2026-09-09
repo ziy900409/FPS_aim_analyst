@@ -25,7 +25,7 @@
 - [x] 三種事件空洞（感測器離地／Pointer Lock 中斷／drill 未進行）在離線分析上**可分辨**。（A-60.9）<br>⚠️ 「可分辨」= 三者在**輸出上分得開**；**不等於**空洞長度可判定成因（D-60.R2-1 已判否）。
 - [x] 缺席合法、宣稱不符擲指名欄位 typed error；缺 `mouseSamples` 的舊匯出不被判 blocked。（A-60.7／A-60.15）
 - [x] 新模組不建立第二套「抬滑鼠」構念：C-D3 零 importer、C-D4 零既有判準符號命中、全 repo 無 `LOD` 縮寫。（A-60.12～14）
-- [ ] WP-61 handoff 四項齊備（事件率分布／空洞分布／授權結論／構念歸屬結論）。<br>①②③ ✅；**④ OQ-60.4 構念歸屬待使用者拍板**（WP-61 T0 的第一件事，不阻塞本 WP 收尾）。
+- [x] WP-61 handoff 四項齊備（事件率分布／空洞分布／授權結論／構念歸屬結論）。<br>①②③ ✅；④ ✅ **已由 WP-61 T0 的 D-61.U1 / GD-37 補齊**：既有 `deriveRepositioningSuspicion()` 與新構念「感測器離地 / sensor lift」並存但語意分離。
 
 ## Commit discipline
 

@@ -23,6 +23,21 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-37 ✅ WP-61 Sensor Lift Validation — 構念並存、標註通道與可分性 gate pre-registration(2026-09-09,WP-61 T0)
+
+| | |
+|---|---|
+| **發現處** | WP-61（Lift-off Validation）T0 entry gate。WP-60 已交付 raw mouse sample gap 原語，但 D-60.R2-1 顯示空洞長度本身不足以可靠分離 lift/pause；WP-57 已有 `deriveRepositioningSuspicion()`，語意是 128 Hz tick 聚合角速度停滯。若不先定義構念邊界與評估 gate，T1 的事件型別與 T3 的結論都會落在 C-D4/GD-20 灰區。 |
+| **① 編號分配** | `DECISIONS.md` 寫入當下最高為 **GD-36**，故本條取用 **GD-37**。規劃期的 `GD-37` 仍按 GD-35 紀律視為佔位符；本次已重新查最大值。 |
+| **② 構念歸屬** | 既有 `deriveRepositioningSuspicion()` **保留原語意**：角速度停滯品質標註，訊號來源為 128 Hz tick 聚合後的 `dYaw/dPitch` 與 canonical movement window，真人校準值 `stallMinMs=150` / `stallOmegaDegPerSec=2`，不得接教練報告。新構念定名為 **感測器離地 / sensor lift**，識別名 `sensorLift`，型別前綴 `SensorLift*`。它用 raw mouse sample gap + independent annotation + gap-boundary kinematics 驗證「候選空洞是否可被判為感測器離地」。兩者**並存但語意分離**，不得互相取代。 |
+| **③ 標註通道與宣稱界線** | 標註通道採 **`KeyL` self-report + block redundancy**。單一鍵 down/up 表達一段 annotation interval；manifest 以 `instructionClass ∈ {'lift','pause','oneshot'}` 指認該 block/run 的 ground-truth 類別。因自報反應時間約 200 ms、WP-57 實測 lift 事件長度約 180–225 ms，同量級，故標註只支撐**事件級匹配**（哪個 gap 是候選 sensor lift），**不支撐起點精度**宣稱。 |
+| **④ 評估契約 `sensor-lift-validation-v1`** | T0 pre-register 並凍結：θ sweep = **18/30/50 ms**；annotation matching tolerance = **300 ms**；資料 gate = ≥2 independent sessions、全 cohort lift/pause 各 ≥30 valid intervals、held-out 各 ≥10、`meta.displayHz === 240`、COI true、active event rate ≥500 Hz、no sample overflow、Pointer Lock break count 0；promotion gate = held-out precision ≥0.90、recall ≥0.80、F1 ≥0.85、pause FPR ≤0.10、oneshot FPR ≤0.05、calibration→held-out F1 drop ≤0.10。事後只能以新版本重開 pre-registration，不得就地改值。 |
+| **⑤ 兩個顯示更新率門檻並存** | WP-61 cohort **一律 240 Hz**。兩個較低門檻不合併也不改寫：≥120 Hz 是資格閘地板（`PERF_FLOOR_MS = 8.33`，管 `meta.suspect`），≥144 Hz 是 KI-031 完全緩解點（aim 更新率 ≥128 Hz；120 Hz 仍約 6% 零樣本，管 detection continuity）。T2 的逐份可用性條件直接比對 `meta.displayHz === 240`，不引用任一下限；禁止與 60 Hz run 混批。 |
+| **⑥ 實作落點與 C-D5** | T2/T3 只做 Python `research/src/lift/` 探索與報表；Stage 1 切段由 TS `segmentByTimeGap()` 產 committed golden JSON，Python 只讀不重寫。只有 T3 判 `promote` 時才進 T4，新增條件式 TS 模組 `src/metrics/sensorLiftCriterion.ts` 並觸發 C-D5 parity。即使 promote，依 n=1 宣稱上限仍一律 `research_only`，`src/` 對新判準的 importer 數為 0 是終局條件，不是暫時措施。 |
+| **合法結案形態** | (A) `promote`：至少一個 θ × ablation layer 達所有 gate，進 T4 凍結版本化判準；(B) `blocked-by-data`：資料量或硬體/標註完整性不足；(C) `annotation-channel-unusable`：lift/pause self-report latency 有系統性差異；(D) `not-reliably-separable`：資料與標註足量但 held-out 未達 promotion gate。B/C/D 都是合格交付，不得把負面結論改寫成「尚未完成」。 |
+| **影響面** | T1 會觸及 `KEY_CODE`/`CODE_KEY`、`InputSampler`、`SimLoop.applyInput`、`DrillEvent`、`createDataRecorder`、`parseExportPayload`；T0 CodeGraph 重跑顯示 `KEY_CODE` 3 callers、`CODE_KEY` 1 caller、`InputEvent` 15 callers、`applyInput` 2 callers、`parseExportPayload` 18 callers，`createDataRecorder` 為 graph god node（68 edges）。T1 必須用四 FPS full `TickRecord` `Object.is` parity + push 計數 + parser round-trip 證明 opt-in/off 行為。 |
+| **狀態** | ✅ 已記名。T0 baseline：typecheck ×2 exit 0、全量 Vitest 249 files / 2764 tests passed（2 skipped）、build 非 sandbox exit 0、preview COI true。5173 已被既有 server 占用，本次未停止他人 server、未宣稱 dev COI 讀數。 |
+
 ### GD-36 ✅ 原始輸入取樣的匯出邊界與 C-D4 歸屬 — 逐筆滑鼠樣本入匯出、時序原語與構念分離、事件率的兩種讀法(2026-09-09,WP-60 T-exit)
 
 | | |

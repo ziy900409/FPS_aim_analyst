@@ -14,7 +14,7 @@
 | **Pre-registration** | 事件匹配容差、資料分割、指標與門檻**必須在看特徵分布之前凍結**（GD-20 先例） |
 | **Estimate** | 9–15 dev-days（T4 為條件式；若判定為負向結論則 6.5–11） |
 | **Risk** | High：cohort 尚未錄製、標註本身有噪、最可能的結果是分不開（硬體風險已於 2026-09-09 消除，R1 降為 Med） |
-| **Status** | 🟡 規劃完成，尚未開工。**四個使用者決策已於 2026-09-09 收斂**（D-61.U1～U4：構念並存／自報鍵／120 Hz + 240 Hz 機器／n=1 宣稱上限）⇒ T1 的阻塞已解除。T0 仍未過，不得開 T1～T4 |
+| **Status** | ✅ **T0 entry gate 已完成 2026-09-09**：構念歸屬、可執行命名、評估契約 pre-registration、WP-60 handoff 覆驗與硬體 go/no-go 已凍結。T1 可開；cohort 仍待 T1 儀器落地後由使用者錄製。 |
 
 ---
 
@@ -55,17 +55,20 @@
 
 ### 0.2 Planning-time blast radius
 
-| 符號／檔案 | 變更性質 | 風險 |
+| 符號／檔案 | 變更性質 | 本次 CodeGraph 實測 blast radius（2026-09-09）與風險 |
 |---|---|---|
-| `KEY_CODE`（`src/state/types.ts:45`） | **additive**：新增第五個 code（標註鍵） | Med — 型別是 `Record<string, number>`，新增 key 不改既有四項的值；但 `CODE_KEY` 陣列與 `keyMaskFromKeys` 需逐條覆驗不受影響 |
-| `InputSampler.onKeyDown`／`onKeyUp` | **不修改邏輯**：新 code 因 `KEY_CODE` 有定義而自動入 ring | Med — 熱路徑；但走既有分支，無新分支 |
-| `SimLoop.applyInput` key 分支 | **加一個 else-if**，只呼叫 recorder、**不寫 `state`** | **High** — sim 熱路徑；決定性須逐位證明 |
-| `DrillEvent` union（`DataRecorder.ts:12-48`） | **additive** 新事件型別 + option flag | Med — 型別被全 repo 消費；比照 `key` 事件先例 |
-| `exportPayloadSchema.ts` | additive strict parse；缺席合法 | Med — 比照 `mouseSamples` 的 strict／absent 先例 |
-| `research/`（新模組） | 純新增；不 import 任何 TS | Low — 但需守 C-D1／C-D2 |
-| `src/metrics/`（**僅 T4 條件式**） | 新增版本化判準 | Med — 觸發 C-D5 雙實作對表 |
+| `KEY_CODE`（`src/state/types.ts:45`） | **additive**：T1 新增第五個 code `KeyL`（標註鍵） | Med — CodeGraph：3 callers（`src/input/InputSampler.ts`、`src/testharness/fpsTestHarness.ts`）；覆蓋測試含 `src/input/InputSampler.test.ts`。新增 key 不改既有四項值，但 `CODE_KEY` 必須同序擴充。 |
+| `CODE_KEY`（`src/state/types.ts:46`） | **additive**：新增反向解碼項 | Med — CodeGraph：1 caller（`src/state/SharedState.ts` 的 `createInputRing().dequeueInto()`）；未列 covering tests，T1 必須補 round-trip 測試證明 `KeyL` 可入 ring 且不進 `TickRecord.keys`。 |
+| `InputSampler.onKeyDown`／`onKeyUp` | **不修改邏輯**：新 code 因 `KEY_CODE` 有定義而自動入 ring | Med — 走既有 `KEY_CODE[e.code]` 分支，無新分支；風險在熱路徑事件量，T1 以 `push` 計數證明只有實際標註次數增加。 |
+| `keyMaskFromKeys`（`src/data/RingBuffer.ts:97`） | **不修改語意**：仍只輸出 A/D/W/S 四 bit | Med — CodeGraph：1 caller（`TickArena.recordTick()`）；未列 covering tests。T1 必須釘死 `KeyL`／`SensorLift` 標註不會進 tick `keys`。 |
+| `SimLoop.applyInput` key 分支 | **加一個 else-if**，只呼叫 recorder、**不寫 `state`** | **High** — CodeGraph：2 callers（`simStep`、`createSimLoop`）；未列 covering tests。T1 的四 FPS parity 必須攤平 `TickRecord` 全欄位 `Object.is`，並以故意寫 `state` 的突變證明斷言抓得到。 |
+| `DrillEvent` union（`DataRecorder.ts`） | **additive** 新 `annotation` 事件型別 + option flag | Med — CodeGraph 將 `createDataRecorder()` 標為 god node之一：68 graph edges；`recordEvent()` 既有 `events.push` 路徑可重用，但 parser／CSV／round-trip 需逐項補測。 |
+| `createDataRecorder`（`src/data/DataRecorder.ts:167`） | **additive option**：`recordAnnotationEvents?: boolean` 預設 false | Med — CodeGraph：`createDataRecorder → recordTick → keyMaskFromKeys`；graph report 列為 god node（68 edges）。預設關閉時匯出必須逐位不變。 |
+| `parseExportPayload`（`src/data/exportPayloadSchema.ts:41`） | additive strict parse；缺席合法 | Med — CodeGraph：18 callers（含 history server、history API、tracking scripts、replay compatibility、export round-trip tests）。T1 parser 必須拒絕 malformed annotation event，但 legacy events 仍合法。 |
+| `research/`（新模組） | 純新增；不 import 任何 TS | Low — 不觸及 runtime；T2/T3 以 committed golden JSON 跨界，遵守 C-D1／C-D2。 |
+| `src/metrics/sensorLiftCriterion.ts`（**僅 T4 條件式**） | 新增版本化判準，`src/` importer 終局為 0 | Med — 觸發 C-D5 雙實作對表；依 D-61.U4，即使通過也維持 `research_only`，不得接教練報告。 |
 
-> ⚠️ T0 必須以 CodeGraph 重跑 `KEY_CODE`、`applyInput`、`DrillEvent`、`createDataRecorder` 的實測 blast radius 並回填本節。WP-60 T0 的實測是 `ExportPayload` 367 callers ／ `createSimLoop` 37 callers；本 WP 觸及的是**更上游的輸入鏈**，**不得沿用舊數字**。
+> CodeGraph 查詢：`KEY_CODE CODE_KEY keyMaskFromKeys applyInput DrillEvent createDataRecorder parseExportPayload InputSampler RingBuffer DataRecorder exportPayloadSchema mouseSampleGaps deriveRepositioningSuspicion` 與 `src/state/types.ts KEY_CODE CODE_KEY InputEvent InputRing pushKey`。本節數字為 WP-61 T0 實測，不沿用 WP-60 的 `ExportPayload`／`createSimLoop` 舊 blast radius。
 
 ---
 
@@ -118,8 +121,8 @@
 |---|---|---|---|---|---|
 | **OQ-61.1**（＝ OQ-60.4） | 新判準與既有 `deriveRepositioningSuspicion()` 是**取代**還是**並存**？各自叫什麼？ | ✅ **已收斂 2026-09-09（使用者）：並存但語意分離**（D-61.U1）。既有者維持「角速度停滯（repositioning suspicion）」不動；新者為**不同構念**「**感測器離地（sensor lift）**」，用不同名稱、不同型別、不同模組。C-D4 禁的是「同一構念兩套定義」，不是「兩個不同構念」—— 但兩者都叫「抬滑鼠」就會踩線 ⇒ 兩個構念必須在 [CONTEXT.md](../../../../../CONTEXT.md) **分開定義並互相指名** | ~~使用者 + 研究~~ 已收斂 | ~~T0 exit~~ 已收斂 | — |
 | **OQ-61.2** | 標註通道的具體形式：**自報鍵**（受測者本人按）、**第二人標註鍵**，還是**兩者都收**？ | ✅ **已收斂 2026-09-09（使用者）：自報鍵為主 + block 設計為冗餘**（D-61.U2）。自報鍵與匯出同時鐘域、零額外硬體；其延遲以 T0 凍結的容差吸收（NFR-61.6）。block 設計（「本 run 每個 trial 都抬」）提供 trial 級的冗餘標籤，用來稽核自報鍵的漏按。<br>⚠️ **隨此決定生效的宣稱界線**：自報鍵可支撐**事件級匹配**（「哪一個空洞是抬滑鼠」），**不可**支撐**起點精度**宣稱（反應時間 ≈ 200 ms 與 lift 事件 180–225 ms 同量級）。T3／T-exit 不得作後者的宣稱 | ~~使用者~~ 已收斂 | ~~T0 exit~~ 已收斂 | — |
-| **OQ-61.3** | 標註鍵選哪個 code？（`KEY_CODE` 封閉集需擴充） | **`KeyL`**（lift 的字首，且不與 WASD／Space／Esc／R／滑鼠鍵衝突）。單一鍵、`down`／`up` 各記一次事件 ⇒「抬起—落下」以一次按住表達，比兩個鍵少一半誤按面 | Engineering | **T1 凍結前** | 常數選錯，之後要改就會動到已錄的 cohort |
-| **OQ-61.4** | 特徵萃取與判準實作落 **Python `research/`** 還是 **TS `src/metrics/`**？何時觸發 C-D5？ | **T2／T3 只做 Python 側**（探索期，含繪圖）；**T4（條件式）才在 `src/metrics/` 建 TS 實作並補 golden parity ⇒ C-D5 於 T4 才觸發**。理由同 OQ-60.6：過早雙實作會讓每次改判準都要兩端同步 + 升版。<br>⚠️ 但 Stage 1 切段**不重寫**：T2 由 TS `segmentByTimeGap()` 產出 committed golden JSON，Python 側讀它（C-D1 允許讀 committed golden），**不另寫一套切段** | Engineering | **T0 exit** | 兩套切段各算一套 = C-D4／C-D5 的灰區，且 T3 的結果無法歸因到底是特徵差異還是切段差異 |
+| **OQ-61.3** | 標註鍵選哪個 code？（`KEY_CODE` 封閉集需擴充） | ✅ **T0 已收斂（D-61.T0-2）：`KeyL`**（lift 的字首，且不與 WASD／Space／Esc／R／滑鼠鍵衝突）。單一鍵、`down`／`up` 各記一次事件 ⇒ 一段自報 annotation interval；實際類別由 block/run manifest 的 `instructionClass` 指定 | ~~Engineering~~ 已收斂 | ~~T1 凍結前~~ | — |
+| **OQ-61.4** | 特徵萃取與判準實作落 **Python `research/`** 還是 **TS `src/metrics/`**？何時觸發 C-D5？ | ✅ **T0 已收斂（D-61.T0-2）：T2／T3 只做 Python 側**（探索期，含繪圖）；**T4（條件式）才在 `src/metrics/sensorLiftCriterion.ts` 建 TS 實作並補 golden parity ⇒ C-D5 於 T4 才觸發**。Stage 1 切段**不重寫**：T2 由 TS `segmentByTimeGap()` 產出 committed golden JSON，Python 側讀它（C-D1 允許讀 committed golden），**不另寫一套切段** | ~~Engineering~~ 已收斂 | ~~T0 exit~~ | — |
 | **OQ-61.5** | 是否存在合格的錄製機器？門檻是多少？ | ✅ **已收斂 2026-09-09（使用者）：cohort 一律錄在 240 Hz 顯示器**（D-61.U3）。<br>⚠️ **「≥ 120」與「≥ 144」不是矛盾，是兩個不同的門檻，兩個都對**：<br>　• **≥ 120 Hz** ＝ 資格閘地板（`PERF_FLOOR_MS = 8.33`，[`constants.ts:13`](../../../../../src/display/constants.ts#L13)）—— 管 `meta.suspect` 是否被 frame floor 判紅；<br>　• **≥ 144 Hz** ＝ KI-031 完全緩解點（aim ≥ 128 Hz；[KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) §2：`f ≈ 120 Hz` 仍約 **6% 零樣本 ⇒ 偶發漏檢**）—— 管 `deriveDetectionMetrics()` 會不會靜默失效。<br>**240 Hz 同時滿足兩者**，故本 WP 的可用性條件直接寫成 **`meta.displayHz === 240`**，不引用任何一個下限。**禁止**與 60 Hz 的 run 混入同一批分析 —— 顯示更新率會同時改變 aim 更新率與 `suspect`，是顯性 confound | ~~使用者~~ 已收斂 | ~~T0 exit~~ 已收斂 | — |
 | **OQ-61.6** | 若 cohort 只有 **n = 1 受測者**（極可能），通過門檻的結論可以宣稱到什麼程度？ | ✅ **已收斂 2026-09-09（使用者）**（D-61.U4）：**上限為「本操作者 × 本硬體 × 本 drill 條件下成立」**，一律 `research_only`，**不得**進教練報告（C-D3／GD-20）。跨人泛化需另立 WP 與另一批 cohort。⇒ 即使 T3 判定 `promote`、T4 交付判準，**也不會有任何教練報告端的消費者**；T4 的「`src/` 零 importer」因此不是暫時措施而是**終局狀態** | ~~使用者 + 研究~~ 已收斂 | ~~T0 exit~~ 已收斂 | — |
 | **OQ-61.7** | `gapThresholdMs` 最終取什麼值？ | **T0 不凍結**。以 18／30／50 ms sweep 進入 T3，門檻本身作為消融的一個維度；最終值（若有）由 T4 依 held-out 結果決定並記名 | Engineering | T4 | 提前凍結 = 用本輪最大值調出剛好分開的門檻（[`../README.md`](../README.md) 明文禁止） |
@@ -256,18 +259,21 @@ export interface GapBoundaryKinematics {
 
 ### 2.4 評估契約（T0 凍結，FR-61.5）
 
-以下每一格的**值**由 T0 填入並凍結。本表在規劃期只定義**形狀**，不預填數字 —— 預填等於偷跑 pre-registration。
+**凍結於 2026-09-09（D-61.T0-1）；事後只能以新版本重開 pre-registration，不得就地改值。** 自報鍵只支撐事件級匹配，不支撐起點精度宣稱（D-61.U2）。
 
 | 項目 | 定義 | T0 凍結值 |
 |---|---|---|
-| 候選事件 | `segmentByTimeGap(block, θ, unlocked).gaps` 中**排除** `lockGapIndices` 者，θ ∈ {18, 30, 50} ms | — |
-| 正例（lift） | 標註區間與候選空洞的重疊符合匹配規則 | — |
-| 負例 | pause 標註區間內的候選空洞 + 無標註區間內的候選空洞（正常急停） | — |
-| 匹配容差 | 標註時刻與空洞邊界的最大允許偏移（ms） | — |
-| 分割 | 依 session 隔離；哪些 session 進校準、哪些進 held-out | — |
-| 指標 | precision／recall／F1（lift 為正類）+ **pause 組誤報率** + **oneshot 組誤報率**（分開報，不併入 F1） | — |
-| 通過門檻 | 上列各值的下限／上限 | — |
-| 決策規則 | 「達門檻 ⇒ 進 T4；未達 ⇒ 走 FR-61.8 的負面結論」的**字面條件** | — |
+| 候選事件 | `segmentByTimeGap(block, θ, unlocked).gaps` 中**排除** `lockGapIndices` 者，θ ∈ {18, 30, 50} ms | θ sweep = **18 / 30 / 50 ms**。18 ms = WP-60 R1 連續移動空洞上限 18.2 ms 的敏感下界近似；30 ms = PA v3 `TIME_GAP_THRESHOLD_MS` prior；50 ms = 保守上界。三個 θ 都報，不在 T3 前選單值。 |
+| 標註與 block | 標註通道與 block 設計 | 標註鍵 code = **`KeyL`**。單一鍵 down/up 表達一段操作者自報 interval；每個 run/block 在 manifest 中標 `instructionClass ∈ {'lift','pause','oneshot'}`。建議一個 run 只含一種指示；若 run 內分段，manifest 必須列出 block time range，否則該 run 作廢。Trial 邊界以 `visible` peripheral event 開始；同 `targetId` 第一個 `hit`、下一個 peripheral `visible`、或 run end 中最早者為結束。 |
+| 正例（lift） | 標註區間與候選空洞的重疊符合匹配規則 | `instructionClass='lift'` 的有效 annotation interval。將 annotation interval 兩側各擴張 **300 ms** 後，與候選 gap interval 有實質重疊（overlap > 0）即可匹配；每個 annotation 與 gap 皆最多匹配一次，按 annotation start 升冪、取最近 gap center 的貪婪 one-to-one pairing。 |
+| 負例 | pause 標註區間內的候選空洞 + 無標註區間內的候選空洞（正常急停） | `instructionClass='pause'` 的有效 annotation interval 依同一 300 ms expansion 匹配到的 gap = pause 負例；`instructionClass='oneshot'` 的所有候選 gap = oneshot 負例；lift run 中未匹配到 lift annotation 的候選 gap 另列 `background`，不併入 pause/oneshot FPR，但列入 precision 的 FP。 |
+| 匹配容差 | 標註時刻與空洞邊界的最大允許偏移（ms） | **300 ms**。依據：D-61.U2 的自報反應時間量級約 200 ms，WP-57 §T5-real 的 lift 事件長度約 180–225 ms；容差吸收事件級匹配延遲，但明文禁止起點精度宣稱。 |
+| 資料充分性 | 進入 T3 前的最低資料量與品質 | 至少 **2 個獨立 session**；全 cohort 至少 **30 個有效 lift annotation intervals** 與 **30 個有效 pause annotation intervals**，且 held-out 端各至少 10 個。每份 run：`meta.displayHz === 240`、`meta.crossOriginIsolated === true`、active event rate ≥ 500 Hz、`mouseSampling.overflow === false`、Pointer Lock 中斷為 0；任一不符即作廢。 |
+| 標註完整性 | F2/F3 gate | 每個 run 的有效 annotation interval 數與 manifest expected trial 數差額 ≤ **max(1, floor(0.05 × expectedTrials))**；down/up 成對違規 = **0**；落在 unlocked interval 內的 annotation = **0**。lift 與 pause 的 `annotationStart - nearestGapBoundary` median 差異 > **150 ms** 或 p90 差異 > **300 ms** ⇒ 自報通道判 `annotation-channel-unusable`，直接 T-exit，不跑 T3。 |
+| 分割 | 依 session 隔離；哪些 session 進校準、哪些進 held-out | 以 manifest 的 `recordedAt`（缺席則檔名時間，仍缺則 manifest order）排序 session；前半為 calibration、後半為 held-out，比例 **50/50**，每側至少 1 session。同一 session 不得跨兩側；若 held-out lift 或 pause 有效數 < 10，T2 判 `blocked-by-data`。 |
+| 指標 | precision／recall／F1（lift 為正類）+ **pause 組誤報率** + **oneshot 組誤報率**（分開報，不併入 F1） | 每個 θ × 每個 ablation layer 各報：TP/FP/FN/TN、precision、recall、F1、pause FPR、oneshot FPR、background FP count。calibration 與 held-out 分開報；held-out 只看一次。 |
+| 通過門檻 | 上列各值的下限／上限 | **held-out precision ≥ 0.90、recall ≥ 0.80、F1 ≥ 0.85、pause FPR ≤ 0.10、oneshot FPR ≤ 0.05**，且 `calibrationF1 - heldOutF1 ≤ 0.10`。任何一項未達即不得 promote。 |
+| 決策規則 | 「達門檻 ⇒ 進 T4；未達 ⇒ 走 FR-61.8 的負面結論」的**字面條件** | 若至少一個 θ × ablation layer 同時滿足通過門檻，且標註通道與資料充分性 gate 皆通過 ⇒ T3 判 `promote`，T4 凍結該 θ/layer/config 並做 TS parity。若資料充分性不足 ⇒ T-exit 結論 `blocked-by-data`。若標註通道不可用 ⇒ T-exit 結論 `annotation-channel-unusable`。若資料與標註都足夠但無 layer 達標 ⇒ T-exit 結論 `not-reliably-separable`，保留 WP-60 gap/segment 原語不變。 |
 
 ⚠️ **凍結後只能升版不能改值**（C-D5 的同一紀律）。若 T3 發現契約本身有缺陷（例如容差定義在物理上不可能滿足），處置是**入帳一個具名決策並重新 pre-register 一輪**，不是就地調數字。
 

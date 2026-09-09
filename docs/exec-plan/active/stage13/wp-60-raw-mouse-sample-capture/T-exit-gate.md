@@ -58,7 +58,7 @@
 - [x] 四個收尾閘的實際數字記入 `progress.md`；`test:ci` 若 exit 1，成因逐條歸屬（既存 KI vs 本 WP）。<br>typecheck ×2 / 全量 Vitest（2614 passed）/ `vite build` **exit 0**；**全量 Playwright 未執行**且已具名歸因（port 5173 被主 checkout 的 dev server 占用，服務的是不含 WP-60 的程式碼 + 真實 history root ⇒ 跑了會沉默地測錯的樹）。因此 `test:ci` 也未取讀數 —— **不宣稱通過**。
 - [x] FR/NFR traceability 表逐條對帳完成。
 - [x] §2b 硬約束表逐條覆核，變動處已更新。
-- [ ] WP-61 handoff 四項齊備。<br>①②③ ✅；**④ OQ-60.4 構念歸屬待使用者拍板**（WP-61 T0 的第一件事，不阻塞本 WP 收尾）。
+- [x] WP-61 handoff 四項齊備。<br>①②③ ✅；④ ✅ **已由 WP-61 T0 的 D-61.U1 / GD-37 補齊**：既有 `deriveRepositioningSuspicion()` 與新構念「感測器離地 / sensor lift」並存但語意分離。
 - [x] `../README.md` §2 與 `docs/exec-plan/README.md` §2 狀態已同步（只含自己的變更行）。<br>後者原**無** stage13 區塊，本 gate 新增「階段 M」整段（未動 stage12 任何一行）。
 - [x] `progress.md` 的 Decision Log／Surprises／Open Questions 三節完整；未收斂的 OQ 標明 owner 與 deadline。<br>新增 D-60.X1、Surprises 9、OQ-60.7。
 

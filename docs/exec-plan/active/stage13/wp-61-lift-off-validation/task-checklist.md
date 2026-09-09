@@ -4,7 +4,7 @@
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry gate／構念歸屬／評估契約 pre-registration | [T0-entry-gate.md](T0-entry-gate.md) | WP-60 T-exit ✅ | High |
+| ✅ | **T0** Entry gate／構念歸屬／評估契約 pre-registration | [T0-entry-gate.md](T0-entry-gate.md) | WP-60 T-exit ✅ | High |
 | ⬜ | **T1** 標註通道儀器 | [T1-annotation-channel.md](T1-annotation-channel.md) | T0 | High |
 | ⬜ | **T2** Cohort 取得／標註完整性稽核／候選事件表 | [T2-cohort-and-label-audit.md](T2-cohort-and-label-audit.md) | T1 + 真人 cohort | High |
 | ⬜ | **T3** 可分性消融 | [T3-separability-ablation.md](T3-separability-ablation.md) | T2 ✅（資料充分性閘） | High |
@@ -13,7 +13,7 @@
 
 ## 序列閘（不得跳）
 
-1. **T0 未通過不得開 T1～T4** —— OQ-61.1（構念歸屬）與評估契約凍結是 T1 的輸入。
+1. **T0 已通過（2026-09-09）** —— OQ-61.1（構念歸屬）、OQ-61.3（`KeyL`）與評估契約已凍結；T1 可開。
 2. **T2 的資料充分性閘未過不得開 T3** —— 髒標籤跑出來的「分不開」不可歸因。
 3. **T2 的 F3 檢定判定「標註通道不可用」時直接跳 T-exit** —— 不得續行 T3。
 4. **T3 判定非 `promote` 時不執行 T4** —— 直接走 T-exit 的負面結論路徑。
