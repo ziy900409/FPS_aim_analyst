@@ -2,9 +2,20 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-09 R2 回填）
+## 最新狀態（2026-09-09 T-exit）
 
-R1 已通過；R2 三組摘要已取得，結論為空洞長度不足以可靠分離 lift/pause。F6 瀏覽器 frame log 開／關對照仍待量測，T0/T-exit 不標完成。下方較早紀錄中的「R2 待實機」由本節更新；T1/T2 既有完成狀態不變。
+**T-exit 已收尾**（見 §T-exit gate）：A-60.1～16 逐條有指令與輸出，14 ✅／1 ✅ 帶上界告警／1 🟡，無 ❌；
+typecheck ×2、全量 Vitest（2614 passed）、`vite build` 三個閘 exit 0。
+
+**三項具名缺口**（都是需要真人／真瀏覽器的經驗性讀數，不是實作缺口）：① F6 的瀏覽器 frame log 開／關對照；
+② T3 DoD 第 9 項的真人取樣區段／間隙分布；③ 全量 Playwright 讀數（port 5173 被他人 dev server 占用，
+且它服務的是不含 WP-60 的程式碼 —— 跑了會沉默地測錯的樹）。⇒ **T0 與 T3 維持 🟡**。
+
+本 gate 另落地一個修復 **D-60.X1**：T4 的事件率 blocker 讀整段平均率，會把 R2 三組真人 run（417／494／412 Hz）
+全部誤判為「事件率不足」，改為讀排除空洞後的連續期間事件率。
+
+較早紀錄：R1 已通過；R2 三組摘要已取得，結論為空洞長度不足以可靠分離 lift/pause。下方較早紀錄中的
+「R2 待實機」由 §T0 R2 節更新；T1/T2/T4 既有完成狀態不變。
 
 ## T0 R2 實機結果與 WP-61 收斂
 
@@ -41,7 +52,7 @@ R2 分離問題已有探索性答案；逐次標註與泛化驗證交給 [WP-61 
 | T2 Recorder Wiring | ✅ Completed（依使用者明確指示 override T0 gate；app 佈線層 opt-in 預設關閉） | 2026-09-08 | 2026-09-08 | 見 §T2 implementation audit。`npm.cmd test -- tests/regression/wp60-raw-mouse-capture.test.ts` exit 0（20 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（245 files passed, 1 skipped；2581 passed, 2 skipped）；`npm.cmd run build` exit 0（`$LASTEXITCODE=0`，193 modules，保留既有 chunk-size warning）；`npx.cmd playwright test tests/e2e/raw-mouse-sampling.spec.ts` **2 passed（真實 Edge）**。 |
 | T3 Time-Gap Primitive | 🟡 Mostly done（原語與全部 scan 已交付；**DoD 的真人取樣分布一項未完成**）| 2026-09-09 | — | 見 §T3 implementation audit。`npm.cmd test -- src/metrics/mouseSampleGaps.test.ts` exit 0（25 passed）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（246 files passed, 1 skipped；2606 passed, 2 skipped）；`npm.cmd run build` exit 0（193 modules，保留既有 chunk-size warning）；三組突變各被抓到。**未完成**：真人取樣的區段／間隙分布 —— T0 R2 只回填統計摘要，逐筆 `dtUs`／`dx`／`dy` 從未入 repo，本 session 取不到。 |
 | T4 Operator Visibility | ✅ Completed | 2026-09-09 | 2026-09-09 | 見 §T4 implementation audit。`npm.cmd test -- tests/regression/spider-wide-repositioning-runner.test.ts` exit 0（**19 passed** = 既有 12 + 新增 7）；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（**246 files passed, 1 skipped；2613 passed, 2 skipped**）；`npm.cmd run build` `$LASTEXITCODE = 0`（bundle hash `index-CcqBc2hD.js` 與 T2 相同 ⇒ `scripts/` 不進 app bundle）；四組突變各被抓到；legacy fixture 與含 `mouseSamples` 的樣本各實跑一次（輸出見下）。 |
-| T-exit | ⬜ Not started | — | — | — |
+| T-exit | ✅ Completed（**帶三項具名缺口**：F6 瀏覽器 frame log／T3 真人分布／全量 Playwright 讀數）| 2026-09-09 | 2026-09-09 | 見 §T-exit gate。A-60.1～16：**14 ✅ + 1 ✅ 帶上界告警（A-60.10 → OQ-60.7）+ 1 🟡（A-60.16 瀏覽器側 = F6）**，無 ❌。`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（**246 files passed, 1 skipped；2614 passed, 2 skipped**）；`npm.cmd run build` exit 0（bundle hash `index-CcqBc2hD.js` 與 T2／T4 相同）；`analyze:spider-wide` legacy 實跑 exit 0（取樣 blocker 0 條）。全量 Playwright **未執行** —— port 5173 被主 checkout 的 dev server 占用且服務不含 WP-60 的程式碼（`rawMouse` 命中 0）＋掛真實 history root（78 runs），跑了會沉默地測錯的樹並污染真實資料。<br>本 gate 落地一個修復：**D-60.X1**（`66a1890`）—— T4 的事件率 blocker 會把 R2 三組真人 run 全部誤判。 |
 
 ## Decision Log
 
@@ -441,6 +452,145 @@ npm.cmd run analyze:spider-wide -- research/fixtures/exports/counterstrafe_ad_v1
 
 ⚠️ 這兩份是**合成**輸入，證明的是報告管線正確，**不是**真人取樣的分布。真人分布仍是 T3 DoD 第 9 項的缺口（同一個經驗性缺口）。
 
+## T-exit gate（2026-09-09）
+
+> 逐條 A-60.1～16 + 四個收尾閘 + FR/NFR 對帳 + §2b 覆核 + WP-61 handoff。
+> **未達成的一律列名歸因**，不以「實作完成」代替。基準 commit `f06fe1f`（T4 之後）；本 gate 期間落地
+> 一個修復 commit `66a1890`（D-60.X1，見 Decision Log）。
+
+### 收尾閘（實際數字）
+
+| 閘 | 指令 | 結果 |
+|---|---|---|
+| Typecheck ×2 | `npm.cmd run typecheck` | **exit 0**（`tsc --noEmit` + `-p tsconfig.node.json`）|
+| 全量 Vitest | `npm.cmd test` | **exit 0**；**246 files passed, 1 skipped（247）；2614 passed, 2 skipped（2616）** |
+| Build | `npm.cmd run build` | **exit 0**；Vite 6.4.3；193 modules；`dist/assets/index-CcqBc2hD.js` 1,220.06 kB gzip 346.97 kB —— **hash 與 T2／T4 完全相同**（本 gate 只動 `scripts/`／`docs/`／`tests/`，不進 app bundle）；保留既有 chunk-size warning |
+| 全量 Playwright | `npx.cmd playwright test --workers=1` | ❌ **未執行** —— 見下方「Playwright 閘為何沒跑」。**不宣稱通過，也不宣稱失敗。** |
+
+**全量差額歸屬**：T4 baseline 246 files / 2613 passed → 本 gate 246 files / **2614** passed。差額 = **+1 case**，即 D-60.X1 在
+`spider-wide-repositioning-runner.test.ts` 新增的停頓對照案例（該檔 19 → 20）；檔數未增、其餘檔案 case 數未動
+⇒ 與平行 session（stage12）**無交集**。本 gate 開場先跑一次未修改狀態的全量，得 2613，與 T4 紀錄逐位相符
+⇒ 這個 baseline 本身也不含他人變更。
+
+### Playwright 閘為何沒跑（不是「跳過」，是**跑了會說謊**）
+
+`playwright.config.ts` 的 dev webServer 是 `reuseExistingServer: !process.env.CI` + `url: http://localhost:5173/`，
+而 27 支 spec 全部把 `http://localhost:5173/` **硬編**在檔內。本機當下的實測：
+
+| 量 | 值 | 含意 |
+|---|---|---|
+| 5173 LISTEN | PID 51084 `node .../FPS_aim_analyst/node_modules/vite/bin/vite.js` | **主 checkout** 的 dev server，不是本 worktree |
+| `GET :5173/src/main.ts` | 200，246,000 bytes，`rawMouse` 命中 **0** | 該 server 服務的是**不含 WP-60 的程式碼** |
+| `GET :5173/api/history/health` | `validRunCount: 78` | 它掛的是**真實** history root（`.playwright-tmp/history-dev` 只有 1 個 entry）|
+| 5174 LISTEN | PID 24544，`/src/main.ts` 的 `rawMouse` 命中 **3** | 這才是 T0 R1/R2 的量測 server（`--port 5174`）|
+| 4173 | 未 LISTEN | preview 會被 Playwright 自己拉起（無妨）|
+
+⇒ 在此狀態下跑全量 Playwright 有兩個後果，且**都不會報錯**：① `reuseExistingServer` 會沉默地重用 5173，
+於是整批 e2e（含 `raw-mouse-sampling.spec.ts`）測的是**別的樹**；② history 相關的 spec 會把測試 participant
+寫進**真實**的 session-history root。這正是 memory 記過的那個陷阱的最壞版本。設 `CI=1` 也救不了 ——
+`reuseExistingServer` 會變 false，但 5173 已被占用，Vite 會自動換 port，而 Playwright 的 readiness 檢查仍打
+5173，於是**照樣**連到別人的 server。
+
+**處置（不由本 gate 代做）**：兩支 dev server 屬於他人的 session（5174 是使用者的 R1/R2 量測入口，今日仍可能在用），
+**本 gate 不終止它們**。待 5173／5174 釋放後跑：
+
+```powershell
+npx.cmd playwright test --workers=1      # KI-030：多 worker 不可重現，門檻讀數一律 --workers=1
+```
+
+⚠️ 屆時**預期仍 exit 1**，唯一既存成因為 [KI-027](../../../../known_issue/)（`overlay-layering.spec.ts` 硬編 launch button 數），
+與本 WP 無關；若出現任何**其他**失敗，第一件事是複製整個 `test-results/`（KI-030 紀律）。
+T2 已在真實 Edge 上跑過 `tests/e2e/raw-mouse-sampling.spec.ts` **2 passed (48.5s)**，但那是 T2 當時的環境，
+本 gate **不把它當成現在的讀數**。
+
+### A-60.1～16 逐條
+
+| ID | 判定 | 指令 / 實際輸出 |
+|---|---|---|
+| **A-60.1** 真實 run 含 `mouseSamples`，樣本數 ≈ 事件率 × 時長 | ✅（實機，2026-09-09 R1 Run B）| arena `recorded` = **10,476**、`lockedRaw` = 10,476（**零遺漏**）、span **10.79 s** ⇒ 971 樣本/s，對照探針實測 `pointermove` 派發 **997 events/s**（比值 0.97）。<br>⚠️ 該匯出 JSON 依 D-57.T5-8 **不進 repo**，證據為使用者貼回的 `__aimDebug.recorder.snapshot()` 摘要；本 gate 未重跑（Playwright 閘同一阻塞）。 |
+| **A-60.2** 關閉錄製時匯出逐位相同 | ✅ | `npm.cmd test -- src/data/*.test.ts`（五檔）**182 passed**：關閉時 `snapshot()` **不存在** `mouseSamples`／`mouseSampling` 兩個 key（非空物件）。<br>更強的證據 —— 全 WP 範圍 `git diff -U0 715ffcb..HEAD -- "src/**/*.test.ts" "tests/**"` 的**移除行共 7 行**，逐行檢視：6 行在 runner test 的檔頭註解／helper 簽名，1 行是 `spiderWideDeterminismFixture.ts` 的 recorder 建構（改為吃 options）——**沒有一行在任何 `it()` 內**。⇒ 既有 golden／determinism／round-trip 期望值**零修改**（NFR-60.7）。 |
+| **A-60.3** 四 FPS parity 開／關逐位一致 | ✅ | `npm.cmd test -- tests/regression/wp60-raw-mouse-capture.test.ts` **20 passed**。比對面為 `TickRecord` **全欄位**攤平後逐格 `Object.is`（D-60.T2-2，非 `toEqual`／`toBeCloseTo`）。 |
+| **A-60.4** 每 tick `dYaw` = 該 tick 窗內原始樣本換算總和 | ✅ | 同檔，`'每個 tick 的 dYaw/dPitch = 落在該 tick 窗內 raw 樣本經同一 gain 換算的總和（逐位）'`：以生產的 `createAimIntegrator()` + 同一 `resolveMouseGain()` 重播半開窗 `[.., tick.t)`，1,200 筆全數歸位。 |
+| **A-60.5** 錄製開啟不新增 `Array.prototype.push` | ✅ | 同檔，含前置案例「微型 harness 真的消費到樣本（否則比較的是兩個 0）」——先證對照組非空，再證計數相同。 |
+| **A-60.6** 溢位獨立旗標、不改 `meta.suspect` | ✅ | 同檔 4 個案例（`overflow: true`、`recorded === capacity`、tick 資料完整、`suspect`／`recorderOverflow` 不變）＋ `DataRecorder.test.ts` 的 `'raw sample overflow is independent from tick recorder overflow'`。 |
+| **A-60.7** 缺席合法／宣稱不符擲指名 typed error | ✅ | `exportPayloadSchema.test.ts`（在上述 182 passed 內）：缺席合法、`mouseSamples` 形狀錯、`recorded > capacity`、`recorded ≠ dtUs.length`、只有 block 沒有 meta、只有 meta 沒有 block —— 六格全覆蓋，錯誤 `path` 逐一指名欄位。 |
+| **A-60.8** `segmentByTimeGap()` 對抗性 fixture 全綠 | ✅ | `npm.cmd test -- src/metrics/mouseSampleGaps.test.ts` **25 passed**，含 32.3 ms 門檻（`×1000 = 32299.999999999996`，唯一能分辨容差的一位小數門檻，D-60.T3-3）。 |
+| **A-60.9** lock 中斷的空洞與真實間隙可分辨 | ✅ | 同檔 Pointer Lock 消歧 5 案例；**且在真實腳本路徑上成立** —— 本 gate 重跑合成 run：`paused.json` 的 5,000 ms 空洞留在 `gaps`；T4 的 `raw-degraded` 那個被中斷覆蓋的 900 ms 空洞則被移出（`gapCountAtThreshold` 2 → 1）。 |
+| **A-60.10** 60 s run 的 `mouseSamples` ≤ 1.0 MB | ✅（60 s）／⚠️（300 s 上界）| T1 實測 60,000 筆 columnar block `JSON.stringify` = **567,316 bytes**（p50 1.714 ms／p95 2.377 ms）。R1 實機推算 9.46 bytes/sample ⇒ 60 s ≈ **571 KB**。<br>⚠️ **滿 300 s 的 run ≈ 2.85 MB**，對現行 3.4–3.8 MB 匯出為 **+75%**，超出 NFR-60.4 敘述裡「增幅 ≤ 30%」那個框。條文的 60 s 門檻通過，框不成立 ⇒ 開 **OQ-60.7**（不阻塞：`spider-shot-wide-v1` 實際 60–120 s ⇒ 0.57–1.1 MB）。 |
+| **A-60.11** `dt` 量化誤差 ≤ 10 µs | ✅（構造性）| `MouseSampleArena.snapshot()` 以 `Math.round((tMs[i]−tMs[i−1]) × 1000)` 產 `dtUs` ⇒ 單筆誤差**上界恆為 0.5 µs**，與資料無關。T0 synthetic round-trip 實測 max **0.369 µs**。<br>⚠️ 這證的是**本專案的量化**不破壞精度；瀏覽器 `event.timeStamp` 自身的解析度另由 `crossOriginIsolated`（R1 實測 `true`）保證，本 gate 未對硬體參考時鐘做外部校驗。 |
+| **A-60.12** 新模組純度掃描全綠 | ✅ | `mouseSampleGaps.test.ts` 的 NFR-60.6 案例：剝註解後掃 `three`／`node:`／`readFileSync`／`Date.now`／`performance.now`／`Math.random`／`document.`／`window.` —— 八個 pattern **全數 0 命中**。 |
+| **A-60.13** C-D3 零 importer + C-D4 零既有判準符號命中 | ✅ | 同檔：`src/**` 內 `mouseSampleGaps` 的 importer 數 **0**；剝註解後掃 `omegaDegPerSec`／`deriveDetectionMetrics`／`deriveRepositioningSuspicion` **0 命中**；構念語彙 `lift`／`reposition`／`suspicion`／`stall` **0 命中**。<br>唯一消費者 `scripts/spiderWideRepositioningRunner.ts` 刻意落在 `scripts/`（不進 `DrillMetricRegistry`、不進教練報告），報告只出**描述性**量。 |
+| **A-60.14** 全 repo 無 `LOD` 縮寫命名 | ✅ | `\bLOD\b` 掃 `src`／`tests`／`scripts`／`CONTEXT.md`／`stage13` 全部檔案 ⇒ **唯一命中是掃描器自己的測試標題**（`mouseSampleGaps.test.ts:321`，已具名排除）。 |
+| **A-60.15** 缺 `mouseSamples` 的舊匯出不被判 blocked | ✅（實跑）| `npm.cmd run analyze:spider-wide -- research/fixtures/exports/counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json --out <scratch>` exit 0 ⇒ 4 條 blocker **全部是本 WP 之前就有的**（drill／指示／DPI／母體），取樣 blocker **0 條**；取樣段落印「這**不是 blocker**」。 |
+| **A-60.16** frame-time p95 開／關差值符合門檻、無新增掉 tick | 🟡 **部分** | **node 側 ✅**：T2 的 throwaway harness（3,840 ticks／30,000 樣本、四次重複）Δp95 = **−0.0044 ～ +0.0007 ms**，**符號在重複之間翻轉** ⇒ run 間噪音 > 任何系統性差異；per-tick 成本 < tick 預算（7.8125 ms）的 0.1%。<br>**瀏覽器側 ❌ 未量測**：真實 frame log 的 p50/p95/p99 與真實掉 tick 數需要真實輸入流（F6，與 T0 同一個經驗性缺口）。`?rawMouse=1` 是它的入口；**本 gate 不宣稱量到**。 |
+
+**逐條結論**：16 條中 **14 條 ✅**、**1 條 ✅ 帶上界告警**（A-60.10 → OQ-60.7）、**1 條 🟡 部分**（A-60.16 瀏覽器側 = F6）。
+沒有任何一條是 ❌。
+
+### FR / NFR traceability 對帳（README §4.1 逐列）
+
+| FR / NFR | Task | 本 gate 覆核 |
+|---|---|---|
+| FR-60.1 逐筆保留 | T1+T2 | ✅ A-60.1／A-60.3 檔內「逐筆保留 raw counts，不做跨事件聚合」 |
+| FR-60.2 選配、預設關閉、關閉時逐位相同 | T1+T2 | ✅ A-60.2（含 7 行移除行的逐行歸因）|
+| FR-60.3 provenance | T1 | ✅ `MouseSamplingMeta` 六欄（`timeSource`／`deltaUnit` 為字面型別，parser 釘死）|
+| FR-60.4 缺席合法／宣稱不符 typed error | T1 | ✅ A-60.7 六格 |
+| FR-60.5 時間間隙切段 | T3 | ✅ A-60.8 |
+| FR-60.6 三種空洞可分辨 | T1+T3 | ✅ A-60.9；第三種（drill 未進行）為**結構性不存在於輸出**（`mouseSampleGaps.ts` 檔頭已明文）|
+| FR-60.7 同時鐘域可對齊 | T2 | ✅ A-60.4 + `t0Ms + Σ dtUs` 逐位還原事件時間戳 |
+| FR-60.8 操作者報告 | T4 | ✅ A-60.15 實跑 + 七欄子表；**且 D-60.X1 修掉了「事件率」那一欄的誤判** |
+| FR-60.9 溢位獨立旗標 | T1+T2 | ✅ A-60.6 |
+| NFR-60.1 決定性 | T2 | ✅ A-60.3 |
+| NFR-60.2 零額外配置 | T2 | ✅ A-60.5 |
+| NFR-60.3 容量 | T1 | ✅ 360,000 槽（1000 Hz × 300 s × 1.2）；R1 實機以 1005 Hz 可撐 358 s > 300 s，`overflow: false` |
+| NFR-60.4 匯出體積 | T0+T1 | ✅ 60 s／⚠️ 300 s 上界 → **OQ-60.7** |
+| NFR-60.5 時間精度 | T0+T1 | ✅ A-60.11（構造性 0.5 µs 上界）|
+| NFR-60.6 純度 | T3 | ✅ A-60.12 |
+| NFR-60.7 零回歸 | 全 | ✅ 三個閘 exit 0 + 期望值零修改；**Playwright 未取讀數**（見上）|
+
+⇒ traceability 表**無遺漏列**；唯一未被任何 task 完整覆蓋的是 **F6 的瀏覽器側讀數**，它不對應任何 FR/NFR 條文，
+而是 README §2.6 的失效模式門檻。
+
+### §2b 硬約束逐條覆核（T-exit 重新過閘）
+
+| 約束 | 覆核結果 |
+|---|---|
+| 禁 `Date.now()`、一律 `performance.now()`（ADR-4）| ✅ 仍成立。sim 內**零新增時鐘讀取**（樣本時間戳沿用 `ev.t` = `event.timeStamp`）；唯一 `performance.now()` 新增點在 `main.ts` 的 `pointer_lock` 事件（app 佈線層，非 sim）。純度掃描含 `Date.now`／`performance.now` 於 `mouseSampleGaps.ts` 0 命中。 |
+| cross-origin isolation 生效 | ✅ 前提未變；R1 實機 `crossOriginIsolated === true`。F4 已落成 T4 的 blocker（且依 D-60.T4-1 閘在 block 存在上）。 |
+| **決定性**（最高風險項）| ✅ 仍成立。本 gate 未動 `src/` 一行；A-60.3 的全欄位 `Object.is` 比對 20 passed。D-60.X1 的修復只在 `scripts/`（離線分析），結構上不可能觸及 sim。 |
+| 三迴圈邊界（ADR-2）| ✅ 仍成立。`src/input/**` 與 render 層對 `mouseSampleArena` 的 import 命中數 **0**（`wp60-raw-mouse-capture.test.ts` 掃 > 10 個模組，非空掃）。 |
+| 固定佈局（真 ring／preallocated arena／不 push 物件）| ✅ 仍成立。`MouseSampleArena` = 三個建構期配置的 `Float64Array`，drill 內不繞圈、滿了設旗標丟末端（D-60.P6）；A-60.5 的 push 計數不變。<br>ⓘ `snapshot()` 會配置三個 plain array（長度 = `recorded`）—— 那是 **drill 結束後**的一次性序列化路徑，與熱路徑紀律無關（`TickArena.snapshot()` 同一慣例）。 |
+| seeded RNG（GD-5）| ✅ 不觸及；`Math.random` 掃描 0 命中。 |
+| GD-6 場景幾何不進 sim／解析度與場景切換不改 sim | ✅ 不觸及（輸入域資料，不讀 `propBounds`／GLTF／`SceneConfig`）。 |
+| GD-9 場景資產授權 | ✅ 不觸及（本 WP 零場景資產）。 |
+| GD-11 FPSci 授權紅線 | ✅ 不觸及。移植來源為 `performance_analysis`，OQ-60.1 已收斂為無授權問題（D-60.P7）；`mouseSampleGaps.ts` 與 runner 皆**記名**來源檔與版本，且**未搬任何 Go 程式碼**（理由為技術性，見 D-60.P7）。 |
+| GD-7 hitbox 單一來源 | ✅ 不觸及（`hitbox` 零命中）。 |
+| C-D1／C-D5 | ✅ 仍成立。本 WP 只動 `src/`／`scripts/`／`tests/`／`docs/`，`research/` 未讀任何 TS 模組、`src/` 未 import Python 產物；**刻意不建立** Python 側實作（OQ-60.6）⇒ 不觸發 C-D5 的雙實作對表。 |
+| C-D3／C-D4（本 WP 真正的風險）| ✅ 仍成立，見 A-60.13。**且 D-60.X1 是這條紀律的實例**：一個會對每份真人 run 說錯話的 blocker，寧可改掉也不能留在報告裡。 |
+
+### WP-61 handoff（四項）
+
+| # | 交付物 | 狀態 / 值 |
+|---|---|---|
+| 1 | 實機事件率分布 | ✅ **R1 Run B**（連續移動 10.79 s，n = 10,475 個間隔）：`dtUs` p50 **995**／p95 **1660**／p99 **2235**／max 151,305 µs；瞬時事件率 **≈ 1005 Hz**、探針派發率 997 events/s。<br>**副產品（WP-61 的門檻可行範圍）**：剔除取鎖起始靜止段後，**連續移動期間的空洞上限 = 18.2 ms**，其餘 6–15 ms ⇒ 本硬體上時間間隙切段的**雜訊底線 ≈ 18 ms**，PA 的 30 ms 有約 1.7× headroom。⚠️ 一輪 / n = 11 個空洞 ⇒ **prior，非校準值**。<br>⚠️ 直方圖本身未入 repo（只有分位與空洞明細，見 §T0 R1）。 |
+| 2 | 抬起／停頓／一次到位的空洞長度分布 | ✅ **且結論是負面的**（R2，各 10 次）：lift 與 pause 的 >1 s 空洞**範圍重疊**（lift 1257–1850 ms、pause 1066–1363 ms），oneshot 無 >1 s 空洞但 max 270.4 ms。⇒ **D-60.R2-1：空洞長度不足以可靠分離 lift/pause**，不得據此凍結 30 ms／1 s 或任何分類門檻。<br>⚠️ 限制逐條見 §T0 R2；逐筆軌跡不入 repo，本 session 無法重算。 |
+| 3 | PA 十四參數與語意抄本 + 「哪些需在角度空間重推」標註 | ✅ 見 §T0 automated audit 的表（十四列逐一標註 time-domain / **px/s 空間需重推** / dimensionless / counts / sample-count）。來源檔與 ADR 已記名（D-60.P7 要求）。 |
+| 4 | OQ-60.4 構念歸屬結論 | 🔴 **未交付 —— 待使用者拍板**。T3 已以**中性時序語彙**交付原語（`gap`／`segment`／`unlocked`，掃描釘死零構念語彙命中），故**沒有預先佔用構念名**；但「新判準與 `deriveRepositioningSuspicion()` 是取代還是並存」仍是研究決定。<br>⇒ **WP-61 T0 的第一件事**，不阻塞 WP-60 收尾（README §1.5 明列 deadline = WP-61 T0）。 |
+
+**WP-61 另需但本 WP 不提供**：高刷（≥ 144 Hz）真人標註 cohort，規格見
+[`spider-wide-recording-spec.md`](../../../../operational/spider-wide-recording-spec.md)。
+
+### 本 WP 明確**未**達成的三件事（不得被「T-exit ✅」蓋掉）
+
+1. **F6 瀏覽器 frame log 開／關對照**（A-60.16 的另一半）—— 需真實輸入流；入口 `?rawMouse=1` 已具備。
+2. **T3 DoD 第 9 項：真人取樣的區段／間隙分布** —— T0 R2 只回填**已排序的**統計摘要，`segmentByTimeGap()` 吃的是**有序** `dtUs` 串，摘要不能代入；全 worktree 無任何含 `mouseSamples` 的匯出檔。需使用者以 `?rawMouse=1` 跑一輪並提供匯出（或在本機貼回以本模組計算的區段摘要）。
+3. **全量 Playwright 讀數** —— port 5173 被他人的 dev server 占用（見上）。
+
+⇒ 故 **T0 維持 🟡**（R1 ✅／R2 已收斂為負面結論／F6 未量測），**T3 維持 🟡**（原語與掃描全綠，真人分布未取）。
+T-exit 判定為 **✅ 帶三項具名缺口**：本 WP 交付的是「**可用且已知其極限**的原始取樣管線」——
+擷取契約、決定性、對齊、消歧、操作者可見度全部有指令與輸出；缺的三項**都是需要真人／真瀏覽器的經驗性讀數**，
+不是實作缺口。
+
 ## Surprises
 
 1. **要偵測抬滑鼠所需的原始資料，這個專案其實一直都在收 —— 只是在進匯出前一步被丟掉。** [`InputSampler.ts:137-139`](../../../../../src/input/InputSampler.ts#L137-L139) 早在 WP-3（ADR-5，「1000 Hz 滑鼠下不遺失中間軌跡」）就用 `getCoalescedEvents()` 逐筆保留了 sub-frame 樣本與各自的 `event.timeStamp`；到了 [`SimLoop.ts:96-99`](../../../../../src/loop/SimLoop.ts#L96-L99) 才被 `accumulateMouse` 聚合成逐 tick 的 `dYaw`／`dPitch`。<br>⇒ 本 WP 的性質因此不是「新增一種量測」，而是**停止丟棄一份已經付過成本的資料**。這也解釋了為什麼 WP-57 的抬滑鼠標註只能做到「角速度停滯」—— 不是判準沒設計好，是它拿到的資料裡已經沒有那個資訊了。
@@ -472,6 +622,7 @@ npm.cmd run analyze:spider-wide -- research/fixtures/exports/counterstrafe_ad_v1
 | OQ-60.4 新判準與 `deriveRepositioningSuspicion()` 的關係 | 🔴 開放（T3 已以**中性時序語彙**交付原語並掃描釘死，故未預先佔用構念名；歸屬仍待拍板）| 使用者 + 研究 | WP-61 T0（不阻塞 WP-60）|
 | OQ-60.5 高輪詢率（4000／8000 Hz）是否支援 | ✅ **T1 contract 凍結**：預設容量 1000 Hz × drill seconds × 1.2 headroom；高輪詢率不預先支援，超出以 `meta.mouseSampling.overflow` 具名退化。R1 實測若顯示本專案常態 >1000 Hz，需另開決策升版。 | Engineering | — |
 | OQ-60.6 是否同步進 `research/` Python 側 | 🟡 有建議值（本 WP 內不做）| Engineering | WP-61 |
+| **OQ-60.7**（T-exit 新開）長 drill 的匯出體積政策 | 🔴 **開放**：NFR-60.4 的 60 s 門檻（≤ 1.0 MB）**通過**（實測 571 KB），但條文附帶的「增幅 ≤ 30%」框在**滿 300 s** 的 run 上不成立 —— 原始取樣 ≈ 2.85 MB，對現行 3.4–3.8 MB 匯出為 **+75%**。<br>**不阻塞**：`spider-shot-wide-v1` 實際 60–120 s ⇒ 0.57–1.1 MB。<br>**候選處置**：(a) 只修條文，把「≤ 30%」改成「60 s ≤ 1.0 MB，長 drill 另計」；(b) 為長 drill 加降取樣或分段匯出政策；(c) 讓 `mouseSampleCapacity` 由 drill 長度而非 `maxDrillSeconds` 推導。**在有人真的錄一份 > 200 s 的 raw run 之前不值得選。** | 使用者 + Engineering | 首次出現 > 200 s 的 `?rawMouse=1` run |
 
 ## 規劃期未解的前提風險
 

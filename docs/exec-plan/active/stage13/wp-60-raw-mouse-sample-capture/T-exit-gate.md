@@ -36,7 +36,8 @@
 5. 覆核 §2b 硬約束表逐條仍成立（特別是決定性、固定佈局、三迴圈邊界）。
 6. 產出 §5 的 WP-61 handoff 四項。
 7. 更新 [`../README.md`](../README.md) §2 的 WP-60 狀態、[`docs/exec-plan/README.md`](../../../README.md) §2 的 stage13 區塊（**只 stage 自己的行**，見 README §6 worktree 紀律）。
-8. 視需要入帳 **GD-35**（原始輸入取樣的匯出邊界與 C-D4 歸屬）到 [`DECISIONS.md`](../../../DECISIONS.md)。
+8. 視需要入帳 ~~**GD-35**~~ → **GD-36**（原始輸入取樣的匯出邊界與 C-D4 歸屬）到 [`DECISIONS.md`](../../../DECISIONS.md)。
+   ⚠️ 規劃期預留的 `GD-35` 已被平行 session 的 WP-58 T0 取用，依 GD-15「先採納先得」順延 —— **已於 2026-09-09 以 GD-36 入帳**。
 
 ## WP-61 handoff（必須交出，否則 WP-61 不得開工）
 
@@ -51,13 +52,15 @@
 
 ## Definition of Done
 
-- [ ] A-60.1～16 逐條有指令與輸出；未達成者**明確列出並歸因**，不得省略。
-- [ ] 四個收尾閘的實際數字記入 `progress.md`；`test:ci` 若 exit 1，成因逐條歸屬（既存 KI vs 本 WP）。
-- [ ] FR/NFR traceability 表逐條對帳完成。
-- [ ] §2b 硬約束表逐條覆核，變動處已更新。
-- [ ] WP-61 handoff 四項齊備。
-- [ ] `../README.md` §2 與 `docs/exec-plan/README.md` §2 狀態已同步（只含自己的變更行）。
-- [ ] `progress.md` 的 Decision Log／Surprises／Open Questions 三節完整；未收斂的 OQ 標明 owner 與 deadline。
+> 執行紀錄：[progress.md](progress.md) §T-exit gate（2026-09-09）。
+
+- [x] A-60.1～16 逐條有指令與輸出；未達成者**明確列出並歸因**，不得省略。<br>14 ✅／1 ✅ 帶上界告警（A-60.10 → OQ-60.7）／1 🟡（A-60.16 瀏覽器側 = F6），無 ❌。
+- [x] 四個收尾閘的實際數字記入 `progress.md`；`test:ci` 若 exit 1，成因逐條歸屬（既存 KI vs 本 WP）。<br>typecheck ×2 / 全量 Vitest（2614 passed）/ `vite build` **exit 0**；**全量 Playwright 未執行**且已具名歸因（port 5173 被主 checkout 的 dev server 占用，服務的是不含 WP-60 的程式碼 + 真實 history root ⇒ 跑了會沉默地測錯的樹）。因此 `test:ci` 也未取讀數 —— **不宣稱通過**。
+- [x] FR/NFR traceability 表逐條對帳完成。
+- [x] §2b 硬約束表逐條覆核，變動處已更新。
+- [ ] WP-61 handoff 四項齊備。<br>①②③ ✅；**④ OQ-60.4 構念歸屬待使用者拍板**（WP-61 T0 的第一件事，不阻塞本 WP 收尾）。
+- [x] `../README.md` §2 與 `docs/exec-plan/README.md` §2 狀態已同步（只含自己的變更行）。<br>後者原**無** stage13 區塊，本 gate 新增「階段 M」整段（未動 stage12 任何一行）。
+- [x] `progress.md` 的 Decision Log／Surprises／Open Questions 三節完整；未收斂的 OQ 標明 owner 與 deadline。<br>新增 D-60.X1、Surprises 9、OQ-60.7。
 
 ## Commit
 
