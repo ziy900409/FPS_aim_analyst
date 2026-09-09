@@ -1,16 +1,16 @@
 # WP-60 — Task Checklist
 
 > Tech spec：[README.md](README.md) · Running log：[progress.md](progress.md) · Stage 索引：[../README.md](../README.md)
-> **T-exit 後續**：收尾計畫見 [T-exit-followup.md](T-exit-followup.md)；TF1 F6 已完成，TF2 真人分布／TF3 Playwright 待執行。
+> **T-exit 後續**：收尾計畫見 [T-exit-followup.md](T-exit-followup.md)；TF1 F6／TF2 真人分布已完成，僅 TF3 Playwright 待執行。
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
 | ✅ | **T0** Entry gate／取樣充分性稽核／實機 PoC | [T0-entry-gate.md](T0-entry-gate.md) | 無（WP-57 已交付，只讀不改）| **High**；R1 已通過，R2 得出空洞長度不足以可靠分離 lift/pause 的負面結論；F6 實機 A/B 通過（Δp95 −0.005 ms、未新增 over-budget windows）|
 | ✅ | **T1** 擷取契約：arena／型別／strict parser | [T1-capture-contract.md](T1-capture-contract.md) | 依使用者明確指示 override T0 gate；OQ-60.2／60.3／60.5 已於 T1 contract 凍結 | Med |
 | ✅ | **T2** SimLoop 接線與決定性證明 | [T2-recorder-wiring.md](T2-recorder-wiring.md) | T1；依使用者明確指示續行（T0 經驗性 gate 仍 blocked，故 app 佈線層 opt-in **預設關閉**，見 D-60.T2-1）| **High** |
-| 🟡 | **T3** 時間間隙切段原語與 Pointer Lock 消歧 | [T3-time-gap-primitive.md](T3-time-gap-primitive.md) | T1（OQ-60.1 已於 2026-09-08 收斂，不再阻塞）| Med；**DoD 的真人取樣分布一項未完成** —— 該 run 從未入 repo，本 session 取不到（見 progress §T3）|
+| ✅ | **T3** 時間間隙切段原語與 Pointer Lock 消歧 | [T3-time-gap-primitive.md](T3-time-gap-primitive.md) | T1（OQ-60.1 已於 2026-09-08 收斂，不再阻塞）| Med；真人 B 組 `activeRateHz=708 Hz`，18／30／50 ms 區段／間隙分布已實跑，DoD 第 9 項補齊（見 progress §TF2）|
 | ✅ | **T4** 操作者可見度：取樣健康度報告 | [T4-operator-visibility.md](T4-operator-visibility.md) | T2 + T3 | Low；六欄 additive、四個 blocker 全閘在 `mouseSamples` 存在上（缺席仍合法），legacy 與含取樣的樣本各實跑一次（見 progress §T4）|
-| ✅ | **T-exit** 驗收與 WP-61 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T4 | Med；A-60.1～16 **15 ✅ / 1 ✅ 帶上界告警**，無 🟡／❌。TF1 F6 已補齊；具名缺口為 T3 真人分布（TF2）與全量 Playwright（TF3）。本 gate 落地修復 **D-60.X1** |
+| ✅ | **T-exit** 驗收與 WP-61 handoff | [T-exit-gate.md](T-exit-gate.md) | T1～T4 | Med；A-60.1～16 **15 ✅ / 1 ✅ 帶上界告警**，無 🟡／❌。TF1 F6 與 TF2 真人分布已補齊；唯一具名缺口為全量 Playwright（TF3）。本 gate 落地修復 **D-60.X1** |
 
 **排程**：T0 是 **go/no-go 閘**（R1：若實機事件率 < 500 Hz，本 WP 前提崩塌，停止並回報 —— 那也是一個合格的 T0 結論）。T1 綠燈後 **T2 與 T3 可並行**（T3 只吃匯出型別，以合成 block 測試，不需要擷取路徑真的在跑）。
 
