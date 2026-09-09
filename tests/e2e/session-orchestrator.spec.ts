@@ -328,7 +328,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
   // ---------------------------------------------------------------------------------------------
 
   /** The three families the program tests interleave, and the one drill each contributes. */
-  const PROGRAM_DRILLS = ['tracking_v1', 'detection_popin_v1', 'spider-shot-wide-v1'] as const;
+  const PROGRAM_DRILLS = ['tracking_scene_v1', 'detection_popin_v1', 'spider-shot-wide-v1'] as const;
 
   async function openPlanSetup(page: Page, participantId: string) {
     await waitForHarness(page);
@@ -524,5 +524,322 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
       PROGRAM_DRILLS[2],
       PROGRAM_DRILLS[1],
     ]);
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // WP-58 T6 — the *live* scheduler: compile -> cursor -> real drill -> per-rep export -> rest
+  // overlay -> done, in a real browser.
+  //
+  // Driven through the dev-only `__fpsTest.startSessionPlanWithoutGate()` seam because the
+  // eligibility gate cannot be passed under automation — measured, not assumed: the gate's own
+  // report in this environment reads `native FAIL — 1280x720 vs 1920x1080` and
+  // `perf FAIL — warmup p95 16.83ms vs 地板 8.33ms` (PERF_FLOOR_MS is a 120 Hz floor; headless rAF
+  // is ~17 ms). The seam still *runs* the real gate and hands its genuine, failing report to
+  // `experimentSession.enter()`, so nothing here fabricates an eligibility pass; only the refusal
+  // is skipped. Everything after that point — compiler, runner, drill load, export, overlay — is
+  // the production path. The DOM route as far as `#eligibility-gate` is covered by the form tests
+  // above, and the pointer-lock playthrough stays manual (full-drill.spec.ts header).
+  //
+  // Drill choice is constrained twice. (1) Only scene-*pinned* drills can be scheduled from a cold
+  // boot: an unpinned drill inherits whatever scene is loaded, and `tracking_v1` on the boot scene
+  // `field-low` fails clearance against its rocks and trees — which is exactly what the abort test
+  // below uses as its fault injection. (2) The run must end without a human aiming, so the roster's
+  // shortest self-terminating drills are used: `tracking_scene_v1` (~23 s of timed presentations),
+  // `detection_popin_v1` (~65 s of pop-in timeouts) and `spider-shot-wide-v1` (60 s time limit).
+  // Nothing runs faster than real time and no `DrillConfig` is shortened for the test.
+  // ---------------------------------------------------------------------------------------------
+
+  type SessionPlanState = {
+    phase: 'idle' | 'run' | 'rest' | 'done';
+    drillId?: string;
+    itemIndex?: number;
+    repIndex?: number;
+    boundary?: 'rep' | 'drill' | 'family';
+    nextDrillId?: string;
+    experimentActive: boolean;
+  };
+  type PhaseSample = { readonly state: SessionPlanState; readonly t: number };
+
+  type SessionPlanSelectionArg =
+    | { mode: 'frozen'; families: string[]; restSeconds: number; includeWarmup: boolean }
+    | {
+        mode: 'custom';
+        items: { drillId: string; reps: number }[];
+        drillRestSeconds: number;
+        familyRestSeconds: number;
+      };
+
+  /**
+   * Starts the live Session Plan and records every phase transition inside the page, on rAF,
+   * stamped with `performance.now()` (ADR-4 — never `Date.now()`). Sampling in the page instead of
+   * polling over the wire is what makes the measured rest durations trustworthy to about a frame.
+   * A rest emits exactly one sample: `sessionPlanState()` deliberately omits `remainingMs`, so the
+   * countdown does not churn the sample log.
+   */
+  async function runLiveSessionPlan(
+    page: Page,
+    participantId: string,
+    selection: SessionPlanSelectionArg,
+    timeoutMs: number,
+  ): Promise<{ samples: PhaseSample[]; downloads: string[]; statuses: string[] }> {
+    const downloads: string[] = [];
+    page.on('download', (download) => void downloads.push(download.suggestedFilename()));
+
+    await page.evaluate(() => {
+      const target = window as unknown as {
+        __fpsTest: { sessionPlanState(): { phase: string } };
+        __t6samples?: { state: { phase: string }; t: number }[];
+        __t6statuses?: string[];
+      };
+      const samples: { state: { phase: string }; t: number }[] = [];
+      const statuses: string[] = [];
+      target.__t6samples = samples;
+      target.__t6statuses = statuses;
+
+      // Statuses are watched, not sampled. Some of them live for less than a frame: when the first
+      // drill's scene is already loaded, `startSessionPlan()` runs from the "no warmup" notice to
+      // the first run ordinal without ever yielding to rAF, so a per-frame sampler would miss the
+      // notice entirely (it did, on the first attempt at this test). A MutationObserver sees every
+      // write regardless of when it happens.
+      const statusEl = document.getElementById('protocol-status');
+      if (statusEl !== null) {
+        const record = (): void => {
+          const text = statusEl.textContent ?? '';
+          if (statuses.at(-1) !== text) statuses.push(text);
+        };
+        record();
+        new MutationObserver(record).observe(statusEl, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+        });
+      }
+
+      let previousState = '';
+      const tick = (): void => {
+        const state = target.__fpsTest.sessionPlanState();
+        const key = JSON.stringify(state);
+        if (key !== previousState) {
+          previousState = key;
+          samples.push({ state, t: performance.now() });
+        }
+        if (state.phase !== 'done') requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+
+    await page.evaluate(
+      async (arg) => {
+        await (
+          window as unknown as {
+            __fpsTest: {
+              startSessionPlanWithoutGate(participantId: string, selection: unknown): Promise<void>;
+            };
+          }
+        ).__fpsTest.startSessionPlanWithoutGate(arg.participantId, arg.selection);
+      },
+      { participantId, selection },
+    );
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () =>
+              (window as unknown as { __fpsTest: { sessionPlanState(): SessionPlanState } }).__fpsTest
+                .sessionPlanState().phase,
+          ),
+        { timeout: timeoutMs, intervals: [500] },
+      )
+      .toBe('done');
+
+    const samples = (await page.evaluate(
+      () => (window as unknown as { __t6samples: PhaseSample[] }).__t6samples,
+    )) as PhaseSample[];
+    const statuses = await page.evaluate(
+      () => (window as unknown as { __t6statuses: string[] }).__t6statuses,
+    );
+    return { samples, downloads, statuses };
+  }
+
+  /** Every rest the run actually served, with the wall time until the next phase, in ms. */
+  function measuredRests(
+    samples: readonly PhaseSample[],
+  ): { boundary: string; nextDrillId: string; ms: number }[] {
+    const rests: { boundary: string; nextDrillId: string; ms: number }[] = [];
+    for (let i = 0; i < samples.length; i++) {
+      const sample = samples[i];
+      const next = samples[i + 1];
+      if (sample.state.phase !== 'rest' || next === undefined) continue;
+      rests.push({
+        boundary: sample.state.boundary ?? '',
+        nextDrillId: sample.state.nextDrillId ?? '',
+        ms: next.t - sample.t,
+      });
+    }
+    return rests;
+  }
+
+  test('WP-58 T6：自訂 program 在真瀏覽器跑完 3 家族 × 2 reps —— 休息時長、6 份唯一匯出、收工狀態', async ({
+    page,
+  }) => {
+    // Six real drills (~23s + ~65s + 60s, twice) plus 7s of rests, with headroom for scene loads
+    // and countdowns.
+    test.setTimeout(15 * 60_000);
+    await waitForHarness(page);
+
+    const { samples, downloads } = await runLiveSessionPlan(
+      page,
+      't6-live-custom',
+      {
+        mode: 'custom',
+        items: [
+          { drillId: PROGRAM_DRILLS[0], reps: 2 },
+          { drillId: PROGRAM_DRILLS[1], reps: 2 },
+          { drillId: PROGRAM_DRILLS[2], reps: 2 },
+        ],
+        drillRestSeconds: 1,
+        familyRestSeconds: 2,
+      },
+      13 * 60_000,
+    );
+
+    // FR-58.9 — the cursor walked the compiled 11 steps, in order, and each run knows where it is.
+    const walked = samples.filter(
+      (sample) => sample.state.phase === 'run' || sample.state.phase === 'rest',
+    );
+    expect(walked.map((sample) => sample.state.phase)).toEqual([
+      'run',
+      'rest',
+      'run',
+      'rest',
+      'run',
+      'rest',
+      'run',
+      'rest',
+      'run',
+      'rest',
+      'run',
+    ]);
+    expect(
+      walked
+        .filter((sample) => sample.state.phase === 'run')
+        .map((sample) => [sample.state.drillId, sample.state.itemIndex, sample.state.repIndex]),
+    ).toEqual([
+      [PROGRAM_DRILLS[0], 0, 0],
+      [PROGRAM_DRILLS[0], 0, 1],
+      [PROGRAM_DRILLS[1], 1, 0],
+      [PROGRAM_DRILLS[1], 1, 1],
+      [PROGRAM_DRILLS[2], 2, 0],
+      [PROGRAM_DRILLS[2], 2, 1],
+    ]);
+
+    // FR-58.5 — each rest served the duration carried by its own step, not one global value.
+    const rests = measuredRests(samples);
+    expect(rests.map((rest) => rest.boundary)).toEqual(['rep', 'family', 'rep', 'family', 'rep']);
+    for (const rest of rests) {
+      const expectedMs = rest.boundary === 'family' ? 2_000 : 1_000;
+      const label = `${rest.boundary} rest before ${rest.nextDrillId}`;
+      // The lower bound is strict: a rest must never be served short. The upper bound is loose
+      // because the next drill's load (and its scene's GLTF) happens inside the same transition —
+      // the runner publishes the `run` phase only after `loadDrillById()` resolves.
+      expect(rest.ms, label).toBeGreaterThanOrEqual(expectedMs - 100);
+      expect(rest.ms, label).toBeLessThan(expectedMs + 10_000);
+    }
+
+    // FR-58.15 — one export per rep, and `startedAt` really does keep the basenames apart (OQ-58.2).
+    expect(downloads).toHaveLength(6);
+    expect(new Set(downloads).size).toBe(6);
+
+    // The session is over: cursor done, `experimentSession.exit()` ran, no rest overlay left behind.
+    const last = samples.at(-1)!;
+    expect(last.state.phase).toBe('done');
+    expect(last.state.experimentActive).toBe(false);
+    await expect(page.locator('#rest-overlay')).toBeHidden();
+  });
+
+  test('WP-58 T6：frozen 標準 Assessment 軌在真瀏覽器跑完 —— 家族順序、單一休息秒數、無熱身提示', async ({
+    page,
+  }) => {
+    test.setTimeout(8 * 60_000);
+    await waitForHarness(page);
+
+    const { samples, downloads, statuses } = await runLiveSessionPlan(
+      page,
+      't6-live-frozen',
+      // `detection` has no warmup drill (only `counterstrafe` does), so this also exercises the
+      // "no warmup for this family" branch without paying for two 120s counterstrafe runs.
+      { mode: 'frozen', families: ['detection', 'spider-shot-wide'], restSeconds: 2, includeWarmup: true },
+      7 * 60_000,
+    );
+
+    // `includeWarmup` was asked for, but `detection` has no warmup drill, so the operator is told
+    // so and the program starts on the first measured run. The notice is transient (the run
+    // ordinals overwrite it), hence the sampled history rather than a post-hoc read.
+    expect(statuses.some((status) => status.includes('本家族無熱身'))).toBe(true);
+    // Warmup runs are not numbered: two families means "1/2" then "2/2", exactly as before WP-58.
+    expect(statuses.some((status) => status.includes('正式測試 1/2'))).toBe(true);
+    expect(statuses.some((status) => status.includes('正式測試 2/2'))).toBe(true);
+    await expect(page.locator('#protocol-status')).toContainText('Session Plan 完成');
+
+    // FR-58.10 — the frozen program is each selected family's representative drill, in the
+    // operator's order, with exactly one rest of the single `restSeconds` between them.
+    const walked = samples.filter(
+      (sample) => sample.state.phase === 'run' || sample.state.phase === 'rest',
+    );
+    expect(walked.map((sample) => sample.state.phase)).toEqual(['run', 'rest', 'run']);
+    expect(
+      walked.filter((sample) => sample.state.phase === 'run').map((sample) => sample.state.drillId),
+    ).toEqual(['detection_popin_v1', 'spider-shot-wide-v1']);
+    const rests = measuredRests(samples);
+    expect(rests.map((rest) => rest.boundary)).toEqual(['family']);
+    expect(rests[0].ms).toBeGreaterThanOrEqual(1_900);
+    expect(rests[0].ms).toBeLessThan(12_000);
+
+    expect(downloads).toHaveLength(2);
+    expect(new Set(downloads).size).toBe(2);
+    expect(samples.at(-1)!.state.experimentActive).toBe(false);
+    await expect(page.locator('#rest-overlay')).toBeHidden();
+  });
+
+  test('WP-58 T6：program 中途 drill 載入失敗 → 中止、錯誤可見、rest overlay 不殘留（FR-58.11）', async ({
+    page,
+  }) => {
+    test.setTimeout(5 * 60_000);
+    await waitForHarness(page);
+
+    // Real fault injection, no stubbing: `tracking_v1` pins no scene, so it inherits whichever one
+    // is loaded, and `tracking_scene_v1` leaves `field-low` loaded — whose rocks and trees the
+    // wider `tracking_v1` envelope cannot clear. The second run therefore fails inside the real
+    // `loadDrillById()`, on the unattended auto-advance out of a rest: the path that would strand
+    // the rest overlay on screen forever if it were not handled.
+    const { samples, downloads } = await runLiveSessionPlan(
+      page,
+      't6-live-abort',
+      {
+        mode: 'custom',
+        items: [
+          { drillId: 'tracking_scene_v1', reps: 1 },
+          { drillId: 'tracking_v1', reps: 1 },
+        ],
+        drillRestSeconds: 1,
+        familyRestSeconds: 1,
+      },
+      4 * 60_000,
+    );
+
+    expect(samples.map((sample) => sample.state.phase)).toEqual(['idle', 'run', 'rest', 'done']);
+    expect(downloads).toHaveLength(1);
+
+    // The operator is told why, in the same status line the rest of the Session Plan uses.
+    const status = page.locator('#protocol-status');
+    await expect(status).toContainText('本次 session 已中止');
+    await expect(status).toContainText('clearance');
+    await expect(page.locator('#rest-overlay')).toBeHidden();
+
+    // An aborted session is *not* formally exited — `experimentSession.exit()` only runs on the
+    // completion branch. Pinned here so the asymmetry is visible rather than folklore; see
+    // progress.md (T6 open questions).
+    expect(samples.at(-1)!.state.experimentActive).toBe(true);
   });
 });

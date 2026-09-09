@@ -42,7 +42,7 @@ import {
 } from './display/ProtocolRunner.ts';
 import { brTrackingProtocol } from './display/brTrackingProtocol.ts';
 import { resolutionDetectionProtocol } from './display/resolutionDetectionProtocol.ts';
-import { probeWarmupP95Ms } from './display/eligibilityGate.ts';
+import { probeWarmupP95Ms, runEligibilityGate } from './display/eligibilityGate.ts';
 import { createExperimentSession } from './display/experimentSession.ts';
 import { PERF_FLOOR_MS, SESSION_PLAN_MIN_CONDITION } from './display/constants.ts';
 import { createFrameLog, frameLogCapacity } from './display/frameLog.ts';
@@ -60,7 +60,11 @@ import {
   type SessionRunnerHandle,
   type SessionRunnerPhase,
 } from './session/SessionRunner.ts';
-import { compileSessionProgram, deriveProgramFamilyOrder } from './session/sessionProgram.ts';
+import {
+  compileSessionProgram,
+  deriveProgramFamilyOrder,
+  type ProgramBoundary,
+} from './session/sessionProgram.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './session/sessionSchedule.ts';
 import { createTrackingPilotSession, type TrackingPilotSessionHandle } from './pilot/trackingPilotSession.ts';
 import { sharedState } from './state/SharedState.ts';
@@ -1138,6 +1142,51 @@ if (import.meta.env.DEV) {
     }): Promise<HistorySaveState> {
       const payload = applyHistoryOverrides(fpsTestHarness.forceExportJSON(), overrides);
       return showResultAndTrackHistory(payload);
+    },
+    // WP-58 T6 — E2E-only seam. Enters a live Session Plan without *enforcing* the eligibility
+    // gate, then hands over to the real `startSessionPlan()`. Automation cannot pass that gate
+    // (PERF_FLOOR_MS is a 120 Hz floor while headless rAF is ~17 ms, and `screen` is 1280x720), so
+    // without this seam the whole scheduler runtime — compile -> cursor -> per-rep export -> rest
+    // overlay -> done -> exit — would have no real-browser coverage at all. The gate is still run
+    // and its genuine (failing) report is what `experimentSession.enter()` records: this fabricates
+    // no eligibility pass, it only skips the refusal. Everything downstream is the production path.
+    async startSessionPlanWithoutGate(participantId: string, selection: SessionPlanSelection): Promise<void> {
+      const report = runEligibilityGate(SESSION_PLAN_MIN_CONDITION, await probeWarmupP95Ms());
+      experimentSession.enter(report);
+      sessionSetupValues = { participantId };
+      pendingSessionPlanSelection = selection;
+      await startSessionPlan();
+    },
+    /** WP-58 T6 — read-only view of the live session cursor, for E2E to follow a running program. */
+    sessionPlanState(): {
+      readonly phase: SessionRunnerPhase['kind'];
+      readonly drillId?: string;
+      readonly itemIndex?: number;
+      readonly repIndex?: number;
+      readonly boundary?: ProgramBoundary;
+      readonly nextDrillId?: string;
+      readonly experimentActive: boolean;
+    } {
+      const phase = sessionPlanRunner.phase;
+      const experimentActive = experimentSession.active;
+      if (phase.kind === 'run') {
+        return {
+          phase: phase.kind,
+          drillId: phase.step.drillId,
+          itemIndex: phase.step.itemIndex,
+          repIndex: phase.step.repIndex,
+          experimentActive,
+        };
+      }
+      if (phase.kind === 'rest') {
+        return {
+          phase: phase.kind,
+          boundary: phase.step.boundary,
+          nextDrillId: phase.step.nextDrillId,
+          experimentActive,
+        };
+      }
+      return { phase: phase.kind, experimentActive };
     },
     historySaveState(): HistorySaveState {
       return historyPersistence.state;
