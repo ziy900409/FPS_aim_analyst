@@ -16,7 +16,7 @@
 1. **T0 已通過（2026-09-09）** —— OQ-61.1（構念歸屬）、OQ-61.3（`KeyL`）與評估契約已凍結；T1 可開。
 2. **T2 的資料充分性閘未過不得開 T3** —— 髒標籤跑出來的「分不開」不可歸因。<br>　⛔ **現況（2026-09-09）：判定 `blocked-by-data`** —— cohort 尚未錄製（真人 session 0／2、lift 標註 0／30、pause 標註 0／30）。T2 的儀器已全部落地並驗證，缺的只有 step 1 的錄製。
 3. **T2 的 F3 檢定判定「標註通道不可用」時直接跳 T-exit** —— 不得續行 T3。
-4. **T3 判定非 `promote` 時不執行 T4** —— 直接走 T-exit 的負面結論路徑。<br>　⛔ **現況（2026-09-09）：T3 判定 `blocked-by-data`** —— 消融儀器（四層、θ×window sweep、session 隔離分割、凍結決策規則、seeded 可重現報表）已全部落地並以合成對照 fixture 端到端驗證；缺的仍只有真人 cohort。**T4 不執行。**<br>　⚠️ `blocked-by-data` **不是** `not-reliably-separable`：本 WP 至今未對可分性作出任何宣稱。
+4. **T3 判定非 `promote` 時不執行 T4** —— 直接走 T-exit 的負面結論路徑。<br>　⛔ **現況（2026-09-09）：T3 判定 `blocked-by-data`** —— 消融儀器（四層、θ×window sweep、session 隔離分割、凍結決策規則、seeded 可重現報表）已全部落地並以合成對照 fixture 端到端驗證；缺的仍只有真人 cohort。**T4 不執行。**<br>　⚠️ `blocked-by-data` **不是** `not-reliably-separable`：本 WP 至今未對可分性作出任何宣稱。<br>　🔁 **2026-09-09 覆核（T4 step 1）：閘仍未通過。** `~/Downloads` 12 份 240 Hz 匯出（較 T3 時多 6 份）經 `analyze:lift-cohort` **12／12 作廢** —— 皆未加 `?rawMouse=1&annotation=1`（無 `mouseSamples`、`annotation` 事件 0）。詳見 [progress.md](progress.md) §T4 前置閘覆核。
 
 ## Package Definition of Done
 

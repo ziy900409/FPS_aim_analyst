@@ -10,7 +10,7 @@ T2 與 T3 的儀器**全部落地並跑過**（逐份可用性覆核、標註完
 
 ⚠️ **T3 判 `blocked-by-data` 不等於「分不開」** —— 本 WP 至今對可分性**未作任何宣稱**，也不得作。`not-reliably-separable` 要等資料與標註兩個閘都過才有資格產出。
 
-⇒ **T4 不執行**（序列閘 ④）。cohort 錄好之後直接跑，不需要再寫程式：
+⇒ **T4 不執行**（序列閘 ④）。**2026-09-09 已就 T4 step 1 重新覆核前置閘：仍未通過**（12 份新匯出全數作廢，皆因未加 `?rawMouse=1&annotation=1`；見 §T4 前置閘覆核）。cohort 錄好之後直接跑，不需要再寫程式：
 
 ```bash
 npm run analyze:lift-cohort -- <匯出資料夾> --manifest <manifest.json>   # 判定：sufficient / blocked-by-data / annotation-channel-unusable
@@ -37,6 +37,7 @@ manifest 需要 `instructionClass` 與 `sessionId`（`spider-wide-recording-spec
 - **2026-09-09**：T0 entry gate 完成。Baseline：HEAD `10ee3561ec81fd78b0fe59d125363ba1fc853c35`；`git status --short` 未列出變更，但 sandbox 讀 global ignore 與 `.pytest_cache/` 有 permission warning；`npm.cmd run typecheck` exit 0；`npm.cmd test` exit 0（249 files passed / 1 skipped；2764 passed / 2 skipped）；`npm.cmd run build` sandbox 內因 esbuild 無權讀 `../../../..` exit 1，非 sandbox 重跑 exit 0（Vite 195 modules，chunk-size warning）；preview COI focused read：`{"status":200,"coop":"same-origin","coep":"require-corp","crossOriginIsolated":true}`。5173 已被既有 server 占用，未停止他人 server，故未跑 dev-server COI 讀數。
 - **2026-09-09**：T3 可分性消融儀器完成，判定 `blocked-by-data`（cohort 仍不存在）。凍結檢核以逐段逐位 diff + sha256 證明 §Pre-registration 與 README §2.4 自 T0 未變。新增 `research/src/lift/algorithms/{features,pa_parameters,ablation}.py` 與 `notebooks/t3/run_ablation.py`；`golden.py` additive 補時間通道。兩個具名發現：PA 三個 `*_PX_S*` 參數名為誤稱（實作即在 counts 空間）、PA Stage 2 在 1 ms 取樣下算術上不可觸發。lift 套件 80 passed；typecheck／Vitest／build 與 T2 基線逐位相同。
 - **2026-09-09**：T1 標註通道儀器完成。`KEY_CODE/CODE_KEY` additive 加入 `KeyL`；`DataRecorder` 新增 `recordAnnotationEvents?: boolean`（預設 false）與 additive `annotation` event；`applyInput` 對 `KeyL` 只在 opt-in recorder 上寫 event，不寫 sim state；app 以 `?annotation=1` 開啟，預設關閉；schema parser/CSV/JSON round-trip、InputRing/InputSampler、focused E2E 與決定性 regression 全補測。
+- **2026-09-09**：**T4 前置閘覆核 —— 未通過，T4 不執行**。依 T4 step 1 重新實測（不引用 T3 結論）：`~/Downloads` 12 份 240 Hz 匯出經 `analyze:lift-cohort` 逐份稽核，**12／12 作廢**，工具判定 `blocked-by-data`。作廢原因同一個：未加 `?rawMouse=1&annotation=1` ⇒ 無 `mouseSamples`、`annotation` 事件 0（`displayHz` 240 與 COI 皆合格，屬 spider-shot 系列而非本 WP cohort）。本輪**未寫任何 T4 程式碼** —— 理由見 §T4 前置閘覆核。
 
 ## T0 entry gate（2026-09-09）
 
@@ -418,6 +419,60 @@ seed 61; full evaluation 0.02 s
 | Build | `npm.cmd run build` | exit 0；Vite 2.00 s，既有 chunk-size warning。 |
 
 全量 Playwright 未在本切片跑：T3 未動任何 runtime 程式碼（變動全在 `research/`），package-level 五閘於 T-exit 補齊。
+
+## T4 前置閘覆核（2026-09-09）—— 未通過，T4 不執行
+
+[T4 task file](T4-conditional-criterion.md) 的 step 1 是「**前置閘**：覆核 T3 判定為 `promote`……**不滿足即停止並記錄**」。本節即該記錄。
+
+### 覆核結果（逐條對 T4 step 1 的字面條件）
+
+| T4 開工前置檢查的字面條件 | 實際值 | 判定 |
+|---|---|---|
+| T3 判定必須是 `promote` | **`blocked-by-data`**（本檔 §T3） | ❌ |
+| 該判定的三欄對照已在 `progress.md` | ✅ 在（§T3 判定表，五列全 ❌） | ✅ |
+| 校準集與 held-out 的差距在 T0 凍結的可接受範圍內 | **無從計算** —— held-out 0 個區間，`calibrationF1 − heldOutF1` 沒有被定義的兩端 | ❌ |
+
+⇒ **T4 不執行**（T4 step 1 + [task-checklist](task-checklist.md) 序列閘 ④）。
+
+### 本次重新驗資料（不引用 T3 的結論）
+
+T3 的判定依據是「cohort 不存在」，而**資料狀態會隨時間改變** ⇒ 本次重新實測，不沿用。`~/Downloads` 現有 **12 份** 240 Hz 匯出（T3 當時 6 份，本次多出 6 份，錄製時刻 19:46–19:55），以 T2 的 operator 入口逐份跑：
+
+```bash
+npm run analyze:lift-cohort -- ~/Downloads --manifest <probe-manifest.json> --out <scratchpad>
+```
+
+| 項目 | 實測 | T0 凍結下限 |
+|---|---|---|
+| 可用 run | **0**（12／12 作廢） | — |
+| 獨立 session | 0 | 2 |
+| lift 標註區間 | 0 | 30 |
+| pause 標註區間 | 0 | 30 |
+| held-out lift／pause 區間 | 無法分割（可用 session 0 個） | 各 10 |
+| θ = 18／30／50 ms 候選空洞 | 0／0／0 | > 0 |
+| F3 檢定（三個 θ） | 全 `indeterminate`（兩組皆無樣本） | — |
+
+工具判定：**`blocked-by-data`**，與 T3 同一個去向、同一份缺口。
+
+**12 份全數作廢的原因是同一個**：`meta.mouseSampling` 缺席、`mouseSamples` 區塊不存在、`annotation` 事件 0 ⇒ **錄製時未加 `?rawMouse=1&annotation=1`**。這 12 份的 `meta.displayHz === 240` 與 `crossOriginIsolated === true` **都合格**，屬 spider-shot／spider-shot-wide 系列的 run，**不是**本 WP 的 cohort。
+
+> ⚠️ probe manifest 為本次覆核**臨時產生**（落 scratchpad，不進 repo）。這 12 份不是 cohort run，沒有真實的 `instructionClass`／`sessionId`；該 manifest 只用來讓稽核工具跑完並輸出**逐份作廢原因**，**不得**被當成 cohort manifest 的樣本（真實格式見 `spider-wide-recording-spec.md` §3.3）。
+
+### 為什麼不「先把 T4 實作起來等資料」
+
+T4 的產出**本質上是凍結**：`gapThresholdMs`（OQ-61.7 的最終值）、`windowMs`、各層門檻，以及一個依 C-D5 **只能升版、不得原地改語意**的版本字串。這些值依定義來自 held-out 結果 —— FR-61.9 明文禁止「在模組內硬編未經校準的常數」。
+
+在 0 筆真人資料上先寫一版，等於**用合成 fixture 憑空產生一組常數，再燒掉一個版本號**；日後拿到真資料時，正確的參數只能以「升版」進場，而 v1 會永久留在帳本上作為一個從未有過經驗依據的判準。這正是 T0 pre-registration（D-61.P6）與 README §2.4「凍結後只能升版不能改值」要防的事，也是 R4（過度擬合）與 F5（未換算常數靜默進場）的合流點。
+
+⇒ 正確去向是 **T-exit 的負面結論路徑**（T4 step 1 明文），或**先錄 cohort → 回到 T3 重跑判定**。
+
+### 解除阻塞需要什麼（錄製屬使用者操作）
+
+1. 開 `?rawMouse=1&annotation=1`（兩個 flag 都要；本次 12 份就是漏了這一步）。
+2. 240 Hz 顯示器、COI 生效、單 run ≤ 120 s，**不得**與 60 Hz 的 run 混批。
+3. **≥ 2 個獨立 session**；全 cohort **≥ 30 個 lift** 與 **≥ 30 個 pause** 有效標註區間，且 held-out 側各 ≥ 10。
+4. manifest 用物件型條目，`instructionClass ∈ {lift, pause, oneshot}` 與 `sessionId` 必填。
+5. 錄完直接跑 §最新狀態 的四行指令 —— **T2／T3 不需要再寫任何程式**。
 
 ## Decision Log
 
