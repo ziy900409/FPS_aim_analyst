@@ -13,7 +13,7 @@
    - 其餘由 `Object.entries(WEAPONS)` 產生，標籤格式 `` `${id}（${magSize} 發）` ``（彈匣數直接讀 `WEAPONS[id].magSize`，不另存常數）；
    - `aria-label` = `` `${drillId} 武器` ``（比照既有 reps 欄位的 a11y 作法）；
    - `change` handler **只更新 `item.weaponId` 並 `refreshPreview()`，不重繪該列**——重繪會在真實瀏覽器裡讓 `<select>` 失焦／關閉展開清單（同 `reps` 於 [SessionPlanSetup.ts:348-353](../../../../../src/ui/SessionPlanSetup.ts) 的既有理由）。
-4. `describeStep()` 的 run 分支加上武器：指定時顯示該武器 id；未指定時依 OQ-62.1 的決議顯示（**預設假設**：顯示「預設」；BR 四格因 T1 的 `DECLARED_WEAPON_BY_DRILL_ID` 可顯示實名）。預覽 `<li>` 加 `data-step-weapon-id` 屬性供 E2E 定位。
+4. `describeStep()` 的 run 分支加上武器：指定時顯示該武器 id；未指定時依 OQ-62.1 的決議顯示（**預設假設**：顯示「預設」；BR 八格因 T1 的 `DECLARED_WEAPON_BY_DRILL_ID` 可顯示實名）。預覽 `<li>` 加 `data-step-weapon-id` 屬性供 E2E 定位。
 5. `refreshPreview()` 傳給 `compileSessionProgram()` 的 items 帶上 `weaponId`；編譯失敗時既有 `setCompileFailure(error.message, error.itemIndex)` 已能標紅該列（`markInvalidItem`），**無需新機制**——只需確認 `field === 'weaponId'` 的錯誤走同一條路。
 6. `submit` handler 的 custom 分支把 `weaponId` 一併送出（沿用「送出前重新編譯、編譯不過就不送出」的既有紀律）。
 7. 清單下方新增固定說明文字（兩行，`descriptionCss`）：
@@ -24,7 +24,7 @@
    - 每列有一個 `<select>`，選項數 = `WEAPONS` 數量 + 1（預設項）；
    - 選項標籤含彈匣數（至少驗 `usp_s_laser（12 發）` 與 `ak47（30 發）`）；
    - 選武器 → 預覽該步的 `data-step-weapon-id` 更新；
-   - 對 BR 四格選錯武器 → submit 被禁用、該列 `data-invalid="true"`、status 顯示編譯錯誤訊息；
+   - 對 BR 八格選錯武器 → submit 被禁用、該列 `data-invalid="true"`、status 顯示編譯錯誤訊息；
    - 送出的 selection 含正確的逐列 `weaponId`；
    - 兩行說明文字存在（FM-5 提示的斷言）；
    - frozen 軌 DOM **零變更**（既有 frozen 案例不得修改）。
@@ -41,7 +41,7 @@
 
 - [ ] 每列 `<select>` 存在，選項數 = `WEAPONS` 數 + 1，且標籤含彈匣容量（兩例具名斷言）
 - [ ] 選武器 → 預覽 `data-step-weapon-id` 更新有測試
-- [ ] BR 四格選錯武器 → submit 禁用 + 該列 `data-invalid` + status 訊息，三項皆有斷言
+- [ ] BR 八格選錯武器 → submit 禁用 + 該列 `data-invalid` + status 訊息，三項皆有斷言
 - [ ] 送出的 `SessionPlanSelection.items[].weaponId` 逐列正確有測試
 - [ ] 兩行說明文字（無 reload、趨勢分群）存在有斷言
 - [ ] frozen 軌既有測試**零修改**全綠

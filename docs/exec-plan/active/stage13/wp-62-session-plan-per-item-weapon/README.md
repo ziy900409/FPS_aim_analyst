@@ -15,7 +15,7 @@
 | **Estimate** | 8.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | Med/High：`activateDrill()` 是全 app 唯一的 drill 啟用路徑，武器賦值點與 `buildSimLoop()` 的先後決定 recoil RNG／彈匣／ADS／感度 gain 是否一致；`sessionProgram.ts` 帶純函式 source-scan 契約 |
 | **Milestone** | 無獨立里程碑，**T-exit gate 即交付判定**（比照 WP-27／WP-58） |
-| **Status** | 🟡 **T0 ✅ / T1 ✅（2026-09-10）**，T2 未開工。基線見 [progress.md §T0.1](progress.md)，T1 的 8-vs-4 修正見 [§T1](progress.md) |
+| **Status** | 🟡 **T0 ✅ / T1 ✅ / T2 ✅（2026-09-10）**，T3 未開工。基線見 [progress.md §T0.1](progress.md)，T1 的 8-vs-4 修正見 [§T1](progress.md)，T2 的逐位回歸 sha256 見 [§T2](progress.md) |
 
 ### 落點說明（stage 主題不符，明帳記錄）
 
@@ -85,7 +85,7 @@ stage13（階段 M）的主題是「原始輸入取樣與抬滑鼠判準驗證�
 
 | # | 決定 | 理由 |
 |---|---|---|
-| **D-62-1** | 已宣告 `weaponId` 的 drill（現況＝ BR 四格）**不可覆蓋**：指定不同武器 → 編譯錯誤並標紅該列。不做鎖定 UI、不靜默忽略 | 武器是那 2×2 實驗格的自變項；覆蓋等於毀掉實驗格。用既有 `SessionProgramCompileError` 定位到列，錯誤訊息本身即說明 |
+| **D-62-1** | 已宣告 `weaponId` 的 drill（現況＝ BR 八格）**不可覆蓋**：指定不同武器 → 編譯錯誤並標紅該列。不做鎖定 UI、不靜默忽略 | 武器是那 2×2×2 實驗格的自變項；覆蓋等於毀掉實驗格。用既有 `SessionProgramCompileError` 定位到列，錯誤訊息本身即說明 |
 | **D-62-2** | frozen 軌**不開放**逐列武器 | frozen = pre-registered 協定，武器是協定的一部分；要換就定義新 preset。同時保住 FR-58.10「frozen 匯出逐位不變」 |
 | **D-62-3** | 下拉列出 `WEAPONS` **全部 9 把**，不做策展白名單 | KI-016 的教訓：第二份手維護白名單必然 rot。實際跑的武器已逐 run 進 `meta.weaponId`，離線可篩 |
 | **D-62-4** | 彈匣容量寫進選項標籤 + 一行「無 reload」說明；**不擋**任何武器×drill 組合 | 全 repo 無 reload 路徑（§0.7）。給資訊而非猜門檻，不替研究者決定 |
@@ -94,7 +94,7 @@ stage13（階段 M）的主題是「原始輸入取樣與抬滑鼠判準驗證�
 
 | OQ | 問題 | Owner | Deadline | Impact |
 |---|---|---|---|---|
-| **OQ-62.1** | 留空（`—`）在預覽表要顯示 drill 自帶武器的**實名**，還是顯示「預設」？顯示實名需要在表單解析 drill config，而部分 roster 項目是 lazy binding（`spiderShotV3Binding`／`spiderShotWideV1Binding`）或 `{ id, drill }` 包裝 | 研究者 | T4 開工前 | T4 範圍。**預設假設**：顯示「預設」字樣；BR 四格因 T1 的 `DECLARED_WEAPON_BY_DRILL_ID` 而能顯示實名 |
+| **OQ-62.1** | 留空（`—`）在預覽表要顯示 drill 自帶武器的**實名**，還是顯示「預設」？顯示實名需要在表單解析 drill config，而部分 roster 項目是 lazy binding（`spiderShotV3Binding`／`spiderShotWideV1Binding`）或 `{ id, drill }` 包裝 | 研究者 | T4 開工前 | T4 範圍。**預設假設**：顯示「預設」字樣；BR 八格因 T1 的 `DECLARED_WEAPON_BY_DRILL_ID` 而能顯示實名 |
 | **OQ-62.2** | FM-4（有 `ads` 的武器 × 禁 ADS 的 drill）是否要在表單出非阻塞警告？ | 研究者 | T4 開工前 | T4。**預設假設**：不做第二套 guard，只在 `progress.md` 記為已知限制；`ads` 事件與 `meta.weapon.ads` 已逐 run 記錄，事後可稽核 |
 | **OQ-62.3** | T1 的對表測試要覆蓋全部 36 個 schedulable drill（需為 lazy binding 準備 fov/aspect 與場景），還是只覆蓋 source 物件可直接取得的子集？ | 實作者 | T1 開工時 | T1 的 DoD 強度。**預設假設**：全覆蓋；若某項解析成本過高則於 `progress.md` 具名豁免並說明，不得靜默略過 |
 
@@ -248,7 +248,7 @@ export interface SessionPlanItemMeta {
 | # | 觸發條件 | 影響範圍 | 處理策略 |
 |---|---|---|---|
 | **FM-1** | 未知武器 id 抵達 runtime | `getWeapon()` 在 `buildSimLoop()` 內拋錯，留下半啟用的 drill（場景已換、`activeDrillConfig` 已改） | 編譯期擋掉（FR-62.2）；表單走既有 `setCompileFailure()` 禁止送出。T2 以負向測試釘死 |
-| **FM-2** | 替 BR 四格指定不同武器 | 2×2 實驗格的自變項被污染，且匯出看起來完全合法 | 編譯錯誤 + 標紅該列（D-62-1）。T2 負向測試 + T4 的列定位測試 |
+| **FM-2** | 替 BR 八格指定不同武器 | 2×2×2 實驗格的自變項被污染，且匯出看起來完全合法 | 編譯錯誤 + 標紅該列（D-62-1）。T2 負向測試 + T4 的列定位測試 |
 | **FM-3** | 選中的武器 `magSize` 不足該 run 實際需要的發數 | **靜默停火**；受測者的「按住」意圖旗標被 `SimLoop` 清成 false，被記成放開 | 選項標籤顯示彈匣容量 + 無 reload 說明（§2.4）。**殘留風險，明帳接受**（D-62-4）。`meta` 已記 `ammo` 逐發，離線可偵測 |
 | **FM-4** | 選到有 `ads` 的武器，配上 protocol 禁 ADS 的 drill | 右鍵變成有效，可能產生 protocol violation | 不做第二套 guard（OQ-62.2 預設假設）；`ads` 事件與 `meta.weapon.ads` 已逐 run 記錄 ⇒ 事後可稽核。列入 `progress.md` 已知限制 |
 | **FM-5** | 逐列換武器 → `CompatibilityKey.weaponId` 不同 ⇒ trend cohort 碎裂 | history 趨勢線變空或變短，外觀像 bug | **零程式修改**（行為正確：不同武器本就不該併池）。在表單說明文字寫明；T4 DoD 含該文字存在的斷言 |
@@ -285,7 +285,7 @@ T4 只需要 T2 的型別與編譯器，**可與 T3 並行**。
 | # | 條目 |
 |---|---|
 | **A-62.1** | 自訂 program 可在每列選武器，該列每一輪 rep 都用同一把（FR-62.1／62.3） |
-| **A-62.2** | 未知武器 id 與覆蓋 BR 四格皆為編譯錯誤且定位到列（FR-62.2） |
+| **A-62.2** | 未知武器 id 與覆蓋 BR 八格皆為編譯錯誤且定位到列（FR-62.2） |
 | **A-62.3** | 省略 `weaponId` 時編譯輸出與本 WP 前 HEAD 逐位相同，鍵集合亦相同（NFR-62.4） |
 | **A-62.4** | frozen 軌編譯／runtime／匯出逐位不變（FR-62.6） |
 | **A-62.5** | 匯出可對帳：`sessionPlanItems[].weaponId`（意圖）vs `meta.weaponId`（事實）（FR-62.4） |

@@ -1,4 +1,5 @@
-import { FAMILY_BY_DRILL_ID } from './drillFamily.ts';
+import { isWeaponId, type WeaponId } from '../weapon/weapons.ts';
+import { DECLARED_WEAPON_BY_DRILL_ID, FAMILY_BY_DRILL_ID } from './drillFamily.ts';
 import type { SessionFamilyId } from './sessionSchedule.ts';
 
 /**
@@ -28,6 +29,13 @@ export interface SessionProgramItem {
    * counter, which is exactly how the pre-WP-58 `warmup` phase behaved.
    */
   readonly warmup?: boolean;
+  /**
+   * WP-62 T2 (FR-62.1) — the weapon this item's runs are to be fired with. Omitted means "whatever
+   * this drill already brings": the drill's own `weaponId`, and failing that the app default. The
+   * compiler only validates and carries the id; it never reads weapon data, so a weapon change can
+   * never reach in and alter a boundary, a rest duration or a rep count.
+   */
+  readonly weaponId?: WeaponId;
 }
 
 export interface SessionProgramPlan {
@@ -58,6 +66,12 @@ export interface RunStep {
   readonly repCount: number;
   /** Present (and `true`) only for a warmup item's runs; absent otherwise. See `SessionProgramItem`. */
   readonly warmup?: boolean;
+  /**
+   * WP-62 T2 (FR-62.3) — the item's `weaponId`, copied onto every one of its reps so the run step
+   * is the single answer to "which weapon does this run use". Absent when the item named none; the
+   * key is omitted rather than set to `undefined` (NFR-62.4).
+   */
+  readonly weaponId?: WeaponId;
 }
 
 export interface RestStep {
@@ -77,7 +91,8 @@ export type SessionProgramErrorField =
   | 'drillId'
   | 'reps'
   | 'drillRestSeconds'
-  | 'familyRestSeconds';
+  | 'familyRestSeconds'
+  | 'weaponId';
 
 /**
  * Typed compile failure. The compiler never truncates, never substitutes a default and never returns
@@ -113,6 +128,41 @@ function requireFamily(drillId: string, itemIndex: number): SessionFamilyId {
     throw new SessionProgramCompileError('drillId', `${drillId} 不是可排程 drill`, itemIndex);
   }
   return family;
+}
+
+/**
+ * WP-62 T2 (FR-62.2 / D-62-1). Two ways a per-item weapon can be wrong, both settled here rather
+ * than at activation — by then `getWeapon()` throws with the scene already swapped and the drill
+ * half-armed (FM-1):
+ *
+ * 1. an id `WEAPONS` does not contain (the form hands over strings, and an export can be replayed);
+ * 2. an id that contradicts the weapon the drill declares for itself. This is the one worth the
+ *    code: the eight `tracking_br_v1` cells fix their weapon as the experimental factor, so an
+ *    override there yields data that looks entirely legal while measuring a different grid than the
+ *    one it claims (FM-2).
+ *
+ * Naming the weapon the drill already declares is agreement, not a conflict, and is let through:
+ * intent and protocol say the same thing, and refusing it would only teach the operator to leave
+ * the field blank and hope.
+ */
+function requireWeapon(
+  drillId: string,
+  weaponId: WeaponId | undefined,
+  itemIndex: number,
+): WeaponId | undefined {
+  if (weaponId === undefined) return undefined;
+  if (!isWeaponId(weaponId)) {
+    throw new SessionProgramCompileError('weaponId', `${String(weaponId)} 不是已知武器`, itemIndex);
+  }
+  const declared = DECLARED_WEAPON_BY_DRILL_ID.get(drillId);
+  if (declared !== undefined && declared !== weaponId) {
+    throw new SessionProgramCompileError(
+      'weaponId',
+      `${drillId} 由實驗格固定為 ${declared}，不可指定其他武器`,
+      itemIndex,
+    );
+  }
+  return weaponId;
 }
 
 function requireReps(reps: number, itemIndex: number): number {
@@ -156,18 +206,28 @@ export function compileSessionProgram(plan: SessionProgramPlan): readonly Progra
     family: requireFamily(item.drillId, itemIndex),
     reps: requireReps(item.reps, itemIndex),
     warmup: item.warmup === true,
+    weaponId: requireWeapon(item.drillId, item.weaponId, itemIndex),
   }));
 
   const steps: ProgramStep[] = [];
   let previous: RunStep | undefined;
   for (let itemIndex = 0; itemIndex < validated.length; itemIndex++) {
-    const { drillId, family, reps, warmup } = validated[itemIndex];
+    const { drillId, family, reps, warmup, weaponId } = validated[itemIndex];
     for (let repIndex = 0; repIndex < reps; repIndex++) {
-      // The key is omitted rather than set to `false` on a normal run: a warmup is the exception, and
-      // step objects are compared element-wise in tests and rendered in the preview table.
-      const run: RunStep = warmup
-        ? { kind: 'run', drillId, family, itemIndex, repIndex, repCount: reps, warmup: true }
-        : { kind: 'run', drillId, family, itemIndex, repIndex, repCount: reps };
+      // Both optional keys are omitted rather than set to `false`/`undefined` on a run that has
+      // neither: a warmup and a named weapon are the exceptions, and step objects are compared
+      // element-wise in tests, rendered in the preview table and serialised into the export, where
+      // a stray `weaponId: undefined` would be a visible schema change (NFR-62.4).
+      const run: RunStep = {
+        kind: 'run',
+        drillId,
+        family,
+        itemIndex,
+        repIndex,
+        repCount: reps,
+        ...(warmup ? { warmup: true } : {}),
+        ...(weaponId === undefined ? {} : { weaponId }),
+      };
       if (previous !== undefined) {
         const boundary = resolveBoundary(previous, run);
         const seconds = boundary === 'family' ? familyRestSeconds : drillRestSeconds;

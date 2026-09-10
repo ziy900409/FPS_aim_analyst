@@ -233,3 +233,137 @@ DoD 的第 3 條要的是「未來任何 drill 新增 `weaponId` 而忘了進 ma
 | 3 | OQ-62.2（ADS × 禁 ADS drill 是否警告） | 🟡 未決，T1 未觸及 | 研究者 | T4 開工前 |
 | 4 | `loadSceneById()` 清空 override 的處置（選項收斂為 ②／③，見 §T0.5） | 🟡 未決，T1 未觸及 | 實作者 + 研究者 | T3 開工時 |
 | 5 | D-62-1 的措辭「BR 四格」散在 §1.4／FM-2／A-62.2 三處，本 task 只改了事實陳述（§0.1 ①、§2.3、T1 doc），**未改決策與驗收條目的措辭** | 🟢 非阻塞：語意不受數字影響（判準是「有宣告就不可覆蓋」）。T2 落地時順手把三處「四格」改為「八格」即可 | 實作者 | T2 |
+
+---
+
+## §T2 編譯器：`weaponId` 穿透與驗證（2026-09-10）
+
+**狀態**：✅ 完成。`SessionProgramItem`／`RunStep` 各加 `weaponId?: WeaponId`，由 `requireWeapon()` 在**建構任何 step 之前**驗證，穿透時維持鍵集合最小化。省略時輸出對本 task 前 HEAD **逐位元相同**（sha256 對帳，見下）。
+
+### Progress
+
+- [x] (2026-09-10) `src/session/sessionProgram.ts`：`SessionProgramItem.weaponId?` / `RunStep.weaponId?`（型別自 `../weapon/weapons.ts` 匯入）、`SessionProgramErrorField` 加 `'weaponId'`、新增 `requireWeapon(drillId, weaponId, itemIndex)`，並把 run step 的兩支 ternary 改為條件展開（見 D-62.T2-2）。
+- [x] (2026-09-10) `deriveProgramFamilyOrder()` / `summarizeProgram()` / `resolveBoundary()` **零修改**（T2 步驟 6）——並以「同一 plan 加不加武器，rest step 與 summary 完全相同」的斷言釘住，而非只是宣稱沒改。
+- [x] (2026-09-10) `src/session/sessionProgram.test.ts`：+30 tests（6 合法穿透／不變性 + 8 非法定位 + 16 純度掃描）。既有 65 tests 零修改。
+- [x] (2026-09-10) README／task-checklist／T1／T2／T4／T5／T6 doc 的「BR 四格」→「BR 八格」、「2×2 實驗格」→「2×2×2 實驗格」——收掉 T1 OQ #5。`progress.md` 的歷史段落**不改**（那是當時的紀錄，不是現況陳述）。
+
+### 驗證（六道閘全綠，逐項實測）
+
+| 指令 | 結果 |
+|---|---|
+| `npm run typecheck`（`tsc --noEmit` ×2） | ✅ exit 0 |
+| `npm run build` | ✅ exit 0，`built in 2.14s`（chunk > 500 kB 警告為先前狀態） |
+| `npx vitest run src/session/sessionProgram.test.ts` | ✅ 95 passed（本 task 前為 65） |
+| 全量 `npx vitest run` | ✅ **2,896 passed / 2 skipped**；檔案 252 passed / 1 skipped |
+
+**回歸基線對帳**：T1 基線 2,866 / 2 → 現 2,896 / 2，差值 **+30 = 6 + 8 + 16**，恰為本 task 新增；檔案數不變（改的是既有 `sessionProgram.test.ts`）。既有測試零修改、零減少 ⇒ NFR-62.3 守住。**Playwright 未跑**：T2 不觸及 DOM／runtime 路徑，全量 e2e 留在 T6（並須遵守 §T0.6 的 5173 前置條件）。
+
+### NFR-62.4 逐位回歸（DoD 第 4 條，實測而非推理）
+
+一次性 harness `.tmp-wp62-t2-baseline.ts`（跑完即刪，內容附於下方以便重製）壓 5 個**不含 `weaponId`** 的 plan：`golden`（三 family ×3 reps）、`zeroRest`、`sameFamilyAdjacent`、`warmupMarked`、`frozenSixFamiliesWithWarmup`（`buildFrozenSessionPlan` 六 family + warmup，即 D-62-2 的 frozen 軌）。
+
+```bash
+# 1) 本 task 的碼
+npx vite-node .tmp-wp62-t2-baseline.ts > after.json
+# 2) 換成本 task 前 HEAD 的 sessionProgram.ts，同一 harness 再跑一次
+git show HEAD:src/session/sessionProgram.ts > src/session/sessionProgram.ts
+npx vite-node .tmp-wp62-t2-baseline.ts > before.json
+# 3) 逐位元比對
+cmp before.json after.json && sha256sum before.json after.json
+```
+
+結果：`cmp` 無輸出（**逐位元相同**），兩檔 sha256 皆為
+
+```text
+dadec456ef0be2b18d9dc7254ef572f35f795b469853d55defaa44799571c30d
+```
+
+⇒ NFR-62.4 與 FR-62.6（frozen 軌編譯逐位不變）在編譯層成立。**這只涵蓋編譯輸出**；frozen 的 runtime 與匯出逐位不變仍是 T6 的職責。
+
+<details>
+<summary>harness 內容（重製用）</summary>
+
+```ts
+import { holdClickV1 } from './src/drill/hold_click_v1.ts';
+import { spiderShotV2 } from './src/drill/spider_shot_v2.ts';
+import { counterstrafeReversalV1 } from './src/drill/counterstrafe_reversal_v1.ts';
+import { counterstrafeFreeV1 } from './src/drill/counterstrafe_free_v1.ts';
+import { buildFrozenSessionPlan } from './src/session/SessionRunner.ts';
+import { compileSessionProgram } from './src/session/sessionProgram.ts';
+
+const A = holdClickV1.id;
+const B = spiderShotV2.drillId;
+const C = counterstrafeReversalV1.drillId;
+const C_SIBLING = counterstrafeFreeV1.drillId;
+
+const cases: Record<string, unknown> = {
+  golden: compileSessionProgram({
+    items: [{ drillId: A, reps: 3 }, { drillId: B, reps: 3 }, { drillId: C, reps: 3 }],
+    drillRestSeconds: 30,
+    familyRestSeconds: 60,
+  }),
+  zeroRest: compileSessionProgram({
+    items: [{ drillId: A, reps: 2 }, { drillId: C_SIBLING, reps: 1 }],
+    drillRestSeconds: 0,
+    familyRestSeconds: 0,
+  }),
+  sameFamilyAdjacent: compileSessionProgram({
+    items: [{ drillId: C_SIBLING, reps: 1 }, { drillId: C, reps: 2 }],
+    drillRestSeconds: 30,
+    familyRestSeconds: 60,
+  }),
+  warmupMarked: compileSessionProgram({
+    items: [{ drillId: C_SIBLING, reps: 1, warmup: true }, { drillId: C, reps: 2 }, { drillId: A, reps: 1 }],
+    drillRestSeconds: 30,
+    familyRestSeconds: 60,
+  }),
+  frozenSixFamiliesWithWarmup: buildFrozenSessionPlan({
+    participantId: 'P001',
+    sessionIndex: 1,
+    families: ['hold-click', 'hold-track', 'spider-shot', 'spider-shot-wide', 'counterstrafe', 'micro-flick'],
+    restSeconds: 60,
+    includeWarmup: true,
+  }),
+};
+
+console.log(JSON.stringify(cases, null, 1));
+```
+
+</details>
+
+### 兩道新守門是否真的會咬（突變實測，沿用 T1 的做法）
+
+`JSON.stringify` 的逐位比對不會替 `weaponId: undefined` 說話（`toEqual`／`toBeUndefined()` 也一樣會過），所以「鍵不存在」與「鍵存在但值是 undefined」的差別必須靠 `Object.hasOwn`／`Object.keys` 斷言看守。用突變證明它會咬：
+
+| 突變 | 結果 |
+|---|---|
+| `...(weaponId === undefined ? {} : { weaponId })` → `weaponId,`（永遠放鍵） | **1 failed / 94 passed**：`omits the key entirely when no weapon was named (NFR-62.4)` |
+| `if (declared !== undefined && declared !== weaponId)` → `if (false)`（拿掉覆蓋檢查） | **3 failed / 92 passed**：`overrides a BR cell`、`only the second of three items is bad`、`classifies by field and index alone` |
+
+兩次突變後皆立即還原，還原後以字串比對確認兩段程式碼原文皆在（非靠 `git diff --stat` 的行數推測）。
+
+### Decision Log
+
+| # | 日期 | 決定 | 理由 | Alternatives considered |
+|---|---|---|---|---|
+| **D-62.T2-1** | 2026-09-10 | **純度 source-scan 擴及 `weapons.ts` 與 `WeaponConfig.ts`**（既有 8 條 FORBIDDEN 規則一條未動，只是多掃兩個檔） | NFR-62.1 要的是「純度不退化」。既有 scan 是**逐檔**的，但純度是**相依閉包**的性質，而本 task 剛好把 `weapons.ts`（及其唯一相依 `WeaponConfig.ts`，該檔無任何 import）拉進編譯器的閉包。不擴掃的話，日後有人在 `weapons.ts` 寫個 `Date.now()`，編譯器的純度閘會全綠放行 | ① 維持只掃 `sessionProgram.ts`／`drillFamily.ts`：新閉包無人看守，等於把 NFR-62.1 縮成「檔案級」承諾；② 放寬規則讓新 import 通過：T2 步驟 9 明文禁止，且本次**不需要**——兩個檔實測對 8 條規則全部乾淨 |
+| **D-62.T2-2** | 2026-09-10 | **run step 改以條件展開（`...(cond ? {x} : {})`）建構**，取代原本 warmup 的兩支 ternary | 兩個獨立 optional 鍵 ⇒ ternary 要寫成 4 個字面分支，鍵順序被複製 4 份，而**鍵順序正是 NFR-62.4 要保的東西**（`JSON.stringify` 逐位比對看得到順序）。單一字面 + 條件展開讓順序只有一份 | ① 巢狀 ternary 4 分支：鍵順序四處重複，任一處手滑就是逐位回歸紅燈；② 先建物件再有條件賦值：破壞 `readonly` 語意，且鍵順序變成執行順序的副作用。實際順序不變已由 harness 的 sha256 與 `Object.keys` 斷言雙重釘死 |
+| **D-62.T2-3** | 2026-09-10 | 非法矩陣納入 **`'toString'`（Object 原型鍵）** 這一格 | `isWeaponId` 是 own-property 判定；若日後有人「簡化」成 `id in WEAPONS` 或 `WEAPONS[id] !== undefined`，`'toString'` 會變成合法武器 id 並一路帶著一個 function 抵達 `buildSimLoop()`。這一格把該判定方式本身釘死 | 只測 `'not_a_weapon'`／空字串：涵蓋不到「判定方式退化」這條路徑，而表單交給編譯器的就是任意字串 |
+
+> D-62-1 的「指定值等於宣告值 → 放行」照 T2 doc 落地，非新決策；已由 `lets a BR cell name the weapon it already declares` 一條正向測試釘住。
+
+### Surprises & Discoveries
+
+1. **本 task 開工時 worktree 已有未提交的 `sessionProgram.ts` 改動**（+ 根目錄的 `.tmp-wp62-t2-baseline.ts`），是前一個中斷 session 的遺留。**逐行對照 T2 doc 的 Steps 1–6 確認語意一致後才沿用**，沒有當成既成事實照單全收；測試、逐位回歸與突變驗證全部在本 session 重跑。記在這裡是因為 §T0.3 已警示平行 session 在跑——下一個 task 開工前一樣要先 `git status` 看清楚手上這份改動是誰的。
+2. **`it.each` 的 `%i` 吃的是第二個參數，不是「第二欄」。** 標題原寫 `'%s -> field weaponId at item %i'`，而 tuple 第二格是 `items` 陣列 ⇒ 測試名字印成 `at item NaN`。斷言本身是對的（`itemIndex` 有逐條比對），錯的只有標題——但一個永遠印 NaN 的標題會讓未來讀 CI log 的人以為索引壞了。已改成不帶索引的標題。
+3. **`JSON.stringify` 的逐位比對擋不住 `weaponId: undefined`。** 這正是 DoD 第 3 條要求「明確斷言 `Object.hasOwn(...) === false`、不得只用 `toBeUndefined()`」的原因：既有的元素級 `toEqual` golden 測試對多出一個 undefined 鍵**完全沉默**，而該鍵一旦進到 `RunStep`，T5 的匯出 schema 就會多一個欄位。突變表第一列就是這個沉默的實測。
+
+### Open Questions（T2 結束時）
+
+| # | 問題 | 狀態 | Owner | 需在何時收斂 |
+|---|---|---|---|---|
+| 1 | T1 OQ #5：「BR 四格」措辭 | ✅ **結案**：WP 資料夾內非 `progress.md` 的 7 個 doc 已全數改為「八格」／「2×2×2」 | 實作者 | — |
+| 2 | OQ-62.1（預覽對未指定列顯示「預設」還是實名） | 🟡 未決，T2 未觸及 | 研究者 | T4 開工前 |
+| 3 | OQ-62.2（ADS × 禁 ADS drill 是否警告） | 🟡 未決，T2 未觸及 | 研究者 | T4 開工前 |
+| 4 | `loadSceneById()` 清空 override 的處置（選項收斂為 ②／③，見 §T0.5） | 🟡 未決 | 實作者 + 研究者 | **T3 開工時** |
+| 5 | T5 提醒：編譯器以 `isWeaponId` 為武器 allowlist 的**唯一**來源；`SessionPlanItemMeta.weaponId?: string` 的 runtime 驗證在 `exportPayloadSchema.ts`（§T0.4 / D-62.T0-3），必須共用同一個判定，不得另寫一套字串比對 | 🟢 非阻塞 | 實作者 | T5 |

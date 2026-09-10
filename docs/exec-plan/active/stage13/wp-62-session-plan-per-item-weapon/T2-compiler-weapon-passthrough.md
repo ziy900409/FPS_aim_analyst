@@ -19,9 +19,9 @@
 7. 測試矩陣（`sessionProgram.test.ts`）：
    - 合法：指定武器 → 該 item 的每一個 rep 的 `RunStep.weaponId` 皆為該值（`reps: 3` 驗三筆）；
    - 合法：省略 → 每個 `RunStep` **沒有** `weaponId` 鍵；
-   - 合法：BR 四格指定的武器等於其宣告值 → 放行；
+   - 合法：BR 八格指定的武器等於其宣告值 → 放行；
    - 非法：未知 id（含空字串、非字串）→ throw，`field === 'weaponId'`、`itemIndex` 正確；
-   - 非法：BR 四格指定不同武器 → throw，`field`／`itemIndex` 正確；
+   - 非法：BR 八格指定不同武器 → throw，`field`／`itemIndex` 正確；
    - 混合：多列中僅第 2 列非法 → `itemIndex === 1`，且無任何 step 產出。
 8. **NFR-62.4 逐位回歸**：對一組不含 `weaponId` 的既有 plan，比對 `JSON.stringify(compileSessionProgram(plan))` 與本 task 前 HEAD 的輸出**逐字元相同**。
 9. **NFR-62.1 純度不退化**：既有 source-scan 測試不得放寬任何一條。新 import 為 `weapons.ts`／`drillFamily.ts`（皆純資料 + 驗證，無 DOM／Three／`node:*`／時鐘／亂數）；若 scan 規則按模組名白名單運作，須確認新 import 合規，**不得為了讓 scan 過而放寬規則**。

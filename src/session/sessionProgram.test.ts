@@ -7,9 +7,13 @@ import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { spiderShotV2 } from '../drill/spider_shot_v2.ts';
 import { spiderShotV3Binding } from '../drill/spider_shot_v3.ts';
 import { spiderShotWideV1Binding } from '../drill/spider_shot_wide_v1.ts';
-import { FAMILY_BY_DRILL_ID, SCHEDULABLE_DRILL_IDS } from './drillFamily.ts';
+import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
+import type { WeaponId } from '../weapon/weapons.ts';
+import { DECLARED_WEAPON_BY_DRILL_ID, FAMILY_BY_DRILL_ID, SCHEDULABLE_DRILL_IDS } from './drillFamily.ts';
 import {
   type ProgramStep,
+  type RunStep,
+  type SessionProgramItem,
   type SessionProgramPlan,
   SessionProgramCompileError,
   compileSessionProgram,
@@ -414,6 +418,178 @@ describe('WP-58 T3 — the warmup marker rides through untouched', () => {
   });
 });
 
+/**
+ * WP-62 T2 — the per-item weapon (FR-62.1 / 62.2 / 62.3, D-62-1).
+ *
+ * The weapon is data on the program item, so the compiler has exactly two jobs: carry it onto every
+ * rep, and refuse the two ways it can be wrong before a single step exists. Everything else about
+ * the compiler — the five rules, the boundaries, the rest durations — has to stay bit-for-bit
+ * unchanged when no weapon is named (NFR-62.4); that is what the key-set assertions are really for.
+ */
+describe('WP-62 T2 — a named weapon rides through to every rep (FR-62.1 / FR-62.3)', () => {
+  /** No schedulable drill declares this one, so it can only reach a run step by being asked for. */
+  const CHOSEN: WeaponId = 'usp_s_laser';
+  /** One of the eight `tracking_br_v1` cells — the only drills that fix a weapon as their own factor. */
+  const BR = trackingBrVariants[0];
+
+  function runStepsOf(program: readonly ProgramStep[]): readonly RunStep[] {
+    return program.flatMap((step) => (step.kind === 'run' ? [step] : []));
+  }
+
+  it('fixture check: the BR cell fixes a weapon, A fixes none, and the two differ', () => {
+    // Read from the registry *and* from the drill config, so a later edit to either is caught here
+    // rather than silently turning the negative cases below into positives.
+    expect(DECLARED_WEAPON_BY_DRILL_ID.get(BR.id)).toBe(BR.drill.weaponId);
+    expect(DECLARED_WEAPON_BY_DRILL_ID.get(BR.id)).not.toBe(CHOSEN);
+    expect(DECLARED_WEAPON_BY_DRILL_ID.has(A)).toBe(false);
+  });
+
+  it('puts the item weapon on all three of its reps and on no run of any other item', () => {
+    const program = compileSessionProgram({
+      items: [{ drillId: A, reps: 3, weaponId: CHOSEN }, { drillId: B, reps: 2 }],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(runStepsOf(program).map((step) => step.weaponId)).toEqual([
+      CHOSEN,
+      CHOSEN,
+      CHOSEN,
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it('lets a BR cell name the weapon it already declares — agreement is not a conflict', () => {
+    const declared = DECLARED_WEAPON_BY_DRILL_ID.get(BR.id);
+    const program = compileSessionProgram({
+      items: [{ drillId: BR.id, reps: 2, weaponId: declared }],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(runStepsOf(program).map((step) => step.weaponId)).toEqual([declared, declared]);
+  });
+
+  it('omits the key entirely when no weapon was named (NFR-62.4)', () => {
+    const program = compileSessionProgram({
+      items: [{ drillId: A, reps: 2 }, { drillId: B, reps: 1, weaponId: CHOSEN }],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    const runs = runStepsOf(program);
+    // `toEqual` and `toBeUndefined()` both pass on a `weaponId: undefined`; only the own-key check
+    // sees it, and that is the difference between an unchanged export and a schema change.
+    expect(runs.map((step) => Object.hasOwn(step, 'weaponId'))).toEqual([false, false, true]);
+    expect(Object.keys(runs[0])).toEqual(['kind', 'drillId', 'family', 'itemIndex', 'repIndex', 'repCount']);
+    expect(Object.keys(runs[2])).toEqual([
+      'kind',
+      'drillId',
+      'family',
+      'itemIndex',
+      'repIndex',
+      'repCount',
+      'weaponId',
+    ]);
+  });
+
+  it('keeps warmup and weapon as independent keys, in a fixed order', () => {
+    const program = compileSessionProgram({
+      items: [{ drillId: C_SIBLING, reps: 1, warmup: true, weaponId: CHOSEN }],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(Object.keys(runStepsOf(program)[0])).toEqual([
+      'kind',
+      'drillId',
+      'family',
+      'itemIndex',
+      'repIndex',
+      'repCount',
+      'warmup',
+      'weaponId',
+    ]);
+  });
+
+  it('does not let a weapon change a boundary, a rest duration or a rep count', () => {
+    const items = [{ drillId: A, reps: 2 }, { drillId: B, reps: 1 }];
+    const plain = compileSessionProgram({ items, drillRestSeconds: 30, familyRestSeconds: 60 });
+    const armed = compileSessionProgram({
+      items: [{ ...items[0], weaponId: CHOSEN }, items[1]],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(armed.map((step) => (step.kind === 'rest' ? step : step.kind))).toEqual(
+      plain.map((step) => (step.kind === 'rest' ? step : step.kind)),
+    );
+    expect(summarizeProgram(armed)).toEqual(summarizeProgram(plain));
+  });
+});
+
+describe('WP-62 T2 — an illegal weapon is a compile failure, located to its item (FR-62.2)', () => {
+  const CHOSEN: WeaponId = 'usp_s_laser';
+  const BR = trackingBrVariants[0];
+
+  /** The form hands the compiler plain strings, and an export can be replayed. This is that, in a test. */
+  function asWeaponId(value: unknown): WeaponId {
+    return value as WeaponId;
+  }
+
+  it.each<[string, readonly SessionProgramItem[], number]>([
+    ['unknown id', [{ drillId: A, reps: 1, weaponId: asWeaponId('not_a_weapon') }], 0],
+    ['empty string', [{ drillId: A, reps: 1, weaponId: asWeaponId('') }], 0],
+    ['non-string', [{ drillId: A, reps: 1, weaponId: asWeaponId(7) }], 0],
+    ['null rather than absent', [{ drillId: A, reps: 1, weaponId: asWeaponId(null) }], 0],
+    // A prototype key is a plain string to the form, and a bare `WEAPONS[id]` would hand back a
+    // function for it. `isWeaponId` is an own-property check, so it is not a weapon id.
+    ['inherited Object key', [{ drillId: A, reps: 1, weaponId: asWeaponId('toString') }], 0],
+    ['overrides a BR cell', [{ drillId: BR.id, reps: 1, weaponId: CHOSEN }], 0],
+    [
+      'only the second of three items is bad',
+      [
+        { drillId: A, reps: 2 },
+        { drillId: BR.id, reps: 2, weaponId: CHOSEN },
+        { drillId: B, reps: 1 },
+      ],
+      1,
+    ],
+  ])('%s -> a located weaponId compile failure', (_label, items, itemIndex) => {
+    let thrown: unknown;
+    let returned: readonly ProgramStep[] | undefined;
+    try {
+      returned = compileSessionProgram({ items, drillRestSeconds: 30, familyRestSeconds: 60 });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(SessionProgramCompileError);
+    const error = thrown as SessionProgramCompileError;
+    expect(error.name).toBe('SessionProgramCompileError');
+    expect(error.field).toBe('weaponId');
+    expect(error.itemIndex).toBe(itemIndex);
+    // Every item is validated before the first step is built, so a bad item sitting behind good ones
+    // cannot leave a half-compiled program behind (FM-1).
+    expect(returned).toBeUndefined();
+  });
+
+  it('classifies by field and index alone — the caller never parses the message', () => {
+    // The message names the drill and the weapon it is pinned to, because the operator reads it. The
+    // caller (T4's form) keys off `field`/`itemIndex`, which is what leaves the wording free to
+    // change without breaking the UI.
+    const declared = DECLARED_WEAPON_BY_DRILL_ID.get(BR.id);
+    let thrown: unknown;
+    try {
+      compileSessionProgram({
+        items: [{ drillId: BR.id, reps: 1, weaponId: CHOSEN }],
+        drillRestSeconds: 30,
+        familyRestSeconds: 60,
+      });
+    } catch (error) {
+      thrown = error;
+    }
+    const error = thrown as SessionProgramCompileError;
+    expect(error.message).toContain(BR.id);
+    expect(error.message).toContain(String(declared));
+  });
+});
+
 describe('WP-58 T2 — module purity boundary scan (NFR-58.1 / NFR-58.5)', () => {
   const FORBIDDEN: readonly RegExp[] = [
     /from ['"]three/,
@@ -436,6 +612,20 @@ describe('WP-58 T2 — module purity boundary scan (NFR-58.1 / NFR-58.5)', () =>
   // suite stops being a gate the moment the transcript scrolls away, so it runs here instead.
   it.each(FORBIDDEN)('drillFamily.ts contains no %s', (pattern) => {
     const source = readFileSync(new URL('./drillFamily.ts', import.meta.url), 'utf8');
+    expect(source).not.toMatch(pattern);
+  });
+
+  // WP-62 T2 (NFR-62.1): validating `weaponId` put `weapons.ts` — and through it `WeaponConfig.ts`,
+  // which imports nothing at all — inside the compiler's dependency closure. Purity is a property of
+  // that whole closure, not of one file, so the same scan now runs on the modules that just joined
+  // it. This widens the gate; no rule above was relaxed to let the new imports through.
+  it.each(FORBIDDEN)('weapons.ts contains no %s', (pattern) => {
+    const source = readFileSync(new URL('../weapon/weapons.ts', import.meta.url), 'utf8');
+    expect(source).not.toMatch(pattern);
+  });
+
+  it.each(FORBIDDEN)('WeaponConfig.ts contains no %s', (pattern) => {
+    const source = readFileSync(new URL('../weapon/WeaponConfig.ts', import.meta.url), 'utf8');
     expect(source).not.toMatch(pattern);
   });
 });

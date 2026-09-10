@@ -14,7 +14,7 @@
 6. **意圖 vs 事實對帳測試**（`sessionProgramExport.test.ts`）：
    - 指定武器的 item → 該 run 的 `meta.weaponId === sessionPlanItems[itemIndex].weaponId`；
    - 未指定的 item → `sessionPlanItems[itemIndex].weaponId` 缺席，而 `meta.weaponId` 為該 drill 自帶或 `'ak47'`；
-   - BR 四格（指定值等於宣告值）→ 兩者相同。
+   - BR 八格（指定值等於宣告值）→ 兩者相同。
 7. **逐位回歸**：既有 golden／canonical fixture 的 parse／serialize 結果逐位不變（比照 WP-58 T5 的 8 個 canonical digest 作法），digest 與比對指令記入 `progress.md`。
 8. **C-D1 相容性驗證**：以**真實** `research/` 的 `load_export()` 讀一份含新欄位的 payload，斷言 ticks／events `equals=True`、既有 meta 逐鍵不變 ⇒ Python 側零修改。若需改 Python，**停下並入帳**（屬 C-D1 邊界）。
 9. 負向 validation 矩陣：`weaponId` 為空字串／非字串／未知 id 各拋出指名 `sessionPlanItems[i].weaponId` 的錯誤。
@@ -31,7 +31,7 @@
 
 - [ ] 既有 golden／canonical fixture 的 parse／serialize 逐位不變（digest 清單記入 `progress.md`）
 - [ ] 新欄位正負向 validation 矩陣全綠（合法 present／合法缺席／空字串／非字串／未知 id）
-- [ ] 意圖 vs 事實對帳三案例全綠（指定／未指定／BR 四格等值）
+- [ ] 意圖 vs 事實對帳三案例全綠（指定／未指定／BR 八格等值）
 - [ ] frozen 軌匯出逐位不變有測試，且 frozen 既有測試零修改
 - [ ] `research/` 相容性有證據：真實 `load_export()` 讀新 payload，ticks／events `equals=True`、既有 meta 逐鍵不變（輸出記入 `progress.md`）
 - [ ] `npm run typecheck` ×2 + 全量 Vitest exit 0
