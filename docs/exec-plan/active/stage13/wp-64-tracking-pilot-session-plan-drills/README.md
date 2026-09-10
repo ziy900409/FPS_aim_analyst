@@ -12,8 +12,8 @@
 | **Primary user** | 研究者／測試操作員；受試者只看見既有 drill/runtime 畫面。 |
 | **Estimate** | 4.5–6 dev-days（T0～T3 + T-exit）。 |
 | **Risk** | Med：程式改動集中在低頻 registry/UI orchestration，但若沒有把「ad hoc Session Plan」與「正式 Pilot manifest」分清楚，會造成研究資料誤用。 |
-| **Provisional IDs** | `WP-64` / `GD-40`。目前工作樹已有未追蹤的 WP-63/GD-39 計畫；依 GD-15，T0 必須在採納進全域索引前重新查號，撞號即順延。 |
-| **Status** | 📋 規劃完成，未開工（2026-09-10）。 |
+| **IDs** | ✅ **`WP-64` / `GD-40` 已於 T0 重查確認可用（2026-09-10）**。WP-63/GD-39 已由 micro-flick v8 WP 佔用（已入 `exec-plan/README.md` §2 索引）；stage14 §3 的三個候選為未採納草稿，依 GD-15 不構成佔用。證據見 [progress.md](progress.md) T0 §1。 |
+| **Status** | 🟡 **T0 ✅ 通過（2026-09-10），T1 可開工**。四個 OQ 全數以 README 預設關閉；選中集合 = `tracking_core_pr_pilot_v1_2deg_5dps`（seed 54012）+ `tracking_reversal_pilot_v1_high`（seed 54101）。 |
 
 ### 落點說明
 
@@ -106,12 +106,14 @@ CodeGraph 於 2026-09-10 顯示：
 
 ### 1.6 Open Questions
 
-| ID | Question | Owner | Deadline | Impact / default |
-|---|---|---|---|---|
-| **OQ-64.1** | 最終核准哪 1–2 個 config？ | 研究者／使用者 | T0 結束前 | 阻塞 T1。預設：`2deg × 5dps` core + `reversal high`。 |
-| **OQ-64.2** | 選中項目是否也顯示在 researcher Controls 的單 drill 下拉？ | 產品 owner／研究者 | T2 開工前 | 影響 `AvailableDrill` surface filter。預設：**只顯示於 Session Plan**，避免無意擴大入口。 |
-| **OQ-64.3** | ad hoc run 是否需要 live 顯示 WP-54 eligibility？ | 指標 owner | T0 結束前 | 影響是否擴大 runner/export 邊界。預設：**不需要**；既有事件仍可離線分析，但 Session Plan 不宣告 eligible。 |
-| **OQ-64.4** | 是否需要 alternate seed 測試？ | 研究者 | T0 結束前 | 若需要，超出本 WP，另開 manifest-aware 設計。預設：只用 primary seed。 |
+✅ **四項全數於 T0 關閉（2026-09-10），全部採本表預設** ⇒ scope / estimate 不變。關閉紀錄見 [progress.md](progress.md) T0 §4–§5。
+
+| ID | Question | Owner | Deadline | Impact / default | 決議 |
+|---|---|---|---|---|---|
+| **OQ-64.1** | 最終核准哪 1–2 個 config？ | 研究者／使用者 | T0 結束前 | 阻塞 T1。預設：`2deg × 5dps` core + `reversal high`。 | ✅ 採預設：`buildTrackingCorePrPilotV1Cell(2, 5)` + `trackingReversalPilotV1High` |
+| **OQ-64.2** | 選中項目是否也顯示在 researcher Controls 的單 drill 下拉？ | 產品 owner／研究者 | T2 開工前 | 影響 `AvailableDrill` surface filter。預設：**只顯示於 Session Plan**，避免無意擴大入口。 | ✅ 採預設（Session Plan-only） |
+| **OQ-64.3** | ad hoc run 是否需要 live 顯示 WP-54 eligibility？ | 指標 owner | T0 結束前 | 影響是否擴大 runner/export 邊界。預設：**不需要**；既有事件仍可離線分析，但 Session Plan 不宣告 eligible。 | ✅ 採預設（不做） |
+| **OQ-64.4** | 是否需要 alternate seed 測試？ | 研究者 | T0 結束前 | 若需要，超出本 WP，另開 manifest-aware 設計。預設：只用 primary seed。 | ✅ 採預設（primary only） |
 
 ---
 
@@ -275,8 +277,8 @@ interface AvailableDrill {
 
 | Task | Objective | Dependencies | Risk | 估時（d） | Commit |
 |---|---|---|---|---|---|
-| [T0](T0-entry-gate.md) | entry gate：重查編號/熱區、收斂選中 config 與四個 OQ、復現上游基線 | — | Low | 0.5–1 | `docs(wp-64): complete tracking pilot scheduling entry gate` |
-| [T1](T1-curated-scheduling-contract.md) | 建立 curated registry，接 family/declared weapon/history invariants | T0；WP-62 T1/T2 已合併 | Med | 1–1.5 | `feat(wp-64): register curated tracking pilot session drills` |
+| [T0](T0-entry-gate.md) ✅ | entry gate：重查編號/熱區、收斂選中 config 與四個 OQ、復現上游基線 | — | Low | 0.5–1 | `docs(wp-64): complete tracking pilot scheduling entry gate` |
+| [T1](T1-curated-scheduling-contract.md) | 建立 curated registry，接 family/declared weapon/history invariants | T0 ✅；~~WP-62 T1/T2 已合併~~ ✅ WP-62 已全數提交（含 T-exit，`035a637`）⇒ **不阻塞** | Med | 1–1.5 | `feat(wp-64): register curated tracking pilot session drills` |
 | [T2](T2-runtime-and-session-plan-wiring.md) | 接 runtime `availableDrills`、`field-low`、Controls surface 與 custom export contract | T1；WP-62 runtime/UI 熱區已穩定 | Med | 1.5 | `feat(wp-64): wire pilot drills into session plans` |
 | [T3](T3-e2e-and-regression.md) | 真瀏覽器走完選取→執行→匯出，並回歸正式 Pilot 與 history 隔離 | T2 | **High validity** | 1–1.5 | `test(wp-64): verify ad hoc tracking pilot session plans` |
 | [T-exit](T-exit-gate.md) | 驗收 A-64.1～A-64.9、同步索引/決策/操作文件 | T1–T3 | Low | 0.5 | `docs(wp-64): close tracking pilot scheduling work package` |

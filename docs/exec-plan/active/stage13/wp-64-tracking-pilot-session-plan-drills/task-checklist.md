@@ -4,15 +4,15 @@
 
 ## T0 — Entry gate
 
-- [ ] 重查 WP/GD 編號與 stage 落點；撞號完整順延
-- [ ] CodeGraph impact / worktree / 平行 WP 熱區對帳
-- [ ] WP-54 與 WP-62 focused baselines exit 0
-- [ ] OQ-64.1：精確核准 1–2 個 config，記錄 symbol/id/seed/role
-- [ ] OQ-64.2：Controls visibility 決策
-- [ ] OQ-64.3：live eligibility 決策
-- [ ] OQ-64.4：alternate seed 決策
-- [ ] `git diff -- src tests` 為空
-- [ ] commit：`docs(wp-64): complete tracking pilot scheduling entry gate`
+- [x] 重查 WP/GD 編號與 stage 落點；撞號完整順延 — WP-64 / GD-40 維持，落點不變
+- [x] CodeGraph impact / worktree / 平行 WP 熱區對帳 — 兩處規劃期敘述已修正
+- [x] WP-54 與 WP-62 focused baselines exit 0 — 238 + 66 passed
+- [x] OQ-64.1：精確核准 1–2 個 config，記錄 symbol/id/seed/role — 2deg_5dps (54012) + reversal_high (54101)
+- [x] OQ-64.2：Controls visibility 決策 — Session Plan-only
+- [x] OQ-64.3：live eligibility 決策 — 不做
+- [x] OQ-64.4：alternate seed 決策 — 只用 primary
+- [x] `git diff -- src tests` 為空
+- [x] commit：`docs(wp-64): complete tracking pilot scheduling entry gate`
 
 ## T1 — Curated scheduling contract
 
