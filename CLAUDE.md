@@ -16,6 +16,7 @@
 | 想知道 | 看這裡 |
 |---|---|
 | 全部文件目錄 / 導航 | [docs/MAP.md](docs/MAP.md) ← **先看這個** |
+| **怎麼安裝 / 怎麼跑一場測試**(操作人員) | [docs/guideline/operator-manual.md](docs/guideline/operator-manual.md) |
 | 專有名詞 / 正規術語(semantic memory) | [CONTEXT.md](CONTEXT.md) |
 | 需求 / ADR-1~9 / WBS(source of truth) | [docs/規格書_Three.js_WebGPU_反向急停瞄準訓練器.md](docs/規格書_Three.js_WebGPU_反向急停瞄準訓練器.md) |
 | **大框架 / WP 狀態 / 里程碑 M1–M15 / 相依圖** | [docs/exec-plan/README.md](docs/exec-plan/README.md) ← **現行權威** |

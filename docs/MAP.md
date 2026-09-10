@@ -29,6 +29,8 @@
 | [PLAN.md](PLAN.md) | 階段 A 執行計畫（歷史紀錄）。**仍被引用者僅 §1 決策 D1–D5 的理由欄**；WP/里程碑/相依/範圍各段一律以 [exec-plan/README.md](exec-plan/README.md) 為準 | 🧊 **已凍結**（停寫 2026-06，不再維護） |
 | [FRONTEND.md](FRONTEND.md) | 前端 / UI 設計（預留） | ⬜ 空檔 |
 
+**操作人員入口**：[guideline/operator-manual.md](guideline/operator-manual.md) — 給實際跑一場測試的人（研究員 / 教練 / 施測助理）的使用說明：安裝、啟動、Session Plan 四步流程、資料落地、故障排除、一頁 SOP。深度主題（`operational/analysis-*.md`、runbook、schema）仍以各自檔案為權威，operator manual 只做導航與操作步驟，不重述它們的定義。
+
 ---
 
 ## 3. 執行計畫（`docs/exec-plan/`）
