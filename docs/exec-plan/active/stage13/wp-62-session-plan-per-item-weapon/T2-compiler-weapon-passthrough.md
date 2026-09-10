@@ -35,12 +35,12 @@
 
 ## Definition of Done
 
-- [ ] 測試矩陣 6 類全綠（3 合法 + 3 非法），每條斷言 `field`／`itemIndex`
-- [ ] `reps: 3` 的指定武器 item 產出三個 `RunStep`，`weaponId` 三筆皆為該值
-- [ ] 省略時 `Object.hasOwn(step, 'weaponId') === false` 有明確斷言（非僅 `toBeUndefined()`）
-- [ ] 逐位回歸：既有 plan 的 `JSON.stringify` 輸出與本 task 前 HEAD 逐字元相同（比對指令與結果記入 `progress.md`）
-- [ ] 純度 source-scan 測試**未修改**且全綠
-- [ ] `npm run typecheck` ×2 + 全量 Vitest exit 0
+- [x] 測試矩陣全綠：合法 3 類（指定穿透／省略／BR 八格等值宣告）+ 非法 7 格 it.each，每格斷言 `field === 'weaponId'` 與 `itemIndex`，並斷言 throw 時無回傳值
+- [x] `reps: 3` 的指定武器 item 產出三個 `RunStep`，`weaponId` 三筆皆為該值；同 program 內未指定的第二個 item 兩筆皆 undefined
+- [x] 省略時 `Object.hasOwn(step, 'weaponId') === false` 有明確斷言，並加 `Object.keys()` 鍵順序斷言；突變（永遠放鍵）實測轉紅 1 條
+- [x] 逐位回歸：5 個不含 `weaponId` 的 plan（含 frozen 六 family + warmup）對本 task 前 HEAD `cmp` 無差異，sha256 相同；指令與雜湊記入 `progress.md §T2`
+- [x] 純度 source-scan 的 8 條 FORBIDDEN 規則**未修改**且全綠；額外擴掃新進閉包的 `weapons.ts`／`WeaponConfig.ts`（D-62.T2-1）
+- [x] `npm run typecheck` ×2 + `npm run build` + 全量 Vitest exit 0（2,896 passed / 2 skipped，較 T1 基線 +30 = 本 task 新增，既有零修改）
 
 ## Commit
 
