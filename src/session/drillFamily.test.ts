@@ -47,6 +47,20 @@ import {
   TRANSFER_PILOT_FAMILY_IDS,
   buildFamilyOrder,
 } from './sessionSchedule.ts';
+import {
+  ALL_TRACKING_PILOT_CONFIGS,
+  TRACKING_PILOT_SCHEDULABLE_DRILL_IDS,
+  TRACKING_PILOT_SCHEDULABLE_DRILLS,
+} from './trackingPilotSchedulableDrills.ts';
+
+/**
+ * WP-64 T1: the seven WP-54 tracking-pilot blocks the researcher did *not* curate. They must stay
+ * exactly as unschedulable as all nine were before WP-64 — "one pilot block became schedulable" may
+ * never generalise to "the pilot manifest is schedulable" (FM-64.4).
+ */
+const UNCURATED_TRACKING_PILOT_DRILL_IDS: readonly string[] = ALL_TRACKING_PILOT_CONFIGS
+  .map((config) => config.drillId)
+  .filter((drillId) => !TRACKING_PILOT_SCHEDULABLE_DRILL_IDS.includes(drillId));
 
 /**
  * WP-58 T1 — README §2.3's four invariants for the drill <-> family single source, plus the
@@ -101,6 +115,7 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
     const spreadLengths: Record<string, number> = {
       PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES: PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES.length,
       trackingBrVariants: trackingBrVariants.length,
+      TRACKING_PILOT_SCHEDULABLE_DRILLS: TRACKING_PILOT_SCHEDULABLE_DRILLS.length,
     };
     let spreadTotal = 0;
     for (const [, spreadSource] of block.matchAll(/\n {2}\.\.\.(\[[^\]]*\]|[A-Za-z_$][\w$]*)/g)) {
@@ -122,16 +137,19 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
 
   it('registers every roster drill exactly once, with no extras', () => {
     expect(FAMILY_BY_DRILL_ID.size).toBe(rosterSizeFromMain());
-    expect(FAMILY_BY_DRILL_ID.size).toBe(36);
+    // 36 through WP-62, + the two WP-64 curated tracking-pilot blocks.
+    expect(FAMILY_BY_DRILL_ID.size).toBe(38);
     expect(SCHEDULABLE_DRILL_IDS).toHaveLength(FAMILY_BY_DRILL_ID.size);
     expect(new Set(SCHEDULABLE_DRILL_IDS).size).toBe(SCHEDULABLE_DRILL_IDS.length);
   });
 
   it('leaves off-roster drills unschedulable rather than giving them a fallback family', () => {
-    // `counterstrafe-cued-v1` exists as a module but is not registered in `availableDrills`;
-    // the tracking-pilot blocks are owned by `TrackingPilotRunner` via `loadDrillConfigDirect()`.
-    for (const id of ['counterstrafe-cued-v1', 'tracking_core_pr_pilot_v1', 'tracking_reversal_pilot_v1']) {
-      expect(FAMILY_BY_DRILL_ID.get(id)).toBeUndefined();
+    // `counterstrafe-cued-v1` exists as a module but is not registered in `availableDrills`; the
+    // uncurated tracking-pilot blocks stay owned by `TrackingPilotRunner` via
+    // `loadDrillConfigDirect()` (WP-64 curated exactly two of the nine, FR-64.1).
+    expect(UNCURATED_TRACKING_PILOT_DRILL_IDS).toHaveLength(7);
+    for (const id of ['counterstrafe-cued-v1', ...UNCURATED_TRACKING_PILOT_DRILL_IDS]) {
+      expect(FAMILY_BY_DRILL_ID.get(id), id).toBeUndefined();
     }
   });
 
@@ -148,7 +166,7 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
       counterstrafe: 3,
       'peek-click-transfer': 6,
       'peek-click-transfer-v1': 1,
-      tracking: 11,
+      tracking: 13, // 11 through WP-62, + the two WP-64 curated tracking-pilot blocks
       detection: 1,
       'micro-flick': 8,
     });
@@ -345,11 +363,13 @@ const SCHEDULABLE_DRILL_SOURCES: readonly (readonly [
     microFlickThreeTargetTestV8,
   ].map((variant) => [variant.id, variant.drill] as const),
   ...trackingBrVariants.map((variant) => [variant.id, variant.drill] as const),
+  // WP-64 T1: the curated tracking-pilot blocks, read from the same registry the map derives from.
+  ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => [entry.config.drillId, entry.config] as const),
 ];
 
 describe('WP-62 T1 — the declared-weapon map matches every schedulable drill config', () => {
   it('covers every schedulable drill, with no entry for anything off the roster', () => {
-    // Full coverage of all 36 (OQ-62.3, no exemptions taken): a subset would leave exactly the
+    // Full coverage of all 38 (OQ-62.3, no exemptions taken): a subset would leave exactly the
     // drills nobody checked as the ones free to grow a `weaponId` unnoticed.
     expect(new Set(SCHEDULABLE_DRILL_SOURCES.map(([drillId]) => drillId))).toEqual(
       new Set(SCHEDULABLE_DRILL_IDS),
@@ -367,17 +387,21 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
     },
   );
 
-  it('never maps an unschedulable drill, including the tracking-pilot blocks that declare weapons', () => {
-    for (const drillId of ['tracking_core_pr_pilot_v1', 'tracking_reversal_pilot_v1']) {
-      expect(FAMILY_BY_DRILL_ID.has(drillId)).toBe(false);
-      expect(DECLARED_WEAPON_BY_DRILL_ID.has(drillId)).toBe(false);
+  it('never maps an unschedulable drill, including the pilot blocks WP-64 left uncurated', () => {
+    // All nine WP-54 blocks declare `tracking_pilot_hold`; only the two curated ones may appear.
+    for (const drillId of UNCURATED_TRACKING_PILOT_DRILL_IDS) {
+      expect(FAMILY_BY_DRILL_ID.has(drillId), drillId).toBe(false);
+      expect(DECLARED_WEAPON_BY_DRILL_ID.has(drillId), drillId).toBe(false);
     }
   });
 
-  it('holds exactly the eight BR cells, so a change of scope cannot pass review unnoticed', () => {
-    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(8);
+  it('holds exactly the eight BR cells plus the two curated pilot blocks, so a change of scope cannot pass review unnoticed', () => {
+    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(10);
     expect(new Set(DECLARED_WEAPON_BY_DRILL_ID.keys())).toEqual(
-      new Set(trackingBrVariants.map((variant) => variant.id)),
+      new Set([
+        ...trackingBrVariants.map((variant) => variant.id),
+        ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => entry.config.drillId),
+      ]),
     );
     // Eight cells, four weapons: the grid's third axis (angular height) is a target-geometry factor,
     // not a weapon one, so the ads x ballistic pairs repeat across it.
@@ -387,6 +411,8 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
         'ak47_br_ads_hitscan',
         'ak47_br_hip_projectile',
         'ak47_br_ads_projectile',
+        // WP-64 T1: both curated pilot blocks fix the same zero-recoil hold weapon (FR-64.4).
+        'tracking_pilot_hold',
       ]),
     );
   });

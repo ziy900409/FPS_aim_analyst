@@ -338,7 +338,7 @@ describe('createSessionPlanSetup — custom program editing (FR-58.12)', () => {
     }
 
     expect(offered).toEqual([...SCHEDULABLE_DRILL_IDS]);
-    expect(offered).toHaveLength(36);
+    expect(offered).toHaveLength(38); // 36 through WP-62, + the two WP-64 curated pilot blocks
     expect(new Set(familyOrder).size).toBe(familyOrder.length);
     expect(familyOrder.every((family) => KNOWN_SESSION_FAMILY_IDS.has(family as SessionFamilyId))).toBe(true);
     for (const drillId of offered) expect(FAMILY_BY_DRILL_ID.has(drillId)).toBe(true);

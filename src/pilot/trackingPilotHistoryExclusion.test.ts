@@ -9,6 +9,11 @@ import {
   TRACKING_CORE_PR_PILOT_V1_CANDIDATES,
 } from '../drill/tracking_core_pr_pilot_v1.ts';
 import { TRACKING_REVERSAL_PILOT_V1_CANDIDATES } from '../drill/tracking_reversal_pilot_v1.ts';
+import { FAMILY_BY_DRILL_ID } from '../session/drillFamily.ts';
+import {
+  ALL_TRACKING_PILOT_CONFIGS,
+  TRACKING_PILOT_SCHEDULABLE_DRILLS,
+} from '../session/trackingPilotSchedulableDrills.ts';
 
 /**
  * README §4 T4 DoD: "practice/pilot run 被 history guard 排除". T0/README §0 already established
@@ -64,6 +69,32 @@ describe('WP-54 tracking pilot drills are excluded from the formal history regis
     for (const drillId of ALL_TRACKING_PILOT_DRILL_IDS) {
       expect(registry.registrationForExactDrill(drillId)).toBeUndefined();
     }
+  });
+
+  /**
+   * WP-64 T1 (FR-64.8) — WP-64 made two of these nine blocks reachable from a custom Session Plan.
+   * The whole point of the exclusion above is that reachability and research status are orthogonal:
+   * a block a researcher can now schedule is *still* practice, still unregistered, still absent
+   * from trend cohorts. This is where "schedulable therefore assessment" would be caught.
+   */
+  it('keeps the two WP-64 curated blocks practice-mode and unregistered even though they are now schedulable', () => {
+    const registry = createDrillMetricRegistry();
+    expect(TRACKING_PILOT_SCHEDULABLE_DRILLS.length).toBeGreaterThan(0);
+    for (const entry of TRACKING_PILOT_SCHEDULABLE_DRILLS) {
+      const { drillId } = entry.config;
+      // Independently maintained list above vs. the registry's own census — each checks the other.
+      expect(ALL_TRACKING_PILOT_DRILL_IDS, drillId).toContain(drillId);
+      expect(FAMILY_BY_DRILL_ID.get(drillId)).toBe('tracking'); // reachable...
+      expect(entry.config.mode).toBe('practice'); // ...and still not an assessment
+      expect(registry.registrationForExactDrill(drillId)).toBeUndefined();
+      const payload: ExportPayload = { meta: { ...baseMeta, drillId }, ticks: [], events: [] };
+      expect(payload.meta.assessment).toBeUndefined();
+      expect(registry.project(payload)).toEqual({ status: 'unregistered-drill', drillId });
+    }
+  });
+
+  it('agrees with the scheduling registry about which nine blocks exist', () => {
+    expect(ALL_TRACKING_PILOT_CONFIGS.map((config) => config.drillId)).toEqual(ALL_TRACKING_PILOT_DRILL_IDS);
   });
 
   it('project() reports unregistered-drill (never ready) for a tracking pilot export', () => {

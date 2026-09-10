@@ -4,6 +4,15 @@
 
 ## Current status
 
+✅ **T1 完成（2026-09-10）；T2 可開工。** 兩個 curated Pilot block 已可排程、可編譯、可載入。
+
+- 新增 [`src/session/trackingPilotSchedulableDrills.ts`](../../../../../src/session/trackingPilotSchedulableDrills.ts)：family / declared weapon / runtime registry 三者**同一來源**。
+- **偏離計畫（D-64-T1-1）**：`main.ts` 的 runtime entry 與 Controls surface filter 由 T2 提前到 T1 —— 理由見下方 T1 §2。
+- 全量 Vitest 2984 passed / 255 files、typecheck ×2、`npm run build` 全 exit 0；三道 mutation 皆被咬住。
+
+<details>
+<summary>T0 entry gate（2026-09-10）已通過</summary>
+
 ✅ **T0 entry gate 通過（2026-09-10）；T1 可開工。**
 
 - 編號重查：**`WP-64` / `GD-40` 維持不變**（證據見下方 T0 §1）。
@@ -11,6 +20,8 @@
 - 選中集合凍結為 **`tracking_core_pr_pilot_v1_2deg_5dps`（seed 54012）+ `tracking_reversal_pilot_v1_high`（seed 54101）**。
 - WP-62 已全數落地（含 T-exit 文件，commit `035a637`）⇒ **無平行未合併熱區**，T1 不需標 blocked-on-commit。
 - 兩組 focused Vitest（238 + 66 passed）與 typecheck ×2 全 exit 0；`git diff -- src tests` 為空。
+
+</details>
 
 ## Planning evidence
 
@@ -36,7 +47,7 @@
 | ID | Decision | Rationale | Status |
 |---|---|---|---|
 | **D-64.P1** | selected Pilot configs 是「可排程的研究用 drill」，不是 Assessment 或 manifest block | family membership 只表達 scheduling reach，與 mode/history eligibility 正交 | ✅ 使用者方向已確認 |
-| **D-64.P2** | 以單一 curated config registry 同時推導 family、weapon、runtime entries | 防止 picker/compiler/runtime 三邊漂移；不手寫第二份 ids | 📋 待 T1 落地 |
+| **D-64.P2** | 以單一 curated config registry 同時推導 family、weapon、runtime entries | 防止 picker/compiler/runtime 三邊漂移；不手寫第二份 ids | ✅ **T1 已落地**（`TRACKING_PILOT_SCHEDULABLE_DRILLS`） |
 | **D-64.P3** | ad hoc path 沿用 generic SessionRunner 與既有 custom audit fields | 最小改動且保持 manifest-specific counterbalance/eligibility 邊界 | 📋 待 T2/T3 證明 |
 | **D-64.P4** | 不新增 metadata execution-context 欄位 | `sessionPlanMode:'custom'` + item/rep 與 manifest session label 已可區分；避免無需求 schema 擴張 | 📋 待 T0 確認 |
 | **D-64.P5** | formal Tracking Pilot 與 frozen tracking family representative 不變 | 本需求只要挑 1–2 個條件做 ad hoc 測試 | ✅ Scope freeze |
@@ -49,6 +60,7 @@
 | ~~OQ-64.2~~ Controls visibility | ✅ **已關閉（T0, 2026-09-10）**：Session Plan-only | 產品 owner／研究者 | T2 | 採預設 |
 | ~~OQ-64.3~~ live eligibility | ✅ **已關閉（T0, 2026-09-10）**：不做；只離線分析 | 指標 owner | T0 | 採預設 |
 | ~~OQ-64.4~~ alternate seed | ✅ **已關閉（T0, 2026-09-10）**：不做；primary only | 研究者 | T0 | 採預設 |
+| **OQ-64.5** `AvailableDrill` 測試 seam | 📋 **T1 新增、未關閉**：runtime registry 目前只有 `main.ts` source-scan 斷言，`loadDrillById()` 行為未測 | 實作者 | T2 開工時 | — |
 
 四項全數採 README 預設 ⇒ scope / estimate 不變，未新增 Decision Log row。詳見下方 T0 §4–§5。
 
@@ -165,12 +177,92 @@ HEAD = `035a637`；工作樹乾淨（`git status --porcelain` 空）。
 2. **`drillFamily.ts` 的 declared-weapon 註解計數不精確**：現行文字為「The two tracking-pilot blocks also declare a weapon but are not schedulable」，但宣告 `tracking_pilot_hold` 的是**兩族共九個 config**。T1 依 README「Surprises」已要求更新該註解的可排程性敘述，**同時**要修正這個計數，否則改完仍在說謊。
 3. **`AvailableDrill` 零測試覆蓋**（§2 修正 ②）——這是 README §3.1 technical debt 的具體代價，T2 需自建測試 seam。
 
+---
+
+## T1 — Curated scheduling contract（2026-09-10）
+
+> Task：[T1-curated-scheduling-contract.md](T1-curated-scheduling-contract.md) · T1 起點 HEAD = `d8fe0ac`。
+
+### 1. Blast radius（Step 1）
+
+T0 §2 的 `codegraph_explore` 快照取於 `035a637`；`d8fe0ac` 只多一個 docs commit，**`src/` 逐位相同**，因此本 task 未重跑 impact query，改以「直接讀取全部 5 個 symbol 的消費端 + 全量 suite」覆核。實際被觸及的檔案與 T0 表格一致，僅多兩處 T0 未預期的消費者：
+
+| 檔案 | 為何被改 | T0 是否預期 |
+|---|---|---|
+| `src/session/trackingPilotSchedulableDrills.ts`（new） | curated registry 本體 | ✅ |
+| `src/session/drillFamily.ts` | `FAMILY_ROSTER['tracking']` + `DECLARED_WEAPON_ROSTER` 推導 | ✅ |
+| `src/main.ts` | runtime entry + `AvailableDrill.showInResearcherControls` + Controls projection | ❌ **T2 的工作，被 §2 的 coherence 閘拉進來** |
+| `src/session/drillFamily.test.ts` | roster 大小 36→38、tracking 11→13、weapon map 8→10、complement 負向斷言改用真實 7 個 id | ⚠️ T0 未點名「roster 大小被寫死」 |
+| `src/ui/SessionPlanSetup.test.ts` / `.ts` | `offered` 長度 36→38（+ 註解文案） | ⚠️ 同上 |
+| `src/session/sessionWeaponActivation.test.ts` | `DECLARED_WEAPON_BY_DRILL_ID.size` 8→10 | ❌ **T0 §2 未列出此消費者** |
+| `src/session/sessionProgram.test.ts` | WP-64 compiler 斷言 | ✅ |
+| `src/pilot/trackingPilotHistoryExclusion.test.ts` | 「可排程 ≠ assessment」斷言 | ✅ |
+
+### 2. D-64-T1-1 — runtime 註冊由 T2 提前到 T1（**偏離計畫，必讀**）
+
+**問題。** T1 Step 4 要求把 curated ids 併入 `FAMILY_ROSTER['tracking']`，但 `drillFamily.test.ts` 的 WP-58 invariant 2 斷言 `FAMILY_BY_DRILL_ID.size === rosterSizeFromMain()`（解析 `main.ts` 的 `availableDrills` literal）。只改 family 不改 `main.ts` ⇒ 該 invariant 必紅，而 T1 DoD 要求全量 Vitest exit 0。
+
+**選項與取捨。**
+
+| 選項 | 結果 |
+|---|---|
+| (a) 放寬 invariant，容忍「family 有、runtime 沒有」到 T2 | ❌ 這正是 **FM-64.2** 本身（picker 可選 → 開始時 `Unknown drill`），等於把失效模式寫進測試 |
+| (b) T1 不碰 `FAMILY_ROSTER`，family+runtime 一起留到 T2 | ❌ T1 DoD 的 compiler weapon-mismatch／rest boundary 斷言需要 family membership，做不到 |
+| (c) **T1 一併加 `main.ts` runtime entry** | ✅ 採用。invariant 的意圖（compilable ⇔ loadable）本來就要求兩者同時落地；FM-64.2 的緩解措施寫的就是「單一 curated source + runtime/family coherence test」 |
+
+**同時提前的還有 `showInResearcherControls`。** 若只加 runtime entry 而不加 surface filter，T1→T2 之間會有一個 commit 讓兩個 Pilot block 出現在 researcher Controls 下拉——與 **OQ-64.2 已關閉的決議（Session Plan-only）矛盾**。與其留一個「已知錯」的中間狀態，不如把 optional 欄位 + 一行 filter 一起落地（合計 ~6 行 production code）。
+
+**T2 剩下什麼。** `AvailableDrill` 的**測試 seam**（T0 §2 修正 ② 指出目前零覆蓋，本 task 只加了 source-scan 級別的斷言，尚無 `loadDrillById()` 側的行為測試）、picker DOM / 鍵盤 / a11y 測試、export round-trip 對帳、manifest 語意負向斷言、以及 clearance 真載入。T2 的 checklist 已就地標記哪三項移前。
+
+### 3. Curated registry 契約（Step 2–4）
+
+`TRACKING_PILOT_SCHEDULABLE_DRILLS` 於 module construction 檢查五件事，任一失敗即 throw（**不是** picker 可選後才在 activation 失敗）：長度 1–2、id 不重複、id ∈ 九個 WP-54 block、`mode === 'practice'`、`weaponId === 'tracking_pilot_hold'`。`family` 固定 `'tracking'`、`sceneId` 固定 `'field-low'`、`selectionSurface` 固定 `'session-plan-only'`。
+
+兩個 config 皆取自 exported builder / named const（`buildTrackingCorePrPilotV1Cell(2, 5)`、`trackingReversalPilotV1High`），測試以 `toEqual`／`toBe` 對 canonical 值覆驗，seed 斷言 `[54012, 54101]` 與 T0 §4 凍結值一致。
+
+`ALL_TRACKING_PILOT_CONFIGS`（九個）由本模組匯出作為 census；`trackingPilotHistoryExclusion.test.ts` **保留自己那份手寫清單**，兩份互相對照（`toEqual`）——刻意不合併成一份，否則就失去獨立驗證。
+
+### 4. Mutation checks（Step 8）
+
+| # | Mutation | 結果 |
+|---|---|---|
+| 1 | 移除 `FAMILY_ROSTER['tracking']` 的 curated spread | ✅ **module construction fail fast**：`Drill tracking_core_pr_pilot_v1_2deg_5dps is not schedulable, so it must not declare a weapon here`（WP-62 既有的 `buildDeclaredWeaponByDrillId` 護欄）。比「某支測試轉紅」更早、更強，但代價是 4 個 test file 全數 collect 失敗、看不到具名測試 |
+| 2 | 移除 `DECLARED_WEAPON_ROSTER` 的 curated spread | ✅ **10 個具名測試轉紅**（跨 4 檔）：WP-64 的 `refuses to re-arm …` ×3、`is in the tracking family with its weapon fixed` ×2、WP-62 的 `declares in the map exactly what its config declares` ×2 等 |
+| 3 | 把全部九個 block spread 進 roster（繞過長度閘） | ✅ **14 個具名測試轉紅**：WP-64 `… is neither curated nor schedulable` ×7、WP-58 roster 大小/分組、WP-62 weapon map 範圍、UI `offers every schedulable drill …` |
+
+三道均已還原（`git diff --stat src/session/drillFamily.ts` = 16 insertions / 4 deletions，即本 task 的正常改動）。
+
+### 5. 驗證證據（Step 9）
+
+| 指令 | 結果 |
+|---|---|
+| `npx vitest run src/session/trackingPilotSchedulableDrills.test.ts src/session/drillFamily.test.ts src/session/sessionProgram.test.ts src/pilot/trackingPilotHistoryExclusion.test.ts src/session/sessionWeaponActivation.test.ts src/ui/SessionPlanSetup.test.ts` | ✅ **6 files / 291 passed**，exit 0（新增 registry 26、drillFamily 106、sessionProgram 103） |
+| `npx vitest run`（全量） | ✅ **255 files / 2984 passed / 2 skipped**，exit 0，18.3 s |
+| `npm run typecheck`（`tsc --noEmit` ×2） | ✅ exit 0，無輸出 |
+| `npm run build` | ✅ exit 0，196 modules，1236.93 kB |
+| `graphify update .` | ✅ 4859 nodes / 12016 edges / 299 communities |
+
+`src/sim`、`SharedState`、input、hit detection、`research/` 與全部 Pilot config **值** 零 diff（本 task 只碰 registry/orchestration 與測試）。
+
+### 6. T1 新增的 Surprises
+
+1. **roster 大小是寫死的常數，散在三個檔**：`drillFamily.test.ts`（36 + per-family 11）、`SessionPlanSetup.test.ts`（36）、`sessionWeaponActivation.test.ts`（weapon map 8）。T0 §2 只點出 symbol 的消費者數，沒點出「這些消費者把 cardinality 寫死」——**任何往 roster 加 drill 的 WP 都要改這三處**，這比 T0 表格所暗示的更廣。
+2. **`sessionWeaponActivation.test.ts` 是 T0 §2 沒列出的第 3 個 `DECLARED_WEAPON_BY_DRILL_ID` 消費者**。T0 的 CodeGraph 表記「12 consumers：`sessionProgram.ts`、`SessionPlanSetup.ts`」與四支測試，實際還有這支。教訓：impact query 的 consumer 清單對 **test** 檔覆蓋不完整，改共用 registry 時仍需一次全量 suite 兜底。
+3. **doc-comment 的字面掃描會誤咬**：架構測試「本模組不得 import manifest/runner」若用 `source.toContain('TrackingPilotRunner')` 會被**解釋為何不 import 的註解**判為違規。已改為只掃 `from '…'` 的 module specifier。
+4. **T0 Surprise #2 已修**：`drillFamily.ts` 原註解「The two tracking-pilot blocks also declare a weapon but are not schedulable」——數量（實為九個）與可排程性（現在兩個可排程）皆已改正。
+
+### 7. Open Questions（T1 新增）
+
+| ID | Question | Owner | Deadline | 現況 |
+|---|---|---|---|---|
+| **OQ-64.5** | `AvailableDrill` 的測試 seam 要建在哪一層？本 task 只用 `main.ts` source scan 斷言「roster 由 registry spread 而來、九個 id 都不是手寫」，尚未測到 `loadDrillById()` 的實際 resolve 行為 | 實作者 | T2 開工時 | 📋 T2 具名前置（承接 T0 §2 修正 ②） |
+
 ## Task log
 
 | Task | Status | Started | Completed | Commit | Evidence |
 |---|---|---|---|---|---|
 | T0 | ✅ Done | 2026-09-10 | 2026-09-10 | `docs(wp-64): complete tracking pilot scheduling entry gate` | 本檔 T0 §1–§8；238 + 66 Vitest passed、typecheck ×2 exit 0、`git diff -- src tests` 空 |
-| T1 | ⬜ Not started | — | — | — | — |
+| T1 | ✅ Done | 2026-09-10 | 2026-09-10 | `feat(wp-64): register curated tracking pilot session drills` | 本檔 T1 §1–§7；全量 2984 passed、typecheck ×2 + build exit 0、三道 mutation 皆被咬 |
 | T2 | ⬜ Not started | — | — | — | — |
 | T3 | ⬜ Not started | — | — | — | — |
 | T-exit | ⬜ Not started | — | — | — | — |

@@ -16,24 +16,25 @@
 
 ## T1 — Curated scheduling contract
 
-- [ ] CodeGraph impact 已記錄
-- [ ] 紅測試先行：selection precision + complement exclusion
-- [ ] 建立唯一 curated registry，無手寫 id／array index contract
-- [ ] `tracking` family roster 由 curated registry 推導
-- [ ] declared weapon roster 由相同 registry 推導
-- [ ] compiler 覆蓋 mismatch/equal weapon、reps、兩種 rest boundary
-- [ ] 全九項 history exclusion 維持
-- [ ] 三道 mutation test 會咬
-- [ ] focused/full Vitest、typecheck ×2、build exit 0
-- [ ] `graphify update .`
-- [ ] commit：`feat(wp-64): register curated tracking pilot session drills`
+- [x] CodeGraph impact 已記錄 — 沿用 T0 §2（同一 code state），T1 以全量 suite 覆核，見 progress T1 §1
+- [x] 紅測試先行：selection precision + complement exclusion
+- [x] 建立唯一 curated registry，無手寫 id／array index contract
+- [x] `tracking` family roster 由 curated registry 推導
+- [x] declared weapon roster 由相同 registry 推導
+- [x] compiler 覆蓋 mismatch/equal weapon、reps、兩種 rest boundary
+- [x] 全九項 history exclusion 維持
+- [x] 三道 mutation test 會咬 — 兩道測試轉紅、一道 module-construction fail fast
+- [x] focused/full Vitest、typecheck ×2、build exit 0 — 2984 passed / 255 files
+- [x] `graphify update .` — 4859 nodes / 12016 edges
+- [x] **偏離**：coherence 迫使 `main.ts` runtime entry + Controls surface filter 提前落在 T1（D-64-T1-1）
+- [x] commit：`feat(wp-64): register curated tracking pilot session drills`
 
 ## T2 — Runtime / UI / export
 
 - [ ] CodeGraph impact 已記錄
-- [ ] runtime entry 由 curated registry 推導，scene 固定 `field-low`
-- [ ] unselected Pilot ids 不在 runtime registry
-- [ ] OQ-64.2 surface policy 已實作且有雙側測試
+- [x] ~~runtime entry 由 curated registry 推導，scene 固定 `field-low`~~ — 已於 T1 落地（D-64-T1-1）
+- [x] ~~unselected Pilot ids 不在 runtime registry~~ — 已於 T1 落地（source-scan 斷言）
+- [ ] OQ-64.2 surface policy 已實作（T1 落地）且有**雙側測試**（T2：`loadDrillById` 側仍缺測試 seam）
 - [ ] Session Plan picker 精確顯示 selected ids 於 tracking 群組
 - [ ] 鍵盤可選取/加入；提示不只靠顏色
 - [ ] export item/rep/family/seed/weapon/scene round-trip 對帳

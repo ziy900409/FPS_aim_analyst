@@ -13,7 +13,7 @@
 | **Estimate** | 4.5–6 dev-days（T0～T3 + T-exit）。 |
 | **Risk** | Med：程式改動集中在低頻 registry/UI orchestration，但若沒有把「ad hoc Session Plan」與「正式 Pilot manifest」分清楚，會造成研究資料誤用。 |
 | **IDs** | ✅ **`WP-64` / `GD-40` 已於 T0 重查確認可用（2026-09-10）**。WP-63/GD-39 已由 micro-flick v8 WP 佔用（已入 `exec-plan/README.md` §2 索引）；stage14 §3 的三個候選為未採納草稿，依 GD-15 不構成佔用。證據見 [progress.md](progress.md) T0 §1。 |
-| **Status** | 🟡 **T0 ✅ 通過（2026-09-10），T1 可開工**。四個 OQ 全數以 README 預設關閉；選中集合 = `tracking_core_pr_pilot_v1_2deg_5dps`（seed 54012）+ `tracking_reversal_pilot_v1_high`（seed 54101）。 |
+| **Status** | 🟡 **T0 ✅ / T1 ✅（2026-09-10），T2 可開工**。四個 OQ 全數以 README 預設關閉；選中集合 = `tracking_core_pr_pilot_v1_2deg_5dps`（seed 54012）+ `tracking_reversal_pilot_v1_high`（seed 54101）。T1 因 roster coherence 閘把 `main.ts` runtime entry + Controls surface filter 由 T2 提前落地（D-64-T1-1，見 [progress.md](progress.md) T1 §2）。 |
 
 ### 落點說明
 
@@ -278,8 +278,8 @@ interface AvailableDrill {
 | Task | Objective | Dependencies | Risk | 估時（d） | Commit |
 |---|---|---|---|---|---|
 | [T0](T0-entry-gate.md) ✅ | entry gate：重查編號/熱區、收斂選中 config 與四個 OQ、復現上游基線 | — | Low | 0.5–1 | `docs(wp-64): complete tracking pilot scheduling entry gate` |
-| [T1](T1-curated-scheduling-contract.md) | 建立 curated registry，接 family/declared weapon/history invariants | T0 ✅；~~WP-62 T1/T2 已合併~~ ✅ WP-62 已全數提交（含 T-exit，`035a637`）⇒ **不阻塞** | Med | 1–1.5 | `feat(wp-64): register curated tracking pilot session drills` |
-| [T2](T2-runtime-and-session-plan-wiring.md) | 接 runtime `availableDrills`、`field-low`、Controls surface 與 custom export contract | T1；WP-62 runtime/UI 熱區已穩定 | Med | 1.5 | `feat(wp-64): wire pilot drills into session plans` |
+| [T1](T1-curated-scheduling-contract.md) ✅ | 建立 curated registry，接 family/declared weapon/history invariants（**+ 提前落地 runtime entry / Controls surface**） | T0 ✅；WP-62 已全數提交（含 T-exit，`035a637`）⇒ **不阻塞** | Med | 1–1.5 | `feat(wp-64): register curated tracking pilot session drills` |
+| [T2](T2-runtime-and-session-plan-wiring.md) | picker/preview DOM 與 a11y、`AvailableDrill` 測試 seam（OQ-64.5）、custom export contract（runtime entry 與 surface filter 已於 T1 落地） | T1 ✅ | Med | 1.5 | `feat(wp-64): wire pilot drills into session plans` |
 | [T3](T3-e2e-and-regression.md) | 真瀏覽器走完選取→執行→匯出，並回歸正式 Pilot 與 history 隔離 | T2 | **High validity** | 1–1.5 | `test(wp-64): verify ad hoc tracking pilot session plans` |
 | [T-exit](T-exit-gate.md) | 驗收 A-64.1～A-64.9、同步索引/決策/操作文件 | T1–T3 | Low | 0.5 | `docs(wp-64): close tracking pilot scheduling work package` |
 

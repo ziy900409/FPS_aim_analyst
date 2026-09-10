@@ -54,12 +54,14 @@ describe('WP-62 T3 — resolveActiveWeapon() 是武器 precedence 的唯一定�
     expect(() => resolveActiveWeapon(undefined, 'toString')).toThrow(/Unknown weapon id/);
   });
 
-  it('BR 八格逐一經 resolver 解析回自己宣告的武器（Controls 面板顯示值的來源）', () => {
+  it('每個自宣告武器的 drill 逐一經 resolver 解析回自己宣告的武器（Controls 面板顯示值的來源）', () => {
     // `controls.setSelectedWeapon()` 現在讀 `activeWeaponConfig().id`，也就是本 resolver 的輸出。
     for (const [drillId, declared] of DECLARED_WEAPON_BY_DRILL_ID) {
       expect(resolveActiveWeapon(undefined, declared).id, drillId).toBe(declared);
     }
-    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(8);
+    // BR 八格（WP-62）+ WP-64 curated 的兩個 tracking-pilot block。數字寫死，讓「又多一個 drill
+    // 把武器固定成實驗因子」這件事無法悄悄通過 review。
+    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(10);
   });
 });
 

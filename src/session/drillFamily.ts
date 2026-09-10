@@ -29,6 +29,7 @@ import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { trackingV1 } from '../drill/tracking_v1.ts';
 import { isWeaponId, type WeaponId } from '../weapon/weapons.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
+import { TRACKING_PILOT_SCHEDULABLE_DRILLS } from './trackingPilotSchedulableDrills.ts';
 
 /**
  * WP-58 T1 (FR-58.1) — the single place that answers "which family does this drill belong to" and
@@ -70,6 +71,11 @@ const FAMILY_ROSTER: readonly (readonly [SessionFamilyId, readonly string[]])[] 
       trackingSceneV1.id,
       trackingLongrangeV1.id,
       ...trackingBrVariants.map((variant) => variant.id),
+      // WP-64 T1 (FR-64.1) — the curated research-schedulable tracking-pilot blocks. Derived from
+      // `TRACKING_PILOT_SCHEDULABLE_DRILLS`, never restated, so this roster row and `main.ts`'s
+      // runtime registry cannot disagree about which pilot blocks a Session Plan may reach
+      // (FM-64.2). The other seven WP-54 blocks stay absent and therefore unschedulable.
+      ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => entry.config.drillId),
     ],
   ],
   ['detection', [detectionPopinV1.drillId]],
@@ -110,7 +116,7 @@ export const FAMILY_BY_DRILL_ID: ReadonlyMap<string, SessionFamilyId> = buildFam
 
 /**
  * Every schedulable drill id, grouped by family in `FAMILY_ROSTER` order. The grouping is the point:
- * the roster is 36 entries, so a flat alphabetical menu would be unusable (WP-58 §3.2 debt).
+ * the roster is 38 entries, so a flat alphabetical menu would be unusable (WP-58 §3.2 debt).
  */
 export const SCHEDULABLE_DRILL_IDS: readonly string[] = [...FAMILY_BY_DRILL_ID.keys()];
 
@@ -126,14 +132,20 @@ export const SCHEDULABLE_DRILL_IDS: readonly string[] = [...FAMILY_BY_DRILL_ID.k
  * `drillFamily.test.ts` walks every schedulable drill's config to prove the derivation stays total.
  *
  * Currently the eight `tracking_br_v1` cells (the 2x2x2 ads x ballistic x angular-height grid,
- * carrying four distinct weapons between them). The two tracking-pilot blocks also declare a weapon
- * but are not schedulable — they load through `loadDrillConfigDirect()`, never through a session
- * program — and the schedulability check below is what keeps them out of this map.
+ * carrying four distinct weapons between them) plus the two curated tracking-pilot blocks WP-64
+ * made schedulable, which fix `tracking_pilot_hold` as an experimental factor (FR-64.4).
+ *
+ * All **nine** WP-54 tracking-pilot blocks declare `tracking_pilot_hold`; the seven WP-64 did not
+ * curate remain unschedulable — they load only through `loadDrillConfigDirect()` under
+ * `TrackingPilotRunner` — and the schedulability check below is what keeps them out of this map.
  */
 type DeclaredWeaponRosterEntry = readonly [drillId: string, weaponId: string | undefined];
 
 const DECLARED_WEAPON_ROSTER: readonly DeclaredWeaponRosterEntry[] = [
   ...trackingBrVariants.map((variant) => [variant.id, variant.drill.weaponId] as const),
+  // WP-64 T1 (FR-64.4) — read off the same curated configs the family row above is derived from, so
+  // a block cannot become schedulable without its weapon becoming fixed in the same step (FM-64.3).
+  ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => [entry.config.drillId, entry.config.weaponId] as const),
 ];
 
 /**

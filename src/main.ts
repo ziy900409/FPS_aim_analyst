@@ -66,6 +66,7 @@ import {
   type ProgramBoundary,
 } from './session/sessionProgram.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './session/sessionSchedule.ts';
+import { TRACKING_PILOT_SCHEDULABLE_DRILLS } from './session/trackingPilotSchedulableDrills.ts';
 import { createTrackingPilotSession, type TrackingPilotSessionHandle } from './pilot/trackingPilotSession.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
@@ -166,6 +167,17 @@ interface AvailableDrill {
   resolveSource?: () => unknown;
   sceneId?: string;
   loadOptions?: DrillLoadOptions;
+  /**
+   * WP-64 T1 (OQ-64.2) — whether this entry is also offered in the researcher Controls drill
+   * dropdown. **Absent means `true`**, so every pre-WP-64 entry keeps its exposure bit-for-bit.
+   *
+   * This separates the two jobs `availableDrills` has been doing at once: it is the runtime
+   * registry `loadDrillById()` searches (always complete — an entry hidden here is still loadable),
+   * and it is the source the Controls dropdown projects from (filtered). Without the split, making
+   * a drill schedulable would silently open a second operator entry point with different semantics
+   * (FM-64.6). See README §3.1 for when this optional field should become a real registry split.
+   */
+  showInResearcherControls?: boolean;
 }
 
 /**
@@ -321,6 +333,22 @@ const availableDrills: AvailableDrill[] = [
     label: variant.id,
     source: variant.drill,
     sceneId: variant.sceneId,
+  })),
+  // WP-64 T1 (FR-64.5) — the curated research-schedulable tracking-pilot blocks, so a custom
+  // Session Plan step can actually be loaded by `loadDrillById()`. Registered from the same
+  // `TRACKING_PILOT_SCHEDULABLE_DRILLS` the family roster and the declared-weapon map derive from:
+  // "compilable" and "loadable" are the same list here, which is what FM-64.2 is about.
+  //
+  // `sceneId` is the descriptor's pinned `field-low`, matching `loadDrillConfigDirect()` — the
+  // blocks' clearance envelope is validated against that scene. `showInResearcherControls: false`
+  // keeps them out of the researcher drill dropdown (OQ-64.2): they are reachable through a
+  // Session Plan and nowhere else.
+  ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => ({
+    id: entry.config.drillId,
+    label: entry.config.drillId,
+    source: entry.config,
+    sceneId: entry.sceneId,
+    showInResearcherControls: entry.selectionSurface === 'session-plan-and-controls',
   })),
 ];
 // WP-52: single-source lookup for the additive `visibility` meta every peek-click-transfer
@@ -1506,7 +1534,11 @@ markProtocolFullscreenExit = () => activeProtocolRunner.markCurrentConditionSusp
 
 // WP-8 / T4（FR-8.4）— 重來 / 換 drill 控制。解鎖時可操作；結果頁顯示時也保持可操作。
 controls = createControls({
-  drills: availableDrills.map(({ id, label }) => ({ id, label })),
+  // WP-64 T1 (OQ-64.2): the dropdown is a *projection* of the runtime registry, not the registry
+  // itself — `loadDrillById()` still searches every entry, hidden ones included.
+  drills: availableDrills
+    .filter(({ showInResearcherControls }) => showInResearcherControls !== false)
+    .map(({ id, label }) => ({ id, label })),
   scenes: availableScenes.map(({ id, label }) => ({ id, label })),
   weapons: Object.keys(WEAPONS).map((id) => ({ id, label: id })),
   selectedDrillId: activeDrillConfig.drillId,

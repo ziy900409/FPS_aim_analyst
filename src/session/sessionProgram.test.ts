@@ -8,8 +8,10 @@ import { spiderShotV2 } from '../drill/spider_shot_v2.ts';
 import { spiderShotV3Binding } from '../drill/spider_shot_v3.ts';
 import { spiderShotWideV1Binding } from '../drill/spider_shot_wide_v1.ts';
 import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
+import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import type { WeaponId } from '../weapon/weapons.ts';
 import { DECLARED_WEAPON_BY_DRILL_ID, FAMILY_BY_DRILL_ID, SCHEDULABLE_DRILL_IDS } from './drillFamily.ts';
+import { TRACKING_PILOT_SCHEDULABLE_DRILLS } from './trackingPilotSchedulableDrills.ts';
 import {
   type ProgramStep,
   type RunStep,
@@ -649,5 +651,123 @@ describe('WP-58 T-exit — SessionRunner stays outside the three loops (ADR-2 / 
   it.each(FORBIDDEN_REACH)('SessionRunner.ts contains no %s', (pattern) => {
     const source = readFileSync(new URL('./SessionRunner.ts', import.meta.url), 'utf8');
     expect(source).not.toMatch(pattern);
+  });
+});
+
+/**
+ * WP-64 T1 (FR-64.3 / FR-64.4) — the curated tracking-pilot blocks compile like any other member of
+ * their family. That is the whole claim: scheduling them adds no case to the compiler, so reps,
+ * both rest boundaries and the fixed-weapon guard must come out of the *existing* rules rather than
+ * out of anything pilot-shaped. Exact expected steps, never a snapshot — a snapshot would happily
+ * record a wrong boundary as the new truth.
+ */
+describe('WP-64 T1 — a curated tracking-pilot block schedules like any other tracking drill', () => {
+  const [CORE, REVERSAL] = TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => entry.config.drillId);
+  const SIBLING = trackingSceneV1.id; // the frozen `tracking` representative, unchanged by WP-64
+  const PILOT_WEAPON = DECLARED_WEAPON_BY_DRILL_ID.get(CORE);
+
+  it('fixture check: both curated blocks are schedulable tracking drills with a fixed weapon', () => {
+    for (const drillId of [CORE, REVERSAL]) {
+      expect(FAMILY_BY_DRILL_ID.get(drillId)).toBe('tracking');
+      expect(SCHEDULABLE_DRILL_IDS).toContain(drillId);
+      expect(DECLARED_WEAPON_BY_DRILL_ID.get(drillId)).toBe('tracking_pilot_hold');
+    }
+    expect(FAMILY_BY_DRILL_ID.get(SIBLING)).toBe('tracking');
+    expect(FAMILY_BY_DRILL_ID.get(A)).not.toBe('tracking');
+  });
+
+  it('expands reps, then the same-family drill rest, then the cross-family rest', () => {
+    const program = compileSessionProgram({
+      items: [
+        { drillId: CORE, reps: 2 },
+        { drillId: SIBLING, reps: 1 },
+        { drillId: A, reps: 1 },
+      ],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(program).toEqual([
+      { kind: 'run', drillId: CORE, family: 'tracking', itemIndex: 0, repIndex: 0, repCount: 2 },
+      { kind: 'rest', seconds: 30, boundary: 'rep', nextDrillId: CORE },
+      { kind: 'run', drillId: CORE, family: 'tracking', itemIndex: 0, repIndex: 1, repCount: 2 },
+      { kind: 'rest', seconds: 30, boundary: 'drill', nextDrillId: SIBLING },
+      { kind: 'run', drillId: SIBLING, family: 'tracking', itemIndex: 1, repIndex: 0, repCount: 1 },
+      { kind: 'rest', seconds: 60, boundary: 'family', nextDrillId: A },
+      { kind: 'run', drillId: A, family: 'hold-click', itemIndex: 2, repIndex: 0, repCount: 1 },
+    ]);
+  });
+
+  it('treats the two curated blocks as same-family neighbours, not as a family boundary', () => {
+    const program = compileSessionProgram({
+      items: [
+        { drillId: CORE, reps: 1 },
+        { drillId: REVERSAL, reps: 1 },
+      ],
+      drillRestSeconds: 45,
+      familyRestSeconds: 90,
+    });
+    expect(program).toEqual([
+      { kind: 'run', drillId: CORE, family: 'tracking', itemIndex: 0, repIndex: 0, repCount: 1 },
+      { kind: 'rest', seconds: 45, boundary: 'drill', nextDrillId: REVERSAL },
+      { kind: 'run', drillId: REVERSAL, family: 'tracking', itemIndex: 1, repIndex: 0, repCount: 1 },
+    ]);
+  });
+
+  it('accepts an item naming the weapon the block already declares (FR-64.4)', () => {
+    const program = compileSessionProgram({
+      items: [{ drillId: CORE, reps: 2, weaponId: PILOT_WEAPON }],
+      drillRestSeconds: 0,
+      familyRestSeconds: 0,
+    });
+    expect(program.flatMap((step) => (step.kind === 'run' ? [step.weaponId] : []))).toEqual([
+      PILOT_WEAPON,
+      PILOT_WEAPON,
+    ]);
+  });
+
+  it.each([
+    ['the core cell', [{ drillId: CORE, reps: 1, weaponId: 'ak47' as WeaponId }], 0],
+    ['the reversal cell', [{ drillId: REVERSAL, reps: 1, weaponId: 'usp_s_laser' as WeaponId }], 0],
+    [
+      'the second item of three',
+      [
+        { drillId: A, reps: 1 },
+        { drillId: CORE, reps: 1, weaponId: 'ak47' as WeaponId },
+        { drillId: SIBLING, reps: 1 },
+      ],
+      1,
+    ],
+  ] as [string, readonly SessionProgramItem[], number][])(
+    'refuses to re-arm %s — the weapon is a fixed research factor',
+    (_label, items, itemIndex) => {
+      let thrown: unknown;
+      let returned: readonly ProgramStep[] | undefined;
+      try {
+        returned = compileSessionProgram({ items, drillRestSeconds: 30, familyRestSeconds: 60 });
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(SessionProgramCompileError);
+      const error = thrown as SessionProgramCompileError;
+      expect(error.field).toBe('weaponId');
+      expect(error.itemIndex).toBe(itemIndex);
+      expect(returned).toBeUndefined();
+    },
+  );
+
+  it('still rejects an uncurated pilot block as an unschedulable drillId (FR-64.1)', () => {
+    let thrown: unknown;
+    try {
+      compileSessionProgram({
+        items: [{ drillId: 'tracking_core_pr_pilot_v1_practice', reps: 1 }],
+        drillRestSeconds: 30,
+        familyRestSeconds: 60,
+      });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(SessionProgramCompileError);
+    expect((thrown as SessionProgramCompileError).field).toBe('drillId');
+    expect((thrown as SessionProgramCompileError).itemIndex).toBe(0);
   });
 });

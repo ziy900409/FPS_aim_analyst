@@ -66,7 +66,7 @@ interface EditableSessionProgramItem {
 }
 
 /**
- * The roster is 36 drills, so a flat menu is unusable (WP-58 §3.2 debt). `SCHEDULABLE_DRILL_IDS` is
+ * The roster is 38 drills, so a flat menu is unusable (WP-58 §3.2 debt). `SCHEDULABLE_DRILL_IDS` is
  * already emitted in family order, so grouping is one pass and introduces no second ordering rule.
  */
 function groupSchedulableDrills(): readonly DrillGroup[] {
