@@ -633,3 +633,98 @@ RESULT         : PASS
 | 2 | `'ak47'` 的字面／常數目前有三處來源：`weapons.ts` `DEFAULT_WEAPON_ID`（T3 新增，權威）、`metadata.ts` `DEFAULT_WEAPON_ID`（既有）、`main.ts` 兩處 `?? 'ak47'`（承 T3 OQ #6） | 🟢 非阻塞：三者逐位等價，純可讀性 debt | 實作者 | 任一觸及該三處的後續 task 順手處理 |
 | 3 | T6 提醒：本 task 的 frozen 逐位不變只驗到 **meta 鍵集合 + 8 個 canonical digest**（unit 級）；**真實 frozen live e2e 的逐份匯出**仍是 T6 的職責，不可視為已由 T5 涵蓋 | 🟢 非阻塞 | 實作者 | T6 |
 | 4 | T6 提醒：`session-orchestrator.spec.ts` 的 live run 若加上逐列武器案例，應順帶斷言匯出的 `sessionPlanItems[].weaponId` 與 `meta.weaponId` 對得上（本 task 只在 unit 級對帳，沒有走過真實瀏覽器） | 🟢 非阻塞 | 實作者 | T6 |
+
+---
+
+## §T6 E2E 整合與 frozen 逐位不變回歸（2026-09-10）
+
+**狀態**：✅ 完成。`session-orchestrator.spec.ts` 擴充 3 條（不新開平行 spec）：DOM 正向逐列選武器、DOM 負向 BR 實驗格覆蓋、live 逐列武器實跑並解析匯出對帳。frozen live 匯出的 meta 鍵面以 `f0df84d`（本 WP 前 HEAD）實跑取得的 digest 釘死，**跑出來一模一樣**。`npm run test:ci` exit 0。
+
+### Progress
+
+- [x] (2026-09-10) `tests/e2e/session-orchestrator.spec.ts` +3 tests（15 → **18**），全部落在既有 `describe` 內：
+  - `WP-62 T6：每列各選一把武器 → 預覽逐步顯示該步武器 → 送出`（FR-62.1／62.3／62.5／62.7）；
+  - `WP-62 T6：覆蓋 BR 實驗格武器 → 標紅該列且禁用提交；改回宣告值即解除`（FR-62.2／FM-2）；
+  - `WP-62 T6：逐列武器實跑 —— 每份匯出的 meta.weaponId 對得上該列選擇，意圖與事實一致`（FR-62.1／62.3／62.4）。
+- [x] (2026-09-10) `runLiveSessionPlan()` 由「只數下載檔名」擴為**同時解析下載內容**（新增 `metas`）。custom／frozen／abort 三條 live 案例共用同一個 helper，frozen 因此免費取得逐份匯出的稽核能力。
+- [x] (2026-09-10) frozen live 案例新增三層 FR-62.6 斷言：`sessionPlan*` 鍵恰為 `sessionPlanFamilyOrder`＋`sessionPlanRestSeconds`、`sessionPlanItems` 缺席、`meta.weaponId === 'ak47'`，外加整個 meta 鍵面的 digest 對表。
+- [x] (2026-09-10) 更新既有 WP-58 T6 預覽文字斷言（T4 改了 `describeStep()` 的唯一 e2e 犧牲者，見 Surprises 1），並**同時加嚴**：逐 run 釘死 `data-step-weapon-id`。
+
+### 驗證（`npm run test:ci` exit 0，逐項實測）
+
+| 指令 | 結果 |
+|---|---|
+| `npm run test:ci`（兩個 typecheck + 全量 Vitest + 全量 Playwright，preview webServer 內含 `vite build`） | ✅ **exit 0** |
+| 全量 Vitest（`npx vitest run`） | ✅ **2,946 passed / 2 skipped**；檔案 **254 passed / 1 skipped**，17.96s |
+| 全量 Playwright（`test:ci` 預設 fullyParallel） | ✅ **106 passed / 0 failed / 0 flaky（7.0m）** |
+| 單檔 `session-orchestrator.spec.ts --workers=1` | ✅ **18 passed（11.7m）** |
+| `tsc --noEmit --strict` 直接掃 `session-orchestrator.spec.ts`（補 `npm run typecheck` 的 `include: ["src"]` 缺口，T6 步驟 5 的警告） | ✅ exit 0 |
+
+**回歸基線對帳**：
+
+| | T0 基線 | T5 | T6 | 差值 |
+|---|---|---|---|---|
+| Vitest tests | 2,822 / 2 skipped | 2,946 / 2 | **2,946 / 2** | **0**（T6 不新增 unit 測試） |
+| Vitest files | 252 / 1 skipped | 254 / 1 | **254 / 1** | 0 |
+| Playwright tests | 103 | —（未跑） | **106** | **+3**，恰為本 task 三條新案例 |
+
+只增不減；既有 Vitest 測試零修改。既有 Playwright 案例修改**一條**（下方 D-62.T6-2 明帳）。
+
+### frozen 逐位不變：實作方式與偏離（DoD 第 4 條）
+
+`f0df84d`（本 WP 前最後一個未動 `src/` 的 commit）另開 worktree、掛同一份 `node_modules`、**放進同一份 spec** 實跑 frozen live e2e 取基準，量完即 `git worktree remove`。兩次跑的 digest：
+
+| Fixture（frozen live run，依序） | `f0df84d` 基準 | 本 WP HEAD | 一致 |
+|---|---|---|---|
+| `detection_popin_v1` | `2752c07b` | `2752c07b` | ✅ |
+| `spider-shot-wide-v1` | `2752c07b` | `2752c07b` | ✅ |
+| `tracking_scene_v1` | `2752c07b` | `2752c07b` | ✅ |
+
+digest = FNV-1a over `Object.keys(meta).sort().join(',')`（與 `exportPayloadSchema.test.ts` 同一個雜湊）。**偏離說明見 D-62.T6-1：比的是鍵面不是整份 payload。**
+
+### 意圖 vs 事實對帳：live 匯出的實際值（DoD 第 1／2 條）
+
+測試名 `WP-62 T6：逐列武器實跑 —— 每份匯出的 meta.weaponId 對得上該列選擇，意圖與事實一致（FR-62.1/62.3/62.4）`。三列同一個 `tracking_scene_v1`（讓武器成為唯一變因），四份匯出實測值：
+
+| 匯出 | `sessionPlanItemIndex` / `RepIndex` | 事實 `meta.weaponId` | 意圖 `sessionPlanItems[i].weaponId` | 守什麼 |
+|---|---|---|---|---|
+| 1 | 0 / 0 | `m4a1s` | `m4a1s` | 指定即生效 |
+| 2 | 0 / 1 | `m4a1s` | `m4a1s` | **同一列第二輪仍是同一把**（FR-62.3；本 WP 前這裡會被 `activateDrill()` 清成 `ak47`） |
+| 3 | 1 / 0 | `usp_s_laser` | `usp_s_laser` | 換列即換槍 |
+| 4 | 2 / 0 | `ak47` | **鍵不存在** | 「沒有意圖」≠「沒有武器」 |
+
+四份匯出的 `meta.sessionPlanItems` 皆為完整計畫且第三列**無 `weaponId` 鍵**（以 `'weaponId' in item === false` 明寫，`toEqual` 對值為 `undefined` 的鍵無感——T5 §Surprises 1 的同一個陷阱）。
+
+### 環境陷阱檢查（DoD 第 6 條）
+
+| 項目 | 跑前 | 跑後 | 判讀 |
+|---|---|---|---|
+| port 5173 歸屬 | **free**（無他人 dev server） | free | Playwright 自起 dev pid 38768 / preview pid 35588，各自持有 `.playwright-tmp/history-{dev,preview}/.history-root.lease` ⇒ `reuseExistingServer` 未誤接他人 server |
+| `.playwright-tmp/history-dev` 目錄數 | 144 | **171**（+27，全量 Playwright 的 history 案例所致） | 遠低於記憶中會出事的「上千個」，本次非嫌疑 |
+| 真實 root `data/session-history/` 項數 | **41** | **41** | 零污染 |
+| 真實 root 新檔（`find -newermt "12:00" ! -name .history-root.lease`） | 空 | **空** | 零污染（逐項證據，非概括宣稱） |
+
+⚠️ **T0 §6 的陷阱第二次現身**：`data/session-history/.history-root.lease` 期間被 **pid 50248**（12:51:53Z）取得，該 pid 非 Playwright 起的兩個 server 之一；查證時該 process **已結束**，屬殘留 lease，且如上表**未寫入任何資料**。與 T0 同一結論：IDE 擴充等非 `playwright.config.ts` 管的 server 仍會搶真實 root，光關手動 dev server 不夠。
+
+### Decision Log
+
+| # | 日期 | 決定 | 理由 | Alternatives considered |
+|---|---|---|---|---|
+| **D-62.T6-1** | 2026-09-10 | frozen「逐位不變」在 live e2e 落成**三層斷言 + meta 鍵面 digest**，而非整份 payload 逐位比對 | 真實 frozen run 的 payload 內含時間戳、逐 tick 資料與命中統計，**兩次跑本來就不同** ⇒ 對整份 payload 取 digest 不是嚴格，是釘死 flake。WP-62 唯一可能弄壞 frozen 匯出的方式是**改變它寫哪些欄位**，鍵面正是那個面 | ① 整份 payload digest：不可能綠，且第一次紅就會被當成環境問題關掉；② 只靠 T5 的 8 個 canonical fixture digest：unit 級、跑的是 committed fixture，**不涵蓋真實 frozen live run**（T5 OQ #3 明文把這件事留給 T6） |
+| **D-62.T6-2** | 2026-09-10 | **修正**（非放寬）既有 WP-58 T6 的預覽文字斷言 `expect(steps[0].text)`，並在同一處**加嚴**逐 run 的 `data-step-weapon-id` | T4 把 `describeStep()` 的 run row 文案加上「· 武器 X」卻標記「Playwright 未跑，留到 T6」⇒ 這條斷言自 T4 起就是紅的。T6 是它的收斂點；斷言的**語意**未變（仍釘死預覽逐字），只換成新文案，並多釘一個屬性 ⇒ 符合 T6 invariant「新增可以、放寬不行」 | ① 刪掉該行：會丟掉「預覽文字由編譯器輸出決定」的唯一 e2e 證據；② 改成 `toContain`：那才是放寬，且會讓下一次文案漂移無聲通過 |
+| **D-62.T6-3** | 2026-09-10 | live 案例用**同一個 drill**（`tracking_scene_v1`）三列 + 四輪，而非三個不同 drill | 武器成為唯一變因 ⇒ 匯出對不上時不可能推給 drill 差異；且 `tracking_scene_v1` 是 roster 中最短的 scene-pinned 自終止 drill（~23 s），四輪 ≈ 1.7 分鐘，比三個不同 drill 便宜一個數量級 | ① 三個不同 drill（沿用 `PROGRAM_DRILLS`）：貴 5 倍且引入 drill 這個混淆變因；② 只跑兩列：無法同時涵蓋「同列兩輪同一把」與「不指定 → app 預設」 |
+
+### Surprises & Discoveries
+
+1. **T4 的預覽文案改動讓既有 e2e 從 T4 當下就是紅的，T6 第一次跑就撞到。** T4 的驗證表六道全綠、`progress.md` 記「Playwright 未跑：T4 只改 DOM setup」——但改的正是 `describeStep()` 的回傳字串，而那個字串有 e2e 逐字斷言。**六道閘裡沒有一道會告訴你這件事**：`npm run typecheck` 不掃 `tests/`，Vitest 不跑 e2e。⇒ 教訓與 T0 §4 的「typecheck 守備範圍比直覺窄」同源：**只要改動的是會被 e2e 逐字斷言的使用者可見字串，就不能把 Playwright 推到下一個 task**。
+2. **三個 frozen drill 的 meta 鍵面 digest 完全相同（`2752c07b`）。** 原以為要三個不同值（`spiderShot`／`tracking` 等 drill 專屬欄位），實測是這三個代表 drill 在 frozen 軌下寫出的鍵集合**逐字相同**。保留三格對表而非收成一格，是因為「哪天某個 drill 開始多寫一個欄位」正是這張表要抓的東西。
+3. **`node_modules` 用 directory junction 掛進量測 worktree 可行**，省掉一次完整 `npm ci`；量完 `git worktree remove --force` 後主 checkout 的 `node_modules` 完好（已覆驗 `npx playwright --version`）。
+4. **`meta.weaponId`（頂層，事實）與 `meta.weapon.id`（武器快照）是兩個不同欄位**：`weapon-select.spec.ts`（WP-47 契約守門人）讀的是後者，本 task 讀的是前者。兩支 spec 在本次全量 Playwright 中同時綠 ⇒ T3 改動 `activateDrill()` override 賦值與 `setSelectedWeapon()` 讀取來源後，WP-47 的 reset-per-drill 契約**未被破壞**（T3 特別點名要 T6 覆驗的那件事，此處結案）。
+
+### Open Questions（T6 結束時）
+
+| # | 問題 | 狀態 | Owner | 需在何時收斂 |
+|---|---|---|---|---|
+| 1 | `loadSceneById()` 清空 override 與 ADS/gain 不對稱（承 T3 OQ #4／T4 OQ #3／T5 OQ #1） | 🟡 **仍未決**。T6 的 e2e **未觀察到**該路徑：Session Plan 執行中不碰 Controls 場景下拉，故 live 案例天然走不到它 ⇒ 「T6 e2e 觀察後判斷」這個收斂條件**無法由 T6 滿足** | 實作者 + 研究者 | **T-exit**（判斷是否另開 KI；選項仍為 T0 §5 收斂的 ②／③） |
+| 2 | `'ak47'` 三處來源的可讀性 debt（承 T5 OQ #2） | 🟢 非阻塞，T6 未觸及 | 實作者 | 任一觸及該三處的後續 task |
+| 3 | 全量 Playwright 的基準跑法不一致：T0 用 `--workers=1`（103，13.8m），T6 的 `npm run test:ci` 用預設 fullyParallel（106，7.0m） | 🟢 非阻塞：兩者本次皆 0 failed／0 flaky，且 T6 另以 `--workers=1` 單檔覆驗過本 task 的 18 條 | 實作者 | T-exit 記錄時擇一為準即可 |

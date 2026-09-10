@@ -15,7 +15,7 @@
 | **Estimate** | 8.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | Med/High：`activateDrill()` 是全 app 唯一的 drill 啟用路徑，武器賦值點與 `buildSimLoop()` 的先後決定 recoil RNG／彈匣／ADS／感度 gain 是否一致；`sessionProgram.ts` 帶純函式 source-scan 契約 |
 | **Milestone** | 無獨立里程碑，**T-exit gate 即交付判定**（比照 WP-27／WP-58） |
-| **Status** | 🟡 **T0 ✅ / T1 ✅ / T2 ✅ / T3 ✅ / T4 ✅ / T5 ✅（2026-09-10）**，T6 未開工。基線見 [progress.md §T0.1](progress.md)，T1 的 8-vs-4 修正見 [§T1](progress.md)，T2 的逐位回歸 sha256 見 [§T2](progress.md)，T3 的跨 FPS 逐位一致與四道突變見 [§T3](progress.md)，T4 的表單選單與預覽驗證見 [§T4](progress.md)，T5 的意圖／事實對帳與 `research/` 相容性實測見 [§T5](progress.md) |
+| **Status** | 🟡 **T0 ✅ / T1 ✅ / T2 ✅ / T3 ✅ / T4 ✅ / T5 ✅ / T6 ✅（2026-09-10）**，僅餘 T-exit。基線見 [progress.md §T0.1](progress.md)，T1 的 8-vs-4 修正見 [§T1](progress.md)，T2 的逐位回歸 sha256 見 [§T2](progress.md)，T3 的跨 FPS 逐位一致與四道突變見 [§T3](progress.md)，T4 的表單選單與預覽驗證見 [§T4](progress.md)，T5 的意圖／事實對帳與 `research/` 相容性實測見 [§T5](progress.md)，T6 的 live 逐列武器匯出對帳與 frozen 鍵面 digest 見 [§T6](progress.md) |
 
 ### 落點說明（stage 主題不符，明帳記錄）
 

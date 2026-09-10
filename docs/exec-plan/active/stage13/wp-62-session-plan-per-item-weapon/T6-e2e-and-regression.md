@@ -31,12 +31,12 @@
 
 ## Definition of Done
 
-- [ ] custom 軌 live run 實跑兩列不同武器，各自匯出的 `meta.weaponId` 與該列選擇相符（測試名 + 實際 payload 值記入 `progress.md`）
-- [ ] `meta.sessionPlanItems[].weaponId`（意圖）與 `meta.weaponId`（事實）在 live 匯出上一致有斷言
-- [ ] DOM 正向 + 負向（BR 八格）案例各一，皆綠
-- [ ] frozen live e2e 匯出與本 WP 前 HEAD 逐位相同（digest 對比記入 `progress.md`）
-- [ ] `npm run test:ci` exit 0；Vitest／Playwright 實測數字與 T0 基線的差異（只增不減）記入 `progress.md`
-- [ ] 環境陷阱檢查結果記入 `progress.md`（5173 埠歸屬、`.playwright-tmp/history-dev` 目錄數）
+- [x] custom 軌 live run 實跑兩列不同武器，各自匯出的 `meta.weaponId` 與該列選擇相符（測試名 + 實際 payload 值記入 `progress.md`）
+- [x] `meta.sessionPlanItems[].weaponId`（意圖）與 `meta.weaponId`（事實）在 live 匯出上一致有斷言
+- [x] DOM 正向 + 負向（BR 八格）案例各一，皆綠
+- [x] frozen live e2e 匯出與本 WP 前 HEAD 逐位相同（digest 對比記入 `progress.md`）
+- [x] `npm run test:ci` exit 0；Vitest／Playwright 實測數字與 T0 基線的差異（只增不減）記入 `progress.md`
+- [x] 環境陷阱檢查結果記入 `progress.md`（5173 埠歸屬、`.playwright-tmp/history-dev` 目錄數）
 
 ## Commit
 
