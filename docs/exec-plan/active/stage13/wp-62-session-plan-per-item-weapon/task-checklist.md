@@ -5,7 +5,7 @@
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
 | ✅ | **T0** Entry gate／基線復現／編號重查／決策凍結 | [T0-entry-gate.md](T0-entry-gate.md) | WP-58 T-exit ✅ | Low |
-| ⬜ | **T1** Drill 自宣告武器的推導註冊表 | [T1-declared-weapon-registry.md](T1-declared-weapon-registry.md) | T0 | Low |
+| ✅ | **T1** Drill 自宣告武器的推導註冊表 | [T1-declared-weapon-registry.md](T1-declared-weapon-registry.md) | T0 | Low |
 | ⬜ | **T2** 編譯器 `weaponId` 穿透與驗證 | [T2-compiler-weapon-passthrough.md](T2-compiler-weapon-passthrough.md) | T1 | Med |
 | ⬜ | **T3** SessionRunner／`activateDrill()` 接線 | [T3-runner-and-activation-wiring.md](T3-runner-and-activation-wiring.md) | T2 | **High** |
 | ⬜ | **T4** 表單每列武器選單／預覽 | [T4-setup-ui-weapon-picker.md](T4-setup-ui-weapon-picker.md) | T2（可與 T3 並行） | Med |

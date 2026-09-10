@@ -15,7 +15,7 @@
 | **Estimate** | 8.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | Med/High：`activateDrill()` 是全 app 唯一的 drill 啟用路徑，武器賦值點與 `buildSimLoop()` 的先後決定 recoil RNG／彈匣／ADS／感度 gain 是否一致；`sessionProgram.ts` 帶純函式 source-scan 契約 |
 | **Milestone** | 無獨立里程碑，**T-exit gate 即交付判定**（比照 WP-27／WP-58） |
-| **Status** | 🟡 **T0 entry gate ✅（2026-09-10）**，T1 未開工。基線見 [progress.md §T0.1](progress.md) |
+| **Status** | 🟡 **T0 ✅ / T1 ✅（2026-09-10）**，T2 未開工。基線見 [progress.md §T0.1](progress.md)，T1 的 8-vs-4 修正見 [§T1](progress.md) |
 
 ### 落點說明（stage 主題不符，明帳記錄）
 
@@ -25,8 +25,8 @@ stage13（階段 M）的主題是「原始輸入取樣與抬滑鼠判準驗證�
 
 ## 0. Repository-grounded discovery（2026-09-10）
 
-1. **可排程 drill 中只有 4 個宣告武器。** [drillFamily.ts:49-88](../../../../../src/session/drillFamily.ts) 的 `FAMILY_ROSTER` 共 36 個 drill，其中僅 `trackingBrVariants`（4 個 `ak47_br_{hip,ads}_{hitscan,projectile}` BR 實驗格，[tracking_br_v1.ts:72](../../../../../src/drill/tracking_br_v1.ts)）有 `weaponId`。其餘 32 個 `weaponId === undefined` ⇒ 一律吃 `main.ts` 的預設 `ak47`。
-2. **綁 `tracking_pilot_hold` 的兩個 pilot drill 不可排程。** `tracking_core_pr_pilot_v1` / `tracking_reversal_pilot_v1` 不在 `FAMILY_ROSTER` 內，走 `loadDrillConfigDirect()`（[main.ts:1435](../../../../../src/main.ts)）。因此本 WP 的「武器鎖」範圍是 4 列，不是一整套機制。
+1. **可排程 drill 中只有 8 個宣告武器（T1 實查修正，原記 4 個）。** [drillFamily.ts](../../../../../src/session/drillFamily.ts) 的 `FAMILY_ROSTER` 共 36 個 drill，其中僅 `trackingBrVariants`（[tracking_br_v1.ts:93-102](../../../../../src/drill/tracking_br_v1.ts)）有 `weaponId`。**該陣列是 2×2×2 = 8 格**（ads × ballistic × angularHeight），共用 4 把武器 `ak47_br_{hip,ads}_{hitscan,projectile}`——規劃期把「4 把武器」誤記為「4 個 drill」。其餘 28 個 `weaponId === undefined` ⇒ 一律吃 `main.ts` 的預設 `ak47`。詳見 [progress.md §T1](progress.md)。
+2. **綁 `tracking_pilot_hold` 的兩個 pilot drill 不可排程。** `tracking_core_pr_pilot_v1` / `tracking_reversal_pilot_v1` 不在 `FAMILY_ROSTER` 內，走 `loadDrillConfigDirect()`（[main.ts:1435](../../../../../src/main.ts)）。因此本 WP 的「武器鎖」範圍是 8 列（T1 修正，原記 4 列），不是一整套機制。
 3. **`drillFamily.ts` 已經 import 每一個 drill 模組**（第 1–29 行），故「該 drill 宣告了哪把武器」可由既有 import **推導**，不需要第二份手寫清單（KI-016 紀律）。
 4. **`SessionProgramItem` 已有純資料穿透前例。** `warmup?` 由編譯器原樣帶進 `RunStep`，不影響 boundary／rest（[sessionProgram.ts:18-31, 168-170](../../../../../src/session/sessionProgram.ts)）。`weaponId?` 是同一個形狀。
 5. **編譯器的既有契約就是「非法輸入不得抵達 runtime」**（`sessionProgram.ts` 檔頭 + `SessionProgramCompileError` 註解）。武器 id 驗證放在這裡與 `requireFamily()` 同層，是既有紀律的延伸而非新增概念。
@@ -150,7 +150,7 @@ export function isWeaponId(id: string): id is WeaponId;
 /**
  * drill -> 該 drill 自己宣告的武器。**由本檔已 import 的 drill 模組推導**，不是第二份手寫清單
  * （KI-016）。不在 map 內 = 該 drill 未宣告武器，可由 Session Plan 逐列指定。
- * 現況恰 4 筆（BR 2x2 實驗格）；`drillFamily.test.ts` 以逐 drill 對表釘死。
+ * 現況恰 8 筆（BR 2x2x2 實驗格，共用 4 把武器）；`drillFamily.test.ts` 以逐 drill 對表釘死。
  */
 export const DECLARED_WEAPON_BY_DRILL_ID: ReadonlyMap<string, WeaponId>;
 

@@ -209,6 +209,12 @@ export function getWeapon(id: string): WeaponConfig {
   throw new Error(`Unknown weapon id: ${id}. Available weapons: ${WEAPON_IDS.join(', ')}`);
 }
 
-function isWeaponId(id: string): id is WeaponId {
+/**
+ * WP-62 T1: exported so the Session Plan compiler can reject an unknown weapon id at *compile*
+ * time instead of letting `getWeapon()` throw mid-activation, after the scene has already swapped.
+ * Behaviour is unchanged — this is the same predicate `getWeapon()` has always used, and `WEAPONS`
+ * stays the only source of truth for what a weapon id is.
+ */
+export function isWeaponId(id: string): id is WeaponId {
   return Object.prototype.hasOwnProperty.call(WEAPONS, id);
 }

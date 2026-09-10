@@ -4,10 +4,41 @@ import defaultDrillSource from '../../drills/counterstrafe_ad_v1.json';
 import { createDrillMetricRegistry } from '../history/DrillMetricRegistry.ts';
 import { counterstrafeFreeV1 } from '../drill/counterstrafe_free_v1.ts';
 import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
-import { PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES } from '../drill/peek_click_transfer_pilot_v2.ts';
+import type { DrillConfig } from '../drill/DrillConfig.ts';
+import { detectionPopinV1 } from '../drill/detection_popin_v1.ts';
+import { holdClickV1 } from '../drill/hold_click_v1.ts';
+import { holdTrackV1 } from '../drill/hold_track_v1.ts';
+import { microFlickThreeTargetTestV1 } from '../drill/micro_flick_three_target_test_v1.ts';
+import { microFlickThreeTargetTestV2 } from '../drill/micro_flick_three_target_test_v2.ts';
+import { microFlickThreeTargetTestV3 } from '../drill/micro_flick_three_target_test_v3.ts';
+import { microFlickThreeTargetTestV4 } from '../drill/micro_flick_three_target_test_v4.ts';
+import { microFlickThreeTargetTestV5 } from '../drill/micro_flick_three_target_test_v5.ts';
+import { microFlickThreeTargetTestV6 } from '../drill/micro_flick_three_target_test_v6.ts';
+import { microFlickThreeTargetTestV7 } from '../drill/micro_flick_three_target_test_v7.ts';
+import { microFlickThreeTargetTestV8 } from '../drill/micro_flick_three_target_test_v8.ts';
+import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
+import {
+  PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES,
+  peekClickTransferPilotV2Masked,
+  peekClickTransferPilotV2Randomized,
+} from '../drill/peek_click_transfer_pilot_v2.ts';
+import { peekClickTransferV1 } from '../drill/peek_click_transfer_v1.ts';
+import { spiderShotV1 } from '../drill/spider_shot_v1.ts';
+import { spiderShotV2 } from '../drill/spider_shot_v2.ts';
+import { spiderShotV3, spiderShotV3Binding } from '../drill/spider_shot_v3.ts';
+import { resolveSpiderShotWideV1, spiderShotWideV1Binding } from '../drill/spider_shot_wide_v1.ts';
 import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
+import { trackingLongrangeV1 } from '../drill/tracking_longrange_v1.ts';
+import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { trackingV1 } from '../drill/tracking_v1.ts';
-import { FAMILY_BY_DRILL_ID, SCHEDULABLE_DRILL_IDS, resolveFamilyDrillId } from './drillFamily.ts';
+import { WEAPONS, isWeaponId } from '../weapon/weapons.ts';
+import {
+  DECLARED_WEAPON_BY_DRILL_ID,
+  FAMILY_BY_DRILL_ID,
+  SCHEDULABLE_DRILL_IDS,
+  buildDeclaredWeaponByDrillId,
+  resolveFamilyDrillId,
+} from './drillFamily.ts';
 import {
   KNOWN_SESSION_FAMILY_IDS,
   SCHEDULABLE_FAMILY_IDS,
@@ -258,5 +289,146 @@ describe('WP-58 T1 — invariant 4: family membership does not grant Assessment 
       // A family id is never a drill id — nothing may become schedulable by naming its family.
       expect(FAMILY_BY_DRILL_ID.has(family), family).toBe(false);
     }
+  });
+});
+
+/**
+ * WP-62 T1 — `DECLARED_WEAPON_BY_DRILL_ID` is the single source for "does this drill fix its own
+ * weapon", which T2 uses to reject an override (D-62-1) and T4 uses to name the weapon in the
+ * preview. A derived map is only worth as much as the proof that its derivation is *total*, so the
+ * first suite walks every schedulable drill's real config rather than the map's own keys.
+ */
+
+/**
+ * Every schedulable drill's actual config source, in `main.ts`'s `availableDrills` order.
+ *
+ * The element type keeps `drillId` even though only `weaponId` is read: a shape of nothing but
+ * optional properties is a weak type, which TypeScript will happily accept an unrelated object for.
+ * Requiring `drillId` is what makes "this really is a drill config" a compile-time claim.
+ */
+const SCHEDULABLE_DRILL_SOURCES: readonly (readonly [
+  string,
+  Pick<DrillConfig, 'drillId' | 'weaponId'>,
+])[] = [
+  // Ids read from the drill modules, never hand-typed (D-58-T0-2).
+  [defaultDrillSource.drillId, defaultDrillSource],
+  [detectionPopinV1.drillId, detectionPopinV1],
+  [trackingV1.drillId, trackingV1],
+  [trackingSceneV1.id, trackingSceneV1.drill],
+  [trackingLongrangeV1.id, trackingLongrangeV1.drill],
+  [holdClickV1.id, holdClickV1.drill],
+  [holdTrackV1.id, holdTrackV1.drill],
+  [spiderShotV1.drillId, spiderShotV1],
+  [spiderShotV2.drillId, spiderShotV2],
+  [spiderShotV3Binding.id, spiderShotV3],
+  // OQ-62.3: the one roster entry whose config is produced at arm time. `resolveSpiderShotWideV1`
+  // is a pure function of (vertical FOV, aspect) and needs no scene, so covering the lazy binding
+  // costs nothing here — the same 75 / 16:9 pair `spider_shot_wide_v1.test.ts` uses.
+  [spiderShotWideV1Binding.id, resolveSpiderShotWideV1(75, 16 / 9)],
+  [counterstrafeReversalV1.drillId, counterstrafeReversalV1],
+  [counterstrafeFreeV1.drillId, counterstrafeFreeV1],
+  [peekClickTransferPilotV1.id, peekClickTransferPilotV1.drill],
+  ...PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES.map(
+    (candidate) => [candidate.id, candidate.drill] as const,
+  ),
+  [peekClickTransferPilotV2Randomized.id, peekClickTransferPilotV2Randomized.drill],
+  [peekClickTransferPilotV2Masked.id, peekClickTransferPilotV2Masked.drill],
+  [peekClickTransferV1.id, peekClickTransferV1.drill],
+  ...[
+    microFlickThreeTargetTestV1,
+    microFlickThreeTargetTestV2,
+    microFlickThreeTargetTestV3,
+    microFlickThreeTargetTestV4,
+    microFlickThreeTargetTestV5,
+    microFlickThreeTargetTestV6,
+    microFlickThreeTargetTestV7,
+    microFlickThreeTargetTestV8,
+  ].map((variant) => [variant.id, variant.drill] as const),
+  ...trackingBrVariants.map((variant) => [variant.id, variant.drill] as const),
+];
+
+describe('WP-62 T1 — the declared-weapon map matches every schedulable drill config', () => {
+  it('covers every schedulable drill, with no entry for anything off the roster', () => {
+    // Full coverage of all 36 (OQ-62.3, no exemptions taken): a subset would leave exactly the
+    // drills nobody checked as the ones free to grow a `weaponId` unnoticed.
+    expect(new Set(SCHEDULABLE_DRILL_SOURCES.map(([drillId]) => drillId))).toEqual(
+      new Set(SCHEDULABLE_DRILL_IDS),
+    );
+    expect(SCHEDULABLE_DRILL_SOURCES).toHaveLength(SCHEDULABLE_DRILL_IDS.length);
+  });
+
+  it.each(SCHEDULABLE_DRILL_SOURCES)(
+    '%s declares in the map exactly what its config declares',
+    (drillId, source) => {
+      // The negative half — both sides `undefined` for the 28 drills that declare nothing — is the
+      // half that catches the real failure mode: a drill gains a `weaponId`, nobody adds it here,
+      // and T2 then lets a Session Plan item silently override an experimental factor.
+      expect(DECLARED_WEAPON_BY_DRILL_ID.get(drillId)).toBe(source.weaponId);
+    },
+  );
+
+  it('never maps an unschedulable drill, including the tracking-pilot blocks that declare weapons', () => {
+    for (const drillId of ['tracking_core_pr_pilot_v1', 'tracking_reversal_pilot_v1']) {
+      expect(FAMILY_BY_DRILL_ID.has(drillId)).toBe(false);
+      expect(DECLARED_WEAPON_BY_DRILL_ID.has(drillId)).toBe(false);
+    }
+  });
+
+  it('holds exactly the eight BR cells, so a change of scope cannot pass review unnoticed', () => {
+    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(8);
+    expect(new Set(DECLARED_WEAPON_BY_DRILL_ID.keys())).toEqual(
+      new Set(trackingBrVariants.map((variant) => variant.id)),
+    );
+    // Eight cells, four weapons: the grid's third axis (angular height) is a target-geometry factor,
+    // not a weapon one, so the ads x ballistic pairs repeat across it.
+    expect(new Set(DECLARED_WEAPON_BY_DRILL_ID.values())).toEqual(
+      new Set([
+        'ak47_br_hip_hitscan',
+        'ak47_br_ads_hitscan',
+        'ak47_br_hip_projectile',
+        'ak47_br_ads_projectile',
+      ]),
+    );
+  });
+
+  it('holds only real weapon ids, not ids that merely type-check', () => {
+    for (const [drillId, weaponId] of DECLARED_WEAPON_BY_DRILL_ID) {
+      expect(isWeaponId(weaponId), drillId).toBe(true);
+      expect(WEAPONS[weaponId], drillId).toBeDefined();
+    }
+  });
+});
+
+describe('WP-62 T1 — the map refuses to be built from a polluted roster', () => {
+  const schedulableDrillId = trackingBrVariants[0].id;
+
+  it('rejects a weapon id that is not in WEAPONS', () => {
+    expect(() => buildDeclaredWeaponByDrillId([[schedulableDrillId, 'ak47_br_hip_railgun']])).toThrow(
+      /declares an unknown weapon: ak47_br_hip_railgun/,
+    );
+  });
+
+  it('rejects a drill whose config lost its weapon id', () => {
+    // The derivation reads `variant.drill.weaponId`, which `DrillConfig` allows to be absent — so
+    // "the BR grid dropped its weapon" has to fail loudly rather than map to `undefined` and look
+    // exactly like the 28 drills that legitimately declare nothing.
+    expect(() => buildDeclaredWeaponByDrillId([[schedulableDrillId, undefined]])).toThrow(
+      /declares an unknown weapon: undefined/,
+    );
+  });
+
+  it('rejects the same drill declaring twice', () => {
+    expect(() =>
+      buildDeclaredWeaponByDrillId([
+        [schedulableDrillId, 'ak47'],
+        [schedulableDrillId, 'm4a4'],
+      ]),
+    ).toThrow(/declares both 'ak47' and 'm4a4'/);
+  });
+
+  it('rejects a drill that is not schedulable', () => {
+    expect(() =>
+      buildDeclaredWeaponByDrillId([['tracking_core_pr_pilot_v1', 'tracking_pilot_hold']]),
+    ).toThrow(/is not schedulable/);
   });
 });

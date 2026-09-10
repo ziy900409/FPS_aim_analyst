@@ -159,3 +159,77 @@ T0 跑 Playwright 前發現 port 5173 已有本 checkout 的 dev server（PID 43
 | 2 | OQ-62.3（見上表） | 實作者 | T1 開工時 |
 | 3 | `loadSceneById()` 清空 override 的處置。**選項已收斂為 ②／③**——① 會讓 `weapon-select.spec.ts:106` 的既有 WP-47 契約轉紅（見 §5） | 實作者 + 研究者 | **T3 開工時**（D-62.T0-4） |
 | 4 | `loadSceneById()` 缺 `setAdsConfig`／`configureMouseIntegration` 的先前既有不對稱是否另開 KI | 實作者 | 非阻塞，T3 順帶判斷 |
+
+---
+
+## §T1 Drill 自宣告武器的推導註冊表（2026-09-10）
+
+**狀態**：✅ 完成。`isWeaponId` 已匯出，`DECLARED_WEAPON_BY_DRILL_ID` 由 `trackingBrVariants` 推導，對表測試**全覆蓋 36 個 schedulable drill、零豁免**。
+
+### Progress
+
+- [x] (2026-09-10) `src/weapon/weapons.ts`：`isWeaponId()` 由模組私有改為 `export`，語意零變更（同一個 `WEAPONS` own-property 判定）；`getWeapon()` 與其錯誤訊息未動。
+- [x] (2026-09-10) `src/session/drillFamily.ts`：新增 `DECLARED_WEAPON_ROSTER`（值取 `variant.drill.weaponId`，零手打字面值）＋ `buildDeclaredWeaponByDrillId()` ＋ `DECLARED_WEAPON_BY_DRILL_ID`。建構時三道驗證：值須通過 `isWeaponId()`、drillId 不得重複、drillId 須在 `FAMILY_BY_DRILL_ID` 內。
+- [x] (2026-09-10) `src/session/drillFamily.test.ts`：+44 tests（36 逐 drill 對表 + 4 範圍/型別斷言 + 4 建構期負向）。既有 60 tests 零修改。
+
+### 驗證（六道閘全綠，逐項實測）
+
+| 指令 | 結果 |
+|---|---|
+| `npm run typecheck`（`tsc --noEmit` ×2） | ✅ exit 0 |
+| `npm run build`（含兩個 typecheck + `vite build`） | ✅ exit 0，`built in 2.12s` |
+| `npx vitest run src/session/drillFamily.test.ts src/weapon/WeaponConfig.test.ts` | ✅ 128 passed |
+| 全量 `npx vitest run` | ✅ **2,866 passed / 2 skipped**；檔案 252 passed / 1 skipped |
+
+**回歸基線對帳**：T0 基線 2,822 passed / 2 skipped → 現 2,866 / 2。差值 **+44 = 36 + 4 + 4**，恰為本 task 新增，**既有測試零修改、零減少**，檔案數不變（改的是既有 `drillFamily.test.ts`）⇒ NFR-62.3 守住。
+
+**Playwright 未跑**：T1 的 DoD 只要求 typecheck + Vitest，且本 task 不觸及 DOM／runtime 路徑（純新增一張編譯期 map）。全量 e2e 留在 T6，並須遵守 [§T0.6](progress.md) 的 5173 前置條件。
+
+### 對表測試覆蓋率（OQ-62.3 → 結案：全覆蓋，零豁免）
+
+`SCHEDULABLE_DRILL_SOURCES` 逐一列出 36 個 schedulable drill 的**真實 config 物件**，與 `main.ts` `availableDrills` 同序、同來源常數：
+
+| 解析方式 | 筆數 | 說明 |
+|---|---|---|
+| 直接 `DrillConfig`（`.drillId`） | 8 | `counterstrafe_ad_v1`(JSON)／`detection_popin_v1`／`tracking_v1`／`spider-shot-v1`／`spider-shot-v2`／`spider-shot-v3`／`counterstrafe-reversal-v1`／`counterstrafe-free-v1` |
+| `{ id, drill }` 包裝（`.drill`） | 27 | tracking scene/longrange、hold-click/track、peek 六格 + formal、micro-flick ×8、BR ×8 |
+| **lazy binding** | 1 | `spider-shot-wide-v1` ⇒ `resolveSpiderShotWideV1(75, 16/9)` |
+
+**OQ-62.3 的「解析成本過高則具名豁免」條款未動用。** 唯一被規劃期點名有風險的兩個 lazy binding 實際成本都是零：
+- `spiderShotV3Binding` 只是 `{id, sceneId}`，其 config 是同檔另一個具名匯出 `spiderShotV3`（一個純常數）⇒ 不需 lazy 解析。
+- `resolveSpiderShotWideV1(fovDegVertical, aspect)` 是 (FOV, aspect) 的純函式，**不需要場景、不需要相機、不讀時鐘**（`spider_shot_wide_v1.test.ts` 已用同樣的 `(75, 16/9)` 呼叫）。
+
+⇒ 對表測試是「全體 36 個」而不是子集，這點很重要：子集覆蓋會讓**沒被檢查的那些 drill** 恰好成為未來可以偷偷長出 `weaponId` 的地方。
+
+### 防 rot 機制已實測有效（不是宣稱）
+
+DoD 的第 3 條要的是「未來任何 drill 新增 `weaponId` 而忘了進 map，這條測試會紅」。這是本 task 唯一真正有價值的斷言，所以**用突變實測而非推理**驗證：
+
+- 暫時在 `src/drill/tracking_v1.ts` 加上 `weaponId: 'm4a4'`（一個未進 roster 的 drill）；
+- `npx vitest run src/session/drillFamily.test.ts` ⇒ **2 failed / 102 passed**，其中一條正是 `tracking_v1 declares in the map exactly what its config declares`；
+- 立即還原，`git diff --stat src/drill/tracking_v1.ts` 為空。
+
+### Decision Log
+
+| # | 日期 | 決定 | 理由 | Alternatives considered |
+|---|---|---|---|---|
+| **D-62.T1-1** | 2026-09-10 | **`DECLARED_WEAPON_BY_DRILL_ID.size` 的斷言值由計畫的 `4` 改為 `8`**，並另加「值集合恰 4 把武器」的斷言 | `trackingBrVariants` 實為 **2×2×2 = 8** 格（ads × ballistic × **angularHeight**），共用 4 把武器。規劃期把「4 把武器」誤記成「4 個 drill」（README §0.1 ①、T1 步驟 2/5、DoD 皆寫 4）。照計畫寫 `size === 4` 會**直接紅**，或更糟——若改成寬鬆斷言就會失去「範圍變了要被看見」的作用 | ① 照 DoD 寫 4 並「修正」實作：不可能，8 個 drill 各自宣告武器是既有事實，不是本 WP 能改的；② 只斷言 key 集合等於 `trackingBrVariants` 而不寫 size：數字消失後 review 時看不出範圍變化，違反該斷言的存在目的 ⇒ 兩個都寫 |
+| **D-62.T1-2** | 2026-09-10 | **`buildDeclaredWeaponByDrillId(roster)` 以 roster 為參數並 `export`**，而非仿 `buildFamilyByDrillId()` 讀模組級常數的私有函式 | DoD 明文要求三種污染各有一條 **throw 的負向測試**。私有零參數函式無法注入污染 roster ⇒ 三條負向測試將無從撰寫，只能靠「相信 if 有寫」 | ① 保持私有 + 不寫負向測試：直接違反 DoD；② 用 `vi.mock` 偽造 `trackingBrVariants`：把測試綁在 import 形狀上，比多一個具名匯出脆弱得多 |
+| **D-62.T1-3** | 2026-09-10 | **roster 的元素型別為 `[string, string \| undefined]`，`undefined` 在建構期 throw**，而非把 `isWeaponId` 的參數放寬成 `unknown` | `DrillConfig.weaponId` 型別上是 optional，所以「BR 格子掉了 weaponId」在型別層是合法的。若讓它靜默映射成 `undefined`，會與「28 個本來就沒宣告」長得**一模一樣**——T2 便會允許覆蓋一個實際上被固定的實驗格 | 放寬 `isWeaponId(id: unknown)`：會改動 T1 invariant「`getWeapon()`／`isWeaponId` 語意零變更」，且讓型別更弱 ⇒ 改在呼叫端顯式檢查 |
+| **D-62.T1-4** | 2026-09-10 | 對表測試的 source 型別用 `Pick<DrillConfig, 'drillId' \| 'weaponId'>`，而非 `{ weaponId?: string }` | 只有 optional 欄位的型別是 TS 的 **weak type**，`tsc` 會對「沒有任何共同屬性」的物件報 TS2322（實際發生了，micro-flick 那組 literal union 觸發）。要求 `drillId` 存在，順帶讓「這真的是一個 drill config」變成編譯期主張 | 加 `as` 斷言消音：會讓「傳錯物件」這類真正的錯誤也一併消音 |
+
+### Surprises & Discoveries
+
+1. **🔴 BR 實驗格是 2×2×2 = 8 格，不是 2×2 = 4 格。** 全套 WP-62 文件（README §0.1 ①／§1.4 D-62-1「BR 四格」／§2.3 註解／FM-2／A-62.2／T1 步驟 2·5／T1 DoD）一致寫「4」，而 [tracking_br_v1.ts:93-102](../../../../../src/drill/tracking_br_v1.ts) 的 `trackingBrVariants` 有 8 個 `makeVariant(...)`——第三軸 `angularHeight`（`0p5deg`／`2deg`）是後來加的目標幾何軸，不改武器，所以 8 格共用 4 把武器。規劃期顯然是數了 `WEAPON_BY_AXIS` 的 4 把武器，寫成了 4 個 drill。**證據**：`drillFamily.test.ts` 既有的 family 分組斷言早就寫著 `tracking: 11`（= `tracking_v1` + scene + longrange + **8**），所以這個數字一直在 repo 裡，只是規劃期沒對上。已回改 README ①、§2.3 註解與 T1 doc；D-62-1 的**語意不變**（宣告了武器的 drill 不可覆蓋），只是範圍從 4 列變 8 列，**T2 的驗證邏輯不受影響**（它查 map 而非數字）。
+2. **`spider-shot-v3` 根本不是 lazy binding。** OQ-62.3 把 `spiderShotV3Binding` 與 `spiderShotWideV1Binding` 並列為「需要各自解析方式、成本可能過高」的兩個風險項。實查：前者只是 `{id, sceneId}` 的**場景綁定**，drill config 是同檔的純常數 `spiderShotV3`（`main.ts` 也是這樣用的：`source: spiderShotV3`）。真正 arm-time 解析的只有 `spider-shot-wide-v1` 一個，而它是 (FOV, aspect) 的純函式 ⇒ OQ-62.3 擔心的成本實際上是零，全覆蓋不需要任何取捨。**「lazy binding」在 repo 裡指兩種不同的東西**（場景綁定 vs config 延遲解析），T4 讀 OQ-62.1 時要注意同一個誤解。
+3. **`tsc` 的 weak-type 檢查在測試碼上救了一次。** `{ readonly weaponId?: string }` 作為對表 source 的型別會被 TS2322 拒絕——這正是該檢查的用意（一個全 optional 的型別可以接受任何無關物件）。若當初用 `as` 消音，這張表就會失去「值真的來自 drill config」的保證。順帶印證 T0 §4 的提醒反向也成立：這個檔在 `src/` 下**有**被 typecheck 守到；T6 寫在 `tests/` 的就沒有。
+
+### Open Questions（T1 結束時）
+
+| # | 問題 | 狀態 | Owner | 需在何時收斂 |
+|---|---|---|---|---|
+| 1 | **OQ-62.3** 對表覆蓋範圍 | ✅ **結案**：全覆蓋 36 個、零豁免（見上） | 實作者 | — |
+| 2 | OQ-62.1（預覽對未指定列顯示「預設」還是實名） | 🟡 未決。**T1 的產出讓實名選項變便宜**：`DECLARED_WEAPON_BY_DRILL_ID` 已可為 8 個 BR 格提供實名，其餘 28 個一律是 app 預設 `ak47`（無 drill 級宣告）⇒ 若研究者要「一律顯示實名」，表單也不需解析任何 drill config，只需 map + 預設字串 | 研究者 | T4 開工前 |
+| 3 | OQ-62.2（ADS × 禁 ADS drill 是否警告） | 🟡 未決，T1 未觸及 | 研究者 | T4 開工前 |
+| 4 | `loadSceneById()` 清空 override 的處置（選項收斂為 ②／③，見 §T0.5） | 🟡 未決，T1 未觸及 | 實作者 + 研究者 | T3 開工時 |
+| 5 | D-62-1 的措辭「BR 四格」散在 §1.4／FM-2／A-62.2 三處，本 task 只改了事實陳述（§0.1 ①、§2.3、T1 doc），**未改決策與驗收條目的措辭** | 🟢 非阻塞：語意不受數字影響（判準是「有宣告就不可覆蓋」）。T2 落地時順手把三處「四格」改為「八格」即可 | 實作者 | T2 |
