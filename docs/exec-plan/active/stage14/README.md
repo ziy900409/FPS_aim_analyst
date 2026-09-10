@@ -85,6 +85,8 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 
 使用者指定的處理順序:**先 v3 → 再 wide → 最後 v8**。編號依 [GD-15](../../DECISIONS.md)「先採納先得」候選為 WP-62 起算（現行最高 WP-61,stage13）。
 
+> ⚠️ **編號已失效（2026-09-10,WP-62 T0 重查）**:下表的 **WP-62/63/64 已被取用**。`WP-62` 已由 [`active/stage13/wp-62-session-plan-per-item-weapon/`](../stage13/wp-62-session-plan-per-item-weapon/README.md) 採納並入 [`exec-plan/README.md`](../../README.md) §2 索引;依 [GD-15](../../DECISIONS.md) 的判準（編號歸屬以採納入 §2 索引為準,**草稿之「候選,未批准」預留不構成佔用**),本 stage 三個候選在**採納當下**應順延為 **WP-63/64/65**,且須依 GD-35 ② 於採納當下重查最大值。下表編號一律視為佔位符,**相依欄的「WP-62」指本 stage 的 v3 參數定案 WP,非 stage13 的逐列武器 WP**。詳見 [GD-38](../../DECISIONS.md) ①。
+
 | WP（候選） | 一句話 | 相依 | 估時（d） | 狀態 |
 |---|---|---|---|---|
 | **WP-62** | `spider-shot-v3` 量測參數定案:把已實作的五類構念與五個 registry 指標寫成規格權威,並處理 KI-031 造成的兩類構念空洞 | **KI-031**（見 §4） | 3–5 | 🟡 規劃中。參數文件已交付:[`spider-shot-v3-measurement-parameters-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-measurement-parameters-2026-09-09.html) |

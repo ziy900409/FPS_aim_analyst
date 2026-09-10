@@ -15,7 +15,7 @@
 | **Estimate** | 8.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | Med/High：`activateDrill()` 是全 app 唯一的 drill 啟用路徑，武器賦值點與 `buildSimLoop()` 的先後決定 recoil RNG／彈匣／ADS／感度 gain 是否一致；`sessionProgram.ts` 帶純函式 source-scan 契約 |
 | **Milestone** | 無獨立里程碑，**T-exit gate 即交付判定**（比照 WP-27／WP-58） |
-| **Status** | 📋 **規劃完成，未開工**（2026-09-10） |
+| **Status** | 🟡 **T0 entry gate ✅（2026-09-10）**，T1 未開工。基線見 [progress.md §T0.1](progress.md) |
 
 ### 落點說明（stage 主題不符，明帳記錄）
 
@@ -42,11 +42,11 @@ stage13（階段 M）的主題是「原始輸入取樣與抬滑鼠判準驗證�
 
 | Symbol / file | 依賴面 | 分級 |
 |---|---|---|
-| `main.ts` `activateDrill()` / `activeWeaponOverride` | 全 app 唯一 drill 啟用路徑；`loadDrillById`／`loadDrillConfigDirect`／`loadSceneById`／`loadWeaponById` 四個呼叫端 | **cross-module High** |
-| `sessionProgram.ts`（`SessionProgramItem`／`RunStep`／`compileSessionProgram`） | `SessionRunner.ts`、`SessionPlanSetup.ts`、`main.ts`、`sessionProgram.test.ts`（含純度 source-scan） | **cross-module High** |
+| `main.ts` `activateDrill()` / `activeWeaponOverride` | `activateDrill()` 有 **2 個直接呼叫端**（`loadDrillById` [main.ts:1428](../../../../../src/main.ts)、`loadDrillConfigDirect` [main.ts:1436](../../../../../src/main.ts)）。`activeWeaponOverride` 另有 **3 個寫入點**：`activateDrill`（清空）、`loadSceneById`（清空，[main.ts:1444](../../../../../src/main.ts)）、`loadWeaponById`（設值）——後兩者**不經** `activateDrill`，而是各自重做一次動作序列 | **cross-module High** |
+| `sessionProgram.ts`（`SessionProgramItem`／`RunStep`／`compileSessionProgram`） | `SessionRunner.ts`、`SessionPlanSetup.ts`、`main.ts`、`sessionProgram.test.ts`（含純度 source-scan）、`SessionRunnerProgram.test.ts`、`SessionPlanSetup.test.ts`、`sessionProgramExport.test.ts` | **cross-module High** |
 | `SessionRunner.ts`（`loadDrillById` callback 簽名） | `main.ts`、`SessionRunner.test.ts`、`SessionRunnerProgram.test.ts`、`SessionRunnerPoll.test.ts` | cross-module Med |
 | `drillFamily.ts` | `sessionProgram.ts`、`SessionPlanSetup.ts`、`metadata.ts`、`drillFamily.test.ts` | cross-module Med |
-| `metadata.ts`（`SessionPlanItemMeta`） | 匯出 schema 全體 consumers、`research/` ingest、history/trend | **cross-module High**（schema 相容性） |
+| `metadata.ts`（`SessionPlanItemMeta`） | **`src/data/exportPayloadSchema.ts`**（具名：import 該型別於第 11 行，並以 `parseSessionPlanItems()` [exportPayloadSchema.ts:529](../../../../../src/data/exportPayloadSchema.ts) 逐列驗證、第 352-355／430 行組裝）、`research/` ingest、history/trend | **cross-module High**（schema 相容性） |
 | `weapons.ts`（新匯出 `isWeaponId`） | 純加法，既有 `getWeapon` 語意不變 | local |
 | `SessionPlanSetup.ts` | `main.ts`、`SessionPlanSetup.test.ts`、`session-orchestrator.spec.ts` | local + 1 E2E |
 
@@ -72,7 +72,7 @@ stage13（階段 M）的主題是「原始輸入取樣與抬滑鼠判準驗證�
 |---|---|---|
 | **NFR-62.1** | `compileSessionProgram()` 維持純函式：既有 source-scan 測試（禁 DOM／Three／`node:*`／時鐘／亂數／模組級可變狀態）**不得放寬任何一條** | T2 |
 | **NFR-62.2** | 同一 program + 同一輸入序列，跨 render FPS（至少 4 種）的 sim 狀態逐位一致 | T3 |
-| **NFR-62.3** | 既有測試零修改全綠：全量 Vitest（WP-58 T-exit 基線 2,688 passed／2 skipped，以 T0 實測為準）+ 全量 Playwright（99 passed）+ build + 兩個 typecheck 皆 exit 0 | T0, T6 |
+| **NFR-62.3** | 既有測試零修改全綠：全量 Vitest **2,822 passed／2 skipped**（252 檔 passed／1 skipped）+ 全量 Playwright **103 passed**（`--workers=1`，13.8m）+ `vite build` + 兩個 typecheck 皆 exit 0。**以上為 T0 實測基線（2026-09-10）**，已取代規劃期引述的 WP-58 T-exit 舊值（2,688／99）——見 [progress.md §T0.1](progress.md) | T0, T6 |
 | **NFR-62.4** | `weaponId` 省略時，`compileSessionProgram()` 的輸出與本 WP 前 HEAD **逐位相同**（物件鍵集合亦相同，不得多出 `weaponId: undefined`） | T2 |
 
 ### 1.3 Constraints
@@ -112,6 +112,7 @@ stage13（階段 M）的主題是「原始輸入取樣與抬滑鼠判準驗證�
 - `src/main.ts` — `activateDrill()` 加 weapon 參數，取代第 1397 行的無條件 reset。
 - `src/ui/SessionPlanSetup.ts` — 每列武器 `<select>`、預覽顯示武器、錯誤定位。
 - `src/data/metadata.ts` — `SessionPlanItemMeta.weaponId?` + validation。
+- `src/data/exportPayloadSchema.ts` — `parseSessionPlanItems()` 的逐列 `weaponId` 驗證（T0 CodeGraph 對帳補入：型別在 `metadata.ts`，**但實際 runtime 驗證在此檔**，兩處必須同步否則 schema 會接受未驗證的欄位）。
 
 **Out of scope**
 - frozen track（D-62-2）。

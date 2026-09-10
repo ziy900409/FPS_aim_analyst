@@ -28,12 +28,12 @@
 
 ## Definition of Done
 
-- [ ] 基線四項指令的**實際輸出數字**記入 `progress.md`（typecheck ×2、build、Vitest passed/skipped、Playwright passed），皆 exit 0
-- [ ] `DECISIONS.md` 新增 `GD-n` 條目（含 D-62-1～4 + stage13 落點說明），且該編號經寫入當下重查確認未被取用
-- [ ] 若編號順延，本 WP 全部檔案（README／T0–T6／T-exit／checklist／progress）已同步改號，`grep -r "WP-62\|GD-38"` 無殘留舊號
-- [ ] 熱區檢查結果記入 `progress.md`：列出 `src/session/`、`SessionPlanSetup.ts`、`main.ts`、`metadata.ts` 的最近 commit 與是否有平行未合併變更
-- [ ] OQ-62.1／62.2／62.3 各有 owner 與預設假設，記入 `progress.md`
-- [ ] README §0.1 blast radius 與 CodeGraph 實查結果一致（有出入則已回改）
+- [x] 基線四項指令的**實際輸出數字**記入 `progress.md`（typecheck ×2、build、Vitest passed/skipped、Playwright passed），皆 exit 0
+- [x] `DECISIONS.md` 新增 `GD-n` 條目（含 D-62-1～4 + stage13 落點說明），且該編號經寫入當下重查確認未被取用
+- [x] 若編號順延，本 WP 全部檔案（README／T0–T6／T-exit／checklist／progress）已同步改號，`grep -r "WP-62\|GD-38"` 無殘留舊號
+- [x] 熱區檢查結果記入 `progress.md`：列出 `src/session/`、`SessionPlanSetup.ts`、`main.ts`、`metadata.ts` 的最近 commit 與是否有平行未合併變更
+- [x] OQ-62.1／62.2／62.3 各有 owner 與預設假設，記入 `progress.md`
+- [x] README §0.1 blast radius 與 CodeGraph 實查結果一致（有出入則已回改）
 
 ## Commit
 
