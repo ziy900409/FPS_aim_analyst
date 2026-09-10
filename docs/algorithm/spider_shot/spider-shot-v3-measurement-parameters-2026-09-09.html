@@ -194,7 +194,7 @@
       <span class="pill">版本 0.1（參數清冊）</span>
       <span class="pill">2026-09-09</span>
       <span class="pill">stage14 / WP-62（候選）</span>
-      <span class="pill blocked">KI-031 阻塞兩類構念</span>
+      <span class="pill blocked">KI-031／KI-034 阻塞兩類構念</span>
     </div>
   </header>
 
@@ -378,7 +378,7 @@
       </p>
 
       <article class="construct">
-        <h3>4.1 切換反應 <span class="zone">switchReaction · peripheral only</span> <span class="tag blocked">KI-031 阻塞</span></h3>
+        <h3>4.1 切換反應 <span class="zone">switchReaction · peripheral only</span> <span class="tag blocked">KI-031／KI-034 阻塞</span></h3>
         <dl class="kv">
           <dt><code>tDetectMs</code></dt>
           <dd>
@@ -403,13 +403,19 @@
           而 <code>status: 'timeout'</code> 是一個合法值（語意為「受測者從未偵測到目標」）,所以這個失效<strong>完全靜默</strong>。
           詳見 §7。
         </div>
+        <div class="callout danger">
+          <strong>更新率足夠仍不代表 detector 有效</strong>
+          KI-034（🔴 未修）:快速循環下,<code>preStimulusMs: 500</code> 會把上一次拉槍納入 baseline,
+          抬高門檻並靜默漏檢；<code>baselineInsufficient: false</code> 只證明樣本覆蓋足夠,不證明 baseline 乾淨。
+          縮短為 120 ms 只能當明確標註的敏感度分析,不是 canonical 修法。
+        </div>
       </article>
 
       <article class="construct">
         <h3>4.2 移動執行 <span class="zone">movementExecution · peripheral only</span></h3>
         <dl class="kv">
           <dt><code>movementTimeMs</code></dt>
-          <dd><code>t_first_on_target − t_detect</code> <span class="tag blocked">依賴 t_detect ⇒ 同受 KI-031 阻塞</span></dd>
+          <dd><code>t_first_on_target − t_detect</code> <span class="tag blocked">依賴 t_detect ⇒ 同受 KI-031／KI-034 阻塞</span></dd>
           <dt><code>peakOmegaDegPerSec</code></dt>
           <dd>該呈現窗 <code>tickRange</code> 內 <code>|ω(t)|</code> 的最大值</dd>
           <dt>意涵</dt>
@@ -617,12 +623,12 @@
       </details>
 
       <details>
-        <summary>次要偏誤來源:baseline 窗吃進上一次拉槍</summary>
+        <summary>KI-034（獨立缺陷）:baseline 窗吃進上一次拉槍</summary>
         <div>
           <code>preStimulusMs: 500</code> 的 baseline 窗會吃進上一次拉槍的尾段（wide-v1 的 <code>rhythm</code> median 僅 828 ms;
           v3 的節奏更快 ⇒ 更嚴重）⇒ <code>baselineSdDegPerSec</code> 被前一次動作抬高（實測 p50 = 71 deg/s、門檻 p50 = 214 deg/s、最大 804）。
           <code>baselineInsufficient</code> 全為 <code>false</code>,<strong>既有品質旗標抓不到這件事</strong>。
-          連續性修好之後,這一項會決定 <code>tDetectMs</code> 的偏誤大小,須一併評估。
+          這和 KI-031 的連續性懸崖可各自發生；詳見 <code>docs/known_issue/KI-034-prestimulus-baseline-overlaps-prior-engagement.md</code>。
         </div>
       </details>
     </section>
@@ -683,6 +689,7 @@
         <li><code>docs/operational/analysis-spider-shot.md</code> — Spider Shot 契約（五類構念的敘述權威）</li>
         <li><code>docs/operational/analysis-assessment-contract.md</code> — Assessment／Practice 五軸 + 第六軸（排程來源）</li>
         <li><code>docs/known_issue/KI-031-*.md</code> — 🔴 detection 連續性判準的取樣率懸崖</li>
+        <li><code>docs/known_issue/KI-034-*.md</code> — 🔴 rapid-cycle pre-stimulus baseline 污染與靜默漏檢</li>
         <li><code>docs/known_issue/KI-021-*.md</code> — 🟢 sphere 幾何在離線推導層的補齊（2026-09-03）</li>
         <li><code>docs/known_issue/KI-026-*.md</code> — eye anchor 修正,v3 存在的理由</li>
         <li><code>docs/exec-plan/active/stage14/README.md</code> — 本文件所屬的三層契約暫時方案</li>

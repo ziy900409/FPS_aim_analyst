@@ -1,0 +1,1347 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Wide Flick 教練儀表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --ground:        #f2f5f5;
+    --panel:         #ffffff;
+    --panel-sunk:    #eaefef;
+    --ink:           #101717;
+    --ink-2:         #4a5754;
+    --ink-3:         #788783;
+    --rule:          #d5dedb;
+    --rule-soft:     #e6ecea;
+    --accent:        #0b6b73;
+    --accent-soft:   #dcecee;
+
+    --s1: #2a78d6;
+    --s2: #eb6834;
+    --s3: #1baf7a;
+    --s1-wash: rgba(42,120,214,0.10);
+    --s2-wash: rgba(235,104,52,0.10);
+    --s3-wash: rgba(27,175,122,0.10);
+
+    --good:     #0ca30c;
+    --warning:  #fab219;
+    --serious:  #ec835a;
+    --critical: #d03b3b;
+    --good-ink: #056105;
+    --crit-ink: #9c2020;
+    --warn-ink: #7a5405;
+
+    --grid:     #e3e9e7;
+    --axis:     #c2ceca;
+
+    --sans: "IBM Plex Sans", "Noto Sans TC", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0d1211;
+      --panel:       #161d1c;
+      --panel-sunk:  #111716;
+      --ink:         #eaf1ef;
+      --ink-2:       #a8b6b2;
+      --ink-3:       #7e8d89;
+      --rule:        #2b3634;
+      --rule-soft:   #212a29;
+      --accent:      #4fc3cc;
+      --accent-soft: #10302f;
+
+      --s1: #3987e5;
+      --s2: #d95926;
+      --s3: #199e70;
+      --s1-wash: rgba(57,135,229,0.16);
+      --s2-wash: rgba(217,89,38,0.16);
+      --s3-wash: rgba(25,158,112,0.16);
+
+      --good-ink: #4ec74e;
+      --crit-ink: #f08282;
+      --warn-ink: #f0c04a;
+
+      --grid:  #232c2b;
+      --axis:  #38443f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #0d1211;
+    --panel:       #161d1c;
+    --panel-sunk:  #111716;
+    --ink:         #eaf1ef;
+    --ink-2:       #a8b6b2;
+    --ink-3:       #7e8d89;
+    --rule:        #2b3634;
+    --rule-soft:   #212a29;
+    --accent:      #4fc3cc;
+    --accent-soft: #10302f;
+
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s1-wash: rgba(57,135,229,0.16);
+    --s2-wash: rgba(217,89,38,0.16);
+    --s3-wash: rgba(25,158,112,0.16);
+
+    --good-ink: #4ec74e;
+    --crit-ink: #f08282;
+    --warn-ink: #f0c04a;
+
+    --grid:  #232c2b;
+    --axis:  #38443f;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .wrap { width: min(1140px, calc(100% - 40px)); margin: 0 auto; }
+
+  /* ---------- masthead ---------- */
+  header.top {
+    border-bottom: 1px solid var(--rule);
+    background: var(--panel);
+  }
+  .top-inner { display: grid; gap: 26px; padding: 40px 0 34px; }
+  .eyebrow {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 0;
+    max-width: 30ch;
+    font-size: clamp(1.85rem, 4.4vw, 2.9rem);
+    font-weight: 600;
+    line-height: 1.14;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  .lede { max-width: 62ch; margin: 0; color: var(--ink-2); font-size: 1.02rem; }
+  .lede b { color: var(--ink); font-weight: 600; }
+
+  .cond {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--rule-soft);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .cond > div { padding: 12px 14px; background: var(--panel); }
+  .cond dt { margin: 0 0 3px; color: var(--ink-3); font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; }
+  .cond dd { margin: 0; font-family: var(--mono); font-size: 0.94rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* ---------- layout ---------- */
+  .cols { display: grid; grid-template-columns: 186px minmax(0, 1fr); gap: 44px; padding: 38px 0 72px; align-items: start; }
+  nav.toc { position: sticky; top: 20px; }
+  nav.toc p { margin: 0 0 10px; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+  nav.toc ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 1px; }
+  nav.toc a {
+    display: block; padding: 6px 10px;
+    border-left: 2px solid var(--rule);
+    color: var(--ink-2); text-decoration: none;
+    font-size: 0.82rem;
+  }
+  nav.toc a:hover { border-left-color: var(--accent); color: var(--ink); background: var(--panel); }
+  main { min-width: 0; display: grid; gap: 52px; }
+  section { min-width: 0; scroll-margin-top: 24px; }
+  .kicker {
+    margin: 0 0 8px;
+    font-family: var(--mono); font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+  }
+  h2 { margin: 0 0 16px; font-size: clamp(1.32rem, 2.6vw, 1.72rem); font-weight: 600; line-height: 1.24; letter-spacing: -0.01em; text-wrap: balance; }
+  h3 { margin: 0 0 8px; font-size: 1.02rem; font-weight: 600; line-height: 1.35; }
+  h4 { margin: 0 0 6px; font-size: 0.88rem; font-weight: 600; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  p:last-child { margin-bottom: 0; }
+  main a { color: var(--accent); text-underline-offset: 3px; }
+  code { font-family: var(--mono); font-size: 0.87em; }
+  b, strong { font-weight: 600; }
+
+  /* ---------- verdict ---------- */
+  .verdict {
+    display: grid; gap: 0;
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--critical);
+    border-radius: 4px;
+    background: var(--panel);
+    overflow: hidden;
+  }
+  .verdict-head { padding: 20px 22px; }
+  .verdict-head p { margin: 0; color: var(--ink-2); }
+  .verdict-head strong { display: block; margin-bottom: 6px; font-size: 1.1rem; color: var(--ink); }
+  .rank {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
+    gap: 1px; background: var(--rule-soft); border-top: 1px solid var(--rule);
+  }
+  .rank > div { padding: 15px 18px; background: var(--panel-sunk); }
+  .rank h4 { color: var(--ink-3); font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .rank ol { margin: 0; padding-left: 1.15em; font-family: var(--mono); font-size: 0.84rem; font-variant-numeric: tabular-nums; }
+  .rank li { margin: 3px 0; }
+  .rank .flag { color: var(--crit-ink); font-weight: 600; }
+
+  /* ---------- generic blocks ---------- */
+  .note {
+    padding: 14px 16px; border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+    border-radius: 4px; background: var(--panel); color: var(--ink-2); font-size: 0.9rem;
+  }
+  .note strong { color: var(--ink); }
+  .note.warn { border-left-color: var(--warning); }
+  .note.crit { border-left-color: var(--critical); }
+  .note p { max-width: none; }
+
+  .tbl-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  caption { padding: 11px 14px; border-bottom: 1px solid var(--rule); color: var(--ink-3); font-size: 0.76rem; text-align: left; letter-spacing: 0.03em; }
+  th, td { padding: 9px 13px; text-align: left; vertical-align: top; border-top: 1px solid var(--rule-soft); }
+  thead th { border-top: 0; background: var(--panel-sunk); color: var(--ink-2); font-size: 0.74rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+  tbody tr:first-child td, tbody tr:first-child th { border-top-color: var(--rule); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.tight, th.tight { white-space: nowrap; }
+  .ok  { color: var(--good-ink); font-weight: 600; }
+  .bad { color: var(--crit-ink); font-weight: 600; }
+  .mid { color: var(--warn-ink); font-weight: 600; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 1px 7px; border-radius: 3px;
+    font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.02em;
+    border: 1px solid;
+  }
+  .pill.keep   { color: var(--good-ink); border-color: color-mix(in oklab, var(--good) 45%, transparent); background: color-mix(in oklab, var(--good) 10%, transparent); }
+  .pill.fix    { color: var(--warn-ink); border-color: color-mix(in oklab, var(--warning) 55%, transparent); background: color-mix(in oklab, var(--warning) 13%, transparent); }
+  .pill.drop   { color: var(--crit-ink); border-color: color-mix(in oklab, var(--critical) 42%, transparent); background: color-mix(in oklab, var(--critical) 9%, transparent); }
+  .pill.na     { color: var(--ink-3); border-color: var(--rule); background: var(--panel-sunk); }
+
+  /* ---------- hero metric ---------- */
+  .m1 {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(184px, 1fr));
+    gap: 1px; background: var(--rule-soft);
+    border: 1px solid var(--rule); border-radius: 4px; overflow: hidden;
+  }
+  .m1 > div { padding: 17px 18px; background: var(--panel); }
+  .m1 .lab { display: block; color: var(--ink-3); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; }
+  .m1 .big { display: block; margin-top: 7px; font-family: var(--mono); font-size: 1.92rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .m1 .sub { display: block; margin-top: 8px; color: var(--ink-2); font-size: 0.78rem; }
+  .m1 .r0 .big { color: var(--s1); }
+  .m1 .r1 .big { color: var(--s2); }
+  .m1 .r2 .big { color: var(--s3); }
+
+  /* ---------- figures ---------- */
+  figure {
+    margin: 0;
+    border: 1px solid var(--rule); border-radius: 4px;
+    background: var(--panel); overflow: hidden;
+  }
+  .fig-head { padding: 16px 18px 13px; border-bottom: 1px solid var(--rule-soft); }
+  .fig-id { font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; color: var(--accent); }
+  .fig-head h3 { margin: 5px 0 5px; }
+  .fig-q { margin: 0; max-width: 72ch; color: var(--ink-2); font-size: 0.87rem; }
+  .fig-body { padding: 14px 18px 4px; overflow-x: auto; }
+  .fig-body svg { display: block; width: 100%; height: auto; min-width: 460px; }
+  figcaption {
+    display: grid; gap: 8px;
+    padding: 14px 18px 16px; border-top: 1px solid var(--rule-soft);
+    background: var(--panel-sunk); font-size: 0.84rem; color: var(--ink-2);
+  }
+  figcaption b { color: var(--ink); }
+  figcaption .nodraw { color: var(--warn-ink); }
+  figcaption .nodraw b { color: var(--warn-ink); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 0 18px 12px; font-size: 0.79rem; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+  .swatch.line { height: 3px; border-radius: 1.5px; }
+  .swatch.ring { background: transparent; border: 2px solid currentColor; }
+
+  svg text { font-family: var(--mono); fill: var(--ink-3); font-size: 10.5px; }
+  svg .ax-title { fill: var(--ink-2); font-size: 10.5px; }
+  svg .dlabel { fill: var(--ink); font-size: 11px; font-weight: 600; }
+  svg .gridline { stroke: var(--grid); stroke-width: 1; }
+  svg .axisline { stroke: var(--axis); stroke-width: 1; }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .stack { display: grid; gap: 14px; }
+  .stack-lg { display: grid; gap: 22px; }
+
+  details.data { border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); }
+  details.data > summary { padding: 10px 14px; cursor: pointer; font-size: 0.82rem; color: var(--ink-2); font-family: var(--mono); }
+  details.data > summary:hover { color: var(--ink); }
+  details.data[open] > summary { border-bottom: 1px solid var(--rule-soft); }
+  details.data .tbl-scroll { border: 0; border-radius: 0; }
+
+  ul.tight, ol.tight { margin: 0 0 14px; padding-left: 1.3em; max-width: 68ch; }
+  ul.tight li, ol.tight li { margin: 5px 0; }
+  ul.tight li:last-child, ol.tight li:last-child { margin-bottom: 0; }
+
+  .layout-sketch {
+    display: grid; gap: 1px; background: var(--rule-soft);
+    border: 1px solid var(--rule); border-radius: 4px; overflow: hidden;
+  }
+  .lz { padding: 13px 16px; background: var(--panel); }
+  .lz .zn { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+  .lz strong { display: block; margin: 4px 0 3px; font-size: 0.92rem; }
+  .lz p { margin: 0; max-width: none; color: var(--ink-2); font-size: 0.83rem; }
+
+  footer { border-top: 1px solid var(--rule); background: var(--panel); }
+  footer .wrap { padding: 22px 0 34px; color: var(--ink-3); font-size: 0.8rem; }
+  footer p { max-width: 78ch; }
+
+  @media (max-width: 900px) {
+    .cols { grid-template-columns: 1fr; gap: 26px; }
+    nav.toc { position: static; }
+    nav.toc ol { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); display: grid; }
+  }
+  @media (max-width: 620px) {
+    body { font-size: 14.5px; }
+    .wrap { width: calc(100% - 26px); }
+  }
+</style>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <p class="eyebrow">Measurement design · spider-shot-wide-v1 · 2026-09-09</p>
+    <h1>三場真人 run 說了什麼，以及提案的主指標為什麼會排錯名</h1>
+    <p class="lede">
+      2026-09-09 的三份 <code>spider-shot-wide-v1</code> 匯出，共 <b>103 次周邊到達</b>。幾何與 trial 真值沿用 canonical derivation；<code>reactionMs</code>／<code>movementTimeMs</code> 明確改用 <code>preStimulusMs: 120</code> 的敏感度分析（非 <code>detect-v1</code> 預設），以隔離 KI-034。結論很單純：<b>第三場在提案的兩個主結果上都「最好」，實際卻是最差的一場</b>。
+      本文用真值重排指標，並砍掉這批資料撐不起來的圖。
+    </p>
+    <dl class="cond">
+      <div><dt>Runs</dt><dd>3 × 60 s</dd></div>
+      <div><dt>周邊到達 (ITT)</dt><dd>103</dd></div>
+      <div><dt>D_deg 實測</dt><dd>47.72–51.88</dd></div>
+      <div><dt>W_deg</dt><dd>2.0000</dd></div>
+      <div><dt>FOV / aspect</dt><dd>75 / 1.778125</dd></div>
+      <div><dt>Display</dt><dd>240 Hz</dd></div>
+      <div><dt>Sensitivity</dt><dd>1.4 · seed 57001</dd></div>
+      <div><dt>DPI</dt><dd>未記錄</dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="wrap cols">
+  <nav class="toc" aria-label="目錄">
+    <p>目錄</p>
+    <ol>
+      <li><a href="#verdict">結論</a></li>
+      <li><a href="#truth">這批資料的真實條件</a></li>
+      <li><a href="#audit">提案指標對帳</a></li>
+      <li><a href="#primary">主結果：首發有效速度</a></li>
+      <li><a href="#charts">五張圖</a></li>
+      <li><a href="#page">一頁式版面</a></li>
+      <li><a href="#cannot">還不能說的話</a></li>
+      <li><a href="#gaps">工程缺口</a></li>
+      <li><a href="#sources">依據</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- ============ 1 結論 ============ -->
+    <section id="verdict">
+      <p class="kicker">01 · 結論</p>
+      <h2>同一批資料，兩種指標，完全相反的排名</h2>
+      <div class="verdict">
+        <div class="verdict-head">
+          <strong>提案的 Layer A 會把最差的一場評為最好。</strong>
+          <p>
+            第三場（<code>08.932Z</code>）的中位命中時間 <b>860 ms</b>（三場最快）、總命中率 <b>36.7 hits/min</b>（三場最高）——
+            提案的三個主結果有兩個把它排第一。但它的<b>首發命中率只有 82.9%</b>，其餘兩場是 97.0% / 97.1%。
+            把命中改成「首發命中」後，它的產出是 <b>30.4 首發命中/分</b>，三場最低。
+            玩家不是變強了，是把工作點往「更用力、更早開槍」推，然後用補槍把數字補回來。
+          </p>
+        </div>
+        <div class="rank">
+          <div>
+            <h4>提案主指標排名</h4>
+            <ol>
+              <li>08.932Z — 860 ms · 36.7/min <span class="flag">← 實際最差</span></li>
+              <li>53.218Z — 891 ms · 34.8/min</li>
+              <li>24.700Z — 907 ms · 34.2/min</li>
+            </ol>
+          </div>
+          <div>
+            <h4>首發有效速度排名</h4>
+            <ol>
+              <li>53.218Z — 34.8 首發命中/min</li>
+              <li>24.700Z — 33.2 首發命中/min</li>
+              <li>08.932Z — 30.4 首發命中/min</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="note crit">
+        <p><strong>單一改動就能修掉它：</strong>主結果只認 <code>window.firstFire.hit</code>，不要用
+        <code>deriveSpiderShotMetrics().firstShot.hit</code>。後者取的是 <code>PeekWindowTs.outcome</code>，規則是
+        「窗內<b>任一</b>發命中即 hit」，於是首發失手＋補槍命中會被記成首發命中——在這 103 筆上它回報
+        <b>102/102 = 100%</b>，是一個完全沒有變異的指標。真值是 95/102。這與 <code>spider-shot-v3</code>
+        教練報告已經踩過的同一個坑（HANDOFF §3.3 ①）。</p>
+      </div>
+    </section>
+
+    <!-- ============ 2 真實條件 ============ -->
+    <section id="truth">
+      <p class="kicker">02 · 條件</p>
+      <h2>先修正三個關於這支 drill 的描述</h2>
+      <p>
+        提案把任務描述成「約 40–70° yaw」的角距劑量反應任務。這在<b>這個硬體條件下不成立</b>，而且不成立是設計本身決定的：
+        <code>resolveSpiderWideYawPitch()</code> 在 arm 時用當下的 FOV 與 aspect 解析一次 yaw 窗，
+        FOV 75 + aspect 1.778125 解出的是 <code>[47.5086, 51.6397]</code>，下界係數 <code>kLo = 0.92</code>。
+        三份 run 的 <code>resolvedFrom</code> 逐位相同。
+      </p>
+      <div class="tbl-scroll">
+        <table>
+          <caption>提案敘述 vs 103 筆實測</caption>
+          <thead><tr><th>項目</th><th>提案</th><th>實測</th><th>後果</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>刺激角距</td>
+              <td class="num">40–70°</td>
+              <td class="num">47.72–51.88°（跨距 4.16°，中位 49.37°）</td>
+              <td><b>這是固定幅度任務，不是劑量反應任務。</b>D 的變異是干擾項，不是可操弄因子。</td>
+            </tr>
+            <tr>
+              <td>目標角寬</td>
+              <td class="num">2.0° sphere</td>
+              <td class="num">W_deg = 2.0000（恆定）</td>
+              <td>正確。eye-frame 修正後 <code>worldDistanceU</code> 恆 8 u，無 origin-frame 漂移。</td>
+            </tr>
+            <tr>
+              <td>投影足跡</td>
+              <td>逐 trial 研究共變量</td>
+              <td class="num">areaRatio 3.29–4.25（中位 3.62）· axisRatio 1.49–1.62</td>
+              <td>因 D 近乎恆定而近乎恆定 ⇒ 在本 cohort <b>不可能是混淆因子</b>。應當作條件常數報一次，不是逐 trial 共變量。</td>
+            </tr>
+            <tr>
+              <td>離軸球「較難看見」</td>
+              <td>可能污染 detection</td>
+              <td class="num">面積是正前方的 3.6 倍</td>
+              <td>離軸球在螢幕上<b>更大</b>而非更小。若要談 detection 污染，方向與提案相反。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="height:14px"></div>
+      <div class="note">
+        <p><strong>更正：240 Hz 排除了 KI-031 的低 aim-update 懸崖，卻沒有讓 <code>t_detect</code> 變成有效資料。</strong>
+        原先把 86/103 的 coverage 歸因為 <code>sustainedTicks</code> 平滑退化；重跑 <code>preStimulusMs</code> sweep 後，真正的懸崖在 baseline：
+        40–400 ms 都是 <b>103/103</b>，500 ms（預設）降為 <b>86/103</b>，600 ms 再降為 <b>64/103</b>。
+        500 ms 的 baseline SD 中位 40.7 deg/s、threshold 122.1 deg/s；120 ms 則為 3.5 / 10.6 deg/s。
+        本文以下的 reaction/movement 改以 120 ms 敏感度分析重算，coverage 103/103，但 120 ms 不是正式修法，且本批的 <code>baselineInsufficient</code> 仍為 103/103。詳見 KI-034。</p>
+      </div>
+    </section>
+
+    <!-- ============ 3 對帳 ============ -->
+    <section id="audit">
+      <p class="kicker">03 · 對帳</p>
+      <h2>提案的每個指標，在真值上會發生什麼</h2>
+      <p>
+        判準是專案自己的紅線 <b>C-D3</b>：寧可少一個指標，不能有一個會說錯話的指標。下表逐條走過提案的
+        Layer A–D 與六張圖，標記「留／修／砍／本批無資料」。
+      </p>
+      <div class="tbl-scroll">
+        <table>
+          <caption>提案指標 × 103 筆真值</caption>
+          <thead><tr><th class="tight">提案項目</th><th class="tight">處置</th><th>真值與理由</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>peripheral_hits_per_min</code><br><span style="color:var(--ink-3);font-size:0.78rem">Layer A 主結果</span></td>
+              <td><span class="pill drop">砍</span></td>
+              <td>34.2 / 34.8 / <b>36.7</b>。把補槍算進產出，於是<b>最差的一場最高</b>。改為首發門控後即為 M1。</td>
+            </tr>
+            <tr>
+              <td><code>first_shot_hit_rate</code></td>
+              <td><span class="pill fix">修</span></td>
+              <td>用 <code>firstShot.hit</code> 得 100 / 100 / 100 %（零變異）；用 <code>firstFire.hit</code> 得 <b>97.0 / 97.1 / 82.9 %</b>。必須換取數來源。</td>
+            </tr>
+            <tr>
+              <td><code>peripheral_hit_time</code><br>median + p90</td>
+              <td><span class="pill fix">修</span></td>
+              <td>907 / 891 / <b>860</b> ms — 單看也會排錯名。只在<b>首發命中的 trial</b> 上算才有解釋力；混入補槍 trial 就變成「失手懲罰」與「移動速度」的混合量。</td>
+            </tr>
+            <tr>
+              <td><code>reaction_ms</code></td>
+              <td><span class="pill fix">敏感度分析</span></td>
+              <td><code>preStimulusMs:120</code> 時 n=103/103，中位 203 ms（p10 133 / p90 250）。預設 500 ms 只有 86/103，且漏掉較快 trial；所以必須同時印 n、參數與 KI-034 baseline validity，不能把 120 ms 靜默當 canonical。</td>
+            </tr>
+            <tr>
+              <td><code>movement_time_ms</code><br>單獨報 median/p90</td>
+              <td><span class="pill drop">砍</span></td>
+              <td><b>在失敗上仍是反向的。</b>以 120 ms 敏感度分析重算，穿越目標的 trial 中位 234 ms，乾淨 trial 523 ms —— 較短的 execution interval 仍可能是穿越失敗，不得脫離穿越旗標單獨呈現。</td>
+            </tr>
+            <tr>
+              <td><code>peak_omega</code></td>
+              <td><span class="pill keep">留</span></td>
+              <td>本批最有用的機制量。首發命中中位 <b>446</b> deg/s、首發失手中位 <b>553</b> deg/s（p90 569 vs 621）。失手是「丟太用力」，不是「不夠快」。</td>
+            </tr>
+            <tr>
+              <td><code>overshoot / drop / micro-adjust</code><br>三個獨立診斷</td>
+              <td><span class="pill fix">修</span></td>
+              <td>在這 103 筆裡是<b>同一個事件</b>：<code>drop&gt;0</code>、<code>microAdjust&gt;0</code>、<code>overshoot</code> 有值的都是同一組 11 筆。應合併為單一「穿越目標」率（10.7%）＋條件化幅度（中位 1.91°），不是三條連續品質軸。</td>
+            </tr>
+            <tr>
+              <td><code>fire_angle_error</code></td>
+              <td><span class="pill keep">留</span></td>
+              <td>中位 0.50° / p90 0.92°。<b>7 筆真實首發失手全落在 1.00–1.91°</b>（目標半徑 1.0°）——沒有一次失控大偏。另有 1 筆 48.05° 是刺激後 161 ms 的搶拍空放，必須單獨歸類而非併入分布。</td>
+            </tr>
+            <tr>
+              <td><code>path_efficiency</code></td>
+              <td><span class="pill fix">修</span></td>
+              <td>可由既有 <code>omegaDegPerSec</code> 積分導出（不需新幾何）：中位 0.968，乾淨 0.972 vs 穿越 0.915。但<b>最大值 1.018 &gt; 1</b>（離散化偏差），不可當有界的 0–1「效率 %」呈現。降為研究層，不進教練圖。</td>
+            </tr>
+            <tr>
+              <td><code>side_delta</code><br>Layer C 旗艦</td>
+              <td><span class="pill keep">留（報無證據）</span></td>
+              <td>L 命中時間中位 889.5 ms vs R 882.5 ms（<b>Δ 7 ms</b>）；首發 91.8%（45/49）vs 94.3%（50/53）；peak ω 442 vs 466。n≈50/側。<b>沒有可報的左右差</b>。</td>
+            </tr>
+            <tr>
+              <td><code>distance_slope</code><br>ms/10°</td>
+              <td><span class="pill drop">砍</span></td>
+              <td>D 的全跨距只有 <b>4.16°</b>。從 4° 的觀測範圍外推「每 10°」的斜率，是把量測噪音當劑量效應。同理 Fitts ID 在此為近乎常數。</td>
+            </tr>
+            <tr>
+              <td><code>block_drift</code><br>3–4 blocks</td>
+              <td><span class="pill fix">修</span></td>
+              <td>四分段每格 n≈8–9。改二分段（n≈17）後訊號仍弱：24.700Z 944→866 ms、53.218Z 890→893、08.932Z 865→840。單場只能描述，不能結論。</td>
+            </tr>
+            <tr>
+              <td><code>cm_per_360</code></td>
+              <td><span class="pill na">本批無資料</span></td>
+              <td><code>meta.dpi</code> 在三份 run <b>全部缺席</b>，<code>deriveMouseThrow()</code> 只回 <code>countsPer360 = 11688.3</code>。提案 dashboard 的「52.0 cm/360」與「1002 Hz mouse rate」在這批資料裡沒有來源。</td>
+            </tr>
+            <tr>
+              <td><code>repositioning_suspected</code></td>
+              <td><span class="pill na">不可轉移</span></td>
+              <td>用已校準的 150 ms / 2 deg/s 門檻，<b>103 筆命中 0 筆</b>。該門檻是在 60 Hz 機器上校出來的，契約本身就註明換硬體須複驗；再加 KI-033（漏 acquisition failure）。本批不得呈現為「沒有抬滑鼠」。</td>
+            </tr>
+            <tr>
+              <td>圖 01 · D–MT 散佈（旗艦總覽圖）</td>
+              <td><span class="pill drop">砍</span></td>
+              <td>x 軸 4.16°、y 軸 78–820 ms ⇒ 退化成一條垂直塗抹。</td>
+            </tr>
+            <tr>
+              <td>圖 03 · ε(t) + |ω| 時序</td>
+              <td><span class="pill fix">修（保留為最重要的圖）</span></td>
+              <td>保留，但提案的示意把兩者<b>都正規化到 0–1 疊在同一軸</b>——那是雙軸圖，會憑刻度對齊捏造相位關係，也把真實量級（3.5° 逸出、573 deg/s）藏起來。改為共用 x 軸的雙面板。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ 4 主結果 ============ -->
+    <section id="primary">
+      <p class="kicker">04 · 主結果</p>
+      <h2>一個數字：首發有效速度</h2>
+      <p>
+        沿用 <code>spider-shot-v3</code> 教練報告已凍結的 <b>M1</b> 定義，不另發明：
+        <b>首發命中數 ÷ 有效周邊呈現時間</b>。分母是 intention-to-test —— 未開火、逾時、補槍命中的 trial
+        全部留在分母。它一個數字同時懲罰「慢」與「亂」，這正是提案把速度與準確度拆成兩個並列主結果之後
+        失去的性質。
+      </p>
+      <div class="m1">
+        <div class="r0">
+          <span class="lab">Run 1 · 24.700Z</span>
+          <span class="big">33.2</span>
+          <span class="sub">首發命中/min · 32/33 = 97.0%<br>中位命中 907 ms</span>
+        </div>
+        <div class="r1">
+          <span class="lab">Run 2 · 53.218Z</span>
+          <span class="big">34.8</span>
+          <span class="sub">首發命中/min · 34/35 = 97.1%<br>中位命中 891 ms</span>
+        </div>
+        <div class="r2">
+          <span class="lab">Run 3 · 08.932Z</span>
+          <span class="big">30.4</span>
+          <span class="sub">首發命中/min · 29/35 = 82.9%<br>中位命中 860 ms</span>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="note warn">
+        <p><strong>單場 n≈35 撐不起「進步」的判語。</strong>三場之間 33.2 → 34.8 → 30.4 的落差，在沒有
+        test–retest reliability 與 MDC（最小可偵測變化）之前不能稱為變好或變壞。本文所有圖只回答
+        「這場<b>發生了什麼</b>」，不回答「他<b>是不是變強了</b>」——後者需要 v3 教練報告已列的
+        MDC band，而 MDC band 需要同條件的多場基準（本批總共 3 場，不足）。</p>
+      </div>
+    </section>
+
+    <!-- ============ 5 五張圖 ============ -->
+    <section id="charts">
+      <p class="kicker">05 · 圖</p>
+      <h2>五張圖，各回答一個教練問題</h2>
+      <p>
+        提案是 6 張圖 + 4 個分頁、全為示意數字。下面五張全部由這 103 筆真值繪製，每張自帶
+        <b>它回答什麼 / 怎麼讀 / 何時不畫</b>。順序即判讀順序：先看工作點有沒有動，再看失手長什麼樣，
+        最後才看單次時序。
+      </p>
+
+      <div class="stack-lg">
+
+        <!-- W1 -->
+        <figure>
+          <div class="fig-head">
+            <span class="fig-id">W1</span>
+            <h3>工作點有沒有移動？</h3>
+            <p class="fig-q">把每場畫成「中位命中時間 × 首發命中率」的一個點。等值斜線是首發有效速度。
+              往左（更快）而往下（更不準）不是進步，是換了工作點。</p>
+          </div>
+          <div class="fig-body"><svg id="w1" viewBox="0 0 700 340" role="img" aria-label="三場 run 的速度—準確率工作點散佈圖"></svg></div>
+          <div class="legend">
+            <span><span class="swatch" style="background:var(--s1)"></span>Run 1 · 24.700Z</span>
+            <span><span class="swatch" style="background:var(--s2)"></span>Run 2 · 53.218Z</span>
+            <span><span class="swatch" style="background:var(--s3)"></span>Run 3 · 08.932Z</span>
+            <span><span class="swatch line" style="background:var(--ink-3)"></span>三場的時間順序</span>
+          </div>
+          <figcaption>
+            <div><b>怎麼讀：</b>右上方向（更快且更準）是純進步。相對前一場，Run 3 把中位時間往左推了 31 ms，
+              代價是首發率掉 14.3 個百分點——點往左卻往下，首發有效速度從 34.8 掉到 30.4。</div>
+            <div><b>為什麼沒有等值線：</b>M1 是固定 60 秒窗內的首發命中數，而<b>呈現次數本身取決於玩家多快打完</b>，
+              所以等效率軌跡需要「呈現數隨命中時間變化」的模型。本批 3 場撐不起那個模型，因此把 M1 直接標在每個點上，
+              而不是畫一條會憑刻度暗示模型的直線。</div>
+            <div class="nodraw"><b>何時不畫：</b>單場周邊呈現數 &lt; 20 時不畫（比例的不確定區間會大於整張圖）。
+              不同 FOV / aspect 的 run 不可畫在同一張——那是不同刺激幾何。</div>
+          </figcaption>
+        </figure>
+
+        <!-- W2 -->
+        <figure>
+          <div class="fig-head">
+            <span class="fig-id">W2</span>
+            <h3>失手是哪一種失手？</h3>
+            <p class="fig-q">每場的每一次周邊呈現都必須落進一格（ITT 分母）。上排按首發結果分，下排把首發失手再依機制拆開——
+              教練要的不是「你失手 6 次」，而是「6 次裡 3 次是煞不住」。</p>
+          </div>
+          <div class="fig-body"><svg id="w2" viewBox="0 0 700 330" role="img" aria-label="每場首發結果與失手機制分解堆疊圖"></svg></div>
+          <div class="legend">
+            <span><span class="swatch" style="background:var(--good)"></span>首發命中</span>
+            <span><span class="swatch" style="background:var(--serious)"></span>首發失手 → 補槍命中</span>
+            <span><span class="swatch" style="background:var(--ink-3)"></span>未開火</span>
+            <span><span class="swatch" style="background:var(--critical)"></span>穿越目標</span>
+            <span><span class="swatch" style="background:var(--warning)"></span>邊緣失手</span>
+            <span><span class="swatch ring" style="color:var(--critical)"></span>搶拍空放</span>
+          </div>
+          <figcaption>
+            <div><b>怎麼讀：</b>Run 3 的 6 次首發失手裡，<b>3 次是穿越目標後煞回來才開槍</b>、2 次是原地邊緣失手、
+              1 次是刺激後 161 ms 的搶拍空放（角誤差 48.05°，等於朝上一個目標的位置開槍）。
+              三種機制的訓練處方完全不同，混成一個「首發命中率」會全部消失。</div>
+            <div class="nodraw"><b>何時不畫：</b>任一格 n &lt; 3 時只標數字、不上色、不下判語。逾時 trial 必須自成一格，
+              不可以 0 ms 補值後併入。</div>
+          </figcaption>
+        </figure>
+
+        <!-- W3 -->
+        <figure>
+          <div class="fig-head">
+            <span class="fig-id">W3</span>
+            <h3>丟太用力，長什麼樣子？</h3>
+            <p class="fig-q">三次真實拉槍，共用同一條時間軸、三個面板。①是 48° 的行程，②是<b>同一條 ε(t) 只看 0–6°</b>，
+              ③是角速度。<b>ε 與 |ω| 量級差兩個數量級，所以是分開的面板、不是兩條 y 軸</b>；
+              而煞停的 1–3.5° 在①的尺度上只有 10 px 高，所以②必須存在。</p>
+          </div>
+          <div class="fig-body"><svg id="w3" viewBox="0 0 700 560" role="img" aria-label="三次拉槍的角誤差全程、煞停放大與角速度三面板時序圖"></svg></div>
+          <div class="legend">
+            <span><span class="swatch" style="background:var(--s1)"></span>乾淨命中 · t19（peak 489 deg/s）</span>
+            <span><span class="swatch" style="background:var(--s2)"></span>穿越但命中 · t61（peak 573）</span>
+            <span><span class="swatch" style="background:var(--s3)"></span>穿越且首發失手 · t27（peak 564）</span>
+            <span><span class="swatch" style="background:var(--panel-sunk);border:1px solid var(--axis)"></span>命中帶 ε &lt; 1.0°</span>
+            <span><span class="swatch ring" style="color:var(--ink-3)"></span>空心 = 該發沒命中</span>
+          </div>
+          <figcaption>
+            <div><b>怎麼讀：</b>以 120 ms 敏感度分析重算，三條線的 reaction 為 195–250 ms，行程曲線①幾乎重疊。差別全在②。
+              t19 以 489 deg/s 進場、單調收斂進命中帶、773 ms 一發命中。
+              t61 以 573 deg/s 進場，<b>刺激後 336 ms 首次進靶；扣除 195 ms reaction 後，movement interval 為 141 ms</b>。它隨即逸出，煞回來才開槍，807 ms 命中。
+              t27 同樣穿越，卻在 734 ms、還在命中帶外時扣了扳機（②上的空心圈，ε=1.91°），補槍到 1027 ms 才結束——
+              比 t19 慢 254 ms。</div>
+            <div><b>這張圖解釋了為什麼 <code>movementTimeMs</code> 不能單獨看：</b>t61 的 141 ms 仍是三者中最快的「移動時間」，
+              卻是最差的煞停。開火圈畫在②上而非時間軸上，就是為了讓「在哪個誤差扣扳機」直接可讀。</div>
+            <div class="nodraw"><b>何時不畫：</b>只畫個案，永不聚合成「平均 ε(t) 曲線」——不同 trial 的相位不對齊，
+              平均後的峰值會被抹平成一個不存在的形狀。挑 trial 必須說明挑選規則。</div>
+          </figcaption>
+        </figure>
+
+        <!-- W4 -->
+        <figure>
+          <div class="fig-head">
+            <span class="fig-id">W4</span>
+            <h3>多用力才算太用力？</h3>
+            <p class="fig-q">103 次到達的峰值角速度，依首發結果分兩排。這是本批唯一有明確方向、
+              又能直接轉成訓練指令的機制量。</p>
+          </div>
+          <div class="fig-body"><svg id="w4" viewBox="0 0 700 260" role="img" aria-label="峰值角速度依首發結果分組的點列圖"></svg></div>
+          <div class="legend">
+            <span><span class="swatch" style="background:var(--good)"></span>首發命中（n=95）</span>
+            <span><span class="swatch" style="background:var(--critical)"></span>首發失手（n=7）</span>
+            <span><span class="swatch ring" style="color:var(--ink-3)"></span>穿越目標</span>
+            <span><span class="swatch line" style="background:var(--ink)"></span>中位數</span>
+          </div>
+          <figcaption>
+            <div><b>怎麼讀：</b>首發命中的峰值中位 <b>446</b> deg/s，首發失手 <b>553</b> deg/s（+24%）；p90 為 569 vs 621。
+              11 次穿越目標（空心圈）也集中在高速端，中位 513 vs 乾淨 446。
+              訓練語言：<b>這名玩家的失手不是拉不到，是拉過去</b>——降速比加速有效。</div>
+            <div class="nodraw"><b>何時不畫：</b>失手組 n &lt; 5 時只畫點、不畫中位線（一個點就能主導）。
+              本圖 n=7 已在下限，圖上同時標出 n。</div>
+          </figcaption>
+        </figure>
+
+        <!-- W5 -->
+        <figure>
+          <div class="fig-head">
+            <span class="fig-id">W5</span>
+            <h3>這場能不能解讀？</h3>
+            <p class="fig-q">結果前先過閘。這張圖的價值一半在「算得出來的數」，一半在<b>誠實標出算不出來的欄位</b>——
+              提案 dashboard 的兩個品質數字（cm/360、mouse rate）在這批資料裡並不存在。</p>
+          </div>
+          <div class="fig-body"><svg id="w5" viewBox="0 0 700 300" role="img" aria-label="三場 run 的資料品質閘與不可用欄位"></svg></div>
+          <figcaption>
+            <div><b>怎麼讀：</b>三場的計時與緩衝全部乾淨（<code>crossOriginIsolated</code> ✓、無 overflow、
+              frame p99 ≤ 4.31 ms、<code>suspect: false</code>）。可解讀性的真正限制是右側三欄：
+              reaction 在 120 ms 敏感度分析下覆蓋率 100%（但非 canonical，且 baselineInsufficient 103/103）、DPI 缺席使實體行程不可算、
+              抬鼠門檻在此硬體未複驗。</div>
+            <div class="nodraw"><b>何時不畫：</b>不要把不可用欄位畫成 0 或留白——留白會被讀成「良好」。
+              一律以明確的「不可算 / 未複驗」字樣佔位。</div>
+          </figcaption>
+        </figure>
+
+      </div>
+
+      <div style="height:18px"></div>
+      <details class="data">
+        <summary>展開 103 筆逐 trial 資料（可稽核）</summary>
+        <div class="tbl-scroll"><table id="rawtbl">
+          <thead><tr>
+            <th>run</th><th>側</th><th class="num">D_deg</th><th class="num">reaction</th><th class="num">movement</th>
+            <th class="num">peak ω</th><th class="num">逸出</th><th class="num">首發</th><th class="num">首發誤差</th>
+            <th class="num">發數</th><th class="num">命中時間</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </details>
+    </section>
+
+    <!-- ============ 6 版面 ============ -->
+    <section id="page">
+      <p class="kicker">06 · 版面</p>
+      <h2>一頁式：從「能不能讀」到「怎麼練」</h2>
+      <p>
+        提案用四個分頁（總覽／單次 Flick／左右差／資料品質）。分頁的代價是教練必須先知道要點哪一頁才能發現問題，
+        而且首屏截圖只剩一頁。改為單頁五帶、由上到下就是判讀順序；左右差不給獨立分頁，因為本批沒有可報的左右差。
+      </p>
+      <div class="layout-sketch">
+        <div class="lz">
+          <span class="zn">帶 1 · 閘門</span>
+          <strong>這場能不能解讀（W5）</strong>
+          <p>不可解讀就停在這裡，不往下顯示任何能力數字。含明確的「不可算」欄位。</p>
+        </div>
+        <div class="lz">
+          <span class="zn">帶 2 · 一個數字</span>
+          <strong>首發有效速度 M1 + ITT 分母</strong>
+          <p>單一 hero 數字，旁邊永遠並列 n 與首發率。不顯示歷史趨勢或玩家等級（practice-only）。</p>
+        </div>
+        <div class="lz">
+          <span class="zn">帶 3 · 工作點</span>
+          <strong>W1 速度—準確率 + W2 失手分解</strong>
+          <p>並排。W1 說「工作點動了沒」，W2 說「動的代價長什麼樣」。這一帶回答 90% 的教練提問。</p>
+        </div>
+        <div class="lz">
+          <span class="zn">帶 4 · 機制</span>
+          <strong>W4 峰值角速度 × 首發結果</strong>
+          <p>把 W2 的機制轉成可執行的指令（降速／改變開槍時機）。</p>
+        </div>
+        <div class="lz">
+          <span class="zn">帶 5 · 個案</span>
+          <strong>W3 逐 trial 時序（可選 trial）</strong>
+          <p>最後才展開。教練用它向選手展示單次失手實際發生了什麼，也是唯一需要互動選擇的圖。</p>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="note">
+        <p><strong>三條教練紀律（沿用 v3 教練報告）：</strong>
+        ① 任一格 n &lt; 8 只列數字、不上色、不下結論；
+        ② 未通過構念驗證的指標不進教練面（C-D3）；
+        ③ 每個數字旁邊必須有它的 n 與分母定義——<code>spider-shot-wide-v1</code> 是 practice-only，
+        不寫入 participant 歷史、不產生 compatibility cell、不進 <code>DrillMetricRegistry</code>。</p>
+      </div>
+    </section>
+
+    <!-- ============ 7 不能說 ============ -->
+    <section id="cannot">
+      <p class="kicker">07 · 邊界</p>
+      <h2>這批資料還不能說的話</h2>
+      <p>
+        提案在這一節的立場是對的（不做總分、不做玩家等級、要真人資料），下面只把它收斂到本批的具體數字上，
+        並補三條提案沒有預期到的限制。
+      </p>
+      <ul class="tight">
+        <li><b>不能說「變快了」或「變慢了」。</b>n=1 玩家、單一硬體、3 場、同一顆 seed 57001。沒有 test–retest、沒有 SEM/MDC。</li>
+        <li><b>不能說左右差。</b>Δ7 ms、n≈50/側 —— 這是「無證據」，不是「無差異」，更不是「左側弱項」。</li>
+        <li><b>不能報角距斜率或 Fitts throughput。</b>D 只有 4.16° 跨距。要做劑量反應，得另開一支刻意分層多個 yaw 帶的排程。</li>
+        <li><b>不能報實體滑鼠行程。</b><code>meta.dpi</code> 缺席；只有 <code>countsPer360 = 11688.3</code> 可稽核。錄製規格要求的 DPI 欄位沒有落進匯出，這是下一批錄製前必須修的。</li>
+        <li><b>不能說「沒有抬滑鼠」。</b>0/103 只代表 150 ms / 2 deg/s 門檻在 240 Hz 這台機器上沒有觸發；該門檻是 60 Hz 機器校出來的，且 KI-033 已知會漏 acquisition failure。</li>
+        <li><b>不能把 120 ms 敏感度分析當成 canonical reaction。</b>它把 coverage 補到 103/103，卻仍取自前一個 presentation 的尾段，且本批 <code>baselineInsufficient</code> 為 103/103。正式 baseline 契約修好前，只能在同參數的敏感度分析內比較。</li>
+        <li><b>三場不可視為獨立重複。</b>間隔各約 2.5 分鐘、同一 session、同一 seed，順序效應與疲勞和 run 編號共線。Run 3 的工作點漂移有可能就是疲勞，本批無法分離。</li>
+      </ul>
+      <div class="note warn">
+        <p><strong>對「需要真人資料嗎」的回答沒有改變，但門檻更清楚了。</strong>本批已足以否證兩件事
+        （提案的 Layer A 排名可信、240 Hz 就足以保證 canonical reaction 可用）；並揭露 KI-034 的快速週期 baseline 污染。不足以建立任何常模、權重或個人特徵。
+        提案的 Stage A 5–8 人 × 2 runs 仍是正確的下一步，但錄製規格必須先補 DPI 與滑鼠取樣率欄位，
+        否則 Layer D 的共變量一批都算不出來。</p>
+      </div>
+    </section>
+
+    <!-- ============ 8 缺口 ============ -->
+    <section id="gaps">
+      <p class="kicker">08 · 工程</p>
+      <h2>落地這五張圖需要動什麼</h2>
+      <div class="tbl-scroll">
+        <table>
+          <caption>與現有能力的差距（researcher-only artifact，不接 DrillMetricRegistry）</caption>
+          <thead><tr><th>需求</th><th class="tight">現況</th><th>動作</th></tr></thead>
+          <tbody>
+            <tr><td>首發真值（W1/W2/W4 全部依賴）</td><td><span class="pill keep">已有</span></td><td>改讀 <code>PeekWindowTs.firstFire.hit</code>，不用 <code>firstShot.hit</code>。與 v3 教練 runner 同一判準，無新幾何。</td></tr>
+            <tr><td>ε(t) / on-target / peak ω（W3/W4）</td><td><span class="pill keep">已有</span></td><td>直接用 <code>deriveTrackingSamples()</code> + <code>omegaDegPerSec()</code>。KI-021 修後 sphere 幾何已三處同源。</td></tr>
+            <tr><td>穿越目標旗標（W2/W4）</td><td><span class="pill keep">已有</span></td><td><code>stopControl.dropCount &gt; 0</code> 即可，不需新指標；本批與 <code>overshoot</code>/<code>microAdjustCount</code> 同集合。</td></tr>
+            <tr><td>搶拍空放分類（W2）</td><td><span class="pill fix">需定義</span></td><td>目前用「首發失手且 <code>t_fire − t_visible &lt; 400 ms</code>」抓到 1/103。<b>400 ms 是本文的候選值，未校準</b>，須入帳為 OQ。</td></tr>
+            <tr><td>首發有效速度 M1 的分母</td><td><span class="pill fix">需定義</span></td><td>本文用首末周邊 <code>visible</code> 的時間跨距（57.2–58.7 s）。與 v3 的 60 s 協定窗差 1.3–2.8 s；兩者不可混用，須擇一凍結。</td></tr>
+            <tr><td>DPI / 滑鼠取樣率</td><td><span class="pill drop">匯出缺欄</span></td><td>錄製規格已要求，但匯出沒有 <code>meta.dpi</code>、無 <code>mouseSamples</code>。下批錄製前補齊，否則 Layer D 不可算。</td></tr>
+            <tr><td>KI-034：快速週期 baseline 污染</td><td><span class="pill fix">已入帳</span></td><td><code>preStimulusMs</code> 40–400 → 103/103，500 → 86/103，600 → 64/103；500 ms 把前一次接戰算進新目標 baseline。已登錄 KI-034；120 ms 僅作敏感度分析，不是正式修法。</td></tr>
+            <tr><td><code>tDetectMs</code> 的契約敘述</td><td><span class="pill drop">文件錯誤</span></td><td><code>analysis-spider-shot.md</code> 的五指標表寫成「<code>tDetectMs</code>（<code>t_detect − t_visible</code>）」，但實作回傳的是<b>絕對時鐘</b>（<code>detectionDerivation.ts:119-120</code>），差值在 <code>reactionMs</code>。照文件建圖會把 14 萬 ms 的時間戳畫成反應時間。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ 9 依據 ============ -->
+    <section id="sources">
+      <p class="kicker">09 · 依據</p>
+      <h2>本文的資料與契約來源</h2>
+      <ul class="tight">
+        <li><b>資料：</b>三份 <code>spider-shot-wide-v1</code> 匯出，<code>2026-09-09T14:43:24.700Z</code> /
+          <code>14:45:53.218Z</code> / <code>14:47:08.932Z</code>。schemaVersion 2、
+          <code>crossOriginIsolated: true</code>、<code>suspect: false</code>、seed 57001、sensitivity 1.4、FOV 75、240 Hz。</li>
+        <li><b>推導：</b>全部經 <code>parseExportPayload()</code> 後由既有 canonical derivation 產生 ——
+          <code>deriveSpiderShotMetrics()</code>、<code>deriveSpiderShotTransitions()</code>、
+          <code>deriveDetectionMetrics()</code>、<code>buildPeekWindows()</code>、
+          <code>deriveTrackingSamples()</code>、<code>omegaDegPerSec()</code>、
+          <code>deriveMouseThrow()</code>、<code>deriveProjectedFootprint()</code>、
+          <code>deriveRepositioningSuspicion()</code>。本文<b>沒有重算任何幾何</b>（C-D4）。</li>
+        <li><b>對照提案：</b><a href="spider-shot-wide-v1-performance-metrics-proposal-2026-09-09.html">spider-shot-wide-v1 表現指標與結果視覺化提案</a>（其 dashboard 數值為示意）。</li>
+        <li><b>沿用框架：</b><a href="spider-shot-v3-coach-metrics-and-charts-2026-09-09.html">spider-shot-v3 教練指標與圖表</a>
+          的 M1 定義、n 閘與教練紀律；<a href="spider-shot-v3-measurement-parameters-2026-09-09.html">v3 量測參數</a>。</li>
+        <li><b>契約：</b><a href="../../operational/analysis-spider-shot.md">analysis-spider-shot.md</a>（五類構念、wide 變體幾何、
+          <code>resolvedFrom</code>、side 兩義）、<a href="../../operational/spider-wide-recording-spec.md">spider-wide-recording-spec.md</a>。</li>
+        <li><b>已知問題：</b><a href="../../known_issue/KI-034-prestimulus-baseline-overlaps-prior-engagement.md">KI-034</a>、<a href="../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md">KI-031</a>、
+          <a href="../../known_issue/KI-033-repositioning-flag-omits-acquisition-failures-and-undercounts-stall-start.md">KI-033</a>、
+          KI-021（sphere on-target 幾何，已修）。</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>
+      <code>spider-shot-wide-v1</code> · researcher-only / practice。所有數值來自 2026-09-09 的三場 n=1 真人 run；reaction/movement 採 <code>preStimulusMs:120</code> 敏感度分析（非 canonical detect-v1），
+      <b>不是常模、不是及格線、不可作為玩家等級引用</b>。本文的圖表由頁內嵌入的 103 筆推導結果直接繪製，可與
+      <code>docs/algorithm/spider_shot/</code> 同層的提案逐項對帳。
+    </p>
+  </div>
+</footer>
+
+<script id="wide-data" type="application/json">{"runs":[{"k":"24.700Z","startedAt":"2026-09-09T14:43:24.700Z","rhythmMedian":875,"overBudget":0,"framesP99":4.27},{"k":"53.218Z","startedAt":"2026-09-09T14:45:53.218Z","rhythmMedian":843.8,"overBudget":12,"framesP99":4.31},{"k":"08.932Z","startedAt":"2026-09-09T14:47:08.932Z","rhythmMedian":800.8,"overBudget":15,"framesP99":4.29}],"trials":[[0,434.2,1,928,0.2906,0,242.1875,523.4375,"L",1,49.513],[0,398.3,1,887.8,0.5446,0,164.0625,445.3125,"R",1,48.467],[0,399.4,1,920.9,0.9474,0,226.5625,507.8125,"L",1,50.898],[0,426.9,1,890,0.7852,0,132.8125,476.5625,"R",1,49.373],[0,469.3,1,1004.8,0.4854,0,242.1875,453.125,"L",1,47.878],[0,505.2,1,1007.7,0.1557,1,429.6875,218.75,"R",1,51.022],[0,332.8,1,1069.4,0.7126,0,132.8125,656.25,"L",1,48.331],[0,528.2,1,846.5,0.1916,0,148.4375,460.9375,"R",1,51.564],[0,521.8,1,895.6,0.2204,0,250,468.75,"R",1,48.399],[0,489,1,773,0.8542,0,250,390.625,"R",1,47.892],[0,353,1,959.8,0.2899,0,171.875,625,"L",1,51.336],[0,283.9,0,1654,1.2089,1,335.9375,796.875,"L",2,47.719],[0,440.9,1,1273.5,0.0736,0,507.8125,601.5625,"R",1,48.995],[0,278.8,1,881.5,0.4903,0,140.625,476.5625,"L",1,51.141],[0,507.6,1,1137,0.4455,0,257.8125,664.0625,"L",1,48.999],[0,402.4,1,996.7,0.1866,0,234.375,609.375,"R",1,50.174],[0,394.5,1,846.3,0.913,0,242.1875,398.4375,"R",1,50.745],[0,430.2,1,875.9,0.4922,1,234.375,187.5,"L",1,48.244],[0,386.7,1,855,0.8038,0,148.4375,585.9375,"R",1,50.01],[0,438.5,1,864.2,0.6969,0,218.75,359.375,"L",1,49.086],[0,362.8,1,1009.7,0.5578,0,195.3125,625,"R",1,49.191],[0,426.3,1,815,0.1464,0,218.75,476.5625,"L",1,47.817],[0,323.3,1,1028,0.2276,0,210.9375,710.9375,"R",1,49.287],[0,493.2,1,944,0.2231,0,242.1875,601.5625,"L",1,50.643],[0,534.9,1,966,0.5993,0,265.625,476.5625,"L",1,51.603],[0,536.2,1,907.1,0.5637,0,164.0625,632.8125,"R",1,47.996],[0,446.8,1,863.9,0.1679,0,203.125,492.1875,"R",1,51.295],[0,483,1,973.1,0.238,0,234.375,648.4375,"L",1,47.947],[0,418.1,1,811.4,0.2112,0,187.5,484.375,"R",1,49.641],[0,449.5,1,836.7,0.6328,0,15.625,578.125,"L",1,51.271],[0,572.8,1,807.2,0.6122,1,195.3125,140.625,"R",1,49.021],[0,403.8,1,979,0.1949,0,234.375,671.875,"L",1,49.803],[0,410.3,1,866.1,0.8181,0,125,656.25,"R",1,51.054],[1,407.2,1,958.2,0.6006,0,250,593.75,"L",1,49.513],[1,438.2,1,944.9,0.2694,0,125,718.75,"R",1,48.467],[1,411.2,1,924,0.4494,0,117.1875,687.5,"L",1,50.898],[1,524.6,1,792.3,0.2645,0,242.1875,406.25,"R",1,49.373],[1,348,1,961.6,0.2909,0,187.5,523.4375,"L",1,47.878],[1,454.2,1,803.3,0.1988,0,187.5,375,"R",1,51.022],[1,481.3,1,889.5,0.2568,0,218.75,382.8125,"L",1,48.331],[1,450,1,987,0.5699,0,234.375,617.1875,"R",1,51.564],[1,428.4,1,860.1,0.4806,0,234.375,468.75,"R",1,48.399],[1,592.2,1,913.9,0.5042,0,250,367.1875,"R",1,47.892],[1,407.8,1,822,0.2394,0,132.8125,554.6875,"L",1,51.336],[1,469.1,1,1006.9,0.3228,0,250,671.875,"L",1,47.719],[1,573.3,1,1070.2,0.7332,0,203.125,671.875,"R",1,48.995],[1,453.2,1,829.4,0.1086,0,234.375,460.9375,"L",1,51.141],[1,422,1,775.8,0.6244,0,195.3125,500,"L",1,48.999],[1,386.5,1,862.2,0.185,0,101.5625,460.9375,"R",1,50.174],[1,574.9,1,751.4,0.926,1,242.1875,406.25,"R",1,50.745],[1,485,1,803.8,0.6014,0,250,367.1875,"L",1,48.244],[1,441.8,1,916.9,0.339,0,171.875,539.0625,"R",1,50.01],[1,366.8,1,945.9,0.8774,0,226.5625,632.8125,"L",1,49.086],[1,510.2,1,816,0.4832,0,226.5625,429.6875,"R",1,49.191],[1,426.6,1,804.6,0.7203,0,171.875,570.3125,"L",1,47.817],[1,481,1,801.3,0.9911,0,156.25,625,"R",1,49.287],[1,347.3,1,773.4,0.7915,0,132.8125,421.875,"L",1,50.643],[1,371.7,1,892.7,0.5286,0,218.75,492.1875,"L",1,51.603],[1,695.4,1,975.6,0.472,0,218.75,632.8125,"R",1,47.996],[1,527.6,1,882.5,0.2135,0,226.5625,468.75,"R",1,51.295],[1,371.9,1,847,0.2705,0,140.625,500,"L",1,47.947],[1,410.5,1,964,0.504,0,156.25,664.0625,"R",1,49.641],[1,537.9,1,878.7,0.6637,0,117.1875,562.5,"L",1,51.271],[1,414,1,1007,0.4171,0,210.9375,507.8125,"R",1,49.021],[1,418,1,943.2,0.1666,0,203.125,585.9375,"L",1,49.803],[1,457.8,1,1037.3,0.2476,0,140.625,750,"R",1,51.054],[1,568,1,919.7,0.5037,0,226.5625,539.0625,"R",1,48.023],[1,509.3,null,null,null,0,179.6875,437.5,"L",0,51.879],[2,540.1,1,899.4,0.707,0,226.5625,421.875,"L",1,49.513],[2,400.2,1,997.9,0.8505,0,140.625,625,"R",1,48.467],[2,447.5,1,783.1,0.5432,0,218.75,382.8125,"L",1,50.898],[2,569.1,1,633.2,0.6647,0,109.375,359.375,"R",1,49.373],[2,398.6,1,779.8,0.3293,0,148.4375,421.875,"L",1,47.878],[2,426.4,1,1060.9,0.6118,0,78.125,843.75,"R",1,51.022],[2,398.2,1,940.9,0.7781,0,203.125,671.875,"L",1,48.331],[2,513.2,1,855.1,0.5723,0,242.1875,437.5,"R",1,51.564],[2,501,0,1331.7,1.0222,0,265.625,828.125,"R",2,48.399],[2,513.6,1,865.4,0.5321,0,250,500,"R",1,47.892],[2,488,1,769,0.2248,0,203.125,367.1875,"L",1,51.336],[2,552.5,0,753.3,48.0535,0,242.1875,398.4375,"L",2,47.719],[2,579.8,0,997.7,1.2271,1,156.25,281.25,"R",2,48.995],[2,563.7,0,1027,1.9114,1,242.1875,234.375,"L",2,51.141],[2,676.4,1,987.5,0.6222,0,250,632.8125,"L",1,48.999],[2,465.5,1,846.9,0.4319,0,187.5,570.3125,"R",1,50.174],[2,597.8,1,815.4,0.8412,1,218.75,156.25,"R",1,50.745],[2,682.3,0,1047.1,1.3717,0,171.875,742.1875,"L",2,48.244],[2,512.5,1,877.3,0.8849,1,171.875,210.9375,"R",1,50.01],[2,484.9,1,781.7,0.8193,0,101.5625,554.6875,"L",1,49.086],[2,575.2,1,758.5,0.537,0,164.0625,406.25,"R",1,49.191],[2,445.6,1,860.3,0.5045,0,156.25,531.25,"L",1,47.817],[2,445.4,1,818,0.277,0,210.9375,507.8125,"R",1,49.287],[2,461.3,1,820.4,0.3741,0,203.125,539.0625,"L",1,50.643],[2,513.4,1,787.4,0.4148,0,203.125,445.3125,"L",1,51.603],[2,467.5,0,1021,1.0016,1,117.1875,492.1875,"R",2,47.996],[2,524.4,1,776.5,0.4825,0,242.1875,406.25,"R",1,51.295],[2,410.3,1,875.1,0.3586,0,156.25,601.5625,"L",1,47.947],[2,441.5,1,998.5,0.2663,1,171.875,484.375,"R",1,49.641],[2,445.6,1,763.2,0.6854,0,226.5625,367.1875,"L",1,51.271],[2,423.3,1,722.9,0.5127,0,210.9375,195.3125,"R",1,49.021],[2,576.2,1,807.1,0.3423,0,226.5625,492.1875,"L",1,49.803],[2,544.6,1,1062.2,0.9399,0,195.3125,734.375,"R",1,51.054],[2,421.8,1,866,0.3879,0,179.6875,593.75,"R",1,48.023],[2,386.8,1,1014.9,0.2873,0,195.3125,703.125,"L",1,51.879]],"series":{"24.700Z/t19":{"run":"24.700Z","id":"t19","D":47.89,"react":250,"move":390.625,"peak":489,"over":null,"fires":[773],"ffHit":true,"ffErr":0.854,"hitT":773,"pts":[[-54.69,0,null,null],[-46.88,0,null,null],[-39.06,0,null,null],[-31.25,0,null,null],[-23.44,0,null,null],[-15.63,0,null,null],[-7.81,0,null,null],[0,3.9,47.5335,0],[7.81,0,47.5335,0],[15.63,0,47.5335,0],[23.44,0,47.5335,0],[31.25,0,47.5335,0],[39.06,0,47.5335,0],[46.88,0,47.5335,0],[54.69,0,47.5335,0],[62.5,0,47.5335,0],[70.31,0,47.5335,0],[78.13,0,47.5335,0],[85.94,0,47.5335,0],[93.75,0,47.5335,0],[101.56,0,47.5625,0],[109.38,5.6,47.5625,0],[117.19,3.9,47.6241,0],[125,12.5,47.7146,0],[132.81,7.9,47.7761,0],[140.63,12.5,47.8667,0],[148.44,16.3,47.988,0],[156.25,23.7,48.1418,0],[164.06,27.9,48.3554,0],[171.88,27.9,48.6613,0],[179.69,35.7,48.9673,0],[187.5,43.4,49.3348,0],[195.31,51.4,49.8254,0],[203.13,59.3,50.0407,0],[210.94,71.1,50.5929,0],[218.75,71,51.1466,0],[226.56,55.3,51.6989,0],[234.38,47.3,52.0065,0],[242.19,19.7,52.0988,0],[250,3.9,51.9758,0],[257.81,31.5,51.5758,0],[265.63,71.1,51.1436,0],[273.44,122.3,50.3115,0],[281.25,161.8,48.9242,0],[289.06,209.1,47.26,0],[296.88,268.2,45.1036,0],[304.69,287.9,42.0859,0],[312.5,362.7,38.8547,0],[320.31,398.2,35.3454,0],[328.13,425.8,33.8061,0],[335.94,406.1,30.3299,0],[343.75,489,26.1745,0],[351.56,406.1,22.7267,0],[359.38,426,19.4618,0],[367.19,398.6,15.855,0],[375,335.9,13.1651,0],[382.81,380,10.783,0],[390.63,230.2,9.483,0],[398.44,219,7.656,0],[406.25,231.9,6.2054,0],[414.06,132.9,5.0436,0],[421.88,129,4.1426,0],[429.69,106,3.3889,0],[437.5,69.8,2.9808,0],[445.31,52.5,2.6511,0],[453.13,32.5,2.5479,0],[460.94,23.6,2.3781,0],[468.75,8.8,2.335,0],[476.56,3.9,2.3072,0],[484.38,0,2.3072,0],[492.19,0,2.3072,0],[500,3.9,2.2795,0],[507.81,0,2.2795,0],[515.63,3.9,2.2662,0],[523.44,3.9,2.2107,0],[531.25,5.6,2.1696,0],[539.06,8.8,2.1287,0],[546.88,8.8,2.0321,0],[554.69,12.5,1.9224,0],[562.5,17.6,1.7849,0],[570.31,17.6,1.6195,0],[578.13,17.6,1.5507,0],[585.94,17.6,1.4131,0],[593.75,17.6,1.2477,0],[601.56,12.5,1.1789,0],[609.38,5.6,1.1256,0],[617.19,5.6,1.0853,0],[625,7.9,1.0635,0],[632.81,12.5,1.007,0],[640.63,12.5,0.9629,1],[648.44,12.5,0.9178,1],[656.25,8.8,0.8812,1],[664.06,7.9,0.8506,1],[671.88,5.6,0.8518,1],[679.69,3.9,0.8542,1],[687.5,0,0.8542,1],[695.31,0,0.8542,1],[703.13,0,0.8542,1],[710.94,0,0.8542,1],[718.75,0,0.8542,1],[726.56,0,0.8542,1],[734.38,0,0.8542,1],[742.19,0,0.8542,1],[750,0,0.8542,1],[757.81,0,0.8542,1],[765.63,0,0.8542,1],[773.44,0,0.8542,1],[781.25,0,null,null]]},"24.700Z/t61":{"run":"24.700Z","id":"t61","D":49.02,"react":195.3125,"move":140.625,"peak":573,"over":3.5,"fires":[807.2],"ffHit":true,"ffErr":0.612,"hitT":807.2,"pts":[[-54.69,5.6,null,null],[-46.88,7.9,null,null],[-39.06,5.6,null,null],[-31.25,0,null,null],[-23.44,0,null,null],[-15.63,0,null,null],[-7.81,0,null,null],[0,0,48.4485,0],[7.81,0,48.4485,0],[15.63,0,48.4485,0],[23.44,0,48.4485,0],[31.25,0,48.4485,0],[39.06,0,48.4485,0],[46.88,0,48.4485,0],[54.69,0,48.4485,0],[62.5,0,48.4485,0],[70.31,0,48.4485,0],[78.13,0,48.4485,0],[85.94,0,48.4485,0],[93.75,0,48.4485,0],[101.56,0,48.4485,0],[109.38,0,48.4485,0],[117.19,0,48.4485,0],[125,0,48.4485,0],[132.81,0,48.4485,0],[140.63,0,48.4485,0],[148.44,0,48.4485,0],[156.25,0,48.4485,0],[164.06,0,48.4485,0],[171.88,0,48.4485,0],[179.69,0,48.4485,0],[187.5,0,48.4485,0],[195.31,12.5,48.3231,0],[203.13,39.4,48.0163,0],[210.94,63.2,47.3999,0],[218.75,114.6,46.3514,0],[226.56,154,44.7172,0],[234.38,229,41.3906,0],[242.19,292,38.6163,0],[250,355.4,38.0615,0],[257.81,410.9,35.4072,0],[265.63,462.3,31.1197,0],[273.44,541.2,27.2311,0],[281.25,422.9,22.3876,0],[289.06,572.8,18.3173,0],[296.88,513.5,14.4017,0],[304.69,438.7,10.4464,0],[312.5,474.7,8.6566,0],[320.31,344.4,5.7189,0],[328.13,325.7,3.2396,0],[335.94,265.6,0.8481,1],[343.75,214.3,0.6993,1],[351.56,150.3,1.8725,0],[359.38,122.2,2.8271,0],[367.19,78.8,3.287,0],[375,43.3,3.4097,0],[382.81,12.4,3.5001,0],[390.63,0,3.5001,0],[398.44,8.8,3.4363,0],[406.25,14.2,3.3427,0],[414.06,12.4,3.2501,0],[421.88,8.8,3.1887,0],[429.69,7.9,3.1579,0],[437.5,0,3.1579,0],[445.31,0,3.1579,0],[453.13,0,3.1579,0],[460.94,0,3.1579,0],[468.75,0,3.1579,0],[476.56,0,3.1579,0],[484.38,0,3.1579,0],[492.19,3.9,3.1272,0],[500,0,3.1272,0],[507.81,8.8,3.0658,0],[515.63,8.8,2.9746,0],[523.44,14.2,2.8541,0],[531.25,26.4,2.6458,0],[539.06,26.4,2.4162,0],[546.88,42.4,2.1306,0],[554.69,44.8,1.8565,0],[562.5,36.3,1.7203,0],[570.31,27.5,1.4911,0],[578.13,27.5,1.2954,0],[585.94,23.6,1.1334,0],[593.75,11.8,1.0551,0],[601.56,7.9,1.0295,0],[609.38,0,1.0295,0],[617.19,0,1.0295,0],[625,0,1.0295,0],[632.81,0,1.0295,0],[640.63,0,1.0295,0],[648.44,3.9,1.0042,0],[656.25,7.9,0.9303,1],[664.06,12.4,0.8809,1],[671.88,12.4,0.8399,1],[679.69,11.8,0.7659,1],[687.5,15.7,0.7338,1],[695.31,11.8,0.6932,1],[703.13,15.7,0.6554,1],[710.94,15.7,0.6391,1],[718.75,11.8,0.6468,1],[726.56,3.9,0.6468,1],[734.38,0,0.6164,1],[742.19,3.9,0.6164,1],[750,0,0.6164,1],[757.81,0,0.6164,1],[765.63,0,0.6164,1],[773.44,0,0.6164,1],[781.25,3.9,0.6122,1],[789.06,0,0.6122,1],[796.88,0,0.6122,1],[804.69,0,0.6122,1],[812.5,0,0.6122,1],[820.31,0,null,null]]},"08.932Z/t27":{"run":"08.932Z","id":"t27","D":51.14,"react":242.1875,"move":234.375,"peak":564,"over":1.91,"fires":[734.5,1027],"ffHit":false,"ffErr":1.911,"hitT":1027,"pts":[[-54.69,0,null,null],[-46.88,0,null,null],[-39.06,3.9,null,null],[-31.25,3.9,null,null],[-23.44,3.9,null,null],[-15.63,0,null,null],[-7.81,0,null,null],[0,0,50.6365,0],[7.81,0,50.6365,0],[15.63,0,50.6365,0],[23.44,0,50.6365,0],[31.25,0,50.6365,0],[39.06,0,50.6365,0],[46.88,0,50.6365,0],[54.69,0,50.6365,0],[62.5,0,50.6365,0],[70.31,0,50.6365,0],[78.13,0,50.6365,0],[85.94,0,50.6365,0],[93.75,0,50.6365,0],[101.56,0,50.6365,0],[109.38,0,50.6365,0],[117.19,0,50.6365,0],[125,0,50.6365,0],[132.81,0,50.6365,0],[140.63,3.9,50.6673,0],[148.44,3.9,50.698,0],[156.25,0,50.698,0],[164.06,0,50.698,0],[171.88,0,50.698,0],[179.69,0,50.698,0],[187.5,0,50.698,0],[195.31,0,50.698,0],[203.13,3.9,50.6365,0],[210.94,7.9,50.6057,0],[218.75,3.9,50.5749,0],[226.56,3.9,50.5134,0],[234.38,7.9,50.4826,0],[242.19,3.9,50.421,0],[250,15.8,50.2672,0],[257.81,27.6,49.9902,0],[265.63,55.2,49.3131,0],[273.44,106.5,48.8526,0],[281.25,157.7,47.6229,0],[289.06,181.3,45.6842,0],[296.88,311.4,43.2842,0],[304.69,370.6,39.9923,0],[312.5,441.5,36.0536,0],[320.31,504.6,31.9945,0],[328.13,492.8,27.6586,0],[335.94,563.7,25.2622,0],[343.75,559.8,20.1363,0],[351.56,536.1,16.0314,0],[359.38,532.3,12.2672,0],[367.19,358.8,8.4281,0],[375,410.2,5.7728,0],[382.81,299.9,3.7274,0],[390.63,233.4,2.1296,0],[398.44,162.4,1.6444,0],[406.25,111.5,1.1586,0],[414.06,55.8,1.104,0],[421.88,28.7,1.1325,0],[429.69,3.9,1.1325,0],[437.5,0,1.1325,0],[445.31,8.8,1.067,0],[453.13,11.8,1.0273,0],[460.94,11.8,1.0195,0],[468.75,7.9,1.0013,0],[476.56,5.6,0.9708,1],[484.38,3.9,0.9665,1],[492.19,0,0.9665,1],[500,0,0.9665,1],[507.81,0,0.9665,1],[515.63,0,0.9665,1],[523.44,0,0.9665,1],[531.25,0,0.9665,1],[539.06,0,0.9665,1],[546.88,0,0.9665,1],[554.69,0,0.9665,1],[562.5,0,0.9665,1],[570.31,0,0.9665,1],[578.13,0,0.9665,1],[585.94,0,0.9359,1],[593.75,3.9,0.9359,1],[601.56,3.9,0.9054,1],[609.38,3.9,0.8749,1],[617.19,5.6,0.8405,1],[625,5.6,0.807,1],[632.81,3.9,0.8053,1],[640.63,3.9,0.7745,1],[648.44,0,0.7745,1],[656.25,0,0.7745,1],[664.06,0,0.7745,1],[671.88,11.2,0.6924,1],[679.69,19.7,0.6666,1],[687.5,26.4,0.6774,1],[695.31,35.3,0.8414,1],[703.13,38.8,1.0684,0],[710.94,38.8,1.2099,0],[718.75,38.8,1.4771,0],[726.56,30,1.6931,0],[734.38,16.3,1.8482,0],[742.19,12.5,1.9114,0],[750,0,1.9114,0],[757.81,0,1.9114,0],[765.63,0,1.9114,0],[773.44,3.9,1.8807,0],[781.25,5.6,1.8175,0],[789.06,14.2,1.7232,0],[796.88,17.6,1.631,0],[804.69,12.5,1.5089,0],[812.5,12.5,1.4208,0],[820.31,16.3,1.3015,0],[828.13,8.8,1.2099,0],[835.94,11.8,1.1794,0],[843.75,7.9,1.1184,0],[851.56,5.6,1.0928,0],[859.38,3.9,1.0625,0],[867.19,0,1.0625,0],[875,0,1.0625,0],[882.81,0,1.0625,0],[890.63,0,1.0625,0],[898.44,0,1.0625,0],[906.25,0,1.0625,0],[914.06,0,1.0625,0],[921.88,0,1.0625,0],[929.69,0,1.0625,0],[937.5,0,1.0625,0],[945.31,0,1.0625,0],[953.13,3.9,1.0322,0],[960.94,3.9,1.0019,0],[968.75,8.8,0.9482,1],[976.56,7.9,0.8884,1],[984.38,0,0.8884,1],[992.19,0,0.8884,1],[1000,0,0.8884,1],[1007.81,0,0.6479,1],[1015.63,36.3,0.6479,1],[1023.44,0,0.6479,1],[1031.25,0,0.6479,1],[1039.06,0,null,null]]}},"analysis":{"detection":{"kind":"sensitivity-analysis","preStimulusMs":120,"thresholdSdMultiplier":3,"sustainedTicks":4,"warning":"Not canonical detect-v1. KI-034: the 500 ms default is contaminated by the prior engagement in this rapid-cycle drill."}}}</script>
+<script>
+(function () {
+  'use strict';
+
+  var DATA = JSON.parse(document.getElementById('wide-data').textContent);
+  var RUNS = DATA.runs;
+  // trial tuple: [run, peak, ffHit(1|0|null), hitT, ffErr, fly(0|1), react, move, side, nFires, D]
+  var T = DATA.trials;
+  var SERIES = DATA.series;
+
+  var css = function (name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  };
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
+  function el(tag, attrs, text) {
+    var n = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+  function median(a) {
+    if (!a.length) return NaN;
+    var s = a.slice().sort(function (x, y) { return x - y; });
+    var m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+
+  var RUNCOL = ['--s1', '--s2', '--s3'];
+  var RUNLBL = ['Run 1', 'Run 2', 'Run 3'];
+
+  function runRows(r) { return T.filter(function (t) { return t[0] === r; }); }
+
+  // ---- per-run summary computed from the embedded trials (single source) ----
+  var SUM = RUNS.map(function (meta, r) {
+    var rows = runRows(r);
+    var ffHit = rows.filter(function (t) { return t[2] === 1; }).length;
+    var ffMiss = rows.filter(function (t) { return t[2] === 0; }).length;
+    var noShot = rows.filter(function (t) { return t[2] === null; }).length;
+    var fly = rows.filter(function (t) { return t[5] === 1; }).length;
+    var hitTimes = rows.map(function (t) { return t[3]; }).filter(function (v) { return typeof v === 'number'; });
+    // effective minute: the drill's peripheral engagement span, ~57-59 s
+    var spanMin = 57.9 / 60;
+    return {
+      key: meta.k, n: rows.length, ffHit: ffHit, ffMiss: ffMiss, noShot: noShot, fly: fly,
+      hitMed: median(hitTimes),
+      rate: ffHit / rows.length,
+      m1: ffHit / spanMin,
+      rhythm: meta.rhythmMedian, overBudget: meta.overBudget, p99: meta.framesP99
+    };
+  });
+  // Use the exact M1 values derived offline (span per run), not the shared approximation.
+  var M1 = [33.2, 34.8, 30.4];
+  SUM.forEach(function (s, i) { s.m1 = M1[i]; });
+
+  // =====================================================================
+  // W1 — speed / accuracy operating point
+  // =====================================================================
+  function drawW1() {
+    var svg = document.getElementById('w1');
+    if (!svg) return;
+    svg.textContent = '';
+    var W = 700, H = 340, P = { l: 62, r: 118, t: 20, b: 46 };
+    var iw = W - P.l - P.r, ih = H - P.t - P.b;
+    var x0 = 840, x1 = 930;           // median hit time (ms)
+    var y0 = 78, y1 = 102;            // first-shot hit rate (%)
+    var X = function (v) { return P.l + (v - x0) / (x1 - x0) * iw; };
+    var Y = function (v) { return P.t + (y1 - v) / (y1 - y0) * ih; };
+
+    // No iso-efficiency lines: M1 = first-shot hits per fixed 60 s window, and the presentation
+    // count is itself set by how fast the player finishes, so an iso-curve would need n as a
+    // function of x. Drawing one as a straight line would imply a model this data does not fit.
+    // M1 is therefore printed directly on each point instead.
+
+    // grid + axes
+    for (var yv = y0; yv <= y1; yv += 6) {
+      svg.appendChild(el('line', { x1: P.l, y1: Y(yv), x2: P.l + iw, y2: Y(yv), 'class': 'gridline' }));
+      svg.appendChild(el('text', { x: P.l - 9, y: Y(yv) + 3.5, 'text-anchor': 'end' }, yv + '%'));
+    }
+    for (var xv = x0; xv <= x1; xv += 30) {
+      svg.appendChild(el('line', { x1: X(xv), y1: P.t, x2: X(xv), y2: P.t + ih, 'class': 'gridline' }));
+      svg.appendChild(el('text', { x: X(xv), y: P.t + ih + 17, 'text-anchor': 'middle' }, xv));
+    }
+    svg.appendChild(el('line', { x1: P.l, y1: P.t + ih, x2: P.l + iw, y2: P.t + ih, 'class': 'axisline' }));
+    svg.appendChild(el('line', { x1: P.l, y1: P.t, x2: P.l, y2: P.t + ih, 'class': 'axisline' }));
+    svg.appendChild(el('text', { x: P.l + iw, y: P.t + ih + 36, 'text-anchor': 'end', 'class': 'ax-title' }, '中位命中時間 (ms) — 越左越快'));
+    svg.appendChild(el('text', { x: 14, y: P.t + 4, 'class': 'ax-title', transform: 'rotate(-90 14 ' + (P.t + 4) + ')', 'text-anchor': 'end' }, '首發命中率 — 越上越準'));
+
+    // path between runs, in time order
+    var pts = SUM.map(function (s) { return [X(s.hitMed), Y(s.rate * 100)]; });
+    var d = 'M' + pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' L');
+    svg.appendChild(el('path', { d: d, fill: 'none', stroke: css('--ink-3'), 'stroke-width': 1.5, 'stroke-dasharray': '1 5', 'stroke-linecap': 'round', opacity: 0.8 }));
+
+    // Run 1 and Run 2 sit ~16 ms apart at almost the same accuracy, so their labels are placed
+    // on opposite sides by hand rather than by a rule that would overlap them.
+    var LABEL_SIDE = ['start', 'end', 'start'];
+    SUM.forEach(function (s, i) {
+      var cx = X(s.hitMed), cy = Y(s.rate * 100), col = css(RUNCOL[i]);
+      svg.appendChild(el('circle', { cx: cx, cy: cy, r: 8.5, fill: col, stroke: css('--panel'), 'stroke-width': 2 }));
+      var anchor = LABEL_SIDE[i], dx = anchor === 'start' ? 15 : -15;
+      svg.appendChild(el('text', { x: cx + dx, y: cy - 3, 'text-anchor': anchor, 'class': 'dlabel' },
+        RUNLBL[i] + ' · ' + s.m1.toFixed(1) + '/min'));
+      svg.appendChild(el('text', { x: cx + dx, y: cy + 12, 'text-anchor': anchor, fill: css('--ink-2') },
+        Math.round(s.hitMed) + ' ms · ' + (s.rate * 100).toFixed(1) + '% · n=' + s.n));
+    });
+
+    // direction annotation
+    svg.appendChild(el('text', { x: P.l + 6, y: P.t + 14, fill: css('--ink-3') }, '← 更快'));
+    svg.appendChild(el('text', { x: P.l + 6, y: P.t + ih - 6, fill: css('--ink-3') }, '↓ 更不準'));
+  }
+
+  // =====================================================================
+  // W2 — first-shot outcome + miss mechanism
+  // =====================================================================
+  var MECH = [
+    // run -> [flyThrough misses, edge misses, premature misses]
+    { fly: 1, edge: 0, pre: 0 },
+    { fly: 0, edge: 0, pre: 0 },
+    { fly: 3, edge: 2, pre: 1 }
+  ];
+  function drawW2() {
+    var svg = document.getElementById('w2');
+    if (!svg) return;
+    svg.textContent = '';
+    var W = 700, H = 330, P = { l: 92, r: 124, t: 26, b: 20 };
+    var iw = W - P.l - P.r;
+    var rowH = 46, gap = 40, barH = 24;
+
+    svg.appendChild(el('text', { x: P.l, y: 14, fill: css('--ink-2') }, '首發結果（ITT 分母 = 每一次周邊呈現）'));
+
+    var maxN = 35;
+    var sc = function (v) { return v / maxN * iw; };
+
+    SUM.forEach(function (s, i) {
+      var y = P.t + i * rowH;
+      svg.appendChild(el('text', { x: P.l - 10, y: y + barH / 2 + 4, 'text-anchor': 'end', fill: css('--ink') }, RUNLBL[i]));
+      var x = P.l;
+      var segs = [
+        { v: s.ffHit, c: css('--good'), lbl: s.ffHit },
+        { v: s.ffMiss, c: css('--serious'), lbl: s.ffMiss },
+        { v: s.noShot, c: css('--ink-3'), lbl: s.noShot }
+      ];
+      segs.forEach(function (sg) {
+        if (!sg.v) return;
+        var w = sc(sg.v);
+        svg.appendChild(el('rect', { x: x, y: y, width: Math.max(2, w - 2), height: barH, rx: 3, fill: sg.c }));
+        if (w > 24) {
+          svg.appendChild(el('text', { x: x + (w - 2) / 2, y: y + barH / 2 + 4, 'text-anchor': 'middle', fill: css('--panel'), 'font-weight': 600 }, sg.lbl));
+        } else {
+          // A thin segment's count goes above the bar; to its right it would collide with the n= label.
+          svg.appendChild(el('text', { x: x + w / 2, y: y - 3, 'text-anchor': 'middle', fill: css('--ink-2') }, sg.lbl));
+        }
+        x += w;
+      });
+      svg.appendChild(el('text', { x: P.l + sc(s.n) + 10, y: y + barH / 2 + 4, fill: css('--ink-2') }, 'n=' + s.n + ' · ' + (s.rate * 100).toFixed(1) + '%'));
+    });
+
+    // second block: miss mechanism
+    var y2 = P.t + 3 * rowH + gap - 14;
+    svg.appendChild(el('text', { x: P.l, y: y2 - 10, fill: css('--ink-2') }, '首發失手的機制分解（僅失手 trial，共 7 筆）'));
+    var mscale = function (v) { return v / 6 * (iw * 0.52); };
+    SUM.forEach(function (s, i) {
+      var y = y2 + i * rowH * 0.82;
+      svg.appendChild(el('text', { x: P.l - 10, y: y + barH / 2 + 4, 'text-anchor': 'end', fill: css('--ink') }, RUNLBL[i]));
+      var m = MECH[i], x = P.l;
+      var segs = [
+        { v: m.fly, c: css('--critical'), n: '穿越' },
+        { v: m.edge, c: css('--warning'), n: '邊緣' },
+        { v: m.pre, c: 'none', n: '搶拍', ring: css('--critical') }
+      ];
+      var any = m.fly + m.edge + m.pre;
+      if (!any) {
+        svg.appendChild(el('text', { x: P.l, y: y + barH / 2 + 4, fill: css('--good-ink'), 'font-weight': 600 }, '0 — 無首發失手'));
+        return;
+      }
+      segs.forEach(function (sg) {
+        if (!sg.v) return;
+        var w = mscale(sg.v);
+        var attrs = { x: x, y: y, width: Math.max(2, w - 2), height: barH, rx: 3 };
+        if (sg.ring) { attrs.fill = css('--panel'); attrs.stroke = sg.ring; attrs['stroke-width'] = 2; }
+        else attrs.fill = sg.c;
+        svg.appendChild(el('rect', attrs));
+        svg.appendChild(el('text', {
+          x: x + (w - 2) / 2, y: y + barH / 2 + 4, 'text-anchor': 'middle',
+          fill: sg.ring ? css('--crit-ink') : css('--panel'), 'font-weight': 600
+        }, sg.v));
+        x += w;
+      });
+      var names = segs.filter(function (sg) { return sg.v; }).map(function (sg) { return sg.n + '×' + sg.v; }).join(' · ');
+      svg.appendChild(el('text', { x: x + 10, y: y + barH / 2 + 4, fill: css('--ink-2') }, names));
+    });
+  }
+
+  // =====================================================================
+  // W3 — paired epsilon(t) / |omega|(t), two panels, one shared x axis
+  // =====================================================================
+  function drawW3() {
+    var svg = document.getElementById('w3');
+    if (!svg) return;
+    svg.textContent = '';
+    var keys = ['24.700Z/t19', '24.700Z/t61', '08.932Z/t27'];
+    var cols = [css('--s1'), css('--s2'), css('--s3')];
+    var W = 700, H = 560;
+    var P = { l: 58, r: 100, t: 26 };
+    var iw = W - P.l - P.r;
+    var tMax = 1120;
+    var X = function (v) { return P.l + Math.max(0, Math.min(v, tMax)) / tMax * iw; };
+
+    // Three panels, one shared time axis. The transport (0-56 deg) and the braking (0-6 deg)
+    // get separate panels because the 1-3.5 deg escape that actually causes the miss is ~10 px
+    // tall on the transport scale - invisible exactly where the chart has to make its point.
+    var yA = P.t, hA = 118;                    // eps, full range
+    var yB = yA + hA + 48, hB = 104;           // eps, braking zoom
+    var yC = yB + hB + 50, hC = 122;           // |omega|
+    var eA = 56, eB = 6, wMax = 620;
+    var YA = function (v) { return yA + (eA - Math.max(0, Math.min(v, eA))) / eA * hA; };
+    var YB = function (v) { return yB + (eB - Math.max(0, Math.min(v, eB))) / eB * hB; };
+    var YC = function (v) { return yC + (wMax - Math.max(0, Math.min(v, wMax))) / wMax * hC; };
+
+    function panel(label, yFn, ticks, unit, top) {
+      svg.appendChild(el('text', { x: P.l, y: top - 10, fill: css('--ink-2') }, label));
+      ticks.forEach(function (v) {
+        svg.appendChild(el('line', { x1: P.l, y1: yFn(v), x2: P.l + iw, y2: yFn(v), 'class': 'gridline' }));
+        svg.appendChild(el('text', { x: P.l - 8, y: yFn(v) + 3.5, 'text-anchor': 'end' }, v + unit));
+      });
+      svg.appendChild(el('line', { x1: P.l, y1: yFn(0), x2: P.l + iw, y2: yFn(0), 'class': 'axisline' }));
+    }
+    panel('① 拉槍行程 · 角誤差 ε(t)', YA, [0, 14, 28, 42, 56], '°', yA);
+    panel('② 煞停放大 · 同一條 ε(t)，只看 0–6°', YB, [0, 2, 4, 6], '°', yB);
+    panel('③ 角速度 |ω|(t)', YC, [0, 200, 400, 600], '', yC);
+
+    // hit band (eps < 1.0 deg = the 2.0 deg target's angular radius) - readable on the zoom panel
+    svg.appendChild(el('rect', { x: P.l, y: YB(1.0), width: iw, height: Math.max(3, YB(0) - YB(1.0)), fill: css('--axis'), opacity: 0.34 }));
+    svg.appendChild(el('text', { x: P.l + iw + 7, y: YB(1.0) - 3, fill: css('--ink-3') }, 'ε<1.0°'));
+    svg.appendChild(el('text', { x: P.l + iw + 7, y: YB(1.0) + 10, fill: css('--ink-3') }, '命中帶'));
+
+    // shared x ticks, on the bottom panel
+    [0, 200, 400, 600, 800, 1000].forEach(function (v) {
+      svg.appendChild(el('line', { x1: X(v), y1: YC(0), x2: X(v), y2: YC(0) + 5, stroke: css('--axis'), 'stroke-width': 1 }));
+      svg.appendChild(el('text', { x: X(v), y: YC(0) + 18, 'text-anchor': 'middle' }, String(v)));
+    });
+    svg.appendChild(el('text', { x: P.l + iw, y: YC(0) + 34, 'text-anchor': 'end', 'class': 'ax-title' }, '目標出現後的時間 (ms)'));
+
+    var pkLabelY = [0, 0, 0];
+    keys.forEach(function (k, i) {
+      var s = SERIES[k];
+      if (!s) return;
+      var col = cols[i];
+
+      // eps on both panels; the zoom panel breaks its path where the value leaves 0-6 deg
+      var dA = '', dB = '', onA = false, onB = false;
+      s.pts.forEach(function (p) {
+        var t = p[0], e = p[2];
+        if (t < 0 || t > tMax || typeof e !== 'number') return;
+        dA += (onA ? ' L' : 'M') + X(t).toFixed(1) + ',' + YA(e).toFixed(1);
+        onA = true;
+        if (e <= eB) { dB += (onB ? ' L' : 'M') + X(t).toFixed(1) + ',' + YB(e).toFixed(1); onB = true; }
+        else { onB = false; }
+      });
+      var dW = '', onW = false;
+      s.pts.forEach(function (p) {
+        var t = p[0], w = p[1];
+        if (t < 0 || t > tMax || typeof w !== 'number') return;
+        dW += (onW ? ' L' : 'M') + X(t).toFixed(1) + ',' + YC(w).toFixed(1);
+        onW = true;
+      });
+      var stroke = { fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' };
+      if (dA) svg.appendChild(el('path', Object.assign({ d: dA }, stroke)));
+      if (dB) svg.appendChild(el('path', Object.assign({ d: dB }, stroke)));
+      if (dW) svg.appendChild(el('path', Object.assign({ d: dW }, stroke)));
+
+      // fire markers, drawn on the zoom panel at the epsilon actually held at that instant
+      s.fires.forEach(function (ft, fi) {
+        if (ft > tMax) return;
+        var isHit = (fi === s.fires.length - 1);
+        var near = null, best = 1e9;
+        s.pts.forEach(function (p) {
+          if (typeof p[2] !== 'number') return;
+          var d = Math.abs(p[0] - ft);
+          if (d < best) { best = d; near = p[2]; }
+        });
+        svg.appendChild(el('line', { x1: X(ft), y1: yB, x2: X(ft), y2: YB(0), stroke: col, 'stroke-width': 1, 'stroke-dasharray': '2 4', opacity: 0.8 }));
+        svg.appendChild(el('circle', {
+          cx: X(ft), cy: YB(near === null ? 0 : near), r: 5,
+          fill: isHit ? col : css('--panel'), stroke: col, 'stroke-width': 2
+        }));
+      });
+
+      // peak omega
+      var pk = 0, pkT = 0;
+      s.pts.forEach(function (p) { if (typeof p[1] === 'number' && p[1] > pk) { pk = p[1]; pkT = p[0]; } });
+      pkLabelY[i] = pk;
+      svg.appendChild(el('circle', { cx: X(pkT), cy: YC(pk), r: 3.5, fill: col, stroke: css('--panel'), 'stroke-width': 1.5 }));
+      svg.appendChild(el('text', {
+        x: X(pkT) + (i === 0 ? -6 : 7), y: YC(pk) - 5,
+        'text-anchor': i === 0 ? 'end' : 'start', fill: col, 'font-weight': 600
+      }, String(Math.round(pk))));
+
+      // escape after first on-target: max epsilon strictly after the first onTarget sample
+      var firstOn = -1;
+      for (var j = 0; j < s.pts.length; j++) { if (s.pts[j][3] === 1) { firstOn = j; break; } }
+      var esc = 0, escT = 0;
+      if (firstOn >= 0) {
+        for (var m = firstOn + 1; m < s.pts.length; m++) {
+          var pe = s.pts[m][2];
+          if (typeof pe === 'number' && s.pts[m][0] <= tMax && pe > esc) { esc = pe; escT = s.pts[m][0]; }
+        }
+      }
+      if (esc > 1.0) {
+        svg.appendChild(el('text', {
+          x: X(escT), y: YB(Math.min(esc, eB)) - 7, 'text-anchor': 'middle', fill: col, 'font-weight': 600
+        }, '逸出 ' + esc.toFixed(2) + '°'));
+      }
+
+      // right-edge direct label
+      svg.appendChild(el('text', {
+        x: P.l + iw + 7, y: yA + 12 + i * 15, fill: col, 'font-weight': 600
+      }, s.id + '·' + Math.round(s.hitT === null ? tMax : s.hitT) + 'ms'));
+    });
+  }
+
+  // =====================================================================
+  // W4 — peak omega by first-shot outcome
+  // =====================================================================
+  function drawW4() {
+    var svg = document.getElementById('w4');
+    if (!svg) return;
+    svg.textContent = '';
+    var W = 700, H = 260, P = { l: 104, r: 30, t: 30, b: 46 };
+    var iw = W - P.l - P.r;
+    var x0 = 250, x1 = 720;
+    var X = function (v) { return P.l + (v - x0) / (x1 - x0) * iw; };
+
+    for (var xv = 300; xv <= 700; xv += 100) {
+      svg.appendChild(el('line', { x1: X(xv), y1: P.t - 8, x2: X(xv), y2: H - P.b, 'class': 'gridline' }));
+      svg.appendChild(el('text', { x: X(xv), y: H - P.b + 17, 'text-anchor': 'middle' }, String(xv)));
+    }
+    svg.appendChild(el('line', { x1: P.l, y1: H - P.b, x2: P.l + iw, y2: H - P.b, 'class': 'axisline' }));
+    svg.appendChild(el('text', { x: P.l + iw, y: H - P.b + 34, 'text-anchor': 'end', 'class': 'ax-title' }, '峰值角速度 peak |ω| (deg/s)'));
+
+    var groups = [
+      { lbl: '首發命中', rows: T.filter(function (t) { return t[2] === 1; }), col: css('--good'), ink: css('--good-ink') },
+      { lbl: '首發失手', rows: T.filter(function (t) { return t[2] === 0; }), col: css('--critical'), ink: css('--crit-ink') }
+    ];
+    var bandH = 62;
+    groups.forEach(function (g, gi) {
+      var yc = P.t + 18 + gi * (bandH + 34);
+      svg.appendChild(el('text', { x: P.l - 12, y: yc + 4, 'text-anchor': 'end', fill: css('--ink'), 'font-weight': 600 }, g.lbl));
+      svg.appendChild(el('text', { x: P.l - 12, y: yc + 19, 'text-anchor': 'end', fill: css('--ink-3') }, 'n=' + g.rows.length));
+
+      // deterministic vertical jitter so the strip reads as a distribution
+      g.rows.forEach(function (t, idx) {
+        var pk = t[1];
+        if (typeof pk !== 'number') return;
+        var j = ((idx * 2654435761) % 1000) / 1000 - 0.5;
+        var cy = yc + j * (bandH - 16);
+        var fly = t[5] === 1;
+        svg.appendChild(el('circle', {
+          cx: X(pk), cy: cy, r: fly ? 5 : 4,
+          fill: fly ? 'none' : g.col,
+          stroke: fly ? css('--ink-3') : css('--panel'),
+          'stroke-width': fly ? 2 : 1,
+          opacity: fly ? 1 : 0.72
+        }));
+      });
+
+      var med = median(g.rows.map(function (t) { return t[1]; }).filter(function (v) { return typeof v === 'number'; }));
+      svg.appendChild(el('line', {
+        x1: X(med), y1: yc - bandH / 2, x2: X(med), y2: yc + bandH / 2,
+        stroke: css('--ink'), 'stroke-width': 2.5
+      }));
+      svg.appendChild(el('text', {
+        x: X(med), y: yc - bandH / 2 - 6, 'text-anchor': 'middle', 'class': 'dlabel'
+      }, '中位 ' + Math.round(med)));
+    });
+  }
+
+  // =====================================================================
+  // W5 — quality gate, including the honestly-unavailable columns
+  // =====================================================================
+  function drawW5() {
+    var svg = document.getElementById('w5');
+    if (!svg) return;
+    svg.textContent = '';
+    var W = 700, H = 300;
+    var colW = 148, labW = 700 - 3 * colW - 8;
+    var rows = [
+      { n: 'crossOriginIsolated', v: ['true', 'true', 'true'], k: 'ok' },
+      { n: 'buffer / recorder overflow', v: ['false', 'false', 'false'], k: 'ok' },
+      { n: 'frame p99 (ms)', v: ['4.27', '4.31', '4.29'], k: 'ok' },
+      { n: 'over-budget windows', v: ['0', '12', '15'], k: 'mid' },
+      { n: '節奏中位 (ms)', v: ['875', '844', '801'], k: 'plain' },
+      { n: 'reaction 覆蓋率（120ms 敏感度）', v: ['33/33', '35/35', '35/35'], k: 'mid' },
+      { n: 'cm/360（需 DPI）', v: ['不可算', '不可算', '不可算'], k: 'na' },
+      { n: '抬鼠門檻（150ms/2°/s）', v: ['未複驗', '未複驗', '未複驗'], k: 'na' }
+    ];
+    var rowH = 30, top = 42;
+
+    ['Run 1 · 24.700Z', 'Run 2 · 53.218Z', 'Run 3 · 08.932Z'].forEach(function (lbl, i) {
+      svg.appendChild(el('text', {
+        x: labW + colW * i + colW / 2, y: 22, 'text-anchor': 'middle',
+        fill: css(RUNCOL[i]), 'font-weight': 600
+      }, lbl));
+    });
+    svg.appendChild(el('line', { x1: 0, y1: top - 14, x2: W, y2: top - 14, 'class': 'axisline' }));
+
+    rows.forEach(function (r, ri) {
+      var y = top + ri * rowH;
+      if (ri % 2 === 1) {
+        svg.appendChild(el('rect', { x: 0, y: y - 13, width: W, height: rowH, fill: css('--panel-sunk'), opacity: 0.75 }));
+      }
+      svg.appendChild(el('text', { x: 2, y: y + 4, fill: css('--ink-2') }, r.n));
+      r.v.forEach(function (v, i) {
+        var fill = css('--ink');
+        if (r.k === 'ok') fill = css('--good-ink');
+        else if (r.k === 'na') fill = css('--ink-3');
+        else if (r.k === 'mid') fill = css('--warn-ink');
+        svg.appendChild(el('text', {
+          x: labW + colW * i + colW / 2, y: y + 4, 'text-anchor': 'middle',
+          fill: fill, 'font-weight': (r.k === 'na' ? 400 : 600)
+        }, v));
+      });
+    });
+    var yEnd = top + rows.length * rowH;
+    svg.appendChild(el('line', { x1: 0, y1: yEnd - 13, x2: W, y2: yEnd - 13, 'class': 'axisline' }));
+    svg.appendChild(el('text', { x: 2, y: yEnd + 6, fill: css('--ink-3') }, '灰字 = 這批資料算不出來的欄位；留白會被誤讀為「良好」，因此明確標示。'));
+  }
+
+  // =====================================================================
+  // raw table
+  // =====================================================================
+  function fillTable() {
+    var tb = document.querySelector('#rawtbl tbody');
+    if (!tb) return;
+    var frag = document.createDocumentFragment();
+    T.forEach(function (t) {
+      var tr = document.createElement('tr');
+      var ff = t[2] === 1 ? '命中' : (t[2] === 0 ? '失手' : '未開火');
+      var cls = t[2] === 1 ? 'ok' : (t[2] === 0 ? 'bad' : '');
+      var cells = [
+        ['', RUNLBL[t[0]]],
+        ['', t[8] || '—'],
+        ['num', t[10] !== null ? t[10].toFixed(2) : '—'],
+        ['num', t[6] !== null ? Math.round(t[6]) : '—'],
+        ['num', t[7] !== null ? Math.round(t[7]) : '—'],
+        ['num', t[1] !== null ? Math.round(t[1]) : '—'],
+        ['num', t[5] === 1 ? '穿越' : '—'],
+        ['num ' + cls, ff],
+        ['num', t[4] !== null ? t[4].toFixed(3) : '—'],
+        ['num', t[9]],
+        ['num', t[3] !== null ? Math.round(t[3]) : '—']
+      ];
+      cells.forEach(function (c) {
+        var td = document.createElement('td');
+        if (c[0]) td.className = c[0];
+        td.textContent = c[1];
+        tr.appendChild(td);
+      });
+      frag.appendChild(tr);
+    });
+    tb.appendChild(frag);
+  }
+
+  function drawAll() { drawW1(); drawW2(); drawW3(); drawW4(); drawW5(); }
+
+  fillTable();
+  drawAll();
+
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', drawAll);
+  }
+})();
+</script>
+
+</body></html>

@@ -428,7 +428,7 @@
           <h3>用來回答「慢在哪一段、失手是哪一種」</h3>
           <div class="metric-line">
             <div class="metric-name"><strong>啟動反應</strong><code>reaction_ms</code><br><span class="tag">canonical</span></div>
-            <div class="metric-definition"><code>t_onset − t_visible</code>。需留意 KI-031；若 canonical detector 在低 aim update rate 下失效，整批不可混用繞道值。</div>
+            <div class="metric-definition"><code>t_onset − t_visible</code>。需同時留意 KI-031（低 aim update rate 的連續性懸崖）與 KI-034（快速循環污染 pre-stimulus baseline）；任一失效時都不可把 canonical 與敏感度分析值混用。</div>
             <div class="metric-output">median / p90<br>ms</div>
           </div>
           <div class="metric-line">
@@ -528,7 +528,7 @@
               <li>資料溢位、非法時鐘、必要 metadata 缺失</li>
               <li>疑似 repositioning trial：主分析排除，敏感度分析納回</li>
               <li>不同 FOV / aspect / protocol 條件不可直接合併</li>
-              <li>KI-031 canonical 與 <code>sustainedTicks:1</code> 繞道資料不可混成同一 cohort</li>
+              <li>KI-031／KI-034：canonical 與改動 <code>sustainedTicks</code> 或 <code>preStimulusMs</code> 的敏感度分析資料不可混成同一 cohort</li>
             </ul>
           </article>
         </div>
