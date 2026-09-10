@@ -15,7 +15,7 @@
 | **Estimate** | 8.5 dev-days（T0～T6 + T-exit） |
 | **Risk** | Med/High：`activateDrill()` 是全 app 唯一的 drill 啟用路徑，武器賦值點與 `buildSimLoop()` 的先後決定 recoil RNG／彈匣／ADS／感度 gain 是否一致；`sessionProgram.ts` 帶純函式 source-scan 契約 |
 | **Milestone** | 無獨立里程碑，**T-exit gate 即交付判定**（比照 WP-27／WP-58） |
-| **Status** | 🟡 **T0 ✅ / T1 ✅ / T2 ✅ / T3 ✅ / T4 ✅ / T5 ✅ / T6 ✅（2026-09-10）**，僅餘 T-exit。基線見 [progress.md §T0.1](progress.md)，T1 的 8-vs-4 修正見 [§T1](progress.md)，T2 的逐位回歸 sha256 見 [§T2](progress.md)，T3 的跨 FPS 逐位一致與四道突變見 [§T3](progress.md)，T4 的表單選單與預覽驗證見 [§T4](progress.md)，T5 的意圖／事實對帳與 `research/` 相容性實測見 [§T5](progress.md)，T6 的 live 逐列武器匯出對帳與 frozen 鍵面 digest 見 [§T6](progress.md) |
+| **Status** | ✅ **T-exit 交付（2026-09-10）**。T0～T6 全數完成；T-exit 驗收 A-62.1～A-62.7 逐條具名證據見 [progress.md §T-exit](progress.md)。最終 gate：`npm run typecheck` exit 0、`npm run build` 非 sandbox exit 0、全量 Vitest **2,946 passed／2 skipped**（254 files passed／1 skipped）、全量 Playwright `--workers=1` **106 passed**（14.4m）。 |
 
 ### 落點說明（stage 主題不符，明帳記錄）
 
@@ -64,7 +64,7 @@ stage13（階段 M）的主題是「原始輸入取樣與抬滑鼠判準驗證�
 | **FR-62.4** | 系統必須把逐列武器選擇寫入匯出 `meta.sessionPlanItems[].weaponId`（意圖），與既有逐 run `meta.weaponId`（事實）並存且可對帳 | T5 |
 | **FR-62.5** | 預覽表的每個 run 步驟必須顯示該步實際會用的武器 | T4 |
 | **FR-62.6** | frozen 軌的編譯結果、runtime 行為與匯出必須**逐位不變** | T2, T5, T6 |
-| **FR-62.7** | 武器選單必須顯示每把武器的彈匣容量，並註明「無 reload：打完該輪即停火」 | T4 |
+| **FR-62.7** | 武器選單必須顯示每把武器的彈匣容量，並註明「無玩家 reload：每次目標生成會補滿彈匣；若連續打空仍會停火」 | T4 |
 
 ### 1.2 Non-functional
 
@@ -88,7 +88,7 @@ stage13（階段 M）的主題是「原始輸入取樣與抬滑鼠判準驗證�
 | **D-62-1** | 已宣告 `weaponId` 的 drill（現況＝ BR 八格）**不可覆蓋**：指定不同武器 → 編譯錯誤並標紅該列。不做鎖定 UI、不靜默忽略 | 武器是那 2×2×2 實驗格的自變項；覆蓋等於毀掉實驗格。用既有 `SessionProgramCompileError` 定位到列，錯誤訊息本身即說明 |
 | **D-62-2** | frozen 軌**不開放**逐列武器 | frozen = pre-registered 協定，武器是協定的一部分；要換就定義新 preset。同時保住 FR-58.10「frozen 匯出逐位不變」 |
 | **D-62-3** | 下拉列出 `WEAPONS` **全部 9 把**，不做策展白名單 | KI-016 的教訓：第二份手維護白名單必然 rot。實際跑的武器已逐 run 進 `meta.weaponId`，離線可篩 |
-| **D-62-4** | 彈匣容量寫進選項標籤 + 一行「無 reload」說明；**不擋**任何武器×drill 組合 | 全 repo 無 reload 路徑（§0.7）。給資訊而非猜門檻，不替研究者決定 |
+| **D-62-4** | 彈匣容量寫進選項標籤 + 一行「無玩家 reload／目標生成補彈／連續打空停火」說明；**不擋**任何武器×drill 組合 | T4 依 GD-38 ② inline 更正收窄措辭：存在 spawn 驅動補彈，但沒有玩家發起 reload。給資訊而非猜門檻，不替研究者決定 |
 
 ### 1.5 Open Questions
 
@@ -209,7 +209,7 @@ export interface SessionPlanItemMeta {
 
 武器選項標籤格式：`` `${id}（${magSize} 發）` ``，例如 `usp_s_laser（12 發）`、`ak47（30 發）`、`tracking_pilot_hold（512 發）`。彈匣數直接讀 `WEAPONS[id].magSize`，不另存常數。清單下方固定一行說明：
 
-> 無 reload：彈匣打完該輪即停火，且受測者的「按住」意圖會被記成放開。
+> 無玩家 reload：每次目標生成會補滿彈匣；若連續打空仍會停火，受測者的「按住」意圖會被記成放開。
 
 選這個呈現而非「猜一個門檻然後警告」，是因為「這個 drill 需要幾發」取決於受測者的失誤數，系統無從預知；顯示事實比顯示猜測誠實（D-62-4）。
 
@@ -249,7 +249,7 @@ export interface SessionPlanItemMeta {
 |---|---|---|---|
 | **FM-1** | 未知武器 id 抵達 runtime | `getWeapon()` 在 `buildSimLoop()` 內拋錯，留下半啟用的 drill（場景已換、`activeDrillConfig` 已改） | 編譯期擋掉（FR-62.2）；表單走既有 `setCompileFailure()` 禁止送出。T2 以負向測試釘死 |
 | **FM-2** | 替 BR 八格指定不同武器 | 2×2×2 實驗格的自變項被污染，且匯出看起來完全合法 | 編譯錯誤 + 標紅該列（D-62-1）。T2 負向測試 + T4 的列定位測試 |
-| **FM-3** | 選中的武器 `magSize` 不足該 run 實際需要的發數 | **靜默停火**；受測者的「按住」意圖旗標被 `SimLoop` 清成 false，被記成放開 | 選項標籤顯示彈匣容量 + 無 reload 說明（§2.4）。**殘留風險，明帳接受**（D-62-4）。`meta` 已記 `ammo` 逐發，離線可偵測 |
+| **FM-3** | 選中的武器 `magSize` 不足連續未擊殺區間所需的發數 | **靜默停火**；受測者的「按住」意圖旗標被 `SimLoop` 清成 false，被記成放開。spawn-driven drill 會在目標生成時補彈，因此風險集中在連續 `magSize` 發都沒殺掉任何目標的區間 | 選項標籤顯示彈匣容量 + 無玩家 reload／目標生成補彈說明（§2.4）。**殘留風險，明帳接受**（D-62-4）。`meta` 已記 `ammo` 逐發，離線可偵測 |
 | **FM-4** | 選到有 `ads` 的武器，配上 protocol 禁 ADS 的 drill | 右鍵變成有效，可能產生 protocol violation | 不做第二套 guard（OQ-62.2 預設假設）；`ads` 事件與 `meta.weapon.ads` 已逐 run 記錄 ⇒ 事後可稽核。列入 `progress.md` 已知限制 |
 | **FM-5** | 逐列換武器 → `CompatibilityKey.weaponId` 不同 ⇒ trend cohort 碎裂 | history 趨勢線變空或變短，外觀像 bug | **零程式修改**（行為正確：不同武器本就不該併池）。在表單說明文字寫明；T4 DoD 含該文字存在的斷言 |
 | **FM-6** | 平行 session 同時改 `src/session/*` 或 stage README | 合併衝突、索引檔互相覆蓋 | T0 開工前檢查；索引檔衝突時只 stage 自己那幾行 |
@@ -290,4 +290,4 @@ T4 只需要 T2 的型別與編譯器，**可與 T3 並行**。
 | **A-62.4** | frozen 軌編譯／runtime／匯出逐位不變（FR-62.6） |
 | **A-62.5** | 匯出可對帳：`sessionPlanItems[].weaponId`（意圖）vs `meta.weaponId`（事實）（FR-62.4） |
 | **A-62.6** | 同 program 跨 4 種 render FPS 的 sim 狀態逐位一致（NFR-62.2） |
-| **A-62.7** | 選單顯示彈匣容量 + 無 reload 說明 + trend 碎裂提示（FR-62.7／FM-5） |
+| **A-62.7** | 選單顯示彈匣容量 + 無玩家 reload／目標生成補彈說明 + trend 碎裂提示（FR-62.7／FM-5） |

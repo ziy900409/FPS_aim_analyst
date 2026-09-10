@@ -728,3 +728,76 @@ digest = FNV-1a over `Object.keys(meta).sort().join(',')`（與 `exportPayloadSc
 | 1 | `loadSceneById()` 清空 override 與 ADS/gain 不對稱（承 T3 OQ #4／T4 OQ #3／T5 OQ #1） | 🟡 **仍未決**。T6 的 e2e **未觀察到**該路徑：Session Plan 執行中不碰 Controls 場景下拉，故 live 案例天然走不到它 ⇒ 「T6 e2e 觀察後判斷」這個收斂條件**無法由 T6 滿足** | 實作者 + 研究者 | **T-exit**（判斷是否另開 KI；選項仍為 T0 §5 收斂的 ②／③） |
 | 2 | `'ak47'` 三處來源的可讀性 debt（承 T5 OQ #2） | 🟢 非阻塞，T6 未觸及 | 實作者 | 任一觸及該三處的後續 task |
 | 3 | 全量 Playwright 的基準跑法不一致：T0 用 `--workers=1`（103，13.8m），T6 的 `npm run test:ci` 用預設 fullyParallel（106，7.0m） | 🟢 非阻塞：兩者本次皆 0 failed／0 flaky，且 T6 另以 `--workers=1` 單檔覆驗過本 task 的 18 條 | 實作者 | T-exit 記錄時擇一為準即可 |
+
+---
+
+## §T-exit 驗收 gate（2026-09-10）
+
+**狀態**：✅ 交付。A-62.1～A-62.7 全數有具名證據；OQ-62.1／62.2／62.3 全數收斂；FM-3／FM-4 明帳接受；最終全量 gate 綠。WP-62 依 T-exit 步驟 7 **維持於 `active/stage13/`**：stage13 仍有 WP-61 blocked-by-data 與 WP-63 未開工，不移入 `completed/`。
+
+### A-62.1～A-62.7 逐項證據
+
+| 驗收 | 證據 |
+|---|---|
+| **A-62.1** 自訂 program 每列可選武器，且同列每一輪 rep 同一把 | `tests/e2e/session-orchestrator.spec.ts`：`WP-62 T6：每列各選一把武器 → 預覽逐步顯示該步武器 → 送出（FR-62.1/62.3/62.5）`；`WP-62 T6：逐列武器實跑 —— 每份匯出的 meta.weaponId 對得上該列選擇，意圖與事實一致（FR-62.1/62.3/62.4）`。live 匯出第 1/2 份皆為 item 0、`meta.weaponId === 'm4a1s'`，證明同列第二輪仍同一把 |
+| **A-62.2** 未知武器 id 與覆蓋 BR 八格皆為編譯錯誤且定位到列 | `src/session/sessionProgram.test.ts` 覆蓋 `SessionProgramCompileError field='weaponId' itemIndex`；`tests/e2e/session-orchestrator.spec.ts`：`WP-62 T6：覆蓋 BR 實驗格武器 → 標紅該列且禁用提交；改回宣告值即解除（FR-62.2/FM-2）` |
+| **A-62.3** 省略 `weaponId` 時編譯輸出與本 WP 前 HEAD 逐位相同，鍵集合亦相同 | `src/session/sessionProgram.test.ts` 的 T2 sha256 逐位回歸；T2 紀錄：省略 `weaponId` 時 3 個 canonical program 的 sha256 與 `f0df84d` 基準一致，並以 `'weaponId' in step === false` 防止 `weaponId: undefined` |
+| **A-62.4** frozen 軌編譯／runtime／匯出逐位不變 | `tests/e2e/session-orchestrator.spec.ts`：`WP-58 T6：frozen 標準 Assessment 軌在真瀏覽器跑完 —— 家族順序、單一休息秒數、無熱身提示`。T6 實跑 frozen live meta 鍵面 digest 對比：`detection_popin_v1` / `spider-shot-wide-v1` / `tracking_scene_v1` 皆 `2752c07b`（`f0df84d` 基準 == 本 WP HEAD） |
+| **A-62.5** 匯出可對帳：`sessionPlanItems[].weaponId`（意圖）vs `meta.weaponId`（事實） | `src/session/sessionProgramExport.test.ts` 的四列意圖/事實對帳；`tests/e2e/session-orchestrator.spec.ts` live 案例四份匯出：`m4a1s`、`m4a1s`、`usp_s_laser`、預設列事實 `ak47` 且意圖鍵缺席 |
+| **A-62.6** 同 program 跨 4 種 render FPS 的 sim 狀態逐位一致 | `src/loop/__tests__/wp62-session-weapon-determinism.test.ts`（9 tests）：同一 program + 同一輸入序列跨 `60/75/120/240` render FPS 逐位一致，且 weapon precedence / 賦值早於 sim 建構有突變實測守住 |
+| **A-62.7** 選單顯示彈匣容量 + 無玩家 reload／目標生成補彈說明 + trend 分群提示 | `src/ui/SessionPlanSetup.test.ts`：`explains reload/ammo behaviour and weapon-based trend grouping before submission`；`tests/e2e/session-orchestrator.spec.ts` WP-62 DOM 正向案例斷言 `usp_s_laser（12 發）`、`ak47（30 發）`、`無玩家 reload`、`不會併入同一條趨勢線` |
+
+### 最終全量 gate
+
+| 指令 | 實測結果 |
+|---|---|
+| `npm.cmd run typecheck` | ✅ exit 0（`tsc --noEmit` + `tsc --noEmit -p tsconfig.node.json`） |
+| `npm.cmd run build` | ⚠️ sandbox 內 Vite/esbuild 讀取 `vite.config.ts` 被擋；✅ 非 sandbox 重跑 exit 0，`vite v6.4.3`，195 modules transformed，`dist/assets/index-cNW_pZdU.js` 1,235.73 kB / gzip 351.57 kB，既有 chunk >500 kB 警告，`built in 2.07s` |
+| `npx.cmd vitest run` | ✅ **254 files passed / 1 skipped**；**2,946 passed / 2 skipped**（2,948 total），14.66s |
+| `npx.cmd playwright test --workers=1 --reporter=line` | ⚠️ sandbox 內 webServer 同樣被 Vite/esbuild config 權限擋；第一次非 sandbox 由 Playwright 自啟 server 時 5173 dev server 未存活，前 6 條 `ERR_CONNECTION_REFUSED` 後中止，未作為 regression 判定。手動以隔離 root 啟動 `npm run dev`（5173，`.playwright-tmp/history-dev`）與 `npm run preview`（4173，`.playwright-tmp/history-preview`），兩 URL 皆 HTTP 200 後重跑：✅ **106 passed**，14.4m，slow file `session-orchestrator.spec.ts` 10.6m |
+
+**相對 T0 基線**：
+
+| | T0 | T-exit | 差值 |
+|---|---|---|---|
+| Vitest tests | 2,822 passed / 2 skipped | **2,946 passed / 2 skipped** | +124 passed |
+| Vitest files | 252 passed / 1 skipped | **254 passed / 1 skipped** | +2 files |
+| Playwright tests (`--workers=1`) | 103 passed | **106 passed** | +3 tests（恰為 WP-62 T6 新增 E2E） |
+
+**history root 污染檢查**：Playwright 前後 `data/session-history/` 項數皆 **42**；`P001--df1e40051e` 仍是最新 participant（2026-09-10 10:22:07）；15:50 後無任何非 `.history-root.lease` 新檔。測試資料寫入 `.playwright-tmp/history-dev` / `.playwright-tmp/history-preview`。
+
+### OQ 收斂
+
+| OQ | T-exit 狀態 |
+|---|---|
+| **OQ-62.1** 預覽對未指定列顯示「預設」或實名 | ✅ 採用預設假設並已落地（D-62.T4-1）：一般未指定列顯示「預設」；BR 八格透過 `DECLARED_WEAPON_BY_DRILL_ID` 顯示自宣告實名。理由：不在 UI 內重寫 runtime fallback，但已知自宣告武器可無成本顯示實名 |
+| **OQ-62.2** ADS 武器 × 禁 ADS drill 是否警告 | ✅ 採用預設假設並已落地（D-62.T4-2）：不新增第二套 guard。理由：禁 ADS drill 與有 ADS weapon 需要額外規則來源；現有 `ads` 事件與 `meta.weapon.ads` 已可離線稽核 |
+| **OQ-62.3** 對表測試覆蓋範圍 | ✅ 已決議（T1）：全覆蓋 36 個 schedulable drill、零豁免。`spider-shot-wide-v1` 以 `(75, 16/9)` 純函式解析；`spider-shot-v3` 實查不是 config lazy binding |
+
+### 已知限制與殘留風險
+
+| 風險 | T-exit 處置 |
+|---|---|
+| **FM-3** 彈匣不足造成靜默停火 | ✅ 明帳接受。T4 已依 GD-38 ② inline 更正把 UI 文案收窄為「無玩家 reload：每次目標生成會補滿彈匣；若連續打空仍會停火」。離線偵測方式：逐發 `ammo` / `magSize` 與 `fire` event 序列；若連續打空至 ammo 0 後 `heldFire` 被清掉，可在匯出中對應到停火區間 |
+| **FM-4** ADS weapon × 禁 ADS drill | ✅ 明帳接受。本 WP 不做 guard、不阻擋組合。離線偵測方式：`ads` event / tick flag + `meta.weapon.ads`；若 protocol 需要禁止 ADS，後續 WP 應定義 drill-level guard，而不是在本 WP 用隱含規則猜測 |
+| `loadSceneById()` 清空 override 與 ADS/gain 不對稱 | ✅ 不另開本 WP 內修復。D-62.T3-2 採選項 ③：明帳接受為既有非主線限制；Session Plan 主線不碰 Controls 場景下拉，且逐 run `meta.weaponId` 可與 `sessionPlanItems[].weaponId` 對帳偵測不一致。若研究者要求 run 中硬性禁止切場景，另開 KI / WP 處理 |
+
+### 索引與圖譜
+
+- [x] `task-checklist.md`：T-exit 與 package DoD 全部翻 ✅。
+- [x] `active/stage13/README.md`：WP-62 狀態翻 ✅ T-exit。
+- [x] `docs/exec-plan/README.md`：階段 M 的 WP-62 狀態翻 ✅ T-exit。
+- [x] `DECISIONS.md`：GD-38 狀態翻 ✅，並補 T-exit 證據摘要。
+- [x] `graphify update .`：已執行，更新 `graphify-out/`。
+
+### Decision Log
+
+| # | 日期 | 決定 | 理由 | Alternatives considered |
+|---|---|---|---|---|
+| **D-62.X-1** | 2026-09-10 | **WP-62 不移入 `completed/`，維持於 `active/stage13/`** | T-exit-gate 步驟 7 要判定是否移入 completed；stage13 仍有 WP-61 blocked-by-data 與 WP-63 未開工，且 stage13 README 仍是 active stage 索引。只把 WP-62 狀態翻 ✅，避免拆散 active stage 內的相依與編號敘事 | 直接移到 `completed/stage13/`：會讓同一 stage 的 active/blocked/未開工 WP 分裂，且需要同步大量相對路徑，超出 T-exit |
+| **D-62.X-2** | 2026-09-10 | **最終 Playwright 以 `--workers=1` 為 T-exit 基準** | T0 基線就是 `--workers=1`；T6 的 `npm run test:ci` parallel 綠燈已提供快跑證據，但 T-exit 需要與 T0 直接對比 | 使用 T6 parallel `106 passed（7.0m）` 作最終數字：也綠，但和 T0 的 worker 設定不同，不利於只增不減對帳 |
+
+### Surprises & Discoveries
+
+1. **非 sandbox 仍需要顯式確認 dev server 存活。** sandbox 內 Playwright 被 Vite/esbuild config 讀取權限擋住；非 sandbox 由 Playwright 自啟 webServer 時 preview 有 build 輸出，但 5173 dev server 未存活，導致前 6 條 `ERR_CONNECTION_REFUSED`。手動用隔離 root 啟 dev/preview 並確認兩 URL HTTP 200 後，完整 suite 一次綠。T-exit 因此記錄的是「verified server reuse」跑法，而不是把 connection refused 當成 app regression。
+2. **T-exit 必須回收 planning 文件裡的舊機制措辭。** T4 已根據 GD-38 ② inline 更正把「無 reload」收窄成「無玩家 reload／目標生成補彈」，但 README 的 FR/FM/A 條目仍留著舊字眼。T-exit 已同步修正，避免驗收文件與實作文案互相矛盾。

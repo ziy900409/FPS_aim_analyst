@@ -86,6 +86,10 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 使用者指定的處理順序:**先 v3 → 再 wide → 最後 v8**。編號依 [GD-15](../../DECISIONS.md)「先採納先得」候選為 WP-62 起算（現行最高 WP-61,stage13）。
 
 > ⚠️ **編號已失效（2026-09-10,WP-62 T0 重查）**:下表的 **WP-62/63/64 已被取用**。`WP-62` 已由 [`active/stage13/wp-62-session-plan-per-item-weapon/`](../stage13/wp-62-session-plan-per-item-weapon/README.md) 採納並入 [`exec-plan/README.md`](../../README.md) §2 索引;依 [GD-15](../../DECISIONS.md) 的判準（編號歸屬以採納入 §2 索引為準,**草稿之「候選,未批准」預留不構成佔用**),本 stage 三個候選在**採納當下**應順延為 **WP-63/64/65**,且須依 GD-35 ② 於採納當下重查最大值。下表編號一律視為佔位符,**相依欄的「WP-62」指本 stage 的 v3 參數定案 WP,非 stage13 的逐列武器 WP**。詳見 [GD-38](../../DECISIONS.md) ①。
+>
+> ⚠️ **再順延（2026-09-10，WP-63 規劃）**：`WP-63` 亦已被取用 —— [`active/stage13/wp-63-micro-flick-v8-measurement-foundation/`](../stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) 已入 [`exec-plan/README.md`](../../README.md) §2 索引。⇒ 本 stage 三個候選在採納當下應順延為 **WP-64/65/66**。
+>
+> ⚠️ **§3 的 WP-64（v8）候選已被 WP-63 實質取代**：WP-63 交付的正是 `buildTargetWindows()` primitive + 三顆離線重建 + v8 指標族。兩處差異須知：(1) WP-63 **不採用** P14-3 所要求的「軌跡意圖歸因 + 合成 harness 驗證歸因規則」，改為**事件錨定** + 以實際下一次擊殺為 ground truth 的方向預測準確率曲線（理由見 [WP-63 §2.2](../stage13/wp-63-micro-flick-v8-measurement-foundation/README.md)：`t_detect` 已是既有構念，C-D4 禁止第二定義，且 v8 受 KI-031／KI-034 雙重阻塞）；(2) WP-63 不等 WP-62（本 stage 候選的 v3 參數定案）先行，因為它不重寫任何既有幾何，primitive 紀律由 NFR-63.4 的符號掃描直接釘死，不需要先有語彙權威。本 stage 若日後採納，§3 的 v8 列應改為指向 WP-63 而非另開新號。
 
 | WP（候選） | 一句話 | 相依 | 估時（d） | 狀態 |
 |---|---|---|---|---|
