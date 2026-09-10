@@ -7,6 +7,7 @@ import {
   type SessionProgramItem,
 } from './sessionProgram.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
+import type { WeaponId } from '../weapon/weapons.ts';
 
 // WP-58 T1 — the drill<->family mapping now lives in `drillFamily.ts` (FR-58.1), so this module no
 // longer imports drill modules at all. Re-exported here because these two names are part of the
@@ -56,7 +57,12 @@ export interface SessionRunnerHandle {
 }
 
 export interface SessionRunnerOptions {
-  readonly loadDrillById: (drillId: string) => Promise<void>;
+  /**
+   * WP-62 T3 — the second argument is the weapon this step was planned with (`RunStep.weaponId`,
+   * FR-62.3). `undefined` means the item named no weapon, so the activation falls back to the
+   * drill's own declared weapon and then to the app default, exactly as before this task.
+   */
+  readonly loadDrillById: (drillId: string, weaponId?: WeaponId) => Promise<void>;
   /** Status is rendered by the UI owner; this module remains DOM-agnostic. */
   readonly onStatus?: (text: string) => void;
   readonly onPhaseChange?: (phase: SessionRunnerPhase) => void;
@@ -171,7 +177,9 @@ export function createSessionRunner(options: SessionRunnerOptions): SessionRunne
       // Load first, then publish the phase: a failed load must not leave the UI (and the rest
       // overlay driven by onPhaseChange) claiming a run is in progress. The rejection propagates to
       // whoever called advance()/start() — for the unattended auto-advance that is poll()'s catch.
-      await options.loadDrillById(step.drillId);
+      // WP-62 T3 (FR-62.3): every rep of an item carries the item's weapon, because the compiler
+      // copied it onto each RunStep. The runner stays a cursor — it never resolves a weapon itself.
+      await options.loadDrillById(step.drillId, step.weaponId);
       restPhase = undefined;
       setPhase({ kind: 'run', step, cursor: index });
       if (step.warmup === true) {

@@ -89,7 +89,7 @@ import {
 import { RAD_PER_COUNT, resolveMouseGain } from './input/mouseGain.ts';
 import { buildExportPayload, downloadCSV, downloadJSON, type ExportPayload } from './data/export.ts';
 import { STAGE6_PROTOCOL_VERSION } from './drill/protocolVersion.ts';
-import { getWeapon, WEAPONS, type WeaponId } from './weapon/weapons.ts';
+import { resolveActiveWeapon, WEAPONS, type WeaponId } from './weapon/weapons.ts';
 import type { SceneConfig } from './scene/SceneConfig.ts';
 import { resolveEyeWorldBase } from './scene/eyePose.ts';
 import { isOutsideCorridor } from './scene/corridor.ts';
@@ -389,7 +389,9 @@ window.addEventListener('resize', resize);
 let activeWeaponOverride: WeaponId | undefined;
 
 function activeWeaponConfig() {
-  return getWeapon(activeWeaponOverride ?? activeDrillConfig.weaponId ?? 'ak47');
+  // WP-62 / T3：precedence（override -> drill 自宣告 -> app 預設）移到 `weapons.ts` 單一定義，
+  // 讓決定性／接線測試斷言的是這條規則本身而非它的副本（C-D4）。語意逐位不變。
+  return resolveActiveWeapon(activeWeaponOverride, activeDrillConfig.weaponId);
 }
 
 // WP-49 T1 — 宣告放在這裡（而非稍後 History 元件實際建構的賦值點）讓 canvas click handler
@@ -1390,11 +1392,16 @@ async function activateDrill(
   sceneId: string | undefined,
   loadOptions: DrillLoadOptions | undefined,
   selectedDrillId: string | undefined,
+  weaponId: WeaponId | undefined,
 ): Promise<void> {
   // Every activation owns a generation, including same-scene/no-load activations: a preceding GLTF
   // request resolving late must never overwrite the drill/scene transaction selected most recently.
   const sceneRequest = liveSceneLoads.begin();
-  activeWeaponOverride = undefined; // WP-47 / T2：reset-per-drill，避免 BR 專屬武器條件被手動選擇靜默覆蓋。
+  // WP-47 / T2：reset-per-drill，避免 BR 專屬武器條件被手動選擇靜默覆蓋。
+  // WP-62 / T3：改為套用本步指定武器（Session Plan 逐列）；其餘呼叫端傳 `undefined` ⇒ 與 WP-47/T2
+  // 的無條件清空逐位等同。位置不動——必須早於下方 buildSimLoop()／setAdsConfig()／
+  // configureMouseIntegration()，否則彈匣、recoil rng stream、ADS 光學與感度 gain 會取到不同世代的武器。
+  activeWeaponOverride = weaponId;
   const requiredScene = sceneId !== undefined ? findSceneOption(sceneId) : undefined;
   const targetSceneConfig = requiredScene?.config ?? activeSceneConfig;
   const nextConfig = loadDrill(source, targetSceneConfig, loadOptions);
@@ -1418,14 +1425,16 @@ async function activateDrill(
   targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：新 drill 的 hitbox shape 生效。
   drillRunner.start(activeDrillConfig);
   if (selectedDrillId !== undefined) controls?.setSelectedDrill(selectedDrillId);
-  controls?.setSelectedWeapon(nextConfig.weaponId ?? 'ak47');
+  controls?.setSelectedWeapon(activeWeaponConfig().id); // WP-62 / T3：顯示**實際生效**武器（含 Session Plan 指定值），而非只讀 drill 自宣告。
   syncControlsVisibility();
 }
 
-async function loadDrillById(drillId: string): Promise<void> {
+async function loadDrillById(drillId: string, weaponId?: WeaponId): Promise<void> {
   const option = availableDrills.find((candidate) => candidate.id === drillId);
   if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
-  await activateDrill(drillSourceFor(option), option.sceneId, option.loadOptions, option.id);
+  // WP-62 / T3：`weaponId` 只有 Session Plan 的 run step 會給；Controls 下拉與 protocol 條件都
+  // 省略它 ⇒ 沿用 reset-per-drill。
+  await activateDrill(drillSourceFor(option), option.sceneId, option.loadOptions, option.id, weaponId);
 }
 
 /** WP-54 / T6 — loads a resolved tracking-pilot `DrillConfig` object. Pinned to `field-low` for
@@ -1433,7 +1442,7 @@ async function loadDrillById(drillId: string): Promise<void> {
  * envelope is validated against `field-low` (`tracking_core_pr_pilot_v1.test.ts`), so inheriting
  * whichever scene the researcher happened to leave loaded could reject a valid pilot block. */
 async function loadDrillConfigDirect(config: DrillConfig): Promise<void> {
-  await activateDrill(config, fieldLow.sceneId, undefined, undefined);
+  await activateDrill(config, fieldLow.sceneId, undefined, undefined, undefined);
 }
 
 async function loadSceneById(sceneId: string): Promise<void> {

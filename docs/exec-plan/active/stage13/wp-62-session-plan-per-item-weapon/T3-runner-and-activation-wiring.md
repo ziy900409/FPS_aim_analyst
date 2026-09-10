@@ -42,13 +42,13 @@
 
 ## Definition of Done
 
-- [ ] 跨 render FPS（≥ 4 種）逐位一致斷言通過；測試檔名 + 案例名記入 `progress.md`
-- [ ] 賦值順序有測試釘死（`state.weapon.magSize` 於首 tick 即等於指定武器的 `magSize`）
-- [ ] `reps: 3` 三輪皆套用同一把武器有測試
-- [ ] 三個非 Session Plan 呼叫端傳 `undefined` 的行為逐位等同前 HEAD（既有 drill 切換／場景切換／protocol 條件測試零修改全綠）
-- [ ] `controls.setSelectedWeapon` 顯示實際生效武器有測試
-- [ ] 既有 `SessionRunner*.test.ts` 三檔僅補參數、**無斷言放寬**，並各含一條 weaponId 傳遞正向斷言
-- [ ] `npm run typecheck` ×2 + 全量 Vitest exit 0
+- [x] 跨 render FPS（≥ 4 種）逐位一致斷言通過；測試檔名 + 案例名記入 `progress.md` —— `src/loop/__tests__/wp62-session-weapon-determinism.test.ts`，4 條 `<FPS>：整份 program 的逐步 sim 狀態 bit-exact 對齊 canonical` + `四種 FPS 序列彼此 bit-exact 相等` + `重播 bit-exact`
+- [x] 賦值順序有測試釘死 —— magSize 版於決定性檔 `武器賦值早於 sim loop 建構…`；**敘述順序**另由 `sessionWeaponActivation.test.ts` 的 `main.ts` source 掃描 3 格釘死（magSize 版擋不住搬動，見 progress.md §T3）。突變 M2 實證
+- [x] `reps: 3` 三輪皆套用同一把武器有測試 —— 決定性檔 `program 走完三條 precedence 分支…` + `SessionRunnerProgram.test.ts` `hands every rep of an item the same planned weapon…`
+- [x] 三個非 Session Plan 呼叫端傳 `undefined` —— `sessionWeaponActivation.test.ts` `非 Session Plan 的呼叫端明確傳 undefined…` + `loadSceneById() 的 WP-47/T2 reset 語意未被本 task 改動`；既有場景／protocol 測試零修改全綠（全量 2,919 passed）
+- [x] `controls.setSelectedWeapon` 顯示實際生效武器 —— `Controls 顯示的是實際生效武器，不是只讀 drill 自宣告`（突變 M3 實證）
+- [x] 既有 `SessionRunner*.test.ts` 三檔僅補參數且 6 條斷言**加嚴**（`(id)` → `(id, undefined)`），三檔各含一條 weaponId 正向斷言 —— 逐檔對照見 progress.md §T3
+- [x] `npm run typecheck` ×2 exit 0 + `npm run build` exit 0 + 全量 Vitest **2,919 passed / 2 skipped**（T2 基線 2,896 → +23，恰為新增）
 
 ## Commit
 

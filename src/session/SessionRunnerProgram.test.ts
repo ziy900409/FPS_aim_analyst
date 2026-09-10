@@ -6,6 +6,7 @@ import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
 import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { compileSessionProgram, type ProgramStep } from './sessionProgram.ts';
 import { TEST_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
+import type { WeaponId } from '../weapon/weapons.ts';
 import {
   buildFrozenSessionPlan,
   createSessionRunner,
@@ -70,7 +71,7 @@ describe('WP-58 T3 — a frozen plan compiles to N runs and N-1 family rests', (
   });
 
   it('emits no rest at all when the operator asks for 0 rest seconds (FR-58.6)', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const { plan } = buildFrozenSessionPlan({
       participantId: 'P001',
       sessionIndex: 0,
@@ -108,7 +109,7 @@ describe('WP-58 T3 — the cursor walks a custom program with reps and two rest 
   });
 
   it('counts each rest down against its own step, not one shared duration', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const runner = createSessionRunner({ loadDrillById });
     await runner.start(customPlan(program));
 
@@ -137,6 +138,33 @@ describe('WP-58 T3 — the cursor walks a custom program with reps and two rest 
       holdClickV1.id,
       counterstrafeFreeV1.drillId,
       counterstrafeReversalV1.drillId,
+    ]);
+  });
+
+  it('hands every rep of an item the same planned weapon, and unnamed items none (FR-62.3)', async () => {
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
+    const runner = createSessionRunner({ loadDrillById });
+    await runner.start(
+      customPlan(
+        compileSessionProgram({
+          items: [
+            { drillId: holdClickV1.id, reps: 3, weaponId: 'm4a1s' },
+            { drillId: counterstrafeFreeV1.drillId, reps: 1 },
+          ],
+          drillRestSeconds: 0,
+          familyRestSeconds: 0,
+        }),
+      ),
+    );
+    // 0-second rests are dropped at compile time, so the program is four back-to-back runs.
+    for (let step = 0; step < 3; step += 1) await runner.advance();
+    expect(runner.phase).toMatchObject({ kind: 'run', step: { drillId: counterstrafeFreeV1.drillId } });
+
+    expect(loadDrillById.mock.calls).toEqual([
+      [holdClickV1.id, 'm4a1s'],
+      [holdClickV1.id, 'm4a1s'],
+      [holdClickV1.id, 'm4a1s'],
+      [counterstrafeFreeV1.drillId, undefined],
     ]);
   });
 

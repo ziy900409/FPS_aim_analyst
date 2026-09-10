@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildFrozenSessionPlan, createSessionRunner } from './SessionRunner.ts';
+import { compileSessionProgram } from './sessionProgram.ts';
+import type { WeaponId } from '../weapon/weapons.ts';
 
 async function settleTransitions(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -17,7 +19,7 @@ function twoFamilyPlan(restSeconds = 60): ReturnType<typeof buildFrozenSessionPl
 
 describe('SessionRunner.poll', () => {
   it('is a no-op outside rest and automatically starts the next family when rest expires', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const runner = createSessionRunner({ loadDrillById });
     await runner.start(twoFamilyPlan());
 
@@ -32,7 +34,38 @@ describe('SessionRunner.poll', () => {
     await settleTransitions();
 
     expect(runner.phase).toMatchObject({ kind: 'run', cursor: 2, step: { drillId: 'hold_track_v1' } });
-    expect(loadDrillById).toHaveBeenLastCalledWith('hold_track_v1');
+    expect(loadDrillById).toHaveBeenLastCalledWith('hold_track_v1', undefined);
+  });
+
+  it('carries the step weapon through the unattended auto-advance too (WP-62 T3)', async () => {
+    // The poll()-driven advance is the path no operator touches, so it is the one that would
+    // silently drop the planned weapon: the researcher would see the right drill with the wrong gun.
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
+    const runner = createSessionRunner({ loadDrillById });
+    await runner.start({
+      participantId: 'P001',
+      sessionIndex: 0,
+      mode: 'custom',
+      items: [],
+      program: compileSessionProgram({
+        items: [
+          { drillId: 'hold_click_v1', reps: 1, weaponId: 'm4a1s' },
+          { drillId: 'hold_track_v1', reps: 1, weaponId: 'usp_s_laser' },
+        ],
+        drillRestSeconds: 30,
+        familyRestSeconds: 60,
+      }),
+    });
+
+    expect(loadDrillById).toHaveBeenLastCalledWith('hold_click_v1', 'm4a1s');
+    await runner.advance();
+    expect(runner.phase.kind).toBe('rest');
+    runner.poll(0);
+    runner.poll(61_000); // hold-click -> hold-track is a *family* seam, so it takes familyRestSeconds
+    await settleTransitions();
+
+    expect(runner.phase).toMatchObject({ kind: 'run', step: { drillId: 'hold_track_v1' } });
+    expect(loadDrillById).toHaveBeenLastCalledWith('hold_track_v1', 'usp_s_laser');
   });
 
   it('recovers from a failed auto-advance instead of leaving the rest phase (and its overlay) stuck forever', async () => {

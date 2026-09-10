@@ -367,3 +367,103 @@ console.log(JSON.stringify(cases, null, 1));
 | 3 | OQ-62.2（ADS × 禁 ADS drill 是否警告） | 🟡 未決，T2 未觸及 | 研究者 | T4 開工前 |
 | 4 | `loadSceneById()` 清空 override 的處置（選項收斂為 ②／③，見 §T0.5） | 🟡 未決 | 實作者 + 研究者 | **T3 開工時** |
 | 5 | T5 提醒：編譯器以 `isWeaponId` 為武器 allowlist 的**唯一**來源；`SessionPlanItemMeta.weaponId?: string` 的 runtime 驗證在 `exportPayloadSchema.ts`（§T0.4 / D-62.T0-3），必須共用同一個判定，不得另寫一套字串比對 | 🟢 非阻塞 | 實作者 | T5 |
+
+---
+
+## §T3 SessionRunner 與 `activateDrill()` 接線（2026-09-10）
+
+**狀態**：✅ 完成。`RunStep.weaponId` 已從編譯結果一路送到 `createSimLoop(..., weapon)`；武器 precedence 抽成 `resolveActiveWeapon()` 單一定義；跨 4 種 render FPS 逐位一致與賦值順序皆有測試釘死。**`loadSceneById()` 未動**（OQ #4 收斂為 ③，見下）。
+
+### Progress
+
+- [x] (2026-09-10) `src/weapon/weapons.ts`：新增 `DEFAULT_WEAPON_ID` 與 `resolveActiveWeapon(override, drillWeaponId)`——把 `main.ts` 原本 inline 的 `override ?? drill ?? 'ak47'` 收成單一定義（見 D-62.T3-1）。既有 `getWeapon`／`isWeaponId`／`WEAPONS` 語意零變更。
+- [x] (2026-09-10) `src/session/SessionRunner.ts`：`loadDrillById` 簽名擴為 `(drillId, weaponId?) => Promise<void>`；`enterStep()` 改呼叫 `loadDrillById(step.drillId, step.weaponId)`。游標／rest／`measuredRunOrdinal`／`runTransition` 錯誤傳播**零修改**。`WeaponId` 以 `import type` 引入 ⇒ runtime 無新增 import，`SessionRunner.ts` 的 `FORBIDDEN_REACH` 掃描（ADR-2）全綠。
+- [x] (2026-09-10) `src/main.ts`：`activateDrill()` 加第五參數 `weaponId: WeaponId | undefined`，第 1397 行的 `activeWeaponOverride = undefined` 改為 `= weaponId`（**位置不動**）；`loadDrillById(drillId, weaponId?)` 穿透；`loadDrillConfigDirect()` 顯式傳 `undefined`；`controls?.setSelectedWeapon()` 改讀 `activeWeaponConfig().id`。
+- [x] (2026-09-10) 新測試檔 2 支（+21）、既有 runner 測試 3 檔補參數並**加嚴**（+2）。全量 Vitest **2,919 passed / 2 skipped**。
+
+### 驗證（六道閘全綠，逐項實測）
+
+| 指令 | 結果 |
+|---|---|
+| `npm run typecheck`（`tsc --noEmit` ×2） | ✅ exit 0 |
+| `npm run build` | ✅ exit 0，`built in 2.41s`（chunk > 500 kB 警告為先前狀態） |
+| `npx vitest run src/session/ src/loop/__tests__/wp62-session-weapon-determinism.test.ts` | ✅ 328 passed |
+| 全量 `npx vitest run` | ✅ **2,919 passed / 2 skipped**；檔案 **254 passed / 1 skipped** |
+
+**回歸基線對帳**：T2 基線 2,896 / 2（252 檔）→ 現 2,919 / 2（254 檔）。差值 **+23 = 9（決定性檔）+ 12（接線檔）+ 2（runner 檔各 1 支新測試）**，檔案 **+2** 恰為兩支新檔。既有測試零刪除。
+
+**Playwright 未跑**：T3 不改 DOM／表單路徑，全量 e2e 留在 T6（並須遵守 [§T0.6](progress.md) 的 5173 前置條件）。⚠️ 但 T6 必須特別覆驗 `tests/e2e/weapon-select.spec.ts`——本 task 改了 `activateDrill()` 的 override 賦值與 `setSelectedWeapon()` 讀取來源，那支 spec 正是 WP-47 reset-per-drill 的契約守門人。
+
+### 既有測試的修改：6 條斷言**加嚴**，非放寬（NFR-62.3 的明帳）
+
+`enterStep()` 改為永遠傳兩個參數後，Vitest 的 `toHaveBeenCalledWith` 是**含 arity** 比對 ⇒ 既有 5 條 `toHaveBeenCalledWith('drill_id')` 立即轉紅（實測：改完 runner 當下 `src/session/` 為 **5 failed / 300 passed**）。依 T3 DoD 第 6 條「僅補參數、無斷言放寬」處理：
+
+| 檔 | 改動 | 方向 |
+|---|---|---|
+| `SessionRunner.test.ts` | 5 條 `toHaveBeenCalledWith(id)` → `(id, undefined)`；stub 型別補第二參數 | **加嚴**（多驗一個值） |
+| `SessionRunnerPoll.test.ts` | 1 條同上；stub 型別補第二參數 | **加嚴** |
+| `SessionRunnerProgram.test.ts` | stub 型別補第二參數（該檔的斷言走 `mock.calls.map(([id]) => id)`，不受 arity 影響） | 不變 |
+
+三檔各新增／擴充一條 **weaponId 正向斷言**（DoD 第 6 條後半）：
+
+- `SessionRunner.test.ts` — frozen 軌逐步第二參數皆為 `undefined`（**D-62-2 的 runner 層守門**：編譯器若哪天開始對 frozen step 發 `weaponId`，這條會紅）。
+- `SessionRunnerProgram.test.ts` — `reps: 3` + `weaponId: 'm4a1s'` 的 item，三輪 call 逐一為 `[holdClickV1.id, 'm4a1s']`，其後未指定的 item 為 `undefined`（**FR-62.3**）。
+- `SessionRunnerPoll.test.ts` — **`poll()` 驅動的無人自動推進**也帶對武器。挑這條路徑是因為它是唯一無操作員在場的推進路徑，掉了武器不會有人當場看見。
+
+### 決定性與賦值順序：兩支新測試檔的分工
+
+| 檔 | 案例 | 守什麼 |
+|---|---|---|
+| `src/loop/__tests__/wp62-session-weapon-determinism.test.ts`（9 tests） | `穩定 60 Hz`／`穩定 144 Hz`／`穩定 240 Hz`／`抖動 144 Hz ±50%`：**整份 program 的逐步 sim 狀態 bit-exact 對齊 canonical**；另有「四種 FPS 序列彼此 bit-exact 相等」與「重播 bit-exact」 | **NFR-62.2 / A-62.6** |
+| 同上 | `武器賦值早於 sim loop 建構：首 tick 的 magSize 已是本步武器的容量` | DoD 第 2 條（magSize 版） |
+| 同上 | `program 走完三條 precedence 分支，且 reps 的每一輪同一把（FR-62.3）` | DoD 第 3 條 |
+| `src/session/sessionWeaponActivation.test.ts`（12 tests） | `resolveActiveWeapon()` precedence 四格 + 未知 id + BR 八格對表 | 武器解析單一定義 |
+| 同上 | `main.ts` source 掃描：賦值早於 `buildSimLoop()`／`setAdsConfig`／`configureMouseIntegration`；`setSelectedWeapon(activeWeaponConfig().id)`；`loadSceneById()` 的 reset 未動；三個非 Session Plan 呼叫端傳 `undefined`；無第二條換武器路徑 | DoD 第 2／4／5 條 + §Invariants |
+
+決定性測試跑的 program 刻意走完三條 precedence 分支——`holdClickV1 ×3`（逐列指定 `m4a1s`，mag 20）→ BR `tracking_br_v1__ads_off__hitscan__0p5deg`（drill 自宣告）→ `counterstrafe-free-v1`（落回預設 `ak47`，mag 30）。輸入序列含**移動中開火**，讓 `inaccuracy.move` 這一項真的參與散佈，否則換武器只換到彈匣容量、測不到 recoil／spread 維度。
+
+### 為何順序要用 source 掃描（不是偷懶）
+
+`main.ts` 是 WebGPU + DOM 的 top-level 腳本，vitest 起不動；而「賦值早於 `buildSimLoop()`」是 `activateDrill()` **函式體內的敘述順序**，沒有任何可注入的介面。關鍵是：**magSize 斷言擋不住這個失敗模式**——它在 `createSimLoop()` 建構當下量測，那時武器早已定案，順序被搬動它仍會綠。兩支測試因此不是重複，是各守一半。source 掃描是既有 repo 慣例（`sessionProgram.test.ts` 的純度掃描同樣 `readFileSync`）。
+
+### 四道突變實測（沿用 T1／T2 做法）：**第四道抓到測試本身的漏洞**
+
+| # | 突變 | 結果 |
+|---|---|---|
+| M1 | `enterStep()` 的 `loadDrillById(step.drillId, step.weaponId)` → 只傳 `drillId` | ✅ **7 failed** |
+| M2 | 把 `activeWeaponOverride = weaponId;` 搬到 `buildSimLoop()` **之後** | ✅ **1 failed**：`賦值早於 simLoop = buildSimLoop()` |
+| M3 | `setSelectedWeapon(activeWeaponConfig().id)` → 還原成 `nextConfig.weaponId ?? 'ak47'` | ✅ **1 failed**：`Controls 顯示的是實際生效武器` |
+| M4 | `resolveActiveWeapon` 的 precedence 反轉為 `drillWeaponId ?? override ?? DEFAULT` | 🔴 **328 passed——沒抓到**。修正後重跑 ✅ **1 failed** |
+
+**M4 是本 task 最有價值的一格。** 原因：測試裡唯一「override 與 drill 宣告都有值」的案例，兩邊填了**同一個值**（`resolveActiveWeapon('ak47_br_hip_hitscan', 'ak47_br_hip_hitscan')`）⇒ precedence 反轉完全不可觀測。而反轉**是可達的真實故障**：`loadWeaponById()`（Controls 武器下拉）**不經編譯器**，可在 BR drill 上直接設 override——precedence 若反過來，那個下拉在 BR 八格會**無聲失效**，WP-47 的既有語意就沒了。已補一格 `resolveActiveWeapon('usp_s_laser', 'ak47_br_hip_hitscan') === 'usp_s_laser'`。
+
+（M2 的第一次嘗試被腳本自己的 `assert count == 1` 擋下：`activeWeaponOverride = weaponId;` 在 `main.ts` 有**兩處**——`activateDrill` 與 `loadWeaponById`。突變腳本改為只在 `activateDrill` 之後的片段動手。記在這裡是因為這正說明「兩個寫入點」這件事有多容易被忽略，見 §T0 Surprises 2。）
+
+四次突變後皆立即還原，還原後以 `git diff --stat` 對帳三個檔的行數與突變前一致，並重跑全綠。
+
+### Decision Log
+
+| # | 日期 | 決定 | 理由 | Alternatives considered |
+|---|---|---|---|---|
+| **D-62.T3-1** | 2026-09-10 | **武器 precedence 抽成 `weapons.ts` 的 `resolveActiveWeapon()`**，`main.ts` `activeWeaponConfig()` 改為單行呼叫；新增具名 `DEFAULT_WEAPON_ID` | 決定性測試若在測試檔裡自己寫一次 `step.weaponId ?? drill.weaponId ?? 'ak47'`，測的就是**測試自己的副本**，而不是 `main.ts` 跑的規則——正是 C-D4 禁止的第二定義。抽出來後測試斷言的是同一個函式 | ① 測試內重寫 precedence：見上，測不到真正的迴歸；② 以 e2e 覆蓋（`main.ts` 唯一可執行的環境）：T3 的 DoD 要 unit 級的跨 FPS 逐位斷言，e2e 給不了逐 tick bit-exact，且 e2e 是 T6 的範圍；③ 不抽、只做 source 掃描：掃描只能證明「寫法沒變」，不能證明「規則正確」 |
+| **D-62.T3-2** | 2026-09-10 | **`loadSceneById()` 完全不動 ⇒ OQ #4 採選項 ③（明帳接受為已知限制）**，不採 ②（session 執行中停用場景下拉） | ① 已由 [§T0.5](progress.md) 排除（會讓 `weapon-select.spec.ts:106` 的 WP-47 契約轉紅）。②／③ 之間選 ③：該路徑**在 Session Plan 主線不可達**（KI-002/D2 明文只走 `loadDrillById`），且事實**已可稽核**——逐 run `meta.weaponId` 會如實記下還原後的武器，離線比對 `sessionPlanItems[].weaponId`（意圖）即可發現。② 要改 UI 行為（run 中停用控制項），屬 T4 範圍且未經研究者要求 | ② 停用場景下拉：零程式風險但擴大 T3 範圍到 UI，且是**猜使用者要什麼**；若研究者確認需要硬性 guard，T4 可零成本補上（本 task 未關閉這條路） |
+| **D-62.T3-3** | 2026-09-10 | **`setSelectedWeapon()` 只改 `activateDrill()` 內那一處**，`loadSceneById()`（第 1459 行）與 Controls 初始建構（`selectedWeaponId`）維持原本的 `?? 'ak47'` 字面 | T3 Invariant 明文「`loadSceneById()` 的既有 reset 語意不變」。那兩處改成 `DEFAULT_WEAPON_ID` 雖逐位等價，但屬與本 task 無關的整理，會讓 diff 混入非必要變更 | 一次把三處 `?? 'ak47'` 全部收斂：逐位等價但越界；已記為可順手處理的 debt（見下方 OQ #6） |
+
+### Surprises & Discoveries
+
+1. **🔴 突變測試抓到的不是程式的 bug，是測試的 bug（M4）。** 前三道突變都被擋下，第四道（precedence 反轉）**全綠通過**——因為唯一同時給兩個值的測試案例兩邊填了同一個值。若當初只做「四道突變、三道紅就算數」的粗略檢查，這個洞會一路留到 T-exit。教訓：**斷言「A 勝過 B」時，A 與 B 必須不同值**，否則那條斷言只是在測 `x === x`。
+2. **`toHaveBeenCalledWith` 含 arity 比對，所以「加一個 optional 參數」不是純加法。** 規劃期把 `loadDrillById` 的簽名擴充視為 additive；實際上 5 條既有斷言立刻轉紅。這**不是**壞事（正因為它會紅，才證明 stub 真的收到了新參數），但它說明 NFR-62.3「既有測試零修改」在**簽名層**的改動上必然要開豁免——T3 DoD 第 6 條就是那個豁免，改動方向必須是加嚴。
+3. **`activeWeaponOverride = weaponId;` 在 `main.ts` 有兩處。** 寫突變腳本時 `assert count == 1` 直接紅——第二處是 `loadWeaponById()`（WP-47 的 Controls 路徑）。這與 §T0 Surprises 2「`activateDrill()` 不是唯一寫入點」是同一件事的第三次現身：改完之後，`activeWeaponOverride` 的**三個寫入點**變成「本步指定值（`activateDrill`）／手選值（`loadWeaponById`）／清空（`loadSceneById`）」，語意反而比先前清楚。
+4. **本 task 期間平行 session 新增了 `docs/known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md`**（未追蹤，非本 WP 產生，**未觸碰、未 stage**）。題材是滑鼠 gain 在感度／FOV 變更後過期——與本 task 動到的 `recorder.configureMouseIntegration()` 呼叫點**相鄰但不相同**（本 task 未改該行，只保證武器賦值早於它）。T4／T5 開工前應重讀該 KI，確認兩者沒有隱含衝突。
+
+### Open Questions（T3 結束時）
+
+| # | 問題 | 狀態 | Owner | 需在何時收斂 |
+|---|---|---|---|---|
+| 1 | OQ-62.1（預覽對未指定列顯示「預設」還是實名） | 🟡 未決，T3 未觸及 | 研究者 | T4 開工前 |
+| 2 | OQ-62.2（ADS × 禁 ADS drill 是否警告） | 🟡 未決，T3 未觸及 | 研究者 | T4 開工前 |
+| 3 | `loadSceneById()` 清空 override 的處置 | ✅ **結案（暫定）**：採 ③，見 D-62.T3-2。**研究者若要硬性 guard，T4 補 ② 的成本仍是零**——本 task 沒有關閉那條路 | 實作者（已決）＋ 研究者（可推翻） | T4 開工前可推翻 |
+| 4 | `loadSceneById()` 缺 `setAdsConfig`／`configureMouseIntegration` 的先前既有不對稱（§T0.5 附帶） | 🟡 未決。本 task 未改該函式，故不對稱**原樣保留**；逐列武器上線後它的可觀測後果變大（換場景後 ADS 光學／gain 可能對不上已還原的武器） | 實作者 | 非阻塞；建議 T6 e2e 觀察後決定是否另開 KI |
+| 5 | T5 提醒：`SessionPlanItemMeta.weaponId` 的 runtime 驗證在 `exportPayloadSchema.ts`，須共用 `isWeaponId` | 🟢 非阻塞（承 T2 OQ #5） | 實作者 | T5 |
+| 6 | `?? 'ak47'` 字面仍散在 `loadSceneById()` 與 Controls 初始建構兩處，未收斂為 `DEFAULT_WEAPON_ID` | 🟢 非阻塞：逐位等價，純可讀性 debt（D-62.T3-3 刻意不越界） | 實作者 | 任一觸及該兩處的後續 task 順手處理 |
+| 7 | 平行 session 的 `KI-035`（滑鼠 gain 過期）與本 task 的 `configureMouseIntegration` 呼叫點相鄰 | 🟡 待確認無衝突 | 實作者 | T4 開工前重讀該 KI |
