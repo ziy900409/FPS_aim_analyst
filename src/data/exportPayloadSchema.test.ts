@@ -125,6 +125,59 @@ describe('parseExportPayload — WP-58 T5 session program audit fields', () => {
     expect(result.payload.meta.sessionPlanItems).toEqual([{ drillId: 'a_drill_that_no_longer_exists', reps: 1 }]);
   });
 
+  // -------------------------------------------------------------------------
+  // WP-62 T5 — the planned weapon per item (FR-62.4)
+  // -------------------------------------------------------------------------
+
+  it('parses a program that names a weapon on some rows and not others', () => {
+    const result = parseExportPayload(
+      metaWith({
+        sessionPlanMode: 'custom',
+        sessionPlanItems: [
+          { drillId: 'hold_click_v1', reps: 3, weaponId: 'm4a1s' },
+          { drillId: 'spider-shot-v2', reps: 2 },
+        ],
+      }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.sessionPlanItems).toEqual([
+      { drillId: 'hold_click_v1', reps: 3, weaponId: 'm4a1s' },
+      { drillId: 'spider-shot-v2', reps: 2 },
+    ]);
+    // The unplanned row must not gain the key — absent in, absent out, or the round trip below
+    // would move bytes that WP-58 payloads never had.
+    expect('weaponId' in (result.payload.meta.sessionPlanItems?.[1] ?? {})).toBe(false);
+  });
+
+  it('keeps reading a stored run whose weapon has since been renamed', () => {
+    // Same asymmetry as the drill id above: `collectMeta` checks `isWeaponId` at write time, the
+    // reader does not, so a run recorded against a weapon this build dropped still loads.
+    const result = parseExportPayload(
+      metaWith({
+        sessionPlanMode: 'custom',
+        sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1, weaponId: 'a_weapon_that_no_longer_exists' }],
+      }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.sessionPlanItems?.[0].weaponId).toBe('a_weapon_that_no_longer_exists');
+  });
+
+  it('round-trips the planned weapon through canonicalExportJSON', () => {
+    const result = parseExportPayload(
+      metaWith({
+        sessionPlanMode: 'custom',
+        sessionPlanItems: [
+          { drillId: 'hold_click_v1', reps: 3, weaponId: 'usp_s_laser' },
+          { drillId: 'spider-shot-v2', reps: 2 },
+        ],
+      }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    const reparsed = parseExportPayload(JSON.parse(canonicalExportJSON(result.payload)));
+    if (!reparsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(reparsed.errors)}`);
+    expect(reparsed.payload.meta.sessionPlanItems).toEqual(result.payload.meta.sessionPlanItems);
+  });
+
   it.each([
     ['an unknown mode literal', { sessionPlanMode: 'manual' }, 'meta.sessionPlanMode'],
     ['a non-array item list', { sessionPlanItems: 'hold_click_v1' }, 'meta.sessionPlanItems'],
@@ -135,6 +188,21 @@ describe('parseExportPayload — WP-58 T5 session program audit fields', () => {
       'fractional reps',
       { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 2.5 }] },
       'meta.sessionPlanItems[0].reps',
+    ],
+    [
+      'an empty weapon id',
+      { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1, weaponId: '' }] },
+      'meta.sessionPlanItems[0].weaponId',
+    ],
+    [
+      'a non-string weapon id',
+      { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1, weaponId: 7 }] },
+      'meta.sessionPlanItems[0].weaponId',
+    ],
+    [
+      'a null weapon id',
+      { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1, weaponId: null }] },
+      'meta.sessionPlanItems[0].weaponId',
     ],
     ['a negative drill rest', { sessionPlanDrillRestSeconds: -1 }, 'meta.sessionPlanDrillRestSeconds'],
     ['a fractional item index', { sessionPlanItemIndex: 0.5 }, 'meta.sessionPlanItemIndex'],

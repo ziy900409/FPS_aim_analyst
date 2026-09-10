@@ -517,3 +517,119 @@ console.log(JSON.stringify(cases, null, 1));
 | 3 | `loadSceneById()` 清空 override 與 ADS/gain 不對稱 | 🟡 未決，T4 未觸及 | 實作者 | T6 e2e 觀察後判斷是否另開 KI |
 | 4 | T5 提醒：`SessionPlanItemMeta.weaponId` 的 runtime 驗證在 `exportPayloadSchema.ts`，須共用 `isWeaponId` | 🟢 非阻塞 | 實作者 | T5 |
 | 5 | `?? 'ak47'` 字面仍散在 `loadSceneById()` 與 Controls 初始建構兩處 | 🟢 非阻塞，T4 未觸及 | 實作者 | 任一觸及該兩處的後續 task |
+
+---
+
+## §T5 匯出稽核：計畫武器（意圖）與實際武器（事實）（2026-09-10）
+
+**狀態**：✅ 完成。`SessionPlanItemMeta.weaponId?` 已在寫入端對 `isWeaponId` 嚴驗、在讀取端只驗形狀，逐列意圖與逐 run 事實（`meta.weaponId`）可對帳。frozen 軌匯出逐位不變（8 個 canonical digest 全綠）。`research/` 側**零修改**，以真實 `load_export()` 實測。
+
+### Progress
+
+- [x] (2026-09-10) `src/data/metadata.ts`：`SessionPlanItemMeta` 加 `readonly weaponId?: string`；`requireSessionPlanItems()` 擴充為「缺席合法 → present 先 `requireTrimmedNonEmptyString` → 再 `isWeaponId`」，錯誤訊息帶 `sessionPlanItems[i].weaponId`。**單一來源**沿用 T1 匯出的 `isWeaponId`／`WEAPONS`，不新增第二份武器清單（比照該函式對 `FAMILY_BY_DRILL_ID` 驗 `drillId` 的既有作法，KI-016）。
+- [x] (2026-09-10) `src/data/exportPayloadSchema.ts`：`parseSessionPlanItems()` 加 `weaponId` 的 additive optional parse，與 `drillId` **同層**（shape-only，不對 allowlist 驗）。理由沿用該函式檔頭既有註解：寫入端嚴、讀取端寬，否則武器改名會讓歷史 run 變成讀不出來。
+- [x] (2026-09-10) `main.ts` **零修改**確認：`sessionPlanAuditFields()` custom 分支的 `sessionPlanItems: activeSessionPlanSelection.items` 就是編譯器驗過的同一組物件，`weaponId` 隨型別自動帶出。已以 source 掃描斷言釘死（不是「應該會帶」而是「有斷言」，T5 步驟 3）。
+- [x] (2026-09-10) frozen 分支**零修改**：只寫 `sessionPlanRestSeconds` + `sessionPlanFamilyOrder`，測試同時斷言「編譯出的 frozen run step 沒有 `weaponId` 鍵」與「frozen meta 的 `sessionPlan*` 鍵恰為那兩個」（FR-58.10／FR-62.6）。
+- [x] (2026-09-10) 測試 **+21**（三個既有檔，零新增檔、零既有案例修改）：`metadata.test.ts` +9、`exportPayloadSchema.test.ts` +6、`sessionProgramExport.test.ts` +6。
+
+### 驗證（逐項實測）
+
+| 指令 | 結果 |
+|---|---|
+| `npm run typecheck`（`tsc --noEmit` ×2） | ✅ exit 0 |
+| `npm run build` | ✅ exit 0，`built in 1.96s`（chunk > 500 kB 警告為既有狀態） |
+| `npx vitest run src/data/metadata.test.ts` | ✅ **101 passed**（本 task 前 92） |
+| `npx vitest run src/data/exportPayloadSchema.test.ts` | ✅ **114 passed**（本 task 前 108） |
+| `npx vitest run src/session/sessionProgramExport.test.ts` | ✅ **13 passed**（本 task 前 7） |
+| 全量 `npx vitest run` | ✅ **2,946 passed / 2 skipped**；檔案 **254 passed / 1 skipped** |
+
+**回歸基線對帳**：T4 基線 2,925 / 2（254 檔）→ 現 2,946 / 2（254 檔）。差值 **+21 = 9 + 6 + 6**，恰為本 task 新增；檔案數不變（三個都是既有檔）。**既有測試零修改、零刪除** ⇒ NFR-62.3 守住，本 task 不需要 T3 那種簽名層豁免。
+
+**Playwright 未跑**：T5 不改 DOM／表單／runtime 路徑，全量 e2e 留在 T6（並須遵守 [§T0.6](progress.md) 的 5173 前置條件）。
+
+### 逐位回歸：沿用既有的 8 個 canonical digest，不另起一套（DoD 第 1 條）
+
+WP-58 T5 已在 `exportPayloadSchema.test.ts` 內建了 8 個 fixture 的 `canonicalExportJSON(parseExportPayload(x).payload)` FNV-1a digest 對表，且該表的 digest 是在 **WP-58 T5 之前**（HEAD `84483a6`）取的。本 task 不新增第二張表——**同一張表就是本 task 的逐位回歸**：`weaponId` 若哪天取得預設值、被無條件寫出、或擾動任何既有欄位，這 8 格立刻轉紅。
+
+| Fixture | digest（本 task 後，與 WP-58 T5 前相同） |
+|---|---|
+| `counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json` | `15c614402021931b` |
+| `counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json` | `390d7578707f6ff9` |
+| `counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json` | `a9555430873bfa89` |
+| `counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json` | `edb34bfc5b664f17` |
+| `counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json` | `d294238f1dc54df2` |
+| `synthetic_counterstrafe.json` | `c159f12f895ae5f3` |
+| `synthetic_counterstrafe_t1_long.json` | `2790a5da578ab390` |
+| `synthetic_timeline.json` | `6b48b2f23a70b6bf` |
+
+```bash
+npx vitest run src/data/exportPayloadSchema.test.ts -t 'byte-identical'
+```
+
+### 意圖 vs 事實對帳：四列一次覆蓋（DoD 第 3 條）
+
+`sessionProgramExport.test.ts` 新增的 program 刻意排出四種列，讓「意圖」與「事實」的**四種關係**同時出現在一份計畫裡：
+
+| 列 | 意圖（`sessionPlanItems[i].weaponId`） | 事實（`meta.weaponId`） | 守什麼 |
+|---|---|---|---|
+| `hold_click_v1` ×2，指定 `m4a1s` | `m4a1s` | `m4a1s` | 指定即生效，且 **reps 的每一輪都同一把**（FR-62.3） |
+| `spider-shot-v2` ×1，未指定 | **鍵不存在** | `ak47`（app 預設） | 「沒有意圖」不等於「沒有武器」 |
+| BR `…__ads_off__hitscan__2deg`，指定值＝宣告值 | `ak47_br_hip_hitscan` | 同左 | 兩欄同值時**都要在**，不可被「優化」掉一個 |
+| BR `…__ads_on__projectile__2deg`，未指定 | **鍵不存在** | `ak47_br_ads_projectile`（drill 自宣告） | 「把 `meta.weaponId` 抄進計畫」這種寫法會在這一列開始說謊 |
+
+事實側一律呼叫 `resolveActiveWeapon(step.weaponId, DECLARED_WEAPON_BY_DRILL_ID.get(step.drillId))`——**`main.ts` 跑的同一個函式**，不是它的副本（C-D4；同 D-62.T3-1 的理由）。
+
+### 四道突變實測（沿用 T1～T3 做法）：四道全紅
+
+腳本一次改一行、跑完即還原，跑的是 `metadata.test.ts` + `exportPayloadSchema.test.ts` + `sessionProgramExport.test.ts`（乾淨基線 **228 passed**）。
+
+| # | 突變 | 結果 |
+|---|---|---|
+| M1 | 寫入端 `return { drillId, reps, weaponId }` → 丟掉 `weaponId`（最平凡的「忘了帶過去」） | ✅ **5 failed** |
+| M2 | 寫入端 `if (!isWeaponId(weaponId))` → 永不成立（等於開出第二個武器命名空間） | ✅ **3 failed** |
+| M3 | 寫入端對未指定列改寫成 `{ drillId, reps, weaponId: undefined }`（鍵存在但值為 undefined） | ✅ **2 failed** |
+| M4 | 讀取端無條件 `push({ drillId, reps, weaponId })`（讓每份 WP-58 舊 payload 都多一個鍵） | ✅ **1 failed** |
+
+M3／M4 是本 task 特有的一對：`toEqual` 會忽略值為 `undefined` 的鍵，所以**只有明寫的 `'weaponId' in item === false` 斷言擋得住它們**。這也是為什麼正向案例裡那兩行 `in` 斷言不是贅語——它們是 NFR-62.4「不得多出 `weaponId: undefined`」在匯出側的唯一防線。
+
+### C-D1 相容性：以真實 `load_export()` 實測，Python 側零修改（DoD 第 5 條）
+
+`research/` 全樹 `grep -rn "sessionPlan" --include=*.py` **零命中**——ingest 從未觸碰這組欄位，`load_export()` 的 `meta=dict(meta)` 是原樣穿透。但 DoD 要的是證據不是推理，故以 `research/.venv` 跑真實 loader：baseline = committed fixture 原樣，candidate = 同一份 payload 加上 WP-58 五個 custom-program 欄位（其中兩列帶 WP-62 `weaponId`）。
+
+```text
+ticks equals   : True
+events equals  : True
+ticks shape    : (48, 14) (48, 14)
+events shape   : (11, 24) (11, 24)
+meta added     : ['sessionPlanDrillRestSeconds', 'sessionPlanItemIndex', 'sessionPlanItems', 'sessionPlanMode', 'sessionPlanRepIndex']
+meta removed   : []
+meta changed   : []
+weaponId (fact): ak47_synthetic
+plan intent    : [{"drillId": "hold_click_v1", "reps": 2, "weaponId": "m4a1s"}, ...]
+RESULT         : PASS
+```
+
+`meta removed` / `meta changed` 皆空 ⇒ 既有 meta 逐鍵不變；`meta added` 恰為 WP-58 那五個（`weaponId` 在 `sessionPlanItems[]` 內，不是頂層新鍵）。**不需要改任何 Python**，故無 C-D1 邊界事件要入帳。
+
+### Decision Log
+
+| # | 日期 | 決定 | 理由 | Alternatives considered |
+|---|---|---|---|---|
+| **D-62.T5-1** | 2026-09-10 | **讀取端 `weaponId` 只驗形狀，不驗 `isWeaponId`**（寫入端才嚴驗） | 沿用 `parseSessionPlanItems()` 檔頭既有的非對稱理由：`collectMeta` 是寫入時的守門人，讀取端必須讓「當年合法、如今武器已改名／已下架」的歷史 run 仍讀得出來。若兩端都嚴驗，`WEAPONS` 的任何一次改名都會讓既有 history 條目變成無法載入 | ① 兩端都用 `isWeaponId`：一致但會把武器表變成歷史資料的相容性契約，任何改名都是 breaking change；② 讀取端驗但只記 warning：需要在 parser 引入第三種錯誤等級，超出本 task 範圍且該檔目前沒有 warning 概念 |
+| **D-62.T5-2** | 2026-09-10 | **不新增本 task 專屬的 digest 表**，直接沿用 WP-58 T5 的 8 格 | 那 8 格的基準是 WP-58 T5 **之前**的 HEAD，涵蓋範圍比「T5 前 vs T5 後」更寬；再開一張表只是把同一件事量兩次，而且第二張表的基準較晚、抓得較少 | 依 T5 步驟 7 字面另取一組 T5-前 digest：可行但嚴格較弱（基準較晚），且會在同一檔留下兩張語意重疊的表，未來改動時不知該更新哪張 |
+| **D-62.T5-3** | 2026-09-10 | **`main.ts` 完全不改**，改以 source 掃描斷言 `sessionPlanItems: activeSessionPlanSelection.items` 與「frozen 分支不含 `weaponId`／`sessionPlanItems`」 | 型別上 `SessionProgramItem` 已可賦值給 `SessionPlanItemMeta`，`weaponId` 本來就會穿透——真正的風險不是「現在沒帶」，而是「日後有人在中間插一層 map 把它濾掉」。掃描守的正是那個未來的迴歸；`main.ts` 是 WebGPU/DOM top-level 腳本，Vitest 起不動（同 T3 的處置） | ① 在 `sessionPlanAuditFields()` 顯式列出 `weaponId`：等於在排程層外再寫一次欄位清單，`warmup` 之外多出第二處要同步的地方；② 完全不斷言、只靠型別：型別擋不住「顯式 map 掉某個欄位」這個最可能的迴歸 |
+
+### Surprises & Discoveries
+
+1. **`toEqual` 對 `undefined` 值的鍵是無感的，所以 NFR-62.4 需要專屬斷言。** M3／M4 兩道突變（把鍵寫成 `weaponId: undefined`）在 `toEqual` 下**完全綠**；只有 `'weaponId' in item === false` 抓得到。這是 T2 在編譯器側已經處理過的同一個陷阱在匯出側的第二次現身——「省略」與「值為 undefined」在 JSON 序列化後才會分家，而測試預設的比較器早在那之前就已放行。
+2. **`metadata.ts` 早已有自己的 `DEFAULT_WEAPON_ID = 'ak47'`（第 17 行），與 T3 新增的 `weapons.ts` `DEFAULT_WEAPON_ID` 同值但各自定義。** 本 task 只 import `isWeaponId`，未動這兩個常數（越界）。兩者目前逐位等價，但這是第二個 `'ak47'` 字面的來源——與 T3 OQ #6 記的兩處是同一類 debt，一併記在下方 OQ。
+3. **本 task 全程未改任何既有測試案例**，這與 T3（簽名層改動必然波及 `toHaveBeenCalledWith` 的 arity 比對）形成對照：純資料欄位的 additive 擴充**真的**可以做到零既有測試修改，T3 的豁免確實是簽名層專屬的例外而非通則。
+
+### Open Questions（T5 結束時）
+
+| # | 問題 | 狀態 | Owner | 需在何時收斂 |
+|---|---|---|---|---|
+| 1 | `loadSceneById()` 清空 override 與 ADS/gain 不對稱（承 T3 OQ #4／T4 OQ #3） | 🟡 未決，T5 未觸及 | 實作者 | T6 e2e 觀察後判斷是否另開 KI |
+| 2 | `'ak47'` 的字面／常數目前有三處來源：`weapons.ts` `DEFAULT_WEAPON_ID`（T3 新增，權威）、`metadata.ts` `DEFAULT_WEAPON_ID`（既有）、`main.ts` 兩處 `?? 'ak47'`（承 T3 OQ #6） | 🟢 非阻塞：三者逐位等價，純可讀性 debt | 實作者 | 任一觸及該三處的後續 task 順手處理 |
+| 3 | T6 提醒：本 task 的 frozen 逐位不變只驗到 **meta 鍵集合 + 8 個 canonical digest**（unit 級）；**真實 frozen live e2e 的逐份匯出**仍是 T6 的職責，不可視為已由 T5 涵蓋 | 🟢 非阻塞 | 實作者 | T6 |
+| 4 | T6 提醒：`session-orchestrator.spec.ts` 的 live run 若加上逐列武器案例，應順帶斷言匯出的 `sessionPlanItems[].weaponId` 與 `meta.weaponId` 對得上（本 task 只在 unit 級對帳，沒有走過真實瀏覽器） | 🟢 非阻塞 | 實作者 | T6 |

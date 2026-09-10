@@ -9,6 +9,7 @@ import { SIM_TO_WORLD } from '../loop/constants.ts';
 import { findSessionPlanPreset } from '../session/sessionPlanPresets.ts';
 import { KNOWN_SESSION_FAMILY_IDS } from '../session/sessionSchedule.ts';
 import { FAMILY_BY_DRILL_ID } from '../session/drillFamily.ts';
+import { isWeaponId } from '../weapon/weapons.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
@@ -132,6 +133,13 @@ export interface ReplayMeta {
 export interface SessionPlanItemMeta {
   readonly drillId: string;
   readonly reps: number;
+  /**
+   * WP-62 T5 (FR-62.4) — the weapon the operator *planned* for this item, absent when the row was
+   * left on the drill's own default. This is intent; `Meta.weaponId` is the fact of what the run
+   * actually loaded. Keeping both lets an offline reader reconcile them instead of inferring one
+   * from the other.
+   */
+  readonly weaponId?: string;
 }
 
 export interface MouseSamplingMeta {
@@ -491,6 +499,11 @@ function requireSessionPlanMode(value: unknown): 'frozen' | 'custom' {
  * WP-58 T5 — validated against `FAMILY_BY_DRILL_ID`, the same single source the program compiler
  * and the plan form already use (FR-58.1 / KI-016: no second allowlist). A drill that cannot be
  * scheduled cannot be claimed to have been scheduled.
+ *
+ * WP-62 T5 — `weaponId` follows the same rule against `isWeaponId`/`WEAPONS`: absent is legal (the
+ * row used the drill's default), present must name a weapon this build can actually load. The key
+ * is omitted rather than written as `undefined` so an unplanned item stays byte-identical to what
+ * WP-58 wrote.
  */
 function requireSessionPlanItems(value: unknown): readonly SessionPlanItemMeta[] {
   if (!Array.isArray(value)) throw new Error('sessionPlanItems must be an array');
@@ -501,7 +514,13 @@ function requireSessionPlanItems(value: unknown): readonly SessionPlanItemMeta[]
     if (!FAMILY_BY_DRILL_ID.has(drillId)) {
       throw new Error(`sessionPlanItems[${index}].drillId must be a schedulable drill`);
     }
-    return { drillId, reps: requirePositiveInteger(item.reps, `sessionPlanItems[${index}].reps`) };
+    const reps = requirePositiveInteger(item.reps, `sessionPlanItems[${index}].reps`);
+    if (item.weaponId === undefined) return { drillId, reps };
+    const weaponId = requireTrimmedNonEmptyString(item.weaponId, `sessionPlanItems[${index}].weaponId`);
+    if (!isWeaponId(weaponId)) {
+      throw new Error(`sessionPlanItems[${index}].weaponId must be a known weapon`);
+    }
+    return { drillId, reps, weaponId };
   });
 }
 

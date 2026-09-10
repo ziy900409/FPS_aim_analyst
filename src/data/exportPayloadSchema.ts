@@ -521,6 +521,10 @@ function parseStringArray(value: unknown, path: string, errors: ExportPayloadPar
  * is strict at write time, while the reader must keep parsing a historical payload whose drill was
  * later renamed or dropped from the roster. A stored run must not become unreadable because the
  * roster moved on.
+ *
+ * WP-62 T5 — `weaponId` sits at the same layer as `drillId` for the same reason: shape-only here
+ * (absent stays absent, present must be a non-empty string), strict against `isWeaponId` in
+ * `collectMeta`. A run recorded with a weapon that a later build renames must still load.
  */
 function parseSessionPlanItems(
   value: unknown,
@@ -539,8 +543,13 @@ function parseSessionPlanItems(
     }
     const drillId = parseNonEmptyString(item.drillId, `${path}[${index}].drillId`, errors);
     const reps = parsePositiveInteger(item.reps, `${path}[${index}].reps`, errors);
-    if (drillId === undefined || reps === undefined) failed = true;
-    else result.push({ drillId, reps });
+    const weaponId =
+      item.weaponId === undefined ? undefined : parseNonEmptyString(item.weaponId, `${path}[${index}].weaponId`, errors);
+    if (drillId === undefined || reps === undefined || (item.weaponId !== undefined && weaponId === undefined)) {
+      failed = true;
+    } else {
+      result.push({ drillId, reps, ...(weaponId !== undefined ? { weaponId } : {}) });
+    }
   });
   return failed ? undefined : result;
 }

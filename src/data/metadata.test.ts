@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh, type CollectMetaArgs } from './metadata.ts';
+import { WEAPONS } from '../weapon/weapons.ts';
 
 describe('collectMeta', () => {
   it('collects complete drill metadata and computes suspect from overflow flags', () => {
@@ -411,6 +412,95 @@ describe('collectMeta', () => {
           sessionPlanItems: sessionPlanItems as unknown as CollectMetaArgs['sessionPlanItems'],
         }),
       ).toThrow(message as string);
+    });
+
+    // -----------------------------------------------------------------------
+    // WP-62 T5 — the planned weapon per item (FR-62.4)
+    // -----------------------------------------------------------------------
+
+    it('records the planned weapon per item and omits the key on rows that named none', () => {
+      const meta = collectMeta({
+        ...customArgs,
+        sessionPlanItems: [
+          { drillId: 'hold_click_v1', reps: 3, weaponId: 'm4a1s' },
+          { drillId: 'spider-shot-v2', reps: 2 },
+        ],
+      });
+      expect(meta.sessionPlanItems).toEqual([
+        { drillId: 'hold_click_v1', reps: 3, weaponId: 'm4a1s' },
+        { drillId: 'spider-shot-v2', reps: 2 },
+      ]);
+      // Absent means absent: an unplanned row must stay byte-identical to what WP-58 wrote, so the
+      // key cannot appear carrying `undefined` (NFR-62.4 applied to the export side).
+      expect('weaponId' in (meta.sessionPlanItems?.[1] ?? {})).toBe(false);
+    });
+
+    it('accepts every weapon this build can load, without a second allowlist', () => {
+      // The validator's source of truth is `WEAPONS`; enumerate it rather than restate it, so a new
+      // weapon becomes recordable the moment it exists (KI-016).
+      for (const weaponId of Object.keys(WEAPONS)) {
+        const meta = collectMeta({
+          ...customArgs,
+          sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 3, weaponId }],
+          sessionPlanItemIndex: 0,
+        });
+        expect(meta.sessionPlanItems?.[0].weaponId).toBe(weaponId);
+      }
+    });
+
+    it.each([
+      [
+        'an unknown weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: 'ak48' }],
+        'sessionPlanItems[0].weaponId must be a known weapon',
+      ],
+      [
+        'a family id used as a weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: 'hold-click' }],
+        'sessionPlanItems[0].weaponId must be a known weapon',
+      ],
+      [
+        'an empty weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: '' }],
+        'sessionPlanItems[0].weaponId must be a non-empty string',
+      ],
+      [
+        'a whitespace-only weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: '   ' }],
+        'sessionPlanItems[0].weaponId must be a non-empty string',
+      ],
+      [
+        'a non-string weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: 7 }],
+        'sessionPlanItems[0].weaponId must be a non-empty string',
+      ],
+      [
+        'a null weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: null }],
+        'sessionPlanItems[0].weaponId must be a non-empty string',
+      ],
+    ])('rejects session plan items with %s', (_label, sessionPlanItems, message) => {
+      expect(() =>
+        collectMeta({
+          ...base,
+          sessionPlanMode: 'custom',
+          sessionPlanItems: sessionPlanItems as unknown as CollectMetaArgs['sessionPlanItems'],
+        }),
+      ).toThrow(message as string);
+    });
+
+    it('locates the offending row, not merely the field', () => {
+      // `field + index` is the whole contract the form relies on to paint one row red (WP-58 T2).
+      expect(() =>
+        collectMeta({
+          ...base,
+          sessionPlanMode: 'custom',
+          sessionPlanItems: [
+            { drillId: 'hold_click_v1', reps: 1 },
+            { drillId: 'spider-shot-v2', reps: 1, weaponId: 'ak48' },
+          ] as unknown as CollectMetaArgs['sessionPlanItems'],
+        }),
+      ).toThrow('sessionPlanItems[1].weaponId must be a known weapon');
     });
 
     it('rejects a non-array item list', () => {
