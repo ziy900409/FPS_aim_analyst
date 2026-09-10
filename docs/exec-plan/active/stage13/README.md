@@ -30,6 +30,8 @@ WP-57 交付的抬滑鼠疑慮標註（`deriveRepositioningSuspicion()`）**只�
 | **WP-60** | [`wp-60-raw-mouse-sample-capture/`](wp-60-raw-mouse-sample-capture/README.md) | 原始滑鼠取樣匯出 schema + 擷取路徑 + 時間間隙原語；證明資料足以支撐 LOD 移植 | T-exit | 無（WP-57 已交付，只讀不改）| 5.5–9.5 | ✅ **T-exit 與 TF1～TF3 全數交付 2026-09-09**（零具名缺口）—— A-60.1～16 **15 ✅／1 ✅ 帶上界告警（OQ-60.7 匯出體積）**，無 🟡／❌；T0～T4 全 ✅。F6 實機 A/B Δp95 **−0.005 ms** 且未新增 over-budget windows；真人 B 組 `activeRateHz=708 Hz` 並完成 18／30／50 ms sweep；typecheck ×2、全量 Vitest（2614 passed）、`vite build` exit 0；全量 Playwright `--workers=1` **101 passed／0 failed（13.8m）**，WP-60 raw-mouse 2／2 passed，測試 history roots 存在且真實 history 前後未變。決策 [GD-36](../../DECISIONS.md) |
 | **WP-61** | [`wp-61-lift-off-validation/`](wp-61-lift-off-validation/README.md) | 先驗證空洞前後運動學可分性，再決定 Stage 2/3 移植與校準 | T-exit（三種合法結案：通過／不可靠分離／證據不足） | WP-60 T-exit ✅ + 高刷（≥ 120 Hz）真人標註 cohort | 9–15（T4 條件式；負面結論路徑 6.5–11） | 🟡 **T2 判定 `blocked-by-data` 2026-09-09：儀器全備，缺真人 cohort**。<br>✅ 已凍結：構念**並存**、新構念「**感測器離地／sensor lift**」、標註採 `KeyL` self-report + block 冗餘、cohort 逐份條件 `meta.displayHz === 240`、n=1 宣稱上限 `research_only`、pre-registration `sensor-lift-validation-v1`（θ = 18/30/50 ms、匹配容差 300 ms、held-out promotion gate）。<br>✅ T1 已交付：`?annotation=1` opt-in、JSON `annotation` event、CSV header 不變、四 FPS tick 全欄位 parity + 突變驗證、focused Edge E2E。<br>✅ T2 已交付儀器：`npm run analyze:lift-cohort`（三選一去向 `sufficient`／`blocked-by-data`／`annotation-channel-unusable`）、`npm run record:lift-golden`（Stage 1 golden + 逐位重現斷言）、`research/src/lift/`（候選事件表，C-D1／C-D2 掃描釘死）、Python `load_export` additive 接受 `pointer_lock`／`annotation`（先前整份拒收）。<br>⚠️ 剩餘阻塞：**cohort 尚未錄製**（硬體已就緒，儀器已落地；錄製屬使用者）。決策帳本 [GD-37](../../DECISIONS.md) |
 
+| **WP-62** | [`wp-62-session-plan-per-item-weapon/`](wp-62-session-plan-per-item-weapon/README.md) | Session Plan 自訂 program 的每一列可事先指定武器；選擇進匯出稽核 | T-exit | WP-58 T-exit ✅（只讀不改 frozen 軌） | 8.5 | 📋 **規劃完成、未開工（2026-09-10）**。決策 [GD-38](../../DECISIONS.md)。⚠️ **主題不屬本 stage**（session 排程層，非原始輸入取樣），依使用者 2026-09-10 指示落於此處——見下方 §3。 |
+
 **為什麼切成兩個 WP**：WP-60 只負責「把資料取回來並證明它夠用」，不宣稱任何偵測準確度。LOD 判準的參數必須以**真人標註資料**重新推導（PA 的參數在 px/s 空間、且其 ADR 自承 F1 從未對標註資料量測過），而那批資料目前不存在 —— 見 §4。把兩者綁在同一個 WP 會讓一個純工程可驗收的切片，卡在一個等資料的研究問題上。
 
 ---
@@ -42,6 +44,9 @@ WP-57 交付的抬滑鼠疑慮標註（`deriveRepositioningSuspicion()`）**只�
   依 GD-15「先採納先得」不與之爭號 ⇒ 本 stage 實際入帳為 **[GD-36](../../DECISIONS.md)**（原始輸入取樣的匯出邊界與 C-D4 歸屬），
   於 **T-exit** 拍板（非 T1 —— T1 當時只凍結 contract，構念邊界要等 T3 的中性語彙與 R2 的負面結論都到位才有東西可入帳）。
   入帳時 `DECISIONS.md` 現行最高為 GD-35。
+- **WP-62 / GD-38（2026-09-10）**：規劃時 `DECISIONS.md` 最高為 GD-37、全 repo 最高為 WP-61，故取用 **WP-62 / GD-38**。依 GD-35 ② 紀律，此二號在該 WP 的 T0 執行時**仍須重查**；被平行 session 取用則依 GD-15 順延。
+  **落點偏離（明帳）**：WP-62 的主題是 session 排程層（WP-58 的延伸），**不屬本 stage 的「原始輸入取樣與抬滑鼠判準驗證」主題**；依使用者 2026-09-10 指示落於 `active/stage13/`。記於此以免後續讀者誤判為歸檔錯誤，決策同步入 [GD-38](../../DECISIONS.md) ①。
+  ⇒ 本 stage 的 §1 敘事、§4 相依圖與「為什麼切成兩個 WP」**皆不涵蓋 WP-62**；它與 WP-60／61 無相依、可完全並行。
 
 ---
 

@@ -23,6 +23,21 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-38 🟡 WP-62 Session Plan 逐列武器指定 — 編號/落點、實驗格不可覆蓋、frozen 不開放、不做武器白名單、彈匣資訊揭露(2026-09-10,WP-62 規劃)
+
+| | |
+|---|---|
+| **發現處** | 使用者要求「本階段可選定本輪測試武器,固定所有 drill 用同一把」。稽核 `activeWeaponConfig()`([main.ts:391-393](../../src/main.ts))與 `activateDrill()`([main.ts:1397](../../src/main.ts))後確認:武器目前是 drill 的隱含屬性,Controls 面板的手選值會被每一次 drill 啟用無條件清成 `undefined`(WP-47/T2 reset-per-drill)⇒ Session Plan 每一步都會清掉,現行系統無法表達「本輪用哪把」。 |
+| **① 編號與落點分配** | 寫入當下 `DECISIONS.md` 最高為 **GD-37**、全 repo 最高為 **WP-61**,故本條取用 **GD-38 / WP-62**。依 GD-35 ② 紀律,此二號在 T0 執行時**仍須重查**,被取用則依 GD-15「先採納先得」順延。<br>**落點 = `active/stage13/`,依使用者 2026-09-10 指示**。stage13(階段 M)主題為「原始輸入取樣與抬滑鼠判準驗證」,本 WP 屬 session 排程層,主題上更接近 stage12(WP-58 延伸)。**主題不符為明帳偏離**,記於此與 WP README 以免後續讀者誤判為歸檔錯誤。 |
+| **② 原方案「全域 pin 單一武器」已放棄(兩個 blocker)** | 使用者原指定 pin `usp_s_laser` 並接受與舊資料斷代。稽核 sim 消費路徑後否決:<br>**(a) 構念歸零**——`totalInaccuracy = stand + inaccuracyFire + speedRatio^0.25 × move`([spread.ts:41](../../src/recoil/spread.ts)),該武器三項全 0 ⇒ `sampleSpread` 恆回 `{0,0}` ⇒ 移動中與靜止開火彈著點相同 ⇒ **counter-strafe 的「急停時機 → 首發命中」因果通道消失**,F1–F4 核心構念失效。這不是斷代,是不再量測任何東西(C-D4 邊界)。<br>**(b) 彈匣靜默截斷**——`state.weapon.ammo` 只在 `createSimLoop()` 設一次([SimLoop.ts:815](../../src/loop/SimLoop.ts)),全 repo **無 reload 路徑**,打空即 `heldFire = false`([SimLoop.ts:541-544](../../src/loop/SimLoop.ts))⇒ `magSize 12` × `cycletime 0.17` = 2.04 秒後該 run 靜默停火,且受測者的「按住」意圖被記成放開。<br>使用者據此改向**逐列指定**,即本 WP。⇒ **紀律:武器不是外觀參數,是量測儀器的一部分**;任何「換一把武器」的需求都必須先過 `inaccuracy.move` 與 `magSize` 兩道檢查。 |
+| **③ D-62-1 實驗格不可覆蓋** | 已自宣告 `weaponId` 的 drill(現況恰 BR 四格 `ak47_br_{hip,ads}_{hitscan,projectile}`,[tracking_br_v1.ts:72](../../src/drill/tracking_br_v1.ts))指定不同武器 ⇒ **編譯期錯誤**並定位到列,不靜默忽略、不做鎖定 UI。理由:武器是該 2×2 實驗格的自變項。指定值**等於**宣告值時放行。<br>綁 `tracking_pilot_hold` 的兩個 tracking pilot drill **不可排程**(走 `loadDrillConfigDirect`),不在本規則射程內。 |
+| **④ D-62-2 frozen 軌不開放** | 逐列武器只給 custom 軌。frozen = pre-registered 協定,武器是協定的一部分;要換就定義新 preset。同時保住 FR-58.10「frozen 匯出逐位不變」。 |
+| **⑤ D-62-3 不做武器白名單** | 下拉列出 `WEAPONS` 全部 9 把,**不做策展子集**。理由:KI-016 的教訓是第二份手維護白名單必然 rot;實際跑的武器已逐 run 進 `meta.weaponId`,離線可篩。<br>對應地,「哪個 drill 宣告了武器」一律**由 `drillFamily.ts` 既有的 drill import 推導**(`DECLARED_WEAPON_BY_DRILL_ID`),並以遍歷 `SCHEDULABLE_DRILL_IDS` 的對表測試防 rot,不新增手寫清單。 |
+| **⑥ D-62-4 彈匣資訊揭露而非門檻猜測** | 選單標籤格式 `` `${id}（${magSize} 發）` ``,清單下方固定註明「無 reload:彈匣打完該輪即停火」。**不擋**任何武器×drill 組合。理由:「這個 drill 需要幾發」取決於受測者失誤數,系統無從預知,顯示事實比顯示猜測誠實。彈匣不足導致的靜默停火列為**明帳接受的殘留風險**,離線可由逐發 `ammo` 偵測。 |
+| **⑦ trend cohort 碎裂為正確行為** | `CompatibilityKey` 十欄位已含 `weaponId`(且 `weaponMode = weaponId`,OQ-S6-10 佔位,[compatibilityKey.ts:8-9,42-43](../../src/metrics/compatibilityKey.ts))⇒ 不同武器的 run **本來就不會**併入同一 trend cohort,本 WP 對 history/trend **零程式修改**。代價是逐列換武器會讓趨勢線依武器分群,外觀像 bug ⇒ 要求在表單明文提示。`weaponMode` 佔位的拆分仍屬 WP-33/OQ-S6-10,本 WP 不動。 |
+| **影響面** | `src/weapon/weapons.ts`(匯出 `isWeaponId`)、`src/session/drillFamily.ts`、`src/session/sessionProgram.ts`、`src/session/SessionRunner.ts`、`src/ui/SessionPlanSetup.ts`、`src/main.ts` `activateDrill()`(全 app 唯一 drill 啟用路徑,四個呼叫端)、`src/data/metadata.ts`。**不觸及** sim/命中/彈道語意,不新增 `SharedState` 欄位。 |
+| **狀態** | 🟡 規劃完成、未開工(2026-09-10)。計畫見 [active/stage13/wp-62-session-plan-per-item-weapon/](active/stage13/wp-62-session-plan-per-item-weapon/README.md);OQ-62.1/62.2(表單顯示與 ADS 警告,owner = 研究者)、OQ-62.3(對表測試覆蓋率,owner = 實作者)待 T0/T4 收斂。 |
+
 ### GD-37 ✅ WP-61 Sensor Lift Validation — 構念並存、標註通道與可分性 gate pre-registration(2026-09-09,WP-61 T0)
 
 | | |
