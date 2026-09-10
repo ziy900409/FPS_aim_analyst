@@ -1,4 +1,8 @@
-import { FAMILY_BY_DRILL_ID, SCHEDULABLE_DRILL_IDS } from '../session/drillFamily.ts';
+import {
+  DECLARED_WEAPON_BY_DRILL_ID,
+  FAMILY_BY_DRILL_ID,
+  SCHEDULABLE_DRILL_IDS,
+} from '../session/drillFamily.ts';
 import {
   compileSessionProgram,
   SessionProgramCompileError,
@@ -7,6 +11,7 @@ import {
   type SessionProgramItem,
 } from '../session/sessionProgram.ts';
 import type { SessionFamilyId } from '../session/sessionSchedule.ts';
+import { WEAPONS, type WeaponId } from '../weapon/weapons.ts';
 import { describeBoundary } from './programBoundaryLabel.ts';
 
 /**
@@ -54,6 +59,12 @@ interface DrillGroup {
   readonly drillIds: readonly string[];
 }
 
+interface EditableSessionProgramItem {
+  drillId: string;
+  reps: number;
+  weaponId?: WeaponId;
+}
+
 /**
  * The roster is 36 drills, so a flat menu is unusable (WP-58 §3.2 debt). `SCHEDULABLE_DRILL_IDS` is
  * already emitted in family order, so grouping is one pass and introduces no second ordering rule.
@@ -78,10 +89,28 @@ function formatRestTotal(seconds: number): string {
   return minutes > 0 ? `${minutes} 分 ${String(rest).padStart(2, '0')} 秒` : `${rest} 秒`;
 }
 
+function sessionProgramItemFromEditable(item: EditableSessionProgramItem): SessionProgramItem {
+  return {
+    drillId: item.drillId,
+    reps: item.reps,
+    ...(item.weaponId === undefined ? {} : { weaponId: item.weaponId }),
+  };
+}
+
+function previewWeaponId(step: ProgramStep): string | undefined {
+  if (step.kind !== 'run') return undefined;
+  return step.weaponId ?? DECLARED_WEAPON_BY_DRILL_ID.get(step.drillId) ?? 'default';
+}
+
+function previewWeaponLabel(step: ProgramStep): string {
+  if (step.kind !== 'run') return '';
+  return step.weaponId ?? DECLARED_WEAPON_BY_DRILL_ID.get(step.drillId) ?? '預設';
+}
+
 function describeStep(step: ProgramStep, index: number): string {
   if (step.kind === 'run') {
     const warmup = step.warmup === true ? ' · 熱身' : '';
-    return `${index + 1}. ▶ ${step.drillId} (${step.repIndex + 1}/${step.repCount})${warmup}`;
+    return `${index + 1}. ▶ ${step.drillId} (${step.repIndex + 1}/${step.repCount}) · 武器 ${previewWeaponLabel(step)}${warmup}`;
   }
   return `${index + 1}. ⏸ ${step.seconds}s · ${describeBoundary(step.boundary)} → ${step.nextDrillId}`;
 }
@@ -297,7 +326,18 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
   previewSteps.setAttribute('data-program-preview-steps', '');
   previewSteps.style.cssText = 'list-style:none;margin:0;padding:0;display:grid;gap:2px';
   preview.append(previewSummary, previewSteps);
-  customSection.append(pickerRow, itemList, drillRestLabel, familyRestLabel, preview);
+  const weaponNotes = document.createElement('div');
+  weaponNotes.style.cssText = descriptionCss;
+  const noReloadNote = document.createElement('p');
+  noReloadNote.textContent =
+    '無玩家 reload：每次目標生成會補滿彈匣；若連續打空仍會停火，受測者的「按住」意圖會被記成放開。';
+  noReloadNote.style.cssText = 'margin:0';
+  const trendNote = document.createElement('p');
+  trendNote.textContent =
+    '不同武器的 run 不會併入同一條趨勢線（相容鍵含 weaponId）——逐列換武器會讓 history 趨勢分群。';
+  trendNote.style.cssText = 'margin:0';
+  weaponNotes.append(noReloadNote, trendNote);
+  customSection.append(pickerRow, itemList, weaponNotes, drillRestLabel, familyRestLabel, preview);
 
   const status = document.createElement('p');
   status.setAttribute('role', 'alert');
@@ -312,7 +352,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
   parent.appendChild(root);
 
   // ---- custom program state --------------------------------------------------------------------
-  const items: { drillId: string; reps: number }[] = [];
+  const items: EditableSessionProgramItem[] = [];
   let mode: 'frozen' | 'custom' = 'frozen';
   /** The last successful compile. `undefined` means the plan must not be submittable (FR-58.7). */
   let compiled: readonly ProgramStep[] | undefined;
@@ -351,6 +391,25 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
         item.reps = Number(reps.value.trim());
         refreshPreview();
       });
+      const weapon = document.createElement('select');
+      weapon.name = 'sessionPlanWeapon';
+      weapon.value = item.weaponId ?? '';
+      weapon.setAttribute('aria-label', `${item.drillId} 武器`);
+      weapon.style.cssText = `${inputCss};width:176px`;
+      const defaultWeapon = document.createElement('option');
+      defaultWeapon.value = '';
+      defaultWeapon.textContent = '—（drill 預設）';
+      weapon.appendChild(defaultWeapon);
+      for (const [weaponId, config] of Object.entries(WEAPONS) as Array<[WeaponId, (typeof WEAPONS)[WeaponId]]>) {
+        const option = document.createElement('option');
+        option.value = weaponId;
+        option.textContent = `${weaponId}（${config.magSize} 發）`;
+        weapon.appendChild(option);
+      }
+      weapon.addEventListener('change', () => {
+        item.weaponId = weapon.value === '' ? undefined : (weapon.value as WeaponId);
+        refreshPreview();
+      });
       const up = makeIconButton('▲', `${item.drillId} 上移`);
       up.addEventListener('click', () => moveItem(index, index - 1));
       const down = makeIconButton('▼', `${item.drillId} 下移`);
@@ -360,7 +419,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
         items.splice(index, 1);
         renderItems();
       });
-      row.append(handle, name, reps, up, down, remove);
+      row.append(handle, name, reps, weapon, up, down, remove);
       row.addEventListener('dragstart', (event) => {
         draggedItemIndex = index;
         event.dataTransfer?.setData('text/plain', String(index));
@@ -431,7 +490,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
     let program: readonly ProgramStep[];
     try {
       program = compileSessionProgram({
-        items: items.map((item) => ({ drillId: item.drillId, reps: item.reps })),
+        items: items.map(sessionProgramItemFromEditable),
         drillRestSeconds: drillRest,
         familyRestSeconds: familyRest,
       });
@@ -455,6 +514,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
           line.setAttribute('data-step-next-drill-id', step.nextDrillId);
         } else {
           line.setAttribute('data-step-drill-id', step.drillId);
+          line.setAttribute('data-step-weapon-id', previewWeaponId(step) ?? '');
         }
         line.textContent = describeStep(step, index);
         line.style.cssText = step.kind === 'rest' ? previewRestCss : previewRunCss;
@@ -506,7 +566,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
       if (compiled === undefined) return;
       options.onSubmit({
         mode: 'custom',
-        items: items.map((item) => ({ drillId: item.drillId, reps: item.reps })),
+        items: items.map(sessionProgramItemFromEditable),
         drillRestSeconds: Number(drillRestSeconds.value.trim()),
         familyRestSeconds: Number(familyRestSeconds.value.trim()),
       });

@@ -6,6 +6,7 @@ import {
   TEST_FAMILY_IDS,
   type SessionFamilyId,
 } from '../session/sessionSchedule.ts';
+import { WEAPONS } from '../weapon/weapons.ts';
 import { createSessionPlanSetup } from './SessionPlanSetup.ts';
 
 interface FakeEvent {
@@ -175,9 +176,13 @@ function addItem(harness: Harness, drillId: string, reps?: number): void {
   setReps(harness, harness.itemList.children.length - 1, String(reps));
 }
 
-/** Row controls are looked up positionally: [handle, name, reps, up, down, remove]. */
-function rowControl(harness: Harness, index: number, control: 'reps' | 'up' | 'down' | 'remove'): FakeElement {
-  const offsets = { reps: 2, up: 3, down: 4, remove: 5 } as const;
+/** Row controls are looked up positionally: [handle, name, reps, weapon, up, down, remove]. */
+function rowControl(
+  harness: Harness,
+  index: number,
+  control: 'reps' | 'weapon' | 'up' | 'down' | 'remove',
+): FakeElement {
+  const offsets = { reps: 2, weapon: 3, up: 4, down: 5, remove: 6 } as const;
   return harness.itemList.children[index].children[offsets[control]];
 }
 
@@ -185,6 +190,13 @@ function setReps(harness: Harness, index: number, value: string): void {
   const input = rowControl(harness, index, 'reps');
   input.value = value;
   input.dispatch('input');
+}
+
+function setWeapon(harness: Harness, index: number, value: string): FakeElement {
+  const select = rowControl(harness, index, 'weapon');
+  select.value = value;
+  select.dispatch('change');
+  return select;
 }
 
 function itemDrillIds(harness: Harness): string[] {
@@ -407,6 +419,75 @@ describe('createSessionPlanSetup — custom program editing (FR-58.12)', () => {
     });
     expect(harness.root.style.display).toBe('none');
   });
+
+  it('renders one weapon picker per item with the WEAPONS list and magazine sizes', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A);
+    addItem(harness, DRILL_B);
+
+    const weaponSelects = harness.itemList.children.map((_, index) => rowControl(harness, index, 'weapon'));
+    expect(weaponSelects).toHaveLength(2);
+    for (const select of weaponSelects) {
+      expect(select.tag).toBe('select');
+      expect(select.children).toHaveLength(Object.keys(WEAPONS).length + 1);
+      expect(select.children[0]).toMatchObject({ value: '', textContent: '—（drill 預設）' });
+      expect(select.children.map((option) => option.textContent)).toContain('usp_s_laser（12 發）');
+      expect(select.children.map((option) => option.textContent)).toContain('ak47（30 發）');
+    }
+  });
+
+  it('updates preview weapon attributes without rerendering the edited row', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A, 2);
+    const row = harness.itemList.children[0];
+    const select = rowControl(harness, 0, 'weapon');
+
+    setWeapon(harness, 0, 'm4a1s');
+
+    expect(harness.itemList.children[0]).toBe(row);
+    expect(rowControl(harness, 0, 'weapon')).toBe(select);
+    expect(
+      harness.previewSteps.children
+        .filter((line) => line.attributes.get('data-program-step') === 'run')
+        .map((line) => line.attributes.get('data-step-weapon-id')),
+    ).toEqual(['m4a1s', 'm4a1s']);
+    expect(harness.previewSteps.children[0].textContent).toContain('武器 m4a1s');
+  });
+
+  it('submits per-item weapon ids and omits the key for drill defaults', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A, 3);
+    addItem(harness, DRILL_B, 2);
+    setWeapon(harness, 0, 'm4a1s');
+
+    harness.form.dispatch('submit');
+
+    expect(harness.onSubmit).toHaveBeenCalledWith({
+      mode: 'custom',
+      items: [
+        { drillId: DRILL_A, reps: 3, weaponId: 'm4a1s' },
+        { drillId: DRILL_B, reps: 2 },
+      ],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    const submitted = harness.onSubmit.mock.calls[0]![0] as { items: Array<Record<string, unknown>> };
+    expect(Object.hasOwn(submitted.items[1], 'weaponId')).toBe(false);
+  });
+
+  it('explains reload/ammo behaviour and weapon-based trend grouping before submission', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+
+    expect(harness.document.created.some((element) => element.textContent.includes('無玩家 reload'))).toBe(true);
+    expect(harness.document.created.some((element) => element.textContent.includes('目標生成會補滿彈匣'))).toBe(
+      true,
+    );
+    expect(harness.document.created.some((element) => element.textContent.includes('趨勢分群'))).toBe(true);
+  });
 });
 
 describe('createSessionPlanSetup — program preview (FR-58.13)', () => {
@@ -445,12 +526,12 @@ describe('createSessionPlanSetup — program preview (FR-58.13)', () => {
       expected.filter((step) => step.kind === 'rest').map((step) => [step.boundary, step.nextDrillId]),
     );
     expect(harness.previewSummary.textContent).toBe('預覽（17 步 · 執行 9 輪 · 休息合計 5 分 00 秒）');
-    expect(harness.previewSteps.children[0].textContent).toBe(`1. ▶ ${DRILL_A} (1/3)`);
+    expect(harness.previewSteps.children[0].textContent).toBe(`1. ▶ ${DRILL_A} (1/3) · 武器 預設`);
     expect(harness.previewSteps.children[1].textContent).toBe('2. ⏸ 30s · rep（同一 drill 下一輪） → hold_click_v1');
     expect(harness.previewSteps.children[5].textContent).toBe(
       '6. ⏸ 60s · family（換家族） → spider-shot-v2',
     );
-    expect(harness.previewSteps.children[16].textContent).toBe(`17. ▶ ${DRILL_C} (3/3)`);
+    expect(harness.previewSteps.children[16].textContent).toBe(`17. ▶ ${DRILL_C} (3/3) · 武器 預設`);
   });
 
   it('shows the drill boundary label when two adjacent items share a family (R-58.8)', () => {
@@ -469,6 +550,15 @@ describe('createSessionPlanSetup — program preview (FR-58.13)', () => {
       '2. ⏸ 30s · drill（同家族換 drill） → spider-shot-v3',
     );
     expect(harness.previewSummary.textContent).toBe('預覽（3 步 · 執行 2 輪 · 休息合計 30 秒）');
+  });
+
+  it('shows declared BR weapons in the preview when the item leaves weapon at drill default', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, 'tracking_br_v1__ads_off__hitscan__0p5deg');
+
+    expect(harness.previewSteps.children[0].attributes.get('data-step-weapon-id')).toBe('ak47_br_hip_hitscan');
+    expect(harness.previewSteps.children[0].textContent).toContain('武器 ak47_br_hip_hitscan');
   });
 
   it('omits a zero-second rest instead of rendering a step that would flash for one frame', () => {
@@ -548,6 +638,23 @@ describe('createSessionPlanSetup — compile failures disable submit (FR-58.7)',
     harness.form.dispatch('submit');
     expect(harness.onSubmit).not.toHaveBeenCalled();
   });
+
+  it('blocks overriding a BR cell weapon with row-local feedback from the compiler', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A);
+    addItem(harness, 'tracking_br_v1__ads_off__hitscan__0p5deg');
+
+    setWeapon(harness, 1, 'm4a1s');
+
+    expect(harness.submit.disabled).toBe(true);
+    expect(harness.status.textContent).toContain('items[1].weaponId');
+    expect(harness.status.textContent).toContain('不可指定其他武器');
+    expect(harness.itemList.children[1].attributes.get('data-invalid')).toBe('true');
+    expect(harness.itemList.children[0].attributes.has('data-invalid')).toBe(false);
+    harness.form.dispatch('submit');
+    expect(harness.onSubmit).not.toHaveBeenCalled();
+  });
 });
 
 describe('createSessionPlanSetup — keyboard and ARIA (NFR-58.7)', () => {
@@ -562,6 +669,7 @@ describe('createSessionPlanSetup — keyboard and ARIA (NFR-58.7)', () => {
     expect(byName(harness.document, 'sessionPlanRestSeconds').attributes.get('aria-label')).toBe('家族間休息秒數');
     expect(harness.itemList.attributes.get('aria-label')).toBe('執行清單');
     expect(rowControl(harness, 0, 'reps').attributes.get('aria-label')).toBe(`${DRILL_A} 重複次數`);
+    expect(rowControl(harness, 0, 'weapon').attributes.get('aria-label')).toBe(`${DRILL_A} 武器`);
     expect(rowControl(harness, 0, 'up').attributes.get('aria-label')).toBe(`${DRILL_A} 上移`);
     expect(rowControl(harness, 0, 'down').attributes.get('aria-label')).toBe(`${DRILL_A} 下移`);
     expect(rowControl(harness, 0, 'remove').attributes.get('aria-label')).toBe(`移除 ${DRILL_A}`);
@@ -600,7 +708,7 @@ describe('createSessionPlanSetup — keyboard and ARIA (NFR-58.7)', () => {
     });
     for (const row of harness.itemList.children) {
       for (const control of row.children.slice(2)) {
-        expect(['input', 'button']).toContain(control.tag);
+        expect(['input', 'select', 'button']).toContain(control.tag);
         expect(control.attributes.get('aria-label')).toBeTruthy();
       }
     }

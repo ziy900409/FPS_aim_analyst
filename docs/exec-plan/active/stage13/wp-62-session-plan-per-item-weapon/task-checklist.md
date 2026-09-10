@@ -8,7 +8,7 @@
 | ✅ | **T1** Drill 自宣告武器的推導註冊表 | [T1-declared-weapon-registry.md](T1-declared-weapon-registry.md) | T0 | Low |
 | ✅ | **T2** 編譯器 `weaponId` 穿透與驗證 | [T2-compiler-weapon-passthrough.md](T2-compiler-weapon-passthrough.md) | T1 | Med |
 | ✅ | **T3** SessionRunner／`activateDrill()` 接線 | [T3-runner-and-activation-wiring.md](T3-runner-and-activation-wiring.md) | T2 | **High** |
-| ⬜ | **T4** 表單每列武器選單／預覽 | [T4-setup-ui-weapon-picker.md](T4-setup-ui-weapon-picker.md) | T2（可與 T3 並行） | Med |
+| ✅ | **T4** 表單每列武器選單／預覽 | [T4-setup-ui-weapon-picker.md](T4-setup-ui-weapon-picker.md) | T2（可與 T3 並行） | Med |
 | ⬜ | **T5** Metadata 稽核欄位／意圖 vs 事實對帳 | [T5-metadata-and-export.md](T5-metadata-and-export.md) | T3 | Med |
 | ⬜ | **T6** E2E 整合／frozen 逐位不變回歸 | [T6-e2e-and-regression.md](T6-e2e-and-regression.md) | T3 + T4 + T5 | Med |
 | ⬜ | **T-exit** WP-62 驗收 | [T-exit-gate.md](T-exit-gate.md) | T1～T6 | Low |

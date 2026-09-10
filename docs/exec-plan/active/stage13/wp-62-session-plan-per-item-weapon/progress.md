@@ -467,3 +467,53 @@ console.log(JSON.stringify(cases, null, 1));
 | 5 | T5 提醒：`SessionPlanItemMeta.weaponId` 的 runtime 驗證在 `exportPayloadSchema.ts`，須共用 `isWeaponId` | 🟢 非阻塞（承 T2 OQ #5） | 實作者 | T5 |
 | 6 | `?? 'ak47'` 字面仍散在 `loadSceneById()` 與 Controls 初始建構兩處，未收斂為 `DEFAULT_WEAPON_ID` | 🟢 非阻塞：逐位等價，純可讀性 debt（D-62.T3-3 刻意不越界） | 實作者 | 任一觸及該兩處的後續 task 順手處理 |
 | 7 | 平行 session 的 `KI-035`（滑鼠 gain 過期）與本 task 的 `configureMouseIntegration` 呼叫點相鄰 | 🟡 待確認無衝突 | 實作者 | T4 開工前重讀該 KI |
+
+---
+
+## §T4 Session Plan 表單每列武器選單與預覽（2026-09-10）
+
+**狀態**：✅ 完成。自訂 program 每列已有武器 `<select>`（預設 + 全部 9 把 `WEAPONS`，標籤含彈匣容量），預覽 run row 顯示武器並帶 `data-step-weapon-id`，BR 八格錯誤覆蓋會走 compiler 錯誤定位到列。frozen track DOM／submit 行為未改。
+
+### Progress
+
+- [x] (2026-09-10) `src/ui/SessionPlanSetup.ts`：新增 internal `EditableSessionProgramItem.weaponId?`，用 `sessionProgramItemFromEditable()` 送進 compiler 與 submit，避免預設列多出 `weaponId: undefined`。
+- [x] (2026-09-10) `renderItems()`：每列插入原生 weapon `<select>`；第一項為 `—（drill 預設）`，其餘由 `Object.entries(WEAPONS)` 產生，格式為 `` `${id}（${magSize} 發）` ``。`change` handler 只更新該 item 並 `refreshPreview()`，不重繪 row。
+- [x] (2026-09-10) `refreshPreview()` / `describeStep()`：預覽直接渲染 compiled program；指定 weapon 顯示該 id，未指定的一般 drill 顯示「預設」，BR 八格透過 `DECLARED_WEAPON_BY_DRILL_ID` 顯示實名。run `<li>` 新增 `data-step-weapon-id`（一般預設為 `default`，BR 自宣告與指定武器為實際 id）。
+- [x] (2026-09-10) 表單說明新增兩行：無玩家 reload／目標生成補彈／連續打空停火行為、不同 `weaponId` 造成 history trend 分群。
+- [x] (2026-09-10) `src/ui/SessionPlanSetup.test.ts`：補 T4 DoD 覆蓋（選項數與彈匣標籤、選武器更新預覽且 row 不重繪、BR 覆蓋錯誤定位、submit payload、兩行說明文字、ARIA）。
+
+### 驗證
+
+| 指令 | 結果 |
+|---|---|
+| `npx vitest run src/ui/SessionPlanSetup.test.ts` | ✅ **39 passed**；preview redraw 799 steps p95 **1.3032 ms** |
+| `npm run typecheck`（`tsc --noEmit` ×2） | ✅ exit 0 |
+| 全量 `npx vitest run` | ✅ **2,925 passed / 2 skipped**；檔案 **254 passed / 1 skipped**；preview redraw p95 **1.9079 ms** |
+| `npm run build` | ⚠️ sandbox 內 Vite/esbuild 讀取上層目錄被拒（`Cannot read directory "../../../.."`）；同指令依權限規則改以非沙箱執行後 ✅ exit 0，`vite build` **195 modules transformed**，`built in 2.53s`；chunk > 500 kB 警告為既有狀態 |
+
+**回歸基線對帳**：T3 全量 Vitest 2,919 / 2 → T4 2,925 / 2，差值 **+6** 皆在 `SessionPlanSetup.test.ts`。該檔 33 → **39 tests**。frozen track 既有 describe 區塊未改案例內容；只有 row control helper 因 custom row 新增 select 而調整位置。
+
+### Decision Log
+
+| # | 日期 | 決定 | 理由 | Alternatives considered |
+|---|---|---|---|---|
+| **D-62.T4-1** | 2026-09-10 | OQ-62.1 採預設假設：未指定 weapon 的一般 drill 在預覽顯示「預設」；BR 八格顯示自宣告實名 | T4 不把 UI 變成第二套 weapon resolution：一般 drill 的 app fallback 仍由 runtime 的 `resolveActiveWeapon()` 決定；BR 八格已有 T1 的推導 map，可在不解析 drill config 的情況下顯示實名 | 對所有未指定列顯示 `ak47`：會把 app fallback 寫死到 UI，與 T3 刻意保留的 runtime precedence 分散；對所有未指定列都顯示「預設」：會讓 BR 八格的實際武器不可見，弱化 FR-62.5 |
+| **D-62.T4-2** | 2026-09-10 | OQ-62.2 採預設假設：不做 ADS × 禁 ADS drill 的非阻塞警告 | T4 的錯誤分類只沿用 compiler 的 `field/itemIndex`，不新增第二套 guard；ADS 事件與 `meta.weapon.ads` 已可在匯出後稽核。本 slice 只揭露彈匣與 trend 分群文案 | 在 UI 額外提示 ADS 風險：需要定義哪個 drill「禁 ADS」與哪個 weapon「有 ADS」的第二套規則，超出 D-62-4 的資訊揭露範圍 |
+| **D-62.T4-3** | 2026-09-10 | 彈匣文案採較窄表述：「無玩家 reload；每次目標生成會補滿彈匣；若連續打空仍會停火」 | 開工期間平行文件更正指出「全 repo 無 reload」過寬：spawn-driven drill 會在目標生成時補彈。T4 仍需要揭露研究者可觀測的風險，但不得把 spawn 補彈路徑講成不存在 | 沿用 T4 原文「無 reload：彈匣打完該輪即停火」：對 spawn-driven drill 誤導；完全移除彈匣提醒：會丟掉 magSize 對資料收集的殘留風險 |
+| **D-62.T4-4** | 2026-09-10 | `data-step-weapon-id` 對一般未指定 fallback 使用字面 `default`，對 BR 自宣告／指定武器使用實際 id | 文字層遵守 OQ-62.1 的「預設」假設；屬性仍給 E2E 一個穩定定位值。用 `default` 可避免把 app fallback `ak47` 提前烙進 UI | 屬性省略或空字串：E2E 不易區分「漏設屬性」與「預設」；屬性填 `ak47`：與文字決策矛盾，且形成第二個 fallback 定義 |
+
+### Surprises & Discoveries
+
+1. **T4 與 KI-035 無直接衝突。** 開工前重讀 `docs/known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md`，該 KI 的落點在 `main.ts` 感度／FOV 變更後重配 recorder gain；T4 只改 DOM setup 與 compiler input，不觸及 `configureMouseIntegration()`。
+2. **彈匣文案需要跟上平行文件更正。** T4 原文要求「無 reload：彈匣打完該輪即停火」，但同一工作樹已出現 GD-38 inline 更正：spawn-driven drill 會於每次目標生成時補滿彈匣。本 task 因此採較窄文案，避免在 UI 裡出貨已知不準確的機制描述。
+3. **`npm run build` 在沙箱內會被 Vite/esbuild 讀上層目錄擋住。** 同一指令非沙箱通過，故這次 build failure 記為環境權限，不是程式回歸。
+
+### Open Questions（T4 結束時）
+
+| # | 問題 | 狀態 | Owner | 需在何時收斂 |
+|---|---|---|---|---|
+| 1 | OQ-62.1（預覽顯示） | ✅ 採 D-62.T4-1 | — | — |
+| 2 | OQ-62.2（ADS × 禁 ADS drill 警告） | ✅ 採 D-62.T4-2；不新增 guard | — | — |
+| 3 | `loadSceneById()` 清空 override 與 ADS/gain 不對稱 | 🟡 未決，T4 未觸及 | 實作者 | T6 e2e 觀察後判斷是否另開 KI |
+| 4 | T5 提醒：`SessionPlanItemMeta.weaponId` 的 runtime 驗證在 `exportPayloadSchema.ts`，須共用 `isWeaponId` | 🟢 非阻塞 | 實作者 | T5 |
+| 5 | `?? 'ak47'` 字面仍散在 `loadSceneById()` 與 Controls 初始建構兩處 | 🟢 非阻塞，T4 未觸及 | 實作者 | 任一觸及該兩處的後續 task |
