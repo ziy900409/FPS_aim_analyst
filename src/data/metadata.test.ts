@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { collectMeta, measureDisplayHz, measureDisplayRefresh, type CollectMetaArgs } from './metadata.ts';
+import { WEAPONS } from '../weapon/weapons.ts';
 
 describe('collectMeta', () => {
   it('collects complete drill metadata and computes suspect from overflow flags', () => {
@@ -413,6 +414,95 @@ describe('collectMeta', () => {
       ).toThrow(message as string);
     });
 
+    // -----------------------------------------------------------------------
+    // WP-62 T5 — the planned weapon per item (FR-62.4)
+    // -----------------------------------------------------------------------
+
+    it('records the planned weapon per item and omits the key on rows that named none', () => {
+      const meta = collectMeta({
+        ...customArgs,
+        sessionPlanItems: [
+          { drillId: 'hold_click_v1', reps: 3, weaponId: 'm4a1s' },
+          { drillId: 'spider-shot-v2', reps: 2 },
+        ],
+      });
+      expect(meta.sessionPlanItems).toEqual([
+        { drillId: 'hold_click_v1', reps: 3, weaponId: 'm4a1s' },
+        { drillId: 'spider-shot-v2', reps: 2 },
+      ]);
+      // Absent means absent: an unplanned row must stay byte-identical to what WP-58 wrote, so the
+      // key cannot appear carrying `undefined` (NFR-62.4 applied to the export side).
+      expect('weaponId' in (meta.sessionPlanItems?.[1] ?? {})).toBe(false);
+    });
+
+    it('accepts every weapon this build can load, without a second allowlist', () => {
+      // The validator's source of truth is `WEAPONS`; enumerate it rather than restate it, so a new
+      // weapon becomes recordable the moment it exists (KI-016).
+      for (const weaponId of Object.keys(WEAPONS)) {
+        const meta = collectMeta({
+          ...customArgs,
+          sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 3, weaponId }],
+          sessionPlanItemIndex: 0,
+        });
+        expect(meta.sessionPlanItems?.[0].weaponId).toBe(weaponId);
+      }
+    });
+
+    it.each([
+      [
+        'an unknown weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: 'ak48' }],
+        'sessionPlanItems[0].weaponId must be a known weapon',
+      ],
+      [
+        'a family id used as a weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: 'hold-click' }],
+        'sessionPlanItems[0].weaponId must be a known weapon',
+      ],
+      [
+        'an empty weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: '' }],
+        'sessionPlanItems[0].weaponId must be a non-empty string',
+      ],
+      [
+        'a whitespace-only weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: '   ' }],
+        'sessionPlanItems[0].weaponId must be a non-empty string',
+      ],
+      [
+        'a non-string weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: 7 }],
+        'sessionPlanItems[0].weaponId must be a non-empty string',
+      ],
+      [
+        'a null weapon id',
+        [{ drillId: 'hold_click_v1', reps: 1, weaponId: null }],
+        'sessionPlanItems[0].weaponId must be a non-empty string',
+      ],
+    ])('rejects session plan items with %s', (_label, sessionPlanItems, message) => {
+      expect(() =>
+        collectMeta({
+          ...base,
+          sessionPlanMode: 'custom',
+          sessionPlanItems: sessionPlanItems as unknown as CollectMetaArgs['sessionPlanItems'],
+        }),
+      ).toThrow(message as string);
+    });
+
+    it('locates the offending row, not merely the field', () => {
+      // `field + index` is the whole contract the form relies on to paint one row red (WP-58 T2).
+      expect(() =>
+        collectMeta({
+          ...base,
+          sessionPlanMode: 'custom',
+          sessionPlanItems: [
+            { drillId: 'hold_click_v1', reps: 1 },
+            { drillId: 'spider-shot-v2', reps: 1, weaponId: 'ak48' },
+          ] as unknown as CollectMetaArgs['sessionPlanItems'],
+        }),
+      ).toThrow('sessionPlanItems[1].weaponId must be a known weapon');
+    });
+
     it('rejects a non-array item list', () => {
       expect(() =>
         collectMeta({
@@ -660,9 +750,76 @@ describe('collectMeta', () => {
       perfFloor: false,
       recorderOverflow: false,
       bufferOverflow: false,
+      // WP-65 / T5（D-65-3）— optional-in：輸入缺欄，輸出補 false。這一條同時是「既存 payload
+      // 零修改仍可被 collectMeta 接受」的向後相容證據。
+      pointerLockLost: false,
     });
     // NFR-S1-2b:validity.corridorExceeded 為 true 不得單獨把 suspect 拉成 true。
     expect(meta.suspect).toBe(false);
+  });
+
+  // ── WP-65 / T5（FR-65.9/65.10，D-65-3，OQ-65.1）─────────────────────────────
+  it('folds validity.pointerLockLost into meta.suspect (FR-65.10 / OQ-65.1)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      validity: {
+        corridorExceeded: false,
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: false,
+        pointerLockLost: true,
+      },
+    });
+
+    expect(meta.validity?.pointerLockLost).toBe(true);
+    // 掉鎖期間滑鼠位移完全沒進輸入鏈 ⇒ 條件失效,與 frameFloor 同性質(OQ-65.1)。
+    expect(meta.suspect).toBe(true);
+  });
+
+  it('leaves meta.suspect false when pointerLockLost is false and nothing else is flagged (FM-3)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      validity: {
+        corridorExceeded: true, // 刻意為 true:走廊越界**不**併入 suspect,這個不對稱是設計
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: false,
+        pointerLockLost: false,
+      },
+    });
+
+    // 一個每場都亮的旗標等於沒有旗標(FM-3):乾淨的一場必須是 false。
+    expect(meta.suspect).toBe(false);
+  });
+
+  it('rejects a non-boolean validity.pointerLockLost (optional-in is not lenient-in)', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        validity: {
+          corridorExceeded: false,
+          perfFloor: false,
+          recorderOverflow: false,
+          bufferOverflow: false,
+          pointerLockLost: 'yes' as unknown as boolean,
+        },
+      }),
+    ).toThrow('validity.pointerLockLost must be a boolean');
   });
 
   it('rejects malformed meta.validity fields', () => {

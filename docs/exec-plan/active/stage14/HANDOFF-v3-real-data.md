@@ -93,8 +93,9 @@ _建立於 2026-09-09。給接手的 AI agent。以下每一項「已驗證」�
 - 比例是 0 或極低 → **停用**這兩類,改用 `phase-v1` 的 REC,並在報告最上方寫明原因。
   **絕對不可以默默輸出空的相位欄位** —— 那會讓報告看起來像「這位受試者沒有反應」。
 
-順帶回報 `baselineInsufficient` 與 `anticipation` 的計數,以及 `thresholdDegPerSec` 的 p50
-(KI-031 §2 的次要觀察:500 ms baseline 窗會吃進上一次拉槍,把門檻抬高)。
+順帶回報 `baselineInsufficient` 與 `anticipation` 的計數,以及 `thresholdDegPerSec` 的 p50。
+[KI-034](../../../known_issue/KI-034-prestimulus-baseline-overlaps-prior-engagement.md) 是與 KI-031 獨立的失效模式:
+500 ms baseline 窗會吃進上一次拉槍並把門檻抬高,且現有 `baselineInsufficient` 不會示警。
 
 ### G2 — `validDurationMs` 含倒數,hits/min 被系統性低估
 

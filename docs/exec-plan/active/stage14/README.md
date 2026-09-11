@@ -83,13 +83,21 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 
 ## 3. WP 清單（候選,未批准）
 
-使用者指定的處理順序:**先 v3 → 再 wide → 最後 v8**。編號依 [GD-15](../../DECISIONS.md)「先採納先得」候選為 WP-62 起算（現行最高 WP-61,stage13）。
+使用者指定的處理順序:**先 v3 → 再 wide → 最後 v8**。初稿曾依 [GD-15](../../DECISIONS.md)「先採納先得」以 WP-62 起算（當時最高 WP-61,stage13）；目前編號見下方 2026-09-11 對齊說明。
+
+> ⚠️ **編號已失效（2026-09-10,WP-62 T0 重查）**:原始候選組的 **WP-62/63/64 已被取用**。`WP-62` 已由 [`active/stage13/wp-62-session-plan-per-item-weapon/`](../stage13/wp-62-session-plan-per-item-weapon/README.md) 採納並入 [`exec-plan/README.md`](../../README.md) §2 索引;依 [GD-15](../../DECISIONS.md) 的判準（編號歸屬以採納入 §2 索引為準,**草稿之「候選,未批准」預留不構成佔用**),當時本 stage 三個候選應順延為 **WP-63/64/65**,且須依 GD-35 ② 於採納當下重查最大值。詳見 [GD-38](../../DECISIONS.md) ①。
+>
+> ⚠️ **再順延（2026-09-10，WP-63 規劃）**：`WP-63` 亦已被取用 —— [`active/stage13/wp-63-micro-flick-v8-measurement-foundation/`](../stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) 已入 [`exec-plan/README.md`](../../README.md) §2 索引。⇒ 當時本 stage 三個候選應順延為 **WP-64/65/66**。
+>
+> ⚠️ **目前編號對齊（2026-09-11,WP-64 T-exit）**：WP-64 已完成、WP-65 已在 stage13 採納；依 GD-15 重查後，本 stage 尚未採納的三個候選依序為 **WP-66/67/68**。下表與後續相依、OQ、文件產出均使用此組目前編號。
+>
+> ⚠️ **§3 的 WP-68（v8）候選已被 WP-63 實質取代**：WP-63 交付的正是 `buildTargetWindows()` primitive + 三顆離線重建 + v8 指標族。兩處差異須知：(1) WP-63 **不採用** P14-3 所要求的「軌跡意圖歸因 + 合成 harness 驗證歸因規則」，改為**事件錨定** + 以實際下一次擊殺為 ground truth 的方向預測準確率曲線（理由見 [WP-63 §2.2](../stage13/wp-63-micro-flick-v8-measurement-foundation/README.md)：`t_detect` 已是既有構念，C-D4 禁止第二定義，且 v8 受 KI-031／KI-034 雙重阻塞）；(2) WP-63 不等 WP-66（本 stage 候選的 v3 參數定案）先行，因為它不重寫任何既有幾何，primitive 紀律由 NFR-63.4 的符號掃描直接釘死，不需要先有語彙權威。本 stage 若日後採納，§3 的 v8 列應改為指向 WP-63 而非另開新號。
 
 | WP（候選） | 一句話 | 相依 | 估時（d） | 狀態 |
 |---|---|---|---|---|
-| **WP-62** | `spider-shot-v3` 量測參數定案:把已實作的五類構念與五個 registry 指標寫成規格權威,並處理 KI-031 造成的兩類構念空洞 | **KI-031**（見 §4） | 3–5 | 🟡 規劃中。參數文件已交付:[`spider-shot-v3-measurement-parameters-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-measurement-parameters-2026-09-09.html) |
-| **WP-63** | `spider-shot-wide-v1` 效度層:`meta.dpi` 蒐集紀律、以 cm/360 為 x 軸的抬滑鼠混淆分析、與 v3 的幅度→表現斜率對照 | WP-62 · WP-61（sensor lift） | 4–6 | ⬜ 未開始 |
-| **WP-64** | `micro_flick_three_target_test_v8`:`buildTargetWindows()` primitive + 三顆離線重建 + 意圖歸因規則 + 合成 harness 驗證 | WP-62（primitive 紀律定案） | 6–10 | ⬜ 未開始 |
+| **WP-66** | `spider-shot-v3` 量測參數定案:把已實作的五類構念與五個 registry 指標寫成規格權威,並處理 KI-031 造成的兩類構念空洞 | **KI-031**（見 §4） | 3–5 | 🟡 規劃中。參數文件已交付:[`spider-shot-v3-measurement-parameters-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-measurement-parameters-2026-09-09.html) |
+| **WP-67** | `spider-shot-wide-v1` 效度層:`meta.dpi` 蒐集紀律、以 cm/360 為 x 軸的抬滑鼠混淆分析、與 v3 的幅度→表現斜率對照 | WP-66 · WP-61（sensor lift） | 4–6 | ⬜ 未開始 |
+| **WP-68** | `micro_flick_three_target_test_v8`:`buildTargetWindows()` primitive + 三顆離線重建 + 意圖歸因規則 + 合成 harness 驗證 | WP-66（primitive 紀律定案） | 6–10 | ⬜ 未開始 |
 
 **為什麼 v3 先行**:v3 是唯一已凍結的 assessment 協定,它的構念定義是另兩支的語彙來源。若 v8 的新 primitive 先落地,`ε`/on-target 的權威歸屬會變成事後追認。
 
@@ -97,7 +105,7 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 
 ## 4. 阻塞:KI-031 讓 v3 的兩類構念在真人資料上歸零
 
-[**KI-031**](../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) 狀態 🔴 **未修**。這不是本 stage 新發現的問題,但它**直接決定 WP-62 能交付什麼**:
+[**KI-031**](../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) 狀態 🔴 **未修**。這不是本 stage 新發現的問題,但它**直接決定 WP-66 能交付什麼**:
 
 四份真人 `spider-shot-wide-v1` 匯出（60 Hz 顯示）的 113 個周邊 presentation,`deriveDetectionMetrics()` 以 canonical 預設參數執行 ⇒ `status: 'detected'` **0 / 113**。下游:
 
@@ -119,7 +127,7 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 **這是懸崖,不是漸進退化。** 對本 stage 的兩個直接後果:
 
 1. **採集紀律**:v3 的 run 必須在 **≥ 144 Hz 顯示**的機器上錄,否則五類構念裡有兩類靜默消失。`meta.displayHz`（[`metadata.ts:154`](../../../../src/data/metadata.ts#L154),實測非自述）已足以做這道閘。
-2. **WP-62 的範圍決策（待定,列為 OQ-62.1）**：是「只加資料充足性旗標、把 KI-031 當採集前提」,還是「本 stage 一併修判準」。後者是 **C-D5 雙實作**指標（TS `detectionDerivation.ts` ↔ Python `detect.py` + `research/fixtures/parity/detect-*.json` 凍結對表）,必須兩端同步 + 重跑 golden + 版本字串升版,不得原地改語意。KI-031 §5 建議的修法 (a)「連續 N 個 tick → 持續 N 毫秒」是候選,但那是一個獨立的 bugfix WP,不該藏在指標定義 WP 裡。
+2. **WP-66 的範圍決策（待定,列為 OQ-66.1）**：是「只加資料充足性旗標、把 KI-031 當採集前提」,還是「本 stage 一併修判準」。後者是 **C-D5 雙實作**指標（TS `detectionDerivation.ts` ↔ Python `detect.py` + `research/fixtures/parity/detect-*.json` 凍結對表）,必須兩端同步 + 重跑 golden + 版本字串升版,不得原地改語意。KI-031 §5 建議的修法 (a)「連續 N 個 tick → 持續 N 毫秒」是候選,但那是一個獨立的 bugfix WP,不該藏在指標定義 WP 裡。
 
 > **協議歸屬**:KI-031 的修復決策走 [CLAUDE.md §3.9](../../../../CLAUDE.md) —— 診斷計畫在 `KI-031-*.md`,修法決策入
 > [`BUGFIX-DECISIONS.md`](../../../known_issue/BUGFIX-DECISIONS.md) 的 `BD-031`。**不**走本 stage 的 `DECISIONS.md`。
@@ -157,8 +165,8 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 
 ## 7. 編號分配（候選）
 
-- **WP 編號**:候選 WP-62～64。現行最高 WP-61（stage13）。依 [GD-15](../../DECISIONS.md)「先採納先得」,平行 session 若先取用則本 stage 順延,不爭號。
-- **GD 編號**:本 stage 預計需要一筆全域決策（三層契約的層邊界與 C-D4 歸屬,即 §2 的硬紀律）。現行最高 **GD-37**,候選 **GD-38**。同樣不預留、不爭號 —— 實際入帳時以當下 `DECISIONS.md` 最高號 +1 為準。
+- **WP 編號**:目前候選 WP-66～68。WP-64 已完成、WP-65 已在 stage13 採納；依 [GD-15](../../DECISIONS.md)「先採納先得」,平行 session 若先取用則本 stage 順延,不爭號。
+- **GD 編號**:本 stage 預計需要一筆全域決策（三層契約的層邊界與 C-D4 歸屬,即 §2 的硬紀律）。現行最高 **GD-40**,候選 **GD-41**。同樣不預留、不爭號 —— 實際入帳時以當下 `DECISIONS.md` 最高號 +1 為準。
 - **BD 編號**:KI-031 的修法決策為 `BD-031`,由該 KI 的修復 WP 入帳,不屬本 stage。
 
 ---
@@ -169,11 +177,11 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 KI-031（🔴 未修：detection 連續性判準在 <128 Hz aim 更新率下失效）
    │  阻塞 switchReaction / movementTimeMs 的真人可用性
    ▼
-WP-62（spider-shot-v3 量測參數定案）  ← 先做
+WP-66（spider-shot-v3 量測參數定案）  ← 先做
    │  產出：構念語彙權威 + primitive 層硬紀律
    ├──────────────────────────┐
    ▼                          ▼
-WP-63（wide-v1 效度層）      WP-64（v8 per-target 窗界 + 歸因）
+WP-67（wide-v1 效度層）      WP-68（v8 per-target 窗界 + 歸因）
    │  需要 meta.dpi 紀律          │  需要合成 harness 已知意圖
    │  ＋ WP-61 sensor lift        │  明確不宣稱生態效度
    ▼                          ▼
@@ -186,11 +194,11 @@ WP-63（wide-v1 效度層）      WP-64（v8 per-target 窗界 + 歸因）
 
 | OQ | 問題 | 影響 |
 |---|---|---|
-| OQ-62.1 | KI-031 是「加資料充足性旗標 + 採集前提」還是「本 stage 一併修判準」? | 決定 WP-62 估時（3–5 d vs +C-D5 雙實作同步）與 v3 五類構念的交付完整度 |
-| OQ-62.2 | v3 的五個 registry 指標是否需要增刪（例如補 `microAdjustCount` 中位數、或補逾時率）? | 目前 descriptors 由 v2 機械 rename 而來（[`DrillMetricRegistry.ts:219-221`](../../../../src/history/DrillMetricRegistry.ts#L219-L221)）,尚未針對 v3 的 eye-frame 幾何重新選過 |
-| OQ-63.1 | `meta.dpi` 缺席的 run 要 fail fast 還是降級交付? | 決定 wide-v1 效度層是硬閘還是軟旗標 |
-| OQ-64.1 | 歸因規則的 movement onset 判準要用 `ω(t)` 門檻、`dε/dt` 符號,還是兩者合議? | 直接決定合成 harness 要生成哪些故障型態 |
-| OQ-64.2 | v8 是否需要 `?rawMouse=1` 才能支撐歸因切段? | 決定採集紀律,以及既有 v8 匯出是否全部作廢 |
+| OQ-66.1 | KI-031 是「加資料充足性旗標 + 採集前提」還是「本 stage 一併修判準」? | 決定 WP-66 估時（3–5 d vs +C-D5 雙實作同步）與 v3 五類構念的交付完整度 |
+| OQ-66.2 | v3 的五個 registry 指標是否需要增刪（例如補 `microAdjustCount` 中位數、或補逾時率）? | 目前 descriptors 由 v2 機械 rename 而來（[`DrillMetricRegistry.ts:219-221`](../../../../src/history/DrillMetricRegistry.ts#L219-L221)）,尚未針對 v3 的 eye-frame 幾何重新選過 |
+| OQ-67.1 | `meta.dpi` 缺席的 run 要 fail fast 還是降級交付? | 決定 wide-v1 效度層是硬閘還是軟旗標 |
+| OQ-68.1 | 歸因規則的 movement onset 判準要用 `ω(t)` 門檻、`dε/dt` 符號,還是兩者合議? | 直接決定合成 harness 要生成哪些故障型態 |
+| OQ-68.2 | v8 是否需要 `?rawMouse=1` 才能支撐歸因切段? | 決定採集紀律,以及既有 v8 匯出是否全部作廢 |
 
 ---
 
@@ -206,5 +214,5 @@ WP-63（wide-v1 效度層）      WP-64（v8 per-target 窗界 + 歸因）
 | [`spider-shot-v3-measurement-parameters-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-measurement-parameters-2026-09-09.html) — v3 預計計算的參數與其意涵 | ✅ 2026-09-09 |
 | [`spider-shot-v3-performance-metrics-design-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-performance-metrics-design-2026-09-09.html) — v3 選手表現量化設計（三層模型／機制指標裁決／教練解讀／驗證計畫／風險） | ✅ 2026-09-09 |
 | [`spider-shot-v3-coach-metrics-and-charts-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-coach-metrics-and-charts-2026-09-09.html) — v3 教練視角的指標與圖示提案（五個問題／三個新指標 M1–M3／七張圖／教練紀律） | ✅ 2026-09-09 |
-| wide-v1 參數文件 | ⬜ WP-63 |
-| v8 參數文件 + 歸因規則規格 | ⬜ WP-64 |
+| wide-v1 參數文件 | ⬜ WP-67 |
+| v8 參數文件 + 歸因規則規格 | ⬜ WP-68 |

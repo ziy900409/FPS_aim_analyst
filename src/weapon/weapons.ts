@@ -209,6 +209,36 @@ export function getWeapon(id: string): WeaponConfig {
   throw new Error(`Unknown weapon id: ${id}. Available weapons: ${WEAPON_IDS.join(', ')}`);
 }
 
-function isWeaponId(id: string): id is WeaponId {
+/**
+ * WP-62 T1: exported so the Session Plan compiler can reject an unknown weapon id at *compile*
+ * time instead of letting `getWeapon()` throw mid-activation, after the scene has already swapped.
+ * Behaviour is unchanged — this is the same predicate `getWeapon()` has always used, and `WEAPONS`
+ * stays the only source of truth for what a weapon id is.
+ */
+export function isWeaponId(id: string): id is WeaponId {
   return Object.prototype.hasOwnProperty.call(WEAPONS, id);
+}
+
+/**
+ * WP-62 T3: the app-wide fallback when neither the run step nor the drill names a weapon.
+ * Named so the precedence chain below has one literal instead of one per call site.
+ */
+export const DEFAULT_WEAPON_ID: WeaponId = 'ak47';
+
+/**
+ * WP-62 T3 — the single definition of "which weapon is this drill activation actually running?".
+ *
+ * Precedence: an explicit override (a Session Plan item's per-item weapon, or the Controls picker)
+ * -> the drill's own declared weapon (the BR experiment cells) -> the app default. `main.ts`'s
+ * `activeWeaponConfig()` is the only production caller; it is exported so the determinism and
+ * activation tests can assert *this* rule rather than a copy of it (C-D4: no second definition).
+ *
+ * @throws Error via `getWeapon()` on an unknown id. The Session Plan compiler rejects those at
+ * compile time (`requireWeapon`, T2), so reaching here with a bad id means a non-compiler caller.
+ */
+export function resolveActiveWeapon(
+  override: WeaponId | undefined,
+  drillWeaponId: string | undefined,
+): WeaponConfig {
+  return getWeapon(override ?? drillWeaponId ?? DEFAULT_WEAPON_ID);
 }

@@ -77,6 +77,12 @@ k = 4 consecutive ticks
 human_rt_lower_bound = 100 ms
 ```
 
+The 500 ms default assumes that the whole pre-stimulus window is a quiet, uncontaminated baseline. Rapid-cycle
+drills can violate that assumption by placing the previous engagement inside the window; the current
+`baseline_insufficient` flag checks sample coverage, not provenance, and therefore does not detect this failure.
+Treat affected `t_detect` and dependent metrics as unavailable outside explicitly labelled sensitivity analyses.
+See [KI-034](../known_issue/KI-034-prestimulus-baseline-overlaps-prior-engagement.md).
+
 `d epsilon / dt` is measured in deg/s between adjacent tick samples and assigned to the later tick. The detection
 onset is the first tick after `t_visible` where:
 

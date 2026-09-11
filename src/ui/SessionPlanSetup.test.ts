@@ -6,6 +6,11 @@ import {
   TEST_FAMILY_IDS,
   type SessionFamilyId,
 } from '../session/sessionSchedule.ts';
+import { WEAPONS } from '../weapon/weapons.ts';
+import {
+  ALL_TRACKING_PILOT_CONFIGS,
+  TRACKING_PILOT_SCHEDULABLE_DRILL_IDS,
+} from '../session/trackingPilotSchedulableDrills.ts';
 import { createSessionPlanSetup } from './SessionPlanSetup.ts';
 
 interface FakeEvent {
@@ -175,9 +180,13 @@ function addItem(harness: Harness, drillId: string, reps?: number): void {
   setReps(harness, harness.itemList.children.length - 1, String(reps));
 }
 
-/** Row controls are looked up positionally: [handle, name, reps, up, down, remove]. */
-function rowControl(harness: Harness, index: number, control: 'reps' | 'up' | 'down' | 'remove'): FakeElement {
-  const offsets = { reps: 2, up: 3, down: 4, remove: 5 } as const;
+/** Row controls are looked up positionally: [handle, name, reps, weapon, up, down, remove]. */
+function rowControl(
+  harness: Harness,
+  index: number,
+  control: 'reps' | 'weapon' | 'up' | 'down' | 'remove',
+): FakeElement {
+  const offsets = { reps: 2, weapon: 3, up: 4, down: 5, remove: 6 } as const;
   return harness.itemList.children[index].children[offsets[control]];
 }
 
@@ -185,6 +194,13 @@ function setReps(harness: Harness, index: number, value: string): void {
   const input = rowControl(harness, index, 'reps');
   input.value = value;
   input.dispatch('input');
+}
+
+function setWeapon(harness: Harness, index: number, value: string): FakeElement {
+  const select = rowControl(harness, index, 'weapon');
+  select.value = value;
+  select.dispatch('change');
+  return select;
 }
 
 function itemDrillIds(harness: Harness): string[] {
@@ -326,7 +342,7 @@ describe('createSessionPlanSetup — custom program editing (FR-58.12)', () => {
     }
 
     expect(offered).toEqual([...SCHEDULABLE_DRILL_IDS]);
-    expect(offered).toHaveLength(36);
+    expect(offered).toHaveLength(38); // 36 through WP-62, + the two WP-64 curated pilot blocks
     expect(new Set(familyOrder).size).toBe(familyOrder.length);
     expect(familyOrder.every((family) => KNOWN_SESSION_FAMILY_IDS.has(family as SessionFamilyId))).toBe(true);
     for (const drillId of offered) expect(FAMILY_BY_DRILL_ID.has(drillId)).toBe(true);
@@ -407,6 +423,75 @@ describe('createSessionPlanSetup — custom program editing (FR-58.12)', () => {
     });
     expect(harness.root.style.display).toBe('none');
   });
+
+  it('renders one weapon picker per item with the WEAPONS list and magazine sizes', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A);
+    addItem(harness, DRILL_B);
+
+    const weaponSelects = harness.itemList.children.map((_, index) => rowControl(harness, index, 'weapon'));
+    expect(weaponSelects).toHaveLength(2);
+    for (const select of weaponSelects) {
+      expect(select.tag).toBe('select');
+      expect(select.children).toHaveLength(Object.keys(WEAPONS).length + 1);
+      expect(select.children[0]).toMatchObject({ value: '', textContent: '—（drill 預設）' });
+      expect(select.children.map((option) => option.textContent)).toContain('usp_s_laser（12 發）');
+      expect(select.children.map((option) => option.textContent)).toContain('ak47（30 發）');
+    }
+  });
+
+  it('updates preview weapon attributes without rerendering the edited row', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A, 2);
+    const row = harness.itemList.children[0];
+    const select = rowControl(harness, 0, 'weapon');
+
+    setWeapon(harness, 0, 'm4a1s');
+
+    expect(harness.itemList.children[0]).toBe(row);
+    expect(rowControl(harness, 0, 'weapon')).toBe(select);
+    expect(
+      harness.previewSteps.children
+        .filter((line) => line.attributes.get('data-program-step') === 'run')
+        .map((line) => line.attributes.get('data-step-weapon-id')),
+    ).toEqual(['m4a1s', 'm4a1s']);
+    expect(harness.previewSteps.children[0].textContent).toContain('武器 m4a1s');
+  });
+
+  it('submits per-item weapon ids and omits the key for drill defaults', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A, 3);
+    addItem(harness, DRILL_B, 2);
+    setWeapon(harness, 0, 'm4a1s');
+
+    harness.form.dispatch('submit');
+
+    expect(harness.onSubmit).toHaveBeenCalledWith({
+      mode: 'custom',
+      items: [
+        { drillId: DRILL_A, reps: 3, weaponId: 'm4a1s' },
+        { drillId: DRILL_B, reps: 2 },
+      ],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    const submitted = harness.onSubmit.mock.calls[0]![0] as { items: Array<Record<string, unknown>> };
+    expect(Object.hasOwn(submitted.items[1], 'weaponId')).toBe(false);
+  });
+
+  it('explains reload/ammo behaviour and weapon-based trend grouping before submission', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+
+    expect(harness.document.created.some((element) => element.textContent.includes('無玩家 reload'))).toBe(true);
+    expect(harness.document.created.some((element) => element.textContent.includes('目標生成會補滿彈匣'))).toBe(
+      true,
+    );
+    expect(harness.document.created.some((element) => element.textContent.includes('趨勢分群'))).toBe(true);
+  });
 });
 
 describe('createSessionPlanSetup — program preview (FR-58.13)', () => {
@@ -445,12 +530,12 @@ describe('createSessionPlanSetup — program preview (FR-58.13)', () => {
       expected.filter((step) => step.kind === 'rest').map((step) => [step.boundary, step.nextDrillId]),
     );
     expect(harness.previewSummary.textContent).toBe('預覽（17 步 · 執行 9 輪 · 休息合計 5 分 00 秒）');
-    expect(harness.previewSteps.children[0].textContent).toBe(`1. ▶ ${DRILL_A} (1/3)`);
+    expect(harness.previewSteps.children[0].textContent).toBe(`1. ▶ ${DRILL_A} (1/3) · 武器 預設`);
     expect(harness.previewSteps.children[1].textContent).toBe('2. ⏸ 30s · rep（同一 drill 下一輪） → hold_click_v1');
     expect(harness.previewSteps.children[5].textContent).toBe(
       '6. ⏸ 60s · family（換家族） → spider-shot-v2',
     );
-    expect(harness.previewSteps.children[16].textContent).toBe(`17. ▶ ${DRILL_C} (3/3)`);
+    expect(harness.previewSteps.children[16].textContent).toBe(`17. ▶ ${DRILL_C} (3/3) · 武器 預設`);
   });
 
   it('shows the drill boundary label when two adjacent items share a family (R-58.8)', () => {
@@ -469,6 +554,15 @@ describe('createSessionPlanSetup — program preview (FR-58.13)', () => {
       '2. ⏸ 30s · drill（同家族換 drill） → spider-shot-v3',
     );
     expect(harness.previewSummary.textContent).toBe('預覽（3 步 · 執行 2 輪 · 休息合計 30 秒）');
+  });
+
+  it('shows declared BR weapons in the preview when the item leaves weapon at drill default', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, 'tracking_br_v1__ads_off__hitscan__0p5deg');
+
+    expect(harness.previewSteps.children[0].attributes.get('data-step-weapon-id')).toBe('ak47_br_hip_hitscan');
+    expect(harness.previewSteps.children[0].textContent).toContain('武器 ak47_br_hip_hitscan');
   });
 
   it('omits a zero-second rest instead of rendering a step that would flash for one frame', () => {
@@ -548,6 +642,23 @@ describe('createSessionPlanSetup — compile failures disable submit (FR-58.7)',
     harness.form.dispatch('submit');
     expect(harness.onSubmit).not.toHaveBeenCalled();
   });
+
+  it('blocks overriding a BR cell weapon with row-local feedback from the compiler', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A);
+    addItem(harness, 'tracking_br_v1__ads_off__hitscan__0p5deg');
+
+    setWeapon(harness, 1, 'm4a1s');
+
+    expect(harness.submit.disabled).toBe(true);
+    expect(harness.status.textContent).toContain('items[1].weaponId');
+    expect(harness.status.textContent).toContain('不可指定其他武器');
+    expect(harness.itemList.children[1].attributes.get('data-invalid')).toBe('true');
+    expect(harness.itemList.children[0].attributes.has('data-invalid')).toBe(false);
+    harness.form.dispatch('submit');
+    expect(harness.onSubmit).not.toHaveBeenCalled();
+  });
 });
 
 describe('createSessionPlanSetup — keyboard and ARIA (NFR-58.7)', () => {
@@ -562,6 +673,7 @@ describe('createSessionPlanSetup — keyboard and ARIA (NFR-58.7)', () => {
     expect(byName(harness.document, 'sessionPlanRestSeconds').attributes.get('aria-label')).toBe('家族間休息秒數');
     expect(harness.itemList.attributes.get('aria-label')).toBe('執行清單');
     expect(rowControl(harness, 0, 'reps').attributes.get('aria-label')).toBe(`${DRILL_A} 重複次數`);
+    expect(rowControl(harness, 0, 'weapon').attributes.get('aria-label')).toBe(`${DRILL_A} 武器`);
     expect(rowControl(harness, 0, 'up').attributes.get('aria-label')).toBe(`${DRILL_A} 上移`);
     expect(rowControl(harness, 0, 'down').attributes.get('aria-label')).toBe(`${DRILL_A} 下移`);
     expect(rowControl(harness, 0, 'remove').attributes.get('aria-label')).toBe(`移除 ${DRILL_A}`);
@@ -600,7 +712,7 @@ describe('createSessionPlanSetup — keyboard and ARIA (NFR-58.7)', () => {
     });
     for (const row of harness.itemList.children) {
       for (const control of row.children.slice(2)) {
-        expect(['input', 'button']).toContain(control.tag);
+        expect(['input', 'select', 'button']).toContain(control.tag);
         expect(control.attributes.get('aria-label')).toBeTruthy();
       }
     }
@@ -628,5 +740,126 @@ describe('createSessionPlanSetup — preview redraw cost (NFR-58.4)', () => {
       `[WP-58 T4 perf] preview redraw(799 steps): samples=${samples.length} p95=${p95.toFixed(4)}ms max=${samples.at(-1)?.toFixed(4)}ms`,
     );
     expect(p95).toBeLessThan(50);
+  });
+});
+
+/**
+ * WP-64 T2 (FR-64.1/FR-64.3/NFR-64.6) — the curated tracking-pilot blocks as seen from the form.
+ *
+ * The picker is not given a second drill list by WP-64: it groups whatever `SCHEDULABLE_DRILL_IDS`
+ * holds, so these tests are about what that reach *looks like* to the operator — the two approved
+ * blocks present in the `tracking` group, the other seven absent, and the rest/preview semantics
+ * identical to any other drill. The compiler-level guarantees live in `sessionProgram.test.ts`;
+ * nothing here restates them.
+ */
+describe('createSessionPlanSetup — curated tracking-pilot blocks (WP-64)', () => {
+  const UNCURATED_PILOT_IDS = ALL_TRACKING_PILOT_CONFIGS.map((config) => config.drillId).filter(
+    (drillId) => !TRACKING_PILOT_SCHEDULABLE_DRILL_IDS.includes(drillId),
+  );
+  /** The frozen tracking representative — same family, so a pilot block next to it earns drill rest. */
+  const TRACKING_PARTNER = 'tracking_scene_v1';
+  const [CURATED_CORE_ID, CURATED_REVERSAL_ID] = TRACKING_PILOT_SCHEDULABLE_DRILL_IDS;
+
+  function offeredByFamily(harness: Harness): Map<string, string[]> {
+    return new Map(
+      harness.picker.children.map((group) => [group.label, group.children.map((option) => option.value)]),
+    );
+  }
+
+  it('offers exactly the two curated blocks in the tracking group, and no other pilot block', () => {
+    const harness = mount();
+    const byFamily = offeredByFamily(harness);
+    const tracking = byFamily.get('tracking') ?? [];
+    const everywhere = [...byFamily.values()].flat();
+
+    expect(TRACKING_PILOT_SCHEDULABLE_DRILL_IDS).toHaveLength(2);
+    for (const drillId of TRACKING_PILOT_SCHEDULABLE_DRILL_IDS) {
+      expect(tracking, `${drillId} must be offered in the tracking group`).toContain(drillId);
+      expect(FAMILY_BY_DRILL_ID.get(drillId)).toBe('tracking');
+    }
+    // The seven blocks nobody approved stay as unreachable as they were before WP-64 (NFR-64.2):
+    // absent from the tracking group *and* from every other group (FM-64.4).
+    expect(UNCURATED_PILOT_IDS).toHaveLength(7);
+    for (const drillId of UNCURATED_PILOT_IDS) expect(everywhere).not.toContain(drillId);
+    expect(tracking).toContain(TRACKING_PARTNER);
+  });
+
+  it('adds a curated block and submits it through focusable controls only (NFR-64.6)', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    // Same gesture as any other drill: pick in the select, activate the button, type the reps.
+    addItem(harness, CURATED_CORE_ID, 2);
+
+    expect(itemDrillIds(harness)).toEqual([CURATED_CORE_ID]);
+    expect(rowControl(harness, 0, 'reps').attributes.get('aria-label')).toBe(`${CURATED_CORE_ID} 重複次數`);
+    for (const control of harness.itemList.children[0].children.slice(2)) {
+      expect(['input', 'select', 'button']).toContain(control.tag);
+      expect(control.attributes.get('aria-label')).toBeTruthy();
+    }
+
+    harness.form.dispatch('submit');
+    expect(harness.onSubmit).toHaveBeenCalledWith({
+      mode: 'custom',
+      // No per-item weapon: the block's own `tracking_pilot_hold` declaration is the fixed research
+      // factor (FR-64.4), so the operator never has to — and must not have to — restate it.
+      items: [{ drillId: CURATED_CORE_ID, reps: 2 }],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+  });
+
+  it('earns drill rest next to another tracking drill, and names the pilot weapon in the preview', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, CURATED_CORE_ID, 2);
+    addItem(harness, TRACKING_PARTNER);
+
+    const expected = compileSessionProgram({
+      items: [
+        { drillId: CURATED_CORE_ID, reps: 2 },
+        { drillId: TRACKING_PARTNER, reps: 1 },
+      ],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(harness.previewSteps.children.map((line) => line.attributes.get('data-program-step'))).toEqual(
+      expected.map((step) => step.kind),
+    );
+    // Both seams inside one family: rep (same drill, next round) then drill (same family, next
+    // drill). Neither is the family boundary — that is the point of the assertion.
+    expect(
+      harness.previewSteps.children
+        .filter((line) => line.attributes.get('data-program-step') === 'rest')
+        .map((line) => line.attributes.get('data-step-boundary')),
+    ).toEqual(['rep', 'drill']);
+    // The fixed weapon is visible to the operator without being selectable per row.
+    expect(harness.previewSteps.children[0].textContent).toBe(
+      `1. ▶ ${CURATED_CORE_ID} (1/2) · 武器 tracking_pilot_hold`,
+    );
+  });
+
+  it('earns family rest when the next item leaves the tracking family', () => {
+    const detectionDrillId = SCHEDULABLE_DRILL_IDS.find((id) => FAMILY_BY_DRILL_ID.get(id) === 'detection');
+    if (detectionDrillId === undefined) throw new Error('expected a schedulable detection drill');
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, CURATED_REVERSAL_ID);
+    addItem(harness, detectionDrillId);
+
+    const expected = compileSessionProgram({
+      items: [
+        { drillId: CURATED_REVERSAL_ID, reps: 1 },
+        { drillId: detectionDrillId, reps: 1 },
+      ],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(harness.previewSteps.children).toHaveLength(expected.length);
+    expect(
+      harness.previewSteps.children
+        .filter((line) => line.attributes.get('data-program-step') === 'rest')
+        .map((line) => [line.attributes.get('data-step-boundary'), line.attributes.get('data-step-next-drill-id')]),
+    ).toEqual([['family', detectionDrillId]]);
+    expect(summarizeProgram(expected)).toEqual({ runCount: 2, totalRestSeconds: 60 });
   });
 });

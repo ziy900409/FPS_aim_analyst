@@ -296,6 +296,21 @@ export interface DrillConfig {
   protocolGuard?: { noFire?: boolean; noAds?: boolean; noMovement?: boolean; requireFire?: boolean };
 }
 
+/**
+ * WP-65 / T4（FR-65.7）：這個 drill 有沒有「總時長」可以倒數——有則回毫秒，沒有則回 `undefined`。
+ *
+ * 讀的是 `endCondition`,**不是** `timing.timeLimitMs`。兩者語意不同:`endCondition.type ===
+ * 'timeLimit'` 的 `value` 才是這場 drill 的設計總時長;`timing.timeLimitMs`(roster 多為 120 000)
+ * 是 `targetCount` 型的**後援閘**,實際多在 20–40 秒就達標結束,拿它倒數會顯示「還剩 118 秒」的
+ * 假資訊(README §0.2)。
+ *
+ * 純函式、無時鐘、無配置;HUD 呈現與遍歷分類測試共用同一個定義(C-D4:同一構念不開第二套實作)。
+ */
+export function resolveDrillTimeLimitMs(config: DrillConfig): number | undefined {
+  const endCondition = config.endCondition;
+  return endCondition.type === 'timeLimit' ? endCondition.value : undefined;
+}
+
 export function resolveTargetHitbox(config?: DrillConfig): TargetHitboxSize {
   const hitbox = config?.targets.hitbox;
   if (hitbox === undefined) return DEFAULT_TARGET_HITBOX;

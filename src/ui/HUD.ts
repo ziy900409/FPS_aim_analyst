@@ -12,6 +12,12 @@ export interface HUDStats {
   vx: number;
   vz: number;
   stopped: boolean;
+  /**
+   * WP-65 / T4（FR-65.7）:設定時 `Time` 卡改顯示 `max(0, timeLimitMs − elapsedMs)`。
+   * additive optional ⇒ 省略時 `formatElapsed(elapsedMs)` 逐位不變（replay 的 `createHUDSummary()`
+   * 路徑因此零修改）。值來自 `resolveDrillTimeLimitMs()`——`endCondition` 而非後援閘。
+   */
+  timeLimitMs?: number;
 }
 
 export interface HUDSummary {
@@ -105,6 +111,7 @@ export function createHUDStats(
   fireCount: number,
   hitCount: number,
   target: HUDStats,
+  timeLimitMs: number | undefined,
 ): HUDStats {
   target.phase = phase;
   target.elapsedMs = elapsedMs;
@@ -114,6 +121,8 @@ export function createHUDStats(
   target.vx = state.player.vx;
   target.vz = state.player.vz;
   target.stopped = state.player.stopped;
+  // WP-65 / T4：參數放在尾端,既有位置參數不整排位移;恆賦值（含 `undefined`）讓重用物件的形狀穩定。
+  target.timeLimitMs = timeLimitMs;
   return target;
 }
 
@@ -132,7 +141,13 @@ function fillHUDSummary(stats: HUDStats, target: HUDSummary): HUDSummary {
   const speed = Math.hypot(stats.vx, stats.vz);
   const stopped = stats.stopped || speed <= STOP_EPSILON;
   target.scoreText = String(stats.score);
-  target.timeText = formatElapsed(stats.elapsedMs);
+  // WP-65 / T4（FR-65.7/65.8）：倒數只是換一個輸入餵給同一個 `formatElapsed()`——它已經 clamp 負值
+  // 並處理非有限值,不另寫第二套格式化（C-D4）。`elapsedMs === 0`（待命／countdown）時自然顯示
+  // 總時長,不需要額外的相位分支。
+  target.timeText =
+    stats.timeLimitMs === undefined
+      ? formatElapsed(stats.elapsedMs)
+      : formatElapsed(Math.max(0, stats.timeLimitMs - stats.elapsedMs));
   target.hitRateText = stats.fireCount > 0 ? `${formatNumber((stats.hitCount / stats.fireCount) * 100, 1)}%` : 'N/A';
   target.velocityText = stopped ? 'STOP' : 'MOVING';
   target.velocityDetail = `${formatNumber(speed, 0)} u/s`;

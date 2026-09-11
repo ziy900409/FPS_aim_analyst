@@ -200,6 +200,46 @@ click-only 的 `<div>`。
    HTML。practice block 會被自動排除並計入 `excludedPracticeRunCount`（FR-54-5）。公式、預設參數與
    blocked 語意見 [analysis-tracking.md](analysis-tracking.md)。
 
+## ⚠️ Session Plan 裡看到的兩個 pilot block（ad hoc 研究用，WP-64）
+
+自 WP-64 起，**「選手測試 Session」→ 自訂 program** 的 drill 下拉選單（`tracking` 群組）多出兩個
+tracking pilot block：
+
+| drill id | 來源 | 主 seed | 條件 |
+|---|---|---|---|
+| `tracking_core_pr_pilot_v1_2deg_5dps` | `buildTrackingCorePrPilotV1Cell(2, 5)` | 54012 | core 2.0° × 5 deg/s（穩定追蹤） |
+| `tracking_reversal_pilot_v1_high` | `trackingReversalPilotV1High` | 54101 | reversal 3.0°、high（反應式修正） |
+
+它們的刺激、hitbox、時序、`protocolGuard` 與武器（`tracking_pilot_hold`）與正式 pilot **逐位相同**
+——WP-64 只做「可不可以被排程」這件事，沒有動任何 config 值。九個 block 裡**只有這兩個**可被排程；
+其餘七個（practice、兩個 calibration、另外三個 core cell、`reversal_medium`）在選單裡不會出現。
+
+用途：接線測試、手感檢查、設備／刷新率比較、示範。**不是**收正式 pilot 資料的路徑。
+
+### 三項明文禁令
+
+1. **不可替代 manifest。** Session Plan 跑出來的 payload **不是** `tracking-pilot-v2` 的一部分，
+   **不得**充當 Gate B／Gate C evidence，也不得餵進 `buildTrackingPilotEvidence()` 當正式 run。
+   Session Plan 沒有 counterbalance、沒有 `sessionIndex`、沒有 block 順序約束、沒有 retry/abort 紀錄。
+   辨識方法（互斥，兩邊都不需要新欄位）：
+   - ad hoc run：`meta.sessionPlanMode === 'custom'`，且 `meta.session` 只有 `participantId`。
+   - 正式 manifest run：`meta.session.sessionLabel === 'tracking-pilot-v2:<pid>:session-N'`。
+2. **只有 primary seed。** Session Plan 永遠使用 config 內的主 seed（上表 54012／54101），
+   **不會**產生 manifest 的 alternate seed（`+10000`）。要測 seed 家族等效性，只能走正式 pilot 入口。
+3. **reps 不是獨立樣本。** 同一列設 reps = 3 是把**同一條軌跡**重播三次（repeated exposure），
+   三份 payload 的 `meta.spawn.trackingTrajectory` 完全相同。**不可**把它們當三個獨立 trial 併池、
+   求平均或做統計檢定；要更多獨立樣本必須換條件或走正式 pilot 的 seed 設計。
+
+### 還有兩件事 Session Plan 不做
+
+- **不判 eligibility。** `requireFire`／`noMovement` 違規**仍然照記**（事件與 `meta.protocolGuard`
+  都在，可離線分析），但 Session Plan **不會**顯示品質橫幅、也不會宣告 eligible／blocked。
+  只有正式 pilot 入口（研究員模式 → Tracking pilot）會跑 `evaluateTrackingRunEligibility()`。
+- **不進歷史紀錄。** 兩個 block 仍是 `mode: 'practice'`，歷史保存會直接判 `excluded (practice)`，
+  不會進趨勢圖或任何 Assessment 群體。
+
+> 一場 ad hoc run 的成本：每個 block 26 秒（1 秒置中準備 + 25 秒計分窗），不可縮短。
+
 ## 遺留給後續 task 的已知缺口
 
 - **無「跳過休息」按鈕**：`restSeconds` 一旦設定，操作員必須等倒數歸零才會進下一個 block（沒有

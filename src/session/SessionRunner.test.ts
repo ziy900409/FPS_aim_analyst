@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { TRANSFER_PILOT_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
+import type { WeaponId } from '../weapon/weapons.ts';
 import {
   buildFrozenSessionPlan,
   createSessionRunner,
@@ -75,7 +76,7 @@ function familyRestPhase(
 
 describe('SessionRunner', () => {
   it('preserves the selected-family sequence and inserts the configured rest', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const runner = createSessionRunner({ loadDrillById });
     const families: readonly SessionFamilyId[] = ['spider-shot', 'hold-click', 'counterstrafe'];
     const { plan } = frozen({ families, sessionIndex: 1, restSeconds: 17 });
@@ -117,7 +118,7 @@ describe('SessionRunner', () => {
   });
 
   it('reports unavailable warmup explicitly and starts assessment instead', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const runner = createSessionRunner({ loadDrillById });
     const build = frozen({ families: ['hold-click'], includeWarmup: true });
 
@@ -129,11 +130,11 @@ describe('SessionRunner', () => {
     await runner.start(build.plan);
 
     expect(runner.phase).toEqual(runPhase(0, 'hold-click', 0));
-    expect(loadDrillById).toHaveBeenCalledWith('hold_click_v1');
+    expect(loadDrillById).toHaveBeenCalledWith('hold_click_v1', undefined); // WP-62 T3：frozen 軌不指定武器
   });
 
   it('loads the counterstrafe practice drill before its assessment, with no rest in between', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const onStatus = vi.fn();
     const runner = createSessionRunner({ loadDrillById, onStatus });
     const build = frozen({ families: ['counterstrafe'], includeWarmup: true });
@@ -148,10 +149,10 @@ describe('SessionRunner', () => {
     expect(runner.phase).toEqual(
       runPhase(0, 'counterstrafe', 0, { drillId: 'counterstrafe-free-v1', warmup: true }),
     );
-    expect(loadDrillById).toHaveBeenCalledWith('counterstrafe-free-v1');
+    expect(loadDrillById).toHaveBeenCalledWith('counterstrafe-free-v1', undefined);
     await runner.advance();
     expect(runner.phase).toEqual(runPhase(1, 'counterstrafe', 1));
-    expect(loadDrillById).toHaveBeenLastCalledWith('counterstrafe-reversal-v1');
+    expect(loadDrillById).toHaveBeenLastCalledWith('counterstrafe-reversal-v1', undefined);
     // The warmup is not counted in the "n / N" progress readout, as before WP-58.
     expect(onStatus.mock.calls.map(([text]) => text)).toEqual([
       '熱身: counterstrafe',
@@ -173,7 +174,7 @@ describe('SessionRunner', () => {
   });
 
   it('resolves the formal peek-click-transfer-v1 family to a drill distinct from every pilot family (WP-53 T4, FR-53-6)', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const runner = createSessionRunner({ loadDrillById });
     const build = frozen({ families: ['peek-click-transfer-v1'], includeWarmup: true });
 
@@ -181,13 +182,13 @@ describe('SessionRunner', () => {
 
     expect(build.warmupAvailability).toBe('unavailable');
     expect(runner.phase).toEqual(runPhase(0, 'peek-click-transfer-v1', 0));
-    expect(loadDrillById).toHaveBeenCalledWith('peek_click_transfer_v1');
+    expect(loadDrillById).toHaveBeenCalledWith('peek_click_transfer_v1', undefined);
     expect(resolveFamilyDrillId('peek-click-transfer-v1')).not.toBe(resolveFamilyDrillId('peek-click-transfer'));
     expect(resolveWarmupDrillId('peek-click-transfer-v1')).toEqual({ availability: 'unavailable' });
   });
 
   it('reports unavailable warmup for the peek-click-transfer pilot family and loads it directly', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const runner = createSessionRunner({ loadDrillById });
     const build = frozen({ families: ['peek-click-transfer'], includeWarmup: true });
 
@@ -195,12 +196,12 @@ describe('SessionRunner', () => {
 
     expect(build.warmupAvailability).toBe('unavailable');
     expect(runner.phase).toEqual(runPhase(0, 'peek-click-transfer', 0));
-    expect(loadDrillById).toHaveBeenCalledWith(resolveFamilyDrillId('peek-click-transfer'));
+    expect(loadDrillById).toHaveBeenCalledWith(resolveFamilyDrillId('peek-click-transfer'), undefined);
     expect(resolveWarmupDrillId('peek-click-transfer')).toEqual({ availability: 'unavailable' });
   });
 
   it('runs the versioned transfer-pilot roster end to end with 60s rest between families (WP-45 T5)', async () => {
-    const loadDrillById = vi.fn<(drillId: string) => Promise<void>>(async () => {});
+    const loadDrillById = vi.fn<(drillId: string, weaponId?: WeaponId) => Promise<void>>(async () => {});
     const runner = createSessionRunner({ loadDrillById });
     const families = [...TRANSFER_PILOT_FAMILY_IDS];
     const build = frozen({ families, includeWarmup: true });
@@ -227,5 +228,10 @@ describe('SessionRunner', () => {
     await runner.advance();
     expect(runner.phase).toEqual({ kind: 'done' });
     expect(loadDrillById.mock.calls.map(([id]) => id)).toEqual(families.map(resolveFamilyDrillId));
+    // WP-62 T3 (D-62-2): the frozen track never names a per-item weapon, so every activation on it
+    // still falls through to the drill's own declared weapon. Asserted on the value, not just on
+    // arity — a compiler that started emitting `weaponId` on frozen steps would break the
+    // pre-registered protocol silently.
+    expect(loadDrillById.mock.calls.map(([, weaponId]) => weaponId)).toEqual(families.map(() => undefined));
   });
 });

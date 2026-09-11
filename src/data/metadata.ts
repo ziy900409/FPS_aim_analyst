@@ -9,6 +9,7 @@ import { SIM_TO_WORLD } from '../loop/constants.ts';
 import { findSessionPlanPreset } from '../session/sessionPlanPresets.ts';
 import { KNOWN_SESSION_FAMILY_IDS } from '../session/sessionSchedule.ts';
 import { FAMILY_BY_DRILL_ID } from '../session/drillFamily.ts';
+import { isWeaponId } from '../weapon/weapons.ts';
 
 export const DEFAULT_SIM_HZ = 128;
 export const DEFAULT_V_STRAFE = 250;
@@ -132,6 +133,13 @@ export interface ReplayMeta {
 export interface SessionPlanItemMeta {
   readonly drillId: string;
   readonly reps: number;
+  /**
+   * WP-62 T5 (FR-62.4) — the weapon the operator *planned* for this item, absent when the row was
+   * left on the drill's own default. This is intent; `Meta.weaponId` is the fact of what the run
+   * actually loaded. Keeping both lets an offline reader reconcile them instead of inferring one
+   * from the other.
+   */
+  readonly weaponId?: string;
 }
 
 export interface MouseSamplingMeta {
@@ -223,6 +231,14 @@ export interface Meta {
     perfFloor: boolean;
     recorderOverflow: boolean;
     bufferOverflow: boolean;
+    /**
+     * WP-65 / T5（FR-65.9/65.10）：錄製中（`countdown`/`running`）曾失去 Pointer Lock。
+     * additive 第五欄，採 **optional-in / required-out**（D-65-3）：`requireValidity()` 缺欄補
+     * `false`（既存 golden／fixture payload 零修改仍可解析），新匯出一律帶欄。
+     * 與其餘四欄不同，本欄**併入** `suspect`（OQ-65.1）——掉鎖期間滑鼠位移完全沒進輸入鏈，屬
+     * 條件失效而非行為觀測。`corridorExceeded` 的不併入是刻意的不對稱，見 `collectMeta()` 註解。
+     */
+    pointerLockLost: boolean;
   };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
@@ -292,6 +308,8 @@ export interface CollectMetaArgs {
     perfFloor: boolean;
     recorderOverflow: boolean;
     bufferOverflow: boolean;
+    /** WP-65 / T5：optional-in（缺席 = `false`），見 `Meta['validity'].pointerLockLost`。 */
+    pointerLockLost?: boolean;
   };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
@@ -416,7 +434,12 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     lateEventCount,
     bufferOverflow,
     recorderOverflow,
-    suspect: explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect,
+    // WP-65 / T5（FR-65.10 / OQ-65.1）— 掉鎖併入 `suspect`：掉鎖期間 `onMouseMove` 直接 return，
+    // 受試者的位移**完全沒進輸入鏈**而 sim 照跑、目標照 spawn ⇒ 這是條件失效，性質同 frameFloor。
+    // `validity.corridorExceeded` **刻意不併入**（既有語意，本 WP 不動）：走出走廊是該記錄的行為
+    // 觀測，且場景幾何永不進 sim（GD-6）不可能影響命中。這個不對稱是設計，不是遺漏——別順手統一。
+    suspect:
+      explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect || validity?.pointerLockLost === true,
     simToWorld,
     ...(validity !== undefined ? { validity } : {}),
     ...(weapon !== undefined ? { weapon } : {}),
@@ -491,6 +514,11 @@ function requireSessionPlanMode(value: unknown): 'frozen' | 'custom' {
  * WP-58 T5 — validated against `FAMILY_BY_DRILL_ID`, the same single source the program compiler
  * and the plan form already use (FR-58.1 / KI-016: no second allowlist). A drill that cannot be
  * scheduled cannot be claimed to have been scheduled.
+ *
+ * WP-62 T5 — `weaponId` follows the same rule against `isWeaponId`/`WEAPONS`: absent is legal (the
+ * row used the drill's default), present must name a weapon this build can actually load. The key
+ * is omitted rather than written as `undefined` so an unplanned item stays byte-identical to what
+ * WP-58 wrote.
  */
 function requireSessionPlanItems(value: unknown): readonly SessionPlanItemMeta[] {
   if (!Array.isArray(value)) throw new Error('sessionPlanItems must be an array');
@@ -501,7 +529,13 @@ function requireSessionPlanItems(value: unknown): readonly SessionPlanItemMeta[]
     if (!FAMILY_BY_DRILL_ID.has(drillId)) {
       throw new Error(`sessionPlanItems[${index}].drillId must be a schedulable drill`);
     }
-    return { drillId, reps: requirePositiveInteger(item.reps, `sessionPlanItems[${index}].reps`) };
+    const reps = requirePositiveInteger(item.reps, `sessionPlanItems[${index}].reps`);
+    if (item.weaponId === undefined) return { drillId, reps };
+    const weaponId = requireTrimmedNonEmptyString(item.weaponId, `sessionPlanItems[${index}].weaponId`);
+    if (!isWeaponId(weaponId)) {
+      throw new Error(`sessionPlanItems[${index}].weaponId must be a known weapon`);
+    }
+    return { drillId, reps, weaponId };
   });
 }
 
@@ -708,6 +742,12 @@ function requireValidity(value: unknown): NonNullable<Meta['validity']> {
     perfFloor: requireBoolean(validity.perfFloor, 'validity.perfFloor'),
     recorderOverflow: requireBoolean(validity.recorderOverflow, 'validity.recorderOverflow'),
     bufferOverflow: requireBoolean(validity.bufferOverflow, 'validity.bufferOverflow'),
+    // WP-65 / T5（D-65-3）— optional-in / required-out。既有四欄維持 required：讓第五欄也 required
+    // 會使**所有**既存 golden／fixture payload 整份被拒（WP-61 踩過同型的坑）。
+    pointerLockLost:
+      validity.pointerLockLost === undefined
+        ? false
+        : requireBoolean(validity.pointerLockLost, 'validity.pointerLockLost'),
   };
 }
 

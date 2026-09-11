@@ -65,9 +65,11 @@ t=11303.3  yaw= 2.86°  ecc=49.73   dEcc/dt =   0   ← aim 未變
 
 即這是一個在 120 Hz 以上不可見、在 60 Hz 硬性失敗的**懸崖**，不是漸進退化。
 
-### 次要觀察（不是本次 0% 的成因，但同一份資料量到）
+### 獨立缺陷：baseline 窗吃進上一次拉槍
 
-`preStimulusMs: 500` 的 baseline 窗會**吃進上一次拉槍**（本 drill 的 `rhythm` median 僅 828 ms）⇒ `baselineSdDegPerSec` p50 = 71 deg/s、`thresholdDegPerSec` p50 = **214 deg/s**（最大 804）。`baselineInsufficient` 全為 `false`，既有品質旗標抓不到。修好連續性之後，這一項會決定 `tDetectMs` 的偏誤大小，應一併評估。
+同一份資料量到的 `preStimulusMs: 500` 污染不是 KI-031 的次要效應，而是獨立的
+[KI-034](KI-034-prestimulus-baseline-overlaps-prior-engagement.md)。它不造成本文的 60 Hz／4 連續 tick
+懸崖，但在更新率足夠的快速循環 drill 仍會單獨抬高門檻並漏檢；兩項修復必須分開驗證。
 
 ## 3. 影響面
 

@@ -521,6 +521,10 @@ function parseStringArray(value: unknown, path: string, errors: ExportPayloadPar
  * is strict at write time, while the reader must keep parsing a historical payload whose drill was
  * later renamed or dropped from the roster. A stored run must not become unreadable because the
  * roster moved on.
+ *
+ * WP-62 T5 — `weaponId` sits at the same layer as `drillId` for the same reason: shape-only here
+ * (absent stays absent, present must be a non-empty string), strict against `isWeaponId` in
+ * `collectMeta`. A run recorded with a weapon that a later build renames must still load.
  */
 function parseSessionPlanItems(
   value: unknown,
@@ -539,8 +543,13 @@ function parseSessionPlanItems(
     }
     const drillId = parseNonEmptyString(item.drillId, `${path}[${index}].drillId`, errors);
     const reps = parsePositiveInteger(item.reps, `${path}[${index}].reps`, errors);
-    if (drillId === undefined || reps === undefined) failed = true;
-    else result.push({ drillId, reps });
+    const weaponId =
+      item.weaponId === undefined ? undefined : parseNonEmptyString(item.weaponId, `${path}[${index}].weaponId`, errors);
+    if (drillId === undefined || reps === undefined || (item.weaponId !== undefined && weaponId === undefined)) {
+      failed = true;
+    } else {
+      result.push({ drillId, reps, ...(weaponId !== undefined ? { weaponId } : {}) });
+    }
   });
   return failed ? undefined : result;
 }
@@ -552,10 +561,22 @@ function parseValidity(value: unknown, path: string, errors: ExportPayloadParseE
   const perfFloor = parseBoolean(record.perfFloor, `${path}.perfFloor`, errors);
   const recorderOverflow = parseBoolean(record.recorderOverflow, `${path}.recorderOverflow`, errors);
   const bufferOverflow = parseBoolean(record.bufferOverflow, `${path}.bufferOverflow`, errors);
-  if (corridorExceeded === undefined || perfFloor === undefined || recorderOverflow === undefined || bufferOverflow === undefined) {
+  // WP-65 / T5（D-65-3）— optional-in：缺欄 ⇒ `false`，既有 golden／fixture payload 零修改仍可解析。
+  // 帶欄但型別錯誤仍必須報錯，所以走 `parseBoolean` 而非 `=== true` 的寬鬆比對。
+  const pointerLockLost =
+    record.pointerLockLost === undefined
+      ? false
+      : parseBoolean(record.pointerLockLost, `${path}.pointerLockLost`, errors);
+  if (
+    corridorExceeded === undefined ||
+    perfFloor === undefined ||
+    recorderOverflow === undefined ||
+    bufferOverflow === undefined ||
+    pointerLockLost === undefined
+  ) {
     return undefined;
   }
-  return { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow };
+  return { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow, pointerLockLost };
 }
 
 function parseWeaponMeta(value: unknown, path: string, errors: ExportPayloadParseError[]): WeaponMeta | undefined {

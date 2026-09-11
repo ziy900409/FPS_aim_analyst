@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { armAndWaitRunning } from './support/arm.ts';
 import type { DrillEvent } from '../../src/data/DataRecorder.ts';
 import type { ExportPayload } from '../../src/data/export.ts';
 import type { SpiderShotYawPitchConfig } from '../../src/drill/DrillConfig.ts';
@@ -133,6 +134,9 @@ async function loadWideFlick(page: Page): Promise<void> {
   await enterResearcherDrillControls(page);
   await page.locator('#drill-select').selectOption(SPIDER_SHOT_WIDE_DRILL_ID);
   await expect(page.locator('#scene-select')).toHaveValue(WIDE_FLICK_ARENA_SCENE_ID, { timeout: 20_000 });
+  // WP-65 T6：待命閘 —— spawn 表要等受試者取鎖並走完倒數才會開始跑。放在 helper 內，所有
+  // 呼叫端（spawn trace / resize invariance / translation lock）自動一致。
+  await armAndWaitRunning(page);
 }
 
 /** FOV 滑桿沒有 id；以 settings-panel 內帶「FOV」文字的那一列取，並回讀確認值真的套用。 */

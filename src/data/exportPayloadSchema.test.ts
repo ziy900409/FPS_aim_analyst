@@ -44,12 +44,28 @@ describe('parseExportPayload — existing research fixtures (8/8)', () => {
 // fields ever acquires a default, gets emitted unconditionally, or perturbs an existing field, the
 // bytes move and this table goes red. Hashed inline rather than with `node:crypto` so this file
 // keeps the `node:*`-free property its header claims.
+//
+// WP-65 / T5 (D-65-3) — `meta.validity.pointerLockLost` is optional-in / required-out, so
+// `parseValidity()` *materializes* `false` when the key is absent. That is exactly the "acquires a
+// default" case this table was built to catch, and it moved the bytes of the **three** fixtures
+// that carry a `meta.validity` block at all (09_18_05 / 09_24_18 / 09_37_24). The other five have
+// no `meta.validity`, so `validity` stays absent and their digests are unchanged — which is the
+// evidence that the shift is confined to the one key and did not perturb anything else.
+//
+// Why accept the shift instead of preserving absence: the flag is required-out so every reader
+// gets a boolean rather than `boolean | undefined`. Nothing persists these digests across
+// versions — `HistoryRepository` recomputes `contentHash` from `canonicalExportJSON` on both the
+// index-load and save paths, and both sides go through `parseExportPayload` first, so a re-saved
+// pre-WP-65 run hashes consistently. Python reads the raw on-disk JSON and never the canonical
+// form (C-D1), so `research/` is untouched.
 const CANONICAL_DIGEST_BEFORE_T5: ReadonlyMap<string, string> = new Map([
   ['counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json', '15c614402021931b'],
   ['counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json', '390d7578707f6ff9'],
-  ['counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json', 'a9555430873bfa89'],
-  ['counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json', 'edb34bfc5b664f17'],
-  ['counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json', 'd294238f1dc54df2'],
+  // ↓ 三筆帶 meta.validity 的 fixture，WP-65 / T5 後的新值（舊值依序為 a9555430873bfa89 /
+  //   edb34bfc5b664f17 / d294238f1dc54df2）。
+  ['counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json', 'e62c8b40f6d51fb4'],
+  ['counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json', 'daa8782429b5904c'],
+  ['counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json', '71814344e3dc42f7'],
   ['synthetic_counterstrafe.json', 'c159f12f895ae5f3'],
   ['synthetic_counterstrafe_t1_long.json', '2790a5da578ab390'],
   ['synthetic_timeline.json', '6b48b2f23a70b6bf'],
@@ -125,6 +141,59 @@ describe('parseExportPayload — WP-58 T5 session program audit fields', () => {
     expect(result.payload.meta.sessionPlanItems).toEqual([{ drillId: 'a_drill_that_no_longer_exists', reps: 1 }]);
   });
 
+  // -------------------------------------------------------------------------
+  // WP-62 T5 — the planned weapon per item (FR-62.4)
+  // -------------------------------------------------------------------------
+
+  it('parses a program that names a weapon on some rows and not others', () => {
+    const result = parseExportPayload(
+      metaWith({
+        sessionPlanMode: 'custom',
+        sessionPlanItems: [
+          { drillId: 'hold_click_v1', reps: 3, weaponId: 'm4a1s' },
+          { drillId: 'spider-shot-v2', reps: 2 },
+        ],
+      }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.sessionPlanItems).toEqual([
+      { drillId: 'hold_click_v1', reps: 3, weaponId: 'm4a1s' },
+      { drillId: 'spider-shot-v2', reps: 2 },
+    ]);
+    // The unplanned row must not gain the key — absent in, absent out, or the round trip below
+    // would move bytes that WP-58 payloads never had.
+    expect('weaponId' in (result.payload.meta.sessionPlanItems?.[1] ?? {})).toBe(false);
+  });
+
+  it('keeps reading a stored run whose weapon has since been renamed', () => {
+    // Same asymmetry as the drill id above: `collectMeta` checks `isWeaponId` at write time, the
+    // reader does not, so a run recorded against a weapon this build dropped still loads.
+    const result = parseExportPayload(
+      metaWith({
+        sessionPlanMode: 'custom',
+        sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1, weaponId: 'a_weapon_that_no_longer_exists' }],
+      }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.sessionPlanItems?.[0].weaponId).toBe('a_weapon_that_no_longer_exists');
+  });
+
+  it('round-trips the planned weapon through canonicalExportJSON', () => {
+    const result = parseExportPayload(
+      metaWith({
+        sessionPlanMode: 'custom',
+        sessionPlanItems: [
+          { drillId: 'hold_click_v1', reps: 3, weaponId: 'usp_s_laser' },
+          { drillId: 'spider-shot-v2', reps: 2 },
+        ],
+      }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    const reparsed = parseExportPayload(JSON.parse(canonicalExportJSON(result.payload)));
+    if (!reparsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(reparsed.errors)}`);
+    expect(reparsed.payload.meta.sessionPlanItems).toEqual(result.payload.meta.sessionPlanItems);
+  });
+
   it.each([
     ['an unknown mode literal', { sessionPlanMode: 'manual' }, 'meta.sessionPlanMode'],
     ['a non-array item list', { sessionPlanItems: 'hold_click_v1' }, 'meta.sessionPlanItems'],
@@ -135,6 +204,21 @@ describe('parseExportPayload — WP-58 T5 session program audit fields', () => {
       'fractional reps',
       { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 2.5 }] },
       'meta.sessionPlanItems[0].reps',
+    ],
+    [
+      'an empty weapon id',
+      { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1, weaponId: '' }] },
+      'meta.sessionPlanItems[0].weaponId',
+    ],
+    [
+      'a non-string weapon id',
+      { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1, weaponId: 7 }] },
+      'meta.sessionPlanItems[0].weaponId',
+    ],
+    [
+      'a null weapon id',
+      { sessionPlanItems: [{ drillId: 'hold_click_v1', reps: 1, weaponId: null }] },
+      'meta.sessionPlanItems[0].weaponId',
     ],
     ['a negative drill rest', { sessionPlanDrillRestSeconds: -1 }, 'meta.sessionPlanDrillRestSeconds'],
     ['a fractional item index', { sessionPlanItemIndex: 0.5 }, 'meta.sessionPlanItemIndex'],
@@ -371,6 +455,33 @@ describe('parseExportPayload — meta.spawn.trackingTrajectory/trackingPrepMs (W
 
   it('trackingPrepMs ≤ 0 fails fast', () => {
     const payload = minimalPayload({ meta: minimalMeta({ spawn: { seed: 7, trackingPrepMs: 0 } }) });
+    const result = parseExportPayload(payload);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe('parseExportPayload — meta.validity.pointerLockLost (WP-65 / T5, D-65-3)', () => {
+  const fourFlags = { corridorExceeded: false, perfFloor: false, recorderOverflow: false, bufferOverflow: false };
+
+  it('round-trips a payload that carries the new flag', () => {
+    const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags, pointerLockLost: true } }) });
+    const parsed = parseExportPayload(payload);
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    expect(parsed.payload.meta.validity).toEqual({ ...fourFlags, pointerLockLost: true });
+
+    const canonical = JSON.parse(canonicalExportJSON(parsed.payload)) as { meta: { validity: unknown } };
+    expect(canonical.meta.validity).toEqual({ ...fourFlags, pointerLockLost: true });
+  });
+
+  it('parses a pre-WP-65 payload that omits the flag, defaulting it to false (optional-in)', () => {
+    const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags } }) });
+    const parsed = parseExportPayload(payload);
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    expect(parsed.payload.meta.validity).toEqual({ ...fourFlags, pointerLockLost: false });
+  });
+
+  it('rejects a non-boolean flag (optional-in is not lenient-in)', () => {
+    const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags, pointerLockLost: 'yes' } }) });
     const result = parseExportPayload(payload);
     expect(result.ok).toBe(false);
   });

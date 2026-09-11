@@ -27,7 +27,9 @@ import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
 import { trackingLongrangeV1 } from '../drill/tracking_longrange_v1.ts';
 import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { trackingV1 } from '../drill/tracking_v1.ts';
+import { isWeaponId, type WeaponId } from '../weapon/weapons.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './sessionSchedule.ts';
+import { TRACKING_PILOT_SCHEDULABLE_DRILLS } from './trackingPilotSchedulableDrills.ts';
 
 /**
  * WP-58 T1 (FR-58.1) — the single place that answers "which family does this drill belong to" and
@@ -69,6 +71,11 @@ const FAMILY_ROSTER: readonly (readonly [SessionFamilyId, readonly string[]])[] 
       trackingSceneV1.id,
       trackingLongrangeV1.id,
       ...trackingBrVariants.map((variant) => variant.id),
+      // WP-64 T1 (FR-64.1) — the curated research-schedulable tracking-pilot blocks. Derived from
+      // `TRACKING_PILOT_SCHEDULABLE_DRILLS`, never restated, so this roster row and `main.ts`'s
+      // runtime registry cannot disagree about which pilot blocks a Session Plan may reach
+      // (FM-64.2). The other seven WP-54 blocks stay absent and therefore unschedulable.
+      ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => entry.config.drillId),
     ],
   ],
   ['detection', [detectionPopinV1.drillId]],
@@ -109,9 +116,69 @@ export const FAMILY_BY_DRILL_ID: ReadonlyMap<string, SessionFamilyId> = buildFam
 
 /**
  * Every schedulable drill id, grouped by family in `FAMILY_ROSTER` order. The grouping is the point:
- * the roster is 36 entries, so a flat alphabetical menu would be unusable (WP-58 §3.2 debt).
+ * the roster is 38 entries, so a flat alphabetical menu would be unusable (WP-58 §3.2 debt).
  */
 export const SCHEDULABLE_DRILL_IDS: readonly string[] = [...FAMILY_BY_DRILL_ID.keys()];
+
+/**
+ * WP-62 T1 — drill -> the weapon that drill declares for itself. A drill absent from this map
+ * declares no weapon, so a Session Plan item may name one for it (FR-62.1); a drill present here
+ * has its weapon fixed as an experimental factor and may not be overridden (D-62-1).
+ *
+ * Every value is read from the drill module's own config, never hand-typed (D-58-T0-2), so "which
+ * weapon does this drill declare" cannot drift from what the sim actually receives. That is also
+ * why there is no second hand-maintained allowlist here (KI-016): the roster below is derived from
+ * the same `trackingBrVariants` this file already imports for `FAMILY_ROSTER`, and
+ * `drillFamily.test.ts` walks every schedulable drill's config to prove the derivation stays total.
+ *
+ * Currently the eight `tracking_br_v1` cells (the 2x2x2 ads x ballistic x angular-height grid,
+ * carrying four distinct weapons between them) plus the two curated tracking-pilot blocks WP-64
+ * made schedulable, which fix `tracking_pilot_hold` as an experimental factor (FR-64.4).
+ *
+ * All **nine** WP-54 tracking-pilot blocks declare `tracking_pilot_hold`; the seven WP-64 did not
+ * curate remain unschedulable — they load only through `loadDrillConfigDirect()` under
+ * `TrackingPilotRunner` — and the schedulability check below is what keeps them out of this map.
+ */
+type DeclaredWeaponRosterEntry = readonly [drillId: string, weaponId: string | undefined];
+
+const DECLARED_WEAPON_ROSTER: readonly DeclaredWeaponRosterEntry[] = [
+  ...trackingBrVariants.map((variant) => [variant.id, variant.drill.weaponId] as const),
+  // WP-64 T1 (FR-64.4) — read off the same curated configs the family row above is derived from, so
+  // a block cannot become schedulable without its weapon becoming fixed in the same step (FM-64.3).
+  ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => [entry.config.drillId, entry.config.weaponId] as const),
+];
+
+/**
+ * Exported for the three pollution cases `drillFamily.test.ts` drives through it directly — an
+ * unknown weapon id, a drill declaring twice, and an unschedulable drill. Each has to fail at
+ * module construction rather than at drill activation, where the scene has already swapped and the
+ * operator is left with a half-armed drill (FM-1).
+ */
+export function buildDeclaredWeaponByDrillId(
+  roster: readonly DeclaredWeaponRosterEntry[],
+): ReadonlyMap<string, WeaponId> {
+  const map = new Map<string, WeaponId>();
+  for (const [drillId, weaponId] of roster) {
+    if (weaponId === undefined || !isWeaponId(weaponId)) {
+      throw new Error(`Drill ${drillId} declares an unknown weapon: ${weaponId}`);
+    }
+    const existing = map.get(drillId);
+    if (existing !== undefined) {
+      throw new Error(`Drill ${drillId} declares both '${existing}' and '${weaponId}'`);
+    }
+    // A drill outside the family table cannot be put into a program at all, so a weapon declaration
+    // for it could only ever mislead a reader of this map into thinking it were schedulable.
+    if (!FAMILY_BY_DRILL_ID.has(drillId)) {
+      throw new Error(`Drill ${drillId} is not schedulable, so it must not declare a weapon here`);
+    }
+    map.set(drillId, weaponId);
+  }
+  return map;
+}
+
+/** drill -> its own declared weapon. Absence means "no declaration", not "no weapon at runtime". */
+export const DECLARED_WEAPON_BY_DRILL_ID: ReadonlyMap<string, WeaponId> =
+  buildDeclaredWeaponByDrillId(DECLARED_WEAPON_ROSTER);
 
 /**
  * family -> the drill that represents it on the frozen counterbalanced path. Moved here verbatim

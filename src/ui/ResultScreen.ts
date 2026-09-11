@@ -23,6 +23,12 @@ export interface ResultScreenHandle {
    * otherwise — including for the whole lifetime of a Practice result, which never calls this with
    * a defined target (FR-49.12 "Practice Result不顯示歷史入口"). */
   setHistoryTarget(target: HistoryDrillTarget | undefined): void;
+  /**
+   * WP-65 / T5（FR-65.11）— `null` 清除警示；字串顯示於結果數值**之上**的警示條。
+   * 純呈現：本畫面不擁有 payload、不決定 `suspect`，呼叫端每次 `show()` 都必須呼叫一次
+   * （含傳 `null`），否則上一場的警示會殘留到下一場。
+   */
+  setValidityWarning(text: string | null): void;
   hide(): void;
   dispose(): void;
 }
@@ -87,6 +93,32 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
   const title = document.createElement('h2');
   title.textContent = 'Drill Results';
   title.style.cssText = 'margin:0 0 6px;font:700 20px/1.2 system-ui,sans-serif;letter-spacing:0';
+
+  // WP-65 / T5（FR-65.11）— 效度警示條。建構期一次配置、預設隱藏；`role="alert"` 讓螢幕閱讀器在
+  // 內容寫入時朗讀。放在 `body` **之上**：受試者掃過數字之前就該知道這場可能要重測。
+  const validityWarning = document.createElement('p');
+  validityWarning.dataset.section = 'result-validity-warning';
+  validityWarning.setAttribute('role', 'alert');
+  validityWarning.hidden = true;
+  validityWarning.style.cssText = [
+    'margin:0 0 12px',
+    'padding:10px 12px',
+    'border:1px solid rgba(229,124,58,0.55)',
+    'border-radius:6px',
+    'background:rgba(120,58,12,0.32)',
+    'color:#ffd9b0',
+    'font:650 12px/1.45 system-ui,sans-serif',
+  ].join(';');
+
+  function setValidityWarning(text: string | null): void {
+    if (text === null) {
+      validityWarning.hidden = true;
+      validityWarning.textContent = '';
+      return;
+    }
+    validityWarning.textContent = text;
+    validityWarning.hidden = false;
+  }
 
   const body = createResultDetailBody();
 
@@ -159,6 +191,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
 
   panel.append(
     title,
+    validityWarning,
     body.element,
     ...(options.saveStatusView === undefined ? [] : [options.saveStatusView]),
     actions,
@@ -173,10 +206,15 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     show(result: ResultPresentation): void {
       body.render(result);
       setHistoryTarget(undefined); // a newly shown result has no known history target yet
+      // WP-65 / T5：同一理由——警示屬於**某一場**結果，不屬於這個畫面。呼叫端仍會在 `show()` 之後
+      // 依該場的 `meta.validity.pointerLockLost` 明確設定一次；這行只保證「沒設」= 沒有警示，
+      // 而不是「沒設」= 沿用上一場（`__fpsTest.showResult()` 等旁路因此也不會殘留）。
+      setValidityWarning(null);
       visible = true;
       root.style.display = 'flex';
     },
     setHistoryTarget,
+    setValidityWarning,
     hide(): void {
       visible = false;
       root.style.display = 'none';

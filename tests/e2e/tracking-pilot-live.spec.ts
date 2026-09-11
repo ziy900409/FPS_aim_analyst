@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { test, expect, type Download, type Page } from '@playwright/test';
 import { trackingCorePrPilotV1Practice } from '../../src/drill/tracking_core_pr_pilot_v1.ts';
 import { TRACKING_PILOT_PROTOCOL_VERSION } from '../../src/pilot/trackingCompatibilityKey.ts';
+import { armAndWaitRunning } from './support/arm.ts';
 
 /**
  * WP-54 / T6 slice 2 — the live tracking pilot path in a real browser.
@@ -16,9 +17,15 @@ import { TRACKING_PILOT_PROTOCOL_VERSION } from '../../src/pilot/trackingCompati
  * WP-54 traceability metadata (drill id, trajectory version/seed, participant, counterbalance
  * cell), and that a real scored block reaches a real `evaluateTrackingRunEligibility()` verdict.
  *
- * No pointer lock and no aiming here: the sim advances on `simLoop.pump()` regardless of pointer
- * lock, and the pilot blocks end on `endCondition: timeLimit`, so an idle run is a legitimate
- * instrumentation test. It measures the plumbing, never a human's tracking ability.
+ * No aiming here: the sim advances on `simLoop.pump()` regardless of pointer lock, and the pilot
+ * blocks end on `endCondition: timeLimit`, so an idle run is a legitimate instrumentation test. It
+ * measures the plumbing, never a human's tracking ability.
+ *
+ * WP-65 T6: every block now starts in the `'armed'` phase and waits for a fresh pointer lock, so
+ * each block needs one `armAndWaitRunning()` — placed *after* that block's status text, which is
+ * the runner's own proof that `loadDrillConfig()` resolved and the new `DrillRunner` was started.
+ * Arming before that would latch `armRequested` on the outgoing runner, where the next `start()`
+ * clears it again, and the block would then sit armed until the download timed out.
  */
 
 const URL = 'http://localhost:5173/';
@@ -81,6 +88,7 @@ test.describe('WP-54 T6 — live tracking pilot session', () => {
     await expect(status).toHaveText(/Block 1\/9（practice）：tracking_core_pr_pilot_v1_practice/);
     // The full-viewport operator scrim must step aside so the participant can see the target.
     await expect(operator).toBeHidden();
+    await armAndWaitRunning(page);
 
     const practicePayload = await readDownloadedPayload(await firstDownload);
     expect(practicePayload.meta.drillId).toBe('tracking_core_pr_pilot_v1_practice');
@@ -132,6 +140,7 @@ test.describe('WP-54 T6 — live tracking pilot session', () => {
       /Block 2\/9（calibration）：tracking_core_pr_pilot_v1_calibration_horizontal/,
       { timeout: 10_000 },
     );
+    await armAndWaitRunning(page);
 
     const calibrationPayload = await readDownloadedPayload(await secondDownload);
     expect(calibrationPayload.meta.drillId).toBe('tracking_core_pr_pilot_v1_calibration_horizontal');

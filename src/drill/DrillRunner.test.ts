@@ -675,3 +675,141 @@ describe('DrillRunner — protocolGuard（WP-54 / T2）', () => {
     expect(state.protocolViolations).toEqual([]);
   });
 });
+/**
+ * WP-65 / T1 — 待命相位（FR-65.1 / 65.2 / 65.3）
+ *
+ * 最重要的一條是 **FM-1 反證**：省略第三參數時 `start()` 必須逐位維持既有的「直接進 countdown」，
+ * 否則 35 個 caller（含全部 determinism / golden fixture）會集體停在 `armed`，而症狀是「測試卡住」
+ * 而非「數值錯」，錯因極不明顯。
+ */
+describe('DrillRunner — 待命相位（WP-65 / T1）', () => {
+  /** 與檔頭 `setup()` 同型，但可注入 `DrillRunnerOptions`。 */
+  function setupArmed(config: DrillConfig, options?: { requireArm?: boolean }) {
+    const state = createSharedState();
+    const tm = createTargetManager(config);
+    const runner = createDrillRunner(state, tm, options);
+    return { state, tm, runner };
+  }
+
+  it('FM-1 反證：省略 options 時 start() 直接進 countdown，第一個 tick 即起算倒數', () => {
+    const config = makeConfig({ timing: { countdownMs: 1000 } });
+    const { state, runner } = setup(config); // 無第三參數 = 既有 34 個 caller 的用法
+
+    runner.start(config);
+    expect(runner.phase).toBe('countdown');
+
+    runner.tick(state, 0);
+    expect(runner.countdownRemainingMs).toBe(1000); // 倒數確實已起算（而非停在待命）
+    runner.tick(state, 1000);
+    expect(runner.phase).toBe('running');
+  });
+
+  it('FM-1 反證：明確傳 requireArm: false 亦維持既有語意', () => {
+    const config = makeConfig({ timing: { countdownMs: 1000 } });
+    const { runner } = setupArmed(config, { requireArm: false });
+
+    runner.start(config);
+    expect(runner.phase).toBe('countdown');
+  });
+
+  it('requireArm: true → start() 進 armed；未解除前 tick 100 次（遠超 countdownMs）仍停在 armed', () => {
+    const config = makeConfig({ timing: { countdownMs: 1000 } });
+    const { state, runner } = setupArmed(config, { requireArm: true });
+
+    runner.start(config);
+    expect(runner.phase).toBe('armed');
+
+    for (let i = 0; i < 100; i++) runner.tick(state, i * 100); // 累計 9 900 ms ≫ countdownMs
+    expect(runner.phase).toBe('armed');
+  });
+
+  it('待命期間不產生任何量測語意（效度風險 §3.1-2 的污染反證）', () => {
+    const config = makeConfig({ timing: { countdownMs: 1000 } });
+    const { state, runner } = setupArmed(config, { requireArm: true });
+
+    runner.start(config);
+    for (let i = 0; i < 100; i++) runner.tick(state, i * 100);
+
+    // 五個集合全空 ⇒ t_acquire / t_detect / on-target 的窗界基準未被待命期污染（C-D4）。
+    expect(state.targets).toHaveLength(0);
+    expect(state.tVisible.size).toBe(0);
+    expect(state.tStop.size).toBe(0);
+    expect(state.tScoredStart.size).toBe(0);
+    expect(state.cues).toHaveLength(0);
+    expect(runner.countdownRemainingMs).toBe(0); // 待命期不得洩漏倒數值
+  });
+
+  it('armRequested = true 後的第一個 tick 轉 countdown（同 tick 起算），再經 countdownMs → running 並 spawn 首目標', () => {
+    const config = makeConfig({ timing: { countdownMs: 1000 } });
+    const { state, runner } = setupArmed(config, { requireArm: true });
+
+    runner.start(config);
+    runner.tick(state, 0);
+    runner.tick(state, 5000); // 仍待命：這些 tick 不得被算進倒數
+    expect(runner.phase).toBe('armed');
+
+    state.armRequested = true; // input 層寫入（此處以測試代打）
+    runner.tick(state, 6000); // 解除 → 同 tick 落入 countdown 並起算
+    expect(runner.phase).toBe('countdown');
+    expect(runner.countdownRemainingMs).toBe(1000);
+
+    runner.tick(state, 6999);
+    expect(runner.phase).toBe('countdown');
+    runner.tick(state, 7000); // 自「解除那一刻」起滿 countdownMs
+    expect(runner.phase).toBe('running');
+    expect(state.targets).toHaveLength(1);
+    expect(state.targets[0].side).toBe('L');
+  });
+
+  it('restart() → idle；其後 start() 回到 armed（resetState 已清掉上一場的解除）', () => {
+    const config = makeConfig({ timing: { countdownMs: 1000 } });
+    const { state, runner } = setupArmed(config, { requireArm: true });
+
+    runner.start(config);
+    state.armRequested = true;
+    runner.tick(state, 0);
+    expect(runner.phase).toBe('countdown');
+
+    runner.restart();
+    expect(runner.phase).toBe('idle');
+    expect(state.armRequested).toBe(false); // resetState 歸零
+
+    runner.start(config);
+    expect(runner.phase).toBe('armed');
+    runner.tick(state, 10_000);
+    expect(runner.phase).toBe('armed'); // 不沿用上一場的解除
+  });
+
+  it('countdownRemainingMs：四相位回傳值 + 單調遞減', () => {
+    const config = makeConfig({ timing: { countdownMs: 1000 } });
+    const { state, runner } = setupArmed(config, { requireArm: true });
+
+    expect(runner.countdownRemainingMs).toBe(0); // idle
+
+    runner.start(config);
+    runner.tick(state, 0);
+    expect(runner.countdownRemainingMs).toBe(0); // armed
+
+    state.armRequested = true;
+    const seen: number[] = [];
+    for (let t = 100; t <= 1100; t += 100) {
+      runner.tick(state, t);
+      seen.push(runner.countdownRemainingMs);
+    }
+    // 解除於 t=100（remaining = countdownMs），其後每 100 ms 遞減 100，t=1100 時滿 1000 → running → 0。
+    expect(seen).toEqual([1000, 900, 800, 700, 600, 500, 400, 300, 200, 100, 0]);
+    expect(runner.phase).toBe('running');
+    expect(runner.countdownRemainingMs).toBe(0); // running
+
+    for (let i = 0; i < seen.length - 1; i++) expect(seen[i + 1]).toBeLessThanOrEqual(seen[i]); // 單調遞減
+
+    const ended = makeConfig({ timing: { countdownMs: 1000 }, endCondition: { type: 'timeLimit', value: 0 } });
+    const b = setupArmed(ended, { requireArm: true });
+    b.runner.start(ended);
+    b.state.armRequested = true;
+    b.runner.tick(b.state, 0);
+    b.runner.tick(b.state, 1000); // countdown 結束 → running → timeLimit 0 立即 ended
+    expect(b.runner.phase).toBe('ended');
+    expect(b.runner.countdownRemainingMs).toBe(0); // ended
+  });
+});

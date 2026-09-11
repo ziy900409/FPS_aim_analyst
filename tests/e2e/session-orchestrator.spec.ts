@@ -1,4 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
+import { armDrill, installAutoArm } from './support/arm.ts';
+import type { DrillConfig } from '../../src/drill/DrillConfig.ts';
+import {
+  ALL_TRACKING_PILOT_CONFIGS,
+  TRACKING_PILOT_SCHEDULABLE_DRILLS,
+} from '../../src/session/trackingPilotSchedulableDrills.ts';
 
 /**
  * WP-42 / T-exit — session orchestrator 端到端補證。
@@ -30,6 +36,15 @@ import { test, expect, type Page } from '@playwright/test';
  *    對照。真瀏覽器在此新增的證據是**渲染出來的預覽表**——編譯器輸出逐 step 落到 DOM 屬性
  *    （`data-program-step` / `data-step-boundary` / `data-step-next-drill-id`），因此「UI 偷算一套
  *    休息模型」在真實 DOM 上會直接紅燈；以及非法輸入時提交確實被禁用（FR-58.7/58.13）。
+ *
+ * 4. WP-64 T3 — curated tracking-pilot block 的 ad hoc 軌（同一個 picker 的第三種內容）。同樣**擴充
+ *    本檔而非新開 spec**（T3 Planned files）：WP-64 的主張是「這兩個 block 走的就是上面那條
+ *    custom Session Plan 路徑，沒有第二套 orchestration」，拆成獨立 spec 等於在測試佈局上先承認
+ *    它是另一條路。真瀏覽器在此新增的是三件只有實跑才成立的事：picker 裡的 pilot 選項**恰好**是
+ *    curated 的兩個（其餘七個 block 缺席，A-64.1）、真 `field-low` clearance 載入後由
+ *    `SessionRunner`（不是 `TrackingPilotRunner`）擁有完成與下載（FR-64.7/FM-64.1）、以及每份
+ *    payload 帶著原 seed/武器/場景與 custom plan 座標、卻沒有 manifest 詞彙、沒有 eligibility
+ *    判定、也沒有進 history（FR-64.5/64.6/64.8）。
  */
 
 const URL = 'http://localhost:5173/';
@@ -371,9 +386,24 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
         boundary: node.getAttribute('data-step-boundary'),
         drillId: node.getAttribute('data-step-drill-id'),
         nextDrillId: node.getAttribute('data-step-next-drill-id'),
+        // WP-62 T6 — the weapon each run step will actually be fired with, as the preview resolved
+        // it: the item's own choice, else the drill's declared weapon, else the literal `default`
+        // (D-62.T4-4 keeps the app fallback `ak47` out of the UI).
+        weaponId: node.getAttribute('data-step-weapon-id'),
         text: node.textContent,
       })),
     );
+  }
+
+  /** Picks a weapon on one program row. `''` is the `—（drill 預設）` option, i.e. no intent. */
+  async function selectRowWeapon(
+    planSetup: ReturnType<Page['locator']>,
+    itemIndex: number,
+    weaponId: string,
+  ): Promise<void> {
+    await planSetup
+      .locator(`[data-program-item="${itemIndex}"] select[name="sessionPlanWeapon"]`)
+      .selectOption(weaponId);
   }
 
   test('WP-58 T6：自訂 program 表單在真實 DOM 編出 3 家族 × 2 reps，預覽 11 步且邊界秒數正確', async ({
@@ -393,7 +423,11 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     // What only the real browser adds is that the *rendered* menu has the same shape and that a
     // drill picked from it is the one that lands in the list.
     const picker = planSetup.locator('select[name="sessionPlanDrill"]');
-    await expect(picker.locator('option')).toHaveCount(36);
+    // 36 -> 38 at WP-64 T1, which added the two curated tracking-pilot blocks to the `tracking`
+    // roster row (the family already existed, so the optgroup count is unchanged). T1/T2 updated
+    // the unit-level cardinalities (`SessionPlanSetup.test.ts`, `drillFamily.test.ts`) but ran no
+    // Playwright, so this line was the one stale expectation WP-64 left behind — see T3 progress.
+    await expect(picker.locator('option')).toHaveCount(38);
     await expect(picker.locator('optgroup')).toHaveCount(10);
     const options = await picker
       .locator('option')
@@ -441,7 +475,20 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
       PROGRAM_DRILLS[2],
       PROGRAM_DRILLS[2],
     ]);
-    expect(steps[0].text).toBe(`1. ▶ ${PROGRAM_DRILLS[0]} (1/2)`);
+    // WP-62 T4 widened the run row's copy with the weapon it will use; with no per-item choice and
+    // no drill-declared weapon, that reads `預設` and the attribute reads `default`. This line is
+    // the pre-WP-62 assertion updated to the new copy — it was the only e2e casualty of T4 (the
+    // task did not run Playwright), and it is tightened rather than relaxed: the attribute is now
+    // pinned for every run step as well.
+    expect(steps[0].text).toBe(`1. ▶ ${PROGRAM_DRILLS[0]} (1/2) · 武器 預設`);
+    expect(steps.filter((step) => step.kind === 'run').map((step) => step.weaponId)).toEqual([
+      'default',
+      'default',
+      'default',
+      'default',
+      'default',
+      'default',
+    ]);
     expect(steps[1].text).toBe(`2. ⏸ 1s · rep（同一 drill 下一輪） → ${PROGRAM_DRILLS[0]}`);
     expect(steps[3].text).toBe(`4. ⏸ 2s · family（換家族） → ${PROGRAM_DRILLS[1]}`);
 
@@ -527,6 +574,91 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
   });
 
   // ---------------------------------------------------------------------------------------------
+  // WP-62 T6 — per-item weapon, in the same form and the same spec as everything above.
+  //
+  // One BR cell is used by name below. `tracking_br_v1__ads_off__hitscan__2deg` declares
+  // `ak47_br_hip_hitscan` as the weapon of its 2x2x2 experimental grid, so it is the row where
+  // D-62-1 (an override is a compile error, not a silently accepted plan) actually bites.
+  // ---------------------------------------------------------------------------------------------
+
+  const BR_GRID_DRILL = 'tracking_br_v1__ads_off__hitscan__2deg';
+  const BR_GRID_WEAPON = 'ak47_br_hip_hitscan';
+
+  test('WP-62 T6：每列各選一把武器 → 預覽逐步顯示該步武器 → 送出（FR-62.1/62.3/62.5）', async ({
+    page,
+  }) => {
+    const planSetup = await openPlanSetup(page, 't6-weapon-picker');
+    await buildProgram(planSetup, [PROGRAM_DRILLS[0], PROGRAM_DRILLS[1]], [2, 1], '1', '2');
+
+    // FR-62.7 — the rendered menu is the whole of `WEAPONS` plus the "no intent" option, and each
+    // label carries the magazine size. Unit tests own the exact list; what the real browser adds is
+    // that the row's `<select>` is really populated and really scoped to its own row.
+    const weaponSelect = planSetup.locator('[data-program-item="0"] select[name="sessionPlanWeapon"]');
+    await expect(weaponSelect.locator('option')).toHaveCount(10);
+    await expect(weaponSelect.locator('option[value="ak47"]')).toHaveText('ak47（30 發）');
+    await expect(planSetup.getByText('無玩家 reload', { exact: false })).toBeVisible();
+    await expect(planSetup.getByText('不會併入同一條趨勢線', { exact: false })).toBeVisible();
+
+    await selectRowWeapon(planSetup, 0, 'm4a1s');
+    await selectRowWeapon(planSetup, 1, 'usp_s_laser');
+
+    // FR-62.3/62.5 — every rep of row 0 carries the same weapon, and row 1 carries its own. The
+    // preview says so *before* the eligibility gate, which is the whole point of the picker.
+    const steps = await readPreview(planSetup);
+    const runs = steps.filter((step) => step.kind === 'run');
+    expect(runs.map((step) => [step.drillId, step.weaponId])).toEqual([
+      [PROGRAM_DRILLS[0], 'm4a1s'],
+      [PROGRAM_DRILLS[0], 'm4a1s'],
+      [PROGRAM_DRILLS[1], 'usp_s_laser'],
+    ]);
+    expect(runs[0].text).toBe(`1. ▶ ${PROGRAM_DRILLS[0]} (1/2) · 武器 m4a1s`);
+    // Step 5 of 5: run, rep rest, run, family rest, run.
+    expect(runs[2].text).toBe(`5. ▶ ${PROGRAM_DRILLS[1]} (1/1) · 武器 usp_s_laser`);
+
+    // Clearing one row back to `—（drill 預設）` removes the intent again — the picker is not a
+    // one-way door, and an undone choice must not leave `weaponId: undefined` behind (NFR-62.4).
+    await selectRowWeapon(planSetup, 1, '');
+    expect((await readPreview(planSetup)).filter((step) => step.kind === 'run').at(-1)?.weaponId).toBe(
+      'default',
+    );
+
+    await planSetup.locator('button[type="submit"]').click();
+    await expect(page.locator('#eligibility-gate')).toBeVisible();
+  });
+
+  test('WP-62 T6：覆蓋 BR 實驗格武器 → 標紅該列且禁用提交；改回宣告值即解除（FR-62.2/FM-2）', async ({
+    page,
+  }) => {
+    const planSetup = await openPlanSetup(page, 't6-weapon-locked');
+    await buildProgram(planSetup, [PROGRAM_DRILLS[0], BR_GRID_DRILL], [1, 1], '1', '2');
+
+    const submit = planSetup.locator('button[type="submit"]');
+    await expect(submit).toBeEnabled();
+    // With no choice made the grid cell already shows its own declared weapon by name (D-62.T4-1).
+    expect((await readPreview(planSetup)).filter((step) => step.kind === 'run').map((s) => s.weaponId)).toEqual([
+      'default',
+      BR_GRID_WEAPON,
+    ]);
+
+    // FM-2 — the failure this rejection exists for is data that looks entirely legal while
+    // measuring a different grid than it claims. The compiler's typed error is the copy and its
+    // `itemIndex` marks the row, exactly as for an invalid `reps` (same contract, no second path).
+    await selectRowWeapon(planSetup, 1, 'm4a1s');
+    await expect(submit).toBeDisabled();
+    await expect(planSetup.locator('[data-program-item="1"]')).toHaveAttribute('data-invalid', 'true');
+    await expect(planSetup.locator('[data-program-item="0"]')).not.toHaveAttribute('data-invalid', 'true');
+    await expect(planSetup.locator('[role="alert"]')).toHaveText(
+      `Session program 編譯失敗: items[1].weaponId ${BR_GRID_DRILL} 由實驗格固定為 ${BR_GRID_WEAPON}，不可指定其他武器`,
+    );
+
+    // Naming the weapon the drill already declares is agreement, not a conflict: it must be let
+    // through, or the operator learns to leave the field blank and hope.
+    await selectRowWeapon(planSetup, 1, BR_GRID_WEAPON);
+    await expect(submit).toBeEnabled();
+    await expect(planSetup.locator('[data-program-item="1"]')).not.toHaveAttribute('data-invalid', 'true');
+  });
+
+  // ---------------------------------------------------------------------------------------------
   // WP-58 T6 — the *live* scheduler: compile -> cursor -> real drill -> per-rep export -> rest
   // overlay -> done, in a real browser.
   //
@@ -564,10 +696,68 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     | { mode: 'frozen'; families: string[]; restSeconds: number; includeWarmup: boolean }
     | {
         mode: 'custom';
-        items: { drillId: string; reps: number }[];
+        items: { drillId: string; reps: number; weaponId?: string }[];
         drillRestSeconds: number;
         familyRestSeconds: number;
       };
+
+  /**
+   * The slice of an exported payload the scheduler tests read. Only `meta` is needed: the run's
+   * weapon is a fact recorded per run (`weaponId`), the plan it came from is intent recorded per
+   * session (`sessionPlanItems`), and the cursor fields say which row of the plan this run is.
+   */
+  type ExportedMeta = {
+    readonly drillId: string;
+    readonly weaponId?: string;
+    readonly sessionPlanMode?: string;
+    readonly sessionPlanItemIndex?: number;
+    readonly sessionPlanRepIndex?: number;
+    readonly sessionPlanItems?: { drillId: string; reps: number; weaponId?: string }[];
+    readonly [key: string]: unknown;
+  };
+
+  /**
+   * FNV-1a over the sorted meta key list — the same cheap digest `exportPayloadSchema.test.ts` uses
+   * for its canonical fixtures, applied here to a *live* export's schema surface. Keys only: the
+   * values of a real run (timestamps, tick counts, hit tallies) differ every time, so pinning them
+   * would pin nothing but flake. What must not drift is which fields the frozen track writes.
+   */
+  function metaKeyDigest(meta: ExportedMeta): string {
+    let hash = 0x811c9dc5;
+    for (const char of Object.keys(meta).sort().join(',')) {
+      hash ^= char.codePointAt(0)!;
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash.toString(16).padStart(8, '0');
+  }
+
+  /** Measured at `f0df84d` (pre-WP-62 HEAD); see the frozen test for what they guard. */
+  const FROZEN_META_KEY_DIGESTS = {
+    detection_popin_v1: '2752c07b',
+    'spider-shot-wide-v1': '2752c07b',
+    tracking_scene_v1: '2752c07b',
+  } as const;
+
+  /**
+   * WP-64 T3 widened this from `meta` to the whole payload: a curated pilot block's prep/scored
+   * window is an *event* (`scored_start`), so "the block's own protocol guard survived being
+   * scheduled" cannot be read off `meta` alone.
+   */
+  type ExportedPayload = {
+    readonly meta: ExportedMeta;
+    readonly ticks: readonly unknown[];
+    readonly events: readonly { readonly type: string }[];
+  };
+
+  /** Reads one download to completion and parses it — the payload as it left the browser. */
+  async function readExportedPayload(
+    download: import('@playwright/test').Download,
+  ): Promise<ExportedPayload> {
+    const stream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(chunk as Buffer);
+    return JSON.parse(Buffer.concat(chunks).toString('utf-8')) as ExportedPayload;
+  }
 
   /**
    * Starts the live Session Plan and records every phase transition inside the page, on rAF,
@@ -581,9 +771,23 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     participantId: string,
     selection: SessionPlanSelectionArg,
     timeoutMs: number,
-  ): Promise<{ samples: PhaseSample[]; downloads: string[]; statuses: string[] }> {
+  ): Promise<{
+    samples: PhaseSample[];
+    downloads: string[];
+    statuses: string[];
+    metas: ExportedMeta[];
+    payloads: ExportedPayload[];
+    /** WP-65 T6 — how many blocks the auto-arm watchdog actually released. Assert it. */
+    armCount: number;
+  }> {
     const downloads: string[] = [];
-    page.on('download', (download) => void downloads.push(download.suggestedFilename()));
+    // WP-62 T6 — the exports are now read, not just counted. The stream has to be taken while the
+    // page is still alive, so each download is parsed as it arrives and awaited at the end.
+    const payloadReads: Promise<ExportedPayload>[] = [];
+    page.on('download', (download) => {
+      downloads.push(download.suggestedFilename());
+      payloadReads.push(readExportedPayload(download));
+    });
 
     await page.evaluate(() => {
       const target = window as unknown as {
@@ -628,6 +832,18 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
       requestAnimationFrame(tick);
     });
 
+    // WP-65 T6 — every block now stops in the `'armed'` phase until a fresh pointer lock arrives
+    // (user ruling 2026-09-11 #3: the participant clicks once per block), and the spec cannot see
+    // block boundaries (it only polls for `phase === 'done'`), so a rAF watchdog releases each one.
+    //
+    // The app's *own* boot drill is armed first, explicitly and outside the watchdog's count: the
+    // page has been sitting on `counterstrafe_ad_v1` in `'armed'` since `waitForHarness()`, and a
+    // watchdog installed while that is still pending would release it too — making `armCount` read
+    // blocks+1 (measured: 7 for six blocks, 5 for four). Draining it here leaves the counter
+    // measuring exactly what FR-65.4 is about: one gesture per *plan* block.
+    await armDrill(page);
+    const armCount = await installAutoArm(page);
+
     await page.evaluate(
       async (arg) => {
         await (
@@ -659,7 +875,15 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     const statuses = await page.evaluate(
       () => (window as unknown as { __t6statuses: string[] }).__t6statuses,
     );
-    return { samples, downloads, statuses };
+    const payloads = await Promise.all(payloadReads);
+    return {
+      samples,
+      downloads,
+      statuses,
+      metas: payloads.map((payload) => payload.meta),
+      payloads,
+      armCount: await armCount(),
+    };
   }
 
   /** Every rest the run actually served, with the wall time until the next phase, in ms. */
@@ -688,7 +912,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     test.setTimeout(15 * 60_000);
     await waitForHarness(page);
 
-    const { samples, downloads } = await runLiveSessionPlan(
+    const { samples, downloads, armCount } = await runLiveSessionPlan(
       page,
       't6-live-custom',
       {
@@ -751,11 +975,79 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     expect(downloads).toHaveLength(6);
     expect(new Set(downloads).size).toBe(6);
 
+    // WP-65 FR-65.4 — one arming gesture per block, no more and no fewer. Six runs, six releases:
+    // a block that skipped the gate (or one released twice) is a different number, not a silent pass.
+    expect(armCount).toBe(6);
+
     // The session is over: cursor done, `experimentSession.exit()` ran, no rest overlay left behind.
     const last = samples.at(-1)!;
     expect(last.state.phase).toBe('done');
     expect(last.state.experimentActive).toBe(false);
     await expect(page.locator('#rest-overlay')).toBeHidden();
+  });
+
+  test('WP-62 T6：逐列武器實跑 —— 每份匯出的 meta.weaponId 對得上該列選擇，意圖與事實一致（FR-62.1/62.3/62.4）', async ({
+    page,
+  }) => {
+    // Four runs of the same ~23 s drill. One drill, three rows, three different weapon situations:
+    // the weapon is the only thing that varies, so a mismatch cannot be blamed on the drill.
+    test.setTimeout(10 * 60_000);
+    await waitForHarness(page);
+
+    const { samples, downloads, metas, armCount } = await runLiveSessionPlan(
+      page,
+      't6-live-weapon',
+      {
+        mode: 'custom',
+        items: [
+          // Two reps, one weapon: FR-62.3 says both runs fire it, not just the first.
+          { drillId: PROGRAM_DRILLS[0], reps: 2, weaponId: 'm4a1s' },
+          { drillId: PROGRAM_DRILLS[0], reps: 1, weaponId: 'usp_s_laser' },
+          // No intent at all — the row must still run, on the app default.
+          { drillId: PROGRAM_DRILLS[0], reps: 1 },
+        ],
+        drillRestSeconds: 1,
+        familyRestSeconds: 1,
+      },
+      9 * 60_000,
+    );
+
+    expect(samples.at(-1)!.state.phase).toBe('done');
+    expect(downloads).toHaveLength(4);
+    expect(armCount).toBe(4); // WP-65 FR-65.4 — four blocks, four arming gestures.
+
+    // The fact, per run: `activateDrill()` really did build the sim loop with the planned weapon,
+    // and it stayed put across the second rep instead of being reset by the next drill activation
+    // (the pre-WP-62 behaviour this whole WP exists to replace).
+    expect(metas.map((meta) => [meta.sessionPlanItemIndex, meta.sessionPlanRepIndex, meta.weaponId])).toEqual([
+      [0, 0, 'm4a1s'],
+      [0, 1, 'm4a1s'],
+      [1, 0, 'usp_s_laser'],
+      // "No intent" is not "no weapon": the run still records the weapon it actually fired.
+      [2, 0, 'ak47'],
+    ]);
+
+    // The intent, per session: every export carries the whole plan, and the row that omitted a
+    // weapon omits the *key* — a `weaponId: undefined` would be a visible schema change (NFR-62.4),
+    // and `toEqual` alone would not notice it, hence the explicit `in`.
+    for (const meta of metas) {
+      expect(meta.sessionPlanMode).toBe('custom');
+      expect(meta.sessionPlanItems).toEqual([
+        { drillId: PROGRAM_DRILLS[0], reps: 2, weaponId: 'm4a1s' },
+        { drillId: PROGRAM_DRILLS[0], reps: 1, weaponId: 'usp_s_laser' },
+        { drillId: PROGRAM_DRILLS[0], reps: 1 },
+      ]);
+      expect('weaponId' in meta.sessionPlanItems![2]).toBe(false);
+    }
+
+    // FR-62.4 — the reconciliation itself: for every run, the plan row it came from either named
+    // this weapon or named none. This is the assertion that would catch a runner handing step N's
+    // weapon to step N+1 while both halves of the export still looked individually plausible.
+    for (const meta of metas) {
+      const planned = meta.sessionPlanItems![meta.sessionPlanItemIndex!].weaponId;
+      if (planned !== undefined) expect(meta.weaponId).toBe(planned);
+      else expect(meta.weaponId).toBe('ak47');
+    }
   });
 
   test('WP-58 T6：frozen 標準 Assessment 軌在真瀏覽器跑完 —— 家族順序、單一休息秒數、無熱身提示', async ({
@@ -764,7 +1056,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     test.setTimeout(11 * 60_000);
     await waitForHarness(page);
 
-    const { samples, downloads, statuses } = await runLiveSessionPlan(
+    const { samples, downloads, statuses, metas } = await runLiveSessionPlan(
       page,
       't6-live-frozen',
       // `detection` has no warmup drill (only `counterstrafe` does), so this also exercises the
@@ -818,6 +1110,32 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     expect(new Set(downloads).size).toBe(3);
     expect(samples.at(-1)!.state.experimentActive).toBe(false);
     await expect(page.locator('#rest-overlay')).toBeHidden();
+
+    // FR-62.6 / FR-58.10 — the frozen track is a pre-registered protocol, so WP-62 must be
+    // invisible in its exports. The per-item weapon never reaches this track (D-62-2: the form
+    // offers no picker here and `buildFrozenSessionPlan` sets no `weaponId`), and this is the live
+    // proof of it: the session-plan audit block is still exactly the two frozen keys, no run
+    // carries a planned weapon, and every run fired the app default because none of these three
+    // representative drills declares a weapon of its own. `META_KEY_DIGEST` below pins the rest.
+    for (const meta of metas) {
+      expect(Object.keys(meta).filter((key) => key.startsWith('sessionPlan')).sort()).toEqual([
+        'sessionPlanFamilyOrder',
+        'sessionPlanRestSeconds',
+      ]);
+      expect(meta.sessionPlanItems).toBeUndefined();
+      expect(meta.weaponId).toBe('ak47');
+    }
+    // The whole meta key surface, not just the parts WP-62 touched. These digests were taken from
+    // the same live frozen run at `f0df84d` — the last commit before any WP-62 source change — and
+    // must not move. Each drill has its own because the exported meta is drill-shaped (only
+    // spider-shot writes `spiderShot`, only tracking writes `tracking`, and so on). A deliberate
+    // addition to the frozen export's schema updates these *and* says so in the owning WP's
+    // progress; silently drifting is what this exists to prevent.
+    expect(metas.map((meta) => [meta.drillId, metaKeyDigest(meta)])).toEqual([
+      ['detection_popin_v1', FROZEN_META_KEY_DIGESTS.detection_popin_v1],
+      ['spider-shot-wide-v1', FROZEN_META_KEY_DIGESTS['spider-shot-wide-v1']],
+      ['tracking_scene_v1', FROZEN_META_KEY_DIGESTS.tracking_scene_v1],
+    ]);
   });
 
   test('WP-58 T6：program 中途 drill 載入失敗 → 中止、錯誤可見、rest overlay 不殘留（FR-58.11）', async ({
@@ -859,5 +1177,236 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     // — reaching `done` calls `experimentSession.exit()`. T6 pinned the old asymmetry here
     // (`true`); the assertion flipping is the regression evidence that the fix landed.
     expect(samples.at(-1)!.state.experimentActive).toBe(false);
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // WP-64 T3 — the ad hoc research track: a curated tracking-pilot block scheduled from the *same*
+  // custom Session Plan form, run by the *same* `SessionRunner`.
+  //
+  // Both curated blocks are read from `TRACKING_PILOT_SCHEDULABLE_DRILLS` rather than typed out, so
+  // a change to the curated set shows up here as a diff instead of a stale literal — and the
+  // complement (the seven pilot blocks that must stay unschedulable) is derived from the same
+  // census, which is what makes "exactly these two, no more" checkable in the rendered DOM.
+  //
+  // Neither config is shortened for the test (T3 step 3): each block is `timeLimit` 26 000 ms
+  // (1 000 ms centre-prep + 25 000 ms scored), so three reps cost ~90 s of real time plus scene
+  // loads. That is the price of testing the production stimulus; no clock is scaled.
+  // ---------------------------------------------------------------------------------------------
+
+  const CURATED_PILOT_CONFIGS: readonly DrillConfig[] = TRACKING_PILOT_SCHEDULABLE_DRILLS.map(
+    (entry) => entry.config,
+  );
+  const CURATED_PILOT_IDS: readonly string[] = CURATED_PILOT_CONFIGS.map((config) => config.drillId);
+  /** The seven WP-54 blocks WP-64 deliberately did *not* curate (T0 §6 complement). */
+  const UNCURATED_PILOT_IDS: readonly string[] = ALL_TRACKING_PILOT_CONFIGS.map(
+    (config) => config.drillId,
+  ).filter((drillId) => !CURATED_PILOT_IDS.includes(drillId));
+
+  /**
+   * The export fields an ad hoc pilot run is audited by; `ExportedMeta`'s index signature alone
+   * would type every one of them `unknown`.
+   */
+  type PilotExportedMeta = ExportedMeta & {
+    readonly scene?: { readonly sceneId?: string };
+    readonly spawn?: { readonly trackingTrajectory?: unknown; readonly trackingPrepMs?: number };
+    readonly targets?: {
+      readonly hitbox?: { widthU: number; heightU: number; depthU: number; shape?: string };
+    };
+    readonly session?: { readonly participantId?: string; readonly sessionLabel?: string };
+    readonly assessment?: unknown;
+  };
+
+  test('WP-64 T3：curated pilot block 是 picker 裡唯一兩個 pilot 選項，可編入 custom program 並走到 eligibility gate（A-64.1/FR-64.1/64.4）', async ({
+    page,
+  }) => {
+    const planSetup = await openPlanSetup(page, 't3-pilot-picker');
+    await planSetup.locator('input[name="sessionPlanMode"][value="custom"]').check();
+
+    const picker = planSetup.locator('select[name="sessionPlanDrill"]');
+    const options = await picker.locator('option').evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        value: (node as HTMLOptionElement).value,
+        group: (node.parentElement as HTMLOptGroupElement | null)?.label ?? '',
+      })),
+    );
+
+    // A-64.1 — the whole registry claim, stated on the rendered menu rather than on a map: the two
+    // curated ids are offered, in the `tracking` group, and the other seven pilot blocks (practice,
+    // both calibrations, three core cells, the medium reversal) are simply not there. This is the
+    // assertion that fails if somebody "helpfully" spreads the whole manifest into the roster.
+    for (const drillId of CURATED_PILOT_IDS) {
+      const option = options.find((candidate) => candidate.value === drillId);
+      expect(option, `${drillId} must be offered by the picker`).toBeDefined();
+      expect(option!.group).toBe('tracking');
+    }
+    for (const drillId of UNCURATED_PILOT_IDS) {
+      expect(
+        options.map((option) => option.value),
+        drillId,
+      ).not.toContain(drillId);
+    }
+
+    // Two curated blocks, same family, different drills: the seam between them is a `drill` rest,
+    // and the seam between two reps of the first is a `rep` rest (FR-64.3 — the ad hoc run inherits
+    // the generic program semantics, it does not get a pilot-specific rest model).
+    await buildProgram(planSetup, CURATED_PILOT_IDS, [2, 1], '1', '2');
+
+    const steps = await readPreview(planSetup);
+    expect(steps.map((step) => step.kind)).toEqual(['run', 'rest', 'run', 'rest', 'run']);
+    expect(steps.filter((step) => step.kind === 'run').map((step) => step.drillId)).toEqual([
+      CURATED_PILOT_IDS[0],
+      CURATED_PILOT_IDS[0],
+      CURATED_PILOT_IDS[1],
+    ]);
+    expect(steps.filter((step) => step.kind === 'rest').map((step) => step.boundary)).toEqual([
+      'rep',
+      'drill',
+    ]);
+    // FR-64.4 — the fixed research factor is visible before the operator commits: every run step
+    // already says `tracking_pilot_hold` without anyone choosing it on the row. (WP-62's compile
+    // error for a *different* weapon is asserted at unit level; what only the browser adds is that
+    // the drill's declared weapon reaches the rendered preview.)
+    expect(steps.filter((step) => step.kind === 'run').map((step) => step.weaponId)).toEqual([
+      'tracking_pilot_hold',
+      'tracking_pilot_hold',
+      'tracking_pilot_hold',
+    ]);
+
+    await planSetup.locator('button[type="submit"]').click();
+    await expect(page.locator('#eligibility-gate')).toBeVisible();
+  });
+
+  test('WP-64 T3：ad hoc custom program 真跑 curated pilot block —— field-low 載入、逐 rep 匯出稽核、SessionRunner 擁有完成（A-64.4/64.5/64.6/64.7）', async ({
+    page,
+  }) => {
+    // Three unshortened 26 s blocks + 3 s countdowns + 3 s of rests + two scene loads.
+    test.setTimeout(10 * 60_000);
+    await waitForHarness(page);
+
+    const participantId = 't3-live-pilot';
+    const items = [
+      { drillId: CURATED_PILOT_IDS[0], reps: 2 },
+      { drillId: CURATED_PILOT_IDS[1], reps: 1 },
+    ];
+    const { samples, downloads, payloads } = await runLiveSessionPlan(
+      page,
+      participantId,
+      { mode: 'custom', items, drillRestSeconds: 1, familyRestSeconds: 2 },
+      9 * 60_000,
+    );
+
+    // A-64.4 — the cursor walked the compiled program: three real runs, in order, each knowing
+    // which item/rep it is. Reaching `run` at all means `loadDrillById()` resolved the curated
+    // runtime entry and the real `field-low` clearance accepted the block (FR-64.5): the runner
+    // publishes `run` only after the load resolves, and a rejected clearance aborts instead.
+    const walked = samples.filter(
+      (sample) => sample.state.phase === 'run' || sample.state.phase === 'rest',
+    );
+    expect(walked.map((sample) => sample.state.phase)).toEqual(['run', 'rest', 'run', 'rest', 'run']);
+    expect(
+      walked
+        .filter((sample) => sample.state.phase === 'run')
+        .map((sample) => [sample.state.drillId, sample.state.itemIndex, sample.state.repIndex]),
+    ).toEqual([
+      [CURATED_PILOT_IDS[0], 0, 0],
+      [CURATED_PILOT_IDS[0], 0, 1],
+      [CURATED_PILOT_IDS[1], 1, 0],
+    ]);
+    expect(measuredRests(samples).map((rest) => rest.boundary)).toEqual(['rep', 'drill']);
+
+    expect(downloads).toHaveLength(3);
+    expect(new Set(downloads).size).toBe(3);
+    expect(samples.at(-1)!.state.phase).toBe('done');
+    expect(samples.at(-1)!.state.experimentActive).toBe(false);
+    await expect(page.locator('#rest-overlay')).toBeHidden();
+
+    // FR-64.7 / FM-64.1 — ownership. `TrackingPilotRunner` is offered this drill's `ended` first
+    // (`main.ts`: `trackingPilotSession?.handleDrillEnded()`), and it must decline every time,
+    // because no manifest is running: its block log stays empty and it renders no eligibility
+    // verdict. Had it taken over, the downloads and the advances above would both be its doing.
+    await expect(page.locator('#tracking-pilot-records-list').locator('li')).toHaveCount(0);
+    await expect(page.locator('#tracking-pilot-quality-banner')).toBeHidden();
+    await expect(page.locator('#tracking-pilot-operator')).toBeHidden();
+
+    // FR-64.8 — practice never reaches the history API: the client-side policy short-circuits to
+    // `excluded` without a request, so no history root can grow from an ad hoc run.
+    const historyState = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __fpsTest: { historySaveState(): { kind: string; reason?: string } };
+          }
+        ).__fpsTest.historySaveState(),
+    );
+    expect(historyState).toEqual({ kind: 'excluded', reason: 'practice' });
+
+    expect(payloads.map((payload) => payload.meta.drillId)).toEqual([
+      CURATED_PILOT_IDS[0],
+      CURATED_PILOT_IDS[0],
+      CURATED_PILOT_IDS[1],
+    ]);
+
+    for (const [index, payload] of payloads.entries()) {
+      const meta = payload.meta as PilotExportedMeta;
+      const config = CURATED_PILOT_CONFIGS.find((candidate) => candidate.drillId === meta.drillId)!;
+      const label = `${meta.drillId} rep ${String(meta.sessionPlanRepIndex)}`;
+
+      // A-64.5 — the run is locatable in the plan it came from, with no new metadata field.
+      expect(meta.sessionPlanMode, label).toBe('custom');
+      expect(meta.sessionPlanItems, label).toEqual(items);
+      expect([meta.sessionPlanItemIndex, meta.sessionPlanRepIndex], label).toEqual(
+        index < 2 ? [0, index] : [1, 0],
+      );
+      expect(meta.sessionPlanItems![meta.sessionPlanItemIndex!].drillId, label).toBe(meta.drillId);
+      // FR-64.6 — the run is audited as what it is: a `tracking`-family program with the two rest
+      // seams the operator chose. A curated block gets no family of its own and no pilot-specific
+      // rest model; the whole audit block is the stage8/WP-58 one, unchanged.
+      expect(meta.sessionPlanFamilyOrder, label).toEqual(['tracking']);
+      expect(meta.sessionPlanDrillRestSeconds, label).toBe(1);
+      expect(meta.sessionPlanRestSeconds, label).toBe(2);
+
+      // FR-64.2 — the stimulus that actually ran is the canonical config's. The primary seed lives
+      // in the trajectory, not in `meta.rngSeed` (T2 §3), which is why the whole trajectory object
+      // is compared rather than one number.
+      expect(meta.spawn?.trackingTrajectory, label).toEqual(config.targets.trackingTrajectory);
+      expect(meta.targets?.hitbox?.shape, label).toBe('sphere');
+      expect(meta.targets?.hitbox?.widthU, label).toBeCloseTo(config.targets.hitbox!.widthU, 6);
+      // FR-64.4 — the fact, not the intent: the run really did fire the pilot's own hold weapon.
+      expect(meta.weaponId, label).toBe('tracking_pilot_hold');
+      // FR-64.5 — the pinned scene, proven by the scene the export names.
+      expect(meta.scene?.sceneId, label).toBe('field-low');
+
+      // FR-64.8 — practice all the way through: no assessment block, so no trend cohort.
+      expect(meta.assessment, label).toBeUndefined();
+
+      // FR-64.7 / FM-64.8 — no manifest vocabulary is borrowed. `sessionLabel` is how a formal
+      // pilot block records its counterbalance cell (`tracking-pilot-v2:<pid>:session-N`); an ad
+      // hoc run carries the participant and nothing else, so its payload cannot be mistaken for
+      // manifest evidence. Nor does anything here claim eligibility.
+      expect(meta.session, label).toEqual({ participantId });
+      expect(
+        Object.keys(meta).filter((key) => /pilot|eligib|counterbalance/i.test(key)),
+        label,
+      ).toEqual([]);
+
+      // The block's own protocol guard survived being scheduled: the 1 s centre-prep window is
+      // still declared and the scored window still opens exactly once (the same two facts
+      // `tracking-pilot-live.spec.ts` asserts for the manifest path). Recording a violation is
+      // what these blocks do; *judging* it is what the ad hoc path refuses to do.
+      expect(meta.spawn?.trackingPrepMs, label).toBe(config.timing.trackingPrepMs);
+      expect(
+        payload.events.filter((event) => event.type === 'scored_start'),
+        label,
+      ).toHaveLength(1);
+      expect(payload.ticks.length, label).toBeGreaterThan(0);
+      expect(meta.recorderOverflow, label).toBe(false);
+    }
+
+    // FM-64.7 — reps are repeated exposure, never independent samples: rep 0 and rep 1 of item 0
+    // replay the *same* primary seed and the same trajectory. Stated here as an executable fact, so
+    // the runbook's prohibition is not merely prose.
+    expect((payloads[0].meta as PilotExportedMeta).spawn?.trackingTrajectory).toEqual(
+      (payloads[1].meta as PilotExportedMeta).spawn?.trackingTrajectory,
+    );
   });
 });
