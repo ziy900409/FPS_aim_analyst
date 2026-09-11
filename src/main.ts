@@ -1032,6 +1032,11 @@ const drillRunner: DrillRunner = {
   get phase() {
     return activeDrillRunner.phase;
   },
+  // WP-65 / T1：純轉發（本切片唯一的 main.ts 改動）。此 façade 以 `DrillRunner` 型別宣告，
+  // 故介面新增必填成員時必須同步補一個 getter；**不**傳 `requireArm`（待命閘的接線屬 T2）。
+  get countdownRemainingMs() {
+    return activeDrillRunner.countdownRemainingMs;
+  },
 };
 drillRunner.start(activeDrillConfig);
 

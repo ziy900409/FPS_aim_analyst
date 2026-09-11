@@ -230,3 +230,86 @@ meta.validity = **不存在**（null）· meta.suspect = false · meta.schemaVer
 
 - **T5**：live 匯出取證需要一條能在自動化中走到「真實 Result 匯出」的路徑；現有 `__fpsTest.showResult()` 走的是 harness payload（無 `validity`）。T5 開工時需先決定取證方式（live drill 手動實測 vs. 新增 live 匯出 e2e 縫），並在 T5 的 progress 段落記錄選擇與理由。
 - **T6**：全量 Playwright 基線若在 T0 未取得，T6 的 NFR-65.6（「通過數 ≥ 本 WP 前基線」）必須在改動任何 e2e 之前先補一次乾淨基線，否則該 NFR 無對照。
+
+---
+
+## §T1 `'armed'` 相位、`armRequested` 與 `countdownRemainingMs`（2026-09-11）
+
+**狀態**：✅ 完成。sim 層待命閘落地，`requireArm` 省略時行為逐位不變（由 `tests/regression/` 零修改全綠佐證）。
+
+執行基準 commit：`63d3187`（T0 落帳）。工作區另有平行 session 的未提交索引檔改動（`docs/exec-plan/README.md`、`DECISIONS.md`、stage13 `README.md`、wp-64 三檔、`graphify-out/`），**本切片未觸碰、未 stage**（[parallel-sessions-coedit-index-docs]）。
+
+### 1. 落地內容
+
+| 檔案 | 改動 |
+|---|---|
+| `src/state/SharedState.ts` | 新增 `armRequested: boolean`（input 寫 / sim 唯讀，ADR-2）；`createSharedState()` 初始 `false`；`resetState()` **原地**歸零（不 realloc，GC 紀律 §4）。`validity` 本切片**未動**（`pointerLockLostDuringRun` 屬 T5，避免一個切片混入兩個構念） |
+| `src/drill/DrillRunner.ts` | `DrillPhase` 擴為五成員；新增 `DrillRunnerOptions { requireArm? }`；`createDrillRunner` 第三參數 optional；`start()` 依 `requireArm` 二選一；`tick()` 新增 `'armed'` 分支；新增 `countdownRemainingMs` getter 與 `lastTickMs` 內部游標（`resetAll()` 歸零） |
+| `src/main.ts` | **僅** 5 行純轉發 getter（見下方「協議偏離」） |
+| `src/drill/DrillRunner.test.ts` | +7 測試（FM-1 反證 ×2、待命滯留、污染反證、解除→running、restart、`countdownRemainingMs` 四相位 + 單調） |
+| `src/loop/__tests__/wp65-arm-determinism.test.ts` | **新檔**，+3 測試（跨 4 種 render 幀序列逐位一致、倒數起算點、不解除的反向釘死） |
+| `src/testharness/fpsTestHarness.test.ts` | +1 測試（FM-1 第二道防線） |
+
+### 2. `DrillPhase` 消費點清單與 `'armed'` 的落點（FM-6 窮舉檢查）
+
+全 repo `DrillPhase` / `drillRunner.phase` 的消費點共 **7 處**，**無任何 `switch`**（故不存在「漏掉一個 case 靜默走 default」的形態；窮舉性由 `tsc` 對 union 的賦值檢查保證）：
+
+| # | 位置 | 形態 | `'armed'` 如何落 | 本切片是否需改 |
+|---|---|---|---|---|
+| 1 | `DrillRunner.ts` `tick()` 首行 guard | `phase === 'idle' \|\| 'ended' \|\| config === null` | 落在外 → 續往下 | 是（新增 `'armed'` 分支於其後） |
+| 2 | `DrillRunner.ts` `if (phase === 'countdown')` | if-chain | 解除後同 tick 落入 | 是 |
+| 3 | `DrillRunner.ts` `if (phase === 'running')` | if-chain | 待命期永不到達 | 否 |
+| 4 | `HUD.ts` `HUDStats.phase` / `createHUDStats()` | **僅型別搬運，零分支** | 原樣存入，不影響呈現 | 否 |
+| 5 | `main.ts:581` `recording = 'countdown' \|\| 'running'` | 錄製判準（KI-007 / WP-60 `pointer_lock`） | **落在外** ⇒ 待命期的掉鎖不被視為錄製中 —— 這正是 **FR-65.12 要的語意**，T5 可直接沿用此判準 | 否 |
+| 6 | `main.ts:1519` `phase === 'ended'`（研究者控制項） | 相等比較 | 落在外 | 否 |
+| 7 | `main.ts:1777` `phase === 'countdown' \|\| 'idle'`（`hudElapsedMs` 歸零） | if-chain 的 else-if | **落在外** ⇒ `'armed'` 期間 `hudElapsedMs` 保留前值而非歸零 | 否（`requireArm` 未啟用 ⇒ 現行不可達；**T4 必須補此分支**，見下方 OQ） |
+
+`main.ts:1808` 的 `phase === 'ended'`（Result 顯示）同樣落在外，無需處理。
+
+### 3. 驗證證據（全部為本切片實際執行輸出）
+
+| 項目 | 結果 | 對照 T0 基線 |
+|---|---|---|
+| `npm run typecheck`（×2） | **exit 0 / exit 0** | 同 |
+| `npx vitest run tests/regression` | **exit 0** — 31 files / **292 passed**，**fixture 零修改**（`git status -- tests/` 為空） | NFR-65.2 ✅ |
+| `npx vitest run`（全量） | **exit 0** — Test Files **257 passed / 1 skipped (258)**；Tests **3025 passed / 2 skipped (3027)**；40.03 s | T0 = 256 files / 3014 tests ⇒ **+1 file、+11 tests**，逐條對得上：DrillRunner +7、wp65-arm-determinism +3（新檔）、fpsTestHarness +1。**零測試由綠轉紅** |
+| `git diff --stat -- src/ tests/` | 5 檔改動 + 1 新檔；`tests/` 目錄**零改動** | — |
+
+`src/drill/DrillRunner.test.ts` 單檔 33 → **40 tests**。
+
+### 4. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T1-a** | `lastTickMs = nowMs` 置於 `tick()` **最前面**（早於 idle/ended guard），而非只在 countdown 分支內更新 | 單一賦值點，不必在三個分支各維護一次；因 getter 在 `phase !== 'countdown'` 時一律回 0，提前賦值對外**不可觀測**。被推翻：只在 countdown 分支更新——會讓「解除待命同 tick」的首次讀取取到 stale 值 |
+| **T1-b** | 解除待命後**同 tick** 落入 countdown 區塊並起算倒數 | 比照既有 `countdown → running` 的同 tick 落入寫法（`DrillRunner.ts` 既有註解明寫「不浪費一個 tick」），不另立慣例。被推翻：`return` 後等下一 tick——多一個 tick 的相位延遲，且與既有寫法不一致 |
+| **T1-c** | 決定性測試把「解除」釘在 **tick index**（經 `afterTick` 寫入）而非 sim 時間或幀數 | 待命閘的決定性風險正是「解除時點綁在 render 幀上」；以 tick index 為條件才真正證明跨 FPS 一致。並加一條**反向釘死**（不解除 → 4 種幀序列全停 `armed`、零 visible 事件），避免「一致地什麼都沒發生」的假綠燈 |
+| **T1-d** | `countdownRemainingMs` 在 `armed` 相位回 **0** 而非 `countdownMs` | 待命期倒數**尚未起算**，回 `countdownMs` 會讓 T3 的 overlay 無從區分「待命」與「倒數第 3 秒」，且等同洩漏一個不存在的量測值。T3 以 `phase` 決定顯示提示或數字 |
+
+### 5. Surprises & Discoveries（T1）
+
+1. **`main.ts` 對 `DrillRunner` 包了一層以介面型別宣告的轉發 façade，規劃期未記錄。**
+   `src/main.ts:1019` 是 `const drillRunner: DrillRunner = { start, tick, restart, get phase }`（為了支援換 drill 時抽換 `activeDrillRunner`）。⇒ 只要在 `DrillRunner` 介面新增**必填**成員，`tsc` 就會報 `TS2741: Property 'countdownRemainingMs' is missing`，**`main.ts` 零修改在型別上不可能成立**。
+   **證據**：`npm run typecheck` → `src/main.ts(1021,7): error TS2741`。
+   **處置**：見下方「協議偏離」。**對後續 task 的意義**：T2 接 `requireArm` 時要改的是 `createDrillRunner(...)` 的**三個**建構點（`main.ts:1008` 初始 + `main.ts:352` 附近的換 drill 重建 + harness 不改），而不是這個 façade。
+
+2. **`fpsTestHarness.startDrill()` 返回時相位已是 `running`，不是 `countdown`。**
+   `startDrillWithScene()` 內部 `while (drillRunner.phase !== 'running' || activeTarget() === undefined)` 會先泵完倒數（`fpsTestHarness.ts:370`）。原本按 T1 doc 寫的 `expect(phase()).toBe('countdown')` 因此紅了一次。
+   ⇒ 修正後的斷言其實**更強**：「不設任何 `armRequested` 就泵到 `running`」直接證明待命閘未洩漏；若洩漏，該 while 迴圈會撞到 4000 次 guard 上限而非默默通過。
+
+3. **`main.ts:1777` 的 `hudElapsedMs` 歸零分支把 `'armed'` 漏在外面**（見 §T1.2 第 7 列）。本切片不可達（`requireArm` 未啟用），但 T4 若只改 Time 卡的倒數顯示而不補這個分支，`'armed'` 期間 `hudElapsedMs` 會保留**上一場**的值 ⇒ 待命畫面的 Time 卡顯示前一場的殘留時間，正好違反 **FR-65.8**「不得閃動或提早歸零」。已列入 T4 的 OQ。
+
+### 6. 已知的協議偏離（明帳）
+
+**T1 doc 的 Invariant「`src/main.ts` 本切片零修改」與 README §2.3 的介面契約（`countdownRemainingMs` 為 `readonly` 必填）在型別上互斥**（Surprise 1）。
+
+- **選擇**：保留 §2.3 的必填契約，在 `main.ts` 補 **5 行純轉發 getter**（含註解 2 行，實體 3 行）。
+- **被推翻的替代**：把 `countdownRemainingMs` 改為 optional。會讓 T3／T4 的每個讀取點都得寫 `?? 0`，並把「render 一定讀得到剩餘倒數」這個契約從型別退化成慣例——為了一條文件字面而永久弱化介面，代價不對等。
+- **FM-1 的保護未被削弱**：該 getter **不傳 `requireArm`**，`main.ts` 的 `createDrillRunner` 呼叫維持兩參數，app 行為逐位不變。
+- **證據**：`git diff -- src/main.ts` 全部內容即該 getter 五行，無其他 hunk。
+- ⇒ T1 DoD 最後一條「`git diff --stat` 顯示 `src/main.ts` 零改動」**未達成**，改以「`src/main.ts` 的 diff 僅含一個純轉發 getter、且不含 `requireArm`」替代，理由如上。
+
+### Open Questions（T1 留給後續 task）
+
+- **T4（新增，來自 Surprise 3）**：`main.ts:1777` 的 `hudElapsedMs` 歸零 if-chain 必須把 `'armed'` 納入（與 `'countdown'`／`'idle'` 同組），否則待命畫面的 Time 卡會顯示上一場殘留值，違反 FR-65.8。T4 開工時一併處理並具名斷言。
+- **T2**：`createDrillRunner` 在 `main.ts` 有**兩個**建構點（初始建構 + 換 drill 時重建），`requireArm: true` 必須兩處都傳，否則「換 drill 後不需取鎖」會成為靜默漏洞。T2 須具名斷言五條路徑（restart／換武器／換場景／換 drill／Session Plan block）皆進 `armed`。

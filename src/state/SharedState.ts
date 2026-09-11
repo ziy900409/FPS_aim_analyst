@@ -312,6 +312,12 @@ export interface SharedState {
    * 每 peek 只放行第一發；新 peek（唯一新 id）隱式 reset。初始 `null`（首發尚未計）。
    */
   firstShotPeekId: string | null;
+  /**
+   * WP-65 / T1（FR-65.2）：待命解除請求。**input 層寫 → sim 層唯讀**（ADR-2），是待命閘唯一的
+   * 跨迴圈接縫。`resetState()` 置 false ⇒ 每次 `start()` 都重新要求一次開始手勢。
+   * `DrillRunnerOptions.requireArm` 未啟用時此欄**不被讀取**（既有 fixture 逐位不受影響）。
+   */
+  armRequested: boolean;
 }
 
 /**
@@ -431,6 +437,7 @@ export function createSharedState(): SharedState {
     protocolViolations: [],
     validity: { playerCorridorExceeded: false },
     firstShotPeekId: null,
+    armRequested: false,
   };
 }
 
@@ -484,4 +491,5 @@ export function resetState(state: SharedState = sharedState): void {
   state.protocolViolations.length = 0;
   state.validity.playerCorridorExceeded = false;
   state.firstShotPeekId = null; // 首發旗標記憶歸零（重開 drill → 首發重新從第一 peek 計）
+  state.armRequested = false; // WP-65：待命解除請求歸零（每次 start() 都要求一次新的開始手勢）
 }

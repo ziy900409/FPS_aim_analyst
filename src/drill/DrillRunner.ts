@@ -24,10 +24,25 @@ import type { DrillConfig } from './DrillConfig.ts';
  * interface 收 state（＝同一實例）,用於推進相位與讀目標;restart 走建構期閉包的 state。
  */
 
-export type DrillPhase = 'idle' | 'countdown' | 'running' | 'ended';
+/**
+ * WP-65 / T1（FR-65.1）：`'armed'` 插在 `idle` 與 `countdown` 之間。
+ * 語意：config 已載入、狀態已 reset，但**尚未取得受試者的開始手勢** ⇒ 不推進任何目標、不計時、
+ * 不判定 `endCondition`。只有 `DrillRunnerOptions.requireArm === true` 時才可能進入此相位。
+ */
+export type DrillPhase = 'idle' | 'armed' | 'countdown' | 'running' | 'ended';
+
+export interface DrillRunnerOptions {
+  /**
+   * WP-65 / T1（FR-65.3，D-65-2）：true ⇒ `start()` 進入 `'armed'`，需
+   * `SharedState.armRequested === true` 才轉 `countdown`。
+   * 省略／false ⇒ `start()` 逐位維持既有語意（直接進 `countdown`），`'armed'` 分支恆不進入。
+   * 僅 `src/main.ts` 傳 true；全部測試與 `fpsTestHarness` 一律省略（NFR-65.2）。
+   */
+  readonly requireArm?: boolean;
+}
 
 export interface DrillRunner {
-  /** 載入 config → 全 reset → 進 countdown（倒數在第一個 tick 以 sim clock 起算）。 */
+  /** 載入 config → 全 reset → 進 countdown（倒數在第一個 tick 以 sim clock 起算）；`requireArm` 時先進 armed。 */
   start(config: DrillConfig): void;
   /** 在 sim tick 內推進相位；running 期間驅動 TargetManager 並判定 endCondition。 */
   tick(state: SharedState, nowMs: number): void;
@@ -35,11 +50,24 @@ export interface DrillRunner {
   restart(): void;
   /** 目前相位（唯讀）。 */
   readonly phase: DrillPhase;
+  /**
+   * WP-65 / T1：`countdown` 相位的剩餘毫秒（sim clock 域，[0, timing.countdownMs]）。
+   * 其他相位一律回 0。**render 層唯讀呈現用**（比照既有 `phase` 的 sim→render 唯讀先例）；
+   * 由最近一次 `tick()` 的 `nowMs` 導出，**不讀任何時鐘**、不寫入匯出、不參與指標推導。
+   */
+  readonly countdownRemainingMs: number;
 }
 
-export function createDrillRunner(state: SharedState, targetManager: TargetManager): DrillRunner {
+export function createDrillRunner(
+  state: SharedState,
+  targetManager: TargetManager,
+  options?: DrillRunnerOptions,
+): DrillRunner {
+  const requireArm = options?.requireArm === true;
   let phase: DrillPhase = 'idle';
   let config: DrillConfig | null = null;
+  // 最近一次 tick() 的 sim clock 時刻；只餵 countdownRemainingMs 的唯讀導出（不參與相位判定）。
+  let lastTickMs = 0;
 
   // countdown 起點：於 **第一個 countdown tick** 以 sim clock 起算（start() 不帶時間源，
   // 故倒數自進入 sim tick 才計，避免依賴 wall-clock）。null = 尚未起算。
@@ -165,6 +193,7 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
     seenIds.clear();
     countdownStartMs = null;
     runStartMs = 0;
+    lastTickMs = 0;
     resetReversalTracking();
     resetProtocolGuardTracking();
   }
@@ -172,13 +201,23 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
   return {
     start(cfg: DrillConfig): void {
       config = cfg;
-      resetAll(); // 乾淨起步（含 targetManager 首側 = cfg 首側）
-      phase = 'countdown';
+      resetAll(); // 乾淨起步（含 targetManager 首側 = cfg 首側；resetState 已把 armRequested 清回 false）
+      phase = requireArm ? 'armed' : 'countdown';
     },
 
     tick(s: SharedState, nowMs: number): void {
+      lastTickMs = nowMs; // countdownRemainingMs 的唯讀導出基準（sim clock，不讀時鐘）
       // idle / ended：不推進；config 為 null（未 start）亦不動作。
       if (phase === 'idle' || phase === 'ended' || config === null) return;
+
+      // WP-65（FR-65.1/65.2）：待命相位——不推進 TargetManager、不起算倒數、不判 endCondition。
+      // `armRequested` 由 input 層寫入、此處唯讀（ADR-2）。`requireArm` 省略時此分支恆不進入。
+      if (phase === 'armed') {
+        if (!s.armRequested) return;
+        phase = 'countdown';
+        // 落入下方 countdown 區塊：解除待命即在同 tick 起算倒數（不浪費一個 tick），
+        // 比照既有 countdown → running 的同 tick 落入寫法，不另立慣例。
+      }
 
       if (phase === 'countdown') {
         if (countdownStartMs === null) countdownStartMs = nowMs; // 第一 tick 起算倒數
@@ -252,6 +291,11 @@ export function createDrillRunner(state: SharedState, targetManager: TargetManag
 
     get phase(): DrillPhase {
       return phase;
+    },
+
+    get countdownRemainingMs(): number {
+      if (phase !== 'countdown' || countdownStartMs === null || config === null) return 0;
+      return Math.max(0, config.timing.countdownMs - (lastTickMs - countdownStartMs));
     },
   };
 }

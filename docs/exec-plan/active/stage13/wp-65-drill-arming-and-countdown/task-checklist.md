@@ -5,7 +5,7 @@
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
 | ✅ | **T0** Entry gate／編號重查／基線凍結／OQ 收斂 | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
-| ⬜ | **T1** `'armed'` 相位 + `armRequested` + `countdownRemainingMs` | [T1-armed-phase.md](T1-armed-phase.md) | T0 | **High** |
+| ✅ | **T1** `'armed'` 相位 + `armRequested` + `countdownRemainingMs` | [T1-armed-phase.md](T1-armed-phase.md) | T0 | **High** |
 | ⬜ | **T2** App 接線：取鎖解除待命／`start()` 前釋鎖／arena 歸零 | [T2-app-arming-wiring.md](T2-app-arming-wiring.md) | T1 | **High** |
 | ⬜ | **T3** 待命提示與倒數數字 overlay | [T3-countdown-overlay.md](T3-countdown-overlay.md) | T1（可與 T2 並行） | Low |
 | ⬜ | **T4** HUD `Time` 卡的時限型倒數 | [T4-hud-remaining-time.md](T4-hud-remaining-time.md) | T1（可與 T2/T3 並行） | Low |

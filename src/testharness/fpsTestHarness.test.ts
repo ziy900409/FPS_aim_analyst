@@ -389,3 +389,27 @@ describe('WP-13 / T2 — harness 整合(分離後仍命中 + recoil 漂移讀數
     expect(payload.meta.suspect).toBe(false);
   });
 });
+
+/**
+ * WP-65 / T1 — FM-1 的第二道防線
+ *
+ * 待命閘是 `createDrillRunner()` 的 opt-in option（D-65-2），而 harness 是**除 `main.ts` 以外唯一**
+ * 在 production 程式碼裡建立 runner 的地方。若 `requireArm` 哪天被順手加進 harness，全部走 harness
+ * 的合成管線（含 19 個 e2e spec）會集體停在 `armed` 而「測試卡住」——症狀與程式錯誤不同型，極難追。
+ * 故在此以**行為**（而非反射）釘死：`startDrill()` 本來就會泵到 `running` 才返回（它內部等的正是
+ * `phase !== 'running'`），所以「返回後即為 `running`」本身就證明了倒數在**沒有任何 `armRequested`**
+ * 的情況下走完——待命閘若洩漏進 harness，這裡會直接卡在 `armed` 的 guard 上而非默默通過。
+ */
+describe('WP-65 T1 — fpsTestHarness 永不進入待命相位', () => {
+  it('startDrill() 不需要任何 armRequested 即可泵到 running，且全程未進 armed', () => {
+    const harness = makeHarness();
+
+    harness.startDrill('counterstrafe_ad_v1');
+    expect(harness.phase()).toBe('running'); // 倒數已在零 armRequested 下走完
+    expect(harness.phase()).not.toBe('armed');
+
+    // 既有 harness 用法（推進一輪 peek）必須逐位照舊可用。
+    harness.runCounterStrafeRound(1);
+    expect(harness.phase()).not.toBe('armed');
+  });
+});
