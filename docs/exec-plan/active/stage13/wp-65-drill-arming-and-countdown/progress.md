@@ -1,6 +1,6 @@
 # WP-65 — Progress
 
-> Tech spec：[README.md](README.md) · Checklist：[task-checklist.md](task-checklist.md) · 決策 GD-41（草稿，T-exit 落帳）
+> Tech spec：[README.md](README.md) · Checklist：[task-checklist.md](task-checklist.md) · 決策 [GD-41](../../../DECISIONS.md)（已於 T-exit 落帳）
 >
 > 每個 task 完成時追加一段（Progress / Decision Log / Surprises / Open Questions），與該切片一起 stage（協議 §3.4）。
 
@@ -1016,3 +1016,67 @@ hit-test 那條不是樣式重述：`DrillStartOverlay.ts:61-63` 自稱 `pointer
 - **T-exit**：`task-checklist.md` 的「19 個 `__fps` spec 零修改」需改寫為「14 零修改 + 3 補 arm + 2 僅擴充」（§7）。
 - **T-exit**：README §0.5 的 spec 分類需改用「是否驅動 live drill runtime」這條軸重寫，並列出 6 個受影響檔（§11 Surprise 1）。
 - **T-exit**：`tests/` 與 `scripts/` 不在任何 typecheck 目標內（§8）。是否新增 `tsconfig.test.json` 並掛進 `test:ci` 屬跨 WP 的工具鏈決策，不在 T6 範圍。
+
+---
+
+## §T-exit 驗收（2026-09-11）
+
+**狀態**：✅ **T-exit 完成**。所有可自動與既有實機證據均已通過；使用者於 2026-09-11 確認**需要** `meta` 版本標記。依 README §3.1，該 schema 變更必須另立 WP，不在 WP-65 夾帶。
+
+### 1. 範圍、基準與環境
+
+- 驗收基準為 `HEAD=1ed18a0815c082469db46d8be4f94e94756e207a`（`main`）；WP-65 production range 的共同祖先為 `9e9f2ac`。T-exit 另把 `wp65-arm-determinism.test.ts` 的一則「不使用非決定性亂數」註解改寫，避免它本身誤觸硬約束的字串掃描；行為與 AST 不變，並已更新 `graphify-out/`、重跑其測試與 typecheck。
+- E2E 使用已核對的本機 Edge dev/preview server：`/api/history/health` 在 5173/4173 分別回 `validRunCount=277/373`，與 T6 已記錄的隔離 roots 一致；真實 `data/session-history/` 在執行前後均為 **54** 份 JSON。執行前 `history-dev/history-preview` participant 目錄數為 **270/187**，執行後為 **297/190**。
+- `Get-CimInstance` 無權讀取既存 server 的 command line；因此以 health count 與真實 history 不變確認 root 歸屬。沒有終止任何非本次程序。
+
+### 2. A-65.1～A-65.12 證據矩陣
+
+| 驗收 | 結論 | 具名證據 |
+|---|---|---|
+| **A-65.1** | ✅ 待命期不 spawn、不計時、不建立量測窗界。 | `src/drill/DrillRunner.test.ts`：`待命期間不產生任何量測語意（效度風險 §3.1-2 的污染反證）` 斷言 `targets`、`tVisible`、`tStop`、`tScoredStart`、`cues` 五集合全空；T2 Edge 實測見 §T2.6「待命不自走」。 |
+| **A-65.2** | ✅ input 寫、sim 唯讀的唯一溝通面是 `SharedState.armRequested`。 | 本次 CodeGraph flow：`main.ts::armOnPointerLock()` 寫 `sharedState.armRequested=true`；`DrillRunner.tick()` 的 `'armed'` 分支唯一讀它。`DrillRunner.test.ts` 的 `armRequested = true 後的第一個 tick…` 釘死轉換。 |
+| **A-65.3** | ✅ `requireArm` 為 opt-in，既有行為與 regression fixture 保留。 | `DrillRunner.test.ts`：兩條 `FM-1 反證`（省略 option／明傳 `false`）皆通過；本次 `npx.cmd vitest run tests/regression`：**31 files / 292 tests passed**。 |
+| **A-65.4** | ✅ restart、武器、場景、drill 與 Session Plan block 均重新進 armed。 | §T2.6 的五條 Edge 實測逐條記錄 `phase=armed, locked=false, armRequested=false`；本次 Playwright #80 於真瀏覽器完成 3 家族 × 2 reps（6 blocks，5.3m），#81 逐列武器 multi-block 亦通過。 |
+| **A-65.5** | ✅ 解除待命的左鍵不被記為 fire。 | `InputSampler.test.ts`：`解除待命的點擊不記作開火，鎖定後的真正開火仍記錄`；§T2.7 的 live export 在未開火前 `events.filter(type === 'fire').length = 0`。 |
+| **A-65.6** | ✅ armed prompt 與 3/2/1 均可見且可及。 | `DrillStartOverlay.test.ts` **16 assertions**；既有 Edge 截圖 `assets/t3-armed.png`、`t3-3.png`、`t3-2.png`、`t3-1.png`（§T3.4）；本次 Playwright #92 驗證 armed → countdown → running 文字與 `aria-hidden`。 |
+| **A-65.7** | ✅ `timeLimit` 倒數、`targetCount` 正計時。 | `HUD.test.ts` **9 tests**（含 60,000→0、targetCount limit 清除）；§T4.4 的 `spider_shot_v3` 與 `counterstrafe_ad_v1` Edge 錄影/截圖。 |
+| **A-65.8** | ✅ armed/countdown 顯示起始值、無早歸零。 | §T4.4：time-limit armed 15 個 100ms 取樣全為 `01:00.0`；targetCount armed/countdown 為 `00:00.0`，running 才由 `00:00.5` 單調增加；`HUD.test.ts` 覆蓋兩個初始狀態。 |
+| **A-65.9** | ✅ recording 中掉鎖翻旗標且 sim 持續。 | §T5.5 的 live Edge 掉鎖 run：續跑、`pointerLockLost=true`、`suspect=true`、Result 警示四項皆記錄；`metadata.test.ts` 的 `folds validity.pointerLockLost into meta.suspect…` 釘死 OR 語意。 |
+| **A-65.10** | ✅ 新旗標進 `meta.validity` 並併入 `suspect`。 | §T5.5 的 live `meta.validity` key set 為 `[bufferOverflow,corridorExceeded,perfFloor,pointerLockLost,recorderOverflow]`，恰多一欄；`metadata.test.ts`、`exportPayloadSchema.test.ts` 的 optional-in/required-out cases，以及 §T5.5 的 `load_export()` 真實輸出。 |
+| **A-65.11** | ✅ Result 明示本場資料可能失效且建議重測。 | `ResultScreen.test.ts` 的 `validity warning` 3 cases；§T5.5 Edge Result 截圖 `assets/t5-result-warning.png`。 |
+| **A-65.12** | ✅ 非 recording 掉鎖不誤報。 | §T5.5 三個乾淨 run 分別為 `false`；armed 手動 lock/unlock 為 `false`；ended 由 app 釋鎖亦為 `false`。`tests/e2e/support/arm.ts::armDrill()` 每次解除待命後皆斷言 `pointerLockLostDuringRun === false`，本次所有 110 個 E2E case 通過。 |
+
+### 3. 最終 gates（本次實際輸出）
+
+| Gate | 結果 |
+|---|---|
+| `npm.cmd run typecheck` ×2 | **exit 0 / exit 0**。註解修正後另跑一次亦 exit 0。 |
+| `npx.cmd vitest run` | **exit 0**；**258 passed / 1 skipped files，3,097 passed / 2 skipped tests**；18.14 s。相對 T0 的 256 / 3,014，為 +2 files / +83 tests。 |
+| `npx.cmd vitest run tests/regression` | **exit 0**；**31 passed files / 292 passed tests**；3.36 s。 |
+| `npx.cmd vitest run src/loop/__tests__/wp65-arm-determinism.test.ts` | 註解修正後以非 sandbox 方式重跑：**1 file / 3 tests passed**；1.38 s。 |
+| `npx.cmd playwright test --workers=1` | **exit 0**；**110 passed / 0 failed**；16.4 min。相對 T0 基線 108 passed / 0 failed 為 +2（新增 overlay coverage）。 |
+| `npm.cmd run build` | 初次 sandbox run **exit 1**：Vite/esbuild 讀取 repo config 父路徑遭拒；依同一命令在授權的非 sandbox 環境重跑 **exit 0**，198 modules、`index-BGy8qBdM.js` 1,240.26 kB（gzip 353.27 kB）、2.26 s。既有 >500 kB chunk warning 保留，非本 WP 引入。 |
+
+### 4. 硬約束與差異檢視
+
+`main...HEAD` 在本次驗收時為同一個 `main` commit，故 T-exit 指定的五條命令均為空輸出；為避免這個空 range 偽裝成證據，另以 WP-65 前共同祖先 `9e9f2ac` 對目前工作樹執行同樣檢視：
+
+| 檢視 | 結果 |
+|---|---|
+| `git diff 9e9f2ac -- src/ \| Select-String 'Date\\.now'` | 空（無新增 `Date.now`）。 |
+| `git diff 9e9f2ac -- src/ \| Select-String 'Math\\.random'` | 空（註解字串已改寫；無新增非決定性亂數）。 |
+| `git diff --stat 9e9f2ac -- research/` | 空（C-D1）。 |
+| `git diff --stat 9e9f2ac -- src/display/experimentSession.ts` | 空（D-65-4）。 |
+| `git diff --stat 9e9f2ac -- src/input/PointerLock.ts src/input/InputSampler.ts` | 空。 |
+
+### 5. GD-41、效度斷代與 OQ 收斂
+
+- **編號重查**：本次先讀 `DECISIONS.md`；當下最大已採納號為 **GD-40**，故 GD-41 無平行佔用，已在本次同步落帳。
+- **效度斷代**：WP-65 把倒數起點從 app 載入改為受試者取得 Pointer Lock 後；開場準備／首目標前的資料，不能與 WP-65 前的資料直接混池比較。現有 schema **未**新增版本標記，避免把新資料契約夾帶入本 WP。
+- **使用者決策（2026-09-11）**：使用者確認**需要**在 `meta` 留下能區分 WP-65 前後開場語意的版本標記。這是新的資料契約與 migration / fixture / Python-compatibility 工作，**必須另立 WP**；WP-65 僅記錄斷代與需求，不夾帶 schema 變更。
+- **OQ-65.1～65.3**：照 README 預設已關閉（併入 suspect、中央 DOM overlay、restart 要新取鎖）。**OQ-65.4**：關閉為「不做即時 HUD 掉鎖提示」；受試者已能看見游標回到桌面，Result 的具名警示足以提供可行動資訊，額外每幀 HUD 分支不增加量測或操作價值。
+
+### 6. 限制
+
+- 本次 Edge E2E 以受控 Pointer-Lock 脈衝測 live 接線；它支持 production wiring，**不**代替真人受試者、實體滑鼠或不同硬體上的效度主張。
+- T2–T5 的截圖／錄影／掉鎖值是相同 production implementation 的既有實機證據；本次在其後未改變行為，只改寫一則 determinism-test 註解並以 focused test/typecheck 重驗。

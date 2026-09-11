@@ -13,7 +13,7 @@
 | **Estimate** | 6.5–9 dev-days（T0～T6 + T-exit）。 |
 | **Risk** | **High**：T1 改 `DrillPhase` 狀態機（`createDrillRunner` 有 35 個 caller、17+ 測試與 golden fixture 覆蓋）；T6 的 live e2e 目前全數假設「載入即開始」。 |
 | **IDs** | ✅ **`WP-65` / `GD-41` 已於 T0 重查確認可用（2026-09-11）**，不需順延；證據見 [progress.md §T0.1](progress.md)。規劃期寫入當下：`exec-plan/README.md §2` 最大 WP = **WP-63**、`active/stage13/` 實際最大 = **WP-64**（[wp-64](../wp-64-tracking-pilot-session-plan-drills/README.md) 已落 code，尚未入 §2 索引）、`DECISIONS.md` 最大 GD = **GD-39**、WP-64 已於其 T0 佔用 **GD-40**（尚未落帳）。依 [GD-35](../../../DECISIONS.md) ② 紀律，二號**必須於 T0 重查**；被平行 session 取用則依 [GD-15](../../../DECISIONS.md)「先採納先得」順延，不爭號。 |
-| **Status** | 🚧 **T0 完成（2026-09-11）**，T1 可開工。四個 OQ 全部照 README 預設關閉；基線與 T0 意外見 [progress.md §T0](progress.md)。 |
+| **Status** | ✅ **T-exit 完成（2026-09-11）**。使用者確認需要 `meta` 版本標記；依 scope 它將由後續獨立 WP 處理，未夾帶於本 WP。證據見 [progress.md §T-exit](progress.md#t-exit-驗收2026-09-11)。 |
 
 ### 落點說明
 
@@ -65,7 +65,7 @@
 - `createDrillRunner` — **35 個 caller**（`src/main.ts`、`src/testharness/fpsTestHarness.ts`），覆蓋測試含 `tests/regression/longrangeTrackingDeterminismFixture.ts`、`src/loop/__tests__/wp22-determinism.test.ts`、`tests/regression/movingTargetDeterminismFixture.ts`、`tests/regression/br-tracking-invariants.test.ts` 等 16+ 檔。
 - `DrillPhase` 為 `HUDStats.phase` 的型別（[HUD.ts:7](../../../../../src/ui/HUD.ts#L7)）；`SessionRunnerPhase` 是**另一個**無關的 union（[SessionRunner.ts:43](../../../../../src/session/SessionRunner.ts#L43)），不得混淆。
 - `SharedState` — 87 個 caller、17+ 覆蓋測試；`createSharedState` — 83 個 caller、37+ 覆蓋測試。新增欄位屬 additive。
-- 9 個 live e2e spec（不使用 `window.__fps` 合成 harness）：`tracking-pilot-live`、`tracking-pilot-operator`、`raw-mouse-sampling`、`annotation-channel`、`input-sampler`、`isolation`、`backend`、`history-api-health`、`history-navigation`。另 19 個 spec 走 `__fps` 合成管線，**不受待命閘影響**（見 §2.1 In scope 的區分）。
+- T6 更正了規劃期的分類軸：是否會受影響取決於 spec **是否驅動 live drill runtime**，不是是否使用 `window.__fps`。需要 arm 的五個 workflow 為 `raw-mouse-sampling`、`tracking-pilot-live`、`session-orchestrator`、`micro-flick-live`、`spider-shot-wide`；`overlay-layering` 與 `stage10-accessibility` 則擴充新 UI coverage。其餘原列的 live spec 不驅動 drill 或驗負向路徑，保持零修改；詳見 [progress.md §T6.3/§T6.7](progress.md)。
 
 ---
 

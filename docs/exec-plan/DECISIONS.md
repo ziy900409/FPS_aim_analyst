@@ -23,6 +23,19 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-41 ✅ WP-65 Drill arming, countdown presentation, and Pointer Lock validity (2026-09-11, T-exit)
+
+| | |
+|---|---|
+| **發現處** | WP-65 修正開機即起算的倒數、缺失的開場提示、時限型 HUD 顯示，以及 recording 中 Pointer Lock 遺失未被標記的缺口。具名驗收證據見 [WP-65 T-exit](active/stage13/wp-65-drill-arming-and-countdown/progress.md#t-exit-驗收2026-09-11)。 |
+| **① 編號與落點** | 落帳前重查本檔，最大已採納號為 **GD-40**，故 **GD-41** 未被佔用。WP-65 依使用者指示寄放 `active/stage13/`，但主題是 drill 生命週期／受試者開場體驗，並非該 stage 的原始輸入取樣主題；此偏離在 stage index 和 WP README 明帳保留。 |
+| **② opt-in 相容策略（D-65-2）** | `createDrillRunner(state, targetManager, { requireArm: true })` 才進 `'armed'`；省略或傳 `false` 的既有 caller 維持 `start() → countdown`。CodeGraph 的當前 blast radius 為 38 call sites（`main.ts` 與 `fpsTestHarness`）；只有 production `main.ts` opt in，故 determinism/golden/harness 不被全域卡在 armed。 |
+| **③ 解除語意（D-65-1）** | 解除待命 = 一次新的 Pointer Lock 成立；每次 `start()` 前主動釋鎖，確保 restart、選項切換及每個 Session Plan block 都需新手勢。該左鍵發生於 input 尚未 locked 的時刻，既有 InputSampler 因而不把它記為 fire；不另設容易漂移的開火例外。 |
+| **④ 匯出相容（D-65-3）** | `meta.validity.pointerLockLost` 是 **optional-in / required-out**：舊 payload 缺欄時 parser 產出 `false`，但一旦 `validity` 物件存在，canonical output 一律有 boolean 欄。如此保留既有 fixture/Python loader 相容，又免除每個 reader 面對 `boolean | undefined`。 |
+| **⑤ 兩個並存構念（D-65-4）** | Pointer Lock 遺失量的是「輸入位移是否仍進入鏈路」；fullscreen 退出量的是「顯示條件是否仍成立」。兩者不合併、不取代，`experimentSession` 維持零 diff。`pointerLockLost` 併入 `suspect`，因掉鎖時輸入遺失；既有 `corridorExceeded` 維持不併入，因它是可觀測的玩家位置事實，並不使命中或輸入資料失效。 |
+| **⑥ recorder 邊界（D-65-5）** | armed 期間 sim/recorder 仍照既有語意 tick；解除待命當下 `recorder.reset()` 清除等待造成的 arena 佔用。不得在 `simStep` 加相位閘，否則會改變既有 countdown recording 與 export 的逐位內容。 |
+| **狀態** | ✅ 技術決策與驗收證據已落帳。使用者於 2026-09-11 確認資料的開場語意斷代需要 `meta` 版本標記；它是後續獨立 WP 的 schema 工作，不在本決策中暗中擴充。 |
+
 ### GD-40 ✅ WP-64 Tracking Pilot ad hoc Session Plan — curated scheduling, manifest separation, and research-use limits (2026-09-11, T-exit)
 
 | | |

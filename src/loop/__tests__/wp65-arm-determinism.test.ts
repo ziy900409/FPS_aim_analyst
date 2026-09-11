@@ -71,7 +71,7 @@ function framesAt(periodMs: number, endMs: number): number[] {
   return abs;
 }
 
-/** 抖動幀序列：決定性 LCG（**不**用 Math.random），比照 determinism.test.ts。 */
+/** 抖動幀序列：決定性 LCG（不使用任何非決定性亂數來源），比照 determinism.test.ts。 */
 function jitterFrames(basePeriod: number, endMs: number): number[] {
   let seed = 1234567;
   const rand = (): number => {
