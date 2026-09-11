@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { armAndWaitRunning } from './support/arm.ts';
 
 const URL = 'http://localhost:5173/';
 
@@ -68,6 +69,8 @@ async function loadMicroFlick(page: import('@playwright/test').Page): Promise<vo
   await enterResearcherDrillControls(page);
   await page.locator('#drill-select').selectOption('micro_flick_three_target_test_v1');
   await expect(page.locator('#scene-select')).toHaveValue('micro-flick-room', { timeout: 20_000 });
+  // WP-65 T6：待命閘 —— 目標在受試者取鎖並走完倒數之前不會 spawn。
+  await armAndWaitRunning(page);
   await expect
     .poll(async () => (await debugState(page)).targets.filter((target) => target.alive && target.visible).length, {
       timeout: 10_000,
@@ -247,6 +250,10 @@ test('WP-56 T5: cached researcher drill selection reaches the first visible corr
 
   // The final sample's drill is left running, so the same transaction is carried through to the
   // three-target population — the corridor mounting is necessary but not by itself sufficient.
+  // WP-65 T6: that population now waits behind the arming gate, and deliberately *outside* the
+  // measured window above — the loop's samples end at `#scene-select`, exactly as the header says
+  // the 3 s countdown is protocol rather than load latency.
+  await armAndWaitRunning(page);
   await expect
     .poll(async () => (await debugState(page)).targets.filter((target) => target.alive && target.visible).length, {
       timeout: 15_000,

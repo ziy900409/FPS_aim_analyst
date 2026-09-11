@@ -10,7 +10,7 @@
 | ✅ | **T3** 待命提示與倒數數字 overlay | [T3-countdown-overlay.md](T3-countdown-overlay.md) | T1（可與 T2 並行） | Low |
 | ✅ | **T4** HUD `Time` 卡的時限型倒數 | [T4-hud-remaining-time.md](T4-hud-remaining-time.md) | T1（可與 T2/T3 並行） | Low |
 | ✅ | **T5** Pointer Lock 掉鎖效度旗標 → `meta.validity` → Result 警示 | [T5-pointer-lock-validity.md](T5-pointer-lock-validity.md) | T2 | Med |
-| ⬜ | **T6** Live e2e arm helper／9 個 spec 補接／全量回歸 | [T6-e2e-and-regression.md](T6-e2e-and-regression.md) | T2 + T3 + T4 + T5 | **High** |
+| ✅ | **T6** Live e2e arm helper／spec 補接／全量回歸 | [T6-e2e-and-regression.md](T6-e2e-and-regression.md) | T2 + T3 + T4 + T5 | **High** |
 | ⬜ | **T-exit** WP-65 驗收（A-65.1～A-65.12） | [T-exit-gate.md](T-exit-gate.md) | T1～T6 | Low |
 
 ## 建議執行順序
@@ -32,9 +32,9 @@ T3／T4 只依賴 T1 的 `phase` 與 `countdownRemainingMs`，可在 T2 進行�
 - [ ] `createDrillRunner` 省略 `requireArm` 時行為**逐位不變**：`tests/regression/` 全部 determinism / golden fixture **零修改**通過
 - [ ] 同一輸入序列跨 ≥ 4 種 render FPS 且於同一 tick index 解除待命時，`TickRecord[]` 逐位一致
 - [ ] `meta` 的既有鍵集合零增減；`meta.validity` 恰多一欄；未帶新欄的舊 payload 仍可被 `parseExportPayload()` 與 Python `load_export()` 讀取
-- [ ] 全 repo 只有一份 e2e 取鎖模擬（helper）；19 個 `__fps` spec 零修改全綠
+- [x] 全 repo 只有一份 e2e 取鎖模擬（helper，`tests/e2e/support/arm.ts`）。~~19 個 `__fps` spec 零修改全綠~~ → **實際為 14 零修改 + 3 補 arm + 2 僅擴充**：`session-orchestrator`／`micro-flick-live`／`spider-shot-wide` 雖走 `__fps`，但**先**以真實 UI／Session Plan 驅動 live drill ⇒ 需要 arm（[progress.md §T6.3b / §T6.7](progress.md)）。**沒有任何既有斷言被修改或放寬**
 - [ ] `src/display/experimentSession.ts`、`src/input/PointerLock.ts`、`src/input/InputSampler.ts`、`research/` 四者的 diff 皆為空
-- [ ] `npm run typecheck` ×2、`npx vitest run`、`npx playwright test --workers=1`（0 failed）、`npm run build` 四項皆 exit 0
+- [x] `npm run typecheck` ×2、`npx vitest run`、`npx playwright test --workers=1`（**110 passed / 0 failed**，T0 基線 108）、`npm run build` 四項皆 exit 0（T6 實測）
 
 ## Commit discipline
 

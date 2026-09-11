@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { armDrill, pulsePointerLock } from './support/arm.ts';
 
 /**
  * WP-60 / T2 — raw mouse sample 擷取的 **app 佈線層** 端到端證據。
@@ -16,6 +17,11 @@ import { test, expect } from '@playwright/test';
  * input-sampler.spec.ts 的 `locked === false` 斷言），而 `PointerLock` 的**權威狀態來源**正是
  * `pointerlockchange` 事件 + `pointerLockElement === canvas`。改寫該 getter 後派發真實事件，走的
  * 是與真人按下取鎖完全相同的那條 code path —— 與該檔合成 coalesced 子樣本是同一個既有取捨。
+ * 該模擬自 WP-65 T6 起抽進共用 helper `support/arm.ts`（全 repo 只有一份）。
+ *
+ * WP-65 T6：`pointer_lock` 事件只在 `countdown`/`running` 記錄，而待命閘讓 drill 停在 `'armed'`
+ * 直到一次取鎖 ⇒ **兩個 case 都必須先 `armDrill()`**。不 arm 也會通過，但那時「沒有事件」會變成
+ * 相位擋掉的結果而非開關關掉的結果 —— 斷言會被悄悄弱化成同義反覆。
  *
  * 只跑 dev（5173）：preview（4173）為 production build、無 `__aimDebug` 縫（刻意）。
  */
@@ -24,7 +30,6 @@ const DEV_URL = 'http://localhost:5173/';
 
 /** dev 觀測縫的形狀（見 main.ts）。此檔不在 tsconfig include 內，型別僅供本地可讀性。 */
 type AimDebug = {
-  pointerLock: { locked: boolean };
   recorder: {
     recordMouseSamples: boolean;
     snapshot: () => {
@@ -33,7 +38,6 @@ type AimDebug = {
       mouseSampling?: { recorded: number; capacity: number; overflow: boolean; timeSource: string; deltaUnit: string };
     };
   };
-  drillPhase: () => string;
 };
 
 async function gotoAppReady(page: import('@playwright/test').Page, url: string): Promise<void> {
@@ -43,44 +47,16 @@ async function gotoAppReady(page: import('@playwright/test').Page, url: string):
     .toBe(true);
 }
 
-/**
- * 在生產 `PointerLock` 上驅動一次 lock→unlock 轉態，回傳轉態後正式 recorder 的 `pointer_lock`
- * 事件與擷取 provenance。`pointerLockElement` 的覆寫在 finally 內還原，不外洩到後續斷言。
- */
-async function driveLockTransition(page: import('@playwright/test').Page): Promise<{
-  phase: string;
-  lockedDuringTransition: boolean;
-  lockedAfter: boolean;
+/** 轉態後的正式 recorder 觀測（`pointer_lock` 事件與擷取 provenance）。 */
+async function readRecorder(page: import('@playwright/test').Page): Promise<{
   events: Array<{ type: string; locked?: boolean; t: number }>;
   recordMouseSamples: boolean;
   mouseSampling: { recorded: number; capacity: number; overflow: boolean; timeSource: string; deltaUnit: string } | null;
 }> {
   return page.evaluate(() => {
     const debug = (window as unknown as { __aimDebug: AimDebug }).__aimDebug;
-    const canvas = document.querySelector('canvas');
-    if (canvas === null) throw new Error('canvas not mounted');
-
-    const descriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'pointerLockElement');
-    const phase = debug.drillPhase();
-    let lockedDuringTransition = false;
-    try {
-      // 取鎖：權威狀態 = `pointerLockElement === canvas`（PointerLock.ts 的註解與實作皆如此）。
-      Object.defineProperty(document, 'pointerLockElement', { configurable: true, get: () => canvas });
-      document.dispatchEvent(new Event('pointerlockchange'));
-      lockedDuringTransition = debug.pointerLock.locked;
-      // 解鎖（Esc / 失焦的同一條路徑）。
-      Object.defineProperty(document, 'pointerLockElement', { configurable: true, get: () => null });
-      document.dispatchEvent(new Event('pointerlockchange'));
-    } finally {
-      delete (document as unknown as Record<string, unknown>).pointerLockElement;
-      if (descriptor !== undefined) Object.defineProperty(Document.prototype, 'pointerLockElement', descriptor);
-    }
-
     const snapshot = debug.recorder.snapshot();
     return {
-      phase,
-      lockedDuringTransition,
-      lockedAfter: debug.pointerLock.locked,
       events: snapshot.events.filter((event) => event.type === 'pointer_lock'),
       recordMouseSamples: debug.recorder.recordMouseSamples,
       mouseSampling: snapshot.mouseSampling ?? null,
@@ -91,44 +67,51 @@ async function driveLockTransition(page: import('@playwright/test').Page): Promi
 test.describe('WP-60 T2 — raw mouse sample 擷取的 app 佈線層（Edge, dev）', () => {
   test('FR-60.2：預設載入時正式單例維持關閉，且不記 pointer_lock 事件', async ({ page }) => {
     await gotoAppReady(page, DEV_URL);
+    await armDrill(page);
 
-    const result = await driveLockTransition(page);
+    const transition = await pulsePointerLock(page);
+    const recorder = await readRecorder(page);
 
     // 開關預設關閉 —— 這是 T0 經驗性 gate 未過期間的刻意狀態（見 main.ts 該處註解）。
-    expect(result.recordMouseSamples).toBe(false);
+    expect(recorder.recordMouseSamples).toBe(false);
+    // 相位是「沒有事件」的前提：錄製中（countdown/running）才可能記錄，故必須先排除相位這個解釋。
+    expect(['countdown', 'running']).toContain(transition.phase);
     // 轉態確實發生（否則下一條的「沒有事件」是因為沒轉態，不是因為關閉）。
-    expect(result.lockedDuringTransition).toBe(true);
-    expect(result.lockedAfter).toBe(false);
+    expect(transition.lockedDuringTransition).toBe(true);
+    expect(transition.lockedAfter).toBe(false);
     // 關閉 ⇒ 匯出裡既沒有 raw 區塊也沒有 pointer_lock 事件（pre-WP-60 逐位形狀）。
-    expect(result.events).toEqual([]);
-    expect(result.mouseSampling).toBeNull();
+    expect(recorder.events).toEqual([]);
+    expect(recorder.mouseSampling).toBeNull();
   });
 
   test('FR-60.6 / OQ-60.3：`?rawMouse=1` 開啟後 Pointer Lock 轉態經生產路徑落成 pointer_lock 事件', async ({
     page,
   }) => {
     await gotoAppReady(page, `${DEV_URL}?rawMouse=1`);
+    await armDrill(page);
 
-    const result = await driveLockTransition(page);
+    const transition = await pulsePointerLock(page);
+    const recorder = await readRecorder(page);
 
     // ② app 佈線層真的把正式單例切到開啟（非僅 API 層 opt-in 存在）。
-    expect(result.recordMouseSamples).toBe(true);
+    expect(recorder.recordMouseSamples).toBe(true);
     // 只在 drill 實際錄製中記錄 —— 相位是斷言前提，不是時間假設。
-    expect(['countdown', 'running']).toContain(result.phase);
-    expect(result.lockedDuringTransition).toBe(true);
-    expect(result.lockedAfter).toBe(false);
+    expect(['countdown', 'running']).toContain(transition.phase);
+    expect(transition.lockedDuringTransition).toBe(true);
+    expect(transition.lockedAfter).toBe(false);
 
     // ③ 一次 lock→unlock 恰好兩個事件，順序與 `locked` 值對得上。
-    expect(result.events.map((event) => event.locked)).toEqual([true, false]);
-    for (const event of result.events) {
+    // 解除待命的那一次取鎖**不**在其中：它發生在 `'armed'`，被同一條相位閘擋在記錄之外。
+    expect(recorder.events.map((event) => event.locked)).toEqual([true, false]);
+    for (const event of recorder.events) {
       expect(Number.isFinite(event.t)).toBe(true);
       expect(event.t).toBeGreaterThan(0);
     }
 
     // provenance 一併就位（FR-60.3）：真實容量走 `mouseSampleCapacityForDrill(maxDrillSeconds)`。
-    expect(result.mouseSampling?.timeSource).toBe('event.timeStamp');
-    expect(result.mouseSampling?.deltaUnit).toBe('counts');
-    expect(result.mouseSampling?.overflow).toBe(false);
-    expect(result.mouseSampling?.capacity).toBeGreaterThanOrEqual(1000 * 300);
+    expect(recorder.mouseSampling?.timeSource).toBe('event.timeStamp');
+    expect(recorder.mouseSampling?.deltaUnit).toBe('counts');
+    expect(recorder.mouseSampling?.overflow).toBe(false);
+    expect(recorder.mouseSampling?.capacity).toBeGreaterThanOrEqual(1000 * 300);
   });
 });

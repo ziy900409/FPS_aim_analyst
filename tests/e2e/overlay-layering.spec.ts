@@ -10,6 +10,11 @@ import { test, expect } from '@playwright/test';
  *
  * 三個 overlay 皆於 startup 建立（result-screen 初始 display:none 仍在 DOM、z-index 可計算），
  * 故不需驅動到 ended 狀態即可斷言疊層不變式。
+ *
+ * WP-65 T6：待命／倒數 overlay（`#drill-start-overlay`，T3）加入同一張疊層表。它有兩條與眾不同
+ * 的不變式：① 必須**高於** HUD（18）與 rest backdrop（20），否則提示被壓灰就失去作用；
+ * ② `pointer-events:none` —— 它在待命相位覆蓋整個視窗（`inset:0`），若吃掉點擊，取鎖就永遠發不
+ * 出去、待命閘再也解不開（DrillStartOverlay.ts 稱之為「本檔最關鍵的一行」）。
  */
 
 const URL = 'http://localhost:5173/';
@@ -32,16 +37,44 @@ test('export panel and drill controls stack above the result-screen backdrop', a
     .poll(() => page.evaluate(() => document.querySelector('#drill-controls') !== null), { timeout: 15_000 })
     .toBe(true);
 
-  const [exportZ, controlsZ, resultZ] = await Promise.all([
+  const [exportZ, controlsZ, resultZ, startZ, hudZ, restZ] = await Promise.all([
     zIndexOf(page, '#export-panel'),
     zIndexOf(page, '#drill-controls'),
     zIndexOf(page, '#result-screen'),
+    zIndexOf(page, '#drill-start-overlay'),
+    zIndexOf(page, '#metrics-hud'),
+    zIndexOf(page, '#rest-overlay'),
   ]);
 
   expect(Number.isFinite(resultZ)).toBe(true);
   // 互動 overlay 必須高於 backdrop，結果頁顯示時才可點。
   expect(exportZ).toBeGreaterThan(resultZ);
   expect(controlsZ).toBeGreaterThan(resultZ);
+
+  // WP-65 T3/T6 — 待命／倒數 overlay 夾在 HUD/rest backdrop 之上、結果頁與控制項之下。
+  expect(Number.isFinite(startZ)).toBe(true);
+  expect(startZ).toBeGreaterThan(hudZ);
+  expect(startZ).toBeGreaterThan(restZ);
+  expect(startZ).toBeLessThan(resultZ);
+  expect(startZ).toBeLessThan(controlsZ);
+});
+
+test('the arming overlay covers the viewport without ever swallowing the lock click', async ({ page }) => {
+  await page.goto(URL, { waitUntil: 'networkidle' });
+
+  const overlay = page.locator('#drill-start-overlay');
+  // 開機即待命（WP-65 T2）⇒ overlay 此刻是可見的，這正是「它會不會吃掉點擊」有意義的時刻。
+  await expect(overlay).toBeVisible({ timeout: 15_000 });
+  await expect(overlay).toHaveCSS('pointer-events', 'none');
+
+  // 不是讀樣式而已：實際在 overlay 覆蓋的正中央做 hit-test，topmost element 必須是 canvas
+  // （點擊穿透），不是 overlay 自己。
+  const topmost = await page.evaluate(() => {
+    const el = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+    return { id: el?.id ?? null, tag: el?.tagName ?? null };
+  });
+  expect(topmost.id).not.toBe('drill-start-overlay');
+  expect(topmost.tag).toBe('CANVAS');
 });
 
 test('Drill Results keeps export, return, and confirmed re-test actions within the dialog', async ({ page }) => {

@@ -2,6 +2,7 @@ import { test, expect, type APIRequestContext, type Page } from '@playwright/tes
 import type { ExportPayload } from '../../src/data/export.ts';
 import { buildRunId, buildRunIdentity } from '../../server/history/historyPaths.ts';
 import { makePayload, makeTick } from '../replay/fixtures.ts';
+import { armDrill, readDrillArmState } from './support/arm.ts';
 
 /**
  * WP-51 T4 — keyboard-only History→Replay journey and automated accessibility gates
@@ -236,5 +237,40 @@ test.describe('WP-51 T4 — keyboard-only History -> Replay journey (FR-51.13/NF
     await page.keyboard.press('Enter');
     await expect(replay).toBeHidden();
     await expect(history.locator('[data-history-action="replay"]')).toBeEnabled();
+  });
+});
+
+/**
+ * WP-65 T6 — 待命提示與倒數（`#drill-start-overlay`，T3）在本檔的無障礙斷言範圍內。
+ *
+ * 它是全視窗、`aria-live="assertive"` 的節點，而且是 drill 開場**唯一**告訴受試者「現在要做什麼」
+ * 的東西。故兩件事必須成立：① 待命／倒數各自以**文字**表達狀態（不是只靠位置或顏色，同本檔既有
+ * 的 rate group / quality banner 紀律）；② 隱藏時必須 `aria-hidden="true"`，否則一個恆在 DOM 的
+ * assertive live region 會在 drill 進行中持續對輔助技術廣播空字串。
+ */
+test.describe('WP-65 T6 — arming/countdown overlay announces its state as text', () => {
+  test('armed -> countdown -> running each render as text, and the live region is hidden once running', async ({
+    page,
+  }) => {
+    await page.goto(URL, { waitUntil: 'networkidle' });
+
+    const overlay = page.locator('#drill-start-overlay');
+    await expect(overlay).toBeVisible({ timeout: 15_000 });
+    await expect(overlay).toHaveAttribute('aria-live', 'assertive');
+    await expect(overlay).toHaveAttribute('aria-hidden', 'false');
+    // 待命：指示是完整句子，不是一個圖示或一個顏色。
+    await expect(overlay).toContainText('點擊左鍵開始');
+
+    await armDrill(page);
+
+    // 倒數：秒數本身就是文字內容（3 -> 2 -> 1），輔助技術讀得到。
+    await expect(overlay).toContainText('準備');
+    await expect.poll(async () => (await overlay.textContent()) ?? '', { timeout: 3_000 }).toMatch(/[123]/);
+
+    await expect
+      .poll(async () => (await readDrillArmState(page))?.phase ?? null, { timeout: 20_000 })
+      .toBe('running');
+    await expect(overlay).toBeHidden();
+    await expect(overlay).toHaveAttribute('aria-hidden', 'true');
   });
 });

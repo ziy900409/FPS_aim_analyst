@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { armDrill, installAutoArm } from './support/arm.ts';
 import type { DrillConfig } from '../../src/drill/DrillConfig.ts';
 import {
   ALL_TRACKING_PILOT_CONFIGS,
@@ -776,6 +777,8 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     statuses: string[];
     metas: ExportedMeta[];
     payloads: ExportedPayload[];
+    /** WP-65 T6 — how many blocks the auto-arm watchdog actually released. Assert it. */
+    armCount: number;
   }> {
     const downloads: string[] = [];
     // WP-62 T6 — the exports are now read, not just counted. The stream has to be taken while the
@@ -829,6 +832,18 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
       requestAnimationFrame(tick);
     });
 
+    // WP-65 T6 — every block now stops in the `'armed'` phase until a fresh pointer lock arrives
+    // (user ruling 2026-09-11 #3: the participant clicks once per block), and the spec cannot see
+    // block boundaries (it only polls for `phase === 'done'`), so a rAF watchdog releases each one.
+    //
+    // The app's *own* boot drill is armed first, explicitly and outside the watchdog's count: the
+    // page has been sitting on `counterstrafe_ad_v1` in `'armed'` since `waitForHarness()`, and a
+    // watchdog installed while that is still pending would release it too — making `armCount` read
+    // blocks+1 (measured: 7 for six blocks, 5 for four). Draining it here leaves the counter
+    // measuring exactly what FR-65.4 is about: one gesture per *plan* block.
+    await armDrill(page);
+    const armCount = await installAutoArm(page);
+
     await page.evaluate(
       async (arg) => {
         await (
@@ -861,7 +876,14 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
       () => (window as unknown as { __t6statuses: string[] }).__t6statuses,
     );
     const payloads = await Promise.all(payloadReads);
-    return { samples, downloads, statuses, metas: payloads.map((payload) => payload.meta), payloads };
+    return {
+      samples,
+      downloads,
+      statuses,
+      metas: payloads.map((payload) => payload.meta),
+      payloads,
+      armCount: await armCount(),
+    };
   }
 
   /** Every rest the run actually served, with the wall time until the next phase, in ms. */
@@ -890,7 +912,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     test.setTimeout(15 * 60_000);
     await waitForHarness(page);
 
-    const { samples, downloads } = await runLiveSessionPlan(
+    const { samples, downloads, armCount } = await runLiveSessionPlan(
       page,
       't6-live-custom',
       {
@@ -953,6 +975,10 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     expect(downloads).toHaveLength(6);
     expect(new Set(downloads).size).toBe(6);
 
+    // WP-65 FR-65.4 — one arming gesture per block, no more and no fewer. Six runs, six releases:
+    // a block that skipped the gate (or one released twice) is a different number, not a silent pass.
+    expect(armCount).toBe(6);
+
     // The session is over: cursor done, `experimentSession.exit()` ran, no rest overlay left behind.
     const last = samples.at(-1)!;
     expect(last.state.phase).toBe('done');
@@ -968,7 +994,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     test.setTimeout(10 * 60_000);
     await waitForHarness(page);
 
-    const { samples, downloads, metas } = await runLiveSessionPlan(
+    const { samples, downloads, metas, armCount } = await runLiveSessionPlan(
       page,
       't6-live-weapon',
       {
@@ -988,6 +1014,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
 
     expect(samples.at(-1)!.state.phase).toBe('done');
     expect(downloads).toHaveLength(4);
+    expect(armCount).toBe(4); // WP-65 FR-65.4 — four blocks, four arming gestures.
 
     // The fact, per run: `activateDrill()` really did build the sim loop with the planned weapon,
     // and it stayed put across the second rep instead of being reset by the next drill activation

@@ -815,3 +815,204 @@ ticks = 8071 events = 1
 - **T6**：① Result 動作列被 `#drill-controls` 蓋住（Surprise 3）與 ② live 匯出必須攔 Blob（Surprise 4），兩者都會直接決定 live spec 寫得出來寫不出來；③ `armed` 相位模擬取鎖會順帶 arm（Surprise 2）。
 - **T-exit**：`CANONICAL_DIGEST_BEFORE_T5` 這張表的名稱仍指 WP-58 的 T5，現在同時承載 WP-65 T5 的位移。是否改名／拆表由 T-exit 決定（純命名，不影響行為）。
 - **T-exit（既有條件，非本 WP 引入）**：研究員模式下 Result dialog 與 `#drill-controls` 同時可見且互相遮擋（T2 Surprise 5 + 本切片 Surprise 3）。是否另立 KI 由 T-exit 判斷。
+
+---
+
+## §T6 Live e2e arm helper、spec 補接與全量回歸（2026-09-11）
+
+**狀態**：✅ 完成。全 repo 只有一份取鎖模擬。**README §0.5 的「9 個 live spec」是錯的座標軸**：那 9 個裡只有 2 個真的驅動 drill runtime，而清單**之外**另有 3 個驅動（詳見 §3）。
+
+執行基準 commit：`9ae6f46`（T5 落地）。本切片**零 production 改動**（`git diff --stat -- src/ server/ research/` 為空）。
+
+### 1. FM-4 spike：兩條路線都可行，選了「脈衝」而非「真鎖」
+
+T6 doc 步驟 1 要求先驗證「模擬取鎖能否走生產路徑解除待命」。spike（暫時性 spec，取證後刪除）同時測了兩條：
+
+| 路線 | 結果 | 證據 |
+|---|---|---|
+| **A：真實 trusted `canvas.click()`** | ✅ **可行** | `before.phase = 'armed'` → click → `after.locked = true`、相位離開 `'armed'`。**README FM-4 的前提「Chromium headless 無法真正取得 Pointer Lock」在本環境不成立**，與 T2 Surprise 3 一致（本次為獨立複驗） |
+| **B：改寫 `pointerLockElement` getter + 派發 `pointerlockchange`** | ✅ 可行（修掉一個競態後） | 見 §1b |
+
+**採用 B，理由是它離開時把頁面留在「未鎖定」**：`armDrill()` 送的是一個 lock→unlock **脈衝**，`armRequested` 是 latch，所以待命被解除、而瀏覽器的鎖狀態與本 WP 前**完全相同**。兩個具體好處：
+
+1. `raw-mouse-sampling.spec.ts` 需要在 arm **之後**再做一次完整的 lock→unlock 才能斷言 `[true, false]` 兩個 `pointer_lock` 事件。若 arm 走真鎖並持有，`PointerLock.setLocked()` 的去重（`if (next === locked) return`，[PointerLock.ts:48](../../../../../src/input/PointerLock.ts#L48)）會讓後續那次「取鎖」變成 no-op ⇒ 只剩一個事件，該斷言必須被改弱才能過。
+2. 其餘既有 spec 的互動與斷言（含 `input-sampler.spec.ts` 的 `locked === false`、`spider-shot-wide.spec.ts` 自己那次真鎖點擊）不必因為 arm 而改變前提。
+
+**⇒ 不新增任何 dev-only 旁路**（`?autoArm=1` 未被採用，README FM-4 的後備路線不啟用）。
+
+### 1b. spike 抓到的競態：模擬脈衝會落進開機視窗而整個消失
+
+第一版 spike 的 B 路線失敗，且失敗樣態具誤導性——`lockedDuring: true`（鎖確實翻了）但 `armAfterLock: false`：
+
+```
+{ canvasCount: 1, canvasId: "app", elementIsCanvas: true,
+  lockedDuring: true, armAfterLock: false, phaseAfterLock: "armed",
+  lockedAfter: false, armAfterUnlock: false }
+```
+
+根因：`armOnPointerLock` 的訂閱者掛在 [main.ts:1379](../../../../../src/main.ts#L1379)，而 `__aimDebug` 早在 [main.ts:1127](../../../../../src/main.ts#L1127) 就掛上了，兩者之間隔著 `fpsTestHarness` 的 top-level `await import(...)`（[main.ts:1147](../../../../../src/main.ts#L1147)）。既有 spec 的 `gotoAppReady()` 只等 `__aimDebug`，於是脈衝可以合法地落在「PointerLock 已存在、arm 訂閱者尚未掛上」的視窗內。
+
+**為什麼真人不會踩到**：真人點擊**持著**鎖，[main.ts:1405](../../../../../src/main.ts#L1405) 的補呼叫（T2-b）會在訂閱者掛上當下以當時的 `pointerLock.locked` 補一次 ⇒ 補得回來。模擬脈衝取完立刻放，補呼叫看到的是 `locked === false` ⇒ 補不回來。**這是模擬手法特有的失效，不是產品缺陷**——T2-b 那行正是為這個視窗而寫的，它對「持鎖」有效、對「脈衝」無效。
+
+處置：`armDrill()` 以 `expect.poll` 重送脈衝，判準是取鎖那一刻**同步讀到**的 `armRequested`（`armRequestedDuringTransition`）。每次 poll 送出的是一次完整且已還原的轉態；判準是「訂閱者已掛上」的**直接觀測**，不是換算成時間的等待，也不是綁死某個開機內部順序的 proxy 訊號（例如「等 `__fpsTest` 出現」——那會把 spec 釘在 `main.ts` 的求值順序上，而那個順序在 T2-a 已經被迫改過一次）。
+
+### 2. 共用 helper：`tests/e2e/support/arm.ts`（新檔）
+
+| 匯出 | 用途 |
+|---|---|
+| `pulsePointerLock(page)` | **全 repo 唯一**的取鎖模擬。改寫 `document.pointerLockElement` → canvas、派發真實 `pointerlockchange`、再還原。回傳 `{ phase, lockedDuringTransition, lockedAfter, armRequestedDuringTransition }` |
+| `readDrillArmState(page)` | 唯讀 `{ phase, locked, armRequested, pointerLockLostDuringRun }`；`__aimDebug` 未掛上時回 `null`（讓 poll 繼續等而不是炸在 undefined） |
+| `armDrill(page)` | 等 `'armed'` → 重送脈衝直到 `armRequested` 觀測到 true → 斷言相位離開 `'armed'` |
+| `armAndWaitRunning(page)` | `armDrill()` + 等 `'running'`。**不寫死 3000**，輪詢相位本身 |
+| `installAutoArm(page)` | 連續多場用的 rAF 看門狗：每次相位落到 `'armed'` 就送一次脈衝（= 受試者每個 block 各點一次，使用者拍板第三條）。回傳 `armCount()` 供斷言實際解除了幾場 |
+
+`raw-mouse-sampling.spec.ts` 原本的 inline `driveLockTransition()` 已刪除並改用 `pulsePointerLock()` ⇒ **DoD「全 repo 只有一份取鎖模擬」成立**（`grep -rn "pointerLockElement" tests/` 只命中 `support/arm.ts` 與 `raw-mouse-sampling` 的說明註解；`history-navigation`／`replay` 那兩處 `requestPointerLock` monkey-patch 是**阻止**取鎖的 spy，不是模擬取鎖）。
+
+**helper 走生產路徑，不寫 `sharedState.armRequested`**（T6 Invariant）：訊號經生產 `PointerLock` → `main.ts` 的 `armOnPointerLock` → `SharedState` → `DrillRunner` 唯讀。直接寫旗標會繞過整條接線，測了等於沒測。
+
+**`armDrill()` 內建一條 FR-65.12 斷言**：解除待命後 `validity.pointerLockLostDuringRun` 必須仍為 `false`。脈衝的「放鎖」那一半發生在 `'armed'`（相位轉換在下一個 sim tick，T5 Surprise 2 已測），故不該被記成「錄製中掉鎖」。放進 helper 而非另立一條只跑一次的測試，等於讓每個 arm 的 spec 都順帶跑一次這條不變式。
+
+`installAutoArm()` 只在 `'armed'` 且 `armRequested === false` 時動作 ⇒ `countdown`/`running`/`ended` 期間一次 `pointerlockchange` 都不派發，同樣不會污染效度旗標。
+
+### 3. **README §0.5 的分類軸是錯的**（本 task 最重要的發現）
+
+README §0.5 把 spec 分成「9 個 live（不使用 `window.__fps`）」與「19 個走 `__fps`，不受待命閘影響」。實測後這條線**與待命閘無關**：真正決定要不要 arm 的是「**這個 spec 有沒有驅動 live drill runtime**」，而兩者並不重合。
+
+#### 3a. 9 個「live spec」逐檔判定（DoD 指名記錄）——只有 2 個需要
+
+| # | spec | 需要 arm？ | 理由 | 實跑 |
+|---|---|---|---|---|
+| 1 | `raw-mouse-sampling` | ✅ **需要** | `pointer_lock` 事件只在 `countdown`/`running` 記錄；case 2 直接斷言 `phase ∈ {countdown, running}`，不 arm 必紅 | 2 passed |
+| 2 | `tracking-pilot-live` | ✅ **需要** | 驅動真實 drill runtime：兩個 pilot block 各自 `activateDrill()` → `start()` → `'armed'`，不 arm 就沒有 block 會結束、匯出 download 永遠等不到 | 1 passed |
+| 3 | `tracking-pilot-operator` | ❌ 不需要 | 跑 `/tracking-pilot-harness.html`——dev-only 掛載，假 `loadDrillConfig`/`exportBlock`，**無三迴圈 sim runtime**，根本沒有 `DrillRunner` | 1 passed（零修改） |
+| 4 | `annotation-channel` | ❌ 不需要 | annotation 事件與 `recordTickFromState()` 皆**不看相位**，`armed` 期間 tick 照記 ⇒ `minTickT ≤ event.t ≤ maxTickT` 的窗界照樣成立 | 2 passed（零修改） |
+| 5 | `input-sampler` | ❌ 不需要 | 驗的是 input → ring → sim 消費與閘門負向路徑；player 物理在 `simStep()` 內、**在 `drillRunner.tick()` 之前**，與 drill 相位無關 | 5 passed（零修改） |
+| 6 | `isolation` | ❌ 不需要 | 只讀 COOP/COEP 標頭與 `crossOriginIsolated`，不進 drill | 2 passed（零修改） |
+| 7 | `backend` | ❌ 不需要 | 只攔 `[render backend]` console 訊息，不進 drill | 1 passed（零修改） |
+| 8 | `history-api-health` | ❌ 不需要 | 純 HTTP（`request` fixture），連頁面都不開 | 2 passed（零修改） |
+| 9 | `history-navigation` | ❌ 不需要 | launch → History shell 的路由往返；唯一與 lock 有關的是**負向**斷言（History 開啟時 canvas 點擊不得請求 Pointer Lock），arm 反而會污染它 | 5 passed（零修改） |
+
+**「不要盲目全加」的實際收穫**：9 個裡 7 個不需要。若照直覺全部補上，`history-navigation` 那條 FM-49.10 的負向斷言會被 arm 的取鎖動作直接破壞——那是把一條真斷言改成假斷言。
+
+#### 3b. 清單**之外**另有 3 個需要 arm（全量回歸抓到的）
+
+這三個都被 README 歸在「走 `__fps`、不受影響」那一組，但它們**先**以真實 UI／真實 Session Plan 驅動 live drill，之後才用 `__fpsTest`：
+
+| spec | 怎麼驅動 live drill | 失效樣態 | 處置 |
+|---|---|---|---|
+| `session-orchestrator` | `__fpsTest.startSessionPlanWithoutGate()` 跑**真的** Session Plan，6 個（另一測 4 個）真 block 依序執行 | 第一個 block 停在 `'armed'` ⇒ plan 永不 `done` ⇒ **13.1 分鐘後 timeout**（全量回歸第 80 個測試） | `runLiveSessionPlan()` 內於 plan 啟動**前**裝 `installAutoArm()`，並把 `armCount` 回傳給兩個 live 測試斷言（6 / 4） |
+| `micro-flick-live` | `#drill-select` 選 `micro_flick_three_target_test_v1`（真實 researcher Controls） | `loadMicroFlick()` 等 3 個 alive+visible 目標，10 s timeout | `loadMicroFlick()` 內加 `armAndWaitRunning()`；P95 測試的**最後**那次目標輪詢另加一次 |
+| `spider-shot-wide` | `#drill-select` 選 `spider_shot_wide_v1` | 四個測試全部等 spawn trace／可見目標 | `loadWideFlick()` helper 內加 `armAndWaitRunning()`，四個呼叫端自動一致 |
+
+**`micro-flick-live` 的 P95 預算沒有被污染**：該測試量的窗是「`#drill-select` 變更 → `#scene-select` 被 `installSceneLoad` 寫回」，檔頭本來就寫明「the drill's own 3 s countdown is protocol, not load latency, and stays outside the window」。arm 只加在迴圈**之後**的那次目標輪詢。實測 p50 = 32.2 ms、p95 = **45.8 ms**（預算 1 500 ms），與 arm 無關。
+
+**`session-orchestrator` 的 `armCount` 斷言是刻意的**：只斷言 plan 走到 `done` 無法區分「每個 block 都被正確解除」與「待命閘根本沒生效」。`expect(armCount).toBe(6)` 讓「少解除一場」或「多解除一場」都是不同的數字而非靜默通過，直接對應 FR-65.4。
+
+### 4. FM-5 等待窗：**一個 timeout 都沒改**，以及為什麼
+
+原則（T6 doc 步驟 4）是「把『載入後等待』改成『**arm 後**等待』，而不是把 timeout 一律加 3 秒」。逐一檢視受影響 spec：
+
+| spec | 等待窗 | 調整前 | 調整後 | 理由 |
+|---|---|---|---|---|
+| `raw-mouse-sampling` | 無顯式 timeout（`gotoAppReady` 的 `expect.poll` 走預設 5 s） | — | **未改** | `armDrill()` 自帶相位 poll，插在載入與斷言之間；斷言本身是同步 `page.evaluate`，不依賴時間 |
+| `tracking-pilot-live` | `BLOCK_WALL_CLOCK_MS = 60_000`（兩個 download wait） | 60 000 | **未改** | 倒數的 3 s **本來就在**（WP-65 前 `start()` 當下即起算），本 WP 只改起算時機、沒有拉長 block。實測整個 test **1.0 min**（block ≈ 28 s），餘裕 > 2× |
+| `tracking-pilot-live` | `test.setTimeout(4 × 60 000)` | 240 000 | **未改** | 同上，實測 1.0 min，餘裕 4× |
+| `tracking-pilot-live` | Block 2 狀態文字 `{ timeout: 10_000 }` | 10 000 | **未改** | 該窗量的是 rest（1 s）+ `loadDrillConfig()`，與 arm 無關——arm 刻意**排在這個斷言之後**（見 §5） |
+| `micro-flick-live` | 目標輪詢 `{ timeout: 10_000 }` / `{ timeout: 15_000 }` | 10 000 / 15 000 | **未改** | `armAndWaitRunning()` 把倒數吸收在輪詢**之前**，輪詢窗本身量的還是 spawn；實測整檔 5 個測試 18.8 s |
+| `spider-shot-wide` | 各測試的 spawn trace 輪詢 | — | **未改** | 同上，`loadWideFlick()` 內吸收；實測整檔 4 個測試 16.3 s |
+| `session-orchestrator` | live plan 的 `timeoutMs` 13 min / 9 min、`test.setTimeout` 15 min / 10 min | 不變 | **未改** | 看門狗在每個 block 落到 `'armed'` 的**同一幀**就解除，額外成本 ≈ 1 幀；6 個 block 的倒數本來就在 |
+
+**⇒「每個被調整的 timeout 記錄調整前後值」的答案是「零個被調整」**，而這正是把等待改成 arm 後等待（而非一律加 3 秒）的結果。
+
+### 5. arm 的**擺放位置**是承重的
+
+`tracking-pilot-live` 兩處 arm 都刻意排在**該 block 的狀態文字斷言之後**：
+
+```
+await expect(status).toHaveText(/Block 1\/9（practice）：…/);   ← runner 自己的「config 已載入、新 runner 已 start()」證明
+await armAndWaitRunning(page);                                  ← 才 arm
+```
+
+若排在之前，`armRequested` 會被 latch 在**上一個** runner 上（app 開機時預設 drill 早已是 `'armed'`），而下一次 `start()` 會把它清掉 ⇒ 該 block 靜默停在待命直到 download timeout。`session-orchestrator` 因為 block 邊界不可見（spec 只輪詢整個 plan），才必須改用看門狗而非單點 arm。
+
+這與 T2 Surprise 1（三個建構點）同型：**待命閘的失效樣態一律是「卡住」，不是「數值錯」**——`session-orchestrator` 那一條就是花了 13.1 分鐘才以 timeout 現形。
+
+### 6. 步驟 6：`overlay-layering` 與 `stage10-accessibility` **擴充**（非放寬）
+
+| 檔 | 擴充內容 | 是否動到既有斷言 |
+|---|---|---|
+| `overlay-layering.spec.ts` | ① 既有疊層測試多讀三個 z-index（`#drill-start-overlay` / `#metrics-hud` / `#rest-overlay`）並加 4 條夾擠斷言：HUD(18) < rest(20) < **start(22)** < result(30) < controls(32)；② 新增一條測試：overlay 可見時 `pointer-events: none`，且在它覆蓋的視窗正中央做 `elementFromPoint()` hit-test，topmost 必須是 **CANVAS** | **否**。唯一的「刪除」是 destructuring 由 3 個變數擴成 6 個；原有 `exportZ > resultZ`、`controlsZ > resultZ` 一字未動 |
+| `stage10-accessibility.spec.ts` | 新增一個 `test.describe`：`armed`（`aria-hidden=false`、`aria-live=assertive`、含「點擊左鍵開始」）→ `countdown`（含「準備」+ 數字 3/2/1）→ `running`（隱藏且 `aria-hidden=true`） | **否**。既有 History→Replay 鍵盤旅程整段未動 |
+
+hit-test 那條不是樣式重述：`DrillStartOverlay.ts:61-63` 自稱 `pointer-events:none` 是「本檔最關鍵的一行」——它在待命相位以 `inset:0` 覆蓋整個視窗，一旦吃掉點擊，取鎖就發不出去、待命閘再也解不開。用 `elementFromPoint()` 斷言穿透，測的是後果而不是宣告。
+
+`aria-hidden` 那條同理：一個恆在 DOM 的 `aria-live="assertive"` region 若在 drill 進行中不收起來，會對輔助技術持續廣播空字串。
+
+### 7. DoD「19 個 `__fps` spec **零修改**」的對帳（有偏離，明帳）
+
+`task-checklist.md` 的 Package DoD 寫「19 個 `__fps` spec 零修改全綠」。實際結果：
+
+- **14 個零修改**：`br-tracking`、`full-drill`、`history-library`、`history-persistence`、`peek-click-transfer`、`peek-click-transfer-v1-formal`、`replay`、`spray-drill`、`stage10-assessment`、`stage10-failure-recovery`、`stage10-lifecycle-scale`、`stage10-preview`、`stage10-projection-shape`、`weapon-select`。
+- **3 個必須補 arm**（§3b）：`session-orchestrator`、`micro-flick-live`、`spider-shot-wide`——這三個雖然也用 `__fpsTest`，但**先**驅動了 live drill runtime。**DoD 的前提（「走 `__fps` ⇒ 不受待命閘影響」）在這三個檔上不成立。**
+- **2 個依步驟 6 擴充**：`overlay-layering`、`stage10-accessibility`——只增加斷言，既有斷言逐字不變。
+
+⇒ T-exit 須把該行改寫為「14 零修改 + 3 補 arm + 2 僅擴充」，並修正 README §0.5 的分類軸（見 §11 Surprise 3）。**沒有任何一條既有斷言被修改或放寬**——這一條 DoD 的實質仍然成立。
+
+### 8. 步驟 7：`typecheck` 覆蓋缺口聲明（FM-6）
+
+`npm run typecheck` = `tsc --noEmit && tsc --noEmit -p tsconfig.node.json`，而兩份 tsconfig 的 `include` 分別是 **`["src"]`** 與 **`["server"]`**（本切片實讀）。⇒ `tests/` 與 `scripts/` **從來沒有被型別檢查過**。
+
+具體到本切片：`tests/e2e/support/arm.ts` 與六個被改的 spec，其型別正確性**唯一**的驗證是 `npx playwright test` 實跑（Playwright 以 esbuild 轉譯，同樣不做型別檢查）。⇒ **typecheck 綠不代表本切片的程式碼被檢查過**，與記憶中 `typecheck-misses-scripts-tests` 的既有記載一致。
+
+本切片**不**順手補一份 `tsconfig.test.json`：T6 的 Invariant 是純測試層、不夾帶範圍外改動，而新增 typecheck 目標會牽動 `test:ci`。列為 T-exit 的觀察項。
+
+### 9. 驗證證據（全部為本切片實際執行輸出）
+
+| 項目 | 結果 | 對照 |
+|---|---|---|
+| `npm run typecheck`（第 1 次） | **exit 0** | 同 T0 基線 |
+| `npm run typecheck`（第 2 次） | **exit 0** | 同上 |
+| `npx vitest run` | **exit 0** — Test Files **258 passed / 1 skipped (259)**；Tests **3097 passed / 2 skipped (3099)**；37.31 s | T0 基線 = 256 files / 3014 tests ⇒ T1–T5 累積 +2 files / +83 tests，**本切片 ±0**（純 e2e） |
+| `npm run build` | **exit 0** — `dist/assets/index-BGy8qBdM.js` 1 240.26 kB（gzip 353.27 kB），built in 2.59 s | T0 = 1 237.00 kB；>500 kB 警告為既有狀態 |
+| `git diff --stat -- src/ server/ research/` | **空** | T6 Invariant「不改任何 production code」成立 |
+| `npx playwright test --workers=1` | **exit 0** — **110 passed / 0 failed**；Duration **15.2 min**（最慢檔 `session-orchestrator.spec.ts` 11.8 min） | T0 基線 = **108 passed / 0 failed / 19.2 min** ⇒ **NFR-65.6 成立**（通過數 110 ≥ 108、0 failed）。+2 = 本切片新增的兩條 overlay 測試（§6） |
+
+#### 9b. 中止的第一次全量回歸（記錄，因為它正是 §3b 的取證過程）
+
+第一次全量在第 80 個測試（`session-orchestrator.spec.ts:885`）**failed（13.1 min）**後被**主動中止**——當時已知 `spider-shot-wide`／`micro-flick-live` 會以同一原因失敗，讓它跑完只是多燒 20 分鐘拿重複結論。中止前 **79 passed / 1 failed**。修完 §3b 三個檔後才重跑乾淨的一次。
+
+#### 9c. Playwright 執行環境（前置條件實測）
+
+- **第一次全量開跑前**：`netstat` 確認 5173 / 4173 皆無 LISTENING ⇒ Playwright 自行啟動兩個 server 並各自帶 `FPS_HISTORY_ROOT`。
+- **最終全量開跑前**：5173 / 4173 **有** LISTENING（前一次 spec 跑完後 Vite 未隨 shell 退出——[KI-028 / T5 Surprise 5] 的同一個現象）。**沒有直接 reuse，先以健康探針確認歸屬**：`GET :5173/api/history/health` 回 `validRunCount: 277`、`:4173` 回 `373`，而真實 `data/session-history/` 只有 **54** 個 JSON ⇒ 兩者都指向 `.playwright-tmp/` 的暫時 root，**不是** T0 Surprise 2 那個會寫進研究資料的情境。全量跑完後真實 `data/session-history/` 仍為 54，未被寫入。
+- `.playwright-tmp/history-dev/` participant 目錄數：最終全量**前 243**、**後 270**（T0 執行後為 225；中止的第一次全量把它推到 243）。距 [e2e-history-root-accumulates] 記載的「上千個後 history-library 轉紅」仍有餘裕，**未清理**。
+
+### 10. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T6-a** | arm 走「模擬脈衝」而非「真實 trusted click」，即使真鎖在本環境**可用** | 脈衝離開時頁面回到未鎖定 ⇒ 既有 spec 的前提一律不變，且 `raw-mouse-sampling` 才做得出 arm 後的完整 lock→unlock 對。被推翻的替代：真鎖並持有——`setLocked()` 的去重會讓後續取鎖成為 no-op，`[true, false]` 那條斷言只能被改弱 |
+| **T6-b** | `armDrill()` 以「重送脈衝 + 觀測 `armRequested`」處理開機競態，而非等某個 proxy 訊號（如 `__fpsTest`） | proxy 訊號會把 spec 釘死在 `main.ts` 的 top-level 求值順序上——那個順序在 T2-a 已被迫調整過一次。直接觀測「訂閱者是否已掛上」對順序免疫 |
+| **T6-c** | 7 個 live spec **不加** arm，並逐檔寫下理由 | T6 doc 步驟 3 明文「不要盲目全加」。`history-navigation` 是硬證據：它的 FM-49.10 斷言是「canvas 點擊**不得**請求 Pointer Lock」，補 arm 等於自己破壞被測的性質 |
+| **T6-d** | `raw-mouse-sampling` 的兩個 case **都** arm（不只斷言相位的那一個） | 不 arm 時 case 1 仍會過，但「沒有 `pointer_lock` 事件」的成因會從「開關關閉」變成「相位擋掉」——斷言退化成同義反覆。加一行 arm 把它變回真正在測 FR-60.2 |
+| **T6-e** | FR-65.12 的斷言放進 `armDrill()` helper 內，而非另立一個 spec | 放在 helper 裡等於每個 arm 的 spec 都跑一次；另立一條只跑一次，且會與 helper 的實作漂移 |
+| **T6-f** | `session-orchestrator` 用 rAF **看門狗**（`installAutoArm`）而非在每個 block 邊界單點 arm | 該 spec 的抽象層級是「整個 plan」，block 邊界在測試側不可見（只輪詢 `sessionPlanState().phase === 'done'`）。看門狗同時是受試者行為的忠實模型（每場各點一次）。被推翻的替代：讓 spec 去解析 `samples` 找 block 邊界再 arm——會把測試耦合到 runner 的相位序列，而那正是同一個測試要斷言的東西 |
+| **T6-g** | 看門狗回傳 `armCount` 並要求呼叫端斷言（6 / 4） | 「plan 跑完了」無法區分「每場都被正確解除」與「待命閘根本沒生效」。有了計數，少解除／多解除都是不同的數字——而它**當場就抓到了一個 off-by-one**，見 Surprise 6 |
+| **T6-h** | `runLiveSessionPlan()` 在裝看門狗**之前**先 `armDrill()` 排掉 app 的開機 drill | 讓 `armCount` 量的是「**plan** 的 block 數」而非「頁面上發生過幾次解除」。被推翻的替代：斷言 `blocks + 1`——那等於把一個與 Session Plan 無關的實作細節（app 開機時載了一支預設 drill）寫死進 FR-65.4 的驗收數字裡 |
+
+### 11. Surprises & Discoveries（T6）
+
+1. **README §0.5 的「9 個 live spec」是錯的座標軸，且錯得對稱。** 那 9 個裡 **7 個不需要 arm**；清單**之外**的 `session-orchestrator`／`micro-flick-live`／`spider-shot-wide` **需要**。規劃期把「不使用 `window.__fps` 合成 harness」當成「驅動 live drill runtime」的同義詞，但這三個檔**兩者都做**——先用真實 UI／真實 Session Plan 跑 live drill，之後才切到 `__fpsTest`。⇒ **T6 的範圍實際上是 6 個檔而非 9 個**，而且範圍表面積是靠全量回歸發現的，不是靠讀計畫。
+2. **最貴的一次失敗花了 13.1 分鐘才現形。** `session-orchestrator` 的 live Session Plan 在第一個 block 就停在 `'armed'`，而該測試只輪詢「plan 跑完了沒」⇒ 一路等到 13 分鐘 timeout。**待命閘的失效樣態是「卡住」不是「數值錯」**（T2 Surprise 1 同型），在長時測試上這代表回歸成本極高——這也是本 task 中止第一次全量、先修再重跑的理由。
+3. **真實 Pointer Lock 在本環境可用，但仍然不該拿來做 arm。** spike A 證實 trusted `canvas.click()` 能取得真鎖（README FM-4 的前提不成立）。然而「可行」不等於「該用」：真鎖持有會讓 `PointerLock.setLocked()` 的去重把後續模擬取鎖吃掉，直接衝突 `raw-mouse-sampling` 的核心斷言。**若只驗可行性就收工，會選錯路線並在下一個 spec 才發現。**
+4. **T2-b 的補呼叫對「持鎖」有效、對「脈衝」無效。** 見 §1b。失敗樣態是 `lockedDuring: true` 但 `armAfterLock: false`——鎖明明翻了卻沒 arm，看起來像 T2 接線壞了，實際是模擬手法與補償邏輯的交互作用。**任何未來以「合成事件脈衝」模擬使用者狀態的 e2e 都會遇到同型問題**：補償邏輯讀的是「當下狀態」，而脈衝的當下狀態已經還原了。
+5. **`micro-flick-live` 的 P95 預算沒被待命閘污染，是因為那個窗界當初就寫對了。** 檔頭明寫「the drill's own 3 s countdown is protocol, not load latency, and stays outside the window」，量測終點是 `#scene-select` 被 app 寫回而非目標出現。若當初把終點定在「第一個可見目標」，這個 NFR 會在本 WP 直接失效且無法只靠測試側修復。實測 p95 = 45.8 ms / 預算 1 500 ms。
+
+6. **`armCount` 第一次跑就抓到 off-by-one：看門狗把 app 的開機 drill 也算成一個 block。**
+   實測 `Expected: 6, Received: 7`（另一測 `4 / 5`）。原因是 `waitForHarness()` 之後頁面已經停在預設 drill `counterstrafe_ad_v1` 的 `'armed'`，看門狗一裝上就把它解除了。**這正是加這條斷言的報酬**：兩個測試的其他斷言（plan 走到 `done`、6 份唯一匯出、每份 `meta.weaponId` 對得上）**全部通過**，若沒有 `armCount`，「看門狗多解除了一場」會完全不可見——而同一個盲點在真實 Session Plan 裡就是「某個 block 沒有要求受試者點擊」。處置見 T6-h。
+
+### Open Questions（T6 留給 T-exit）
+
+- **T-exit**：`task-checklist.md` 的「19 個 `__fps` spec 零修改」需改寫為「14 零修改 + 3 補 arm + 2 僅擴充」（§7）。
+- **T-exit**：README §0.5 的 spec 分類需改用「是否驅動 live drill runtime」這條軸重寫，並列出 6 個受影響檔（§11 Surprise 1）。
+- **T-exit**：`tests/` 與 `scripts/` 不在任何 typecheck 目標內（§8）。是否新增 `tsconfig.test.json` 並掛進 `test:ci` 屬跨 WP 的工具鏈決策，不在 T6 範圍。
