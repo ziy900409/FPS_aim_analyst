@@ -1,0 +1,4 @@
+interface:
+  display_name: "FPS 專案驗證"
+  short_description: "依變更選擇引擎、瀏覽器與資料驗證，回報結果與證據限制"
+  default_prompt: "使用 $fps-verification 驗證本次指定變更，執行必要檢查並回報證據與未完成項。"
