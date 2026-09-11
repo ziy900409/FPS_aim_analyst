@@ -14,7 +14,13 @@
       "Bash(python -)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(echo \"tsc\\(node\\)=$?\")"
+      "Bash(echo \"tsc\\(node\\)=$?\")",
+      "PowerShell(Select-String -Path \"D:\\\\git\\\\FPS_aim_analyst\\\\tests\\\\regression\\\\spider-wide-repositioning-runner.test.ts\" -Pattern \"function widePayload\" -Context 0,80 | ForEach-Object { $_.Context.PostContext -join \"`n\" })",
+      "PowerShell(npx vite-node scripts/_probe3-v3.ts -- \"C:/Users/User/Downloads/spider-shot-v3-2026-09-09T14_42_09.086Z.json\" \"C:/Users/User/Downloads/spider-shot-v3-2026-09-09T14_48_47.194Z.json\" \"C:/Users/User/Downloads/spider-shot-v3-2026-09-09T14_49_57.739Z.json\" 2>&1 | Out-File -Encoding utf8 \"$env:TEMP\\\\v3-report.json\"; Get-Content \"$env:TEMP\\\\v3-report.json\" -TotalCount 200)",
+      "PowerShell(npm run analyze:spider-v3 -- \"C:/Users/User/Downloads/spider-shot-v3-2026-09-09T14_42_09.086Z.json\" \"C:/Users/User/Downloads/spider-shot-v3-2026-09-09T14_48_47.194Z.json\" \"C:/Users/User/Downloads/spider-shot-v3-2026-09-09T14_49_57.739Z.json\" 2>&1)",
+      "PowerShell(node scripts/check-coach-report-render.mjs \".spider-v3-analysis/coach-report-spider-shot-v3-2026-09-09T14_49_57.739Z.html\" \".spider-v3-analysis/shots\")",
+      "PowerShell(git -C \"D:\\\\git\\\\FPS_aim_analyst\" status --short)",
+      "PowerShell(git -C \"D:\\\\git\\\\FPS_aim_analyst\" log --oneline -3)"
     ]
   },
   "hooks": {
