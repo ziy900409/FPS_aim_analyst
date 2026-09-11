@@ -199,7 +199,8 @@ WP-63（wide-v1 效度層）      WP-64（v8 per-target 窗界 + 歸因）
 | 文件 | 狀態 |
 |---|---|
 | 本檔（stage14 暫時方案） | ✅ 2026-09-09 |
-| [`HANDOFF-v3-real-data.md`](HANDOFF-v3-real-data.md) — 用三份真人 run 產出 v3 教練報告的接手 prompt（含五道必經閘與已驗證採集條件） | ✅ 2026-09-09 |
+| [`HANDOFF-v3-real-data.md`](HANDOFF-v3-real-data.md) — 用三份真人 run 產出 v3 教練報告的接手 prompt（含五道必經閘與已驗證採集條件） | ✅ 2026-09-09 · **已執行**（§9 DoD 有一條被實測推翻,見檔頭） |
+| [`progress.md`](progress.md) — stage14 的 episodic memory：三份真人 run 的實測結論、被推翻的設計假設、新開的 KI-034/035/036、偏離協議之處 | ✅ 2026-09-09 |
 | [`SESSION-HANDOFF-2026-09-09.md`](SESSION-HANDOFF-2026-09-09.md) — session 交接：現況、已凍結決策、下一步優先序、平行 session 危險 | ✅ 2026-09-09 |
 | [`coach-figures/`](coach-figures/README.md) — 七張圖的 SVG 產生器與渲染檢查（WP 工作資產，可搬走） | ✅ 2026-09-09 |
 | [`spider-shot-v3-measurement-parameters-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-measurement-parameters-2026-09-09.html) — v3 預計計算的參數與其意涵 | ✅ 2026-09-09 |

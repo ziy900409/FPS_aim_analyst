@@ -214,6 +214,41 @@
   </nav>
 
   <main class="shell">
+    <div class="callout warning">
+      <strong>2026-09-09 真人資料回寫 —— 三處運算定義需要限定</strong>
+      <p style="margin-top:8px">
+        三份真人 <code>spider-shot-v3</code> 匯出（同一位受試者、同一台機器、連續錄製,<strong>240 Hz 顯示</strong>）
+        已跑過本文件所列的全部推導。逐項數字見
+        <a href="../../exec-plan/active/stage14/progress.md">stage14 <code>progress.md</code></a>。
+        本文件的定義<strong>全部照跑無誤</strong>,但有三處的實際行為與文中的敘述需要限定:
+      </p>
+      <ul>
+        <li><strong>§4.1 切換反應不再是「拿不到值」。</strong>該節的 danger callout 寫「KI-031 ⇒ 0/113」,那是 60 Hz 顯示的數字。
+          240 Hz 上以 <strong>canonical 預設參數</strong>實測 <code>detected</code> = <strong>85/119（71.4%）</strong>
+          （逐份 27/37、29/39、29/43）⇒ <strong>懸崖沒有咬到</strong>。但 28.6% 仍是 <code>timeout</code>,
+          且 <code>thresholdDegPerSec</code> 的 p50 高達 64.4／83.5／97.6 deg/s ⇒
+          <strong>KI-031 §2 的次要觀察成立</strong>:500 ms baseline 窗確實吃進上一次拉槍、把門檻抬高。
+          ⇒ <code>reactionMs</code>／<code>movementTimeMs</code> 可用於描述,但不宜作處方,且必須與 timeout 數並列。</li>
+        <li><strong>§4.3 <code>overshootDeg</code> 的母體遠小於呈現數。</strong>實測有效樣本只有 <strong>4／5／4</strong>（呈現數 37／39／43）——
+          受試者多半一進靶就開槍結束該次呈現,<code>postAcquireOvershoot()</code> 因此沒有「首次進靶之後」的離靶樣本。
+          ⇒ §5 的 <code>median-overshoot-deg</code> 在這種打法下是<strong>由 4–5 個樣本決定的整場指標</strong>,
+          與同列其他四個不同量級的穩定性。應併入 OQ-62.2。</li>
+        <li><strong>§3 的 <code>side</code> 對 v3 是佔位值。</strong>該節已警告「近垂直呈現的符號可能是浮點殘值」——
+          實測 <code>|Δx|</code> 最小 1.06e-2 u（約 0.076°）⇒ <strong>不是殘值</strong>,符號有意義但沒有左右負荷語意。
+          真正的問題在別處:<strong>匯出事件的 <code>visible.side</code> 被 spawn 寫死為 <code>'R'</code></strong>
+          （三份 119 個周邊事件相異取值數 = 1）,任何以它分左右的聚合會靜默塌成單邊。已立案為
+          <a href="../../known_issue/KI-036-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md">KI-036</a>。
+          <code>deriveSpiderShotTransitions()</code> 的 eye-frame <code>side</code> 不受影響,仍是權威。</li>
+      </ul>
+      <p style="margin-bottom:0">
+        另有兩個缺陷落在 §5 與 registry:
+        <a href="../../known_issue/KI-035-valid-duration-includes-countdown.md">KI-035</a>（<code>validDurationMs</code>
+        含 3 秒倒數與尾段 tick ⇒ 主指標 hits/min 恆向低估 7.3–8.6%,實測 33.2/36.2/40.1 應為 36.0/39.0/43.0）·
+        <a href="../../known_issue/KI-034-registry-projection-failed-hides-which-precondition-broke.md">KI-034</a>
+        （三份因缺 <code>meta.session.participantId</code> 全部進不了趨勢,而 <code>projection-failed</code> 不說是哪一條前提）。
+      </p>
+    </div>
+
     <section id="protocol">
       <h2>1. 協定固定參數</h2>
       <p class="section-intro">
@@ -402,6 +437,13 @@
           湊不出 4 連 ⇒ 四份真人匯出的 113 個周邊呈現,<code>detected</code> 為 <strong>0 / 113</strong>。
           而 <code>status: 'timeout'</code> 是一個合法值（語意為「受測者從未偵測到目標」）,所以這個失效<strong>完全靜默</strong>。
           詳見 §7。
+          <p style="margin-top:8px;margin-bottom:0"><strong>2026-09-09 更新（240 Hz 真人資料）:</strong>
+            上述 0/113 是 <strong>60 Hz 顯示</strong>的數字。240 Hz 上以 canonical 預設參數實測
+            <code>detected</code> = <strong>85/119（71.4%）</strong>,逐份 27/37、29/39、29/43 ⇒
+            <strong>本類在符合採集紀律的機器上拿得到值</strong>。剩下的 28.6% <code>timeout</code> 未證實是「真的沒偵測到」
+            還是門檻被抬高後的漏檢（<code>thresholdDegPerSec</code> p50 = 64.4／83.5／97.6 deg/s,
+            KI-031 §2 的次要觀察在本批成立）⇒ 本類目前只作描述,不作處方。見
+            <a href="../../exec-plan/active/stage14/progress.md">stage14 <code>progress.md</code></a> OQ-S14.2。</p>
         </div>
       </article>
 
@@ -500,7 +542,10 @@
               <td><code>spider-v3.peripheral-hits-per-minute</code></td>
               <td>周邊有效命中速度</td>
               <td>hits/min · 越高越好</td>
-              <td><code>60000 × 周邊命中窗數 / validDurationMs</code>,其中 <code>validDurationMs</code> = 最後 tick − 第一 tick（<strong>實測時長,不是名目 60 s</strong>）</td>
+              <td><code>60000 × 周邊命中窗數 / validDurationMs</code>,其中 <code>validDurationMs</code> = 最後 tick − 第一 tick（<strong>實測時長,不是名目 60 s</strong>）。
+                ⚠️ <strong>該分母含 3 秒開場倒數與 1.4–2.1 s 尾段 tick,而分子全部落在計分窗內 ⇒ 絕對值恆向低估
+                （2026-09-09 實測 +8.6%／+7.8%／+7.3%）</strong>。同 cohort 內排序不受影響,但絕對值不可對外報數。見
+                <a href="../../known_issue/KI-035-valid-duration-includes-countdown.md">KI-035</a></td>
               <td><span class="tag primary">主指標</span></td>
             </tr>
             <tr>

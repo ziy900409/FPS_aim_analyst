@@ -234,6 +234,40 @@
   </nav>
 
   <main class="shell">
+    <div class="callout warning">
+      <strong>2026-09-09 真人資料回寫 —— 首批三場已跑完,四項設計預期需要修正</strong>
+      <p style="margin-top:8px">
+        三份真人 <code>spider-shot-v3</code> 匯出（<strong>n = 1 位受試者、3 場</strong>,同一台機器連續錄製,240 Hz 顯示）
+        已依本文件的三層模型完整跑過一輪。完整報告與逐項數字見
+        <a href="../../exec-plan/active/stage14/progress.md">stage14 <code>progress.md</code></a>。
+        <strong>本文件的三層模型與機制指標裁決都成立</strong>;需要修正的是四項對資料形狀的預期:
+      </p>
+      <ul>
+        <li><strong>地板／天花板效應已經出現,而且在準確率那一端。</strong>首發命中率實測 94.6%／84.6%／97.7%,
+          21 個達 n≥8 的分箱中 13 個 ≥ 90% ⇒ <strong>2.0° 角徑對這位受試者太容易</strong>,
+          首發命中率作為鑑別量在這個側寫上已飽和。這正是
+          <a href="../../exec-plan/active/stage14/README.md">stage14 README §6 第 5 項</a>列為「非真人不可」的項目之一。
+          ⚠️ n = 1 ⇒ <strong>不得據此改協定</strong>;需要角徑掃描（OQ-S14.3）。</li>
+        <li><strong>機制指標的可用性排序與預期相反。</strong>預期被 KI-031 阻塞的 <code>t_detect</code> 在 240 Hz 上
+          拿得到 71.4%;反倒是 <code>overshootDeg</code> 只有 <strong>4／5／4</strong> 個有效樣本 ——
+          受試者一進靶就開槍,沒有「首次進靶之後」的離靶樣本。⇒ <code>median-overshoot-deg</code>
+          作為五個趨勢指標之一的穩定性遠低於其餘四個,應併入 OQ-62.2 重新評估。</li>
+        <li><strong>Fitts 正規化目前不可用。</strong>本文件要求「先驗證 <code>MT ~ ID</code> 線性再報 throughput」——
+          方向驗證<strong>通過</strong>（三份的命中時間都隨 ID 單調上升）,但斜率<strong>不通過</strong>:
+          37／154／57 ms/bit,全距是平均的 139%,而三場的刺激<strong>逐位相同</strong>。
+          r² 0.963／0.980／0.975 高但無意義（3 個 tier 中位數、兩個自由度）。⇒ <strong>不報 throughput</strong>。</li>
+        <li><strong>「同一 drill 的多輪不是獨立取樣」這條排除規則在首批資料上就生效了。</strong>
+          三份的前 75 個呈現（37 個周邊）<strong>逐位相同</strong> ⇒ 這批資料能支撐的縱向量只有
+          「同一序列重複三次的練習效應」,不是「本場 vs 個人基準」。C-D3 的信度閘因此連起跑線都還沒到。</li>
+      </ul>
+      <p style="margin-bottom:0">
+        三個工程缺陷由這批資料發現,已立案:
+        <a href="../../known_issue/KI-034-registry-projection-failed-hides-which-precondition-broke.md">KI-034</a> ·
+        <a href="../../known_issue/KI-035-valid-duration-includes-countdown.md">KI-035</a> ·
+        <a href="../../known_issue/KI-036-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md">KI-036</a>。
+      </p>
+    </div>
+
     <section id="decision">
       <h2>核心決策</h2>
       <p class="section-intro">

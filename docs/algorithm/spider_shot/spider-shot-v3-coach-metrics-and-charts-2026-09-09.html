@@ -204,6 +204,34 @@
       不是可以拿去給選手下處方的報告。
     </div>
 
+    <div class="callout warning">
+      <strong>2026-09-09 真人資料回寫 —— 本提案有四處被資料推翻</strong>
+      <p style="margin-top:8px">
+        三份真人 <code>spider-shot-v3</code> 匯出（同一位受試者、同一台機器、連續錄製,240 Hz 顯示）已跑過本提案的七張圖。
+        報告與逐項數字見 <a href="../../exec-plan/active/stage14/progress.md">stage14 <code>progress.md</code></a>;
+        產生器為 <code>npm run analyze:spider-v3</code>。以下四處<strong>本文件的判讀規則仍然有效,但示例所預設的資料形狀不成立</strong>:
+      </p>
+      <ul>
+        <li><strong>C4 的首發命中率撞天花板</strong>（實測 94.6%／84.6%／97.7%,21 個達 n≥8 的分箱中 13 個 ≥ 90%）⇒
+          「最弱的一箱」在這個區間裡只是取樣雜訊。實作已改以<strong>命中時間</strong>編碼條長,首發命中率退為直接標籤,且不上色。見下方 C4。</li>
+        <li><strong>C5 的「進靶後逸出」有效樣本只有 4／5／4</strong>（&lt; 10 ⇒ 依本文件自己的規則不畫 p95）。
+          根因是打法而非缺陷:一進靶就開槍結束該次呈現,就沒有「首次進靶之後」的離靶樣本。見下方 C5。</li>
+        <li><strong>C3 的時間預算形狀與示例相反</strong>:示例是 V 最短（96 ms）,實測 <strong>V 最長且長過 MR</strong>（378／373／333 ms）。
+          ⇒ 「V 長 = 不敢開槍」這句判讀不可直接套用。見下方 C3。</li>
+        <li><strong>C7 的 Fitts 斜率在同一刺激序列的三次重複之間不穩定</strong>（37／154／57 ms/bit,全距是平均的 139%,
+          而三場的刺激<strong>逐位相同</strong>）⇒ 這個離散全是估計誤差。逐份 r² 0.963／0.980／0.975 ——
+          <strong>r² 高不代表斜率可信</strong>。見下方 C7。</li>
+      </ul>
+      <p style="margin-bottom:0">
+        另有三個工程缺陷由這批資料發現,已立案:
+        <a href="../../known_issue/KI-034-registry-projection-failed-hides-which-precondition-broke.md">KI-034</a>（registry 的
+        <code>projection-failed</code> 遮蔽真因）·
+        <a href="../../known_issue/KI-035-valid-duration-includes-countdown.md">KI-035</a>（主指標 hits/min 恆向低估 7–9%）·
+        <a href="../../known_issue/KI-036-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md">KI-036</a>（<code>visible.side</code>
+        是佔位值,<code>curve-v1</code> 左右分群靜默塌成單邊）。
+      </p>
+    </div>
+
     <section id="questions">
       <h2>1. 教練的五個問題</h2>
       <p class="section-intro">
@@ -297,6 +325,14 @@
         <strong>在 pilot 完成前的臨時做法(必須標註)</strong>
         真正的 MDC 需要多日重測才有。在那之前,用<strong>個人近 n 場相容 run 的 IQR</strong> 當臨時帶,
         並在圖上明寫「臨時雜訊帶,非 MDC」。這比不畫帶好,但<strong>不可以叫它 MDC</strong>。
+      </div>
+      <div class="callout danger">
+        <strong>2026-09-09 實測：連臨時帶都畫不了</strong>
+        臨時 IQR 帶要求「個人近 n 場相容 run」,而首批真人資料<strong>總共只有 3 場</strong> ——
+        這 3 場<strong>就是</strong>建立基準的過程,不是被比較的對象。實作因此把 C1 降級為
+        「建立基準中 3/3」+ 三場實際值 + <strong>三場全距</strong>（35.0／33.0／42.0 首發有效命中/min）,
+        並在報告內<strong>禁用「MDC」作為宣稱</strong>。同一天連續三場算出來的離散只是當日變異,
+        叫它 MDC 會讓後續每一次比較都建立在一個假門檻上。
       </div>
 
       <h3>M3 · 邊際軸取代 12 格矩陣（單場）<span class="tag new" style="margin-left:10px">新分析規則</span></h3>
@@ -499,6 +535,12 @@
           <div><span class="nk">為什麼是這個圖形</span>一段時間的組成 = 堆疊橫棒,三段遠低於 6 段上限。每段直接標值(淺色主題下 aqua 對白底 2.82:1,直接標籤是必要的補償)。</div>
           <div><span class="nk">怎麼讀</span>本場 MR 比基準<strong>快 22 ms</strong>,但 V <strong>慢 22 ms</strong> —— 揮動省下的時間全部還回給開火前的猶豫,合計只差 4 ms。這正好解釋 C2 的策略位移是<strong>怎麼</strong>發生的。</div>
           <div><span class="nk">何時不畫</span><code>meta.displayHz &lt; 144</code>、或該場 <code>seg-v2</code> 的 <code>no_peak</code>／<code>below_floor</code> 旗標比例過高時不畫。</div>
+          <div><span class="nk">2026-09-09 實測</span><strong>形狀與上圖示例相反。</strong>三份真人 run 的 REC／MR／V 為
+            203/211/<strong>378</strong>、180/211/<strong>373</strong>、195/234/<strong>333</strong> ms ——
+            <strong>V 是最長的一段,而且三場都長過 MR</strong>（示例是 V 最短）。該受試者的首發命中率 94.6%／84.6%／97.7%,
+            即<strong>用長確認期換高首發命中</strong>。⇒ 「V 長 = 不敢開槍」這句判讀在這種側寫上會說錯話;
+            V 的定義是「主揮動段結束 → 第一發」,它<strong>包含</strong>微調與確認。要分開猶豫與修正需併看
+            <code>microAdjustCount</code>（本批 p50 = 0 ⇒ 傾向不是微調）。旗標極少（三份各 0／2／1 個被排除）。</div>
         </div>
         <details class="viz-table">
           <summary>表格檢視（每個值都可讀,不靠顏色或 hover）</summary>
@@ -562,6 +604,17 @@
           <div><span class="nk">為什麼是這個圖形</span>類別對量值 = 橫條。<strong>用強調而非顏色分級</strong>:最弱的一箱上實色,其餘退為淡色,並一律直接標值與 n。</div>
           <div><span class="nk">怎麼讀</span>弱點<strong>同時</strong>集中在方位「右」（55.6%）與幅度「20–25°」（50.0%),而且幅度呈單調下降 —— 這兩條軸交會的地方就是訓練標的。</div>
           <div><span class="nk">何時不畫</span>任一箱 n &lt; 8 時該箱只顯示數字、不上色、不進結論句。12 格交叉必須 pooled 後才畫。</div>
+          <div><span class="nk">2026-09-09 實測</span><strong>本圖所編碼的量在真人資料上撞天花板,已改。</strong>
+            三份真人 run 的每箱 n 是 8–18（全部過 n≥8 閘）,但首發命中率有 13/21 個分箱 ≥ 90%,整體 94.6%／84.6%／97.7% ——
+            示例的 50–78% 區間裡「最弱的一箱」有意義,在 85–98% 裡它只是取樣雜訊。實作因此把<strong>條長改為命中時間 p50</strong>
+            （越短越好,仍是「最弱者上實色」），首發命中率與 n 退為逐箱直接標籤。判讀規則本身不變。<br>
+            <strong>另一處與本文件不同:方位軸不是「上／下／左／右」四箱。</strong>canonical derivation 只輸出
+            <code>quadrant</code>（<code>horizontal</code>／<code>vertical</code>／<code>oblique</code>）與 eye-frame
+            <code>side</code>（<code>L</code>／<code>R</code>）,<strong>沒有「上 vs 下」的既有構念</strong>;在分析腳本裡自己算一個
+            等於新增第二套幾何（C-D4）。實作改用 <code>quadrant × side</code> 的四箱:水平·左／水平·右／近垂直·左／近垂直·右。
+            順帶複驗了「近垂直落點的 <code>x</code> 符號可能是浮點殘值」這個疑慮:實測 <code>|Δx|</code> 最小值為
+            <strong>1.06e-2 u</strong>（8 u 距離下約 0.076°）,而殘值量級是 1e-16 ⇒ <strong>符號有意義,不是殘值</strong>;
+            但 0.076° 離垂直軸太近,不應把「近垂直·左／右」讀成左右負荷差異。</div>
         </div>
         <details class="viz-table">
           <summary>表格檢視（每個值都可讀,不靠顏色或 hover）</summary>
@@ -610,6 +663,13 @@
           <div><span class="nk">為什麼是這個圖形</span>三個指標單位不同,<strong>絕不可以放在同一條軸上</strong>。改用無單位的 p95 ÷ p50 倍率,一條軸解決;原始值放在標籤與表格。</div>
           <div><span class="nk">怎麼讀</span>進靶後逸出的尾端是中位數的 <strong>4.58 倍</strong> —— 中位數 0.31° 看起來很穩,但偶發會衝到 1.42°。這種選手在賽場上會突然「打歪一發」,而中位數完全看不出來。</div>
           <div><span class="nk">何時不畫</span>有效樣本 &lt; 10 時不畫 p95（一個極端值就會主導）。</div>
+          <div><span class="nk">2026-09-09 實測</span><strong>「進靶後逸出」那一列在真人資料上觸發了自己的不畫規則。</strong>
+            有效樣本只有 4／5／4（&lt; 10）⇒ 不畫 p95。根因是<strong>打法而非缺陷</strong>:受試者多半一進靶就開槍結束該次呈現,
+            <code>postAcquireOvershoot()</code> 因此沒有「首次進靶之後」的離靶樣本可取。
+            <strong>連帶後果:registry 的 <code>spider-v3.median-overshoot-deg</code> 在這種打法下是由 4–5 個樣本決定的整場指標</strong>,
+            穩定性遠低於同列的其他四個 —— 這一點應併入 OQ-62.2 的 descriptor 重選。
+            另兩列正常:命中時間 1.26／1.52／1.17×、首發角誤差 2.03／2.83／1.96×,且角誤差的 p95 仍 &lt; W/2 = 1.0°
+            ⇒ 那些「差比較多」的一發仍然命中。</div>
         </div>
         <details class="viz-table">
           <summary>表格檢視（每個值都可讀,不靠顏色或 hover）</summary>
@@ -722,6 +782,13 @@
           <div><span class="nk">為什麼是這個圖形</span>關係 + 擬合 = 散布圖加迴歸線。兩條線都直接標名,不靠顏色分辨。</div>
           <div><span class="nk">怎麼讀</span>本場斜率幾乎沒變（102 vs 98 ms/bit）,但<strong>截距高了 30 ms</strong>。意思是:大幅度控制沒有退步,退的是<strong>固定開銷</strong> —— 和 C3 的 V 相位 +22 ms 完全對上。</div>
           <div><span class="nk">何時不畫</span>少於 3 個幅度 tier 有效樣本、或 D 的變異範圍過窄時不擬合（斜率會不穩定）。</div>
+          <div><span class="nk">2026-09-09 實測</span><strong>「何時不畫」的兩條件都滿足,斜率照樣不穩定 ⇒ 需要第三個條件。</strong>
+            三份真人 run 各有 3 個 tier、ID 跨度約 0.8 bits,但擬合出來的斜率是 <strong>37／154／57 ms/bit</strong>
+            （截距 686／287／586 ms）,全距是平均值的 <strong>139%</strong> —— 而三場的<strong>刺激逐位相同</strong>,
+            所以這個離散全部是估計誤差,不是難度縮放的變化。逐份 r² 為 0.963／0.980／0.975:
+            <strong>r² 高不代表斜率可信</strong>,3 個 tier 中位數擬合一條線只有兩個自由度,r² 幾乎必然漂亮。
+            <strong>唯一穩的結論是方向</strong>:三份的命中時間都隨 ID 單調上升。實作因此畫三條擬合線但
+            <strong>不報 throughput、不比較截距與斜率</strong>。要談難度縮放需要更多 tier 或更多場。</div>
         </div>
         <details class="viz-table">
           <summary>表格檢視（每個值都可讀,不靠顏色或 hover）</summary>
