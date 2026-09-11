@@ -441,3 +441,129 @@ Session Plan 走既有的 WP-58 T6 縫 `__fpsTest.startSessionPlanWithoutGate()`
 - **T3（來自 Surprise 5）**：待命提示／倒數 overlay 的 `z-index` 需與 `#drill-controls`（研究員 Controls）一併確認，而不只是與 Result dialog 和 HUD 比較。`'ended'` + 研究員模式下三者會同時在畫面上。
 - **T6（來自 Surprise 3/4）**：① 真鎖在本環境可用 ⇒ FM-4 的後備 `?autoArm=1` 縫大機率不需要，但仍須在 T6 自行複驗；② 任何「3 秒倒數」的 e2e 斷言必須在 sim clock 單域內量測（`ticks[0].t` → 首個 `visible.t`），不得混用 `performance.now()`。
 - **T5**：本切片已確認 `armOnPointerLock` 與 T5 的掉鎖偵測會共用同一個 `pointerLock.onChange` 管道；T5 新增偵測時應**再新增一個訂閱者**（比照本切片），不要改寫 `armOnPointerLock`——兩者條件互斥（`armed` vs `countdown`/`running`），合併只會讓兩個構念糾纏。
+
+---
+
+## §T3 待命提示與倒數數字 overlay（2026-09-11）
+
+**狀態**：✅ 完成。倒數自此**看得見**：待命顯示「點擊左鍵開始」，倒數顯示 3 → 2 → 1，`running` 起隱藏。
+
+執行基準 commit：`7b98d3e`（T1）起工；期間平行 session 提交 `45cec7f`（T2），詳見下方「協議偏離」。
+
+### 1. 落地內容
+
+| 檔案 | 改動 |
+|---|---|
+| `src/ui/DrillStartOverlay.ts` | **新檔**。`createDrillStartOverlay()` → 單一 `<section id="drill-start-overlay">` + 兩個建構期預建文字節點（提示行／數字行）。`update(phase, countdownRemainingMs)` 三分支；`dispose()` 移除根節點 |
+| `src/ui/DrillStartOverlay.test.ts` | **新檔**，16 條（三分支 + 四邊界 + 3→2→1 單調 + 版面防撞 + `pointer-events:none` + 分層 + 無配置 + dispose） |
+| `src/main.ts` | 三段接線：import、`createHUD()` 旁建構、`liveFrame` 內緊鄰 `hud.update()` 的一行 `update()`。**此三段已被平行 session 併入 `45cec7f`**（見協議偏離），故本切片的 `main.ts` diff 為空 |
+| `assets/t3-*.png` | 實機截圖四張（待命／倒數 3／倒數 1／running 隱藏） |
+
+`src/ui/HUD.ts` 本切片**零修改**（Time 卡屬 T4），既有 overlay 的 `z-index` 亦一個未動（Invariant 達成）。
+
+### 2. 採用的 `z-index` = **22**，與理由
+
+T3 doc 建議 30，**未採用**：`#result-screen` 正是 30，同值時由 DOM 順序決勝，等於把分層交給建構次序的偶然。實際落 **22**，取「HUD 與 rest backdrop 之上、Result dialog 與 Controls 之下」的空隙：
+
+| overlay | z-index | 與本 overlay 的關係 |
+|---|---:|---|
+| `#lock-hint` | 10 | 之下 |
+| `#metrics-hud` | 18 | **之下** —— 提示不得被 HUD 壓住 |
+| `#rest-overlay` | 20 | **之下** —— 休息 backdrop 是半透明灰幕，壓在提示上會讓提示變灰 |
+| **`#drill-start-overlay`** | **22** | — |
+| `#result-screen` | 30 | **之上** —— 結果頁必須蓋過本 overlay |
+| `#drill-controls` | 32 | **之上** |
+
+實機 `getComputedStyle` 實測回值：overlay 22 / hud 18 / rest 20 / result 30 / controls 32，五者關係全部成立。**這同時關掉 T2 Surprise 5 留給 T3 的 OQ**（「需與 `#drill-controls` 一併確認，而不只是 Result dialog 與 HUD」）：22 < 32，`'ended'` + 研究員模式下 Controls 仍蓋過本 overlay。
+
+### 3. `Math.ceil` 對 0 的處理：採 `Math.max(1, Math.ceil(ms / 1000))`
+
+T3 doc 允許兩種寫法，此處採 clamp 版，理由是 **clamp 對真實倒數是 no-op，只擋一個會說錯話的退化窗**：
+
+- `DrillRunner` 在 `nowMs - countdownStartMs >= countdownMs` 當下即轉 `running` ⇒ `countdown` 期間剩餘值**恆 > 0**，3000 → `3`、1 → `1`，clamp 不改變任何真實顯示值。
+- 唯一會回 0 的是 `countdownStartMs === null`（相位已是 `countdown`、首個 sim tick 尚未跑）。此時顯示「0」會被讀成「倒數已結束」——恰好在它**還沒開始**的那一刻。
+- `requireArm` 路徑下相位轉換與倒數起算同在一個 tick，該窗**不可達**；仍 clamp 是因為 overlay 不該依賴呼叫端的相位來源（它只是個呈現元件）。
+
+### 4. 實機證據（Edge，dev server 5173，1280×800）
+
+截圖四張於 [`assets/`](assets/)：
+
+| 檔 | 內容 |
+|---|---|
+| [`t3-armed.png`](assets/t3-armed.png) | 待命：中線下方「點擊左鍵開始」，上方為既有 `#lock-hint` |
+| [`t3-countdown-3.png`](assets/t3-countdown-3.png) | 倒數：置中「準備」+ 大字 `3` |
+| [`t3-countdown-1.png`](assets/t3-countdown-1.png) | 倒數：大字 `1` |
+| [`t3-running.png`](assets/t3-running.png) | `running`：overlay `display:none`，畫面淨空 |
+
+| DoD 項 | 實測 |
+|---|---|
+| 待命點擊可正常取鎖（`pointer-events:none` 生效，非只靠單元測試） | 畫面中心 `document.elementFromPoint()` = **`canvas#app`**（非 overlay）；於 topmost 派發 `mousedown` → canvas 的 listener **確實收到**（`reachedCanvas: true`） |
+| 不遮蔽 HUD `Time` 卡 | `#metrics-hud` 佔 y ∈ [12, 95.4]；overlay 文字：待命 y ≈ 579、倒數 y ∈ [313, 486] ⇒ **無交集** |
+| 不被 Controls 遮住 | z 22 < 32（見 §2） |
+| `running` 後隱藏 | `display: none`、`aria-hidden: true` |
+| 無 page error | `pageErrors: null` 全程 |
+
+### 5. frameLog 對照（NFR-65.7 / DoD）
+
+`frameLog` 未掛在 `__aimDebug` 上，且取 `meta.frames` 需跑完整場 drill。改以**同一頁面內直接取 rAF delta 序列**（12 s／約 677 幀）對照，A/B 只差 `main.ts` 的三段接線（同一 commit、同一 dev server、同一 drill、同機連續執行）：
+
+| 條件 | 相位 | p50 | **p95** | p99 | max | >20 ms | >33 ms |
+|---|---|---:|---:|---:|---:|---:|---:|
+| **無 overlay** | armed | 17.760 | **18.475** | 19.720 | 248.02 | 5 | 1 |
+| **有 overlay** | armed | 17.745 | **18.365** | 19.205 | 19.985 | **0** | **0** |
+| **有 overlay** | running | 17.760 | 18.385 | 18.745 | 18.915 | 0 | 0 |
+
+- **p95 差值 = −0.110 ms**（有 overlay 反而略低）⇒ 落在執行間噪音內，overlay 無可測成本。
+- **未新增任何 over-budget window**：有 overlay 的兩段皆 `>20 ms` = 0、`>33 ms` = 0；無 overlay 那輪的 1 個 248 ms 離群幀屬背景干擾（該輪腳本同時在對不存在的節點輪詢 `getComputedStyle` 而持續拋錯），**不利的那一側反而是基線**，結論方向不受影響。
+- 機制上也符合預期：`update()` 以快取值比對，文字／版面**只在改變時**才寫 DOM（每場至多數次），穩態每幀零 DOM 寫入、零 `String()` 配置。
+
+### 6. 驗證證據
+
+| 項目 | 結果 |
+|---|---|
+| `npx vitest run src/ui/DrillStartOverlay.test.ts` | **exit 0** — 16 passed |
+| `npm run typecheck` ×2 | **exit 0 / exit 0** |
+| `npx vitest run`（全量，T3 接線在位時） | **exit 0** — Test Files **258 passed / 1 skipped**；Tests **3041 passed / 2 skipped** |
+
+對照 T1 的 257 files / 3025 tests：**+1 file、+16 tests**，逐條對得上（本切片 15 條 + 版面防撞 1 條 = 16；另 T2 的 InputSampler +1 已隨 `45cec7f` 入帳）。**零測試由綠轉紅。**
+
+### 7. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T3-a** | `z-index` 取 **22**，非 doc 建議的 30 | 30 = `#result-screen` 同值 ⇒ 分層由 DOM 順序決定，是偶然而非契約。被推翻：30（同值）、以及「沿用 rest-overlay 的 20」（同值於 rest backdrop，休息畫面上提示會變灰） |
+| **T3-b** | 顯示秒數用 `Math.max(1, Math.ceil(…))` | clamp 對真實倒數為 no-op，只擋 `countdownStartMs === null` 的退化窗（見 §3）。被推翻：裸 `Math.ceil`——會在倒數**尚未起算**時顯示「0」，語意正好相反 |
+| **T3-c** | 待命提示落**中線下方**（`flex-end` + `padding-bottom:22vh`），倒數維持置中 | 既有 `#lock-hint` 也是 `inset:0` 置中且只在未鎖定時顯示（＝待命相位），兩者置中會逐字疊字（見 §8 Surprise 1）。倒數時已持鎖、lock-hint 自行隱藏 ⇒ 數字可安心置中。被推翻：改 `#lock-hint`（既有元件，其顯示條件涵蓋非 drill 情境，超出 T3 範圍） |
+| **T3-d** | `update()` 以快取值比對後才寫 DOM | NFR-65.7 只要求「不新增每幀堆配置」，但每幀重寫 `textContent` 也會每幀做一次 `String(n)` 配置。快取讓穩態每幀**零** DOM 寫入，代價是三個模組級變數 |
+| **T3-e** | 單元測試沿用 repo 既有的 `FakeElement`／`FakeDocument` stub，**不**引入 jsdom | T3 doc 寫「jsdom，比照 `HUD.test.ts`／`ResultScreen.test.ts`」，但實況是 `vite.config.ts` 的 vitest 區塊**未設 `environment`**（node），`CueOverlay.test.ts`／`RestOverlay.test.ts` 皆以 stub 測 DOM 元件。為單一新檔引入 jsdom 會改動全 repo 的測試環境 |
+
+### 8. Surprises & Discoveries（T3）
+
+1. **待命提示與既有 `#lock-hint` 逐字疊在一起，兩句都讀不出來。**
+   `#lock-hint`（`main.ts:400`，文字「點擊以鎖定滑鼠視角（Esc 解除）」）是 `inset:0` + `align-items:center` + `justify-content:center`，而它的顯示條件是**未鎖定**——正好完全涵蓋待命相位。本 overlay 初版也置中 ⇒ 首輪實機截圖是兩句話疊成一團亂碼。
+   **單元測試抓不到**（stub 沒有版面），**型別也抓不到**；只有實機截圖會抓到。這是 T3 DoD 硬性要求截圖的價值所在。
+   **處置**：T3-c 的版面分流 + 一條迴歸斷言（`armed` → `flex-end`/`22vh`，`countdown` → `center`/`0px`）。
+   ⇒ **殘留 UX 問題（非阻塞，留給 T-exit／使用者）**：兩句話語意高度重疊（「點擊以鎖定滑鼠視角」vs「點擊左鍵開始」），實機上會同時出現、一上一下。要不要在待命相位隱藏 `#lock-hint`（或反過來只留它）是**產品決定**，且會影響非 drill 情境（Result／History 畫面下 lock-hint 也會顯示），故本切片不動它。
+
+2. **第一版實機腳本只等 `drillPhase() === 'armed'` 就取樣，量到的是「overlay 還沒畫出來」的空窗。**
+   相位在**模組求值期**（`drillRunner.start()`）就已是 `'armed'`，但 overlay 要等 `renderLoop` 的第一個 `liveFrame` 才會被 `update()`。兩者之間有一段真實存在的窗，該窗內 `#drill-start-overlay` 的 `display` 仍是初始的 `none`、文字仍為空字串。
+   第二輪即因此拿到 `phase: 'armed'` + `display: 'none'` + `prompt: ''` 的自相矛盾快照，看起來像功能壞了。
+   ⇒ **對 T6 的意義**：live e2e **不可**以 `drillPhase()` 當 overlay 就緒訊號，必須等 overlay 自身的 computed `display === 'flex'`（或等首幀）。只等相位會是間歇性紅的來源。
+
+3. **`countdownRemainingMs` 的 sim→render 唯讀出口維持單一。** 全 repo 對該 getter 的讀取點仍只有 `liveFrame` 一處（`main.ts:1886`），符合 README §2.4 的明帳承諾。
+
+### 9. 已知的協議偏離（明帳）
+
+**T3 的 `src/main.ts` 三段接線被平行 session 的 T2 commit `45cec7f` 一併提交。**
+
+- **事實**：本切片先寫好 `DrillStartOverlay.ts` 與 `main.ts` 的三段接線（import／建構／`liveFrame` 一行），尚未 stage；期間平行 session 完成 T2 並以整檔 stage 的方式提交 `45cec7f feat(app): require a fresh pointer lock before each drill starts`，把 T3 的 8 行一併帶入。
+- **後果**：`45cec7f` 當下的 tree **無法建置**——`main.ts` import 了尚未入 repo 的 `./ui/DrillStartOverlay.ts`。該狀態自本 T3 commit 起解除（新檔補上）。
+- **選擇**：**不改寫 `45cec7f`**。它是另一個 session 的已發布 commit，rebase／amend 屬破壞性且會與對方的工作區打架；代價是 history 中留下一個瞬時不可建置的 commit，效益是不動他人歷史。
+- **對本切片的影響**：T3 的 commit **不含** `src/main.ts`（其內容已與 HEAD 逐位相同）。`git diff -- src/main.ts` 為空即為證據。
+- ⇒ **紀律修正（寫給後續 task 與平行 session）**：共編 `src/main.ts` 時**不得整檔 stage**，須逐 hunk stage（[parallel-sessions-coedit-index-docs] 記載的紀律原本只涵蓋索引文件，此次證明**程式碼檔同樣適用**，且後果更嚴重——索引檔衝突會被看見，程式碼檔的誤帶會產生一個看似正常、實則不可建置的 commit）。
+
+### Open Questions（T3 留給後續 task）
+
+- **T4**：`main.ts` 的 `hudElapsedMs` 歸零 if-chain 仍未納入 `'armed'`（T1 Surprise 3 已列），本切片未處理——Time 卡屬 T4，且 T3 Invariant 明訂 `HUD.ts` 零修改。
+- **T-exit／使用者**：待命相位同時出現「點擊以鎖定滑鼠視角（Esc 解除）」與「點擊左鍵開始」兩句語意重疊的提示（見 Surprise 1）。是否合併為一句、以及合併後 `#lock-hint` 在非 drill 情境的行為，屬產品決定。
+- **T6**：live e2e 判斷 overlay 就緒必須等 computed `display`，不可只等 `drillPhase()`（見 Surprise 2）。
