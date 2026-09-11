@@ -567,3 +567,107 @@ T3 doc 允許兩種寫法，此處採 clamp 版，理由是 **clamp 對真實倒
 - **T4**：`main.ts` 的 `hudElapsedMs` 歸零 if-chain 仍未納入 `'armed'`（T1 Surprise 3 已列），本切片未處理——Time 卡屬 T4，且 T3 Invariant 明訂 `HUD.ts` 零修改。
 - **T-exit／使用者**：待命相位同時出現「點擊以鎖定滑鼠視角（Esc 解除）」與「點擊左鍵開始」兩句語意重疊的提示（見 Surprise 1）。是否合併為一句、以及合併後 `#lock-hint` 在非 drill 情境的行為，屬產品決定。
 - **T6**：live e2e 判斷 overlay 就緒必須等 computed `display`，不可只等 `drillPhase()`（見 Surprise 2）。
+
+---
+
+## §T4 HUD `Time` 卡的時限型倒數（2026-09-11）
+
+**狀態**：✅ 完成。FR-65.7 / FR-65.8 落地並以實機錄樣佐證。
+
+執行基準 commit：`a64eb61`。
+
+### 1. 落地內容
+
+| 檔案 | 改動 |
+|---|---|
+| `src/drill/DrillConfig.ts` | **新** `resolveDrillTimeLimitMs(config)` — 純函式，`endCondition.type === 'timeLimit'` 回 `value`，否則 `undefined` |
+| `src/ui/HUD.ts` | `HUDStats` 增 additive optional `timeLimitMs`；`createHUDStats()` 增**第八個**（尾端）參數；`fillHUDSummary()` 的 `timeText` 一處三元分支 |
+| `src/main.ts` | ① `liveFrame` 的 `hud.update(createHUDStats(...))` 尾端補 `resolveDrillTimeLimitMs(activeDrillConfig)`；② `hudElapsedMs` 歸零的 if-chain 納入 `'armed'` |
+| `src/ui/HUD.test.ts` | +6 條（零回歸三案例／FR-65.8 起始值／遞減／歸零／超時 clamp／非有限 limit／重用物件換回正計時） |
+| `src/session/drillFamily.test.ts` | +41 條（38 個 roster drill 的逐一分類 + 3 條集合／完整性／後援閘斷言）；`SCHEDULABLE_DRILL_SOURCES` 的 `Pick` 擴至 `endCondition` |
+| `assets/t4-*.png` | 實機截圖四張 |
+
+`formatElapsed()`、`HUDSummary`／`HUDHandle`／`createHUD()` 簽名、`createHUDSummary()` 的預設物件、`DrillRunner.ts` 皆**零修改**（Invariants 全數達成）。
+
+### 2. 為何讀 `endCondition` 而非 `timing.timeLimitMs`（DoD 指名記錄）
+
+兩者是**不同的量**，只是單位都叫毫秒：
+
+| | `endCondition.value`（`type === 'timeLimit'`） | `timing.timeLimitMs` |
+|---|---|---|
+| 語意 | 這場 drill **設計上的總時長** | `targetCount` 型的**後援閘**（跑太久就收） |
+| roster 典型值 | 60 000（spider-shot 家族／tracking pilot） | 120 000 |
+| 實際結束時機 | 就是它 | 多在 20–40 秒由 `reachedCount` 先達成 |
+
+拿後援閘倒數，`counterstrafe` 一開場就會顯示「還剩 1:58」然後在 1:38 左右突然結束——**一個會說錯話的指標**（C-D3 的精神）。分類因此只讀 `endCondition`，且寫成單一 exported 純函式：HUD 呈現與遍歷分類測試讀的是同一個定義，而不是各算一套（C-D4）。
+
+### 3. FR-65.8 不需要額外的相位分支
+
+`fillHUDSummary()` 只看 `elapsedMs`：`elapsedMs === 0` 時倒數型自然顯示 `timeLimitMs`（`01:00.0`）、正計時型顯示 `00:00.0`。前提是 **`'armed'` 也要把 `hudElapsedMs` 歸零**——這正是 T1 Surprise 3 / T3 留給 T4 的那條 if-chain（`main.ts:1824`）。若漏掉，新相位會落到 `else` 之外而保留上一場殘值，倒數型甚至會在待命期顯示一個已經扣掉的剩餘值。
+
+### 4. 實機證據（Edge，dev server 5173，1280×800）
+
+以一次性 Playwright 腳本驅動（走**生產** `PointerLock` 模組的取鎖模擬，同 `raw-mouse-sampling.spec.ts`；腳本與其暫用 config 已於驗證後刪除，未進 repo）：
+
+| DoD 項 | 實測 |
+|---|---|
+| `spider-shot-v3` 自 `01:00.0` 單調遞減至 `00:00.0`，歸零瞬間結束 | 117 個取樣（每 500 ms）：`00:59.0 → 00:58.5 → … → 00:00.5 → 00:00.0/running → 00:00.0/ended`，**無任何一筆回升**；Result 畫面於 `00:00.0` 當下出現（[`t4-ended.png`](assets/t4-ended.png)） |
+| 待命期顯示起始值、不閃動、不提早歸零（FR-65.8） | `armed` 15 個取樣（每 100 ms）**全為 `01:00.0`**（[`t4-armed.png`](assets/t4-armed.png)） |
+| 倒數期同上 | `countdown` 12 個取樣（每 150 ms）**全為 `01:00.0`**（[`t4-countdown.png`](assets/t4-countdown.png)） |
+| `targetCount` 型零回歸 | 預設 `counterstrafe_ad_v1`：`armed`／`countdown` 皆 `00:00.0`；`running` 後 `00:00.5 → 00:05.1` 單調遞增（[`t4-countup.png`](assets/t4-countup.png)） |
+
+> T4 doc 的實機項寫 `counterstrafe_cued_v1`，但該 drill **不在 `availableDrills`**（`drillFamily.test.ts` 另有一條斷言釘死它的 off-roster 身分），UI 選不到。改用 app 預設載入的 `counterstrafe_ad_v1`——同為 `targetCount` 型 counterstrafe，零回歸的構念相同。
+
+### 5. 遍歷測試寫死的倒數型 drill id 集合（DoD 指名記錄）
+
+本 WP 當下，38 個可排程 drill 中**恰 5 個**為 `timeLimit` 型（id 為 roster 註冊 id）：
+
+```
+spider-shot-v2
+spider-shot-v3
+spider-shot-wide-v1
+tracking_core_pr_pilot_v1_2deg_5dps
+tracking_reversal_pilot_v1_high
+```
+
+其餘 33 個維持正計時。這條測試同時斷言 `SCHEDULABLE_DRILL_SOURCES` 的 id 集合等於 `SCHEDULABLE_DRILL_IDS`——新 drill 若沒被列入，紅的是「名單不完整」而不是靜默預設成正計時。
+
+### 6. 驗證證據
+
+| 項目 | 結果 |
+|---|---|
+| `npx vitest run src/ui/HUD.test.ts` | **exit 0** — 9 passed（3 → 9） |
+| `npx vitest run src/session/drillFamily.test.ts` | **exit 0** — 146 passed（105 → 146） |
+| `npm run typecheck` ×2 | **exit 0 / exit 0** |
+| `npx vitest run`（全量） | **exit 0** — Test Files **258 passed / 1 skipped**；Tests **3088 passed / 2 skipped** |
+
+對照 T3 的 258 files / 3041 tests：**+0 file、+47 tests**（HUD 6 + drillFamily 41），逐條對得上。**零測試由綠轉紅。**
+
+### 7. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T4-a** | 分類寫成 `src/drill/DrillConfig.ts` 的 exported 純函式 `resolveDrillTimeLimitMs()`，`main.ts` 直接在呼叫點用它，**不**另設 `activeTimeLimitMs()` 包裝 | T4 doc 寫「在 `main.ts` 新增 `activeTimeLimitMs()`」，但步驟 5 的遍歷測試**無法 import `main.ts`**（top-level await + WebGPU + DOM），只能另寫一份同樣的三元式——那正是 C-D4 禁止的第二定義。落在 `DrillConfig.ts` 讓呈現與測試共用同一個定義；比照既有 `resolveTargetHitbox()` 的先例。單行包裝函式則是多餘的一層 |
+| **T4-b** | 遍歷測試加在既有的 `src/session/drillFamily.test.ts`，而非新開檔 | 該檔已持有**唯一**一份「38 個可排程 drill 的真實 config 來源」清單（`SCHEDULABLE_DRILL_SOURCES`，WP-58 家族 + WP-62 武器兩個投影都用它）。新開檔就得複製整份清單，兩份清單遲早分岔。被推翻：`src/drill/drillTimeLimit.test.ts`（要複製 40 行 import 與 roster） |
+| **T4-c** | `HUDStats.timeLimitMs` **不加 `readonly`**（README §2.3 契約寫 readonly） | `HUDStats` 是每幀重用的物件，`createHUDStats()` 對每個欄位就地賦值；`readonly` 會讓 `target.timeLimitMs = …` 編譯不過。其餘七個欄位也都不是 readonly ⇒ 維持同一慣例 |
+| **T4-d** | `createHUDStats()` 的新參數為**必填**的 `number \| undefined`，非 optional | 只有一個 production 呼叫點；必填讓每個呼叫端明確表態「這個 drill 有沒有總時長」，而不是漏傳就靜默退回正計時。代價是既有測試的一處呼叫補一個 `undefined` |
+| **T4-e** | `createHUDStats()` 恆賦值（含 `undefined`）而非條件式寫入 | 重用物件的 shape 保持穩定（隱藏類別不變動）；同時釘死「上一場的 limit 不會殘留到下一場」——已由一條測試覆蓋（換 drill 後 `timeLimitMs` 必須回 `undefined`） |
+
+### 8. Surprises & Discoveries（T4）
+
+1. **JSON drill 的 `endCondition.type` 是 `string`，擴 `Pick` 的那一刻才爆出來。**
+   `SCHEDULABLE_DRILL_SOURCES` 的第一筆是 `drills/counterstrafe_ad_v1.json`（`resolveJsonModule` 直接推成 `{ type: string }`），把 `Pick` 從 `'drillId' | 'weaponId'` 擴到含 `endCondition` 後 `tsc` 立刻拒收。
+   **處置**：加 `narrowJsonDrill()`——以**檢查值**收窄（非 `as` 斷言），JSON 若長出未知的 end condition 會在此**大聲失敗**而不是被硬轉成期望的形狀。
+   ⇒ 這也說明 roster 中唯一未經 `loadDrill()` 驗證就被測試直接讀的來源是哪一個。
+
+2. **`counterstrafe_cued_v1` 不在 roster，T4 doc 的實機項指到了一個 UI 選不到的 drill。** 見 §4 註。
+
+3. **live 腳本第一個取樣可能拿到空字串。** 相位在模組求值期就是 `'armed'`，但 HUD 的 `timeValue` 要等第一個 `liveFrame` 才被寫入 ⇒ 只等 `drillPhase()` 會取到 `textContent === ''`。與 T3 Surprise 2 是**同一個**失效模式（相位先於首幀），此處再次命中。
+   ⇒ **對 T6 的意義**：等待條件必須是「HUD/overlay 自身已被寫過」，`drillPhase()` 只是必要條件。
+
+4. **倒數的第一個 running 取樣通常已是 `00:59.x` 而非 `01:00.0`。** `expect.poll` 的間隔（100→250→500 ms）讓腳本晚於相位轉換一拍取到。這是**觀測解析度**而非顯示錯誤：`countdown` 期間的 12 個取樣全為 `01:00.0`，起點正確。T6 若要斷言「起點恰為總時長」，須用 rAF 取樣或放寬到一個 poll 間隔。
+
+### Open Questions（T4 留給後續 task）
+
+- **T6**：本切片的實機驗證用的是一次性腳本（已刪）。正式的 live spec（含 arm helper）屬 T6；上面 §8.3／§8.4 的兩個等待條件與取樣解析度細節應直接套用。
+- **T-exit**：倒數型 drill 目前 5 個。若日後 roster 新增 `timeLimit` 型 drill，`drillFamily.test.ts` 的 `COUNTDOWN_DRILL_IDS` 必須同步——這是刻意的「改了要來報到」閘，不是待辦。

@@ -4,7 +4,7 @@ import defaultDrillSource from '../../drills/counterstrafe_ad_v1.json';
 import { createDrillMetricRegistry } from '../history/DrillMetricRegistry.ts';
 import { counterstrafeFreeV1 } from '../drill/counterstrafe_free_v1.ts';
 import { counterstrafeReversalV1 } from '../drill/counterstrafe_reversal_v1.ts';
-import type { DrillConfig } from '../drill/DrillConfig.ts';
+import { resolveDrillTimeLimitMs, type DrillConfig } from '../drill/DrillConfig.ts';
 import { detectionPopinV1 } from '../drill/detection_popin_v1.ts';
 import { holdClickV1 } from '../drill/hold_click_v1.ts';
 import { holdTrackV1 } from '../drill/hold_track_v1.ts';
@@ -341,12 +341,29 @@ describe('WP-58 T1 — invariant 4: family membership does not grant Assessment 
  * optional properties is a weak type, which TypeScript will happily accept an unrelated object for.
  * Requiring `drillId` is what makes "this really is a drill config" a compile-time claim.
  */
+
+/**
+ * WP-65 / T4 — the roster's one JSON-sourced drill needs its `endCondition.type` narrowed:
+ * `resolveJsonModule` types it as plain `string`. Narrowed by checking the value rather than
+ * asserting it, so a JSON that grew an unknown end condition fails loudly here instead of being
+ * cast into the shape the suites below expect. Every other entry is a typed module and needs none
+ * of this.
+ */
+function narrowJsonDrill(
+  source: typeof defaultDrillSource,
+): Pick<DrillConfig, 'drillId' | 'weaponId' | 'endCondition'> {
+  const type = source.endCondition.type;
+  if (type !== 'targetCount' && type !== 'timeLimit') {
+    throw new Error(`${source.drillId} declares an unknown endCondition type: ${type}`);
+  }
+  return { drillId: source.drillId, endCondition: { type, value: source.endCondition.value } };
+}
 const SCHEDULABLE_DRILL_SOURCES: readonly (readonly [
   string,
-  Pick<DrillConfig, 'drillId' | 'weaponId'>,
+  Pick<DrillConfig, 'drillId' | 'weaponId' | 'endCondition'>,
 ])[] = [
   // Ids read from the drill modules, never hand-typed (D-58-T0-2).
-  [defaultDrillSource.drillId, defaultDrillSource],
+  [defaultDrillSource.drillId, narrowJsonDrill(defaultDrillSource)],
   [detectionPopinV1.drillId, detectionPopinV1],
   [trackingV1.drillId, trackingV1],
   [trackingSceneV1.id, trackingSceneV1.drill],
@@ -473,5 +490,52 @@ describe('WP-62 T1 — the map refuses to be built from a polluted roster', () =
     expect(() =>
       buildDeclaredWeaponByDrillId([['tracking_core_pr_pilot_v1', 'tracking_pilot_hold']]),
     ).toThrow(/is not schedulable/);
+  });
+});
+
+/**
+ * WP-65 / T4（FR-65.7）— the third projection over the same roster list: which drills have a total
+ * duration the HUD may count down. The classification lives in `resolveDrillTimeLimitMs()`, read
+ * here off every schedulable drill's real config rather than off a hand-kept list, so a drill that
+ * changes its `endCondition` type cannot quietly change what its Time card shows.
+ */
+const COUNTDOWN_DRILL_IDS = [
+  'spider-shot-v2',
+  'spider-shot-v3',
+  'spider-shot-wide-v1',
+  'tracking_core_pr_pilot_v1_2deg_5dps',
+  'tracking_reversal_pilot_v1_high',
+] as const;
+
+describe('WP-65 T4 — exactly the time-limited drills expose a duration to count down', () => {
+  it.each(SCHEDULABLE_DRILL_SOURCES)('%s classifies from its own endCondition', (drillId, source) => {
+    const expected = (COUNTDOWN_DRILL_IDS as readonly string[]).includes(drillId);
+    expect(source.endCondition.type === 'timeLimit').toBe(expected);
+    // The count-up half is the one that matters: a `targetCount` drill that leaked a limit would
+    // show "118 s remaining" from its 120 s backstop — information the drill never promised.
+    expect(resolveDrillTimeLimitMs(source as DrillConfig) !== undefined).toBe(expected);
+  });
+
+  it('names every countdown drill in the frozen list, and nothing else', () => {
+    const fromRoster = SCHEDULABLE_DRILL_SOURCES.filter(
+      ([, source]) => resolveDrillTimeLimitMs(source as DrillConfig) !== undefined,
+    ).map(([drillId]) => drillId);
+    expect(new Set(fromRoster)).toEqual(new Set(COUNTDOWN_DRILL_IDS));
+    expect(fromRoster).toHaveLength(COUNTDOWN_DRILL_IDS.length);
+    // Covered against the roster the app actually offers, so a new drill nobody listed here fails
+    // this suite rather than silently defaulting to counting up.
+    expect(new Set(SCHEDULABLE_DRILL_SOURCES.map(([drillId]) => drillId))).toEqual(
+      new Set(SCHEDULABLE_DRILL_IDS),
+    );
+  });
+
+  it('never reads the 120 s backstop as a duration', () => {
+    // `timing.timeLimitMs` and `endCondition.value` are different quantities; the drills that carry
+    // both are exactly where confusing them would be invisible.
+    for (const [drillId, source] of SCHEDULABLE_DRILL_SOURCES) {
+      const limit = resolveDrillTimeLimitMs(source as DrillConfig);
+      if (limit === undefined) continue;
+      expect(limit, drillId).toBe(source.endCondition.value);
+    }
   });
 });

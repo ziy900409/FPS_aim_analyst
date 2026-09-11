@@ -79,7 +79,12 @@ import {
   type AvailableDrill,
 } from './drill/drillRegistry.ts';
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
-import { resolveTargetHitbox, targetHitboxToConfig, type DrillConfig } from './drill/DrillConfig.ts';
+import {
+  resolveDrillTimeLimitMs,
+  resolveTargetHitbox,
+  targetHitboxToConfig,
+  type DrillConfig,
+} from './drill/DrillConfig.ts';
 import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts';
 import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
@@ -1821,7 +1826,9 @@ function liveFrame(now: number): void {
   if (phase === 'running') {
     if (hudRunStartMs === null) hudRunStartMs = now;
     hudElapsedMs = now - hudRunStartMs;
-  } else if (phase === 'countdown' || phase === 'idle') {
+  } else if (phase === 'countdown' || phase === 'idle' || phase === 'armed') {
+    // WP-65 / T4（FR-65.8）：`'armed'` 必須一起歸零,否則新相位落到 else 之外、`hudElapsedMs` 保留
+    // 上一場殘值 ⇒ 待命期的 Time 卡會顯示上一場的時間（倒數型還會顯示一個已經扣掉的剩餘值）。
     hudRunStartMs = null;
     hudElapsedMs = 0;
   }
@@ -1880,7 +1887,21 @@ function liveFrame(now: number): void {
       }
     })();
   }
-  hud.update(createHUDStats(sharedState, phase, hudElapsedMs, recorder.hitCount, recorder.fireCount, recorder.hitCount, hudStats));
+  // WP-65 / T4（FR-65.7）：`timeLimit` 型 drill 的 Time 卡倒數,`targetCount` 型（傳 `undefined`）
+  // 維持正計時。分類由 `resolveDrillTimeLimitMs()` 單一定義——讀 `endCondition`,不讀後援閘
+  // `timing.timeLimitMs`（那會讓 targetCount drill 顯示 120 秒倒數）。
+  hud.update(
+    createHUDStats(
+      sharedState,
+      phase,
+      hudElapsedMs,
+      recorder.hitCount,
+      recorder.fireCount,
+      recorder.hitCount,
+      hudStats,
+      resolveDrillTimeLimitMs(activeDrillConfig),
+    ),
+  );
   // WP-65 / T3：`countdownRemainingMs` 的**唯一**讀取點——sim→render 唯讀只開這一個出口
   // （比照既有 `drillRunner.phase`，見 README §2.4 的明帳）。`phase` 沿用上方既有區域變數。
   drillStartOverlay.update(phase, drillRunner.countdownRemainingMs);
