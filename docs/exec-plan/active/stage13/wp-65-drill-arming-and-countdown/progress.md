@@ -313,3 +313,131 @@ meta.validity = **不存在**（null）· meta.suspect = false · meta.schemaVer
 
 - **T4（新增，來自 Surprise 3）**：`main.ts:1777` 的 `hudElapsedMs` 歸零 if-chain 必須把 `'armed'` 納入（與 `'countdown'`／`'idle'` 同組），否則待命畫面的 Time 卡會顯示上一場殘留值，違反 FR-65.8。T4 開工時一併處理並具名斷言。
 - **T2**：`createDrillRunner` 在 `main.ts` 有**兩個**建構點（初始建構 + 換 drill 時重建），`requireArm: true` 必須兩處都傳，否則「換 drill 後不需取鎖」會成為靜默漏洞。T2 須具名斷言五條路徑（restart／換武器／換場景／換 drill／Session Plan block）皆進 `armed`。
+
+## §T2 App 接線：取鎖解除待命、`start()` 前釋鎖、arena 歸零（2026-09-11）
+
+**狀態**：✅ 完成。待命閘已接上真實 app，五條 start 路徑（restart／換武器／換場景／換 drill／Session Plan block）全部實測回到待命並要求一次新的取鎖。
+
+執行基準 commit：`7b98d3e`（T1 落地）。工作區另有平行 session 的 `graphify-out/` 未提交改動，**本切片未觸碰、未 stage**（[parallel-sessions-coedit-index-docs]）。
+
+### 1. 落地內容
+
+| 檔案 | 改動 |
+|---|---|
+| `src/main.ts` | ① `requireArm: true` 傳入 **三個** `activeDrillRunner` 建構點；② `drillRunner` façade 的 `start()` 內於 `activeDrillRunner.start()` **之前** 清 `armRequested` + 釋鎖；③ 新增 `armOnPointerLock()` 訂閱者（取鎖 → `recorder.reset()` + `hudRunStartMs = null` + `armRequested = true`），並在掛上當下補呼叫一次 |
+| `src/input/InputSampler.test.ts` | +1 測試：FR-65.5 的具名斷言（整個取鎖手勢序列零 fire 事件）。**`InputSampler.ts` 本體零修改** |
+
+### 2. Invariants 實測（`git diff --stat` 為空 = 成立）
+
+`src/input/PointerLock.ts`、`src/input/InputSampler.ts`、`src/loop/SimLoop.ts`、`src/drill/DrillRunner.ts`、`src/target/TargetManager.ts`、`src/display/experimentSession.ts`、`research/` **七者 diff 皆為空**。`drillRunner.start()` 的四條呼叫端**呼叫點未改**，只改被呼叫的 façade 實作。
+
+### 3. 三個建構點（**T2 doc 與 T1 OQ 都少算了一個**）
+
+T2 doc 步驟 1 與 T1 的 Open Question 都寫「兩個建構點」。實際為 **三個**：
+
+| # | 位置 | 路徑 |
+|---|---|---|
+| 1 | `main.ts:1017` | 初始建構 |
+| 2 | `main.ts:1454` | `activateDrill()` —— 換 drill／**Session Plan 的每個 block** |
+| 3 | `main.ts:1496` | `loadSceneById()` —— 換場景 |
+
+漏掉第 2 個會讓「換 drill 與 Session Plan 的每個 block 都不需點擊」成為靜默漏洞——正是使用者 2026-09-11 拍板第三條要擋的情境。⇒ T2 DoD 第一條「`git grep -n "requireArm" src/main.ts` 回兩處」**改為回三處**（外加一行說明註解）。
+
+### 4. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T2-a** | `armOnPointerLock` 訂閱者掛在 `resetRunPresentation()` **之後**（`main.ts:1346`），而非 T2 doc 指定的 `main.ts:991` 附近 | `hudRunStartMs` 是宣告於 `main.ts:1301` 的 `let`，而本檔 `main.ts:1112-1113` 有 **dev-only top-level await**（`measureDisplayHz`，約 10 幀）。掛在 991 時，受試者若在該 await 視窗內點擊取鎖，callback 會對尚在 TDZ 的 `hudRunStartMs` 賦值 → `ReferenceError`。此為 KI-013／WP-54 boot barrier 同型的既有危害，不是新風險，但新訂閱者必須避開。被推翻的替代：維持 991 但改用 `resetRunPresentation()` 代替兩行——T2 doc 步驟 6 已明確禁止（時機不同，見 T2-c） |
+| **T2-b** | 掛上訂閱者後**立即以當下 `pointerLock.locked` 補呼叫一次** | T2-a 把註冊點往後移，就打開了「鎖在註冊前就取得」的視窗（同一個 dev await）。沒有這行，那一場會永遠停在待命——把一個 TDZ crash 換成一個更難察覺的靜默卡死。補呼叫走**同一個函式**、同一條規則，不是特例分支 |
+| **T2-c** | `recorder.reset()` 放在 arm 當下，**不**併入 `resetRunPresentation()` | 兩者時機不同：`resetRunPresentation()` 在 `start()` **之前**跑，那時待命期的 tick 尚未產生；併過去等於在錯的時點清一次，待命期照樣從零重新堆積 324 s 後溢位。實測見 §T2.6（NFR-65.4） |
+| **T2-d** | 顯式 `sharedState.armRequested = false`，不只依賴 `resetState()` | `resetState()` 確實會清（T1 已驗），但「每場都要一次新手勢」這條語意寫在 `main.ts` 本地才讀得到，不必回頭追 `DrillRunner` 內部。成本 = 一行；收益 = 該不變式在它被依賴的地方可見 |
+
+### 5. 步驟 5／6 的檢視結論（T2 doc 要求記錄）
+
+- **步驟 2 的順序為何不觸發 T5 旗標**（FM-3）：釋鎖發生在 `activeDrillRunner.start(config)` **之前**，此刻 phase 必為 `'idle'`——四條路徑都先呼叫 `drillRunner.restart()`（`activateDrill`／`loadSceneById` 另外重建 runner，新 runner 亦為 `'idle'`），初次則是建構後尚未 `start()`。T5 的偵測條件是 `phase === 'countdown' || 'running'` ⇒ 本處主動釋鎖恆不滿足，不會誤標。**T1 §2 第 5 列已確認 `main.ts:581` 的 `recording` 判準（`countdown`/`running`）把 `'armed'` 排除在外，T5 可直接沿用同一判準。**
+- **步驟 5 `syncControlsVisibility()`**：判準 `!pointerLock.locked || phase === 'ended'` **無需修改**。待命相位恆為未取鎖 ⇒ 研究員 Controls 會顯示，這是想要的（受試者待命時可換 drill），實測五條路徑皆 `locked=false` 且 Controls 可操作。
+- **步驟 6 `resetRunPresentation()`**：確認**不**把 arm 時的兩行併入，理由見 T2-c。
+
+### 6. 驗證證據（全部為本切片實際執行輸出）
+
+#### 6a. 靜態與單元
+
+| 項目 | 結果 | 對照 |
+|---|---|---|
+| `npm run typecheck`（×2） | **exit 0 / exit 0** | 同 T1 |
+| `npx vitest run`（全量） | **exit 0** — Test Files **257 passed / 1 skipped (258)**；Tests **3026 passed / 2 skipped (3028)**；19.62 s | T1 = 257 files / 3025 tests ⇒ **+1 test**（InputSampler 的 FR-65.5 斷言），**零測試由綠轉紅** |
+| `git diff --stat -- src/ tests/ research/` | `src/main.ts` +42/−5、`src/input/InputSampler.test.ts` +19 | 兩檔，其餘為空 |
+
+#### 6b. 實機（dev server，真瀏覽器 Chromium，生產 `PointerLock` 模組）
+
+> 全程以 `.playwright-tmp/wp65-t2-history` 為 `FPS_HISTORY_ROOT`；執行前探針確認 5173 淨空、`validRunCount: 0` ⇒ 真實 `data/session-history/` **未被寫入**（[e2e-port-5173-collision]）。每輪帶 `__wp65Sentinel`，全部回報 `sentinel: true` ⇒ 無 HMR full reload 污染（[hmr-reload-resets-long-idle-measurements]）。
+
+**待命不自走**（DoD 第 2 條）：開機 `phase = 'armed'`；不點任何東西 3 s 後仍 `armed`、`armRequested=false`、`visible` 事件 **0**、HUD Time 停在 `00:00.0`。recorder ticks 仍 0 → 319 累加（`recordTickFromState` 不看相位，正是 D-65-5 的理由）。
+
+**倒數 3 秒**（DoD 第 3 條）：以 `ticks[0].t`（arm 當下 `recorder.reset()` 後的第一個 tick）→ 首個 `visible` 事件 `t`，**同一時鐘域（sim clock）**量測，n=6：
+
+```
+rep 1..6 sim span = 3000.000 ms（六輪逐位相同）
+mean=3000.000  min=3000.000  max=3000.000  |span − 3000| max = 0.000 ms
+```
+
+> **量測方法的坑（必記）**：第一版用 `performance.now()`（wall clock）蓋取鎖時刻、再減 `visible` 事件的 `t`（**sim clock**），得到 2789–2914 ms，看似「倒數短少約 100–200 ms」。那是**跨時鐘域相減**的假象——sim clock 以固定 tick 推進並在 headless 下累積 catch-up 落後，兩者原點不同且差值隨時間漂移（實測 2789→2914 ms 單調漂移即為證據）。改為同域量測後為逐位精確的 3000.000 ms。**T6 的 e2e 斷言必須同域量測**，否則會寫出一條會隨機器負載飄紅的假斷言。
+
+**五條 start 路徑**（DoD 第 4/5 條 + 使用者拍板第三條）：
+
+| 路徑 | 結果 |
+|---|---|
+| 換武器（`Weapon` → m4a4） | `phase=armed, locked=false, armRequested=false` |
+| 換場景（`Scene` → field-low） | `phase=armed, locked=false, armRequested=false` |
+| 換 drill（`Load` → tracking_v1） | `phase=armed, locked=false, armRequested=false` |
+| Restart（Controls） | `phase=armed, locked=false, armRequested=false` |
+| Result → **再測目前 Drill** | `phase=armed, locked=false, armRequested=false`，recorder ticks 8081 → 180（`resetRunPresentation` 生效）；**+3 s 不點擊仍 armed**；補一次點擊 → `countdown` |
+| Session Plan（custom，2 item ×1 rep） | 兩個 block **各自**停在 `armed`、等 2.5 s 仍 `armed`（`armRequested=false`），各需一次新點擊才 `countdown`；`item=0 tracking_scene_v1`、`item=1 spider-shot-wide-v1`，plan 最終 `done` |
+
+Session Plan 走既有的 WP-58 T6 縫 `__fpsTest.startSessionPlanWithoutGate()`（資格閘在自動化下不可能通過，該縫仍跑真閘、只跳過拒入，不偽造通過——[eligibility-gate-blocks-automation]）。
+
+**FR-65.5**（DoD 第 6 條）：spider-shot-v2 完整 60 s live run、受試者全程未開火 ⇒ 匯出 recorder 的 `type === 'fire'` 事件 **0 筆**（`ticks=8081, visibleEvents=1`）。單元側另有具名斷言（見 §T2.7）。
+
+**NFR-65.4 / FM-2**（DoD 第 7 條）：見下方 §6c。
+
+#### 6c. NFR-65.4：≥ 10 分鐘待命後的 arena
+
+**實測**（dev server，真瀏覽器；以 route-block `/@vite/client` 關閉 HMR，理由見 Surprise 7）：
+
+| t (s) | `drillPhase()` | `ticks.length` | `recorderOverflow` |
+|---:|---|---:|---|
+| 0 | `armed` | 334 | `false` |
+| 301 | `armed` | 38 776 | `false` |
+| **331** | `armed` | **41 528** | ✅ **`true`** |
+| 662（= 11 分 2 秒） | `armed` | 41 528 | `true` |
+
+- 全程 `sentinel: true` ⇒ **無 HMR full reload 污染**，662 s 為單一連續待命窗。
+- `ticks` 在 +331 s 停在 **41 528** 並翻 `overflow`，與 `capacityForDrill(128, 300, 128)` 及 T0 §4 的翻轉點**逐位相符**（消耗率 ≈ 128 ticks/s）。
+- **取鎖 arm 當下** → `recorder.reset()` ⇒ ticks `41 528 → 66`、`recorderOverflow` **`true → false`**。
+- 該場 spider-shot-v2 跑到自然結束（60 s timeLimit）：ticks **8 079**、**`meta.recorderOverflow === false`** ✅。
+
+> **D-65-5 是承重的，不是防禦性的**：本輪在 arm 之前 `recorderOverflow` 已**確實**為 `true`。若不做 arm 當下的 `recorder.reset()`，這場資料完全有效的 run 會被 `recorderOverflow` → `meta.suspect` 的 OR 集合整場標紅。FM-2 不是假想風險，實測 5 分 31 秒即觸發。
+
+### 7. FR-65.5 的具名單元斷言
+
+`src/input/InputSampler.test.ts` 新增一條，釘死的是**整個取鎖手勢序列**而非單一事件：未鎖定時 `mousedown`（取鎖那一下）→ `locked = true`（`pointerlockchange` 成立）→ 已鎖定時 `mouseup`。結果 `state.input.size() === 0`、`bufferOverflow === 0`，其後一次真開火仍照常採計。
+
+為什麼要釘整個序列：擋住 down 的是 `isLocked` 閘門，但擋住 up 的**不是**閘門——`onMouseUp` 刻意不受閘門限制（stuck-fire 防護），真正擋住它的是 `fireButtonHeld` latch（down 未被採計 ⇒ latch 為 false ⇒ up 直接 return）。只斷言「未鎖定時 down 不採計」會漏掉 up 這半條，而 arm 手勢的 up **必然**落在鎖定成立之後。
+
+### 8. Surprises & Discoveries（T2）
+
+1. **`createDrillRunner` 在 `main.ts` 有三個建構點，不是兩個。** T2 doc 步驟 1 與 T1 的 OQ 都寫兩個，漏掉 `activateDrill()`（`main.ts:1454`）——而那正是換 drill 與 **Session Plan 每個 block** 的路徑。若照文件只改兩處，使用者拍板第三條會靜默失效，且單元測試抓不到（`main.ts` 不在單元測試覆蓋內）。實測五條路徑才是抓到它的原因。
+2. **新訂閱者不能掛在 T2 doc 指定的 `main.ts:991`。** `hudRunStartMs`（`let`，宣告於 1301）與 dev-only top-level await（1112-1113）之間存在 TDZ 視窗。見 T2-a／T2-b。
+3. **真實 Pointer Lock 在 headless Chromium 可以取得。** 以 Playwright 的 trusted `canvas.click()` 實測 `pointerLock.locked === true`，全部實機證據皆走**真鎖**，未用 `pointerLockElement` getter 覆寫。⇒ **README FM-4 的前提「Chromium headless 無法真正取得 Pointer Lock」在本環境不成立**，T6 的第一步 spike 可能比規劃期預期簡單；但 T6 仍須自行複驗（不同 Playwright 啟動參數／CI 環境可能不同），本結論只覆蓋「headless Chromium + trusted click + 同源 canvas」。
+4. **跨時鐘域相減會製造「倒數短少 100–200 ms」的假象。** 見 §6b 的量測方法坑。這是 T6 寫斷言時最容易踩的形態——數字看起來夠接近 3000，會被當成「量到了」而寫進一條隨負載飄紅的斷言。
+5. **Result 畫面的動作按鈕在研究員模式下被 `#drill-controls` 蓋住。** `phase === 'ended'` 時 `syncControlsVisibility()` 讓 Controls 顯示，與 Result dialog 同時在畫面上；hit-test 顯示「再測目前 Drill」按鈕中心點的 topmost element 是 `#drill-controls`。**此為既有條件**（該判準本 WP 未改，`'ended'` 一直會顯示 Controls），非 T2 引入，也不在 T2 範圍；但 T3 要放畫面中央大字 overlay 時會面對同一個 z-index 家族，**建議 T3 一併處理**（OQ-65.2 已指定 overlay `z-index` 低於 Result dialog、高於 HUD，需確認 Controls 的落點）。
+6. **`再測目前 Drill` 走 `window.confirm()`。** 自動化預設會 auto-dismiss ⇒ 不處理 dialog 時該按鈕看起來「沒反應」（phase 仍 `ended`、`armRequested` 仍為前一場的 true），極易被誤判為待命閘壞掉。T6 若要覆蓋這條路徑，必須註冊 dialog handler。
+
+7. **平行 session 正在編輯本 repo，vite HMR 會靜默作廢長時量測。** 第一輪 11 分鐘 soak 在 +602 s 遭 full reload（`sentinel: false`、ticks 由 41 528 歸零重數），且 reload 後 drill 退回預設的 `counterstrafe_ad_v1`——該 drill **無後援閘**（T0 Surprise 3），於是後續「等 drill 自然結束」永遠等不到，錯誤表現為 timeout 而非「量到錯的數字」。處置：以 Playwright `page.route('**/@vite/client', abort)` 關掉 HMR client（只停 HMR，app 模組圖照常載入），並加一條「arm 當下 drill 必須仍是 spider-shot-v2」的守門斷言，讓漂移**大聲失敗**而不是掛住。第二輪即取得乾淨的 662 s 連續窗。
+   ⇒ **對 T6 的意義**：任何跨越數分鐘的 live e2e 都該封掉 HMR client，否則在有人平行開發時會間歇性紅、且紅的樣子（timeout）與真 bug 難以區分。[hmr-reload-resets-long-idle-measurements] 記載的失效模式在此再度成立，本次並多出「reload 後 drill 身分漂移」這一層。
+
+### Open Questions（T2 留給後續 task）
+
+- **T3（來自 Surprise 5）**：待命提示／倒數 overlay 的 `z-index` 需與 `#drill-controls`（研究員 Controls）一併確認，而不只是與 Result dialog 和 HUD 比較。`'ended'` + 研究員模式下三者會同時在畫面上。
+- **T6（來自 Surprise 3/4）**：① 真鎖在本環境可用 ⇒ FM-4 的後備 `?autoArm=1` 縫大機率不需要，但仍須在 T6 自行複驗；② 任何「3 秒倒數」的 e2e 斷言必須在 sim clock 單域內量測（`ticks[0].t` → 首個 `visible.t`），不得混用 `performance.now()`。
+- **T5**：本切片已確認 `armOnPointerLock` 與 T5 的掉鎖偵測會共用同一個 `pointerLock.onChange` 管道；T5 新增偵測時應**再新增一個訂閱者**（比照本切片），不要改寫 `armOnPointerLock`——兩者條件互斥（`armed` vs `countdown`/`running`），合併只會讓兩個構念糾纏。

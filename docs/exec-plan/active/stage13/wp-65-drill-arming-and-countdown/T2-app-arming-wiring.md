@@ -11,7 +11,8 @@
 ## Steps
 
 1. **建構期**（`src/main.ts`，`activeDrillRunner` 的兩個建構點）：
-   - `createDrillRunner(sharedState, activeTargetManager, { requireArm: true })` —— 共兩處：[main.ts:1009](../../../../../src/main.ts#L1009) 與 `loadSceneById()` 內的 [main.ts:1449](../../../../../src/main.ts#L1449)。**兩處都要改**，漏一處會造成「換場景後就不需要點擊」的情境性不一致。
+   - `createDrillRunner(sharedState, activeTargetManager, { requireArm: true })` —— 共**三處**：初始建構、`activateDrill()`（換 drill／Session Plan block）與 `loadSceneById()`（換場景）。**三處都要改**，漏一處會造成「換 drill／換場景後就不需要點擊」的情境性不一致。
+   > 規劃期本步驟寫「兩處」並漏掉 `activateDrill()`；T2 實作時以五條路徑實測抓出，見 [progress.md §T2.3](progress.md)。
 2. **釋鎖 + 進待命的單一入口**（D-65-1）：在 `main.ts` 的 `drillRunner` 包裝物件（[main.ts:1021-1035](../../../../../src/main.ts#L1021-L1035)）的 `start()` 內，於 `activeDrillRunner.start(config)` **之前**加入：
    ```ts
    sharedState.armRequested = false;                       // 顯式，不只依賴 resetState()
@@ -44,7 +45,8 @@
 
 ## Definition of Done
 
-- [ ] `git grep -n "requireArm" src/main.ts` 回兩處（`activeDrillRunner` 的兩個建構點），無遺漏
+- [x] `git grep -n "requireArm" src/main.ts` 回**三處** call site（`main.ts:1017` 初始、`main.ts:1454` `activateDrill()`、`main.ts:1496` `loadSceneById()`），無遺漏
+  > **T2 實作更正**：本檔步驟 1 原寫「兩個建構點」，實際為三個——漏記的是 `activateDrill()`，即換 drill 與 **Session Plan 每個 block** 的路徑。詳見 [progress.md §T2.3](progress.md)。
 - [ ] 實機：載入 app → 不點任何東西 → 目視確認**沒有任何目標出現**、HUD Time 不動；螢幕錄影或截圖存證並記入 `progress.md`
 - [ ] 實機：點左鍵 → 3 秒後首目標出現。以 `performance.now()` 量測「取鎖 `pointerlockchange` → 首個 `visible` event 的 `t`」，記錄實測值並確認落在 `3000 ± 50 ms`（tick 量化 + rAF 對齊的合理窗）
 - [ ] 實機：drill 結束 → Result → 「重新測試」 → 確認**再次回到待命**且需重新點擊（FR-65.4 / OQ-65.3）

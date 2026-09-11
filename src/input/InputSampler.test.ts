@@ -188,6 +188,25 @@ describe('InputSampler — 開火採集（mousedown 左鍵 + event.timeStamp，�
     expect(state.input.size()).toBe(0);
   });
 
+  it('WP-65 / T2（FR-65.5）：解除待命的取鎖手勢完整序列不產生任何 fire 事件', () => {
+    // 真實時序：mousedown 落在**未鎖定**時（取鎖請求由該次 click 發出），瀏覽器非同步授予鎖，
+    // 因此 mouseup 多半已經**在鎖定中**抵達。擋住 down 的是 isLocked 閘門；擋住 up 的**不是**
+    // 閘門（onMouseUp 刻意不受閘門限制，以保 stuck-fire 防護），而是 `fireButtonHeld` latch
+    // ——down 未被採計 ⇒ latch 為 false ⇒ up 直接 return。兩道一起才讓 FR-65.5 成立，故此處
+    // 釘死的是整個序列而非單一事件：D-65-1 選「取鎖 = arm」正是為了不必在 InputSampler 另加閘。
+    locked = false;
+    target.dispatch('mousedown', mouseEvent(0, 512.25)); // 受試者點左鍵解除待命
+    locked = true; // pointerlockchange → 鎖定成立（main.ts 於此翻 armRequested）
+    target.dispatch('mouseup', mouseEvent(0, 530.5)); // 放開時已在鎖定中
+
+    expect(state.input.size()).toBe(0);
+    expect(state.inputMeta.bufferOverflow).toBe(0);
+
+    // 其後的真實開火仍照常採計（證明上面擋掉的是 arm 手勢，不是把開火整條關掉）
+    target.dispatch('mousedown', mouseEvent(0, 900.75));
+    expect(drainToArray(state)).toEqual([{ type: 'fire', down: true, t: 900.75 }]);
+  });
+
   it('中鍵不入緩衝（右鍵 ADS 語意見 WP-24 / T1 describe）', () => {
     // WP-24 / T1：右鍵改採計為 ADS（見下方 ADS describe）；此處僅驗中鍵仍不污染開火緩衝。
     target.dispatch('mousedown', mouseEvent(1, 20)); // 中鍵

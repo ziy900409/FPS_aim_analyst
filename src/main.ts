@@ -14,6 +14,7 @@ import { createCrosshair } from './ui/Crosshair.ts';
 import { createScopeOverlay } from './ui/ScopeOverlay.ts';
 import { createExportPanel } from './ui/ExportPanel.ts';
 import { createHUD, createHUDStats, type HUDStats } from './ui/HUD.ts';
+import { createDrillStartOverlay } from './ui/DrillStartOverlay.ts';
 import { createResultScreen } from './ui/ResultScreen.ts';
 import { buildResultPresentation, exportBasename } from './results/ResultPresentation.ts';
 import { createHistorySaveStatus } from './ui/HistorySaveStatus.ts';
@@ -981,6 +982,10 @@ function showResultAndTrackHistory(payload: ExportPayload): Promise<HistorySaveS
 // WP-8 / T3（FR-8.3）— 即時 HUD：rAF 只讀 SharedState + recorder counters，不進 sim、不 snapshot。
 const hud = createHUD();
 
+// WP-65 / T3（FR-65.6）— 待命提示與倒數數字。與 HUD 同為 rAF 唯讀呈現層，故建在它旁邊；
+// `pointer-events:none` 讓待命期的點擊穿透到 canvas 取鎖（＝解除待命的訊號，D-65-1）。
+const drillStartOverlay = createDrillStartOverlay();
+
 // WP-3 / T1+T3（FR-3.1/3.3）— 輸入採集：keydown/keyup（A/D/W/S）與開火 mousedown（左鍵）蓋
 // event.timeStamp 寫入 sharedState.input，供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；
 // 掛在 window（鍵盤事件不落在 canvas；lock 中滑鼠事件亦冒泡至 window）。開火以 pointerLock.locked
@@ -1005,8 +1010,11 @@ pointerLock.onChange((locked) => {
 // tick 由 simStep 呼叫；時間源為 sim clock，非 rAF）。
 // WP-5 / T1（FR-5.1）— fire 事件在 sim tick 內就地 raycast（camera 中心射線 → 命中即擊殺）。
 // 傳入 sceneManager.camera：sim 唯讀其朝向（由 CameraController 走輸入路徑寫入，非 sim；雙迴圈邊界）。
+// WP-65 / T2（FR-65.4，D-65-2）— `requireArm: true` **只**在 app 傳；全部測試與 fpsTestHarness
+// 一律省略第三參數（FM-1）。本檔共三個 `activeDrillRunner` 建構點（此處 + activateDrill +
+// loadSceneById），三處都必須傳，漏一處就會出現「換 drill／換場景後不需點擊」的情境性不一致。
 let activeTargetManager = createTargetManager(activeDrillConfig);
-let activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
+let activeDrillRunner = createDrillRunner(sharedState, activeTargetManager, { requireArm: true });
 const targetManager: TargetManager = {
   tick(state, nowMs): void {
     activeTargetManager.tick(state, nowMs);
@@ -1021,6 +1029,17 @@ const targetManager: TargetManager = {
 const drillRunner: DrillRunner = {
   start(config): void {
     frameLog.reset();
+    // WP-65 / T2（FR-65.4，D-65-1）— 待命閘的**單一入口**。restartActiveDrill / loadWeaponById /
+    // loadSceneById / activateDrill 四條路徑（Session Plan 的每個 block 走 activateDrill）全部收斂
+    // 到這一個 start()，故在這裡釋鎖 = 四條路徑行為一致，不需在各呼叫端各寫一次。
+    // 釋鎖的理由：連續 session 中受試者可能**仍持鎖**，若不先釋放，`armRequested` 就沒有新的取鎖
+    // 事件可翻 ⇒ 下一場會永遠停在待命。顯式清 armRequested 而不只依賴 resetState()，是為了讓
+    // 「每場都要一次新手勢」這條語意在本檔可讀，而不必回頭追 DrillRunner 內部。
+    // **順序關鍵**（FM-3）：此刻 activeDrillRunner.phase 必為 'idle'（四條路徑都先 restart()，
+    // 初次則是建構後未 start），尚未被設為 'armed'，更不是 'countdown'/'running' ⇒ 本處主動釋鎖
+    // 觸發的 pointerlockchange 恆不滿足 T5 掉鎖偵測的 phase 條件，不會誤標效度旗標。
+    sharedState.armRequested = false;
+    if (document.pointerLockElement !== null) document.exitPointerLock();
     activeDrillRunner.start(config);
   },
   tick(state, nowMs): void {
@@ -1032,8 +1051,8 @@ const drillRunner: DrillRunner = {
   get phase() {
     return activeDrillRunner.phase;
   },
-  // WP-65 / T1：純轉發（本切片唯一的 main.ts 改動）。此 façade 以 `DrillRunner` 型別宣告，
-  // 故介面新增必填成員時必須同步補一個 getter；**不**傳 `requireArm`（待命閘的接線屬 T2）。
+  // WP-65 / T1：純轉發。此 façade 以 `DrillRunner` 型別宣告，故介面新增必填成員時必須同步補
+  // 一個 getter。`requireArm` 不在此處傳——它屬於被轉發的 `activeDrillRunner` 建構期（見上）。
   get countdownRemainingMs() {
     return activeDrillRunner.countdownRemainingMs;
   },
@@ -1324,6 +1343,29 @@ function resetRunPresentation(): void {
   recorderStartedAt = new Date().toISOString();
 }
 
+// WP-65 / T2（FR-65.2/65.4，D-65-1/D-65-5）— 取鎖 = 解除待命。新增一個訂閱者而非改寫既有三個
+// （updateLockHint / 清 held 狀態 / syncControlsVisibility），既有行為零變更。
+//
+// `phase === 'armed'` 這個條件是本函式的全部語意重點：drill **進行中**掉鎖後重新取鎖不會落進來，
+// 那一場的 arena 因此完整保留（只由 T5 標記效度），不會被中途清掉。
+//
+// 為什麼 `recorder.reset()`（D-65-5 / FM-2）：`simStep()` 末端的 `recordTickFromState()` 不看相位，
+// 待命期每個 tick 照樣吃一格 arena（容量 41 528 ⇒ 約 324 s 填滿，T0 §4 實測翻轉點逐位相符）。
+// 不在這裡丟棄，受試者在待命畫面停留超過約 5 分半，該場匯出就會被 recorderOverflow → suspect 標紅。
+// 刻意**不**併進 `resetRunPresentation()`：後者在 `start()` **之前**跑，那時待命期的 tick 根本還沒
+// 產生，併過去等於在錯的時點清一次、待命期照樣重新堆積。兩者時機不同，重複是表面的。
+function armOnPointerLock(locked: boolean): void {
+  if (!locked || drillRunner.phase !== 'armed') return;
+  recorder.reset();
+  hudRunStartMs = null; // 待命期的 rAF 基準一併歸零（Time 卡的相位分支屬 T4）
+  sharedState.armRequested = true; // input → SharedState → sim 唯讀（ADR-2）
+}
+pointerLock.onChange(armOnPointerLock);
+// 補一次當下狀態：本檔後段有 dev-only top-level await（`measureDisplayHz`），受試者在那個視窗內
+// 點擊取得的鎖會早於本訂閱者掛上 ⇒ 沒有這行，該場會永遠停在待命。訂閱者本身不能更早掛，
+// 因為 `hudRunStartMs` 的宣告就在上方不遠處，更早掛會在同一視窗內撞 TDZ ReferenceError。
+armOnPointerLock(pointerLock.locked);
+
 function restartActiveDrill(): void {
   drillRunner.restart(); // WP-6 restart path: full state + TargetManager + runner reset.
   resetRunPresentation();
@@ -1409,7 +1451,7 @@ async function activateDrill(
   activeDrillSource = source;
   activeDrillLoadOptions = loadOptions ?? {};
   activeTargetManager = createTargetManager(nextConfig);
-  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
+  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager, { requireArm: true });
   resetRunPresentation();
   simLoop = buildSimLoop(); // WP-13 / T2：新 drill 的 seed 生效 + 重置 rng stream（決定性）。
   cameraController.setAdsConfig(activeWeaponConfig().ads); // WP-24 / T2：新 drill 武器的 ADS 光學。
@@ -1451,7 +1493,7 @@ async function loadSceneById(sceneId: string): Promise<void> {
   drillRunner.restart();
   activeDrillConfig = nextDrillConfig;
   activeTargetManager = createTargetManager(activeDrillConfig);
-  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager);
+  activeDrillRunner = createDrillRunner(sharedState, activeTargetManager, { requireArm: true });
   resetRunPresentation();
   simLoop = buildSimLoop();
   targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape); // WP-46 / T3：場景切換後沿用同一 drill 的 hitbox shape。
@@ -1839,6 +1881,9 @@ function liveFrame(now: number): void {
     })();
   }
   hud.update(createHUDStats(sharedState, phase, hudElapsedMs, recorder.hitCount, recorder.fireCount, recorder.hitCount, hudStats));
+  // WP-65 / T3：`countdownRemainingMs` 的**唯一**讀取點——sim→render 唯讀只開這一個出口
+  // （比照既有 `drillRunner.phase`，見 README §2.4 的明帳）。`phase` 沿用上方既有區域變數。
+  drillStartOverlay.update(phase, drillRunner.countdownRemainingMs);
   // dev-only：更新急停 readout（vx / stopped）——手動驗證用，production 剝除。
   // 急停 stopped=true 只存活 1 tick（7.8ms），render frame（~16ms）幾乎必錯過瞬時值；故除了讀
   // 當下 stopped，另**閂鎖**：偵測到 stopped 或 vx 反向（+→−/−→+，過衝 = 急停已發生）就把綠燈
