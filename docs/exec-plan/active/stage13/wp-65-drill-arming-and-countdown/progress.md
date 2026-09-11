@@ -671,3 +671,147 @@ tracking_reversal_pilot_v1_high
 
 - **T6**：本切片的實機驗證用的是一次性腳本（已刪）。正式的 live spec（含 arm helper）屬 T6；上面 §8.3／§8.4 的兩個等待條件與取樣解析度細節應直接套用。
 - **T-exit**：倒數型 drill 目前 5 個。若日後 roster 新增 `timeLimit` 型 drill，`drillFamily.test.ts` 的 `COUNTDOWN_DRILL_IDS` 必須同步——這是刻意的「改了要來報到」閘，不是待辦。
+
+---
+
+## §T5 Pointer Lock 掉鎖的效度旗標 → `meta.validity` → Result 警示（2026-09-11）
+
+**狀態**：✅ 完成。錄製中掉鎖會標記本場資料、併入 `meta.suspect`、在 Result 顯示重測建議；**sim 不中斷**，drill 一路跑到自然結束。
+
+執行基準 commit：`762b166`（T4 落地 + graphify 索引）。
+
+### 1. 落地內容
+
+| 檔案 | 改動 |
+|---|---|
+| `src/state/SharedState.ts` | `validity` 增 `pointerLockLostDuringRun`（`createSharedState` 初始 false、`resetState()` 原地歸零） |
+| `src/main.ts` | ① 第三個 `pointerLock.onChange` 訂閱者：`!locked && phase ∈ {countdown, running}` → 翻旗標；② `buildCurrentExportPayload()` 的 `validity` 投影補 `pointerLockLost`；③ `showResultAndTrackHistory()` 每場明確呼叫一次 `setValidityWarning()` |
+| `src/data/metadata.ts` | `Meta['validity']` / `CollectMetaArgs` 增第五欄（optional-in / required-out）；`requireValidity()` 缺欄補 false；`collectMeta()` 的 `suspect` OR 併入 |
+| `src/data/exportPayloadSchema.ts` | `parseValidity()` 同步 optional-in（帶欄但型別錯誤仍報錯） |
+| `src/ui/ResultScreen.ts` | `setValidityWarning(text \| null)` + 建構期預建的 `role="alert"` 警示條（插在結果數值**之上**）；`show()` 一併清除（比照既有 `setHistoryTarget(undefined)`） |
+| 測試 | `SharedState.test.ts`（歸零）、`metadata.test.ts` +3、`exportPayloadSchema.test.ts` +3、`ResultScreen.test.ts` +3、`export.test.ts` / `ResultPresentation.test.ts` 各補 required-out 欄位 |
+
+### 2. Invariants 實測（`git diff --stat` 為空 = 成立）
+
+`src/display/experimentSession.ts`、`src/drill/DrillRunner.ts`、`src/loop/SimLoop.ts`、`src/target/TargetManager.ts`、**`src/data/export.ts`**、`research/` 六者 diff 皆為空。sim 完全不知道有這個旗標。
+
+- **步驟 5 的 `export.ts` 展開確認（T5 doc 要求記錄）**：[export.ts:33-34](../../../../../src/data/export.ts#L33-L34) 的 `{ ...meta.validity, recorderOverflow }` **已讀過並確認**展開涵蓋新欄——不是「沒改所以沒事」。`export.test.ts` 那條既有斷言補上 `pointerLockLost: false` 後仍綠，即為展開確實帶過新欄的證據。
+- **`meta` 鍵集合零增減**：新欄只落在 `validity` 物件內（見 §5c 的鍵面對照）。
+
+### 3. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T5-a** | 偵測掛成**第三個** `pointerLock.onChange` 訂閱者，不改寫 `armOnPointerLock` | 依 T2 留下的 Open Question 執行。兩者條件互斥（`armed` vs `countdown`/`running`）、方向相反（取鎖 vs 掉鎖）、構念不同（開始手勢 vs 效度）。合併只會把兩件事糾纏在一個分支 |
+| **T5-b** | 判準與 `fullscreenchange` 的 `recording` 判準**逐字相同**，不另立第二套 | C-D4：既有構念不得有第二定義。KI-007 已論證過這個窗界（`idle`/`ended` 的退出屬正常操作）。同時**不**以 `experimentSession.active` 為前提（缺口 G1） |
+| **T5-c** | `resultScreen.show()` 一併把警示清成 `null`，而非只靠呼叫端每次設定 | T5 doc 只要求呼叫端每次呼叫（含 `null`）。但 `show()` 早已用 `setHistoryTarget(undefined)` 表達「這個狀態屬於**某一場**結果、不屬於這個畫面」——警示是同一類狀態。加上這行讓 `__fpsTest.showResult()` 等旁路也不會殘留上一場的警示；呼叫端的明確設定照舊保留。被推翻的替代：只靠呼叫端——那條規則正確但**不可見**，漏一個旁路就是乾淨的一場被誤標紅 |
+| **T5-d** | 警示文字取自 **payload**（`payload.meta.validity?.pointerLockLost`）而非 `sharedState` | `sharedState.validity` 會被下一場的 `resetState()` 清掉；payload 是那一場的匯出事實。歷史／重播路徑因此拿到同一個答案 |
+| **T5-e** | 接受既有 3 筆 golden fixture 的 **canonical 位元組位移**，更新 `CANONICAL_DIGEST_BEFORE_T5` 而非讓 parser 保留「缺席」 | 見 §6 Surprise 1。required-out 讓每個讀者拿到 `boolean` 而非 `boolean \| undefined`；位移範圍可證明地限於帶 `meta.validity` 的 3 筆、且只多一個鍵。被推翻的替代：`parseValidity()` 缺席即省略——會讓型別退回 optional，與 D-65-3 相衝，且把 `?? false` 散進每個讀者 |
+
+### 4. `corridorExceeded` 不併入 `suspect` 的不對稱為何刻意保留（T5 doc 要求記錄）
+
+新旗標**併入** `suspect`（OQ-65.1），`validity.corridorExceeded` **不併入**（既有語意，本 WP 不動）。兩者性質不同：
+
+- **掉鎖 = 條件失效**。掉鎖期間 `onMouseMove` 在 `!locked` 時直接 return（[PointerLock.ts:43](../../../../../src/input/PointerLock.ts#L43)）⇒ 受試者的位移**完全沒進輸入鏈**，而 sim 照跑、目標照 spawn。性質同 `frameFloorSuspect`（量測條件不成立）。
+- **走出走廊 = 行為觀測**。越界的真實後果是視覺遮擋，而場景幾何永不進 sim（GD-6）⇒ 不可能影響命中判定。屬「該記錄的觀測」而非「該作廢的 run」（K-3 / KI-004 S1 T3）。
+
+⇒ 這個不對稱是設計，不是遺漏。**別順手統一**——已在 `collectMeta()` 的註解就地寫下同一句話，免得後人只讀到程式碼。
+
+### 5. 驗證證據（全部為本切片實際執行輸出）
+
+#### 5a. 靜態與單元
+
+| 項目 | 結果 | 對照 |
+|---|---|---|
+| `npm run typecheck`（×2） | **exit 0 / exit 0** | 同 T4 |
+| `npx vitest run`（全量） | **exit 0** — Test Files **258 passed / 1 skipped (259)**；Tests **3097 passed / 2 skipped (3099)**；35.97 s | T4 = 258 files / 3088 tests ⇒ **+0 file、+9 tests**（metadata 3 + exportPayloadSchema 3 + ResultScreen 3），**零測試由綠轉紅** |
+| 既有 golden／fixture payload | **8/8 通過 `parseExportPayload()`，fixture 檔零修改** | 詳見 §6 Surprise 1（canonical digest 常數有更新，fixture **檔案**沒有） |
+
+#### 5b. 實機（dev server + 真瀏覽器 Chromium，生產 `PointerLock` 模組與 live 匯出路徑）
+
+> 走 **live** 匯出而非 `__fps` harness——T0 §3 已釘死 harness 路徑根本不輸出 `meta.validity`（T0 Surprise 1），只用 harness 取證會誤判為「沒接上」。這即是 T0 留給 T5 的 Open Question 的答案：**取證方式 = live drill 自動化（既有生產路徑 + Blob 攔截），不新增任何 live 匯出 e2e 縫**。
+> 專屬埠 5199 + 專屬 `FPS_HISTORY_ROOT=.playwright-tmp/wp65-t5/history`，並 route-block `/@vite/client`（[e2e-port-5173-collision]／[hmr-reload-resets-long-idle-measurements]）。真實 `data/session-history/` 未被寫入。
+> drill 用 `spider-shot-v2`／`v3`（`timeLimit` 60 s，無人瞄準也會自然結束）——**預設的 `counterstrafe_ad_v1` 不能用**：`targetCount` 且無後援閘，實測 180 s 後仍 `running`（T0 Surprise 3 再度命中）。
+
+**FM-3 反證（必要）— 三場乾淨 run 的 `meta.validity.pointerLockLost` 逐一列出：**
+
+| # | 路徑 | drill | ticks | `pointerLockLost` | Result 警示 |
+|---|---|---|---:|---|---|
+| 1 | 初次載入 | `spider-shot-v2` | 8 078 | **`false`** | 隱藏 |
+| 2 | **restart**（Result →「再測目前 Drill」） | `spider-shot-v2` | 8 068 | **`false`** | 隱藏 |
+| 3 | **換 drill**（`#drill-select` → Load） | `spider-shot-v3` | 8 075 | **`false`** | 隱藏 |
+
+三場皆 `false` ⇒ 旗標具鑑別力。**旗標若每場都亮就等於沒有。**
+
+**正向 — 一場 drill 跑到一半掉鎖：**
+
+| 項目 | 值 |
+|---|---|
+| 掉鎖前 | `phase = running`、`pointerLockLostDuringRun = false` |
+| 掉鎖手段 | `page.keyboard.press('Escape')` 在 headless 未解鎖 ⇒ 退回 `document.exitPointerLock()`（**同一個**生產 `pointerlockchange`，只有發起者不同） |
+| 掉鎖當下 | `phase = running`、`locked = false`、旗標 **`true`** |
+| ① drill **繼續跑** | 掉鎖後 +3 s 仍 `phase = running`；最終自然結束，ticks **8 050**（乾淨 run 為 8 068–8 078）⇒ 掉鎖後**整整 60 s 照跑完**，未被截短 |
+| ② `meta.validity.pointerLockLost` | **`true`** |
+| ③ `meta.suspect` | **`true`** |
+| ④ Result 警示 | `hidden = false`、`role = "alert"`、文字＝「本場測試中途失去滑鼠鎖定（ESC／切換視窗），期間的滑鼠移動未被記錄，本場資料可能失效——建議重新測試。」 |
+
+> **③ 的誠實註記**：headless 的 `frames.summary.p95` 必然超過 `PERF_FLOOR_MS`（120 Hz 地板，[eligibility-gate-blocks-automation]），所以**四場**的 `meta.suspect` 都是 `true`、`validity.perfFloor` 都是 `true`。本項實機證據因此只證明「掉鎖沒有讓 suspect 變回 false」；**`pointerLockLost` 單獨把 `suspect` 拉成 true 的語意由單元測試釘死**（`metadata.test.ts` 的兩條：`true` ⇒ suspect true；`false` 且其餘皆 false ⇒ suspect false）。
+
+**FR-65.12 — 待命期與 `ended` 各掉鎖一次：**
+
+| 相位 | 取鎖→掉鎖後的旗標 |
+|---|---|
+| `armed`（`phaseAtLock`／`phaseAtUnlock` 皆實測為 `armed`） | **`false`** ✅ |
+| `ended`（`phaseAtLock = ended`） | **`false`** ✅ |
+| `ended`（app **自己**在 `liveFrame` 釋鎖） | 三場乾淨 run 在 `ended` 當下讀 `pointerLockLostDuringRun` 皆 **`false`**、`locked = false` ✅ |
+
+> 取鎖必須用「覆寫 `document.pointerLockElement` + 派發真實 `pointerlockchange`」驅動（README §0.4 已驗證的模式，走**生產** `PointerLock` 模組）：app 自己到不了「`armed` 且已持鎖」，因為**取鎖本身就是 arm**（D-65-1）。也因此該檢查會順帶把 drill 解除待命，之後必須 Restart 才能回到 `armed`——見 §6 Surprise 2。
+
+#### 5c. `meta` 鍵面對照（T0 §3 基線）
+
+| 項目 | 結果 |
+|---|---|
+| `meta` 鍵集合 vs T0 §3 的 43 鍵基線 | **新增 0 個**（四場 live 匯出的鍵皆為基線子集；33／34 的差異只是 `protocolGuard`——`spider-shot-v3` 有、`v2` 沒有，與本 WP 無關） |
+| `meta.validity` 鍵集合 | `["bufferOverflow","corridorExceeded","perfFloor","pointerLockLost","recorderOverflow"]` ⇒ **恰多一個 `pointerLockLost`** ✅ |
+
+#### 5d. Python 相容（NFR-65.5 / C-D1）— **`research/` 零修改**
+
+以真實 live 匯出（帶 `pointerLockLost: true`）實跑：
+
+```
+$ cd research && python -c "import sys; sys.path.insert(0,'src'); from pathlib import Path;
+  from modules.ingest.algorithms.loader import load_export;
+  e = load_export(Path('.../live-export-pointer-lock-lost.json')); ..."
+load_export OK: Export
+meta.validity = {'corridorExceeded': False, 'perfFloor': True, 'recorderOverflow': False,
+                 'bufferOverflow': False, 'pointerLockLost': True}
+meta.suspect = True
+ticks = 8071 events = 1
+```
+
+不拋 `SchemaError`，新欄原樣穿透。`_validate_meta()` 只檢查 `_META_REQUIRED_TYPES` 的必填欄，additive 欄位不觸發拒收——與 T0 的 C-D1 佐證（Python 端對四個既有旗標全域零命中）一致。
+
+### 6. Surprises & Discoveries（T5）
+
+1. **optional-in 的「補預設值」會移動既有 golden fixture 的 canonical 位元組——而那正是 `CANONICAL_DIGEST_BEFORE_T5` 這張表存在的意義。**
+   `parseValidity()` 缺欄補 `false` ⇒ 重新序列化時多一個鍵。8 筆 fixture 中**恰好 3 筆**（`09_18_05` / `09_24_18` / `09_37_24`）帶 `meta.validity`，digest 全部移動；另 5 筆沒有 `validity` 物件，digest **逐位不變**——後者正是「位移確實限於這一個鍵、沒有波及別處」的證據。
+   **處置**：更新那三個常數並在表頭就地寫明新舊值與理由，**fixture 檔本身零修改**。
+   **為什麼不是災難**：`HistoryRepository` 的 `contentHash` 在 index-load（`:405`）與 save（`:412`）兩條路徑都**當場**由 `canonicalExportJSON` 重算，且兩邊都先過 `parseExportPayload` ⇒ 同一版本內自洽，沒有跨版本存下來的 hash 會對不上。Python 讀的是磁碟原始 JSON、從不讀 canonical 形式（C-D1）。
+   ⇒ **對後續 additive 欄位的意義**：「optional-in」只保證**舊 payload 不被拒收**，不保證**重新序列化的位元組不變**。兩者是不同的相容性，這張表分得出來——下一個 additive 欄位的作者應該預期它會紅一次。
+
+2. **`armed` 相位的掉鎖偵測無法用「模擬取鎖」單獨驗證而不改變相位——因為取鎖本身就是 arm。**
+   模擬 `pointerlockchange`（locked=true）在 `armed` 相位會同時觸發 `armOnPointerLock` ⇒ drill 被解除待命。實測 `phaseAtLock` 與 `phaseAtUnlock` **都還是 `armed`**（相位轉移發生在下一個 sim tick，不是同步），所以檢查本身有效；但之後必須 Restart 才能回到待命。第一版腳本沒有這一步，下一步 `waitPhase('armed')` 直接 timeout。
+   ⇒ **對 T6 的意義**：任何「在 `armed` 相位模擬鎖狀態」的 spec 都要把「這個動作會 arm 掉這一場」算進去。
+
+3. **T2 Surprise 5 在自動化中是硬阻斷，不只是外觀問題。** 研究員模式下 `#drill-controls` 蓋住 Result dialog 的動作列 ⇒ Playwright 對 `[data-result-action="export-json"]` 的 hit-test 點擊**永遠 timeout**（錯誤訊息明指 `<select id="weapon-select">` 攔截了 pointer events）。本切片以 `dispatchEvent('click')` 繞過（仍走真實 handler）。**此為既有 UI 條件，非 T5 引入**，但 T6 的 live spec 會撞上同一堵牆。
+
+4. **live 匯出在 headless 拿不到檔案——`downloadTextFile()` 在 `anchor.click()` 的下一行就 `URL.revokeObjectURL()`。** `waitForEvent('download')` 因此恆 timeout。改為在 init script 攔截 `URL.createObjectURL` 取得同一個 Blob 的位元組：`buildCurrentExportPayload → collectMeta → serializeJSON` 整條生產路徑照跑，只有最後落地那一跳被接走。
+   ⇒ **對 T6 的意義**：任何需要 live 匯出內容的 spec 都得用這個手法（或另開 seam），`download` 事件在本 app 不可用。
+
+5. **KI-028 再度命中：`taskkill` 掉 shell 之後 Vite 仍在聽。** 第一輪跑完 5199 仍 LISTENING（node PID 50660，`vite.js --port 5199`），需另外依埠號 kill。腳本已補「依埠號 kill + 確認埠安靜」的收尾。
+
+### Open Questions（T5 留給後續 task）
+
+- **T6**：① Result 動作列被 `#drill-controls` 蓋住（Surprise 3）與 ② live 匯出必須攔 Blob（Surprise 4），兩者都會直接決定 live spec 寫得出來寫不出來；③ `armed` 相位模擬取鎖會順帶 arm（Surprise 2）。
+- **T-exit**：`CANONICAL_DIGEST_BEFORE_T5` 這張表的名稱仍指 WP-58 的 T5，現在同時承載 WP-65 T5 的位移。是否改名／拆表由 T-exit 決定（純命名，不影響行為）。
+- **T-exit（既有條件，非本 WP 引入）**：研究員模式下 Result dialog 與 `#drill-controls` 同時可見且互相遮擋（T2 Surprise 5 + 本切片 Surprise 3）。是否另立 KI 由 T-exit 判斷。

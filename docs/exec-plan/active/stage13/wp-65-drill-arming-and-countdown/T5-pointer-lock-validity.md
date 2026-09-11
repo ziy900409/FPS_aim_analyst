@@ -70,16 +70,16 @@
 
 ## Definition of Done
 
-- [ ] `src/data/metadata.test.ts` 新增 ≥ 3 條斷言全綠（缺欄預設 false、true 併入 suspect、false 不併入）
-- [ ] 既有 golden／fixture payload **零修改**通過 `parseExportPayload()`（`npx vitest run tests/` exit 0，通過數 ≥ T4 之後）
-- [ ] **FM-3 反證（必要）**：連續三場**乾淨** run（含一次 restart、一次換 drill）匯出後 `meta.validity.pointerLockLost` 皆為 `false`。三個值逐一記入 `progress.md`——旗標若每場都亮就等於沒有
-- [ ] **正向**：一場 drill 跑到一半按 ESC，確認 ① drill **繼續跑到自然結束**（目標繼續 spawn、Time 繼續走）② 匯出 `meta.validity.pointerLockLost === true` ③ `meta.suspect === true` ④ Result 出現警示文字。四項各有截圖或數值佐證
-- [ ] **FR-65.12**：待命期間（尚未 arm）與 Result 顯示後（`ended`）各手動掉鎖一次，確認旗標仍為 `false`
-- [ ] `meta` 鍵集合與 T0 步驟 3 的基線**逐字相同**；`meta.validity` 鍵集合恰多一個 `pointerLockLost`
-- [ ] Python `load_export()` 對帶新欄的匯出不拋錯，指令與輸出記入 `progress.md`
-- [ ] `src/ui/ResultScreen.test.ts` 新增 3 條全綠（顯示／隱藏／不殘留）
-- [ ] `npm run typecheck` ×2 exit 0；全量 `npx vitest run` exit 0
-- [ ] `progress.md §T5` 記錄：`corridorExceeded` 不併入 `suspect` 的不對稱為何刻意保留；步驟 5 的 `export.ts` 展開確認
+- [x] `src/data/metadata.test.ts` 新增 ≥ 3 條斷言全綠（缺欄預設 false、true 併入 suspect、false 不併入）
+- [x] 既有 golden／fixture payload **零修改**通過 `parseExportPayload()`（`npx vitest run tests/` exit 0，通過數 ≥ T4 之後）
+- [x] **FM-3 反證（必要）**：連續三場**乾淨** run（含一次 restart、一次換 drill）匯出後 `meta.validity.pointerLockLost` 皆為 `false`。三個值逐一記入 `progress.md`——旗標若每場都亮就等於沒有
+- [x] **正向**：一場 drill 跑到一半按 ESC，確認 ① drill **繼續跑到自然結束**（目標繼續 spawn、Time 繼續走）② 匯出 `meta.validity.pointerLockLost === true` ③ `meta.suspect === true` ④ Result 出現警示文字。四項各有截圖或數值佐證
+- [x] **FR-65.12**：待命期間（尚未 arm）與 Result 顯示後（`ended`）各手動掉鎖一次，確認旗標仍為 `false`
+- [x] `meta` 鍵集合與 T0 步驟 3 的基線**逐字相同**；`meta.validity` 鍵集合恰多一個 `pointerLockLost`
+- [x] Python `load_export()` 對帶新欄的匯出不拋錯，指令與輸出記入 `progress.md`
+- [x] `src/ui/ResultScreen.test.ts` 新增 3 條全綠（顯示／隱藏／不殘留）
+- [x] `npm run typecheck` ×2 exit 0；全量 `npx vitest run` exit 0
+- [x] `progress.md §T5` 記錄：`corridorExceeded` 不併入 `suspect` 的不對稱為何刻意保留；步驟 5 的 `export.ts` 展開確認
 
 ## Commit
 

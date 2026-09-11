@@ -561,10 +561,22 @@ function parseValidity(value: unknown, path: string, errors: ExportPayloadParseE
   const perfFloor = parseBoolean(record.perfFloor, `${path}.perfFloor`, errors);
   const recorderOverflow = parseBoolean(record.recorderOverflow, `${path}.recorderOverflow`, errors);
   const bufferOverflow = parseBoolean(record.bufferOverflow, `${path}.bufferOverflow`, errors);
-  if (corridorExceeded === undefined || perfFloor === undefined || recorderOverflow === undefined || bufferOverflow === undefined) {
+  // WP-65 / T5（D-65-3）— optional-in：缺欄 ⇒ `false`，既有 golden／fixture payload 零修改仍可解析。
+  // 帶欄但型別錯誤仍必須報錯，所以走 `parseBoolean` 而非 `=== true` 的寬鬆比對。
+  const pointerLockLost =
+    record.pointerLockLost === undefined
+      ? false
+      : parseBoolean(record.pointerLockLost, `${path}.pointerLockLost`, errors);
+  if (
+    corridorExceeded === undefined ||
+    perfFloor === undefined ||
+    recorderOverflow === undefined ||
+    bufferOverflow === undefined ||
+    pointerLockLost === undefined
+  ) {
     return undefined;
   }
-  return { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow };
+  return { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow, pointerLockLost };
 }
 
 function parseWeaponMeta(value: unknown, path: string, errors: ExportPayloadParseError[]): WeaponMeta | undefined {

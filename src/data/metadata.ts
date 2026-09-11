@@ -231,6 +231,14 @@ export interface Meta {
     perfFloor: boolean;
     recorderOverflow: boolean;
     bufferOverflow: boolean;
+    /**
+     * WP-65 / T5（FR-65.9/65.10）：錄製中（`countdown`/`running`）曾失去 Pointer Lock。
+     * additive 第五欄，採 **optional-in / required-out**（D-65-3）：`requireValidity()` 缺欄補
+     * `false`（既存 golden／fixture payload 零修改仍可解析），新匯出一律帶欄。
+     * 與其餘四欄不同，本欄**併入** `suspect`（OQ-65.1）——掉鎖期間滑鼠位移完全沒進輸入鏈，屬
+     * 條件失效而非行為觀測。`corridorExceeded` 的不併入是刻意的不對稱，見 `collectMeta()` 註解。
+     */
+    pointerLockLost: boolean;
   };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
@@ -300,6 +308,8 @@ export interface CollectMetaArgs {
     perfFloor: boolean;
     recorderOverflow: boolean;
     bufferOverflow: boolean;
+    /** WP-65 / T5：optional-in（缺席 = `false`），見 `Meta['validity'].pointerLockLost`。 */
+    pointerLockLost?: boolean;
   };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
@@ -424,7 +434,12 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     lateEventCount,
     bufferOverflow,
     recorderOverflow,
-    suspect: explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect,
+    // WP-65 / T5（FR-65.10 / OQ-65.1）— 掉鎖併入 `suspect`：掉鎖期間 `onMouseMove` 直接 return，
+    // 受試者的位移**完全沒進輸入鏈**而 sim 照跑、目標照 spawn ⇒ 這是條件失效，性質同 frameFloor。
+    // `validity.corridorExceeded` **刻意不併入**（既有語意，本 WP 不動）：走出走廊是該記錄的行為
+    // 觀測，且場景幾何永不進 sim（GD-6）不可能影響命中。這個不對稱是設計，不是遺漏——別順手統一。
+    suspect:
+      explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect || validity?.pointerLockLost === true,
     simToWorld,
     ...(validity !== undefined ? { validity } : {}),
     ...(weapon !== undefined ? { weapon } : {}),
@@ -727,6 +742,12 @@ function requireValidity(value: unknown): NonNullable<Meta['validity']> {
     perfFloor: requireBoolean(validity.perfFloor, 'validity.perfFloor'),
     recorderOverflow: requireBoolean(validity.recorderOverflow, 'validity.recorderOverflow'),
     bufferOverflow: requireBoolean(validity.bufferOverflow, 'validity.bufferOverflow'),
+    // WP-65 / T5（D-65-3）— optional-in / required-out。既有四欄維持 required：讓第五欄也 required
+    // 會使**所有**既存 golden／fixture payload 整份被拒（WP-61 踩過同型的坑）。
+    pointerLockLost:
+      validity.pointerLockLost === undefined
+        ? false
+        : requireBoolean(validity.pointerLockLost, 'validity.pointerLockLost'),
   };
 }
 

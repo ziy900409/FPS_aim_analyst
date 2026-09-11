@@ -750,9 +750,76 @@ describe('collectMeta', () => {
       perfFloor: false,
       recorderOverflow: false,
       bufferOverflow: false,
+      // WP-65 / T5（D-65-3）— optional-in：輸入缺欄，輸出補 false。這一條同時是「既存 payload
+      // 零修改仍可被 collectMeta 接受」的向後相容證據。
+      pointerLockLost: false,
     });
     // NFR-S1-2b:validity.corridorExceeded 為 true 不得單獨把 suspect 拉成 true。
     expect(meta.suspect).toBe(false);
+  });
+
+  // ── WP-65 / T5（FR-65.9/65.10，D-65-3，OQ-65.1）─────────────────────────────
+  it('folds validity.pointerLockLost into meta.suspect (FR-65.10 / OQ-65.1)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      validity: {
+        corridorExceeded: false,
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: false,
+        pointerLockLost: true,
+      },
+    });
+
+    expect(meta.validity?.pointerLockLost).toBe(true);
+    // 掉鎖期間滑鼠位移完全沒進輸入鏈 ⇒ 條件失效,與 frameFloor 同性質(OQ-65.1)。
+    expect(meta.suspect).toBe(true);
+  });
+
+  it('leaves meta.suspect false when pointerLockLost is false and nothing else is flagged (FM-3)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      validity: {
+        corridorExceeded: true, // 刻意為 true:走廊越界**不**併入 suspect,這個不對稱是設計
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: false,
+        pointerLockLost: false,
+      },
+    });
+
+    // 一個每場都亮的旗標等於沒有旗標(FM-3):乾淨的一場必須是 false。
+    expect(meta.suspect).toBe(false);
+  });
+
+  it('rejects a non-boolean validity.pointerLockLost (optional-in is not lenient-in)', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        validity: {
+          corridorExceeded: false,
+          perfFloor: false,
+          recorderOverflow: false,
+          bufferOverflow: false,
+          pointerLockLost: 'yes' as unknown as boolean,
+        },
+      }),
+    ).toThrow('validity.pointerLockLost must be a boolean');
   });
 
   it('rejects malformed meta.validity fields', () => {

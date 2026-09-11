@@ -815,6 +815,10 @@ async function buildCurrentExportPayload(
       perfFloor: frames.summary.p95 > PERF_FLOOR_MS,
       recorderOverflow: snapshot.recorderOverflow,
       bufferOverflow: sharedState.inputMeta.bufferOverflow > 0,
+      // WP-65 / T5（FR-65.9/65.10）— 本物件是**逐欄手抄**而非展開 sharedState.validity，所以新旗標
+      // 必須在這裡明寫，否則會靜默漏掉整條鏈（旗標在記憶體裡翻了、匯出卻永遠 false）。
+      // `collectMeta()` 會把它 OR 進 `meta.suspect`（OQ-65.1）。
+      pointerLockLost: sharedState.validity.pointerLockLostDuringRun,
     },
     weapon: {
       id: weaponConfig.id,
@@ -975,6 +979,13 @@ const resultScreen = createResultScreen({
 function showResultAndTrackHistory(payload: ExportPayload): Promise<HistorySaveState> {
   lastResultPayload = payload;
   resultScreen.show(buildResultPresentation(payload));
+  // WP-65 / T5（FR-65.11）— 每一場都明確設定一次（含 `null`）。旗標讀自 **payload**（那一場的匯出
+  // 事實）而非 `sharedState`（會被下一場的 `resetState()` 清掉），所以歷史／重播路徑拿到同樣的答案。
+  resultScreen.setValidityWarning(
+    payload.meta.validity?.pointerLockLost === true
+      ? '本場測試中途失去滑鼠鎖定（ESC／切換視窗），期間的滑鼠移動未被記錄，本場資料可能失效——建議重新測試。'
+      : null,
+  );
   const savePromise = historyPersistence.save(payload);
   void savePromise.then((state) => {
     if (state.kind === 'saved') {
@@ -1366,6 +1377,28 @@ function armOnPointerLock(locked: boolean): void {
   sharedState.armRequested = true; // input → SharedState → sim 唯讀（ADR-2）
 }
 pointerLock.onChange(armOnPointerLock);
+
+// WP-65 / T5（FR-65.9/65.12，D-65-4／FM-3）— 錄製中掉鎖 = 條件失效，標記但**不中斷**。
+//
+// 刻意是**第三個**訂閱者，不與 `armOnPointerLock` 合併：兩者條件互斥（`armed` vs `countdown`/
+// `running`）、方向相反（取鎖 vs 掉鎖）、構念不同（開始手勢 vs 效度）。合併只會把兩件事糾纏在
+// 一個分支裡。
+//
+// 判準與 `main.ts` 的 `fullscreenchange` recording 判準**逐字相同**（KI-007 已論證過這個窗界：
+// `idle`/`ended` 的退出屬正常操作），不另立第二套定義（C-D4）。三個相位被刻意排除：
+//   - `'armed'`：`drillRunner.start()` 之前的主動 `exitPointerLock()` 落在這裡 ⇒ 恆不誤標（FM-3）。
+//   - `'ended'`：Result 顯示前 `liveFrame` 自己會 `exitPointerLock()`，那是收工不是失效。
+//   - `'idle'`：drill 之間，本就沒有錄製中。
+//
+// **不**以 `experimentSession.active` 為前提（README §0.3 缺口 G1）：那個閘只在 eligibility gate
+// 通過的實驗 session 內武裝，選手測試／研究員模式的一般 drill 會完全不被標記。掉鎖與有沒有跑正式
+// 流程無關——`onMouseMove` 在 `!locked` 時直接 return，位移沒進輸入鏈這件事在哪個模式都一樣。
+pointerLock.onChange((locked) => {
+  if (locked) return;
+  const phase = drillRunner.phase;
+  if (phase !== 'countdown' && phase !== 'running') return;
+  sharedState.validity.pointerLockLostDuringRun = true; // input → SharedState → data 唯讀（ADR-2）
+});
 // 補一次當下狀態：本檔後段有 dev-only top-level await（`measureDisplayHz`），受試者在那個視窗內
 // 點擊取得的鎖會早於本訂閱者掛上 ⇒ 沒有這行，該場會永遠停在待命。訂閱者本身不能更早掛，
 // 因為 `hudRunStartMs` 的宣告就在上方不遠處，更早掛會在同一視窗內撞 TDZ ReferenceError。

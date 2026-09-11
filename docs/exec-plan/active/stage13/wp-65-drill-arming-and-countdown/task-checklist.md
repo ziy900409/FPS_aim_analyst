@@ -9,7 +9,7 @@
 | ✅ | **T2** App 接線：取鎖解除待命／`start()` 前釋鎖／arena 歸零 | [T2-app-arming-wiring.md](T2-app-arming-wiring.md) | T1 | **High** |
 | ✅ | **T3** 待命提示與倒數數字 overlay | [T3-countdown-overlay.md](T3-countdown-overlay.md) | T1（可與 T2 並行） | Low |
 | ✅ | **T4** HUD `Time` 卡的時限型倒數 | [T4-hud-remaining-time.md](T4-hud-remaining-time.md) | T1（可與 T2/T3 並行） | Low |
-| ⬜ | **T5** Pointer Lock 掉鎖效度旗標 → `meta.validity` → Result 警示 | [T5-pointer-lock-validity.md](T5-pointer-lock-validity.md) | T2 | Med |
+| ✅ | **T5** Pointer Lock 掉鎖效度旗標 → `meta.validity` → Result 警示 | [T5-pointer-lock-validity.md](T5-pointer-lock-validity.md) | T2 | Med |
 | ⬜ | **T6** Live e2e arm helper／9 個 spec 補接／全量回歸 | [T6-e2e-and-regression.md](T6-e2e-and-regression.md) | T2 + T3 + T4 + T5 | **High** |
 | ⬜ | **T-exit** WP-65 驗收（A-65.1～A-65.12） | [T-exit-gate.md](T-exit-gate.md) | T1～T6 | Low |
 

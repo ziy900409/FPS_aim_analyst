@@ -28,6 +28,7 @@ class FakeElement {
   textContent = '';
   type = '';
   disabled = false;
+  hidden = false; // WP-65 / T5：效度警示條以 `hidden` 切換（不是 style.display）
   readonly dataset: Record<string, string> = {};
   readonly style: Record<string, string> = { cssText: '', display: '' };
   readonly attributes = new Map<string, string>();
@@ -270,6 +271,64 @@ describe('WP-48 T5 save-status embed seam', () => {
     expect(found).toBeUndefined();
   });
 });
+
+// ── WP-65 / T5（FR-65.11）───────────────────────────────────────────────────
+describe('validity warning', () => {
+  const WARNING = '本場測試中途失去滑鼠鎖定（ESC／切換視窗），期間的滑鼠移動未被記錄，本場資料可能失效——建議重新測試。';
+
+  it('shows the warning text above the result body when set', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(result);
+    screen.setValidityWarning(WARNING);
+
+    const banner = section(document.body, 'result-validity-warning');
+    expect(banner.hidden).toBe(false);
+    expect(banner.textContent).toBe(WARNING);
+    expect(banner.attributes.get('role')).toBe('alert');
+    // 「之上」不是措辭而是可驗證的位置：警示必須排在 body 之前，受試者掃到數字前就看到它。
+    const panel = document.body.children[0].children[0];
+    expect(panel.children.indexOf(banner)).toBe(1); // 0 = 標題
+  });
+
+  it('hides the warning when set to null', () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(result);
+    screen.setValidityWarning(WARNING);
+    screen.setValidityWarning(null);
+
+    const banner = section(document.body, 'result-validity-warning');
+    expect(banner.hidden).toBe(true);
+    expect(banner.textContent).toBe('');
+  });
+
+  it("does not leak a previous run's warning into the next show()", () => {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen();
+
+    screen.show(result);
+    screen.setValidityWarning(WARNING); // 掉鎖的那一場
+    screen.hide();
+    screen.show(result); // 下一場:呼叫端還沒設定
+
+    // 「沒設」必須等於「沒有警示」,不能等於「沿用上一場」——否則乾淨的一場會被誤標。
+    const banner = section(document.body, 'result-validity-warning');
+    expect(banner.hidden).toBe(true);
+    expect(banner.textContent).toBe('');
+  });
+});
+
+function section(root: FakeElement, name: string): FakeElement {
+  const node = flatten(root).find((candidate) => candidate.dataset.section === name);
+  if (node === undefined) throw new Error(`Missing section: ${name}`);
+  return node;
+}
 
 function action(root: FakeElement, name: string): FakeElement {
   const node = flatten(root).find((candidate) => candidate.dataset.resultAction === name);

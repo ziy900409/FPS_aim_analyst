@@ -306,7 +306,20 @@ export interface SharedState {
    */
   protocolViolations: Array<{ kind: 'fire' | 'ads' | 'movement' | 'fire-released'; t: number }>;
   /** runtime validity observations;純觀測旗標，不 clamp、不改 sim 演進。 */
-  validity: { playerCorridorExceeded: boolean };
+  validity: {
+    playerCorridorExceeded: boolean;
+    /**
+     * WP-65 / T5（FR-65.9）：錄製中（`countdown`/`running`）曾失去 Pointer Lock。
+     * **input 層寫 → data 層唯讀**（ADR-2）——寫入者是 input 層而非 sim 的 `afterTick`，這是與
+     * `playerCorridorExceeded` 的唯一差別；sim（`DrillRunner`/`SimLoop`/`TargetManager`）完全不
+     * 讀它，掉鎖**不中斷 sim、不改 `endCondition`**，drill 一路跑到自然結束（使用者 2026-09-11 拍板）。
+     *
+     * 與 `experimentSession.suspect`（退出全螢幕，KI-007）**並存不合併**（D-65-4）：前者管「鍵鼠
+     * 輸入是否真的進得來」（掉鎖期間 `onMouseMove` 直接 return，位移完全沒進輸入鏈），後者管
+     * 「顯示條件是否成立」。合併會讓 KI-007 刻意區分的 `recording` 判準失去意義（C-D4）。
+     */
+    pointerLockLostDuringRun: boolean;
+  };
   /**
    * 首發旗標記憶（WP-5 / T2，FR-5.2）：已計首發的 peekId（= active 目標 id）。`firstShotGate`
    * 每 peek 只放行第一發；新 peek（唯一新 id）隱式 reset。初始 `null`（首發尚未計）。
@@ -435,7 +448,7 @@ export function createSharedState(): SharedState {
     cues: [],
     targetMotionChanges: [],
     protocolViolations: [],
-    validity: { playerCorridorExceeded: false },
+    validity: { playerCorridorExceeded: false, pointerLockLostDuringRun: false },
     firstShotPeekId: null,
     armRequested: false,
   };
@@ -490,6 +503,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.targetMotionChanges.length = 0;
   state.protocolViolations.length = 0;
   state.validity.playerCorridorExceeded = false;
+  state.validity.pointerLockLostDuringRun = false; // WP-65 / T5：掉鎖效度旗標每場重新起算
   state.firstShotPeekId = null; // 首發旗標記憶歸零（重開 drill → 首發重新從第一 peek 計）
   state.armRequested = false; // WP-65：待命解除請求歸零（每次 start() 都要求一次新的開始手勢）
 }

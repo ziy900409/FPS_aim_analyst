@@ -84,7 +84,7 @@ describe('data export', () => {
   it('syncs meta.validity.recorderOverflow with the recorder snapshot (KI-004 / S1 T2)', () => {
     const validityMeta: Meta = {
       ...meta,
-      validity: { corridorExceeded: false, perfFloor: false, recorderOverflow: false, bufferOverflow: false },
+      validity: { corridorExceeded: false, perfFloor: false, recorderOverflow: false, bufferOverflow: false, pointerLockLost: false },
     };
     const payload = buildExportPayload(validityMeta, { ...snapshot, recorderOverflow: true });
 
@@ -93,6 +93,8 @@ describe('data export', () => {
       perfFloor: false,
       recorderOverflow: true,
       bufferOverflow: false,
+      // WP-65 / T5：`{ ...meta.validity, recorderOverflow }` 的展開自動帶過新欄（T5 步驟 5 的確認點）。
+      pointerLockLost: false,
     });
     expect(payload.meta.suspect).toBe(true);
   });
