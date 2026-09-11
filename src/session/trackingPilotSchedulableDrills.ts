@@ -1,4 +1,5 @@
 import type { DrillConfig } from '../drill/DrillConfig.ts';
+import type { AvailableDrill } from '../drill/drillRegistry.ts';
 import {
   buildTrackingCorePrPilotV1Cell,
   trackingCorePrPilotV1CalibrationHorizontal,
@@ -148,3 +149,27 @@ export const TRACKING_PILOT_SCHEDULABLE_DRILLS: readonly ResearchSchedulableDril
  */
 export const TRACKING_PILOT_SCHEDULABLE_DRILL_IDS: readonly string[] =
   TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => entry.config.drillId);
+
+/**
+ * WP-64 T2 (FR-64.5/FR-64.9) — the curated blocks as runtime roster entries, spread into
+ * `main.ts`'s `availableDrills` so "compilable" and "loadable" are the same list (FM-64.2).
+ *
+ * Built here rather than inline in `main.ts` for one reason: `main.ts` cannot be executed by a test,
+ * and three of the claims this projection makes are behavioural, not textual — the entry's `source`
+ * is the canonical config *by reference* (no clone, FR-64.2), the scene is the descriptor's pinned
+ * `field-low` (FM-64.5), and `showInResearcherControls` is `false` for a `'session-plan-only'`
+ * surface (OQ-64.2/FM-64.6). `trackingPilotSchedulableDrills.test.ts` asserts all three against
+ * these objects; `main.ts` only spreads them.
+ *
+ * Neither `loadOptions` nor `resolveSource` is set: a curated block takes the identical activation
+ * path as every other module-constant roster entry, so WP-62's pinned weapon precedence ordering
+ * inside `activateDrill()` applies to it unchanged (T2 step 9).
+ */
+export const TRACKING_PILOT_RUNTIME_DRILLS: readonly AvailableDrill[] =
+  TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => ({
+    id: entry.config.drillId,
+    label: entry.config.drillId,
+    source: entry.config,
+    sceneId: entry.sceneId,
+    showInResearcherControls: entry.selectionSurface === 'session-plan-and-controls',
+  }));

@@ -7,6 +7,10 @@ import {
   type SessionFamilyId,
 } from '../session/sessionSchedule.ts';
 import { WEAPONS } from '../weapon/weapons.ts';
+import {
+  ALL_TRACKING_PILOT_CONFIGS,
+  TRACKING_PILOT_SCHEDULABLE_DRILL_IDS,
+} from '../session/trackingPilotSchedulableDrills.ts';
 import { createSessionPlanSetup } from './SessionPlanSetup.ts';
 
 interface FakeEvent {
@@ -736,5 +740,126 @@ describe('createSessionPlanSetup — preview redraw cost (NFR-58.4)', () => {
       `[WP-58 T4 perf] preview redraw(799 steps): samples=${samples.length} p95=${p95.toFixed(4)}ms max=${samples.at(-1)?.toFixed(4)}ms`,
     );
     expect(p95).toBeLessThan(50);
+  });
+});
+
+/**
+ * WP-64 T2 (FR-64.1/FR-64.3/NFR-64.6) — the curated tracking-pilot blocks as seen from the form.
+ *
+ * The picker is not given a second drill list by WP-64: it groups whatever `SCHEDULABLE_DRILL_IDS`
+ * holds, so these tests are about what that reach *looks like* to the operator — the two approved
+ * blocks present in the `tracking` group, the other seven absent, and the rest/preview semantics
+ * identical to any other drill. The compiler-level guarantees live in `sessionProgram.test.ts`;
+ * nothing here restates them.
+ */
+describe('createSessionPlanSetup — curated tracking-pilot blocks (WP-64)', () => {
+  const UNCURATED_PILOT_IDS = ALL_TRACKING_PILOT_CONFIGS.map((config) => config.drillId).filter(
+    (drillId) => !TRACKING_PILOT_SCHEDULABLE_DRILL_IDS.includes(drillId),
+  );
+  /** The frozen tracking representative — same family, so a pilot block next to it earns drill rest. */
+  const TRACKING_PARTNER = 'tracking_scene_v1';
+  const [CURATED_CORE_ID, CURATED_REVERSAL_ID] = TRACKING_PILOT_SCHEDULABLE_DRILL_IDS;
+
+  function offeredByFamily(harness: Harness): Map<string, string[]> {
+    return new Map(
+      harness.picker.children.map((group) => [group.label, group.children.map((option) => option.value)]),
+    );
+  }
+
+  it('offers exactly the two curated blocks in the tracking group, and no other pilot block', () => {
+    const harness = mount();
+    const byFamily = offeredByFamily(harness);
+    const tracking = byFamily.get('tracking') ?? [];
+    const everywhere = [...byFamily.values()].flat();
+
+    expect(TRACKING_PILOT_SCHEDULABLE_DRILL_IDS).toHaveLength(2);
+    for (const drillId of TRACKING_PILOT_SCHEDULABLE_DRILL_IDS) {
+      expect(tracking, `${drillId} must be offered in the tracking group`).toContain(drillId);
+      expect(FAMILY_BY_DRILL_ID.get(drillId)).toBe('tracking');
+    }
+    // The seven blocks nobody approved stay as unreachable as they were before WP-64 (NFR-64.2):
+    // absent from the tracking group *and* from every other group (FM-64.4).
+    expect(UNCURATED_PILOT_IDS).toHaveLength(7);
+    for (const drillId of UNCURATED_PILOT_IDS) expect(everywhere).not.toContain(drillId);
+    expect(tracking).toContain(TRACKING_PARTNER);
+  });
+
+  it('adds a curated block and submits it through focusable controls only (NFR-64.6)', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    // Same gesture as any other drill: pick in the select, activate the button, type the reps.
+    addItem(harness, CURATED_CORE_ID, 2);
+
+    expect(itemDrillIds(harness)).toEqual([CURATED_CORE_ID]);
+    expect(rowControl(harness, 0, 'reps').attributes.get('aria-label')).toBe(`${CURATED_CORE_ID} 重複次數`);
+    for (const control of harness.itemList.children[0].children.slice(2)) {
+      expect(['input', 'select', 'button']).toContain(control.tag);
+      expect(control.attributes.get('aria-label')).toBeTruthy();
+    }
+
+    harness.form.dispatch('submit');
+    expect(harness.onSubmit).toHaveBeenCalledWith({
+      mode: 'custom',
+      // No per-item weapon: the block's own `tracking_pilot_hold` declaration is the fixed research
+      // factor (FR-64.4), so the operator never has to — and must not have to — restate it.
+      items: [{ drillId: CURATED_CORE_ID, reps: 2 }],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+  });
+
+  it('earns drill rest next to another tracking drill, and names the pilot weapon in the preview', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, CURATED_CORE_ID, 2);
+    addItem(harness, TRACKING_PARTNER);
+
+    const expected = compileSessionProgram({
+      items: [
+        { drillId: CURATED_CORE_ID, reps: 2 },
+        { drillId: TRACKING_PARTNER, reps: 1 },
+      ],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(harness.previewSteps.children.map((line) => line.attributes.get('data-program-step'))).toEqual(
+      expected.map((step) => step.kind),
+    );
+    // Both seams inside one family: rep (same drill, next round) then drill (same family, next
+    // drill). Neither is the family boundary — that is the point of the assertion.
+    expect(
+      harness.previewSteps.children
+        .filter((line) => line.attributes.get('data-program-step') === 'rest')
+        .map((line) => line.attributes.get('data-step-boundary')),
+    ).toEqual(['rep', 'drill']);
+    // The fixed weapon is visible to the operator without being selectable per row.
+    expect(harness.previewSteps.children[0].textContent).toBe(
+      `1. ▶ ${CURATED_CORE_ID} (1/2) · 武器 tracking_pilot_hold`,
+    );
+  });
+
+  it('earns family rest when the next item leaves the tracking family', () => {
+    const detectionDrillId = SCHEDULABLE_DRILL_IDS.find((id) => FAMILY_BY_DRILL_ID.get(id) === 'detection');
+    if (detectionDrillId === undefined) throw new Error('expected a schedulable detection drill');
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, CURATED_REVERSAL_ID);
+    addItem(harness, detectionDrillId);
+
+    const expected = compileSessionProgram({
+      items: [
+        { drillId: CURATED_REVERSAL_ID, reps: 1 },
+        { drillId: detectionDrillId, reps: 1 },
+      ],
+      drillRestSeconds: 30,
+      familyRestSeconds: 60,
+    });
+    expect(harness.previewSteps.children).toHaveLength(expected.length);
+    expect(
+      harness.previewSteps.children
+        .filter((line) => line.attributes.get('data-program-step') === 'rest')
+        .map((line) => [line.attributes.get('data-step-boundary'), line.attributes.get('data-step-next-drill-id')]),
+    ).toEqual([['family', detectionDrillId]]);
+    expect(summarizeProgram(expected)).toEqual({ runCount: 2, totalRestSeconds: 60 });
   });
 });

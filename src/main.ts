@@ -66,11 +66,17 @@ import {
   type ProgramBoundary,
 } from './session/sessionProgram.ts';
 import { KNOWN_SESSION_FAMILY_IDS, type SessionFamilyId } from './session/sessionSchedule.ts';
-import { TRACKING_PILOT_SCHEDULABLE_DRILLS } from './session/trackingPilotSchedulableDrills.ts';
+import { TRACKING_PILOT_RUNTIME_DRILLS } from './session/trackingPilotSchedulableDrills.ts';
 import { createTrackingPilotSession, type TrackingPilotSessionHandle } from './pilot/trackingPilotSession.ts';
 import { sharedState } from './state/SharedState.ts';
 import { createTargetManager, type TargetManager } from './sim/TargetManager.ts';
 import { loadDrill, type DrillLoadOptions } from './drill/DrillLoader.ts';
+import {
+  drillSourceFor,
+  researcherControlsDrills,
+  resolveAvailableDrill,
+  type AvailableDrill,
+} from './drill/drillRegistry.ts';
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
 import { resolveTargetHitbox, targetHitboxToConfig, type DrillConfig } from './drill/DrillConfig.ts';
 import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts';
@@ -151,44 +157,6 @@ const canvas = document.querySelector<HTMLCanvasElement>('#app')!;
 
 // WP-0 seam：async bootstrap，取得 renderer + backend（backend 供 WP-7 metadata）。
 const { renderer, backend } = await createRenderer(canvas);
-
-interface AvailableDrill {
-  id: string;
-  label: string;
-  /** Module-load-time config source. Exactly one of `source` / `resolveSource` per entry. */
-  source?: unknown;
-  /**
-   * WP-57 / T6 (FR-57.3) — arm-time source factory. `spider-shot-wide-v1`'s peripheral yaw window
-   * is a function of the display state (vertical FOV x camera aspect), so unlike every other roster
-   * entry its config cannot be a module-load constant: resolving at import time would freeze the
-   * aspect at the wrong moment and quietly bypass the whole NFR-57.5 argument (D-57.T3-3).
-   * Called exactly once per arm — never per tick, never from the render callback.
-   */
-  resolveSource?: () => unknown;
-  sceneId?: string;
-  loadOptions?: DrillLoadOptions;
-  /**
-   * WP-64 T1 (OQ-64.2) — whether this entry is also offered in the researcher Controls drill
-   * dropdown. **Absent means `true`**, so every pre-WP-64 entry keeps its exposure bit-for-bit.
-   *
-   * This separates the two jobs `availableDrills` has been doing at once: it is the runtime
-   * registry `loadDrillById()` searches (always complete — an entry hidden here is still loadable),
-   * and it is the source the Controls dropdown projects from (filtered). Without the split, making
-   * a drill schedulable would silently open a second operator entry point with different semantics
-   * (FM-64.6). See README §3.1 for when this optional field should become a real registry split.
-   */
-  showInResearcherControls?: boolean;
-}
-
-/**
- * The one place the two source flavours converge. Arm-time resolution runs here rather than inside
- * `activateDrill` so a typed resolver failure (FR-57.14) throws before any activation state is
- * touched, and surfaces through the researcher controls' existing failure path (`runControl`
- * alert + console.error) instead of crashing or silently falling back to another drill.
- */
-function drillSourceFor(option: AvailableDrill): unknown {
-  return option.resolveSource !== undefined ? option.resolveSource() : option.source;
-}
 
 interface AvailableScene {
   id: string;
@@ -334,22 +302,13 @@ const availableDrills: AvailableDrill[] = [
     source: variant.drill,
     sceneId: variant.sceneId,
   })),
-  // WP-64 T1 (FR-64.5) — the curated research-schedulable tracking-pilot blocks, so a custom
-  // Session Plan step can actually be loaded by `loadDrillById()`. Registered from the same
-  // `TRACKING_PILOT_SCHEDULABLE_DRILLS` the family roster and the declared-weapon map derive from:
-  // "compilable" and "loadable" are the same list here, which is what FM-64.2 is about.
-  //
-  // `sceneId` is the descriptor's pinned `field-low`, matching `loadDrillConfigDirect()` — the
-  // blocks' clearance envelope is validated against that scene. `showInResearcherControls: false`
-  // keeps them out of the researcher drill dropdown (OQ-64.2): they are reachable through a
-  // Session Plan and nowhere else.
-  ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => ({
-    id: entry.config.drillId,
-    label: entry.config.drillId,
-    source: entry.config,
-    sceneId: entry.sceneId,
-    showInResearcherControls: entry.selectionSurface === 'session-plan-and-controls',
-  })),
+  // WP-64 (FR-64.5) — the curated research-schedulable tracking-pilot blocks, so a custom Session
+  // Plan step can actually be loaded by `loadDrillById()`. Projected from the same curated registry
+  // the family roster and the declared-weapon map derive from: "compilable" and "loadable" are the
+  // same list here, which is what FM-64.2 is about. The entries are built in that module (pinned
+  // `field-low`, config by reference, withheld from the Controls dropdown) so a test can execute
+  // those three claims instead of scanning this literal for them — see `drillRegistry.ts`.
+  ...TRACKING_PILOT_RUNTIME_DRILLS,
 ];
 // WP-52: single-source lookup for the additive `visibility` meta every peek-click-transfer
 // pilot cell (v1 default, every v2 fixed candidate, and the v2 randomized cell) needs in its
@@ -1458,8 +1417,7 @@ async function activateDrill(
 }
 
 async function loadDrillById(drillId: string, weaponId?: WeaponId): Promise<void> {
-  const option = availableDrills.find((candidate) => candidate.id === drillId);
-  if (option === undefined) throw new Error(`Unknown drill: ${drillId}`);
+  const option = resolveAvailableDrill(availableDrills, drillId);
   // WP-62 / T3：`weaponId` 只有 Session Plan 的 run step 會給；Controls 下拉與 protocol 條件都
   // 省略它 ⇒ 沿用 reset-per-drill。
   await activateDrill(drillSourceFor(option), option.sceneId, option.loadOptions, option.id, weaponId);
@@ -1534,11 +1492,9 @@ markProtocolFullscreenExit = () => activeProtocolRunner.markCurrentConditionSusp
 
 // WP-8 / T4（FR-8.4）— 重來 / 換 drill 控制。解鎖時可操作；結果頁顯示時也保持可操作。
 controls = createControls({
-  // WP-64 T1 (OQ-64.2): the dropdown is a *projection* of the runtime registry, not the registry
-  // itself — `loadDrillById()` still searches every entry, hidden ones included.
-  drills: availableDrills
-    .filter(({ showInResearcherControls }) => showInResearcherControls !== false)
-    .map(({ id, label }) => ({ id, label })),
+  // WP-64 (OQ-64.2): the dropdown is a *projection* of the runtime registry, not the registry
+  // itself — `resolveAvailableDrill()` still searches every entry, hidden ones included.
+  drills: researcherControlsDrills(availableDrills),
   scenes: availableScenes.map(({ id, label }) => ({ id, label })),
   weapons: Object.keys(WEAPONS).map((id) => ({ id, label: id })),
   selectedDrillId: activeDrillConfig.drillId,

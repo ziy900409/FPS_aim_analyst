@@ -49,6 +49,7 @@ import {
 } from './sessionSchedule.ts';
 import {
   ALL_TRACKING_PILOT_CONFIGS,
+  TRACKING_PILOT_RUNTIME_DRILLS,
   TRACKING_PILOT_SCHEDULABLE_DRILL_IDS,
   TRACKING_PILOT_SCHEDULABLE_DRILLS,
 } from './trackingPilotSchedulableDrills.ts';
@@ -115,7 +116,7 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
     const spreadLengths: Record<string, number> = {
       PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES: PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES.length,
       trackingBrVariants: trackingBrVariants.length,
-      TRACKING_PILOT_SCHEDULABLE_DRILLS: TRACKING_PILOT_SCHEDULABLE_DRILLS.length,
+      TRACKING_PILOT_RUNTIME_DRILLS: TRACKING_PILOT_RUNTIME_DRILLS.length,
     };
     let spreadTotal = 0;
     for (const [, spreadSource] of block.matchAll(/\n {2}\.\.\.(\[[^\]]*\]|[A-Za-z_$][\w$]*)/g)) {
@@ -196,6 +197,15 @@ describe('WP-58 T-exit — invariant 5: every family representative pins a scene
     ['counterstrafeFreeV1.drillId', counterstrafeFreeV1.drillId],
   ]);
 
+  /**
+   * WP-64 T2 — a roster entry built outside this literal has no textual `sceneId` to scan for, so
+   * its pinning is read off the objects instead. `TRACKING_PILOT_RUNTIME_DRILLS` moved out of
+   * `main.ts` precisely so its `field-low` pin could be *executed* by a test (OQ-64.5); this map is
+   * what keeps that move from quietly turning the entries into unreviewed scene-less ones here.
+   */
+  const PREBUILT_ROSTER_SPREADS: ReadonlyMap<string, readonly { id: string; sceneId?: string }[]> =
+    new Map([['TRACKING_PILOT_RUNTIME_DRILLS', TRACKING_PILOT_RUNTIME_DRILLS]]);
+
   function scenelessRosterDrillIds(): Set<string> {
     const source = readFileSync(new URL('../main.ts', import.meta.url), 'utf8');
     const start = source.indexOf('const availableDrills: AvailableDrill[] = [');
@@ -205,6 +215,13 @@ describe('WP-58 T-exit — invariant 5: every family representative pins a scene
     const ids = new Set<string>();
     for (const entry of block.split(/\n {2}(?=\{|\.\.\.)/).slice(1)) {
       if (entry.includes('sceneId')) continue;
+      const spread = /^\.\.\.([A-Za-z_$][\w$]*),/.exec(entry.trim())?.[1];
+      if (spread !== undefined) {
+        const prebuilt = PREBUILT_ROSTER_SPREADS.get(spread);
+        expect(prebuilt, `unrecognized prebuilt roster spread: ${spread}`).toBeDefined();
+        for (const option of prebuilt ?? []) if (option.sceneId === undefined) ids.add(option.id);
+        continue;
+      }
       const expression = /\bid:\s*([^,\n]+)/.exec(entry)?.[1]?.trim();
       const id = expression === undefined ? undefined : SCENELESS_ROSTER_EXPRESSIONS.get(expression);
       // A scene-less entry this map cannot resolve means the roster grew an unpinned drill nobody

@@ -5,8 +5,14 @@ import { buildTrackingCorePrPilotV1Cell } from '../drill/tracking_core_pr_pilot_
 import { trackingReversalPilotV1High } from '../drill/tracking_reversal_pilot_v1.ts';
 import { DECLARED_WEAPON_BY_DRILL_ID, FAMILY_BY_DRILL_ID, SCHEDULABLE_DRILL_IDS } from './drillFamily.ts';
 import {
+  drillSourceFor,
+  researcherControlsDrills,
+  resolveAvailableDrill,
+} from '../drill/drillRegistry.ts';
+import {
   ALL_TRACKING_PILOT_CONFIGS,
   buildCuratedRegistry,
+  TRACKING_PILOT_RUNTIME_DRILLS,
   TRACKING_PILOT_SCHEDULABLE_DRILL_IDS,
   TRACKING_PILOT_SCHEDULABLE_DRILLS,
 } from './trackingPilotSchedulableDrills.ts';
@@ -109,22 +115,69 @@ describe('WP-64 T1 — family, weapon and runtime all derive from this one regis
   });
 
   /**
-   * FM-64.2 is "family roster grows, runtime registry does not" — the operator picks the drill,
-   * the preview renders, and the session dies on `Unknown drill` after the scene has swapped.
-   * `main.ts` cannot be imported here (top-level await + WebGPU + DOM), so the check is that its
-   * roster is *derived from this module* rather than restated: a second hand-written list is the
-   * only way the two can disagree.
+   * FM-64.2 is "family roster grows, runtime registry does not" — the operator picks the drill, the
+   * preview renders, and the session dies on `Unknown drill` after the scene has swapped.
+   *
+   * T1 could only scan `main.ts` for the spread (T0 §2 修正 ②: `AvailableDrill` had no test seam at
+   * all). T2 closed OQ-64.5 by moving the projection here and the two lookups into
+   * `drillRegistry.ts`, so the runtime claims below are *executed* against the very objects
+   * `main.ts` spreads — only "main.ts spreads them" is still textual.
    */
-  it('registers the curated entries in `main.ts` by spreading this registry, not by hand', () => {
+  it.each([...SELECTED_IDS])('%s resolves out of the runtime registry, pinned to field-low', (drillId) => {
+    const entry = resolveAvailableDrill(TRACKING_PILOT_RUNTIME_DRILLS, drillId);
+    expect(entry.sceneId).toBe('field-low');
+    // The canonical config **by reference** (FR-64.2): not a spread clone, so no seed, trajectory,
+    // hitbox, timing or guard can have been rewritten on the way into the roster.
+    const curated = TRACKING_PILOT_SCHEDULABLE_DRILLS.find((candidate) => candidate.config.drillId === drillId);
+    expect(drillSourceFor(entry)).toBe(curated?.config);
+    // No arm-time resolver and no loader options ⇒ the identical activation path as every other
+    // module-constant roster entry, which is what keeps WP-62's pinned weapon precedence ordering
+    // inside `activateDrill()` applicable here unchanged (T2 step 9).
+    expect(entry.resolveSource).toBeUndefined();
+    expect(entry.loadOptions).toBeUndefined();
+  });
+
+  it.each([...COMPLEMENT_IDS])('%s has no runtime entry at all', (drillId) => {
+    expect(() => resolveAvailableDrill(TRACKING_PILOT_RUNTIME_DRILLS, drillId)).toThrow(/Unknown drill/);
+  });
+
+  /**
+   * The two sides of OQ-64.2, asserted together: loadable and withheld are different questions, and
+   * a change that answered them from one list would break exactly one of these two expectations.
+   */
+  it('keeps the curated blocks out of the researcher Controls dropdown while staying loadable', () => {
+    expect(researcherControlsDrills(TRACKING_PILOT_RUNTIME_DRILLS)).toEqual([]);
+    for (const entry of TRACKING_PILOT_RUNTIME_DRILLS) {
+      expect(entry.showInResearcherControls).toBe(false);
+      expect(resolveAvailableDrill(TRACKING_PILOT_RUNTIME_DRILLS, entry.id)).toBe(entry);
+    }
+    // And the filter withholds nothing else: a roster of ordinary entries plus these two projects
+    // down to exactly the ordinary ones (NFR-64.4 — the optional field changes no existing entry).
+    const mixed = [
+      { id: 'plain_a', label: 'plain_a' },
+      ...TRACKING_PILOT_RUNTIME_DRILLS,
+      { id: 'plain_b', label: 'plain_b' },
+    ];
+    expect(researcherControlsDrills(mixed)).toEqual([
+      { id: 'plain_a', label: 'plain_a' },
+      { id: 'plain_b', label: 'plain_b' },
+    ]);
+  });
+
+  it('registers the curated entries in `main.ts` by spreading this projection, not by hand', () => {
     const source = readFileSync(new URL('../main.ts', import.meta.url), 'utf8');
     const start = source.indexOf('const availableDrills: AvailableDrill[] = [');
     expect(start, 'availableDrills literal not found in main.ts').toBeGreaterThan(-1);
     const block = source.slice(start, source.indexOf('\n];', start));
 
-    expect(block).toContain('...TRACKING_PILOT_SCHEDULABLE_DRILLS.map(');
+    expect(block).toContain('...TRACKING_PILOT_RUNTIME_DRILLS,');
     for (const drillId of ALL_TRACKING_PILOT_CONFIGS.map((config) => config.drillId)) {
       expect(block, `${drillId} must never be hand-written into the roster`).not.toContain(drillId);
     }
+    // The two projections are the shared ones, so `drillRegistry.test.ts` and the suites above are
+    // testing what the app actually runs rather than a parallel implementation.
+    expect(source).toContain('resolveAvailableDrill(availableDrills, drillId)');
+    expect(source).toContain('drills: researcherControlsDrills(availableDrills),');
   });
 
   /**

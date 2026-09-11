@@ -31,18 +31,18 @@
 
 ## T2 — Runtime / UI / export
 
-- [ ] CodeGraph impact 已記錄
-- [x] ~~runtime entry 由 curated registry 推導，scene 固定 `field-low`~~ — 已於 T1 落地（D-64-T1-1）
-- [x] ~~unselected Pilot ids 不在 runtime registry~~ — 已於 T1 落地（source-scan 斷言）
-- [ ] OQ-64.2 surface policy 已實作（T1 落地）且有**雙側測試**（T2：`loadDrillById` 側仍缺測試 seam）
-- [ ] Session Plan picker 精確顯示 selected ids 於 tracking 群組
-- [ ] 鍵盤可選取/加入；提示不只靠顏色
-- [ ] export item/rep/family/seed/weapon/scene round-trip 對帳
-- [ ] 無 assessment／manifest eligibility 欄位偽造
-- [ ] formal pilot runner/manifest 與 config values 零 diff
-- [ ] focused/full Vitest、typecheck ×2、build exit 0
-- [ ] `graphify update .`
-- [ ] commit：`feat(wp-64): wire pilot drills into session plans`
+- [x] CodeGraph impact 已記錄 — 見 progress T2 §1（`AvailableDrill`/`loadDrillById`/`sessionPlanAuditFields` 三者 T2 前零覆蓋）
+- [x] ~~runtime entry 由 curated registry 推導，scene 固定 `field-low`~~ — 已於 T1 落地（D-64-T1-1）；T2 升級為**行為**斷言
+- [x] ~~unselected Pilot ids 不在 runtime registry~~ — T2 改為 `resolveAvailableDrill()` 對 7 個 id 各拋 `Unknown drill`
+- [x] OQ-64.2 surface policy 已實作且有**雙側測試** — OQ-64.5 關閉：seam = `src/drill/drillRegistry.ts`（D-64-T2-1）
+- [x] Session Plan picker 精確顯示 selected ids 於 tracking 群組 — 2 在、7 缺席（跨全部 optgroup）
+- [x] 鍵盤可選取/加入；提示不只靠顏色 — 新列控制項皆 input/select/button 且有 aria-label
+- [x] export item/rep/family/seed/weapon/scene round-trip 對帳 — seed 走 `meta.spawn.trackingTrajectory`（見 progress T2 §3.1）
+- [x] 無 assessment／manifest eligibility 欄位偽造 — `startSessionPlan()` 函式體掃描 7 個禁用符號
+- [x] formal pilot runner/manifest 與 config values 零 diff — `git status` 只列本 task 的 6 改 + 2 新檔
+- [x] focused/full Vitest、typecheck ×2、build exit 0 — 3014 passed / 256 files
+- [x] `graphify update .` — 4869 nodes / 12052 edges
+- [x] commit：`feat(wp-64): wire pilot drills into session plans`
 
 ## T3 — E2E / validity regression
 
