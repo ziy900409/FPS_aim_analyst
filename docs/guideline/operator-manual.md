@@ -184,6 +184,12 @@ npm run preview
 
 > 自訂 program **沒有**熱身勾選框：在這條路徑上，清單的第一項本身就是你的熱身。
 
+> ⚠️ **`tracking` 群組裡的兩個 pilot block**（`tracking_core_pr_pilot_v1_2deg_5dps`、
+> `tracking_reversal_pilot_v1_high`）是**接線／手感測試用**的研究 drill：每個 26 秒且不可縮短，
+> 跑出來的資料**不可**當正式 tracking pilot 證據、**只有** primary seed、**重複次數不是獨立樣本**。
+> 三項禁令與辨識方法見
+> [tracking-pilot-runbook.md](../operational/tracking-pilot-runbook.md) 的「Session Plan 裡看到的兩個 pilot block」。
+
 確認無誤後按 **「開始 Session Plan」**。
 
 ### 4.3 第 ③ 步：資格閘

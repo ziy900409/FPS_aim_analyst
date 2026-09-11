@@ -46,17 +46,18 @@
 
 ## T3 — E2E / validity regression
 
-- [ ] 擴充既有 `session-orchestrator.spec.ts`，不開平行 spec
-- [ ] 真 DOM picker → eligibility → field-low → running → ended → download 全通
-- [ ] 不縮 production duration、不繞過 runner
-- [ ] ad hoc payload audit facts 全對帳
-- [ ] SessionRunner 擁有完成；TrackingPilotRunner records 不變
-- [ ] `tracking-pilot-live.spec.ts` 原 expected 全綠
-- [ ] history roots before/after 不變
-- [ ] 跨 render FPS sim state bit-exact
-- [ ] runbook 明列非 manifest／primary only／reps 非獨立樣本
-- [ ] full verification exit 0；`graphify update .`
-- [ ] commit：`test(wp-64): verify ad hoc tracking pilot session plans`
+- [x] 擴充既有 `session-orchestrator.spec.ts`，不開平行 spec — +2 test，未新增 spec 檔
+- [x] 真 DOM picker → eligibility → field-low → running → ended → download 全通 — DOM 軌到 `#eligibility-gate`，live 軌走既有 `startSessionPlanWithoutGate()` seam（閘仍執行、只跳過拒入）
+- [x] 不縮 production duration、不繞過 runner — 三次 26 s block 實跑，1.6 min
+- [x] ad hoc payload audit facts 全對帳 — plan 座標 / familyOrder / 兩個 rest / trajectory 物件 / hitbox / weapon / `scene.sceneId`
+- [x] SessionRunner 擁有完成；TrackingPilotRunner records 不變 — block log 0 列、品質橫幅隱藏
+- [x] `tracking-pilot-live.spec.ts` 原 expected 全綠 — 1 passed，2.7 min，一字未改
+- [x] history roots before/after 不變 — 三個 root deep-equal（含**真實** `data/session-history/`，見 progress T3 §1）
+- [x] 跨 render FPS sim state bit-exact — 既有四 pump suites 全綠；未新增第二定義（progress T3 §7）
+- [x] runbook 明列非 manifest／primary only／reps 非獨立樣本 — runbook 新章 + operator-manual callout
+- [x] full verification exit 0；`graphify update .`
+- [x] **T3 額外修復**：T1 遺留的紅燈 e2e（picker option 36→38）——`typecheck`/Vitest 都掃不到 `tests/e2e/`（progress T3 §3）
+- [x] commit：`test(wp-64): verify ad hoc tracking pilot session plans`
 
 ## T-exit
 

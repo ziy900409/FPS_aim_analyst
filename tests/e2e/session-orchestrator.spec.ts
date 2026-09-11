@@ -1,4 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+import type { DrillConfig } from '../../src/drill/DrillConfig.ts';
+import {
+  ALL_TRACKING_PILOT_CONFIGS,
+  TRACKING_PILOT_SCHEDULABLE_DRILLS,
+} from '../../src/session/trackingPilotSchedulableDrills.ts';
 
 /**
  * WP-42 / T-exit — session orchestrator 端到端補證。
@@ -30,6 +35,15 @@ import { test, expect, type Page } from '@playwright/test';
  *    對照。真瀏覽器在此新增的證據是**渲染出來的預覽表**——編譯器輸出逐 step 落到 DOM 屬性
  *    （`data-program-step` / `data-step-boundary` / `data-step-next-drill-id`），因此「UI 偷算一套
  *    休息模型」在真實 DOM 上會直接紅燈；以及非法輸入時提交確實被禁用（FR-58.7/58.13）。
+ *
+ * 4. WP-64 T3 — curated tracking-pilot block 的 ad hoc 軌（同一個 picker 的第三種內容）。同樣**擴充
+ *    本檔而非新開 spec**（T3 Planned files）：WP-64 的主張是「這兩個 block 走的就是上面那條
+ *    custom Session Plan 路徑，沒有第二套 orchestration」，拆成獨立 spec 等於在測試佈局上先承認
+ *    它是另一條路。真瀏覽器在此新增的是三件只有實跑才成立的事：picker 裡的 pilot 選項**恰好**是
+ *    curated 的兩個（其餘七個 block 缺席，A-64.1）、真 `field-low` clearance 載入後由
+ *    `SessionRunner`（不是 `TrackingPilotRunner`）擁有完成與下載（FR-64.7/FM-64.1）、以及每份
+ *    payload 帶著原 seed/武器/場景與 custom plan 座標、卻沒有 manifest 詞彙、沒有 eligibility
+ *    判定、也沒有進 history（FR-64.5/64.6/64.8）。
  */
 
 const URL = 'http://localhost:5173/';
@@ -408,7 +422,11 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     // What only the real browser adds is that the *rendered* menu has the same shape and that a
     // drill picked from it is the one that lands in the list.
     const picker = planSetup.locator('select[name="sessionPlanDrill"]');
-    await expect(picker.locator('option')).toHaveCount(36);
+    // 36 -> 38 at WP-64 T1, which added the two curated tracking-pilot blocks to the `tracking`
+    // roster row (the family already existed, so the optgroup count is unchanged). T1/T2 updated
+    // the unit-level cardinalities (`SessionPlanSetup.test.ts`, `drillFamily.test.ts`) but ran no
+    // Playwright, so this line was the one stale expectation WP-64 left behind — see T3 progress.
+    await expect(picker.locator('option')).toHaveCount(38);
     await expect(picker.locator('optgroup')).toHaveCount(10);
     const options = await picker
       .locator('option')
@@ -719,14 +737,25 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     tracking_scene_v1: '2752c07b',
   } as const;
 
+  /**
+   * WP-64 T3 widened this from `meta` to the whole payload: a curated pilot block's prep/scored
+   * window is an *event* (`scored_start`), so "the block's own protocol guard survived being
+   * scheduled" cannot be read off `meta` alone.
+   */
+  type ExportedPayload = {
+    readonly meta: ExportedMeta;
+    readonly ticks: readonly unknown[];
+    readonly events: readonly { readonly type: string }[];
+  };
+
   /** Reads one download to completion and parses it — the payload as it left the browser. */
-  async function readExportedMeta(
+  async function readExportedPayload(
     download: import('@playwright/test').Download,
-  ): Promise<ExportedMeta> {
+  ): Promise<ExportedPayload> {
     const stream = await download.createReadStream();
     const chunks: Buffer[] = [];
     for await (const chunk of stream) chunks.push(chunk as Buffer);
-    return (JSON.parse(Buffer.concat(chunks).toString('utf-8')) as { meta: ExportedMeta }).meta;
+    return JSON.parse(Buffer.concat(chunks).toString('utf-8')) as ExportedPayload;
   }
 
   /**
@@ -746,14 +775,15 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     downloads: string[];
     statuses: string[];
     metas: ExportedMeta[];
+    payloads: ExportedPayload[];
   }> {
     const downloads: string[] = [];
     // WP-62 T6 — the exports are now read, not just counted. The stream has to be taken while the
     // page is still alive, so each download is parsed as it arrives and awaited at the end.
-    const metaReads: Promise<ExportedMeta>[] = [];
+    const payloadReads: Promise<ExportedPayload>[] = [];
     page.on('download', (download) => {
       downloads.push(download.suggestedFilename());
-      metaReads.push(readExportedMeta(download));
+      payloadReads.push(readExportedPayload(download));
     });
 
     await page.evaluate(() => {
@@ -830,7 +860,8 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     const statuses = await page.evaluate(
       () => (window as unknown as { __t6statuses: string[] }).__t6statuses,
     );
-    return { samples, downloads, statuses, metas: await Promise.all(metaReads) };
+    const payloads = await Promise.all(payloadReads);
+    return { samples, downloads, statuses, metas: payloads.map((payload) => payload.meta), payloads };
   }
 
   /** Every rest the run actually served, with the wall time until the next phase, in ms. */
@@ -1119,5 +1150,236 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     // — reaching `done` calls `experimentSession.exit()`. T6 pinned the old asymmetry here
     // (`true`); the assertion flipping is the regression evidence that the fix landed.
     expect(samples.at(-1)!.state.experimentActive).toBe(false);
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // WP-64 T3 — the ad hoc research track: a curated tracking-pilot block scheduled from the *same*
+  // custom Session Plan form, run by the *same* `SessionRunner`.
+  //
+  // Both curated blocks are read from `TRACKING_PILOT_SCHEDULABLE_DRILLS` rather than typed out, so
+  // a change to the curated set shows up here as a diff instead of a stale literal — and the
+  // complement (the seven pilot blocks that must stay unschedulable) is derived from the same
+  // census, which is what makes "exactly these two, no more" checkable in the rendered DOM.
+  //
+  // Neither config is shortened for the test (T3 step 3): each block is `timeLimit` 26 000 ms
+  // (1 000 ms centre-prep + 25 000 ms scored), so three reps cost ~90 s of real time plus scene
+  // loads. That is the price of testing the production stimulus; no clock is scaled.
+  // ---------------------------------------------------------------------------------------------
+
+  const CURATED_PILOT_CONFIGS: readonly DrillConfig[] = TRACKING_PILOT_SCHEDULABLE_DRILLS.map(
+    (entry) => entry.config,
+  );
+  const CURATED_PILOT_IDS: readonly string[] = CURATED_PILOT_CONFIGS.map((config) => config.drillId);
+  /** The seven WP-54 blocks WP-64 deliberately did *not* curate (T0 §6 complement). */
+  const UNCURATED_PILOT_IDS: readonly string[] = ALL_TRACKING_PILOT_CONFIGS.map(
+    (config) => config.drillId,
+  ).filter((drillId) => !CURATED_PILOT_IDS.includes(drillId));
+
+  /**
+   * The export fields an ad hoc pilot run is audited by; `ExportedMeta`'s index signature alone
+   * would type every one of them `unknown`.
+   */
+  type PilotExportedMeta = ExportedMeta & {
+    readonly scene?: { readonly sceneId?: string };
+    readonly spawn?: { readonly trackingTrajectory?: unknown; readonly trackingPrepMs?: number };
+    readonly targets?: {
+      readonly hitbox?: { widthU: number; heightU: number; depthU: number; shape?: string };
+    };
+    readonly session?: { readonly participantId?: string; readonly sessionLabel?: string };
+    readonly assessment?: unknown;
+  };
+
+  test('WP-64 T3：curated pilot block 是 picker 裡唯一兩個 pilot 選項，可編入 custom program 並走到 eligibility gate（A-64.1/FR-64.1/64.4）', async ({
+    page,
+  }) => {
+    const planSetup = await openPlanSetup(page, 't3-pilot-picker');
+    await planSetup.locator('input[name="sessionPlanMode"][value="custom"]').check();
+
+    const picker = planSetup.locator('select[name="sessionPlanDrill"]');
+    const options = await picker.locator('option').evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        value: (node as HTMLOptionElement).value,
+        group: (node.parentElement as HTMLOptGroupElement | null)?.label ?? '',
+      })),
+    );
+
+    // A-64.1 — the whole registry claim, stated on the rendered menu rather than on a map: the two
+    // curated ids are offered, in the `tracking` group, and the other seven pilot blocks (practice,
+    // both calibrations, three core cells, the medium reversal) are simply not there. This is the
+    // assertion that fails if somebody "helpfully" spreads the whole manifest into the roster.
+    for (const drillId of CURATED_PILOT_IDS) {
+      const option = options.find((candidate) => candidate.value === drillId);
+      expect(option, `${drillId} must be offered by the picker`).toBeDefined();
+      expect(option!.group).toBe('tracking');
+    }
+    for (const drillId of UNCURATED_PILOT_IDS) {
+      expect(
+        options.map((option) => option.value),
+        drillId,
+      ).not.toContain(drillId);
+    }
+
+    // Two curated blocks, same family, different drills: the seam between them is a `drill` rest,
+    // and the seam between two reps of the first is a `rep` rest (FR-64.3 — the ad hoc run inherits
+    // the generic program semantics, it does not get a pilot-specific rest model).
+    await buildProgram(planSetup, CURATED_PILOT_IDS, [2, 1], '1', '2');
+
+    const steps = await readPreview(planSetup);
+    expect(steps.map((step) => step.kind)).toEqual(['run', 'rest', 'run', 'rest', 'run']);
+    expect(steps.filter((step) => step.kind === 'run').map((step) => step.drillId)).toEqual([
+      CURATED_PILOT_IDS[0],
+      CURATED_PILOT_IDS[0],
+      CURATED_PILOT_IDS[1],
+    ]);
+    expect(steps.filter((step) => step.kind === 'rest').map((step) => step.boundary)).toEqual([
+      'rep',
+      'drill',
+    ]);
+    // FR-64.4 — the fixed research factor is visible before the operator commits: every run step
+    // already says `tracking_pilot_hold` without anyone choosing it on the row. (WP-62's compile
+    // error for a *different* weapon is asserted at unit level; what only the browser adds is that
+    // the drill's declared weapon reaches the rendered preview.)
+    expect(steps.filter((step) => step.kind === 'run').map((step) => step.weaponId)).toEqual([
+      'tracking_pilot_hold',
+      'tracking_pilot_hold',
+      'tracking_pilot_hold',
+    ]);
+
+    await planSetup.locator('button[type="submit"]').click();
+    await expect(page.locator('#eligibility-gate')).toBeVisible();
+  });
+
+  test('WP-64 T3：ad hoc custom program 真跑 curated pilot block —— field-low 載入、逐 rep 匯出稽核、SessionRunner 擁有完成（A-64.4/64.5/64.6/64.7）', async ({
+    page,
+  }) => {
+    // Three unshortened 26 s blocks + 3 s countdowns + 3 s of rests + two scene loads.
+    test.setTimeout(10 * 60_000);
+    await waitForHarness(page);
+
+    const participantId = 't3-live-pilot';
+    const items = [
+      { drillId: CURATED_PILOT_IDS[0], reps: 2 },
+      { drillId: CURATED_PILOT_IDS[1], reps: 1 },
+    ];
+    const { samples, downloads, payloads } = await runLiveSessionPlan(
+      page,
+      participantId,
+      { mode: 'custom', items, drillRestSeconds: 1, familyRestSeconds: 2 },
+      9 * 60_000,
+    );
+
+    // A-64.4 — the cursor walked the compiled program: three real runs, in order, each knowing
+    // which item/rep it is. Reaching `run` at all means `loadDrillById()` resolved the curated
+    // runtime entry and the real `field-low` clearance accepted the block (FR-64.5): the runner
+    // publishes `run` only after the load resolves, and a rejected clearance aborts instead.
+    const walked = samples.filter(
+      (sample) => sample.state.phase === 'run' || sample.state.phase === 'rest',
+    );
+    expect(walked.map((sample) => sample.state.phase)).toEqual(['run', 'rest', 'run', 'rest', 'run']);
+    expect(
+      walked
+        .filter((sample) => sample.state.phase === 'run')
+        .map((sample) => [sample.state.drillId, sample.state.itemIndex, sample.state.repIndex]),
+    ).toEqual([
+      [CURATED_PILOT_IDS[0], 0, 0],
+      [CURATED_PILOT_IDS[0], 0, 1],
+      [CURATED_PILOT_IDS[1], 1, 0],
+    ]);
+    expect(measuredRests(samples).map((rest) => rest.boundary)).toEqual(['rep', 'drill']);
+
+    expect(downloads).toHaveLength(3);
+    expect(new Set(downloads).size).toBe(3);
+    expect(samples.at(-1)!.state.phase).toBe('done');
+    expect(samples.at(-1)!.state.experimentActive).toBe(false);
+    await expect(page.locator('#rest-overlay')).toBeHidden();
+
+    // FR-64.7 / FM-64.1 — ownership. `TrackingPilotRunner` is offered this drill's `ended` first
+    // (`main.ts`: `trackingPilotSession?.handleDrillEnded()`), and it must decline every time,
+    // because no manifest is running: its block log stays empty and it renders no eligibility
+    // verdict. Had it taken over, the downloads and the advances above would both be its doing.
+    await expect(page.locator('#tracking-pilot-records-list').locator('li')).toHaveCount(0);
+    await expect(page.locator('#tracking-pilot-quality-banner')).toBeHidden();
+    await expect(page.locator('#tracking-pilot-operator')).toBeHidden();
+
+    // FR-64.8 — practice never reaches the history API: the client-side policy short-circuits to
+    // `excluded` without a request, so no history root can grow from an ad hoc run.
+    const historyState = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __fpsTest: { historySaveState(): { kind: string; reason?: string } };
+          }
+        ).__fpsTest.historySaveState(),
+    );
+    expect(historyState).toEqual({ kind: 'excluded', reason: 'practice' });
+
+    expect(payloads.map((payload) => payload.meta.drillId)).toEqual([
+      CURATED_PILOT_IDS[0],
+      CURATED_PILOT_IDS[0],
+      CURATED_PILOT_IDS[1],
+    ]);
+
+    for (const [index, payload] of payloads.entries()) {
+      const meta = payload.meta as PilotExportedMeta;
+      const config = CURATED_PILOT_CONFIGS.find((candidate) => candidate.drillId === meta.drillId)!;
+      const label = `${meta.drillId} rep ${String(meta.sessionPlanRepIndex)}`;
+
+      // A-64.5 — the run is locatable in the plan it came from, with no new metadata field.
+      expect(meta.sessionPlanMode, label).toBe('custom');
+      expect(meta.sessionPlanItems, label).toEqual(items);
+      expect([meta.sessionPlanItemIndex, meta.sessionPlanRepIndex], label).toEqual(
+        index < 2 ? [0, index] : [1, 0],
+      );
+      expect(meta.sessionPlanItems![meta.sessionPlanItemIndex!].drillId, label).toBe(meta.drillId);
+      // FR-64.6 — the run is audited as what it is: a `tracking`-family program with the two rest
+      // seams the operator chose. A curated block gets no family of its own and no pilot-specific
+      // rest model; the whole audit block is the stage8/WP-58 one, unchanged.
+      expect(meta.sessionPlanFamilyOrder, label).toEqual(['tracking']);
+      expect(meta.sessionPlanDrillRestSeconds, label).toBe(1);
+      expect(meta.sessionPlanRestSeconds, label).toBe(2);
+
+      // FR-64.2 — the stimulus that actually ran is the canonical config's. The primary seed lives
+      // in the trajectory, not in `meta.rngSeed` (T2 §3), which is why the whole trajectory object
+      // is compared rather than one number.
+      expect(meta.spawn?.trackingTrajectory, label).toEqual(config.targets.trackingTrajectory);
+      expect(meta.targets?.hitbox?.shape, label).toBe('sphere');
+      expect(meta.targets?.hitbox?.widthU, label).toBeCloseTo(config.targets.hitbox!.widthU, 6);
+      // FR-64.4 — the fact, not the intent: the run really did fire the pilot's own hold weapon.
+      expect(meta.weaponId, label).toBe('tracking_pilot_hold');
+      // FR-64.5 — the pinned scene, proven by the scene the export names.
+      expect(meta.scene?.sceneId, label).toBe('field-low');
+
+      // FR-64.8 — practice all the way through: no assessment block, so no trend cohort.
+      expect(meta.assessment, label).toBeUndefined();
+
+      // FR-64.7 / FM-64.8 — no manifest vocabulary is borrowed. `sessionLabel` is how a formal
+      // pilot block records its counterbalance cell (`tracking-pilot-v2:<pid>:session-N`); an ad
+      // hoc run carries the participant and nothing else, so its payload cannot be mistaken for
+      // manifest evidence. Nor does anything here claim eligibility.
+      expect(meta.session, label).toEqual({ participantId });
+      expect(
+        Object.keys(meta).filter((key) => /pilot|eligib|counterbalance/i.test(key)),
+        label,
+      ).toEqual([]);
+
+      // The block's own protocol guard survived being scheduled: the 1 s centre-prep window is
+      // still declared and the scored window still opens exactly once (the same two facts
+      // `tracking-pilot-live.spec.ts` asserts for the manifest path). Recording a violation is
+      // what these blocks do; *judging* it is what the ad hoc path refuses to do.
+      expect(meta.spawn?.trackingPrepMs, label).toBe(config.timing.trackingPrepMs);
+      expect(
+        payload.events.filter((event) => event.type === 'scored_start'),
+        label,
+      ).toHaveLength(1);
+      expect(payload.ticks.length, label).toBeGreaterThan(0);
+      expect(meta.recorderOverflow, label).toBe(false);
+    }
+
+    // FM-64.7 — reps are repeated exposure, never independent samples: rep 0 and rep 1 of item 0
+    // replay the *same* primary seed and the same trajectory. Stated here as an executable fact, so
+    // the runbook's prohibition is not merely prose.
+    expect((payloads[0].meta as PilotExportedMeta).spawn?.trackingTrajectory).toEqual(
+      (payloads[1].meta as PilotExportedMeta).spawn?.trackingTrajectory,
+    );
   });
 });

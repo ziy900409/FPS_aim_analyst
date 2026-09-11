@@ -4,10 +4,12 @@
 
 ## Current status
 
-✅ **T2 完成（2026-09-11）；T3 可開工。** 兩個 curated Pilot block 已可排程、可編譯、可載入，且三者皆**有行為測試**。
+✅ **T3 完成（2026-09-11）；T-exit 可開工。** 兩個 curated Pilot block 已可排程、可編譯、可載入、**並在真 Edge 裡真的跑完與匯出**。
 
 - T1 新增 [`src/session/trackingPilotSchedulableDrills.ts`](../../../../../src/session/trackingPilotSchedulableDrills.ts)：family / declared weapon / runtime registry 三者**同一來源**；runtime entry 與 Controls surface filter 亦由 T2 提前落地（D-64-T1-1）。
 - T2 新增 [`src/drill/drillRegistry.ts`](../../../../../src/drill/drillRegistry.ts)：**OQ-64.5 的測試 seam 已關閉**——`resolveAvailableDrill()` / `researcherControlsDrills()` 是 `main.ts` 實際呼叫的同一對函式，「載得到」與「不顯示」兩側皆被執行而非掃字串（D-64-T2-1）。
+- T3 只動測試與文件（`src/` 零 diff）：`session-orchestrator.spec.ts` +2 test（DOM picker／live run），
+  runbook 與 operator-manual 補上三項明文禁令。順手修掉 T1 留下的一條紅燈 e2e（picker option 36→38，T3 §3）。
 - 全量 Vitest 3014 passed / 256 files、typecheck ×2、`npm run build` 全 exit 0；三道 mutation 皆被咬住。
 - ⚠️ **T2 發現**：curated block 的 primary seed 在 `targets.trackingTrajectory.seed`，`meta.rngSeed` 實為 `DEFAULT_RNG_SEED`——稽核要對 `meta.spawn.trackingTrajectory`（見下方 T2 §3）。
 
@@ -364,6 +366,133 @@ T2 Step 9 要求「drill activation 必須在 sim loop 建構前套用既有 wea
 ——T1 之後那張 map 已含兩個 curated id，所以覆蓋自動成立。T2 改為在 registry test 斷言 curated entry
 **沒有** `resolveSource` / `loadOptions`，亦即走的是與其他 module-constant entry 完全相同的 activation 路徑。
 
+## T3 — E2E 與研究語意回歸（2026-09-11）
+
+> Task：[T3-e2e-and-regression.md](T3-e2e-and-regression.md) · T3 起點 HEAD = `cd61721`。
+
+### 1. E2E server / history root 對帳（Step 1）——**本 task 最先做、也最該先做的一件事**
+
+`playwright.config.ts` 的 `reuseExistingServer: !process.env.CI` 代表「5173 上已經有人」時 Playwright
+**不會**啟動自己那台（帶 `FPS_HISTORY_ROOT=.playwright-tmp/history-dev` 的）dev server。開工時 5173
+確實已被佔用，三道探針的結果：
+
+| 探針 | 結果 | 結論 |
+|---|---|---|
+| `Win32_Process` command line | `node …/vite/bin/vite.js`，cwd = 本 repo | 是本 checkout，不是別的 app／worktree |
+| `GET /src/session/trackingPilotSchedulableDrills.ts`、`/src/drill/drillRegistry.ts` | 皆 200 | 供的是含 T1+T2 的碼，不是舊 commit |
+| `GET /api/history/health` | `validRunCount: 54` | ⚠️ **對到真實 `data/session-history/`（54 筆），不是 `.playwright-tmp/history-dev`（243 筆）** |
+
+即：那台 server 起動時沒有 `FPS_HISTORY_ROOT`，**本次 e2e 的任何 history 寫入都會落進真實研究資料
+根目錄**。嘗試停掉它被環境權限攔下，故改採兩道替代保證，兩道都成立才繼續：
+
+1. **機制**：curated block 是 `mode:'practice'`，`HistoryPersistence.save()` 對無 `meta.assessment`
+   的 payload **短路成 `{kind:'excluded', reason:'practice'}` 且不發 HTTP**——所以 ad hoc run 在原理上
+   碰不到任何 history root。這條已寫成新 e2e 的斷言（讀 `__fpsTest.historySaveState()`），不是推論。
+2. **證據**：三個 root 於本 task 全部 e2e 前後各做一次 `FullName+Length` 快照並 deep-equal 比對。
+
+**結果**：`data/session-history`（56 檔）、`.playwright-tmp/history-dev`（244 檔）、
+`.playwright-tmp/history-preview`（368 檔）前後完全相同 ⇒ T3 DoD「history roots before/after
+deep-equal」PASS。
+
+> ⚠️ **留給下一位**：這條風險是環境性的、會復發。跑 e2e 前先打一次 `/api/history/health`，
+> `validRunCount` 若等於 `data/session-history/` 的檔數，就代表 5173 上那台 server **沒有**帶
+> 測試用 history root；此時要嘛停掉它讓 Playwright 自己起，要嘛確認本次要跑的 spec 全程不寫 history。
+
+### 2. Blast radius（Step 1–2）
+
+本 task 只碰測試與文件，`src/` 零 diff：
+
+| 檔案 | 為何被改 |
+|---|---|
+| `tests/e2e/session-orchestrator.spec.ts` | +2 個 WP-64 test（DOM picker／live run）、`readExportedMeta` → `readExportedPayload`（events 也要讀）、**修一條 T1 留下的紅燈**（見 §3） |
+| `docs/operational/tracking-pilot-runbook.md` | 新增「Session Plan 裡看到的兩個 pilot block」章：三項明文禁令 + 兩項「不做」 |
+| `docs/guideline/operator-manual.md` | 自訂 program 段落加一則 callout，指回 runbook |
+
+`tests/e2e/tracking-pilot-live.spec.ts` 與 `src/pilot/trackingPilotHistoryExclusion.test.ts`
+**未改**：前者 expected 原則上不得放寬（T3 Failure handling），只重跑；後者 T1 已補上「可排程 ≠
+assessment」的五項斷言（全九個 id + 兩個 curated 的 `unregistered-drill` projection），T3 重跑確認
+仍綠，沒有再加平行斷言的理由。
+
+### 3. T3 發現①：T1/T2 留下一條**紅燈 e2e**，六次綠燈都沒看見
+
+`session-orchestrator.spec.ts:411` 斷言 custom picker 有 36 個 `<option>`；T1 加了兩個 curated block
+之後真值是 38。**T1 與 T2 各自宣告的「全量 Vitest + typecheck ×2 + build exit 0」全都是真的**——
+它們就是掃不到這裡：
+
+- `npm run typecheck` 只涵蓋 `tsconfig.json`（`src/`）與 `tsconfig.node.json`；`tests/e2e/` 兩邊都不在。
+- Vitest 不收 `tests/e2e/*.spec.ts`（Playwright 專屬）。
+- 兩個 code task 都沒跑 Playwright（T1/T2 的 DoD 也沒要求）。
+
+T1 Surprise #1 說「roster 大小寫死在**三個**檔」——實際是**四個**，第四個在 e2e，而且是唯一一個
+既有 verification battery 照不到的。修法是把 36 改成 38 並就地註明來歷（不是放寬：`optgroup` 仍
+釘 10，id 唯一性仍斷言）。
+
+> 教訓（跨 WP）：**任何動 `FAMILY_ROSTER` / `availableDrills` 基數的 task，DoD 必須包含一次
+> `session-orchestrator.spec.ts` 的 e2e**，否則「全綠」只是四個檢查裡的三個。
+
+### 4. T3 發現②：`field-low` 的 pin **沒有第二道防線**，只有匯出斷言咬得住
+
+mutation M2 把 `TRACKING_PILOT_RUNTIME_DRILLS` 的 `sceneId` 改成 `'urban-high'` 後，curated block
+**照樣載入、照樣跑完 26 秒、照樣匯出**——`urban-high` 的 clearance 並沒有拒絕它。也就是說 FM-64.5
+（「runtime entry 未 pin `field-low`」）的真實後果不是 loud failure，而是**安靜地換掉視覺場景與遮擋
+條件**，而唯一會發現的是新 e2e 的 `meta.scene.sceneId === 'field-low'`。
+
+README §3 把 FM-64.5 的緩解寫成「descriptor 的 literal type + 真實 load E2E」——現在知道
+**literal type 只擋打錯字，真正的守門人是那條匯出斷言**；T2 的 registry 單元測試（同一個 mutation
+也會咬）是第二層，但它證的是「物件寫對了」，不是「跑起來真的在那個場景」。
+
+### 5. Mutation checks
+
+| # | Mutation | 結果 |
+|---|---|---|
+| 1 | `FAMILY_ROSTER['tracking']` 改 spread `ALL_TRACKING_PILOT_CONFIGS`（全九個） | ✅ DOM picker test 紅：`not.toContain("tracking_core_pr_pilot_v1_practice")` 失敗，並印出整份 45 個選項的選單 —— A-64.1 的「其餘七個缺席」不是空話 |
+| 2 | `TRACKING_PILOT_RUNTIME_DRILLS.sceneId` → `'urban-high'` | ✅ live test 紅：`meta.scene?.sceneId` `expected "field-low" / received "urban-high"`（§4：block 仍跑完，只有這條咬住） |
+| 3 | 移除 `DECLARED_WEAPON_ROSTER` 的 curated spread | ✅ DOM picker test 紅：預覽的 `data-step-weapon-id` 由 `tracking_pilot_hold` ×3 變 `default` ×3 —— FR-64.4 的固定研究因子在送出前就看得見 |
+
+三道均已還原（`git status --short -- src` 事後為空）。
+
+### 6. 新增的兩個 test 各自證什麼（Step 2–6）
+
+| Test | 成本 | 只有真瀏覽器能證的事 |
+|---|---|---|
+| `curated pilot block 是 picker 裡唯一兩個 pilot 選項…` | 1.9 s | 渲染出來的 `<optgroup label="tracking">` 恰含兩個 curated id、七個 uncurated id 全數缺席（**由 `ALL_TRACKING_PILOT_CONFIGS` 推導，非手抄**）；同家族兩 drill 的 seam 是 `drill` 而非 `family`；預覽逐步顯示 `tracking_pilot_hold`；submit 走到 `#eligibility-gate` |
+| `ad hoc custom program 真跑 curated pilot block…` | 1.6 min | 三次真跑（26 s 未縮短）在真 `field-low` 載入並結束；cursor `[item,rep]` 正確；三份唯一下載；`meta` 逐份對帳（plan 座標 / trajectory 物件 / hitbox / `tracking_pilot_hold` / `scene.sceneId` / 無 `assessment` / `session` 只有 `participantId`）；`scored_start` 各一次且 `trackingPrepMs` 保留；`TrackingPilotRunner` 的 block log 為空、品質橫幅不顯示；`historySaveState()` = `excluded/practice`；rep 0 與 rep 1 的 trajectory `toEqual`（FM-64.7 重複暴露） |
+
+**eligibility gate 的處理**：DOM 軌走到 `#eligibility-gate` 為止，live 軌走既有
+`startSessionPlanWithoutGate()` seam——與 WP-58 T6 同一條路，理由與證據見該 seam 的既有註解
+（PERF_FLOOR_MS 是 120 Hz 地板，headless rAF ~17 ms，閘**仍然執行**並把真實的失敗報告交給
+`experimentSession.enter()`，只跳過拒入）。本 task 未新增任何繞過。
+
+### 7. Step 8（跨 render FPS 決定性）的處理
+
+**未新增測試**。NFR-64.1 的主張是「排程化不改變刺激或 sim」，而 WP-64 從頭到尾沒有進 sim：
+`src/sim`、`SharedState`、輸入鏈與命中判定零 diff（T1/T2 已證，T3 未碰 `src/`）。因此證據取既有四
+pump（穩定 60/144/240 Hz + 抖動 144 Hz ±50%）suites 全綠，加上新 e2e 對「同一 config 物件被逐位帶到
+匯出」的行為斷言。再寫一份「用 pilot config 跑四 pump」只會是既有 `determinism.test.ts` 的第二定義
+（C-D4），不會多證任何東西。
+
+### 8. 驗證證據（Step 10）
+
+| 指令 | 結果 |
+|---|---|
+| `npx playwright test tests/e2e/session-orchestrator.spec.ts --project=edge --workers=1` | ✅ **20 passed**，13.2 min，exit 0（既有 18 項 expected 一字未改）。⚠️ 該次全量跑的是**加 3 行 `sessionPlanFamilyOrder`/rest 斷言之前**的檔；補完後針對 `-g "WP-64 T3"` 再跑一次 **2 passed，2.4 min**，其餘 18 項未受影響（本 task 只加斷言、未改既有 test） |
+| `npx playwright test tests/e2e/tracking-pilot-live.spec.ts --project=edge --workers=1` | ✅ **1 passed**，2.7 min（`[WP-54 T6] calibration block — ticks=3714, events=3, quality="Blocked — reasons: insufficient-fire-hold-coverage"` —— 既有 expected 一字未改，idle run 的 verdict 照舊只印不斷言） |
+| `npx vitest run src/loop/__tests__/{determinism,fire-determinism,wp22-determinism,wp62-session-weapon-determinism}.test.ts src/sim/trackingTrajectory.test.ts src/pilot/trackingPilotHistoryExclusion.test.ts` | ✅ **6 files / 85 passed**，exit 0 |
+| `npx vitest run`（全量） | ✅ **256 files / 3014 passed / 2 skipped**，exit 0，17.0 s |
+| `npm run typecheck`（`tsc --noEmit` ×2） | ✅ exit 0 |
+| `npm run build` | ✅ exit 0，2.31 s |
+| spec 自身 typecheck（`tsc --noEmit --strict … session-orchestrator.spec.ts`） | ✅ 無輸出 —— 因為 §3 的緣故，e2e spec 的型別**不在** `npm run typecheck` 涵蓋範圍，故本 task 額外手動跑一次 |
+| `graphify update .` | ✅ **4870 nodes / 12055 edges / 278 communities** |
+| history roots before/after | ✅ 三個 root 全 deep-equal（§1） |
+| `git status --short -- src` | ✅ 空 —— T3 未動任何 production code |
+
+瀏覽器：Playwright `edge` project（系統 Edge，`channel: 'msedge'`），單 worker。
+
+### 9. Open Questions（T3 新增）
+
+無。§3 的「roster 基數改動必須跑 e2e」與 §1 的 dev-server/history-root 探針屬**程序**發現，已寫在
+上方與 T-exit 的交接段，不需要 owner 決策。
+
 ## Task log
 
 | Task | Status | Started | Completed | Commit | Evidence |
@@ -371,6 +500,6 @@ T2 Step 9 要求「drill activation 必須在 sim loop 建構前套用既有 wea
 | T0 | ✅ Done | 2026-09-10 | 2026-09-10 | `docs(wp-64): complete tracking pilot scheduling entry gate` | 本檔 T0 §1–§8；238 + 66 Vitest passed、typecheck ×2 exit 0、`git diff -- src tests` 空 |
 | T1 | ✅ Done | 2026-09-10 | 2026-09-10 | `feat(wp-64): register curated tracking pilot session drills` | 本檔 T1 §1–§7；全量 2984 passed、typecheck ×2 + build exit 0、三道 mutation 皆被咬 |
 | T2 | ✅ Done | 2026-09-11 | 2026-09-11 | `feat(wp-64): wire pilot drills into session plans` | 本檔 T2 §1–§6；全量 3014 passed、typecheck ×2 + build exit 0、三道 mutation 皆被咬 |
-| T3 | ⬜ Not started | — | — | — | — |
+| T3 | ✅ Done | 2026-09-11 | 2026-09-11 | `test(wp-64): verify ad hoc tracking pilot session plans` | 本檔 T3 §1–§9；`session-orchestrator` 20 passed（13.2 min）、`tracking-pilot-live` 1 passed、全量 3014 passed、typecheck ×2 + build exit 0、三道 mutation 皆被咬、三個 history root deep-equal |
 | T-exit | ⬜ Not started | — | — | — | — |
 
