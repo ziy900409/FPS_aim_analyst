@@ -21,6 +21,7 @@
     "analyze:lift-cohort": "vite-node scripts/analyze-lift-cohort.ts --",
     "test:stage10": "node scripts/run-stage10-acceptance.mjs",
     "test:stage10:scale": "node scripts/run-stage10-scale-benchmark.mjs",
+    "graph:update": "set GRAPHIFY_VIZ_NODE_LIMIT=8000&& graphify update .",
     "test:ci": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json && vitest run && playwright test"
   },
   "dependencies": {
