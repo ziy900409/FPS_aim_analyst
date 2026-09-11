@@ -12,8 +12,8 @@
 | **Primary user** | 受試者（待命／倒數／Time 卡／重測提示）；研究者與分析端（`meta.validity` 新旗標）。 |
 | **Estimate** | 6.5–9 dev-days（T0～T6 + T-exit）。 |
 | **Risk** | **High**：T1 改 `DrillPhase` 狀態機（`createDrillRunner` 有 35 個 caller、17+ 測試與 golden fixture 覆蓋）；T6 的 live e2e 目前全數假設「載入即開始」。 |
-| **IDs** | 🟡 **候選 `WP-65` / `GD-41`**。寫入當下：`exec-plan/README.md §2` 最大 WP = **WP-63**、`active/stage13/` 實際最大 = **WP-64**（[wp-64](../wp-64-tracking-pilot-session-plan-drills/README.md) 已落 code，尚未入 §2 索引）、`DECISIONS.md` 最大 GD = **GD-39**、WP-64 已於其 T0 佔用 **GD-40**（尚未落帳）。依 [GD-35](../../../DECISIONS.md) ② 紀律，二號**必須於 T0 重查**；被平行 session 取用則依 [GD-15](../../../DECISIONS.md)「先採納先得」順延，不爭號。 |
-| **Status** | 📋 **規劃完成，未開工（2026-09-11）**。四個 OQ 全部有 README 預設值，無阻塞性未決項。 |
+| **IDs** | ✅ **`WP-65` / `GD-41` 已於 T0 重查確認可用（2026-09-11）**，不需順延；證據見 [progress.md §T0.1](progress.md)。規劃期寫入當下：`exec-plan/README.md §2` 最大 WP = **WP-63**、`active/stage13/` 實際最大 = **WP-64**（[wp-64](../wp-64-tracking-pilot-session-plan-drills/README.md) 已落 code，尚未入 §2 索引）、`DECISIONS.md` 最大 GD = **GD-39**、WP-64 已於其 T0 佔用 **GD-40**（尚未落帳）。依 [GD-35](../../../DECISIONS.md) ② 紀律，二號**必須於 T0 重查**；被平行 session 取用則依 [GD-15](../../../DECISIONS.md)「先採納先得」順延，不爭號。 |
+| **Status** | 🚧 **T0 完成（2026-09-11）**，T1 可開工。四個 OQ 全部照 README 預設關閉；基線與 T0 意外見 [progress.md §T0](progress.md)。 |
 
 ### 落點說明
 
@@ -37,6 +37,7 @@
 - `endCondition` 兩型並存（[DrillConfig.ts:280](../../../../../src/drill/DrillConfig.ts#L280)）：
   - `timeLimit`：`spider_shot_v2`／`v3`（60 000 ms）、`tracking_core_pr_pilot_v1` 與 `tracking_reversal_pilot_v1` 家族。**有總時長可倒數。**
   - `targetCount`：`counterstrafe_*`／`detection_popin_v1`／`tracking_v1`／`peek_click_transfer_*`／`micro_flick_*`。**無總時長**；唯一時間上限是 `timing.timeLimitMs = 120 000` 的**後援閘**（[DrillRunner.ts:237-242](../../../../../src/drill/DrillRunner.ts#L237-L242)），實際多在 20–40 秒結束 ⇒ 顯示「還剩 118 秒」會誤導。
+    > **T0 更正（2026-09-11）**：「唯一時間上限是 `timing.timeLimitMs = 120 000`」對 roster 多數成立，但 **app 開機載入的預設 drill [`drills/counterstrafe_ad_v1.json`](../../../../../drills/counterstrafe_ad_v1.json) 沒有 `timeLimitMs`** ⇒ `backstopMs === undefined`、`reachedBackstop` 恆 false，閒置的 app 會永遠停在 `running`。實測與影響見 [progress.md §T0.4 / Surprise 3](progress.md)。此為既有條件，不在本 WP 範圍。
 
 ### 0.3 現況：掉鎖 / 退出全螢幕的效度機制有兩個缺口
 
