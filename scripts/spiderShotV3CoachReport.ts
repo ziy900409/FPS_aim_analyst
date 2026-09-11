@@ -311,7 +311,7 @@ function renderValidity(report: CoachReport): string {
 <strong>採集面缺兩樣東西,兩樣都改變了報告能說什麼</strong>
 <ul>
 <li><code>meta.dpi</code> <strong>缺席</strong> ⇒ <code>cm/360</code> 不可算。<code>counts/360</code> = ${first.countsPer360.toFixed(0)}（sens ${first.sensitivity} / FOV ${fmt(first.fovDeg, 0)}）照列,但**不用預設 DPI 猜** cm/360。</li>
-<li><code>meta.session.participantId</code> <strong>缺席</strong> ⇒ compatibility key 建不起來,三份都進不了歷史趨勢（見 §3 與 KI-034）。</li>
+<li><code>meta.session.participantId</code> <strong>缺席</strong> ⇒ compatibility key 建不起來,三份都進不了歷史趨勢（見 §3 與 KI-036）。</li>
 <li><code>mouseSamples</code> 缺席（未用 <code>?rawMouse=1</code>）⇒ 只有 128 Hz tick 級 <code>aim</code>。<strong>這不是 blocker</strong>,只是少了一維資料。</li>
 </ul>
 </div>
@@ -427,7 +427,7 @@ function renderMetrics(report: CoachReport): string {
 <code>${escapeHtml(runs[0].registry.reasonCode ?? '—')}</code>。
 根因:${inline(runs[0].registry.diagnosis ?? '未知')}。
 下表的五個值是直接呼叫該 drill 的 <code>registration.project()</code> 算出來的 —— 指標本身沒問題,
-<strong>進不了趨勢的是這三份 run 的 metadata</strong>。已立案為 <strong>KI-034</strong>。
+<strong>進不了趨勢的是這三份 run 的 metadata</strong>。已立案為 <strong>KI-036</strong>。
 </div>
 <div class="table-wrap"><table>
 <thead><tr><th>Metric ID</th>${runs.map((run) => `<th>rep ${run.runIndex + 1}</th>`).join('')}<th>單位</th></tr></thead>
@@ -435,7 +435,7 @@ function renderMetrics(report: CoachReport): string {
 </table></div>
 <p class="footnote">
 ⚠️ <code>peripheral-hits-per-minute</code> 的分母是 <code>validDurationMs</code>（最後 tick − 第一 tick,含 ${PROTOCOL_COUNTDOWN_MS / 1000} 秒倒數）
-⇒ 絕對值低估 ${runs.map((run) => pct(run.effectiveSpeed.denominatorInflation)).join('／')}（G2 / KI-035）。
+⇒ 絕對值低估 ${runs.map((run) => pct(run.effectiveSpeed.denominatorInflation)).join('／')}（G2 / KI-037）。
 ⚠️ <code>median-overshoot-deg</code> 只有 ${runs.map((run) => run.tails.find((tail) => tail.key === 'overshoot')?.n ?? 0).join('／')} 個有效樣本（§6）。
 ⚠️ <code>peripheral-first-shot-hit-rate</code> 由 <code>firstFire</code> 自己的命中結果算出（非 <code>window.outcome</code>）—— 不會被補槍灌水。
 </p>
@@ -549,7 +549,7 @@ function renderMethod(report: CoachReport): string {
 <ul>
 <li><code>sync-v1</code>（<code>computeSyncMetrics</code>）—— v3 是 <code>translation: 'locked'</code>、無 <code>counter</code> 事件,
 <code>releaseToFireMs</code>／<code>counterHoldMs</code> 沒有可錨定的對象（設計文件 D4:結構性不適用）。</li>
-<li><code>curve-v1</code> 的左右分群 —— <code>PeekWindowTs.side</code> 對 v3 是佔位值,左右分群會整組塌到單邊（KI-036）。</li>
+<li><code>curve-v1</code> 的左右分群 —— <code>PeekWindowTs.side</code> 對 v3 是佔位值,左右分群會整組塌到單邊（KI-038）。</li>
 <li>12 格交叉矩陣 —— 單場每格 n ≈ 3（G3）。</li>
 <li>throughput —— Fitts 斜率在三次重複之間不穩定（§6）。</li>
 </ul>

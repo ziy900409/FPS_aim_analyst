@@ -36,7 +36,7 @@ node scripts/check-coach-report-render.mjs <report.html> [screenshot-dir]
 | 閘 | 結論 | 造成的降級 |
 |---|---|---|
 | **G1** `t_detect` 活著嗎 | 🟡 **活著但比例偏低**：canonical 預設參數下 **85/119 = 71.4%** `detected`（逐份 27/37、29/39、29/43）。KI-031 的懸崖在 240 Hz 上**沒有咬到**（60 Hz 那批是 0/113）。零位移 tick 佔 38.6%／34.6%／35.0% ——**不是**「沒有新資料」，否則 detected 會歸零。`baselineInsufficient` 0、`anticipation` 0；`thresholdDegPerSec` p50 = 64.4／83.5／97.6 deg/s ⇒ **KI-031 §2 的次要觀察成立**，500 ms baseline 窗確實吃進上一次拉槍、門檻被抬到數十 deg/s | `reactionMs`／`movementTimeMs` 只作描述、不作處方，且必須與 timeout 數並列 |
-| **G2** 分母含倒數 | 🔴 **確認**：tick span 65.148／64.656／64.406 s vs 協定 60.0 s ⇒ **+8.6%／+7.8%／+7.3%**（HANDOFF 預估 8–9%，實測略低）。第一個 `visible` 一律在 t0+3.000 s | 每個速率量**同時給兩個分母**；registry 絕對值不得直接對外報數。→ **KI-035** |
+| **G2** 分母含倒數 | 🔴 **確認**：tick span 65.148／64.656／64.406 s vs 協定 60.0 s ⇒ **+8.6%／+7.8%／+7.3%**（HANDOFF 預估 8–9%，實測略低）。第一個 `visible` 一律在 t0+3.000 s | 每個速率量**同時給兩個分母**；registry 絕對值不得直接對外報數。→ **KI-037** |
 | **G3** n-gate | 🟡 **邊際軸過關、12 格不過**：單場周邊 37／39／43 ⇒ 12 格每格 ≈ 3.1／3.3／3.6。方位軸每箱 8–13、幅度軸 8–18，全部 ≥ 8 | 12 格不繪製、不入結論；方位軸改用 `quadrant × side`（見「偏離協議」①） |
 | **G4** 序列逐位相同 | 🔴 **確認**：共同前綴 **75 個呈現（37 個周邊）** 的 zone 與 `targetX/Y/Z` 完全相同 | pooled 一律限制在共同前綴內並標為 clustered；跨 run 差異不可解讀為一般化能力變化 |
 | **G5** 沒有基準 | 🔴 **確認**：相容 run 總數 3，這 3 場**就是**建立基準的過程 | C1 不畫雜訊帶（改「建立基準中 3/3」）、C2 不畫基準重心與位移連線、**全報告禁用「MDC」作為宣稱** |
@@ -68,23 +68,23 @@ node scripts/check-coach-report-render.mjs <report.html> [screenshot-dir]
 2. **C5 的「進靶後逸出」樣本不足。** 有效樣本 4／5／4（< 10）⇒ 不畫 p95。根因是**行為不是缺陷**：
    受試者多半一進靶就開槍結束該次呈現，`postAcquireOvershoot()` 因此沒有「首次進靶之後」的離靶樣本。
    ⇒ registry 的 `spider-v3.median-overshoot-deg` 在這種打法下是**由 4–5 個樣本決定的整場指標**，
-   穩定性遠低於同列的其他四個。→ 入 OQ-62.2。
+   穩定性遠低於同列的其他四個。→ 入 OQ-66.2。
 3. **時間預算的形狀與示例相反。** 示例 REC 168 / MR 214 / V 96（V 最短）；實測 **V 最長且長過 MR**。
    這位受試者用長確認期換高首發命中。⇒ C3 的判讀語句不能沿用「V 長 = 不敢開槍」。
 4. **Fitts 斜率在三次重複之間不穩定。** 37／154／57 ms/bit，全距是平均的 **139%**，而三場的刺激
    **逐位相同** ⇒ 這個離散全是估計誤差。逐份 r² 0.963／0.980／0.975 —— **r² 高不代表斜率可信**
    （3 個 tier 中位數擬合一條線，兩個自由度）。⇒ 畫線但**不報 throughput、不比較截距與斜率**。
-5. **`visible.side` 對 v3 是佔位值。** → **KI-036**。
-6. **`DrillMetricRegistry.project()` 對三份都不是 `'ready'`。** → **KI-034**。
+5. **`visible.side` 對 v3 是佔位值。** → **KI-038**。
+6. **`DrillMetricRegistry.project()` 對三份都不是 `'ready'`。** → **KI-036**。
    HANDOFF §9 的 DoD 那一條是**未實跑 registry** 寫下的預期。
 
 ### 新開的帳
 
 | # | 一句話 | 狀態 |
 |---|---|---|
-| [KI-034](../../../known_issue/KI-034-registry-projection-failed-hides-which-precondition-broke.md) | `projection-failed` 是單一 catch-all，遮蔽「缺 `meta.session.participantId`」這個真因；至少七類前提失敗共用一個編碼 | 🔴 待落地 |
-| [KI-035](../../../known_issue/KI-035-valid-duration-includes-countdown.md) | `validDurationMs` 含倒數與尾段 tick ⇒ 主指標 hits/min 恆向低估 7.3–8.6% | 🔴 待落地，建議併入 OQ-62.2 |
-| [KI-036](../../../known_issue/KI-036-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md) | v3 周邊 spawn 寫死 `side: 'R'` ⇒ `curve-v1` 左右分群靜默塌成單邊（`omega.left.n === 0`） | 🔴 被 KI-032 排序阻塞 |
+| [KI-036](../../../known_issue/KI-036-registry-projection-failed-hides-which-precondition-broke.md) | `projection-failed` 是單一 catch-all，遮蔽「缺 `meta.session.participantId`」這個真因；至少七類前提失敗共用一個編碼 | 🔴 待落地 |
+| [KI-037](../../../known_issue/KI-037-valid-duration-includes-countdown.md) | `validDurationMs` 含倒數與尾段 tick ⇒ 主指標 hits/min 恆向低估 7.3–8.6% | 🔴 待落地，建議併入 OQ-66.2 |
+| [KI-038](../../../known_issue/KI-038-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md) | v3 周邊 spawn 寫死 `side: 'R'` ⇒ `curve-v1` 左右分群靜默塌成單邊（`omega.left.n === 0`） | 🔴 被 KI-032 排序阻塞 |
 
 ### 偏離協議 / 偏離 HANDOFF 之處（三項，皆已在報告內原地說明）
 
@@ -139,6 +139,6 @@ node scripts/check-coach-report-render.mjs <report.html> [screenshot-dir]
   呈現的動作」的對照跑。
 - **OQ-S14.3**：本批的首發命中率 85–98% ⇒ 2.0° 角徑對這位受試者**太容易**。
   這是 [README §6 第 5 項](README.md)要的答案之一，但 n = 1 ⇒ 不能據此改協定。
-  要不要把「角徑掃描」列成 WP-62 的前置採集？
+  要不要把「角徑掃描」列成 WP-66 的前置採集？
 - **OQ-S14.4**：三份的 `lateEventCount` 是 2／4／6（HANDOFF §1 記的是三份都 2）。量很小可忽略，
   但**單調遞增**這件事沒有解釋。是連續錄製的累積效應還是巧合？

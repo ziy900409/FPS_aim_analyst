@@ -1,4 +1,4 @@
-# KI-036 — `spider-shot-v3` 的周邊 `side` 寫死 `'R'`,所有左右分群聚合靜默塌成單邊
+# KI-038 — `spider-shot-v3` 的周邊 `side` 寫死 `'R'`,所有左右分群聚合靜默塌成單邊
 
 > 類型：**silent-zero defect**（合法值掩蓋整組缺席;與 [KI-031](KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md) 同型）。
 > 狀態：🔴 **診斷完成（2026-09-09），修法待落地**。尚無 `BD-036`。
@@ -113,6 +113,6 @@ if (spiderShot.kind === 'center-peripheral-eye-stratified') {    // spider-shot-
 - **OQ-KI36-1**：`visible.side` 對 `counterstrafe`／`peek` 家族是**真的**（那些 drill 的左右是協定
   變因）。改 optional 會讓那些路徑的型別多一層 narrowing —— 影響面需先掃過所有 `\.side` 讀取點。
 - **OQ-KI36-2**：v3 的教練報告是否需要左右曲線？若答案是「不需要」，A 的價值只剩「保護下一個人」，
-  應與 WP-62 的 descriptor 重選（OQ-62.2）一併評估優先序。
+  應與 WP-66 的 descriptor 重選（OQ-66.2）一併評估優先序。
 - **OQ-KI36-3**：`spider-shot-v1/v2` 的既有匯出全部帶 `side: 'R'`。若 A 落地，舊 payload 的
   `side` 仍在 ⇒ 需決定是「讀到就當佔位值忽略」還是「以 `schemaVersion` 分界」。

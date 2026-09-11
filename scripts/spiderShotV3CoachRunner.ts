@@ -478,7 +478,7 @@ function analyseRun(input: SpiderShotV3RunInput, runIndex: number): AnalysedRun 
  * `DrillMetricRegistry.project()` 的 `catch` 是**單一 catch-all**：任何前提失敗都變成
  * `reasonCode: 'projection-failed'`（[`DrillMetricRegistry.ts:413`](../src/history/DrillMetricRegistry.ts#L413)）。
  * 操作者因此看不出是「忘了填受試者代號」還是「幾何檢查沒過」。本函式在**不改 registry** 的前提下
- * 逐條複驗它的前提,把診斷補回來（KI-034）。
+ * 逐條複驗它的前提,把診斷補回來（KI-036）。
  */
 function projectRegistry(payload: ExportPayload): RegistryOutcome {
   const registry = createDrillMetricRegistry();
@@ -855,7 +855,7 @@ function g2(runs: readonly RunSummary[]): GateVerdict {
       `本報告因此對每一個速率量**同時給兩個分母**：registry 原值（可比、可進趨勢）與 ` +
         `${(PROTOCOL_SCORING_WINDOW_MS / 1000).toFixed(1)} s 分母值（教練語意正確）。`,
       `⚠️ **不修 registry** —— \`validDurationMs\` 的語意屬凍結協定的可比性,改它會讓既有趨勢點不可比。` +
-        `缺陷已依 CLAUDE.md §3.9 立案為 **KI-035**。`,
+        `缺陷已依 CLAUDE.md §3.9 立案為 **KI-037**。`,
     ],
     degradations: [
       'registry 的 `spider-v3.peripheral-hits-per-minute` 絕對值不得直接對外報數,必須標註低估幅度。',
@@ -1027,7 +1027,7 @@ function findOverturnedAssumptions(runs: readonly RunSummary[]): readonly string
     overturned.push(
       `**\`visible.side\` 對 v3 是佔位值。** 三份 run 的全部周邊 \`visible\` 事件 \`side\` 只有 ` +
         `${runs[0]?.quality.rawSideDistinctValues ?? 0} 種取值 ⇒ 任何以 \`PeekWindowTs.side\`／\`PhaseSample.side\` ` +
-        `分左右的聚合都會整組塌到單邊而不報錯（實測 \`curve-v1\` 的 \`omega.left.n === 0\`）。已立案為 **KI-036**。`,
+        `分左右的聚合都會整組塌到單邊而不報錯（實測 \`curve-v1\` 的 \`omega.left.n === 0\`）。已立案為 **KI-038**。`,
     );
   }
 
@@ -1036,7 +1036,7 @@ function findOverturnedAssumptions(runs: readonly RunSummary[]): readonly string
       `**\`DrillMetricRegistry.project()\` 對三份都不是 \`'ready'\`。** 實際回 ` +
         `\`${runs[0]?.registry.status}\`／\`${runs[0]?.registry.reasonCode ?? '—'}\`,` +
         `根因是 ${runs[0]?.registry.diagnosis ?? '未知'} —— 而 \`projection-failed\` 是單一 catch-all,` +
-        `不告訴操作者是哪一條前提失敗。已立案為 **KI-034**。` +
+        `不告訴操作者是哪一條前提失敗。已立案為 **KI-036**。` +
         `五個 descriptor 的值本身仍算得出來（\`registration.project()\` 不需要 compatibility key）,故照常列出。`,
     );
   }

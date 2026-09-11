@@ -1,11 +1,11 @@
-# KI-034 — `projection-failed` 是單一 catch-all,遮蔽「缺受試者代號」這個真因
+# KI-036 — `projection-failed` 是單一 catch-all,遮蔽「缺受試者代號」這個真因
 
 > 類型：**diagnosability defect**（無錯資料流出;但整批 run 靜默退出趨勢且無從歸因）。
 > 狀態：🔴 **診斷完成（2026-09-09），修法待落地**。尚無 `BD-034`。
 > 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) §1 索引。
 > 標的：[`src/history/DrillMetricRegistry.ts`](../../src/history/DrillMetricRegistry.ts)（`project()` 的
 > `try/catch`，`:397-415`）· [`src/metrics/compatibilityKey.ts`](../../src/metrics/compatibilityKey.ts)（`:30`）。
-> 相關：[KI-035](KI-035-valid-duration-includes-countdown.md)（同一批真人 run 發現）·
+> 相關：[KI-037](KI-037-valid-duration-includes-countdown.md)（同一批真人 run 發現）·
 > [CLAUDE.md §4 C-D3](../../CLAUDE.md)。
 > 發現脈絡：2026-09-09 依
 > [`HANDOFF-v3-real-data.md`](../exec-plan/active/stage14/HANDOFF-v3-real-data.md) 用三份真人

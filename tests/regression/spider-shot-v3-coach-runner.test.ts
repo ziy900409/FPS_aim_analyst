@@ -31,7 +31,7 @@ import {
  *   ② **左右一律走 eye-frame `side`** —— `visible.side` 是佔位值,不得用它分箱（HANDOFF §3.3 ②）。
  *   ③ **n 閘與降級** —— n < 8 不下結論、有效樣本 < 10 不畫 p95、呈現數 < 24 不畫滾動窗。
  *   ④ **兩個分母同時報** —— registry 的 `validDurationMs` 與協定的 60.0 s（G2）。
- *   ⑤ **registry 失敗要點名前提** —— `projection-failed` 這個 catch-all 之外要說出缺了什麼（KI-034）。
+ *   ⑤ **registry 失敗要點名前提** —— `projection-failed` 這個 catch-all 之外要說出缺了什麼（KI-036）。
  *   ⑥ **渲染層不得說出資料不支持的話** —— 沒有 MDC、沒有基準、誠實邊界逐條在場。
  *
  * fixture 一律**合成**,不是真人資料（參與者匯出不進 repo）。

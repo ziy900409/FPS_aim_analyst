@@ -71,7 +71,7 @@ function load(files: readonly string[]): { inputs: SpiderShotV3RunInput[]; rejec
       continue;
     }
     if (parsed.payload.meta.drillId !== spiderShotV3.drillId) {
-      // 同一個 Downloads 目錄常常混著 `spider-shot-wide-v1`（WP-63 的範圍）。點名跳過而不是硬跑,
+      // 同一個 Downloads 目錄常常混著 `spider-shot-wide-v1`（WP-67 的範圍）。點名跳過而不是硬跑,
       // 因為 wide 的幾何與構念都不同,混進來的數字看起來完全合理但屬於另一支 drill。
       rejected.push({
         sourcePath: file,

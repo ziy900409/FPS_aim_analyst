@@ -224,10 +224,10 @@
       </ul>
       <p style="margin-bottom:0">
         另有三個工程缺陷由這批資料發現,已立案:
-        <a href="../../known_issue/KI-034-registry-projection-failed-hides-which-precondition-broke.md">KI-034</a>（registry 的
+        <a href="../../known_issue/KI-036-registry-projection-failed-hides-which-precondition-broke.md">KI-036</a>（registry 的
         <code>projection-failed</code> 遮蔽真因）·
-        <a href="../../known_issue/KI-035-valid-duration-includes-countdown.md">KI-035</a>（主指標 hits/min 恆向低估 7–9%）·
-        <a href="../../known_issue/KI-036-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md">KI-036</a>（<code>visible.side</code>
+        <a href="../../known_issue/KI-037-valid-duration-includes-countdown.md">KI-037</a>（主指標 hits/min 恆向低估 7–9%）·
+        <a href="../../known_issue/KI-038-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md">KI-038</a>（<code>visible.side</code>
         是佔位值,<code>curve-v1</code> 左右分群靜默塌成單邊）。
       </p>
     </div>
@@ -667,7 +667,7 @@
             有效樣本只有 4／5／4（&lt; 10）⇒ 不畫 p95。根因是<strong>打法而非缺陷</strong>:受試者多半一進靶就開槍結束該次呈現,
             <code>postAcquireOvershoot()</code> 因此沒有「首次進靶之後」的離靶樣本可取。
             <strong>連帶後果:registry 的 <code>spider-v3.median-overshoot-deg</code> 在這種打法下是由 4–5 個樣本決定的整場指標</strong>,
-            穩定性遠低於同列的其他四個 —— 這一點應併入 OQ-62.2 的 descriptor 重選。
+            穩定性遠低於同列的其他四個 —— 這一點應併入 OQ-66.2 的 descriptor 重選。
             另兩列正常:命中時間 1.26／1.52／1.17×、首發角誤差 2.03／2.83／1.96×,且角誤差的 p95 仍 &lt; W/2 = 1.0°
             ⇒ 那些「差比較多」的一發仍然命中。</div>
         </div>

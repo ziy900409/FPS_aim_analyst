@@ -251,7 +251,7 @@
         <li><strong>機制指標的可用性排序與預期相反。</strong>預期被 KI-031 阻塞的 <code>t_detect</code> 在 240 Hz 上
           拿得到 71.4%;反倒是 <code>overshootDeg</code> 只有 <strong>4／5／4</strong> 個有效樣本 ——
           受試者一進靶就開槍,沒有「首次進靶之後」的離靶樣本。⇒ <code>median-overshoot-deg</code>
-          作為五個趨勢指標之一的穩定性遠低於其餘四個,應併入 OQ-62.2 重新評估。</li>
+          作為五個趨勢指標之一的穩定性遠低於其餘四個,應併入 OQ-66.2 重新評估。</li>
         <li><strong>Fitts 正規化目前不可用。</strong>本文件要求「先驗證 <code>MT ~ ID</code> 線性再報 throughput」——
           方向驗證<strong>通過</strong>（三份的命中時間都隨 ID 單調上升）,但斜率<strong>不通過</strong>:
           37／154／57 ms/bit,全距是平均的 139%,而三場的刺激<strong>逐位相同</strong>。
@@ -262,9 +262,9 @@
       </ul>
       <p style="margin-bottom:0">
         三個工程缺陷由這批資料發現,已立案:
-        <a href="../../known_issue/KI-034-registry-projection-failed-hides-which-precondition-broke.md">KI-034</a> ·
-        <a href="../../known_issue/KI-035-valid-duration-includes-countdown.md">KI-035</a> ·
-        <a href="../../known_issue/KI-036-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md">KI-036</a>。
+        <a href="../../known_issue/KI-036-registry-projection-failed-hides-which-precondition-broke.md">KI-036</a> ·
+        <a href="../../known_issue/KI-037-valid-duration-includes-countdown.md">KI-037</a> ·
+        <a href="../../known_issue/KI-038-spider-v3-peripheral-side-hardcoded-collapses-lr-aggregates.md">KI-038</a>。
       </p>
     </div>
 
@@ -430,7 +430,7 @@
       <div class="callout warning">
         <strong>descriptors 目前是 v2 的機械 rename</strong>
         v3 的五個 descriptor 由 v2 的 id 字串替換而來（<code>spider-v2.</code> → <code>spider-v3.</code>）,
-        <strong>尚未針對 v3 的 eye-frame 幾何重新選過</strong>。是否增刪（例如補 <code>microAdjustCount</code> 中位數、或補逾時率）列為 OQ-62.2。
+        <strong>尚未針對 v3 的 eye-frame 幾何重新選過</strong>。是否增刪（例如補 <code>microAdjustCount</code> 中位數、或補逾時率）列為 OQ-66.2。
       </div>
 
       <div class="metric-list">
@@ -773,7 +773,7 @@
         <li><code>docs/operational/analysis-assessment-contract.md</code> —— Assessment／Practice 五軸 + 第六軸（排程來源）</li>
         <li><code>docs/known_issue/KI-031-*.md</code> —— R1 的診斷與修法候選</li>
         <li><code>docs/known_issue/KI-021-*.md</code> · <code>KI-026-*.md</code> —— R9 與 v3 存在的理由</li>
-        <li><code>docs/exec-plan/active/stage14/README.md</code> —— 本文件所屬的三層契約暫時方案（WP-62）</li>
+        <li><code>docs/exec-plan/active/stage14/README.md</code> —— 本文件所屬的三層契約暫時方案（WP-66）</li>
       </ul>
 
       <h3>程式碼入口</h3>
@@ -801,7 +801,7 @@
       文件狀態:<strong>研究設計草案</strong>,不代表已完成真人構念效度、信度或正式 Assessment 門檻凍結。
       本文件所列的每一個指標目前都<strong>沒有信度證據</strong>,依 C-D3 不得進教練報告作為處方依據。
     </p>
-    <p>最後更新:2026-09-09 · 適用協定:<code>spider-shot-v3@1.0.0</code> · stage14 / WP-62（候選,未批准）</p>
+    <p>最後更新:2026-09-09 · 適用協定:<code>spider-shot-v3@1.0.0</code> · stage14 / WP-66（候選,未批准）</p>
   </footer>
 </body>
 </html>

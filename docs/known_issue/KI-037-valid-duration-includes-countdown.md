@@ -1,4 +1,4 @@
-# KI-035 — `validDurationMs` 含開場倒數與尾段 tick,主指標 hits/min 系統性低估 7–9%
+# KI-037 — `validDurationMs` 含開場倒數與尾段 tick,主指標 hits/min 系統性低估 7–9%
 
 > 類型：**latent measurement defect**（**恆向低估**;不影響同 cohort 內的可比性,但絕對值錯,
 > 且低估幅度逐場不同 ⇒ 也是一個雜訊源）。
@@ -7,7 +7,7 @@
 > 標的：[`src/history/DrillMetricRegistry.ts`](../../src/history/DrillMetricRegistry.ts) 的
 > `validDurationMs()`（`:427-432`），經 `projectSpiderShotV2()`（`:159-167`）供 `spider-shot-v2`
 > 與 `spider-shot-v3` **兩支的主指標**使用。
-> 相關：[KI-034](KI-034-registry-projection-failed-hides-which-precondition-broke.md)（同一批真人 run
+> 相關：[KI-036](KI-036-registry-projection-failed-hides-which-precondition-broke.md)（同一批真人 run
 > 發現）· [CLAUDE.md §4 C-D3](../../CLAUDE.md)。
 > 發現脈絡：2026-09-09 依
 > [`HANDOFF-v3-real-data.md`](../exec-plan/active/stage14/HANDOFF-v3-real-data.md) §2 G2 對三份真人
@@ -81,7 +81,7 @@ function validDurationMs(payload: ExportPayload): number | undefined {
   與現行 `peripheral-hits-per-minute` **並存**。
 - registry version 由 `1.0.0` 升 `1.1.0`（新增 descriptor 是相容變更，既有點不需重算）。
 - 教練面顯示新的、趨勢面兩個都留，並在 descriptor 的 `label` 上把差異寫死。
-- 成本低、無回溯風險、可比性完好。**代價是指標數從 5 變 6**，需先答 OQ-62.2（v3 的 descriptor 集合
+- 成本低、無回溯風險、可比性完好。**代價是指標數從 5 變 6**，需先答 OQ-66.2（v3 的 descriptor 集合
   是否重選）。
 
 **選項 B —— 把分母改成「第一個 `visible` 到最後一個 `visible` + 該窗上界」的實測計分窗。**
@@ -91,9 +91,9 @@ function validDurationMs(payload: ExportPayload): number | undefined {
 **選項 C —— 不修，只在文件與教練面標註低估幅度。**
 即本次落地的做法:報告對每一個速率量**同時給兩個分母**並在方法欄寫明差異來源
 （[`spiderShotV3CoachRunner.ts`](../../scripts/spiderShotV3CoachRunner.ts) 的 `EffectiveSpeed`）。
-成本 0、不動凍結協定。若 v3 的 descriptor 集合本來就要在 WP-62 重選，C 是合理的過渡終局。
+成本 0、不動凍結協定。若 v3 的 descriptor 集合本來就要在 WP-66 重選，C 是合理的過渡終局。
 
-**排序建議**：本 KI 的修法應**併入 OQ-62.2 的 descriptor 重選**一起做，不單獨開 PR ——
+**排序建議**：本 KI 的修法應**併入 OQ-66.2 的 descriptor 重選**一起做，不單獨開 PR ——
 單獨加一個 descriptor 會讓「五個指標」這個已寫進三份設計文件的說法立刻過期。
 
 ## 5. 遺留 OQ
@@ -105,4 +105,4 @@ function validDurationMs(payload: ExportPayload): number | undefined {
   需要看 `DrillRunner` 的收尾路徑才能確認，本次未查。
 - **OQ-KI35-3**：`peekTimeoutMs = 1750` 的周邊逾時會截斷命中時間分布的右端（量測參數文件 §8 已記）。
   逾時率與本 KI 的分母問題會**同向**影響 hits/min，判讀時兩者須併看;是否要把逾時率也升成 descriptor
-  一併列入 OQ-62.2。
+  一併列入 OQ-66.2。
