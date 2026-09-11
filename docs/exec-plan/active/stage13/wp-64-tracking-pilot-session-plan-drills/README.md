@@ -13,7 +13,7 @@
 | **Estimate** | 4.5–6 dev-days（T0～T3 + T-exit）。 |
 | **Risk** | Med：程式改動集中在低頻 registry/UI orchestration，但若沒有把「ad hoc Session Plan」與「正式 Pilot manifest」分清楚，會造成研究資料誤用。 |
 | **IDs** | ✅ **`WP-64` / `GD-40` 已於 T0 重查確認可用（2026-09-10）**。WP-63/GD-39 已由 micro-flick v8 WP 佔用（已入 `exec-plan/README.md` §2 索引）；stage14 §3 的三個候選為未採納草稿，依 GD-15 不構成佔用。證據見 [progress.md](progress.md) T0 §1。 |
-| **Status** | 🟡 **T0 ✅ / T1 ✅ / T2 ✅ / T3 ✅（2026-09-11），T-exit 可開工**。T3 以真 Edge 走完「DOM picker → 預覽 → eligibility gate」與「三次未縮短的 26 秒 block 實跑 → 逐份匯出稽核」，並回歸正式 pilot spec；同時修掉 T1 遺留的一條紅燈 e2e（picker option 36→38，見 [progress.md](progress.md) T3 §3）與確立 `field-low` pin 的唯一守門人是匯出斷言而非 clearance（T3 §4）。四個 OQ 全數以 README 預設關閉；選中集合 = `tracking_core_pr_pilot_v1_2deg_5dps`（seed 54012）+ `tracking_reversal_pilot_v1_high`（seed 54101）。T1 因 roster coherence 閘把 `main.ts` runtime entry + Controls surface filter 由 T2 提前落地（D-64-T1-1）。T2 關閉 OQ-64.5：`AvailableDrill` 的形狀與兩個投影移入 [`src/drill/drillRegistry.ts`](../../../../../src/drill/drillRegistry.ts)，「載得到」與「不顯示」兩側皆有執行得到的斷言（D-64-T2-1，見 [progress.md](progress.md) T2 §2）。 |
+| **Status** | ✅ **T0～T-exit 全部完成（2026-09-11）**。兩個 curated Pilot block 已在真 Edge 由 custom Session Plan 選取、以固定 `tracking_pilot_hold` 於 `field-low` 執行並逐份匯出；正式 manifest 路徑、practice/history 隔離與 sim hard constraints 均維持。最終 evidence 與限制見 [progress.md](progress.md) T-exit。四個 OQ 全數 resolved；選中集合固定為 `tracking_core_pr_pilot_v1_2deg_5dps`（seed 54012）與 `tracking_reversal_pilot_v1_high`（seed 54101）。 |
 
 ### 落點說明
 
@@ -281,7 +281,7 @@ interface AvailableDrill {
 | [T1](T1-curated-scheduling-contract.md) ✅ | 建立 curated registry，接 family/declared weapon/history invariants（**+ 提前落地 runtime entry / Controls surface**） | T0 ✅；WP-62 已全數提交（含 T-exit，`035a637`）⇒ **不阻塞** | Med | 1–1.5 | `feat(wp-64): register curated tracking pilot session drills` |
 | [T2](T2-runtime-and-session-plan-wiring.md) ✅ | picker/preview DOM 與 a11y、`AvailableDrill` 測試 seam（OQ-64.5 ✅）、custom export contract（runtime entry 與 surface filter 已於 T1 落地） | T1 ✅ | Med | 1.5 | `feat(wp-64): wire pilot drills into session plans` |
 | [T3](T3-e2e-and-regression.md) ✅ | 真瀏覽器走完選取→執行→匯出，並回歸正式 Pilot 與 history 隔離 | T2 ✅ | **High validity** | 1–1.5 | `test(wp-64): verify ad hoc tracking pilot session plans` |
-| [T-exit](T-exit-gate.md) | 驗收 A-64.1～A-64.9、同步索引/決策/操作文件 | T1–T3 | Low | 0.5 | `docs(wp-64): close tracking pilot scheduling work package` |
+| [T-exit](T-exit-gate.md) ✅ | 驗收 A-64.1～A-64.9、同步索引/決策/操作文件 | T1–T3 ✅ | Low | 0.5 | `docs(wp-64): close tracking pilot scheduling work package` |
 
 ```text
 T0 → T1 → T2 → T3 → T-exit
@@ -302,4 +302,3 @@ T0 → T1 → T2 → T3 → T-exit
 | **A-64.7** | 所選 drill 仍是 practice、無 assessment metadata、history projection 為 `unregistered-drill` |
 | **A-64.8** | typecheck ×2、build、focused/full Vitest 與既有 Session Plan/Tracking Pilot Playwright 全部 exit 0 |
 | **A-64.9** | `src/sim`、`SharedState`、input、hit detection、trajectory/config values 與 research Python 零 diff；`graphify update .` 已於 code task 後執行 |
-

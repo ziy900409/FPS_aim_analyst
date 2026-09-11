@@ -61,12 +61,11 @@
 
 ## T-exit
 
-- [ ] A-64.1～A-64.9 逐項具名證據
-- [ ] Exit matrix 八列全 PASS
-- [ ] OQ 全 resolved/deferred-with-owner
-- [ ] full typecheck/build/Vitest/兩支 Edge E2E exit 0
-- [ ] hard-constraint zero-diff audit 完成
-- [ ] WP/stage/global index/decision ledger 同步
-- [ ] staged files 只含本 WP 核准範圍
-- [ ] commit：`docs(wp-64): close tracking pilot scheduling work package`
-
+- [x] A-64.1～A-64.9 逐項具名證據 — progress T-exit §2
+- [x] Exit matrix 八列全 PASS — progress T-exit §3
+- [x] OQ 全 resolved/deferred-with-owner — OQ-64.1～64.5 全數 closed，無 deferred
+- [x] full typecheck/build/Vitest/兩支 Edge E2E exit 0 — typecheck ×2、build、Vitest 3014、Edge 21 passed
+- [x] hard-constraint zero-diff audit 完成 — `d8fe0ac..63d3187` 的 sim/input/render/config/research path 空
+- [x] WP/stage/global index/decision ledger 同步 — README/progress、stage13、top-level index、GD-40
+- [x] staged files 只含本 WP 核准範圍 — commit 前人工對照，不含 WP-65
+- [x] commit：`docs(wp-64): close tracking pilot scheduling work package`

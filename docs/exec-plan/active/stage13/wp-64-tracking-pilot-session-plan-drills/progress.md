@@ -4,13 +4,13 @@
 
 ## Current status
 
-✅ **T3 完成（2026-09-11）；T-exit 可開工。** 兩個 curated Pilot block 已可排程、可編譯、可載入、**並在真 Edge 裡真的跑完與匯出**。
+✅ **T-exit 完成（2026-09-11）。** 兩個 curated Pilot block 已可排程、可編譯、可載入，且在真 Edge 由 custom Session Plan 跑完、匯出並與 formal Tracking Pilot 路徑隔離。
 
 - T1 新增 [`src/session/trackingPilotSchedulableDrills.ts`](../../../../../src/session/trackingPilotSchedulableDrills.ts)：family / declared weapon / runtime registry 三者**同一來源**；runtime entry 與 Controls surface filter 亦由 T2 提前落地（D-64-T1-1）。
 - T2 新增 [`src/drill/drillRegistry.ts`](../../../../../src/drill/drillRegistry.ts)：**OQ-64.5 的測試 seam 已關閉**——`resolveAvailableDrill()` / `researcherControlsDrills()` 是 `main.ts` 實際呼叫的同一對函式，「載得到」與「不顯示」兩側皆被執行而非掃字串（D-64-T2-1）。
 - T3 只動測試與文件（`src/` 零 diff）：`session-orchestrator.spec.ts` +2 test（DOM picker／live run），
   runbook 與 operator-manual 補上三項明文禁令。順手修掉 T1 留下的一條紅燈 e2e（picker option 36→38，T3 §3）。
-- 全量 Vitest 3014 passed / 256 files、typecheck ×2、`npm run build` 全 exit 0；三道 mutation 皆被咬住。
+- 最終 T-exit：typecheck ×2、build、全量 Vitest（3014 passed / 256 files）與 Edge（21 passed / 14.3 min）全 exit 0；三道 mutation 皆被咬住。
 - ⚠️ **T2 發現**：curated block 的 primary seed 在 `targets.trackingTrajectory.seed`，`meta.rngSeed` 實為 `DEFAULT_RNG_SEED`——稽核要對 `meta.spawn.trackingTrajectory`（見下方 T2 §3）。
 
 <details>
@@ -493,6 +493,54 @@ pump（穩定 60/144/240 Hz + 抖動 144 Hz ±50%）suites 全綠，加上新 e2
 無。§3 的「roster 基數改動必須跑 e2e」與 §1 的 dev-server/history-root 探針屬**程序**發現，已寫在
 上方與 T-exit 的交接段，不需要 owner 決策。
 
+## T-exit — 驗收與交付（2026-09-11）
+
+> Gate：[`T-exit-gate.md`](T-exit-gate.md) · code baseline HEAD = `63d3187`（後續僅提交本節與索引／decision／graph artifacts）· browser = Playwright `edge`（系統 Edge / `msedge` channel，單 worker）。
+
+### 1. A-64.1～A-64.9 evidence
+
+| Acceptance | 具名證據與本次命令 | 結果 |
+|---|---|---|
+| **A-64.1 selection precision** | `trackingPilotSchedulableDrills.test.ts`、`drillFamily.test.ts`；Edge `curated pilot block 是 picker 裡唯一兩個 pilot 選項…` | selected 2 在 `tracking` picker；其餘 7 全缺席。focused 7 files / **291 passed**，Edge case pass。 |
+| **A-64.2 source / scene integrity** | `trackingPilotSchedulableDrills.test.ts` 的 canonical by-reference / `field-low` assertions；Edge live payload trajectory/hitbox/scene assertions | config identity 與 `meta.spawn.trackingTrajectory`、sphere hitbox、`field-low` 對帳通過。 |
+| **A-64.3 schedule / fixed weapon** | `sessionProgram.test.ts`、`sessionWeaponActivation.test.ts`、`wp62-session-weapon-determinism.test.ts`；DOM preview | reps、`rep` / `drill` boundary 與不同 weapon override fail-fast；三個 preview steps 均為 `tracking_pilot_hold`。 |
+| **A-64.4 real orchestration** | Edge `ad hoc custom program 真跑 curated pilot block…` | 三個未縮短 26 s block 依序 run/rest/done，三份唯一下載；`SessionRunner` 完成、Pilot records 為 0。 |
+| **A-64.5 auditability** | `sessionProgramExport.test.ts`；同一 Edge live payload case | 每份 payload 的 custom items / itemIndex / repIndex 回指 drill，weapon / trajectory seed / scene 可稽核。 |
+| **A-64.6 orchestration separation** | `trackingPilotSchedulableDrills.test.ts` 的 import boundary；`tracking-pilot-live.spec.ts` | ad hoc payload 無 manifest / eligibility 詞彙；formal manifest / alternate-seed / operator eligibility E2E 維持通過。 |
+| **A-64.7 research separation** | `trackingPilotHistoryExclusion.test.ts`；Edge `historySaveState()` assertion | selected 均是 `practice`、無 assessment，history projection 是 `unregistered-drill`；live save state = `excluded/practice`。 |
+| **A-64.8 regression** | `npx.cmd tsc --noEmit`、`npx.cmd tsc --noEmit -p tsconfig.node.json`、`npm.cmd run build`、`npx.cmd vitest run`、完整 Edge command | typecheck ×2 / build exit 0；Vitest **256 files / 3014 passed / 2 existing skipped**；Edge **21 passed / 14.3 min**。 |
+| **A-64.9 architecture** | `git diff --name-only d8fe0ac..63d3187` path audit；`graphify update .` | sim/input/render/hitbox/Pilot config/research path 均空；graph = **4872 nodes / 12056 edges / 284 communities**。 |
+
+### 2. Selected / unselected projection audit
+
+| Projection | Selected (`tracking_core_pr_pilot_v1_2deg_5dps`, `tracking_reversal_pilot_v1_high`) | Other seven Pilot ids |
+|---|---|---|
+| Family / picker | `tracking` / offered | no family / absent |
+| Runtime | resolvable, pinned `field-low` | `Unknown drill` |
+| Weapon | declared `tracking_pilot_hold`; mismatch rejected | no schedulable declaration |
+| History | practice / `unregistered-drill` | practice / `unregistered-drill` |
+
+The table is exercised by `trackingPilotSchedulableDrills.test.ts`, `drillFamily.test.ts`, `sessionProgram.test.ts`, `sessionProgramExport.test.ts`, `trackingPilotHistoryExclusion.test.ts`, `sessionWeaponActivation.test.ts`, and `wp62-session-weapon-determinism.test.ts`: **7 files / 291 passed**, exit 0.
+
+### 3. Exit matrix
+
+| Gate | Verdict | Evidence |
+|---|---|---|
+| Selection precision | ✅ PASS | two selected / seven complement assertions in unit and real DOM picker |
+| Runtime coherence | ✅ PASS | runtime resolve + real `field-low` export |
+| Instrument integrity | ✅ PASS | canonical config / seed / hitbox identity; fixed-weapon rejection |
+| Orchestration separation | ✅ PASS | SessionRunner-owned ad hoc run; formal Pilot E2E still green |
+| Auditability | ✅ PASS | item/rep/custom plan plus trajectory seed/weapon/scene payload facts |
+| Research separation | ✅ PASS | practice-only, no assessment, unregistered history / excluded save |
+| Regression | ✅ PASS | typecheck ×2, build, Vitest and full 21-case Edge command all exit 0 |
+| Architecture | ✅ PASS | hard-constraint paths zero-diff; graph refreshed |
+
+### 4. Re-run record and limitation
+
+The first complete Edge attempt in this exit session ended `17 passed / 4 failed`, exit 1 after the local 5173 server disappeared; every failure was `net::ERR_CONNECTION_REFUSED`, not an assertion. The clean retry above used newly created runner-owned servers and passed all **21** cases, exit 0. This is recorded as an environment interruption, not a flaky assertion.
+
+E2E is live app wiring with synthetic input / DEV harness and does not establish human performance or hardware timing validity. The T3 root snapshots remain the file-system evidence that no history root changed; the current retry independently reasserted `excluded/practice` on the live ad hoc path.
+
 ## Task log
 
 | Task | Status | Started | Completed | Commit | Evidence |
@@ -501,5 +549,4 @@ pump（穩定 60/144/240 Hz + 抖動 144 Hz ±50%）suites 全綠，加上新 e2
 | T1 | ✅ Done | 2026-09-10 | 2026-09-10 | `feat(wp-64): register curated tracking pilot session drills` | 本檔 T1 §1–§7；全量 2984 passed、typecheck ×2 + build exit 0、三道 mutation 皆被咬 |
 | T2 | ✅ Done | 2026-09-11 | 2026-09-11 | `feat(wp-64): wire pilot drills into session plans` | 本檔 T2 §1–§6；全量 3014 passed、typecheck ×2 + build exit 0、三道 mutation 皆被咬 |
 | T3 | ✅ Done | 2026-09-11 | 2026-09-11 | `test(wp-64): verify ad hoc tracking pilot session plans` | 本檔 T3 §1–§9；`session-orchestrator` 20 passed（13.2 min）、`tracking-pilot-live` 1 passed、全量 3014 passed、typecheck ×2 + build exit 0、三道 mutation 皆被咬、三個 history root deep-equal |
-| T-exit | ⬜ Not started | — | — | — | — |
-
+| T-exit | ✅ Done | 2026-09-11 | 2026-09-11 | `docs(wp-64): close tracking pilot scheduling work package` | 本檔 T-exit §1–§4；typecheck ×2 + build exit 0、Vitest 3014 passed、Edge 21 passed（14.3 min）、projection / zero-diff / graph audit 全綠 |

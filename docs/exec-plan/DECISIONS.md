@@ -23,6 +23,18 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-40 ✅ WP-64 Tracking Pilot ad hoc Session Plan — curated scheduling, manifest separation, and research-use limits (2026-09-11, T-exit)
+
+| | |
+|---|---|
+| **發現處** | Tracking Pilot 的九個 `DrillConfig` 原本只可由 `TrackingPilotRunner` / manifest 路徑載入；研究者需要把少數代表性條件放入一般 custom Session Plan，做接線、手感與設備測試，但不能把結果誤當正式 pilot evidence。 |
+| **① 編號與落點** | T0 重查確認 **WP-64 / GD-40** 未被已採納項目取用。依使用者指示落於 `active/stage13/`；主題屬 Session Plan／研究工具層而非 stage13 原始輸入取樣，故此偏離在 stage index 與 WP README 明帳保留。 |
+| **② curated scheduling policy** | 唯一可排程集合固定為 `tracking_core_pr_pilot_v1_2deg_5dps`（primary seed 54012）與 `tracking_reversal_pilot_v1_high`（54101）。由 `TRACKING_PILOT_SCHEDULABLE_DRILLS` 單一 config reference 推導 family、fixed weapon 與 runtime entry；其餘七個 Pilot config 不得進 picker、family 或 runtime registry。兩者固定 `tracking`、`tracking_pilot_hold`、`field-low`、`mode:'practice'`；不得 clone 或改寫 stimulus/seed/hitbox/timing/guard。 |
+| **③ ad hoc 與 formal 的邊界** | custom Session Plan 只走 `SessionRunner`，使用 config 的 primary seed；reps 是 repeated exposure，不是獨立樣本。它不產生 manifest counterbalance / `sessionIndex` / alternate seed / retry-abort record / eligibility verdict。正式 `TrackingPilotRunner` 與 `tracking-pilot-v2` manifest 繼續擁有該等語意。 |
+| **④ exposure / history policy** | runtime registry entry 可載入但 `showInResearcherControls:false`，避免新增單 drill Controls 入口。ad hoc payload 以既有 `sessionPlanMode:'custom'`、items、item/rep 與 config facts 稽核；不新增 execution-context schema。兩個 drill 維持 practice、無 assessment、exact-id history projection `unregistered-drill`，不得作 Gate B/C 或 formal evidence。 |
+| **⑤ hard constraints / verification** | 此 WP 只修改 registry、Session Plan UI/orchestration 與測試；sim/input/render/hitbox/Pilot config values/research 均零語意 diff。T-exit 在真 Edge 完整跑過 21 cases（14.3 min），並通過 typecheck ×2、build、Vitest 3014 tests、four-projection and graph audits。 |
+| **狀態** | ✅ **WP-64 T-exit 交付（2026-09-11）**。A-64.1～A-64.9 evidence 見 [WP-64 progress T-exit](active/stage13/wp-64-tracking-pilot-session-plan-drills/progress.md)。這是 ad hoc research-tool capability，不宣稱 human-performance validity 或正式 pilot research evidence。 |
+
 ### GD-38 ✅ WP-62 Session Plan 逐列武器指定 — 編號/落點、實驗格不可覆蓋、frozen 不開放、不做武器白名單、彈匣資訊揭露(2026-09-10,WP-62 規劃；T-exit 交付 2026-09-10)
 
 | | |
