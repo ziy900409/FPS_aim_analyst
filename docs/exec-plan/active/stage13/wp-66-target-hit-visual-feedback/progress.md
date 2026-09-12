@@ -16,7 +16,7 @@
 | T3 | ✅ 完成 | 2026-09-12 | 見 [§T3](#t3--targetshitfeedback-設定schemametadata-與-maints-接線2026-09-12)。`targets.hitFeedback?` 進 type + `schema.ts` 白名單、`resolveHitFeedback()` 為四條路徑的單一比較式、`meta.targets.hitFeedback` optional-in（live + harness 兩條管線同形）；**接線收斂到 `drillRunner.start()` façade 一處**（具名偏離 task file 的「四處各寫一次」，理由見 Decision T3-a）；+20 tests、**5 個變異注入全數 RED**；regression **319 passed 逐位一致**、fixture 零修改；`drills/*.json` 與全部 drill 定義**值零修改**（值變更屬 T4）；Python `load_export()` 對帶新鍵的 payload **零修改可讀**、`git diff research/` 為空。⚠️ 傳遞給 T4：啟用清單十個 id 一律改**具名常數／builder 上的 `targets.hitFeedback: 'flash'`**，且 `meta.targets` 屆時由 1 鍵變 2 鍵——只限這十個 run。|
 | T4 | ✅ 完成 | 2026-09-12 | 見 [§T4](#t4--在指名的-tracking-drill-啟用命中回饋2026-09-12)。`tracking_br_v1` 家族**八格全部**啟用（`makeVariant()` 一處生效八個）；八個 id 的 `loadDrill()` 前後逐欄比對，差異**恰為** `targets.hitFeedback`（22 欄位 × 8 drill）；`meta.targets` 由 1 鍵變 2 鍵、對照組 `counterstrafe_ad_v1` 維持 1 鍵逐字不變；golden fixture 逐筆分類完成（**無一應變動、實測亦無一變動**）；regression **319 passed 逐位一致**、全量 **3181 passed**（+3 tests）、typecheck／build exit 0；**5 個變異注入全數 RED**。⚠️ **啟用清單由十個收斂為八個**：T0 列入的兩個 WP-54 pilot id 經執行期讀碼證實是 `tracking-pilot-v2` **已版本化協定**六個 scored block 中的兩個（啟用將造成協定內 2/6 混淆，且 `checkTrackingCompatibility()` 無 `hitFeedback` 軸、前後無法分池，與 KI-025 同型）；**使用者 2026-09-12 裁決選項 A：整個 WP-54 tracking-pilot 家族（九個 block）一律不啟用**，並以 census 表＋策展註冊表**兩個入口**的斷言釘死（見 [Open Questions](#open-questionst4)）。⚠️ 交接 T5：四項實機證據（命中亮／打偏不亮／燄滅／projectile 延遲）需操作人員實機，已交接 T5 同場取得，不阻塞 T5 開工。|
 | T5 | ✅ 完成 | 2026-09-12 | 見 [§T5](#t5--零-importer-常駐掃描focused-live-e2eab-frame-time-與全量回歸2026-09-12)。零 importer 由一次性 grep 變成**常駐測試**（`src/data/`／`src/metrics/`／`research/` 三個 root × 七個具名符號零出現，並各自斷言掃到的檔數下限 + 一條「掃描確實會咬」反證 + 匯出事件 union 拒收）；**live e2e 三條全綠**——啟用 drill 命中亮起（`ff8a3d`）、109–119 ms 內熄滅且**熄滅時被打中的那一顆仍在場**、換 drill 兩個方向、換場景往返後仍生效、對照 drill `tracking_v1` 命中 3 發但恆不亮；**4 個變異注入全數 RED**（`main.ts` 兩條接線各一 + `src/metrics/` 符號洩漏 + 對照 drill 啟用），其中 MUT-SYNCARG（`sync()` 少傳參數的靜默退回）**沒有任何單元測試守得到**。A/B frame-time：p95 增量 **+0.025 ms ≤ 0.2 ms**、長幀（>2×p50）ON/OFF 六場皆 **0**、首次命中幀無尖峰（FM-6 ✅）。全量：typecheck ×2 exit 0 · regression **324 passed**（+5 = 本切片）· 全量 vitest **3186 passed**（+5）· build exit 0 · Playwright **115 passed / 0 failed**（基線 112 ⇒ NFR-66.7 ✅）。既有 spec **零修改**、`git diff --stat src/` 為空。⚠️ 兩項交接 T-exit：**① draw call 的「相同」判準需改寫**（`drawCalls` 在 br-field 逐幀變動 114–118，ON/OFF 無系統性差異）；**② T4 交接的四項實機證據取得三項**，「刻意打偏不亮」與「projectile 亮起延遲對 `timeOfFlightMs`」未取得。⚠️ 開跑前 5173 上有一個**指向真實研究資料 root 且已壞掉（504）**的外部 dev server，經使用者同意後停掉（詳見 §5）。 |
-| T-exit | ⬜ 未開始 | — | — |
+| T-exit | ✅ 完成 | 2026-09-12 | 見 [§T-exit](#t-exit--驗收閘a-661a-6612與-gd-42-入帳2026-09-12)。A-66.1～A-66.12 **十二條逐條具名證據全數成立**；最終 gate 全部本閘實跑：typecheck ×2 **exit 0**、全量 Vitest **3186 passed / 2 skipped**（263 檔）、regression **33 檔 / 324 passed**（其餘 319 逐位一致）、Playwright **115 passed / 0 failed**（基線 112 ⇒ NFR-66.7 ✅）、`npm run build` **exit 0**（bundle 檔名與 T5 逐字相同）。A-66.9 以**靜態全量普查**複驗：全 repo 唯一把 `hitFeedback` 賦值進 drill config 的位置是 `tracking_br_v1.ts:98`，`drills/*.json` 零命中，runtime 列印八個 id 全為 `flash`。**GD-42 已入帳**（入帳前重查：已落帳最大為 GD-41，GD-42 未被取用）。⚠️ **一項判準具名改寫**：A-66.12 的 draw call 由「相同」改為「分布無系統性差異 + `poolSize` 不變」（`drawCalls` 在 br-field 逐幀抖動 114–118，ON/OFF 範圍互相覆蓋）。⚠️ **第一輪全量 e2e 曾 2 failed**，根因為本閘平行跑 `vite-node`／python 探針導致 headed Edge 掉焦點、真實 Pointer Lock 取不到；單獨重跑該 spec **3 passed**、全量在機器獨佔下重跑 **115 passed / 0 failed** ⇒ 環境干擾而非程式，已升級為明帳紀律（跑全量 e2e 期間視為機器獨佔）。⚠️ **兩項實機證據未取得**（刻意打偏不亮的正面證據、projectile 亮起延遲對 `timeOfFlightMs`），明帳以單元層證據替代，不以「已完成」宣稱。|
 
 ---
 
@@ -991,6 +991,121 @@ WP-65 的 arm helper 送的是一個 lock→unlock **脈衝**，離開時 `Point
 
 ---
 
+## T-exit — 驗收閘（A-66.1～A-66.12）與 GD-42 入帳（2026-09-12）
+
+> 驗收基準：**`HEAD = 7448d34`**（worktree clean），WP-66 production range = `9a03562..7448d34`
+> （`9a03562` 即 [§T0.2](#2-基線凍結nfr-662-667-的對照基準) 凍結的基線 commit）。
+> 本閘**未修改任何 `src/`／`tests/` 檔案**：range 內的程式碼全部由 T1–T5 落地，本節只做驗收、入帳與狀態翻轉。
+> 下列每個數字皆為**本閘實際執行輸出**，非引用 T1–T5 的記載。
+
+### 1. A-66.1～A-66.12 證據矩陣
+
+| 驗收 | 結論 | 具名證據（本閘實跑） |
+|---|---|---|
+| **A-66.1** | ✅ 環形格 sim 唯寫、render 唯讀，且**未新增任何命中判定** | `git diff --stat 9a03562..HEAD -- src/sim/HitDetector.ts src/ballistics/sweptHit.ts src/sim/TargetManager.ts` **輸出為空**（`ballisticRaycast`／`targetAabb` 定義於 `SimLoop.ts`，其 diff 見右）。`SimLoop.ts` 的**完整** diff = 1 個 import 改寫 + **恰 2 行** `pushTargetHit`（[:361](../../../../../src/loop/SimLoop.ts#L361) projectile、[:473](../../../../../src/loop/SimLoop.ts#L473) hitscan），判定式／`markKilled` 條件／事件欄位逐字未動 |
+| **A-66.2** | ✅ 六條「不得寫入」反證全綠 | `src/loop/__tests__/wp66-target-hit-ring.test.ts`：`脫靶 → 零筆，且 impacts.total > 0（證明彈著格不是命中訊號，FR-66.3）`／`occlusion blocker 擋下 → 零筆（WP-45 的隔牆未命中免費繼承）`／`未過速度閘（\|vx\| ≥ accuracyThreshold）→ 零筆，即使射線幾何對準目標`／`無存活目標 → 零筆`／`未過速度閘的飛行彈（accurate === 0）掃過目標 → 零筆`／`逾 maxRangeU 消滅 → 零筆`。本閘 `npx vitest run` **exit 0** |
+| **A-66.3** | ✅ 跨 4 種 render FPS 逐位一致 | `src/loop/__tests__/wp66-hit-ring-determinism.test.ts`：`同一輸入序列在 4 種 render 幀序列下：total / cursor / 逐槽 id 與 seq 逐位一致`，於本閘全量 vitest 內通過 |
+| **A-66.4** | ✅ 命中態跟身分走、不跟 pool 槽位走 | `src/render/TargetView.test.ts`：`FM-2:目標撤除後同一 pool 槽位被新目標取用,新目標不亮`（以 `toBe` 斷言確實是同一個 mesh 物件）＋ `本幀未用到的 pool mesh 一併熄滅(FM-2 第二條洩漏路徑)` |
+| **A-66.5** | ✅ render 對 `SharedState` 零寫入 | `src/render/TargetView.test.ts`：`FM-4:sync() 對環形格零回寫(total/cursor/逐槽 id 與 seq 全數不變)`。程式面佐證：`TargetView` 的高水位是**私有** `#syncedSeq`，ring 只被讀 |
+| **A-66.6** | ✅ 未啟用時逐位不變（三項齊備） | ① `FM-1 反證:不帶 hits/nowMs 時,材質三屬性與本 WP 前逐位相同` ＋ `setHitFeedback 未啟用:逐幀帶 ring 且期間有命中,仍不亮(FM-1)`；② [`metadata.test.ts:665`](../../../../../src/data/metadata.test.ts#L665) 釘死未列名 drill 的 `Object.keys(targets) === ['hitbox']`（＝[§T0.3](#3-既有匯出鍵面-digestt3additive-不動既有鍵面t4只多一欄的唯一對照基準) 基線逐字）；③ 本閘 `git diff --stat 9a03562..HEAD -- '*fixtures*' '*golden*' '*.json'` 對 fixture **零命中**（僅 `graphify-out/` 索引），`npx vitest run tests/regression` **324 passed**（= 319 基線 + T5 新檔 5） |
+| **A-66.7** | ✅ 四個 wiring 點全部到位 | 本閘 `grep -n "targetView" src/main.ts` 完整輸出 **9 行**：`:350` 建構／`:351` setShape／`:1070` 註解／**`:1075` `setHitFeedback`**／`:1454` dispose／`:1465` 重建／`:1519`、`:1559` setShape／**`:1911` `sync(..., sharedState.targetHits, now)`**。**一處覆蓋四條路徑的結構性證據**：`drillRunner.start()` 的五個呼叫端（`:1093`／`:1428`／`:1439`／`:1520`／`:1560`）涵蓋 §0.4 全部四點；本閘另讀碼複驗 `installSceneLoad()` 的兩個呼叫端（`:1507`→`:1520`、`:1551`→`:1560`）之間**無 `await`、無 `return`** ⇒ 涵蓋關係是結構的、不靠慣例。e2e 兩條見 §4 的 `ok 35/36/37` |
+| **A-66.8** | ✅ metadata additive、跨語言可讀 | TS：`src/data/exportPayloadSchema.test.ts` round-trip 兩形狀 + 舊 payload 不生預設值，本閘全量 vitest 綠。Python：本閘以**未修改**的 `research/src/modules/ingest/algorithms/loader.py::load_export()` 實跑 → `with hitFeedback -> ticks (2038, 14) events (150, 24)`／`without -> ticks (2038, 14) events (150, 24)`，`meta.targets` 帶新鍵為 `{'hitbox': {...}, 'hitFeedback': 'flash'}`、舊 payload 為 `{'hitbox': {...}}` **未長出預設值**。`git diff --stat 9a03562..HEAD -- research/ drills/` **輸出為空**（C-D1 ✅） |
+| **A-66.9** | ✅ 啟用清單逐字等於收斂結果，且不含任何 formal assessment 協定 | 本閘**靜態全量普查**：`grep -rn "hitFeedback" src/ drills/ --include=*.ts --include=*.json`（排除 `*.test.ts`）顯示全 repo **唯一**把該欄位賦值進 drill config 的位置是 [`tracking_br_v1.ts:98`](../../../../../src/drill/tracking_br_v1.ts#L98) 的 `hitFeedback: HIT_FEEDBACK`；`drills/*.json` **零命中**。runtime 複驗（`vite-node` 實跑 `trackingBrVariants`）列印八個 id 全為 `flash`、`distinct hitFeedback values = ['flash']`（集合大小 1），與 [README §1.4a](README.md#14a-oq-收斂結果t0-定案2026-09-12) 第 1–8 列**逐字相同**。`protocolVersion` 零變更：`git diff --stat 9a03562..HEAD -- src/drill/protocolVersion.ts src/drill/assessmentProtocolVersion.ts src/display/brTrackingProtocol.ts src/pilot/protocolFreeze.test.ts …` **輸出為空** |
+| **A-66.10** | ✅ 效度斷代已成明帳（三處同一句） | ① 本檔 [§T4](#t4--在指名的-tracking-drill-啟用命中回饋2026-09-12)；② [stage13 README §2](../README.md) WP-66 列；③ 本閘落帳的 **GD-42 / D-66-4**。同一句摘要：**自 2026-09-12 起 `tracking_br_v1` 家族八個 variant 全數帶命中視覺回饋；此日期之後的資料刺激與之前不同、不可混池比較；逐 run 的判別依據是 `meta.targets.hitFeedback === 'flash'`，不是收集日期。** 程式內第四個掛點：[`tracking_br_v1.ts` 的 `HIT_FEEDBACK` 常數註解](../../../../../src/drill/tracking_br_v1.ts#L27) |
+| **A-66.11** | ✅ 零洩漏進資料層／指標層 | `tests/regression/wp66-hit-feedback-isolation.test.ts`：`src/data/ 對命中回饋的全部具名符號零出現`／`src/metrics/ …`／`research/ …`（七個具名符號 × 三個 root）＋ `掃描確實會咬：對一個已知存在的符號跑同一條掃描必須命中 src/state/`（反證）＋ `匯出事件 union 不含任何命中回饋事件型別（parser 層拒收）`。本閘 `npx vitest run tests/regression`：**33 檔 / 324 passed** |
+| **A-66.12** | ✅ 效能無退步（draw call 判準具名改寫，見 §3） | T5 同場 A/B（六場，ON/OFF 各 3）：p95 **19.565 vs 19.540 ⇒ +0.025 ms ≤ 0.2 ms**；over-budget window ON 89.7–90.8 % 落在 OFF 68.5–91.0 % 之內（**不增加**）；首次命中幀 delta ON 17.785／11.595 ms、OFF 5.295／16.845 ms，全部 ≤ 各自 p99（≈20.6 ms）⇒ **FM-6 無 pipeline 重編尖峰**；`> 2×p50` 長幀 ON/OFF 六場**全部 0**。draw call 見 §3 |
+
+### 2. 最終 gate（全部本閘實跑）
+
+| Gate | 結果 | 對照 |
+|---|---|---|
+| `npm run typecheck` ×2 | **exit 0 / exit 0** | 同 T0–T5 |
+| `npx vitest run` | **exit 0** — Test Files **263 passed / 1 skipped (264)**；Tests **3186 passed / 2 skipped (3188)**；11.46 s | T0 基線 **3128 / 2**（260 檔）⇒ **+58 tests / +3 檔**；逐條可對帳：T1 +17、T2 +13、T3 +20、T4 +2、T5 +5 = **+57**，餘 **+1** 為平行 session 落在 range 內的既有增量。**零測試由綠轉紅** |
+| `npx vitest run tests/regression` | **exit 0** — **33 檔 / 324 passed** | T0 基線 **32 檔 / 319** ⇒ **+1 檔 / +5 tests**（全部為 T5 的 `wp66-hit-feedback-isolation.test.ts`）；**其餘 319 逐位一致**，NFR-66.2 ✅ |
+| `npx playwright test --workers=1` | **exit 0（Playwright 自身的 exit code，非 pipeline 尾端指令的）** — **115 tests：115 passed / 0 failed**；18.4 min | T0 基線 **112 passed / 0 failed** ⇒ **+3 = T5 新增的三條**，**NFR-66.7 ✅**。⚠️ 本閘第一輪曾 **2 failed**，根因為執行環境干擾而非程式，逐條記於 §4 |
+| `npm run build` | **exit 0** — 200 modules，`dist/assets/index-3FOU0U0g.js` **1 242.51 kB**（gzip 353.88 kB），2.29 s | 既有 >500 kB chunk 警告，非本 WP 引入；bundle 檔名與 T5 **逐字相同** |
+
+**執行環境（比照 T5 §5 的埠探針）**：開跑前 `:5173`／`:4173` 皆**無** LISTENING（無外部 dev server 佔用，未重演 T5 的 504 情境），Playwright 自行啟動兩個各帶 `FPS_HISTORY_ROOT` 的 server；收尾兩埠皆已釋放。**真實研究資料全程未被寫入**：`find data/session-history -name '*.json' | wc -l` 在全部執行前後皆為 **0**。`.playwright-tmp/history-dev/` participant 目錄數 **162 → 216**（距 [e2e-history-root-accumulates] 記載的上千個門檻仍有數量級餘裕，**未清理**）。收尾 `git status --short` 為空。
+
+### 3. 具名判準改寫：A-66.12 的 draw call 條款（承 [T5 Open Questions](#open-questionst5-留給-t-exit)）
+
+[T-exit-gate.md](T-exit-gate.md) 的 A-66.12 原文寫 draw call「**相同**」。**本閘採納 T5 的建議改寫為**：
+
+> **ON 與 OFF 的 draw call 分布無系統性差異，且目標 mesh 數（`poolSize`）啟用前後不變。**
+
+理由：`renderer.info.render.drawCalls` 在 br-field **不是定值**——它隨 camera 與目標移動造成的 frustum culling 逐幀變動，T5 六場的中位落在 **114–118**、最大 115–119，**ON 與 OFF 的範圍互相覆蓋、無系統性差異**。拿「逐位相同」當判準，會讓一個本來就會抖動的量偽裝成迴歸訊號。NFR-66.5 真正的結構性根據反而更強：目標本來就各自是一個 `Mesh`，本 WP 只是把「整池共用一份 material」換成「逐 mesh 各持一份 clone」，**mesh 數不變** ⇒ 不可能新增 draw call。這一條已由 T2 的單元測試 `逐 mesh 各持一份 material clone(不共用),且 poolSize 與啟用前相同(NFR-66.5)` 釘死，是可持續回歸的證據，而非一次性量測。
+
+### 4. 全量 e2e 的第一輪 2 failed —— 環境干擾，非程式（必記）
+
+本閘第一次跑全量 Playwright 得到 **2 failed / 113 passed**，兩條皆在 `tests/e2e/hit-feedback-live.spec.ts`：
+
+| 失敗 | 症狀 |
+|---|---|
+| `:502`（命中當下亮起，HOLD 窗內熄滅） | `命中未發生（taps=0, lastShots=[]）`、`litSamples = 0`；page snapshot 仍停在「點擊以鎖定滑鼠視角」⇒ **Pointer Lock 從未取得**，一發都沒扣 |
+| `:541`（換場景後仍生效） | `armDrill` 的 `.poll(...).not.toBe('armed')` **10 s timeout**，相位始終停在 `'armed'` ⇒ 同樣是取鎖沒成 |
+
+**根因**：該 spec 是全 115 條裡**唯一需要真實 Pointer Lock** 的（其餘走 WP-65 的合成 `armDrill()` 脈衝）。而本閘在那一輪執行期間**平行跑了 `npx vite-node`（A-66.9 的 roster 普查）與 `research/.venv` 的 python（A-66.8 的 `load_export()` 複驗）**——兩者都是秒級的 CPU 尖峰與新進程，足以讓 headed Edge 掉焦點／錯過取鎖的時序窗。
+
+**處置與證據**：① 單獨重跑該 spec（期間不執行任何其他指令）⇒ **3 passed (1.3m)**，數值與 T5 §3b 同量級：亮起色 `ff8a3d`、亮起窗 **108／114／119／120／121 ms** 對 `HIT_FEEDBACK_HOLD_MS = 120`、對照 drill `tracking_v1` **3 taps / 3 hits / litSamples 0 / firstLitAtMs −1**、`sameTargetDarkAfterLit = 6`；② 之後**全量重跑且全程不下任何其他指令** ⇒ **115 passed / 0 failed**，該 spec 為 `ok 35/36/37`，`test-results/` 零失敗產物。上表 §2 記的是**第二輪**結果。
+
+⇒ **給後續 task 的教訓（比本 WP 更廣）**：`hit-feedback-live.spec.ts` 這類依賴**真實** Pointer Lock 的 spec，**不能與任何其他指令同時跑**。這不是 flaky test，是一個有明確機制的環境相依。WP-65 T6 與本 WP T5 都各自繞過同族的時序脆弱性一次（T5 Surprises 3／5），本閘是第三次 ⇒ 值得升級為一條明帳紀律：**跑全量 e2e 期間應視為機器獨佔**。
+
+### 5. 交付範圍複驗（本閘實跑）
+
+| 檢視 | 結果 |
+|---|---|
+| `git diff --stat 9a03562..HEAD -- research/ drills/` | **空**（C-D1 ✅；drill 值變更只發生在 `src/drill/tracking_br_v1.ts`） |
+| `git diff --name-only 9a03562..HEAD`（排除 `src/`／`tests/`／`docs/`） | 僅 `CONTEXT.md` 與 `graphify-out/`（`GRAPH_REPORT.md`／`graph.html`／`graph.json`／`manifest.json`）⇒ **無 fixture、無 golden、無 payload 變動** |
+| production（非測試）改動行數 | `SharedState.ts` +71／`TargetView.ts` +120／`SimLoop.ts` +15／`main.ts` +23／`DrillConfig.ts` +26／`schema.ts` +11／`metadata.ts` +16／`exportPayloadSchema.ts` +11／`tracking_br_v1.ts` +20／`fpsTestHarness.ts` +3 ≈ **316 行**，分佈於 T1–T4 四個原子 commit（＋各自的 graphify 索引 commit），每個切片皆在可審閱範圍內 |
+| `TargetState`／`ReplayTargetView`／replay contracts | 未出現在 range diff ⇒ [§2.1](README.md) 的 out-of-scope 全數成立（replay 先不同步，D-66-6） |
+
+### 6. 讀碼複驗發現的一處註解過強（FYI，不阻塞、不改碼）
+
+[`TargetView.#flashUntil`](../../../../../src/render/TargetView.ts#L55) 的註解寫「過期即刪 ⇒ 大小恆 ≤ 同時顯示的目標數」。**實際語意略弱於這句話**：過期刪除發生在 `#paintHit()`，而它只對**本幀可見**的目標呼叫；若某目標在亮起期間被撤除且不再可見，它的鍵會留到 drill 邊界才被清（`#ingestHits()` 的 `total` 倒退分支／`setHitFeedback()`／`dispose()` 三者皆 `clear()`）。
+
+**為什麼不改**：① 目前啟用清單**全部**是 `persistent: true` 的單目標 tracking drill ⇒ 實際鍵數恆為 1，該命題在現行 roster 上為真；② 上界仍是「單場 run 內的相異目標 id 數」，且每場邊界必清，不構成無界成長；③ 本閘的 Invariant 是不改 `src/`，改碼會夾帶一個未被 T1–T5 測試矩陣覆蓋的行為變更。**留為觀察項**：若日後把回饋啟用到非 persistent／多目標的 drill（例如 micro-flick v8/v9 的 `population.activeCount: 3`），應同時把該註解改成「drill 邊界清空」，或在隱藏 pool mesh 的迴圈內一併刪鍵。已列入 Open Questions。
+
+### 7. T4 交接的四項實機證據 —— 三項已取得，兩項明帳以單元層證據替代
+
+| # | 項目 | 狀態 |
+|---|---|---|
+| 1 | 命中當下亮起 | ✅ live e2e（`ff8a3d`，本閘重跑複驗） |
+| 2 | 停火後 ≤ `HIT_FEEDBACK_HOLD_MS` 熄滅，且熄滅時被打中的那顆仍在場 | ✅ live e2e（亮起窗 108–121 ms；`sameTargetDarkAfterLit = 6`） |
+| 3 | 未列名對照 drill 命中不亮 | ✅ live e2e（`tracking_v1` 3 hits / 0 lit samples） |
+| 4 | **刻意打偏不亮**的正面實機證據 | ⚠️ **未取得**，明帳**以單元層證據替代**：T1 的六條反證（脫靶／occlusion／速度閘 ×2／逾射程／無目標）在 sim 層釘死「不命中就不寫環形格」，且 T5 的 MUT-CONTROL 變異注入證明對照那條會咬。live 探測只在就位時扣板機；補這一項需操作人員實機錄影 |
+| 5 | **projectile variant 亮起延遲與 `timeOfFlightMs` 數量級相符** | ⚠️ **未取得**（live e2e 只跑 hitscan variant）。這是 **D-66-5 已接受的條件差異**的實機佐證，不是正確性前提：延遲來自既有 `hit` 事件的落點時刻，而環形格寫入點就在該事件的同一個 `if` 區塊內（A-66.1）⇒「延遲等於 `timeOfFlightMs`」是結構保證。列為 Open Question 供後續實機作業補齊 |
+
+⇒ 兩項皆**非阻塞**，且都不是「沒驗」而是「以較弱但具名的證據替代」，**不以「已完成」宣稱**。
+
+### 8. Decision Log（T-exit）
+
+| # | 決策 | 理由 |
+|---|---|---|
+| **Tx-a** | A-66.12 的 draw call 條款**具名改寫**為「分布無系統性差異 + `poolSize` 不變」 | 見 §3。原字面「相同」會把一個逐幀抖動的量當成迴歸訊號；改寫後的判準既可持續回歸（單元測試），又誠實描述量測到的東西 |
+| **Tx-b** | 第一輪 2 failed **不以「flaky，重跑就好」帶過**，而是逐條記錄症狀、根因與兩段式複驗 | 「重跑就綠」是本 repo 最貴的一句話：它會把一個有明確機制的環境相依（真實 Pointer Lock 要求機器獨佔）藏起來，下一個人只會再踩一次。T5 已因同族時序脆弱性繞過兩次（Surprises 3／5），本閘是第三次 ⇒ 值得升級成明帳紀律 |
+| **Tx-c** | `#flashUntil` 的註解過強**只記不改** | 本閘 Invariant 是不改 `src/`；且該命題在現行啟用清單（全 persistent 單目標）上為真、上界有界、每場邊界必清。改碼會讓 T-exit 夾帶未經測試矩陣覆蓋的行為變更 |
+| **Tx-d** | GD-42 入帳前**重查**當下最大 GD | [GD-35](../../../DECISIONS.md) ② 紀律。本閘實查：`DECISIONS.md` 已落帳最大 = **GD-41**，`GD-42`／`GD-43` 在該檔**零命中**；GD-43 由 [WP-67](../wp-67-export-opening-protocol-marker/README.md) 預約中（其 README §IDs 明載）⇒ **GD-42 未被取用，不需順延** |
+
+### 9. GD-42 入帳
+
+草稿 D-66-1～D-66-6 補上實際結果後已寫入 [DECISIONS.md](../../../DECISIONS.md)（最新在上，置於 GD-41 之前）。入帳前的編號重查見 Tx-d。
+
+### 10. 狀態翻轉
+
+- [task-checklist.md](task-checklist.md)：T-exit 列翻 ✅，Package Definition of Done 十二項全部打勾。
+- [stage13 README §2](../README.md)：WP-66 列翻 ✅ + 具名證據摘要；§3 的「WP-66 / GD-42 編號與落點偏離」條目補上 T-exit 落帳結果。
+- [`docs/exec-plan/README.md §2`](../../../README.md)：WP-66 列由 ⬜ 翻 ✅（該列於 T0–T5 期間未被更新，本閘一次補齊）。
+
+> ⚠️ 後兩份是多 session 共編索引：本閘**只 stage 自己那幾行**，未整檔覆蓋。
+
+### 11. 限制（誠實界線）
+
+- 本閘的 live e2e 以受控的合成 `mousemove` ＋ 真實 Pointer Lock 驅動瞄準，證明的是 **production wiring 在真瀏覽器成立**；它**不**代替真人受試者對「命中回饋是否改善體驗／是否改變行為」的判斷。後者正是 GD-42 D-66-4 記為**效度斷代**的原因。
+- A-66.12 的 frame-time 數字取自 T5 的同場 A/B（本閘未重量測）。本閘在其後**未改動任何 `src/`**（§5 已以 diff 證明），故該組數字對 `HEAD = 7448d34` 仍然成立。
+- `tests/` 仍未納入 `npm run typecheck`（兩份 tsconfig 的 `include` 分別為 `["src"]`／`["server"]`）——WP-65 T6 與本 WP T5 已各記一次，本閘**同樣不夾帶** `tsconfig.test.json`（會牽動 `test:ci`，屬獨立切片）。新增測試檔的型別正確性目前唯一的驗證是 `vitest`／`playwright` 實跑。
+
+---
+
 ## Decision Log
 
 ### 規劃期（2026-09-11）
@@ -1071,3 +1186,6 @@ WP-65 的 arm helper 送的是一個 lock→unlock **脈衝**，離開時 `Point
 | **OQ-66.4** | 是否需要 `meta` 層級的效度斷代版本標記 | ✅ **T0 收斂（2026-09-12）：照預設否**。`meta.targets.hitFeedback` 逐 run 自述已足以分池；WP-65 交接的版本標記工作已另立為 [WP-67](../wp-67-export-opening-protocol-marker/README.md)（`meta.opening`），本 WP **不夾帶、不改為相依**。 | 使用者 | T0 |
 | **OQ-66.5** | replay 何時補上命中回饋？（技術債 §3.2；觸發條件 = replay 被用於**向受試者**回放而非研究者檢視） | ⬜ 開放（非阻塞） | 使用者 | 本 WP 之後 |
 | **OQ-66.6** | T0 清單上的兩個 WP-54 pilot id 是 `tracking-pilot-v2` 已版本化協定的 scored block，要不要啟用？ | ✅ **T4 收斂（2026-09-12）：選項 A** —— 兩個都不啟用，FR-66.11 清單由十個收斂為八個（`tracking_br_v1` 家族）；**整個 WP-54 tracking-pilot 家族（九個 block）一律排除**，以 census 表＋策展註冊表兩個入口的斷言釘死。日後若要啟用，必須連同 `TRACKING_PILOT_PROTOCOL_VERSION` 升版一起做，屬另一個 WP。詳見 [§T4 Open Questions](#open-questionst4) | 使用者 | T4 |
+| **OQ-66.7** | 命中回饋若要啟用到**非 persistent／多目標**的 drill（例如 micro-flick v8/v9 的 `population.activeCount: 3`），`TargetView.#flashUntil` 的過期清理需要補強嗎？ | ⬜ **開放（非阻塞；現行啟用清單上恆為真）**。過期刪鍵只發生在 `#paintHit()`，而它只對**本幀可見**的目標呼叫 ⇒ 亮起期間被撤除的目標，其鍵會留到 drill 邊界才清（三個 `clear()` 點：`#ingestHits()` 的 `total` 倒退分支／`setHitFeedback()`／`dispose()`）。現行八個啟用 drill 全是 `persistent: true` 單目標 ⇒ 鍵數恆為 1。啟用到多目標 drill 時，應同時把該註解改為「drill 邊界清空」或在隱藏 pool mesh 的迴圈內一併刪鍵。詳見 [§T-exit.6](#6-讀碼複驗發現的一處註解過強fyi不阻塞不改碼) | 後續 WP | 啟用非 persistent drill 前 |
+| **OQ-66.8** | T4 交接的兩項實機證據（**刻意打偏不亮**的正面證據、**projectile 亮起延遲與 `timeOfFlightMs` 數量級相符**）何時補齊？ | ⬜ **開放（非阻塞）**。T-exit 明帳**以單元層證據替代**：前者由 T1 的六條反證 + T5 的 MUT-CONTROL 變異注入覆蓋；後者由「環形格寫入點就在既有 `hit` 事件的同一個 `if` 區塊內」結構保證（A-66.1）。兩者皆需操作人員在實機錄影補齊，屬**實機作業**而非程式工作。詳見 [§T-exit.7](#7-t4-交接的四項實機證據--三項已取得兩項明帳以單元層證據替代) | 操作人員 | 下一次 `tracking_br_v1` 實機場次 |
+| **OQ-66.9** | 全量 e2e 期間的**機器獨佔**要不要寫成工具層的硬約束（而非只靠紀律）？ | ⬜ **開放（非阻塞）**。`tests/e2e/hit-feedback-live.spec.ts` 是全 115 條裡唯一需要**真實** Pointer Lock 的 spec，與其他指令並行會靜默失敗成「這場都沒打中」。本閘第一輪即因此 2 failed（詳見 [§T-exit.4](#4-全量-e2e-的第一輪-2-failed--環境干擾非程式必記)）。WP-65 T6／本 WP T5 已各繞過同族脆弱性一次，本閘是第三次。 | 後續 WP | — |

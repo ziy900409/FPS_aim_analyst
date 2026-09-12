@@ -13,7 +13,7 @@
 | **Estimate** | 6–8.5 dev-days（T0～T5 + T-exit）。 |
 | **Risk** | **Med**。單一最高風險點在 T4 的**效度斷代**（改視覺＝改刺激，已收資料與新資料不可混池），不在程式。T1 觸及 `SimLoop` 命中路徑與 `SharedState`（91 callers），但屬 additive。 |
 | **IDs** | 規劃期（2026-09-11）：`exec-plan/README.md §2` 最大 WP = **WP-65**、`active/*/` 實際最大 = **WP-65**、`DECISIONS.md` 最大 GD = **GD-41**；[stage14 §3](../../stage14/README.md) 的三個候選（WP-66/67/68）**尚未採納**。依 [GD-15](../../../DECISIONS.md)「先採納先得」取用 **WP-66 / GD-42**，stage14 候選順延為 WP-67/68/69。⚠️ 依 [GD-35](../../../DECISIONS.md) ② 紀律，二號**必須於 T0 重查**；被平行 session 取用則順延、不爭號。 |
-| **Status** | 🟡 **T0 已過（2026-09-12）**，T1 可開工。編號重查確認 **WP-66 / GD-42 未被取用**；四個 OQ 全數照預設收斂（啟用清單十個 `drillId` 見 [§1.4a](#14a-oq-收斂結果t0-定案2026-09-12)）；假設 #3 證實成立 ⇒ **T3 必改 `schema.ts`**。基線與三項須傳遞的偏離見 [progress.md §T0](progress.md#t0--entry-gate2026-09-12)。決策草稿 GD-42（D-66-1～D-66-6），**本體於 T-exit 入帳**（承 [WP-63](../wp-63-micro-flick-v8-measurement-foundation/README.md) D-63-P6 先例）。 |
+| **Status** | ✅ **T-exit 交付（2026-09-12）** —— A-66.1～A-66.12 十二條逐條具名證據成立，**GD-42 已入帳**；最終 gate：typecheck ×2 exit 0、Vitest **3186 passed / 2 skipped**、regression **324 passed**、Playwright **115 passed / 0 failed**、build exit 0。實際啟用 **八個** `tracking_br_v1` variant（T0 原列十個，經 OQ-66.6 排除整個 WP-54 tracking-pilot 家族）。逐條證據見 [progress §T-exit](progress.md)。⚠️ A-66.12 的 draw call 判準具名改寫為「ON/OFF 分布無系統性差異 + `poolSize` 不變」；兩項實機證據（刻意打偏不亮、projectile 亮起延遲）明帳以單元層證據替代。<br>**T0 記錄（保留）**：編號重查確認 **WP-66 / GD-42 未被取用**；四個 OQ 全數照預設收斂（啟用清單十個 `drillId` 見 [§1.4a](#14a-oq-收斂結果t0-定案2026-09-12)）；假設 #3 證實成立 ⇒ **T3 必改 `schema.ts`**。基線與三項須傳遞的偏離見 [progress.md §T0](progress.md#t0--entry-gate2026-09-12)。決策草稿 GD-42（D-66-1～D-66-6），**本體於 T-exit 入帳**（承 [WP-63](../wp-63-micro-flick-v8-measurement-foundation/README.md) D-63-P6 先例）。 |
 
 ### 落點說明
 
