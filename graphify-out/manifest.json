@@ -804,8 +804,8 @@
     "hash": "5433e8cdca2e86fa5cc51c7160f460eb"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\DrillConfig.test.ts": {
-    "mtime": 1789207363.4312742,
-    "hash": "54b894d7ea8ea14c7b27e4b8fd7c8600"
+    "mtime": 1789210137.9774654,
+    "hash": "606704bb972e4efa9dad3f0ee29d1095"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\DrillConfig.ts": {
     "mtime": 1789205632.434919,
@@ -984,7 +984,7 @@
     "hash": "ae0a71b61f347d11860cd57e5a742505"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\tracking_core_pr_pilot_v1.ts": {
-    "mtime": 1788552909.646669,
+    "mtime": 1789210319.6410346,
     "hash": "6390cdb12091a872b5b3198d0a966f15"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\tracking_longrange_v1.test.ts": {
@@ -1000,7 +1000,7 @@
     "hash": "b5d8d594727701d710cca32cf6f86692"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\tracking_reversal_pilot_v1.ts": {
-    "mtime": 1788552921.8518856,
+    "mtime": 1789210319.6416526,
     "hash": "f9661fb3093dc803e81657167dbbe569"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\tracking_scene_v1.test.ts": {
@@ -1944,7 +1944,7 @@
     "hash": "df56cdc07a346367baf0c6124b1c5ef6"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\trackingPilotSchedulableDrills.ts": {
-    "mtime": 1789142140.3782556,
+    "mtime": 1789210319.6427898,
     "hash": "fd7935c8d56652455291ae4eedb75606"
   },
   "D:\\git\\FPS_aim_analyst\\src\\sim\\firstShot.test.ts": {
@@ -3316,8 +3316,8 @@
     "hash": "353adaacb52d86a378b3008e1e5a0767"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\README.md": {
-    "mtime": 1789207942.181532,
-    "hash": "45a77f590fb0d376d8401986d4956b60"
+    "mtime": 1789210215.1227577,
+    "hash": "7ba8e9b32fa4ccab0e50c3b2a9101ac8"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\progress.md": {
     "mtime": 1788979165.2570803,
@@ -3564,12 +3564,12 @@
     "hash": "a77a51d2cfdb30a7179cc5433d97205a"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-66-target-hit-visual-feedback\\progress.md": {
-    "mtime": 1789207857.2608957,
-    "hash": "a785cd4e4988eba1f191f131879fecd7"
+    "mtime": 1789210276.01009,
+    "hash": "4d91b299cd414a275d435c4bb037a8fb"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-66-target-hit-visual-feedback\\README.md": {
-    "mtime": 1789200399.848019,
-    "hash": "045800f93775c9e9564216da399e8384"
+    "mtime": 1789210180.5447195,
+    "hash": "c05301eb7b8a2e511e39fadf630f891e"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-66-target-hit-visual-feedback\\T-exit-gate.md": {
     "mtime": 1789142140.330521,
@@ -3600,8 +3600,8 @@
     "hash": "ca90e4cc89b5bc6ae0dfe4efa9d09991"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-66-target-hit-visual-feedback\\task-checklist.md": {
-    "mtime": 1789207871.3471162,
-    "hash": "4601a91389a0663b0be9ee68ccc5fa68"
+    "mtime": 1789210215.1222484,
+    "hash": "9a631223fb0958cbe308f26034dafac0"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-67-export-opening-protocol-marker\\progress.md": {
     "mtime": 1789198072.7195907,
