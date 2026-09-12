@@ -131,7 +131,19 @@ WP-65 的 FM-1 正是「三處 wiring 漏一處 ⇒ 換 drill 後行為不一致
 
 四個 OQ **全數照上表預設收斂**（使用者 2026-09-12 回覆；OQ-66.3 為規劃期 D-66-P4 已定、T0 未推翻）。上表保留為決策脈絡，**本節為執行權威**。
 
-**OQ-66.1 — FR-66.11 的「指名清單」逐字定案。T4 只能動這十個 `drillId`，未列名者一律不啟用：**
+**OQ-66.1 — FR-66.11 的「指名清單」逐字定案。**
+
+> ⚠️ **T4（2026-09-12）修訂：下表第 9、10 列已被排除，實際啟用為前八個。**
+> `tracking_core_pr_pilot_v1_2deg_5dps` 與 `tracking_reversal_pilot_v1_high` 經 T4 執行期讀碼證實是
+> [`tracking-pilot-v2`](../../../../../src/pilot/trackingCompatibilityKey.ts) 這個**已版本化協定**六個 scored block 中的兩個。
+> 啟用將造成協定內 **2/6 帶回饋、4/6 不帶**（size／speed／reversal 三個對比全數與「有無回饋」共變），
+> 且 `checkTrackingCompatibility()` 的十個軸**沒有 `hitFeedback`** ⇒ 啟用前後的 run 取得相同 cohort key、無法分池
+> （＝ KI-025 的失效模式）。**使用者 2026-09-12 裁決選項 A：整個 WP-54 tracking-pilot 家族（九個 block）一律不啟用**，
+> 並以 census 表＋策展註冊表**兩個入口**的斷言釘死（3 個變異注入全數 RED）。
+> 日後若要啟用，必須連同 `TRACKING_PILOT_PROTOCOL_VERSION` 升版一起做，屬**另一個 WP**。
+> → 經過與證據見 [progress §T4](progress.md#open-questionst4)（OQ-66.6）。
+
+**T4 只能動下表第 1–8 列的 `drillId`，未列名者（含被划掉的 9、10）一律不啟用：**
 
 | # | `drillId` | 來源（具名常數，非手抄） |
 |---|---|---|
@@ -143,10 +155,10 @@ WP-65 的 FM-1 正是「三處 wiring 漏一處 ⇒ 換 drill 後行為不一致
 | 6 | `tracking_br_v1__ads_on__hitscan__2deg` | `trackingBrVariants[5]` |
 | 7 | `tracking_br_v1__ads_off__projectile__2deg` | `trackingBrVariants[6]` |
 | 8 | `tracking_br_v1__ads_on__projectile__2deg` | `trackingBrVariants[7]` |
-| 9 | `tracking_core_pr_pilot_v1_2deg_5dps` | `TRACKING_PILOT_SCHEDULABLE_DRILL_IDS[0]`（WP-64 策展） |
-| 10 | `tracking_reversal_pilot_v1_high` | `TRACKING_PILOT_SCHEDULABLE_DRILL_IDS[1]`（WP-64 策展） |
+| ~~9~~ | ~~`tracking_core_pr_pilot_v1_2deg_5dps`~~ **← T4 排除** | `TRACKING_PILOT_SCHEDULABLE_DRILL_IDS[0]`（WP-64 策展） |
+| ~~10~~ | ~~`tracking_reversal_pilot_v1_high`~~ **← T4 排除** | `TRACKING_PILOT_SCHEDULABLE_DRILL_IDS[1]`（WP-64 策展） |
 
-**排除**：`hold_track_v1`（T0 讀碼證實 `mode: 'assessment'` 且落回 `STAGE6_PROTOCOL_VERSION = '1.0.0'`）與其餘七個未策展的 WP-54 pilot block。
+**排除**：**全部九個 WP-54 tracking-pilot block**（T4 / OQ-66.6 裁決，含上表被划掉的兩個）、`hold_track_v1`（T0 讀碼證實 `mode: 'assessment'` 且落回 `STAGE6_PROTOCOL_VERSION = '1.0.0'`）與其餘七個未策展的 WP-54 pilot block。
 
 - **OQ-66.2** — `HIT_FEEDBACK_HOLD_MS = **120**`（照預設）。
 - **OQ-66.3** — 以 `emissive` 呈現（照預設）。

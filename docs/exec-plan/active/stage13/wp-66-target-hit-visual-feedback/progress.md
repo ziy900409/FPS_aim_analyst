@@ -14,7 +14,7 @@
 | T1 | ✅ 完成 | 2026-09-12 | 見 [§T1](#t1--targethitring-進-sharedstatesimloop-兩處寫入2026-09-12)。`TargetHitRing` 落 `SharedState`、`SimLoop` **只加兩行寫入**（命中路徑窮舉證明恰為兩條）；+17 tests（反證 6 條 + 決定性 1 條），regression **319 passed 逐位一致**、fixture 零修改；`src/render`／`src/drill`／`src/main.ts`／`src/data`／`research` 五者零改動；零 importer 掃描乾淨。變異注入實證反證測試會咬（非假綠燈）。⚠️ 傳遞給 T2：`trackingPilotHold.magSize = 512` ⇒ 一場約 250 次命中 **遠超 CAP 64**，`TargetView` 必須走 `seq` 高水位增量消費，不得以 `total` 當索引。|
 | T2 | ✅ 完成 | 2026-09-12 | 見 [§T2](#t2--targetview-逐-mesh-material-與命中態衰減2026-09-12)。`TargetView` 改逐 mesh material clone、新增 `setHitFeedback()` 與 `sync()` 的兩個 optional 參數；+13 tests（含 FM-1／FM-2／FM-4 反證各一）；**5 個變異注入全數 RED**（其中 M-B 一度 GREEN，揪出一條真的假綠燈並改掉測試）；regression **319 passed 逐位一致**、fixture 零修改；`src/main.ts`／`src/drill/`／`src/data/`／`src/loop/`／`src/render/replay/`／`research/` **六者零改動**。⚠️ 傳遞給 T3：`setHitFeedback()` 必須在 §0.4 四處全到位，且**必須在 `drillRunner.start()` 之前**呼叫（理由見 §T2 Decision T2-b）。|
 | T3 | ✅ 完成 | 2026-09-12 | 見 [§T3](#t3--targetshitfeedback-設定schemametadata-與-maints-接線2026-09-12)。`targets.hitFeedback?` 進 type + `schema.ts` 白名單、`resolveHitFeedback()` 為四條路徑的單一比較式、`meta.targets.hitFeedback` optional-in（live + harness 兩條管線同形）；**接線收斂到 `drillRunner.start()` façade 一處**（具名偏離 task file 的「四處各寫一次」，理由見 Decision T3-a）；+20 tests、**5 個變異注入全數 RED**；regression **319 passed 逐位一致**、fixture 零修改；`drills/*.json` 與全部 drill 定義**值零修改**（值變更屬 T4）；Python `load_export()` 對帶新鍵的 payload **零修改可讀**、`git diff research/` 為空。⚠️ 傳遞給 T4：啟用清單十個 id 一律改**具名常數／builder 上的 `targets.hitFeedback: 'flash'`**，且 `meta.targets` 屆時由 1 鍵變 2 鍵——只限這十個 run。|
-| T4 | 🟡 **部分完成（8/10）** | 2026-09-12 | 見 [§T4](#t4--在指名的-tracking-drill-啟用命中回饋2026-09-12)。`tracking_br_v1` 家族**八格全部**啟用（`makeVariant()` 一處生效八個）；八個 id 的 `loadDrill()` 前後逐欄比對，差異**恰為** `targets.hitFeedback`（22 欄位 × 8 drill，零其他增刪改）；`meta.targets` 由 1 鍵變 2 鍵、對照組 `counterstrafe_ad_v1` 維持 1 鍵逐字不變；regression **319 passed 逐位一致**、全量 **3180 passed**（+2 tests）、typecheck／build exit 0；**2 個變異注入全數 RED**。⚠️ **清單上的另外兩個 id（`tracking_core_pr_pilot_v1_2deg_5dps`／`tracking_reversal_pilot_v1_high`）本切片刻意未啟用**——執行期讀碼發現兩者同時是 `tracking-pilot-v2` **已版本化協定**六個 scored block 中的兩個，啟用會造成協定內 2/6 帶回饋、4/6 不帶的**條件混淆**，且 `checkTrackingCompatibility()` 無 `hitFeedback` 軸 ⇒ 前後 cohort key 相同、無法分池。詳見 §T4 Surprises 1，待使用者裁決（OQ-66.5）。|
+| T4 | ✅ 完成 | 2026-09-12 | 見 [§T4](#t4--在指名的-tracking-drill-啟用命中回饋2026-09-12)。`tracking_br_v1` 家族**八格全部**啟用（`makeVariant()` 一處生效八個）；八個 id 的 `loadDrill()` 前後逐欄比對，差異**恰為** `targets.hitFeedback`（22 欄位 × 8 drill）；`meta.targets` 由 1 鍵變 2 鍵、對照組 `counterstrafe_ad_v1` 維持 1 鍵逐字不變；golden fixture 逐筆分類完成（**無一應變動、實測亦無一變動**）；regression **319 passed 逐位一致**、全量 **3181 passed**（+3 tests）、typecheck／build exit 0；**5 個變異注入全數 RED**。⚠️ **啟用清單由十個收斂為八個**：T0 列入的兩個 WP-54 pilot id 經執行期讀碼證實是 `tracking-pilot-v2` **已版本化協定**六個 scored block 中的兩個（啟用將造成協定內 2/6 混淆，且 `checkTrackingCompatibility()` 無 `hitFeedback` 軸、前後無法分池，與 KI-025 同型）；**使用者 2026-09-12 裁決選項 A：整個 WP-54 tracking-pilot 家族（九個 block）一律不啟用**，並以 census 表＋策展註冊表**兩個入口**的斷言釘死（見 [Open Questions](#open-questionst4)）。⚠️ 交接 T5：四項實機證據（命中亮／打偏不亮／燄滅／projectile 延遲）需操作人員實機，已交接 T5 同場取得，不阻塞 T5 開工。|
 | T5 | ⬜ 未開始 | — | — |
 | T-exit | ⬜ 未開始 | — | — |
 
@@ -683,24 +683,58 @@ manifest blocks on T4 list = ['tracking_core_pr_pilot_v1_2deg_5dps',
 
 ⇒ 這正是兩組 id 該分開處理的結構性理由，而非「先做簡單的」。
 
-### Open Questions（T4，待使用者裁決）
+### Open Questions（T4）
 
-**OQ-66.5（阻塞 T4 收尾）— `tracking_core_pr_pilot_v1_2deg_5dps` 與 `tracking_reversal_pilot_v1_high` 要不要啟用？三條路，選一條：**
+**OQ-66.6 — ✅ 已收斂（使用者 2026-09-12 裁決：選項 A，兩個都不啟用）**
 
-| 選項 | 內容 | 代價 |
+T0 的 OQ-66.1 把十個 drill id 列入啟用清單。T4 執行期讀碼發現其中兩個
+（`tracking_core_pr_pilot_v1_2deg_5dps`／`tracking_reversal_pilot_v1_high`）是
+`tracking-pilot-v2` 這個**已版本化協定**六個 scored block 中的兩個（詳見 Surprises 1），
+遂停手提交裁決。使用者選 **A**：
+
+> **FR-66.11 的啟用清單由十個收斂為八個** —— 即 `tracking_br_v1` 家族八個 variant。
+> **整個 WP-54 tracking-pilot 家族（九個 block）一律不啟用。**
+
+| 選項 | 內容 | 裁決 |
 |---|---|---|
-| **A（建議）** | **兩個都不啟用**，把 FR-66.11 的清單由十個收斂為八個（`tracking_br_v1` 家族）。T0 的 OQ-66.1 收斂結果隨之修訂並入帳 | 兩個 tracking pilot block 仍無命中回饋。但它們是 `requireFire`（scored 窗全程按住左鍵）的持續射擊任務，回饋缺口的嚴重性低於 br 家族 |
-| **B** | **整個 `tracking-pilot-v2` 六個 scored block 全開**（含未列名的四個），並**同時**升 `TRACKING_PILOT_PROTOCOL_VERSION` → `tracking-pilot-v3`，另補一列 protocol decision row | 協定內一致、cohort 可分池，但這是**另一個 WP 的範圍**（升版是 research-visible act），且會使既有 v2 資料全部斷代 |
-| **C** | 只開那兩個、不升版 | **不建議**：協定內 2/6 混淆 ＋ cohort key 無法分池，兩者皆為研究效度問題。列出僅為完整性 |
+| **A** | 兩個都不啟用，清單收斂為八個 | ✅ **採用** |
+| **B** | 六個 scored block 全開 ＋ 升 `TRACKING_PILOT_PROTOCOL_VERSION` → v3 | 未採用（升版是 research-visible act，屬另一個 WP 的範圍） |
+| **C** | 只開那兩個、不升版 | 未採用（協定內 2/6 混淆 ＋ cohort key 無法分池） |
 
-**待補的 T4 DoD 項目（需操作人員實機，本 session 為非互動、無法在 Pointer Lock 下真人瞄準）**：
+**落地方式**：本裁決不是「什麼都不做」——它以測試釘死。`DrillConfig.test.ts` 新增
+`OQ-66.6：整個 tracking-pilot-v2 家族排除在外`，同時斷言**兩個入口**：
+
+- `ALL_TRACKING_PILOT_CONFIGS`（九個 block 的普查表，協定 runner 解析 manifest 用）
+- `TRACKING_PILOT_SCHEDULABLE_DRILLS`（WP-64 策展註冊表，Session Plan 排程用）
+
+兩者對 `tracking_core_pr_pilot_v1_2deg_5dps` 是**不同的物件參考**（Surprises 1 之三），
+所以只守一邊會讓同一個 `drillId` 依進入路徑帶兩種刺激。
+
+**變異注入：3 個全數 RED**（還原置於 `try/finally`，SHA-256 逐位複驗）：
+
+| 變異 | 注入內容 | 結果 |
+|---|---|---|
+| **MUT-CENSUS** | `buildTrackingCorePrPilotV1Cell()` 內加 `hitFeedback` ——「天真地照 T0 清單啟用 2deg_5dps」的實際寫法 | **RED**（1 failed / 6 passed） |
+| **MUT-REVERSAL** | `buildReversalCell()` 內加 `hitFeedback` | **RED**（1 failed / 6 passed） |
+| **MUT-CURATED** | 只在 WP-64 策展來源物件上加（＝同一 `drillId` 兩種刺激的那個失效模式） | **RED**（1 failed / 6 passed） |
+
+MUT-CURATED 是三者中最有價值的一條：它是唯一「census 表看起來乾淨、協定 runner 行為不變、
+但 Session Plan 排程同一個 id 時刺激不同」的變異，只有策展註冊表那半條斷言抓得到。
+
+**若日後要啟用此家族**，必須連同 `TRACKING_PILOT_PROTOCOL_VERSION` 升版一起做，並補一列
+protocol decision row —— 該常數註解自述「Bumping this is a research-visible act … may only
+move together with a new protocol decision row」。這屬另一個 WP。
+
+---
+
+**待補的 T4 DoD 項目（需操作人員實機；本 session 為非互動，無法在 Pointer Lock 下真人瞄準）**：
 
 - `tracking_br_v1` hitscan 實機三項證據：命中亮／刻意打偏不亮／停火後 ≤ `HIT_FEEDBACK_HOLD_MS` 熄滅（截圖或錄影）
 - projectile variant：亮起延遲與該場匯出 `hit` 事件 `timeOfFlightMs` 數量級相符
 - 兩場 tracking 匯出 JSON 的 `meta.targets.hitFeedback === 'flash'`（**靜態鍵面已於 §4 證實**，待實機匯出複驗）
 - 未啟用對照 drill 的實機「命中不亮」證據（**靜態鍵面已於 §4 證實**）
 
-這四項與 T5 的 focused e2e／A-B frame-time 是同一場實機作業，建議併入 T5 一次取得；本切片不宣稱已完成。
+這四項與 T5 的 focused e2e／A-B frame-time 是同一場實機作業，**已交接 T5 一次取得**；本 task 不宣稱已完成，亦不阻塞 T5 開工。
 
 ---
 
@@ -725,7 +759,7 @@ manifest blocks on T4 list = ['tracking_core_pr_pilot_v1_2deg_5dps',
 | **D-66-1** | 命中回饋走獨立環形格（`targetHits`），不放 `TargetState` |
 | **D-66-2** | 環形格不帶時間戳，衰減一律以 render 的 rAF `now` 起算 |
 | **D-66-3** | 回饋為 `DrillConfig.targets.hitFeedback?`，省略＝逐位不變且不寫 metadata |
-| **D-66-4** | 啟用清單逐一列名 —— **T0（2026-09-12）已填實為十個 drill id**（`tracking_br_v1` 八 variant + `tracking_core_pr_pilot_v1_2deg_5dps` + `tracking_reversal_pilot_v1_high`，見 [§T0.5](#5-oq-收斂使用者-2026-09-12-回覆)），排除 `hold_track_v1` 等已凍結的 assessment 協定；啟用即構成**效度斷代**，由 `meta.targets.hitFeedback` 逐 run 自述。生效日期待 T4 補 |
+| **D-66-4** | 啟用清單逐一列名 —— **實際啟用為八個 drill id，生效 2026-09-12**：`tracking_br_v1` 家族全部八個 variant（commit `cfe2e63`）。T0 原列十個，經 **OQ-66.6**（使用者 2026-09-12 裁決 A）收斂為八：`tracking_core_pr_pilot_v1_2deg_5dps` 與 `tracking_reversal_pilot_v1_high` 是 `tracking-pilot-v2` 已版本化協定六個 scored block 中的兩個，啟用會造成協定內 2/6 混淆且 cohort key 無法分池 ⇒ **整個 WP-54 tracking-pilot 家族（九個 block）一律排除**，以測試釘死兩個入口。一律排除的還有 `hold_track_v1` 等已凍結的 assessment 協定。啟用即構成**效度斷代**，由 `meta.targets.hitFeedback` 逐 run 自述 |
 | **D-66-5** | projectile 條件的回饋延遲（飛行時間）為已知且已接受的條件差異——使用者 2026-09-11 決定 |
 | **D-66-6** | replay **先不同步**（使用者 2026-09-11 決定）；觸發補齊的條件 = replay 被用於向受試者回放 |
 
@@ -778,8 +812,9 @@ manifest blocks on T4 list = ['tracking_core_pr_pilot_v1_2deg_5dps',
 
 | OQ | 問題 | 狀態 | Owner | Deadline |
 |---|---|---|---|---|
-| **OQ-66.1** | 哪些 drill 啟用命中回饋？ | ✅ **T0 收斂（2026-09-12）：照預設**——`tracking_br_v1` 八 variant + WP-64 兩個 curated Tracking Pilot config，排除 `hold_track_v1`。**十個 drill id 逐字清單見 [§T0.5](#5-oq-收斂使用者-2026-09-12-回覆)**，T4 只能動這份清單。 | 使用者 | T0 |
+| **OQ-66.1** | 哪些 drill 啟用命中回饋？ | ✅ **T0 收斂（2026-09-12）：照預設（十個 id）→ 經 OQ-66.6 於 T4 修訂為八個**。實際啟用 = `tracking_br_v1` 家族八個 variant；T0 原列的兩個 WP-54 curated Tracking Pilot config 經執行期讀碼證實是 `tracking-pilot-v2` 已版本化協定的 scored block，**使用者 2026-09-12 裁決排除**（選項 A）。一併排除 `hold_track_v1` 等已凍結協定。八個 id 逐字清單見 [§T4](#t4--在指名的-tracking-drill-啟用命中回饋2026-09-12)。 | 使用者 | T0（T4 修訂）|
 | **OQ-66.2** | `HIT_FEEDBACK_HOLD_MS` 取值 | ✅ **T0 收斂（2026-09-12）：照預設 120 ms** | 使用者 | T0 |
 | **OQ-66.3** | 命中態以 `emissive` 呈現 | ✅ 規劃期已定（D-66-P4）；T0 未推翻 | 規劃者 | — |
 | **OQ-66.4** | 是否需要 `meta` 層級的效度斷代版本標記 | ✅ **T0 收斂（2026-09-12）：照預設否**。`meta.targets.hitFeedback` 逐 run 自述已足以分池；WP-65 交接的版本標記工作已另立為 [WP-67](../wp-67-export-opening-protocol-marker/README.md)（`meta.opening`），本 WP **不夾帶、不改為相依**。 | 使用者 | T0 |
 | **OQ-66.5** | replay 何時補上命中回饋？（技術債 §3.2；觸發條件 = replay 被用於**向受試者**回放而非研究者檢視） | ⬜ 開放（非阻塞） | 使用者 | 本 WP 之後 |
+| **OQ-66.6** | T0 清單上的兩個 WP-54 pilot id 是 `tracking-pilot-v2` 已版本化協定的 scored block，要不要啟用？ | ✅ **T4 收斂（2026-09-12）：選項 A** —— 兩個都不啟用，FR-66.11 清單由十個收斂為八個（`tracking_br_v1` 家族）；**整個 WP-54 tracking-pilot 家族（九個 block）一律排除**，以 census 表＋策展註冊表兩個入口的斷言釘死。日後若要啟用，必須連同 `TRACKING_PILOT_PROTOCOL_VERSION` 升版一起做，屬另一個 WP。詳見 [§T4 Open Questions](#open-questionst4) | 使用者 | T4 |
