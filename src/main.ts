@@ -128,6 +128,7 @@ import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
+import { trackingReversalFeedbackV1 } from './drill/tracking_reversal_feedback_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
 import { holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
@@ -319,6 +320,15 @@ const availableDrills: AvailableDrill[] = [
   // `field-low`, config by reference, withheld from the Controls dropdown) so a test can execute
   // those three claims instead of scanning this literal for them — see `drillRegistry.ts`.
   ...TRACKING_PILOT_RUNTIME_DRILLS,
+  // WP-66 後續（使用者 2026-09-12）：帶命中回饋的 reversal tracking。**不是** pilot block——
+  // 不在 `ALL_TRACKING_PILOT_CONFIGS`、不進 manifest，故 `tracking-pilot-v2` 逐位不變。scene 沿用
+  // pilot 的 `field-low` pin：`reversal-2d-v1` 的 ±13° 視窗是對該場景 clearance envelope 驗證過的。
+  {
+    id: trackingReversalFeedbackV1.drillId,
+    label: trackingReversalFeedbackV1.drillId,
+    source: trackingReversalFeedbackV1,
+    sceneId: 'field-low',
+  },
 ];
 // WP-52: single-source lookup for the additive `visibility` meta every peek-click-transfer
 // pilot cell (v1 default, every v2 fixed candidate, and the v2 randomized cell) needs in its

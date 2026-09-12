@@ -26,6 +26,7 @@ import { spiderShotV3Binding } from '../drill/spider_shot_v3.ts';
 import { spiderShotWideV1Binding } from '../drill/spider_shot_wide_v1.ts';
 import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
 import { trackingLongrangeV1 } from '../drill/tracking_longrange_v1.ts';
+import { trackingReversalFeedbackV1 } from '../drill/tracking_reversal_feedback_v1.ts';
 import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { trackingV1 } from '../drill/tracking_v1.ts';
 import { isWeaponId, type WeaponId } from '../weapon/weapons.ts';
@@ -77,6 +78,10 @@ const FAMILY_ROSTER: readonly (readonly [SessionFamilyId, readonly string[]])[] 
       // runtime registry cannot disagree about which pilot blocks a Session Plan may reach
       // (FM-64.2). The other seven WP-54 blocks stay absent and therefore unschedulable.
       ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => entry.config.drillId),
+      // WP-66 後續（使用者 2026-09-12）：帶命中回饋的 reversal tracking。獨立 drill id，**不是**
+      // tracking-pilot block，故不經 `TRACKING_PILOT_SCHEDULABLE_DRILLS`——把它放在那個策展清單裡
+      // 會被 census 檢查擋下（它本來就不該通過：那份清單只收 WP-54 的九個 block）。
+      trackingReversalFeedbackV1.drillId,
     ],
   ],
   ['detection', [detectionPopinV1.drillId]],
@@ -148,6 +153,9 @@ const DECLARED_WEAPON_ROSTER: readonly DeclaredWeaponRosterEntry[] = [
   // WP-64 T1 (FR-64.4) — read off the same curated configs the family row above is derived from, so
   // a block cannot become schedulable without its weapon becoming fixed in the same step (FM-64.3).
   ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => [entry.config.drillId, entry.config.weaponId] as const),
+  // 同上：它沿用 pilot 的 `tracking_pilot_hold`（零後座力 hold 武器），武器是該任務的固定因子，
+  // 不可被 Session Plan 逐列武器指定覆蓋（WP-62 / D-62-1）。
+  [trackingReversalFeedbackV1.drillId, trackingReversalFeedbackV1.weaponId] as const,
 ];
 
 /**
