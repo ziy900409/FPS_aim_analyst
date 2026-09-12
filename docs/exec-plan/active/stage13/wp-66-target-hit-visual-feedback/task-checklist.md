@@ -4,7 +4,7 @@
 
 | Done | Task | Objective | Dependencies | Risk |
 |---|---|---|---|---|
-| ⬜ | **T0** Entry gate：編號重查／基線凍結／OQ-66.1～66.4 收斂 | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
+| ✅ | **T0** Entry gate：編號重查／基線凍結／OQ-66.1～66.4 收斂 | [T0-entry-gate.md](T0-entry-gate.md) | — | Low |
 | ⬜ | **T1** `TargetHitRing` + `SimLoop` 兩處寫入 + 決定性斷言 | [T1-target-hit-ring.md](T1-target-hit-ring.md) | T0 | **Med** |
 | ⬜ | **T2** `TargetView` 逐 mesh material + 命中態衰減 | [T2-target-view-hit-flash.md](T2-target-view-hit-flash.md) | T1 | Med |
 | ⬜ | **T3** `targets.hitFeedback?` + schema + metadata + 四處 wiring | [T3-config-gate-and-wiring.md](T3-config-gate-and-wiring.md) | T2 | Med |
