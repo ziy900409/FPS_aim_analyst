@@ -933,3 +933,53 @@ describe('validateDrill — center-peripheral-yawpitch spiderShot（WP-57 / T1�
     });
   }
 });
+
+describe('validateDrill — targets.hitFeedback（WP-66 / T3，FR-66.8）', () => {
+  it("'flash' 通過驗證且**保留在白名單重組結果中**", () => {
+    const cfg: DrillConfig = validateDrill({
+      ...(minimalValid() as object),
+      targets: { count: 20, distance: 4, hitFeedback: 'flash' },
+    });
+    expect(cfg.targets.hitFeedback).toBe('flash');
+  });
+
+  it('省略時結果物件**不含**該鍵（既有 drill 逐位不變）', () => {
+    const cfg = validateDrill(minimalValid());
+    expect('hitFeedback' in cfg.targets).toBe(false);
+    // 白名單重組的鍵面：只有 count / distance，與本 WP 前逐字相同。
+    expect(Object.keys(cfg.targets).sort()).toEqual(['count', 'distance']);
+  });
+
+  const invalidHitFeedback: ReadonlyArray<readonly [string, unknown]> = [
+    ['未知字串', 'blink'],
+    ['布林', true],
+    ['數字', 1],
+    ['空字串', ''],
+    ['null', null],
+  ];
+
+  for (const [label, value] of invalidHitFeedback) {
+    it(`非法值（${label}）→ throw 且訊息含 targets.hitFeedback`, () => {
+      expect(() =>
+        validateDrill({
+          ...(minimalValid() as object),
+          targets: { count: 20, distance: 4, hitFeedback: value },
+        }),
+      ).toThrow(/targets\.hitFeedback/);
+    });
+  }
+
+  it('與 hitbox 併存時兩者都保留（JSON drill 設了確實生效，T0 假設 #3）', () => {
+    const cfg = validateDrill({
+      ...(minimalValid() as object),
+      targets: {
+        count: 20,
+        distance: 4,
+        hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 },
+        hitFeedback: 'flash',
+      },
+    });
+    expect(cfg.targets.hitbox).toEqual({ widthU: 0.5, heightU: 1, depthU: 0.5 });
+    expect(cfg.targets.hitFeedback).toBe('flash');
+  });
+});

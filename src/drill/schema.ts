@@ -56,6 +56,10 @@ export function validateDrill(json: unknown): DrillConfig {
   const motion = targets.motion === undefined ? undefined : validateMotion(targets.motion);
   const trackingTrajectory =
     targets.trackingTrajectory === undefined ? undefined : validateTrackingTrajectory(targets.trackingTrajectory);
+  // WP-66 / T3：render-only 命中回饋。必須在此驗證並於下方重組時帶出——本函式以**白名單重組**
+  // 回傳 config，未列名的鍵會被靜默丟棄（JSON drill 設了也不生效）。
+  const hitFeedback =
+    targets.hitFeedback === undefined ? undefined : requireHitFeedback(targets.hitFeedback, 'targets.hitFeedback');
   if (hitboxCandidates !== undefined) {
     if (hitbox !== undefined) throw err('targets.hitbox', '不可與 targets.hitboxCandidates 同時提供');
     if (count % hitboxCandidates.length !== 0) {
@@ -176,6 +180,7 @@ export function validateDrill(json: unknown): DrillConfig {
       ...(spawnArea ? { spawnArea } : {}),
       ...(motion ? { motion } : {}),
       ...(trackingTrajectory ? { trackingTrajectory } : {}),
+      ...(hitFeedback ? { hitFeedback } : {}),
     },
     sequence: {
       alternation,
@@ -420,6 +425,12 @@ function validateHitboxCandidates(json: unknown): readonly TargetHitboxConfig[] 
 
 function requireHitboxShape(v: unknown, path: string): 'box' | 'sphere' {
   if (v !== 'box' && v !== 'sphere') throw err(path, "必須為 'box' 或 'sphere'");
+  return v;
+}
+
+/** WP-66 / T3：命中回饋只有一種樣式；其餘值一律拋出（逐字比照 `requireHitboxShape`）。 */
+function requireHitFeedback(v: unknown, path: string): 'flash' {
+  if (v !== 'flash') throw err(path, "必須為 'flash'");
   return v;
 }
 

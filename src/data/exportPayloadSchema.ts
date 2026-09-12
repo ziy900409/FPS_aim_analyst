@@ -630,10 +630,17 @@ function parseWeaponBulletMeta(
 function parseTargetsMeta(value: unknown, path: string, errors: ExportPayloadParseError[]): TargetsMeta | undefined {
   const record = parseRecord(value, path, errors);
   if (record === undefined) return undefined;
-  if (record.hitbox === undefined) return {};
+  // WP-66 / T3：additive、optional-in。缺席的舊 payload 仍可 parse（NFR-66.6）。
+  const hitFeedback =
+    record.hitFeedback === undefined
+      ? undefined
+      : parseLiteral(record.hitFeedback, `${path}.hitFeedback`, ['flash'] as const, errors);
+  if (record.hitFeedback !== undefined && hitFeedback === undefined) return undefined;
+  const feedbackKey = hitFeedback !== undefined ? { hitFeedback } : {};
+  if (record.hitbox === undefined) return feedbackKey;
   const hitbox = parseTargetHitboxConfig(record.hitbox, `${path}.hitbox`, errors);
   if (hitbox === undefined) return undefined;
-  return { hitbox };
+  return { hitbox, ...feedbackKey };
 }
 
 function parseTargetHitboxConfig(

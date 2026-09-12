@@ -13,7 +13,7 @@
 | T0 | ✅ 完成 | 2026-09-12 | 見 [§T0](#t0--entry-gate2026-09-12)。編號重查四處來源已記錄（**WP-66 / GD-42 仍可用，未順延**；stage14 §3 已補順延註記）；基線於 `9a03562` 凍結（typecheck exit 0 · Vitest **3128 passed / 2 skipped** · regression **319 passed** · build exit 0 · Playwright **112 tests / 112 passed / 0 failed**）；`meta` 鍵面 **34 鍵**、`meta.targets` **1 鍵（`hitbox`）** 已逐字記錄；OQ-66.1／66.2／66.4 使用者收斂**全數照預設**，啟用清單十個 drill id 已逐字定案；假設 #3 讀碼**確認成立**（T3 必改 `schema.ts`）。⚠️ 兩項須傳遞給後續 task：**① frame-time 基線改由 T5 同場 A/B 取得**（具名偏離 T0 DoD 第 5 條，理由見 Surprises 3）；**② 基準 commit 執行中被平行 session 推進兩次** ⇒ 後續 task 須在自己的 commit 上自備同期對照，不得引用本表絕對數。詳見 [Surprises](#surprises)。 |
 | T1 | ✅ 完成 | 2026-09-12 | 見 [§T1](#t1--targethitring-進-sharedstatesimloop-兩處寫入2026-09-12)。`TargetHitRing` 落 `SharedState`、`SimLoop` **只加兩行寫入**（命中路徑窮舉證明恰為兩條）；+17 tests（反證 6 條 + 決定性 1 條），regression **319 passed 逐位一致**、fixture 零修改；`src/render`／`src/drill`／`src/main.ts`／`src/data`／`research` 五者零改動；零 importer 掃描乾淨。變異注入實證反證測試會咬（非假綠燈）。⚠️ 傳遞給 T2：`trackingPilotHold.magSize = 512` ⇒ 一場約 250 次命中 **遠超 CAP 64**，`TargetView` 必須走 `seq` 高水位增量消費，不得以 `total` 當索引。|
 | T2 | ✅ 完成 | 2026-09-12 | 見 [§T2](#t2--targetview-逐-mesh-material-與命中態衰減2026-09-12)。`TargetView` 改逐 mesh material clone、新增 `setHitFeedback()` 與 `sync()` 的兩個 optional 參數；+13 tests（含 FM-1／FM-2／FM-4 反證各一）；**5 個變異注入全數 RED**（其中 M-B 一度 GREEN，揪出一條真的假綠燈並改掉測試）；regression **319 passed 逐位一致**、fixture 零修改；`src/main.ts`／`src/drill/`／`src/data/`／`src/loop/`／`src/render/replay/`／`research/` **六者零改動**。⚠️ 傳遞給 T3：`setHitFeedback()` 必須在 §0.4 四處全到位，且**必須在 `drillRunner.start()` 之前**呼叫（理由見 §T2 Decision T2-b）。|
-| T3 | ⬜ 未開始 | — | — |
+| T3 | ✅ 完成 | 2026-09-12 | 見 [§T3](#t3--targetshitfeedback-設定schemametadata-與-maints-接線2026-09-12)。`targets.hitFeedback?` 進 type + `schema.ts` 白名單、`resolveHitFeedback()` 為四條路徑的單一比較式、`meta.targets.hitFeedback` optional-in（live + harness 兩條管線同形）；**接線收斂到 `drillRunner.start()` façade 一處**（具名偏離 task file 的「四處各寫一次」，理由見 Decision T3-a）；+20 tests、**5 個變異注入全數 RED**；regression **319 passed 逐位一致**、fixture 零修改；`drills/*.json` 與全部 drill 定義**值零修改**（值變更屬 T4）；Python `load_export()` 對帶新鍵的 payload **零修改可讀**、`git diff research/` 為空。⚠️ 傳遞給 T4：啟用清單十個 id 一律改**具名常數／builder 上的 `targets.hitFeedback: 'flash'`**，且 `meta.targets` 屆時由 1 鍵變 2 鍵——只限這十個 run。|
 | T4 | ⬜ 未開始 | — | — |
 | T5 | ⬜ 未開始 | — | — |
 | T-exit | ⬜ 未開始 | — | — |
@@ -417,6 +417,141 @@ key 命名，因此 clone 與模板共用同一個編譯產物；執行期改的
 - **T5**：NFR-66.5 的 `renderer.info.render.drawcalls` 與 NFR-66.4 的 A/B frame-time 皆待實機量測；
   本切片只在單元層證明了 `poolSize` 不變（§2 末的警示框）。
 
+---
+
+## T3 — `targets.hitFeedback?` 設定、schema、metadata 與 `main.ts` 接線（2026-09-12）
+
+> 基準 commit：**`98d2f00`**（T2 的 graphify 索引刷新）。開工與收尾 worktree 皆 clean，**本切片執行期間未被平行 session 推進**。
+> 依 [T0 Surprises 5](#t0-執行期新增) 的紀律，下列「逐位不變」的對照**全部取自同一 commit 上的實測**，不引用 T0 表的絕對數。
+> 本切片**不啟用任何 drill**（值變更屬 T4）；交付後全 repo 行為與 T2 後**逐位相同**。
+
+### 1. 落地內容
+
+| 檔案 | 改動 |
+|---|---|
+| `src/drill/DrillConfig.ts` | `DrillConfig['targets']` 增 `readonly hitFeedback?: 'flash'`（註解寫明不得影響命中判定／目標推進／hitbox／任何指標，且啟用即構成效度斷代）；新增 `resolveHitFeedback(config?)` 純函式，位置與命名比照相鄰的 `resolveTargetHitbox` |
+| `src/drill/schema.ts` | targets 驗證段加 `hitFeedback`、白名單重組加 `...(hitFeedback ? { hitFeedback } : {})`、新增 `requireHitFeedback()`（逐字比照 `requireHitboxShape`） |
+| `src/data/metadata.ts` | `TargetsMeta` 增 `hitFeedback?: 'flash'`；`requireTargetsMeta()` optional-in 帶出 + `requireHitFeedbackMeta()` 驗證 |
+| `src/data/exportPayloadSchema.ts` | `parseTargetsMeta()` additive 接受新鍵（含「只有 hitFeedback、無 hitbox」的形狀） |
+| `src/main.ts` | import `resolveHitFeedback`；`drillRunner.start()` façade 內**一行**接線；`liveFrame` 的 `targetView.sync(...)` 改傳 `sharedState.targetHits` + `now`；`meta.targets` 加 optional-in 欄位；`installSceneLoad()` 加「為何刻意不在此接線」的註解 |
+| `src/testharness/fpsTestHarness.ts` | `meta.targets` 同一 optional-in 形狀（見 Decision T3-b） |
+| `src/drill/DrillConfig.test.ts` | **新檔**，+5 測試（`resolveHitFeedback` 四分支 + roster 現況反證） |
+| `src/drill/schema.test.ts` | +8 測試（通過／省略鍵面／五種非法值／與 hitbox 併存） |
+| `src/data/metadata.test.ts` | +3 測試（帶出／省略時鍵集合逐字＝T0 基線／非法值拋錯） |
+| `src/data/exportPayloadSchema.test.ts` | +4 測試（round-trip 兩形狀／舊 payload 不生預設值／非法值帶欄位路徑） |
+
+**值零修改（DoD 指名項）**：`git status --porcelain drills/` **輸出為空**；`git status --short src/drill/` 只有 `DrillConfig.ts`／`schema.ts`／兩個 test 檔 —— **沒有任何 drill 定義檔**（`tracking_br_v1.ts` 等一律未觸碰）。`research/` 的 `git diff --stat` 亦為空。
+
+### 2. `main.ts` 接線的窮舉證據（FM-3，T3 DoD 指名項）
+
+```
+$ grep -n "targetView" src/main.ts
+ 350: let targetView = new TargetView(sceneManager.scene);
+ 351: targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape);   // WP-46
+1070: // `installSceneLoad()` 重建 `targetView` 亦被涵蓋：…（註解）
+1075: targetView.setHitFeedback(resolveHitFeedback(config));               // ← 本切片的唯一接線點
+1454: targetView.dispose();
+1465: targetView = new TargetView(sceneManager.scene);
+1519: targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape);   // WP-46
+1559: targetView.setShape(resolveTargetHitbox(activeDrillConfig).shape);   // WP-46
+1911: targetView.sync(sharedState.targets, alpha, sharedState.targetHits, now);
+```
+
+| 行 | 情境 | 處置 | 理由 |
+|---|---|---|---|
+| 350 | 初始建構 | **不需處理** | 建構後的第一件事是 `drillRunner.start(activeDrillConfig)`（:1093），由 :1075 設值；中間無 render frame |
+| 351 | 初始 `setShape`（WP-46） | **不需處理** | 不同關注點（幾何 vs 回饋），不夾帶 |
+| 1070 | 註解 | — | 說明 `installSceneLoad()` 為何不重複接線 |
+| **1075** | **`drillRunner.start()` façade** | **✅ 已處理** | **本切片的唯一接線點**，見下表 |
+| 1454 | 場景重載 `dispose()` | **不需處理** | 舊 view 銷毀，`#flashUntil` 與高水位隨之消滅 |
+| 1465 | 場景重載重建 view | **不需處理（已加註解）** | 兩個呼叫端都在**同一同步區塊**內走到 :1520／:1560 的 `start()`，中間不可能夾一個 render frame；且此刻 `activeDrillConfig` 仍是**舊** drill，寫在這裡讀起來是錯的 |
+| 1519 | `activateDrill()` 的 `setShape` | **不需處理** | 同 351；其後 :1520 立刻 `start()` |
+| 1559 | `loadSceneById()` 的 `setShape` | **不需處理** | 同 351；其後 :1560 立刻 `start()` |
+| **1911** | **`liveFrame` 的 `sync()`** | **✅ 已處理** | 改傳 `sharedState.targetHits` + `now`（**必須同時傳**，只傳其一會靜默退回舊行為）。`now` 即相鄰 `tracerView.sync(sharedState.shotRays, now)` 用的同一個 rAF 值 ⇒ 假設 #2 讀碼**確認成立**，未新增時鐘來源 |
+
+**為什麼一處等於四處**——`drillRunner.start()` 的全部呼叫端（`grep -n "drillRunner.start(" src/main.ts`，扣掉一行註解後恰五處），以及 task file §0.4 四個點的對應：
+
+| # | `start()` 呼叫端 | 行 | 涵蓋 task file §0.4 的哪個點 |
+|---|---|---|---|
+| 1 | top-level 初始啟動 | 1093 | **#1 初始建構** |
+| 2 | `restartActiveDrill()` | 1428 | （§0.4 未列；重開同一場，順帶重新對齊高水位） |
+| 3 | `loadWeaponById()` | 1439 | **#2 換武器** |
+| 4 | `activateDrill()` | 1520 | **#2 換 drill**，且在 `installSceneLoad()` 之後 ⇒ 涵蓋 **#4 場景重載重建 view** |
+| 5 | `loadSceneById()` | 1560 | **#3 換場景**，同樣在 `installSceneLoad()` 之後 ⇒ 亦涵蓋 **#4** |
+
+⇒ §0.4 的**四個點全部到位**，且多涵蓋一條（`restartActiveDrill`）。`new TargetView(...)` 全 repo 只有 :350 與 :1465 兩處，`installSceneLoad()` 全 repo 只有 :1520／:1560 兩個呼叫端，兩者之間皆無 `return`、無 `await` ⇒ 涵蓋關係是結構性的，不靠慣例。
+
+**順序**（T2 Decision T2-b 的必做項）：`setHitFeedback()` 寫在 `activeDrillRunner.start(config)` 的**前一行**。串起來是 `setHitFeedback()`（高水位設回 `-1`）→ `start()` → `resetAll()` → `resetState()` → `resetTargetHitRing()`（`total` 歸 0）→ 下一幀 `#ingestHits` 走 `#syncedSeq < 0` 分支只對齊到 0 ⇒ **對齊那一幀確實落在 ring 已清空之後**，上一場的 backlog 不可能補亮這一場的同名 `t0`（FM-2）。
+
+### 3. Python 相容與 `research/` 隔離（C-D1 / NFR-66.6，T3 步驟 7）
+
+以 `fixtures/exports/counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json` 注入 `meta.targets.hitFeedback = 'flash'` 後，用**未修改的** `research/src/modules/ingest/algorithms/loader.py::load_export()` 實跑：
+
+```
+with hitFeedback   -> ticks (2038, 14)  events (150, 24)
+  meta.targets     = {'hitbox': {...}, 'hitFeedback': 'flash'}
+without (pre-WP66) -> ticks (2038, 14)  events (150, 24)
+  meta.targets     = {'hitbox': {...}}
+OK: load_export reads the new key with zero modification; tick/event frames identical
+```
+
+讀碼佐證（不只是「剛好沒爆」）：`_validate_meta()` 對 `("weapon","targets","spawn",…)` 只斷言「是 mapping」，**不列舉內部鍵**，故 `meta.targets` 的 additive 欄位天然相容。
+`git diff --stat research/` **輸出為空**；注入後的 payload 落在 scratchpad，未進 repo。
+
+### 4. 測試設計：五個變異注入全數 RED（非假綠燈）
+
+標記互不為子字串（T1 Surprise 1 的教訓），每個變異跑滿四個 spec 檔（333 tests）後**先還原、再列印**，並以 SHA-256 逐位複驗還原：
+
+| 變異 | 注入內容 | 結果 |
+|---|---|---|
+| **MUT-ALPHA** | `schema.ts` 白名單重組**拿掉** `...(hitFeedback ? { hitFeedback } : {})` —— 即 T0 假設 #3 的「靜默丟棄」失效模式本體 | **RED**（3 failed / 330 passed） |
+| **MUT-BRAVO** | `requireHitFeedback` 接受任何值（不拋） | **RED**（6 failed） |
+| **MUT-CHARLIE** | `requireTargetsMeta` **無條件**寫 `hitFeedback`（取得預設值） | **RED**（2 failed） |
+| **MUT-DELTA** | `parseTargetsMeta` 在無 `hitbox` 時丟掉 `hitFeedback` | **RED**（1 failed） |
+| **MUT-ECHO** | `resolveHitFeedback` 不看 config（恆回 `config !== undefined`） | **RED**（2 failed） |
+
+MUT-CHARLIE 是本切片最重要的一條：`meta.targets` 的鍵集合一旦多出預設值，`exportPayloadSchema.test.ts` 的 `CANONICAL_DIGEST_BEFORE_T5` 位元組表與 metadata 的「鍵集合逐字＝T0 基線」會**同時**轉紅 ⇒ FR-66.8 的「鍵面零增減」有兩道獨立防線。
+
+### 5. 驗證證據（全部為本切片實際執行輸出）
+
+| 項目 | 結果 | 對照 |
+|---|---|---|
+| `npm run typecheck`（`tsc --noEmit` ×2） | **exit 0 / exit 0** | 同 T0／T1／T2 |
+| `npx vitest run tests/regression` | **exit 0** — 32 檔 / **319 passed**；`git status --short tests/` **為空** | T0／T1／T2 基線 **319** ⇒ **逐位一致**，NFR-66.2 ✅ |
+| `npx vitest run`（全量） | **exit 0** — Test Files **262 passed / 1 skipped (263)**；Tests **3178 passed / 2 skipped (3180)** | T2 收尾 **3158 / 2**（261 檔）⇒ **+20 tests、+1 檔，零測試由綠轉紅**。20 = 8（schema）+ 5（DrillConfig）+ 3（metadata）+ 4（exportPayloadSchema），逐條可對帳 |
+| `npm run build` | **exit 0**（既有 >500 kB chunk 警告，非本切片引入） | 同 T0／T1／T2 |
+| `git status --porcelain drills/` | **為空** | T3 Invariant「drill 值零修改」✅ |
+| `git diff --stat research/` | **為空** | C-D1 ✅ |
+
+`TargetState`／`HitDetector`／命中判定路徑／`ReplayTargetView`／replay contracts 皆未出現在 `git status --short` ⇒ 四條 Invariant 成立。
+
+### 6. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T3-a** | **接線收斂到 `drillRunner.start()` façade 一處**，不在 §0.4 的四個點各寫一次 —— **具名偏離 task file 步驟 4**，但正面回應了 [T2 Open Questions](#7-open-questionst2-留給後續-task) 的必做項 | 三個理由：**① 順序**——T2-b 要求 `setHitFeedback()` 必須在 `drillRunner.start()` **之前**，寫在 façade 內的前一行是唯一「不可能寫錯順序」的位置；散在四處則每個呼叫端都要各自維持這條時序不變式。**② 正確性**——`installSceneLoad()` 那一處若照 task file 寫，讀到的 `activeDrillConfig` 是**舊** drill（`activateDrill` 要到下一行才換），會先設錯值再被修正。**③ 先例**——WP-65 / D-65-1 已把「每場 drill 起手的跨層一次性動作」（釋鎖、`frameLog.reset()`）收斂到這同一個 façade，並在該處明帳寫下「四條路徑收斂到這一個 start()，故在這裡做 = 四條路徑一致」。本切片是同一形狀的第三個實例。step 5「不得在 `main.ts` 內重複寫四次比較式」的意圖因此被**更強地**滿足：連呼叫都只有一次。被推翻：四處各呼叫一次（留下四個要同步維護的時序不變式）；只在 `installSceneLoad()` 接線（漏掉不換場景的換 drill） |
+| **T3-b** | `fpsTestHarness` 的 `meta.targets` **同步**加 optional-in 欄位（task file 未列此檔） | FR-66.10 的主張是「**啟用該設定的 run** 必須在匯出 metadata 自述」，不是「live 管線的 run」。harness 走的是與 live 單例隔離的獨立管線（[T0 §3](#3-既有匯出鍵面-digestt3additive-不動既有鍵面t4只多一欄的唯一對照基準) 已記載這件事），兩條管線的 `meta.targets` 建構式本來就是刻意平行的兩份；只改一份會讓斷代自述在 harness 產出的 payload 上**靜默缺席**。因 `hitFeedback` 在本切片對全 roster 皆為 `undefined`，加這一行對現況**逐位無差異**（全量測試 +0 red 即為證據），代價為零 |
+| **T3-c** | `parseTargetsMeta` 在「有 `hitFeedback`、無 `hitbox`」時回傳 `{ hitFeedback }` 而非 `{}` | 原本的 `if (record.hitbox === undefined) return {};` 早退會把新鍵吃掉。這個形狀不是假想：T4 若有 drill 省略 `hitbox`（走 `DEFAULT_TARGET_HITBOX`）而啟用回饋，`meta.targets` 就只有新鍵一個。MUT-DELTA 專門釘住它 |
+| **T3-d** | metadata 與 export parser **各自**驗證 `'flash'`，不共用一個 validator | 兩者的錯誤契約不同：`requireTargetsMeta` 走 throw（collect 期的程式錯誤），`parseTargetsMeta` 走 `errors[]` 累積（讀外部 JSON 的容錯路徑）。既有的 `requireHitboxShape` 與 `parseLiteral(['box','sphere'])` 已經是同一組並存的兩份，本切片沿用該形狀而非新造抽象 |
+
+### 7. Surprises & Discoveries（T3）
+
+1. **既有的 `CANONICAL_DIGEST_BEFORE_T5` 位元組表，剛好就是 FR-66.8 的第二道防線——不需要新造。**
+   `exportPayloadSchema.test.ts` 已有一張 8 個 fixture 的 canonical JSON digest 表（WP-58 T5 建立、WP-65 T5 更新過三筆）。八個 fixture **全部不帶** `meta.targets.hitFeedback`，所以任何「無條件輸出／取得預設值」的寫法都會同時移動它們的位元組。MUT-CHARLIE 實測即同時咬中這張表與 metadata 的鍵集合斷言。
+   ⇒ **T4 注意**：T4 啟用十個 drill 後，這張表**仍應逐位不變**（fixture 全是 `counterstrafe_ad_v1` 與 synthetic，不在啟用清單上）。若 T4 執行時這張表轉紅，那不是預期變更，是寫錯了範圍。
+
+2. **`load_export()` 的相容性是結構性的，不是巧合。**
+   `_validate_meta()` 對 `weapon`／`targets`／`spawn`／`scene`／`display`／`frames`／`session` 七個 block 只斷言「是 mapping」，**完全不列舉內部鍵**。⇒ 這七個 block 下的任何 additive 欄位對 Python 端都是零修改可讀；C-D1 的單向隔離在這個方向上有結構保證。本 WP 之後的 `meta` additive 欄位（例如 [WP-67](../wp-67-export-opening-protocol-marker/README.md) 的 `meta.opening`）**若落在這七個 block 之外**，就沒有這層保證、需各自驗證。
+
+3. **變異注入腳本本身踩了一次「還原寫在列印之後」的坑。**
+   第一版把還原放在列印之後，而列印在 cp950 終端上對 vitest 輸出的 `❯` 字元拋 `UnicodeEncodeError` ⇒ 例外跳過還原，`schema.ts` 被留在**已變異**狀態（`grep` 當場抓到、手動還原、重測）。改為 `try/finally` 先還原再列印後才穩。
+   ⇒ **教訓**：變異注入的還原必須在 `finally`，且不得與任何可能拋例外的輸出／格式化共用同一條路徑。這條在本 repo 會重複出現（T1／T2 都做過變異注入，都是手寫流程）。
+
+### 8. Open Questions（T3 留給後續 task）
+
+- **T4**：啟用清單十個 id 的 `targets.hitFeedback: 'flash'` 必須加在**具名常數／builder** 上（`tracking_br_v1.ts` 的 `makeVariant()` 一處即涵蓋八個 variant；兩個 WP-64 pilot config 各一處），不得手抄 id 逐一 patch —— 守 [WP-64 README §1.5](../wp-64-tracking-pilot-session-plan-drills/README.md) 的同一紀律。並確認 Surprise 1：`CANONICAL_DIGEST_BEFORE_T5` 在 T4 後仍應**逐位不變**。
+- **T5**：`liveFrame` 的 `sync()` 必須**同時**傳 `hits` 與 `nowMs`（只傳其一會靜默退回舊行為、不報錯）—— 這條沒有單元測試能守（`main.ts` 不在 vitest 覆蓋內），只能靠 e2e「啟用的 drill 打中會亮」與「未啟用的 drill 不亮」兩條反向覆蓋。
+- **T5**：e2e 寫「切換 drill 後回饋仍生效」時，務必**跑滿兩幀**（T2 Surprise 1）——`setHitFeedback()` 之後的第一幀恆走「只對齊、不補亮」分支，單幀量到的是初始化分支而非開關本身。
 ---
 
 ## Decision Log
