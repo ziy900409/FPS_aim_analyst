@@ -120,6 +120,7 @@ import { microFlickRoomV5 } from './scene/scenes/micro-flick-room-v5.ts';
 import { microFlickRoomV6 } from './scene/scenes/micro-flick-room-v6.ts';
 import { microFlickRoomV7 } from './scene/scenes/micro-flick-room-v7.ts';
 import { microFlickRoomV8 } from './scene/scenes/micro-flick-room-v8.ts';
+import { microFlickRoomV9 } from './scene/scenes/micro-flick-room-v9.ts';
 import { spiderShotRoom } from './scene/scenes/spider-shot-room.ts';
 import { wideFlickArena } from './scene/scenes/wide-flick-arena.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
@@ -151,6 +152,7 @@ import { microFlickThreeTargetTestV5 } from './drill/micro_flick_three_target_te
 import { microFlickThreeTargetTestV6 } from './drill/micro_flick_three_target_test_v6.ts';
 import { microFlickThreeTargetTestV7 } from './drill/micro_flick_three_target_test_v7.ts';
 import { microFlickThreeTargetTestV8 } from './drill/micro_flick_three_target_test_v8.ts';
+import { microFlickThreeTargetTestV9 } from './drill/micro_flick_three_target_test_v9.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -185,6 +187,7 @@ const availableScenes: AvailableScene[] = [
   { id: microFlickRoomV6.sceneId, label: microFlickRoomV6.sceneId, config: microFlickRoomV6 },
   { id: microFlickRoomV7.sceneId, label: microFlickRoomV7.sceneId, config: microFlickRoomV7 },
   { id: microFlickRoomV8.sceneId, label: microFlickRoomV8.sceneId, config: microFlickRoomV8 },
+  { id: microFlickRoomV9.sceneId, label: microFlickRoomV9.sceneId, config: microFlickRoomV9 },
   { id: spiderShotRoom.sceneId, label: spiderShotRoom.sceneId, config: spiderShotRoom },
   // WP-57 / T3：寬場 arena。drill 的 roster 註冊需 arm-time resolve（FOV/aspect），屬 T6。
   { id: wideFlickArena.sceneId, label: wideFlickArena.sceneId, config: wideFlickArena },
@@ -296,7 +299,7 @@ const availableDrills: AvailableDrill[] = [
     source: microFlickThreeTargetTestV1.drill,
     sceneId: microFlickThreeTargetTestV1.sceneId,
   },
-  ...[microFlickThreeTargetTestV2, microFlickThreeTargetTestV3, microFlickThreeTargetTestV4, microFlickThreeTargetTestV5, microFlickThreeTargetTestV6, microFlickThreeTargetTestV7, microFlickThreeTargetTestV8].map((variant) => ({
+  ...[microFlickThreeTargetTestV2, microFlickThreeTargetTestV3, microFlickThreeTargetTestV4, microFlickThreeTargetTestV5, microFlickThreeTargetTestV6, microFlickThreeTargetTestV7, microFlickThreeTargetTestV8, microFlickThreeTargetTestV9].map((variant) => ({
     id: variant.id,
     label: variant.id,
     source: variant.drill,

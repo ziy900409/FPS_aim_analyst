@@ -12,6 +12,7 @@ import { microFlickThreeTargetTestV5 } from '../drill/micro_flick_three_target_t
 import { microFlickThreeTargetTestV6 } from '../drill/micro_flick_three_target_test_v6.ts';
 import { microFlickThreeTargetTestV7 } from '../drill/micro_flick_three_target_test_v7.ts';
 import { microFlickThreeTargetTestV8 } from '../drill/micro_flick_three_target_test_v8.ts';
+import { microFlickThreeTargetTestV9 } from '../drill/micro_flick_three_target_test_v9.ts';
 import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
 import {
   PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES,
@@ -90,6 +91,7 @@ const FAMILY_ROSTER: readonly (readonly [SessionFamilyId, readonly string[]])[] 
       microFlickThreeTargetTestV6.id,
       microFlickThreeTargetTestV7.id,
       microFlickThreeTargetTestV8.id,
+      microFlickThreeTargetTestV9.id,
     ],
   ],
 ];
@@ -116,7 +118,7 @@ export const FAMILY_BY_DRILL_ID: ReadonlyMap<string, SessionFamilyId> = buildFam
 
 /**
  * Every schedulable drill id, grouped by family in `FAMILY_ROSTER` order. The grouping is the point:
- * the roster is 38 entries, so a flat alphabetical menu would be unusable (WP-58 §3.2 debt).
+ * the roster is 39 entries, so a flat alphabetical menu would be unusable (WP-58 §3.2 debt).
  */
 export const SCHEDULABLE_DRILL_IDS: readonly string[] = [...FAMILY_BY_DRILL_ID.keys()];
 

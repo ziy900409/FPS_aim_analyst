@@ -16,6 +16,7 @@ import { microFlickThreeTargetTestV5 } from '../drill/micro_flick_three_target_t
 import { microFlickThreeTargetTestV6 } from '../drill/micro_flick_three_target_test_v6.ts';
 import { microFlickThreeTargetTestV7 } from '../drill/micro_flick_three_target_test_v7.ts';
 import { microFlickThreeTargetTestV8 } from '../drill/micro_flick_three_target_test_v8.ts';
+import { microFlickThreeTargetTestV9 } from '../drill/micro_flick_three_target_test_v9.ts';
 import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
 import {
   PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES,
@@ -138,8 +139,8 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
 
   it('registers every roster drill exactly once, with no extras', () => {
     expect(FAMILY_BY_DRILL_ID.size).toBe(rosterSizeFromMain());
-    // 36 through WP-62, + the two WP-64 curated tracking-pilot blocks.
-    expect(FAMILY_BY_DRILL_ID.size).toBe(38);
+    // 36 through WP-62, + the two WP-64 curated tracking-pilot blocks, + micro-flick v9.
+    expect(FAMILY_BY_DRILL_ID.size).toBe(39);
     expect(SCHEDULABLE_DRILL_IDS).toHaveLength(FAMILY_BY_DRILL_ID.size);
     expect(new Set(SCHEDULABLE_DRILL_IDS).size).toBe(SCHEDULABLE_DRILL_IDS.length);
   });
@@ -169,7 +170,7 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
       'peek-click-transfer-v1': 1,
       tracking: 13, // 11 through WP-62, + the two WP-64 curated tracking-pilot blocks
       detection: 1,
-      'micro-flick': 8,
+      'micro-flick': 9,
     });
   });
 });
@@ -300,7 +301,7 @@ describe('WP-58 T1 — invariant 4: family membership does not grant Assessment 
     'peek_click_transfer_pilot_v2_5deg',
     'peek_click_transfer_pilot_v2_randomized',
     'peek_click_transfer_pilot_v2_masked',
-    ...Array.from({ length: 8 }, (_unused, index) => `micro_flick_three_target_test_v${index + 1}`),
+    ...Array.from({ length: 9 }, (_unused, index) => `micro_flick_three_target_test_v${index + 1}`),
     ...trackingBrVariants.map((variant) => variant.id),
   ];
 
@@ -395,6 +396,7 @@ const SCHEDULABLE_DRILL_SOURCES: readonly (readonly [
     microFlickThreeTargetTestV6,
     microFlickThreeTargetTestV7,
     microFlickThreeTargetTestV8,
+    microFlickThreeTargetTestV9,
   ].map((variant) => [variant.id, variant.drill] as const),
   ...trackingBrVariants.map((variant) => [variant.id, variant.drill] as const),
   // WP-64 T1: the curated tracking-pilot blocks, read from the same registry the map derives from.
@@ -505,6 +507,8 @@ const COUNTDOWN_DRILL_IDS = [
   'spider-shot-wide-v1',
   'tracking_core_pr_pilot_v1_2deg_5dps',
   'tracking_reversal_pilot_v1_high',
+  // The one practice drill scored by the clock rather than by a kill budget (60 s).
+  'micro_flick_three_target_test_v9',
 ] as const;
 
 describe('WP-65 T4 — exactly the time-limited drills expose a duration to count down', () => {
