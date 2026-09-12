@@ -12,7 +12,7 @@
 |---|---|---|---|
 | T0 | ✅ 完成 | 2026-09-12 | 見 [§T0](#t0--entry-gate2026-09-12)。編號重查四處來源已記錄（**WP-66 / GD-42 仍可用，未順延**；stage14 §3 已補順延註記）；基線於 `9a03562` 凍結（typecheck exit 0 · Vitest **3128 passed / 2 skipped** · regression **319 passed** · build exit 0 · Playwright **112 tests / 112 passed / 0 failed**）；`meta` 鍵面 **34 鍵**、`meta.targets` **1 鍵（`hitbox`）** 已逐字記錄；OQ-66.1／66.2／66.4 使用者收斂**全數照預設**，啟用清單十個 drill id 已逐字定案；假設 #3 讀碼**確認成立**（T3 必改 `schema.ts`）。⚠️ 兩項須傳遞給後續 task：**① frame-time 基線改由 T5 同場 A/B 取得**（具名偏離 T0 DoD 第 5 條，理由見 Surprises 3）；**② 基準 commit 執行中被平行 session 推進兩次** ⇒ 後續 task 須在自己的 commit 上自備同期對照，不得引用本表絕對數。詳見 [Surprises](#surprises)。 |
 | T1 | ✅ 完成 | 2026-09-12 | 見 [§T1](#t1--targethitring-進-sharedstatesimloop-兩處寫入2026-09-12)。`TargetHitRing` 落 `SharedState`、`SimLoop` **只加兩行寫入**（命中路徑窮舉證明恰為兩條）；+17 tests（反證 6 條 + 決定性 1 條），regression **319 passed 逐位一致**、fixture 零修改；`src/render`／`src/drill`／`src/main.ts`／`src/data`／`research` 五者零改動；零 importer 掃描乾淨。變異注入實證反證測試會咬（非假綠燈）。⚠️ 傳遞給 T2：`trackingPilotHold.magSize = 512` ⇒ 一場約 250 次命中 **遠超 CAP 64**，`TargetView` 必須走 `seq` 高水位增量消費，不得以 `total` 當索引。|
-| T2 | ⬜ 未開始 | — | — |
+| T2 | ✅ 完成 | 2026-09-12 | 見 [§T2](#t2--targetview-逐-mesh-material-與命中態衰減2026-09-12)。`TargetView` 改逐 mesh material clone、新增 `setHitFeedback()` 與 `sync()` 的兩個 optional 參數；+13 tests（含 FM-1／FM-2／FM-4 反證各一）；**5 個變異注入全數 RED**（其中 M-B 一度 GREEN，揪出一條真的假綠燈並改掉測試）；regression **319 passed 逐位一致**、fixture 零修改；`src/main.ts`／`src/drill/`／`src/data/`／`src/loop/`／`src/render/replay/`／`research/` **六者零改動**。⚠️ 傳遞給 T3：`setHitFeedback()` 必須在 §0.4 四處全到位，且**必須在 `drillRunner.start()` 之前**呼叫（理由見 §T2 Decision T2-b）。|
 | T3 | ⬜ 未開始 | — | — |
 | T4 | ⬜ 未開始 | — | — |
 | T5 | ⬜ 未開始 | — | — |
@@ -282,6 +282,140 @@ NFR-66.3（零堆配置）：`pushTargetHit` 熱路徑無 `push`、無物件字�
 
 - **T2**：見上方 Surprise 2 —— `TargetView` 必須以 `seq` 高水位增量消費，且 `TARGET_HIT_CAP` 的繞圈語意（不宣稱零丟失）要在 render 端讀得出來，不能寫成「讀 `total` 筆」。
 - **T5**：本切片的零 importer 檢查是**一次性 grep**；T5 需把它變成常駐測試（FM-5 要求的自動掃描），否則後續 WP 可能無聲把 `targetHits` 接進 `src/metrics/`。
+
+---
+
+## T2 — `TargetView` 逐 mesh material 與命中態衰減（2026-09-12）
+
+> 基準 commit：**`8966924`**（worktree clean）。本切片只動 `src/render/TargetView.ts`、
+> `src/render/TargetView.test.ts` 與 `CONTEXT.md`（＋本檔與 checklist）。
+> 以下每個數字都是本切片的實際執行輸出。
+
+### 1. 落地內容
+
+| 檔 | 改動 |
+|---|---|
+| `src/render/TargetView.ts` | 逐 mesh `#material.clone()`（`#acquire`）；`dispose()` 逐 mesh 釋放 clone；匯出 `HIT_FEEDBACK_HOLD_MS = 120`；模組常數 `HIT_EMISSIVE = 0xff8a3d` / `NO_EMISSIVE = 0x000000`（**不匯出**）；新增 `setHitFeedback()`、`#ingestHits()`、`#paintHit()`、`#flashUntil: Map<string, number>`、`#syncedSeq`；`sync()` 加第 3／4 個 optional 參數 `hits?` / `nowMs?` |
+| `src/render/TargetView.test.ts` | +13 tests（既有 13 → 26）；`meshes()` 回傳型別收斂為 `Mesh<BufferGeometry, MeshStandardMaterial>` 以便直接斷言材質 |
+| `CONTEXT.md` §H | 新增三個術語條目：**`targetHits`（命中環形格）**、**命中回饋（hit feedback）**、**`TargetView` 逐 mesh material**；節標題補上 WP-66 與 `TargetView.ts` |
+
+**零改動（`git diff --stat` 實測為空）**：`src/main.ts`、`src/drill/`、`src/data/`、`src/loop/`、
+`src/render/replay/`、`research/`、`tests/`。⇒ T2 Invariant 全部成立，`ReplayTargetView` 未被觸碰。
+
+### 2. material clone 數上界，與為何 clone 不會造成 pipeline 重編（T2 步驟 7／FM-6）
+
+**clone 數 = `poolSize` = 歷史上單幀最多顯示的目標數**，且這個數有**結構上的硬上界**，不是靠慣例：
+
+| 來源 | 值 | 證據 |
+|---|---|---|
+| 單 drill 同時在場目標數的**schema 硬上界** | **16** | `MAX_ACTIVE_TARGET_COUNT = 16`（[schema.ts:18](../../../../../src/drill/schema.ts#L18)），`targets.population.activeCount` 超過即拋錯（[schema.ts:211-213](../../../../../src/drill/schema.ts#L211-L213)） |
+| 啟用清單上的 tracking 家族 | **1** | `tracking_br_v1` 無 `population` 欄 ⇒ 走 legacy 單活目標生命週期（[DrillConfig.ts:230](../../../../../src/drill/DrillConfig.ts#L230)） |
+| 現行 roster 實際最大 | **3** | `micro_flick_three_target_test_v8/v9` 的 `population.activeCount: 3` |
+
+⇒ 實務上 clone 至多 3 份、架構上至多 16 份，全部於 `#acquire()` **一次性**建立（pool 只增不減），
+**熱路徑零配置**（NFR-66.3）。加上模板本身，`MeshStandardMaterial` 實例數上界 = `poolSize + 1`。
+
+**為何不重編 pipeline**：`Material.clone()` 產生的是**同一個類別**（`MeshStandardMaterial`）、
+逐欄複製自同一個模板 ⇒ 決定 shader 變體的那組輸入（material type + defines + 有無貼圖／
+`vertexColors`／`flatShading` 等 program cache key）與模板**完全相同**。three 的 program cache 以這組
+key 命名，因此 clone 與模板共用同一個編譯產物；執行期改的 `emissive` 是 **uniform**，不在 cache key 內。
+本 WP 前的做法（整池共用一顆 material）之所以不能用，不是效能問題而是**無法逐目標上色**；
+而被否決的替代方案「命中時換一顆 material 物件」才會引入新的 cache key ⇒ 首次命中當下才編譯、掉一幀（FM-6）。
+
+> ⚠️ 這條推論的**直接量測**（`renderer.info.render.drawcalls` 與 A/B frame-time）屬 T5 實機範圍。
+> 本切片能在單元層證明的是 **`poolSize` 啟用前後相同**（測試「逐 mesh 各持一份 material clone…」以
+> 同目標集合分別建 feedback-on／off 兩個 view 比對 `poolSize`）⇒ **mesh 數不變 ⇒ draw call 不變**（NFR-66.5）。
+
+### 3. 測試設計：反證優先，並以變異注入證明不是假綠燈
+
+新增 13 條，**前三條全是反證**（本 WP 最大的風險不是「亮不起來」，是未指名的 drill 被無聲改掉視覺）：
+
+| # | 測試 | 釘住 |
+|---|---|---|
+| 1 | 不帶 `hits`/`nowMs` → `emissive`/`color`/`roughness` 三屬性逐位等於本 WP 前 | FM-1（含「clone 必須保留模板建構參數」） |
+| 2 | `setHitFeedback` 未啟用、**逐幀**帶 ring 且期間有命中 → 仍不亮 | FM-1 行為版 |
+| 3 | 亮起 → 到期熄滅，**邊界 `nowMs === until` 當下已熄** | FR-66.5 |
+| 4 | HOLD 窗內再次命中 → 重新起算，原到期時刻之後仍亮 | FR-66.5 |
+| 5 | A 命中後撤除、B 佔用**同一個 mesh 物件**（以 `toBe` 斷言確實是同一槽）→ B 不亮 | **FM-2 本體** |
+| 6 | 同幀 A 命中、B 未命中 → A 亮 B 不亮 | FR-66.6 |
+| 7 | 本幀未用到的 pool mesh 隱藏時一併熄滅，且仍在窗內的 A 不受影響 | FM-2 第二條洩漏路徑 |
+| 8 | `sync()` ×2（含過期清理那一幀）前後 ring 的 `total`／`cursor`／逐槽 `id`／逐槽 `seq` 全 `Object.is` 不變 | **FM-4** |
+| 9 | 命中數 `> TARGET_HIT_CAP × 3` 使 ring 繞圈多次後仍正確亮起、且到期後不被舊槽重新點亮 | T1 Surprise 2 的警示 |
+| 10 | ring 被重開 drill 清空（`total` 倒退）→ 不補亮上一場的命中 | 見 Surprise 2 |
+| 11 | `setHitFeedback(false)` 立即熄滅殘留亮態，且之後 `sync()` 不再改材質 | 見 Decision T2-c |
+| 12 | 逐 mesh material **不共用**（`not.toBe`）、`poolSize` 與啟用前相同、clone 保留 `color`/`roughness` | NFR-66.5 / FM-6 |
+| 13 | `dispose()` 對**每個** mesh 的 clone 各呼叫一次 `dispose` | GPU 資源不洩漏 |
+
+**變異注入（5 個，標記互不為子字串——T1 Surprise 1 的教訓）**：
+
+| 變異 | 注入內容 | 結果 |
+|---|---|---|
+| **M-A** | 命中態改以 pool 槽位為鍵（`String(used - 1)`） | **RED**（8 failed / 18 passed） |
+| **M-B** | 早退條件漏掉 `#hitFeedback` | **RED**（1 failed）——**修正後才 RED，見 Surprise 1** |
+| **M-C** | 隱藏的 pool mesh 不熄滅（`if (!feedback)`） | **RED**（1 failed） |
+| **M-D** | render 回寫 `hits.cursor = 0` 當作「已消費」 | **RED**（1 failed） |
+| **M-E** | 命中不重新起算（`if (!has(id)) set(...)`） | **RED**（1 failed） |
+
+還原後以**檔案內容逐位比對 + `git diff`** 雙重複驗（`還原逐位一致: True`），未重蹈 T1 的前綴子字串覆轍。
+
+### 4. 驗證證據（全部為本切片實際執行輸出）
+
+| 項目 | 結果 | 對照 |
+|---|---|---|
+| `npm run typecheck`（`tsc --noEmit` ×2） | **exit 0 / exit 0** | 同 T0／T1 |
+| `npx vitest run tests/regression` | **exit 0** — 32 檔 / **319 passed**；`git status --short tests/` **為空** | T0／T1 基線 **319** ⇒ **逐位一致**，NFR-66.2 ✅ |
+| `npx vitest run`（全量） | **exit 0** — Test Files **261 passed / 1 skipped (262)**；Tests **3158 passed / 2 skipped (3160)** | 本切片開工前於 `8966924` 實測 **3145 / 2** ⇒ **+13 tests，零測試由綠轉紅**，且檔數不變（全部加在既有 `TargetView.test.ts`） |
+| `npm run build` | **exit 0**（既有 >500 kB chunk 警告，非本切片引入） | 同 T0／T1 |
+| `git diff --stat -- src/main.ts src/drill src/data src/loop src/render/replay research tests` | **輸出為空** | T2 DoD「六者零改動」✅ |
+
+> 開工前基線於本 session 在 `8966924` 上**重新實測**（3145 passed / 2 skipped），未引用 T0 表的絕對數
+> —— 遵守 T0 傳遞事項 ②（基準 commit 曾被平行 session 推進）。
+
+### 5. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T2-a** | 高水位只用**一個** `#syncedSeq` 欄位，不設 `#syncedTotal` / `#syncedSeq` 兩個 | task file 步驟 4 寫的是兩個欄位名，但 `pushTargetHit` 寫入時 `seq[i] = total` ⇒ 兩者恆為**同一個數**。`ImpactView`（task file 自己指名的先例）也只用一個 `#syncedSeq`。兩個欄位只會製造「它們何時會不一致」的假問題。**屬對 task file 的具名簡化，行為無差異** |
+| **T2-b** | `#syncedSeq` 以 **`-1` = 尚未與 ring 對齊**作哨兵；`setHitFeedback()` 兩個方向都設回 `-1`，下一幀只對齊高水位、**不補亮既有 backlog** | 若切換當下直接沿用舊高水位（或歸零），ring 裡既有的至多 64 筆 backlog 會在切換後那一幀**一次點亮**。這不是理論風險：目標 id 由 `TargetManager` 每場自 `t0` 重編（`nextId = 0`，[TargetManager.ts:763](../../../../../src/sim/TargetManager.ts#L763)）⇒ **上一場的 `t0` 命中會點亮這一場的 `t0`**，正是 FM-2 要防的「沒打中卻亮」。同一個哨兵順帶處理 `resetTargetHitRing()` 造成的 `total` 倒退。代價：切換後第一幀的命中不補亮（≤1 幀，與 ring「不宣稱零丟失」語意一致）。**⇒ T3 必須在 `drillRunner.start()` 之前呼叫 `setHitFeedback()`**，讓對齊那一幀落在 ring 已清空之後 |
+| **T2-c** | `setHitFeedback(false)` **主動熄滅**全部 pool mesh，不只是設旗標 | task file 的 invariant 是「停用時 `sync()` 不讀 ring、不碰任何材質」。正因為之後不再碰材質，停用當下若不熄，正在亮的目標會**永久卡在亮態**——從 tracking drill 切到非 tracking drill 就會看到。被推翻：讓 `sync()` 在停用時仍跑一次歸零（那等於破壞 FM-1 的「逐位相同」早退路徑） |
+| **T2-d** | 到期邊界取 `nowMs < until` 為亮（即 `nowMs === until` 當下**已熄**） | 半開區間 `[hit, hit + HOLD)` 讓「連續兩次命中間隔恰為 `HOLD_MS`」不會多亮一幀；且測試可以對邊界寫出唯一期望值，不需要 `toBeCloseTo` |
+| **T2-e** | `HIT_EMISSIVE` / `NO_EMISSIVE` **不匯出**，測試以字面量逐字對照 | 承 task file 的形狀（只匯出 `HIT_FEEDBACK_HOLD_MS`）。色值是 render 內部表述，匯出等於邀請其他層讀它；測試以字面量對照反而讓「改色值」成為一個必須同時改測試的**顯式**動作 |
+
+### 6. Surprises & Discoveries（T2）
+
+1. **一條 FM-1 反證測試原本是假綠燈，被 M-B 當場抓到。**
+   原寫法是「建一個未啟用的 view → 帶著已有命中的 ring `sync()` 一次 → 斷言不亮」。
+   它**永遠會過**——因為未啟用的 view 高水位恆為 `-1`，第一幀必然走「只對齊、不補亮」分支，
+   於是即使把 `#hitFeedback` 從早退條件裡拿掉（M-B），第一幀也照樣不亮。
+   改成**跑滿兩幀**（第一幀對齊、幀間才寫入命中、第二幀才斷言）後 M-B 立刻 RED。
+   ⇒ **教訓**：凡是被「首次呼叫要做初始化／對齊」保護的行為，單幀測試量到的是那個初始化分支、
+   不是被測的開關本身。這個形狀在本 repo 會重複出現（`ImpactView`／`TracerView` 都有高水位），
+   T3／T5 寫類似測試時**必須跑滿兩幀**。
+
+2. **目標 id 跨 drill 會重複，這讓「補亮 backlog」從美觀問題升級成刺激污染問題。**
+   `TargetManager.reset()` 把 `nextId` 歸零（[TargetManager.ts:763](../../../../../src/sim/TargetManager.ts#L763)）
+   ⇒ 每一場的目標都從 `t0` 開始編號，**`t0` 在不同 drill 之間是同一個字串**。
+   規劃期文件把命中態的鍵描述成「跟身分走而不是跟槽位走」（FR-66.6），讀起來像是身分是全域唯一的；
+   實際上**身分只在單場內唯一**。這正是 T2-b 那個 `-1` 哨兵存在的理由，也是為什麼
+   「重開 drill 清空 ring → 不補亮上一場的命中」需要一條專測（測試 #10）。
+   ⇒ **T3／T4 注意**：任何以 `TargetState.id` 為鍵、且生命週期跨越 drill 邊界的 render 結構，
+   都必須在 drill 邊界主動清空，不能假設 id 不會撞。
+
+3. **`Material.clone()` 在 vitest 下可直接驗證「不共用」，不需要 render harness。**
+   假設 #1（README §5）成立且更強：`MeshStandardMaterial.emissive` 不只可讀寫，
+   `material` 的 identity 也可直接以 `not.toBe` 斷言 ⇒ FM-6 的「逐 mesh 各一份」在單元層即可釘死，
+   只有 pipeline 與 frame-time 的**直接量測**需要留到 T5 實機。
+
+### 7. Open Questions（T2 留給後續 task）
+
+- **T3（必做，非選項）**：`setHitFeedback()` 必須在 `drillRunner.start()` **之前**呼叫（Decision T2-b）。
+  §0.4 的四處 wiring 除了「有沒有到位」，還要確認**順序**；建議比照 WP-65 T2 的做法，
+  把它收斂到 `main.ts` 的 `drillRunner` 包裝 `start()` 一個地方，而不是散在四個呼叫端。
+- **T3**：`sync()` 目前有兩個 optional 參數，`main.ts` 的 `liveFrame` 必須**同時**傳 `hits` 與 `nowMs`
+  （只傳其一會靜默退回舊行為，不會報錯）。假設 #2 已指出 `liveFrame` 持有 rAF `now`
+  （`tracerView.sync(sharedState.shotRays, now)` 先例），T3 讀碼時確認即可。
+- **T5**：NFR-66.5 的 `renderer.info.render.drawcalls` 與 NFR-66.4 的 A/B frame-time 皆待實機量測；
+  本切片只在單元層證明了 `poolSize` 不變（§2 末的警示框）。
 
 ---
 
