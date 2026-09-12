@@ -103,7 +103,8 @@ Rules:
 - Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
 - If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
 - For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
-- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
+- After modifying code files in this session, run `npm run graph:update` to keep the graph current (AST-only, no API cost)
+- **Never run bare `graphify update .`** — the graph passed the 5000-node HTML visualization limit, so the bare command *deletes* `graphify-out/graph.html` instead of rebuilding it, and says so only in a line that is easy to miss. The npm script sets `GRAPHIFY_VIZ_NODE_LIMIT` so the file is rebuilt.
 
 <!-- CODEGRAPH_START -->
 ## codegraph — Code Intelligence

@@ -4,6 +4,19 @@ _建立於 2026-09-09。給接手的 AI agent。以下每一項「已驗證」�
 
 > **怎麼用這份文件**：§0–§9 就是完整的 prompt。把整份貼給接手的 agent,或讓它讀這個路徑。
 
+> ✅ **已於 2026-09-09 執行完畢。** 結果、實測數字、被推翻的設計假設與新開的 KI 見
+> [`progress.md`](progress.md)。本檔保留原樣作為交接紀錄,但下列三處**已被實測推翻或需要限定**,
+> 照抄會走錯路：
+>
+> 1. **§9 DoD 第 2 條「`DrillMetricRegistry.project()` 對三份都回 `status: 'ready'`」是錯的。**
+>    三份都回 `invalid-metric` / `projection-failed`,根因是 `meta.session` 整個區塊缺席
+>    ⇒ 建不出 compatibility key。五個指標的值本身仍算得出來。已立案 **KI-036**。
+> 2. **§1 表格的 `meta.lateEventCount` 不是三份都 2**，實測 2 / 4 / 6。量很小可忽略,但別當它是常數。
+> 3. **§2 G1 沒有規定 71.4% 這種中間值怎麼辦。** 實測 detected = 85/119 = 71.4%（非 0、也非 ≥ 80%）。
+>    本次的處置是「不停用、降級為描述性」,理由見 `progress.md` 的「偏離協議」§3。
+>
+> 另外 §5 的調色盤、§8 的紅線、§3.3 的兩個陷阱**全部成立且已照做**。
+
 ---
 
 ## 0. 你的任務
@@ -31,7 +44,7 @@ _建立於 2026-09-09。給接手的 AI agent。以下每一項「已驗證」�
 | `spider-shot-v3-2026-09-09T14_48_47.194Z.json` | 14:48 | 8277 | 79 | 39 | 90 |
 | `spider-shot-v3-2026-09-09T14_49_57.739Z.json` | 14:49 | 8245 | 86 | 43 | 91 |
 
-同一天同一台機器另有 5 份 `spider-shot-wide-v1` 匯出 —— **本次不要碰**,那是 WP-63 的範圍。
+同一天同一台機器另有 5 份 `spider-shot-wide-v1` 匯出 —— **本次不要碰**,那是 WP-67 的範圍。
 
 > ⚠️ **參與者匯出不進 repo。** 依 `.gitignore` 既有紀律(`.pilot-analysis/`、`.contact-analysis/`、
 > `.spider-wide-analysis/`、`.lift-cohort-analysis/`)與 D-57.T5-8,原始 JSON 與由它推導出的產物

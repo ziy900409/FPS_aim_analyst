@@ -28,7 +28,7 @@ def _algorithm_sources() -> list[Path]:
 
 def test_the_package_has_algorithm_sources_to_scan() -> None:
     # A scan over zero files passes vacuously -- the worst kind of green.
-    assert len(_algorithm_sources()) >= 2
+    assert len(_algorithm_sources()) >= 5
 
 
 def test_no_module_under_lift_references_a_typescript_module(tmp_path) -> None:
@@ -78,6 +78,9 @@ def test_importing_the_algorithms_pulls_in_no_plotting_and_touches_no_cwd(tmp_pa
         "import sys; "
         "import lift.algorithms.golden; "
         "import lift.algorithms.candidates; "
+        "import lift.algorithms.features; "
+        "import lift.algorithms.pa_parameters; "
+        "import lift.algorithms.ablation; "
         "assert not any(name == 'matplotlib' or name.startswith('matplotlib.') for name in sys.modules)"
     )
 

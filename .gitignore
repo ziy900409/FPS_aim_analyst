@@ -57,3 +57,9 @@ data/session-history/*
 # cohort exports themselves also never enter the repo (D-57.T5-8); see
 # docs/operational/spider-wide-recording-spec.md §2.5.
 .lift-cohort-analysis/
+
+# stage14 — spider-shot-v3 coach report output (npm run analyze:spider-v3). Same rule again:
+# the HTML/CSV are derived from participant exports, so they stay out of git. The three
+# 2026-09-09 v3 exports themselves also never enter the repo (D-57.T5-8); see
+# docs/exec-plan/active/stage14/HANDOFF-v3-real-data.md §1.
+.spider-v3-analysis/

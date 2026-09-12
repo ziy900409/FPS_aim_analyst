@@ -45,6 +45,8 @@ def golden(instruction_class: str, annotations: tuple[Interval, ...], gaps: tupl
         instruction_class=instruction_class,
         display_hz=240.0,
         sample_count=len(gaps) * 100,
+        t0_ms=0.0,
+        dt_us=(0,) * (len(gaps) * 100),
         unlocked_intervals=(),
         annotation_intervals=annotations,
         segmentations=tuple(Segmentation(theta_ms=theta, gaps=gaps) for theta in THETA_SWEEP_MS),
