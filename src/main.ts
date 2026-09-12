@@ -1635,12 +1635,13 @@ protocolStatus.id = 'protocol-status';
 protocolStatus.style.cssText = [
   'position:fixed',
   'top:12px',
-  'left:50%',
-  'transform:translateX(-50%)',
+  // WP-66 follow-up: top-center collides with the HUD stat cards (`#hud` is also top:12px,
+  // centered), which hid Time/Accuracy behind this banner. Anchor left of the HUD instead.
+  'left:12px',
   'display:none',
   'align-items:center',
   'gap:10px',
-  'max-width:min(92vw,760px)',
+  'max-width:min(36vw,420px)',
   'padding:9px 12px',
   'font:700 13px/1.35 system-ui,sans-serif',
   'color:#e6e9ec',
