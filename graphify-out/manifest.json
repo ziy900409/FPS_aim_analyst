@@ -632,8 +632,8 @@
     "hash": "ef6590f94626e205fed3cffa0cb39e9a"
   },
   "D:\\git\\FPS_aim_analyst\\src\\main.ts": {
-    "mtime": 1789198520.5832431,
-    "hash": "3e5e94ddbff6e11b8b20694c1e362e36"
+    "mtime": 1789205420.6198826,
+    "hash": "8924147d61a3b418d9eb538b41db064c"
   },
   "D:\\git\\FPS_aim_analyst\\src\\vite-env.d.ts": {
     "mtime": 1783376868.0886695,
@@ -680,20 +680,20 @@
     "hash": "f1ceb05983c77df09486001322feee30"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\exportPayloadSchema.test.ts": {
-    "mtime": 1789142140.369255,
-    "hash": "c975eaa89e8404f664d8fba76d4ab410"
+    "mtime": 1789205376.013272,
+    "hash": "ddb4c881cfc499124ae45962dba183b7"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\exportPayloadSchema.ts": {
-    "mtime": 1789142140.369255,
-    "hash": "343ba9234e84fdd93655cb38cc657e19"
+    "mtime": 1789205629.3672113,
+    "hash": "e664fa251f09d6c9eff905527725a620"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\metadata.test.ts": {
-    "mtime": 1789142140.3702548,
-    "hash": "7bc4799650df48bbed290f2a1aed7f5b"
+    "mtime": 1789205346.523059,
+    "hash": "536662dd28194dd6091a72df4dc0eb89"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\metadata.ts": {
-    "mtime": 1789142140.3702548,
-    "hash": "d4d0d902eef4fc303b7a8f4a4201be06"
+    "mtime": 1789205626.2297492,
+    "hash": "f886b9f5d34e2e1db8786776f35d9d23"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\mouseSampleArena.test.ts": {
     "mtime": 1788978406.6416738,
@@ -803,9 +803,13 @@
     "mtime": 1788549832.108676,
     "hash": "5433e8cdca2e86fa5cc51c7160f460eb"
   },
+  "D:\\git\\FPS_aim_analyst\\src\\drill\\DrillConfig.test.ts": {
+    "mtime": 1789205326.254156,
+    "hash": "9b330d6c3c14e27a65a4bdf60052af56"
+  },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\DrillConfig.ts": {
-    "mtime": 1789142140.371255,
-    "hash": "b31f5be466e4baf25cf04aa93312d124"
+    "mtime": 1789205632.434919,
+    "hash": "9c6c2f929ad86d57e389b110a7518895"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\DrillLoader.test.ts": {
     "mtime": 1788978406.6426754,
@@ -920,12 +924,12 @@
     "hash": "2aed695d055118684099a01efac60f62"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\schema.test.ts": {
-    "mtime": 1788978406.6456742,
-    "hash": "e6e79c0a45d967597a9746a46c0364a8"
+    "mtime": 1789205297.1577535,
+    "hash": "0957ed4461db39e9fb9dd2a5065d7857"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\schema.ts": {
-    "mtime": 1788978406.6456742,
-    "hash": "e8cc65e7203de933919b9bd80a1b976c"
+    "mtime": 1789205623.2233303,
+    "hash": "5f63f193c82ebdb6856aa98cf3b570f7"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\spiderShotWide.test.ts": {
     "mtime": 1788978406.646677,
@@ -2040,8 +2044,8 @@
     "hash": "0f7b6f8430d4e7085856d3c6b83c1db5"
   },
   "D:\\git\\FPS_aim_analyst\\src\\testharness\\fpsTestHarness.ts": {
-    "mtime": 1788978406.6686132,
-    "hash": "c59b68a84a176d3c2dd5b1d139653aeb"
+    "mtime": 1789205218.6704266,
+    "hash": "655c077af56a19d51c5bf0ef99c0fda5"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\Controls.test.ts": {
     "mtime": 1788549832.2174892,
@@ -3560,8 +3564,8 @@
     "hash": "a77a51d2cfdb30a7179cc5433d97205a"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-66-target-hit-visual-feedback\\progress.md": {
-    "mtime": 1789204012.626436,
-    "hash": "e7605e9f57a7167188af3693866df6e1"
+    "mtime": 1789205974.365098,
+    "hash": "3df302617b8b9d08e4bcff1935a16667"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-66-target-hit-visual-feedback\\README.md": {
     "mtime": 1789200399.848019,
@@ -3596,8 +3600,8 @@
     "hash": "ca90e4cc89b5bc6ae0dfe4efa9d09991"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-66-target-hit-visual-feedback\\task-checklist.md": {
-    "mtime": 1789204012.6269493,
-    "hash": "9a0d4290ac1fb3d5b7d040ad19705d31"
+    "mtime": 1789205987.9043276,
+    "hash": "0a9e10efbc99206d7db5ad7596c6493b"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-67-export-opening-protocol-marker\\progress.md": {
     "mtime": 1789198072.7195907,
