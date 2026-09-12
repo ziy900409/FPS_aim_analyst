@@ -24,6 +24,25 @@ const ANGULAR_PROFILES: Record<BrTrackingAngularAxis, { angularHeightDeg: number
   '2deg': { angularHeightDeg: 2.0, seedOffset: 100 },
 };
 
+/**
+ * WP-66 / T4 — 命中視覺回饋（render-only）在**整個 `tracking_br_v1` 家族**啟用。
+ *
+ * 這些目標是 `persistent: true`（命中不撤除），所以在本常數之前，受試者在整個呈現窗內**無從
+ * 得知自己有沒有打中**——非 tracking 的 peek drill 靠「目標消失」當回饋，tracking 沒有這個事件。
+ *
+ * **為什麼設在 `makeVariant()` 裡（一處生效八個）**：`hitFeedback` 必須對這個 2x2x2 條件矩陣的
+ * **每一格逐格相同**，否則 ads x ballistic x angularHeight 三個被操弄變數就與「有無回饋」共變。
+ * `brTrackingProtocol`（`src/display/brTrackingProtocol.ts`）的 conditions 正是 `trackingBrVariants`
+ * 全部八格，所以寫在 builder 上＝該 protocol 全條件一致，協定內比較不受污染。
+ *
+ * ⚠️ **效度斷代（FM-7）**：啟用於 2026-09-12。此日期之後收的 `tracking_br_v1` 家族資料，刺激與
+ * 之前**不同**，兩者不可混池比較。逐 run 的判別依據是匯出的 `meta.targets.hitFeedback`
+ * （FR-66.10），不是收集日期。
+ *
+ * 本欄位不得影響命中判定、目標推進、hitbox 或任何指標（見 `DrillConfig['targets'].hitFeedback`）。
+ */
+const HIT_FEEDBACK = 'flash' as const;
+
 const WEAPON_BY_AXIS: Record<BrTrackingAdsAxis, Record<BrTrackingBallisticAxis, string>> = {
   ads_off: {
     hitscan: 'ak47_br_hip_hitscan',
@@ -76,6 +95,7 @@ function makeVariant(
         hitbox: { widthU: 0.5, heightU: TARGET_HEIGHT_U, depthU: 0.5 },
         spawnArea: { yawDegRange: [0, 0], distanceURange: [distance, distance] },
         motion: { type: 'pingpong', axis: 'horizontal', range: speed / 2, speed },
+        hitFeedback: HIT_FEEDBACK,
       },
       sequence: {
         alternation: 'LR',

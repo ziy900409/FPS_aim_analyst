@@ -14,7 +14,7 @@
 | T1 | ✅ 完成 | 2026-09-12 | 見 [§T1](#t1--targethitring-進-sharedstatesimloop-兩處寫入2026-09-12)。`TargetHitRing` 落 `SharedState`、`SimLoop` **只加兩行寫入**（命中路徑窮舉證明恰為兩條）；+17 tests（反證 6 條 + 決定性 1 條），regression **319 passed 逐位一致**、fixture 零修改；`src/render`／`src/drill`／`src/main.ts`／`src/data`／`research` 五者零改動；零 importer 掃描乾淨。變異注入實證反證測試會咬（非假綠燈）。⚠️ 傳遞給 T2：`trackingPilotHold.magSize = 512` ⇒ 一場約 250 次命中 **遠超 CAP 64**，`TargetView` 必須走 `seq` 高水位增量消費，不得以 `total` 當索引。|
 | T2 | ✅ 完成 | 2026-09-12 | 見 [§T2](#t2--targetview-逐-mesh-material-與命中態衰減2026-09-12)。`TargetView` 改逐 mesh material clone、新增 `setHitFeedback()` 與 `sync()` 的兩個 optional 參數；+13 tests（含 FM-1／FM-2／FM-4 反證各一）；**5 個變異注入全數 RED**（其中 M-B 一度 GREEN，揪出一條真的假綠燈並改掉測試）；regression **319 passed 逐位一致**、fixture 零修改；`src/main.ts`／`src/drill/`／`src/data/`／`src/loop/`／`src/render/replay/`／`research/` **六者零改動**。⚠️ 傳遞給 T3：`setHitFeedback()` 必須在 §0.4 四處全到位，且**必須在 `drillRunner.start()` 之前**呼叫（理由見 §T2 Decision T2-b）。|
 | T3 | ✅ 完成 | 2026-09-12 | 見 [§T3](#t3--targetshitfeedback-設定schemametadata-與-maints-接線2026-09-12)。`targets.hitFeedback?` 進 type + `schema.ts` 白名單、`resolveHitFeedback()` 為四條路徑的單一比較式、`meta.targets.hitFeedback` optional-in（live + harness 兩條管線同形）；**接線收斂到 `drillRunner.start()` façade 一處**（具名偏離 task file 的「四處各寫一次」，理由見 Decision T3-a）；+20 tests、**5 個變異注入全數 RED**；regression **319 passed 逐位一致**、fixture 零修改；`drills/*.json` 與全部 drill 定義**值零修改**（值變更屬 T4）；Python `load_export()` 對帶新鍵的 payload **零修改可讀**、`git diff research/` 為空。⚠️ 傳遞給 T4：啟用清單十個 id 一律改**具名常數／builder 上的 `targets.hitFeedback: 'flash'`**，且 `meta.targets` 屆時由 1 鍵變 2 鍵——只限這十個 run。|
-| T4 | ⬜ 未開始 | — | — |
+| T4 | 🟡 **部分完成（8/10）** | 2026-09-12 | 見 [§T4](#t4--在指名的-tracking-drill-啟用命中回饋2026-09-12)。`tracking_br_v1` 家族**八格全部**啟用（`makeVariant()` 一處生效八個）；八個 id 的 `loadDrill()` 前後逐欄比對，差異**恰為** `targets.hitFeedback`（22 欄位 × 8 drill，零其他增刪改）；`meta.targets` 由 1 鍵變 2 鍵、對照組 `counterstrafe_ad_v1` 維持 1 鍵逐字不變；regression **319 passed 逐位一致**、全量 **3180 passed**（+2 tests）、typecheck／build exit 0；**2 個變異注入全數 RED**。⚠️ **清單上的另外兩個 id（`tracking_core_pr_pilot_v1_2deg_5dps`／`tracking_reversal_pilot_v1_high`）本切片刻意未啟用**——執行期讀碼發現兩者同時是 `tracking-pilot-v2` **已版本化協定**六個 scored block 中的兩個，啟用會造成協定內 2/6 帶回饋、4/6 不帶的**條件混淆**，且 `checkTrackingCompatibility()` 無 `hitFeedback` 軸 ⇒ 前後 cohort key 相同、無法分池。詳見 §T4 Surprises 1，待使用者裁決（OQ-66.5）。|
 | T5 | ⬜ 未開始 | — | — |
 | T-exit | ⬜ 未開始 | — | — |
 
@@ -552,6 +552,156 @@ MUT-CHARLIE 是本切片最重要的一條：`meta.targets` 的鍵集合一旦�
 - **T4**：啟用清單十個 id 的 `targets.hitFeedback: 'flash'` 必須加在**具名常數／builder** 上（`tracking_br_v1.ts` 的 `makeVariant()` 一處即涵蓋八個 variant；兩個 WP-64 pilot config 各一處），不得手抄 id 逐一 patch —— 守 [WP-64 README §1.5](../wp-64-tracking-pilot-session-plan-drills/README.md) 的同一紀律。並確認 Surprise 1：`CANONICAL_DIGEST_BEFORE_T5` 在 T4 後仍應**逐位不變**。
 - **T5**：`liveFrame` 的 `sync()` 必須**同時**傳 `hits` 與 `nowMs`（只傳其一會靜默退回舊行為、不報錯）—— 這條沒有單元測試能守（`main.ts` 不在 vitest 覆蓋內），只能靠 e2e「啟用的 drill 打中會亮」與「未啟用的 drill 不亮」兩條反向覆蓋。
 - **T5**：e2e 寫「切換 drill 後回饋仍生效」時，務必**跑滿兩幀**（T2 Surprise 1）——`setHitFeedback()` 之後的第一幀恆走「只對齊、不補亮」分支，單幀量到的是初始化分支而非開關本身。
+---
+
+## T4 — 在指名的 tracking drill 啟用命中回饋（2026-09-12）
+
+> 基準 commit：**`4bf5cfe`**（T3 的 graphify 索引刷新）。開工與收尾 worktree 皆 clean，本切片執行期間未被平行 session 推進。
+> 依 [T0 Surprises 5](#t0-執行期新增) 的紀律，下列「逐位一致」的對照**全部取自同一 commit 上的實測**，不引用 T0 表的絕對數。
+> **本切片只啟用 T0 清單十個 id 中的八個**（`tracking_br_v1` 家族）。另外兩個的暫緩理由見 Surprises 1，**不是遺漏，是刻意停手待裁決**。
+
+### 1. 落地內容
+
+| 檔案 | 改動 |
+|---|---|
+| `src/drill/tracking_br_v1.ts` | 新增具名常數 `HIT_FEEDBACK = 'flash'`（帶效度斷代註解）；`makeVariant()` 的 `targets` 加一行 `hitFeedback: HIT_FEEDBACK` —— **一處生效八個 variant** |
+| `src/drill/DrillConfig.test.ts` | T3 的 roster 反證測試由「全部 `false`」翻為「八格全部 `true`」；**新增**未列名者反證（`hold_track_v1` ＋ 四個 core pilot cell ＋ `trackingReversalPilotV1Medium` 一律 `false`） |
+| `src/drill/tracking_br_v1.test.ts` | **新增** uniformity 測試：八格的 `hitFeedback` 取值集合大小必須 = 1 |
+
+**Invariant 實測**：`git status --short` 收尾恰為上述三檔。`src/state/`、`src/loop/`、`src/render/`、`src/drill/schema.ts`、`src/data/` **零修改**（T1–T3 已落地）；`drills/` 與 `research/` 的 `git status --porcelain` 皆為空。
+
+### 2. 為什麼寫在 `makeVariant()` 上（而非逐 variant 列舉）
+
+不只是「少打七次字」，是**效度前提**：`hitFeedback` 必須對 2×2×2 條件矩陣的每一格**逐格相同**，否則 `ads` / `ballistic` / `angularHeight` 三個被操弄變數就與「有無回饋」共變，每一條主效果與交互作用都不再可解釋。
+
+寫在 builder 上使「八格一致」成為**結構性**保證而非慣例。並且 [`brTrackingProtocol`](../../../../../src/display/brTrackingProtocol.ts#L10) 的 conditions 正是 `trackingBrVariants` 全部八格 ⇒ `br_tracking_v1` protocol **全條件一致**，協定內比較不受污染。這一點是本切片與暫緩的兩個 pilot id 之間的**決定性差別**（Surprises 1）。
+
+新增的 uniformity 測試刻意斷言「取值集合大小 = 1」而非逐格比對字面量——被守住的性質是**一致性本身**。
+
+### 3. 逐欄比對：差異恰為 `targets.hitFeedback`（T4 步驟 2 / DoD 指名項）
+
+以 `vite-node` 在**同一 commit** 上對改動前後各跑一次 `loadDrill(variant.drill, brField)`，展平成葉欄位後逐欄集合比較：
+
+```
+OK  tracking_br_v1__ads_off__hitscan__0p5deg:    +['.targets.hitFeedback'] -[] ~[]
+OK  tracking_br_v1__ads_on__hitscan__0p5deg:     +['.targets.hitFeedback'] -[] ~[]
+OK  tracking_br_v1__ads_off__projectile__0p5deg: +['.targets.hitFeedback'] -[] ~[]
+OK  tracking_br_v1:                              +['.targets.hitFeedback'] -[] ~[]
+OK  tracking_br_v1__ads_off__hitscan__2deg:      +['.targets.hitFeedback'] -[] ~[]
+OK  tracking_br_v1__ads_on__hitscan__2deg:       +['.targets.hitFeedback'] -[] ~[]
+OK  tracking_br_v1__ads_off__projectile__2deg:   +['.targets.hitFeedback'] -[] ~[]
+OK  tracking_br_v1__ads_on__projectile__2deg:    +['.targets.hitFeedback'] -[] ~[]
+
+drills compared = 8; fields per drill = 22
+RESULT: all eight differ EXACTLY by targets.hitFeedback='flash'
+```
+
+`hitbox` / `motion` / `spawnArea` / `timing` / `sequence.seed` / `weaponId` / `distance` 全部落在「零變更」那一側（`~[]` 為空即為證據，非逐項目視）。
+
+### 4. 匯出 `meta` 鍵面（T4 步驟 4／步驟 5 的**可決定性部分**）
+
+以 [main.ts:839-845](../../../../../src/main.ts#L839-L845) 的 `targets` 建構式逐行複製，呼叫 `collectMeta()`：
+
+```
+tracking_br_v1                            meta.targets keys = ["hitFeedback","hitbox"]   hitFeedback = "flash"
+tracking_br_v1__ads_off__hitscan__0p5deg  meta.targets keys = ["hitFeedback","hitbox"]   hitFeedback = "flash"
+counterstrafe_ad_v1  (未列名，對照組)       meta.targets keys = ["hitbox"]
+  meta.targets = {"hitbox":{"widthU":1,"heightU":2,"depthU":1,"shape":"box"}}
+```
+
+⇒ 啟用者 `meta.targets` 由 **1 鍵變 2 鍵**（T3 交接的預期），未列名的對照組 **逐字維持 T0 §3 基線的 1 鍵**（FR-66.8）。
+
+**須誠實標明的取樣差異**：本探針傳的是精簡參數集（`meta` 頂層 25 鍵），**不是** T0 §3 的完整 live 參數集（34 鍵）。頂層鍵數因此不可與 T0 表直接相比；本節主張的是 `meta.targets` **子物件**的鍵面，那部分兩者可逐字對比。頂層 34 鍵的複驗屬 T5 的全量匯出檢查。
+
+### 5. golden fixture 逐筆分類（T4 步驟 6 / DoD 指名項）
+
+| 類別 | 檔案 | digest 是否應變動 | 實測 |
+|---|---|---|---|
+| 引用 `tracking_br_v1` 的 regression | `br-tracking-invariants.test.ts`、`br-camera-anchor-invariants.test.ts`、`protocol-atomic-load.test.ts` | **否** —— 三者皆斷言 sim 不變式／camera anchor／protocol 原子載入；`grep "digest\|collectMeta\|meta\.targets\|CANONICAL"` 對三檔**皆無命中** ⇒ 不涵蓋 `meta` 鍵面 | **319 passed，逐位一致** |
+| `CANONICAL_DIGEST_BEFORE_T5` 位元組表（`exportPayloadSchema.test.ts`，8 個 fixture） | 全為 `counterstrafe_ad_v1` 與 synthetic，**無一在啟用清單上** | **否**（T3 Surprise 1 的預測） | **未轉紅** ⇒ 預測成立 |
+| 任何 `*.json` golden fixture 提及 `tracking_br_v1` | `grep -rl` 於 `fixtures/`、`tests/` **無命中** | 不適用 | — |
+
+⇒ 本切片 **無任何 digest 應變動，實測亦無任何 digest 變動**。T4 DoD 的「未涉及 `meta` 鍵面的 fixture 必須零變動」以 regression 319 逐位一致滿足。
+
+### 6. 變異注入：2 個全數 RED（非假綠燈）
+
+還原一律置於 `try/finally`，且**先還原、再列印**，並以 SHA-256 逐位複驗還原（T3 Surprise 3 的教訓）。
+
+| 變異 | 注入內容 | 結果 |
+|---|---|---|
+| **MUT-ONE** | `makeVariant()` 拿掉 `hitFeedback: HIT_FEEDBACK`（＝本切片從未發生） | **RED**（2 failed / 10 passed）——roster 測試與 uniformity 測試**各咬一次** |
+| **MUT-TWO** | 只在 `0p5deg` 兩格啟用（＝條件矩陣被回饋混淆的**失效模式本體**） | **RED**（2 failed / 10 passed） |
+
+MUT-TWO 是本切片最重要的一條：它是「程式跑得起來、八個 drill 都載得動、但研究設計已經壞掉」的那一類 bug，**只有 uniformity 測試抓得到**。還原後 SHA-256 與注入前逐位相同。
+
+> 執行期踩到一次 cp950：`subprocess` 以文字模式讀 vitest 輸出時對 `✓` 拋 `UnicodeDecodeError`。因還原寫在 `finally`，檔案**未被留在變異狀態**（`git diff --stat` ＋ `grep -c` 當場複驗）——T3 Surprise 3 的教訓這次生效了。改為 bytes 讀取 ＋ `decode('utf-8','replace')` 後穩定。
+
+### 7. 驗證證據（全部為本切片實際執行輸出）
+
+| 項目 | 結果 | 對照 |
+|---|---|---|
+| `npm run typecheck`（`tsc --noEmit` ×2） | **exit 0** | 同 T0–T3 |
+| `npx vitest run tests/regression` | **32 檔 / 319 passed** | T0–T3 基線 **319** ⇒ **逐位一致**，NFR-66.2 ✅ |
+| `npx vitest run`（全量） | **262 檔 passed / 1 skipped；3180 passed / 2 skipped** | T3 收尾 **3178 / 2**（262 檔）⇒ **+2 tests、+0 檔、零測試由綠轉紅**。+2 = uniformity 1 ＋ 未列名反證 1（改寫既有 roster 測試不計數） |
+| `npm run build` | **exit 0**（既有 >500 kB chunk 警告，非本切片引入） | 同 T0–T3 |
+| `git status --porcelain drills/` · `git diff --stat research/` | 皆為空 | T4 Invariant ✅ · C-D1 ✅ |
+
+### 8. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T4-a** | **暫緩**啟用 `tracking_core_pr_pilot_v1_2deg_5dps` 與 `tracking_reversal_pilot_v1_high`，交付 8/10 並停手待裁決 | 兩者是 `tracking-pilot-v2`（已版本化協定）六個 scored block 中的兩個（實跑 `buildTrackingPilotManifest()` 證實）。啟用會造成**協定內 2/6 帶回饋、4/6 不帶**——這正是本切片為 br 家族刻意避免的條件混淆（§2），而 br 家族因 `brTrackingProtocol` 涵蓋全部八格而天然免疫。且 `checkTrackingCompatibility()` 的十個軸**沒有 `hitFeedback`** ⇒ 啟用前後的 run 取得**相同 cohort key**，正是 KI-025 已立案的失效模式重演。README §3.1(2) 已為 `hold_track_v1` 立下「不得靜默改視覺、須另開升版切片」的先例，本情形同型。被推翻：**① 照清單全開**（造成上述兩個效度問題，且 T0 未曾評估過 `TRACKING_PILOT_PROTOCOL_VERSION`）；**② 只改 WP-64 策展物件**（`buildTrackingCorePrPilotV1Cell(2,5)` 產生的是**新物件**，與 manifest 用的 census 物件不同——實跑 `curated core === census core object ? false` ⇒ 同一 `drillId` 會依進入路徑帶兩種刺激，比全開更糟）；**③ 自行升 `TRACKING_PILOT_PROTOCOL_VERSION`**（該常數註解明定「Bumping this is a research-visible act … may only move together with a new protocol decision row」——不是本 WP 可代為決定的事） |
+| **T4-b** | `HIT_FEEDBACK` 寫成**模組具名常數**，不在 `makeVariant()` 內聯字面量 | 效度斷代的敘事（啟用日期、不可混池、為何全家族一致）需要一個掛得住的宣告點。內聯字面量會讓這段說明散在 builder 內部、或根本不寫 |
+| **T4-c** | 新增「未列名者一律不啟用」的**反向**測試，而非只測已啟用者 | FR-66.11 有兩面，而只有正面有測試時，「只動清單上的 id」就只是 commit message 裡的一句話。`hold_track_v1` 是其中最重要的一格（stage6 `protocolVersion = '1.0.0'` 凍結，GD-23）；四個 core pilot cell 現在也由這條守住，正好是 T4-a 暫緩範圍的機器可讀版本 |
+
+### 9. Surprises & Discoveries（T4）
+
+#### 1. T0 的十個 id 中有兩個是已版本化協定的 scored block——這件事 T0 未查
+
+T0 §5 對 `hold_track_v1` 做了完整的協定版本讀碼（`mode: 'assessment'` → 落回 `STAGE6_PROTOCOL_VERSION`），**但對兩個 WP-64 策展 pilot id 只憑「WP-64 已策展、`mode: 'practice'`」就納入**，未檢查它們是否屬於某個版本化協定。實跑結果：
+
+```
+manifest blocks = [practice, calibration_h, calibration_v,
+                   3deg_5dps, 3deg_14dps, 2deg_5dps, 2deg_14dps,
+                   reversal_medium, reversal_high]
+manifest protoVer = tracking-pilot-v2
+manifest blocks on T4 list = ['tracking_core_pr_pilot_v1_2deg_5dps',
+                             'tracking_reversal_pilot_v1_high']
+```
+
+⇒ 清單上那兩個，正是 `tracking-pilot-v2` 六個 scored block（4 core matrix ＋ 2 reversal）中的兩個。三個獨立的問題：
+
+1. **協定內條件混淆**：2/6 帶回饋、4/6 不帶。該協定的主要結果定義在 scored block 之間的比較上（`trackingPilotManifest.ts` 註解：「README §2.5 primary outcome is defined over the scored blocks only」）⇒ size／speed／reversal 三個對比全部與「有無回饋」共變。**這與本切片為 br 家族刻意避免的是同一個錯誤**（§2）。
+2. **cohort key 無法分池**：`checkTrackingCompatibility()` 逐欄比十個軸，**沒有一個是 `hitFeedback`** ⇒ 啟用前與啟用後的同一 block 取得**相同**相容性鍵。`TRACKING_PILOT_PROTOCOL_VERSION` 的註解已明載這正是 KI-025 的失效模式（常數停在 `v1` 三個切片，使 G5／G6 共用同一把鍵）。
+3. **同一 `drillId` 兩個物件**：`TRACKING_PILOT_SCHEDULABLE_DRILLS[0].config` 是 `buildTrackingCorePrPilotV1Cell(2,5)` 的**新物件**，與 manifest 解析用的 `TRACKING_CORE_PR_PILOT_V1_CANDIDATES[2]` **不同參考**（實測 `false`）。而 reversal 那個**是**同一參考（實測 `true`）。⇒ 「只改策展來源」會讓 `tracking_core_pr_pilot_v1_2deg_5dps` 依進入路徑（Session Plan vs 協定 runner）帶**兩種不同刺激**——比全開更難察覺。
+
+**本切片因此停在 8/10**，不自行裁決。README §3.1(2) 對 `hold_track_v1` 已立先例：對已凍結／已版本化的協定改視覺，**必須另開升版切片，不得靜默進行**。
+
+#### 2. `br_tracking_v1` 免疫於同一個問題，而且是結構性的免疫
+
+[`brTrackingProtocol`](../../../../../src/display/brTrackingProtocol.ts#L10) 的 conditions 直接 `trackingBrVariants.map(...)` —— **全部八格，無子集**。所以「寫在 builder 上」與「該 protocol 全條件一致」是同一件事，不是巧合，也不需要額外測試去維持：任何未來新增的 variant 都會自動同時進入 protocol 與回饋集合。`br_tracking_v1` 亦**無** `protocolVersion` 欄位（`grep -i version` 對該檔零命中），不存在「該升版卻沒升」的問題。
+
+⇒ 這正是兩組 id 該分開處理的結構性理由，而非「先做簡單的」。
+
+### Open Questions（T4，待使用者裁決）
+
+**OQ-66.5（阻塞 T4 收尾）— `tracking_core_pr_pilot_v1_2deg_5dps` 與 `tracking_reversal_pilot_v1_high` 要不要啟用？三條路，選一條：**
+
+| 選項 | 內容 | 代價 |
+|---|---|---|
+| **A（建議）** | **兩個都不啟用**，把 FR-66.11 的清單由十個收斂為八個（`tracking_br_v1` 家族）。T0 的 OQ-66.1 收斂結果隨之修訂並入帳 | 兩個 tracking pilot block 仍無命中回饋。但它們是 `requireFire`（scored 窗全程按住左鍵）的持續射擊任務，回饋缺口的嚴重性低於 br 家族 |
+| **B** | **整個 `tracking-pilot-v2` 六個 scored block 全開**（含未列名的四個），並**同時**升 `TRACKING_PILOT_PROTOCOL_VERSION` → `tracking-pilot-v3`，另補一列 protocol decision row | 協定內一致、cohort 可分池，但這是**另一個 WP 的範圍**（升版是 research-visible act），且會使既有 v2 資料全部斷代 |
+| **C** | 只開那兩個、不升版 | **不建議**：協定內 2/6 混淆 ＋ cohort key 無法分池，兩者皆為研究效度問題。列出僅為完整性 |
+
+**待補的 T4 DoD 項目（需操作人員實機，本 session 為非互動、無法在 Pointer Lock 下真人瞄準）**：
+
+- `tracking_br_v1` hitscan 實機三項證據：命中亮／刻意打偏不亮／停火後 ≤ `HIT_FEEDBACK_HOLD_MS` 熄滅（截圖或錄影）
+- projectile variant：亮起延遲與該場匯出 `hit` 事件 `timeOfFlightMs` 數量級相符
+- 兩場 tracking 匯出 JSON 的 `meta.targets.hitFeedback === 'flash'`（**靜態鍵面已於 §4 證實**，待實機匯出複驗）
+- 未啟用對照 drill 的實機「命中不亮」證據（**靜態鍵面已於 §4 證實**）
+
+這四項與 T5 的 focused e2e／A-B frame-time 是同一場實機作業，建議併入 T5 一次取得；本切片不宣稱已完成。
+
 ---
 
 ## Decision Log

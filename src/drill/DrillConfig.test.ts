@@ -35,10 +35,33 @@ describe('resolveHitFeedback（WP-66 / T3，FR-66.8／FR-66.9）', () => {
     expect(() => configWith({ hitFeedback: 'blink' as 'flash' })).toThrow(/targets\.hitFeedback/);
   });
 
-  it('roster 現況：本 task 不啟用任何 drill（值變更屬 T4）', async () => {
+  it('roster 現況（T4）：`tracking_br_v1` 家族**八格全部**啟用', async () => {
     const { trackingBrVariants } = await import('./tracking_br_v1.ts');
+    expect(trackingBrVariants).toHaveLength(8);
     for (const variant of trackingBrVariants) {
-      expect(resolveHitFeedback(variant.drill)).toBe(false);
+      expect(resolveHitFeedback(variant.drill)).toBe(true);
+    }
+  });
+
+  /**
+   * FR-66.11 的反向面：**未列名者一律不啟用**。若沒有這條，T4 的「只動清單上的 id」就只是
+   * commit message 裡的一句話，沒有任何東西會在它被破壞時轉紅。
+   *
+   * `hold_track_v1` 是這裡最重要的一格——它屬 stage6 `protocolVersion = '1.0.0'` 凍結範圍
+   * （GD-23），對它改視覺＝靜默改已凍結協定。
+   */
+  it('roster 現況（T4）：未列名的 drill 一律不啟用', async () => {
+    const [{ holdTrackV1 }, { TRACKING_CORE_PR_PILOT_V1_CANDIDATES }, { trackingReversalPilotV1Medium }] =
+      await Promise.all([
+        import('./hold_track_v1.ts'),
+        import('./tracking_core_pr_pilot_v1.ts'),
+        import('./tracking_reversal_pilot_v1.ts'),
+      ]);
+
+    expect(resolveHitFeedback(holdTrackV1.drill)).toBe(false);
+    expect(resolveHitFeedback(trackingReversalPilotV1Medium)).toBe(false);
+    for (const cell of TRACKING_CORE_PR_PILOT_V1_CANDIDATES) {
+      expect(resolveHitFeedback(cell)).toBe(false);
     }
   });
 });
