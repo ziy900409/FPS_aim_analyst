@@ -9,7 +9,7 @@
 | ✅ | **T2** `TargetView` 逐 mesh material + 命中態衰減 | [T2-target-view-hit-flash.md](T2-target-view-hit-flash.md) | T1 | Med |
 | ✅ | **T3** `targets.hitFeedback?` + schema + metadata + 四條路徑 wiring（收斂於 `drillRunner.start()` 一處，見 progress T3-a） | [T3-config-gate-and-wiring.md](T3-config-gate-and-wiring.md) | T2 | Med |
 | ✅ | **T4** 在指名 tracking drill 啟用 + 效度斷代明帳（清單經 OQ-66.6 由十個收斂為**八個**：`tracking_br_v1` 家族；整個 WP-54 tracking-pilot 家族排除。四項實機證據交接 T5） | [T4-enable-on-tracking-drills.md](T4-enable-on-tracking-drills.md) | T3 | **Med** |
-| ⬜ | **T5** 零 importer 掃描／focused e2e／A/B frame-time／全量回歸 | [T5-regression-and-e2e.md](T5-regression-and-e2e.md) | T4 | Med |
+| ✅ | **T5** 零 importer 常駐掃描／focused live e2e／A/B frame-time／全量回歸（Playwright 115 passed / 0 failed；4 個變異注入全數 RED；draw call 判準需於 T-exit 改寫，見 progress §9 OQ） | [T5-regression-and-e2e.md](T5-regression-and-e2e.md) | T4 | Med |
 | ⬜ | **T-exit** WP-66 驗收（A-66.1～A-66.12）+ GD-42 入帳 | [T-exit-gate.md](T-exit-gate.md) | T1–T5 | Low |
 
 ## 建議執行順序
