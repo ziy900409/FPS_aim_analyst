@@ -1,7 +1,13 @@
 import * as THREE from 'three/webgpu';
 import { computeMuzzleOrigin, DEFAULT_MUZZLE_OFFSETS } from '../render/muzzleOffset.ts';
 import { consume } from '../input/consume.ts';
-import { pushImpact, pushShotRay, resetBulletArena, type SharedState } from '../state/SharedState.ts';
+import {
+  pushImpact,
+  pushShotRay,
+  pushTargetHit,
+  resetBulletArena,
+  type SharedState,
+} from '../state/SharedState.ts';
 import type { TargetManager } from '../sim/TargetManager.ts';
 import { raycastWithRay, targetCenterOffsetDeg, type HitPointOut, type RaycastResult } from '../sim/HitDetector.ts';
 import { firstBlockingIntersection } from '../scene/occlusionGeometry.ts';
@@ -350,6 +356,9 @@ function advanceProjectiles(
       pushImpact(state.impacts, hx, hy, hz);
       pushShotRay(state.shotRays, arena.mx[i], arena.my[i], arena.mz[i], hx, hy, hz);
       if (target.persistent !== true) targetManager?.markKilled(state, target.id);
+      // WP-66 / T1：render-only 命中訊號。位置在 `hitIndex >= 0 && accurate === 1` 區塊內 ⇒ 未過
+      // 速度閘的彈與逾 maxRangeU 消滅的彈都不寫（FR-66.3）。與下方 `hit` 事件同一 tick、同一條件。
+      pushTargetHit(state.targetHits, target.id);
       recorder?.recordEvent({
         type: 'hit',
         t: hitT,
@@ -458,6 +467,10 @@ function fireOneShot(
         if (hitTarget === undefined || hitTarget.persistent !== true) {
           targetManager.markKilled(state, result.targetId);
         }
+        // WP-66 / T1：render-only 命中訊號。`hit` 已是 `accurate && result.hit && blocker === undefined`
+        // ⇒ 速度閘與 WP-45 occlusion 免費繼承（FR-66.2）。**不可**移到下方 pushImpact 旁——彈著格
+        // 脫靶也寫（FR-66.3）。persistent 與否不影響：命中不撤除的目標同樣要亮。
+        pushTargetHit(state.targetHits, result.targetId);
       }
       // WP-13 / T3+T4：命中（目標近面）或脫靶（交戰平面投影,T4）皆寫彈孔（world 座標,render
       // `ImpactView` 唯讀繪製）；環狀覆寫最舊。脫靶彈孔使壓槍漂移 pattern 可視化;`ballisticHitPoint`

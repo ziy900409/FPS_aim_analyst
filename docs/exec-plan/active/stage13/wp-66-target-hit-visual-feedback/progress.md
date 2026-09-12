@@ -11,7 +11,7 @@
 | Task | 狀態 | 日期 | 證據 |
 |---|---|---|---|
 | T0 | ✅ 完成 | 2026-09-12 | 見 [§T0](#t0--entry-gate2026-09-12)。編號重查四處來源已記錄（**WP-66 / GD-42 仍可用，未順延**；stage14 §3 已補順延註記）；基線於 `9a03562` 凍結（typecheck exit 0 · Vitest **3128 passed / 2 skipped** · regression **319 passed** · build exit 0 · Playwright **112 tests / 112 passed / 0 failed**）；`meta` 鍵面 **34 鍵**、`meta.targets` **1 鍵（`hitbox`）** 已逐字記錄；OQ-66.1／66.2／66.4 使用者收斂**全數照預設**，啟用清單十個 drill id 已逐字定案；假設 #3 讀碼**確認成立**（T3 必改 `schema.ts`）。⚠️ 兩項須傳遞給後續 task：**① frame-time 基線改由 T5 同場 A/B 取得**（具名偏離 T0 DoD 第 5 條，理由見 Surprises 3）；**② 基準 commit 執行中被平行 session 推進兩次** ⇒ 後續 task 須在自己的 commit 上自備同期對照，不得引用本表絕對數。詳見 [Surprises](#surprises)。 |
-| T1 | ⬜ 未開始 | — | — |
+| T1 | ✅ 完成 | 2026-09-12 | 見 [§T1](#t1--targethitring-進-sharedstatesimloop-兩處寫入2026-09-12)。`TargetHitRing` 落 `SharedState`、`SimLoop` **只加兩行寫入**（命中路徑窮舉證明恰為兩條）；+17 tests（反證 6 條 + 決定性 1 條），regression **319 passed 逐位一致**、fixture 零修改；`src/render`／`src/drill`／`src/main.ts`／`src/data`／`research` 五者零改動；零 importer 掃描乾淨。變異注入實證反證測試會咬（非假綠燈）。⚠️ 傳遞給 T2：`trackingPilotHold.magSize = 512` ⇒ 一場約 250 次命中 **遠超 CAP 64**，`TargetView` 必須走 `seq` 高水位增量消費，不得以 `total` 當索引。|
 | T2 | ⬜ 未開始 | — | — |
 | T3 | ⬜ 未開始 | — | — |
 | T4 | ⬜ 未開始 | — | — |
@@ -153,6 +153,135 @@ targets: {
 ### 7. GD-42 草稿（本體 **T-exit 入帳**，承 D-66-P7）
 
 D-66-1～D-66-6 見 [Decision Log](#gd-42-草稿本體-t-exit-入帳)。**D-66-4 的「啟用清單」欄位已由本 T0 填實**：即上方 §5 OQ-66.1 的十個 drill id 逐字清單；生效日期待 T4 落地時補。
+
+---
+
+## T1 — `TargetHitRing` 進 `SharedState`，`SimLoop` 兩處寫入（2026-09-12）
+
+> 基準 commit：**`65350c8`**（T0 落帳）。開工與收尾 worktree 皆 clean，**本切片執行期間未被平行 session 推進**（與 T0 的情況不同）。
+> 下列每個數字皆為本切片實際執行輸出。依 [T0 Surprises 5](#t0-執行期新增) 的紀律，「逐位不變」的對照**取自同一 commit 上的實測**，不引用 T0 的絕對數。
+
+### 1. 落地內容
+
+| 檔案 | 改動 |
+|---|---|
+| `src/state/SharedState.ts` | 新增 `TARGET_HIT_CAP = 64`、`TargetHitRing`、`createTargetHitRing()`、`pushTargetHit()`、`resetTargetHitRing()`；`SharedState` 增 `targetHits`；`createSharedState()` 建一份、`resetState()` 原地清空（不 realloc）。位置與註解密度逐條比照既有 `ImpactRing`／`ShotRayRing` 段落 |
+| `src/loop/SimLoop.ts` | **只加兩行寫入 + 一個 import**，零判定變更（diff 全文見下方 §3） |
+| `src/state/SharedState.test.ts` | +7 測試（ring 原語、同一參考、空字串 no-op、繞圈、reset 不 realloc、state 層 create/reset） |
+| `src/loop/__tests__/wp66-target-hit-ring.test.ts` | **新檔**，+9 測試（hitscan 6 條 + projectile 3 條） |
+| `src/loop/__tests__/wp66-hit-ring-determinism.test.ts` | **新檔**，+1 測試（4 種 render 幀序列逐位一致） |
+
+`src/render/`、`src/drill/`、`src/main.ts`、`src/data/`、`research/` **五者零改動**（見 §3）。
+
+### 2. `SimLoop` 產生命中的路徑窮舉（T1 步驟 3）
+
+全檔搜 `type: 'hit'` 與 `hit` 旗標的賦值點，**命中路徑恰為兩條**，無第三條：
+
+| # | 路徑 | 命中的權威表述 | 位置 | 本切片寫入點 |
+|---|---|---|---|---|
+| 1 | projectile（掃掠） | `hitIndex >= 0 && arena.accurate[i] === 1` | [SimLoop.ts:350](../../../../../src/loop/SimLoop.ts#L350) 區塊；唯一的 `type: 'hit'` 事件在 [:363](../../../../../src/loop/SimLoop.ts#L363) | [:361](../../../../../src/loop/SimLoop.ts#L361)，緊鄰 `markKilled` |
+| 2 | hitscan（射線） | `hit = accurate && result.hit && blocker === undefined` | **全檔唯一**的 `hit` 賦值在 [:459](../../../../../src/loop/SimLoop.ts#L459)，消費於 `fire` 事件 [:500](../../../../../src/loop/SimLoop.ts#L500) | [:473](../../../../../src/loop/SimLoop.ts#L473)，在既有 `if (hit && result.targetId !== undefined)` 區塊**內** |
+
+- `let hit = false`（[:411](../../../../../src/loop/SimLoop.ts#L411)）之後**只有一次**再賦值 ⇒ hitscan 側不存在第二個命中定義；速度閘與 WP-45 occlusion 因此是**繼承**的，不是本 WP 重寫的（守 GD-7 單一來源）。
+- `markKilled` 在本檔的呼叫點同樣恰為這兩處（[:358](../../../../../src/loop/SimLoop.ts#L358) / [:468](../../../../../src/loop/SimLoop.ts#L468)），其餘命中為註解。**`DrillRunner` 另有 `peekTimeoutMs`／`presentationMs` 到期的 `markKilled`**——那是「目標到期撤除」而非「打中」，本切片正確地**不**為它寫入環形格（到期撤除不該亮）。
+- ⚠️ 兩行寫入**刻意不放在 `pushImpact`／`pushShotRay` 旁**：那兩者脫靶也寫（README §0.1 #4）。此事已由測試釘死（見 §5 的「脫靶」條）。
+
+### 3. 零 importer 與 diff 範圍（FR-66.12 / FM-5）
+
+```
+$ grep -rn "targetHits|TargetHitRing|pushTargetHit|TARGET_HIT_CAP|resetTargetHitRing|createTargetHitRing" \
+    src/data/ src/metrics/ research/
+（零命中）
+
+$ 全 repo 提及者（5 檔，全落 state/loop）
+src/state/SharedState.ts · src/state/SharedState.test.ts
+src/loop/SimLoop.ts · src/loop/__tests__/wp66-target-hit-ring.test.ts
+src/loop/__tests__/wp66-hit-ring-determinism.test.ts
+```
+
+`git status --short` 恰為 3 M + 2 ??（上表五檔），`src/render/`、`src/drill/`、`src/main.ts`、`src/data/`、`research/` 皆零命中 ⇒ T1 Invariant 與 DoD 的 diff 範圍條款成立。`DataRecorder`／`exportPayloadSchema`／`metadata.ts` diff 為空。
+
+**`src/loop/SimLoop.ts` 的完整 diff = 1 個 import 改寫 + 2 段寫入（各 1 行實體 + 註解）**，無任何其他 hunk；判定式、`markKilled` 條件、事件欄位全數逐字未動。
+
+### 4. `TARGET_HIT_CAP` 餘裕估算（T1 步驟 5 / FM-8）
+
+**CAP 管的是「render 尚未消費的積壓量」，不是一場 run 的命中總數**——比照 `ImpactRing`／`ShotRayRing` 的環狀覆寫語意，明確**不宣稱零丟失**。
+
+| 量 | 值 | 出處 |
+|---|---|---|
+| 全部啟用清單 drill 的射速上限 | **10 Hz** | `cycletimeSec = 0.1 s`（`ak47` 與 `trackingPilotHold` 同值，[weapons.ts:137](../../../../../src/weapon/weapons.ts#L137)） |
+| 命中寫入率上限 | **10 筆/s**（每發至多寫一筆） | 同上 |
+| CAP | 64 | 本切片 |
+| **render 可停擺多久才會覆寫掉未消費的最舊命中** | **6.4 s** | 64 ÷ 10 Hz |
+| 60 FPS 下每幀到達量 | ≈ 0.17 筆 | 10 ÷ 60 ⇒ 相對 CAP 有 **≈380×** 餘裕 |
+
+⇒ 要撞到覆寫，render 必須連續停擺 **6.4 秒**；那種情境下該場 run 早已因 frame-time 而作廢，視覺瑕疵不是當下的問題。**一個完整彈匣**：`ak47` 30 發、`m4a1s` 20 發皆 < 64 ⇒ 即使 render 全程不消費，單匣連續全中也不會繞圈。
+
+> ⚠️ **給 T2 的前提**：`trackingPilotHold.magSize = 512`（[weapons.ts:136](../../../../../src/weapon/weapons.ts#L136)，25 s scored 窗打不完的刻意裕度）⇒ **一場 tracking run 的命中總數會遠超過 64**（10 Hz × 25 s ≈ 250）。T2 的 `TargetView` 因此**必須**以 `seq` 高水位做增量消費（比照 `ImpactView`／`TracerView`），不得假設 `total ≤ TARGET_HIT_CAP` 或用 `total` 當索引。
+
+### 5. 測試設計：反證優先，並以變異注入證明不是假綠燈
+
+本切片釘死的不是「命中會亮」，而是**「只有命中才會亮」**——一次「沒打中卻亮」直接污染刺激。九條 `SimLoop` 測試中**六條是反證**：
+
+| 反證 | 斷言 |
+|---|---|
+| 脫靶 | `impacts.total > 0` **且** `targetHits.total === 0` —— 同一條測試同時證明「彈著格不是命中訊號」 |
+| occlusion blocker 擋下 | `fire.hit === false`、未撤除、彈孔停在牆面、環形格零筆 |
+| 未過速度閘（hitscan） | 射線幾何對準目標但 `|vx| ≥ accuracyThreshold` ⇒ 零筆 |
+| 未過速度閘（projectile，`accurate === 0`） | 彈掃過目標但零筆 |
+| 逾 `maxRangeU` 消滅 | `shotRays.total > 0`（tracer 有畫）但零筆 |
+| 無存活目標 | 零筆 |
+
+**變異注入（mutation check，本切片實跑）**——反證測試最容易變成「因為別的理由而通過」，故逐一驗證它們會咬：
+
+| 注入的變異 | 結果 |
+|---|---|
+| 兩處 `pushTargetHit` 同時註解掉 | **3 failed / 6 passed** —— 三條正證全紅（hitscan 命中、persistent 連續命中、projectile 命中），六條反證維持綠（正確：它們斷言的是零筆） |
+| 移除 projectile 的 `&& arena.accurate[i] === 1` 速度閘 | 「未過速度閘的飛行彈 → 零筆」**轉紅** ⇒ 證明該彈**確實掃過目標**、是被閘擋下的，不是因為根本沒飛到而空過（**非 vacuous**） |
+
+> 變異注入後已還原；還原過程本身踩了一個坑，見 §7 Surprise 1。
+
+### 6. 驗證證據（全部為本切片實際執行輸出）
+
+| 項目 | 結果 | 對照 |
+|---|---|---|
+| `npm run typecheck`（×2） | **exit 0 / exit 0** | 同 T0 |
+| `npx vitest run tests/regression` | **exit 0** — 32 檔 / **319 passed**；`git status --short tests/` **為空**（fixture 零修改） | T0 基線 **319** ⇒ **逐位一致**，NFR-66.2 ✅ |
+| `npx vitest run`（全量） | **exit 0** — Test Files **261 passed / 1 skipped (262)**；Tests **3145 passed / 2 skipped (3147)**；9.68 s | T0 = 260 檔 / 3128 tests ⇒ **+2 檔、+17 tests**，逐條對得上：SharedState +7、wp66-target-hit-ring +9（新檔）、wp66-hit-ring-determinism +1（新檔）。**零測試由綠轉紅** |
+| `npm run build` | **exit 0**（既有 >500 kB chunk 警告，非本切片引入） | 同 T0 |
+| 零 importer 掃描 | `src/data/`／`src/metrics/`／`research/` **零命中** | FR-66.12 ✅（T5 再以常駐測試釘一次） |
+
+NFR-66.1（決定性）：`wp66-hit-ring-determinism.test.ts` 在 **4 種 render 幀序列**（穩定 60／144／240 Hz + 抖動 144 Hz ±50%）下，`total`／`cursor`／逐槽 `id`／逐槽 `seq` 皆逐位一致，且 `fire` 事件序列本身一併比對（避免「兩邊都壞得一樣」）。
+
+NFR-66.3（零堆配置）：`pushTargetHit` 熱路徑無 `push`、無物件字面值、無 `new` —— 寫入的是既有 `TargetState.id` 的**參考**（由「同一參考」測試以 `toBe` 釘死），`id` 為建構期一次性 `new Array(64).fill('')`。
+
+### 7. Decision Log
+
+| # | 決策 | 理由 / 被推翻的替代方案 |
+|---|---|---|
+| **T1-a** | `resetTargetHitRing()` 連 `id` 一併清回 `''`，不只清 `seq` | 既有 `resetImpactRing`／`resetShotRayRing` **只清 `seq`**（數值殘值無害，render 靠 `seq=0` 哨兵早退）。但本格殘留的是**目標身分字串**：留著它等於讓一個已結束 drill 的目標 id 可被下一場讀到，且會讓那個字串無法被 GC 回收。清 64 格字串是 per-drill 一次性成本，不在熱路徑。被推翻：逐字比照既有兩個 reset 只清 `seq` —— 一致性不值得換一個「上一場的身分還在記憶體裡」的坑 |
+| **T1-b** | `pushTargetHit` 對空字串 id 為 **no-op，不拋** | 比照既有 ring 原語「不在熱路徑做驗證」的慣例；空 id 在現行 roster 不可能出現（`TargetState.id` 由 `TargetManager` 產生），防呆存在的意義是「萬一出現也只是少亮一次」，而不是讓 sim 迴圈在受試者面前崩掉 |
+| **T1-c** | 決定性測試**不掛 `DrillRunner`**，改用手放的 persistent 目標 + 固定輸入 | 目的是量「命中訊號」的決定性，不是 drill 生命週期（那條已由 `wp65-arm-determinism` 與既有 `determinism.test.ts` 覆蓋）。掛 runner 會讓目標 spawn／撤除的時序混進來，失敗時無從分辨是 ring 不決定還是 spawn 不決定 |
+| **T1-d** | 決定性測試的輸入序列**同時包含 A/D 橫移與連射**，刻意讓速度閘反覆翻轉 | 只射不動 ⇒ 發發命中 ⇒ 測到的是「一致地全部命中」的弱綠燈。命中與否經過速度閘、而 `vx` 由逐 tick movement 積分推進，**混合命中／脫靶的序列**才真的在考驗「寫入時機綁 sim tick 而非 render 幀」。測試內以 `some(hit)` + `some(!hit)` 斷言此前提成立 |
+| **T1-e** | 環形格寫在 `markKilled` **之後**（projectile）／`markKilled` 區塊**內**（hitscan） | 兩者都必須落在既有命中條件的**同一個 if 區塊**內，才能讓「寫入條件與既有 `fire.hit`／`hit` 事件逐條相同」由結構保證，而不是靠兩份條件式維持同步。hitscan 側特別注意：寫入放在 `if (hitTarget === undefined \|\| ...persistent !== true)` 的**外面**、`if (hit && ...)` 的**裡面** —— persistent 目標命中不撤除，但**同樣要亮**（正是本 WP 的主要使用情境） |
+
+### 8. Surprises & Discoveries（T1）
+
+1. **變異注入的還原腳本被「前綴子字串」咬了一口 —— 差點把 hitscan 寫入點還原成 projectile 的變數。**
+   兩個注入標記分別是 6 空格與 8 空格縮排的 `// MUTANT`；還原時先跑 6 空格那條 `split/join`，它**同時命中了 8 空格那行的後 6 個空格**，於是 hitscan 的寫入被還原成 `pushTargetHit(state.targetHits, target.id)` —— 而 `target` 在該 scope 根本不存在（hitscan 側叫 `hitTarget`）。
+   **抓到它的是測試不是眼睛**：還原後重跑，兩條 hitscan 測試仍紅，才回頭看 diff。
+   ⇒ **給後續 task 的教訓**：在這個 repo 做臨時變異注入時，標記字串必須**互不為子字串**（例如帶不同編號 `// MUTANT-A` / `// MUTANT-B`），且還原後**一律以 `git diff` 逐行複驗**，不能只看測試綠。本次最終 diff 已逐行確認 = 1 import + 2 寫入。
+
+2. **`trackingPilotHold.magSize = 512` 使一場 tracking run 的命中總數遠超過 CAP。**
+   規劃期的 FM-8 以「射速 vs CAP」論述餘裕，讀起來像「總數不會超過 64」。實際上啟用清單上的 tracking drill 一場可命中約 250 次（10 Hz × 25 s scored）。**這不影響 T1 的正確性**（CAP 管的是未消費積壓，render 每幀消費 ⇒ 積壓 ≈ 0.17 筆/幀），但**直接約束 T2 的實作**：必須走 `seq` 高水位增量消費，不得假設 `total ≤ TARGET_HIT_CAP`、不得拿 `total` 當索引。已寫入 §4 的警示框。
+
+3. **`DrillRunner` 的到期撤除是第三個 `markKilled` 來源，但不是第三條命中路徑。**
+   窮舉時一度把它算進來。`peekTimeoutMs`／`presentationMs` 到期會 `markKilled` 但**沒有任何一發子彈打中**——命中回饋正確地不為它寫入。記此一筆是因為「`markKilled` 的來源數 ≠ 命中路徑數」這件事在讀碼時會讓人多繞一圈；T5 若以 `markKilled` 為線索做掃描會數錯。
+
+### Open Questions（T1 留給後續 task）
+
+- **T2**：見上方 Surprise 2 —— `TargetView` 必須以 `seq` 高水位增量消費，且 `TARGET_HIT_CAP` 的繞圈語意（不宣稱零丟失）要在 render 端讀得出來，不能寫成「讀 `total` 筆」。
+- **T5**：本切片的零 importer 檢查是**一次性 grep**；T5 需把它變成常駐測試（FM-5 要求的自動掃描），否則後續 WP 可能無聲把 `targetHits` 接進 `src/metrics/`。
 
 ---
 

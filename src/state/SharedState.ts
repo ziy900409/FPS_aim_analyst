@@ -22,6 +22,12 @@ export const IMPACT_CAP = 64;
 export const TRACER_CAP = 64;
 
 /**
+ * 命中目標環形格容量（WP-66 / T1）：比照 `IMPACT_CAP` / `TRACER_CAP`，render 每幀消費，
+ * **不宣稱零丟失**（FM-8，環狀覆寫最舊）。64 相對 128 Hz sim 與 ≤20 Hz 射速有數量級餘裕。
+ */
+export const TARGET_HIT_CAP = 64;
+
+/**
  * 飛行彈 arena 容量（WP-25 / T3）：預設 AK 彈匣 30 × 2 = 60，一匣連發加飛行殘留裕度。
  * 滿載時拒發並升 `overflowCount`，不成長、不 realloc。
  */
@@ -59,6 +65,31 @@ export interface ShotRayRing {
   /** 累計寫入軌跡總數（單調遞增；render 端據此偵測新軌跡）。 */
   total: number;
   /** 下一寫入槽位 [0, TRACER_CAP)。 */
+  cursor: number;
+}
+
+/**
+ * 命中目標環形格（WP-66 / T1）：sim 在**既有**命中判定成立時寫入被命中目標的 id，
+ * render（`TargetView`）唯讀——雙迴圈邊界（ADR-2），方向與 `ImpactRing`／`ShotRayRing` 同向。
+ *
+ * **不新增命中判定**：寫入條件與既有 `fire.hit` / `hit` 事件逐條相同（含 `accurate` 速度閘與
+ * WP-45 occlusion blocker）。彈著格（`impacts`）**不是**命中訊號——脫靶也寫；本格才是。
+ *
+ * **不帶時間戳**（D-66-2）：只帶身分與 `seq`。衰減完全由 render 以 rAF `now`（wall clock）起算，
+ * 從結構上消除「拿 sim clock 的 `t` 減 wall clock 的 `performance.now()`」——那種相減會得到看似
+ * 合理、卻隨負載漂移的數字。
+ *
+ * 固定佈局（CLAUDE.md §4）：`id` 為 preallocated `string[]`，槽位**就地覆寫既有參考**（非 `push`、
+ * 非物件配置；寫入的是 `TargetState.id` 這個既有字串的參考，熱路徑零配置）。`seq[i]` = 該槽的
+ * 單調寫入序號（1 起；0 = 空槽哨兵），供 render 偵測新命中做增量同步。
+ */
+export interface TargetHitRing {
+  /** 被命中目標的 `TargetState.id`；空槽為 ''。 */
+  readonly id: string[];
+  readonly seq: Float64Array;
+  /** 累計命中總數（單調遞增；render 據此早退）。 */
+  total: number;
+  /** 下一寫入槽位 [0, TARGET_HIT_CAP)。 */
   cursor: number;
 }
 
@@ -111,6 +142,16 @@ export function createShotRayRing(): ShotRayRing {
     ey: new Float64Array(TRACER_CAP),
     ez: new Float64Array(TRACER_CAP),
     seq: new Float64Array(TRACER_CAP),
+    total: 0,
+    cursor: 0,
+  };
+}
+
+/** 建一份全空的命中目標環形格（預配置 id 陣列與 typed-array，不再 realloc）。 */
+export function createTargetHitRing(): TargetHitRing {
+  return {
+    id: new Array<string>(TARGET_HIT_CAP).fill(''),
+    seq: new Float64Array(TARGET_HIT_CAP),
     total: 0,
     cursor: 0,
   };
@@ -177,6 +218,20 @@ export function pushShotRay(
   ring.cursor = (i + 1) % TRACER_CAP;
 }
 
+/**
+ * 環狀寫入一次命中（覆寫最舊）：就地覆寫 id 槽的**既有字串參考**、蓋單調序號、推進游標
+ * ——熱路徑零配置（GC 紀律）。**sim 唯寫**；`targetId` 須為既有 `TargetState.id`（不得在此組字串）。
+ * 空字串為 no-op（防呆，不拋）。
+ */
+export function pushTargetHit(ring: TargetHitRing, targetId: string): void {
+  if (targetId === '') return;
+  const i = ring.cursor;
+  ring.id[i] = targetId;
+  ring.total += 1;
+  ring.seq[i] = ring.total; // 單調序號（1 起）；render 端偵測 seq 變化做增量同步
+  ring.cursor = (i + 1) % TARGET_HIT_CAP;
+}
+
 /** 原地清空彈著格（重開 drill / reset）：seq 歸零使所有槽視為空、游標歸零；typed-array 不 realloc（GC 紀律）。 */
 export function resetImpactRing(ring: ImpactRing): void {
   ring.seq.fill(0); // seq=0 → 空槽哨兵（render 端不繪；x/y/z 殘值待覆寫，免額外清）
@@ -186,6 +241,14 @@ export function resetImpactRing(ring: ImpactRing): void {
 
 /** 原地清空子彈軌跡格；typed-array 不 realloc，端點殘值待下次覆寫。 */
 export function resetShotRayRing(ring: ShotRayRing): void {
+  ring.seq.fill(0);
+  ring.total = 0;
+  ring.cursor = 0;
+}
+
+/** 原地清空命中格；重用既有陣列（不 realloc），id 槽一併清回 '' 以免殘留身分被誤讀。 */
+export function resetTargetHitRing(ring: TargetHitRing): void {
+  ring.id.fill('');
   ring.seq.fill(0);
   ring.total = 0;
   ring.cursor = 0;
@@ -263,6 +326,12 @@ export interface SharedState {
    * 不參與命中/資料匯出，固定容量 `TRACER_CAP`，滿即環狀覆寫最舊。
    */
   shotRays: ShotRayRing;
+  /**
+   * 命中目標環形格（WP-66 / T1）：sim 在既有命中判定成立時寫入被命中目標的 id，render
+   * （`TargetView`）唯讀繪命中亮起。**不新增命中判定、不進匯出/指標**（FR-66.12），
+   * 固定容量 `TARGET_HIT_CAP`，滿即環狀覆寫最舊。
+   */
+  targetHits: TargetHitRing;
   /**
    * 飛行彈 arena（WP-25 / T3）：`WeaponConfig.bullet` 存在時才由 SimLoop 使用；hitscan 路徑不讀。
    */
@@ -436,6 +505,7 @@ export function createSharedState(): SharedState {
     },
     impacts: createImpactRing(),
     shotRays: createShotRayRing(),
+    targetHits: createTargetHitRing(),
     bullets: createBulletArena(),
     prev: { x: 0, z: 0 },
     curr: { x: 0, z: 0 },
@@ -486,6 +556,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.recoil.lastSpread.y = 0;
   resetImpactRing(state.impacts); // 原地清空彈著格（重開 drill → 彈孔清；typed-array 不 realloc，GC 紀律）
   resetShotRayRing(state.shotRays); // 原地清空 tracer 格（render-only；重開 drill → 軌跡清）
+  resetTargetHitRing(state.targetHits); // 原地清空命中格（render-only；重開 drill → 命中回饋清）
   resetBulletArena(state.bullets); // 原地清空飛行彈 arena（重開 drill → 不保留飛行中子彈）
   state.prev.x = 0;
   state.prev.z = 0;
