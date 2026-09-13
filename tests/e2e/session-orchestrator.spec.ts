@@ -424,10 +424,14 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     // drill picked from it is the one that lands in the list.
     const picker = planSetup.locator('select[name="sessionPlanDrill"]');
     // 36 -> 38 at WP-64 T1, which added the two curated tracking-pilot blocks to the `tracking`
-    // roster row (the family already existed, so the optgroup count is unchanged). T1/T2 updated
-    // the unit-level cardinalities (`SessionPlanSetup.test.ts`, `drillFamily.test.ts`) but ran no
-    // Playwright, so this line was the one stale expectation WP-64 left behind — see T3 progress.
-    await expect(picker.locator('option')).toHaveCount(38);
+    // roster row; -> 39 with micro-flick v9, which joined the existing `micro-flick` row. Neither
+    // added a family, so the optgroup count is unchanged through both. This is the *fourth* place a
+    // roster addition has to be counted (after `drillFamily.test.ts`, `SessionPlanSetup.test.ts`
+    // and the countdown classification) and the only one no unit test can reach, which is why
+    // WP-64 left it stale: it fails only under Playwright. -> 40 with WP-66 後續的
+    // tracking_reversal_high_feedback_v1, which joined the existing `tracking` row (no new family);
+    // -> 41 with tracking_core_pr_3deg_14dps_feedback_v1, likewise on that row.
+    await expect(picker.locator('option')).toHaveCount(41);
     await expect(picker.locator('optgroup')).toHaveCount(10);
     const options = await picker
       .locator('option')

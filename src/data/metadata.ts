@@ -43,6 +43,13 @@ export interface SpawnMeta {
 export interface TargetsMeta {
   /** Resolved H1 hitbox snapshot (source units). Additive v2 metadata for offline on-target derivation. */
   hitbox?: TargetHitboxConfig;
+  /**
+   * WP-66 / T3（FR-66.10）：本場是否帶命中視覺回饋。省略＝無（既有 payload 鍵面不變）。
+   *
+   * **不是指標、也不是刺激之外的任何構念**——它只是效度斷代的自述欄位：啟用命中回饋改變了刺激，
+   * 故啟用前後的 run 不可混池比較，分析端據此分池。
+   */
+  hitFeedback?: 'flash';
 }
 
 export interface WeaponMeta {
@@ -620,7 +627,16 @@ function requireTargetsMeta(value: unknown): TargetsMeta {
   const targets = requireRecord(value, 'targets');
   return {
     ...(targets.hitbox !== undefined ? { hitbox: requireTargetHitboxConfig(targets.hitbox, 'targets.hitbox') } : {}),
+    // WP-66 / T3：optional-in——省略時不寫入該鍵，既有 payload 的 canonical 位元組不移動。
+    ...(targets.hitFeedback !== undefined
+      ? { hitFeedback: requireHitFeedbackMeta(targets.hitFeedback, 'targets.hitFeedback') }
+      : {}),
   };
+}
+
+function requireHitFeedbackMeta(value: unknown, name: string): 'flash' {
+  if (value !== 'flash') throw new Error(`${name} must be flash`);
+  return value;
 }
 
 function requireTargetHitboxConfig(value: unknown, name: string): TargetHitboxConfig {

@@ -13,7 +13,7 @@
 | **Estimate** | 6–8.5 dev-days（T0～T5 + T-exit）。 |
 | **Risk** | **Med**。單一最高風險點在 T4 的**效度斷代**（改視覺＝改刺激，已收資料與新資料不可混池），不在程式。T1 觸及 `SimLoop` 命中路徑與 `SharedState`（91 callers），但屬 additive。 |
 | **IDs** | 規劃期（2026-09-11）：`exec-plan/README.md §2` 最大 WP = **WP-65**、`active/*/` 實際最大 = **WP-65**、`DECISIONS.md` 最大 GD = **GD-41**；[stage14 §3](../../stage14/README.md) 的三個候選（WP-66/67/68）**尚未採納**。依 [GD-15](../../../DECISIONS.md)「先採納先得」取用 **WP-66 / GD-42**，stage14 候選順延為 WP-67/68/69。⚠️ 依 [GD-35](../../../DECISIONS.md) ② 紀律，二號**必須於 T0 重查**；被平行 session 取用則順延、不爭號。 |
-| **Status** | ⬜ **未開工**（2026-09-11 規劃完成）。決策草稿 GD-42（D-66-1～D-66-6），**本體於 T-exit 入帳**（承 [WP-63](../wp-63-micro-flick-v8-measurement-foundation/README.md) D-63-P6 先例，規劃期只留草稿）。 |
+| **Status** | ✅ **T-exit 交付（2026-09-12）** —— A-66.1～A-66.12 十二條逐條具名證據成立，**GD-42 已入帳**；最終 gate：typecheck ×2 exit 0、Vitest **3186 passed / 2 skipped**、regression **324 passed**、Playwright **115 passed / 0 failed**、build exit 0。實際啟用 **八個** `tracking_br_v1` variant（T0 原列十個，經 OQ-66.6 排除整個 WP-54 tracking-pilot 家族）。逐條證據見 [progress §T-exit](progress.md)。⚠️ A-66.12 的 draw call 判準具名改寫為「ON/OFF 分布無系統性差異 + `poolSize` 不變」；兩項實機證據（刻意打偏不亮、projectile 亮起延遲）明帳以單元層證據替代。<br>**T0 記錄（保留）**：編號重查確認 **WP-66 / GD-42 未被取用**；四個 OQ 全數照預設收斂（啟用清單十個 `drillId` 見 [§1.4a](#14a-oq-收斂結果t0-定案2026-09-12)）；假設 #3 證實成立 ⇒ **T3 必改 `schema.ts`**。基線與三項須傳遞的偏離見 [progress.md §T0](progress.md#t0--entry-gate2026-09-12)。決策草稿 GD-42（D-66-1～D-66-6），**本體於 T-exit 入帳**（承 [WP-63](../wp-63-micro-flick-v8-measurement-foundation/README.md) D-63-P6 先例）。 |
 
 ### 落點說明
 
@@ -126,6 +126,45 @@ WP-65 的 FM-1 正是「三處 wiring 漏一處 ⇒ 換 drill 後行為不一致
 | **OQ-66.2** | 命中態維持時長（`HIT_FEEDBACK_HOLD_MS`）取值？ | **預設 120 ms**。使用者已定義語意為「命中才亮、沒中不亮」；tracking pilot 的射速約 10 Hz（≈100 ms 間隔）⇒ 120 ms 使**連續命中呈連續亮起**、**一次未命中在 ≤120 ms 內熄滅**，最貼合該語意且不閃爍。 | 使用者 | **T0** | T2 的常數值與其測試期望值 |
 | **OQ-66.3** | 命中態以 `emissive` 呈現（目標自體發光）還是換 `color`？ | **預設 `emissive`**：`MeshStandardMaterial.emissive` 預設即 `0x000000` ⇒ 未啟用時**逐位不變**；且保留目標原色身分，亮起語意最直觀。 | 規劃者（已定） | T0 | T2 的斷言屬性 |
 | **OQ-66.4** | 是否需要 `meta` 層級的效度斷代版本標記？ | **預設否**——本 WP 以 `meta` 的 additive 欄位（FR-66.10）逐 run 自述是否帶回饋，已足以讓分析端分池。[WP-65 T-exit](../wp-65-drill-arming-and-countdown/progress.md) 確認的 `meta` 版本標記工作屬**另一個獨立 WP**，本 WP 不夾帶。 | 使用者 | **T0** | 若改判為是 ⇒ 本 WP 需等該 schema WP，改為相依而非並行 |
+
+### 1.4a OQ 收斂結果（T0 定案，2026-09-12）
+
+四個 OQ **全數照上表預設收斂**（使用者 2026-09-12 回覆；OQ-66.3 為規劃期 D-66-P4 已定、T0 未推翻）。上表保留為決策脈絡，**本節為執行權威**。
+
+**OQ-66.1 — FR-66.11 的「指名清單」逐字定案。**
+
+> ⚠️ **T4（2026-09-12）修訂：下表第 9、10 列已被排除，實際啟用為前八個。**
+> `tracking_core_pr_pilot_v1_2deg_5dps` 與 `tracking_reversal_pilot_v1_high` 經 T4 執行期讀碼證實是
+> [`tracking-pilot-v2`](../../../../../src/pilot/trackingCompatibilityKey.ts) 這個**已版本化協定**六個 scored block 中的兩個。
+> 啟用將造成協定內 **2/6 帶回饋、4/6 不帶**（size／speed／reversal 三個對比全數與「有無回饋」共變），
+> 且 `checkTrackingCompatibility()` 的十個軸**沒有 `hitFeedback`** ⇒ 啟用前後的 run 取得相同 cohort key、無法分池
+> （＝ KI-025 的失效模式）。**使用者 2026-09-12 裁決選項 A：整個 WP-54 tracking-pilot 家族（九個 block）一律不啟用**，
+> 並以 census 表＋策展註冊表**兩個入口**的斷言釘死（3 個變異注入全數 RED）。
+> 日後若要啟用，必須連同 `TRACKING_PILOT_PROTOCOL_VERSION` 升版一起做，屬**另一個 WP**。
+> → 經過與證據見 [progress §T4](progress.md#open-questionst4)（OQ-66.6）。
+
+**T4 只能動下表第 1–8 列的 `drillId`，未列名者（含被划掉的 9、10）一律不啟用：**
+
+| # | `drillId` | 來源（具名常數，非手抄） |
+|---|---|---|
+| 1 | `tracking_br_v1` | `trackingBrVariants[3]`（`ads_on` × `projectile` × `0p5deg`） |
+| 2 | `tracking_br_v1__ads_off__hitscan__0p5deg` | `trackingBrVariants[0]` |
+| 3 | `tracking_br_v1__ads_on__hitscan__0p5deg` | `trackingBrVariants[1]` |
+| 4 | `tracking_br_v1__ads_off__projectile__0p5deg` | `trackingBrVariants[2]` |
+| 5 | `tracking_br_v1__ads_off__hitscan__2deg` | `trackingBrVariants[4]` |
+| 6 | `tracking_br_v1__ads_on__hitscan__2deg` | `trackingBrVariants[5]` |
+| 7 | `tracking_br_v1__ads_off__projectile__2deg` | `trackingBrVariants[6]` |
+| 8 | `tracking_br_v1__ads_on__projectile__2deg` | `trackingBrVariants[7]` |
+| ~~9~~ | ~~`tracking_core_pr_pilot_v1_2deg_5dps`~~ **← T4 排除** | `TRACKING_PILOT_SCHEDULABLE_DRILL_IDS[0]`（WP-64 策展） |
+| ~~10~~ | ~~`tracking_reversal_pilot_v1_high`~~ **← T4 排除** | `TRACKING_PILOT_SCHEDULABLE_DRILL_IDS[1]`（WP-64 策展） |
+
+**排除**：**全部九個 WP-54 tracking-pilot block**（T4 / OQ-66.6 裁決，含上表被划掉的兩個）、`hold_track_v1`（T0 讀碼證實 `mode: 'assessment'` 且落回 `STAGE6_PROTOCOL_VERSION = '1.0.0'`）與其餘七個未策展的 WP-54 pilot block。
+
+- **OQ-66.2** — `HIT_FEEDBACK_HOLD_MS = **120**`（照預設）。
+- **OQ-66.3** — 以 `emissive` 呈現（照預設）。
+- **OQ-66.4** — **不**新增 `meta` 版本標記（照預設）；該工作已另立為 [WP-67](../wp-67-export-opening-protocol-marker/README.md)（`meta.opening`），本 WP 不夾帶、不改為相依。
+
+> T0 執行證據、基線數字與三項須傳遞的偏離見 [progress.md §T0](progress.md#t0--entry-gate2026-09-12)。
 
 ---
 

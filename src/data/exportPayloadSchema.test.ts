@@ -775,6 +775,47 @@ function payloadWithEvents(events: unknown[]): unknown {
   return minimalPayload({ events });
 }
 
+// WP-66 / T3 (NFR-66.6) — `meta.targets.hitFeedback` is additive and optional-in: a payload
+// written before it must still parse, and one carrying it must survive the round trip. The
+// byte-identity half of the claim is already covered by CANONICAL_DIGEST_BEFORE_T5 above (none of
+// the eight fixtures carries the key, so any unconditional emission moves their digests).
+describe('parseExportPayload — WP-66 T3 targets.hitFeedback (additive)', () => {
+  function payloadWithTargets(targets: unknown): unknown {
+    return minimalPayload({ meta: minimalMeta({ targets }) });
+  }
+
+  it('parses a payload carrying targets.hitFeedback alongside the hitbox', () => {
+    const result = parseExportPayload(
+      payloadWithTargets({ hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 }, hitFeedback: 'flash' }),
+    );
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.targets).toEqual({
+      hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 },
+      hitFeedback: 'flash',
+    });
+  });
+
+  it('parses targets.hitFeedback with no hitbox present', () => {
+    const result = parseExportPayload(payloadWithTargets({ hitFeedback: 'flash' }));
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    expect(result.payload.meta.targets).toEqual({ hitFeedback: 'flash' });
+  });
+
+  it('still parses a pre-WP-66 payload whose targets block has no hitFeedback key', () => {
+    const result = parseExportPayload(payloadWithTargets({ hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } }));
+    if (!result.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(result.errors)}`);
+    // The key must stay **absent**, not materialize a default — a default would move canonical bytes.
+    expect(Object.keys(result.payload.meta.targets ?? {})).toEqual(['hitbox']);
+  });
+
+  it('rejects an unknown hitFeedback value with a field-named error', () => {
+    const result = parseExportPayload(payloadWithTargets({ hitFeedback: 'blink' }));
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((error) => error.path === 'meta.targets.hitFeedback')).toBe(true);
+  });
+});
+
 function minimalMeta(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     schemaVersion: 2,

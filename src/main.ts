@@ -81,6 +81,7 @@ import {
 import { createDrillRunner, type DrillRunner } from './drill/DrillRunner.ts';
 import {
   resolveDrillTimeLimitMs,
+  resolveHitFeedback,
   resolveTargetHitbox,
   targetHitboxToConfig,
   type DrillConfig,
@@ -120,12 +121,15 @@ import { microFlickRoomV5 } from './scene/scenes/micro-flick-room-v5.ts';
 import { microFlickRoomV6 } from './scene/scenes/micro-flick-room-v6.ts';
 import { microFlickRoomV7 } from './scene/scenes/micro-flick-room-v7.ts';
 import { microFlickRoomV8 } from './scene/scenes/micro-flick-room-v8.ts';
+import { microFlickRoomV9 } from './scene/scenes/micro-flick-room-v9.ts';
 import { spiderShotRoom } from './scene/scenes/spider-shot-room.ts';
 import { wideFlickArena } from './scene/scenes/wide-flick-arena.ts';
 import { detectionPopinV1 } from './drill/detection_popin_v1.ts';
 import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
+import { trackingReversalFeedbackV1 } from './drill/tracking_reversal_feedback_v1.ts';
+import { trackingCorePrFeedbackV1 } from './drill/tracking_core_pr_feedback_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
 import { holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
@@ -151,6 +155,7 @@ import { microFlickThreeTargetTestV5 } from './drill/micro_flick_three_target_te
 import { microFlickThreeTargetTestV6 } from './drill/micro_flick_three_target_test_v6.ts';
 import { microFlickThreeTargetTestV7 } from './drill/micro_flick_three_target_test_v7.ts';
 import { microFlickThreeTargetTestV8 } from './drill/micro_flick_three_target_test_v8.ts';
+import { microFlickThreeTargetTestV9 } from './drill/micro_flick_three_target_test_v9.ts';
 import defaultDrillSource from '../drills/counterstrafe_ad_v1.json';
 
 // 進入點必須走 'three/webgpu'（見 createRenderer），否則拿不到 WebGPURenderer。
@@ -185,6 +190,7 @@ const availableScenes: AvailableScene[] = [
   { id: microFlickRoomV6.sceneId, label: microFlickRoomV6.sceneId, config: microFlickRoomV6 },
   { id: microFlickRoomV7.sceneId, label: microFlickRoomV7.sceneId, config: microFlickRoomV7 },
   { id: microFlickRoomV8.sceneId, label: microFlickRoomV8.sceneId, config: microFlickRoomV8 },
+  { id: microFlickRoomV9.sceneId, label: microFlickRoomV9.sceneId, config: microFlickRoomV9 },
   { id: spiderShotRoom.sceneId, label: spiderShotRoom.sceneId, config: spiderShotRoom },
   // WP-57 / T3：寬場 arena。drill 的 roster 註冊需 arm-time resolve（FOV/aspect），屬 T6。
   { id: wideFlickArena.sceneId, label: wideFlickArena.sceneId, config: wideFlickArena },
@@ -296,7 +302,7 @@ const availableDrills: AvailableDrill[] = [
     source: microFlickThreeTargetTestV1.drill,
     sceneId: microFlickThreeTargetTestV1.sceneId,
   },
-  ...[microFlickThreeTargetTestV2, microFlickThreeTargetTestV3, microFlickThreeTargetTestV4, microFlickThreeTargetTestV5, microFlickThreeTargetTestV6, microFlickThreeTargetTestV7, microFlickThreeTargetTestV8].map((variant) => ({
+  ...[microFlickThreeTargetTestV2, microFlickThreeTargetTestV3, microFlickThreeTargetTestV4, microFlickThreeTargetTestV5, microFlickThreeTargetTestV6, microFlickThreeTargetTestV7, microFlickThreeTargetTestV8, microFlickThreeTargetTestV9].map((variant) => ({
     id: variant.id,
     label: variant.id,
     source: variant.drill,
@@ -315,6 +321,22 @@ const availableDrills: AvailableDrill[] = [
   // `field-low`, config by reference, withheld from the Controls dropdown) so a test can execute
   // those three claims instead of scanning this literal for them — see `drillRegistry.ts`.
   ...TRACKING_PILOT_RUNTIME_DRILLS,
+  // WP-66 後續（使用者 2026-09-12）：帶命中回饋的 reversal tracking。**不是** pilot block——
+  // 不在 `ALL_TRACKING_PILOT_CONFIGS`、不進 manifest，故 `tracking-pilot-v2` 逐位不變。scene 沿用
+  // pilot 的 `field-low` pin：`reversal-2d-v1` 的 ±13° 視窗是對該場景 clearance envelope 驗證過的。
+  {
+    id: trackingReversalFeedbackV1.drillId,
+    label: trackingReversalFeedbackV1.drillId,
+    source: trackingReversalFeedbackV1,
+    sceneId: 'field-low',
+  },
+  // 同上（使用者 2026-09-13）：core pseudorandom 的 3deg/14dps 格，帶命中回饋的獨立 drill。
+  {
+    id: trackingCorePrFeedbackV1.drillId,
+    label: trackingCorePrFeedbackV1.drillId,
+    source: trackingCorePrFeedbackV1,
+    sceneId: 'field-low',
+  },
 ];
 // WP-52: single-source lookup for the additive `visibility` meta every peek-click-transfer
 // pilot cell (v1 default, every v2 fixed candidate, and the v2 randomized cell) needs in its
@@ -834,6 +856,10 @@ async function buildCurrentExportPayload(
     },
     targets: {
       hitbox: targetHitboxToConfig(resolveTargetHitbox(activeDrillConfig)),
+      // WP-66 / T3（FR-66.10）：optional-in 的效度斷代自述——省略時不寫入該鍵，既有 payload 鍵面不變。
+      ...(activeDrillConfig.targets.hitFeedback !== undefined
+        ? { hitFeedback: activeDrillConfig.targets.hitFeedback }
+        : {}),
     },
     // WP-54 / T7：protocolGuard 快照原樣帶出（比照 spawn 的 opaque pass-through）。離線 eligibility
     // 必須能從 payload 本身得知這個 run 是否宣告了 requireFire，才不會用結果去定義判準。
@@ -1056,6 +1082,15 @@ const drillRunner: DrillRunner = {
     // 觸發的 pointerlockchange 恆不滿足 T5 掉鎖偵測的 phase 條件，不會誤標效度旗標。
     sharedState.armRequested = false;
     if (document.pointerLockElement !== null) document.exitPointerLock();
+    // WP-66 / T3（FR-66.9，FM-3）— 命中回饋接線的**單一來源**，理由與上面的釋鎖完全相同：
+    // 初始載入 / restartActiveDrill / loadWeaponById / activateDrill / loadSceneById 五條路徑
+    // 全部收斂到這一個 start()，在此接線 = 五條路徑一致，不需在各呼叫端各寫一次比較式。
+    // `installSceneLoad()` 重建 `targetView` 亦被涵蓋：它的兩個呼叫端（activateDrill /
+    // loadSceneById）都在重建後、同一個同步區塊內走到這裡，中間不可能夾一個 render frame。
+    // **順序關鍵**（WP-66 T2 Decision T2-b）：必須在 `activeDrillRunner.start(config)` **之前**——
+    // `setHitFeedback()` 會把高水位設回「尚未對齊」，下一幀只對齊、不補亮 backlog；目標 id 每場
+    // 自 `t0` 重編，補亮等於讓上一場的命中點亮這一場的同名目標（FM-2）。
+    targetView.setHitFeedback(resolveHitFeedback(config));
     activeDrillRunner.start(config);
   },
   tick(state, nowMs): void {
@@ -1440,6 +1475,11 @@ function installSceneLoad(
   sceneManager.dispose();
   sceneManager = nextScene.manager;
   resize();
+  // WP-66 / T3（FM-3）：重建的 view 其 `#hitFeedback` 回到預設 false，但此處**刻意不**接線——
+  // 本函式的兩個呼叫端（activateDrill / loadSceneById）都在同一個同步區塊內接著走到
+  // `drillRunner.start()`，由那個單一來源設值（中間不可能夾一個 render frame）。在此再寫一次
+  // 只會製造第二個比較式，且此刻 `activeDrillConfig` 仍是**舊** drill（activateDrill 要到下一行
+  // 才換）⇒ 寫在這裡反而讀起來是錯的。新增第三個呼叫端時，維持「呼叫端負責 start()」這條不變式。
   targetView = new TargetView(sceneManager.scene);
   impactView = new ImpactView(sceneManager.scene);
   tracerView = new TracerView(sceneManager.scene);
@@ -1612,13 +1652,19 @@ const protocolStatus = document.createElement('div');
 protocolStatus.id = 'protocol-status';
 protocolStatus.style.cssText = [
   'position:fixed',
-  'top:12px',
+  // WP-66 follow-up: this banner has to clear two neighbours at once. Top-center is
+  // `#metrics-hud` (top:12px, ~90px tall) and top-left is `#top-left-controls` (top:16px,
+  // 250px wide) — the launcher column is shown whenever the pointer is unlocked, which is
+  // exactly when this line reads "Session Plan 完成". So sit centered *below* the HUD row,
+  // and reserve 280px on each side so neither end can reach the launcher column (or the
+  // export buttons) on a narrow viewport.
+  'top:104px',
   'left:50%',
   'transform:translateX(-50%)',
   'display:none',
   'align-items:center',
   'gap:10px',
-  'max-width:min(92vw,760px)',
+  'max-width:min(720px,calc(100vw - 560px))',
   'padding:9px 12px',
   'font:700 13px/1.35 system-ui,sans-serif',
   'color:#e6e9ec',
@@ -1884,7 +1930,9 @@ function liveFrame(now: number): void {
   scopeOverlay.setActive(sharedState.heldAds && activeWeaponConfig().ads !== undefined);
   // 4) 目標 mesh 依 state 顯示/隱藏（唯讀；本 WP 目標序列由 T2/T3 的 TargetManager 寫入）。
   //    移動目標以 alpha 內插 posPrev→pos（WP-18 / T3，比照 player 位置；render-only，不寫 state）。
-  targetView.sync(sharedState.targets, alpha);
+  //    命中回饋（WP-66 / T3）：`hits` 與 `nowMs` 必須**同時**傳（只傳其一會靜默退回舊行為）；
+  //    `now` 為 rAF 時鐘,與相鄰的 `tracerView.sync(..., now)` 同一個值、同一個時鐘域。
+  targetView.sync(sharedState.targets, alpha, sharedState.targetHits, now);
   // 4b) 彈孔 InstancedMesh 依 impacts 環形格增量同步（WP-13 / T3；唯讀，sim 命中時寫入）。
   impactView.sync(sharedState.impacts);
   // 4c) tracer InstancedMesh 依 shotRays 環形格增量同步（WP-25 / T1；關閉時不呼叫 sync = 零工作）。

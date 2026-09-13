@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { resolveDrillTimeLimitMs } from './DrillConfig.ts';
 import { loadDrill } from './DrillLoader.ts';
 import {
   MICRO_FLICK_V2_TARGET_DIAMETER_U,
@@ -29,6 +30,12 @@ import { microFlickRoomV7 } from '../scene/scenes/micro-flick-room-v7.ts';
 import { microFlickThreeTargetTestV7, MICRO_FLICK_V7_TARGET_DIAMETER_U } from './micro_flick_three_target_test_v7.ts';
 import { microFlickRoomV8 } from '../scene/scenes/micro-flick-room-v8.ts';
 import { microFlickThreeTargetTestV8, MICRO_FLICK_V8_TARGET_DIAMETER_U } from './micro_flick_three_target_test_v8.ts';
+import { microFlickRoomV9 } from '../scene/scenes/micro-flick-room-v9.ts';
+import {
+  microFlickThreeTargetTestV9,
+  MICRO_FLICK_V9_TARGET_DIAMETER_U,
+  MICRO_FLICK_V9_TIME_LIMIT_MS,
+} from './micro_flick_three_target_test_v9.ts';
 
 const variants = [
   { label: 'v2', fixture: microFlickThreeTargetTestV2, scene: microFlickRoomV2, distance: 17, range: [16, 18], diameter: MICRO_FLICK_V2_TARGET_DIAMETER_U, room: [16, 44, 12], endZ: -22.06, yaw: [-22, 22], pitch: [-12, 12], expectedApparentDiameterDeg: 3 },
@@ -69,6 +76,43 @@ describe('micro-flick deep-corridor variants', () => {
       preferredReplacementSeparationDeg: 2.6,
     });
     expect(parsed.sequence.seed).toBe(56008);
+  });
+
+  it('shrinks the v9 sphere 10% below v8 and ends it on the clock, not on a kill budget', () => {
+    const parsed = loadDrill(microFlickThreeTargetTestV9.drill, microFlickRoomV9);
+    const v8 = loadDrill(microFlickThreeTargetTestV8.drill, microFlickRoomV8);
+
+    expect(microFlickThreeTargetTestV9.sceneId).toBe('micro-flick-room-v9');
+    expect(microFlickRoomV9.proceduralRoom).toEqual(microFlickRoomV7.proceduralRoom);
+    expect(parsed.mode).toBe('practice');
+
+    // The only two deliberate departures from v8: a 10% smaller sphere and a 60 s time limit.
+    expect(MICRO_FLICK_V9_TARGET_DIAMETER_U).toBeCloseTo(MICRO_FLICK_V8_TARGET_DIAMETER_U * 0.9, 12);
+    expect(parsed.targets.hitbox).toEqual({
+      widthU: MICRO_FLICK_V9_TARGET_DIAMETER_U,
+      heightU: MICRO_FLICK_V9_TARGET_DIAMETER_U,
+      depthU: MICRO_FLICK_V9_TARGET_DIAMETER_U,
+      shape: 'sphere',
+    });
+    expect(parsed.endCondition).toEqual({ type: 'timeLimit', value: MICRO_FLICK_V9_TIME_LIMIT_MS });
+    expect(MICRO_FLICK_V9_TIME_LIMIT_MS).toBe(60000);
+    expect(resolveDrillTimeLimitMs(parsed)).toBe(60000);
+    // A timed run must not be cut short by the spawn budget: `count` is a ceiling far above any
+    // reachable kill rate, and no 120 s backstop may preempt the 60 s the drill promises.
+    expect(parsed.targets.count).toBeGreaterThanOrEqual(
+      Math.ceil((MICRO_FLICK_V9_TIME_LIMIT_MS / 1000) * 10),
+    );
+    expect(parsed.timing.timeLimitMs).toBeUndefined();
+
+    // Everything else is v8's field, verbatim.
+    expect(parsed.targets.distance).toBe(v8.targets.distance);
+    expect(parsed.targets.population).toEqual(v8.targets.population);
+    expect(parsed.targets.spawnArea).toEqual(v8.targets.spawnArea);
+    expect(parsed.playerControl).toEqual(v8.playerControl);
+    expect(parsed.timing.countdownMs).toBe(v8.timing.countdownMs);
+    // A distinct seed keeps v9's spawn stream from replaying v8's under a different ball size.
+    expect(parsed.sequence.seed).toBe(56009);
+    expect(parsed.sequence.seed).not.toBe(v8.sequence.seed);
   });
 
   it.each(variants)('$label binds its practice drill, deep corridor, and target envelope', ({ fixture, scene, distance, range, diameter, room, endZ, expectedApparentDiameterDeg }) => {

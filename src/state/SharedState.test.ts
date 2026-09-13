@@ -5,14 +5,18 @@ import {
   createImpactRing,
   createSharedState,
   createShotRayRing,
+  createTargetHitRing,
   IMPACT_CAP,
   pushImpact,
   pushShotRay,
+  pushTargetHit,
   resetImpactRing,
   resetBulletArena,
   resetShotRayRing,
+  resetTargetHitRing,
   resetState,
   sharedState,
+  TARGET_HIT_CAP,
   TRACER_CAP,
 } from './SharedState.ts';
 import { pushEvent } from './inputRingTestUtil.ts';
@@ -307,5 +311,101 @@ describe('ShotRayRing — tracer 軌跡環形格（WP-25 / T1）', () => {
     expect(Array.from(r.seq)).toEqual(new Array(TRACER_CAP).fill(0));
     expect(r.ox).toBe(oxRef);
     expect(r.seq).toBe(seqRef);
+  });
+});
+
+describe('TargetHitRing — 命中目標環形格（WP-66 / T1）', () => {
+  it('createTargetHitRing 全空：total/cursor 0、seq 全 0、id 全空字串、容量 = TARGET_HIT_CAP', () => {
+    const r = createTargetHitRing();
+    expect(r.total).toBe(0);
+    expect(r.cursor).toBe(0);
+    expect(r.id).toHaveLength(TARGET_HIT_CAP);
+    expect(r.seq).toHaveLength(TARGET_HIT_CAP);
+    expect(r.id).toEqual(new Array(TARGET_HIT_CAP).fill(''));
+    expect(Array.from(r.seq)).toEqual(new Array(TARGET_HIT_CAP).fill(0));
+  });
+
+  it('pushTargetHit 就地寫 id、蓋單調 seq（1 起）、推進游標', () => {
+    const r = createTargetHitRing();
+    pushTargetHit(r, 't0');
+    pushTargetHit(r, 't1');
+
+    expect(r.total).toBe(2);
+    expect(r.cursor).toBe(2);
+    expect([r.id[0], r.id[1]]).toEqual(['t0', 't1']);
+    expect(r.seq[0]).toBe(1);
+    expect(r.seq[1]).toBe(2);
+    expect(r.id[2]).toBe(''); // 未寫入槽維持空槽哨兵
+  });
+
+  it('寫入的是既有 id 字串的同一參考（熱路徑不組字串，GC 紀律）', () => {
+    const r = createTargetHitRing();
+    const targetId = `t${1 + 1}`; // 執行期組出的字串，確保不是常數池的同一實例
+    pushTargetHit(r, targetId);
+    expect(r.id[0]).toBe(targetId); // toBe = Object.is ⇒ 同一參考，非複製
+  });
+
+  it('空字串 id 為 no-op（防呆，不拋、不推進游標）', () => {
+    const r = createTargetHitRing();
+    pushTargetHit(r, '');
+    expect(r.total).toBe(0);
+    expect(r.cursor).toBe(0);
+    expect(Array.from(r.seq)).toEqual(new Array(TARGET_HIT_CAP).fill(0));
+  });
+
+  it('溢位 → 環狀覆寫最舊槽（游標繞回、seq 遞增使舊槽被判為新命中；不宣稱零丟失，FM-8）', () => {
+    const r = createTargetHitRing();
+    for (let i = 0; i < TARGET_HIT_CAP; i++) pushTargetHit(r, `t${i}`);
+    expect(r.total).toBe(TARGET_HIT_CAP);
+    expect(r.cursor).toBe(0);
+    expect(r.id[0]).toBe('t0');
+    expect(r.seq[0]).toBe(1);
+
+    // 繞圈 3 次：最舊槽被覆寫，seq 全程單調遞增。
+    pushTargetHit(r, 'wrap0');
+    pushTargetHit(r, 'wrap1');
+    pushTargetHit(r, 'wrap2');
+
+    expect(r.total).toBe(TARGET_HIT_CAP + 3);
+    expect(r.cursor).toBe(3);
+    expect([r.id[0], r.id[1], r.id[2]]).toEqual(['wrap0', 'wrap1', 'wrap2']);
+    expect(r.seq[0]).toBe(TARGET_HIT_CAP + 1);
+    expect(r.seq[1]).toBe(TARGET_HIT_CAP + 2);
+    expect(r.seq[2]).toBe(TARGET_HIT_CAP + 3);
+  });
+
+  it('resetTargetHitRing 原地清空：total/cursor 0、seq 全清、id 全清，且重用同一陣列（不 realloc）', () => {
+    const r = createTargetHitRing();
+    const idRef = r.id;
+    const seqRef = r.seq;
+    pushTargetHit(r, 't0');
+
+    resetTargetHitRing(r);
+
+    expect(r.total).toBe(0);
+    expect(r.cursor).toBe(0);
+    expect(Array.from(r.seq)).toEqual(new Array(TARGET_HIT_CAP).fill(0));
+    expect(r.id).toEqual(new Array(TARGET_HIT_CAP).fill('')); // 殘留身分不得被 render 誤讀
+    expect(r.id).toBe(idRef);
+    expect(r.seq).toBe(seqRef);
+  });
+
+  it('createSharedState 帶一份全空的命中格；resetState 原地清空且重用同一陣列', () => {
+    const state = createSharedState();
+    expect(state.targetHits.total).toBe(0);
+    expect(state.targetHits.cursor).toBe(0);
+
+    const idRef = state.targetHits.id;
+    const seqRef = state.targetHits.seq;
+    pushTargetHit(state.targetHits, 't0');
+    expect(state.targetHits.total).toBe(1);
+
+    resetState(state); // 重開 drill → 命中回饋清
+
+    expect(state.targetHits.total).toBe(0);
+    expect(state.targetHits.cursor).toBe(0);
+    expect(state.targetHits.id[0]).toBe('');
+    expect(state.targetHits.id).toBe(idRef);
+    expect(state.targetHits.seq).toBe(seqRef);
   });
 });

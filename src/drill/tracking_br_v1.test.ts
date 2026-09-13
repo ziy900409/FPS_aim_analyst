@@ -79,6 +79,23 @@ describe('tracking_br_v1 drill config', () => {
     }
   });
 
+  /**
+   * WP-66 / T4 — 回饋必須**逐格相同**，這是條件矩陣效度的前提，不只是「有開到」。
+   *
+   * 若有任何一格與其他格不同，`ads` / `ballistic` / `angularHeight` 三個被操弄變數就與「有無命中
+   * 回饋」共變，2x2x2 的每一條主效果與交互作用都不再可解釋。斷言寫成「集合大小 = 1」而非逐格
+   * 比對字面量,是為了讓「八格一致」這件事本身成為被守住的性質。
+   *
+   * `brTrackingProtocol` 的 conditions 就是 `trackingBrVariants` 全部八格,所以這條同時保證了
+   * `br_tracking_v1` protocol 內部的所有條件帶同一種回饋。
+   */
+  it('applies hit feedback uniformly across all eight cells (WP-66 / FR-66.11)', () => {
+    const values = new Set(trackingBrVariants.map((variant) => loadDrill(variant.drill, brField).targets.hitFeedback));
+
+    expect(values.size).toBe(1);
+    expect([...values]).toEqual(['flash']);
+  });
+
   it('uses ADS/projectile weapon gates only through variant weapon ids', () => {
     for (const variant of trackingBrVariants) {
       const cfg = loadDrill(variant.drill, brField);

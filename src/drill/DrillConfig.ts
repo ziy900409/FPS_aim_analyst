@@ -239,6 +239,20 @@ export interface DrillConfig {
      * 不同的獨立驅動路徑，見 `TargetManager` 的 trajectory drive 分支。Researcher/pilot-only。
      */
     trackingTrajectory?: TrackingTrajectoryConfig;
+    /**
+     * WP-66 / T3：命中視覺回饋（**render-only**）。`'flash'` = 命中當下目標亮起、
+     * `HIT_FEEDBACK_HOLD_MS` 內未再命中即熄滅（`src/render/TargetView.ts`）。
+     *
+     * 省略＝不顯示回饋，且**不寫入匯出 metadata**（既有 drill 逐位不變，FR-66.8）。
+     *
+     * 本欄**不得**影響命中判定、目標推進、hitbox 或任何指標——它消費的是既有命中判定的布林
+     * 結果，不新增第二套幾何或閾值（GD-7）；且不得被 `src/metrics/`／`research/` 讀取，
+     * 亮起只代表「這一發判定命中」，**不是** on-target 構念的第二定義（C-D3／C-D4，FR-66.12）。
+     *
+     * 啟用即構成**效度斷代**：啟用前後的資料不可混池比較，故逐 run 由 `meta.targets.hitFeedback`
+     * 自述（FR-66.10）。
+     */
+    readonly hitFeedback?: 'flash';
   };
   /** 左右交替序列:`alternation` 首字定首側（對齊 `TargetManager.reset(seq)`）;`seed` 驅動 WP-21 seeded spawn。 */
   sequence: { alternation: 'LR' | 'RL'; seed?: number; spawnDelayMsRange?: [number, number] };
@@ -309,6 +323,18 @@ export interface DrillConfig {
 export function resolveDrillTimeLimitMs(config: DrillConfig): number | undefined {
   const endCondition = config.endCondition;
   return endCondition.type === 'timeLimit' ? endCondition.value : undefined;
+}
+
+/**
+ * WP-66 / T3（FR-66.8／FR-66.9）：這個 drill 要不要顯示命中視覺回饋。
+ *
+ * `main.ts` 的**單一**接線點（`drillRunner.start()` façade）共用這一個定義，四條進入路徑
+ * （初始載入／換 drill／換武器／換場景）因此不可能各自寫出不同的比較式（FM-3）。
+ *
+ * 純函式、無時鐘、無配置；`'flash'` 以外的值由 `schema.ts` 在載入 JSON drill 時攔下。
+ */
+export function resolveHitFeedback(config?: DrillConfig): boolean {
+  return config?.targets.hitFeedback === 'flash';
 }
 
 export function resolveTargetHitbox(config?: DrillConfig): TargetHitboxSize {

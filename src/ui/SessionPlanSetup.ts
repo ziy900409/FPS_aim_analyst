@@ -347,7 +347,14 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
   const buttonRow = document.createElement('div');
   buttonRow.style.cssText = 'display:flex;gap:8px';
   buttonRow.append(submit, cancel);
-  form.append(title, desc, modeFieldset, frozenSection, customSection, status, buttonRow);
+  // A long custom program pushes the card past its 88vh cap, and on a 800px-tall screen that used to
+  // put 開始/取消 — and the `role="alert"` status line explaining *why* a plan will not compile —
+  // below the fold. Pinning the footer to the bottom of the scrollport keeps both on screen at any
+  // item count. The negative margins let it span the card's own 20px padding.
+  const footer = document.createElement('div');
+  footer.style.cssText = footerCss;
+  footer.append(status, buttonRow);
+  form.append(title, desc, modeFieldset, frozenSection, customSection, footer);
   root.appendChild(form);
   parent.appendChild(root);
 
@@ -374,9 +381,14 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
       row.style.cssText = itemRowCss;
       const handle = document.createElement('span');
       handle.textContent = '⋮⋮';
+      handle.style.cssText = 'flex:0 0 auto;cursor:grab';
       const name = document.createElement('span');
       name.textContent = item.drillId;
-      name.style.cssText = 'flex:1';
+      // The ids run to ~40 chars, and a flex item defaults to min-width:auto — so without this the
+      // row cannot shrink and the card grows a horizontal scrollbar that hides the ▼/✕ controls.
+      // `title` keeps the full id reachable once it ellipsizes.
+      name.title = item.drillId;
+      name.style.cssText = 'flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
       const reps = document.createElement('input');
       reps.type = 'number';
       reps.name = 'sessionPlanReps';
@@ -384,7 +396,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
       reps.step = '1';
       reps.value = String(item.reps);
       reps.setAttribute('aria-label', `${item.drillId} 重複次數`);
-      reps.style.cssText = `${inputCss};width:72px`;
+      reps.style.cssText = `${inputCss};width:72px;flex:0 0 auto`;
       // Only the preview is rebuilt on input: re-rendering the row here would destroy the very
       // field being typed into, which in a real browser means losing focus on every keystroke.
       reps.addEventListener('input', () => {
@@ -395,7 +407,7 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
       weapon.name = 'sessionPlanWeapon';
       weapon.value = item.weaponId ?? '';
       weapon.setAttribute('aria-label', `${item.drillId} 武器`);
-      weapon.style.cssText = `${inputCss};width:176px`;
+      weapon.style.cssText = `${inputCss};width:176px;flex:0 0 auto`;
       const defaultWeapon = document.createElement('option');
       defaultWeapon.value = '';
       defaultWeapon.textContent = '—（drill 預設）';
@@ -614,12 +626,12 @@ function makeIconButton(glyph: string, ariaLabel: string): HTMLButtonElement {
   button.title = ariaLabel;
   button.setAttribute('aria-label', ariaLabel);
   button.style.cssText =
-    'height:28px;min-width:28px;padding:0 6px;border:1px solid rgba(255,255,255,0.18);border-radius:6px;font:700 12px/1 system-ui,sans-serif;color:#e6e9ec;background:rgba(15,18,21,0.96);cursor:pointer';
+    'height:28px;min-width:28px;flex:0 0 auto;padding:0 6px;border:1px solid rgba(255,255,255,0.18);border-radius:6px;font:700 12px/1 system-ui,sans-serif;color:#e6e9ec;background:rgba(15,18,21,0.96);cursor:pointer';
   return button;
 }
 
 const overlayCss = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,12,14,0.82);pointer-events:auto;z-index:60';
-const cardCss = 'display:flex;flex-direction:column;gap:12px;max-width:min(88vw,620px);max-height:88vh;overflow:auto;padding:20px;background:rgba(24,27,30,0.98);border:1px solid rgba(255,255,255,0.14);border-radius:10px;box-shadow:0 18px 48px rgba(0,0,0,0.4);color:#edf2f7';
+const cardCss = 'display:flex;flex-direction:column;gap:12px;width:min(92vw,820px);max-width:min(92vw,820px);max-height:88vh;overflow:auto;padding:20px;background:rgba(24,27,30,0.98);border:1px solid rgba(255,255,255,0.14);border-radius:10px;box-shadow:0 18px 48px rgba(0,0,0,0.4);color:#edf2f7';
 const headingCss = 'margin:0;font:750 18px/1.3 system-ui,sans-serif';
 const descriptionCss = 'margin:0;font:500 13px/1.5 system-ui,sans-serif;color:#aeb6bf';
 const labelCss = 'font:700 13px/1.4 system-ui,sans-serif';
@@ -627,9 +639,13 @@ const rowCss = 'display:flex;align-items:center;gap:8px;font:600 13px/1.4 system
 const fieldCss = 'display:grid;gap:6px';
 const fieldsetCss = 'border:0;padding:0;margin:0;display:grid;gap:8px';
 const sectionCss = 'display:grid;gap:12px';
-const itemRowCss = 'display:flex;align-items:center;gap:8px;padding:4px 6px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;font:600 13px/1.4 system-ui,sans-serif';
+const itemRowCss = 'display:flex;align-items:center;gap:8px;min-width:0;padding:4px 6px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;font:600 13px/1.4 system-ui,sans-serif';
 const previewCss = 'display:grid;gap:6px;max-height:240px;overflow:auto;padding:8px;border:1px solid rgba(255,255,255,0.12);border-radius:6px;background:rgba(15,18,21,0.6)';
 const previewRunCss = 'font:600 12px/1.5 ui-monospace,SFMono-Regular,monospace;color:#edf2f7';
 const previewRestCss = 'font:600 12px/1.5 ui-monospace,SFMono-Regular,monospace;color:#aeb6bf';
 const inputCss = 'height:36px;padding:0 8px;border:1px solid rgba(255,255,255,0.18);border-radius:6px;background:#171a1e;color:#edf2f7;font:600 13px/1 system-ui,sans-serif';
+// `bottom:-20px` (not 0) because the sticky constraint rect is the card's *content* box: at 0 the
+// bar parks 20px above the visible edge and the scrolled content shows through that gap. Opaque,
+// not the card's 0.98 alpha, so rows passing underneath do not bleed through the bar.
+const footerCss = 'position:sticky;bottom:-20px;z-index:1;display:grid;gap:8px;margin:0 -20px 0;padding:12px 20px 16px;background:#181b1e;border-top:1px solid rgba(255,255,255,0.10)';
 const statusCss = 'margin:0;min-height:18px;font:650 13px/1.4 system-ui,sans-serif;color:#f0c674';

@@ -636,6 +636,49 @@ describe('collectMeta', () => {
     ).toThrow('targets.hitbox.heightU');
   });
 
+  // WP-66 / T3（FR-66.8／FR-66.10）—— `meta.targets.hitFeedback` 為 optional-in 的效度斷代自述。
+  it('carries targets.hitFeedback when the drill turns hit feedback on (WP-66 / T3)', () => {
+    expect(
+      collectMeta({
+        drillId: 'tracking_br_v1',
+        backend: 'webgl2',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        targets: { hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 }, hitFeedback: 'flash' },
+      }).targets,
+    ).toEqual({ hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 }, hitFeedback: 'flash' });
+  });
+
+  it('omits targets.hitFeedback entirely when unset — meta.targets key set is byte-identical to the T0 baseline (WP-66 / T3)', () => {
+    const targets = collectMeta({
+      drillId: 'tracking_br_v1',
+      backend: 'webgl2',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      targets: { hitbox: { widthU: 0.5, heightU: 1, depthU: 0.5 } },
+    }).targets;
+    // T0 基線逐字記錄：`meta.targets` 恰一鍵 `hitbox`（progress.md §T0.3）。
+    expect(Object.keys(targets ?? {})).toEqual(['hitbox']);
+  });
+
+  it('rejects a malformed targets.hitFeedback value (WP-66 / T3)', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'tracking_br_v1',
+        backend: 'webgl2',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        targets: { hitFeedback: 'blink' as 'flash' },
+      }),
+    ).toThrow('targets.hitFeedback');
+  });
+
   it('accepts stage3 scene metadata including fallback state', () => {
     expect(
       collectMeta({

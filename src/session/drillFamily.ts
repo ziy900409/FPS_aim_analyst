@@ -12,6 +12,7 @@ import { microFlickThreeTargetTestV5 } from '../drill/micro_flick_three_target_t
 import { microFlickThreeTargetTestV6 } from '../drill/micro_flick_three_target_test_v6.ts';
 import { microFlickThreeTargetTestV7 } from '../drill/micro_flick_three_target_test_v7.ts';
 import { microFlickThreeTargetTestV8 } from '../drill/micro_flick_three_target_test_v8.ts';
+import { microFlickThreeTargetTestV9 } from '../drill/micro_flick_three_target_test_v9.ts';
 import { peekClickTransferPilotV1 } from '../drill/peek_click_transfer_pilot_v1.ts';
 import {
   PEEK_CLICK_TRANSFER_PILOT_V2_CANDIDATES,
@@ -25,6 +26,8 @@ import { spiderShotV3Binding } from '../drill/spider_shot_v3.ts';
 import { spiderShotWideV1Binding } from '../drill/spider_shot_wide_v1.ts';
 import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
 import { trackingLongrangeV1 } from '../drill/tracking_longrange_v1.ts';
+import { trackingCorePrFeedbackV1 } from '../drill/tracking_core_pr_feedback_v1.ts';
+import { trackingReversalFeedbackV1 } from '../drill/tracking_reversal_feedback_v1.ts';
 import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { trackingV1 } from '../drill/tracking_v1.ts';
 import { isWeaponId, type WeaponId } from '../weapon/weapons.ts';
@@ -76,6 +79,11 @@ const FAMILY_ROSTER: readonly (readonly [SessionFamilyId, readonly string[]])[] 
       // runtime registry cannot disagree about which pilot blocks a Session Plan may reach
       // (FM-64.2). The other seven WP-54 blocks stay absent and therefore unschedulable.
       ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => entry.config.drillId),
+      // WP-66 後續（使用者 2026-09-12）：帶命中回饋的 reversal tracking。獨立 drill id，**不是**
+      // tracking-pilot block，故不經 `TRACKING_PILOT_SCHEDULABLE_DRILLS`——把它放在那個策展清單裡
+      // 會被 census 檢查擋下（它本來就不該通過：那份清單只收 WP-54 的九個 block）。
+      trackingReversalFeedbackV1.drillId,
+      trackingCorePrFeedbackV1.drillId,
     ],
   ],
   ['detection', [detectionPopinV1.drillId]],
@@ -90,6 +98,7 @@ const FAMILY_ROSTER: readonly (readonly [SessionFamilyId, readonly string[]])[] 
       microFlickThreeTargetTestV6.id,
       microFlickThreeTargetTestV7.id,
       microFlickThreeTargetTestV8.id,
+      microFlickThreeTargetTestV9.id,
     ],
   ],
 ];
@@ -116,7 +125,7 @@ export const FAMILY_BY_DRILL_ID: ReadonlyMap<string, SessionFamilyId> = buildFam
 
 /**
  * Every schedulable drill id, grouped by family in `FAMILY_ROSTER` order. The grouping is the point:
- * the roster is 38 entries, so a flat alphabetical menu would be unusable (WP-58 §3.2 debt).
+ * the roster is 39 entries, so a flat alphabetical menu would be unusable (WP-58 §3.2 debt).
  */
 export const SCHEDULABLE_DRILL_IDS: readonly string[] = [...FAMILY_BY_DRILL_ID.keys()];
 
@@ -146,6 +155,10 @@ const DECLARED_WEAPON_ROSTER: readonly DeclaredWeaponRosterEntry[] = [
   // WP-64 T1 (FR-64.4) — read off the same curated configs the family row above is derived from, so
   // a block cannot become schedulable without its weapon becoming fixed in the same step (FM-64.3).
   ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => [entry.config.drillId, entry.config.weaponId] as const),
+  // 同上：它沿用 pilot 的 `tracking_pilot_hold`（零後座力 hold 武器），武器是該任務的固定因子，
+  // 不可被 Session Plan 逐列武器指定覆蓋（WP-62 / D-62-1）。
+  [trackingReversalFeedbackV1.drillId, trackingReversalFeedbackV1.weaponId] as const,
+  [trackingCorePrFeedbackV1.drillId, trackingCorePrFeedbackV1.weaponId] as const,
 ];
 
 /**

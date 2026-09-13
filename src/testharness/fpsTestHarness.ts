@@ -411,6 +411,9 @@ export function createFpsTestHarness(deps: HarnessDeps): FpsTestHarness {
       },
       targets: {
         hitbox: targetHitboxToConfig(resolveTargetHitbox(config)),
+        // WP-66 / T3：與 live `buildCurrentExportPayload()` 同一 optional-in 形狀——harness 走的是
+        // 獨立管線，`meta` 的斷代自述不能只在其中一條成立。
+        ...(config.targets.hitFeedback !== undefined ? { hitFeedback: config.targets.hitFeedback } : {}),
       },
       ...(config.protocolGuard !== undefined ? { protocolGuard: config.protocolGuard } : {}),
       spawn: {

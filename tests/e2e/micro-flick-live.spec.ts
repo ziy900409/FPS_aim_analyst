@@ -20,8 +20,10 @@ type FpsTestHarness = {
   startDrill(id: string): void;
   feedInput(seq: HarnessInputEvent[]): void;
   forceExportJSON(): {
+    meta: { drillId: string; targets?: { hitbox?: { widthU: number; heightU: number; depthU: number; shape?: string } } };
     events: Array<{
       type: string;
+      t?: number;
       targetId?: string;
       hit?: boolean;
       targetX?: number;
@@ -265,4 +267,185 @@ test('WP-56 T5: cached researcher drill selection reaches the first visible corr
     `[WP-56 T5 perf] cached researcher selection: samples=20 p50=${[...samples].sort((a, b) => a - b)[9].toFixed(1)}ms p95=${p95Ms.toFixed(1)}ms max=${Math.max(...samples).toFixed(1)}ms`,
   );
   expect(p95Ms).toBeLessThan(1_500);
+});
+
+// ---------------------------------------------------------------------------
+// micro-flick v9 — the timed variant.
+//
+// v9 is v8's field with exactly two departures: a 10% smaller sphere and a
+// `timeLimit` end condition. Both gates below are written against *that*
+// difference rather than against v9 in isolation — a gate that only asserted
+// "v9 ran and ended" would still pass if v9 had silently inherited v8's
+// 60-kill budget, which is the one regression worth catching here.
+// ---------------------------------------------------------------------------
+
+/**
+ * Restated rather than imported from the drill module on purpose. `tests/e2e/` sits outside the app
+ * tsconfig and, more to the point, a spec that derives its expectations from the module under test
+ * agrees with it by construction. These numbers are the contract v9 published; if the module changes
+ * them, this is where that has to be noticed and argued, not silently absorbed.
+ */
+const MICRO_FLICK_V9_TIME_LIMIT_MS = 60_000;
+/** v8's 1.08375u x 0.9. */
+const MICRO_FLICK_V9_DIAMETER_U = 0.975375;
+const MICRO_FLICK_V8_DIAMETER_U = 1.08375;
+
+test('v9: the browser harness ends micro-flick v9 on its 60 s clock rather than on a kill budget', async ({ page }) => {
+  test.setTimeout(120_000);
+  await gotoAppReady(page);
+  await waitForHarness(page);
+
+  // 80 taps = 40 s of running: comfortably past the 60 kills that end v8, comfortably short of 60 s.
+  // Unlike the v1 budget gate above, a dropped tap here is harmless — v9 is scored by the clock, so
+  // a miss costs a kill rather than stalling the end condition. That is exactly the property under
+  // test, which is why the tap cadence is not load-bearing in this gate the way it is in that one.
+  const run = await page.evaluate(
+    ({ tapIntervalMs, budgetLegTaps, limitMs }) => {
+      const harness = (window as unknown as { __fpsTest: FpsTestHarness }).__fpsTest;
+      const taps = (count: number): HarnessInputEvent[] =>
+        Array.from({ length: count }, (_unused, index) => {
+          const t = index * tapIntervalMs;
+          return [
+            { type: 'fire' as const, down: true, t },
+            { type: 'fire' as const, down: false, t: t + 8 },
+          ];
+        }).flat();
+      const checkpoint = (): { phase: string; hits: number; lastHitT?: number } => {
+        const hits = harness.forceExportJSON().events.filter((event) => event.type === 'fire' && event.hit);
+        return { phase: harness.phase(), hits: hits.length, lastHitT: hits[hits.length - 1]?.t };
+      };
+
+      harness.startDrill('micro_flick_three_target_test_v9');
+
+      harness.feedInput(taps(budgetLegTaps));
+      const pastBudget = checkpoint();
+
+      // One tap ~1.5 s short of the limit, then one ~1.5 s past it. `feedInput` advances tick by tick
+      // to each event's offset, so these two legs straddle the 60 s boundary without ever consulting a
+      // wall clock — the harness runs a synthetic clock, which is what makes the straddle exact.
+      harness.feedInput([
+        { type: 'fire', down: true, t: limitMs - budgetLegTaps * tapIntervalMs - 1_500 },
+        { type: 'fire', down: false, t: limitMs - budgetLegTaps * tapIntervalMs - 1_492 },
+      ]);
+      const beforeLimit = checkpoint();
+
+      harness.feedInput([
+        { type: 'fire', down: true, t: 3_000 },
+        { type: 'fire', down: false, t: 3_008 },
+      ]);
+      const afterLimit = checkpoint();
+
+      const payload = harness.forceExportJSON();
+      return {
+        pastBudget,
+        beforeLimit,
+        afterLimit,
+        drillId: payload.meta.drillId,
+        hitbox: payload.meta.targets?.hitbox,
+        // The first target becomes visible on the tick the countdown ends, so this is the run's t0.
+        firstVisibleT: payload.events.find((event) => event.type === 'visible')?.t,
+      };
+    },
+    {
+      tapIntervalMs: MICRO_FLICK_TAP_INTERVAL_MS,
+      budgetLegTaps: 80,
+      limitMs: MICRO_FLICK_V9_TIME_LIMIT_MS,
+    },
+  );
+
+  expect(run.drillId).toBe('micro_flick_three_target_test_v9');
+
+  // The claim: 40 s in, with v8's entire 60-kill budget already spent, v9 is still running.
+  expect(run.pastBudget.hits).toBeGreaterThan(60);
+  expect(run.pastBudget.phase).toBe('running');
+  // Still running 1.5 s short of the limit, ended 1.5 s past it. Together these pin the end to the
+  // 60 s mark rather than merely to somewhere after the budget.
+  expect(run.beforeLimit.phase).toBe('running');
+  expect(run.afterLimit.phase).toBe('ended');
+  // Deliberately NOT asserted: that the post-limit tap scored nothing. It does score — `DrillRunner`
+  // stops driving targets when it ends but leaves the three survivors standing, and the fire->hit
+  // path runs through `targetManager` regardless of phase. That is pre-existing behaviour shared by
+  // every `timeLimit` drill rather than anything v9 introduces, and it is unreachable in the live
+  // app (on `ended` the frame exits pointer lock, freezes the frame log and builds the export before
+  // another shot can arrive). Pinning it here would freeze a harness artifact as if it were v9's
+  // contract, and would fail this gate if someone later, reasonably, closed it.
+
+  // The run really spanned its minute: measured from the first target becoming visible to the last
+  // kill scored while still running — which is the pre-limit checkpoint, not the post-limit tap the
+  // note above explains away.
+  expect(run.firstVisibleT).toBeDefined();
+  expect(run.beforeLimit.lastHitT).toBeDefined();
+  const runningMs = run.beforeLimit.lastHitT! - run.firstVisibleT!;
+  expect(runningMs).toBeGreaterThan(MICRO_FLICK_V9_TIME_LIMIT_MS - 2_500);
+  expect(runningMs).toBeLessThan(MICRO_FLICK_V9_TIME_LIMIT_MS);
+
+  // The smaller sphere reaches the export, not just the config: `meta.targets.hitbox` is the single
+  // geometry source offline derivation reads (GD-7), so a v9 that rendered small but exported v8's
+  // hitbox would corrupt every on-target measure computed from the file.
+  expect(run.hitbox).toEqual({
+    widthU: MICRO_FLICK_V9_DIAMETER_U,
+    heightU: MICRO_FLICK_V9_DIAMETER_U,
+    depthU: MICRO_FLICK_V9_DIAMETER_U,
+    shape: 'sphere',
+  });
+  expect(MICRO_FLICK_V9_DIAMETER_U).toBeCloseTo(MICRO_FLICK_V8_DIAMETER_U * 0.9, 10);
+});
+
+async function loadMicroFlickVariantAndArm(
+  page: import('@playwright/test').Page,
+  drillId: string,
+  sceneId: string,
+): Promise<void> {
+  await enterResearcherDrillControls(page);
+  await page.locator('#drill-select').selectOption(drillId);
+  await expect(page.locator('#scene-select')).toHaveValue(sceneId, { timeout: 20_000 });
+  await armAndWaitRunning(page);
+}
+
+/** Parses the HUD `Time` card's `MM:SS.T` back into milliseconds. */
+function parseHudTimeMs(text: string): number {
+  const match = /^(\d{2}):(\d{2})\.(\d)$/.exec(text.trim());
+  if (match === null) throw new Error(`unparseable HUD time: ${JSON.stringify(text)}`);
+  return Number(match[1]) * 60_000 + Number(match[2]) * 1_000 + Number(match[3]) * 100;
+}
+
+function hudTimeValue(page: import('@playwright/test').Page) {
+  return page.locator('#metrics-hud section').filter({ hasText: 'Time' }).locator('div').nth(1);
+}
+
+async function readHudTimeMs(page: import('@playwright/test').Page): Promise<number> {
+  return parseHudTimeMs((await hudTimeValue(page).textContent()) ?? '');
+}
+
+// FR-65.7 on the live singleton, not on `resolveDrillTimeLimitMs()` in isolation: the unit tests
+// prove v9 *classifies* as countdown, and this proves the classification actually reaches the Time
+// card of a running drill. v8 is measured in the same test because "counts down" is only meaningful
+// against a sibling that counts up — asserting v9's direction alone would still pass on a HUD that
+// had broken the other way for every drill in the roster.
+test('v9: the live HUD counts v9 down from its 60 s limit while v8 counts up', async ({ page }) => {
+  test.setTimeout(120_000);
+  const SAMPLE_GAP_MS = 1_500;
+
+  await gotoAppReady(page);
+  await loadMicroFlickVariantAndArm(page, 'micro_flick_three_target_test_v9', 'micro-flick-room-v9');
+  const v9First = await readHudTimeMs(page);
+  await page.waitForTimeout(SAMPLE_GAP_MS);
+  const v9Second = await readHudTimeMs(page);
+
+  // Starts at the limit (the read costs a moment, so allow the first sample to have ticked down a
+  // little) and is strictly smaller a second and a half later.
+  expect(v9First).toBeLessThanOrEqual(MICRO_FLICK_V9_TIME_LIMIT_MS);
+  expect(v9First).toBeGreaterThan(MICRO_FLICK_V9_TIME_LIMIT_MS - 5_000);
+  expect(v9Second).toBeLessThan(v9First);
+
+  await gotoAppReady(page);
+  await loadMicroFlickVariantAndArm(page, 'micro_flick_three_target_test_v8', 'micro-flick-room-v8');
+  const v8First = await readHudTimeMs(page);
+  await page.waitForTimeout(SAMPLE_GAP_MS);
+  const v8Second = await readHudTimeMs(page);
+
+  // v8 has no designed duration, so its Time card must keep counting up from zero — and in
+  // particular must never show the 120 s backstop other drills carry.
+  expect(v8First).toBeLessThan(5_000);
+  expect(v8Second).toBeGreaterThan(v8First);
 });
