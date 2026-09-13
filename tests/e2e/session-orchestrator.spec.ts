@@ -429,8 +429,9 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     // roster addition has to be counted (after `drillFamily.test.ts`, `SessionPlanSetup.test.ts`
     // and the countdown classification) and the only one no unit test can reach, which is why
     // WP-64 left it stale: it fails only under Playwright. -> 40 with WP-66 後續的
-    // tracking_reversal_high_feedback_v1, which joined the existing `tracking` row (no new family).
-    await expect(picker.locator('option')).toHaveCount(40);
+    // tracking_reversal_high_feedback_v1, which joined the existing `tracking` row (no new family);
+    // -> 41 with tracking_core_pr_3deg_14dps_feedback_v1, likewise on that row.
+    await expect(picker.locator('option')).toHaveCount(41);
     await expect(picker.locator('optgroup')).toHaveCount(10);
     const options = await picker
       .locator('option')

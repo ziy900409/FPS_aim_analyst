@@ -342,8 +342,8 @@ describe('createSessionPlanSetup — custom program editing (FR-58.12)', () => {
     }
 
     expect(offered).toEqual([...SCHEDULABLE_DRILL_IDS]);
-    expect(offered).toHaveLength(40); // 36 through WP-62, + the two WP-64 curated pilot blocks, + micro-flick v9,
-    // + WP-66 後續的 tracking_reversal_high_feedback_v1（帶命中回饋的 reversal tracking，非 pilot block）
+    expect(offered).toHaveLength(41); // 36 through WP-62, + the two WP-64 curated pilot blocks, + micro-flick v9,
+    // + WP-66 後續的兩個帶命中回饋的獨立 drill（reversal high / core pr 3deg_14dps，皆非 pilot block）
     expect(new Set(familyOrder).size).toBe(familyOrder.length);
     expect(familyOrder.every((family) => KNOWN_SESSION_FAMILY_IDS.has(family as SessionFamilyId))).toBe(true);
     for (const drillId of offered) expect(FAMILY_BY_DRILL_ID.has(drillId)).toBe(true);

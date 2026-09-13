@@ -129,6 +129,7 @@ import { trackingV1 } from './drill/tracking_v1.ts';
 import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import { trackingReversalFeedbackV1 } from './drill/tracking_reversal_feedback_v1.ts';
+import { trackingCorePrFeedbackV1 } from './drill/tracking_core_pr_feedback_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
 import { holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
@@ -327,6 +328,13 @@ const availableDrills: AvailableDrill[] = [
     id: trackingReversalFeedbackV1.drillId,
     label: trackingReversalFeedbackV1.drillId,
     source: trackingReversalFeedbackV1,
+    sceneId: 'field-low',
+  },
+  // 同上（使用者 2026-09-13）：core pseudorandom 的 3deg/14dps 格，帶命中回饋的獨立 drill。
+  {
+    id: trackingCorePrFeedbackV1.drillId,
+    label: trackingCorePrFeedbackV1.drillId,
+    source: trackingCorePrFeedbackV1,
     sceneId: 'field-low',
   },
 ];

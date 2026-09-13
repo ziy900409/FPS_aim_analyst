@@ -30,6 +30,7 @@ import { spiderShotV3, spiderShotV3Binding } from '../drill/spider_shot_v3.ts';
 import { resolveSpiderShotWideV1, spiderShotWideV1Binding } from '../drill/spider_shot_wide_v1.ts';
 import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
 import { trackingLongrangeV1 } from '../drill/tracking_longrange_v1.ts';
+import { trackingCorePrFeedbackV1 } from '../drill/tracking_core_pr_feedback_v1.ts';
 import { trackingReversalFeedbackV1 } from '../drill/tracking_reversal_feedback_v1.ts';
 import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { trackingV1 } from '../drill/tracking_v1.ts';
@@ -141,7 +142,7 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
   it('registers every roster drill exactly once, with no extras', () => {
     expect(FAMILY_BY_DRILL_ID.size).toBe(rosterSizeFromMain());
     // 36 through WP-62, + the two WP-64 curated tracking-pilot blocks, + micro-flick v9.
-    expect(FAMILY_BY_DRILL_ID.size).toBe(40);
+    expect(FAMILY_BY_DRILL_ID.size).toBe(41);
     expect(SCHEDULABLE_DRILL_IDS).toHaveLength(FAMILY_BY_DRILL_ID.size);
     expect(new Set(SCHEDULABLE_DRILL_IDS).size).toBe(SCHEDULABLE_DRILL_IDS.length);
   });
@@ -169,8 +170,8 @@ describe('WP-58 T1 — invariant 2: the table covers exactly `main.ts`\'s roster
       counterstrafe: 3,
       'peek-click-transfer': 6,
       'peek-click-transfer-v1': 1,
-      tracking: 14, // 11 through WP-62, + the two WP-64 curated tracking-pilot blocks,
-      // + WP-66 後續的 tracking_reversal_high_feedback_v1（帶命中回饋，非 pilot block）
+      tracking: 15, // 11 through WP-62, + the two WP-64 curated tracking-pilot blocks,
+      // + WP-66 後續的兩個帶命中回饋的獨立 drill（reversal high / core pr 3deg_14dps，皆非 pilot block）
       detection: 1,
       'micro-flick': 9,
     });
@@ -405,6 +406,7 @@ const SCHEDULABLE_DRILL_SOURCES: readonly (readonly [
   ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => [entry.config.drillId, entry.config] as const),
   // WP-66 後續：帶命中回饋的 reversal tracking（獨立 drill，非 tracking-pilot block）。
   [trackingReversalFeedbackV1.drillId, trackingReversalFeedbackV1],
+  [trackingCorePrFeedbackV1.drillId, trackingCorePrFeedbackV1],
 ];
 
 describe('WP-62 T1 — the declared-weapon map matches every schedulable drill config', () => {
@@ -436,12 +438,13 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
   });
 
   it('holds exactly the eight BR cells, the two curated pilot blocks, and the hit-feedback reversal drill, so a change of scope cannot pass review unnoticed', () => {
-    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(11);
+    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(12);
     expect(new Set(DECLARED_WEAPON_BY_DRILL_ID.keys())).toEqual(
       new Set([
         ...trackingBrVariants.map((variant) => variant.id),
         ...TRACKING_PILOT_SCHEDULABLE_DRILLS.map((entry) => entry.config.drillId),
         trackingReversalFeedbackV1.drillId,
+        trackingCorePrFeedbackV1.drillId,
       ]),
     );
     // Eight cells, four weapons: the grid's third axis (angular height) is a target-geometry factor,
@@ -512,8 +515,9 @@ const COUNTDOWN_DRILL_IDS = [
   'spider-shot-wide-v1',
   'tracking_core_pr_pilot_v1_2deg_5dps',
   'tracking_reversal_pilot_v1_high',
-  // WP-66 後續：帶命中回饋的 reversal tracking，沿用 pilot block 的 timeLimit（26 s）。
+  // WP-66 後續：兩個帶命中回饋的獨立 drill，沿用各自 pilot 格的 timeLimit。
   'tracking_reversal_high_feedback_v1',
+  'tracking_core_pr_3deg_14dps_feedback_v1',
   // The one practice drill scored by the clock rather than by a kill budget (60 s).
   'micro_flick_three_target_test_v9',
 ] as const;
