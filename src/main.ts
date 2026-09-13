@@ -1652,14 +1652,19 @@ const protocolStatus = document.createElement('div');
 protocolStatus.id = 'protocol-status';
 protocolStatus.style.cssText = [
   'position:fixed',
-  'top:12px',
-  // WP-66 follow-up: top-center collides with the HUD stat cards (`#hud` is also top:12px,
-  // centered), which hid Time/Accuracy behind this banner. Anchor left of the HUD instead.
-  'left:12px',
+  // WP-66 follow-up: this banner has to clear two neighbours at once. Top-center is
+  // `#metrics-hud` (top:12px, ~90px tall) and top-left is `#top-left-controls` (top:16px,
+  // 250px wide) — the launcher column is shown whenever the pointer is unlocked, which is
+  // exactly when this line reads "Session Plan 完成". So sit centered *below* the HUD row,
+  // and reserve 280px on each side so neither end can reach the launcher column (or the
+  // export buttons) on a narrow viewport.
+  'top:104px',
+  'left:50%',
+  'transform:translateX(-50%)',
   'display:none',
   'align-items:center',
   'gap:10px',
-  'max-width:min(36vw,420px)',
+  'max-width:min(720px,calc(100vw - 560px))',
   'padding:9px 12px',
   'font:700 13px/1.35 system-ui,sans-serif',
   'color:#e6e9ec',
