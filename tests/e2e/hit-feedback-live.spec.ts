@@ -499,7 +499,7 @@ function expectFlashed(result: ProbeResult): void {
 test.describe('WP-66 命中視覺回饋 live e2e', () => {
   test.describe.configure({ timeout: 180_000 });
 
-  test('啟用清單上的 tracking drill：命中當下亮起，HOLD 窗內熄滅（FR-66.4/66.5）', async ({ page }) => {
+  test('啟用清單上的 tracking drill：命中當下亮起，HOLD 窗內熄滅（FR-66.4/66.5） @realgpu', async ({ page }) => {
     await openDrillControls(page);
     await selectDrill(page, ENABLED_DRILL_ID, ENABLED_SCENE_ID);
     await armAndTakeRealLock(page);
@@ -514,7 +514,7 @@ test.describe('WP-66 命中視覺回饋 live e2e', () => {
     expect(result.sameTargetDarkAfterLit, '未觀測到「被打中的那一顆仍在、但已熄滅」的畫面').toBeGreaterThanOrEqual(6);
   });
 
-  test('換 drill：對照 drill 命中不亮，換回啟用 drill 又亮（FM-3 wiring #2 / FR-66.8）', async ({ page }) => {
+  test('換 drill：對照 drill 命中不亮，換回啟用 drill 又亮（FM-3 wiring #2 / FR-66.8） @realgpu', async ({ page }) => {
     await openDrillControls(page);
     await selectDrill(page, ENABLED_DRILL_ID, ENABLED_SCENE_ID);
     await armAndTakeRealLock(page);
@@ -538,7 +538,7 @@ test.describe('WP-66 命中視覺回饋 live e2e', () => {
     expectFlashed(await probe(page, TRACKING_PROBE, 'enabled/after-switch-back'));
   });
 
-  test('換場景：離開再載回 br-field 後仍生效（FM-3 wiring #3/#4）', async ({ page }) => {
+  test('換場景：離開再載回 br-field 後仍生效（FM-3 wiring #3/#4） @realgpu', async ({ page }) => {
     await openDrillControls(page);
     await selectDrill(page, ENABLED_DRILL_ID, ENABLED_SCENE_ID);
     await armAndTakeRealLock(page);

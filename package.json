@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:e2e": "playwright test --project=edge",
-    "test:e2e:fast": "playwright test --project=chromium-ci --grep-invert @slow",
+    "test:e2e:fast": "playwright test --project=chromium-ci --grep-invert \"@slow|@realgpu\"",
     "capture:wp56-visuals": "node scripts/capture-wp56-visuals.mjs",
     "capture:wp56-visuals:interactive": "set HEADLESS=false&& node scripts/capture-wp56-visuals.mjs",
     "capture:wp57-visuals": "node scripts/capture-wp57-visuals.mjs",

@@ -5,8 +5,11 @@
 # WebGPURenderer 會依 createRenderer.ts 的設計 fallback 成 WebGL2。真實 GPU、系統 Edge
 # 與桌面計時特性無法在 cloud runner 上複製，所以這層跑在研究者的機器上。
 #
-# runner 需求：Windows + 已安裝 Microsoft Edge + Node 20。
-# 註冊方式見 docs/guideline/ci-tiers.md。
+# runner 需求：Windows + 已安裝 Microsoft Edge + **真實 GPU** + Node 20。
+# `real-gpu` 是註冊時自訂的 label，不是預設 label：它把「這台機器是合格量測環境」這個
+# 前提編進 runs-on。只寫 [self-hosted, windows] 的話，日後若有人加一台無 GPU 的 Windows
+# runner（雲端 VM、容器），這個 job 會悄悄落到它身上，backend.spec.ts 的 webgpu 斷言就會
+# 開始紅——而那正是本層唯一無法被 Tier 1 取代的東西。註冊步驟見 docs/guideline/ci-tiers.md §3。
 name: E2E (full, self-hosted)
 
 on:
@@ -19,7 +22,7 @@ on:
 
 jobs:
   e2e-full:
-    runs-on: [self-hosted, windows]
+    runs-on: [self-hosted, windows, real-gpu]
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4

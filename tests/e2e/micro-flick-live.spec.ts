@@ -234,7 +234,7 @@ test('WP-56 T5: the browser harness completes the real 60-target budget and recr
 // `sceneId` at all and leaves whichever scene is loaded in place.  `installSceneLoad` writes the scene
 // dropdown right after the asset mounts, so that app-driven value is the observable end of the measured
 // transaction; the drill's own 3 s countdown is protocol, not load latency, and stays outside the window.
-test('WP-56 T5: cached researcher drill selection reaches the first visible corridor frame within the 1,500 ms P95 budget', async ({ page }) => {
+test('WP-56 T5: cached researcher drill selection reaches the first visible corridor frame within the 1,500 ms P95 budget @realgpu', async ({ page }) => {
   test.setTimeout(180_000);
   await gotoAppReady(page);
   await enterResearcherDrillControls(page);

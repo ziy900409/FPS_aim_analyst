@@ -143,7 +143,7 @@ async function openRunDetail(page: Page, participantId: string, drillId: string,
 }
 
 test.describe('WP-51 T4 — real-browser resource lifecycle (FR-51.12/NFR-51.4)', () => {
-  test('50x History -> Replay -> Back cycles leave zero growth in listeners/rAF, and exactly one canvas persists', async ({ page, request }) => {
+  test('50x History -> Replay -> Back cycles leave zero growth in listeners/rAF, and exactly one canvas persists @realgpu', async ({ page, request }) => {
     await installLifecycleInstrumentation(page);
     const participantId = `stage10-lifecycle-${crypto.randomUUID()}`;
     const { payload, runId } = buildFixture(participantId, '2099-06-01T00:00:00.000Z');

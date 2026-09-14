@@ -192,7 +192,7 @@ test.describe('WP-50 T-exit — Replay acceptance (A-50.1/50.2/50.3)', () => {
     expect(consoleErrors.filter((message) => message.includes("Cannot access 'replayController' before initialization"))).toEqual([]);
   });
 
-  test('a full official Assessment run replays end to end from History (A-50.1)', async ({ page }) => {
+  test('a full official Assessment run replays end to end from History (A-50.1) @realgpu', async ({ page }) => {
     await waitForHarness(page);
     const participantId = `texit-full-${crypto.randomUUID()}`;
     const run = await seedHistoricalRun(page, FULL_DRILL_ID, participantId);
