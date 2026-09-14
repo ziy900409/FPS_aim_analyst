@@ -2,9 +2,11 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-14 T1 完成）
+## 最新狀態（2026-09-14 T2 完成）
 
-🟡 **T0／T1 已完成，T2 可開工**。分支 `wp-68-micro-flick-v9-measurement-parity`（基準 `main` @ `eec359d`）。
+🟡 **T0／T1／T2 已完成，T-exit 可開工**。分支 `wp-68-micro-flick-v9-measurement-parity`（基準 `main` @ `eec359d`）。
+
+T2 結論一句話：**計分窗右界依 `endCondition` 分流落地（路徑 B），v9 取到鐘尾、v8 四量逐位不變**。v9 上兩種右界的實測差值：真 run **+191.25 ms / `killRateHz` 高估 +2.799%**，合成 dry-tail 案例 **+334.8%**（[T2.3](#t23--兩種右界的實測差值steps-5--這條-fr-存在的理由)）。v8 四量以取自 `c81778f` worktree 的**寫死常數**逐位 `Object.is` 釘死。v9 四 FPS parity **12 passed**，帶自己的非空對空前置（37 發／18 中／19 失／21 窗）。全量閘一次通過：typecheck ×2、Vitest **3,385 passed／2 skipped（273 files，+23 = 本 task 新增數）**、build **203 modules**。⚠️ determinism harness 已抽成 v8／v9 共用模組（[D-68.T2-3](#d-68t2-3--harness-抽成共用模組而非照抄一份2026-09-14)）。⚠️ 查出旗標詞彙表的 runtime 封閉性斷言**結構性恆真**，真正的守衛是 TS 型別（[Surprises 1](#surprises--discoveriest2)，記為 **OQ-68.6**）。✅ OQ-68.4 收斂：完整 60 s 合成 run **零次空倉**（[T2.7](#t27-oq-684-收斂magsize-30--12-而-v9-的鐘不因失手而停)）。
 
 T1 結論一句話：**v9 宣告 `weaponId: 'usp_s_laser'` 並登記 `DECLARED_WEAPON_ROSTER`，FR-68.1／68.2 與 NFR-68.1／68.2 逐條有機械證據**（spawn trace 96 snapshot 逐位 `Object.is` 相同且兩邊實測各開 **4** 發、`sampleSpread()` rng 呼叫數 **0** 且 ak47 對照組 **> 0**、`meta.weaponId` round-trip 綠）。全量閘：typecheck ×2、Vitest **3,362 passed／2 skipped（271 files）**、build **203 modules**、`micro-flick-live.spec.ts` **6 passed** 皆 exit 0。⚠️ 全量 Vitest 揭露 DoD 未點名的**第二個**硬編 roster 大小守衛（`sessionWeaponActivation.test.ts:67`），已一併修正（[Surprises 2](#surprises--discoveriest1)）。⚠️ 另查出 spread 與 spawn 是**兩個獨立的 `createRan1` 實例** ⇒ WP-63 T1 檔頭「(2) 是 (1) 在實彈下仍成立的原因」為過度宣稱；v9 新檔的註解已照實改寫，v8 該檔屬 WP-63 已交付證據、依範圍紀律不動，記為 **[OQ-68.5](#open-questionst1-後)（Deadline = T-exit）**。
 
@@ -22,7 +24,7 @@ T0 結論一句話：**兩號沿用（WP-68／GD-45），上游 WP-63 三項證�
 |---|---|---|---|---|
 | T0 Entry gate | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 [§T0](#t0--entry-gate編號重查上游驗證基線實測oq-682-收斂2026-09-14)。WP-68／GD-45 重查後沿用；WP-63 三項上游證據綠（`targetWindows.test.ts` 27／`microFlickMetrics.test.ts` 80／`wp63-v8-metrics-determinism.test.ts` 11／`drillFamily.test.ts` 155）；五項基線 exit 0 —— typecheck ×2、Vitest **3,351 passed／2 skipped（270 files）**、build **203 modules**、Tier 1 **102 passed／1 skipped**（8.4 m）、Tier 2 Edge **115 passed／0 failed**（18.3 m，第一輪 1 failed 為 [OQ-66.9](../wp-66-target-hit-visual-feedback/progress.md) 機制第五次發生，已明帳）；CodeGraph impact 已記錄且**降級為下界**，C-D5 以 grep 判定**不觸發**；`endCondition` **不在**匯出 schema ⇒ T2 走**路徑 B**；OQ-68.2 以預設「否」明帳推進；GD-45 草稿已寫入。 |
 | T1 零散布武器宣告 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 [§T1](#t1--v9-宣告-weaponid-usp_s_laser--roster-登記--斷代標記2026-09-14)。v9 fixture 宣告 `usp_s_laser` + `DECLARED_WEAPON_ROSTER` 登記（14 → 15）；spawn trace **96 snapshot 逐位 `Object.is` 相同、兩邊各 4 發**；rng 呼叫數 **0**（ak47 對照 > 0）；recoil table 逐位 0；`meta.weaponId` round-trip 綠；v1–v7 七支 `hasOwnProperty('weaponId') === false`。全量閘 exit 0：typecheck ×2、Vitest **3,362 passed／2 skipped（271 files，+11 = 本 task 新增數）**、build **203 modules**、`micro-flick-live.spec.ts` **6 passed**。⚠️ 第一輪全量 Vitest 1 failed = DoD 未點名的第二個硬編守衛 `sessionWeaponActivation.test.ts:67`，已修正並重跑。 |
-| T2 計時制右界 | ⬜ 未開工 | — | — | — |
+| T2 計時制右界 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 [§T2](#t2--計時制-drill-的計分窗右界--v9-fps-parity2026-09-14)。`deriveOutcome()` 右界依 `endCondition` 分流（路徑 B，新檔 `microFlickEndConditions.ts` 查表）；v9 右界 = 最後一個 tick（真 run 差 **+191.25 ms**、`killRateHz` 舊值高估 **+2.799%**；合成 dry-tail 案例 **+334.8%**）；**v8 四量對 `c81778f` 的寫死常數逐位 `Object.is` 相同**；`unknown_end_condition` 與「計時制但無 tick」兩條退回各有具名測試；v9 四 FPS parity **12 passed**（自帶非空對空前置：37 發／18 中／19 失／21 窗）；六個 canonical derivation 檔與 `DrillMetricRegistry.ts` `git diff` **0 行**。全量閘 exit 0：typecheck ×2、Vitest **3,385 passed／2 skipped（273 files）**、build **203 modules**。 |
 | T-exit | ⬜ 未開工 | — | — | — |
 
 ---
@@ -460,3 +462,156 @@ T0 的 Surprises 3 指出換武器會讓空倉旗標在 v9 上更易觸發。T1 
 | ~~OQ-68.1~~／~~OQ-68.2~~／~~OQ-68.3~~ | ✅ 見 [§Open Questions（T0 後）](#open-questionst0-後) |
 | **OQ-68.4** | 🔵 **維持開放至 T2**（[D-68.T1-2](#d-68t1-2--magsize-30--12-的後果記為-oq-684不在-t1-處置2026-09-14)）。T1 只把 `magSize === 12` 的事實釘進測試；覆蓋一個真的打空的 v9 案例屬 T2 的非空對空前置 |
 | **OQ-68.5（新）** | `micro_flick_three_target_test_v8_weapon.test.ts` 檔頭第 2 點的「shared seeded stream」措辭要不要更正？（Surprises 4）**預設假設：要，但屬 T-exit 的文件對帳而非 T1 的程式切片** —— 它是 WP-63 已交付的證據檔，且更正的是**註解措辭**不是斷言，v8 的任何數字與任何測試結果都不會因此改變。Owner = 實作者，Deadline = **T-exit** |
+
+---
+
+## T2 — 計時制 drill 的計分窗右界 + v9 FPS parity（2026-09-14）
+
+### T2.1 C-D5 邊界複核（Steps 1）
+
+以全 repo grep 為權威（承 [D-68.T0-4](#d-68t0-4--codegraph-對本問題降級為blast-radius-下界c-d5-判定改以全-repo-grep-為權威2026-09-14)，CodeGraph 索引覆蓋不足）：
+
+| 查詢 | 結果 |
+|---|---|
+| `grep -rn "deriveOutcome" src/ research/` | **4 命中，全在 `src/metrics/microFlickMetrics.ts` 內**（宣告 `:387`、唯一呼叫點 `:355`、兩處註解）＋ 新檔 `microFlickEndConditions.ts` 的一處註解。**零跨模組消費者** |
+| `grep -rln "deriveMicroFlickMetrics" src/ tests/` | 6 檔：實作本身 + harness + 三個測試檔。**無 production 消費端、無 `DrillMetricRegistry`、無 `research/`** |
+| `grep -rn "microFlick\|micro-flick" src/history/DrillMetricRegistry.ts` | **0 命中** |
+
+⇒ **C-D5 不觸發**：`deriveOutcome` 不被任何晉升指標（`seg-v2`／`phase-v1`／`curve-v1`／`sync-v1`／`sg-seg-v2`）或 `DrillMetricRegistry` 消費，故本 task 不是晉升指標語意變更，不需雙實作對表。
+
+### T2.2 右界來源：走路徑 B（承 T0.6 的結論，實作時再次複核）
+
+複核結果與 T0.6 相同：`endCondition` **不在**匯出 schema。實作為
+
+```ts
+const endConditionType = MICRO_FLICK_END_CONDITION_BY_DRILL_ID.get(payload.meta.drillId)?.type;
+if (endConditionType === undefined) flags.push('unknown_end_condition');
+const clockEndMs = endConditionType === 'timeLimit' ? ticks.at(-1)?.t : undefined;
+if (clockEndMs === undefined) flags.push('scoring_window_truncated_at_last_kill');
+const scoringEndMs = clockEndMs ?? lastKillMs;
+```
+
+查表落在**新檔** [`src/drill/microFlickEndConditions.ts`](../../../../../src/drill/microFlickEndConditions.ts)，形狀比照 `microFlickMetrics.ts` 既有的 `resolveCycletimeMs()`（從匯出取一個穩定 id → 查本 build 的登記表）。九支 micro-flick 的 `endCondition` 值**一律讀自各自 drill module 的 config，不手抄**（D-58-T0-2 的同一條紀律），重複登記在**模組建構期**拋錯。
+
+**被否決的路徑 A**（一律取最後一個 tick）：對 v8 同樣生效 ⇒ 會把已釋出（v0.1.1）的 `validSpanMs` 6832.1875 改寫成 7023.4375，違反 FR-68.4／FM-1。**被否決的 (a) 把 `endCondition` 加進 `meta`**：匯出契約的 additive 變更，應另開 WP（比照 WP-67 對 `meta.opening`）。
+
+### T2.3 ⭐ 兩種右界的實測差值（Steps 5 —— 這條 FR 存在的理由）
+
+**(a) 真 v9 run**（共用 harness，900 ticks / 18 kills，`wp68-v9-metrics-determinism.test.ts`）：
+
+| 量 | 舊右界（截最後一殺） | 新右界（鐘尾） | 差 |
+|---|---|---|---|
+| 右界 `t` | 6840 ms | **7031.25 ms** | **+191.25 ms** |
+| `validSpanMs` | 6832.1875 | **7023.4375** | +191.25 |
+| `killRateHz` | 2.634588116909848 | **2.5628476084538376** | 舊值**高估 +2.799%** |
+
+**(b) 合成案例**（3 殺止於 2300 ms、鐘走到 10 000 ms，`wp68-scoringWindow.test.ts`）：舊右界 `killRateHz` = 1.304 Hz vs 新右界 0.3 Hz ⇒ **高估 +334.8%**。
+
+⚠️ **(a) 的 +2.8% 是下界不是典型值**：harness 的合成受試者以 190 ms 固定節奏打到最後一刻，尾段幾乎沒有「打不中／找不到靶」的空窗。真人在 60 s 計時制的尾段本來就會有長短不一的 dry spell，偏誤隨那段長度單調放大 —— (b) 的 +334.8% 才是這條 FR 要防的量級。**偏誤方向恆為高估**（與 KI-037 的恆向低估相反、性質相同）。
+
+⚠️ 另記：(a) 的舊右界 `killRateHz` 2.634588116909848 與 `validSpanMs` 6832.1875 **與 v8 的逐位相同**。這是 README §0.1 #3 已警告的**巧合**（合成瞄準軌跡的收斂值沒有落在兩個角半徑的窄帶裡），現已確認它同時涵蓋這兩個量。**不得**引用它作為 v8／v9 等價的任何論證。
+
+### T2.4 證據（逐條對 T2 DoD）
+
+| DoD | 證據 | 狀態 |
+|---|---|---|
+| `microFlickMetrics.test.ts` exit 0 | **80 passed**（零既有斷言被移除；一條期望值因新增具名旗標而更新，見下） | ✅ |
+| FR-68.3 有具名測試 | `wp68-scoringWindow.test.ts` ▸「右界 = 最後一個 tick，而不是最後一次擊殺」「killRateHz 用的是整段鐘 —— 舊定義會高估 335%」「最後一殺之後才開的槍，舊右界會整段漏掉、新右界會算進去」；`wp68-v9-metrics-determinism.test.ts` ▸「FR-68.3：v9 是計時制 ⇒ 計分窗右界取最後一個 tick」（**真 run**，非合成） | ✅ |
+| FR-68.4 有具名測試 | `wp68-scoringWindow.test.ts` ▸「真 v8 run 的四量對 T1 後的值逐位 Object.is 相同（FM-1）」「即使 tick 遠遠走到最後一殺之後，v8 的右界仍截在最後一殺」 | ✅ |
+| FR-68.5 有具名測試 | 同檔 ▸「未知 drillId ⇒ unknown_end_condition + 退回既有語意」「計時制但匯出沒有任何 tick ⇒ 無從定出鐘的右界，同樣具名退回」 | ✅ |
+| **v8 四量逐位不變，期望值為寫死常數** | `PRE_T2_V8_OUTCOME = { validSpanMs: 6832.1875, killRateHz: 2.634588116909848, shotsPerKill: 2, shotAccuracy: 0.5 }`，取自 **`c81778f` 的 worktree** 對同一份 harness canonical payload 實跑；四條 `Object.is(...) === true` | ✅ |
+| `unknown_end_condition` 具名測試（FM-2） | 同上；且斷言退回的是**既有**語意（`validSpanMs === 2300`）而非猜成 timeLimit | ✅ |
+| v9 兩種右界實測差值入帳 | T2.3 | ✅ |
+| v9 四 FPS 逐位一致 + **自己的**非空對空前置 | `wp68-v9-metrics-determinism.test.ts` **12 passed**。前置以 `toBe` 釘死實測形狀：900 ticks／**37 發／18 中／19 失／21 窗**／`outcome.n` 18／`geometry.shots` 37／`selection.n` 17／`microAdjust.n` 18 | ✅ |
+| 六個 canonical derivation 檔 `git diff` 為空 | `peekWindows`／`trackingDerivation`／`detectionDerivation`／`eyeOrigin`／`angularKinematics`／`submovement` 逐檔 `git diff --stat` **0 行** | ✅ |
+| `DrillMetricRegistry.ts` `git diff` 為空 | `git diff --stat` **0 行**（KI-037 邊界） | ✅ |
+| typecheck ×2／全量 Vitest／build exit 0 | 見 T2.6 | ✅ |
+| 右界選定理由與被否決方案入帳 | T2.2 | ✅ |
+
+**既有測試的唯一異動**：`microFlickMetrics.test.ts` ▸「攜帶 n、flags 與 version（FR-63.15）」的 `flags` 期望由 `['idle_span_unbounded']` 改為併列 `'scoring_window_truncated_at_last_kill'`。**這是本 task 蓄意的語意具名**（v8 的右界規則交付時就在作用，只是沒說出來），四量數值不變 —— 由上一列的寫死常數斷言獨立佐證。
+
+### T2.5 harness 抽取（C-D4：同一構念不開第二套實作）
+
+v9 的決定性契約與 v8 逐字相同，只有 drill config 與瞄準參數不同。照抄一份 295 行的 harness 會讓同一個構念有兩套實作，日後「v8 綠、v9 紅」分不清是 drill 差異還是 harness 漂移。⇒ 抽出 [`src/loop/__tests__/microFlickDeterminismHarness.ts`](../../../../../src/loop/__tests__/microFlickDeterminismHarness.ts)（參數化 `expectedTicks`／振幅／衰減／點擊節奏），v8 與 v9 兩支 spec 共用。
+
+**抽取未擾動 v8 的保證**：`wp63-v8-metrics-determinism.test.ts` 抽取後仍 **11 passed**（tests 數不變），且 T2.4 的 `PRE_T2_V8_OUTCOME` 寫死常數是取自**抽取前**（`c81778f`）的 worktree ⇒ 若抽取改動了 v8 的任何一個數字，那四條 `Object.is` 會立刻轉紅。
+
+**v9 沿用 v8 的瞄準常數是實測後的選擇，不是未複核的照抄**：v9 靶小 10%（角半徑 1.118° vs 1.242°），T2 開工前先實測 —— 小振幅支在首發時剩 0.72° < 1.118° ⇒ 仍命中；大振幅支剩 4.3° ⇒ 仍失手。兩條分支都活著（18 中 19 失），故沿用常數，讓兩支 drill 的差異只剩 drill config 本身。
+
+### T2.6 全量閘（對 T1 基線）
+
+| 指令 | exit | 數字 | 對 T1 基線 |
+|---|---|---|---|
+| `npm.cmd run typecheck`（×2） | **0** | — | 同 |
+| `npm.cmd test`（全量 Vitest） | **0** | **Test Files 273 passed／1 skipped（274）**；**Tests 3,385 passed／2 skipped（3,387）** | 檔 271 → **273 = +2**（`wp68-v9-metrics-determinism.test.ts`、`wp68-scoringWindow.test.ts`；harness 非 `*.test.ts` 故不被收集）；測試 3,362 → **3,385 = +23**，與本 task 新增數（12 + 11）**逐數相符** ⇒ **零既有測試被移除或改寫**（`wp63-v8-…` 維持 11、`microFlickMetrics.test.ts` 維持 80） |
+| `npm.cmd run build` | **0** | **203 modules transformed** | 逐數相同 |
+
+本輪一次通過，無環境性失敗（對比 T1 的三輪）。
+
+### T2.7 OQ-68.4 收斂（`magSize` 30 → 12 而 v9 的鐘不因失手而停）
+
+以共用 harness 對 v9 跑**兩種長度**實測窗級 `ammo_exhausted_in_window`：
+
+| run 長度 | 窗數 | `ammo_exhausted_in_window` 窗數 | `outcome.flags` | `validSpanMs` |
+|---|---|---|---|---|
+| 900 ticks（7.03 s） | 21 | **0** | `['idle_span_unbounded']` | 7023.4375 |
+| **7,680 ticks（完整 60 s）** | **133** | **0** | `['idle_span_unbounded']` | **59992.1875** |
+
+⇒ **在合成節奏下，即使跑滿 60 s 也零次空倉**：190 ms 點擊間隔讓換彈跟得上 12 發彈匣。⚠️ **但這不關閉真人側的疑慮** —— 合成受試者命中率 49%、節奏恆定；真人在連續失手時單位時間發數更高且更不規律。⇒ OQ-68.4 **降級為真人 pilot 的觀察項**，不再是本 WP 的阻塞項（承 GD-39 ⑤ 的同一分界：本 WP 交付可算的指標，不宣稱效度）。
+
+附帶佐證：完整 60 s run 的 `validSpanMs` = 59 992.1875 ms（距 `timeLimit` 60 000 僅 7.8125 ms = 一個 tick）⇒ 鐘的右界確實貼合 drill 的設計總時長，路徑 B 的取值沒有系統性偏移。
+
+---
+
+## Decision Log（T2）
+
+### D-68.T2-1 — 右界走路徑 B（`drillId` → config 查表），路徑 A 駁回（2026-09-14）
+
+**Decision**：`deriveOutcome()` 以 `meta.drillId` 反查新檔 `MICRO_FLICK_END_CONDITION_BY_DRILL_ID`；`timeLimit` 取最後一個 tick 為右界，其餘（含 `targetCount`）維持 `lastKillMs`，查不到則 `unknown_end_condition` 具名退回。
+
+**Why**：`endCondition` 不在匯出 schema（T0.6 與 T2 開工時各複核一次）。路徑 A（一律取最後一個 tick）會把 v8 已釋出的 `validSpanMs` 6832.1875 → 7023.4375，違反 FR-68.4／FM-1。
+
+**Alternatives considered**：(a) 先把 `endCondition` 加進 `meta` 再做右界 —— 匯出契約的 additive 變更，應另開 WP（比照 WP-67 對 `meta.opening`），夾帶進來會讓一個切片同時動 schema 與指標語意；(b) 以 `meta.maxDrillSeconds` 當代理 —— 駁回，它對 v8／v9 同值，零鑑別力。
+
+**Debt**：任何 WP 把 `endCondition` 或等價事實加進 `meta` 之後，本查表應改讀匯出並移除 `unknown_end_condition`（README §3.2 已列為觸發重構的條件）。
+
+### D-68.T2-2 — 兩個新旗標都描述「規則」而非「結果」（2026-09-14）
+
+**Decision**：`scoring_window_truncated_at_last_kill` 在**三種**情況下亮：kill-budget drill（本來就該如此）、結束條件未知（退回）、計時制但匯出無 tick。`unknown_end_condition` 只描述「查不到結束條件」這一件事，兩者可同時亮。
+
+**Why**：旗標的消費端問的是「我手上這個 `validSpanMs` 是怎麼算出來的」，那是**規則**不是內部決策路徑。把兩件事拆開，消費端才能分辨「v8 本來就截在最後一殺」（正常）與「這是一支我不認識的 drill 所以退回了」（要查）。合併成一個旗標會讓前者看起來也像異常。
+
+### D-68.T2-3 — harness 抽成共用模組而非照抄一份（2026-09-14）
+
+**Decision**：把 WP-63 T-exit 的 v8 determinism harness 參數化抽出 `microFlickDeterminismHarness.ts`，v8／v9 兩支 spec 共用；v8 spec 的斷言逐條保留、tests 數不變（11）。
+
+**Why**：C-D4「同一構念不開第二套實作」。兩份各自漂移的 harness 會讓「v8 綠、v9 紅」無法歸因。抽取的安全性由 T2.4 的寫死常數（取自抽取前的 worktree）獨立把關。
+
+**偏離協議之處**：本 task 因此動到 WP-63 已交付的證據檔 `wp63-v8-metrics-determinism.test.ts`。判定為可接受 —— 動的是 harness 的**所在位置**不是**內容**，斷言逐條保留，且有抽取前的寫死數值作為回歸防線。
+
+---
+
+## Surprises & Discoveries（T2）
+
+1. ⚠️ **旗標詞彙表的「封閉性測試」是結構性恆真的 —— 它不可能轉紅。** T2 Steps 7 要求「暫時加一個表外字串應轉紅」，實測**沒有轉紅**：注入 `(flags as string[]).push('not_in_the_vocabulary')` 後 `microFlickMetrics.test.ts` 仍 **80 passed**。
+
+   原因在 `ordered()`（`microFlickMetrics.ts:950`）：`return vocabulary.filter((flag) => present.has(flag))` —— 它投影的是**詞彙表**，表外的旗標在輸出前就被**靜默丟棄**，所以 `expect(VOCABULARY).toContain(flag)` 這條 runtime 斷言永遠成立。
+
+   **真正的封閉性守衛是 TS 型別**：不加 `as string[]` 時 `tsc` 直接擋下 —— `error TS2345: Argument of type '"not_in_the_vocabulary"' is not assignable to parameter of type '"no_valid_span" | … | "scoring_window_truncated_at_last_kill" | "unknown_end_condition"'`（該訊息同時證明兩個新旗標確實已進詞彙表）。⇒ **封閉性成立，但買下它的是 compile 期而不是那條 runtime 斷言。**
+
+   **處置**：本 task **不改** WP-63 交付的那條斷言（範圍紀律；它無害，只是不買它看起來買的東西）。記為 **OQ-68.6** 交 T-exit 判斷是否值得補一條真的會咬的 runtime 測試。
+
+2. **v8 與 v9 在 harness 上的「舊右界」四量逐位相同，涵蓋範圍比 README 警告的更廣。** README §0.1 #3 已警告合成軌跡的巧合，T2 確認它同時涵蓋 `validSpanMs`（兩者皆 6832.1875）與舊 `killRateHz`（兩者皆 2.634588116909848）—— 因為兩支 drill 的首個 `visible`（7.8125）、最後一殺（6840）與擊殺數（18）在這條合成軌跡下完全相同（瞄準以 tick index 純函式收斂，與靶的實際位置無關）。**這使 T2.3 的差值必須以「新舊右界對同一份 v9 payload」呈現，而不是「v9 對 v8」** —— 後者會把一個巧合誤讀成結論。
+
+3. **完整 60 s 的 v9 合成 run 零次空倉，OQ-68.4 的擔憂在合成節奏下不成立。** 見 T2.7。這是 T0 規劃期未知的事實（當時只知道彈匣 30 → 12 且鐘不停，未實測換彈是否跟得上）。
+
+---
+
+## Open Questions（T2 後）
+
+| OQ | 狀態 |
+|---|---|
+| ~~OQ-68.1~~／~~OQ-68.2~~／~~OQ-68.3~~ | ✅ 見 §Open Questions（T0 後） |
+| ~~OQ-68.4~~ | ✅ **已收斂（T2.7）**：完整 60 s 合成 run 零次 `ammo_exhausted_in_window` ⇒ 降級為真人 pilot 的觀察項，非本 WP 阻塞項 |
+| **OQ-68.5** | 🔵 維持開放至 T-exit（`micro_flick_three_target_test_v8_weapon.test.ts` 檔頭「shared seeded stream」措辭的更正） |
+| **OQ-68.6（新）** | 旗標詞彙表的 runtime 封閉性斷言結構性恆真（Surprises 1）——要不要補一條真的會咬的測試？**預設假設：不補**，封閉性已由 TS 型別買下，補一條 runtime 測試只是重複買同一個保證；但該斷言目前**看起來**買的比它實際買的多，至少值得一條註解說明。Owner = 實作者，Deadline = **T-exit** |

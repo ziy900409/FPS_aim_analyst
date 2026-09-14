@@ -81,7 +81,12 @@ describe('WP-63 T4 — L0 結果層（FR-63.6）', () => {
     expect(metrics.version).toBe('micro-flick-v1');
     expect(metrics.eyeOriginSource).toBe('meta');
     expect(metrics.outcome.n).toBe(4);
-    expect(metrics.outcome.flags).toEqual(['idle_span_unbounded']);
+    // WP-68 / T2：v8 是 kill-budget drill ⇒ 右界截在最後一次擊殺。這條規則交付時就在作用，
+    // 本 WP 只是把它具名出來（數值不變，見下方 FR-68.4 的逐位斷言）。
+    expect(metrics.outcome.flags).toEqual([
+      'idle_span_unbounded',
+      'scoring_window_truncated_at_last_kill',
+    ]);
     expect(metrics.selection.n).toBe(3);
   });
 
