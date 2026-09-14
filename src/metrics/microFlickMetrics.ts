@@ -1,5 +1,6 @@
 import type { ExportPayload } from '../data/export.ts';
 import type { TickRecord } from '../data/RingBuffer.ts';
+import { SIM_HZ } from '../loop/constants.ts';
 import { WEAPONS, isWeaponId } from '../weapon/weapons.ts';
 import {
   aimForward,
@@ -42,6 +43,14 @@ import {
 
 /** 版本字串。`selectionCostRatio` 的貪婪基準線起點 = **被殺目標中心**（OQ-63.2 預設，見下方註解）。 */
 export const MICRO_FLICK_METRICS_VERSION = 'micro-flick-v1' as const;
+
+/**
+ * 方向預測的預設窗長掃描（T6／FR-63.11）。
+ *
+ * **這不是一組門檻，是自變項的取樣點**：輸出是逐 `W` 的準確率曲線，消費端讀的是曲線形狀
+ * （小 `W` 反映最初的彈道朝向，大 `W` 反映修正後的落點），不是某一個 `W` 的判定值。
+ */
+export const DEFAULT_DIRECTION_WINDOWS_MS: readonly number[] = [30, 60, 90, 120];
 
 export const MICRO_FLICK_OUTCOME_FLAG_VOCABULARY = [
   /** 整份匯出沒有 `visible` 事件或沒有擊殺 ⇒ `T_valid` 無錨點。 */
@@ -198,15 +207,110 @@ export interface MicroFlickSelectionMetrics {
   readonly flags: readonly MicroFlickSelectionFlag[];
 }
 
+export const MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY = [
+  /** 匯出缺 `meta.targets.hitbox` ⇒ 角半徑沒有單一來源可讀（GD-7），整層不出數。 */
+  'no_hitbox',
+  /** hitbox 不是 `sphere` ⇒ 角半徑無唯一定義（見 `angularRadiusSource` 註解）。 */
+  'unsupported_hitbox_shape',
+  /** 該窗缺 `pos`（pre-WP-56 匯出）⇒ 無幾何可算（FM-1）。 */
+  'missing_target_position',
+  /** drill 結束時仍存活 ⇒ 沒有擊殺可當事件錨。 */
+  'never_killed',
+  /** 窗內零 tick。 */
+  'empty_tick_range',
+  /** 窗內 tick 缺 `dYaw`／`dPitch` ⇒ 無法重建逐 tick 視角（不退回 `aim`，見下方註解）。 */
+  'no_mouse_integration',
+  /** 擊殺那一發缺 `viewYaw`／`viewPitch` ⇒ 沒有事件錨。 */
+  'missing_view_angles',
+  /** 整段交戰從未進入角半徑 ⇒ 沒有「進入之後」的區段可量。 */
+  'never_entered_radius',
+  /** 沒有任何一發被意圖歸屬到本窗（T5／FR-63.8）⇒ `approachToFireMs` 無右界。 */
+  'no_shot_at_target',
+  /** 意圖歸屬的首發早於首次進入角半徑 ⇒ approach 區間為負，不出數（見下方註解）。 */
+  'fire_before_entry',
+] as const;
+export type MicroFlickMicroAdjustFlag = (typeof MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY)[number];
+
+export const MICRO_FLICK_DIRECTION_FLAG_VOCABULARY = [
+  /** 少於兩次擊殺 ⇒ 沒有「下一顆被擊殺目標」這個 ground truth。 */
+  'no_kill_transitions',
+  /** 有擊殺缺 `viewYaw`／`viewPitch` ⇒ 該次沒有方位角原點。 */
+  'missing_view_angles',
+  /** 預測窗內的 tick 缺 `dYaw`／`dPitch`。 */
+  'no_mouse_integration',
+  /** 擊殺後的候選集為空或全數缺座標。 */
+  'no_candidates',
+  /** 預測窗內累積位移為零 ⇒ 方位角無定義，該次不計入分母（不補零）。 */
+  'zero_displacement',
+  /** 下一顆被殺者不在候選集內——真實 v8 不可能，合成 fixture 才會出現。 */
+  'next_kill_not_in_candidates',
+  /** 多個候選的方位角差在容差內併列最小 ⇒ 預測不唯一，該次不計入（FM-2 的同一條紀律）。 */
+  'ambiguous_bearing',
+] as const;
+export type MicroFlickDirectionFlag = (typeof MICRO_FLICK_DIRECTION_FLAG_VOCABULARY)[number];
+
+/**
+ * 一顆目標的免閾值微調描述子（FR-63.10）。一列 = 一個 `TargetWindow`，不是一個 `targetId`。
+ *
+ * 四者皆為**單調計數或比值**：沒有峰值偵測、沒有平滑窗、沒有速度門檻。
+ */
+export interface MicroFlickTargetMicroAdjust {
+  readonly windowIndex: number;
+  readonly targetId: string;
+  /** 首次進入角半徑之後，又離開、再進入的次數。從未進入 ⇒ 缺席（不是 0）。 */
+  readonly reEntryCount?: number;
+  /** 在 2× 角半徑內的累積角路徑長 / 角半徑（無單位）。1 附近 = 一進去就停住。 */
+  readonly dwellPathRatio?: number;
+  /** 首次進入角半徑之後，dε/dt 的符號反轉次數。 */
+  readonly signReversalCount?: number;
+  /** 首次進入角半徑 → 意圖歸屬為本窗的首發（ms）。 */
+  readonly approachToFireMs?: number;
+  readonly flags: readonly MicroFlickMicroAdjustFlag[];
+}
+
+export interface MicroFlickMicroAdjustMetrics {
+  readonly targets: readonly MicroFlickTargetMicroAdjust[];
+  /**
+   * 角半徑所依據的命中半徑（source unit）—— 與 `HitDetector` 讀的是**同一個**單一來源
+   * （GD-7）。逐 tick 的角半徑 = `asin(hitboxRadiusU / 該 tick 的球心距)`。缺席 ⇒ 見 `flags`。
+   */
+  readonly hitboxRadiusU?: number;
+  /** 樣本數 = 進入過角半徑、因而四個描述子有定義的窗數。 */
+  readonly n: number;
+  readonly flags: readonly MicroFlickMicroAdjustFlag[];
+}
+
+/** 單一窗長 `W` 的擊殺後方向預測結果（FR-63.11）。 */
+export interface MicroFlickDirectionWindow {
+  readonly windowMs: number;
+  /** 預測命中率 [0,1]；`n === 0` 時缺席（不補零）。 */
+  readonly predictionAccuracy?: number;
+  /** 該窗長的有效樣本數。 */
+  readonly n: number;
+  readonly flags: readonly MicroFlickDirectionFlag[];
+}
+
+export interface MicroFlickDirectionMetrics {
+  /** 逐窗長的準確率，`directionWindowsMs` 的順序。**輸出是一條曲線，不是一個判定**。 */
+  readonly windows: readonly MicroFlickDirectionWindow[];
+  /** 樣本數 = 可評估的擊殺轉移數（有 ground truth 的擊殺數）。 */
+  readonly n: number;
+  readonly flags: readonly MicroFlickDirectionFlag[];
+}
+
 export interface MicroFlickMetricsOptions {
   /** eye origin 解析；研究側入口必須傳 `strictEyeOrigin: true`（FM-3）。 */
   readonly eye?: EyeOriginOptions;
+  /** 方向預測的窗長掃描（FR-63.11）。預設 {@link DEFAULT_DIRECTION_WINDOWS_MS}。 */
+  readonly directionWindowsMs?: readonly number[];
 }
 
 export interface MicroFlickMetrics {
   readonly outcome: MicroFlickOutcomeMetrics;
   readonly geometry: MicroFlickGeometryMetrics;
   readonly selection: MicroFlickSelectionMetrics;
+  readonly microAdjust: MicroFlickMicroAdjustMetrics;
+  readonly direction: MicroFlickDirectionMetrics;
   readonly version: typeof MICRO_FLICK_METRICS_VERSION;
   readonly eyeOriginSource: EyeOriginSource;
 }
@@ -224,11 +328,16 @@ export function deriveMicroFlickMetrics(
   const eyeOrigin = resolveEyeOrigin(payload, options.eye);
   const ticks = payload.ticks.slice().sort((a, b) => a.t - b.t);
   const windows = buildTargetWindows(payload);
+  // L2 的 `approachToFireMs` 右界是 **T5 的意圖歸屬首發**（FR-63.8），故 L1 先算、L2 讀它的輸出
+  // ——不在本層另立一套「這一發打誰」的判準（C-D4 的同一條紀律）。
+  const geometry = deriveGeometry(payload, windows.windows, ticks, eyeOrigin);
 
   return {
     outcome: deriveOutcome(payload, windows.windows),
-    geometry: deriveGeometry(payload, windows.windows, ticks, eyeOrigin),
+    geometry,
     selection: deriveSelection(windows.windows, ticks, eyeOrigin),
+    microAdjust: deriveMicroAdjust(payload, windows.windows, ticks, eyeOrigin, geometry),
+    direction: deriveDirection(payload, windows.windows, ticks, eyeOrigin, options),
     version: MICRO_FLICK_METRICS_VERSION,
     eyeOriginSource: eyeOrigin.source,
   };
@@ -796,4 +905,484 @@ function pushFlag<F>(flags: F[], flag: F): void {
 function ordered<F>(vocabulary: readonly F[], flags: readonly F[]): F[] {
   const present = new Set(flags);
   return vocabulary.filter((flag) => present.has(flag));
+}
+
+// ---------------------------------------------------------------------------
+// L2 免閾值微調層（T6／FR-63.10）
+// ---------------------------------------------------------------------------
+
+/**
+ * `dwellPathRatio` 的取樣帶寬，以**目標自己的角半徑**為單位。
+ *
+ * 這不是調校旋鈕：它沒有絕對尺度，隨目標的角尺寸伸縮；換靶徑、換距離它自動跟著變。
+ * 相對地，`SEG_V2_PARAMS` 的速度地板與平滑窗是**絕對**的（60 deg/s、11 個樣本），
+ * 換取樣率或換動作幅度就變成另一套演算法——那才是本層要避開的東西。
+ */
+const DWELL_RADIUS_MULTIPLE = 2;
+
+/** 方位角併列的容差（rad）。併列 ⇒ 不預測，不以陣列順序或 id 序決勝（FM-2 的同一條紀律）。 */
+const BEARING_TIE_TOLERANCE_RAD = 1e-9;
+
+type AngularRadius =
+  | { readonly kind: 'sphere'; readonly radiusU: number }
+  | { readonly kind: 'missing' }
+  | { readonly kind: 'unsupported' };
+
+/**
+ * 角半徑的單一來源（GD-7）：`meta.targets.hitbox`，`sphere` 取 `widthU / 2` —— 與 `HitDetector`
+ * 的 ray/sphere 判定（`HitDetector.ts:105`）讀的是同一個量，故「進入角半徑」⟺「這一發會命中」，
+ * 不是另一套門檻。
+ *
+ * ⚠️ **不得**改用 `targetHitboxRadius()`：它回的是箱體**角點**半徑，在 cube 上高估 √3×
+ * （[KI-029]），那是 scene clearance 專用路徑。
+ *
+ * `'box'` 判為 unsupported 而非改用某種等效半徑：箱體的角半徑隨方位變化，沒有單一值。寧可具名
+ * 拒絕，也不要算出一個會說錯話的數字（C-D3）。v8 是 `shape: 'sphere'`，故這條在 v8 上不觸發。
+ */
+function angularRadiusSource(payload: ExportPayload): AngularRadius {
+  const hitbox = payload.meta?.targets?.hitbox;
+  if (hitbox === undefined) return { kind: 'missing' };
+  if (hitbox.shape !== 'sphere') return { kind: 'unsupported' };
+  if (!Number.isFinite(hitbox.widthU) || hitbox.widthU <= 0) return { kind: 'missing' };
+  return { kind: 'sphere', radiusU: hitbox.widthU / 2 };
+}
+
+/**
+ * 免閾值微調描述子（FR-63.10）。
+ *
+ * **為什麼不用 `seg-v2`**：`SEG_V2_PARAMS` 是為 10–25° 寬幅 flick 校準的。`sgWindow` 的單位是
+ * **樣本數**，11 個樣本 @128 Hz 約 78 ms 跨度，比 v8 的微調事件（30–80 ms）還長 ⇒ 濾波必然向
+ * 兩側借值把峰值壓平；速度地板 60 deg/s 會讓 1°／50 ms 的修正（minimum-jerk 峰值約 38 deg/s）
+ * 整段判為低於地板 ⇒ 分段數 0 ⇒ correction-free-rate **系統性高估**。那是偏誤不是雜訊，不會
+ * 平均掉，而且偏誤方向對玩家有利 ⇒ 教練報告會說錯話（C-D3）。故本層一行不動 `submovement.ts`。
+ *
+ * **為什麼不讀 `ticks[].aim`**：`aim` 由 render thread 寫 ⇒ 更新率 = 顯示率（KI-031 的根因）。
+ * 本層以**事件**為錨（擊殺那一發的 `viewYaw`／`viewPitch` 是精確已知的，不需要偵測），再以
+ * `ticks[].dYaw`／`dPitch` 反向積分重建逐 tick 視角——後者依事件自身 `timeStamp` 分桶，
+ * **真 128 Hz，與顯示率無關**。E5 fixture 是這條紀律的回歸防線。
+ */
+function deriveMicroAdjust(
+  payload: ExportPayload,
+  windows: readonly TargetWindow[],
+  ticks: readonly TickRecord[],
+  eyeOrigin: ResolvedEyeOrigin,
+  geometry: MicroFlickGeometryMetrics,
+): MicroFlickMicroAdjustMetrics {
+  const flags: MicroFlickMicroAdjustFlag[] = [];
+  const radius = angularRadiusSource(payload);
+  if (radius.kind === 'missing') pushFlag(flags, 'no_hitbox');
+  if (radius.kind === 'unsupported') pushFlag(flags, 'unsupported_hitbox_shape');
+
+  const fires = payload.events
+    .filter((event): event is FireEvent => event.type === 'fire')
+    .slice()
+    .sort((a, b) => a.t - b.t);
+
+  // 首發一律取 T5 的意圖歸屬結果（FR-63.8），不在本層另立判準。鍵是窗索引不是 `targetId`。
+  const firstShotByWindow = new Map<number, MicroFlickShotAttribution>();
+  for (const shot of geometry.shots) {
+    if (shot.intendedWindowIndex === undefined) continue;
+    if (!firstShotByWindow.has(shot.intendedWindowIndex)) {
+      firstShotByWindow.set(shot.intendedWindowIndex, shot);
+    }
+  }
+
+  const targets = windows.map((window) =>
+    targetMicroAdjust(
+      window,
+      ticks,
+      fires,
+      eyeOrigin,
+      radius,
+      firstShotByWindow.get(window.index),
+      flags,
+    ),
+  );
+
+  return {
+    targets,
+    ...(radius.kind === 'sphere' ? { hitboxRadiusU: radius.radiusU } : {}),
+    n: targets.filter((target) => target.reEntryCount !== undefined).length,
+    flags: ordered(MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY, flags),
+  };
+}
+
+interface MicroAdjustSample {
+  readonly tMs: number;
+  /** ε(t)：重建視角與目標中心的無號夾角（度）。 */
+  readonly errorDeg: number;
+  /** 該 tick 距離下目標張成的角半徑（度）。距離變它就變——這正是「免閾值」的意思。 */
+  readonly radiusDeg: number;
+  /** 該 tick 自身的角路徑長（度）。 */
+  readonly stepDeg: number;
+}
+
+function targetMicroAdjust(
+  window: TargetWindow,
+  ticks: readonly TickRecord[],
+  fires: readonly FireEvent[],
+  eyeOrigin: ResolvedEyeOrigin,
+  radius: AngularRadius,
+  firstShot: MicroFlickShotAttribution | undefined,
+  traceFlags: MicroFlickMicroAdjustFlag[],
+): MicroFlickTargetMicroAdjust {
+  const flags: MicroFlickMicroAdjustFlag[] = [];
+  const identity = { windowIndex: window.index, targetId: window.targetId };
+  const raise = (flag: MicroFlickMicroAdjustFlag): MicroFlickTargetMicroAdjust => {
+    pushFlag(flags, flag);
+    pushFlag(traceFlags, flag);
+    return { ...identity, flags: ordered(MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY, flags) };
+  };
+
+  if (radius.kind !== 'sphere') {
+    pushFlag(flags, radius.kind === 'missing' ? 'no_hitbox' : 'unsupported_hitbox_shape');
+    return { ...identity, flags: ordered(MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY, flags) };
+  }
+  if (window.pos === undefined) return raise('missing_target_position');
+  if (window.tKillMs === undefined) return raise('never_killed');
+  if (window.tickRange.end <= window.tickRange.start) return raise('empty_tick_range');
+
+  // 事件錨 = 擊殺那一發。`tKillMs` 本來就取自該發（T3），故以時刻定位即可，不讀 `fire.targetId`。
+  const anchor = fires.find((fire) => Math.abs(fire.t - window.tKillMs!) <= WINDOW_EPSILON_MS);
+  if (anchor?.viewYaw === undefined || anchor.viewPitch === undefined) {
+    return raise('missing_view_angles');
+  }
+
+  const span = ticks.slice(window.tickRange.start, window.tickRange.end);
+  if (span.some((tick) => tick.dYaw === undefined || tick.dPitch === undefined)) {
+    return raise('no_mouse_integration');
+  }
+
+  // 反向積分：view[j] = 擊殺那一發的視角 − (tick j 起、到窗尾為止的全部位移)。
+  // 只讀 dYaw/dPitch，**不讀 `aim`**。窗尾到擊殺時刻之間的 sub-tick 殘量無法拆分，故一律歸入
+  // 最後一個 tick——對單調計數與比值而言影響不超過一個 tick，且不引入任何可調參數。
+  const suffixYaw = new Array<number>(span.length + 1).fill(0);
+  const suffixPitch = new Array<number>(span.length + 1).fill(0);
+  for (let k = span.length - 1; k >= 0; k--) {
+    suffixYaw[k] = suffixYaw[k + 1] + span[k].dYaw!;
+    suffixPitch[k] = suffixPitch[k + 1] + span[k].dPitch!;
+  }
+
+  const target = window.pos;
+  // 逐 tick 的重建視線方向。`aimForward()` 是朝向的 canonical 定義，本檔不另建一套。
+  const views = span.map((_, j) =>
+    aimForward(anchor.viewYaw! - suffixYaw[j], anchor.viewPitch! - suffixPitch[j]),
+  );
+
+  const samples: MicroAdjustSample[] = span.map((tick, j) => {
+    const eye = eyeOriginForTick(tick, eyeOrigin);
+    const to = direction(eye, target);
+    return {
+      tMs: tick.t,
+      // ε(t) 走既有 canonical 實作（C-D4）：本檔不自備球面幾何。
+      errorDeg: to === undefined ? Infinity : angularDistanceDeg(views[j], to),
+      radiusDeg: angularRadiusDeg(eye, target, radius.radiusU),
+      // 角路徑元素 = 相鄰兩個重建視線的大圓夾角，同樣經 canonical 實作 ⇒ 精確而非小角近似。
+      // `view[j+1] − view[j] === dYaw/dPitch[j]`（反向積分的定義），故這就是逐 tick 的位移長度。
+      stepDeg: j === 0 ? 0 : angularDistanceDeg(views[j - 1], views[j]),
+    };
+  });
+
+  // `dwellPathRatio` 不需要「曾經進入」才有意義（它量的是帶寬內的路徑），故先算、先出。
+  const dwell = dwellPathRatio(samples);
+  const firstEntry = samples.findIndex((sample) => sample.errorDeg <= sample.radiusDeg);
+  if (firstEntry < 0) {
+    pushFlag(flags, 'never_entered_radius');
+    pushFlag(traceFlags, 'never_entered_radius');
+    return {
+      ...identity,
+      ...maybe('dwellPathRatio', dwell),
+      flags: ordered(MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY, flags),
+    };
+  }
+
+  const tEntryMs = samples[firstEntry].tMs;
+  let approachToFireMs: number | undefined;
+  if (firstShot === undefined) {
+    pushFlag(flags, 'no_shot_at_target');
+    pushFlag(traceFlags, 'no_shot_at_target');
+  } else if (firstShot.tMs + WINDOW_EPSILON_MS < tEntryMs) {
+    // 意圖歸屬的首發在進入角半徑之前（玩家在還沒對準時就扣了扳機）⇒ approach 區間為負。
+    // 具名聲明而不是取 0 或取絕對值——兩者都會把「提早開火」偽裝成「立刻開火」。
+    pushFlag(flags, 'fire_before_entry');
+    pushFlag(traceFlags, 'fire_before_entry');
+  } else {
+    approachToFireMs = firstShot.tMs - tEntryMs;
+  }
+
+  return {
+    ...identity,
+    reEntryCount: reEntryCount(samples, firstEntry),
+    ...maybe('dwellPathRatio', dwell),
+    signReversalCount: signReversalCount(samples.slice(firstEntry)),
+    ...maybe('approachToFireMs', approachToFireMs),
+    flags: ordered(MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY, flags),
+  };
+}
+
+/**
+ * 目標在該視點張成的**角半徑**（度）：`asin(r / d)`，`r` = 命中半徑、`d` = 球心距。
+ *
+ * 這不是門檻參數，是目標的**實際角尺寸**：距離變它就變，換靶徑它也跟著變。且它與命中判定
+ * **恆等**而非近似 —— ray/sphere 相交 ⟺ 球心到射線的垂距 `d·sin(ε) ≤ r` ⟺ `ε ≤ asin(r/d)`。
+ * 故「進入角半徑」⟺「這一發會命中」，讀的是同一個 `meta.targets.hitbox`（GD-7），
+ * 不是另一套尺寸常數。
+ *
+ * ⚠️ 這裡的 `Math.asin` 是本模組僅有的三角換算之一（另一處是方位角的 `Math.atan2`），兩者都是
+ * T6 新構念所需的量，**不是** ε(t)／on-target／eye origin 的第二定義 —— 那三者仍一律走
+ * `angularDistanceDeg()`／`resolveEyeOrigin()`／`eyeOriginForTick()`。見 `progress.md` D-63.T6-1。
+ */
+function angularRadiusDeg(eye: TargetPoint, center: TargetWorldPos, radiusU: number): number {
+  const distance = Math.hypot(center.x - eye.x, center.y - eye.y, center.z - eye.z);
+  // 視點落在球內 ⇒ 整個視野都「在靶上」。真實 v8 不可能（靶在 24–26 u 外），但不靜默除爆。
+  if (distance <= radiusU) return 180;
+  return radToDeg(Math.asin(radiusU / distance));
+}
+
+/** 首次進入之後，每一次「離開 → 再進入」記 1。單調計數，無門檻、無遲滯帶。 */
+function reEntryCount(samples: readonly MicroAdjustSample[], firstEntry: number): number {
+  let count = 0;
+  let inside = true;
+  for (let i = firstEntry + 1; i < samples.length; i++) {
+    const nowInside = samples[i].errorDeg <= samples[i].radiusDeg;
+    if (nowInside && !inside) count++;
+    inside = nowInside;
+  }
+  return count;
+}
+
+/** 帶寬內的累積角路徑長 / 該帶寬內的平均角半徑。比值，無門檻。 */
+function dwellPathRatio(samples: readonly MicroAdjustSample[]): number | undefined {
+  let pathDeg = 0;
+  let radiusSumDeg = 0;
+  let count = 0;
+  for (const sample of samples) {
+    if (sample.errorDeg > DWELL_RADIUS_MULTIPLE * sample.radiusDeg) continue;
+    pathDeg += sample.stepDeg;
+    radiusSumDeg += sample.radiusDeg;
+    count++;
+  }
+  if (count === 0 || radiusSumDeg === 0) return undefined;
+  return pathDeg / (radiusSumDeg / count);
+}
+
+/** dε/dt 的符號反轉次數。零差分既不算反轉也不重設方向（純計數，無平滑、無死區）。 */
+function signReversalCount(samples: readonly MicroAdjustSample[]): number {
+  let reversals = 0;
+  let previousSign = 0;
+  for (let i = 1; i < samples.length; i++) {
+    const sign = Math.sign(samples[i].errorDeg - samples[i - 1].errorDeg);
+    if (sign === 0) continue;
+    if (previousSign !== 0 && sign !== previousSign) reversals++;
+    previousSign = sign;
+  }
+  return reversals;
+}
+
+// ---------------------------------------------------------------------------
+// 擊殺後方向預測曲線（T6／FR-63.11）
+// ---------------------------------------------------------------------------
+
+interface DirectionTransition {
+  readonly tKillMs: number;
+  readonly anchorYaw: number;
+  readonly anchorPitch: number;
+  readonly startTickIndex: number;
+  readonly candidates: readonly { readonly targetId: string; readonly bearingRad: number }[];
+  readonly groundTruthId: string;
+}
+
+/**
+ * 擊殺後固定窗長 `W` 的累積角位移方位角，用來預測下一顆要打的是誰（FR-63.11）。
+ *
+ * - **`W` 是掃描出來的自變項，不是凍結的門檻**。輸出是一條逐 `W` 的準確率曲線，不是一個判定。
+ * - **ground truth 是實際的下一次擊殺** ⇒ 不需要合成已知意圖，也不需要驗證任何歸因規則。
+ * - 位移取 `ticks[].dYaw`／`dPitch`（真 128 Hz），**不**用 `aim` 差分（更新率 = 顯示率）。
+ * - 候選集取**下一 tick**的存活集合，故含擊殺當下才補位的 replacement（FR-63.2）。
+ */
+function deriveDirection(
+  payload: ExportPayload,
+  windows: readonly TargetWindow[],
+  ticks: readonly TickRecord[],
+  eyeOrigin: ResolvedEyeOrigin,
+  options: MicroFlickMetricsOptions,
+): MicroFlickDirectionMetrics {
+  const flags: MicroFlickDirectionFlag[] = [];
+  const windowsMs = options.directionWindowsMs ?? DEFAULT_DIRECTION_WINDOWS_MS;
+  const simHz = payload.meta?.simHz;
+  const tickMs = 1000 / (Number.isFinite(simHz) && simHz > 0 ? simHz : SIM_HZ);
+
+  const fires = payload.events
+    .filter((event): event is FireEvent => event.type === 'fire')
+    .slice()
+    .sort((a, b) => a.t - b.t);
+  const killed = windows
+    .filter((window): window is TargetWindow & { tKillMs: number } => window.tKillMs !== undefined)
+    .slice()
+    .sort((a, b) => a.tKillMs - b.tKillMs);
+  if (killed.length < 2) pushFlag(flags, 'no_kill_transitions');
+
+  // 候選方位角與 `W` 無關 ⇒ 每次擊殺只算一次，之後逐 `W` 重用。
+  const transitions: DirectionTransition[] = [];
+  for (let i = 0; i + 1 < killed.length; i++) {
+    const tKillMs = killed[i].tKillMs;
+    const anchor = fires.find((fire) => Math.abs(fire.t - tKillMs) <= WINDOW_EPSILON_MS);
+    if (anchor?.viewYaw === undefined || anchor.viewPitch === undefined) {
+      pushFlag(flags, 'missing_view_angles');
+      continue;
+    }
+
+    const eye = eyeOriginForTick(tickAtOrBefore(ticks, tKillMs), eyeOrigin);
+    const candidates: { targetId: string; bearingRad: number }[] = [];
+    for (const candidate of aliveAt(windows, tKillMs + tickMs).targets) {
+      if (candidate.pos === undefined) continue;
+      const aim = viewAnglesTo(eye, candidate.pos);
+      if (aim === undefined) continue;
+      candidates.push({
+        targetId: candidate.targetId,
+        bearingRad: Math.atan2(
+          wrapPi(aim.pitch - anchor.viewPitch),
+          wrapPi(aim.yaw - anchor.viewYaw),
+        ),
+      });
+    }
+    if (candidates.length === 0) {
+      pushFlag(flags, 'no_candidates');
+      continue;
+    }
+
+    const groundTruthId = killed[i + 1].targetId;
+    if (!candidates.some((candidate) => candidate.targetId === groundTruthId)) {
+      pushFlag(flags, 'next_kill_not_in_candidates');
+      continue;
+    }
+
+    transitions.push({
+      tKillMs,
+      anchorYaw: anchor.viewYaw,
+      anchorPitch: anchor.viewPitch,
+      startTickIndex: firstTickIndexAtOrAfter(ticks, tKillMs),
+      candidates,
+      groundTruthId,
+    });
+  }
+
+  const curve = windowsMs.map((windowMs) =>
+    directionWindow(windowMs, transitions, ticks, flags),
+  );
+
+  return {
+    windows: curve,
+    n: transitions.length,
+    flags: ordered(MICRO_FLICK_DIRECTION_FLAG_VOCABULARY, flags),
+  };
+}
+
+function directionWindow(
+  windowMs: number,
+  transitions: readonly DirectionTransition[],
+  ticks: readonly TickRecord[],
+  traceFlags: MicroFlickDirectionFlag[],
+): MicroFlickDirectionWindow {
+  const flags: MicroFlickDirectionFlag[] = [];
+  const raise = (flag: MicroFlickDirectionFlag): void => {
+    pushFlag(flags, flag);
+    pushFlag(traceFlags, flag);
+  };
+
+  let correct = 0;
+  let n = 0;
+
+  for (const transition of transitions) {
+    let sumYaw = 0;
+    let sumPitch = 0;
+    let integrable = true;
+    for (let i = transition.startTickIndex; i < ticks.length; i++) {
+      const tick = ticks[i];
+      if (tick.t > transition.tKillMs + windowMs + WINDOW_EPSILON_MS) break;
+      if (tick.dYaw === undefined || tick.dPitch === undefined) {
+        integrable = false;
+        break;
+      }
+      sumYaw += tick.dYaw;
+      sumPitch += tick.dPitch;
+    }
+    if (!integrable) {
+      raise('no_mouse_integration');
+      continue;
+    }
+    if (sumYaw === 0 && sumPitch === 0) {
+      raise('zero_displacement');
+      continue;
+    }
+
+    const predictedBearing = Math.atan2(sumPitch, sumYaw);
+    let best: string | undefined;
+    let bestDelta = Infinity;
+    let tied = false;
+    for (const candidate of transition.candidates) {
+      const delta = Math.abs(wrapPi(candidate.bearingRad - predictedBearing));
+      if (delta < bestDelta - BEARING_TIE_TOLERANCE_RAD) {
+        bestDelta = delta;
+        best = candidate.targetId;
+        tied = false;
+      } else if (delta <= bestDelta + BEARING_TIE_TOLERANCE_RAD) {
+        tied = true;
+      }
+    }
+    if (best === undefined || tied) {
+      raise('ambiguous_bearing');
+      continue;
+    }
+
+    n++;
+    if (best === transition.groundTruthId) correct++;
+  }
+
+  return {
+    windowMs,
+    ...(n > 0 ? { predictionAccuracy: correct / n } : {}),
+    n,
+    flags: ordered(MICRO_FLICK_DIRECTION_FLAG_VOCABULARY, flags),
+  };
+}
+
+/**
+ * 從 eye 指向世界點所需的 `(yaw, pitch)` —— `aimForward()` 的反解。
+ *
+ * 這是**座標換算**不是新構念：朝向的定義本身仍在 `eyeOrigin.ts` 的 `aimForward()`，此處只是把它
+ * 反過來解，用來回答「候選目標在準心的哪個方位」。任何**誤差**量仍一律走 `angularDistanceDeg()`。
+ */
+function viewAnglesTo(
+  eye: TargetPoint,
+  pos: TargetWorldPos,
+): { readonly yaw: number; readonly pitch: number } | undefined {
+  const to = direction(eye, pos);
+  if (to === undefined) return undefined;
+  return { yaw: Math.atan2(-to.x, -to.z), pitch: Math.asin(Math.min(1, Math.max(-1, to.y))) };
+}
+
+/** 第一個 `t >= tMs` 的 tick 索引；二分搜尋。 */
+function firstTickIndexAtOrAfter(ticks: readonly TickRecord[], tMs: number): number {
+  let low = 0;
+  let high = ticks.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (ticks[mid].t + WINDOW_EPSILON_MS >= tMs) high = mid;
+    else low = mid + 1;
+  }
+  return low;
+}
+
+const PI = Math.PI;
+const TWO_PI = PI * 2;
+
+/** 折回 `[-π, π)`，讓方位角相減不會在 ±π 附近炸開。純算術，不經三角函式。 */
+function wrapPi(value: number): number {
+  const shifted = (((value + PI) % TWO_PI) + TWO_PI) % TWO_PI;
+  return shifted - PI;
+}
+
+function radToDeg(value: number): number {
+  return (value * 180) / PI;
 }

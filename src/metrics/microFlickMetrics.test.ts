@@ -4,18 +4,26 @@ import { describe, expect, it } from 'vitest';
 import type { DrillEvent } from '../data/DataRecorder.ts';
 import type { ExportPayload } from '../data/export.ts';
 import type { TickRecord } from '../data/RingBuffer.ts';
-import { microFlickThreeTargetTestV8 } from '../drill/micro_flick_three_target_test_v8.ts';
-import { angularDistanceDeg } from './eyeOrigin.ts';
+import {
+  MICRO_FLICK_V8_TARGET_DIAMETER_U,
+  microFlickThreeTargetTestV8,
+} from '../drill/micro_flick_three_target_test_v8.ts';
+import { aimForward, angularDistanceDeg } from './eyeOrigin.ts';
 import { createRan1 } from '../recoil/rng.ts';
 import { createTargetManager } from '../sim/TargetManager.ts';
 import { createSharedState } from '../state/SharedState.ts';
 import type { Vec3 } from '../state/types.ts';
 import {
+  DEFAULT_DIRECTION_WINDOWS_MS,
+  MICRO_FLICK_DIRECTION_FLAG_VOCABULARY,
   MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY,
+  MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY,
   MICRO_FLICK_OUTCOME_FLAG_VOCABULARY,
   MICRO_FLICK_SELECTION_FLAG_VOCABULARY,
   deriveMicroFlickMetrics,
   type MicroFlickGeometryMetrics,
+  type MicroFlickMetrics,
+  type MicroFlickTargetMicroAdjust,
 } from './microFlickMetrics.ts';
 
 const TICK_MS = 1000 / 128;
@@ -253,18 +261,30 @@ describe('WP-63 T4 — 缺失一律 undefined + 具名旗標（FR-63.15）', () 
     }
   });
 
-  it('不先佔位尚未交付的鍵：L1 已由 T5 交付，L2 與方向預測仍由 T6 交付', () => {
+  it('不先佔位尚未交付的鍵：L0／L1／L3 由 T4–T5 交付，L2 與方向預測由 T6 交付', () => {
     const metrics = deriveMicroFlickMetrics(scenario(HAND_CASE)) as unknown as Record<string, unknown>;
+    // T6 落地後這裡由「斷言兩鍵缺席」翻成「斷言兩鍵存在且是真的有算」——原本的意圖是**不得先佔位**
+    // （空陣列會被讀成「算過了，沒有樣本」而不是「這一層還沒交付」），交付之後同一個意圖就變成
+    // 「鍵在，而且帶得動 n 與 flags」。T7 之後不應再有第三種狀態。
     expect(Object.keys(metrics).sort()).toEqual([
+      'direction',
       'eyeOriginSource',
       'geometry',
+      'microAdjust',
       'outcome',
       'selection',
       'version',
     ]);
-    // 空陣列會被讀成「算過了，沒有樣本」而不是「這一層還沒交付」。
-    expect(metrics.microAdjust).toBeUndefined();
-    expect(metrics.direction).toBeUndefined();
+    expect(metrics.microAdjust).toMatchObject({
+      targets: expect.any(Array),
+      n: expect.any(Number),
+      flags: expect.any(Array),
+    });
+    expect(metrics.direction).toMatchObject({
+      windows: expect.any(Array),
+      n: expect.any(Number),
+      flags: expect.any(Array),
+    });
   });
 });
 
@@ -273,20 +293,21 @@ describe('WP-63 T4 — C-D4：角距來自既有 canonical 實作,不在本模�
     readFileSync(fileURLToPath(new URL('./microFlickMetrics.ts', import.meta.url)), 'utf8'),
   );
 
-  it('模組原始碼不含任何三角／弧度換算——夾角一律經 angularDistanceDeg()', () => {
-    for (const symbol of [
-      'Math.acos',
-      'Math.asin',
-      'Math.atan',
-      'Math.cos',
-      'Math.sin',
-      'Math.tan',
-      'RAD_TO_DEG',
-      'DEG_TO_RAD',
-      'Math.PI',
-    ]) {
+  it('夾角一律經 angularDistanceDeg()——三角換算只保留 T6 兩個具名用途', () => {
+    // T4/T5 時期本檔零三角換算。T6 帶進兩個**新構念**，各自需要一次換算，兩者都不是既有構念的
+    // 第二定義（D-63.T6-1）：
+    //   - `Math.asin` ×2：目標角半徑 `asin(r/d)`（與 ray/sphere 命中判定**恆等**而非近似，半徑
+    //     讀 `meta.targets.hitbox` 這個 GD-7 單一來源），以及 `viewAnglesTo()` 反解 pitch。
+    //   - `Math.atan2` ×3：`viewAnglesTo()` 反解 yaw，加上兩處方位角（FR-63.11 的字面定義）。
+    //   - `Math.PI` ×1：`radToDeg`／`wrapPi` 共用的那一個常數。
+    // 其餘換算仍為零，且下一個 it() 的 ε／on-target／eye 幾何禁令**未放寬**。數字刻意寫死：
+    // 多出來的任何一處都該回來讀這段註解，確認它也是新構念而不是既有構念的第二定義。
+    for (const symbol of ['Math.acos', 'Math.cos', 'Math.sin', 'Math.tan', 'RAD_TO_DEG', 'DEG_TO_RAD']) {
       expect(occurrences(source, symbol), symbol).toBe(0);
     }
+    expect(occurrences(source, 'Math.asin'), 'Math.asin: 角半徑 + viewAnglesTo').toBe(2);
+    expect(occurrences(source, 'Math.atan'), 'Math.atan2: viewAnglesTo + 兩處方位角').toBe(3);
+    expect(occurrences(source, 'Math.PI'), 'Math.PI: 僅 PI 常數一處').toBe(1);
     expect(occurrences(source, 'angularDistanceDeg')).toBeGreaterThan(0);
     expect(occurrences(source, 'resolveEyeOrigin')).toBeGreaterThan(0);
     expect(occurrences(source, 'eyeOriginForTick')).toBeGreaterThan(0);
@@ -1064,4 +1085,457 @@ function t5Scenario(spec: T5Spec): ExportPayload {
     ticks,
     events,
   };
+}
+
+// ---------------------------------------------------------------------------
+// T6 —— L2 免閾值微調描述子 + 擊殺後方向預測曲線（FR-63.10／63.11）
+// ---------------------------------------------------------------------------
+
+/** v8 靶徑 1.08375 u @ 25 u ⇒ 角半徑 asin(0.541875/25)，約 1.242°。 */
+const T6_ANGULAR_RADIUS_DEG =
+  (Math.asin(MICRO_FLICK_V8_TARGET_DIAMETER_U / 2 / TARGET_DISTANCE_U) * 180) / Math.PI;
+
+describe('WP-63 T6 — E1 直線 flick 進靶即開火（FR-63.10）', () => {
+  const metrics = deriveMicroFlickMetrics(t6Scenario(E1_STRAIGHT));
+  const entry = microAdjustAt(metrics, 0);
+
+  it('E1: 進入門界由靶的角尺寸決定，不是調校值', () => {
+    expect(T6_ANGULAR_RADIUS_DEG).toBeCloseTo(1.242, 3);
+    expect(metrics.microAdjust.hitboxRadiusU).toBe(MICRO_FLICK_V8_TARGET_DIAMETER_U / 2);
+  });
+
+  it('E1: 單調逼近 ⇒ reEntryCount === 0、signReversalCount === 0', () => {
+    expect(entry.reEntryCount).toBe(0);
+    expect(entry.signReversalCount).toBe(0);
+    expect(entry.flags).toEqual([]);
+  });
+
+  it('E1: approachToFireMs = 首次進入角半徑 → 意圖歸屬首發', () => {
+    // 逐 tick 0.25°、起點 0°、靶在 5° ⇒ ε_j = 5 − 0.25j，首次 ≤ 1.242 的是 j = 16（ε = 1.0）。
+    // 擊殺排在 tick 20 的前半個 tick ⇒ 相距 3.5 個 tick。
+    expect(entry.approachToFireMs).toBeCloseTo(3.5 * TICK_MS, 6);
+  });
+
+  it('E1: dwellPathRatio 反映「進帶寬後一路走到底」的路徑量', () => {
+    expect(entry.dwellPathRatio).toBeGreaterThan(1);
+    expect(entry.dwellPathRatio).toBeLessThan(3);
+  });
+});
+
+describe('WP-63 T6 — E2 過衝後回頭再殺（FR-63.10）', () => {
+  const entry = microAdjustAt(deriveMicroFlickMetrics(t6Scenario(E2_OVERSHOOT)), 0);
+
+  it('E2: reEntryCount >= 1 且 signReversalCount >= 1', () => {
+    expect(entry.reEntryCount).toBeGreaterThanOrEqual(1);
+    expect(entry.signReversalCount).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('WP-63 T6 — E3 一路碎步修正（FR-63.10）', () => {
+  const choppy = microAdjustAt(deriveMicroFlickMetrics(t6Scenario(E3_CHOPPY)), 0);
+  const straight = microAdjustAt(deriveMicroFlickMetrics(t6Scenario(E1_STRAIGHT)), 0);
+
+  it('E3: signReversalCount 顯著高於直線 flick', () => {
+    expect(choppy.signReversalCount!).toBeGreaterThan(straight.signReversalCount! + 4);
+  });
+
+  it('E3: dwellPathRatio 大於直線 flick（同一段距離走了更多路）', () => {
+    expect(choppy.dwellPathRatio!).toBeGreaterThan(straight.dwellPathRatio!);
+  });
+});
+
+describe('WP-63 T6 — E4 已知意圖的兩段軌跡：小 W 預測 A、大 W 預測 B（FR-63.11）', () => {
+  const metrics = deriveMicroFlickMetrics(t6Scenario(E4_FEINT));
+  const curve = new Map(metrics.direction.windows.map((entry) => [entry.windowMs, entry]));
+
+  it('E4: 四個預設窗長各有一筆，樣本數一致', () => {
+    expect(metrics.direction.windows.map((entry) => entry.windowMs)).toEqual([
+      ...DEFAULT_DIRECTION_WINDOWS_MS,
+    ]);
+    expect(metrics.direction.n).toBe(1);
+    for (const entry of metrics.direction.windows) expect(entry.n).toBe(1);
+  });
+
+  it('E4: 小 W 抓到假動作（朝 A，預測錯），大 W 抓到真意圖（朝 B，預測對）', () => {
+    expect(curve.get(30)!.predictionAccuracy).toBe(0);
+    expect(curve.get(60)!.predictionAccuracy).toBe(0);
+    expect(curve.get(90)!.predictionAccuracy).toBe(1);
+    expect(curve.get(120)!.predictionAccuracy).toBe(1);
+  });
+
+  it('E4: 曲線形狀本身是產出——這正是不把某個 W 凍結成門檻的理由', () => {
+    expect(metrics.direction.windows.map((entry) => entry.predictionAccuracy)).toEqual([0, 0, 1, 1]);
+  });
+
+  it('E4: 自訂 directionWindowsMs 照樣掃描（W 是自變項不是常數）', () => {
+    const custom = deriveMicroFlickMetrics(t6Scenario(E4_FEINT), { directionWindowsMs: [45, 200] });
+    expect(custom.direction.windows.map((entry) => entry.windowMs)).toEqual([45, 200]);
+  });
+});
+
+describe('WP-63 T6 — 單一意圖軌跡上，準確率隨 W 增大不下降（Step 6）', () => {
+  it('直線奔向下一顆 ⇒ 每個 W 都預測對，曲線不下降', () => {
+    const metrics = deriveMicroFlickMetrics(t6Scenario(SINGLE_INTENT));
+    const accuracies = metrics.direction.windows.map((entry) => entry.predictionAccuracy!);
+    expect(accuracies).toEqual([1, 1, 1, 1]);
+    for (let i = 1; i < accuracies.length; i++) {
+      expect(accuracies[i]).toBeGreaterThanOrEqual(accuracies[i - 1]);
+    }
+  });
+});
+
+describe('WP-63 T6 — E5 60 Hz aim 更新：本層不依賴 aim 連續性（KI-031 懸崖的回歸防線）', () => {
+  it('E5: aim 逐 tick 重複、dYaw 正常 ⇒ L2 與方向預測輸出逐位不變', () => {
+    const fresh = deriveMicroFlickMetrics(t6Scenario(E4_FEINT));
+    const stale = deriveMicroFlickMetrics(t6Scenario({ ...E4_FEINT, staleAim: true }));
+
+    expect(stale.microAdjust).toEqual(fresh.microAdjust);
+    expect(stale.direction).toEqual(fresh.direction);
+  });
+
+  it('E5: 這份 fixture 的 aim 確實被凍住了（否則上一條是空測試）', () => {
+    const stale = t6Scenario({ ...E4_FEINT, staleAim: true });
+    const fresh = t6Scenario(E4_FEINT);
+    expect(new Set(stale.ticks.map((tick) => tick.aim.yaw)).size).toBe(1);
+    expect(new Set(fresh.ticks.map((tick) => tick.aim.yaw)).size).toBeGreaterThan(1);
+    // dYaw 兩邊完全相同 —— 差別只在 aim 這條被顯示率污染的頻道。
+    expect(stale.ticks.map((tick) => tick.dYaw)).toEqual(fresh.ticks.map((tick) => tick.dYaw));
+  });
+});
+
+describe('WP-63 T6 — GD-7：角半徑與命中判定同源，且不經 targetHitboxRadius()', () => {
+  const source = codeOnly(
+    readFileSync(fileURLToPath(new URL('./microFlickMetrics.ts', import.meta.url)), 'utf8'),
+  );
+
+  it('角半徑用 widthU / 2（HitDetector 的 sphere 半徑），不是箱體角點半徑', () => {
+    const metrics = deriveMicroFlickMetrics(t6Scenario(E1_STRAIGHT));
+    expect(metrics.microAdjust.hitboxRadiusU).toBe(MICRO_FLICK_V8_TARGET_DIAMETER_U / 2);
+
+    // KI-029：`targetHitboxRadius()` 對 cube 回角點半徑 √3/2·w，是命中半徑的 √3 倍。誤用它會讓
+    // 進入判準整個鬆掉——這一條把兩者的差距釘成一個會紅的數字。
+    const cornerRadiusU = (Math.sqrt(3) / 2) * MICRO_FLICK_V8_TARGET_DIAMETER_U;
+    expect(metrics.microAdjust.hitboxRadiusU!).toBeLessThan(cornerRadiusU);
+    expect(cornerRadiusU / metrics.microAdjust.hitboxRadiusU!).toBeCloseTo(Math.sqrt(3), 6);
+  });
+
+  it('模組不 import 也不提及 targetHitboxRadius／clearance 路徑', () => {
+    expect(source).not.toMatch(/targetHitboxRadius/);
+    expect(source).not.toMatch(/from ['"][^'"]*clearance/);
+  });
+
+  it('缺 hitbox ⇒ no_hitbox，整層不出數（不猜一個預設靶徑）', () => {
+    const metrics = deriveMicroFlickMetrics(t6Scenario({ ...E1_STRAIGHT, omitHitbox: true }));
+    expect(metrics.microAdjust.flags).toContain('no_hitbox');
+    expect(metrics.microAdjust.hitboxRadiusU).toBeUndefined();
+    expect(metrics.microAdjust.n).toBe(0);
+    for (const target of metrics.microAdjust.targets) {
+      expect(target.reEntryCount).toBeUndefined();
+      expect(target.dwellPathRatio).toBeUndefined();
+    }
+  });
+
+  it('box hitbox ⇒ unsupported_hitbox_shape，不改用某種等效半徑', () => {
+    const metrics = deriveMicroFlickMetrics(t6Scenario({ ...E1_STRAIGHT, hitboxShape: 'box' }));
+    expect(metrics.microAdjust.flags).toContain('unsupported_hitbox_shape');
+    expect(metrics.microAdjust.n).toBe(0);
+  });
+});
+
+describe('WP-63 T6 — 免閾值：原始碼不含任何速度門檻或平滑窗常數', () => {
+  const source = codeOnly(
+    readFileSync(fileURLToPath(new URL('./microFlickMetrics.ts', import.meta.url)), 'utf8'),
+  );
+
+  it('五個 seg-v2 調校符號的出現次數皆為 0（T6 Step 3）', () => {
+    for (const symbol of ['DegPerSec', 'peakFloor', 'sgWindow', 'stopRatio', 'lowRatio']) {
+      expect(occurrences(source, symbol), symbol).toBe(0);
+    }
+  });
+
+  it('不 import submovement／savitzkyGolay——seg-v2 一行不動', () => {
+    expect(source).not.toMatch(/from ['"]\.\/submovement/);
+    expect(source).not.toMatch(/savitzkyGolay/);
+  });
+});
+
+describe('WP-63 T6 — 缺失一律 undefined + 封閉詞彙表旗標（FR-63.15）', () => {
+  it('L2 與方向層的旗標都落在各自的詞彙表內', () => {
+    for (const spec of [E1_STRAIGHT, E2_OVERSHOOT, E3_CHOPPY, E4_FEINT, SINGLE_INTENT]) {
+      const metrics = deriveMicroFlickMetrics(t6Scenario(spec));
+      for (const flag of metrics.microAdjust.flags) {
+        expect(MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY).toContain(flag);
+      }
+      for (const target of metrics.microAdjust.targets) {
+        for (const flag of target.flags) {
+          expect(MICRO_FLICK_MICRO_ADJUST_FLAG_VOCABULARY).toContain(flag);
+        }
+      }
+      for (const flag of metrics.direction.flags) {
+        expect(MICRO_FLICK_DIRECTION_FLAG_VOCABULARY).toContain(flag);
+      }
+    }
+  });
+
+  it('缺 dYaw/dPitch ⇒ no_mouse_integration，不退回 aim 差分', () => {
+    const metrics = deriveMicroFlickMetrics(t6Scenario({ ...E4_FEINT, omitMouseIntegration: true }));
+    expect(metrics.microAdjust.flags).toContain('no_mouse_integration');
+    expect(metrics.direction.flags).toContain('no_mouse_integration');
+    expect(metrics.microAdjust.n).toBe(0);
+    for (const entry of metrics.direction.windows) expect(entry.n).toBe(0);
+  });
+
+  it('從未進入角半徑 ⇒ never_entered_radius，三個「進入後」描述子缺席', () => {
+    const entry = microAdjustAt(deriveMicroFlickMetrics(t6Scenario(NEVER_ENTERS)), 0);
+    expect(entry.flags).toContain('never_entered_radius');
+    expect(entry.reEntryCount).toBeUndefined();
+    expect(entry.signReversalCount).toBeUndefined();
+    expect(entry.approachToFireMs).toBeUndefined();
+  });
+
+  it('drill 結束仍存活的窗標 never_killed，不出任何描述子', () => {
+    const metrics = deriveMicroFlickMetrics(t6Scenario(E1_STRAIGHT));
+    const alive = metrics.microAdjust.targets.filter((target) =>
+      target.flags.includes('never_killed'),
+    );
+    expect(alive.length).toBeGreaterThan(0);
+    for (const target of alive) expect(target.reEntryCount).toBeUndefined();
+  });
+
+  it('沒有擊殺轉移時不補零準確率', () => {
+    const metrics = deriveMicroFlickMetrics(t6Scenario(E1_STRAIGHT));
+    expect(metrics.direction.flags).toContain('no_kill_transitions');
+    for (const entry of metrics.direction.windows) {
+      expect(entry.n).toBe(0);
+      expect(entry.predictionAccuracy).toBeUndefined();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T6 fixture
+// ---------------------------------------------------------------------------
+
+interface T6View {
+  readonly yawDeg: number;
+  readonly pitchDeg?: number;
+}
+
+interface T6Kill {
+  /**
+   * 擊殺排在這個 tick 的**前**半個 tick ⇒ 該窗的 tickRange 正好結束在此，而擊殺那一發的視角
+   * 等於 `path[tickIndex]`。反向積分因此還原出逐位相同的 `path`（見 `t6Scenario` 註解）。
+   */
+  readonly tickIndex: number;
+  /** 被殺目標的身分 = 它所在的視角 yaw。 */
+  readonly viewYawDeg: number;
+  readonly replacement?: T6View;
+}
+
+interface T6Spec {
+  readonly initial: readonly T6View[];
+  /** 逐 tick 邊界的視角（度），索引 0..T。`ticks[i].dYaw = path[i+1] − path[i]`。 */
+  readonly path: readonly T6View[];
+  readonly kills: readonly T6Kill[];
+  /** E5：`aim` 逐 tick 凍住（模擬 60 Hz 更新），`dYaw`/`dPitch` 不變。 */
+  readonly staleAim?: boolean;
+  readonly omitHitbox?: boolean;
+  readonly hitboxShape?: 'box' | 'sphere';
+  readonly omitMouseIntegration?: boolean;
+}
+
+/** 0° → 5°，每 tick 0.25°，單調逼近後開火。靶在 5°。 */
+const E1_STRAIGHT: T6Spec = {
+  initial: [{ yawDeg: 5 }, { yawDeg: -20 }, { yawDeg: 25 }],
+  path: ramp(0, 5, 20),
+  kills: [{ tickIndex: 20, viewYawDeg: 5 }],
+};
+
+/** 0° → 7°（過衝出角半徑）→ 回到 5°。 */
+const E2_OVERSHOOT: T6Spec = {
+  initial: [{ yawDeg: 5 }, { yawDeg: -20 }, { yawDeg: 25 }],
+  path: [...ramp(0, 7, 20), ...ramp(7, 5, 8).slice(1)],
+  kills: [{ tickIndex: 28, viewYawDeg: 5 }],
+};
+
+/** 進靶後在 ±0.9°（角半徑內外）來回碎步，最後停在靶心。 */
+const E3_CHOPPY: T6Spec = {
+  initial: [{ yawDeg: 5 }, { yawDeg: -20 }, { yawDeg: 25 }],
+  path: [...ramp(0, 5, 20), ...zigzag(5, 0.25, 1.05, 12)],
+  kills: [{ tickIndex: 32, viewYawDeg: 5 }],
+};
+
+/** 從未靠近靶：全程停在 0°，靶在 20°。 */
+const NEVER_ENTERS: T6Spec = {
+  initial: [{ yawDeg: 20 }, { yawDeg: -20 }, { yawDeg: 25 }],
+  path: ramp(0, 0, 20),
+  kills: [{ tickIndex: 20, viewYawDeg: 20 }],
+};
+
+/**
+ * E4：殺掉 0° 的靶之後先朝 A（−10°）動 8 個 tick，再反向奔向 B（+10°）並殺掉 B。
+ *
+ * 小 `W` 的累積位移是負的（朝 A）⇒ 預測 A、答錯；`W` 夠大之後淨位移轉正 ⇒ 預測 B、答對。
+ */
+const E4_FEINT: T6Spec = {
+  initial: [{ yawDeg: 0 }, { yawDeg: -10 }, { yawDeg: 10 }],
+  path: [...ramp(0, 0, 10), ...ramp(0, -3, 8).slice(1), ...ramp(-3, 10, 16).slice(1)],
+  kills: [
+    { tickIndex: 10, viewYawDeg: 0 },
+    { tickIndex: 34, viewYawDeg: 10 },
+  ],
+};
+
+/** 單一意圖：殺掉 0° 之後一路直奔 B（+10°）。每個 `W` 都該預測對。 */
+const SINGLE_INTENT: T6Spec = {
+  initial: [{ yawDeg: 0 }, { yawDeg: -10 }, { yawDeg: 10 }],
+  path: [...ramp(0, 0, 10), ...ramp(0, 10, 24).slice(1)],
+  kills: [
+    { tickIndex: 10, viewYawDeg: 0 },
+    { tickIndex: 34, viewYawDeg: 10 },
+  ],
+};
+
+/** 線性斜坡，含頭尾共 `steps + 1` 個點。 */
+function ramp(fromDeg: number, toDeg: number, steps: number): T6View[] {
+  return Array.from({ length: steps + 1 }, (_, i) => ({
+    yawDeg: fromDeg + ((toDeg - fromDeg) * i) / steps,
+    pitchDeg: 0,
+  }));
+}
+
+/**
+ * 在靶心附近來回碎步，最後停在中心。不含起點（接在斜坡後面）。
+ *
+ * ⚠️ 讓 ε 真的**上下震盪**，而不是在中心兩側交替：ε 是無號角距，「左右交替但振幅遞減」的軌跡
+ * 其 ε 反而是單調遞減的（0 次符號反轉）。故此處交替的是**離中心的遠近**，不是左右。
+ */
+function zigzag(centerDeg: number, nearDeg: number, farDeg: number, steps: number): T6View[] {
+  return Array.from({ length: steps }, (_, i) => ({
+    yawDeg: centerDeg + (i === steps - 1 ? 0 : i % 2 === 0 ? farDeg : nearDeg),
+    pitchDeg: 0,
+  }));
+}
+
+function t6Scenario(spec: T6Spec): ExportPayload {
+  const {
+    initial,
+    path,
+    kills,
+    staleAim = false,
+    omitHitbox = false,
+    hitboxShape = 'sphere',
+    omitMouseIntegration = false,
+  } = spec;
+
+  const events: DrillEvent[] = [];
+  const idByYaw = new Map<number, string>();
+  let nextId = 0;
+
+  const spawn = (view: T6View, t: number): void => {
+    const targetId = `t${nextId}`;
+    idByYaw.set(view.yawDeg, targetId);
+    const pos = targetAtView(view);
+    events.push({
+      type: 'visible',
+      targetId,
+      side: nextId % 2 === 0 ? 'L' : 'R',
+      t,
+      targetX: pos.x,
+      targetY: pos.y,
+      targetZ: pos.z,
+    });
+    nextId++;
+  };
+
+  for (const view of initial) spawn(view, 0);
+
+  const ticks: TickRecord[] = path.map((view, i) => {
+    const next = path[i + 1];
+    const dYawRad = next === undefined ? 0 : deg2rad(next.yawDeg - view.yawDeg);
+    const dPitchRad = next === undefined ? 0 : deg2rad((next.pitchDeg ?? 0) - (view.pitchDeg ?? 0));
+    return {
+      t: i * TICK_MS,
+      vx: 0,
+      vz: 0,
+      px: 0,
+      pz: 0,
+      // README §0.1 #1 的錯誤形態：`tx/ty/tz` 只描述陣列首顆。本層不得讀它。
+      tx: 0,
+      ty: 1.6,
+      tz: -TARGET_DISTANCE_U,
+      // `aim` 走 render thread ⇒ 更新率 = 顯示率。`staleAim` 把它凍成常數來模擬 60 Hz 的 KI-031
+      // 懸崖；L2 與方向層都不該受影響。
+      aim: staleAim
+        ? { yaw: 0, pitch: 0 }
+        : { yaw: deg2rad(view.yawDeg), pitch: deg2rad(view.pitchDeg ?? 0) },
+      keys: [],
+      ads: false,
+      fire: false,
+      ...(omitMouseIntegration ? {} : { dYaw: dYawRad, dPitch: dPitchRad }),
+    };
+  });
+
+  for (const kill of kills) {
+    const targetId = idByYaw.get(kill.viewYawDeg);
+    if (targetId === undefined) throw new Error(`no live target at view yaw ${kill.viewYawDeg}`);
+    const anchor = path[kill.tickIndex];
+    const tKillMs = ticks[kill.tickIndex].t - TICK_MS / 2;
+    events.push({
+      type: 'fire',
+      t: tKillMs,
+      hit: true,
+      firstShot: false,
+      residualSpeed: 0,
+      targetId,
+      ammo: 11,
+      viewYaw: deg2rad(anchor.yawDeg),
+      viewPitch: deg2rad(anchor.pitchDeg ?? 0),
+    });
+    if (kill.replacement !== undefined) spawn(kill.replacement, ticks[kill.tickIndex].t);
+  }
+
+  return {
+    meta: {
+      drillId: microFlickThreeTargetTestV8.drill.drillId,
+      weaponId: 'usp_s_laser',
+      simHz: 128,
+      simToWorld: 1,
+      scene: { sceneId: 'micro-flick-room-v8', eye: { ...EYE } },
+      ...(omitHitbox
+        ? {}
+        : {
+            targets: {
+              hitbox: {
+                widthU: MICRO_FLICK_V8_TARGET_DIAMETER_U,
+                heightU: MICRO_FLICK_V8_TARGET_DIAMETER_U,
+                depthU: MICRO_FLICK_V8_TARGET_DIAMETER_U,
+                shape: hitboxShape,
+              },
+            },
+          }),
+    } as ExportPayload['meta'],
+    ticks,
+    events,
+  };
+}
+
+/** 視角 `(yaw, pitch)` 正中目標時，該目標必須在的世界座標。`aimForward()` 是朝向的 canonical 定義。 */
+function targetAtView(view: T6View): { x: number; y: number; z: number } {
+  const forward = aimForward(deg2rad(view.yawDeg), deg2rad(view.pitchDeg ?? 0));
+  return {
+    x: EYE.x + TARGET_DISTANCE_U * forward.x,
+    y: EYE.y + TARGET_DISTANCE_U * forward.y,
+    z: EYE.z + TARGET_DISTANCE_U * forward.z,
+  };
+}
+
+function deg2rad(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function microAdjustAt(metrics: MicroFlickMetrics, windowIndex: number): MicroFlickTargetMicroAdjust {
+  const entry = metrics.microAdjust.targets.find((target) => target.windowIndex === windowIndex);
+  if (entry === undefined) throw new Error(`no micro-adjust row for window ${windowIndex}`);
+  return entry;
 }

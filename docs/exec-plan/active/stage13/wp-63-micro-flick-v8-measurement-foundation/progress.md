@@ -4,7 +4,9 @@
 
 ## 最新狀態（2026-09-14 T5 完成）
 
-✅ **T5 完成**（2026-09-14 16:40Z）。`src/metrics/microFlickMetrics.ts` 補上 **L1 幾何層**（FR-63.7／63.8／63.9）：逐發意圖歸屬（argmin 角誤差，**不讀** `fire.targetId`／`offsetDeg`／`firstShot`）、首發重定義與 `correctionMs` = `cadenceWaitMs` + `settlingMs` 三段拆解。24 個新測試全綠（檔內 26 → **50**）、全量 Vitest **3,310 passed**（T4 基線 3,286，**+24 = 本 task**）、typecheck ×2 與 `vite build` exit 0。三條偏離規劃期字面的決策（D-63.T5-1～3）：`cycletimeSec` 不在 `meta.weapon` 上改查 registry、L1 另立閉區間右界的候選集（否則命中發歸屬不到自己）、`geometry` 為物件並新增逐發 `shots`。T6～T7 未開工。
+✅ **T6 完成**（2026-09-14）。`src/metrics/microFlickMetrics.ts` 補上 **L2 免閾值微調描述子**（FR-63.10：`reEntryCount`／`dwellPathRatio`／`signReversalCount`／`approachToFireMs`）與**擊殺後方向預測曲線**（FR-63.11，逐 `W ∈ {30,60,90,120} ms`）。四個描述子無速度門檻、無平滑窗、無峰值偵測，`submovement.ts` 一行未動；角半徑讀 `meta.targets.hitbox` 並與 ray/sphere 命中判定恆等（GD-7）。25 個新測試全綠（檔內 50 → **75**）、全量 Vitest **3,335 passed**（T5 基線 3,310，**+25 = 本 task**）、typecheck ×2 與 `vite build` exit 0。五條決策（D-63.T6-1～5），其中 **D-63.T6-1 放寬了 T4 的「模組零三角換算」掃描**，單獨列帳。T7 與 T-exit 未開工。
+
+> ⚠️ **T-exit 待辦（本 task 產生）**：README §2.5 的 `microAdjust`／`direction` 簽名（D-63.T6-5）與 §4.1 相依圖的 `T5 → T6`（D-63.T6-4）須同步更正。
 
 ✅ **T4 完成**（2026-09-14 16:29Z）。`src/metrics/microFlickMetrics.ts` 交付 L0 結果層（FR-63.6）＋ L3 選擇策略層（FR-63.4／63.5）；26 個新測試全綠、全量 Vitest 3,286 passed（T3 基線 3,260，**+26 = 本 task**）、typecheck ×2 與 `vite build` exit 0。**可比性前置檢查判定兩群不可比** ⇒ `replacementEngagedRate` 依 [README §3.1](README.md) 只出分層值（`replacementEngagedByRank`）、不出總量（見 §T4 與 D-63.T4-3）。`T_valid` 的錨點與 FM-4 的處置各有一條偏離規劃期字面的決策（D-63.T4-1／D-63.T4-2）。T5–T7 未開工。
 
@@ -30,7 +32,7 @@
 | T3 窗界 primitive | ✅ 完成 | 2026-09-14 | 2026-09-14 15:42Z | 見下方 §T3：typecheck ×2 exit 0、全量 Vitest **3,260 passed／2 skipped（269 files）**（≥ T2 基線 3,233，+27 = 本 task 新增）、`targetWindows.test.ts` 27 passed、NFR-63.3 實測 0.914 ms／5.187 ms、NFR-63.4 掃描 count === 0。 |
 | T4 L0 + L3 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:29Z | 見下方 §T4：26 tests 綠、全量 Vitest 3,286 passed／2 skipped、typecheck ×2 與 build exit 0；可比性檢查 p10/p50/p90 入帳。 |
 | T5 L1 幾何層 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:40Z | 見下方 §T5：50 tests 綠（+24）、全量 Vitest 3,310 passed／2 skipped、typecheck ×2 與 build exit 0；D1–D6 六份對抗性 fixture 各有具名測試；五個 canonical derivation 檔 `git diff` 為空。 |
-| T6 L2 + 方向 | ⬜ 未開工 | — | — | — |
+| T6 L2 + 方向 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T6：75 tests 綠（+25）、全量 Vitest 3,335 passed／2 skipped（T5 基線 3,310）、typecheck ×2 與 `vite build` exit 0；E1–E5 五份 fixture 各有具名測試；門檻常數掃描五個字串 count === 0；六個 canonical derivation 檔 `git diff` 為空。 |
 | T7 Harness + 紀律 | ⬜ 未開工 | — | — | — |
 | T-exit | ⬜ 未開工 | — | — | — |
 
@@ -723,6 +725,93 @@ README §2.5 的 `geometry` 是一個 per-target 陣列。但 FR-63.8 要 `first
 20. **（T4）`angularDistanceDeg()` 收的是兩個單位方向向量，不是兩個點。** canonical 實作把「點 → 以 eye 為頂點的單位方向」這一步留在呼叫端（`angularEccentricityDeg()` 自己做了一次）。⇒ 消費端必然要寫一段正規化，這不是重寫幾何（角度本身仍來自 canonical），但邊界要講清楚：本模組的 C-D4 掃描因此**允許 `Math.hypot`、禁掉所有三角函式與弧度換算**，讓「角度只能從 `angularDistanceDeg()` 來」變成機械可驗的。
 
 **T5 新發現（2026-09-14）**：兩個像是漏寫、實則是結構性的缺口。（1）**`WeaponConfig.cycletimeSec` 從來沒有進過匯出 schema** —— `WeaponMeta` 只帶 `id`／`ads`／`bullet`／`projectileOverflow`，所以任何「從 `meta.weapon` 讀節奯」的規劃都只能改走 registry 查表（D-63.T5-1）。（2）**`aliveAt()` 的右界是半開的**（`tMs < tKillMs`）——對 L3 正確，拿去做 L1 則會把「被這一發打掉的那顆」從它自己那一發的候選集排除，使命中發永遠歸屬不到自己（D-63.T5-2）。⭐ **T6 注意**：免閾值描述子若要「進入角半徑後的計數」，同樣要先想清楚右界該開還是該閉。
+
+## T6 L2 免閾值微調描述子 + 擊殺後方向預測曲線（2026-09-14）
+
+`src/metrics/microFlickMetrics.ts` 補上 **L2**（FR-63.10）與**方向預測**（FR-63.11）兩個鍵，加法為主：T4／T5 的 `outcome`／`geometry`／`selection` 一行未改，六個 canonical derivation 檔（含 `submovement.ts`）`git diff` 為空。
+
+| 指令 | exit | 數字 |
+|---|---:|---|
+| `npx vitest run src/metrics/microFlickMetrics.test.ts` | **0** | **75 passed**（T5 基線 50，**+25 = 本 task**） |
+| `npm run typecheck`（×2） | **0** | 兩段 `tsc --noEmit` 皆成功 |
+| `npm test`（全量 Vitest） | **0** | **269 files passed／1 skipped**；**3,335 tests passed／2 skipped**（T5 基線 3,310，**+25**） |
+| `npm run build` | **0** | Vite 2.13 s，保留既有 chunk-size warning |
+| `git diff` on 6 canonical 檔 | — | **空**（五個既有 + `submovement.ts`） |
+
+### E4 逐 `W` 預測結果（T6 DoD：曲線形狀是本指標的主要產出）
+
+fixture E4 = 殺掉 0° 的靶之後**先朝 A（−10°）動 8 個 tick（約 62 ms），再反向奔向 B（+10°）並殺掉 B**。ground truth = B。
+
+| `W` (ms) | 窗內淨位移 | 預測 | 正確？ | `predictionAccuracy` | `n` |
+|---:|---|---|---|---:|---:|
+| 30 | 負（仍在朝 A） | A | ✗ | **0** | 1 |
+| 60 | 負（剛到假動作底部） | A | ✗ | **0** | 1 |
+| 90 | 正（已反向越過起點） | B | ✓ | **1** | 1 |
+| 120 | 正 | B | ✓ | **1** | 1 |
+
+⇒ 曲線在 60→90 ms 之間翻轉。**這個形狀本身就是訊號**：假動作的持續時間可以從翻轉點讀出來，而任何單一凍結的 `W` 都只會回報一個沒有上下文的布林。對照組 `SINGLE_INTENT`（擊殺後直奔下一顆）四個 `W` 全為 1，符合 T6 Step 6 的「單一意圖軌跡上隨 `W` 增大不下降」。
+
+⚠️ 這是**合成軌跡上的機械驗證**，`n = 1`。它證明的是「這個運算會照定義動」，不是「人類的假動作真有 60–90 ms」。真人常模屬 README §5 的非真人不可項。
+
+### Decision Log
+
+#### D-63.T6-1 — 放寬 T4 的「模組零三角換算」掃描，改為**具名白名單 + 寫死次數**
+
+T4 立過一條 C-D4 守門測試：`microFlickMetrics.ts` 內 `Math.acos`／`asin`／`atan`／`cos`／`sin`／`tan`／`PI` 出現次數皆為 **0**，夾角一律經 `angularDistanceDeg()`。T6 有兩個新構念無法在這條下實作：
+
+- **角半徑** `asin(r/d)`（FR-63.10 的「進入目標角半徑」）
+- **方位角** `atan2(Σ dPitch, Σ dYaw)`（FR-63.11 的字面定義）
+
+**處置**：測試從「全部為 0」改為「**`cos`／`sin`／`tan`／`acos` 仍為 0，`asin` 恰 2 處、`atan2` 恰 3 處、`Math.PI` 恰 1 處**」，並在測試內註明每一處的用途。**下一個 `it()`（ε／on-target／eyeHeight／SIM_TO_WORLD 禁令）完全未動**。
+
+**為什麼這不是破防**：那條測試的意圖是「不要在本模組重寫既有幾何構念」。角半徑與方位角都是 T6 才引入的**新**量，repo 內沒有既有實作可呼叫。而 ε(t)、eye origin、朝向定義仍一律走 `angularDistanceDeg()`／`resolveEyeOrigin()`／`eyeOriginForTick()`／`aimForward()`。次數寫死是為了讓**下一個**想加三角換算的人被測試擋下來、回來讀這段理由。
+
+**替代方案（被否決）**：
+- 以向量構造迴避 `asin`（取球面上一個切點方向再量夾角）—— 幾何上可行，但正確的切點構造是 `C − (r²/d)·u + (r√(d²−r²)/d)·p`，寫出來沒有人看得懂它就是 `asin(r/d)`。為了通過一條 lint 而讓程式碼變難讀是反向的取捨。
+- 把 L2 另開一個模組以保住 T4 的掃描 —— 否決理由為 `approachToFireMs` 要讀 T5 的 `geometry.shots`，拆檔會讓同一層的資料流跨檔繞路；且 README §2.1 明文把 L2／方向列在 `microFlickMetrics.ts`。
+- 改用小角近似避開 `asin` —— 否決理由為那會讓「進入角半徑」不再與命中判定**恆等**，正好踩掉 GD-7 的同源要求。
+
+⚠️ **本條是本 task 唯一放寬既有守門測試的地方**，故單獨列帳；T-exit 稽核時應把它與 T4 的原始測試並讀。
+
+#### D-63.T6-2 — 角半徑取 `asin(r/d)`，與 ray/sphere 命中判定**恆等**而非近似
+
+`HitDetector.ts:105` 的 sphere 分支用 `radius = hitbox.width / 2`。射線與球相交 ⟺ 球心到射線的垂距 `d·sin(ε) ≤ r` ⟺ `ε ≤ asin(r/d)`。故「進入角半徑」與「這一發會命中」是**同一個判定**，不是另一套門檻；半徑讀 `meta.targets.hitbox` 這個 GD-7 單一來源，以 `hitboxRadiusU` 輸出讓它可稽核。
+
+`targetHitboxRadius()` **未被 import**（測試掃描佐證）：它回箱體角點半徑，在 cube 上是命中半徑的 **√3 倍**（KI-029），誤用會讓進入判準整個鬆掉。測試把這個倍率釘成一個會紅的數字。
+
+`shape: 'box'` 判為 `unsupported_hitbox_shape` 而**不**改用任何等效半徑：箱體的角半徑隨方位變化，沒有單一值。依 C-D3 寧可具名拒絕，也不要算出一個會說錯話的數字。v8 是 `sphere`，故這條在 v8 上不觸發。
+
+#### D-63.T6-3 — 窗右界：tick 窗維持半開，右緣由**事件錨**補上（回答 T5 的 ⭐ 提醒）
+
+T5 留了一條提醒：「免閾值描述子若要『進入角半徑後的計數』，同樣要先想清楚右界該開還是該閉」。
+
+**本層不需要另立閉區間右界**，因為它的右緣不是靠候選集判定，而是靠**事件**：逐 tick 視角由「擊殺那一發的 `viewYaw`／`viewPitch`」**反向積分**重建，而 `tickRange` 的半開右界 `[tVisible, tKill)` 正好讓最後一個 tick 的下一步落在擊殺瞬間 —— `view[j] = anchor − Σ_{k≥j} dYaw[k]` 於是逐位還原出真實軌跡（合成 fixture 以此驗證）。
+
+`approachToFireMs` 的右界則是 **T5 的意圖歸屬首發**（見 D-63.T6-4），它是事件時刻不是 tick，故完全不受 tick 窗開閉影響。
+
+#### D-63.T6-4 — `approachToFireMs` 的首發一律讀 T5 的歸屬結果，不在 L2 另立判準
+
+規劃期把 T5／T6 列為可並行，若照字面各自實作，L2 勢必要自備一套「這一發打誰」的判準 ⇒ 同一構念兩個定義（C-D4）。
+
+T5 既已落地，`deriveMicroFlickMetrics()` 改為**先算 L1、再把 `geometry.shots` 餵給 L2**，首發取「意圖歸屬為本窗的第一發」（FR-63.8 的同一定義，鍵為窗索引而非 `targetId`）。L2 完全不讀 `fire.targetId`／`offsetDeg`／`firstShot`。
+
+**副作用**：T6 因此實質相依 T5，與 README §4.1 的相依圖（T6 只相依 T3）不符。⇒ **README §4.1 須在 T-exit 對帳時更正為 `T5 → T6`**。
+
+首發早於首次進入角半徑（玩家還沒對準就扣扳機）⇒ 區間為負，標 `fire_before_entry` 且不出數，**不取 0 也不取絕對值** —— 兩者都會把「提早開火」偽裝成「立刻開火」。
+
+#### D-63.T6-5 — L2／方向層採 T5 的「層 = 物件」形狀，不用 README §2.5 的裸陣列
+
+README §2.5 把 `microAdjust` 與 `direction` 寫成裸陣列。T5 已因同一理由把 `geometry` 改為物件（D-63.T5-3）：FR-63.15 要求**每個指標輸出**攜帶 `n` 與封閉詞彙表旗標，裸陣列沒有地方放層級旗標（例如 `no_hitbox` 是整層的性質，不是某一列的）。⇒ 沿用 T5 的先例，兩層皆為 `{ targets／windows, n, flags }`。**README §2.5 須在 T-exit 一併更正。**
+
+### Surprises & Discoveries
+
+1. **ε 是無號角距 ⇒「在靶心兩側左右交替、振幅遞減」的軌跡，`signReversalCount` 是 0 而不是很多**。第一版 E3 fixture 就是這樣寫的，實測只得到 2 次反轉（全部來自銜接處）。因為 ε(t) = |Δ| 在振幅遞減時**單調下降**，左右交替完全不在 ε 上留下痕跡。⇒ 要讓 ε 真的震盪，交替的必須是**離中心的遠近**而不是左右。fixture 已改為在 0.25°／1.05° 之間來回（兩者都在角半徑內），得 10 次反轉。⭐ **T7 注意**：七種故障型態裡的 #3「一路修正」與 #4「過衝後回頭」若照直覺寫成左右交替，會得到一個**恆真的空測試**。
+
+2. **T4 留下的兩條守門測試在 T6 落地時必然轉紅，而且兩條都是「刻意設計成會紅」的**。一條斷言 `microAdjust`／`direction` **不存在**（防先佔位），一條禁止一切三角換算。前者按其註解的意圖翻成「鍵存在且帶得動 `n`／`flags`」；後者見 D-63.T6-1。兩條都不是 bug，是 T4 把「尚未交付」寫成了可執行的斷言 —— 這個做法值得延用，但接手的人要預期它們會擋路。
+
+3. **`Math.atan2(Math.sin(x), Math.cos(x))` 這種慣用的角度折回寫法會踩自己的三角掃描**。改成純算術的 `((x + π) mod 2π + 2π) mod 2π − π` 之後，`sin`／`cos` 歸零、`Math.PI` 也收斂成單一常數 `PI`。副作用是程式碼反而更快也更好讀。
+
+---
 
 ## Open Questions
 
