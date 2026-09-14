@@ -37,6 +37,8 @@ npm run dev
 **只想跑一場測試,不想看架構** → [docs/guideline/operator-manual.md](docs/guideline/operator-manual.md)
 (操作人員使用說明:安裝、啟動、Session Plan 四步流程、資料落地、故障排除、一頁 SOP)。
 
+版本與交付範圍見 [CHANGELOG.md](CHANGELOG.md)(以 stage／WP／里程碑為單位)。
+
 完整文件從 [docs/MAP.md](docs/MAP.md) 開始導覽,包含需求規格、ADR、執行計畫
 (WP 狀態 / 里程碑)、決策帳本、已知問題等。專案術語與領域詞彙見
 [CONTEXT.md](CONTEXT.md)。

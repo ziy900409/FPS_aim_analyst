@@ -8,6 +8,7 @@
 | | |
 |---|---|
 | **Repo** | [ziy900409/FPS_aim_analyst](https://github.com/ziy900409/FPS_aim_analyst) |
+| **定版** | **v0.1.0 — 2026-09-14**（首次 tag；範圍 = 階段 A~M 已交付部分，含到 WP-66；**未含** WP-59／61 T2／63／67、WP-44、stage14 草案，M13／M18 人工閘未宣告）。版本切面索引見 [`CHANGELOG.md`](../../CHANGELOG.md)，本檔仍為 WP 狀態的現行權威。 |
 | **交付範圍** | 階段 A：F1–F4 + 1 個完整 counter-strafe drill（簡化「立即停止」急停） |
 | **技術棧** | Three.js `WebGPURenderer`（`three/webgpu`）+ TypeScript + Vite；UI = 純 TS + DOM overlay；測試 = Vitest + Playwright |
 | **估時** | 25–39 dev-days（≈5–8 週，含 WebGPU 設定與學習爬升） |
