@@ -27,6 +27,7 @@ import { spiderShotWideV1Binding } from '../drill/spider_shot_wide_v1.ts';
 import { trackingBrVariants } from '../drill/tracking_br_v1.ts';
 import { trackingLongrangeV1 } from '../drill/tracking_longrange_v1.ts';
 import { trackingCorePrFeedbackV1 } from '../drill/tracking_core_pr_feedback_v1.ts';
+import { trackingCorePrFeedback30sV1 } from '../drill/tracking_core_pr_feedback_30s_v1.ts';
 import { trackingReversalFeedbackV1 } from '../drill/tracking_reversal_feedback_v1.ts';
 import { trackingSceneV1 } from '../drill/tracking_scene_v1.ts';
 import { trackingV1 } from '../drill/tracking_v1.ts';
@@ -84,6 +85,8 @@ const FAMILY_ROSTER: readonly (readonly [SessionFamilyId, readonly string[]])[] 
       // 會被 census 檢查擋下（它本來就不該通過：那份清單只收 WP-54 的九個 block）。
       trackingReversalFeedbackV1.drillId,
       trackingCorePrFeedbackV1.drillId,
+      // 使用者 2026-09-14：上一個的 30 秒 / 無置中準備窗變體，同樣是獨立 drill。
+      trackingCorePrFeedback30sV1.drillId,
     ],
   ],
   ['detection', [detectionPopinV1.drillId]],
@@ -159,6 +162,7 @@ const DECLARED_WEAPON_ROSTER: readonly DeclaredWeaponRosterEntry[] = [
   // 不可被 Session Plan 逐列武器指定覆蓋（WP-62 / D-62-1）。
   [trackingReversalFeedbackV1.drillId, trackingReversalFeedbackV1.weaponId] as const,
   [trackingCorePrFeedbackV1.drillId, trackingCorePrFeedbackV1.weaponId] as const,
+  [trackingCorePrFeedback30sV1.drillId, trackingCorePrFeedback30sV1.weaponId] as const,
 ];
 
 /**

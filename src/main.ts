@@ -130,6 +130,7 @@ import { trackingSceneV1 } from './drill/tracking_scene_v1.ts';
 import { trackingLongrangeV1 } from './drill/tracking_longrange_v1.ts';
 import { trackingReversalFeedbackV1 } from './drill/tracking_reversal_feedback_v1.ts';
 import { trackingCorePrFeedbackV1 } from './drill/tracking_core_pr_feedback_v1.ts';
+import { trackingCorePrFeedback30sV1 } from './drill/tracking_core_pr_feedback_30s_v1.ts';
 import { trackingBrVariants } from './drill/tracking_br_v1.ts';
 import { holdClickV1 } from './drill/hold_click_v1.ts';
 import { holdTrackV1 } from './drill/hold_track_v1.ts';
@@ -335,6 +336,14 @@ const availableDrills: AvailableDrill[] = [
     id: trackingCorePrFeedbackV1.drillId,
     label: trackingCorePrFeedbackV1.drillId,
     source: trackingCorePrFeedbackV1,
+    sceneId: 'field-low',
+  },
+  // 使用者 2026-09-14：以上一列為參照的 30 秒變體，且移除置中準備窗（目標自計時第一個 tick
+  // 起就移動）。同樣不是 pilot block，scene pin 理由同上。
+  {
+    id: trackingCorePrFeedback30sV1.drillId,
+    label: trackingCorePrFeedback30sV1.drillId,
+    source: trackingCorePrFeedback30sV1,
     sceneId: 'field-low',
   },
 ];
