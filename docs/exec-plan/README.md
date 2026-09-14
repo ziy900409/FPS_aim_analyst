@@ -8,7 +8,7 @@
 | | |
 |---|---|
 | **Repo** | [ziy900409/FPS_aim_analyst](https://github.com/ziy900409/FPS_aim_analyst) |
-| **定版** | **v0.1.1 — 2026-09-14**（範圍 = 階段 A~M 已交付部分，含到 **WP-66 + WP-63**；**未含** WP-59／61 T2／67、WP-44、stage14 草案，M13／M18 人工閘未宣告）。本版新增 v8 量測基礎層（`buildTargetWindows()` + 四層事件錨定指標）並修掉 [KI-035](../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md)；⚠️ v8 因改宣告 `usp_s_laser` 而**效度斷代**，前後資料不可混比（判別依據 `meta.weaponId`）。前一版為 v0.1.0（2026-09-14，首次 tag，未含 WP-63）。版本切面索引見 [`CHANGELOG.md`](../../CHANGELOG.md)，本檔仍為 WP 狀態的現行權威。 |
+| **定版** | **v0.1.2 — 2026-09-15**（範圍 = 階段 A~M 已交付部分，含到 **WP-68**；**未含** WP-59／61 T2／67、WP-44、stage14 草案，M13／M18 人工閘未宣告）。本版把 **v9**（v8 的 60 s 計時版姊妹 drill）補到與 v8 同等的量測基礎層，並修掉一條**為 kill-budget drill 寫、套到計時制上就會說錯話**的計分窗定義（`killRateHz` 系統性高估；實測真 run **+2.799%**、合成 dry-tail **+334.8%**）。⚠️ v9 因改宣告 `usp_s_laser` 而**效度斷代**，前後資料不可混比（判別依據 `meta.weaponId`）；⚠️ **v8 與 v9 自此在 `meta.weaponId` 上不可分**，分析側的分池鍵**必須**是 `meta.drillId`。`targetCount` drill（含 v8）的四量**逐位不變**。前一版為 v0.1.1（2026-09-14，含到 WP-66 + WP-63）。版本切面索引見 [`CHANGELOG.md`](../../CHANGELOG.md)，本檔仍為 WP 狀態的現行權威。 |
 | **交付範圍** | 階段 A：F1–F4 + 1 個完整 counter-strafe drill（簡化「立即停止」急停） |
 | **技術棧** | Three.js `WebGPURenderer`（`three/webgpu`）+ TypeScript + Vite；UI = 純 TS + DOM overlay；測試 = Vitest + Playwright |
 | **估時** | 25–39 dev-days（≈5–8 週，含 WebGPU 設定與學習爬升） |

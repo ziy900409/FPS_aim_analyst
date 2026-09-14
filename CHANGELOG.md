@@ -10,6 +10,100 @@ registry 正式凍結、且 M13／M18 人工閘收斂的那一版。
 
 ---
 
+## [0.1.2] — 2026-09-15
+
+**WP-68 交付版**（tag `v0.1.2`）。把 `micro_flick_three_target_test_v9`（v8 的 **60 s 計時版**姊妹 drill）
+補到與 v8 同等的量測基礎層，並修掉一條**為 kill-budget drill 寫、套到計時制上就會說錯話**的計分窗定義。
+本版**不改** sim 演進、命中判定或 spawn 分布；除 v9 的 `weaponId` 與 `deriveOutcome()` 的右界分流之外，
+`src/` 全為加法。
+
+### 新增
+
+- **`src/drill/microFlickEndConditions.ts`** —— micro-flick 家族的 `drillId → endCondition` 查表。
+  `endCondition` **從來沒有進過匯出 `meta`**，所以離線端無從得知這一場是 kill-budget 還是計時制，
+  而兩者的計分窗右界語意不同。九支 drill 的值**一律讀自各自 module 的 config，不手抄**
+  （同一 `drillId` 登記兩次在**模組建構期**拋錯）。
+- **`src/loop/__tests__/wp68-v9-metrics-determinism.test.ts`** —— v9 跨 render FPS 的逐位一致閘
+  （NFR-68.3），形狀與 v8 那支相同並**共用同一份 harness**。帶**自己的**非空對空前置：v9 靶比 v8 小 10%
+  （角半徑 1.118° vs 1.242°），照抄 v8 的瞄準參數有讓 v9 全部失手、四層指標一起變空的風險 ⇒ 前置以
+  `toBe` 釘死實測形狀（900 ticks／37 發／18 中／19 失／21 窗）。
+- **`src/loop/__tests__/microFlickDeterminismHarness.ts`** —— v8／v9 共用的 determinism harness
+  （由 WP-63 的 v8 版參數化抽出）。兩支 drill 因此走**同一條**程式路徑，日後「v8 綠、v9 紅」必然歸因於
+  drill 本身而不是兩份各自漂移的 harness（C-D4）。
+- **`src/metrics/wp68-scoringWindow.test.ts`** —— 右界分流的三條 FR 證據，含 v8 逐位不變、兩條具名退回，
+  以及分子／分母必須對同一個窗的不變式。
+- **兩個新的 outcome 旗標**：`scoring_window_truncated_at_last_kill`（右界截在最後一殺 —— 這條規則
+  **一直都在，只是以前沒說**）與 `unknown_end_condition`（查不到結束條件 ⇒ 退回既有語意並具名）。
+
+### 修正
+
+- **計時制 drill 的 `killRateHz` 系統性高估** —— `validSpanMs = lastKillMs − firstVisibleMs` 是為
+  **kill-budget** drill 寫的（最後一顆被打掉，drill 就結束）。套到 **`timeLimit`** drill 上，受試者在最後
+  一次擊殺**之後**仍有真實的剩餘時間在打、在失手、在找靶，那段被整段排除出分母。偏誤方向與
+  [KI-037](docs/known_issue/KI-037-valid-duration-includes-countdown.md)（恆向低估）相反、性質相同：一個看
+  起來合理、實際會說錯話的數字。**實測**：真 run **+191.25 ms**／`killRateHz` 高估 **+2.799%**；
+  合成 7.7 s dry-tail 案例 **+334.8%**（前者是下界不是典型值 —— 合成受試者以固定節奏打到最後一刻）。
+  修法：右界依 `endCondition` 分流，`timeLimit` 取**最後一個 tick**（匯出**自身**的事實，不需要相信 config
+  宣告的 60 s 與實際錄到的長度對得上），`targetCount` 維持 `lastKillMs`。
+  ⚠️ **這條只影響計時制 drill**。`targetCount` drill（含 v8）的 `validSpanMs`／`killRateHz`／
+  `shotsPerKill`／`shotAccuracy` **逐位不變**，以取自 v0.1.1 世代 worktree 的**寫死常數** `Object.is` 釘死
+  （期望值**不是**再跑一次實作產生的 —— 那會把回歸連同結果一起抄進測試）。
+- **`shotAccuracy` 可能大於 1（本版自己的回歸，交付前由 exit gate 攔下）** —— 上一條的鐘右界若被無條件
+  採用，當 tick 紀錄**截斷在最後一殺之前**（recorder 溢位可達；events 不受同一個緩衝區限制）時，`n`
+  仍計全部擊殺而 `shots` 只數窗內的 ⇒ 分子與分母對不上同一個窗。實測會輸出 `shotAccuracy` **1.5**
+  （機率 > 1）與 `shotsPerKill` **0.667**（發數少於擊殺數），且**零旗標**。修法：鐘的右界**只有在它至少
+  涵蓋最後一次擊殺時才採用**，否則退回 `lastKillMs`（依定義自洽）並具名。**刻意不用** `max(鐘, 最後一殺)`
+  —— 那會靜默把一份內部不一致的匯出補成看起來一致的樣子。回歸測試守的是**不變式**
+  （`shotAccuracy <= 1`、`shotsPerKill >= 1`），不是那一個修好的數字。
+
+### 變更
+
+- **`micro_flick_three_target_test_v9` 改宣告 `weaponId: 'usp_s_laser'`**（原吃 `main.ts` 預設 `ak47`）
+  並登記 `DECLARED_WEAPON_ROSTER`（14 → 15）⇒ 武器是**量測儀器**不是操作員可選的變項，Session Plan
+  的逐列指定**不得**覆蓋它。
+  **這是效度斷代：本版之前與之後的 v9 匯出不可混比** —— 變的是**命中判定的隨機性本身**（實測 v9 在
+  `ak47` 下 **33/33 發帶散布、32/33 發帶 aim punch**，命中數 18 → 1，需要「擊殺→擊殺」轉移的兩層指標
+  整個算不出來；只換武器一項即從 `n = 0` 回到 `n = 17`）。機械區分方式 = 匯出的 `meta.weaponId`。
+  換武器**不擾動任何 seeded 串流**（spawn trace 96 snapshot 逐位相同且兩邊各實開 4 發、`sampleSpread()`
+  rng 呼叫數 0 而 `ak47` 對照組 > 0）。副作用：`cycletimeSec` 0.10 → **0.17**、`magSize` 30 → **12**
+  （實測跑滿 60 s 仍**零次**空倉，但真人節奏更不規律 ⇒ 列為 pilot 觀察項）。
+- ⚠️ **v8 與 v9 自此在 `meta.weaponId` 上不可分**（兩者都是 `usp_s_laser`）⇒ **分析側的分池鍵從
+  「`weaponId` 或 `drillId` 皆可」收窄為「必須 `meta.drillId`」**。兩者本來就不該混池：靶徑不同
+  （角半徑 1.242° vs 1.118°）、計分制不同（kill-budget vs 60 s），連帶 `killRateHz`／`shotsPerKill`／
+  `shotAccuracy` 三個量**在兩支 drill 上不是同一個構念**。
+- `docs/operational/analysis-micro-flick.md` 補 **v9 Applicability** 節：全部環境硬閘、探針與紀律對 v9
+  原樣適用，**唯一差異是計分窗右界**（附兩制對照表與實測偏誤）。
+
+### 決策
+
+- **[GD-45](docs/exec-plan/DECISIONS.md)** —— 儀器宣告、計分窗右界依計分制分流、v8/v9 分池鍵收窄。
+  含實測差值、v8 逐位不變的硬斷言，以及一條廣義教訓：**「投影式」輸出**（先 filter 再回傳）**會讓下游的
+  成員資格斷言恆真** —— 旗標詞彙表的 runtime 封閉性測試因此不可能轉紅，真正買下封閉性的是 TS 型別。
+
+### 交付宣稱上限
+
+與 v0.1.1 的 v8 相同 = **可算、可重現、可稽核，不含效度**。C-D3 的構念驗證閘未過 ⇒ **v9 的指標不得進
+教練報告**。v9 靶徑較 v8 再縮 10% 後是否仍有鑑別力、計時制與 kill-budget 對受試者策略的影響、以及
+計時制尾段 dry spell 的真實長度分布（它直接決定本版修掉的偏誤在真人資料上的實際量級），皆**非真人不可**。
+v8 與 v9 應在**同一個 cohort** 內一起收，否則兩支之間的差異無法與受試者差異分離。
+
+### 尚未納入本版
+
+WP-59／61 T2／67、WP-44、stage14 草案；M13／M18 人工閘未宣告。
+
+### 已知問題
+
+- **[KI-037](docs/known_issue/KI-037-valid-duration-includes-countdown.md)** 仍開放 —— 它與本版修的是
+  **不同路徑、不同界、不同消費者**：KI-037 在 `DrillMetricRegistry.validDurationMs()`（history／assessment
+  投影路徑）談**左界**（倒數被計入），本版在 `deriveOutcome()` 談**右界**。本版**未碰**該檔
+  （以 `git diff` 為空稽核），KI-037 有自己的 `BD` 號與修法。
+- `endCondition` 仍不在匯出 schema 內，故右界經 `meta.drillId` 反查**本 build** 的 config。這回答的是
+  「**這個 build** 認為該 drill 的結束條件是什麼」，不是「**錄製當下**實際跑的是什麼」——
+  若日後有人改了某支 drill 的 `endCondition`，舊匯出會被新 build 以新語意重算，而匯出本身沒有欄位能揭露
+  這件事。把 `endCondition` 加進 `meta` 之後應改讀匯出並移除 `unknown_end_condition` 旗標。
+
+---
+
 ## [0.1.1] — 2026-09-14
 
 **WP-63 交付版**（tag `v0.1.1`）。`micro_flick_three_target_test_v8`（全 repo 唯一**三顆同時存活**的
