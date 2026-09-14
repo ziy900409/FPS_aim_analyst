@@ -43,6 +43,7 @@ import {
   buildDeclaredWeaponByDrillId,
   resolveFamilyDrillId,
 } from './drillFamily.ts';
+import { SessionProgramCompileError, compileSessionProgram } from './sessionProgram.ts';
 import {
   KNOWN_SESSION_FAMILY_IDS,
   SCHEDULABLE_FAMILY_IDS,
@@ -440,10 +441,11 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
     }
   });
 
-  it('holds exactly the eight BR cells, the two curated pilot blocks, the hit-feedback reversal drills, and micro flick v8, so a change of scope cannot pass review unnoticed', () => {
-    // 14 = 13 + WP-63 T1's `micro_flick_three_target_test_v8`, whose zero-spread weapon is the
-    // measurement instrument rather than an operator choice, so it joins the fixed-factor set.
-    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(14);
+  it('holds exactly the eight BR cells, the two curated pilot blocks, the hit-feedback reversal drills, and micro flick v8 and v9, so a change of scope cannot pass review unnoticed', () => {
+    // 15 = 13 + WP-63 T1's `micro_flick_three_target_test_v8` + WP-68 T1's timed sibling `_v9`,
+    // whose zero-spread weapon is the measurement instrument rather than an operator choice, so
+    // both join the fixed-factor set.
+    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(15);
     expect(new Set(DECLARED_WEAPON_BY_DRILL_ID.keys())).toEqual(
       new Set([
         ...trackingBrVariants.map((variant) => variant.id),
@@ -452,6 +454,7 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
         trackingCorePrFeedbackV1.drillId,
         trackingCorePrFeedback30sV1.drillId,
         microFlickThreeTargetTestV8.id,
+        microFlickThreeTargetTestV9.id,
       ]),
     );
     // Eight cells, four weapons: the grid's third axis (angular height) is a target-geometry factor,
@@ -464,7 +467,9 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
         'ak47_br_ads_projectile',
         // WP-64 T1: both curated pilot blocks fix the same zero-recoil hold weapon (FR-64.4).
         'tracking_pilot_hold',
-        // WP-63 T1: micro flick v8's zero-spread, zero-recoil pistol (FR-63.12).
+        // WP-63 T1 / WP-68 T1: micro flick v8's zero-spread, zero-recoil pistol (FR-63.12), which
+        // its timed sibling v9 declares too (FR-68.2) — so this set stays at six weapons while the
+        // key set above grows. `meta.weaponId` therefore cannot separate v8 from v9; `drillId` can.
         'usp_s_laser',
       ]),
     );
@@ -509,6 +514,66 @@ describe('WP-62 T1 — the map refuses to be built from a polluted roster', () =
     expect(() =>
       buildDeclaredWeaponByDrillId([['tracking_core_pr_pilot_v1', 'tracking_pilot_hold']]),
     ).toThrow(/is not schedulable/);
+  });
+});
+
+/**
+ * WP-68 / T1 (FR-68.2) — registering v9 in the roster is only worth as much as the refusal it buys.
+ * The map membership and the refusal are asserted together here, because membership without the
+ * refusal is the failure this task exists to prevent: a Session Plan names another weapon for v9,
+ * the run is recorded, and offline nothing looks wrong — `meta.weaponId` just reads whatever was
+ * used. Same `requireWeapon()` path as v8 and the BR cells (WP-62 / D-62-1).
+ */
+describe('WP-68 T1 — micro flick v9 fixes its weapon, and a Session Plan may not override it', () => {
+  const V9 = microFlickThreeTargetTestV9.id;
+
+  it('declares the same zero-spread weapon v8 does, so only drillId separates the two', () => {
+    expect(DECLARED_WEAPON_BY_DRILL_ID.get(V9)).toBe('usp_s_laser');
+    expect(DECLARED_WEAPON_BY_DRILL_ID.get(V9)).toBe(
+      DECLARED_WEAPON_BY_DRILL_ID.get(microFlickThreeTargetTestV8.id),
+    );
+    expect(V9).not.toBe(microFlickThreeTargetTestV8.id);
+    // Read off the fixture, never hand-typed (D-58-T0-2): the map cannot disagree with the config.
+    expect(DECLARED_WEAPON_BY_DRILL_ID.get(V9)).toBe(microFlickThreeTargetTestV9.drill.weaponId);
+  });
+
+  it('rejects an item that names any other weapon for v9, located to that item', () => {
+    let thrown: unknown;
+    let returned: unknown;
+    try {
+      returned = compileSessionProgram({
+        items: [
+          { drillId: microFlickThreeTargetTestV8.id, reps: 1 },
+          { drillId: V9, reps: 1, weaponId: 'ak47' },
+        ],
+        drillRestSeconds: 30,
+        familyRestSeconds: 60,
+      });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(SessionProgramCompileError);
+    const error = thrown as SessionProgramCompileError;
+    expect(error.field).toBe('weaponId');
+    expect(error.itemIndex).toBe(1);
+    expect(error.message).toContain(V9);
+    expect(error.message).toContain('usp_s_laser');
+    expect(returned).toBeUndefined();
+  });
+
+  it('lets an item name the weapon v9 already declares, and lets it say nothing at all', () => {
+    // Agreement is not a conflict (WP-62): refusing it would only teach the operator to leave the
+    // field blank and hope. Both spellings must arm v9 with the instrument it declares.
+    for (const weaponId of ['usp_s_laser' as const, undefined]) {
+      const program = compileSessionProgram({
+        items: [{ drillId: V9, reps: 1, ...(weaponId === undefined ? {} : { weaponId }) }],
+        drillRestSeconds: 30,
+        familyRestSeconds: 60,
+      });
+      const runs = program.filter((step) => step.kind === 'run');
+      expect(runs).toHaveLength(1);
+      expect(runs[0].drillId).toBe(V9);
+    }
   });
 });
 
