@@ -12,13 +12,13 @@
 # 開始紅——而那正是本層唯一無法被 Tier 1 取代的東西。註冊步驟見 docs/guideline/ci-tiers.md §3。
 name: E2E (full, self-hosted)
 
+# 觸發刻意只有兩個，**沒有 schedule**：runner 不是常駐的（以 run.cmd 手動在登入的桌面
+# session 執行，才拿得到 GPU）。排程在 runner 離線時只會累積一堆沒人接的排隊 job，
+# 徒增雜訊。定版閘的重點是「發版時擋住紅的東西」，那由 tag push 觸發就夠了。
 on:
   workflow_dispatch:
   push:
     tags: ['v*']
-  schedule:
-    # 18:00 UTC = 隔日 02:00 Asia/Taipei
-    - cron: '0 18 * * *'
 
 jobs:
   e2e-full:
@@ -33,9 +33,13 @@ jobs:
       - run: npm ci
       # test:ci = typecheck ×2 + vitest + playwright --project=edge（全套，含 @slow）
       - run: npm run test:ci
+      # always() 而非 failure()：flaky（第一次失敗、重試通過）會讓 job 判定為 success，
+      # 但 trace: 'on-first-retry' 正是在那一刻錄到東西。用 failure() 等於在最需要證據的
+      # 情況下把它丟掉 —— KI-030 的根因至今未定，就是因為失敗當下的資訊沒被保存。
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: playwright-trace-full
           path: test-results/
+          if-no-files-found: ignore
           retention-days: 14

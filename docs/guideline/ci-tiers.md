@@ -32,7 +32,7 @@ GitHub-hosted runner **沒有 GPU**，`WebGPURenderer` 會依
 
 | | Tier 1 `e2e-fast` | Tier 2 `e2e-full` |
 |---|---|---|
-| 何時跑 | 每個 PR / push to main | tag push（`v*`）、每日 02:00 (Asia/Taipei)、手動 |
+| 何時跑 | 每個 PR / push to main | tag push（`v*`）、手動 |
 | 機器 | `ubuntu-latest`（hosted，無 GPU） | `[self-hosted, windows, real-gpu]`（研究者機器，真 GPU + Edge） |
 | 瀏覽器 | Playwright 內建 chromium + `--enable-unsafe-swiftshader` | 系統安裝的 Microsoft Edge（`channel: 'msedge'`） |
 | Playwright project | `chromium-ci`（`metadata.realGpu: false`） | `edge`（`metadata.realGpu: true`） |
@@ -88,9 +88,13 @@ Tier 1 紅燈時**先問「是不是環境」再問「是不是迴歸」**：
    三個都要對上才會被撿走（label 比對不分大小寫）。
    這個 label 不是裝飾：它把「這台機器是合格量測環境」編進 workflow。少了它，日後任何一台
    Windows runner 都可能接走這個 job。
-4. 選擇執行方式：
-   - `run.cmd` — 前景跑，關掉視窗就停。適合先試。
-   - `svc.cmd install` + `svc.cmd start` — 註冊成 Windows 服務，開機自動啟動。**排程跑（每日 02:00）需要這個**。
+4. 執行方式：**`run.cmd`，在你登入的桌面 session 前景跑**。
+
+   `svc.cmd install` 可以註冊成 Windows 服務、開機自動啟動，但服務預設在 session 0 以
+   `NT AUTHORITY\NETWORK SERVICE` 執行，**那裡拿不到桌面 GPU** —— Edge 會 fallback 成 WebGL2，
+   `backend.spec.ts` 就紅，而那正是這一層唯一無法被 Tier 1 取代的東西。若要裝服務，
+   **裝完必須再跑一次確認 `backend.spec.ts` 仍是 passed 而非 fallback**。
+   2026-09-14 的驗證是在 `run.cmd` 互動模式下取得的（`backend.spec.ts` ok、114 passed + 1 flaky、9.9m）。
 5. 驗證：GitHub → **Actions → E2E (full, self-hosted) → Run workflow**，看它有沒有被撿走。
 
 **安全提醒**：self-hosted runner **不要**用在會接受外部 PR 的 public repo 上 ——
@@ -100,12 +104,42 @@ fork PR 可以在你的機器上執行任意程式碼。本 workflow 的觸發�
 
 ---
 
+## 3.5 失敗證據（trace）
+
+兩層的 workflow 都以 `if: always()` 上傳 `test-results/`，**不是 `if: failure()`**。
+
+理由：**flaky（第一次失敗、重試通過）會讓 job 判定為 success**，但 `trace: 'on-first-retry'`
+正是在那一刻錄到東西。用 `failure()` 等於在最需要證據的情況下把它丟掉 ——
+[KI-030](../known_issue/KI-030-history-e2e-flaky-under-parallel-workers.md) 的根因至今未定，
+就是因為失敗當下的資訊沒被保存。
+
+Tier 2 首跑（2026-09-14）就出現 1 flaky（`hit-feedback-live.spec.ts:541`），trace 有錄到、
+卻因為當時是 `failure()` 而沒被上傳 —— 這條規則就是那次的產物。
+
+**綠燈但有 flaky 時，去 run 頁面下載 artifact 看 trace。** 綠燈不等於沒事。
+
+---
+
+## 3.6 runner 不是常駐的 —— 這對 tag push 意味著什麼
+
+runner 以 `run.cmd` 手動執行，所以平常是**離線**的。兩種情況要分清楚：
+
+| 情況 | 結果 |
+|---|---|
+| runner **已註冊但離線**（關掉 `run.cmd`） | job **排隊等待**，你開 `run.cmd` 後就會被接走（GitHub 最長等 24 小時） |
+| **沒有**任何符合 label 的 runner（例如 runner 被移除） | job **直接失敗**，訊息是找不到符合 label 的 runner |
+
+所以發版流程是：**先開 `run.cmd`，再推 tag**。忘了開也沒關係 —— job 會等你，
+只是 release 要晚一點發。
+
+---
+
 ## 4. 定版流程裡的位置
 
 發 release 時：
 
-1. `git tag -a vX.Y.Z` → `git push --follow-tags`
-2. tag push 自動觸發 **Tier 2 `e2e-full`**
+1. **先在 runner 機器上開 `run.cmd`**（見 §3.6）
+2. `git tag -a vX.Y.Z` → `git push --follow-tags` → 自動觸發 **Tier 2 `e2e-full`**
 3. **等它綠了**再 `gh release create`
 4. 把該次 run 的結論寫進 [CHANGELOG.md](../../CHANGELOG.md) 或 release notes
 
