@@ -54,13 +54,14 @@ replacementEngagedRate = #(下一顆被殺者 = 上一次擊殺的 replacement) 
 
 ## Definition of Done
 
-- [ ] `npx.cmd vitest run src/metrics/microFlickMetrics.test.ts` exit 0
-- [ ] 零 `hit` 事件 fixture 的測試綠，測試名明示「hitscan 無 hit 事件」
-- [ ] 手算 3-target 案例的 `selectionCostRatio` 與 `nearestFirstRate` 期望值綠
-- [ ] `selectionCostRatio === 1.0` 的貪婪序列斷言綠
-- [ ] 兩群角距分布可比性檢查的 p10/p50/p90 記入 `progress.md`，並明示是否影響 `replacementEngagedRate` 的呈現方式
-- [ ] 所有輸出攜帶 `n`、`flags`、`version: 'micro-flick-v1'`
-- [ ] `npm.cmd run typecheck` ×2 exit 0；全量 Vitest exit 0
+- [x] `npx.cmd vitest run src/metrics/microFlickMetrics.test.ts` exit 0
+- [x] 零 `hit` 事件 fixture 的測試綠，測試名明示「hitscan 無 hit 事件」
+- [x] 手算 3-target 案例的 `selectionCostRatio` 與 `nearestFirstRate` 期望值綠
+- [x] `selectionCostRatio === 1.0` 的貪婪序列斷言綠
+- [x] 兩群角距分布可比性檢查的 p10/p50/p90 記入 `progress.md`，並明示是否影響 `replacementEngagedRate` 的呈現方式
+      —— **判定不可比**（survivor p50 9.224° vs replacement p50 11.278°）⇒ 總量不出數，改出 `replacementEngagedByRank` 分層值（D-63.T4-3）
+- [x] 所有輸出攜帶 `n`、`flags`、`version: 'micro-flick-v1'`
+- [x] `npm.cmd run typecheck` ×2 exit 0；全量 Vitest exit 0
 
 ## Commit
 

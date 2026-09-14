@@ -2,7 +2,9 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-14 T3 完成）
+## 最新狀態（2026-09-14 T4 完成）
+
+✅ **T4 完成**（2026-09-14 16:29Z）。`src/metrics/microFlickMetrics.ts` 交付 L0 結果層（FR-63.6）＋ L3 選擇策略層（FR-63.4／63.5）；26 個新測試全綠、全量 Vitest 3,286 passed（T3 基線 3,260，**+26 = 本 task**）、typecheck ×2 與 `vite build` exit 0。**可比性前置檢查判定兩群不可比** ⇒ `replacementEngagedRate` 依 [README §3.1](README.md) 只出分層值（`replacementEngagedByRank`）、不出總量（見 §T4 與 D-63.T4-3）。`T_valid` 的錨點與 FM-4 的處置各有一條偏離規劃期字面的決策（D-63.T4-1／D-63.T4-2）。T5–T7 未開工。
 
 ✅ **T3 完成**（2026-09-14 15:42Z）。`src/metrics/targetWindows.ts` 交付 `buildTargetWindows()` + `aliveAt()`；27 個新測試全綠、NFR-63.4 符號掃描 count === 0、NFR-63.3 實測 **0.914 ms**（63 窗／7,682 ticks）與 **5.187 ms**（180 窗／22,658 ticks），遠低於 50 ms 門檻。五個 canonical derivation 檔 `git diff` 為空。**T1 的 FR-63.13 判準 `ammo === 0` 經實作複核為不可達，已就地更正為「扣彈前存量觸底」**（見 D-63.T3-2）。T4–T7 未開工。
 
@@ -24,7 +26,7 @@
 | T1 零散布武器宣告 | ✅ 完成 | 2026-09-14 | 2026-09-14 14:52Z | 見下方 §T1：typecheck ×2 exit 0、全量 Vitest **3,224 passed／2 skipped（267 files）**（≥ T0 基線 3,217）、`vite build` exit 0、`micro-flick-live.spec.ts` 6/6 passed。 |
 | T2 Mouse gain 修復 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T2：typecheck ×2 exit 0、全量 Vitest **3,233 passed／2 skipped（268 files）**（≥ T1 基線 3,224）、`vite build` exit 0、GD-44 Tier 1 **102 passed／1 skipped**（= T0 基線）、Tier 2 Edge 全量見該節。`BD-038` 已入帳、KI-035 翻 ✅。 |
 | T3 窗界 primitive | ✅ 完成 | 2026-09-14 | 2026-09-14 15:42Z | 見下方 §T3：typecheck ×2 exit 0、全量 Vitest **3,260 passed／2 skipped（269 files）**（≥ T2 基線 3,233，+27 = 本 task 新增）、`targetWindows.test.ts` 27 passed、NFR-63.3 實測 0.914 ms／5.187 ms、NFR-63.4 掃描 count === 0。 |
-| T4 L0 + L3 | ⬜ 未開工 | — | — | — |
+| T4 L0 + L3 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:29Z | 見下方 §T4：26 tests 綠、全量 Vitest 3,286 passed／2 skipped、typecheck ×2 與 build exit 0；可比性檢查 p10/p50/p90 入帳。 |
 | T5 L1 幾何層 | ⬜ 未開工 | — | — | — |
 | T6 L2 + 方向 | ⬜ 未開工 | — | — | — |
 | T7 Harness + 紀律 | ⬜ 未開工 | — | — | — |
@@ -250,7 +252,111 @@ fixture A 刻意複製兩個既有的靜默錯誤形態，好讓「原語不能�
 
 ---
 
-## Decision Log（規劃期與 T0／T1／T2／T3）
+## T4 L0 結果層 + L3 選擇策略層（2026-09-14）
+
+### 交付物
+
+| 檔案 | 內容 |
+|---|---|
+| `src/metrics/microFlickMetrics.ts`（**新**） | `deriveMicroFlickMetrics()`、兩份封閉旗標詞彙表、`MICRO_FLICK_METRICS_VERSION = 'micro-flick-v1'` |
+| `src/metrics/microFlickMetrics.test.ts`（**新**，26 tests） | 手算 3-target 小案例、零 `hit` 事件釘死、FR-63.15 缺失處置、C-D4 符號掃描、可比性前置檢查 |
+
+既有檔案異動：**零**。本 task 只新增兩個 `src/metrics/` 檔。
+
+**本層只交付 `outcome` 與 `selection` 兩個鍵**，不替 T5／T6 的 `geometry`／`microAdjust`／`direction` 先佔位——空陣列會被讀成「算過了，沒有樣本」而不是「這一層還沒交付」。以 `Object.keys()` 一測釘死。
+
+### 可比性前置檢查（T4 Steps 4／[README §3.1](README.md)）
+
+以 [WP-59](../../stage12/wp-59-micro-flick-v8-replacement-spacing/README.md) 同一條 stress 路徑（`createTargetManager(v8.drill)` + `createRan1(killOrderSeed)`，60 個 kill-order seed × 57 次補位 = **3,420 次補位機會**）量「被殺目標中心 → 候選」的角距分布，頂點取 eye `{0, 1.6, 0}`，夾角一律經 canonical `angularDistanceDeg()`：
+
+| 群 | n | p10 | p50 | p90 | mean |
+|---|---:|---:|---:|---:|---:|
+| **倖存者**（每次 2 顆） | 6,840 | 5.579° | **9.224°** | 12.725° | 9.159° |
+| **replacement**（每次 1 顆） | 3,420 | 8.282° | **11.278°** | 14.290° | 11.243° |
+| `nearest2Deg` | 3,420 | 5.275° | 7.097° | 10.385° | 7.532° |
+| `nearest3Deg` | 3,420 | 5.267° | 6.883° | 9.650° | 7.209° |
+
+**判定：兩群不可比。** 位移不是雜訊而是機制——WP-59 的 temporal replacement sampler 以「離被殺目標中心越遠越好」排序候選（`TargetManager.ts:407-418`），把補位系統性推離。三個分位點同向外推（p10 +2.70°、p50 +2.05°、p90 +1.57°），遠大於任何合理的可比容差。
+
+⇒ **影響呈現方式**：`replacementEngagedRate`（總量）**不出數**，改出 `replacementEngagedByRank` —— 依「replacement 在候選集中的角距 rank」分層的交戰率。rank 正是上面那條距離混淆的載體，分層即控掉它。決策見 D-63.T4-3。
+
+> 補充觀測（同一份 corpus）：replacement 嚴格比兩顆倖存者都近的比例為 **545/3,420 = 15.9%**；`nearest3 − nearest2` 平均 **−0.32°**。⇒ replacement 確實會搶走注意力，但六次裡只有一次真的在幾何上「最近」。
+
+這段檢查以 `replacement 與倖存者的角距分布可比性` 為名**committed 成測試**（非一次性腳本）：日後誰把 sampler 調到兩群可比，那條測試就會紅，強迫重新評估 `replacementEngagedRate` 的呈現方式。
+
+### 驗證輸出
+
+| 指令 | exit code | 數字 |
+|---|---:|---|
+| `npx.cmd vitest run src/metrics/microFlickMetrics.test.ts` | **0** | **26 passed**（12 ms tests／305 ms collect） |
+| `npm.cmd run typecheck` | **0** | `tsc --noEmit` ×2 皆成功 |
+| `npm.cmd test` | **0** | **269 files passed／1 skipped（270）**；**3,286 tests passed／2 skipped**（T3 基線 3,260，**+26 = 本 task**） |
+| `npm.cmd run build` | **0** | built in 2.20 s |
+
+### 手算 3-target 小案例（T4 Steps 5）
+
+三顆一律落在通過 eye 的同一水平面、距 eye 等距 ⇒ 任兩顆之間以 eye 為頂點的球面角**恰等於方位角之差**，每個期望值都能用紙筆寫下，而不是跑實作產生「期望值」（那會讓測試變成把實作抄一遍）。
+
+擊殺順序 A(0°) → C(17°) → B(5°) → D(40°)，擊殺於 1000／1600／2300／3500 ms，每次擊殺前 170 ms 一發失手：
+
+| 量 | 手算 | 實測 |
+|---|---|---|
+| `killRateHz` | 4 / 3.5 s | ✅ |
+| `shotsPerKill`／`shotAccuracy` | 8/4 = 2 ／ 4/8 = 0.5 | ✅ |
+| `killIntervalP50Ms`／`P90Ms` | 間隔 [600, 700, 1200] ⇒ 700 ／ 1100 | ✅ |
+| `firstKillLatencyMs` | 1000（**不**併入上面的分布） | ✅ |
+| `nearest2Deg`／`nearest3Deg` | [5, 12, 35, 20]（逐位對齊） | ✅ |
+| `nearestFirstRate` | rank [2, 1, 1] ⇒ 2/3 | ✅ |
+| `selectionCostRatio` | (17+12+35) / (5+12+35) = 64/52 | ✅ |
+| `selectionRankEntropy` | H({1:2, 2:1}) = 0.9182958… bits | ✅ |
+
+另有一份**完全按最近鄰擊殺**的序列，`selectionCostRatio === 1.0`、`nearestFirstRate === 1.0`、熵 `=== 0`（T4 DoD 第四條）。
+
+零 `hit` 事件的釘死方式：fixture 一個 `hit` 事件都不發（`events.some(e => e.type === 'hit') === false` 先斷言），再斷言四個依賴擊殺時刻的量都對得上手算值 —— 照抄 `t_hit` 的實作在這裡會拿到空陣列而靜默回 0 樣本，那四條就會紅。
+
+---
+
+## Decision Log（規劃期與 T0／T1／T2／T3／T4）
+
+### D-63.T4-1 — `T_valid` 錨在第一個 `visible`，不是 countdown 也不是整場（2026-09-14）
+
+[T4 檔](T4-outcome-and-selection.md) Steps 2 寫「`T_valid` 從 `meta` 的 countdown 結束推導 …… 若匯出無此資訊則整場計入並標旗標」。實作時逐欄掃過 [`metadata.ts`](../../../../../src/data/metadata.ts) 的 `Meta`：**`timing.countdownMs` 從來沒有進過匯出**（它只活在 `DrillConfig` 與 `DrillRunner` 內）。⇒ 前半句在資料上不存在，只剩後半句的退路。
+
+但「整場計入」會把 3 秒倒數整段算進分母（[`main.ts:1446`](../../../../../src/main.ts) 註明 `recordTickFromState()` **不看相位**，故 trace 從 countdown 就開始），讓 `killRateHz` 系統性偏低——這不是缺失，是**已知偏誤**。
+
+**取「第一個 `visible` 事件」為 `T_valid` 起點、「最後一次擊殺」為終點。** v8 無 `spawnDelayMs` ⇒ 第一次 spawn 就在 running 的第一個 sim tick，與倒數結束同一刻（差一個 tick 之內）。這同時是 [GD-39](../../../DECISIONS.md) ② 「v8 指標一律事件錨定」的直接應用。`validSpanMs` 一併輸出，讓分母本身可稽核。
+
+暫停／失焦區間**不扣除**：匯出只有 `meta.validity.pointerLockLost` 這個布林，沒有區間。WP-60 的 `pointer_lock` 事件雖然有區間，但那是 `?rawMouse=1` 才收的 opt-in 資料——**讓指標定義依賴一個採集開關，會讓開／關兩批 run 的 `killRateHz` 不可混比**。⇒ 一律不扣，以 `idle_span_unbounded` 恆亮聲明這件事，另以 `focus_lost_during_run` 指出這一場實際掉過鎖。
+
+**替代方案（被否決）**：整場計入 —— 否決理由為它是已知偏誤而非缺失，而本 WP 的存在理由正是消滅「數字看起來合理但錯」；把 `countdownMs` 補進 `meta` —— 否決理由為那是改匯出 schema，[README §1.3](README.md) 明文禁止，且要動的話該另開 WP 一次處理所有 timing 欄位。
+
+### D-63.T4-2 — FM-4 的彈匣空倉改為「整層不出數」，因為「該窗不進分母」在 L0 無定義（2026-09-14）
+
+[README §2.6](README.md) FM-4 寫「標 `ammo_exhausted_in_window`，**該窗不進 L0 的 `shotsPerKill` 分母**」。實作時發現這條在 v8 上沒有定義：`shotsPerKill = N_fire / N_kill` 是 trace 層的量，而 v8 **三顆並發** ⇒ 一發 `fire` 同時落在最多三個窗內。**逐窗的發數歸屬要等 T5 的意圖歸屬才存在**，L0 拿不到。
+
+**取「任一窗在 `T_valid` 內標了 `ammo_exhausted_in_window` ⇒ `shotsPerKill` 與 `shotAccuracy` 皆不出數 + `ammo_exhausted_in_run`」。** 依 **C-D3**（寧可少一個指標，不能有一個會說錯話的指標）：FM-4 已載明這時的數字**已知偏低**，輸出它等於明知有偏誤還發數字。其餘三量（`killRateHz`／兩個 `killInterval` 分位數）不吃發數，不連坐。
+
+實務上這條幾乎不會觸發：D-63-P4 已證每次 `spawn()` 都補滿彈匣，而 v8 每殺一顆就補位。
+
+**替代方案（被否決）**：照出數字只加旗標 —— 否決理由如上；等 T5 再回頭剔窗 —— 否決理由為那會讓 L0 的語意依賴 L1，破壞「L0／L3 完全不需要意圖歸屬」這個 T4 的設計前提。
+
+### D-63.T4-3 — `replacementEngagedRate` 只出 rank 分層值，總量不出（2026-09-14）
+
+可比性前置檢查（見 §T4）判定 replacement 群與倖存者群的角距分布**不可比**（p50 11.28° vs 9.22°，機制為 WP-59 的 sampler 刻意外推）。依 [README §3.1](README.md) 的既定緩解「分布不可比 ⇒ 只出分層值不出總量」，`replacementEngagedRate` 恆為 `undefined` 並常亮 `replacement_distance_not_comparable`。
+
+**分層變項取「replacement 在候選集中的角距 rank」**（1／2／3），不取距離分箱：rank 正是距離混淆的載體，而且 v8 的候選集恆為 3 顆 ⇒ rank 是完整、無參數、無分箱邊界的分層。距離分箱會引入 bin 寬這個自由參數，與本 WP 的免閾值紀律相衝。
+
+**替代方案（被否決）**：照出總量只加旗標 —— 否決理由為總量會把「玩家偏好補位」與「補位比較遠所以少被選」混在一起，而讀者幾乎一定會把它讀成前者；不出任何 replacement 量 —— 否決理由為 [README §5](README.md) #6 的 (c) 路（以 replacement 對照倖存者取搜尋成本下界）明文要靠這個原料，分層值保住了它。
+
+### D-63.T4-4 — `nearest2Deg` 與 `nearest3Deg` 逐位對齊是硬不變式（2026-09-14）
+
+兩個陣列的唯一用途之一是相減（`nearest3 − nearest2` = 這一次 replacement 搶走的角距，[README](README.md) FR-63.4 的設計意圖）。若「沒有倖存者」的退化情形只讓其中一邊 push，兩者就會**靜靜地錯位**，而相減仍然算得出數字 —— 又是一個 §0.1 型的靜默錯誤。
+
+**取「一顆倖存者都沒有 ⇒ 兩邊都不 push」**，並以「逐位對齊且 `nearest3 <= nearest2`」一測釘死（四份 fixture 各驗）。介面註解也把對齊寫成契約。
+
+### D-63.T4-5 — 同距候選一律同 rank，不以陣列順序或 id 序決勝（2026-09-14）
+
+`rank = 1 + #{候選 : 角距 < 本候選角距 − 1e-9}`。這是 [README §2.6](README.md) FM-2 「**不**以陣列順序或 id 序決勝（那正是 §0.1 #4 的錯誤形態）」在 L3 的對應實作。後果是等距時兩顆都算 rank 1 ⇒ `nearestFirstRate` 在對稱佈局上不會因為實作的迭代順序而抖動。以「倖存者 −9°／+9° 與被殺的 0° 等距」一測釘死。
 
 ### D-63.T3-1 — `pos` 改為 optional，而不是用哨兵值填滿（2026-09-14）
 
@@ -451,7 +557,7 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 
 ---
 
-## Surprises & Discoveries（規劃期、T0、T1、T2 與 T3）
+## Surprises & Discoveries（規劃期、T0、T1、T2、T3 與 T4）
 
 **T0 新發現（2026-09-14）**：`npm.cmd run build` 在 worktree 的 sandbox 內兩次於 esbuild 讀取 `vite.config.ts` 時遭 `Access is denied`，第二次已使用獨立 `npm ci --offline` 安裝而非 junction；在 sandbox 外同一 HEAD、同一 worktree 重跑 exit 0、203 modules。這個差異屬執行環境，非 source failure。舊 Playwright 指令在 GD-44 後混跑兩個 project，SwiftShader 上的三個 `@realgpu` 案例失敗，故按 D-63.T0-2 改用正式分層。另 [WP-59 README](../../stage12/wp-59-micro-flick-v8-replacement-spacing/README.md) 的 T4／T-exit 仍未勾，雖 HEAD 已含 v8 replacement E2E；後續角距分析必須記錄 HEAD，不能將存在測試誤寫成 WP-59 已正式退出。
 
@@ -492,12 +598,21 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 
 14. **（T2）Edge 全量首次出現 `armed` 卡住的 flake。** `hit-feedback-live.spec.ts:541`（`@realgpu`）在全量第一次跑時停在 `'armed'` 10 s；單跑該 spec 3/3、全量重跑 115/115。可疑機制是 `armed → countdown` 由 sim pump 消費 `armRequested`，而 pump 只在 rAF 內跑 ⇒ headed Edge 視窗失焦／被遮擋時會停住。⇒ **`armDrill()` 的第三個 poll 對 rAF 節流沒有免疫力**；它的前兩個 poll 都直接觀測狀態，只有這一個依賴 render loop 有在跑。後續若再遇到，應登記 KI 而非再判一次 flake（判定與證據見 §T2）。
 
+
+17. **（T4）`timing.countdownMs` 從來沒有進過匯出 `meta`。** 規劃期與 T4 檔都寫「從 `meta` 的 countdown 結束起算」，逐欄掃 `Meta` 才發現這個欄位只活在 `DrillConfig`／`DrillRunner` 裡。**證據**：`grep -rn "countdown" src/` 的 40 筆命中沒有一筆在 `metadata.ts` 的 `Meta` 或 `collectMeta()` 內。⇒ 任何以 metadata 欄位為前提寫的分析步驟，開工時要先驗那個欄位真的在 payload 裡；欄位名在 config 裡看得到，不代表它進得了匯出。
+
+18. **（T4）WP-59 的 replacement sampler 讓「補位比較遠」成為結構性事實，不是雜訊。** 量到 replacement 群的角距分布整體外推於倖存者群（p50 11.28° vs 9.22°，三個分位點同向）。**證據**：60 個 kill-order seed × 57 次補位 = 3,420 次機會，數字見 §T4。機制在 `TargetManager.ts:407-418`——候選以 `killedSeparationDeg` 由大到小排序。⇒ [README §3.1](README.md) 把它列為「若不可比」的**條件**風險，實測結果是它**確實**不可比；`replacementEngagedRate` 的總量因此永遠不會出數（D-63.T4-3）。這也意味著**任何**拿 replacement 與倖存者直接對比的未來指標都要先過同一關。
+
+19. **（T4）FM-4 的緩解措施在它自己的 drill 上沒有定義。** README 的 FM-4 寫「該窗不進 `shotsPerKill` 分母」，但 v8 三顆並發 ⇒ 一發 `fire` 同時落在最多三個窗內，逐窗發數歸屬要等 T5 才存在。⇒ **規劃期為 FM 寫緩解措施時，措施本身也要過一次「這個 drill 的資料形狀支援嗎」的檢查**；本例的措施是照單目標 drill 的直覺寫的。處置見 D-63.T4-2。
+
+20. **（T4）`angularDistanceDeg()` 收的是兩個單位方向向量，不是兩個點。** canonical 實作把「點 → 以 eye 為頂點的單位方向」這一步留在呼叫端（`angularEccentricityDeg()` 自己做了一次）。⇒ 消費端必然要寫一段正規化，這不是重寫幾何（角度本身仍來自 canonical），但邊界要講清楚：本模組的 C-D4 掃描因此**允許 `Math.hypot`、禁掉所有三角函式與弧度換算**，讓「角度只能從 `angularDistanceDeg()` 來」變成機械可驗的。
+
 ## Open Questions
 
 | OQ | 問題 | 預設假設 | Owner | Deadline |
 |---|---|---|---|---|
 | **OQ-63.1** | 既有 v8 匯出是否屬於已凍結的研究 cohort？ | **2026-09-14 11:42Z 以預設「否」明帳推進**，不是研究者回覆；T1 直接改 fixture，若 T1 前確認 frozen 則轉 v9（見 §T0） | 研究者 | T1 開工前 |
-| **OQ-63.2** | `selectionCostRatio` 貪婪基準線的起點？ | 被殺目標中心（非擊殺瞬間瞄準點） | 研究者 | T4 開工前 |
+| ~~OQ-63.2~~ | ~~`selectionCostRatio` 貪婪基準線的起點？~~ | ✅ **已關閉（2026-09-14，T4）：被殺目標中心**（非擊殺瞬間瞄準點），以預設假設明帳推進，研究者未另行回覆。基準線是幾何量，不該被執行誤差污染；選定值寫在 `MICRO_FLICK_METRICS_VERSION` 旁的註解與 `candidatesAtKill()` 的 docstring | — | — |
 | **OQ-63.3** | `?rawMouse=1` 是否為 v8 的強制採集條件？ | 否，但預設開啟；不進本 WP 任何指標定義 | 研究者 | T7 開工前 |
 | ~~OQ-63.4~~ | ~~KI-035 修法取 (a)、(b) 或併行？~~ | ✅ **已關閉（2026-09-14，T2）：(a)+(b) 併行**。(b) 實測不讓任何既有 e2e 轉紅（`spider-shot-wide.spec.ts` 4/4），故不需退回 (a) only。見 D-63.T2-1 | — | — |
 | ~~OQ-63.5~~ | ~~GD-39 ③（GD-38 ②(b) 更正）是否提前單獨入帳？~~ | ✅ **已關閉（2026-09-10）：是**，已寫入 GD-38 ② inline 更正段。理由見 D-63-P6 修訂 | — | — |
