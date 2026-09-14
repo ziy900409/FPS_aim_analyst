@@ -19,14 +19,17 @@
    - [WP-60](../wp-60-raw-mouse-sample-capture/README.md) T-exit ✅（`?rawMouse=1` 可用，R1 已過：活動期約 1005 Hz、dt p50 995 µs、零遺漏）
    - 逐條把證據連結記入 `progress.md`。
 
-3. **實測基線（NFR-63.6）**
+3. **實測基線（NFR-63.6；2026-09-14 依 GD-44 對齊驗證層級）**
    ```powershell
    npm.cmd run typecheck
    npm.cmd test
-   npx.cmd playwright test --workers=1
+   npm.cmd run test:e2e -- --workers=1
+   npm.cmd run test:e2e:fast -- --workers=1
    npm.cmd run build
    ```
-   四項皆須 exit 0，並把**實際數字**（Vitest passed／skipped 檔數與測試數、Playwright passed 數與耗時、build modules 數）記入 `progress.md §T0`。**不得**引用 WP-62 T0 的舊值（2,822／103）當本 WP 基線。
+   五項皆須 exit 0，並把**實際數字**（Vitest passed／skipped 檔數與測試數、Edge 全量與 chromium-ci 快速閘各自 passed／skipped 數及耗時、build modules 數）記入 `progress.md §T0`。**不得**引用 WP-62 T0 的舊值（2,822／103）當本 WP 基線。
+
+   原規劃的 `npx.cmd playwright test --workers=1` 在 [GD-44](../../../DECISIONS.md) 引入兩個 Playwright project 後會把 `@realgpu` 的真 GPU 案例也拿到 `chromium-ci` 的 SwiftShader 執行，與 [正式 CI 分層](../../../../guideline/ci-tiers.md) 相牴觸；本次先實跑確認該失敗，再依權威 `package.json` 的 Edge 全量與 chromium-ci fast 兩條指令拆開記錄。`--workers=1` 保留 T0 的序列化要求。
 
 4. **CodeGraph impact 重跑**
    - 對 `buildPeekWindows`、`resolveEyeOrigin`、`omegaDegPerSec`、`createDataRecorder`、`microFlickThreeTargetTestV8` 各跑一次 impact。
@@ -47,13 +50,13 @@
 
 ## Definition of Done
 
-- [ ] `progress.md §T0` 記錄當下最大 WP／GD 號與是否順延的判定
-- [ ] 三個上游 gate 各有可點擊的證據連結
-- [ ] 四項基線指令的 exit code 與**實際數字**記入 `progress.md`（非「全綠」三個字）
-- [ ] 五個符號的 CodeGraph impact 數字記入 `progress.md`，README §0.6 已更新或明示無變化
-- [ ] README §0.4 的三項機制事實逐條在 `progress.md` 標記「已親自確認」並附行號
-- [ ] OQ-63.1 有明確答案（研究者回覆，或明帳記錄「以預設假設推進」與推進時間）
-- [ ] GD-39 草稿存在於 `progress.md`（不寫入 `DECISIONS.md`）
+- [x] `progress.md §T0` 記錄當下最大 WP／GD 號與是否順延的判定
+- [x] 三個上游 gate 各有可點擊的證據連結（WP-59 的未完成狀態亦明帳）
+- [x] 五項基線指令的 exit code 與**實際數字**記入 `progress.md`（非「全綠」三個字）
+- [x] 五個符號的 CodeGraph impact 數字記入 `progress.md`，README §0.6 已更新
+- [x] README §0.4 的三項機制事實逐條在 `progress.md` 標記「已親自確認」並附行號
+- [x] OQ-63.1 明帳記錄「以預設假設推進」與推進時間；非研究者確認
+- [x] GD-39 草稿存在於 `progress.md`（不寫入 `DECISIONS.md`）
 
 ## Commit
 

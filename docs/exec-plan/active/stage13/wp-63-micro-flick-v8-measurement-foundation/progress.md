@@ -2,9 +2,9 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-10 規劃完成）
+## 最新狀態（2026-09-14 T0 完成）
 
-⬜ **未開工**。本檔目前只含規劃期的決策與待驗證項；T0 開工後每個 task 完成時追加。
+✅ **T0 entry gate 完成**（2026-09-14 12:38Z）。編號、上游與機制事實已複核；GD-44 的 Edge 全量／chromium-ci fast 與 typecheck、Vitest、build 五項正式基線 exit 0。T1–T7 未開工；OQ-63.1 以具名預設假設推進。
 
 規劃來源：2026-09-10 的設計對話（使用者指定四項計算 → 逐項稽核蒐集層 → 依 `.claude/skills/engineering-planning/SKILL.md` 落成執行計畫）。
 
@@ -14,7 +14,7 @@
 
 | Task | Status | Started | Completed | Evidence |
 |---|---|---|---|---|
-| T0 Entry gate | ⬜ 未開工 | — | — | — |
+| T0 Entry gate | ✅ 完成 | 2026-09-14 | 2026-09-14 12:38Z | 見下方 §T0：五項基線 exit 0，Vitest 3,217 passed／2 skipped、Edge 115 passed、chromium-ci fast 102 passed／1 skipped、build 203 modules；編號、上游、五個 CodeGraph impact、三項機制與 OQ-63.1 明帳。 |
 | T1 零散布武器宣告 | ⬜ 未開工 | — | — | — |
 | T2 Mouse gain 修復 | ⬜ 未開工 | — | — | — |
 | T3 窗界 primitive | ⬜ 未開工 | — | — | — |
@@ -26,7 +26,72 @@
 
 ---
 
-## Decision Log（規劃期）
+## T0 Entry gate（2026-09-14；worktree `codex/wp-63-t0`，基線 HEAD `bc467c49`）
+
+### 編號與上游
+
+| 檢查 | 2026-09-14 重查結果 |
+|---|---|
+| WP 編號 | [`exec-plan/README.md §2`](../../../README.md) 目前最大採納號 **WP-67**；[WP-63 索引列](../../../README.md) 已明確指向本資料夾，故 **WP-63 保留、不順延**。 |
+| GD 編號 | [`DECISIONS.md`](../../../DECISIONS.md) 最大已落帳號 **GD-44**；**GD-39 無已落帳標題**，仍為本 WP 已預留的草稿號，T0 不佔用新號。T-exit 入帳前須再重查，若屆時號已被取用，依 GD-15 順延。GD-43 由 WP-67 預約，不動。 |
+| stage14 候選 | [stage14 §3](../../stage14/README.md) 已有 2026-09-12 權威註記：WP-66／67 再被採納後，候選應為 **WP-68／69／70**；該表仍顯示過時的 66／67／68，但本 T0 不替未批准草案改寫。 |
+| WP-56 | [progress.md 的 T-exit Evidence Log](../../stage12/wp-56-micro-flick-test-scene/progress.md)：**Complete（2026-09-07）**，FR/NFR、全量 Vitest／build／Playwright 已入帳；三顆 population 生命週期可用。 |
+| WP-59 | [README Progress](../../stage12/wp-59-micro-flick-v8-replacement-spacing/README.md)：**T3 完成（2026-09-08）**，T4 與 T-exit 仍未勾；T3 的 2,000-run stress corpus 為現有證據。本 WP 不以其 T-exit 為前置；T4 比較角距分布須註明所用 HEAD。 |
+| WP-60 | [progress.md T-exit](../wp-60-raw-mouse-sample-capture/progress.md)：**✅，TF1–TF3 亦關閉（2026-09-09）**；[T0 R1 實機讀數](../wp-60-raw-mouse-sample-capture/T0-entry-gate.md) 為瞬時約 **1005 Hz**、dt p50 **995 µs**，取樣串流可用。 |
+
+### NFR-63.6 基線實測
+
+五項均在本 worktree、未修改任何 `src/` 或測試的 HEAD `bc467c49` 上執行。依賴以 `npm.cmd ci --offline` 安裝到本 worktree；曾用 junction 的第一次 build 因 sandbox 的 esbuild 目錄存取拒絕失敗，移除 junction、獨立安裝後 sandbox 仍拒絕讀取 `vite.config.ts`，在 sandbox 外重跑成功。這是執行環境限制，不能把失敗當程式碼回歸。
+
+**舊規劃指令的實測失敗**：`npx.cmd playwright test --workers=1` 在 GD-44 的雙 project 設定下計畫執行 **230 tests**。Edge **115/115 通過**；進入 chromium-ci 後，真 GPU 專用的 `hit-feedback-live.spec.ts` `@realgpu` 三例連續失敗（第 150–152 例，SwiftShader 下沒有穩定命中／Pointer Lock）。已中止該不符合 [GD-44](../../../DECISIONS.md) 分層的舊指令，exit **1**。這不是 WP-63 source 回歸；T0 的正式基線改採下表 Edge 全量與 chromium-ci fast 各自 exit 0，保留這次失敗紀錄以便稽核。
+
+| 指令 | exit code | 當次實測數字 |
+|---|---:|---|
+| `npm.cmd run typecheck` | **0** | `tsc --noEmit` 與 `tsc --noEmit -p tsconfig.node.json` 兩段皆成功。 |
+| `npm.cmd test` | **0** | Vitest **266 files passed／1 skipped（267）**；**3,217 tests passed／2 skipped（3,219）**；12.81 s。 |
+| `npm.cmd run test:e2e -- --workers=1` | **0** | GD-44 Tier 2：Edge 全量，**115 passed／0 skipped**，**18.3m**。真 GPU `@realgpu` 案例含在內；由本 worktree 的 5173／4173 server 執行。 |
+| `npm.cmd run test:e2e:fast -- --workers=1` | **0** | GD-44 Tier 1：chromium-ci，排除 `@slow|@realgpu`；**102 passed／1 skipped（103）**，**11.7m**；由本 worktree 的 5173／4173 server 執行。 |
+| `npm.cmd run build` | **0** | `tsc` 兩段成功；Vite 6.4.3 **203 modules transformed**、2.03 s；保留既有 chunk-size warning。 |
+
+### CodeGraph impact（當下 index up to date）
+
+逐一執行 `codegraph.cmd impact <symbol> -j -p .`（預設 depth 2），並以 `codegraph.cmd callers <symbol> -j -l 1000 -p .` 計算直接 caller。caller 條目含檔案節點，因此另列非檔案符號數與 distinct file 數，避免把兩種計數混稱。`graphify-out/GRAPH_REPORT.md` 宣告建自 `8e03f9d6`，落後本 HEAD `bc467c49`，此處以 up-to-date 的 CodeGraph 與原始碼為準。
+
+| 符號 | 直接 caller 條目 | 非檔案 caller | distinct files | depth-2 impact nodes | 判定 |
+|---|---:|---:|---:|---:|---|
+| `buildPeekWindows` | 26 | 12 | 14 | 50 | cross-module，**不改** |
+| `resolveEyeOrigin` | 24 | 11 | 13 | 75 | cross-module，**只讀** |
+| `omegaDegPerSec` | 11 | 5 | 6 | 33 | cross-module，**只讀** |
+| `createDataRecorder` | 64 | 35 | 34 | 75 | cross-module，**不改** |
+| `microFlickThreeTargetTestV8` | 6 | 0 | 6 | 21 | fixture 變更會波及 `main.ts`／session consumer；T1 回歸保護 |
+
+`impact` 對 `resolveEyeOrigin`、`createDataRecorder` 均回報 75 個節點；這是本次 depth-2 查詢的回傳值，**不得當成全域影響上界**。此 T0 僅更動 WP-63 文件，程式碼 blast radius 為零；未來 T1–T3 仍須依各自 HEAD 重查。
+
+### README §0.4 機制事實親自複核
+
+| 機制 | 原始碼位置與結論 |
+|---|---|
+| `spawn()` 補彈及三個呼叫點 | **已親自確認**：[TargetManager.ts:582](../../../../../src/sim/TargetManager.ts) 定義 `spawn()`；[585](../../../../../src/sim/TargetManager.ts) 執行 `state.weapon.ammo = state.weapon.magSize`；呼叫點為 **617、644、647**，涵蓋 legacy 與 population。 |
+| 零散布不耗 RNG | **已親自確認**：[spread.ts:28-32](../../../../../src/recoil/spread.ts) 在 `inaccuracy === 0` 時於第 29 行回 `{x: 0, y: 0}`；RNG 呼叫從第 31 行才開始。 |
+| `usp_s_laser` 規格 | **已親自確認**：[weapons.ts:82-100](../../../../../src/weapon/weapons.ts) 為 `cycletimeSec: 0.17`、`magSize: 12`、`recoil.magnitude: 0`、stand/crouch/fire/move inaccuracy 全 0，且無 `ads` 區塊。 |
+
+### OQ-63.1 與 GD-39 草稿
+
+**OQ-63.1：以預設假設推進（2026-09-14 11:42Z）**。已向研究者詢問既有 v8 匯出是否為 frozen cohort；T0 記錄採 README §1.4 的非阻塞預設「否」，故 T1 預設直接改 v8 fixture 並以 `meta.weaponId` 斷代。若研究者在 T1 開工前回覆「是」，改走 v9 fixture 並同步改 FR-63.12／§3.1。此處不是研究者的肯定回覆。
+
+**GD-39 草稿（不入帳，T-exit 再重查號）**：① WP-63 依 2026-09-10 指示寄放 stage13，明帳其量測窗界部分較接近 stage14；② v8 指標一律事件錨定，不新設 movement-onset，日後若需偵測式錨點，先解 KI-031／KI-034 並用 canonical `t_detect`；③ GD-38 ② 的更正已在原條 inline 入帳，此處只指回其機制事實：`spawn()` 每次補彈，且 locked translation 使 counter-strafe 論證不適用 v8；④ 可在 v8 逐 drill 指定 `usp_s_laser`，以 `meta.weaponId` 區分前後世代，維持不做全域 pin；⑤ 本 WP 的交付宣稱限「可算、可重現、可稽核」，C-D3 未過不得進教練報告。
+
+---
+
+## Decision Log（規劃期與 T0）
+
+### D-63.T0-1 — 編號與 cohort gate 依當下權威處理（2026-09-14）
+
+WP-63 已在 §2 索引由本案採納，GD-39 尚無已落帳標題，故維持既有號；stage14 §3 的後續註記已把候選推至 WP-68／69／70。OQ-63.1 先採非 frozen cohort 的明帳預設，T1 前若有相反研究者回覆即改為 v9。**Alternatives considered**：把 GD 草稿直接改成最大號之後的 GD-45，會在 T0 尚未入帳時無端放棄本 WP 已預留且未被占用的號，駁回；直接將研究者未回覆解讀為確認「否」，會抹掉 cohort 風險，駁回。
+
+### D-63.T0-2 — Playwright 基線跟隨 GD-44 分層（2026-09-14）
+
+T0 原規劃的無 project 指令在 2026-09-14 新增 `chromium-ci` 後，會把 Edge 真 GPU 案例送入 SwiftShader；實跑第 150–152 例失敗。按 [GD-44](../../../DECISIONS.md) 與 `package.json`，基線改為 Edge 全量 `test:e2e` 和 chromium-ci fast `test:e2e:fast` 兩個 exit 0 的獨立閘，兩者都指定一個 worker。**Alternatives considered**：修改 `hit-feedback-live.spec.ts` 讓 SwiftShader 的 `@realgpu` 斷言變綠，會降低真 GPU 效度閘且違反 T0 既有測試零修改，駁回；只接受舊指令 Edge 階段 115/115 而不獨立跑 chromium-ci fast，不能建立 GD-44 Tier 1 基線，駁回。
 
 ### D-63-P1 — 四項計算的蒐集層逐項判定（2026-09-10，使用者指定）
 
@@ -100,7 +165,9 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 
 ---
 
-## Surprises & Discoveries（規劃期）
+## Surprises & Discoveries（規劃期與 T0）
+
+**T0 新發現（2026-09-14）**：`npm.cmd run build` 在 worktree 的 sandbox 內兩次於 esbuild 讀取 `vite.config.ts` 時遭 `Access is denied`，第二次已使用獨立 `npm ci --offline` 安裝而非 junction；在 sandbox 外同一 HEAD、同一 worktree 重跑 exit 0、203 modules。這個差異屬執行環境，非 source failure。舊 Playwright 指令在 GD-44 後混跑兩個 project，SwiftShader 上的三個 `@realgpu` 案例失敗，故按 D-63.T0-2 改用正式分層。另 [WP-59 README](../../stage12/wp-59-micro-flick-v8-replacement-spacing/README.md) 的 T4／T-exit 仍未勾，雖 HEAD 已含 v8 replacement E2E；後續角距分析必須記錄 HEAD，不能將存在測試誤寫成 WP-59 已正式退出。
 
 1. **v8 整場 0 個 `hit` 事件**。[`SimLoop.ts:354`](../../../../../src/loop/SimLoop.ts) 的 `hit` 事件只在 projectile 分支發射；v8（ak47 與 usp_s_laser 皆無 `bullet`）為純 hitscan。⇒ [micro-flick 設計文件](../../../../algorithm/micro-flick/README.md) 與 [`compute.ts`](../../../../../src/metrics/compute.ts) 裡所有 `t_hit` 公式在 v8 上會拿到**空陣列**且靜默回傳 0 樣本。
 
@@ -120,7 +187,7 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 
 | OQ | 問題 | 預設假設 | Owner | Deadline |
 |---|---|---|---|---|
-| **OQ-63.1** | 既有 v8 匯出是否屬於已凍結的研究 cohort？ | 否 ⇒ T1 直接改 fixture | 研究者 | T1 開工前 |
+| **OQ-63.1** | 既有 v8 匯出是否屬於已凍結的研究 cohort？ | **2026-09-14 11:42Z 以預設「否」明帳推進**，不是研究者回覆；T1 直接改 fixture，若 T1 前確認 frozen 則轉 v9（見 §T0） | 研究者 | T1 開工前 |
 | **OQ-63.2** | `selectionCostRatio` 貪婪基準線的起點？ | 被殺目標中心（非擊殺瞬間瞄準點） | 研究者 | T4 開工前 |
 | **OQ-63.3** | `?rawMouse=1` 是否為 v8 的強制採集條件？ | 否，但預設開啟；不進本 WP 任何指標定義 | 研究者 | T7 開工前 |
 | **OQ-63.4** | KI-035 修法取 (a)、(b) 或併行？ | (a)+(b) 併行 | 實作者 | T2 開工時 |

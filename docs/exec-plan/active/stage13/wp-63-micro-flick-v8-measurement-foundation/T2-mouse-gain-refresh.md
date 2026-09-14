@@ -37,7 +37,7 @@
 
 - [ ] `npx.cmd vitest run src/data/DataRecorder.test.ts` exit 0，含三條新測試（sensitivity／FOV／negative）
 - [ ] 既有 `dYaw`/`dPitch` golden 與四 FPS parity 斷言**未修改**且仍綠（`git diff` 對這些測試檔為空）
-- [ ] 若採 (b)：`npx.cmd playwright test --workers=1` exit 0 且 passed 數 ≥ T0 基線，**且未修改任何既有 spec**
+- [ ] 若採 (b)：`npm.cmd run test:e2e -- --workers=1`（GD-44 Edge 全量）exit 0 且 passed 數 ≥ T0 Edge 基線，**且未修改任何既有 spec**
 - [ ] `main.ts:712-713` 註解已更正為描述實際保證
 - [ ] `BD-035` 已入 `BUGFIX-DECISIONS.md`；`KI-035` 狀態已翻 ✅
 - [ ] `npm.cmd run typecheck` ×2 與 `npm.cmd run build` exit 0

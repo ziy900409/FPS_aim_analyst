@@ -47,7 +47,8 @@
    ```powershell
    npm.cmd run typecheck
    npm.cmd test
-   npx.cmd playwright test --workers=1
+   npm.cmd run test:e2e -- --workers=1
+   npm.cmd run test:e2e:fast -- --workers=1
    npm.cmd run build
    graphify update .
    ```
@@ -65,7 +66,7 @@
 - [ ] `GD-39` 已入 `DECISIONS.md`，且入帳前的重查結果記入 `progress.md`
 - [ ] stage13 README §2、`exec-plan/README.md §2`、stage14 README §3、`docs/MAP.md` 四處索引已更新
 - [ ] `git diff --cached --name-only` 只含預期檔案
-- [ ] 四項全量閘 exit 0；`graphify update .` 已執行
+- [ ] 五項全量閘（含 GD-44 兩層 Playwright）exit 0；`graphify update .` 已執行
 - [ ] 交接清單三項齊全
 
 ## Commit
