@@ -17,3 +17,28 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run test
+
+  # Tier 1 — 快速 e2e 子集。跑在無 GPU 的 hosted runner 上，用 Playwright 內建 chromium
+  # （非 msedge channel），並排除標了 @slow 的長跑測試（那幾個在等真實 rest 秒數，
+  # 最長單一測試 5.4 分鐘，無法靠加 worker 縮短）。
+  #
+  # 這一層抓的是邏輯／DOM／UI 迴歸。**它不是定版閘**：真 GPU、真 Edge 與桌面計時
+  # 的證據由 e2e-full.yml（Tier 2，self-hosted）產生。
+  e2e-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:fast
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace-fast
+          path: test-results/
+          retention-days: 7

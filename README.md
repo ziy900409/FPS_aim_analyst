@@ -29,8 +29,9 @@ npm run dev
 | `npm run preview` | 預覽打包後的成品 |
 | `npm run typecheck` | 只跑 TypeScript 型別檢查 |
 | `npm test` | 跑 Vitest 單元/整合測試 |
-| `npm run test:e2e` | 跑 Playwright e2e 測試 |
-| `npm run test:ci` | 型別檢查 + Vitest + Playwright 全套 |
+| `npm run test:e2e` | 跑 Playwright e2e 全套(`edge` project,需真 GPU + Edge) |
+| `npm run test:e2e:fast` | 快速 e2e 子集(`chromium-ci` project,排除 `@slow`;CI Tier 1 用) |
+| `npm run test:ci` | 型別檢查 + Vitest + Playwright 全套(定版閘) |
 
 ## 文件
 

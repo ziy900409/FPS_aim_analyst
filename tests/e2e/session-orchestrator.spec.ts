@@ -909,7 +909,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     return rests;
   }
 
-  test('WP-58 T6：自訂 program 在真瀏覽器跑完 3 家族 × 2 reps —— 休息時長、6 份唯一匯出、收工狀態', async ({
+  test('WP-58 T6：自訂 program 在真瀏覽器跑完 3 家族 × 2 reps —— 休息時長、6 份唯一匯出、收工狀態 @slow', async ({
     page,
   }) => {
     // Six real drills (~23s + ~65s + 60s, twice) plus 7s of rests, with headroom for scene loads
@@ -991,7 +991,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     await expect(page.locator('#rest-overlay')).toBeHidden();
   });
 
-  test('WP-62 T6：逐列武器實跑 —— 每份匯出的 meta.weaponId 對得上該列選擇，意圖與事實一致（FR-62.1/62.3/62.4）', async ({
+  test('WP-62 T6：逐列武器實跑 —— 每份匯出的 meta.weaponId 對得上該列選擇，意圖與事實一致（FR-62.1/62.3/62.4） @slow', async ({
     page,
   }) => {
     // Four runs of the same ~23 s drill. One drill, three rows, three different weapon situations:
@@ -1055,7 +1055,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     }
   });
 
-  test('WP-58 T6：frozen 標準 Assessment 軌在真瀏覽器跑完 —— 家族順序、單一休息秒數、無熱身提示', async ({
+  test('WP-58 T6：frozen 標準 Assessment 軌在真瀏覽器跑完 —— 家族順序、單一休息秒數、無熱身提示 @slow', async ({
     page,
   }) => {
     test.setTimeout(11 * 60_000);
@@ -1281,7 +1281,7 @@ test.describe('WP-42 T-exit — session orchestrator', () => {
     await expect(page.locator('#eligibility-gate')).toBeVisible();
   });
 
-  test('WP-64 T3：ad hoc custom program 真跑 curated pilot block —— field-low 載入、逐 rep 匯出稽核、SessionRunner 擁有完成（A-64.4/64.5/64.6/64.7）', async ({
+  test('WP-64 T3：ad hoc custom program 真跑 curated pilot block —— field-low 載入、逐 rep 匯出稽核、SessionRunner 擁有完成（A-64.4/64.5/64.6/64.7） @slow', async ({
     page,
   }) => {
     // Three unshortened 26 s blocks + 3 s countdowns + 3 s of rests + two scene loads.

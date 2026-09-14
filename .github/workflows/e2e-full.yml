@@ -1,0 +1,38 @@
+# Tier 2 — 完整驗證閘（typecheck + Vitest + 全套 Playwright，含 @slow 與 webgpu 斷言）。
+#
+# 為什麼一定要 self-hosted：這個 suite 的環境**就是量測儀器的環境**。
+# `backend.spec.ts` 要求 `backend === 'webgpu'`，而 GitHub-hosted runner 沒有 GPU，
+# WebGPURenderer 會依 createRenderer.ts 的設計 fallback 成 WebGL2。真實 GPU、系統 Edge
+# 與桌面計時特性無法在 cloud runner 上複製，所以這層跑在研究者的機器上。
+#
+# runner 需求：Windows + 已安裝 Microsoft Edge + Node 20。
+# 註冊方式見 docs/guideline/ci-tiers.md。
+name: E2E (full, self-hosted)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+  schedule:
+    # 18:00 UTC = 隔日 02:00 Asia/Taipei
+    - cron: '0 18 * * *'
+
+jobs:
+  e2e-full:
+    runs-on: [self-hosted, windows]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      # test:ci = typecheck ×2 + vitest + playwright --project=edge（全套，含 @slow）
+      - run: npm run test:ci
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace-full
+          path: test-results/
+          retention-days: 14
