@@ -12,13 +12,13 @@
 # 開始紅——而那正是本層唯一無法被 Tier 1 取代的東西。註冊步驟見 docs/guideline/ci-tiers.md §3。
 name: E2E (full, self-hosted)
 
+# 觸發刻意只有兩個，**沒有 schedule**：runner 不是常駐的（以 run.cmd 手動在登入的桌面
+# session 執行，才拿得到 GPU）。排程在 runner 離線時只會累積一堆沒人接的排隊 job，
+# 徒增雜訊。定版閘的重點是「發版時擋住紅的東西」，那由 tag push 觸發就夠了。
 on:
   workflow_dispatch:
   push:
     tags: ['v*']
-  schedule:
-    # 18:00 UTC = 隔日 02:00 Asia/Taipei
-    - cron: '0 18 * * *'
 
 jobs:
   e2e-full:
