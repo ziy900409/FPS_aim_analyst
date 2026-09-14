@@ -249,6 +249,30 @@ describe('WP-68 T2 — FR-68.5：右界的依據查不到時具名退回，不�
     expect(outcome.killRateHz).toBe(3 / (KILLS.at(-1)! / 1000));
   });
 
+  it('計時制但 tick 紀錄截斷在最後一殺之前 ⇒ 退回，且 shotAccuracy 不得 > 1', () => {
+    // 回歸：T2 導入鐘右界時曾讓這條路徑算出 **shotAccuracy 1.5**（機率 > 1）與
+    // **shotsPerKill 0.667**（發數少於擊殺數），且**零旗標**。根因：tick 被 recorder 溢位
+    // 截斷後，`n` 仍計全部擊殺而 `shots` 只數窗內的 ⇒ 分子與分母對不上同一個窗。
+    // 舊實作不可能出這種值（右界恆為 `lastKillMs`，依定義涵蓋全部擊殺）。
+    const payload = buildPayload({
+      drillId: microFlickThreeTargetTestV9.drill.drillId,
+      killTimesMs: KILLS,
+      lastTickMs: LAST_TICK_MS,
+    });
+    // tick 停在 1200 ms，而最後一殺在 2300 ms。
+    const truncated = payload.ticks.filter((tick) => tick.t <= 1200);
+    const outcome = deriveMicroFlickMetrics(
+      { ...payload, ticks: truncated },
+      { eye: { strictEyeOrigin: true } },
+    ).outcome;
+
+    expect(outcome.flags).toContain('scoring_window_truncated_at_last_kill');
+    expect(outcome.validSpanMs).toBe(KILLS.at(-1));
+    // 不變式：分子與分母必須對的是同一個窗。
+    expect(outcome.shotAccuracy).toBeLessThanOrEqual(1);
+    expect(outcome.shotsPerKill).toBeGreaterThanOrEqual(1);
+  });
+
   it('計時制但匯出沒有任何 tick ⇒ 無從定出鐘的右界，同樣具名退回', () => {
     const payload = buildPayload({
       drillId: microFlickThreeTargetTestV9.drill.drillId,

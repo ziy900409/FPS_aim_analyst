@@ -416,9 +416,20 @@ function deriveOutcome(
   // **退回**既有語意並具名，不猜（FM-2）。`ticks` 已由呼叫端依 `t` 排序。
   const endConditionType = MICRO_FLICK_END_CONDITION_BY_DRILL_ID.get(payload.meta.drillId)?.type;
   if (endConditionType === undefined) flags.push('unknown_end_condition');
-  const clockEndMs = endConditionType === 'timeLimit' ? ticks.at(-1)?.t : undefined;
-  // 沒有鐘的右界可用 ⇒ 右界就是最後一次擊殺。三種情況共用這一條：kill-budget drill（本來就該如此）、
-  // 結束條件未知（退回），以及計時制但匯出沒有任何 tick（無從定出鐘的右界）。
+  const lastTickMs = ticks.at(-1)?.t;
+  // 鐘的右界只有在它至少涵蓋最後一次擊殺時才用得。tick 紀錄被截斷到最後一殺之前時
+  // （recorder 溢位），用它當右界會讓**分子與分母對不上同一個窗**：`n` 仍計全部擊殺，而
+  // `shots` 只數窗內的 ⇒ `shotAccuracy` 算得出 **> 1** 的機率、`shotsPerKill` 算得出「發數少於
+  // 擊殺數」。那正是 C-D3 禁的那種數字：看起來合理、實際在說錯話。∴ 不可用時一律退回最後一殺
+  // （它依定義涵蓋全部擊殺，兩者必然自洽）並具名。
+  const clockEndMs =
+    endConditionType === 'timeLimit' &&
+    lastTickMs !== undefined &&
+    (lastKillMs === undefined || lastTickMs >= lastKillMs)
+      ? lastTickMs
+      : undefined;
+  // 沒有鐘的右界可用 ⇒ 右界就是最後一次擊殺。四種情況共用這一條：kill-budget drill（本來就該如此）、
+  // 結束條件未知（退回）、計時制但匯出沒有任何 tick，以及計時制但 tick 紀錄截斷在最後一殺之前。
   if (clockEndMs === undefined) flags.push('scoring_window_truncated_at_last_kill');
   const scoringEndMs = clockEndMs ?? lastKillMs;
 
