@@ -2,7 +2,9 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-14 T4 完成）
+## 最新狀態（2026-09-14 T5 完成）
+
+✅ **T5 完成**（2026-09-14 16:40Z）。`src/metrics/microFlickMetrics.ts` 補上 **L1 幾何層**（FR-63.7／63.8／63.9）：逐發意圖歸屬（argmin 角誤差，**不讀** `fire.targetId`／`offsetDeg`／`firstShot`）、首發重定義與 `correctionMs` = `cadenceWaitMs` + `settlingMs` 三段拆解。24 個新測試全綠（檔內 26 → **50**）、全量 Vitest **3,310 passed**（T4 基線 3,286，**+24 = 本 task**）、typecheck ×2 與 `vite build` exit 0。三條偏離規劃期字面的決策（D-63.T5-1～3）：`cycletimeSec` 不在 `meta.weapon` 上改查 registry、L1 另立閉區間右界的候選集（否則命中發歸屬不到自己）、`geometry` 為物件並新增逐發 `shots`。T6～T7 未開工。
 
 ✅ **T4 完成**（2026-09-14 16:29Z）。`src/metrics/microFlickMetrics.ts` 交付 L0 結果層（FR-63.6）＋ L3 選擇策略層（FR-63.4／63.5）；26 個新測試全綠、全量 Vitest 3,286 passed（T3 基線 3,260，**+26 = 本 task**）、typecheck ×2 與 `vite build` exit 0。**可比性前置檢查判定兩群不可比** ⇒ `replacementEngagedRate` 依 [README §3.1](README.md) 只出分層值（`replacementEngagedByRank`）、不出總量（見 §T4 與 D-63.T4-3）。`T_valid` 的錨點與 FM-4 的處置各有一條偏離規劃期字面的決策（D-63.T4-1／D-63.T4-2）。T5–T7 未開工。
 
@@ -27,7 +29,7 @@
 | T2 Mouse gain 修復 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T2：typecheck ×2 exit 0、全量 Vitest **3,233 passed／2 skipped（268 files）**（≥ T1 基線 3,224）、`vite build` exit 0、GD-44 Tier 1 **102 passed／1 skipped**（= T0 基線）、Tier 2 Edge 全量見該節。`BD-038` 已入帳、KI-035 翻 ✅。 |
 | T3 窗界 primitive | ✅ 完成 | 2026-09-14 | 2026-09-14 15:42Z | 見下方 §T3：typecheck ×2 exit 0、全量 Vitest **3,260 passed／2 skipped（269 files）**（≥ T2 基線 3,233，+27 = 本 task 新增）、`targetWindows.test.ts` 27 passed、NFR-63.3 實測 0.914 ms／5.187 ms、NFR-63.4 掃描 count === 0。 |
 | T4 L0 + L3 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:29Z | 見下方 §T4：26 tests 綠、全量 Vitest 3,286 passed／2 skipped、typecheck ×2 與 build exit 0；可比性檢查 p10/p50/p90 入帳。 |
-| T5 L1 幾何層 | ⬜ 未開工 | — | — | — |
+| T5 L1 幾何層 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:40Z | 見下方 §T5：50 tests 綠（+24）、全量 Vitest 3,310 passed／2 skipped、typecheck ×2 與 build exit 0；D1–D6 六份對抗性 fixture 各有具名測試；五個 canonical derivation 檔 `git diff` 為空。 |
 | T6 L2 + 方向 | ⬜ 未開工 | — | — | — |
 | T7 Harness + 紀律 | ⬜ 未開工 | — | — | — |
 | T-exit | ⬜ 未開工 | — | — | — |
@@ -313,10 +315,80 @@ fixture A 刻意複製兩個既有的靜默錯誤形態，好讓「原語不能�
 另有一份**完全按最近鄰擊殺**的序列，`selectionCostRatio === 1.0`、`nearestFirstRate === 1.0`、熵 `=== 0`（T4 DoD 第四條）。
 
 零 `hit` 事件的釘死方式：fixture 一個 `hit` 事件都不發（`events.some(e => e.type === 'hit') === false` 先斷言），再斷言四個依賴擊殺時刻的量都對得上手算值 —— 照抄 `t_hit` 的實作在這裡會拿到空陣列而靜默回 0 樣本，那四條就會紅。
+## T5 L1 幾何層：意圖歸屬 + 角誤差 + 首發重定義 + 修正時間拆解（2026-09-14）
+
+### 交付物
+
+| 檔案 | 內容 |
+|---|---|
+| `src/metrics/microFlickMetrics.ts`（**改**，+約 260 行） | `deriveGeometry()`、`attributeShot()`、`candidatesForShot()`、`targetGeometry()`、`cadenceWaitWithin()`、`heldFireWithin()`、`resolveCycletimeMs()`；新增 `MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY`（10 個旗標）與 `MicroFlickShotAttribution`／`MicroFlickTargetGeometry`／`MicroFlickGeometryMetrics` |
+| `src/metrics/microFlickMetrics.test.ts`（**改**，+24 tests → 50） | D1–D6 六份對抗性 fixture、`t5Scenario()`（**帶視角**的合成匯出）、命名紀律掃描、cycletime 非常數佐證 |
+
+既有檔案異動：**零**。本 task 只改 T4 交付的那兩個檔（加上一條 T4 測試的期望值更新，見下方 §偏離）。五個 canonical derivation 檔（`peekWindows.ts`／`trackingDerivation.ts`／`detectionDerivation.ts`／`eyeOrigin.ts`／`angularKinematics.ts`）`git diff --stat` 為**空**。
+
+### 幾何學的可手算性（測試不抄實作）
+
+T5 的 fixture 讓目標與開火射線都落在通過 eye 的同一水平面（`viewPitch = 0`）：
+
+```
+aimForward(−a) = { sin a, 0, −cos a }      目標方向 = { sin t, 0, −cos t }
+⇒ dot = cos(a − t)  ⇒  angularDistanceDeg = |a − t|（度），精確
+```
+
+於是每個期望角誤差都能用紙筆寫下（`aimYawDeg = 4.9`、目標 `5°` ⇒ 期望 `0.1°`），不必跑實作產生「期望值」。
+
+### 三個偏離規劃期字面的決策
+
+全文見下方 [Decision Log](#decision-log) 的 **D-63.T5-1**（`cycletimeSec` 不在 `meta.weapon` 上，改由匯出宣告的武器 id 查 registry）、**D-63.T5-2**（L1 另立閉區間右界的候選集，不用 `aliveAt()`）與 **D-63.T5-3**（`geometry` 為物件，並新增逐發 `shots`；逐發列不轉載 `fire.targetId`）。
+
+### `cadenceWaitMs` 的定義與一個規劃期沒寫的判斷
+
+task 文件寫「對區間內每一對相鄰 fire，間隔恰等於 `cycleMs` ⇒ 全部計入；大於 `cycleMs` ⇒ 只有 `cycleMs` 那段計入」。兩種情形合起來就是 `min(間隔, cycleMs)`（排程器保證間隔不可能**小於** `cycleMs`：[`SimLoop.ts:552`](../../../../../src/loop/SimLoop.ts) 的 `nextFireT += cycleMs`）。
+
+規劃期沒寫的是：**區間內朝別顆開的槍算不算**。本 task 判定**算**——節奏地板是武器層級的，玩家中途朝別顆開的槍一樣會把本顆的補槍往後推。不計入會讓 `settlingMs` 把武器的硬等待誤讀成玩家的猶豫，正好是 FR-63.9 要避免的那件事。以 `中途朝別顆開的槍一樣佔住節奏` 一條測試釘死（1000 失手 t0 → 1170 失手 t1 → 1340 命中 t0 ⇒ `correction 340 / cadence 340 / settling 0`）。
+
+推論：`settlingMs >= 0` 恆成立（`Σ min(gap, cycle) <= Σ gap = correctionMs`）。
+
+### 點擊 vs 按住（task 文件的 ⚠️）
+
+`fire.t` 是**排程時刻**不是點擊時刻：單次點擊的首發 `nextFireT = ev.t`（真實 mouse-down 時間戳，[`SimLoop.ts:100`](../../../../../src/loop/SimLoop.ts)），按住時後續發為 `nextFireT += cycleMs`（552 行）。只有逐 tick 的 `heldFire`（`ticks[].fire`，WP-54 / T7 加的欄）能分辨兩者。
+
+落成兩個旗標：修正區間內有 `fire === true` 的 tick ⇒ `held_fire_during_correction`（那幾發的 `t` 是排程出來的）；`ticks` 整批沒有 `fire` 欄 ⇒ `no_held_fire_channel`（**不**把缺席當成 `false`）。旗標只描述語意，**不改動數值**——`cadenceWaitMs` 在標旗標時仍是同一個數。
+
+### 不加 recoil punch（C-D4）
+
+`fire.viewYaw`／`viewPitch` 是 `state.aim` 的原值；punch 另記於 `aimPunch*`。把兩者相加等於在本檔重寫一次彈道朝向 ⇒ 踩 C-D4。且 `usp_s_laser` 的 punch 逐位為 0（T1 NFR-63.7 已釘死），v8 上兩種讀法本來就同值。記錄於此以免後續讀者以為是漏做。
+
+### 驗證輸出
+
+| 指令 | exit code | 數字 |
+|---|---:|---|
+| `npx.cmd vitest run src/metrics/microFlickMetrics.test.ts` | **0** | **50 passed**（T4 交付時為 26 ⇒ **+24 = 本 task**） |
+| `npm.cmd run typecheck` | **0** | `tsc --noEmit` 與 `tsc --noEmit -p tsconfig.node.json` 兩段皆成功 |
+| `npm.cmd test` | **0** | Vitest **269 files passed／1 skipped（270）**；**3,310 tests passed／2 skipped（3,312）**；16.81 s。T4 基線 3,286 ⇒ **+24 = 本 task** |
+| `npm.cmd run build` | **0** | `tsc` 兩段成功；Vite build 2.02 s；保留既有 chunk-size warning |
+| `git diff --stat -- <五個 canonical derivation 檔>` | — | **空**（README §1.3 的「不得修改任何一行」） |
+| `git status --short` | — | 只有 `src/metrics/microFlickMetrics.ts` 與 `src/metrics/microFlickMetrics.test.ts` |
+
+### DoD 逐條對帳
+
+| DoD | 證據 |
+|---|---|
+| `vitest run src/metrics/microFlickMetrics.test.ts` exit 0 | 上表，50 passed |
+| D1–D6 各有具名測試且綠 | 測試名逐一以 `D1`～`D6` 開頭（D1 等距併列／D2 argmin vs `targetId`／D3 交叉檢核／D4 strict 拋錯／D5 170 ms／D6 500 ms） |
+| D2 測試名明示「採用 argmin 而非 fire.targetId」 | `D2 採用 argmin 角誤差而非 fire.targetId——後者失手時是陣列首顆（README §0.1 #4）` |
+| D3 在**全部**命中發上成立（不只抽樣） | 測試先斷言 `hits.length === 4` 且 `attributedHits.length === hits.length`，再逐發對照 `tMs` 與 `intendedTargetId` |
+| `cycletimeSec` 讀匯出而非常數 | 見 D-63.T5-1；`usp_s_laser` 170 / `ak47` 100 / 未知 id ⇒ `unknown_cycletime` 三條測試 |
+| `intended*` 命名紀律 | 逐發列鍵名掃描（`/target/i` ⇒ 必須 `intended` 開頭）+ 原始碼掃描 `fire.targetId`／`fire.offsetDeg`／`fire.firstShot` 各 0 次 |
+| typecheck ×2 exit 0；全量 Vitest exit 0 | 上表 |
+
+### 偏離協議的明帳
+
+**改了一條 T4 的測試期望值**：`本層不先佔位 L1／L2／方向預測的鍵——那三層由 T5／T6 交付` 斷言 `Object.keys(metrics)` 不含 `geometry`。T5 交付 L1 之後這條**必定**轉紅——那正是它被寫出來的目的（它是「這一層還沒交付」的哨兵）。已改名為 `不先佔位尚未交付的鍵：L1 已由 T5 交付，L2 與方向預測仍由 T6 交付`，並補上 `microAdjust`／`direction` 仍為 `undefined` 的斷言，讓哨兵繼續替 T6 站崗。除此之外 T4 的 25 條測試**零修改**全綠。
 
 ---
 
-## Decision Log（規劃期與 T0／T1／T2／T3／T4）
+## Decision Log（規劃期與 T0／T1／T2／T3／T4／T5）
 
 ### D-63.T4-1 — `T_valid` 錨在第一個 `visible`，不是 countdown 也不是整場（2026-09-14）
 
@@ -555,9 +627,33 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 
 ⚠️ 這是本 WP **唯一**在規劃期就落地的帳本異動；除此之外 `DECISIONS.md` 不應有本 WP 的其他改動。
 
+### D-63.T5-1 — `cycletimeSec` 讀不到 `meta.weapon`，改由匯出宣告的武器 id 查 registry
+
+T5 Steps 5 與 DoD 寫「`cycletimeSec` 從 `meta.weapon` 讀，**不寫死**」。**實況**：`WeaponMeta`（[`metadata.ts:55-67`](../../../../../src/data/metadata.ts)）只有 `id`／`ads`／`bullet`／`projectileOverflow`，**沒有** `cycletimeSec`；`WeaponConfig.cycletimeSec` 從來沒有進過匯出 schema。
+
+**採用**：`resolveCycletimeMs()` 取 `meta.weapon?.id ?? meta.weaponId`，經 `isWeaponId()` 查本 build 的 `WEAPONS` registry。這仍然滿足規劃期真正要守的那條（**不是常數**）：同一份程式碼對 `usp_s_laser` 得 170 ms、對 `ak47` 得 100 ms。DoD 的「以測試傳入不同 cycletime 佐證」由 `cycletimeSec 讀匯出宣告的武器,不是常數——同一份時序換 ak47 就換一組拆解` 這條測試滿足：同一份事件時序，`usp_s_laser` 給 `cadenceWait 170 / settling 330`，`ak47` 給 `100 / 400`，而 `correctionMs` 兩邊相同（它不依賴武器）。
+
+**替代方案（被否決）**：把 `cycletimeSec` 加進 `WeaponMeta` —— 否決理由是它會動匯出 schema，而 README §1.3 明文「**不得**改 `DataRecorder` 或匯出 schema」；且 registry 查表已足夠，加欄位只是把同一個事實寫兩份（第二定義風險）。寫死 170 —— 否決理由是換武器時離線不可察覺地錯。
+
+**殘留**：認不得的武器 id ⇒ `cycletimeMs` 缺席 + `unknown_cycletime` 旗標，`correctionMs` 仍出數但不拆解（不猜預設值：猜錯會讓 `settlingMs` 系統性偏移且離線不可察覺）。
+
+### D-63.T5-2 — L1 的候選集不用 `aliveAt()`，另立「開火那一刻在場上的窗」
+
+`aliveAt()`（T3）的右界是半開的（`tMs < tKillMs`），對 L3 的「擊殺之後誰還活著」是對的。但 L1 問的是**開火那一刻誰在場上**——擊殺那一發的目標在開火瞬間還活著，它是被這一發打掉的。沿用 `aliveAt()` 會把它從自己那一發的候選集排除，於是**命中的那一發永遠歸屬不到自己**，D3 交叉檢核必然失敗。
+
+**採用**：`candidatesForShot()` 用閉區間右界（`tMs <= tKillMs + ε`）。這不是第二套幾何（C-D4 管的是 ε(t)／on-target／eye origin／ω(t)，本函式一個都不算），是同一個窗陣列的另一種區間查詢。以 `D3 的前提:候選集含**被這一發打掉的那顆**` 一條測試把這個理由釘在程式碼旁邊。
+
+### D-63.T5-3 — `geometry` 是物件不是陣列；逐發列刻意不轉載 `fire.targetId`
+
+README §2.5 的 `geometry` 是一個 per-target 陣列。但 FR-63.8 要 `firstShotHitRate`、FR-63.15 要 `n` 與旗標——陣列裝不下聚合量。**採用**：比照 T4 的 `outcome`／`selection` 先例，`geometry` 為物件 `{ shots, targets, firstShotHitRate?, cycletimeMs?, n, flags }`，per-target 列住在 `targets` 裡。
+
+`shots`（逐發意圖歸屬）是 README 沒列的新輸出。它不是裝飾：D3 的 DoD 要求交叉檢核在**全部**命中發上成立，per-target 聚合看不到逐發；T6 的 `approachToFireMs` 也要逐發歸屬。
+
+逐發列**刻意不轉載** `fire.targetId`：交叉檢核由讀得到 payload 的測試自己做，輸出端不該提供一個會被下游誤當資料源的欄位。這同時讓 DoD 的 `intended*` 命名紀律成為一條機械化測試（逐發列上凡 `/target/i` 的鍵必須 `intended` 開頭），而不是靠人看。原始碼掃描同時釘死 `fire.targetId`／`fire.offsetDeg`／`fire.firstShot` 三個字串在模組內出現次數為 **0**。
+
 ---
 
-## Surprises & Discoveries（規劃期、T0、T1、T2、T3 與 T4）
+## Surprises & Discoveries（規劃期、T0、T1、T2、T3、T4 與 T5）
 
 **T0 新發現（2026-09-14）**：`npm.cmd run build` 在 worktree 的 sandbox 內兩次於 esbuild 讀取 `vite.config.ts` 時遭 `Access is denied`，第二次已使用獨立 `npm ci --offline` 安裝而非 junction；在 sandbox 外同一 HEAD、同一 worktree 重跑 exit 0、203 modules。這個差異屬執行環境，非 source failure。舊 Playwright 指令在 GD-44 後混跑兩個 project，SwiftShader 上的三個 `@realgpu` 案例失敗，故按 D-63.T0-2 改用正式分層。另 [WP-59 README](../../stage12/wp-59-micro-flick-v8-replacement-spacing/README.md) 的 T4／T-exit 仍未勾，雖 HEAD 已含 v8 replacement E2E；後續角距分析必須記錄 HEAD，不能將存在測試誤寫成 WP-59 已正式退出。
 
@@ -606,6 +702,8 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 19. **（T4）FM-4 的緩解措施在它自己的 drill 上沒有定義。** README 的 FM-4 寫「該窗不進 `shotsPerKill` 分母」，但 v8 三顆並發 ⇒ 一發 `fire` 同時落在最多三個窗內，逐窗發數歸屬要等 T5 才存在。⇒ **規劃期為 FM 寫緩解措施時，措施本身也要過一次「這個 drill 的資料形狀支援嗎」的檢查**；本例的措施是照單目標 drill 的直覺寫的。處置見 D-63.T4-2。
 
 20. **（T4）`angularDistanceDeg()` 收的是兩個單位方向向量，不是兩個點。** canonical 實作把「點 → 以 eye 為頂點的單位方向」這一步留在呼叫端（`angularEccentricityDeg()` 自己做了一次）。⇒ 消費端必然要寫一段正規化，這不是重寫幾何（角度本身仍來自 canonical），但邊界要講清楚：本模組的 C-D4 掃描因此**允許 `Math.hypot`、禁掉所有三角函式與弧度換算**，讓「角度只能從 `angularDistanceDeg()` 來」變成機械可驗的。
+
+**T5 新發現（2026-09-14）**：兩個像是漏寫、實則是結構性的缺口。（1）**`WeaponConfig.cycletimeSec` 從來沒有進過匯出 schema** —— `WeaponMeta` 只帶 `id`／`ads`／`bullet`／`projectileOverflow`，所以任何「從 `meta.weapon` 讀節奯」的規劃都只能改走 registry 查表（D-63.T5-1）。（2）**`aliveAt()` 的右界是半開的**（`tMs < tKillMs`）——對 L3 正確，拿去做 L1 則會把「被這一發打掉的那顆」從它自己那一發的候選集排除，使命中發永遠歸屬不到自己（D-63.T5-2）。⭐ **T6 注意**：免閾值描述子若要「進入角半徑後的計數」，同樣要先想清楚右界該開還是該閉。
 
 ## Open Questions
 

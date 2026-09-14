@@ -10,7 +10,7 @@
 - [x] (2026-09-14) **T2** — [Mouse gain 修復](T2-mouse-gain-refresh.md)：KI-035 / **BD-038**（規劃期寫的 `BD-035` 已被 KI-038 取用，見 D-63.T2-1）· 1 d · Med
 - [x] (2026-09-14 15:42Z) **T3** — [窗界 primitive](T3-target-window-primitive.md)：`buildTargetWindows()` + `aliveAt()` · 2.5 d · **High**
 - [x] (2026-09-14 16:29Z) **T4** — [L0 + L3](T4-outcome-and-selection.md)：結果層 + 選擇策略層（`nearest-2` / `nearest-3`）· 2 d · Med
-- [ ] **T5** — [L1 幾何層](T5-intent-attributed-geometry.md)：意圖歸屬 + 角誤差 + 首發重定義 + 修正時間拆解 · 2.5 d · **High**
+- [x] (2026-09-14 16:40Z) **T5** — [L1 幾何層](T5-intent-attributed-geometry.md)：意圖歸屬 + 角誤差 + 首發重定義 + 修正時間拆解 · 2.5 d · **High**
 - [ ] **T6** — [L2 + 方向](T6-threshold-free-and-direction.md)：免閾值描述子 + 方向預測曲線 · 2.5 d · Med
 - [ ] **T7** — [Harness + 紀律](T7-synthetic-harness-and-discipline.md)：七種故障型態 + FPS parity + 敏感度 + 採集紀律 · 2.5 d · Med
 - [ ] **T-exit** — [Exit gate](T-exit-gate.md)：FR／NFR 對帳、diff 稽核、GD-39 入帳、索引更新 · 0.5 d

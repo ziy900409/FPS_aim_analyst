@@ -1,6 +1,8 @@
 import type { ExportPayload } from '../data/export.ts';
 import type { TickRecord } from '../data/RingBuffer.ts';
+import { WEAPONS, isWeaponId } from '../weapon/weapons.ts';
 import {
+  aimForward,
   angularDistanceDeg,
   eyeOriginForTick,
   resolveEyeOrigin,
@@ -13,16 +15,18 @@ import { WINDOW_EPSILON_MS } from './peekWindows.ts';
 import {
   aliveAt,
   buildTargetWindows,
+  type FireEvent,
   type TargetWindow,
   type TargetWorldPos,
 } from './targetWindows.ts';
 
 /**
- * WP-63 / T4 —— `micro_flick_three_target_test_v8` 的 **L0 結果層**與 **L3 選擇策略層**。
+ * WP-63 —— `micro_flick_three_target_test_v8` 的 **L0 結果層**（T4）、**L3 選擇策略層**（T4）與
+ * **L1 幾何層**（T5）。
  *
- * 兩層的共同性質是**完全不需要意圖歸屬**：L0 只看結果，L3 只看「下一顆被殺的是誰」。意圖歸屬
- * （argmin 角誤差）連同 L1 幾何層留給 T5，免閾值微調與方向預測留給 T6；本檔只交付這兩層，
- * 其餘鍵**不先佔位**——空陣列會被讀成「算過了，沒有樣本」，而不是「這一層還沒交付」。
+ * L0／L3 的共同性質是**完全不需要意圖歸屬**：L0 只看結果，L3 只看「下一顆被殺的是誰」。L1 則
+ * 相反——它整層建立在意圖歸屬（argmin 角誤差）上。免閾值微調與方向預測留給 T6；本檔只交付這
+ * 三層，其餘鍵**不先佔位**——空陣列會被讀成「算過了，沒有樣本」，而不是「這一層還沒交付」。
  *
  * 硬紀律：
  *  - **擊殺時刻一律取 `fire.hit === true` 的 `fire.t`**。v8 是 hitscan ⇒ 匯出內 **0 個 `hit` 事件**
@@ -31,6 +35,9 @@ import {
  *  - **角距一律呼叫既有 canonical 實作**（C-D4）：eye 由 `resolveEyeOrigin()`／`eyeOriginForTick()`
  *    解析，夾角由 `angularDistanceDeg()` 算。本檔不自備任何球面幾何。
  *  - **缺失一律 `undefined` + 具名旗標，不補零、不吞成 NaN**（FR-63.15）。
+ *  - **每一發的目標歸屬一律離線重算**（T5／FR-63.7）：`fire.targetId` 只在命中時被 raycast 覆寫，
+ *    失手時是陣列首顆；`fire.offsetDeg` **永遠**對陣列首顆算（README §0.1 #4）。本檔一律不讀這兩
+ *    個欄位，改以「該發時刻存活集合的 argmin 角誤差」推定，並以 `intended*` 前綴聲明它是推定。
  */
 
 /** 版本字串。`selectionCostRatio` 的貪婪基準線起點 = **被殺目標中心**（OQ-63.2 預設，見下方註解）。 */
@@ -69,6 +76,78 @@ export const MICRO_FLICK_SELECTION_FLAG_VOCABULARY = [
   'replacement_distance_not_comparable',
 ] as const;
 export type MicroFlickSelectionFlag = (typeof MICRO_FLICK_SELECTION_FLAG_VOCABULARY)[number];
+
+export const MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY = [
+  /** 該發缺 `viewYaw`／`viewPitch` ⇒ 無法離線重算角誤差，**不**退回 `fire.targetId`（README §0.1 #4）。 */
+  'missing_view_angles',
+  /** 候選缺 `pos`（pre-WP-56 匯出）⇒ 該顆不進 argmin（FM-1）。 */
+  'missing_target_position',
+  /** 該發時刻沒有任何帶幾何的存活目標 ⇒ 無從歸屬。 */
+  'no_candidates',
+  /** 多顆候選的角誤差在容差內併列最小 ⇒ 歸屬不唯一，該發不進聚合（FM-2）。 */
+  'multiple_kill_candidates',
+  /** 該目標從未被任何一發意圖歸屬 ⇒ 沒有首發，不進 `firstShotHitRate` 的分母。 */
+  'no_shot_at_target',
+  /** drill 結束時仍存活 ⇒ 修正段沒有右界。 */
+  'never_killed',
+  /** 首發即命中 ⇒ 沒有修正段可拆（不是缺失，是這顆目標就是一槍解決的）。 */
+  'first_shot_hit',
+  /** 匯出沒有本 build 認得的武器宣告 ⇒ 節奏地板未知，cadence 拆解不出數。 */
+  'unknown_cycletime',
+  /** `ticks[]` 沒有 `fire` 欄 ⇒ 無法分辨「點擊」與「按住」（見 `deriveGeometry` 註解）。 */
+  'no_held_fire_channel',
+  /** 修正區間內有按住 tick ⇒ 那幾發的 `fire.t` 是**排程時刻**而非點擊時刻。 */
+  'held_fire_during_correction',
+] as const;
+export type MicroFlickGeometryFlag = (typeof MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY)[number];
+
+/**
+ * 一發射擊的意圖歸屬（FR-63.7）。
+ *
+ * ⚠️ **命名紀律**：凡帶「這一發的目標」語意的欄位一律 `intended` 前綴——argmin 角誤差只證明「開火
+ * 那一刻離誰最近」，不證明玩家想打誰（README §3.1）。本列刻意**不**轉載 `fire.targetId`：交叉檢核
+ * 由讀得到 payload 的測試自己做，輸出端不該提供一個會被誤當資料源的欄位。
+ */
+export interface MicroFlickShotAttribution {
+  readonly tMs: number;
+  readonly hit: boolean;
+  /** 歸屬到的窗（`TargetWindow.index`）。缺席 ⇒ 本發不可歸屬，見 `flags`。 */
+  readonly intendedWindowIndex?: number;
+  readonly intendedTargetId?: string;
+  /** 開火射線與該顆目標中心的無號夾角（度），頂點 = eye。 */
+  readonly intendedErrorDeg?: number;
+  readonly flags: readonly MicroFlickGeometryFlag[];
+}
+
+/** 一顆目標的首發與修正段（FR-63.8／63.9）。一列 = 一個 `TargetWindow`，不是一個 `targetId`。 */
+export interface MicroFlickTargetGeometry {
+  readonly windowIndex: number;
+  readonly targetId: string;
+  /** 首發 = **意圖歸屬為本窗的第一發**（不是 `fire.firstShot`，那是對陣列首顆算的）。 */
+  readonly intendedFirstShotErrorDeg?: number;
+  readonly firstShotHit?: boolean;
+  /** `t_kill − t_首發`；首發即命中或未被擊殺時缺席。 */
+  readonly correctionMs?: number;
+  /** 修正段內被 `cycletimeSec` 排程擋住的累計等待。 */
+  readonly cadenceWaitMs?: number;
+  /** `correctionMs − cadenceWaitMs` ⇒ 扣掉武器節奏之後真正花在對齊上的時間。 */
+  readonly settlingMs?: number;
+  readonly flags: readonly MicroFlickGeometryFlag[];
+}
+
+export interface MicroFlickGeometryMetrics {
+  /** 逐發的意圖歸屬，時間序。 */
+  readonly shots: readonly MicroFlickShotAttribution[];
+  /** 逐窗的首發與修正段，`TargetWindow` 順序（`visible` 時間序）。 */
+  readonly targets: readonly MicroFlickTargetGeometry[];
+  /** #(首發命中) / #(有首發的目標)。分母是**有首發的目標**，不是全部 `visible`（FR-63.8）。 */
+  readonly firstShotHitRate?: number;
+  /** 本場的武器節奏地板（ms），由匯出宣告的武器解析而來——**不是常數**。 */
+  readonly cycletimeMs?: number;
+  /** 樣本數 = `firstShotHitRate` 的分母（有首發的目標數）。 */
+  readonly n: number;
+  readonly flags: readonly MicroFlickGeometryFlag[];
+}
 
 export interface MicroFlickOutcomeMetrics {
   readonly killRateHz?: number;
@@ -126,6 +205,7 @@ export interface MicroFlickMetricsOptions {
 
 export interface MicroFlickMetrics {
   readonly outcome: MicroFlickOutcomeMetrics;
+  readonly geometry: MicroFlickGeometryMetrics;
   readonly selection: MicroFlickSelectionMetrics;
   readonly version: typeof MICRO_FLICK_METRICS_VERSION;
   readonly eyeOriginSource: EyeOriginSource;
@@ -147,6 +227,7 @@ export function deriveMicroFlickMetrics(
 
   return {
     outcome: deriveOutcome(payload, windows.windows),
+    geometry: deriveGeometry(payload, windows.windows, ticks, eyeOrigin),
     selection: deriveSelection(windows.windows, ticks, eyeOrigin),
     version: MICRO_FLICK_METRICS_VERSION,
     eyeOriginSource: eyeOrigin.source,
@@ -231,6 +312,262 @@ function deriveOutcome(
     n,
     flags: ordered(MICRO_FLICK_OUTCOME_FLAG_VOCABULARY, flags),
   };
+}
+
+// ---------------------------------------------------------------------------
+// L1 幾何層（FR-63.7／63.8／63.9）
+// ---------------------------------------------------------------------------
+
+/**
+ * 逐發重算意圖目標與開火角誤差，再據此重定義首發與修正段。
+ *
+ * **為什麼整層要重算**：`fire.targetId` 只在命中時被 raycast 覆寫（`SimLoop.ts:451`），失手時仍是
+ * 陣列首顆；`fire.offsetDeg` **永遠**對 `currentPeekId`（陣列首顆）算；`fire.firstShot` 也以首顆為
+ * 鍵 ⇒ 陣列首顆存活期間，後續 fire 的 `firstShot` 恆 `false`。三者在三顆並發的 v8 上全部失真
+ * （README §0.1 #4），所以本層一個都不讀。
+ *
+ * **T1 的紅利**：`usp_s_laser` 零散布 ⇒ 命中 ⟺ 角誤差 ≤ 角半徑，無隨機成分 ⇒「這一發本來想打誰、
+ * 差了多少」是完全確定的，不需要任何機率推論。
+ *
+ * **不加 recoil punch**：`fire.viewYaw`／`viewPitch` 是 `state.aim` 的原值，punch 另記於
+ * `aimPunch*`。把兩者相加等於在本檔重寫一次彈道朝向（C-D4）；而 `usp_s_laser` 的 punch 逐位為 0
+ * （T1 NFR-63.7），故 v8 上兩種讀法本來就同值。
+ *
+ * **`no_held_fire_channel` 的用途**：`fire.t` 是**排程時刻**不是點擊時刻——單次點擊的首發
+ * `nextFireT = ev.t`（真實 mouse-down 時間戳），按住時後續發為 `nextFireT += cycleMs`
+ * （`SimLoop.ts:100, 552`）。只有逐 tick 的 `heldFire`（`ticks[].fire`）能分辨兩者，故該欄缺席時
+ * 具名聲明；存在且修正區間內有按住 tick 時標 `held_fire_during_correction`。
+ */
+function deriveGeometry(
+  payload: ExportPayload,
+  windows: readonly TargetWindow[],
+  ticks: readonly TickRecord[],
+  eyeOrigin: ResolvedEyeOrigin,
+): MicroFlickGeometryMetrics {
+  const flags: MicroFlickGeometryFlag[] = [];
+
+  const cycletimeMs = resolveCycletimeMs(payload.meta);
+  if (cycletimeMs === undefined) pushFlag(flags, 'unknown_cycletime');
+
+  const hasHeldFireChannel = ticks.some((tick) => tick.fire !== undefined);
+  if (!hasHeldFireChannel) pushFlag(flags, 'no_held_fire_channel');
+
+  const fires = payload.events
+    .filter((event): event is FireEvent => event.type === 'fire')
+    .slice()
+    .sort((a, b) => a.t - b.t);
+  const fireTimes = fires.map((fire) => fire.t);
+
+  const shots = fires.map((fire) => attributeShot(fire, windows, ticks, eyeOrigin, flags));
+
+  /** 每個窗的首發 = 意圖歸屬為它的第一發。鍵是**窗索引**不是 `targetId`——id 可能被重複使用。 */
+  const firstShotByWindow = new Map<number, MicroFlickShotAttribution>();
+  for (const shot of shots) {
+    if (shot.intendedWindowIndex === undefined) continue;
+    if (!firstShotByWindow.has(shot.intendedWindowIndex)) {
+      firstShotByWindow.set(shot.intendedWindowIndex, shot);
+    }
+  }
+
+  const targets = windows.map((window) =>
+    targetGeometry(
+      window,
+      firstShotByWindow.get(window.index),
+      fireTimes,
+      ticks,
+      cycletimeMs,
+      flags,
+    ),
+  );
+
+  const withFirstShot = targets.filter((target) => target.firstShotHit !== undefined);
+  const hits = withFirstShot.filter((target) => target.firstShotHit === true).length;
+
+  return {
+    shots,
+    targets,
+    ...(withFirstShot.length > 0 ? { firstShotHitRate: hits / withFirstShot.length } : {}),
+    ...maybe('cycletimeMs', cycletimeMs),
+    n: withFirstShot.length,
+    flags: ordered(MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY, flags),
+  };
+}
+
+/** 歸屬一發射擊：候選集的 argmin 角誤差（FR-63.7）。併列 ⇒ 不歸屬（FM-2），不以 id 序決勝。 */
+function attributeShot(
+  fire: FireEvent,
+  windows: readonly TargetWindow[],
+  ticks: readonly TickRecord[],
+  eyeOrigin: ResolvedEyeOrigin,
+  traceFlags: MicroFlickGeometryFlag[],
+): MicroFlickShotAttribution {
+  const shotFlags: MicroFlickGeometryFlag[] = [];
+  const raise = (flag: MicroFlickGeometryFlag): void => {
+    pushFlag(shotFlags, flag);
+    pushFlag(traceFlags, flag);
+  };
+
+  if (fire.viewYaw === undefined || fire.viewPitch === undefined) {
+    raise('missing_view_angles');
+    return {
+      tMs: fire.t,
+      hit: fire.hit,
+      flags: ordered(MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY, shotFlags),
+    };
+  }
+
+  const aim = aimForward(fire.viewYaw, fire.viewPitch);
+  const eye = eyeOriginForTick(tickAtOrBefore(ticks, fire.t), eyeOrigin);
+
+  let best: { readonly index: number; readonly targetId: string; readonly deg: number } | undefined;
+  let tied = false;
+  for (const window of candidatesForShot(windows, fire.t)) {
+    if (window.pos === undefined) {
+      raise('missing_target_position');
+      continue;
+    }
+    const to = direction(eye, window.pos);
+    if (to === undefined) continue;
+    const deg = angularDistanceDeg(aim, to);
+    if (best === undefined || deg < best.deg - RANK_TIE_TOLERANCE_DEG) {
+      best = { index: window.index, targetId: window.targetId, deg };
+      tied = false;
+    } else if (deg <= best.deg + RANK_TIE_TOLERANCE_DEG) {
+      tied = true;
+    }
+  }
+
+  if (best === undefined) raise('no_candidates');
+  else if (tied) raise('multiple_kill_candidates');
+
+  return {
+    tMs: fire.t,
+    hit: fire.hit,
+    ...(best !== undefined && !tied
+      ? {
+          intendedWindowIndex: best.index,
+          intendedTargetId: best.targetId,
+          intendedErrorDeg: best.deg,
+        }
+      : {}),
+    flags: ordered(MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY, shotFlags),
+  };
+}
+
+/**
+ * 一發射擊當下的候選集 = 已 `visible` 且尚未被擊殺的窗，**含被這一發打掉的那顆**。
+ *
+ * 這裡刻意不用 `aliveAt()`：它的右界是半開的（`tMs < tKillMs`），對 L3「擊殺之後誰還活著」是對的，
+ * 對 L1「開火那一刻誰在場上」則會把被這發打掉的目標排除掉——於是命中的那一發永遠歸屬不到它自己，
+ * 交叉檢核（T5 D3）必然失敗。
+ */
+function candidatesForShot(windows: readonly TargetWindow[], tMs: number): readonly TargetWindow[] {
+  return windows.filter(
+    (window) =>
+      window.tVisibleMs <= tMs + WINDOW_EPSILON_MS &&
+      (window.tKillMs === undefined || tMs <= window.tKillMs + WINDOW_EPSILON_MS),
+  );
+}
+
+/** 一顆目標的首發與修正段拆解（FR-63.8／63.9）。 */
+function targetGeometry(
+  window: TargetWindow,
+  firstShot: MicroFlickShotAttribution | undefined,
+  fireTimes: readonly number[],
+  ticks: readonly TickRecord[],
+  cycletimeMs: number | undefined,
+  traceFlags: MicroFlickGeometryFlag[],
+): MicroFlickTargetGeometry {
+  const flags: MicroFlickGeometryFlag[] = [];
+  const identity = { windowIndex: window.index, targetId: window.targetId };
+
+  if (firstShot === undefined) {
+    pushFlag(flags, 'no_shot_at_target');
+    pushFlag(traceFlags, 'no_shot_at_target');
+    return { ...identity, flags: ordered(MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY, flags) };
+  }
+
+  const head = {
+    ...identity,
+    ...maybe('intendedFirstShotErrorDeg', firstShot.intendedErrorDeg),
+    firstShotHit: firstShot.hit,
+  };
+
+  // 首發即命中 ⇒ 沒有修正段可拆；未被擊殺 ⇒ 修正段沒有右界。兩者都不是缺失，故具名而非靜默。
+  if (firstShot.hit) pushFlag(flags, 'first_shot_hit');
+  if (window.tKillMs === undefined) pushFlag(flags, 'never_killed');
+  if (firstShot.hit || window.tKillMs === undefined) {
+    return { ...head, flags: ordered(MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY, flags) };
+  }
+
+  const correctionMs = window.tKillMs - firstShot.tMs;
+  if (heldFireWithin(ticks, firstShot.tMs, window.tKillMs)) {
+    pushFlag(flags, 'held_fire_during_correction');
+    pushFlag(traceFlags, 'held_fire_during_correction');
+  }
+  if (cycletimeMs === undefined) {
+    pushFlag(flags, 'unknown_cycletime');
+    return { ...head, correctionMs, flags: ordered(MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY, flags) };
+  }
+
+  const cadenceWaitMs = cadenceWaitWithin(fireTimes, firstShot.tMs, window.tKillMs, cycletimeMs);
+  return {
+    ...head,
+    correctionMs,
+    cadenceWaitMs,
+    settlingMs: correctionMs - cadenceWaitMs,
+    flags: ordered(MICRO_FLICK_GEOMETRY_FLAG_VOCABULARY, flags),
+  };
+}
+
+/**
+ * 修正區間內被武器節奏擋住的累計等待。
+ *
+ * 對區間內每一對相鄰 `fire`：間隔恰等於 `cycleMs`（排程連發）⇒ 整段是等待；間隔大於 `cycleMs`
+ * （玩家還在對齊）⇒ 只有 `cycleMs` 那段是等待。兩種情形合起來就是 `min(間隔, cycleMs)`。
+ *
+ * 計入**區間內的每一發**而不只是歸屬給本目標的那幾發：節奏地板是武器層級的，玩家中途朝別顆開的
+ * 槍一樣會把本顆的補槍往後推。
+ */
+function cadenceWaitWithin(
+  fireTimes: readonly number[],
+  fromMs: number,
+  toMs: number,
+  cycleMs: number,
+): number {
+  const inWindow = fireTimes.filter(
+    (t) => t + WINDOW_EPSILON_MS >= fromMs && t <= toMs + WINDOW_EPSILON_MS,
+  );
+  let wait = 0;
+  for (let i = 1; i < inWindow.length; i++) {
+    wait += Math.min(inWindow[i] - inWindow[i - 1], cycleMs);
+  }
+  return wait;
+}
+
+/** 區間內是否有按住左鍵的 tick。`fire` 欄缺席的 tick 不算 `false`——那是「沒這個頻道」。 */
+function heldFireWithin(ticks: readonly TickRecord[], fromMs: number, toMs: number): boolean {
+  return ticks.some(
+    (tick) =>
+      tick.fire === true &&
+      tick.t + WINDOW_EPSILON_MS >= fromMs &&
+      tick.t <= toMs + WINDOW_EPSILON_MS,
+  );
+}
+
+/**
+ * 本場的節奏地板（ms）。**由匯出宣告的武器解析，不寫死**。
+ *
+ * 規劃期（T5 Steps 5）寫的是「從 `meta.weapon` 讀 `cycletimeSec`」，但 `WeaponMeta` 只帶
+ * `id`／`ads`／`bullet`／`projectileOverflow`，**沒有** `cycletimeSec`（`metadata.ts:55-67`）。可用
+ * 的路徑是拿匯出宣告的武器 id 去查本 build 的 `WEAPONS` registry——那仍然是「從匯出讀」而非常數：
+ * 同一份程式碼對 `usp_s_laser` 得 170 ms、對 `ak47` 得 100 ms。認不得的 id ⇒ `undefined` + 具名
+ * 旗標，不猜一個預設值（猜錯會讓 `settlingMs` 系統性偏移而離線不可察覺）。
+ */
+function resolveCycletimeMs(meta: ExportPayload['meta']): number | undefined {
+  const id = meta.weapon?.id ?? meta.weaponId;
+  if (typeof id !== 'string' || !isWeaponId(id)) return undefined;
+  return WEAPONS[id].cycletimeSec * 1000;
 }
 
 // ---------------------------------------------------------------------------
