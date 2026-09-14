@@ -38,7 +38,7 @@ class FakeElement {
   title = '';
   type = '';
   name = '';
-  value = '';
+  private valueRaw = '';
   label = '';
   checked = false;
   disabled = false;
@@ -52,6 +52,30 @@ class FakeElement {
   readonly listeners = new Map<string, Array<(event: FakeEvent) => void>>();
 
   constructor(readonly tag: string) {}
+
+  /**
+   * A real <select> only holds a value one of its *current* options carries: assigning before the
+   * options are appended leaves selectedIndex at -1 and reads back as ''. Modelling that here is
+   * what lets these tests catch an option/value ordering bug that a browser punishes but a plain
+   * value field silently forgives.
+   */
+  get value(): string {
+    return this.valueRaw;
+  }
+
+  set value(next: string) {
+    if (this.tag !== 'select') {
+      this.valueRaw = next;
+      return;
+    }
+    this.valueRaw = this.optionValues().includes(next) ? next : '';
+  }
+
+  private optionValues(): string[] {
+    return this.children.flatMap((child) =>
+      child.tag === 'option' ? [child.value] : child.optionValues(),
+    );
+  }
 
   append(...children: FakeElement[]): void {
     for (const child of children) this.appendChild(child);
@@ -342,8 +366,9 @@ describe('createSessionPlanSetup — custom program editing (FR-58.12)', () => {
     }
 
     expect(offered).toEqual([...SCHEDULABLE_DRILL_IDS]);
-    expect(offered).toHaveLength(41); // 36 through WP-62, + the two WP-64 curated pilot blocks, + micro-flick v9,
-    // + WP-66 後續的兩個帶命中回饋的獨立 drill（reversal high / core pr 3deg_14dps，皆非 pilot block）
+    expect(offered).toHaveLength(42); // 36 through WP-62, + the two WP-64 curated pilot blocks, + micro-flick v9,
+    // + WP-66 後續的兩個帶命中回饋的獨立 drill（reversal high / core pr 3deg_14dps，皆非 pilot block），
+    // + 使用者 2026-09-14 的 core pr 3deg_14dps feedback 30s noprep（30 s、無置中準備窗的變體）
     expect(new Set(familyOrder).size).toBe(familyOrder.length);
     expect(familyOrder.every((family) => KNOWN_SESSION_FAMILY_IDS.has(family as SessionFamilyId))).toBe(true);
     for (const drillId of offered) expect(FAMILY_BY_DRILL_ID.has(drillId)).toBe(true);
@@ -481,6 +506,23 @@ describe('createSessionPlanSetup — custom program editing (FR-58.12)', () => {
     });
     const submitted = harness.onSubmit.mock.calls[0]![0] as { items: Array<Record<string, unknown>> };
     expect(Object.hasOwn(submitted.items[1], 'weaponId')).toBe(false);
+  });
+
+  /**
+   * `renderItems` rebuilds every row, so the freshly created picker has to be told the weapon the
+   * item already carries. Getting that wrong desyncs what the operator sees from what compiles.
+   */
+  it('shows each row’s chosen weapon again after the list rerenders', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A);
+    setWeapon(harness, 0, 'usp_s_laser');
+
+    // Adding a second drill rebuilds row 0 from scratch.
+    addItem(harness, DRILL_B);
+
+    expect(rowControl(harness, 0, 'weapon').value).toBe('usp_s_laser');
+    expect(rowControl(harness, 1, 'weapon').value).toBe('');
   });
 
   it('explains reload/ammo behaviour and weapon-based trend grouping before submission', () => {
@@ -659,6 +701,29 @@ describe('createSessionPlanSetup — compile failures disable submit (FR-58.7)',
     expect(harness.itemList.children[0].attributes.has('data-invalid')).toBe(false);
     harness.form.dispatch('submit');
     expect(harness.onSubmit).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The field case behind this test: the row still *read* 「—（drill 預設）」 while the item held an
+   * override, leaving a 「預覽不可用」 the operator could not clear — re-picking the default on a
+   * picker already showing the default fires no `change`. The rebuilt row must surface the value
+   * the item actually holds, or the compile failure is a dead end.
+   */
+  it('keeps the rejected weapon visible after a rerender, so the operator can clear it', () => {
+    const harness = mount();
+    selectMode(harness.document, 'custom');
+    addItem(harness, DRILL_A);
+    addItem(harness, 'tracking_br_v1__ads_off__hitscan__0p5deg');
+    setWeapon(harness, 1, 'm4a1s');
+
+    addItem(harness, DRILL_B);
+
+    expect(rowControl(harness, 1, 'weapon').value).toBe('m4a1s');
+    expect(harness.status.textContent).toContain('items[1].weaponId');
+
+    setWeapon(harness, 1, '');
+    expect(harness.submit.disabled).toBe(false);
+    expect(harness.status.textContent).toBe('');
   });
 });
 

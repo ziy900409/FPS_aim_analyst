@@ -405,7 +405,6 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
       });
       const weapon = document.createElement('select');
       weapon.name = 'sessionPlanWeapon';
-      weapon.value = item.weaponId ?? '';
       weapon.setAttribute('aria-label', `${item.drillId} 武器`);
       weapon.style.cssText = `${inputCss};width:176px;flex:0 0 auto`;
       const defaultWeapon = document.createElement('option');
@@ -418,6 +417,12 @@ export function createSessionPlanSetup(options: SessionPlanSetupOptions): Sessio
         option.textContent = `${weaponId}（${config.magSize} 發）`;
         weapon.appendChild(option);
       }
+
+      // Only now: a <select> keeps a value one of its *current* options carries, so assigning
+      // before the options exist is silently dropped and the row falls back to 「—（drill 預設）」
+      // while `item.weaponId` still holds the override. That desync makes a compile failure on a
+      // weapon-pinned drill unclearable — the operator cannot re-pick a default already shown.
+      weapon.value = item.weaponId ?? '';
       weapon.addEventListener('change', () => {
         item.weaponId = weapon.value === '' ? undefined : (weapon.value as WeaponId);
         refreshPreview();
