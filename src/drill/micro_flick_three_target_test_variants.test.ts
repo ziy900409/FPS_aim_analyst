@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveDrillTimeLimitMs } from './DrillConfig.ts';
+import { WEAPONS, type WeaponId } from '../weapon/weapons.ts';
 import { loadDrill } from './DrillLoader.ts';
 import {
   MICRO_FLICK_V2_TARGET_DIAMETER_U,
@@ -28,6 +29,7 @@ import { microFlickRoomV5 } from '../scene/scenes/micro-flick-room-v5.ts';
 import { microFlickRoomV6 } from '../scene/scenes/micro-flick-room-v6.ts';
 import { microFlickRoomV7 } from '../scene/scenes/micro-flick-room-v7.ts';
 import { microFlickThreeTargetTestV7, MICRO_FLICK_V7_TARGET_DIAMETER_U } from './micro_flick_three_target_test_v7.ts';
+import { microFlickThreeTargetTestV1 } from './micro_flick_three_target_test_v1.ts';
 import { microFlickRoomV8 } from '../scene/scenes/micro-flick-room-v8.ts';
 import { microFlickThreeTargetTestV8, MICRO_FLICK_V8_TARGET_DIAMETER_U } from './micro_flick_three_target_test_v8.ts';
 import { microFlickRoomV9 } from '../scene/scenes/micro-flick-room-v9.ts';
@@ -76,6 +78,42 @@ describe('micro-flick deep-corridor variants', () => {
       preferredReplacementSeparationDeg: 2.6,
     });
     expect(parsed.sequence.seed).toBe(56008);
+  });
+
+  // WP-63 / T1 (FR-63.12) — v8 is the one drill whose whole measurement claim is that a hit is a
+  // pure function of the firing-instant angular error. Without `weaponId` it silently inherits
+  // `main.ts`'s `ak47` default: seeded spread, aim punch, and an ADS block that shrinks the FOV on
+  // right-click. `usp_s_laser` removes all three.
+  it('declares the zero-spread, zero-recoil weapon for v8 and leaves v1-v7 on their own default', () => {
+    const parsed = loadDrill(microFlickThreeTargetTestV8.drill, microFlickRoomV8);
+
+    expect(microFlickThreeTargetTestV8.drill.weaponId).toBe('usp_s_laser');
+    expect(parsed.weaponId).toBe('usp_s_laser');
+
+    // The three properties v8's metrics depend on, read off the weapon roster rather than restated
+    // here, so a retune of `usp_s_laser` fails this test instead of silently degrading v8.
+    const weapon = WEAPONS[parsed.weaponId as WeaponId];
+    expect(weapon.recoil).toEqual({ seed: weapon.recoil.seed, magnitude: 0, magnitudeVariance: 0, angleVariance: 0 });
+    expect([weapon.inaccuracy.stand, weapon.inaccuracy.crouch, weapon.inaccuracy.fire, weapon.inaccuracy.move]).toEqual([0, 0, 0, 0]);
+    expect(weapon.ads).toBeUndefined();
+    expect(weapon.bullet).toBeUndefined(); // hitscan: no `hit` events, kills read off `fire.hit` (README 0.3).
+
+    // NFR-63.1 — the sibling variants keep their key sets bit-for-bit. In particular none of them
+    // may acquire a `weaponId: undefined`, which would move export bytes without changing intent.
+    const untouched = [
+      microFlickThreeTargetTestV1,
+      microFlickThreeTargetTestV2,
+      microFlickThreeTargetTestV3,
+      microFlickThreeTargetTestV4,
+      microFlickThreeTargetTestV5,
+      microFlickThreeTargetTestV6,
+      microFlickThreeTargetTestV7,
+    ];
+    for (const fixture of untouched) {
+      expect(Object.keys(fixture.drill)).not.toContain('weaponId');
+      expect(Object.prototype.hasOwnProperty.call(fixture.drill, 'weaponId')).toBe(false);
+      expect(loadDrill(fixture.drill, microFlickRoomV8).weaponId).toBeUndefined();
+    }
   });
 
   it('shrinks the v9 sphere 10% below v8 and ends it on the clock, not on a kill budget', () => {

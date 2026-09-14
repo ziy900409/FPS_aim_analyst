@@ -54,7 +54,7 @@
 - [ ] NFR-63.1：`git diff` 對所有既有 golden／期望輸出檔為空
 - [ ] `docs/operational/analysis-micro-flick.md` 存在且含採集紀律表與排除規則
 - [ ] `docs/MAP.md` 已更新
-- [ ] `npm.cmd run typecheck` ×2、`npm.cmd test`、`npx.cmd playwright test --workers=1`、`npm.cmd run build` 四項 exit 0，數字記入 `progress.md` 並與 T0 基線對照
+- [ ] `npm.cmd run typecheck` ×2、`npm.cmd test`、`npm.cmd run test:e2e -- --workers=1`、`npm.cmd run test:e2e:fast -- --workers=1`、`npm.cmd run build` 五項 exit 0，數字記入 `progress.md` 並與 T0 基線對照
 
 ## Commit
 

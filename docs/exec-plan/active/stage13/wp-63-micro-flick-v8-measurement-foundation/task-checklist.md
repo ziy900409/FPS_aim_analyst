@@ -5,12 +5,12 @@
 
 ## Tasks
 
-- [ ] **T0** — [Entry gate](T0-entry-gate.md)：編號重查、上游驗證、基線實測、OQ-63.1 收斂 · 0.5 d · Low
-- [ ] **T1** — [零散布武器宣告](T1-zero-spread-weapon.md)：v8 `weaponId: 'usp_s_laser'` + 斷代 + 彈匣旗標契約 · 1.5 d · Med
-- [ ] **T2** — [Mouse gain 修復](T2-mouse-gain-refresh.md)：KI-035 / BD-039 · 1 d · Med
-- [ ] **T3** — [窗界 primitive](T3-target-window-primitive.md)：`buildTargetWindows()` + `aliveAt()` · 2.5 d · **High**
-- [ ] **T4** — [L0 + L3](T4-outcome-and-selection.md)：結果層 + 選擇策略層（`nearest-2` / `nearest-3`）· 2 d · Med
-- [ ] **T5** — [L1 幾何層](T5-intent-attributed-geometry.md)：意圖歸屬 + 角誤差 + 首發重定義 + 修正時間拆解 · 2.5 d · **High**
+- [x] (2026-09-14 12:38Z) **T0** — [Entry gate](T0-entry-gate.md)：編號重查、上游驗證、基線實測、OQ-63.1 以預設假設明帳收斂 · 0.5 d · Low
+- [x] (2026-09-14 14:52Z) **T1** — [零散布武器宣告](T1-zero-spread-weapon.md)：v8 `weaponId: 'usp_s_laser'` + 斷代 + 彈匣旗標契約 · 1.5 d · Med
+- [x] (2026-09-14) **T2** — [Mouse gain 修復](T2-mouse-gain-refresh.md)：KI-035 / **BD-039**（規劃期寫的 `BD-035` 已被 KI-038 取用，見 D-63.T2-1）· 1 d · Med
+- [x] (2026-09-14 15:42Z) **T3** — [窗界 primitive](T3-target-window-primitive.md)：`buildTargetWindows()` + `aliveAt()` · 2.5 d · **High**
+- [x] (2026-09-14 16:29Z) **T4** — [L0 + L3](T4-outcome-and-selection.md)：結果層 + 選擇策略層（`nearest-2` / `nearest-3`）· 2 d · Med
+- [x] (2026-09-14 16:40Z) **T5** — [L1 幾何層](T5-intent-attributed-geometry.md)：意圖歸屬 + 角誤差 + 首發重定義 + 修正時間拆解 · 2.5 d · **High**
 - [ ] **T6** — [L2 + 方向](T6-threshold-free-and-direction.md)：免閾值描述子 + 方向預測曲線 · 2.5 d · Med
 - [ ] **T7** — [Harness + 紀律](T7-synthetic-harness-and-discipline.md)：七種故障型態 + FPS parity + 敏感度 + 採集紀律 · 2.5 d · Med
 - [ ] **T-exit** — [Exit gate](T-exit-gate.md)：FR／NFR 對帳、diff 稽核、GD-39 入帳、索引更新 · 0.5 d
@@ -39,7 +39,7 @@ T1／T2／T3 互不相依可完全並行；T4／T5／T6 皆只相依 T3，亦可
 
 | Gate | 條件 |
 |---|---|
-| T0 → 其餘 | 四項基線指令 exit 0 且數字入帳；OQ-63.1 有答案 |
+| T0 → 其餘 | 五項基線指令（含 GD-44 兩層 Playwright）exit 0 且數字入帳；OQ-63.1 有答案或預設假設明帳 |
 | T3 → T4/T5/T6 | 窗數不變式綠 + NFR-63.4 符號掃描 count === 0 |
 | T7 → T-exit | 四 FPS 逐位一致 + 七份故障 fixture 全綠 |
 | T-exit | 每條 FR／NFR 有指令/斷言證據（非主觀語句） |

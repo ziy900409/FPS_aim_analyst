@@ -440,8 +440,10 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
     }
   });
 
-  it('holds exactly the eight BR cells, the two curated pilot blocks, and the hit-feedback reversal drill, so a change of scope cannot pass review unnoticed', () => {
-    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(13);
+  it('holds exactly the eight BR cells, the two curated pilot blocks, the hit-feedback reversal drills, and micro flick v8, so a change of scope cannot pass review unnoticed', () => {
+    // 14 = 13 + WP-63 T1's `micro_flick_three_target_test_v8`, whose zero-spread weapon is the
+    // measurement instrument rather than an operator choice, so it joins the fixed-factor set.
+    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(14);
     expect(new Set(DECLARED_WEAPON_BY_DRILL_ID.keys())).toEqual(
       new Set([
         ...trackingBrVariants.map((variant) => variant.id),
@@ -449,6 +451,7 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
         trackingReversalFeedbackV1.drillId,
         trackingCorePrFeedbackV1.drillId,
         trackingCorePrFeedback30sV1.drillId,
+        microFlickThreeTargetTestV8.id,
       ]),
     );
     // Eight cells, four weapons: the grid's third axis (angular height) is a target-geometry factor,
@@ -461,6 +464,8 @@ describe('WP-62 T1 — the declared-weapon map matches every schedulable drill c
         'ak47_br_ads_projectile',
         // WP-64 T1: both curated pilot blocks fix the same zero-recoil hold weapon (FR-64.4).
         'tracking_pilot_hold',
+        // WP-63 T1: micro flick v8's zero-spread, zero-recoil pistol (FR-63.12).
+        'usp_s_laser',
       ]),
     );
   });

@@ -1,7 +1,11 @@
 # T2 — 修 KI-035：感度／FOV 變更後重設 mouse gain
 
-> WP：[WP-63](README.md) · 估時 1 d · Risk Med · 相依：T0
-> 診斷：[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) · 修復決策：`BD-039`（本 task 開立）
+> WP：[WP-63](README.md) · 估時 1 d · Risk Med · 相依：T0 · **狀態：✅ 完成（2026-09-14）**
+> 診斷：[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) · 修復決策：**`BD-039`**
+> ⚠️ 本檔原寫「`BD-035`（本 task 開立）」—— 那是規劃期按 KI 號推的，實況 `BD-n` 與 `KI-n` 不同步且
+> `BD-035` 已由 KI-038 取用 ⇒ T2 先改取 `BD-038`（D-63.T2-1）；`main` 的 `67962ed` 隨後又把
+> `BD-038` 保留給 KI-034、`BD-039` 保留給 KI-035 ⇒ 採納該保留，**最終落帳 `BD-039`**
+>（見 [progress.md](progress.md) D-63.T2-1 與 **D-63.T2-2**）。
 
 ## 目的
 
@@ -31,16 +35,19 @@
 5. 新增測試（FOV）：同上，改變 `hipFovDeg`。
 6. 新增測試（negative）：**未**變更設定時，`configureMouseIntegration` 不被額外呼叫，`ticks[].dYaw` 逐位不變。
 7. 驗證既有 `dYaw`/`dPitch` golden 與四 FPS `TickRecord` 全欄位 parity 斷言**逐位不變**。
-8. 開立 `BD-039` 入 [BUGFIX-DECISIONS.md](../../../../known_issue/BUGFIX-DECISIONS.md)：選了哪個修法、為何、是否偏離協議、遺留 OQ。同步把 [KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 狀態翻為 ✅ 並補修復連結。
+8. 開立 `BD-035`（**實際落帳為 `BD-039`**，見抬頭）入 [BUGFIX-DECISIONS.md](../../../../known_issue/BUGFIX-DECISIONS.md)：選了哪個修法、為何、是否偏離協議、遺留 OQ。同步把 [KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 狀態翻為 ✅ 並補修復連結。
 
 ## Definition of Done
 
-- [ ] `npx.cmd vitest run src/data/DataRecorder.test.ts` exit 0，含三條新測試（sensitivity／FOV／negative）
-- [ ] 既有 `dYaw`/`dPitch` golden 與四 FPS parity 斷言**未修改**且仍綠（`git diff` 對這些測試檔為空）
-- [ ] 若採 (b)：`npx.cmd playwright test --workers=1` exit 0 且 passed 數 ≥ T0 基線，**且未修改任何既有 spec**
-- [ ] `main.ts:712-713` 註解已更正為描述實際保證
-- [ ] `BD-039` 已入 `BUGFIX-DECISIONS.md`；`KI-035` 狀態已翻 ✅
-- [ ] `npm.cmd run typecheck` ×2 與 `npm.cmd run build` exit 0
+- [x] `npx.cmd vitest run src/data/DataRecorder.test.ts` exit 0，含三條新測試（sensitivity／FOV／negative）—— 31 passed
+- [x] 既有 `dYaw`/`dPitch` golden 與四 FPS parity 斷言**未修改**且仍綠（`git diff` 對這些測試檔為空）
+- [x] 採 (b)：`npm.cmd run test:e2e -- --workers=1`（GD-44 Edge 全量）exit 0 且 passed 數 ≥ T0 Edge 基線，**未修改任何既有 spec**；另補 Tier 1 `test:e2e:fast`
+- [x] `main.ts` `currentMouseGain()` 上方註解（規劃期記的 `:712-713`，行號已漂移）已更正為描述實際保證；
+      同義宣稱的第二份複本 `DataRecorder.configureMouseIntegration()` docstring 一併更正（見 progress.md Surprises 13）
+- [x] `BD-039` 已入 `BUGFIX-DECISIONS.md`（含原本缺漏的 KI-035 索引列）；`KI-035` 狀態已翻 ✅
+- [x] `npm.cmd run typecheck` ×2 與 `npm.cmd run build` exit 0
+
+> 逐條證據（指令 + 數字）見 [progress.md §T2](progress.md)。
 
 ## Commit
 

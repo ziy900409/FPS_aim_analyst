@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createSharedState } from '../state/SharedState.ts';
-import { createDataRecorder } from './DataRecorder.ts';
+import { createDataRecorder, type DataRecorder } from './DataRecorder.ts';
 import { capacityForDrill } from './RingBuffer.ts';
-import { resolveMouseGain } from '../input/mouseGain.ts';
+import { resolveMouseGain, type MouseGain } from '../input/mouseGain.ts';
+import { createSettingsPanel } from '../ui/SettingsPanel.ts';
 
 const HIP_GAIN = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75 });
 const ADS_GAIN = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75, ads: { fovDeg: 40, sensitivityRatio: 1 } });
@@ -361,5 +363,211 @@ describe('DataRecorder mouse 積分 — KI-005 / A（FR-A-1/4）', () => {
     recorder.recordTick({ t: 1, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
 
     expect(recorder.snapshot().ticks[0].dYaw).toBe(0); // 累加器已隨 reset 歸零
+  });
+});
+
+/**
+ * KI-035 / BD-039（WP-63 T2）— 感度／FOV 變更後 recorder 的 mouse gain 必須跟著換。
+ *
+ * 為什麼測試放在 data 層卻拉進 `ui/SettingsPanel`：這個 bug **不在任何一層裡面**，它在兩層之間
+ * 的那條線上——`configureMouseIntegration()` 本來就正確（上方既有測試已證），`resolveMouseGain()`
+ * 也正確，缺的是「設定一變就呼叫它」這一步。只測 data 層的任何寫法，在 bug 仍在時都會通過。
+ *
+ * 下面的 harness 逐字重現 `main.ts` 的佈線**與其順序陷阱**：`createSettingsPanel()` 在建構當下就
+ * 把兩個預設值推過 callback 一次，而那時 recorder 還不存在（`main.ts` 內是 TDZ）⇒ 佈線必須帶一個
+ * 就緒旗標。`main.ts` 本身跑不動 vitest（WebGPU + top-level await 的 DOM 腳本），故「main.ts 真的
+ * 這樣接了」由本檔最後一個 describe 以 source 掃描釘死，沿用 `sessionWeaponActivation.test.ts`
+ * 的既有慣例。
+ */
+
+class FakeSettingsElement {
+  id = '';
+  textContent = '';
+  value = '';
+  valueAsNumber = 0;
+  type = '';
+  min = '';
+  max = '';
+  step = '';
+  disabled = false;
+  readonly style: Record<string, string> = { cssText: '' };
+  readonly children: FakeSettingsElement[] = [];
+  readonly listeners = new Map<string, Array<() => void>>();
+
+  append(...children: FakeSettingsElement[]): void {
+    this.children.push(...children);
+  }
+
+  appendChild(child: FakeSettingsElement): void {
+    this.children.push(child);
+  }
+
+  addEventListener(type: string, listener: () => void): void {
+    const listeners = this.listeners.get(type) ?? [];
+    listeners.push(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  /** 模擬操作員拖動滑桿：設值後發 `input`，與 SettingsPanel 綁的是同一個事件。 */
+  slideTo(value: number): void {
+    this.valueAsNumber = value;
+    this.value = String(value);
+    for (const listener of this.listeners.get('input') ?? []) listener();
+  }
+}
+
+class FakeSettingsDocument {
+  readonly body = new FakeSettingsElement();
+  /** 依建立順序收集 `input`：SettingsPanel 先建 Sensitivity 那列，再建 FOV 那列。 */
+  readonly inputs: FakeSettingsElement[] = [];
+
+  createElement(tag: string): FakeSettingsElement {
+    const element = new FakeSettingsElement();
+    if (tag === 'input') this.inputs.push(element);
+    return element;
+  }
+}
+
+const USP_ADS = { fovDeg: 40, sensitivityRatio: 1 };
+
+/** `main.ts` 佈線的最小忠實複製：settingsPanel → currentMouseGain() → recorder。 */
+function wireSettingsToRecorder(ads?: { fovDeg: number; sensitivityRatio: number }) {
+  const fakeDocument = new FakeSettingsDocument();
+  vi.stubGlobal('document', fakeDocument);
+
+  let wired = false;
+  const currentMouseGain = (): MouseGain =>
+    resolveMouseGain({
+      sensitivity: panel.sensitivity,
+      hipFovDeg: panel.fov,
+      ...(ads !== undefined ? { ads } : {}),
+    });
+  // main.ts `refreshRecorderMouseGain()` 的逐字對應，含就緒旗標。
+  const refreshRecorderMouseGain = (): void => {
+    if (!wired) return;
+    recorder.configureMouseIntegration({ gain: currentMouseGain() });
+  };
+
+  const panel = createSettingsPanel({
+    onSensitivityChange: () => refreshRecorderMouseGain(),
+    onFovChange: () => refreshRecorderMouseGain(),
+  });
+  const recorder = createDataRecorder({ capacity: 8, mouseIntegration: { gain: currentMouseGain() } });
+  wired = true;
+
+  const [sensitivityInput, fovInput] = fakeDocument.inputs;
+  return { panel, recorder, currentMouseGain, sensitivityInput, fovInput };
+}
+
+/** 積一筆 delta 進新的一個 tick，回傳該 tick 的 dYaw。 */
+function integrateOneTick(recorder: DataRecorder, dx: number, dy: number, ads: boolean): number {
+  recorder.accumulateMouse(dx, dy, ads);
+  recorder.recordTick({ t: recorder.tickCount + 1, vx: 0, vz: 0, aim: { yaw: 0, pitch: 0 }, keys: [] });
+  const ticks = recorder.snapshot().ticks;
+  return ticks[ticks.length - 1].dYaw as number;
+}
+
+describe('KI-035 / BD-039 — 感度／FOV 變更後 ticks[].dYaw 用新 gain', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('sensitivity 變更後，積分用新 gain，且與 meta.mouseIntegration 會報的值同源', () => {
+    const { recorder, panel, sensitivityInput } = wireSettingsToRecorder();
+    const beforeGain = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75 });
+    expect(integrateOneTick(recorder, 4, 0, false)).toBeCloseTo(-4 * beforeGain.hipStep, 15);
+
+    sensitivityInput.slideTo(2.5);
+
+    // (1) recorder 手上的 gain === 匯出時 buildCurrentExportPayload() 會重算的那一份（同一組輸入）。
+    const afterGain = resolveMouseGain({ sensitivity: panel.sensitivity, hipFovDeg: panel.fov });
+    expect(recorder.mouseIntegration?.gain).toEqual(afterGain);
+    // (2) 新 gain 真的進了積分路徑。修復前這裡會拿到 beforeGain 的刻度。
+    expect(integrateOneTick(recorder, 4, 0, false)).toBeCloseTo(-4 * afterGain.hipStep, 15);
+    // (3) 兩組 gain 確實不同 ⇒ 上一條不是「新舊剛好一樣」的空斷言。
+    expect(afterGain.hipStep).not.toBe(beforeGain.hipStep);
+  });
+
+  it('FOV 變更後，ADS 態積分用新 adsStep（hip 態本就不隨 FOV 變，見斷言 4）', () => {
+    const { recorder, panel, fovInput } = wireSettingsToRecorder(USP_ADS);
+    const beforeGain = resolveMouseGain({ sensitivity: 1, hipFovDeg: 75, ads: USP_ADS });
+    expect(integrateOneTick(recorder, 4, 0, true)).toBeCloseTo(-4 * beforeGain.adsStep, 15);
+
+    fovInput.slideTo(100);
+
+    const afterGain = resolveMouseGain({ sensitivity: panel.sensitivity, hipFovDeg: panel.fov, ads: USP_ADS });
+    expect(recorder.mouseIntegration?.gain).toEqual(afterGain);
+    expect(integrateOneTick(recorder, 4, 0, true)).toBeCloseTo(-4 * afterGain.adsStep, 15);
+    expect(afterGain.adsStep).not.toBe(beforeGain.adsStep);
+    // (4) `resolveMouseGain` 的 hipStep 只看 sensitivity ⇒ 無 ads 的武器（例如 v8 的 usp_s_laser）
+    //     改 FOV 不會動到 hip 態的 dYaw。KI-035 的 FOV 半邊只咬得到可開鏡的武器；記在這裡免得
+    //     後續讀者以為每個 drill 都有這條風險。
+    expect(afterGain.hipStep).toBe(beforeGain.hipStep);
+  });
+
+  it('未變更設定時不重設 gain，dYaw 與從未接過面板的 recorder 逐位相同', () => {
+    const { recorder } = wireSettingsToRecorder();
+    const constructionGain = recorder.mouseIntegration;
+    const control = createDataRecorder({
+      capacity: 8,
+      mouseIntegration: { gain: resolveMouseGain({ sensitivity: 1, hipFovDeg: 75 }) },
+    });
+
+    for (const [dx, dy] of [
+      [3, 1],
+      [-1, 2],
+      [0, 0],
+      [7, -4],
+    ] as const) {
+      expect(Object.is(integrateOneTick(recorder, dx, dy, false), integrateOneTick(control, dx, dy, false))).toBe(true);
+    }
+    // 物件同一性：`configureMouseIntegration()` 每次都換上一個新物件，故「沒被呼叫過」才會維持
+    // 建構時傳進去的那一個。
+    expect(recorder.mouseIntegration).toBe(constructionGain);
+  });
+});
+
+describe('KI-035 / BD-039 — main.ts 真的接了這條線（source 掃描）', () => {
+  const MAIN_SOURCE = readFileSync(new URL('../main.ts', import.meta.url), 'utf8');
+
+  /** 取 `const settingsPanel = createSettingsPanel({ ... })` 的選項字面量。 */
+  function settingsPanelOptions(): string {
+    const start = MAIN_SOURCE.indexOf('const settingsPanel = createSettingsPanel({');
+    expect(start, 'main.ts should still build the settings panel').toBeGreaterThan(-1);
+    const end = MAIN_SOURCE.indexOf('\n});', start);
+    expect(end).toBeGreaterThan(start);
+    return MAIN_SOURCE.slice(start, end);
+  }
+
+  it.each([['onSensitivityChange'], ['onFovChange']])('%s 變更後推新 gain 進 recorder（BD-039 (a)）', (callback) => {
+    const options = settingsPanelOptions();
+    const callbackAt = options.indexOf(`${callback}:`);
+    expect(callbackAt).toBeGreaterThan(-1);
+    expect(options.slice(callbackAt)).toMatch(/refreshRecorderMouseGain\(\)/);
+  });
+
+  it('refreshRecorderMouseGain() 走既有的 currentMouseGain()，不另算一份 gain', () => {
+    expect(MAIN_SOURCE).toMatch(
+      /function refreshRecorderMouseGain\(\): void \{[\s\S]*?recorder\.configureMouseIntegration\(\{ gain: currentMouseGain\(\) \}\);[\s\S]*?\n\}/,
+    );
+    // 就緒旗標必須在 recorder 建好之後才翻開，否則建構時的預設值推送會撞 TDZ。
+    const createdAt = MAIN_SOURCE.indexOf('const recorder = createDataRecorder({');
+    const wiredAt = MAIN_SOURCE.indexOf('recorderMouseGainWired = true;');
+    expect(createdAt).toBeGreaterThan(-1);
+    expect(wiredAt).toBeGreaterThan(createdAt);
+  });
+
+  it('錄製中停用兩個滑桿，判準沿用 countdown/running（BD-039 (b)）', () => {
+    expect(MAIN_SOURCE).toMatch(
+      /function syncAimSettingsLock\(\): void \{[\s\S]*?settingsPanel\.lockAim\(phase === 'countdown' \|\| phase === 'running'\);[\s\S]*?\n\}/,
+    );
+    // 掛在既有的 UI 同步點上，且在 `controls === undefined` 的 early return 之前。
+    const body = MAIN_SOURCE.slice(MAIN_SOURCE.indexOf('function syncControlsVisibility(): void {'));
+    expect(body.indexOf('syncAimSettingsLock();')).toBeLessThan(body.indexOf('if (controls === undefined) return;'));
+  });
+
+  it('舊的「不可能發散」宣稱已從 currentMouseGain() 之前的註解移除', () => {
+    const head = MAIN_SOURCE.slice(0, MAIN_SOURCE.indexOf('function currentMouseGain()'));
+    expect(head).not.toContain('故兩者不可能發散');
   });
 });

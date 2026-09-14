@@ -515,9 +515,23 @@ sessionLaunchControls.style.cssText = [
 topLeftControls.appendChild(sessionLaunchControls);
 document.body.appendChild(topLeftControls);
 
+// KI-035 / BD-039（WP-63 T2）— `refreshRecorderMouseGain()` 的就緒旗標。`createSettingsPanel()`
+// 在**建構當下**就把兩個預設值推過 callback 一次,而 `settingsPanel` 與 `recorder` 都是下方才宣告
+// 的 `const`（TDZ）⇒ 那一次推送不能碰 recorder,否則 ReferenceError。建構時的初值改由
+// `createDataRecorder({ mouseIntegration: { gain: currentMouseGain() } })` 負責（同一份設定）。
+let recorderMouseGainWired = false;
+
 const settingsPanel = createSettingsPanel({
-  onSensitivityChange: (s) => cameraController.setSensitivity(s),
-  onFovChange: (deg) => cameraController.setFov(deg),
+  // KI-035（BD-039）:感度／FOV 一變更就把新的 gain 推進 recorder,否則 `ticks[].dYaw`/`dPitch`
+  // 會沿用舊 gain 積分,而匯出的 `meta.mouseIntegration` 用當下設定重算 ⇒ 兩者發散且離線不可察覺。
+  onSensitivityChange: (s) => {
+    cameraController.setSensitivity(s);
+    refreshRecorderMouseGain();
+  },
+  onFovChange: (deg) => {
+    cameraController.setFov(deg);
+    refreshRecorderMouseGain();
+  },
   initialResolutionMode: activeResolutionMode,
   parent: topLeftControls,
   onResolutionModeChange: (mode) => {
@@ -735,14 +749,32 @@ pointerLock.onChange((locked) => {
   topLeftControls.style.display = locked ? 'none' : 'flex';
 });
 
-// KI-005 / A（FR-A-1/7）— tick 窗 mouse 積分的感度 gain：與 collectMeta 的 meta.mouseIntegration
-// 用**同一個 MouseGain 物件**產生（buildCurrentExportPayload 內另算一份，值必然相同），故兩者不可能發散。
+// KI-005 / A（FR-A-1/7）— tick 窗 mouse 積分的感度 gain。與 collectMeta 的 `meta.mouseIntegration`
+// 讀**同一組輸入**（`settingsPanel` 的 sensitivity/FOV + 當前武器的 ads），`buildCurrentExportPayload`
+// 內另算一份。
+//
+// KI-035（2026-09-14 更正）—— 這裡原本宣稱兩者「不可能發散」,那是設計意圖不是現行保證。實際保證
+// 是「recorder 的 gain 在下列**每一個**時機都被重設,故任何一刻都是最新值」:
+//   1. recorder 建構（`createDataRecorder({ mouseIntegration: ... })`）
+//   2. 換武器（`loadWeaponById()`）與換 drill（`activateDrill()`）—— ads 光學會換
+//   3. 感度／FOV 滑桿變更（`refreshRecorderMouseGain()`,BD-039 的 (a)）
+// 「同一份 `ticks[]` 前後段用同一組 gain」則由 BD-039 的 (b) 保證:`syncAimSettingsLock()` 在
+// `countdown`/`running` 期間停用兩個滑桿。(a) 與 (b) 分工不同,缺一不可——(b) 關掉 run 內變更,
+// (a) 讓 run **之間**的每一次變更都即時生效（載入 drill 後、取鎖之前調滑桿正是 KI-035 的原始症狀）。
 function currentMouseGain() {
   return resolveMouseGain({
     sensitivity: settingsPanel.sensitivity,
     hipFovDeg: settingsPanel.fov,
     ads: activeWeaponConfig().ads,
   });
+}
+
+// KI-035 / BD-039 (a)（WP-63 T2）— 把當下設定的 gain 推進 recorder。`recorderMouseGainWired` 之前
+// 的呼叫（= `createSettingsPanel()` 建構時的預設值推送）一律略過:那時 `recorder` 還在 TDZ,而它
+// 自己的建構參數就已經帶了同一份 gain。
+function refreshRecorderMouseGain(): void {
+  if (!recorderMouseGainWired) return;
+  recorder.configureMouseIntegration({ gain: currentMouseGain() });
 }
 
 // WP-7 / T4（FR-7.4）— 匯出控制：讀取 recorder snapshot + metadata 後下載 JSON/CSV。
@@ -772,6 +804,8 @@ const recorder = createDataRecorder({
   recordAnnotationEvents: operatorAnnotationCapture,
   recordMouseSamples: rawMouseSampleCapture,
 });
+// KI-035 / BD-039 (a)：recorder 存在之後，感度／FOV 的每一次變更才可以（也必須）推 gain 進來。
+recorderMouseGainWired = true;
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(
   protocolContext?: ProtocolConditionContext,
@@ -1645,7 +1679,25 @@ controls = createControls({
   },
 });
 
+// KI-035 / BD-039 (b)（WP-63 T2）— 錄製中（`countdown`/`running`）停用感度與 FOV 滑桿,使一次 run
+// 內只有一組 mouse gain。判準沿用 KI-007 對 `fullscreenchange` 的同一條（`countdown`/`running` =
+// 實際錄製中）,不另立第二個「run 進行中」定義。
+//
+// 為什麼這裡就夠:面板在 Pointer Lock 鎖定中整組隱藏,唯一能在錄製中碰到滑桿的路徑是「run 到一半
+// 掉鎖」——而 `syncControlsVisibility` 本來就掛在 `pointerLock.onChange` 上,且 drill 的每一個
+// start/restart/換武器/換 drill/轉 `ended` 都已經呼叫它。
+function syncAimSettingsLock(): void {
+  const phase = drillRunner.phase;
+  settingsPanel.lockAim(phase === 'countdown' || phase === 'running');
+}
+
 function syncControlsVisibility(): void {
+  // 放在下面的 early return **之前**：面板要不要鎖與 researcher controls 有沒有建好無關。
+  // KI-013 的 TDZ 顧慮在這一行不適用：`settingsPanel`(:519) 與 `drillRunner`(:1114) 之間沒有任何
+  // top-level await，模組評估到 `drillRunner` 為止都是同步的 ⇒ 任何 handler 能跑到本函式時，兩者
+  // 必定已初始化。⚠️ 若日後有人在這兩個宣告之間插入 top-level await，本行就會變成 KI-013 的重演，
+  // 屆時要把它移到 early return 之後（那個窗內相位不可能是 countdown/running，移動不損語意）。
+  syncAimSettingsLock();
   // KI-013：controls 尚未建好時（top-level await 期間的早期點擊）無事可同步，安全略過——
   // controls 建好當下會立即呼叫本函式一次，補上當時的 appMode/pointerLock 狀態。
   if (controls === undefined) return;

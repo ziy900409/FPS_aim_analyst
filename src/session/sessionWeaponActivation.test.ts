@@ -61,9 +61,10 @@ describe('WP-62 T3 — resolveActiveWeapon() 是武器 precedence 的唯一定�
     }
     // BR 八格（WP-62）+ WP-64 curated 的兩個 tracking-pilot block + WP-66 後續的**兩個**帶命中
     // 回饋獨立 drill + 使用者 2026-09-14 的 30 s／無置中準備窗變體（皆沿用 pilot 的
-    // tracking_pilot_hold）。數字寫死，讓
+    // tracking_pilot_hold）+ WP-63 T1 的 micro flick v8（`usp_s_laser` 為量測儀器，非操作員可選
+    // 變項）。數字寫死，讓
     // 「又多一個 drill 把武器固定成實驗因子」這件事無法悄悄通過 review。
-    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(13);
+    expect(DECLARED_WEAPON_BY_DRILL_ID.size).toBe(14);
   });
 });
 
