@@ -1,0 +1,91 @@
+/*
+ * aim-analyst-ui — design tokens（單一真實來源）
+ *
+ * 用法：把這段 :root 注入一次（report surface 開場；live HUD 可只取色彩子集）。
+ * 所有 inline cssText 與 component 一律引 var(--token)，不要散落 magic hex。
+ * 視覺方向 = 暗色科學儀器（dark sports-science lab），非遊戲花俏 UI。
+ */
+
+:root {
+  /* ---- 表面 surface（暗，中性帶極微藍） ---- */
+  --bg-0: #0f1113; /* app 底（canvas 後方、報告頁底） */
+  --bg-1: #16191d; /* panel / card */
+  --bg-2: #1e2227; /* raised / sidebar / row hover */
+  --line: rgba(255, 255, 255, 0.08); /* hairline 分隔 */
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  /* ---- 文字 ---- */
+  --text-hi: #edeff2; /* 主要 */
+  --text-mid: #aeb4bc; /* 次要 / 說明 */
+  --text-lo: #6e757e; /* label / caption（多為 uppercase tracked） */
+
+  /* ---- 主強調 accent（brand / section header / primary CTA） ---- */
+  --accent: #e8285a; /* 洋紅偏紅，對齊參考圖品牌色 */
+  --accent-hi: #ff3d6e; /* hover / active */
+  --accent-dim: rgba(232, 40, 90, 0.14); /* 填底 / focus ring 底 */
+
+  /* ---- 狀態 ---- */
+  --ok: #2ecc71; /* Completed / pass */
+  --warn: #f5a623; /* suspect / overflow flag（bufferOverflow、recorderOverflow…） */
+  --bad: #ff5470; /* miss / fail */
+
+  /* ---- 分類色 categorical（比較條件：session / device / 對照組） ---- */
+  /* 規則：顏色 = 身份，不可只靠顏色區分 → 一律加 label 或 pre/post 填法。 */
+  --cat-1: #e83a6a; /* magenta */
+  --cat-2: #f5a623; /* amber */
+  --cat-3: #3fa9f5; /* azure */
+  --cat-4: #9b6dff; /* violet */
+
+  /* ---- 字體 role ---- */
+  /* report：可載 webfont；live HUD：只用 system-ui，零網路、零字體 FOUT。 */
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+
+  /* ---- 字級 scale ---- */
+  --fs-display: 1.75rem; /* 28 — 報告頁玩家名 / hero 數字 */
+  --fs-h1: 1.25rem; /* 20 */
+  --fs-h2: 1rem; /* 16 — card 標題 */
+  --fs-body: 0.875rem; /* 14 */
+  --fs-data: 0.9375rem; /* 15 — 量測讀值（mono, tabular） */
+  --fs-label: 0.6875rem; /* 11 — uppercase tracked 標籤 */
+
+  /* ---- 間距 4px grid ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* ---- 圓角 ---- */
+  --r-card: 12px;
+  --r-control: 8px;
+  --r-pill: 999px;
+
+  /* ---- 動態（克制；下游須尊重 prefers-reduced-motion） ---- */
+  --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-reveal: 200ms;
+}
+
+/* 量測讀值的標準呈現：mono + 等寬數字，避免抖動、像儀表板。 */
+.metric-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+/* uppercase tracked 標籤（對齊參考圖的 "Mouse brand" / scale hint 風格）。 */
+.label {
+  font-size: var(--fs-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-lo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
