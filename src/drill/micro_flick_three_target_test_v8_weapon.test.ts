@@ -25,10 +25,22 @@ import { microFlickThreeTargetTestV8 } from './micro_flick_three_target_test_v8.
  *
  *  1. the seeded spawn stream is untouched — same seed and same kill order give bit-identical
  *     placements under either weapon;
- *  2. `sampleSpread()` early-returns for this weapon ([spread.ts] `inaccuracy === 0`), so the
- *     shared seeded stream it draws from is not advanced by a single draw — that is *why* (1) also
- *     holds under live fire and not merely when nobody shoots;
+ *  2. `sampleSpread()` early-returns for this weapon ([spread.ts] `inaccuracy === 0`), so its own
+ *     seeded stream is not advanced by a single draw;
  *  3. the recoil table is bit-zero, so `aimPunch` never moves and `ticks[].aim` is the real view.
+ *
+ * ⚠️ Corrected in WP-68 T-exit (OQ-68.5), comment only — no assertion changed. This header used to
+ * say (2) was *why* (1) survives live fire. It is not: spread and spawn draw from two **separate**
+ * `createRan1` instances (`SimLoop.ts:855` builds `recoilRuntime.rng`, `TargetManager.ts:315`
+ * builds its own `spawnRng`, and the loop never hands its rng to the manager), and `createRan1`
+ * returns a closure owning its `idum`/`iy`/`iv` (`rng.ts:13-22`), so two instances on one seed are
+ * still two states. (1) and (2) are **independent** claims. What each actually buys:
+ *   (1) a guard against some *other* weapon property coupling into spawn — the magazine shrinks
+ *       30 -> 12 here and `spawn()` refills it (`TargetManager.ts:585`), so ammo and placement do
+ *       meet;
+ *   (2) a tripwire for the day someone retunes `usp_s_laser` to a non-zero inaccuracy.
+ * See `micro_flick_three_target_test_v9_weapon.test.ts` for the same reasoning stated correctly
+ * from the start.
  */
 
 const V8_CONFIG = microFlickThreeTargetTestV8.drill;

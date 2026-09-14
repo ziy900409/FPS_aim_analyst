@@ -309,7 +309,7 @@ docs/exec-plan/
 
 ## Operational Micro-Flick Entry
 
-**Micro-flick analysis**: [operational/analysis-micro-flick.md](operational/analysis-micro-flick.md) documents the WP-63 v8 metric boundary, environment gates, seven synthetic probes, FPS parity, tick-rate sensitivity, legacy fixture discipline, and quality-flag interpretation.
+**Micro-flick analysis**: [operational/analysis-micro-flick.md](operational/analysis-micro-flick.md) documents the WP-63 v8 metric boundary, environment gates, seven synthetic probes, FPS parity, tick-rate sensitivity, legacy fixture discipline, and quality-flag interpretation —— 並於 WP-68 後補上 **v9 的適用性與兩者唯一的語義差（計分窗右界）**。
 
 **WP-63 交付物的入口**（2026-09-14 T-exit）：
 
@@ -318,7 +318,18 @@ docs/exec-plan/
 | v8 的 per-target 窗界原語（`buildTargetWindows()` / `aliveAt()`） | [`src/metrics/targetWindows.ts`](../src/metrics/targetWindows.ts) —— 只做窗界與候選集，**零幾何**（C-D4，NFR-63.4 符號掃描釘死） |
 | v8 的四層事件錨定指標 + 方向預測曲線 | [`src/metrics/microFlickMetrics.ts`](../src/metrics/microFlickMetrics.ts) |
 | **v8 跨 render FPS 的逐位一致證明**（NFR-63.2） | [`src/loop/__tests__/wp63-v8-metrics-determinism.test.ts`](../src/loop/__tests__/wp63-v8-metrics-determinism.test.ts) —— 跑真的 v8（seeded spawn + hitscan + recorder），30／60／144／240 四條幀序列逐位比對 trace 與四層指標 |
+| **v8／v9 共用的 determinism harness**（WP-68 T2 抽出） | [`src/loop/__tests__/microFlickDeterminismHarness.ts`](../src/loop/__tests__/microFlickDeterminismHarness.ts) —— 參數化 drill config 與矄準參數；兩支 drill 走**同一條**程式路徑（C-D4） |
 | 為什麼 v8 不用 `t_detect`／`seg-v2`，以及交付宣稱的上限 | [GD-39](exec-plan/DECISIONS.md) · [WP-63 README §2.2／§5](exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) |
+
+**WP-68 交付物的入口**（2026-09-14 T-exit）：
+
+| 想知道 | 看這裡 |
+|---|---|
+| v9 的零散布武器宣告（量測儀器，不可被 Session Plan 覆蓋） | [`src/drill/micro_flick_three_target_test_v9.ts`](../src/drill/micro_flick_three_target_test_v9.ts) · [`src/session/drillFamily.ts`](../src/session/drillFamily.ts) 的 `DECLARED_WEAPON_ROSTER` |
+| **計分窗右界依 `endCondition` 分流**（v9 取鐘尾、v8 截最後一殺） | [`src/metrics/microFlickMetrics.ts`](../src/metrics/microFlickMetrics.ts) 的 `deriveOutcome()` · 查表在 [`src/drill/microFlickEndConditions.ts`](../src/drill/microFlickEndConditions.ts) |
+| v9 跨 render FPS 的逐位一致證明（NFR-68.3） | [`src/loop/__tests__/wp68-v9-metrics-determinism.test.ts`](../src/loop/__tests__/wp68-v9-metrics-determinism.test.ts) |
+| 右界分流的三條 FR 證據（含 v8 逐位不變與兩條具名退回） | [`src/metrics/wp68-scoringWindow.test.ts`](../src/metrics/wp68-scoringWindow.test.ts) |
+| 為什麼 v8／v9 自此必須以 `meta.drillId` 分池，以及右界偏誤的實測量級 | [GD-45](exec-plan/DECISIONS.md) · [WP-68 README](exec-plan/active/stage13/wp-68-micro-flick-v9-measurement-parity/README.md) |
 
 ---
 

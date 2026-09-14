@@ -262,6 +262,11 @@ describe('WP-63 T4 — 缺失一律 undefined + 具名旗標（FR-63.15）', () 
     expect(deriveMicroFlickMetrics(payload).eyeOriginSource).toBe('legacy-default');
   });
 
+  // ⚠️ WP-68 T-exit（OQ-68.6）—— 這條斷言**結構性恒真**，實測注入表外字串後仍 80 passed。
+  // 原因在 `ordered()`：`vocabulary.filter(f => present.has(f))` 投影的是**詞彙表**，表外旗標在輸出
+  // 前就被靜默丟棄。真正的封閉守衛是 **TS 型別**（`flags: MicroFlickOutcomeFlag[]`）—— push 一個
+  // 表外字串時 `tsc` 回 TS2345。本條保留作為輸出形狀的回歸陣，但**不要把它當成封閉性的證據**。
+  // 廣義教訓（GD-45 ⑤）：「投影式」輸出（先 filter 再回傳）會讓下游的成員資格斷言恒真。
   it('旗標詞彙表封閉:輸出的每個旗標都在詞彙表內', () => {
     for (const options of [HAND_CASE, GREEDY_CASE, NO_REPLACEMENT_CASE, SINGLE_KILL_CASE]) {
       const metrics = deriveMicroFlickMetrics(scenario(options));

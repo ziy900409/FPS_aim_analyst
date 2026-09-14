@@ -2,9 +2,15 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-14 T2 完成）
+## 最新狀態（2026-09-14 T-exit 完成）
 
-🟡 **T0／T1／T2 已完成，T-exit 可開工**。分支 `wp-68-micro-flick-v9-measurement-parity`（基準 `main` @ `eec359d`）。
+✅ **WP-68 已交付**（T0／T1／T2／T-exit 全數完成）。分支 `wp-68-micro-flick-v9-measurement-parity`（基準 `main` @ `eec359d`）。
+
+T-exit 結論一句話：**FR-68.1–5 與 NFR-68.1–4 逐條有機械證據，判定為 ✅ 完全交付、無具名缺口**（[D-68.TE-2](#d-68te-2--交付判定為完全交付無具名缺口2026-09-14)）；`GD-45` 已入帳（入帳前重查：最大已落帳 **GD-44**、`GD-43` 仍由 WP-67 預約未落帳）；五處索引已更新（其中 stage14 候選順延為只**複核**）；OQ-68.5／68.6 皆已關閉，**無遺留阻塞項**。
+
+⚠️ **本 gate 咬到了一個真的缺陷**：T2 導入的鐘右界在 **tick 紀錄截斷於最後一殺之前**時會讓分子與分母對不上同一個窗，静默輸出 **`shotAccuracy` = 1.5**（機率 > 1）與 **`shotsPerKill` = 0.667**且**零旗標** —— 正是本 WP 存在理由所針對的那一類數字，只是從另一扈門進來。已以獨立 commit `fix(wp-68)` 修復並附會咬的回歸測試，詳見 [TE.0](#te0--t-exit-複核當場查出-t2-引入的缺陷shotaccuracy--1)。
+
+T2 結論一句話：**計分窗右界依 `endCondition` 分流落地（路徑 B），v9 取到鐘尾、v8 四量逐位不變**。v9 上兩種右界的實測差值：真 run **+191.25 ms / `killRateHz` 高估 +2.799%**，合成 dry-tail 案例 **+334.8%**（[T2.3](#t23--兩種右界的實測差值steps-5--這條-fr-存在的理由)）。
 
 T2 結論一句話：**計分窗右界依 `endCondition` 分流落地（路徑 B），v9 取到鐘尾、v8 四量逐位不變**。v9 上兩種右界的實測差值：真 run **+191.25 ms / `killRateHz` 高估 +2.799%**，合成 dry-tail 案例 **+334.8%**（[T2.3](#t23--兩種右界的實測差值steps-5--這條-fr-存在的理由)）。v8 四量以取自 `c81778f` worktree 的**寫死常數**逐位 `Object.is` 釘死。v9 四 FPS parity **12 passed**，帶自己的非空對空前置（37 發／18 中／19 失／21 窗）。全量閘一次通過：typecheck ×2、Vitest **3,385 passed／2 skipped（273 files，+23 = 本 task 新增數）**、build **203 modules**。⚠️ determinism harness 已抽成 v8／v9 共用模組（[D-68.T2-3](#d-68t2-3--harness-抽成共用模組而非照抄一份2026-09-14)）。⚠️ 查出旗標詞彙表的 runtime 封閉性斷言**結構性恆真**，真正的守衛是 TS 型別（[Surprises 1](#surprises--discoveriest2)，記為 **OQ-68.6**）。✅ OQ-68.4 收斂：完整 60 s 合成 run **零次空倉**（[T2.7](#t27-oq-684-收斂magsize-30--12-而-v9-的鐘不因失手而停)）。
 
@@ -25,7 +31,7 @@ T0 結論一句話：**兩號沿用（WP-68／GD-45），上游 WP-63 三項證�
 | T0 Entry gate | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 [§T0](#t0--entry-gate編號重查上游驗證基線實測oq-682-收斂2026-09-14)。WP-68／GD-45 重查後沿用；WP-63 三項上游證據綠（`targetWindows.test.ts` 27／`microFlickMetrics.test.ts` 80／`wp63-v8-metrics-determinism.test.ts` 11／`drillFamily.test.ts` 155）；五項基線 exit 0 —— typecheck ×2、Vitest **3,351 passed／2 skipped（270 files）**、build **203 modules**、Tier 1 **102 passed／1 skipped**（8.4 m）、Tier 2 Edge **115 passed／0 failed**（18.3 m，第一輪 1 failed 為 [OQ-66.9](../wp-66-target-hit-visual-feedback/progress.md) 機制第五次發生，已明帳）；CodeGraph impact 已記錄且**降級為下界**，C-D5 以 grep 判定**不觸發**；`endCondition` **不在**匯出 schema ⇒ T2 走**路徑 B**；OQ-68.2 以預設「否」明帳推進；GD-45 草稿已寫入。 |
 | T1 零散布武器宣告 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 [§T1](#t1--v9-宣告-weaponid-usp_s_laser--roster-登記--斷代標記2026-09-14)。v9 fixture 宣告 `usp_s_laser` + `DECLARED_WEAPON_ROSTER` 登記（14 → 15）；spawn trace **96 snapshot 逐位 `Object.is` 相同、兩邊各 4 發**；rng 呼叫數 **0**（ak47 對照 > 0）；recoil table 逐位 0；`meta.weaponId` round-trip 綠；v1–v7 七支 `hasOwnProperty('weaponId') === false`。全量閘 exit 0：typecheck ×2、Vitest **3,362 passed／2 skipped（271 files，+11 = 本 task 新增數）**、build **203 modules**、`micro-flick-live.spec.ts` **6 passed**。⚠️ 第一輪全量 Vitest 1 failed = DoD 未點名的第二個硬編守衛 `sessionWeaponActivation.test.ts:67`，已修正並重跑。 |
 | T2 計時制右界 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 [§T2](#t2--計時制-drill-的計分窗右界--v9-fps-parity2026-09-14)。`deriveOutcome()` 右界依 `endCondition` 分流（路徑 B，新檔 `microFlickEndConditions.ts` 查表）；v9 右界 = 最後一個 tick（真 run 差 **+191.25 ms**、`killRateHz` 舊值高估 **+2.799%**；合成 dry-tail 案例 **+334.8%**）；**v8 四量對 `c81778f` 的寫死常數逐位 `Object.is` 相同**；`unknown_end_condition` 與「計時制但無 tick」兩條退回各有具名測試；v9 四 FPS parity **12 passed**（自帶非空對空前置：37 發／18 中／19 失／21 窗）；六個 canonical derivation 檔與 `DrillMetricRegistry.ts` `git diff` **0 行**。全量閘 exit 0：typecheck ×2、Vitest **3,385 passed／2 skipped（273 files）**、build **203 modules**。 |
-| T-exit | ⬜ 未開工 | — | — | — |
+| T-exit | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 [§T-exit](#t-exit--exit-gatefr／nfr-逐條對帳diff-稽核帳本與索引更新2026-09-14)。FR-68.1–5／NFR-68.1–4 逐條有斷言檔 + 案例名或實測數值；硬約束表逐列複核 + 五項具名檢查（C-D4／C-D5／GD-5／ADR-2／KI-037 邊界）皆有證據；onset 掃描 **0／0／0**；`GD-45` 已入帳（重查後確認未被取用）；五處索引已更新；交接清單三項齊全。⚠️ **本 gate 查出並修復了 T2 引入的一個靜默缺陷**（`shotAccuracy` > 1，見 TE.0）。 |
 
 ---
 
@@ -127,11 +133,36 @@ T2 的右界問題與 [KI-037](../../../../known_issue/KI-037-valid-duration-inc
 
 ---
 
-## 交接清單（T-exit 時填寫）
+## 交接清單（2026-09-14 T-exit 填寫）
 
-- [ ] v8／v9 因同武器而不可分，對混池分析的具體操作要求
-- [ ] `endCondition` 若日後進匯出 schema，本 WP 的查表應改讀匯出並移除 `unknown_end_condition`
-- [ ] v9 的真人 pilot 需求（承 [WP-63 §5](../wp-63-micro-flick-v8-measurement-foundation/README.md)，兩支應一起收而非各收一次）
+- [x] **v8／v9 因同武器而不可分，對混池分析的具體操作要求**
+
+  兩支 drill 自 T1 起都是 `usp_s_laser` ⇒ **`meta.weaponId` 不再能區分 v8／v9**。分析側的分池鍵從「`weaponId` 或 `drillId` 皆可」**收窄為必須 `meta.drillId`**（`micro_flick_three_target_test_v8` / `..._v9`）。
+
+  **兩者本來就不該混池**，有兩個獨立理由：(a) 靶徑不同（角半徑 1.242° vs 1.118°）；(b) 計分制不同（kill-budget vs 60 s 計時），連帶 `validSpanMs` 的右界語意不同 ⇒ **`killRateHz`／`shotsPerKill`／`shotAccuracy` 三個量在兩支 drill 上不是同一個構念**，混池平均會產出一個沒有對應現象的數字。
+
+  **另有一條斷代**：v9 在 T1 **之前**錄的資料 `meta.weaponId === 'ak47'`（有散布、有 aim punch）⇒ 與 T1 後的 v9 **不可混比**，變的是命中判定的隨機性本身。斷代鍵同為 `meta.weaponId`。⇒ 實務上 v9 的分池條件是 **`drillId === ..._v9` AND `weaponId === 'usp_s_laser'`**。
+
+- [x] **`endCondition` 若日後進匯出 schema，本 WP 的查表應改讀匯出並移除 `unknown_end_condition`**
+
+  現況：`endCondition` 不在匯出 `meta`（T0.6 逐欄確認 `src/data/metadata.ts` 零命中），故 [`src/drill/microFlickEndConditions.ts`](../../../../../src/drill/microFlickEndConditions.ts) 以 `meta.drillId` 反查**本 build** 的 drill config。
+
+  **這張查表的已知弱點**：它回答的是「**這個 build** 認為該 drillId 的結束條件是什麼」，不是「**錄製當下**那一場實際跑的是什麼」。若日後有人改了某支 drill 的 `endCondition`，舊匯出會被新 build 以新語意重算 —— 而匯出本身沒有任何欄位能揭露這件事。這正是 `unknown_end_condition` 只能擋住「drill 被改名／移除」而擋不住「drill 被改值」的原因。
+
+  **接手動作**：任何 WP 把 `endCondition`（或等價事實，例如 `meta.scoringWindow`）加進匯出 schema 之後 ——
+  1. 把 `deriveOutcome()` 的右界來源改讀匯出，查表降級為 pre-schema 匯出的後援；
+  2. 移除 `unknown_end_condition`（或改寫其語意為「連後援都查不到」）；
+  3. 同步改 [`analysis-micro-flick.md`](../../../../operational/analysis-micro-flick.md) 的旗標解讀表與本 WP 的 [GD-45](../../../DECISIONS.md) ⑥ 技術債列。
+
+- [x] **v9 的真人 pilot 需求（承 [WP-63 §5](../wp-63-micro-flick-v8-measurement-foundation/README.md)，兩支應一起收而非各收一次）**
+
+  **本 WP 明確不宣稱效度**（C-D3 閘未過 ⇒ v9 指標不得進教練報告）。以下四項**非真人不可**，且 v8／v9 應在**同一個 cohort、同一批受試者**內收，否則兩支之間的任何差異都無法與受試者差異分離：
+  1. v9 靶徑再縮 10% 後是否仍有**鑑別力**（天花板／地板效應）；
+  2. **計時制 vs kill-budget 對受試者策略的影響**（計時制會不會誘發「亂噴提高期望擊殺數」，那會讓 `shotAccuracy` 與 `killRateHz` 反向移動）；
+  3. 計時制**尾段 dry spell 的真實長度分布** —— 它直接決定 T2 修掉的偏誤在真人資料上的實際量級（本 WP 只量到合成的 +2.8%～+334.8% 兩端，中間全靠猜）；
+  4. WP-63 §5 已列的其餘各項（免閾值微調描述子的漏檢率、`?rawMouse=1` 專屬校準）。
+
+  **一併觀察（非阻塞）**：[OQ-68.4](#open-questionst2-後) 的空倉率 —— 合成節奏下跑滿 60 s **零次**空倉，但真人連續失手時單位時間發數更高且更不規律，`ammo_exhausted_in_run` 的真實觸發率仍未知。若真人資料顯示該旗標頻繁亮起，v9 的 `shotsPerKill`／`shotAccuracy` 將整層不出數（C-D3），屆時需要的是**調整彈匣或換彈語意**，不是放寬旗標。
 
 ---
 
@@ -615,3 +646,192 @@ v9 的決定性契約與 v8 逐字相同，只有 drill config 與瞄準參數�
 | ~~OQ-68.4~~ | ✅ **已收斂（T2.7）**：完整 60 s 合成 run 零次 `ammo_exhausted_in_window` ⇒ 降級為真人 pilot 的觀察項，非本 WP 阻塞項 |
 | **OQ-68.5** | 🔵 維持開放至 T-exit（`micro_flick_three_target_test_v8_weapon.test.ts` 檔頭「shared seeded stream」措辭的更正） |
 | **OQ-68.6（新）** | 旗標詞彙表的 runtime 封閉性斷言結構性恆真（Surprises 1）——要不要補一條真的會咬的測試？**預設假設：不補**，封閉性已由 TS 型別買下，補一條 runtime 測試只是重複買同一個保證；但該斷言目前**看起來**買的比它實際買的多，至少值得一條註解說明。Owner = 實作者，Deadline = **T-exit** |
+
+---
+
+## T-exit — Exit gate：FR／NFR 逐條對帳、diff 稽核、帳本與索引更新（2026-09-14）
+
+> 判定原則：每條 FR／NFR 必須有**指令 + 輸出**、**斷言檔名 + 案例名**，或**記入本檔的實測數值**。「已完成」「運作正常」一律不合格。
+
+### TE.0 ⚠️ T-exit 複核當場查出 T2 引入的缺陷：`shotAccuracy > 1`
+
+**這一條排在最前面，因為它是本 gate 唯一真正咬到東西的地方。**
+
+複核 `deriveOutcome()` 的邊界時問了一個 T2 沒問的問題：**如果最後一個 tick 早於最後一次擊殺呢？**（recorder 溢位截斷 tick 時可達 —— `ticks` 有容量上限，`events` 不同源）。實測一份 tick 停在 1200 ms、最後一殺在 2300 ms 的 v9 payload：
+
+```
+EDGE={"validSpanMs":1200,"killRateHz":2.5,"n":3,
+      "shotsPerKill":0.6666666666666666,"shotAccuracy":1.5,"flags":["idle_span_unbounded"]}
+```
+
+- **`shotAccuracy` = 1.5** —— 一個**大於 1 的機率**。
+- **`shotsPerKill` = 0.667** —— 發數**少於**擊殺數。
+- **`flags` 只有 `idle_span_unbounded`** —— 零警告，靜默輸出。
+
+**根因**：T2 把右界改成鐘尾之後，`n`（分子）仍計**全部**擊殺，而 `shots`（分母）只數**窗內**的 ⇒ 分子與分母對不上同一個窗。舊實作**不可能**出這種值：右界恆為 `lastKillMs`，依定義涵蓋全部擊殺，兩者必然自洽。**⇒ 這是 T2 引入的回歸，不是既有缺陷。**
+
+**這正是本 WP 存在的理由所針對的那一類數字**（C-D3：看起來合理、實際會說錯話），只是從另一扇門進來的。
+
+**修法**（採「不可用就具名退回」，與既有兩條退回同一形狀，不新增旗標）：
+
+```ts
+const clockEndMs =
+  endConditionType === 'timeLimit' &&
+  lastTickMs !== undefined &&
+  (lastKillMs === undefined || lastTickMs >= lastKillMs)
+    ? lastTickMs
+    : undefined;
+```
+
+鐘的右界**只有在它至少涵蓋最後一次擊殺時才用得著**；否則退回 `lastKillMs`（依定義自洽）並亮 `scoring_window_truncated_at_last_kill`。`scoring_window_truncated_at_last_kill` 的適用情況因此由三種變**四種**（kill-budget／結束條件未知／無 tick／tick 截斷在最後一殺之前），詞彙表不變。
+
+**為何不用 `max(clockEnd, lastKill)`**：那會**靜默**把一份內部不一致的匯出補成看起來一致的樣子。匯出的 tick 與 event 對不上是**資料問題**，不是可以就地算掉的問題 ⇒ 依 FR-68.5 具名退回到那個保證自洽的定義。
+
+**為何 v8 不受影響**：`endConditionType !== 'timeLimit'` ⇒ `clockEndMs` 恆 `undefined` ⇒ 這條分支對 v8 不可達，四量的寫死常數斷言維持綠。
+
+**回歸測試**：`wp68-scoringWindow.test.ts` ▸「計時制但 tick 紀錄截斷在最後一殺之前 ⇒ 退回，且 shotAccuracy 不得 > 1」，斷言 `shotAccuracy <= 1` 與 `shotsPerKill >= 1` 這兩條**不變式**（分子與分母必須對同一個窗），而不只是斷言那一個修好的數字。**已驗證它會咬**：暫時移除 guard 後該案例轉紅（`expected [ 'idle_span_unbounded' ] to include 'scoring_window_truncated_at_last_kill'`），還原後 12 passed。
+
+**流程偏離（明帳）**：本修復是 T-exit 期間對 T2 程式碼的變更，故**另開一個 `fix(wp-68)` commit**而非併進 T-exit 的文件切片，也不另開 KI／BD 號 —— 它不是已釋出的 bug，是同一個 WP 內、交付前被自己的 exit gate 攔下的回歸（KI／BD 是為**已落地**的 known issue 設計的，見 CLAUDE.md §3.9）。
+
+⚠️ **另一條流程教訓（承 T1 Surprises 3）**：本 gate 第一輪 Playwright 是在**工作區仍在變動時**啟動的 —— 上述 guard 在該輪跑到一半時落地，而 `playwright.config.ts:45` 的 `webServer` 是 `npm run dev`（vite dev server 直接吃 `src/`）⇒ 那一輪的數字**對應不到任何一份樹**，已**作廢並在原始碼凍結後整套重跑**（TE.8 的數字為重跑結果）。T1 記的是「驗證期間工作區不得變動」，本次證明它對 **e2e 尤其成立**，因為 dev server 會 HMR。
+
+### TE.1 FR 對帳
+
+| FR | 內容 | 證據（檔 + 案例名） | 判定 |
+|---|---|---|---|
+| **FR-68.1** | v9 宣告 `weaponId: 'usp_s_laser'`，且在匯出以 `meta.weaponId` 可稽核 | `micro_flick_three_target_test_variants.test.ts`（**11 tests**）斷言 `parsed.weaponId === 'usp_s_laser'`，並從 `WEAPONS` **讀**出 `inaccuracy` 四項／`recoil` 三項全 0 且無 `ads`（改動該武器會在此轉紅）；`micro_flick_three_target_test_v9_weapon.test.ts` ▸ round-trip：`collectMeta` → `canonicalExportJSON` → `parseExportPayload` 後 `meta.weaponId === 'usp_s_laser'` 且 `!== 'ak47'` | ✅ |
+| **FR-68.2** | v9 登記 `DECLARED_WEAPON_ROSTER`，武器不可被 Session Plan 逐列覆蓋 | `drillFamily.test.ts`（**158 tests**，T0 基線 155）：`DECLARED_WEAPON_BY_DRILL_ID.size` 14 → **15**；逐列指定 `weaponId: 'ak47'` 被 `SessionProgramCompileError` 擋下且 `itemIndex === 1`；「指定成它已宣告的那把」與「不指定」兩種拼法放行 | ✅ |
+| **FR-68.3** | `timeLimit` drill 以**涵蓋計分窗尾段**的右界計算 `validSpanMs` | `wp68-scoringWindow.test.ts` ▸「右界 = 最後一個 tick，而不是最後一次擊殺」／「killRateHz 用的是整段鐘 —— 舊定義會高估 335%」／「最後一殺之後才開的槍，舊右界會整段漏掉、新右界會算進去」；`wp68-v9-metrics-determinism.test.ts` ▸「FR-68.3：v9 是計時制 ⇒ 計分窗右界取最後一個 tick，不截在最後一次擊殺」（**真 run**）。實測差值見 [T2.3](#t23--兩種右界的實測差值steps-5--這條-fr-存在的理由) | ✅ |
+| **FR-68.4** | `targetCount` drill（含 v8）四量**逐位不變** | `wp68-scoringWindow.test.ts` ▸「真 v8 run 的四量對 T1 後的值逐位 Object.is 相同（FM-1）」——期望值 `{ 6832.1875, 2.634588116909848, 2, 0.5 }` 為取自 **T2 前 worktree `c81778f`** 的寫死常數，**非**再跑一次實作產生；另 ▸「即使 tick 遠遠走到最後一殺之後，v8 的右界仍截在最後一殺」 | ✅ |
+| **FR-68.5** | 右界依據來自匯出本身（不得寫死 `60000` 或任何 drill 專屬常數），無法判定時具名旗標 | **機械複核**：`deriveOutcome()` 的右界只有兩個輸入，皆取自 payload —— `payload.meta.drillId`（`microFlickMetrics.ts:417`）與 `ticks.at(-1)?.t`（`:419`）。`grep -nE "60000\|56009" src/metrics/microFlickMetrics.ts src/drill/microFlickEndConditions.ts` **零命中**（唯一的 `60` 是既有且無關的 `DEFAULT_DIRECTION_WINDOWS_MS`）。具名退回：`wp68-scoringWindow.test.ts` ▸「未知 drillId ⇒ unknown_end_condition + 退回既有語意」／「計時制但匯出沒有任何 tick ⇒ 無從定出鐘的右界，同樣具名退回」 | ✅ |
+
+### TE.2 NFR 對帳（對 T0 基線）
+
+| NFR | 指令 | 實際輸出 | 對 T0 基線 | 判定 |
+|---|---|---|---|---|
+| **NFR-68.1** | 全量 Vitest + `micro_flick_three_target_test_variants.test.ts` | v1–v7 **七支**皆 `hasOwnProperty('weaponId') === false` 且 `loadDrill(...).weaponId === undefined`；v8 四量以寫死常數逐位釘死（FR-68.4）；全量 **3,386 passed／2 skipped（273 files）**，**零既有測試被移除或改寫** | Vitest 3,351 → 3,386，差值 **+35 = T1 的 +11、T2 的 +23、[TE.0](#te0--t-exit-複核當場查出-t2-引入的缺陷shotaccuracy--1) 回歸測試的 +1 之和**，逐數可歸因 | ✅ |
+| **NFR-68.2** | `micro_flick_three_target_test_v9_weapon.test.ts` | spawn trace **96 snapshot** 逐顆 `id/side/x/y/z/visible/alive` 全 `Object.is` 相同，**兩邊各實開 4 發**（非空對空）；三個 `speedRatio` ＋整彈匣 12 發後 `counter.calls() === 0`，**ak47 對照組 `> 0`** | 新增 | ✅ |
+| **NFR-68.3** | `npx.cmd vitest run src/loop/__tests__/wp68-v9-metrics-determinism.test.ts` | **12 passed**。30／60／144／240 四條幀序列的逐 tick trace、events 與四層指標全部 `Object.is` 逐位相同；四種 FPS 彼此亦相等；重播兩次一致。**自帶非空對空前置**：900 ticks／37 發／18 中／19 失／21 窗／`outcome.n` 18／`geometry.shots` 37／`selection.n` 17／`microAdjust.n` 18 | 新增（WP-63 的 harness 形狀，共用實作） | ✅ |
+| **NFR-68.4** | 見 [TE.8](#te8-全量閘) | typecheck ×2、全量 Vitest、Tier 1、Tier 2、`vite build` 皆 exit 0 | 見 TE.8 | ✅ |
+
+### TE.3 硬約束複核（README §2b 逐列重走）
+
+| 約束 | 規劃期判定 | T-exit 實測複核 |
+|---|---|---|
+| 時鐘域：禁 `Date.now()`（ADR-4） | 不觸及 | ✅ `grep -cE "Date\.now\|performance\.now"` 對 `microFlickEndConditions.ts`／`wp68-scoringWindow.test.ts` 皆 **0**；`deriveOutcome()` 的右界只讀 payload 內既有的時間戳 |
+| cross-origin isolation | 不觸及（沿用） | ✅ 未改該契約；`analysis-micro-flick.md` 已補 v9 適用同一份環境硬閘 |
+| **決定性**跨 render FPS 逐位一致 | 觸及（T1／T2） | ✅ NFR-68.2（spawn trace + rng 零消耗）與 NFR-68.3（四 FPS parity）各自綠燈 |
+| **三迴圈邊界**（ADR-2） | 不觸及 | ✅ 新程式碼零 `SharedState` 讀寫：`grep -c SharedState` 對兩個新 `src` 檔皆 **0**，`git diff HEAD~1 -- src/metrics/microFlickMetrics.ts \| grep -c SharedState` = **0**。異動全在離線分析層 |
+| 固定佈局：ring + arena | 不觸及 | ✅ 未改 recorder；離線分析不在熱路徑 |
+| seeded RNG（GD-5） | 觸及（T1） | ✅ 不新增任何 RNG；四個新／改檔的 `Math.random` 命中**全為註解或測試標題**（逐行確認），零實際呼叫 |
+| **GD-6** 場景幾何不進 sim | 不觸及 | ✅ 未讀 `propBounds`／GLTF mesh |
+| **GD-9** 場景資產授權 | 不觸及 | ✅ 未新增任何場景資產 |
+| **GD-11** FPSci 授權紅線 | 不觸及 | ✅ 未引用 FPSci 任何程式碼或 config |
+| **GD-7** hitbox 單一來源 | 觸及（只讀） | ✅ 未新增任何尺寸常數；v9 角半徑仍由既有 `meta.targets.hitbox` 解析 |
+| C-D1／C-D5 | 觸及（邊界宣告） | ✅ 見 [T2.1](#t21-c-d5-邊界複核steps-1)：`deriveOutcome` 零跨模組消費者；`research/` 側零改動 |
+
+**五項具名檢查**（T-exit Steps 3）：
+
+| 檢查 | 指令 | 結果 |
+|---|---|---|
+| **C-D4** 六個 canonical derivation 檔 | `git diff --stat -- src/metrics/{peekWindows,trackingDerivation,detectionDerivation,eyeOrigin,angularKinematics,submovement}.ts` | ✅ 逐檔 **0 行** |
+| **C-D5** `deriveOutcome` 未被晉升指標／registry 消費 | 全 repo grep（見 T2.1） | ✅ 零跨模組消費者；`DrillMetricRegistry.ts` 對 `microFlick` **0 命中** |
+| **GD-5** spawn trace + rng 零消耗 | `npx.cmd vitest run src/drill/micro_flick_three_target_test_v9_weapon.test.ts` | ✅ **7 passed** |
+| **ADR-2** 新程式碼零 `SharedState` | 見上表 | ✅ **0** |
+| **KI-037 邊界** | `git diff --stat -- src/history/DrillMetricRegistry.ts` | ✅ **0 行** |
+
+### TE.4 診斷式錨點掃描（GD-39 ② 硬紀律）
+
+```
+onset            0
+sustained        0
+firstSustained   0
+```
+
+⇒ 三個字串在 `src/metrics/microFlickMetrics.ts` 的 count **皆為 0**，本 WP 未引入 movement-onset 判準。
+
+### TE.5 `GD-45` 入帳（入帳前重查，GD-35 ② 紀律）
+
+**重查結果（2026-09-14 T-exit 當下）**：`DECISIONS.md` 已落帳最大為 **GD-44**；`GD-43` 仍由 [WP-67](../wp-67-export-opening-protocol-marker/README.md) 預約中且**標題零命中**（未落帳）；`GD-45` **標題零命中** ⇒ 未被取用。⇒ **取 GD-45**，與 T0 草稿一致，不佔用 WP-67 的預約號。
+
+已落帳於 [`DECISIONS.md`](../../../DECISIONS.md)，含四個規定段落 ①②③④，另加 T2 產生的三段：**③a 實測差值**（這條決策存在的理由）、**③b v8 逐位不變為硬斷言**、**⑤ 旗標詞彙表封閉性斷言結構性恆真的廣義教訓**、**⑥ 技術債**。
+
+### TE.6 索引更新（五處）
+
+| # | 檔 | 動作 | 狀態 |
+|---|---|---|---|
+| 1 | [stage13 README §2](../README.md) | WP-68 列翻 ✅ 並補證據（右界差值、v8 逐位不變、v9 parity） | ✅ |
+| 2 | [`exec-plan/README.md §2`](../../../README.md) | 階段 M 區塊 WP-68 列翻 ✅ 並補證據 | ✅ |
+| 3 | [stage14 README §3](../../stage14/README.md) | **只複核不重複寫入**（採納時已寫入）：`:96` 的「再順延（2026-09-14，WP-68 採納）… 順延為 `WP-69`／`WP-70`／`WP-71`」**仍在且仍正確**；`:98` 另已明記「下表 `WP-68`（v8）那一列與本次採納的 WP-68 無關，只是撞號」 | ✅ 複核通過，未改動 |
+| 4 | [`docs/MAP.md`](../../../../MAP.md) | micro-flick 入口補「WP-68 交付物的入口」表（fixture／roster、右界分流與查表、v9 parity、三條 FR 證據、GD-45），並在 WP-63 表補共用 harness 一列 | ✅ |
+| 5 | [`analysis-micro-flick.md`](../../../../operational/analysis-micro-flick.md) | 新增 **v9 Applicability (WP-68)** 節：全部 gate／probe／紀律對 v9 原樣適用，**唯一差異是計分窗右界**（附兩制對照表與 +2.799%／+334.8% 實測偏誤）；兩條具名退回；`meta.drillId` 分池硬要求與 pre-WP-68 `ak47` 斷代。另補：Quality Flags 新增兩旗標的解讀、weapon gate 明列 v9、FPS parity 段改指兩檔 + 共用 harness | ✅ |
+
+⚠️ 額外（規劃期未列，但屬同一索引責任）：WP-68 自己的 [README.md](README.md) `Status` 列亦由 ⬜ 翻 ✅。
+
+### TE.7 diff 稽核
+
+```
+git status --short
+git diff --cached --stat
+git diff --cached --name-only
+```
+
+本 gate 的切片**僅含文件 + 兩處註解更正**，零行為變更：
+
+| 檔 | 性質 |
+|---|---|
+| `docs/MAP.md`／`docs/exec-plan/DECISIONS.md`／`docs/exec-plan/README.md`／`docs/exec-plan/active/stage13/README.md`／WP-68 `README.md`／WP-68 `progress.md`／`docs/operational/analysis-micro-flick.md` | 文件（TE.5／TE.6） |
+| `src/drill/micro_flick_three_target_test_v8_weapon.test.ts`／`src/drill/micro_flick_three_target_test_v9_weapon.test.ts`／`src/metrics/microFlickMetrics.test.ts` | **僅註解**（TE.9 的 OQ-68.5／68.6），零斷言變更 —— 三檔測試數維持 6／7／80 |
+| `graphify-out/{GRAPH_REPORT.md,graph.html,graph.json,manifest.json}` | `npm run graph:update` 的產物（TE.8），非手寫 |
+
+**零非預期的 golden／期望輸出檔異動**；零 `src/` 行為變更。
+
+> 📌 `.agents/skills/*`／`.codex/config.toml` 為 untracked，**本 session 開始前即存在**（見開場 git status），非本 WP 產物，不納入任何切片。
+
+### TE.8 全量閘
+
+| 指令 | exit | 數字 |
+|---|---|---|
+| `npm.cmd run typecheck`（×2） | **0** | — |
+| `npm.cmd test`（全量 Vitest） | **0** | **3,386 passed／2 skipped（273 files passed／1 skipped）** |
+| `npm.cmd run test:e2e:fast -- --workers=1`（Tier 1 chromium-ci） | **0** | **102 passed／1 skipped**（8.0 m）—— 與 T0 基線逐數相同（skipped = `backend.spec.ts` 的 webgpu 斷言，GD-44 Tier 1 閘門如預期） |
+| `npm.cmd run test:e2e -- --workers=1`（Tier 2 Edge 全量） | **0** | **115 passed／0 failed／0 flaky**（18.0 m）—— 與 T0 基線逐數相同；本輪**無** [OQ-66.9](../wp-66-target-hit-visual-feedback/progress.md) 機制的環境性失敗（T0 第一輪曾發生） |
+| `npm.cmd run build` | **0** | **203 modules transformed** |
+| `npm.cmd run graph:update` | **0** | **5,392 nodes／13,525 edges／312 communities**，`graph.json`／`graph.html`／`GRAPH_REPORT.md` 均已重建（**`graph.html` 確實被重建而非刪除** ⇒ npm script 的 `GRAPHIFY_VIZ_NODE_LIMIT=8000` 確實生效） |
+
+⚠️ `graph:update` 走 npm script（`GRAPHIFY_VIZ_NODE_LIMIT=8000`）；**未**跑裸 `graphify update .`（節點數已過 5000，裸指令會刪掉 `graph.html`）。
+
+### TE.9 OQ 收尾
+
+| OQ | 處置 |
+|---|---|
+| **OQ-68.5** ✅ **關閉** | `micro_flick_three_target_test_v8_weapon.test.ts` 檔頭第 2 點的「shared seeded stream … that is *why* (1) also holds under live fire」為過度宣稱（T1 Surprises 4 查出）。**已就地更正**：改為兩條**獨立**斷言的正確敘述，並註明兩個 `createRan1` 實例的出處與各自買到什麼。**僅註解，零斷言變更**（該檔維持 6 tests）。`v9_weapon.test.ts` 的回指句同步由「the v8 file … is left alone on scope grounds」改為「has since been corrected in kind」 |
+| **OQ-68.6** ✅ **關閉（採預設假設：不補測試，補註解）** | 旗標詞彙表的 runtime 封閉性斷言結構性恆真（T2 Surprises 1）。**不補**新測試 —— 封閉性已由 TS 型別買下（實測 TS2345），補一條 runtime 測試只是重複買同一個保證。**改為在該斷言上方加註**說明它恆真的原因、真正的守衛是什麼、以及「投影式輸出會讓下游成員資格斷言恆真」的廣義教訓（同步入 GD-45 ⑤）。該檔維持 80 tests |
+
+其餘 OQ：OQ-68.1／68.2／68.3 於 T0 關閉，OQ-68.4 於 [T2.7](#t27-oq-684-收斂magsize-30--12-而-v9-的鐘不因失手而停) 收斂並降級為真人 pilot 觀察項。**本 WP 結束時無遺留阻塞項。**
+
+---
+
+## Decision Log（T-exit）
+
+### D-68.TE-1 — OQ-68.5／68.6 以「僅註解」就地關閉，不擴大切片（2026-09-14）
+
+**Decision**：兩條 OQ 都在 T-exit 就地關閉，動的**只有註解**（三個測試檔），斷言與測試數零變更。
+
+**Why**：兩者都是 T1／T2 明確 park 到 T-exit、Deadline = T-exit 的項目，本 gate 有義務**決定**它們。兩者的共同性質是「檔案裡有一句話說的比它實際成立的多」—— OQ-68.5 是對 seeded 串流關係的過度宣稱，OQ-68.6 是一條看起來在買封閉性、實際恆真的斷言。依 [GD-39](../../../DECISIONS.md) ⑥ 的同一精神（斷言守的不是它掛著的那件事就地補齊），留著一句已知為假／已知空買的敘述，比改掉它的成本高：下一個讀者會據此做錯決定。
+
+**為何不補 OQ-68.6 的 runtime 測試**：封閉性已由 TS 型別強制（實測 `tsc` 回 TS2345 並列出完整 union）。再寫一條 runtime 測試買的是同一個保證，且同樣會被 `ordered()` 的投影吃掉 —— 除非改 `ordered()` 本身（那會動到 WP-63 交付的輸出形狀，屬另一個切片的範圍）。
+
+### D-68.TE-2 — 交付判定為「✅ 完全交付」，無具名缺口（2026-09-14）
+
+**Decision**：FR-68.1–5 與 NFR-68.1–4 **全數有機械證據**，本 WP 判定為 ✅ 完全交付，**不列任何具名缺口**。
+
+**Why**：T-exit gate 允許「✅ 帶具名缺口」，但缺口只留給「本 WP 內不可能關閉」的項目。逐條複核後，本 WP 的每一條 FR／NFR 都已關閉，OQ 亦全數收斂。**唯一不宣稱的是效度** —— 但那從規劃期就寫在 README §5 與 GD-45 ④ 的交付宣稱上限裡，是**範圍邊界**不是缺口（承 [GD-39](../../../DECISIONS.md) ⑤ 的同一分界）。
+
+---
+
+## Surprises & Discoveries（T-exit）
+
+1. **stage14 §3 的順延註記已在採納時寫入且仍正確，本 gate 無事可做 —— 這正是 gate 文件預期的結果。** `:96` 的 WP-69／70／71 順延註記與 `:98` 的「舊候選 WP-68（v8）與本次採納的 WP-68 只是撞號」兩條皆在。⇒ [GD-15](../../../DECISIONS.md)「先採納先得」以**採納**為準而非以交付為準的設計，讓 T-exit 只需複核不需重寫；若當初等到 T-exit 才寫，中間任何一個 WP 採納都會讓那三個號再次失效。
+
+2. **T-exit 的切片含三個 `src/` 檔，但全部是註解。** 這偏離「T-exit = 純文件」的直覺，故在 [TE.7](#te7-diff-稽核) 的表格中逐檔標明性質，並以「三檔測試數維持 6／7／80」作為零行為變更的機械證據，而不是靠 commit message 宣稱。

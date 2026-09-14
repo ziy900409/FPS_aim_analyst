@@ -44,7 +44,7 @@ import { microFlickThreeTargetTestV9 } from './micro_flick_three_target_test_v9.
  *       magazine shrinks 30 -> 12 here and `spawn()` refills it (`TargetManager.ts:585`), so ammo
  *       and placement genuinely meet.
  *   (2) a tripwire for the day someone retunes `usp_s_laser` to a non-zero inaccuracy.
- * The v8 file is WP-63 delivered evidence and is left alone on scope grounds (OQ-68.5, T-exit).
+ * The v8 file's header has since been corrected in kind (WP-68 T-exit, OQ-68.5 — comment only).
  *
  * The accounted side effects are asserted rather than described: cycletime 0.10 -> 0.17 s and
  * magazine 30 -> 12, the second of which matters more for v9 than it did for v8 because v9's clock
