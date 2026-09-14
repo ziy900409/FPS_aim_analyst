@@ -54,6 +54,15 @@ export interface SettingsPanelHandle {
   setResolutionMode(mode: ResolutionMode): void;
   /** protocol 鎖定解析度條件時停用切換；WP-22 T2 消費。 */
   lockMode(locked: boolean): void;
+  /**
+   * KI-035 / BD-038（WP-63 T2）：drill 錄製中（`countdown`/`running`）停用感度與 FOV 兩個滑桿，
+   * 使一次 run 內只會有一組 mouse gain —— 否則同一份 `ticks[]` 的前後段會用不同 gain 積分，
+   * 而匯出的 `meta.mouseIntegration` 只有一組值。
+   *
+   * 比照 `lockMode()` 的既有作法同時做兩件事：`disabled`（擋操作員）與 handler guard
+   * （擋程式化 `dispatchEvent`）。單靠 `disabled` 攔不住後者。
+   */
+  lockAim(locked: boolean): void;
 }
 
 export function createSettingsPanel(opts: SettingsPanelOptions): SettingsPanelHandle {
@@ -61,6 +70,7 @@ export function createSettingsPanel(opts: SettingsPanelOptions): SettingsPanelHa
   let fov = FOV_DEFAULT;
   let resolutionMode = opts.initialResolutionMode ?? 'native';
   let resolutionModeLocked = false;
+  let aimLocked = false;
 
   const root = document.createElement('div');
   root.id = 'settings-panel';
@@ -92,11 +102,13 @@ export function createSettingsPanel(opts: SettingsPanelOptions): SettingsPanelHa
   (opts.parent ?? document.body).appendChild(root);
 
   sens.input.addEventListener('input', () => {
+    if (aimLocked) return;
     sensitivity = sens.input.valueAsNumber;
     sens.value.textContent = fmtSens(sensitivity);
     opts.onSensitivityChange(sensitivity);
   });
   fovRow.input.addEventListener('input', () => {
+    if (aimLocked) return;
     fov = fovRow.input.valueAsNumber;
     fovRow.value.textContent = fmtFov(fov);
     opts.onFovChange(fov);
@@ -134,6 +146,13 @@ export function createSettingsPanel(opts: SettingsPanelOptions): SettingsPanelHa
     lockMode(locked: boolean): void {
       resolutionModeLocked = locked;
       resolutionRow.select.disabled = locked;
+    },
+    lockAim(locked: boolean): void {
+      aimLocked = locked;
+      sens.input.disabled = locked;
+      fovRow.input.disabled = locked;
+      sens.input.style.cursor = locked ? 'not-allowed' : 'pointer';
+      fovRow.input.style.cursor = locked ? 'not-allowed' : 'pointer';
     },
   };
 }

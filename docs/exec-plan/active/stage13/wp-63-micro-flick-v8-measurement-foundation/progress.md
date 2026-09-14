@@ -2,9 +2,13 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-14 T1 完成）
+## 最新狀態（2026-09-14 T3 完成）
 
-✅ **T1 完成**（2026-09-14 14:52Z）。v8 宣告 `weaponId: 'usp_s_laser'`，斷代靠 `meta.weaponId`；NFR-63.7 以「同 kill order 下換武器 spawn trace 逐位相同（且雙方皆有實際開火）」+「`sampleSpread()` 對本武器 rng 呼叫數 === 0」兩條機械證據釘死。T2–T7 未開工；OQ-63.1 仍以具名預設假設推進（研究者未回覆）。
+✅ **T3 完成**（2026-09-14 15:42Z）。`src/metrics/targetWindows.ts` 交付 `buildTargetWindows()` + `aliveAt()`；27 個新測試全綠、NFR-63.4 符號掃描 count === 0、NFR-63.3 實測 **0.914 ms**（63 窗／7,682 ticks）與 **5.187 ms**（180 窗／22,658 ticks），遠低於 50 ms 門檻。五個 canonical derivation 檔 `git diff` 為空。**T1 的 FR-63.13 判準 `ammo === 0` 經實作複核為不可達，已就地更正為「扣彈前存量觸底」**（見 D-63.T3-2）。T4–T7 未開工。
+
+✅ **T2 完成**（2026-09-14）。[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 以 **(a)+(b) 併行**修復並以 **`BD-038`**（非規劃期寫的 `BD-035`，已撞號）入帳：感度／FOV 變更即時把新 gain 推進 recorder，且錄製中（`countdown`/`running`）停用兩個滑桿。OQ-63.4 關閉。T3–T7 未開工。
+
+✅ **T1 完成**（2026-09-14 14:52Z）。v8 宣告 `weaponId: 'usp_s_laser'`，斷代靠 `meta.weaponId`；NFR-63.7 以「同 kill order 下換武器 spawn trace 逐位相同（且雙方皆有實際開火）」+「`sampleSpread()` 對本武器 rng 呼叫數 === 0」兩條機械證據釘死。（當時）T2–T7 未開工；OQ-63.1 仍以具名預設假設推進（研究者未回覆）。
 
 ✅ **T0 entry gate 完成**（2026-09-14 12:38Z）。編號、上游與機制事實已複核；GD-44 的 Edge 全量／chromium-ci fast 與 typecheck、Vitest、build 五項正式基線 exit 0。
 
@@ -18,8 +22,8 @@
 |---|---|---|---|---|
 | T0 Entry gate | ✅ 完成 | 2026-09-14 | 2026-09-14 12:38Z | 見下方 §T0：五項基線 exit 0，Vitest 3,217 passed／2 skipped、Edge 115 passed、chromium-ci fast 102 passed／1 skipped、build 203 modules；編號、上游、五個 CodeGraph impact、三項機制與 OQ-63.1 明帳。 |
 | T1 零散布武器宣告 | ✅ 完成 | 2026-09-14 | 2026-09-14 14:52Z | 見下方 §T1：typecheck ×2 exit 0、全量 Vitest **3,224 passed／2 skipped（267 files）**（≥ T0 基線 3,217）、`vite build` exit 0、`micro-flick-live.spec.ts` 6/6 passed。 |
-| T2 Mouse gain 修復 | ⬜ 未開工 | — | — | — |
-| T3 窗界 primitive | ⬜ 未開工 | — | — | — |
+| T2 Mouse gain 修復 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T2：typecheck ×2 exit 0、全量 Vitest **3,233 passed／2 skipped（268 files）**（≥ T1 基線 3,224）、`vite build` exit 0、GD-44 Tier 1 **102 passed／1 skipped**（= T0 基線）、Tier 2 Edge 全量見該節。`BD-038` 已入帳、KI-035 翻 ✅。 |
+| T3 窗界 primitive | ✅ 完成 | 2026-09-14 | 2026-09-14 15:42Z | 見下方 §T3：typecheck ×2 exit 0、全量 Vitest **3,260 passed／2 skipped（269 files）**（≥ T2 基線 3,233，+27 = 本 task 新增）、`targetWindows.test.ts` 27 passed、NFR-63.3 實測 0.914 ms／5.187 ms、NFR-63.4 掃描 count === 0。 |
 | T4 L0 + L3 | ⬜ 未開工 | — | — | — |
 | T5 L1 幾何層 | ⬜ 未開工 | — | — | — |
 | T6 L2 + 方向 | ⬜ 未開工 | — | — | — |
@@ -99,6 +103,8 @@
 
 **離線判準 = 窗內存在 `fire.ammo === 0` 的 `fire` 事件。** 兩個前提已在本 task 確認：
 
+> ⚠️ **T3 就地更正（2026-09-14）**：上面這條字面判準**在真實匯出上永遠不成立**。[`SimLoop.ts:510`](../../../../../src/loop/SimLoop.ts) 記的 `ammo` 是**本發扣彈前**的存量（扣彈在 551 行），而 [538 行](../../../../../src/loop/SimLoop.ts) 的 while gate 是 `ammo > 0` ⇒ 能被記到的最小值是 **1**（＝這發打完就空倉）。T3 的實作判準改為 **`ammo <= 1`**，並保留 `0` 的涵蓋以防手工 fixture 與未來 schema 變動。下方「不得假設窗內 `ammo` 單調」的警告仍然成立且已照做（逐事件判，不假設單調）。詳見 D-63.T3-2。
+
 1. `fire` 事件的 `ammo` 欄位在 v8 匯出中**無條件存在**（[`SimLoop.ts`](../../../../../src/loop/SimLoop.ts) `recordFire` 路徑非選填欄位）。
 2. run 起始彈匣 === `usp_s_laser.magSize === 12`，由本 task 新增測試 `starts every magazine at the declared size` 斷言（`state.weapon.magSize` 與 `state.weapon.ammo` 皆為 12）。
 
@@ -124,7 +130,220 @@
 | `npm.cmd run test:e2e:fast -- --workers=1 tests/e2e/micro-flick-live.spec.ts` | **0** | 6 passed（1.4m）。該 spec 是全 repo 唯一載入 v8 的 e2e |
 
 
-## Decision Log（規劃期與 T0／T1）
+## T2 Mouse gain 修復（KI-035 / BD-038）（2026-09-14）
+
+### OQ-63.4 收斂：(a)+(b) 併行
+
+T2 Steps 1 要求「先確認 (b) 是否會讓既有 E2E 轉紅」。**實測：不會。** 全 repo 唯一操作感度／FOV 滑桿的
+e2e 是 [`spider-shot-wide.spec.ts`](../../../../../tests/e2e/spider-shot-wide.spec.ts) 的 `setFov()`
+（`#settings-panel` 內 FOV 那列，以 `dispatchEvent(new Event('input'))` 驅動）。加上 handler guard
+之後單跑該 spec **4/4 passed**，與未加 guard 的對照組同樣 4/4。
+
+原因（實測前的推測是錯的，記下來以免後續重蹈）：`harness.startDrill()` 跑的是
+[`fpsTestHarness`](../../../../../src/testharness/fpsTestHarness.ts) **自己那條獨立管線**（自有
+`state`／`recorder`／`targetManager`／`drillRunner`），完全不動 `main.ts` 的 live `drillRunner`。
+`syncAimSettingsLock()` 讀的是 live 那個，所以 harness 把自己泵到 `running` 並不會鎖住面板。
+
+⇒ 不需要退回「(a) only + 明帳限制」，(a)+(b) 併行按預設假設落地。**OQ-63.4 關閉。**
+
+### 修法與落點
+
+| 修法 | 落點 | 修掉哪條路徑 |
+|---|---|---|
+| **(a)** | [`main.ts`](../../../../../src/main.ts) 新增 `refreshRecorderMouseGain()`，`onSensitivityChange`／`onFovChange` 各呼叫一次 | KI-035 §3 的原始症狀：**載入 drill 之後、取鎖之前**調滑桿（相位 `idle`/`armed`，(b) 的判準根本不涵蓋） |
+| **(b)** | [`SettingsPanel.ts`](../../../../../src/ui/SettingsPanel.ts) 新增 `lockAim()`；`main.ts` 新增 `syncAimSettingsLock()` | run **進行中**改設定 —— 唯一可達路徑是「跑到一半掉鎖 ⇒ 面板重新顯示」 |
+
+`(b)` 的判準沿用 KI-007 對 `fullscreenchange` 的同一條（`countdown`/`running` = 實際錄製中），
+**不另立第二個「run 進行中」定義**；掛載點選既有的 `syncControlsVisibility()`，因為 drill 的每一次
+start／restart／換武器／換 drill／轉 `ended`，以及 `pointerLock.onChange`，都已經呼叫它。
+
+`main.ts:738-739`（原 KI-035 doc 記的 712-713，行號已漂移）與
+[`DataRecorder.ts`](../../../../../src/data/DataRecorder.ts) `configureMouseIntegration()` 的
+docstring **兩處**都宣稱了被本 bug 證偽的不變式，已一併改寫為列舉「實際保證的重設時機」與
+「仍不保證的事」。
+
+### 驗證輸出
+
+| 指令 | exit code | 數字 |
+|---|---:|---|
+| `npx.cmd vitest run src/data/DataRecorder.test.ts` | **0** | 31 passed（新增 8：3 條行為 + 2 條 `it.each` + 3 條 source 掃描） |
+| `npx.cmd vitest run src/ui/SettingsPanel.test.ts` | **0** | 2 passed（新增 1：`lockAim()`） |
+| `npm.cmd run typecheck` | **0** | `tsc --noEmit` ×2 皆成功 |
+| `npm.cmd test` | **0** | **267 files passed／1 skipped（268）**；**3,233 passed／2 skipped（3,235）**（T1 基線 3,224 ⇒ **+9 = 本 task 新增**） |
+| `npm.cmd run build` | **0** | Vite 203 modules、2.15 s，保留既有 chunk-size warning |
+| `npm.cmd run test:e2e:fast -- --workers=1` | **0** | GD-44 Tier 1：**102 passed／1 skipped**、11.1 m，**與 T0 基線逐項相同** |
+| `npm.cmd run test:e2e -- --workers=1`（run 2） | **0** | GD-44 Tier 2：Edge 全量，**115 passed／0 skipped**、17.8 m，**與 T0 基線逐項相同**。run 1 為 114 passed／1 failed，見下方 flake 判定 |
+
+**Edge run 1 的單一失敗判為 flake，非本 task 回歸**（證據而非宣稱）：
+
+| 觀察 | 值 |
+|---|---|
+| 失敗案例 | `hit-feedback-live.spec.ts:541`「換場景：離開再載回 br-field 後仍生效」`@realgpu` |
+| 失敗點 | [`support/arm.ts:120`](../../../../../tests/e2e/support/arm.ts) 的**第三個** poll：相位 10 s 未離開 `'armed'` |
+| 關鍵細節 | **第二個** poll（`armRequestedDuringTransition === true`）已通過 ⇒ `armOnPointerLock` 確實收到取鎖、`sharedState.armRequested` 已設。卡住的是其後 `armed → countdown` 的那一步 |
+| 機制 | 該轉態由 sim pump 消費 `armRequested`，而 pump 只在 `liveFrame()` 的 rAF 內跑 ⇒ headed Edge 視窗失焦／被遮擋而 rAF 被節流時就會停住。與 T2 的 diff（mouse gain 佈線 + 兩個滑桿的 `disabled`）無任何交集：本 task 不碰 arming、pointer lock、pump 或 rAF |
+| 單跑該 spec（Edge） | **3 passed**，含該失敗案例本身（1.6 m） |
+| 全量重跑（run 2） | **115 passed**、exit 0 |
+
+⚠️ 仍**具名記錄**而非抹掉：這是 T0 基線（115/115）之後首次觀察到該案例失敗。若後續 task 再遇到同一個
+`armed` 卡住，應直接登記為 KI 而不是再判一次 flake。
+
+既有 `dYaw`/`dPitch` golden 與四 FPS parity 的測試檔 `git diff` 為空（本 task 只新增測試，未改任何
+既有斷言）；`git diff --name-only` 的完整清單見下方 diff 稽核。
+
+---
+
+## T3 窗界 primitive（2026-09-14）
+
+### 交付物
+
+| 檔案 | 內容 |
+|---|---|
+| `src/metrics/targetWindows.ts`（**新**） | `buildTargetWindows()`／`aliveAt()`／`TARGET_WINDOW_FLAG_VOCABULARY`，介面照 [README §2.5](README.md) |
+| `src/metrics/targetWindows.test.ts`（**新**，27 tests） | fixture A／B／C + 旗標封閉性 + 不拋錯契約 + NFR-63.4 掃描 + NFR-63.3 效能 |
+
+既有檔案異動：**零**。`peekWindows.ts`／`trackingDerivation.ts`／`detectionDerivation.ts`／`eyeOrigin.ts`／`angularKinematics.ts` 五個 canonical 檔的 `git diff --name-only` 為空（本 task 對它們只有一個 `import { WINDOW_EPSILON_MS }` 的讀取）。
+
+### 三份 fixture（T3 Steps 7）
+
+fixture 是**合成**的 v8 形狀匯出（決定性，無 `Math.random()`，GD-5），由測試檔內的 `v8Fixture()` 生成：三顆同時存活、`next-tick` 補位、每次擊殺前一發失手、擊殺時刻一半落在 tick 邊界上一半落在 tick 之間（壓測半開區間與容差）。
+
+| Fixture | 形狀 | 針對 |
+|---|---|---|
+| **A** | 60 kills、63 個 `visible`、7,682 ticks | 窗數不變式、窗不被別顆 spawn 截斷、`aliveAt` 2↔3 顆、座標來源、效能 |
+| **B** | 3 個 `visible`、零擊殺 | `never_killed`：三個窗皆無 `tKillMs` 且延伸到 trace 末尾 |
+| **C** | 6 kills、`visible` 不帶 `targetX/Y/Z`（pre-WP-56 形狀） | `no_position`：`pos` 缺席、不回退 `ticks[].tx`、窗界本身仍正確 |
+
+fixture A 刻意複製兩個既有的靜默錯誤形態，好讓「原語不能讀它們」成為**可測的事**：`ticks[].tx/ty/tz` 一律只描述陣列首顆（[README §0.1](README.md) #1），失手 `fire` 的 `targetId` 也指向陣列首顆（同 #4）。若實作讀了其中任何一個，fixture A 的三顆座標會塌成一顆、或擊殺歸屬會全錯。
+
+### 反向證明：同一份 payload 餵給既有原語會被截斷
+
+`fixture A: 窗內確實含有別顆的 visible 事件` 這個測試把同一份 payload 同時餵給 `buildTargetWindows()` 與既有的 `buildPeekWindows()`：60 個被擊殺的窗裡，**有別顆 `visible` 橫跨在窗內**的那些，在 peek 側的 `tEnd` **全部**嚴格早於真實擊殺時刻。這把 [README §0.1](README.md) #3 從一段散文變成一條會紅的斷言。
+
+### 驗證輸出
+
+| 指令 | exit code | 數字 |
+|---|---:|---|
+| `npx.cmd vitest run src/metrics/targetWindows.test.ts` | **0** | **27 passed**（53 ms） |
+| `npm.cmd run typecheck` | **0** | `tsc --noEmit` ×2 皆成功 |
+| `npm.cmd test` | **0** | **268 files passed／1 skipped（269）**；**3,260 tests passed／2 skipped**（T2 基線 3,233 passed，**+27 = 本 task 新增**） |
+| `git diff --name-only -- <五個 canonical 檔>` | — | **空** |
+
+**NFR-63.3 實測**（`performance.now()` 同域相減，臨時 instrument 後移除）：
+
+| 規模 | 耗時 | 門檻 |
+|---|---:|---:|
+| 63 窗／7,682 ticks（實際的 60-kill v8） | **0.914 ms** | < 50 ms |
+| 180 窗／22,658 ticks（README 規劃期估的上界） | **5.187 ms** | < 50 ms |
+
+> README §0.6／NFR-63.3 寫「約 180 個 `visible` 事件」；**60 kills 的實際形狀是 63 個**（60 擊殺 + 3 殘存）。兩個規模都留了效能斷言，故無論後續採哪個數字當基準都有覆蓋。
+
+### `multiple_kill_candidates`（T3 Steps 6）
+
+只建立**槽位**：進封閉詞彙表、型別可用、封閉性測試涵蓋。判定留給 T5——它需要逐顆角誤差，而角誤差是 canonical derivation 的事，不是窗界原語的事（C-D4）。
+
+---
+
+## Decision Log（規劃期與 T0／T1／T2／T3）
+
+### D-63.T3-1 — `pos` 改為 optional，而不是用哨兵值填滿（2026-09-14）
+
+[README §2.5](README.md) 的介面草稿把 `pos` 寫成**必填**，同時 §2.6 的 FM-1 又要求缺座標時「**不**猜位置、**不**回退到 `ticks[].tx`」。兩者不可能同時成立：必填就得填一個值，而任何值都是猜的。
+
+**取 `readonly pos?:`**（`no_position` 旗標同時標上）。理由是型別要逼消費端處理缺席——填 `{0,0,0}` 會讓 T4／T5／T6 的角距在 pre-WP-56 匯出上安靜地算出一堆指向原點的數字，那正是本 WP 存在的理由（靜默錯誤比報錯貴）。`AliveSnapshot.targets` 的 `Pick<TargetWindow, 'targetId' | 'pos'>` 不受影響。
+
+實作上缺席是**真的不存在這個鍵**（條件展開，非 `pos: undefined`）；測試以 `'pos' in window === false` 釘死，免得 `JSON.stringify` 往返後語意漂移。
+
+**替代方案（被否決）**：`pos` 填 NaN 三元組 —— 否決理由為 NaN 會在下游算術裡傳播成 NaN 指標，而 FR-63.15 明文要求「缺失一律 `undefined` + 具名旗標，**不補零、不吞成 NaN**」。
+
+### D-63.T3-2 — `ammo_exhausted_in_window` 判準改為 `ammo <= 1`（2026-09-14）
+
+T1 的 FR-63.13 契約寫「逐事件判 `fire.ammo === 0`」。T3 實作時複核原始碼發現這個判準**不可達**：
+
+| 位置 | 事實 |
+|---|---|
+| [`SimLoop.ts:510`](../../../../../src/loop/SimLoop.ts) | `ammo: state.weapon.ammo` —— 記的是**本發扣彈前**的存量 |
+| [`SimLoop.ts:551`](../../../../../src/loop/SimLoop.ts) | `if (fired) state.weapon.ammo--;` —— 扣彈發生在記錄**之後** |
+| [`SimLoop.ts:538`](../../../../../src/loop/SimLoop.ts) | while gate `state.weapon.ammo > 0` —— 存量 0 時根本不會產生 `fire` 事件 |
+
+⇒ 匯出裡 `fire.ammo` 的最小可能值是 **1**（＝這發打完就空倉），`0` 永遠不出現。照字面實作會得到一個**永遠不會亮的旗標**，而它守的正是 FM-4 那條「該窗有一段按住但不出彈的時間洞」的殘留風險——不亮等於沒守。
+
+**取 `event.ammo !== undefined && event.ammo <= 1`**，保留 `0` 的涵蓋（手工 fixture、未來 schema 變動）。三條測試分別釘死 `ammo: 1` 會亮、`ammo: 0` 也會亮、`ammo: 11/10` 與缺欄位不亮。T1 的契約段已就地加更正框（比照本 WP 對 GD-38 ② 的 inline 更正慣例，D-63-P6）。
+
+T1 另外警告的「`ammo` 不單調（`spawn()` 每次補滿）」仍然成立，實作照做：逐事件判，不假設窗內單調、不取 min、不看首尾差。
+
+**替代方案（被否決）**：照字面留 `=== 0` 並把差異記成 OQ —— 否決理由為那會讓一個**已知失效**的旗標帶著綠燈進 T4／T5／T6，而 T7 的 harness 不會替它補課（合成 fixture 是我們自己寫的，寫成 0 就會過）。
+
+### D-63.T3-3 — NFR-63.4 的符號掃描取**大小寫敏感**（2026-09-14）
+
+NFR-63.4 要求 `epsilon`／`onTarget`／`eyeHeight`／`SIM_TO_WORLD`／`acos` 五個符號直接出現次數為 0；T3 的 DoD 同時要求 `WINDOW_EPSILON_MS` 必須是**引用**而非重新定義。不分大小寫的掃描會讓這兩條互相矛盾（`WINDOW_EPSILON_MS` 含 `EPSILON`）。
+
+**取大小寫敏感**：五個禁用名在各自的 canonical 實作裡就是這個拼法（`trackingDerivation.ts` 的 `epsilonDeg`／`onTarget`、`eyeOrigin.ts` 的 `eyeHeight`、`loop/constants.ts` 的 `SIM_TO_WORLD`、`Math.acos`），已逐一複核。掃描另外加了三組補強，讓「不重寫幾何」不靠單一字串：禁 `Math` 的三角／`hypot` 家族、禁 `angularEccentricityDeg`／`omegaDegPerSec`／`resolveEyeOrigin`／`deriveTracking*`／`deriveDetection*`、禁 `RAD_TO_DEG`／`DEG_TO_RAD`。
+
+同步記一個掃描本身的陷阱：DOM 全域**不能**用「`window` 加點」的 pattern 掃——`window` 正是本模組的核心領域詞（target window），那個 pattern 會把 `window.flags` 一起打死。改掃 DOM 專屬成員（`document`／`location`／`navigator`／`addEventListener`／…）與 `globalThis`／`self`。
+
+### D-63.T3-4 — 擊殺歸屬收斂在「這一次 presentation」的佔用區間內（2026-09-14）
+
+[`TargetManager.ts:587`](../../../../../src/sim/TargetManager.ts) 現況是遞增計數器產 id，一場之內全域唯一 ⇒ 「找第一個 `hit === true` 且 `targetId` 相符的 `fire`」已經夠用。**實作仍額外把搜尋右界收在「同 id 的下一次 `visible`」**，多一個反向 pass（O(n)）。
+
+理由是窗界原語不該把 id 生成策略這個實作產物當前提——若日後有人改成 slot-based 或 pooled id，字面判準會安靜地把第二次 presentation 的擊殺歸給第一次的窗，而那個錯誤的形態（歸屬到錯的目標、數字仍然合理）正是本 WP §0.1 要消滅的那一類。以 `同一個 id 被重複使用時，擊殺只歸屬給當次 presentation` 一測釘死。
+
+### D-63.T2-1 — KI-035 取 (a)+(b) 併行；`BD-035` 撞號改取 `BD-038`（2026-09-14）
+
+**OQ-63.4 關閉**：T2 Steps 1 的條件（「若 (b) 讓既有 E2E 轉紅就退回 (a) only」）**未觸發**，故按預設
+假設 (a)+(b) 併行落地。全 repo 唯一操作感度／FOV 滑桿的 e2e 是
+[`spider-shot-wide.spec.ts`](../../../../../tests/e2e/spider-shot-wide.spec.ts) 的 `setFov()`；加上
+handler guard 之後單跑該 spec **4/4 passed**，與未加 guard 的對照組相同（兩次各 1.2–1.3 m）。
+
+**編號偏離（明帳）**：T2 task 檔與 KI-035 doc 都寫「開立 `BD-035`」，那是規劃期按 KI 號推的。實況
+`BD-n` 與 `KI-n` **不同步** —— `BD-035`／`BD-036`／`BD-037` 已分別由 KI-038／KI-037／KI-039 取用，
+`BUGFIX-DECISIONS.md` 最大號為 `BD-037`。依 [GD-15](../../../DECISIONS.md)「先採納先得」改取
+**`BD-038`**，並在 KI-035 doc 抬頭具名記錄這次改號，免得後續讀者照舊文去找 `BD-035`。順帶補上
+`BUGFIX-DECISIONS.md` §1 索引**原本缺的 KI-035 列**。
+
+**Alternatives considered**：
+- **(a) only** —— 駁回。它讓 run **之間**的變更即時生效，但 run **內**改設定仍會讓同一份 `ticks[]`
+  前後段用不同 gain，而 `meta` 只有一組值。既然 (b) 實測不破壞任何既有 spec，沒有理由留著這個缺口。
+- **(b) only** —— 駁回，而且是**修不到 bug 本身**：KI-035 §3 的症狀發生在「載入 drill 之後、取鎖之前」，
+  相位是 `idle`/`armed`，(b) 的 `countdown`/`running` 判準根本不涵蓋。
+- **(c) provenance 化**（`meta` 增加 gain 變更事件序列）—— 駁回，要動匯出 schema，而 (a)+(b) 之後
+  run 內本就不會有第二組 gain，(c) 付的代價買不到對應的資訊。
+- **`lockAim()` 只做 `disabled` 不加 handler guard** —— 這是實測前準備好的退路（`disabled` 擋操作員，
+  程式化 `dispatchEvent` 仍通過 ⇒ 保證 dev-only harness 不受影響）。實測顯示 guard 不破壞既有 spec，
+  故採**與 `lockMode()` 相同的既有作法**（`disabled` + guard），不為了保留退路而弱化語意。
+
+### D-63.T2-2 — (b) 的判準與掛載點都沿用既有的，不新增第二套（2026-09-14）
+
+**判準**：`drillRunner.phase === 'countdown' || 'running'`，與 KI-007 對 `fullscreenchange`、
+以及 WP-60 對 `pointer_lock` 事件記錄用的是**同一條**。不新增「run 進行中」的第二個定義。
+
+**掛載點**：`syncControlsVisibility()` 的第一行（在 `controls === undefined` 的 early return **之前**）。
+理由是那個函式已經是全 app 的 UI 同步匯流點 —— `pointerLock.onChange`、
+`restartActiveDrill()`、`loadWeaponById()`、`activateDrill()`、以及 `liveFrame()` 轉 `ended` 時都會呼叫它。
+唯一能在錄製中碰到滑桿的路徑是「run 到一半掉鎖 ⇒ 面板重新顯示」，而那正是 `pointerLock.onChange`。
+
+**放在 `controls === undefined` early return 之前，且已核對過 KI-013 的 TDZ 顧慮**：`settingsPanel`（`main.ts:519`）
+與 `drillRunner`（`:1114`）之間**沒有任何 top-level await**，模組評估到 `drillRunner` 為止都是同步的
+⇒ 任何 handler 能跑到 `syncControlsVisibility()` 時，兩者必定已初始化。（`controls` 的 early return
+之所以存在，是因為 `controls` 的賦值點在 dev harness／`measureDisplayHz` 的 top-level await **之後**。）
+這條推理已寫進該行上方的註解，並具名標出「日後若有人在那兩個宣告之間插入 top-level await，就必須把
+這一行移到 early return 之後」——移動不損語意，因為那個窗內相位不可能是 `countdown`/`running`。
+
+**Alternatives considered**：在 `liveFrame()` 每幀同步 —— 駁回，per-frame 做一件只在相位轉換時會變的事，
+而且會把 UI 狀態塞進 render 熱路徑；新增一組 drillRunner 的 phase-change 訂閱 —— 駁回，`DrillRunner`
+目前沒有這種 callback，為此加一個公開 API 的代價遠大於重用既有匯流點。
+
+### D-63.T2-3 — `refreshRecorderMouseGain()` 需要就緒旗標，這不是可省的防禦性程式（2026-09-14）
+
+`createSettingsPanel()` 在**建構當下**就把 sensitivity/FOV 兩個預設值各推過 callback 一次
+（面板自述為這兩個設定的單一真實來源）。而在 `main.ts` 裡 `settingsPanel`（:519）與 `recorder`（:797）
+都是**更下方**才宣告的 `const` ⇒ 那一次推送若碰 recorder 會直接 `ReferenceError`（TDZ），app 開不起來。
+`typeof recorder === 'undefined'` 也擋不住（`typeof` 對 TDZ 變數同樣拋錯），故用一個
+`recorderMouseGainWired` 布林。建構時刻的 gain 不會漏：
+`createDataRecorder({ mouseIntegration: { gain: currentMouseGain() } })` 讀的是同一組設定。
+
+**Alternatives considered**：把 `createSettingsPanel()` 移到 `recorder` 之後 —— 駁回，`cameraController`
+的初值推送與 `topLeftControls` 的組裝順序都綁在現位置，為一行接線搬動 app 啟動順序是不對價的風險。
 
 ### D-63.T1-1 — v8 進 `DECLARED_WEAPON_BY_DRILL_ID`，武器成為不可覆蓋的固定因子（2026-09-14）
 
@@ -226,7 +445,7 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 
 ---
 
-## Surprises & Discoveries（規劃期、T0 與 T1）
+## Surprises & Discoveries（規劃期、T0、T1、T2 與 T3）
 
 **T0 新發現（2026-09-14）**：`npm.cmd run build` 在 worktree 的 sandbox 內兩次於 esbuild 讀取 `vite.config.ts` 時遭 `Access is denied`，第二次已使用獨立 `npm ci --offline` 安裝而非 junction；在 sandbox 外同一 HEAD、同一 worktree 重跑 exit 0、203 modules。這個差異屬執行環境，非 source failure。舊 Playwright 指令在 GD-44 後混跑兩個 project，SwiftShader 上的三個 `@realgpu` 案例失敗，故按 D-63.T0-2 改用正式分層。另 [WP-59 README](../../stage12/wp-59-micro-flick-v8-replacement-spacing/README.md) 的 T4／T-exit 仍未勾，雖 HEAD 已含 v8 replacement E2E；後續角距分析必須記錄 HEAD，不能將存在測試誤寫成 WP-59 已正式退出。
 
@@ -250,6 +469,23 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 
 9. **（T1）零散布讓 v8 的 e2e 只會更穩，不會更脆。** [`micro-flick-live.spec.ts`](../../../../../tests/e2e/micro-flick-live.spec.ts) 是全 repo 唯一載入 v8 的 e2e；其 500 ms 敲擊節奏的註解明寫是為了讓 **ak47 的 punch 與 spread** 在兩發之間衰減完（該段描述的是 v1，不是 v8）。v8 換零散布後這層補償對 v8 不再需要；6/6 全綠，且未改動該 spec 任何一行。
 
+10. **（T2）`BD-n` 與 `KI-n` 不同步，規劃期照 KI 號推的 `BD-035` 已被別人用掉。** `BD-035`／`BD-036`／`BD-037` 分別屬於 KI-038／KI-037／KI-039。⇒ 本 WP 改取 `BD-038`（D-63.T2-1）。同時發現 `BUGFIX-DECISIONS.md` §1 的索引表**根本沒有 KI-035 這一列**（KI-034 之後直接跳 KI-036），本 task 補上。**教訓**：帳本的號要在**開工當下**重查，不能沿用規劃期推的號；GD-35 ② 對 WP／GD 號的紀律，對 BD 號同樣適用。
+
+11. **（T2）`fpsTestHarness` 有自己的 `drillRunner`，e2e 的 `harness.startDrill()` 不會讓 live 相位變成 `running`。** 這件事推翻了本 task 的第一個假設：原本預期
+    [`spider-shot-wide.spec.ts`](../../../../../tests/e2e/spider-shot-wide.spec.ts) 在 `running` 中改 FOV 會被 (b) 的 handler guard 擋下而轉紅，實測 4/4 全綠。harness 自述「每次 `startDrill()` 重建，形成乾淨、與生產同源的**獨立**管線」——`state`／`recorder`／`targetManager`／`drillRunner` 全都是它自己的。⇒ **任何以 `drillRunner.phase` 為判準的新 UI 行為，都不會被 harness 驅動的 e2e 覆蓋到**；要測那種行為必須走真 pointer lock 的 live 路徑（`armAndWaitRunning`）。
+
+12. **（T2）`resolveMouseGain()` 的 `hipStep` 不看 FOV。** 公式是 `sensitivity × RAD_PER_COUNT`；FOV 只進 `adsStep`（`ads.sensitivityRatio × (ads.fovDeg / hipFovDeg)`）。⇒ **KI-035 的 FOV 半邊只咬得到有 `ads` 的武器**；v8 的 `usp_s_laser` 無 `ads` 區塊（T1 已確認），改 FOV 對它的 `dYaw` 逐位無影響。以 `DataRecorder.test.ts` 的斷言 (4) 釘死，免得後續讀者把「FOV 也會污染 dYaw」當成所有 drill 的通則。
+
+13. **（T2）同一個被證偽的不變式在 repo 裡寫了兩遍。** KI-035 只點名 `main.ts` 的「兩者不可能發散」；實作時發現 [`DataRecorder.ts`](../../../../../src/data/DataRecorder.ts) `configureMouseIntegration()` 的 docstring 另有一份同義宣稱（「SettingsPanel 於 Pointer Lock 鎖定中整組隱藏 ⇒ drill 內 sensitivity/FOV 不可能變動」）。後者的推論漏掉的正是 KI-035 的路徑：**載入 drill 之後、取鎖之前**面板是顯示的。兩處都已改寫為列舉「實際保證的重設時機」與「仍不保證的事」。⇒ 診斷 KI 時，值得 grep 同一個不變式宣稱的其他複本。
+
+14. **（T3）`fire.ammo` 記的是扣彈前的存量 ⇒ 規劃期的 `=== 0` 判準永遠不會亮。** 見 D-63.T3-2。**證據**：`SimLoop.ts:510` 寫 `ammo: state.weapon.ammo`，`551` 才做遞減，而 `538` 的 while gate 是 `ammo > 0`。⇒ 匯出的最小值是 1。教訓：規劃期讀欄位名推語意（`ammo === 0` = 空倉）很自然，但「記錄點相對於狀態更新的**位置**」才決定欄位到底是什麼。
+
+15. **（T3）v8 的 60 kills 產生 63 個 `visible`，不是 README 估的約 180 個。** 每次擊殺補位一顆 ⇒ `visible` 數 = 擊殺數 + 期末存活數（3）。**證據**：fixture A 生成器實測 `visibleCount === 63`、`ticks.length === 7682`。NFR-63.3 的兩個數字（180 visible／7,700 ticks）其實對應不到同一個 run。效能斷言兩個規模都留了（0.914 ms／5.187 ms），故此差異不影響閘門，但 T4–T7 若要引用「樣本數」須以實際形狀為準。
+
+16. **（T3）`window` 是本模組的領域詞，讓「禁 DOM 全域」的標準掃描 pattern 直接誤殺。** 既有 `mouseSampleGaps.test.ts` 的純函式掃描以「`window` 加點」禁 DOM；同一條 pattern 套到 `targetWindows.ts` 會打中 `window.flags`／`window.tKillMs` 等數十處領域用法。**證據**：第一次跑該斷言轉紅（`expected 'import type { DrillEvent } …' not to match`）。⇒ 複製既有掃描規則時，要先確認被掃模組的**詞彙**與那條規則的假設不衝突。
+
+14. **（T2）Edge 全量首次出現 `armed` 卡住的 flake。** `hit-feedback-live.spec.ts:541`（`@realgpu`）在全量第一次跑時停在 `'armed'` 10 s；單跑該 spec 3/3、全量重跑 115/115。可疑機制是 `armed → countdown` 由 sim pump 消費 `armRequested`，而 pump 只在 rAF 內跑 ⇒ headed Edge 視窗失焦／被遮擋時會停住。⇒ **`armDrill()` 的第三個 poll 對 rAF 節流沒有免疫力**；它的前兩個 poll 都直接觀測狀態，只有這一個依賴 render loop 有在跑。後續若再遇到，應登記 KI 而非再判一次 flake（判定與證據見 §T2）。
+
 ## Open Questions
 
 | OQ | 問題 | 預設假設 | Owner | Deadline |
@@ -257,7 +493,7 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 | **OQ-63.1** | 既有 v8 匯出是否屬於已凍結的研究 cohort？ | **2026-09-14 11:42Z 以預設「否」明帳推進**，不是研究者回覆；T1 直接改 fixture，若 T1 前確認 frozen 則轉 v9（見 §T0） | 研究者 | T1 開工前 |
 | **OQ-63.2** | `selectionCostRatio` 貪婪基準線的起點？ | 被殺目標中心（非擊殺瞬間瞄準點） | 研究者 | T4 開工前 |
 | **OQ-63.3** | `?rawMouse=1` 是否為 v8 的強制採集條件？ | 否，但預設開啟；不進本 WP 任何指標定義 | 研究者 | T7 開工前 |
-| **OQ-63.4** | KI-035 修法取 (a)、(b) 或併行？ | (a)+(b) 併行 | 實作者 | T2 開工時 |
+| ~~OQ-63.4~~ | ~~KI-035 修法取 (a)、(b) 或併行？~~ | ✅ **已關閉（2026-09-14，T2）：(a)+(b) 併行**。(b) 實測不讓任何既有 e2e 轉紅（`spider-shot-wide.spec.ts` 4/4），故不需退回 (a) only。見 D-63.T2-1 | — | — |
 | ~~OQ-63.5~~ | ~~GD-39 ③（GD-38 ②(b) 更正）是否提前單獨入帳？~~ | ✅ **已關閉（2026-09-10）：是**，已寫入 GD-38 ② inline 更正段。理由見 D-63-P6 修訂 | — | — |
 
 ---

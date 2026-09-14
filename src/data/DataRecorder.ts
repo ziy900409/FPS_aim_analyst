@@ -139,8 +139,14 @@ export interface DataRecorder {
   /** KI-005 / A（FR-A-1）：未啟用時為 `undefined`；`applyInput` 以此判定是否進入 mouse 分支。 */
   readonly mouseIntegration?: MouseIntegrationConfig;
   /**
-   * KI-005 / A：drill 開始時由 main.ts 以當前 settings/weapon 重新佈線。SettingsPanel 於 Pointer
-   * Lock 鎖定中整組隱藏（KI-003）⇒ drill 內 sensitivity/FOV 不可能變動，單一快照即足夠。
+   * KI-005 / A：drill 開始時由 main.ts 以當前 settings/weapon 重新佈線。
+   *
+   * KI-035（2026-09-14 更正）：原註解宣稱「SettingsPanel 於 Pointer Lock 鎖定中整組隱藏 ⇒ drill 內
+   * sensitivity/FOV 不可能變動」。該推論漏掉「**載入 drill 之後、取鎖之前**調滑桿」這條路徑——面板
+   * 那時是顯示的，而舊實作只在換武器／換 drill 重設 gain ⇒ `ticks[]` 用舊 gain 積分、匯出的
+   * `meta.mouseIntegration` 用新設定重算，兩者發散且離線不可察覺。現在 main.ts 的
+   * `refreshRecorderMouseGain()` 也掛在感度／FOV 變更上（BD-038 (a)），故本方法的呼叫時機是
+   * 「建構 + 換武器 + 換 drill + 設定變更」四種，而非三種。
    */
   configureMouseIntegration(config: MouseIntegrationConfig | undefined): void;
   /**

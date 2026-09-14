@@ -1,7 +1,9 @@
 # KI-035 — 感度／FOV 變更後 `dYaw`/`dPitch` 沿用舊 gain,而 `meta.mouseIntegration` 報新值
 
-> 狀態:🔴 **未修**(2026-09-10 登記)· 類別:量測效度(silent data corruption)
-> 修復決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) `BD-035`(尚未開立)
+> 狀態:✅ **已修**(2026-09-10 登記 → 2026-09-14 修復,[WP-63](../exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) T2)· 類別:量測效度(silent data corruption)
+> 修復決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) **`BD-038`**
+> ⚠️ 規劃期本檔與 T2 task 檔都寫「`BD-035`」,那是按 KI 號推的。實況 `BD-n` 與 `KI-n` 不同步,
+> `BD-035` 已由 KI-038 取用 ⇒ 依 GD-15「先採納先得」改取 **BD-038**。
 > 發現於:[WP-63](../exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) 規劃期稽核
 
 ---
@@ -59,7 +61,7 @@ sim 決定性亦不受影響 —— 受污染的只有 tick 窗積分角位移�
 
 ⇒ **這是必須在寫入端修的問題,不是離線端可補救的問題。**
 
-## 5. 候選修法(未拍板,BD-035 決定)
+## 5. 候選修法(規劃期,已由 `BD-038` 拍板,見 §5b)
 
 | 方案 | 內容 | 代價 |
 |---|---|---|
@@ -70,13 +72,37 @@ sim 決定性亦不受影響 —— 受污染的只有 tick 窗積分角位移�
 **規劃期傾向 (a) + (b) 併行**:(a) 讓任何時刻的 gain 都是最新值,(b) 讓一次 run 內不會出現兩組 gain。
 (c) 留給「確實需要 run 內變更設定」的情境,目前無此需求。
 
+## 5b. 實際修法(2026-09-14,`BD-038`)
+
+**採 (a) + (b) 併行**,兩者修的不是同一條路徑,缺一不可:
+
+| 修法 | 落點 | 修掉哪條路徑 |
+|---|---|---|
+| **(a)** | `main.ts` 新增 `refreshRecorderMouseGain()`,`onSensitivityChange`/`onFovChange` 各呼叫一次 | §3 的原始症狀:**載入 drill 之後、取鎖之前**調滑桿(相位為 `idle`/`armed`,(b) 的判準不涵蓋) |
+| **(b)** | `SettingsPanel` 新增 `lockAim()`;`main.ts` 新增 `syncAimSettingsLock()`,在 `drillRunner.phase` 為 `countdown`/`running` 時停用兩個滑桿 | run **進行中**改設定(唯一可達路徑 = 跑到一半掉鎖 ⇒ 面板重新顯示) |
+
+兩個實作細節值得記住:
+
+1. **(a) 需要就緒旗標**。`createSettingsPanel()` 在**建構當下**就把兩個預設值推過 callback 一次,
+   而 `settingsPanel` 與 `recorder` 在 `main.ts` 都是下方才宣告的 `const`(TDZ)⇒ 直接呼叫會
+   `ReferenceError`。`recorderMouseGainWired` 讓那一次推送直接略過;該時刻的 gain 由
+   `createDataRecorder({ mouseIntegration: { gain: currentMouseGain() } })` 自己帶,是同一份值。
+2. **FOV 半邊只咬得到可開鏡的武器**。`resolveMouseGain()` 的 `hipStep` 只取決於 sensitivity,
+   FOV 只進 `adsStep`(`ads.fovDeg / hipFovDeg`)⇒ 無 `ads` 的武器(例如 v8 的 `usp_s_laser`)
+   改 FOV 對 `dYaw` 逐位無影響。以 `DataRecorder.test.ts` 的斷言 (4) 釘死。
+
+**未提供回溯修正**:§4 已論證修前的匯出無法事後判定積分用了哪組 gain。凡「載入 drill 後才調過設定」
+的舊 run,其 `dYaw`/`dPitch` 一律不可信(`BD-038` 的 OQ-KI35-1)。
+
 ## 6. 驗收(修復時)
 
-- [ ] 新增測試:建構 recorder → 變更 sensitivity → 積分一批 mouse delta → 斷言
+- [x] 新增測試:建構 recorder → 變更 sensitivity → 積分一批 mouse delta → 斷言
       `ticks[].dYaw` 使用**新** gain,且與 `meta.mouseIntegration.hipStep` 對得上
-- [ ] 新增測試:同上但變更 FOV
-- [ ] 既有 `dYaw`/`dPitch` golden 與四 FPS parity 斷言逐位不變
-- [ ] `npm run typecheck` / 全量 Vitest / `vite build` 皆 exit 0
+      (`DataRecorder.test.ts`「sensitivity 變更後,積分用新 gain…」)
+- [x] 新增測試:同上但變更 FOV(「FOV 變更後,ADS 態積分用新 adsStep…」)
+- [x] 既有 `dYaw`/`dPitch` golden 與四 FPS parity 斷言逐位不變(那些測試檔 `git diff` 為空)
+- [x] `npm run typecheck` / 全量 Vitest / `vite build` 皆 exit 0
+      (3,233 passed / 2 skipped;數字與 Playwright 兩層閘記於 WP-63 `progress.md` §T2)
 
 ## 7. 相關
 
