@@ -5,7 +5,7 @@
 
 ## Tasks
 
-- [ ] **T0** — [Entry gate](T0-entry-gate.md)：編號重查、上游驗證、基線實測、`endCondition` schema 複核、OQ-68.2 收斂 · 0.5 d · Low
+- [x] ✅ **T0** — [Entry gate](T0-entry-gate.md)：編號重查、上游驗證、基線實測、`endCondition` schema 複核、OQ-68.2 收斂 · 0.5 d · Low —— 2026-09-14 完成，見 [progress §T0](progress.md)
 - [ ] **T1** — [零散布武器宣告](T1-zero-spread-weapon.md)：v9 `weaponId: 'usp_s_laser'` + roster 登記 + 斷代 · 1 d · Med
 - [ ] **T2** — [計時制右界](T2-time-limited-valid-span.md)：`validSpanMs` 依 `endCondition` 分流 + v9 FPS parity · 1 d · **High**
 - [ ] **T-exit** — [Exit gate](T-exit-gate.md)：FR／NFR 對帳、diff 稽核、GD-45 入帳、五處索引更新 · 0.5 d
