@@ -31,6 +31,8 @@
 
 **操作人員入口**：[guideline/operator-manual.md](guideline/operator-manual.md) — 給實際跑一場測試的人（研究員 / 教練 / 施測助理）的使用說明：安裝、啟動、Session Plan 四步流程、資料落地、故障排除、一頁 SOP。深度主題（`operational/analysis-*.md`、runbook、schema）仍以各自檔案為權威，operator manual 只做導航與操作步驟，不重述它們的定義。
 
+**CI／驗證閘**：[guideline/ci-tiers.md](guideline/ci-tiers.md) — 兩層驗證閘的分工（Tier 1 hosted runner 快速子集 vs. Tier 2 self-hosted 真 GPU 定版閘）、`@slow` 的判準、self-hosted runner 註冊步驟、發 release 時的閘門順序。
+
 ---
 
 ## 3. 執行計畫（`docs/exec-plan/`）

@@ -23,6 +23,24 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-44 🟡 CI 驗證閘分兩層 — cloud runner 抓迴歸、self-hosted 真 GPU 才是定版閘 (2026-09-14, v0.1.0 定版後)
+
+| | |
+|---|---|
+| **發現處** | v0.1.0 定版時盤點 [`ci.yml`](../../.github/workflows/ci.yml)，發現 CI 只跑 `typecheck` + `vitest`，**Playwright 從第一天起就不在 CI 裡**。三道閘的第三道一直靠人記得在本機跑 —— v0.1.0 的 115 passed 就是這樣來的，只留在 commit message 裡，不可重現。 |
+| **① 編號** | 落帳前重查本檔：已落帳最大為 **GD-42**，**GD-43 已由 [WP-67](active/stage13/wp-67-export-opening-protocol-marker/README.md) 預約**（尚未落帳）⇒ 取 **GD-44**，不佔用 WP-67 的預約號。 |
+| **② 為何不能整套搬進 hosted CI（三個具名障礙）** | (a) [`backend.spec.ts`](../../tests/e2e/backend.spec.ts) 硬斷言 `backend === 'webgpu'`；GitHub-hosted runner **無 GPU**，`WebGPURenderer` 會依 [`createRenderer.ts`](../../src/render/createRenderer.ts) 的設計 fallback 成 WebGL2（那正是 `resolveBackend()` 存在的理由）⇒ 必紅。(b) `channel: 'msedge'` 需要系統安裝的 Edge。(c) **時間**：`session-orchestrator.spec.ts` 單檔 731s 序列工作量，最長單一測試 **5.4 分鐘**，且耗時來自**等待真實 rest／sim 秒數** ⇒ 加 worker 不會變快。再疊上 [KI-030](../known_issue/KI-030-history-e2e-flaky-under-parallel-workers.md)（多 worker flaky、根因未定），整套進每個 PR 最可能的結果是**常態紅、大家學會忽略的 CI**，比沒有更糟。 |
+| **③ 決策：兩層（D-CI-1）** | **Tier 1 `e2e-fast`**：每個 PR／push，`ubuntu-latest` + Playwright 內建 chromium（`chromium-ci` project，`--enable-unsafe-swiftshader`），`--grep-invert @slow` ⇒ 110 tests。**Tier 2 `e2e-full`**：tag push（`v*`）／每日／手動，`[self-hosted, windows]` 真 GPU + Edge，跑 `npm run test:ci` 全套 115 tests。**Tier 1 抓迴歸，Tier 2 才是定版閘。** 理由：這個 suite 的環境**就是量測儀器的環境**（階段 A 鎖桌面 Chromium、`crossOriginIsolated`、真 WebGPU backend），cloud runner 在原理上產不出「這是合格量測環境」的證據。 |
+| **④ webgpu 斷言改由 project metadata 把關（D-CI-2）** | `backend.spec.ts` 的 `expect(backend).toBe('webgpu')` 以 `testInfo.project.metadata.realGpu !== true` 跳過。**這不是放寬斷言**，是把原本隱含的前提（「受測機 = 有 GPU 的研究者桌機」，WP-0 T0 記錄）**寫明**成 project 屬性：`edge` project `realGpu: true`（強制執行）、`chromium-ci` `realGpu: false`（跳過）。webgpu 證據仍然只由 Tier 2 產生，總量不減。 |
+| **⑤ `@slow` 的判準（D-CI-3）** | `@slow` = **在等真實時間**（rest 秒數、sim 秒數），不是「碰巧比較慢」。目前 5 個：`session-orchestrator.spec.ts` ×4、`tracking-pilot-live.spec.ts` ×1。**新增測試時由作者自行判斷並標註** —— 這是每個後續 WP 都要遵守的慣例，故落全域帳本而非 per-WP `progress.md`。 |
+| **⑥ 順帶解 KI-030 的死結** | `use: { trace: 'on-first-retry' }` 加進 [`playwright.config.ts`](../../playwright.config.ts)。KI-030 的根因至今未定，**正是因為「失敗當下的錯誤文字未被保存」**；`retries` 只在 CI 開啟 ⇒ trace 也只在 CI 產出，本機零成本。失敗時 workflow 上傳 `test-results/`。 |
+| **⑦ self-hosted 的安全邊界** | `e2e-full.yml` 的觸發**刻意不含 `pull_request`**。本 repo 為 **public**，self-hosted runner 接 fork PR 等於讓任意人在研究者機器上執行程式碼。註冊步驟與此限制寫在 [guideline/ci-tiers.md](../guideline/ci-tiers.md)。 |
+| **⑩ 實測修正：Tier 1 的真實邊界（2026-09-14，PR #45 首跑）** | hosted runner 實測 **102 passed / 7 failed / 1 skipped（18.6m）**（skipped = webgpu 斷言，閘門如預期）。7 個失敗**全屬同一類：斷言的對象就是環境本身** —— 效能預算（`micro_flick` 的 1,500 ms P95）、需真實算繪迴圈驅動準心的命中探測（`hit-feedback-live` ×3，錯誤為「命中未發生 taps=0」）、重度 replay 與資源生命週期（50× 循環量 listener/rAF 增長）。**在 SwiftShader 上斷言 1,500 ms P95 不是驗證產品、是驗證 runner**，結果無意義 ⇒ 新增第二個 tag **`@realgpu`**，與 `@slow` **理由不同不可合併**（一個是「等真實時間」、一個是「斷言環境本身」）。Tier 1 範圍 110 → **103 tests**；兩個 tag 的測試**都仍在 Tier 2 全量執行**，覆蓋率未減少，只是搬家。 |
+| **⑧ 意外：`backend.spec.ts` 的既有測試缺陷（2026-09-14 實測發現）** | 在 `chromium-ci` 首跑時 `backend.spec.ts` **failed 而非 skipped**。根因不是 GPU：`createRenderer` 以**同一個** `'[render backend]'` 前綴發兩種訊息（`console.info` 帶 backend 值、`console.warn` 帶 divergence 警告），而 spec 只比對前綴 ⇒ `backends[0]` 收到的是**警告全文**。這個缺陷在有 GPU 的機器上永遠打不到（警告從不觸發），Playwright 內建 chromium 卻穩定重現（有 `navigator.gpu`、取不到 adapter）—— 正是 spec 原註解說「無法在真實瀏覽器穩定重現」的那個 divergence。修法：依 `msg.type()` 分流，divergence 變成可觀測訊號並斷言其與實際 backend 一致。**這是 Tier 1 的第一個實質產出**：它打到了 Tier 2 環境在原理上打不到的路徑。 |
+| **⑨ 意外：軟體算繪下的平行度（2026-09-14 實測）** | 本機以預設 worker 數跑 `chromium-ci` 子集 → **23 failed**，但逐一單獨重跑**全部通過**（含純 DOM 的 KI-018 打字測試與算繪吃重的 hit-feedback live）。⇒ 功能無迴歸，是 SwiftShader 軟體算繪把每頁成本拉高後的**逾時**。故 config 固定 `workers: 2`（CI）與 `timeout: 90s`（CI），不依賴 `cpus()/2` 預設。**判讀紀律**：Tier 1 紅燈時先問「是不是逾時」再問「是不是迴歸」。 |
+| **影響面** | `playwright.config.ts`（新增 `chromium-ci` project + trace）、`backend.spec.ts`（斷言加閘）、5 個測試標題加 `@slow`、`package.json`（`test:e2e` 綁 `--project=edge`、新增 `test:e2e:fast`、`test:ci` 綁 project）、`ci.yml`（新增 `e2e-fast` job）、新增 `e2e-full.yml`、新增 [guideline/ci-tiers.md](../guideline/ci-tiers.md)。**不改任何 sim／指標／匯出語意**。 |
+| **狀態** | 🟡 **Tier 1 已落地並驗證；Tier 2 待 runner 註冊**。self-hosted runner 的註冊需要 repo admin 在 GitHub Settings 操作 + 在機器上跑 `config.cmd`，**不是本次變更能自動完成的**，故 `e2e-full.yml` 在 runner 上線前不會有任何 run 被撿走。待辦：註冊 runner（步驟見 ci-tiers.md §3）→ 手動觸發一次確認綠 → 下一版起由 tag push 自動當定版閘。 |
+
 ### GD-42 ✅ WP-66 命中視覺回饋 — render-only 環形格、config gate、效度斷代與啟用清單收斂 (2026-09-12, T-exit)
 
 | | |

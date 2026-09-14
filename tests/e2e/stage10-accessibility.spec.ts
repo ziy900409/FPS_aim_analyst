@@ -119,7 +119,7 @@ async function tabUntilButton(page: Page, needle: string, maxPresses = 12): Prom
 }
 
 test.describe('WP-51 T4 — keyboard-only History -> Replay journey (FR-51.13/NFR-51.6)', () => {
-  test('launch -> History -> Participant -> drill -> run -> Replay controls/events -> Back is completable with only Tab/Enter/Space/Arrow keys', async ({
+  test('launch -> History -> Participant -> drill -> run -> Replay controls/events -> Back is completable with only Tab/Enter/Space/Arrow keys @realgpu', async ({
     page,
     request,
   }) => {

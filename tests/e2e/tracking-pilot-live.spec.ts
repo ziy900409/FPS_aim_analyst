@@ -67,7 +67,7 @@ async function readDownloadedPayload(download: Download): Promise<{
 }
 
 test.describe('WP-54 T6 — live tracking pilot session', () => {
-  test('practice -> calibration: real blocks load, export with full traceability, and reach a real quality verdict', async ({
+  test('practice -> calibration: real blocks load, export with full traceability, and reach a real quality verdict @slow', async ({
     page,
   }) => {
     // Two full blocks plus rest; each block is ~28s of real sim time.
