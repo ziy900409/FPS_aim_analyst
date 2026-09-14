@@ -36,9 +36,13 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e:fast
+      # always() 而非 failure()：flaky（第一次失敗、重試通過）會讓 job 判定為 success，
+      # 但 trace: 'on-first-retry' 正是在那一刻錄到東西。用 failure() 等於在最需要證據的
+      # 情況下把它丟掉 —— KI-030 的根因至今未定，就是因為失敗當下的資訊沒被保存。
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: playwright-trace-fast
           path: test-results/
+          if-no-files-found: ignore
           retention-days: 7

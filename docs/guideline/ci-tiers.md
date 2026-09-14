@@ -100,6 +100,22 @@ fork PR 可以在你的機器上執行任意程式碼。本 workflow 的觸發�
 
 ---
 
+## 3.5 失敗證據（trace）
+
+兩層的 workflow 都以 `if: always()` 上傳 `test-results/`，**不是 `if: failure()`**。
+
+理由：**flaky（第一次失敗、重試通過）會讓 job 判定為 success**，但 `trace: 'on-first-retry'`
+正是在那一刻錄到東西。用 `failure()` 等於在最需要證據的情況下把它丟掉 ——
+[KI-030](../known_issue/KI-030-history-e2e-flaky-under-parallel-workers.md) 的根因至今未定，
+就是因為失敗當下的資訊沒被保存。
+
+Tier 2 首跑（2026-09-14）就出現 1 flaky（`hit-feedback-live.spec.ts:541`），trace 有錄到、
+卻因為當時是 `failure()` 而沒被上傳 —— 這條規則就是那次的產物。
+
+**綠燈但有 flaky 時，去 run 頁面下載 artifact 看 trace。** 綠燈不等於沒事。
+
+---
+
 ## 4. 定版流程裡的位置
 
 發 release 時：
