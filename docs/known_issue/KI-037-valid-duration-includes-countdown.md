@@ -2,7 +2,7 @@
 
 > 類型：**latent measurement defect**（**恆向低估**;不影響同 cohort 內的可比性,但絕對值錯,
 > 且低估幅度逐場不同 ⇒ 也是一個雜訊源）。
-> 狀態：🔴 **診斷完成（2026-09-09），修法待落地**。尚無 `BD-035`。
+> 狀態：🔴 **診斷完成（2026-09-09），修法待落地**。尚無 `BD-041`。
 > 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) §1 索引。
 > 標的：[`src/history/DrillMetricRegistry.ts`](../../src/history/DrillMetricRegistry.ts) 的
 > `validDurationMs()`（`:427-432`），經 `projectSpiderShotV2()`（`:159-167`）供 `spider-shot-v2`

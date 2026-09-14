@@ -1,7 +1,7 @@
 # KI-034 — `preStimulusMs: 500` 在快速連續呈現中把前一次接戰當基線，讓 `tDetectMs` 靜默漏報並高估反應時間
 
 > 類型：**指標正確性 / 非隨機靜默資料遺失**（production runtime 與原始匯出無缺陷；壞掉的是離線 `t_detect` 推導的 baseline 時段假設）。
-> 狀態：🔴 **未修（2026-09-10 已以 3 份 240 Hz 真人匯出診斷並重現）**。尚無 `BD-034`。
+> 狀態：🔴 **未修（2026-09-10 已以 3 份 240 Hz 真人匯出診斷並重現）**。尚無 `BD-038`。
 > 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) §1 索引。
 > 標的：[`src/metrics/detectionDerivation.ts`](../../src/metrics/detectionDerivation.ts) 與
 > [`research/src/modules/metrics/algorithms/detect.py`](../../research/src/modules/metrics/algorithms/detect.py)（TS/Python parity）。

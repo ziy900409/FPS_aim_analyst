@@ -1,7 +1,7 @@
 # T2 — 修 KI-035：感度／FOV 變更後重設 mouse gain
 
 > WP：[WP-63](README.md) · 估時 1 d · Risk Med · 相依：T0
-> 診斷：[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) · 修復決策：`BD-035`（本 task 開立）
+> 診斷：[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) · 修復決策：`BD-039`（本 task 開立）
 
 ## 目的
 
@@ -31,7 +31,7 @@
 5. 新增測試（FOV）：同上，改變 `hipFovDeg`。
 6. 新增測試（negative）：**未**變更設定時，`configureMouseIntegration` 不被額外呼叫，`ticks[].dYaw` 逐位不變。
 7. 驗證既有 `dYaw`/`dPitch` golden 與四 FPS `TickRecord` 全欄位 parity 斷言**逐位不變**。
-8. 開立 `BD-035` 入 [BUGFIX-DECISIONS.md](../../../../known_issue/BUGFIX-DECISIONS.md)：選了哪個修法、為何、是否偏離協議、遺留 OQ。同步把 [KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 狀態翻為 ✅ 並補修復連結。
+8. 開立 `BD-039` 入 [BUGFIX-DECISIONS.md](../../../../known_issue/BUGFIX-DECISIONS.md)：選了哪個修法、為何、是否偏離協議、遺留 OQ。同步把 [KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 狀態翻為 ✅ 並補修復連結。
 
 ## Definition of Done
 
@@ -39,7 +39,7 @@
 - [ ] 既有 `dYaw`/`dPitch` golden 與四 FPS parity 斷言**未修改**且仍綠（`git diff` 對這些測試檔為空）
 - [ ] 若採 (b)：`npx.cmd playwright test --workers=1` exit 0 且 passed 數 ≥ T0 基線，**且未修改任何既有 spec**
 - [ ] `main.ts:712-713` 註解已更正為描述實際保證
-- [ ] `BD-035` 已入 `BUGFIX-DECISIONS.md`；`KI-035` 狀態已翻 ✅
+- [ ] `BD-039` 已入 `BUGFIX-DECISIONS.md`；`KI-035` 狀態已翻 ✅
 - [ ] `npm.cmd run typecheck` ×2 與 `npm.cmd run build` exit 0
 
 ## Commit

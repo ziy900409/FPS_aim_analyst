@@ -1,7 +1,7 @@
 # KI-035 — 感度／FOV 變更後 `dYaw`/`dPitch` 沿用舊 gain,而 `meta.mouseIntegration` 報新值
 
 > 狀態:🔴 **未修**(2026-09-10 登記)· 類別:量測效度(silent data corruption)
-> 修復決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) `BD-035`(尚未開立)
+> 修復決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) `BD-039`(尚未開立)
 > 發現於:[WP-63](../exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) 規劃期稽核
 
 ---
@@ -59,7 +59,7 @@ sim 決定性亦不受影響 —— 受污染的只有 tick 窗積分角位移�
 
 ⇒ **這是必須在寫入端修的問題,不是離線端可補救的問題。**
 
-## 5. 候選修法(未拍板,BD-035 決定)
+## 5. 候選修法(未拍板,BD-039 決定)
 
 | 方案 | 內容 | 代價 |
 |---|---|---|
