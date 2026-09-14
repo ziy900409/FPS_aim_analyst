@@ -204,6 +204,12 @@ docstring **兩處**都宣稱了被本 bug 證偽的不變式，已一併改寫�
 
 既有檔案異動：**零**。`peekWindows.ts`／`trackingDerivation.ts`／`detectionDerivation.ts`／`eyeOrigin.ts`／`angularKinematics.ts` 五個 canonical 檔的 `git diff --name-only` 為空（本 task 對它們只有一個 `import { WINDOW_EPSILON_MS }` 的讀取）。
 
+> ⚠️ **commit 落點更正（2026-09-14）**：本節、D-63.T3-1～4、Surprises 14～16 與 `task-checklist.md` 的 T3 勾選，
+> 因為與 T2 的文件異動在同一份檔案裡無法乾淨切開，**實際隨 T2 的 commit `909a29c` 一起入庫**；
+> `feat(wp-63): T3 add population-aware target window primitive` 這個 commit 只含兩個新的 `src/metrics/` 檔
+> 與本段更正。⇒ **T-exit 做 diff 稽核時，不要因為 T3 的 commit 沒帶 `progress.md` 就判定證據缺漏**——
+> 它在前一個 commit 裡。這是一次性的落點偏移，不是新慣例（協議 §3.4 仍要求 `progress.md` 與切片同 commit）。
+
 ### 三份 fixture（T3 Steps 7）
 
 fixture 是**合成**的 v8 形狀匯出（決定性，無 `Math.random()`，GD-5），由測試檔內的 `v8Fixture()` 生成：三顆同時存活、`next-tick` 補位、每次擊殺前一發失手、擊殺時刻一半落在 tick 邊界上一半落在 tick 之間（壓測半開區間與容差）。
