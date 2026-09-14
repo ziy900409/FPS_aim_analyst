@@ -33,7 +33,7 @@
 | T4 L0 + L3 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:29Z | 見下方 §T4：26 tests 綠、全量 Vitest 3,286 passed／2 skipped、typecheck ×2 與 build exit 0；可比性檢查 p10/p50/p90 入帳。 |
 | T5 L1 幾何層 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:40Z | 見下方 §T5：50 tests 綠（+24）、全量 Vitest 3,310 passed／2 skipped、typecheck ×2 與 build exit 0；D1–D6 六份對抗性 fixture 各有具名測試；五個 canonical derivation 檔 `git diff` 為空。 |
 | T6 L2 + 方向 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T6：75 tests 綠（+25）、全量 Vitest 3,335 passed／2 skipped（T5 基線 3,310）、typecheck ×2 與 `vite build` exit 0；E1–E5 五份 fixture 各有具名測試；門檻常數掃描五個字串 count === 0；六個 canonical derivation 檔 `git diff` 為空。 |
-| T7 Harness + 紀律 | ⬜ 未開工 | — | — | — |
+| T7 Harness + discipline | Complete | 2026-09-14 | 2026-09-14 | T7 synthetic harness covers README section 4.2 probes; FPS parity and tick-rate drift gates pass; legacy v1-v7 fixtures are snapshotted; operational contract added. Verification evidence below. |
 | T-exit | ⬜ 未開工 | — | — | — |
 
 ---
@@ -810,6 +810,45 @@ README §2.5 把 `microAdjust` 與 `direction` 寫成裸陣列。T5 已因同一
 2. **T4 留下的兩條守門測試在 T6 落地時必然轉紅，而且兩條都是「刻意設計成會紅」的**。一條斷言 `microAdjust`／`direction` **不存在**（防先佔位），一條禁止一切三角換算。前者按其註解的意圖翻成「鍵存在且帶得動 `n`／`flags`」；後者見 D-63.T6-1。兩條都不是 bug，是 T4 把「尚未交付」寫成了可執行的斷言 —— 這個做法值得延用，但接手的人要預期它們會擋路。
 
 3. **`Math.atan2(Math.sin(x), Math.cos(x))` 這種慣用的角度折回寫法會踩自己的三角掃描**。改成純算術的 `((x + π) mod 2π + 2π) mod 2π − π` 之後，`sin`／`cos` 歸零、`Math.PI` 也收斂成單一常數 `PI`。副作用是程式碼反而更快也更好讀。
+
+---
+
+## T7 Harness + discipline（2026-09-14）
+
+Implemented T7 in [`src/metrics/microFlickMetrics.test.ts`](../../../../../../src/metrics/microFlickMetrics.test.ts) and [`docs/operational/analysis-micro-flick.md`](../../../../../operational/analysis-micro-flick.md).
+
+Evidence:
+
+- Synthetic harness now covers all 7 pre-registered README §4.2 probes: straight approach, feint reversal, choppy oscillation, overshoot/re-entry, stale aim, late-fire approach timing, and near-target replacement.
+- NFR-63.2: display FPS parity is asserted for 30/60/144/240 Hz by comparing v8 tick traces and `deriveMicroFlickMetrics()` outputs with recursive `Object.is` equality.
+- NFR-63.5 / FR-63.10: tick-rate sensitivity is asserted at 64/128/256 Hz with <5% drift for core metrics.
+- NFR-63.1: legacy micro-flick v1-v7 fixtures are snapshotted so v8 harness work cannot perturb older drills.
+- Operational contract records the metric boundary, environment gates, quality flags, and the scope of `?rawMouse=1`.
+
+Verification:
+
+- Focused: `npx.cmd vitest run src/metrics/microFlickMetrics.test.ts` -> 80 passed.
+- Typecheck: `npm.cmd run typecheck` -> exit 0.
+- Unit: `npm.cmd test` -> 269 files passed, 1 skipped; 3,340 tests passed, 2 skipped.
+- Build: `npm.cmd run build` -> exit 0 after sandbox EPERM rerun with elevated Vite temp-file permission; 203 modules transformed.
+- Fast e2e: `npm.cmd run test:e2e:fast -- --workers=1` -> 102 passed, 1 skipped after sandbox EPERM rerun with elevated Vite temp-file permission.
+- Full Edge e2e: `npm.cmd run test:e2e -- --workers=1` -> final rerun 115 passed. The first full run had one unrelated WP-66 realgpu scene-switch arming timeout; focused rerun `npx.cmd playwright test tests/e2e/hit-feedback-live.spec.ts --project=edge --grep "換場景" --workers=1` -> 1 passed before the clean full rerun.
+- Graph upkeep: `npm.cmd run graph:update` -> 5,366 nodes, 13,384 edges, 303 communities after sandbox permission rerun for `graphify-out/.graphify_root`.
+
+### Decision Log
+
+#### D-63.T7-1 `?rawMouse=1` is recommended evidence, not a WP-63 metric precondition
+
+T7 resolves OQ-63.3 by documenting `?rawMouse=1` as recommended operational evidence for pilot collection, while keeping WP-63 v8 metric promotion based on exported tick deltas (`dYaw`/`dPitch`) and frozen metadata gates. Requiring raw mouse samples as a metric precondition would widen this WP into cohort collection and ingestion policy; that belongs to a later pilot/promotion package.
+
+#### D-63.T7-2 Near-target replacement is asserted at rank detail, not as the legacy aggregate
+
+T7 keeps the D-63.T4 aggregate `replacementEngagedRate` behavior unchanged and asserts the near-target probe through `replacementEngagedByRank`. This closes the synthetic gate without reinterpreting the aggregate metric.
+
+### Surprises & Discoveries
+
+1. The graphify project report was available, but CodeGraph MCP tools were not exposed in this session; T7 exploration used the existing graph report plus direct file reads/search.
+2. The legacy v1-v7 fixture snapshot needed rounded three-decimal target diameters because v2/v4 encode non-terminating design diameters.
 
 ---
 

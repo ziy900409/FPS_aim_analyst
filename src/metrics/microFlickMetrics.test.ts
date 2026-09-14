@@ -4,10 +4,18 @@ import { describe, expect, it } from 'vitest';
 import type { DrillEvent } from '../data/DataRecorder.ts';
 import type { ExportPayload } from '../data/export.ts';
 import type { TickRecord } from '../data/RingBuffer.ts';
+import type { DrillConfig } from '../drill/DrillConfig.ts';
 import {
   MICRO_FLICK_V8_TARGET_DIAMETER_U,
   microFlickThreeTargetTestV8,
 } from '../drill/micro_flick_three_target_test_v8.ts';
+import { microFlickThreeTargetTestV1 } from '../drill/micro_flick_three_target_test_v1.ts';
+import { microFlickThreeTargetTestV2 } from '../drill/micro_flick_three_target_test_v2.ts';
+import { microFlickThreeTargetTestV3 } from '../drill/micro_flick_three_target_test_v3.ts';
+import { microFlickThreeTargetTestV4 } from '../drill/micro_flick_three_target_test_v4.ts';
+import { microFlickThreeTargetTestV5 } from '../drill/micro_flick_three_target_test_v5.ts';
+import { microFlickThreeTargetTestV6 } from '../drill/micro_flick_three_target_test_v6.ts';
+import { microFlickThreeTargetTestV7 } from '../drill/micro_flick_three_target_test_v7.ts';
 import { aimForward, angularDistanceDeg } from './eyeOrigin.ts';
 import { createRan1 } from '../recoil/rng.ts';
 import { createTargetManager } from '../sim/TargetManager.ts';
@@ -1337,6 +1345,7 @@ interface T6Spec {
   /** 逐 tick 邊界的視角（度），索引 0..T。`ticks[i].dYaw = path[i+1] − path[i]`。 */
   readonly path: readonly T6View[];
   readonly kills: readonly T6Kill[];
+  readonly simHz?: number;
   /** E5：`aim` 逐 tick 凍住（模擬 60 Hz 更新），`dYaw`/`dPitch` 不變。 */
   readonly staleAim?: boolean;
   readonly omitHitbox?: boolean;
@@ -1422,11 +1431,13 @@ function t6Scenario(spec: T6Spec): ExportPayload {
     initial,
     path,
     kills,
+    simHz = 128,
     staleAim = false,
     omitHitbox = false,
     hitboxShape = 'sphere',
     omitMouseIntegration = false,
   } = spec;
+  const tickMs = 1000 / simHz;
 
   const events: DrillEvent[] = [];
   const idByYaw = new Map<number, string>();
@@ -1455,7 +1466,7 @@ function t6Scenario(spec: T6Spec): ExportPayload {
     const dYawRad = next === undefined ? 0 : deg2rad(next.yawDeg - view.yawDeg);
     const dPitchRad = next === undefined ? 0 : deg2rad((next.pitchDeg ?? 0) - (view.pitchDeg ?? 0));
     return {
-      t: i * TICK_MS,
+      t: i * tickMs,
       vx: 0,
       vz: 0,
       px: 0,
@@ -1480,7 +1491,7 @@ function t6Scenario(spec: T6Spec): ExportPayload {
     const targetId = idByYaw.get(kill.viewYawDeg);
     if (targetId === undefined) throw new Error(`no live target at view yaw ${kill.viewYawDeg}`);
     const anchor = path[kill.tickIndex];
-    const tKillMs = ticks[kill.tickIndex].t - TICK_MS / 2;
+    const tKillMs = ticks[kill.tickIndex].t - tickMs / 2;
     events.push({
       type: 'fire',
       t: tKillMs,
@@ -1499,7 +1510,7 @@ function t6Scenario(spec: T6Spec): ExportPayload {
     meta: {
       drillId: microFlickThreeTargetTestV8.drill.drillId,
       weaponId: 'usp_s_laser',
-      simHz: 128,
+      simHz,
       simToWorld: 1,
       scene: { sceneId: 'micro-flick-room-v8', eye: { ...EYE } },
       ...(omitHitbox
@@ -1538,4 +1549,276 @@ function microAdjustAt(metrics: MicroFlickMetrics, windowIndex: number): MicroFl
   const entry = metrics.microAdjust.targets.find((target) => target.windowIndex === windowIndex);
   if (entry === undefined) throw new Error(`no micro-adjust row for window ${windowIndex}`);
   return entry;
+}
+
+describe('WP-63 T7 — synthetic harness, FPS parity, and tick-rate discipline', () => {
+  it('covers the seven pre-registered synthetic gates from README §4.2', () => {
+    const straight = deriveMicroFlickMetrics(t6Scenario(E1_STRAIGHT));
+    const overshoot = deriveMicroFlickMetrics(t6Scenario(E2_OVERSHOOT));
+    const choppy = deriveMicroFlickMetrics(t6Scenario(E3_CHOPPY));
+    const feint = deriveMicroFlickMetrics(t6Scenario(E4_FEINT));
+    const staleAim = deriveMicroFlickMetrics(t6Scenario({ ...E4_FEINT, staleAim: true }));
+    const lateFire = deriveMicroFlickMetrics(t6Scenario(E1_STRAIGHT));
+    const replacement = deriveMicroFlickMetrics(scenario(NEAR_REPLACEMENT_CASE), {
+      eye: { strictEyeOrigin: true },
+    });
+
+    const gates = [
+      {
+        id: 1,
+        assert: () => {
+          const entry = microAdjustAt(straight, 0);
+          expect(entry.reEntryCount).toBe(0);
+          expect(entry.signReversalCount).toBe(0);
+          expect(entry.flags).toEqual([]);
+        },
+      },
+      {
+        id: 2,
+        assert: () => {
+          const curve = new Map(feint.direction.windows.map((entry) => [entry.windowMs, entry.predictionAccuracy]));
+          expect(curve.get(30)).toBe(0);
+          expect(curve.get(60)).toBe(0);
+          expect(curve.get(90)).toBe(1);
+          expect(curve.get(120)).toBe(1);
+        },
+      },
+      {
+        id: 3,
+        assert: () => {
+          const entry = microAdjustAt(choppy, 0);
+          expect(entry.signReversalCount!).toBeGreaterThan(microAdjustAt(straight, 0).signReversalCount!);
+          expect(entry.dwellPathRatio!).toBeGreaterThan(microAdjustAt(straight, 0).dwellPathRatio!);
+        },
+      },
+      {
+        id: 4,
+        assert: () => {
+          const entry = microAdjustAt(overshoot, 0);
+          expect(entry.reEntryCount).toBeGreaterThanOrEqual(1);
+          expect(entry.signReversalCount).toBeGreaterThanOrEqual(1);
+        },
+      },
+      {
+        id: 5,
+        assert: () => {
+          expectObjectIsDeep(staleAim.microAdjust, feint.microAdjust);
+          expectObjectIsDeep(staleAim.direction, feint.direction);
+        },
+      },
+      {
+        id: 6,
+        assert: () => {
+          expect(microAdjustAt(lateFire, 0).approachToFireMs).toBeLessThanOrEqual(80);
+        },
+      },
+      {
+        id: 7,
+        assert: () => {
+          expect(replacement.selection.nearest3Deg[0]).toBeLessThan(replacement.selection.nearest2Deg[0]);
+          expect(replacement.selection.replacementEngagedRate).toBeUndefined();
+          expect(replacement.selection.replacementEngagedByRank.some((bin) => bin.engagedRate! > 0)).toBe(true);
+        },
+      },
+    ];
+
+    expect(gates.map((gate) => gate.id)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    for (const gate of gates) gate.assert();
+  });
+
+  it('NFR-63.2: display FPS metadata does not perturb v8 tick traces or derived metrics', () => {
+    const baselinePayload = withDisplayHz(t6Scenario(E4_FEINT), 30);
+    const baselineMetrics = deriveMicroFlickMetrics(baselinePayload, { eye: { strictEyeOrigin: true } });
+
+    for (const displayHz of [60, 144, 240]) {
+      const payload = withDisplayHz(t6Scenario(E4_FEINT), displayHz);
+      expectObjectIsDeep(payload.ticks, baselinePayload.ticks);
+      expectObjectIsDeep(
+        deriveMicroFlickMetrics(payload, { eye: { strictEyeOrigin: true } }),
+        baselineMetrics,
+      );
+    }
+  });
+
+  it('NFR-63.5: FR-63.10 micro-adjust metrics vary by less than 5% across 64/128/256 Hz ticks', () => {
+    const baseline = microAdjustAt(deriveMicroFlickMetrics(tickRateProbe(128)), 0);
+
+    for (const simHz of [64, 256] as const) {
+      const sampled = microAdjustAt(deriveMicroFlickMetrics(tickRateProbe(simHz)), 0);
+      expect(sampled.reEntryCount).toBe(baseline.reEntryCount);
+      expect(sampled.signReversalCount).toBe(baseline.signReversalCount);
+      expect(relativeDiff(sampled.dwellPathRatio!, baseline.dwellPathRatio!)).toBeLessThan(0.05);
+      expect(relativeDiff(sampled.approachToFireMs!, baseline.approachToFireMs!)).toBeLessThan(0.05);
+    }
+  });
+
+  it('NFR-63.1: legacy v1-v7 micro-flick fixture contract stays frozen outside the v8 gate', () => {
+    expect(legacyMicroFlickSnapshot()).toEqual([
+      legacyRow('micro_flick_three_target_test_v1', 'micro-flick-room', 'default', 13, 0.681, 56001, [-22, 22], [-12, 12], [12, 14], 7, null),
+      legacyRow('micro_flick_three_target_test_v2', 'micro-flick-room-v2', 'default', 17, 0.89, 56002, [-22, 22], [-12, 12], [16, 18], 7, null),
+      legacyRow('micro_flick_three_target_test_v3', 'micro-flick-room-v3', 'default', 21, 1.1, 56003, [-22, 22], [-12, 12], [20, 22], 7, null),
+      legacyRow('micro_flick_three_target_test_v4', 'micro-flick-room-v4', 'default', 25, 1.309, 56004, [-22, 22], [-12, 12], [24, 26], 7, null),
+      legacyRow('micro_flick_three_target_test_v5', 'micro-flick-room-v5', 'default', 25, 1.5, 56005, [-10, 10], [-8, 8], [24, 26], 7, null),
+      legacyRow('micro_flick_three_target_test_v6', 'micro-flick-room-v6', 'default', 25, 1.275, 56006, [-8.5, 8.5], [-8, 8], [24, 26], 7, null),
+      legacyRow('micro_flick_three_target_test_v7', 'micro-flick-room-v7', 'default', 25, 1.275, 56007, [-6.5, 6.5], [-5, 6], [24, 26], 7, null),
+    ]);
+  });
+
+  it('records the operational quality gates as concrete v8 payload facts', () => {
+    const payload = withDisplayHz(t6Scenario(E4_FEINT), 144);
+
+    expect(payload.meta.displayHz).toBeGreaterThanOrEqual(144);
+    expect(payload.meta.crossOriginIsolated).toBe(true);
+    expect(payload.meta.weaponId).toBe('usp_s_laser');
+    expect(payload.meta.scene?.eye).toEqual(EYE);
+    expect(payload.meta.targets?.hitbox?.shape).toBe('sphere');
+    expect(payload.meta.simHz).toBe(128);
+  });
+});
+
+function withDisplayHz(payload: ExportPayload, displayHz: number): ExportPayload {
+  const frameMs = 1000 / displayHz;
+  return {
+    ...payload,
+    meta: {
+      ...payload.meta,
+      displayHz,
+      crossOriginIsolated: true,
+      frames: {
+        series: [frameMs, frameMs, frameMs, frameMs],
+        summary: {
+          count: 4,
+          p50: frameMs,
+          p95: frameMs,
+          p99: frameMs,
+          overBudgetWindows: 0,
+          overflow: false,
+        },
+      },
+    } as ExportPayload['meta'],
+  };
+}
+
+function tickRateProbe(simHz: 64 | 128 | 256): ExportPayload {
+  const steps = simHz;
+  return t6Scenario({
+    initial: [{ yawDeg: 0 }, { yawDeg: -20 }, { yawDeg: 25 }],
+    path: ramp(0, 0.5, steps),
+    kills: [{ tickIndex: steps, viewYawDeg: 0 }],
+    simHz,
+  });
+}
+
+function relativeDiff(value: number, baseline: number): number {
+  return Math.abs(value - baseline) / Math.max(Math.abs(baseline), Number.EPSILON);
+}
+
+function expectObjectIsDeep(actual: unknown, expected: unknown): void {
+  if (typeof actual === 'number' || typeof expected === 'number') {
+    expect(typeof actual).toBe('number');
+    expect(typeof expected).toBe('number');
+    expect(Object.is(actual, expected)).toBe(true);
+    return;
+  }
+  if (Array.isArray(actual) || Array.isArray(expected)) {
+    expect(Array.isArray(actual)).toBe(true);
+    expect(Array.isArray(expected)).toBe(true);
+    const actualArray = actual as readonly unknown[];
+    const expectedArray = expected as readonly unknown[];
+    expect(actualArray.length).toBe(expectedArray.length);
+    for (let i = 0; i < actualArray.length; i++) {
+      expectObjectIsDeep(actualArray[i], expectedArray[i]);
+    }
+    return;
+  }
+  if (actual !== null && expected !== null && typeof actual === 'object' && typeof expected === 'object') {
+    const actualRecord = actual as Record<string, unknown>;
+    const expectedRecord = expected as Record<string, unknown>;
+    const actualKeys = Object.keys(actualRecord).sort();
+    const expectedKeys = Object.keys(expectedRecord).sort();
+    expect(actualKeys).toEqual(expectedKeys);
+    for (const key of actualKeys) {
+      expectObjectIsDeep(actualRecord[key], expectedRecord[key]);
+    }
+    return;
+  }
+  expect(actual).toEqual(expected);
+}
+
+interface LegacyMicroFlickFixture {
+  readonly sceneId: string;
+  readonly drill: DrillConfig;
+}
+
+function legacyMicroFlickSnapshot(): ReturnType<typeof legacyRow>[] {
+  const fixtures: readonly LegacyMicroFlickFixture[] = [
+    microFlickThreeTargetTestV1,
+    microFlickThreeTargetTestV2,
+    microFlickThreeTargetTestV3,
+    microFlickThreeTargetTestV4,
+    microFlickThreeTargetTestV5,
+    microFlickThreeTargetTestV6,
+    microFlickThreeTargetTestV7,
+  ];
+  return fixtures.map((fixture) => {
+    const spawnArea = fixture.drill.targets.spawnArea!;
+    const hitbox = fixture.drill.targets.hitbox!;
+    return legacyRow(
+      fixture.drill.drillId,
+      fixture.sceneId,
+      fixture.drill.weaponId ?? 'default',
+      fixture.drill.targets.distance,
+      round3(hitbox.widthU),
+      fixture.drill.sequence.seed!,
+      spawnArea.yawDegRange,
+      spawnArea.pitchDegRange!,
+      spawnArea.distanceURange,
+      spawnArea.minAngularSeparationDeg!,
+      spawnArea.preferredReplacementSeparationDeg ?? null,
+    );
+  });
+}
+
+function legacyRow(
+  drillId: string,
+  sceneId: string,
+  weaponId: string,
+  distanceU: number,
+  diameterU: number,
+  seed: number,
+  yawDegRange: readonly [number, number],
+  pitchDegRange: readonly [number, number],
+  distanceURange: readonly [number, number],
+  minAngularSeparationDeg: number,
+  preferredReplacementSeparationDeg: number | null,
+): {
+  readonly drillId: string;
+  readonly sceneId: string;
+  readonly weaponId: string;
+  readonly distanceU: number;
+  readonly diameterU: number;
+  readonly seed: number;
+  readonly yawDegRange: readonly [number, number];
+  readonly pitchDegRange: readonly [number, number];
+  readonly distanceURange: readonly [number, number];
+  readonly minAngularSeparationDeg: number;
+  readonly preferredReplacementSeparationDeg: number | null;
+} {
+  return {
+    drillId,
+    sceneId,
+    weaponId,
+    distanceU,
+    diameterU,
+    seed,
+    yawDegRange,
+    pitchDegRange,
+    distanceURange,
+    minAngularSeparationDeg,
+    preferredReplacementSeparationDeg,
+  };
+}
+
+function round3(value: number): number {
+  return Math.round(value * 1e3) / 1e3;
 }

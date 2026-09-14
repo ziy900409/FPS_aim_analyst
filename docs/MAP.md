@@ -307,6 +307,12 @@ docs/exec-plan/
 
 ---
 
+## Operational Micro-Flick Entry
+
+**Micro-flick analysis**: [operational/analysis-micro-flick.md](operational/analysis-micro-flick.md) documents the WP-63 v8 metric boundary, environment gates, seven synthetic probes, FPS parity, tick-rate sensitivity, legacy fixture discipline, and quality-flag interpretation.
+
+---
+
 ## 6. 維護約定
 
 - 新增 / 移除 `docs/` 下的資料夾或頂層文件時，**同步更新本檔**。
