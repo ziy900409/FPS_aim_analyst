@@ -1,9 +1,9 @@
 # KI-035 — 感度／FOV 變更後 `dYaw`/`dPitch` 沿用舊 gain,而 `meta.mouseIntegration` 報新值
 
 > 狀態:✅ **已修**(2026-09-10 登記 → 2026-09-14 修復,[WP-63](../exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) T2)· 類別:量測效度(silent data corruption)
-> 修復決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) **`BD-038`**
+> 修復決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) **`BD-039`**
 > ⚠️ 規劃期本檔與 T2 task 檔都寫「`BD-035`」,那是按 KI 號推的。實況 `BD-n` 與 `KI-n` 不同步,
-> `BD-035` 已由 KI-038 取用 ⇒ 依 GD-15「先採納先得」改取 **BD-038**。
+> `BD-035` 已由 KI-038 取用 ⇒ 依 GD-15「先採納先得」改取 **BD-039**。
 > 發現於:[WP-63](../exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) 規劃期稽核
 
 ---
@@ -61,7 +61,7 @@ sim 決定性亦不受影響 —— 受污染的只有 tick 窗積分角位移�
 
 ⇒ **這是必須在寫入端修的問題,不是離線端可補救的問題。**
 
-## 5. 候選修法(規劃期,已由 `BD-038` 拍板,見 §5b)
+## 5. 候選修法(規劃期,已由 `BD-039` 拍板,見 §5b)
 
 | 方案 | 內容 | 代價 |
 |---|---|---|
@@ -72,7 +72,7 @@ sim 決定性亦不受影響 —— 受污染的只有 tick 窗積分角位移�
 **規劃期傾向 (a) + (b) 併行**:(a) 讓任何時刻的 gain 都是最新值,(b) 讓一次 run 內不會出現兩組 gain。
 (c) 留給「確實需要 run 內變更設定」的情境,目前無此需求。
 
-## 5b. 實際修法(2026-09-14,`BD-038`)
+## 5b. 實際修法(2026-09-14,`BD-039`)
 
 **採 (a) + (b) 併行**,兩者修的不是同一條路徑,缺一不可:
 
@@ -92,7 +92,7 @@ sim 決定性亦不受影響 —— 受污染的只有 tick 窗積分角位移�
    改 FOV 對 `dYaw` 逐位無影響。以 `DataRecorder.test.ts` 的斷言 (4) 釘死。
 
 **未提供回溯修正**:§4 已論證修前的匯出無法事後判定積分用了哪組 gain。凡「載入 drill 後才調過設定」
-的舊 run,其 `dYaw`/`dPitch` 一律不可信(`BD-038` 的 OQ-KI35-1)。
+的舊 run,其 `dYaw`/`dPitch` 一律不可信(`BD-039` 的 OQ-KI35-1)。
 
 ## 6. 驗收(修復時)
 

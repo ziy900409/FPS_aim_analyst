@@ -515,14 +515,14 @@ sessionLaunchControls.style.cssText = [
 topLeftControls.appendChild(sessionLaunchControls);
 document.body.appendChild(topLeftControls);
 
-// KI-035 / BD-038（WP-63 T2）— `refreshRecorderMouseGain()` 的就緒旗標。`createSettingsPanel()`
+// KI-035 / BD-039（WP-63 T2）— `refreshRecorderMouseGain()` 的就緒旗標。`createSettingsPanel()`
 // 在**建構當下**就把兩個預設值推過 callback 一次,而 `settingsPanel` 與 `recorder` 都是下方才宣告
 // 的 `const`（TDZ）⇒ 那一次推送不能碰 recorder,否則 ReferenceError。建構時的初值改由
 // `createDataRecorder({ mouseIntegration: { gain: currentMouseGain() } })` 負責（同一份設定）。
 let recorderMouseGainWired = false;
 
 const settingsPanel = createSettingsPanel({
-  // KI-035（BD-038）:感度／FOV 一變更就把新的 gain 推進 recorder,否則 `ticks[].dYaw`/`dPitch`
+  // KI-035（BD-039）:感度／FOV 一變更就把新的 gain 推進 recorder,否則 `ticks[].dYaw`/`dPitch`
   // 會沿用舊 gain 積分,而匯出的 `meta.mouseIntegration` 用當下設定重算 ⇒ 兩者發散且離線不可察覺。
   onSensitivityChange: (s) => {
     cameraController.setSensitivity(s);
@@ -757,8 +757,8 @@ pointerLock.onChange((locked) => {
 // 是「recorder 的 gain 在下列**每一個**時機都被重設,故任何一刻都是最新值」:
 //   1. recorder 建構（`createDataRecorder({ mouseIntegration: ... })`）
 //   2. 換武器（`loadWeaponById()`）與換 drill（`activateDrill()`）—— ads 光學會換
-//   3. 感度／FOV 滑桿變更（`refreshRecorderMouseGain()`,BD-038 的 (a)）
-// 「同一份 `ticks[]` 前後段用同一組 gain」則由 BD-038 的 (b) 保證:`syncAimSettingsLock()` 在
+//   3. 感度／FOV 滑桿變更（`refreshRecorderMouseGain()`,BD-039 的 (a)）
+// 「同一份 `ticks[]` 前後段用同一組 gain」則由 BD-039 的 (b) 保證:`syncAimSettingsLock()` 在
 // `countdown`/`running` 期間停用兩個滑桿。(a) 與 (b) 分工不同,缺一不可——(b) 關掉 run 內變更,
 // (a) 讓 run **之間**的每一次變更都即時生效（載入 drill 後、取鎖之前調滑桿正是 KI-035 的原始症狀）。
 function currentMouseGain() {
@@ -769,7 +769,7 @@ function currentMouseGain() {
   });
 }
 
-// KI-035 / BD-038 (a)（WP-63 T2）— 把當下設定的 gain 推進 recorder。`recorderMouseGainWired` 之前
+// KI-035 / BD-039 (a)（WP-63 T2）— 把當下設定的 gain 推進 recorder。`recorderMouseGainWired` 之前
 // 的呼叫（= `createSettingsPanel()` 建構時的預設值推送）一律略過:那時 `recorder` 還在 TDZ,而它
 // 自己的建構參數就已經帶了同一份 gain。
 function refreshRecorderMouseGain(): void {
@@ -804,7 +804,7 @@ const recorder = createDataRecorder({
   recordAnnotationEvents: operatorAnnotationCapture,
   recordMouseSamples: rawMouseSampleCapture,
 });
-// KI-035 / BD-038 (a)：recorder 存在之後，感度／FOV 的每一次變更才可以（也必須）推 gain 進來。
+// KI-035 / BD-039 (a)：recorder 存在之後，感度／FOV 的每一次變更才可以（也必須）推 gain 進來。
 recorderMouseGainWired = true;
 const frameLog = createFrameLog(frameLogCapacity(DEFAULT_MAX_DRILL_SECONDS));
 async function buildCurrentExportPayload(
@@ -1679,7 +1679,7 @@ controls = createControls({
   },
 });
 
-// KI-035 / BD-038 (b)（WP-63 T2）— 錄製中（`countdown`/`running`）停用感度與 FOV 滑桿,使一次 run
+// KI-035 / BD-039 (b)（WP-63 T2）— 錄製中（`countdown`/`running`）停用感度與 FOV 滑桿,使一次 run
 // 內只有一組 mouse gain。判準沿用 KI-007 對 `fullscreenchange` 的同一條（`countdown`/`running` =
 // 實際錄製中）,不另立第二個「run 進行中」定義。
 //

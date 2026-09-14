@@ -7,7 +7,7 @@
 
 - [x] (2026-09-14 12:38Z) **T0** — [Entry gate](T0-entry-gate.md)：編號重查、上游驗證、基線實測、OQ-63.1 以預設假設明帳收斂 · 0.5 d · Low
 - [x] (2026-09-14 14:52Z) **T1** — [零散布武器宣告](T1-zero-spread-weapon.md)：v8 `weaponId: 'usp_s_laser'` + 斷代 + 彈匣旗標契約 · 1.5 d · Med
-- [x] (2026-09-14) **T2** — [Mouse gain 修復](T2-mouse-gain-refresh.md)：KI-035 / **BD-038**（規劃期寫的 `BD-035` 已被 KI-038 取用，見 D-63.T2-1）· 1 d · Med
+- [x] (2026-09-14) **T2** — [Mouse gain 修復](T2-mouse-gain-refresh.md)：KI-035 / **BD-039**（規劃期寫的 `BD-035` 已被 KI-038 取用，見 D-63.T2-1）· 1 d · Med
 - [x] (2026-09-14 15:42Z) **T3** — [窗界 primitive](T3-target-window-primitive.md)：`buildTargetWindows()` + `aliveAt()` · 2.5 d · **High**
 - [x] (2026-09-14 16:29Z) **T4** — [L0 + L3](T4-outcome-and-selection.md)：結果層 + 選擇策略層（`nearest-2` / `nearest-3`）· 2 d · Med
 - [x] (2026-09-14 16:40Z) **T5** — [L1 幾何層](T5-intent-attributed-geometry.md)：意圖歸屬 + 角誤差 + 首發重定義 + 修正時間拆解 · 2.5 d · **High**

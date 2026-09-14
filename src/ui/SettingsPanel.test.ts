@@ -82,7 +82,7 @@ describe('createSettingsPanel', () => {
     expect(modes).toEqual(['native', 'qhd-1440']);
   });
 
-  // KI-035 / BD-038 (b)（WP-63 T2）：錄製中鎖住感度與 FOV，讓一次 run 只有一組 mouse gain。
+  // KI-035 / BD-039 (b)（WP-63 T2）：錄製中鎖住感度與 FOV，讓一次 run 只有一組 mouse gain。
   it('lockAim() 停用兩個滑桿並吃掉變更，解鎖後恢復', () => {
     const document = new FakeDocument();
     vi.stubGlobal('document', document);

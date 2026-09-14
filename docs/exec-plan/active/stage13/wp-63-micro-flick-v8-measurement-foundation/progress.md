@@ -10,7 +10,7 @@
 
 ✅ **T3 完成**（2026-09-14 15:42Z）。`src/metrics/targetWindows.ts` 交付 `buildTargetWindows()` + `aliveAt()`；27 個新測試全綠、NFR-63.4 符號掃描 count === 0、NFR-63.3 實測 **0.914 ms**（63 窗／7,682 ticks）與 **5.187 ms**（180 窗／22,658 ticks），遠低於 50 ms 門檻。五個 canonical derivation 檔 `git diff` 為空。**T1 的 FR-63.13 判準 `ammo === 0` 經實作複核為不可達，已就地更正為「扣彈前存量觸底」**（見 D-63.T3-2）。T4–T7 未開工。
 
-✅ **T2 完成**（2026-09-14）。[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 以 **(a)+(b) 併行**修復並以 **`BD-038`**（非規劃期寫的 `BD-035`，已撞號）入帳：感度／FOV 變更即時把新 gain 推進 recorder，且錄製中（`countdown`/`running`）停用兩個滑桿。OQ-63.4 關閉。T3–T7 未開工。
+✅ **T2 完成**（2026-09-14）。[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 以 **(a)+(b) 併行**修復並以 **`BD-039`**（非規劃期寫的 `BD-035`，已撞號）入帳：感度／FOV 變更即時把新 gain 推進 recorder，且錄製中（`countdown`/`running`）停用兩個滑桿。OQ-63.4 關閉。T3–T7 未開工。
 
 ✅ **T1 完成**（2026-09-14 14:52Z）。v8 宣告 `weaponId: 'usp_s_laser'`，斷代靠 `meta.weaponId`；NFR-63.7 以「同 kill order 下換武器 spawn trace 逐位相同（且雙方皆有實際開火）」+「`sampleSpread()` 對本武器 rng 呼叫數 === 0」兩條機械證據釘死。（當時）T2–T7 未開工；OQ-63.1 仍以具名預設假設推進（研究者未回覆）。
 
@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | T0 Entry gate | ✅ 完成 | 2026-09-14 | 2026-09-14 12:38Z | 見下方 §T0：五項基線 exit 0，Vitest 3,217 passed／2 skipped、Edge 115 passed、chromium-ci fast 102 passed／1 skipped、build 203 modules；編號、上游、五個 CodeGraph impact、三項機制與 OQ-63.1 明帳。 |
 | T1 零散布武器宣告 | ✅ 完成 | 2026-09-14 | 2026-09-14 14:52Z | 見下方 §T1：typecheck ×2 exit 0、全量 Vitest **3,224 passed／2 skipped（267 files）**（≥ T0 基線 3,217）、`vite build` exit 0、`micro-flick-live.spec.ts` 6/6 passed。 |
-| T2 Mouse gain 修復 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T2：typecheck ×2 exit 0、全量 Vitest **3,233 passed／2 skipped（268 files）**（≥ T1 基線 3,224）、`vite build` exit 0、GD-44 Tier 1 **102 passed／1 skipped**（= T0 基線）、Tier 2 Edge 全量見該節。`BD-038` 已入帳、KI-035 翻 ✅。 |
+| T2 Mouse gain 修復 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T2：typecheck ×2 exit 0、全量 Vitest **3,233 passed／2 skipped（268 files）**（≥ T1 基線 3,224）、`vite build` exit 0、GD-44 Tier 1 **102 passed／1 skipped**（= T0 基線）、Tier 2 Edge 全量見該節。`BD-039` 已入帳、KI-035 翻 ✅。 |
 | T3 窗界 primitive | ✅ 完成 | 2026-09-14 | 2026-09-14 15:42Z | 見下方 §T3：typecheck ×2 exit 0、全量 Vitest **3,260 passed／2 skipped（269 files）**（≥ T2 基線 3,233，+27 = 本 task 新增）、`targetWindows.test.ts` 27 passed、NFR-63.3 實測 0.914 ms／5.187 ms、NFR-63.4 掃描 count === 0。 |
 | T4 L0 + L3 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:29Z | 見下方 §T4：26 tests 綠、全量 Vitest 3,286 passed／2 skipped、typecheck ×2 與 build exit 0；可比性檢查 p10/p50/p90 入帳。 |
 | T5 L1 幾何層 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:40Z | 見下方 §T5：50 tests 綠（+24）、全量 Vitest 3,310 passed／2 skipped、typecheck ×2 與 build exit 0；D1–D6 六份對抗性 fixture 各有具名測試；五個 canonical derivation 檔 `git diff` 為空。 |
@@ -134,7 +134,7 @@
 | `npm.cmd run test:e2e:fast -- --workers=1 tests/e2e/micro-flick-live.spec.ts` | **0** | 6 passed（1.4m）。該 spec 是全 repo 唯一載入 v8 的 e2e |
 
 
-## T2 Mouse gain 修復（KI-035 / BD-038）（2026-09-14）
+## T2 Mouse gain 修復（KI-035 / BD-039）（2026-09-14）
 
 ### OQ-63.4 收斂：(a)+(b) 併行
 
@@ -472,7 +472,7 @@ NFR-63.4 要求 `epsilon`／`onTarget`／`eyeHeight`／`SIM_TO_WORLD`／`acos` �
 
 理由是窗界原語不該把 id 生成策略這個實作產物當前提——若日後有人改成 slot-based 或 pooled id，字面判準會安靜地把第二次 presentation 的擊殺歸給第一次的窗，而那個錯誤的形態（歸屬到錯的目標、數字仍然合理）正是本 WP §0.1 要消滅的那一類。以 `同一個 id 被重複使用時，擊殺只歸屬給當次 presentation` 一測釘死。
 
-### D-63.T2-1 — KI-035 取 (a)+(b) 併行；`BD-035` 撞號改取 `BD-038`（2026-09-14）
+### D-63.T2-1 — KI-035 取 (a)+(b) 併行；`BD-035` 撞號（2026-09-14）
 
 **OQ-63.4 關閉**：T2 Steps 1 的條件（「若 (b) 讓既有 E2E 轉紅就退回 (a) only」）**未觸發**，故按預設
 假設 (a)+(b) 併行落地。全 repo 唯一操作感度／FOV 滑桿的 e2e 是
@@ -482,7 +482,7 @@ handler guard 之後單跑該 spec **4/4 passed**，與未加 guard 的對照組
 **編號偏離（明帳）**：T2 task 檔與 KI-035 doc 都寫「開立 `BD-035`」，那是規劃期按 KI 號推的。實況
 `BD-n` 與 `KI-n` **不同步** —— `BD-035`／`BD-036`／`BD-037` 已分別由 KI-038／KI-037／KI-039 取用，
 `BUGFIX-DECISIONS.md` 最大號為 `BD-037`。依 [GD-15](../../../DECISIONS.md)「先採納先得」改取
-**`BD-038`**，並在 KI-035 doc 抬頭具名記錄這次改號，免得後續讀者照舊文去找 `BD-035`。順帶補上
+**`BD-038`**（⚠️ 這個號後來又被 `main` 撞一次，最終落帳為 **`BD-039`**，見 **D-63.T2-2**），並在 KI-035 doc 抬頭具名記錄這次改號，免得後續讀者照舊文去找 `BD-035`。順帶補上
 `BUGFIX-DECISIONS.md` §1 索引**原本缺的 KI-035 列**。
 
 **Alternatives considered**：
@@ -651,6 +651,25 @@ README §2.5 的 `geometry` 是一個 per-target 陣列。但 FR-63.8 要 `first
 
 逐發列**刻意不轉載** `fire.targetId`：交叉檢核由讀得到 payload 的測試自己做，輸出端不該提供一個會被下游誤當資料源的欄位。這同時讓 DoD 的 `intended*` 命名紀律成為一條機械化測試（逐發列上凡 `/target/i` 的鍵必須 `intended` 開頭），而不是靠人看。原始碼掃描同時釘死 `fire.targetId`／`fire.offsetDeg`／`fire.firstShot` 三個字串在模組內出現次數為 **0**。
 
+### D-63.T2-2 — `BD-038` 再撞號，採納 `main` 的保留改落 `BD-039`（2026-09-14）
+
+本分支自 `bc467c4` 切出後，`main` 落了 [`67962ed` *docs: reserve unique bugfix decision numbers for KI-034 to KI-037*](../../../../known_issue/BUGFIX-DECISIONS.md)，把 BD 號重新配過：
+
+| | 本分支（T2 已落地） | `main` （67962ed 保留） |
+|---|---|---|
+| **BD-038** | KI-035 修復決策 ✅ 已寫 | 保留給 **KI-034** |
+| **BD-039** | — | 保留給 **KI-035** |
+
+⇒ 兩邊都宣稱 `BD-038`。這是 **D-63.T2-1 那個號的第二次撞號**：規劃期照 KI 號推的 `BD-035` 已被 KI-038 取用 ⇒ T2 改取 `BD-038` ⇒ `main` 又把 `BD-038` 給了 KI-034。
+
+**採用：改落 `BD-039`。** 依 [GD-15](../../../DECISIONS.md)「先採納先得」，`main` 是已採納的主幹而本分支當時尚未推送 ⇒ 本分支讓號。而 `main` 同一個 commit **已經替 KI-035 保留了 `BD-039`**，所以這不是「再找一個空號」而是直接**採納 `main` 的保留**：`BD-038` 回到 KI-034、`BD-039` 歸 KI-035，兩邊的帳本一次對齊，沒有任何號被爭。
+
+落地範圍：`docs/` 六檔 + `src/` 四檔共 **37 處**（`main.ts` 7、`DataRecorder.test.ts` 5、KI-035 doc 5、`progress.md` 6、`T2-mouse-gain-refresh.md` 4、`BUGFIX-DECISIONS.md` 3、其餘各 1–2）。`src/` 的 15 處全是註解與測試名稱，**無任何測試斷言這個字串**（已逐條確認 `DataRecorder.test.ts` 的 source 掃描測試只掃 `refreshRecorderMouseGain`／`syncAimSettingsLock`，不掃 BD 號）⇒ 改號不改行為。
+
+**為何單獨一個 `docs:` commit，不摻進 merge commit**：帳本編號是協定 §7 的決策，不是機械 rebase；摻進 merge 會讓它在 `git log` 裡消失。
+
+**教訓（接 Surprises 10）**：BD 號在**開工當下**重查還不夠 —— 長命的分支在**推送前**都可能被主幹撞號。給未推送分支用的號，實質上只是「預約」，要到合併那一刻才算數。
+
 ---
 
 ## Surprises & Discoveries（規劃期、T0、T1、T2、T3、T4 與 T5）
@@ -677,7 +696,7 @@ README §2.5 的 `geometry` 是一個 per-target 陣列。但 FR-63.8 要 `first
 
 9. **（T1）零散布讓 v8 的 e2e 只會更穩，不會更脆。** [`micro-flick-live.spec.ts`](../../../../../tests/e2e/micro-flick-live.spec.ts) 是全 repo 唯一載入 v8 的 e2e；其 500 ms 敲擊節奏的註解明寫是為了讓 **ak47 的 punch 與 spread** 在兩發之間衰減完（該段描述的是 v1，不是 v8）。v8 換零散布後這層補償對 v8 不再需要；6/6 全綠，且未改動該 spec 任何一行。
 
-10. **（T2）`BD-n` 與 `KI-n` 不同步，規劃期照 KI 號推的 `BD-035` 已被別人用掉。** `BD-035`／`BD-036`／`BD-037` 分別屬於 KI-038／KI-037／KI-039。⇒ 本 WP 改取 `BD-038`（D-63.T2-1）。同時發現 `BUGFIX-DECISIONS.md` §1 的索引表**根本沒有 KI-035 這一列**（KI-034 之後直接跳 KI-036），本 task 補上。**教訓**：帳本的號要在**開工當下**重查，不能沿用規劃期推的號；GD-35 ② 對 WP／GD 號的紀律，對 BD 號同樣適用。
+10. **（T2）`BD-n` 與 `KI-n` 不同步，規劃期照 KI 號推的 `BD-035` 已被別人用掉。** `BD-035`／`BD-036`／`BD-037` 分別屬於 KI-038／KI-037／KI-039。⇒ 本 WP 先改取 `BD-038`（D-63.T2-1），其後 `main` 的 `67962ed` 把 `BD-038` 保留給 KI-034、把 `BD-039` 保留給 KI-035 ⇒ **同一個號撞了兩次**，最終落帳 `BD-039`（D-63.T2-2）。同時發現 `BUGFIX-DECISIONS.md` §1 的索引表**根本沒有 KI-035 這一列**（KI-034 之後直接跳 KI-036），本 task 補上。**教訓**：帳本的號要在**開工當下**重查，不能沿用規劃期推的號；GD-35 ② 對 WP／GD 號的紀律，對 BD 號同樣適用。
 
 11. **（T2）`fpsTestHarness` 有自己的 `drillRunner`，e2e 的 `harness.startDrill()` 不會讓 live 相位變成 `running`。** 這件事推翻了本 task 的第一個假設：原本預期
     [`spider-shot-wide.spec.ts`](../../../../../tests/e2e/spider-shot-wide.spec.ts) 在 `running` 中改 FOV 會被 (b) 的 handler guard 擋下而轉紅，實測 4/4 全綠。harness 自述「每次 `startDrill()` 重建，形成乾淨、與生產同源的**獨立**管線」——`state`／`recorder`／`targetManager`／`drillRunner` 全都是它自己的。⇒ **任何以 `drillRunner.phase` 為判準的新 UI 行為，都不會被 harness 驅動的 e2e 覆蓋到**；要測那種行為必須走真 pointer lock 的 live 路徑（`armAndWaitRunning`）。

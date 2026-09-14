@@ -367,7 +367,7 @@ describe('DataRecorder mouse 積分 — KI-005 / A（FR-A-1/4）', () => {
 });
 
 /**
- * KI-035 / BD-038（WP-63 T2）— 感度／FOV 變更後 recorder 的 mouse gain 必須跟著換。
+ * KI-035 / BD-039（WP-63 T2）— 感度／FOV 變更後 recorder 的 mouse gain 必須跟著換。
  *
  * 為什麼測試放在 data 層卻拉進 `ui/SettingsPanel`：這個 bug **不在任何一層裡面**，它在兩層之間
  * 的那條線上——`configureMouseIntegration()` 本來就正確（上方既有測試已證），`resolveMouseGain()`
@@ -467,7 +467,7 @@ function integrateOneTick(recorder: DataRecorder, dx: number, dy: number, ads: b
   return ticks[ticks.length - 1].dYaw as number;
 }
 
-describe('KI-035 / BD-038 — 感度／FOV 變更後 ticks[].dYaw 用新 gain', () => {
+describe('KI-035 / BD-039 — 感度／FOV 變更後 ticks[].dYaw 用新 gain', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -527,7 +527,7 @@ describe('KI-035 / BD-038 — 感度／FOV 變更後 ticks[].dYaw 用新 gain', 
   });
 });
 
-describe('KI-035 / BD-038 — main.ts 真的接了這條線（source 掃描）', () => {
+describe('KI-035 / BD-039 — main.ts 真的接了這條線（source 掃描）', () => {
   const MAIN_SOURCE = readFileSync(new URL('../main.ts', import.meta.url), 'utf8');
 
   /** 取 `const settingsPanel = createSettingsPanel({ ... })` 的選項字面量。 */
@@ -539,7 +539,7 @@ describe('KI-035 / BD-038 — main.ts 真的接了這條線（source 掃描）',
     return MAIN_SOURCE.slice(start, end);
   }
 
-  it.each([['onSensitivityChange'], ['onFovChange']])('%s 變更後推新 gain 進 recorder（BD-038 (a)）', (callback) => {
+  it.each([['onSensitivityChange'], ['onFovChange']])('%s 變更後推新 gain 進 recorder（BD-039 (a)）', (callback) => {
     const options = settingsPanelOptions();
     const callbackAt = options.indexOf(`${callback}:`);
     expect(callbackAt).toBeGreaterThan(-1);
@@ -557,7 +557,7 @@ describe('KI-035 / BD-038 — main.ts 真的接了這條線（source 掃描）',
     expect(wiredAt).toBeGreaterThan(createdAt);
   });
 
-  it('錄製中停用兩個滑桿，判準沿用 countdown/running（BD-038 (b)）', () => {
+  it('錄製中停用兩個滑桿，判準沿用 countdown/running（BD-039 (b)）', () => {
     expect(MAIN_SOURCE).toMatch(
       /function syncAimSettingsLock\(\): void \{[\s\S]*?settingsPanel\.lockAim\(phase === 'countdown' \|\| phase === 'running'\);[\s\S]*?\n\}/,
     );

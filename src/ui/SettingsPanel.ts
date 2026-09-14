@@ -55,7 +55,7 @@ export interface SettingsPanelHandle {
   /** protocol 鎖定解析度條件時停用切換；WP-22 T2 消費。 */
   lockMode(locked: boolean): void;
   /**
-   * KI-035 / BD-038（WP-63 T2）：drill 錄製中（`countdown`/`running`）停用感度與 FOV 兩個滑桿，
+   * KI-035 / BD-039（WP-63 T2）：drill 錄製中（`countdown`/`running`）停用感度與 FOV 兩個滑桿，
    * 使一次 run 內只會有一組 mouse gain —— 否則同一份 `ticks[]` 的前後段會用不同 gain 積分，
    * 而匯出的 `meta.mouseIntegration` 只有一組值。
    *

@@ -145,7 +145,7 @@ export interface DataRecorder {
    * sensitivity/FOV 不可能變動」。該推論漏掉「**載入 drill 之後、取鎖之前**調滑桿」這條路徑——面板
    * 那時是顯示的，而舊實作只在換武器／換 drill 重設 gain ⇒ `ticks[]` 用舊 gain 積分、匯出的
    * `meta.mouseIntegration` 用新設定重算，兩者發散且離線不可察覺。現在 main.ts 的
-   * `refreshRecorderMouseGain()` 也掛在感度／FOV 變更上（BD-038 (a)），故本方法的呼叫時機是
+   * `refreshRecorderMouseGain()` 也掛在感度／FOV 變更上（BD-039 (a)），故本方法的呼叫時機是
    * 「建構 + 換武器 + 換 drill + 設定變更」四種，而非三種。
    */
   configureMouseIntegration(config: MouseIntegrationConfig | undefined): void;

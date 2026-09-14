@@ -15,7 +15,7 @@
 | **Estimate** | 12–16.5 dev-days（T0～T7 + T-exit） |
 | **Risk** | Med：主要風險在**構念邊界**而非實作。`buildTargetWindows()` 若被寫成第二套幾何就踩 C-D4；v8 換武器會讓既有 v8 匯出與新資料不可混比 |
 | **Milestone** | 無獨立里程碑，**T-exit gate 即交付判定**（比照 WP-60／62） |
-| **Status** | 🟡 **T0／T1／T2 完成**（2026-09-14；[證據](progress.md)）—— entry gate、v8 零散布武器宣告、[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 修復（`BD-038`）。T3–T7 未開工 |
+| **Status** | 🟡 **T0／T1／T2 完成**（2026-09-14；[證據](progress.md)）—— entry gate、v8 零散布武器宣告、[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 修復（`BD-039`）。T3–T7 未開工 |
 
 ### 落點說明（stage 主題部分相符，明帳記錄）
 
@@ -437,7 +437,7 @@ export function deriveMicroFlickMetrics(
 |---|---|---|---|---|---|---|
 | **T0** | entry-gate：重查 WP／GD 編號、驗上游 gate、實測基線、收斂 OQ-63.1 | — | Low | 0.5 | `DECISIONS.md` 與 `exec-plan/README.md §2` 的當下最大 WP／GD 號記入 `progress.md`；typecheck ×2／全量 Vitest／GD-44 Edge 全量與 chromium-ci fast（均 `--workers=1`）／`vite build` 五項 exit 0 且**數字**記入 `progress.md`；CodeGraph impact 重跑並記錄 §0.6 的當下值；OQ-63.1 由研究者回答或以預設假設明帳推進 | `docs(wp-63): T0 entry-gate` |
 | **T1** | v8 宣告 `weaponId: 'usp_s_laser'` + 斷代標記 + 彈匣旗標契約 | T0 | Med | 1.5 | `micro_flick_three_target_test_variants.test.ts` 斷言 v8 的 `weaponId === 'usp_s_laser'` 且 v1–v7 的 config 物件鍵集合逐位不變；新增測試以同 seed 同輸入序列比對 T1 前後的 **spawn trace 逐位相同**（證明 recoil RNG 零消耗，NFR-63.7）；新增測試斷言 v8 條件下 `sampleSpread()` 回 `{0,0}`；`meta.weaponId` round-trip 測試綠 | `feat(wp-63): T1 declare zero-spread weapon for micro flick v8` |
-| **T2** | 修 [KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md)：感度／FOV 變更後重設 mouse gain | T0 | Med | 1 | 新增測試：變更 sensitivity 後積分 mouse delta，斷言 `ticks[].dYaw` 用新 gain 且與 `meta.mouseIntegration.hipStep` 對得上；FOV 同理；既有 `dYaw`/`dPitch` golden 與四 FPS parity 斷言**逐位不變**；**`BD-038`**（規劃期寫的 `BD-035` 已被 KI-038 取用）入 [BUGFIX-DECISIONS.md](../../../../known_issue/BUGFIX-DECISIONS.md) 並翻 KI-035 狀態 | `fix(wp-63): T2 refresh mouse gain on sensitivity and fov change` |
+| **T2** | 修 [KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md)：感度／FOV 變更後重設 mouse gain | T0 | Med | 1 | 新增測試：變更 sensitivity 後積分 mouse delta，斷言 `ticks[].dYaw` 用新 gain 且與 `meta.mouseIntegration.hipStep` 對得上；FOV 同理；既有 `dYaw`/`dPitch` golden 與四 FPS parity 斷言**逐位不變**；**`BD-039`**（規劃期寫的 `BD-035` 已被 KI-038 取用）入 [BUGFIX-DECISIONS.md](../../../../known_issue/BUGFIX-DECISIONS.md) 並翻 KI-035 狀態 | `fix(wp-63): T2 refresh mouse gain on sensitivity and fov change` |
 | **T3** | `buildTargetWindows()` primitive + `aliveAt()` | T0 | **High** | 2.5 | 介面符合 §2.5 簽名；窗數 === `visible` 事件數的不變式測試（含 3 顆並發、`never_killed`、`no_position` 三種 fixture）；**NFR-63.4 符號掃描測試**（五個符號直接出現次數為 0）綠；NFR-63.3 效能斷言（60-kill fixture < 50 ms）綠；`peekWindows.ts` 等五個 canonical 檔案 `git diff` 為空 | `feat(wp-63): T3 add population-aware target window primitive` |
 | **T4** | L0 結果層 + L3 選擇策略層（含 `nearest-2` / `nearest-3`） | T3 | Med | 2 | FR-63.4/5/6 逐條有測試；擊殺時刻取 `fire.hit === true` 的斷言（以一份**零 `hit` 事件**的 hitscan fixture 釘死 §0.3）；`selectionCostRatio` 的貪婪基準線以手算 3-target 小案例驗證；兩群角距分布可比性檢查結果記入 `progress.md` | `feat(wp-63): T4 add micro flick outcome and selection metrics` |
 | **T5** | L1 幾何層：意圖歸屬 + 角誤差 + 首發重定義 + 修正時間拆解 | T3 | **High** | 2.5 | FR-63.7/8/9 逐條有測試；**對抗性 fixture**：一發同時對兩顆等距（FM-2 標旗標且不入聚合）、一發的 `fire.targetId` 與 argmin 角誤差不同（斷言採用 argmin 而非 `targetId`）；`strictEyeOrigin` 缺 `meta.scene.eye` 時拋錯（FM-3）；`cadenceWaitMs` 以 `cycletimeSec` 手算案例驗證 | `feat(wp-63): T5 add intent-attributed shot geometry metrics` |
