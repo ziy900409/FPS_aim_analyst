@@ -52,14 +52,21 @@ WP-63 T7 freezes seven synthetic probes in `src/metrics/microFlickMetrics.test.t
 | 3 | Choppy correction path | higher `signReversalCount` and `dwellPathRatio` than the straight path. |
 | 4 | Overshoot then return | `reEntryCount >= 1` and `signReversalCount >= 1`. |
 | 5 | Stale 60 Hz render `aim` | L2/direction outputs are bit-identical to fresh `aim` when `dYaw/dPitch` match. |
-| 6 | Fire after entry | `approachToFireMs <= 80`. |
+| 6 | Pause then resume: flick into the radius, hold for 10 ticks (78.125 ms), micro-adjust, then fire | `approachToFireMs` **includes** the pause: it exceeds the paused-versus-unpaused control by exactly the pause length, and `reEntryCount` is unchanged (the hold stays inside the angular radius). |
 | 7 | Near replacement | `nearest3Deg < nearest2Deg`, with rank-specific replacement evidence. |
 
 The same test file also freezes:
 
-- display FPS parity at 30/60/144/240 Hz, using deep `Object.is` equality over ticks and derived metrics;
-- tick-rate sensitivity at 64/128/256 Hz, requiring FR-63.10 numeric drift below 5%;
-- v1-v7 micro-flick fixture snapshots so the v8 harness does not silently rewrite legacy drills.
+- tick-rate sensitivity at 64/128/256 Hz, requiring FR-63.10 numeric drift below 5%. The probe resamples **one continuous trajectory** (0° → 6.5° → 5° over 1.000 s) at the three rates, and asserts up front that the two discrete counters are non-zero at the 128 Hz baseline — on a monotone ramp they would both be `0`, and the equality check would prove nothing;
+- that `deriveMicroFlickMetrics()` ignores `meta.displayHz` and `meta.frames`;
+- v1-v7 micro-flick fixture snapshots so the v8 harness does not silently rewrite legacy drills. Note this snapshot compares an 11-field config subset with `widthU` rounded to three decimals; the bit-exact protection for v1-v7 comes from those config objects being untouched by WP-63 plus the existing per-key assertions in `micro_flick_three_target_test_variants.test.ts`.
+
+**Render-FPS parity (NFR-63.2) lives in its own file**: `src/loop/__tests__/wp63-v8-metrics-determinism.test.ts`
+runs the **real** v8 drill — seeded `TargetManager` spawns, real hitscan hit detection, real `DataRecorder` —
+and pumps the same input sequence through 30/60/144/240 Hz frame sequences, then compares tick traces, events,
+and all four metric layers with deep `Object.is` equality. Two sides of a parity comparison must come from two
+real executions of the thing under test; a comparison whose two sides share one generator is always green and
+proves nothing about the pipeline (see [GD-39](../exec-plan/DECISIONS.md) ⑥).
 
 ## Interpretation Limit
 

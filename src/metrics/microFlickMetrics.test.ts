@@ -1374,6 +1374,33 @@ const E3_CHOPPY: T6Spec = {
   kills: [{ tickIndex: 32, viewYawDeg: 5 }],
 };
 
+/**
+ * E6（README §4.2 #6）：flick 進靶 → **停 `PAUSE_TICKS` 個 tick** → 微調 → 開火。
+ *
+ * 停頓整段落在角半徑**內**（4.5° vs 靶心 5°，誤差 0.5° < 1.24° 角半徑），所以它既不是
+ * re-entry 也不是 overshoot；它只是純粹的時間。`approachToFireMs` 的右界是意圖歸屬首發、
+ * 左界是首次進入角半徑 ⇒ 停頓必須**原封不動**留在區間裡。`E6_NO_PAUSE` 是同一條軌跡去掉
+ * 停頓的對照組，兩者的差必須**恰等於**停頓長度——這比一個上界斷言強，它把「吞掉停頓」這個
+ * 失敗模式釘成一個會紅的數字。
+ */
+const PAUSE_TICKS = 10;
+const E6_PAUSE: T6Spec = {
+  initial: [{ yawDeg: 5 }, { yawDeg: -20 }, { yawDeg: 25 }],
+  path: [
+    ...ramp(0, 4.5, 12),
+    ...Array.from({ length: PAUSE_TICKS }, () => ({ yawDeg: 4.5, pitchDeg: 0 })),
+    ...ramp(4.5, 5, 4).slice(1),
+  ],
+  kills: [{ tickIndex: 12 + PAUSE_TICKS + 4, viewYawDeg: 5 }],
+};
+
+/** E6 的對照組：同一條軌跡，抽掉停頓那一段。 */
+const E6_NO_PAUSE: T6Spec = {
+  initial: [{ yawDeg: 5 }, { yawDeg: -20 }, { yawDeg: 25 }],
+  path: [...ramp(0, 4.5, 12), ...ramp(4.5, 5, 4).slice(1)],
+  kills: [{ tickIndex: 16, viewYawDeg: 5 }],
+};
+
 /** 從未靠近靶：全程停在 0°，靶在 20°。 */
 const NEVER_ENTERS: T6Spec = {
   initial: [{ yawDeg: 20 }, { yawDeg: -20 }, { yawDeg: 25 }],
@@ -1558,7 +1585,8 @@ describe('WP-63 T7 — synthetic harness, FPS parity, and tick-rate discipline',
     const choppy = deriveMicroFlickMetrics(t6Scenario(E3_CHOPPY));
     const feint = deriveMicroFlickMetrics(t6Scenario(E4_FEINT));
     const staleAim = deriveMicroFlickMetrics(t6Scenario({ ...E4_FEINT, staleAim: true }));
-    const lateFire = deriveMicroFlickMetrics(t6Scenario(E1_STRAIGHT));
+    const paused = deriveMicroFlickMetrics(t6Scenario(E6_PAUSE));
+    const unpaused = deriveMicroFlickMetrics(t6Scenario(E6_NO_PAUSE));
     const replacement = deriveMicroFlickMetrics(scenario(NEAR_REPLACEMENT_CASE), {
       eye: { strictEyeOrigin: true },
     });
@@ -1609,7 +1637,15 @@ describe('WP-63 T7 — synthetic harness, FPS parity, and tick-rate discipline',
       {
         id: 6,
         assert: () => {
-          expect(microAdjustAt(lateFire, 0).approachToFireMs).toBeLessThanOrEqual(80);
+          const withPause = microAdjustAt(paused, 0).approachToFireMs!;
+          const withoutPause = microAdjustAt(unpaused, 0).approachToFireMs!;
+          const pauseMs = (PAUSE_TICKS * 1000) / 128;
+          // 停頓既沒被吞掉，也沒被當成 re-entry 或 overshoot（它整段落在角半徑內）。
+          expect(withPause - withoutPause).toBeCloseTo(pauseMs, 9);
+          expect(withPause).toBeGreaterThan(pauseMs);
+          expect(microAdjustAt(paused, 0).reEntryCount).toBe(
+            microAdjustAt(unpaused, 0).reEntryCount,
+          );
         },
       },
       {
@@ -1626,7 +1662,12 @@ describe('WP-63 T7 — synthetic harness, FPS parity, and tick-rate discipline',
     for (const gate of gates) gate.assert();
   });
 
-  it('NFR-63.2: display FPS metadata does not perturb v8 tick traces or derived metrics', () => {
+  // ⚠️ 這條**不是** NFR-63.2 的閘：兩側的 `ticks` 來自同一次 `t6Scenario(E4_FEINT)` 呼叫，故
+  // `expectObjectIsDeep(payload.ticks, baselinePayload.ticks)` 恆真。它守的是「`deriveMicroFlickMetrics()`
+  // 不讀 `meta.displayHz`／`meta.frames`」——仍有價值，但名字必須說實話。真正的跨 render FPS 逐位
+  // 比對（跑真的 v8 × 四條幀序列）在 `src/loop/__tests__/wp63-v8-metrics-determinism.test.ts`。
+  // 紀律見 GD-39 ⑥：parity gate 的兩側不得同源。
+  it('deriveMicroFlickMetrics ignores meta.displayHz and meta.frames (NOT the NFR-63.2 parity gate)', () => {
     const baselinePayload = withDisplayHz(t6Scenario(E4_FEINT), 30);
     const baselineMetrics = deriveMicroFlickMetrics(baselinePayload, { eye: { strictEyeOrigin: true } });
 
@@ -1642,6 +1683,10 @@ describe('WP-63 T7 — synthetic harness, FPS parity, and tick-rate discipline',
 
   it('NFR-63.5: FR-63.10 micro-adjust metrics vary by less than 5% across 64/128/256 Hz ticks', () => {
     const baseline = microAdjustAt(deriveMicroFlickMetrics(tickRateProbe(128)), 0);
+
+    // 前置：兩個離散計數在基線上必須非零，否則下面的相等斷言是 `0 === 0` 的空測試。
+    expect(baseline.reEntryCount!).toBeGreaterThan(0);
+    expect(baseline.signReversalCount!).toBeGreaterThan(0);
 
     for (const simHz of [64, 256] as const) {
       const sampled = microAdjustAt(deriveMicroFlickMetrics(tickRateProbe(simHz)), 0);
@@ -1699,12 +1744,21 @@ function withDisplayHz(payload: ExportPayload, displayHz: number): ExportPayload
   };
 }
 
+/**
+ * NFR-63.5 的重採樣探針：**同一條連續時間軌跡**（1.000 s 內 0° → 6.5° → 5°，靶在 5°）在
+ * 64／128／256 Hz 上各取一次樣。`steps = simHz` ⇒ 三者的總時長與總角程完全相同，變的只有取樣率。
+ *
+ * ⚠️ 軌跡刻意**過衝出角半徑再回頭**，而不是單調斜坡：`reEntryCount` 與 `signReversalCount` 是
+ * 離散計數，單調軌跡上三個取樣率都恆為 0 ⇒ 相等斷言會退化成 `0 === 0`，測不到任何東西。過衝
+ * 讓兩個計數在基線上就非零（測試另外斷言這件事），重採樣才真的被壓測。
+ */
 function tickRateProbe(simHz: 64 | 128 | 256): ExportPayload {
   const steps = simHz;
+  const half = steps / 2;
   return t6Scenario({
-    initial: [{ yawDeg: 0 }, { yawDeg: -20 }, { yawDeg: 25 }],
-    path: ramp(0, 0.5, steps),
-    kills: [{ tickIndex: steps, viewYawDeg: 0 }],
+    initial: [{ yawDeg: 5 }, { yawDeg: -20 }, { yawDeg: 25 }],
+    path: [...ramp(0, 6.5, half), ...ramp(6.5, 5, half).slice(1)],
+    kills: [{ tickIndex: steps, viewYawDeg: 5 }],
     simHz,
   });
 }

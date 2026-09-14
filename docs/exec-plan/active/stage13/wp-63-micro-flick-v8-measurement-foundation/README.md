@@ -322,46 +322,23 @@ export interface MicroFlickMetricsOptions {
   readonly directionWindowsMs?: readonly number[];
 }
 
+// ⚠️ **T-exit 更正（2026-09-14）**：規劃期把 `geometry`／`microAdjust`／`direction` 寫成裸陣列。
+// FR-63.15 要求**每個指標輸出**攜帶 `n` 與封閉詞彙表旗標，而裸陣列沒有地方放**層級**旗標
+// （`no_hitbox`／`unknown_cycletime` 是整層的性質，不是某一列的）⇒ 五層一律為
+// `{ 逐列陣列, 聚合量, n, flags }` 物件。見 D-63.T5-3 / D-63.T6-5。以下為**實際交付**的形狀，
+// 逐欄註解見 `src/metrics/microFlickMetrics.ts`。
+
 export interface MicroFlickMetrics {
-  readonly outcome: {                // L0（FR-63.6）
-    readonly killRateHz?: number;
-    readonly shotsPerKill?: number;
-    readonly shotAccuracy?: number;
-    readonly killIntervalP50Ms?: number;
-    readonly killIntervalP90Ms?: number;
-    readonly n: number;
-  };
-  readonly geometry: readonly {      // L1（FR-63.7~63.9）
-    readonly targetId: string;
-    readonly intendedFirstShotErrorDeg?: number;
-    readonly firstShotHit?: boolean;
-    readonly correctionMs?: number;
-    readonly settlingMs?: number;
-    readonly cadenceWaitMs?: number;
-    readonly flags: readonly string[];
-  }[];
-  readonly microAdjust: readonly {   // L2（FR-63.10，免閾值）
-    readonly targetId: string;
-    readonly reEntryCount?: number;
-    readonly dwellPathRatio?: number;
-    readonly signReversalCount?: number;
-    readonly approachToFireMs?: number;
-    readonly flags: readonly string[];
-  }[];
-  readonly selection: {              // L3（FR-63.4~63.5）
-    readonly nearest2Deg: readonly number[];
-    readonly nearest3Deg: readonly number[];
-    readonly nearestFirstRate?: number;
-    readonly selectionCostRatio?: number;
-    readonly selectionRankEntropy?: number;
-    readonly replacementEngagedRate?: number;
-    readonly n: number;
-  };
-  readonly direction: readonly {     // FR-63.11
-    readonly windowMs: number;
-    readonly predictionAccuracy?: number;
-    readonly n: number;
-  }[];
+  /** L0 結果層（FR-63.6）。 */
+  readonly outcome: MicroFlickOutcomeMetrics;
+  /** L1 幾何層（FR-63.7~63.9）：`{ shots[], targets[], firstShotHitRate?, cycletimeMs?, n, flags }`。 */
+  readonly geometry: MicroFlickGeometryMetrics;
+  /** L3 選擇策略層（FR-63.4／63.5）：`replacementEngagedRate` 依 §3.1 只出 `…ByRank` 分層值。 */
+  readonly selection: MicroFlickSelectionMetrics;
+  /** L2 免閾值微調層（FR-63.10）：`{ targets[], hitboxRadiusU?, n, flags }`。 */
+  readonly microAdjust: MicroFlickMicroAdjustMetrics;
+  /** 方向預測曲線（FR-63.11）：`{ windows[], n, flags }` —— 輸出是一條曲線，不是一個判定。 */
+  readonly direction: MicroFlickDirectionMetrics;
   readonly version: 'micro-flick-v1';
   readonly eyeOriginSource: EyeOriginSource;
 }
@@ -459,7 +436,7 @@ flowchart LR
     T0 --> T3[T3 窗界 primitive]
     T3 --> T4[T4 L0 + L3]
     T3 --> T5[T5 L1]
-    T3 --> T6[T6 L2 + 方向]
+    T5 --> T6[T6 L2 + 方向]
     T1 --> T7[T7 harness + 紀律]
     T2 --> T7
     T4 --> T7
@@ -469,6 +446,10 @@ flowchart LR
 ```
 
 T1／T2／T3 互不相依，可完全並行。
+
+> ⚠️ **T-exit 更正（2026-09-14）**：規劃期把 T6 畫成只相依 T3。實作時 `approachToFireMs` 的右界必須是
+> **T5 的意圖歸屬首發**（FR-63.8 的同一定義），否則 L2 要自備一套「這一發打誰」的判準 ⇒ 同一構念
+> 兩個定義（C-D4）。⇒ 相依圖已改為 **`T5 → T6`**，T4／T5 仍可並行。見 D-63.T6-4。
 
 ### 4.2 T7 的七種故障型態（合成 harness 必須生成）
 

@@ -93,6 +93,8 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 >
 > ⚠️ **再順延（2026-09-12，WP-66 T0 重查）**：`WP-66` 與 `WP-67` **均已被 stage13 採納**並入 [`exec-plan/README.md`](../../README.md) §2 索引 —— [`active/stage13/wp-66-target-hit-visual-feedback/`](../stage13/wp-66-target-hit-visual-feedback/README.md)（命中視覺回饋）與 [`active/stage13/wp-67-export-opening-protocol-marker/`](../stage13/wp-67-export-opening-protocol-marker/README.md)（`meta.opening` 開場協定標記，commit `c54f2c6`）。依 [GD-15](../../DECISIONS.md)「先採納先得」，**本 stage 尚未採納的三個候選順延為 `WP-68`／`WP-69`／`WP-70`**。下表的 WP 欄位尚未改寫（本註記即權威）；採納當下須依 [GD-35](../../DECISIONS.md) ② 再重查一次，不得直接沿用本註記的數字。
 >
+> ⚠️ **T-exit 複核（2026-09-14，WP-63 T-exit）**：`exec-plan/README.md` §2 的最大採納號仍為 **WP-67** ⇒ 上面那條「順延為 `WP-68`／`WP-69`／`WP-70`」的註記**仍然正確**，本次不再順延。同時 **WP-63 已於 2026-09-14 T-exit 交付**（`buildTargetWindows()` primitive + `aliveAt()` + 四層事件錨定指標 + 方向預測曲線，決策 [GD-39](../../DECISIONS.md)）⇒ 下表的 **WP-68（v8）候選視為已由 WP-63 交付**，本 stage 若日後採納，該列應改為指向 WP-63 而不是佔用一個新號。本 stage 未批准，故此處只記事實、不改寫下表。
+
 > ⚠️ **§3 的 WP-68（v8）候選已被 WP-63 實質取代**：WP-63 交付的正是 `buildTargetWindows()` primitive + 三顆離線重建 + v8 指標族。兩處差異須知：(1) WP-63 **不採用** P14-3 所要求的「軌跡意圖歸因 + 合成 harness 驗證歸因規則」，改為**事件錨定** + 以實際下一次擊殺為 ground truth 的方向預測準確率曲線（理由見 [WP-63 §2.2](../stage13/wp-63-micro-flick-v8-measurement-foundation/README.md)：`t_detect` 已是既有構念，C-D4 禁止第二定義，且 v8 受 KI-031／KI-034 雙重阻塞）；(2) WP-63 不等 WP-66（本 stage 候選的 v3 參數定案）先行，因為它不重寫任何既有幾何，primitive 紀律由 NFR-63.4 的符號掃描直接釘死，不需要先有語彙權威。本 stage 若日後採納，§3 的 v8 列應改為指向 WP-63 而非另開新號。
 
 | WP（候選） | 一句話 | 相依 | 估時（d） | 狀態 |

@@ -2,11 +2,22 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-14 T5 完成）
+## 最新狀態（2026-09-14 T-exit 交付）
 
-✅ **T6 完成**（2026-09-14）。`src/metrics/microFlickMetrics.ts` 補上 **L2 免閾值微調描述子**（FR-63.10：`reEntryCount`／`dwellPathRatio`／`signReversalCount`／`approachToFireMs`）與**擊殺後方向預測曲線**（FR-63.11，逐 `W ∈ {30,60,90,120} ms`）。四個描述子無速度門檻、無平滑窗、無峰值偵測，`submovement.ts` 一行未動；角半徑讀 `meta.targets.hitbox` 並與 ray/sphere 命中判定恆等（GD-7）。25 個新測試全綠（檔內 50 → **75**）、全量 Vitest **3,335 passed**（T5 基線 3,310，**+25 = 本 task**）、typecheck ×2 與 `vite build` exit 0。五條決策（D-63.T6-1～5），其中 **D-63.T6-1 放寬了 T4 的「模組零三角換算」掃描**，單獨列帳。T7 與 T-exit 未開工。
+✅ **WP-63 交付完成**（2026-09-14，T-exit）。FR-63.1～63.15、NFR-63.1～63.7 逐條有**指令／斷言證據**（見 [§T-exit](#t-exit--exit-gatefrnfr-逐條對帳diff-稽核帳本與索引更新2026-09-14)）；**GD-39 已入帳**（入帳前重查：已落帳最大 GD-44，但 `GD-39` 零標題命中 ⇒ 未被取用）。最終全量閘：typecheck ×2 exit 0、Vitest **3,351 passed／2 skipped（270 files）**、`vite build` exit 0（203 modules）、GD-44 Tier 1 chromium-ci **102 passed／1 skipped**、Tier 2 Edge 全量 **115 passed**、`npm run graph:update` 已執行。四處索引（stage13 §2／`exec-plan/README.md` §2／stage14 §3／`docs/MAP.md`）已更新。
 
-> ⚠️ **T-exit 待辦（本 task 產生）**：README §2.5 的 `microAdjust`／`direction` 簽名（D-63.T6-5）與 §4.1 相依圖的 `T5 → T6`（D-63.T6-4）須同步更正。
+> ⚠️ **T-exit 補了三個證據缺口，三者皆零 `src/` 異動**（詳見 [TE.0](#te0-本-gate-補的三個證據缺口先記因為它們改變了下面的對帳內容)）：
+> **(TE-a)** T7 的 `NFR-63.2` 斷言兩側來自同一個 generator ⇒ 恆真、與被測物無關 ⇒ 新增 [`wp63-v8-metrics-determinism.test.ts`](../../../../../src/loop/__tests__/wp63-v8-metrics-determinism.test.ts)（11 tests），跑**真的 v8** × 30／60／144／240 四條幀序列逐位比對 trace 與四層指標；紀律入帳 GD-39 ⑥。
+> **(TE-b)** `NFR-63.5` 的重採樣探針原為單調斜坡，兩個離散計數恆 0 ⇒ 相等斷言退化成 `0 === 0` ⇒ 改為過衝軌跡並加「基線計數必須 > 0」前置。
+> **(TE-c)** README §4.2 #6「停頓再啟動」原本用的是**無停頓**的 `E1_STRAIGHT` ⇒ 新增 `E6_PAUSE` 與對照組，斷言兩者 `approachToFireMs` 差**恰等於**停頓長度。
+
+> ⚠️ **交付宣稱上限 = 可算、可重現、可稽核，不含效度**（C-D3 閘未過 ⇒ 指標一律不得進教練報告）。三項具名限制見 [TE.8](#te8-具名限制交付但不宣稱)。
+
+✅ **T7 完成**（2026-09-14）。合成 harness 覆蓋 README §4.2 七種故障型態、FPS parity 與 tick-rate 敏感度閘、v1–v7 legacy fixture 快照、採集紀律文件 [`docs/operational/analysis-micro-flick.md`](../../../../operational/analysis-micro-flick.md)。`microFlickMetrics.test.ts` 80 passed、全量 Vitest **3,340 passed**、typecheck／build／兩層 Playwright 皆 exit 0。OQ-63.3 關閉（D-63.T7-1）。
+
+✅ **T6 完成**（2026-09-14）。`src/metrics/microFlickMetrics.ts` 補上 **L2 免閾值微調描述子**（FR-63.10：`reEntryCount`／`dwellPathRatio`／`signReversalCount`／`approachToFireMs`）與**擊殺後方向預測曲線**（FR-63.11，逐 `W ∈ {30,60,90,120} ms`）。四個描述子無速度門檻、無平滑窗、無峰值偵測，`submovement.ts` 一行未動；角半徑讀 `meta.targets.hitbox` 並與 ray/sphere 命中判定恆等（GD-7）。25 個新測試全綠（檔內 50 → **75**）、全量 Vitest **3,335 passed**（T5 基線 3,310，**+25 = 本 task**）、typecheck ×2 與 `vite build` exit 0。五條決策（D-63.T6-1～5），其中 **D-63.T6-1 放寬了 T4 的「模組零三角換算」掃描**，單獨列帳。
+
+> ✅ **T6 留給 T-exit 的兩項待辦皆已處理**：README §2.5 的 `microAdjust`／`direction` 簽名（D-63.T6-5）與 §4.1 相依圖的 `T5 → T6`（D-63.T6-4）已於 T-exit 同步更正（`task-checklist.md` 的並行圖一併更正）。
 
 ✅ **T4 完成**（2026-09-14 16:29Z）。`src/metrics/microFlickMetrics.ts` 交付 L0 結果層（FR-63.6）＋ L3 選擇策略層（FR-63.4／63.5）；26 個新測試全綠、全量 Vitest 3,286 passed（T3 基線 3,260，**+26 = 本 task**）、typecheck ×2 與 `vite build` exit 0。**可比性前置檢查判定兩群不可比** ⇒ `replacementEngagedRate` 依 [README §3.1](README.md) 只出分層值（`replacementEngagedByRank`）、不出總量（見 §T4 與 D-63.T4-3）。`T_valid` 的錨點與 FM-4 的處置各有一條偏離規劃期字面的決策（D-63.T4-1／D-63.T4-2）。T5–T7 未開工。
 
@@ -33,8 +44,8 @@
 | T4 L0 + L3 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:29Z | 見下方 §T4：26 tests 綠、全量 Vitest 3,286 passed／2 skipped、typecheck ×2 與 build exit 0；可比性檢查 p10/p50/p90 入帳。 |
 | T5 L1 幾何層 | ✅ 完成 | 2026-09-14 | 2026-09-14 16:40Z | 見下方 §T5：50 tests 綠（+24）、全量 Vitest 3,310 passed／2 skipped、typecheck ×2 與 build exit 0；D1–D6 六份對抗性 fixture 各有具名測試；五個 canonical derivation 檔 `git diff` 為空。 |
 | T6 L2 + 方向 | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T6：75 tests 綠（+25）、全量 Vitest 3,335 passed／2 skipped（T5 基線 3,310）、typecheck ×2 與 `vite build` exit 0；E1–E5 五份 fixture 各有具名測試；門檻常數掃描五個字串 count === 0；六個 canonical derivation 檔 `git diff` 為空。 |
-| T7 Harness + discipline | Complete | 2026-09-14 | 2026-09-14 | T7 synthetic harness covers README section 4.2 probes; FPS parity and tick-rate drift gates pass; legacy v1-v7 fixtures are snapshotted; operational contract added. Verification evidence below. |
-| T-exit | ⬜ 未開工 | — | — | — |
+| T7 Harness + discipline | ✅ 完成 | 2026-09-14 | 2026-09-14 | T7 synthetic harness covers README section 4.2 probes; FPS parity and tick-rate drift gates pass; legacy v1-v7 fixtures are snapshotted; operational contract added. Verification evidence below. |
+| T-exit | ✅ 完成 | 2026-09-14 | 2026-09-14 | 見下方 §T-exit：FR-63.1～15／NFR-63.1～7 逐條對帳；typecheck ×2 exit 0、Vitest **3,351 passed／2 skipped（270 files）**、build exit 0、Tier 1 **102 passed／1 skipped**、Tier 2 Edge **115 passed**、`npm run graph:update` 已執行；GD-39 入帳、四處索引更新；TE-a／TE-b／TE-c 三個證據缺口就地補齊（零 `src/` 異動）。 |
 
 ---
 
@@ -852,6 +863,192 @@ T7 keeps the D-63.T4 aggregate `replacementEngagedRate` behavior unchanged and a
 
 ---
 
+## T-exit — Exit gate：FR／NFR 逐條對帳、diff 稽核、帳本與索引更新（2026-09-14）
+
+> 判定原則（[T-exit-gate.md](T-exit-gate.md)）：每一條必須對應**指令 + 輸出**、**斷言檔名 + 案例名**，或**記入本檔的實測數值**。
+> 「已完成」「運作正常」一律不合格。
+
+### TE.0 本 gate 補的三個證據缺口（先記，因為它們改變了下面的對帳內容）
+
+T-exit 逐條複核 T7 的三條 NFR 斷言時，發現**其中兩條守的不是它們掛著的那條 NFR**，一條沒有覆蓋
+它宣稱的故障型態。三者都是**測試層**的問題（`src/metrics/*.ts` 與所有 src 一行未動），且都可在本
+gate 內關閉，故**補證據而不是列具名缺口** —— 具名缺口留給「需要真人或真瀏覽器」的項目。
+
+| # | 原狀 | 為什麼不合格 | 本 gate 的處置 |
+|---|---|---|---|
+| **TE-a** | `NFR-63.2: display FPS metadata does not perturb v8 tick traces or derived metrics` | `withDisplayHz()` 只改寫同一份合成 payload 的 `meta.displayHz`／`meta.frames`，**兩側的 `ticks` 來自同一次 `t6Scenario(E4_FEINT)` 呼叫** ⇒ `expectObjectIsDeep(payload.ticks, baselinePayload.ticks)` 恆真，與被測物無關。它守的是「指標不讀 `meta.displayHz`」（仍值得有），但 NFR-63.2 要的是**跑四次真的 v8** | 新增 [`src/loop/__tests__/wp63-v8-metrics-determinism.test.ts`](../../../../../src/loop/__tests__/wp63-v8-metrics-determinism.test.ts)（11 tests）。比照 repo 既有的 `wp62`／`wp65`／`wp66` determinism harness：真 `TargetManager` seeded spawn、真 camera hitscan、真 `DataRecorder`，以 30／60／144／240 四條幀序列 pump **同一份輸入**，再逐位比對 trace、events 與四層指標。紀律入帳 [GD-39](../../../DECISIONS.md) ⑥。原斷言**保留但改名**為 `deriveMicroFlickMetrics ignores meta.displayHz and meta.frames (NOT the NFR-63.2 parity gate)` —— 留著一條掛著 `NFR-63.2` 名字卻不測 NFR-63.2 的斷言，正是本 gate 要消除的混淆 |
+| **TE-b** | `NFR-63.5: … vary by less than 5% across 64/128/256 Hz ticks` | 探針 `tickRateProbe()` 用 `ramp(0, 0.5, steps)` —— **單調斜坡**。`reEntryCount` 與 `signReversalCount` 是離散計數，單調軌跡上三個取樣率恆為 0 ⇒ 兩條相等斷言退化成 `0 === 0`。而重採樣最可能咬到的**正是**離散計數 | 探針改為 1.000 s 內 `0° → 6.5° → 5°`（過衝出角半徑再回頭），三個取樣率取樣**同一條連續時間軌跡**（`steps = simHz` ⇒ 總時長與總角程相同）。並加一條前置斷言：基線的兩個計數**必須 > 0**，否則相等比較是空測試 |
+| **TE-c** | 七種故障型態的 gate 6（README §4.2 #6「停頓再啟動」） | `lateFire` 與 gate 1 的 `straight` 是**同一個 `E1_STRAIGHT` fixture**（一條直線逼近，全程無停頓），斷言 `approachToFireMs <= 80`。README 要的是「`approachToFireMs` 不應把停頓吞掉」——一個上界斷言在無停頓的 fixture 上不可能測到這件事 | 新增 `E6_PAUSE`（flick 進靶 → 停 10 ticks ＝ 78.125 ms → 微調 → 開火；停頓整段落在角半徑**內**，故不是 re-entry 也不是 overshoot）與對照組 `E6_NO_PAUSE`。gate 6 改為斷言兩者的 `approachToFireMs` 差**恰等於**停頓長度（`toBeCloseTo(78.125, 9)`），並斷言 `reEntryCount` 不受停頓影響 |
+
+⇒ 三處**只動測試檔**：`microFlickMetrics.test.ts`（TE-b／TE-c）與一個新檔（TE-a）。
+`src/metrics/targetWindows.ts`／`microFlickMetrics.ts` 與所有其他 `src/` 檔在本 gate 的 `git diff` 為**空**。
+
+**這個新閘自己不是空測試 —— 以 mutation probe 證明（2026-09-14）**：把 `runV8()` 的 `mouse` 事件時間戳
+改成依賴**當前是第幾次 `pump()`**（`t: tickEndMs + TICK_MS / 2 + (pumpIndex % 2) * TICK_MS`），
+也就是人工製造一條「輸入排空邊界沾到 render 幀」的洩漏。結果：**11 條測試中 9 條轉紅**
+（四個 FPS × trace、四個 FPS × 四層指標、四序列互等），只有「非空對空前置」與「同序列重播」兩條仍綠
+（後者本來就餵同一條幀序列，不該被這個洩漏咬到 —— 它照定義通過，正是預期行為）。
+probe 已移除，`git diff` 零殘留。⇒ 這條閘確實會因為被測物的行為而紅，而不是因為兩側同源而恆綠。
+
+新 harness 的 canonical trace 形狀（**非空對空**的機械佐證，由該檔第一條測試守住）：
+
+| 量 | 值 |
+|---|---:|
+| ticks | 900 |
+| `fire` 事件 | 37（**hit 18／miss 19**） |
+| `visible` 事件 | 21 |
+| `outcome.n`（擊殺數） | 18 |
+| `geometry.shots` | 37 |
+| `selection.n` | 17 |
+| `microAdjust.n` | 18 |
+| `direction` 逐 `W` 的 `n` | 17 / 17 / 17 / 17 |
+| `geometry.firstShotHitRate` | 0.4210…（**兩條分支都走到**） |
+| 出現過的旗標 | `no_shot_at_target`／`held_fire_during_correction`／`never_killed`／`fire_before_entry` |
+
+### TE.1 FR 逐條對帳
+
+| FR | 證據（檔案 › 案例名） |
+|---|---|
+| **FR-63.1** 窗數恆等於 `visible` 事件數，不丟窗不合併窗 | `targetWindows.test.ts` › `fixture A: 窗數 === visible 事件數（FR-63.1 不變式）`、`fixture B: …`、`fixture C: …`（三種 fixture 各一條）＋ `fixture A: drill 結束仍存活的 3 顆窗仍在，並標 never_killed（不丟窗）` |
+| **FR-63.2** 「某時刻誰活著」候選集 | `targetWindows.test.ts` › `fixture A: aliveAt 在每個擊殺時刻回 2 顆、在補位 tick 回 3 顆（FR-63.2）`、`fixture A: 存活集合帶座標，且座標來自 visible 事件而非 ticks[].tx` |
+| **FR-63.3** 原語不自算 ε／on-target／eye origin／ω | `targetWindows.test.ts` › `五個 canonical 幾何符號的直接出現次數為 0`、`不重寫任何角度／世界座標換算，也不呼叫既有 derivation`、`維持純函式：無時鐘、無隨機、無 DOM、無 three、無 node builtin` |
+| **FR-63.4** `nearest-2`／`nearest-3` 雙候選集角距 | `microFlickMetrics.test.ts` › `nearest2Deg / nearest3Deg 逐次擊殺對上手算角距`、`nearest2Deg 與 nearest3Deg 逐位對齊,且 nearest3 恆不大於 nearest2`、`replacement 比倖存者更近時,nearest3Deg 嚴格小於 nearest2Deg`、`擊殺後沒有補位時標 no_replacement_for_kill,且該次 nearest3 退化為 nearest2` |
+| **FR-63.5** 選擇策略四量 | `microFlickMetrics.test.ts` › `nearestFirstRate 與 selectionCostRatio 對上手算值`、`selectionRankEntropy 是被選中 rank 分布的 Shannon 熵（bits）`、`完全按最近鄰順序擊殺的序列 ⇒ selectionCostRatio === 1.0、nearestFirstRate === 1.0、熵 === 0`、`同距候選一律同 rank,不以陣列順序決勝（FM-2 的同一條紀律）`。⚠️ `replacementEngagedRate` **總量不出數**，改出 `replacementEngagedByRank`（§T4 可比性前置檢查判定兩群不可比；D-63.T4-3） |
+| **FR-63.6** 結果層五量，擊殺時刻取 `fire.hit === true` | `microFlickMetrics.test.ts` › `這份 hitscan fixture 完全沒有 hit 事件——擊殺時刻只能來自 fire.hit === true（README §0.3）`（先斷言 `events.some(type==='hit') === false`）＋ `五量對上手算期望值`、`首顆間隔單獨回報,不併入 killInterval 分布` |
+| **FR-63.7** 意圖歸屬 = argmin 角誤差，不得用 `fire.targetId`／`offsetDeg` | `microFlickMetrics.test.ts` › `D2 採用 argmin 角誤差而非 fire.targetId——後者失手時是陣列首顆（README §0.1 #4）`、`D3 交叉檢核:正常 fixture 的**每一發**命中,argmin 都等於被 raycast 覆寫的 fire.targetId`、`D1 一發同時對兩顆等距 ⇒ multiple_kill_candidates,且該發不進 L1 聚合（FM-2）`、`命名紀律:逐發列上凡帶「這一發的目標」語意的鍵一律 intended 前綴`（含原始碼掃描 `fire.targetId`／`offsetDeg`／`firstShot` 各 0 次） |
+| **FR-63.8** 以意圖歸屬重定義首發 + `firstShotHitRate` | `microFlickMetrics.test.ts` › `首發 = 意圖歸屬為該顆的**第一發**,不是 fire.firstShot`、`firstShotHitRate 的分母是「有首發的目標」,不是全部 visible`、`沒有任何一發可歸屬 ⇒ firstShotHitRate undefined + n === 0,不補零（FR-63.15）` |
+| **FR-63.9** `correctionMs` 拆 `settlingMs` + `cadenceWaitMs` | `microFlickMetrics.test.ts` › `D5 首發失手 → 隔 170 ms（= cycletime）補一發命中 ⇒ cadenceWaitMs ≈ 170、settlingMs ≈ 0`、`D6 … 隔 500 ms … ⇒ cadenceWaitMs ≈ 170、settlingMs ≈ 330`、`cycletimeSec 讀匯出宣告的武器,不是常數——同一份時序換 ak47 就換一組拆解`、`中途朝別顆開的槍一樣佔住節奏 ⇒ 計入 cadenceWaitMs（節奏地板是武器層級的）` |
+| **FR-63.10** 四個免閾值描述子 | `microFlickMetrics.test.ts` › E1 四條（`進入門界由靶的角尺寸決定，不是調校值` 等）、E2 `reEntryCount >= 1 且 signReversalCount >= 1`、E3 兩條（`signReversalCount 顯著高於直線 flick`／`dwellPathRatio 大於直線 flick`）、**免閾值掃描** `五個 seg-v2 調校符號的出現次數皆為 0（T6 Step 3）`、`不 import submovement／savitzkyGolay——seg-v2 一行不動` |
+| **FR-63.11** 逐 `W` 方向預測曲線 | `microFlickMetrics.test.ts` › `E4: 四個預設窗長各有一筆，樣本數一致`、`E4: 小 W 抓到假動作（朝 A，預測錯），大 W 抓到真意圖（朝 B，預測對）`、`E4: 曲線形狀本身是產出——這正是不把某個 W 凍結成門檻的理由`、`E4: 自訂 directionWindowsMs 照樣掃描（W 是自變項不是常數）`、`直線奔向下一顆 ⇒ 每個 W 都預測對，曲線不下降`。逐 `W` 實測值見 §T6 的 E4 表 |
+| **FR-63.12** v8 宣告 `weaponId: 'usp_s_laser'`，`meta.weaponId` 可稽核 | `micro_flick_three_target_test_variants.test.ts` › `declares the zero-spread, zero-recoil weapon for v8 and leaves v1-v7 on their own default`；`micro_flick_three_target_test_v8_weapon.test.ts` › `resolves usp_s_laser through the same precedence rule main.ts uses`、`stamps the generation break into meta.weaponId, through the shape-only reader`（經 `canonicalExportJSON` → `parseExportPayload` round-trip） |
+| **FR-63.13** 彈匣打空偵測，不靜默忽略 | `targetWindows.test.ts` › `窗內把彈匣打到見底時標旗標`、`彈匣充足的窗不標旗標；缺 ammo 欄位的匯出也不標`、`判準是「扣彈前存量觸底」而非字面的 ammo === 0（SimLoop.ts:510 記的是扣彈前的值）`；起始彈匣由 `micro_flick_three_target_test_v8_weapon.test.ts` › `starts every magazine at the declared size, …` 釘死。⚠️ 規劃期字面判準 `ammo === 0` **不可達**，已就地更正為 `<= 1`（D-63.T3-2） |
+| **FR-63.14** 感度／FOV 變更後 gain 即時生效且與 `meta.mouseIntegration` 一致 | `DataRecorder.test.ts` › `sensitivity 變更後，積分用新 gain，且與 meta.mouseIntegration 會報的值同源`、`FOV 變更後，ADS 態積分用新 adsStep（hip 態本就不隨 FOV 變，見斷言 4）`、`未變更設定時不重設 gain，dYaw 與從未接過面板的 recorder 逐位相同`、`refreshRecorderMouseGain() 走既有的 currentMouseGain()，不另算一份 gain`；錄製中鎖面板由 `SettingsPanel.test.ts` › `lockAim() 停用兩個滑桿並吃掉變更，解鎖後恢復`。決策 [`BD-039`](../../../../known_issue/BUGFIX-DECISIONS.md)，[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) 已翻 ✅ |
+| **FR-63.15** 每層帶 `n`／封閉詞彙表旗標／版本字串；缺失 `undefined` 不補零 | `microFlickMetrics.test.ts` › `攜帶 n、flags 與 version（FR-63.15）`、`零擊殺 ⇒ 五量全 undefined、n === 0,不補零`、`只有一次擊殺 ⇒ killInterval 分位數 undefined + single_kill,但 killRateHz 仍成立`、`旗標詞彙表封閉:輸出的每個旗標都在詞彙表內`、`旗標詞彙表封閉:逐發列與逐窗列的每個旗標都在詞彙表內`、`L2 與方向層的旗標都落在各自的詞彙表內`、`缺 dYaw/dPitch ⇒ no_mouse_integration，不退回 aim 差分`、`從未進入角半徑 ⇒ never_entered_radius，三個「進入後」描述子缺席`；`targetWindows.test.ts` › `任何輸出旗標都在 TARGET_WINDOW_FLAG_VOCABULARY 內（封閉性）` |
+
+### TE.2 NFR 逐條對帳（指令 + 實際數字，並與 T0 基線對照）
+
+| NFR | 指令／斷言 | T-exit 實測 | T0 基線 | 判定 |
+|---|---|---|---|---|
+| **NFR-63.1** v1–v7 與非 population drill 逐位不變 | `micro_flick_three_target_test_variants.test.ts`（10 passed）＋ `microFlickMetrics.test.ts` › `NFR-63.1: legacy v1-v7 micro-flick fixture contract stays frozen outside the v8 gate`；`git diff cd7d1d3^..HEAD -- src/drill/` 只含 `micro_flick_three_target_test_v8.ts`（6 行）與兩個**新增**測試檔 | 通過 | — | ✅ ⚠️ 見 TE.8 #2 |
+| **NFR-63.2** 30／60／144／240 render FPS 逐位一致 | `npx.cmd vitest run src/loop/__tests__/wp63-v8-metrics-determinism.test.ts` | **exit 0，11 passed**（四 FPS × trace ＋ 四 FPS × 四層指標 ＋ 互等 ＋ 重播 ＋ 非空對空前置） | 無（T7 的原斷言不構成本閘，見 TE-a） | ✅ |
+| **NFR-63.3** `buildTargetWindows()` < 50 ms | `targetWindows.test.ts` › `60-kill v8 匯出（63 窗、7,680 ticks）在 50 ms 內完成` ＋ `規劃期估的上界（約 180 個 visible 事件）同樣在 50 ms 內完成`；T-exit 另以一次性 instrument 取值 | **0.644 ms**（63 窗／7,682 ticks）。T3 當時為 0.914 ms；180 窗／22,658 ticks 當時為 5.187 ms | — | ✅（門檻 50 ms） |
+| **NFR-63.4** 五個符號直接出現次數為 0 | `targetWindows.test.ts` › `五個 canonical 幾何符號的直接出現次數為 0`；T-exit 另以 `grep -c` 直接複驗 | `epsilon` **0**／`onTarget` **0**／`eyeHeight` **0**／`SIM_TO_WORLD` **0**／`acos` **0** | — | ✅ |
+| **NFR-63.5** 64／128／256 Hz 重採樣相對變異 < 5% | `microFlickMetrics.test.ts` › `NFR-63.5: FR-63.10 micro-adjust metrics vary by less than 5% across 64/128/256 Hz ticks`（TE-b 後：過衝軌跡 ＋ 兩個離散計數基線 > 0 的前置斷言） | 通過 | 無（TE-b 前的探針為單調斜坡，兩個計數恆 0） | ✅ |
+| **NFR-63.6** 既有測試零修改全綠（五項全量閘） | 見 TE.5 | typecheck ×2 exit 0／Vitest **3,351 passed／2 skipped（270 files）**／build exit 0／Playwright 兩層見 TE.5 | Vitest 3,217 passed；Edge 115 passed；chromium-ci fast 102 passed／1 skipped；build 203 modules | ✅ |
+| **NFR-63.7** v8 換武器不擾動 seeded 串流 | `micro_flick_three_target_test_v8_weapon.test.ts` › `swapping the weapon does not perturb the seeded spawn stream, even under live fire`（96 snapshot × 7 欄 `Object.is`，兩側 `shotsFired` 皆 4 且相等）、`never draws from the shared seeded stream, because sampleSpread early-returns`（15 次 `sampleSpread()` 後 rng 呼叫數 **0**；對照組 ak47 > 0）、`generates a bit-zero recoil table, …` | **6 passed** | — | ✅ |
+
+### TE.3 README §2b 硬約束表逐列複核
+
+| 約束 | 規劃期判定 | T-exit 複核 |
+|---|---|---|
+| 時鐘域：禁 `Date.now()` | 不觸及 | ✅ `grep -c` 於兩個新模組：`Date.now` **0**、`performance.now` **0**（離線層只消費匯出時間戳）。新增的 determinism harness 以 `fixedClock(0)` 注入，`pump()` 的 `nowMs` 由測試給定 |
+| cross-origin isolation | 觸及（採集端） | ✅ 離線端硬閘記於 [`docs/operational/analysis-micro-flick.md`](../../../../operational/analysis-micro-flick.md)；`microFlickMetrics.test.ts` › `records the operational quality gates as concrete v8 payload facts` 斷言 `meta.crossOriginIsolated === true` 與 `displayHz >= 144` |
+| **決定性**（ADR-3／CLAUDE.md §4） | 觸及（T1） | ✅ 兩條獨立證據：T1 的 spawn trace 逐位比對（NFR-63.7）＋ T-exit 新增的四 FPS × 真 v8 逐位比對（NFR-63.2）。斷言對象為 tick index 對應的狀態與指標，**不**斷言 wall-clock |
+| 三迴圈邊界（ADR-2） | 不觸及 | ✅ `grep -c SharedState` 於 `targetWindows.ts`／`microFlickMetrics.ts` 皆 **0**。T2 的修復只在 app 佈線層加 callback，不新增跨迴圈通道 |
+| 固定佈局：ring／arena 不 `push` 物件 | 不觸及 | ✅ recorder 零修改；`git diff cd7d1d3^..HEAD -- src/data/` 只含 `DataRecorder.ts` 的 **10 行**（`configureMouseIntegration()` docstring 改寫，無行為變更）與其測試 |
+| seeded RNG（GD-5） | 觸及（T1／T7） | ✅ 新程式碼零 RNG：`grep -c Math.random` 兩個模組皆 **0**，新 harness 亦 **0**（`APPROACH_*` 常數與換靶規則皆為 tick index 的純函式）。合成 fixture 全部決定性、無隨機 |
+| GD-6 場景幾何不進 sim／解析度切換不改 sim | 不觸及 | ✅ 兩個模組零 `propBounds`／GLTF／scene collision 引用；v8 為 hitscan 無 occlusion context |
+| GD-9 場景資產授權 | 不觸及 | ✅ 零新增場景資產 |
+| GD-11 FPSci 授權紅線 | 不觸及 | ✅ 指標定義源自本 repo 既有設計文件與公開文獻；零 FPSci 程式碼／config |
+| **GD-7 hitbox 單一來源** | 觸及 | ✅ `microFlickMetrics.test.ts` › `角半徑用 widthU / 2（HitDetector 的 sphere 半徑），不是箱體角點半徑`（並把 `√3` 倍率釘成會紅的數字）、`模組不 import 也不提及 targetHitboxRadius／clearance 路徑`（原始碼掃描，`codeOnly()` 去註解後 0 命中）、`缺 hitbox ⇒ no_hitbox，整層不出數`、`box hitbox ⇒ unsupported_hitbox_shape，不改用某種等效半徑`。⚠️ **Nit**：模組第 936 行的 docstring 刻意**提及** `targetHitboxRadius()` 以警告後人；測試名寫「不提及」但實際掃的是去註解後的程式碼 —— 語意是「不使用」，措辭略寬。不改測試（那段註解正是要留的） |
+| C-D1／C-D5 | 觸及（邊界宣告） | ✅ `research/` 側 `git diff` 為**空**；v8 為 practice mode ⇒ `DrillMetricRegistry` 自動排除 ⇒ C-D5 不觸發，不建立 Python 對表。入帳 [GD-39](../../../DECISIONS.md) ⑤ |
+| **C-D4 canonical derivation 檔不得動一行** | 硬紀律 | ✅ `git diff cd7d1d3^..HEAD` 對 `peekWindows.ts`／`trackingDerivation.ts`／`detectionDerivation.ts`／`eyeOrigin.ts`／`angularKinematics.ts`／`submovement.ts` **六個檔全部為空** |
+
+### TE.4 診斷式錨點掃描（§2.2 硬紀律）
+
+```
+targetWindows.ts      : onset 0 · sustained 0 · firstSustained 0
+microFlickMetrics.ts  : onset 0 · sustained 0 · firstSustained 0
+（大小寫不敏感複掃，含兩個測試檔）: 四個檔全部 0
+```
+
+⇒ 本 WP 未引入任何自訂 movement-onset 判準。紀律入帳 [GD-39](../../../DECISIONS.md) ②。
+
+### TE.5 全量閘
+
+| 指令 | exit code | 數字 |
+|---|---:|---|
+| `npm.cmd run typecheck` | **0** | `tsc --noEmit` 與 `tsc --noEmit -p tsconfig.node.json` 兩段皆成功 |
+| `npm.cmd test` | **0** | Vitest **270 files passed／1 skipped（271）**；**3,351 tests passed／2 skipped（3,353）**；14.33 s。T7 基線 3,340 ⇒ **+11 = 本 gate 新增的 determinism harness** |
+| `npm.cmd run build` | **0** | `tsc` 兩段成功；Vite 6.4.3 **203 modules transformed**、2.26 s；保留既有 chunk-size warning |
+| `npm.cmd run test:e2e:fast -- --workers=1` | **0** | GD-44 Tier 1：chromium-ci **102 passed／1 skipped（103）**、8.4 m —— 與 T0 基線逐項相同 |
+| `npm.cmd run test:e2e -- --workers=1` | **0** | GD-44 Tier 2：Edge 全量 **115 passed／0 failed**、18.0 m，含 `@realgpu` 與 `@slow` —— 與 T0 基線逐項相同。**一次跑過，無 flake 重跑** |
+| `npm.cmd run graph:update` | **0** | **5,374 nodes／13,421 edges／291 communities**；`graph.json`、`graph.html`、`GRAPH_REPORT.md` 皆重建。依 CLAUDE.md 走 npm script，**不得**跑裸 `graphify update .`（會刪掉 `graph.html`） |
+
+焦點測試（本 WP 交付物）：
+
+| 指令 | exit code | 數字 |
+|---|---:|---|
+| `npx.cmd vitest run src/metrics/targetWindows.test.ts` | **0** | 27 passed |
+| `npx.cmd vitest run src/metrics/microFlickMetrics.test.ts` | **0** | **80 passed**（T7 交付時亦為 80；TE-b／TE-c 是既有案例的判準強化，非新增案例） |
+| `npx.cmd vitest run src/loop/__tests__/wp63-v8-metrics-determinism.test.ts` | **0** | **11 passed**（新檔） |
+| `npx.cmd vitest run src/drill/micro_flick_three_target_test_variants.test.ts` | **0** | 10 passed |
+| `npx.cmd vitest run src/drill/micro_flick_three_target_test_v8_weapon.test.ts` | **0** | 6 passed |
+| `npx.cmd vitest run src/data/DataRecorder.test.ts` | **0** | 31 passed |
+| `npx.cmd vitest run src/ui/SettingsPanel.test.ts` | **0** | 2 passed |
+
+### TE.6 帳本與索引
+
+| 項目 | 結果 |
+|---|---|
+| **GD 編號重查**（GD-35 ② 紀律） | 2026-09-14 T-exit 重查 [`DECISIONS.md`](../../../DECISIONS.md)：**已落帳最大為 GD-44**；但 `GD-39` 在本檔**零標題命中**（唯一出現處是 GD-38 ② 內指回本條的交叉引用）⇒ **GD-39 未被取用，不需順延** |
+| **GD-39 入帳** | ✅ 已寫入 `DECISIONS.md` §2（插在 GD-40 與 GD-38 之間，維持號碼降冪）。①②④⑤ 依 T-exit 步驟 5；③ 只**複核**並指回 GD-38 ② 的 inline 更正段（已於 2026-09-10 提前落帳），不重複入帳；另加 **⑥**（parity gate 兩側不得同源，TE-a 的紀律化） |
+| **WP 編號複查** | `exec-plan/README.md §2` 目前最大採納號仍為 **WP-67**（與 T0 相同） |
+| stage13 README §2 | ✅ WP-63 列翻 ✅ 並補證據 |
+| `exec-plan/README.md §2`（階段 M） | ✅ WP-63 列翻 ✅ 並補證據 |
+| stage14 README §3 | ✅ 候選編號順延註記（68／69／70）複查後**仍然正確**（最大採納號未動）；補一行 T-exit 複核日期與「WP-68 候選已由 WP-63 實質交付」的收尾 |
+| [`docs/MAP.md`](../../../../MAP.md) | ✅ T7 已加入 `operational/analysis-micro-flick.md` 條目；本 gate 補上新 determinism harness 的指路 |
+| [KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) ／ `BD-039` | ✅ T2 已翻狀態並入帳，T-exit 複核仍一致 |
+
+### TE.7 diff 稽核
+
+`git diff cd7d1d3^..HEAD --stat`（`cd7d1d3` = T0 的 `docs(wp-63): T0 entry-gate`）＋ 本 gate 的工作樹異動，逐檔判定：
+
+| 群 | 檔案 | 判定 |
+|---|---|---|
+| 新增交付物 | `src/metrics/targetWindows.ts`（213）／`microFlickMetrics.ts`（1,388）＋ 兩個測試檔 ＋ `src/loop/__tests__/wp63-v8-metrics-determinism.test.ts`（本 gate） | 預期 |
+| v8 fixture | `src/drill/micro_flick_three_target_test_v8.ts`（**6 行**，`weaponId` ＋ 理由註解） | 預期（FR-63.12） |
+| KI-035 修復 | `src/main.ts`（60）／`src/ui/SettingsPanel.ts`（19）／`src/data/DataRecorder.ts`（10，docstring）＋ 三個測試檔 | 預期（FR-63.14） |
+| T1 的 consumer 保護 | `src/session/drillFamily.ts`（4）／`drillFamily.test.ts`／`sessionWeaponActivation.test.ts` | 預期（D-63.T1-1：v8 進 `DECLARED_WEAPON_BY_DRILL_ID`） |
+| 文件與帳本 | WP-63 的 task 文件 ＋ `progress.md` ＋ `task-checklist.md` ＋ `DECISIONS.md` ＋ `BUGFIX-DECISIONS.md` ＋ 四份 KI ＋ `docs/MAP.md` ＋ `docs/operational/analysis-micro-flick.md` ＋ 三份索引 | 預期 |
+| graphify 產物 | `graphify-out/*` | 預期（`npm run graph:update` 產物） |
+
+**零非預期的 golden／期望輸出檔異動**：`tests/regression/`、`research/fixtures/golden/`、五個 canonical derivation 檔 `git diff` 皆為空。
+
+### TE.8 具名限制（交付但不宣稱）
+
+依 T-exit-gate 的「✅ 帶具名缺口」形態，以下三項**本 WP 不關閉**，逐條具名歸因：
+
+1. **效度（C-D3 閘）** —— 地板／天花板效應、意圖歸屬的生態效度、免閾值描述子的漏檢率、信度／構念驗證、選擇策略常模，五項**非真人不可**（[README §5](README.md)）。⇒ 本 WP 交付的指標**一律不得進教練報告**。
+2. **NFR-63.1 的「逐位不變」在 T7 的 legacy 快照上是 config 子集比對，不是全欄位 `Object.is`** —— `legacyMicroFlickSnapshot()` 取 11 個欄位且 `widthU` 四捨五入到小數三位（v2／v4 的設計直徑是無窮小數）。**全欄位逐位保護由另一條路徑成立**：v1–v7 的 config 物件本身在本 WP 的 `git diff` 中一行未動（唯一被改的 drill 檔是 v8），且 `micro_flick_three_target_test_variants.test.ts` 對各 variant 有既有的逐鍵斷言。⇒ 這不是漏洞，但 T7 那條測試的名字比它守的範圍大，記在此處以免後續讀者把它當成全欄位 golden。
+3. **`DWELL_RADIUS_MULTIPLE = 2`（`microFlickMetrics.ts:921`）是一個自由選擇的取樣帶寬** —— 它**不是**速度門檻也不是平滑窗（FR-63.10 的字面要求成立：以目標自己的角半徑為單位、隨角尺寸伸縮、無絕對尺度），但「為什麼是 2 而不是 3」目前只有可讀性理由，沒有資料依據。⇒ 取得真人 cohort 後應與漏檢率一起校準；在那之前，跨 cohort 比較 `dwellPathRatio` 必須確認雙方用同一個版本字串。
+
+另承 [README §3.2](README.md) 既有的兩項明帳妥協（不做 movement onset ⇒ 無 `movementTimeMs`／`peakOmega` 的 canonical 對應；FM-4 彈匣空倉列為接受的殘留風險），條件與觸發重構的判準不變。
+
+### TE.9 Decision Log（本 gate）
+
+#### D-63.TE-1 — 三條 T7 斷言就地補強，而不是列為具名缺口（2026-09-14）
+
+判準：**具名缺口保留給「本 WP 內不可能關閉」的項目**（需要真人資料、需要真 GPU 瀏覽器）。TE-a／TE-b／TE-c
+三者都只需要測試層的工作，且都在 0.5 d 的 gate 預算內 ⇒ 列為缺口等同於把「之後再修」寫進交付紀錄。
+三者**零 `src/` 異動**，故不改變任何已入帳的指標語意，也不需要重跑 T1–T6 的證據。
+
+**替代方案（被否決）**：把 TE-a 寫成「NFR-63.2 具名缺口，待另開 WP」。否決理由：determinism 是
+CLAUDE.md §4 的硬約束，repo 內已有 `wp62`／`wp65`／`wp66` 三個可直接比照的 harness，缺的是工，
+不是能力或資料。
+
+#### D-63.TE-2 — 新 harness 的視角軌跡刻意 tick-locked（2026-09-14）
+
+真 app 的 `state.aim` 由 render thread 寫 ⇒ 更新率本來就是顯示率（KI-031 的根因）。若讓測試的視角
+也隨幀率更新，四條序列的**輸入**就不同，比對出來的差異無法歸因。NFR-63.2 固定的是「同一 seed 與
+**輸入序列**」，而視角軌跡屬於輸入 ⇒ 本 harness 以 `afterTick` 逐 sim tick 推進視角，並把同一份 delta
+以 `mouse` 事件（時間戳落在下一個 tick 窗）送進輸入 ring。**這正好壓住真正會漏的那條路徑**：
+`ticks[].dYaw` 的分桶只能由事件自身時間戳決定（[README §0.2](README.md) 宣稱「真 128 Hz，與顯示率無關」），
+若排空邊界沾到幀，30 Hz 與 240 Hz 的分桶就會分歧。比照 `wp66-hit-ring-determinism.test.ts` 的同一取捨
+（該檔也用固定 camera ＋ 固定時間戳的 key／fire 事件）。
+
+---
+
 ## Open Questions
 
 | OQ | 問題 | 預設假設 | Owner | Deadline |
@@ -864,8 +1061,63 @@ T7 keeps the D-63.T4 aggregate `replacementEngagedRate` behavior unchanged and a
 
 ---
 
-## 交接清單（T-exit 時填寫）
+## 交接清單（T-exit 2026-09-14 填寫）
 
-- [ ] 真人 pilot 最小規格（[README §5](README.md) 的六項非真人不可）
-- [ ] `?rawMouse=1` cohort 取得後，量免閾值描述子漏檢率的方法
-- [ ] KI-031／KI-034 修復後，補 `movementTimeMs`／`peakOmega` 的路徑
+> 本 WP 交付的是**可算、可重現、可稽核**的指標，**不含效度**。下列三項是後續 WP 必須接手的東西；
+> 每一項都寫明「要什麼資料」與「拿到之後做什麼」，而不只是「待辦」。
+
+### 1. 真人 pilot 的最小規格（[README §5](README.md) 的六項非真人不可）
+
+| 要回答的問題 | 最小資料需求 | 判準 |
+|---|---|---|
+| **地板／天花板效應** | ≥ 10 名受試者 × ≥ 3 場 60-kill v8（`meta.weaponId === 'usp_s_laser'`，post-T1 世代） | `shotAccuracy` 的受試者間分布若 p10 > 0.9 或 p90 < 0.15 ⇒ 該指標在此參數下無鑑別力，須先調靶徑／距離再談常模 |
+| **意圖歸屬的生態效度** | 同上 cohort ＋ 逐場 `multiple_kill_candidates` 與 `signReversalCount` 分布 | argmin 角誤差只證明「開火那一刻離誰最近」。若 `multiple_kill_candidates` 比例 > 5%，`intendedTargetId` 的解釋力須降級並在報告中具名 |
+| **免閾值描述子的漏檢率** | 帶 `?rawMouse=1` 的 cohort（[WP-60](../wp-60-raw-mouse-sample-capture/README.md) 的逐筆樣本，實測約 1005 Hz） | 見下方 §2 |
+| **信度／構念驗證（C-D3 閘）** | test–retest（同受試者跨日 ≥ 2 場）＋ split-half | **未過此閘的指標不得進教練報告**。這是硬閘，不是建議 |
+| **選擇策略常模** | ≥ 30 名受試者 | `selectionCostRatio` / `selectionRankEntropy` 的族群分布；在此之前這兩個數字只能做組內比較，不能說「多少算好」 |
+| **「找尋下一個目標的時間」** | **本 WP 明確放棄**（使用者 2026-09-10 決定） | 若日後要量，三條路見 [README §5 補充](README.md)：(a) eye tracking、(b) cued v9 協定、(c) 以 `replacementEngagedByRank` 取搜尋成本下界（前提是兩群角距分布可比，而 §T4 的「可比性前置檢查」判定目前不可比） |
+
+採集紀律（硬閘）見 [`docs/operational/analysis-micro-flick.md`](../../../../operational/analysis-micro-flick.md)：
+`crossOriginIsolated === true`、`displayHz >= 144`、`meta.weaponId === 'usp_s_laser'`、`meta.scene.eye` 存在
+（研究側入口一律 `strictEyeOrigin: true`，缺席**拋錯**而不是算出一組偏掉的角度）。
+
+### 2. `?rawMouse=1` cohort 取得後，如何量免閾值描述子的漏檢率
+
+**方法**：以 raw sample（約 1005 Hz，`mouseSamples` arena）當**參考真值**，把同一段軌跡重採樣到 128 Hz，
+再對兩者各跑一次 L2 的四個描述子，逐窗比對。
+
+**量什麼**：
+- `reEntryCount` / `signReversalCount` 的**漏檢率** = `1 − (128 Hz 的計數 / 1005 Hz 的計數)`，逐窗取中位數；
+- `dwellPathRatio` / `approachToFireMs` 的相對偏差。
+
+**觸發重構的條件**（承 [README §3.2](README.md)）：若漏檢率不可接受（建議門檻：中位漏檢率 > 20%），
+再評估是否付 C-D5 雙實作代價開 v8 專用的分段版本。**在那之前不得改用 `seg-v2`** —— 它的 `sgWindow: 11`
+在 128 Hz 是約 78 ms 跨度、`peakFloorDegPerSec: 60` 會讓 1°／50 ms 的修正整段判為低於地板 ⇒
+`correction-free-rate` 系統性高估，偏誤方向對玩家有利（C-D3 會說錯話）。
+
+**同時校準** `DWELL_RADIUS_MULTIPLE = 2`（見 [TE.8](#te8-具名限制交付但不宣稱) #3）：它目前只有可讀性理由。
+校準後若改值，**必須升 `MICRO_FLICK_METRICS_VERSION`**，不得原地改語意。
+
+### 3. KI-031／KI-034 修復後，可補 `movementTimeMs`／`peakOmega` 的路徑
+
+**前置**：[KI-031](../../../../known_issue/KI-031-detection-sustained-ticks-dies-when-aim-updates-slower-than-sim.md)
+（`firstSustainedDecrease()` 要求連續 N 個合格樣本，而 `aim` 由 render thread 寫 ⇒ 更新率 = 顯示率）與
+[KI-034](../../../../known_issue/KI-034-prestimulus-baseline-overlaps-prior-engagement.md)
+（前刺激基線窗在 v8 上 100% 被上一次拉槍污染）**兩者皆修復**。
+
+**路徑**：走既有的 `detectionDerivation.ts` 的 `t_detect`，**不得**在 v8 側另立 ω 門檻（[GD-39](../../../DECISIONS.md) ② 的硬紀律；
+機械判準 = `onset`／`sustained`／`firstSustained` 三字串掃描 count 0，該掃描應一併擴到新模組）。
+補上 `t_detect` 之後，`movementTimeMs = t_kill − t_detect`、`peakOmega` 由 `angularKinematics.ts` 的
+`omegaDegPerSec()` 取窗內最大值 —— 兩者都是**呼叫既有 canonical derivation**，不是新寫幾何。
+
+**不要做的事**：在 KI-031／KI-034 未修之前，用 `dYaw`/`dPitch` 自己做一套 onset 偵測。那會是同一構念的
+第二定義（C-D4），而且會因為看起來「能跑」而比明白的缺席更難發現。
+
+### 4. 本 gate 產生的兩個待觀察項（非阻塞）
+
+- **`replacementEngagedRate` 的總量何時能出**：§T4 的「可比性前置檢查」測試是 committed 的
+  （不是一次性腳本）。日後誰把 WP-59 的 temporal replacement sampler 調到兩群角距分布可比，那條測試會**轉紅**，
+  屆時應重新評估是否改出總量而非只出 `replacementEngagedByRank`。
+- **T7 的 legacy 快照測試名字比它守的範圍大**（[TE.8](#te8-具名限制交付但不宣稱) #2）。若日後要把它升成真正的全欄位
+  golden，應改用 `Object.is` 逐欄比對並處理 v2／v4 的無窮小數直徑，而不是繼續四捨五入。
+

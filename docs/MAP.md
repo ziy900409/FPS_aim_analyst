@@ -311,6 +311,15 @@ docs/exec-plan/
 
 **Micro-flick analysis**: [operational/analysis-micro-flick.md](operational/analysis-micro-flick.md) documents the WP-63 v8 metric boundary, environment gates, seven synthetic probes, FPS parity, tick-rate sensitivity, legacy fixture discipline, and quality-flag interpretation.
 
+**WP-63 交付物的入口**（2026-09-14 T-exit）：
+
+| 想知道 | 看這裡 |
+|---|---|
+| v8 的 per-target 窗界原語（`buildTargetWindows()` / `aliveAt()`） | [`src/metrics/targetWindows.ts`](../src/metrics/targetWindows.ts) —— 只做窗界與候選集，**零幾何**（C-D4，NFR-63.4 符號掃描釘死） |
+| v8 的四層事件錨定指標 + 方向預測曲線 | [`src/metrics/microFlickMetrics.ts`](../src/metrics/microFlickMetrics.ts) |
+| **v8 跨 render FPS 的逐位一致證明**（NFR-63.2） | [`src/loop/__tests__/wp63-v8-metrics-determinism.test.ts`](../src/loop/__tests__/wp63-v8-metrics-determinism.test.ts) —— 跑真的 v8（seeded spawn + hitscan + recorder），30／60／144／240 四條幀序列逐位比對 trace 與四層指標 |
+| 為什麼 v8 不用 `t_detect`／`seg-v2`，以及交付宣稱的上限 | [GD-39](exec-plan/DECISIONS.md) · [WP-63 README §2.2／§5](exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) |
+
 ---
 
 ## 6. 維護約定
