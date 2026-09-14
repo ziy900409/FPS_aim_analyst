@@ -163,6 +163,10 @@ const DECLARED_WEAPON_ROSTER: readonly DeclaredWeaponRosterEntry[] = [
   [trackingReversalFeedbackV1.drillId, trackingReversalFeedbackV1.weaponId] as const,
   [trackingCorePrFeedbackV1.drillId, trackingCorePrFeedbackV1.weaponId] as const,
   [trackingCorePrFeedback30sV1.drillId, trackingCorePrFeedback30sV1.weaponId] as const,
+  // WP-63 T1 (FR-63.12)：v8 的零散布零後座武器是**量測儀器**，不是操作員可選的變項——它存在的
+  // 理由就是讓「命中與否」成為開火瞬間角誤差的純函式。登記在此讓 `requireWeapon()` 在編譯期
+  // 擋掉 Session Plan 逐列覆蓋，與 tracking pilot 的固定因子同一紀律（WP-62 / D-62-1）。
+  [microFlickThreeTargetTestV8.drill.drillId, microFlickThreeTargetTestV8.drill.weaponId] as const,
 ];
 
 /**

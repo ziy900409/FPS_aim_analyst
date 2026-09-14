@@ -2,9 +2,11 @@
 
 > 主規格：[README.md](README.md) · 清單：[task-checklist.md](task-checklist.md)
 
-## 最新狀態（2026-09-14 T0 完成）
+## 最新狀態（2026-09-14 T1 完成）
 
-✅ **T0 entry gate 完成**（2026-09-14 12:38Z）。編號、上游與機制事實已複核；GD-44 的 Edge 全量／chromium-ci fast 與 typecheck、Vitest、build 五項正式基線 exit 0。T1–T7 未開工；OQ-63.1 以具名預設假設推進。
+✅ **T1 完成**（2026-09-14 14:52Z）。v8 宣告 `weaponId: 'usp_s_laser'`，斷代靠 `meta.weaponId`；NFR-63.7 以「同 kill order 下換武器 spawn trace 逐位相同（且雙方皆有實際開火）」+「`sampleSpread()` 對本武器 rng 呼叫數 === 0」兩條機械證據釘死。T2–T7 未開工；OQ-63.1 仍以具名預設假設推進（研究者未回覆）。
+
+✅ **T0 entry gate 完成**（2026-09-14 12:38Z）。編號、上游與機制事實已複核；GD-44 的 Edge 全量／chromium-ci fast 與 typecheck、Vitest、build 五項正式基線 exit 0。
 
 規劃來源：2026-09-10 的設計對話（使用者指定四項計算 → 逐項稽核蒐集層 → 依 `.claude/skills/engineering-planning/SKILL.md` 落成執行計畫）。
 
@@ -15,7 +17,7 @@
 | Task | Status | Started | Completed | Evidence |
 |---|---|---|---|---|
 | T0 Entry gate | ✅ 完成 | 2026-09-14 | 2026-09-14 12:38Z | 見下方 §T0：五項基線 exit 0，Vitest 3,217 passed／2 skipped、Edge 115 passed、chromium-ci fast 102 passed／1 skipped、build 203 modules；編號、上游、五個 CodeGraph impact、三項機制與 OQ-63.1 明帳。 |
-| T1 零散布武器宣告 | ⬜ 未開工 | — | — | — |
+| T1 零散布武器宣告 | ✅ 完成 | 2026-09-14 | 2026-09-14 14:52Z | 見下方 §T1：typecheck ×2 exit 0、全量 Vitest **3,224 passed／2 skipped（267 files）**（≥ T0 基線 3,217）、`vite build` exit 0、`micro-flick-live.spec.ts` 6/6 passed。 |
 | T2 Mouse gain 修復 | ⬜ 未開工 | — | — | — |
 | T3 窗界 primitive | ⬜ 未開工 | — | — | — |
 | T4 L0 + L3 | ⬜ 未開工 | — | — | — |
@@ -83,7 +85,66 @@
 
 ---
 
-## Decision Log（規劃期與 T0）
+## T1 零散布武器宣告（2026-09-14）
+
+### 斷代宣告（T1 Steps 6）
+
+**T1 之後的 `micro_flick_three_target_test_v8` 匯出與之前的不可混比。** 變的不是 spawn 分布（WP-59 的等級），而是**命中判定的隨機性本身**：pre-T1 的 v8 吃 `main.ts` 預設 `ak47`（`inaccuracy.stand 0.00641` / `fire 0.0078` 的 seeded spread + `recoil.magnitude 25` 的 aim punch + `ads.fovDeg` 縮 FOV），post-T1 的 v8 是 `usp_s_laser`（三者皆 0／不存在）。
+
+**機械區分方式 = 匯出的 `meta.weaponId`**（`'ak47'` vs `'usp_s_laser'`）。分析側**不得**以 drillId 合併兩批資料。
+
+**副作用（明帳，承 D-63-P3）**：`cycletimeSec` 由 ak47 的 **0.10** 升為 **0.17** ⇒ 最小發間隔 170 ms，補槍的時間懲罰是 ak47 的 1.7 倍。這是 FR-63.9 必須把 `correctionMs` 拆成 `settlingMs` + `cadenceWaitMs` 的直接理由，也是 T5 不可省略該拆解的原因。`magSize` 由 30 降為 **12**。
+
+### FR-63.13 彈匣契約（T1 Steps 7；實作落 T3）
+
+**離線判準 = 窗內存在 `fire.ammo === 0` 的 `fire` 事件。** 兩個前提已在本 task 確認：
+
+1. `fire` 事件的 `ammo` 欄位在 v8 匯出中**無條件存在**（[`SimLoop.ts`](../../../../../src/loop/SimLoop.ts) `recordFire` 路徑非選填欄位）。
+2. run 起始彈匣 === `usp_s_laser.magSize === 12`，由本 task 新增測試 `starts every magazine at the declared size` 斷言（`state.weapon.magSize` 與 `state.weapon.ammo` 皆為 12）。
+
+⚠️ **`ammo` 不是單調遞減的**：`spawn()` 每次補滿彈匣（D-63-P4），v8 每殺一顆就 spawn ⇒ T3 實作 `ammo_exhausted_in_window` 時**不得**假設窗內 `ammo` 單調，必須逐事件判 `=== 0`。本 task 的 trace harness 已實地踩到這一點（見下方 Surprises 7）。
+
+### NFR-63.7 的兩條機械證據
+
+| 證據 | 測試 | 結果 |
+|---|---|---|
+| 換武器不擾動 seeded spawn 串流 | `swapping the weapon does not perturb the seeded spawn stream, even under live fire` | ak47 與 `usp_s_laser` 兩次 96-snapshot trace 的 **7 個欄位逐筆 `Object.is` 相同**；兩次 `shotsFired` 皆 > 0 且相等（實測各 4 發），故比較不是「沒人開槍」的空對空 |
+| 零消耗 spread RNG | `never draws from the shared seeded stream, because sampleSpread early-returns` | 3 種 speedRatio + 12 發 `recoilOnFire` 後共 15 次 `sampleSpread()`，counting rng 呼叫數 **0**；對照組 ak47 同一 harness 呼叫數 > 0 |
+| recoil 表逐筆 0 | `generates a bit-zero recoil table, so aim punch never moves the recorded view` | 全表 `angleDeg`／`magnitude` 皆 `Object.is(x, 0)`；12 發後 `aimPunch*`／`viewPunch*` 皆 0 |
+
+### 驗證輸出
+
+| 指令 | exit code | 數字 |
+|---|---:|---|
+| `npx.cmd vitest run src/drill/micro_flick_three_target_test_variants.test.ts` | **0** | 10 passed |
+| `npx.cmd vitest run src/drill/micro_flick_three_target_test_v8_weapon.test.ts` | **0** | 6 passed |
+| `npm.cmd run typecheck` | **0** | `tsc --noEmit` ×2 皆成功 |
+| `npm.cmd test` | **0** | **267 files passed／1 skipped**；**3,224 tests passed／2 skipped**（T0 基線 3,217 passed，**+7 = 本 task 新增**） |
+| `npm.cmd run build` | **0** | Vite 203 modules、2.58 s，保留既有 chunk-size warning |
+| `npm.cmd run test:e2e:fast -- --workers=1 tests/e2e/micro-flick-live.spec.ts` | **0** | 6 passed（1.4m）。該 spec 是全 repo 唯一載入 v8 的 e2e |
+
+
+## Decision Log（規劃期與 T0／T1）
+
+### D-63.T1-1 — v8 進 `DECLARED_WEAPON_BY_DRILL_ID`，武器成為不可覆蓋的固定因子（2026-09-14）
+
+T1 加上 `weaponId` 後，WP-62 T1 的守門測試 `drillFamily.test.ts` 立刻轉紅（`expected undefined to be 'usp_s_laser'`）——它對**全部 38 個 schedulable drill** 逐一斷言「map 宣告 === config 宣告」，正是為了攔截「drill 長出 weaponId 但沒人登記，於是 Session Plan 逐列武器可以悄悄覆蓋實驗因子」。
+
+處置：把 v8 登記進 [`drillFamily.ts`](../../../../../src/session/drillFamily.ts) 的 `DECLARED_WEAPON_ROSTER`。**這不是純記帳，有行為後果**：[`sessionProgram.ts`](../../../../../src/session/sessionProgram.ts) 的 `requireWeapon()` 會在**編譯期**拒絕替 v8 指定其他武器（錯誤訊息「由實驗格固定為 usp_s_laser，不可指定其他武器」），且 `SessionPlanSetup` 的武器欄改顯示 `usp_s_laser` 而非「預設」。
+
+**這正是本 WP 要的語意**：零散布武器是 v8 的**量測儀器**，不是操作員的偏好選項——若可被逐列覆蓋，FR-63.7 的意圖歸屬與 `shotAccuracy` 隨時可能在某一列被散布污染，而離線端只能從 `meta.weaponId` 事後發現。與 tracking pilot 的固定因子（WP-62 / D-62-1）同一紀律。
+
+**Alternatives considered**：不登記、改讓 `drillFamily.test.ts` 對 v8 例外 —— 駁回，那等於為了少改一行而關掉唯一會攔住「實驗因子被覆蓋」的閘；改用 Session Plan 逐列指定 `usp_s_laser` 而 fixture 不宣告 —— 駁回，v8 主要走 researcher 下拉直接載入（非 Session Plan），那條路徑根本吃不到逐列指定，等於沒修。
+
+⚠️ **T-exit 對帳項**：本 task 的 diff 因此比 [T1 檔](T1-zero-spread-weapon.md) DoD 列的檔案集多出三個（`src/session/drillFamily.ts` 與兩個 WP-62 scope-count 測試）。三者皆為**既有守門測試逼出的必要異動**，非 scope 蔓延；詳見 Surprises 8。
+
+### D-63.T1-2 — v9 不在本 task 範圍內跟著換武器（2026-09-14）
+
+[`micro_flick_three_target_test_v9.ts`](../../../../../src/drill/micro_flick_three_target_test_v9.ts) 是 v8 的 60 s 計時版姊妹 drill，其 variants 測試明寫「Everything else is v8's field, verbatim」。T1 後 v9 **仍吃預設 `ak47`** —— 亦即兩個共用同一 spawn 場域的姊妹 drill 現在跑不同武器。
+
+本 task **不代改**：v9 不在 WP-63 的 FR 範圍（FR-63.12 只點名 v8），且 v9 若要換武器必須同步處理自己的斷代宣告與 `DECLARED_WEAPON_ROSTER` 登記，屬另一個垂直切片。**具名記錄以免後續讀者誤判為遺漏**；若研究者要以 v9 收資料，應先開 task 比照 T1 處理。
+
+**Alternatives considered**：順手一起改 —— 駁回（協議 §3.1：一 task 一垂直切片，且會讓 T1 的斷代宣告涵蓋一個本 WP 不量測的 drill）。
 
 ### D-63.T0-1 — 編號與 cohort gate 依當下權威處理（2026-09-14）
 
@@ -165,7 +226,7 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 
 ---
 
-## Surprises & Discoveries（規劃期與 T0）
+## Surprises & Discoveries（規劃期、T0 與 T1）
 
 **T0 新發現（2026-09-14）**：`npm.cmd run build` 在 worktree 的 sandbox 內兩次於 esbuild 讀取 `vite.config.ts` 時遭 `Access is denied`，第二次已使用獨立 `npm ci --offline` 安裝而非 junction；在 sandbox 外同一 HEAD、同一 worktree 重跑 exit 0、203 modules。這個差異屬執行環境，非 source failure。舊 Playwright 指令在 GD-44 後混跑兩個 project，SwiftShader 上的三個 `@realgpu` 案例失敗，故按 D-63.T0-2 改用正式分層。另 [WP-59 README](../../stage12/wp-59-micro-flick-v8-replacement-spacing/README.md) 的 T4／T-exit 仍未勾，雖 HEAD 已含 v8 replacement E2E；後續角距分析必須記錄 HEAD，不能將存在測試誤寫成 WP-59 已正式退出。
 
@@ -182,6 +243,12 @@ GD-37 於 T0 入帳、GD-38 於規劃期入帳、GD-36 於 T-exit 入帳 —— 
 6. **v8 的 Fitts ID 跨度只有約 2 bits**（`D` 2.6–17°、`W` 2.483°@25u ⇒ ID 約 1.0–3.0）。⇒ throughput 只能作 covariate，不交付。
 
 ---
+
+7. **（T1）`fire.ammo` 在 v8 上不是單調遞減的。** T1 的 trace harness 原本以「ammo 從 magSize 起遞減」計開火數，實測 ak47 `minAmmo=29`／`usp_s_laser` `minAmmo=11`（各只低於滿匣 1 發），但實際各開了 **4 發** —— 因為 `spawn()` 每次補滿彈匣（D-63-P4），而 harness 每 3 個 tick 就殺一顆。harness 已改為只累加向下的差值。⇒ **T3 實作 `ammo_exhausted_in_window` 時不得假設窗內單調**，必須逐 `fire` 事件判 `ammo === 0`；這同時是 FM-4「彈匣空倉」在 spawn-driven 的 v8 上極罕見的實地佐證。
+
+8. **（T1）WP-62 的守門測試比 T1 的 DoD 檔案清單更早發現範圍。** `weaponId` 一加，`drillFamily.test.ts` 對**全部 38 個 schedulable drill** 的逐一對帳立刻轉紅（`expected undefined to be 'usp_s_laser'`）。這是設計意圖生效（見 D-63.T1-1），但代表 **[T1 檔](T1-zero-spread-weapon.md) DoD 的 `git diff --name-only` 清單在規劃期就是錯的** —— §0.6 的 blast radius 漏掉了 `DECLARED_WEAPON_BY_DRILL_ID`。實際 diff 另含 `src/session/drillFamily.ts`、`src/session/drillFamily.test.ts`、`src/session/sessionWeaponActivation.test.ts`（後二者是 WP-62 刻意寫死的 scope-count 守門，13 → 14）。⇒ T-exit 的 diff 稽核以本條為準，不以 T1 檔原始清單判定「超出範圍」。
+
+9. **（T1）零散布讓 v8 的 e2e 只會更穩，不會更脆。** [`micro-flick-live.spec.ts`](../../../../../tests/e2e/micro-flick-live.spec.ts) 是全 repo 唯一載入 v8 的 e2e；其 500 ms 敲擊節奏的註解明寫是為了讓 **ak47 的 punch 與 spread** 在兩發之間衰減完（該段描述的是 v1，不是 v8）。v8 換零散布後這層補償對 v8 不再需要；6/6 全綠，且未改動該 spec 任何一行。
 
 ## Open Questions
 
