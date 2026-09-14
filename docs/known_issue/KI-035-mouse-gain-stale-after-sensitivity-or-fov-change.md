@@ -3,7 +3,8 @@
 > 狀態:✅ **已修**(2026-09-10 登記 → 2026-09-14 修復,[WP-63](../exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) T2)· 類別:量測效度(silent data corruption)
 > 修復決策帳本:[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) **`BD-039`**
 > ⚠️ 規劃期本檔與 T2 task 檔都寫「`BD-035`」,那是按 KI 號推的。實況 `BD-n` 與 `KI-n` 不同步,
-> `BD-035` 已由 KI-038 取用 ⇒ 依 GD-15「先採納先得」改取 **BD-039**。
+> `BD-035` 已由 KI-038 取用 ⇒ 依 GD-15「先採納先得」改取 `BD-038`;而 `main` 的 `67962ed`
+> 隨後把 `BD-038` 保留給 KI-034、`BD-039` 保留給本 KI ⇒ 採納該保留,**最終落帳 BD-039**。
 > 發現於:[WP-63](../exec-plan/active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) 規劃期稽核
 
 ---

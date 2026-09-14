@@ -1,7 +1,7 @@
 # KI-036 — `projection-failed` 是單一 catch-all,遮蔽「缺受試者代號」這個真因
 
 > 類型：**diagnosability defect**（無錯資料流出;但整批 run 靜默退出趨勢且無從歸因）。
-> 狀態：🔴 **診斷完成（2026-09-09），修法待落地**。尚無 `BD-034`。
+> 狀態：🔴 **診斷完成（2026-09-09），修法待落地**。尚無 `BD-040`。
 > 決策帳本：[BUGFIX-DECISIONS.md](BUGFIX-DECISIONS.md) §1 索引。
 > 標的：[`src/history/DrillMetricRegistry.ts`](../../src/history/DrillMetricRegistry.ts)（`project()` 的
 > `try/catch`，`:397-415`）· [`src/metrics/compatibilityKey.ts`](../../src/metrics/compatibilityKey.ts)（`:30`）。

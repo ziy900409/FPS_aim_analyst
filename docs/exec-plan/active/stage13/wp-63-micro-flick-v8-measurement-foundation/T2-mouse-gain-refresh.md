@@ -3,7 +3,9 @@
 > WP：[WP-63](README.md) · 估時 1 d · Risk Med · 相依：T0 · **狀態：✅ 完成（2026-09-14）**
 > 診斷：[KI-035](../../../../known_issue/KI-035-mouse-gain-stale-after-sensitivity-or-fov-change.md) · 修復決策：**`BD-039`**
 > ⚠️ 本檔原寫「`BD-035`（本 task 開立）」—— 那是規劃期按 KI 號推的，實況 `BD-n` 與 `KI-n` 不同步且
-> `BD-035` 已由 KI-038 取用 ⇒ 依 GD-15 改取 `BD-039`（見 [progress.md](progress.md) D-63.T2-1）。
+> `BD-035` 已由 KI-038 取用 ⇒ T2 先改取 `BD-038`（D-63.T2-1）；`main` 的 `67962ed` 隨後又把
+> `BD-038` 保留給 KI-034、`BD-039` 保留給 KI-035 ⇒ 採納該保留，**最終落帳 `BD-039`**
+>（見 [progress.md](progress.md) D-63.T2-1 與 **D-63.T2-2**）。
 
 ## 目的
 
