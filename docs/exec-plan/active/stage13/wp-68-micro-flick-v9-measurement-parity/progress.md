@@ -6,7 +6,7 @@
 
 🟡 **T0／T1 已完成，T2 可開工**。分支 `wp-68-micro-flick-v9-measurement-parity`（基準 `main` @ `eec359d`）。
 
-T1 結論一句話：**v9 宣告 `weaponId: 'usp_s_laser'` 並登記 `DECLARED_WEAPON_ROSTER`，FR-68.1／68.2 與 NFR-68.1／68.2 逐條有機械證據**（spawn trace 96 snapshot 逐位 `Object.is` 相同且兩邊實測各開 **4** 發、`sampleSpread()` rng 呼叫數 **0** 且 ak47 對照組 **> 0**、`meta.weaponId` round-trip 綠）。全量閘：typecheck ×2、Vitest **3,362 passed／2 skipped（271 files）**、build **203 modules**、`micro-flick-live.spec.ts` **6 passed** 皆 exit 0。⚠️ 全量 Vitest 揭露 DoD 未點名的**第二個**硬編 roster 大小守衛（`sessionWeaponActivation.test.ts:67`），已一併修正（[Surprises 2](#surprises--discoveriest1)）。
+T1 結論一句話：**v9 宣告 `weaponId: 'usp_s_laser'` 並登記 `DECLARED_WEAPON_ROSTER`，FR-68.1／68.2 與 NFR-68.1／68.2 逐條有機械證據**（spawn trace 96 snapshot 逐位 `Object.is` 相同且兩邊實測各開 **4** 發、`sampleSpread()` rng 呼叫數 **0** 且 ak47 對照組 **> 0**、`meta.weaponId` round-trip 綠）。全量閘：typecheck ×2、Vitest **3,362 passed／2 skipped（271 files）**、build **203 modules**、`micro-flick-live.spec.ts` **6 passed** 皆 exit 0。⚠️ 全量 Vitest 揭露 DoD 未點名的**第二個**硬編 roster 大小守衛（`sessionWeaponActivation.test.ts:67`），已一併修正（[Surprises 2](#surprises--discoveriest1)）。⚠️ 另查出 spread 與 spawn 是**兩個獨立的 `createRan1` 實例** ⇒ WP-63 T1 檔頭「(2) 是 (1) 在實彈下仍成立的原因」為過度宣稱；v9 新檔的註解已照實改寫，v8 該檔屬 WP-63 已交付證據、依範圍紀律不動，記為 **[OQ-68.5](#open-questionst1-後)（Deadline = T-exit）**。
 
 T0 結論一句話：**兩號沿用（WP-68／GD-45），上游 WP-63 三項證據綠燈，五項基線指令全部 exit 0 且數字與 WP-63 T-exit 逐項相同，`endCondition` 不在匯出 schema ⇒ T2 走路徑 B，OQ-68.2 以非阻塞預設「否」明帳推進。** 另有三項 T0 自行查出、規劃期未知的事實：README「唯三差異」漏列 `targets.count`（[Surprises 1](#surprises--discoveriest0)）、CodeGraph 索引只覆蓋 repo 一小片而其 `callers` 輸出不可採信（[D-68.T0-4](#d-68t0-4--codegraph-對本問題降級為blast-radius-下界c-d5-判定改以全-repo-grep-為權威2026-09-14)）、T1 換武器會把彈匣 30 → 12 而 v9 的鐘不會因失手而停（[OQ-68.4](#open-questionst0-後)）。
 
@@ -412,7 +412,7 @@ v8 是 kill-budget（60 顆打完才結束），沒有「鐘還在跑但一直�
 | `npm.cmd run build` | **0** | **203 modules transformed** | 逐數相同（fixture 改動不新增模組） |
 | `npm.cmd run test:e2e:fast -- --workers=1 tests/e2e/micro-flick-live.spec.ts` | **0** | **6 passed**（1.4 m） | v9 的唯一 live 消費端，spec 零修改通過 |
 
-⚠️ **第一輪全量 Vitest 為 `1 failed / 3,361 passed`**（`sessionWeaponActivation.test.ts:67` 的 `toBe(14)`）。上表為該檔修正後的第二輪；兩輪之間**只改了那一個數字與其註解**，六個切片檔的 md5 經 `md5sum -c` 確認在第二輪執行期間逐檔未變（避免在移動中的工作區上取數）。
+⚠️ 上表是**第三輪**。全量 Vitest 共跑三輪：**第一輪 `2 failed / 3,360 passed`**（`sessionWeaponActivation.test.ts:67` 的 `toBe(14)`，**外加**環境性的 `tests/history/historyPlugin.test.ts` 埠佔用 —— 見 [Surprises 5](#surprises--discoveriest1)）、**第二輪 `1 failed / 3,361 passed`**（埠釋出，只剩那個守衛）、第三輪全綠。三輪之間對 `src/` **只改了那一個數字與其註解**（`sessionWeaponActivation.test.ts:67` 的 `toBe(14)` → `toBe(15)`），六個切片檔的 md5 經 `md5sum -c` 確認在末輪執行期間逐檔未變（避免在移動中的工作區上取數）。
 
 ---
 
@@ -442,3 +442,21 @@ T0 的 Surprises 3 指出換武器會讓空倉旗標在 v9 上更易觸發。T1 
    ⇒ **這是本切片唯一一次「targeted 綠、全量紅」**，也是 T1 DoD 第 6 項（全量閘）真正咬到東西的一次 —— DoD 前五項全部只點名了 `micro_flick_three_target_test_variants.test.ts` 與 `drillFamily.test.ts` 兩個檔，照著跑完會得到全綠的錯覺。**給後續 task 的教訓**：本 repo 的「硬編數字守衛」可能散在多個檔，`DECLARED_WEAPON_ROSTER` 這種跨 WP 累積的 roster 尤其如此；改 roster 後**必須**以全量 Vitest 收尾，不能只跑 task 檔點名的 spec。兩處都按設計轉紅、被有意識地改，其餘既有斷言零修改。
 
 3. **本切片的 `src/` 變更由平行作業產出，且工作區在驗證期間仍在變動。** 第一輪全量 Vitest（21:23:45Z）跑完後，`sessionWeaponActivation.test.ts` 於 **21:25:05Z** 被修正 —— 亦即修正發生在那一輪之後。⇒ 第一輪的 `1 failed` 與第二輪的全綠**不是同一份工作區**。處置：重跑前先取六個切片檔的 md5，跑完 `md5sum -c` 確認逐檔未變，才把數字入帳（見 T1.5 的 ⚠️）。**紀律**：工作區由多方同時編輯時，「先驗證再 commit」必須加一條「驗證期間工作區不得變動」，否則入帳的數字對應不到被 commit 的那份樹。
+
+4. ⚠️ **spread 串流與 spawn 串流是兩個獨立的 `createRan1` 實例 —— 於是 spawn trace 逐位比對證明的東西比 [WP-63 T1](../wp-63-micro-flick-v8-measurement-foundation/T1-zero-spread-weapon.md) 的檔頭註解所宣稱的窄。** `SimLoop` 自建 `recoilRuntime.rng = createRan1(seed)` 供 spread 取樣（`SimLoop.ts:855`、`:428`），`TargetManager` 另自建 `spawnRng = createRan1(config.sequence.seed)`（`TargetManager.ts:314`），而 loop **從不**把自己的 rng 交給 manager（`SimLoop.ts` 對 manager 的呼叫只有 `markKilled`／`tick`）。`createRan1` 回的是閉包持有自身 `idum`／`iy`／`iv` 的產生器（`rng.ts:13-22`）⇒ **同 seed 的兩個實例仍是兩份狀態**。
+
+   ⇒ 不論 `ak47` 抽了幾次 spread，spawn placement 都不可能因此位移。**`micro_flick_three_target_test_v8_weapon.test.ts` 檔頭第 2 點寫的「the shared seeded stream it draws from … that is *why* (1) also holds under live fire」是過度宣稱** —— (1) 並不建立在 (2) 之上，兩者是**各自獨立**的斷言。
+
+   **本 task 的處置**：新檔 `micro_flick_three_target_test_v9_weapon.test.ts` 的註解**照實寫**，明列兩條串流的出處與「兩個 `createRan1` 閉包不共享狀態」這個事實，並重述兩條斷言各自買到什麼 —— (1) 買的是**其他**武器耦合進 spawn 的防線（彈匣 30 → 12，而 `spawn()` 會補彈 ⇒ ammo 與 placement 確實會碰面），(2) 買的是「日後有人把 `usp_s_laser` 調成非零 inaccuracy 時會在此轉紅」。**兩條斷言本身與其數值證據完全不受影響，動到的只有註解的措辭。** v8 那個檔屬 WP-63 已交付的證據檔，本切片**不改**（範圍紀律）⇒ 記為 [OQ-68.5](#open-questionst1-後)。
+
+5. **第一輪全量 Vitest 其實是 `2 failed`，第二個失敗與本切片無關。** 除 Surprises 2 的守衛外，`tests/history/historyPlugin.test.ts` 同輪回 `Error: Port 18173 is already in use`。單獨重跑該檔 **1 passed（1.27 s）** ⇒ 環境性（埠佔用），非本切片所致。與 [T0.3](#t0.3-nfr-684-基線實測head-eec359d未改任何-src) 的 Tier 2 單輪失敗屬同一類，處置也相同：**exit code 單看不成立判讀**，須配合「失敗檔單獨重跑」與「失敗原因是否落在本切片的 blast radius 內」兩問並用。T1.5 上表為三輪中最後一輪（無環境性失敗）的數字。
+
+---
+
+## Open Questions（T1 後）
+
+| OQ | 狀態 |
+|---|---|
+| ~~OQ-68.1~~／~~OQ-68.2~~／~~OQ-68.3~~ | ✅ 見 [§Open Questions（T0 後）](#open-questionst0-後) |
+| **OQ-68.4** | 🔵 **維持開放至 T2**（[D-68.T1-2](#d-68t1-2--magsize-30--12-的後果記為-oq-684不在-t1-處置2026-09-14)）。T1 只把 `magSize === 12` 的事實釘進測試；覆蓋一個真的打空的 v9 案例屬 T2 的非空對空前置 |
+| **OQ-68.5（新）** | `micro_flick_three_target_test_v8_weapon.test.ts` 檔頭第 2 點的「shared seeded stream」措辭要不要更正？（Surprises 4）**預設假設：要，但屬 T-exit 的文件對帳而非 T1 的程式切片** —— 它是 WP-63 已交付的證據檔，且更正的是**註解措辭**不是斷言，v8 的任何數字與任何測試結果都不會因此改變。Owner = 實作者，Deadline = **T-exit** |

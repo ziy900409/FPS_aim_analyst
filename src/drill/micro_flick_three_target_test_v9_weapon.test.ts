@@ -29,10 +29,22 @@ import { microFlickThreeTargetTestV9 } from './micro_flick_three_target_test_v9.
  *
  *  1. the seeded spawn stream is untouched — same seed and same kill order give bit-identical
  *     placements under either weapon;
- *  2. `sampleSpread()` early-returns for this weapon, so the shared seeded stream it draws from is
- *     not advanced by a single draw — that is *why* (1) also holds under live fire rather than only
- *     when nobody shoots;
+ *  2. `sampleSpread()` early-returns for this weapon, so its own seeded stream is not advanced by a
+ *     single draw;
  *  3. the recoil table is bit-zero, so `aimPunch` never moves and `ticks[].aim` is the real view.
+ *
+ * (1) and (2) are **independent** claims, and the v8 file this one is modelled on overstates their
+ * relation — it says (2) is *why* (1) survives live fire. It is not. Spread and spawn draw from two
+ * separate `createRan1` instances: `SimLoop` builds `recoilRuntime.rng` at `SimLoop.ts:855`,
+ * `TargetManager` builds its own `spawnRng` at `TargetManager.ts:315`, and the loop never hands its
+ * rng to the manager (it only calls `markKilled` and `tick`). `createRan1` returns a closure owning
+ * its `idum`/`iy`/`iv` (`rng.ts:13-22`), so two instances on the same seed are still two states —
+ * no number of spread draws can shift a spawn placement. What each claim actually buys:
+ *   (1) a guard against some *other* weapon property coupling into spawn. Not hypothetical: the
+ *       magazine shrinks 30 -> 12 here and `spawn()` refills it (`TargetManager.ts:585`), so ammo
+ *       and placement genuinely meet.
+ *   (2) a tripwire for the day someone retunes `usp_s_laser` to a non-zero inaccuracy.
+ * The v8 file is WP-63 delivered evidence and is left alone on scope grounds (OQ-68.5, T-exit).
  *
  * The accounted side effects are asserted rather than described: cycletime 0.10 -> 0.17 s and
  * magazine 30 -> 12, the second of which matters more for v9 than it did for v8 because v9's clock
@@ -201,7 +213,7 @@ describe('WP-68 T1 — micro flick v9 runs a zero-spread, zero-recoil weapon', (
     expect(distinctIds.size).toBeGreaterThan(V9_CONFIG.targets.population.activeCount);
   });
 
-  it('never draws from the shared seeded stream, because sampleSpread early-returns', () => {
+  it('never draws from its own seeded stream, because sampleSpread early-returns', () => {
     const recoilState = createRecoilState();
     const table = generateRecoilTable(POST_T1_WEAPON.recoil);
     const counter = countingRng();
