@@ -2,6 +2,28 @@
 
 This note defines the operational contract for `micro_flick_three_target_test_v8` metrics after WP-63. The scope is deliberately narrow: v8 is a researcher/practice drill with three simultaneously alive targets, so analysis must use the population-aware target-window primitive and the event-anchored micro-flick metrics. It must not be treated as an ordinary one-active-target drill.
 
+## v9 Applicability (WP-68)
+
+`micro_flick_three_target_test_v9` is v8's **60 s time-limited** sister drill: same population shape, same measurement instrument, target sphere 10% smaller (angular radius ~1.118 deg vs ~1.242 deg), `seed 56009`. After WP-68 it declares the same `usp_s_laser` and is registered in `DECLARED_WEAPON_ROSTER`, so **every gate, probe, and discipline in this note applies to v9 unchanged** — with exactly one semantic difference, below.
+
+**The one difference — the scoring window's right bound.** `T_valid` is `[first visible, right bound]` for both drills, but the right bound is resolved from the drill's `endCondition`:
+
+| Drill | `endCondition` | Right bound | Flag raised |
+|---|---|---|---|
+| v1–v8 | `targetCount 60` | **last kill** — the last target dies and the run ends | `scoring_window_truncated_at_last_kill` |
+| **v9** | `timeLimit 60000` | **last tick** — the clock keeps running after the final kill | *(none)* |
+
+Scoring v9 at the last kill would drop the real tail in which the subject is still shooting, missing and searching, and would therefore **overstate `killRateHz`**. Measured: +2.799% on a synthetic run that fires to the last moment, +334.8% on one with a 7.7 s dry tail. The bias is always an overstatement, and it grows with the length of that tail. (Opposite in direction to [KI-037](../known_issue/KI-037-valid-duration-includes-countdown.md), which always understates, but the same kind of defect — a plausible number that says the wrong thing.)
+
+Two named fallbacks, both of which keep the **old** semantics rather than guessing:
+
+- `unknown_end_condition` — `meta.drillId` is not in the build's drill registry. Guessing `timeLimit` is exactly the direction that flatters the number, so it is never guessed.
+- `scoring_window_truncated_at_last_kill` on a time-limited drill — the export carried no ticks, so no clock bound could be derived.
+
+⚠️ **v8 and v9 are no longer distinguishable by `meta.weaponId`** (both are `usp_s_laser`). Analysis **must** pool by `meta.drillId`. The two drills should not be pooled at all in any case: different target diameters and different scoring regimes. v9 exports recorded **before** WP-68 carry `meta.weaponId === 'ak47'` and are not comparable with anything after it — the randomness of hit detection itself changed. See [GD-45](../exec-plan/DECISIONS.md).
+
+Delivery claim for v9 is identical to v8's: **calculable, reproducible, auditable — not valid**. The C-D3 construct gate has not been passed, so v9 metrics must not enter a coaching report.
+
 ## Metric Boundary
 
 `deriveMicroFlickMetrics(payload)` is the canonical offline entry point for v8. It consumes only export facts:
@@ -21,7 +43,7 @@ A v8 run is suitable for this metric contract only when these payload facts are 
 |---|---|---|
 | `meta.displayHz >= 144` | required for metric-grade interpretation | Below 144 Hz, render `aim` can undersample short acquisition windows; even though L2 does not consume `aim`, the run environment is still below the WP-63 validity floor. |
 | `meta.crossOriginIsolated === true` | required | Timer precision must stay on the COOP/COEP path used by the rest of the measurement stack. |
-| `meta.weaponId === 'usp_s_laser'` | required | v8 is declared as zero-spread/zero-recoil so shot geometry is not contaminated by AK spread, recoil, or ADS FOV. |
+| `meta.weaponId === 'usp_s_laser'` | required | v8 **and v9** are declared as zero-spread/zero-recoil so shot geometry is not contaminated by AK spread, recoil, or ADS FOV. A v9 export carrying `ak47` predates WP-68 and is not metric-grade. |
 | `meta.scene.eye` | required for strict analysis | Missing eye origin forces `legacy-default`, which is allowed only for backwards compatibility and not for metric-grade v8 runs. |
 | `meta.targets.hitbox.shape === 'sphere'` | required for L2 | The angular radius uses the same ray/sphere assumption as the hit detector. |
 | No sensitivity/FOV change after drill start | required | WP-63 T2 fixed stale gain, but a valid protocol still freezes aim settings during a run. |
@@ -40,6 +62,8 @@ Important flags:
 - `no_hitbox` or `unsupported_hitbox_shape`: L2 angular-radius metrics are unavailable.
 - `ammo_exhausted_in_run` / `ammo_exhausted_in_window`: shot-rate metrics are withheld because magazine state may truncate firing intent.
 - `replacement_distance_not_comparable`: aggregate replacement engagement is withheld; use `replacementEngagedByRank` instead.
+- `scoring_window_truncated_at_last_kill` (WP-68): `validSpanMs` stops at the last kill rather than at the end of the run. Expected on v1–v8 (kill-budget). **On a time-limited drill it means the clock bound could not be derived**, so `killRateHz` is overstated — investigate before using the number.
+- `unknown_end_condition` (WP-68): `meta.drillId` is not in the build's drill registry, so the scoring window fell back to kill-budget semantics. Any rate metric from such a run is suspect.
 
 ## Synthetic Gates
 
@@ -61,8 +85,8 @@ The same test file also freezes:
 - that `deriveMicroFlickMetrics()` ignores `meta.displayHz` and `meta.frames`;
 - v1-v7 micro-flick fixture snapshots so the v8 harness does not silently rewrite legacy drills. Note this snapshot compares an 11-field config subset with `widthU` rounded to three decimals; the bit-exact protection for v1-v7 comes from those config objects being untouched by WP-63 plus the existing per-key assertions in `micro_flick_three_target_test_variants.test.ts`.
 
-**Render-FPS parity (NFR-63.2) lives in its own file**: `src/loop/__tests__/wp63-v8-metrics-determinism.test.ts`
-runs the **real** v8 drill — seeded `TargetManager` spawns, real hitscan hit detection, real `DataRecorder` —
+**Render-FPS parity lives in its own files**: `src/loop/__tests__/wp63-v8-metrics-determinism.test.ts` (v8, NFR-63.2) and `src/loop/__tests__/wp68-v9-metrics-determinism.test.ts` (v9, NFR-68.3), both driven by the shared `microFlickDeterminismHarness.ts`, which
+runs the **real** drill — seeded `TargetManager` spawns, real hitscan hit detection, real `DataRecorder` —
 and pumps the same input sequence through 30/60/144/240 Hz frame sequences, then compares tick traces, events,
 and all four metric layers with deep `Object.is` equality. Two sides of a parity comparison must come from two
 real executions of the thing under test; a comparison whose two sides share one generator is always green and

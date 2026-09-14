@@ -167,6 +167,10 @@ const DECLARED_WEAPON_ROSTER: readonly DeclaredWeaponRosterEntry[] = [
   // 理由就是讓「命中與否」成為開火瞬間角誤差的純函式。登記在此讓 `requireWeapon()` 在編譯期
   // 擋掉 Session Plan 逐列覆蓋，與 tracking pilot 的固定因子同一紀律（WP-62 / D-62-1）。
   [microFlickThreeTargetTestV8.drill.drillId, microFlickThreeTargetTestV8.drill.weaponId] as const,
+  // WP-68 T1 (FR-68.2)：v9 是 v8 的計時制姊妹 drill，指標族與量測前提完全相同，故武器同樣是**儀器**
+  // 而非操作員可選的變項——同一條 WP-62 / D-62-1 的固定因子紀律。少了這一列，即使 fixture 已宣告
+  // 武器，Session Plan 的逐列指定仍可覆蓋它，而離線端只會看到一個合理但不可用的 `meta.weaponId`。
+  [microFlickThreeTargetTestV9.drill.drillId, microFlickThreeTargetTestV9.drill.weaponId] as const,
 ];
 
 /**

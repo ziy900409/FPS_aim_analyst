@@ -40,13 +40,13 @@
 
 ## Definition of Done
 
-- [ ] WP-68 / GD-45 兩個號的重查結果逐字記入 `progress.md`
-- [ ] WP-63 三項上游證據連結齊全，當下 HEAD 已記錄
-- [ ] 五項基線指令 exit 0 且**實測數字**（檔數／測試數／時間／modules）入帳
-- [ ] `deriveOutcome` 的 CodeGraph impact 已記錄，且 C-D5 邊界有明確結論
-- [ ] `endCondition` 是否進匯出 schema 有明確答案，並指定 T2 走哪條路徑
-- [ ] OQ-68.2 有答案或以預設假設明帳推進
-- [ ] GD-45 草稿已寫入 `progress.md`
+- [x] WP-68 / GD-45 兩個號的重查結果逐字記入 `progress.md`
+- [x] WP-63 三項上游證據連結齊全，當下 HEAD 已記錄
+- [x] 五項基線指令 exit 0 且**實測數字**（檔數／測試數／時間／modules）入帳
+- [x] `deriveOutcome` 的 CodeGraph impact 已記錄，且 C-D5 邊界有明確結論
+- [x] `endCondition` 是否進匯出 schema 有明確答案，並指定 T2 走哪條路徑
+- [x] OQ-68.2 有答案或以預設假設明帳推進
+- [x] GD-45 草稿已寫入 `progress.md`
 
 ## Commit
 

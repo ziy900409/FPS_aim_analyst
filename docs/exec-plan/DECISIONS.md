@@ -23,6 +23,22 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-45 ✅ WP-68 Micro Flick v9 量測基礎層對齊 — 儀器宣告、計分窗右界依計分制分流、v8/v9 分池鍵收窄 (2026-09-14, T-exit)
+
+| | |
+|---|---|
+| **發現處** | [WP-63](active/stage13/wp-63-micro-flick-v8-measurement-foundation/README.md) 釋出（v0.1.1）後，使用者問「v9 是否也有同等的量測基礎層」。以 WP-63 T-exit 的 determinism harness 對 v8／v9 餵同一份合成輸入實測，確認 **結構可用、儀器污染**：窗界原語與指標模組對 v9 零修改可用，但 v9 未宣告 `weaponId` ⇒ 吃 `main.ts` 預設 `ak47`（33/33 發帶散布、32/33 帶 aim punch），擊殺 18 → 1，需要「擊殺→擊殺」轉移的兩層指標 `n` 從 17 掉到 **0**。**這是活的風險**：操作員當時就能載入 v9 收資料，匯出看起來完全合理。 |
+| **① 編號與落點** | 落帳前重查本檔（2026-09-14, T-exit）：已落帳最大為 **GD-44**，`GD-43` 由 [WP-67](active/stage13/wp-67-export-opening-protocol-marker/README.md) 預約中且仍零標題命中，`GD-45` 零命中 ⇒ 取 **GD-45**，不佔用 WP-67 的預約號。WP-68 依使用者 2026-09-14 指示寄放 `active/stage13/`，但主題（v8 量測基礎層的姊妹補齊）**不屬**該 stage 的「原始輸入取樣與抬滑鼠判準驗證」，承 WP-62／63／64／65／66／67 同一先例；偏離在 stage index 與 WP README 明帳保留。連帶：stage14 §3 的三個候選依 [GD-15](#gd-15) 「先採納先得」順延為 **WP-69／70／71**。 |
+| **② v9 的零散布武器宣告與效度斷代** | v9 宣告 `weaponId: 'usp_s_laser'`（使用者 2026-09-14 拍板）並登記 `DECLARED_WEAPON_ROSTER`（14 → 15），理由與 v8 同一條：武器是**量測儀器**不是操作員可選的變項，零散布零後座才讓「命中與否」是開火瞬間角誤差的純函式。證據：spawn trace **96 snapshot 逐位 `Object.is` 相同且兩邊各實開 4 發**、`sampleSpread()` rng 呼叫數 **0**（ak47 對照 > 0）、recoil table 逐位 0。⚠️ **新事實**：v8／v9 自此在 `meta.weaponId` 上**不可分**，分析側的分池鍵從「`weaponId` 或 `drillId` 皆可」收窄為「**必須** `meta.drillId`」。本次變更前後的 v9 資料**不可混比**（變的是命中判定的隨機性本身），斷代鍵同為 `meta.weaponId`（`ak47` = pre-T1 世代）。 |
+| **③ 計時制與 kill-budget 兩種計分窗右界的分流** | `validSpanMs` 的原定義 `lastKillMs − firstVisibleMs` 是為 **kill-budget** drill 寫的；套到**計時制** drill 上會把最後一次擊殺之後的真實剩餘時間整段排除出分母 ⇒ `killRateHz` 系統性**高估**。因 `endCondition` **不在匯出 schema 內**（逐欄確認 `src/data/metadata.ts` 零命中），採**路徑 B**：`meta.drillId` → 本 build 的 drill config 查表（新檔 `src/drill/microFlickEndConditions.ts`，形狀比照 `resolveCycletimeMs()`），`timeLimit` 取**最後一個 tick** 為右界、`targetCount` 維持 `lastKillMs`、查不到則 `unknown_end_condition` 具名退回（**不猜、不預設成 timeLimit** —— 猜錯的方向剛好讓數字變好看）。kill-budget 的右界規則本身也一併具名為 `scoring_window_truncated_at_last_kill`（它一直都在，只是以前沒說）。 |
+| **③a ⭐ 實測差值（這條決策存在的理由，不得以「已修正」帶過）** | **真 v9 run**（共用 harness，900 ticks／18 kills）：右界 6840 → **7031.25 ms（+191.25 ms）**，`killRateHz` 舊 2.634588116909848 → 新 2.5628476084538376 ⇒ 舊值**高估 +2.799%**。**合成 dry-tail 案例**（3 殺止於 2300 ms、鐘走到 10 000 ms）：舊 1.304 Hz vs 新 0.3 Hz ⇒ **高估 +334.8%**。⚠️ **+2.8% 是下界不是典型值**：harness 的合成受試者以固定 190 ms 節奏打到最後一刻，尾段幾無空窗；真人在 60 s 計時制尾段本就有長短不一的 dry spell，偏誤隨那段長度單調放大。**偏誤方向恆為高估**（與 [KI-037](../known_issue/KI-037-valid-duration-includes-countdown.md) 的恆向低估相反、性質相同）。 |
+| **③b v8 逐位不變為硬斷言** | v8 的 `validSpanMs`／`killRateHz`／`shotsPerKill`／`shotAccuracy` 四量以取自 **T2 前 worktree（`c81778f`）** 的**寫死常數**逐位 `Object.is` 釘死（`{ 6832.1875, 2.634588116909848, 2, 0.5 }`）—— **期望值不得由再跑一次實作產生**，否則測試會把回歸連同結果一起抄進去。⚠️ 邊界：本決策**不碰** [KI-037](../known_issue/KI-037-valid-duration-includes-countdown.md)（不同路徑、不同界、不同消費者，有自己的 `BD` 號），以 `src/history/DrillMetricRegistry.ts` 的 `git diff` 為空稽核。 |
+| **④ 交付宣稱上限** | 與 [GD-39](#gd-39) ⑤ 相同 = **可算、可重現、可稽核，不含效度**。C-D3 的構念驗證閘未過 ⇒ v9 的指標同樣**不得進教練報告**。v9 靶徑較 v8 再縮 10%（角半徑約 1.118° vs 1.242°）後是否仍有鑑別力、以及計時制與 kill-budget 對受試者策略的影響，皆**非真人不可**，本 WP 明確不宣稱。 |
+| **⑤ 意外：旗標詞彙表的 runtime 封閉性斷言結構性恆真** | `microFlickMetrics.ts` 的 `ordered()` 投影的是**詞彙表**（`vocabulary.filter(f => present.has(f))`）⇒ 表外旗標在輸出前被**靜默丟棄**，故 `expect(VOCABULARY).toContain(flag)` 永遠成立。實測注入表外字串後仍 80 passed。**真正的封閉性守衛是 TS 型別**（不加 cast 時 `tsc` 回 TS2345）。⇒ 封閉性成立，但買下它的是 compile 期而非那條 runtime 斷言。**給後續 WP 的判讀紀律**：「投影式」輸出（先 filter 再回傳）會讓下游的成員資格斷言恆真，寫這類斷言前先確認它能轉紅。 |
+| **⑥ 技術債** | 任何 WP 把 `endCondition` 或等價事實加進 `meta` 之後，③ 的查表應改讀匯出並移除 `unknown_end_condition` 旗標。 |
+| **影響面** | `micro_flick_three_target_test_v9.ts`（`weaponId` 1 鍵）、`drillFamily.ts`（roster 1 列）、`sessionWeaponActivation.test.ts`（硬編 roster 大小 14 → 15）、`microFlickMetrics.ts`（`deriveOutcome` 右界分流 + 2 個旗標）、新增 `microFlickEndConditions.ts`、determinism harness 抽成 v8／v9 共用模組。**不改 sim 演進、不改命中判定、不改 spawn 分布、不新增指標構念、不改匯出 schema。** |
+| **狀態** | ✅ **已落地（2026-09-14, WP-68 T-exit）**。FR-68.1–5／NFR-68.1–4 逐條有證據，見 [WP-68 progress.md](active/stage13/wp-68-micro-flick-v9-measurement-parity/progress.md)。 |
+
 ### GD-44 🟡 CI 驗證閘分兩層 — cloud runner 抓迴歸、self-hosted 真 GPU 才是定版閘 (2026-09-14, v0.1.0 定版後)
 
 | | |

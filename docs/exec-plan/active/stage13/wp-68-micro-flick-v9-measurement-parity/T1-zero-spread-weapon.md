@@ -25,14 +25,14 @@
 
 ## Definition of Done
 
-- [ ] `npx.cmd vitest run src/drill/micro_flick_three_target_test_variants.test.ts` exit 0，含 v9 的 `weaponId` 斷言與 v1–v7 鍵集合不變
-- [ ] `npx.cmd vitest run src/session/drillFamily.test.ts` exit 0，含 v9 的 roster 與不可覆蓋斷言
-- [ ] spawn trace 逐位相同的測試綠，且測試本身斷言兩邊 `shotsFired > 0` 且相等（**實測發數入帳**）
-- [ ] `sampleSpread()` 對 v9 武器的 rng 呼叫數 === 0，且 ak47 對照組 > 0
-- [ ] `meta.weaponId` round-trip 測試綠
-- [ ] `npm.cmd run typecheck` ×2、`npm.cmd test`、`npm.cmd run build` 皆 exit 0，Vitest 數字 ≥ T0 基線且差值 = 本 task 新增數
-- [ ] `npm.cmd run test:e2e:fast -- --workers=1 tests/e2e/micro-flick-live.spec.ts` exit 0（該 spec 載入 v9，是唯一的 live 消費端）
-- [ ] 斷代宣告與「v8／v9 在 `meta.weaponId` 上不可分」入 `progress.md`
+- [x] `npx.cmd vitest run src/drill/micro_flick_three_target_test_variants.test.ts` exit 0，含 v9 的 `weaponId` 斷言與 v1–v7 鍵集合不變
+- [x] `npx.cmd vitest run src/session/drillFamily.test.ts` exit 0，含 v9 的 roster 與不可覆蓋斷言
+- [x] spawn trace 逐位相同的測試綠，且測試本身斷言兩邊 `shotsFired > 0` 且相等（**實測發數入帳**）
+- [x] `sampleSpread()` 對 v9 武器的 rng 呼叫數 === 0，且 ak47 對照組 > 0
+- [x] `meta.weaponId` round-trip 測試綠
+- [x] `npm.cmd run typecheck` ×2、`npm.cmd test`、`npm.cmd run build` 皆 exit 0，Vitest 數字 ≥ T0 基線且差值 = 本 task 新增數
+- [x] `npm.cmd run test:e2e:fast -- --workers=1 tests/e2e/micro-flick-live.spec.ts` exit 0（該 spec 載入 v9，是唯一的 live 消費端）
+- [x] 斷代宣告與「v8／v9 在 `meta.weaponId` 上不可分」入 `progress.md`
 
 ## Commit
 

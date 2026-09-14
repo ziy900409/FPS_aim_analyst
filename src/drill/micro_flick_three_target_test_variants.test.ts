@@ -153,6 +153,44 @@ describe('micro-flick deep-corridor variants', () => {
     expect(parsed.sequence.seed).not.toBe(v8.sequence.seed);
   });
 
+  // WP-68 / T1 (FR-68.1) — v9 inherits v8's whole measurement claim, so it inherits the weapon that
+  // makes the claim true. Before this task v9 carried no `weaponId` and silently ran `main.ts`'s
+  // `ak47` default: seeded spread on every shot, aim punch on almost every shot, and an ADS block.
+  it('declares the same zero-spread weapon for v9 as for v8, leaving v1-v7 on the app default', () => {
+    const parsed = loadDrill(microFlickThreeTargetTestV9.drill, microFlickRoomV9);
+
+    expect(microFlickThreeTargetTestV9.drill.weaponId).toBe('usp_s_laser');
+    expect(parsed.weaponId).toBe('usp_s_laser');
+
+    // Read off the roster rather than restated, so retuning `usp_s_laser` fails here instead of
+    // silently degrading v9 — the same three properties v8 depends on.
+    const weapon = WEAPONS[parsed.weaponId as WeaponId];
+    expect([weapon.inaccuracy.stand, weapon.inaccuracy.crouch, weapon.inaccuracy.fire, weapon.inaccuracy.move]).toEqual([0, 0, 0, 0]);
+    expect(weapon.recoil).toEqual({ seed: weapon.recoil.seed, magnitude: 0, magnitudeVariance: 0, angleVariance: 0 });
+    expect(weapon.ads).toBeUndefined();
+
+    // The new fact WP-63 did not have: the two sibling drills now declare the *same* weapon, so
+    // `meta.weaponId` no longer separates them. Pooling analysis must key on `meta.drillId`.
+    expect(microFlickThreeTargetTestV8.drill.weaponId).toBe(microFlickThreeTargetTestV9.drill.weaponId);
+    expect(microFlickThreeTargetTestV9.drill.drillId).not.toBe(microFlickThreeTargetTestV8.drill.drillId);
+
+    // NFR-68.1 — the seven variants that legitimately declare nothing keep their key sets
+    // bit-for-bit. A `weaponId: undefined` here would move export bytes without changing intent.
+    const untouched = [
+      microFlickThreeTargetTestV1,
+      microFlickThreeTargetTestV2,
+      microFlickThreeTargetTestV3,
+      microFlickThreeTargetTestV4,
+      microFlickThreeTargetTestV5,
+      microFlickThreeTargetTestV6,
+      microFlickThreeTargetTestV7,
+    ];
+    for (const fixture of untouched) {
+      expect(Object.prototype.hasOwnProperty.call(fixture.drill, 'weaponId')).toBe(false);
+      expect(loadDrill(fixture.drill, microFlickRoomV9).weaponId).toBeUndefined();
+    }
+  });
+
   it.each(variants)('$label binds its practice drill, deep corridor, and target envelope', ({ fixture, scene, distance, range, diameter, room, endZ, expectedApparentDiameterDeg }) => {
     const parsed = loadDrill(fixture.drill, scene);
     expect(fixture.sceneId).toBe(scene.sceneId);

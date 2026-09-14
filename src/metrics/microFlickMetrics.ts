@@ -1,6 +1,7 @@
 import type { ExportPayload } from '../data/export.ts';
 import type { TickRecord } from '../data/RingBuffer.ts';
 import { SIM_HZ } from '../loop/constants.ts';
+import { MICRO_FLICK_END_CONDITION_BY_DRILL_ID } from '../drill/microFlickEndConditions.ts';
 import { WEAPONS, isWeaponId } from '../weapon/weapons.ts';
 import {
   aimForward,
@@ -67,6 +68,24 @@ export const MICRO_FLICK_OUTCOME_FLAG_VOCABULARY = [
   'focus_lost_during_run',
   /** `T_valid` 內有窗把彈匣打到見底 ⇒ `shotsPerKill`／`shotAccuracy` 已知偏誤，不出數（FM-4）。 */
   'ammo_exhausted_in_run',
+  /**
+   * WP-68 / T2（FR-68.3）：計分窗右界**截在最後一次擊殺**，而不是這一場實際打到的最後一刻。
+   *
+   * 這是 kill-budget drill（`endCondition.type === 'targetCount'`，如 v1–v8）的自然語意——最後一顆
+   * 被打掉，drill 就結束了。**這條規則一直都在，只是以前沒說**；具名之後，消費端才能分辨手上這份
+   * `validSpanMs` 是「打到結束」還是「截到最後一殺」。
+   *
+   * 計時制 drill（如 v9）落在這裡代表右界**退回**了 kill-budget 語意：要嘛結束條件查不到
+   * （同時亮 `unknown_end_condition`），要嘛匯出沒有 tick 可以定出鐘的右界。兩種情況下
+   * `killRateHz` 都會系統性**高估**（最後一殺之後的真實剩餘時間被整段排除出分母）。
+   */
+  'scoring_window_truncated_at_last_kill',
+  /**
+   * WP-68 / T2（FM-2）：`meta.drillId` 不在 {@link MICRO_FLICK_END_CONDITION_BY_DRILL_ID} 內 ⇒ 無從
+   * 得知這一場是 kill-budget 還是計時制。一律**退回既有語意**（截在最後一殺）並具名，
+   * **不猜、不預設成 timeLimit**——猜錯的方向剛好是讓 `killRateHz` 變好看的那一邊。
+   */
+  'unknown_end_condition',
 ] as const;
 export type MicroFlickOutcomeFlag = (typeof MICRO_FLICK_OUTCOME_FLAG_VOCABULARY)[number];
 
@@ -333,7 +352,7 @@ export function deriveMicroFlickMetrics(
   const geometry = deriveGeometry(payload, windows.windows, ticks, eyeOrigin);
 
   return {
-    outcome: deriveOutcome(payload, windows.windows),
+    outcome: deriveOutcome(payload, windows.windows, ticks),
     geometry,
     selection: deriveSelection(windows.windows, ticks, eyeOrigin),
     microAdjust: deriveMicroAdjust(payload, windows.windows, ticks, eyeOrigin, geometry),
@@ -348,7 +367,10 @@ export function deriveMicroFlickMetrics(
 // ---------------------------------------------------------------------------
 
 /**
- * `T_valid` = `[第一個 visible 的 t, 最後一次擊殺的 t]`。
+ * `T_valid` = `[第一個 visible 的 t, 計分窗右界]`。**右界依 drill 的結束條件分流**（WP-68 / T2，
+ * FR-68.3）：kill-budget drill 取最後一次擊殺（v1–v8 的原定義，逐位不變），計時制 drill 取最後一個
+ * tick。哪一條在作用一律具名於 `flags`（`scoring_window_truncated_at_last_kill`／
+ * `unknown_end_condition`），見下方右界分流處的註解。
  *
  * ⚠️ **為什麼不是「countdown 結束」**：`timing.countdownMs` 從來沒有進過匯出 `meta`（`Meta` 無此
  * 欄位），所以規劃期寫的「從 `meta` 的 countdown 結束起算」在資料上不存在。task 文件的退路是
@@ -365,6 +387,7 @@ export function deriveMicroFlickMetrics(
 function deriveOutcome(
   payload: ExportPayload,
   windows: readonly TargetWindow[],
+  ticks: readonly TickRecord[],
 ): MicroFlickOutcomeMetrics {
   const flags: MicroFlickOutcomeFlag[] = ['idle_span_unbounded'];
   if (payload.meta?.validity?.pointerLockLost === true) flags.push('focus_lost_during_run');
@@ -379,17 +402,48 @@ function deriveOutcome(
 
   const firstVisibleMs = windows.reduce((min, window) => Math.min(min, window.tVisibleMs), Infinity);
   const lastKillMs = killTimes.at(-1);
+
+  // WP-68 / T2（FR-68.3／68.5）：計分窗的**右界**依 drill 的結束條件分流。
+  //
+  //  - kill-budget（`targetCount`，v1–v8）：最後一顆被打掉，drill 就結束 ⇒ 右界 = 最後一次擊殺，
+  //    與本函式交付時的定義逐位相同（FR-68.4 以 v8 四量的 `Object.is` 斷言釘死）。
+  //  - 計時制（`timeLimit`，v9）：受試者在最後一次擊殺**之後**仍有真實的剩餘時間在打、在失手、
+  //    在找靶。截在最後一殺會把那段整段排除出分母 ⇒ `killRateHz` 系統性高估（README §0.2）。
+  //    右界改取**最後一個 tick 的 `t`** ——它是匯出**自身**的事實，不需要相信 config 宣告的 60 s
+  //    與這一場實際錄到的長度對得上（OQ-68.3 的收斂方向）。
+  //
+  // 結束條件不在匯出 schema 內（T0.6），故經 `meta.drillId` 查本 build 的登記表取得；查不到就
+  // **退回**既有語意並具名，不猜（FM-2）。`ticks` 已由呼叫端依 `t` 排序。
+  const endConditionType = MICRO_FLICK_END_CONDITION_BY_DRILL_ID.get(payload.meta.drillId)?.type;
+  if (endConditionType === undefined) flags.push('unknown_end_condition');
+  const lastTickMs = ticks.at(-1)?.t;
+  // 鐘的右界只有在它至少涵蓋最後一次擊殺時才用得。tick 紀錄被截斷到最後一殺之前時
+  // （recorder 溢位），用它當右界會讓**分子與分母對不上同一個窗**：`n` 仍計全部擊殺，而
+  // `shots` 只數窗內的 ⇒ `shotAccuracy` 算得出 **> 1** 的機率、`shotsPerKill` 算得出「發數少於
+  // 擊殺數」。那正是 C-D3 禁的那種數字：看起來合理、實際在說錯話。∴ 不可用時一律退回最後一殺
+  // （它依定義涵蓋全部擊殺，兩者必然自洽）並具名。
+  const clockEndMs =
+    endConditionType === 'timeLimit' &&
+    lastTickMs !== undefined &&
+    (lastKillMs === undefined || lastTickMs >= lastKillMs)
+      ? lastTickMs
+      : undefined;
+  // 沒有鐘的右界可用 ⇒ 右界就是最後一次擊殺。四種情況共用這一條：kill-budget drill（本來就該如此）、
+  // 結束條件未知（退回）、計時制但匯出沒有任何 tick，以及計時制但 tick 紀錄截斷在最後一殺之前。
+  if (clockEndMs === undefined) flags.push('scoring_window_truncated_at_last_kill');
+  const scoringEndMs = clockEndMs ?? lastKillMs;
+
   const hasSpan =
-    Number.isFinite(firstVisibleMs) && lastKillMs !== undefined && lastKillMs > firstVisibleMs;
+    Number.isFinite(firstVisibleMs) && scoringEndMs !== undefined && scoringEndMs > firstVisibleMs;
   if (!hasSpan) flags.push('no_valid_span');
 
-  const validSpanMs = hasSpan ? lastKillMs - firstVisibleMs : undefined;
+  const validSpanMs = hasSpan ? scoringEndMs - firstVisibleMs : undefined;
   const shots = hasSpan
     ? payload.events.filter(
         (event) =>
           event.type === 'fire' &&
           event.t + WINDOW_EPSILON_MS >= firstVisibleMs &&
-          event.t <= lastKillMs + WINDOW_EPSILON_MS,
+          event.t <= scoringEndMs + WINDOW_EPSILON_MS,
       ).length
     : 0;
   if (hasSpan && shots === 0) flags.push('no_shots');
@@ -402,7 +456,8 @@ function deriveOutcome(
     (window) =>
       window.flags.includes('ammo_exhausted_in_window') &&
       window.tKillMs !== undefined &&
-      window.tKillMs <= (lastKillMs ?? -Infinity) + WINDOW_EPSILON_MS,
+      // 右界跟著計分窗走：計時制的窗變長，尾段那些窗的空倉同樣污染 `shotsPerKill`／`shotAccuracy`。
+      window.tKillMs <= (scoringEndMs ?? -Infinity) + WINDOW_EPSILON_MS,
   );
   if (ammoExhausted) flags.push('ammo_exhausted_in_run');
 
