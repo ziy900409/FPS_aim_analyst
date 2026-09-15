@@ -23,6 +23,19 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-46 🟡 WP-69 暫停後永久失去實驗效力；時間戳不可信即丟棄；只有整場 Restart 可恢復資格（2026-09-15，規劃）
+
+| | |
+|---|---|
+| **來源** | 使用者要求：(1) 測試可暫停，但暫停後該任務標註沒有實驗效力；若無法可靠延續事件時間戳，直接丟棄紀錄；(2) 新增 Restart，只有整場重新測試才可再次符合門檻。執行計畫見 [WP-69](active/stage15/wp-69-pause-invalid-restart/README.md)。 |
+| **① attempt 級 sticky 規則** | `countdown`／`running` 一旦 pause，該 attempt 永久成為 `invalid-paused`；Resume 只供完成操作，不恢復效力。只有 full restart 清除 attempt validity 並建立新的 `eligible-candidate`；candidate 仍須通過全部既有 eligibility/quality/compatibility gates，Restart 本身不等於 accepted。`armed` 的開場取鎖脈衝不算 pause。 |
+| **② 三種 final disposition** | 集中式 gate 僅回 `eligible-candidate`／`invalid-retained`／`discarded`。paused attempt 的 tick/event time 可證明連續才允許建立帶 `meta.validity.pauseOccurred=true` 的 diagnostic payload；它不得進正式 history/trend/threshold 或推進 Session/Protocol/Pilot。若時間戳、pause fence 或 paused-attempt overflow 使完整性無法證明，則不建立 payload、不下載、不保存、不 replay，原地清空 recorder。 |
+| **③ 時間與狀態架構** | 不新增全域 `TimeScale`，也不把 `paused` 加進 `DrillPhase`。新增 orthogonal attempt controller 與 active-time mapper：rAF/UI 走 wall time，sim/drill/target/recorder/gameplay HUD 與 DOM input timestamp 走同一個扣除 pause duration 的 active time。Pause 時仍以固定 mapped time 呼叫 `SimLoop.pump()`，避免 resume catch-up 與 >250 ms re-anchor；零 pause 路徑必須 identity/逐位不變。 |
+| **④ Pointer Lock / input** | recording-time Pointer Lock loss（Esc、blur、瀏覽器掉鎖無法可靠區分）一律觸發 pause + invalid。Resume 按鈕在 click user gesture stack 內直接 request lock，以 `pointerlockchange` 為成功權威；取鎖後跑 resume countdown，完成前 mouse/fire/ADS/keyboard/camera 全部 gated。Pause 邊界以 input event 合成 release，不由 UI 直接寫 sim held state。 |
+| **⑤ 與 GD-41 的關係** | **明確覆寫 GD-41 中「錄製中掉鎖只標記、不中斷、sim 跑到自然結束」這一段行為。** 保留 GD-41 的 `pointerLockLost` 事實欄、optional-in/required-out 相容策略，以及 Pointer Lock 與 fullscreen 為不同構念；新欄 `pauseOccurred` 是 attempt 採納規則，不能只靠既有 `suspect`（History 現況仍會保存 suspect assessment）。 |
+| **⑥ 編號與相依** | 寫入當下正式索引最大為 WP-68、已落帳最大 GD-45；stage14 的 WP-69～71 自我標示為未批准候選，依 GD-15 不佔號，故 Stage15 採 **WP-69 / GD-46**。T0 仍須重查；WP-67 已預約 GD-43 且可能平行修改 export schema/digest，WP-69 T0 必須對帳而不覆蓋。 |
+| **狀態** | 🟡 產品/架構規則已採納，production 尚未落地。WP-69 T-exit 以具名證據補齊後翻 ✅；在此前不得宣稱功能已可用。 |
+
 ### GD-45 ✅ WP-68 Micro Flick v9 量測基礎層對齊 — 儀器宣告、計分窗右界依計分制分流、v8/v9 分池鍵收窄 (2026-09-14, T-exit)
 
 | | |
