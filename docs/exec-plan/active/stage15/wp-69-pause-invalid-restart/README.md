@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **狀態** | ⬜ 規劃完成，未開工 |
+| **狀態** | 🟡 T0 已落閘（2026-09-15），T1 可開工 |
 | **目標** | 允許測試中暫停與繼續，但 pause 發生後該 attempt 永久不得被實驗採納；時間戳完整才保留 invalid diagnostic record，否則丟棄；只有 full restart 產生新的 eligible candidate |
 | **上游** | [WP-65](../../stage13/wp-65-drill-arming-and-countdown/README.md)（arming/countdown/Pointer Lock validity）✅ |
 | **決策** | [GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)（規劃期已採納產品規則，T-exit 補實作證據） |
@@ -63,11 +63,13 @@
 
 ### 1.4 Open Questions
 
-| ID | 問題 | 預設（未推翻即生效） | Owner | Deadline | 影響 |
-|---|---|---|---|---|---|
-| **OQ-69.1** | invalid diagnostic record 要自動下載，還是只在結果頁提供手動下載？ | **自動下載**，檔名強制 `.invalid-paused`；避免「保留」只存在記憶體，但不得保存 history | 使用者 | T4 開工前 | T4 UI/下載接線 |
-| **OQ-69.2** | 是否只把明確 `Esc` 算 pause？ | **任何 recording-time Pointer Lock loss 都算**；Web API 無可靠方式區分 Esc、blur、權限或瀏覽器回收 | 使用者 | T3 開工前 | pause 觸發面與效度規則 |
-| **OQ-69.3** | `bufferOverflow`/`recorderOverflow` 是否一律歸 `discarded`？ | **只要發生於 paused attempt 就 discard**；乾淨未 pause run 維持既有 suspect 語意，避免本 WP偷改全域品質政策 | 研究者 | T1 開工前 | integrity reason vocabulary |
+**全部已於 T0 關閉（2026-09-15，使用者拍板）**，證據與後果見 [progress.md §T0.6](progress.md)。
+
+| ID | 問題 | 結論 | 與規劃期預設 | 影響 |
+|---|---|---|---|---|
+| **OQ-69.1** | invalid diagnostic record 要自動下載，還是只在結果頁提供手動下載？ | **只在結果頁提供手動下載鈕**；檔名仍強制 `.invalid-paused`，仍不得存 history | ⚠️ **推翻預設**（原為自動下載） | T4 不接自動下載，改為 Result 上的顯著下載控件。⚠️ `#drill-controls`（z-index 32）蓋在 `#result-screen`（30）之上 ⇒ 按鈕位置與 T6 點擊斷言有硬性要求（見 §T0.6）；殘餘風險：操作員不按即等於未保留 |
+| **OQ-69.2** | 是否只把明確 `Esc` 算 pause？ | **任何 recording-time Pointer Lock loss 都算**；Web API 無可靠方式區分 Esc、blur、權限或瀏覽器回收 | 維持預設 | 與 [main.ts:1474](../../../../../src/main.ts#L1474) 既有 `pointerLockLost` 的相位判準逐字同窗，不新增第二套定義（C-D4） |
+| **OQ-69.3** | `bufferOverflow`/`recorderOverflow` 是否一律歸 `discarded`？ | **只要發生於 paused attempt 就 discard**；乾淨未 pause run 維持既有 suspect 語意 | 維持預設 | 入封閉詞彙 `pause-attempt-overflow`（§T0.5 #8）；不偷改全域品質政策 |
 
 ## 2. 技術設計 (Technical Design)
 
@@ -224,13 +226,13 @@ Defense in depth：`HistoryPersistence.save()` 新增 `excluded: invalid-attempt
 
 - `main.ts` 仍是 orchestration god node；本 WP 只抽出 `RunAttemptController`、`PausableTimeMapper` 與 `AttemptFinalizationGate` 三個可測模組，不藉機重構整個 bootstrap。
 - mapper 每事件只有常數次減法/比較；不新增 tick/event object allocation。Pause overlay 的 DOM 只建一次。
-- invalid diagnostic auto-download（OQ-69.1 預設）仍會產生完整 JSON，容量等同正常匯出；這是使用者要求「可繼續記錄才保留」的直接成本，不進熱路徑。
+- ~~invalid diagnostic auto-download（OQ-69.1 預設）的容量成本~~ —— **T0 已推翻該預設**（改為結果頁手動下載），此成本不再存在；改為承擔「操作員不按即未保留」的殘餘風險（見 §1.4）。
 
 ## 4. 任務拆解 (Task Breakdown)
 
 | Task | Objective | Dependencies | Risk | Complexity | 估時 | Commit |
 |---|---|---|---|---|---:|---|
-| **[T0](T0-entry-gate.md)** | Entry gate：重查編號/WP-67、凍結 baseline、time/integrity spike、關閉 OQ | — | High | Med | 1–1.5 d | `docs(wp-69): T0 entry gate for pause validity` |
+| **[T0](T0-entry-gate.md)** ✅ | Entry gate：重查編號/WP-67、凍結 baseline、time/integrity spike、關閉 OQ | — | High | Med | 1–1.5 d | `docs(wp-69): T0 entry gate for pause validity` |
 | **[T1](T1-attempt-disposition-contract.md)** | `RunAttemptController` + disposition/integrity contract + additive metadata/parser | T0 | High | Med | 2–2.5 d | `feat(attempt): add sticky pause validity contract` |
 | **[T2](T2-pausable-time-mapper.md)** | `PausableTimeMapper` 接 SimLoop/HUD/recorder，證明 freeze/no-catch-up/zero-pause identity | T1 | **High** | High | 2–3 d | `feat(loop): freeze active time during paused attempts` |
 | **[T3](T3-input-pointer-lock-overlay.md)** | Input/camera gate、Pointer Lock resume、倒數與 PauseOverlay/Restart | T2 | High | High | 2–3 d | `feat(ui): add invalidating pause and full restart controls` |

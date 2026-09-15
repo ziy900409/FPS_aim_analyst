@@ -173,7 +173,7 @@
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---:|---|
-| **WP-69** | [`active/stage15/wp-69-pause-invalid-restart/`](active/stage15/wp-69-pause-invalid-restart/README.md) | recording-time 掉鎖即 pause + sticky invalid；時間戳健康才保留 invalid diagnostic，否則無 payload 並清 recorder；只有 full restart 建立新的 eligible candidate，且三種 orchestrator 都不得跳過同一測試 | —（T-exit 即交付） | WP-65 ✅；T0 對帳未開工 WP-67 schema | 12.5–18 | ⬜ **規劃完成（2026-09-15），未開工**。零 production code；T0 先凍結 active-time/integrity contract。stage14 的 WP-69～71 仍是未批准候選，依 GD-15 不構成佔號。 |
+| **WP-69** | [`active/stage15/wp-69-pause-invalid-restart/`](active/stage15/wp-69-pause-invalid-restart/README.md) | recording-time 掉鎖即 pause + sticky invalid；時間戳健康才保留 invalid diagnostic，否則無 payload 並清 recorder；只有 full restart 建立新的 eligible candidate，且三種 orchestrator 都不得跳過同一測試 | —（T-exit 即交付） | WP-65 ✅；T0 對帳未開工 WP-67 schema | 12.5–18 | 🟡 **T0 已落閘（2026-09-15），T1 可開工**。T0 零 production code：編號重查維持 WP-69／GD-46；baseline 凍結（typecheck exit 0、build exit 0、Vitest **3386 passed／2 skipped**、`tests/regression` **324 passed**、Edge Pointer Lock focused e2e **15 passed／0 failed**）；spike 以真 `createSimLoop` 量到 naive pause 的 resume 幀 **32 ticks**（正常 2）且**下一幀**才顯現 **2766.667 ms** re-anchor 不連續，mapped active time 則暫停期每幀 **0 ticks**、resume 幀 2 ticks、零 pause 路徑逐位 identity；`RecordingIntegrityReason` 凍結為 8 項封閉詞彙（tick 軸 bit-exact、event 軸須容許 <1 tick 回退，實測有乾淨 payload 帶 0.2025 ms 跨時鐘回退）；OQ-69.1～69.3 全關（**OQ-69.1 經使用者推翻為「只在結果頁手動下載」**）。與 WP-67 的 canonical digest 影響面互斥（WP-67 動 0 筆、WP-69 動 3 筆），不需共用 fixture 基線。stage14 的 WP-69～71 仍是未批准候選，依 GD-15 不構成佔號。 |
 
 ---
 
