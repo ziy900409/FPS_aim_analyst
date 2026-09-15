@@ -672,6 +672,16 @@ document.addEventListener('fullscreenchange', () => {
   // 準備匯出)退出全螢幕不算,避免把「錄完正常退出全螢幕去抓匯出檔」誤判為錄製中途失效。
   const recording = drillRunner.phase === 'countdown' || drillRunner.phase === 'running';
   experimentSession.handleFullscreenChange(fullscreen, recording);
+  // WP-70 / T1（FR-70.1）— 匯出的 fullscreen suspect 成分的**唯一**真值來源。沿用上面算好的
+  // `recording`，不另開第二套判準（C-D4：KI-007 的錄製窗定義只能有一個）。
+  //
+  // 與 `handleFullscreenChange()` 並存而不取代它：那個呼叫仍負責 session 級的 `onSuspect` 去重
+  // 觸發（橫幅掛點，OQ-70.2），本行負責**這一場**的效度事實 —— 由 `resetState()` 每場歸零。
+  //
+  // **不**以 `experimentSession.active` 為前提（比照 `pointerLockLostDuringRun` 的同型理由）：
+  // 錄製中掉出全螢幕這件事與有沒有跑正式實驗流程無關，欄位叫 `fullscreenExited` 就不該在某些
+  // 模式下對著已發生的退出回報 false。實務差異接近零——只有資格閘會進 Element fullscreen。
+  if (!fullscreen && recording) sharedState.validity.fullscreenExitedDuringRun = true;
   if (!fullscreen) markProtocolFullscreenExit?.();
 });
 
@@ -906,13 +916,17 @@ async function buildCurrentExportPayload(
     lateEventCount: sharedState.inputMeta.lateEventCount,
     bufferOverflow: sharedState.inputMeta.bufferOverflow,
     recorderOverflow: snapshot.recorderOverflow,
-    // 純觀測 suspect:實驗 session 中途退出 fullscreen(GD-10 failure mode)、或 drill frame p95
+    // 純觀測 suspect:錄製中退出 fullscreen(GD-10 failure mode)、或 drill frame p95
     // 超過效能地板(GD-10 防線③)。玩家逸出走廊**不在此列**(K-3,KI-004 / S1 T3):越界的真實
     // 後果是視覺遮擋,而場景幾何永不進 sim(GD-6),不可能影響命中判定 —— 屬「該記錄的觀測」而非
     // 「該作廢的 run」,越界事實改由下方 meta.validity.corridorExceeded 記錄。
-    suspect:
-      (protocolContext === undefined ? experimentSession.suspect : protocolContext.suspect) ||
-      frames.summary.p95 > PERF_FLOOR_MS,
+    //
+    // WP-70 / T1 — 這裡**刻意不再讀 `experimentSession.suspect`**（KI-040 缺陷 A）。fullscreen 成分
+    // 改由下方 `validity.fullscreenExited` 供應，`collectMeta()` 會把它 OR 進 `meta.suspect`
+    // （與 `pointerLockLost`／`pauseOccurred` 同一條路徑）。差別是**效力單位**：舊來源 session 級
+    // sticky、永不復位；新來源每場 `resetState()` 歸零 ⇒ 與這一行右半邊的 per-run 效能地板對齊。
+    // protocol 分支仍讀 `protocolContext.suspect`（該路徑的錄製窗判準由 T2 補上）。
+    suspect: (protocolContext?.suspect ?? false) || frames.summary.p95 > PERF_FLOOR_MS,
     simToWorld: SIM_TO_WORLD,
     // meta.validity(KI-004 / S1 T2,FR-S1-15):與上面的 suspect **不是同一集合**,純觀測拆解,
     // 前拉自 OQ-S1-2;`suspect` 本身的 OR 集合逐位不變。
@@ -930,6 +944,10 @@ async function buildCurrentExportPayload(
       // 真，但判準未來可能分岔。這個欄位讓 payload 自述「我不可採納」，也讓 `HistoryPersistence`
       // 的第二道防線有東西可讀（README §2.4 defense in depth）。
       pauseOccurred: runAttempt.pauseOccurred,
+      // WP-70 / T1（FR-70.1/70.2）— 同上，**逐欄手抄**的第七欄。讀 `sharedState.validity` 而非
+      // `experimentSession.suspect`：前者每場歸零（run 級，與同物件的 `perfFloor` 對齊），後者是
+      // session 級 sticky，一次中斷會污染其後每一場（KI-040 缺陷 A）。
+      fullscreenExited: sharedState.validity.fullscreenExitedDuringRun,
     },
     weapon: {
       id: weaponConfig.id,

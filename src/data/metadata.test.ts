@@ -798,6 +798,8 @@ describe('collectMeta', () => {
       pointerLockLost: false,
       // WP-69 / T1：第六欄走同一條規則。
       pauseOccurred: false,
+      // WP-70 / T1：第七欄走同一條規則。
+      fullscreenExited: false,
     });
     // NFR-S1-2b:validity.corridorExceeded 為 true 不得單獨把 suspect 拉成 true。
     expect(meta.suspect).toBe(false);

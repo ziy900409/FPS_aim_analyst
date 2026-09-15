@@ -36,15 +36,15 @@
 
 ## Definition of Done
 
-- [ ] `npx vitest run` exit 0；新增測試數記入 `progress.md`
-- [ ] **跨 run 不繼承**有具名測試（測試檔名 + 案例名），且該測試在改動前會紅（反證其有效性）
-- [ ] **端到端旗標→匯出**有具名測試（不只測 SharedState 層，FM-70.2）
-- [ ] **run 內偵測未被放寬**有具名測試（風險分析要求的反方向證據）
-- [ ] source-scan 斷言 `collectMeta()` 不再讀 `experimentSession.suspect`（FM-70.1）
-- [ ] canonical digest 實際移動筆數**與 T0 預測逐筆吻合**；第 N+1 筆變動 ⇒ 回頭修程式，不改表（NFR-70.2）
-- [ ] `npx vitest run tests/regression` 計數與 T0 baseline **逐數相同**（NFR-70.1）
-- [ ] 新增程式碼的 `Date.now` / `Math.random` 掃描為 **0**
-- [ ] OQ-70.2 已關閉，結論（刪除或保留＋清理觸發條件）記入 `progress.md`
+- [x] `npx vitest run` exit 0；新增測試數記入 `progress.md`
+- [x] **跨 run 不繼承**有具名測試（測試檔名 + 案例名），且該測試在改動前會紅（反證其有效性）
+- [x] **端到端旗標→匯出**有具名測試（不只測 SharedState 層，FM-70.2）
+- [x] **run 內偵測未被放寬**有具名測試（風險分析要求的反方向證據）
+- [x] source-scan 斷言 `collectMeta()` 不再讀 `experimentSession.suspect`（FM-70.1）
+- [x] canonical digest 實際移動筆數**與 T0 預測逐筆吻合**；第 N+1 筆變動 ⇒ 回頭修程式，不改表（NFR-70.2）
+- [x] `npx vitest run tests/regression` 計數與 T0 baseline **逐數相同**（NFR-70.1）
+- [x] 新增程式碼的 `Date.now` / `Math.random` 掃描為 **0**
+- [x] OQ-70.2 已關閉，結論（刪除或保留＋清理觸發條件）記入 `progress.md`
 
 ## Commit
 

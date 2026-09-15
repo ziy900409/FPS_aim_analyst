@@ -107,6 +107,7 @@ describe('WP-63 T4 — L0 結果層（FR-63.6）', () => {
         // WP-69 / T1：兩個構念各自獨立（FR-69.11）。這一場只掉鎖、未 pause —— `focus_lost_during_run`
         // 的來源仍只有 `pointerLockLost`，本 WP 不讓 pause 借用它的旗標。
         pauseOccurred: false,
+        fullscreenExited: false,
       },
     };
     const flags = deriveMicroFlickMetrics(lost).outcome.flags;

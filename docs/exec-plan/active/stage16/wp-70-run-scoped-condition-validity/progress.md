@@ -2,10 +2,10 @@
 
 ## Snapshot
 
-- **狀態**：🟡 **T0 ✅ 通過**（2026-09-15），T1 未開工
+- **狀態**：🟡 **T0 ✅ / T1 ✅**（2026-09-15），T2 未開工
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：**T1** per-run fullscreen 旗標（T0 已放行：編號確認、baseline 四閘全綠、KI-040 四缺陷全數複核成立、digest 預測 3 筆、OQ-70.1 實測可行）
+- **下一步**：**T2** protocol 路徑補上 KI-007 錄製窗判準（消除第二套判準，C-D4）
 - **來源**：[KI-040](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)
 - **決策**：`GD-47`（預約，T0 重查）
 
@@ -44,7 +44,7 @@
 | Task | 狀態 | 證據 / 決策 / 意外 |
 |---|---|---|
 | T0 | ✅ | 2026-09-15。production diff = 空。編號 WP-70／GD-47 確認可用；四閘 baseline 全 exit 0（Vitest **3709 passed／2 skipped**、regression **324**）；KI-040 四缺陷逐條以當前行號複核**全數仍成立**；digest 預測 **3 筆**（具名）；**OQ-70.1 實測可行 ⇒ T5 = e2e 任務**，但帶三條具名限制（L1～L3）。見 [§T0](#t0-entry-gate2026-09-15) |
-| T1 | ⬜ | — |
+| T1 | ✅ | 2026-09-15。四閘全綠（typecheck／build exit 0、Vitest **3725 passed／2 skipped**、regression **324** 與 baseline 逐數相同）；新增 **16** 個測試（`src/data/wp70-run-scoped-fullscreen.test.ts`），改動前**全 16 紅**；canonical digest **實際移動 3 筆**，與 D-70-T0-3 預測逐筆吻合、第 4 筆未出現；OQ-70.2 已關閉。見 [§T1](#t1-per-run-fullscreen-旗標2026-09-15) |
 | T2 | ⬜ | — |
 | T3 | ⬜ | — |
 | T4 | ⬜ | — |
@@ -65,6 +65,8 @@
 | **D-70-T0-2** | GD-10 **補澄清註記、不修訂**——但澄清範圍必須比規劃期大：GD-10 ① 的字面是「**session** 標 suspect」且該句綁在效能地板上，而效能地板成分自實作起就是 per-run ⇒ 條文沒規定 fullscreen sticky（規劃期判讀成立），但「session」這個**用詞**本身早就與實作不符。澄清註記必須一併澄清用詞，不得只談 fullscreen | T0 採納（見 [§T0.4](#t04-gd-10-複核步驟-1-的延伸d-70p5-複核)） |
 | **D-70-T0-3** | canonical digest 預測 **3 筆**移動：`09_18_05`／`09_24_18`／`09_37_24`；其餘 **5 筆逐位不變**。**第 4 筆變動即 bug，回頭修程式不准改表** | T0 採納（見 [§T0.6](#t06-canonical-digest-預測步驟-5)） |
 | **D-70-T0-4** | **T5 = e2e 任務**（OQ-70.1 實測可行）。但 **FM-70.4 明確不在 e2e 涵蓋範圍**（限制 L1）：本環境下 `page.evaluate()` 自帶 user activation，錯誤實作照樣全綠 ⇒ FM-70.4 的守衛**只能**是 T4 的 source-scan ＋ 實機手動，**不得**以 T5 綠燈宣稱已守 | T0 採納（見 [§T0.7](#t07-oq-701-實測步驟-6)） |
+| **D-70-T1-1** | `experimentSession.suspect` **保留、只切 export 路徑**（依 T0.8 的預設動作）。executable 讀取點由 1 歸 **0**，欄位仍是 `handleFullscreenChange()` 的去重閂。**清理觸發條件（明帳）**：T3 決定橫幅改由旗標真值驅動後，若 `onSuspect` 回呼也不再有消費者 ⇒ 由 **T3** 連同 `suspect` 欄位與 `onSuspect` 一併刪除；若 T3 結束仍保留，須在 T3 的 progress 重新說明誰在讀它 | T1 採納，關閉 OQ-70.2（見 [§T1.3](#t13-oq-702-關閉步驟-5)） |
+| **D-70-T1-2** ⭐ | 新旗標的寫入**不以 `experimentSession.active` 為前提**，只看 `recording` —— 逐字沿用 `pointerLockLostDuringRun` 的同型理由。這是相對舊語意的**收緊**（研究員／一般 drill 模式錄製中退出全螢幕，過去不標、現在會標），方向與 README §3 要求「不得放寬 run 內偵測」一致；實務差異接近零（只有資格閘會進 Element fullscreen）。理由：欄位叫 `fullscreenExited` 就不該對著已發生的退出回報 `false`（FR-70.2 要 payload 自述） | T1 採納（見 [§T1.4](#t14-一處刻意的語意收緊d-70-t1-2)） |
 | **D-70-T0-5** | 恢復流程**重跑三項全部**，沿用既有純函式 `runEligibilityGate()`，不另開「只驗 fullscreen＋perf」的兩項變體 —— 代價為零（同一個純函式、呼叫點讀 `screen`/`dpr`/`fullscreenElement` 三個環境訊號），且避免生出第二套資格判準（C-D4） | T0 採納，關閉 OQ-70.3（見 [§T0.8](#t08-oq-關閉與降級步驟-8)） |
 
 ## Open Questions
@@ -72,7 +74,7 @@
 | ID | 問題 | Owner | Deadline | Impact |
 |---|---|---|---|---|
 | ~~**OQ-70.1**~~ ✅ | ~~Playwright 能否在 `--project=edge` 下可靠進入真 fullscreen 並觸發 `fullscreenchange`？~~ | T0 | — | **已關閉（2026-09-15）**：實測**可行** ⇒ T5 = e2e 任務，帶 L1～L3 三條具名限制。見 [§T0.7](#t07-oq-701-實測步驟-6) |
-| **OQ-70.2** 🟢 | `experimentSession.suspect` 被切斷 export 路徑後是否仍有消費者？刪除或保留為 session 級稽核？ | T1 | T1 | **已降級**（T0 把事實查完，只剩取捨）：`.suspect` 的 production **讀取點恰為 1 個**（`main.ts:914`），T1 切斷後歸 **0**；但該欄位在模組**內部仍承重**（`handleFullscreenChange` 的 `\|\| suspect` 早退＝「同一次退出只觸發一次 `onSuspect`」的去重閂）。⇒ T1 的預設動作 = **只切 export 路徑、不刪欄位**；是否連 `onSuspect`／欄位一起刪，待 T3 決定橫幅真值驅動後再回頭收。見 [§T0.8](#t08-oq-關閉與降級步驟-8) |
+| ~~**OQ-70.2**~~ ✅ | ~~`experimentSession.suspect` 被切斷 export 路徑後是否仍有消費者？刪除或保留為 session 級稽核？~~ **已關閉（2026-09-15，T1）**：保留欄位、只切 export 路徑（D-70-T1-1），清理觸發條件已明帳並交棒 T3。以下為 T0 查到的事實，保留備查： | T1 | — | **已降級**（T0 把事實查完，只剩取捨）：`.suspect` 的 production **讀取點恰為 1 個**（`main.ts:914`），T1 切斷後歸 **0**；但該欄位在模組**內部仍承重**（`handleFullscreenChange` 的 `\|\| suspect` 早退＝「同一次退出只觸發一次 `onSuspect`」的去重閂）。⇒ T1 的預設動作 = **只切 export 路徑、不刪欄位**；是否連 `onSuspect`／欄位一起刪，待 T3 決定橫幅真值驅動後再回頭收。見 [§T0.8](#t08-oq-關閉與降級步驟-8) |
 | ~~**OQ-70.3**~~ ✅ | ~~恢復流程要不要重驗**原生解析度**？~~ | T4 | — | **已關閉（2026-09-15）**：重跑**三項全部**（D-70-T0-5）。`runEligibilityGate()` 是純函式、呼叫時現讀三個環境訊號 ⇒ 重跑解析度的邊際成本為零，而「使用者把視窗拖到另一個螢幕」正是解析度會變的那個情況 |
 | **OQ-70.4** 🟡 | 已下載的匯出檔（瀏覽器下載資料夾，repo 掃不到）是否需要操作員自查清單？`data/session-history/` 已確認零筆（KI-040 §8） | 使用者 | T6 | T6 的文件範圍；不阻塞程式修改 |
 
@@ -325,3 +327,119 @@ WP-69 T-exit 二度複現）⇒ 本節**全部以 grep 取得**，未使用 Code
 - [x] **OQ-70.1 有實測結論**（非推測）：spike 指令／輸出／T5 形狀決定 → T0.7
 - [x] blast radius 六個符號的 grep 計數記入 → T0.9
 - [x] `git diff -- src tests` 為空（spike 已刪除）
+
+---
+
+## T1 per-run fullscreen 旗標（2026-09-15）
+
+**判定：✅ 完成。** 缺陷 A 的修復點已落地：`meta.suspect` 的 fullscreen 成分不再由 session 級
+sticky 的 `experimentSession.suspect` 供應，改由每場 `resetState()` 歸零的
+`sharedState.validity.fullscreenExitedDuringRun` 供應，與同一個 `suspect` 運算式右半邊的 per-run
+效能地板成分**對齊**（README §0.1 的不對稱消失）。
+
+### T1.1 改動範圍（production 5 檔，逐檔一句）
+
+| 檔案 | 改了什麼 |
+|---|---|
+| [`src/state/SharedState.ts`](../../../../../src/state/SharedState.ts) | `validity` 加 `fullscreenExitedDuringRun`（固定欄位、不新增配置）；`createSharedState()` 初值 `false`；`resetState()` 歸零 |
+| [`src/main.ts`](../../../../../src/main.ts) | `fullscreenchange` 處理器內 `if (!fullscreen && recording)` 置真（**沿用**既有 `recording` const，不另開判準）；`collectMeta()` 的逐欄手抄加第七欄；`suspect:` 運算式移除 `experimentSession.suspect` |
+| [`src/data/metadata.ts`](../../../../../src/data/metadata.ts) | `Meta['validity'].fullscreenExited`（required-out）+ args 型別（optional-in）+ `requireValidity()` 缺欄補 `false` + 併入 `collectMeta()` 的 `suspect` OR |
+| [`src/data/exportPayloadSchema.ts`](../../../../../src/data/exportPayloadSchema.ts) | `parseValidity()` 的 optional-in 解析（缺席 = `false`，帶欄但非布林仍報錯） |
+
+`schemaVersion` **維持 2**（FR-70.3）；`research/` **零改動**。
+
+### T1.2 證據（四閘 + 測試）
+
+| 閘 | 結果 | 對照 T0 baseline |
+|---|---|---|
+| `npm run typecheck` | **exit 0** | 同 |
+| `npm run build` | **exit 0**，208 modules，`index-C_uagY72.js` 1,258.41 kB（gzip 359.85 kB） | baseline 1,258.13 kB ⇒ +0.28 kB（新欄位與註解） |
+| `npx vitest run` | **exit 0**；**285 passed / 1 skipped（286 files）**、**3725 passed / 2 skipped（3727 tests）** | baseline 284 files／3709 tests ⇒ **+1 file、+16 tests，全部是本 task 新增的**，零既有測試淨增減 |
+| `npx vitest run tests/regression` | **exit 0**；**33 files**、**324 passed** | baseline **324** ⇒ **逐數相同**，NFR-70.1 的零漂移成立 |
+
+**DoD 的具名測試**（全部在新檔 [`src/data/wp70-run-scoped-fullscreen.test.ts`](../../../../../src/data/wp70-run-scoped-fullscreen.test.ts)）：
+
+| DoD 要求 | 測試案例名 |
+|---|---|
+| **跨 run 不繼承** | `WP-70 T1 — 跨 run 不繼承（FR-70.1）` › `run N 錄製中退出全螢幕 → DrillRunner.start() 起的 run N+1 旗標為 false` ＋ `乾淨的 run N+1 匯出的 suspect 為 false（不繼承上一場的失效）` |
+| **端到端 旗標 → 匯出** | `WP-70 T1 — 端到端：旗標 → 匯出（FM-70.2）` › `旗標為真 ⇒ meta.validity.fullscreenExited 與 meta.suspect 皆為真` |
+| **run 內偵測未被放寬** | `WP-70 T1 — run 內的偵測未被放寬（README §3 的反方向證據）` › `同一場內置真後，drill 一路跑到 ended 仍為真` |
+| **source-scan（FM-70.1）** | `WP-70 T1 — main.ts 的接線（source-scan）` › `export 路徑不再讀 experimentSession.suspect（FM-70.1）` |
+
+⭐ **「改動前會紅」已實測，非宣稱**：測試先寫、先跑，改 production code 前
+`npx vitest run src/data/wp70-run-scoped-fullscreen.test.ts` 為 **16 failed / 16**；
+改完為 **16 passed**。「跨 run 不繼承」刻意用**真的** `DrillRunner.start()` 而非直接呼叫
+`resetState()`——缺陷 A 的要害就是「每場的歸零點有沒有真的接上」，繞過 `DrillRunner` 會讓這條測試
+在歸零點斷掉時仍然全綠。
+
+**`Date.now` / `Math.random` 掃描**：`git diff -- src | grep '^+' | grep -cE 'Date\.now|Math\.random'`
+⇒ **0**。
+
+### T1.3 OQ-70.2 關閉（步驟 5）
+
+依 T0.8 查好的事實執行**預設動作**：`experimentSession.suspect` **保留、只切 export 路徑**。
+切斷後 `main.ts` 對 `experimentSession.suspect` 的 **executable 讀取點為 0**（剩下的 2 處命中皆為
+註解；source-scan 測試先 `stripComments` 再斷言，所以那兩處不會讓測試假綠）。
+
+**清理觸發條件（D-70-T1-1，明帳而非靜默留著）**：T3 讓橫幅改由旗標真值驅動之後，
+`onSuspect` 回呼若也不再有消費者 ⇒ **由 T3 連同 `suspect` 欄位與 `onSuspect` 一併刪除**；
+若 T3 結束仍選擇保留，須在 T3 的 progress 重新回答「誰在讀它」。
+
+### T1.4 一處刻意的語意收緊（D-70-T1-2）
+
+新旗標的寫入條件是 `!fullscreen && recording`，**不含** `experimentSession.active`。
+舊來源 `experimentSession.handleFullscreenChange()` 的早退條件含 `!active`，所以**研究員模式／
+一般 drill** 在錄製中退出全螢幕過去不會被標記、現在會。
+
+- **方向是收緊不是放寬**，與 README §3「唯一該放寬的是跨 run 污染，run 內偵測不得放寬」相容。
+- **理由**：FR-70.2 要求 payload 自述 suspect 來源；一個叫 `fullscreenExited` 的欄位在某些模式下
+  對著**已經發生的**退出回報 `false`，是會說錯話的欄位（C-D3 的同一條精神）。
+- **先例**：`pointerLockLostDuringRun` 的寫入點就刻意不以 `experimentSession.active` 為前提，
+  `main.ts` 該處註解逐字寫著理由（WP-65 README §0.3 缺口 G1）。本 task 照抄該判斷。
+- **實務差異接近零**：只有資格閘會呼叫 `requestFullscreen()`，沒進過 Element fullscreen 就不會有
+  退出事件；F11 的瀏覽器全螢幕不觸發 `fullscreenchange`。
+
+### T1.5 canonical digest 對帳（NFR-70.2）
+
+**預測（D-70-T0-3）：3 筆移動、5 筆逐位不變。實測：完全吻合，第 4 筆未出現。**
+
+| fixture | 預測 | 實測 | 新值（舊值） |
+|---|---|---|---|
+| `…T09_18_05.631Z.json` | 移動 | **移動** | `0fe2abf8de5fb2ed`（`be406f8793cc4c4e`） |
+| `…T09_24_18.148Z.json` | 移動 | **移動** | `71df8d6e504b1f75`（`e725f627bce38982`） |
+| `…T09_37_24.351Z.json` | 移動 | **移動** | `d6dfcf26053178f8`（`0e8a86413b324c2d`） |
+| 其餘 5 筆 | 逐位不變 | **逐位不變** | — |
+
+⇒ 這是**第三個** WP（WP-65 T5 / WP-69 T1 / 本案）落在同一組三筆上，materialized default 確實
+只落在「本來就帶 `meta.validity` 父物件」的 payload。表已更新並補上歷代舊值，理由寫在
+[`exportPayloadSchema.test.ts`](../../../../../src/data/exportPayloadSchema.test.ts) 的表頭註解。
+
+### T1.6 C-D1 additive 相容性（README §2b 要求的 T1 檢查）
+
+[`research/src/modules/ingest/algorithms/loader.py`](../../../../../research/src/modules/ingest/algorithms/loader.py)
+的 `load_export()` 以 `meta = _mapping(_required(root, "meta", "meta"), "meta")` 取整塊 meta，
+`_validate_meta()` 只檢查**必填欄位**，回傳 `meta=dict(meta)` 原樣穿透——全檔**零處**提及
+`validity`，也**沒有**任何 unknown-key / `additionalProperties` 拒絕。⇒ 新欄位對 Python 側透明，
+`research/` 不需任何改動（WP-69 的 `test_loader_invalid_paused.py` 對 `pauseOccurred` 已記過同一結論）。
+
+### T1.7 既有測試期望值的變動（逐條，皆為 required-out 的機械後果）
+
+7 個測試檔的既有斷言被動更新，**沒有一條是為了讓測試變綠而放寬主張**：
+
+| 檔案 | 變動 | 理由 |
+|---|---|---|
+| `src/state/SharedState.test.ts` | 2 處 `validity` 的 `toEqual` 加第三欄；reset 測試多置真一個旗標 | 新欄位是 `validity` 物件的成員，全等比對必然要帶 |
+| `src/data/metadata.test.ts`、`src/data/exportPayloadSchema.test.ts`（6 處）、`src/data/export.test.ts`、`src/history/HistoryPersistence.test.ts`、`src/metrics/microFlickMetrics.test.ts`、`src/results/ResultPresentation.test.ts` | `validity` 字面值／`toEqual` 加 `fullscreenExited: false` | required-out ⇒ 型別上構造一個 `Meta['validity']` 必須帶齊七欄（typecheck 先報，不是測試先紅） |
+| `src/data/exportPayloadSchema.test.ts` digest 表 | 3 筆數值 + 表頭註解 | 見 T1.5 |
+
+### T1.8 DoD 對帳
+
+- [x] `npx vitest run` exit 0；新增測試數 **16** 記入 → T1.2
+- [x] **跨 run 不繼承**有具名測試，且改動前實測會紅（16/16 紅 → 16/16 綠） → T1.2
+- [x] **端到端旗標 → 匯出**有具名測試（不只測 SharedState） → T1.2
+- [x] **run 內偵測未被放寬**有具名測試 → T1.2
+- [x] source-scan 斷言 `collectMeta()` 不再讀 `experimentSession.suspect` → T1.2 / T1.3
+- [x] canonical digest 實際移動 **3 筆**，與 T0 預測逐筆吻合（無第 4 筆） → T1.5
+- [x] `npx vitest run tests/regression` = **324**，與 T0 baseline 逐數相同 → T1.2
+- [x] 新增程式碼的 `Date.now` / `Math.random` 掃描為 **0** → T1.2
+- [x] OQ-70.2 已關閉，保留 + 清理觸發條件記入 → T1.3 / D-70-T1-1

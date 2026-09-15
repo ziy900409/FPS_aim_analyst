@@ -258,6 +258,18 @@ export interface Meta {
      * 品質提示，`pauseOccurred` 是硬性不可採納。真正的守門在 `AttemptFinalizationGate`（T4/FM-2）。
      */
     pauseOccurred: boolean;
+    /**
+     * WP-70 / T1（FR-70.1/70.2）：本次 run 的錄製窗內是否退出過 fullscreen。additive 第七欄，
+     * 同樣 **optional-in / required-out**（承 D-65-3）：缺欄補 `false`，既存 fixture 零修改仍可解析。
+     *
+     * 與 `perfFloor` 同為 **run 級**——這正是本欄存在的理由（KI-040 缺陷 A）：在本欄之前，
+     * `suspect` 的 fullscreen 成分來自 session 級 sticky 的 `experimentSession.suspect`，
+     * 一次中斷會污染其後每一場，且 payload 無從分辨 `suspect` 到底來自 fullscreen 還是效能地板。
+     *
+     * ⚠️ 與 `pointerLockLost` 是**兩個構念**：Esc 會同時觸發兩者，但切換視窗只觸發本欄
+     * （fullscreen 掉了、鎖還在）。別由其中一個推導另一個。
+     */
+    fullscreenExited: boolean;
   };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
@@ -331,6 +343,8 @@ export interface CollectMetaArgs {
     pointerLockLost?: boolean;
     /** WP-69 / T1：optional-in（缺席 = `false`），見 `Meta['validity'].pauseOccurred`。 */
     pauseOccurred?: boolean;
+    /** WP-70 / T1：optional-in（缺席 = `false`），見 `Meta['validity'].fullscreenExited`。 */
+    fullscreenExited?: boolean;
   };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
@@ -468,7 +482,12 @@ export function collectMeta(args: CollectMetaArgs): Meta {
       recorderOverflow ||
       frameFloorSuspect ||
       validity?.pointerLockLost === true ||
-      validity?.pauseOccurred === true,
+      validity?.pauseOccurred === true ||
+      // WP-70 / T1（FR-70.1/70.2）— 退出全螢幕併入 `suspect`：GD-10 的顯示條件在錄製中失效，
+      // 性質同 `frameFloorSuspect`。這一行取代了舊的來源（`main.ts` 讀 `experimentSession.suspect`
+      // 再傳進 `explicitSuspect`），差別在**效力單位**：舊來源是 session 級 sticky、永不復位，本欄
+      // 由 `resetState()` 每場歸零 ⇒ 一次中斷不再污染其後每一場（KI-040 缺陷 A）。
+      validity?.fullscreenExited === true,
     simToWorld,
     ...(validity !== undefined ? { validity } : {}),
     ...(weapon !== undefined ? { weapon } : {}),
@@ -791,6 +810,11 @@ function requireValidity(value: unknown): NonNullable<Meta['validity']> {
       validity.pauseOccurred === undefined
         ? false
         : requireBoolean(validity.pauseOccurred, 'validity.pauseOccurred'),
+    // WP-70 / T1（同一條 optional-in / required-out 規則）。
+    fullscreenExited:
+      validity.fullscreenExited === undefined
+        ? false
+        : requireBoolean(validity.fullscreenExited, 'validity.fullscreenExited'),
   };
 }
 

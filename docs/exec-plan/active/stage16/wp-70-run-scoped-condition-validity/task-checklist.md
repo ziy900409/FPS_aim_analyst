@@ -3,7 +3,7 @@
 | 狀態 | Task | 交付 | 相依 | 風險 |
 |---|---|---|---|---|
 | ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | — | Med |
-| ⬜ | **T1** per-run fullscreen 旗標 | [T1-per-run-fullscreen-flag.md](T1-per-run-fullscreen-flag.md) | T0 | High |
+| ✅ | **T1** per-run fullscreen 旗標 | [T1-per-run-fullscreen-flag.md](T1-per-run-fullscreen-flag.md) | T0 | High |
 | ⬜ | **T2** protocol 路徑判準一致 | [T2-protocol-path-consistency.md](T2-protocol-path-consistency.md) | T1 | Med |
 | ⬜ | **T3** 橫幅真值驅動 + run 級文案 | [T3-banner-truth-driven.md](T3-banner-truth-driven.md) | T1 | Low |
 | ⬜ | **T4** 恢復條件入口（E2） | [T4-condition-recovery-entry.md](T4-condition-recovery-entry.md) | T1, T3 | High |

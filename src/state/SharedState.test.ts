@@ -34,7 +34,11 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(a.input.size()).toBe(0);
     expect(a.targets).toHaveLength(0);
     expect(a.tVisible.size).toBe(0);
-    expect(a.validity).toEqual({ playerCorridorExceeded: false, pointerLockLostDuringRun: false });
+    expect(a.validity).toEqual({
+      playerCorridorExceeded: false,
+      pointerLockLostDuringRun: false,
+      fullscreenExitedDuringRun: false,
+    });
     expect(a.shotRays.total).toBe(0);
     expect(a.shotRays.cursor).toBe(0);
     expect(a.bullets.activeCount).toBe(0);
@@ -107,6 +111,7 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     s.tVisible.set('t1', 123.4);
     s.validity.playerCorridorExceeded = true;
     s.validity.pointerLockLostDuringRun = true; // WP-65 / T5：掉鎖效度旗標也必須每場歸零
+    s.validity.fullscreenExitedDuringRun = true; // WP-70 / T1：退出全螢幕效度旗標也必須每場歸零
 
     resetState(s);
 
@@ -120,7 +125,11 @@ describe('SharedState — 三迴圈溝通管道（型別 + 單例）', () => {
     expect(s.aim).toEqual({ yaw: 0, pitch: 0 });
     expect(s.targets).toHaveLength(0);
     expect(s.tVisible.size).toBe(0);
-    expect(s.validity).toEqual({ playerCorridorExceeded: false, pointerLockLostDuringRun: false });
+    expect(s.validity).toEqual({
+      playerCorridorExceeded: false,
+      pointerLockLostDuringRun: false,
+      fullscreenExitedDuringRun: false,
+    });
 
     // recoil 狀態機 + 視覺快照 + spread 暫存原地歸零（WP-13 / T1）
     expect(s.recoilState.aimPunchPitchDeg).toBe(0);

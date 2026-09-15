@@ -137,6 +137,7 @@ describe('qualityFlagsForPayload', () => {
           bufferOverflow: false,
           pointerLockLost: false,
           pauseOccurred: false,
+          fullscreenExited: false,
         } },
     };
     expect(qualityFlagsForPayload(payload).validity).toEqual({ corridorExceeded: true, perfFloor: false });

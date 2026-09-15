@@ -574,17 +574,33 @@ function parseValidity(value: unknown, path: string, errors: ExportPayloadParseE
     record.pauseOccurred === undefined
       ? false
       : parseBoolean(record.pauseOccurred, `${path}.pauseOccurred`, errors);
+  // WP-70 / T1（FR-70.3）— 同一條 optional-in / required-out 規則。與 `pointerLockLost` 各自獨立
+  // 解析：Esc 會讓兩者同時為 true，但切換視窗只讓本欄為 true（fullscreen 掉了、鎖還在），所以
+  // **不得**從其中一個推導另一個。
+  const fullscreenExited =
+    record.fullscreenExited === undefined
+      ? false
+      : parseBoolean(record.fullscreenExited, `${path}.fullscreenExited`, errors);
   if (
     corridorExceeded === undefined ||
     perfFloor === undefined ||
     recorderOverflow === undefined ||
     bufferOverflow === undefined ||
     pointerLockLost === undefined ||
-    pauseOccurred === undefined
+    pauseOccurred === undefined ||
+    fullscreenExited === undefined
   ) {
     return undefined;
   }
-  return { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow, pointerLockLost, pauseOccurred };
+  return {
+    corridorExceeded,
+    perfFloor,
+    recorderOverflow,
+    bufferOverflow,
+    pointerLockLost,
+    pauseOccurred,
+    fullscreenExited,
+  };
 }
 
 function parseWeaponMeta(value: unknown, path: string, errors: ExportPayloadParseError[]): WeaponMeta | undefined {

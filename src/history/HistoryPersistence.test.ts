@@ -299,6 +299,7 @@ describe('HistoryPersistence — paused attempts never reach the client (WP-69 T
         bufferOverflow: false,
         pointerLockLost: true,
         pauseOccurred: true,
+        fullscreenExited: false,
       },
       ...(overrides.assessment === false ? { assessment: undefined } : {}),
     };
@@ -353,6 +354,7 @@ describe('HistoryPersistence — paused attempts never reach the client (WP-69 T
           bufferOverflow: false,
           pointerLockLost: false,
           pauseOccurred: false,
+          fullscreenExited: false,
         },
       },
     };
