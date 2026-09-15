@@ -14,12 +14,12 @@
 
 ## Definition of Done
 
-- [ ] FR-69.1～69.12 與 NFR-69.1～69.8 無任何「完成」但無證據的列
-- [ ] invalid/discarded 對正式保存、trend、threshold、advance 的零呼叫有 unit + live evidence
-- [ ] timestamp corrupt 案例證明 payload/metrics/download/replay 均未建立
-- [ ] full restart 同 seed/input fresh-run parity 通過，且只 clean retry 能前進
-- [ ] 全量驗證綠；任何 skip/替代證據有 owner、原因與後續處置
-- [ ] GD-46、README index、stage index、task checklist、progress 狀態一致
+- [x] FR-69.1～69.12 與 NFR-69.1～69.8 無任何「完成」但無證據的列
+- [x] invalid/discarded 對正式保存、trend、threshold、advance 的零呼叫有 unit + live evidence
+- [x] timestamp corrupt 案例證明 payload/metrics/download/replay 均未建立
+- [x] full restart 同 seed/input fresh-run parity 通過，且只 clean retry 能前進
+- [x] 全量驗證綠；任何 skip/替代證據有 owner、原因與後續處置
+- [x] GD-46、README index、stage index、task checklist、progress 狀態一致
 
 ## Commit
 
@@ -27,3 +27,10 @@
 docs(wp-69): T-exit evidence for pause validity
 ```
 
+---
+
+## 落閘結果（2026-09-15）
+
+✅ 六條 DoD 全數達成，逐條證據與對帳見 [progress.md §T-exit](progress.md)（§TE.7 為 DoD 逐條對帳）。production diff = 空。
+
+本 gate 另查出並修復三處文件不一致（§TE.6），其中 `operator-manual.md` 的 Esc 語意過期屬操作員會實際踩到的缺口，非 nit。
