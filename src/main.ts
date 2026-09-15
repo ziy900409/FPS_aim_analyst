@@ -682,7 +682,11 @@ document.addEventListener('fullscreenchange', () => {
   // 錄製中掉出全螢幕這件事與有沒有跑正式實驗流程無關，欄位叫 `fullscreenExited` 就不該在某些
   // 模式下對著已發生的退出回報 false。實務差異接近零——只有資格閘會進 Element fullscreen。
   if (!fullscreen && recording) sharedState.validity.fullscreenExitedDuringRun = true;
-  if (!fullscreen) markProtocolFullscreenExit?.();
+  // WP-70 / T2（FR-70.5）— protocol 路徑補上**同一個** `recording` 閘。在此之前這一行不看
+  // `recording`，所以 drill 之間（`idle`）與收工後（`ended`）退出全螢幕也會把 protocol 的當前
+  // condition 標成 suspect —— 正是 KI-007 引入錄製窗判準要避免的誤判，只是當初沒套到這條路徑。
+  // 讀上面算好的那個 const,不重算一份：一個構念（KI-007 錄製窗）只能有一個定義（C-D4）。
+  if (!fullscreen && recording) markProtocolFullscreenExit?.();
 });
 
 // WP-43 / T1（FR-H1/H4）— 啟動器收斂為選手測試 / 研究員模式兩個主入口。未獲產品歸類的

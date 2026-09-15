@@ -2,10 +2,11 @@
 
 ## Snapshot
 
-- **狀態**：🟡 **T0 ✅ / T1 ✅**（2026-09-15），T2 未開工
+- **狀態**：🟡 **T0 ✅ / T1 ✅ / T2 ✅**（2026-09-15），T3 未開工
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：**T2** protocol 路徑補上 KI-007 錄製窗判準（消除第二套判準，C-D4）
+- **下一步**：**T3** 橫幅改由旗標真值驅動 + run 級文案（FR-70.6/70.7）；⚠️ T3 須回頭收 D-70-T1-1
+  交棒的問題——`experimentSession.suspect`／`onSuspect` 是否連同刪除
 - **來源**：[KI-040](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)
 - **決策**：`GD-47`（預約，T0 重查）
 
@@ -45,7 +46,7 @@
 |---|---|---|
 | T0 | ✅ | 2026-09-15。production diff = 空。編號 WP-70／GD-47 確認可用；四閘 baseline 全 exit 0（Vitest **3709 passed／2 skipped**、regression **324**）；KI-040 四缺陷逐條以當前行號複核**全數仍成立**；digest 預測 **3 筆**（具名）；**OQ-70.1 實測可行 ⇒ T5 = e2e 任務**，但帶三條具名限制（L1～L3）。見 [§T0](#t0-entry-gate2026-09-15) |
 | T1 | ✅ | 2026-09-15。四閘全綠（typecheck／build exit 0、Vitest **3725 passed／2 skipped**、regression **324** 與 baseline 逐數相同）；新增 **16** 個測試（`src/data/wp70-run-scoped-fullscreen.test.ts`），改動前**全 16 紅**；canonical digest **實際移動 3 筆**，與 D-70-T0-3 預測逐筆吻合、第 4 筆未出現；OQ-70.2 已關閉。見 [§T1](#t1-per-run-fullscreen-旗標2026-09-15) |
-| T2 | ⬜ | — |
+| T2 | ✅ | 2026-09-15。production diff = **一行**（+ 註解）；四閘全綠（typecheck／build exit 0、Vitest **3737 passed／2 skipped**、regression **324** 與 baseline 逐數相同）；新增 **12** 個測試（`src/display/wp70-protocol-recording-window.test.ts`），**既有測試期望值變動 = 0**（逐條理由見 §T2.4）。見 [§T2](#t2-protocol-路徑補上錄製窗判準2026-09-15) |
 | T3 | ⬜ | — |
 | T4 | ⬜ | — |
 | T5 | ⬜ | — |
@@ -68,6 +69,8 @@
 | **D-70-T1-1** | `experimentSession.suspect` **保留、只切 export 路徑**（依 T0.8 的預設動作）。executable 讀取點由 1 歸 **0**，欄位仍是 `handleFullscreenChange()` 的去重閂。**清理觸發條件（明帳）**：T3 決定橫幅改由旗標真值驅動後，若 `onSuspect` 回呼也不再有消費者 ⇒ 由 **T3** 連同 `suspect` 欄位與 `onSuspect` 一併刪除；若 T3 結束仍保留，須在 T3 的 progress 重新說明誰在讀它 | T1 採納，關閉 OQ-70.2（見 [§T1.3](#t13-oq-702-關閉步驟-5)） |
 | **D-70-T1-2** ⭐ | 新旗標的寫入**不以 `experimentSession.active` 為前提**，只看 `recording` —— 逐字沿用 `pointerLockLostDuringRun` 的同型理由。這是相對舊語意的**收緊**（研究員／一般 drill 模式錄製中退出全螢幕，過去不標、現在會標），方向與 README §3 要求「不得放寬 run 內偵測」一致；實務差異接近零（只有資格閘會進 Element fullscreen）。理由：欄位叫 `fullscreenExited` 就不該對著已發生的退出回報 `false`（FR-70.2 要 payload 自述） | T1 採納（見 [§T1.4](#t14-一處刻意的語意收緊d-70-t1-2)） |
 | **D-70-T0-5** | 恢復流程**重跑三項全部**，沿用既有純函式 `runEligibilityGate()`，不另開「只驗 fullscreen＋perf」的兩項變體 —— 代價為零（同一個純函式、呼叫點讀 `screen`/`dpr`/`fullscreenElement` 三個環境訊號），且避免生出第二套資格判準（C-D4） | T0 採納，關閉 OQ-70.3（見 [§T0.8](#t08-oq-關閉與降級步驟-8)） |
+| **D-70-T2-1** | T2 的修法＝**在既有 handler 內多一個 `&& recording`**（沿用同一個 const），**不**把分派抽成可測模組。抽模組曾被認真評估（能讓成對測試直接吃 production 分派），但代價是：（a）動到剛落地、正在當防線用的 T1 source-scan 測試；（b）每次事件多配置一個 sink 物件；（c）超出 T2「protocol 路徑」的範圍——`recording` 判準在 `main.ts` 另有 4 個重算點（`:1484`／`:1894`／`:1913`／`:2132`），要抽就該一起抽，那是獨立的整併工作而非本 task | T2 採納（見 [§T2.2](#t22-為什麼是一行而不是抽一個-dispatcher)） |
+| **D-70-T2-2** | 成對行為測試以 **rig + parity pin 兩層**成立，並**明帳**其限制：rig 內 `onFullscreenChange()` 是 production 兩行的逐字副本 ⇒ **成對測試在改動前後皆綠**，red-before-green 的訊號由 **source-scan 承載**（改動前 12 個測試中 **2 紅**，改動後 **12 綠**）。parity 測試釘住「副本 ≡ 正本」，production 一漂移就紅（FM-70.5），成對測試的結論隨即失去授權 | T2 採納（見 [§T2.3](#t23-成對行為測試的效力與其限制明帳)） |
 
 ## Open Questions
 
@@ -106,6 +109,17 @@ OQ-70.1 的第一輪 spike（A/B）**全綠**：synthetic click → 真 fullscre
 Spike E 以 `waitForFunction(() => document.fullscreenElement == null)` 為準再讀事件記錄，拿到
 `["enter"]`（漏掉 exit）；Spike G 改成等**事件記錄長度**才拿到 `["enter","exit"]`。
 ⇒ T5 的等待條件必須掛在事件記錄上，不能掛在 `fullscreenElement`，否則會是一支間歇性假失敗的測試。
+
+### S-70-T2-1 — `import.meta.glob` 讀不到「本檔自己」，source-scan 的自讀要走 `node:fs`
+
+T2 的 parity pin 需要讀**測試檔自己**的原始碼。第一版沿用 T1 的 `import.meta.glob('?raw')` 寫法，對自身路徑取值回 `undefined`（Vite 的 glob 不收自身／測試檔被 include 規則濾掉），測試以
+`TypeError: Cannot read properties of undefined` 失敗——是 rig 壞了，不是 production 壞了。
+
+改用 repo 既有先例 [`src/session/drillFamily.test.ts:115`](../../../../../src/session/drillFamily.test.ts#L115)
+的 `readFileSync(new URL(..., import.meta.url), 'utf8')` 後即可，並順手把同檔對 `main.ts` 的讀取
+一併改為同一種寫法（一個檔案內不要兩套 source-scan 慣例）。
+
+⇒ 給後續 task 的提醒：source-scan 讀**別的**檔用哪種都行，讀**自己**只有 `node:fs` 這條路。
 
 ---
 
@@ -443,3 +457,117 @@ sticky 的 `experimentSession.suspect` 供應，改由每場 `resetState()` 歸�
 - [x] `npx vitest run tests/regression` = **324**，與 T0 baseline 逐數相同 → T1.2
 - [x] 新增程式碼的 `Date.now` / `Math.random` 掃描為 **0** → T1.2
 - [x] OQ-70.2 已關閉，保留 + 清理觸發條件記入 → T1.3 / D-70-T1-1
+
+---
+
+## T2 protocol 路徑補上錄製窗判準（2026-09-15）
+
+**判定：✅ 完成。** FR-70.5 的第二套判準消失：`fullscreenchange` 處理器內算出的**同一個**
+`recording` const，現在同時閘住三個 sink（`experimentSession.handleFullscreenChange()`、
+`sharedState.validity.fullscreenExitedDuringRun`、`markProtocolFullscreenExit?.()`）。
+
+⚠️ **方向與 T1 相反，分開記帳**：T1 是**放寬**（跨 run 不繼承上一場的失效），
+T2 是**收緊**（`idle`／`ended` 退出全螢幕不再誤標 protocol condition）。兩者落在同一個 WP，
+但不是「一次調整」——T1 拿掉的是跨 run 污染，T2 拿掉的是**非錄製窗**的誤判。
+
+### T2.1 改動範圍（production 1 檔、1 行）
+
+| 檔案 | 改了什麼 |
+|---|---|
+| [`src/main.ts`](../../../../../src/main.ts) | `fullscreenchange` 處理器最後一行 `if (!fullscreen)` → `if (!fullscreen && recording)`，**讀上面既有的 const**，不重算判準（C-D4）；補 4 行說明為何這行本來漏判 |
+
+`git diff -- src/main.ts` 的 `+` 行共 5 行（1 行程式 + 4 行註解），其餘零改動。
+`ProtocolRunner.ts` **未動**：`markCurrentConditionSuspect()` 本來就不該知道 drill 相位，
+錄製窗是呼叫端的判準（`ProtocolRunner` 連 `DrillRunner` 都不 import）。
+
+### T2.2 為什麼是一行，而不是抽一個 dispatcher
+
+抽 `dispatchFullscreenChange(fullscreen, recording, sinks)` 成獨立模組曾被認真評估——好處明確：
+成對行為測試可以直接吃 production 分派，不必複製（見 T2.3 的限制）。**否決**，理由三條：
+
+1. 會動到 **T1 剛落地的 source-scan 測試**（它們逐字釘住 handler body 內的兩行）。防線落地一天
+   就因為下一個 task 的方便而改寫，防線的意義會被稀釋。
+2. 每次 `fullscreenchange` 多配置一個 sink 物件。非熱路徑，但本 repo 的配置紀律不該為了測試便利
+   而破例。
+3. **超出 T2 的範圍**。真正的整併標的不是這兩個 sink，而是 `main.ts` 內 `recording` 判準的
+   **5 個站點**（T2 落地後的行號：`:673` 本處、`:1488` pointer_lock 記錄、`:1898` 掉鎖效度、
+   `:1917`、`:2136` 感度鎖）。要抽就該一起抽——那是一個獨立的 C-D4 整併 task，不是「順手」。
+
+⇒ D-70-T2-1。**這是有意識的妥協，不是遺漏**：整併機會已在此明帳，等一個真正以它為標的的 task。
+
+### T2.3 成對行為測試的效力與其限制（明帳）
+
+新檔 [`src/display/wp70-protocol-recording-window.test.ts`](../../../../../src/display/wp70-protocol-recording-window.test.ts)
+共 **12 個測試**，兩層：
+
+| 層 | 內容 | 改動前 | 改動後 |
+|---|---|---|---|
+| **行為層（成對）** | rig 以**真的** `DrillRunner`（相位由 `start()`/`tick()` 真實推進，不是手塞字串）+ **真的** `ProtocolRunner` 驅動 | 8 綠 | 8 綠 |
+| **source-scan** | production 接線 4 條 | **2 紅** | 4 綠 |
+
+⚠️ **限制必須直說**：rig 內的 `onFullscreenChange()` 是 production 兩行的**逐字副本**，
+所以**成對行為測試在改動前後皆綠**——red-before-green 的訊號由 source-scan 那 2 條承載
+（`npx vitest run src/display/wp70-protocol-recording-window.test.ts`：改動前 **2 failed / 10 passed**，
+改動後 **12 passed**）。這與 T1「16 紅 → 16 綠」不同，不得混為一談。
+
+副本的授權來自第 12 條 **parity pin**：它把 rig body 與 production handler 逐字比對，
+production 一漂移（例如為了求綠燈把閘拿掉，FM-70.5）就紅。DoD 第 3 條允許
+「source-scan **或**型別層證明」，此處採前者。
+
+**成對結構的作用**（T2 task 檔 step 4 的原話）：若 rig 根本沒跑起來，「不標記」那半會**假綠**，
+但「仍標記」那半會紅。兩半都具名、都在同一個 rig 上，缺一不可：
+
+| 半邊 | 測試案例名 |
+|---|---|
+| **非錄製中不標記** | `idle（drill 之間）退出全螢幕 ⇒ 當前 condition 不被標記`、`ended（收工去抓匯出檔）退出全螢幕 ⇒ 當前 condition 不被標記`、`非錄製中的誤標不會滲進該 condition 的匯出` |
+| **錄製中仍標記** | `countdown 退出全螢幕 ⇒ 當前 condition 標記為 fullscreen-exit`、`running 退出全螢幕 ⇒ 當前 condition 標記，且標記進得了匯出` |
+| 方向性 | `錄製中「進入」全螢幕不是失效事件 ⇒ 不標記` |
+| **C-D4 行為層** | `錄製中退出 ⇒ run 旗標與 protocol 標記同時為真`、`非錄製中退出 ⇒ 兩者同時為假` |
+
+最後兩條是本 task 的核心主張的直接證據：**兩個 sink 不得各走各的**。
+
+### T2.4 既有測試期望值的變動：**零**（逐條理由，FM-70.5）
+
+T2 task 檔 step 3 要求「找出所有因此改變期望值的既有測試，逐條檢視」。實測**一條都沒有**，
+這不是「沒去找」，逐條理由如下：
+
+| 既有測試 | 為何不受影響 |
+|---|---|
+| [`src/display/ProtocolRunner.test.ts:88`](../../../../../src/display/ProtocolRunner.test.ts#L88)（`keeps fullscreen/perf failure as condition-level suspect…`） | 它**直接**呼叫 `runner.markCurrentConditionSuspect('fullscreen-exit')`，測的是 runner API 的語意（標記能不能進匯出），不經過 `main.ts` 的閘。T2 改的是**呼叫端要不要呼叫**，不是被呼叫端的行為 ⇒ 期望值不動是**正確**的 |
+| [`src/ui/EligibilityGate.test.ts:121`](../../../../../src/ui/EligibilityGate.test.ts#L121)（`toggles the mid-session fullscreen-exit warning banner`） | 橫幅由 `experimentSession.onSuspect` 驅動，而 `handleFullscreenChange(fullscreen, recording)` **本來就**帶 `recording` 閘、T2 一個字都沒改 |
+| [`src/data/wp70-run-scoped-fullscreen.test.ts`](../../../../../src/data/wp70-run-scoped-fullscreen.test.ts)（T1 的 source-scan） | 它斷言 handler body 內 `drillRunner.phase === 'countdown'` **恰出現 1 次**、且含 `if (!fullscreen && recording)`。T2 沒有新增判準運算式，只是讓第二個分支也讀那個 const ⇒ 兩條斷言都仍成立（`toMatch` 不要求唯一） |
+| e2e（`br-tracking` / `full-drill` / `spray-drill` / `stage10-failure-recovery`） | 全部斷言 `meta.suspect === false`。T2 只會讓 suspect **更不容易**被設起（少一類誤判）⇒ 方向上不可能讓這些變紅 |
+
+⇒ 沒有任何一條測試是為了配合本次改動而放寬主張（FM-70.5 的反面證據）。
+
+### T2.5 證據（四閘）
+
+| 閘 | 結果 | 對照 T1 |
+|---|---|---|
+| `npm run typecheck` | **exit 0** | 同 |
+| `npm run build` | **exit 0**，`index-QtoTxbZG.js` **1,258.41 kB**（gzip 359.85 kB） | T1 為 1,258.41 kB ⇒ **逐位元組相同**（只加註解，minify 後消失） |
+| `npx vitest run` | **exit 0**；**286 passed / 1 skipped（287 files）**、**3737 passed / 2 skipped（3739 tests）** | T1 為 285 files／3725 tests ⇒ **+1 file、+12 tests，全部是本 task 新增的**，既有測試淨增減為 **0** |
+| `npx vitest run tests/regression` | **exit 0**；**33 files**、**324 passed** | T0 baseline **324** ⇒ **逐數相同**（DoD 第 5 條） |
+
+**`Date.now` / `Math.random` 掃描**：`git diff -- src | grep '^+' | grep -cE 'Date\.now|Math\.random'` ⇒ **0**。
+**canonical digest**：本 task 不碰 schema／匯出欄位，8 筆 digest **全數未動**（NFR-70.2 不適用於 T2）。
+
+### T2.6 效度影響（README §3 要求 T1／T2 分別記錄）
+
+**收緊的是誤判，不是偵測。** 被本 task 拿掉的標記，全部發生在 `idle`／`ended` ——
+那兩個相位**沒有正在錄製的 payload**，把當時的退出算進「該 condition 的錄製條件失效」本來就
+沒有構念上的依據（KI-007 的原始論證）。錄製窗內（`countdown`／`running`）的偵測**一格都沒放寬**，
+由上表「錄製中仍標記」兩條具名測試反證。
+
+⚠️ **對既有資料的意義**：本 WP 不回填舊匯出（README Non-goal）。修正前跑過的 protocol session，
+其 condition 的 `suspect` **可能含這類誤判**，而 payload 當時沒有欄位可資辨別
+（`suspectReason` 只寫 `'fullscreen-exit'`，不記相位）。⇒ 這點應併入 **T6** 的操作員說明範圍
+（與 OQ-70.4 同一段），本 task 不自行擴大文件改動。
+
+### T2.7 DoD 對帳
+
+- [x] `npx vitest run` exit 0 → T2.5
+- [x] 成對測試（錄製中標記 / 非錄製中不標記）皆具名且皆綠 → T2.3（逐案例名列表）
+- [x] source-scan 證明 protocol 與 session 路徑**共用同一個** `recording` 判準值（C-D4） → T2.3 第 12 條 parity pin ＋ `protocol 與 session 路徑共用同一個 recording 判準值` 一條
+- [x] 期望值變動的既有測試**逐條列在 `progress.md`** → T2.4（**零條**，附四條不受影響的理由）
+- [x] `npx vitest run tests/regression` 計數與 baseline 逐數相同（**324**） → T2.5
