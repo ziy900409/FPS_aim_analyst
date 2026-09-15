@@ -17,6 +17,22 @@ registry 正式凍結、且 M13／M18 人工閘收斂的那一版。
 本版**不改** sim 演進、命中判定或 spawn 分布；除 v9 的 `weaponId` 與 `deriveOutcome()` 的右界分流之外，
 `src/` 全為加法。
 
+### 驗證（Tier 2 定版閘）
+
+| 閘 | 結果 |
+|---|---|
+| typecheck ×2 | ✅ exit 0 |
+| Vitest | ✅ **3,386 passed / 2 skipped**（273 files） |
+| Tier 1 `e2e-fast`（`chromium-ci`，GitHub-hosted） | ✅ **102 passed / 1 skipped** |
+| **Tier 2 `e2e-full`（`edge`，self-hosted 真 GPU）** | ✅ **115 passed / 0 flaky**（9.5 m，2 workers） |
+
+Tier 2 是定版閘（[ci-tiers.md](docs/guideline/ci-tiers.md) §4），run
+[34905394937](https://github.com/ziy900409/FPS_aim_analyst/actions/runs/34905394937)：2026-09-15 08:09–08:24 Z
+在 self-hosted runner（`run.cmd` 互動桌面 session）跑完，checkout 的是 `refs/tags/v0.1.2` @ `9376d5f`。
+115 tests 含 5 個 `@slow` 與 7 個 `@realgpu`；`backend.spec.ts` 在 `metadata.realGpu: true` 下 passed
+⇒ 量測效度環境成立（真 GPU、真 Edge、`backend === 'webgpu'` 而非 WebGL2 fallback）。
+發版當下 runner 離線，job 排隊約 9.5 小時後才被撿走（§3.6 的正常情形），故本段是事後回填的結論。
+
 ### 新增
 
 - **`src/drill/microFlickEndConditions.ts`** —— micro-flick 家族的 `drillId → endCondition` 查表。
@@ -109,6 +125,23 @@ WP-59／61 T2／67、WP-44、stage14 草案；M13／M18 人工閘未宣告。
 **WP-63 交付版**（tag `v0.1.1`）。`micro_flick_three_target_test_v8`（全 repo 唯一**三顆同時存活**的
 drill）第一次有可宣稱的量測指標，並修掉一個會**靜默污染資料**的效度缺口。本版**不改** sim 演進、
 命中判定或 spawn 分布；除 v8 的 `weaponId` 與 KI-035 的接線之外，`src/` 全為加法。
+
+### 驗證（Tier 2 定版閘）
+
+| 閘 | 結果 |
+|---|---|
+| typecheck ×2 | ✅ exit 0 |
+| Vitest | ✅ **3,351 passed / 2 skipped**（270 files） |
+| Tier 1 `e2e-fast`（`chromium-ci`，GitHub-hosted） | ✅ **102 passed / 1 skipped**（10.8 m） |
+| **Tier 2 `e2e-full`（`edge`，self-hosted 真 GPU）** | ✅ **115 passed / 0 flaky**（9.7 m，2 workers） |
+
+Tier 2 是定版閘（[ci-tiers.md](docs/guideline/ci-tiers.md) §4），run
+[34891175278](https://github.com/ziy900409/FPS_aim_analyst/actions/runs/34891175278)：2026-09-15 07:51–08:08 Z
+在 self-hosted runner（`run.cmd` 互動桌面 session）跑完，checkout 的是 `refs/tags/v0.1.1` @ `e58232d`。
+115 tests 含 5 個 `@slow` 與 7 個 `@realgpu`；`backend.spec.ts` 在 `metadata.realGpu: true` 下 passed
+⇒ 量測效度環境成立（真 GPU、真 Edge、`backend === 'webgpu'` 而非 WebGL2 fallback）。
+tag 於 2026-09-14 20:09 Z 推出時 runner 離線，job 排隊約 11.7 小時後才被撿走（§3.6 的正常情形），
+故本段是事後回填的結論。
 
 ### 新增
 
