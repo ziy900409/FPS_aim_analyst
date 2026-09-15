@@ -460,13 +460,19 @@ async function armAndTakeRealLock(page: Page): Promise<void> {
  *
  * 釋鎖不是收尾禮儀，是正確性：鎖定中 Playwright 的任何滑鼠移動（例如去點 `Scene` 按鈕）都會被
  * `PointerLock.onMove` 當成玩家轉視角灌進 `CameraController`，準心就此離開目標再也回不來
- * （實測殘留 `offsetDeg ≈ 7°`，之後每一發必落空）。
+ * （實測殘留 `offsetDeg ≈ 7°`，之後每一發必落空）。WP-69 起，錄製中釋鎖會正確進入
+ * paused-invalid；需要再操作同一個 drill 的 caller 必須先走可見的「重新測試」。
  */
 async function probe(page: Page, options: ProbeOptions, label: string): Promise<ProbeResult> {
   const result = await page.evaluate(PROBE, options);
   await page.evaluate(() => {
     if (document.pointerLockElement !== null) document.exitPointerLock();
   });
+  // Pointer Lock loss is delivered asynchronously relative to `exitPointerLock()`. Wait for the
+  // production WP-69 transition here instead of letting the next control interaction race it.
+  if (result.phase === 'running') {
+    await expect(page.locator('#pause-overlay')).toBeVisible({ timeout: 10_000 });
+  }
   console.log(`[hit-feedback] ${label} =`, JSON.stringify(result));
   return result;
 }
@@ -478,6 +484,14 @@ async function selectDrill(page: Page, drillId: string, sceneId: string): Promis
 
 /** 換場景走 Controls 的 `Scene` 按鈕（下拉本身不觸發載入，見 `Controls.ts` 的 loadSceneButton）。 */
 async function loadScene(page: Page, sceneId: string): Promise<void> {
+  // `probe()` 的必要釋鎖在 WP-69 會把仍在 running 的 attempt 標成 paused-invalid；overlay 的
+  // pointer-events:auto 是產品契約，測試不可 force-click 穿透。先實際按 Restart 放棄該 attempt，
+  // 回到 armed 後才操作研究員 controls，與正式操作規則一致。
+  const pauseOverlay = page.locator('#pause-overlay');
+  if (await pauseOverlay.isVisible()) {
+    await pauseOverlay.getByRole('button', { name: '重新測試', exact: true }).click();
+    await expect.poll(async () => (await readDrillArmState(page))?.phase ?? null, { timeout: 30_000 }).toBe('armed');
+  }
   await page.locator('#scene-select').selectOption(sceneId);
   await page.getByRole('button', { name: 'Scene', exact: true }).click();
   await expect.poll(async () => (await readDrillArmState(page))?.phase ?? null, { timeout: 30_000 }).toBe('armed');

@@ -2,10 +2,10 @@
 
 ## Snapshot
 
-- **狀態**：🟡 T5 已落地（2026-09-15），T6 可開工
+- **狀態**：🟡 T6 已落地（2026-09-15），T-exit 可開工
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：T6 — Live Edge E2E、全量回歸、文件/術語與操作說明
+- **下一步**：T-exit — acceptance matrix、GD-46 與索引狀態收尾
 - **決策**：[GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)
 
 ## Planning evidence
@@ -24,7 +24,7 @@
 | T3 | ✅ | 2026-09-15。gameplay 閘（input + camera 共用）、`suspend()` release edge、`PauseOverlay`、Pointer Lock resume 倒數、Restart 收斂；61 個新測試 + 六刀 mutation 反證。四閘全綠 + Edge e2e 15 passed。見 [§T3](#t3-input--pointer-lock--overlay2026-09-15) |
 | T4 | ✅ | 2026-09-15。`AttemptFinalizationGate`（consequence matrix）+ main.ts 五個消費點 + History 第二道防線 + Result 稽核下載 + PauseOverlay 作廢 view；76 個新測試 + 十二刀 mutation 全部見血；OQ-69.4 關閉。四閘全綠 + Edge e2e 15 passed。見 [§T4](#t4-finalization--persistence-gate2026-09-15) |
 | T5 | ✅ | 2026-09-15。`describeAttemptHold()` + `TrackingPilotRunner.retryRunningBlock()` + `main.ts` 的 `holdOrchestratorsOnAttempt()` 單一接縫；33 個新測試 + 六刀 mutation 全部見血。四閘全綠 + Edge e2e 15 passed。見 [§T5](#t5-orchestrator-retry2026-09-15) |
-| T6 | ⬜ | — |
+| T6 | ✅ | 2026-09-15。真 Edge 4-case live E2E：Standalone Resume 成功/失敗、invalid diagnostic、forced discard；Session/BR Protocol/Pilot 同項 retry + clean advance。全量 3709 passed / 2 skipped；回歸 324；文件與 graph 更新。見 [§T6](#t6-live-edge--regression--docs2026-09-15) |
 | T-exit | ⬜ | — |
 
 ## Decision log
@@ -70,6 +70,61 @@ OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使
 
 
 ---
+
+## T6 live Edge + regression + docs（2026-09-15）
+
+### T6.1 交付與真瀏覽器量測
+
+- 新增 `tests/e2e/wp69-pause-invalid-restart.spec.ts` 四條真 Edge lifecycle；瀏覽器為 Edge
+  `149.0.7827.55`，`crossOriginIsolated=true`。
+- Standalone 真 `document.exitPointerLock()` 後：pause 前後 tick 固定為 **397**、fire 新增 **0**、pause
+  fence **1**；Resume request rejection 仍留在 pause，下一次取鎖成功後完整倒數；排除 wall time
+  **3419.42 ms**，lock confirmation **1**。Restart 後 attempt = **3**；強制 10,000 keyboard
+  events 得到 overflow **9488**，`discarded` 不下載；完整 invalid run 手動下載恰一份
+  `*.invalid-paused.json`。
+- Session Plan：paused Restart 後 cursor = **0**；clean retry attempt = **3**，正式下載 **1**。
+- BR Protocol：paused Restart 後 condition = **0**、export count = **1**；clean retry 後 condition = **1**，
+  正式下載 **1**。
+- Tracking Pilot：同一 block 先 audit 一筆 `discarded/pause-fence-unclosed`（previousAttempt = **1**），
+  clean retry 後 records = **1**、正式下載 **1**，才前進。
+
+Live E2E 同時抓到三個只會在整合層露出的缺口並固定成回歸：paused navigation 原先會在 orchestrator
+audit 前清掉 attempt；discarded 收工後下一個 rAF 又會把 recorder 填回；WP-66 的 scene roundtrip probe
+在 running 時主動釋鎖，現在必須等真正的 pause event，再按真 Restart 才可換場景。
+
+### T6.2 A-69 acceptance evidence
+
+| Acceptance | 證據 |
+|---|---|
+| A-69.1 pause 凍結 active time/sim | Edge `tickCount=397` 不變；`wp69-pause-time.test.ts` 的「active time is frozen for the whole pause」與 30/60/144/240 FPS matrix |
+| A-69.2 pause 後 sticky invalid | Edge Resume 完成後仍產生 `.invalid-paused`；`wp69-pause-lifecycle.test.ts`「resume 完成後 validity 仍是 invalid-paused」 |
+| A-69.3 只有 running 掉鎖才 pause | `wp69-pause-lifecycle.test.ts` 的 running 與 `armed/idle/ended` table tests |
+| A-69.4 pause UI 與 input/fire 封鎖 | Edge `fireCount=0`、tick 不增；`PauseOverlay.test.ts` 與 lifecycle 的 pause/countdown 零新增 tests |
+| A-69.5 Resume 失敗、成功與倒數 | Edge 同一案例實測 rejection → retry → lock → countdown；lifecycle 的 Resume 三路 tests |
+| A-69.6 full Restart 建 fresh attempt | Edge attempt = 3；`wp69-pause-time.test.ts` same-seed restart parity 與 lifecycle restart test |
+| A-69.7 三態 consequence matrix | `wp69-finalization.test.ts`「三態的呼叫矩陣」：eligible / invalid-retained / discarded |
+| A-69.8 invalid diagnostic | Edge 手動下載恰一份 `.invalid-paused`；finalization 的「稽核檔只有手動一條路」tests |
+| A-69.9 integrity fail discard | Edge overflow = 9488、下載 0、recorder 清空；finalization discarded 與 post-clear pump tests |
+| A-69.10 runner hold/retry | 三條 Edge Session/Protocol/Pilot cases；`wp69-orchestrator-retry.test.ts` held × clean pairs |
+| A-69.11 schema 可區分 pause 與 suspect | `schema.md` 的 `pointerLockLost` / `pauseOccurred`；metadata/schema Vitest 覆蓋，`suspect` 保持獨立 |
+| A-69.12 navigation 同一 gate | Edge scene roundtrip；finalization/orchestrator source tests 釘住 restart 前 finalize + hold |
+
+### T6.3 Exit gates
+
+| Gate | 結果 |
+|---|---|
+| `npm run typecheck` | ✅ exit 0 |
+| `npm run build` | ✅ 208 modules，2.04 s（只有既有 chunk warning） |
+| `npx vitest run` | ✅ 284 files passed / 1 skipped；3709 tests passed / 2 skipped |
+| `npx vitest run tests/regression` | ✅ 33 files / 324 tests passed |
+| focused WP-69 Vitest | ✅ 16 files / 396 tests passed |
+| focused Edge WP-69 | ✅ 4/4，3.8 min |
+| full Edge，`--workers=1` | ✅ **119/119**，22.2 min |
+| canonical fixture unexpected diff | ✅ 0 |
+| `npm run graph:update` | ✅ AST graph 更新 |
+
+操作語意已寫入 `CONTEXT.md`、`docs/operational/schema.md`、
+`docs/operational/pause-invalid-restart.md`，並在 tracking pilot runbook 加上同 block retry/audit 規則。
 
 ## T5 orchestrator retry（2026-09-15）
 

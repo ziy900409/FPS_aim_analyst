@@ -218,8 +218,10 @@ If `summary.p95 > PERF_FLOOR_MS`, `collectMeta()` marks `meta.suspect = true`.
 
 #### `meta.validity`
 
-Additive v2 block (KI-004 / S1 T2). Records four runtime observation booleans without changing `suspect`
-semantics. Absence means a pre-S1 export.
+Additive v2 block (KI-004 / S1 T2; extended by WP-65 and WP-69). New writers emit all six runtime
+observation booleans. Older payloads may omit the block or the two later fields; the parser treats omitted
+`pointerLockLost` / `pauseOccurred` as `false`. The block records facts and does not replace the central
+attempt-disposition gate.
 
 | Field | Type | Unit / Values | Required | Source | Notes |
 |---|---|---|---:|---|---|
@@ -227,11 +229,18 @@ semantics. Absence means a pre-S1 export.
 | `perfFloor` | boolean | `true` / `false` | Yes when `validity` exists | `frames.summary.p95 > PERF_FLOOR_MS` | Same condition that contributes to `suspect`. |
 | `recorderOverflow` | boolean | `true` / `false` | Yes when `validity` exists | recorder snapshot | `buildExportPayload()` ORs this with `snapshot.recorderOverflow`, same as the top-level `meta.recorderOverflow`. |
 | `bufferOverflow` | boolean | `true` / `false` | Yes when `validity` exists | `sharedState.inputMeta.bufferOverflow > 0` | **Not** part of `main.ts`'s explicit `suspect` OR set — recorded here as an observation only (it does still fold into `meta.suspect` via `collectMeta()`'s own internal OR, a pre-existing, S1-unrelated coupling; see KI-004-S1 progress.md S-S1.6). |
+| `pointerLockLost` | boolean | `true` / `false` | Yes in current writers; optional in older payloads | recording-time Pointer Lock observer | Records that the input lock was lost. This is an observation distinct from attempt adoption; current recording-time loss also sets `pauseOccurred=true`. |
+| `pauseOccurred` | boolean | `true` / `false` | Yes in current writers; optional in older payloads | `RunAttemptController.pauseOccurred` | Sticky for the lifetime of one attempt. `true` is a hard adoption reject even if timestamps remain healthy: the only permitted payload is the manually requested `.invalid-paused` diagnostic. Full Restart creates a new attempt with `false`. |
 
-**`meta.validity` is not the same set as `meta.suspect`.** As of **KI-004 / S1 T3**, `main.ts`'s explicit
+**`meta.validity` is not the same set as `meta.suspect`, and `suspect` is not an attempt disposition.**
+As of **KI-004 / S1 T3**, `main.ts`'s explicit
 `suspect` OR set no longer includes corridor exit (K-3): it is
 `explicitSuspect (session/protocol/perfFloor) || bufferOverflow || recorderOverflow || perfFloor`, computed
 independently in `collectMeta()`/`buildExportPayload()`. Adding `validity` never widens or narrows `suspect`.
+WP-69 additionally ORs `pauseOccurred` into the diagnostic payload's `suspect` value, but adoption is decided
+earlier by `AttemptFinalizationGate`: `invalid-retained` cannot enter History/trends or advance a runner, while
+`discarded` has no payload at all. A clean, never-paused run can still be `suspect=true` under the older quality
+policy; conversely, a timestamp-healthy paused run is still permanently invalid for that attempt.
 Exports produced **before T3** landed carry `validity.corridorExceeded` computed from the pre-fix, 100×-too-tight
 source-unit comparison (`|player.x| > halfWidthU` instead of `|player.x| × SIM_TO_WORLD > halfWidthU`) and are
 **not** comparable to post-T3 exports for this field.

@@ -14,16 +14,15 @@
 
 ## Definition of Done
 
-- [ ] A-69.1～A-69.12 每條都有 test 名稱/命令/輸出或真瀏覽器證據，記於 `progress.md`
-- [ ] Edge 實測 Resume 成功/失敗、fire 誤觸 0、pause input 0、Restart fresh 四項皆有數值
-- [ ] invalid diagnostic 恰一份 `.invalid-paused`；discard 下載 0 份；clean retry 恰一份正式 record
-- [ ] typecheck/build/full Vitest/regression/full Edge 全綠，既有 fixture 非預期 diff 為 0
-- [ ] `CONTEXT.md` 與 operational docs 清楚區分 pause invalid、suspect 與 discarded
-- [ ] `npm run graph:update` 完成且 graph files 為預期更新
+- [x] A-69.1～A-69.12 每條都有 test 名稱/命令/輸出或真瀏覽器證據，記於 `progress.md`
+- [x] Edge 實測 Resume 成功/失敗、fire 誤觸 0、pause input 0、Restart fresh 四項皆有數值
+- [x] invalid diagnostic 恰一份 `.invalid-paused`；discard 下載 0 份；clean retry 恰一份正式 record
+- [x] typecheck/build/full Vitest/regression/full Edge 全綠，既有 fixture 非預期 diff 為 0
+- [x] `CONTEXT.md` 與 operational docs 清楚區分 pause invalid、suspect 與 discarded
+- [x] `npm run graph:update` 完成且 graph files 為預期更新
 
 ## Commit
 
 ```text
 test(wp-69): verify pause discard and restart lifecycle
 ```
-
