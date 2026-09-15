@@ -4,8 +4,10 @@
 > 三種後果：(a) 同一分頁內**之後每一場**匯出都被標 `meta.suspect=true`（靜默）；(b) Session Plan 的
 > 該項在 Esc 之後**沒有任何操作可以救回有效**，只能 reload；(c) 若走資格閘重入，橫幅會消失但旗標仍
 > 為 true ⇒ **UI 說沒事、資料說 suspect**。
-> 狀態：🔴 **診斷完成（2026-09-15），修法待定**。使用者已定方向＝**維持 session 級語意，另補一個
-> 明確的「回到 fullscreen 並繼續本項」入口**；具體修法待使用者複核本文件後拍板，故**尚未開 `BD-n`**。
+> 狀態：🟡 **診斷完成 + 方向已拍板（2026-09-15），實作未開工**。判準改為 **run 級**（「session 斷掉
+> 沒關係，只要同一個 drill 沒有中斷即可」），入口採 **E2**；詳見 §6。⚠️ 此判準修改觸及 **GD-10**，
+> 除 `BD-n` 外**另需一條 `GD-n` 或對 GD-10 的明帳修訂**（OQ-KI-040-4）；兩個編號皆待落帳前重查，
+> 故目前**尚未開號**。
 > 標的：[`src/display/experimentSession.ts`](../../src/display/experimentSession.ts)（`suspect` 無復位
 > 路徑）· [`src/main.ts`](../../src/main.ts)（唯一 `requestFullscreen()` 與唯一 `hideSuspectWarning()`
 > 呼叫點都綁在資格閘 `onEnter`）· [`src/ui/EligibilityGate.ts`](../../src/ui/EligibilityGate.ts)（橫幅）。
@@ -164,32 +166,59 @@ WP-69 的 pause 刻意不擴充 `DrillPhase`（D-69.P1），`updatePauseRuntime(
 
 ---
 
-## 6. 修法選項（**未定案**，待使用者複核後拍板）
+## 6. 修法方向（使用者 2026-09-15 拍板，實作細節待展開）
 
-使用者 2026-09-15 已定方向：**維持 session 級語意**（不把 fullscreen 退出降級為 attempt 級），
-**另補一個明確的「回到 fullscreen 並繼續本項」入口**。以下按此方向展開，但細節仍待決。
+> ⚠️ **本節取代先前記錄的「維持 session 級語意」方向。** 使用者在看過「你最初要的『重測後有效』
+> 與『維持 session 級』互相矛盾」這個張力之後改口，逐字答覆為：
+> **「session 斷掉沒關係，只要同一個 drill 沒有中斷即可」**。以較晚、且是在知情下做出的這一版為準。
 
-### 必做且無爭議（不論最終選哪個入口設計）
+### 6.1 拍板的判準：效力單位是 **run**，不是 session
 
-**修 A**：`suspect` 必須有復位點。沒有人會主張「上一個 session 的 fullscreen 退出應該污染下一個
-session」。候選落點是 `enter()`（語意最直觀：進入一個新 session ⇒ 條件重新評估一次，而 `enter()`
-的前置正是剛通過的資格閘）。⚠️ 需一併確認不破壞 `exit()` 的「保留供最後一次匯出讀取」契約——
-兩者不衝突（`exit()` 保留，`enter()` 才清），但要有測試釘住這個順序。
+`suspect` 的 fullscreen 成分改為以「**該次 run 的錄製窗內是否發生 fullscreen 退出**」判定，
+而非「本 session 是否曾經發生過」。逐條後果：
 
-**修 C**：橫幅顯示必須由 `suspect` 真值驅動，而不是由「有沒有人呼叫 hide」驅動，否則缺陷 C 的
-反向錯誤（UI 說沒事、資料說 suspect）會在修 A 之後仍然存在。
-
-### 待決：「回到 fullscreen 並繼續本項」的入口設計
-
-| 選項 | 作法 | 待評估的點 |
+| 情境 | 現行 | 拍板後 |
 |---|---|---|
-| **E1** | 暫停面板上增加第三顆鈕「回到全螢幕並繼續」，在 click user gesture 內直接 `requestFullscreen()`，成功後走既有 resume 流程 | user gesture 鏈：`requestFullscreen()` 與 `requestPointerLock()` 需在同一次 click 內先後請求，兩者都可能失敗 ⇒ 收斂路徑比 WP-69 現行的兩路再多一層 |
-| **E2** | 另立一條獨立的「恢復條件」流程（重跑資格閘的 fullscreen＋perf 檢查但**不**重啟 plan），通過後才回到該項 | 較忠於 GD-10「條件要重新被證明」的原意；代價是要把 `startSessionPlan()` 與「進入 fullscreen」解耦（目前 `onEnter` 把兩件事綁死） |
-| **E3** | 只做「不再污染後續」：修 A＋C，該項仍報廢，操作員手動重跑 plan | 最小；但沒有滿足使用者要的「繼續本項」 |
+| run N 錄製中掉出全螢幕 | run N 起**之後全部** suspect | 只有 **run N** suspect |
+| run N 被 restart，重跑全程在全螢幕 | 仍 suspect | **乾淨** |
+| run N+1 全程在全螢幕 | 仍 suspect | **乾淨**（不論前面斷過幾次） |
+| drill 之間（`idle`／`ended`）掉出全螢幕 | 不算 | **不算**（KI-007 既有判準，不變） |
 
-⚠️ **E1／E2 都必須回答同一個問題**：該項在 Esc 之前已經錄到的那段資料算什麼？WP-69 對此已有既成
-答案（attempt 級：暫停中結算 ⇒ `pause-fence-unclosed` ⇒ `discarded`，見 OQ-69.4），所以「繼續本項」
-實際上一定是「**restart 本項**」而非「接續錄製」——入口設計不應暗示後者。
+⇒ 這讓 fullscreen 與 Pointer Lock 的語意**對稱**：WP-69 已經把後者定為 attempt 級且可由 restart
+復原（GD-46 ⑤ 覆寫 GD-41），前者現在跟上。使用者最初的訴求（「重測該項**並且有效**」）因此成立。
+
+⚠️ **這是對 [GD-10](../exec-plan/DECISIONS.md) 的語意修改，不只是修 bug。** GD-10 現行措辭是
+session 級（橫幅文案「本 session 資料標記為 suspect」即其直接產物）。因此本案除了 `BD-n`，**還需要
+一條 `GD-n` 或對 GD-10 的明帳修訂**（CLAUDE.md §7：跨 WP／跨文件的決策寫全域帳本）。落帳前需重查
+最大已用編號。
+
+### 6.2 修法（依 6.1 重寫，與先前版本不同）
+
+**修 A′（形狀已改變）**：先前寫「在 `enter()` 復位」，那是 session 級前提下的答案。在 run 級前提下
+復位點必須是**每一次 run 的錄製窗開啟時**（`armed → countdown` 附近），而不是 session 進入時。
+⚠️ 連帶：`experimentSession` 目前把 `suspect` 存成 session 級累加器，run 級語意下它應該**改為
+per-run 計算**而非只是多一個 reset —— 這比原先估的變更大。`meta.display.gate` 維持 session 級不動。
+
+**修 C（不變）**：橫幅顯示必須由旗標真值驅動，而非由「有沒有人呼叫 `hideSuspectWarning()`」驅動。
+橫幅文案也要跟著 6.1 改寫 —— 現行的「本 session 資料標記為 suspect」在 run 級語意下是錯的。
+
+**入口 = E2（拍板）**：另立獨立的「恢復條件」流程，重新請求 fullscreen 並重跑 perf 探測，通過後
+回到該項，**不重啟 plan**。需把「進入 fullscreen」與 `startSessionPlan()` 解耦（目前 `onEnter`
+綁死，且 plan 進行中重入會撞 `SessionRunner is already active`，見 §3）。perf 檢查可能失敗 ⇒
+需要自己的收斂路徑。
+
+> 📌 在 run 級語意下，E2 的**理由改變了**：它不再是「重新證明條件才能洗掉 session 旗標」（run 級
+> 下旗標本來就只綁該次 run），而是「**操作員需要一條回到全螢幕的正規路徑**」，perf 重探是附帶的
+> 額外保障。這不影響 E2 仍是正確選擇，但寫實作計畫時理由要寫對。
+
+**「繼續本項」= restart 本項**：該項在 Esc 之前錄到的那段，依 WP-69 既成答案（OQ-69.4，暫停中結算
+⇒ `pause-fence-unclosed` ⇒ `discarded`）不會留下 payload。入口文案不得暗示「接續錄製」。
+
+### 6.3 其他拍板
+
+- **OQ-KI-040-1（暫停窗界）**：**維持現狀，另案處理**。暫停中離開全螢幕仍算該 run 條件失效；不把
+  KI-007 判準的再定義夾帶進本修法。（在 run 級語意下影響很小：那一次 run 本來就會被 restart 掉。）
+- **既有資料**：**先查範圍再決定**。查核結果見 §8 —— 範圍為零，此項就此關閉。
 
 ---
 
@@ -197,6 +226,24 @@ session」。候選落點是 `enter()`（語意最直觀：進入一個新 sessi
 
 | ID | 問題 | 歸屬 |
 |---|---|---|
-| **OQ-KI-040-1** | 缺陷 D：WP-69 的暫停讓 `phase` 停在 `running` 數分鐘，KI-007 的 recording 窗界是否該把「paused」排除在條件失效之外？排除＝操作員可以在暫停中安全地離開全螢幕去處理事情；不排除＝維持現狀。這是 KI-007 判準的**再定義**，不宜夾帶在本 bug 的修法裡 | 待定，建議獨立處理 |
-| **OQ-KI-040-2** | 受影響的既有資料要不要回溯標註？`meta.suspect=true` 本身是忠實的（條件確實失效過），但「因為上一個 session 而繼承」與「本 session 真的退出過 fullscreen」在資料上**不可分**。是否需要一個能區分兩者的欄位 | 待定 |
-| **OQ-KI-040-3** | `startSessionPlanWithoutGate()` 讓全部 Session Plan e2e 在非 fullscreen 下跑 ⇒ 任何 fullscreen／資格閘相關的迴歸都不可見。是否要補一條**真的走資格閘**的 e2e？（Playwright 可否可靠取得 fullscreen 需先驗證） | 待定，屬測試基礎建設 |
+| **OQ-KI-040-1** ✅ | 暫停期間離開全螢幕算不算條件失效 | **已答：維持現狀**，KI-007 判準的再定義獨立處理（§6.3） |
+| **OQ-KI-040-2** ✅ | 受影響既有資料要不要回溯標註 | **已答：不需要**——查核後範圍為零（§8） |
+| **OQ-KI-040-3** 🟡 | `startSessionPlanWithoutGate()` 讓全部 Session Plan e2e 在非 fullscreen 下跑 ⇒ fullscreen／資格閘相關的迴歸不可見。是否補一條**真的走資格閘**的 e2e？（Playwright 能否可靠取得 fullscreen 需先驗證） | **待定**，屬測試基礎建設。⚠️ 本 bug 的修法若沒有這條，修完仍然沒有迴歸防線 |
+| **OQ-KI-040-4** 🟡 | §6.1 的判準修改觸及 GD-10，需開 `GD-n` 或明帳修訂 GD-10；編號須落帳前重查 | **待定**，屬全域決策帳本 |
+
+---
+
+## 8. 既有資料查核（2026-09-15）
+
+| 位置 | 結果 |
+|---|---|
+| `data/session-history/`（**真正的研究 root**，D-48.P9） | **零筆已保存的 run** —— 目錄內只有 `README.md` 與 `.history-root.lease` |
+| `.playwright-tmp/history-dev`／`history-preview` | 598 個參與者目錄，全部為 `e2e-*` 測試產物，非研究資料（NFR-48.6 要求測試用獨立 root，此處符合） |
+
+⇒ **本機無受影響的研究資料**，OQ-KI-040-2 就此關閉，不需要稽核腳本或回溯標註。
+
+⚠️ **唯一未能查核的範圍**：瀏覽器**下載資料夾**內的匯出 JSON（`downloadJSON()` 的產物）不在 repo
+內，無法從這裡掃描。若你手上有先前下載的匯出檔要確認，判準是 `meta.suspect`；但**注意**在修法落地
+前，「繼承自前一個 session」與「本 session 真的斷過」在 payload 上**不可分**（這正是缺陷 A 的後果），
+只能靠操作紀錄回溯。本次回報的情境中該項從未完成 ⇒ 依 WP-69 三態根本不會產生 payload，與 history
+root 為空一致。
