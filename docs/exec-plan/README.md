@@ -177,6 +177,16 @@
 
 ---
 
+**Stage 16（`active/stage16/`，⬜ 規劃完成；條件失效的效力單位與恢復）**
+
+> WP-69 交付後在實操中暴露的不對稱：Pointer Lock 遺失是 attempt 級且可 restart 復原，fullscreen 退出卻是 session 級且**無任何復原路徑**，一次 `Esc` 同時觸發兩者 ⇒ 操作員卡在「怎麼按重新測試都無效」。Stage spec：[`active/stage16/README.md`](active/stage16/README.md)；來源 [KI-040](../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)；決策 `GD-47`（預約，T0 重查）。無獨立 milestone，T-exit 即交付判定。
+
+| WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
+|---|---|---|---|---|---:|---|
+| **WP-70** | [`active/stage16/wp-70-run-scoped-condition-validity/`](active/stage16/wp-70-run-scoped-condition-validity/README.md) | `meta.suspect` 的 fullscreen 成分由 session 級 sticky 改為 **run 級**（與早已是 run 級的 perf 成分對齊，非新增 scope）；protocol 路徑補上 KI-007 錄製窗判準以消除第二套判準（C-D4）；suspect 橫幅改由旗標真值驅動並改 run 級文案；新增**不重啟 plan** 的恢復條件入口（E2） | —（T-exit 即交付） | WP-69 ✅ | 6–9.5 | ⬜ **規劃完成，未開工**。核心發現：`pointerLockLostDuringRun`（WP-65 T5）已是逐字同型的 per-run 先例 ⇒ T1 照抄即可，非重新設計 `experimentSession`。⚠️ 單點風險 **OQ-70.1**：Playwright 能否可靠取得真 fullscreen 未經驗證，T0 必須實測 —— 它決定 T5 是 e2e 任務還是手動清單＋單元注入。⚠️ 編號 **WP-70 / GD-47 為預約**，T0 依 GD-15 重查。 |
+
+---
+
 ## 3. 里程碑門控（gates）
 
 | 里程碑 | 完成條件 | 對應 WP | 意義 |
