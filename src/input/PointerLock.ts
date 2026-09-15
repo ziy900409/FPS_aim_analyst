@@ -26,6 +26,14 @@ export interface PointerLockHandle {
    */
   readonly rawInputEnabled: boolean;
   onChange(cb: (locked: boolean) => void): void;
+  /**
+   * WP-69 / T3（FR-69.5，FM-4）— document 級 `pointerlockerror`。
+   *
+   * 為什麼不能只靠 `onChange`：取鎖失敗時 `locked` 本來就是 `false`，`setLocked(false)` 因此是
+   * no-op，**一個 change 回撥都不會發出**。要偵測「請求了但沒拿到」只有這個事件（與 `request()`
+   * 回傳的 Promise rejection 兩條路，兩條都接才不會讓 UI 卡在「正在取鎖…」）。
+   */
+  onError(cb: () => void): void;
   /** 鎖定中轉發 movementX/Y；解鎖不轉發（避免殘留 delta）。 */
   onMove(cb: (dx: number, dy: number) => void): void;
 }
@@ -35,6 +43,7 @@ export function createPointerLock(canvas: HTMLCanvasElement): PointerLockHandle 
   const win = doc.defaultView ?? window;
 
   const changeCbs = new Set<(locked: boolean) => void>();
+  const errorCbs = new Set<() => void>();
   const moveCbs = new Set<(dx: number, dy: number) => void>();
   let locked = false;
   let rawInputEnabled = false;
@@ -59,6 +68,8 @@ export function createPointerLock(canvas: HTMLCanvasElement): PointerLockHandle 
   // request 失敗（缺手勢 / 權限）→ 維持 unlocked，UI 續顯示「點擊以鎖定」。
   doc.addEventListener('pointerlockerror', () => {
     setLocked(false);
+    // WP-69 / T3：`setLocked(false)` 在已解鎖時是 no-op（不發 change）⇒ 失敗必須自己有出口。
+    for (const cb of errorCbs) cb();
   });
   // 失焦（alt-tab）：瀏覽器通常自動 exitPointerLock；防禦性停止轉發 delta。
   win.addEventListener('blur', () => {
@@ -95,6 +106,9 @@ export function createPointerLock(canvas: HTMLCanvasElement): PointerLockHandle 
     },
     onChange(cb): void {
       changeCbs.add(cb);
+    },
+    onError(cb): void {
+      errorCbs.add(cb);
     },
     onMove(cb): void {
       moveCbs.add(cb);

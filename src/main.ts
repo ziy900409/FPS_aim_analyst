@@ -92,6 +92,8 @@ import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
 import type { Clock } from './loop/clock.ts';
 import { createPausableTimeMapper } from './loop/pausableTimeMapper.ts';
+import { createRunAttemptController } from './attempt/RunAttemptController.ts';
+import { createPauseOverlay, type PauseOverlayView } from './ui/PauseOverlay.ts';
 import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
@@ -434,6 +436,21 @@ let replayController: ReplayController | undefined;
 // WP-1 / T2（FR-1.2）— Pointer Lock：click 取得、Esc/失焦解除、可重取。
 const pointerLock = createPointerLock(canvas);
 
+// WP-69 / T3（FR-69.2/69.3/69.6）— pause 生命週期與 sticky attempt validity 的**單一**權威
+// （[RunAttemptController.ts]）。宣告在這裡而不是靠近下方的 pause 接線：camera consumer（幾行之後的
+// `pointerLock.onMove`）與 InputSampler 都要讀它的相位，兩者都比 pause 接線早建構。
+const runAttempt = createRunAttemptController();
+
+/**
+ * WP-69 / T3（NFR-69.4，FM-5）— gameplay 採計/套用的**單一**閘（README §2.3）。
+ * InputSampler 與 camera consumer 共用同一個布林，否則「擋了滑鼠卻沒擋視角」這種半套 pause 會靠
+ * 兩份各自漂移的判準長出來。`active` 以外（paused / locking / resume-countdown）一律關閉——
+ * 特別是 `resume-countdown`：那時鎖**已經**拿回來了，只有這個閘擋著倒數三秒內的偷跑。
+ */
+function isGameplayInputEnabled(): boolean {
+  return runAttempt.phase === 'active';
+}
+
 // 「點擊以鎖定」提示（DOM overlay, D1）：解鎖時顯示、鎖定時隱藏（OQ-1.3）。
 // pointer-events:none 讓點擊穿透到 canvas；T5 會接更完整的設定面板。
 const lockHint = document.createElement('div');
@@ -484,7 +501,12 @@ canvas.addEventListener('click', () => {
 // WP-1 / T4（FR-1.4）— yaw/pitch 視角：鎖定中的滑鼠 delta 累積到 camera 朝向。
 // 走輸入/render 路徑，不入 sim（雙迴圈邊界，WP-2）；onMove 僅 locked 時轉發（T2）。
 const cameraController = new CameraController(sceneManager.camera, sharedState.aim);
-pointerLock.onMove((dx, dy) => cameraController.applyDelta(dx, dy));
+pointerLock.onMove((dx, dy) => {
+  // WP-69 / T3（NFR-69.4）：與 InputSampler 共用同一個閘（見 `isGameplayInputEnabled`）。
+  // `onMove` 只在鎖定中轉發，而 resume 倒數期間正是「已鎖定但還不該動」的窗。
+  if (!isGameplayInputEnabled()) return;
+  cameraController.applyDelta(dx, dy);
+});
 // WP-24 / T2（FR-E5）— 當前武器 ADS 光學佈線（render loop 每幀讀 heldAds → FOV/gain）；
 // undefined = 該武器不可開鏡。換 drill/武器時於 loadDrillById 重設。
 cameraController.setAdsConfig(activeWeaponConfig().ads);
@@ -1073,12 +1095,133 @@ const hud = createHUD();
 // `pointer-events:none` 讓待命期的點擊穿透到 canvas 取鎖（＝解除待命的訊號，D-65-1）。
 const drillStartOverlay = createDrillStartOverlay();
 
+// WP-69 / T2 — active measurement time 的**單一**映射點（README §2.2）。首次 pause 前恆為 identity
+// （`mapWallTime(now) === now`,逐位),所以未暫停的路徑與 WP-69 之前逐位相同（NFR-69.1）。
+// pause 期間 rAF 照跑、`pump()` 照呼叫,但餵進去的是凍結值 ⇒ delta=0 ⇒ ticks=0;resume 不會有
+// catch-up 或 >250ms re-anchor（NFR-69.2,見 SimLoop.pump 的 clamp/re-anchor 與 T0.4 實測）。
+// T3 把觸發點接上（Pointer Lock → pause）；宣告點上移到 InputSampler 之前，讓下方的 pause runtime
+// 與 sampler 的 `mapEventTime` 都讀得到同一個 mapper，`activeClock`/`buildSimLoop()` 不受影響。
+const timeMapper = createPausableTimeMapper();
+
+// ─── WP-69 / T3：pause runtime（FR-69.1/69.2/69.4/69.5/69.6） ────────────────────────────────
+// 這一小段是 app 這一層**唯一**的 pause 接線。權威分工：相位與 sticky validity 在 `runAttempt`、
+// 量測時鐘在 `timeMapper`、取鎖成功與否在 `pointerLock` 的事件、畫面在 `pauseOverlay`。
+// 本檔只負責把它們按正確順序串起來，不重新定義其中任何一個構念（C-D4）。
+
+/** 恢復倒數長度 = 該 drill 自己的 `timing.countdownMs`（FR-69.5）——不另立第二個常數。 */
+function resolveResumeCountdownMs(): number {
+  return activeDrillConfig.timing.countdownMs;
+}
+
+/** `null` = 目前沒有進行中的恢復倒數。wall ms：倒數期間 active time 仍凍結，不能拿它計時。 */
+let resumeCountdownEndsAtWallMs: number | null = null;
+// 四個 view 各一個重用實例：`liveFrame()` 每幀都會呼叫 `pauseOverlay.update()`，其中「未暫停」
+// 是每一場每一幀都會走到的路徑 ⇒ 在那裡每幀配置一個物件會把 NFR-69.5 的「熱路徑零配置」變成空話。
+// 倒數 view 以就地改寫 `remainingMs` 重用（`update()` 只讀不存）。
+const PAUSE_VIEW_HIDDEN: PauseOverlayView = { kind: 'hidden' };
+const PAUSE_VIEW_PAUSED: PauseOverlayView = { kind: 'paused' };
+const PAUSE_VIEW_LOCKING: PauseOverlayView = { kind: 'locking' };
+const pauseCountdownView = { kind: 'resume-countdown' as const, remainingMs: 0 };
+/** 上一次取鎖失敗的可重試訊息（FR-69.5）。`undefined` = 沒有錯誤 ⇒ 用上面的共用 `paused` view。 */
+let pauseErrorView: PauseOverlayView | undefined;
+
+const pauseOverlay = createPauseOverlay({
+  // 兩個回撥都必須**同步**執行到底：Resume 的 `requestPointerLock()` 只在這一次 click 的 user
+  // gesture stack 內才會被瀏覽器接受（FM-4）。任何 `await`／`setTimeout` 跳板都會讓取鎖靜默失敗。
+  onResume: () => requestResume(),
+  onRestart: () => restartActiveDrill(),
+});
+
+/**
+ * 進入 pause。**順序是硬的**：先凍結 mapper、再開 attempt fence、最後補 release edge。
+ *
+ * 先凍結 mapper ⇒ fence 兩端與 release edge 都蓋在同一個 active ms 上，fence 退化成一個點
+ * （D-69-T1-1／D-69-T2-1），沒有任何戳記可能落在裡面。順序顛倒 fence 就會張開，而張開的 fence
+ * 正是 `pause-fence-unclosed` 要抓的東西 —— 我們會被自己的 validator 判成 `discarded`。
+ *
+ * 已在 `paused` 時為 no-op；`locking`／`resume-countdown` 期間再次掉鎖會落回這裡（FR-69.5），
+ * 此時 mapper 仍凍結、fence 仍開著，兩者都是冪等的。
+ */
+function beginPause(): void {
+  if (runAttempt.phase === 'paused') return;
+  runAttempt.pause(timeMapper.pause(performance.now()));
+  // release edge 走 ring（不是直接寫 `SharedState.held*`）：held 狀態是 sim 依時序消費輸入推導出來
+  // 的，UI 直接寫會讓狀態與產生它的事件序列對不上（ADR-2 / NFR-69.4）。sampler 內部會把這個 wall
+  // 戳記映射成剛剛凍結的 active ms。
+  inputSampler.suspend(performance.now());
+  resumeCountdownEndsAtWallMs = null;
+}
+
+/** Resume 按鈕：同步送出取鎖請求，成功與否交給 `pointerlockchange`／`pointerlockerror` 收斂。 */
+function requestResume(): void {
+  if (runAttempt.phase !== 'paused') return;
+  runAttempt.beginResume();
+  pauseErrorView = undefined;
+  // `request()` 本身在 user gesture stack 內同步發出；只有**結果**是非同步的（FM-4）。
+  void pointerLock.request().catch((error: unknown) => {
+    failResume(`重新取得滑鼠鎖定失敗，請再按一次「繼續」：${error instanceof Error ? error.message : String(error)}`);
+  });
+}
+
+/** 取鎖失敗：留在 paused 並顯示可重試訊息（FR-69.5）。非 `locking` 相位一律忽略。 */
+function failResume(message: string): void {
+  if (runAttempt.phase !== 'locking') return;
+  pauseErrorView = { kind: 'paused', error: message };
+  beginPause();
+}
+
+/** 取鎖成功：**只**進恢復倒數，不解凍。倒數完成前 input/camera/量測時鐘全部維持凍結（FR-69.5）。 */
+function confirmResumeLock(): void {
+  if (runAttempt.phase !== 'locking') return;
+  const nowWall = performance.now();
+  runAttempt.confirmLock(nowWall);
+  resumeCountdownEndsAtWallMs = nowWall + resolveResumeCountdownMs();
+}
+
+/**
+ * 每 rAF 一次，且必須在 `timeMapper.mapWallTime(now)` **之前**呼叫：倒數在本幀完成時要先解凍，
+ * 這一幀才拿得到正確的 active time（否則 resume 會晚一幀生效）。
+ */
+function updatePauseRuntime(nowWall: number): void {
+  if (
+    runAttempt.phase === 'resume-countdown' &&
+    resumeCountdownEndsAtWallMs !== null &&
+    nowWall >= resumeCountdownEndsAtWallMs
+  ) {
+    // 解凍點：`timeMapper.resume()` 回傳的 active ms 與 `pause()` 當初回傳的是**同一個 double**,
+    // 直接交給 `finishResumeCountdown()` 關 fence,呼叫端不得自行重算（D-69-T2-1）。
+    runAttempt.finishResumeCountdown(timeMapper.resume(nowWall));
+    resumeCountdownEndsAtWallMs = null;
+  }
+  pauseOverlay.update(pauseOverlayView(nowWall));
+}
+
+function pauseOverlayView(nowWall: number): PauseOverlayView {
+  switch (runAttempt.phase) {
+    case 'active':
+      return PAUSE_VIEW_HIDDEN;
+    case 'paused':
+      return pauseErrorView ?? PAUSE_VIEW_PAUSED;
+    case 'locking':
+      return PAUSE_VIEW_LOCKING;
+    default:
+      pauseCountdownView.remainingMs = (resumeCountdownEndsAtWallMs ?? nowWall) - nowWall;
+      return pauseCountdownView;
+  }
+}
+// ─── WP-69 / T3 pause runtime 結束 ────────────────────────────────────────────────────────────
+
 // WP-3 / T1+T3（FR-3.1/3.3）— 輸入採集：keydown/keyup（A/D/W/S）與開火 mousedown（左鍵）蓋
 // event.timeStamp 寫入 sharedState.input，供 sim（T4）依時序消費。事件驅動（非固定迴圈，ADR-2）；
 // 掛在 window（鍵盤事件不落在 canvas；lock 中滑鼠事件亦冒泡至 window）。開火以 pointerLock.locked
 // 為採計閘門——否則「點擊 canvas 取鎖」與 UI 點擊會被誤判為開火（T3）。與 CameraController（視角走
 // pointerLock.onMove）互不干擾——此處只入緩衝供量測（WP-3 目的）。
-const inputSampler = createInputSampler(sharedState, () => pointerLock.locked);
+const inputSampler = createInputSampler(sharedState, () => pointerLock.locked, {
+  // WP-69 / T3：pause / locking / resume 倒數期間不採計任何 gameplay down/move（NFR-69.4），
+  // 且**每一個**戳記都經 mapper 映射到 active measurement time（未 pause 時為逐位 identity）。
+  isGameplayInputEnabled,
+  mapEventTime: (wallMs) => timeMapper.mapWallTime(wallMs),
+});
 inputSampler.attach(window);
 pointerLock.onChange((locked) => {
   if (!locked) {
@@ -1165,16 +1308,11 @@ drillRunner.start(activeDrillConfig);
 if (recorder.recordMouseSamples) {
   pointerLock.onChange((locked) => {
     if (drillRunner.phase !== 'countdown' && drillRunner.phase !== 'running') return;
-    recorder.recordEvent({ type: 'pointer_lock', locked, t: performance.now() });
+    // WP-69 / T3：與 tick／輸入戳記同域（active measurement time）。未 pause 時 mapper 為逐位
+    // identity ⇒ 既有匯出不變；少了這層映射，第二次掉鎖會蓋上 wall 戳記而落到 tick 窗之外。
+    recorder.recordEvent({ type: 'pointer_lock', locked, t: timeMapper.mapWallTime(performance.now()) });
   });
 }
-
-// WP-69 / T2 — active measurement time 的**單一**映射點（README §2.2）。首次 pause 前恆為 identity
-// （`mapWallTime(now) === now`,逐位),所以未暫停的路徑與 WP-69 之前逐位相同（NFR-69.1）。
-// pause 期間 rAF 照跑、`pump()` 照呼叫,但餵進去的是凍結值 ⇒ delta=0 ⇒ ticks=0;resume 不會有
-// catch-up 或 >250ms re-anchor（NFR-69.2,見 SimLoop.pump 的 clamp/re-anchor 與 T0.4 實測）。
-// T2 只鋪設這條時鐘管線:production **尚無** pause 觸發點,那是 T3（Pointer Lock → pause）的事。
-const timeMapper = createPausableTimeMapper();
 
 // SimLoop 建構時取的時間基準（`lastMs`/`simTimeMs`）必須與 `pump()` 餵入的同一個域,否則重建 loop
 // 時會拿 wall 當基準卻被餵 active ms。故注入 mapped clock,而非 `realClock`。
@@ -1442,6 +1580,12 @@ function resetRunPresentation(): void {
   // 這裡,且都在下游重建 SimLoop —— 把 mapper 歸零放在這一個共同點,新 attempt 的 active time 回到
   // identity,重建的 loop 才會錨在同一個域（`activeClock`）。順序是硬的:**先歸零、後 buildSimLoop()**。
   timeMapper.restart(performance.now());
+  // WP-69 / T3（FR-69.6）— attempt validity / fence / attempt number 與 mapper 在**同一個**點歸零。
+  // 這是四條 full-restart 路徑（restart / 換武器 / 換 drill / 換場景）的共同點，也是 sticky
+  // `invalid-paused` 唯一的出口：`restart()` 之外沒有任何 mutator 能把 validity 走回來（FR-69.2）。
+  runAttempt.restart();
+  resumeCountdownEndsAtWallMs = null;
+  pauseErrorView = undefined;
   recorder.reset();
   frameLog.reset();
   resultScreen.hide();
@@ -1493,6 +1637,30 @@ pointerLock.onChange((locked) => {
   const phase = drillRunner.phase;
   if (phase !== 'countdown' && phase !== 'running') return;
   sharedState.validity.pointerLockLostDuringRun = true; // input → SharedState → data 唯讀（ADR-2）
+});
+
+// WP-69 / T3（FR-69.1/69.2/69.3，OQ-69.2）— 錄製中掉鎖 = 進入 pause 並**永久**失去實驗效力。
+//
+// 刻意是**第四個**訂閱者，且不與上面那個合併：`pointerLockLost` 與 `pauseOccurred` 是兩個構念
+// （FR-69.11）——前者記「輸入鎖遺失」這個事實，後者控制「這場能不能被實驗採納」。錄製中掉鎖會讓兩者
+// 同時為真，但它們的判準未來可能分岔，合併會讓那一天無法拆開。
+//
+// 相位判準與上面那條**逐字相同**（`countdown`/`running`），不新增第二套定義（C-D4／OQ-69.2）：
+// `armed` 的開場釋鎖脈衝、`ended` 的收工釋鎖、`idle` 的 drill 之間都不算失效（FR-69.3）。
+// 取鎖方向則相反：只有我們自己要求的那一次（`locking` 相位）才算 resume，其餘取鎖不是。
+pointerLock.onChange((locked) => {
+  if (locked) {
+    confirmResumeLock();
+    return;
+  }
+  const phase = drillRunner.phase;
+  if (phase !== 'countdown' && phase !== 'running') return;
+  beginPause();
+});
+// 取鎖失敗的第二條收斂路徑（FM-4）：`pointerlockerror` 不會翻 `locked`（本來就是 false），
+// 因此**不會**經過上面的 onChange —— 少了這條，一次失敗的 resume 會讓面板永遠停在「正在取鎖…」。
+pointerLock.onError(() => {
+  failResume('重新取得滑鼠鎖定失敗，請再按一次「繼續」。');
 });
 // 補一次當下狀態：本檔後段有 dev-only top-level await（`measureDisplayHz`），受試者在那個視窗內
 // 點擊取得的鎖會早於本訂閱者掛上 ⇒ 沒有這行，該場會永遠停在待命。訂閱者本身不能更早掛，
@@ -1977,6 +2145,10 @@ protocolNextButton.addEventListener('click', () => void beginNextProtocolConditi
 function liveFrame(now: number): void {
   sessionPlanRunner.poll(now);
   trackingPilotSession?.poll(now); // WP-54 / T6：pilot 的 rest 倒數，比照 SessionRunner.poll()。
+  // WP-69 / T3：恢復倒數與 pause 面板。**必須在下一行的 `mapWallTime()` 之前**——倒數若在本幀完成，
+  // 要先解凍 mapper，這一幀才拿得到正確的 active time（否則 resume 晚一幀生效）。倒數本身吃 wall
+  // `now`：那正是「暫停了多久」的時鐘，不是量測時間。
+  updatePauseRuntime(now);
   // WP-69 / T2：rAF 的 wall `now` → active measurement time。**量測**用途一律用 `activeNow`
   // （sim、recorder 戳記、gameplay HUD 經過時間）；**render-only** 的動畫壽命仍用原始 `now`
   //  （命中回饋、tracer、ADS FOV 內插、急停閂鎖）——暫停時畫面該繼續動,但量測不該前進。

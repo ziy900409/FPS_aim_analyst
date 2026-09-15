@@ -15,12 +15,12 @@
 
 ## Definition of Done
 
-- [ ] overlay 文案逐字含「本次已失去實驗效力」「繼續仍無效」「只有完整重新測試才能再次接受門檻」
-- [ ] pause 與 resume-countdown 期間 ring write count、camera yaw/pitch、held states 與 shot count 無新增
-- [ ] Resume request 在 button click stack 內發生；成功/NotSupported fallback/error 三路有測試
-- [ ] armed lock→unlock helper 仍為 `pauseOccurred=false`；countdown/running 掉鎖為 true
-- [ ] Restart 後 attempt +1、validity fresh、同 config/seed、需重新取鎖並跑初始 countdown
-- [ ] overlay 建構期一次配置，更新路徑零新增 DOM node
+- [x] overlay 文案逐字含「本次已失去實驗效力」「繼續仍無效」「只有完整重新測試才能再次接受門檻」
+- [x] pause 與 resume-countdown 期間 ring write count、camera yaw/pitch、held states 與 shot count 無新增
+- [x] Resume request 在 button click stack 內發生；成功/NotSupported fallback/error 三路有測試
+- [x] armed lock→unlock helper 仍為 `pauseOccurred=false`；countdown/running 掉鎖為 true
+- [x] Restart 後 attempt +1、validity fresh、同 config/seed、需重新取鎖並跑初始 countdown
+- [x] overlay 建構期一次配置，更新路徑零新增 DOM node
 
 ## Commit
 

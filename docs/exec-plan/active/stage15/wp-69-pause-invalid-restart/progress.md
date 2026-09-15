@@ -2,10 +2,10 @@
 
 ## Snapshot
 
-- **狀態**：🟡 T2 已落地（2026-09-15），T3 可開工
+- **狀態**：🟡 T3 已落地（2026-09-15），T4 可開工
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：T3 — Input/Pointer Lock gate、resume 倒數、PauseOverlay/Restart
+- **下一步**：T4 — 中央 finalization gate、invalid diagnostic export、discard、History/replay/navigation 防線
 - **決策**：[GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)
 
 ## Planning evidence
@@ -21,7 +21,7 @@
 | T0 | ✅ | 2026-09-15。編號重查、blast radius、baseline 四閘、pause time spike、integrity 詞彙凍結、OQ-69.1～69.3 全關。production diff = 空。見 [§T0](#t0-entry-gate2026-09-15) |
 | T1 | ✅ | 2026-09-15。`src/attempt/` 三模組 + 88 個新測試；9 份 clean fixture 全數放行；canonical digest 只動 3 筆（完全印證 D-69-T0-4）。見 [§T1](#t1-attempt-disposition-contract2026-09-15) |
 | T2 | ✅ | 2026-09-15。`PausableTimeMapper` + main.ts 時鐘管線（mapped clock 注入 SimLoop）；50 個新測試；naive-pause 失敗模式固化成永久測試。四閘全綠 + Edge e2e 13 passed。見 [§T2](#t2-pausable-active-time2026-09-15) |
-| T3 | ⬜ | — |
+| T3 | ✅ | 2026-09-15。gameplay 閘（input + camera 共用）、`suspend()` release edge、`PauseOverlay`、Pointer Lock resume 倒數、Restart 收斂；61 個新測試 + 六刀 mutation 反證。四閘全綠 + Edge e2e 15 passed。見 [§T3](#t3-input--pointer-lock--overlay2026-09-15) |
 | T4 | ⬜ | — |
 | T5 | ⬜ | — |
 | T6 | ⬜ | — |
@@ -46,6 +46,10 @@
 | D-69-T2-2 | resume 後的映射錨在 `(wall, active)` 配對而非減去 offset：`(w − resumeWall) + resumeActive` 對**所有**可表示輸入在 `w === resumeWall` 逐位還原 | T2 採納（見 §T2.3） |
 | D-69-T2-3 | mapper 對非 finite 輸入與 resume 的 wall 倒退 **throw**（不靜默夾住）；`mapWallTime` 本身**不**做單調性檢查，因為 T3 要用同一入口映射可能早於當前幀的 DOM `event.timeStamp` | T2 採納（見 §T2.5） |
 | D-69-T2-4 | mapper 歸零放進 `resetRunPresentation()`（四條 full-restart 路徑的共同點），並以 source-scan 測試釘住「reset 之後必須 `buildSimLoop()`」的順序 | T2 採納 |
+| D-69-T3-1 | `InputSampler.suspend(atWallMs)` 收 **wall** ms（README §2.3 寫 `atActiveMs`）；映射統一在 sampler 內部做，`releaseAds` 也一併改走 `mapEventTime` | T3 採納（見 §T3.3） |
+| D-69-T3-2 | up edge 的採計條件改為「sampler 自己採計過對應的 down」，鍵盤因此與 fire/ads 對齊（新增固定長度 `heldKeys` 帳面）；gameplay 閘只擋 down/move | T3 採納（見 §T3.3） |
+| D-69-T3-3 | `PointerLockHandle` 新增 `onError()`：`pointerlockerror` 不翻 `locked` ⇒ 不發 change 回撥，沒有它取鎖失敗在該模組內完全無聲 | T3 採納（見 §T3.4） |
+| D-69-T3-4 | `runAttempt.restart()` 與 `timeMapper.restart()` 同放 `resetRunPresentation()` ⇒ 換武器／換 drill／換場景也會 attempt +1（不只 Restart 鈕） | T3 採納（見 §T3.6） |
 
 ## Open Questions
 
@@ -57,6 +61,150 @@ OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使
 
 > T1 本身不替 OQ-69.4 做決定：實作上**逐字執行 T0 凍結的判準**（pause/resume 次數不相等 ⇒ `pause-fence-unclosed`），不在實作期悔放寬。
 
+
+---
+
+## T3 input / Pointer Lock / overlay（2026-09-15）
+
+> 交付物 = gameplay 閘（InputSampler 與 camera consumer 共用）、pause 邊界的 release edge、
+> `PauseOverlay`、Pointer Lock resume 與恢復倒數、Restart 收斂到既有 full-restart coordinator。
+> **T3 讓 pause 第一次真的會發生**（T2 只鋪了時鐘管線）。finalization／export／orchestrator 仍未動
+> —— `finalize()` 目前沒有任何 production 呼叫端，那是 T4/T5。
+
+### T3.1 交付檔案
+
+| 檔案 | 內容 | 測試數 |
+|---|---|---|
+| `src/input/InputSampler.ts` | `InputSamplerOptions`（`isGameplayInputEnabled` / `mapEventTime`）+ `heldKeys` + `suspend()` | +11 |
+| `src/input/PointerLock.ts` | 新增 `onError()` 接縫 | — |
+| `src/input/PointerLock.test.ts` | **該模組首個單元測試**（T0.2 標示為無覆蓋）：成功 / NotSupported fallback / error / move 轉發 | 10 |
+| `src/ui/PauseOverlay.ts` + `.test.ts` | 純 TS DOM 面板、四個 view、建構期一次配置；`locking` 只停用「繼續」，Restart 永遠是保底出口 | 15 |
+| `src/main.ts` | pause runtime（見 T3.2）、camera 閘、第四個 `onChange` 訂閱者、`onError`、`resetRunPresentation` | — |
+| `src/attempt/__tests__/wp69-pause-lifecycle.test.ts` | 真模組整合 rig + `main.ts` source-scan 漂移守衛 | 25 |
+
+### T3.2 main.ts 的接點（唯讀清單，便於 T4 接手）
+
+| 接點 | 位置 | 作用 |
+|---|---|---|
+| `runAttempt` + `isGameplayInputEnabled()` | `pointerLock` 建構之後 | gameplay 採計／套用的單一閘；宣告點必須早於 camera consumer 與 InputSampler |
+| `pointerLock.onMove` 內的閘 | camera 佈線 | resume 倒數期間鎖已回來，只有這個閘擋著視角偷跑 |
+| `createInputSampler(..., { isGameplayInputEnabled, mapEventTime })` | 輸入採集 | 所有 down/move 過閘；**所有**戳記過 mapper |
+| pause runtime 區塊（`beginPause` / `requestResume` / `failResume` / `confirmResumeLock` / `updatePauseRuntime`） | `drillStartOverlay` 與 `inputSampler` 之間 | app 這一層唯一的 pause 接線；`timeMapper` 宣告點一併上移到這裡 |
+| 第四個 `pointerLock.onChange` + `pointerLock.onError` | WP-65 T5 的效度訂閱者之後 | 掉鎖→pause／取鎖→倒數／失敗→回 paused |
+| `updatePauseRuntime(now)` | `liveFrame()` 第一段 | **必須早於** `timeMapper.mapWallTime(now)` |
+| `runAttempt.restart()` | `resetRunPresentation()` | 與 `timeMapper.restart()` 同一個點 |
+
+`pointer_lock` 事件的戳記一併改走 `timeMapper.mapWallTime(performance.now())`：未 pause 時 mapper 是
+逐位 identity ⇒ 既有匯出不變；少了這層映射，**第二次**掉鎖會蓋上 wall 戳記而落到 tick 窗之外
+（`event-out-of-window` ⇒ 整場 discard）。這是 T3 掃出來、T2 沒看見的殘留 wall 讀點（見 §T3.9 #4）。
+
+### T3.3 對 README §2.3 的兩處刻意偏離（D-69-T3-1 / D-69-T3-2）
+
+1. **`suspend(atWallMs)` 收 wall，不收 active**（README 寫 `suspend(atActiveMs)`）。sampler 內部的
+   每一個 push 點都過 `mapEventTime`，所以呼叫端一律傳 wall——「這個要映射、那個不用」的分岔一旦
+   存在，遲早有人會漏掉一個（`releaseAds` 本來就是漏網的那一個，`pointer_lock` 是另一個）。
+   代價是參數名與 README 不同；換得的是「沒有任何呼叫端需要知道 mapper 存在」。
+2. **up edge 的採計條件改成「採計過對應的 down」**。原本 keyup 無條件入 ring，而 fire/ads 早就靠
+   `fireButtonHeld`／`adsButtonHeld` 把關。若沿用舊語意，暫停中受試者放開 A/D 會讓一筆 keyup 溜進
+   ring；它蓋的是**凍結的** active time，因此可能大於 `lastTick` ⇒ `event-out-of-window` ⇒ 整場被
+   自己的 validator 丟掉。把三類控制對齊到同一條規則後，`suspend()` 清帳這件事自動關上了那個門，
+   不需要對 up edge 另加一道閘（gameplay 閘因此只擋 down/move，語意更窄也更好解釋）。
+
+### T3.4 為什麼 `PointerLock` 非得長出 `onError`（D-69-T3-3）
+
+`setLocked(next)` 在 `next === locked` 時直接 return。取鎖失敗時 `locked` **本來就是** `false`，
+所以 `pointerlockerror` → `setLocked(false)` 是 no-op，**一個 change 回撥都不會發出**。
+只接 `onChange` 的話，一次失敗的 resume 會讓面板永遠停在「正在重新取得滑鼠鎖定…」。
+
+因此 resume 的失敗有兩條收斂路徑，兩條都接：`request()` 的 Promise rejection（Chromium 現行行為）
+與 `onError`（document 事件）。兩者都只在 `locking` 相位生效，其餘相位一律忽略。
+
+順帶補上該模組的第一份單元測試（T0.2 明確標示「無單元測試覆蓋」），涵蓋 T3 真正依賴的四條語意，
+不追求把整個 Pointer Lock 生命週期補完——那不是本 task 的範圍。
+
+### T3.5 `beginPause()` 的順序是契約，不是風格
+
+```ts
+runAttempt.pause(timeMapper.pause(performance.now()));
+inputSampler.suspend(performance.now());
+```
+
+mapper 的回傳值**直接**餵給 fence：fence 兩端因此是同一個 double，退化成一個點，沒有任何戳記可能
+落在裡面（D-69-T1-1／D-69-T2-1）。拆成「先 `mapWallTime()` 算一次、再另外 `pause()` 一次」會讀兩次
+時鐘，fence 張開一個 sliver，`pause-fence-unclosed` 從機械證明降級成容差。
+
+這條有兩層反證：**負向對照**（rig 裡「只開 fence、不凍時鐘」的變體 ⇒ `discarded`
+`pause-fence-unclosed`）與 **source-scan**（逐字釘死 `runAttempt.pause(timeMapper.pause(` 這個巢狀
+形狀）。兩者缺一不可：前者證明語意，後者擋 `main.ts` 漂移。
+
+### T3.6 Restart 的落點（D-69-T3-4）
+
+`runAttempt.restart()` 與 `timeMapper.restart()` 同放 `resetRunPresentation()`——四條 full-restart
+路徑（Restart 鈕／換武器／換 drill／換場景）的共同點。**後果要明帳**：換武器、換 drill、換場景
+也會 attempt +1。那是對的（那些確實是新的 attempt），但 README FR-69.6 只談 Restart，故在此記下。
+Restart 之後走既有 `drillRunner.start()` ⇒ 主動釋鎖 ⇒ 回到 `armed`，需要重新取鎖並跑初始倒數
+（WP-65 的既有語意，本 WP 一字未改）。
+
+### T3.7 四閘 + e2e
+
+| 閘 | 命令 | exit | 計數 | 對比 T2 |
+|---|---|---|---|---|
+| typecheck | `npm run typecheck` | **0** | — | 同 |
+| build | `npm run build` | **0** | `✓ built in 2.48s` | 同（chunk >500 kB 為既有警告） |
+| 全量單元 | `npx vitest run` | **0** | **3594 passed / 2 skipped**；檔案 **281 / 1 skipped** | 3533 → 3594（**+61**，恰為本 task 新增數）；檔案 278 → 281 |
+| 回歸 | `npx vitest run tests/regression` | **0** | **324 passed**（33 files） | **逐數相同，零漂移** |
+| Edge e2e（focused） | `npx playwright test --project=edge --workers=1 full-drill input-sampler raw-mouse-sampling` | **0** | **15 passed**（1.7m） | 與 T0 基線同一集、同一計數 |
+
+canonical digest 零移動（在全量單元內綠）——本 task 對未 pause 路徑是 identity。
+e2e 前置：5173 無人佔用；`.playwright-tmp/history-dev` 352 個 participant 目錄（未到會讓
+history-library 變紅的量級，且本次 focused 集不含該 spec）。
+
+### T3.8 Mutation check（六刀，全部見血）
+
+新測試不是佈景。逐一把接線拆掉後的紅燈：
+
+| # | 拆掉什麼 | 結果 |
+|---|---|---|
+| 1 | `onKeyDown` 的 gameplay 閘 | **5 紅**（sampler 單元 + 生命週期 rig 兩層） |
+| 2 | `beginPause` 的巢狀呼叫改成兩次讀時鐘 | 1 紅（source-scan） |
+| 3 | camera consumer 的閘 | 1 紅（source-scan） |
+| 4 | `liveFrame` 的 `updatePauseRuntime(now)` | 1 紅（source-scan） |
+| 5 | `resetRunPresentation` 的 `runAttempt.restart()` | 1 紅（source-scan） |
+| 6 | `createInputSampler` 的 `mapEventTime` 接線 | 1 紅（source-scan） |
+
+⚠️ **#2、#4、#6 第一刀都是綠的**，守衛改好之後才見血，見 §T3.9。
+
+### T3.9 Surprises
+
+1. **兩個 source-scan 守衛第一次寫錯方向，mutation 才抓到。**
+   - `indexOf(a) < indexOf(b)` 在 `a` **不存在**時（回 `-1`）恆真 ⇒ 把 `updatePauseRuntime(now)`
+     整行刪掉反而讓測試變綠。順序斷言必須先各自斷言「存在」。
+   - `beginPause` 的順序原本寫成「`runAttempt.pause(` 出現在 `timeMapper.pause(` 之前」——那只是巢狀
+     呼叫的**文字**順序，把它拆成兩條獨立敘述後仍然滿足。真正的契約是巢狀形狀本身，只能逐字釘。
+2. **`mapEventTime` 是個靜默接點。** 拆掉它，未暫停路徑完全正常（mapper 是 identity），只有
+   「暫停過一次之後」的事件戳記會悄悄落在 wall 域。整個單元與 e2e 套件都不會紅——因為 production
+   目前還沒有任何自動化路徑會真的暫停。這類接點只有 source-scan 擋得住。
+3. **`pointerlockerror` 在既有 `PointerLock` 裡是完全無聲的**（§T3.4）。規劃期 FM-4 寫「以
+   `pointerlockchange/error` 收斂」時，`error` 那一半在程式碼裡根本沒有出口。
+4. **T3 掃出一個 T2 漏掉的 wall 讀點**：`recorder.recordEvent({ type: 'pointer_lock', …, t:
+   performance.now() })`。T2 的三個接點清單本身沒錯，但它只列了「量測時間的映射點」，沒有回頭掃
+   「還有誰在直接讀時鐘、把值寫進 recorder」。第二次暫停之後那個戳記會落到 tick 窗外。
+5. **UI 測試的假 DOM 不解析 `cssText`。** overlay 的初始隱藏寫在建構期的 `cssText` 裡，
+   `style.display` 因此是空字串——第一版斷言 `display === 'none'` 直接紅。
+
+### T3.10 Definition of Done 對帳
+
+- [x] overlay 文案逐字含「本次已失去實驗效力」「繼續仍無效」「只有完整重新測試才能再次接受門檻」
+      （三個 `toContain`，且文案在建構期就存在、不必先 `update()`）
+- [x] pause 與 resume-countdown 期間 ring write count、camera yaw/pitch、held states 與 shot count
+      無新增（兩個 describe：未鎖定的 pause 與**已鎖定**的倒數各一組；後者是 FM-5 唯一的擋點）
+- [x] Resume request 在 button click stack 內發生（overlay 的同步回撥測試 + rig 的「click 回來時
+      `requestCalls() === 1`」）；成功／NotSupported fallback／error 三路有測試（前二者在
+      `PointerLock.test.ts` 對**真**模組，error 的兩條收斂路徑各一個 rig 測試）
+- [x] armed／idle／ended 掉鎖仍為 `pauseOccurred=false`（`it.each` 三個相位）；countdown／running 為 true
+- [x] Restart 後 attempt +1、validity fresh、fence 清空、mapper 回 identity、overlay 收起；
+      同 config/seed 與「需重新取鎖並跑初始 countdown」沿用既有 `drillRunner.start()` 釋鎖語意
+- [x] overlay 建構期一次配置，更新路徑零新增 DOM node（跑完三輪全部 view 後 `createElement` 計數不變）
 
 ---
 
