@@ -246,6 +246,18 @@ export interface Meta {
      * 條件失效而非行為觀測。`corridorExceeded` 的不併入是刻意的不對稱，見 `collectMeta()` 註解。
      */
     pointerLockLost: boolean;
+    /**
+     * WP-69 / T1（FR-69.8/69.11）：本次 attempt 曾進入 pause ⇒ **永久失去實驗效力**。additive 第六欄，
+     * 同樣 **optional-in / required-out**（承 D-65-3）：缺欄補 `false`，既存 fixture 零修改仍可解析。
+     *
+     * ⚠️ 與 `pointerLockLost` 是**兩個構念，不是同義詞**（FR-69.11）：前者記「輸入鎖遺失」這個事實，
+     * 後者控制「這次能不能被採納」。錄製中掉鎖會讓兩者同時為 true，但它們的來源與用途不同 ——
+     * 別因為看起來總是一起出現就把其中一個刪掉或推導出另一個。
+     *
+     * ⚠️ 本欄併入 `suspect`（同 `pointerLockLost`），但**正式採納絕不可只看 `suspect`**：`suspect` 是
+     * 品質提示，`pauseOccurred` 是硬性不可採納。真正的守門在 `AttemptFinalizationGate`（T4/FM-2）。
+     */
+    pauseOccurred: boolean;
   };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
@@ -317,6 +329,8 @@ export interface CollectMetaArgs {
     bufferOverflow: boolean;
     /** WP-65 / T5：optional-in（缺席 = `false`），見 `Meta['validity'].pointerLockLost`。 */
     pointerLockLost?: boolean;
+    /** WP-69 / T1：optional-in（缺席 = `false`），見 `Meta['validity'].pauseOccurred`。 */
+    pauseOccurred?: boolean;
   };
   weapon?: WeaponMeta;
   targets?: TargetsMeta;
@@ -445,8 +459,16 @@ export function collectMeta(args: CollectMetaArgs): Meta {
     // 受試者的位移**完全沒進輸入鏈**而 sim 照跑、目標照 spawn ⇒ 這是條件失效，性質同 frameFloor。
     // `validity.corridorExceeded` **刻意不併入**（既有語意，本 WP 不動）：走出走廊是該記錄的行為
     // 觀測，且場景幾何永不進 sim（GD-6）不可能影響命中。這個不對稱是設計，不是遺漏——別順手統一。
+    // WP-69 / T1（§2.6）— `pauseOccurred` 同樣併入 `suspect`：pause 期間 sim 凍結、輸入全被擋，
+    // 這一場的觀測條件已經不是原設計。但**採納與否不靠這一行**：`suspect` 只是提示，硬性拒收在
+    // `AttemptFinalizationGate`（T4/FM-2）。這裡併入是為了讓既有的下游品質提示不漏訊，不是守門。
     suspect:
-      explicitSuspect || bufferOverflow || recorderOverflow || frameFloorSuspect || validity?.pointerLockLost === true,
+      explicitSuspect ||
+      bufferOverflow ||
+      recorderOverflow ||
+      frameFloorSuspect ||
+      validity?.pointerLockLost === true ||
+      validity?.pauseOccurred === true,
     simToWorld,
     ...(validity !== undefined ? { validity } : {}),
     ...(weapon !== undefined ? { weapon } : {}),
@@ -764,6 +786,11 @@ function requireValidity(value: unknown): NonNullable<Meta['validity']> {
       validity.pointerLockLost === undefined
         ? false
         : requireBoolean(validity.pointerLockLost, 'validity.pointerLockLost'),
+    // WP-69 / T1（同 D-65-3 的 optional-in / required-out）。
+    pauseOccurred:
+      validity.pauseOccurred === undefined
+        ? false
+        : requireBoolean(validity.pauseOccurred, 'validity.pauseOccurred'),
   };
 }
 

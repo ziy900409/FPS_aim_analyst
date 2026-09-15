@@ -2,10 +2,10 @@
 
 ## Snapshot
 
-- **狀態**：🟡 T0 已落閘（2026-09-15），T1 可開工
+- **狀態**：🟡 T1 已落地（2026-09-15），T2 可開工
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：T1 — attempt/disposition contract
+- **下一步**：T2 — `PausableTimeMapper`
 - **決策**：[GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)
 
 ## Planning evidence
@@ -19,7 +19,7 @@
 | Task | 狀態 | 證據 / 決策 / 意外 |
 |---|---|---|
 | T0 | ✅ | 2026-09-15。編號重查、blast radius、baseline 四閘、pause time spike、integrity 詞彙凍結、OQ-69.1～69.3 全關。production diff = 空。見 [§T0](#t0-entry-gate2026-09-15) |
-| T1 | ⬜ | — |
+| T1 | ✅ | 2026-09-15。`src/attempt/` 三模組 + 88 個新測試；9 份 clean fixture 全數放行；canonical digest 只動 3 筆（完全印證 D-69-T0-4）。見 [§T1](#t1-attempt-disposition-contract2026-09-15) |
 | T2 | ⬜ | — |
 | T3 | ⬜ | — |
 | T4 | ⬜ | — |
@@ -39,10 +39,19 @@
 | D-69-T0-2 | tick 軸判準取 **bit-exact** `dt === tickMs`（零容差）；event 軸判準取 **一個 tick 的回退窗**，非零容差 | T0 採納（實測支撐） |
 | D-69-T0-3 | OQ-69.1 由使用者**推翻 README 預設**：invalid diagnostic 改「只在結果頁手動下載」，不自動下載 | 使用者 2026-09-15 拍板 |
 | D-69-T0-4 | `meta.validity.pauseOccurred` 預期只移動 3 筆 canonical digest（帶 `validity` 父物件者）；第 4 筆變動即 bug | T0 採納 |
+| D-69-T1-1 | **pause fence 以 active time 記錄，不是 wall time**（偏離 README §2.1 的 `atWallMs` 參數命名） | T1 採納（機械必然，見 §T1.3） |
+| D-69-T1-2 | 非法轉換一律 no-op，不 throw（這些 method 直接掋在 UI 事件上） | T1 採納 |
+| D-69-T1-3 | `finalize()` 先判 integrity 再判 validity；`discarded` 取凍結詞彙順序的第一個 reason | T1 採納（FM-7） |
 
 ## Open Questions
 
-OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使用者拍板)）。目前無未決 OQ。
+OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使用者拍板)）。
+
+| ID | 問題 | 提出 | 歸屬 |
+|---|---|---|---|
+| **OQ-69.4** | 「正在 paused 時離開/切換 drill」依 T0.5 凍結判準會得到 `discarded`（fence 未閉合）——但 pause 之前的時間軸其實是可證的。T4 要不要在導航前先要求 resume（才能拿到 `invalid-retained` 稿核檔），還是接受直接 discard？ | T1（2026-09-15） | **T4**（FR-69.12） |
+
+> T1 本身不替 OQ-69.4 做決定：實作上**逐字執行 T0 凍結的判準**（pause/resume 次數不相等 ⇒ `pause-fence-unclosed`），不在實作期悔放寬。
 
 
 ---
@@ -194,3 +203,64 @@ e2e 前置：`netstat` 確認 **5173 無人佔用**（避免測到別人的 serv
 3. **一份乾淨 fixture 裡有真的 event 回退**（T0.5），且**不是** `lateEventCount` 那個既有構念，而是 `simStep()` 內 sim 蓋 `tickEndMs` 早於 `consume()` 的跨時鐘混寫。零容差 validator 會誤殺正式資料。
 4. **`#drill-controls`（z-index 32）蓋在 `#result-screen`（30）之上**（T0.6），正好打在 OQ-69.1 新選的手動下載鈕上。
 5. **`TrackingPilotRunner` 現行唯一的 retry 路徑會強制先建立 payload**（T0.2），與 `discarded` 的「不得建立 payload」直接衝突 —— 比規劃期所述更強的「必須新增入口」理由。
+
+---
+
+## T1 attempt/disposition contract（2026-09-15）
+
+> 交付物 = `src/attempt/` 三個純模組 + `meta.validity.pauseOccurred` additive 欄位。**不接線**：`main.ts`、SimLoop、input、UI、history 全部零 diff —— 本 task 只立契約，T2–T5 才接。
+
+### T1.1 交付檔案
+
+| 檔案 | 內容 | 測試數 |
+|---|---|---|
+| `src/attempt/recordingIntegrity.ts` | T0.5 凍結的 8 個 `RecordingIntegrityReason` 判準，純函式 `evaluateRecordingIntegrity()` | 39 |
+| `src/attempt/RunAttemptController.ts` | `PauseRuntimePhase` / `AttemptValidity` / `AttemptDisposition` + sticky 狀態機 + `finalize()` | 34 |
+| `src/attempt/architecture.test.ts` | 依賴邊界掃描（DoD 第 5 條） | 15 |
+| `src/data/metadata.ts` / `exportPayloadSchema.ts` | `validity.pauseOccurred` optional-in / required-out；`suspect` OR 納入 | +9 |
+
+### T1.2 四閘（全綠）
+
+| 閘 | 命令 | exit | 計數 | 對比 T0 基線 |
+|---|---|---|---|---|
+| typecheck | `npm run typecheck` | **0** | — | 同 |
+| build | `npm run build` | **0** | `✓ built in 2.21s` | 同（chunk >500 kB 為既有警告） |
+| 全量單元 | `npx vitest run` | **0** | **3483 passed / 2 skipped**；檔案 **276 / 1 skipped** | 3386 → 3483（**+97**：88 個 `src/attempt/` + 9 個 metadata/schema）；檔案 273 → 276 |
+| 回歸 | `npx vitest run tests/regression` | **0** | **324 passed**（33 files） | **逐數相同，零漂移** |
+
+### T1.3 對 README §2.1 的一處**刻意偏離**：fence 存 active time，不存 wall time（D-69-T1-1）
+
+README §2.1 把 `pause()` / `finishResumeCountdown()` 的參數寫成 `atWallMs`。**照字面做會讓 T0.5 的第 7 條判準產生偽陽性**，所以 T1 改存 active time，參數改名 `atActiveMs`。
+
+理由是機械的：`pause-fence-unclosed` 的判準之一是「有 tick／event 的戳記落在某個 pause 區間內」，而 tick/event 戳記是 **active time**。若 fence 存 wall time `[w1, w2]`（`w2 − w1` = 真實暫停牆鐘長度），resume 之後的 tick 其 active time 從 `w1` 繼續往前長 —— 於是**每一個 resume 後的 tick 都會落進 `[w1, w2]`**，一場正常的 pause→resume 會被自己的 validator 判成 discarded。
+
+存 active time 則相反：mapper 正確時 active time 在 pause 期間凍結 ⇒ `resumedAtMs === pausedAtMs`，fence 退化成一個點，**沒有任何戳記可能落在裡面**。這讓該檢查從「容差」升級成「凍結的機械證明」：
+
+- 正常情形 ⇒ 退化 fence ⇒ 恆放行（`RunAttemptController.test.ts` 的 `admits ticks straddling a degenerate fence`）。
+- **T2 若讓 active time 在 pause 期間偷跑** ⇒ fence 張開 ⇒ 被它吞掉的 tick 就是證據 ⇒ `discarded`（`discards when active time advanced during the pause (mapper leak)`）。
+
+⇒ 這條檢查同時是 **T2 的回歸偵測器**，在 T1 就先架好。`confirmLock(atWallMs)` 維持 wall time（純稽核，不參與時鐘語意）。
+
+### T1.4 canonical digest：D-69-T0-4 完全印證
+
+| 預測（T0.4） | 實測 |
+|---|---|
+| 只有帶 `meta.validity` 父物件的 **3 筆**會移動 | ✅ **恰好 3 筆**：`09_18_05` `e62c8b40f6d51fb4` → `be406f8793cc4c4e`、`09_24_18` `daa8782429b5904c` → `e725f627bce38982`、`09_37_24` `71814344e3dc42f7` → `0e8a86413b324c2d` |
+| 其餘 **5 筆**逐位不變 | ✅ 5 筆零變動（`validity` 缺席 ⇒ 鍵不存在 ⇒ 位元不動） |
+
+⇒ 這 5 筆不動正是「預設只落在這一個鍵、沒有污染任何既有欄位」的反證。`exportPayloadSchema.test.ts` 的表格註解已補上 WP-69 段落，並寫明**第 4 筆變紅 = 回頭修程式，不准改表**。
+
+### T1.5 Definition of Done 對帳
+
+- [x] Resume 無法把 `invalid-paused` 改回 `eligible-candidate`；只有 `restart()` 可以 —— 四條恢復路徑（`beginResume` / `confirmLock` / `finishResumeCountdown` / 重複 `pause`）各一個測試，外加一條窮舉所有 mutator 的測試
+- [x] 三態每一分支皆有正向 + 反證測試（`eligible-candidate` 4 / `invalid-retained` 4 / `discarded` 5）
+- [x] `pointerLockLost` 與 `pauseOccurred` 可分別解析；四種組合全數 round-trip（parser 與 `collectMeta` 各一組）
+- [x] pre-WP-69 payload 可讀（9 份 fixture 全綠 + optional-in 缺席測試）
+- [x] 模組依賴掃描證明零 DOM / Three / sim / `SharedState` / research / `node:*` import，且零 `Date.now()` / `Math.random()` / `performance.now()`（`architecture.test.ts`，`import.meta.glob('?raw')`，沿用 `src/scene/architecture.test.ts` 先例）
+
+### T1.6 Surprises
+
+1. **T0.5 的 fence 判準把「暫停中直接收工」判成 `discarded`。** pause 之後不 resume 就 finalize ⇒ pause/resume 次數不等 ⇒ `pause-fence-unclosed` ⇒ 無 payload。這是 T0 凍結判準的**正確**後果（實作時逐字照做，不放寬），但它對 FR-69.12「paused 時離開/切換 drill」是有產品後果的：pause 之前那段時間軸其實可證。已開 **OQ-69.4** 交 T4 決定。撰寫測試時我自己先踩到這個坑（原本預期 `invalid-retained`），紅燈是對的。
+2. **`Math.nextUp` 不是標準 JS。** 要證明 tick 軸真的 bit-exact（D-69-T0-2）得用 `Float64Array`/`BigUint64Array` 手動加 1 ULP。已封在 `recordingIntegrity.test.ts` 的 `nextUp()` helper。
+3. **`toEqual` 對 additive 欄位是硬性斷言。** 兩個 WP-65 的 `pointerLockLost` round-trip 測試因為 validity 從 5 鍵變 6 鍵而變紅 —— 與 digest 移動同源，都是 required-out 的預期成本，不是回歸。
+4. **T0.5 的語料計數可機械複驗**：9 份 fixture 合計 **13,262 ticks / 634 events**，與 T0 記錄逐數相同，已固化成測試（語料若被換掉會立刻紅）。

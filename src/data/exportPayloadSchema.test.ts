@@ -58,14 +58,20 @@ describe('parseExportPayload — existing research fixtures (8/8)', () => {
 // index-load and save paths, and both sides go through `parseExportPayload` first, so a re-saved
 // pre-WP-65 run hashes consistently. Python reads the raw on-disk JSON and never the canonical
 // form (C-D1), so `research/` is untouched.
+//
+// WP-69 / T1 — `meta.validity.pauseOccurred` is the *sixth* flag and follows the same optional-in /
+// required-out rule, so it moved the same three digests again and left the other five alone. T0
+// predicted exactly that (D-69-T0-4): the five `meta.validity`-less fixtures staying byte-identical
+// is the evidence the default landed on one key only. A **fourth** row going red here means the
+// default leaked somewhere it should not have — fix the parser, never this table.
 const CANONICAL_DIGEST_BEFORE_T5: ReadonlyMap<string, string> = new Map([
   ['counterstrafe_ad_v1-2026-08-05T08_03_45.617Z.json', '15c614402021931b'],
   ['counterstrafe_ad_v1-2026-08-05T09_39_06.031Z.json', '390d7578707f6ff9'],
   // ↓ 三筆帶 meta.validity 的 fixture，WP-65 / T5 後的新值（舊值依序為 a9555430873bfa89 /
   //   edb34bfc5b664f17 / d294238f1dc54df2）。
-  ['counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json', 'e62c8b40f6d51fb4'],
-  ['counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json', 'daa8782429b5904c'],
-  ['counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json', '71814344e3dc42f7'],
+  ['counterstrafe_ad_v1-2026-08-07T09_18_05.631Z.json', 'be406f8793cc4c4e'],
+  ['counterstrafe_ad_v1-2026-08-07T09_24_18.148Z.json', 'e725f627bce38982'],
+  ['counterstrafe_ad_v1-2026-08-07T09_37_24.351Z.json', '0e8a86413b324c2d'],
   ['synthetic_counterstrafe.json', 'c159f12f895ae5f3'],
   ['synthetic_counterstrafe_t1_long.json', '2790a5da578ab390'],
   ['synthetic_timeline.json', '6b48b2f23a70b6bf'],
@@ -467,23 +473,78 @@ describe('parseExportPayload — meta.validity.pointerLockLost (WP-65 / T5, D-65
     const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags, pointerLockLost: true } }) });
     const parsed = parseExportPayload(payload);
     if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
-    expect(parsed.payload.meta.validity).toEqual({ ...fourFlags, pointerLockLost: true });
+    // WP-69 / T1 added a sixth required-out flag, so the exact shape grew — `pointerLockLost` itself
+    // is unchanged, which is what this WP-65 test is about.
+    expect(parsed.payload.meta.validity).toEqual({ ...fourFlags, pointerLockLost: true, pauseOccurred: false });
 
     const canonical = JSON.parse(canonicalExportJSON(parsed.payload)) as { meta: { validity: unknown } };
-    expect(canonical.meta.validity).toEqual({ ...fourFlags, pointerLockLost: true });
+    expect(canonical.meta.validity).toEqual({ ...fourFlags, pointerLockLost: true, pauseOccurred: false });
   });
 
   it('parses a pre-WP-65 payload that omits the flag, defaulting it to false (optional-in)', () => {
     const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags } }) });
     const parsed = parseExportPayload(payload);
     if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
-    expect(parsed.payload.meta.validity).toEqual({ ...fourFlags, pointerLockLost: false });
+    expect(parsed.payload.meta.validity).toEqual({ ...fourFlags, pointerLockLost: false, pauseOccurred: false });
   });
 
   it('rejects a non-boolean flag (optional-in is not lenient-in)', () => {
     const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags, pointerLockLost: 'yes' } }) });
     const result = parseExportPayload(payload);
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('parseExportPayload — meta.validity.pauseOccurred (WP-69 / T1, FR-69.8/69.11)', () => {
+  const fourFlags = { corridorExceeded: false, perfFloor: false, recorderOverflow: false, bufferOverflow: false };
+
+  it('round-trips a payload that self-reports the pause', () => {
+    const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags, pauseOccurred: true } }) });
+    const parsed = parseExportPayload(payload);
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    expect(parsed.payload.meta.validity).toEqual({ ...fourFlags, pointerLockLost: false, pauseOccurred: true });
+
+    const canonical = JSON.parse(canonicalExportJSON(parsed.payload)) as { meta: { validity: unknown } };
+    expect(canonical.meta.validity).toEqual({ ...fourFlags, pointerLockLost: false, pauseOccurred: true });
+  });
+
+  it('parses a pre-WP-69 payload that omits the flag, defaulting it to false (optional-in)', () => {
+    const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags } }) });
+    const parsed = parseExportPayload(payload);
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    expect(parsed.payload.meta.validity?.pauseOccurred).toBe(false);
+  });
+
+  it('rejects a non-boolean flag (optional-in is not lenient-in)', () => {
+    const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags, pauseOccurred: 'yes' } }) });
+    const result = parseExportPayload(payload);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((error) => error.path === 'meta.validity.pauseOccurred')).toBe(true);
+  });
+
+  // FR-69.11 — two constructs, not one. A reader must be able to tell "the lock was lost" from
+  // "this attempt may not be adopted", so every combination has to survive the round trip.
+  it('keeps pointerLockLost and pauseOccurred independently addressable', () => {
+    const combinations = [
+      { pointerLockLost: false, pauseOccurred: false },
+      { pointerLockLost: true, pauseOccurred: false },
+      { pointerLockLost: false, pauseOccurred: true },
+      { pointerLockLost: true, pauseOccurred: true },
+    ] as const;
+    for (const combination of combinations) {
+      const payload = minimalPayload({ meta: minimalMeta({ validity: { ...fourFlags, ...combination } }) });
+      const parsed = parseExportPayload(payload);
+      if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+      expect(parsed.payload.meta.validity).toEqual({ ...fourFlags, ...combination });
+    }
+  });
+
+  it('leaves meta.validity absent when the payload has none (no phantom block)', () => {
+    const parsed = parseExportPayload(minimalPayload({ meta: minimalMeta({}) }));
+    if (!parsed.ok) throw new Error(`expected ok, got errors: ${JSON.stringify(parsed.errors)}`);
+    expect(parsed.payload.meta.validity).toBeUndefined();
+    expect('validity' in parsed.payload.meta).toBe(false);
   });
 });
 

@@ -3,7 +3,7 @@
 | 狀態 | Task | 交付 | 相依 | 風險 |
 |---|---|---|---|---|
 | ✅ | **T0** Entry gate | [T0-entry-gate.md](T0-entry-gate.md) | — | High |
-| ⬜ | **T1** Attempt/disposition contract | [T1-attempt-disposition-contract.md](T1-attempt-disposition-contract.md) | T0 | High |
+| ✅ | **T1** Attempt/disposition contract | [T1-attempt-disposition-contract.md](T1-attempt-disposition-contract.md) | T0 | High |
 | ⬜ | **T2** Pausable active time | [T2-pausable-time-mapper.md](T2-pausable-time-mapper.md) | T1 | High |
 | ⬜ | **T3** Input/Pointer Lock/UI | [T3-input-pointer-lock-overlay.md](T3-input-pointer-lock-overlay.md) | T2 | High |
 | ⬜ | **T4** Finalization/persistence | [T4-finalization-persistence-gate.md](T4-finalization-persistence-gate.md) | T1–T3 | High |

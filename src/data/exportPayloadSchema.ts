@@ -567,16 +567,24 @@ function parseValidity(value: unknown, path: string, errors: ExportPayloadParseE
     record.pointerLockLost === undefined
       ? false
       : parseBoolean(record.pointerLockLost, `${path}.pointerLockLost`, errors);
+  // WP-69 / T1（FR-69.8/69.11）— 同一條 optional-in / required-out 規則。`pauseOccurred` 與
+  // `pointerLockLost` 各自獨立解析：錄製中掉鎖的新資料兩者皆 true，但舊資料只有後者，而未來也可能
+  // 有「沒掉鎖卻 pause」的來源，所以**不得**從其中一個推導另一個。
+  const pauseOccurred =
+    record.pauseOccurred === undefined
+      ? false
+      : parseBoolean(record.pauseOccurred, `${path}.pauseOccurred`, errors);
   if (
     corridorExceeded === undefined ||
     perfFloor === undefined ||
     recorderOverflow === undefined ||
     bufferOverflow === undefined ||
-    pointerLockLost === undefined
+    pointerLockLost === undefined ||
+    pauseOccurred === undefined
   ) {
     return undefined;
   }
-  return { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow, pointerLockLost };
+  return { corridorExceeded, perfFloor, recorderOverflow, bufferOverflow, pointerLockLost, pauseOccurred };
 }
 
 function parseWeaponMeta(value: unknown, path: string, errors: ExportPayloadParseError[]): WeaponMeta | undefined {

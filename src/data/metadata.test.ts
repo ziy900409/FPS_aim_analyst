@@ -796,6 +796,8 @@ describe('collectMeta', () => {
       // WP-65 / T5（D-65-3）— optional-in：輸入缺欄，輸出補 false。這一條同時是「既存 payload
       // 零修改仍可被 collectMeta 接受」的向後相容證據。
       pointerLockLost: false,
+      // WP-69 / T1：第六欄走同一條規則。
+      pauseOccurred: false,
     });
     // NFR-S1-2b:validity.corridorExceeded 為 true 不得單獨把 suspect 拉成 true。
     expect(meta.suspect).toBe(false);
@@ -843,6 +845,102 @@ describe('collectMeta', () => {
 
     // 一個每場都亮的旗標等於沒有旗標(FM-3):乾淨的一場必須是 false。
     expect(meta.suspect).toBe(false);
+  });
+
+  // ── WP-69 / T1（FR-69.8/69.11，§2.6）──────────────────────────────
+  it('folds validity.pauseOccurred into meta.suspect (§2.6)', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      validity: {
+        corridorExceeded: false,
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: false,
+        pauseOccurred: true,
+      },
+    });
+
+    expect(meta.validity?.pauseOccurred).toBe(true);
+    expect(meta.suspect).toBe(true);
+  });
+
+  // FR-69.11 — 兩個構念，不是同義詞。錄製中掉鎖會讓兩者同時為 true，但實作上不得從
+  // 其中一個推導另一個：舊 payload 只有前者，而 pause 也可能來自不掉鎖的來源。
+  it('keeps pointerLockLost and pauseOccurred as two constructs (FR-69.11)', () => {
+    const base = {
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+    } as const;
+    const fourFlags = {
+      corridorExceeded: false,
+      perfFloor: false,
+      recorderOverflow: false,
+      bufferOverflow: false,
+    } as const;
+
+    const both = collectMeta({ ...base, validity: { ...fourFlags, pointerLockLost: true, pauseOccurred: true } });
+    expect(both.validity?.pointerLockLost).toBe(true);
+    expect(both.validity?.pauseOccurred).toBe(true);
+
+    // 掉鎖但未 pause（例：本 WP 落地前的舊資料）—— pause 旗標不得被推出來。
+    const lockOnly = collectMeta({ ...base, validity: { ...fourFlags, pointerLockLost: true } });
+    expect(lockOnly.validity?.pointerLockLost).toBe(true);
+    expect(lockOnly.validity?.pauseOccurred).toBe(false);
+
+    // pause 但未掉鎖——反方向同樣不得被推導。
+    const pauseOnly = collectMeta({ ...base, validity: { ...fourFlags, pauseOccurred: true } });
+    expect(pauseOnly.validity?.pointerLockLost).toBe(false);
+    expect(pauseOnly.validity?.pauseOccurred).toBe(true);
+  });
+
+  it('leaves meta.suspect false when pauseOccurred is false and nothing else is flagged', () => {
+    const meta = collectMeta({
+      drillId: 'counterstrafe_ad_v1',
+      backend: 'webgpu',
+      displayHz: 144,
+      sensitivity: 1,
+      crossOriginIsolated: true,
+      startedAt: '2026-07-02T10:00:00.000Z',
+      validity: {
+        corridorExceeded: false,
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: false,
+        pointerLockLost: false,
+        pauseOccurred: false,
+      },
+    });
+
+    expect(meta.suspect).toBe(false);
+  });
+
+  it('rejects a non-boolean validity.pauseOccurred (optional-in is not lenient-in)', () => {
+    expect(() =>
+      collectMeta({
+        drillId: 'counterstrafe_ad_v1',
+        backend: 'webgpu',
+        displayHz: 144,
+        sensitivity: 1,
+        crossOriginIsolated: true,
+        startedAt: '2026-07-02T10:00:00.000Z',
+        validity: {
+          corridorExceeded: false,
+          perfFloor: false,
+          recorderOverflow: false,
+          bufferOverflow: false,
+          pauseOccurred: 'yes' as unknown as boolean,
+        },
+      }),
+    ).toThrow('validity.pauseOccurred must be a boolean');
   });
 
   it('rejects a non-boolean validity.pointerLockLost (optional-in is not lenient-in)', () => {

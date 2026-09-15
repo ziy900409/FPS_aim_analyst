@@ -130,7 +130,14 @@ describe('qualityFlagsForPayload', () => {
     const base = makeAssessmentPayload();
     const payload: ExportPayload = {
       ...base,
-      meta: { ...base.meta, validity: { corridorExceeded: true, perfFloor: false, recorderOverflow: false, bufferOverflow: false, pointerLockLost: false } },
+      meta: { ...base.meta, validity: {
+          corridorExceeded: true,
+          perfFloor: false,
+          recorderOverflow: false,
+          bufferOverflow: false,
+          pointerLockLost: false,
+          pauseOccurred: false,
+        } },
     };
     expect(qualityFlagsForPayload(payload).validity).toEqual({ corridorExceeded: true, perfFloor: false });
   });
