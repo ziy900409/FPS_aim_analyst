@@ -127,6 +127,10 @@
     "mtime": 1789024446.5970848,
     "hash": "eb45e2fb46184736758010a845e62a0d"
   },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\ingest\\algorithms\\tests\\test_loader_invalid_paused.py": {
+    "mtime": 1789470077.6519284,
+    "hash": "15038fbdc82b07319da5eb4c559dbb20"
+  },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\research\\src\\modules\\ingest\\algorithms\\tests\\test_loader_key_events.py": {
     "mtime": 1786003419.2507095,
     "hash": "8e522d69b5a52e1a84a362a99bbdeede"
@@ -632,16 +636,24 @@
     "hash": "943047ccc70f3c555b658196f6e96c57"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\main.ts": {
-    "mtime": 1789468471.1164095,
-    "hash": "5b22a5180f71aa37446ea3e7588a2819"
+    "mtime": 1789470174.4465666,
+    "hash": "f00512b105d136d1c244ed0bf6bd427b"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\vite-env.d.ts": {
     "mtime": 1782985917.6295617,
     "hash": "8f68c27c3fc38817b2726b20e2d4f1ee"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\architecture.test.ts": {
-    "mtime": 1789465492.8715954,
-    "hash": "d781822743f145436cc564d430bee287"
+    "mtime": 1789469527.262894,
+    "hash": "1565764f45f66a7c90b6c0357bcf6584"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\AttemptFinalizationGate.test.ts": {
+    "mtime": 1789469525.3151538,
+    "hash": "ac0343a4454c6bd8a37620d249844cf5"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\AttemptFinalizationGate.ts": {
+    "mtime": 1789470187.1148756,
+    "hash": "f4f1f70f585dfe003494ee455e815a72"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\recordingIntegrity.test.ts": {
     "mtime": 1789465375.38735,
@@ -658,6 +670,10 @@
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\RunAttemptController.ts": {
     "mtime": 1789465436.396594,
     "hash": "e65c0ce5e4dad9e1cfb00f58b81053e8"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\__tests__\\wp69-finalization.test.ts": {
+    "mtime": 1789470270.8636281,
+    "hash": "b3ed218bf7f4cf5cb5266d796f905cdb"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\__tests__\\wp69-pause-lifecycle.test.ts": {
     "mtime": 1789468459.232284,
@@ -1108,12 +1124,12 @@
     "hash": "3301fbd5fff9410c879d75986a1ffd09"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\history\\HistoryPersistence.test.ts": {
-    "mtime": 1788901749.9673393,
-    "hash": "8c0580f20742587fbdb22ca560c5d792"
+    "mtime": 1789469710.334513,
+    "hash": "c691a6d9d705cf94c3b6cacb40649e6b"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\history\\HistoryPersistence.ts": {
-    "mtime": 1787829498.8903224,
-    "hash": "3262b0b372c74b9787d56411308a151c"
+    "mtime": 1789470178.63956,
+    "hash": "9a2b90fa78d3c75dd159b0b4db5c4cd3"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\history\\HistoryTrend.test.ts": {
     "mtime": 1788901606.2000976,
@@ -2200,8 +2216,8 @@
     "hash": "334fe641e6908ae17a7e17ad32cb69ed"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\HistorySaveStatus.ts": {
-    "mtime": 1787830955.6879473,
-    "hash": "634ba9ee29e234ef162daf3c8d69f2bc"
+    "mtime": 1789469547.5693405,
+    "hash": "73587c1977080ccb20c5d2d851ec9624"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\HUD.test.ts": {
     "mtime": 1789124946.9072127,
@@ -2212,12 +2228,12 @@
     "hash": "ab1b6bee66f656ca4ba957a7658e695d"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\PauseOverlay.test.ts": {
-    "mtime": 1789468820.126081,
-    "hash": "c033b74307b84301a3345bb925a492ef"
+    "mtime": 1789469602.597335,
+    "hash": "4ab096a2f8a9e16dcc79350dd2ed2d21"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\PauseOverlay.ts": {
-    "mtime": 1789468820.1227744,
-    "hash": "5527e1184d183af070638207d7ae8431"
+    "mtime": 1789469587.4594653,
+    "hash": "bc9bb056dce9c9b736ce3858affc4573"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\programBoundaryLabel.ts": {
     "mtime": 1788896233.1265688,
@@ -2248,12 +2264,12 @@
     "hash": "5b2db8e9a0e8478bc4820b97e536fe7e"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\ResultScreen.test.ts": {
-    "mtime": 1789126427.3905742,
-    "hash": "8c959c5156cb685f9f38816ad1bdee92"
+    "mtime": 1789469735.7526846,
+    "hash": "60c5aa5800c36baae6119d55103277cf"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\ResultScreen.ts": {
-    "mtime": 1789126131.21478,
-    "hash": "56106e1208e5b66d8fd52917893ed4c6"
+    "mtime": 1789470191.2096696,
+    "hash": "1c8334c9005951ce5455712464b64d74"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\ui\\ScopeOverlay.test.ts": {
     "mtime": 1783934680.3468332,
@@ -3824,12 +3840,12 @@
     "hash": "a6b0ee75121e3be0c4843be7b66ea04f"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\progress.md": {
-    "mtime": 1789468955.4168353,
-    "hash": "fe0b901ecf6567ac70aca0c3812c8dff"
+    "mtime": 1789470569.9780788,
+    "hash": "6b5b6b989d0673c5cbb82223e19b391e"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\README.md": {
-    "mtime": 1789468716.5265772,
-    "hash": "e67f34704e64e74961092d860fdf092a"
+    "mtime": 1789470575.3650184,
+    "hash": "81f059d72bb9a1d5c439029632fbd166"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T-exit-gate.md": {
     "mtime": 1789462523.1586328,
@@ -3852,8 +3868,8 @@
     "hash": "4340c74a64f9e7dcdee8d48816a0338d"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T4-finalization-persistence-gate.md": {
-    "mtime": 1789462519.3376367,
-    "hash": "439d1fea31aec23572b8037ce814fecc"
+    "mtime": 1789470579.975492,
+    "hash": "aa661ed22ddc54315b25f618da04ca3e"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T5-orchestrator-retry.md": {
     "mtime": 1789462520.6367438,
@@ -3864,8 +3880,8 @@
     "hash": "abed7793c32682fdfd4e44a0411d052f"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\task-checklist.md": {
-    "mtime": 1789468716.522411,
-    "hash": "67a96fde49100c43bfdf71b19e23932b"
+    "mtime": 1789470575.3650184,
+    "hash": "b8cdc0c32cac0df65859d2266049e756"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage5\\wp-25-ballistics-tracer\\ENHANCEMENT-tracer-pertick-replay.md": {
     "mtime": 1785827798.6873362,
