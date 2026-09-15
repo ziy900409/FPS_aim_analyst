@@ -536,11 +536,14 @@ describe('WP-69 T4 — main.ts 的 finalization 接線沒有漂移', () => {
     const start = source.indexOf('function resetRunPresentation()');
     expect(start).toBeGreaterThan(-1);
     const body = source.slice(start, source.indexOf('\n}', start));
-    const finalizeAt = body.indexOf('if (runAttempt.pauseOccurred) finalizeAttempt();');
+    const finalizeAt = body.indexOf('runAttempt.pauseOccurred && finalizedPlan === undefined');
+    const holdAt = body.indexOf('holdOrchestratorsOnAttempt(plan)');
     const restartAt = body.indexOf('runAttempt.restart()');
     expect(finalizeAt).toBeGreaterThan(-1);
+    expect(holdAt).toBeGreaterThan(-1);
     expect(restartAt).toBeGreaterThan(-1);
-    expect(finalizeAt).toBeLessThan(restartAt);
+    expect(finalizeAt).toBeLessThan(holdAt);
+    expect(holdAt).toBeLessThan(restartAt);
     expect(body).toContain('finalizedPlan = undefined');
   });
 

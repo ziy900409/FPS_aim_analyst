@@ -1740,7 +1740,13 @@ function resetRunPresentation(): void {
   // T4 **不**在導航前強迫 resume,也不放寬判準。理由是那一場根本沒有跑到 `ended`——它是被放棄的,
   // 不是被完成的,而「沒跑完」與「時間軸可證」是兩件事,後者成立不代表前者該被留成紀錄。
   // 代價明帳:暫停中直接換 drill 會連稽核檔都沒有。想留稽核檔的操作員必須先「繼續」把這一場跑完。
-  if (runAttempt.pauseOccurred) finalizeAttempt();
+  if (runAttempt.pauseOccurred && finalizedPlan === undefined) {
+    const plan = finalizeAttempt();
+    // A paused attempt abandoned through Restart / drill / scene / weapon navigation never reaches
+    // `liveFrame()`'s ended branch. Record the same orchestrator hold here before the attempt state
+    // is erased; the memo guard prevents an invalid run that already ended from being audited twice.
+    if (!plan.advancesOrchestrator) holdOrchestratorsOnAttempt(plan);
+  }
   // 結算結果只活到這一行為止（新 attempt 要重新判一次）。作廢告知同理:Restart 就是它的出口。
   finalizedPlan = undefined;
   discardedNoticeView = undefined;

@@ -117,7 +117,10 @@ function createRetryRig(): RetryRig {
    * *later* held attempt quietly inherit the *earlier* clean attempt's plan.
    */
   function resetRunPresentation(): void {
-    if (runAttempt.pauseOccurred) finalizedPlan ??= gate.decide(cleanSnapshot());
+    if (runAttempt.pauseOccurred && finalizedPlan === undefined) {
+      const plan = (finalizedPlan ??= gate.decide(cleanSnapshot()));
+      if (!plan.advancesOrchestrator) hold(plan);
+    }
     finalizedPlan = undefined;
     runAttempt.restart();
   }
@@ -244,6 +247,19 @@ describe('WP-69 T5 — SessionRunner 停在同一 step（FR-69.10，T5 DoD 第 1
     expect(rig.sessionDownloads).toHaveLength(1);
   });
 
+  it('paused 時直接 Restart 仍 hold 同一個 step，且不下載', async () => {
+    const rig = createRetryRig();
+    await startSession(rig);
+    const held = rig.session.phase;
+
+    pauseWithoutResuming(rig);
+    rig.restart();
+
+    expect(rig.session.phase).toEqual(held);
+    expect(rig.sessionDownloads).toEqual([]);
+    expect(rig.status()).toContain('重新測試');
+  });
+
   it('full restart 之後同一個 step 重跑，attempt +1、drill 不變（FR-69.6，T5 DoD 第 2 條）', async () => {
     const rig = createRetryRig();
     await startSession(rig);
@@ -329,6 +345,19 @@ describe('WP-69 T5 — ProtocolRunner 停在同一 condition（FR-69.10）', () 
 
     expect(rig.protocol.exports).toHaveLength(1);
   });
+
+  it('paused 時直接 Restart 仍 hold 同一個 condition，且 exports[] 不長', async () => {
+    const rig = createRetryRig();
+    await rig.protocol.start();
+    const held = rig.protocol.current;
+
+    pauseWithoutResuming(rig);
+    rig.restart();
+
+    expect(rig.protocol.current).toEqual(held);
+    expect(rig.protocol.exports).toEqual([]);
+    expect(rig.status()).toContain('重新測試');
+  });
 });
 
 describe('WP-69 T5 — TrackingPilotRunner 重跑同一 block（README §2.5，T5 DoD 第 4 條）', () => {
@@ -381,6 +410,36 @@ describe('WP-69 T5 — TrackingPilotRunner 重跑同一 block（README §2.5，T
     expect(rig.status()).toContain('已失效');
     expect(rig.status()).not.toContain('重新測試本項');
   });
+
+  it('paused 時直接 Restart 仍先 audit discarded，且同一 block 只增加一次 attempt', async () => {
+    const rig = createRetryRig();
+    await rig.pilot.start(smallManifest());
+
+    pauseWithoutResuming(rig);
+    rig.restart();
+
+    expect(rig.pilot.phase).toMatchObject({ kind: 'running', blockIndex: 0, attempt: 2 });
+    expect(rig.pilot.records).toEqual([]);
+    expect(rig.pilot.invalidAttempts).toEqual([
+      expect.objectContaining({
+        blockIndex: 0,
+        previousAttempt: 1,
+        disposition: { kind: 'discarded', reason: 'pause-fence-unclosed' },
+      }),
+    ]);
+  });
+
+  it('ended invalid attempt 已 hold 後再 Restart 不會重複 audit', async () => {
+    const rig = createRetryRig();
+    await rig.pilot.start(smallManifest());
+
+    pauseAndResume(rig);
+    await rig.endDrill('pilot');
+    rig.restart();
+
+    expect(rig.pilot.phase).toMatchObject({ kind: 'running', blockIndex: 0, attempt: 2 });
+    expect(rig.pilot.invalidAttempts).toHaveLength(1);
+  });
 });
 
 describe('WP-69 T5 — 沒有 orchestrator 在跑時完全靜默（NFR-69.1）', () => {
@@ -430,6 +489,20 @@ describe('WP-69 T5 — main.ts 的 orchestrator hold 接線沒有漂移', () => 
     expect(holdAt).toBeGreaterThan(-1);
     expect(awaitAt).toBeGreaterThan(-1);
     expect(holdAt).toBeLessThan(awaitAt);
+  });
+
+  it('paused navigation 在 restart 清狀態前先 hold，且 finalized memo 防止 ended 後重複 audit', () => {
+    const start = source.indexOf('function resetRunPresentation()');
+    expect(start).toBeGreaterThan(-1);
+    const body = source.slice(start, source.indexOf('\n}', start));
+    const memoGuardAt = body.indexOf('runAttempt.pauseOccurred && finalizedPlan === undefined');
+    const holdAt = body.indexOf('holdOrchestratorsOnAttempt(plan)');
+    const restartAt = body.indexOf('runAttempt.restart()');
+    expect(memoGuardAt).toBeGreaterThan(-1);
+    expect(holdAt).toBeGreaterThan(-1);
+    expect(restartAt).toBeGreaterThan(-1);
+    expect(memoGuardAt).toBeLessThan(holdAt);
+    expect(holdAt).toBeLessThan(restartAt);
   });
 
   it('hold 只讀 plan：不從 meta.suspect／pointerLockLost 重算 disposition（C-D4）', () => {
