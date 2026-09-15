@@ -2,11 +2,11 @@
 
 ## Snapshot
 
-- **Status**: T0 / T1 / T2 / T3 complete (2026-09-15); T4 is next.
+- **Status**: T0 / T1 / T2 / T3 / T4 complete (2026-09-15); T5 is next.
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **Next**: T4 condition recovery entry point. T3 completed by rendering the suspect banner from `sharedState.validity.fullscreenExitedDuringRun`.
-  Production no longer drives the banner from sticky `experimentSession.suspect`; `onSuspect` is only a deduplicated notification hook.
+- **Next**: T5 gate e2e guard. T4 added a condition recovery screen that reacquires fullscreen, reruns all three gate checks, and only restarts the active drill after recovery succeeds.
+  The recovery path does not call Session Plan / protocol start or advance/export/history paths.
 - **來源**：[KI-040](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)
 - **決策**：`GD-47`（預約，T0 重查）
 
@@ -48,7 +48,7 @@
 | T1 | ✅ | 2026-09-15。四閘全綠（typecheck／build exit 0、Vitest **3725 passed／2 skipped**、regression **324** 與 baseline 逐數相同）；新增 **16** 個測試（`src/data/wp70-run-scoped-fullscreen.test.ts`），改動前**全 16 紅**；canonical digest **實際移動 3 筆**，與 D-70-T0-3 預測逐筆吻合、第 4 筆未出現；OQ-70.2 已關閉。見 [§T1](#t1-per-run-fullscreen-旗標2026-09-15) |
 | T2 | ✅ | 2026-09-15。production diff = **一行**（+ 註解）；四閘全綠（typecheck／build exit 0、Vitest **3737 passed／2 skipped**、regression **324** 與 baseline 逐數相同）；新增 **12** 個測試（`src/display/wp70-protocol-recording-window.test.ts`），**既有測試期望值變動 = 0**（逐條理由見 §T2.4）。見 [§T2](#t2-protocol-路徑補上錄製窗判準2026-09-15) |
 | T3 | done | 2026-09-15 - banner now renders from the per-run fullscreen flag, not sticky `experimentSession.suspect`; Restart/full-reset path syncs the banner after `runAttempt.restart()`. Verification: `npm.cmd run typecheck` exit 0; focused `npx.cmd vitest run src/ui/EligibilityGate.test.ts src/data/wp70-run-scoped-fullscreen.test.ts src/display/wp70-protocol-recording-window.test.ts` = **37 passed**; full `npx.cmd vitest run` = **3741 passed / 2 skipped**; `npm.cmd run build` exit 0 after rerun outside sandbox (initial Vite temp write hit EPERM); `npm.cmd run graph:update` exit 0 after rerun outside sandbox (initial graphify write hit EPERM). |
-| T4 | ⬜ | — |
+| T4 | ✅ | 2026-09-15。新增 `ConditionRecoveryScreen`，由 pause overlay restart 進入；若本 run 沒有 fullscreen invalid flag，仍走既有 `restartActiveDrill()`。恢復 click stack 內同步呼叫 `requestFullscreen()`，成功後重跑 native/fullscreen/perf 三項 gate，pass 才以 `onRecovered` 呼叫 `restartActiveDrill()`；fullscreen rejected / gate failed 均不觸發 recovery callback。驗證：`npm.cmd run typecheck` exit 0；focused `npx.cmd vitest run src/ui/ConditionRecoveryScreen.test.ts src/ui/EligibilityGate.test.ts src/display/wp70-protocol-recording-window.test.ts` = **30 passed**；full `npx.cmd vitest run` = **287 files**, **3750 passed / 2 skipped**；`npm.cmd run build` exit 0 after rerun outside sandbox（initial Vite temp write hit EPERM）；`npm.cmd run graph:update` exit 0 after rerun outside sandbox（initial graphify write hit permission denied）。見 [§T4](#t4-condition-recovery-entry-point2026-09-15) |
 | T5 | ⬜ | — |
 | T6 | ⬜ | — |
 | T-exit | ⬜ | — |
@@ -72,6 +72,7 @@
 | **D-70-T2-1** | T2 的修法＝**在既有 handler 內多一個 `&& recording`**（沿用同一個 const），**不**把分派抽成可測模組。抽模組曾被認真評估（能讓成對測試直接吃 production 分派），但代價是：（a）動到剛落地、正在當防線用的 T1 source-scan 測試；（b）每次事件多配置一個 sink 物件；（c）超出 T2「protocol 路徑」的範圍——`recording` 判準在 `main.ts` 另有 4 個重算點（`:1484`／`:1894`／`:1913`／`:2132`），要抽就該一起抽，那是獨立的整併工作而非本 task | T2 採納（見 [§T2.2](#t22-為什麼是一行而不是抽一個-dispatcher)） |
 | **D-70-T2-2** | 成對行為測試以 **rig + parity pin 兩層**成立，並**明帳**其限制：rig 內 `onFullscreenChange()` 是 production 兩行的逐字副本 ⇒ **成對測試在改動前後皆綠**，red-before-green 的訊號由 **source-scan 承載**（改動前 12 個測試中 **2 紅**，改動後 **12 綠**）。parity 測試釘住「副本 ≡ 正本」，production 一漂移就紅（FM-70.5），成對測試的結論隨即失去授權 | T2 採納（見 [§T2.3](#t23-成對行為測試的效力與其限制明帳)） |
 | **D-70-T3-1** | The suspect banner is rendered from the run-scoped truth source `sharedState.validity.fullscreenExitedDuringRun` via `renderSuspectWarning(boolean)`. `experimentSession.onSuspect` remains only a deduplicated notification hook; production no longer calls `showSuspectWarning()` / `hideSuspectWarning()` directly from `main.ts`. Alternatives considered: keep imperative show/hide in `onSuspect`/`onEnter` (rejected because it preserves the sticky-session UI bug); call `renderSuspectWarning(false)` directly in each restart caller (rejected because `resetRunPresentation()` is the existing full-restart choke point). | T3 complete; guarded by `src/ui/EligibilityGate.test.ts` source scans and DOM node-count test. |
+| **D-70-T4-1** | The recovery entry intercepts only flagged fullscreen-invalid runs. `recoverActiveCondition()` preserves the WP-69 restart path for clean pauses, while flagged runs open `ConditionRecoveryScreen`; after the recovery gate passes, the only orchestrator action is the existing `restartActiveDrill()` callback. Alternatives considered: always gate every pause restart (rejected because it changes WP-69 clean-pause UX and adds unnecessary fullscreen work); reuse `EligibilityGateScreen.open()` (rejected because its `onEnter` can route to `startSessionPlan()` / `startProtocol()`, the exact FM-70.3 failure mode); add a runner method for "recover current condition" (rejected as unnecessary for T4 because full drill restart is already the documented recovery action). | T4 complete; guarded by `src/ui/ConditionRecoveryScreen.test.ts` behavior tests and source-scan guards. |
 
 ## Open Questions
 
@@ -604,3 +605,38 @@ T2 task 檔 step 3 要求「找出所有因此改變期望值的既有測試，�
 - [x] Full restart path syncs the banner after the run-scoped validity reset, so the next run does not inherit the old warning.
 - [x] No extra banner DOM node is created while toggling (`document.created` count pinned in `EligibilityGate.test.ts`).
 - [x] Source-scan confirms production no longer directly calls `showSuspectWarning()` / `hideSuspectWarning()` from `main.ts`.
+
+---
+
+## T4 condition recovery entry point (2026-09-15)
+
+**Summary**: Added a dedicated `ConditionRecoveryScreen` for fullscreen-invalid runs. The pause overlay restart action now opens this recovery screen only when `sharedState.validity.fullscreenExitedDuringRun` is true; clean pause restarts still use the existing WP-69 `restartActiveDrill()` path. Recovery reacquires fullscreen, reruns the same three gate checks (native / fullscreen / perf), and only then restarts the current drill.
+
+### T4.1 Production changes
+
+| File | Change |
+|---|---|
+| [`src/ui/ConditionRecoveryScreen.ts`](../../../../../src/ui/ConditionRecoveryScreen.ts) | New DOM overlay with `open({ onRecovered })`, `close()`, and `dispose()`. Its click handler calls `requestFullscreen()` before the first `await`, reruns `probeWarmupP95Ms()` + `runEligibilityGate()`, and calls `onRecovered(report)` only on pass. |
+| [`src/main.ts`](../../../../../src/main.ts) | Added `conditionRecoveryScreen` and `recoverActiveCondition()`. The pause overlay restart callback now routes through recovery for flagged fullscreen-invalid runs; successful recovery calls the existing `restartActiveDrill()` and does not call session/protocol start, advance, export, or history save paths. |
+
+### T4.2 Verification
+
+| Command | Result |
+|---|---|
+| `npm.cmd run typecheck` | exit 0 |
+| `npx.cmd vitest run src/ui/ConditionRecoveryScreen.test.ts src/ui/EligibilityGate.test.ts src/display/wp70-protocol-recording-window.test.ts` | exit 0; **30 passed** |
+| `npx.cmd vitest run` | exit 0; **287 files**, **3750 passed / 2 skipped** |
+| `npm.cmd run build` | exit 0 after rerun outside sandbox; first run failed at Vite temp-config write with `EPERM` |
+| `npm.cmd run graph:update` | exit 0 after rerun outside sandbox; first run failed writing `graphify-out/.graphify_root` with permission denied |
+
+### T4.3 DoD
+
+- [x] `npx vitest run` exit 0.
+- [x] Rejected fullscreen request and failed gate both leave the recovery callback uncalled; by construction this means no restart / advance / export / save path runs.
+- [x] Passing recovery calls `onRecovered(report)` and the production callback is `restartActiveDrill()` only.
+- [x] Source-scan pins `requestFullscreen()` before the first `await` in the recovery click path (FM-70.4).
+- [x] Source-scan confirms `ConditionRecoveryScreen` does not reference `startSessionPlan`, `startProtocol`, `sessionPlanRunner`, `downloadJSON`, or `historyPersistence` (FM-70.3).
+- [x] Source-scan confirms `recoverActiveCondition()` does not call `sessionPlanRunner.start()`, `sessionPlanRunner.advance()`, `completeCurrentCondition()`, `downloadJSON`, or `historyPersistence.save()` (FR-70.10 / NFR-70.5).
+- [x] DOM node-count test confirms open/retry reuses mounted nodes and does not create nodes during state changes (NFR-70.4).
+- [x] OQ-70.3 remains closed by D-70-T0-5: recovery reruns all three checks through `runEligibilityGate()`.
+- [x] FR-70.11 preserved: clean pause restart still uses the WP-69 restart path; fullscreen-invalid pause restart first performs condition recovery, then uses the same restart path.

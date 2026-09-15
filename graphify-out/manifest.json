@@ -636,8 +636,8 @@
     "hash": "ef6590f94626e205fed3cffa0cb39e9a"
   },
   "D:\\git\\FPS_aim_analyst\\src\\main.ts": {
-    "mtime": 1789499193.0740323,
-    "hash": "eab26b7279c86c796e453c7518a59db0"
+    "mtime": 1789500151.4324224,
+    "hash": "d0a597d7837d53f686452860d7e5ced1"
   },
   "D:\\git\\FPS_aim_analyst\\src\\vite-env.d.ts": {
     "mtime": 1783376868.0886695,
@@ -2182,6 +2182,14 @@
   "D:\\git\\FPS_aim_analyst\\src\\testharness\\fpsTestHarness.ts": {
     "mtime": 1789401054.0374217,
     "hash": "0f0db4fbbb355a38d2bd97f356f2d043"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\ui\\ConditionRecoveryScreen.test.ts": {
+    "mtime": 1789500206.9749415,
+    "hash": "f49734faf480749215eeab7ffca669ba"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\ui\\ConditionRecoveryScreen.ts": {
+    "mtime": 1789500139.0781815,
+    "hash": "b25dbeaabcfb3f55745a8226cf2bfbf7"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\Controls.test.ts": {
     "mtime": 1788549832.2174892,
@@ -3904,8 +3912,8 @@
     "hash": "4e50b9b5f89ac7bffcf2668553a7b553"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\progress.md": {
-    "mtime": 1789493048.4704678,
-    "hash": "455456275dd4c461d9dff1522aaa4ef0"
+    "mtime": 1789499541.3747497,
+    "hash": "ed49093f131b5b4557e6bd6b0191c88e"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\README.md": {
     "mtime": 1789490988.091839,

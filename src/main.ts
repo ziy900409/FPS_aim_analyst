@@ -48,6 +48,7 @@ import { createExperimentSession } from './display/experimentSession.ts';
 import { PERF_FLOOR_MS, SESSION_PLAN_MIN_CONDITION } from './display/constants.ts';
 import { createFrameLog, frameLogCapacity } from './display/frameLog.ts';
 import { createEligibilityGateScreen } from './ui/EligibilityGate.ts';
+import { createConditionRecoveryScreen } from './ui/ConditionRecoveryScreen.ts';
 import {
   createSessionSetupForm,
   displaySelfReportFromSessionSetup,
@@ -649,6 +650,23 @@ const eligibilityGateScreen = createEligibilityGateScreen({
     else if (requestedMode === 'session-plan') void startSessionPlan();
   },
 });
+const conditionRecoveryScreen = createConditionRecoveryScreen({
+  required: () =>
+    activeSessionPlanSelection === undefined
+      ? resolutionDetectionProtocol.requiredDisplay
+      : SESSION_PLAN_MIN_CONDITION,
+  requestFullscreen: () => document.documentElement.requestFullscreen(),
+  probeWarmupP95Ms: () => probeWarmupP95Ms(),
+});
+function recoverActiveCondition(): void {
+  if (!sharedState.validity.fullscreenExitedDuringRun) {
+    restartActiveDrill();
+    return;
+  }
+  conditionRecoveryScreen.open({
+    onRecovered: () => restartActiveDrill(),
+  });
+}
 const sessionPlanSetup = createSessionPlanSetup({
   // WP-52 T2: widened beyond the frozen four-family TEST_FAMILY_IDS so operators can freely
   // include 'peek-click-transfer' in a Session Plan — same single-source allowlist KI-016 fixed
@@ -1309,7 +1327,7 @@ const pauseOverlay = createPauseOverlay({
   // 兩個回撥都必須**同步**執行到底：Resume 的 `requestPointerLock()` 只在這一次 click 的 user
   // gesture stack 內才會被瀏覽器接受（FM-4）。任何 `await`／`setTimeout` 跳板都會讓取鎖靜默失敗。
   onResume: () => requestResume(),
-  onRestart: () => restartActiveDrill(),
+  onRestart: () => recoverActiveCondition(),
 });
 
 /**
