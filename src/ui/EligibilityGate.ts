@@ -30,6 +30,7 @@ export interface EligibilityGateScreenHandle {
   /** session 進行中退出 fullscreen → 顯示警示條（failure mode）。 */
   showSuspectWarning(): void;
   hideSuspectWarning(): void;
+  renderSuspectWarning(suspect: boolean): void;
   dispose(): void;
 }
 
@@ -145,16 +146,21 @@ export function createEligibilityGateScreen(
     open,
     close,
     showSuspectWarning(): void {
-      suspectBanner.style.display = 'block';
+      renderSuspectWarning(true);
     },
     hideSuspectWarning(): void {
-      suspectBanner.style.display = 'none';
+      renderSuspectWarning(false);
     },
+    renderSuspectWarning,
     dispose(): void {
       root.remove();
       suspectBanner.remove();
     },
   };
+
+  function renderSuspectWarning(suspect: boolean): void {
+    suspectBanner.style.display = suspect ? 'block' : 'none';
+  }
 }
 
 function mark(pass: boolean): string {

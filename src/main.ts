@@ -591,8 +591,11 @@ const scopeOverlay = createScopeOverlay();
 // （防 FHD 面板混入 QHD 條件）。session 進行中退出 fullscreen → 標 suspect（純觀測,OR 進匯出 meta,
 // 不中斷 drill）;gate 全量進 meta.display.gate 供事後審查。protocol 排程本體歸 WP-22 T2（此為最小落地）。
 const experimentSession = createExperimentSession({
-  onSuspect: () => eligibilityGateScreen.showSuspectWarning(),
+  onSuspect: () => syncFullscreenSuspectWarning(),
 });
+function syncFullscreenSuspectWarning(): void {
+  eligibilityGateScreen.renderSuspectWarning(sharedState.validity.fullscreenExitedDuringRun);
+}
 let pendingSessionSetupValues: SessionSetupValues | undefined;
 let sessionSetupValues: SessionSetupValues | undefined;
 let pendingSessionPlanSelection: SessionPlanSelection | undefined;
@@ -639,7 +642,7 @@ const eligibilityGateScreen = createEligibilityGateScreen({
       sessionSetupValues = pendingSessionSetupValues;
       pendingSessionSetupValues = undefined;
     }
-    eligibilityGateScreen.hideSuspectWarning();
+    syncFullscreenSuspectWarning();
     experimentSession.enter(report);
     if (requestedMode === 'resolution-protocol') void startResolutionProtocol();
     else if (requestedMode === 'br-tracking-protocol') void startBrTrackingProtocol();
@@ -671,7 +674,6 @@ document.addEventListener('fullscreenchange', () => {
   // （drill 之間,單一「實驗 session」流程不會為此呼叫 experimentSession.exit()）與 ended（已收工,
   // 準備匯出)退出全螢幕不算,避免把「錄完正常退出全螢幕去抓匯出檔」誤判為錄製中途失效。
   const recording = drillRunner.phase === 'countdown' || drillRunner.phase === 'running';
-  experimentSession.handleFullscreenChange(fullscreen, recording);
   // WP-70 / T1（FR-70.1）— 匯出的 fullscreen suspect 成分的**唯一**真值來源。沿用上面算好的
   // `recording`，不另開第二套判準（C-D4：KI-007 的錄製窗定義只能有一個）。
   //
@@ -682,6 +684,8 @@ document.addEventListener('fullscreenchange', () => {
   // 錄製中掉出全螢幕這件事與有沒有跑正式實驗流程無關，欄位叫 `fullscreenExited` 就不該在某些
   // 模式下對著已發生的退出回報 false。實務差異接近零——只有資格閘會進 Element fullscreen。
   if (!fullscreen && recording) sharedState.validity.fullscreenExitedDuringRun = true;
+  experimentSession.handleFullscreenChange(fullscreen, recording);
+  syncFullscreenSuspectWarning();
   // WP-70 / T2（FR-70.5）— protocol 路徑補上**同一個** `recording` 閘。在此之前這一行不看
   // `recording`，所以 drill 之間（`idle`）與收工後（`ended`）退出全螢幕也會把 protocol 的當前
   // condition 標成 suspect —— 正是 KI-007 引入錄製窗判準要避免的誤判，只是當初沒套到這條路徑。
@@ -1844,6 +1848,7 @@ function resetRunPresentation(): void {
   // 這是四條 full-restart 路徑（restart / 換武器 / 換 drill / 換場景）的共同點，也是 sticky
   // `invalid-paused` 唯一的出口：`restart()` 之外沒有任何 mutator 能把 validity 走回來（FR-69.2）。
   runAttempt.restart();
+  syncFullscreenSuspectWarning();
   resumeCountdownEndsAtWallMs = null;
   pauseErrorView = undefined;
   recorder.reset();
