@@ -1607,6 +1607,70 @@ if (import.meta.env.DEV) {
       pendingSessionPlanSelection = selection;
       await startSessionPlan();
     },
+    // WP-69 / T6 — the protocol counterpart of the Session Plan seam above. It still measures and
+    // records the genuine eligibility failure; only the automated environment's refusal is skipped
+    // so Playwright can exercise the live ProtocolRunner → attempt gate → retry lifecycle.
+    async startProtocolWithoutGate(participantId: string, protocol: 'resolution' | 'br'): Promise<void> {
+      const report = runEligibilityGate(resolutionDetectionProtocol.requiredDisplay, await probeWarmupP95Ms());
+      experimentSession.enter(report);
+      sessionSetupValues = { participantId };
+      await startProtocol(protocol === 'br' ? brTrackingProtocolRunner : resolutionProtocolRunner);
+    },
+    /** WP-69 / T6 — read-only live state used to assert the production wiring in Edge. */
+    wp69State() {
+      const snapshot = recorder.snapshot();
+      const pilot = trackingPilotSession?.runner;
+      return {
+        drill: {
+          drillId: activeDrillConfig.drillId,
+          sceneId: activeSceneConfig.sceneId,
+          weaponId: activeDrillConfig.weaponId ?? 'ak47',
+          seed: activeDrillConfig.spiderShot?.seed ?? activeDrillConfig.sequence.seed ?? DEFAULT_RNG_SEED,
+        },
+        attempt: {
+          number: runAttempt.attempt,
+          phase: runAttempt.phase,
+          validity: runAttempt.validity,
+          pauseOccurred: runAttempt.pauseOccurred,
+          fenceCount: runAttempt.pauseFences.length,
+          lockConfirmationCount: runAttempt.lockConfirmations.length,
+        },
+        time: {
+          mapperPaused: timeMapper.paused,
+          excludedWallMs: timeMapper.excludedWallMs,
+          hudElapsedMs,
+        },
+        recording: {
+          tickCount: recorder.tickCount,
+          eventCount: snapshot.events.length,
+          fireCount: recorder.fireCount,
+          hitCount: recorder.hitCount,
+          recorderOverflow: snapshot.recorderOverflow,
+          bufferOverflow: sharedState.inputMeta.bufferOverflow,
+          inputSize: sharedState.input.size(),
+          ammo: sharedState.weapon.ammo,
+        },
+        aim: { ...sharedState.aim },
+        held: { ...sharedState.held, fire: sharedState.heldFire, ads: sharedState.heldAds },
+        finalizedDisposition: finalizedPlan?.disposition,
+        resultShown,
+        session: sessionPlanRunner.phase,
+        protocol: {
+          protocolId: activeProtocolRunner.config.protocolId,
+          current: activeProtocolRunner.current,
+          exportCount: activeProtocolRunner.exports.length,
+        },
+        pilot:
+          pilot === undefined
+            ? undefined
+            : {
+                phase: pilot.phase,
+                recordCount: pilot.records.length,
+                invalidAttemptCount: pilot.invalidAttempts.length,
+                invalidAttempts: pilot.invalidAttempts,
+              },
+      };
+    },
     /** WP-58 T6 — read-only view of the live session cursor, for E2E to follow a running program. */
     sessionPlanState(): {
       readonly phase: SessionRunnerPhase['kind'];
@@ -2328,7 +2392,11 @@ function liveFrame(now: number): void {
   //  （命中回饋、tracer、ADS FOV 內插、急停閂鎖）——暫停時畫面該繼續動,但量測不該前進。
   const activeNow = timeMapper.mapWallTime(now);
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
-  const { alpha } = simLoop.pump(activeNow);
+  // WP-69 / T6 live regression: the discarded branch below clears the recorder, but rAF keeps
+  // rendering so the discard overlay remains interactive. Do not let subsequent frames pump the
+  // ended simulation and silently repopulate that cleared recorder. Restart clears `finalizedPlan`,
+  // so the next attempt resumes the ordinary byte-identical pump path.
+  const alpha = finalizedPlan?.disposition.kind === 'discarded' ? 0 : simLoop.pump(activeNow).alpha;
   const phase = drillRunner.phase;
   if (phase === 'running') {
     if (hudRunStartMs === null) hudRunStartMs = activeNow;

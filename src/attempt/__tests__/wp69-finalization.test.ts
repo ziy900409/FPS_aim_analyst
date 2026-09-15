@@ -506,6 +506,15 @@ describe('WP-69 T4 — main.ts 的 finalization 接線沒有漂移', () => {
     expect(block).toContain('frameLog.reset()');
   });
 
+  it('discarded 清空後不再 pump，避免後續 rAF 把 ended ticks 寫回 recorder', () => {
+    const pumpAt = source.indexOf('simLoop.pump(activeNow).alpha');
+    expect(pumpAt).toBeGreaterThan(-1);
+    const lineStart = source.lastIndexOf('\n', pumpAt);
+    const lineEnd = source.indexOf('\n', pumpAt);
+    const pumpLine = source.slice(lineStart, lineEnd);
+    expect(pumpLine).toContain("finalizedPlan?.disposition.kind === 'discarded' ? 0");
+  });
+
   it('plan 一路傳進 showResultAndTrackHistory（不讓它自己重新判一次）', () => {
     expect(endedBranch).toContain('showResultAndTrackHistory(payload, plan)');
   });

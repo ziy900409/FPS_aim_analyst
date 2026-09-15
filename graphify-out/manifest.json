@@ -636,8 +636,8 @@
     "hash": "943047ccc70f3c555b658196f6e96c57"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\main.ts": {
-    "mtime": 1789472904.484675,
-    "hash": "31f4eeb5fb1068ab8480b85bfdb713dd"
+    "mtime": 1789475174.227113,
+    "hash": "01e868312ef7b9bd57a4da277d314ae6"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\vite-env.d.ts": {
     "mtime": 1782985917.6295617,
@@ -672,8 +672,8 @@
     "hash": "e65c0ce5e4dad9e1cfb00f58b81053e8"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\__tests__\\wp69-finalization.test.ts": {
-    "mtime": 1789472991.7321894,
-    "hash": "9221cd5bf83338698aaa089cb936a8b5"
+    "mtime": 1789475175.5045874,
+    "hash": "ca74db3ee6f0bcecdb0bfb7ca21041c4"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\src\\attempt\\__tests__\\wp69-orchestrator-retry.test.ts": {
     "mtime": 1789473008.100567,
@@ -2522,6 +2522,10 @@
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\e2e\\weapon-select.spec.ts": {
     "mtime": 1787820336.8987815,
     "hash": "20b6bab47bdf03b184649b25e0753f43"
+  },
+  "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\e2e\\wp69-pause-invalid-restart.spec.ts": {
+    "mtime": 1789475434.329677,
+    "hash": "509eebb876f70a240b52674583392704"
   },
   "C:\\Users\\Hsin.YH.Yang\\BenQ\\03_external\\gitgit\\FPS_aim_analyst\\tests\\e2e\\support\\arm.ts": {
     "mtime": 1789131354.6647487,
