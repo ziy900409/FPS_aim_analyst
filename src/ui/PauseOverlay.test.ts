@@ -234,3 +234,65 @@ describe('createPauseOverlay — 更新路徑零新增 DOM node（NFR-69.5）', 
     expect(root.removed).toBe(true);
   });
 });
+
+describe('createPauseOverlay — discarded view（WP-69 T4，FR-69.9）', () => {
+  const DISCARD: PauseOverlayView = { kind: 'discarded', reason: '暫停區間未閉合' };
+
+  it('換成作廢文案，不再說「繼續仍無效」', () => {
+    const { overlay, root } = mount();
+    overlay.update(DISCARD);
+    const text = root.text();
+    expect(text).toContain('本次紀錄已作廢');
+    expect(text).toContain('沒有產生任何資料檔');
+    expect(text).toContain('暫停區間未閉合'); // reason 原樣顯示（翻譯在 main.ts 那一側）
+    expect(text).not.toContain('繼續仍無效');
+  });
+
+  it('「繼續」整顆收掉，Restart 仍是可按的唯一出口', () => {
+    const { overlay, document } = mount();
+    const [resume, restart] = document.buttons;
+    overlay.update(DISCARD);
+    expect(resume!.style.display).toBe('none');
+    expect(restart!.style.display).not.toBe('none');
+    expect(restart!.disabled).toBe(false);
+  });
+
+  it('Restart 點得下去（作廢後唯一能做的事仍然能做）', () => {
+    const { overlay, document, restartClicks } = mount();
+    overlay.update(DISCARD);
+    document.buttons[1]!.dispatch('click');
+    expect(restartClicks).toHaveLength(1);
+  });
+
+  it('不顯示倒數數字（作廢沒有任何東西在倒數）', () => {
+    const { overlay, root } = mount();
+    overlay.update({ kind: 'resume-countdown', remainingMs: 3_000 });
+    overlay.update(DISCARD);
+    // digits 是 root 底下唯一會寫 textContent 成數字的節點。
+    expect(root.text()).not.toContain('3');
+  });
+
+  it('回到 paused 時文案與「繼續」都復原（同一組節點雙向切換）', () => {
+    const { overlay, root, document } = mount();
+    overlay.update(DISCARD);
+    overlay.update({ kind: 'paused' });
+    expect(root.text()).toContain('繼續仍無效');
+    expect(root.text()).not.toContain('本次紀錄已作廢');
+    expect(document.buttons[0]!.style.display).not.toBe('none');
+  });
+
+  it('跑遍含 discarded 的全部 view 三輪，零新增 DOM node（NFR-69.5）', () => {
+    const { overlay, document } = mount();
+    const afterConstruction = document.createdCount;
+    const views: PauseOverlayView[] = [
+      { kind: 'paused' },
+      DISCARD,
+      { kind: 'locking' },
+      { kind: 'discarded', reason: '另一個理由' },
+      { kind: 'resume-countdown', remainingMs: 2_000 },
+      { kind: 'hidden' },
+    ];
+    for (let pass = 0; pass < 3; pass += 1) for (const view of views) overlay.update(view);
+    expect(document.createdCount).toBe(afterConstruction);
+  });
+});

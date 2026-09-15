@@ -15,12 +15,12 @@
 
 ## Definition of Done
 
-- [ ] 三態對 payload builder、metrics、download、history、replay 的呼叫矩陣逐格有 spy 斷言
-- [ ] invalid-retained JSON 可由 TS parser 與 Python `load_export()` 讀，且明確帶 `pauseOccurred=true`
-- [ ] invalid/discarded 對 `HistoryClient.saveRun` 與正式 history/trend 的呼叫數均為 0
-- [ ] discarded 路徑 payload builder/serializer 呼叫數為 0，recorder count 回 0
-- [ ] clean assessment/practice 路徑與 T0 baseline 相同
-- [ ] navigation 不可繞過 gate，且沒有 double finalization/download
+- [x] 三態對 payload builder、metrics、download、history、replay 的呼叫矩陣逐格有 spy 斷言
+- [x] invalid-retained JSON 可由 TS parser 與 Python `load_export()` 讀，且明確帶 `pauseOccurred=true`
+- [x] invalid/discarded 對 `HistoryClient.saveRun` 與正式 history/trend 的呼叫數均為 0
+- [x] discarded 路徑 payload builder/serializer 呼叫數為 0，recorder count 回 0
+- [x] clean assessment/practice 路徑與 T0 baseline 相同
+- [x] navigation 不可繞過 gate，且沒有 double finalization/download
 
 ## Commit
 

@@ -289,8 +289,13 @@ describe('validity warning', () => {
     expect(banner.textContent).toBe(WARNING);
     expect(banner.attributes.get('role')).toBe('alert');
     // 「之上」不是措辭而是可驗證的位置：警示必須排在 body 之前，受試者掃到數字前就看到它。
+    // WP-69 / T4 起，面板頂端多了一條不可採納警示（`result-invalid-attempt`），所以這裡斷言的是
+    // 原本就想斷言的那件事——**排在 body 之前**——而不是某個會隨相鄰元素增減而漂移的常數索引。
     const panel = document.body.children[0].children[0];
-    expect(panel.children.indexOf(banner)).toBe(1); // 0 = 標題
+    const bodyIndex = panel.children.indexOf(section(document.body, 'result-detail-body'));
+    expect(bodyIndex).toBeGreaterThan(0);
+    expect(panel.children.indexOf(banner)).toBeGreaterThan(0); // 0 = 標題
+    expect(panel.children.indexOf(banner)).toBeLessThan(bodyIndex);
   });
 
   it('hides the warning when set to null', () => {
@@ -346,3 +351,109 @@ function text(root: FakeElement): string {
 function flatten(root: FakeElement): FakeElement[] {
   return [root, ...root.children.flatMap(flatten)];
 }
+
+// ── WP-69 / T4（FR-69.8，OQ-69.1 / D-69-T0-3）─────────────────────────────────
+describe('invalid attempt notice', () => {
+  const NOTICE = {
+    text: '本次曾暫停，已失去實驗效力：此檔僅供稽核，不會進入正式紀錄。',
+    downloadLabel: '下載稽核檔（.invalid-paused）',
+  };
+
+  function mountWithActions(onDownload: () => void | Promise<void> = () => {}) {
+    const document = new FakeDocument();
+    vi.stubGlobal('document', document);
+    const screen = createResultScreen({
+      onExportJSON: () => {},
+      onExportCSV: () => {},
+      onOpenHistory: () => {},
+      onReplay: () => {},
+    });
+    screen.show(result);
+    return { document, screen, notice: { ...NOTICE, onDownload } };
+  }
+
+  it('是隱藏的、且不影響任何既有按鈕，直到被設定（乾淨路徑逐位不變）', () => {
+    const { document } = mountWithActions();
+    expect(section(document.body, 'result-invalid-attempt').hidden).toBe(true);
+    expect(action(document.body, 'export-json').style.display).toBe('');
+    expect(action(document.body, 'export-csv').style.display).toBe('');
+    expect(action(document.body, 'replay').style.display).toBe('');
+  });
+
+  it('設定後顯示文案與下載鈕，並收起正式匯出／3D 重播', () => {
+    const { document, screen, notice } = mountWithActions();
+
+    screen.setInvalidAttempt(notice);
+
+    const banner = section(document.body, 'result-invalid-attempt');
+    expect(banner.hidden).toBe(false);
+    expect(banner.attributes.get('role')).toBe('alert');
+    expect(text(banner)).toContain('僅供稽核');
+    expect(action(document.body, 'export-json').style.display).toBe('none');
+    expect(action(document.body, 'export-csv').style.display).toBe('none');
+    expect(action(document.body, 'replay').style.display).toBe('none');
+  });
+
+  it('下載鈕在警示條內，而不是在會被 #drill-controls 蓋住的 footer 裡（T0.6 硬性要求）', () => {
+    const { document, screen, notice } = mountWithActions();
+    screen.setInvalidAttempt(notice);
+
+    const banner = section(document.body, 'result-invalid-attempt');
+    const footer = section(document.body, 'result-actions');
+    const button = action(document.body, 'export-invalid-diagnostic');
+
+    expect(flatten(banner)).toContain(button);
+    expect(flatten(footer)).not.toContain(button);
+  });
+
+  it('警示條排在結果數值之前（看到任何數字之前就讀到「不可採納」）', () => {
+    const { document, screen, notice } = mountWithActions();
+    screen.setInvalidAttempt(notice);
+    const panel = document.body.children[0].children[0];
+    const bannerIndex = panel.children.indexOf(section(document.body, 'result-invalid-attempt'));
+    const bodyIndex = panel.children.indexOf(section(document.body, 'result-detail-body'));
+    expect(bannerIndex).toBeGreaterThan(0);
+    expect(bannerIndex).toBeLessThan(bodyIndex);
+  });
+
+  it('點下載鈕會呼叫 onDownload（這是稽核檔唯一的產生路徑）', () => {
+    const onDownload = vi.fn();
+    const { document, screen, notice } = mountWithActions(onDownload);
+    screen.setInvalidAttempt(notice);
+
+    action(document.body, 'export-invalid-diagnostic').click();
+
+    expect(onDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it('未設定時點下載鈕不做任何事（沒有稽核檔可下載）', () => {
+    const onDownload = vi.fn();
+    const { document, screen, notice } = mountWithActions(onDownload);
+    screen.setInvalidAttempt(notice);
+    screen.setInvalidAttempt(null);
+
+    action(document.body, 'export-invalid-diagnostic').click();
+
+    expect(onDownload).toHaveBeenCalledTimes(0);
+  });
+
+  it('不可採納時，即使有人餵進 history target 也不開歷史入口', () => {
+    const { document, screen, notice } = mountWithActions();
+    screen.setInvalidAttempt(notice);
+
+    screen.setHistoryTarget({ participantId: 'P-001', drillId: 'counterstrafe_ad_v1' });
+
+    expect(action(document.body, 'open-history').style.display).toBe('none');
+  });
+
+  it('下一場 show() 會清掉旗標並把正式匯出／重播放回來（不殘留到下一場）', () => {
+    const { document, screen, notice } = mountWithActions();
+    screen.setInvalidAttempt(notice);
+
+    screen.show(result);
+
+    expect(section(document.body, 'result-invalid-attempt').hidden).toBe(true);
+    expect(action(document.body, 'export-json').style.display).toBe('');
+    expect(action(document.body, 'replay').style.display).toBe('');
+  });
+});

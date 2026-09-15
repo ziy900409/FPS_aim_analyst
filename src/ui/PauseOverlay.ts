@@ -22,7 +22,17 @@ export type PauseOverlayView =
   /** 已送出 `requestPointerLock()`，等 `pointerlockchange`／`pointerlockerror` 收斂。 */
   | { readonly kind: 'locking' }
   /** 已取回鎖，跑恢復倒數；此期間 gameplay input 與 camera 仍被阻斷（FR-69.5）。 */
-  | { readonly kind: 'resume-countdown'; readonly remainingMs: number };
+  | { readonly kind: 'resume-countdown'; readonly remainingMs: number }
+  /**
+   * WP-69 / T4（FR-69.9）— 本次紀錄已作廢：**沒有** payload、沒有數值、沒有可下載的檔。
+   * `reason` 是**已經翻譯好的**人話（`describeDiscardReason()` 的輸出），不是 enum：本檔是零狀態
+   * 呈現層，讓它自己查表等於把 `RecordingIntegrityReason` 的第二份定義搬進 UI（C-D4）。
+   *
+   * 為什麼放這個 overlay 而不是 Result：Result 的存在本身就代表「有一份結果」。作廢的那一場連
+   * 一個數字都不該出現在畫面上（FM-7），所以它要用一個**不是 Result 的**面板來說，而這個面板
+   * 已經擁有正確的 z-index（50，蓋過 drill-controls/ExportPanel）與唯一的出口按鈕 Restart。
+   */
+  | { readonly kind: 'discarded'; readonly reason: string };
 
 export interface PauseOverlayOptions {
   parent?: HTMLElement;
@@ -48,6 +58,10 @@ const RESUME_LABEL = '繼續（本次仍無效）';
 const RESTART_LABEL = '重新測試';
 const LOCKING_TEXT = '正在重新取得滑鼠鎖定…';
 const COUNTDOWN_PROMPT = '恢復中';
+/** WP-69 / T4（FR-69.9）— 作廢視圖的三句文案，同樣是規則的使用者可見表述，改動等於改規則。 */
+const DISCARD_TITLE = '本次紀錄已作廢 — 時間戳無法證明連續';
+const DISCARD_BODY = '這一場沒有產生任何資料檔，也不會顯示任何數值：時間軸無法證明連續，由它算出的一切都不可信。';
+const DISCARD_RESTART = '請按「重新測試」重跑這一步。';
 
 /** 數字行留空的哨兵（`paused`／`locking` 沒有數字可顯示）。比照 DrillStartOverlay 的 NO_DIGITS。 */
 const NO_DIGITS = 0;
@@ -146,12 +160,34 @@ export function createPauseOverlay(options: PauseOverlayOptions): PauseOverlayHa
   let shownStatus = '';
   let actionsShown = true;
   let buttonsDisabled = false;
+  let resumeShown = true;
+  let shownCopy: 'pause' | 'discard' = 'pause';
 
   function setVisible(next: boolean): void {
     if (next === visible) return;
     visible = next;
     root.style.display = next ? 'flex' : 'none';
     root.setAttribute('aria-hidden', next ? 'false' : 'true');
+  }
+
+  /**
+   * WP-69 / T4 — 兩組文案共用同三個節點（建構期一次配置，NFR-69.5：更新路徑零新增 DOM node）。
+   * 以 `shownCopy` 快取，所以恆定狀態下每幀零 DOM 寫入,與既有 `setDigits`／`setStatus` 同紀律。
+   */
+  function setCopy(next: 'pause' | 'discard'): void {
+    if (next === shownCopy) return;
+    shownCopy = next;
+    const discard = next === 'discard';
+    title.textContent = discard ? DISCARD_TITLE : TITLE;
+    bodyInvalid.textContent = discard ? DISCARD_BODY : BODY_INVALID;
+    bodyRestart.textContent = discard ? DISCARD_RESTART : BODY_RESTART;
+  }
+
+  /** 作廢時「繼續」不只是停用而是**不存在**：沒有可恢復的東西，留著一顆死鈕只會請人去點它。 */
+  function setResumeVisible(next: boolean): void {
+    if (next === resumeShown) return;
+    resumeShown = next;
+    resumeButton.style.display = next ? '' : 'none';
   }
 
   function setDigits(seconds: number): void {
@@ -189,6 +225,17 @@ export function createPauseOverlay(options: PauseOverlayOptions): PauseOverlayHa
         return;
       }
       setVisible(true);
+      if (view.kind === 'discarded') {
+        // Restart 是唯一出口：`setActions(true, …)` 保持 actions 可見，但 resume 整顆收掉。
+        setCopy('discard');
+        setResumeVisible(false);
+        setActions(true, false);
+        setDigits(NO_DIGITS);
+        setStatus(view.reason);
+        return;
+      }
+      setCopy('pause');
+      setResumeVisible(true);
       if (view.kind === 'paused') {
         setActions(true, false);
         setDigits(NO_DIGITS);

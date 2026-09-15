@@ -41,6 +41,7 @@ const FORBIDDEN_GLOBALS: ReadonlyArray<{ label: string; pattern: RegExp }> = [
 describe('src/attempt boundary — the disposition contract stays pure (T1 DoD)', () => {
   it('scans the production sources it claims to scan', () => {
     expect(Object.keys(productionSources).sort()).toEqual([
+      './AttemptFinalizationGate.ts',
       './RunAttemptController.ts',
       './recordingIntegrity.ts',
     ]);

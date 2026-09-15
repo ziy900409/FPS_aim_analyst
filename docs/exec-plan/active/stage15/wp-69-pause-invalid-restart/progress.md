@@ -2,10 +2,10 @@
 
 ## Snapshot
 
-- **狀態**：🟡 T3 已落地（2026-09-15），T4 可開工
+- **狀態**：🟡 T4 已落地（2026-09-15），T5 可開工
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：T4 — 中央 finalization gate、invalid diagnostic export、discard、History/replay/navigation 防線
+- **下一步**：T5 — Session/Protocol/Tracking Pilot 留在同一步並支援 full retry/audit
 - **決策**：[GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)
 
 ## Planning evidence
@@ -22,7 +22,7 @@
 | T1 | ✅ | 2026-09-15。`src/attempt/` 三模組 + 88 個新測試；9 份 clean fixture 全數放行；canonical digest 只動 3 筆（完全印證 D-69-T0-4）。見 [§T1](#t1-attempt-disposition-contract2026-09-15) |
 | T2 | ✅ | 2026-09-15。`PausableTimeMapper` + main.ts 時鐘管線（mapped clock 注入 SimLoop）；50 個新測試；naive-pause 失敗模式固化成永久測試。四閘全綠 + Edge e2e 13 passed。見 [§T2](#t2-pausable-active-time2026-09-15) |
 | T3 | ✅ | 2026-09-15。gameplay 閘（input + camera 共用）、`suspend()` release edge、`PauseOverlay`、Pointer Lock resume 倒數、Restart 收斂；61 個新測試 + 六刀 mutation 反證。四閘全綠 + Edge e2e 15 passed。見 [§T3](#t3-input--pointer-lock--overlay2026-09-15) |
-| T4 | ⬜ | — |
+| T4 | ✅ | 2026-09-15。`AttemptFinalizationGate`（consequence matrix）+ main.ts 五個消費點 + History 第二道防線 + Result 稽核下載 + PauseOverlay 作廢 view；76 個新測試 + 十二刀 mutation 全部見血；OQ-69.4 關閉。四閘全綠 + Edge e2e 15 passed。見 [§T4](#t4-finalization--persistence-gate2026-09-15) |
 | T5 | ⬜ | — |
 | T6 | ⬜ | — |
 | T-exit | ⬜ | — |
@@ -50,18 +50,182 @@
 | D-69-T3-2 | up edge 的採計條件改為「sampler 自己採計過對應的 down」，鍵盤因此與 fire/ads 對齊（新增固定長度 `heldKeys` 帳面）；gameplay 閘只擋 down/move | T3 採納（見 §T3.3） |
 | D-69-T3-3 | `PointerLockHandle` 新增 `onError()`：`pointerlockerror` 不翻 `locked` ⇒ 不發 change 回撥，沒有它取鎖失敗在該模組內完全無聲 | T3 採納（見 §T3.4） |
 | D-69-T3-4 | `runAttempt.restart()` 與 `timeMapper.restart()` 同放 `resetRunPresentation()` ⇒ 換武器／換 drill／換場景也會 attempt +1（不只 Restart 鈕） | T3 採納（見 §T3.6） |
+| D-69-T4-1 | gate 的 `decide()` 回傳 **plan**（七個後果欄位）而非 bare `AttemptDisposition`（README §2.4 寫後者） | T4 採納（見 §T4.3） |
+| D-69-T4-2 | **OQ-69.4 結論**：暫停中離開/切換一律 `discarded`，T4 不在導航前強迫 resume、不放寬 T0.5 判準 | T4 採納（見 §T4.5） |
+| D-69-T4-3 | `finalizeAttempt()` 一場 memo 一次。memo 是**正確性**不是最佳化：收工後 recorder 與釋鎖事件還會動 | T4 採納（見 §T4.4） |
+| D-69-T4-4 | 尚未結算的隨手匯出只有在 `pauseOccurred` 時才問 gate；從未暫停的路徑行為逐位不變（NFR-69.1） | T4 採納（見 §T4.6） |
+| D-69-T4-5 | 稽核檔下載鈕放 Result **面板頂端警示條**，不進 `result-actions` footer（T0.6 的 z-index 硬性要求） | T4 採納 |
+| D-69-T4-6 | `HistorySaveState.excluded.reason` 擴成 `'practice' \| 'invalid-attempt'`，且 invalid 優先於 practice | T4 採納 |
+| D-69-T4-7 | `discarded` 用 `PauseOverlay` 的第五個 view 呈現，**不**用 Result —— Result 存在本身就代表「有一份結果」 | T4 採納 |
 
 ## Open Questions
 
-OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使用者拍板)）。
+OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使用者拍板)）；**OQ-69.4 已於 T4 關閉**（見 [§T4.5](#t45-oq-694-的結論暫停中離開就是-discardedd-69-t4-2)）。
 
 | ID | 問題 | 提出 | 歸屬 |
 |---|---|---|---|
-| **OQ-69.4** | 「正在 paused 時離開/切換 drill」依 T0.5 凍結判準會得到 `discarded`（fence 未閉合）——但 pause 之前的時間軸其實是可證的。T4 要不要在導航前先要求 resume（才能拿到 `invalid-retained` 稿核檔），還是接受直接 discard？ | T1（2026-09-15） | **T4**（FR-69.12） |
+| **OQ-69.4** ✅ | 「正在 paused 時離開/切換 drill」依 T0.5 凍結判準會得到 `discarded`（fence 未閉合）——但 pause 之前的時間軸其實是可證的。T4 要不要在導航前先要求 resume（才能拿到 `invalid-retained` 稿核檔），還是接受直接 discard？ | T1（2026-09-15） | **T4 已答：接受 discard**（§T4.5） |
 
 > T1 本身不替 OQ-69.4 做決定：實作上**逐字執行 T0 凍結的判準**（pause/resume 次數不相等 ⇒ `pause-fence-unclosed`），不在實作期悔放寬。
 
 
+---
+
+## T4 finalization / persistence gate（2026-09-15）
+
+> 交付物 = `AttemptFinalizationGate`（純模組）+ `main.ts` 的五個消費點 + `HistoryPersistence` 第二道
+> 防線 + Result 的稽核下載 + `PauseOverlay` 的作廢 view。**T4 讓 pause 第一次真的有後果**
+> —— T3 之前 `finalize()` 在 production 沒有任何呼叫端。orchestrator 的明確 retry 入口仍是 T5；
+> 本 task 只保證三個 runner **不會前進**。
+
+### T4.1 交付檔案
+
+| 檔案 | 內容 | 測試數 |
+|---|---|---|
+| `src/attempt/AttemptFinalizationGate.ts` | disposition → **consequence matrix**（七欄）、`invalidAttemptBasename()`、`describeDiscardReason()` | 30 |
+| `src/attempt/__tests__/wp69-finalization.test.ts` | 真模組整合 rig（呼叫矩陣）+ `main.ts` source-scan 漂移守衛 | 27 |
+| `src/history/HistoryPersistence.ts` + `.test.ts` | `excluded: 'invalid-attempt'` 第二道防線 | +5 |
+| `src/ui/ResultScreen.ts` + `.test.ts` | `setInvalidAttempt()`：頂端警示條 + 稽核下載鈕 + 收起正式匯出／重播 | +8 |
+| `src/ui/PauseOverlay.ts` + `.test.ts` | 第五個 view `discarded`（同一組節點切文案，「繼續」整顆收掉） | +6 |
+| `src/ui/HistorySaveStatus.ts` | 兩個排除理由讀得出差別 | — |
+| `src/main.ts` | 見 T4.2 | — |
+| `research/.../tests/test_loader_invalid_paused.py` | Python `load_export()` 讀得到 `pauseOccurred=true`，欄面不變 | 3 |
+
+### T4.2 main.ts 的接點（唯讀清單，便於 T5 接手）
+
+| 接點 | 位置 | 作用 |
+|---|---|---|
+| `finalizationGate` | `runAttempt` 之後 | 三態 → plan 的唯一入口 |
+| `recordingSnapshotForGate()` / `finalizeAttempt()` / `attemptPlanForExport()` / `requireOfficialExport()` / `downloadInvalidDiagnostic()` / `invalidAttemptNoticeFor()` | `createExportPanel` 之前 | T4 的全部政策，集中一段 |
+| `pauseOccurred: runAttempt.pauseOccurred` | `collectMeta()` 的 `validity` | payload 自述不可採納（第二道防線的讀取來源） |
+| `const plan = finalizeAttempt();` | `liveFrame()` 收工分支**第一行**（第一個 `await` 之前） | 見 §T4.4 |
+| `if (!plan.buildsPayload) { … return; }` | 同分支 | `discarded`：零 payload、零 metrics、清 arena/frame log |
+| `showResultAndTrackHistory(payload, plan)` | 同分支 | Result 警示 + `savesHistory` 閘 |
+| `if (!plan.advancesOrchestrator) return;` | 同分支，三個 runner 之前 | FM-6 |
+| `if (runAttempt.pauseOccurred) finalizeAttempt();` | `resetRunPresentation()` **第一行** | FR-69.12 的全部機制 |
+| `discardedNoticeView` | pause runtime | 作廢告知，優先於相位 |
+
+### T4.3 為什麼 gate 回傳 plan 而不是 disposition（D-69-T4-1）
+
+README §2.4 把 gate 寫成 `decide(...): AttemptDisposition`。照字面做，gate 只是 `finalize()` 的一層
+轉發——而 `finalize()` 已經存在，所以那一層不會帶來任何東西。
+
+本 WP 要關的失效模式（FM-2/FM-6/FM-7）不是「判錯」，是「**判對了**，然後五個地方各自把那個判斷翻譯
+成後果，翻譯得不完全一樣」。`meta.suspect` 正是這樣長出來的。所以 gate 交出的是**後果本身**：七個
+欄位、三列常數，呼叫端讀欄位而不是寫規則。新增第六個消費者是讀一個欄位，不是再寫一次 if。
+
+矩陣裡真正有內容的是三處不對稱（模組 doc 有完整表格）：`invalid-retained` **仍然**建 payload、顯示
+數值（時間軸可證，數字是真的，只是不可採納）；`discarded` 在 **payload** 那一行就拒絕，不是在 save
+那一行（FM-7：payload 一旦存在，數值早就到了 Result、replay 與每個下載 helper）；只有 `discarded`
+清 arena（`invalid-retained` 的 arena 必須活著，操作員還沒按稽核下載）。
+
+### T4.4 gate 必須在第一個 `await` 之前跑（不是風格）
+
+收工分支的上一行是 `document.exitPointerLock()`。那會在**下一個 task** 補一筆 `pointer_lock` 事件，
+其戳記晚於最後一個 tick。若 gate 在 `await buildCurrentExportPayload()` 之後才問，它看到的就是一筆
+落在 `[firstTick − tickMs, lastTick]` 之外的事件 ⇒ `event-out-of-window` ⇒ **一場乾淨的 run 被判
+`discarded`**。這與 FM-7 是同一條順序的兩面，兩個 source-scan 測試各釘一面。
+
+同一個理由讓 `finalizeAttempt()` 必須 memo（D-69-T4-3）：收工之後 `liveFrame()` 不看相位照樣 pump，
+recorder 與事件序列都還在動。不 memo 的話，Result 上按下稽核下載時重判一次，可能拿到與收工當下
+不同的答案——那正是 DoD 第 6 條說的 double finalization。memo 在 `resetRunPresentation()` 清掉。
+
+### T4.5 OQ-69.4 的結論：暫停中離開就是 discarded（D-69-T4-2）
+
+依 T0.5 凍結的判準，暫停中結算 ⇒ pause/resume 次數不等 ⇒ `pause-fence-unclosed` ⇒ `discarded`。
+T4 **逐字執行**，不在導航前強迫 resume，也不在實作期把判準放寬成「暫停中可以就地閉合 fence」。
+
+理由不是「T0 說了算」，而是：那一場**根本沒有跑到 `ended`**。它是被放棄的，不是被完成的。
+「暫停之前的時間軸可證」與「這一段該不該留成紀錄」是兩件事，前者成立不蘊含後者。
+
+**代價明帳**：暫停中直接換 drill/scene/weapon 或按 Restart，連稽核檔都不會有。想保留稽核檔的操作員
+必須先按「繼續」把這一場跑完（那條路徑給的是 `invalid-retained` + 手動下載）。這條代價與 OQ-69.1
+的殘餘風險同源——兩者都是「操作員不做那個動作就等於沒保留」。
+
+機制上它只是 `resetRunPresentation()` 的第一行：四條 full-restart 路徑的共同點，且下一行的
+`runAttempt.restart()` 一跑 fence 與 validity 就沒了，所以那一行就是「navigation 不可繞過 gate」的
+全部。從未暫停的導航不觸發任何結算（`emptyMatrix()` 反證）。
+
+### T4.6 隨手匯出的分界（D-69-T4-4）
+
+匯出鈕讀 `attemptPlanForExport()`：已結算就用那一份；**尚未**結算的隨手匯出只有在「這一場曾暫停」
+時才問 gate。從未暫停、尚未收工的匯出維持既有行為逐位不變。
+
+這條分界是刻意的。把 integrity 判準套到任意時點的隨手匯出上不在 FR-69.7–69.9 的範圍（那三條談的是
+**finalization**），只會給乾淨路徑長出新的拒絕理由——而待命期的 `pointer_lock` 事件本來就可能短暫
+落在 tick 窗之外（T4.4 的同一個機制）。NFR-69.1 講的是行為，不只是位元。
+
+### T4.7 四閘 + e2e
+
+| 閘 | 命令 | exit | 計數 | 對比 T3 |
+|---|---|---|---|---|
+| typecheck | `npm run typecheck` | **0** | — | 同 |
+| build | `npm run build` | **0** | `✓ built in 2.50s` | 同（chunk >500 kB 為既有警告） |
+| 全量單元 | `npx vitest run` | **0** | **3670 passed / 2 skipped**；檔案 **283 / 1 skipped** | 3594 → 3670（**+76**，恰為本 task 新增數）；檔案 281 → 283 |
+| 回歸 | `npx vitest run tests/regression` | **0** | **324 passed**（33 files） | **逐數相同，零漂移** |
+| Edge e2e（focused） | `npx playwright test --project=edge --workers=1 full-drill input-sampler raw-mouse-sampling` | **0** | **15 passed**（1.6m） | 與 T0/T3 基線同一集、同一計數 |
+| Python（新增） | `pytest .../test_loader_invalid_paused.py .../test_loader_annotation_events.py` | **0** | **10 passed** | 新增 3 |
+
+canonical digest **零移動**——T1 的 `collectMeta()` 早就把 `pauseOccurred` normalize 成 `false` 寫進
+每一份帶 `validity` 的 payload，T4 只是把那個值接上真正的來源（見 §T4.9 #4）。
+
+e2e 前置：5173 無人佔用；`.playwright-tmp/history-dev` 352 個 participant 目錄（與 T3 同，未到會讓
+history-library 變紅的量級，且本次 focused 集不含該 spec）。
+
+### T4.8 Mutation check（十二刀，全部見血）
+
+| # | 拆掉什麼 | 紅燈數 |
+|---|---|---|
+| 1 | 收工分支的 `!plan.buildsPayload` 早退 | 2 |
+| 2 | `!plan.advancesOrchestrator` 閘 | 1 |
+| 3 | `resetRunPresentation()` 的導航結算 | 1 |
+| 4 | `collectMeta` 的 `pauseOccurred: runAttempt.pauseOccurred` | 1 |
+| 5 | `showResultAndTrackHistory()` 的 `savesHistory` 閘 | 1 |
+| 6 | 四顆匯出鈕中任一顆的 `requireOfficialExport()` | 1 |
+| 7 | 不再把 plan 傳進 `showResultAndTrackHistory()` | 1 |
+| 8 | `HistoryPersistence` 的 `invalid-attempt` 排除 | 3 |
+| 9 | 矩陣：`invalid-retained.savesHistory = true` | 7 |
+| 10 | 矩陣：`discarded.buildsPayload = true` | 13 |
+| 11 | `ResultScreen` 不再收起正式匯出／重播 | 1 |
+| 12 | 作廢 view 不再優先於相位 | 1 |
+
+### T4.9 Surprises
+
+1. **`main.ts` 的既有註解裡就寫著它所描述的呼叫名。** WP-48 的 fire-and-forget 說明逐字含
+   `sessionPlanRunner.advance()／completeActiveProtocolCondition()`，本 task 自己的註解也提到
+   `runAttempt.restart()`。逐字掃原始文字的順序斷言因此在**程式碼完全正確**時先紅了一次。受測的
+   主張是「可執行的接線長這樣」，所以掃描前必須 `stripComments()`（沿用 `architecture.test.ts` 的
+   先例，也是 T2.6 #4 踩過的同一種坑）。
+2. **rig 第一版沒有重建 SimLoop，於是一場乾淨的 restart 被判成 `discarded`。** mapper 歸零後舊 loop
+   的 `simTimeMs` 與新的 active 域差了一整段 ⇒ re-anchor ⇒ `tick-step-off-grid`。這是 rig 不忠實的
+   結果（`main.ts` 的 `resetRunPresentation()` 之後**必定**緊接 `buildSimLoop()`，T2 已用 source-scan
+   釘住），但它剛好從反面示範了那個順序為什麼是契約。
+3. **收工釋鎖補的 `pointer_lock` 事件會把乾淨的一場推出 tick 窗。**（§T4.4）規劃期只寫了「gate 要早
+   於 payload」，沒寫「要早於第一個 `await`」——而後者才是實際會踩到的那一條。
+4. **canonical digest 零移動，而且這是對的。** 一開始預期會再動 3 筆（比照 T1）。實際零移動，因為 T1
+   的 `requireValidity()` 已經把缺席的 `pauseOccurred` normalize 成 `false` 並 required-out 寫進每一份
+   帶 `validity` 的 payload；T4 只是把那個位置的**值**接上真正的來源。位元早在 T1 就付過了。
+5. **pytest 在這台機器用預設 tmp root 會 `PermissionError`**（`%LOCALAPPDATA%\Temp\pytest-of-*` 存取
+   被拒）。要跑 research 側測試必須帶 `--basetemp=<可寫目錄>`，否則三個測試全部 error 而看起來像程式
+   壞了。
+6. **`ResultScreen` 既有的「警示條在 body 之上」測試是用常數索引 `toBe(1)` 寫的**，頂端多一條警示就
+   紅。改成斷言它自己註解裡本來就說的那件事（排在 body 之前），比原本更貼近意圖，也不會再因為相鄰
+   元素增減而漂移。
+
+### T4.10 Definition of Done 對帳
+
+- [x] 三態對 payload builder / metrics / download / history / replay 的呼叫矩陣逐格有 spy 斷言
+      （`wp69-finalization.test.ts` 三個 `toEqual(CallMatrix)`，八個欄位一次比完，少比一格會漏）
+- [x] invalid-retained JSON 可由 TS parser 讀（T1 的 schema round-trip + `pauseOccurred=true` 專節）
+      與 Python `load_export()` 讀（新增 3 個 pytest，含「缺席 ≠ true」的負向對照）
+- [x] invalid/discarded 對 `HistoryClient.saveRun` 與正式 history/trend 的呼叫數均為 0
+      （第一道：`main.ts` 連 `save()` 都不呼叫；第二道：`HistoryPersistence` 的 `saveRun` 呼叫數 = 0）
+- [x] discarded 路徑 payload builder/serializer 呼叫數為 0，recorder count 回 0
+      （`expect(rig.calls).toEqual({ ...emptyMatrix(), recorderReset: 1 })` + snapshot events 為空）
+- [x] clean assessment/practice 路徑與 T0 baseline 相同（回歸 324 零漂移、canonical digest 零移動、
+      Edge e2e 同一集 15 passed、乾淨路徑的正式匯出仍可用）
+- [x] navigation 不可繞過 gate（`resetRunPresentation()` 第一行 + source-scan 順序守衛），
+      且沒有 double finalization/download（memo 測試：第二次進收工分支不改變任何後果）
 ---
 
 ## T3 input / Pointer Lock / overlay（2026-09-15）

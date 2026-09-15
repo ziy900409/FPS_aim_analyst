@@ -93,6 +93,14 @@ import { realClock } from './loop/clock.ts';
 import type { Clock } from './loop/clock.ts';
 import { createPausableTimeMapper } from './loop/pausableTimeMapper.ts';
 import { createRunAttemptController } from './attempt/RunAttemptController.ts';
+import {
+  createAttemptFinalizationGate,
+  describeDiscardReason,
+  invalidAttemptBasename,
+  planFinalization,
+  type AttemptFinalizationPlan,
+} from './attempt/AttemptFinalizationGate.ts';
+import type { RecordingSnapshot } from './attempt/recordingIntegrity.ts';
 import { createPauseOverlay, type PauseOverlayView } from './ui/PauseOverlay.ts';
 import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
@@ -440,6 +448,14 @@ const pointerLock = createPointerLock(canvas);
 // （[RunAttemptController.ts]）。宣告在這裡而不是靠近下方的 pause 接線：camera consumer（幾行之後的
 // `pointerLock.onMove`）與 InputSampler 都要讀它的相位，兩者都比 pause 接線早建構。
 const runAttempt = createRunAttemptController();
+
+/**
+ * WP-69 / T4（README §2.4，FR-69.7）— 每一條「這一場結束了 / 要離開了」的路徑都必須先問它一次，
+ * 而且只問它。它回的是一份 **plan**（可不可以建 payload / 顯示數值 / 下載 / 保存 / 推進），呼叫端
+ * 讀欄位而不是自己判斷——`meta.suspect` 在本檔曾經是那個「大家各自解讀一次」的欄位，FM-2/FM-6 就是
+ * 這樣長出來的。
+ */
+const finalizationGate = createAttemptFinalizationGate(runAttempt);
 
 /**
  * WP-69 / T3（NFR-69.4，FM-5）— gameplay 採計/套用的**單一**閘（README §2.3）。
@@ -908,6 +924,11 @@ async function buildCurrentExportPayload(
       // 必須在這裡明寫，否則會靜默漏掉整條鏈（旗標在記憶體裡翻了、匯出卻永遠 false）。
       // `collectMeta()` 會把它 OR 進 `meta.suspect`（OQ-65.1）。
       pointerLockLost: sharedState.validity.pointerLockLostDuringRun,
+      // WP-69 / T4（FR-69.8/69.11）— 讀 `runAttempt`，**不**讀 `sharedState.validity`：這兩個是
+      // 兩個構念（前者「這場能不能被採納」、後者「輸入鎖遺失這件事」），錄製中掉鎖會讓兩者同時為
+      // 真，但判準未來可能分岔。這個欄位讓 payload 自述「我不可採納」，也讓 `HistoryPersistence`
+      // 的第二道防線有東西可讀（README §2.4 defense in depth）。
+      pauseOccurred: runAttempt.pauseOccurred,
     },
     weapon: {
       id: weaponConfig.id,
@@ -994,12 +1015,88 @@ async function buildCurrentExportPayload(
   return buildExportPayload(meta, snapshot);
 }
 
+// ─── WP-69 / T4：attempt finalization（FR-69.7/69.8/69.9/69.12） ────────────────────────────────
+// 這一段是「這一場能不能被當成紀錄」的**唯一**接線。以下每一個消費者都只讀 plan 的欄位:
+// `liveFrame()` 的收工分支、`resetRunPresentation()` 的離開分支、兩個匯出面板、Result 的稽核下載。
+
+/**
+ * 交給 gate 的錄製快照。`bufferOverflow` 讀 `sharedState.inputMeta`（輸入環的溢位）、
+ * `recorderOverflow` 讀 arena——與 `collectMeta()` 裡那兩個欄位**同源同義**，不另立第二套判準。
+ */
+function recordingSnapshotForGate(): RecordingSnapshot {
+  const snapshot = recorder.snapshot();
+  return {
+    ticks: snapshot.ticks,
+    events: snapshot.events,
+    simHz: SIM_HZ,
+    bufferOverflow: sharedState.inputMeta.bufferOverflow > 0,
+    recorderOverflow: snapshot.recorderOverflow,
+  };
+}
+
+/**
+ * 本 attempt 的終局判定，**一場一次**。memo 不是最佳化而是正確性：gate 讀的是當下的 recorder 與
+ * fence，而收工之後這兩者還會繼續動（`liveFrame()` 不看相位照樣 pump，收工釋鎖也會補一筆
+ * `pointer_lock` 事件）。不 memo 的話，同一場在 Result 上按下匯出時可能拿到與收工當下不同的答案
+ * ——那正是 double finalization。`resetRunPresentation()` 清掉它，新 attempt 重新判一次。
+ */
+let finalizedPlan: AttemptFinalizationPlan | undefined;
+
+function finalizeAttempt(): AttemptFinalizationPlan {
+  finalizedPlan ??= finalizationGate.decide(recordingSnapshotForGate());
+  return finalizedPlan;
+}
+
+/**
+ * 匯出鈕要遵守的 plan。已 finalize 就用那一份（Result 顯示的是**那一場**）；還沒 finalize 的隨手
+ * 匯出只有在「這一場曾暫停」時才需要問 gate —— 從未暫停的路徑維持既有行為逐位不變（NFR-69.1）。
+ * 把 integrity 判準套到任意時點的隨手匯出上不是本 WP 的範圍，只會給乾淨路徑長出新的拒絕理由。
+ */
+function attemptPlanForExport(): AttemptFinalizationPlan {
+  if (finalizedPlan !== undefined) return finalizedPlan;
+  if (!runAttempt.pauseOccurred) return planFinalization({ kind: 'eligible-candidate' });
+  return finalizationGate.decide(recordingSnapshotForGate());
+}
+
+/** 正式匯出（JSON/CSV）的守門。丟例外 = 兩個面板的既有 catch 會把理由 alert 出來。 */
+function requireOfficialExport(): void {
+  const plan = attemptPlanForExport();
+  if (plan.download === 'official') return;
+  if (plan.disposition.kind === 'discarded') {
+    throw new Error(
+      `本次紀錄已作廢（${describeDiscardReason(plan.disposition.reason)}），沒有可匯出的資料；請重新測試。`,
+    );
+  }
+  throw new Error('本次曾暫停，已失去實驗效力：正式匯出已停用。請改用結果頁的「下載稽核檔」。');
+}
+
+/** OQ-69.1 / D-69-T0-3 —— 稽核檔的**唯一**產生路徑：操作員手動按，檔名強制帶 `.invalid-paused`。 */
+async function downloadInvalidDiagnostic(): Promise<void> {
+  const plan = attemptPlanForExport();
+  if (plan.download !== 'diagnostic-manual') throw new Error('本次沒有可下載的稽核檔。');
+  const payload = await buildCurrentExportPayload();
+  downloadJSON(payload, { basename: invalidAttemptBasename(exportBasename(payload)) });
+}
+
+/** Result 上的不可採納說明。`null` = 可採納（既有畫面逐位不變）。 */
+function invalidAttemptNoticeFor(plan: AttemptFinalizationPlan): Parameters<typeof resultScreen.setInvalidAttempt>[0] {
+  if (plan.download !== 'diagnostic-manual') return null;
+  return {
+    text: '本次曾暫停，已失去實驗效力：不會進入歷史／趨勢，也不能用於門檻判定。此檔僅供稽核，需要保留請按右側下載。',
+    downloadLabel: '下載稽核檔（.invalid-paused）',
+    onDownload: () => downloadInvalidDiagnostic(),
+  };
+}
+// ─── WP-69 / T4 finalization 結束 ──────────────────────────────────────────────────────────────
+
 createExportPanel({
   async onExportJSON(): Promise<void> {
+    requireOfficialExport();
     const payload = await buildCurrentExportPayload();
     downloadJSON(payload, { basename: exportBasename(payload) });
   },
   async onExportCSV(): Promise<void> {
+    requireOfficialExport();
     const payload = await buildCurrentExportPayload();
     downloadCSV(payload, { basename: exportBasename(payload) });
   },
@@ -1044,10 +1141,12 @@ const resultScreen = createResultScreen({
   saveStatusView: historySaveStatus.element,
   onRestart: restartActiveDrill,
   async onExportJSON(): Promise<void> {
+    requireOfficialExport();
     const payload = await buildCurrentExportPayload();
     downloadJSON(payload, { basename: exportBasename(payload) });
   },
   async onExportCSV(): Promise<void> {
+    requireOfficialExport();
     const payload = await buildCurrentExportPayload();
     downloadCSV(payload, { basename: exportBasename(payload) });
   },
@@ -1060,6 +1159,9 @@ const resultScreen = createResultScreen({
   },
   onReplay(): void {
     if (lastResultPayload === undefined) return;
+    // WP-69 / T4（T4 Step 5）— 第三道:按鈕在不可採納時已被 `setInvalidAttempt()` 收起,但 replay
+    // 會把不可採納（或不可信）的一場當成可檢視的紀錄重放,所以入口本身也拒收一次。
+    if (lastResultPayload.meta.validity?.pauseOccurred === true) return;
     replayController?.open({ kind: 'current', payload: lastResultPayload }, '目前結果');
   },
 });
@@ -1069,9 +1171,18 @@ const resultScreen = createResultScreen({
  * `setHistoryTarget()`；Practice（`historyPersistence.save` 回 `excluded`）或保存失敗都不會呼叫，
  * 按鈕維持隱藏（FR-49.12「Practice Result不顯示歷史入口」／T5 高風險失效模式表）。回傳值供呼叫端
  * fire-and-forget，不阻擋 session/protocol 後續流程（沿用既有 D-48.P6 NFR-48.8 語意）。*/
-function showResultAndTrackHistory(payload: ExportPayload): Promise<HistorySaveState> {
+function showResultAndTrackHistory(
+  payload: ExportPayload,
+  /**
+   * WP-69 / T4 — 預設值讓既有呼叫端（dev-only harness）行為逐位不變；live 路徑一律明傳 gate 的
+   * 判定。`savesHistory === false` 時**根本不呼叫** `historyPersistence.save()`：那是第一道防線,
+   * `HistoryPersistence` 內的 `invalid-attempt` 排除是第二道（README §2.4 defense in depth）。
+   */
+  plan: AttemptFinalizationPlan = planFinalization({ kind: 'eligible-candidate' }),
+): Promise<HistorySaveState> {
   lastResultPayload = payload;
   resultScreen.show(buildResultPresentation(payload));
+  resultScreen.setInvalidAttempt(invalidAttemptNoticeFor(plan));
   // WP-65 / T5（FR-65.11）— 每一場都明確設定一次（含 `null`）。旗標讀自 **payload**（那一場的匯出
   // 事實）而非 `sharedState`（會被下一場的 `resetState()` 清掉），所以歷史／重播路徑拿到同樣的答案。
   resultScreen.setValidityWarning(
@@ -1079,6 +1190,13 @@ function showResultAndTrackHistory(payload: ExportPayload): Promise<HistorySaveS
       ? '本場測試中途失去滑鼠鎖定（ESC／切換視窗），期間的滑鼠移動未被記錄，本場資料可能失效——建議重新測試。'
       : null,
   );
+  // WP-69 / T4（FR-69.8，NFR-69.7）— 不可採納時 `HistoryClient.saveRun` 的呼叫數必須是 0,所以這裡
+  // 連 `historyPersistence.save()` 都不呼叫;狀態列改為直接呈現排除理由（與第二道防線同一個字面）。
+  if (!plan.savesHistory) {
+    const excluded: HistorySaveState = { kind: 'excluded', reason: 'invalid-attempt' };
+    historySaveStatus.render(excluded);
+    return Promise.resolve(excluded);
+  }
   const savePromise = historyPersistence.save(payload);
   void savePromise.then((state) => {
     if (state.kind === 'saved') {
@@ -1124,6 +1242,14 @@ const PAUSE_VIEW_LOCKING: PauseOverlayView = { kind: 'locking' };
 const pauseCountdownView = { kind: 'resume-countdown' as const, remainingMs: 0 };
 /** 上一次取鎖失敗的可重試訊息（FR-69.5）。`undefined` = 沒有錯誤 ⇒ 用上面的共用 `paused` view。 */
 let pauseErrorView: PauseOverlayView | undefined;
+/**
+ * WP-69 / T4（FR-69.9）— 作廢告知。`undefined` = 沒有作廢。
+ *
+ * 刻意是**閂鎖**而不是從 `runAttempt.phase` 推導：作廢與相位正交（resume 後跑完再作廢時相位是
+ * `active`，暫停中收工時是 `paused`），拿相位去猜會兩邊都猜錯。由 `resetRunPresentation()` 清除,
+ * 也就是說它活到操作員按下 Restart／換 drill 為止——這正是它該活的長度。
+ */
+let discardedNoticeView: PauseOverlayView | undefined;
 
 const pauseOverlay = createPauseOverlay({
   // 兩個回撥都必須**同步**執行到底：Resume 的 `requestPointerLock()` 只在這一次 click 的 user
@@ -1197,6 +1323,8 @@ function updatePauseRuntime(nowWall: number): void {
 }
 
 function pauseOverlayView(nowWall: number): PauseOverlayView {
+  // 作廢優先於相位：這一場已經沒有任何可恢復的東西，顯示「繼續」只會請人去點一顆假的出口。
+  if (discardedNoticeView !== undefined) return discardedNoticeView;
   switch (runAttempt.phase) {
     case 'active':
       return PAUSE_VIEW_HIDDEN;
@@ -1576,6 +1704,18 @@ const hudStats: HUDStats = {
 };
 
 function resetRunPresentation(): void {
+  // WP-69 / T4（FR-69.12）— 離開/切換 drill/scene/weapon 或按 Restart 時,**若還有一場暫停中的
+  // attempt 沒有結算過**,先過同一個 gate。這一行是「navigation 不可繞過 gate」的全部機制:四條
+  // full-restart 路徑的共同點就在這裡,下面 `runAttempt.restart()` 一跑,fence 與 validity 就沒了。
+  //
+  // OQ-69.4 的結論落在這裡:依 T0.5 凍結的判準,暫停中結算 ⇒ `pause-fence-unclosed` ⇒ `discarded`,
+  // T4 **不**在導航前強迫 resume,也不放寬判準。理由是那一場根本沒有跑到 `ended`——它是被放棄的,
+  // 不是被完成的,而「沒跑完」與「時間軸可證」是兩件事,後者成立不代表前者該被留成紀錄。
+  // 代價明帳:暫停中直接換 drill 會連稽核檔都沒有。想留稽核檔的操作員必須先「繼續」把這一場跑完。
+  if (runAttempt.pauseOccurred) finalizeAttempt();
+  // 結算結果只活到這一行為止（新 attempt 要重新判一次）。作廢告知同理:Restart 就是它的出口。
+  finalizedPlan = undefined;
+  discardedNoticeView = undefined;
   // WP-69 / T2（FR-69.6）：full restart 的四條路徑（restart / 換武器 / 換 drill / 換場景）都經過
   // 這裡,且都在下游重建 SimLoop —— 把 mapper 歸零放在這一個共同點,新 attempt 的 active time 回到
   // identity,重建的 loop 才會錨在同一個域（`activeClock`）。順序是硬的:**先歸零、後 buildSimLoop()**。
@@ -2200,11 +2340,33 @@ function liveFrame(now: number): void {
     resultShown = true;
     syncControlsVisibility();
     void (async () => {
+      // WP-69 / T4（FR-69.7/69.9，FM-7）— gate **先於** snapshot／payload／metrics／result／
+      // history／advance。同步呼叫（在第一個 await 之前）是刻意的:上一行的 `exitPointerLock()` 會
+      // 在下一個 task 補一筆 `pointer_lock` 事件,那筆戳記晚於最後一個 tick,等到 await 之後才判會
+      // 把乾淨的一場判成 `event-out-of-window`。
+      const plan = finalizeAttempt();
+      if (!plan.buildsPayload) {
+        // `discarded`：不建 payload、不算 metrics、不顯示 Result、不下載、不保存、不推進。
+        // 現地清掉 arena 與 frame log——不可信的資料不留在記憶體裡等下一個讀取者（FR-69.9）。
+        if (plan.clearsRecording) {
+          recorder.reset();
+          frameLog.reset();
+        }
+        discardedNoticeView =
+          plan.disposition.kind === 'discarded'
+            ? { kind: 'discarded', reason: describeDiscardReason(plan.disposition.reason) }
+            : undefined;
+        return;
+      }
       const payload = await buildCurrentExportPayload();
       // WP-48 T5（FR-48.1/48.9,D-48.P1）／WP-49 T5（FR-49.12）— 顯示 Result 並觸發保存；
       // fire-and-forget，不阻擋下面 sessionPlanRunner.advance()／completeActiveProtocolCondition()
       // （D-48.P6，NFR-48.8）。
-      void showResultAndTrackHistory(payload);
+      void showResultAndTrackHistory(payload, plan);
+      // WP-69 / T4（FR-69.8/69.10，FM-6）— `invalid-retained` 到此為止：不自動下載正式檔、不推進
+      // 任何 orchestrator，三個 runner 停在同一個 run/condition/block 等待 full restart。三者的
+      // 「明確 retry 入口」是 T5；本 task 只保證它們**不會前進**。
+      if (!plan.advancesOrchestrator) return;
       // WP-58 / T3：顯式標註型別，讓 phase union 的任何改動在此處編譯期爆掉而非靜默失配
       // （D-58-T0-4：這條鏈以前只做 structural 的 `.kind` 比對）。
       const sessionPhase: SessionRunnerPhase = sessionPlanRunner.phase;

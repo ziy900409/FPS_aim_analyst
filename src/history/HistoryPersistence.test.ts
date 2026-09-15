@@ -281,3 +281,101 @@ describe('HistoryPersistence — no unhandled rejection on failure', () => {
     });
   });
 });
+
+describe('HistoryPersistence — paused attempts never reach the client (WP-69 T4, FR-69.8/FM-2)', () => {
+  /**
+   * This is deliberately a *second* line of defense: `main.ts` already refuses to call `save()` at
+   * all for a non-`savesHistory` plan. These tests assert the behaviour that survives when that
+   * first line is wired wrong — which is the only scenario in which this code ever runs.
+   */
+  function pausedPayload(overrides: { assessment?: boolean } = {}) {
+    const base = makeAssessmentPayload();
+    const meta = {
+      ...base.meta,
+      validity: {
+        corridorExceeded: false,
+        perfFloor: false,
+        recorderOverflow: false,
+        bufferOverflow: false,
+        pointerLockLost: true,
+        pauseOccurred: true,
+      },
+      ...(overrides.assessment === false ? { assessment: undefined } : {}),
+    };
+    return { ...base, meta };
+  }
+
+  it('excludes an Assessment run whose payload self-describes pauseOccurred', async () => {
+    const saveRun = vi.fn();
+    const persistence = createHistoryPersistence(fakeClient({ saveRun }));
+
+    const result = await persistence.save(pausedPayload());
+
+    expect(result).toEqual({ kind: 'excluded', reason: 'invalid-attempt' });
+    expect(saveRun).toHaveBeenCalledTimes(0); // NFR-69.7: the call count is the assertion
+  });
+
+  it('reports invalid-attempt rather than practice when both would exclude', async () => {
+    const persistence = createHistoryPersistence(fakeClient({ saveRun: vi.fn() }));
+    const result = await persistence.save(pausedPayload({ assessment: false }));
+    expect(result).toEqual({ kind: 'excluded', reason: 'invalid-attempt' });
+  });
+
+  it('retry() cannot resurrect a paused attempt saved after a failure', async () => {
+    const saveRun = vi
+      .fn<() => Promise<SaveHistoryRunResult>>()
+      .mockRejectedValueOnce(new HistoryClientError('NETWORK_ERROR', 'boom'));
+    const persistence = createHistoryPersistence(fakeClient({ saveRun }));
+
+    // A clean Assessment run fails first, so `lastAssessmentPayload` is armed and retryable…
+    await persistence.save(makeAssessmentPayload());
+    expect(persistence.state.kind).toBe('failed');
+
+    // …then a paused attempt arrives. It must both be excluded *and* disarm the retry target,
+    // otherwise pressing "retry" would silently re-save the earlier run under the new state.
+    await persistence.save(pausedPayload());
+    const retried = await persistence.retry();
+
+    expect(retried).toEqual({ kind: 'excluded', reason: 'invalid-attempt' });
+    expect(saveRun).toHaveBeenCalledTimes(1);
+  });
+
+  it('still saves a clean Assessment run with pauseOccurred=false (no collateral damage)', async () => {
+    const base = makeAssessmentPayload();
+    const payload = {
+      ...base,
+      meta: {
+        ...base.meta,
+        validity: {
+          corridorExceeded: false,
+          perfFloor: false,
+          recorderOverflow: false,
+          bufferOverflow: false,
+          pointerLockLost: false,
+          pauseOccurred: false,
+        },
+      },
+    };
+    const saveRun = vi.fn(
+      async (): Promise<SaveHistoryRunResult> => ({ disposition: 'created', run: runSummary() }),
+    );
+    const persistence = createHistoryPersistence(fakeClient({ saveRun }));
+
+    const result = await persistence.save(payload);
+
+    expect(saveRun).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe('saved');
+  });
+
+  it('still saves a pre-WP-69 payload whose validity block is absent entirely', async () => {
+    const saveRun = vi.fn(
+      async (): Promise<SaveHistoryRunResult> => ({ disposition: 'created', run: runSummary() }),
+    );
+    const persistence = createHistoryPersistence(fakeClient({ saveRun }));
+
+    const result = await persistence.save(makeAssessmentPayload());
+
+    expect(saveRun).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe('saved');
+  });
+});
