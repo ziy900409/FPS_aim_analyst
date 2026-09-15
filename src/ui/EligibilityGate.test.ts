@@ -140,6 +140,20 @@ describe('createEligibilityGateScreen', () => {
     expect(document.created).toHaveLength(createdCount);
   });
 
+  // WP-70 / T6（FR-70.7）— T5.6 交棒的未結項：T3 交付了真值驅動但沒改文案。舊文案是 session 級
+  // sticky 旗標的產物，在 run 級判準下對「下一場乾淨的 run」是錯的（KI-040 缺陷 A）。
+  it('states run-scoped invalidity in the banner instead of session-scoped wording', () => {
+    const { document } = setup(() => PASS_REPORT);
+    const banner = document.created.find((el) => el.attributes.get('role') === 'alert')!;
+    const text = banner.textContent ?? '';
+
+    expect(text).not.toContain('本 session');
+    expect(text).toContain('本次測試');
+    expect(text).toContain('下一次測試不受影響');
+    // 恢復路徑的按鈕字樣必須與 `PauseOverlay.ts` 的 `RESTART_LABEL` 逐字一致,不另造說法。
+    expect(text).toContain('重新測試');
+  });
+
   it('cancel button closes the screen without entering a session', () => {
     const { handle, onEnter, root, cancel } = setup(() => PASS_REPORT);
     handle.open();

@@ -660,6 +660,38 @@ T2 task 檔 step 3 要求「找出所有因此改變期望值的既有測試，�
 - [x] No extra banner DOM node is created while toggling (`document.created` count pinned in `EligibilityGate.test.ts`).
 - [x] Source-scan confirms production no longer directly calls `showSuspectWarning()` / `hideSuspectWarning()` from `main.ts`.
 
+### T3.4 補結 FR-70.7 的文案（2026-09-15，T6 第一個切片）
+
+T5.6 交棒的未結項 (a)。T3 交付了真值驅動（FR-70.6）但**沒動文案**，DoD 的「新文案不含『本 session』
+字樣」因此未達成 —— 這裡補上，並保留在 UI 切片內（不與 T6 的文件切片混在同一個 commit）。
+
+| | 舊 | 新 |
+|---|---|---|
+| [`EligibilityGate.ts`](../../../../../src/ui/EligibilityGate.ts) 橫幅 | `⚠ 已離開 fullscreen — 本 session 資料標記為 suspect(條件失效)。` | `⚠ 已離開 fullscreen — 本次測試標記為 suspect(條件失效)；下一次測試不受影響。暫停面板的「重新測試」可恢復條件並重跑本項。` |
+
+新文案三件事逐條對應 T3 步驟 2：**失效範圍＝這一次測試**、**不繼承到下一次**（KI-040 缺陷 A 的正面
+陳述）、**操作員的下一步**。「重新測試」逐字取自 [`PauseOverlay.ts`](../../../../../src/ui/PauseOverlay.ts)
+的 `RESTART_LABEL`，不另造第二個說法（與 T4 入口一致，T3 步驟 2 的要求）。
+
+**證據**：
+
+| Command | Result |
+|---|---|
+| `npx.cmd vitest run src/ui/EligibilityGate.test.ts` | exit 0；**10 passed**（新增 1，改動前該筆**實測轉紅**：`expect(text).not.toContain('本 session')` 收到舊文案） |
+| `npm.cmd run typecheck` | exit 0 |
+| `npx.cmd vitest run` | exit 0；**287 files**、**3751 passed / 2 skipped**（T5 收尾 3750 ⇒ 淨增恰為新增的 1 筆） |
+| `npx.cmd vitest run tests/regression` | exit 0；**324 passed**（與 T0.3 baseline 逐數相同，NFR-70.1 零漂移） |
+| `npm.cmd run build` | exit 0 |
+| `npx.cmd playwright test --project=edge --workers=1 wp70-fullscreen-validity` | exit 0；**2 passed**（1.8m）。T5 的 `SUSPECT_BANNER` 只釘 `'⚠ 已離開 fullscreen'` 前綴（刻意不釘錯的措辭）⇒ 改文案不動 e2e 一行 |
+
+⚠️ 這次 e2e 跑在**夠快的機器**上（warmup p95 4.89ms），所以 L4 描述的那一支出現了：乾淨 rep 的
+`meta.suspect` **實測為 `false`**（`perfFloor: false`、`fullscreenExited: false`）—— T5.3 表格中
+「perf 過地板時」那一列的真實觀測，DoD 原文的 `suspect === false` 在此重現。
+
+**未做（明帳）**：沒有為「橫幅字樣 ≡ `RESTART_LABEL`」加 parity 測試。T2 對 production 副本用了
+parity pin，但那裡釘的是**行為分派的副本**（漂移會讓結論失效）；這裡兩處是各自獨立的文案，
+釘死反而會讓任何一邊的措辭調整連坐變紅。⇒ 由 T6 的 operator-manual 逐字核對承擔（該節 DoD 明列）。
+
 ---
 
 ## T4 condition recovery entry point (2026-09-15)
