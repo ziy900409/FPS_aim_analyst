@@ -101,6 +101,8 @@ primitive 層   新增 buildTargetWindows()（per-target 窗界，population-awa
 
 > ⚠️ **§3 的 WP-68（v8）候選已被 WP-63 實質取代**：WP-63 交付的正是 `buildTargetWindows()` primitive + 三顆離線重建 + v8 指標族。兩處差異須知：(1) WP-63 **不採用** P14-3 所要求的「軌跡意圖歸因 + 合成 harness 驗證歸因規則」，改為**事件錨定** + 以實際下一次擊殺為 ground truth 的方向預測準確率曲線（理由見 [WP-63 §2.2](../stage13/wp-63-micro-flick-v8-measurement-foundation/README.md)：`t_detect` 已是既有構念，C-D4 禁止第二定義，且 v8 受 KI-031／KI-034 雙重阻塞）；(2) WP-63 不等 WP-66（本 stage 候選的 v3 參數定案）先行，因為它不重寫任何既有幾何，primitive 紀律由 NFR-63.4 的符號掃描直接釘死，不需要先有語彙權威。本 stage 若日後採納，§3 的 v8 列應改為指向 WP-63 而非另開新號。
 
+> ⚠️ **再順延（2026-09-15，WP-70 T0 重查）**：`WP-69` 與 `WP-70` **均已被採納**並入 [`exec-plan/README.md`](../../README.md) §2 索引 —— [`active/stage15/wp-69-pause-invalid-restart/`](../stage15/wp-69-pause-invalid-restart/README.md)（pause/invalid/restart，已交付）與 [`active/stage16/wp-70-run-scoped-condition-validity/`](../stage16/wp-70-run-scoped-condition-validity/README.md)（條件失效的效力單位改為 run）。依 [GD-15](../../DECISIONS.md)「先採納先得」，**本 stage 尚未採納的三個候選再順延為 `WP-71`／`WP-72`／`WP-73`**。下表的 WP 欄位仍未改寫（本註記即權威）；採納當下須依 [GD-35](../../DECISIONS.md) ② 再重查一次，不得直接沿用本註記的數字。重查證據：`exec-plan/README.md` §2 目前最大採納號 = **WP-70**、`DECISIONS.md` 已落帳最大 = **GD-46**。
+
 | WP（候選） | 一句話 | 相依 | 估時（d） | 狀態 |
 |---|---|---|---|---|
 | **WP-66** | `spider-shot-v3` 量測參數定案:把已實作的五類構念與五個 registry 指標寫成規格權威,並處理 KI-031 造成的兩類構念空洞 | **KI-031**（見 §4） | 3–5 | 🟡 規劃中。參數文件已交付:[`spider-shot-v3-measurement-parameters-2026-09-09.html`](../../../algorithm/spider_shot/spider-shot-v3-measurement-parameters-2026-09-09.html) |

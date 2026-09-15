@@ -183,7 +183,7 @@
 
 | WP | 子資料夾 | 目標 | 里程碑 | 相依 | 估時 | 狀態 |
 |---|---|---|---|---|---:|---|
-| **WP-70** | [`active/stage16/wp-70-run-scoped-condition-validity/`](active/stage16/wp-70-run-scoped-condition-validity/README.md) | `meta.suspect` 的 fullscreen 成分由 session 級 sticky 改為 **run 級**（與早已是 run 級的 perf 成分對齊，非新增 scope）；protocol 路徑補上 KI-007 錄製窗判準以消除第二套判準（C-D4）；suspect 橫幅改由旗標真值驅動並改 run 級文案；新增**不重啟 plan** 的恢復條件入口（E2） | —（T-exit 即交付） | WP-69 ✅ | 6–9.5 | ⬜ **規劃完成，未開工**。核心發現：`pointerLockLostDuringRun`（WP-65 T5）已是逐字同型的 per-run 先例 ⇒ T1 照抄即可，非重新設計 `experimentSession`。⚠️ 單點風險 **OQ-70.1**：Playwright 能否可靠取得真 fullscreen 未經驗證，T0 必須實測 —— 它決定 T5 是 e2e 任務還是手動清單＋單元注入。⚠️ 編號 **WP-70 / GD-47 為預約**，T0 依 GD-15 重查。 |
+| **WP-70** | [`active/stage16/wp-70-run-scoped-condition-validity/`](active/stage16/wp-70-run-scoped-condition-validity/README.md) | `meta.suspect` 的 fullscreen 成分由 session 級 sticky 改為 **run 級**（與早已是 run 級的 perf 成分對齊，非新增 scope）；protocol 路徑補上 KI-007 錄製窗判準以消除第二套判準（C-D4）；suspect 橫幅改由旗標真值驅動並改 run 級文案；新增**不重啟 plan** 的恢復條件入口（E2） | —（T-exit 即交付） | WP-69 ✅ | 6–9.5 | 🟡 **進行中 —— T0 ✅（2026-09-15）**，T1 未開工。**T0 實測結論**：編號 WP-70 / GD-47 確認可用；baseline 四闸全 exit 0（Vitest **3709 passed／2 skipped**、regression **324**，與 WP-69 T-exit 逐字相同⇒零漂移）；KI-040 四缺陷以當前行號複核**全數仍成立**；digest 預測 **3 筆**（具名）。**OQ-70.1 已結案：Playwright 可取得真 fullscreen ⇒ T5 = e2e 任務**，但帶三條具名限制（尤其 **L1：`page.evaluate()` 自帶 user activation，故 e2e **無法**守 FM-70.4**，須改由 T4 source-scan ＋ 實機手動守）。規劃期核心發現：`pointerLockLostDuringRun`（WP-65 T5）已是逐字同型的 per-run 先例 ⇒ T1 照抄即可，非重新設計 `experimentSession`。（上述兩項規劃期風險均已於 T0 結案：~~OQ-70.1 未經驗證~~ ⇒ 已實測；~~編號為預約~~ ⇒ 已依 GD-15 重查確認，並順帶修好 stage14 §3 的過期順延註記） |
 
 ---
 

@@ -13,11 +13,12 @@ Stage 15 解的是「暫停後這一輪還能不能被採納」；本 stage 解�
 
 | WP | 目標 | 相依 | 估時 | 狀態 |
 |---|---|---|---:|---|
-| **WP-70** | [`wp-70-run-scoped-condition-validity/`](wp-70-run-scoped-condition-validity/README.md)：`meta.suspect` 的 fullscreen 成分改為 run 級（與已是 run 級的 perf 成分對齊）；protocol 路徑補上錄製窗判準；橫幅改由真值驅動；新增不重啟 plan 的恢復條件入口 | WP-69 ✅ | 6–9.5 d | ⬜ 規劃完成，未開工 |
+| **WP-70** | [`wp-70-run-scoped-condition-validity/`](wp-70-run-scoped-condition-validity/README.md)：`meta.suspect` 的 fullscreen 成分改為 run 級（與已是 run 級的 perf 成分對齊）；protocol 路徑補上錄製窗判準；橫幅改由真值驅動；新增不重啟 plan 的恢復條件入口 | WP-69 ✅ | 6–9.5 d | 🟡 **T0 ✅（2026-09-15）**，T1 未開工 |
 
 本 stage 暫無獨立 milestone；WP-70 的 `T-exit` 即交付判定。編號依
-[GD-15](../../DECISIONS.md)「正式進 §2 索引才算採納」取得，**WP-70 / GD-47 為規劃期預約，T0 須重查**；
-stage14 的未採納候選依「先採納先得」順延。
+[GD-15](../../DECISIONS.md)「正式進 §2 索引才算採納」取得；
+✅ **WP-70 / GD-47 已於 T0（2026-09-15）重查確認可用**（本案以外最大採納 WP-69、`DECISIONS.md` 最大 GD-46、`### GD-47 ` 零命中）；
+stage14 的未採納候選依「先採納先得」已順延為 `WP-71`／`WP-72`／`WP-73`。
 
 ## Stage 級不變式
 
