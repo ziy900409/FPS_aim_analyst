@@ -307,6 +307,10 @@ docs/exec-plan/
 
 ---
 
+## Operational Pause / Attempt-Validity Entry
+
+**暫停、失效與整場 Restart**：[operational/pause-invalid-restart.md](operational/pause-invalid-restart.md)（WP-69 交付，2026-09-15）——錄製中 Pointer Lock 遺失即暫停且該 attempt **永久失去實驗採納資格**；收工由單一 finalization gate 三分為 `eligible-candidate`／`invalid-retained`（只有手動下載的 `.invalid-paused` 稽核檔）／`discarded`（無 payload、清空 recorder）。`meta.suspect` 是品質警告，**不是**這三態的替代品。操作步驟與現場檢查清單見該檔；術語見 [CONTEXT.md](../CONTEXT.md)「paused-invalid attempt／attempt disposition」；schema 欄位見 [operational/schema.md](operational/schema.md#metavalidity)；操作員速查列在 [guideline/operator-manual.md §4.4／§8.3](guideline/operator-manual.md)。
+
 ## Operational Micro-Flick Entry
 
 **Micro-flick analysis**: [operational/analysis-micro-flick.md](operational/analysis-micro-flick.md) documents the WP-63 v8 metric boundary, environment gates, seven synthetic probes, FPS parity, tick-rate sensitivity, legacy fixture discipline, and quality-flag interpretation —— 並於 WP-68 後補上 **v9 的適用性與兩者唯一的語義差（計分窗右界）**。

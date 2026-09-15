@@ -23,7 +23,7 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
-### GD-46 🟡 WP-69 暫停後永久失去實驗效力；時間戳不可信即丟棄；只有整場 Restart 可恢復資格（2026-09-15，規劃）
+### GD-46 ✅ WP-69 暫停後永久失去實驗效力；時間戳不可信即丟棄；只有整場 Restart 可恢復資格（2026-09-15, T-exit）
 
 | | |
 |---|---|
@@ -35,7 +35,9 @@
 | **⑤ 與 GD-41 的關係** | **明確覆寫 GD-41 中「錄製中掉鎖只標記、不中斷、sim 跑到自然結束」這一段行為。** 保留 GD-41 的 `pointerLockLost` 事實欄、optional-in/required-out 相容策略，以及 Pointer Lock 與 fullscreen 為不同構念；新欄 `pauseOccurred` 是 attempt 採納規則，不能只靠既有 `suspect`（History 現況仍會保存 suspect assessment）。 |
 | **⑥ 編號與相依** | 寫入當下正式索引最大為 WP-68、已落帳最大 GD-45；stage14 的 WP-69～71 自我標示為未批准候選，依 GD-15 不佔號，故 Stage15 採 **WP-69 / GD-46**。T0 仍須重查；WP-67 已預約 GD-43 且可能平行修改 export schema/digest，WP-69 T0 必須對帳而不覆蓋。 |
 | **⑦ T0 落閘（2026-09-15）** | 編號重查：索引/資料夾最大為 **WP-69**、已落帳最大 **GD-45**、`GD-46` 零標題命中 ⇒ **維持 WP-69 / GD-46 不改號**。WP-67 T0～T-exit 全 ⬜、production 零落地，且兩案 canonical digest 影響面**互斥**（WP-67 `meta.opening` 缺席不補預設 ⇒ 移動 **0** 筆；WP-69 `validity.pauseOccurred` required-out ⇒ 只移動帶 `meta.validity` 父物件的 **3** 筆，第 4 筆變動即 bug）⇒ **不需共用 fixture 基線**。OQ 關閉：**OQ-69.1 經使用者推翻預設，改為「只在結果頁手動下載」**（不自動下載）；OQ-69.2／69.3 維持預設。`RecordingIntegrityReason` 凍結為 8 項封閉詞彙，判準由現行 9 份乾淨 fixture（13,262 ticks／634 events）實測反推：**tick 軸取 bit-exact，event 軸必須容許「小於一個 tick」的回退**——實測有一份 `suspect=false` 的正式 payload 帶 0.2025 ms 跨時鐘回退（`simStep()` 內 sim 蓋 `tickEndMs` 早於 `consume()`，非 `lateEventCount`），零容差 validator 會誤殺既有資料。詳見 [WP-69 progress §T0](active/stage15/wp-69-pause-invalid-restart/progress.md)。 |
-| **狀態** | 🟡 產品/架構規則已採納，production 尚未落地。WP-69 T-exit 以具名證據補齊後翻 ✅；在此前不得宣稱功能已可用。 |
+| **⑧ T-exit 落閘（2026-09-15，commit `4bc2fdf` + 本 slice）** | **①～⑤ 的每一條規則都已落地並有具名機械證據**，FR-69.1～69.12／NFR-69.1～69.8 逐條對表見 [WP-69 progress §T-exit](active/stage15/wp-69-pause-invalid-restart/progress.md)。三個集中式邊界各自落在一個模組：`src/loop/pausableTimeMapper.ts`（首次 pause 前 identity——30/60/144/240 FPS 四組 trace 逐位 `Object.is`；pause 期間每幀 `ticks=0`；resume 幀無 catch-up／無 re-anchor，且 T0.4 的 naive-pause 失敗模式已固化成永久負向測試）、`src/attempt/RunAttemptController.ts`（sticky `invalid-paused`，四條恢復路徑各一測試＋一條窮舉所有 mutator 的測試證明 `restart()` 是唯一出口）、`src/attempt/AttemptFinalizationGate.ts`（三態 consequence plan，且 source-scan 釘住它早於 payload builder、早於第一個 `await`、早於三個 runner 的推進呼叫）。**零呼叫反證**（NFR-69.7）在 unit（三態呼叫矩陣）與真 Edge live e2e（Session／BR Protocol／Tracking Pilot 各一條 held × clean 成對案例）兩層都成立；`HistoryPersistence` 的 `excluded: 'invalid-attempt'` 為第二道防線（讀 payload 自述而非 app state）。⑤ 對 [GD-41](#gd-41--wp-65-drill-arming-countdown-presentation-and-pointer-lock-validity-2026-09-11-t-exit) 的覆寫已生效且 `pointerLockLost`／`pauseOccurred` 保持兩個構念（schema round-trip 四種組合全綠）。全量閘：typecheck／build exit 0、Vitest **3709 passed／2 skipped（284 files／1 skipped）**、`tests/regression` **324 passed（與 T0 baseline 逐數相同）**、Edge full e2e **119 passed / 0 failed**（20.4m）、canonical fixture 非預期 diff **0**（僅 D-69-T0-4 預測的 3 筆移動）。 |
+| **⑨ 明帳殘餘風險與邊界（不得被「已交付」蓋過）** | (a) **OQ-69.1 的代價**：稽核檔改為結果頁**手動**下載 ⇒ 操作員不按即等於未保留，這是產品選擇不是缺陷，但它把一個保存責任移到人身上。(b) **OQ-69.4 的代價**：暫停中直接換 drill／scene／weapon ⇒ `pause-fence-unclosed` ⇒ **連稽核檔都沒有**；要留稽核檔必須先 Resume 把該 attempt 跑完。(c) 本 WP **不宣稱**任何指標效度變化：三態只決定「這一場能不能被採納」，C-D3 的構念驗證閘與既有 eligibility／quality gates 一條都沒有放寬——`eligible-candidate` **不等於** accepted。(d) `main.ts` 仍是 orchestration god node；本 WP 只抽出三個可測模組，未重構 bootstrap（承 README §3 技術債，仍在帳）。 |
+| **狀態** | ✅ **已落地並驗收**（2026-09-15，WP-69 T-exit）。產品/架構規則與 production 實作一致，證據逐條可稽核；殘餘風險見 ⑨，未被關閉而是明帳保留。 |
 
 ### GD-45 ✅ WP-68 Micro Flick v9 量測基礎層對齊 — 儀器宣告、計分窗右界依計分制分流、v8/v9 分池鍵收窄 (2026-09-14, T-exit)
 

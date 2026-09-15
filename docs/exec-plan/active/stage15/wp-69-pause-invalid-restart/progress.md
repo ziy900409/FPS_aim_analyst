@@ -2,11 +2,12 @@
 
 ## Snapshot
 
-- **狀態**：🟡 T6 已落地（2026-09-15），T-exit 可開工
+- **狀態**：✅ **已交付**（2026-09-15，T-exit）。T0–T6 + T-exit 全數完成
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：T-exit — acceptance matrix、GD-46 與索引狀態收尾
-- **決策**：[GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)
+- **下一步**：無阻塞項。⚠️ 跨 WP 遺留：[OQ-69.5](#open-questionst-exit-後)（CodeGraph 索引涵蓋範圍，屬工具層）
+- **決策**：[GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15-t-exit) ✅
+- **T-exit 判定一句話**：FR-69.1～69.12 與 NFR-69.1～69.8 逐條有具名機械證據，無「完成但無證據」的列 ⇒ **✅ 完全交付、無具名缺口**（[D-69-TE-1](#d-69-te-1--交付判定為完全交付殘餘風險明帳保留而非關閉2026-09-15)）；本 gate 另修好三處文件不一致，其中 `operator-manual.md` 的 Esc 語意過期是操作員會實際踩到的（[§TE.6](#te6-本-gate-查出並修復的三處文件不一致)）
 
 ## Planning evidence
 
@@ -25,7 +26,7 @@
 | T4 | ✅ | 2026-09-15。`AttemptFinalizationGate`（consequence matrix）+ main.ts 五個消費點 + History 第二道防線 + Result 稽核下載 + PauseOverlay 作廢 view；76 個新測試 + 十二刀 mutation 全部見血；OQ-69.4 關閉。四閘全綠 + Edge e2e 15 passed。見 [§T4](#t4-finalization--persistence-gate2026-09-15) |
 | T5 | ✅ | 2026-09-15。`describeAttemptHold()` + `TrackingPilotRunner.retryRunningBlock()` + `main.ts` 的 `holdOrchestratorsOnAttempt()` 單一接縫；33 個新測試 + 六刀 mutation 全部見血。四閘全綠 + Edge e2e 15 passed。見 [§T5](#t5-orchestrator-retry2026-09-15) |
 | T6 | ✅ | 2026-09-15。真 Edge 4-case live E2E：Standalone Resume 成功/失敗、invalid diagnostic、forced discard；Session/BR Protocol/Pilot 同項 retry + clean advance。全量 3709 passed / 2 skipped；回歸 324；文件與 graph 更新。見 [§T6](#t6-live-edge--regression--docs2026-09-15) |
-| T-exit | ⬜ | — |
+| T-exit | ✅ | 2026-09-15。production diff = 空。FR-69.1～69.12／NFR-69.1～69.8 逐條對到**逐字測試名**；gate caller 出口清單六類全數在閘後（CodeGraph 涵蓋不足，改以 grep 為權威，沿 D-68.T0-4）；全量閘 Vitest **3709 passed／2 skipped**、回歸 **324**、Edge full e2e **119 passed / 0 failed**（20.4m）、canonical 非預期 diff **0**。⚠️ 查出並修復三處文件不一致（operator manual 的 Esc 語意過期、MAP.md 缺入口、checklist T6 未翻）。見 [§T-exit](#t-exit-acceptance-gate2026-09-15) |
 
 ## Decision log
 
@@ -57,19 +58,181 @@
 | D-69-T4-5 | 稽核檔下載鈕放 Result **面板頂端警示條**，不進 `result-actions` footer（T0.6 的 z-index 硬性要求） | T4 採納 |
 | D-69-T4-6 | `HistorySaveState.excluded.reason` 擴成 `'practice' \| 'invalid-attempt'`，且 invalid 優先於 practice | T4 採納 |
 | D-69-T4-7 | `discarded` 用 `PauseOverlay` 的第五個 view 呈現，**不**用 Result —— Result 存在本身就代表「有一份結果」 | T4 採納 |
+| D-69-T5-1 | Session／Protocol 不加 production 程式碼：`advancesOrchestrator` 一關就沒人呼叫 `advance()`／`completeCurrentCondition()`，再加一層 `if` 就是第二個判準（C-D4）。T5 對這兩者的交付是 held × clean 成對測試 | T5 採納（見 §T5.3） |
+| D-69-T5-2 | pilot 的 held 入口是獨立的 `retryRunningBlock()`，不借 `abortCurrentBlock()`（它會 `advanceFromBlock()` 前進，FM-6），且刻意不重載 config —— full restart 是 `main.ts` 單一 coordinator 的職責 | T5 採納（見 §T5.5） |
+| **D-69-TE-1** | **交付判定為「完全交付、無具名缺口」；殘餘風險（手動下載的人為風險、暫停中導航無稽核檔、不宣稱指標效度、`main.ts` 技術債）明帳保留於 GD-46 ⑨ 而非隨 gate 關閉** | **T-exit 採納**（見 [§D-69-TE-1](#d-69-te-1--交付判定為完全交付殘餘風險明帳保留而非關閉2026-09-15)） |
+| D-69-TE-2 | gate caller 稽核以 **grep 為權威**，CodeGraph 僅作下界（索引涵蓋 98/228，三個核心交付檔零命中）；沿用 WP-68 的 D-68.T0-4，不因 CLAUDE.md 的「Trust codegraph results」而採信未涵蓋檔的空結果 | T-exit 採納（見 §TE.3） |
 
 ## Open Questions
 
-OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使用者拍板)）；**OQ-69.4 已於 T4 關閉**（見 [§T4.5](#t45-oq-694-的結論暫停中離開就是-discardedd-69-t4-2)）。
+OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使用者拍板)）；**OQ-69.4 已於 T4 關閉**（見 [§T4.5](#t45-oq-694-的結論暫停中離開就是-discardedd-69-t4-2)）。**本 WP 範圍內零遺留**；T-exit 另開的 **OQ-69.5 屬工具層、非本 WP**（見 [§Open Questions（T-exit 後）](#open-questionst-exit-後)）。
 
 | ID | 問題 | 提出 | 歸屬 |
 |---|---|---|---|
 | **OQ-69.4** ✅ | 「正在 paused 時離開/切換 drill」依 T0.5 凍結判準會得到 `discarded`（fence 未閉合）——但 pause 之前的時間軸其實是可證的。T4 要不要在導航前先要求 resume（才能拿到 `invalid-retained` 稿核檔），還是接受直接 discard？ | T1（2026-09-15） | **T4 已答：接受 discard**（§T4.5） |
+| **OQ-69.5** 🟡 | CodeGraph 索引只涵蓋 `src/` 228 個非測試 `.ts` 中的 98 個，`sync` 卻回「Already up to date」；WP-68 T0 與本 gate 已兩度改用 grep。要修工具設定，還是改 CLAUDE.md 的「Trust codegraph results」指示？ | T-exit（2026-09-15） | **非本 WP**（工具層），留給使用者決定 |
 
 > T1 本身不替 OQ-69.4 做決定：實作上**逐字執行 T0 凍結的判準**（pause/resume 次數不相等 ⇒ `pause-fence-unclosed`），不在實作期悔放寬。
 
 
 ---
+
+## T-exit acceptance gate（2026-09-15）
+
+> 交付物 = **證據**，不是程式碼。本 gate 的 production diff 為空；唯一的 source 變更是文件與索引。
+> 判定一句話：**FR-69.1～69.12 與 NFR-69.1～69.8 逐條有具名機械證據，無「完成但無證據」的列 ⇒ 判定為 ✅ 完全交付**（[D-69-TE-1](#d-69-te-1--交付判定為完全交付殘餘風險明帳保留而非關閉2026-09-15)）。本 gate 另查出並修好**三處文件不一致**（§TE.6），其中一處是操作員會實際踩到的行為描述過期。
+
+### TE.0 本 gate 的驗證環境（所有數字的前提）
+
+| 項 | 值 |
+|---|---|
+| git SHA（gate 起跑時） | `4bc2fdf1dd06ff128398ef2cb00cfb383abd5465` |
+| branch | `chore/agents-skills-tree`（working tree 起跑時 clean） |
+| 瀏覽器 | Edge **`149.0.7827.55`**（Playwright `channel: 'msedge'`，`--project=edge`，真 GPU） |
+| `crossOriginIsolated` | **`true`**（e2e 內實測，非推論） |
+| e2e worker | `--workers=1`（KI-030 的多 worker flakiness 不入本 gate 的判讀） |
+| dev/preview server | `5173`／`4173`，history root 走 `.playwright-tmp/history-*`（與 T4/T5/T6 同） |
+| Pointer Lock / display | 真 `document.exitPointerLock()` 觸發 pause（非合成事件）；真 GPU（`metadata.realGpu: true`），非 SwiftShader |
+
+**本 gate 的 live 實測值**（四條 WP-69 case 的機器可讀輸出，非目視）：
+
+| 量 | 值 |
+|---|---|
+| Standalone：pause 前後 `tickCount` | **390**（前後相同）；`fireCount` **0**；`fenceCount` **1** |
+| Standalone：resume | 排除 wall time **3313.41 ms**；`lockConfirmationCount` **1** |
+| Standalone：Restart 後 attempt | **3** |
+| Standalone：強制 discard | `bufferOverflow` **9488** → `{kind:'discarded', reason:'pause-attempt-overflow'}`；`recording` 四欄全 **0**；Result 隱藏；下載數 **1**（就是那份稽核檔） |
+| Standalone：稽核檔 | 恰一份 `tracking_scene_v1-2026-09-15T15_56_24.338Z.invalid-paused.json`（marker 只出現一次） |
+| Session Plan | held cursor **0** → clean retry attempt **3**，正式下載 **1**（檔名不含 `.invalid-paused`） |
+| BR Protocol | held condition **0**、`exportCount` **1** → clean retry 後 condition **1**，正式下載 **1** |
+| Tracking Pilot | audit 一筆 `{blockIndex:0, role:'practice', previousAttempt:1, disposition:{kind:'discarded', reason:'pause-fence-unclosed'}}`；`recordCount` **1**、正式下載 **1** |
+
+> ⚠️ **`tickCount` 為 390，T6 記的是 397——這不是回歸。** 該值是「操作員在第幾個 tick 按下暫停」的實時結果，隨真瀏覽器的排程抖動而變；本案例斷言的是**pause 前後兩次讀數相同**（凍結）與 `fireCount` 新增為 0，不是某個固定 tick 數。真正逐位的 determinism 斷言在 NFR-69.1／69.8 的 Vitest 側（`Object.is`），不靠 live 數字。
+
+### TE.1 Functional acceptance matrix（A-69.1～A-69.12 ≡ FR-69.1～69.12）
+
+> 「檔案」欄的測試以 `npx vitest run <file>` 執行（exit 0）；live 欄以 `npx playwright test --project=edge --workers=1` 執行（exit 0）。
+> Live 欄只填**真 Edge 實測值**；空白代表該條沒有 live 面，不是沒有證據。
+
+| FR | 具名斷言（測試名逐字） | 檔案 | Live 證據 |
+|---|---|---|---|
+| **69.1** 錄製相位掉鎖即凍結 | `running 掉鎖 → paused + invalid-paused`；`{1,10,300}s pause: every frame returns ticks=0 and nothing advances` | `wp69-pause-lifecycle.test.ts`、`wp69-pause-time.test.ts` | pause 前後 `tickCount` 固定 **390**、`fireCount` 新增 **0** |
+| **69.2** 第一次 pause 即 sticky | `invalidates on the first pause`；`does not restore eligibility when {the resume request starts, Pointer Lock is re-acquired, the resume countdown completes}`（三條）；`exposes no mutator that clears validity other than restart()`（窮舉）；`resume 完成後 validity 仍是 invalid-paused` | `RunAttemptController.test.ts`、`wp69-pause-lifecycle.test.ts` | Resume 完整跑完後仍產出 `.invalid-paused` 檔 |
+| **69.3** armed/idle/ended 不算 pause | `%s 掉鎖不 pause、不失效（FR-69.3：開場釋鎖脈衝與收工釋鎖維持乾淨）` —— `it.each(['armed','idle','ended'])` 三相位，與 `running 掉鎖 → paused + invalid-paused` 同一個 rig 對照 | `wp69-pause-lifecycle.test.ts` | 開場取鎖脈衝未觸發 overlay |
+| **69.4** overlay 文案與兩顆鈕、同步 request | `成功：click → 一次 request → locking → 取鎖 → 倒數 → active`；`beginPause 把 mapper 的回傳值直接餵給 fence，再補 release edge` | `wp69-pause-lifecycle.test.ts`、`PauseOverlay.test.ts` | overlay 實際出現「本次已失去實驗效力」 |
+| **69.5** resume 倒數取自 drill、失敗可重試 | `resume 倒數長度取自該 drill 的 timing.countdownMs（不另立常數）`；`error（pointerlockerror）：留在 paused 並帶可重試訊息`；`request rejection：同樣留在 paused 並帶訊息（第二條收斂路徑）`；`失敗後可以再按一次「繼續」並成功（不會卡在沒有出口的畫面）` | `wp69-pause-lifecycle.test.ts` | rejection → retry → lock → 完整倒數；`lockConfirmationCount` = **1** |
+| **69.6** full restart 建新 attempt | `attempt +1、validity fresh、fence 清空、mapper 回 identity`；`clears pause state, validity and fences, and increments the attempt`；`replays the same tick-index states after a pause, resume and full restart` | `wp69-pause-lifecycle.test.ts`、`RunAttemptController.test.ts`、`wp69-pause-time.test.ts` | Restart 後 attempt = **3** |
+| **69.7** 三態 | `eligible-candidate keeps every existing path open and clears nothing`；`states every consequence on every row (a new field cannot default itself in)`；三態呼叫矩陣三條 | `AttemptFinalizationGate.test.ts`、`wp69-finalization.test.ts` | 三態在 live 各出現至少一次 |
+| **69.8** invalid-retained 的檔名與禁區 | `invalid-retained：payload 與 metrics 有，history／replay／advance／正式下載全為 0`；`invalid-retained 收工當下不產生任何檔；按下去才有，且檔名帶 .invalid-paused`；`is idempotent — double-marking cannot happen` | `wp69-finalization.test.ts`、`AttemptFinalizationGate.test.ts` | 手動下載恰一份 `*.invalid-paused.json` |
+| **69.9** discarded 無 payload | `discarded：payload builder 一次都沒被呼叫，recorder 被清空（FR-69.9／FM-7）`；`discarded 清空後不再 pump，避免後續 rAF 把 ended ticks 寫回 recorder`；`discarded 連稽核檔都沒有（沒有 payload 就沒有檔）` | `wp69-finalization.test.ts` | 強制 overflow = **9488**；`recording` 全歸零、下載不增、Result 隱藏 |
+| **69.10** 三 runner 停在同一步 | Session：`paused 時直接 Restart 仍 hold 同一個 step，且不下載` ＋ `連續兩次 pause + restart：step 仍不動，attempt 走到 3`；Protocol：`paused 時直接 Restart 仍 hold 同一個 condition，且 exports[] 不長` ＋ `最後一個 condition 被 held 時不觸發 protocol complete（整份 protocol 仍未完成）`；Pilot：`paused 時直接 Restart 仍先 audit discarded，且同一 block 只增加一次 attempt` | `wp69-orchestrator-retry.test.ts` | 三條 live case（Session cursor、Protocol condition/export、Pilot audit）各自 held → clean retry |
+| **69.11** 兩個構念不合併 | `round-trips a payload that self-reports the pause`；`parses a pre-WP-69 payload that omits the flag, defaulting it to false (optional-in)`；`rejects a non-boolean flag (optional-in is not lenient-in)`；WP-65 的 `pointerLockLost` 三條同型測試仍全綠 | `exportPayloadSchema.test.ts`、`metadata.test.ts` | 錄製中掉鎖的 live payload 兩旗標同時 true |
+| **69.12** navigation 不可繞過 gate | `暫停中換 drill/scene/weapon：先過 gate 得到 discarded，再由 restart 清乾淨`；`resetRunPresentation 在 runAttempt.restart() 之前先結算暫停中的 attempt（FR-69.12）`；`從未暫停的導航不觸發 finalization（乾淨路徑零新增工作，NFR-69.1）` | `wp69-finalization.test.ts` | WP-66 scene roundtrip 必須先等真 pause event、再按真 Restart 才可換場景 |
+
+### TE.2 Non-functional acceptance matrix（NFR-69.1～69.8）
+
+| NFR | 具名斷言 | 檔案 | 判讀 |
+|---|---|---|---|
+| **69.1** 零 pause 逐位不變 | `{30,60,144,240} FPS: mapped and unmapped traces are Object.is identical, tick for tick`（四條）；`overlay 恆為 hidden、mapper 恆為 identity、attempt 恆為 eligible-candidate`；`從未暫停的導航不觸發 finalization`；`standalone drill 的 held attempt 不寫任何 orchestrator 狀態列` | `wp69-pause-time.test.ts`、`wp69-pause-lifecycle.test.ts`、`wp69-finalization.test.ts`、`wp69-orchestrator-retry.test.ts` | `Object.is` 而非 `toBeCloseTo` ⇒ 逐位，非近似 |
+| **69.2** pause 零 tick、resume 無 catch-up | `every frame returns ticks=0 and nothing advances`；`a sub-tick resume frame produces at most one tick (T2 DoD)`；`reproduces the T0.4 naive-pause failure — the reason the mapper exists` | `wp69-pause-time.test.ts` | ⭐ 最後一條是**負向對照**：naive pause 的 32-tick catch-up 與 2766.667 ms re-anchor 被固化成永久測試，mapper 若被拆掉會立刻紅 |
+| **69.3** resume 後時間軸連續 | `a pause is invisible in the output: mapped equals a never-paused run, tick for tick`；`a 300 s pause is equally invisible — length does not matter, only the mapping`；`holds 128 Hz across three pause cycles and stays exactly on the tick grid` | `wp69-pause-time.test.ts` | 三個 pause cycle ⇒ 不是只證單次 |
+| **69.4** pause／倒數期零偷跑 | `pause 期間 ring 寫入、camera delta、fire 與 tick 全部零新增`；`resume 倒數期間（鎖已拿回來）仍零新增 —— 只有這個閘擋著（FM-5）`；`pause 邊界補送 release edge，held 狀態不殘留（sim 消費後全部 false）`；`倒數完成後 camera 與 ring 立刻恢復（閘不是 sticky，sticky 的是 validity）` | `wp69-pause-lifecycle.test.ts` | 第四條反證 input 閘**不是** sticky —— sticky 的只有 validity |
+| **69.5** 熱路徑零配置 | `never reaches for {performance.now(), Date.now(), Math.random(), document, window}`（五條，註解先剝除再掃）；`跑遍含 discarded 的全部 view 三輪，零新增 DOM node`；`跑完所有 view 轉換後 createElement 呼叫數不變` | `pausableTimeMapper.test.ts`、`PauseOverlay.test.ts` | overlay 以 `createdCount` 機械計數，非目視 |
+| **69.6** 純 TS DOM + 實機 Pointer Lock | `src/attempt` 零 DOM／Three／sim／`SharedState`／research／`node:*` import 且零 `Date.now()`／`Math.random()`／`performance.now()`（掃 raw source）；live e2e 覆蓋 resume **失敗**與**成功**兩路 | `architecture.test.ts`、`wp69-pause-invalid-restart.spec.ts` | 零框架；Pointer Lock user gesture 只在 Edge 實機成立 |
+| **69.7** 零呼叫反證 | `never lets a non-eligible attempt reach history, replay or an orchestrator advance`；`savesHistory 為假時連 historyPersistence.save() 都不呼叫（第一道防線）`；`advancesOrchestrator 的閘早於三個 runner 的推進呼叫（FM-6）`；三態呼叫矩陣三條 | `AttemptFinalizationGate.test.ts`、`wp69-finalization.test.ts` | unit（spy 計數）＋ live（下載檔名清單）兩層 |
+| **69.8** restart parity | `replays the same tick-index states after a pause, resume and full restart`；`pairs every resetRunPresentation() call with a buildSimLoop() right after it` | `wp69-pause-time.test.ts` | 第二條釘住順序：先歸零 mapper、後重建 loop |
+
+### TE.3 Gate caller 稽核（T-exit 步驟 2）
+
+⚠️ **CodeGraph 對本問題再次不可採信，沿用 [D-68.T0-4](../../stage13/wp-68-micro-flick-v9-measurement-parity/progress.md) 的處置。** 本 gate 實測 `codegraph_status` 回 **156 files / 4390 nodes**，其中 `src/` 僅 **98** 檔（repo 實有 **228** 個非測試 `.ts`）；WP-69 的三個核心交付檔（`RunAttemptController`／`AttemptFinalizationGate`／`recordingIntegrity`）在索引中**零命中**，而 `codegraph sync .` 回「Already up to date」。⇒ 屬**涵蓋範圍缺口**而非 staleness，與 WP-68 T0 觀察到的是同一現象、隔一個 WP 再度複現。**本節結論以 grep over `src/ tests/ scripts/` 為權威**（CLAUDE.md 的「Trust codegraph results」在索引未涵蓋該檔時不適用）。
+
+**出口清單（每一條會產生後果的路徑都必須在閘之後）**：
+
+| 出口 | production call sites | 閘 |
+|---|---|---|
+| 建 payload | `buildCurrentExportPayload()` | `if (!plan.buildsPayload) return;` —— source-scan 釘住它早於 payload builder，且整個 gate 早於第一個 `await` |
+| 正式下載 | `main.ts` 6 處 `downloadJSON` ＋ 2 處 `downloadCSV` = **8**（測試逐條列舉，第 9 處即紅） | 面板 4 顆鈕走 `requireOfficialExport()` 且早於建 payload；收工自動下載與 pilot block 匯出在 `advancesOrchestrator` 之後 |
+| 稽核下載 | 1 處，且是唯一帶 `invalidAttemptBasename()` 的一處 | `plan.download !== 'diagnostic-manual'` 直接拒絕 |
+| 歷史保存 | `historyPersistence.save()` 2 處 | 第一道：`savesHistory` 為假則**根本不呼叫**；第二道：`HistoryPersistence` 讀 `payload.meta.validity?.pauseOccurred === true` → `excluded: 'invalid-attempt'` |
+| Orchestrator 前進 | `handleDrillEnded()`／`sessionPlanRunner.advance()`／`completeActiveProtocolCondition()` | 三者都在 `if (!plan.advancesOrchestrator) return;` **之後** |
+| Pilot hold | `handleInvalidAttempt()` → `retryRunningBlock()` | `abortCurrentBlock()` **不在** hold 路徑上（它只由 operator harness 的主動 Abort 觸發，語意不同，FM-6） |
+
+`HistoricalRunDetail.ts` 的 `downloadJSON` 讀的是**已存進 History 的別人的 payload**，而 invalid attempt 依上表兩道防線根本進不了 History ⇒ 不構成第 9 個出口。
+
+**符號參照數（grep，`src/ tests/ scripts/`，格式「檔數（production 檔數）」）**：`finalizeAttempt` 2（1）、`holdOrchestratorsOnAttempt` 3（1）、`requireOfficialExport` 2（1）、`createAttemptFinalizationGate` 5（2）、`planFinalization` 4（2）、`createRunAttemptController` 8（2）、`createPausableTimeMapper` 6（2）、`evaluateRecordingIntegrity` 3（2）、`invalidAttemptBasename` 4（2）、`describeAttemptHold` 4（2）。**每一個 production 消費點都恰是「1 個 app 接縫 ＋ 1 個模組自身」** ⇒ 無第二套判準（C-D4）。
+
+### TE.4 全量閘（T-exit 步驟 3）
+
+| 閘 | 命令 | exit | 計數 | 對比 T6 |
+|---|---|---|---|---|
+| typecheck | `npm run typecheck` | **0** | — | 同 |
+| build | `npm run build` | **0** | `✓ built in 2.10s`（chunk >500 kB 為既有警告） | 同 |
+| 全量單元 | `npx vitest run` | **0** | **3709 passed / 2 skipped**；檔案 **284 passed / 1 skipped** | **逐數相同** |
+| 回歸 | `npx vitest run tests/regression` | **0** | **324 passed**（33 files） | **逐數相同，零漂移** |
+| WP-69 觸及面 focused | 本 WP 動過的 20 個單元檔 | **0** | **664 passed**（20 files） | — |
+| Edge full e2e | `npx playwright test --project=edge --workers=1` | **0** | **119 passed / 0 failed**（20.4m） | **逐數相同**（T6 亦為 119/119） |
+| canonical fixture 非預期 diff | `exportPayloadSchema.test.ts` 8 筆逐筆 | **0** | 8/8 `serializes … unchanged` | 同 |
+
+### TE.5 Schema／fixture／parity／call-matrix（T-exit 步驟 4）
+
+1. **Canonical digest**：`CANONICAL_DIGEST_BEFORE_T5` 8 筆全部 `serializes … unchanged`（逐筆具名測試）。D-69-T0-4 的預測「只動帶 `meta.validity` 父物件的 3 筆」在 T1 實測**完全命中**（`09_18_05`／`09_24_18`／`09_37_24`），其餘 5 筆逐位不變；T2～T6 再無移動。**「第 4 筆變動即 bug，回頭修程式不准改表」的守衛仍在表上。**
+2. **Zero-pause digest**：NFR-69.1 的四條 FPS identity 測試 ＋ `tests/regression` 324 逐數不變 ⇒ 未 pause 路徑對本 WP 不可觀測。
+3. **Invalid／discard call matrix**：三態各一條具名測試，斷言的是**呼叫次數**（spy）而非從結果反推狀態；`invalid-retained` 的 history／replay／advance／正式下載四者皆 **0**，`discarded` 連 payload builder 都 **0**。
+4. **Same-seed restart parity**：`replays the same tick-index states after a pause, resume and full restart`（NFR-69.8），配 `pairs every resetRunPresentation() call with a buildSimLoop() right after it` 釘住順序。
+5. **WP-67 對帳（FM-9）**：`wp-67` 仍 T0～T-exit 全 ⬜、production 零落地 ⇒ 無 rebase 衝突，兩案 digest 影響面互斥的 T0 結論維持有效。
+
+### TE.6 本 gate 查出並修復的三處文件不一致
+
+> 這三處都不是程式缺陷，但第 1 項會讓操作員在現場做錯事，因此不列為 nit。
+
+1. ⭐ **`operator-manual.md` 仍在描述 WP-69 之前的 Esc 語意。** §4.4 的受測者操作表寫「**Esc**｜解除滑鼠鎖定」，§8.3 故障排除只有 fullscreen/suspect 一列 —— 整份操作手冊沒有任何一個字提到「錄製中掉鎖 = 暫停 ＋ 本次永久作廢」。而 `operator-manual.md` 正是 CLAUDE.md §2 指定給操作人員的**唯一入口**。⇒ 一位只讀操作手冊的施測助理，會在受測者按 Esc 後以為「再點一下取回鎖就好」，然後把一份 `invalid-retained` 當成正式資料交出去。**已修**：§4.4 補 Esc 後果與對受測者的事前說明，§8.3 補三列（已暫停／`invalid-retained` 結果頁／`discarded` 作廢面板），皆指向 `operational/pause-invalid-restart.md`。
+2. **`docs/MAP.md` 沒有 `operational/pause-invalid-restart.md` 的入口。** T6 新增的操作文件只從 `CONTEXT.md` 與 tracking pilot runbook 可達，而 MAP.md 是 CLAUDE.md §2 指定的「先看這個」。⇒ **已修**：新增 `## Operational Pause / Attempt-Validity Entry` 區塊。
+3. **`task-checklist.md` 的 T6 box 沒有跟著 T6 commit 翻。** T6 已於 `4bc2fdf` 落地且 progress.md 記為 ✅，但 checklist 仍是 ⬜ —— 違反 CLAUDE.md §3 第 4 條。⇒ **已修**：T6 與 T-exit 兩格一併翻 ✅。
+
+### TE.7 Definition of Done 對帳
+
+- [x] **FR-69.1～69.12 與 NFR-69.1～69.8 無任何「完成」但無證據的列** —— §TE.1／§TE.2 每一列都填**逐字測試名**（不是「有測試覆蓋」這種宣稱），live 欄只填真 Edge 實測值。
+- [x] **invalid/discarded 對正式保存、trend、threshold、advance 的零呼叫有 unit + live evidence** —— unit：三態呼叫矩陣（spy 計數）＋ `never lets a non-eligible attempt reach history, replay or an orchestrator advance`；live：三條 orchestrator case 的 held × clean 成對比較（沒有 clean 那一半，「不變」斷言會在 rig 根本沒跑起來時也全綠）。
+- [x] **timestamp corrupt 案例證明 payload/metrics/download/replay 均未建立** —— `discarded：payload builder 一次都沒被呼叫`（builder 本身是 spy，不是事後檢查產物）＋ live 強制 overflow 後 `recording` 全歸零、Result 隱藏、下載數不增。
+- [x] **full restart 同 seed/input fresh-run parity 通過，且只 clean retry 能前進** —— NFR-69.8 parity 測試 ＋ 三 runner 的 held／clean 成對。
+- [x] **全量驗證綠；任何 skip/替代證據有 owner、原因與後續處置** —— §TE.4。全量單元的 **2 skipped tests / 1 skipped file** 具名為 `tests/history/historyRepository.perf.test.ts` 的 `describe.skipIf(!RUN_BENCHMARK)`（WP-48 的 opt-in 5,000-run benchmark，commit `9314d84`）：owner = WP-48／NFR-48.2-48.3，原因 = 需顯式環境變數才跑的效能基準，後續處置 = 無（設計上就不在預設閘內）。與 T0 baseline、T6 **逐數相同**，本 WP 未新增任何 skip。
+- [x] **GD-46、README index、stage index、task checklist、progress 狀態一致** —— GD-46 翻 ✅ 並補 ⑧ 實作證據 ＋ ⑨ 殘餘風險；exec-plan README（stage 15 標題 ＋ WP-69 狀態格）、stage15 README、WP-69 README（狀態／決策／T-exit 列）、task-checklist、本檔五處同步。
+
+### TE.8 OQ／風險／技術債的結清狀態（沒有靜默遺留）
+
+| 項 | 狀態 | 處置 |
+|---|---|---|
+| OQ-69.1／69.2／69.3 | ✅ T0 關閉 | 69.1 被使用者推翻為手動下載；殘餘風險「不按即未保留」入 GD-46 ⑨(a) |
+| OQ-69.4 | ✅ T4 關閉 | 暫停中導航 = `discarded`；代價「連稽核檔都沒有」入 GD-46 ⑨(b) 與操作手冊 |
+| FM-1～FM-9 | ✅ 九條各有機械證據 | FM-1 有負向對照測試；FM-2 有兩道防線；FM-3 `DrillPhase` diff 為零；FM-4～FM-8 見 §TE.1／TE.2；FM-9 見 §TE.5 #5 |
+| 技術債：`main.ts` god node | 🟡 **仍在帳** | 本 WP 只抽三個可測模組，未重構 bootstrap（README §3 明載，GD-46 ⑨(d) 重申） |
+| 技術債：CodeGraph 涵蓋範圍缺口 | 🟡 **仍在帳，跨 WP** | 第二次複現（WP-68 T0 → WP-69 T-exit）。屬工具層而非本 WP 標的；影響是每個 gate 都得改用 grep ⇒ 見 [OQ-69.5](#open-questionst-exit-後) |
+
+### D-69-TE-1 — 交付判定為「完全交付」，殘餘風險明帳保留而非關閉（2026-09-15）
+
+**判定**：WP-69 ✅ 完全交付，**無具名缺口**。
+
+理由：20 條 FR／NFR 全部有逐字可執行的斷言，且最關鍵的三條（零 pause identity、pause 零 tick、restart parity）用的是 `Object.is` 逐位比對而非近似；零呼叫類需求同時有 spy 與真瀏覽器兩層反證；三個最容易退化的接縫（gate 早於 payload、gate 早於第一個 `await`、hold 早於 `buildsPayload` 分岔）各有 source-scan 測試釘住**順序**而非只釘存在。
+
+**但「完全交付」不等於「沒有代價」**：GD-46 ⑨ 的四項（手動下載的人為風險、暫停中導航無稽核檔、不宣稱任何指標效度變化、`main.ts` 技術債）是**設計後果**，刻意寫進決策帳本而不是隨 T-exit 一起關掉。特別是第三項 —— 本 WP 決定的是「這一場能不能被採納」，**沒有**放寬任何既有 eligibility／quality gate，`eligible-candidate` 距離 accepted 還隔著全部既有閘（C-D3）。
+
+**Alternatives considered**：(a) 把殘餘風險一併標成「已處理」⇒ 帳本會看起來更乾淨，但下一個讀者會以為稽核檔是自動保存的，駁回；(b) 因 CodeGraph 涵蓋缺口而判為「部分交付」⇒ 那是工具層問題且已有 grep 權威來源與 WP-68 先例，與本 WP 的交付內容無關，駁回。
+
+### Open Questions（T-exit 後）
+
+| ID | 問題 | 歸屬 |
+|---|---|---|
+| **OQ-69.5** 🟡 | CodeGraph 索引只涵蓋 `src/` 228 個非測試 `.ts` 中的 98 個，且 `sync` 回「Already up to date」而非報告缺口；WP-68 T0 與 WP-69 T-exit 已兩度因此改用 grep。這是工具設定問題（涵蓋範圍／ignore 規則），但它讓 CLAUDE.md「Trust codegraph results — 不要再用 grep 覆驗」這條程序指示在**目前狀態下是錯的**。要修工具設定，還是改 CLAUDE.md 的指示？ | **非本 WP**（工具層）。留給使用者決定要開獨立 chore 還是改協定；在此之前，凡結論依賴完整 caller 列舉者一律以 grep 為權威 |
+
+### TE.9 Surprises
+
+1. ⭐ **操作手冊沒跟上（§TE.6 #1）。** T6 寫了一份完整的 `operational/pause-invalid-restart.md`，也更新了 `CONTEXT.md`、`schema.md` 與 tracking pilot runbook —— 唯獨漏掉 `operator-manual.md`，而那是**唯一一份給非工程師讀的文件**。教訓：新增一份深度操作文件時，「有沒有人從操作員入口走得到它」是**獨立的一問**，不會因為深度文件寫得好而自動成立。
+2. **`task-checklist.md` 的 box 與 commit 脫節（§TE.6 #3）。** T6 的 progress、README 狀態、commit 全都對，只有 checklist 沒翻。這類單點漏翻不會被任何測試抓到，只會被下一個 gate 抓到 —— 這正是 T-exit 步驟 5 存在的理由。
+3. **`DECISIONS.md` 的寫入慣例與實務不符。** §寫入慣例 寫「解決時…整條移到 §3」，但 GD-40／41／42／45 四條 ✅ 全部留在 §2。本 gate 依**實務**（與相鄰的 GD-45 一致）處理 GD-46，未移到 §3；慣例文字與實務何者為準未擅自改動，記於此供後續決定。
+4. **CodeGraph 第二次失準（§TE.3）。** WP-68 T0 已下過 D-68.T0-4，本 gate 獨立複現且範圍更明確（98/228，三個核心交付檔零命中）。第二次出現代表這不是偶發 ⇒ OQ-69.5。
+
+---
+
 
 ## T6 live Edge + regression + docs（2026-09-15）
 
