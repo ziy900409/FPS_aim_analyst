@@ -589,8 +589,12 @@ const scopeOverlay = createScopeOverlay();
 
 // WP-20 / T2（FR-C7）— 資格閘 + 實驗 session 進入流程（GD-10 防線①）。通過三檢查（原生解析度 ≥
 // 實驗最高條件、fullscreen 已進入、warmup 效能地板）才進入實驗 session;不合格 = **拒入並明示原因**
-// （防 FHD 面板混入 QHD 條件）。session 進行中退出 fullscreen → 標 suspect（純觀測,OR 進匯出 meta,
-// 不中斷 drill）;gate 全量進 meta.display.gate 供事後審查。protocol 排程本體歸 WP-22 T2（此為最小落地）。
+// （防 FHD 面板混入 QHD 條件）。gate 全量進 meta.display.gate 供事後審查。protocol 排程本體歸
+// WP-22 T2（此為最小落地）。
+// ⚠️ WP-70 / T1（KI-040 缺陷 A）:`experimentSession.suspect` **不再進匯出**——它是 session 級 sticky、
+// 永不復位,一次中斷會污染其後每一場。匯出路徑的 fullscreen 成分改為 run 級的
+// `sharedState.validity.fullscreenExitedDuringRun`（見 `fullscreenchange` 處理器與 `collectMeta()`）。
+// 這裡的 `onSuspect` 今日只是**通知掛點**（同一次退出只觸發一次）,橫幅真值仍由 run 旗標供應（T3）。
 const experimentSession = createExperimentSession({
   onSuspect: () => syncFullscreenSuspectWarning(),
 });
@@ -2252,6 +2256,10 @@ const sessionPlanRunner: SessionRunnerHandle = createSessionRunner({
     // kept inheriting that session's `gate`/`suspect`. `exit()` is idempotent and keeps
     // `gate`/`suspect` readable, so the run being exported right now is unaffected — it was
     // collected before `advance()` was awaited.
+    // WP-70 / T1: the `suspect` half of that inheritance is gone for good — `collectMeta()` no
+    // longer reads `experimentSession.suspect` (the fullscreen component is now the per-run
+    // `validity.fullscreenExited`). `gate` is still session-scoped and still inherited, which is
+    // why this `exit()` call still matters.
     if (nextPhase.kind === 'done') experimentSession.exit();
   },
 });

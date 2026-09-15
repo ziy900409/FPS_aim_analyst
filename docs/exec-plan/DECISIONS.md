@@ -23,6 +23,22 @@
 
 > 狀態:🔴 矛盾待解 · 🟡 待決策 · ✅ 已解(移至 §3 並標日期)
 
+### GD-47 ✅ WP-70 條件失效的效力單位是 **run** — fullscreen 與 Pointer Lock 語意對稱，並補上不重啟 plan 的恢復入口（2026-09-15, T6）
+
+| | |
+|---|---|
+| **來源** | 使用者 2026-09-15 以 Session Plan 實測回報「無論怎麼按『重新測試』，仍然出現『已離開 fullscreen — 本 session 資料標記為 suspect(條件失效)』」，診斷落 [KI-040](../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)。在看過「你要的『重測後有效』與『維持 session 級』互相矛盾」這個張力後，使用者逐字拍板：**「session 斷掉沒關係，只要同一個 drill 沒有中斷即可」**。執行計畫見 [WP-70](active/stage16/wp-70-run-scoped-condition-validity/README.md)。 |
+| **① 效力單位 = 單次 run** | `meta.suspect` 的 fullscreen 成分以「**該次 run 的錄製窗（`countdown`／`running`）內是否發生 fullscreen 退出**」判定，不再問「本 session 是否曾經發生過」。**run = 產生一份 payload 的那一次**，不是 drill 型別、也不是 Session Plan 的一個 item（一個 item 多 reps ⇒ 多個 run，各自獨立判定）。落地為 `sharedState.validity.fullscreenExitedDuringRun`，由 `fullscreenchange` 處理器寫、由 `resetState()`（`DrillRunner.start()` 內）**每場歸零**、經 `meta.validity.fullscreenExited` 匯出並 OR 進 `suspect`。KI-007 的錄製窗**定義不變**（含「暫停期間仍屬錄製窗」）。 |
+| **② ⭐ 明帳方向性：跨 run 放寬、protocol 路徑收緊** | 兩個**方向相反**的變更在同一個 WP 落地，不得只講一半。**放寬**：唯一來源是「上一個 run 的中斷不再污染這個 run」（KI-040 缺陷 A）；單一 run **內**的偵測一格都沒放寬，且 T1 另有一處**刻意收緊**——新旗標不以 `experimentSession.active` 為前提、只看 `recording`（D-70-T1-2），研究員／一般 drill 模式錄製中退出全螢幕過去不標、現在會標。**收緊**：protocol 路徑（`markProtocolFullscreenExit`）此前**未**套 KI-007 錄製窗閘，drill 之間（`idle`）與收工後（`ended`）退出全螢幕也會把 protocol 的當前 condition 標 suspect ⇒ T2 補上**同一個** `recording` const（C-D4：一個構念只能有一個定義）。 |
+| **③ 與 [GD-10](#gd-10--顯示硬體策略--全遠端--三道防線2026-07-06) 的關係：補澄清、不修訂（並附理由）** | T0 逐字重讀 GD-10 ① 後判定：條文把「session 標 `suspect`／剔除」寫在**效能地板**的括號內，**從未**規定「錄製中退出 fullscreen ⇒ session 級 sticky suspect」——那是 WP-20 T2 的實作延伸（`experimentSession.ts` docstring 自述）。GD-10 ① 的三項檢查是**進場**判準，本 WP 一項門檻都不動 ⇒ **不構成對 GD-10 的實質修改**。⚠️ 但規劃期給的理由不夠：GD-10 ① 的字面用詞是「**session** 標 suspect」，而那一句綁的效能地板成分**自實作起就是 per-run**（`frameLog` 每場 reset）⇒「session」這個**用詞**早就與實作不符，不是本 WP 才造成的。故 GD-10 的澄清註記**一併澄清用詞**，只談 fullscreen 會讓下一個讀者再踩一次同一個歧義（D-70-T0-2，對規劃期 D-70.P5 的理由改寫而非推翻）。 |
+| **④ 與 [GD-46](#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15-t-exit)／WP-69 的關係：語意對稱** | WP-69 已把 Pointer Lock loss 定為 **attempt 級**且只有 full Restart 可恢復資格；本條讓 fullscreen 退出跟上，兩者自此**效力單位對稱**。⚠️ 對稱的是**效力單位**，不是**後果**：`pauseOccurred` 是 attempt 採納的 hard reject（`AttemptFinalizationGate` 三態），`fullscreenExited` 只是可保留資料的品質提示。本條**不**改變 GD-46 的任何一態，也不宣稱任何指標效度變化。 |
+| **⑤ payload 自述（新增 `meta.validity.fullscreenExited`）** | 在本欄之前，payload **無從分辨** `suspect` 來自 fullscreen 還是效能地板 —— 這正是缺陷 A 得以靜默的條件。新欄為 `meta.validity` 的第七個布林，承 D-65-3 的 **optional-in／required-out**（缺席解析為 `false`，`schemaVersion` 維持 2，既有 fixture 零修改可解析）。⚠️ 它與 `pointerLockLost` 是**兩個構念**：Esc 常同時觸發兩者，但切換視窗只觸發本欄（fullscreen 掉了、鎖還在；`document.exitFullscreen()` 在 Chromium **不**釋放 Pointer Lock，T5 實測）。不得由其中一個推導另一個。 |
+| **⑥ 恢復入口採 E2（重跑條件、不重啟 plan）** | 使用者拍板 E2。新 `ConditionRecoveryScreen` 在 click user gesture stack 內**同步**呼叫 `requestFullscreen()`（第一個 `await` 之前），成功後以既有純函式 `runEligibilityGate()` **重跑三項全部**（不另開「只驗 fullscreen＋perf」的兩項變體——重跑解析度的邊際成本為零，而「使用者把視窗拖到另一個螢幕」正是解析度會變的那個情況，D-70-T0-5）。通過才呼叫既有 `restartActiveDrill()`；拒絕或不過**留在原畫面**顯示具名原因與重試鈕，不推進 cursor／conditionIndex／`exports[]`、不下載。⚠️ **「繼續本項」= restart 本項**：依 WP-69 OQ-69.4，暫停中結算不留 payload，入口文案不得暗示接續錄製。 |
+| **⑦ 編號重查（T0，2026-09-15）** | 依 [GD-15](#gd-15) 「正式進 §2 索引才算採納」：`exec-plan/README.md` §2 本案以外最大採納 **WP-69**、`WP-71` 零命中；`DECISIONS.md` 已落帳最大 **GD-46**、`### GD-47 ` 零標題命中（`GD-44`/`45`/`46` 各 1 為計數法對照）⇒ **WP-70 / GD-47 維持，不順延**。連帶修好 stage14 §3 一處過期順延註記（WP-69／70 均已採納 ⇒ 候選再順延為 `WP-71`／`WP-72`／`WP-73`）。 |
+| **影響面** | `SharedState.validity`（+1 固定布林，不新增配置）、`main.ts`（`fullscreenchange` 處理器、`collectMeta()` 組裝、恢復流程接線）、`metadata.ts`／`exportPayloadSchema.ts`（additive 第七欄 + parser）、`EligibilityGate.ts`（橫幅真值驅動 + run 級文案）、新檔 `ConditionRecoveryScreen.ts`、`ProtocolRunner` 接線點的錄製窗閘。**不改 sim 迴圈、命中判定、彈道、目標演進、場景、eligibility 三項門檻、`PERF_FLOOR_MS`、KI-007 窗界定義、WP-69 三態，不回填舊匯出。** canonical fixture digest 移動 **3 筆**（`meta.validity` required-out 的機械後果，與 T0 預測逐筆吻合、第 4 筆未出現）；`tests/regression` **324** 零漂移。 |
+| **⑧ 明帳殘餘風險與邊界（不得被「已交付」蓋過）** | (a) **FM-70.4（`requestFullscreen()` 必須在第一個 `await` 之前同步呼叫）的 e2e 守衛不存在**：Playwright 的 `page.evaluate()` 對 CDP 帶 `userGesture: true`，錯誤實作照樣全綠（T0 以控制組 C/D/F 排除法定位）⇒ 守衛只有 T4 的 source-scan ＋ [實機手動清單](../operational/fullscreen-recovery-manual-check.md)，**不得**以 e2e 綠燈宣稱已守。(b) **FM-70.1 不被 e2e 可靠守住**：在破效能地板的機器上 `suspect` 本來就是 `true`，`collectMeta()` 若把 `experimentSession.suspect` OR 回去會被蓋掉；可靠守衛是 T1 的 source-scan。(c) `experimentSession.suspect` **保留但 executable 讀取點歸 0**，僅剩 `handleFullscreenChange()` 的去重閂——這是**有意識的妥協**，清理觸發條件已明帳（D-70-T1-1）。(d) `main.ts` 仍是 orchestration god node；本 WP 只抽出恢復流程一個可測模組（承 WP-69 同一條技術債，仍在帳）。 |
+| **狀態** | ✅ **已落地（2026-09-15，WP-70 T1–T6）**。①～⑥ 皆有具名機械證據：typecheck／build exit 0、Vitest **3751 passed / 2 skipped**、`tests/regression` **324**（零漂移）、Edge e2e `wp70-fullscreen-validity` **2 passed**（真 fullscreen 進場／錄製中退出／恢復不推進／下一 run 乾淨四段各有具名斷言）。逐條 FR／NFR acceptance matrix 由 **T-exit** 產出，在它落閘前本條**不得**被引用為「FR-70.1～70.11 全數驗收」。 |
+
 ### GD-46 ✅ WP-69 暫停後永久失去實驗效力；時間戳不可信即丟棄；只有整場 Restart 可恢復資格（2026-09-15, T-exit）
 
 | | |
@@ -426,7 +442,8 @@
 | **實驗語意精確化** | 量測構念 = 「**同一面板上的 render 解析度效應**」(QHD 面板玩家降 render 解析度的感知代價),**非**「不同螢幕的比較」。FHD 條件在 QHD 面板上 = compositor upscale,屬操弄本身(真實世界語意)。 |
 | **失效防範** | 無資格閘時,FHD 原生面板受試者的「QHD 條件」= 降階超取樣 → **方向性錯誤資料**(非雜訊)且無聲混入——資格閘防的是統計必然,不是罕見邊角。 |
 | **影響面** | display-settings WP(解析度切換 + fullscreen + 資格閘 + session setup 表單 + metadata 欄位)、WP-16 schema v2(display metadata + frame-time log)、偵測實驗 protocol、追蹤實驗共用同一 metadata 地板(遠端天然可行)。 |
-| **狀態** | ✅ 已拍板(2026-07-06 grill)。 |
+| **⚠️ 澄清註記(2026-09-15, WP-70 T6 補;不修訂上列條文)** | **`suspect` 的效力單位是「一次 run」(產生一份 payload 的那一次),不是 session。** ① 的字面寫「session 標 `suspect`/剔除」,但那一句綁的是**效能地板**,而該成分**自實作起就是 per-run**(`frameLog` 每場 reset)——「session」這個用詞從一開始就與實作不符,不是後來才漂移的。② 條文**從未**規定「錄製中退出 fullscreen ⇒ session 級 sticky suspect」;曾經如此是 WP-20 T2 的實作延伸,已由 **WP-70** 改為 run 級並以 `meta.validity.fullscreenExited` 自述來源(判準見 [GD-47](#gd-47--wp-70-條件失效的效力單位是-run--fullscreen-與-pointer-lock-語意對稱並補上不重啟-plan-的恢復入口2026-09-15-t6))。③ 本註記**不動** ① 的三項**進場**檢查與其門檻(原生解析度、fullscreen 強制、效能地板),「不合格拒入,非僅記錄」原封不動。④ `suspect` 是**可保留資料的品質提示**,不是採納判定——採納由 [GD-46](#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15-t-exit) 的 attempt disposition 三態與既有 eligibility/quality gates 決定。 |
+| **狀態** | ✅ 已拍板(2026-07-06 grill);措辭澄清 2026-09-15(WP-70 T6),條文本身未修訂。 |
 
 ### GD-9 ✅ BR 場景資產 — 寫實原創 + CC0/CC-BY 授權紀律(2026-07-06)
 

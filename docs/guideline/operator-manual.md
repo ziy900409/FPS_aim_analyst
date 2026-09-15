@@ -26,7 +26,8 @@
 | **Session Plan** | 一整場測試的排程：哪些 drill、各跑幾輪、中間休息多久 | 「選手測試 Session」入口 |
 | **Assessment / Practice** | drill 的 `mode`。**只有 Assessment 會自動存進歷史紀錄**；Practice 只能手動匯出 | Result 畫面下方 |
 | **資格閘（eligibility gate）** | 進入正式 session 前的三項硬檢查（解析度／fullscreen／效能地板） | 「進入 fullscreen 並開始」畫面 |
-| **suspect** | 條件在錄製途中失效（例如中途退出 fullscreen）。資料仍匯出，但標記為可疑 | 黃色警示條、`meta.suspect` |
+| **suspect** | 條件在錄製途中失效（例如中途退出 fullscreen）。資料仍匯出，但標記為可疑。**效力單位是一次 run**：只標那一次，不會傳染到下一次（WP-70） | 黃色警示條、`meta.suspect` |
+| **恢復條件** | 掉出全螢幕之後，不重啟整個 Session Plan 就重新取得全螢幕並重跑三項檢查，通過後重跑**本項** | 暫停面板「重新測試」→「恢復實驗條件」畫面 |
 | **run** | 一次跑完的 drill。一場 Session Plan 由多個 run 組成 | Result 畫面、歷史紀錄 |
 
 ---
@@ -234,9 +235,25 @@ npm run preview
 
 - **HUD**：分數、時間、命中率、速度（給受測者看的即時回饋）
 - **休息畫面**：顯示「休息中」＋倒數。**倒數歸零會自動開始下一個 drill**，不用點任何東西
-- **⚠ 黃色警示條**：「已離開 fullscreen — 本 session 資料標記為 suspect(條件失效)。」
+- **⚠ 黃色警示條**：「⚠ 已離開 fullscreen — 本次測試標記為 suspect(條件失效)；下一次測試不受影響。暫停面板的「重新測試」可恢復條件並重跑本項。」
 
-**中途退出 fullscreen 的規則**（容易誤會）：只有在 drill **實際錄製中**（倒數或進行中）退出 fullscreen 才算條件失效。drill 之間的空檔、以及已結束準備匯出時退出 fullscreen **不算**——所以「錄完正常退出全螢幕去拿匯出檔」不會被誤判。
+**中途退出 fullscreen 的規則**（容易誤會，2026-09-15 更新）：
+
+1. **只有在 drill 實際錄製中**（倒數或進行中）退出 fullscreen 才算條件失效。drill 之間的空檔、以及已結束準備匯出時退出 fullscreen **不算**——所以「錄完正常退出全螢幕去拿匯出檔」不會被誤判。
+2. ⭐ **失效範圍只有那一次測試（run），不會傳染。**（WP-70）下一場只要全程在 fullscreen 就是乾淨的，**不論前面斷過幾次**、也不論中間有沒有重開 session。這一點 2026-09-15 之前**不成立**：舊版一旦離開過全螢幕，同一個分頁內其後每一場匯出都會被標 `suspect`，而且沒有任何操作可以清掉（[KI-040](../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)）。
+3. 該次的匯出會帶 `meta.validity.fullscreenExited: true`，所以分析端**看得出**這個 `suspect` 是 fullscreen 造成的，而不是效能地板。
+4. `suspect` 是**品質提示**，不是作廢：資料照收、照匯出。真正會讓該次失去採納資格的是 Pointer Lock 遺失造成的 pause（見上方警告與 [pause-invalid-restart.md](../operational/pause-invalid-restart.md)）。
+
+**掉出全螢幕之後要怎麼救回這一項**（恢復條件，WP-70）：
+
+1. 按 **Esc**（或已因掉鎖而暫停）叫出暫停面板，按 **「重新測試」**。
+2. 若這一次**曾經掉出全螢幕**，按下去不會直接重跑，而是先出現 **「恢復實驗條件」** 畫面：按 **「重新進入 fullscreen」** 會重新請求全螢幕，然後**重跑資格閘的同三項檢查**（原生解析度、fullscreen、warmup p95）。
+   - 三項全過 → 自動重跑**本項**，排程停在同一個位置、不前進、不下載、不產生任何檔案。
+   - 瀏覽器拒絕全螢幕 → 顯示「無法進入 fullscreen，請再按一次重試。」，按鈕變「重試 fullscreen」。
+   - 進了全螢幕但檢查沒過 → 顯示「條件仍未通過，請修正後重試。」＋逐項 `PASS`／`FAIL` 報告，按鈕變「重試條件檢查」。**畫面留在原地**，照 §3 清環境後重試；不要繞過。
+   - 按 **「取消」** 只關掉這個畫面，什麼都不會發生。
+3. 若這一次**沒有**掉出過全螢幕，「重新測試」就是原本的 WP-69 行為（直接建立新 attempt），不會多一個畫面。
+4. ⚠️ **「重新測試」是重跑本項，不是接續錄製**：按下之前錄到的那一段依 WP-69 不會留下任何 payload。
 
 ### 4.5 每個 run 結束時會發生什麼
 
@@ -366,7 +383,10 @@ data/
 
 | 現象 | 意義 | 處理 |
 |---|---|---|
-| 黃色警示條「已離開 fullscreen — 本 session 資料標記為 suspect」 | 錄製途中離開了 fullscreen | 該筆資料仍會匯出但標 suspect。記錄下發生在第幾個 drill，回報給分析端 |
+| 黃色警示條「已離開 fullscreen — 本次測試標記為 suspect(條件失效)」 | **這一次測試**的錄製途中離開了 fullscreen | 該筆資料仍會匯出但標 `suspect`（`meta.validity.fullscreenExited: true`）。**只影響這一次**——下一場全程在 fullscreen 就是乾淨的。要救回本項：暫停面板 →「重新測試」→「恢復實驗條件」畫面 →「重新進入 fullscreen」。仍請記錄發生在第幾個 drill 回報給分析端 |
+| 按「重新測試」後出現「恢復實驗條件」畫面而不是直接重跑 | 這一次曾掉出全螢幕，所以先要重新證明顯示條件（WP-70） | 按 **「重新進入 fullscreen」**。三項全過才會重跑本項；排程不前進、不下載。按「取消」則什麼都不做 |
+| 恢復畫面顯示「無法進入 fullscreen，請再按一次重試。」 | 瀏覽器拒絕了全螢幕請求（多半是沒被當成真人點擊，或網站權限被封鎖） | 直接再按一次「重試 fullscreen」。連續失敗就到瀏覽器網站設定裡放行全螢幕 |
+| 恢復畫面顯示「條件仍未通過，請修正後重試。」 | 進了全螢幕，但三項檢查有一項沒過（報告會逐項列 `PASS`／`FAIL`） | 照 §3 清環境（關背景程式、解析度設回原生、顯示比例 100%）後按「重試條件檢查」。**不要繞過**——它擋的是「這台機器現在量不準」 |
 | 畫面顯示「已暫停 — 本次已失去實驗效力」 | 錄製中滑鼠鎖定遺失（Esc／切視窗／瀏覽器收回鎖） | **效力無法恢復**。要留稽核檔就按「繼續（本次仍無效）」跑完，再到結果頁按 **下載稽核檔（.invalid-paused）**；不需要稽核檔就直接按 **重新測試**。排程不會前進，重測後回到同一項 |
 | 結果頁頂端紅色警示條＋只有「下載稽核檔」可按 | 這一場是 `invalid-retained`（曾暫停但時間戳完整） | 這份資料**只供稽核**，不進 History／trend，也不算完成該項。要拿到正式資料必須 **重新測試** 並完整跑完一次 |
 | 畫面顯示「本次紀錄已作廢」（不是結果頁） | `discarded`：時間戳／pause fence 不可信，或 paused attempt 發生 overflow | 沒有結果、沒有任何檔案可下載，recorder 已清空。唯一動作是 **重新測試**。連續發生請記錄作廢理由字串回報 |
@@ -420,6 +440,12 @@ data/
   ⑤ 受測者：點擊鎖定滑鼠 / A・D 橫移 / 左鍵開火 / Esc 解鎖
   ⑥ 排程自動推進，休息倒數歸零自動接下一個，不用按任何鍵
 
+【掉出全螢幕了】
+  黃色警示條 = 只有「這一次」標 suspect，下一次不受影響
+  要救回本項：Esc → 暫停面板「重新測試」→「恢復實驗條件」
+              →「重新進入 fullscreen」→ 三項全 PASS → 自動重跑本項
+  沒過就留在原畫面重試，不要繞過（排程不會前進、不會產生檔案）
+
 【收工】
   確認下載資料夾有每個 run 的 JSON
   確認「歷史紀錄」裡有本次 Participant 的 Assessment 紀錄
@@ -438,5 +464,7 @@ data/
 | 匯出 JSON／CSV 的欄位定義 | [schema.md](../operational/schema.md) |
 | 計時效度的量測與論證 | [timing-validity.md](../operational/timing-validity.md) |
 | Stage6 pilot 的受測者準備流程 | [pilot-protocol-stage6.md](../operational/pilot-protocol-stage6.md) |
+| 暫停／失效／Restart 的完整規則 | [pause-invalid-restart.md](../operational/pause-invalid-restart.md) |
+| 恢復條件流程的實機手動驗證（換瀏覽器版本時必做） | [fullscreen-recovery-manual-check.md](../operational/fullscreen-recovery-manual-check.md) |
 | 專案術語 | [../../CONTEXT.md](../../CONTEXT.md) |
 | 全部文件導航 | [../MAP.md](../MAP.md) |

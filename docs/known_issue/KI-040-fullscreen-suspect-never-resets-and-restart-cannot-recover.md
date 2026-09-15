@@ -4,14 +4,17 @@
 > 三種後果：(a) 同一分頁內**之後每一場**匯出都被標 `meta.suspect=true`（靜默）；(b) Session Plan 的
 > 該項在 Esc 之後**沒有任何操作可以救回有效**，只能 reload；(c) 若走資格閘重入，橫幅會消失但旗標仍
 > 為 true ⇒ **UI 說沒事、資料說 suspect**。
-> 狀態：🟡 **診斷完成 + 方向已拍板 + 執行計畫已落（2026-09-15），實作未開工**。修法計畫見 **[WP-70](../exec-plan/active/stage16/wp-70-run-scoped-condition-validity/README.md)**（stage16，T0–T6 + T-exit）。判準改為 **run 級**（「session 斷掉
-> 沒關係，只要同一個 drill 沒有中斷即可」），入口採 **E2**；詳見 §6。⚠️ 此判準修改觸及 **GD-10**，
-> 除 `BD-n` 外**另需一條 `GD-n` 或對 GD-10 的明帳修訂**（OQ-KI-040-4）；兩個編號皆待落帳前重查，
-> 故目前**尚未開號**。
+> 狀態：✅ **已修（2026-09-15，[WP-70](../exec-plan/active/stage16/wp-70-run-scoped-condition-validity/README.md) T1–T6）**。判準改為 **run 級**（「session 斷掉
+> 沒關係，只要同一個 drill 沒有中斷即可」），入口採 **E2**；詳見 §6 與 §9。
+> 決策：[`BD-040`](BUGFIX-DECISIONS.md#bd-040--ki-040--suspect-的-fullscreen-成分改為-per-run並補上不重啟-plan-的恢復入口2026-09-15)（修法）
+> ／[`GD-47`](../exec-plan/DECISIONS.md#gd-47--wp-70-條件失效的效力單位是-run--fullscreen-與-pointer-lock-語意對稱並補上不重啟-plan-的恢復入口2026-09-15-t6)（判準）；
+> **GD-10 補澄清註記而非修訂** —— 條文從未規定「fullscreen 退出 ⇒ session 級 sticky」，那是 WP-20 T2 的
+> 實作延伸（理由見 `GD-47` ③）。⚠️ 逐條 FR／NFR acceptance matrix 由 WP-70 **T-exit** 產出，在它落閘前
+> 不得以本行宣稱「全部驗收完成」。
 > 標的：[`src/display/experimentSession.ts`](../../src/display/experimentSession.ts)（`suspect` 無復位
 > 路徑）· [`src/main.ts`](../../src/main.ts)（唯一 `requestFullscreen()` 與唯一 `hideSuspectWarning()`
 > 呼叫點都綁在資格閘 `onEnter`）· [`src/ui/EligibilityGate.ts`](../../src/ui/EligibilityGate.ts)（橫幅）。
-> 相關：[GD-10](../exec-plan/DECISIONS.md)（fullscreen 退出 = session 級條件失效）·
+> 相關：[GD-10](../exec-plan/DECISIONS.md)（fullscreen 退出 = 條件失效；效力單位的澄清註記 2026-09-15 補）·
 > [KI-007](KI-007-suspect-flag-false-positive-post-drill-fullscreen-exit.md)（recording 窗界判準）·
 > [GD-46](../exec-plan/DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15-t-exit)／
 > [WP-69](../exec-plan/active/stage15/wp-69-pause-invalid-restart/README.md)（attempt 級 pause/restart）。
@@ -228,8 +231,8 @@ per-run 計算**而非只是多一個 reset —— 這比原先估的變更大�
 |---|---|---|
 | **OQ-KI-040-1** ✅ | 暫停期間離開全螢幕算不算條件失效 | **已答：維持現狀**，KI-007 判準的再定義獨立處理（§6.3） |
 | **OQ-KI-040-2** ✅ | 受影響既有資料要不要回溯標註 | **已答：不需要**——查核後範圍為零（§8） |
-| **OQ-KI-040-3** 🟡 | `startSessionPlanWithoutGate()` 讓全部 Session Plan e2e 在非 fullscreen 下跑 ⇒ fullscreen／資格閘相關的迴歸不可見。是否補一條**真的走資格閘**的 e2e？（Playwright 能否可靠取得 fullscreen 需先驗證） | **待定**，屬測試基礎建設。⚠️ 本 bug 的修法若沒有這條，修完仍然沒有迴歸防線 |
-| **OQ-KI-040-4** 🟡 | §6.1 的判準修改觸及 GD-10，需開 `GD-n` 或明帳修訂 GD-10；編號須落帳前重查 | **待定**，屬全域決策帳本 |
+| **OQ-KI-040-3** ✅ | `startSessionPlanWithoutGate()` 讓全部 Session Plan e2e 在非 fullscreen 下跑 ⇒ fullscreen／資格閘相關的迴歸不可見。是否補一條**真的走資格閘**的 e2e？ | **已答：補了**（2026-09-15，WP-70 T5）。`tests/e2e/wp70-fullscreen-validity.spec.ts` 真的進入／失去／重取全螢幕，鏈路四段各有具名斷言，全套 Edge e2e 121 passed。⚠️ **兩條具名邊界**：(a) FM-70.4（`requestFullscreen()` 是否在第一個 `await` 之前同步呼叫）**e2e 永遠測不到** —— Playwright 的 `page.evaluate()` 對 CDP 帶 `userGesture: true` ⇒ 守衛是 source-scan ＋ [實機手動清單](../operational/fullscreen-recovery-manual-check.md)；(b) FM-70.1 在破效能地板的機器上會被 `perfFloor: true` 蓋掉 ⇒ 可靠守衛是 T1 的 source-scan。詳見 [WP-70 progress §T5](../exec-plan/active/stage16/wp-70-run-scoped-condition-validity/progress.md) |
+| **OQ-KI-040-4** ✅ | §6.1 的判準修改觸及 GD-10，需開 `GD-n` 或明帳修訂 GD-10；編號須落帳前重查 | **已答**（2026-09-15，WP-70 T0 重查 + T6 落帳）：取 **`GD-47`**（落帳前重查：最大採納 WP-69／最大 GD-46／`### GD-47 ` 零命中），GD-10 **補澄清註記、不修訂** —— 條文把「session 標 suspect」綁在**效能地板**上，而該成分自實作起就是 per-run，**從未**規定 fullscreen sticky（理由見 `GD-47` ③；澄清註記一併澄清「session」這個用詞）。修法決策另落 **`BD-040`** |
 
 ---
 
@@ -247,3 +250,48 @@ per-run 計算**而非只是多一個 reset —— 這比原先估的變更大�
 前，「繼承自前一個 session」與「本 session 真的斷過」在 payload 上**不可分**（這正是缺陷 A 的後果），
 只能靠操作紀錄回溯。本次回報的情境中該項從未完成 ⇒ 依 WP-69 三態根本不會產生 payload，與 history
 root 為空一致。
+
+---
+
+## 9. 修法落地實況（2026-09-15，WP-70 T1–T6）
+
+> 決策全文見 [`BD-040`](BUGFIX-DECISIONS.md#bd-040--ki-040--suspect-的-fullscreen-成分改為-per-run並補上不重啟-plan-的恢復入口2026-09-15)；
+> 判準見 [`GD-47`](../exec-plan/DECISIONS.md#gd-47--wp-70-條件失效的效力單位是-run--fullscreen-與-pointer-lock-語意對稱並補上不重啟-plan-的恢復入口2026-09-15-t6)。
+> 本節只記「實際落地 vs §6 初估」的差，不複製那兩處。
+
+### 9.1 四個缺陷各自的出口
+
+| 缺陷 | 修法 | 落在 |
+|---|---|---|
+| **A**（`suspect` 永不復位） | 新旗標 `sharedState.validity.fullscreenExitedDuringRun`：`fullscreenchange` 在 `phase ∈ {countdown, running}` 時寫真、`resetState()`（`DrillRunner.start()` 內）每場歸零、經 `meta.validity.fullscreenExited` 匯出並 OR 進 `meta.suspect`；`collectMeta()` 不再讀 `experimentSession.suspect` | T1 |
+| **B**（沒有路徑回到 fullscreen） | 新 `ConditionRecoveryScreen`：click gesture 內同步 `requestFullscreen()` → 重跑 `runEligibilityGate()` 三項 → 過才呼叫既有 `restartActiveDrill()`。不呼叫 `start()`／`advance()`／`completeCurrentCondition()`／`downloadJSON`／`historyPersistence.save()` | T4 |
+| **C**（橫幅與旗標脫鉤） | `renderSuspectWarning(boolean)` 由旗標真值推導，`main.ts` 在 `fullscreenchange` 之後與 `resetRunPresentation()` 內各同步一次；文案改為 run 級 | T3 + T6 |
+| **D**（pause 放大觸發窗口） | 不另修：窗界定義維持不變（OQ-KI-040-1），run 級語意下那一次 run 本來就會被 restart 掉 | — |
+
+### 9.2 ⚠️ 與 §6.2 初估的差（不得靜默）
+
+§6.2 寫「`experimentSession` 目前把 `suspect` 存成 session 級累加器，run 級語意下它應該**改為 per-run
+計算**而非只是多一個 reset —— 這比原先估的變更大」。**實況相反、且更小**：規劃期找到 repo 內**逐字同型
+的先例**（WP-65 T5 的 `pointerLockLostDuringRun`：DOM 事件寫、`resetState()` 歸零、`meta.validity` 匯出、
+OR 進 `suspect`）⇒ per-run 儲存與歸零點**都已存在**，修法縮小為「照抄該 pattern 換一個旗標」，
+`experimentSession` **結構一行未改**，只是停止供應 export 路徑的 fullscreen 成分。
+
+§6.2 是在尚未發現該先例時寫的。**保留原文不改寫**，差異記在這裡與 `BD-040`「偏離計畫」①。
+
+### 9.3 三處 §6 沒預見的事
+
+1. **`experimentSession.suspect` 保留、不刪**：executable 讀取點由 1 歸 **0**，但欄位在模組內部仍承重
+   （`handleFullscreenChange()` 的 `|| suspect` 早退 = 同一次退出只觸發一次 `onSuspect` 的去重閂）。
+   有意識的妥協，清理觸發條件已明帳（WP-70 D-70-T1-1）。
+2. **一處刻意的收緊**：新旗標**不**以 `experimentSession.active` 為前提、只看 `recording`（沿用
+   `pointerLockLostDuringRun` 的同型理由）⇒ 研究員／一般 drill 模式錄製中退出全螢幕，過去不標、現在會標。
+3. **protocol 路徑是相反方向的收緊**：該路徑此前**未**套 KI-007 錄製窗閘，drill 之間（`idle`）與收工後
+   （`ended`）退出全螢幕也會把當前 condition 標 suspect ⇒ T2 補上**同一個** `recording` const（C-D4）。
+
+### 9.4 §8 的未查核範圍：修法後可分辨了
+
+§8 最後一段說「修法落地前，『繼承自前一個 session』與『本 session 真的斷過』在 payload 上**不可分**」。
+**落地後可分**：`meta.validity.fullscreenExited` 直接自述該 run 的錄製窗內是否退出過全螢幕
+（`meta.suspect` 的另一半來源是 `meta.validity.perfFloor`）。
+⚠️ 這**只對修法之後產生的匯出成立**；舊匯出不回填，仍只能靠操作紀錄回溯。瀏覽器下載資料夾的自查清單
+是否需要，仍是 WP-70 的 **OQ-70.4**（owner = 使用者）。

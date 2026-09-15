@@ -218,10 +218,10 @@ If `summary.p95 > PERF_FLOOR_MS`, `collectMeta()` marks `meta.suspect = true`.
 
 #### `meta.validity`
 
-Additive v2 block (KI-004 / S1 T2; extended by WP-65 and WP-69). New writers emit all six runtime
-observation booleans. Older payloads may omit the block or the two later fields; the parser treats omitted
-`pointerLockLost` / `pauseOccurred` as `false`. The block records facts and does not replace the central
-attempt-disposition gate.
+Additive v2 block (KI-004 / S1 T2; extended by WP-65, WP-69 and WP-70). New writers emit all seven runtime
+observation booleans. Older payloads may omit the block or the three later fields; the parser treats omitted
+`pointerLockLost` / `pauseOccurred` / `fullscreenExited` as `false`. The block records facts and does not replace
+the central attempt-disposition gate.
 
 | Field | Type | Unit / Values | Required | Source | Notes |
 |---|---|---|---:|---|---|
@@ -231,12 +231,34 @@ attempt-disposition gate.
 | `bufferOverflow` | boolean | `true` / `false` | Yes when `validity` exists | `sharedState.inputMeta.bufferOverflow > 0` | **Not** part of `main.ts`'s explicit `suspect` OR set — recorded here as an observation only (it does still fold into `meta.suspect` via `collectMeta()`'s own internal OR, a pre-existing, S1-unrelated coupling; see KI-004-S1 progress.md S-S1.6). |
 | `pointerLockLost` | boolean | `true` / `false` | Yes in current writers; optional in older payloads | recording-time Pointer Lock observer | Records that the input lock was lost. This is an observation distinct from attempt adoption; current recording-time loss also sets `pauseOccurred=true`. |
 | `pauseOccurred` | boolean | `true` / `false` | Yes in current writers; optional in older payloads | `RunAttemptController.pauseOccurred` | Sticky for the lifetime of one attempt. `true` is a hard adoption reject even if timestamps remain healthy: the only permitted payload is the manually requested `.invalid-paused` diagnostic. Full Restart creates a new attempt with `false`. |
+| `fullscreenExited` | boolean | `true` / `false` | Yes in current writers; optional in older payloads | `sharedState.validity.fullscreenExitedDuringRun` (recording-window `fullscreenchange` observer, WP-70) | **Run-scoped**, like `perfFloor`: `true` iff fullscreen was exited during *this* run's recording window (`countdown` / `running`, the KI-007 definition). Zeroed by `resetState()` on every `DrillRunner.start()`, so a run never inherits the previous run's exit. ORed into `meta.suspect`. |
+
+**The three interruption flags are three different constructs — do not derive one from another.**
+They are often `true` together, which is exactly why the distinction has to be written down:
+
+| Flag | Answers | Scope | Consequence |
+|---|---|---|---|
+| `fullscreenExited` | Did the display condition (GD-10 fullscreen) break during this run's recording window? | **run** (one payload) | Quality warning only: ORed into `suspect`; the data is still exported and retained. |
+| `pointerLockLost` | Did the input lock drop during recording? | **run** (zeroed by `resetState()`) | Quality warning, and under WP-69 a recording-time loss also triggers the pause that sets `pauseOccurred`. |
+| `pauseOccurred` | Was this attempt ever paused? | **attempt** (sticky; cleared only by full Restart) | Hard adoption reject — decided earlier by `AttemptFinalizationGate`, not by `suspect`. |
+
+Concretely: pressing `Esc` usually sets all three; **alt-tabbing out of the window or a `document.exitFullscreen()`
+sets only `fullscreenExited`** (Chromium does not release Pointer Lock when fullscreen ends — measured in WP-70 T5,
+so the run keeps running). Before WP-70 the fullscreen component came from a session-scoped sticky flag that never
+reset, so one interruption marked every later export in the tab and the payload could not say which component had
+fired ([KI-040](../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md),
+[`GD-47`](../exec-plan/DECISIONS.md#gd-47--wp-70-條件失效的效力單位是-run--fullscreen-與-pointer-lock-語意對稱並補上不重啟-plan-的恢復入口2026-09-15-t6)).
+Exports produced before 2026-09-15 therefore have no `fullscreenExited` field and a `suspect=true` that cannot be
+attributed; they are not backfilled.
 
 **`meta.validity` is not the same set as `meta.suspect`, and `suspect` is not an attempt disposition.**
 As of **KI-004 / S1 T3**, `main.ts`'s explicit
 `suspect` OR set no longer includes corridor exit (K-3): it is
-`explicitSuspect (session/protocol/perfFloor) || bufferOverflow || recorderOverflow || perfFloor`, computed
-independently in `collectMeta()`/`buildExportPayload()`. Adding `validity` never widens or narrows `suspect`.
+`explicitSuspect (protocol/perfFloor) || bufferOverflow || recorderOverflow || perfFloor || pointerLockLost ||
+pauseOccurred || fullscreenExited`, computed independently in `collectMeta()`/`buildExportPayload()`. Adding
+`validity` never widens or narrows `suspect`. **WP-70 removed the session-scoped fullscreen contributor**: the
+fullscreen component now enters through `validity.fullscreenExited` (run-scoped) instead of
+`experimentSession.suspect` (session-scoped sticky).
 WP-69 additionally ORs `pauseOccurred` into the diagnostic payload's `suspect` value, but adoption is decided
 earlier by `AttemptFinalizationGate`: `invalid-retained` cannot enter History/trends or advance a runner, while
 `discarded` has no payload at all. A clean, never-paused run can still be `suspect=true` under the older quality

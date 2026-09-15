@@ -11,7 +11,15 @@ import type { GateReport } from './eligibilityGate.ts';
  *   不算 —— KI-007:單一「實驗 session」流程不會在 drill 之間呼叫 `exit()`（刻意支援連續多 drill
  *   不重新過閘),若不分辨錄製中與否,drill 結束後研究者為了下載匯出檔而退出全螢幕的正常動作,會
  *   與錄製中途意外掉出全螢幕的真實失效樣態混為一談。
- * - `suspect`:OR 進匯出 meta 的 suspect（比照 playerCorridorExceeded/recorderOverflow）。
+ * - `suspect`:**session 級 sticky 的內部閂鎖**,一旦為 true 就不再復位（`exit()` 刻意保留）。
+ *
+ * ⚠️ **WP-70 / T1（KI-040 缺陷 A）之後,本欄不再進匯出。** 它曾經被 `collectMeta()` 直接讀取並 OR 進
+ * `meta.suspect`,而它從不復位 ⇒ 同一分頁內一次中斷會污染其後**每一場**匯出（靜默）。匯出路徑的
+ * fullscreen 成分現在是 **run 級**的 `sharedState.validity.fullscreenExitedDuringRun`
+ * →`meta.validity.fullscreenExited`（`resetState()` 每場歸零,判準見 GD-47）。
+ * 本欄今日的**唯一**用途 = `handleFullscreenChange()` 裡的 `|| suspect` 早退,也就是
+ * 「同一次退出只觸發一次 `onSuspect`」的去重閂;executable 讀取點為 **0**。
+ * 橫幅顯示亦**不**由本欄驅動（WP-70 / T3 改為 run 旗標真值驅動）。
  *
  * protocol 排程本體（條件序列/對抗平衡）歸 WP-22 T2;本模組不涉及。
  */
@@ -19,7 +27,7 @@ import type { GateReport } from './eligibilityGate.ts';
 export interface ExperimentSession {
   /** session 是否進行中（gate 通過後 → true;exit() → false）。 */
   readonly active: boolean;
-  /** 進行中曾退出 fullscreen → true（條件失效觀測旗標）。 */
+  /** 進行中曾退出 fullscreen → true。**session 級 sticky,不進匯出**（WP-70;見檔頭警告）。 */
   readonly suspect: boolean;
   /** 通過的 gate 明細（進 meta.display.gate;未進 session 時 undefined）。 */
   readonly gate: GateReport | undefined;
@@ -30,7 +38,7 @@ export interface ExperimentSession {
    * 判定「drill 目前是否正在錄製」（KI-007,例如 `DrillRunner.phase` 屬於 `countdown`/`running`）。
    */
   handleFullscreenChange(present: boolean, recording: boolean): void;
-  /** 結束 session（保留 gate/suspect 供最後一次匯出讀取）。 */
+  /** 結束 session（保留 `gate` 供最後一次匯出讀取;`suspect` 自 WP-70 起不進匯出）。 */
   exit(): void;
 }
 

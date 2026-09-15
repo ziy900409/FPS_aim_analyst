@@ -1,6 +1,6 @@
 # Stage 16 — 條件失效的效力單位與恢復
 
-> 上層索引：[`docs/exec-plan/README.md`](../../README.md) · 全域決策：`GD-47`（預約，WP-70 T0 重查）
+> 上層索引：[`docs/exec-plan/README.md`](../../README.md) · 全域決策：[`GD-47`](../../DECISIONS.md) ✅ **已落帳（2026-09-15, WP-70 T6）**；修法決策 [`BD-040`](../../../known_issue/BUGFIX-DECISIONS.md) ✅
 > 來源：[KI-040](../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)
 
 本 stage 處理 [stage15](../stage15/README.md)（WP-69，attempt 級 pause/restart）交付後，**在實際操作中
@@ -13,7 +13,7 @@ Stage 15 解的是「暫停後這一輪還能不能被採納」；本 stage 解�
 
 | WP | 目標 | 相依 | 估時 | 狀態 |
 |---|---|---|---:|---|
-| **WP-70** | [`wp-70-run-scoped-condition-validity/`](wp-70-run-scoped-condition-validity/README.md)：`meta.suspect` 的 fullscreen 成分改為 run 級（與已是 run 級的 perf 成分對齊）；protocol 路徑補上錄製窗判準；橫幅改由真值驅動；新增不重啟 plan 的恢復條件入口 | WP-69 ✅ | 6–9.5 d | 🟡 **T0 ✅（2026-09-15）**，T1 未開工 |
+| **WP-70** | [`wp-70-run-scoped-condition-validity/`](wp-70-run-scoped-condition-validity/README.md)：`meta.suspect` 的 fullscreen 成分改為 run 級（與已是 run 級的 perf 成分對齊）；protocol 路徑補上錄製窗判準；橫幅改由真值驅動；新增不重啟 plan 的恢復條件入口 | WP-69 ✅ | 6–9.5 d | 🟡 **T0–T6 ✅（2026-09-15）**，T-exit 未開 |
 
 本 stage 暫無獨立 milestone；WP-70 的 `T-exit` 即交付判定。編號依
 [GD-15](../../DECISIONS.md)「正式進 §2 索引才算採納」取得；

@@ -2,15 +2,17 @@
 
 ## Snapshot
 
-- **Status**: T0 / T1 / T2 / T3 / T4 / T5 complete (2026-09-15); T6 is next.
+- **Status**: T0–T6 complete (2026-09-15); **T-exit is next**。
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **Next**: T6 decisions and docs. T5 landed the live fullscreen regression guard
-  (`tests/e2e/wp70-fullscreen-validity.spec.ts`, 路徑 A) —— 真 fullscreen 進場 → 錄製中掉出 → 該 run 標記 →
-  恢復入口重取 fullscreen 但不推進 → 下一 run 乾淨。**T6 待辦兩筆由 T5 交棒**：(a) FR-70.7 的橫幅文案仍是
-  session 級措辭（T3 DoD 未達成，見 [§T5.6](#t56-交棒-t6-的兩筆未結項)）；(b) FM-70.4 的實機手動驗證清單尚未落 `docs/operational/`。
-- **來源**：[KI-040](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)
-- **決策**：`GD-47`（預約，T0 重查）
+- **Next**: T-exit 驗收閘 —— FR-70.1～70.11／NFR-70.1～70.6 逐條 acceptance matrix、grep 重跑 blast radius、
+  全量閘精確計數（含 Edge full e2e），並確認七處狀態一致（`GD-47`／GD-10 處置／KI-040／stage16 index／
+  top index／checklist／progress）。⚠️ **T-exit 不得以「測試全綠」取代具名證據**，且須把兩條具名邊界帶進
+  matrix：**FM-70.4 沒有 e2e 守衛**（守衛＝T4 source-scan ＋ [實機手動清單](../../../../operational/fullscreen-recovery-manual-check.md)，該清單 §5 執行紀錄**目前為空**）、
+  **FM-70.1 在破效能地板的機器上不被 e2e 可靠守住**（守衛＝T1 source-scan）。
+  T5 交棒的兩筆未結項**均已於 T6 結清**（FR-70.7 文案 → [§T3.4](#t34-補結-fr-707-的文案2026-09-15t6-第一個切片)；手動清單 → [§T6.7](#t67-fm-704-實機手動清單t56-交棒-b)）。
+- **來源**：[KI-040](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md) ✅ 已翻已修（2026-09-15）
+- **決策**：[`GD-47`](../../../DECISIONS.md) ✅ 已落帳（2026-09-15, T6）／[`BD-040`](../../../../known_issue/BUGFIX-DECISIONS.md) ✅／GD-10 **補澄清註記、未修訂**
 
 ## Planning evidence
 
@@ -52,7 +54,7 @@
 | T3 | done | 2026-09-15 - banner now renders from the per-run fullscreen flag, not sticky `experimentSession.suspect`; Restart/full-reset path syncs the banner after `runAttempt.restart()`. Verification: `npm.cmd run typecheck` exit 0; focused `npx.cmd vitest run src/ui/EligibilityGate.test.ts src/data/wp70-run-scoped-fullscreen.test.ts src/display/wp70-protocol-recording-window.test.ts` = **37 passed**; full `npx.cmd vitest run` = **3741 passed / 2 skipped**; `npm.cmd run build` exit 0 after rerun outside sandbox (initial Vite temp write hit EPERM); `npm.cmd run graph:update` exit 0 after rerun outside sandbox (initial graphify write hit EPERM). |
 | T4 | ✅ | 2026-09-15。新增 `ConditionRecoveryScreen`，由 pause overlay restart 進入；若本 run 沒有 fullscreen invalid flag，仍走既有 `restartActiveDrill()`。恢復 click stack 內同步呼叫 `requestFullscreen()`，成功後重跑 native/fullscreen/perf 三項 gate，pass 才以 `onRecovered` 呼叫 `restartActiveDrill()`；fullscreen rejected / gate failed 均不觸發 recovery callback。驗證：`npm.cmd run typecheck` exit 0；focused `npx.cmd vitest run src/ui/ConditionRecoveryScreen.test.ts src/ui/EligibilityGate.test.ts src/display/wp70-protocol-recording-window.test.ts` = **30 passed**；full `npx.cmd vitest run` = **287 files**, **3750 passed / 2 skipped**；`npm.cmd run build` exit 0 after rerun outside sandbox（initial Vite temp write hit EPERM）；`npm.cmd run graph:update` exit 0 after rerun outside sandbox（initial graphify write hit permission denied）。見 [§T4](#t4-condition-recovery-entry-point2026-09-15) |
 | T5 | ✅ | 2026-09-15。**路徑 A**（D-70-T0-4）。新增 `tests/e2e/wp70-fullscreen-validity.spec.ts`（**2 個 test**，production diff = **空**）；`npx playwright test --project=edge --workers=1` **exit 0、121 passed**（T5 之前 119 ⇒ 淨增 2，零既有測試改動）；鏈路四段各有具名斷言，「下一 run 乾淨」以**實際匯出 payload** 為證。新增兩條具名限制 **L4／L5**（T0 只預見 L1～L3）。見 [§T5](#t5-fullscreen-效度鏈路的-e2e-防線2026-09-15) |
-| T6 | ⬜ | — |
+| T6 | ✅ | 2026-09-15。**兩個切片**：`fix(ui)` 補結 FR-70.7 的 run 級文案（T5.6 交棒 (a)，改動前該筆斷言實測轉紅；全套 **3751 passed / 2 skipped**，e2e `wp70-fullscreen-validity` **2 passed** 零改動）＋ `docs(wp-70)` 落帳與文件。`GD-47`／`BD-040` **落帳前重查編號**（最大 GD-46／BD-039，兩個標題各零命中）；GD-10 **補澄清註記、條文一字未動**；KI-040 翻 ✅ 並補 §9 修法落地實況（含「與 §6.2 初估相反且更小」）；`operator-manual.md` §0.1／§4.4／§8.3／§10／附錄五處同步且 UI 字串**逐字核對過**；`schema.md` 補 `fullscreenExited` 列＋**三構念對照表**；`pause-invalid-restart.md` 補恢復流程與 2 條現場檢查；`CONTEXT.md` 補術語；新檔 [`fullscreen-recovery-manual-check.md`](../../../../operational/fullscreen-recovery-manual-check.md)（T5.6 交棒 (b)）；舊措辭 live 命中 **0**，另修 3 處被本 WP 證偽的註解宣稱。見 [§T6](#t6-決策落帳與文件2026-09-15) |
 | T-exit | ⬜ | — |
 
 ## Decision log
@@ -78,6 +80,9 @@
 | **D-70-T5-1** | T5 走 **路徑 A**，且 fullscreen **一律由 production 控制項取得**（資格閘的「進入 fullscreen 並開始」按鈕），不用 `page.evaluate` 直呼 `requestFullscreen()` 當作進場。理由：要證的是「產品觀察得到真 fullscreen」，所以由**資格閘自己的報告**（`fullscreen: PASS — document.fullscreenElement 存在`）作證，而非測試自己讀 `fullscreenElement`。但資格閘在本環境**必然拒入**（`native` 1280×720 < 1920×1080），所以 run 仍必須由 `startSessionPlanWithoutGate()` 起始 —— 這個落差**寫在 e2e 檔頭**，不隱藏 | T5 採納（見 [§T5.2](#t52-鏈路四段與各自的具名斷言)） |
 | **D-70-T5-2** ⭐ | 資格閘「拒入」的斷言**只掛 `native: FAIL`，永不掛 `perf`**。`perf` 是當下實測值，同一台機器不同時刻量到 **15.02ms（FAIL）** 與 **4.36ms（PASS）**；第一版 spec 釘了 `perf: FAIL`，在全套跑時**真的紅了**（S-70-T5-1）。`native` 在本環境**由構造保證**失敗，另以 `assertGateIsRefusableHere()` 具名前置斷言釘住這個前提，換機器時會死在有寫理由的那一行 | T5 採納（見 [§T5.4](#t54-意外與修正)） |
 | **D-70-T5-3** | 第三段斷言的是 **「恢復不推進」**（T5 DoD 的原文），不是「恢復後 restart 成功」。理由：恢復閘在本環境同樣必然失敗（native），**正向 restart 路徑無法在自動化中走到**；而「失敗的恢復不得靜默前進」正是 FR-70.9／70.10 的內容，且是操作員真正會遇到的分支。正向路徑的守衛留在 T4 的 `ConditionRecoveryScreen.test.ts`（`onRecovered` → `restartActiveDrill()`） | T5 採納（見 [§T5.2](#t52-鏈路四段與各自的具名斷言)） |
+| **D-70-T6-1** | `BD-040` **照取**，不順延。`KI-036` 檔頭的「尚無 `BD-040`」是 2026-09-09 當下的下一個空號、**不是保留**（依 GD-15「正式進索引才算採納」，`BD-040` 未被任何 §3 條目或 §1 索引列取用）⇒ 取用之，並**同步修好那句過期文字**（→「尚無 `BD-n`」＋具名註記）。Alternatives considered：跳到 `BD-041`（否決——會讓帳本出現一個永遠沒人解釋的空號，且沒有消除 KI-036 那句過期文字，下一個落帳的人還是會撞上同一個問題） | T6 採納（見 [§T6.1](#t61-編號重查落帳前不沿用-t0)） |
+| **D-70-T6-2** | 橫幅新文案取「**本次測試**…下一次測試不受影響…暫停面板的『重新測試』」，其中「重新測試」**逐字取自** `PauseOverlay.ts` 的 `RESTART_LABEL`。Alternatives considered：① 只改「本 session」→「本次 run」（否決——`run` 是內部詞彙，操作手冊 §0.1 對操作員講的是「一次跑完的 drill」，且不回答「那我現在該做什麼」）；② 在橫幅上做一顆恢復按鈕（否決——橫幅是 `role="alert"` 的純通知，且恢復入口已在暫停面板，兩個入口＝兩套狀態機）；③ 為「橫幅字樣 ≡ `RESTART_LABEL`」加 parity 測試（否決——兩處是各自獨立的文案而非行為副本，釘死會讓任一邊的措辭調整連坐變紅；改由 operator-manual 的逐字核對承擔） | T6 採納（見 [§T3.4](#t34-補結-fr-707-的文案2026-09-15t6-第一個切片)） |
+| **D-70-T6-3** | 一併修正**三處被本 WP 證偽的註解宣稱**（`experimentSession.ts` 檔頭與兩處欄位註解、`main.ts` 資格閘區塊、`main.ts` WP-58 `exit()` 區塊），comment-only、零行為改動。理由：那三處都宣稱 `experimentSession.suspect` 仍餵匯出，**T1 之後是假的**；留著等於叫下一個讀者相信缺陷 A 的認知模型。與 [BD-039](../../../../known_issue/BUGFIX-DECISIONS.md) ③ 同一類動作。Alternatives considered：留給 T-exit（否決——T-exit 的職責是驗收既有證據，不是改 production 註解）；一併刪掉 `suspect` 欄位（否決——去重閂仍承重，清理觸發條件已由 D-70-T1-1 明帳） | T6 採納（見 [§T6.8](#t68-舊措辭殘留點清理步驟-9)） |
 
 ## Open Questions
 
@@ -86,7 +91,7 @@
 | ~~**OQ-70.1**~~ ✅ | ~~Playwright 能否在 `--project=edge` 下可靠進入真 fullscreen 並觸發 `fullscreenchange`？~~ | T0 | — | **已關閉（2026-09-15）**：實測**可行** ⇒ T5 = e2e 任務，帶 L1～L3 三條具名限制。見 [§T0.7](#t07-oq-701-實測步驟-6) |
 | ~~**OQ-70.2**~~ ✅ | ~~`experimentSession.suspect` 被切斷 export 路徑後是否仍有消費者？刪除或保留為 session 級稽核？~~ **已關閉（2026-09-15，T1）**：保留欄位、只切 export 路徑（D-70-T1-1），清理觸發條件已明帳並交棒 T3。以下為 T0 查到的事實，保留備查： | T1 | — | **已降級**（T0 把事實查完，只剩取捨）：`.suspect` 的 production **讀取點恰為 1 個**（`main.ts:914`），T1 切斷後歸 **0**；但該欄位在模組**內部仍承重**（`handleFullscreenChange` 的 `\|\| suspect` 早退＝「同一次退出只觸發一次 `onSuspect`」的去重閂）。⇒ T1 的預設動作 = **只切 export 路徑、不刪欄位**；是否連 `onSuspect`／欄位一起刪，待 T3 決定橫幅真值驅動後再回頭收。見 [§T0.8](#t08-oq-關閉與降級步驟-8) |
 | ~~**OQ-70.3**~~ ✅ | ~~恢復流程要不要重驗**原生解析度**？~~ | T4 | — | **已關閉（2026-09-15）**：重跑**三項全部**（D-70-T0-5）。`runEligibilityGate()` 是純函式、呼叫時現讀三個環境訊號 ⇒ 重跑解析度的邊際成本為零，而「使用者把視窗拖到另一個螢幕」正是解析度會變的那個情況 |
-| **OQ-70.4** 🟡 | 已下載的匯出檔（瀏覽器下載資料夾，repo 掃不到）是否需要操作員自查清單？`data/session-history/` 已確認零筆（KI-040 §8） | 使用者 | T6 | T6 的文件範圍；不阻塞程式修改 |
+| **OQ-70.4** 🟡 | 已下載的匯出檔（瀏覽器下載資料夾，repo 掃不到）是否需要操作員自查清單？`data/session-history/` 已確認零筆（KI-040 §8） | **使用者**（T6 已把判準備妥，決定權未行使） | — | **仍開，不阻塞交付**（2026-09-15，T6）。判準已寫進 [`BD-040`](../../../../known_issue/BUGFIX-DECISIONS.md)「遺留 OQ」與 [KI-040 §9.4](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)：修法**前**的 payload 其 `suspect=true` **無法歸因**（缺陷 A 的後果，只能靠操作紀錄回溯）；修法**後**的匯出可由 `meta.validity.fullscreenExited` 直接分辨。舊匯出**不回填** |
 
 ## Surprises
 
@@ -826,3 +831,182 @@ WP-70 的 T0.3 baseline 未含 playwright 一閘，本節是本 WP 第一份 e2e
 - [x] 新增限制 L4／L5 與其實測依據入帳 → T5.3／T5.4
 - [x] 非本 WP 的既有 flake 已具名排除，不當作雜訊也不當作迴歸 → S-70-T5-3
 - [x] 未結項具名交棒（FR-70.7 文案、FM-70.4 手動清單）→ T5.6
+
+---
+
+## T6 決策落帳與文件（2026-09-15）
+
+**判定：✅ 完成。** 兩個切片：**(1)** `fix(ui)` 補結 T5.6 交棒的 FR-70.7 文案（見 [§T3.4](#t34-補結-fr-707-的文案2026-09-15t6-第一個切片)）；
+**(2)** 本切片 `docs(wp-70)` 落帳與文件。KI-040 §5 的教訓（「T6 若漏掉 `operator-manual.md`，等於這個修法對現場
+操作員不存在」）是本 task 的判準來源，故 §T6.5 的逐字核對**以當前程式碼為準、不憑記憶**。
+
+### T6.1 編號重查（落帳前，不沿用 T0）
+
+| 查核 | 指令 | 結果 |
+|---|---|---|
+| `DECISIONS.md` 已落帳最大 GD | `grep -oE 'GD-[0-9]+' … 排序取尾` | **GD-46** |
+| `GD-47` 標題命中數 | `grep -c "^### GD-47 " docs/exec-plan/DECISIONS.md` | **0** ✅ |
+| repo 全域 `GD-47` 提及 | `grep -rn "GD-47" --include=*.md .` | 僅 WP-70 自身文件與 stage16 index 的**預約**字樣，無他案取用 |
+| `BUGFIX-DECISIONS.md` 已落帳最大 BD | `grep -oE 'BD-[0-9]+' … 排序取尾` | **BD-039** |
+| `BD-040` 標題命中數 | `grep -c "^### BD-040 " docs/known_issue/BUGFIX-DECISIONS.md` | **0** ✅ |
+
+⇒ 取 **`GD-47`** / **`BD-040`**，與 T0 預約一致。
+
+⚠️ **一處前向參照要處理**（D-70-T6-1）：`KI-036` 檔頭寫「尚無 `BD-040`」。逐字重讀後判定那是
+**2026-09-09 當下的下一個空號，不是保留**——依 [GD-15](../../../DECISIONS.md)「正式進索引才算採納」，
+`BD-040` 未被任何 §3 條目或 §1 索引列取用。⇒ 本案取用 `BD-040`，並**同步修好那句過期文字**
+（改為「尚無 `BD-n`」＋具名註記說明 `BD-040` 已由 KI-040 取用、落帳時須重查）。
+與 T0.1 修 stage14 順延註記是同一類問題：**單點漏翻不會被任何測試抓到，只會被下一個 gate 抓到**。
+
+### T6.2 `GD-47` 落帳（步驟 1）
+
+落在 [`DECISIONS.md`](../../../DECISIONS.md) §2 最上方（承 GD-46／45 的「最新在上」體例）。八格：
+① 效力單位＝run（含「run = 產生一份 payload 的那一次」的讀法）、② **方向性明帳**、③ 與 GD-10 的關係、
+④ 與 GD-46／WP-69 的關係、⑤ payload 自述、⑥ 恢復入口 E2、⑦ 編號重查、⑧ 明帳殘餘風險。
+
+**② 是本條最容易被讀漏的一格**（README §3 要求兩個方向分別記錄），逐字寫進條文：
+
+| 方向 | 內容 | 落在 |
+|---|---|---|
+| **放寬** | 唯一來源＝「上一個 run 的中斷不再污染這個 run」。run **內**的偵測一格都沒放寬 | T1 |
+| **收緊 (a)** | 新旗標不以 `experimentSession.active` 為前提、只看 `recording`（D-70-T1-2）⇒ 研究員／一般 drill 模式錄製中退出全螢幕，過去不標、現在會標 | T1 |
+| **收緊 (b)** | protocol 路徑補上 KI-007 錄製窗閘 ⇒ `idle`／`ended` 退出不再標記 condition | T2 |
+
+④ 另補一句規劃期沒寫死的邊界：**對稱的是效力單位，不是後果**——`pauseOccurred` 是採納的 hard reject，
+`fullscreenExited` 只是可保留資料的品質提示；本條不改 GD-46 的任何一態。
+
+### T6.3 GD-10 的處置：補澄清註記（步驟 2）
+
+依 [T0.4](#t04-gd-10-複核步驟-1-的延伸d-70p5-複核) 的複核結論執行 **D-70-T0-2**：在 GD-10 表格加一列
+`⚠️ 澄清註記(2026-09-15, WP-70 T6 補;不修訂上列條文)`，**原「決議」列一字未動**，並在「狀態」列註明
+「措辭澄清 2026-09-15，條文本身未修訂」。
+
+註記四點，其中**第一點是 T0 才補上的範圍擴大**：
+
+1. ⭐ **一併澄清用詞**：① 字面寫「**session** 標 suspect」，但那句綁的是效能地板，而該成分自實作起就是
+   per-run ⇒「session」這個用詞**從一開始**就與實作不符，不是本 WP 才造成的。只談 fullscreen 會讓下一個
+   讀者再踩一次同一個歧義。
+2. 條文從未規定「fullscreen 退出 ⇒ session 級 sticky」；那是 WP-20 T2 的實作延伸。
+3. **不動** ① 的三項**進場**檢查與門檻，「不合格拒入，非僅記錄」原封不動。
+4. `suspect` 是品質提示，採納由 GD-46 三態與既有 gates 決定。
+
+⇒ **選擇理由已寫在 `GD-47` ③**（T6 DoD 明列要求「選擇理由寫在 `GD-47`」）。
+
+### T6.4 `BD-040` 落帳與 KI-040 狀態翻新（步驟 3、4）
+
+- [`BD-040`](../../../../known_issue/BUGFIX-DECISIONS.md) 落在 §3（CLOSED）最上方，六格比照 BD-039 體例。
+  **「偏離計畫」格是本條的重點**，五項具名：
+  ① ⭐ **偏離 KI-040 §6.2 初估**——§6.2 估「`experimentSession` 改為 per-run 計算，比原先估的變更大」，
+  實況**相反且更小**（WP-65 T5 先例 ⇒ 照抄 pattern，`experimentSession` 結構一行未改）；
+  ② `experimentSession.suspect` 保留不刪（去重閂仍承重）；③ D-70-T1-2 的刻意收緊；
+  ④ T2 是相反方向的收緊；⑤ T3 的文案延到 T6 才補（具名交棒、未靜默放過）。
+- §1 索引列的「修復決策」與「狀態」兩欄一併翻新為 `✅ 已修（2026-09-15，WP-70 T1–T6）`，
+  並連到 `BD-040`／`GD-47`／WP-70 三處。
+- [KI-040](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)
+  檔頭狀態由 🟡 翻 ✅，並新增 **§9 修法落地實況**：四個缺陷各自的出口（A/B/C 有、D 刻意不修）、
+  **§9.2 與 §6.2 初估的差**（保留 §6.2 原文不改寫，差異記在 §9 與 `BD-040`）、§9.3 三處 §6 沒預見的事、
+  **§9.4 §8 的未查核範圍在修法後可分辨了**（`fullscreenExited` 直接自述；但只對修法後的匯出成立）。
+
+**OQ 處置**（步驟 4）：
+
+| OQ | 處置 |
+|---|---|
+| `OQ-KI-040-3`（e2e 盲區） | **關閉**。T5 已交付 live 防線；但**帶兩條具名邊界**寫進該列：(a) FM-70.4 e2e 永遠測不到（L1）⇒ 守衛是 source-scan ＋ 實機清單；(b) FM-70.1 在破地板機器上會被 `perfFloor` 蓋掉（L4）。⇒ 這是**關閉 + 具名遺留**，不是無條件關閉 |
+| `OQ-KI-040-4`（GD-n 編號） | **關閉**。`GD-47` 落帳、GD-10 補澄清；理由寫在 `GD-47` ③ |
+| `OQ-70.4`（已下載匯出的自查清單） | **仍開，owner = 使用者**。不阻塞本 WP。判準已在 `BD-040` 與 KI-040 §9.4 寫清楚：修法**前**的 payload 無法歸因、修法**後**可由 `meta.validity.fullscreenExited` 直接分辨 |
+
+### T6.5 `operator-manual.md`：逐字核對過的 UI 字串（步驟 5）
+
+⚠️ **T6 DoD 要求「實際 UI 字串逐字核對過（非憑記憶）」**。本節記錄核對來源與結果。
+
+| 字串 | 來源（本 session 讀碼） |
+|---|---|
+| `⚠ 已離開 fullscreen — 本次測試標記為 suspect(條件失效)；下一次測試不受影響。暫停面板的「重新測試」可恢復條件並重跑本項。` | [`EligibilityGate.ts`](../../../../../src/ui/EligibilityGate.ts)（本 WP 第一個切片剛改） |
+| `已暫停 — 本次已失去實驗效力` / `繼續（本次仍無效）` / `重新測試` | [`PauseOverlay.ts`](../../../../../src/ui/PauseOverlay.ts) `TITLE`／`RESUME_LABEL`／`RESTART_LABEL` |
+| `恢復實驗條件` / `重新進入 fullscreen` / `取消` | [`ConditionRecoveryScreen.ts`](../../../../../src/ui/ConditionRecoveryScreen.ts) |
+| `正在恢復 fullscreen 並重驗條件...` / `無法進入 fullscreen，請再按一次重試。` / `重試 fullscreen` / `條件仍未通過，請修正後重試。` / `重試條件檢查` | 同上（四個狀態字串 + 兩個重試鈕字樣） |
+| `fullscreen: PASS — document.fullscreenElement 存在` | 資格閘報告（T5 e2e 實測輸出亦逐字吻合） |
+
+**改了四處**（WP-69 T-exit 才剛把 Esc 語意補進 §4.4／§8.3，本 WP 又改了失效範圍與恢復路徑 ⇒ 必須同步）：
+
+1. **§4.4 黃色警示條**：字串換成新文案；「中途退出 fullscreen 的規則」由一段散文改為 4 點，
+   新增 ⭐「失效範圍只有那一次 run，不會傳染」與「2026-09-15 之前**不成立**」的斷代說明。
+2. **§4.4 新增「掉出全螢幕之後要怎麼救回這一項」**：4 步，含三條失敗分支的**逐字**狀態文案，
+   並寫明「重新測試＝重跑本項，不是接續錄製」（FR-70.11）。
+3. **§8.3 故障排除**：原 1 列（舊措辭）擴為 **4 列** —— 橫幅、恢復畫面為何出現、fullscreen 被拒、閘沒過。
+4. **§0.1 名詞速查**（`suspect` 補效力單位 + 新增「恢復條件」）、**§10 SOP 速查卡**（新增「掉出全螢幕了」段）、
+   **附錄**（補 `pause-invalid-restart.md` 與新清單兩列）。
+
+### T6.6 `CONTEXT.md` / `schema.md` / `pause-invalid-restart.md`（步驟 6、7、8）
+
+- **`CONTEXT.md` §A** 新增 **run 級條件失效／恢復條件**一條，緊接 `paused-invalid attempt` 之後
+  （兩者必須相鄰閱讀）。含 run 的定義、旗標鏈路、三構念區分、恢復＝restart 的語意。
+- **`schema.md` §`meta.validity`**：intro 由「six／two later fields」改為 **seven／three**；新增
+  `fullscreenExited` 列；新增 **三構念對照表**（各自回答什麼問題／效力單位／後果）與一段
+  「`Esc` 通常三者皆真，但切視窗／`exitFullscreen()` 只觸發 fullscreen 這一項」的具體說明；
+  並修正 `suspect` OR 集合的敘述（舊文只列到 `perfFloor`，實際還有 `pointerLockLost`／`pauseOccurred`，
+  現再加 `fullscreenExited`，並註明 **session 級 contributor 已移除**）。
+- **`pause-invalid-restart.md`**：新增「掉出全螢幕時：恢復實驗條件」一節（含 WP-69 三態 vs 本 WP 的
+  **兩欄對照表**）、在「重新測試」那一列補上 flagged 分支、現場檢查清單由 5 條加到 **7 條**
+  （新增「先出現恢復畫面而非直接重跑」與「下一場 `fullscreenExited: false`」兩條可勾選的現場證據）。
+
+### T6.7 FM-70.4 實機手動清單（T5.6 交棒 (b)）
+
+新檔 [`docs/operational/fullscreen-recovery-manual-check.md`](../../../../operational/fullscreen-recovery-manual-check.md)。
+**它存在的理由寫在 §0**：`page.evaluate()` 自帶 user activation ⇒ 即使把 `requestFullscreen()` 寫在
+`await` 之後，e2e 照樣全綠；source-scan 抓得到**程式碼形狀**改變，抓不到**瀏覽器行為**改變，
+而後者每次 Chromium 改版都可能發生。
+
+內容：何時要跑（4 個觸發條件，含「主版號變動後的第一次正式收案前」）、環境記錄表（含完整瀏覽器版本欄）、
+**12 步可勾選流程**（步驟 7 標 ⭐ = FM-70.4 的整個實質內容）、步驟 7 失敗的判讀與處置
+（明寫「**不要**改成先 await 再請求來繞過」）、§4 **這份清單不宣稱的事**、§5 執行紀錄表。
+
+⚠️ **目前 §5 執行紀錄為空**——清單存在不等於跑過。實機執行的 owner 與時機留給 T-exit／操作員。
+
+### T6.8 舊措辭殘留點清理（步驟 9）
+
+T3 的 DoD 要求交一份清單給 T6，**但 T3 沒有交**（progress §T3 無此節）⇒ 本 task 自己以 grep 重建並逐條處置。
+
+`grep -rn "本 session 資料標記為 suspect"` 命中 **11 處**，逐條處置：
+
+| 處 | 處置 |
+|---|---|
+| `EligibilityGate.ts:79` | ✅ 已改（第一個切片）。剩下的命中是**新註解在解釋舊文案**，刻意保留 |
+| KI-040 檔頭／§6.1／§6.2（3 處） | **保留** —— 診斷紀錄引用當時的症狀原文，改掉等於竄改病歷 |
+| `DECISIONS.md` GD-47「來源」格、`BUGFIX-DECISIONS.md` BD-040「發現處」格 | **保留** —— 引用使用者回報的逐字原文 |
+| WP-70 README FR-70.7／T3／T6 task 檔／progress §T3.4 §T5.6（5 處） | **保留** —— 規劃文件描述「要改掉的那個字串」，是規格不是措辭 |
+
+⇒ **live UI／操作員文件的命中數 = 0**；其餘皆為引用，逐條有理由（DoD 的括號條款）。
+
+另外掃到**三處不是措辭、而是被本 WP 證偽的宣稱**，一併修正（comment-only，零行為改動）：
+
+| 處 | 原本宣稱 | 為什麼必須改 |
+|---|---|---|
+| [`experimentSession.ts`](../../../../../src/display/experimentSession.ts) 檔頭 + 兩處欄位註解 | 「`suspect`:OR 進匯出 meta 的 suspect」「保留 gate/suspect 供最後一次匯出讀取」 | **T1 之後是假的**。留著等於叫下一個讀者相信這個欄位還在餵匯出——那正是缺陷 A 的認知來源 |
+| [`main.ts`](../../../../../src/main.ts) 資格閘區塊註解 | 「session 進行中退出 fullscreen → 標 suspect（OR 進匯出 meta）」 | 同上 |
+| `main.ts` WP-58 T-exit 的 `exit()` 註解 | 「每個後續 standalone 匯出繼承該 session 的 `gate`/`suspect`」 | `suspect` 那一半已消失；`gate` 仍是 session 級且仍被繼承 ⇒ 補一句說明**這個 `exit()` 呼叫為何仍然重要**，避免下一個人誤以為它可以刪 |
+
+⚠️ 與 [BD-039](../../../../known_issue/BUGFIX-DECISIONS.md) ③ 同一類動作：**被修復證偽的不變式宣稱必須跟著改**，
+否則測試綠而註解騙人。三處皆只改註解，`git diff` 無可執行行變動。
+
+### T6.9 證據（四閘）
+
+| Command | Result |
+|---|---|
+| `npm.cmd run typecheck`（`tsc --noEmit` ×2） | exit 0 |
+| `npx.cmd vitest run` | exit 0；**287 files**、**3751 passed / 2 skipped** —— 與第一個切片收尾**逐字相同**（本切片只動註解與文件） |
+| `npx.cmd vitest run tests/regression` | exit 0；**324 passed**（與 T0.3 baseline 逐數相同，NFR-70.1 零漂移） |
+| `npm.cmd run build` | exit 0 |
+| `npm.cmd run graph:update` | exit 0（⚠️ 依 CLAUDE.md **不得**跑裸 `graphify update .`） |
+
+### T6.10 DoD 對帳
+
+- [x] `GD-47` 已落帳且**落帳前重查過編號**（證據 → [§T6.1](#t61-編號重查落帳前不沿用-t0)）
+- [x] GD-10 的處置（**澄清**）已執行，**選擇理由寫在 `GD-47` ③** → [§T6.3](#t63-gd-10-的處置補澄清註記步驟-2)
+- [x] `BD-040` 已落帳，含「偏離 KI-040 §6.2 初估」的具名說明（「偏離計畫」格 ①）→ [§T6.4](#t64-bd-040-落帳與-ki-040-狀態翻新步驟-34)
+- [x] KI-040 狀態列 + BUGFIX-DECISIONS §1 索引列一致翻新（另補 KI-040 §9）
+- [x] `operator-manual.md` §4.4／§8.3 已同步，且**實際 UI 字串逐字核對過**（來源逐條列於 [§T6.5](#t65-operator-manualmd逐字核對過的-ui-字串步驟-5)）
+- [x] `schema.md` 有 `fullscreenExited` 條目並說明與另兩個構念的差異（三構念對照表）
+- [x] 舊措辭掃描：**live UI／操作員文件命中 0**；其餘 10 處為引用，逐條有保留理由 → [§T6.8](#t68-舊措辭殘留點清理步驟-9)
+- [x] `npm run graph:update` exit 0
+- [x] 附加（T5.6 交棒 (b)）：FM-70.4 實機手動清單已落 `docs/operational/` → [§T6.7](#t67-fm-704-實機手動清單t56-交棒-b)
