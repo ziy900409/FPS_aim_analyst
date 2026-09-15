@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **狀態** | 🟡 T4 已落地（2026-09-15），T5 可開工 |
+| **狀態** | 🟡 T5 已落地（2026-09-15），T6 可開工 |
 | **目標** | 允許測試中暫停與繼續，但 pause 發生後該 attempt 永久不得被實驗採納；時間戳完整才保留 invalid diagnostic record，否則丟棄；只有 full restart 產生新的 eligible candidate |
 | **上游** | [WP-65](../../stage13/wp-65-drill-arming-and-countdown/README.md)（arming/countdown/Pointer Lock validity）✅ |
 | **決策** | [GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)（規劃期已採納產品規則，T-exit 補實作證據） |
@@ -237,7 +237,7 @@ Defense in depth：`HistoryPersistence.save()` 新增 `excluded: invalid-attempt
 | **[T2](T2-pausable-time-mapper.md)** ✅ | `PausableTimeMapper` 接 SimLoop/HUD/recorder，證明 freeze/no-catch-up/zero-pause identity | T1 | **High** | High | 2–3 d | `feat(loop): freeze active time during paused attempts` |
 | **[T3](T3-input-pointer-lock-overlay.md)** ✅ | Input/camera gate、Pointer Lock resume、倒數與 PauseOverlay/Restart | T2 | High | High | 2–3 d | `feat(ui): add invalidating pause and full restart controls` |
 | **[T4](T4-finalization-persistence-gate.md)** ✅ | Central finalization gate、invalid diagnostic export、discard、History/replay/navigation 防線 | T1–T3 | **High** | High | 2–3 d | `feat(data): gate finalization by attempt disposition` |
-| **[T5](T5-orchestrator-retry.md)** | Session/Protocol/Tracking Pilot 留在同一步並支援 full retry/audit | T4 | High | High | 2–3 d | `feat(session): retry invalid attempts without advancing` |
+| **[T5](T5-orchestrator-retry.md)** ✅ | Session/Protocol/Tracking Pilot 留在同一步並支援 full retry/audit | T4 | High | High | 2–3 d | `feat(session): retry invalid attempts without advancing` |
 | **[T6](T6-e2e-regression-docs.md)** | Live Edge E2E、全量回歸、文件/術語與操作說明 | T1–T5 | Med | Med | 1–1.5 d | `test(wp-69): verify pause discard and restart lifecycle` |
 | **[T-exit](T-exit-gate.md)** | A-69.1～A-69.12 證據、GD-46 翻 ✅、索引狀態收尾 | T1–T6 | Low | Low | 0.5 d | `docs(wp-69): T-exit evidence for pause validity` |
 

@@ -95,6 +95,7 @@ import { createPausableTimeMapper } from './loop/pausableTimeMapper.ts';
 import { createRunAttemptController } from './attempt/RunAttemptController.ts';
 import {
   createAttemptFinalizationGate,
+  describeAttemptHold,
   describeDiscardReason,
   invalidAttemptBasename,
   planFinalization,
@@ -1087,7 +1088,34 @@ function invalidAttemptNoticeFor(plan: AttemptFinalizationPlan): Parameters<type
     onDownload: () => downloadInvalidDiagnostic(),
   };
 }
-// ─── WP-69 / T4 finalization 結束 ──────────────────────────────────────────────────────────────
+
+/**
+ * WP-69 / T5（FR-69.10，FM-6）— invalid/discarded 時三個 orchestrator 的**唯一**處置點。
+ *
+ * T4 已經讓它們不會前進（收工分支的 `!plan.advancesOrchestrator` 早退）。少的是另一半：操作員看
+ * 不到任何東西告訴他「這一項還沒完成、要重跑」，而 pilot 連「第幾次 attempt 失敗、為什麼」都沒有
+ * 留痕。這個函式補的就是那一半，而且**只**在這裡補——三個 runner 都不自己從 `meta.suspect` 或
+ * `pointerLockLost` 重算一次 disposition（C-D4）。
+ *
+ * 三者的差別只在通道，不在規則:pilot 有自己的 status 與 audit（`retryRunningBlock()` 一併把同一
+ * 個 block 的 attempt +1，index/config/seed 不動）；Session 與 Protocol 只是**不動**，所以它們要
+ * 的只有一句話，寫進既有的 `#protocol-status`。沒有任何 orchestrator 在跑時則完全靜默——單機
+ * standalone drill 的畫面不該因為本 WP 多出一條狀態列（NFR-69.1）。
+ */
+function holdOrchestratorsOnAttempt(plan: AttemptFinalizationPlan): void {
+  const notice = describeAttemptHold(plan);
+  // 第二個條件不是重複判斷:`describeAttemptHold()` 回 `null` 的時機與 `eligible-candidate` 是同一
+  // 個,但只有這一行能把 `plan.disposition` 收窄成 `HeldAttemptDisposition` 交給 pilot。
+  if (notice === null || plan.disposition.kind === 'eligible-candidate') return;
+  // pilot 優先:它是唯一需要記帳（audit + attempt +1）而不只是停住的 runner，且它自己的 status
+  // 通道已經把 block/attempt/reason 說完，不需要再蓋上一句泛用文案。
+  if (trackingPilotSession?.handleInvalidAttempt(plan.disposition) === true) return;
+  // WP-58 / T3 的先例：顯式標註型別，phase union 有任何改動要在這裡編譯期爆掉而非靜默失配。
+  const sessionPhase: SessionRunnerPhase = sessionPlanRunner.phase;
+  if (sessionPhase.kind !== 'run' && activeProtocolRunner.current === undefined) return;
+  setProtocolStatus(notice, false);
+}
+// ─── WP-69 / T4 finalization 結束（T5 的 orchestrator hold 見上） ───────────────────────────────
 
 createExportPanel({
   async onExportJSON(): Promise<void> {
@@ -2345,6 +2373,9 @@ function liveFrame(now: number): void {
       // 在下一個 task 補一筆 `pointer_lock` 事件,那筆戳記晚於最後一個 tick,等到 await 之後才判會
       // 把乾淨的一場判成 `event-out-of-window`。
       const plan = finalizeAttempt();
+      // WP-69 / T5（FR-69.10）— 在 `buildsPayload` 分岔**之前**:`discarded` 也必須讓 orchestrator
+      // 停在原處並留下痕跡,而那條路徑在下一行就 return 了。仍在第一個 await 之前（T4.4）。
+      if (!plan.advancesOrchestrator) holdOrchestratorsOnAttempt(plan);
       if (!plan.buildsPayload) {
         // `discarded`：不建 payload、不算 metrics、不顯示 Result、不下載、不保存、不推進。
         // 現地清掉 arena 與 frame log——不可信的資料不留在記憶體裡等下一個讀取者（FR-69.9）。

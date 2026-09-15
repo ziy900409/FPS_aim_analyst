@@ -6,6 +6,7 @@ import {
 } from '../session/trackingPilotManifest.ts';
 import {
   createTrackingPilotRunner,
+  type HeldAttemptDisposition,
   type TrackingPilotRunnerHandle,
   type TrackingPilotRunnerPhase,
 } from '../session/TrackingPilotRunner.ts';
@@ -62,6 +63,16 @@ export interface TrackingPilotSessionHandle {
    * session-plan/protocol completion branches.
    */
   handleDrillEnded(): boolean;
+  /**
+   * WP-69 / T5 (FR-69.10) — called instead of `handleDrillEnded()` when the attempt that just ended
+   * is not adoptable. Returns `true` when a pilot block owned that run, so the caller knows the
+   * pilot's own status channel has already explained the hold.
+   *
+   * There is no route from here to `completeCurrentBlock()`: a held attempt must not produce a
+   * block record, an export or an eligibility verdict, and the way to guarantee that is for the
+   * held path to have no access to them.
+   */
+  handleInvalidAttempt(disposition: HeldAttemptDisposition): boolean;
   readonly runner: TrackingPilotRunnerHandle;
   readonly screen: TrackingPilotOperatorScreenHandle;
   dispose(): void;
@@ -162,6 +173,9 @@ export function createTrackingPilotSession(deps: TrackingPilotSessionDeps): Trac
       if (runner.phase.kind !== 'running') return false;
       void runner.completeCurrentBlock().catch((error: unknown) => reportFailure('Block 匯出失敗', error));
       return true;
+    },
+    handleInvalidAttempt(disposition): boolean {
+      return runner.retryRunningBlock(disposition) !== undefined;
     },
     runner,
     screen,

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createAttemptFinalizationGate,
+  describeAttemptHold,
   describeDiscardReason,
   INVALID_ATTEMPT_BASENAME_MARKER,
   invalidAttemptBasename,
@@ -222,5 +223,53 @@ describe('createAttemptFinalizationGate — one call site, one decision', () => 
     controller.restart();
 
     expect(gate.decide(snapshot()).disposition).toEqual({ kind: 'eligible-candidate' });
+  });
+});
+
+describe('describeAttemptHold — 三個 orchestrator 共用的一句話（WP-69 T5，FR-69.10）', () => {
+  it('eligible-candidate 回 null：乾淨路徑不多出任何狀態文字（NFR-69.1）', () => {
+    expect(describeAttemptHold(planFinalization({ kind: 'eligible-candidate' }))).toBeNull();
+  });
+
+  it('invalid-retained 說「曾暫停」，且指向同一個出口：重新測試本項', () => {
+    const text = describeAttemptHold(planFinalization({ kind: 'invalid-retained', reason: 'paused' }));
+
+    expect(text).toContain('曾暫停');
+    expect(text).toContain('停在原處');
+    expect(text).toContain('重新測試');
+  });
+
+  it('discarded 指名作廢理由（invalid-retained 還有稽核檔，它沒有）', () => {
+    const text = describeAttemptHold(planFinalization({ kind: 'discarded', reason: 'pause-fence-unclosed' }));
+
+    expect(text).toContain(describeDiscardReason('pause-fence-unclosed'));
+    expect(text).toContain('重新測試');
+  });
+
+  it('每一個凍結 reason 都有可讀文案，沒有一個會印出 undefined', () => {
+    const reasons: RecordingIntegrityReason[] = [
+      'tick-non-finite',
+      'tick-regression',
+      'tick-step-off-grid',
+      'event-non-finite',
+      'event-out-of-window',
+      'event-backward-step-exceeds-tick',
+      'pause-fence-unclosed',
+      'pause-attempt-overflow',
+    ];
+    for (const reason of reasons) {
+      const text = describeAttemptHold(planFinalization({ kind: 'discarded', reason }));
+      expect(text).not.toContain('undefined');
+      expect(text).toContain(describeDiscardReason(reason));
+    }
+  });
+
+  it('兩個 held disposition 給的指示逐字相同——操作員的下一個動作只有一個（FR-69.6）', () => {
+    const invalid = describeAttemptHold(planFinalization({ kind: 'invalid-retained', reason: 'paused' }))!;
+    const discarded = describeAttemptHold(planFinalization({ kind: 'discarded', reason: 'tick-regression' }))!;
+    const instruction = '：測試進度停在原處，未計入本項。請按「重新測試」重跑本項。';
+
+    expect(invalid.endsWith(instruction)).toBe(true);
+    expect(discarded.endsWith(instruction)).toBe(true);
   });
 });

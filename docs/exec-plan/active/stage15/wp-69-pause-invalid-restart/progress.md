@@ -2,10 +2,10 @@
 
 ## Snapshot
 
-- **狀態**：🟡 T4 已落地（2026-09-15），T5 可開工
+- **狀態**：🟡 T5 已落地（2026-09-15），T6 可開工
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：T5 — Session/Protocol/Tracking Pilot 留在同一步並支援 full retry/audit
+- **下一步**：T6 — Live Edge E2E、全量回歸、文件/術語與操作說明
 - **決策**：[GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)
 
 ## Planning evidence
@@ -23,7 +23,7 @@
 | T2 | ✅ | 2026-09-15。`PausableTimeMapper` + main.ts 時鐘管線（mapped clock 注入 SimLoop）；50 個新測試；naive-pause 失敗模式固化成永久測試。四閘全綠 + Edge e2e 13 passed。見 [§T2](#t2-pausable-active-time2026-09-15) |
 | T3 | ✅ | 2026-09-15。gameplay 閘（input + camera 共用）、`suspend()` release edge、`PauseOverlay`、Pointer Lock resume 倒數、Restart 收斂；61 個新測試 + 六刀 mutation 反證。四閘全綠 + Edge e2e 15 passed。見 [§T3](#t3-input--pointer-lock--overlay2026-09-15) |
 | T4 | ✅ | 2026-09-15。`AttemptFinalizationGate`（consequence matrix）+ main.ts 五個消費點 + History 第二道防線 + Result 稽核下載 + PauseOverlay 作廢 view；76 個新測試 + 十二刀 mutation 全部見血；OQ-69.4 關閉。四閘全綠 + Edge e2e 15 passed。見 [§T4](#t4-finalization--persistence-gate2026-09-15) |
-| T5 | ⬜ | — |
+| T5 | ✅ | 2026-09-15。`describeAttemptHold()` + `TrackingPilotRunner.retryRunningBlock()` + `main.ts` 的 `holdOrchestratorsOnAttempt()` 單一接縫；33 個新測試 + 六刀 mutation 全部見血。四閘全綠 + Edge e2e 15 passed。見 [§T5](#t5-orchestrator-retry2026-09-15) |
 | T6 | ⬜ | — |
 | T-exit | ⬜ | — |
 
@@ -69,6 +69,121 @@ OQ-69.1～69.3 已於 T0 全數關閉（見 [§T0.6](#t06-oq-關閉2026-09-15使
 > T1 本身不替 OQ-69.4 做決定：實作上**逐字執行 T0 凍結的判準**（pause/resume 次數不相等 ⇒ `pause-fence-unclosed`），不在實作期悔放寬。
 
 
+---
+
+## T5 orchestrator retry（2026-09-15）
+
+> 交付物 = 三個 orchestrator 在 held attempt 之後的**外顯**行為：一句共用文案、pilot 的重跑入口與
+> audit、以及 `main.ts` 那一個把三者接起來的接縫。**T4 已經讓它們不會前進**（`advancesOrchestrator`
+> 早退）；T5 補的是另一半——操作員看得到「這一項還沒完成」，pilot 記得住「第幾次、為什麼」。
+
+### T5.1 交付檔案
+
+| 檔案 | 內容 | 測試數 |
+|---|---|---|
+| `src/attempt/AttemptFinalizationGate.ts` | `describeAttemptHold(plan)`：三 runner 共用的**一句話**，`null` = 可前進 | +5 |
+| `src/session/TrackingPilotRunner.ts` | `HeldAttemptDisposition`、`TrackingPilotInvalidAttempt`、`invalidAttempts`、`retryRunningBlock()` | +5 |
+| `src/pilot/trackingPilotSession.ts` | `handleInvalidAttempt()`——與 `handleDrillEnded()` 互斥的第二條路 | +2 |
+| `src/attempt/__tests__/wp69-orchestrator-retry.test.ts` | 三 runner 真模組整合 rig（held × clean 成對）+ `main.ts` source-scan | 21 |
+| `src/main.ts` | `holdOrchestratorsOnAttempt()` + 收工分支的一行呼叫（見 T5.2） | — |
+
+### T5.2 main.ts 的接點（唯讀清單，便於 T6 接手）
+
+| 接點 | 位置 | 作用 |
+|---|---|---|
+| `holdOrchestratorsOnAttempt(plan)` | T4 finalization 區塊末尾 | held attempt 的**唯一**處置點；三 runner 都不自己重算 disposition |
+| `if (!plan.advancesOrchestrator) holdOrchestratorsOnAttempt(plan);` | 收工分支，`finalizeAttempt()` 之後、`!plan.buildsPayload` 分岔**之前** | 見 §T5.4 |
+| `trackingPilotSession?.handleInvalidAttempt(plan.disposition)` | 同函式，最優先 | pilot 是唯一需要記帳（audit + attempt +1）而不只是停住的 runner |
+| `const sessionPhase: SessionRunnerPhase = ...` | 同函式 | 沿用 WP-58 T3 的顯式標註（DoD 第 6 條：union 改動要編譯期爆掉） |
+
+### T5.3 為什麼 Session/Protocol 沒有新的 production 程式碼（D-69-T5-1）
+
+T5 的步驟 1、2 讀起來像是要在兩個 runner 裡加東西。實際不需要，而這正是 T4 的設計成立的證據：
+`advancesOrchestrator` 一關，`advance()` 與 `completeCurrentCondition()` **根本沒被呼叫**，cursor 與
+`exports[]` 是靠「沒有人動它們」保持不變的，不是靠新寫的守衛。
+
+在兩個 runner 裡再加一層 `if (disposition…)` 會直接違反 T5 步驟 4 與 C-D4——那就是第二個判準，而且
+是從 payload 反推的那一種。所以本 task 對這兩個 runner 的交付是**測試**：held × clean 成對跑同一個
+rig，held 那半斷言 cursor/conditionIndex/`exports[]`/下載逐位不變，clean 那半斷言前進確實發生（沒有
+這一半，一個根本沒跑起來的 rig 會讓每一條「不變」斷言都綠）。
+
+### T5.4 hold 必須早於 `buildsPayload` 分岔（不是風格）
+
+`discarded` 在 `!plan.buildsPayload` 那一行就 `return` 了。hold 若放在 T4 既有的
+`if (!plan.advancesOrchestrator) return;` 旁邊，**只有 `invalid-retained` 會被處置**——最該讓操作員
+知道「這一場什麼都沒留下」的那一種反而最安靜，pilot 的 audit 也會漏掉每一筆 discarded。
+所以 hold 放在 gate 之後的第一行，且仍在第一個 `await` 之前（T4.4 的同一條順序），兩件事各有一條
+source-scan 釘住。
+
+### T5.5 pilot 為什麼不重載 config、也不借 `abortCurrentBlock()`（D-69-T5-2）
+
+`abortCurrentBlock()` 會 `advanceFromBlock()`——它前進。README §2.5 明文禁止借用它，理由就是這個
+（FM-6）。`retryRunningBlock()` 因此是獨立入口，且刻意**不呼叫 `loadDrillConfig`**：full restart 是
+`main.ts` 單一 coordinator 的職責（`restartActiveDrill()` → `resetRunPresentation()` → `buildSimLoop()`），
+而同一個 block 的 config/seed 逐位相同——「不用重載」正是「這還是同一個 block」的直接後果。
+
+attempt 在 held 的當下就 +1，不等 restart。`startBlock(blockIndex, attemptNumber)` 一向在 block 被玩
+**之前**發佈 phase，所以 `phase.attempt` 的既有語意就是「即將跑的那一次」；held 之後即將跑的就是
+`previousAttempt + 1`。兩個時點各記一次會多一個接縫，也多一次漂移機會。
+
+`payload` 沒有進 audit（README §2.5 寫的是「可選存在」）：要塞進去就得讓 hold 等 `await
+buildCurrentExportPayload()`，那會把它推到第一個 await 之後（§T5.4 的同一條線）。稽核檔的取得路徑
+是 Result 上的手動下載鈕（OQ-69.1），audit 只回答「第幾次、為什麼」。
+
+### T5.6 四閘 + e2e
+
+| 閘 | 命令 | exit | 計數 | 對比 T4 |
+|---|---|---|---|---|
+| typecheck | `npm run typecheck` | **0** | — | 同 |
+| build | `npm run build` | **0** | `✓ built in 2.03s` | 同（chunk >500 kB 為既有警告） |
+| 全量單元 | `npx vitest run` | **0** | **3703 passed / 2 skipped**；檔案 **284 / 1 skipped** | 3670 → 3703（**+33**，恰為本 task 新增數）；檔案 283 → 284 |
+| 回歸 | `npx vitest run tests/regression` | **0** | **324 passed**（33 files） | **逐數相同，零漂移** |
+| Edge e2e（focused） | `npx playwright test --project=edge --workers=1 full-drill input-sampler raw-mouse-sampling` | **0** | **15 passed**（1.4m） | 與 T0/T3/T4 基線同一集、同一計數 |
+
+e2e 前置：5173 無人佔用；`.playwright-tmp/history-dev` 352 個 participant 目錄（與 T4 同）。
+
+### T5.7 Mutation check（六刀，全部見血）
+
+| # | 拆掉什麼 | 紅燈數 |
+|---|---|---|
+| 1 | 收工分支的 `holdOrchestratorsOnAttempt(plan)` 呼叫 | 2 |
+| 2 | `retryRunningBlock()` 不 bump attempt | 7 |
+| 3 | audit 覆寫前筆（`invalidAttempts.length = 0`） | 1 |
+| 4 | `describeAttemptHold()` 恆回 `null` | 12 |
+| 5 | `handleInvalidAttempt()` 改走 `completeCurrentBlock()` | 1 |
+| 6 | hold 裡 pilot 接手後不 `return` | 1 |
+
+### T5.8 Surprises
+
+1. **第六刀一開始沒見血。** pilot 在跑時 Session/Protocol 都不是 active，所以少掉那個 `return`
+   目前不改變任何可觀察行為——rig 測到的是 rig 自己的 `return`。這條規則（pilot 的 status 才是權威）
+   只能靠 source-scan 釘，補上之後第六刀才紅。**沒有跑 mutation 就不會發現這件事**。
+2. **rig 第一版讓一個 held attempt 繼承了前一場乾淨的 plan。** `finalizedPlan` 的 memo 在 `main.ts`
+   是由 `resetRunPresentation()` 清的，而**每一次** drill load 都經過它（`loadDrillById` 與
+   `loadDrillConfigDirect` 都走 `activateDrill()`）。rig 的兩個 loader 原本是空的 `async () => {}`，
+   於是 memo 變成「一個 manifest run 一份」而不是「一場一份」，第二個 block 的 pause 被靜默放行。
+   比照 T4.9 #2：又一次是 rig 不忠實，而它剛好示範了那個共同點為什麼是契約。
+3. **Session 與 Protocol 一行 production 程式碼都沒加**（§T5.3）。規劃期的步驟 1/2 讀起來像要改
+   runner；實際要交的是測試。這不是偷工，是 T4 的 plan 設計本來就把後果收斂到一個欄位。
+
+### T5.9 Definition of Done 對帳
+
+- [x] 三 runner 在 invalid/discarded 後的 step/condition/block index 逐位不變
+      （三組 `it.each` 各自對 `session.phase` / `protocol.current` / pilot phase 做整物件比對，
+      且每組都配一個 clean 對照證明 rig 真的跑到了會前進的位置）
+- [x] full restart 後 attempt +1，drill/config/scene/weapon/seed 與前 attempt 相同
+      （`rig.restart()` 後 `runAttempt.attempt` +1、`validity` 回 `eligible-candidate`、
+      `session.phase` 與 held 當下逐位相同；連續兩次 pause + restart 的 +2 版本）
+- [x] invalid/discarded 不進 Session download、Protocol exports、Pilot completed payload 集合
+      （`sessionDownloads` 為 `[]`、`protocol.exports` 為 `[]`、`pilot.records` 為 `[]`；
+      最後一個 condition 被 held 時 `onProtocolComplete` 呼叫數為 0）
+- [x] Pilot audit 保留每次失敗 attempt 的 reason/disposition，不覆寫前筆；正式 block record 只在
+      candidate 通過後成立（連續兩次失效 → `previousAttempt` 為 `[1, 2]`；`records` 仍為空，
+      直到那個 block 真的乾淨跑完才長出一筆且 `attempt` 記的是成功的那一次）
+- [x] 正常 clean flow 的 rest/advance/done callbacks 與既有測試逐位不變
+      （回歸 324 零漂移、全量單元只增不改、三組 clean 對照、Edge e2e 同一集 15 passed）
+- [x] `SessionRunnerPhase`/`TrackingPilotRunnerPhase` 的 union 未改動，且 `main.ts` 的讀取點帶
+      顯式型別標註（source-scan 釘住 `const sessionPhase: SessionRunnerPhase =`）
 ---
 
 ## T4 finalization / persistence gate（2026-09-15）

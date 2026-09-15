@@ -7,7 +7,7 @@
 | ✅ | **T2** Pausable active time | [T2-pausable-time-mapper.md](T2-pausable-time-mapper.md) | T1 | High |
 | ✅ | **T3** Input/Pointer Lock/UI | [T3-input-pointer-lock-overlay.md](T3-input-pointer-lock-overlay.md) | T2 | High |
 | ✅ | **T4** Finalization/persistence | [T4-finalization-persistence-gate.md](T4-finalization-persistence-gate.md) | T1–T3 | High |
-| ⬜ | **T5** Orchestrator retry | [T5-orchestrator-retry.md](T5-orchestrator-retry.md) | T4 | High |
+| ✅ | **T5** Orchestrator retry | [T5-orchestrator-retry.md](T5-orchestrator-retry.md) | T4 | High |
 | ⬜ | **T6** E2E/regression/docs | [T6-e2e-regression-docs.md](T6-e2e-regression-docs.md) | T1–T5 | Med |
 | ⬜ | **T-exit** Acceptance | [T-exit-gate.md](T-exit-gate.md) | T1–T6 | Low |
 

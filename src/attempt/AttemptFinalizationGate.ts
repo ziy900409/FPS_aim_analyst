@@ -141,6 +141,32 @@ export function describeDiscardReason(reason: RecordingIntegrityReason): string 
   return DISCARD_REASON_TEXT[reason];
 }
 
+/**
+ * WP-69 / T5 (FR-69.10) — the one sentence every orchestrator shows when an attempt is **held**.
+ *
+ * Session, Protocol and Tracking Pilot each have their own status channel, and before this there
+ * was nothing stopping the three from explaining the same situation three different ways — or, far
+ * worse, from each deciding for itself *whether* this is that situation (the `meta.suspect` failure
+ * mode again, C-D4). So the text is derived here, from the same plan its consequences come from:
+ * a runner that wants to say something says this, or says nothing.
+ *
+ * `null` means the attempt advances, i.e. there is nothing to hold and nothing to announce — the
+ * clean path's existing status lines stay byte-for-byte as they were (T5 DoD, NFR-69.1).
+ *
+ * Both held dispositions end in the same instruction because the operator's next action is the
+ * same one: only a full restart produces a new eligible candidate (FR-69.6). They differ in what
+ * survives, and only there — `invalid-retained` still has an audit file to download from Result,
+ * `discarded` has nothing at all, which is why its reason is named.
+ */
+export function describeAttemptHold(plan: AttemptFinalizationPlan): string | null {
+  if (plan.advancesOrchestrator) return null;
+  const cause =
+    plan.disposition.kind === 'discarded'
+      ? `本次紀錄已作廢（${describeDiscardReason(plan.disposition.reason)}）`
+      : '本次曾暫停，已失去實驗效力';
+  return `${cause}：測試進度停在原處，未計入本項。請按「重新測試」重跑本項。`;
+}
+
 /** Only the one method this gate needs from the controller — keeps the rig and the tests honest. */
 export interface AttemptFinalizationSource {
   finalize(snapshot: RecordingSnapshot): AttemptDisposition;
