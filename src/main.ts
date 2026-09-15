@@ -90,6 +90,8 @@ import { createSimLoop, DEFAULT_RNG_SEED, type SimLoop } from './loop/SimLoop.ts
 import { punchToThreeRad } from './recoil/adapter.ts';
 import { createRenderLoop, lerp } from './loop/RenderLoop.ts';
 import { realClock } from './loop/clock.ts';
+import type { Clock } from './loop/clock.ts';
+import { createPausableTimeMapper } from './loop/pausableTimeMapper.ts';
 import { SIM_HZ, SIM_TO_WORLD } from './loop/constants.ts';
 import { createDataRecorder } from './data/DataRecorder.ts';
 import { DEFAULT_MAX_DRILL_SECONDS } from './data/RingBuffer.ts';
@@ -1167,13 +1169,24 @@ if (recorder.recordMouseSamples) {
   });
 }
 
+// WP-69 / T2 — active measurement time 的**單一**映射點（README §2.2）。首次 pause 前恆為 identity
+// （`mapWallTime(now) === now`,逐位),所以未暫停的路徑與 WP-69 之前逐位相同（NFR-69.1）。
+// pause 期間 rAF 照跑、`pump()` 照呼叫,但餵進去的是凍結值 ⇒ delta=0 ⇒ ticks=0;resume 不會有
+// catch-up 或 >250ms re-anchor（NFR-69.2,見 SimLoop.pump 的 clamp/re-anchor 與 T0.4 實測）。
+// T2 只鋪設這條時鐘管線:production **尚無** pause 觸發點,那是 T3（Pointer Lock → pause）的事。
+const timeMapper = createPausableTimeMapper();
+
+// SimLoop 建構時取的時間基準（`lastMs`/`simTimeMs`）必須與 `pump()` 餵入的同一個域,否則重建 loop
+// 時會拿 wall 當基準卻被餵 active ms。故注入 mapped clock,而非 `realClock`。
+const activeClock: Clock = { now: () => timeMapper.mapWallTime(realClock.now()) };
+
 // WP-13 / T2 — spread/recoil RNG seed 佈線（OQ-13.1）：seed 取自 `drill.sequence.seed`（省略即
 // createSimLoop 內後援 DEFAULT_RNG_SEED）。restart / 換 drill 走**重建 loop** 重置 rng stream 與
 // tickIndex（決定性:同 seed 同輸入序列位元一致）。seed 值交 WP-16 記入匯出 meta（研究可重現）。
 function buildSimLoop(): SimLoop {
   return createSimLoop(
     sharedState,
-    realClock,
+    activeClock,
     SIM_HZ,
     targetManager,
     sceneManager.camera,
@@ -1425,6 +1438,10 @@ const hudStats: HUDStats = {
 };
 
 function resetRunPresentation(): void {
+  // WP-69 / T2（FR-69.6）：full restart 的四條路徑（restart / 換武器 / 換 drill / 換場景）都經過
+  // 這裡,且都在下游重建 SimLoop —— 把 mapper 歸零放在這一個共同點,新 attempt 的 active time 回到
+  // identity,重建的 loop 才會錨在同一個域（`activeClock`）。順序是硬的:**先歸零、後 buildSimLoop()**。
+  timeMapper.restart(performance.now());
   recorder.reset();
   frameLog.reset();
   resultScreen.hide();
@@ -1960,12 +1977,16 @@ protocolNextButton.addEventListener('click', () => void beginNextProtocolConditi
 function liveFrame(now: number): void {
   sessionPlanRunner.poll(now);
   trackingPilotSession?.poll(now); // WP-54 / T6：pilot 的 rest 倒數，比照 SessionRunner.poll()。
+  // WP-69 / T2：rAF 的 wall `now` → active measurement time。**量測**用途一律用 `activeNow`
+  // （sim、recorder 戳記、gameplay HUD 經過時間）；**render-only** 的動畫壽命仍用原始 `now`
+  //  （命中回饋、tracer、ADS FOV 內插、急停閂鎖）——暫停時畫面該繼續動,但量測不該前進。
+  const activeNow = timeMapper.mapWallTime(now);
   // 1) 推進 sim（固定步長，只用 TICK；決定性根源在 SimLoop），取回 alpha 內插係數。
-  const { alpha } = simLoop.pump(now);
+  const { alpha } = simLoop.pump(activeNow);
   const phase = drillRunner.phase;
   if (phase === 'running') {
-    if (hudRunStartMs === null) hudRunStartMs = now;
-    hudElapsedMs = now - hudRunStartMs;
+    if (hudRunStartMs === null) hudRunStartMs = activeNow;
+    hudElapsedMs = activeNow - hudRunStartMs;
   } else if (phase === 'countdown' || phase === 'idle' || phase === 'armed') {
     // WP-65 / T4（FR-65.8）：`'armed'` 必須一起歸零,否則新相位落到 else 之外、`hudElapsedMs` 保留
     // 上一場殘值 ⇒ 待命期的 Time 卡會顯示上一場的時間（倒數型還會顯示一個已經扣掉的剩餘值）。

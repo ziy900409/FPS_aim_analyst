@@ -2,10 +2,10 @@
 
 ## Snapshot
 
-- **狀態**：🟡 T1 已落地（2026-09-15），T2 可開工
+- **狀態**：🟡 T2 已落地（2026-09-15），T3 可開工
 - **分支**：`chore/agents-skills-tree`
 - **規劃日期**：2026-09-15
-- **下一步**：T2 — `PausableTimeMapper`
+- **下一步**：T3 — Input/Pointer Lock gate、resume 倒數、PauseOverlay/Restart
 - **決策**：[GD-46](../../../DECISIONS.md#gd-46--wp-69-暫停後永久失去實驗效力時間戳不可信即丟棄只有整場-restart-可恢復資格2026-09-15規劃)
 
 ## Planning evidence
@@ -20,7 +20,7 @@
 |---|---|---|
 | T0 | ✅ | 2026-09-15。編號重查、blast radius、baseline 四閘、pause time spike、integrity 詞彙凍結、OQ-69.1～69.3 全關。production diff = 空。見 [§T0](#t0-entry-gate2026-09-15) |
 | T1 | ✅ | 2026-09-15。`src/attempt/` 三模組 + 88 個新測試；9 份 clean fixture 全數放行；canonical digest 只動 3 筆（完全印證 D-69-T0-4）。見 [§T1](#t1-attempt-disposition-contract2026-09-15) |
-| T2 | ⬜ | — |
+| T2 | ✅ | 2026-09-15。`PausableTimeMapper` + main.ts 時鐘管線（mapped clock 注入 SimLoop）；50 個新測試；naive-pause 失敗模式固化成永久測試。四閘全綠 + Edge e2e 13 passed。見 [§T2](#t2-pausable-active-time2026-09-15) |
 | T3 | ⬜ | — |
 | T4 | ⬜ | — |
 | T5 | ⬜ | — |
@@ -42,6 +42,10 @@
 | D-69-T1-1 | **pause fence 以 active time 記錄，不是 wall time**（偏離 README §2.1 的 `atWallMs` 參數命名） | T1 採納（機械必然，見 §T1.3） |
 | D-69-T1-2 | 非法轉換一律 no-op，不 throw（這些 method 直接掋在 UI 事件上） | T1 採納 |
 | D-69-T1-3 | `finalize()` 先判 integrity 再判 validity；`discarded` 取凍結詞彙順序的第一個 reason | T1 採納（FM-7） |
+| D-69-T2-1 | `pause()` / `resume()` 回傳 active ms（README §2.2 寫 `void`）；fence 的兩端由 mapper 給同一個 double，呼叫端不得自行重算 | T2 採納（見 §T2.3） |
+| D-69-T2-2 | resume 後的映射錨在 `(wall, active)` 配對而非減去 offset：`(w − resumeWall) + resumeActive` 對**所有**可表示輸入在 `w === resumeWall` 逐位還原 | T2 採納（見 §T2.3） |
+| D-69-T2-3 | mapper 對非 finite 輸入與 resume 的 wall 倒退 **throw**（不靜默夾住）；`mapWallTime` 本身**不**做單調性檢查，因為 T3 要用同一入口映射可能早於當前幀的 DOM `event.timeStamp` | T2 採納（見 §T2.5） |
+| D-69-T2-4 | mapper 歸零放進 `resetRunPresentation()`（四條 full-restart 路徑的共同點），並以 source-scan 測試釘住「reset 之後必須 `buildSimLoop()`」的順序 | T2 採納 |
 
 ## Open Questions
 
@@ -264,3 +268,71 @@ README §2.1 把 `pause()` / `finishResumeCountdown()` 的參數寫成 `atWallMs
 2. **`Math.nextUp` 不是標準 JS。** 要證明 tick 軸真的 bit-exact（D-69-T0-2）得用 `Float64Array`/`BigUint64Array` 手動加 1 ULP。已封在 `recordingIntegrity.test.ts` 的 `nextUp()` helper。
 3. **`toEqual` 對 additive 欄位是硬性斷言。** 兩個 WP-65 的 `pointerLockLost` round-trip 測試因為 validity 從 5 鍵變 6 鍵而變紅 —— 與 digest 移動同源，都是 required-out 的預期成本，不是回歸。
 4. **T0.5 的語料計數可機械複驗**：9 份 fixture 合計 **13,262 ticks / 634 events**，與 T0 記錄逐數相同，已固化成測試（語料若被換掉會立刻紅）。
+
+---
+
+## T2 pausable active time（2026-09-15）
+
+> 交付物 = `src/loop/pausableTimeMapper.ts` + `main.ts` 的時鐘管線（三個接點）+ 50 個新測試。
+> **production 尚無 pause 觸發點** —— mapper 在正式路徑恆為 identity，pause/resume 的呼叫端是 T3。
+> 本 task 鋪的是「暫停時時間怎麼不動」的機制，不是「什麼情況會暫停」的政策。
+
+### T2.1 交付檔案
+
+| 檔案 | 內容 | 測試數 |
+|---|---|---|
+| `src/loop/pausableTimeMapper.ts` | 純算術 mapper：`mapWallTime` / `pause` / `resume` / `restart` + `paused` / `excludedWallMs` | — |
+| `src/loop/pausableTimeMapper.test.ts` | 三條不變量各一組 + fail-fast + 與 `RunAttemptController` 的 fence 對接 + 純度掃描 | 36 |
+| `src/loop/__tests__/wp69-pause-time.test.ts` | 真 `createSimLoop` 整合：四 FPS identity、凍結、no-catch-up、多次 pause、restart parity、main.ts 順序守衛 | 14 |
+| `src/main.ts` | 三個接點（見 T2.2） | — |
+
+### T2.2 main.ts 的三個接點（唯讀清單，便於 T3 接手）
+
+| 接點 | 位置 | 作用 |
+|---|---|---|
+| `activeClock` 注入 `createSimLoop` | `buildSimLoop()` | loop 建構期的 `lastMs`/`simTimeMs` 與 `pump()` 餵入值同域；重建 loop 不會一邊 wall 一邊 active |
+| `mapWallTime(now)` → `pump()` + HUD elapsed | `liveFrame()` | 量測時間的唯一映射點；**render-only 壽命（命中回饋 / tracer / ADS FOV / 急停閂鎖）刻意留在 wall `now`** |
+| `timeMapper.restart()` | `resetRunPresentation()` | 四條 full-restart 路徑的共同點，且都緊接 `buildSimLoop()`（順序已被測試釘住） |
+
+drill countdown **不需要改**：`countdownRemainingMs` 由 sim tick 導出（WP-65），tick 停了它自然凍結。
+`sessionPlanRunner.poll(now)` / `trackingPilotSession?.poll(now)` 維持 wall —— 那是 drill **之間**的休息倒數，不是量測時間。
+
+### T2.3 兩處對 README §2.2 的刻意偏離（D-69-T2-1 / D-69-T2-2）
+
+1. **`pause()` / `resume()` 回傳 active ms**（README 寫 `void`）。fence 的兩端必須是**同一個 double**，否則 T1 的 `pause-fence-unclosed` 會從「機械證明」退化成「容差」。讓 mapper 直接交出那個值，呼叫端無從算錯。
+2. **錨在 `(wall, active)` 配對，不用 offset 減法**。`w − offset` 只在捨入剛好配合時能在 resume 當下逐位還原 `frozenActive`；`(w − resumeWall) + resumeActive` 在 `w === resumeWall` 時是 `0 + resumeActive`，對**所有**可表示輸入恆真。不變量要對所有輸入成立，不是對看起來合理的輸入成立。
+
+「首次 pause 前 identity」用**短路**（直接 `return wallNowMs`）而非 `w − 0`：後者對 `-0` 不是 identity，且短路讓 NFR-69.1 變成讀得出來的保證而不是推導出來的巧合。
+
+### T2.4 四閘 + e2e
+
+| 閘 | 命令 | exit | 計數 | 對比 T1 |
+|---|---|---|---|---|
+| typecheck | `npm run typecheck` | **0** | — | 同 |
+| build | `npm run build` | **0** | `✓ built in 2.46s` | 同（chunk >500 kB 為既有警告） |
+| 全量單元 | `npx vitest run` | **0** | **3533 passed / 2 skipped**；檔案 **278 / 1 skipped** | 3483 → 3533（**+50**，恰為本 task 新增數）；檔案 276 → 278 |
+| 回歸 | `npx vitest run tests/regression` | **0** | **324 passed**（33 files） | **逐數相同，零漂移** |
+| Edge e2e（focused） | `npx playwright test --project=edge --workers=1 full-drill input-sampler` | **0** | **13 passed**（1.6m） | 全鏈路 drill → 匯出 → 統計在 mapped clock 下未變 |
+
+canonical digest **零移動**（`exportPayloadSchema.test.ts` 在上表全量單元內綠）——本 task 對未 pause 路徑是 identity，本來就不該動任何一筆。
+
+### T2.5 fail-fast 的邊界在哪（D-69-T2-3）
+
+- `mapWallTime` / `pause` / `resume` / `restart` 對非 finite 一律 `RangeError`。
+- `resume` 對 wall 倒退（`w < pausedAtWall`）`RangeError`：把倒退的時鐘折進錨點會讓 active time 往回走，下游只會在匯出時以 `tick-regression` 浮現，那時現場證據已經沒了。
+- **`mapWallTime` 刻意不做單調性檢查。** T3 會用同一個入口映射 DOM `event.timeStamp`，而事件戳記合法地早於當幀的 rAF `now`（T0.5 已實測到一份乾淨 fixture 內有 0.2025 ms 的跨構念回退）。在這裡加單調閘會對正式資料誤殺。
+
+### T2.6 Surprises
+
+1. **T0.4 的頭條常數（resume 首幀 32 / 2 ticks）不是不變量，是排程巧合。** 它們取決於暫停落在 7.8125 ms 網格的哪個位置——accumulator 帶著殘餘量。我照抄 T0 的數字寫斷言，四條全紅（實測拿到 33 / 3）。**修正後的做法是對照組**：跑一條「完全沒暫停、但 frame 落在相同 active 時刻」的 control rig，斷言 mapped 的 tick 軸與它**逐位相同**。這比常數更強（證明「暫停在輸出裡完全不存在」）也不吃排程。naive 那條則改斷言「多出 >28 個 tick」與「注入 >2700 ms 的空洞」，並在註解保留 T0 的 2766.667 ms 出處。
+2. **殘餘 accumulator 跨 pause 必須保留，不能歸零。** resume 後第一個 sub-tick 幀可能仍產生 1 個 tick（不是 0）——因為暫停前沒跑完的那不到一個 tick 的時間被正確地留著。把它清掉會是同一個 bug 的另一種口味（時間在暫停邊界蒸發）。DoD 的 `ticks <= 1` 因此是正確的寫法，`=== 0` 不是。
+3. **mutation check**：把 `mapWallTime` 的凍結短路拿掉後，兩個檔案共 **8 個測試**轉紅（涵蓋 mapper 單元與 SimLoop 整合兩層）。測試有牙齒，不是佈景。
+4. **純度掃描要先剝註解**。模組 doc 正當地寫著 `performance.now()`（說明呼叫端該傳哪個時鐘域的值），逐字掃描會把說明文字當成違規。受測的主張是「沒有可執行行讀時鐘」，不是「檔案裡不准出現這個詞」。
+
+### T2.7 Definition of Done 對帳
+
+- [x] pause 1/10/300 秒期間每幀 `pump()` 都回 `ticks=0`，sim state / recorder tickCount / fireCount / hitCount / weapon.ammo 全不變（三個時長各一個測試，逐項斷言）
+- [x] resume 第一幀不 catch up、無 >250 ms re-anchor —— 以「與 control rig 逐位相同 + 注入空洞恆為 0」證明；sub-tick 幀 `ticks <= 1`（見 T2.6 #2）
+- [x] 從未 pause 的 30/60/144/240 FPS trace 逐欄 `Object.is`（mapped vs 未經 mapper 的同一 loop）；回歸 324 零漂移、canonical digest 零移動
+- [x] gameplay HUD 不含 pause wall duration（`elapsedActive === elapsedWall − excludedWallMs`）；render-only 動畫維持 wall `now`（T2.2 明列哪些留在 wall）
+- [x] `SimLoop.ts` **零 diff** —— tick dt、accumulator clamp、re-anchor、target motion 一字未動
