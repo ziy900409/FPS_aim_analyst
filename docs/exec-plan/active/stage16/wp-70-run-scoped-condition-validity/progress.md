@@ -2,15 +2,23 @@
 
 ## Snapshot
 
-- **Status**: T0–T6 complete (2026-09-15); **T-exit is next**。
+- **Status**: ✅ **WP-70 已交付（2026-09-16, T-exit）**。T0–T6 + T-exit 全數完成。
 - **分支**：`chore/agents-skills-tree`
-- **規劃日期**：2026-09-15
-- **Next**: T-exit 驗收閘 —— FR-70.1～70.11／NFR-70.1～70.6 逐條 acceptance matrix、grep 重跑 blast radius、
-  全量閘精確計數（含 Edge full e2e），並確認七處狀態一致（`GD-47`／GD-10 處置／KI-040／stage16 index／
-  top index／checklist／progress）。⚠️ **T-exit 不得以「測試全綠」取代具名證據**，且須把兩條具名邊界帶進
-  matrix：**FM-70.4 沒有 e2e 守衛**（守衛＝T4 source-scan ＋ [實機手動清單](../../../../operational/fullscreen-recovery-manual-check.md)，該清單 §5 執行紀錄**目前為空**）、
-  **FM-70.1 在破效能地板的機器上不被 e2e 可靠守住**（守衛＝T1 source-scan）。
-  T5 交棒的兩筆未結項**均已於 T6 結清**（FR-70.7 文案 → [§T3.4](#t34-補結-fr-707-的文案2026-09-15t6-第一個切片)；手動清單 → [§T6.7](#t67-fm-704-實機手動清單t56-交棒-b)）。
+- **規劃日期**：2026-09-15／**交付日期**：2026-09-16
+- **交付判定**（[§T-exit](#t-exit-驗收閘2026-09-16)）：FR-70.1～70.11／NFR-70.1～70.6 逐條 acceptance matrix
+  **無「完成但無證據」的列**；全量閘全綠且計數精確（typecheck／build exit 0、Vitest **3751 passed / 2 skipped**、
+  `tests/regression` **324**＝baseline、**Edge 全套 e2e 121 passed（21.5m）**＝T5 基準）。
+  canonical digest 移動 **3 筆**＝T0 預測逐筆吻合。
+  ⭐ 本閘取得 FR-70.1 最強的一組 live 證據：同一次 e2e 內，被標記的 run
+  `perfFloor: false / fullscreenExited: true / suspect: **true**`（suspect **純由 fullscreen 供應**）、
+  下一 run `fullscreenExited: false / suspect: **false**`，**兩者皆出自實際匯出的 payload**。
+- **⚠️ 帶著交付的具名邊界**（[§Tx.6](#tx6-具名邊界--不得被全綠蓋過)）：**B1 — FM-70.4 沒有 e2e 守衛**
+  （限制 L1；守衛＝T4 source-scan ＋ [實機手動清單](../../../../operational/fullscreen-recovery-manual-check.md)，
+  該清單 **§5 執行紀錄仍為空**，owner = 使用者／操作員）⇒ FR-70.9／NFR-70.6 在 matrix 標 🟡 **部分**，未標 ✅；
+  **B2 — FM-70.1 在破效能地板的機器上不被 e2e 可靠守住**（守衛＝T1 source-scan）；
+  **B3 — OQ-70.4 仍開**（owner = 使用者，不阻塞交付）。
+  另有一筆 dead code 明帳並附清理觸發條件（[§Tx.9](#tx9-本閘發現的一筆-dead-code不在此就地刪明帳並給觸發條件)）。
+- **Next**: 無。後續只剩 B1 的實機手動清單（由操作員在正式收案前執行）與 B3 的使用者決定。
 - **來源**：[KI-040](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md) ✅ 已翻已修（2026-09-15）
 - **決策**：[`GD-47`](../../../DECISIONS.md) ✅ 已落帳（2026-09-15, T6）／[`BD-040`](../../../../known_issue/BUGFIX-DECISIONS.md) ✅／GD-10 **補澄清註記、未修訂**
 
@@ -52,10 +60,10 @@
 | T1 | ✅ | 2026-09-15。四閘全綠（typecheck／build exit 0、Vitest **3725 passed／2 skipped**、regression **324** 與 baseline 逐數相同）；新增 **16** 個測試（`src/data/wp70-run-scoped-fullscreen.test.ts`），改動前**全 16 紅**；canonical digest **實際移動 3 筆**，與 D-70-T0-3 預測逐筆吻合、第 4 筆未出現；OQ-70.2 已關閉。見 [§T1](#t1-per-run-fullscreen-旗標2026-09-15) |
 | T2 | ✅ | 2026-09-15。production diff = **一行**（+ 註解）；四閘全綠（typecheck／build exit 0、Vitest **3737 passed／2 skipped**、regression **324** 與 baseline 逐數相同）；新增 **12** 個測試（`src/display/wp70-protocol-recording-window.test.ts`），**既有測試期望值變動 = 0**（逐條理由見 §T2.4）。見 [§T2](#t2-protocol-路徑補上錄製窗判準2026-09-15) |
 | T3 | done | 2026-09-15 - banner now renders from the per-run fullscreen flag, not sticky `experimentSession.suspect`; Restart/full-reset path syncs the banner after `runAttempt.restart()`. Verification: `npm.cmd run typecheck` exit 0; focused `npx.cmd vitest run src/ui/EligibilityGate.test.ts src/data/wp70-run-scoped-fullscreen.test.ts src/display/wp70-protocol-recording-window.test.ts` = **37 passed**; full `npx.cmd vitest run` = **3741 passed / 2 skipped**; `npm.cmd run build` exit 0 after rerun outside sandbox (initial Vite temp write hit EPERM); `npm.cmd run graph:update` exit 0 after rerun outside sandbox (initial graphify write hit EPERM). |
-| T4 | ✅ | 2026-09-15。新增 `ConditionRecoveryScreen`，由 pause overlay restart 進入；若本 run 沒有 fullscreen invalid flag，仍走既有 `restartActiveDrill()`。恢復 click stack 內同步呼叫 `requestFullscreen()`，成功後重跑 native/fullscreen/perf 三項 gate，pass 才以 `onRecovered` 呼叫 `restartActiveDrill()`；fullscreen rejected / gate failed 均不觸發 recovery callback。驗證：`npm.cmd run typecheck` exit 0；focused `npx.cmd vitest run src/ui/ConditionRecoveryScreen.test.ts src/ui/EligibilityGate.test.ts src/display/wp70-protocol-recording-window.test.ts` = **30 passed**；full `npx.cmd vitest run` = **287 files**, **3750 passed / 2 skipped**；`npm.cmd run build` exit 0 after rerun outside sandbox（initial Vite temp write hit EPERM）；`npm.cmd run graph:update` exit 0 after rerun outside sandbox（initial graphify write hit permission denied）。見 [§T4](#t4-condition-recovery-entry-point2026-09-15) |
+| T4 | ✅ | 2026-09-15。新增 `ConditionRecoveryScreen`，由 pause overlay restart 進入；若本 run 沒有 fullscreen invalid flag，仍走既有 `restartActiveDrill()`。恢復 click stack 內同步呼叫 `requestFullscreen()`，成功後重跑 native/fullscreen/perf 三項 gate，pass 才以 `onRecovered` 呼叫 `restartActiveDrill()`；fullscreen rejected / gate failed 均不觸發 recovery callback。驗證：`npm.cmd run typecheck` exit 0；focused `npx.cmd vitest run src/ui/ConditionRecoveryScreen.test.ts src/ui/EligibilityGate.test.ts src/display/wp70-protocol-recording-window.test.ts` = **30 passed**；full `npx.cmd vitest run` = **287 files**, **3750 passed / 2 skipped**；`npm.cmd run build` exit 0 after rerun outside sandbox（initial Vite temp write hit EPERM）；`npm.cmd run graph:update` exit 0 after rerun outside sandbox（initial graphify write hit permission denied）。見 [§T4](#t4-condition-recovery-entry-point-2026-09-15) |
 | T5 | ✅ | 2026-09-15。**路徑 A**（D-70-T0-4）。新增 `tests/e2e/wp70-fullscreen-validity.spec.ts`（**2 個 test**，production diff = **空**）；`npx playwright test --project=edge --workers=1` **exit 0、121 passed**（T5 之前 119 ⇒ 淨增 2，零既有測試改動）；鏈路四段各有具名斷言，「下一 run 乾淨」以**實際匯出 payload** 為證。新增兩條具名限制 **L4／L5**（T0 只預見 L1～L3）。見 [§T5](#t5-fullscreen-效度鏈路的-e2e-防線2026-09-15) |
 | T6 | ✅ | 2026-09-15。**兩個切片**：`fix(ui)` 補結 FR-70.7 的 run 級文案（T5.6 交棒 (a)，改動前該筆斷言實測轉紅；全套 **3751 passed / 2 skipped**，e2e `wp70-fullscreen-validity` **2 passed** 零改動）＋ `docs(wp-70)` 落帳與文件。`GD-47`／`BD-040` **落帳前重查編號**（最大 GD-46／BD-039，兩個標題各零命中）；GD-10 **補澄清註記、條文一字未動**；KI-040 翻 ✅ 並補 §9 修法落地實況（含「與 §6.2 初估相反且更小」）；`operator-manual.md` §0.1／§4.4／§8.3／§10／附錄五處同步且 UI 字串**逐字核對過**；`schema.md` 補 `fullscreenExited` 列＋**三構念對照表**；`pause-invalid-restart.md` 補恢復流程與 2 條現場檢查；`CONTEXT.md` 補術語；新檔 [`fullscreen-recovery-manual-check.md`](../../../../operational/fullscreen-recovery-manual-check.md)（T5.6 交棒 (b)）；舊措辭 live 命中 **0**，另修 3 處被本 WP 證偽的註解宣稱。見 [§T6](#t6-決策落帳與文件2026-09-15) |
-| T-exit | ⬜ | — |
+| T-exit | ✅ | 2026-09-16。`git diff -- src tests` 為空（零 production code）。四閘＋e2e 全綠且計數精確（Vitest **3751 passed / 2 skipped**、regression **324**＝T0 baseline、**Edge 全套 121 passed（21.5m）**＝T5 基準，三者皆零漂移）；FR×11／NFR×6 acceptance matrix 每列連到**逐字測試名**，**FR-70.9／NFR-70.6 標 🟡 部分**（B1，未以全綠冒充）；blast radius 三項機械複核全清，並把 **C-D4 往下推一層**（`experimentSession.ts` 對 `drillRunner`／`phase ===` 命中 **0** ⇒ 判準算一次、傳三處、無人重算）；digest **3 筆**＝預測；取得 live payload 證據（flagged `suspect` 純由 fullscreen 供應／clean `suspect: false`）。八處狀態一致。見 [§T-exit](#t-exit-驗收閘2026-09-16) |
 
 ## Decision log
 
@@ -1010,3 +1018,249 @@ T3 的 DoD 要求交一份清單給 T6，**但 T3 沒有交**（progress §T3 �
 - [x] 舊措辭掃描：**live UI／操作員文件命中 0**；其餘 10 處為引用，逐條有保留理由 → [§T6.8](#t68-舊措辭殘留點清理步驟-9)
 - [x] `npm run graph:update` exit 0
 - [x] 附加（T5.6 交棒 (b)）：FM-70.4 實機手動清單已落 `docs/operational/` → [§T6.7](#t67-fm-704-實機手動清單t56-交棒-b)
+
+---
+
+## T-exit 驗收閘（2026-09-16）
+
+**判定：✅ 通過，WP-70 交付。** `git diff -- src tests` 為空（本閘零 production code、零測試改動）——
+T-exit 只做**驗收**，不改行為；本閘發現的問題一律退回對應 task，不得就地補（同 D-70-T6-3 的原則）。
+⚠️ 兩列標 🟡 **部分**、一筆 dead code 明帳、一條 OQ 具名遺留，**均不被「全綠」蓋過**（KI-040 §5 的教訓）。
+
+### Tx.1 全量閘：精確計數與環境（步驟 3）
+
+| 閘 | 命令 | 結果 | 對照 |
+|---|---|---|---|
+| typecheck | `npm.cmd run typecheck`（`tsc --noEmit` ×2） | **exit 0** | 同 T6.9 |
+| build | `npm.cmd run build` | **exit 0**；209 modules，`index-DmIxk-in.js` **1,262.44 kB**（gzip 360.65 kB） | T0 baseline 1,258.13 kB ⇒ **+4.31 kB**（新旗標／parser／`ConditionRecoveryScreen` 197 行） |
+| 單元全套 | `npx.cmd vitest run` | **exit 0**；**287 passed / 1 skipped（288 files）**、**3751 passed / 2 skipped（3753 tests）** | 與 T6.9 **逐字相同** ⇒ T6 之後零漂移 |
+| 回歸 | `npx.cmd vitest run tests/regression` | **exit 0**；**33 files**、**324 passed** | T0.3 baseline **324** ⇒ **逐數相同**（NFR-70.1） |
+| **Edge 全套 e2e** | `npx.cmd playwright test --project=edge --workers=1` | **exit 0**；**121 passed（21.5m）**，零 failed／零 flaky／零 skipped | T5.5 基準 **121** ⇒ **逐數相同** |
+
+⭐ **回歸零漂移是「同一組測試」的比較，不是計數巧合**：`git diff 7bfeaef..HEAD -- tests/regression` 為**空**
+（本 WP 一個回歸測試都沒加沒改）⇒ 324 = 324 是同集合、同計數、全通過。
+同理 `tests/` 全 WP 只新增一檔（`wp70-fullscreen-validity.spec.ts`，+2 tests）⇒ **119 + 2 = 121**，
+與本閘實測逐數吻合，**零既有 e2e 被改動或被本檔影響**。
+
+**環境（本閘實測，未沿用前面的 task）**：
+
+| 項 | 值 |
+|---|---|
+| git SHA | `fd7ddb3a859a3787b878d91aec481de1153b1c35`（branch `chore/agents-skills-tree`，工作樹 clean） |
+| **瀏覽器（權威值＝測試內實測 UA）** | `Chrome/149.0.7827.55 … Edg/149.0.7827.55`，由 [E2E-1]／[E2E-2] 各自 `navigator.userAgent` 印出 |
+| ⚠️ 瀏覽器（磁碟安裝值，**與上列不符**） | `C:\Program Files (x86)\Microsoft\Edge\Application\` 的目錄名與 `msedge.exe` ProductVersion 皆為 **153.0.4234.32**。兩者不一致的原因**本閘未查明** ⇒ **以實測 UA 為準**（那才是真的跑了測試的那個 runtime）；填 [實機手動清單](../../../../operational/fullscreen-recovery-manual-check.md) §2 的「瀏覽器版本」時**一律填瀏覽器自報值**，不要填檔案屬性 |
+| Playwright | **1.61.1** |
+| cross-origin isolation | `crossOriginIsolated === true` —— [`wp70-fullscreen-validity.spec.ts:226`](../../../../../tests/e2e/wp70-fullscreen-validity.spec.ts#L226) 在**兩個** WP-70 test 的進場路徑上都斷言，且兩份 evidence log 各自複印一次 |
+| WP-70 全 WP diff | `7bfeaef..HEAD -- src tests`：**19 檔、1669 insertions / 33 deletions**；production（非 `.test.ts`）**7 檔**。`src/sim`／`HitDetector`／`TargetManager`／`research/`／`tests/regression` **皆零改動** |
+
+#### Tx.1.1 ⭐ 本閘取得的 live payload 證據（FR-70.1 最強的一組）
+
+[E2E-1] 的 `WP70_SESSION_EVIDENCE`（**實際匯出的兩份 payload**，非記憶體旗標）：
+
+```jsonc
+"gateDetails": "native: FAIL — 原生 1280×720 vs 需求 1920×1080 / fullscreen: PASS / perf: PASS — warmup p95 4.21ms vs 地板 8.33ms",
+"fullscreenLog": ["enter","exit","enter"],
+"flagged": { "repIndex": 0, "validity": { …, "pointerLockLost": false, "pauseOccurred": false, "fullscreenExited": true  }, "suspect": true  },
+"clean":   { "repIndex": 1, "validity": { …, "pointerLockLost": false, "pauseOccurred": false, "fullscreenExited": false }, "suspect": false },
+"downloads": ["tracking_scene_v1-…T06_51_43.844Z.json", "tracking_scene_v1-…T06_52_12.974Z.json"]
+```
+
+**本閘恰好落在 perf 過地板的那一側（4.21 ms vs 8.33 ms）**，所以 S-70-T5-1／L4 描述的有利情境成立：
+
+- 被標記的 rep 0：`perfFloor: false` 而 `suspect: true` ⇒ **`suspect` 純由 fullscreen 供應**，
+  效能地板沒有參與 —— 這同時是 FM-70.1 在本次環境下**真的被 e2e 抓住**的那一次（見 Tx.6 B2 的條件）。
+- 乾淨的 rep 1：`fullscreenExited: false` 且 **`suspect: false`** ⇒ T5 DoD 原文要的字面值
+  **在本閘實際出現**（L4 的恆等式斷言 `suspect === perfFloor` 因此退化為 `false === false`）。
+- 兩份 payload 有**不同的檔名時戳**（06_51_43 / 06_52_12）⇒ 確為兩次獨立的 run，不是同一份被讀兩次。
+
+[E2E-2] 的 `WP70_RECOVERY_EVIDENCE`：`fullscreenLog: ["enter","exit","enter"]`（真的重取全螢幕）、
+恢復畫面自報 `fullscreen: PASS — document.fullscreenElement 存在`、`native: FAIL`（構造保證的拒入錨點，D-70-T5-2 成立）、
+`cursor: {phase:"run", itemIndex:0, repIndex:0}` 不變、`attempt: 2`、**`downloads: 0`**。
+### Tx.2 Blast radius 重跑（步驟 2，grep 為權威）
+
+⚠️ 依 [D-68.T0-4](../../stage13/wp-68-micro-flick-v9-measurement-parity/progress.md) 與 WP-69 T-exit 的二度複現，
+**CodeGraph 對 caller 列舉不可採信** ⇒ 本節三項全部以 comment-stripped 的機械掃描取得，未使用 CodeGraph。
+
+| 查核（T-exit 步驟 2 原文） | 方法 | 結果 |
+|---|---|---|
+| `experimentSession.suspect` 不再出現在 export 路徑 | 對 `src/main.ts`／`src/data/metadata.ts`／`src/data/export.ts` 去註解後掃 `experimentSession\s*\.\s*suspect` | **0 個 executable 命中**（`main.ts` 剩 2 處、`metadata.ts` 剩 2 處**皆為註解**，且是 T6.8 刻意改寫成「已不再供應匯出」的那批） |
+| fullscreen 退出判準在 session 與 protocol 兩條路徑上是**同一個值**（C-D4） | 抽出 `fullscreenchange` handler 去註解後的全文，數 `const recording =` 宣告數與讀取該 const 的 sink 數 | **宣告 1 個、sink 3 個**（run 旗標／`experimentSession.handleFullscreenChange`／`markProtocolFullscreenExit`）⇒ 一套判準、三個 sink，**無第二次重算** |
+| 恢復流程對五個推進／保存／下載入口零呼叫 | 對 `ConditionRecoveryScreen.ts` 全檔 + `recoverActiveCondition()` body 去註解後逐一計數 | 七個識別字（五個 DoD 入口 + `startSessionPlan`／`startProtocol`）**兩處皆 0** |
+
+`fullscreenchange` handler 去註解後的全文（**三個 sink 共用同一個 `recording`**，C-D4 的機械證據）：
+
+```ts
+document.addEventListener('fullscreenchange', () => {
+  const fullscreen = document.fullscreenElement != null;
+  const recording = drillRunner.phase === 'countdown' || drillRunner.phase === 'running';
+  if (!fullscreen && recording) sharedState.validity.fullscreenExitedDuringRun = true;
+  experimentSession.handleFullscreenChange(fullscreen, recording);
+  syncFullscreenSuspectWarning();
+  if (!fullscreen && recording) markProtocolFullscreenExit?.();
+});
+```
+
+`recoverActiveCondition()` 去註解後的全文（**唯一的 orchestrator 動作是既有的 `restartActiveDrill()`**，FR-70.10）：
+
+```ts
+function recoverActiveCondition(): void {
+  if (!sharedState.validity.fullscreenExitedDuringRun) { restartActiveDrill(); return; }
+  conditionRecoveryScreen.open({ onRecovered: () => restartActiveDrill() });
+}
+```
+
+⭐ **本閘把 C-D4 的查核往下推了一層**（超出步驟 2 的字面要求）：不只 handler 內只算一次，
+**消費端也沒有人自己重算**。[`experimentSession.ts`](../../../../../src/display/experimentSession.ts) 全檔對
+`drillRunner` 與 `phase ===` 的命中數為 **0** —— 它是**收參數** `handleFullscreenChange(present, recording)`，
+而非自行判定錄製窗。⇒ KI-007 的錄製窗判準在整條鏈上**算一次、傳三處、無人重算**，C-D4 成立於模組層而不只語句層。
+
+### Tx.3 Acceptance matrix — FR-70.1～70.11（步驟 1）
+
+**讀法**：「單元證據」欄是**逐字測試名**（`describe` › `it`），全部由 `npx.cmd vitest run` 一次跑完（exit 0）；
+「e2e／實機」欄的 `[E2E-1]`／`[E2E-2]` 指
+[`tests/e2e/wp70-fullscreen-validity.spec.ts`](../../../../../tests/e2e/wp70-fullscreen-validity.spec.ts) 的兩個 test：
+
+- **[E2E-1]** `WP-70 T5 — fullscreen validity lifecycle` › `a run that loses fullscreen is flagged and the next run in fullscreen is clean @slow`
+- **[E2E-2]** `WP-70 T5 — fullscreen validity lifecycle` › `condition recovery re-enters fullscreen without advancing the session @slow`
+
+**空白欄 = 該面沒有那類證據，不是漏填**；每一列的「判定」只在有具名證據時才是 ✅。
+
+| FR | 單元證據（逐字測試名） | e2e／實機 | 判定 |
+|---|---|---|---|
+| **FR-70.1**<br>run 級、跨 run 不繼承 | `WP-70 T1 — 跨 run 不繼承（FR-70.1）` › `run N 錄製中退出全螢幕 → DrillRunner.start() 起的 run N+1 旗標為 false`；同 describe › `乾淨的 run N+1 匯出的 suspect 為 false（不繼承上一場的失效）`。⭐ 兩者都走**真的** `DrillRunner.start()` 而非直呼 `resetState()` —— 缺陷 A 的要害正是「歸零點有沒有接上」 | **[E2E-1]** 第 ④ 段：rep 2 起始 `fullscreenExitedDuringRun === false`，且 **rep 2 的實際匯出** `meta.validity.fullscreenExited === false` | ✅ |
+| **FR-70.2**<br>`meta.validity.fullscreenExited` 具名欄 | `WP-70 T1 — 端到端：旗標 → 匯出（FM-70.2）` › `旗標為真 ⇒ meta.validity.fullscreenExited 與 meta.suspect 皆為真`；同 describe › `與 pointerLockLost 是兩個構念（Esc 同時觸發，視窗切換只觸發本欄）` | **[E2E-1]** 斷言的是**匯出 payload 的欄位**（非記憶體旗標）；**[E2E-1]** 的 `suspect === validity.perfFloor` 恆等式只有在本欄存在後才寫得出來 | ✅ |
+| **FR-70.3**<br>optional-in／required-out，`schemaVersion` 維持 2 | `WP-70 T1 — export payload schema round-trip（FR-70.3）` › `帶 fullscreenExited: true 的 payload 解析後保留為 true` ／ `缺席 fullscreenExited 的舊 payload 解析為 false（optional-in，schemaVersion 維持 2）` ／ `非布林的 fullscreenExited 被拒（optional-in 不等於 lenient-in）`；另 `WP-70 T1 — 端到端…` › `collectMeta 缺欄補 false（optional-in / required-out，承 D-65-3）` ／ `collectMeta 拒絕非布林的 validity.fullscreenExited` | | ✅ |
+| **FR-70.4**<br>零退出路徑逐位不變 | canonical digest 表：**8 筆中恰 3 筆移動、5 筆逐位不變**（Tx.4 以 `git diff` 機械複核）；`WP-70 T1 — 端到端…` › `旗標為假且無其他失效 ⇒ 兩者皆為假（一個每場都亮的旗標等於沒有旗標）`；`tests/regression` **324 = baseline 324** | **[E2E-1]** rep 2（全程在 fullscreen）的匯出 `fullscreenExited: false`、`pointerLockLost: false`、`pauseOccurred: false` | ✅ |
+| **FR-70.5**<br>protocol 路徑套用 KI-007 錄製窗 | `WP-70 T2 — 非錄製中退出全螢幕不標記 protocol condition（FR-70.5）` › `idle（drill 之間）退出全螢幕 ⇒ 當前 condition 不被標記` ／ `ended（收工去抓匯出檔）退出全螢幕 ⇒ 當前 condition 不被標記` ／ `非錄製中的誤標不會滲進該 condition 的匯出`；source-scan `WP-70 T2 — main.ts 的接線（source-scan）` › `protocol 分派套用 recording 閘（FR-70.5 的修復點）` ／ `未閘的 markProtocolFullscreenExit 分派已不存在（FM-70.5：不得為求綠燈把閘拿掉）` | | ✅ |
+| **FR-70.6**<br>橫幅由真值驅動 | `renders the fullscreen-exit banner from the current run flag without creating another DOM node`；`WP-70 T3 main.ts suspect banner wiring` › `renders the banner from sharedState.validity.fullscreenExitedDuringRun` ／ `syncs after fullscreenchange updates the per-run flag` | **[E2E-1]**：rep 1 退出後橫幅 visible；rep 2 起始橫幅**自動收起**（沒有任何人呼叫 `hideSuspectWarning()`） | ✅ |
+| **FR-70.7**<br>run 級文案 | `states run-scoped invalidity in the banner instead of session-scoped wording`（T6 第一個切片補結；改動前該筆實測轉紅） | T6.8 措辭掃描：**live UI／操作員文件命中 0**，其餘 10 處為引用且逐條有保留理由 | ✅ |
+| **FR-70.8**<br>不重啟 plan 的恢復入口 | `createConditionRecoveryScreen` › `reruns fullscreen plus the three-check gate and calls onRecovered only after pass`；`WP-70 T4 condition recovery source guards` › `routes pause restart through recovery without advancing, completing, exporting, or saving` | **[E2E-2]** 第 ③ 段：flagged run 的「重新測試」**開恢復畫面而非直接 restart**；點「重新進入 fullscreen」**真的重取 fullscreen**（`fullscreenLog === ['enter','exit','enter']`，恢復畫面自己的報告 `fullscreen: PASS`） | ✅ |
+| **FR-70.9**<br>user gesture 內請求；失敗留在原畫面、具名可重試 | `calls requestFullscreen synchronously inside the click stack before warmup awaits`；`rejected fullscreen request does not probe, recover, restart, advance, export, or save by proxy`；`failed gate shows details and does not call the recovery callback`；source guard `calls requestFullscreen before the first await in the recovery click path` | **[E2E-2]**：閘不過 ⇒ 畫面**留在原地**、`role="status"` 為「條件仍未通過，請修正後重試。」、「重試條件檢查」可按。⚠️ **user-gesture 那一半 e2e 守不住**（限制 L1）——見 Tx.6 | 🟡 **程式層 ✅／實機層未證**（見 Tx.6 B1） |
+| **FR-70.10**<br>不推進 orchestrator、不改 cursor／`exports[]`、不下載 | source guards `keeps the recovery screen decoupled from session/protocol orchestrator entry points`（7 個識別字全 0）／`routes pause restart through recovery without advancing, completing, exporting, or saving`；spy：`probeWarmupP95Ms`／`runGate`／`onRecovered` `.not.toHaveBeenCalled()` | **[E2E-2]**：`readSessionCursor()` 逐位相等（`toEqual(cursorBefore)`）、`readAttemptNumber()` 不變、`readDownloads()` 長度 **0**、`#result-screen` hidden | ✅ |
+| **FR-70.11**<br>「繼續本項」＝ restart 本項，文案不得暗示接續錄製 | `routes pause restart through recovery without advancing…` 釘住 `onRecovered: () => restartActiveDrill()`（唯一 orchestrator 動作＝既有的整場 restart，承 WP-69 OQ-69.4） | 措辭掃描：`src/ui/`＋`main.ts` 的 live UI 對 `繼續本項｜接續｜續錄｜繼續錄製｜恢復錄製｜從中斷處` **命中 0**；入口按鈕字面即 `PauseOverlay.ts` 的 `RESTART_LABEL = '重新測試'` | ✅ |
+
+### Tx.4 Acceptance matrix — NFR-70.1～70.6
+
+| NFR | 證據 | 判定 |
+|---|---|---|
+| **NFR-70.1**<br>跨 FPS 逐位不變、regression 零漂移 | `npx.cmd vitest run tests/regression` = **33 files / 324 passed**，與 T0.3 baseline **324 逐數相同**；其中 `決定性回歸（完整 sim）★M1 守護 — 同輸入序列、不同 render FPS → 逐 tick 狀態一致（FR-9.3）`（16 tests，含 `四種 FPS 序列的最終狀態彼此 bit-exact 相等`）。**反證面**：`git diff 7bfeaef..HEAD -- src/sim src/drill/HitDetector.ts src/drill/TargetManager.ts` = **空** | ✅ |
+| **NFR-70.2**<br>digest 移動筆數事前預測 = 事後逐筆吻合 | 預測 D-70-T0-3 = **3 筆**（`09_18_05`／`09_24_18`／`09_37_24`）。**本閘以 `git diff 7bfeaef..HEAD -- src/data/exportPayloadSchema.test.ts` 機械複核整個 WP 的淨變動**：digest 表恰 **3 行 `-` / 3 行 `+`**，且正是預測的那三個檔名；其餘 5 筆**無任何 ± 行**。**第 4 筆未出現** | ✅ |
+| **NFR-70.3**<br>不新增 sim／`SharedState` 熱路徑工作 | `src/state/SharedState.ts` 的全部改動＝`validity` 物件上**一個固定布林欄位** + `createSharedState()` 既有字面值加一鍵 + `resetState()` 加一行歸零。**無新配置、無 resize、無 `push`**；`src/sim` 零改動 | ✅ |
+| **NFR-70.4**<br>DOM 建構期一次配置，零框架 | `open and retry reuse the existing DOM nodes`；`ConditionRecoveryScreen.ts` 全檔 197 行純 `document.createElement` + `style.cssText`，零框架 import（D1） | ✅ |
+| **NFR-70.5**<br>五個入口呼叫數皆 0，由 spy 反證 | 見 FR-70.10 列。⚠️ **證據形狀明帳**：直接 `vi.fn()` spy 的是 `probeWarmupP95Ms`／`runGate`／`onRecovered`；`sessionPlanRunner.advance`／`completeCurrentCondition`／`downloadJSON`／`historyPersistence.save` 的「零呼叫」是**結構性不可達**（模組不 import、`recoverActiveCondition()` body 不含該識別字）＋ **[E2E-2]** 的可觀察後果（cursor／attempt／downloads／Result 全不動），**不是**對這四個符號各掛一個 spy | ✅（形狀已具名） |
+| **NFR-70.6**<br>Chrome/Edge 實機 e2e 覆蓋完整鏈路 | `npx.cmd playwright test --project=edge --workers=1` **exit 0／121 passed（21.5m）**，其中 [E2E-1] 56.6s、[E2E-2] 7.6s；鏈路四段各有具名斷言（T5.2），且本閘的 `WP70_SESSION_EVIDENCE` 以**實際匯出 payload** 作證（Tx.1.1）。瀏覽器自報 **Edg/149.0.7827.55**、Playwright **1.61.1**、`crossOriginIsolated === true` | 🟡 **鏈路 ✅／activation 半邊未證**（見 Tx.6 B1） |
+
+⚠️ **FR-70.1 的證據形狀（明帳，避免單列 ✅ 讀起來像單一測試涵蓋全鏈）**：單元層的兩條「跨 run 不繼承」
+測試是**直接把旗標設為 true**（`state.validity.fullscreenExitedDuringRun = true`）再跑真的
+`DrillRunner.start()` —— 它們證的是**歸零點確實接上**（缺陷 A 的要害），**不**驅動真的 `fullscreenchange`。
+DOM 事件 → 旗標那一段由 source-scan（`fullscreenchange 處理器沿用同一個 recording 判準`）與
+**[E2E-1] 的真 `document.exitFullscreen()`** 承擔。⇒ **三層合起來覆蓋整條鏈，但沒有任何單一測試橫跨全鏈**；
+拆任何一層都會留下缺口。
+
+### Tx.5 專項驗證（步驟 4）—— 兩個方向都要有證據
+
+T-exit DoD 明文：「跨 run 不繼承、run 內未放寬 —— **兩個方向都有證據**（只證一邊不合格）」。
+本 WP 同時含**放寬**（跨 run 污染消失）與**收緊**（protocol 路徑補閘、D-70-T1-2）兩個相反方向，逐一分列：
+
+| 方向 | 主張 | 具名證據 | 判定 |
+|---|---|---|---|
+| **放寬（意圖之內）** | run N 標記 ⇒ run N+1 乾淨 | `run N 錄製中退出全螢幕 → DrillRunner.start() 起的 run N+1 旗標為 false`；`乾淨的 run N+1 匯出的 suspect 為 false（不繼承上一場的失效）`；**[E2E-1]** rep 2 的實際匯出 `fullscreenExited: false` | ✅ |
+| **未放寬（反方向）** | 同一 run 內退出 ⇒ 仍標記，且一路帶到 `ended` | `WP-70 T1 — run 內的偵測未被放寬（README §3 的反方向證據）` › `同一場內置真後，drill 一路跑到 ended 仍為真`；**[E2E-1]** rep 1 的實際匯出 `fullscreenExited: true`、`suspect: true` | ✅ |
+| **收緊 ①（T2，protocol 路徑）** | 非錄製窗退出**不再**標記 | `idle（drill 之間）退出全螢幕 ⇒ 當前 condition 不被標記`；`ended（收工去抓匯出檔）退出全螢幕 ⇒ 當前 condition 不被標記`；`非錄製中的誤標不會滲進該 condition 的匯出` | ✅ |
+| **收緊 ①ʹ（成對的另一半）** | 錄製窗退出**仍**標記（收緊不得誤傷偵測） | `countdown 退出全螢幕 ⇒ 當前 condition 標記為 fullscreen-exit`；`running 退出全螢幕 ⇒ 當前 condition 標記，且標記進得了匯出`；`錄製中「進入」全螢幕不是失效事件 ⇒ 不標記` | ✅ |
+| **收緊 ②（T1，D-70-T1-2）** | 新旗標**不**以 `experimentSession.active` 為前提 ⇒ 研究員／一般 drill 模式錄製中退出也會標 | `fullscreenchange 處理器沿用同一個 recording 判準，不另開第二套（C-D4）`；理由與實務差異記於 [§T1.4](#t14-一處刻意的語意收緊d-70-t1-2) | ✅ |
+
+**T2 期望值變動的既有測試（DoD 要求逐條有理由）**：**0 條**。
+[§T2.4](#t24-既有測試期望值的變動零逐條理由fm-705) 已逐條說明為何既有 protocol 測試全部不受影響
+（它們都在 `running` 相位觸發退出，落在閘的**通過側**）⇒ FM-70.5「為求綠燈把閘拿掉」在本 WP 沒有發生的空間：
+source-scan `未閘的 markProtocolFullscreenExit 分派已不存在` 會在有人把閘拿掉時直接轉紅。
+
+**T1 期望值變動的既有測試**：7 檔，全部是 required-out 的**機械後果**（typecheck 先報，不是測試先紅），
+逐條理由見 [§T1.7](#t17-既有測試期望值的變動逐條皆為-required-out-的機械後果)。**沒有一條是放寬主張換綠燈。**
+
+### Tx.6 具名邊界 —— 不得被「全綠」蓋過
+
+T-exit 的職責之一是拒絕讓機械綠燈冒充行為證據（KI-040 §5 的教訓）。以下三條**帶進交付**，
+每條都有 owner 與後續處置：
+
+| ID | 邊界 | 現有守衛 | Owner / 後續處置 |
+|---|---|---|---|
+| **B1** ⭐ | **FM-70.4（`requestFullscreen()` 必須在第一個 `await` 之前同步呼叫）沒有 e2e 守衛。** 限制 L1：Playwright 的 `page.evaluate()` 對 CDP 帶 `userGesture: true`（T0 spike C/D 證實通過、spike F 證實 activation 閘本身有效）⇒ **把 `requestFullscreen()` 錯排到 `await` 之後的實作在 e2e 裡照樣全綠** | ① source-scan `calls requestFullscreen before the first await in the recovery click path`（抓**程式碼形狀**）；② 行為測試 `calls requestFullscreen synchronously inside the click stack before warmup awaits`（抓 rig 內的呼叫順序） | ⚠️ ③ [`docs/operational/fullscreen-recovery-manual-check.md`](../../../../operational/fullscreen-recovery-manual-check.md) 的 **§5 執行紀錄仍為空**——清單存在不等於跑過。**Owner = 使用者／操作員**；觸發時機已寫在該檔 §1（其一為「Edge 主版號變動後的第一次正式收案前」）。本閘**不**宣稱 FM-70.4 已由實機證實 |
+| **B2** | **FM-70.1（`collectMeta()` 又把 `experimentSession.suspect` OR 回去）在破效能地板的機器上不被 e2e 可靠守住。** 限制 L4：`meta.suspect` 的另一半是效能地板，同一台機器實測在 4.36～15.7 ms 之間橫跳；地板破時 `suspect` 本來就是 `true`，會蓋掉迴歸 | source-scan `export 路徑不再讀 experimentSession.suspect（FM-70.1）`（本閘另以 comment-stripped 全檔掃描獨立複核 = **0**，見 Tx.2） | 已明帳於 e2e 檔頭與 [§T5.3](#t53-下一-run-乾淨的證據形狀l4nfr-706-的誠實邊界)。**無後續動作**：source-scan 是這一條的可靠守衛，e2e 只在機器夠快時順帶抓到。⭐ **本閘就是「夠快」的那一次**（warmup p95 4.21 ms vs 地板 8.33 ms）⇒ 被標記的 rep 0 量到 `perfFloor: false` 而 `suspect: true`，FM-70.1 **在本次環境下真的被 e2e 抓住了**。但這是**環境恩賜、不是保證**，下一台機器不必然重現 ⇒ 邊界照留 |
+| **B3** | **OQ-70.4 仍開**：已下載到瀏覽器下載資料夾的舊匯出（repo 掃不到）是否需要操作員自查清單 | 判準已備妥（`BD-040`「遺留 OQ」／[KI-040 §9.4](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)）：修法**前**的 `suspect=true` 無法歸因，修法**後**可由 `meta.validity.fullscreenExited` 直接分辨 | **Owner = 使用者**，決定權未行使。`data/session-history/` 已確認**零筆**（KI-040 §8）⇒ **不阻塞交付**；舊匯出**不回填**（已拍板） |
+
+另記一筆**非本 WP** 的既有 flake，以免下一個人把它當成 WP-70 迴歸：
+`hit-feedback-live.spec.ts` 的 `@realgpu` 「換 drill」在**機器負載下**會紅（S-70-T5-3 已以 baseline worktree／
+`--repeat-each=3`／淨空全套三組證據排除）。根因是 `loadScene()` 的 check-then-act 競態，不在本 WP 範圍。
+
+### Tx.7 狀態一致（步驟 5）—— DoD 的七處，外加 `BUGFIX-DECISIONS` 索引列共八處
+
+| # | 位置 | 本閘前 | 本閘後 |
+|---|---|---|---|
+| 1 | [`DECISIONS.md` `GD-47`](../../../DECISIONS.md) 狀態格 | ✅ 已落地，但註明「逐條 FR／NFR acceptance matrix 由 T-exit 產出，**在它落閘前本條不得被引用為『FR-70.1～70.11 全數驗收』**」 | ✅ 已落地**且已驗收**：matrix 見本節 Tx.3／Tx.4，並帶 **B1／B2** 兩條具名邊界 |
+| 2 | GD-10 處置 | 補澄清註記、條文一字未動（T6.3） | **不變**（本閘複核：澄清註記與 `GD-47` ③ 對得上，用詞澄清與 fullscreen 兩件事都在註記內） |
+| 3 | [KI-040](../../../../known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md) 檔頭狀態 | ✅ 已修，附同一句「matrix 待 T-exit」的但書 | ✅ 已修**且已驗收**（但書換成本閘的具名結論 + B1／B3 遺留） |
+| 4 | [`BUGFIX-DECISIONS.md`](../../../../known_issue/BUGFIX-DECISIONS.md) §1 索引列 | ✅ 已修（…；FR／NFR acceptance matrix 待 T-exit） | ✅ 已修（…；acceptance matrix 已於 T-exit 落閘） |
+| 5 | [stage16 index](../README.md) | 🟡 T0–T6 ✅，T-exit 未開 | ✅ **已交付** |
+| 6 | [top index `README.md` §2](../../../README.md) | 🟡 進行中 —— T0 ✅，**T1 未開工**（自 T0 起未再更新，已嚴重過期） | ✅ **已交付（T-exit）**，含 T1–T6 的實際結論 |
+| 7 | [`task-checklist.md`](task-checklist.md) | T-exit ⬜ | T-exit ✅ |
+| （8） | 本檔 `progress.md` | Snapshot「T-exit is next」 | Snapshot／Task log／本節同步 |
+
+**資料夾位置**：**留在 `active/stage16/`**，不移入 `completed/`。依既有先例——WP-69 的 T-exit 已於
+2026-09-15 落閘，`stage15/` 仍在 `active/`——`CLAUDE.md` §3.5 的「視需要移入 `completed/`」在近期 stage
+並未行使。此處**明帳而非靜默**：若日後要整批歸檔，stage15 與 stage16 應一起處理。
+
+**OQ 收尾**：OQ-70.1 ✅（T0 實測，帶 L1～L3）／OQ-70.2 ✅（T1，D-70-T1-1 含清理觸發條件）／
+OQ-70.3 ✅（T0，D-70-T0-5）／**OQ-70.4 🟡 仍開**（owner = 使用者，不阻塞交付，見 Tx.6 B3）。
+⇒ **四條全部關閉或具名遺留（含 owner）**。
+
+### Tx.8 DoD 對帳
+
+- [x] FR-70.1～70.11 與 NFR-70.1～70.6 **無任何「完成」但無證據的列** —— 每列都連到逐字測試名；
+      兩列標 🟡 **部分**（FR-70.9 的 user-gesture 半邊、NFR-70.6 的實機半邊）並在 Tx.6 具名 → Tx.3／Tx.4
+- [x] **跨 run 不繼承、run 內未放寬兩個方向都有證據**（另含 T2 收緊的成對證據與 D-70-T1-2 的第二個收緊）→ Tx.5
+- [x] T2 的收緊方向有成對證據；期望值變動的既有測試 **T2 = 0 條**（逐條理由）、**T1 = 7 檔且皆為 required-out 的機械後果** → Tx.5
+- [x] 恢復入口對五個入口零呼叫有證據，**且證據形狀已具名**（spy ×3 + 結構性不可達 + e2e 可觀察後果）；
+      cursor／attempt number／`exports[]`／downloads 逐位不變 → FR-70.10 列、Tx.2
+- [x] canonical digest 移動 **3 筆**，與 D-70-T0-3 預測**逐筆吻合**（本閘另以 `git diff` 機械複核整個 WP 的淨變動）；
+      `tests/regression` **324 = 324** 零漂移 → NFR-70.1／70.2 列
+- [x] 全量驗證綠（typecheck／build／vitest／regression／Edge 全套 e2e，精確計數 + 環境記入）；
+      **替代證據與未執行項逐條有 owner、原因、後續處置** → Tx.1、Tx.6
+- [x] `GD-47`／GD-10 處置／KI-040／`BUGFIX-DECISIONS` 索引／stage16 index／top index／checklist／progress **八處一致** → Tx.7
+
+### Tx.9 本閘發現的一筆 dead code（不在此就地刪，明帳並給觸發條件）
+
+T3 把橫幅改為真值驅動後，`EligibilityGateScreenHandle` 的 **`showSuspectWarning()` / `hideSuspectWarning()`
+在 production 已無任何呼叫點**：
+
+| 符號 | production 呼叫點 | 測試內出現處 |
+|---|---:|---|
+| `showSuspectWarning()` | **0** | `EligibilityGate.test.ts:125`（行為測試仍走它）、`:199`（source-scan **反**斷言 `main.ts` 不得呼叫） |
+| `hideSuspectWarning()` | **0** | `EligibilityGate.test.ts:127`、`:200`（同上） |
+
+兩者現在只是 `renderSuspectWarning(true/false)` 的薄包裝。D-70-T3-1 記了「production 不再直接呼叫」，
+但**沒有**記「留著還是刪掉、為什麼」——這正是 README §3「不得靜默留著」要避免的形狀。
+
+**本閘的處置：不刪。** 理由：(a) T-exit 的職責是驗收既有證據，**不是改 production**（同 D-70-T6-3 對
+「留給 T-exit」的否決理由，方向相反但同一條原則）；(b) 刪除會動到 `EligibilityGate.test.ts:199/200`
+那兩條**正在當防線用**的反斷言（它們釘住「`main.ts` 不得走回命令式 show/hide」，是 FR-70.6 的守衛之一）。
+
+**清理觸發條件（明帳）**：下一個碰 `EligibilityGate.ts` 的 WP 一併處理——把 `showSuspectWarning` /
+`hideSuspectWarning` 從 handle 介面移除，並把 `:199/:200` 的反斷言改成釘 `renderSuspectWarning` 的正斷言
+（反斷言的守衛價值必須先有替代，否則是拿掉防線）。與 [D-70-T1-1](#decision-log) 對 `experimentSession.suspect`
+的處置同一種形狀：**保留 + 具名觸發條件**，不是靜默留著。
+
+⚠️ 對照：`experimentSession.suspect` / `onSuspect` 的清理條件（D-70-T1-1：「若 T3 之後 `onSuspect`
+也不再有消費者 ⇒ T3 一併刪」）**未被觸發**且義務已履行——`onSuspect` 仍有唯一消費者
+（[`main.ts:599`](../../../../../src/main.ts#L599) `onSuspect: () => syncFullscreenSuspectWarning()`），
+`suspect` 欄位仍是模組內的去重閂，D-70-T3-1 已重新回答「誰在讀它」。本閘複核通過，不另開帳。
+
+### Tx.10 連結稽核（本閘順帶做的機械檢查）
+
+本閘對七個被改動的文件做了 **693 個檔案連結** + progress 內 **31 個錨點**的機械解析：
+
+| 檢查 | 結果 |
+|---|---|
+| progress 內部錨點 | **全數解析**。修掉一個**既有**壞錨（T4 task-log 那格的 `#t4-condition-recovery-entry-point2026-09-15`，少一個連字號）——成因是該標題用 **ASCII `( )`** 且括號前有空格（⇒ GitHub 會留下連字號），而本 WP 其他中文標題用**全形 `（ ）`**、前面沒有空格（⇒ 不留連字號）。兩種寫法在同一份文件裡混用就會踩到這個差異 |
+| 本閘新增的連結 | **17 條全部解析**（693 − 676） |
+| ⚠️ 既有壞連結（**非本 WP，不在此修**） | [`BUGFIX-DECISIONS.md`](../../../../known_issue/BUGFIX-DECISIONS.md) **4 條**指向 `exec-plan/active/stage4/…`（stage4 已移入 `completed/`）與 `research/out/overlay-contact-sheet.png`。**已確認在 `HEAD` 即存在**（stash 前後同樣 4 條），屬 WP-28／WP-31 的舊條目 ⇒ 依「T-exit 只驗收、不順手改別人的文件」原則**留給下一個碰 `BUGFIX-DECISIONS.md` 的 task**，此處明帳 |

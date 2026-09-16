@@ -9,8 +9,11 @@
 > 決策：[`BD-040`](BUGFIX-DECISIONS.md#bd-040--ki-040--suspect-的-fullscreen-成分改為-per-run並補上不重啟-plan-的恢復入口2026-09-15)（修法）
 > ／[`GD-47`](../exec-plan/DECISIONS.md#gd-47--wp-70-條件失效的效力單位是-run--fullscreen-與-pointer-lock-語意對稱並補上不重啟-plan-的恢復入口2026-09-15-t6)（判準）；
 > **GD-10 補澄清註記而非修訂** —— 條文從未規定「fullscreen 退出 ⇒ session 級 sticky」，那是 WP-20 T2 的
-> 實作延伸（理由見 `GD-47` ③）。⚠️ 逐條 FR／NFR acceptance matrix 由 WP-70 **T-exit** 產出，在它落閘前
-> 不得以本行宣稱「全部驗收完成」。
+> 實作延伸（理由見 `GD-47` ③）。✅ **T-exit 已於 2026-09-16 落閘**：FR-70.1～70.11／NFR-70.1～70.6 逐條
+> acceptance matrix 完成（無「完成但無證據」的列），Edge 全套 e2e **121 passed**、regression **324** 零漂移，
+> 並取得 live payload 證據（被標記的 run `suspect` **純由 fullscreen 供應**、下一 run `suspect: false`）。
+> ⚠️ **兩條具名邊界隨交付留存**：FM-70.4 沒有 e2e 守衛且[實機手動清單](../operational/fullscreen-recovery-manual-check.md)
+> **§5 執行紀錄仍為空**（owner = 使用者／操作員）⇒ FR-70.9／NFR-70.6 標 🟡 部分；OQ-70.4 仍開（見 §9.4）。
 > 標的：[`src/display/experimentSession.ts`](../../src/display/experimentSession.ts)（`suspect` 無復位
 > 路徑）· [`src/main.ts`](../../src/main.ts)（唯一 `requestFullscreen()` 與唯一 `hideSuspectWarning()`
 > 呼叫點都綁在資格閘 `onEnter`）· [`src/ui/EligibilityGate.ts`](../../src/ui/EligibilityGate.ts)（橫幅）。

@@ -13,7 +13,7 @@ Stage 15 解的是「暫停後這一輪還能不能被採納」；本 stage 解�
 
 | WP | 目標 | 相依 | 估時 | 狀態 |
 |---|---|---|---:|---|
-| **WP-70** | [`wp-70-run-scoped-condition-validity/`](wp-70-run-scoped-condition-validity/README.md)：`meta.suspect` 的 fullscreen 成分改為 run 級（與已是 run 級的 perf 成分對齊）；protocol 路徑補上錄製窗判準；橫幅改由真值驅動；新增不重啟 plan 的恢復條件入口 | WP-69 ✅ | 6–9.5 d | 🟡 **T0–T6 ✅（2026-09-15）**，T-exit 未開 |
+| **WP-70** | [`wp-70-run-scoped-condition-validity/`](wp-70-run-scoped-condition-validity/README.md)：`meta.suspect` 的 fullscreen 成分改為 run 級（與已是 run 級的 perf 成分對齊）；protocol 路徑補上錄製窗判準；橫幅改由真值驅動；新增不重啟 plan 的恢復條件入口 | WP-69 ✅ | 6–9.5 d | ✅ **已交付（2026-09-16, T-exit）** —— T0–T6 + T-exit 全數完成。FR×11／NFR×6 acceptance matrix 無「完成但無證據」的列；四閘＋Edge 全套 e2e 全綠（Vitest **3751 passed / 2 skipped**、regression **324**＝baseline、e2e **121 passed**＝T5 基準，三者零漂移）；digest 移動 **3 筆**＝T0 預測。⚠️ **FR-70.9／NFR-70.6 標 🟡 部分**（FM-70.4 無 e2e 守衛，實機手動清單 §5 仍為空，owner = 使用者）；OQ-70.4 仍開 |
 
 本 stage 暫無獨立 milestone；WP-70 的 `T-exit` 即交付判定。編號依
 [GD-15](../../DECISIONS.md)「正式進 §2 索引才算採納」取得；
