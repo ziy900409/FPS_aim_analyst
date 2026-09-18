@@ -1155,13 +1155,21 @@ function holdOrchestratorsOnAttempt(plan: AttemptFinalizationPlan): void {
   // 第二個條件不是重複判斷:`describeAttemptHold()` 回 `null` 的時機與 `eligible-candidate` 是同一
   // 個,但只有這一行能把 `plan.disposition` 收窄成 `HeldAttemptDisposition` 交給 pilot。
   if (notice === null || plan.disposition.kind === 'eligible-candidate') return;
-  // pilot 優先:它是唯一需要記帳（audit + attempt +1）而不只是停住的 runner，且它自己的 status
-  // 通道已經把 block/attempt/reason 說完，不需要再蓋上一句泛用文案。
-  if (trackingPilotSession?.handleInvalidAttempt(plan.disposition) === true) return;
-  // WP-58 / T3 的先例：顯式標註型別，phase union 有任何改動要在這裡編譯期爆掉而非靜默失配。
-  const sessionPhase: SessionRunnerPhase = sessionPlanRunner.phase;
-  if (sessionPhase.kind !== 'run' && activeProtocolRunner.current === undefined) return;
-  setProtocolStatus(notice, false);
+  // KI-041 / A1 — 本區間內寫進 `#protocol-status` 的一切都是 hold 文案（含 pilot 經由自己的
+  // `onStatus` 寫的那一句）。`finally` 而非結尾賦值：中間任何一條 early return 都必須解除旗標，
+  // 否則下一則真正的 orchestrator 狀態會被誤分類成 hold、然後被 restart 清掉。
+  writingAttemptHoldNotice = true;
+  try {
+    // pilot 優先:它是唯一需要記帳（audit + attempt +1）而不只是停住的 runner，且它自己的 status
+    // 通道已經把 block/attempt/reason 說完，不需要再蓋上一句泛用文案。
+    if (trackingPilotSession?.handleInvalidAttempt(plan.disposition) === true) return;
+    // WP-58 / T3 的先例：顯式標註型別，phase union 有任何改動要在這裡編譯期爆掉而非靜默失配。
+    const sessionPhase: SessionRunnerPhase = sessionPlanRunner.phase;
+    if (sessionPhase.kind !== 'run' && activeProtocolRunner.current === undefined) return;
+    setProtocolStatus(notice, false);
+  } finally {
+    writingAttemptHoldNotice = false;
+  }
 }
 // ─── WP-69 / T4 finalization 結束（T5 的 orchestrator hold 見上） ───────────────────────────────
 
@@ -1883,6 +1891,11 @@ function resetRunPresentation(): void {
   stopFlashUntil = 0;
   prevVx = 0;
   recorderStartedAt = new Date().toISOString();
+  // KI-041 / A1 — **最後一行**,兩條路徑因此收斂在同一個點:上一場收工時寫的 hold 文案（liveFrame
+  // 的 ended 分支）,以及本函式開頭「暫停中被放棄的 attempt」剛寫下的那一句。四條 full-restart
+  // 路徑全都緊接著 `drillRunner.start()`,所以走到這裡 = 新 attempt 已經要開始,hold 文案失去指涉
+  // 對象。hold 的**記帳**（cursor 不動／pilot attempt +1／零下載）一行未動,消失的只有那句話。
+  clearAttemptHoldNotice();
 }
 
 // WP-65 / T2（FR-65.2/65.4，D-65-1/D-65-5）— 取鎖 = 解除待命。新增一個訂閱者而非改寫既有三個
@@ -2230,10 +2243,51 @@ document.body.appendChild(protocolStatus);
 let completingProtocolCondition = false;
 let completedProtocolConditionIndex: number | undefined;
 
+// KI-041 / A1 — attempt-hold 文案的生命終點 = 下一個 attempt 開始。
+//
+// `#protocol-status` 是 Session／Protocol／Pilot 與 WP-69 hold 通知**共用**的單一通道，而在本修復
+// 之前它只有寫入、沒有任何清除路徑（下面這個函式恆 `display:'flex'`）⇒ 操作員按下「重新測試」之後，
+// 那句「測試進度停在原處…請按「重新測試」」會跟著新一場一路顯示到重跑結束（使用者實測回報）。
+//
+// 為什麼是「還原上一則 orchestrator 狀態」而不是「隱藏」：hold 的定義就是 orchestrator **沒有前進**
+// ⇒ 從它上一次寫狀態到這次 restart 之間不存在任何 step transition，閂鎖的那句話正是當前 step 的正確
+// 文案，不需要第二個真值來源。隱藏則會連「我在 plan 的哪一步」一起拿掉（KI-041 §5.1 選項 C，已否決）。
+//
+// 宣告點與 `protocolStatusText` 同一段落，因此不引入新的 TDZ 視窗：任何早到會撞這幾個 `let` 的呼叫，
+// 在本修復之前就已經會撞 `protocolStatusText`。
+let lastOrchestratorStatusText: string | undefined;
+let lastOrchestratorStatusShowsNext = false;
+/** 目前畫面上顯示的是不是 hold 文案。 */
+let attemptHoldNoticeShown = false;
+/**
+ * 只在 `holdOrchestratorsOnAttempt()` 的**同步**區間內為真,那是「這是不是 hold 文案」的**唯一**
+ * 分類點（C-D4）。pilot 的 hold 文案（`retryRunningBlock()`，刻意同步）也在那個區間內寫出,因此
+ * 一個旗標就涵蓋三條通道 —— 不得改用字串比對去猜,三條通道的字面本來就不同。
+ */
+let writingAttemptHoldNotice = false;
+
 function setProtocolStatus(text: string, showNext: boolean): void {
+  if (writingAttemptHoldNotice) {
+    attemptHoldNoticeShown = true;
+  } else {
+    lastOrchestratorStatusText = text;
+    lastOrchestratorStatusShowsNext = showNext;
+    attemptHoldNoticeShown = false;
+  }
   protocolStatusText.textContent = text;
   protocolNextButton.style.display = showNext ? 'inline-flex' : 'none';
   protocolStatus.style.display = 'flex';
+}
+
+/** 沒有 hold 文案在顯示時為 no-op；從未有 orchestrator 寫過狀態（standalone）則整條收起。 */
+function clearAttemptHoldNotice(): void {
+  if (!attemptHoldNoticeShown) return;
+  attemptHoldNoticeShown = false;
+  if (lastOrchestratorStatusText === undefined) {
+    protocolStatus.style.display = 'none';
+    return;
+  }
+  setProtocolStatus(lastOrchestratorStatusText, lastOrchestratorStatusShowsNext);
 }
 
 const restOverlay = createRestOverlay();

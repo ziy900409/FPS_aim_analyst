@@ -142,6 +142,34 @@ async function restartFromPause(page: Page): Promise<void> {
   await expect.poll(async () => (await readDrillArmState(page))?.phase ?? null).toBe('armed');
 }
 
+/**
+ * The text span only, never `#protocol-status` itself: the banner also contains the `下一條件`
+ * button, whose label is in `textContent` whether or not it is displayed — comparing the whole
+ * element would compare the button's visibility rules instead of the status line.
+ */
+function protocolStatusLine(page: Page) {
+  return page.locator('#protocol-status > span');
+}
+
+async function readProtocolStatusLine(page: Page): Promise<string> {
+  return (await protocolStatusLine(page).textContent()) ?? '';
+}
+
+/**
+ * KI-041 — the hold notice's lifetime ends when the next attempt starts.
+ *
+ * `#protocol-status` is a single channel shared by Session / Protocol / Pilot, and it had no clear
+ * path at all: whatever `holdOrchestratorsOnAttempt()` wrote survived the operator's own Restart and
+ * kept claiming "測試進度停在原處…請按「重新測試」" while the retry was already counting down. The
+ * assertion is deliberately equality against the pre-pause line rather than a mere absence check —
+ * hiding the banner would also pass an absence check while destroying the operator's "where am I in
+ * the plan" context (KI-041 §5.1 option C, rejected).
+ */
+async function expectStatusRestoredAfterRestart(page: Page, before: string): Promise<void> {
+  await expect(protocolStatusLine(page)).toHaveText(before);
+  await expect(protocolStatusLine(page)).not.toContainText('重新測試');
+}
+
 async function snapshotFrozenGameplay(page: Page): Promise<Pick<Wp69State, 'recording' | 'aim' | 'held' | 'time'>> {
   const state = await readState(page);
   return { recording: state.recording, aim: state.aim, held: state.held, time: state.time };
@@ -326,6 +354,7 @@ test.describe('WP-69 T6 — live pause / invalid / restart lifecycle', () => {
       });
     }, TRACKING_DRILL_ID);
     await expect.poll(async () => (await readState(page)).drill.drillId).toBe(TRACKING_DRILL_ID);
+    const statusBeforePause = await readProtocolStatusLine(page);
     await startRunningWithRealLock(page);
     await pauseThroughRealPointerLockLoss(page);
     const beforeRestart = await readState(page);
@@ -334,6 +363,7 @@ test.describe('WP-69 T6 — live pause / invalid / restart lifecycle', () => {
     expect(held.session).toMatchObject({ kind: 'run', cursor: 0 });
     expect(held.attempt.number).toBe(beforeRestart.attempt.number + 1);
     expect(await readDownloads(page)).toHaveLength(0);
+    await expectStatusRestoredAfterRestart(page, statusBeforePause); // KI-041
 
     await startRunningWithRealLock(page);
     await expect.poll(async () => String((await readState(page)).session.kind), { timeout: 40_000 }).toBe('done');
@@ -361,6 +391,7 @@ test.describe('WP-69 T6 — live pause / invalid / restart lifecycle', () => {
       ).__fpsTest.startProtocolWithoutGate('wp69-protocol-e2e', 'br');
     });
     await expect.poll(async () => (await readState(page)).protocol.current?.conditionIndex ?? 0).toBe(0);
+    const statusBeforePause = await readProtocolStatusLine(page);
     await startRunningWithRealLock(page);
     await pauseThroughRealPointerLockLoss(page);
     await restartFromPause(page);
@@ -368,6 +399,7 @@ test.describe('WP-69 T6 — live pause / invalid / restart lifecycle', () => {
     expect(held.protocol.current?.conditionIndex ?? 0).toBe(0);
     expect(held.protocol.exportCount).toBe(0);
     expect(await readDownloads(page)).toHaveLength(0);
+    await expectStatusRestoredAfterRestart(page, statusBeforePause); // KI-041
 
     await startRunningWithRealLock(page);
     await expect.poll(async () => (await readState(page)).protocol.exportCount, { timeout: 40_000 }).toBe(1);
@@ -395,9 +427,14 @@ test.describe('WP-69 T6 — live pause / invalid / restart lifecycle', () => {
     await operator.locator('input[name="restSeconds"]').fill('0');
     await operator.getByRole('button', { name: 'Start manifest', exact: true }).click();
     await expect(page.locator('#tracking-pilot-status')).toContainText('Block 1/9');
+    const statusBeforePause = await readProtocolStatusLine(page);
     await startRunningWithRealLock(page);
     await pauseThroughRealPointerLockLoss(page);
     await restartFromPause(page);
+    // KI-041 — the pilot's hold line reaches the same shared element through `onStatus`, so the
+    // restore must cover it too. `#tracking-pilot-status` (the operator screen's own line) keeps the
+    // hold text on purpose: that screen is the audit surface and is hidden while a block runs.
+    await expectStatusRestoredAfterRestart(page, statusBeforePause);
     const held = await readState(page);
     expect(held.pilot?.phase).toMatchObject({ kind: 'running', blockIndex: 0, attempt: 2 });
     expect(held.pilot?.recordCount).toBe(0);

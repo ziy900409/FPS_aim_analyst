@@ -109,6 +109,28 @@ function createRetryRig(): RetryRig {
   const sessionDownloads: string[] = [];
   let status: string | undefined;
   let finalizedPlan: AttemptFinalizationPlan | undefined;
+  // KI-041 — `main.ts` 的 `#protocol-status` 閂鎖,同樣手抄。hold 文案不進閂鎖,新 attempt 開始時
+  // 還原上一則 orchestrator 自己寫的狀態（`undefined` = 從未寫過 ⇒ 該元素在 app 那側是隱藏的）。
+  let lastOrchestratorStatus: string | undefined;
+  let holdNoticeShown = false;
+  let writingHoldNotice = false;
+
+  /** `setProtocolStatus()` 的分類半邊,restated。 */
+  function setStatus(text: string): void {
+    if (writingHoldNotice) holdNoticeShown = true;
+    else {
+      lastOrchestratorStatus = text;
+      holdNoticeShown = false;
+    }
+    status = text;
+  }
+
+  /** `clearAttemptHoldNotice()`, restated. */
+  function clearHoldNotice(): void {
+    if (!holdNoticeShown) return;
+    holdNoticeShown = false;
+    status = lastOrchestratorStatus;
+  }
 
   /**
    * Every drill load in `main.ts` runs through `resetRunPresentation()` — that is what makes the
@@ -123,6 +145,7 @@ function createRetryRig(): RetryRig {
     }
     finalizedPlan = undefined;
     runAttempt.restart();
+    clearHoldNotice(); // KI-041 — 末端,與 `main.ts` 同一個位置
   }
 
   const session = createSessionRunner({
@@ -130,7 +153,7 @@ function createRetryRig(): RetryRig {
       resetRunPresentation();
     }),
     onStatus: (text) => {
-      status = text;
+      setStatus(text);
     },
   });
   const protocol = createProtocolRunner<{ id: string }>({
@@ -145,7 +168,7 @@ function createRetryRig(): RetryRig {
     exportBlock: vi.fn(async () => ({}) as never),
     evaluateEligibility: vi.fn(() => ({ status: 'eligible', validScoredTicks: 100, durationMs: 1000 }) as never),
     onStatus: (text) => {
-      status = text;
+      setStatus(text);
     },
   });
 
@@ -153,10 +176,15 @@ function createRetryRig(): RetryRig {
   function hold(plan: AttemptFinalizationPlan): void {
     const notice = describeAttemptHold(plan);
     if (notice === null || plan.disposition.kind === 'eligible-candidate') return;
-    if (pilot.retryRunningBlock(plan.disposition) !== undefined) return;
-    const sessionPhase: SessionRunnerPhase = session.phase;
-    if (sessionPhase.kind !== 'run' && protocol.current === undefined) return;
-    status = notice;
+    writingHoldNotice = true; // KI-041 — 這個區間內寫的一切都是 hold 文案（含 pilot 自己那一句）
+    try {
+      if (pilot.retryRunningBlock(plan.disposition) !== undefined) return;
+      const sessionPhase: SessionRunnerPhase = session.phase;
+      if (sessionPhase.kind !== 'run' && protocol.current === undefined) return;
+      setStatus(notice);
+    } finally {
+      writingHoldNotice = false;
+    }
   }
 
   return {
@@ -247,17 +275,22 @@ describe('WP-69 T5 — SessionRunner 停在同一 step（FR-69.10，T5 DoD 第 1
     expect(rig.sessionDownloads).toHaveLength(1);
   });
 
-  it('paused 時直接 Restart 仍 hold 同一個 step，且不下載', async () => {
+  it('paused 時直接 Restart 仍 hold 同一個 step，且不下載（KI-041:狀態列回到該 step 的文案）', async () => {
     const rig = createRetryRig();
     await startSession(rig);
     const held = rig.session.phase;
+    const statusBefore = rig.status();
 
     pauseWithoutResuming(rig);
     rig.restart();
 
     expect(rig.session.phase).toEqual(held);
     expect(rig.sessionDownloads).toEqual([]);
-    expect(rig.status()).toContain('重新測試');
+    // KI-041 / A1 — hold 的**記帳**（上面兩行）逐位不變;變的只有那句話的壽命。新 attempt 一開始
+    // 它就失去指涉對象（四條 full-restart 路徑都緊接著 `drillRunner.start()`）,狀態列因此回到
+    // orchestrator 自己上一次寫的文案 —— 此處正是同一個 step 的那一句,因為 hold 的定義就是沒前進。
+    expect(rig.status()).toBe(statusBefore);
+    expect(rig.status() ?? '').not.toContain('重新測試');
   });
 
   it('full restart 之後同一個 step 重跑，attempt +1、drill 不變（FR-69.6，T5 DoD 第 2 條）', async () => {
@@ -265,15 +298,21 @@ describe('WP-69 T5 — SessionRunner 停在同一 step（FR-69.10，T5 DoD 第 1
     await startSession(rig);
     const held = rig.session.phase;
     const attemptBefore = rig.runAttempt.attempt;
+    const statusBefore = rig.status();
 
     pauseAndResume(rig);
     await rig.endDrill('session');
     await settleTransitions();
+    // KI-041 — 收工當下 hold 文案**必須**在（這是 FR-69.10 的告知,本次修復未放寬）…
+    expect(rig.status()).toContain('重新測試');
     rig.restart();
 
     expect(rig.runAttempt.attempt).toBe(attemptBefore + 1);
     expect(rig.runAttempt.validity).toBe('eligible-candidate');
     expect(rig.session.phase).toEqual(held); // 同一個 drill/step，不是下一個
+    // …而 restart 之後它必須消失。這是使用者實測回報的那條路徑（收工才作廢、之後才按重新測試）,
+    // 與「暫停中直接 restart」那條在同一個點（`resetRunPresentation()` 末端）收斂。
+    expect(rig.status()).toBe(statusBefore);
   });
 
   it('連續兩次 pause + restart：step 仍不動，attempt 走到 3', async () => {
@@ -346,17 +385,22 @@ describe('WP-69 T5 — ProtocolRunner 停在同一 condition（FR-69.10）', () 
     expect(rig.protocol.exports).toHaveLength(1);
   });
 
-  it('paused 時直接 Restart 仍 hold 同一個 condition，且 exports[] 不長', async () => {
+  it('paused 時直接 Restart 仍 hold 同一個 condition，且 exports[] 不長（KI-041:狀態列不留 hold 文案）', async () => {
     const rig = createRetryRig();
     await rig.protocol.start();
     const held = rig.protocol.current;
+    const statusBefore = rig.status();
 
     pauseWithoutResuming(rig);
     rig.restart();
 
     expect(rig.protocol.current).toEqual(held);
     expect(rig.protocol.exports).toEqual([]);
-    expect(rig.status()).toContain('重新測試');
+    // KI-041 / A1。此處 `statusBefore` 是 `undefined`:protocol 的「條件 N/M」那一句由 `main.ts`
+    // 的 `startProtocol()` 寫,不在本 rig 的模型內 ⇒ 還原的結果就是「回到沒有人寫過」,在 app 那側
+    // 對應到整條狀態列收起。live 的那一半由 `wp69-pause-invalid-restart.spec.ts` 守。
+    expect(rig.status()).toBe(statusBefore);
+    expect(rig.status() ?? '').not.toContain('重新測試');
   });
 });
 
