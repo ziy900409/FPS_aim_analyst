@@ -9,15 +9,13 @@ I/O lives here, not in ``algorithms/`` (C-D2). Never imports TS (C-D1).
 
 Condition cells come from the folder tree, but the *grip* of the GPW1 cell does not: GPW1 has no
 grip sub-folder, and a grip guessed from a path is how one label ends up meaning two different
-things. It is therefore recorded as ``unrecorded`` for every participant whose grip the study
-owner has not confirmed -- currently everyone except S01 (confirmed 1-2-2).
+things. The study-owner manifest records S06 as 1-3-1 and S01-S05/S07-S08 as 1-2-2; future
+participants remain ``unrecorded`` until explicitly confirmed.
 
 Runs stay in the ledger whatever happens to them. Only a hard-gate blocker -- a technical
-failure -- withholds a run from the comparison. A settings change inside one participant's
-session is handled at the level of the **contrast** instead: if they played one condition at a
-different sensitivity or viewport, the two factors are confounded and only the contrasts
-spanning that change are spoiled, while every run remains a valid measurement of what it
-actually recorded.
+failure -- withholds a run from the comparison. Sensitivity changes are player adaptation and
+never block a run or contrast; sensitivity stays in the exported ledger as descriptive
+provenance. Geometry, stimulus or viewport changes remain contrast-level comparability failures.
 """
 
 from __future__ import annotations
@@ -55,8 +53,14 @@ CELLS: dict[str, tuple[str, str, str]] = {
     "C": ("DK/1-3-1", "DK", "1-3-1"),
 }
 
-#: Participants whose GPW1 grip the study owner has confirmed. Everyone else gets ``unrecorded``.
-CONFIRMED_GPW1_GRIP: dict[str, str] = {"S01": "1-2-2"}
+#: GPW1 grip is study-owner metadata, never inferred from the folder tree.
+CONFIRMED_GPW1_GRIP: dict[str, str] = {
+    **{
+        participant: "1-2-2"
+        for participant in ("S01", "S02", "S03", "S04", "S05", "S07", "S08")
+    },
+    "S06": "1-3-1",
+}
 
 CONTRASTS = [("A", "B"), ("B", "C"), ("A", "C")]
 
@@ -130,8 +134,7 @@ def main() -> int:
     all_runs = [run for runs in by_participant.values() for run in runs]
 
     def admitted(run: RunExtract) -> bool:
-        """Only a technical failure withholds a run. A settings change spoils contrasts, not
-        measurements, so it is handled per contrast below."""
+        """Only a technical failure withholds a run; adaptation never does."""
         return not run.quality.blockers
 
     # Which contrasts each participant can actually support, and why not when they cannot.
