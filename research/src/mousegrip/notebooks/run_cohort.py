@@ -32,12 +32,18 @@ RESEARCH_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(RESEARCH_ROOT / "src"))
 
 from mousegrip.algorithms.pilot import (  # noqa: E402
+    MECHANISM_COLUMNS,
+    MECHANISM_COVERAGE_FLOOR,
     RunExtract,
+    admissible_mechanism_columns,
     common_prefix_length,
     contrast_comparability,
     extract_run,
+    index_mechanism,
     kaplan_meier,
     match_prefix,
+    mechanism_coverage,
+    mechanism_key,
 )
 
 REPO_ROOT = RESEARCH_ROOT.parent
@@ -66,7 +72,10 @@ def load_participant(root: Path, participant: str) -> list[RunExtract]:
             cell_runs.append(
                 extract_run(
                     payload,
-                    run_id=f"{participant}/{condition_id}/{path.stem[-24:]}",
+                    # Identical to the TS extractor's `run_id` (path relative to the cohort
+                    # root, POSIX separators), so the two sides join on equality rather than
+                    # on a timestamp fished out of a filename.
+                    run_id=f"{participant}/{folder}/{path.name}",
                     condition_id=condition_id,
                     mouse=mouse,
                     grip=grip,
@@ -95,10 +104,22 @@ def main() -> int:
     parser.add_argument("--data", default=str(REPO_ROOT / "data/BQC-test/DKMouse"))
     parser.add_argument("--participants", nargs="*", default=None)
     parser.add_argument("--out", default=str(RESEARCH_ROOT / "out/mousegrip-cohort"))
+    parser.add_argument(
+        "--mechanism",
+        default=None,
+        help="mechanism_metrics.csv from `npm run analyze:spider-wide-mech` (TS side, C-D4)",
+    )
     args = parser.parse_args()
 
     root = Path(args.data)
     out = Path(args.out)
+
+    # The mechanism constructs are derived in TypeScript and joined here on (run_id, target_id);
+    # this side never recomputes one. No file given = the columns simply do not appear.
+    mechanism: dict[tuple[str, str], dict[str, str]] = {}
+    if args.mechanism:
+        with Path(args.mechanism).open(encoding="utf-8") as handle:
+            mechanism = index_mechanism(csv.DictReader(handle))
     participants = args.participants or sorted(
         p.name for p in root.iterdir() if p.is_dir() and p.name.startswith("S")
     )
@@ -176,6 +197,7 @@ def main() -> int:
                 "rep": run.rep,
                 "admitted": admitted(run),
                 "presentation_index": p.presentation_index,
+                "target_id": p.target_id,
                 "in_matched_prefix": p.presentation_index <= prefix,
                 "side": p.side,
                 "stimulus_key": "|".join(str(v) for v in p.stimulus_key),
@@ -192,6 +214,12 @@ def main() -> int:
                 "event_observed": p.event_observed,
                 "end_reason": p.end_reason,
                 "ads_overlap": p.ads_overlap,
+                **({
+                    column.name: mechanism.get(
+                        mechanism_key(run.run_id, p.target_id), {}
+                    ).get(column.name, "")
+                    for column in MECHANISM_COLUMNS
+                } if mechanism else {}),
             })
 
         km = kaplan_meier((p.observed_ms, p.event_observed) for p in run.presentations)
@@ -264,6 +292,30 @@ def main() -> int:
     for run in all_runs:
         if run.quality.blockers:
             print(f"  blocked {run.run_id}: {list(run.quality.blockers)}")
+    if mechanism:
+        joined = [row for row in trial_rows if row["admitted"]]
+        matched = sum(
+            1 for row in trial_rows if mechanism_key(row["run_id"], row["target_id"]) in mechanism
+        )
+        coverage = mechanism_coverage(joined)
+        admissible, withheld = admissible_mechanism_columns(coverage)
+        write_csv(out / "mechanism_coverage.csv", [
+            {
+                "column": column.name,
+                "tier": column.tier,
+                "blank_is_missing": column.blank_is_missing,
+                "coverage": round(coverage[column.name], 4),
+                "floor": MECHANISM_COVERAGE_FLOOR,
+                "verdict": "admissible" if column.name in admissible else "withheld",
+            }
+            for column in MECHANISM_COLUMNS
+        ])
+        print(f"mechanism join: {matched}/{len(trial_rows)} presentations matched")
+        for column in MECHANISM_COLUMNS:
+            mark = "OK  " if column.name in admissible else "HOLD"
+            print(f"  {mark} tier{column.tier} {column.name:26s} {coverage[column.name]:6.1%}")
+        if withheld:
+            print(f"  withheld at the {MECHANISM_COVERAGE_FLOOR:.0%} floor: {', '.join(withheld)}")
     print("\ncontrast comparability:")
     for key in sorted(comparability):
         reasons = comparability[key]

@@ -12,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from mousegrip.algorithms.pilot import (
+    MECHANISM_COLUMNS,
     PEEK_TIMEOUT_MS,
     extract_presentations,
     kaplan_meier,
@@ -179,3 +180,72 @@ def test_active_window_comes_from_the_protocol_not_the_last_event() -> None:
     assert timing.countdown_trim_ms == 3000.0
     assert abs(timing.post_task_trim_ms - 5062.5) < 1e-9
     assert timing.trim_reasons == ("TRIM_COUNTDOWN", "TRIM_POST_TASK")
+
+
+# --- mechanism layer ----------------------------------------------------------------------
+
+
+def _mech(run_id: str, target_id: str, **cells) -> dict[str, str]:
+    row = {column.name: "" for column in MECHANISM_COLUMNS}
+    row.update({"run_id": run_id, "target_id": target_id})
+    row.update({key: str(value) for key, value in cells.items()})
+    return row
+
+
+def test_mechanism_rows_key_on_run_and_target_because_target_ids_repeat() -> None:
+    """`t3` exists in every run; keying on it alone would silently overwrite 50 rows with one."""
+    from mousegrip.algorithms.pilot import index_mechanism
+
+    rows = [_mech("S01/GPW1/a.json", "t3", peak_omega_deg_per_sec=100),
+            _mech("S02/GPW1/b.json", "t3", peak_omega_deg_per_sec=200)]
+    indexed = index_mechanism(rows)
+    assert len(indexed) == 2
+    assert indexed[("S01/GPW1/a.json", "t3")]["peak_omega_deg_per_sec"] == "100"
+    assert indexed[("S02/GPW1/b.json", "t3")]["peak_omega_deg_per_sec"] == "200"
+
+
+def test_a_blank_that_is_an_answer_does_not_count_against_coverage() -> None:
+    """`overshoot_deg` is blank when the crosshair never left the target -- that is "no escape",
+    not "unknown", and treating it as missing would withhold a column that is fully available."""
+    from mousegrip.algorithms.pilot import mechanism_coverage
+
+    rows = [_mech("r", f"t{i}", peak_omega_deg_per_sec=1) for i in range(10)]
+    rows[0]["overshoot_deg"] = "0.4"  # only one trial actually overshot
+    coverage = mechanism_coverage(rows)
+    assert coverage["overshoot_deg"] == 1.0
+    assert coverage["peak_omega_deg_per_sec"] == 1.0
+    assert coverage["reaction_ms"] == 0.0
+
+
+def test_admissibility_is_decided_by_coverage_not_by_tier() -> None:
+    """The tier explains why a column tends to fail; the verdict still comes from what this
+    cohort produced, so a Tier 1 column that did survive is admitted."""
+    from mousegrip.algorithms.pilot import admissible_mechanism_columns
+
+    coverage = {
+        "peak_omega_deg_per_sec": 1.0,
+        "entry_omega_deg_per_sec": 0.99,
+        "brake_retention": 0.99,
+        "trigger_margin_ms": 0.99,
+        "overshoot_deg": 1.0,
+        "drop_count": 1.0,
+        "micro_adjust_count": 1.0,
+        "fire_angle_error_deg": 0.99,
+        "reaction_ms": 0.95,      # would have survived
+        "movement_time_ms": 0.32,  # the cohort's actual figure
+    }
+    admissible, withheld = admissible_mechanism_columns(coverage)
+    assert "reaction_ms" in admissible
+    assert withheld == ("movement_time_ms",)
+
+
+def test_the_cohort_figure_withholds_both_tier_one_columns() -> None:
+    from mousegrip.algorithms.pilot import admissible_mechanism_columns
+
+    coverage = {"peak_omega_deg_per_sec": 1.0, "entry_omega_deg_per_sec": 0.992,
+                "brake_retention": 0.992, "trigger_margin_ms": 0.991, "overshoot_deg": 1.0,
+                "drop_count": 1.0, "micro_adjust_count": 1.0, "fire_angle_error_deg": 0.992,
+                "reaction_ms": 0.318, "movement_time_ms": 0.317}
+    admissible, withheld = admissible_mechanism_columns(coverage)
+    assert set(withheld) == {"reaction_ms", "movement_time_ms"}
+    assert len(admissible) == 8

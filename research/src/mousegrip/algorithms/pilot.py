@@ -604,3 +604,90 @@ def common_prefix_length(runs: Sequence[RunExtract]) -> int:
         if any(run.presentations[idx].stimulus_key != key for run in runs):
             return idx
     return shortest
+
+
+# --- mechanism layer ----------------------------------------------------------------------
+# The mechanism constructs live in TypeScript (C-D4) and arrive here as a CSV produced by
+# `npm run analyze:spider-wide-mech`. Nothing below computes a construct: this is matching and
+# counting over a table someone else derived.
+
+
+@dataclass(frozen=True)
+class MechanismColumn:
+    """One mechanism column, with the two facts needed to decide whether it may be analysed."""
+
+    name: str
+
+    tier: int
+    """0 = never touches the detector. 1 = starts from ``tDetectMs`` and therefore inherits
+    KI-031 and KI-034 wholesale -- including movement time, which ends at first entry and so
+    looks detector-independent but is not."""
+
+    blank_is_missing: bool = True
+    """False where a blank cell is a real answer rather than an absent one. ``overshoot_deg``
+    is the case: canonical returns nothing when the crosshair never left the target after
+    entry, which means "no escape", not "unknown". Counting those blanks as missing would
+    reject a column that is in fact fully available."""
+
+
+MECHANISM_COLUMNS: tuple[MechanismColumn, ...] = (
+    MechanismColumn("peak_omega_deg_per_sec", 0),
+    MechanismColumn("entry_omega_deg_per_sec", 0),
+    MechanismColumn("brake_retention", 0),
+    MechanismColumn("trigger_margin_ms", 0),
+    MechanismColumn("overshoot_deg", 0, blank_is_missing=False),
+    MechanismColumn("drop_count", 0),
+    MechanismColumn("micro_adjust_count", 0),
+    MechanismColumn("fire_angle_error_deg", 0),
+    MechanismColumn("reaction_ms", 1),
+    MechanismColumn("movement_time_ms", 1),
+)
+
+#: Pre-registered convention, not a calibrated threshold: a column analysed on fewer than this
+#: share of presentations is reported as unavailable rather than quietly analysed on whoever
+#: happened to produce a value. Changing it must happen before the numbers are read.
+MECHANISM_COVERAGE_FLOOR = 0.90
+
+
+def mechanism_key(run_id: str, target_id: str) -> tuple[str, str]:
+    """The only pair unique across the cohort —— `target_id` repeats in every run."""
+    return (run_id, target_id)
+
+
+def index_mechanism(rows: Iterable[dict[str, str]]) -> dict[tuple[str, str], dict[str, str]]:
+    """Key the extractor's CSV rows for joining onto presentations."""
+    return {mechanism_key(row["run_id"], row["target_id"]): row for row in rows}
+
+
+def mechanism_coverage(
+    rows: Sequence[dict[str, str]],
+    columns: Sequence[MechanismColumn] = MECHANISM_COLUMNS,
+) -> dict[str, float]:
+    """Share of rows carrying a value, per column. Columns whose blank is a real answer
+    report 1.0 rather than their fill rate."""
+    if not rows:
+        return {column.name: 0.0 for column in columns}
+    coverage: dict[str, float] = {}
+    for column in columns:
+        if not column.blank_is_missing:
+            coverage[column.name] = 1.0
+            continue
+        filled = sum(1 for row in rows if str(row.get(column.name, "")).strip() != "")
+        coverage[column.name] = filled / len(rows)
+    return coverage
+
+
+def admissible_mechanism_columns(
+    coverage: dict[str, float],
+    columns: Sequence[MechanismColumn] = MECHANISM_COLUMNS,
+    floor: float = MECHANISM_COVERAGE_FLOOR,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Split the columns into (admissible, withheld) by coverage alone.
+
+    Deliberately blind to tier: the tier explains *why* a column tends to fail, but the
+    decision is made on what this cohort actually produced. A Tier 1 column that did reach
+    the floor would be admitted, and a Tier 0 column that did not would be withheld.
+    """
+    admissible = tuple(c.name for c in columns if coverage.get(c.name, 0.0) >= floor)
+    withheld = tuple(c.name for c in columns if coverage.get(c.name, 0.0) < floor)
+    return admissible, withheld
