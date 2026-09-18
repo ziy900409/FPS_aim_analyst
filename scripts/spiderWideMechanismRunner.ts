@@ -52,6 +52,11 @@ export interface SpiderWideMechanismRow {
   readonly brakeRetention?: number;
   /** `tFirstShot − tFirstOnTarget`。負值＝早於進靶擊發，正值＝進靶後的確認時間。 */
   readonly triggerMarginMs?: number;
+  /**
+   * 首次進靶後最大逸出角。**空白有兩種意思，靠 `flags` 區分**：`no_on_target` = 從未進靶（真的不可算）；
+   * 沒有該旗標而仍為空 = 進靶後準星未再離開目標，即「沒有逸出」。canonical 對後者回 `undefined` 而非 0，
+   * 本模組照實傳遞不代為改寫（C-D4）；下游若要當 0 處理，必須自己說明並對 `flags` 設條件。
+   */
   readonly overshootDeg?: number;
   readonly dropCount?: number;
   readonly microAdjustCount?: number;
