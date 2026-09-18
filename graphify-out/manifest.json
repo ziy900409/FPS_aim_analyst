@@ -127,6 +127,10 @@
     "mtime": 1788979165.299479,
     "hash": "eb45e2fb46184736758010a845e62a0d"
   },
+  "D:\\git\\FPS_aim_analyst\\research\\src\\modules\\ingest\\algorithms\\tests\\test_loader_invalid_paused.py": {
+    "mtime": 1789486547.5312183,
+    "hash": "899ff2d803533a9f54967c7bda0b3f40"
+  },
   "D:\\git\\FPS_aim_analyst\\research\\src\\modules\\ingest\\algorithms\\tests\\test_loader_key_events.py": {
     "mtime": 1788549831.918904,
     "hash": "8e522d69b5a52e1a84a362a99bbdeede"
@@ -632,12 +636,52 @@
     "hash": "ef6590f94626e205fed3cffa0cb39e9a"
   },
   "D:\\git\\FPS_aim_analyst\\src\\main.ts": {
-    "mtime": 1789401054.0334208,
-    "hash": "73df504ec4e221b2579fbd1b4f8db0ad"
+    "mtime": 1789508212.5157647,
+    "hash": "02394b01dbcd52b21fd1d30ab001f3ab"
   },
   "D:\\git\\FPS_aim_analyst\\src\\vite-env.d.ts": {
     "mtime": 1783376868.0886695,
     "hash": "8f68c27c3fc38817b2726b20e2d4f1ee"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\architecture.test.ts": {
+    "mtime": 1789486547.5334125,
+    "hash": "3cb5f05ad909ebbc6439d1995df36a23"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\AttemptFinalizationGate.test.ts": {
+    "mtime": 1789486547.5312183,
+    "hash": "9649a738ae75609450f3ee5235c82dff"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\AttemptFinalizationGate.ts": {
+    "mtime": 1789486547.5312183,
+    "hash": "d3970d864dc84044b4b8b2eff2b239fc"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\recordingIntegrity.test.ts": {
+    "mtime": 1789486547.5334125,
+    "hash": "c096b642a1b2a66474b20c0405597993"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\recordingIntegrity.ts": {
+    "mtime": 1789486547.534564,
+    "hash": "6dabd38e6d7c2999f00aa4c729a3967e"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\RunAttemptController.test.ts": {
+    "mtime": 1789486547.5324087,
+    "hash": "d56338f081031807ddbba7387a72ce8f"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\RunAttemptController.ts": {
+    "mtime": 1789486547.5324087,
+    "hash": "ec94a3c92d8eea85e1a947f85d0351b0"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\__tests__\\wp69-finalization.test.ts": {
+    "mtime": 1789486547.5324087,
+    "hash": "6fa59c689ef62ce691a87cf5816623a0"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\__tests__\\wp69-orchestrator-retry.test.ts": {
+    "mtime": 1789486547.5334125,
+    "hash": "bb426d8e78c6a234ab420a0e72226850"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\attempt\\__tests__\\wp69-pause-lifecycle.test.ts": {
+    "mtime": 1789486547.5334125,
+    "hash": "24e09239d93cf3c29c49400030f78235"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ballistics\\bullet.test.ts": {
     "mtime": 1788549832.0832238,
@@ -672,28 +716,28 @@
     "hash": "74c1abdc44cfeaf5cecbe69f7ecf163b"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\export.test.ts": {
-    "mtime": 1789142140.368255,
-    "hash": "d573d4357e3f760eae74b4b472ab58ba"
+    "mtime": 1789491985.2409108,
+    "hash": "f658cbd6eebd09cdb617e6e1836b0c62"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\export.ts": {
     "mtime": 1788979165.303114,
     "hash": "f1ceb05983c77df09486001322feee30"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\exportPayloadSchema.test.ts": {
-    "mtime": 1789401054.0254173,
-    "hash": "c3bfe9d3406d6548174d99e8853e40b1"
+    "mtime": 1789491913.0018985,
+    "hash": "af7f15046c5a1ec2adf6812412bfabc1"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\exportPayloadSchema.ts": {
-    "mtime": 1789401054.0264184,
-    "hash": "144a8e8c9c5c38855c8fffea4785e701"
+    "mtime": 1789491840.563744,
+    "hash": "452eacf4d835f5a4b06ec8c0b08dd317"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\metadata.test.ts": {
-    "mtime": 1789401054.0264184,
-    "hash": "1ff56a5574d98f82f17891d014bc8fa3"
+    "mtime": 1789491917.5520103,
+    "hash": "7e169c784787bf4ad7155cf2a709a2f5"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\metadata.ts": {
-    "mtime": 1789401054.0274174,
-    "hash": "a18e8d8d8f7b9b1a2f31b9bd70b9304c"
+    "mtime": 1789491836.4415371,
+    "hash": "ae4710354bd4a2d43e960ab4202b1233"
   },
   "D:\\git\\FPS_aim_analyst\\src\\data\\mouseSampleArena.test.ts": {
     "mtime": 1788978406.6416738,
@@ -706,6 +750,10 @@
   "D:\\git\\FPS_aim_analyst\\src\\data\\RingBuffer.ts": {
     "mtime": 1788551597.0749414,
     "hash": "2a0262197bdcfa1645f1121ae032be04"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\data\\wp70-run-scoped-fullscreen.test.ts": {
+    "mtime": 1789491872.3726757,
+    "hash": "bf81a0047933fde90fbf7a1fd3f0ba92"
   },
   "D:\\git\\FPS_aim_analyst\\src\\display\\brTrackingProtocol.ts": {
     "mtime": 1788549832.1008484,
@@ -728,8 +776,8 @@
     "hash": "3ab7deaa4a6891907704ac034d238842"
   },
   "D:\\git\\FPS_aim_analyst\\src\\display\\experimentSession.ts": {
-    "mtime": 1788549832.1018488,
-    "hash": "7ea46dcb9d719adefe73404fbb696900"
+    "mtime": 1789508205.636787,
+    "hash": "607c17c88d384d7eeba6f1658cf96067"
   },
   "D:\\git\\FPS_aim_analyst\\src\\display\\frameLog.test.ts": {
     "mtime": 1788549832.1033528,
@@ -758,6 +806,10 @@
   "D:\\git\\FPS_aim_analyst\\src\\display\\resolutionMode.ts": {
     "mtime": 1788549832.1048648,
     "hash": "bc6aa93a0c3ae3a9d2afd06da4a31747"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\display\\wp70-protocol-recording-window.test.ts": {
+    "mtime": 1789492855.5823781,
+    "hash": "1bf7c80f89ba12e5b84ec1c611ad7bf4"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\assessmentContract.ts": {
     "mtime": 1788549832.1068707,
@@ -852,8 +904,8 @@
     "hash": "e277ffd991c2a8db0296599c087ba4e4"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\microFlickEndConditions.ts": {
-    "mtime": 1789421777.7181773,
-    "hash": "6cf42b9812710b6b6f65f9d94c55bbad"
+    "mtime": 1789425463.0169852,
+    "hash": "b53a91eb36ee68f94b7762e2225a7cc9"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\micro_flick_three_target_test_v1.test.ts": {
     "mtime": 1788978406.643674,
@@ -892,19 +944,19 @@
     "hash": "2690e1346d10f97210dd287d8146b537"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\micro_flick_three_target_test_v8_weapon.test.ts": {
-    "mtime": 1789422644.6587958,
+    "mtime": 1789425463.0182092,
     "hash": "4fe35e0c75bd532b3fe40e261f65675e"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\micro_flick_three_target_test_v9.ts": {
-    "mtime": 1789420827.5205545,
+    "mtime": 1789425463.0182092,
     "hash": "c1edc94588929f4887012edd711dbb17"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\micro_flick_three_target_test_v9_weapon.test.ts": {
-    "mtime": 1789422644.7362947,
+    "mtime": 1789425463.0182092,
     "hash": "1dca0845346bcfc555863e8e5af5f1c2"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\micro_flick_three_target_test_variants.test.ts": {
-    "mtime": 1789420853.4513376,
+    "mtime": 1789425463.0202868,
     "hash": "147bde2f69ff3332820d983e6f6b4728"
   },
   "D:\\git\\FPS_aim_analyst\\src\\drill\\peek_click_transfer_pilot_v1.test.ts": {
@@ -1084,12 +1136,12 @@
     "hash": "39380347885be8d2b9d2ab9958be6936"
   },
   "D:\\git\\FPS_aim_analyst\\src\\history\\HistoryPersistence.test.ts": {
-    "mtime": 1788978406.6486742,
-    "hash": "4978baba0325c2db6e14d0e79bbc6624"
+    "mtime": 1789491985.241414,
+    "hash": "cc773492a5e96ed2a06d2228792cfd03"
   },
   "D:\\git\\FPS_aim_analyst\\src\\history\\HistoryPersistence.ts": {
-    "mtime": 1788549832.1262255,
-    "hash": "de5162c4e5a1c53c2c1de22bb4a7f86a"
+    "mtime": 1789486547.537367,
+    "hash": "98655ca190c8bc88c27bacb7452d22e9"
   },
   "D:\\git\\FPS_aim_analyst\\src\\history\\HistoryTrend.test.ts": {
     "mtime": 1788978406.6496742,
@@ -1124,12 +1176,12 @@
     "hash": "a79bf8c71b30e7883864ec4b290a37ba"
   },
   "D:\\git\\FPS_aim_analyst\\src\\input\\InputSampler.test.ts": {
-    "mtime": 1789142140.3722548,
-    "hash": "e5ce61a92b6d247855db5774e4befc40"
+    "mtime": 1789486547.537367,
+    "hash": "007b186136c4dc2779ddd9081b26cca0"
   },
   "D:\\git\\FPS_aim_analyst\\src\\input\\InputSampler.ts": {
-    "mtime": 1788549832.1307335,
-    "hash": "e944a663648096558fb89c80d8bf9a4e"
+    "mtime": 1789486547.537367,
+    "hash": "6fde11f9eb4c417a5e26d1777f3dfd1b"
   },
   "D:\\git\\FPS_aim_analyst\\src\\input\\mouseGain.test.ts": {
     "mtime": 1788549832.1307335,
@@ -1139,9 +1191,13 @@
     "mtime": 1788549832.1317334,
     "hash": "abb54dd1180afa6075101261a26a4e8d"
   },
+  "D:\\git\\FPS_aim_analyst\\src\\input\\PointerLock.test.ts": {
+    "mtime": 1789486547.537367,
+    "hash": "87e8b99c9d31c526dda65dd1897c4582"
+  },
   "D:\\git\\FPS_aim_analyst\\src\\input\\PointerLock.ts": {
-    "mtime": 1782847491.065329,
-    "hash": "e0782033d92868e2a88691e9a25d4ede"
+    "mtime": 1789486547.5384455,
+    "hash": "9fe95848620a7ddce350df66479339fe"
   },
   "D:\\git\\FPS_aim_analyst\\src\\loop\\clock.ts": {
     "mtime": 1782853778.0688689,
@@ -1150,6 +1206,14 @@
   "D:\\git\\FPS_aim_analyst\\src\\loop\\constants.ts": {
     "mtime": 1788549832.1377492,
     "hash": "b2009a38ff19be1396892cef15c3ddf8"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\loop\\pausableTimeMapper.test.ts": {
+    "mtime": 1789486547.5384455,
+    "hash": "baa2cfed8725dbface74249f4d3a3d3c"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\loop\\pausableTimeMapper.ts": {
+    "mtime": 1789486547.5384455,
+    "hash": "a629824b02f71da84f7357cb8dc02f7f"
   },
   "D:\\git\\FPS_aim_analyst\\src\\loop\\RenderLoop.test.ts": {
     "mtime": 1788549832.1317334,
@@ -1184,8 +1248,8 @@
     "hash": "57bf3ea38a029c2efdb2eed378bc6e08"
   },
   "D:\\git\\FPS_aim_analyst\\src\\loop\\__tests__\\microFlickDeterminismHarness.ts": {
-    "mtime": 1789421977.5252984,
-    "hash": "24d7b1f73bc67129d4192e840c083dd9"
+    "mtime": 1789425463.0211964,
+    "hash": "e83747e45a1c759052868c25ffd71360"
   },
   "D:\\git\\FPS_aim_analyst\\src\\loop\\__tests__\\recoil-wiring.test.ts": {
     "mtime": 1788549832.1362436,
@@ -1204,8 +1268,8 @@
     "hash": "064dc1bc9e3e2d76437aae88110889eb"
   },
   "D:\\git\\FPS_aim_analyst\\src\\loop\\__tests__\\wp63-v8-metrics-determinism.test.ts": {
-    "mtime": 1789421987.2490757,
-    "hash": "5fe6dbb9aafd62a4f077b4d7c56fe671"
+    "mtime": 1789425463.0228422,
+    "hash": "63a834d7c5661dfc6a6356ed97af17fa"
   },
   "D:\\git\\FPS_aim_analyst\\src\\loop\\__tests__\\wp65-arm-determinism.test.ts": {
     "mtime": 1789142140.373255,
@@ -1220,8 +1284,12 @@
     "hash": "f9c38c272663603bc13c44305b123f66"
   },
   "D:\\git\\FPS_aim_analyst\\src\\loop\\__tests__\\wp68-v9-metrics-determinism.test.ts": {
-    "mtime": 1789422055.9493468,
-    "hash": "15f410616693b0a30148d5339c154191"
+    "mtime": 1789425463.0228422,
+    "hash": "e4ccb711f3966a9757e52d7bf5101cb4"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\loop\\__tests__\\wp69-pause-time.test.ts": {
+    "mtime": 1789486547.5384455,
+    "hash": "1f5af7e269e8e65210bbacce5563f650"
   },
   "D:\\git\\FPS_aim_analyst\\src\\metrics\\angularKinematics.test.ts": {
     "mtime": 1788549832.1397543,
@@ -1316,11 +1384,11 @@
     "hash": "c6236846d02733fa545aa60c4cc8ed88"
   },
   "D:\\git\\FPS_aim_analyst\\src\\metrics\\microFlickMetrics.test.ts": {
-    "mtime": 1789422656.769724,
-    "hash": "20d39af16e2de270989dbbaffbf8b5f7"
+    "mtime": 1789491985.241414,
+    "hash": "142f7372356a1035b013acbec319b480"
   },
   "D:\\git\\FPS_aim_analyst\\src\\metrics\\microFlickMetrics.ts": {
-    "mtime": 1789422844.2073288,
+    "mtime": 1789425463.0262449,
     "hash": "814d672dbdf834a5d630c2d1c3a6ef33"
   },
   "D:\\git\\FPS_aim_analyst\\src\\metrics\\mouseSampleGaps.test.ts": {
@@ -1500,7 +1568,7 @@
     "hash": "f08a51e31b82b0d971ad4b18bffff313"
   },
   "D:\\git\\FPS_aim_analyst\\src\\metrics\\wp68-scoringWindow.test.ts": {
-    "mtime": 1789422823.6080334,
+    "mtime": 1789425463.0262449,
     "hash": "0c363f691e3cd36d64bce521a1bebe9a"
   },
   "D:\\git\\FPS_aim_analyst\\src\\metrics\\filters\\savitzkyGolay.test.ts": {
@@ -1564,12 +1632,12 @@
     "hash": "b8b9f03bb67c9f7eba5a9ff664b2535b"
   },
   "D:\\git\\FPS_aim_analyst\\src\\pilot\\trackingPilotSession.test.ts": {
-    "mtime": 1788549832.176401,
-    "hash": "6c53028ef8783311affd622b20ae68e1"
+    "mtime": 1789486547.539546,
+    "hash": "2534e5a1067d4ebc17ba866bfd8235fc"
   },
   "D:\\git\\FPS_aim_analyst\\src\\pilot\\trackingPilotSession.ts": {
-    "mtime": 1788549832.176401,
-    "hash": "372877fdad6694332964e41ce9fb89ee"
+    "mtime": 1789486547.539546,
+    "hash": "47e6e73343e0f76097d03f3e8c1a00ee"
   },
   "D:\\git\\FPS_aim_analyst\\src\\pilot\\trackingRunEligibility.test.ts": {
     "mtime": 1788978406.6574502,
@@ -1776,8 +1844,8 @@
     "hash": "055e1f7a46369ded1bdbd1499f0594d5"
   },
   "D:\\git\\FPS_aim_analyst\\src\\results\\ResultPresentation.test.ts": {
-    "mtime": 1789142140.3742554,
-    "hash": "0c3f06efe7d4f77ed3cd5421c91d7355"
+    "mtime": 1789491985.242419,
+    "hash": "cb53b06cab5ec50b35da4449159cabb3"
   },
   "D:\\git\\FPS_aim_analyst\\src\\results\\ResultPresentation.ts": {
     "mtime": 1788549832.1919322,
@@ -1932,11 +2000,11 @@
     "hash": "7034ddc5022e6347e19b98d533ce2df9"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\drillFamily.test.ts": {
-    "mtime": 1789420882.4151654,
+    "mtime": 1789425463.0272448,
     "hash": "f794bb9b9506d09efe51ca916f8a1c5e"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\drillFamily.ts": {
-    "mtime": 1789420839.405619,
+    "mtime": 1789425463.0282507,
     "hash": "1b83c92ce07d998aeb6695e112f48ed8"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\sessionPlanPresets.test.ts": {
@@ -1988,7 +2056,7 @@
     "hash": "073ca4a20491afa8d412b998d8e62189"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\sessionWeaponActivation.test.ts": {
-    "mtime": 1789421105.0024347,
+    "mtime": 1789425463.0282507,
     "hash": "55b2cdb66cd6f42bcb605bda0d8de920"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\trackingPilotManifest.test.ts": {
@@ -2000,12 +2068,12 @@
     "hash": "05d37cface308774682db90b9e554e51"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\TrackingPilotRunner.test.ts": {
-    "mtime": 1788978406.6629379,
-    "hash": "87887a9728c59f67480bc607b9dfaabb"
+    "mtime": 1789486547.539546,
+    "hash": "06910ba5540280a893c54557323ed2ad"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\TrackingPilotRunner.ts": {
-    "mtime": 1788549832.2049692,
-    "hash": "c956c8c4ecc15cdf54ad533cb29f7001"
+    "mtime": 1789486547.539546,
+    "hash": "8fdb60b71136a04dd437b6a228b79aba"
   },
   "D:\\git\\FPS_aim_analyst\\src\\session\\trackingPilotSchedulableDrills.test.ts": {
     "mtime": 1789142140.377255,
@@ -2096,12 +2164,12 @@
     "hash": "5b926e62faed3a4985c51728046a5b74"
   },
   "D:\\git\\FPS_aim_analyst\\src\\state\\SharedState.test.ts": {
-    "mtime": 1789401054.03642,
-    "hash": "16b9de3615d1584280dc16dfa27a1c53"
+    "mtime": 1789491917.5530097,
+    "hash": "7caf247aee20e03959c513e0871d7dd0"
   },
   "D:\\git\\FPS_aim_analyst\\src\\state\\SharedState.ts": {
-    "mtime": 1789401054.0374217,
-    "hash": "395ec9505b858b4aa9a2d1d984668f52"
+    "mtime": 1789491819.34175,
+    "hash": "edbb1912e9aea2b0dffdf0ae2063f3df"
   },
   "D:\\git\\FPS_aim_analyst\\src\\state\\types.ts": {
     "mtime": 1788979165.3056867,
@@ -2114,6 +2182,14 @@
   "D:\\git\\FPS_aim_analyst\\src\\testharness\\fpsTestHarness.ts": {
     "mtime": 1789401054.0374217,
     "hash": "0f0db4fbbb355a38d2bd97f356f2d043"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\ui\\ConditionRecoveryScreen.test.ts": {
+    "mtime": 1789500206.9749415,
+    "hash": "f49734faf480749215eeab7ffca669ba"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\ui\\ConditionRecoveryScreen.ts": {
+    "mtime": 1789500139.0781815,
+    "hash": "b25dbeaabcfb3f55745a8226cf2bfbf7"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\Controls.test.ts": {
     "mtime": 1788549832.2174892,
@@ -2144,12 +2220,12 @@
     "hash": "b67d7c224be8359901598b0298244068"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\EligibilityGate.test.ts": {
-    "mtime": 1788549832.2189934,
-    "hash": "d432f81e77559dce9f338141af413667"
+    "mtime": 1789507736.8470917,
+    "hash": "cdefffa14fb559b658b4dde8cb6c8c06"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\EligibilityGate.ts": {
-    "mtime": 1788549832.2189934,
-    "hash": "db704262108b4a782caca1b46c22d1f7"
+    "mtime": 1789507748.8422775,
+    "hash": "39472305cad9bba567f2ee383b21155a"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\ExportPanel.ts": {
     "mtime": 1783376868.0876698,
@@ -2160,8 +2236,8 @@
     "hash": "6bd9d44bc3e987e7d792bc5a4096458d"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\HistorySaveStatus.ts": {
-    "mtime": 1788549832.2199998,
-    "hash": "bba16000f766f7f9aafef7fa00c257fd"
+    "mtime": 1789486547.539546,
+    "hash": "dea241bd84bdd852f6692425b1624bc7"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\HUD.test.ts": {
     "mtime": 1789142140.380255,
@@ -2170,6 +2246,14 @@
   "D:\\git\\FPS_aim_analyst\\src\\ui\\HUD.ts": {
     "mtime": 1789142140.380255,
     "hash": "5007c5c8ad1f4a0f64bd92aa9c61d03d"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\ui\\PauseOverlay.test.ts": {
+    "mtime": 1789486547.539546,
+    "hash": "b36d2516a55095f326f273afee949a56"
+  },
+  "D:\\git\\FPS_aim_analyst\\src\\ui\\PauseOverlay.ts": {
+    "mtime": 1789486547.539546,
+    "hash": "bc9bb056dce9c9b736ce3858affc4573"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\programBoundaryLabel.ts": {
     "mtime": 1788978406.6706161,
@@ -2200,12 +2284,12 @@
     "hash": "126a104e3332c3aadc49f49dabded004"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\ResultScreen.test.ts": {
-    "mtime": 1789142140.380255,
-    "hash": "389db4e278977ceac972015a0d0b6410"
+    "mtime": 1789486547.539546,
+    "hash": "60c5aa5800c36baae6119d55103277cf"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\ResultScreen.ts": {
-    "mtime": 1789142140.380255,
-    "hash": "f4c290ee0f179adc9f76f629f19b502c"
+    "mtime": 1789486547.5437226,
+    "hash": "87a6925438aba8d1d9c414d070079f3e"
   },
   "D:\\git\\FPS_aim_analyst\\src\\ui\\ScopeOverlay.test.ts": {
     "mtime": 1788549832.223509,
@@ -2372,8 +2456,8 @@
     "hash": "6b4efb3f7c4f02b4fcab2670808b73b6"
   },
   "D:\\git\\FPS_aim_analyst\\tests\\e2e\\hit-feedback-live.spec.ts": {
-    "mtime": 1789401054.0394201,
-    "hash": "f97b29dc260fee03faf1f5da36859740"
+    "mtime": 1789486547.5437226,
+    "hash": "69b21150d539d2c43e92bf350e23a941"
   },
   "D:\\git\\FPS_aim_analyst\\tests\\e2e\\input-sampler.spec.ts": {
     "mtime": 1788549832.2425609,
@@ -2454,6 +2538,14 @@
   "D:\\git\\FPS_aim_analyst\\tests\\e2e\\weapon-select.spec.ts": {
     "mtime": 1788549832.2475796,
     "hash": "ac3158abe7e38d52b42dea864512b5ca"
+  },
+  "D:\\git\\FPS_aim_analyst\\tests\\e2e\\wp69-pause-invalid-restart.spec.ts": {
+    "mtime": 1789486547.5437226,
+    "hash": "ff95233469b54374e0afdc9d993dcc77"
+  },
+  "D:\\git\\FPS_aim_analyst\\tests\\e2e\\wp70-fullscreen-validity.spec.ts": {
+    "mtime": 1789505054.787961,
+    "hash": "9fc1cdc11e24c583673970df066cb3ce"
   },
   "D:\\git\\FPS_aim_analyst\\tests\\e2e\\support\\arm.ts": {
     "mtime": 1789142140.384255,
@@ -2800,16 +2892,16 @@
     "hash": "e87c9d02b8dbb0f76a668196e6be80b9"
   },
   "D:\\git\\FPS_aim_analyst\\CHANGELOG.md": {
-    "mtime": 1789409229.437786,
-    "hash": "5cab569c953f21a9fd9ba69101542a0f"
+    "mtime": 1789486547.4811614,
+    "hash": "90a7f6042f845b287f5e7702b0779da6"
   },
   "D:\\git\\FPS_aim_analyst\\CLAUDE.md": {
     "mtime": 1789142528.4900877,
     "hash": "c6715a692fc14f43143967f1ec3507af"
   },
   "D:\\git\\FPS_aim_analyst\\CONTEXT.md": {
-    "mtime": 1789401053.965583,
-    "hash": "a9719f90eb5be3a8f67a6f1e6e02fea2"
+    "mtime": 1789508174.1849885,
+    "hash": "7ab5c6afbae9751b13fd4d1f0b9433ff"
   },
   "D:\\git\\FPS_aim_analyst\\index.html": {
     "mtime": 1782847007.6509051,
@@ -2836,8 +2928,8 @@
     "hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\MAP.md": {
-    "mtime": 1789422547.905826,
-    "hash": "2dd193fb4b330ed9cca0be89e4c809b3"
+    "mtime": 1789508183.570937,
+    "hash": "a2c59eea6a2b5c8038434b90fbd7a4a2"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\PLAN.md": {
     "mtime": 1788549831.364343,
@@ -2944,12 +3036,12 @@
     "hash": "9cbde5ef80038699df6d2702ace9c8af"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\DECISIONS.md": {
-    "mtime": 1789422520.3075585,
-    "hash": "333df083b43c61c43b96c72e7bb0609d"
+    "mtime": 1789541761.9147747,
+    "hash": "22a2d79e0fa65061225daab595626dd7"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\README.md": {
-    "mtime": 1789422583.98446,
-    "hash": "76a3e10cef0706e0c485487e8bd0f7b7"
+    "mtime": 1789541761.9147747,
+    "hash": "16a4aca9c91557d1bafd2d8f695e888b"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage10\\progress.md": {
     "mtime": 1788549831.3778734,
@@ -3396,7 +3488,7 @@
     "hash": "353adaacb52d86a378b3008e1e5a0767"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\README.md": {
-    "mtime": 1789422577.4808435,
+    "mtime": 1789425462.9710884,
     "hash": "9c08a6a8e2eed713f3507820db05726b"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-60-raw-mouse-sample-capture\\progress.md": {
@@ -3724,11 +3816,11 @@
     "hash": "9f857a587a781c32483458c2747b20d7"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-68-micro-flick-v9-measurement-parity\\progress.md": {
-    "mtime": 1789422948.6576664,
-    "hash": "e961ca0cb8ab148294840c8e3f600e83"
+    "mtime": 1789425462.9752483,
+    "hash": "2470bcc3f62a3083ee6add70eecb883a"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-68-micro-flick-v9-measurement-parity\\README.md": {
-    "mtime": 1789422589.3413744,
+    "mtime": 1789425462.9710884,
     "hash": "d4eb5933c3f966e8c4f89d780477b110"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-68-micro-flick-v9-measurement-parity\\T-exit-gate.md": {
@@ -3736,20 +3828,20 @@
     "hash": "3fdc31c03da9befe2da593ae64a5b471"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-68-micro-flick-v9-measurement-parity\\T0-entry-gate.md": {
-    "mtime": 1789420707.7195952,
-    "hash": "260c10b85ec2064d49ecbb1ac0837e89"
+    "mtime": 1789425462.9710884,
+    "hash": "373f15c74bd61a977b2b296b8e62bee9"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-68-micro-flick-v9-measurement-parity\\T1-zero-spread-weapon.md": {
-    "mtime": 1789421343.6433122,
-    "hash": "11efdf3f652c394a2e5c49827c30db15"
+    "mtime": 1789425462.9710884,
+    "hash": "6ccfa757058f2899ec784d15f81cac80"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-68-micro-flick-v9-measurement-parity\\T2-time-limited-valid-span.md": {
     "mtime": 1789417478.633662,
     "hash": "f51e4a78aa441297ba278b432ab24175"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage13\\wp-68-micro-flick-v9-measurement-parity\\task-checklist.md": {
-    "mtime": 1789422466.2248962,
-    "hash": "271369ca77f28e965edb2518b45da6d7"
+    "mtime": 1789425462.9752483,
+    "hash": "402520df303f2d08835e4b45e8358071"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage14\\HANDOFF-v3-real-data.md": {
     "mtime": 1789142140.333025,
@@ -3760,8 +3852,8 @@
     "hash": "2d6eb930ba367a2880e08d875c7ac364"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage14\\README.md": {
-    "mtime": 1789417564.4803288,
-    "hash": "61f9cebcc6238c172537d0664b7167dd"
+    "mtime": 1789491352.2466483,
+    "hash": "6715b5f70a22f72833b5bdb8fe754bef"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage14\\SESSION-HANDOFF-2026-09-09.md": {
     "mtime": 1788979165.2600803,
@@ -3770,6 +3862,102 @@
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage14\\coach-figures\\README.md": {
     "mtime": 1788979165.2610807,
     "hash": "539a5534438b9473ca7394bd0724194b"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\README.md": {
+    "mtime": 1789487982.3612998,
+    "hash": "f5f45b2d62e1d79a4260326a25eb4450"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\progress.md": {
+    "mtime": 1789487993.6248693,
+    "hash": "631e8cd06034510d65029637fa9e93e5"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\README.md": {
+    "mtime": 1789486911.1105125,
+    "hash": "a9f903810ec1b1fc8b1eae0d55227f95"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T-exit-gate.md": {
+    "mtime": 1789488070.602729,
+    "hash": "d34172c6d8333bf1a4c4e0b917b84387"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T0-entry-gate.md": {
+    "mtime": 1789486547.4853404,
+    "hash": "24051d8fe4259ba7b3b9864a547b61b7"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T1-attempt-disposition-contract.md": {
+    "mtime": 1789486547.4856534,
+    "hash": "085bee38b826691974e2f07922f4aac8"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T2-pausable-time-mapper.md": {
+    "mtime": 1789486547.4861233,
+    "hash": "d18f8e142a784222bd9a66bc41bebbf3"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T3-input-pointer-lock-overlay.md": {
+    "mtime": 1789486547.4861233,
+    "hash": "4340c74a64f9e7dcdee8d48816a0338d"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T4-finalization-persistence-gate.md": {
+    "mtime": 1789486547.4861233,
+    "hash": "563117cf92de0f0b1a90c1a3b736bf8e"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T5-orchestrator-retry.md": {
+    "mtime": 1789486547.4861233,
+    "hash": "01d6116d9fe4071e11c68da9ccaf871f"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\T6-e2e-regression-docs.md": {
+    "mtime": 1789486547.4861233,
+    "hash": "b66201cdf25e0a60051abc85ed4f38bb"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage15\\wp-69-pause-invalid-restart\\task-checklist.md": {
+    "mtime": 1789486911.1105125,
+    "hash": "193d49d6b7f52bd897ca1575d3134a60"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\README.md": {
+    "mtime": 1789541761.915781,
+    "hash": "3d45cead20d4c20c274cf3cda122227c"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\progress.md": {
+    "mtime": 1789541771.8421078,
+    "hash": "da610f27d87695f7de5e99af3e74c7a9"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\README.md": {
+    "mtime": 1789490988.091839,
+    "hash": "2a0da46bd543a0b11b3a46d4aa842409"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\T-exit-gate.md": {
+    "mtime": 1789490965.008353,
+    "hash": "49c5f39635240be329f39bc5b2a6b275"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\T0-entry-gate.md": {
+    "mtime": 1789490965.008353,
+    "hash": "e02af7b99ad10617f87798ab0295021b"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\T1-per-run-fullscreen-flag.md": {
+    "mtime": 1789492160.8238795,
+    "hash": "c33be1ff3dd4753f5315b86ca1d02e65"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\T2-protocol-path-consistency.md": {
+    "mtime": 1789490965.0093527,
+    "hash": "a995c68e26b75330c0db5513c7512250"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\T3-banner-truth-driven.md": {
+    "mtime": 1789490965.0093527,
+    "hash": "0c80a4a0432acd6f54243f0e48dec58f"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\T4-condition-recovery-entry.md": {
+    "mtime": 1789490965.0093527,
+    "hash": "0c5b91368b11138e6da94a2c8f5bcd3f"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\T5-gate-e2e-guard.md": {
+    "mtime": 1789490965.010352,
+    "hash": "b0259b8efd253a6b1137f1a1e849ed34"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\T6-decisions-and-docs.md": {
+    "mtime": 1789490988.092842,
+    "hash": "13c85fbb2dc897590a351c1a15ef2624"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage16\\wp-70-run-scoped-condition-validity\\task-checklist.md": {
+    "mtime": 1789541761.916778,
+    "hash": "6e76cba0118c0e52295a2fafa6c53b20"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\exec-plan\\active\\stage5\\wp-25-ballistics-tracer\\ENHANCEMENT-tracer-pertick-replay.md": {
     "mtime": 1788549831.4190395,
@@ -5464,12 +5652,12 @@
     "hash": "92efccf8c3c1661962a2c13172441926"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\guideline\\operator-manual.md": {
-    "mtime": 1789142140.333025,
-    "hash": "75b5a2f063ae7343198974290d967128"
+    "mtime": 1789508124.9794052,
+    "hash": "7807a92a4ffe4f7bd5f3f17824d42376"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\known_issue\\BUGFIX-DECISIONS.md": {
-    "mtime": 1789401053.974583,
-    "hash": "7c088ea50a3a6e4032e1b80183709f8e"
+    "mtime": 1789541761.9177802,
+    "hash": "a2b15ce69a2276eec520d7aeb4275314"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\known_issue\\KI-001-input-lag-sim-clock-drift.md": {
     "mtime": 1788549831.616653,
@@ -5612,8 +5800,8 @@
     "hash": "e4109a3dfd10ce6cdee862c596ddf66e"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\known_issue\\KI-036-registry-projection-failed-hides-which-precondition-broke.md": {
-    "mtime": 1789401053.9762464,
-    "hash": "79273a2f43a2023061795ac1f11c87c8"
+    "mtime": 1789508069.7572944,
+    "hash": "d36a8b589c77079ca0930c2c7df954b5"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\known_issue\\KI-037-valid-duration-includes-countdown.md": {
     "mtime": 1789401053.9762464,
@@ -5626,6 +5814,10 @@
   "D:\\git\\FPS_aim_analyst\\docs\\known_issue\\KI-039-session-plan-weapon-select-value-assigned-before-options.md": {
     "mtime": 1789401053.9772503,
     "hash": "247f71dd9b895ee2f687c6966f212494"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\known_issue\\KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md": {
+    "mtime": 1789541761.9177802,
+    "hash": "c26a34cbdbc8a587f8568e0e2a655a34"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\known_issue\\KI-004-S1\\progress.md": {
     "mtime": 1788549831.6226707,
@@ -5804,7 +5996,7 @@
     "hash": "6e8664e7bdae89ccf3226e2805f386a1"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\operational\\analysis-micro-flick.md": {
-    "mtime": 1789422567.8463788,
+    "mtime": 1789425462.9752483,
     "hash": "350fe4c14f22e77ad8d6c113cfed454e"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\operational\\analysis-peek-click-transfer.md": {
@@ -5843,9 +6035,17 @@
     "mtime": 1782847007.6479049,
     "hash": "1d24148eecf1f5603f75b4cd53951177"
   },
+  "D:\\git\\FPS_aim_analyst\\docs\\operational\\fullscreen-recovery-manual-check.md": {
+    "mtime": 1789508168.2387123,
+    "hash": "6612ad5b2c80ab0cd7168279aaf70b21"
+  },
   "D:\\git\\FPS_aim_analyst\\docs\\operational\\history-center-replay.md": {
     "mtime": 1788549831.6618404,
     "hash": "27ebb4630536b20cbb1d82ac637d8bfa"
+  },
+  "D:\\git\\FPS_aim_analyst\\docs\\operational\\pause-invalid-restart.md": {
+    "mtime": 1789508150.452321,
+    "hash": "3e0e535f790c064e3dd831d445b6c72f"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\operational\\pilot-protocol-stage3.md": {
     "mtime": 1788549831.6628413,
@@ -5856,8 +6056,8 @@
     "hash": "a42362a77de6bea2673a8525caafaad7"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\operational\\schema.md": {
-    "mtime": 1788979165.26208,
-    "hash": "87ec5f6167e0556c1c7708fec4f24d7d"
+    "mtime": 1789508134.7719476,
+    "hash": "fc8d88c42064dcd6f172fc3a75330997"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\operational\\spider-wide-recording-spec.md": {
     "mtime": 1788979165.26208,
@@ -5868,8 +6068,8 @@
     "hash": "5cecc7992678e7337464c53c1e0d2ce6"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\operational\\tracking-pilot-runbook.md": {
-    "mtime": 1789142140.336748,
-    "hash": "f1e2f2e9055491e543ed72489aa14afa"
+    "mtime": 1789486547.4885468,
+    "hash": "0890c3b13e7349da150bb92cad6f6194"
   },
   "D:\\git\\FPS_aim_analyst\\docs\\prototypes\\metrics-dashboard.html": {
     "mtime": 1782854383.3097026,

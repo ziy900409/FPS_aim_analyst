@@ -176,6 +176,11 @@ click-only 的 `<div>`。
    >   右鍵對視角與感度**完全無效**，不再會毀掉 block。`heldAds` 與 `ads` event 仍照記，
    >   稽核不損失。
    > - 程式端依 OQ-54-13 仍**刻意不阻止**任何輸入，維持「記錄而非阻止」的設計。
+
+   **若中途失去 Pointer Lock（WP-69）**：畫面會暫停，且這一次 attempt 已永久不可採納。
+   `繼續（本次仍無效）` 只供完成稽核，不能恢復資格；正式施測通常應按 `重新測試`，同一 block
+   以相同 seed/config、attempt +1 重跑。這次放棄會進 Pilot audit，但不會下載、不會占正式 record，
+   clean retry 完成後才前進。三態與例外處置見 [pause-invalid-restart.md](pause-invalid-restart.md)。
 5. block 結束 → **自動下載該 block 的 JSON** → 面板自動回來，顯示 outcome 與品質橫幅
    （`Eligible — scored ticks: …` / `Blocked — reasons: …`；practice 無橫幅）。
 

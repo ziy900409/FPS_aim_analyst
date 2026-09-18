@@ -128,6 +128,32 @@ describe('createEligibilityGateScreen', () => {
     expect(banner.style.display).toBe('none');
   });
 
+  it('renders the fullscreen-exit banner from the current run flag without creating another DOM node', () => {
+    const { handle, document } = setup(() => PASS_REPORT);
+    const createdCount = document.created.length;
+    const banner = document.created.find((el) => el.attributes.get('role') === 'alert')!;
+
+    handle.renderSuspectWarning(true);
+    expect(banner.style.display).toBe('block');
+    handle.renderSuspectWarning(false);
+    expect(banner.style.display).toBe('none');
+    expect(document.created).toHaveLength(createdCount);
+  });
+
+  // WP-70 / T6（FR-70.7）— T5.6 交棒的未結項：T3 交付了真值驅動但沒改文案。舊文案是 session 級
+  // sticky 旗標的產物，在 run 級判準下對「下一場乾淨的 run」是錯的（KI-040 缺陷 A）。
+  it('states run-scoped invalidity in the banner instead of session-scoped wording', () => {
+    const { document } = setup(() => PASS_REPORT);
+    const banner = document.created.find((el) => el.attributes.get('role') === 'alert')!;
+    const text = banner.textContent ?? '';
+
+    expect(text).not.toContain('本 session');
+    expect(text).toContain('本次測試');
+    expect(text).toContain('下一次測試不受影響');
+    // 恢復路徑的按鈕字樣必須與 `PauseOverlay.ts` 的 `RESTART_LABEL` 逐字一致,不另造說法。
+    expect(text).toContain('重新測試');
+  });
+
   it('cancel button closes the screen without entering a session', () => {
     const { handle, onEnter, root, cancel } = setup(() => PASS_REPORT);
     handle.open();
@@ -155,5 +181,46 @@ describe('createEligibilityGateScreen', () => {
     currentRequired = { minW: 2560, minH: 1440 };
     handle.open();
     expect(desc.textContent).toContain('2560×1440');
+  });
+});
+
+describe('WP-70 T3 main.ts suspect banner wiring', () => {
+  const raw = import.meta.glob<string>('../main.ts', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  })['../main.ts']!;
+  const source = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+  it('renders the banner from sharedState.validity.fullscreenExitedDuringRun', () => {
+    expect(source).toContain(
+      'eligibilityGateScreen.renderSuspectWarning(sharedState.validity.fullscreenExitedDuringRun)',
+    );
+    expect(source).not.toContain('eligibilityGateScreen.showSuspectWarning(');
+    expect(source).not.toContain('eligibilityGateScreen.hideSuspectWarning(');
+  });
+
+  it('syncs after fullscreenchange updates the per-run flag', () => {
+    const start = source.indexOf("document.addEventListener('fullscreenchange'");
+    expect(start).toBeGreaterThan(-1);
+    const handler = source.slice(start, source.indexOf('\n});', start));
+    const flagAt = handler.indexOf('sharedState.validity.fullscreenExitedDuringRun = true');
+    const sessionAt = handler.indexOf('experimentSession.handleFullscreenChange(fullscreen, recording)');
+    const syncAt = handler.indexOf('syncFullscreenSuspectWarning()');
+
+    expect(flagAt).toBeGreaterThan(-1);
+    expect(sessionAt).toBeGreaterThan(flagAt);
+    expect(syncAt).toBeGreaterThan(sessionAt);
+  });
+
+  it('syncs in the full-restart presentation reset path', () => {
+    const start = source.indexOf('function resetRunPresentation()');
+    expect(start).toBeGreaterThan(-1);
+    const body = source.slice(start, source.indexOf('function armOnPointerLock', start));
+    const restartAt = body.indexOf('runAttempt.restart()');
+    const syncAt = body.indexOf('syncFullscreenSuspectWarning()');
+
+    expect(restartAt).toBeGreaterThan(-1);
+    expect(syncAt).toBeGreaterThan(restartAt);
   });
 });

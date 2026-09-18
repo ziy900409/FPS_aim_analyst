@@ -405,3 +405,188 @@ describe('InputSampler — 滑鼠 coalesced 採集（pointermove + getCoalescedE
     expect(state.input.size()).toBe(0);
   });
 });
+
+/**
+ * WP-69 / T3（FR-69.1，NFR-69.1/69.4）— pause 的兩個注入接縫。
+ *
+ * 這一組測試釘的不是「暫停時會發生什麼」（那是 main.ts 的接線，見 wp69-pause-input.test.ts），
+ * 而是 sampler 這一層的三條不變量：閘關閉時 gameplay 一個都進不了 ring、`suspend()` 把已採計的
+ * held control 成對收掉、以及**沒有注入時逐位不變**。
+ */
+describe('InputSampler — WP-69 T3 gameplay 閘（pause / locking / resume 倒數）', () => {
+  let state: ReturnType<typeof createSharedState>;
+  let target: ReturnType<typeof makeFakeTarget>;
+  let sampler: ReturnType<typeof createInputSampler>;
+  let enabled: boolean;
+
+  beforeEach(() => {
+    state = createSharedState();
+    target = makeFakeTarget();
+    enabled = true;
+    // 鎖定中（`isLocked` 恆真）＝ resume 倒數期間的真實情境：鎖已經拿回來了，只有 gameplay 閘還關著。
+    sampler = createInputSampler(state, () => true, { isGameplayInputEnabled: () => enabled });
+    sampler.attach(target as unknown as EventTarget);
+  });
+
+  it('閘關閉：keydown / fire-down / ads-down / pointermove 皆不入 ring（NFR-69.4）', () => {
+    enabled = false;
+    target.dispatch('keydown', keyEvent('KeyD', 10));
+    target.dispatch('keydown', keyEvent('KeyA', 11));
+    target.dispatch('mousedown', mouseEvent(0, 12));
+    target.dispatch('mousedown', mouseEvent(2, 13));
+    target.dispatch('pointermove', pointerMoveEvent([coalescedSample(9, -4, 14)]));
+    target.dispatch('pointermove', legacyPointerMoveEvent(3, 3, 15));
+
+    expect(state.input.size()).toBe(0);
+    expect(state.inputMeta.bufferOverflow).toBe(0); // 拒收 ≠ 溢位
+  });
+
+  it('閘關閉期間抵達的 keyup / mouseup 也不入 ring（suspend 已清帳 ⇒ up 條件不成立）', () => {
+    target.dispatch('keydown', keyEvent('KeyD', 10));
+    target.dispatch('mousedown', mouseEvent(0, 11));
+    target.dispatch('mousedown', mouseEvent(2, 12));
+
+    sampler.suspend(20); // pause 邊界
+    enabled = false;
+
+    // 受試者在 overlay 開著時才真的放開
+    target.dispatch('keyup', keyEvent('KeyD', 5_000));
+    target.dispatch('mouseup', mouseEvent(0, 5_001));
+    target.dispatch('mouseup', mouseEvent(2, 5_002));
+
+    expect(drainToArray(state)).toEqual([
+      { type: 'key', code: 'KeyD', down: true, t: 10 },
+      { type: 'fire', down: true, t: 11 },
+      { type: 'ads', down: true, t: 12 },
+      { type: 'key', code: 'KeyD', down: false, t: 20 },
+      { type: 'fire', down: false, t: 20 },
+      { type: 'ads', down: false, t: 20 },
+    ]);
+  });
+
+  it('閘重新打開後照常採計（sticky 的是 attempt validity，不是這個閘）', () => {
+    enabled = false;
+    target.dispatch('keydown', keyEvent('KeyD', 10));
+    enabled = true;
+    target.dispatch('keydown', keyEvent('KeyD', 20));
+    target.dispatch('keyup', keyEvent('KeyD', 30));
+
+    expect(drainToArray(state)).toEqual([
+      { type: 'key', code: 'KeyD', down: true, t: 20 },
+      { type: 'key', code: 'KeyD', down: false, t: 30 },
+    ]);
+  });
+
+  it('閘關閉期間按下的鍵，閘打開後放開不會產生孤兒 up（down 從未被採計）', () => {
+    enabled = false;
+    target.dispatch('keydown', keyEvent('KeyD', 10));
+    enabled = true;
+    target.dispatch('keyup', keyEvent('KeyD', 30));
+
+    expect(state.input.size()).toBe(0);
+  });
+});
+
+describe('InputSampler — WP-69 T3 suspend()（pause 邊界的成對 release edge）', () => {
+  let state: ReturnType<typeof createSharedState>;
+  let target: ReturnType<typeof makeFakeTarget>;
+  let sampler: ReturnType<typeof createInputSampler>;
+
+  beforeEach(() => {
+    state = createSharedState();
+    target = makeFakeTarget();
+    sampler = createInputSampler(state);
+    sampler.attach(target as unknown as EventTarget);
+  });
+
+  it('對每一個已採計的 held control 補一筆 release edge，全部蓋同一個 t', () => {
+    target.dispatch('keydown', keyEvent('KeyA', 1));
+    target.dispatch('keydown', keyEvent('KeyW', 2));
+    target.dispatch('mousedown', mouseEvent(0, 3));
+    target.dispatch('mousedown', mouseEvent(2, 4));
+
+    sampler.suspend(100.5);
+
+    expect(drainToArray(state).slice(4)).toEqual([
+      { type: 'key', code: 'KeyA', down: false, t: 100.5 },
+      { type: 'key', code: 'KeyW', down: false, t: 100.5 },
+      { type: 'fire', down: false, t: 100.5 },
+      { type: 'ads', down: false, t: 100.5 },
+    ]);
+  });
+
+  it('沒有 held control 時為完全的 no-op（零 ring 寫入）', () => {
+    sampler.suspend(100.5);
+    expect(state.input.size()).toBe(0);
+  });
+
+  it('已放開的鍵不再補 release（不造出第二筆 up）', () => {
+    target.dispatch('keydown', keyEvent('KeyD', 1));
+    target.dispatch('keyup', keyEvent('KeyD', 2));
+
+    sampler.suspend(100.5);
+
+    expect(drainToArray(state)).toEqual([
+      { type: 'key', code: 'KeyD', down: true, t: 1 },
+      { type: 'key', code: 'KeyD', down: false, t: 2 },
+    ]);
+  });
+
+  it('重複 suspend 是冪等的（第二次零寫入）', () => {
+    target.dispatch('keydown', keyEvent('KeyD', 1));
+    sampler.suspend(100.5);
+    const afterFirst = state.input.size();
+    sampler.suspend(200.5);
+    expect(state.input.size()).toBe(afterFirst);
+  });
+
+  it('suspend 之後 sim 端不會殘留 held（消費完的最後一筆是 down=false）', () => {
+    target.dispatch('keydown', keyEvent('KeyD', 1));
+    target.dispatch('mousedown', mouseEvent(0, 2));
+    sampler.suspend(100.5);
+
+    const drained = drainToArray(state);
+    for (const control of ['key', 'fire'] as const) {
+      const last = drained.filter((e) => e.type === control).pop();
+      expect(last && 'down' in last && last.down).toBe(false);
+    }
+  });
+});
+
+describe('InputSampler — WP-69 T3 mapEventTime（wall → active measurement time）', () => {
+  let state: ReturnType<typeof createSharedState>;
+  let target: ReturnType<typeof makeFakeTarget>;
+  let sampler: ReturnType<typeof createInputSampler>;
+
+  beforeEach(() => {
+    state = createSharedState();
+    target = makeFakeTarget();
+    // 代表「已暫停過一次、扣掉 1000 ms wall」的 mapper：所有戳記都該經過它，一個都不能漏。
+    sampler = createInputSampler(state, () => true, { mapEventTime: (wallMs) => wallMs - 1_000 });
+    sampler.attach(target as unknown as EventTarget);
+  });
+
+  it('每一個 push 點都經過映射：key / fire / ads / mouse / releaseAds / suspend', () => {
+    target.dispatch('keydown', keyEvent('KeyD', 1_010));
+    target.dispatch('keyup', keyEvent('KeyD', 1_020));
+    target.dispatch('mousedown', mouseEvent(0, 1_030));
+    target.dispatch('mouseup', mouseEvent(0, 1_040));
+    target.dispatch('pointermove', pointerMoveEvent([coalescedSample(2, 3, 1_050)]));
+    target.dispatch('mousedown', mouseEvent(2, 1_060));
+    sampler.releaseAds(1_070);
+    target.dispatch('keydown', keyEvent('KeyA', 1_080));
+    sampler.suspend(1_090);
+
+    expect(drainToArray(state).map((e) => e.t)).toEqual([10, 20, 30, 40, 50, 60, 70, 80, 90]);
+  });
+
+  it('未注入時為逐位 identity（NFR-69.1：未 pause 路徑與 WP-69 之前相同）', () => {
+    const plain = createSharedState();
+    const plainTarget = makeFakeTarget();
+    createInputSampler(plain).attach(plainTarget as unknown as EventTarget);
+
+    const stamp = 1234.5678901234;
+    plainTarget.dispatch('keydown', keyEvent('KeyD', stamp));
+    expect(Object.is(drainToArray(plain)[0].t, stamp)).toBe(true);
+  });
+});

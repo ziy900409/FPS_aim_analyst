@@ -388,6 +388,20 @@ export interface SharedState {
      * 「顯示條件是否成立」。合併會讓 KI-007 刻意區分的 `recording` 判準失去意義（C-D4）。
      */
     pointerLockLostDuringRun: boolean;
+    /**
+     * WP-70 / T1（FR-70.1）：本次 run 的錄製窗（`countdown`/`running`）內是否掉出全螢幕。
+     * **DOM 事件寫 → data/UI 唯讀**（ADR-2），與上面的 `pointerLockLostDuringRun` 同一條路徑、
+     * 同一個方向；`resetState()` 每場歸零 ⇒ 效力單位是 **run**，跨 run 不繼承。
+     *
+     * 取代 `experimentSession.suspect` 供應匯出的那條路徑（KI-040 缺陷 A）：後者是 session 級
+     * sticky（只有 `false → true` 一個方向，`exit()` 不碰它），會讓一次中斷污染其後每一場。
+     * 保留 `experimentSession.suspect` 本身——它在該模組內仍是「同一次退出只觸發一次 `onSuspect`」
+     * 的去重閂（OQ-70.2），只是不再是匯出的真值來源。
+     *
+     * ⚠️ 與 `pointerLockLostDuringRun` 是**兩個構念**：Esc 常同時觸發兩者（解鎖 + 退出全螢幕），
+     * 但切換視窗只退全螢幕、不掉鎖 —— 別因為常一起出現就合併或由其中一個推導另一個。
+     */
+    fullscreenExitedDuringRun: boolean;
   };
   /**
    * 首發旗標記憶（WP-5 / T2，FR-5.2）：已計首發的 peekId（= active 目標 id）。`firstShotGate`
@@ -518,7 +532,7 @@ export function createSharedState(): SharedState {
     cues: [],
     targetMotionChanges: [],
     protocolViolations: [],
-    validity: { playerCorridorExceeded: false, pointerLockLostDuringRun: false },
+    validity: { playerCorridorExceeded: false, pointerLockLostDuringRun: false, fullscreenExitedDuringRun: false },
     firstShotPeekId: null,
     armRequested: false,
   };
@@ -575,6 +589,7 @@ export function resetState(state: SharedState = sharedState): void {
   state.protocolViolations.length = 0;
   state.validity.playerCorridorExceeded = false;
   state.validity.pointerLockLostDuringRun = false; // WP-65 / T5：掉鎖效度旗標每場重新起算
+  state.validity.fullscreenExitedDuringRun = false; // WP-70 / T1：退出全螢幕效度旗標每場重新起算（缺陷 A 的修復點）
   state.firstShotPeekId = null; // 首發旗標記憶歸零（重開 drill → 首發重新從第一 peek 計）
   state.armRequested = false; // WP-65：待命解除請求歸零（每次 start() 都要求一次新的開始手勢）
 }

@@ -344,3 +344,37 @@ describe('createTrackingPilotSession — rest countdown', () => {
     expect(root(document).style.display).toBe('none');
   });
 });
+
+/**
+ * WP-69 / T5（FR-69.10）— 失效 attempt 的 handoff。`handleDrillEnded()` 與 `handleInvalidAttempt()`
+ * 是互斥的兩條路：前者匯出並產生正式 record，後者一筆 record 都不產生。app 端由
+ * `plan.advancesOrchestrator` 決定走哪一條，這裡只釘住「走進去之後會發生什麼」。
+ */
+describe('createTrackingPilotSession — invalid attempt handoff（WP-69 T5）', () => {
+  const PAUSED = { kind: 'invalid-retained', reason: 'paused' } as const;
+
+  it('停在同一個 block、attempt +1，不匯出、不產生 record，operator status 說明原因', async () => {
+    const { session, deps, document } = makeSession();
+    session.open();
+    await startManifest(document);
+
+    expect(session.handleInvalidAttempt(PAUSED)).toBe(true);
+    await flush();
+
+    expect(deps.exportBlock).not.toHaveBeenCalled();
+    expect(deps.onBlockExported).not.toHaveBeenCalled();
+    expect(session.runner.records).toEqual([]);
+    expect(session.runner.phase).toMatchObject({ kind: 'running', blockIndex: 0, attempt: 2 });
+    expect(session.runner.invalidAttempts).toHaveLength(1);
+    expect(session.runner.invalidAttempts[0]).toMatchObject({ blockIndex: 0, previousAttempt: 1, reason: 'paused' });
+    expect(byId(document, 'tracking-pilot-status').textContent).toContain('已失效');
+  });
+
+  it('沒有 pilot block 在跑就回 false（app 保留它自己的 Session/Protocol 分支）', () => {
+    const { session, deps } = makeSession();
+    session.open();
+
+    expect(session.handleInvalidAttempt(PAUSED)).toBe(false);
+    expect(deps.exportBlock).not.toHaveBeenCalled();
+  });
+});

@@ -16,9 +16,30 @@ export interface HistoryDrillTarget {
   readonly drillId: string;
 }
 
+/**
+ * WP-69 / T4（FR-69.8，OQ-69.1 / D-69-T0-3）— 一場 `invalid-retained` 的 Result 說明與**唯一**的
+ * 保留動作。自動下載已在 T0 被使用者推翻，所以這份稽核檔只有操作員按下去才存在；那讓「按鈕看不到
+ * 或點不到」等同於資料遺失，因此位置是硬性要求而非美學：
+ *
+ * T0.6 實測 `#drill-controls`（z-index 32）疊在 `#result-screen`（30）之上，會蓋住面板下緣置中
+ * 一帶——正是 `result-actions` 那條 sticky footer 的所在。所以這顆鈕**不**進 footer，而是長在面板
+ * 最上方的警示條裡：既避開被蓋住的區域，也讓「本次無效、此檔僅供稽核」在看到任何數字之前就讀到。
+ */
+export interface InvalidAttemptNotice {
+  readonly text: string;
+  readonly downloadLabel: string;
+  readonly onDownload: () => void | Promise<void>;
+}
+
 export interface ResultScreenHandle {
   readonly visible: boolean;
   show(result: ResultPresentation): void;
+  /**
+   * `null` = 這是一場可採納的 candidate（既有行為，逐位不變）。非 `null` = 不可採納：顯示警示條與
+   * 稽核檔下載鈕，並收起正式匯出／3D 重播入口——後兩者會產出看起來像正式紀錄的東西。
+   * 與 `setValidityWarning` 同紀律：呼叫端每次 `show()` 後都必須明確設定一次（含 `null`）。
+   */
+  setInvalidAttempt(notice: InvalidAttemptNotice | null): void;
   /** Shows "查看此 Drill 歷史" once `target` is known (a successful Assessment save), hides it
    * otherwise — including for the whole lifetime of a Practice result, which never calls this with
    * a defined target (FR-49.12 "Practice Result不顯示歷史入口"). */
@@ -120,6 +141,32 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     validityWarning.hidden = false;
   }
 
+  // WP-69 / T4（FR-69.8）— 不可採納警示條。刻意是**獨立**節點而非沿用 `validityWarning`：
+  // `pointerLockLost` 是「這場可能有問題」的觀測，這一條是「這場不會被採納」的結論，兩者可以同時
+  // 為真且不可互相取代（FR-69.11 的兩個構念）。紅底／更高對比,且排在最上面。
+  const invalidAttemptNotice = document.createElement('div');
+  invalidAttemptNotice.dataset.section = 'result-invalid-attempt';
+  invalidAttemptNotice.setAttribute('role', 'alert');
+  invalidAttemptNotice.hidden = true;
+  invalidAttemptNotice.style.cssText = [
+    'display:flex',
+    'flex-wrap:wrap',
+    'align-items:center',
+    'gap:10px',
+    'margin:0 0 12px',
+    'padding:12px 14px',
+    'border:1px solid rgba(229,78,78,0.66)',
+    'border-radius:6px',
+    'background:rgba(104,24,24,0.42)',
+    'color:#ffd5d5',
+    'font:700 13px/1.45 system-ui,sans-serif',
+  ].join(';');
+
+  const invalidAttemptText = document.createElement('span');
+  invalidAttemptText.style.cssText = 'flex:1 1 320px';
+  const invalidAttemptButton = makeResultActionButton('下載稽核檔', 'export-invalid-diagnostic', true);
+  invalidAttemptNotice.append(invalidAttemptText, invalidAttemptButton);
+
   const body = createResultDetailBody();
 
   // Results may be long enough to scroll. Keep the next actions in the dialog itself so the
@@ -149,7 +196,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
   const historyEntryButton = makeResultActionButton('查看此 Drill 歷史', 'open-history');
   const replayButton = makeResultActionButton('3D 重播', 'replay');
   const closeButton = makeResultActionButton('返回設定', 'close');
-  const actionButtons = [restartButton, exportJSONButton, exportCSVButton, closeButton];
+  const actionButtons = [restartButton, exportJSONButton, exportCSVButton, closeButton, invalidAttemptButton];
 
   restartButton.style.display = options.onRestart === undefined ? 'none' : '';
   exportJSONButton.style.display = options.onExportJSON === undefined ? 'none' : '';
@@ -160,10 +207,32 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     restartHint.style.display = 'none';
   }
 
+  let invalidAttempt: InvalidAttemptNotice | null = null;
+  function setInvalidAttempt(notice: InvalidAttemptNotice | null): void {
+    invalidAttempt = notice;
+    invalidAttemptNotice.hidden = notice === null;
+    invalidAttemptText.textContent = notice?.text ?? '';
+    invalidAttemptButton.textContent = notice?.downloadLabel ?? '下載稽核檔';
+    // 正式匯出與 3D 重播會產出/呈現看起來像正式紀錄的東西 ⇒ 不可採納時一併收起。CSV 也不例外:
+    // 稽核檔只有 JSON 一種形狀,再開一個 `.invalid-paused.csv` 等於多一份要維護的不可採納格式。
+    const adoptable = notice === null;
+    exportJSONButton.style.display = adoptable && options.onExportJSON !== undefined ? '' : 'none';
+    exportCSVButton.style.display = adoptable && options.onExportCSV !== undefined ? '' : 'none';
+    replayButton.style.display = adoptable && options.onReplay !== undefined ? '' : 'none';
+    if (!adoptable) historyEntryButton.style.display = 'none';
+  }
+  invalidAttemptButton.addEventListener('click', () => {
+    if (invalidAttempt === null) return;
+    void runResultAction(actionButtons, invalidAttempt.onDownload);
+  });
+
   let historyTarget: HistoryDrillTarget | undefined;
   function setHistoryTarget(target: HistoryDrillTarget | undefined): void {
     historyTarget = target;
-    historyEntryButton.style.display = options.onOpenHistory !== undefined && target !== undefined ? '' : 'none';
+    // WP-69 / T4：`invalidAttempt` 一票否決。正常流程下不可採納的 run 根本拿不到 target（保存被
+    // 排除 ⇒ 沒有 `saved` 狀態），這條是防止未來有人從別處餵 target 進來就把歷史入口開回去。
+    historyEntryButton.style.display =
+      options.onOpenHistory !== undefined && target !== undefined && invalidAttempt === null ? '' : 'none';
   }
   historyEntryButton.addEventListener('click', () => {
     if (options.onOpenHistory === undefined || historyTarget === undefined) return;
@@ -191,6 +260,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
 
   panel.append(
     title,
+    invalidAttemptNotice,
     validityWarning,
     body.element,
     ...(options.saveStatusView === undefined ? [] : [options.saveStatusView]),
@@ -205,6 +275,9 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     },
     show(result: ResultPresentation): void {
       body.render(result);
+      // WP-69 / T4：與 `setValidityWarning(null)` 同一條紀律,且順序重要——先清不可採納狀態,
+      // `setHistoryTarget(undefined)` 才不會讀到上一場的旗標。
+      setInvalidAttempt(null);
       setHistoryTarget(undefined); // a newly shown result has no known history target yet
       // WP-65 / T5：同一理由——警示屬於**某一場**結果，不屬於這個畫面。呼叫端仍會在 `show()` 之後
       // 依該場的 `meta.validity.pointerLockLost` 明確設定一次；這行只保證「沒設」= 沒有警示，
@@ -215,6 +288,7 @@ export function createResultScreen(options: ResultScreenOptions = {}): ResultScr
     },
     setHistoryTarget,
     setValidityWarning,
+    setInvalidAttempt,
     hide(): void {
       visible = false;
       root.style.display = 'none';

@@ -59,7 +59,12 @@ export function createHistorySaveStatus(options: HistorySaveStatusOptions = {}):
         message.textContent = '';
         return;
       case 'excluded':
-        message.textContent = 'Practice 不納入歷史；可手動匯出 JSON/CSV。';
+        // WP-69 / T4（FR-69.8）— 兩個互斥的排除理由必須讀得出差別：Practice 是「本來就不收」，
+        // invalid-attempt 是「這一場已失去實驗效力」，後者還得把手動匯出導向稽核檔而非正式匯出。
+        message.textContent =
+          state.reason === 'invalid-attempt'
+            ? '本次曾暫停，已失去實驗效力：不納入歷史／趨勢；僅可下載稽核檔。'
+            : 'Practice 不納入歷史；可手動匯出 JSON/CSV。';
         break;
       case 'saving':
         message.textContent = 'Saving to history…';

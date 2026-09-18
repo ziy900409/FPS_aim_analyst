@@ -1,3 +1,4 @@
+import type { AttemptDisposition } from '../attempt/RunAttemptController.ts';
 import type { DrillConfig } from '../drill/DrillConfig.ts';
 import type { ExportPayload } from '../data/export.ts';
 import { evaluateTrackingRunEligibility, type TrackingRunEligibility } from '../pilot/trackingRunEligibility.ts';
@@ -68,6 +69,31 @@ export interface TrackingPilotRetryLogEntry {
   readonly reason: string;
 }
 
+/**
+ * WP-69 / T5 (FR-69.10, README §2.5) — the audit row for an attempt that reached `ended` but is not
+ * adoptable. It is deliberately **not** a `TrackingPilotBlockRunRecord`: a record is the block's
+ * official result, and a paused or discarded attempt never earns one (T5 DoD). These rows only
+ * accumulate — the fourth failed attempt at block 2 does not overwrite the first three.
+ *
+ * `reason` is derived from `disposition`, never supplied by the caller. Letting an app-layer caller
+ * pass its own string is how a second vocabulary for "why was this rejected" gets born, and this WP
+ * exists to keep there being exactly one (C-D4). Both fields are kept because they answer different
+ * questions: `disposition` is the machine-readable verdict, `reason` the frozen code inside it.
+ */
+export interface TrackingPilotInvalidAttempt {
+  readonly drillId: string;
+  readonly blockIndex: number;
+  readonly role: TrackingPilotBlockRole;
+  /** The attempt number that just failed. The phase moves to `previousAttempt + 1`. */
+  readonly previousAttempt: number;
+  readonly disposition: HeldAttemptDisposition;
+  /** `'paused'` for `invalid-retained`; the frozen integrity code for `discarded`. */
+  readonly reason: string;
+}
+
+/** The two dispositions that hold a block. `eligible-candidate` is not one of them, by type. */
+export type HeldAttemptDisposition = Exclude<AttemptDisposition, { kind: 'eligible-candidate' }>;
+
 export interface TrackingPilotRunnerOptions {
   readonly loadDrillConfig: (config: DrillConfig) => Promise<void>;
   readonly exportBlock: () => ExportPayload | Promise<ExportPayload>;
@@ -83,6 +109,8 @@ export interface TrackingPilotRunnerHandle {
   readonly phase: TrackingPilotRunnerPhase;
   readonly records: readonly TrackingPilotBlockRunRecord[];
   readonly retryLog: readonly TrackingPilotRetryLogEntry[];
+  /** WP-69 / T5 — every held attempt of this manifest run, oldest first. Append-only. */
+  readonly invalidAttempts: readonly TrackingPilotInvalidAttempt[];
   start(manifest: TrackingPilotManifest): Promise<void>;
   /** Called from the existing render loop; never interacts with simulation state. */
   poll(nowMs: number): void;
@@ -93,6 +121,22 @@ export interface TrackingPilotRunnerHandle {
   retryCurrentBlock(reason: string): Promise<void>;
   /** Marks the currently-running block aborted (no export was taken) and advances past it. */
   abortCurrentBlock(reason: string): Promise<void>;
+  /**
+   * WP-69 / T5 (FR-69.10, README §2.5) — the running block's attempt just ended without being
+   * adoptable. Records the audit row and re-arms the **same** block at `attempt + 1`; the block
+   * index, role, config and seed are untouched, so the operator's full restart replays this exact
+   * block (FR-69.6).
+   *
+   * Deliberately **not** `abortCurrentBlock()`, which this WP is not allowed to reuse: aborting
+   * advances past the block, which is precisely the thing a held attempt must never cause (FM-6).
+   * Nor does it reload the config — `main.ts`'s single full-restart coordinator owns that, and the
+   * config is identical by construction, which is the whole reason this stays the same block.
+   *
+   * Returns `undefined` when no block is running: a standalone drill, a Session Plan run and a
+   * protocol condition all reach the same app-level seam, and "no pilot owned this" is an ordinary
+   * answer there, not an error.
+   */
+  retryRunningBlock(disposition: HeldAttemptDisposition): TrackingPilotInvalidAttempt | undefined;
   /** Accepts the current block-outcome (or aborted block) and moves to rest / the next block. */
   advance(): Promise<void>;
   dispose(): void;
@@ -108,6 +152,7 @@ export function createTrackingPilotRunner(options: TrackingPilotRunnerOptions): 
   let transition: Promise<unknown> | undefined;
   const records: TrackingPilotBlockRunRecord[] = [];
   const retryLog: TrackingPilotRetryLogEntry[] = [];
+  const invalidAttempts: TrackingPilotInvalidAttempt[] = [];
 
   function setPhase(next: TrackingPilotRunnerPhase): void {
     phase = next;
@@ -158,6 +203,9 @@ export function createTrackingPilotRunner(options: TrackingPilotRunnerOptions): 
     get retryLog(): readonly TrackingPilotRetryLogEntry[] {
       return retryLog;
     },
+    get invalidAttempts(): readonly TrackingPilotInvalidAttempt[] {
+      return invalidAttempts;
+    },
     start(plan): Promise<void> {
       return runTransition(async () => {
         if (phase.kind !== 'idle' && phase.kind !== 'done') {
@@ -166,6 +214,7 @@ export function createTrackingPilotRunner(options: TrackingPilotRunnerOptions): 
         manifest = parseTrackingPilotManifest(plan);
         records.length = 0;
         retryLog.length = 0;
+        invalidAttempts.length = 0;
         restStartedAt = undefined;
         await startBlock(0, 1);
       });
@@ -243,6 +292,30 @@ export function createTrackingPilotRunner(options: TrackingPilotRunnerOptions): 
         await advanceFromBlock(blockIndex);
       });
     },
+    retryRunningBlock(disposition): TrackingPilotInvalidAttempt | undefined {
+      // Synchronous on purpose: it queues no transition because it loads nothing. Routing it
+      // through `runTransition()` would put the audit row behind whatever promise happens to be in
+      // flight, and the caller — `liveFrame()`'s ended branch — must stay in the synchronous
+      // prologue that runs before the first `await` (WP-69 / T4.4).
+      if (phase.kind !== 'running') return undefined;
+      const { block, blockIndex, role, attempt: previousAttempt } = phase;
+      const entry: TrackingPilotInvalidAttempt = {
+        drillId: block.drillId,
+        blockIndex,
+        role,
+        previousAttempt,
+        disposition,
+        reason: disposition.reason,
+      };
+      invalidAttempts.push(entry);
+      // Same block, next attempt. `startBlock()` publishes the phase *before* the block is played,
+      // so `phase.attempt` has always named the attempt about to run — this keeps that meaning.
+      setPhase({ kind: 'running', block, blockIndex, role, attempt: previousAttempt + 1 });
+      options.onStatus?.(
+        `Block ${blockIndex + 1}（${role}）第 ${previousAttempt} 次已失效（${disposition.reason}），請重新測試本 block。`,
+      );
+      return entry;
+    },
     advance(): Promise<void> {
       return runTransition(async () => {
         if (phase.kind !== 'block-outcome') throw new Error('No block outcome is awaiting advance');
@@ -255,6 +328,7 @@ export function createTrackingPilotRunner(options: TrackingPilotRunnerOptions): 
       restStartedAt = undefined;
       records.length = 0;
       retryLog.length = 0;
+      invalidAttempts.length = 0;
       setPhase({ kind: 'idle' });
     },
   };

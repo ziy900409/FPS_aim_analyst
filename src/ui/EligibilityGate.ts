@@ -30,6 +30,7 @@ export interface EligibilityGateScreenHandle {
   /** session 進行中退出 fullscreen → 顯示警示條（failure mode）。 */
   showSuspectWarning(): void;
   hideSuspectWarning(): void;
+  renderSuspectWarning(suspect: boolean): void;
   dispose(): void;
 }
 
@@ -75,7 +76,13 @@ export function createEligibilityGateScreen(
 
   const suspectBanner = document.createElement('div');
   suspectBanner.setAttribute('role', 'alert');
-  suspectBanner.textContent = '⚠ 已離開 fullscreen — 本 session 資料標記為 suspect(條件失效)。';
+  // WP-70 / T6（FR-70.7）— run 級措辭。舊文案「本 session 資料標記為 suspect」是 session 級 sticky
+  // 旗標的直接產物（KI-040 缺陷 A）；旗標改為 per-run（`fullscreenExitedDuringRun`，T1）之後，那句話
+  // 對「下一場乾淨的 run」是**錯的**。三件事必須都在：失效範圍＝這一次測試、不繼承到下一次、
+  // 操作員的下一步。「重新測試」逐字對齊 `PauseOverlay.ts` 的 `RESTART_LABEL`，不另造一個說法。
+  suspectBanner.textContent =
+    '⚠ 已離開 fullscreen — 本次測試標記為 suspect(條件失效)；下一次測試不受影響。' +
+    '暫停面板的「重新測試」可恢復條件並重跑本項。';
   suspectBanner.style.cssText = suspectBannerCss;
   suspectBanner.style.display = 'none';
 
@@ -145,16 +152,21 @@ export function createEligibilityGateScreen(
     open,
     close,
     showSuspectWarning(): void {
-      suspectBanner.style.display = 'block';
+      renderSuspectWarning(true);
     },
     hideSuspectWarning(): void {
-      suspectBanner.style.display = 'none';
+      renderSuspectWarning(false);
     },
+    renderSuspectWarning,
     dispose(): void {
       root.remove();
       suspectBanner.remove();
     },
   };
+
+  function renderSuspectWarning(suspect: boolean): void {
+    suspectBanner.style.display = suspect ? 'block' : 'none';
+  }
 }
 
 function mark(pass: boolean): string {

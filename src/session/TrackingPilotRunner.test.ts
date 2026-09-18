@@ -196,3 +196,123 @@ describe('TrackingPilotRunner', () => {
     expect(runner.retryLog).toEqual([]);
   });
 });
+
+/**
+ * WP-69 / T5（FR-69.10，README §2.5）— 失效 attempt 的明確入口。
+ *
+ * 這一組真正要反證的是「**不得借用 `abortCurrentBlock()`**」：abort 會前進到下一個 block，而那正是
+ * 失效 attempt 絕不能造成的事（FM-6）。所以每一個斷言都盯著兩件事——blockIndex 沒動、`records`
+ * 沒長出一筆——而不只是「audit 有寫」。
+ */
+describe('TrackingPilotRunner — 失效 attempt 的 retry/audit（WP-69 T5）', () => {
+  const PAUSED = { kind: 'invalid-retained', reason: 'paused' } as const;
+  const DISCARDED = { kind: 'discarded', reason: 'pause-fence-unclosed' } as const;
+
+  it('停在同一個 block：index/role/config 不動，attempt +1，records 不長', async () => {
+    const options = makeOptions();
+    const runner = createTrackingPilotRunner(options);
+    const manifest = smallManifest();
+    await runner.start(manifest);
+    await runner.completeCurrentBlock();
+    await runner.advance();
+    runner.poll(1000);
+    runner.poll(6000);
+    await settleTransitions();
+    expect(runner.phase).toMatchObject({ kind: 'running', blockIndex: 1, attempt: 1 });
+    const recordsBefore = runner.records.length;
+    const callsBefore = {
+      load: (options.loadDrillConfig as ReturnType<typeof vi.fn>).mock.calls.length,
+      exportBlock: (options.exportBlock as ReturnType<typeof vi.fn>).mock.calls.length,
+      evaluate: (options.evaluateEligibility as ReturnType<typeof vi.fn>).mock.calls.length,
+    };
+
+    const entry = runner.retryRunningBlock(PAUSED);
+
+    expect(runner.phase).toEqual({
+      kind: 'running',
+      block: manifest.orderedBlocks[1],
+      blockIndex: 1,
+      role: 'scored',
+      attempt: 2,
+    });
+    expect(runner.records).toHaveLength(recordsBefore); // 正式 record 只在 candidate 通過後成立
+    expect(entry).toEqual({
+      drillId: manifest.orderedBlocks[1].drillId,
+      blockIndex: 1,
+      role: 'scored',
+      previousAttempt: 1,
+      disposition: PAUSED,
+      reason: 'paused',
+    });
+    // 不重載 config、不匯出、不評分：full restart 是 app 單一 coordinator 的職責（同一個 block 的
+    // config/seed 不變），而 held 路徑本來就走不到 `completeCurrentBlock()`。
+    expect({
+      load: (options.loadDrillConfig as ReturnType<typeof vi.fn>).mock.calls.length,
+      exportBlock: (options.exportBlock as ReturnType<typeof vi.fn>).mock.calls.length,
+      evaluate: (options.evaluateEligibility as ReturnType<typeof vi.fn>).mock.calls.length,
+    }).toEqual(callsBefore);
+  });
+
+  it('連續兩次失效：audit 累積兩筆、不覆寫前筆，attempt 走到 3', async () => {
+    const runner = createTrackingPilotRunner(makeOptions());
+    await runner.start(smallManifest());
+
+    runner.retryRunningBlock(PAUSED);
+    runner.retryRunningBlock(DISCARDED);
+
+    expect(runner.invalidAttempts).toHaveLength(2);
+    expect(runner.invalidAttempts.map((entry) => entry.previousAttempt)).toEqual([1, 2]);
+    expect(runner.invalidAttempts.map((entry) => entry.reason)).toEqual(['paused', 'pause-fence-unclosed']);
+    expect(runner.phase).toMatchObject({ kind: 'running', blockIndex: 0, attempt: 3 });
+  });
+
+  it('失效之後仍可正常完成本 block，且 record 記的是那一次 attempt', async () => {
+    const runner = createTrackingPilotRunner(makeOptions());
+    await runner.start(smallManifest());
+    runner.retryRunningBlock(PAUSED);
+
+    const record = await runner.completeCurrentBlock();
+
+    expect(record).toMatchObject({ blockIndex: 0, attempt: 2, outcome: 'completed' });
+    expect(runner.records).toHaveLength(1);
+    expect(runner.invalidAttempts).toHaveLength(1);
+  });
+
+  it('沒有 block 在跑就回 undefined（standalone drill 走同一個 app 接縫，不是錯誤）', async () => {
+    const runner = createTrackingPilotRunner(makeOptions());
+    expect(runner.retryRunningBlock(PAUSED)).toBeUndefined();
+
+    await runner.start(smallManifest());
+    await runner.completeCurrentBlock();
+    expect(runner.phase.kind).toBe('block-outcome');
+
+    expect(runner.retryRunningBlock(PAUSED)).toBeUndefined();
+    expect(runner.invalidAttempts).toEqual([]);
+    expect(runner.phase).toMatchObject({ kind: 'block-outcome', blockIndex: 0, attempt: 1 });
+  });
+
+  it('start() 清掉上一個 manifest run 的 audit', async () => {
+    const runner = createTrackingPilotRunner(makeOptions());
+    await runner.start(smallManifest());
+    runner.retryRunningBlock(PAUSED);
+    expect(runner.invalidAttempts).toHaveLength(1);
+
+    await runner.completeCurrentBlock();
+    await runner.advance();
+    runner.poll(1000);
+    runner.poll(6000);
+    await settleTransitions();
+    await runner.completeCurrentBlock();
+    await runner.advance();
+    runner.poll(7000);
+    runner.poll(13000);
+    await settleTransitions();
+    await runner.completeCurrentBlock();
+    await runner.advance();
+    expect(runner.phase).toEqual({ kind: 'done' });
+
+    await runner.start(smallManifest());
+
+    expect(runner.invalidAttempts).toEqual([]);
+  });
+});

@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>S01–S06 Cohort Result · Spider Shot Wide v1 滑鼠 × 握法</title>
+  <style>
+    :root {
+      --page: #eef1ef; --paper: #fff; --ink: #17211e; --muted: #5f6d68;
+      --line: #cfd7d3; --line-dark: #9aa8a2;
+      --teal: #087e8b; --teal-soft: #dceff1;
+      --coral: #d75a47; --coral-soft: #fae7e3;
+      --amber: #ad7417; --amber-soft: #fff0cb;
+      --green: #257552; --green-soft: #e1f1e9;
+      --violet: #7258a6; --violet-soft: #ece7f5;
+      --radius: 6px;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-width: 320px; color: var(--ink); background: var(--page); font-family: var(--sans); line-height: 1.62; }
+    a { color: var(--teal); text-underline-offset: 3px; }
+    code { font-family: var(--mono); font-size: 0.9em; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+
+    .masthead { position: relative; min-height: 300px; overflow: hidden; color: #fff; background: #171d1c; }
+    .masthead img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 78% 51%; opacity: 0.5; }
+    .masthead::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,19,18,0.98) 0%, rgba(14,19,18,0.9) 44%, rgba(14,19,18,0.2) 80%); }
+    .masthead-inner { position: relative; z-index: 1; display: grid; align-content: center; min-height: 300px; max-width: 790px; padding: 32px 0; }
+    .eyebrow { margin: 0 0 10px; color: #8fdce2; font: 750 0.76rem/1.2 var(--mono); text-transform: uppercase; }
+    h1 { margin: 0; max-width: 730px; font-size: clamp(1.85rem, 4.4vw, 3.1rem); line-height: 1.1; }
+    .lede { max-width: 700px; margin: 16px 0 0; color: #d9e1de; font-size: 1rem; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .status { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 9px; border: 1px solid rgba(255,255,255,0.24); border-radius: 4px; background: rgba(0,0,0,0.28); color: #edf5f2; font-size: 0.74rem; font-weight: 700; }
+    .status.warn { border-color: #d8ab54; color: #ffdda0; }
+
+    .layout { display: grid; grid-template-columns: 218px minmax(0, 1fr); gap: 30px; padding: 30px 0 60px; }
+    .toc { position: sticky; top: 18px; align-self: start; }
+    .toc-title { margin: 0 0 8px; color: var(--muted); font: 700 0.72rem/1.2 var(--mono); text-transform: uppercase; }
+    .toc a { display: block; padding: 7px 9px; border-left: 2px solid var(--line); color: var(--muted); text-decoration: none; font-size: 0.8rem; }
+    .toc a:hover, .toc a:focus-visible { border-left-color: var(--teal); color: var(--ink); background: #fff; }
+    main { min-width: 0; }
+    section { margin-bottom: 44px; scroll-margin-top: 20px; }
+    .section-no { display: block; margin-bottom: 4px; color: var(--coral); font: 750 0.76rem/1.2 var(--mono); }
+    h2 { margin: 0 0 14px; font-size: clamp(1.4rem, 3vw, 1.95rem); line-height: 1.2; }
+    h3 { margin: 0 0 8px; font-size: 1rem; line-height: 1.35; }
+    p { margin: 0 0 12px; }
+    .section-intro { max-width: 860px; color: var(--muted); }
+
+    .decision { display: grid; grid-template-columns: 1.05fr 0.95fr; border: 1px solid var(--line-dark); border-left: 5px solid var(--coral); border-radius: var(--radius); background: var(--paper); }
+    .decision > div { padding: 22px; }
+    .decision > div + div { border-left: 1px solid var(--line); background: #f7f9f8; }
+    .decision strong { display: block; margin-bottom: 6px; font-size: 1.06rem; }
+    .decision p { color: var(--muted); font-size: 0.88rem; }
+    .verdict { color: var(--coral); font-size: 1.3rem; }
+
+    .matrix { width: 100%; border-collapse: collapse; border: 1px solid var(--line); background: var(--paper); font-size: 0.78rem; }
+    .matrix th, .matrix td { padding: 8px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .matrix th { background: #f0f3f1; font-size: 0.72rem; }
+    .matrix td.num { font-family: var(--mono); text-align: right; }
+    .matrix .yes { color: var(--green); font-weight: 750; }
+    .matrix .no { color: var(--coral); font-weight: 750; }
+    .matrix .partial { color: var(--amber); font-weight: 750; }
+    .matrix caption { text-align: left; color: var(--muted); font-size: 0.75rem; padding: 0 0 6px; }
+    .matrix-wrap { overflow-x: auto; }
+    .matrix tr.sep td { border-top: 2px solid var(--line-dark); }
+    .ca { color: var(--violet); font-weight: 750; }
+    .cb { color: var(--teal); font-weight: 750; }
+    .cc { color: var(--coral); font-weight: 750; }
+
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .chart { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .chart.full { grid-column: 1 / -1; }
+    .chart h3 { margin: 0 0 2px; font-size: 0.9rem; }
+    .chart p { margin: 0 0 9px; color: var(--muted); font-size: 0.74rem; }
+    canvas { display: block; width: 100%; height: 260px; border-radius: 3px; background: #fbfcfb; border: 1px solid var(--line); }
+    canvas.tall { height: 420px; }
+
+    .callout { padding: 15px 17px; border: 1px solid #d8b66f; border-radius: var(--radius); background: var(--amber-soft); color: #5d4519; font-size: 0.83rem; }
+    .callout strong { color: #49340f; }
+    .callout.stop { border-color: var(--coral); background: var(--coral-soft); color: #6c2b1e; }
+    .callout.stop strong { color: #55200f; }
+    .callout.ok { border-color: #7fb79a; background: var(--green-soft); color: #1e4f38; }
+    .callout.ok strong { color: #143627; }
+
+    .finding { border: 1px solid var(--line); border-left: 4px solid var(--amber); border-radius: var(--radius); background: var(--paper); padding: 17px; margin-bottom: 10px; }
+    .finding .no { color: var(--muted); font: 750 0.7rem/1.2 var(--mono); text-transform: uppercase; }
+    .finding h3 { margin: 7px 0 6px; }
+    .finding p { margin: 0 0 8px; color: var(--muted); font-size: 0.83rem; }
+    .finding p:last-child { margin-bottom: 0; }
+    .finding.grew { border-left-color: var(--coral); }
+    .finding.same { border-left-color: var(--teal); }
+    .finding.newf { border-left-color: var(--violet); }
+    .badge { display: inline-flex; margin-left: 8px; padding: 2px 7px; border-radius: 3px; font-size: 0.66rem; font-weight: 750; }
+    .badge.grew { background: var(--coral-soft); color: var(--coral); }
+    .badge.same { background: var(--teal-soft); color: var(--teal); }
+    .badge.newf { background: var(--violet-soft); color: var(--violet); }
+
+    .formula { padding: 13px 15px; border-left: 3px solid var(--teal); background: #f6f8f7; color: #31413c; font: 0.78rem/1.7 var(--mono); overflow-x: auto; }
+    .files { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .files ul { margin: 0; padding-left: 20px; }
+    .files li { margin: 7px 0; font-size: 0.8rem; }
+    footer { padding: 22px 0 38px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.75rem; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; display: grid; grid-template-columns: repeat(2, 1fr); }
+      .toc-title { grid-column: 1 / -1; }
+      .decision, .charts { grid-template-columns: 1fr; }
+      .decision > div + div { border-left: 0; border-top: 1px solid var(--line); }
+    }
+    @media print { body { background: #fff; } .toc { display: none; } .layout { display: block; } section, .finding, .chart { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <img src="../../../exec-plan/active/stage12/wp-57-spider-shot-wide-flick/captures/peripheral-R-fov75.png" alt="Spider Shot Wide v1 在 FOV 75 下的右側周邊目標實機畫面">
+    <div class="shell masthead-inner">
+      <p class="eyebrow">Cohort result · S01–S06 · 2026-09-18</p>
+      <h1>滑鼠 × 握法<br>六人 cohort 結果</h1>
+      <p class="lede">51 個 run、2442 次周邊呈現。硬閘首次觸發並擋下 1 個 run。跨條件差異在 9 個「受試者 × 對比」中有 <b>6 個落在該受試者自己的 run 間波動之內</b>；方向一致的訊號集中在同一件事上——周邊命中時間、峰值角速度與擊發邊際，但它們同時受到一個尚未記錄的變因牽制。</p>
+      <div class="status-row">
+        <span class="status">6 participants · 51 runs · 2442 presentations</span>
+        <span class="status">硬閘擋下 1 run · timeout 0/2442</span>
+        <span class="status warn">握法順序未反平衡 · GPW1 握法 5/6 未紀錄</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell layout">
+    <nav class="toc" aria-label="文件目錄">
+      <p class="toc-title">結果結構</p>
+      <a href="#verdict">00 結論</a>
+      <a href="#eligibility">01 資格、排除與可比性</a>
+      <a href="#design">02 設計診斷</a>
+      <a href="#profile">03 跨人 profile</a>
+      <a href="#contrasts">04 跨人配對對比</a>
+      <a href="#cycle">05 週期拆解</a>
+      <a href="#mechanism">06 機制層</a>
+      <a href="#findings">07 S01 Finding 再檢視</a>
+      <a href="#next">08 下一步</a>
+      <a href="#artifacts">09 產物與重現</a>
+    </nav>
+
+    <main>
+      <section id="verdict">
+        <span class="section-no">00 / VERDICT</span>
+        <h2>六個人之後，能不能選出最佳組合</h2>
+        <div class="decision">
+          <div>
+            <strong class="verdict">仍然不能——但理由換了。</strong>
+            <p>S01 時的理由是「只有一個人、順序只有一種」。現在滑鼠的位置已經反平衡（3 人排第一、3 人排最後），樣本變成六人，<b>理由改為兩點</b>：差異多半不超過同條件 run 之間的擺動，且那組方向一致的訊號帶著一個無法解讀的註腳。</p>
+            <p>握法對比 <code>B→C</code> 在 <b>5/5 受試者身上全部落在雜訊內</b>，同時它對每一位受試者都與場內順序完全共線。</p>
+          </div>
+          <div>
+            <strong>方向一致的那組訊號</strong>
+            <p>結果面：周邊命中時間中位數 <b>DK/1-2-2 比 GPW1 慢，4/4 可比受試者皆然</b>（+6.0 / +31.9 / +34.1 / +54.7 ms），2/4 超出自身 run 波動。</p>
+            <p>機制面（<a href="#mechanism">§06</a>）：<b>峰值角速度 4/4 較低</b>、<b>擊發邊際 3/4 較長</b>。三者是同一件事的三個切面，不是三份獨立證據；而且峰速<b>沒有任何一位</b>超出自身波動。</p>
+            <p>且 <b>GPW1 的握法只有 S01 被確認過</b>。其餘 5 人的 <code>A→B</code> 可能是「換滑鼠」，也可能是「換滑鼠＋換握法」。在補上紀錄之前，整組訊號都不能被稱為裝置效應。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="eligibility">
+        <span class="section-no">01 / ELIGIBILITY</span>
+        <h2>資格、排除與可比性</h2>
+        <p class="section-intro">條件 cell 來自資料夾結構；<b>GPW1 的握法不來自資料夾</b>——GPW1 沒有握法子層，由路徑推測握法正是同一個標籤代表兩件事的起點。只有 S01 的 GPW1 握法經研究負責人確認（1-2-2），其餘記為 <code>unrecorded</code>。</p>
+
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption>排除流程計數表。只有技術失效會撤下一個 run；設定變動改為在對比層處理（見下）。</caption>
+            <thead><tr><th>步驟</th><th>數量</th><th>說明</th></tr></thead>
+            <tbody>
+              <tr><td>匯入 run</td><td class="num">51</td><td>6 位受試者 × 3 條件 × 3 reps，S06 缺 DK/1-2-2 cell</td></tr>
+              <tr><td>通過硬閘</td><td class="num yes">50</td><td>擋下 1 個：<code>S04 / DK/1-2-2 / rep1</code></td></tr>
+              <tr><td>修剪後 active duration</td><td class="num">60.0 s × 50</td><td>全部由 protocol 邊界決定，1 個 run 帶錄製尾巴</td></tr>
+              <tr><td>周邊呈現</td><td class="num">2442</td><td>命中 2418 · 行政右截 24 · <b>timeout 0</b></td></tr>
+              <tr><td>可比的對比</td><td class="num partial">11 / 18</td><td>感度變動 2、cell 缺席 2、其餘可比</td></tr>
+              <tr><td>機制層可用 n</td><td class="num partial">Tier 0 ≥ 2420 · Tier 1 = 777</td><td>分母為 2442 筆可分析呈現（≥99.1% 對 31.8%）；見 <a href="#mechanism">§06</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="callout stop"><strong>硬閘首次觸發，而且抓對了東西。</strong><code>S04 / DK/1-2-2 / rep1</code> 同時具備 <code>pointerLockLost</code>、<code>suspect=true</code>、<b>非全螢幕的 1920×911 視窗</b>與尚未調整的感度 1.1。非全螢幕代表 aspect 不同，刺激的 eye-frame 幾何與其他 50 個 run 並不相同——這個 run 不是「表現比較差」，而是<b>另一個實驗</b>。</div>
+
+        <div style="height:14px"></div>
+        <h3>可比性矩陣</h3>
+        <p class="section-intro">比較性的單位是<b>對比</b>，不是 run。場中改設定沒有哪一邊是「漂移的那一邊」——兩個因子只是糾纏了，被毀掉的是跨越該變動的對比，而每個 run 仍然是它自己所記錄的那件事的有效量測。</p>
+        <div class="matrix-wrap" id="comparabilityTable"></div>
+      </section>
+
+      <section id="design">
+        <span class="section-no">02 / DESIGN</span>
+        <h2>設計診斷：順序、感度、握法紀錄</h2>
+
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption>各受試者的實際條件順序（以 wall clock 排序）。A = GPW1，B = DK/1-2-2，C = DK/1-3-1。</caption>
+            <thead><tr><th>受試者</th><th>第一</th><th>第二</th><th>第三</th><th>感度</th></tr></thead>
+            <tbody id="orderTable"></tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="callout ok"><strong>好消息：滑鼠位置已經反平衡。</strong>GPW1 在 S01 / S04 / S06 排第一，在 S02 / S03 / S05 排最後——3:3。S01 報告裡「68 分鐘空窗與裝置效應共線」的問題，在 cohort 層級已經解除。</div>
+
+        <div style="height:10px"></div>
+        <div class="callout stop"><strong>壞消息：握法順序一次都沒有反平衡。</strong>在 5 位同時有兩種握法的受試者身上，<b>1-2-2 全部排在 1-3-1 之前</b>。因此 <code>B→C</code> 對<b>每一位</b>受試者都與場內順序完全共線，無法以任何統計手段分離。我在 S01 報告提出的警告，一半解除、一半成真。</div>
+
+        <div style="height:10px"></div>
+        <div class="callout"><strong>兩個紀錄缺口：</strong>（1）<b>GPW1 的握法只有 S01 確認過</b>，其餘 5 人未紀錄——這直接決定 <code>A→B</code> 能不能被稱為滑鼠對比。（2）<b>S04 在場中把感度從 1.1 改成 1.0</b>（GPW1 全程 1.1、DK 後續為 1.0），所以 S04 的 <code>A→B</code> 與 <code>A→C</code> 跨越了設定變動，只有 <code>B→C</code> 可用。另有 <code>lateEventCount</code> 在 23/51 個 run 非零（合計 34），目前只被記錄、尚未依完整性規則處置。</div>
+      </section>
+
+      <section id="profile">
+        <span class="section-no">03 / PROFILE</span>
+        <h2>跨人 profile</h2>
+        <p class="section-intro">原尺度值，每個 cell 為該受試者該條件 3 個 run 的合併值；括號內為 3 個 run 的數列。受試者之間的絕對水準差很大（命中時間中位數 516–701 ms），因此任何跨人彙總都必須以受試者為權重單位，不能把 trial 直接倒在一起。</p>
+        <div class="matrix-wrap" id="profileTable"></div>
+        <div style="height:12px"></div>
+        <div class="charts">
+          <div class="chart full">
+            <h3>各受試者的條件輪廓：命中時間中位數</h3>
+            <p>每條折線是一位受試者，三個點是 A / B / C。線條互相交叉代表條件效果不具跨人一致性；線條的垂直位置差距就是受試者之間的能力差異。</p>
+            <canvas id="slopeChart" aria-label="各受試者三個條件的命中時間中位數折線圖"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section id="contrasts">
+        <span class="section-no">04 / CONTRASTS</span>
+        <h2>跨人配對對比</h2>
+        <p class="section-intro">每一位受試者的配對都在自己身上完成（同 seed、逐筆驗證刺激一致），再以受試者為單位並列。<b>灰帶是該受試者自己同條件 3 個 run 之間的全距</b>——跨條件差值必須明顯跳出灰帶，才值得當成訊號而不是當天的起伏。</p>
+
+        <div class="charts">
+          <div class="chart">
+            <h3>Δ 首發命中率（百分點）</h3>
+            <p>灰帶 = ±（該受試者自身 run 間全距）。實心點 = 超出灰帶；空心點 = 未超過測量波動。</p>
+            <canvas class="tall" id="forestFirst" aria-label="各受試者首發命中率差值與自身雜訊帶"></canvas>
+          </div>
+          <div class="chart">
+            <h3>Δ 命中時間中位數（ms）</h3>
+            <p>正值代表右側條件較慢。灰帶同左圖。<code>A→B</code> 四位可比受試者全部為正。</p>
+            <canvas class="tall" id="forestTime" aria-label="各受試者命中時間差值與自身雜訊帶"></canvas>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="matrix-wrap" id="contrastTable"></div>
+
+        <div style="height:12px"></div>
+        <div class="callout stop"><strong>握法對比 5/5 落在雜訊內。</strong><code>B→C</code> 的 Δ 首發率為 −7.8 到 +15.0 pp，而對應受試者自身的 run 間全距是 5.7 到 15.9 pp——沒有任何一位超出。再加上它對每個人都與場內順序共線，本批資料<b>對握法沒有可供解讀的結論</b>。</div>
+
+        <div style="height:10px"></div>
+        <div class="callout"><strong>首發率與時間指向不同方向。</strong>在 4 位可比受試者中，DK/1-2-2 的首發命中率有 3 位較高（S01 +6.2、S03 +5.7、S05 +11.3 pp；S02 −10.0 pp），但命中時間 <b>4/4 較慢</b>。這與「較慢但首發較準」的取捨型態相容，然而 S02 在兩項上都較差，因此本批<b>尚不足以支持該型態</b>——它只是下一輪值得預先登錄的假設。</div>
+      </section>
+
+      <section id="cycle">
+        <span class="section-no">05 / CYCLE</span>
+        <h2>週期拆解：差異落在哪一半</h2>
+        <p class="section-intro">一個完整週期 = 回中心 + 周邊拉槍。<code>hits/min</code> 的分母含兩者，但首發率、命中時間與整個機制層只描述右半。</p>
+        <div class="charts">
+          <div class="chart full">
+            <h3>各受試者 × 條件的週期成本</h3>
+            <p>下段為回中心，上段為周邊拉槍，數字為週期總長（ms）。</p>
+            <canvas class="tall" id="cycleChart" aria-label="各受試者各條件的回中心與周邊拉槍成本堆疊圖"></canvas>
+          </div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="matrix-wrap" id="cycleTable"></div>
+      </section>
+
+      <section id="mechanism">
+        <span class="section-no">06 / MECHANISM</span>
+        <h2>機制層：差異出在動作的哪一段</h2>
+        <p class="section-intro">機制構念由 TypeScript 的 canonical 推導產生（<code>analyze:spider-wide-mech</code>），以
+        <code>run_id</code> + <code>target_id</code> 接進本表——<b>2486/2486 逐筆對上，零未匹配</b>（抽取層掃全部 51 個 run；下表的可算率分母則是 <b>2442 筆可分析呈現</b>，即扣除硬閘擋下的那個 run）。研究側不重算任何構念（C-D4）。
+        可採用與否由**這批資料實際產出的可算率**決定，不由分層決定：門檻 90% 是事前約定的慣例值，不是校準過的閾值。</p>
+
+        <div class="matrix-wrap" id="mechCoverageTable"></div>
+
+        <div style="height:12px"></div>
+        <div class="callout stop"><strong>Tier 1 在本 cohort 不可用，而原因不是 baseline 覆蓋率。</strong>
+        <code>baselineInsufficient</code> 全數為 false，detector 卻對全部 2486 筆中的 <b>1696 筆</b>回 <code>timeout</code>；在 2442 筆可分析呈現上，反應時間只有 <b>777 筆</b>（31.8%）可算。
+        覆蓋率不等於乾淨度：KI-034 說的是 pre-stimulus 窗吃進前一次交戰，那會灌大 baseline SD、把偵測門檻頂高，
+        而覆蓋率旗標看不見這件事；1.2 秒的中心↔周邊週期保證了重疊。<b>把 <code>baseline_insufficient</code> 讀成
+        KI-034 的全清訊號會判斷錯。</b>因此本節不含反應時間與 movement time。</div>
+
+        <div style="height:16px"></div>
+        <h3>各受試者 × 條件的機制輪廓（中位數）</h3>
+        <div class="matrix-wrap" id="mechCellTable"></div>
+
+        <div style="height:16px"></div>
+        <div class="charts">
+          <div class="chart">
+            <h3>Δ 擊發邊際（ms）</h3>
+            <p>正值＝右側條件在進靶後等更久才擊發。灰帶 = ±（該受試者自身 run 間全距）。</p>
+            <canvas class="tall" id="mechForestTrigger" aria-label="各受試者擊發邊際差值與自身雜訊帶"></canvas>
+          </div>
+          <div class="chart">
+            <h3>Δ 峰值角速度（deg/s）</h3>
+            <p>負值＝右側條件甩得較慢。注意灰帶寬度——峰速的 run 間擺動本來就很大。</p>
+            <canvas class="tall" id="mechForestPeak" aria-label="各受試者峰值角速度差值與自身雜訊帶"></canvas>
+          </div>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="callout"><strong>「較慢但首發較準」現在有了機制側的描述，但它的強度比方向一致性看起來弱。</strong>
+        在 <code>A→B</code> 的四位可比受試者中：<b>峰值角速度 4/4 為負</b>（−6.8／−25.2／−31.9／−56.0 deg/s，即 DK/1-2-2 甩得較慢），
+        <b>擊發邊際 3/4 為正</b>（中位 +21.0 ms，即進靶後等更久才開火）。兩者方向都與「較慢、首發較準」相容。
+        <b>但對照各自的 run 間波動：峰值角速度 0/4 超出、擊發邊際 2/4 超出</b>（S03 +21.0 vs 帶寬 13.7、S05 +34.3 vs 11.6）。
+        峰速的方向一致性跨四人成立，量級卻每一位都落在自己的擺動之內。</div>
+
+        <div style="height:10px"></div>
+        <div class="callout stop"><strong>不可據此宣稱裝置造成較慢的拉槍。</strong>三個理由並存：
+        （1）<code>A→B</code> 的 GPW1 握法 5/6 未紀錄，這個對比可能是滑鼠＋握法；
+        （2）峰速差沒有任何一位超出自身波動；（3）四人方向一致在樣本 4 上本身不構成統計證據。
+        正確的用法是把它當<b>下一輪的預先登錄假設</b>：DK/1-2-2 的峰速較低且擊發較晚，是否在反平衡握法與足夠人數下重現。</div>
+      </section>
+
+      <section id="findings">
+        <span class="section-no">07 / FINDINGS</span>
+        <h2>S01 六項 Finding 的再檢視</h2>
+        <p class="section-intro">S01 報告的主要產出是四個量測問題與兩個能力缺口。以下逐項對照 cohort 結果，標出影響是<b>擴大</b>、<b>持平</b>，還是只有在 cohort 才看得到的<b>新問題</b>。</p>
+
+        <article class="finding grew">
+          <span class="no">F02 · 殘留擊發<span class="badge grew">證據等級大幅提升</span></span>
+          <h3>不再是候選，而是有簽名的量測假象</h3>
+          <p>cohort 共 <b>6 筆</b>，橫跨 <b>5 / 6 位受試者</b>。六筆全部同時滿足兩個條件：開火落在目標出現後 <b>60–140 ms</b>，且首發角誤差 <b>47.5–51.8°</b>。本 drill 的中心↔周邊角距是 <b>47.7–51.9°</b>（seed 57001 對所有人相同），也就是說誤差幾乎精確等於「準心還停在前一個中心目標上」。</p>
+          <p><b>六筆全部被判為首發失手。</b>量級仍小（0.25% 的呈現，首發率影響 ≤ 0.7 pp），但它每次都製造一次假失手，且落點在條件之間不均。S01 時只能說「需要一條護欄」；現在可以寫成明確規則：<code>first_fire &lt; 150 ms 且 offset ≈ D_deg</code>。門檻仍必須在看資料前鎖定。</p>
+        </article>
+
+        <div class="chart" style="margin-bottom:10px">
+          <h3>F02 的簽名：首發時間 × 首發角誤差</h3>
+          <p>2421 個首發（縱軸為對數刻度）。左上角那一叢孤立點就是殘留擊發——它們與主群體之間隔著超過一個數量級的角誤差，沒有任何連續過渡。順帶驗證了抽取正確：命中（青）與失手（琥珀）的分界恰好落在 <b>1.0°</b>，也就是 2.0° 目標的角半徑。</p>
+          <canvas id="signatureChart" aria-label="首發時間與角誤差的散佈圖，顯示殘留擊發的孤立叢集"></canvas>
+        </div>
+
+        <article class="finding grew">
+          <span class="no">F06 · run 間雜訊尺度<span class="badge grew">大幅擴大</span></span>
+          <h3>雜訊尺度從 3 個 cell 變成 17 個，而且比差異大</h3>
+          <p>同條件 3 個 run 之間的首發率全距：中位數 <b>8.5 pp</b>、最大 <b>15.9 pp</b>、最小 3.3 pp。對照之下，跨條件的 Δ 首發率為 −10.0 到 +15.0 pp。</p>
+          <p>結果：9 個「受試者 × 對比」（A→B 與 B→C）之中，<b>只有 2 個超出自身雜訊帶，而且方向相反</b>（S02 −10.0 pp、S05 +11.3 pp，都在 A→B）。S01 的結論不但成立，且被六倍資料強化。</p>
+        </article>
+
+        <article class="finding grew">
+          <span class="no">F03 · 回中心佔比<span class="badge grew">擴大</span></span>
+          <h3>現象普遍，但 77% 是 S01 特例</h3>
+          <p><code>A→B</code> 的週期差之中，回中心所佔比例為 <b>34% / 50% / 57% / 77% / 78%</b>（五位受試者），<code>B→C</code> 為 20–59%。所以 S01 的「77%」不是通例，但「相當大一部分的速率差異落在周邊指標完全看不到的地方」在<b>每一位受試者身上都成立</b>。</p>
+          <p>建議不變：把「回中心時間」納入資料契約。它是直接讀數，不需要新的構念定義。</p>
+        </article>
+
+        <article class="finding same">
+          <span class="no">F01 · 錄製尾巴<span class="badge same">持平</span></span>
+          <h3>仍然只有 1/51，單發影響不變</h3>
+          <p>整個 cohort 只有 <code>S01 / GPW1 / rep1</code> 帶錄製尾巴（5062.5 ms）。以原始錄製長度當 rate 分母，該 run 會從 45.00 掉到 39.67 hits/min（−11.8%）。頻率沒有上升，但 51 個 run 出現一次代表它會持續發生，protocol 邊界的修剪必須留著。</p>
+        </article>
+
+        <article class="finding same">
+          <span class="no">F04 · timeout 護欄<span class="badge same">確認，逼近度上升</span></span>
+          <h3>2442 次呈現、0 次 timeout</h3>
+          <p>最長觀測時間 <b>2249.1 ms</b>（S01 時只到 1700.6 ms），僅 3 次呈現超過 2000 ms。2500 ms 期限仍未被觸發過，δF 閘在這個難度下無法區分任何條件；但邊際已經不再寬裕，較慢的受試者進來後它可能開始咬到。</p>
+        </article>
+
+        <article class="finding grew">
+          <span class="no">F05 · 機制層<span class="badge same">已解除一半</span></span>
+          <h3>Tier 0 已可算，Tier 1 在這批資料上不可用</h3>
+          <p>本頁定稿後已建立 TS 抽取層（<code>analyze:spider-wide-mech</code>），實測 2486 次呈現的可算率<b>依層別分裂</b>：</p>
+          <p><b>Tier 0（不經 detector）99.1–100%</b> —— peak／entry ω、煞停保留率、擊發邊際、drop、micro-adjust、首發角誤差。首批真實值：煞停保留率中位數 <b>0.072</b>（進靶時只剩峰速的 7%）、擊發邊際中位數 <b>+73 ms</b>，其中 <b>6.9%</b> 的首發早於進靶。</p>
+          <p><b>Tier 1（reaction／movement time）僅 31.8%</b>，不可用於本 cohort。關鍵在於原因<b>不是</b> baseline 覆蓋率——<code>baselineInsufficient</code> 全數為 false，detector 卻對全部 2486 筆中的 <b>1696 筆</b>回 <code>timeout</code>；在 2442 筆可分析呈現上，反應時間只有 <b>777 筆</b>（31.8%）可算。覆蓋率不等於乾淨度：KI-034 講的是 pre-stimulus 窗吃進前一次交戰，那會灌大 baseline SD、把偵測門檻頂高，而覆蓋率旗標看不見這件事；1.2 秒的週期保證了重疊。</p>
+          <p>因此本頁浮現的機制問題（<b>DK/1-2-2 較慢 4/4 但首發率多半較高 3/4</b>）現在<b>有工具可查</b>，但只能用 Tier 0 的煞停與擊發時機去查，不能用反應時間。機制層數值已併入 <a href="#mechanism">§06</a>：峰值角速度在 4/4 可比受試者身上較低、擊發邊際 3/4 較長，但只有擊發邊際有 2/4 超出自身 run 波動。</p>
+        </article>
+
+        <article class="finding newf">
+          <span class="no">N1 · 只有 cohort 看得到<span class="badge newf">新</span></span>
+          <h3>順序反平衡只做對了一半</h3>
+          <p>GPW1 位置 3:3 反平衡（已解除 S01 的裝置—時間共線），但 1-2-2 在 5/5 受試者身上都排在 1-3-1 之前。<b>握法對比對每一位受試者都與場內順序完全共線。</b></p>
+        </article>
+
+        <article class="finding newf">
+          <span class="no">N2 · 只有 cohort 看得到<span class="badge newf">新</span></span>
+          <h3>GPW1 的握法 5/6 未紀錄</h3>
+          <p>只有 S01 被確認為 1-2-2。若其餘受試者在 GPW1 上用的不是 1-2-2，<code>A→B</code> 就不是滑鼠對比而是滑鼠＋握法。這是<b>紀錄缺口而非資料問題</b>，且它正好牽制本批<b>全部</b>方向一致的訊號——結果面與機制面都建立在 <code>A→B</code> 上。</p>
+        </article>
+
+        <article class="finding newf">
+          <span class="no">N3 · 只有 cohort 看得到<span class="badge newf">新</span></span>
+          <h3>場中改設定，以及它應該由誰承擔</h3>
+          <p>S04 在場中把感度從 1.1 改為 1.0。處置方式從「標記漂移的 run」改為「標記跨越變動的<b>對比</b>」——因為沒有哪一邊是漂移的那一邊。結果是 S04 保住了 <code>B→C</code>，只失去 <code>A→B</code> 與 <code>A→C</code>；若按 run 排除，會連 3 個乾淨的 GPW1 run 一起丟掉。</p>
+        </article>
+      </section>
+
+      <section id="next">
+        <span class="section-no">08 / NEXT</span>
+        <h2>下一步</h2>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead><tr><th>#</th><th>動作</th><th>為什麼是現在</th></tr></thead>
+            <tbody>
+              <tr><td class="num">1</td><td>補記 S02–S06 在 GPW1 上的握法</td><td>它決定本批那組方向一致的訊號（命中時間、峰速、擊發邊際）能不能被稱為裝置效應；是紀錄工作，不需要重測</td></tr>
+              <tr><td class="num">2</td><td>下一輪把握法順序納入反平衡</td><td>滑鼠位置已經做到了，握法一次都沒有；目前 <code>B→C</code> 對每個人都與順序共線</td></tr>
+              <tr><td class="num">3</td><td><s>建 TS 抽取層</s>、<s>把 Tier 0 數值併入本報告</s> → 已完成（<a href="#mechanism">§06</a>）；剩餘工作是釐清 detector 對 68% 呈現回 timeout 的成因</td><td>「較慢但首發較準」現在可用煞停保留率與擊發邊際去查；反應時間在本 cohort 仍不可用</td></tr>
+              <tr><td class="num">4</td><td>把殘留擊發護欄寫進 protocol（看資料前鎖門檻）</td><td>簽名已明確：<code>first_fire &lt; 150 ms 且 offset ≈ D_deg</code></td></tr>
+              <tr><td class="num">5</td><td>把「回中心時間」納入資料契約</td><td>速率差異有 34–78% 落在它身上，目前沒有任何指標描述它</td></tr>
+              <tr><td class="num">6</td><td>訂定 <code>lateEventCount</code> 非零的完整性規則</td><td>23/51 個 run 非零，目前只記錄不處置</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="artifacts">
+        <span class="section-no">09 / ARTIFACTS</span>
+        <h2>產物與重現</h2>
+        <div class="files">
+          <ul>
+            <li><b>純函式抽取</b>：<code>research/src/mousegrip/algorithms/pilot.py</code></li>
+            <li><b>機制層抽取（TypeScript，構念權威）</b>：<code>scripts/spiderWideMechanismRunner.ts</code>（純函式）+ <code>scripts/analyze-spider-wide-mechanism.ts</code>（I/O）　→　<code>npm run analyze:spider-wide-mech -- data/BQC-test/DKMouse --out &lt;dir&gt;</code>，產出 <code>mechanism_metrics.csv</code></li>
+            <li><b>Cohort runner</b>：<code>research/src/mousegrip/notebooks/run_cohort.py</code>　→　<code>uv run python src/mousegrip/notebooks/run_cohort.py --mechanism &lt;dir&gt;/mechanism_metrics.csv</code>（省略 <code>--mechanism</code> 則機制層欄位不出現）</li>
+            <li><b>輸出</b>（<code>research/out/mousegrip-cohort/</code>，git-ignored）：<code>quality_ledger.csv</code>（51 列）、<code>trial_metrics.csv</code>（2486 列）、<code>run_metrics.csv</code>（51 列）、<code>matched_pairs.csv</code>、<code>mechanism_coverage.csv</code>（10 列，逐欄可算率與採用判定）</li>
+            <li><b>S01 單人報告</b>：<a href="s01-track-p-pilot-result-2026-09-17.html">Track P pilot result</a>（數字在本次管線改動後逐位重現）</li>
+            <li><b>流程依據</b>：<a href="mouse-grip-final-workflow-2026-09-17.html">最終整合 workflow v2.0</a> 的 Track P 分支</li>
+          </ul>
+        </div>
+        <div style="height:12px"></div>
+        <div class="callout"><strong>本頁沒有做的事：</strong>沒有產生優勝條件、沒有常模或技能等級、沒有確認性 CI、沒有呈現 Tier 1 機制指標（反應時間與 movement time 在 31.8% 被擋下，見 <a href="#mechanism">§06</a>）、沒有 polling／sensor 推論、沒有把右鍵觸發稱為誤觸、沒有對未反平衡的握法對比下任何方向性判語。跨人彙總一律以受試者為權重單位，不把 trial 直接合併。</div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="shell">Spider Shot Wide v1 · S01–S06 cohort result · 2026-09-18 · 描述性結果，不得作為選鼠依據或常模引用。</div>
+  </footer>
+
+  <script id="series" type="application/json">{"order":{"S01":[["A","06:56"],["B","08:07"],["C","08:27"]],"S02":[["B","01:49"],["C","02:25"],["A","03:04"]],"S03":[["B","07:18"],["C","08:04"],["A","08:36"]],"S04":[["A","10:52"],["B","11:29"],["C","12:01"]],"S05":[["B","01:58"],["C","02:33"],["A","03:03"]],"S06":[["A","08:30"],["C","09:03"]]},"profile":{"S01A":{"runs":3,"n":136,"hits":135,"rate":[45.0,45.0,45.0],"first":[0.9111,0.8444,0.8478],"firstPooled":0.8676,"kmMed":610.5,"kmP90":870.6,"ads":0,"adsOverlap":0,"sens":[1.3],"sessEnd":1},"S01B":{"runs":3,"n":145,"hits":143,"rate":[48.0,48.0,47.0],"first":[0.8776,0.9388,0.9362],"firstPooled":0.9172,"kmMed":617.9,"kmP90":796.3,"ads":1,"adsOverlap":1,"sens":[1.3],"sessEnd":2},"S01C":{"runs":3,"n":136,"hits":133,"rate":[42.0,45.0,46.0],"first":[0.7907,0.913,0.8511],"firstPooled":0.8529,"kmMed":642.0,"kmP90":941.4,"ads":79,"adsOverlap":59,"sens":[1.3],"sessEnd":3},"S02A":{"runs":3,"n":130,"hits":128,"rate":[44.0,42.0,42.0],"first":[0.9091,0.8372,0.8605],"firstPooled":0.8692,"kmMed":685.4,"kmP90":938.6,"ads":0,"adsOverlap":0,"sens":[1.0],"sessEnd":2},"S02B":{"runs":3,"n":123,"hits":121,"rate":[39.0,41.0,41.0],"first":[0.725,0.8095,0.8049],"firstPooled":0.7805,"kmMed":701.1,"kmP90":916.6,"ads":0,"adsOverlap":0,"sens":[1.0],"sessEnd":2},"S02C":{"runs":3,"n":131,"hits":131,"rate":[43.0,44.0,44.0],"first":[1.0,0.9545,0.8409],"firstPooled":0.9313,"kmMed":691.4,"kmP90":808.3,"ads":8,"adsOverlap":4,"sens":[1.0],"sessEnd":0},"S03A":{"runs":3,"n":159,"hits":159,"rate":[54.0,54.0,51.0],"first":[0.8889,0.8704,0.7451],"firstPooled":0.8365,"kmMed":536.6,"kmP90":1020.4,"ads":0,"adsOverlap":0,"sens":[1.0],"sessEnd":0},"S03B":{"runs":3,"n":151,"hits":149,"rate":[48.0,51.0,50.0],"first":[0.8958,0.8654,0.8627],"firstPooled":0.8742,"kmMed":573.6,"kmP90":900.7,"ads":0,"adsOverlap":0,"sens":[1.0],"sessEnd":2},"S03C":{"runs":3,"n":146,"hits":144,"rate":[46.0,48.0,50.0],"first":[0.7447,0.8542,0.8039],"firstPooled":0.8014,"kmMed":595.8,"kmP90":1123.0,"ads":13,"adsOverlap":11,"sens":[1.0],"sessEnd":2},"S04A":{"runs":3,"n":149,"hits":148,"rate":[48.0,49.0,51.0],"first":[0.8333,0.74,0.7843],"firstPooled":0.7852,"kmMed":594.1,"kmP90":1016.2,"ads":1,"adsOverlap":1,"sens":[1.1],"sessEnd":1},"S04B":{"runs":2,"n":106,"hits":105,"rate":[50.0,55.0],"first":[0.8235,0.9273],"firstPooled":0.8774,"kmMed":545.0,"kmP90":873.2,"ads":3,"adsOverlap":1,"sens":[1.0],"sessEnd":1},"S04C":{"runs":3,"n":148,"hits":147,"rate":[49.0,48.0,50.0],"first":[0.8571,0.7755,0.92],"firstPooled":0.8514,"kmMed":589.8,"kmP90":856.1,"ads":4,"adsOverlap":3,"sens":[1.0],"sessEnd":1},"S05A":{"runs":3,"n":167,"hits":166,"rate":[56.0,55.0,55.0],"first":[0.8214,0.8571,0.8182],"firstPooled":0.8323,"kmMed":516.3,"kmP90":715.0,"ads":0,"adsOverlap":0,"sens":[1.0],"sessEnd":1},"S05B":{"runs":3,"n":157,"hits":155,"rate":[50.0,52.0,53.0],"first":[0.94,0.9245,0.8889],"firstPooled":0.9172,"kmMed":578.7,"kmP90":754.3,"ads":0,"adsOverlap":0,"sens":[1.0],"sessEnd":2},"S05C":{"runs":3,"n":161,"hits":159,"rate":[52.0,54.0,53.0],"first":[0.9038,0.9091,0.8519],"firstPooled":0.8882,"kmMed":547.0,"kmP90":784.1,"ads":0,"adsOverlap":0,"sens":[1.0],"sessEnd":2},"S06A":{"runs":3,"n":143,"hits":142,"rate":[46.0,48.0,48.0],"first":[0.8298,0.9375,0.8542],"firstPooled":0.8741,"kmMed":628.4,"kmP90":788.3,"ads":0,"adsOverlap":0,"sens":[1.1],"sessEnd":1},"S06C":{"runs":3,"n":154,"hits":153,"rate":[50.0,51.0,52.0],"first":[0.88,0.8846,0.9231],"firstPooled":0.8961,"kmMed":581.3,"kmP90":813.7,"ads":5,"adsOverlap":5,"sens":[1.1],"sessEnd":1}},"comparability":{"S01":{"A->B":"","B->C":"","A->C":""},"S02":{"A->B":"","B->C":"","A->C":""},"S03":{"A->B":"","B->C":"","A->C":""},"S04":{"A->B":"sensitivity 1.1 vs 1.0","B->C":"","A->C":"sensitivity 1.1 vs 1.0"},"S05":{"A->B":"","B->C":"","A->C":""},"S06":{"A->B":"cell missing","B->C":"cell missing","A->C":""}},"noise":{"S01":{"A":{"first":6.7,"km":33.3},"B":{"first":6.1,"km":51.2},"C":{"first":12.2,"km":102.8}},"S02":{"A":{"first":7.2,"km":24.7},"B":{"first":8.5,"km":50.7},"C":{"first":15.9,"km":54.3}},"S03":{"A":{"first":14.4,"km":10.4},"B":{"first":3.3,"km":28.1},"C":{"first":10.9,"km":25.6}},"S04":{"A":{"first":9.3,"km":51.6},"B":{"first":10.4,"km":18.4},"C":{"first":14.5,"km":5.2}},"S05":{"A":{"first":3.9,"km":38.8},"B":{"first":5.1,"km":32.1},"C":{"first":5.7,"km":28.2}},"S06":{"A":{"first":10.8,"km":71.2},"C":{"first":4.3,"km":10.6}}},"contrasts":{"A->B":[{"p":"S01","pairs":129,"dFirst":6.2,"dTime":6.0,"band":6.7,"bandKm":51.2},{"p":"S02","pairs":120,"dFirst":-10.0,"dTime":34.1,"band":8.5,"bandKm":50.7},{"p":"S03","pairs":141,"dFirst":5.7,"dTime":31.9,"band":14.4,"bandKm":28.1},{"p":"S05","pairs":150,"dFirst":11.3,"dTime":54.7,"band":5.1,"bandKm":38.8}],"B->C":[{"p":"S01","pairs":129,"dFirst":-6.2,"dTime":34.1,"band":12.2,"bandKm":102.8},{"p":"S02","pairs":120,"dFirst":15.0,"dTime":-18.0,"band":15.9,"bandKm":54.3},{"p":"S03","pairs":141,"dFirst":-7.8,"dTime":20.9,"band":10.9,"bandKm":28.1},{"p":"S04","pairs":96,"dFirst":-1.0,"dTime":43.8,"band":14.5,"bandKm":18.4},{"p":"S05","pairs":150,"dFirst":-3.3,"dTime":-25.9,"band":5.7,"bandKm":32.1}],"A->C":[{"p":"S01","pairs":129,"dFirst":0.0,"dTime":50.8,"band":12.2,"bandKm":102.8},{"p":"S02","pairs":120,"dFirst":5.0,"dTime":6.5,"band":15.9,"bandKm":54.3},{"p":"S03","pairs":141,"dFirst":-2.1,"dTime":61.0,"band":14.4,"bandKm":25.6},{"p":"S05","pairs":150,"dFirst":8.0,"dTime":28.2,"band":5.7,"bandKm":38.8},{"p":"S06","pairs":141,"dFirst":2.8,"dTime":-49.0,"band":10.8,"bandKm":71.2}]},"cycle":{"S01A":[630.5,686.5],"S01B":[573.4,669.4],"S01C":[610.4,720.1],"S02A":[645.0,744.0],"S02B":[702.6,759.9],"S02C":[643.1,718.9],"S03A":[494.1,629.5],"S03B":[531.4,658.1],"S03C":[540.7,695.5],"S04A":[547.5,659.5],"S04B":[508.4,620.9],"S04C":[555.2,658.5],"S05A":[500.4,577.3],"S05B":[524.4,623.5],"S05C":[516.6,604.4],"S06A":[576.7,679.7],"S06C":[529.2,640.9]},"scatter":[[740,1.3,0],[806,0.78,1],[711,0.32,1],[573,0.6,1],[609,0.74,1],[661,0.29,1],[615,0.27,1],[601,0.44,1],[704,0.47,1],[608,0.41,1],[696,0.73,1],[754,0.6,1],[619,0.1,1],[561,1.12,0],[730,0.36,1],[710,0.68,1],[795,0.9,1],[508,0.44,1],[507,0.51,1],[480,0.95,1],[481,0.79,1],[461,0.92,1],[456,0.27,1],[467,0.3,1],[771,0.32,1],[534,1.58,0],[779,0.41,1],[546,0.55,1],[526,0.59,1],[542,0.4,1],[549,0.44,1],[635,0.84,1],[510,0.59,1],[691,1.06,0],[625,0.53,1],[766,0.39,1],[573,0.75,1],[522,0.26,1],[495,0.57,1],[531,0.61,1],[675,0.53,1],[648,0.2,1],[656,0.15,1],[683,0.78,1],[707,0.64,1],[637,0.27,1],[603,1.02,0],[585,0.45,1],[581,0.48,1],[627,0.36,1],[505,0.11,1],[465,0.75,1],[498,0.34,1],[643,1.66,0],[642,0.54,1],[598,0.54,1],[724,0.79,1],[528,0.27,1],[499,1.19,0],[736,0.14,1],[550,0.43,1],[843,0.31,1],[498,0.16,1],[529,0.17,1],[555,0.7,1],[592,0.3,1],[587,0.26,1],[590,0.6,1],[579,0.77,1],[680,0.24,1],[826,0.67,1],[650,0.76,1],[548,0.77,1],[578,0.43,1],[520,0.16,1],[451,0.34,1],[506,1.07,0],[511,0.72,1],[693,0.18,1],[610,0.97,1],[785,0.45,1],[495,1.58,0],[476,0.38,1],[509,1.34,0],[571,0.81,1],[498,0.88,1],[681,1.12,0],[522,0.31,1],[713,0.34,1],[741,0.65,1],[592,0.67,1],[514,1.15,0],[524,0.99,1],[526,0.6,1],[434,0.82,1],[517,0.69,1],[486,0.94,1],[439,0.88,1],[661,0.37,1],[483,0.6,1],[608,0.9,1],[797,0.44,1],[495,1.3,0],[560,0.95,1],[631,0.43,1],[508,0.17,1],[715,0.85,1],[674,0.42,1],[483,1.26,0],[569,0.26,1],[616,0.83,1],[492,0.75,1],[507,0.44,1],[589,0.69,1],[689,0.67,1],[502,0.3,1],[656,0.37,1],[565,0.69,1],[520,0.35,1],[527,0.72,1],[561,1.35,0],[556,0.86,1],[560,0.42,1],[649,0.79,1],[677,0.73,1],[629,0.39,1],[640,0.46,1],[771,0.69,1],[526,1.18,0],[523,0.93,1],[529,1.01,0],[649,0.22,1],[599,0.69,1],[871,0.06,1],[790,0.54,1],[582,1.19,0],[826,0.64,1],[557,0.72,1],[992,0.38,1],[605,0.72,1],[546,0.7,1],[565,0.58,1],[518,0.84,1],[633,0.61,1],[746,0.65,1],[720,1.41,0],[528,0.26,1],[657,0.96,1],[509,0.92,1],[526,0.41,1],[715,0.21,1],[517,0.67,1],[774,0.74,1],[588,0.37,1],[517,0.83,1],[485,0.33,1],[487,0.7,1],[497,0.63,1],[513,1.46,0],[655,0.18,1],[725,0.13,1],[548,0.71,1],[754,0.37,1],[601,0.31,1],[634,0.18,1],[515,0.13,1],[683,0.03,1],[641,0.17,1],[486,0.69,1],[719,0.56,1],[601,0.81,1],[709,0.96,1],[510,0.49,1],[506,0.7,1],[506,2.05,0],[562,0.86,1],[492,1.39,0],[735,0.4,1],[611,0.22,1],[871,0.5,1],[939,0.13,1],[753,0.53,1],[719,1.26,0],[699,0.44,1],[736,0.05,1],[670,0.4,1],[571,0.3,1],[634,0.72,1],[518,0.62,1],[731,0.07,1],[560,0.27,1],[637,0.7,1],[696,0.3,1],[859,0.42,1],[523,0.47,1],[618,0.32,1],[624,0.36,1],[507,0.18,1],[645,0.05,1],[527,0.92,1],[657,0.28,1],[535,0.51,1],[554,0.67,1],[520,0.97,1],[495,0.99,1],[535,0.96,1],[598,0.68,1],[513,0.6,1],[673,0.67,1],[525,0.43,1],[713,0.04,1],[555,0.53,1],[511,0.2,1],[606,0.61,1],[554,0.42,1],[544,1.13,0],[662,0.5,1],[664,0.16,1],[611,0.13,1],[766,0.2,1],[531,0.72,1],[521,0.73,1],[560,0.7,1],[662,0.48,1],[529,0.69,1],[637,0.62,1],[510,1.09,0],[587,0.69,1],[745,0.54,1],[660,0.14,1],[549,0.34,1],[580,0.45,1],[592,0.38,1],[748,0.54,1],[547,0.62,1],[609,0.44,1],[583,0.13,1],[594,0.39,1],[614,0.24,1],[626,0.14,1],[80,48.36,0],[717,0.33,1],[703,0.29,1],[675,0.77,1],[650,0.96,1],[586,0.12,1],[821,0.33,1],[770,0.74,1],[692,0.2,1],[799,0.19,1],[682,0.63,1],[568,0.45,1],[543,0.56,1],[490,0.66,1],[476,0.57,1],[582,0.19,1],[701,0.64,1],[595,0.64,1],[792,0.34,1],[616,0.73,1],[529,0.51,1],[566,0.29,1],[694,0.5,1],[676,0.62,1],[549,0.48,1],[657,0.76,1],[752,1.18,0],[797,0.51,1],[514,1.51,0],[557,0.66,1],[531,0.48,1],[521,0.44,1],[501,0.4,1],[775,0.36,1],[701,0.29,1],[789,0.23,1],[557,0.61,1],[696,0.5,1],[710,0.9,1],[706,0.26,1],[644,0.58,1],[630,0.23,1],[652,0.3,1],[604,0.5,1],[496,1.19,0],[539,1.75,0],[642,0.19,1],[849,0.28,1],[766,0.27,1],[582,0.82,1],[753,1.12,0],[634,0.43,1],[616,0.62,1],[773,0.08,1],[758,0.23,1],[781,0.1,1],[612,0.76,1],[500,2.36,0],[601,0.8,1],[626,0.46,1],[533,0.43,1],[569,1.1,0],[617,0.63,1],[976,0.21,1],[745,0.34,1],[854,0.3,1],[673,0.64,1],[630,0.36,1],[694,1.18,0],[716,0.4,1],[829,0.6,1],[677,0.39,1],[800,0.49,1],[745,0.84,1],[834,0.38,1],[553,0.44,1],[586,0.32,1],[590,1.28,0],[624,1.07,0],[612,0.88,1],[905,0.58,1],[702,0.53,1],[681,0.61,1],[638,0.36,1],[676,0.37,1],[486,0.31,1],[494,1.44,0],[533,0.52,1],[463,0.46,1],[722,0.96,1],[716,0.31,1],[594,0.15,1],[730,0.71,1],[489,0.81,1],[553,0.41,1],[684,0.13,1],[616,0.09,1],[681,0.3,1],[668,0.76,1],[538,0.7,1],[512,0.74,1],[480,0.51,1],[620,0.43,1],[499,0.23,1],[502,0.87,1],[671,0.53,1],[541,0.56,1],[728,0.84,1],[661,0.27,1],[565,0.28,1],[644,0.9,1],[537,0.84,1],[584,0.49,1],[630,0.18,1],[720,0.87,1],[590,1.06,0],[779,0.45,1],[622,0.28,1],[534,0.22,1],[624,0.72,1],[662,0.79,1],[588,0.88,1],[736,1.08,0],[669,0.87,1],[690,0.37,1],[770,0.13,1],[598,0.56,1],[653,0.82,1],[551,0.57,1],[646,0.61,1],[566,0.51,1],[522,0.87,1],[510,0.56,1],[550,0.65,1],[715,0.3,1],[657,0.5,1],[642,0.47,1],[745,1.19,0],[638,0.27,1],[520,0.3,1],[776,1.9,0],[708,0.48,1],[755,0.33,1],[650,0.74,1],[548,0.23,1],[613,0.51,1],[466,0.8,1],[578,0.42,1],[510,0.29,1],[538,0.29,1],[832,0.44,1],[609,0.35,1],[434,1.12,0],[542,0.54,1],[500,0.84,1],[573,0.31,1],[504,0.59,1],[641,0.34,1],[583,0.36,1],[716,0.77,1],[636,0.86,1],[693,0.13,1],[546,1.25,0],[700,1.2,0],[557,0.63,1],[607,0.26,1],[561,0.46,1],[614,0.74,1],[542,0.46,1],[718,1.63,0],[779,0.36,1],[624,0.93,1],[849,0.81,1],[631,0.24,1],[707,0.28,1],[828,0.59,1],[714,0.57,1],[705,0.28,1],[571,0.28,1],[625,0.63,1],[758,0.28,1],[619,0.36,1],[619,0.51,1],[637,0.5,1],[704,0.71,1],[648,0.3,1],[665,0.97,1],[746,0.18,1],[693,0.22,1],[632,0.62,1],[578,0.03,1],[646,1.18,0],[615,1.16,0],[608,0.4,1],[530,0.93,1],[708,1.1,0],[694,0.17,1],[613,0.77,1],[820,0.45,1],[666,0.59,1],[595,0.51,1],[679,0.75,1],[589,0.64,1],[664,0.52,1],[709,0.44,1],[725,0.61,1],[786,0.17,1],[1123,0.45,1],[496,0.22,1],[591,0.25,1],[613,0.79,1],[637,0.28,1],[756,0.24,1],[735,1.49,0],[655,0.89,1],[639,0.54,1],[690,0.31,1],[667,0.38,1],[686,0.36,1],[691,1.28,0],[711,0.53,1],[654,0.33,1],[689,0.02,1],[754,0.91,1],[690,0.54,1],[566,0.88,1],[736,0.08,1],[485,0.37,1],[703,1.63,0],[711,0.14,1],[576,2.39,0],[658,0.1,1],[706,0.42,1],[791,1.12,0],[612,0.94,1],[591,0.51,1],[588,0.67,1],[658,0.28,1],[574,0.42,1],[769,0.16,1],[615,0.94,1],[553,0.44,1],[862,0.29,1],[599,0.31,1],[592,0.48,1],[622,0.19,1],[625,0.63,1],[575,1.41,0],[511,0.7,1],[693,0.58,1],[722,0.63,1],[689,0.82,1],[797,0.28,1],[635,1.2,0],[568,0.26,1],[631,0.96,1],[629,0.93,1],[767,0.46,1],[654,1.35,0],[688,0.65,1],[747,0.96,1],[700,0.28,1],[765,1.18,0],[657,0.38,1],[817,0.24,1],[675,0.61,1],[766,0.33,1],[698,1.64,0],[662,0.14,1],[737,0.67,1],[764,0.25,1],[685,0.94,1],[596,0.31,1],[788,0.33,1],[610,0.8,1],[727,0.86,1],[623,0.57,1],[632,0.78,1],[655,0.25,1],[690,0.27,1],[805,0.35,1],[622,0.53,1],[634,0.69,1],[761,1.1,0],[663,0.7,1],[727,1.43,0],[607,0.08,1],[637,0.87,1],[748,0.47,1],[584,0.8,1],[625,0.62,1],[648,0.37,1],[789,0.41,1],[667,0.36,1],[728,0.37,1],[703,0.34,1],[675,0.24,1],[761,1.09,0],[598,0.87,1],[614,0.36,1],[727,0.35,1],[697,1.11,0],[762,0.34,1],[546,1.19,0],[575,1.21,0],[728,0.71,1],[636,0.35,1],[576,1.79,0],[690,0.31,1],[657,1.67,0],[689,0.81,1],[663,0.03,1],[612,0.59,1],[722,1.82,0],[690,0.59,1],[696,0.71,1],[580,1.0,1],[772,0.32,1],[769,0.9,1],[691,0.87,1],[623,0.34,1],[687,0.61,1],[791,0.82,1],[760,0.12,1],[812,0.33,1],[684,1.13,0],[668,0.48,1],[706,0.12,1],[689,0.81,1],[625,1.38,0],[696,1.13,0],[609,0.84,1],[676,1.87,0],[686,0.39,1],[689,0.9,1],[645,0.85,1],[719,0.54,1],[697,0.21,1],[627,0.28,1],[696,0.41,1],[762,0.58,1],[727,0.9,1],[730,0.26,1],[709,0.04,1],[745,0.61,1],[695,0.47,1],[732,0.22,1],[653,0.12,1],[751,0.15,1],[523,3.08,0],[744,0.53,1],[598,0.24,1],[718,0.51,1],[701,0.47,1],[651,0.65,1],[650,0.51,1],[727,0.45,1],[681,0.66,1],[668,0.57,1],[651,0.55,1],[717,0.79,1],[695,0.61,1],[660,0.5,1],[644,0.09,1],[657,0.79,1],[719,0.34,1],[756,0.24,1],[685,0.56,1],[622,1.34,0],[762,0.45,1],[548,1.63,0],[853,1.34,0],[506,2.69,0],[727,1.09,0],[730,0.96,1],[67,51.76,0],[810,0.15,1],[681,0.33,1],[728,0.12,1],[700,0.39,1],[748,0.82,1],[859,0.75,1],[627,0.63,1],[641,0.87,1],[667,2.08,0],[606,1.19,0],[657,0.43,1],[629,0.57,1],[763,0.4,1],[690,0.28,1],[543,1.86,0],[708,1.02,0],[668,0.14,1],[595,0.57,1],[581,0.47,1],[742,0.59,1],[743,0.69,1],[747,1.04,0],[604,1.07,0],[627,0.15,1],[593,0.28,1],[632,0.17,1],[606,0.69,1],[639,0.54,1],[655,0.49,1],[571,1.08,0],[682,0.53,1],[681,0.95,1],[625,0.5,1],[559,0.92,1],[665,0.29,1],[546,0.56,1],[848,0.26,1],[683,0.85,1],[633,0.65,1],[730,0.47,1],[690,1.13,0],[647,0.62,1],[709,0.32,1],[638,0.43,1],[671,0.53,1],[769,0.42,1],[693,0.47,1],[698,0.88,1],[656,0.07,1],[821,0.1,1],[766,0.36,1],[655,0.44,1],[690,0.19,1],[810,0.37,1],[707,0.35,1],[645,0.43,1],[660,0.38,1],[704,0.25,1],[912,0.81,1],[689,0.73,1],[746,0.12,1],[847,0.22,1],[731,0.31,1],[783,0.85,1],[742,0.53,1],[675,0.15,1],[738,0.65,1],[645,0.48,1],[691,0.66,1],[639,0.57,1],[685,0.22,1],[757,0.54,1],[781,0.29,1],[765,0.44,1],[697,0.09,1],[732,0.52,1],[725,0.14,1],[761,0.72,1],[720,0.68,1],[683,0.19,1],[767,0.22,1],[754,0.31,1],[728,0.77,1],[722,0.03,1],[495,0.16,1],[546,0.99,1],[597,0.76,1],[723,0.57,1],[700,0.25,1],[743,0.4,1],[851,0.49,1],[632,0.13,1],[808,0.39,1],[589,0.15,1],[841,0.87,1],[677,0.36,1],[719,0.73,1],[697,0.35,1],[706,0.14,1],[592,0.13,1],[696,0.28,1],[677,0.49,1],[593,0.28,1],[716,1.54,0],[778,0.71,1],[787,0.67,1],[573,0.42,1],[704,0.68,1],[630,0.47,1],[717,0.4,1],[608,0.37,1],[744,0.63,1],[626,0.59,1],[659,0.17,1],[745,0.7,1],[707,0.17,1],[605,0.25,1],[797,1.17,0],[570,0.23,1],[693,0.85,1],[706,0.32,1],[595,0.73,1],[647,0.69,1],[569,0.3,1],[748,0.41,1],[739,0.36,1],[607,0.87,1],[899,0.31,1],[504,0.56,1],[563,0.69,1],[643,0.29,1],[543,0.62,1],[644,0.63,1],[678,0.26,1],[626,0.69,1],[587,0.48,1],[738,0.15,1],[602,1.12,0],[626,0.48,1],[650,0.51,1],[729,0.03,1],[688,0.48,1],[675,0.46,1],[567,0.61,1],[635,0.1,1],[662,0.93,1],[626,0.46,1],[555,0.85,1],[729,0.76,1],[96,50.95,0],[550,0.46,1],[764,0.47,1],[636,0.75,1],[641,0.14,1],[574,2.17,0],[717,0.41,1],[710,1.0,0],[673,0.56,1],[665,0.89,1],[638,0.44,1],[613,0.29,1],[701,0.86,1],[560,0.46,1],[641,0.57,1],[718,0.07,1],[661,0.71,1],[689,0.46,1],[698,0.1,1],[641,0.31,1],[768,1.18,0],[628,0.88,1],[708,1.08,0],[579,0.61,1],[676,0.32,1],[535,1.23,0],[671,0.56,1],[642,0.5,1],[531,0.36,1],[629,0.38,1],[449,0.59,1],[473,0.36,1],[428,0.73,1],[639,0.89,1],[455,0.34,1],[590,0.63,1],[706,0.54,1],[645,0.16,1],[559,0.22,1],[575,0.32,1],[448,0.36,1],[432,0.78,1],[578,0.28,1],[530,0.77,1],[583,0.31,1],[450,0.89,1],[501,0.41,1],[461,0.45,1],[415,1.33,0],[439,1.27,0],[514,0.41,1],[403,0.18,1],[657,0.39,1],[441,0.37,1],[621,0.18,1],[442,0.34,1],[386,0.77,1],[436,0.98,1],[513,0.43,1],[443,1.08,0],[504,0.43,1],[607,0.62,1],[424,0.65,1],[576,1.3,0],[463,0.8,1],[491,1.67,0],[622,0.25,1],[523,1.28,0],[475,0.39,1],[621,0.15,1],[457,0.17,1],[541,0.21,1],[650,0.22,1],[569,0.58,1],[612,0.49,1],[537,0.38,1],[564,0.6,1],[582,0.44,1],[536,0.73,1],[429,0.47,1],[474,0.25,1],[427,0.61,1],[524,0.57,1],[536,0.34,1],[501,0.98,1],[471,0.4,1],[474,0.09,1],[538,0.56,1],[454,0.86,1],[426,0.36,1],[544,1.36,0],[646,0.4,1],[439,1.17,0],[581,0.35,1],[484,0.36,1],[577,0.16,1],[602,0.65,1],[499,0.41,1],[580,0.39,1],[497,0.61,1],[474,0.56,1],[479,1.33,0],[614,0.57,1],[530,0.92,1],[564,0.49,1],[545,0.63,1],[572,0.31,1],[509,1.33,0],[711,0.34,1],[447,0.75,1],[486,0.14,1],[445,0.14,1],[458,0.36,1],[412,0.44,1],[521,0.98,1],[560,0.23,1],[560,1.01,0],[658,0.33,1],[505,0.74,1],[570,1.37,0],[468,0.5,1],[463,0.64,1],[474,0.43,1],[590,0.12,1],[459,0.45,1],[589,0.56,1],[598,0.64,1],[509,1.63,0],[600,0.26,1],[589,0.94,1],[473,0.38,1],[553,0.33,1],[688,0.69,1],[439,0.46,1],[476,0.4,1],[500,0.72,1],[659,0.24,1],[565,0.25,1],[484,0.45,1],[473,0.74,1],[485,0.12,1],[505,0.26,1],[546,0.5,1],[455,0.07,1],[497,1.02,0],[475,0.4,1],[632,0.06,1],[624,0.78,1],[427,0.92,1],[439,0.66,1],[594,0.43,1],[479,0.56,1],[596,0.33,1],[551,0.78,1],[411,0.7,1],[491,0.52,1],[452,0.64,1],[460,0.35,1],[469,0.25,1],[549,1.15,0],[617,1.51,0],[486,1.68,0],[547,0.2,1],[514,1.02,0],[473,0.62,1],[535,1.13,0],[465,1.04,0],[463,1.32,0],[436,0.78,1],[597,1.4,0],[457,0.48,1],[574,1.05,0],[484,0.53,1],[454,0.95,1],[467,0.8,1],[468,0.28,1],[419,0.29,1],[656,0.19,1],[529,0.16,1],[562,0.97,1],[625,1.3,0],[651,0.19,1],[521,0.87,1],[566,1.15,0],[505,0.48,1],[398,1.47,0],[626,0.61,1],[628,1.3,0],[532,0.59,1],[534,0.41,1],[719,0.58,1],[486,0.72,1],[594,0.98,1],[489,0.61,1],[508,0.54,1],[815,0.65,1],[648,0.85,1],[797,0.21,1],[577,0.22,1],[619,0.18,1],[521,0.05,1],[648,1.25,0],[638,0.6,1],[685,0.6,1],[522,1.26,0],[608,0.51,1],[538,0.12,1],[512,0.63,1],[536,0.45,1],[508,0.47,1],[512,0.81,1],[676,0.97,1],[585,0.75,1],[607,0.31,1],[481,0.9,1],[533,0.09,1],[522,0.58,1],[525,0.53,1],[517,1.27,0],[543,0.18,1],[660,0.56,1],[514,1.05,0],[799,0.68,1],[661,0.24,1],[509,0.39,1],[469,0.3,1],[539,0.63,1],[581,0.58,1],[687,0.21,1],[513,0.53,1],[664,0.91,1],[655,0.35,1],[442,0.93,1],[765,0.28,1],[683,0.59,1],[640,0.59,1],[667,0.29,1],[569,0.51,1],[477,0.83,1],[506,0.4,1],[560,0.38,1],[536,0.35,1],[527,0.84,1],[678,0.52,1],[577,0.73,1],[467,0.08,1],[748,0.14,1],[609,0.78,1],[642,0.23,1],[666,0.72,1],[488,1.11,0],[544,0.38,1],[485,0.64,1],[470,0.99,1],[600,0.49,1],[635,0.77,1],[477,0.88,1],[449,0.67,1],[465,0.56,1],[730,0.45,1],[415,1.14,0],[561,0.26,1],[538,0.76,1],[548,0.37,1],[647,0.48,1],[456,0.5,1],[499,0.57,1],[534,0.67,1],[652,0.37,1],[559,0.66,1],[588,1.66,0],[655,1.86,0],[504,0.66,1],[538,0.39,1],[507,0.26,1],[553,1.18,0],[599,0.16,1],[595,0.2,1],[606,0.68,1],[463,0.71,1],[505,0.72,1],[476,0.75,1],[580,0.69,1],[515,0.31,1],[516,1.37,0],[641,0.44,1],[489,1.07,0],[533,0.72,1],[513,0.58,1],[526,0.34,1],[484,1.32,0],[519,0.15,1],[502,0.38,1],[468,0.31,1],[606,0.87,1],[494,0.59,1],[567,0.51,1],[599,0.5,1],[462,0.56,1],[469,0.14,1],[619,0.46,1],[434,0.77,1],[498,0.74,1],[531,0.77,1],[448,0.37,1],[523,1.0,1],[392,4.4,0],[516,0.51,1],[493,0.7,1],[525,0.93,1],[647,0.47,1],[513,0.76,1],[557,1.14,0],[574,0.74,1],[557,0.44,1],[468,0.27,1],[511,0.67,1],[537,0.69,1],[583,1.2,0],[719,0.85,1],[629,0.3,1],[669,0.17,1],[516,0.53,1],[612,0.9,1],[655,0.39,1],[602,0.19,1],[452,0.27,1],[638,0.86,1],[448,0.49,1],[654,0.24,1],[726,0.66,1],[584,0.59,1],[616,1.17,0],[682,0.84,1],[1034,0.84,1],[625,0.25,1],[757,0.21,1],[673,1.04,0],[492,0.43,1],[617,0.42,1],[457,0.04,1],[521,1.03,0],[517,0.28,1],[470,0.82,1],[663,0.27,1],[741,0.37,1],[546,0.33,1],[654,0.76,1],[494,0.38,1],[566,0.46,1],[635,0.85,1],[450,0.77,1],[601,0.82,1],[451,0.88,1],[613,0.48,1],[442,0.6,1],[433,1.1,0],[883,0.41,1],[553,1.05,0],[608,0.18,1],[605,1.26,0],[480,1.12,0],[570,1.92,0],[573,0.83,1],[547,0.42,1],[537,0.64,1],[496,1.09,0],[535,0.47,1],[609,0.23,1],[630,0.13,1],[638,0.26,1],[742,1.04,0],[483,0.6,1],[542,0.65,1],[402,1.07,0],[514,0.34,1],[504,0.86,1],[706,0.53,1],[455,0.33,1],[770,0.71,1],[714,1.34,0],[575,0.49,1],[746,0.63,1],[597,0.9,1],[548,1.36,0],[1410,0.64,1],[525,0.88,1],[517,0.43,1],[517,0.38,1],[535,0.55,1],[632,0.45,1],[631,0.3,1],[438,1.06,0],[539,0.72,1],[544,0.27,1],[505,0.49,1],[651,0.57,1],[654,0.47,1],[635,0.42,1],[457,0.69,1],[552,0.28,1],[519,0.84,1],[613,0.21,1],[545,1.1,0],[521,0.58,1],[519,0.41,1],[646,0.58,1],[482,0.49,1],[898,0.4,1],[511,0.51,1],[570,0.68,1],[447,0.15,1],[523,1.27,0],[989,0.69,1],[449,0.37,1],[662,0.24,1],[458,0.64,1],[602,0.5,1],[478,0.16,1],[495,0.82,1],[460,1.11,0],[551,0.48,1],[487,1.3,0],[682,0.87,1],[495,0.17,1],[610,1.16,0],[711,0.47,1],[674,0.35,1],[592,0.27,1],[789,0.67,1],[587,0.25,1],[578,0.97,1],[528,0.35,1],[613,1.04,0],[527,0.62,1],[635,0.22,1],[557,0.5,1],[552,0.52,1],[649,0.46,1],[583,0.37,1],[420,0.51,1],[519,0.27,1],[438,1.87,0],[555,0.27,1],[529,0.53,1],[621,0.49,1],[546,0.8,1],[518,0.35,1],[498,0.62,1],[590,0.22,1],[555,0.85,1],[474,0.82,1],[626,0.45,1],[513,0.3,1],[650,1.7,0],[445,0.37,1],[654,0.12,1],[434,0.51,1],[563,0.52,1],[572,1.8,0],[583,0.62,1],[455,1.47,0],[566,0.55,1],[580,0.24,1],[589,1.92,0],[727,0.61,1],[604,0.79,1],[563,0.89,1],[618,1.06,0],[674,0.19,1],[620,0.53,1],[595,0.42,1],[478,0.83,1],[612,0.56,1],[619,0.43,1],[637,0.45,1],[717,1.65,0],[698,0.63,1],[513,0.34,1],[476,1.57,0],[708,0.42,1],[580,0.22,1],[647,0.91,1],[634,0.34,1],[600,0.67,1],[564,0.41,1],[585,0.45,1],[549,0.25,1],[674,1.02,0],[692,1.03,0],[622,0.04,1],[623,0.47,1],[593,0.59,1],[647,0.28,1],[615,0.53,1],[557,0.44,1],[582,0.25,1],[529,1.34,0],[607,1.28,0],[621,0.55,1],[594,0.43,1],[541,0.1,1],[647,0.45,1],[615,0.67,1],[691,0.21,1],[691,0.58,1],[681,0.62,1],[610,0.46,1],[577,0.93,1],[598,0.2,1],[588,0.52,1],[575,0.94,1],[490,0.72,1],[638,0.23,1],[553,0.52,1],[525,0.12,1],[562,1.06,0],[650,0.32,1],[560,0.82,1],[545,0.47,1],[1000,0.36,1],[654,0.4,1],[504,1.11,0],[582,0.6,1],[602,1.0,0],[533,0.45,1],[523,0.23,1],[858,1.29,0],[597,0.21,1],[573,0.47,1],[524,0.16,1],[499,0.46,1],[140,47.48,0],[479,0.61,1],[532,0.6,1],[521,0.3,1],[547,1.24,0],[603,0.49,1],[615,1.09,0],[584,0.09,1],[549,0.52,1],[596,0.65,1],[568,1.77,0],[430,0.47,1],[499,2.05,0],[654,0.37,1],[532,0.88,1],[534,0.56,1],[553,0.42,1],[527,0.63,1],[604,1.14,0],[503,0.43,1],[594,0.75,1],[551,1.05,0],[553,0.89,1],[588,1.04,0],[556,0.58,1],[517,0.55,1],[491,0.2,1],[552,1.72,0],[487,0.38,1],[638,0.32,1],[551,1.02,0],[615,0.72,1],[514,0.58,1],[520,0.51,1],[473,0.92,1],[500,0.42,1],[523,1.44,0],[1310,0.43,1],[483,0.25,1],[668,0.32,1],[589,0.59,1],[637,0.7,1],[527,0.55,1],[578,0.21,1],[524,1.01,0],[663,1.1,0],[489,0.12,1],[546,0.53,1],[527,0.99,1],[454,0.15,1],[482,0.34,1],[468,0.21,1],[622,0.98,1],[591,0.48,1],[564,1.08,0],[455,0.46,1],[617,0.5,1],[471,0.84,1],[488,0.76,1],[543,0.26,1],[439,0.71,1],[528,0.24,1],[414,1.49,0],[653,0.22,1],[470,1.35,0],[563,0.09,1],[455,1.08,0],[461,0.11,1],[444,1.74,0],[581,1.14,0],[486,0.75,1],[639,0.25,1],[504,0.44,1],[424,0.79,1],[486,0.43,1],[427,0.51,1],[508,0.27,1],[432,0.57,1],[1016,0.7,1],[655,0.34,1],[610,0.45,1],[417,0.36,1],[466,0.95,1],[538,0.74,1],[525,1.04,0],[613,0.82,1],[634,0.45,1],[539,0.58,1],[617,0.73,1],[685,0.93,1],[599,0.69,1],[637,0.48,1],[665,1.2,0],[532,0.65,1],[456,2.69,0],[610,1.12,0],[573,1.66,0],[472,0.55,1],[510,0.21,1],[488,0.74,1],[470,0.58,1],[537,1.28,0],[486,0.69,1],[447,0.89,1],[538,0.82,1],[536,0.92,1],[545,0.46,1],[604,1.27,0],[480,0.92,1],[553,0.56,1],[878,1.21,0],[493,0.26,1],[575,0.09,1],[504,0.74,1],[434,0.49,1],[471,0.66,1],[429,0.5,1],[427,0.59,1],[524,0.28,1],[498,0.26,1],[588,0.38,1],[506,1.05,0],[600,0.68,1],[545,0.47,1],[594,0.24,1],[564,0.43,1],[518,0.49,1],[504,0.51,1],[435,0.81,1],[587,0.36,1],[562,0.33,1],[557,1.58,0],[575,0.56,1],[566,1.01,0],[1063,0.46,1],[623,0.39,1],[444,0.25,1],[617,0.67,1],[503,0.62,1],[577,0.53,1],[611,0.64,1],[729,0.8,1],[669,0.21,1],[613,1.23,0],[604,0.82,1],[561,0.75,1],[578,0.46,1],[462,0.54,1],[456,0.05,1],[488,1.14,0],[471,0.57,1],[479,0.35,1],[515,0.5,1],[452,0.28,1],[499,0.23,1],[573,0.54,1],[549,0.86,1],[576,0.48,1],[540,0.78,1],[491,0.2,1],[600,0.6,1],[582,0.27,1],[657,0.51,1],[508,0.59,1],[543,0.59,1],[510,0.94,1],[460,0.67,1],[419,0.8,1],[450,1.42,0],[482,0.75,1],[569,0.25,1],[606,0.59,1],[509,0.49,1],[485,0.67,1],[520,0.72,1],[497,0.55,1],[896,0.65,1],[511,0.13,1],[500,0.47,1],[542,0.8,1],[494,0.31,1],[643,0.96,1],[497,0.42,1],[418,0.46,1],[422,0.49,1],[458,1.22,0],[873,0.36,1],[658,0.12,1],[531,1.19,0],[661,0.47,1],[672,0.08,1],[742,0.2,1],[636,0.85,1],[495,0.04,1],[548,0.43,1],[466,0.53,1],[665,0.23,1],[560,0.15,1],[547,0.31,1],[542,0.25,1],[550,0.25,1],[587,0.47,1],[479,0.39,1],[497,0.87,1],[589,0.66,1],[475,0.11,1],[511,0.88,1],[625,0.39,1],[495,0.52,1],[748,0.51,1],[583,0.75,1],[523,0.64,1],[576,0.26,1],[531,0.38,1],[589,0.37,1],[538,0.29,1],[531,1.02,0],[578,0.73,1],[523,0.13,1],[502,1.09,0],[600,0.38,1],[625,1.22,0],[626,0.73,1],[522,0.94,1],[622,0.39,1],[1107,0.69,1],[559,0.53,1],[598,0.31,1],[511,1.01,0],[539,0.77,1],[538,1.51,0],[546,0.66,1],[506,1.34,0],[668,0.14,1],[616,0.46,1],[607,0.51,1],[527,0.72,1],[530,0.84,1],[496,0.02,1],[479,0.93,1],[1108,0.29,1],[538,0.41,1],[654,0.66,1],[598,0.12,1],[624,0.69,1],[589,0.66,1],[595,0.35,1],[567,0.36,1],[593,1.03,0],[641,0.63,1],[773,1.0,0],[621,0.42,1],[582,0.26,1],[521,1.0,0],[609,0.61,1],[565,0.8,1],[495,0.81,1],[527,0.18,1],[608,1.15,0],[612,0.33,1],[522,1.02,0],[672,0.42,1],[523,0.59,1],[495,0.75,1],[587,0.39,1],[542,0.47,1],[753,0.75,1],[557,0.67,1],[461,1.31,0],[551,0.5,1],[505,0.7,1],[488,0.2,1],[603,1.04,0],[579,0.1,1],[562,0.27,1],[562,0.8,1],[581,0.53,1],[533,1.18,0],[500,1.01,0],[599,0.55,1],[473,0.5,1],[526,0.96,1],[527,0.21,1],[590,0.21,1],[551,1.59,0],[647,0.46,1],[550,0.56,1],[617,0.48,1],[475,0.76,1],[436,1.07,0],[554,0.44,1],[612,0.13,1],[541,0.81,1],[595,0.54,1],[653,0.49,1],[645,0.1,1],[576,0.51,1],[662,0.67,1],[818,0.44,1],[568,0.22,1],[592,0.37,1],[753,0.67,1],[618,0.6,1],[545,0.28,1],[558,0.25,1],[450,0.95,1],[595,0.57,1],[590,0.78,1],[538,0.6,1],[677,0.68,1],[635,0.21,1],[599,0.46,1],[611,0.72,1],[544,0.23,1],[627,0.66,1],[552,0.45,1],[593,0.44,1],[550,0.7,1],[537,0.6,1],[452,0.85,1],[560,0.42,1],[548,0.49,1],[665,0.16,1],[502,1.13,0],[595,0.2,1],[495,0.68,1],[552,0.81,1],[910,0.84,1],[503,0.45,1],[529,0.57,1],[560,0.93,1],[528,0.53,1],[573,0.92,1],[644,0.84,1],[607,0.55,1],[600,1.23,0],[704,0.69,1],[554,0.3,1],[642,0.97,1],[600,0.19,1],[491,0.23,1],[608,0.19,1],[645,0.62,1],[635,0.7,1],[491,1.08,0],[668,0.15,1],[488,0.51,1],[523,1.11,0],[589,1.14,0],[544,0.54,1],[510,0.37,1],[491,0.98,1],[480,0.6,1],[461,0.63,1],[417,0.27,1],[447,0.35,1],[523,0.53,1],[499,0.14,1],[530,0.35,1],[575,0.77,1],[407,0.53,1],[478,0.88,1],[513,0.81,1],[513,0.13,1],[555,0.68,1],[504,0.17,1],[452,0.89,1],[441,0.6,1],[462,0.49,1],[538,0.39,1],[417,1.87,0],[541,0.69,1],[529,1.0,0],[414,1.73,0],[568,0.76,1],[506,1.33,0],[464,0.26,1],[497,0.51,1],[441,0.26,1],[535,0.69,1],[493,0.93,1],[474,0.76,1],[582,1.53,0],[615,0.43,1],[786,0.49,1],[525,0.36,1],[533,0.89,1],[530,0.07,1],[443,0.58,1],[536,0.2,1],[60,48.95,0],[551,0.59,1],[620,0.16,1],[554,0.25,1],[463,1.18,0],[502,1.69,0],[455,1.07,0],[450,0.74,1],[530,0.5,1],[425,0.61,1],[449,0.79,1],[581,0.61,1],[703,0.83,1],[544,0.19,1],[715,0.69,1],[512,0.41,1],[499,0.48,1],[456,0.27,1],[463,0.99,1],[468,1.58,0],[456,0.28,1],[462,0.68,1],[582,0.94,1],[548,0.3,1],[469,0.93,1],[539,0.37,1],[413,0.28,1],[427,0.56,1],[500,0.36,1],[409,0.44,1],[540,1.04,0],[537,0.93,1],[504,0.49,1],[443,0.12,1],[442,0.17,1],[485,0.19,1],[505,0.33,1],[495,1.95,0],[617,1.07,0],[461,0.61,1],[578,0.57,1],[463,0.7,1],[421,0.45,1],[458,0.17,1],[469,0.53,1],[489,0.91,1],[457,0.27,1],[516,1.69,0],[454,1.1,0],[637,0.2,1],[447,0.31,1],[552,0.36,1],[439,0.92,1],[491,0.19,1],[462,0.61,1],[570,0.49,1],[431,0.57,1],[552,0.2,1],[528,1.18,0],[542,0.24,1],[483,0.61,1],[523,0.8,1],[473,0.95,1],[491,0.34,1],[784,0.47,1],[431,0.96,1],[461,0.85,1],[455,0.35,1],[521,0.83,1],[569,0.19,1],[464,0.65,1],[424,1.44,0],[462,0.32,1],[444,1.0,0],[468,0.47,1],[431,0.12,1],[485,0.67,1],[499,1.03,0],[553,0.16,1],[515,0.21,1],[578,0.83,1],[448,0.54,1],[535,0.47,1],[577,0.57,1],[418,0.06,1],[599,0.53,1],[478,0.93,1],[408,0.35,1],[439,0.74,1],[480,1.37,0],[512,0.88,1],[472,0.36,1],[541,0.06,1],[534,0.31,1],[447,0.36,1],[529,0.27,1],[468,1.18,0],[413,1.29,0],[546,1.4,0],[434,1.19,0],[567,0.17,1],[460,1.52,0],[544,0.56,1],[451,0.74,1],[533,0.66,1],[434,0.75,1],[433,0.62,1],[516,0.54,1],[462,0.73,1],[467,0.95,1],[519,0.49,1],[458,0.7,1],[584,0.16,1],[572,1.04,0],[547,0.75,1],[550,0.49,1],[579,0.91,1],[523,0.14,1],[434,0.38,1],[537,0.56,1],[533,0.24,1],[449,0.58,1],[514,0.56,1],[430,0.47,1],[744,0.23,1],[621,1.3,0],[602,0.71,1],[648,0.43,1],[565,0.17,1],[582,0.7,1],[556,1.0,0],[643,0.04,1],[600,0.64,1],[565,0.23,1],[631,0.37,1],[541,0.38,1],[617,0.37,1],[794,0.24,1],[559,0.67,1],[637,0.28,1],[633,0.35,1],[613,0.2,1],[593,0.09,1],[512,0.39,1],[515,0.19,1],[567,0.46,1],[569,0.22,1],[519,0.77,1],[560,0.54,1],[607,0.28,1],[841,0.96,1],[599,0.53,1],[579,0.35,1],[804,0.85,1],[598,0.25,1],[592,0.54,1],[719,0.43,1],[606,0.68,1],[559,0.47,1],[581,0.56,1],[637,0.37,1],[502,0.18,1],[555,0.38,1],[518,0.49,1],[699,0.81,1],[592,0.26,1],[617,1.3,0],[605,0.08,1],[579,0.43,1],[553,0.51,1],[617,0.59,1],[569,0.56,1],[596,0.89,1],[573,0.86,1],[646,0.33,1],[606,0.1,1],[577,0.21,1],[568,0.45,1],[496,0.73,1],[513,0.35,1],[511,0.59,1],[620,0.58,1],[739,0.64,1],[578,0.44,1],[551,0.37,1],[532,0.75,1],[594,0.59,1],[524,0.15,1],[611,0.52,1],[606,0.26,1],[576,0.62,1],[589,0.68,1],[574,0.59,1],[469,0.54,1],[591,0.19,1],[447,0.58,1],[501,0.73,1],[516,0.23,1],[930,1.4,0],[561,0.54,1],[643,0.34,1],[557,0.43,1],[491,0.65,1],[614,0.6,1],[572,0.57,1],[562,0.31,1],[472,0.7,1],[611,0.58,1],[522,0.17,1],[590,0.38,1],[544,0.34,1],[527,0.32,1],[959,0.49,1],[496,0.41,1],[551,0.12,1],[669,0.6,1],[567,0.49,1],[596,0.2,1],[588,0.36,1],[533,0.55,1],[531,1.05,0],[626,0.57,1],[516,0.45,1],[505,0.39,1],[630,0.11,1],[461,1.48,0],[514,1.76,0],[600,0.41,1],[564,0.73,1],[579,0.3,1],[527,1.68,0],[494,0.67,1],[528,0.79,1],[457,0.6,1],[456,0.29,1],[586,0.61,1],[543,0.55,1],[563,0.38,1],[664,0.12,1],[502,0.91,1],[498,0.7,1],[617,0.24,1],[459,0.53,1],[624,0.86,1],[484,0.4,1],[562,0.59,1],[719,1.06,0],[514,0.47,1],[503,0.47,1],[618,0.44,1],[558,1.09,0],[611,1.27,0],[642,0.48,1],[672,0.84,1],[521,0.49,1],[472,0.23,1],[522,0.38,1],[478,0.86,1],[496,0.71,1],[599,0.51,1],[574,0.72,1],[506,0.54,1],[595,0.97,1],[529,0.32,1],[484,1.04,0],[566,0.2,1],[485,0.97,1],[489,0.99,1],[655,0.16,1],[470,0.9,1],[548,0.32,1],[610,0.66,1],[578,0.4,1],[639,0.48,1],[643,0.84,1],[754,0.99,1],[482,0.46,1],[617,0.68,1],[445,0.19,1],[621,0.9,1],[635,1.44,0],[572,0.63,1],[530,0.19,1],[539,1.22,0],[486,0.43,1],[575,0.98,1],[506,0.48,1],[548,0.09,1],[529,0.93,1],[534,0.99,1],[569,0.2,1],[522,1.09,0],[475,0.52,1],[522,0.27,1],[533,0.16,1],[597,0.66,1],[631,0.91,1],[550,0.16,1],[497,0.74,1],[448,0.47,1],[664,0.12,1],[556,0.78,1],[588,0.11,1],[566,0.09,1],[790,0.6,1],[534,0.1,1],[606,0.27,1],[542,0.78,1],[554,0.37,1],[588,1.11,0],[467,0.7,1],[481,0.64,1],[571,0.82,1],[558,0.69,1],[506,0.74,1],[610,0.34,1],[642,0.19,1],[676,0.18,1],[520,0.38,1],[871,0.24,1],[492,0.51,1],[565,0.83,1],[490,1.05,0],[656,0.61,1],[632,0.41,1],[527,0.43,1],[616,0.8,1],[610,0.76,1],[505,0.23,1],[521,0.64,1],[634,0.68,1],[610,0.81,1],[608,1.11,0],[512,0.55,1],[491,0.61,1],[508,0.33,1],[480,0.58,1],[495,0.65,1],[599,0.07,1],[507,0.27,1],[544,0.31,1],[606,0.59,1],[651,0.78,1],[572,0.41,1],[473,0.74,1],[542,0.23,1],[628,0.67,1],[511,1.2,0],[640,0.46,1],[497,0.79,1],[467,0.18,1],[719,0.19,1],[668,0.28,1],[553,1.07,0],[525,1.27,0],[549,0.37,1],[596,0.23,1],[516,0.41,1],[616,0.36,1],[538,0.34,1],[435,0.97,1],[588,0.85,1],[434,0.82,1],[606,0.3,1],[493,0.73,1],[596,0.63,1],[507,0.55,1],[594,0.37,1],[485,0.62,1],[486,0.44,1],[435,0.18,1],[573,0.86,1],[446,0.8,1],[546,0.36,1],[521,0.4,1],[589,0.51,1],[647,0.3,1],[604,0.6,1],[485,0.28,1],[623,0.75,1],[520,0.29,1],[481,0.05,1],[596,0.59,1],[448,0.88,1],[415,0.22,1],[507,0.4,1],[611,0.51,1],[476,0.11,1],[570,1.03,0],[469,0.68,1],[609,0.09,1],[497,0.86,1],[537,0.94,1],[479,0.61,1],[546,0.51,1],[480,0.57,1],[571,1.09,0],[597,0.3,1],[453,0.19,1],[519,0.36,1],[531,0.16,1],[521,0.76,1],[579,0.84,1],[781,0.09,1],[455,0.91,1],[520,0.54,1],[494,0.7,1],[416,0.85,1],[400,0.5,1],[433,0.48,1],[653,0.37,1],[431,0.57,1],[638,0.72,1],[548,0.98,1],[651,0.33,1],[558,0.17,1],[443,0.47,1],[449,0.96,1],[512,0.61,1],[519,0.19,1],[536,0.95,1],[618,0.51,1],[472,0.56,1],[481,0.87,1],[483,0.49,1],[484,0.37,1],[457,1.03,0],[547,0.41,1],[456,0.91,1],[576,0.86,1],[603,0.34,1],[591,0.07,1],[459,0.31,1],[582,1.02,0],[600,1.29,0],[449,1.14,0],[541,0.2,1],[561,0.25,1],[471,1.48,0],[773,0.03,1],[601,0.27,1],[668,0.58,1],[779,0.34,1],[746,0.47,1],[642,0.43,1],[616,0.21,1],[669,0.18,1],[835,0.68,1],[612,0.43,1],[655,0.84,1],[597,0.36,1],[677,0.54,1],[643,0.25,1],[633,0.46,1],[624,0.71,1],[795,0.12,1],[614,0.37,1],[551,1.52,0],[774,0.07,1],[614,0.63,1],[473,0.24,1],[596,0.45,1],[523,1.01,0],[690,0.78,1],[763,0.47,1],[655,1.02,0],[573,1.35,0],[635,0.49,1],[570,1.23,0],[568,0.38,1],[683,0.61,1],[585,0.85,1],[807,0.66,1],[678,0.34,1],[584,0.18,1],[559,0.26,1],[545,0.27,1],[525,0.9,1],[551,1.03,0],[731,0.14,1],[666,1.28,0],[609,0.2,1],[684,0.68,1],[641,0.76,1],[574,0.99,1],[613,0.76,1],[543,0.72,1],[559,0.71,1],[615,0.34,1],[587,0.69,1],[608,0.1,1],[566,0.65,1],[538,0.78,1],[673,0.33,1],[550,0.27,1],[699,0.48,1],[662,0.42,1],[628,0.42,1],[509,0.2,1],[638,0.34,1],[606,0.47,1],[616,0.13,1],[494,0.75,1],[561,0.89,1],[602,0.45,1],[523,0.64,1],[589,0.54,1],[522,0.82,1],[546,0.25,1],[614,1.02,0],[562,0.62,1],[651,1.35,0],[689,0.51,1],[559,0.59,1],[537,0.77,1],[502,0.35,1],[554,0.35,1],[719,0.41,1],[954,0.34,1],[628,0.64,1],[597,0.33,1],[520,0.49,1],[484,0.48,1],[476,1.12,0],[624,0.04,1],[492,0.51,1],[583,0.46,1],[742,0.63,1],[674,0.71,1],[687,0.87,1],[596,0.48,1],[642,0.75,1],[611,0.42,1],[598,0.37,1],[574,0.52,1],[525,0.95,1],[575,0.49,1],[542,0.67,1],[598,0.35,1],[458,0.29,1],[710,0.42,1],[676,0.59,1],[677,1.13,0],[548,1.19,0],[665,0.23,1],[628,0.66,1],[582,0.64,1],[702,0.38,1],[566,2.13,0],[645,0.44,1],[559,0.21,1],[689,0.15,1],[587,0.28,1],[588,1.46,0],[484,1.25,0],[653,0.58,1],[619,0.46,1],[674,0.75,1],[515,0.07,1],[766,0.41,1],[533,0.38,1],[686,0.34,1],[563,1.19,0],[669,0.65,1],[788,0.87,1],[645,0.68,1],[720,0.55,1],[725,0.38,1],[618,0.42,1],[645,0.51,1],[595,0.53,1],[642,0.7,1],[628,0.37,1],[1025,0.36,1],[655,0.16,1],[566,0.81,1],[600,0.95,1],[638,1.07,0],[523,0.21,1],[616,0.16,1],[627,0.41,1],[561,0.65,1],[491,0.41,1],[531,0.2,1],[71,49.61,0],[578,0.32,1],[589,0.46,1],[557,0.43,1],[654,0.73,1],[693,1.15,0],[571,0.14,1],[536,0.67,1],[1289,0.32,1],[589,0.59,1],[562,0.24,1],[563,0.29,1],[597,0.6,1],[683,0.33,1],[485,1.03,0],[572,0.33,1],[483,0.53,1],[565,0.42,1],[491,0.84,1],[518,0.37,1],[818,0.28,1],[900,0.71,1],[579,0.61,1],[613,0.54,1],[502,0.88,1],[528,0.15,1],[505,0.23,1],[565,0.42,1],[556,0.72,1],[612,0.83,1],[624,0.41,1],[481,0.69,1],[500,0.33,1],[580,0.82,1],[438,0.26,1],[707,8.18,0],[443,1.8,0],[622,0.12,1],[647,0.71,1],[478,0.14,1],[612,0.78,1],[615,0.65,1],[528,0.26,1],[605,0.97,1],[629,0.36,1],[446,1.4,0],[553,0.75,1],[542,0.63,1],[564,0.82,1],[573,0.72,1],[601,0.6,1],[517,0.41,1],[588,0.14,1],[473,0.41,1],[572,0.31,1],[692,0.57,1],[595,0.97,1],[458,1.88,0],[554,0.17,1],[580,0.36,1],[531,0.83,1],[636,0.27,1],[540,1.45,0],[623,0.22,1],[488,0.67,1],[605,0.26,1],[480,0.25,1],[503,0.3,1],[588,0.1,1],[637,0.53,1],[496,0.58,1],[499,0.41,1],[564,0.86,1],[651,0.2,1],[679,0.58,1],[639,0.95,1],[463,0.43,1],[544,0.83,1],[640,0.8,1],[581,0.41,1],[655,0.47,1],[496,1.11,0],[632,0.59,1],[522,0.23,1],[543,0.62,1],[561,0.48,1],[746,0.55,1],[565,0.24,1],[698,0.87,1],[470,0.25,1],[534,1.57,0],[669,1.26,0],[814,0.54,1],[612,0.52,1],[639,0.47,1],[556,0.28,1],[544,0.35,1],[586,0.9,1],[493,0.73,1],[531,0.73,1],[538,0.74,1],[487,0.44,1],[509,0.84,1],[623,0.53,1],[463,0.46,1],[543,0.24,1],[631,0.38,1],[671,0.88,1],[521,0.84,1],[644,0.52,1],[591,0.09,1],[507,0.82,1],[641,0.94,1],[485,0.67,1],[719,0.37,1],[603,1.06,0],[505,0.18,1],[533,0.56,1],[502,0.54,1],[475,0.56,1],[641,0.42,1],[493,0.85,1],[1010,0.35,1],[549,0.3,1],[658,0.29,1],[536,0.86,1],[599,1.77,0],[712,0.5,1],[560,0.26,1],[499,1.07,0],[457,0.81,1],[663,0.36,1],[589,0.21,1],[652,0.32,1],[515,0.62,1],[507,0.73,1],[962,0.6,1],[563,0.3,1],[605,0.69,1],[642,0.65,1],[661,0.65,1],[644,1.31,0],[650,0.49,1],[668,0.52,1],[562,0.27,1],[600,0.11,1],[617,0.22,1],[529,0.57,1],[677,0.27,1],[511,0.06,1]],"counts":{"participants":6,"runs":51,"admitted":50,"blocked":1,"presentations":2442,"hits":2418,"sessionEnd":24,"timeouts":0,"early":6,"lateNonZero":23,"lateTotal":34},"mechCoverage":[{"column":"peak_omega_deg_per_sec","tier":0,"coverage":1.0,"verdict":"admissible"},{"column":"entry_omega_deg_per_sec","tier":0,"coverage":0.9922,"verdict":"admissible"},{"column":"brake_retention","tier":0,"coverage":0.9922,"verdict":"admissible"},{"column":"trigger_margin_ms","tier":0,"coverage":0.991,"verdict":"admissible"},{"column":"overshoot_deg","tier":0,"coverage":1.0,"verdict":"admissible"},{"column":"drop_count","tier":0,"coverage":1.0,"verdict":"admissible"},{"column":"micro_adjust_count","tier":0,"coverage":1.0,"verdict":"admissible"},{"column":"fire_angle_error_deg","tier":0,"coverage":0.9914,"verdict":"admissible"},{"column":"reaction_ms","tier":1,"coverage":0.3182,"verdict":"withheld"},{"column":"movement_time_ms","tier":1,"coverage":0.3174,"verdict":"withheld"}],"mechCell":{"S01A":{"brake_retention":0.0689,"trigger_margin_ms":78.46,"peak_omega_deg_per_sec":438.2718,"entry_omega_deg_per_sec":32.725,"fire_angle_error_deg":0.5972,"n":136,"early":0.037},"S01B":{"brake_retention":0.0725,"trigger_margin_ms":99.395,"peak_omega_deg_per_sec":431.496,"entry_omega_deg_per_sec":33.1278,"fire_angle_error_deg":0.5112,"n":145,"early":0.042},"S01C":{"brake_retention":0.0588,"trigger_margin_ms":89.725,"peak_omega_deg_per_sec":395.0233,"entry_omega_deg_per_sec":24.4844,"fire_angle_error_deg":0.5129,"n":136,"early":0.0677},"S02A":{"brake_retention":0.0757,"trigger_margin_ms":109.5475,"peak_omega_deg_per_sec":382.9752,"entry_omega_deg_per_sec":26.6192,"fire_angle_error_deg":0.5083,"n":130,"early":0.0233},"S02B":{"brake_retention":0.0997,"trigger_margin_ms":109.1375,"peak_omega_deg_per_sec":351.0375,"entry_omega_deg_per_sec":33.8645,"fire_angle_error_deg":0.5742,"n":123,"early":0.0579},"S02C":{"brake_retention":0.0763,"trigger_margin_ms":146.995,"peak_omega_deg_per_sec":382.8871,"entry_omega_deg_per_sec":29.3833,"fire_angle_error_deg":0.4684,"n":131,"early":0.0305},"S03A":{"brake_retention":0.0693,"trigger_margin_ms":51.5025,"peak_omega_deg_per_sec":489.5552,"entry_omega_deg_per_sec":34.8286,"fire_angle_error_deg":0.5014,"n":159,"early":0.1069},"S03B":{"brake_retention":0.0565,"trigger_margin_ms":72.495,"peak_omega_deg_per_sec":433.56,"entry_omega_deg_per_sec":28.209,"fire_angle_error_deg":0.591,"n":151,"early":0.0738},"S03C":{"brake_retention":0.06,"trigger_margin_ms":59.0487,"peak_omega_deg_per_sec":419.3252,"entry_omega_deg_per_sec":25.4944,"fire_angle_error_deg":0.5327,"n":146,"early":0.0903},"S04A":{"brake_retention":0.0827,"trigger_margin_ms":59.9475,"peak_omega_deg_per_sec":357.0119,"entry_omega_deg_per_sec":31.4368,"fire_angle_error_deg":0.5489,"n":149,"early":0.1351},"S04B":{"brake_retention":0.0857,"trigger_margin_ms":63.4,"peak_omega_deg_per_sec":352.4953,"entry_omega_deg_per_sec":31.7342,"fire_angle_error_deg":0.5408,"n":106,"early":0.0762},"S04C":{"brake_retention":0.0688,"trigger_margin_ms":53.4825,"peak_omega_deg_per_sec":376.2394,"entry_omega_deg_per_sec":25.1247,"fire_angle_error_deg":0.5731,"n":148,"early":0.0748},"S05A":{"brake_retention":0.0702,"trigger_margin_ms":41.4538,"peak_omega_deg_per_sec":405.8534,"entry_omega_deg_per_sec":28.2171,"fire_angle_error_deg":0.5742,"n":167,"early":0.0904},"S05B":{"brake_retention":0.0906,"trigger_margin_ms":75.7575,"peak_omega_deg_per_sec":380.6598,"entry_omega_deg_per_sec":33.8799,"fire_angle_error_deg":0.5,"n":157,"early":0.0321},"S05C":{"brake_retention":0.0824,"trigger_margin_ms":63.0325,"peak_omega_deg_per_sec":402.7727,"entry_omega_deg_per_sec":31.4151,"fire_angle_error_deg":0.5483,"n":161,"early":0.0629},"S06A":{"brake_retention":0.0629,"trigger_margin_ms":74.6575,"peak_omega_deg_per_sec":424.4164,"entry_omega_deg_per_sec":27.271,"fire_angle_error_deg":0.4904,"n":143,"early":0.0775},"S06C":{"brake_retention":0.0565,"trigger_margin_ms":61.4375,"peak_omega_deg_per_sec":427.6293,"entry_omega_deg_per_sec":25.5429,"fire_angle_error_deg":0.5314,"n":154,"early":0.0588}},"mechContrast":{"A->B":[{"p":"S01","brake_retention":0.0036,"brake_retention_band":0.0108,"trigger_margin_ms":20.935,"trigger_margin_ms_band":21.505,"peak_omega_deg_per_sec":-6.7758,"peak_omega_deg_per_sec_band":77.9266},{"p":"S02","brake_retention":0.024,"brake_retention_band":0.0682,"trigger_margin_ms":-0.41,"trigger_margin_ms_band":40.0425,"peak_omega_deg_per_sec":-31.9377,"peak_omega_deg_per_sec_band":101.6739},{"p":"S03","brake_retention":-0.0128,"brake_retention_band":0.0191,"trigger_margin_ms":20.9925,"trigger_margin_ms_band":13.6825,"peak_omega_deg_per_sec":-55.9952,"peak_omega_deg_per_sec_band":73.1118},{"p":"S05","brake_retention":0.0204,"brake_retention_band":0.0222,"trigger_margin_ms":34.3037,"trigger_margin_ms_band":11.6113,"peak_omega_deg_per_sec":-25.1936,"peak_omega_deg_per_sec_band":31.2262}],"B->C":[{"p":"S01","brake_retention":-0.0137,"brake_retention_band":0.0119,"trigger_margin_ms":-9.67,"trigger_margin_ms_band":24.7787,"peak_omega_deg_per_sec":-36.4727,"peak_omega_deg_per_sec_band":77.9266},{"p":"S02","brake_retention":-0.0234,"brake_retention_band":0.0682,"trigger_margin_ms":37.8575,"trigger_margin_ms_band":41.8988,"peak_omega_deg_per_sec":31.8496,"peak_omega_deg_per_sec_band":73.7331},{"p":"S03","brake_retention":0.0035,"brake_retention_band":0.028,"trigger_margin_ms":-13.4463,"trigger_margin_ms_band":17.5787,"peak_omega_deg_per_sec":-14.2348,"peak_omega_deg_per_sec_band":73.1118},{"p":"S04","brake_retention":-0.0169,"brake_retention_band":0.0336,"trigger_margin_ms":-9.9175,"trigger_margin_ms_band":16.8363,"peak_omega_deg_per_sec":23.7441,"peak_omega_deg_per_sec_band":40.511},{"p":"S05","brake_retention":-0.0082,"brake_retention_band":0.0222,"trigger_margin_ms":-12.725,"trigger_margin_ms_band":11.6113,"peak_omega_deg_per_sec":22.1129,"peak_omega_deg_per_sec_band":33.1873}],"A->C":[{"p":"S01","brake_retention":-0.0101,"brake_retention_band":0.0119,"trigger_margin_ms":11.265,"trigger_margin_ms_band":24.7787,"peak_omega_deg_per_sec":-43.2485,"peak_omega_deg_per_sec_band":43.3719},{"p":"S02","brake_retention":0.0006,"brake_retention_band":0.013,"trigger_margin_ms":37.4475,"trigger_margin_ms_band":41.8988,"peak_omega_deg_per_sec":-0.0881,"peak_omega_deg_per_sec_band":101.6739},{"p":"S03","brake_retention":-0.0093,"brake_retention_band":0.028,"trigger_margin_ms":7.5462,"trigger_margin_ms_band":17.5787,"peak_omega_deg_per_sec":-70.23,"peak_omega_deg_per_sec_band":34.5893},{"p":"S05","brake_retention":0.0122,"brake_retention_band":0.0141,"trigger_margin_ms":21.5787,"trigger_margin_ms_band":6.0812,"peak_omega_deg_per_sec":-3.0807,"peak_omega_deg_per_sec_band":33.1873},{"p":"S06","brake_retention":-0.0064,"brake_retention_band":0.023,"trigger_margin_ms":-13.22,"trigger_margin_ms_band":31.165,"peak_omega_deg_per_sec":3.2129,"peak_omega_deg_per_sec_band":82.3706}]}}</script>
+  <script>
+    const S = JSON.parse(document.getElementById('series').textContent);
+    const PS = ['S01', 'S02', 'S03', 'S04', 'S05', 'S06'];
+    const CN = { A: 'GPW1', B: 'DK/1-2-2', C: 'DK/1-3-1' };
+    const C = { A: '#7258a6', B: '#087e8b', C: '#d75a47', grid: '#dfe5e2', text: '#5f6d68', ink: '#17211e', band: '#d6dedb' };
+    const PCOL = ['#7258a6', '#087e8b', '#d75a47', '#ad7417', '#257552', '#3f6ea8'];
+
+    const esc = v => String(v).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const pct = v => (v * 100).toFixed(1) + '%';
+
+    // ---- tables rendered from the embedded data, so nothing is transcribed by hand ----
+    function comparabilityTable() {
+      let h = '<table class="matrix"><caption>空白 = 可比。理由欄說明為何不可比。</caption>'
+        + '<thead><tr><th>受試者</th><th>A→B（換滑鼠）</th><th>B→C（換握法）</th><th>A→C（完整組合）</th></tr></thead><tbody>';
+      PS.forEach(p => {
+        h += `<tr><td><b>${p}</b></td>`;
+        ['A->B', 'B->C', 'A->C'].forEach(c => {
+          const why = S.comparability[p][c];
+          h += why ? `<td class="no">不可比<br><span style="font-weight:400">${esc(why)}</span></td>`
+                   : '<td class="yes">可比</td>';
+        });
+        h += '</tr>';
+      });
+      document.getElementById('comparabilityTable').innerHTML = h + '</tbody></table>';
+    }
+
+    function orderTable() {
+      let h = '';
+      PS.forEach(p => {
+        const steps = S.order[p];
+        const sens = [...new Set(['A', 'B', 'C'].flatMap(c => (S.profile[p + c] || {}).sens || []))].sort();
+        h += `<tr><td><b>${p}</b></td>`;
+        for (let i = 0; i < 3; i++) {
+          if (steps[i]) {
+            const cid = steps[i][0];
+            h += `<td><span class="c${cid.toLowerCase()}">${cid}</span> ${CN[cid]} <span style="color:var(--muted)">@${steps[i][1]}</span></td>`;
+          } else h += '<td style="color:var(--muted)">—</td>';
+        }
+        h += `<td class="num">${sens.join(' / ')}</td></tr>`;
+      });
+      document.getElementById('orderTable').innerHTML = h;
+    }
+
+    function profileTable() {
+      let h = '<table class="matrix"><caption>括號內為 3 個 run 的數列。S04 的 B 只有 2 個 run（第 3 個被硬閘擋下）。</caption>'
+        + '<thead><tr><th>受試者 / 條件</th><th>呈現</th><th>hits/min</th><th>首發率</th><th>KM 中位數 ms</th><th>KM p90 ms</th><th>右鍵</th></tr></thead><tbody>';
+      PS.forEach(p => {
+        ['A', 'B', 'C'].forEach((c, i) => {
+          const d = S.profile[p + c];
+          if (!d) return;
+          const mean = d.rate.reduce((a, b) => a + b, 0) / d.rate.length;
+          h += `<tr${i === 0 ? ' class="sep"' : ''}><td><b>${p}</b> <span class="c${c.toLowerCase()}">${c}</span> ${CN[c]}</td>`
+            + `<td class="num">${d.n}</td>`
+            + `<td class="num">${mean.toFixed(2)} <span style="color:var(--muted)">(${d.rate.join(', ')})</span></td>`
+            + `<td class="num">${pct(d.firstPooled)} <span style="color:var(--muted)">(${d.first.map(v => v.toFixed(3)).join(', ')})</span></td>`
+            + `<td class="num">${d.kmMed}</td><td class="num">${d.kmP90}</td>`
+            + `<td class="num">${d.ads}${d.adsOverlap ? ` <span style="color:var(--muted)">(${d.adsOverlap} 重疊)</span>` : ''}</td></tr>`;
+        });
+      });
+      document.getElementById('profileTable').innerHTML = h + '</tbody></table>';
+    }
+
+    function contrastTable() {
+      let h = '<table class="matrix"><caption>雜訊帶 = 該受試者該對比兩個條件中，run 間全距較大的那一個；判定為 |Δ| &gt; 雜訊帶。粗體 = 超出。</caption>'
+        + '<thead><tr><th>對比</th><th>受試者</th><th>配對數</th><th>Δ 首發率 pp</th><th>雜訊帶 pp</th><th>Δ 中位時間 ms</th><th>雜訊帶 ms</th></tr></thead><tbody>';
+      ['A->B', 'B->C', 'A->C'].forEach(c => {
+        (S.contrasts[c] || []).forEach((r, i) => {
+          const bf = Math.abs(r.dFirst) > r.band, bt = Math.abs(r.dTime) > r.bandKm;
+          h += `<tr${i === 0 ? ' class="sep"' : ''}><td>${i === 0 ? '<b>' + c + '</b>' : ''}</td><td>${r.p}</td><td class="num">${r.pairs}</td>`
+            + `<td class="num"${bf ? ' style="font-weight:750"' : ''}>${r.dFirst > 0 ? '+' : ''}${r.dFirst.toFixed(1)}</td>`
+            + `<td class="num" style="color:var(--muted)">${r.band.toFixed(1)}</td>`
+            + `<td class="num"${bt ? ' style="font-weight:750"' : ''}>${r.dTime > 0 ? '+' : ''}${r.dTime.toFixed(1)}</td>`
+            + `<td class="num" style="color:var(--muted)">${r.bandKm.toFixed(1)}</td></tr>`;
+        });
+      });
+      document.getElementById('contrastTable').innerHTML = h + '</tbody></table>';
+    }
+
+    function cycleTable() {
+      let h = '<table class="matrix"><caption>回中心佔比 = 該對比的週期差之中，落在回中心那一半的比例。</caption>'
+        + '<thead><tr><th>對比</th><th>受試者</th><th>Δ 回中心 ms</th><th>Δ 周邊 ms</th><th>Δ 週期 ms</th><th>回中心佔比</th></tr></thead><tbody>';
+      [['A', 'B'], ['B', 'C']].forEach(([a, b]) => {
+        let first = true;
+        PS.forEach(p => {
+          const x = S.cycle[p + a], y = S.cycle[p + b];
+          if (!x || !y) return;
+          const dc = y[0] - x[0], dp = y[1] - x[1], tot = dc + dp;
+          h += `<tr${first ? ' class="sep"' : ''}><td>${first ? `<b>${a}→${b}</b>` : ''}</td><td>${p}</td>`
+            + `<td class="num">${dc > 0 ? '+' : ''}${dc.toFixed(1)}</td><td class="num">${dp > 0 ? '+' : ''}${dp.toFixed(1)}</td>`
+            + `<td class="num">${tot > 0 ? '+' : ''}${tot.toFixed(1)}</td>`
+            + `<td class="num">${Math.abs(tot) > 1e-9 ? (dc / tot * 100).toFixed(0) + '%' : '—'}</td></tr>`;
+          first = false;
+        });
+      });
+      document.getElementById('cycleTable').innerHTML = h + '</tbody></table>';
+    }
+
+    // ---- charts ----
+    function setup(id) {
+      const canvas = document.getElementById(id);
+      if (!canvas) return null;
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(280, Math.round(rect.width));
+      const height = Math.max(180, Math.round(rect.height));
+      canvas.width = width * ratio; canvas.height = height * ratio;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.font = '11px "Cascadia Code", Consolas, monospace';
+      return { ctx, width, height };
+    }
+
+    function forest(id, key, bandKey, lim, unit) {
+      const s = setup(id); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = { l: 62, r: 16, t: 16, b: 34 };
+      const rows = [];
+      ['A->B', 'B->C', 'A->C'].forEach(c => {
+        rows.push({ header: c });
+        (S.contrasts[c] || []).forEach(r => rows.push({ ...r, c }));
+      });
+      const step = (height - p.t - p.b) / rows.length;
+      const x = v => p.l + (Math.max(-lim, Math.min(lim, v)) + lim) / (2 * lim) * (width - p.l - p.r);
+
+      ctx.strokeStyle = C.grid;
+      [-lim, -lim / 2, 0, lim / 2, lim].forEach(v => {
+        ctx.beginPath(); ctx.moveTo(x(v), p.t); ctx.lineTo(x(v), height - p.b); ctx.stroke();
+        ctx.fillStyle = C.text;
+        const label = (v > 0 ? '+' : '') + (Number.isInteger(v) ? v : v.toFixed(1));
+        ctx.fillText(label, x(v) - 10, height - 18);
+      });
+      ctx.strokeStyle = C.text; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(x(0), p.t); ctx.lineTo(x(0), height - p.b); ctx.stroke();
+
+      rows.forEach((r, i) => {
+        const y = p.t + step * (i + 0.5);
+        if (r.header) {
+          ctx.fillStyle = C[r.header.split('->')[1]];
+          ctx.fillText(r.header, 6, y + 4);
+          return;
+        }
+        ctx.fillStyle = C.band;
+        ctx.fillRect(x(-r[bandKey]), y - 7, x(r[bandKey]) - x(-r[bandKey]), 14);
+        ctx.fillStyle = C.text; ctx.fillText(r.p, 22, y + 4);
+        const v = r[key], out = Math.abs(v) > r[bandKey];
+        ctx.fillStyle = C[r.c.split('->')[1]];
+        ctx.beginPath(); ctx.arc(x(v), y, out ? 6 : 4.5, 0, Math.PI * 2);
+        out ? ctx.fill() : (ctx.strokeStyle = ctx.fillStyle, ctx.lineWidth = 2, ctx.stroke());
+        ctx.fillStyle = C.ink;
+        const t = (v > 0 ? '+' : '') + v.toFixed(1);
+        ctx.fillText(t, x(v) + (v >= 0 ? 10 : -10 - ctx.measureText(t).width), y + 4);
+      });
+      ctx.fillStyle = C.text; ctx.fillText(unit, width - 40, height - 4);
+    }
+
+    function drawSlope() {
+      const s = setup('slopeChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = { l: 52, r: 100, t: 18, b: 34 };
+      const vals = [];
+      PS.forEach(pp => ['A', 'B', 'C'].forEach(c => { if (S.profile[pp + c]) vals.push(S.profile[pp + c].kmMed); }));
+      const lo = Math.floor(Math.min(...vals) / 50) * 50 - 25, hi = Math.ceil(Math.max(...vals) / 50) * 50 + 25;
+      const x = i => p.l + (width - p.l - p.r) * i / 2;
+      const y = v => p.t + (hi - v) / (hi - lo) * (height - p.t - p.b);
+      ctx.strokeStyle = C.grid;
+      for (let v = lo; v <= hi; v += 50) {
+        ctx.beginPath(); ctx.moveTo(p.l, y(v)); ctx.lineTo(width - p.r, y(v)); ctx.stroke();
+        ctx.fillStyle = C.text; ctx.fillText(String(v), 6, y(v) + 4);
+      }
+      ['A', 'B', 'C'].forEach((c, i) => {
+        ctx.fillStyle = C[c];
+        ctx.fillText(`${c} ${CN[c]}`, x(i) - 24, height - 14);
+      });
+      PS.forEach((pp, k) => {
+        const pts = ['A', 'B', 'C'].map((c, i) => S.profile[pp + c] ? [i, S.profile[pp + c].kmMed] : null).filter(Boolean);
+        ctx.strokeStyle = PCOL[k]; ctx.lineWidth = 2; ctx.beginPath();
+        pts.forEach(([i, v], n) => n ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+        ctx.stroke();
+        ctx.fillStyle = PCOL[k];
+        pts.forEach(([i, v]) => { ctx.beginPath(); ctx.arc(x(i), y(v), 4, 0, Math.PI * 2); ctx.fill(); });
+        const last = pts[pts.length - 1];
+        ctx.fillText(pp, x(last[0]) + 9, y(last[1]) + 4);
+      });
+      ctx.fillStyle = C.text; ctx.fillText('KM 中位 time-to-hit (ms)', p.l, 12);
+    }
+
+    function drawCycle() {
+      const s = setup('cycleChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = { l: 50, r: 14, t: 18, b: 52 };
+      const cells = [];
+      PS.forEach(pp => ['A', 'B', 'C'].forEach(c => { if (S.cycle[pp + c]) cells.push([pp, c, S.cycle[pp + c]]); }));
+      const max = 1600, plotH = height - p.t - p.b;
+      const bw = (width - p.l - p.r) / cells.length * 0.62;
+      ctx.strokeStyle = C.grid;
+      [0, 400, 800, 1200, 1600].forEach(v => {
+        const yy = p.t + (1 - v / max) * plotH;
+        ctx.beginPath(); ctx.moveTo(p.l, yy); ctx.lineTo(width - p.r, yy); ctx.stroke();
+        ctx.fillStyle = C.text; ctx.fillText(String(v), 6, yy + 4);
+      });
+      cells.forEach(([pp, c, [centre, periph]], i) => {
+        const cx = p.l + (width - p.l - p.r) * (i + 0.5) / cells.length;
+        const hc = centre / max * plotH, hp = periph / max * plotH;
+        ctx.fillStyle = '#c3ccc8';
+        ctx.fillRect(cx - bw / 2, p.t + plotH - hc, bw, hc);
+        ctx.fillStyle = C[c];
+        ctx.fillRect(cx - bw / 2, p.t + plotH - hc - hp, bw, hp);
+        ctx.save(); ctx.translate(cx, height - p.b + 8); ctx.rotate(-Math.PI / 3);
+        ctx.fillStyle = C.text; ctx.fillText(`${pp}·${c}`, -46, 4); ctx.restore();
+      });
+      ctx.fillStyle = '#c3ccc8'; ctx.fillRect(p.l, 8, 9, 9);
+      ctx.fillStyle = C.text; ctx.fillText('回中心', p.l + 14, 16);
+      ctx.fillStyle = C.B; ctx.fillRect(p.l + 66, 8, 9, 9);
+      ctx.fillStyle = C.text; ctx.fillText('周邊拉槍', p.l + 80, 16);
+    }
+
+    function drawSignature() {
+      const s = setup('signatureChart'); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = { l: 48, r: 14, t: 16, b: 34 };
+      const xMax = 1500;
+      const x = v => p.l + Math.min(v, xMax) / xMax * (width - p.l - p.r);
+      const y = v => {
+        const lg = Math.log10(Math.max(0.01, v));
+        return p.t + (2 - lg) / 4 * (height - p.t - p.b); // 100 .. 0.01
+      };
+      ctx.fillStyle = '#fae7e3';
+      ctx.fillRect(p.l, p.t, x(150) - p.l, height - p.t - p.b);
+      ctx.strokeStyle = C.grid;
+      [100, 10, 1, 0.1, 0.01].forEach(v => {
+        ctx.beginPath(); ctx.moveTo(p.l, y(v)); ctx.lineTo(width - p.r, y(v)); ctx.stroke();
+        ctx.fillStyle = C.text; ctx.fillText(v >= 1 ? String(v) : v.toFixed(2), 4, y(v) + 4);
+      });
+      [0, 500, 1000, 1500].forEach(v => {
+        ctx.fillStyle = C.text; ctx.fillText(String(v), x(v) - 12, height - 16);
+      });
+      S.scatter.forEach(([ms, deg, hit]) => {
+        ctx.fillStyle = ms < 150 ? '#d75a47' : (hit ? 'rgba(8,126,139,0.34)' : 'rgba(173,116,23,0.5)');
+        ctx.beginPath(); ctx.arc(x(ms), y(deg), ms < 150 ? 5 : 2, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.strokeStyle = '#d75a47'; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(p.l, y(47.7)); ctx.lineTo(width - p.r, y(47.7)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p.l, y(51.9)); ctx.lineTo(width - p.r, y(51.9)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#d75a47';
+      ctx.fillText('D_deg 47.7–51.9°', width - 160, y(51.9) - 6);
+      ctx.fillStyle = C.text;
+      ctx.fillText('首發時間 ms', width - 100, height - 2);
+      ctx.fillText('角誤差 °（對數）', p.l, 12);
+    }
+
+    const MECH_LABEL = {
+      peak_omega_deg_per_sec: 'peak ω deg/s',
+      entry_omega_deg_per_sec: 'entry ω deg/s',
+      brake_retention: '煞停保留率',
+      trigger_margin_ms: '擊發邊際 ms',
+      overshoot_deg: 'overshoot °',
+      drop_count: '掉靶次數',
+      micro_adjust_count: '微調次數',
+      fire_angle_error_deg: '首發角誤差 °',
+      reaction_ms: '反應時間 ms',
+      movement_time_ms: 'movement time ms',
+    };
+
+    function mechCoverageTable() {
+      let h = '<table class="matrix"><caption>可算率門檻 90%（事前約定的慣例值）。判定只看這批資料實際產出多少，不看分層。</caption>'
+        + '<thead><tr><th>欄位</th><th>層</th><th>可算率</th><th>判定</th></tr></thead><tbody>';
+      S.mechCoverage.forEach(row => {
+        const ok = row.verdict === 'admissible';
+        h += `<tr><td>${esc(MECH_LABEL[row.column] || row.column)} <span style="color:var(--muted)">${esc(row.column)}</span></td>`
+          + `<td class="num">${row.tier}</td>`
+          + `<td class="num">${(row.coverage * 100).toFixed(1)}%</td>`
+          + `<td class="${ok ? 'yes' : 'no'}">${ok ? '可採用' : '不可採用'}</td></tr>`;
+      });
+      document.getElementById('mechCoverageTable').innerHTML = h + '</tbody></table>';
+    }
+
+    function mechCellTable() {
+      let h = '<table class="matrix"><caption>每格為該受試者該條件全部呈現的中位數；「早於進靶」是擊發邊際為負的比例。</caption>'
+        + '<thead><tr><th>受試者 / 條件</th><th>n</th><th>煞停保留率</th><th>擊發邊際 ms</th><th>peak ω</th><th>entry ω</th><th>首發角誤差</th><th>早於進靶</th></tr></thead><tbody>';
+      PS.forEach(p => {
+        ['A', 'B', 'C'].forEach((c, i) => {
+          const d = S.mechCell[p + c];
+          if (!d) return;
+          h += `<tr${i === 0 ? ' class="sep"' : ''}><td><b>${p}</b> <span class="c${c.toLowerCase()}">${c}</span> ${CN[c]}</td>`
+            + `<td class="num">${d.n}</td><td class="num">${d.brake_retention.toFixed(3)}</td>`
+            + `<td class="num">${d.trigger_margin_ms.toFixed(1)}</td>`
+            + `<td class="num">${d.peak_omega_deg_per_sec.toFixed(0)}</td>`
+            + `<td class="num">${d.entry_omega_deg_per_sec.toFixed(1)}</td>`
+            + `<td class="num">${d.fire_angle_error_deg.toFixed(3)}</td>`
+            + `<td class="num">${(d.early * 100).toFixed(1)}%</td></tr>`;
+        });
+      });
+      document.getElementById('mechCellTable').innerHTML = h + '</tbody></table>';
+    }
+
+    function mechForest(id, key, lim, unit, digits) {
+      const s = setup(id); if (!s) return;
+      const { ctx, width, height } = s;
+      const p = { l: 62, r: 16, t: 16, b: 34 };
+      const rows = [];
+      ['A->B', 'B->C', 'A->C'].forEach(c => {
+        rows.push({ header: c });
+        (S.mechContrast[c] || []).forEach(r => rows.push({ ...r, c }));
+      });
+      const step = (height - p.t - p.b) / rows.length;
+      const x = v => p.l + (Math.max(-lim, Math.min(lim, v)) + lim) / (2 * lim) * (width - p.l - p.r);
+      ctx.strokeStyle = C.grid;
+      [-lim, -lim / 2, 0, lim / 2, lim].forEach(v => {
+        ctx.beginPath(); ctx.moveTo(x(v), p.t); ctx.lineTo(x(v), height - p.b); ctx.stroke();
+        ctx.fillStyle = C.text;
+        ctx.fillText((v > 0 ? '+' : '') + v.toFixed(digits > 1 ? digits : 0), x(v) - 12, height - 18);
+      });
+      ctx.strokeStyle = C.text; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(x(0), p.t); ctx.lineTo(x(0), height - p.b); ctx.stroke();
+      rows.forEach((r, i) => {
+        const y = p.t + step * (i + 0.5);
+        if (r.header) { ctx.fillStyle = C[r.header.split('->')[1]]; ctx.fillText(r.header, 6, y + 4); return; }
+        const band = r[key + '_band'] ?? 0;
+        ctx.fillStyle = C.band;
+        ctx.fillRect(x(-band), y - 7, x(band) - x(-band), 14);
+        ctx.fillStyle = C.text; ctx.fillText(r.p, 22, y + 4);
+        const v = r[key];
+        if (v === undefined) return;
+        const out = Math.abs(v) > band;
+        ctx.fillStyle = C[r.c.split('->')[1]];
+        ctx.beginPath(); ctx.arc(x(v), y, out ? 6 : 4.5, 0, Math.PI * 2);
+        out ? ctx.fill() : (ctx.strokeStyle = ctx.fillStyle, ctx.lineWidth = 2, ctx.stroke());
+        ctx.fillStyle = C.ink;
+        const t = (v > 0 ? '+' : '') + v.toFixed(digits);
+        ctx.fillText(t, x(v) + (v >= 0 ? 10 : -10 - ctx.measureText(t).width), y + 4);
+      });
+      ctx.fillStyle = C.text; ctx.fillText(unit, width - 46, height - 4);
+    }
+
+    function drawAll() {
+      forest('forestFirst', 'dFirst', 'band', 18, 'pp');
+      forest('forestTime', 'dTime', 'bandKm', 110, 'ms');
+      drawSlope(); drawCycle(); drawSignature();
+      mechForest('mechForestTrigger', 'trigger_margin_ms', 60, 'ms', 1);
+      mechForest('mechForestPeak', 'peak_omega_deg_per_sec', 90, 'deg/s', 1);
+    }
+
+    comparabilityTable(); orderTable(); profileTable(); contrastTable(); cycleTable();
+    mechCoverageTable(); mechCellTable();
+    window.addEventListener('resize', drawAll);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll); else drawAll();
+  </script>
+</body>
+</html>
