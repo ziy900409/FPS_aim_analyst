@@ -10,6 +10,112 @@ registry 正式凍結、且 M13／M18 人工閘收斂的那一版。
 
 ---
 
+## [0.1.3] — 2026-09-18
+
+**WP-69 + WP-70 交付版**（tag `v0.1.3`）。把「**這一場還能不能被實驗採納**」講清楚：中途暫停的 attempt
+有了三態處置與**唯一出口**（WP-69），fullscreen 條件失效的效力單位從 session 收斂到 **run**、並補上不重啟
+plan 的恢復入口（WP-70）。本版**不改** sim 演進、命中判定、彈道、目標演進或 spawn 分布；`schemaVersion`
+維持 **2**，`meta.validity` 為**加法**。
+
+### 驗證（Tier 2 定版閘）
+
+| 閘 | 結果 |
+|---|---|
+| typecheck ×2 | ✅ exit 0 |
+| Vitest | ✅ **3,758 passed / 2 skipped**（288 files） |
+| `vite build` | ✅ **209 modules** |
+| Tier 1 `e2e-fast`（`chromium-ci`，GitHub-hosted） | ✅ **101 passed / 1 skipped**（13.6 m） — run [35329187672](https://github.com/ziy900409/FPS_aim_analyst/actions/runs/35329187672) |
+| **Tier 2 `e2e-full`（`edge`，self-hosted 真 GPU）** | ⏳ **待執行** —— 由本 tag 觸發，結論回填本節 |
+
+Tier 2 是定版閘（[ci-tiers.md](docs/guideline/ci-tiers.md) §4）。本版的 GitHub release 先以 **draft**
+發出，待 `refs/tags/v0.1.3` 的 e2e-full run 綠燈、證據回填後才 publish。
+交付期間取得的**本機** Edge 證據（非 CI 留痕，效力較弱）：WP-70 T-exit 全套 **121 passed**（21.5 m）、
+KI-041 的 `wp69-pause-invalid-restart.spec.ts` **4 passed** 與鄰居 `session-orchestrator.spec.ts`
+**20 passed**。
+
+### 新增
+
+- **WP-69 — 暫停即失效 + 完整重測**（stage15）。四個新模組：
+  - `src/attempt/RunAttemptController.ts` —— attempt 級 **sticky** validity：這一場一旦暫停就回不去，
+    `restart()` 是**唯一**能讓 validity 走回 `eligible-candidate` 的 mutator（不是「暫停久一點才算」的門檻，
+    是**有沒有發生過**）。
+  - `src/loop/PausableTimeMapper.ts` —— 暫停期間 active time 凍結。**未暫停路徑是 identity**：
+    30/60/144/240 FPS 下 mapped 與 unmapped trace 以 `Object.is` 逐 tick 相同（不是近似）。
+  - `src/attempt/AttemptFinalizationGate.ts` —— `eligible-candidate` / `invalid-retained` / `discarded`
+    **三態 → 後果矩陣**（payload／metrics／download／history／replay／advance／clears），取代此前散在五處
+    的手寫 `if (suspect)`。新增第六個消費者是**讀一個欄位**，不是**再寫一條規則**（C-D4）。
+  - `src/ui/PauseOverlay.ts` —— 暫停面板，兩個出口：「繼續（本次仍無效）」把這一場跑完供稽核、
+    「重新測試」才產生新的 candidate。
+- **`.invalid-paused` 稽核檔** —— `invalid-retained` 的**唯一**下載路徑：操作員手動按，檔名強制帶標記，
+  永遠不會被誤認成正式匯出，也不進 history／趨勢／門檻判定。
+- **WP-70 — run 級條件效度**（stage16）：
+  - `sharedState.validity.fullscreenExitedDuringRun`（per-run，`resetState()` 每場歸零）與匯出欄位
+    **`meta.validity.fullscreenExited`**（optional-in／required-out，缺席解析為 `false`）。
+  - `src/ui/ConditionRecoveryScreen.ts` —— **不重啟 Session Plan／protocol** 即可重新請求 fullscreen
+    並重跑 perf 探測，通過後回到**同一項**。此前全 repo 唯一的 `requestFullscreen()` 綁在資格閘，
+    plan 進行中重開會撞 `SessionRunner is already active` ⇒ 只能 reload。
+- **`research/` 的 spider-shot-wide 機制層** —— Track P 握法（mouse-x grip）逐 trial 抽取 → S01–S06
+  cohort → 與 cohort 報告對帳，含 operator entry point 與 regression runner。`research/` 只讀匯出
+  JSON/CSV，不 import 任何 TS（C-D1）。
+
+### 修正
+
+- **[KI-040](docs/known_issue/KI-040-fullscreen-suspect-never-resets-and-restart-cannot-recover.md)
+  —— `experimentSession.suspect` 一旦為 `true` 永不復位**（`BD-040`）。後果一（靜默、跨 session）：
+  同一分頁內**其後每一場**匯出的 `meta.suspect` 都是 `true`；後果二：`Esc` 同時觸發 attempt 級失效
+  （**有**出口）與 session 級失效（**無**出口）⇒ 操作員只能 reload；後果三：走資格閘重入時橫幅被關掉但
+  旗標仍真 ⇒ **UI 說沒事、資料說 suspect**。根因不是「少一個 reset」，而是**同一個 `meta.suspect` 的兩個
+  成分 scope 不一致** —— 效能地板成分自實作起就是 per-run，只有 fullscreen 成分是 session 級 sticky。
+  修法把左半邊對齊右半邊。
+- **[KI-041](docs/known_issue/KI-041-attempt-hold-notice-never-clears-on-restart.md)
+  —— attempt-hold 文案寫進 `#protocol-status` 後永不清除**（`BD-041`）。按下「重新測試」、新一場已在倒數，
+  橫幅仍寫「測試進度停在原處，未計入本項。請按「重新測試」重跑本項。」。判定與寫入時機都**正確**；
+  缺的是生命終點：`setProtocolStatus()` 恆 `display:'flex'`，全檔**無任何清除者**。修法讓 hold 文案的
+  壽命 = 到下一個 attempt 開始為止，並還原 orchestrator 自己的當前 step 文案（**不是**隱藏 —— 那會連
+  「我在 plan 的哪一步」一起拿掉）。hold 的**記帳**（cursor 不動／pilot attempt +1／零下載）一行未放寬。
+- **protocol 路徑的第二套錄製窗判準** —— `markCurrentConditionSuspect('fullscreen-exit')` 此前未套
+  KI-007 的錄製窗閘，drill **之間**退出全螢幕也會標記 condition。本版讓它與 session plan 走**同一個**
+  判準（C-D4）。方向與上面兩條相反：這一條是**收緊**。
+
+### 變更
+
+- **`meta.validity` 新增 `fullscreenExited`（required-out）** —— payload 自此可自述 `suspect` 的來源；
+  此前無法區分 suspect 來自 fullscreen 或 perf floor。canonical fixture digest 的移動筆數**事前預測 3 筆、
+  事後逐筆吻合**（只動帶 `meta.validity` 父物件者）。
+- **`meta.suspect` 的語意收窄為 run 級** —— ⚠️ **這是判讀斷代**：本版之前的 `true` 可能只是「這個分頁稍早
+  某一場斷過」，之後的 `true` 只談**這一場**。機械區分方式 = 匯出裡有沒有 `meta.validity.fullscreenExited`。
+  方向是**放寬**，且放寬的**唯一**來源是「上一個 run 的中斷不再污染這個 run」——單一 run 內的偵測未被放寬。
+- **suspect 橫幅改為真值驅動 + run 級文案**（舊文案「本 session 資料標記為 suspect」在新判準下是錯的）。
+- 決策：**[GD-47](docs/exec-plan/DECISIONS.md)**（效力單位 = run，fullscreen 與 pointer-lock 語意對稱，
+  並補恢復入口）。**GD-10 補澄清註記、條文一字未動** —— 它把「session 標 suspect」綁在效能地板上，
+  而該成分本來就是 per-run，故本版不是推翻它，是修正 WP-20 T2 延伸出來的 scope 不一致。
+
+### 交付宣稱上限
+
+與 v0.1.2 相同 = **可算、可重現、可稽核，不含效度**。本版**不新增任何指標**，只改變「哪些場次可被採納」
+與「失效如何呈現」⇒ C-D3 的構念驗證閘狀態不變，未過閘的指標仍不得進教練報告。
+WP-69／70 讓不可採納的場次**更早**被擋下（`discarded` 連 payload 都不建），這對品質判讀只增不減。
+
+### 尚未納入本版
+
+WP-59／61 T2／67、WP-44、stage14 草案、**WP-71（僅規劃，未開工）**；M13／M18 人工閘未宣告。
+Tier 2 定版閘見上表（待回填）。
+
+### 已知問題
+
+- **[KI-042](docs/known_issue/KI-042-first-shot-hit-reports-window-outcome-not-the-first-shot.md) 🔴 開放**
+  —— `firstShot.hit` 回報的是**窗結果**而非第一發。診斷完成、未修。
+- **[KI-037](docs/known_issue/KI-037-valid-duration-includes-countdown.md) 仍開放**（左界含倒數，與本版無關）。
+- **FM-70.4 沒有 e2e 守衛** —— Playwright 的 `page.evaluate()` 對 CDP 帶 user gesture，
+  「`requestFullscreen()` 是否在第一個 `await` 之前」錯誤實作照樣全綠 ⇒ 守衛是 source-scan ＋
+  [實機手動清單](docs/operational/fullscreen-recovery-manual-check.md)，該清單的**執行紀錄仍為空**
+  （owner = 操作員，正式收案前執行）。
+- **`#protocol-status` 沒有所有權模型**（四個來源共用單一通道，OQ-KI41-1）；
+  **`wp69-orchestrator-retry.test.ts` 的 rig 手抄 `main.ts`** 兩個函式，KI-041 正是在該 rig 全綠下存活的
+  （OQ-KI41-2）。兩者皆為明帳的技術債，觸發條件已寫在各自的 KI／BD 條目。
+
+---
+
 ## [0.1.2] — 2026-09-15
 
 **WP-68 交付版**（tag `v0.1.2`）。把 `micro_flick_three_target_test_v9`（v8 的 **60 s 計時版**姊妹 drill）
