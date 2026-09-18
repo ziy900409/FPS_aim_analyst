@@ -150,6 +150,11 @@ class RunExtract:
     sensitivity: float
     dpi: int
     fov_deg: float
+    display_css: str
+    """``<cssW>x<cssH>``. A run recorded at a different viewport has a different aspect, so the
+    eye-frame geometry of the stimulus is not the one every other run presented."""
+    fullscreen: bool
+    display_hz: int
 
     @property
     def peripheral_count(self) -> int:
@@ -392,7 +397,50 @@ def extract_run(
         sensitivity=float(meta.get("sensitivity", float("nan"))),
         dpi=int(meta.get("dpi", -1)),
         fov_deg=float(meta.get("fovDeg", float("nan"))),
+        display_css=f"{meta.get('display', {}).get('cssW')}x{meta.get('display', {}).get('cssH')}",
+        fullscreen=bool(meta.get("display", {}).get("fullscreen")),
+        display_hz=int(meta.get("displayHz", -1)),
     )
+
+
+#: Settings that must hold still across one participant's runs for their conditions to be
+#: comparable. A change here is not a technical failure -- every validity flag can stay green --
+#: but it makes the affected run a different experiment, so pooling it silently would attribute
+#: a settings change to the device or the grip.
+COMPARABILITY_KEYS = ("sensitivity", "dpi", "fov_deg", "seed", "display_css", "fullscreen")
+
+
+def settings_spread(runs: Sequence[RunExtract]) -> dict[str, tuple[Any, ...]]:
+    """Distinct values each comparability key takes over ``runs``. One value each means settled."""
+    spread: dict[str, tuple[Any, ...]] = {}
+    for key in COMPARABILITY_KEYS:
+        seen: list[Any] = []
+        for run in runs:
+            value = getattr(run, key)
+            if value not in seen:
+                seen.append(value)
+        spread[key] = tuple(seen)
+    return spread
+
+
+def contrast_comparability(
+    left_runs: Sequence[RunExtract], right_runs: Sequence[RunExtract]
+) -> tuple[str, ...]:
+    """Reasons two conditions cannot be compared as a device or grip contrast.
+
+    The unit is the **contrast**, not the run, because a settings change inside one session has
+    no "drifted side": if a participant played one condition at sensitivity 1.1 and the other at
+    1.0, neither block is the deviant one -- the two factors are simply confounded, and only the
+    contrasts spanning the change are spoiled. Flagging runs against a modal value instead would
+    pick an arbitrary reference and discard perfectly good measurements from the majority side.
+    """
+    reasons: list[str] = []
+    for key in COMPARABILITY_KEYS:
+        left = settings_spread(left_runs)[key]
+        right = settings_spread(right_runs)[key]
+        if len(left) > 1 or len(right) > 1 or left[0] != right[0]:
+            reasons.append(f"{key}: {left} vs {right}")
+    return tuple(reasons)
 
 
 # --- survival estimates -------------------------------------------------------------------

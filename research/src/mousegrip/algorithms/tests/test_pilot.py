@@ -130,6 +130,45 @@ def test_a_presentation_with_no_fire_still_counts_in_the_denominator() -> None:
     assert hits / len(presentations) == 0.5
 
 
+def _run(run_id: str, condition: str, **overrides) -> object:
+    from mousegrip.algorithms.pilot import RunExtract, RunQuality, RunTiming
+
+    timing = RunTiming(3000.0, 63000.0, "test", 63000.0, 60000.0, 3000.0, 0.0, ())
+    quality = RunQuality((), False, 0, False, False, 0.9, ())
+    defaults = dict(
+        run_id=run_id, condition_id=condition, mouse="m", grip="g", rep=1, started_at="",
+        timing=timing, quality=quality, presentations=(), center_presentations=0,
+        ads_down_count=0, seed=1, sensitivity=1.0, dpi=800, fov_deg=75.0,
+        display_css="1920x1080", fullscreen=True, display_hz=240,
+    )
+    return RunExtract(**{**defaults, **overrides})
+
+
+def test_a_settings_change_spoils_the_contrast_that_spans_it_not_the_runs() -> None:
+    """A participant who played one condition at a different sensitivity has two confounded
+    factors, not one deviant block: the contrast crossing the change is unusable while every
+    other contrast of theirs -- and every run -- stays intact."""
+    from mousegrip.algorithms.pilot import contrast_comparability
+
+    a = [_run("a1", "A", sensitivity=1.1), _run("a2", "A", sensitivity=1.1)]
+    b = [_run("b1", "B", sensitivity=1.0), _run("b2", "B", sensitivity=1.0)]
+    c = [_run("c1", "C", sensitivity=1.0), _run("c2", "C", sensitivity=1.0)]
+
+    spoiled = contrast_comparability(a, b)
+    assert spoiled and "sensitivity" in spoiled[0]
+    # The contrast that never crosses the change is untouched.
+    assert contrast_comparability(b, c) == ()
+
+
+def test_a_setting_that_moves_inside_one_condition_spoils_its_contrasts_too() -> None:
+    from mousegrip.algorithms.pilot import contrast_comparability
+
+    mixed = [_run("b1", "B", fullscreen=False), _run("b2", "B", fullscreen=True)]
+    steady = [_run("c1", "C"), _run("c2", "C")]
+    reasons = contrast_comparability(mixed, steady)
+    assert any("fullscreen" in r for r in reasons)
+
+
 def test_active_window_comes_from_the_protocol_not_the_last_event() -> None:
     """The recording tail must be trimmed by the time limit, not by where activity stopped."""
     start = 3000.0
