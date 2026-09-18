@@ -25,13 +25,22 @@ plan 的恢復入口（WP-70）。本版**不改** sim 演進、命中判定、�
 | Vitest | ✅ **3,758 passed / 2 skipped**（288 files） |
 | `vite build` | ✅ **209 modules** |
 | Tier 1 `e2e-fast`（`chromium-ci`，GitHub-hosted） | ✅ **101 passed / 1 skipped**（13.6 m） — run [35329187672](https://github.com/ziy900409/FPS_aim_analyst/actions/runs/35329187672) |
-| **Tier 2 `e2e-full`（`edge`，self-hosted 真 GPU）** | ⏳ **待執行** —— 由本 tag 觸發，結論回填本節 |
+| **Tier 2 `e2e-full`（`edge`，self-hosted 真 GPU）** | ✅ **117 passed / 4 flaky**（25.0 m） — run [35330789457](https://github.com/ziy900409/FPS_aim_analyst/actions/runs/35330789457) |
 
-Tier 2 是定版閘（[ci-tiers.md](docs/guideline/ci-tiers.md) §4）。本版的 GitHub release 先以 **draft**
-發出，待 `refs/tags/v0.1.3` 的 e2e-full run 綠燈、證據回填後才 publish。
-交付期間取得的**本機** Edge 證據（非 CI 留痕，效力較弱）：WP-70 T-exit 全套 **121 passed**（21.5 m）、
-KI-041 的 `wp69-pause-invalid-restart.spec.ts` **4 passed** 與鄰居 `session-orchestrator.spec.ts`
-**20 passed**。
+Tier 2 是定版閘（[ci-tiers.md](docs/guideline/ci-tiers.md) §4），run
+[35330789457](https://github.com/ziy900409/FPS_aim_analyst/actions/runs/35330789457)：2026-09-18
+09:55–10:26 Z 在 self-hosted runner（`run.cmd` 互動桌面 session）跑完，checkout 的是
+`refs/tags/v0.1.3` @ `25ff81b`。`npm run test:ci` 四段（`tsc --noEmit` ×2 → Vitest → Playwright
+`--project=edge`）全通過；`backend.spec.ts` 在 `metadata.realGpu: true` 下 passed ⇒ 量測效度環境成立
+（真 GPU、真 Edge、`backend === 'webgpu'` 而非 WebGL2 fallback）。
+
+⚠️ **4 flaky（第一次紅、retry #1 通過）—— 綠燈不等於沒事**（[ci-tiers.md](docs/guideline/ci-tiers.md) §3.5）：
+`hit-feedback-live.spec.ts:531`（換 drill，`@realgpu`）、`:555`（換場景，`@realgpu`）、
+`session-orchestrator.spec.ts:912`（自訂 program 3 家族 × 2 reps，`@slow`）、
+`:994`（逐列武器實跑，`@slow`）。四條都**不是**本版新增或修改的路徑；trace 已隨 run 上傳
+（artifact `playwright-trace-full`，保留 14 天），**尚未逐條判讀** ⇒ 列為本版的具名未結項
+（與 [KI-030](docs/known_issue/KI-030-history-e2e-flaky-under-parallel-workers.md) 是否同族未定）。
+本版新增的三條 WP-69 live 測試（`wp69-pause-invalid-restart.spec.ts:339/381/417`）**首次即通過、無 retry**。
 
 ### 新增
 
