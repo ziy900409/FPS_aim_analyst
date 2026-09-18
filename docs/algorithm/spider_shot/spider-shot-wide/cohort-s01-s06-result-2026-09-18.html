@@ -120,7 +120,7 @@
     <div class="shell masthead-inner">
       <p class="eyebrow">Cohort result · S01–S06 · 2026-09-18</p>
       <h1>滑鼠 × 握法<br>六人 cohort 結果</h1>
-      <p class="lede">51 個 run、2442 次周邊呈現。硬閘首次觸發並擋下 1 個 run。跨條件差異在 9 個「受試者 × 對比」中有 <b>6 個落在該受試者自己的 run 間波動之內</b>；唯一方向一致的訊號是周邊命中時間，但它同時受到一個尚未記錄的變因牽制。</p>
+      <p class="lede">51 個 run、2442 次周邊呈現。硬閘首次觸發並擋下 1 個 run。跨條件差異在 9 個「受試者 × 對比」中有 <b>6 個落在該受試者自己的 run 間波動之內</b>；方向一致的訊號集中在同一件事上——周邊命中時間、峰值角速度與擊發邊際，但它們同時受到一個尚未記錄的變因牽制。</p>
       <div class="status-row">
         <span class="status">6 participants · 51 runs · 2442 presentations</span>
         <span class="status">硬閘擋下 1 run · timeout 0/2442</span>
@@ -151,13 +151,14 @@
         <div class="decision">
           <div>
             <strong class="verdict">仍然不能——但理由換了。</strong>
-            <p>S01 時的理由是「只有一個人、順序只有一種」。現在滑鼠的位置已經反平衡（3 人排第一、3 人排最後），樣本變成六人，<b>理由改為兩點</b>：差異多半不超過同條件 run 之間的擺動，且唯一方向一致的訊號帶著一個無法解讀的註腳。</p>
+            <p>S01 時的理由是「只有一個人、順序只有一種」。現在滑鼠的位置已經反平衡（3 人排第一、3 人排最後），樣本變成六人，<b>理由改為兩點</b>：差異多半不超過同條件 run 之間的擺動，且那組方向一致的訊號帶著一個無法解讀的註腳。</p>
             <p>握法對比 <code>B→C</code> 在 <b>5/5 受試者身上全部落在雜訊內</b>，同時它對每一位受試者都與場內順序完全共線。</p>
           </div>
           <div>
-            <strong>唯一方向一致的訊號</strong>
-            <p>周邊命中時間中位數：<b>DK/1-2-2 比 GPW1 慢，4/4 可比受試者皆然</b>（+6.0 / +31.9 / +34.1 / +54.7 ms），其中 2/4 超出自身 run 波動。</p>
-            <p>但 <b>GPW1 的握法只有 S01 被確認過</b>。其餘 5 人的 <code>A→B</code> 可能是「換滑鼠」，也可能是「換滑鼠＋換握法」。在補上紀錄之前，這個訊號不能被稱為裝置效應。</p>
+            <strong>方向一致的那組訊號</strong>
+            <p>結果面：周邊命中時間中位數 <b>DK/1-2-2 比 GPW1 慢，4/4 可比受試者皆然</b>（+6.0 / +31.9 / +34.1 / +54.7 ms），2/4 超出自身 run 波動。</p>
+            <p>機制面（<a href="#mechanism">§06</a>）：<b>峰值角速度 4/4 較低</b>、<b>擊發邊際 3/4 較長</b>。三者是同一件事的三個切面，不是三份獨立證據；而且峰速<b>沒有任何一位</b>超出自身波動。</p>
+            <p>且 <b>GPW1 的握法只有 S01 被確認過</b>。其餘 5 人的 <code>A→B</code> 可能是「換滑鼠」，也可能是「換滑鼠＋換握法」。在補上紀錄之前，整組訊號都不能被稱為裝置效應。</p>
           </div>
         </div>
       </section>
@@ -177,7 +178,7 @@
               <tr><td>修剪後 active duration</td><td class="num">60.0 s × 50</td><td>全部由 protocol 邊界決定，1 個 run 帶錄製尾巴</td></tr>
               <tr><td>周邊呈現</td><td class="num">2442</td><td>命中 2418 · 行政右截 24 · <b>timeout 0</b></td></tr>
               <tr><td>可比的對比</td><td class="num partial">11 / 18</td><td>感度變動 2、cell 缺席 2、其餘可比</td></tr>
-              <tr><td>機制層可用 n</td><td class="num partial">Tier 0 ≈ 2464 · Tier 1 = 790</td><td>抽取層已建；Tier 1 受 detector 牽制，見 <a href="#findings">§06 F05</a></td></tr>
+              <tr><td>機制層可用 n</td><td class="num partial">Tier 0 ≥ 2420 · Tier 1 = 777</td><td>分母為 2442 筆可分析呈現（≥99.1% 對 31.8%）；見 <a href="#mechanism">§06</a></td></tr>
             </tbody>
           </table>
         </div>
@@ -275,14 +276,14 @@
         <span class="section-no">06 / MECHANISM</span>
         <h2>機制層：差異出在動作的哪一段</h2>
         <p class="section-intro">機制構念由 TypeScript 的 canonical 推導產生（<code>analyze:spider-wide-mech</code>），以
-        <code>run_id</code> + <code>target_id</code> 接進本表——<b>2486/2486 逐筆對上，零未匹配</b>。研究側不重算任何構念（C-D4）。
+        <code>run_id</code> + <code>target_id</code> 接進本表——<b>2486/2486 逐筆對上，零未匹配</b>（抽取層掃全部 51 個 run；下表的可算率分母則是 <b>2442 筆可分析呈現</b>，即扣除硬閘擋下的那個 run）。研究側不重算任何構念（C-D4）。
         可採用與否由**這批資料實際產出的可算率**決定，不由分層決定：門檻 90% 是事前約定的慣例值，不是校準過的閾值。</p>
 
         <div class="matrix-wrap" id="mechCoverageTable"></div>
 
         <div style="height:12px"></div>
         <div class="callout stop"><strong>Tier 1 在本 cohort 不可用，而原因不是 baseline 覆蓋率。</strong>
-        <code>baselineInsufficient</code> 全數為 false，detector 卻對 2486 筆中的 <b>1696 筆</b>回 <code>timeout</code>。
+        <code>baselineInsufficient</code> 全數為 false，detector 卻對全部 2486 筆中的 <b>1696 筆</b>回 <code>timeout</code>；在 2442 筆可分析呈現上，反應時間只有 <b>777 筆</b>（31.8%）可算。
         覆蓋率不等於乾淨度：KI-034 說的是 pre-stimulus 窗吃進前一次交戰，那會灌大 baseline SD、把偵測門檻頂高，
         而覆蓋率旗標看不見這件事；1.2 秒的中心↔周邊週期保證了重疊。<b>把 <code>baseline_insufficient</code> 讀成
         KI-034 的全清訊號會判斷錯。</b>因此本節不含反應時間與 movement time。</div>
@@ -368,7 +369,7 @@
           <h3>Tier 0 已可算，Tier 1 在這批資料上不可用</h3>
           <p>本頁定稿後已建立 TS 抽取層（<code>analyze:spider-wide-mech</code>），實測 2486 次呈現的可算率<b>依層別分裂</b>：</p>
           <p><b>Tier 0（不經 detector）99.1–100%</b> —— peak／entry ω、煞停保留率、擊發邊際、drop、micro-adjust、首發角誤差。首批真實值：煞停保留率中位數 <b>0.072</b>（進靶時只剩峰速的 7%）、擊發邊際中位數 <b>+73 ms</b>，其中 <b>6.9%</b> 的首發早於進靶。</p>
-          <p><b>Tier 1（reaction／movement time）僅 31.8%</b>，不可用於本 cohort。關鍵在於原因<b>不是</b> baseline 覆蓋率——<code>baselineInsufficient</code> 全數為 false，detector 卻對 2486 筆中的 <b>1696 筆</b>回 <code>timeout</code>。覆蓋率不等於乾淨度：KI-034 講的是 pre-stimulus 窗吃進前一次交戰，那會灌大 baseline SD、把偵測門檻頂高，而覆蓋率旗標看不見這件事；1.2 秒的週期保證了重疊。</p>
+          <p><b>Tier 1（reaction／movement time）僅 31.8%</b>，不可用於本 cohort。關鍵在於原因<b>不是</b> baseline 覆蓋率——<code>baselineInsufficient</code> 全數為 false，detector 卻對全部 2486 筆中的 <b>1696 筆</b>回 <code>timeout</code>；在 2442 筆可分析呈現上，反應時間只有 <b>777 筆</b>（31.8%）可算。覆蓋率不等於乾淨度：KI-034 講的是 pre-stimulus 窗吃進前一次交戰，那會灌大 baseline SD、把偵測門檻頂高，而覆蓋率旗標看不見這件事；1.2 秒的週期保證了重疊。</p>
           <p>因此本頁浮現的機制問題（<b>DK/1-2-2 較慢 4/4 但首發率多半較高 3/4</b>）現在<b>有工具可查</b>，但只能用 Tier 0 的煞停與擊發時機去查，不能用反應時間。機制層數值已併入 <a href="#mechanism">§06</a>：峰值角速度在 4/4 可比受試者身上較低、擊發邊際 3/4 較長，但只有擊發邊際有 2/4 超出自身 run 波動。</p>
         </article>
 
@@ -381,7 +382,7 @@
         <article class="finding newf">
           <span class="no">N2 · 只有 cohort 看得到<span class="badge newf">新</span></span>
           <h3>GPW1 的握法 5/6 未紀錄</h3>
-          <p>只有 S01 被確認為 1-2-2。若其餘受試者在 GPW1 上用的不是 1-2-2，<code>A→B</code> 就不是滑鼠對比而是滑鼠＋握法。這是<b>紀錄缺口而非資料問題</b>，且它正好牽制本批唯一方向一致的訊號。</p>
+          <p>只有 S01 被確認為 1-2-2。若其餘受試者在 GPW1 上用的不是 1-2-2，<code>A→B</code> 就不是滑鼠對比而是滑鼠＋握法。這是<b>紀錄缺口而非資料問題</b>，且它正好牽制本批<b>全部</b>方向一致的訊號——結果面與機制面都建立在 <code>A→B</code> 上。</p>
         </article>
 
         <article class="finding newf">
@@ -398,7 +399,7 @@
           <table class="matrix">
             <thead><tr><th>#</th><th>動作</th><th>為什麼是現在</th></tr></thead>
             <tbody>
-              <tr><td class="num">1</td><td>補記 S02–S06 在 GPW1 上的握法</td><td>它決定本批唯一方向一致的訊號能不能被稱為裝置效應；是紀錄工作，不需要重測</td></tr>
+              <tr><td class="num">1</td><td>補記 S02–S06 在 GPW1 上的握法</td><td>它決定本批那組方向一致的訊號（命中時間、峰速、擊發邊際）能不能被稱為裝置效應；是紀錄工作，不需要重測</td></tr>
               <tr><td class="num">2</td><td>下一輪把握法順序納入反平衡</td><td>滑鼠位置已經做到了，握法一次都沒有；目前 <code>B→C</code> 對每個人都與順序共線</td></tr>
               <tr><td class="num">3</td><td><s>建 TS 抽取層</s>、<s>把 Tier 0 數值併入本報告</s> → 已完成（<a href="#mechanism">§06</a>）；剩餘工作是釐清 detector 對 68% 呈現回 timeout 的成因</td><td>「較慢但首發較準」現在可用煞停保留率與擊發邊際去查；反應時間在本 cohort 仍不可用</td></tr>
               <tr><td class="num">4</td><td>把殘留擊發護欄寫進 protocol（看資料前鎖門檻）</td><td>簽名已明確：<code>first_fire &lt; 150 ms 且 offset ≈ D_deg</code></td></tr>
@@ -415,14 +416,15 @@
         <div class="files">
           <ul>
             <li><b>純函式抽取</b>：<code>research/src/mousegrip/algorithms/pilot.py</code></li>
-            <li><b>Cohort runner</b>：<code>research/src/mousegrip/notebooks/run_cohort.py</code>　→　<code>uv run python src/mousegrip/notebooks/run_cohort.py</code></li>
-            <li><b>輸出</b>（<code>research/out/mousegrip-cohort/</code>，git-ignored）：<code>quality_ledger.csv</code>（51 列）、<code>trial_metrics.csv</code>（2486 列）、<code>run_metrics.csv</code>（51 列）、<code>matched_pairs.csv</code></li>
+            <li><b>機制層抽取（TypeScript，構念權威）</b>：<code>scripts/spiderWideMechanismRunner.ts</code>（純函式）+ <code>scripts/analyze-spider-wide-mechanism.ts</code>（I/O）　→　<code>npm run analyze:spider-wide-mech -- data/BQC-test/DKMouse --out &lt;dir&gt;</code>，產出 <code>mechanism_metrics.csv</code></li>
+            <li><b>Cohort runner</b>：<code>research/src/mousegrip/notebooks/run_cohort.py</code>　→　<code>uv run python src/mousegrip/notebooks/run_cohort.py --mechanism &lt;dir&gt;/mechanism_metrics.csv</code>（省略 <code>--mechanism</code> 則機制層欄位不出現）</li>
+            <li><b>輸出</b>（<code>research/out/mousegrip-cohort/</code>，git-ignored）：<code>quality_ledger.csv</code>（51 列）、<code>trial_metrics.csv</code>（2486 列）、<code>run_metrics.csv</code>（51 列）、<code>matched_pairs.csv</code>、<code>mechanism_coverage.csv</code>（10 列，逐欄可算率與採用判定）</li>
             <li><b>S01 單人報告</b>：<a href="s01-track-p-pilot-result-2026-09-17.html">Track P pilot result</a>（數字在本次管線改動後逐位重現）</li>
             <li><b>流程依據</b>：<a href="mouse-grip-final-workflow-2026-09-17.html">最終整合 workflow v2.0</a> 的 Track P 分支</li>
           </ul>
         </div>
         <div style="height:12px"></div>
-        <div class="callout"><strong>本頁沒有做的事：</strong>沒有產生優勝條件、沒有常模或技能等級、沒有確認性 CI、沒有在本頁呈現機制層數值（抽取層已建，數值併入為下一切片）、沒有 polling／sensor 推論、沒有把右鍵觸發稱為誤觸、沒有對未反平衡的握法對比下任何方向性判語。跨人彙總一律以受試者為權重單位，不把 trial 直接合併。</div>
+        <div class="callout"><strong>本頁沒有做的事：</strong>沒有產生優勝條件、沒有常模或技能等級、沒有確認性 CI、沒有呈現 Tier 1 機制指標（反應時間與 movement time 在 31.8% 被擋下，見 <a href="#mechanism">§06</a>）、沒有 polling／sensor 推論、沒有把右鍵觸發稱為誤觸、沒有對未反平衡的握法對比下任何方向性判語。跨人彙總一律以受試者為權重單位，不把 trial 直接合併。</div>
       </section>
     </main>
   </div>
